@@ -9289,7 +9289,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\appframework\IAppSystem.h"
+				RelativePath="..\..\public\appframework\iappsystem.h"
 				>
 			</File>
 			<File

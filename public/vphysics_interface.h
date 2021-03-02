@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Public interfaces to vphysics DLL
 //
@@ -13,7 +13,7 @@
 
 
 #include "tier1/interface.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector4d.h"
 #include "vcollide.h"

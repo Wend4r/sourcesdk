@@ -15,7 +15,7 @@
 #include "tier1/utldict.h"
 #include "soundflags.h"
 #include "mathlib/compressed_vector.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "tier3/tier3.h"
 
 

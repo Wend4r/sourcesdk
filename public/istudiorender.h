@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -18,7 +18,7 @@
 #include "tier1/utlvector.h"
 #include "materialsystem/imaterial.h"
 #include "materialsystem/imaterialsystem.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "datacache/imdlcache.h"
 #include "tier0/fasttimer.h"
 #include "studio.h"

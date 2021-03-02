@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//====== Copyright ï¿½ 1996-2004, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #include "tier1/interface.h"
 #include "tier1/utlvector.h"
 #include "tier1/utlsymbollarge.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "datamodel/dmattributetypes.h"
 #include "datamodel/dmxheader.h"
 

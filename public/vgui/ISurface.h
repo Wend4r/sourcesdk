@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -17,7 +17,7 @@
 #include "tier1/interface.h"
 #include "bitmap/imageformat.h"
 
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "mathlib/vector2d.h"  // must be before the namespace line
 #include "vgui/ischemesurface.h"
 

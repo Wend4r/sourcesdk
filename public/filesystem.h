@@ -23,7 +23,7 @@
 //#include "tier1/functors.h" 
 #include "tier1/checksum_crc.h"
 #include "tier1/utlqueue.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "tier2/tier2.h"
 
 //-----------------------------------------------------------------------------
