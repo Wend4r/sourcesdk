@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -40,15 +40,15 @@ class CPeerToPeerAddress
 {
 public:
 	CPeerToPeerAddress ( void )
-	: m_AddrType( P2P_STEAMID )
-	, m_steamChannel( STEAM_P2P_GAME_CLIENT )
+	: m_steamChannel( STEAM_P2P_GAME_CLIENT )
+	, m_AddrType( P2P_STEAMID )
 	{}
 
 	void Clear ( void )
 	{
-		m_AddrType = P2P_STEAMID;
 		m_steamID.Clear();
 		m_steamChannel = STEAM_P2P_GAME_CLIENT;
+		m_AddrType = P2P_STEAMID;
 	}
 
 	void SetSteamChannel( int nChannel )
@@ -67,9 +67,9 @@ public:
 	}
 
 	CPeerToPeerAddress ( const CSteamID &steamID, int nSteamChannel )
-		: m_AddrType ( P2P_STEAMID )
-		, m_steamID ( steamID )
+		: m_steamID ( steamID )
 		, m_steamChannel( nSteamChannel )
+		, m_AddrType ( P2P_STEAMID )
 	{
 	}
 
@@ -81,9 +81,9 @@ public:
 	// Like operator =
 	CPeerToPeerAddress &SetFromSteamID( const CSteamID &steamID, int nSteamChannel )
 	{
-		m_AddrType = P2P_STEAMID;
 		m_steamID = steamID;
 		m_steamChannel = nSteamChannel;
+		m_AddrType = P2P_STEAMID;
 		return *this;
 	}
 
@@ -209,14 +209,14 @@ struct ns_address
 
 	void Clear ( )
 	{
-		m_AddrType = NSAT_NETADR;
 		m_adr.Clear ( );
 		m_steamID.Clear ( );
+		m_AddrType = NSAT_NETADR;
 	}
 
 	ns_address ( const netadr_t &other )
-		: m_AddrType ( NSAT_NETADR )
-		, m_adr ( other )
+		: m_adr ( other )
+		, m_AddrType ( NSAT_NETADR )
 	{
 		m_steamID.Clear();
 	}
@@ -231,8 +231,8 @@ struct ns_address
 
 
 	ns_address ( const CPeerToPeerAddress &steamID )
-		: m_AddrType ( NSAT_P2P )
-		, m_steamID ( steamID )
+		: m_steamID ( steamID )
+		, m_AddrType ( NSAT_P2P )
 	{
 		m_adr.Clear ( );
 	}
@@ -240,16 +240,16 @@ struct ns_address
 	ns_address& operator=(const CPeerToPeerAddress &steamID)
 	{
 		Clear ( );
-		m_AddrType = NSAT_P2P;
 		m_steamID = steamID;
+		m_AddrType = NSAT_P2P;
 		return *this;
 	}
 
 	ns_address &SetFromSteamID ( const CSteamID &steamID, int nSteamChannel )
 	{
 		Clear ( );
-		m_AddrType = NSAT_P2P;
 		m_steamID.SetFromSteamID( steamID, nSteamChannel );
+		m_AddrType = NSAT_P2P;
 		return *this;
 	}
 
