@@ -358,7 +358,7 @@ inline bool V_isspace(int c)
 	#endif
 }
 #undef isspace
-#define isspace use_V_isspace_instead_of_isspace
+#define isspace V_isspace
 
 // Returns true if V_isspace returns true for any character in the string
 inline bool V_containsWhitespace( const char *pStr )
