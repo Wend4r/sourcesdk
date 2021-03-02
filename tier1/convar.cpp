@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -18,7 +18,7 @@
 #include "tier1/convar_serverbounded.h"
 #include "icvar.h"
 #include "tier0/dbg.h"
-#include "Color.h"
+#include "color.h"
 #if defined( _X360 )
 #include "xbox/xbox_console.h"
 #endif

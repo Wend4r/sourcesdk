@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements visual effects entities: sprites, beams, bubbles, etc.
 //
@@ -10,7 +10,7 @@
 #include "engine/IEngineSound.h"
 #include "KeyValues.h"
 #include "filesystem.h"
-#include "Color.h"
+#include "color.h"
 #include "GameStats.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

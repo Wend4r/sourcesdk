@@ -21,7 +21,7 @@
 
 
 
-#include "Color.h"
+#include "color.h"
 #include "collisionutils.h"
 #include "functorutils.h"
 #include "team.h"

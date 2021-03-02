@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // $Header: $
 // $NoKeywords: $
@@ -16,7 +16,7 @@
 #include "mathlib/vector2d.h"
 #include "mathlib/vector4d.h"
 #include "mathlib/vmatrix.h"
-#include "Color.h"
+#include "color.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <ctype.h>
