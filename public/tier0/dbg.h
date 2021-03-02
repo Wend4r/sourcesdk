@@ -124,7 +124,7 @@ typedef void (*AssertFailedNotifyFunc_t)( const char *pchFile, int nLine, const 
 PLATFORM_INTERFACE void SetAssertFailedNotifyFunc( AssertFailedNotifyFunc_t func );
 PLATFORM_INTERFACE void CallAssertFailedNotifyFunc( const char *pchFile, int nLine, const char *pchMessage );
 
-#if defined( LINUX )
+#if defined( LINUX ) || defined( _LINUX )
 PLATFORM_INTERFACE void SetAssertDialogParent( struct SDL_Window *window );
 PLATFORM_INTERFACE struct SDL_Window * GetAssertDialogParent();
 #endif

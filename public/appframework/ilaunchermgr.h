@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#if defined( USE_SDL ) || defined( OSX ) || defined( LINUX ) 
+#if defined( USE_SDL ) || defined( OSX ) || defined( LINUX ) || defined( _LINUX )
 
 // Purpose: The overlay doesn't properly work on OS X 64-bit because a bunch of 
 // Cocoa functions that we hook were never ported to 64-bit. Until that is fixed,

@@ -17,7 +17,7 @@
 // These memory debugging switches aren't relevant under Linux builds since memoverride.cpp
 // isn't built into Linux projects
 // [will] - Temporarily disabling for OSX until I can fix memory issues.
-#if !defined( LINUX ) && !defined( _OSX )
+#if !defined( LINUX ) && !defined( _LINUX ) && !defined( _OSX )
 // Define this in release to get memory tracking even in release builds
 //#define USE_MEM_DEBUG 1
 

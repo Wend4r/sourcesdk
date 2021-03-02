@@ -13,7 +13,7 @@
 #define PLATFORM_64BITS 1
 #endif
 
-#if defined( LINUX ) && ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
+#if (defined( LINUX ) || defined( _LINUX )) && ((__GNUC__ * 100) + __GNUC_MINOR__) >= 406
 // based on some Jonathan Wakely macros on the net...
 #define GCC_DIAG_STR(s) #s
 #define GCC_DIAG_JOINSTR(x,y) GCC_DIAG_STR(x ## y)
@@ -334,7 +334,7 @@
 	#define IsPlatformPosix()		1
 	#define PLATFORM_POSIX 1
 
-	#if defined( LINUX ) && !defined( OSX ) // for havok we define both symbols, so don't let the osx build wander down here
+	#if (defined( LINUX ) || defined( _LINUX ) && !defined( OSX ) // for havok we define both symbols, so don't let the osx build wander down here
 		#define IsPlatformLinux() 1
 		#define IsPlatformOSX() 0
 		#define IsOSXOpenGL() 0
@@ -2040,7 +2040,7 @@ class CReuseVaList
 public:
 	CReuseVaList( va_list List )
 	{
-#if defined(LINUX) || defined(OSX)
+#if defined(LINUX) || defined(_LINUX) || defined(OSX)
 		va_copy( m_ReuseList, List );
 #else
 		m_ReuseList = List;
@@ -2048,7 +2048,7 @@ public:
 	}
 	~CReuseVaList()
 	{
-#if defined(LINUX) || defined(OSX)
+#if defined(LINUX) || defined(_LINUX) || defined(OSX)
 		va_end( m_ReuseList );
 #endif
 	}

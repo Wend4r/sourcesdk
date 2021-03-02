@@ -1139,7 +1139,7 @@ FSReturnCode_t SetSteamInstallPath( char *steamInstallPath, int steamInstallPath
 	// under osx the bin lives in the bin/ folder, so step back one
 	Q_StripLastDir( steamInstallPath, steamInstallPathLen );
 	const char *pchSteamDLL = "libsteam.dylib";	
-#elif defined(LINUX)
+#elif defined(LINUX) || defined(_LINUX)
 	// under linux the bin lives in the bin/ folder, so step back one
 	Q_StripLastDir( steamInstallPath, steamInstallPathLen );
 	const char *pchSteamDLL = "libsteam.so";
