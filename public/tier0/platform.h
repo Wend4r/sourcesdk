@@ -684,7 +684,8 @@ typedef void * HINSTANCE;
 // Maximum and minimum representable values
 #ifndef PLATFORM_OSX
 
-#if _MSC_VER >= 1800 // VS 2013 or higher
+#ifdef PLATFORM_WINDOWS
+#	if _MSC_VER >= 1800 // VS 2013 or higher
 	// Copied from stdint.h
 	#define INT8_MIN         (-127i8 - 1)
 	#define INT16_MIN        (-32767i16 - 1)
@@ -698,7 +699,7 @@ typedef void * HINSTANCE;
 	#define UINT16_MAX       0xffffui16
 	#define UINT32_MAX       0xffffffffui32
 	#define UINT64_MAX       0xffffffffffffffffui64
-#else // _MSC_VER
+#	else // _MSC_VER
 	#define  INT8_MAX			SCHAR_MAX
 	#define  INT16_MAX			SHRT_MAX
 	#define  INT32_MAX			LONG_MAX
@@ -713,6 +714,7 @@ typedef void * HINSTANCE;
 	#define  UINT16_MAX			((uint16)~0)
 	#define  UINT32_MAX			((uint32)~0)
 	#define  UINT64_MAX			((uint64)~0)
+#	endif
 #endif
 
 #define  UINT8_MIN			0
@@ -2535,7 +2537,7 @@ template < size_t NUM, class T > struct AlignedByteArray_t : public AlignedByteA
 	struct ALIGN_N( ALIGN ) AlignedByteArrayExplicit_t< NUM, T, ALIGN > \
 	{ \
 		/* NOTE: verify alignment in the constructor (which may be wrong if this is heap-allocated, for ALIGN > MEMALLOC_MAX_AUTO_ALIGN) */ \
-		AlignedByteArrayExplicit_t()	{ if ( (ALIGN-1) & (size_t)this ) DebuggerBreakIfDebugging(); } \
+		AlignedByteArrayExplicit_t()	{ if ( (ALIGN-1) & (size_t)this ) { DebuggerBreakIfDebugging(); } } \
 		T *			Base( void )		{ ValidateAlignmentExplicit<T,ALIGN>(); return (T *)&m_Data; } \
 		const T *	Base( void ) const	{ ValidateAlignmentExplicit<T,ALIGN>(); return (const T *)&m_Data; } \
 	private: \
