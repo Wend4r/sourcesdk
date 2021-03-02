@@ -16,7 +16,7 @@
 #pragma once
 #endif
 
-#include "color.h"
+#include <color.h>
 #include "icommandline.h"
 #include <stdio.h>
 
