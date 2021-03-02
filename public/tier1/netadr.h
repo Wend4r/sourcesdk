@@ -13,8 +13,10 @@
 #endif
 
 #include "tier0/platform.h"
-#include <steam/steamclientpublic.h>
 #undef SetPort
+
+class bf_read;
+class bf_write;
 
 typedef enum
 { 
@@ -38,7 +40,7 @@ public:
 	void	SetIP(uint8 b1, uint8 b2, uint8 b3, uint8 b4);
 	void	SetIP(uint unIP);									// Sets IP.  unIP is in host order (little-endian)
 	void    SetIPAndPort( uint unIP, unsigned short usPort ) { SetIP( unIP ); SetPort( usPort ); }
-	void	SetFromString(const char *pch, bool bUseDNS = false ); // if bUseDNS is true then do a DNS lookup if needed
+	bool	SetFromString(const char *pch, bool bUseDNS = false ); // if bUseDNS is true then do a DNS lookup if needed
 	
 	bool	CompareAdr (const netadr_s &a, bool onlyBase = false) const;
 	bool	CompareClassBAdr (const netadr_s &a) const;
@@ -46,9 +48,26 @@ public:
 
 	netadrtype_t	GetType() const;
 	unsigned short	GetPort() const;
+
+	// DON'T CALL THIS
 	const char*		ToString( bool onlyBase = false ) const; // returns xxx.xxx.xxx.xxx:ppppp
+
+	void	ToString( char *pchBuffer, uint32 unBufferSize, bool onlyBase = false ) const; // returns xxx.xxx.xxx.xxx:ppppp
+	template< size_t maxLenInChars >
+	void	ToString_safe( char (&pDest)[maxLenInChars], bool onlyBase = false ) const
+	{
+		ToString( &pDest[0], maxLenInChars, onlyBase );
+	}
+
 	void			ToSockadr(struct sockaddr *s) const;
-	unsigned int	GetIP() const;
+
+	// Returns 0xAABBCCDD for AA.BB.CC.DD on all platforms, which is the same format used by SetIP().
+	// (So why isn't it just named GetIP()?  Because previously there was a fucntion named GetIP(), and
+	// it did NOT return back what you put into SetIP().  So we nuked that guy.)
+	unsigned int	GetIPHostByteOrder() const;
+
+	// Returns a number that depends on the platform.  In most cases, this probably should not be used.
+	unsigned int	GetIPNetworkByteOrder() const;
 
 	bool	IsLocalhost() const; // true, if this is the localhost IP 
 	bool	IsLoopback() const;	// true if engine loopback buffers are used
@@ -58,10 +77,11 @@ public:
 
 	void    SetFromSocket( int hSocket );
 
-	// These function names are decorated because the Xbox360 defines macros for ntohl and htonl
- 	unsigned long addr_ntohl() const;
- 	unsigned long addr_htonl() const;
+	bool	Unserialize( bf_read &readBuf );
+	bool	Serialize( bf_write &writeBuf );
+
 	bool operator==(const netadr_s &netadr) const {return ( CompareAdr( netadr ) );}
+	bool operator!=(const netadr_s &netadr) const {return !( CompareAdr( netadr ) );}
 	bool operator<(const netadr_s &netadr) const;
 
 public:	// members are public to avoid to much changes
@@ -71,35 +91,46 @@ public:	// members are public to avoid to much changes
 	unsigned short	port;
 } netadr_t;
 
-enum ENSAddressType
-{
-	kAddressDirect,
-	kAddressP2P,
-	kAddressProxiedGameServer,
-	kAddressProxiedClient,
 
-	kAddressMax
-};
-
-class ns_address
+/// Helper class to render a netadr_t.  Use this when formatting a net address
+/// in a printf.  Don't use adr.ToString()!
+class CUtlNetAdrRender
 {
 public:
-	ns_address( const netadr_t &adr )
+	CUtlNetAdrRender( const netadr_t &obj, bool bBaseOnly = false )
 	{
-			m_Address = adr;
-			m_AddressType = kAddressDirect;
+		obj.ToString( m_rgchString, sizeof(m_rgchString), bBaseOnly );
 	}
-public:
-	const netadr_t &GetAddress() const { return m_Address; }
-	const CSteamID& GetSteamID() const { return m_ID; }
-	const uint16 GetRemotePort() const { return m_nRemotePort; }
-	ENSAddressType GetAddressType() const { return m_AddressType; }
+
+	CUtlNetAdrRender( uint32 unIP )
+	{
+		netadr_t addr( unIP, 0 );
+		addr.ToString( m_rgchString, sizeof(m_rgchString), true );
+	}
+
+	CUtlNetAdrRender( uint32 unIP, uint16 unPort )
+	{
+		netadr_t addr( unIP, unPort );
+		addr.ToString( m_rgchString, sizeof(m_rgchString), false );
+	}
+
+	CUtlNetAdrRender( const struct sockaddr &s )
+	{
+		netadr_t addr;
+		if ( addr.SetFromSockadr( &s ) )
+			addr.ToString( m_rgchString, sizeof(m_rgchString), false );
+		else
+			m_rgchString[0] = '\0';
+	}
+
+	const char * String() const
+	{ 
+		return m_rgchString;
+	}
+
 private:
-	netadr_t m_Address;
-	CSteamID m_ID;
-	uint16 m_nRemotePort;
-	int m_Unknown;
-	ENSAddressType m_AddressType;
+
+	char m_rgchString[32];
 };
 
 #endif // NETADR_H

@@ -31,10 +31,25 @@ enum EDictCompareType
 //-----------------------------------------------------------------------------
 // A dictionary mapping from symbol to structure
 //-----------------------------------------------------------------------------
+
+// This is a useful macro to iterate from start to end in order in a map
+#define FOR_EACH_DICT( dictName, iteratorName ) \
+	for( int iteratorName=dictName.First(); iteratorName != dictName.InvalidIndex(); iteratorName = dictName.Next( iteratorName ) )
+
+// faster iteration, but in an unspecified order
+#define FOR_EACH_DICT_FAST( dictName, iteratorName ) \
+	for ( int iteratorName = 0; iteratorName < dictName.MaxElement(); ++iteratorName ) if ( !dictName.IsValidIndex( iteratorName ) ) continue; else
+
+//-----------------------------------------------------------------------------
+// A dictionary mapping from symbol to structure
+//-----------------------------------------------------------------------------
 template <class T, class I = int > 
 class CUtlDict
 {
 public:
+	typedef const char* KeyType_t;
+	typedef T ElemType_t;
+
 	// constructor, destructor
 	// Left at growSize = 0, the memory will first allocate 1 element and double in size
 	// at each increment.
@@ -50,13 +65,16 @@ public:
 	const T&   operator[]( I i ) const;
 
 	// gets element names
-	char	   *GetElementName( I i );
+	//char	   *GetElementName( I i );
 	char const *GetElementName( I i ) const;
 
 	void		SetElementName( I i, char const *pName );
 
 	// Number of elements
 	unsigned int Count() const;
+
+	// Number of allocated slots
+	I MaxElement() const;
 	
 	// Checks if a node is valid and in the tree
 	bool  IsValidIndex( I i ) const;
@@ -70,6 +88,7 @@ public:
 	
 	// Find method
 	I  Find( const char *pName ) const;
+	bool HasElement( const char *pName ) const;
 	
 	// Remove methods
 	void	RemoveAt( I i );
@@ -144,11 +163,11 @@ inline const T& CUtlDict<T, I>::Element( I i ) const
 //-----------------------------------------------------------------------------
 // gets element names
 //-----------------------------------------------------------------------------
-template <class T, class I>
+/*template <class T, class I>
 inline char *CUtlDict<T, I>::GetElementName( I i )
 {
-	return (char *)m_Elements.Key( i );
-}
+	return const_cast< char* >( m_Elements.Key( i ) );
+}*/
 
 template <class T, class I>
 inline char const *CUtlDict<T, I>::GetElementName( I i ) const
@@ -175,7 +194,7 @@ inline void CUtlDict<T, I>::SetElementName( I i, char const *pName )
 	// TODO:  This makes a copy of the old element
 	// TODO:  This relies on the rb tree putting the most recently
 	//  removed element at the head of the insert list
-	free( (void *)m_Elements.Key( i ) );
+	free( const_cast< char* >( m_Elements.Key( i ) ) );
 	m_Elements.Reinsert( strdup( pName ), i );
 }
 
@@ -188,6 +207,14 @@ inline	unsigned int CUtlDict<T, I>::Count() const
 	return m_Elements.Count(); 
 }
 
+//-----------------------------------------------------------------------------
+// Number of allocated slots
+//-----------------------------------------------------------------------------
+template <class T, class I>
+inline I CUtlDict<T, I>::MaxElement() const
+{
+	return m_Elements.MaxElement();
+}
 	
 //-----------------------------------------------------------------------------
 // Checks if a node is valid and in the tree
@@ -215,7 +242,7 @@ inline I CUtlDict<T, I>::InvalidIndex()
 template <class T, class I>
 void CUtlDict<T, I>::RemoveAt(I elem) 
 {
-	free( (void *)m_Elements.Key( elem ) );
+	free( const_cast< char* >( m_Elements.Key( elem ) ) );
 	m_Elements.RemoveAt(elem);
 }
 
@@ -242,7 +269,8 @@ void CUtlDict<T, I>::RemoveAll()
 	typename DictElementMap_t::IndexType_t index = m_Elements.FirstInorder();
 	while ( index != m_Elements.InvalidIndex() )
 	{
-		free( (void *)m_Elements.Key( index ) );
+		const char* p = m_Elements.Key( index );
+		free( const_cast< char* >( p ) );
 		index = m_Elements.NextInorder( index );
 	}
 
@@ -263,7 +291,8 @@ void CUtlDict<T, I>::PurgeAndDeleteElements()
 	I index = m_Elements.FirstInorder();
 	while ( index != m_Elements.InvalidIndex() )
 	{
-		free( (void *)m_Elements.Key( index ) );
+		const char* p = m_Elements.Key( index );
+		free( const_cast< char* >( p ) );
 		delete m_Elements[index];
 		index = m_Elements.NextInorder( index );
 	}
@@ -301,6 +330,18 @@ I CUtlDict<T, I>::Find( const char *pName ) const
 		return m_Elements.Find( pName );
 	else
 		return InvalidIndex();
+}
+
+//-----------------------------------------------------------------------------
+// returns true if we already have this node
+//-----------------------------------------------------------------------------
+template <class T, class I> 
+bool CUtlDict<T, I>::HasElement( const char *pName ) const
+{
+	if ( pName )
+		return m_Elements.IsValidIndex( m_Elements.Find( pName ) );
+	else
+		return false;
 }
 
 

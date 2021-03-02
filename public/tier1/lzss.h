@@ -9,7 +9,7 @@
 #define _LZSS_H
 #pragma once
 
-#if !defined( _X360 )
+#if defined( PLAT_LITTLE_ENDIAN )
 #define LZSS_ID				(('S'<<24)|('S'<<16)|('Z'<<8)|('L'))
 #else
 #define LZSS_ID				(('L'<<24)|('Z'<<16)|('S'<<8)|('S'))

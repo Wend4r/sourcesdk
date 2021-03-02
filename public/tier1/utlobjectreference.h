@@ -200,26 +200,26 @@ class CUtlReferenceVector : public CUtlBlockVector< CUtlReference< T > >
 public:
 	void RemoveAll()
 	{
-		for ( int i = 0; i < Count(); i++ )
+		for ( int i = 0; i < this->Count(); i++ )
 		{
-			Element( i ).KillRef();
+			this->Element( i ).KillRef();
 		}
 
-		CUtlBlockVector::RemoveAll(); 
+		CUtlBlockVector< CUtlReference< T > >::RemoveAll(); 
 	}
 
 	void FastRemove( int elem )
 	{
-		Assert( IsValidIndex(elem) );
+		Assert( this->IsValidIndex(elem) );
 
-		if (m_Size > 0)
+		if ( this->m_Size > 0 )
 		{
-			if ( elem != m_Size -1 )
+			if ( elem != this->m_Size -1 )
 			{
-				Element(elem).Set( Element(m_Size-1).GetObject() );
+				this->Element( elem ).Set( this->Element( this->m_Size - 1 ).GetObject() );
 			}
-			Destruct( &Element(m_Size-1) );
-			--m_Size;
+			Destruct( &Element( this->m_Size - 1 ) );
+			--this->m_Size;
 		}
 	}
 
@@ -234,39 +234,13 @@ public:
 		return false;
 	}
 
-	void Remove( int elem )
-	{
-		Assert( IsValidIndex(elem) );
-
-		if (m_Size > 0)
-		{
-			for ( int i = elem; i < ( m_Size - 1 ); i++ )
-			{
-				Element( i ).Set( Element( i + 1 ).GetObject() );
-			}
-
-			Destruct( &Element(m_Size-1) );
-			--m_Size;
-		}
-	}
-
-	bool FindAndRemove( const CUtlReference< T >& src )
-	{
-		int elem = Find( src );
-		if ( elem != -1 )
-		{
-			Remove( elem );
-			return true;
-		}
-		return false;
-	}
-
 private:
 	//
 	// Disallow methods of CUtlBlockVector that can cause element addresses to change, thus
-	// breaking assumptions of CUtlReference. If any of these becomes needed just add a safe
-	// implementation to the public section.
+	// breaking assumptions of CUtlReference
 	//
+	void Remove( int elem );		
+	bool FindAndRemove( const T& src );	
 	void RemoveMultiple( int elem, int num );	
 	void RemoveMultipleFromHead(int num); 
 	void RemoveMultipleFromTail(int num); 

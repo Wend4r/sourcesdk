@@ -189,15 +189,15 @@ public:
 	{
 		// Nothing, only matters for thread-safe tables
 	}
-	inline int Insert( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
+	inline intp Insert( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
 	{
 		return CNonThreadsafeTreeType::Insert( entry );
 	}
-	inline int Find( CUtlSymbolTableLargeBaseTreeEntry_t *entry ) const
+	inline intp Find( CUtlSymbolTableLargeBaseTreeEntry_t *entry ) const
 	{
 		return CNonThreadsafeTreeType::Find( entry );
 	}
-	inline int InvalidIndex() const
+	inline intp InvalidIndex() const
 	{
 		return CNonThreadsafeTreeType::InvalidIndex();
 	}
@@ -264,19 +264,19 @@ public:
 	{
 		CThreadsafeTreeType::Commit();
 	}
-	inline int Insert( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
+	inline UtlTSHashHandle_t Insert( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
 	{
 		return CThreadsafeTreeType::Insert( entry, entry );
 	}
-	inline int Find( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
+	inline UtlTSHashHandle_t Find( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
 	{
 		return CThreadsafeTreeType::Find( entry );
 	}
-	inline int InvalidIndex() const
+	inline UtlTSHashHandle_t InvalidIndex() const
 	{
 		return CThreadsafeTreeType::InvalidHandle();
 	}
-	inline int GetElements( int nFirstElement, int nCount, CUtlSymbolLarge *pElements ) const
+	inline int GetElements( UtlTSHashHandle_t nFirstElement, int nCount, CUtlSymbolLarge *pElements ) const
 	{
 		CUtlVector< UtlTSHashHandle_t > list;
 		list.EnsureCount( nCount );
@@ -291,7 +291,7 @@ public:
 };
 
 // Base Class for threaded and non-threaded types
-template < class TreeType, bool CASEINSENSITIVE >
+template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE = MIN_STRING_POOL_SIZE >
 class CUtlSymbolTableLargeBase
 {
 public:
@@ -322,6 +322,11 @@ public:
 	int GetElements( int nFirstElement, int nCount, CUtlSymbolLarge *pElements ) const
 	{
 		return m_Lookup.GetElements( nFirstElement, nCount, pElements );
+	}
+
+	const char *GetElementString(int nElement) const
+	{
+		return m_Lookup.Element(nElement)->String();
 	}
 
 	uint64 GetMemoryUsage() const
@@ -359,21 +364,21 @@ private:
 //-----------------------------------------------------------------------------
 // constructor, destructor
 //-----------------------------------------------------------------------------
-template< class TreeType, bool CASEINSENSITIVE >
-inline CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE >::CUtlSymbolTableLargeBase() : 
+template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
+inline CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE >::CUtlSymbolTableLargeBase() : 
 	m_StringPools( 8 )
 {
 }
 
-template< class TreeType, bool CASEINSENSITIVE >
-inline CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::~CUtlSymbolTableLargeBase()
+template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
+inline CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::~CUtlSymbolTableLargeBase()
 {
 	// Release the stringpool string data
 	RemoveAll();
 }
 
-template< class TreeType, bool CASEINSENSITIVE >
-inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::Find( const char* pString ) const
+template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::Find( const char* pString ) const
 {	
 	VPROF( "CUtlSymbolLarge::Find" );
 	if (!pString)
@@ -387,7 +392,7 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::Find
 	search->m_Hash = CUtlSymbolLarge_Hash( CASEINSENSITIVE, pString, len );
 	Q_memcpy( (char *)&search->m_String[ 0 ], pString, len );
 
-	int idx = const_cast< TreeType & >(m_Lookup).Find( search );
+	intp idx = const_cast< TreeType & >(m_Lookup).Find( search );
 
 	if ( idx == m_Lookup.InvalidIndex() )
 		return UTL_INVAL_SYMBOL_LARGE;
@@ -396,8 +401,8 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::Find
 	return entry->ToSymbol();
 }
 
-template< class TreeType, bool CASEINSENSITIVE >
-inline int CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::FindPoolWithSpace( int len )	const
+template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
+inline int CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::FindPoolWithSpace( int len )	const
 {
 	for ( int i=0; i < m_StringPools.Count(); i++ )
 	{
@@ -415,8 +420,8 @@ inline int CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::FindPoolWithSpac
 //-----------------------------------------------------------------------------
 // Finds and/or creates a symbol based on the string
 //-----------------------------------------------------------------------------
-template< class TreeType, bool CASEINSENSITIVE >
-inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::AddString( const char* pString )
+template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::AddString( const char* pString )
 {
 	VPROF("CUtlSymbolLarge::AddString");
 	if (!pString) 
@@ -429,15 +434,17 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::AddS
 	int lenString = Q_strlen(pString) + 1; // length of just the string
 	int lenDecorated = lenString + sizeof(LargeSymbolTableHashDecoration_t); // and with its hash decoration
 	// make sure that all strings are aligned on 2-byte boundaries so the hashes will read correctly
-	COMPILE_TIME_ASSERT(sizeof(LargeSymbolTableHashDecoration_t) == sizeof(intp));
-	lenDecorated = ALIGN_VALUE(lenDecorated, sizeof( intp ) );
+	// This assert seems to be invalid because LargeSymbolTableHashDecoration_t is always
+	// a uint32, by design.
+	//COMPILE_TIME_ASSERT(sizeof(LargeSymbolTableHashDecoration_t) == sizeof(intp));
+	lenDecorated = ALIGN_VALUE(lenDecorated, sizeof( LargeSymbolTableHashDecoration_t ) );
 
 	// Find a pool with space for this string, or allocate a new one.
 	int iPool = FindPoolWithSpace( lenDecorated );
 	if ( iPool == -1 )
 	{
 		// Add a new pool.
-		int newPoolSize = MAX( lenDecorated + sizeof( StringPool_t ), MIN_STRING_POOL_SIZE );
+		int newPoolSize = MAX( lenDecorated + sizeof( StringPool_t ), POOL_SIZE );
 		StringPool_t *pPool = (StringPool_t*)malloc( newPoolSize );
 
 		pPool->m_TotalLen = newPoolSize - sizeof( StringPool_t );
@@ -450,7 +457,7 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::AddS
 
 	// Copy the string in.
 	StringPool_t *pPool = m_StringPools[iPool];
-	Assert( pPool->m_SpaceUsed < 0xFFFF );	
+	// Assert( pPool->m_SpaceUsed < 0xFFFF );	// Pool could be bigger than 2k
 	// This should never happen, because if we had a string > 64k, it
 	// would have been given its entire own pool.
 	
@@ -464,15 +471,17 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::AddS
 
 	// insert the string into the database
 	MEM_ALLOC_CREDIT();
-	int idx = m_Lookup.Insert( entry );
-	return m_Lookup.Element( idx )->ToSymbol();
+	return m_Lookup.Element( m_Lookup.Insert( entry ) )->ToSymbol();
 }
 
 //-----------------------------------------------------------------------------
 // Remove all symbols in the table.
 //-----------------------------------------------------------------------------
-template< class TreeType, bool CASEINSENSITIVE >
-inline void CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::RemoveAll()
+#ifdef ANALYZE_SUPPRESS // So that swig builds
+ANALYZE_SUPPRESS( 6001 ); // warning C6001: Using uninitialized memory '*m_StringPools.public: ...
+#endif
+template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
+inline void CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::RemoveAll()
 {
 	m_Lookup.Purge();
 
@@ -481,6 +490,9 @@ inline void CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE>::RemoveAll()
 
 	m_StringPools.RemoveAll();
 }
+#ifdef ANALYZE_UNSUPPRESS // So that swig builds
+ANALYZE_UNSUPPRESS(); // warning C6001: Using uninitialized memory '*m_StringPools.public: ...
+#endif
 
 // Case-sensitive
 typedef CUtlSymbolTableLargeBase< CNonThreadsafeTree< false >, false > CUtlSymbolTableLarge;

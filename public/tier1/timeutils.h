@@ -135,8 +135,8 @@ public:
 
 	// helper functions
 
-	friend float GetFractionOfTimeBetween( DmeTime_t t, DmeTime_t start, DmeTime_t end, bool bClamp = false );
-	friend float GetFractionOfTime( DmeTime_t t, DmeTime_t duration, bool bClamp = false );
+	friend float GetFractionOfTimeBetween( DmeTime_t t, DmeTime_t start, DmeTime_t end, bool bClamp );
+	friend float GetFractionOfTime( DmeTime_t t, DmeTime_t duration, bool bClamp );
 	friend int FrameForTime( DmeTime_t t, DmeFramerate_t framerate );
 
 
@@ -161,6 +161,9 @@ private:
 
 	int m_tms;
 };
+
+float GetFractionOfTimeBetween( DmeTime_t t, DmeTime_t start, DmeTime_t end, bool bClamp = false );
+float GetFractionOfTime( DmeTime_t t, DmeTime_t duration, bool bClamp = false );
 
 class CUtlBuffer;
 bool Serialize( CUtlBuffer &buf, const DmeTime_t &src );

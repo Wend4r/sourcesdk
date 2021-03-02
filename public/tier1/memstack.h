@@ -13,62 +13,83 @@
 
 #include "tier1/utlvector.h"
 
+#if defined( _WIN32 ) || defined( _PS3 )
+#define MEMSTACK_VIRTUAL_MEMORY_AVAILABLE
+#endif
+
 //-----------------------------------------------------------------------------
 
 typedef unsigned MemoryStackMark_t;
 
-class CMemoryStack
+class CMemoryStack : private IMemoryInfo
 {
 public:
 	CMemoryStack();
 	~CMemoryStack();
 
-	bool Init( unsigned maxSize = 0, unsigned commitSize = 0, unsigned initialCommit = 0, unsigned alignment = 16 );
-#ifdef _X360
-	bool InitPhysical( uint size, uint nBaseAddrAlignment, uint alignment = 16, uint32 nAdditionalFlags = 0 );
+	bool Init( const char *pszAllocOwner, unsigned maxSize = 0, unsigned commitIncrement = 0, unsigned initialCommit = 0, unsigned alignment = 16 );
+#ifdef _GAMECONSOLE
+	bool InitPhysical( const char *pszAllocOwner, uint size, uint nBaseAddrAlignment, uint alignment = 16, uint32 nAdditionalFlags = 0 );
 #endif
 	void Term();
 
-	int GetSize();
-	int GetMaxSize();
-	int	GetUsed();
+	int GetSize() const;
+	int GetMaxSize() const ;
+	int	GetUsed() const;
 	
 	void *Alloc( unsigned bytes, bool bClear = false ) RESTRICT;
 
-	MemoryStackMark_t GetCurrentAllocPoint();
+	MemoryStackMark_t GetCurrentAllocPoint() const;
 	void FreeToAllocPoint( MemoryStackMark_t mark, bool bDecommit = true );
 	void FreeAll( bool bDecommit = true );
 	
 	void Access( void **ppRegion, unsigned *pBytes );
 
-	void PrintContents();
+	void PrintContents() const;
 
 	void *GetBase();
 	const void *GetBase() const {  return const_cast<CMemoryStack *>(this)->GetBase(); }
 
-	bool CommitSize( int );
+	bool CommitSize( int nBytes );
+
+	void SetAllocOwner( const char *pszAllocOwner );
 
 private:
 	bool CommitTo( byte * ) RESTRICT;
 	void RegisterAllocation();
-	void RegisterDeallocation();
+	void RegisterDeallocation( bool bShouldSpew );
 
-	byte *m_pNextAlloc;
-	byte *m_pCommitLimit;
-	byte *m_pAllocLimit;
-	
+	byte *m_pNextAlloc; // Current alloc point (m_pNextAlloc - m_pBase == allocated bytes)
+	byte *m_pCommitLimit; // The current end of the committed memory. On systems without dynamic commit/decommit this is always m_pAllocLimit
+	byte *m_pAllocLimit; // The top of the allocated address space (m_pBase + m_maxSize)
+	// Track the highest alloc limit seen.
+	byte *m_pHighestAllocLimit;
+
+	const char* GetMemoryName() const OVERRIDE; // User friendly name for this stack or pool
+	size_t GetAllocatedBytes() const OVERRIDE; // Number of bytes currently allocated
+	size_t GetCommittedBytes() const OVERRIDE; // Bytes committed -- may be greater than allocated.
+	size_t GetReservedBytes() const OVERRIDE; // Bytes reserved -- may be greater than committed.
+	size_t GetHighestBytes() const OVERRIDE; // The maximum number of bytes allocated or committed.	
+
 	byte *m_pBase;
 	bool m_bRegisteredAllocation;
+	bool m_bPhysical;
+	char *m_pszAllocOwner;
 
-	unsigned m_maxSize;
+	unsigned m_maxSize; // m_maxSize stores how big the stack can grow. It measures the reservation size.
 	unsigned m_alignment;
-#ifdef _WIN32
-	unsigned m_commitSize;
+#ifdef MEMSTACK_VIRTUAL_MEMORY_AVAILABLE
+	unsigned m_commitIncrement;
 	unsigned m_minCommit;
 #endif
-#ifdef _X360
-	bool m_bPhysical;
+#if defined( MEMSTACK_VIRTUAL_MEMORY_AVAILABLE ) && defined( _PS3 )
+	IVirtualMemorySection *m_pVirtualMemorySection;
 #endif
+
+private:
+	// Make the assignment operator and copy constructor private and unimplemented.
+	CMemoryStack& operator=( const CMemoryStack& );
+	CMemoryStack( const CMemoryStack& );
 };
 
 //-------------------------------------
@@ -77,16 +98,8 @@ FORCEINLINE void *CMemoryStack::Alloc( unsigned bytes, bool bClear ) RESTRICT
 {
 	Assert( m_pBase );
 
-	int alignment = m_alignment;
-	if ( bytes )
-	{
-		bytes = AlignValue( bytes, alignment );
-	}
-	else
-	{
-		bytes = alignment;
-	}
-
+	bytes = MAX( bytes, m_alignment );
+	bytes = AlignValue( bytes, m_alignment );
 
 	void *pResult = m_pNextAlloc;
 	byte *pNextAlloc = m_pNextAlloc + bytes;
@@ -105,6 +118,7 @@ FORCEINLINE void *CMemoryStack::Alloc( unsigned bytes, bool bClear ) RESTRICT
 	}
 
 	m_pNextAlloc = pNextAlloc;
+	m_pHighestAllocLimit = Max( m_pNextAlloc, m_pHighestAllocLimit );
 
 	return pResult;
 }
@@ -122,14 +136,16 @@ inline bool CMemoryStack::CommitSize( int nBytes )
 
 //-------------------------------------
 
-inline int CMemoryStack::GetMaxSize()
+// How big can this memory stack grow? This is equivalent to how many
+// bytes are reserved.
+inline int CMemoryStack::GetMaxSize() const
 { 
 	return m_maxSize;
 }
 
 //-------------------------------------
 
-inline int CMemoryStack::GetUsed() 
+inline int CMemoryStack::GetUsed() const
 { 
 	return ( m_pNextAlloc - m_pBase ); 
 }
@@ -143,7 +159,7 @@ inline void *CMemoryStack::GetBase()
 
 //-------------------------------------
 
-inline MemoryStackMark_t CMemoryStack::GetCurrentAllocPoint()
+inline MemoryStackMark_t CMemoryStack::GetCurrentAllocPoint() const
 {
 	return ( m_pNextAlloc - m_pBase );
 }
@@ -158,7 +174,7 @@ class CUtlMemoryStack
 {
 public:
 	// constructor, destructor
-	CUtlMemoryStack( int nGrowSize = 0, int nInitSize = 0 )	{ m_MemoryStack.Init( MAX_SIZE * sizeof(T), COMMIT_SIZE * sizeof(T), INITIAL_COMMIT * sizeof(T), 4 ); COMPILE_TIME_ASSERT( sizeof(T) % 4 == 0 );	}
+	CUtlMemoryStack( int nGrowSize = 0, int nInitSize = 0 )	{ m_MemoryStack.Init( "CUtlMemoryStack", MAX_SIZE * sizeof(T), COMMIT_SIZE * sizeof(T), INITIAL_COMMIT * sizeof(T), 4 ); COMPILE_TIME_ASSERT( sizeof(T) % 4 == 0 );	}
 	CUtlMemoryStack( T* pMemory, int numElements )			{ Assert( 0 ); 										}
 
 	// Can we use this index?
@@ -214,7 +230,10 @@ public:
 	bool IsExternallyAllocated() const						{ return false; }
 
 	// Set the size by which the memory grows
-	void SetGrowSize( int size )							{}
+	void SetGrowSize( int size )							{ Assert( 0 ); }
+
+	// Identify the owner of this memory stack's memory
+	void SetAllocOwner( const char *pszAllocOwner )			{ m_MemoryStack.SetAllocOwner( pszAllocOwner ); }
 
 private:
 	CMemoryStack m_MemoryStack;

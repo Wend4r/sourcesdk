@@ -28,7 +28,7 @@
 // Purpose: Optimized pool memory allocator
 //-----------------------------------------------------------------------------
 
-typedef void (*MemoryPoolReportFunc_t)( char const* pMsg, ... );
+typedef void (*MemoryPoolReportFunc_t)( PRINTF_FORMAT_STRING char const* pMsg, ... );
 
 class CUtlMemoryPool
 {
@@ -61,7 +61,7 @@ public:
 	int Count() const		{ return m_BlocksAllocated; }
 	int PeakCount() const	{ return m_PeakAlloc; }
 	int BlockSize() const	{ return m_BlockSize; }
-	int Size() const		{ return m_NumBlobs * m_BlocksPerBlob * m_BlockSize; }
+	int Size() const;
 
 	bool		IsAllocationWithinPool( void *pMem ) const;
 
@@ -85,12 +85,13 @@ protected:
 
 	int			m_GrowMode;	// GROW_ enum.
 
-	// FIXME: Change m_ppMemBlob into a growable array?
-	void			*m_pHeadOfFreeList;
 	int				m_BlocksAllocated;
 	int				m_PeakAlloc;
 	unsigned short	m_nAlignment;
 	unsigned short	m_NumBlobs;
+	// Group up pointers at the end of the class to avoid padding bloat
+	// FIXME: Change m_ppMemBlob into a growable array?
+	void			*m_pHeadOfFreeList;
 	const char *	m_pszAllocOwner;
 	// CBlob could be not a multiple of 4 bytes so stuff it at the end here to keep us otherwise aligned
 	CBlob			m_BlobHead;
@@ -182,7 +183,7 @@ private:
 	FreeBlock_t *		m_pFirstFree;
 	int					m_nFree;
 	CAllocator			m_Allocator;
-	float				m_TimeLastCompact;
+	double				m_TimeLastCompact;
 
 	CThreadFastMutex	m_mutex;
 };
@@ -215,7 +216,7 @@ public:
 
 	void Purge()
 	{
-		T *p;
+		T *p = NULL;
 		while ( m_AvailableObjects.PopItem( &p ) )
 		{
 			delete p;
@@ -224,7 +225,7 @@ public:
 
 	T *GetObject( bool bCreateNewIfEmpty = bDefCreateNewIfEmpty )
 	{
-		T *p;
+		T *p = NULL;
 		if ( !m_AvailableObjects.PopItem( &p )  )
 		{
 			p = ( bCreateNewIfEmpty ) ? new T : NULL;
@@ -296,9 +297,30 @@ public:
 			free( p );
 	}
 
+	void Clear()
+	{
+#ifndef USE_MEM_DEBUG
+		if ( m_pBase )
+		{
+			free( m_pBase );
+		}
+		m_pBase = m_pLimit = 0;
+		Construct( &m_freeList );
+#endif
+	}
+
+	bool IsEmpty()
+	{
+#ifndef USE_MEM_DEBUG
+		if ( m_pBase && m_freeList.Count() != ITEM_COUNT )
+			return false;
+#endif
+		return true;
+	}
+
 	enum
 	{
-		ITEM_SIZE = ALIGN_VALUE( PROVIDED_ITEM_SIZE, 4 )
+		ITEM_SIZE = ALIGN_VALUE( PROVIDED_ITEM_SIZE, TSLIST_NODE_ALIGNMENT )
 	};
 
 	CTSListBase m_freeList;
@@ -363,7 +385,7 @@ inline void CClassMemoryPool<T>::Free(T *pMem)
 template< class T >
 inline void CClassMemoryPool<T>::Clear()
 {
-	CUtlRBTree<void *> freeBlocks;
+	CUtlRBTree<void *, int> freeBlocks;
 	SetDefLessFunc( freeBlocks );
 
 	void *pCurFree = m_pHeadOfFreeList;
@@ -375,8 +397,9 @@ inline void CClassMemoryPool<T>::Clear()
 
 	for( CBlob *pCur=m_BlobHead.m_pNext; pCur != &m_BlobHead; pCur=pCur->m_pNext )
 	{
-		T *p = (T *)pCur->m_Data;
-		T *pLimit = (T *)(pCur->m_Data + pCur->m_NumBytes);
+		int nElements = pCur->m_NumBytes / this->m_BlockSize;
+		T *p = ( T * ) AlignValue( pCur->m_Data, this->m_nAlignment );
+		T *pLimit = p + nElements;
 		while ( p < pLimit )
 		{
 			if ( freeBlocks.Find( p ) == freeBlocks.InvalidIndex() )
@@ -389,6 +412,9 @@ inline void CClassMemoryPool<T>::Clear()
 
 	CUtlMemoryPool::Clear();
 }
+
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -448,8 +474,10 @@ inline CAlignedMemPool<ITEM_SIZE, ALIGNMENT, CHUNK_SIZE, CAllocator, GROWMODE, C
 	m_nFree( 0 ),
 	m_TimeLastCompact( 0 )
 {
-	COMPILE_TIME_ASSERT( sizeof( FreeBlock_t ) >= BLOCK_SIZE );
-	COMPILE_TIME_ASSERT( ALIGN_VALUE( sizeof( FreeBlock_t ), ALIGNMENT ) == sizeof( FreeBlock_t ) );
+	// These COMPILE_TIME_ASSERT checks need to be in individual scopes to avoid build breaks
+	// on MacOS and Linux due to a gcc bug.
+	{ COMPILE_TIME_ASSERT( sizeof( FreeBlock_t ) >= BLOCK_SIZE ); }
+	{ COMPILE_TIME_ASSERT( ALIGN_VALUE( sizeof( FreeBlock_t ), ALIGNMENT ) == sizeof( FreeBlock_t ) ); }
 }
 
 template <int ITEM_SIZE, int ALIGNMENT, int CHUNK_SIZE, class CAllocator, bool GROWMODE, int COMPACT_THRESHOLD >
@@ -514,9 +542,9 @@ inline void CAlignedMemPool<ITEM_SIZE, ALIGNMENT, CHUNK_SIZE, CAllocator, GROWMO
 
 	if ( m_nFree >= ( CHUNK_SIZE / BLOCK_SIZE ) * COMPACT_THRESHOLD )
 	{
-		float time = Plat_FloatTime();
-		float compactTime = ( m_nFree >= ( CHUNK_SIZE / BLOCK_SIZE ) * COMPACT_THRESHOLD * 4 ) ? 15.0 : 30.0;
-		if ( m_TimeLastCompact > time || m_TimeLastCompact + compactTime < Plat_FloatTime() )
+		double time = Plat_FloatTime();
+		double compactTime = ( m_nFree >= ( CHUNK_SIZE / BLOCK_SIZE ) * COMPACT_THRESHOLD * 4 ) ? 15.0 : 30.0;
+		if ( m_TimeLastCompact > time || m_TimeLastCompact + compactTime < time )
 		{
 			Compact();
 			m_TimeLastCompact = time;
@@ -527,7 +555,7 @@ inline void CAlignedMemPool<ITEM_SIZE, ALIGNMENT, CHUNK_SIZE, CAllocator, GROWMO
 template <int ITEM_SIZE, int ALIGNMENT, int CHUNK_SIZE, class CAllocator, bool GROWMODE, int COMPACT_THRESHOLD >
 inline int __cdecl CAlignedMemPool<ITEM_SIZE, ALIGNMENT, CHUNK_SIZE, CAllocator, GROWMODE, COMPACT_THRESHOLD>::CompareChunk( void * const *ppLeft, void * const *ppRight )
 {
-	return ((uintp)*ppLeft) - ((uintp)*ppRight);
+	return size_cast<int>( (intp)*ppLeft - (intp)*ppRight );
 }
 
 template <int ITEM_SIZE, int ALIGNMENT, int CHUNK_SIZE, class CAllocator, bool GROWMODE, int COMPACT_THRESHOLD >

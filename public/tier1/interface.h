@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright (c) 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -36,16 +36,22 @@
 #pragma once
 #endif
 
-#ifdef POSIX
+// TODO: move interface.cpp into tier0 library.
+// Need to include platform.h in case _PS3 and other tokens are not yet defined
+#include "tier0/platform.h"
+
+#if defined( POSIX ) && !defined( _PS3 )
+
 #include <dlfcn.h> // dlopen,dlclose, et al
 #include <unistd.h>
 
 #define GetProcAddress dlsym
 
+#ifdef _snprintf
+#undef _snprintf
 #endif
-
-// TODO: move interface.cpp into tier0 library.
-#include "tier0/platform.h"
+#define _snprintf snprintf
+#endif // POSIX && !_PS3
 
 // All interfaces derive from this.
 class IBaseInterface

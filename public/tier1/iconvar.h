@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright (c) 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -19,7 +19,7 @@
 #include "tier0/dbg.h"
 #include "tier0/platform.h"
 #include "tier1/strtools.h"
-#include "Color.h"
+#include "color.h"
 
 
 //-----------------------------------------------------------------------------
@@ -51,6 +51,11 @@ class CCommand;
 #define	FCVAR_USERINFO			(1<<9)	// changes the client's info string
 
 #define FCVAR_PRINTABLEONLY		(1<<10)  // This cvar's string cannot contain unprintable characters ( e.g., used for player name etc ).
+
+#define FCVAR_GAMEDLL_FOR_REMOTE_CLIENTS		(1<<10)  // When on concommands this allows remote clients to execute this cmd on the server. 
+														 // We are changing the default behavior of concommands to disallow execution by remote clients without
+														 // this flag due to the number existing concommands that can lag or crash the server when clients abuse them.
+
 #define FCVAR_UNLOGGED			(1<<11)  // If this is a FCVAR_SERVER, don't log changes to the log file / console if we are creating a log
 #define FCVAR_NEVER_AS_STRING	(1<<12)  // never try to print that cvar
 
@@ -71,7 +76,7 @@ class CCommand;
 
 #define FCVAR_NOT_CONNECTED		(1<<22)	// cvar cannot be changed by a client that is connected to a server
 #define FCVAR_MATERIAL_SYSTEM_THREAD (1<<23)	// Indicates this cvar is read from the material system thread
-#define FCVAR_ARCHIVE_XBOX		(1<<24) // cvar written to config.cfg on the Xbox
+#define FCVAR_ARCHIVE_GAMECONSOLE	(1<<24) // cvar written to config.cfg on the Xbox
 
 #define FCVAR_SERVER_CAN_EXECUTE	(1<<28)// the server is allowed to execute this command on clients via ClientCommand/NET_StringCmd/CBaseClientState::ProcessStringCmd.
 #define FCVAR_SERVER_CANNOT_QUERY	(1<<29)// If this is set, then the server is not allowed to query this cvar's value (via IServerPluginHelpers::StartQueryCvarValue).

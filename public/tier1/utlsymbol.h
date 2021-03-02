@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright (c) 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Defines a symbol table
 //
@@ -13,6 +13,7 @@
 #pragma once
 #endif
 
+#include "tier0/platform.h"
 #include "tier0/threadtools.h"
 #include "tier1/utlrbtree.h"
 #include "tier1/utlvector.h"
@@ -55,14 +56,19 @@ public:
 	bool IsValid() const { return m_Id != UTL_INVAL_SYMBOL; }
 	
 	// Gets at the symbol
-	operator UtlSymId_t const() const { return m_Id; }
+	operator UtlSymId_t () const { return m_Id; }
 	
 	// Gets the string associated with the symbol
 	const char* String( ) const;
 
 	// Modules can choose to disable the static symbol table so to prevent accidental use of them.
 	static void DisableStaticSymbolTable();
-		
+
+	// Methods with explicit locking mechanism. Only use for optimization reasons.
+	static void LockTableForRead();
+	static void UnlockTableForRead();
+	const char * StringNoLock() const;
+
 protected:
 	UtlSymId_t   m_Id;
 		
@@ -109,6 +115,11 @@ public:
 	
 	// Look up the string associated with a particular symbol
 	const char* String( CUtlSymbol id ) const;
+
+	inline bool HasElement(const char* pStr) const
+	{
+		return Find(pStr) != UTL_INVAL_SYMBOL;
+	}
 	
 	// Remove all symbols in the table.
 	void  RemoveAll();
@@ -216,9 +227,28 @@ public:
 		m_lock.UnlockRead();
 		return pszResult;
 	}
-	
+
+	const char * StringNoLock( CUtlSymbol id ) const
+	{
+		return CUtlSymbolTable::String( id );
+	}
+
+	void LockForRead()
+	{
+		m_lock.LockForRead();
+	}
+
+	void UnlockForRead()
+	{
+		m_lock.UnlockRead();
+	}
+
 private:
+#ifdef WIN32
 	mutable CThreadSpinRWLock m_lock;
+#else
+	mutable CThreadRWLock m_lock;
+#endif
 };
 
 
@@ -247,20 +277,48 @@ class CUtlFilenameSymbolTable
 	{
 		FileNameHandleInternal_t()
 		{
-			path = 0;
-			file = 0;
+			COMPILE_TIME_ASSERT( sizeof( *this ) == sizeof( FileNameHandle_t ) );
+			COMPILE_TIME_ASSERT( sizeof( value ) == 4 );
+			value = 0;
+
+#ifdef PLATFORM_64BITS
+			pad = 0;
+#endif
 		}
 
+		// We pack the path and file values into a single 32 bit value.  We were running
+		// out of space with the two 16 bit values (more than 64k files) so instead of increasing
+		// the total size we split the underlying pool into two (paths and files) and 
+		// use a smaller path string pool and a larger file string pool.
+		unsigned int value;
+
+#ifdef PLATFORM_64BITS
+		// some padding to make sure we are the same size as FileNameHandle_t on 64 bit.
+		unsigned int pad;
+#endif
+
+		static const unsigned int cNumBitsInPath = 12;
+		static const unsigned int cNumBitsInFile = 32 - cNumBitsInPath;
+
+		static const unsigned int cMaxPathValue = 1 << cNumBitsInPath;
+		static const unsigned int cMaxFileValue = 1 << cNumBitsInFile;
+
+		static const unsigned int cPathBitMask = cMaxPathValue - 1;
+		static const unsigned int cFileBitMask = cMaxFileValue - 1;
+
 		// Part before the final '/' character
-		unsigned short path;
+		unsigned int	GetPath() const { return ((value >> cNumBitsInFile) & cPathBitMask); }
+		void			SetPath( unsigned int path ) { Assert( path < cMaxPathValue ); value = ((value & cFileBitMask) | ((path & cPathBitMask) << cNumBitsInFile)); }
+
 		// Part after the final '/', including extension
-		unsigned short file;
+		unsigned int	GetFile() const { return (value & cFileBitMask); }
+		void			SetFile( unsigned int file ) { Assert( file < cMaxFileValue ); value = ((value & (cPathBitMask << cNumBitsInFile)) | (file & cFileBitMask)); }
 	};
 
 public:
 	FileNameHandle_t	FindOrAddFileName( const char *pFileName );
 	FileNameHandle_t	FindFileName( const char *pFileName );
-	int					PathIndex(const FileNameHandle_t &handle) { return (( const FileNameHandleInternal_t * )&handle)->path; }
+	int					PathIndex( const FileNameHandle_t &handle ) { return (( const FileNameHandleInternal_t * )&handle)->GetPath(); }
 	bool				String( const FileNameHandle_t& handle, char *buf, int buflen );
 	void				RemoveAll();
 	void				SpewStrings();
@@ -268,7 +326,8 @@ public:
 	bool				RestoreFromBuffer( CUtlBuffer &buffer );
 
 private:
-	CCountedStringPool	m_StringPool;
+	CCountedStringPoolBase<unsigned short> m_PathStringPool;
+	CCountedStringPoolBase<unsigned int> m_FileStringPool;
 	mutable CThreadSpinRWLock m_lock;
 };
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright (c) 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -19,6 +19,7 @@
 #include "mathlib/mathlib.h"
 #include "mathlib/vector.h"
 #include "basetypes.h"
+#include "tier0/platform.h"
 #include "tier0/dbg.h"
 
 
@@ -83,6 +84,61 @@ enum EBitCoordType
 };
 
 //-----------------------------------------------------------------------------
+// namespaced helpers
+//-----------------------------------------------------------------------------
+namespace bitbuf
+{
+	// ZigZag Transform:  Encodes signed integers so that they can be
+	// effectively used with varint encoding.
+	//
+	// varint operates on unsigned integers, encoding smaller numbers into
+	// fewer bytes.  If you try to use it on a signed integer, it will treat
+	// this number as a very large unsigned integer, which means that even
+	// small signed numbers like -1 will take the maximum number of bytes
+	// (10) to encode.  ZigZagEncode() maps signed integers to unsigned
+	// in such a way that those with a small absolute value will have smaller
+	// encoded values, making them appropriate for encoding using varint.
+	//
+	//       int32 ->     uint32
+	// -------------------------
+	//           0 ->          0
+	//          -1 ->          1
+	//           1 ->          2
+	//          -2 ->          3
+	//         ... ->        ...
+	//  2147483647 -> 4294967294
+	// -2147483648 -> 4294967295
+	//
+	//        >> encode >>
+	//        << decode <<
+
+	inline uint32 ZigZagEncode32(int32 n) 
+	{
+		// Note:  the right-shift must be arithmetic
+		return(n << 1) ^ (n >> 31);
+	}
+
+	inline int32 ZigZagDecode32(uint32 n) 
+	{
+		return(n >> 1) ^ -static_cast<int32>(n & 1);
+	}
+
+	inline uint64 ZigZagEncode64(int64 n) 
+	{
+		// Note:  the right-shift must be arithmetic
+		return(n << 1) ^ (n >> 63);
+	}
+
+	inline int64 ZigZagDecode64(uint64 n) 
+	{
+		return(n >> 1) ^ -static_cast<int64>(n & 1);
+	}
+
+	const int kMaxVarintBytes = 10;
+	const int kMaxVarint32Bytes = 5;
+}
+
+//-----------------------------------------------------------------------------
 // Used for serialization
 //-----------------------------------------------------------------------------
 
@@ -143,8 +199,15 @@ public:
 	// writes an unsigned integer with variable bit length
 	void			WriteUBitVar( unsigned int data );
 
+	// writes a varint encoded integer
 	void			WriteVarInt32( uint32 data );
+	void			WriteVarInt64( uint64 data );
+	void			WriteSignedVarInt32( int32 data );
+	void			WriteSignedVarInt64( int64 data );
 	int				ByteSizeVarInt32( uint32 data );
+	int				ByteSizeVarInt64( uint64 data );
+	int				ByteSizeSignedVarInt32( int32 data );
+	int				ByteSizeSignedVarInt64( int64 data );
 
 	// Copy the bits straight out of pIn. This seeks pIn forward by nBits.
 	// Returns an error if this buffer or the read buffer overflows.
@@ -168,7 +231,7 @@ public:
 	void			WriteByte( unsigned int val );
 	void			WriteShort(int val);
 	void			WriteWord( unsigned int val );
-	void			WriteLong(long val);
+	void			WriteLong(int32 val);
 	void			WriteLongLong(int64 val);
 	void			WriteFloat(float val);
 	bool			WriteBytes( const void *pBuf, int nBytes );
@@ -182,19 +245,19 @@ public:
 public:
 
 	// How many bytes are filled in?
-	int				GetNumBytesWritten();
-	int				GetNumBitsWritten();
-	int				GetMaxNumBits();
-	int				GetNumBitsLeft();
-	int				GetNumBytesLeft();
+	int				GetNumBytesWritten() const;
+	int				GetNumBitsWritten() const;
+	int				GetMaxNumBits() const;
+	int				GetNumBitsLeft() const;
+	int				GetNumBytesLeft() const;
 	unsigned char*	GetData();
+	const unsigned char*	GetData() const;
 
 	// Has the buffer overflowed?
 	bool			CheckForOverflow(int nBits);
 	inline bool		IsOverflowed() const {return m_bOverflow;}
 
 	inline void		SetOverflowFlag();
-
 
 public:
 	// The current buffer.
@@ -220,32 +283,37 @@ private:
 //-----------------------------------------------------------------------------
 
 // How many bytes are filled in?
-inline int bf_write::GetNumBytesWritten()	
+inline int bf_write::GetNumBytesWritten() const
 {
 	return BitByte(m_iCurBit);
 }
 
-inline int bf_write::GetNumBitsWritten()	
+inline int bf_write::GetNumBitsWritten() const
 {
 	return m_iCurBit;
 }
 
-inline int bf_write::GetMaxNumBits()		
+inline int bf_write::GetMaxNumBits() const
 {
 	return m_nDataBits;
 }
 
-inline int bf_write::GetNumBitsLeft()	
+inline int bf_write::GetNumBitsLeft() const
 {
 	return m_nDataBits - m_iCurBit;
 }
 
-inline int bf_write::GetNumBytesLeft()	
+inline int bf_write::GetNumBytesLeft() const
 {
 	return GetNumBitsLeft() >> 3;
 }
 
 inline unsigned char* bf_write::GetData()			
+{
+	return m_pData;
+}
+
+inline const unsigned char* bf_write::GetData() const
 {
 	return m_pData;
 }
@@ -310,7 +378,7 @@ inline void bf_write::WriteUBitLong( unsigned int curData, int numbits, bool bCh
 	// Make sure it doesn't overflow.
 	if ( bCheckRange && numbits < 32 )
 	{
-		if ( curData >= (unsigned long)(1 << numbits) )
+		if ( curData >= (uint32)(1 << numbits) )
 		{
 			CallErrorHandler( BITBUFERROR_VALUE_OUT_OF_RANGE, GetDebugName() );
 		}
@@ -318,7 +386,7 @@ inline void bf_write::WriteUBitLong( unsigned int curData, int numbits, bool bCh
 	Assert( numbits >= 0 && numbits <= 32 );
 #endif
 
-	extern unsigned long g_BitWriteMasks[32][33];
+	extern uint32 g_BitWriteMasks[32][33];
 
 	// Bounds checking..
 	if ((m_iCurBit+numbits) > m_nDataBits)
@@ -334,9 +402,9 @@ inline void bf_write::WriteUBitLong( unsigned int curData, int numbits, bool bCh
 
 	// Mask in a dword.
 	unsigned int iDWord = iCurBit >> 5;
-	Assert( (iDWord*4 + sizeof(long)) <= (unsigned int)m_nDataBytes );
+	Assert( (iDWord*4 + sizeof(int32)) <= (unsigned int)m_nDataBytes );
 
-	unsigned long iCurBitMasked = iCurBit & 31;
+	uint32 iCurBitMasked = iCurBit & 31;
 
 	uint32 dword = LoadLittleDWord( (uint32*)m_pData, iDWord );
 
@@ -452,6 +520,12 @@ public:
 	// reads an unsigned integer with variable bit length
 	unsigned int	ReadUBitVar();
 	
+	// reads a varint encoded integer
+	uint32			ReadVarInt32();
+	uint64			ReadVarInt64();
+	int32			ReadSignedVarInt32();
+	int64			ReadSignedVarInt64();
+
 	// You can read signed or unsigned data with this, just cast to 
 	// a signed int if necessary.
 	unsigned int	ReadBitLong(int numbits, bool bSigned);
@@ -473,7 +547,7 @@ public:
 	int				ReadByte();
 	int				ReadShort();
 	int				ReadWord();
-	long			ReadLong();
+	int32			ReadLong();
 	int64			ReadLongLong();
 	float			ReadFloat();
 	bool			ReadBytes(void *pOut, int nBytes);
@@ -619,9 +693,9 @@ inline int old_bf_read::ReadOneBit()
 
 inline float old_bf_read::ReadBitFloat()
 {
-	long val;
+	int32 val;
 
-	Assert(sizeof(float) == sizeof(long));
+	Assert(sizeof(float) == sizeof(int32));
 	Assert(sizeof(float) == 4);
 
 	if(CheckForOverflow(32))
@@ -642,7 +716,7 @@ inline float old_bf_read::ReadBitFloat()
 
 inline unsigned int old_bf_read::ReadUBitLong( int numbits )
 {
-	extern unsigned long g_ExtraMasks[32];
+	extern uint32 g_ExtraMasks[32];
 
 	if ( (m_iCurBit+numbits) > m_nDataBits )
 	{
@@ -781,7 +855,7 @@ public:
 			}
 			else
 			{
-				StoreLittleDWord( m_pDataOut, 0, (LoadLittleDWord(m_pDataOut,0) & ~s_nMaskTable[ 32 - m_nOutBitsAvail ]) | m_nOutBufWord );
+				StoreLittleDWord( m_pDataOut, 0, LoadLittleDWord(m_pDataOut,0) & ~s_nMaskTable[ 32 - m_nOutBitsAvail ] | m_nOutBufWord );
 			}
 		}
 		m_bFlushed = true;
@@ -823,7 +897,7 @@ public:
 	}
 
 
-	FORCEINLINE void WriteLong(long val)
+	FORCEINLINE void WriteLong(int32 val)
 	{
 		WriteSBitLong( val, 32 );
 	}
@@ -928,7 +1002,7 @@ FORCEINLINE void CBitWrite::WriteUBitLong( unsigned int nData, int nNumBits, boo
 	// Make sure it doesn't overflow.
 	if ( bCheckRange && nNumBits < 32 )
 	{
-		Assert( nData <= (unsigned long)(1 << nNumBits ) );
+		Assert( nData <= (uint32)(1 << nNumBits ) );
 	}
 	Assert( nNumBits >= 0 && nNumBits <= 32 );
 #endif
@@ -1048,6 +1122,7 @@ public:
 	void StartReading( const void *pData, int nBytes, int iStartBit = 0, int nBits = -1 );
 
 	FORCEINLINE int GetNumBitsRead( void ) const;
+	FORCEINLINE int GetNumBytesRead( void ) const;
 
 	FORCEINLINE void GrabNextDWord( bool bOverFlowImmediately = false );
 	FORCEINLINE void FetchNext( void );
@@ -1090,11 +1165,16 @@ public:
 	// complete (this will never exceed bufLen-1).
 	//
 	bool ReadString( char *pStr, int bufLen, bool bLine=false, int *pOutNumChars=NULL );
-	bool ReadWString( wchar_t *pStr, int bufLen, bool bLine=false, int *pOutNumChars=NULL );
+	bool ReadWString( OUT_Z_CAP(maxLenInChars) wchar_t *pStr, int maxLenInChars, bool bLine=false, int *pOutNumChars=NULL );
 	char* ReadAndAllocateString( bool *pOverflow = 0 );
 
 	int64 ReadLongLong( void );
 
+	// reads a varint encoded integer
+	uint32			ReadVarInt32();
+	uint64			ReadVarInt64();
+	int32			ReadSignedVarInt32() { return bitbuf::ZigZagDecode32( ReadVarInt32() ); }
+	int64			ReadSignedVarInt64() { return bitbuf::ZigZagDecode64( ReadVarInt64() ); }
 };
 
 
@@ -1102,10 +1182,17 @@ FORCEINLINE int CBitRead::GetNumBitsRead( void ) const
 {
 	if ( ! m_pData )									   // pesky null ptr bitbufs. these happen.
 		return 0;
-	int nCurOfs = ( 32 - m_nBitsAvail ) + ( 8 * sizeof( m_pData[0] ) * ( m_pDataIn - m_pData -1  ) );
+
+	int nCurOfs = int(((intp(m_pDataIn) - intp(m_pData))/4)-1);
+	nCurOfs  *= 32;
+	nCurOfs += ( 32 - m_nBitsAvail );
 	int nAdjust = 8 * ( m_nDataBytes & 3 );
 	return MIN( nCurOfs + nAdjust, m_nDataBits );
+}
 
+FORCEINLINE int CBitRead::GetNumBytesRead( void ) const
+{
+	return ( (GetNumBitsRead()+7) >> 3 );
 }
 
 FORCEINLINE void CBitRead::GrabNextDWord( bool bOverFlowImmediately )
@@ -1126,7 +1213,7 @@ FORCEINLINE void CBitRead::GrabNextDWord( bool bOverFlowImmediately )
 		}
 		else
 		{
-			Assert( reinterpret_cast<int>(m_pDataIn) + 3 < reinterpret_cast<int>(m_pBufferEnd));
+			Assert( reinterpret_cast<intp>(m_pDataIn) + 3 < reinterpret_cast<intp>(m_pBufferEnd));
 			m_nInBufWord = LittleDWord( *( m_pDataIn++ ) );
 		}
 }
@@ -1202,12 +1289,12 @@ FORCEINLINE int CBitRead::ReadSBitLong( int numbits )
 
 FORCEINLINE int CBitRead::ReadLong( void )
 {
-	return ( int ) ReadUBitLong( sizeof(long) << 3 );
+	return ( int ) ReadUBitLong( sizeof(int32) << 3 );
 }
 
 FORCEINLINE float CBitRead::ReadFloat( void )
 {
-	uint32 nUval = ReadUBitLong( sizeof(long) << 3 );
+	uint32 nUval = ReadUBitLong( sizeof(int32) << 3 );
 	return * ( ( float * ) &nUval );
 }
 

@@ -21,15 +21,29 @@
 #endif
 
 #include "utlvector.h"
-#include "Color.h"
+#include "color.h"
 #include "exprevaluator.h"
+
+
+#define FOR_EACH_SUBKEY( kvRoot, kvSubKey ) \
+	for ( KeyValues * kvSubKey = kvRoot->GetFirstSubKey(); kvSubKey != NULL; kvSubKey = kvSubKey->GetNextKey() )
+
+#define FOR_EACH_TRUE_SUBKEY( kvRoot, kvSubKey ) \
+	for ( KeyValues * kvSubKey = kvRoot->GetFirstTrueSubKey(); kvSubKey != NULL; kvSubKey = kvSubKey->GetNextTrueSubKey() )
+
+#define FOR_EACH_VALUE( kvRoot, kvValue ) \
+	for ( KeyValues * kvValue = kvRoot->GetFirstValue(); kvValue != NULL; kvValue = kvValue->GetNextValue() )
+
 
 class IBaseFileSystem;
 class CUtlBuffer;
 class Color;
+class CKeyValuesTokenReader;
 class KeyValues;
 class IKeyValuesDumpContext;
 typedef void * FileHandle_t;
+class CKeyValuesGrowableStringTable;
+
 
 // single byte identifies a xbox kv file in binary format
 // strings are pooled from a searchpath/zip mounted symbol table
@@ -55,7 +69,7 @@ typedef void * FileHandle_t;
 //	About KeyValues Text File Format:
 
 //	It has 3 control characters '{', '}' and '"'. Names and values may be quoted or
-//	not. The quote '"' charater must not be used within name or values, only for
+//	not. The quote '"' character must not be used within name or values, only for
 //	quoting whole tokens. You may use escape sequences wile parsing and add within a
 //	quoted token a \" to add quotes within your name or token. When using Escape
 //	Sequence the parser must now that by setting KeyValues::UsesEscapeSequences( true ),
@@ -65,12 +79,28 @@ typedef void * FileHandle_t;
 //  with a closing bracket '}'. Subkeys use the same definitions recursively.
 //  Whitespaces are space, return, newline and tabulator. Allowed Escape sequences
 //	are \n, \t, \\, \n and \". The number character '#' is used for macro purposes 
-//	(eg #include), don't use it as first charater in key names.
+//	(eg #include), don't use it as first character in key names.
 //-----------------------------------------------------------------------------
 class KeyValues
 {
+	friend class CKeyValuesTokenReader;
+
 public:
-	KeyValues( const char *setName );
+	//	By default, the KeyValues class uses a string table for the key names that is
+	//	limited to 4MB. The game will exit in error if this space is exhausted. In
+	//	general this is preferable for game code for performance and memory fragmentation
+	//	reasons.
+	//
+	//	If this is not acceptable, you can use this call to switch to a table that can grow
+	//	arbitrarily. This call must be made before any KeyValues objects are allocated or it
+	//	will result in undefined behavior. If you use the growable string table, you cannot
+	//	share KeyValues pointers directly with any other module. You can serialize them across
+	//	module boundaries. These limitations are acceptable in the Steam backend code 
+	//	this option was written for, but may not be in other situations. Make sure to
+	//	understand the implications before using this.
+	static void SetUseGrowableStringTable( bool bUseGrowableTable );
+
+	explicit KeyValues( const char *setName );
 
 	//
 	// AutoDelete class to automatically free the keyvalues.
@@ -83,8 +113,10 @@ public:
 	public:
 		explicit inline AutoDelete( KeyValues *pKeyValues ) : m_pKeyValues( pKeyValues ) {}
 		explicit inline AutoDelete( const char *pchKVName ) : m_pKeyValues( new KeyValues( pchKVName ) ) {}
-		inline ~AutoDelete( void ) { if( m_pKeyValues ) m_pKeyValues->deleteThis(); }
+		inline ~AutoDelete( void ) { delete m_pKeyValues; }
 		inline void Assign( KeyValues *pKeyValues ) { m_pKeyValues = pKeyValues; }
+		/// behaves more like an auto pointer detach ( flags itself to not delete the contained object, and returns a pointer to it)
+		inline KeyValues * Detach() { KeyValues *retval = m_pKeyValues; Assign( NULL ); return retval; }
 		KeyValues *operator->()	{ return m_pKeyValues; }
 		operator KeyValues *()	{ return m_pKeyValues; }
 	private:
@@ -115,6 +147,9 @@ public:
 	KeyValues( const char *setName, const char *firstKey, const char *firstValue, const char *secondKey, const char *secondValue );
 	KeyValues( const char *setName, const char *firstKey, int firstValue, const char *secondKey, int secondValue );
 
+	// destruct
+	~KeyValues();
+
 	// Section name
 	const char *GetName() const;
 	void SetName( const char *setName);
@@ -126,7 +161,7 @@ public:
 	// File access. Set UsesEscapeSequences true, if resource file/buffer uses Escape Sequences (eg \n, \t)
 	void UsesEscapeSequences(bool state); // default false
 	bool LoadFromFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL);
-	bool SaveToFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL);
+	bool SaveToFile( IBaseFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, bool bWriteEmptySubkeys = false);
 
 	// Read from a buffer...  Note that the buffer must be null terminated
 	bool LoadFromBuffer( char const *resourceName, const char *pBuffer, IBaseFileSystem* pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL );
@@ -145,16 +180,28 @@ public:
 	bool ContainsSubKey( KeyValues *pSubKey ); // Returns true if this key values contains the specified sub key, false otherwise.
 	void SwapSubKey( KeyValues *pExistingSubKey, KeyValues *pNewSubKey );	// Swaps an existing subkey for a new one, DOES NOT DELETE THE OLD ONE but takes ownership of the new one
 	void ElideSubKey( KeyValues *pSubKey );	// Removes a subkey but inserts all of its children in its place, in-order (flattens a tree, like firing a manager!)
-	
+	KeyValues* CreateKey( const char *keyName );
+	KeyValues* CreatePeerKey( const char *keyName );
+
 	// Key iteration.
 	//
 	// NOTE: GetFirstSubKey/GetNextKey will iterate keys AND values. Use the functions 
 	// below if you want to iterate over just the keys or just the values.
 	//
-	KeyValues *GetFirstSubKey();	// returns the first subkey in the list
-	KeyValues *GetNextKey();		// returns the next subkey
+	KeyValues *GetFirstSubKey() const;	// returns the first subkey in the list
+	KeyValues *GetNextKey() const;		// returns the next subkey
 	void SetNextKey( KeyValues * pDat);
 
+	KeyValues *FindLastSubKey();	// returns the LAST subkey in the list.  This requires a linked list iteration to find the key.  Returns NULL if we don't have any children
+
+	bool BInteriorNode() const
+	{
+		return GetFirstSubKey() != NULL;
+	}
+	bool BLeafNode() const
+	{
+		return GetFirstSubKey() == NULL;
+	}
 	//
 	// These functions can be used to treat it like a true key/values tree instead of 
 	// confusing values with keys.
@@ -215,14 +262,20 @@ public:
 
 	KeyValues& operator=( KeyValues& src );
 
+	bool IsEqual( KeyValues *pRHS );
+
 	// Adds a chain... if we don't find stuff in this keyvalue, we'll look
 	// in the one we're chained to.
 	void ChainKeyValue( KeyValues* pChain );
 	
 	void RecursiveSaveToFile( CUtlBuffer& buf, int indentLevel );
 
-	bool WriteAsBinary( CUtlBuffer &buffer );
-	bool ReadAsBinary( CUtlBuffer &buffer );
+	bool WriteAsBinary( CUtlBuffer &buffer ) const;
+	bool ReadAsBinary( CUtlBuffer &buffer, int nStackDepth = 0 );
+
+	// Same as the other binary functions, but filter out and remove empty keys (like when seralizing to a file )
+	bool WriteAsBinaryFiltered( CUtlBuffer &buffer );
+	bool ReadAsBinaryFiltered( CUtlBuffer &buffer, int nStackDepth = 0 );
 
 	// Allocate & create a new copy of the keys
 	KeyValues *MakeCopy( void ) const;
@@ -250,8 +303,9 @@ public:
 		TYPE_NUMTYPES, 
 	};
 	types_t GetDataType(const char *keyName = NULL);
+	types_t GetDataType() const;
 
-	// Virtual deletion function - ensures that KeyValues object is deleted from correct heap
+	// for backward compat
 	void deleteThis();
 
 	void SetStringValue( char const *strValue );
@@ -278,14 +332,18 @@ public:
 	// Assign keyvalues from a string
 	static KeyValues * FromString( char const *szName, char const *szStringVal, char const **ppEndOfParse = NULL );
 		
+	/// Create a child key, given that we know which child is currently the last child.
+	/// This avoids the O(N^2) behaviour when adding children in sequence to KV,
+	/// when CreateKey() wil have to re-locate the end of the list each time.  This happens,
+	/// for example, every time we load any KV file whatsoever.
+
+	KeyValues* CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pLastChild );
+	void AddSubkeyUsingKnownLastChild( KeyValues *pSubKey, KeyValues *pLastChild );
+
 private:
 	KeyValues( KeyValues& );	// prevent copy constructor being used
 
-	// prevent delete being called except through deleteThis()
-	~KeyValues();
 
-	KeyValues* CreateKey( const char *keyName );
-	
 	void RecursiveCopyKeyValues( KeyValues& src );
 	void RemoveEverything();
 //	void RecursiveSaveToFile( IBaseFileSystem *filesystem, CUtlBuffer &buffer, int indentLevel );
@@ -293,10 +351,10 @@ private:
 	
 	// NOTE: If both filesystem and pBuf are non-null, it'll save to both of them.
 	// If filesystem is null, it'll ignore f.
-	void RecursiveSaveToFile( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, int indentLevel );
+	void RecursiveSaveToFile( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, int indentLevel, bool bWriteEmptySubkeys = false );
 	void WriteConvertedString( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, const char *pszString );
 	
-	void RecursiveLoadFromBuffer( char const *resourceName, CUtlBuffer &buf, GetSymbolProc_t pfnEvaluateSymbolProc );
+	void RecursiveLoadFromBuffer( char const *resourceName, CKeyValuesTokenReader &buf, GetSymbolProc_t pfnEvaluateSymbolProc );
 
 	// for handling #include "filename"
 	void AppendIncludedKeys( CUtlVector< KeyValues * >& includedKeys );
@@ -312,7 +370,6 @@ private:
 	void InternalWrite( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, const void *pData, int len );
 	
 	void Init();
-	const char * ReadToken( CUtlBuffer &buf, bool &wasQuoted, bool &wasConditional );
 	void WriteIndents( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, int indentLevel );
 
 	void FreeAllocatedValue();
@@ -345,6 +402,24 @@ private:
 	KeyValues *m_pPeer;	// pointer to next key in list
 	KeyValues *m_pSub;	// pointer to Start of a new sub key list
 	KeyValues *m_pChain;// Search here if it's not in our list
+	
+	GetSymbolProc_t	m_pExpressionGetSymbolProc;
+
+private:
+	// Statics to implement the optional growable string table
+	// Function pointers that will determine which mode we are in
+	static int (*s_pfGetSymbolForString)( const char *name, bool bCreate );
+	static const char *(*s_pfGetStringForSymbol)( int symbol );
+	static CKeyValuesGrowableStringTable *s_pGrowableStringTable;
+
+public:
+	// Functions that invoke the default behavior
+	static int GetSymbolForStringClassic( const char *name, bool bCreate = true );
+	static const char *GetStringForSymbolClassic( int symbol );
+	
+	// Functions that use the growable string table
+	static int GetSymbolForStringGrowable( const char *name, bool bCreate = true );
+	static const char *GetStringForSymbolGrowable( int symbol );
 };
 
 typedef KeyValues::AutoDelete KeyValuesAD;

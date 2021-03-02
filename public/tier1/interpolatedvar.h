@@ -43,8 +43,11 @@
 
 // this global keeps the last known server packet tick (to avoid calling engine->GetLastTimestamp() all the time)
 extern float g_flLastPacketTimestamp;
+// when we renormalize hermite spline samples (on the time axis), determines whether we hold the previous sample at a fixed up time or lerp the sample as well as 
+//  fix up the time (to get two even time intervals)
+extern bool g_bHermiteFix;
 
-inline void Interpolation_SetLastPacketTimeStamp( float timestamp)
+inline void Interpolation_SetLastPacketTimeStamp( float timestamp )
 {
 	Assert( timestamp > 0 );
 	g_flLastPacketTimestamp = timestamp;
@@ -462,7 +465,7 @@ public:
 	void DebugInterpolate( Type *pOut, float currentTime );
 
 	void GetDerivative( Type *pOut, float currentTime );
-	void GetDerivative_SmoothVelocity( Type *pOut, float currentTime );	// See notes on ::Derivative_HermiteLinearVelocity for info.
+	void GetDerivative_SmoothVelocity( Type *pOut, float currentTime, bool bAllowHermiteFix );	// See notes on ::Derivative_HermiteLinearVelocity for info.
 
 	void ClearHistory();
 	void AddToHead( float changeTime, const Type* values, bool bFlushNewer );
@@ -528,14 +531,16 @@ protected:
 		CInterpolatedVarEntry &fixup,
 		CInterpolatedVarEntry*& prev, 
 		CInterpolatedVarEntry*& start, 
-		CInterpolatedVarEntry*& end	);
+		CInterpolatedVarEntry*& end,
+		bool bAllowHermiteFix );
 
 	// Force the time between prev and start to be dt (and extend prev out farther if necessary).
 	void TimeFixup2_Hermite( 
 		CInterpolatedVarEntry &fixup,
 		CInterpolatedVarEntry*& prev, 
 		CInterpolatedVarEntry*& start, 
-		float dt
+		float dt,
+		bool bAllowHermiteFix
 		);
 
 	void _Extrapolate( 
@@ -550,7 +555,7 @@ protected:
 	void _Interpolate_Hermite( Type *out, float frac, CInterpolatedVarEntry *pOriginalPrev, CInterpolatedVarEntry *start, CInterpolatedVarEntry *end, bool looping = false );
 	
 	void _Derivative_Hermite( Type *out, float frac, CInterpolatedVarEntry *pOriginalPrev, CInterpolatedVarEntry *start, CInterpolatedVarEntry *end );
-	void _Derivative_Hermite_SmoothVelocity( Type *out, float frac, CInterpolatedVarEntry *b, CInterpolatedVarEntry *c, CInterpolatedVarEntry *d );
+	void _Derivative_Hermite_SmoothVelocity( Type *out, float frac, CInterpolatedVarEntry *b, CInterpolatedVarEntry *c, CInterpolatedVarEntry *d, bool bAllowHermiteFix );
 	void _Derivative_Linear( Type *out, CInterpolatedVarEntry *start, CInterpolatedVarEntry *end );
 	
 	bool ValidOrder();
@@ -640,11 +645,14 @@ inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float flCurr
 		NoteLastNetworkedValue();
 	}
 	
-#if 0
+	// Paul : I am re-instating a RemoveOldEntries()
+	// call to delete very old entries which cause glitches entering PVS (JIRA 4524)
+	// I have also changed RemoveOldEntries() to never keep entries older than 0.5s
+	// even if that means there are no remaining history samples.
 	// Since we don't clean out the old entries until Interpolate(), make sure that there
 	// aren't any super old entries hanging around.
-	RemoveOldEntries( flCurrentTime - interpolation_amount - 2.0f );
-#else
+	RemoveOldEntries( flCurrentTime - interpolation_amount - 0.5f );
+
 	// JAY: It doesn't seem like the above code is correct.  This is keeping more than two seconds of history
 	// for variables that aren't being interpolated for some reason.  For example, the player model isn't drawn
 	// in first person, so the history is only truncated here and will accumulate ~40 entries instead of 2 or 3
@@ -652,7 +660,6 @@ inline bool CInterpolatedVarArrayBase<Type, IS_ARRAY>::NoteChanged( float flCurr
 	// any data we're going to need.  Unless flCurrentTime is different when samples are added vs. when
 	// they are interpolated I can't see this having any ill effects.  
 	RemoveEntriesPreviousTo( flCurrentTime - interpolation_amount - EXTRA_INTERPOLATION_HISTORY_STORED );
-#endif
 	
 	return bRet;
 }
@@ -755,7 +762,7 @@ template< typename Type, bool IS_ARRAY >
 inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::RemoveOldEntries( float oldesttime )
 {
 	int newCount = m_VarHistory.Count();
-	for ( int i = m_VarHistory.Count(); --i > 2; )
+	for ( int i = m_VarHistory.Count(); --i > -1; )
 	{
 		if ( m_VarHistory[i].flChangeTime > oldesttime )
 			break;
@@ -1057,7 +1064,7 @@ void CInterpolatedVarArrayBase<Type, IS_ARRAY>::GetDerivative( Type *pOut, float
 
 
 template< typename Type, bool IS_ARRAY >
-void CInterpolatedVarArrayBase<Type, IS_ARRAY>::GetDerivative_SmoothVelocity( Type *pOut, float currentTime )
+void CInterpolatedVarArrayBase<Type, IS_ARRAY>::GetDerivative_SmoothVelocity( Type *pOut, float currentTime, bool bAllowHermiteFix )
 {
 	CInterpolationInfo info;
 	if (!GetInterpolationInfo( &info, currentTime, m_InterpolationAmount, NULL ))
@@ -1069,7 +1076,7 @@ void CInterpolatedVarArrayBase<Type, IS_ARRAY>::GetDerivative_SmoothVelocity( Ty
 	
 	if ( info.m_bHermite )
 	{
-		_Derivative_Hermite_SmoothVelocity( pOut, info.frac, &history[info.oldest], &history[info.older], &history[info.newer] );
+		_Derivative_Hermite_SmoothVelocity( pOut, info.frac, &history[info.oldest], &history[info.older], &history[info.newer], bAllowHermiteFix );
 		return;
 	}
 	else if ( info.newer == info.older && CInterpolationContext::IsExtrapolationAllowed() )
@@ -1344,7 +1351,8 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::TimeFixup2_Hermite(
 	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry &fixup,
 	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry*& prev, 
 	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry*& start, 
-	float dt1
+	float dt1,
+	bool bAllowHermiteFix
 	)
 {
 	float dt2 = start->flChangeTime - prev->flChangeTime;
@@ -1363,11 +1371,11 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::TimeFixup2_Hermite(
 		{
 			if ( m_bLooping[i] )
 			{
-				fixup.GetValue()[i] = LoopingLerp( 1-frac, prev->GetValue()[i], start->GetValue()[i] );
+				fixup.GetValue()[i] = (g_bHermiteFix && bAllowHermiteFix) ? prev->GetValue()[i] : LoopingLerp( 1-frac, prev->GetValue()[i], start->GetValue()[i] );
 			}
 			else
 			{
-				fixup.GetValue()[i] = Lerp( 1-frac, prev->GetValue()[i], start->GetValue()[i] );
+				fixup.GetValue()[i] = (g_bHermiteFix && bAllowHermiteFix) ? prev->GetValue()[i] : Lerp( 1-frac, prev->GetValue()[i], start->GetValue()[i] );
 			}
 		}
 
@@ -1382,9 +1390,10 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::TimeFixup_Hermite(
 	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry &fixup,
 	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry*& prev, 
 	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry*& start, 
-	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry*& end	)
+	typename CInterpolatedVarArrayBase<Type, IS_ARRAY>::CInterpolatedVarEntry*& end,
+	bool bAllowHermiteFix	)
 {
-	TimeFixup2_Hermite( fixup, prev, start, end->flChangeTime - start->flChangeTime );
+	TimeFixup2_Hermite( fixup, prev, start, end->flChangeTime - start->flChangeTime, bAllowHermiteFix );
 }
 
 
@@ -1406,7 +1415,7 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::_Interpolate_Hermite(
 
 	CInterpolatedVarEntry fixup;
 	fixup.Init(m_nMaxCount);
-	TimeFixup_Hermite( fixup, prev, start, end );
+	TimeFixup_Hermite( fixup, prev, start, end, true );
 
 	for( int i = 0; i < m_nMaxCount; i++ )
 	{
@@ -1445,7 +1454,7 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::_Derivative_Hermite(
 
 	CInterpolatedVarEntry fixup;
 	fixup.value = (Type*)_alloca( sizeof(Type) * m_nMaxCount );
-	TimeFixup_Hermite( fixup, prev, start, end );
+	TimeFixup_Hermite( fixup, prev, start, end, true );
 
 	float divisor = 1.0f / (end->flChangeTime - start->flChangeTime);
 
@@ -1464,11 +1473,12 @@ inline void CInterpolatedVarArrayBase<Type, IS_ARRAY>::_Derivative_Hermite_Smoot
 	float frac, 
 	CInterpolatedVarEntry *b, 
 	CInterpolatedVarEntry *c, 
-	CInterpolatedVarEntry *d )
+	CInterpolatedVarEntry *d,
+	bool bAllowHermiteFix )
 {
 	CInterpolatedVarEntry fixup;
 	fixup.Init(m_nMaxCount);
-	TimeFixup_Hermite( fixup, b, c, d );
+	TimeFixup_Hermite( fixup, b, c, d, bAllowHermiteFix );
 	for ( int i=0; i < m_nMaxCount; i++ )
 	{
 		Type prevVel = (c->GetValue()[i] - b->GetValue()[i]) / (c->flChangeTime - b->flChangeTime);
@@ -1535,9 +1545,9 @@ class CInterpolatedVarArray : public CInterpolatedVarArrayBase<Type, true >
 {
 public:
 	CInterpolatedVarArray( const char *pDebugName = "no debug name" )
-		: CInterpolatedVarArrayBase<Type, true>( pDebugName )
+		: CInterpolatedVarArrayBase< Type, true>( pDebugName )
 	{
-		SetMaxCount( 0.0f, COUNT );
+		CInterpolatedVarArrayBase< Type, true >::SetMaxCount( 0.0f, COUNT );
 	}
 };
 
@@ -1553,7 +1563,7 @@ public:
 	CInterpolatedVar( const char *pDebugName = NULL )
 		: CInterpolatedVarArrayBase< Type, false >(pDebugName) 
 	{
-		SetMaxCount( 0.0f, 1 );
+		CInterpolatedVarArrayBase< Type, false >::SetMaxCount( 0.0f, 1 );
 	}
 };
 

@@ -20,10 +20,8 @@
 #include "tier0/memalloc.h"
 #include "tier0/memdbgon.h"
 
-#ifdef _MSC_VER
 #pragma warning (disable:4100)
 #pragma warning (disable:4514)
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -64,7 +62,7 @@ public:
 	public:
 		Iterator_t( BlockHeader_t *p, int i ) : m_pBlockHeader( p ), m_nIndex( i ) {}
 		BlockHeader_t *m_pBlockHeader;
-		int m_nIndex;
+		intp m_nIndex;
 
 		bool operator==( const Iterator_t it ) const	{ return m_pBlockHeader == it.m_pBlockHeader && m_nIndex == it.m_nIndex; }
 		bool operator!=( const Iterator_t it ) const	{ return m_pBlockHeader != it.m_pBlockHeader || m_nIndex != it.m_nIndex; }
@@ -107,7 +105,7 @@ public:
 		return false;
 	}
 	bool IsValidIterator( const Iterator_t &it ) const	{ return it.m_pBlockHeader && it.m_nIndex >= 0 && it.m_nIndex < it.m_pBlockHeader->m_nBlockSize; }
-	Iterator_t InvalidIterator() const					{ return Iterator_t( NULL, -1 ); }
+	Iterator_t InvalidIterator() const					{ return Iterator_t( NULL, INVALID_INDEX ); }
 
 	// element access
 	T& operator[]( intp i );
@@ -166,7 +164,7 @@ protected:
 
 template< class T >
 CUtlFixedMemory<T>::CUtlFixedMemory( int nGrowSize, int nInitAllocationCount )
-: m_pBlocks( 0 ), m_nAllocationCount( 0 ), m_nGrowSize( 0 )
+	: m_pBlocks( 0 ), m_nAllocationCount( 0 ), m_nGrowSize( 0 )
 {
 	Init( nGrowSize, nInitAllocationCount );
 }

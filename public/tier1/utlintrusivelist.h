@@ -1,4 +1,4 @@
-//===== Copyright � 1996-2006, Valve Corporation, All rights reserved. ======//
+//===== Copyright (c) 1996-2006, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Intrusive linked list templates, both for singly and doubly linked lists
 //
@@ -896,7 +896,7 @@ public:
 
 };
 
-// doubly linked list with a tial ptr for fast addtotail.
+// doubly linked list with a tail ptr for fast addtotail.
 template<class T> class CUtlIntrusiveDListWithTailPtr : public CUtlIntrusiveDList<T>
 {
 public:
