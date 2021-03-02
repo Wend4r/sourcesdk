@@ -1,4 +1,4 @@
-//========== Copyright © 2005, Valve Corporation, All rights reserved. ========
+//========== Copyright ï¿½ 2005, Valve Corporation, All rights reserved. ========
 //
 // Purpose:
 //
@@ -104,7 +104,7 @@ protected:
 // constructor, destructor
 //-----------------------------------------------------------------------------
 template <typename T, bool bCaseInsensitive, bool bDupeStrings>
-CUtlHashDict<T, bCaseInsensitive, bDupeStrings>::CUtlHashDict( int bucketCount = 16, int growCount = 0, int initCount = 0 ) : 
+CUtlHashDict<T, bCaseInsensitive, bDupeStrings>::CUtlHashDict( int bucketCount, int growCount, int initCount ) : 
 	m_Elements( SmallestPowerOfTwoGreaterOrEqual(bucketCount), growCount, initCount )
 {
 	Assert( SmallestPowerOfTwoGreaterOrEqual(bucketCount) <= 0xffff );
