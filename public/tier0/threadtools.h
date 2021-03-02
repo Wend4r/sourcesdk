@@ -288,7 +288,7 @@ PLATFORM_INTERFACE void ThreadSetAffinity( ThreadHandle_t hThread, int nAffinity
 #error Every platform needs to define ThreadMemoryBarrier to at least prevent compiler reordering
 #endif
 
-#if defined( _LINUX ) || defined( _OSX )
+#if defined( LINUX ) || defined( _LINUX ) || defined( _OSX )
 #define USE_INTRINSIC_INTERLOCKED
 // linux implementation
 inline int32 ThreadInterlockedIncrement( int32 volatile *p )
