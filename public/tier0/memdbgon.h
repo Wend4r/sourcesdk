@@ -11,11 +11,11 @@
 // to include this potentially multiple times (since we can deactivate debugging
 // by including memdbgoff.h)
 
-#if !defined(STEAM) && !defined(NO_MALLOC_OVERRIDE)
+#if !defined(STEAM) && !defined(NO_MALLOC_OVERRIDE) && !defined(__SPU__)
 
 // SPECIAL NOTE #2: This must be the final include in a .cpp or .h file!!!
 
-#if defined(_DEBUG) && !defined(USE_MEM_DEBUG)
+#if defined(_DEBUG) && !defined(USE_MEM_DEBUG) && !defined( _PS3 )
 #define USE_MEM_DEBUG 1
 #endif
 
@@ -31,10 +31,8 @@
 		#include <wchar.h>
 	#endif
 	#include <string.h>
-	#ifdef OSX
-	#include <malloc/malloc.h>
-	#else
-	#include <malloc.h>
+	#ifndef _PS3
+		#include <malloc.h>
 	#endif
 #include "tier0/valve_on.h"
 
@@ -50,12 +48,11 @@
 #endif
 
 #if defined(USE_MEM_DEBUG)
-	#if defined(POSIX)
+	#if defined( POSIX ) || defined( _PS3 )
 		#define _NORMAL_BLOCK 1
 		
 		#include "tier0/valve_off.h"
 		#include <cstddef>
-		#include <glob.h>
 		#include <new>
 		#include <sys/types.h>
 		#if !defined( DID_THE_OPERATOR_NEW )
@@ -109,8 +106,8 @@ inline void *MemAlloc_InlineCallocMemset( void *pMem, size_t nCount, size_t nEle
 #define _aligned_free( p )	MemAlloc_FreeAligned( p )
 #else
 extern const char *g_pszModule; 
-#define free(p)				g_pMemAlloc->Free( p, g_pszModule, 0 )
-#define _aligned_free( p )	MemAlloc_FreeAligned( p, g_pszModule, 0 )
+#define free(p)				g_pMemAlloc->Free( p, ::g_pszModule, 0 )
+#define _aligned_free( p )	MemAlloc_FreeAligned( p, ::g_pszModule, 0 )
 #endif
 #define _msize(p)			g_pMemAlloc->GetSize( p )
 #define _expand(p, s)		_expand_NoLongerSupported(p, s)
@@ -125,14 +122,22 @@ extern const char *g_pszModule;
 
 #define _malloc_dbg(s, t, f, l)	WHYCALLINGTHISDIRECTLY(s)
 
-#if !defined( LINUX )
-#if defined(__AFX_H__) && defined(DEBUG_NEW)
-	#define new DEBUG_NEW
-#else
-	#undef new
-	#define MEMALL_DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
-	#define new MEMALL_DEBUG_NEW
-#endif
+#undef new
+
+#if defined( _PS3 )
+	#ifndef PS3_OPERATOR_NEW_WRAPPER_DEFINED
+		#define PS3_OPERATOR_NEW_WRAPPER_DEFINED
+		inline void* operator new( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
+		inline void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
+	#endif
+	#define new new( 1, __FILE__, __LINE__ )
+#elif !defined( GNUC )
+	#if defined(__AFX_H__) && defined(DEBUG_NEW)
+		#define new DEBUG_NEW
+	#else
+		#define MEMALL_DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
+		#define new MEMALL_DEBUG_NEW
+	#endif
 #endif
 
 #undef _strdup
@@ -191,9 +196,9 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString, const char *pFileName,
 #define realloc(p, s)			g_pMemAlloc->Realloc( p, s )
 #define _aligned_malloc( s, a )	MemAlloc_AllocAligned( s, a )
 #else
-#define malloc(s)				MemAlloc_Alloc( s, g_pszModule, 0  )
-#define realloc(p, s)			g_pMemAlloc->Realloc( p, s, g_pszModule, 0 )
-#define _aligned_malloc( s, a )	MemAlloc_AllocAlignedFileLine( s, a, g_pszModule, 0 )
+#define malloc(s)				MemAlloc_Alloc( s, ::g_pszModule, 0  )
+#define realloc(p, s)			g_pMemAlloc->Realloc( p, s, ::g_pszModule, 0 )
+#define _aligned_malloc( s, a )	MemAlloc_AllocAlignedFileLine( s, a, ::g_pszModule, 0 )
 #endif
 
 #ifndef _malloc_dbg
@@ -201,6 +206,15 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString, const char *pFileName,
 #endif
 
 #undef new
+
+#if defined( _PS3 ) && !defined( _CERT )
+	#ifndef PS3_OPERATOR_NEW_WRAPPER_DEFINED
+		#define PS3_OPERATOR_NEW_WRAPPER_DEFINED
+		inline void* operator new( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
+		inline void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
+	#endif
+	#define new new( 1, __FILE__, __LINE__ )
+#endif
 
 #undef _strdup
 #undef strdup

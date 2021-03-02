@@ -10,11 +10,13 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
+#if !defined(__SPU__)
+
 #if defined( COMPILER_MSVC )
 #pragma once
 #endif
 
-#include "Color.h"
+#include "color.h"
 #include "icommandline.h"
 #include <stdio.h>
 
@@ -24,7 +26,7 @@
 #endif
 
 // Used by CColorizedLoggingListener
-#if defined( _WIN32 )
+#if defined( _WIN32 ) || (defined(POSIX) && !defined(_GAMECONSOLE))
 #include "tier0/win32consoleio.h"
 #endif
 
@@ -284,7 +286,7 @@ public:
 		  else
 #endif
 		  {
-#ifndef _CERT
+#if !defined( _CERT ) && !defined( DBGFLAG_STRINGS_STRIP )
 			  if ( !m_bQuietPrintf )
 			  {
 				  _tprintf( _T("%s"), pMessage );
@@ -337,7 +339,7 @@ public:
 // A logging listener with Win32 console API color support which which prints 
 // to stdout and the debug channel.
 //-----------------------------------------------------------------------------
-#if !defined _X360 && defined COMPILER_MSVC
+#if !defined(_GAMECONSOLE)
 class CColorizedLoggingListener : public CSimpleLoggingListener
 {
 public:
@@ -377,7 +379,7 @@ public:
 
 	Win32ConsoleColorContext_t m_ColorContext;
 };
-#endif // !_X360
+#endif // !_GAMECONSOLE
 
 
 //-----------------------------------------------------------------------------
@@ -474,9 +476,15 @@ public:
 	bool HasTag( LoggingChannelID_t channelID, const char *pTag ) const { return GetChannel( channelID )->HasTag( pTag ); }
 	
 	//-----------------------------------------------------------------------------
+	// Returns true if the given channel has been initialized.
+	// The main purpose is catching m_nChannelCount being zero because no channels have been registered.
+	//-----------------------------------------------------------------------------
+	bool IsValidChannelID( LoggingChannelID_t channelID ) const { return ( channelID >= 0 ) && ( channelID < m_nChannelCount ); }
+	
+	//-----------------------------------------------------------------------------
 	// Returns true if the given channel will spew at the given severity level.
 	//-----------------------------------------------------------------------------
-	bool IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity ) const { return GetChannel( channelID )->IsEnabled( severity ); }
+	bool IsChannelEnabled( LoggingChannelID_t channelID, LoggingSeverity_t severity ) const { return IsValidChannelID( channelID ) && GetChannel( channelID )->IsEnabled( severity ); }
 
 	//-----------------------------------------------------------------------------
 	// Functions to set the spew level of a channel either directly by ID or 
@@ -489,6 +497,7 @@ public:
 	void SetChannelSpewLevel( LoggingChannelID_t channelID, LoggingSeverity_t minimumSeverity );
 	void SetChannelSpewLevelByName( const char *pName, LoggingSeverity_t minimumSeverity );
 	void SetChannelSpewLevelByTag( const char *pTag, LoggingSeverity_t minimumSeverity );
+	void SetGlobalSpewLevel( LoggingSeverity_t minimumSeverity );
 
 	//-----------------------------------------------------------------------------
 	// Gets or sets the color of a logging channel.
@@ -537,7 +546,7 @@ public:
 	//-----------------------------------------------------------------------------
 	// Returns whether the specified logging listener is registered.
 	//-----------------------------------------------------------------------------
-	bool IsListenerRegistered( ILoggingListener *pListener ) const;
+	bool IsListenerRegistered( ILoggingListener *pListener );
 
 	//-----------------------------------------------------------------------------
 	// Clears out all of the current logging state (removes all listeners, 
@@ -557,6 +566,7 @@ public:
 	// Logs a message to the specified channel using a given severity and 
 	// spew color.  Passing in UNSPECIFIED_LOGGING_COLOR for 'color' allows
 	// the logging listeners to provide a default.
+	// NOTE: test 'IsChannelEnabled(channelID,severity)' before calling this!
 	//-----------------------------------------------------------------------------
 	LoggingResponse_t LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color color, const tchar *pMessage );
 	
@@ -658,7 +668,11 @@ private:
 //////////////////////////////////////////////////////////////////////////
 
 // This macro will resolve to the most appropriate overload of LoggingSystem_Log() depending on the number of parameters passed in.
+#ifdef DBGFLAG_STRINGS_STRIP
+#define InternalMsg( Channel, Severity, /* [Color], Message, */ ... ) do { if ( Severity == LS_ERROR && LoggingSystem_IsChannelEnabled( Channel, Severity ) ) LoggingSystem_Log( Channel, Severity, /* [Color], Message, */ ##__VA_ARGS__ ); } while( 0 )
+#else
 #define InternalMsg( Channel, Severity, /* [Color], Message, */ ... ) do { if ( LoggingSystem_IsChannelEnabled( Channel, Severity ) ) LoggingSystem_Log( Channel, Severity, /* [Color], Message, */ ##__VA_ARGS__ ); } while( 0 )
+#endif
 
 //-----------------------------------------------------------------------------
 // New macros, use these!
@@ -671,7 +685,11 @@ private:
 #define Log_Msg( Channel, /* [Color], Message, */ ... ) InternalMsg( Channel, LS_MESSAGE, /* [Color], Message, */ ##__VA_ARGS__ )
 #define Log_Warning( Channel, /* [Color], Message, */ ... ) InternalMsg( Channel, LS_WARNING, /* [Color], Message, */ ##__VA_ARGS__ )
 #define Log_Error( Channel, /* [Color], Message, */ ... ) InternalMsg( Channel, LS_ERROR, /* [Color], Message, */ ##__VA_ARGS__ )
+#ifdef DBGFLAG_STRINGS_STRIP
+#define Log_Assert( ... ) LR_CONTINUE
+#else
 #define Log_Assert( Message, ... ) LoggingSystem_LogAssert( Message, ##__VA_ARGS__ )
+#endif
 
 
 #define DECLARE_LOGGING_CHANNEL( Channel ) extern LoggingChannelID_t Channel
@@ -699,6 +717,7 @@ private:
 PLATFORM_INTERFACE LoggingChannelID_t LoggingSystem_RegisterLoggingChannel( const char *pName, RegisterTagsFunc registerTagsFunc, int flags = 0, LoggingSeverity_t severity = LS_MESSAGE, Color color = UNSPECIFIED_LOGGING_COLOR ); 
 
 PLATFORM_INTERFACE void LoggingSystem_RegisterLoggingListener( ILoggingListener *pListener );
+PLATFORM_INTERFACE void LoggingSystem_UnregisterLoggingListener(ILoggingListener *pListener);
 PLATFORM_INTERFACE void LoggingSystem_ResetCurrentLoggingState();
 PLATFORM_INTERFACE void LoggingSystem_SetLoggingResponsePolicy( ILoggingResponsePolicy *pResponsePolicy );
 // NOTE: PushLoggingState() saves the current logging state on a stack and results in a new clear state
@@ -722,6 +741,7 @@ PLATFORM_INTERFACE bool LoggingSystem_IsChannelEnabled( LoggingChannelID_t chann
 PLATFORM_INTERFACE void LoggingSystem_SetChannelSpewLevel( LoggingChannelID_t channelID, LoggingSeverity_t minimumSeverity );
 PLATFORM_INTERFACE void LoggingSystem_SetChannelSpewLevelByName( const char *pName, LoggingSeverity_t minimumSeverity );
 PLATFORM_INTERFACE void LoggingSystem_SetChannelSpewLevelByTag( const char *pTag, LoggingSeverity_t minimumSeverity );
+PLATFORM_INTERFACE void LoggingSystem_SetGlobalSpewLevel( LoggingSeverity_t minimumSeverity );
 
 // Color is represented as an int32 due to C-linkage restrictions
 PLATFORM_INTERFACE int32 LoggingSystem_GetChannelColor( LoggingChannelID_t channelID );
@@ -737,10 +757,12 @@ PLATFORM_INTERFACE void LoggingSystem_SetChannelFlags( LoggingChannelID_t channe
 // Therefore, you need to ensure that the parameters are in the same general 
 // order and that there are no ambiguities with the overload.
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const char *pMessageFormat, ... ) FMTFUNCTION( 3, 4 );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
+PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, PRINTF_FORMAT_STRING const char *pMessageFormat, ... ) FMTFUNCTION( 3, 4 );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, PRINTF_FORMAT_STRING const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
 
 PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessage );
-PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogAssert( PRINTF_FORMAT_STRING const char *pMessageFormat, ... ) FMTFUNCTION( 1, 2 );
+
+#endif //#if !defined(__SPU__)
 
 #endif // LOGGING_H
