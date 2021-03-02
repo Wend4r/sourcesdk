@@ -300,34 +300,34 @@ inline bool V_isempty( const char* pszString ) { return !pszString || !pszString
 // These functions could also be used for optimizations if locale
 // considerations make some of the CRT functions slow.
 #undef isdigit // In case this is implemented as a macro
-#define isdigit use_V_isdigit_instead_of_isdigit
+#define isdigit V_isdigit
 inline bool V_isalpha(char c) { return isalpha( (unsigned char)c ) != 0; }
 #undef isalpha
-#define isalpha use_V_isalpha_instead_of_isalpha
+#define isalpha V_isalpha
 inline bool V_isalnum(char c) { return isalnum( (unsigned char)c ) != 0; }
 #undef isalnum
-#define isalnum use_V_isalnum_instead_of_isalnum
+#define isalnum V_isalnum
 inline bool V_isprint(char c) { return isprint( (unsigned char)c ) != 0; }
 #undef isprint
-#define isprint use_V_isprint_instead_of_isprint
+#define isprint V_isprint
 inline bool V_isxdigit(char c) { return isxdigit( (unsigned char)c ) != 0; }
 #undef isxdigit
-#define isxdigit use_V_isxdigit_instead_of_isxdigit
+#define isxdigit V_isxdigit
 inline bool V_ispunct(char c) { return ispunct( (unsigned char)c ) != 0; }
 #undef ispunct
-#define ispunct use_V_ispunct_instead_of_ispunct
+#define ispunct V_ispunct
 inline bool V_isgraph(char c) { return isgraph( (unsigned char)c ) != 0; }
 #undef isgraph
-#define isgraph use_V_isgraph_instead_of_isgraph
+#define isgraph V_isgraph
 inline bool V_isupper(char c) { return isupper( (unsigned char)c ) != 0; }
 #undef isupper
-#define isupper use_V_isupper_instead_of_isupper
+#define isupper V_isupper
 inline bool V_islower(char c) { return islower( (unsigned char)c ) != 0; }
 #undef islower
-#define islower use_V_islower_instead_of_islower
+#define islower V_islower
 inline bool V_iscntrl(char c) { return iscntrl( (unsigned char)c ) != 0; }
 #undef iscntrl
-#define iscntrl use_V_iscntrl_instead_of_iscntrl
+#define iscntrl V_iscntrl
 
 inline bool V_isspace(int c)
 {
