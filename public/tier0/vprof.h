@@ -15,7 +15,7 @@
 #include "tier0/l2cache.h"
 #include "tier0/threadtools.h"
 #include "tier0/vprof_sn.h"
-#include "tier0/vprof_telemetry.h"
+// #include "tier0/vprof_telemetry.h"
 
 // VProf is enabled by default in all configurations -except- X360 Retail and PS3.
 #if !( defined( _GAMECONSOLE ) && defined( _CERT ) ) && !defined( _PS3 )
