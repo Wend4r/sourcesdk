@@ -69,16 +69,15 @@ public:
 	virtual void Shutdown() = 0;
 
 	// Returns all dependent libraries
-	virtual const AppSystemInfo_t* GetDependencies() = 0;
+	virtual const AppSystemInfo_t* GetDependencies() {return NULL;}
 
 	// Returns the tier
-	virtual AppSystemTier_t GetTier() = 0;
+	virtual AppSystemTier_t GetTier() {return APP_SYSTEM_TIER_OTHER;}
 
 	// Reconnect to a particular interface
-	virtual void Reconnect( CreateInterfaceFn factory, const char *pInterfaceName ) = 0;
-	
-	// Returns whether or not the app system is a singleton
-	virtual bool IsSingleton() = 0;
+	virtual void Reconnect( CreateInterfaceFn factory, const char *pInterfaceName ) {}
+	// Is this appsystem a singleton? (returns false if there can be multiple instances of this interface)
+	virtual bool IsSingleton() { return true; }
 };
 
 
@@ -108,8 +107,6 @@ public:
 	{
 		ReconnectInterface( factory, pInterfaceName );
 	}
-	
-	virtual bool IsSingleton() { return true; }
 };
 
 

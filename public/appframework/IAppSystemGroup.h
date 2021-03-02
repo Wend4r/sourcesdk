@@ -106,6 +106,7 @@ public:
 		DESTRUCTION,
 
 		APPSYSTEM_GROUP_STAGE_COUNT,
+		NONE,	// This means no error
 	};
 
 public:
@@ -129,6 +130,8 @@ public:
 
 	// Returns the stage at which the app system group ran into an error
 	AppSystemGroupStage_t GetCurrentStage() const;
+	
+	int ReloadModule( const char * pDLLName );
 
 protected:
 	// These methods are meant to be called by derived classes of CAppSystemGroup
