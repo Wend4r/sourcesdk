@@ -88,11 +88,14 @@ public:
 //-----------------------------------------------------------------------------
 enum FadeMode_t
 {
+	// These map directly to cpu_level, and g_aFadeData contains settings for each given cpu_level (see videocfg.h CPULevel_t).
+	// The exception is 'FADE_MODE_LEVEL', which refers to level-specific values in the map entity.
 	FADE_MODE_NONE = 0,
 	FADE_MODE_LOW,
 	FADE_MODE_MED,
 	FADE_MODE_HIGH,
 	FADE_MODE_360,
+	FADE_MODE_PS3,
 	FADE_MODE_LEVEL,
 
 	FADE_MODE_COUNT,
@@ -100,11 +103,10 @@ enum FadeMode_t
 
 struct FadeData_t
 {
-	float	m_flPercentMin;
-	float	m_flPercentMax;
-	float	m_flPixelMin;
-	float	m_flPixelMax;
-	float	m_flWidth;
+	float	m_flPixelMin;		// Size (height in pixels) above which objects start to fade in
+	float	m_flPixelMax;		// Size (height in pixels) above which objects are fully faded in
+	float	m_flWidth;			// Reference screen res w.r.t which the above pixel values were chosen
+	float	m_flFadeDistScale;	// Scale factor applied before entity distance-based fade is calculated
 };
 
 // see tier2.cpp for data!

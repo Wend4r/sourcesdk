@@ -12,7 +12,7 @@
 #endif
 
 #include "tier2/tier2.h"
-#include "Color.h"
+#include "color.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -67,6 +67,9 @@ void DrawScreenSpaceRectangle( IMaterial *pMaterial,
 
 // Renders a single polygon without texturing in normalized-device coordinate space (x, y in the range [-1,1], z = 0)
 void DrawNDCSpaceUntexturedPolygon( IMaterial *pMaterial, int nVertexCount, Vector2D *pScreenSpaceCoordinates, void *pClientRenderable );
+
+// Render a capsule ( a pill-shaped hemisphere-capped cylinder )
+void RenderCapsule( const Vector &vStart, const Vector &vEnd, const float &flRadius, Color c, IMaterial *pMaterial );
 
 #endif // RENDERUTILS_H
 

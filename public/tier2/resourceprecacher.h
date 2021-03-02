@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+ //===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Utilities for setting vproject settings
 //
@@ -156,13 +156,13 @@ public:													\
 	PRECACHE_REGISTER_BEGIN_CONDITIONAL( _system, _className, true )
 
 // Resource precache definitions
+#define	PRECACHE( _type, _name )				pPrecacheHandler->CacheResource( _type, _name, bPrecache, hResourceList, NULL ); 
+
 // NOTE: PRECACHE_INDEX_CONDITIONAL doesn't initialize the index to 0
 // on the assumption that some other conditional will
-#ifdef _WIN64
-#error "PRECACHE_INDEX and PRECACHE_INDEX_CONDITIONAL won't work in 64 bit because the old-school particle mgr is sending ptr data types into here. Hopefully the old-school particle mgr will die before this is an issue."
-#endif
 
-#define	PRECACHE( _type, _name )				pPrecacheHandler->CacheResource( _type, _name, bPrecache, hResourceList, NULL ); 
+//MCCLEANUP //NOTE: PRECACHE_INDEX and PRECACHE_INDEX_CONDITIONAL won't work in 64 bit because the old-school particle mgr is sending ptr data types into here. Hopefully the old-school particle mgr will die before this is an issue.
+
 #define	PRECACHE_INDEX( _type, _name, _index )	pPrecacheHandler->CacheResource( _type, _name, bPrecache, hResourceList, (int*)( &(_index) ) ); 
 #define	PRECACHE_CONDITIONAL( _type, _name, _condition )			\
 	if ( !bIgnoreConditionals && ( _condition ) )					\
