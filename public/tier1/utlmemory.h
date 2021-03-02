@@ -22,9 +22,10 @@
 #include "mathlib/mathlib.h"
 #include "tier0/memdbgon.h"
 
+#ifdef _MSC_VER
 #pragma warning (disable:4100)
 #pragma warning (disable:4514)
-
+#endif
 
 //-----------------------------------------------------------------------------
 
