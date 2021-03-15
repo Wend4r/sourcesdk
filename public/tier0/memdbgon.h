@@ -94,10 +94,12 @@
 
 #ifndef MEMDBGON_H
 #if !defined( _PS3 ) || defined( _CERT )
+#	if defined( COMPILER_GCC )
 	inline void *operator new( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
 	inline void *operator new[]( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
 	inline void operator delete( void *pPtr ) { g_pMemAlloc->Free(pPtr); }
 	inline void operator delete[]( void *pPtr ) { g_pMemAlloc->Free(pPtr); }
+#	endif
 #endif
 
 inline void *MemAlloc_InlineCallocMemset( void *pMem, size_t nCount, size_t nElementSize)
