@@ -1,0 +1,15 @@
+[vpc crc file version 3]
+_.HOST_WIN32.HOST_WINDOWS.VS2015.WINDOWS_/vpcgame:csgo_
+PROJECT.tier1.GAME..PLATFORM.win32
+cca86782 tier1.vpc
+f4cf0328 ..\vpc_scripts\source_lib_base.vpc
+61c7a4fb ..\vpc_scripts\platform_dirs.vpc
+8cb7a33b ..\vpc_scripts\source_base.vpc
+8153c3a9 ..\vpc_scripts\definitions\win32_2010.def
+710e594c ..\vpc_scripts\source_lib_win32_base.vpc
+486b766d ..\vpc_scripts\version.vpc
+bf6e0205 ..\vpc_scripts\source_lib_win32_debug.vpc
+74b59ea1 ..\vpc_scripts\source_lib_win32_release.vpc
+e9a1be45 ..\vpc_scripts\source_win32_base.vpc
+12020bcc ..\vpc_scripts\source_lowest_base.vpc
+75e9bed8 ..\vpc_scripts\source_video_base.vpc

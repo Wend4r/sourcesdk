@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright  1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -34,8 +34,19 @@
 //			in[16] - 
 // Output : static void
 //-----------------------------------------------------------------------------
+#if ( PLAT_BIG_ENDIAN == 1 )
+static void MD5Transform(unsigned int buf[4], unsigned int const in_big[16])
+{
+
+	unsigned int in[16];
+	for( int i = 0; i != 16; ++i )
+	{
+		in[i] = LittleDWord(in_big[i]);
+	}
+#else
 static void MD5Transform(unsigned int buf[4], unsigned int const in[16])
 {
+#endif
     register unsigned int a, b, c, d;
 
     a = buf[0];
@@ -226,13 +237,21 @@ void MD5Final(unsigned char digest[MD5_DIGEST_LENGTH], MD5Context_t *ctx)
     //byteReverse(ctx->in, 14);
 
     /* Append length in bits and transform */
-    ((unsigned int *) ctx->in)[14] = ctx->bits[0];
-    ((unsigned int *) ctx->in)[15] = ctx->bits[1];
+	((unsigned int *) ctx->in)[14] = LittleDWord( ctx->bits[0] );
+	((unsigned int *) ctx->in)[15] = LittleDWord( ctx->bits[1] );
 
     MD5Transform(ctx->buf, (unsigned int *) ctx->in);
     //byteReverse((unsigned char *) ctx->buf, 4);
+#if ( PLAT_BIG_ENDIAN == 1 )
+	COMPILE_TIME_ASSERT( MD5_DIGEST_LENGTH == (sizeof(unsigned int) * 4) );
+	((unsigned int *)digest)[0] = LittleDWord( ctx->buf[0] );
+	((unsigned int *)digest)[1] = LittleDWord( ctx->buf[1] );
+	((unsigned int *)digest)[2] = LittleDWord( ctx->buf[2] );
+	((unsigned int *)digest)[3] = LittleDWord( ctx->buf[3] );
+#else
     memcpy(digest, ctx->buf, MD5_DIGEST_LENGTH);
-    memset(ctx, 0, sizeof(MD5Context_t));        /* In case it's sensitive */
+#endif
+    memset(ctx, 0, sizeof(*ctx));        /* In case it's sensitive */
 }
 
 //-----------------------------------------------------------------------------
@@ -258,6 +277,7 @@ char *MD5_Print( unsigned char *hash, int hashlen )
 //-----------------------------------------------------------------------------
 unsigned int MD5_PseudoRandom(unsigned int nSeed)
 {
+	nSeed = LittleDWord( nSeed );
 	MD5Context_t ctx;
 	unsigned char digest[MD5_DIGEST_LENGTH]; // The MD5 Hash
 
@@ -267,5 +287,39 @@ unsigned int MD5_PseudoRandom(unsigned int nSeed)
 	MD5Update(&ctx, (unsigned char*)&nSeed, sizeof(nSeed) );
 	MD5Final(digest, &ctx);
 
-	return *(unsigned int*)(digest+6);	// use 4 middle bytes for random value
+	return LittleDWord(*(unsigned int*)(digest+6));	// use 4 middle bytes for random value
+}
+
+//-----------------------------------------------------------------------------
+bool MD5_Compare( const MD5Value_t &data, const MD5Value_t &compare )
+{
+	return V_memcmp( data.bits, compare.bits, MD5_DIGEST_LENGTH ) == 0;
+}
+
+//-----------------------------------------------------------------------------
+void MD5Value_t::Zero()
+{
+	V_memset( bits, 0, sizeof( bits ) );
+}
+
+//-----------------------------------------------------------------------------
+bool MD5Value_t::IsZero() const
+{
+	for ( int i = 0 ; i < Q_ARRAYSIZE( bits ) ; ++i )
+	{
+		if ( bits[i] != 0 )
+			return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+void MD5_ProcessSingleBuffer( const void *p, int len, MD5Value_t &md5Result )
+{
+	Assert( len >= 0 );
+	MD5Context_t ctx;
+	MD5Init( &ctx );
+	MD5Update( &ctx, (unsigned char const *)p, len );
+	MD5Final( md5Result.bits, &ctx );
 }
