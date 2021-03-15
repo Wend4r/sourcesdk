@@ -93,6 +93,13 @@
 #undef _aligned_free
 
 #ifndef MEMDBGON_H
+#if !defined( _PS3 ) || defined( _CERT )
+	inline void *operator new( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
+	inline void *operator new[]( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
+	inline void operator delete( void *pPtr ) { g_pMemAlloc->Free(pPtr); }
+	inline void operator delete[]( void *pPtr ) { g_pMemAlloc->Free(pPtr); }
+#endif
+
 inline void *MemAlloc_InlineCallocMemset( void *pMem, size_t nCount, size_t nElementSize)
 {
 	memset(pMem, 0, nElementSize * nCount);
