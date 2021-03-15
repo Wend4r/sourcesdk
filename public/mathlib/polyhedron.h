@@ -50,7 +50,7 @@ public:
 
 	virtual ~CPolyhedron( void ) {};
 	virtual void Release( void ) = 0;
-	Vector Center( void );
+	Vector Center( void ) const;
 };
 
 class CPolyhedron_AllocByNew : public CPolyhedron

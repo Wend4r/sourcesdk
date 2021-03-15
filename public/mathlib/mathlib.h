@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright  1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,11 +12,27 @@
 #include "mathlib/vector.h"
 #include "mathlib/vector2d.h"
 #include "tier0/dbg.h"
-
 #include "mathlib/math_pfns.h"
+#include "mathlib/fltx4.h"
+
 #ifndef ALIGN8_POST
 #define ALIGN8_POST
 #endif
+
+#if defined(_PS3)
+
+#if defined(__SPU__)
+#include <spu_intrinsics.h>
+#include <vmx2spu.h>
+#include <vectormath/c/vectormath_soa.h>
+#else
+#include <ppu_intrinsics.h>
+#include <altivec.h>
+#include <vectormath/c/vectormath_soa.h>
+#endif
+
+#endif
+
 // plane_t structure
 // !!! if this is changed, it must be changed in asm code too !!!
 // FIXME: does the asm code even exist anymore?
@@ -92,6 +108,7 @@ void GeneratePerspectiveFrustum( const Vector& origin, const Vector &forward, co
 // bool R_CullBoxSkipNear( const Vector& mins, const Vector& maxs, const Frustum_t &frustum );
 void GenerateOrthoFrustum( const Vector &origin, const Vector &forward, const Vector &right, const Vector &up, float flLeft, float flRight, float flBottom, float flTop, float flZNear, float flZFar, VPlane *pPlanesOut );
 
+class CTransform;
 class matrix3x4a_t;
 
 struct matrix3x4_t
@@ -105,6 +122,14 @@ struct matrix3x4_t
 		m_flMatVal[0][0] = m00;	m_flMatVal[0][1] = m01; m_flMatVal[0][2] = m02; m_flMatVal[0][3] = m03;
 		m_flMatVal[1][0] = m10;	m_flMatVal[1][1] = m11; m_flMatVal[1][2] = m12; m_flMatVal[1][3] = m13;
 		m_flMatVal[2][0] = m20;	m_flMatVal[2][1] = m21; m_flMatVal[2][2] = m22; m_flMatVal[2][3] = m23;
+	}
+
+	/// Creates a matrix where the X axis = forward the Y axis = left, and the Z axis = up
+	void InitXYZ( const Vector& xAxis, const Vector& yAxis, const Vector& zAxis, const Vector &vecOrigin )
+	{
+		m_flMatVal[ 0 ][ 0 ] = xAxis.x; m_flMatVal[ 0 ][ 1 ] = yAxis.x; m_flMatVal[ 0 ][ 2 ] = zAxis.x; m_flMatVal[ 0 ][ 3 ] = vecOrigin.x;
+		m_flMatVal[ 1 ][ 0 ] = xAxis.y; m_flMatVal[ 1 ][ 1 ] = yAxis.y; m_flMatVal[ 1 ][ 2 ] = zAxis.y; m_flMatVal[ 1 ][ 3 ] = vecOrigin.y;
+		m_flMatVal[ 2 ][ 0 ] = xAxis.z; m_flMatVal[ 2 ][ 1 ] = yAxis.z; m_flMatVal[ 2 ][ 2 ] = zAxis.z; m_flMatVal[ 2 ][ 3 ] = vecOrigin.z;
 	}
 
 	//-----------------------------------------------------------------------------
@@ -127,11 +152,39 @@ struct matrix3x4_t
 		Init( xAxis, yAxis, zAxis, vecOrigin );
 	}
 
+	inline void InitFromQAngles( const QAngle &angles, const Vector &vPosition );
+	inline void InitFromQAngles( const QAngle &angles );
+	inline void InitFromRadianEuler( const RadianEuler &angles, const Vector &vPosition );
+	inline void InitFromRadianEuler( const RadianEuler &angles );
+	inline void InitFromCTransform( const CTransform &transform );
+	inline void InitFromQuaternion( const Quaternion &orientation, const Vector &vPosition );
+	inline void InitFromQuaternion( const Quaternion &orientation );
+	inline void InitFromDiagonal( const Vector &vDiagonal );
+
+	inline Quaternion ToQuaternion() const;
+	inline QAngle ToQAngle() const;
+	inline CTransform ToCTransform() const;
+
+	inline void SetToIdentity();
+
+	/// multiply the scale/rot part of the matrix by a constant. This doesn't init the matrix ,
+	/// just scale in place. So if you want to construct a scaling matrix, init to identity and
+	/// then call this.
+	FORCEINLINE void ScaleUpper3x3Matrix( float flScale );
+
+	/// modify the origin
 	inline void SetOrigin( Vector const & p )
 	{
 		m_flMatVal[0][3] = p.x;
 		m_flMatVal[1][3] = p.y;
 		m_flMatVal[2][3] = p.z;
+	}
+
+	/// return the origin
+	inline Vector GetOrigin( void ) const
+	{
+		Vector vecRet( m_flMatVal[ 0 ][ 3 ], m_flMatVal[ 1 ][ 3 ], m_flMatVal[ 2 ][ 3 ] );
+		return vecRet;
 	}
 
 	inline void Invalidate( void )
@@ -144,6 +197,60 @@ struct matrix3x4_t
 			}
 		}
 	}
+
+		/// check all components for invalid floating point values
+	inline bool IsValid( void ) const
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				if ( !IsFinite( m_flMatVal[i][j] ) )
+					return false;
+			}
+		}
+		return true;
+	}
+
+	bool operator==( const matrix3x4_t &other ) const
+	{
+		return memcmp( this, &other, sizeof(matrix3x4_t) ) == 0;
+	}
+
+	bool operator!=( const matrix3x4_t &other ) const
+	{
+		return memcmp( this, &other, sizeof(matrix3x4_t) ) != 0;
+	}
+
+	inline bool IsEqualTo( const matrix3x4_t &other, float flTolerance = 1e-5f ) const;
+
+	inline void GetBasisVectorsFLU( Vector *pForward, Vector *pLeft, Vector *pUp ) const;
+	inline Vector TransformVector( const Vector &v0 ) const;
+	inline Vector RotateVector( const Vector &v0 ) const;
+	inline Vector TransformVectorByInverse( const Vector &v0 ) const;
+	inline Vector RotateVectorByInverse( const Vector &v0 ) const;
+	inline Vector RotateExtents( const Vector &vBoxExtents ) const; // these are extents and must remain positive/symmetric after rotation
+	inline void TransformAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+	inline void TransformAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+	inline void RotateAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+	inline void RotateAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+	inline void TransformPlane( const cplane_t &inPlane, cplane_t &outPlane ) const;
+	inline void TransformPlaneByInverse( const cplane_t &inPlane, cplane_t &outPlane ) const;
+	inline float GetOrthogonalityError() const;
+	inline float GetDeterminant( )const;
+	inline float GetSylvestersCriterion()const; // for symmetrical matrices only: should be >0 iff it's a positive definite matrix
+
+	inline Vector GetColumn( MatrixAxisType_t nColumn ) const;
+	inline void SetColumn( const Vector &vColumn, MatrixAxisType_t nColumn );
+	inline Vector GetForward() const { return GetColumn( FORWARD_AXIS ); }
+	inline Vector GetLeft() const { return GetColumn( LEFT_AXIS ); }
+	inline Vector GetUp() const { return GetColumn( UP_AXIS ); }
+	inline Vector GetRow( int nRow ) const { return *(Vector *)(m_flMatVal[nRow]); }
+	inline void SetRow( int nRow, const Vector &vRow ) { m_flMatVal[nRow][0] = vRow.x; m_flMatVal[nRow][1] = vRow.y; m_flMatVal[nRow][2] = vRow.z; }
+
+	inline void InverseTR( matrix3x4_t &out ) const;
+	inline matrix3x4_t InverseTR() const;
+
 
 	float *operator[]( int i )				{ Assert(( i >= 0 ) && ( i < 3 )); return m_flMatVal[i]; }
 	const float *operator[]( int i ) const	{ Assert(( i >= 0 ) && ( i < 3 )); return m_flMatVal[i]; }
@@ -159,14 +266,50 @@ public:
 	/*
 	matrix3x4a_t() { if (((size_t)Base()) % 16 != 0) { Error( "matrix3x4a_t missaligned" ); } }
 	*/
+	matrix3x4a_t( const matrix3x4_t& src ) { *this = src; };
 	matrix3x4a_t& operator=( const matrix3x4_t& src ) { memcpy( Base(), src.Base(), sizeof( float ) * 3 * 4 ); return *this; };
-};
+
+	matrix3x4a_t(
+		float m00, float m01, float m02, float m03,
+		float m10, float m11, float m12, float m13,
+		float m20, float m21, float m22, float m23 )
+	{
+		AssertDbg( ( ( size_t )Base() & 0xf ) == 0 );
+		m_flMatVal[ 0 ][ 0 ] = m00;	m_flMatVal[ 0 ][ 1 ] = m01; m_flMatVal[ 0 ][ 2 ] = m02; m_flMatVal[ 0 ][ 3 ] = m03;
+		m_flMatVal[ 1 ][ 0 ] = m10;	m_flMatVal[ 1 ][ 1 ] = m11; m_flMatVal[ 1 ][ 2 ] = m12; m_flMatVal[ 1 ][ 3 ] = m13;
+		m_flMatVal[ 2 ][ 0 ] = m20;	m_flMatVal[ 2 ][ 1 ] = m21; m_flMatVal[ 2 ][ 2 ] = m22; m_flMatVal[ 2 ][ 3 ] = m23;
+	}
+	matrix3x4a_t(){}
+
+	static FORCEINLINE bool TypeIsAlignedForSIMD( void ) { return true; }
+
+
+	// raw data simd accessor
+	FORCEINLINE fltx4 &SIMDRow( uint nIdx ) { AssertDbg( nIdx < 3 ); return *( ( fltx4 * )( &( m_flMatVal[ nIdx ] ) ) ); }
+	FORCEINLINE const fltx4 &SIMDRow( uint nIdx ) const { AssertDbg( nIdx < 3 ); return *( ( const fltx4 * )( &( m_flMatVal[ nIdx ] ) ) ); }
+
+} ALIGN16_POST;
+
+
+FORCEINLINE void matrix3x4_t::ScaleUpper3x3Matrix( float flScale )
+{
+	for ( int i = 0; i < 3; i++ )
+	{
+		for ( int j = 0; j < 3; j++ )
+		{
+			m_flMatVal[ i ][ j ] *= flScale;
+		}
+	}
+}
+
 
 #ifndef M_PI
 	#define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
 #endif
 
-#define M_PI_F		((float)(M_PI))	// Shouldn't collide with anything.
+#ifndef M_PI_F
+	#define M_PI_F		((float)(M_PI))
+#endif
 
 // NJS: Inlined to prevent floats from being autopromoted to doubles, as with the old system.
 #ifndef RAD2DEG
@@ -183,11 +326,21 @@ public:
 #define	SIDE_ON		2
 #define SIDE_CROSS  -2      // necessary for polylib.c
 
+// Use different side values (1, 2, 4) instead of (0, 1, 2) so we can '|' and '&' them, and quickly determine overall clipping
+// without having to maintain counters and read / write memory.
+enum Sides
+{
+	OR_SIDE_FRONT	=	1,
+	OR_SIDE_BACK	=	2,
+	OR_SIDE_ON		=	4,
+};
+
 #define ON_VIS_EPSILON  0.01    // necessary for vvis (flow.c) -- again look into moving later!
 #define	EQUAL_EPSILON	0.001   // necessary for vbsp (faces.c) -- should look into moving it there?
 
 extern bool s_bMathlibInitialized;
 
+extern const matrix3x4a_t g_MatrixIdentity;
 extern  const Vector vec3_origin;
 extern  const QAngle vec3_angle;
 extern	const Quaternion quat_identity;
@@ -302,6 +455,21 @@ inline float VectorLength(const float *v)
 
 void CrossProduct (const float *v1, const float *v2, float *cross);
 
+inline float CrossProductX( const Vector & v1, const Vector& v2 )
+{
+	return v1.y * v2.z - v1.z * v2.y;
+}
+
+inline float CrossProductY( const Vector & v1, const Vector& v2 )
+{
+	return v1.z * v2.x - v1.x * v2.z;
+}
+
+inline float CrossProductZ( const Vector & v1, const Vector& v2 )
+{
+	return v1.x * v2.y - v1.y * v2.x;
+}
+
 qboolean VectorsEqual( const float *v1, const float *v2 );
 
 inline vec_t RoundInt (vec_t in)
@@ -312,10 +480,46 @@ inline vec_t RoundInt (vec_t in)
 size_t Q_log2( unsigned int val );
 
 // Math routines done in optimized assembly math package routines
-void inline SinCos( float radians, float *sine, float *cosine )
+void inline SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosine )
 {
 #if defined( _X360 )
 	XMScalarSinCos( sine, cosine, radians );
+#elif defined( _PS3 )
+#if ( __GNUC__ == 4 ) && ( __GNUC_MINOR__ == 1 ) && ( __GNUC_PATCHLEVEL__ == 1 )
+	vector_float_union s;
+	vector_float_union c;
+
+	vec_float4 rad = vec_splats( radians );
+	vec_float4 sin;
+	vec_float4 cos;
+
+	sincosf4( rad, &sin, &cos );
+
+	vec_st( sin, 0, s.f );
+	vec_st( cos, 0, c.f );
+
+	*sine   = s.f[0];
+	*cosine = c.f[0];
+#else //__GNUC__ == 4 && __GNUC_MINOR__ == 1 && __GNUC_PATCHLEVEL__ == 1
+	vector_float_union r;
+	vector_float_union s;
+	vector_float_union c;
+
+	vec_float4 rad;
+	vec_float4 sin;
+	vec_float4 cos;
+
+	r.f[0] = radians;
+	rad = vec_ld( 0, r.f );
+
+	sincosf4( rad, &sin, &cos );
+
+	vec_st( sin, 0, s.f );
+	vec_st( cos, 0, c.f );
+
+	*sine   = s.f[0];
+	*cosine = c.f[0];
+#endif //__GNUC__ == 4 && __GNUC_MINOR__ == 1 && __GNUC_PATCHLEVEL__ == 1
 #elif defined( COMPILER_MSVC32 )
 	_asm
 	{
@@ -346,6 +550,10 @@ extern float SinCosTable[SIN_TABLE_SIZE];
 
 inline float TableCos( float theta )
 {
+#if defined( LINUX )
+	return cos(theta); // under the GCC compiler the float-represented-as-an-int causes an internal compiler error
+#else
+
 	union
 	{
 		int i;
@@ -355,10 +563,14 @@ inline float TableCos( float theta )
 	// ideally, the following should compile down to: theta * constant + constant, changing any of these constants from defines sometimes fubars this.
 	ftmp.f = theta * ( float )( SIN_TABLE_SIZE / ( 2.0f * M_PI ) ) + ( FTOIBIAS + ( SIN_TABLE_SIZE / 4 ) );
 	return SinCosTable[ ftmp.i & ( SIN_TABLE_SIZE - 1 ) ];
+#endif
 }
 
 inline float TableSin( float theta )
 {
+#if defined( LINUX )
+	return sin(theta); // under the GCC compiler the float-represented-as-an-int causes an internal compiler error
+#else
 	union
 	{
 		int i;
@@ -368,6 +580,7 @@ inline float TableSin( float theta )
 	// ideally, the following should compile down to: theta * constant + constant
 	ftmp.f = theta * ( float )( SIN_TABLE_SIZE / ( 2.0f * M_PI ) ) + FTOIBIAS;
 	return SinCosTable[ ftmp.i & ( SIN_TABLE_SIZE - 1 ) ];
+#endif
 }
 
 template<class T>
@@ -376,6 +589,10 @@ FORCEINLINE T Square( T const &a )
 	return a * a;
 }
 
+FORCEINLINE bool IsPowerOfTwo( uint x )
+{
+	return ( x & ( x - 1 ) ) == 0;
+}
 
 // return the smallest power of two >= x.
 // returns 0 if x == 0 or x > 0x80000000 (ie numbers that would be negative if x was signed)
@@ -417,6 +634,7 @@ enum
 	ROLL		// fall over
 };
 
+void MatrixVectorsFLU( const matrix3x4_t &matrix, Vector* pForward, Vector *pLeft, Vector *pUp );
 void MatrixAngles( const matrix3x4_t & matrix, float *angles ); // !!!!
 void MatrixVectors( const matrix3x4_t &matrix, Vector* pForward, Vector *pRight, Vector *pUp );
 void VectorTransform (const float *in1, const matrix3x4_t & in2, float *out);
@@ -425,6 +643,14 @@ void VectorRotate( const float *in1, const matrix3x4_t & in2, float *out);
 void VectorRotate( const Vector &in1, const QAngle &in2, Vector &out );
 void VectorRotate( const Vector &in1, const Quaternion &in2, Vector &out );
 void VectorIRotate( const float *in1, const matrix3x4_t & in2, float *out);
+
+inline const Vector VectorRotate( const Vector &vIn1, const Quaternion &qIn2 )
+{
+	Vector out;
+	VectorRotate( vIn1, qIn2, out );
+	return out;
+}
+
 
 #ifndef VECTOR_NO_SLOW_OPERATIONS
 
@@ -455,6 +681,10 @@ inline void MatrixMultiply ( const matrix3x4_t &in1, const matrix3x4_t &in2, mat
 	ConcatTransforms( in1, in2, out );
 }
 
+void QuaternionExp( const Quaternion &p, Quaternion &q );
+void QuaternionLn( const Quaternion &p, Quaternion &q );
+void QuaternionAverageExponential( Quaternion &q, int nCount, const Quaternion *pQuaternions, const float *pflWeights = NULL );
+void QuaternionLookAt( const Vector &vecForward, const Vector &referenceUp, Quaternion &q );
 void QuaternionSlerp( const Quaternion &p, const Quaternion &q, float t, Quaternion &qt );
 void QuaternionSlerpNoAlign( const Quaternion &p, const Quaternion &q, float t, Quaternion &qt );
 void QuaternionBlend( const Quaternion &p, const Quaternion &q, float t, Quaternion &qt );
@@ -467,22 +697,240 @@ float QuaternionDotProduct( const Quaternion &p, const Quaternion &q );
 void QuaternionConjugate( const Quaternion &p, Quaternion &q );
 void QuaternionInvert( const Quaternion &p, Quaternion &q );
 float QuaternionNormalize( Quaternion &q );
+void QuaternionMultiply( const Quaternion &q, const Vector &v, Vector &result );
 void QuaternionAdd( const Quaternion &p, const Quaternion &q, Quaternion &qt );
 void QuaternionMult( const Quaternion &p, const Quaternion &q, Quaternion &qt );
-void QuaternionExp( const Quaternion &p, Quaternion &q );
-void QuaternionLn( const Quaternion &p, Quaternion &q );
-void QuaternionAverageExponential( Quaternion &q, int nCount, const Quaternion *pQuaternions, const float *pflWeights = NULL );
-void QuaternionLookAt( const Vector &vecForward, const Vector &referenceUp, Quaternion &q );
 void QuaternionMatrix( const Quaternion &q, matrix3x4_t &matrix );
 void QuaternionMatrix( const Quaternion &q, const Vector &pos, matrix3x4_t &matrix );
+void QuaternionMatrix( const Quaternion &q, const Vector &pos, const Vector &vScale, matrix3x4_t& mat );
 void QuaternionAngles( const Quaternion &q, QAngle &angles );
 void AngleQuaternion( const QAngle& angles, Quaternion &qt );
 void QuaternionAngles( const Quaternion &q, RadianEuler &angles );
+void QuaternionVectorsFLU( Quaternion const &q, Vector *pForward, Vector *pLeft, Vector *pUp );
+void QuaternionVectorsForward( const Quaternion& q, Vector *pForward );
 void AngleQuaternion( RadianEuler const &angles, Quaternion &qt );
 void QuaternionAxisAngle( const Quaternion &q, Vector &axis, float &angle );
 void AxisAngleQuaternion( const Vector &axis, float angle, Quaternion &q );
 void BasisToQuaternion( const Vector &vecForward, const Vector &vecRight, const Vector &vecUp, Quaternion &q );
 void MatrixQuaternion( const matrix3x4_t &mat, Quaternion &q );
+
+
+void MatrixQuaternionFast( const matrix3x4_t &mat, Quaternion &q );
+void MatrixPosition( const matrix3x4_t &matrix, Vector &position );
+Vector MatrixNormalize( const matrix3x4_t &in, matrix3x4_t &out );
+
+inline void MatrixQuaternion( const matrix3x4_t &mat, Quaternion &q, Vector &o )
+{
+	MatrixQuaternion( mat, q );
+	MatrixPosition( mat, o );
+}
+
+
+
+float MatrixQuaternionTest( uint );
+float MatrixQuaternionTest2( uint );
+
+/// qt = p + s * q
+void QuaternionAccumulate( const Quaternion &p, float s, const Quaternion &q, Quaternion &qt );
+
+/// qt = ( s * p ) * q
+void QuaternionSM( float s, const Quaternion &p, const Quaternion &q, Quaternion &qt );
+
+/// qt = p * ( s * q )
+void QuaternionMA( const Quaternion &p, float s, const Quaternion &q, Quaternion &qt );
+
+/*
+//-----------------------------------------------------------------------------
+// Quaternion equality with tolerance
+//-----------------------------------------------------------------------------
+inline bool QuaternionsAreEqualInternal( const Quaternion& src1, const Quaternion& src2, float flTolerance )
+{
+	if ( !FloatsAreEqual( src1.x, src2.x, flTolerance ) )
+		return false;
+
+	if ( !FloatsAreEqual( src1.y, src2.y, flTolerance ) )
+		return false;
+
+	if ( !FloatsAreEqual( src1.z, src2.z, flTolerance ) )
+		return false;
+
+	return FloatsAreEqual( src1.w, src2.w, flTolerance );
+}
+
+inline bool QuaternionsAreEqual( const Quaternion& src1, const Quaternion& src2, float flTolerance )
+{
+	if ( QuaternionsAreEqualInternal( src1, src2, flTolerance ) )
+		return true;
+
+	// negated quaternions are also 'equal'
+	Quaternion src2neg( -src2.x, -src2.y, -src2.z, -src2.w );
+	return QuaternionsAreEqualInternal( src1, src2neg, flTolerance );
+}
+*/
+inline const Quaternion GetNormalized( const Quaternion & q )
+{
+	float flInv = 1.0f / sqrtf( q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w );
+	return Quaternion( q.x * flInv, q.y * flInv, q.z * flInv, q.w * flInv );
+}
+
+inline const Quaternion AngleQuaternion( const QAngle& angles )
+{
+	Quaternion qt;
+	AngleQuaternion( angles, qt );
+	return qt;
+}
+
+
+inline const Quaternion AngleQuaternion( RadianEuler const &angles )
+{
+	Quaternion qt;
+	AngleQuaternion( angles, qt );
+	return qt;
+}
+
+
+
+inline Quaternion QuaternionFromPitchYawRoll( float flPitch, float flYaw, float flRoll )
+{
+	QAngle ang( flPitch, flYaw, flRoll );
+
+	Quaternion q;
+	AngleQuaternion( ang, q );
+	return q;
+}
+
+inline Quaternion QuaternionAddPitch( const Quaternion &q, float flPitch )
+{
+	// FIXME: I know this can be made *tons* faster, but I just want to get something working quickly
+	// that matches being able to add to the pitch of a QAngles so I can expose Quats to script/game code
+	QAngle ang;
+	QuaternionAngles( q, ang );
+	ang[ PITCH ] += flPitch;
+
+	Quaternion res;
+	AngleQuaternion( ang, res );
+	return res;
+}
+
+inline Quaternion QuaternionAddYaw( const Quaternion &q, float flYaw )
+{
+	// FIXME: I know this can be made *tons* faster, but I just want to get something working quickly
+	// that matches being able to add to the yaw of a QAngles so I can expose Quats to script/game code
+	QAngle ang;
+	QuaternionAngles( q, ang );
+	ang[ YAW ] += flYaw;
+
+	Quaternion res;
+	AngleQuaternion( ang, res );
+	return res;
+}
+
+inline Quaternion QuaternionAddRoll( const Quaternion &q, float flRoll )
+{
+	// FIXME: I know this can be made *tons* faster, but I just want to get something working quickly
+	// that matches being able to add to the roll of a QAngles so I can expose Quats to script/game code
+	QAngle ang;
+	QuaternionAngles( q, ang );
+	ang[ ROLL ] += flRoll;
+
+	Quaternion res;
+	AngleQuaternion( ang, res );
+	return res;
+}
+
+inline const Quaternion MatrixQuaternion( const matrix3x4_t &mat )
+{
+	Quaternion tmp;
+	MatrixQuaternion( mat, tmp );
+	return tmp;
+}
+
+inline const Quaternion MatrixQuaternionFast( const matrix3x4_t &mat )
+{
+	Quaternion tmp;
+	MatrixQuaternionFast( mat, tmp );
+	return tmp;
+}
+
+inline const matrix3x4_t QuaternionMatrix( const Quaternion &q )
+{
+	matrix3x4_t mat;
+	QuaternionMatrix( q, mat );
+	return mat;
+}
+
+inline const matrix3x4_t QuaternionMatrix( const Quaternion &q, const Vector &pos )
+{
+	matrix3x4_t mat;
+	QuaternionMatrix( q, pos, mat );
+	return mat;
+}
+
+//! Shortest-arc quaternion that rotates vector v1 into vector v2
+const Quaternion RotateBetween( const Vector& v1, const Vector& v2 );
+
+inline const Quaternion QuaternionConjugate( const Quaternion &p )
+{
+	Quaternion q;
+	QuaternionConjugate( p, q );
+	return q;
+}
+
+inline const Quaternion QuaternionInvert( const Quaternion &p )
+{
+	Quaternion q;
+	QuaternionInvert( p, q );
+	return q;
+}
+
+
+
+
+
+/// Actual quaternion multiplication; NOTE: QuaternionMult aligns quaternions first, so that q *
+/// conjugate(q) may be -1 instead of 1!
+inline const Quaternion operator * ( const Quaternion &p, const Quaternion &q )
+{
+	Quaternion qt;
+	qt.x = p.x * q.w + p.y * q.z - p.z * q.y + p.w * q.x;
+	qt.y = -p.x * q.z + p.y * q.w + p.z * q.x + p.w * q.y;
+	qt.z = p.x * q.y - p.y * q.x + p.z * q.w + p.w * q.z;
+	qt.w = -p.x * q.x - p.y * q.y - p.z * q.z + p.w * q.w;
+	return qt;
+}
+
+inline Quaternion& operator *= ( Quaternion &p, const Quaternion &q )
+{
+	QuaternionMult( p, q, p );
+	return p;
+}
+
+inline const matrix3x4_t ConcatTransforms( const matrix3x4_t &in1, const matrix3x4_t &in2 )
+{
+	matrix3x4_t out;
+	ConcatTransforms( in1, in2, out );
+	return out;
+}
+
+inline const matrix3x4_t operator *( const matrix3x4_t &in1, const matrix3x4_t &in2 )
+{
+	matrix3x4_t out;
+	ConcatTransforms( in1, in2, out );
+	return out;
+}
+
+
+inline const matrix3x4_t MatrixInvert( const matrix3x4_t &in )
+{
+	matrix3x4_t out;
+	::MatrixInvert( in, out );
+	return out;
+}
+
+inline const Vector MatrixGetColumn( const matrix3x4_t &in, MatrixAxisType_t nColumn )
+{
+	return in.GetColumn( nColumn );
+}
 
 // A couple methods to find the dot product of a vector with a matrix row or column...
 inline float MatrixRowDotProduct( const matrix3x4_t &in1, int row, const Vector& in2 )
@@ -504,6 +952,75 @@ inline float anglemod(float a)
 	a = (360.f/65536) * ((int)(a*(65536.f/360.0f)) & 65535);
 	return a;
 }
+
+//// CLAMP
+#if defined(__cplusplus) && defined(PLATFORM_PPC)
+
+#ifdef _X360
+#define __fsels __fsel
+#endif
+
+template< >
+inline double clamp( double const &val, double const &minVal, double const &maxVal )
+{
+	float diffmin = val - minVal;
+	float diffmax = maxVal - val;
+	float r;
+	r = __fsel(diffmin, val, minVal);
+	r = __fsel(diffmax, r, maxVal);
+	return r;
+}
+
+template< >
+inline double clamp( double const &val, float const &minVal, float const &maxVal )
+{
+	// these typecasts are actually free since all FPU regs are 64 bit on PPC anyway
+	return clamp ( val, (double) minVal, (double) maxVal );
+}
+template< >
+inline double clamp( double const &val, float const &minVal, double const &maxVal )
+{
+	return clamp ( val, (double) minVal, (double) maxVal );
+}
+template< >
+inline double clamp( double const &val, double const &minVal, float const &maxVal )
+{
+	return clamp ( val, (double) minVal, (double) maxVal );
+}
+
+template< >
+inline float clamp( float const &val, float const &minVal, float const &maxVal )
+{
+	float diffmin = val - minVal;
+	float diffmax = maxVal - val;
+	float r;
+	r = __fsels(diffmin, val, minVal);
+	r = __fsels(diffmax, r, maxVal);
+	return r;
+}
+
+template< >
+inline float clamp( float const &val, double const &minVal, double const &maxVal )
+{
+	float diffmin = val - minVal;
+	float diffmax = maxVal - val;
+	float r;
+	r = __fsels(diffmin, val, minVal);
+	r = __fsels(diffmax, r, maxVal);
+	return r;
+}
+template< >
+inline float clamp( float const &val, double const &minVal, float const &maxVal )
+{
+	return clamp ( val, (float) minVal, maxVal );
+}
+template< >
+inline float clamp( float const &val, float const &minVal, double const &maxVal )
+{
+	return clamp ( val, minVal, (float) maxVal );
+}
+
+#endif
 
 // Remap a value in the range [A,B] to [C,D].
 inline float RemapVal( float val, float A, float B, float C, float D)
@@ -629,10 +1146,8 @@ template <class T> FORCEINLINE T AVG(T a, T b)
 // XYZ macro, for printf type functions - ex printf("%f %f %f",XYZ(myvector));
 #define XYZ(v) (v).x,(v).y,(v).z
 
-//
-// Returns a clamped value in the range [min, max].
-//
-#define clamp(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
+
+
 
 inline float Sign( float x )
 {
@@ -702,6 +1217,7 @@ int InsideOut( int nTotal, int nCounter );
 void AngleVectors (const QAngle& angles, Vector *forward);
 void AngleVectors (const QAngle& angles, Vector *forward, Vector *right, Vector *up);
 void AngleVectorsTranspose (const QAngle& angles, Vector *forward, Vector *right, Vector *up);
+void AngleVectorsFLU( const QAngle& angles, Vector *pForward, Vector *pLeft, Vector *pUp );
 void AngleMatrix (const QAngle &angles, matrix3x4_t &mat );
 void AngleMatrix( const QAngle &angles, const Vector &position, matrix3x4_t &mat );
 void AngleMatrix (const RadianEuler &angles, matrix3x4_t &mat );
@@ -716,6 +1232,15 @@ void VectorVectors( const Vector &forward, Vector &right, Vector &up );
 void SetIdentityMatrix( matrix3x4_t &mat );
 void SetScaleMatrix( float x, float y, float z, matrix3x4_t &dst );
 void MatrixBuildRotationAboutAxis( const Vector &vAxisOfRot, float angleDegrees, matrix3x4_t &dst );
+
+inline bool MatrixIsIdentity( const matrix3x4_t &m )
+{
+	return 
+		m.m_flMatVal[0][0] == 1.0f && m.m_flMatVal[0][1] == 0.0f && m.m_flMatVal[0][2] == 0.0f && m.m_flMatVal[0][3] == 0.0f &&
+		m.m_flMatVal[1][0] == 0.0f && m.m_flMatVal[1][1] == 1.0f && m.m_flMatVal[1][2] == 0.0f && m.m_flMatVal[1][3] == 0.0f &&
+		m.m_flMatVal[2][0] == 0.0f && m.m_flMatVal[2][1] == 0.0f && m.m_flMatVal[2][2] == 1.0f && m.m_flMatVal[2][3] == 0.0f;
+}
+
 
 inline void SetScaleMatrix( float flScale, matrix3x4_t &dst )
 {
@@ -786,9 +1311,34 @@ inline void VectorTransform (const Vector& in1, const matrix3x4_t &in2, Vector &
 	VectorTransform( &in1.x, in2, &out.x );
 }
 
+// MSVC folds the return value nicely and creates no temporaries on the stack,
+//    we need more experiments with different compilers and in different circumstances
+inline const Vector VectorTransform( const Vector& in1, const matrix3x4_t &in2 )
+{
+	Vector out;
+	VectorTransform( in1, in2, out );
+	return out;
+}
+
+inline const Vector VectorRotate( const Vector& in1, const matrix3x4_t &in2 )
+{
+	Vector out;
+	VectorRotate( in1, in2, out );
+	return out;
+}
+
+
+
 inline void VectorITransform (const Vector& in1, const matrix3x4_t &in2, Vector &out)
 {
 	VectorITransform( &in1.x, in2, &out.x );
+}
+
+inline const Vector VectorITransform( const Vector& in1, const matrix3x4_t &in2 )
+{
+	Vector out;
+	VectorITransform( in1, in2, out );
+	return out;
 }
 
 /*
@@ -900,7 +1450,9 @@ void BuildGammaTable( float gamma, float texGamma, float brightness, int overbri
 // convert texture to linear 0..1 value
 inline float TexLightToLinear( int c, int exponent )
 {
-	extern float power2_n[256]; 
+	// On VS 2013 LTCG builds it is required that the array declaration be annotated with
+	// the same alignment requirements as the array definition.
+	extern ALIGN128 float power2_n[256]; 
 	Assert( exponent >= -128 && exponent <= 127 );
 	return ( float )c * power2_n[exponent+128];
 }
@@ -1098,6 +1650,7 @@ inline float SimpleSplineRemapValClamped( float val, float A, float B, float C, 
 	return C + (D - C) * SimpleSpline( cVal );
 }
 
+
 FORCEINLINE int RoundFloatToInt(float f)
 {
 #if defined( _X360 )
@@ -1111,6 +1664,14 @@ FORCEINLINE int RoundFloatToInt(float f)
 	};
 	flResult = __fctiw( f );
 	return pResult[1];
+#elif defined ( _PS3 )
+#if defined(__SPU__)
+	int nResult;
+	nResult = static_cast<int>(f);
+	return nResult;
+#else
+	return  __fctiw( f );
+#endif
 #else // !X360
 	int nResult;
 #if defined( COMPILER_MSVC32 )
@@ -1148,6 +1709,14 @@ FORCEINLINE unsigned char RoundFloatToByte(float f)
 #endif
 	return pResult[7];
 
+#elif defined ( _PS3 )
+#if defined(__SPU__)
+	int nResult;
+	nResult = static_cast<unsigned int> (f) & 0xff;
+	return nResult;
+#else
+	return __fctiw( f );
+#endif
 #else // !X360
 	
 	int nResult;
@@ -1189,6 +1758,12 @@ FORCEINLINE unsigned long RoundFloatToUnsignedLong(float f)
 	flResult = __fctiw( f );
 	Assert( pIntResult[1] >= 0 );
 	return pResult[1];
+#elif defined ( _PS3 )
+#if defined(__SPU__)
+	return static_cast<unsigned long>(f);
+#else
+	return __fctiw( f );
+#endif
 #else  // !X360
 	
 #if defined( COMPILER_MSVC32 )
@@ -1228,6 +1803,14 @@ FORCEINLINE int Float2Int( float a )
 	};
 	flResult = __fctiwz( a );
 	return pResult[1];
+#elif defined ( _PS3 )
+#if defined(__SPU__)
+	int RetVal;
+	RetVal = static_cast<int>( a );
+	return RetVal;
+#else
+	return __fctiwz( a );
+#endif
 #else  // !X360
 	
 	int RetVal;
@@ -1255,12 +1838,14 @@ FORCEINLINE int Float2Int( float a )
 #endif
 }
 
+
+
 // Over 15x faster than: (int)floor(value)
 inline int Floor2Int( float a )
 {
    int RetVal;
 
-#if defined( _X360 )
+#if defined( PLATFORM_PPC )
 	RetVal = (int)floor( a );
 #elif defined( COMPILER_MSVC32 )
    int CtrlwdHolder;
@@ -1295,7 +1880,7 @@ FORCEINLINE unsigned char FastFToC( float c )
 	dc = c * 255.0f + (float)(1 << 23);
 	
 	// return the lsb
-#if defined( _X360 )
+#if defined( _X360 ) || defined( _PS3 )
 	return ((unsigned char*)&dc)[3];
 #else
 	return *(unsigned char*)&dc;
@@ -1318,7 +1903,7 @@ inline int Ceil2Int( float a )
 {
    int RetVal;
 
-#if defined( _X360 )
+#if defined( PLATFORM_PPC )
 	RetVal = (int)ceil( a );
 #elif defined( COMPILER_MSVC32 )
    int CtrlwdHolder;
@@ -1688,7 +2273,7 @@ float CubicBasis3( float t );
 
 // quintic interpolating polynomial from Perlin.
 // 0->0, 1->1, smooth-in between with smooth tangents
-FORCEINLINE float QuinticInterpolatingPolynomial(float t)
+inline float QuinticInterpolatingPolynomial(float t)
 {
 	// 6t^5-15t^4+10t^3
 	return t * t * t *( t * ( t* 6.0 - 15.0 ) + 10.0 );
@@ -1780,11 +2365,20 @@ void RotationDelta( const QAngle &srcAngles, const QAngle &destAngles, QAngle *o
 void ClipLineSegmentToPlane( const Vector &vNormal, const Vector &vPlanePoint, Vector *p1, Vector *p2, float flBias = 0.0f );
 
 void ComputeTrianglePlane( const Vector& v1, const Vector& v2, const Vector& v3, Vector& normal, float& intercept );
-int PolyFromPlane( Vector *outVerts, const Vector& normal, float dist, float fHalfScale = 9000.0f );
+int PolyFromPlane( Vector *pOutVerts, const Vector& normal, float dist, float fHalfScale = 9000.0f );
+void PolyFromPlane_SIMD( fltx4 *pOutVerts, const fltx4 & plane, float fHalfScale = 9000.0f );
 int ClipPolyToPlane( Vector *inVerts, int vertCount, Vector *outVerts, const Vector& normal, float dist, float fOnPlaneEpsilon = 0.1f );
+int ClipPolyToPlane_SIMD( fltx4 *pInVerts, int vertCount, fltx4 *pOutVerts, const fltx4& plane, float fOnPlaneEpsilon = 0.1f );
 int ClipPolyToPlane_Precise( double *inVerts, int vertCount, double *outVerts, const double *normal, double dist, double fOnPlaneEpsilon = 0.1 );
 float TetrahedronVolume( const Vector &p0, const Vector &p1, const Vector &p2, const Vector &p3 );
 float TriangleArea( const Vector &p0, const Vector &p1, const Vector &p2 );
+
+/// return surface area of an AABB
+FORCEINLINE float BoxSurfaceArea( Vector const &vecBoxMin, Vector const &vecBoxMax )
+{
+	Vector boxdim = vecBoxMax - vecBoxMin;
+	return 2.0 * ( ( boxdim[0] * boxdim[2] ) + ( boxdim[0] * boxdim[1] ) + ( boxdim[1] * boxdim[2] ) );
+}
 
 //-----------------------------------------------------------------------------
 // Computes a reasonable tangent space for a triangle
@@ -1881,6 +2475,7 @@ FORCEINLINE float * UnpackNormal_HEND3N( const unsigned int *pPackedNormal, floa
 	return pNormal;
 }
 
+
 FORCEINLINE unsigned int * PackNormal_HEND3N( const float *pNormal, unsigned int *pPackedNormal )
 {
 	int temp[3];
@@ -1901,6 +2496,7 @@ FORCEINLINE unsigned int * PackNormal_HEND3N( const float *pNormal, unsigned int
 	return pPackedNormal;
 }
 
+
 FORCEINLINE unsigned int * PackNormal_HEND3N( float nx, float ny, float nz, unsigned int *pPackedNormal )
 {
 	int temp[3];
@@ -1920,6 +2516,8 @@ FORCEINLINE unsigned int * PackNormal_HEND3N( float nx, float ny, float nz, unsi
                      ( ( temp[0] & 0x7ff ) << 0L );
 	return pPackedNormal;
 }
+
+
 
 FORCEINLINE float * UnpackNormal_SHORT2( const unsigned int *pPackedNormal, float *pNormal, bool bIsTangent = FALSE )
 {
@@ -2177,11 +2775,18 @@ void HSVtoRGB( const Vector &hsv, Vector &rgb );
 //-----------------------------------------------------------------------------
 // Fast version of pow and log
 //-----------------------------------------------------------------------------
-
+#ifndef _PS3 // these actually aren't fast (or correct) on the PS3
 float FastLog2(float i);			// log2( i )
 float FastPow2(float i);			// 2^i
 float FastPow(float a, float b);	// a^b
 float FastPow10( float i );			// 10^i
+#else
+inline float FastLog2(float i) {return logbf(i);}			// log2( i )
+inline float FastPow2(float i) {return exp2f(i);}			// 2^i
+inline float FastPow(float a, float b) {return powf(a,b);}	// a^b
+#define LOGBASE2OF10 3.3219280948873623478703194294893901758648313930
+inline float FastPow10( float i ) { return exp2f( i * LOGBASE2OF10 ); }			// 10^i, transform to base two, so log2(10^y) = y log2(10) . log2(10) = 3.3219280948873623478703194294893901758648313930
+#endif
 
 //-----------------------------------------------------------------------------
 // For testing float equality
@@ -2215,11 +2820,26 @@ inline bool AlmostEqual( const Vector &a, const Vector &b, int maxUlps = 10)
 		AlmostEqual( a.z, b.z, maxUlps );
 }
 
+inline Vector Approach( Vector target, Vector value, float speed )
+{
+	Vector diff = (target - value);
+	float delta = diff.Length();
+
+	if ( delta > speed )
+		value += diff.Normalized() * speed;
+	else if ( delta < -speed )
+		value -= diff.Normalized() * speed;
+	else 
+		value = target;
+		
+	return value;
+}
+
 inline float Approach( float target, float value, float speed )
 {
 	float delta = target - value;
 
-#if defined(_X360) || defined( PS3 ) // use conditional move for speed on 360
+#if defined(_X360) || defined( _PS3 ) // use conditional move for speed on 360
 
 	return fsel( delta-speed,	// delta >= speed ?
 				 value + speed,	// if delta == speed, then value + speed == value + delta == target  
@@ -2241,6 +2861,273 @@ inline float Approach( float target, float value, float speed )
 
 #endif
 }
+
+
+// return a 0..1 value based on the position of x between edge0 and edge1
+inline float smoothstep_bounds(float edge0, float edge1, float x)
+{
+	x = clamp((x - edge0)/(edge1 - edge0),0,1);
+	return x*x*(3 - 2*x);
+}
+
+// return a value between edge0 and edge1 based on the 0..1 value of x
+inline float interpstep(float edge0, float edge1, float x)
+{
+	return edge0 + (x * ( edge1 - edge0 ));
+}
+
+// on PPC we can do this truncate without converting to int
+#if defined(_X360) || defined(_PS3)
+inline double TruncateFloatToIntAsFloat( double flVal )
+{
+#if defined(_X360)
+	double flIntFormat = __fctiwz( flVal );
+	return __fcfid( flIntFormat );
+#elif defined(_PS3)
+#if defined(__SPU__)
+	int iVal = int(flVal);
+	return static_cast<double>(iVal);
+#else
+	double flIntFormat = __builtin_fctiwz( flVal );
+	return __builtin_fcfid( flIntFormat );
+#endif
+#endif
+}
+#endif
+
+inline double SubtractIntegerPart( double flVal )
+{
+#if defined(_X360) || defined(_PS3)
+	return flVal - TruncateFloatToIntAsFloat(flVal);
+#else
+	return flVal - int(flVal);
+#endif
+}
+
+
+inline void matrix3x4_t::InitFromQAngles( const QAngle &angles, const Vector &vPosition )
+{
+	AngleMatrix( angles, vPosition, *this );
+}
+inline void matrix3x4_t::InitFromQAngles( const QAngle &angles ) { InitFromQAngles( angles, vec3_origin ); }
+
+inline void matrix3x4_t::InitFromRadianEuler( const RadianEuler &angles, const Vector &vPosition )
+{
+	AngleMatrix( angles, vPosition, *this );
+}
+
+inline void matrix3x4_t::InitFromRadianEuler( const RadianEuler &angles ) { InitFromRadianEuler( angles, vec3_origin ); }
+
+inline void matrix3x4_t::InitFromQuaternion( const Quaternion &orientation, const Vector &vPosition )
+{
+	QuaternionMatrix( orientation, vPosition, *this );
+}
+
+inline void matrix3x4_t::InitFromDiagonal( const Vector &vDiagonal )
+{
+	SetToIdentity();
+	m_flMatVal[ 0 ][ 0 ] = vDiagonal.x;
+	m_flMatVal[ 1 ][ 1 ] = vDiagonal.y;
+	m_flMatVal[ 2 ][ 2 ] = vDiagonal.z;
+}
+
+
+inline void matrix3x4_t::InitFromQuaternion( const Quaternion &orientation ) { InitFromQuaternion( orientation, vec3_origin ); }
+
+inline Quaternion matrix3x4_t::ToQuaternion() const
+{
+	return MatrixQuaternion( *this );
+}
+
+inline QAngle matrix3x4_t::ToQAngle() const
+{
+	QAngle tmp;
+	MatrixAngles( *this, tmp );
+	return tmp;
+}
+
+inline void matrix3x4_t::SetToIdentity()
+{
+	SetIdentityMatrix( *this );
+}
+
+inline bool matrix3x4_t::IsEqualTo( const matrix3x4_t &other, float flTolerance ) const
+{
+	return MatricesAreEqual( *this, other, flTolerance );
+}
+
+inline void matrix3x4_t::GetBasisVectorsFLU( Vector *pForward, Vector *pLeft, Vector *pUp ) const
+{
+	return MatrixVectorsFLU( *this, pForward, pLeft, pUp );
+}
+
+inline Vector matrix3x4_t::TransformVector( const Vector &v0 ) const
+{
+	return VectorTransform( v0, *this );
+}
+
+inline Vector matrix3x4_t::RotateVector( const Vector &v0 ) const
+{
+	return VectorRotate( v0, *this );
+}
+
+inline Vector matrix3x4_t::TransformVectorByInverse( const Vector &v0 ) const
+{
+	return VectorITransform( v0, *this );
+}
+
+inline Vector matrix3x4_t::RotateVectorByInverse( const Vector &v0 ) const
+{
+	Vector tmp;
+	VectorIRotate( v0, *this, tmp );
+	return tmp;
+}
+
+inline Vector matrix3x4_t::RotateExtents( const Vector &vBoxExtents ) const
+{
+	return Vector( DotProductAbs( vBoxExtents, m_flMatVal[ 0 ] ), DotProductAbs( vBoxExtents, m_flMatVal[ 1 ] ), DotProductAbs( vBoxExtents, m_flMatVal[ 2 ] ) );
+}
+
+inline Vector matrix3x4_t::GetColumn( MatrixAxisType_t nColumn ) const
+{
+	return Vector( m_flMatVal[ 0 ][ nColumn ], m_flMatVal[ 1 ][ nColumn ], m_flMatVal[ 2 ][ nColumn ] );
+}
+
+inline void matrix3x4_t::SetColumn( const Vector &vColumn, MatrixAxisType_t nColumn )
+{
+	m_flMatVal[ 0 ][ nColumn ] = vColumn.x;
+	m_flMatVal[ 1 ][ nColumn ] = vColumn.y;
+	m_flMatVal[ 2 ][ nColumn ] = vColumn.z;
+}
+
+inline void matrix3x4_t::InverseTR( matrix3x4_t &out ) const
+{
+	::MatrixInvert( *this, out );
+}
+
+inline matrix3x4_t matrix3x4_t::InverseTR() const
+{
+	matrix3x4_t out;
+	::MatrixInvert( *this, out );
+	return out;
+}
+
+inline void matrix3x4_t::TransformAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const
+{
+	::TransformAABB( *this, vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
+}
+
+inline void matrix3x4_t::TransformAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const
+{
+	::ITransformAABB( *this, vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
+}
+
+inline void matrix3x4_t::RotateAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const
+{
+	::RotateAABB( *this, vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
+}
+inline void matrix3x4_t::RotateAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const
+{
+	::IRotateAABB( *this, vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
+}
+
+inline void matrix3x4_t::TransformPlane( const cplane_t &inPlane, cplane_t &outPlane ) const
+{
+	::MatrixTransformPlane( *this, inPlane, outPlane );
+}
+inline void matrix3x4_t::TransformPlaneByInverse( const cplane_t &inPlane, cplane_t &outPlane ) const
+{
+	::MatrixITransformPlane( *this, inPlane, outPlane );
+}
+
+inline float matrix3x4_t::GetOrthogonalityError() const
+{
+	return
+		fabsf( m_flMatVal[ 0 ][ 0 ] * m_flMatVal[ 0 ][ 1 ] + m_flMatVal[ 1 ][ 0 ] * m_flMatVal[ 1 ][ 1 ] + m_flMatVal[ 2 ][ 0 ] * m_flMatVal[ 2 ][ 1 ] ) +
+		fabsf( m_flMatVal[ 0 ][ 1 ] * m_flMatVal[ 0 ][ 2 ] + m_flMatVal[ 1 ][ 1 ] * m_flMatVal[ 1 ][ 2 ] + m_flMatVal[ 2 ][ 1 ] * m_flMatVal[ 2 ][ 2 ] ) +
+		fabsf( m_flMatVal[ 0 ][ 2 ] * m_flMatVal[ 0 ][ 0 ] + m_flMatVal[ 1 ][ 2 ] * m_flMatVal[ 1 ][ 0 ] + m_flMatVal[ 2 ][ 2 ] * m_flMatVal[ 2 ][ 0 ] );
+}
+
+inline matrix3x4_t Quaternion::ToMatrix() const
+{
+	matrix3x4_t mat;
+	mat.InitFromQuaternion( *this );
+	return mat;
+}
+
+inline matrix3x4_t QAngle::ToMatrix() const
+{
+	matrix3x4_t mat;
+	AngleMatrix( *this, mat );
+	return mat;
+}
+
+inline Quaternion QAngle::ToQuaternion() const
+{
+	return AngleQuaternion( *this );
+}
+
+inline float matrix3x4_t::GetDeterminant() const
+{
+	return
+		m_flMatVal[ 0 ][ 0 ] * ( m_flMatVal[ 1 ][ 1 ] * m_flMatVal[ 2 ][ 2 ] - m_flMatVal[ 2 ][ 1 ] * m_flMatVal[ 1 ][ 2 ] )
+		- m_flMatVal[ 0 ][ 1 ] * ( m_flMatVal[ 1 ][ 0 ] * m_flMatVal[ 2 ][ 2 ] - m_flMatVal[ 1 ][ 2 ] * m_flMatVal[ 2 ][ 0 ] )
+		+ m_flMatVal[ 0 ][ 2 ] * ( m_flMatVal[ 1 ][ 0 ] * m_flMatVal[ 2 ][ 1 ] - m_flMatVal[ 1 ][ 1 ] * m_flMatVal[ 2 ][ 0 ] );
+}
+
+inline float GetRelativeDifferenceSqr( const Vector &a, const Vector &b )
+{
+	return ( a - b ).LengthSqr() / Max( 1.0f, Max( a.LengthSqr(), b.LengthSqr() ) );
+}
+
+
+inline float GetRelativeDifference( const Vector &a, const Vector &b )
+{
+	return sqrtf( GetRelativeDifferenceSqr( a, b ) );
+}
+
+
+// a good measure of relative error between two TR matrices, perhaps with a reasonable scale
+inline float GetRelativeDifference( const matrix3x4_t &a, const matrix3x4_t &b )
+{
+	return sqrtf( Max( Max( GetRelativeDifferenceSqr( a.GetColumn( X_AXIS ), b.GetColumn( X_AXIS ) ),
+		GetRelativeDifferenceSqr( a.GetColumn( Y_AXIS ), b.GetColumn( Y_AXIS ) ) ),
+		Max( GetRelativeDifferenceSqr( a.GetColumn( Z_AXIS ), b.GetColumn( Z_AXIS ) ),
+		GetRelativeDifferenceSqr( a.GetOrigin(), b.GetOrigin() ) )
+		)
+		);
+}
+
+
+
+inline float matrix3x4_t::GetSylvestersCriterion()const
+{
+	// http://en.wikipedia.org/wiki/Sylvester%27s_criterion
+	float flDet1 = m_flMatVal[ 0 ][ 0 ];
+	float flDet2 = m_flMatVal[ 0 ][ 0 ] * m_flMatVal[ 1 ][ 1 ] - m_flMatVal[ 1 ][ 0 ] * m_flMatVal[ 0 ][ 1 ];
+	float flDet3 = GetDeterminant();
+	return MIN( MIN( flDet1, flDet2 ), flDet3 );
+}
+
+
+
+// Generate the corner points of a box:
+// +y       _+z
+// ^        /|
+// |       /
+// |  3---7   
+//   /|  /|
+//  / | / |
+// 2---6  |
+// |  1|--5
+// | / | /
+// |/  |/
+// 0---4   --> +x
+//
+void PointsFromBox( const Vector &mins, const Vector &maxs, Vector *points );
+void BuildTransformedBox( Vector *v2, Vector const &bbmin, Vector const &bbmax, const matrix3x4_t& m );
+
+
 
 #endif	// MATH_BASE_H
 
