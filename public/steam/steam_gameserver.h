@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2008, Valve Corporation, All rights reserved. =======
+//====== Copyright ï¿½ 1996-2008, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -62,11 +62,11 @@ S_API uint64 SteamGameServer_GetSteamID();
 // Older SDKs exported this global pointer, but it is no longer supported.
 // You should use SteamGameServerClient() or CSteamGameServerAPIContext to
 // safely access the ISteamClient APIs from your game server application.
-//S_API ISteamClient *g_pSteamClientGameServer;
+S_API ISteamClient *g_pSteamClientGameServer;
 
 // SteamGameServer_InitSafe has been replaced with SteamGameServer_Init and
 // is no longer supported. Use SteamGameServer_Init instead.
-//S_API void S_CALLTYPE SteamGameServer_InitSafe();
+S_API void S_CALLTYPE SteamGameServer_InitSafe();
 
 //=============================================================================
 //
