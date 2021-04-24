@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,6 +13,8 @@
 #endif
 
 #include "tier0/platform.h"
+#include <steam/steamclientpublic.h>
+
 #undef SetPort
 
 class bf_read;
