@@ -238,6 +238,7 @@
     <ClCompile Include="utlstring.cpp" />
     <ClCompile Include="utlstringtoken.cpp" />
     <ClCompile Include="utlsymbol.cpp" />
+    <ClCompile Include="murmurhash3.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
