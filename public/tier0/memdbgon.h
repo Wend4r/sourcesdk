@@ -94,7 +94,7 @@
 
 #ifndef MEMDBGON_H
 #if !defined( _PS3 ) || defined( _CERT )
-#	if defined( COMPILER_GCC )
+#	if !defined( __clang__ )
 	inline void *operator new( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
 	inline void *operator new[]( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
 	inline void operator delete( void *pPtr ) { g_pMemAlloc->Free(pPtr); }
