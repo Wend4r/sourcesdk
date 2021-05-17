@@ -98,6 +98,7 @@
 	inline void *operator new( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
 	inline void *operator new[]( size_t nSize ) { return g_pMemAlloc->Alloc( nSize ); }
 	inline void operator delete( void *pPtr ) { g_pMemAlloc->Free(pPtr); }
+	inline void operator delete( void *pPtr, size_t iSize ) { g_pMemAlloc->Free(pPtr); }
 	inline void operator delete[]( void *pPtr ) { g_pMemAlloc->Free(pPtr); }
 #	endif
 #endif
