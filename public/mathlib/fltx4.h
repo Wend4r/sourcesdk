@@ -96,6 +96,8 @@ typedef __vector4 u32x4; // a VMX register; just a way of making it explicit tha
 typedef fltx4 bi32x4;
 #else
 
+#include <tmmintrin.h>		// For __m128(i)
+
 typedef __m128 fltx4;
 typedef __m128 i32x4;
 typedef __m128 u32x4;

@@ -251,7 +251,11 @@ private:
 // Zero the object -- necessary for CNetworkVar and possibly other cases.
 inline void EnsureValidValue( Vector &x ) { x.Zero(); }
 
-#define USE_M64S defined( PLATFORM_WINDOWS_PC )
+#if defined( PLATFORM_WINDOWS_PC )
+	#define USE_M64S 1
+#else
+	#define USE_M64S 0
+#endif
 
 
 
