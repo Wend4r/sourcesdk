@@ -336,7 +336,7 @@ static HMODULE Sys_LoadLibraryGuts( const char *pLibraryName )
 static HMODULE Sys_LoadLibrary( const char *pLibraryName )
 {
 	// load a library. If a library suffix is set, look for the library first with that name
-	char *pSuffix = NULL;
+	const char *pSuffix = NULL;
 	
 	if ( CommandLine()->FindParm( "-xlsp" ) )
 	{
@@ -492,7 +492,9 @@ CSysModule *Sys_LoadModule( const char *pModuleName )
 #endif // DEBUG
 	}
 
-	// If running in the debugger, assume debug binaries are okay, otherwise they must run with -allowdebug
+//lwss - Was having issues with the "BuiltDebug" symbol here. Looked at source-sdk-2013 and they just ifdef it out
+#if !defined(LINUX)
+    // If running in the debugger, assume debug binaries are okay, otherwise they must run with -allowdebug
 	if ( !IsGameConsole() && Sys_GetProcAddress( hDLL, "BuiltDebug" ) )
 	{
 		if ( hDLL && !CommandLine()->FindParm( "-allowdebug" ) && 
@@ -517,7 +519,16 @@ CSysModule *Sys_LoadModule( const char *pModuleName )
 #endif
 		}
 	}
+#endif
+//lwss end
 
+//lwss - add dlopen error checking here.
+#if defined(LINUX64)
+    if( !hDLL ){
+        Warning( "Module %s failed to load! Error: (%s)\n", pModuleName, dlerror());
+	}
+#endif
+//lwss end
 	return reinterpret_cast<CSysModule *>(hDLL);
 }
 

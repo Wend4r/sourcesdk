@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2009, Valve Corporation, All rights reserved. =======//
+//====== Copyright Â© 1996-2009, Valve Corporation, All rights reserved. =======//
 #ifndef INCREMENTAL_VECTOR_H
 #define INCREMENTAL_VECTOR_H
 

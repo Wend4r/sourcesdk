@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2006, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2006, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 	ExprSimplifier builds a binary tree from an infix expression (in the
 //				form of a character array).

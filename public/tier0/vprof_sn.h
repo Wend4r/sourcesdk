@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 #ifndef TIER_V0PROF_SN_HDR
 #define TIER_V0PROF_SN_HDR
 

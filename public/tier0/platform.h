@@ -1231,15 +1231,22 @@ PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessa
 #define _chdir chdir
 #define _access access
 
+#undef strcmpi
 #define strcmpi stricmp
+#undef stricmp
 #define stricmp strcasecmp
+
 #define _alloca alloca
 #define GetProcAddress dlsym
 #define _chdir chdir
 #ifndef _PS3
+#undef _strnicmp
 #define _strnicmp strnicmp
 #endif
+
+#undef strnicmp
 #define strnicmp strncasecmp
+
 #define _snwprintf swprintf
 #define swprintf_s swprintf
 #define wcsicmp _wcsicmp
