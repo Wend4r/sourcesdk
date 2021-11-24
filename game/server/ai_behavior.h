@@ -18,10 +18,14 @@
 #include "generic_classmap.h"
 
 #ifdef DEBUG
+#ifdef _MSC_VER
 #pragma warning(push)
+#endif
 #include <typeinfo>
+#ifdef _MSC_VER
 #pragma warning(pop)
 #pragma warning(disable:4290)
+#endif
 #endif
 
 #if defined( _WIN32 )

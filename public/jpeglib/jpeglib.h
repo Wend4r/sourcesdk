@@ -17,10 +17,12 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4100 )  // unused formal parameter
 #pragma warning( disable : 4127 )  // warning C4127: conditional expression is constant
 #pragma warning( disable : 4244 )  // warning C4244: '+=' : conversion from 'int' to 'JSAMPLE', possible loss of data
 #pragma warning( disable : 4267 )  // warning C4267: '+=' : conversion from 'size_t' to 'long', possible loss of data
+#endif
 
 /*
  * First we include the configuration files that record how this

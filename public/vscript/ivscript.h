@@ -304,8 +304,10 @@ enum SVFlags_t
 	SV_FREE = 0x01,
 };
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4800)
+#endif
 struct ScriptVariant_t
 {
 	ScriptVariant_t() :						m_flags( 0 ), m_type( FIELD_VOID )		{ m_pVector = 0; }
@@ -478,7 +480,9 @@ private:
 
 #define SCRIPT_VARIANT_NULL ScriptVariant_t()
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 
 

@@ -6,7 +6,9 @@
 // Serialization buffer
 //===========================================================================//
 
+#ifdef _MSC_VER
 #pragma warning (disable : 4514)
+#endif
 
 #include "utlbuffer.h"
 #include <stdio.h>
@@ -1008,7 +1010,9 @@ void CUtlBuffer::SeekGet( SeekType_t type, int offset )
 // Parse...
 //-----------------------------------------------------------------------------
 
+#ifdef _MSC_VER
 #pragma warning ( disable : 4706 )
+#endif
 
 int CUtlBuffer::VaScanf( const char* pFmt, va_list list )
 {
@@ -1189,7 +1193,9 @@ int CUtlBuffer::VaScanf( const char* pFmt, va_list list )
 	return numScanned;
 }
 
+#ifdef _MSC_VER
 #pragma warning ( default : 4706 )
+#endif
 
 int CUtlBuffer::Scanf( const char* pFmt, ... )
 {

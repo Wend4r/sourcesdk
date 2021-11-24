@@ -178,8 +178,10 @@ int C_ASW_Game_Resource::CMarineToCrosshairInfo::FindIndexForMarine( C_ASW_Marin
 	return -1;
 }
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning( disable : 4706 )
+#endif
 /// @TODO can use a more optimal sorting strategy
 void C_ASW_Game_Resource::CMarineToCrosshairInfo::RecomputeCache()
 {
@@ -205,4 +207,6 @@ void C_ASW_Game_Resource::CMarineToCrosshairInfo::RecomputeCache()
 
 	m_iLastFrameCached = gpGlobals->framecount;
 }
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif

@@ -388,7 +388,9 @@ extern "C" void __cxa_pure_virtual() { VPurecallHandler(); }
 #endif
 
 #if defined(USE_MEM_DEBUG)
+#ifdef _MSC_VER
 #pragma optimize( "", off )
+#endif
 #define inline
 #endif
 
@@ -1870,10 +1872,10 @@ class _LocaleUpdate
         return &localeinfo;
     }
 };
-#endif //_MSC_VER
 
 #pragma warning(push)
 #pragma warning(disable: 4483)
+#endif //_MSC_VER
 #if _MSC_FULL_VER >= 140050415
 #define _NATIVE_STARTUP_NAMESPACE  __identifier("<CrtImplementationDetails>")
 #else  /* _MSC_FULL_VER >= 140050415 */

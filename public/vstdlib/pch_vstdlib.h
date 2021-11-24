@@ -12,7 +12,9 @@
 //=============================================================================
 
 
+#ifdef _MSC_VER
 #pragma warning(disable: 4514)
+#endif
 
 // First include standard libraries
 #include <stdio.h>

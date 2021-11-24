@@ -932,9 +932,11 @@ void V_strncpy( char *pDest, const char *pSrc, int maxLen )
 // warning C6386: Buffer overrun: accessing 'argument 1', the writable size is 'destBufferSize' bytes, but '1000' bytes might be written
 // These warnings were investigated through code inspection and writing of tests and they are
 // believed to all be spurious.
+#ifdef _MSC_VER
 #ifdef _PREFAST_
 #pragma warning( push )
 #pragma warning( disable : 6053 6059 6386 )
+#endif
 #endif
 
 void V_wcsncpy( OUT_Z_BYTECAP(maxLenInBytes) wchar_t *pDest, wchar_t const *pSrc, int maxLenInBytes )
@@ -1428,8 +1430,10 @@ int _V_UCS2ToUnicode( const ucs2 *pUCS2, wchar_t *pUnicode, int cubDestSizeInByt
 
 }
 
+#ifdef _MSC_VER
 #ifdef _PREFAST_
 #pragma warning( pop ) // Restore the /analyze warnings
+#endif
 #endif
 
 
@@ -4011,8 +4015,10 @@ struct Tier1FullHTMLEntity_t
 };
 
 
+#ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4428 ) // universal-character-name encountered in source
+#endif
 const Tier1FullHTMLEntity_t g_Tier1_FullHTMLEntities[] =
 {
 	{ L'"', "&quot;", 6 },
@@ -4122,7 +4128,9 @@ const Tier1FullHTMLEntity_t g_Tier1_FullHTMLEntities[] =
 	{ L'\u00FF', "&yuml;", 6 },
 	{ 0, NULL, 0 } // sentinel for end of array
 };
+#ifdef _MSC_VER
 #pragma warning( pop )
+#endif
 
 
 

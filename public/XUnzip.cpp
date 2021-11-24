@@ -252,7 +252,9 @@ void zfree(void *buf)
 }
 */
 
+#ifdef _MSC_VER
 #pragma warning(disable : 4702)   // unreachable code
+#endif
 
 typedef struct tm_unz_s
 { unsigned int tm_sec;            // seconds after the minute - [0,59]

@@ -5043,7 +5043,9 @@ void CGameMovement::FullTossMove( void )
 // Purpose: TF2 commander mode movement logic
 //-----------------------------------------------------------------------------
 
+#ifdef _MSC_VER
 #pragma warning (disable : 4701)
+#endif
 
 void CGameMovement::IsometricMove( void )
 {
@@ -5078,7 +5080,9 @@ void CGameMovement::IsometricMove( void )
 	mv->m_vecVelocity.Init();
 }
 
+#ifdef _MSC_VER
 #pragma warning (default : 4701)
+#endif
 
 
 bool CGameMovement::GameHasLadders() const

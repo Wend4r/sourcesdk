@@ -22,7 +22,9 @@
 
 // includes needed for the creating of a new process and handling its output
 // ASW TODO: Handle Linux/Xbox way of doing this
+#ifdef _MSC_VER
 #pragma warning( disable : 4005 )
+#endif
 #include <windows.h>
 #include <iostream>
 

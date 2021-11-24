@@ -42,7 +42,9 @@ using namespace BaseModUI;
 
 KeyValues *g_pPreloadedAchievementListItemLayout = NULL;
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4800 ) // warning C4800: 'uint64' : forcing value to bool 'true' or 'false' (performance warning)
+#endif
 
 AchievementListItem::AchievementListItem( IAchievement *pAchievement ) : BaseClass( NULL, "AchievementListItem" )
 {

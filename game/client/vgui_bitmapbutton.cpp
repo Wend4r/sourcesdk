@@ -6,7 +6,9 @@
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
+#ifdef _MSC_VER
 #pragma warning (disable: 4514)
+#endif
 
 #include "vgui_bitmapimage.h"
 #include "vgui_BitmapButton.h"

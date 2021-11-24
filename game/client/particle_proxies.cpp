@@ -13,10 +13,12 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef _MSC_VER
 // This was specified in the .dsp with the /Od flag, but that causes a warning since
 //  it's inconsistent with the release .pch, so just disable optimizations here instead
 // FIXME:  Is this even needed any more?
 #pragma optimize( "", off )
+#endif
 
 
 // ------------------------------------------------------------------------ //
@@ -81,5 +83,7 @@ private:
 
 EXPOSE_MATERIAL_PROXY( ParticleSphereProxy, ParticleSphereProxy );
 
+#ifdef _MSC_VER
 #pragma optimize( "", on )
+#endif
 

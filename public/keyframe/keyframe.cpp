@@ -13,7 +13,9 @@
 #include <string.h>
 
 typedef unsigned char byte;
+#ifdef _MSC_VER
 #pragma warning(disable:4244)
+#endif
 
 #include "tier0/dbg.h"
 #include "mathlib/vector.h"

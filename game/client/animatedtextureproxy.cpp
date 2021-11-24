@@ -21,7 +21,9 @@ public:
 
 EXPOSE_MATERIAL_PROXY( CAnimatedTextureProxy, AnimatedTexture );
 
+#ifdef _MSC_VER
 #pragma warning (disable : 4100)
+#endif
 
 float CAnimatedTextureProxy::GetAnimationStartTime( void* pBaseEntity )
 {

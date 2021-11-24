@@ -307,7 +307,9 @@ int AFX_CDECL AfxNewHandler(size_t /* nSize */)
 	AfxThrowMemoryException();
 }
 
+#ifdef _MSC_VER
 #pragma warning(disable: 4273)
+#endif
 
 #ifndef _AFXDLL
 _PNH _afxNewHandler = &AfxNewHandler;

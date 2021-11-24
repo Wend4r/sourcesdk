@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 // Silence certain warnings
 #pragma warning(disable : 4244)		// int or float down-conversion
 #pragma warning(disable : 4305)		// int or float data truncation

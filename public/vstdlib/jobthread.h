@@ -693,10 +693,12 @@ private:
 // Work splitting: array split, best when cost per item is roughly equal
 //-----------------------------------------------------------------------------
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4389)
 #pragma warning(disable:4018)
 #pragma warning(disable:4701)
+#endif
 
 #define DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL(N) \
 	template <typename FUNCTION_CLASS, typename FUNCTION_RETTYPE FUNC_TEMPLATE_FUNC_PARAMS_##N FUNC_TEMPLATE_ARG_PARAMS_##N, typename ITERTYPE1, typename ITERTYPE2> \
@@ -875,8 +877,10 @@ protected:
 };
 
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4189)
+#endif
 
 template <typename ITEM_TYPE, class ITEM_PROCESSOR_TYPE, int ID_TO_PREVENT_COMDATS_IN_PROFILES = 1>
 class CParallelProcessor
@@ -986,7 +990,9 @@ private:
 
 };
 
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 template <typename ITEM_TYPE> 
 inline void ParallelProcess( ITEM_TYPE *pItems, unsigned nItems, void (*pfnProcess)( ITEM_TYPE & ), void (*pfnBegin)() = NULL, void (*pfnEnd)() = NULL, int nMaxParallel = INT_MAX )

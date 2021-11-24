@@ -148,7 +148,7 @@ ConVar r_flashlightdepthres( "r_flashlightdepthres", "1024" );
 #define RTT_TEXTURE_SIZE_640
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #pragma warning( disable: 4701 )
 #endif
 
