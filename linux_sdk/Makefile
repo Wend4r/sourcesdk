@@ -25,8 +25,14 @@ SRCDS_DIR = ~/srcds/csgo
 # set this so that 'make install' or 'make installrelease' will copy your binary over automatically.
 GAME_DIR = $(SRCDS_DIR)/scratchmod
 
-# compiler options (gcc 3.4.1 or above is required - 4.1.2+ recommended)
 ifeq "$(OS)" "Darwin"
+USE_CLANG = 1
+else ifeq "$(CC)" "clang"
+USE_CLANG = 1
+endif
+
+# compiler options (gcc 3.4.1 or above is required - 4.1.2+ recommended)
+ifdef USE_CLANG
 CC = /usr/bin/clang
 CPLUS = /usr/bin/clang++
 CLINK = /usr/bin/clang
