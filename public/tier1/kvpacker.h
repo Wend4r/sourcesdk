@@ -12,7 +12,7 @@
 #pragma once
 #endif
 
-#include "keyvalues.h"
+#include "KeyValues.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Handles packing KeyValues binary packing and unpacking in a a

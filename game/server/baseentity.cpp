@@ -66,7 +66,7 @@
 #include "vstdlib/IKeyValuesSystem.h"
 #include "videocfg/videocfg.h"
 #include "ilagcompensationmanager.h"
-#include "vstdlib/ikeyvaluessystem.h"
+#include "vstdlib/IKeyValuesSystem.h"
 #include "bittools.h"
 #include "cellcoord.h"
 #include "sendprop_priorities.h"

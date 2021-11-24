@@ -10,7 +10,7 @@
 #include "c_basetempentity.h"
 #include "c_te_legacytempents.h"
 #include "fx.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "tier0/vprof.h"
 #include "toolframework_client.h"
 

@@ -18,7 +18,7 @@
 #include "scenefilecache/iscenefilecache.h"
 /*
 #include "engine/ienginesound.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 #include "ai_criteria.h"
 #include "isaverestore.h"
 #include "sceneentity.h"

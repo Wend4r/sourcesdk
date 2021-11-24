@@ -6,7 +6,7 @@
 
 #include "loadingtippanel.h"
 #include "filesystem.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 #include "vgui/isurface.h"
 #include "EngineInterface.h"
 #include "vstdlib/random.h"

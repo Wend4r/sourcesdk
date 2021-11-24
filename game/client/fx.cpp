@@ -17,7 +17,7 @@
 #include "effect_dispatch_data.h"
 #include "c_te_effect_dispatch.h"
 #include "tier0/vprof.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "effect_color_tables.h"
 #include "iviewrender_beams.h"
 #include "view.h"

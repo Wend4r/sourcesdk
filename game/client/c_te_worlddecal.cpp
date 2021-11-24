@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "c_basetempentity.h"
 #include "iefx.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "toolframework_client.h"
 #include "fx.h"
 #include "tier0/vprof.h"

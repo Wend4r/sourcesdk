@@ -12,7 +12,7 @@
 #include "ai_speech.h"
 #endif
 
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "engine/ienginesound.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

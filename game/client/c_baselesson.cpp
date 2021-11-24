@@ -15,7 +15,7 @@
 #include "ammodef.h"
 #include "vprof.h"
 #include "view.h"
-#include "vstdlib/ikeyvaluessystem.h"
+#include "vstdlib/IKeyValuesSystem.h"
 
 #ifdef INFESTED_DLL
 	#include "c_asw_marine.h"

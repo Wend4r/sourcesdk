@@ -11,7 +11,7 @@
 #include "cbase.h"
 #include "clientmode.h"
 #include "hudelement.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 #include "vgui_controls/AnimationController.h"
 #include "engine/IEngineSound.h"
 #include <bitbuf.h>

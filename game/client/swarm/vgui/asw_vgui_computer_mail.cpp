@@ -11,7 +11,7 @@
 #include "vgui/ILocalize.h"
 #include "WrappedLabel.h"
 #include "filesystem.h"
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "controller_focus.h"
 #include "vgui_controls\PanelListPanel.h"
 #include "ImageButton.h"

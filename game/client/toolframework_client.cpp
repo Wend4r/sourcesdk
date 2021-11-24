@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "toolframework_client.h"
 #include "igamesystem.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "toolframework/iclientenginetools.h"
 #include "client_factorylist.h"
 #include "iviewrender.h"

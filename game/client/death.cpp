@@ -15,7 +15,7 @@
 #include <vgui/ILocalize.h>
 #include <game/client/iviewport.h>
 #include <igameevents.h>
-#include <keyvalues.h>
+#include <KeyValues.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

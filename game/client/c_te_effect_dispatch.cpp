@@ -11,7 +11,7 @@
 #include "networkstringtable_clientdll.h"
 #include "effect_dispatch_data.h"
 #include "c_te_effect_dispatch.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "toolframework_client.h"
 #include "tier0/vprof.h"
 #include "particles_new.h"

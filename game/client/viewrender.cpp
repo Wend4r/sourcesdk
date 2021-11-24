@@ -45,7 +45,7 @@
 #include "ScreenSpaceEffects.h"
 #include "toolframework_client.h"
 #include "c_func_reflective_glass.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 #include "renderparm.h"
 #include "modelrendersystem.h"
 #include "vgui/ISurface.h"
