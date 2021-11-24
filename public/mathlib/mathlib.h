@@ -533,7 +533,10 @@ void inline SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosin
 		fstp DWORD PTR [eax]
 	}
 #elif defined( GNUC )
-	register double __cosr, __sinr;
+#	if __cplusplus >= 201703L
+	register
+#	endif
+	double __cosr, __sinr;
  	__asm __volatile__ ("fsincos" : "=t" (__cosr), "=u" (__sinr) : "0" (radians));
 
   	*sine = __sinr;

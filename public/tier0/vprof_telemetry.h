@@ -53,7 +53,7 @@ enum TelemetryZonePlotSlot_t
 // If Telemetry isn't enabled, then kill all the tmZone() macros, etc.
 //
 #define NTELEMETRY		1
-#include "../../thirdparty/telemetry/include/telemetry.h"
+// #include "../../thirdparty/telemetry/include/telemetry.h"
 // Different versions of radbase.h define RADCOPYRIGHT to different values. So undef that here.
 #undef RADCOPYRIGHT
 
@@ -64,14 +64,14 @@ inline void TelemetrySetLevel( unsigned int Level ) {}
 #define TELEMETRY_REQUIRED_REPLACE( tmRequiredCode, replacementCode ) replacementCode //in case you need to replace the code with something specific if telemetry isn't present
 
 // need some of the types even if we aren't using Telemetry
-#include "../../thirdparty/telemetry/include/tmtypes.h"
+// #include "../../thirdparty/telemetry/include/tmtypes.h"
 
 #else
 
 //
 // Telemetry is enabled. Include the telemetry header.
 //
-#include "../../thirdparty/telemetry/include/telemetry.h"
+// #include "../../thirdparty/telemetry/include/telemetry.h"
 // Different versions of radbase.h define RADCOPYRIGHT to different values. So undef that here.
 #undef RADCOPYRIGHT
 

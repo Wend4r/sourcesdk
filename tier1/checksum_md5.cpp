@@ -47,7 +47,10 @@ static void MD5Transform(unsigned int buf[4], unsigned int const in_big[16])
 static void MD5Transform(unsigned int buf[4], unsigned int const in[16])
 {
 #endif
-    register unsigned int a, b, c, d;
+#   if __cplusplus >= 201703L
+    register 
+#   endif
+    unsigned int a, b, c, d;
 
     a = buf[0];
     b = buf[1];

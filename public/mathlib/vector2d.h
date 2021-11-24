@@ -37,7 +37,7 @@
 	#define DEG2RAD( x  )  ( (float)(x) * (float)(M_PI_F / 180.f) )
 #endif
 
-extern void inline SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosine );
+extern void SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosine );
 
 //=========================================================
 // 2D Vector2D

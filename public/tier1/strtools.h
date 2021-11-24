@@ -651,7 +651,7 @@ typedef char *  va_list;
 #define INCORRECT_PATH_SEPARATOR '\\'
 #define INCORRECT_PATH_SEPARATOR_S "\\"
 #define CHARACTERS_WHICH_SEPARATE_DIRECTORY_COMPONENTS_IN_PATHNAMES "/"
-#define PATHSEPARATOR(c) ((c) == '/')
+#define PATHSEPARATOR(c) ((c) == '\\' || (c) == '/')
 #endif
 
 

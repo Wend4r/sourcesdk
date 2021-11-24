@@ -41,7 +41,7 @@
 // confusing effects.
 //////////////////////////////////
 
-static char * s_LastFileLoadingFrom = "unknown"; // just needed for error messages
+static const char * s_LastFileLoadingFrom = "unknown"; // just needed for error messages
 
 // Statics for the growable string table
 int (*KeyValues::s_pfGetSymbolForString)( const char *name, bool bCreate ) = &KeyValues::GetSymbolForStringClassic;
@@ -392,8 +392,8 @@ class CKeyValuesGrowableStringTable
 public: 
 	// Constructor
 	CKeyValuesGrowableStringTable() :
-	  m_vecStrings( 0, 512 * 1024 ),
-	  m_hashLookup( 2048, 0, 0, m_Functor, m_Functor )
+	  m_hashLookup( 2048, 0, 0, m_Functor, m_Functor ),
+	  m_vecStrings( 0, 512 * 1024 )
 	{
 		m_vecStrings.AddToTail( '\0' );
 	}
