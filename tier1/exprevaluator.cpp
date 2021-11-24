@@ -8,7 +8,7 @@
 //===========================================================================//
 
 #include <ctype.h>
-#include <vstdlib/ikeyvaluessystem.h>
+#include <vstdlib/IKeyValuesSystem.h>
 #include "tier1/exprevaluator.h"
 #include "tier1/convar.h"
 #include "tier1/fmtstr.h"

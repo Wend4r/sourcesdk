@@ -17,7 +17,7 @@
 
 #include <KeyValues.h>
 #include "filesystem.h"
-#include <vstdlib/ikeyvaluessystem.h>
+#include <vstdlib/IKeyValuesSystem.h>
 
 #include <color.h>
 #include <stdlib.h>
