@@ -39,23 +39,23 @@ const fltx4 g_QuatMultRowSign[4] =
 };
 
 const int32 ALIGN16 g_SIMD_clear_signmask[4]= {0x7fffffff,0x7fffffff,0x7fffffff,0x7fffffff};
-const int32 ALIGN16 g_SIMD_signmask[4]= { 0x80000000, 0x80000000, 0x80000000, 0x80000000 };
-const int32 ALIGN16 g_SIMD_lsbmask[4]= { 0xfffffffe, 0xfffffffe, 0xfffffffe, 0xfffffffe };
-const int32 ALIGN16 g_SIMD_clear_wmask[4]= { 0xffffffff, 0xffffffff, 0xffffffff, 0 };
-const int32 ALIGN16 g_SIMD_AllOnesMask[4]= { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff }; // ~0,~0,~0,~0
+const int32 ALIGN16 g_SIMD_signmask[4]= { static_cast<int32>(0x80000000), static_cast<int32>(0x80000000), static_cast<int32>(0x80000000), static_cast<int32>(0x80000000) };
+const int32 ALIGN16 g_SIMD_lsbmask[4]= { static_cast<int32>(0xfffffffe), static_cast<int32>(0xfffffffe), static_cast<int32>(0xfffffffe), static_cast<int32>(0xfffffffe) };
+const int32 ALIGN16 g_SIMD_clear_wmask[4]= { static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), 0 };
+const int32 ALIGN16 g_SIMD_AllOnesMask[4]= { static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff) }; // ~0,~0,~0,~0
 const int32 ALIGN16 g_SIMD_Low16BitsMask[4]= { 0xffff, 0xffff, 0xffff, 0xffff }; // 0xffff x 4
 
 const int32 ALIGN16 g_SIMD_ComponentMask[4][4] =
 {
-	{ 0xFFFFFFFF, 0, 0, 0 }, { 0, 0xFFFFFFFF, 0, 0 }, { 0, 0, 0xFFFFFFFF, 0 }, { 0, 0, 0, 0xFFFFFFFF }
+	{ static_cast<int32>(0xFFFFFFFF), 0, 0, 0 }, { 0, static_cast<int32>(0xFFFFFFFF), 0, 0 }, { 0, 0, static_cast<int32>(0xFFFFFFFF), 0 }, { 0, 0, 0, static_cast<int32>(0xFFFFFFFF) }
 };
 
 const int32 ALIGN16 g_SIMD_SkipTailMask[4][4] =
 {
-	{ 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff },
-	{ 0xffffffff, 0x00000000, 0x00000000, 0x00000000 },
-	{ 0xffffffff, 0xffffffff, 0x00000000, 0x00000000 },
-	{ 0xffffffff, 0xffffffff, 0xffffffff, 0x00000000 },
+	{ static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff) },
+	{ static_cast<int32>(0xffffffff), 0x00000000, 0x00000000, 0x00000000 },
+	{ static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), 0x00000000, 0x00000000 },
+	{ static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), static_cast<int32>(0xffffffff), 0x00000000 },
 };
 
 

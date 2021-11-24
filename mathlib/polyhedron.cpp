@@ -150,7 +150,7 @@ CPolyhedron *GetTempPolyhedron( unsigned short iVertices, unsigned short iLines,
 }
 
 
-Vector CPolyhedron::Center( void )
+Vector CPolyhedron::Center( void ) const
 {
 	if( iVertexCount == 0 )
 		return vec3_origin;
