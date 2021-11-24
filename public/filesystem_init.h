@@ -26,7 +26,9 @@
 #if defined( _WIN32 ) || defined( WIN32 )
 #define PATHSEPARATOR(c) ((c) == '\\' || (c) == '/')
 #else	//_WIN32
+#ifndef PATHSEPARATOR		// May be strtool.h conflict
 #define PATHSEPARATOR(c) ((c) == '/')
+#endif
 #endif	//_WIN32
 
 

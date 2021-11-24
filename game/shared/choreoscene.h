@@ -42,7 +42,7 @@ class CChoreoScene : public ICurveDataAccessor
 public:
 	// Construction
 					CChoreoScene( IChoreoEventCallback *callback );
-					~CChoreoScene( void );
+					virtual ~CChoreoScene( void );
 
 	// Assignment
 	CChoreoScene&	operator=(const CChoreoScene& src );
