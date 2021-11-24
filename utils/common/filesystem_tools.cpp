@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -17,7 +17,7 @@
 #include "tier1/strtools.h"
 #include "filesystem_tools.h"
 #include "tier0/icommandline.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 #include "tier2/tier2.h"
 
 #ifdef MPI

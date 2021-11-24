@@ -20,7 +20,7 @@
 using namespace vgui;
 
 #include "filesystem.h"
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "asw_hud_minimap.h"
 #include "c_asw_player.h"
 #include "c_asw_marine.h"

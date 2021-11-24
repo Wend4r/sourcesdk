@@ -15,7 +15,7 @@
 #include <vgui/ILocalize.h>
 
 #include <filesystem.h>
-#include <keyvalues.h>
+#include <KeyValues.h>
 
 #include "asw_hudelement.h"
 #include "hud_numericdisplay.h"

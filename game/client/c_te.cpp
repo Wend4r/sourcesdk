@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "itempents.h"
 #include "effect_dispatch_data.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "iefx.h"
 #include "ieffects.h"
 #include "toolframework_client.h"

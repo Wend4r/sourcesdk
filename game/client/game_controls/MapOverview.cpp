@@ -10,7 +10,7 @@
 #include <vgui/isurface.h>
 #include <vgui/ILocalize.h>
 #include <filesystem.h>
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include <convar.h>
 #include "mathlib/mathlib.h"
 #include <game/client/iviewport.h>

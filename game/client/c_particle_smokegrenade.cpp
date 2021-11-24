@@ -12,7 +12,7 @@
 #include "view.h"
 #include "dlight.h"
 #include "iefx.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "toolframework_client.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

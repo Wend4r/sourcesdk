@@ -11,7 +11,7 @@
 #include "tier0/icommandline.h"
 #include "igamesystem.h"
 #include "filesystem.h"
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "in_buttons.h"
 #include "engine/ienginesound.h"
 #include "soundenvelope.h"

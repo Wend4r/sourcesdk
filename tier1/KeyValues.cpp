@@ -15,7 +15,7 @@
 #define _wtoi64(arg) wcstoll(arg, NULL, 10)
 #endif
 
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "filesystem.h"
 #include <vstdlib/ikeyvaluessystem.h>
 

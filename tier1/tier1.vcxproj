@@ -140,7 +140,7 @@
     <ClInclude Include="..\public\tier1\iconvar.h" />
     <ClInclude Include="..\public\tier1\interface.h" />
     <ClInclude Include="..\public\tier1\interpolatedvar.h" />
-    <ClInclude Include="..\public\tier1\keyvalues.h" />
+    <ClInclude Include="..\public\tier1\KeyValues.h" />
     <ClInclude Include="..\public\tier1\keyvaluesjson.h" />
     <ClInclude Include="..\public\tier1\kvpacker.h" />
     <ClInclude Include="..\public\tier1\lerp_functions.h" />

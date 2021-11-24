@@ -10,7 +10,7 @@
 #include "ai_responsesystem.h"
 #include "igamesystem.h"
 #include "ai_criteria.h"
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "filesystem.h"
 #include "utldict.h"
 #ifdef GAME_DLL

@@ -11,7 +11,7 @@
 #include <vgui_controls/AnimationController.h>
 #include <vgui/ILocalize.h>
 #include <filesystem.h>
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "hud_numericdisplay.h"
 #include "c_asw_player.h"
 #include "c_asw_marine.h"

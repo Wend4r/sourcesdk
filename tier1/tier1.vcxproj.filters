@@ -77,7 +77,7 @@
     <ClInclude Include="..\public\tier1\interpolatedvar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\keyvalues.h">
+    <ClInclude Include="..\public\tier1\KeyValues.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\keyvaluesjson.h">

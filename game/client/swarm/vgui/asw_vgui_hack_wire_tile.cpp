@@ -9,7 +9,7 @@
 #include <vgui/ISurface.h>
 #include <vgui_controls/AnimationController.h>
 #include "controller_focus.h"
-#include <keyvalues.h>
+#include <KeyValues.h>
 #include "engine/IEngineSound.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 
