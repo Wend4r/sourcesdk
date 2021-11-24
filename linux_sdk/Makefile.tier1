@@ -49,6 +49,7 @@ LIB_OBJS= \
 	$(LIB_OBJ_DIR)/rangecheckedvar.o \
 	$(LIB_OBJ_DIR)/stringpool.o \
 	$(LIB_OBJ_DIR)/strtools.o \
+	$(LIB_OBJ_DIR)/strtools_unicode.o \
 	$(LIB_OBJ_DIR)/tier1.o \
 	$(LIB_OBJ_DIR)/undiff.o \
 	$(LIB_OBJ_DIR)/uniqueid.o \
