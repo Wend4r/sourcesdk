@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright (c) 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -24,10 +24,20 @@
 #define INVALID_STEAM_VACBANSTATE "VAC banned from secure server\n"
 #define INVALID_STEAM_LOGGED_IN_ELSEWHERE "This Steam account is being used in another location\n"
 
+#define DEFAULT_TICK_INTERVAL_X360	(1.0 / 29.970030) // This matches x360 refresh, but is not critical
+#define DEFAULT_TICK_INTERVAL_PS3	(1.0 / 30.0)
+#define DEFAULT_TICK_INTERVAL_PC	(1.0 / 64.0)
+
 // This is the default, see shareddefs.h for mod-specific value, which can override this
-#define DEFAULT_TICK_INTERVAL	(1.0f / 64.0f)	// 0.015625
-#define MINIMUM_TICK_INTERVAL	(1.0f / 128.0f) // 0.0078125
-#define MAXIMUM_TICK_INTERVAL	(1.0f / 20.48f)	// 0.048828125
+#if defined( _X360 )
+#define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_X360
+#elif defined( _PS3 )
+#define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_PS3
+#else
+#define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_PC
+#endif
+#define MINIMUM_TICK_INTERVAL   (4.0f / 512.0f)		// 128 fps
+#define MAXIMUM_TICK_INTERVAL	(25.0f / 512.0f)	// 20.48 fps
 
 // This is the max # of players the engine can handle
 // Note, must be power of 2
@@ -50,12 +60,13 @@
 #define MAX_PLAYERS_PER_CLIENT		1	// One player per PC
 #endif
 
-#define MAX_MAP_NAME				32	
+#define MAX_MAP_NAME				64	
 #define	MAX_NETWORKID_LENGTH		64  // num chars for a network (i.e steam) ID
 
 // BUGBUG: Reconcile with or derive this from the engine's internal definition!
-// FIXME: I added an extra bit because I needed to make it signed
-#define SP_MODEL_INDEX_BITS			11
+// FIXME: Somebody added an extra bit because they needed to make it signed, not sure why?
+// Anyways must have this value in sync(+1) with qlimits.h and effect_dispatch_data.cpp
+#define SP_MODEL_INDEX_BITS			13
 
 // How many bits to use to encode an edict.
 #define	MAX_EDICT_BITS				11			// # of bits needed to represent max edicts
@@ -93,7 +104,7 @@
 
 // a client can have up to 4 customization files (logo, sounds, models, txt).
 #define MAX_CUSTOM_FILES		4		// max 4 files
-#define MAX_CUSTOM_FILE_SIZE	131072	
+#define MAX_CUSTOM_FILE_SIZE	524288	// Half a megabyte
 
 //
 // Constants shared by the engine and dlls
@@ -104,6 +115,11 @@
 // PLAYER SPECIFIC FLAGS FIRST BECAUSE WE USE ONLY A FEW BITS OF NETWORK PRECISION
 #define	FL_ONGROUND				(1<<0)	// At rest / on the ground
 #define FL_DUCKING				(1<<1)	// Player flag -- Player is fully crouched
+#define FL_ANIMDUCKING			(1<<2)	// Player flag -- Player is in the process of crouching or uncrouching but could be in transition
+                                        // examples:                                   Fully ducked:  FL_DUCKING &  FL_ANIMDUCKING
+                                        //           Previously fully ducked, unducking in progress:  FL_DUCKING & !FL_ANIMDUCKING
+                                        //                                           Fully unducked: !FL_DUCKING & !FL_ANIMDUCKING
+                                        //           Previously fully unducked, ducking in progress: !FL_DUCKING &  FL_ANIMDUCKING
 #define	FL_WATERJUMP			(1<<3)	// player jumping out of water
 #define FL_ONTRAIN				(1<<4) // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
 #define FL_INRAIN				(1<<5)	// Indicates the entity is standing in rain
@@ -111,12 +127,12 @@
 #define FL_ATCONTROLS			(1<<7) // Player can't move, but keeps key inputs for controlling another entity
 #define	FL_CLIENT				(1<<8)	// Is a player
 #define FL_FAKECLIENT			(1<<9)	// Fake client, simulated server side; don't send network messages to them
+// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
 #define	FL_INWATER				(1<<10)	// In water
 
 // NOTE if you move things up, make sure to change this value
 #define PLAYER_FLAG_BITS		11
 
-// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
 #define	FL_FLY					(1<<11)	// Changes the SV_Movestep() behavior to not need to be on ground
 #define	FL_SWIM					(1<<12)	// Changes the SV_Movestep() behavior to not need to be on ground (but stay in water)
 #define	FL_CONVEYOR				(1<<13)
@@ -126,7 +142,11 @@
 #define	FL_AIMTARGET			(1<<17)	// set if the crosshair needs to aim onto the entity
 #define	FL_PARTIALGROUND		(1<<18)	// not all corners are valid
 #define FL_STATICPROP			(1<<19)	// Eetsa static prop!		
+#ifdef PORTAL2
+#define FL_AFFECTED_BY_PAINT	(1<<20)
+#else
 #define FL_GRAPHED				(1<<20) // worldgraph has this ent listed as something that blocks a connection
+#endif
 #define FL_GRENADE				(1<<21)
 #define FL_STEPMOVEMENT			(1<<22)	// Changes the SV_Movestep() behavior to not do any processing
 #define FL_DONTTOUCH			(1<<23)	// Doesn't generate touch functions, generates Untouch() for anything it was touching when this flag was set
@@ -138,6 +158,13 @@
 #define FL_DISSOLVING			(1<<29) // We're dissolving!
 #define FL_TRANSRAGDOLL			(1<<30) // In the process of turning into a client side ragdoll.
 #define FL_UNBLOCKABLE_BY_PLAYER (1<<31) // pusher that can't be blocked by the player
+
+// FIXME[HPE]: this won't actually work - we're out of bits. :(
+#ifdef PORTAL2
+#define FL_UNPAINTABLE			(1<<32) // Unpaintable entities!
+#else
+#define FL_FREEZING				(1<<32) // We're becoming frozen!
+#endif
 
 // edict->movetype values
 enum MoveType_t
@@ -248,12 +275,12 @@ enum
 										// the parent is not in the PVS.
 	EF_ITEM_BLINK			= 0x100,	// blink an item so that the user notices it.
 	EF_PARENT_ANIMATES		= 0x200,	// always assume that the parent entity is animating
-	
-	EF_MARKED_FOR_FAST_REFLECTION	= 0x400,
-	EF_NOSHADOWDEPTH		= 0x800,
-	EF_NOFLASHLIGHT			= 0x1000,
-	
-	EF_MAX_BITS = 10
+	EF_MARKED_FOR_FAST_REFLECTION	= 0x400,	// marks an entity for reflection rendering when using $reflectonlymarkedentities material variable
+	EF_NOSHADOWDEPTH		= 0x800,	// Indicates this entity does not render into any shadow depthmap
+	EF_SHADOWDEPTH_NOCACHE	= 0x1000,	// Indicates this entity cannot be cached in shadow depthmap and should render every frame
+	EF_NOFLASHLIGHT         = 0x2000,
+	EF_NOCSM				= 0x4000,	// Indicates this entity does not render into the cascade shadow depthmap
+	EF_MAX_BITS = 15
 };
 
 #define EF_PARITY_BITS	3
@@ -377,7 +404,12 @@ enum Collision_Group_t
 	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
 	COLLISION_GROUP_PZ_CLIP,
 
-
+#ifdef PORTAL2
+	COLLISION_GROUP_CAMERA_SOLID,		// Solid only to the camera's test trace
+	COLLISION_GROUP_PLACEMENT_SOLID,	// Solid only to the placement tool's test trace
+	COLLISION_GROUP_PLAYER_HELD,		// Held objects that shouldn't collide with players
+	COLLISION_GROUP_WEIGHTED_CUBE,		// Cubes need a collision group that acts roughly like COLLISION_GROUP_NONE but doesn't collide with debris or interactive
+#endif // PORTAL2
 
 	COLLISION_GROUP_DEBRIS_BLOCK_PROJECTILE, // Only collides with bullets
 
@@ -387,6 +419,9 @@ enum Collision_Group_t
 #include "basetypes.h"
 
 #define SOUND_NORMAL_CLIP_DIST	1000.0f
+
+// max number of cached build/draw views to support parallel building of World/Renderlists on SPU
+#define MAX_CONCURRENT_BUILDVIEWS 10
 
 //-----------------------------------------------------------------------------
 // Base light indices to avoid index collision
@@ -431,3 +466,4 @@ typedef CThreadNullMutex CSourceMutex;
 
 #endif
 
+#define IsValveDedicated() false
