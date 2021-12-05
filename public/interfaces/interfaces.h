@@ -90,6 +90,10 @@ class IWorldRendererMgr;
 class ISceneSystem;
 class IVGuiRenderSurface;
 
+class IScaleformUISystemMgr;
+class IScaleformUI;
+class IRocketUI;
+
 namespace vgui
 {
 	class ISurface;
@@ -251,6 +255,13 @@ DECLARE_TIER2_INTERFACE( IMatchFramework, g_pMatchFramework );
 DECLARE_TIER3_INTERFACE( IGameUISystemMgr, g_pGameUISystemMgr );
 #endif
 
+#if defined( INCLUDE_SCALEFORM ) && !defined( SCALEFORMUI_INTERFACE_VERSION )
+#define SCALEFORMUI_INTERFACE_VERSION "ScaleformUI002"
+DECLARE_TIER3_INTERFACE( IScaleformUI, g_pScaleformUI );
+#elif defined( INCLUDE_ROCKETUI ) && !defined( SCALEFORMUI_INTERFACE_VERSION )
+#define ROCKETUI_INTERFACE_VERSION "RocketUI001"
+DECLARE_TIER3_INTERFACE( IRocketUI, g_pRocketUI );
+#endif
 
 //-----------------------------------------------------------------------------
 // Not exactly a global, but we're going to keep track of these here anyways
