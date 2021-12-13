@@ -151,15 +151,16 @@ bool CUtlSymbolTable::CLess::operator()( const CStringPoolIndex &i1, const CStri
 	// right now at least, because m_LessFunc is the first member of CUtlRBTree, and m_Lookup
 	// is the first member of CUtlSymbolTabke, this == pTable
 	CUtlSymbolTable *pTable = (CUtlSymbolTable *)( (byte *)this - offsetof(CUtlSymbolTable::CTree, m_LessFunc) ) - offsetof(CUtlSymbolTable, m_Lookup );
-
-#if 1 // using the hashes
+	
 	const char *str1, *str2;
 	hashDecoration_t hash1, hash2;
 
 	if (i1 == INVALID_STRING_INDEX)
 	{
-		str1 = pTable->m_pUserSearchString;
-		hash1 = pTable->m_nUserSearchStringHash;
+		const CStringPoolSearcher* searchString = reinterpret_cast<const CStringPoolSearcher*>(&i1);
+		
+		str1 = searchString->m_pString;
+		hash1 = searchString->m_nStringHash;
 	}
 	else
 	{
@@ -173,8 +174,10 @@ bool CUtlSymbolTable::CLess::operator()( const CStringPoolIndex &i1, const CStri
 
 	if (i2 == INVALID_STRING_INDEX)
 	{
-		str2 = pTable->m_pUserSearchString;
-		hash2 = pTable->m_nUserSearchStringHash;
+		const CStringPoolSearcher* searchString = reinterpret_cast<const CStringPoolSearcher*>(&i2);
+		
+		str2 = searchString->m_pString;
+		hash2 = searchString->m_nStringHash;
 	}
 	else
 	{
@@ -206,24 +209,6 @@ bool CUtlSymbolTable::CLess::operator()( const CStringPoolIndex &i1, const CStri
 	{
 		return hash1 < hash2;
 	}
-
-#else // not using the hashes, just comparing strings
-	const char* str1 = (i1 == INVALID_STRING_INDEX) ? pTable->m_pUserSearchString :
-		pTable->StringFromIndex( i1 );
-	const char* str2 = (i2 == INVALID_STRING_INDEX) ? pTable->m_pUserSearchString :
-		pTable->StringFromIndex( i2 );
-
-	if ( !str1 && str2 )
-		return 1;
-	if ( !str2 && str1 )
-		return -1;
-	if ( !str1 && !str2 )
-		return 0;
-	if ( !pTable->m_bInsensitive )
-		return strcmp( str1, str2 ) < 0;
-	else
-		return strcmpi( str1, str2 ) < 0;
-#endif
 }
 
 
@@ -248,19 +233,12 @@ CUtlSymbol CUtlSymbolTable::Find( const char* pString ) const
 	if (!pString)
 		return CUtlSymbol();
 	
-	// Store a special context used to help with insertion
-	m_pUserSearchString = pString;
-	m_nUserSearchStringHash = m_bInsensitive ? HashStringCaseless(pString) : HashString(pString) ;
+	CStringPoolSearcher searchString;
+	searchString.m_pString = pString;
+	searchString.m_nStringHash = m_bInsensitive ? HashStringCaseless(pString) : HashString(pString);
 	
-	// Passing this special invalid symbol makes the comparison function
-	// use the string passed in the context
-	UtlSymId_t idx = m_Lookup.Find( INVALID_STRING_INDEX );
-
-#ifdef _DEBUG
-	m_pUserSearchString = NULL;
-	m_nUserSearchStringHash = 0;
-#endif
-
+	UtlSymId_t idx = m_Lookup.Find( searchString );
+	
 	return CUtlSymbol( idx );
 }
 
