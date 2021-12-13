@@ -153,6 +153,21 @@ protected:
 		unsigned short m_iPool;		// Index into m_StringPools.
 		unsigned short m_iOffset;	// Index into the string pool.
 	};
+	
+	class CStringPoolSearcher : public CStringPoolIndex
+	{
+	public:
+		inline CStringPoolSearcher()
+			: 	CStringPoolIndex(0xFFFF, 0xFFFF)
+		{}
+		
+		inline CStringPoolSearcher( const char* pszSearchString, unsigned short SearchStringHash )
+			: 	CStringPoolIndex(0xFFFF, 0xFFFF), m_pString(pszSearchString), m_nStringHash(SearchStringHash)
+		{}
+		
+		const char* m_pString;
+		unsigned short m_nStringHash;
+	};
 
 	class CLess
 	{
@@ -180,8 +195,6 @@ protected:
 	CTree m_Lookup;
 
 	bool m_bInsensitive;
-	mutable unsigned short m_nUserSearchStringHash;
-	mutable const char* m_pUserSearchString;
 
 	// stores the string data
 	CUtlVector<StringPool_t*> m_StringPools;
