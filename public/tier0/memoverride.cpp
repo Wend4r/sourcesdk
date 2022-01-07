@@ -1873,14 +1873,15 @@ class _LocaleUpdate
     }
 };
 
-#pragma warning(push)
-#pragma warning(disable: 4483)
 #endif //_MSC_VER
 #if _MSC_FULL_VER >= 140050415
 #define _NATIVE_STARTUP_NAMESPACE  __identifier("<CrtImplementationDetails>")
 #else  /* _MSC_FULL_VER >= 140050415 */
 #define _NATIVE_STARTUP_NAMESPACE __CrtImplementationDetails
 #endif  /* _MSC_FULL_VER >= 140050415 */
+
+#pragma warning(push)
+#pragma warning(disable: 4483)
 
 namespace _NATIVE_STARTUP_NAMESPACE
 {
