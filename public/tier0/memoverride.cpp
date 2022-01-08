@@ -507,17 +507,17 @@ void *_realloc_base( void *pMem, size_t nSize )
 {
 	return ReallocUnattributed( pMem, nSize );
 }
-/*
-void *_recalloc_base( void *pMem, size_t nSize )
+
+void *_recalloc_base( void *pMem, size_t nCount, size_t nSize )
 {
-	void *pMemOut = ReallocUnattributed( pMem, nSize );
+	void *pMemOut = ReallocUnattributed( pMem, nCount*nSize );
 	if (!pMem)
 	{
-		memset(pMemOut, 0, nSize);
+		memset(pMemOut, 0, nCount*nSize);
 	}
 	return pMemOut;
 }
-*/
+
 void _free_base( void *pMem )
 {
 #if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
@@ -533,12 +533,11 @@ void *__cdecl _expand_base( void *pMem, size_t nNewSize, int nBlockUse )
 	return NULL;
 }
 
-/* crt
+// crt
 void * __cdecl _malloc_crt(size_t size)
 {
 	return AllocUnattributed( size );
 }
-*/
 
 void * __cdecl _calloc_crt(size_t count, size_t size)
 {
@@ -556,7 +555,7 @@ void * __cdecl _realloc_crt(void *ptr, size_t size)
 
 void * __cdecl _recalloc_crt(void *ptr, size_t count, size_t size)
 {
-	return _recalloc( ptr, size, count );
+	return _recalloc_base( ptr, count, size );
 }
 
 ALLOC_CALL void * __cdecl _recalloc ( void * memblock, size_t count, size_t size )
@@ -1872,16 +1871,15 @@ class _LocaleUpdate
         return &localeinfo;
     }
 };
-
 #endif //_MSC_VER
+
+#pragma warning(push)
+#pragma warning(disable: 4483)
 #if _MSC_FULL_VER >= 140050415
 #define _NATIVE_STARTUP_NAMESPACE  __identifier("<CrtImplementationDetails>")
 #else  /* _MSC_FULL_VER >= 140050415 */
 #define _NATIVE_STARTUP_NAMESPACE __CrtImplementationDetails
 #endif  /* _MSC_FULL_VER >= 140050415 */
-
-#pragma warning(push)
-#pragma warning(disable: 4483)
 
 namespace _NATIVE_STARTUP_NAMESPACE
 {
