@@ -1050,7 +1050,7 @@ public:
 			Lock( threadId, nSpinSleepTime );
 		}
 #ifdef _DEBUG
-		if ( m_ownerID != (int32)ThreadGetCurrentId() )
+		if ( m_ownerID != (uint32)ThreadGetCurrentId() )
 			DebuggerBreak();
 
 		if ( m_depth == INT_MAX )
@@ -1067,7 +1067,7 @@ public:
 	void Unlock() volatile
 	{
 #ifdef _DEBUG
-		if ( m_ownerID != (int32)ThreadGetCurrentId() )
+		if ( m_ownerID != (uint32)ThreadGetCurrentId() )
 			DebuggerBreak();
 
 		if ( m_depth <= 0 )
