@@ -14,6 +14,7 @@
 #include "inetchannelinfo.h"
 #include "tier1/bitbuf.h"
 #include "tier1/netadr.h"
+#include "tier1/ns_address.h"
 
 class	IDemoRecorder;
 class	INetMessage;
@@ -26,7 +27,7 @@ typedef struct netpacket_s netpacket_t;
 #define NET_PACKET_ST_DEFINED
 typedef struct netpacket_s
 {
-	netadr_t		from;		// sender IP
+	ns_address		from;		// sender address
 	int				source;		// received source 
 	double			received;	// received time
 	unsigned char	*data;		// pointer to raw packet data
@@ -45,8 +46,12 @@ public:
 	virtual	~INetChannel( void ) {};
 
 	virtual void	SetDataRate(float rate) = 0;
+
 	virtual bool	RegisterMessage(INetMessageBinder *msg) = 0;
 	virtual bool	UnregisterMessage(INetMessageBinder *msg) = 0;
+
+	virtual bool	StartStreaming( unsigned int challengeNr ) = 0;
+	virtual void	ResetStreaming( void ) = 0;
 	virtual void	SetTimeout(float seconds, bool bForceExact = false) = 0;
 	virtual void	SetDemoRecorder(IDemoRecorder *recorder) = 0;
 	virtual void	SetChallengeNr(unsigned int chnr) = 0;
@@ -56,7 +61,7 @@ public:
 	virtual void	Shutdown(const char *reason) = 0;
 	
 	virtual void	ProcessPlayback( void ) = 0;
-    virtual bool    ProcessStream( void ) = 0;
+	virtual bool	ProcessStream( void ) = 0;
 	virtual void	ProcessPacket( struct netpacket_s* packet, bool bHasHeader ) = 0;
 			
 	virtual bool	SendNetMsg(INetMessage &msg, bool bForceReliable = false, bool bVoice = false ) = 0;
@@ -64,14 +69,14 @@ public:
 	FORCEINLINE bool SendNetMsg(INetMessage const &msg, bool bForceReliable = false, bool bVoice = false ) { return SendNetMsg( *( (INetMessage *) &msg ), bForceReliable, bVoice ); }
 #endif
 	virtual bool	SendData(bf_write &msg, bool bReliable = true) = 0;
-	virtual bool	SendFile(const char *filename, unsigned int transferID, bool isReplayDemo) = 0;
-	virtual void	DenyFile(const char *filename, unsigned int transferID, bool isReplayDemo) = 0;
+	virtual bool	SendFile(const char *filename, unsigned int transferID, bool bIsReplayDemoFile ) = 0;
+	virtual void	DenyFile(const char *filename, unsigned int transferID, bool bIsReplayDemoFile ) = 0;
 	virtual void	RequestFile_OLD(const char *filename, unsigned int transferID) = 0;	// get rid of this function when we version the 
 	virtual void	SetChoked( void ) = 0;
 	virtual int		SendDatagram(bf_write *data) = 0;		
 	virtual bool	Transmit(bool onlyReliable = false) = 0;
 
-	virtual const netadr_t	&GetRemoteAddress( void ) const = 0;
+	virtual const ns_address &GetRemoteAddress( void ) const = 0;
 	virtual INetChannelHandler *GetMsgHandler( void ) const = 0;
 	virtual int				GetDropNumber( void ) const = 0;
 	virtual int				GetSocket( void ) const = 0;
@@ -87,7 +92,8 @@ public:
 
 	virtual void	SetFileTransmissionMode(bool bBackgroundMode) = 0;
 	virtual void	SetCompressionMode( bool bUseCompression ) = 0;
-	virtual unsigned int RequestFile(const char *filename, bool isReplayDemoFile) = 0;
+	virtual unsigned int RequestFile(const char *filename, bool bIsReplayDemoFile ) = 0;
+	virtual float	GetTimeSinceLastReceived( void ) const = 0;	// get time since last received packet in seconds
 
 	virtual void	SetMaxBufferSize(bool bReliable, int nBytes, bool bVoice = false ) = 0;
 
@@ -106,9 +112,12 @@ public:
 	virtual void	DetachSplitPlayer( int nSplitPlayerSlot ) = 0;
 
 	virtual bool	IsRemoteDisconnected() const = 0;
-	virtual bool	WasLastMessageReliable() const = 0;
-	virtual unsigned int GetChannelEncryptionKey( void ) const = 0;
-	virtual bool	EnqueueVeryLargeAsyncTransfer( INetMessage &msg ) = 0;
+
+	virtual bool	WasLastMessageReliable() const = 0; // True if the last (or currently processing) message was sent via the reliable channel
+
+	virtual const unsigned char * GetChannelEncryptionKey() const = 0;	// Returns a buffer with channel encryption key data (network layer determines the buffer size)
+
+	virtual bool	EnqueueVeryLargeAsyncTransfer( INetMessage &msg ) = 0;	// Enqueues a message for a large async transfer
 };
 
 
