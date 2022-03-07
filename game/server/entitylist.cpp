@@ -10,7 +10,7 @@
 #include "utlvector.h"
 #include "igamesystem.h"
 #include "collisionutils.h"
-#include "UtlSortVector.h"
+#include "utlsortvector.h"
 #include "tier0/vprof.h"
 #include "mapentities.h"
 #include "client.h"
@@ -19,7 +19,10 @@
 #include "datacache/imdlcache.h"
 #include "tier1/utlhash.h"
 
-
+#ifdef PORTAL2
+#include "team.h"
+#include "portal_mp_gamerules.h"
+#endif // PORTAL2
 
 #ifdef HL2_DLL
 #include "npc_playercompanion.h"
@@ -220,6 +223,8 @@ public:
 				Assert(m_simThinkList[i].nextThinkTick>=0);
 				int entinfoIndex = m_simThinkList[i].entEntry;
 				const CEntInfo *pInfo = gEntList.GetEntInfoPtrByIndex( entinfoIndex );
+				if ( !pInfo->m_pEntity )
+					continue;
 				pList[out] = (CBaseEntity *)pInfo->m_pEntity;
 				Assert(m_simThinkList[i].nextThinkTick==0 || pList[out]->GetFirstThinkTick()==m_simThinkList[i].nextThinkTick);
 				Assert( gEntList.IsEntityPtr( pList[out] ) );
@@ -364,8 +369,8 @@ public:
 
 	unsigned int operator()( const EntsByStringList_t &item ) const
 	{
-		COMPILE_TIME_ASSERT( sizeof(char *) == sizeof(int) );
-		return HashInt( (int)item.iszStr.ToCStr() );
+		COMPILE_TIME_ASSERT( sizeof( char * ) == sizeof( intp ) );
+		return HashIntp( ( intp )item.iszStr.ToCStr() );
 	}
 };
 
@@ -387,11 +392,25 @@ CGlobalEntityList::CGlobalEntityList()
 // only called from with the CBaseEntity destructor
 static bool g_fInCleanupDelete;
 
+void CGlobalEntityList::UpdateName( IHandleEntity *pHandleEnt, CBaseHandle hEnt )
+{
+	CEntInfo *pEntInfo = const_cast<CEntInfo *>( GetEntInfoPtr( hEnt ) );
+	IServerUnknown *pUnk = static_cast<IServerUnknown*>(LookupEntity( hEnt ));
+	CBaseEntity *pEnt = pUnk->GetBaseEntity();
+	pEntInfo->m_iClassName = MAKE_STRING( pEnt->GetClassname() );
+	pEntInfo->m_iName = pEnt->GetEntityName();
+}
+
+void CGlobalEntityList::UpdateName( IHandleEntity *pEnt )
+{
+	UpdateName( pEnt, pEnt->GetRefEHandle() );
+}
+
 
 // mark an entity as deleted
 void CGlobalEntityList::AddToDeleteList( IServerNetworkable *ent )
 {
-	if ( ent && ent->GetEntityHandle()->GetRefEHandle() != INVALID_EHANDLE_INDEX )
+	if ( ent && ent->GetEntityHandle()->GetRefEHandle() != CBaseHandle( INVALID_EHANDLE ) )
 	{
 		g_DeleteList.AddToTail( ent );
 	}
@@ -402,6 +421,7 @@ extern bool g_bDisableEhandleAccess;
 void CGlobalEntityList::CleanupDeleteList( void )
 {
 	VPROF( "CGlobalEntityList::CleanupDeleteList" );
+	SNPROF( "CGlobalEntityList::CleanupDeleteList" );
 	g_fInCleanupDelete = true;
 	// clean up the vphysics delete list as well
 	PhysOnCleanupDeleteList();
@@ -597,7 +617,7 @@ CBaseEntity *CGlobalEntityList::FindEntityByClassname( CBaseEntity *pStartEntity
 			continue;
 		}
 
-		if ( pEntity->ClassMatches(szName) )
+		if ( EntityNamesMatch( szName, pInfo->m_iClassName ) )
 			return pEntity;
 	}
 
@@ -679,7 +699,38 @@ CBaseEntity *CGlobalEntityList::FindEntityProcedural( const char *szName, CBaseE
 		{
 			return pSearchingEntity;
 		}
+#ifdef PORTAL2
+		else if ( FStrEq( pName, "player_orange" ) )
+		{
+			CTeam *pTeam = GetGlobalTeam( TEAM_RED );
+			Assert( pTeam );
+			if ( pTeam == NULL )
+				return NULL;
 
+			for ( int i = 0; i < pTeam->GetNumPlayers(); i++ )
+			{
+				if ( pTeam->GetPlayer( i ) != NULL )
+				{
+					return (CBaseEntity *) pTeam->GetPlayer( i );
+				}
+			}
+		}
+		else if ( FStrEq( pName, "player_blue" ) )
+		{
+			CTeam *pTeam = GetGlobalTeam( TEAM_BLUE );
+			Assert( pTeam );
+			if ( pTeam == NULL )
+				return NULL;
+
+			for ( int i = 0; i < pTeam->GetNumPlayers(); i++ )
+			{
+				if ( pTeam->GetPlayer( i ) != NULL )
+				{
+					return (CBaseEntity *) pTeam->GetPlayer( i );
+				}
+			}
+		}
+#endif // PORTAL2
 		else 
 		{
 			Warning( "Invalid entity search name %s\n", szName );
@@ -725,10 +776,10 @@ CBaseEntity *CGlobalEntityList::FindEntityByName( CBaseEntity *pStartEntity, con
 			continue;
 		}
 
-		if ( !ent->m_iName.Get() )
+		if ( pInfo->m_iName == NULL_STRING )
 			continue;
 
-		if ( ent->NameMatches( szName ) )
+		if ( EntityNamesMatch( szName, pInfo->m_iName ) )
 		{
 			if ( pFilter && !pFilter->ShouldFindEntity(ent) )
 				continue;
@@ -756,10 +807,10 @@ CBaseEntity *CGlobalEntityList::FindEntityByNameFast( CBaseEntity *pStartEntity,
 			continue;
 		}
 
-		if ( !ent->m_iName.Get() )
+		if ( pInfo->m_iName == NULL_STRING )
 			continue;
 
-		if ( ent->m_iName.Get() == iszName )
+		if ( pInfo->m_iName == iszName )
 		{
 			return ent;
 		}
@@ -855,7 +906,7 @@ CBaseEntity	*CGlobalEntityList::FindEntityByOutputTarget( CBaseEntity *pStartEnt
 				typedescription_t *dataDesc = &dmap->dataDesc[i];
 				if ( ( dataDesc->fieldType == FIELD_CUSTOM ) && ( dataDesc->flags & FTYPEDESC_OUTPUT ) )
 				{
-					CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((int)ent + (int)dataDesc->fieldOffset);
+					CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((intp)ent + (intp)dataDesc->fieldOffset);
 					if ( pOutput->GetActionForTarget( iTarget ) )
 						return ent;
 				}
@@ -1637,7 +1688,14 @@ public:
 	{
 		if ( pEntity->IsMarkedForDeletion() )
 			return;
+
+		Assert( !m_updateList.IsValidIndex( m_updateList.Find( pEntity ) ) );
 		m_updateList.AddToTail( pEntity );
+	}
+
+	void RemoveEntity( CBaseEntity *pEntity )
+	{
+		m_updateList.FindAndFastRemove( pEntity );
 	}
 
 private:
@@ -1651,10 +1709,16 @@ void EntityTouch_Add( CBaseEntity *pEntity )
 	g_TouchManager.AddEntity( pEntity );
 }
 
+void EntityTouch_Remove( CBaseEntity *pEntity )
+{
+	g_TouchManager.RemoveEntity( pEntity );
+}
+
 
 void CEntityTouchManager::FrameUpdatePostEntityThink()
 {
 	VPROF( "CEntityTouchManager::FrameUpdatePostEntityThink" );
+	SNPROF( "CEntityTouchManager::FrameUpdatePostEntityThink" );
 	// Loop through all entities again, checking their untouch if flagged to do so
 	
 	int count = m_updateList.Count();
@@ -1879,6 +1943,9 @@ private:
 
 CON_COMMAND(report_entities, "Lists all entities")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	CSortedEntityList list;
 	CBaseEntity *pEntity = gEntList.FirstEnt();
 	while ( pEntity )
@@ -1892,6 +1959,9 @@ CON_COMMAND(report_entities, "Lists all entities")
 
 CON_COMMAND(report_touchlinks, "Lists all touchlinks")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	CSortedEntityList list;
 	CBaseEntity *pEntity = gEntList.FirstEnt();
 	const char *pClassname = NULL;
@@ -1921,6 +1991,9 @@ CON_COMMAND(report_touchlinks, "Lists all touchlinks")
 
 CON_COMMAND(report_simthinklist, "Lists all simulating/thinking entities")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	CBaseEntity *pTmp[NUM_ENT_ENTRIES];
 	int count = SimThink_ListCopy( pTmp, ARRAYSIZE(pTmp) );
 

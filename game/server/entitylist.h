@@ -13,8 +13,7 @@
 #pragma once
 #endif
 
-#include "baseentity.h"
-
+class CBaseEntity;
 class IEntityListener;
 
 abstract_class CBaseEntityClassList
@@ -82,6 +81,12 @@ private:
 	CUtlVector<IEntityListener *>	m_entityListeners;
 
 public:
+	CBaseHandle AddNetworkableEntity( IHandleEntity *pEnt, int index, int iForcedSerialNum = -1 );
+	CBaseHandle AddNonNetworkableEntity( IHandleEntity *pEnt );
+
+	void UpdateName( IHandleEntity *pEnt, CBaseHandle hEnt );
+	void UpdateName( IHandleEntity *pEnt );
+
 	IServerNetworkable* GetServerNetworkable( CBaseHandle hEnt ) const;
 	CBaseNetworkable* GetBaseNetworkable( CBaseHandle hEnt ) const;
 	CBaseEntity* GetBaseEntity( CBaseHandle hEnt ) const;
@@ -185,6 +190,21 @@ extern CGlobalEntityList gEntList;
 //-----------------------------------------------------------------------------
 // Inlines.
 //-----------------------------------------------------------------------------
+
+inline CBaseHandle CGlobalEntityList::AddNetworkableEntity( IHandleEntity *pEnt, int index, int iForcedSerialNum )
+{
+	CBaseHandle h = CBaseEntityList::AddNetworkableEntity( pEnt, index, iForcedSerialNum );
+	UpdateName( pEnt, h );
+	return h;
+}
+
+inline CBaseHandle CGlobalEntityList::AddNonNetworkableEntity( IHandleEntity *pEnt )
+{
+	CBaseHandle h = CBaseEntityList::AddNonNetworkableEntity( pEnt );
+	UpdateName( pEnt, h );
+	return h;
+}
+
 inline edict_t* CGlobalEntityList::GetEdict( CBaseHandle hEnt ) const
 {
 	IServerUnknown *pUnk = static_cast<IServerUnknown*>(LookupEntity( hEnt ));
@@ -363,6 +383,7 @@ public:
 extern INotify *g_pNotify;
 
 void EntityTouch_Add( CBaseEntity *pEntity );
+void EntityTouch_Remove( CBaseEntity *pEntity );
 int AimTarget_ListCount();
 int AimTarget_ListCopy( CBaseEntity *pList[], int listMax );
 CBaseEntity *AimTarget_ListElement( int iIndex );
