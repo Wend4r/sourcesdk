@@ -28,6 +28,7 @@
 class CDamageModifier;
 
 struct CSoundParameters;
+class CStudioHdr;
 
 #ifndef AI_CriteriaSet
 #define AI_CriteriaSet ResponseRules::CriteriaSet 
@@ -41,7 +42,16 @@ using ResponseRules::IResponseSystem;
 class IEntitySaveUtils;
 class CRecipientFilter;
 
+#ifdef PORTAL
+#include "portal_shareddefs.h"
+class CPortal_Base2D;
+#endif // PORTAL 
 
+
+
+// Matching the high level concept is significantly better than other criteria
+// FIXME:  Could do this in the script file by making it required and bumping up weighting there instead...
+#define CONCEPT_WEIGHT 5.0f
 
 typedef CHandle<CBaseEntity> EHANDLE;
 
@@ -97,7 +107,9 @@ class CGlobalEvent;
 
 typedef CUtlVector< CBaseEntity* > EntityList_t;
 
-
+#ifdef PORTAL2
+class CInfoPlacementHelper;
+#endif
 
 //
 // Structure passed to input handlers.
@@ -292,6 +304,10 @@ public:
 	CBaseEntity( bool bServerOnly=false );
 	virtual ~CBaseEntity();
 
+	// Entities are not copyable
+	CBaseEntity( const CBaseEntity& ) = delete;
+	CBaseEntity& operator=( const CBaseEntity& ) = delete;
+
 	// prediction system
 	DECLARE_PREDICTABLE();
 	// network data
@@ -346,9 +362,9 @@ public:
 	bool					IsCurrentlyTouching( void ) const;
 	const Vector&			GetAbsOrigin( void ) const;
 	const QAngle&			GetAbsAngles( void ) const;  // see also GetVectors()
-	inline Vector			Forward() const; ///< get my forward (+x) vector
-	inline Vector			Left() const;    ///< get my left    (+y) vector
-	inline Vector			Up() const;      ///< get my up      (+z) vector
+	inline Vector			Forward() const RESTRICT; ///< get my forward (+x) vector
+	inline Vector			Left() const RESTRICT;    ///< get my left    (+y) vector
+	inline Vector			Up() const RESTRICT;      ///< get my up      (+z) vector
 
 	SolidType_t				GetSolid() const;
 	int			 			GetSolidFlags( void ) const;
@@ -479,6 +495,13 @@ public:
 
 	virtual void SetModel( const char *szModelName );
 
+protected:
+	// Notification on model load. May be called multiple times for dynamic models.
+	// Implementations must call BaseClass::OnNewModel and pass return value through.
+	virtual CStudioHdr* OnNewModel();
+
+public:
+
 	virtual void InitSharedVars( void ) {};
 	virtual void PostConstructor( const char *szClassname );
 	virtual void PostClientActive( void );
@@ -534,10 +557,18 @@ public:
 	bool		NameMatchesExact( string_t nameStr );
 	bool		ClassMatchesExact( string_t nameStr );
 
+	void		MarkNeedsNamePurge();
+
 	template <typename T>
 	bool		Downcast( string_t iszClass, T **ppResult );
 
+	const float	GetUseLookAtAngle( void ) { return m_flUseLookAtAngle; }
+	void		SetUseLookAtAngle( float flNewValue ) { m_flUseLookAtAngle = flNewValue; }
+
 private:
+
+	CNetworkVar( float, m_flUseLookAtAngle ); // dot product angle used for +USE events
+
 	bool		NameMatchesComplex( const char *pszNameOrWildcard );
 	bool		ClassMatchesComplex( const char *pszClassOrWildcard );
 	void		TransformStepData_WorldToParent( CBaseEntity *pParent );
@@ -575,7 +606,12 @@ public:
 	// capabilities
 	virtual int	ObjectCaps( void );
 
-
+#if defined ( PORTAL2 )
+	// For portal 2, the use traces are on the client so
+	// we network down entities current use capabilities for validity checking.
+	CNetworkVar( int,			m_iObjectCapsCache );
+	void		UpdateObjectCapsCache();
+#endif 
 
 	// Verifies that the data description is valid in debug builds.
 	#ifdef _DEBUG
@@ -597,6 +633,8 @@ public:
 	void InputSetParentAttachment( inputdata_t &inputdata );
 	void InputSetParentAttachmentMaintainOffset( inputdata_t &inputdata );
 	void InputClearParent( inputdata_t &inputdata );
+	void InputSetLocalOrigin( inputdata_t &inputdata );
+	void InputSetLocalAngles( inputdata_t &inputdata );
 	void InputSetTeam( inputdata_t &inputdata );
 	void InputUse( inputdata_t &inputdata );
 	void InputKill( inputdata_t &inputdata );
@@ -611,6 +649,12 @@ public:
 	void InputDispatchResponse( inputdata_t& inputdata );
 	void InputDisableShadow( inputdata_t &inputdata );
 	void InputEnableShadow( inputdata_t &inputdata );
+	void InputDisableReceivingFlashlight( inputdata_t &inputdata );
+	void InputEnableReceivingFlashlight( inputdata_t &inputdata );
+	void InputDisableDrawInFastReflection( inputdata_t &inputdata );
+	void InputEnableDrawInFastReflection( inputdata_t &inputdata );
+	void InputDisableDraw( inputdata_t &inputdata );
+	void InputEnableDraw( inputdata_t &inputdata );
 	void InputAddOutput( inputdata_t &inputdata );
 	void InputFireUser1( inputdata_t &inputdata );
 	void InputFireUser2( inputdata_t &inputdata );
@@ -619,6 +663,9 @@ public:
 	void InputRunScript( inputdata_t &inputdata );
 	void InputRunScriptFile( inputdata_t &inputdata );
 	void InputCallScriptFunction( inputdata_t &inputdata );
+#ifdef PORTAL2
+	void InputRemovePaint( inputdata_t &inputdata );
+#endif
 
 	bool RunScriptFile( const char *pScriptFile, bool bUseRootScope = false );
 	bool RunScript( const char *pScriptText, const char *pDebugFilename = "CBaseEntity::RunScript" );
@@ -726,8 +773,10 @@ public:
 	float				GetSimulationTime() const;
 	void				SetSimulationTime( float st );
 
+#if defined(ENABLE_CREATE_TIME)
 	float				GetCreateTime()										{ return m_flCreateTime; }
 	void				SetCreateTime( float flCreateTime )					{ m_flCreateTime = flCreateTime; }
+#endif
 
 	void				SetRenderMode( RenderMode_t nRenderMode );
 	RenderMode_t		GetRenderMode() const;
@@ -741,12 +790,6 @@ private:
 public:
 	// members
 	string_t m_iClassname;  // identifier for entity creation and save/restore
-	string_t m_iGlobalname; // identifier for carrying entity across level transitions
-	string_t m_iParent;	// the name of the entities parent; linked into m_pParent during Activate()
-
-	// This comes from the "id" key/value that Hammer adds to entities.
-	// It is used by Foundry to match up live (engine) entities with Hammer entities.
-	int		m_iHammerID; // Hammer unique edit id number
 
 public:
 	const color24 GetRenderColor() const;
@@ -761,7 +804,9 @@ public:
 	float		m_flPrevAnimTime;
 	CNetworkVar( float, m_flAnimTime );  // this is the point in time that the client will interpolate to position,angle,frame,etc.
 	CNetworkVar( float, m_flSimulationTime );
+#if defined(ENABLE_CREATE_TIME)
 	CNetworkVar( float, m_flCreateTime );
+#endif
 
 	int				m_nLastThinkTick;
 
@@ -808,8 +853,6 @@ protected:
 	string_t	m_iszResponseContext;
 
 private:
-	CBaseEntity( CBaseEntity& );
-
 	// list handling
 	friend class CGlobalEntityList;
 	friend class CThinkSyncTester;
@@ -861,7 +904,7 @@ public:
 
 	virtual int		TakeHealth( float flHealth, int bitsDamageType );
 
-	virtual bool	IsAlive( void );
+	virtual bool	IsAlive( void )const;
 	// Entity killed (only fired once)
 	virtual void	Event_Killed( const CTakeDamageInfo &info );
 	
@@ -884,7 +927,7 @@ public:
 	bool					IsWorld() const { extern CWorld *g_WorldEntity; return (void *)this == (void *)g_WorldEntity; }
 	virtual char const		*DamageDecal( int bitsDamageType, int gameMaterial );
 	virtual void			DecalTrace( trace_t *pTrace, char const *decalName );
-	virtual void			ImpactTrace( trace_t *pTrace, int iDamageType, char *pCustomImpactName = NULL );
+	virtual void			ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName = NULL );
 
 	void			AddPoints( int score, bool bAllowNegativeScore );
 	void			AddPointsToTeam( int score, bool bAllowNegativeScore );
@@ -902,6 +945,7 @@ public:
 
 	virtual bool	IsBaseCombatWeapon( void ) const { return false; }
 	virtual CBaseCombatWeapon *MyCombatWeaponPointer( void ) { return NULL; }
+	//virtual bool					IsGrenadeProjectile( void ) { return false; };
 
 	// If this is a vehicle, returns the vehicle interface
 	virtual IServerVehicle*			GetServerVehicle() { return NULL; }
@@ -912,6 +956,7 @@ public:
 	// Team Handling
 	CTeam			*GetTeam( void ) const;				// Get the Team this entity is on
 	int				GetTeamNumber( void ) const;		// Get the Team number of the team this entity is on
+	int				GetPendingTeamNumber( void ) const;	// Get the pending Team number of the team this is entity will be on at the beginning of the next round
 	virtual void	ChangeTeam( int iTeamNum );			// Assign this entity to a team.
 	bool			IsInTeam( CTeam *pTeam ) const;		// Returns true if this entity's in the specified team
 	bool			InSameTeam( CBaseEntity *pEntity ) const;	// Returns true if the specified entity is on the same team as this one
@@ -931,6 +976,11 @@ public:
 	virtual CBaseEntity		*GetEnemy( void ) { return NULL; }
 	virtual CBaseEntity		*GetEnemy( void ) const { return NULL; }
 
+	// Paint helper
+	// Should never be called on anything that doesn't use PropPaintPowerUser, which overrides this.
+#ifdef PORTAL2
+	virtual void UpdatePaintPowersFromContacts() { Assert(0); }
+#endif
 
 	void	ViewPunch( const QAngle &angleOffset );
 	void	VelocityPunch( const Vector &vecForce );
@@ -938,10 +988,6 @@ public:
 	CBaseEntity *GetNextTarget( void );
 	
 	// fundamental callbacks
-	void (CBaseEntity ::*m_pfnTouch)( CBaseEntity *pOther );
-	void (CBaseEntity ::*m_pfnUse)( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	void (CBaseEntity ::*m_pfnBlocked)( CBaseEntity *pOther );
-
 	virtual void			Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 	virtual void			StartTouch( CBaseEntity *pOther );
 	virtual void			Touch( CBaseEntity *pOther ); 
@@ -961,7 +1007,7 @@ public:
 	void					PhysicsImpact( CBaseEntity *other, trace_t &trace );
  	void					PhysicsMarkEntitiesAsTouching( CBaseEntity *other, trace_t &trace );
 	void					PhysicsMarkEntitiesAsTouchingEventDriven( CBaseEntity *other, trace_t &trace );
-	void					PhysicsTouchTriggers( const Vector *pPrevAbsOrigin = NULL );
+	virtual void			PhysicsTouchTriggers( const Vector *pPrevAbsOrigin = NULL );
 	virtual void			PhysicsLandedOnGround( float flFallingSpeed ) { return; }
 
 	// Physics helper
@@ -1002,7 +1048,7 @@ public:
 
 	// change position, velocity, orientation instantly
 	// passing NULL means no change
-	virtual void			Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity );
+	virtual void			Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity, bool bUseSlowHighAccuracyContacts = true );
 	// notify that another entity (that you were watching) was teleported
 	virtual void			NotifySystemEvent( CBaseEntity *pNotify, notify_system_event_t eventType, const notify_system_event_params_t &params );
 
@@ -1037,40 +1083,49 @@ public:
 	virtual void	SetHealth( int amt )	{ m_iHealth = amt; }
 
 	// Ugly code to lookup all functions to make sure they are in the table when set.
-#ifdef _DEBUG
-	void FunctionCheck( void *pFunction, const char *name );
-
-	ENTITYFUNCPTR TouchSet( ENTITYFUNCPTR func, char *name ) 
+	// Turn this off in 64-bit builds because OSX-64 fails to compile.
+#if defined( _DEBUG )
+	void FunctionCheck( inputfunc_t pFunction, const char *name );
+	ENTITYFUNCPTR TouchSet( ENTITYFUNCPTR func, char *name )
 	{ 
-#ifdef GNUC
-		COMPILE_TIME_ASSERT( sizeof(func) == 8 );
-#else
-		COMPILE_TIME_ASSERT( sizeof(func) == 4 );
+#if defined( __clang__ ) 
+		COMPILE_TIME_ASSERT( sizeof( func ) == sizeof( m_pfnTouch ) );
+#elif defined( GNUC ) || defined( PLATFORM_WINDOWS_PC64 )
+        //lwss update: newer compilers will make class member pointers 2x the size of a pointer
+	    COMPILE_TIME_ASSERT( sizeof(func) == 8 || sizeof(func) == 16 );
+#elif !defined( _PS3 )
+		COMPILE_TIME_ASSERT( sizeof(func) == 4 || sizeof(func) == 8 );
 #endif
 		m_pfnTouch = func; 
-		FunctionCheck( *(reinterpret_cast<void **>(&m_pfnTouch)), name ); 
+		FunctionCheck( reinterpret_cast<inputfunc_t>(m_pfnTouch), name ); 
 		return func;
 	}
 	USEPTR	UseSet( USEPTR func, char *name ) 
 	{ 
-#ifdef GNUC
-		COMPILE_TIME_ASSERT( sizeof(func) == 8 );
-#else
-		COMPILE_TIME_ASSERT( sizeof(func) == 4 );
+#if defined( __clang__ ) 
+		COMPILE_TIME_ASSERT( sizeof( func ) == sizeof( m_pfnTouch ) );
+#elif defined( GNUC ) || defined( PLATFORM_WINDOWS_PC64 )
+        //lwss update: newer compilers will make class member pointers 2x the size of a pointer
+	    COMPILE_TIME_ASSERT( sizeof(func) == 8 || sizeof(func) == 16 );
+#elif !defined( _PS3 )
+		COMPILE_TIME_ASSERT( sizeof(func) == 4 || sizeof(func) == 8 );
 #endif
 		m_pfnUse = func; 
-		FunctionCheck( *(reinterpret_cast<void **>(&m_pfnUse)), name ); 
+		FunctionCheck( reinterpret_cast<inputfunc_t>(m_pfnUse), name ); 
 		return func;
 	}
 	ENTITYFUNCPTR	BlockedSet( ENTITYFUNCPTR func, char *name ) 
 	{ 
-#ifdef GNUC
-		COMPILE_TIME_ASSERT( sizeof(func) == 8 );
-#else
-		COMPILE_TIME_ASSERT( sizeof(func) == 4 );
+#if defined( __clang__ ) 
+		COMPILE_TIME_ASSERT( sizeof( func ) == sizeof( m_pfnTouch ) );
+#elif defined( GNUC ) || defined( PLATFORM_WINDOWS_PC64 )
+        //lwss update: newer compilers will make class member pointers 2x the size of a pointer
+	    COMPILE_TIME_ASSERT( sizeof(func) == 8 || sizeof(func) == 16 );
+#elif !defined( _PS3 )
+		COMPILE_TIME_ASSERT( sizeof(func) == 4 || sizeof(func) == 8 );
 #endif
 		m_pfnBlocked = func; 
-		FunctionCheck( *(reinterpret_cast<void **>(&m_pfnBlocked)), name ); 
+		FunctionCheck( reinterpret_cast<inputfunc_t>(m_pfnBlocked), name ); 
 		return func;
 	}
 
@@ -1082,7 +1137,10 @@ public:
 	virtual void	ModifyOrAppendDerivedCriteria( AI_CriteriaSet& set ) {};
 	void			AppendContextToCriteria( AI_CriteriaSet& set, const char *prefix = "" );
 	void			DumpResponseCriteria( void );
-	
+protected:
+	string_t		m_ModelName;
+
+	CNetworkVar( bool, m_bIsAutoaimTarget );
 private:
 	friend class CAI_Senses;
 	CBaseEntity	*m_pLink;// used for temporary link-list operations. 
@@ -1090,19 +1148,6 @@ private:
 public:
 	// variables promoted from edict_t
 	string_t	m_target;
-	CNetworkVarForDerived( int, m_iMaxHealth ); // CBaseEntity doesn't care about changes to this variable, but there are derived classes that do.
-	CNetworkVarForDerived( int, m_iHealth );
-
-	CNetworkVarForDerived( char, m_lifeState );
-	CNetworkVarForDerived( char , m_takedamage );
-
-	// Damage filtering
-	string_t	m_iszDamageFilterName;	// The name of the entity to use as our damage filter.
-	EHANDLE		m_hDamageFilter;		// The entity that controls who can damage us.
-
-	// Debugging / devolopment fields
-	int				m_debugOverlays;	// For debug only (bitfields)
-	TimedOverlay_t*	m_pTimedOverlay;	// For debug only
 
 	// virtual functions used by a few classes
 	
@@ -1141,14 +1186,6 @@ public:
 
 	virtual const Vector &GetViewOffset() const;
 	virtual void SetViewOffset( const Vector &v );
-
-	// TrackIR
-	const Vector&		GetEyeOffset() const;
-	void				SetEyeOffset( const Vector& v );
-
-	const QAngle &		GetEyeAngleOffset() const;
-	void				SetEyeAngleOffset( const QAngle & qa );
-	// TrackIR
 
 	// NOTE: Setting the abs velocity in either space will cause a recomputation
 	// in the other space, so setting the abs velocity will also set the local vel
@@ -1291,9 +1328,6 @@ public:
 	static void SendProxy_CellOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_CellOriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 	static void SendProxy_CellOriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
-	static void SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 		
 	// Used by the PAS filters to ask the entity where in world space the sounds it emits come from.
 	// This is used right now because if you have something sitting on an incline, using our axis-aligned 
@@ -1313,35 +1347,43 @@ public:
 	void					SetLocalTransform( const matrix3x4_t &localTransform );
 
 	// See CSoundEmitterSystem
-	void					EmitSound( const char *soundname, float soundtime = 0.0f, float *duration = NULL );  // Override for doing the general case of CPASAttenuationFilter filter( this ), and EmitSound( filter, entindex(), etc. );
-	void					EmitSound( const char *soundname, HSOUNDSCRIPTHANDLE& handle, float soundtime = 0.0f, float *duration = NULL );  // Override for doing the general case of CPASAttenuationFilter filter( this ), and EmitSound( filter, entindex(), etc. );
+	// Will return the sound guid. If negative, the guid is unknown (call may be successful or not). 0 if the sound was not emitted. Positive if the guid is valid.
+	int						EmitSound( const char *soundname, float soundtime = 0.0f, float *duration = NULL );  // Override for doing the general case of CPASAttenuationFilter filter( this ), and EmitSound( filter, entindex(), etc. );
+	int						EmitSound( const char *soundname, HSOUNDSCRIPTHASH& handle, float soundtime = 0.0f, float *duration = NULL );  // Override for doing the general case of CPASAttenuationFilter filter( this ), and EmitSound( filter, entindex(), etc. );
 	void					ScriptEmitSound( const char *soundname );
+	void					ScriptStopSound( const char *soundname );
 	float					ScriptSoundDuration( const char *soundname, const char *actormodel );
 	void					StopSound( const char *soundname );
-	void					StopSound( const char *soundname, HSOUNDSCRIPTHANDLE& handle );
+	void					StopSound( const char *soundname, HSOUNDSCRIPTHASH& handle );
 	void					GenderExpandString( char const *in, char *out, int maxlen );
 
+	void					SetPendingTeamNum( int nTeamID );
+
+	void UpdateLastMadeNoiseTime( const char* pszSoundName = NULL );
 
 	static float GetSoundDuration( const char *soundname, char const *actormodel );
 
 	static bool	GetParametersForSound( const char *soundname, CSoundParameters &params, char const *actormodel );
-	static bool	GetParametersForSound( const char *soundname, HSOUNDSCRIPTHANDLE& handle, CSoundParameters &params, char const *actormodel );
+	static bool	GetParametersForSound( const char *soundname, HSOUNDSCRIPTHASH& handle, CSoundParameters &params, char const *actormodel );
 
-	static void EmitSound( IRecipientFilter& filter, int iEntIndex, const char *soundname, const Vector *pOrigin = NULL, float soundtime = 0.0f, float *duration = NULL );
-	static void EmitSound( IRecipientFilter& filter, int iEntIndex, const char *soundname, HSOUNDSCRIPTHANDLE& handle, const Vector *pOrigin = NULL, float soundtime = 0.0f, float *duration = NULL );
+	static int EmitSound( IRecipientFilter& filter, int iEntIndex, const char *soundname, const Vector *pOrigin = NULL, float soundtime = 0.0f, float *duration = NULL );
+	static int EmitSound( IRecipientFilter& filter, int iEntIndex, const char *soundname, HSOUNDSCRIPTHASH& handle, const Vector *pOrigin = NULL, float soundtime = 0.0f, float *duration = NULL );
 	static void StopSound( int iEntIndex, const char *soundname );
 	static soundlevel_t LookupSoundLevel( const char *soundname );
-	static soundlevel_t LookupSoundLevel( const char *soundname, HSOUNDSCRIPTHANDLE& handle );
+	static soundlevel_t LookupSoundLevel( const char *soundname, HSOUNDSCRIPTHASH& handle );
 
-	static void EmitSound( IRecipientFilter& filter, int iEntIndex, const EmitSound_t & params );
-	static void EmitSound( IRecipientFilter& filter, int iEntIndex, const EmitSound_t & params, HSOUNDSCRIPTHANDLE& handle );
+	static int EmitSound( IRecipientFilter& filter, int iEntIndex, const EmitSound_t & params );
+	static int EmitSound( IRecipientFilter& filter, int iEntIndex, const EmitSound_t & params, HSOUNDSCRIPTHASH& handle );
 
 	static void StopSound( int iEntIndex, int iChannel, const char *pSample, bool bIsStoppingSpeakerSound = false );
 
 	static void EmitAmbientSound( int entindex, const Vector& origin, const char *soundname, int flags = 0, float soundtime = 0.0f, float *duration = NULL );
 
+	// keep track of other-player audible sounds.
+	CNetworkVar( float, m_flLastMadeNoiseTime );
+
 	// These files need to be listed in scripts/game_sounds_manifest.txt
-	static HSOUNDSCRIPTHANDLE PrecacheScriptSound( const char *soundname );
+	static HSOUNDSCRIPTHASH PrecacheScriptSound( const char *soundname );
 	static void PrefetchScriptSound( const char *soundname );
 	void VScriptPrecacheScriptSound( const char *soundname );
 
@@ -1400,7 +1442,7 @@ public:
 	virtual void	VPhysicsUpdate( IPhysicsObject *pPhysics );
 	void			VPhysicsUpdatePusher( IPhysicsObject *pPhysics );
 	float			VPhysicsGetNonShadowMass( void ) const { return m_flNonShadowMass; }
-	
+
 	// react physically to damage (called from CBaseEntity::OnTakeDamage() by default)
 	virtual int		VPhysicsTakeDamage( const CTakeDamageInfo &info );
 	virtual void	VPhysicsShadowCollision( int index, gamevcollisionevent_t *pEvent );
@@ -1577,8 +1619,6 @@ private:
 	void ShadowCastDistThink( );
 
 public:
-	// was pev->speed
-	float		m_flSpeed;
 	// was pev->renderfx
 	CNetworkVar( unsigned char, m_nRenderFX );
 	// was pev->rendermode
@@ -1589,15 +1629,8 @@ public:
 
 protected:
 	// Which frame did I simulate?
-	int						m_nSimulationTick;
-
-	// TrackIR
-	Vector							m_vecEyeOffset;
-	QAngle							m_EyeAngleOffset;
-	// TrackIR
-
-	// FIXME: Make this private! Still too many references to do so...
-	CNetworkVar( int, m_spawnflags );
+	int					m_nSimulationTick;
+	int					m_fDataObjectTypes;
 
 protected:
 	int		m_iEFlags;	// entity flags EFL_*
@@ -1606,11 +1639,11 @@ protected:
 
 	CNetworkVar( string_t, m_iName ); // name used to identify this entity
 
-
-
 	// Damage modifiers
+#if defined(ENABLE_DAMAGE_MODIFIERS)
 	friend class CDamageModifier;
-	CUtlLinkedList<CDamageModifier*,int>	m_DamageModifiers;
+	CUtlLinkedList<CDamageModifier*,int>	m_DamageModifiers;		// ONLY TF, REMOVE?
+#endif
 
 	EHANDLE m_pParent;  // for movement hierarchy
 	byte	m_nTransmitStateOwnedCounter;
@@ -1622,7 +1655,7 @@ protected:
 	// FIXME: clarify m_pParent vs. m_pMoveParent
 	CNetworkHandle( CBaseEntity, m_hMoveParent );
 	// cached child list
-	EHANDLE m_hMoveChild;	
+	EHANDLE m_hMoveChild;
 	// generated from m_pMoveParent
 	EHANDLE m_hMovePeer;	
 
@@ -1631,21 +1664,10 @@ protected:
 	CNetworkVarEmbedded( CCollisionProperty, m_Collision );
 
 	CNetworkHandle( CBaseEntity, m_hOwnerEntity );	// only used to point to an edict it won't collide with
-	CNetworkHandle( CBaseEntity, m_hEffectEntity );	// Fire/Dissolve entity.
-	CNetworkVar( float, m_fadeMinDist );	// Point at which fading is absolute
-	CNetworkVar( float, m_fadeMaxDist );	// Point at which fading is inactive
-	CNetworkVar( float, m_flFadeScale );	// Scale applied to min / max
 
 	CNetworkVar( int, m_CollisionGroup );		// used to cull collision tests
 	IPhysicsObject	*m_pPhysicsObject;	// pointer to the entity's physics object (vphysics.dll)
 	float m_flNonShadowMass;	// cached mass (shadow controllers set mass to VPHYSICS_MAX_MASS, or 50000)
-
-	CNetworkVar( float, m_flShadowCastDistance );
-	float		m_flDesiredShadowCastDistance;
-
-	// Team handling
-	int			m_iInitialTeamNum;		// Team number of this entity's team read from file
-	CNetworkVar( int, m_iTeamNum );				// Team number of this entity's team. 
 
 	// Sets water type + level for physics objects
 	unsigned char	m_nWaterTouch;
@@ -1655,13 +1677,10 @@ protected:
 	float			m_flNavIgnoreUntilTime;
 
 	CNetworkHandleForDerived( CBaseEntity, m_hGroundEntity );
-	float			m_flGroundChangeTime; // Time that the ground entity changed
+	float			m_flGroundChangeTime; // Time that the ground entity changed  --- only used by NPCs, move?
 	
-	string_t		m_ModelName;
-	string_t		m_AIAddOn;
-
 	// Velocity of the thing we're standing on (world space)
-	CNetworkVarForDerived( Vector, m_vecBaseVelocity );
+	CNetworkVectorForDerived( m_vecBaseVelocity );
 
 	// Global velocity
 	Vector			m_vecAbsVelocity;
@@ -1675,17 +1694,13 @@ protected:
 	// local coordinate frame of entity
 	matrix3x4_t		m_rgflCoordinateFrame;
 
-	// Physics state
-	EHANDLE			m_pBlocker;
-
-	// was pev->gravity;
-	float			m_flGravity;  // rename to m_flGravityScale;
 	// was pev->friction
 	CNetworkVarForDerived( float, m_flFriction );
 	CNetworkVar( float, m_flElasticity );
+#if defined(ENABLE_FRICTION_OVERRIDE)
 	float m_flOverriddenFriction;
 	void FrictionRevertThink( void );
-
+#endif
 	// was pev->ltime
 	float			m_flLocalTime;
 	// local time at the beginning of this frame
@@ -1697,8 +1712,12 @@ protected:
 	int				m_nPushEnumCount;
 
 	Vector			m_vecAbsOrigin;
-	CNetworkVectorForDerived( m_vecVelocity );
+	QAngle			m_angAbsRotation;
+	CNetworkVectorXYZForDerived( m_vecVelocity );
 	
+	// Physics state
+	EHANDLE			m_pBlocker;
+
 	//Adrian
 	CNetworkVar( unsigned char, m_iTextureFrameIndex );
 	
@@ -1712,9 +1731,35 @@ protected:
 	CNetworkVar( unsigned char, m_nMaxGPULevel );
 
 public:
+	// was pev->speed
+	string_t m_iGlobalname; // identifier for carrying entity across level transitions
+	string_t m_iParent;	// the name of the entities parent; linked into m_pParent during Activate()
+
+	// This comes from the "id" key/value that Hammer adds to entities.
+	// It is used by Foundry to match up live (engine) entities with Hammer entities.
+	int		m_iHammerID; // Hammer unique edit id number
+	float		m_flSpeed;
+	CNetworkVarForDerived( int, m_iMaxHealth ); // CBaseEntity doesn't care about changes to this variable, but there are derived classes that do.
+	CNetworkVarForDerived( int, m_iHealth );
+	// Damage filtering
+	string_t	m_iszDamageFilterName;	// The name of the entity to use as our damage filter.
+	EHANDLE		m_hDamageFilter;		// The entity that controls who can damage us.
+
+	void (CBaseEntity ::*m_pfnTouch)( CBaseEntity *pOther );
+	void (CBaseEntity ::*m_pfnUse)( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void (CBaseEntity ::*m_pfnBlocked)( CBaseEntity *pOther );
+
+	static uint GetOriginPrefetchOffset() { return offsetof(CBaseEntity,m_vecAbsOrigin); }
 	CNetworkVarForDerived( bool, m_bClientSideRagdoll );
+	CNetworkVarForDerived( char, m_lifeState );
+	CNetworkVarForDerived( char , m_takedamage );
 
 private:
+#if !defined( NO_ENTITY_PREDICTION )
+	CNetworkVar( bool, m_bIsPlayerSimulated );
+	// Player who is driving my simulation
+	CNetworkHandle( CBasePlayer, m_hPlayerSimulationOwner );
+#endif
 	// User outputs. Fired when the "FireInputX" input is triggered.
 	COutputEvent m_OnUser1;
 	COutputEvent m_OnUser2;
@@ -1723,9 +1768,7 @@ private:
 
 	COutputEvent m_OnKilled;
 
-	QAngle			m_angAbsRotation;
-
-	// We cache the cell width for convience
+	// We cache the cell width for convenience
 	int m_cellwidth;
 
 	CNetworkVar( int, m_cellbits );
@@ -1736,20 +1779,12 @@ private:
 	CNetworkVar( int, m_cellY );
 	CNetworkVar( int, m_cellZ );
 
-	CNetworkVector( m_vecOrigin );
-	CNetworkQAngle( m_angRotation );
+	CNetworkVectorXY_SeparateZ( m_vecOrigin );
+	CNetworkQAngleXYZ( m_angRotation );
 	CBaseHandle m_RefEHandle;
 
 	// was pev->view_ofs ( FIXME:  Move somewhere up the hierarch, CBaseAnimating, etc. )
-	CNetworkVectorForDerived( m_vecViewOffset );
-
-#if !defined( NO_ENTITY_PREDICTION )
-	CNetworkVar( bool, m_bIsPlayerSimulated );
-	// Player who is driving my simulation
-	CNetworkHandle( CBasePlayer, m_hPlayerSimulationOwner );
-#endif
-
-	int								m_fDataObjectTypes;
+	CNetworkVectorXYZForDerived( m_vecViewOffset );
 
 	UtlHashHandle_t		m_ListByClass;
 	CBaseEntity	*		m_pPrevByClass;
@@ -1757,10 +1792,33 @@ private:
 	// So it can get at the physics methods
 	friend class CCollisionEvent;
 
+	// Team handling
+	int			m_iInitialTeamNum;		// Team number of this entity's team read from file
+	CNetworkVar( int, m_iTeamNum );				// Team number of this entity's team. 
+	CNetworkVar( int, m_iPendingTeamNum );				// Team number of this entity's pending team. 
+
+protected:
+	// FIXME: Make this private! Still too many references to do so...
+	CNetworkVar( int, m_spawnflags );
+	string_t		m_AIAddOn;
+	// was pev->gravity;
+	float			m_flGravity;  // rename to m_flGravityScale;
+	CNetworkHandle( CBaseEntity, m_hEffectEntity );	// Fire/Dissolve entity.
+	CNetworkVar( float, m_fadeMinDist );	// Point at which fading is absolute
+	CNetworkVar( float, m_fadeMaxDist );	// Point at which fading is inactive
+	CNetworkVar( float, m_flFadeScale );	// Scale applied to min / max
+	CNetworkVar( float, m_flShadowCastDistance );
+	float		m_flDesiredShadowCastDistance;
+
+#ifdef PORTAL2
+	CNetworkVar( string_t, m_iSignifierName );
+#endif // PORTAL2
+
+
 // Methods shared by client and server
 public:
 	void							SetSize( const Vector &vecMin, const Vector &vecMax ); // UTIL_SetSize( this, mins, maxs );
-	static int						PrecacheModel( const char *name ); 
+	static int						PrecacheModel( const char *name, bool bPreload = true ); 
 	static bool						PrecacheSound( const char *name );
 	static void						PrefetchSound( const char *name );
 	void							Remove( ); // UTIL_Remove( this );
@@ -1778,6 +1836,7 @@ private:
 	//  randon number generators to spit out the same random numbers on both sides for a particular
 	//  usercmd input.
 	static int						m_nPredictionRandomSeed;
+	static int						m_nPredictionRandomSeedServer;
 	static CBasePlayer				*m_pPredictionPlayer;
 
 	// FIXME: Make hierarchy a member of CBaseEntity
@@ -1791,10 +1850,12 @@ private:
 
 	bool m_bNetworkQuantizeOriginAndAngles;
 	bool m_bLagCompensate; // Special flag for certain l4d2 props to use
+
+	bool m_bForcePurgeFixedupStrings; // For template entites so we don't leak strings.
 	
 public:
 	// Accessors for above
-	static int						GetPredictionRandomSeed( void );
+	static int						GetPredictionRandomSeed( bool bUseUnSyncedServerPlatTime = false );
 	static void						SetPredictionRandomSeed( const CUserCmd *cmd );
 	static CBasePlayer				*GetPredictionPlayer( void );
 	static void						SetPredictionPlayer( CBasePlayer *player );
@@ -1822,6 +1883,10 @@ public:
 	static bool s_bAbsQueriesValid;
 
 	CGlobalEvent	*m_pEvent;
+	// Debugging / devolopment fields
+	int				m_debugOverlays;	// For debug only (bitfields)
+	TimedOverlay_t*	m_pTimedOverlay;	// For debug only
+
 
 	// VSCRIPT
 	HSCRIPT GetScriptInstance();
@@ -1856,6 +1921,9 @@ public:
 
 	HSCRIPT ScriptGetModelKeyValues( void );
 
+	void ScriptPrecacheModel( const char *name );
+	void ScriptPrecacheScriptSound( const char *name );
+
 	string_t		m_iszVScripts;
 	string_t		m_iszScriptThinkFunction;
 	CScriptScope	m_ScriptScope;
@@ -1876,8 +1944,29 @@ public:
 	}
 
 public:
+#ifdef PORTAL
+	virtual void NotifyPortalEvent( PortalEvent_t nEventType, CPortal_Base2D *pNotifier ) { /*Do nothing*/ }
+#endif // PORTAL
 
+public:
+	void	ClearSpotRule( int nRuleFlags );
+	void	SetSpotRules( int nRuleFlags );
+	bool	CanBeSpotted( void );
 
+	bool	IsSpotted( void );
+	void	SetIsSpotted( bool bSpotted );
+	void	ClearSpottedBy( void );
+	void	SetIsSpottedBy( int nPlayerEntIndex );
+	int		GetSpotRules( void );
+
+protected:
+	// SpottingRules_T flags for limiting conditions under
+	// which an entity is spotted
+	int		m_nSpotRules;
+	CNetworkVar( bool, m_bSpotted );
+
+	CNetworkArray( uint32, m_bSpottedByMask, kNumSpottedByMask );
+	float	m_fLastSpotCheck;
 };
 
 // Send tables exposed in this module.
@@ -1890,7 +1979,7 @@ EXTERN_SEND_TABLE(DT_BaseEntity);
 // Normally it's illegal to cast a pointer to a member function of a derived class to a pointer to a 
 // member function of a base class.  static_cast is a sleezy way around that problem.
 
-#ifdef _DEBUG
+#if defined( _DEBUG ) 
 
 #define SetTouch( a ) TouchSet( static_cast <void (CBaseEntity::*)(CBaseEntity *)> (a), #a )
 #define SetUse( a ) UseSet( static_cast <void (CBaseEntity::*)(	CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )> (a), #a )
@@ -2024,6 +2113,7 @@ inline const char *CBaseEntity::GetPreTemplateName()
 inline void CBaseEntity::SetName( string_t newName )
 {
 	m_iName = newName;
+	gEntList.UpdateName( this );
 }
 
 
@@ -2039,6 +2129,11 @@ inline bool CBaseEntity::NameMatches( string_t nameStr )
 	if ( IDENT_STRINGS(m_iName, nameStr) )
 		return true;
 	return NameMatchesComplex( STRING(nameStr) );
+}
+
+inline void CBaseEntity::MarkNeedsNamePurge()
+{ 
+	m_bForcePurgeFixedupStrings = true;
 }
 
 inline bool CBaseEntity::NameMatchesExact( string_t nameStr )
@@ -2469,14 +2564,15 @@ inline void CBaseEntity::SetTextureFrameIndex( int iIndex )
 //-----------------------------------------------------------------------------
 // An inline version the game code can use
 //-----------------------------------------------------------------------------
+
 inline CCollisionProperty *CBaseEntity::CollisionProp()
 {
-	return &m_Collision;
+	return m_Collision.Get();
 }
 
 inline const CCollisionProperty *CBaseEntity::CollisionProp() const
 {
-	return &m_Collision;
+	return m_Collision.Get();
 }
 
 inline CServerNetworkProperty *CBaseEntity::NetworkProp()
@@ -2547,7 +2643,7 @@ inline void	CBaseEntity::EyePositionZOnly( Vector *pPosition )
 //-----------------------------------------------------------------------------
 inline ICollideable *CBaseEntity::GetCollideable()
 {
-	return &m_Collision;
+	return CollisionProp();
 }
 
 inline IServerNetworkable *CBaseEntity::GetNetworkable()
@@ -2582,8 +2678,12 @@ inline const char*CBaseEntity::ScriptGetModelName( void ) const
 
 inline void CBaseEntity::SetModelIndex( int index )
 {
-	m_nModelIndex = index;
-	DispatchUpdateTransmitState();
+	if ( m_nModelIndex != index )
+	{
+		m_nModelIndex = index;
+		DispatchUpdateTransmitState();
+		OnNewModel();
+	}
 }
 
 inline int CBaseEntity::GetModelIndex( void ) const
@@ -2685,28 +2785,6 @@ inline Vector	CBaseEntity::EarPosition( void ) const			// position of ears
 	return const_cast<CBaseEntity*>(this)->EarPosition();
 }
 
-// TrackIR
-inline const Vector& CBaseEntity::GetEyeOffset() const 
-{ 
-	return m_vecEyeOffset; 
-}
-
-inline void CBaseEntity::SetEyeOffset( const Vector& v ) 
-{ 
-	m_vecEyeOffset = v; 
-}
-
-inline const QAngle & CBaseEntity::GetEyeAngleOffset() const 
-{ 
-	return m_EyeAngleOffset; 
-}
-
-inline void CBaseEntity::SetEyeAngleOffset( const QAngle & qa ) 
-{ 
-	m_EyeAngleOffset = qa; 
-}
-// TrackIR
-
 inline float CBaseEntity::GetDistanceToEntity( const CBaseEntity *other ) const
 {
 	if( other == NULL )
@@ -2790,15 +2868,15 @@ inline const ResponseContext_t	*CBaseEntity::GetContextData( int index ) const
 // Normally it's illegal to cast a pointer to a member function of a derived class to a pointer to a 
 // member function of a base class.  static_cast is a sleezy way around that problem.
 
-#define SetThink( a ) ThinkSet( static_cast <void (CBaseEntity::*)(void)> (a), 0, NULL )
-#define SetContextThink( a, b, context ) ThinkSet( static_cast <void (CBaseEntity::*)(void)> (a), (b), context )
+#define SetThink( a ) CBaseEntity::ThinkSet( static_cast <void (CBaseEntity::*)(void)> (a), 0, NULL )
+#define SetContextThink( a, b, context ) CBaseEntity::ThinkSet( static_cast <void (CBaseEntity::*)(void)> (a), (b), context )
 
 #ifdef _DEBUG
 #define SetMoveDone( a ) \
 	do \
 	{ \
 		m_pfnMoveDone = static_cast <void (CBaseEntity::*)(void)> (a); \
-		FunctionCheck( (void *)*((int *)((char *)this + ( offsetof(CBaseEntity,m_pfnMoveDone)))), "BaseMoveFunc" ); \
+		FunctionCheck( * (inputfunc_t *)(((char *)this + ( offsetof(CBaseEntity,m_pfnMoveDone)))), "BaseMoveFunc" ); \
 	} while ( 0 )
 #else
 #define SetMoveDone( a ) \
@@ -2807,8 +2885,9 @@ inline const ResponseContext_t	*CBaseEntity::GetContextData( int index ) const
 
 
 inline bool FClassnameIs(CBaseEntity *pEntity, const char *szClassname)
-{ 
-	return pEntity->ClassMatches(szClassname); 
+{
+	Assert( pEntity );
+	return pEntity && pEntity->ClassMatches(szClassname); 
 }
 
 class CPointEntity : public CBaseEntity
@@ -2874,6 +2953,7 @@ void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *p
 void SendProxy_OriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_OriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 
+extern bool EntityNamesMatchCStrings( const char *pszQuery, const char *pszNameToMatch );
 
 FORCEINLINE bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch )
 {
@@ -2886,24 +2966,7 @@ FORCEINLINE bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch )
 	if ( pszNameToMatch == pszQuery )
 		return true;
 
-	while ( *pszNameToMatch && *pszQuery )
-	{
-		char cName = *pszNameToMatch;
-		char cQuery = *pszQuery;
-		if ( cName != cQuery && tolower(cName) != tolower(cQuery) ) // people almost always use lowercase, so assume that first
-			break;
-		++pszNameToMatch;
-		++pszQuery;
-	}
-
-	if ( *pszQuery == 0 && *pszNameToMatch == 0 )
-		return true;
-
-	// @TODO (toml 03-18-03): Perhaps support real wildcards. Right now, only thing supported is trailing *
-	if ( *pszQuery == '*' )
-		return true;
-
-	return false;
+	return EntityNamesMatchCStrings( pszQuery, pszNameToMatch );
 }
 
 #endif // BASEENTITY_H

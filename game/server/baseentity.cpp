@@ -36,8 +36,8 @@
 #include "vcollide_parse.h"
 #include "filters.h"
 #include "te_effect_dispatch.h"
-#include "AI_Criteria.h"
-#include "AI_ResponseSystem.h"
+#include "ai_criteria.h"
+#include "ai_responsesystem.h"
 #include "world.h"
 #include "globals.h"
 #include "saverestoretypes.h"
@@ -63,14 +63,18 @@
 #include "tier1/utlstring.h"
 #include "vscript_server.h"
 #include "toolframework/itoolframework.h"
-#include "vstdlib/IKeyValuesSystem.h"
 #include "videocfg/videocfg.h"
+#include "vstdlib/ikeyvaluessystem.h"
 #include "ilagcompensationmanager.h"
-#include "vstdlib/IKeyValuesSystem.h"
 #include "bittools.h"
 #include "cellcoord.h"
 #include "sendprop_priorities.h"
 #include "videocfg/videocfg.h"
+#include "tier0/stackstats.h"
+
+#if defined ( PORTAL2 )
+#include "PortalSimulation.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -90,6 +94,7 @@ int CBaseEntity::m_nDebugSteps = 1;				// Number of entity outputs to fire befor
 bool CBaseEntity::sm_bDisableTouchFuncs = false;	// Disables PhysicsTouch and PhysicsStartTouch function calls
 
 int CBaseEntity::m_nPredictionRandomSeed = -1;
+int CBaseEntity::m_nPredictionRandomSeedServer = -1;
 CBasePlayer *CBaseEntity::m_pPredictionPlayer = NULL;
 
 // Used to make sure nobody calls UpdateTransmitState directly.
@@ -233,7 +238,7 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendPredictableId );
 //--------------------------------------------------------------------------------------------------------
 // Origin debugging
 //--------------------------------------------------------------------------------------------------------
-#if (defined(_WIN32) && (!defined(_X360) ) )
+#if (defined(_WIN32) && (!defined(_GAMECONSOLE) ) )
 #include "filesystem.h"
 
 struct SOriginDebugFP
@@ -310,7 +315,7 @@ static void LogNetOriginDeltas( CBaseEntity *entity, Vector const *v )
 	}
 }
 
-#endif // (defined(_WIN32) && (!defined(_X360) ) )
+#endif // (defined(_WIN32) && (!defined(_GAMECONSOLE) ) )
 */
 
 //--------------------------------------------------------------------------------------------------------
@@ -538,51 +543,6 @@ void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *p
 	pOut->m_Vector[ 2 ] = anglemod( a->z );
 }
 
-void CBaseEntity::SendProxy_AnglesX( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
-{
-	CBaseEntity *entity = (CBaseEntity*)pStruct;
-	Assert( entity );
-
-	const QAngle *a;
-
-	if ( !entity->UseStepSimulationNetworkAngles( &a ) )
-	{
-		a = &entity->GetLocalAngles();
-	}
-
-	pOut->m_Float = anglemod( a->x );
-}
-
-void CBaseEntity::SendProxy_AnglesY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
-{
-	CBaseEntity *entity = (CBaseEntity*)pStruct;
-	Assert( entity );
-
-	const QAngle *a;
-
-	if ( !entity->UseStepSimulationNetworkAngles( &a ) )
-	{
-		a = &entity->GetLocalAngles();
-	}
-
-	pOut->m_Float = anglemod( a->y );
-}
-
-void CBaseEntity::SendProxy_AnglesZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
-{
-	CBaseEntity *entity = (CBaseEntity*)pStruct;
-	Assert( entity );
-
-	const QAngle *a;
-
-	if ( !entity->UseStepSimulationNetworkAngles( &a ) )
-	{
-		a = &entity->GetLocalAngles();
-	}
-
-	pOut->m_Float = anglemod( a->z );
-}
-
 #if PREDICTION_ERROR_CHECK_LEVEL > 1 
 const int SENDPROP_ANGROTATION_DEFAULT_BITS = -1;
 const int SENDPROP_VECORIGIN_FLAGS = SPROP_NOSCALE|SPROP_CHANGES_OFTEN;
@@ -595,7 +555,9 @@ const int SENDPROP_VECORIGIN_FLAGS = SPROP_CELL_COORD|SPROP_CHANGES_OFTEN;
 IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropDataTable( "AnimTimeMustBeFirst", 0, &REFERENCE_SEND_TABLE(DT_AnimTimeMustBeFirst), SendProxy_ClientSideAnimation ),
 	SendPropInt			(SENDINFO(m_flSimulationTime),	SIMULATION_TIME_WINDOW_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_SimulationTime, SENDPROP_SIMULATION_TIME_PRIORITY ),
+#if defined(ENABLE_CREATE_TIME)
 	SendPropFloat		(SENDINFO( m_flCreateTime ) ),
+#endif
 
 	SendPropInt			(SENDINFO(m_cellbits), MINIMUM_BITS_NEEDED( 32 ), SPROP_UNSIGNED, 0, SENDPROP_CELL_INFO_PRIORITY ),
 //	SendPropArray       (SendPropInt(SENDINFO_ARRAY(m_cellXY), CELL_COUNT_BITS( CELL_BASEENTITY_ORIGIN_CELL_BITS ), SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ), m_cellXY),
@@ -611,6 +573,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO(m_fEffects),		EF_MAX_BITS, SPROP_UNSIGNED),
 	SendPropInt		(SENDINFO(m_clrRender),	32, SPROP_UNSIGNED, SendProxy_Color32ToInt32 ),
 	SendPropInt		(SENDINFO(m_iTeamNum),		TEAMNUM_NUM_BITS, 0),
+	SendPropInt		(SENDINFO(m_iPendingTeamNum),		TEAMNUM_NUM_BITS, 0),
 #ifdef INFESTED_DLL
 	SendPropInt		(SENDINFO(m_CollisionGroup), 6, SPROP_UNSIGNED),
 #else
@@ -625,7 +588,9 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 
 	SendPropStringT( SENDINFO( m_iName ) ),
 
-
+#ifdef PORTAL2
+	SendPropStringT( SENDINFO( m_iSignifierName ) ),
+#endif // PORTAL2
 
 	SendPropInt		(SENDINFO_NAME( m_MoveType, movetype ), MOVETYPE_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropInt		(SENDINFO_NAME( m_MoveCollide, movecollide ), MOVECOLLIDE_MAX_BITS, SPROP_UNSIGNED ),
@@ -637,7 +602,9 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 
 	SendPropInt		( SENDINFO( m_iTextureFrameIndex ),		8, SPROP_UNSIGNED ),
 
-
+#if defined ( PORTAL2 )
+	SendPropInt		( SENDINFO( m_iObjectCapsCache ),		6, SPROP_UNSIGNED ),
+#endif
 
 #if !defined( NO_ENTITY_PREDICTION ) && defined( USE_PREDICTABLEID )
 	SendPropEHandle (SENDINFO(m_hPlayerSimulationOwner)),
@@ -648,6 +615,10 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt( SENDINFO(m_bSimulatedEveryTick),		1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_bAnimatedEveryTick),		1, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO( m_bAlternateSorting )),
+	SendPropBool( SENDINFO( m_bSpotted )),
+	SendPropArray3( SENDINFO_ARRAY3(m_bSpottedByMask), SendPropInt( SENDINFO_ARRAY( m_bSpottedByMask ), -1, SPROP_UNSIGNED ) ),
+
+	SendPropBool( SENDINFO( m_bIsAutoaimTarget )),
 
 	// Fading
 	SendPropFloat( SENDINFO( m_fadeMinDist ),			0, SPROP_NOSCALE ),
@@ -655,16 +626,44 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropFloat( SENDINFO( m_flFadeScale ),			0, SPROP_NOSCALE ),
 
 #if 1
-// #ifndef _X360 -- X360 client and Win32 XLSP dedicated server need equivalent SendTables
+// #ifndef _GAMECONSOLE -- X360 client and Win32 XLSP dedicated server need equivalent SendTables
 	SendPropInt( SENDINFO(m_nMinCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMaxCPULevel),				CPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMinGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO(m_nMaxGPULevel),				GPU_LEVEL_BIT_COUNT, SPROP_UNSIGNED ),
 #endif
 
+	SendPropFloat(SENDINFO( m_flUseLookAtAngle ) ),
+
+	SendPropFloat( SENDINFO( m_flLastMadeNoiseTime ) ),
+
 END_SEND_TABLE()
 
+//-----------------------------------------------------------------------------
 
+bool EntityNamesMatchCStrings( const char *pszQuery, const char *pszNameToMatch )
+{
+	while ( *pszNameToMatch && *pszQuery )
+	{
+		char cName = *pszNameToMatch;
+		char cQuery = *pszQuery;
+		if ( cName != cQuery && tolower(cName) != tolower(cQuery) ) // people almost always use lowercase, so assume that first
+			break;
+		++pszNameToMatch;
+		++pszQuery;
+	}
+
+	if ( *pszQuery == 0 && *pszNameToMatch == 0 )
+		return true;
+
+	// @TODO (toml 03-18-03): Perhaps support real wildcards. Right now, only thing supported is trailing *
+	if ( *pszQuery == '*' )
+		return true;
+
+	return false;
+}
+
+//-----------------------------------------------------------------------------
 
 CBaseEntity::CBaseEntity( bool bServerOnly )
 {
@@ -678,6 +677,8 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 #ifdef _DEBUG
 	// necessary since in debug, we initialize vectors to NAN for debugging
 	m_vecAngVelocity.Init();
+	m_vecAbsOrigin.Init();
+	m_angAbsRotation.Init();
 //	m_vecAbsAngVelocity.Init();
 	m_vecViewOffset.Init();
 	m_vecBaseVelocity.GetForModify().Init();
@@ -693,6 +694,7 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	m_iParentAttachment = 0;
 	CollisionProp()->Init( this );
 	NetworkProp()->Init( this );
+	m_bForcePurgeFixedupStrings = false;
 
 	m_fadeMinDist = 0;
 	m_fadeMaxDist = 0;
@@ -709,7 +711,7 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	m_flShadowCastDistance = m_flDesiredShadowCastDistance = 0;
 	SetRenderColor( 255, 255, 255 );
 	SetRenderAlpha( 255 );
-	m_iTeamNum = m_iInitialTeamNum = TEAM_UNASSIGNED;
+	m_iPendingTeamNum = m_iTeamNum = m_iInitialTeamNum = TEAM_UNASSIGNED;
 	m_nLastThinkTick = gpGlobals->tickcount;
 	m_nSimulationTick = -1;
 	SetIdentityMatrix( m_rgflCoordinateFrame );
@@ -740,17 +742,32 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	}
 	NetworkProp()->MarkPVSInformationDirty();
 
-#ifndef _XBOX
 	AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
-#endif
+
 	m_pPrevByClass = m_pNextByClass = NULL;
 	m_ListByClass = (UtlHashHandle_t)~0;
 	SetNetworkQuantizeOriginAngAngles( false );
 
+#if defined(ENABLE_CREATE_TIME)
 	m_flCreateTime = 0.0f;
-
+#endif
 	m_pEvent = NULL;
 
+#ifdef PORTAL2
+	m_iSignifierName = NULL_STRING;
+#endif // PORTAL2
+
+	m_bSpotted = false;
+	ClearSpottedBy();
+
+	m_nSpotRules = 0;
+	m_fLastSpotCheck = 0.0f;
+
+	m_bIsAutoaimTarget = false;
+
+	m_flUseLookAtAngle = DEFAULT_LOOK_AT_USE_ANGLE;
+
+	m_flLastMadeNoiseTime = 0.0f;
 
 }
 
@@ -806,6 +823,7 @@ CBaseEntity::~CBaseEntity( )
 
 void CBaseEntity::PostConstructor( const char *szClassname )
 {
+	NetworkProp()->CacheServerClass();
 	if ( szClassname )
 	{
 		SetClassname(szClassname);
@@ -968,7 +986,9 @@ void CBaseEntity::SetClassname( const char *className )
 {
 	m_iClassname = AllocPooledString( className );
 
-
+#ifdef PORTAL2
+	m_iSignifierName = m_iClassname;
+#endif // PORTAL2
 }
 
 // position to shoot at
@@ -1374,7 +1394,7 @@ int CBaseEntity::DrawDebugTextOverlays(void)
 			EntityText( offset, tempstr, 0 );
 			offset++;
 
-			Q_snprintf( tempstr, sizeof(tempstr), "cell: (%d, %d, %d)\n", m_cellX, m_cellY, m_cellZ );
+			Q_snprintf( tempstr, sizeof(tempstr), "cell: (%d, %d, %d)\n", m_cellX.Get(), m_cellY.Get(), m_cellZ.Get() );
 			EntityText( offset, tempstr, 0 );
 			offset++;
 
@@ -1437,6 +1457,13 @@ int CBaseEntity::DrawDebugTextOverlays(void)
 		Q_snprintf(tempstr, sizeof(tempstr), "Effects :%d (EF_NODRAW=%d)", GetEffects(), GetEffects() & EF_NODRAW );
 		EntityText(offset,tempstr,0);
 		offset++;
+
+#if defined ( PORTAL2 )
+		Q_snprintf(tempstr, sizeof(tempstr), "In Portal Environment: %s", (CPortalSimulator::GetSimulatorThatOwnsEntity(this))?("yes"):("no") );
+		EntityText(offset,tempstr,0);
+		offset++;
+#endif
+
 	}
 
 	if (m_debugOverlays & OVERLAY_VIEWOFFSET)
@@ -1558,6 +1585,7 @@ void CBaseEntity::SetParent( CBaseEntity *pParentEntity, int iAttachment )
 
 		// Transform step data from parent to worldspace
 		TransformStepData_ParentToWorld( pOldParent );
+		UpdatePhysicsShadowToCurrentPosition(0);
 		return;
 	}
 
@@ -1626,6 +1654,10 @@ void CBaseEntity::SetParent( CBaseEntity *pParentEntity, int iAttachment )
 			VPhysicsDestroyObject();
 			VPhysicsInitShadow(false, false);
 		}
+		else
+		{
+			UpdatePhysicsShadowToCurrentPosition(0);
+		}
 	}
 	CollisionRulesChanged();
 }
@@ -1667,7 +1699,7 @@ void CBaseEntity::ValidateEntityConnections()
 			typedescription_t *dataDesc = &dmap->dataDesc[i];
 			if ( ( dataDesc->fieldType == FIELD_CUSTOM ) && ( dataDesc->flags & FTYPEDESC_OUTPUT ) )
 			{
-				CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((int)this + (int)dataDesc->fieldOffset);
+				CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((intp)this + (int)dataDesc->fieldOffset);
 				if ( pOutput->NumberOfElements() )
 					return;
 			}
@@ -1713,7 +1745,7 @@ CBaseEntityOutput *CBaseEntity::FindNamedOutput( const char *pszOutput )
 			typedescription_t *dataDesc = &dmap->dataDesc[i];
 			if ( ( dataDesc->fieldType == FIELD_CUSTOM ) && ( dataDesc->flags & FTYPEDESC_OUTPUT ) )
 			{
-				CBaseEntityOutput *pOutput = ( CBaseEntityOutput * )( ( int )this + ( int )dataDesc->fieldOffset );
+				CBaseEntityOutput *pOutput = ( CBaseEntityOutput * )( ( intp )this + ( int )dataDesc->fieldOffset );
 				if ( !Q_stricmp( dataDesc->externalName, pszOutput ) )
 				{
 					return pOutput;
@@ -1758,7 +1790,9 @@ void CBaseEntity::Activate( void )
 		AddContext( m_iszResponseContext.ToCStr() );
 	}
 
-
+#if defined ( PORTAL2 )
+	UpdateObjectCapsCache();
+#endif
 }
 
 ////////////////////////////  old CBaseEntity stuff ///////////////////////////////////
@@ -1929,6 +1963,7 @@ void CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 float CBaseEntity::GetAttackDamageScale( CBaseEntity *pVictim )
 {
 	float flScale = 1;
+#if ENABLE_DAMAGE_MODIFIERS
 	FOR_EACH_LL( m_DamageModifiers, i )
 	{
 		if ( !m_DamageModifiers[i]->IsDamageDoneToMe() )
@@ -1936,6 +1971,7 @@ float CBaseEntity::GetAttackDamageScale( CBaseEntity *pVictim )
 			flScale *= m_DamageModifiers[i]->GetModifier();
 		}
 	}
+#endif
 	return flScale;
 }
 
@@ -1945,6 +1981,7 @@ float CBaseEntity::GetAttackDamageScale( CBaseEntity *pVictim )
 float CBaseEntity::GetReceivedDamageScale( CBaseEntity *pAttacker )
 {
 	float flScale = 1;
+#if ENABLE_DAMAGE_MODIFIERS
 	FOR_EACH_LL( m_DamageModifiers, i )
 	{
 		if ( m_DamageModifiers[i]->IsDamageDoneToMe() )
@@ -1952,6 +1989,7 @@ float CBaseEntity::GetReceivedDamageScale( CBaseEntity *pAttacker )
 			flScale *= m_DamageModifiers[i]->GetModifier();
 		}
 	}
+#endif
 	return flScale;
 }
 
@@ -2090,12 +2128,12 @@ class CThinkContextsSaveDataOps : public CDefSaveRestoreOps
 		// Now write out all the functions
 		for ( int i = 0; i < pUtlVector->Count(); i++ )
 		{
-			void **ppV = (void**)&((*pUtlVector)[i].m_pfnThink);
+			inputfunc_t *ppV = (inputfunc_t *)&((*pUtlVector)[i].m_pfnThink);
 			bool bHasFunc = (*ppV != NULL);
 			pSave->WriteBool( &bHasFunc, 1 );
 			if ( bHasFunc )
 			{
-				pSave->WriteFunction( pOwner->GetDataDescMap(), "m_pfnThink", (int *)(char *)ppV, 1 );
+				pSave->WriteFunction( pOwner->GetDataDescMap(), "m_pfnThink", ppV, 1 );
 			}
 		}
 		pSave->EndBlock();
@@ -2118,7 +2156,7 @@ class CThinkContextsSaveDataOps : public CDefSaveRestoreOps
 		{
 			bool bHasFunc;
 			pRestore->ReadBool( &bHasFunc, 1 );
-			void **ppV = (void**)&((*pUtlVector)[i].m_pfnThink);
+			inputfunc_t *ppV = (inputfunc_t *)&((*pUtlVector)[i].m_pfnThink);
 			if ( bHasFunc )
 			{
 				SaveRestoreRecordHeader_t header;
@@ -2186,7 +2224,9 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_FIELD( m_flPrevAnimTime, FIELD_TIME ),
 	DEFINE_FIELD( m_flAnimTime, FIELD_TIME ),
 	DEFINE_FIELD( m_flSimulationTime, FIELD_TIME ),
+#if defined(ENABLE_CREATE_TIME)
 	DEFINE_FIELD( m_flCreateTime, FIELD_TIME ),
+#endif
 	DEFINE_FIELD( m_nLastThinkTick, FIELD_TICK ),
 
 	DEFINE_FIELD( m_iszScriptId, FIELD_STRING ),
@@ -2220,6 +2260,7 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_KEYFIELD( m_iMaxHealth, FIELD_INTEGER, "max_health" ),
 	DEFINE_KEYFIELD( m_iHealth, FIELD_INTEGER, "health" ),
 	// DEFINE_FIELD( m_pLink, FIELD_CLASSPTR ),
+	DEFINE_KEYFIELD( m_bIsAutoaimTarget, FIELD_BOOLEAN, "is_autoaim_target" ),
 	DEFINE_KEYFIELD( m_target, FIELD_STRING, "target" ),
 
 	DEFINE_KEYFIELD( m_iszDamageFilterName, FIELD_STRING, "damagefilter" ),
@@ -2237,7 +2278,9 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 
 	DEFINE_FIELD( m_iName, FIELD_STRING ),
 
-
+#ifdef PORTAL2
+	DEFINE_FIELD( m_iSignifierName, FIELD_STRING ),
+#endif // PORTAL2
 
 	DEFINE_EMBEDDED( m_Collision ),
 	DEFINE_EMBEDDED( m_Network ),
@@ -2253,10 +2296,13 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 
 	DEFINE_INPUT( m_iInitialTeamNum, FIELD_INTEGER, "TeamNum" ),
 	DEFINE_KEYFIELD( m_iTeamNum, FIELD_INTEGER, "teamnumber" ),
+	DEFINE_KEYFIELD( m_iPendingTeamNum, FIELD_INTEGER, "pendingteamnumber" ),
 
 //	DEFINE_FIELD( m_bSentLastFrame, FIELD_INTEGER ),
 
-
+#if defined ( PORTAL2 )
+	DEFINE_FIELD( m_iObjectCapsCache, FIELD_INTEGER ),
+#endif 
 
 	DEFINE_FIELD( m_hGroundEntity, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_flGroundChangeTime, FIELD_TIME ),
@@ -2291,6 +2337,7 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_FIELD( m_bSimulatedEveryTick, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bAnimatedEveryTick, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bAlternateSorting, FIELD_BOOLEAN ),
+	//DEFINE_FIELD( m_bSpotted, FIELD_BOOLEAN ),
 	DEFINE_KEYFIELD( m_spawnflags, FIELD_INTEGER, "spawnflags" ),
 	DEFINE_FIELD( m_nTransmitStateOwnedCounter, FIELD_CHARACTER ),
 	DEFINE_FIELD( m_angAbsRotation, FIELD_VECTOR ),
@@ -2336,6 +2383,8 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetParentAttachment", InputSetParentAttachment ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetParentAttachmentMaintainOffset", InputSetParentAttachmentMaintainOffset ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "ClearParent", InputClearParent ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetLocalOrigin", InputSetLocalOrigin ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetLocalAngles", InputSetLocalAngles ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "SetDamageFilter", InputSetDamageFilter ),
 
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableDamageForces", InputEnableDamageForces ),
@@ -2351,6 +2400,15 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_INPUTFUNC( FIELD_VOID, "DisableShadow", InputDisableShadow ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "EnableShadow", InputEnableShadow ),
 
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisableDraw", InputDisableDraw ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnableDraw", InputEnableDraw ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisableReceivingFlashlight", InputDisableReceivingFlashlight ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnableReceivingFlashlight", InputEnableReceivingFlashlight ),
+
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisableDrawInFastReflection", InputDisableDrawInFastReflection ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "EnableDrawInFastReflection", InputEnableDrawInFastReflection ),
+
 	DEFINE_INPUTFUNC( FIELD_STRING, "AddOutput", InputAddOutput ),
 
 	DEFINE_INPUTFUNC( FIELD_STRING, "FireUser1", InputFireUser1 ),
@@ -2361,6 +2419,10 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_INPUTFUNC( FIELD_STRING, "RunScriptFile", InputRunScriptFile ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "RunScriptCode", InputRunScript ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "CallScriptFunction", InputCallScriptFunction ),
+
+#ifdef PORTAL2
+	DEFINE_INPUTFUNC( FIELD_VOID, "RemovePaint", InputRemovePaint ),
+#endif
 
 	DEFINE_OUTPUT( m_OnUser1, "OnUser1" ),
 	DEFINE_OUTPUT( m_OnUser2, "OnUser2" ),
@@ -2376,7 +2438,9 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_FUNCTION( SUB_Vanish ),
 	DEFINE_FUNCTION( SUB_CallUseToggle ),
 	DEFINE_THINKFUNC( ShadowCastDistThink ),
+#if defined(ENABLE_FRICTION_OVERRIDE)
 	DEFINE_THINKFUNC( FrictionRevertThink ),
+#endif
 	DEFINE_THINKFUNC( ScriptThink ),
 
 	DEFINE_FIELD( m_hEffectEntity, FIELD_EHANDLE ),
@@ -2385,10 +2449,14 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	// DEFINE_FIELD( m_fDataObjectTypes, FIELD_INTEGER ),
 
 	DEFINE_KEYFIELD( m_bLagCompensate, FIELD_BOOLEAN, "LagCompensate" ),
+	DEFINE_FIELD( m_bForcePurgeFixedupStrings, FIELD_BOOLEAN ),
+
+	DEFINE_FIELD( m_flUseLookAtAngle, FIELD_FLOAT ),
 END_DATADESC()
 
+DEFINE_SCRIPT_INSTANCE_HELPER( CBaseEntity, &g_BaseEntityScriptInstanceHelper )
+
 BEGIN_ENT_SCRIPTDESC_ROOT( CBaseEntity, "Root class of all server-side entities" )
-	DEFINE_SCRIPT_INSTANCE_HELPER( &g_BaseEntityScriptInstanceHelper )
 	DEFINE_SCRIPTFUNC_NAMED( ConnectOutputToScript, "ConnectOutput", "Adds an I/O connection that will call the named function when the specified output fires"  )
 	DEFINE_SCRIPTFUNC_NAMED( DisconnectOutputFromScript, "DisconnectOutput", "Removes a connected script function from an I/O event."  )
 	
@@ -2401,6 +2469,7 @@ BEGIN_ENT_SCRIPTDESC_ROOT( CBaseEntity, "Root class of all server-side entities"
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetModelName, "GetModelName", "Returns the name of the model" )
 	
 	DEFINE_SCRIPTFUNC_NAMED( ScriptEmitSound, "EmitSound", "Plays a sound from this entity." )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptStopSound, "StopSound", "Stops a sound on this entity." )
 	DEFINE_SCRIPTFUNC_NAMED( VScriptPrecacheScriptSound, "PrecacheSoundScript", "Precache a sound for later playing." )
 	DEFINE_SCRIPTFUNC_NAMED( ScriptSoundDuration, "GetSoundDuration", "Returns float duration of the sound. Takes soundname and optional actormodelname.")
 
@@ -2452,6 +2521,9 @@ BEGIN_ENT_SCRIPTDESC_ROOT( CBaseEntity, "Root class of all server-side entities"
 
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetModelKeyValues, "GetModelKeyValues", "Get a KeyValue class instance on this entity's model")
 	
+	DEFINE_SCRIPTFUNC_NAMED( ScriptPrecacheModel, "PrecacheModel", "" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptPrecacheScriptSound, "PrecacheScriptSound", "" )
+
 	DEFINE_SCRIPTFUNC( ValidateScriptScope, "Ensure that an entity's script scope has been created" )
 	DEFINE_SCRIPTFUNC( GetScriptScope, "Retrieve the script-side data associated with an entity" )
 	DEFINE_SCRIPTFUNC( GetScriptId, "Retrieve the unique identifier used to refer to the entity within the scripting system" )
@@ -2507,9 +2579,9 @@ void CBaseEntity::UpdateOnRemove( void )
 	if ( edict() )
 	{
 		AddFlag( FL_KILLME );
+		/*	<<TODO>>
 		if ( GetFlags() & FL_GRAPHED )
 		{
-			/*	<<TODO>>
 			// this entity was a LinkEnt in the world node graph, so we must remove it from
 			// the graph since we are removing it from the world.
 			for ( int i = 0 ; i < WorldGraph.m_cLinks ; i++ )
@@ -2520,8 +2592,8 @@ void CBaseEntity::UpdateOnRemove( void )
 					WorldGraph.m_pLinkPool [ i ].m_pLinkEnt = NULL;
 				}
 			}
-			*/
 		}
+		*/
 	}
 
 	if ( m_iGlobalname != NULL_STRING )
@@ -2530,6 +2602,20 @@ void CBaseEntity::UpdateOnRemove( void )
 		// it assumes your changing levels or the game will end
 		// causing the whole list to be flushed
 		GlobalEntity_SetState( m_iGlobalname, GLOBAL_DEAD );
+	}
+
+	// Remove the fixed up name from this entity
+	// we need to do this now since we will set the name to nothing later
+	if( m_bForcePurgeFixedupStrings )
+	{	
+		if( m_iName.Get() != NULL_STRING )	
+		{
+			RemovePooledString( STRING( m_iName.Get() ) );
+		}
+		if( m_iszScriptId != NULL_STRING )	
+		{
+			RemovePooledString( STRING( m_iszScriptId ) );
+		}
 	}
 
 	VPhysicsDestroyObject();
@@ -2613,7 +2699,14 @@ int CBaseEntity::ObjectCaps( void )
 #endif
 }
 
-
+#if defined ( PORTAL2 )
+void CBaseEntity::UpdateObjectCapsCache( void )
+{
+	// Send the first six bits of the object caps to the client
+	// those should be the +use logic capabilities
+	m_iObjectCapsCache = 0x0000003f & ObjectCaps();
+}
+#endif
 
 void CBaseEntity::StartTouch( CBaseEntity *pOther )
 {
@@ -2922,7 +3015,7 @@ static void CheckPushedEntity( CBaseEntity *pEntity, pushblock_t &params )
 			}
 		}
 	}
-	if ( fraction >= params.moveBackFraction )
+	if ( fraction >= params.moveBackFraction && sv_phys_props_block_movers.GetBool() )
 	{
 		params.moveBackFraction = fraction;
 		params.pBlockedEntity = pEntity;
@@ -3163,21 +3256,6 @@ void CBaseEntity::VPhysicsFriction( IPhysicsObject *pObject, float energy, int s
 }
 
 
-void CBaseEntity::VPhysicsSwapObject( IPhysicsObject *pSwap )
-{
-	if ( !pSwap )
-	{
-		PhysRemoveShadow(this);
-	}
-
-	if ( !m_pPhysicsObject )
-	{
-		Warning( "Bad vphysics swap for %s\n", STRING(m_iClassname) );
-	}
-	m_pPhysicsObject = pSwap;
-}
-
-
 // Tells the physics shadow to update it's target to the current position
 void CBaseEntity::UpdatePhysicsShadowToCurrentPosition( float deltaTime )
 {
@@ -3245,15 +3323,23 @@ extern ConVar ai_LOS_mode;
 // Uncomment the #define ENABLE_RUNTIME_STACK_TRANSLATION line in stacktools.h
 // vpc +game /allgames /nofpo  to disable frame pointer omission in *ALL COMPILED PROJECTS*
 // rebuild everything
-#ifdef ENABLE_RUNTIME_STACK_TRANSLATION
-#include "stacktools.h"
+#ifdef ENABLE_STACK_STATS_GATHERING
+//#define FVIS_STACK_TRACKING
+#endif
+
+#if defined( FVIS_STACK_TRACKING )
 struct Count_t ///< simple wrapper so I get a default constructor
 {
+	DECLARE_CALLSTACKSTATSTRUCT();
+
 	Count_t() : i(0) {};
 	Count_t(int a) : i(a) {};
 
 	unsigned int i;
 };
+BEGIN_STATSTRUCTDESCRIPTION( Count_t )
+END_STATSTRUCTDESCRIPTION()
+
 static CCallStackStatsGatherer<Count_t, 16> s_FVisCallStackInfo; 
 
 
@@ -3273,7 +3359,7 @@ void CC_FVis_Stack_Dump( const CCommand& args )
 		// print call stack
 		// TranslateStackInfo( const void * const *pCallStack, int iCallStackCount, tchar *szOutput, int iOutBufferSize, const tchar *szEntrySeparator, TranslateStackInfo_StyleFlags_t style = TSISTYLEFLAG_DEFAULT );
 		char outBuf[1024];
-		TranslateStackInfo( s_FVisCallStackInfo.GetCallStackForIndex(i), CCallStackStatsGatherer<Count_t, 16>::kCapturedCallStackLength, outBuf, 1023, "\n", (TranslateStackInfo_StyleFlags_t)(TSISTYLEFLAG_MODULENAME | TSISTYLEFLAG_SYMBOLNAME | TSISTYLEFLAG_SHORTPATH ) );
+		TranslateStackInfo( s_FVisCallStackInfo.GetCallStackForIndex(i), s_FVisCallStackInfo.CapturedCallStackLength, outBuf, 1023, "\n", (TranslateStackInfo_StyleFlags_t)(TSISTYLEFLAG_MODULENAME | TSISTYLEFLAG_SYMBOLNAME | TSISTYLEFLAG_SHORTPATH ) );
 		Msg( outBuf );
 		Msg( "\n\n" );
 	}
@@ -3292,9 +3378,12 @@ bool CBaseEntity::FVisible( CBaseEntity *pEntity, int traceMask, CBaseEntity **p
 {
 	VPROF( "CBaseEntity::FVisible" );
 
-#ifdef ENABLE_RUNTIME_STACK_TRANSLATION
+#if defined( FVIS_STACK_TRACKING )
 	if ( perf_fvis_stacks_trace.GetBool() )
-		s_FVisCallStackInfo.GetEntryForCurrentCallStack( 1 ).i += 1;
+	{
+		CCallStackStatsGatherer_StructAccessor_AutoLock<Count_t> accessor = s_FVisCallStackInfo.GetEntry(); //( CCallStackStorage( s_FVisCallStackInfo.StackFunction, 1 ) );
+		accessor->i += 1;
+	}
 #endif
 
 	if ( pEntity->GetFlags() & FL_NOTARGET )
@@ -3303,7 +3392,7 @@ bool CBaseEntity::FVisible( CBaseEntity *pEntity, int traceMask, CBaseEntity **p
 	Vector vecTargetOrigin = pEntity->EyePosition();
 
 	trace_t tr;
-	if ( !IsXbox() && ai_LOS_mode.GetBool() )
+	if ( ai_LOS_mode.GetBool() )
 	{
 		UTIL_TraceLine(vecLookerOrigin, vecTargetOrigin, traceMask, this, COLLISION_GROUP_NONE, &tr);
 	}
@@ -3360,9 +3449,12 @@ bool CBaseEntity::FVisible( const Vector &vecTarget, int traceMask, CBaseEntity 
 {
 	VPROF( "CBaseEntity::FVisible" );
 
-#ifdef ENABLE_RUNTIME_STACK_TRANSLATION
+#if defined( FVIS_STACK_TRACKING )
 	if ( perf_fvis_stacks_trace.GetBool() )
-		s_FVisCallStackInfo.GetEntryForCurrentCallStack( 1 ).i += 1;
+	{
+		CCallStackStatsGatherer_StructAccessor_AutoLock<Count_t> accessor = s_FVisCallStackInfo.GetEntry(); //( CCallStackStorage( s_FVisCallStackInfo.StackFunction, 1 ) );
+		accessor->i += 1;
+	}
 #endif
 
 	trace_t tr;
@@ -3730,6 +3822,8 @@ void CBaseEntity::OnSave( IEntitySaveUtils *pUtils )
 //-----------------------------------------------------------------------------
 void CBaseEntity::OnRestore()
 {
+	gEntList.UpdateName( this );
+
 	SimThink_EntityChanged( this );
 
 	// touchlinks get recomputed
@@ -3832,15 +3926,15 @@ void CBaseEntity::operator delete( void *pMem )
 
 
 #ifdef _DEBUG
-void CBaseEntity::FunctionCheck( void *pFunction, const char *name )
+void CBaseEntity::FunctionCheck( inputfunc_t pFunction, const char *name )
 { 
 #ifdef USES_SAVERESTORE
 	// Note, if you crash here and your class is using multiple inheritance, it is
 	// probably the case that CBaseEntity (or a descendant) is not the first
 	// class in your list of ancestors, which it must be.
-	if (pFunction && !UTIL_FunctionToName( GetDataDescMap(), pFunction ) )
+	if ( pFunction && !UTIL_FunctionToName( GetDataDescMap(), pFunction ) )
 	{
-		Warning( "FUNCTION NOT IN TABLE!: %s:%s (%08lx)\n", STRING(m_iClassname), name, (unsigned long)pFunction );
+		Warning( "FUNCTION NOT IN TABLE!: %s:%s (%08lx)\n", STRING(m_iClassname), name, *reinterpret_cast<uint32*>(&pFunction) );
 		Assert(0);
 	}
 #endif
@@ -3909,6 +4003,11 @@ void CBaseEntity::SetMoveType( MoveType_t val, MoveCollide_t moveCollide )
 	// We can't transition from follow to a different movetype directly
 	// or the leaf code will break.
 	Assert( !IsEffectActive( EF_BONEMERGE ) );
+	if ( IsPushableMoveType(val) != IsPushableMoveType(m_MoveType) )
+	{
+		CollisionProp()->MarkPartitionHandleDirty();
+	}
+
 	m_MoveType = val;
 	m_MoveCollide = moveCollide;
 
@@ -4002,6 +4101,10 @@ int CBaseEntity::UpdateTransmitState()
 	// If you get this assert, you should be calling DispatchUpdateTransmitState
 	// instead of UpdateTransmitState.
 	Assert( g_nInsideDispatchUpdateTransmitState > 0 );
+
+#ifdef DOTA_DLL
+	return SetTransmitState( FL_EDICT_FULLCHECK );
+#endif
 	
 	// If an object is the moveparent of something else, don't skip it just because it's marked EF_NODRAW or else
 	//  the client won't have a proper origin for the child since the hierarchy won't be correctly transmitted down
@@ -4283,7 +4386,7 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 	{
 	case ENTITY_EVENT_WATER_TOUCH:
 		{
-			int nContents = (int)pEventData;
+			int nContents = size_cast< int >( (intp)pEventData );
 			if ( !nContents || (nContents & CONTENTS_WATER) )
 			{
 				++m_nWaterTouch;
@@ -4297,7 +4400,7 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 
 	case ENTITY_EVENT_WATER_UNTOUCH:
 		{
-			int nContents = (int)pEventData;
+			int nContents = size_cast< int >( (intp)pEventData );
 			if ( !nContents || (nContents & CONTENTS_WATER) )
 			{
 				--m_nWaterTouch;
@@ -4377,22 +4480,25 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 				{
 					// found a match
 
-					char szBuffer[256];
-					// mapper debug message
-					if (pCaller != NULL)
+					if ( developer.GetBool() )
 					{
-						Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input %s: %s.%s(%s)\n", gpGlobals->curtime, STRING(pCaller->m_iName.Get()), GetDebugName(), szInputName, Value.String() );
-					}
-					else
-					{
-						Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input <NULL>: %s.%s(%s)\n", gpGlobals->curtime, GetDebugName(), szInputName, Value.String() );
-					}
-					DevMsg( 2, szBuffer );
-					ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
+						char szBuffer[256];
+						// mapper debug message
+						if (pCaller != NULL)
+						{
+							Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input %s: %s.%s(%s)\n", gpGlobals->curtime, STRING(pCaller->m_iName.Get()), GetDebugName(), szInputName, Value.String() );
+						}
+						else
+						{
+							Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input <NULL>: %s.%s(%s)\n", gpGlobals->curtime, GetDebugName(), szInputName, Value.String() );
+						}
+						DevMsg( 2, "%s", szBuffer );
+						ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
 
-					if (m_debugOverlays & OVERLAY_MESSAGE_BIT)
-					{
-						DrawInputOverlay(szInputName,pCaller,Value);
+						if (m_debugOverlays & OVERLAY_MESSAGE_BIT)
+						{
+							DrawInputOverlay(szInputName,pCaller,Value);
+						}
 					}
 
 					// convert the value if necessary
@@ -4519,6 +4625,15 @@ void CBaseEntity::InputColor( inputdata_t &inputdata )
 void CBaseEntity::InputUse( inputdata_t &inputdata )
 {
 	Use( inputdata.pActivator, inputdata.pCaller, (USE_TYPE)inputdata.nOutputID, 0 );
+
+	IGameEvent *event = gameeventmanager->CreateEvent( "player_use" );
+	if ( event )
+	{
+		event->SetInt( "userid", inputdata.pActivator && inputdata.pActivator->IsPlayer() ? static_cast< CBasePlayer* >( inputdata.pActivator )->GetUserID() : 0 );
+		event->SetInt( "entity", entindex() );
+
+		gameeventmanager->FireEvent( event );
+	}
 }
 
 
@@ -4709,6 +4824,41 @@ void CBaseEntity::InputClearParent( inputdata_t &inputdata )
 	SetParent( NULL );
 }
 
+//------------------------------------------------------------------------------
+// Purpose: Input handler for setting the entities local origin
+//------------------------------------------------------------------------------
+void CBaseEntity::InputSetLocalOrigin( inputdata_t &inputdata )
+{
+	Vector tmpVec;
+
+	if (sscanf(inputdata.value.String(), "[%f %f %f]", &tmpVec[0], &tmpVec[1], &tmpVec[2]) == 0)
+	{
+		// Try sucking out 3 floats with no []s
+		sscanf(inputdata.value.String(), "%f %f %f", &tmpVec[0], &tmpVec[1], &tmpVec[2]);
+	}
+
+	// DevMsg("%s : InputSetLocalOrigin( %f %f %f )\n", GetDebugName(), tmpVec.x, tmpVec.y, tmpVec.z );
+	SetLocalOrigin( tmpVec );
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Input handler for setting the entities local angles
+//------------------------------------------------------------------------------
+void CBaseEntity::InputSetLocalAngles( inputdata_t &inputdata )
+{
+	Vector tmpVec;
+
+	if (sscanf(inputdata.value.String(), "[%f %f %f]", &tmpVec[0], &tmpVec[1], &tmpVec[2]) == 0)
+	{
+		// Try sucking out 3 floats with no []s
+		sscanf(inputdata.value.String(), "%f %f %f", &tmpVec[0], &tmpVec[1], &tmpVec[2]);
+	}
+
+	// DevMsg("%s : InputSetLocalAngles( %f %f %f )\n", GetDebugName(), tmpVec.x, tmpVec.y, tmpVec.z );
+	QAngle angles( tmpVec.x, tmpVec.y, tmpVec.z );
+	SetLocalAngles( angles );
+}
+
 
 //------------------------------------------------------------------------------
 // Purpose : Returns velcocity of base entity.  If physically simulated gets
@@ -4785,6 +4935,13 @@ void CBaseEntity::SetModel( const char *szModelName )
 		Msg( "Setting CBaseEntity to non-brush model %s\n", szModelName );
 	}
 	UTIL_SetModel( this, szModelName );
+}
+
+//------------------------------------------------------------------------------
+CStudioHdr *CBaseEntity::OnNewModel()
+{
+	// Do nothing.
+	return NULL;
 }
 
 
@@ -4870,6 +5027,14 @@ int CBaseEntity::GetTeamNumber( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+int CBaseEntity::GetPendingTeamNumber( void ) const
+{
+	return m_iPendingTeamNum;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 bool CBaseEntity::IsInAnyTeam( void ) const
 {
 	return ( GetTeam() != NULL );
@@ -4905,15 +5070,26 @@ struct TeleportListEntry_t
 	QAngle prevAbsAngles;
 };
 
-
-static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &entry, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
+static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &entry, const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity, bool bUseSlowHighAccuracyContacts )
 {
 	CBaseEntity *pTeleport = entry.pEntity;
 	Vector prevOrigin = entry.prevAbsOrigin;
 	QAngle prevAngles = entry.prevAbsAngles;
 
 	int nSolidFlags = pTeleport->GetSolidFlags();
-	pTeleport->AddSolidFlags( FSOLID_NOT_SOLID );
+	IPhysicsObject *pPhys = pTeleport->VPhysicsGetObject();
+	bool bEnablePhysCollision = false;
+	// by default we use a slow method that keeps contacts accurate.
+	// when desired it is possible to use a quicker method that trades off accuracy to save CPU
+	if ( pPhys && bUseSlowHighAccuracyContacts )
+	{
+		bEnablePhysCollision = pPhys->IsCollisionEnabled();
+		if ( bEnablePhysCollision )
+		{
+			pPhys->EnableCollisions( false );
+		}
+		pTeleport->AddSolidFlags( FSOLID_NOT_SOLID );
+	}
 
 	// I'm teleporting myself
 	if ( pSourceEntity == pTeleport )
@@ -4930,7 +5106,10 @@ static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &ent
 
 		if ( newVelocity )
 		{
-			pTeleport->SetAbsVelocity( *newVelocity );
+			if ( !pPhys || pTeleport->GetMoveType() != MOVETYPE_VPHYSICS )
+			{
+				pTeleport->SetAbsVelocity( *newVelocity );
+			}
 			pTeleport->SetBaseVelocity( vec3_origin );
 		}
 
@@ -4945,8 +5124,6 @@ static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &ent
 		// My parent is teleporting, just update my position & physics
 		pTeleport->CalcAbsolutePosition();
 	}
-	IPhysicsObject *pPhys = pTeleport->VPhysicsGetObject();
-	bool rotatePhysics = false;
 
 	// handle physics objects / shadows
 	if ( pPhys )
@@ -4959,19 +5136,29 @@ static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &ent
 		// don't rotate physics on players or bbox entities
 		if (pTeleport->IsPlayer() || pTeleport->GetSolid() == SOLID_BBOX )
 		{
-			rotAngles = &vec3_angle;
-		}
-		else
-		{
-			rotatePhysics = true;
+			if ( newAngles )
+			{
+				rotAngles = newAngles;
+			}
+			else
+			{
+				rotAngles = &vec3_angle;
+			}
 		}
 
-		pPhys->SetPosition( pTeleport->GetAbsOrigin(), *rotAngles, true );
+		pPhys->SetPosition( pTeleport->GetAbsOrigin(), *rotAngles, bUseSlowHighAccuracyContacts );
 	}
 
-	g_pNotify->ReportTeleportEvent( pTeleport, prevOrigin, prevAngles, rotatePhysics );
+	g_pNotify->ReportTeleportEvent( pTeleport, prevOrigin, prevAngles, true );
 
-	pTeleport->SetSolidFlags( nSolidFlags );
+	if ( pPhys && bUseSlowHighAccuracyContacts )
+	{
+		pTeleport->SetSolidFlags( nSolidFlags );
+		if ( bEnablePhysCollision )
+		{
+			pPhys->EnableCollisions( true );
+		}
+	}
 }
 
 
@@ -5002,7 +5189,7 @@ static void BuildTeleportList_r( CBaseEntity *pTeleport, CUtlVector<TeleportList
 
 
 static CUtlVector<CBaseEntity *> g_TeleportStack;
-void CBaseEntity::Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity )
+void CBaseEntity::Teleport( const Vector *newPosition, const QAngle *newAngles, const Vector *newVelocity, bool bUseSlowHighAccuracyContacts )
 {
 	if ( g_TeleportStack.Find( this ) >= 0 )
 		return;
@@ -5014,12 +5201,7 @@ void CBaseEntity::Teleport( const Vector *newPosition, const QAngle *newAngles, 
 	int i;
 	for ( i = 0; i < teleportList.Count(); i++)
 	{
-		TeleportEntity( this, teleportList[i], newPosition, newAngles, newVelocity );
-	}
-
-	for (i = 0; i < teleportList.Count(); i++)
-	{
-		teleportList[i].pEntity->CollisionRulesChanged();
+		TeleportEntity( this, teleportList[i], newPosition, newAngles, newVelocity, bUseSlowHighAccuracyContacts );
 	}
 
 	Assert( g_TeleportStack[index] == this );
@@ -5073,7 +5255,7 @@ static CUtlCachedFileData< CModelSoundsCache > g_ModelSoundsCache( "modelsounds.
 
 void ClearModelSoundsCache()
 {
-	if ( IsX360() || engine->IsCreatingXboxReslist() )
+	if ( IsGameConsole() || engine->IsCreatingXboxReslist() )
 	{
 		return;
 	}
@@ -5087,7 +5269,7 @@ void ClearModelSoundsCache()
 //-----------------------------------------------------------------------------
 bool ModelSoundsCacheInit()
 {
-	if ( IsX360() || engine->IsCreatingXboxReslist() )
+	if ( IsGameConsole() || engine->IsCreatingXboxReslist() )
 	{
 		return true;
 	}
@@ -5100,7 +5282,7 @@ bool ModelSoundsCacheInit()
 //-----------------------------------------------------------------------------
 void ModelSoundsCacheShutdown()
 {
-	if ( IsX360() || engine->IsCreatingXboxReslist() )
+	if ( IsGameConsole() || engine->IsCreatingXboxReslist() )
 	{
 		return;
 	}
@@ -5117,7 +5299,7 @@ public:
 	}
 	virtual void LevelInitPostEntity()
 	{
-		if ( IsX360() )
+		if ( IsGameConsole() )
 		{
 			return;
 		}
@@ -5129,7 +5311,7 @@ public:
 	}
 	virtual void LevelShutdownPostEntity()
 	{
-		if ( IsX360() )
+		if ( IsGameConsole() )
 		{
 			// Unforunate that this table must persist through duration of level.
 			// It is the common case that PrecacheModel() still gets called (and needs this table),
@@ -5196,7 +5378,7 @@ static CWatchForModelAccess g_WatchForModels;
 //-----------------------------------------------------------------------------
 void CBaseEntity::PrecacheSoundHelper( const char *pName )
 {
-	if ( !IsX360() )
+	if ( !IsGameConsole() )
 	{
 		// 360 only
 		Assert( 0 );
@@ -5361,7 +5543,7 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 					// The disk based solution was not needed. Now at runtime partly due to already crawling the sequences
 					// for the particles and the expensive part was redundant PrecacheScriptSound(), which is now prevented
 					// by a local symbol table.
-					if ( IsX360() )
+					if ( IsGameConsole() )
 					{
 						switch ( nEvent )
 						{
@@ -5429,7 +5611,7 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 // Input  : *name - model name
 // Output : int -- model index for model
 //-----------------------------------------------------------------------------
-int CBaseEntity::PrecacheModel( const char *name )
+int CBaseEntity::PrecacheModel( const char *name, bool bPreload )
 {
 	if ( !name || !*name )
 	{
@@ -5453,7 +5635,7 @@ int CBaseEntity::PrecacheModel( const char *name )
 	}
 #endif
 
-	int idx = engine->PrecacheModel( name, true );
+	int idx = engine->PrecacheModel( name, bPreload );
 	if ( idx != -1 )
 	{
 		PrecacheModelComponents( idx );
@@ -5515,6 +5697,25 @@ HSCRIPT CBaseEntity::ScriptGetModelKeyValues( void )
 	return hScript;
 }
 
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CBaseEntity::ScriptPrecacheModel( const char *name )
+{
+	PrecacheModel( name );
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CBaseEntity::ScriptPrecacheScriptSound( const char *name )
+{
+	PrecacheScriptSound( name );
+}
 
 //   Entity degugging console commands
 extern void			SetDebugBits( CBasePlayer* pPlayer, const char *name, int bit );
@@ -5862,7 +6063,7 @@ void DumpEntity( CBaseEntity *ent )
 						// don't print out empty keys
 						if ( buf[0] )
 						{
-					Msg( UTIL_VarArgs("  %s: %s\n", dmap->dataDesc[i].externalName, buf) );
+							Msg( "  %s: %s\n", dmap->dataDesc[i].externalName, buf );
 						}
 					}
 				}
@@ -6142,6 +6343,9 @@ static ConCommand ent_fire("ent_fire", &g_EntFireAutoComplete, "Usage:\n   ent_f
 
 void CC_Ent_CancelPendingEntFires( const CCommand& args )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
 	if (!pPlayer)
 		return;
@@ -6300,6 +6504,7 @@ void CBaseEntity::SetCheckUntouch( bool check )
 	else
 	{
 		RemoveEFlags( EFL_CHECK_UNTOUCH );
+		EntityTouch_Remove( this );
 	}
 }
 
@@ -6563,6 +6768,12 @@ void CBaseEntity::SetAbsAngles( const QAngle& absAngles )
 	{
 		m_angRotation = angNewRotation;
 		SetSimulationTime( gpGlobals->curtime );
+
+        // PRB TODO : HACK FIX
+        // This call fixes the fact that this network var does not get set for some derived classes (eg chickens)
+        // Since we are so close to CERT this will have to do for now, but needs re-visiting.
+
+        m_angRotation.GetForModify();
 	}
 }
 
@@ -6576,6 +6787,7 @@ void CBaseEntity::SetAbsVelocity( const Vector &vecAbsVelocity )
 	InvalidatePhysicsRecursive( VELOCITY_CHANGED );
 	RemoveEFlags( EFL_DIRTY_ABSVELOCITY );
 
+	Assert( vecAbsVelocity.IsValid() );
 	m_vecAbsVelocity = vecAbsVelocity;
 
 	// NOTE: Do *not* do a network state change in this case.
@@ -6635,9 +6847,14 @@ void CBaseEntity::SetAbsAngularVelocity( const QAngle &vecAbsAngVelocity )
 //-----------------------------------------------------------------------------
 void CBaseEntity::SetLocalOrigin( const Vector& origin )
 {
-	if ( !origin.IsValid() )
+	// Safety check against NaN or really huge numbers
+	if ( !IsEntityPositionReasonable( origin ) )
 	{
-		AssertMsg( 0, "Bad origin set" );
+		if ( CheckEmitReasonablePhysicsSpew() )
+		{
+			Warning( "Bad SetLocalOrigin(%f,%f,%f) on %s\n", origin.x, origin.y, origin.z, GetDebugName() );
+		}
+		Assert( false );
 		return;
 	}
 
@@ -6671,6 +6888,14 @@ void CBaseEntity::SetLocalAngles( const QAngle& angles )
 	//        handling things like +/-180 degrees properly. This should be revisited.
 	//QAngle angleNormalize( AngleNormalize( angles.x ), AngleNormalize( angles.y ), AngleNormalize( angles.z ) );
 
+	// Safety check against NaN or really huge numbers
+	if ( !IsEntityQAngleReasonable( angles ) )
+	{
+		Warning( "Bad SetLocalAngles(%f,%f,%f) on %s\n", angles.x, angles.y, angles.z, GetDebugName() );
+		Assert( false );
+		return;
+	}
+
 	if (m_angRotation != angles)
 	{
 		InvalidatePhysicsRecursive( ANGLES_CHANGED );
@@ -6679,8 +6904,27 @@ void CBaseEntity::SetLocalAngles( const QAngle& angles )
 	}
 }
 
-void CBaseEntity::SetLocalVelocity( const Vector &vecVelocity )
+void CBaseEntity::SetLocalVelocity( const Vector &inVecVelocity )
 {
+	Vector vecVelocity = inVecVelocity;
+
+	// Safety check against NaN's or really huge numbers, which can explode physics
+	switch ( CheckEntityVelocity( vecVelocity ) )
+	{
+	case -1:
+		Warning( "Discarding SetLocalVelocity(%f,%f,%f) on %s\n", vecVelocity.x, vecVelocity.y, vecVelocity.z, GetDebugName() );
+		Assert( false );
+		return;
+	case 0:
+		if ( CheckEmitReasonablePhysicsSpew() )
+		{
+			Warning( "Clamping SetLocalVelocity(%f,%f,%f) on %s\n", vecVelocity.x, vecVelocity.y, vecVelocity.z, GetDebugName() );
+		}
+		break;
+	default:
+		break;
+	}
+
 	if (m_vecVelocity != vecVelocity)
 	{
 		InvalidatePhysicsRecursive( VELOCITY_CHANGED );
@@ -6690,6 +6934,17 @@ void CBaseEntity::SetLocalVelocity( const Vector &vecVelocity )
 
 void CBaseEntity::SetLocalAngularVelocity( const QAngle &vecAngVelocity )
 {
+	// Safety check against NaN's or really huge numbers
+	if ( !IsEntityQAngleVelReasonable( vecAngVelocity ) )
+	{
+		if ( CheckEmitReasonablePhysicsSpew() )
+		{
+			Warning( "Bad SetLocalAngularVelocity(%f,%f,%f) on %s\n", vecAngVelocity.x, vecAngVelocity.y, vecAngVelocity.z, GetDebugName() );
+		}
+		Assert( false );
+		return;
+	}
+
 	if (m_vecAngVelocity != vecAngVelocity)
 	{
 //		InvalidatePhysicsRecursive( EFL_DIRTY_ABSANGVELOCITY );
@@ -6748,6 +7003,15 @@ void CBaseEntity::UpdateCell()
 	m_cellX = CellFromCoord( cellwidth, m_vecOrigin.GetX() );
 	m_cellY = CellFromCoord( cellwidth, m_vecOrigin.GetY() );
 	m_cellZ	= CellFromCoord( cellwidth, m_vecOrigin.GetZ() );
+
+
+    // PRB TODO : HACK fix for hostage warping.
+    // Somehow the above code does not flag the network vars as modified, but below does... 
+    // Needs revisiting, but at this stage it fixes our bug
+
+    m_cellX.GetForModify();
+    m_cellY.GetForModify();
+    m_cellZ.GetForModify();
 }
 
 //-----------------------------------------------------------------------------
@@ -6871,6 +7135,58 @@ void CBaseEntity::RemoveAllDecals( void )
 	EntityMessageBegin( this );
 		WRITE_BYTE( BASEENTITY_MSG_REMOVE_DECALS );
 	MessageEnd();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : set - 
+//-----------------------------------------------------------------------------
+void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
+{
+	// TODO
+	// Append chapter/day?
+
+	set.AppendCriteria( "randomnum", UTIL_VarArgs("%d", RandomInt(0,100)) );
+	// Append map name
+	set.AppendCriteria( "map", gpGlobals->mapname.ToCStr() );
+	// Append our classname and game name
+	set.AppendCriteria( "classname", GetClassname() );
+	set.AppendCriteria( "name", GetEntityName().ToCStr() );
+
+	// Append our health
+	set.AppendCriteria( "health", UTIL_VarArgs( "%i", GetHealth() ) );
+
+	float healthfrac = 0.0f;
+	if ( GetMaxHealth() > 0 )
+	{
+		healthfrac = (float)GetHealth() / (float)GetMaxHealth();
+	}
+
+	set.AppendCriteria( "healthfrac", UTIL_VarArgs( "%.3f", healthfrac ) );
+
+	// Go through all the global states and append them
+
+	for ( int i = 0; i < GlobalEntity_GetNumGlobals(); i++ ) 
+	{
+		const char *szGlobalName = GlobalEntity_GetName(i);
+		int iGlobalState = (int)GlobalEntity_GetStateByIndex(i);
+		set.AppendCriteria( szGlobalName, UTIL_VarArgs( "%i", iGlobalState ) );
+	}
+
+	// Append anything from I/O or keyvalues pairs
+	AppendContextToCriteria( set );
+
+	if( hl2_episodic.GetBool() )
+	{
+		set.AppendCriteria( "episodic", "1" );
+	}
+
+	// Append anything from world I/O/keyvalues with "world" as prefix
+	CWorld *world = assert_cast< CWorld * >( CBaseEntity::Instance( INDEXENT( 0 ) ) );
+	if ( world )
+	{
+		world->AppendContextToCriteria( set, "world" );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -7075,6 +7391,29 @@ void CBaseEntity::InputCallScriptFunction( inputdata_t& inputdata )
 	CallScriptFunction( inputdata.value.String(), NULL );
 }
 
+
+#ifdef PORTAL2
+
+//---------------------------------------------------------
+// Remove paint from entity with BSP model.
+//---------------------------------------------------------
+void CBaseEntity::InputRemovePaint( inputdata_t &inputdata )
+{
+	if ( engine->HasPaintmap() && IsBSPModel() )
+	{
+		engine->RemovePaint( GetModel() );
+
+		CBroadcastRecipientFilter filter;
+		filter.MakeReliable();
+		UserMessageBegin( filter, "RemovePaint" );
+		WRITE_EHANDLE( this );
+		MessageEnd();
+	}
+}
+
+#endif
+
+
 // #define VMPROFILE	// define to profile vscript calls
 
 #ifdef VMPROFILE
@@ -7118,8 +7457,14 @@ bool CBaseEntity::CallScriptFunction( const char *pFunctionName, ScriptVariant_t
 
 	if( hFunc )
 	{
+		// Kind of a hack to make glados.nut easier to work with...
+		// When a script function is called by connecting the function to an entity output,
+		// the entity who is connected to the output and who has this function in their scope
+		// will be set to 'owninginstance'. In this situation, it can be a different instance than 'self'.
+		g_pScriptVM->SetValue( "owninginstance", ScriptVariant_t( GetScriptInstance() ) );
 		m_ScriptScope.Call( hFunc, pFunctionReturn );
 		m_ScriptScope.ReleaseFunction( hFunc );
+		g_pScriptVM->ClearValue( "owninginstance" );
 
 		UPDATE_VMPROFILE
 
@@ -7310,7 +7655,9 @@ void CBaseEntity::AddContext( const char *contextName )
 	char key[ 128 ];
 	char value[ 128 ];
 	float duration;
-
+#ifdef TERROR  // from changelist 729204 . Ifdef'd out because not tested outside L4D yet.
+	CWorld * const world = assert_cast< CWorld * >( CBaseEntity::Instance( INDEXENT( 0 ) ) );
+#endif
 
 	const char *p = contextName;
 	while ( p )
@@ -7322,9 +7669,24 @@ void CBaseEntity::AddContext( const char *contextName )
 			duration += gpGlobals->curtime;
 		}
 
-
+#ifdef TERROR 
+		// Egregious last-minute hack. If a specific context is prefixed with a '$', then 
+		// apply it to the World instead of to this character. The proper way to fix this
+		// would be to do away with this insane mechanism of writing contexts out into a 
+		// string and then parsing it back apart again after calling a member function
+		// on the receiving character; but that's way too big to deal with at this stage
+		// of L4D2.  ( this hack dated 9/4/09 )
+		if ( key[0] == AI_CriteriaSet::kAPPLYTOWORLDPREFIX && world && world != this )
+		{
+			world->AddContext( key+1, value, duration );
+		}
+		else
+		{
+			AddContext( key, value, duration );
+		}
+#else
 		AddContext( key, value, duration );
-
+#endif
 	}
 }
 
@@ -7435,6 +7797,49 @@ void CBaseEntity::InputEnableShadow( inputdata_t &inputdata )
 {
 	RemoveEffects( EF_NOSHADOW );
 }
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputDisableReceivingFlashlight( inputdata_t &inputdata )
+{
+	AddEffects( EF_NOFLASHLIGHT );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputEnableReceivingFlashlight( inputdata_t &inputdata )
+{
+	RemoveEffects( EF_NOFLASHLIGHT );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputDisableDrawInFastReflection( inputdata_t &inputdata )
+{
+	RemoveEffects( EF_MARKED_FOR_FAST_REFLECTION );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputEnableDrawInFastReflection( inputdata_t &inputdata )
+{
+	AddEffects( EF_MARKED_FOR_FAST_REFLECTION );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputDisableDraw( inputdata_t &inputdata )
+{
+	AddEffects( EF_NODRAW );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::InputEnableDraw( inputdata_t &inputdata )
+{
+	RemoveEffects( EF_NODRAW );
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: An input to add a new connection from this entity
@@ -7850,26 +8255,14 @@ void CBaseEntity::RemoveRecipientsIfNotCloseCaptioning( CRecipientFilter& filter
 		CBasePlayer *player = static_cast< CBasePlayer * >( CBaseEntity::Instance( playerIndex ) );
 		if ( !player )
 			continue;
-#if !defined( _XBOX )
+
 		const char *cvarvalue = engine->GetClientConVarValue( playerIndex, "closecaption" );
 		Assert( cvarvalue );
 		if ( !cvarvalue[ 0 ] )
 			continue;
 
 		int value = atoi( cvarvalue );
-#else
-		static ConVar *s_pCloseCaption = NULL;
-		if ( !s_pCloseCaption )
-		{
-			s_pCloseCaption = cvar->FindVar( "closecaption" );
-			if ( !s_pCloseCaption )
-			{
-				Error( "XBOX couldn't find closecaption convar!!!" );
-			}
-		}
 
-		int value = s_pCloseCaption->GetInt();
-#endif
 		// No close captions?
 		if ( value == 0 )
 		{
@@ -7898,7 +8291,7 @@ void CBaseEntity::EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, 
 {
 	CUtlVector< Vector > dummy;
 	enginesound->EmitSentenceByIndex( filter, iEntIndex, iChannel, iSentenceIndex, 
-		flVolume, iSoundlevel, iFlags, iPitch, pOrigin, pDirection, &dummy, bUpdatePositions, soundtime );
+		flVolume, iSoundlevel, 0, iFlags, iPitch, pOrigin, pDirection, &dummy, bUpdatePositions, soundtime );
 }
 
 
@@ -8053,12 +8446,15 @@ bool CBaseEntity::SUB_AllowedToFade( void )
 			return false;
 	}
 
-	// on Xbox, allow these to fade out
-#ifndef _XBOX
-	CBasePlayer *pPlayer = ( AI_IsSinglePlayer() ) ? UTIL_GetLocalPlayer() : NULL;
+	// only keep fading things active on the high end
+#if !defined( PORTAL2 )
+	if ( !IsGameConsole() )
+	{
+		CBasePlayer *pPlayer = ( AI_IsSinglePlayer() ) ? UTIL_GetLocalPlayer() : NULL;
 
-	if ( pPlayer && pPlayer->FInViewCone( this ) )
-		return false;
+		if ( pPlayer && pPlayer->FInViewCone( this ) )
+			return false;
+	}
 #endif
 
 	return true;
@@ -8184,11 +8580,12 @@ void CBaseEntity::RunVScripts()
 			//TODO: For perf, this should be precompiled and the %s should be passed as a parameter
 			HSCRIPT hCreateChainScript = g_pScriptVM->CompileScript( CFmtStr( "%sCallChain <- CSimpleCallChainer(\"%s\", self.GetScriptScope(), true)", sCallChainFunctions[j], sCallChainFunctions[j] ) );
 			g_pScriptVM->Run( hCreateChainScript, (HSCRIPT)m_ScriptScope ); 
+			g_pScriptVM->ReleaseScript( hCreateChainScript );
 		}
 	}
 
 	char szScriptsList[255];
-	Q_strcpy( szScriptsList, STRING(m_iszVScripts) );
+	V_strcpy_safe( szScriptsList, STRING(m_iszVScripts) );
 	CUtlStringList szScripts;
 
 	V_SplitString( szScriptsList, " ", szScripts);
@@ -8211,6 +8608,7 @@ void CBaseEntity::RunVScripts()
 				//TODO: For perf, this should be precompiled and the %s should be passed as a parameter.
 				HSCRIPT hRunPostScriptExecute = g_pScriptVM->CompileScript( CFmtStr( "%sCallChain.PostScriptExecute()", sCallChainFunctions[j] ) );
 				g_pScriptVM->Run( hRunPostScriptExecute, (HSCRIPT)m_ScriptScope ); 
+				g_pScriptVM->ReleaseScript( hRunPostScriptExecute );
 			}
 		}
 	}
@@ -8305,19 +8703,23 @@ bool CBaseEntity::DoesHavePlayerChild()
 	return IsEFlagSet( EFL_HAS_PLAYER_CHILD );
 }
 
+void CBaseEntity::SetFriction( float flFriction )
+{ 
+	m_flFriction = flFriction;
+#if defined(ENABLE_FRICTION_OVERRIDE)
+	if ( GetIndexForThinkContext( "FrictionRevertThink" ) != NO_THINK_CONTEXT )
+	{
+		SetContextThink( NULL, TICK_NEVER_THINK, "FrictionRevertThink" );
+	}
+#endif
+}
+
+#if defined(ENABLE_FRICTION_OVERRIDE)
 void CBaseEntity::FrictionRevertThink( void )
 {
 	SetFriction( m_flOverriddenFriction );
 }
 
-void CBaseEntity::SetFriction( float flFriction )
-{ 
-	m_flFriction = flFriction;
-	if ( GetIndexForThinkContext( "FrictionRevertThink" ) != NO_THINK_CONTEXT )
-	{
-		SetContextThink( NULL, TICK_NEVER_THINK, "FrictionRevertThink" );
-	}
-}
 
 void CBaseEntity::OverrideFriction( float duration, float friction )
 {
@@ -8329,6 +8731,7 @@ void CBaseEntity::OverrideFriction( float duration, float friction )
 	m_flFriction = friction;
 	SetContextThink( &CBaseEntity::FrictionRevertThink, gpGlobals->curtime + duration, "FrictionRevertThink" );
 }
+#endif
 
 void CBaseEntity::SetNetworkQuantizeOriginAngAngles( bool bQuantize )
 {
@@ -8383,6 +8786,62 @@ bool CBaseEntity::ShouldLagCompensate() const
 
 
 //------------------------------------------------------------------------------
+void CBaseEntity::SetPendingTeamNum( int nTeamID )
+{
+	m_iPendingTeamNum = nTeamID;
+}
+
+
+
+void CBaseEntity::ClearSpotRule( int bRuleFlags )
+{
+	m_nSpotRules = m_nSpotRules & ~bRuleFlags;
+}
+
+void CBaseEntity::SetSpotRules( int nRuleFlags )
+{
+	m_nSpotRules |= nRuleFlags;
+}
+
+bool CBaseEntity::IsSpotted()
+{
+	return m_bSpotted;
+}
+
+void CBaseEntity::SetIsSpotted( bool bSpotted )
+{
+	m_bSpotted = bSpotted;
+}
+
+void CBaseEntity::ClearSpottedBy( void )
+{
+	for ( int i = 0; i < kNumSpottedByMask; i++ )
+		m_bSpottedByMask.Set(i,0);
+}
+
+void CBaseEntity::SetIsSpottedBy( int nPlayerEntIndex )
+{
+	Assert( nPlayerEntIndex > 0 && nPlayerEntIndex <= MAX_PLAYERS );
+	if ( nPlayerEntIndex > 0 && nPlayerEntIndex <= MAX_PLAYERS )
+	{
+		int maskBitIndex = nPlayerEntIndex - 1; // player ents start at 1
+		int maskIndex = BitVec_Int( maskBitIndex );
+		m_bSpottedByMask.Set( maskIndex, m_bSpottedByMask.Get( maskIndex ) | BitVec_Bit( maskBitIndex ) );
+	}
+}
+
+int CBaseEntity::GetSpotRules( void )
+{
+	return m_nSpotRules;
+}
+
+bool CBaseEntity::CanBeSpotted( void )
+{
+	return ( m_nSpotRules != 0 );
+}
+
+
+//------------------------------------------------------------------------------
 // Purpose: Create an NPC of the given type
 //------------------------------------------------------------------------------
 void CC_Ent_Create( const CCommand& args )
@@ -8418,7 +8877,11 @@ void CC_Ent_Create( const CCommand& args )
 			{
 				// Raise the end position a little up off the floor, place the npc and drop him down
 				tr.endpos.z += 12;
-				entity->Teleport( &tr.endpos, NULL, NULL );
+
+				QAngle vecOppositePlayerAngles = pPlayer->GetAbsAngles();
+				vecOppositePlayerAngles[YAW] += 180;
+
+				entity->Teleport( &tr.endpos, &vecOppositePlayerAngles, NULL );
 				UTIL_DropToFloor( entity, MASK_SOLID );
 			}
 		}
@@ -8519,7 +8982,7 @@ void CC_Ent_Orient( const CCommand& args )
 	if ( CC_GetCommandEnt( args, &pEnt, NULL, &vecPlayerAngles ) )
 	{
 		QAngle vecEntAngles = pEnt->GetAbsAngles();
-		if ( args.ArgC() == 3 && !Q_strncmp( args[2], "allangles", 9 ) )
+		if ( args.ArgC() == 3 && StringHasPrefixCaseSensitive( args[2], "allangles" ) )
 		{
 			vecEntAngles = vecPlayerAngles;
 		}
