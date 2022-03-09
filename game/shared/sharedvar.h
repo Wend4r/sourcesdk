@@ -84,7 +84,7 @@ static bool SharedVar_IsEmpty( Type *pValue, int iCount = 1 )
 
 	for ( int i = 0; i < iNumBytes; ++i )
 	{
-		if ( pChar[i] != NULL )
+		if ( pChar[i] != '\0' )
 		{
 			return false;
 		}
