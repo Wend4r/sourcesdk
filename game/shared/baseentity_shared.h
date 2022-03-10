@@ -11,6 +11,12 @@
 #pragma once
 #endif
 
+#ifndef CLIENT_DLL
+#define SERVER_PLATTIME_RNG true
+#else
+#define SERVER_PLATTIME_RNG
+#endif
+
 extern ConVar hl2_episodic;
 
 // Simple shared header file for common base entities
@@ -44,6 +50,8 @@ extern ConVar hl2_episodic;
 
 // Maximum number of vphysics objects per entity
 #define VPHYSICS_MAX_OBJECT_LIST_COUNT	1024
+
+#define DEFAULT_LOOK_AT_USE_ANGLE 0.8f
 
 #if defined( CLIENT_DLL )
 #include "c_baseentity.h"
@@ -96,7 +104,7 @@ inline int	CBaseEntity::GetFlags( void ) const
 	return m_fFlags;
 }
 
-inline bool CBaseEntity::IsAlive( void ) const
+inline bool CBaseEntity::IsAlive( void )const
 {
 	return m_lifeState == LIFE_ALIVE; 
 }
@@ -111,10 +119,17 @@ inline CBaseEntity	*CBaseEntity::GetEffectEntity() const
 	return m_hEffectEntity.Get();
 }
 
+#ifdef CLIENT_DLL
 inline int CBaseEntity::GetPredictionRandomSeed( void )
 {
 	return m_nPredictionRandomSeed;
 }
+#else
+inline int CBaseEntity::GetPredictionRandomSeed( bool bUseUnSyncedServerPlatTime )
+{
+	return bUseUnSyncedServerPlatTime ? m_nPredictionRandomSeedServer : m_nPredictionRandomSeed;
+}
+#endif
 
 inline CBasePlayer *CBaseEntity::GetPredictionPlayer( void )
 {
@@ -209,6 +224,16 @@ inline void CBaseEntity::RemoveEffects( int nEffects )
 		UpdateVisibility();
 #endif
 	}
+
+#ifdef CLIENT_DLL
+	if ( nEffects & EF_MARKED_FOR_FAST_REFLECTION )
+	{
+		OnFastReflectionRenderingChanged();
+	}
+	OnDisableShadowDepthRenderingChanged();
+	OnDisableCSMRenderingChanged();
+	OnShadowDepthRenderingCacheableStateChanged();
+#endif
 }
 
 inline void CBaseEntity::ClearEffects( void ) 
@@ -226,11 +251,23 @@ inline void CBaseEntity::ClearEffects( void )
 #endif // HL2_EPISODIC
 #endif // !CLIENT_DLL
 
+#ifdef CLIENT_DLL
+	bool bRendersInFastReflection = ( m_fEffects & EF_MARKED_FOR_FAST_REFLECTION ) != 0;
+#endif
+
 	m_fEffects = 0;
+
 #ifndef CLIENT_DLL
-		DispatchUpdateTransmitState();
+	DispatchUpdateTransmitState();
 #else
-		UpdateVisibility();
+	UpdateVisibility();
+	if ( bRendersInFastReflection )
+	{
+		OnFastReflectionRenderingChanged();
+	}
+	OnDisableShadowDepthRenderingChanged();
+	OnDisableCSMRenderingChanged();
+	OnShadowDepthRenderingCacheableStateChanged();
 #endif
 }
 
@@ -275,5 +312,71 @@ inline Vector	CBaseEntity::Up() const  RESTRICT      ///< get my up      (+z) ve
 
 // Shared EntityMessage between game and client .dlls
 #define BASEENTITY_MSG_REMOVE_DECALS	1
+
+inline bool IsPushableMoveType( int nMoveType )
+{
+	if ( nMoveType == MOVETYPE_PUSH || nMoveType == MOVETYPE_NONE || 
+		nMoveType == MOVETYPE_VPHYSICS || nMoveType == MOVETYPE_NOCLIP )
+		return false;
+	return true;
+}
+
+extern float k_flMaxEntityPosCoord;
+extern float k_flMaxEntityEulerAngle;
+extern float k_flMaxEntitySpeed;
+extern float k_flMaxEntitySpinRate;
+
+inline bool IsEntityCoordinateReasonable( const vec_t c )
+{
+	float r = k_flMaxEntityPosCoord;
+	return c > -r && c < r;
+}
+
+inline bool IsEntityPositionReasonable( const Vector &v )
+{
+	float r = k_flMaxEntityPosCoord;
+	return
+		v.x > -r && v.x < r &&
+		v.y > -r && v.y < r &&
+		v.z > -r && v.z < r;
+}
+
+// Returns:
+//   -1 - velocity is really, REALLY bad and probably should be rejected.
+//   0  - velocity was suspicious and clamped.
+//   1  - velocity was OK and not modified
+extern int CheckEntityVelocity( Vector &v );
+
+inline bool IsEntityQAngleReasonable( const QAngle &q )
+{
+	float r = k_flMaxEntityEulerAngle;
+	return
+		q.x > -r && q.x < r &&
+		q.y > -r && q.y < r &&
+		q.z > -r && q.z < r;
+}
+
+// Angular velocity in exponential map form
+inline bool IsEntityAngularVelocityReasonable( const Vector &q )
+{
+	float r = k_flMaxEntitySpinRate;
+	return
+		q.x > -r && q.x < r &&
+		q.y > -r && q.y < r &&
+		q.z > -r && q.z < r;
+}
+
+// Angular velocity of each Euler angle.
+inline bool IsEntityQAngleVelReasonable( const QAngle &q )
+{
+	float r = k_flMaxEntitySpinRate;
+	return
+		q.x > -r && q.x < r &&
+		q.y > -r && q.y < r &&
+		q.z > -r && q.z < r;
+}
+
+// Should we emit physics spew into the log or not?
+extern bool CheckEmitReasonablePhysicsSpew();
 
 #endif // BASEENTITY_SHARED_H
