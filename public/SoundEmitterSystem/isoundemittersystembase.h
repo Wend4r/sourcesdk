@@ -19,6 +19,8 @@
 #include "tier3/tier3.h"
 
 
+DECLARE_LOGGING_CHANNEL( LOG_SND_EMITTERSYSTEM );
+
 #define SOUNDGENDER_MACRO "$gender"
 #define SOUNDGENDER_MACRO_LENGTH 7		// Length of above including $
 
@@ -76,7 +78,6 @@ struct CSoundParameters
 	bool			m_bHRTFFollowEntity;
 	bool			m_bHRTFBilinear;
 };
-
 
 // A bit of a hack, but these are just utility function which are implemented in the SouneParametersInternal.cpp file which all users of this lib also compile
 const char *SoundLevelToString( soundlevel_t level );
