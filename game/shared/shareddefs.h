@@ -21,16 +21,12 @@
 #define ROUND_TO_TICKS( t )		( TICK_INTERVAL * TIME_TO_TICKS( t ) )
 #define TICK_NEVER_THINK		(-1)
 
-
+#if defined( TF_DLL )
+#define ANIMATION_CYCLE_BITS		10
+#else
 #define ANIMATION_CYCLE_BITS		15
-
+#endif
 #define ANIMATION_CYCLE_MINFRAC		(1.0f / (1<<ANIMATION_CYCLE_BITS))
-
-// Matching the high level concept is significantly better than other criteria
-// FIXME:  Could do this in the script file by making it required and bumping up weighting there instead...
-#define CONCEPT_WEIGHT 5.0f
-
-
 
 // Each mod defines these for itself.
 class CViewVectors
@@ -95,9 +91,16 @@ public:
 
 #define MAX_CLIMB_SPEED		200
 
+#if defined(TF_DLL) || defined(TF_CLIENT_DLL) || defined( CSTRIKE15 )
+
+	#define TIME_TO_DUCK_MSECS		200
+
+#else
 
 	#define TIME_TO_DUCK_MSECS		400
- 
+
+#endif 
+
 #define TIME_TO_UNDUCK_MSECS		200
 
 inline float FractionDucked( int msecs )
@@ -110,10 +113,17 @@ inline float FractionUnDucked( int msecs )
 	return clamp( (float)msecs / (float)TIME_TO_UNDUCK_MSECS, 0.0f, 1.0f );
 }
 
+#if defined( CSTRIKE15 )
 #define MAX_WEAPON_SLOTS		6	// hud item selection slots
+#define MAX_WEAPON_POSITIONS	6	// max number of items within a slot
+#define MAX_ITEM_TYPES			6	// hud item selection slots
+#define MAX_WEAPONS				64	// Max number of weapons available
+#else
+#define MAX_WEAPON_SLOTS		11	// hud item selection slots
 #define MAX_WEAPON_POSITIONS	20	// max number of items within a slot
 #define MAX_ITEM_TYPES			6	// hud item selection slots
-#define MAX_WEAPONS				48	// Max number of weapons available
+#define MAX_WEAPONS				64	// Max number of weapons available
+#endif 
 
 #define MAX_ITEMS				5	// hard coded item types
 
@@ -127,6 +137,90 @@ inline float FractionUnDucked( int msecs )
 #define HUD_PRINTTALK		3
 #define HUD_PRINTCENTER		4
 
+
+// Vote creation or processing failure codes
+typedef enum
+{
+	VOTE_FAILED_GENERIC = 0,
+	VOTE_FAILED_TRANSITIONING_PLAYERS,
+	VOTE_FAILED_RATE_EXCEEDED,
+	VOTE_FAILED_YES_MUST_EXCEED_NO,
+	VOTE_FAILED_QUORUM_FAILURE,
+	VOTE_FAILED_ISSUE_DISABLED,
+	VOTE_FAILED_MAP_NOT_FOUND,
+	VOTE_FAILED_MAP_NAME_REQUIRED,
+	VOTE_FAILED_FAILED_RECENTLY,
+	VOTE_FAILED_FAILED_RECENT_KICK,
+	VOTE_FAILED_FAILED_RECENT_CHANGEMAP,
+	VOTE_FAILED_FAILED_RECENT_SWAPTEAMS,
+	VOTE_FAILED_FAILED_RECENT_SCRAMBLETEAMS,
+	VOTE_FAILED_FAILED_RECENT_RESTART,
+	VOTE_FAILED_TEAM_CANT_CALL,
+	VOTE_FAILED_WAITINGFORPLAYERS,
+	VOTE_FAILED_PLAYERNOTFOUND,
+	VOTE_FAILED_CANNOT_KICK_ADMIN,
+	VOTE_FAILED_SCRAMBLE_IN_PROGRESS,
+	VOTE_FAILED_SWAP_IN_PROGRESS,
+	VOTE_FAILED_SPECTATOR,
+	VOTE_FAILED_DISABLED,
+	VOTE_FAILED_NEXTLEVEL_SET,
+	VOTE_FAILED_REMATCH,
+	VOTE_FAILED_TOO_EARLY_SURRENDER,
+	VOTE_FAILED_CONTINUE,
+	VOTE_FAILED_MATCH_PAUSED,
+	VOTE_FAILED_MATCH_NOT_PAUSED,
+	VOTE_FAILED_NOT_IN_WARMUP,
+	VOTE_FAILED_NOT_10_PLAYERS,
+	VOTE_FAILED_TIMEOUT_ACTIVE,
+	VOTE_FAILED_TIMEOUT_INACTIVE,
+	VOTE_FAILED_TIMEOUT_EXHAUSTED,
+	VOTE_FAILED_CANT_ROUND_END,
+	VOTE_FAILED_MAX,
+} vote_create_failed_t;
+
+#define MAX_VOTE_DETAILS_LENGTH 64
+#define INVALID_ISSUE -1
+#define MAX_VOTE_OPTIONS 5
+
+enum
+{
+	VOTEISSUE_UNDEFINED = -1,
+	VOTEISSUE_KICK,
+	VOTEISSUE_CHANGELEVEL,
+	VOTEISSUE_NEXTLEVEL,
+	VOTEISSUE_SWAPTEAMS,
+	VOTEISSUE_SCRAMBLE,
+	VOTEISSUE_RESTARTGAME,
+	VOTEISSUE_SURRENDER,
+	VOTEISSUE_REMATCH,
+	VOTEISSUE_CONTINUE,
+	VOTEISSUE_PAUSEMATCH,
+	VOTEISSUE_UNPAUSEMATCH,
+	VOTEISSUE_LOADBACKUP,
+	VOTEISSUE_ENDWARMUP,
+	VOTEISSUE_STARTTIMEOUT,
+	VOTEISSUE_ENDTIMEOUT,
+	VOTEISSUE_READYFORMATCH,
+	VOTEISSUE_NOTREADYFORMATCH,
+	VOTEISSUE_LAST
+};
+
+enum CastVote
+{
+	VOTE_OPTION1,  // Use this for Yes
+	VOTE_OPTION2,  // Use this for No
+	VOTE_OPTION3,
+	VOTE_OPTION4,
+	VOTE_OPTION5,
+	VOTE_UNCAST
+};
+
+
+enum AmmoPosition_t
+{
+	AMMO_POSITION_PRIMARY = 1,
+	AMMO_POSITION_SECONDARY = 2
+};
 
 //===================================================================================================================
 // Close caption flags
@@ -149,9 +243,10 @@ inline float FractionUnDucked( int msecs )
 #define	HIDEHUD_VEHICLE_CROSSHAIR	( 1<<9 )	// Hide vehicle crosshair
 #define HIDEHUD_INVEHICLE			( 1<<10 )
 #define HIDEHUD_BONUS_PROGRESS		( 1<<11 )	// Hide bonus progress display (for bonus map challenges)
-#define HIDEHUD_RADAR				( 1<<12 )	// Hide the radar
+#define HIDEHUD_RADAR				( 1<<12 )   // Hides the radar in CS1.5
+#define HIDEHUD_MINISCOREBOARD      ( 1<<13 )   // Hides the miniscoreboard in CS1.5
 
-#define HIDEHUD_BITCOUNT			13
+#define HIDEHUD_BITCOUNT			14
 
 //===================================================================================================================
 // suit usage bits
@@ -173,9 +268,11 @@ inline float FractionUnDucked( int msecs )
 //You might be wondering why these aren't multiple of 2. Well the reason is that if servers decide to have HLTV or Replay enabled we need the extra slot.
 //This is ok since MAX_PLAYERS is used for code specific things like arrays and loops, but it doesn't really means that this is the max number of players allowed
 //Since this is decided by the gamerules (and it can be whatever number as long as its less than MAX_PLAYERS).
-
+#if defined( CSTRIKE_DLL )
+	#define MAX_PLAYERS				64  // Absolute max players supported
+#else
 	#define MAX_PLAYERS				33  // Absolute max players supported
-
+#endif
 
 #define MAX_PLACE_NAME_LENGTH		18
 
@@ -193,6 +290,14 @@ inline float FractionUnDucked( int msecs )
 
 #define MAX_TEAMS				32	// Max number of teams in a game
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
+
+#define MAX_TEAM_FLAG_ICON_LENGTH	8	// Max length of a team's flag icon (just the singlular country code)
+#define MAX_TEAM_LOGO_ICON_LENGTH	8	// Max length of a team's flag icon (just the singlular country code)
+#define MAX_TEAM_FLAG_HTML_LENGTH	64	// Max length of a team's flag html string
+//#define TEAM_FLAG_IMG_STRING		"<img src='flag_%s.png' height='26' width='52'/>"
+#define TEAM_FLAG_IMG_STRING		"<img src='flag_%s.png'/>"//resource/Flash/images/flags/
+#define TEAM_LOGO_IMG_STRING		"%s.png"
+#define TEAM_FLAG_IMG_MOV_STRING		"%s"//.png
 
 // Weapon m_iState
 #define WEAPON_NOT_CARRIED				0	// Weapon is on the ground
@@ -224,7 +329,15 @@ inline float FractionUnDucked( int msecs )
 
 // Humans only have left and right hands, though we might have aliens with more
 //  than two, sigh
+#if defined( CSTRIKE15 )
+
 #define MAX_VIEWMODELS			2
+
+#else
+
+#define MAX_VIEWMODELS			2
+
+#endif
 
 #define MAX_BEAM_ENTS			10
 
@@ -390,6 +503,19 @@ enum PLAYER_ANIM
 #define	DAMAGE_YES				2
 #define	DAMAGE_AIM				3
 
+
+enum RelativeDamagedDirection_t
+{
+	DAMAGED_DIR_NONE = 0,
+	DAMAGED_DIR_FRONT,
+	DAMAGED_DIR_BACK,
+	DAMAGED_DIR_LEFT,
+	DAMAGED_DIR_RIGHT,
+
+	DAMAGED_DIR_TOTAL
+};
+
+
 // Spectator Movement modes
 enum
 {
@@ -423,6 +549,20 @@ enum
 	TYPE_FILE,		// show this local file
 } ;
 
+// [Forrest] Replaced text window command string with TEXTWINDOW_CMD enumeration
+// of options.  Passing a command string is dangerous and allowed a server network
+// message to run arbitrary commands on the client.
+enum
+{
+	TEXTWINDOW_CMD_NONE = 0,
+	TEXTWINDOW_CMD_JOINGAME,
+	TEXTWINDOW_CMD_CHANGETEAM,
+	TEXTWINDOW_CMD_IMPULSE101,
+	TEXTWINDOW_CMD_MAPINFO,
+	TEXTWINDOW_CMD_CLOSED_HTMLPAGE,
+	TEXTWINDOW_CMD_CHOOSETEAM,
+};
+
 // VGui Screen Flags
 enum
 {
@@ -449,6 +589,8 @@ typedef enum
 #define COLOR_YELLOW	Color(255, 178, 0, 255)
 #define COLOR_GREEN		Color(153, 255, 153, 255)
 #define COLOR_GREY		Color(204, 204, 204, 255)
+#define COLOR_WHITE		Color(255, 255, 255, 255)
+#define COLOR_BLACK		Color(0, 0, 0, 255)
 
 // All NPCs need this data
 enum
@@ -710,9 +852,9 @@ struct ModelScale
 };
 
 #include "soundflags.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 
 struct CSoundParameters;
-typedef short HSOUNDSCRIPTHANDLE;
 //-----------------------------------------------------------------------------
 // Purpose: Aggregates and sets default parameters for EmitSound function calls
 //-----------------------------------------------------------------------------
@@ -733,7 +875,8 @@ struct EmitSound_t
 		m_bWarnOnDirectWaveReference( false ),
 		m_nSpeakerEntity( -1 ),
 		m_UtlVecSoundOrigin(),
-		m_hSoundScriptHandle( -1 )
+		m_hSoundScriptHash( SOUNDEMITTER_INVALID_HASH ),
+		m_nSoundEntryVersion( 1 )
 	{
 	}
 
@@ -753,7 +896,8 @@ struct EmitSound_t
 	bool						m_bWarnOnDirectWaveReference;
 	int							m_nSpeakerEntity;
 	mutable CUtlVector< Vector >	m_UtlVecSoundOrigin;  ///< Actual sound origin(s) (can be multiple if sound routed through speaker entity(ies) )
-	mutable HSOUNDSCRIPTHANDLE		m_hSoundScriptHandle;
+	mutable HSOUNDSCRIPTHASH	m_hSoundScriptHash;
+	int							m_nSoundEntryVersion;
 };
 
 #define MAX_ACTORS_IN_SCENE 16
@@ -816,7 +960,19 @@ enum
 //-----------------------------------------------------------------------------
 // Commentary Mode
 //-----------------------------------------------------------------------------
+#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
+#define GAME_HAS_NO_USE_KEY
 
+//-----------------------------------------------------------------------------
+// Multiplayer overrides
+//-----------------------------------------------------------------------------
+#if defined( SPROP_COORD )
+#undef SPROP_COORD
+#endif
+
+#define SPROP_COORD SPROP_COORD_MP
+
+#endif
 
 //-----------------------------------------------------------------------------
 // Cell origin values
@@ -828,19 +984,39 @@ enum
 
 // The player's method of starting / stopping commentary
 #ifdef GAME_HAS_NO_USE_KEY
-#define COMMENTARY_BUTTONS		(IN_ATTACK | IN_ATTACK2 | IN_USE)
+	#define COMMENTARY_BUTTONS		(IN_ATTACK | IN_ATTACK2 | IN_USE)
 #else
-#define COMMENTARY_BUTTONS		(IN_USE)
+	#ifdef PORTAL2
+		#define COMMENTARY_BUTTONS	(IN_USE | IN_REMOTE_VIEW)
+	#else
+		#define COMMENTARY_BUTTONS	(IN_USE)
+	#endif
 #endif
 
 bool IsHeadTrackingEnabled();
 
 // If this is defined, all of the scopeguard objects are NULL'd out to reduce overhead
-// #define SPLIT_SCREEN_STUBS
+#if defined( CSTRIKE15 ) //&& !defined( _GAMECONSOLE )  // Split screen removed from console.
+#define SPLIT_SCREEN_STUBS
+#endif
 
-
+#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
+	#if defined( SPLIT_SCREEN_STUBS )
+		#define MAX_SPLITSCREEN_PLAYERS 1
+	#else
+		#define MAX_SPLITSCREEN_PLAYERS 2
+	#endif
+#elif defined( PORTAL2 )
+	#define MAX_SPLITSCREEN_PLAYERS 2
+#elif defined ( CSTRIKE15 )
+#if defined( _GAMECONSOLE )
+	#define MAX_SPLITSCREEN_PLAYERS 1 // Split screen removed from console.
+#else
 	#define MAX_SPLITSCREEN_PLAYERS 1
-
+#endif
+#else
+	#define MAX_SPLITSCREEN_PLAYERS 1
+#endif
 
 inline bool IsSplitScreenSupported()
 {
@@ -899,5 +1075,40 @@ enum Class_T
 #define FACTION_NONE				0					// Not assigned a faction.  Entities not assigned a faction will not do faction tests.
 #define LAST_SHARED_FACTION			(FACTION_NONE)
 #define NUM_SHARED_FACTIONS			(FACTION_NONE + 1)
+
+enum ModelScaleType_t
+{
+	HIERARCHICAL_MODEL_SCALE,
+	NONHIERARCHICAL_MODEL_SCALE
+};
+
+//-----------------------------------------------------------------------------
+// Econ Item testing
+//-----------------------------------------------------------------------------
+enum testitem_itemtypes_t
+{
+	TI_TYPE_UNKNOWN = -1,
+
+	TI_TYPE_WEAPON = 0,
+	TI_TYPE_HEADGEAR,
+	TI_TYPE_MISC1,
+	TI_TYPE_MISC2,
+
+	TI_TYPE_COUNT,
+};
+
+
+//-----------------------------------------------------------------------------
+// Generic activity lookup support
+//-----------------------------------------------------------------------------
+enum
+{
+	kActivityLookup_Unknown = -2,			// hasn't been searched for
+	kActivityLookup_Missing = -1,			// has been searched for but wasn't found
+};
+
+// Used by base entity for spotted by masks
+static int const kNumSpottedByMask = ALIGN_VALUE( MAX_PLAYERS, 32 ) / 32;
+
 
 #endif // SHAREDDEFS_H
