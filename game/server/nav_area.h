@@ -38,7 +38,7 @@ private:
 	static int m_nBytesCurrent;
 };
 
-#if !defined(_X360)
+#if !defined(_GAMECONSOLE)
 typedef CUtlVectorUltraConservativeAllocator CNavVectorAllocator;
 #else
 typedef CNavVectorNoEditAllocator CNavVectorAllocator;
@@ -63,11 +63,13 @@ public:
  */
 struct NavConnect
 {
+#if !defined( __clang__ )
 	NavConnect()
 	{
 		id = 0;
 		length = -1;
 	}
+#endif
 
 	union
 	{
@@ -110,7 +112,6 @@ typedef CUtlVectorUltraConservative<NavLadderConnect, CNavVectorAllocator> NavLa
 class HidingSpot
 {
 public:
-	virtual ~HidingSpot()	{ }
 
 	enum 
 	{ 
@@ -134,11 +135,14 @@ public:
 	const Vector &GetPosition( void ) const		{ return m_pos; }	// get the position of the hiding spot
 	unsigned int GetID( void ) const			{ return m_id; }
 	const CNavArea *GetArea( void ) const		{ return m_area; }	// return nav area this hiding spot is within
+	void SetArea( CNavArea *pArea ) { m_area = pArea; }
 
 	void Mark( void )							{ m_marker = m_masterMarker; }
 	bool IsMarked( void ) const					{ return (m_marker == m_masterMarker) ? true : false; }
 	static void ChangeMasterMarker( void )		{ ++m_masterMarker; }
 
+	void SetSaved( bool bSaved ) { m_bIsSaved = bSaved; }
+	bool IsSaved( void ) const { return m_bIsSaved; }
 
 public:
 	void SetFlags( int flags )				{ m_flags |= flags; }	// FOR INTERNAL USE ONLY
@@ -156,6 +160,7 @@ private:
 	CNavArea *m_area;										// the nav area containing this hiding spot
 
 	unsigned char m_flags;									// bit flags
+	bool m_bIsSaved;										// this hiding spot saves to the nav file (spots specified by entities do not save)
 
 	static unsigned int m_nextID;							// used when allocating spot ID's
 	static unsigned int m_masterMarker;						// used to mark spots
@@ -213,42 +218,43 @@ protected:
 	/* 28 */	float m_invDyCorners;
 	/* 32 */	float m_neZ;												// height of the implicit corner defined by (m_seCorner.x, m_nwCorner.y, m_neZ)
 	/* 36 */	float m_swZ;												// height of the implicit corner defined by (m_nwCorner.x, m_seCorner.y, m_neZ)
-	/* 40 */	Vector m_center;											// centroid of area
+	/* 40 */	float		m_danger[ MAX_NAV_TEAMS ];						// danger of this area, allowing bots to avoid areas where they died in the past - zero is no danger
+	/* 48 */	float		m_dangerTimestamp;								// time when danger value was set - used for decaying
+	/* 52 */	int			m_damagingTickCount;
 
-	/* 52 */	unsigned char m_playerCount[ MAX_NAV_TEAMS ];				// the number of players currently in this area
+	/* 56 */	unsigned char m_playerCount[ MAX_NAV_TEAMS ];				// the number of players currently in this area
 
-	/* 54 */	bool m_isBlocked[ MAX_NAV_TEAMS ];							// if true, some part of the world is preventing movement through this nav area
+	/* 58 */	unsigned char m_isBlocked[ MAX_NAV_TEAMS ];					// if true, some part of the world is preventing movement through this nav area
 
-	/* 56 */	unsigned int m_marker;										// used to flag the area as visited
 	/* 60 */	float m_totalCost;											// the distance so far plus an estimate of the distance left
 	/* 64 */	float m_costSoFar;											// distance travelled so far
 
 	/* 68 */	CNavArea *m_nextOpen, *m_prevOpen;							// only valid if m_openMarker == m_masterMarker
-	/* 76 */	unsigned int m_openMarker;									// if this equals the current marker value, we are on the open list
+	/* 76 */	uint32 m_openMarker;									    // if this equals the current marker value, we are on the open list
+	/* 80 */	uint32 m_marker;										    // used to flag the area as visited
 
-	/* 80 */	int	m_attributeFlags;										// set of attribute bit flags (see NavAttributeType)
+	/* 84 */	int	m_attributeFlags;										// set of attribute bit flags (see NavAttributeType)
 
 	//- connections to adjacent areas -------------------------------------------------------------------
-	/* 84 */	NavConnectVector m_connect[ NUM_DIRECTIONS ];				// a list of adjacent areas for each direction
-	/* 100*/	NavLadderConnectVector m_ladder[ CNavLadder::NUM_LADDER_DIRECTIONS ];	// list of ladders leading up and down from this area
-	/* 108*/	NavConnectVector m_elevatorAreas;							// a list of areas reachable via elevator from this area
+	/* 88 */	NavConnectVector m_connect[ NUM_DIRECTIONS ];				// a list of adjacent areas for each direction
+	/* 104*/	NavLadderConnectVector m_ladder[ CNavLadder::NUM_LADDER_DIRECTIONS ];	// list of ladders leading up and down from this area
 
-	/* 112*/	unsigned int m_nearNavSearchMarker;							// used in GetNearestNavArea()
+	/* 112 */	uint32 m_nearNavSearchMarker;								// used in GetNearestNavArea()
 
-	/* 116*/	CNavArea *m_parent;											// the area just prior to this on in the search path
-	/* 120*/	NavTraverseType m_parentHow;								// how we get from parent to us
-
+	/* 116 */	uint16 m_isUnderwater : 15;									// true if the center of the area is underwater
+	/* 116.1 */ uint16 m_isInheritedFrom : 1;								// latch used during visibility inheritance computation
+	/* 118 */	uint16 /* NavTraverseType */ m_parentHow;							// how we get from parent to us
+	
+	/* 120*/	CNavArea *m_parent;											// the area just prior to this on in the search path
 	/* 124*/	float m_pathLengthSoFar;									// length of path so far, needed for limiting pathfind max path length
+	
 
 	/* *************** 360 cache line *************** */
-
-	/* 128*/	CFuncElevator *m_elevator;									// if non-NULL, this area is in an elevator's path. The elevator can transport us vertically to another area.
 
 	// --- End critical data --- 
 };
 
-
-class CNavArea : protected CNavAreaCriticalData
+class CNavArea : public CNavAreaCriticalData
 {
 public:
 	DECLARE_CLASS_NOBASE( CNavArea )
@@ -289,7 +295,7 @@ public:
 
 	unsigned int GetID( void ) const	{ return m_id; }		// return this area's unique ID
 	static void CompressIDs( void );							// re-orders area ID's so they are continuous
-	unsigned int GetDebugID( void ) const { return m_debugid; }
+	unsigned int GetDebugID( void ) const { return 0; }		// not used, need the space for cache optimization
 
 	void SetAttributes( int bits )			{ m_attributeFlags = bits; }
 	int GetAttributes( void ) const			{ return m_attributeFlags; }
@@ -300,6 +306,7 @@ public:
 	Place GetPlace( void ) const		{ return m_place; }		// get place descriptor
 
 	void MarkAsBlocked( int teamID, CBaseEntity *blocker, bool bGenerateEvent = true );	// An entity can force a nav area to be blocked
+	void MarkAsUnblocked( int teamID, bool bGenerateEvent = true );	// An entity can force a nav area to be blocked
 	virtual void UpdateBlocked( bool force = false, int teamID = TEAM_ANY );		// Updates the (un)blocked status of the nav area (throttled)
 	virtual bool IsBlocked( int teamID, bool ignoreNavBlockers = false ) const;
 
@@ -311,15 +318,15 @@ public:
 	float GetAvoidanceObstacleHeight( void ) const; // returns the maximum height of the obstruction above the ground
 
 	void CheckWaterLevel( void );
-	bool IsUnderwater( void ) const		{ return m_isUnderwater; }
+	bool IsUnderwater( void ) const		{ return !!m_isUnderwater; }
 
 	bool IsOverlapping( const Vector &pos, float tolerance = 0.0f ) const;	// return true if 'pos' is within 2D extents of area.
 	bool IsOverlapping( const CNavArea *area ) const;			// return true if 'area' overlaps our 2D extents
 	bool IsOverlapping( const Extent &extent ) const;			// return true if 'extent' overlaps our 2D extents
 	bool IsOverlappingX( const CNavArea *area ) const;			// return true if 'area' overlaps our X extent
 	bool IsOverlappingY( const CNavArea *area ) const;			// return true if 'area' overlaps our Y extent
-	inline float GetZ( const Vector * RESTRICT pPos ) const ;			// return Z of area at (x,y) of 'pos'
-	inline float GetZ( const Vector &pos ) const;						// return Z of area at (x,y) of 'pos'
+	inline float GetZ( const Vector * RESTRICT pPos ) const RESTRICT;			// return Z of area at (x,y) of 'pos'
+	inline float GetZ( const Vector &pos ) const RESTRICT;						// return Z of area at (x,y) of 'pos'
 	float GetZ( float x, float y ) const RESTRICT;				// return Z of area at (x,y) of 'pos'
 	bool Contains( const Vector &pos ) const;					// return true if given point is on or above this area, but no others
 	bool Contains( const CNavArea *area ) const;	
@@ -357,8 +364,6 @@ public:
 	void AddIncomingConnection( CNavArea *source, NavDirType incomingEdgeDir );
 
 	const NavLadderConnectVector *GetLadders( CNavLadder::LadderDirectionType dir ) const	{ return &m_ladder[dir]; }
-	CFuncElevator *GetElevator( void ) const												{ Assert( !( m_attributeFlags & NAV_MESH_HAS_ELEVATOR ) == (m_elevator == NULL) ); return ( m_attributeFlags & NAV_MESH_HAS_ELEVATOR ) ? m_elevator : NULL; }
-	const NavConnectVector &GetElevatorAreas( void ) const									{ return m_elevatorAreas; }	// return collection of areas reachable via elevator from this area
 
 	void ComputePortal( const CNavArea *to, NavDirType dir, Vector *center, float *halfWidth ) const;		// compute portal to adjacent area
 	NavDirType ComputeLargestPortal( const CNavArea *to, Vector *center, float *halfWidth ) const;		// compute largest portal to adjacent area, returning direction
@@ -371,6 +376,9 @@ public:
 
 	//- hiding spots ------------------------------------------------------------------------------------
 	const HidingSpotVector *GetHidingSpots( void ) const	{ return &m_hidingSpots; }
+	void AddHidingSpot( HidingSpot * pSpot );
+	void RemoveHidingSpot( HidingSpot * pSpot );
+	unsigned char GetSavedHidingSpotCount( void ) const;
 
 	SpotEncounter *GetSpotEncounter( const CNavArea *from, const CNavArea *to );	// given the areas we are moving between, return the spots we will encounter
 	int GetSpotEncounterCount( void ) const				{ return m_spotEncounters.Count(); }
@@ -384,7 +392,18 @@ public:
 	float GetSizeX( void ) const			{ return m_seCorner.x - m_nwCorner.x; }
 	float GetSizeY( void ) const			{ return m_seCorner.y - m_nwCorner.y; }
 	void GetExtent( Extent *extent ) const;						// return a computed extent (XY is in m_nwCorner and m_seCorner, Z is computed)
-	const Vector &GetCenter( void ) const	{ return m_center; }
+
+	Vector GetCenter( void ) const	
+	{ 
+		Vector center;
+
+		center.x = (m_nwCorner.x + m_seCorner.x)/2.0f;
+		center.y = (m_nwCorner.y + m_seCorner.y)/2.0f;
+		center.z = (m_nwCorner.z + m_seCorner.z)/2.0f;
+
+		return center; 
+	}
+
 	Vector GetRandomPoint( void ) const;
 	Vector GetCorner( NavCornerType corner ) const;
 	void SetCorner( NavCornerType corner, const Vector& newPosition );
@@ -392,8 +411,7 @@ public:
 	void RemoveOrthogonalConnections( NavDirType dir );
 
 	//- occupy time ------------------------------------------------------------------------------------
-	float GetEarliestOccupyTime( int teamID ) const;			// returns the minimum time for someone of the given team to reach this spot from their spawn
-	bool IsBattlefront( void ) const	{ return m_isBattlefront; }	// true if this area is a "battlefront" - where rushing teams initially meet
+	virtual float GetEarliestOccupyTime( int teamID ) const;			// returns the minimum time for someone of the given team to reach this spot from their spawn
 
 	//- player counting --------------------------------------------------------------------------------
 	void IncrementPlayerCount( int teamID, int entIndex );		// add one player to this area's count
@@ -412,7 +430,7 @@ public:
 	
 	void SetParent( CNavArea *parent, NavTraverseType how = NUM_TRAVERSE_TYPES )	{ m_parent = parent; m_parentHow = how; }
 	CNavArea *GetParent( void ) const	{ return m_parent; }
-	NavTraverseType GetParentHow( void ) const	{ return m_parentHow; }
+	NavTraverseType GetParentHow( void ) const	{ return (NavTraverseType)m_parentHow; }
 
 	bool IsOpen( void ) const;									// true if on "open list"
 	void AddToOpenList( void );									// add to open list in decreasing value order
@@ -628,6 +646,7 @@ protected:
 private:
 	friend class CNavMesh;
 	friend class CNavLadder;
+	friend class CCSNavArea;									// allow CS load code to complete replace our default load behavior
 
 	static bool m_isReset;										// if true, don't bother cleaning up in destructor since everything is going away
 
@@ -647,16 +666,11 @@ private:
 
 	static unsigned int m_nextID;								// used to allocate unique IDs
 	unsigned int m_id;											// unique area ID
-	unsigned int m_debugid;
 
 	Place m_place;												// place descriptor
 
 	CountdownTimer m_blockedTimer;								// Throttle checks on our blocked state while blocked
 	void UpdateBlockedFromNavBlockers( void );					// checks if nav blockers are still blocking the area
-
-	bool m_isUnderwater;										// true if the center of the area is underwater
-
-	bool m_isBattlefront;
 
 	float m_avoidanceObstacleHeight;							// if nonzero, a prop is obstructing movement through this nav area
 	CountdownTimer m_avoidanceObstacleTimer;					// Throttle checks on our obstructed state while obstructed
@@ -665,8 +679,6 @@ private:
 	float m_clearedTimestamp[ MAX_NAV_TEAMS ];					// time this area was last "cleared" of enemies
 
 	//- "danger" ----------------------------------------------------------------------------------------
-	float m_danger[ MAX_NAV_TEAMS ];							// danger of this area, allowing bots to avoid areas where they died in the past - zero is no danger
-	float m_dangerTimestamp[ MAX_NAV_TEAMS ];					// time when danger value was set - used for decaying
 	void DecayDanger( void );
 
 	//- hiding spots ------------------------------------------------------------------------------------
@@ -687,7 +699,7 @@ private:
 	float m_lightIntensity[ NUM_CORNERS ];						// 0..1 light intensity at corners
 
 	//- A* pathfinding algorithm ------------------------------------------------------------------------
-	static unsigned int m_masterMarker;
+	static uint32 m_masterMarker;
 
 	static CNavArea *m_openList;
 	static CNavArea *m_openListTail;
@@ -713,23 +725,17 @@ private:
 
 	void ConnectElevators( void );								// find elevator connections between areas
 
-	int m_damagingTickCount;									// this area is damaging through this tick count
-
-
 	//- visibility --------------------------------------------------------------------------------------
 	void ComputeVisibilityToMesh( void );						// compute visibility to surrounding mesh
 	void ResetPotentiallyVisibleAreas();
 	static void ComputeVisToArea( CNavArea *&pOtherArea );
 
-#ifndef _X360
 	typedef CUtlVectorConservative<AreaBindInfo> CAreaBindInfoArray; // shaves 8 bytes off structure caused by need to support editing
-#else
-	typedef CUtlVector<AreaBindInfo> CAreaBindInfoArray; // Need to use this on 360 to support external allocation pattern
-#endif
 
 	AreaBindInfo m_inheritVisibilityFrom;						// if non-NULL, m_potentiallyVisibleAreas becomes a list of additions and deletions (NOT_VISIBLE) to the list of this area
+
+	// This does not appear to be used in CS:GO, so take it out of the instances for now
 	CAreaBindInfoArray m_potentiallyVisibleAreas;				// list of areas potentially visible from inside this area (after PostLoad(), use area portion of union)
-	bool m_isInheritedFrom;										// latch used during visibility inheritance computation
 
 	const CAreaBindInfoArray &ComputeVisibilityDelta( const CNavArea *other ) const;	// return a list of the delta between our visibility list and the given adjacent area
 
@@ -936,7 +942,7 @@ inline void CNavArea::DecrementPlayerCount( int teamID, int entIndex )
 
 	if (m_playerCount[ teamID ] == 0)
 	{
-		DevMsg( "CNavArea::IncrementPlayerCount: Underflow\n" );
+		DevWarning( "CNavArea::IncrementPlayerCount: Underflow\n" );
 		return;
 	}
 
