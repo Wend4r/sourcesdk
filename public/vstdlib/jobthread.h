@@ -91,16 +91,28 @@ enum JobPriority_t
 {
 	JP_LOW,
 	JP_NORMAL,
-	JP_HIGH
+	JP_HIGH,
+	JP_IMMEDIATE,
+
+	JP_NUM_PRIORITIES,
+
+	// Priority aliases for game jobs
+	JP_FRAME			= JP_NORMAL,
+	JP_FRAME_SEGMENT	= JP_HIGH,
 };
 
 #define TP_MAX_POOL_THREADS	64
 struct ThreadPoolStartParams_t
 {
-	ThreadPoolStartParams_t( bool bIOThreads = false, unsigned nThreads = -1, int *pAffinities = NULL, ThreeState_t fDistribute = TRS_NONE, unsigned nStackSize = -1, int iThreadPriority = SHRT_MIN )
-		: bIOThreads( bIOThreads ), nThreads( nThreads ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority )
+	ThreadPoolStartParams_t( bool bIOThreads = false, unsigned nThreads = (unsigned)-1, int *pAffinities = NULL, ThreeState_t fDistribute = TRS_NONE, unsigned nStackSize = (unsigned)-1, int iThreadPriority = SHRT_MIN )
+		: bIOThreads( bIOThreads ), nThreads( nThreads ), nThreadsMax( -1 ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority )
 	{
-		bUseAffinityTable = ( pAffinities != NULL ) && ( fDistribute == TRS_TRUE ) && ( nThreads != -1 );
+		bExecOnThreadPoolThreadsOnly = false;
+#if defined( DEDICATED ) && IsPlatformLinux()
+		bEnableOnLinuxDedicatedServer = false; // by default, thread pools don't start up on Linux DS
+#endif
+
+		bUseAffinityTable = ( pAffinities != NULL ) && ( fDistribute == TRS_TRUE ) && ( nThreads != (unsigned)-1 );
 		if ( bUseAffinityTable )
 		{
 			// user supplied an optional 1:1 affinity mapping to override normal distribute behavior
@@ -113,6 +125,7 @@ struct ThreadPoolStartParams_t
 	}
 
 	int				nThreads;
+	int				nThreadsMax;
 	ThreeState_t	fDistribute;
 	int				nStackSize;
 	int				iThreadPriority;
@@ -120,6 +133,10 @@ struct ThreadPoolStartParams_t
 
 	bool			bIOThreads : 1;
 	bool			bUseAffinityTable : 1;
+	bool			bExecOnThreadPoolThreadsOnly : 1;
+#if defined( DEDICATED ) && IsPlatformLinux()
+	bool			bEnableOnLinuxDedicatedServer : 1;
+#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -480,9 +497,9 @@ public:
 	//-----------------------------------------------------
 	// Try to acquire ownership (to satisfy). If you take the lock, you must either execute or abort.
 	//-----------------------------------------------------
-	bool TryLock() volatile							{ return m_mutex.TryLock(); }
-	void Lock() volatile 								{ m_mutex.Lock(); }
-	void Unlock() volatile								{ m_mutex.Unlock(); }
+	bool TryLock()										{ return m_mutex.TryLock(); }
+	void Lock()											{ m_mutex.Lock(); }
+	void Unlock()										{ m_mutex.Unlock(); }
 
 	//-----------------------------------------------------
 	// Thread event support (safe for NULL this to simplify code )
@@ -512,13 +529,17 @@ private:
 
 	JobStatus_t			m_status;
 	JobPriority_t		m_priority;
-	CThreadFastMutex	m_mutex;
+	CThreadMutex		m_mutex;
 	unsigned char		m_flags;
 	char				m_iServicingThread;
 	short				m_reserved;
 	ThreadPoolData_t	m_ThreadPoolData;
 	IThreadPool *		m_pThreadPool;
 	CThreadEvent		m_CompleteEvent;
+
+#if defined( THREAD_PARENT_STACK_TRACE_ENABLED )
+	void *				m_ParentStackTrace[THREAD_PARENT_STACK_TRACE_LENGTH];
+#endif
 
 private:
 	//-----------------------------------------------------
@@ -702,7 +723,7 @@ private:
 
 #define DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL(N) \
 	template <typename FUNCTION_CLASS, typename FUNCTION_RETTYPE FUNC_TEMPLATE_FUNC_PARAMS_##N FUNC_TEMPLATE_ARG_PARAMS_##N, typename ITERTYPE1, typename ITERTYPE2> \
-	void IterRangeParallel(FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
+	void IterRangeParallel(FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_SEPARATOR_##N FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
 	{ \
 		const int MAX_THREADS = 16; \
 		int nIdle = g_pThreadPool->NumIdleThreads(); \
@@ -737,7 +758,7 @@ FUNC_GENERATE_ALL( DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL );
 
 #define DEFINE_MEMBER_ITER_RANGE_PARALLEL(N) \
 	template <typename OBJECT_TYPE, typename FUNCTION_CLASS, typename FUNCTION_RETTYPE FUNC_TEMPLATE_FUNC_PARAMS_##N FUNC_TEMPLATE_ARG_PARAMS_##N, typename ITERTYPE1, typename ITERTYPE2> \
-	void IterRangeParallel(OBJECT_TYPE *pObject, FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
+	void IterRangeParallel(OBJECT_TYPE *pObject, FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_SEPARATOR_##N FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
 	{ \
 		const int MAX_THREADS = 16; \
 		int nIdle = g_pThreadPool->NumIdleThreads(); \
@@ -1257,7 +1278,7 @@ private:
 // Raw thread launching
 //-----------------------------------------------------------------------------
 
-inline unsigned FunctorExecuteThread( void *pParam )
+inline uintp FunctorExecuteThread( void *pParam )
 {
 	CFunctor *pFunctor = (CFunctor *)pParam;
 	(*pFunctor)();
@@ -1357,7 +1378,17 @@ inline JobStatus_t CJob::Execute()
 		{
 			// Service it
 			m_status = JOB_STATUS_INPROGRESS;
+
+#if defined( THREAD_PARENT_STACK_TRACE_ENABLED )
+			//replace thread parent trace with job parent
+			{
+				CStackTop_ReferenceParentStack stackTop( m_ParentStackTrace, ARRAYSIZE( m_ParentStackTrace ) );
+				result = m_status = DoExecute();
+			}
+#else
 			result = m_status = DoExecute();
+#endif			
+			
 			DoCleanup();
 			m_CompleteEvent.Set();
 			break;
