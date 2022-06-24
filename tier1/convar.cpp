@@ -23,10 +23,6 @@
 #endif
 #include "tier0/memdbgon.h"
 
-
-// This enables the l4d style of culling all cvars that are not marked FCVAR_RELEASE :
-#define CULL_ALL_CVARS_NOT_FCVAR_RELEASE
-
 //-----------------------------------------------------------------------------
 // Statically constructed list of ConCommandBases, 
 // used for registering them with the ICVar interface
