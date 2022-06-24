@@ -617,6 +617,9 @@ void KeyValues::Init()
 	m_pValue = NULL;
 
 	m_bHasEscapeSequences = 0;
+
+	m_iUnk1 = 0;
+	m_iUnk2 = 0;
 }
 
 //-----------------------------------------------------------------------------
