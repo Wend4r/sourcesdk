@@ -41,6 +41,7 @@ class Color;
 class CKeyValuesTokenReader;
 class KeyValues;
 class IKeyValuesDumpContext;
+class IKeyValuesSystem;
 typedef void * FileHandle_t;
 class CKeyValuesGrowableStringTable;
 
@@ -399,8 +400,9 @@ private:
 	char	   m_bHasEscapeSequences; // true, if while parsing this KeyValue, Escape Sequences are used (default false)
 	uint16	   m_iKeyNameCaseSensitive2;	// 2nd part of case sensitive symbol defined in KeyValueSystem;
 
-	uint32     m_iUnk1;
-	uint32     m_iUnk2;
+	IKeyValuesSystem *m_pKeyValuesSystem;
+	char m_bOwnsCustomKeyValuesSystem;
+	char unused[3];
 
 	KeyValues *m_pPeer;	// pointer to next key in list
 	KeyValues *m_pSub;	// pointer to Start of a new sub key list
