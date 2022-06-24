@@ -29,6 +29,9 @@ public:
 	virtual void RegisterSizeofKeyValues(int size) = 0;
 
 	virtual void Unknown1() = 0;
+#ifndef _WIN32
+	virtual void Unknown2() = 0;
+#endif
 
 	// allocates/frees a KeyValues object from the shared mempool
 	virtual void *AllocKeyValuesMemory(int size) = 0;
