@@ -528,7 +528,7 @@ const char *KeyValues::GetStringForSymbolGrowable( int symbol )
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-KeyValues::KeyValues( const char *setName )
+KeyValues::KeyValues( const char *setName, IKeyValuesSystem *customSystem, bool ownsCustomSystem )
 {
 	TRACK_KV_ADD( this, setName );
 
@@ -601,7 +601,7 @@ KeyValues::KeyValues( const char *setName, const char *firstKey, int firstValue,
 //-----------------------------------------------------------------------------
 // Purpose: Initialize member variables
 //-----------------------------------------------------------------------------
-void KeyValues::Init()
+void KeyValues::Init(IKeyValuesSystem *customSystem, bool ownsCustomSystem)
 {
 	m_iKeyName = 0;
 	m_iKeyNameCaseSensitive1 = 0;
@@ -618,11 +618,8 @@ void KeyValues::Init()
 
 	m_bHasEscapeSequences = 0;
 
-	m_pKeyValuesSystem = 0;
-	m_bOwnsCustomKeyValuesSystem = 0;
-
-	// for future proof
-	memset( unused, 0, sizeof(unused) );
+	m_pKeyValuesSystem = customSystem;
+	m_bOwnsCustomKeyValuesSystem = ownsCustomSystem;
 }
 
 //-----------------------------------------------------------------------------
@@ -633,6 +630,11 @@ KeyValues::~KeyValues()
 	TRACK_KV_REMOVE( this );
 
 	RemoveEverything();
+
+	if (m_pKeyValuesSystem && m_bOwnsCustomKeyValuesSystem) {
+		delete m_pKeyValuesSystem;
+		m_pKeyValuesSystem = NULL;
+	}
 }
 
 
@@ -696,7 +698,7 @@ void KeyValues::ChainKeyValue( KeyValues* pChain )
 const char *KeyValues::GetName( void ) const
 {
 	AssertMsg( this, "Member function called on NULL KeyValues" );
-	return this ? KeyValuesSystem()->GetStringForSymbol( MAKE_3_BYTES_FROM_1_AND_2( m_iKeyNameCaseSensitive1, m_iKeyNameCaseSensitive2 ) ) : "";
+	return this ? GetKeyValuesSystem()->GetStringForSymbol( MAKE_3_BYTES_FROM_1_AND_2( m_iKeyNameCaseSensitive1, m_iKeyNameCaseSensitive2 ) ) : "";
 }
 
 //-----------------------------------------------------------------------------
@@ -1031,7 +1033,7 @@ KeyValues *KeyValues::FindKey(const char *keyName, bool bCreate)
 	// because if the key is found, then it will be found by case-insensitive lookup
 	// if the key is not found and needs to be created we will pass the actual searchStr
 	// and have the new KeyValues constructor get/create the case-sensitive symbol
-	HKeySymbol iSearchStr = KeyValuesSystem()->GetSymbolForString( searchStr, bCreate );
+	HKeySymbol iSearchStr = GetKeyValuesSystem()->GetSymbolForString( searchStr, bCreate );
 	if ( iSearchStr == INVALID_KEY_SYMBOL )
 	{
 		// not found, couldn't possibly be in key value list
@@ -1063,7 +1065,7 @@ KeyValues *KeyValues::FindKey(const char *keyName, bool bCreate)
 		if (bCreate)
 		{
 			// we need to create a new key
-			dat = new KeyValues( searchStr );
+			dat = new KeyValues( searchStr, m_pKeyValuesSystem );
 			//			Assert(dat != NULL);
 
 			// insert new key at end of list
@@ -1124,7 +1126,7 @@ KeyValues *KeyValues::CreateNewKey()
 	char buf[12];
 	V_snprintf( buf, sizeof(buf), "%d", newID );
 
-	return CreateKeyUsingKnownLastChild( buf, pLastChild );
+	return CreateKeyUsingKnownLastChild( buf, pLastChild, m_pKeyValuesSystem );
 }
 
 
@@ -1134,7 +1136,7 @@ KeyValues *KeyValues::CreateNewKey()
 KeyValues* KeyValues::CreateKey( const char *keyName )
 {
 	KeyValues *pLastChild = FindLastSubKey();
-	return CreateKeyUsingKnownLastChild( keyName, pLastChild );
+	return CreateKeyUsingKnownLastChild( keyName, pLastChild, m_pKeyValuesSystem );
 }
 
 //-----------------------------------------------------------------------------
@@ -1142,7 +1144,7 @@ KeyValues* KeyValues::CreateKey( const char *keyName )
 //-----------------------------------------------------------------------------
 KeyValues* KeyValues::CreatePeerKey( const char *keyName )
 {
-	KeyValues* dat = new KeyValues( keyName );
+	KeyValues* dat = new KeyValues( keyName, m_pKeyValuesSystem );
 	
 	//dat->Internal_SetHasEscapeSequences( Internal_HasEscapeSequences() ); // use same format as peer
 
@@ -1156,10 +1158,10 @@ KeyValues* KeyValues::CreatePeerKey( const char *keyName )
 }
 
 //-----------------------------------------------------------------------------
-KeyValues* KeyValues::CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pLastChild )
+KeyValues* KeyValues::CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pLastChild, IKeyValuesSystem *pKVSystem )
 {
 	// Create a new key
-	KeyValues* dat = new KeyValues( keyName );
+	KeyValues* dat = new KeyValues( keyName, pKVSystem );
 
 	dat->UsesEscapeSequences( m_bHasEscapeSequences != 0 ); // use same format as parent does
 
@@ -1868,7 +1870,7 @@ void KeyValues::SetFloat( const char *keyName, float value )
 void KeyValues::SetName( const char * setName )
 {
 	HKeySymbol hCaseSensitiveKeyName = INVALID_KEY_SYMBOL, hCaseInsensitiveKeyName = INVALID_KEY_SYMBOL;
-	hCaseSensitiveKeyName = KeyValuesSystem()->GetSymbolForStringCaseSensitive( hCaseInsensitiveKeyName, setName );
+	hCaseSensitiveKeyName = GetKeyValuesSystem()->GetSymbolForStringCaseSensitive( hCaseInsensitiveKeyName, setName );
 
 	m_iKeyName = hCaseInsensitiveKeyName;
 	SPLIT_3_BYTES_INTO_1_AND_2( m_iKeyNameCaseSensitive1, m_iKeyNameCaseSensitive2, hCaseSensitiveKeyName );
@@ -1982,14 +1984,14 @@ void KeyValues::RecursiveCopyKeyValues( KeyValues& src )
 	// Handle the immediate child
 	if( src.m_pSub )
 	{
-		m_pSub = new KeyValues( NULL );
+		m_pSub = new KeyValues( NULL, m_pKeyValuesSystem );
 		m_pSub->RecursiveCopyKeyValues( *src.m_pSub );
 	}
 
 	// Handle the immediate peer
 	if( src.m_pPeer )
 	{
-		m_pPeer = new KeyValues( NULL );
+		m_pPeer = new KeyValues( NULL, m_pKeyValuesSystem );
 		m_pPeer->RecursiveCopyKeyValues( *src.m_pPeer );
 	}
 }
@@ -2036,7 +2038,7 @@ void KeyValues::CopySubkeys( KeyValues *pParent ) const
 //-----------------------------------------------------------------------------
 KeyValues *KeyValues::MakeCopy( void ) const
 {
-	KeyValues *newKeyValue = new KeyValues(GetName());
+	KeyValues *newKeyValue = new KeyValues(GetName(), m_pKeyValuesSystem);
 
 	// copy data
 	newKeyValue->m_iDataType = m_iDataType;
@@ -2203,7 +2205,7 @@ void KeyValues::ParseIncludedKeys( char const *resourceName, const char *filetoi
 	// Append included file
 	V_strncat( fullpath, filetoinclude, sizeof( fullpath ), COPY_ALL_CHARACTERS );
 
-	KeyValues *newKV = new KeyValues( fullpath );
+	KeyValues *newKV = new KeyValues( fullpath, m_pKeyValuesSystem );
 
 	// CUtlSymbol save = s_CurrentFileSymbol;	// did that had any use ???
 
@@ -2379,7 +2381,7 @@ bool KeyValues::LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IBase
 
 		if ( !pCurrentKey )
 		{
-			pCurrentKey = new KeyValues( s );
+			pCurrentKey = new KeyValues( s, m_pKeyValuesSystem );
 			Assert( pCurrentKey );
 
 			pCurrentKey->UsesEscapeSequences( m_bHasEscapeSequences != 0 ); // same format has parent use
@@ -2537,7 +2539,7 @@ void KeyValues::RecursiveLoadFromBuffer( char const *resourceName, CKeyValuesTok
 
 		// Always create the key; note that this could potentially
 		// cause some duplication, but that's what we want sometimes
-		KeyValues *dat = CreateKeyUsingKnownLastChild( name, pLastChild );
+		KeyValues *dat = CreateKeyUsingKnownLastChild( name, pLastChild, m_pKeyValuesSystem );
 
 		errorKey.Reset( dat->GetNameSymbolCaseSensitive() );
 
@@ -2863,7 +2865,7 @@ bool KeyValues::ReadAsBinary( CUtlBuffer &buffer, int nStackDepth )
 		{
 		case TYPE_NONE:
 			{
-				dat->m_pSub = new KeyValues("");
+				dat->m_pSub = new KeyValues("", m_pKeyValuesSystem);
 				dat->m_pSub->ReadAsBinary( buffer, nStackDepth + 1 );
 				break;
 			}
@@ -2945,7 +2947,7 @@ bool KeyValues::ReadAsBinary( CUtlBuffer &buffer, int nStackDepth )
 			break;
 
 		// new peer follows
-		dat->m_pPeer = new KeyValues("");
+		dat->m_pPeer = new KeyValues("", m_pKeyValuesSystem);
 		dat = dat->m_pPeer;
 	}
 
@@ -3226,7 +3228,7 @@ bool KeyValues::ReadAsBinaryPooledFormat( CUtlBuffer &buffer, IBaseFileSystem *p
 		{
 		case TYPE_NONE:
 			{
-				dat->m_pSub = new KeyValues( "" );
+				dat->m_pSub = new KeyValues( "", m_pKeyValuesSystem );
 				if ( !dat->m_pSub->ReadAsBinaryPooledFormat( buffer, pFileSystem, poolKey, pfnEvaluateSymbolProc ) )
 					return false;
 				break;
@@ -3335,7 +3337,7 @@ bool KeyValues::ReadAsBinaryPooledFormat( CUtlBuffer &buffer, IBaseFileSystem *p
 			break;
 
 		// new peer follows
-		dat->m_pPeer = new KeyValues("");
+		dat->m_pPeer = new KeyValues("", m_pKeyValuesSystem);
 		dat = dat->m_pPeer;
 	}
 

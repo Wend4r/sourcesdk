@@ -20,6 +20,8 @@
 #endif
 #endif
 
+#include <vstdlib/IKeyValuesSystem.h>
+
 #include "utlvector.h"
 #include "color.h"
 #include "exprevaluator.h"
@@ -101,7 +103,7 @@ public:
 	//	understand the implications before using this.
 	static void SetUseGrowableStringTable( bool bUseGrowableTable );
 
-	explicit KeyValues( const char *setName );
+	explicit KeyValues( const char *setName, IKeyValuesSystem *customSystem = NULL, bool ownsCustomSystem = false );
 
 	//
 	// AutoDelete class to automatically free the keyvalues.
@@ -338,7 +340,7 @@ public:
 	/// when CreateKey() wil have to re-locate the end of the list each time.  This happens,
 	/// for example, every time we load any KV file whatsoever.
 
-	KeyValues* CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pLastChild );
+	KeyValues* CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pLastChild, IKeyValuesSystem *pKVSystem = NULL );
 	void AddSubkeyUsingKnownLastChild( KeyValues *pSubKey, KeyValues *pLastChild );
 
 private:
@@ -370,7 +372,7 @@ private:
 	// If filesystem is null, it'll ignore f.
 	void InternalWrite( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, const void *pData, int len );
 	
-	void Init();
+	void Init(IKeyValuesSystem *customSystem = NULL, bool ownsCustomSystem = false);
 	void WriteIndents( IBaseFileSystem *filesystem, FileHandle_t f, CUtlBuffer *pBuf, int indentLevel );
 
 	void FreeAllocatedValue();
@@ -379,6 +381,14 @@ private:
 	bool ReadAsBinaryPooledFormat( CUtlBuffer &buf, IBaseFileSystem *pFileSystem, unsigned int poolKey, GetSymbolProc_t pfnEvaluateSymbolProc );
 
 	bool EvaluateConditional( const char *pExpressionString, GetSymbolProc_t pfnEvaluateSymbolProc );
+
+	inline IKeyValuesSystem *GetKeyValuesSystem() const {
+		if (m_pKeyValuesSystem) {
+			return m_pKeyValuesSystem;
+		}
+
+		return KeyValuesSystem();
+	}
 
 	uint32 m_iKeyName : 24;	// keyname is a symbol defined in KeyValuesSystem
 	uint32 m_iKeyNameCaseSensitive1 : 8;	// 1st part of case sensitive symbol defined in KeyValueSystem
@@ -401,8 +411,7 @@ private:
 	uint16	   m_iKeyNameCaseSensitive2;	// 2nd part of case sensitive symbol defined in KeyValueSystem;
 
 	IKeyValuesSystem *m_pKeyValuesSystem;
-	char m_bOwnsCustomKeyValuesSystem;
-	char unused[3];
+	bool m_bOwnsCustomKeyValuesSystem;
 
 	KeyValues *m_pPeer;	// pointer to next key in list
 	KeyValues *m_pSub;	// pointer to Start of a new sub key list
