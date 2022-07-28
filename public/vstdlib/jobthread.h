@@ -105,7 +105,7 @@ enum JobPriority_t
 struct ThreadPoolStartParams_t
 {
 	ThreadPoolStartParams_t( bool bIOThreads = false, unsigned nThreads = (unsigned)-1, int *pAffinities = NULL, ThreeState_t fDistribute = TRS_NONE, unsigned nStackSize = (unsigned)-1, int iThreadPriority = SHRT_MIN )
-		: bIOThreads( bIOThreads ), nThreads( nThreads ), nThreadsMax( -1 ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority )
+		: nThreads( nThreads ), nThreadsMax( -1 ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority ), bIOThreads( bIOThreads )
 	{
 		bExecOnThreadPoolThreadsOnly = false;
 #if defined( DEDICATED ) && IsPlatformLinux()
@@ -460,12 +460,12 @@ class CJob : public CRefCounted1<IRefCounted, CRefCountServiceMT>
 public:
 	CJob( JobPriority_t priority = JP_NORMAL )
 	  : m_status( JOB_STATUS_UNSERVICED ),
-		m_ThreadPoolData( JOB_NO_DATA ),
 		m_priority( priority ),
 		m_flags( 0 ),
+		m_iServicingThread( -1 ),
+		m_ThreadPoolData( JOB_NO_DATA ),
 		m_pThreadPool( NULL ),
-		m_CompleteEvent( true ),
-		m_iServicingThread( -1 )
+		m_CompleteEvent( true )
 	{
 	}
 

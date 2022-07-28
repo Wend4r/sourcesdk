@@ -472,8 +472,8 @@ public:
 
 protected:
 	CMemberFuncProxyBase( OBJECT_TYPE_PTR pObject, FUNCTION_TYPE pfnProxied )
-	  : m_pObject( pObject ),
-		m_pfnProxied( pfnProxied )
+	  : m_pfnProxied( pfnProxied ),
+		m_pObject( pObject )
 	{
 		MEM_POLICY::OnAcquire(m_pObject);
 	}
