@@ -97,9 +97,8 @@ ARCH_CFLAGS = -mtune=generic -arch x86_64 -mmmx -msse -msse2 -std=gnu++11 -fPIC
 
 ifeq "$(OS)" "Darwin"
 DEFINES = -D_OSX -DOSX -D_DLL_EXT=.dylib
-ARCH_CFLAGS += -mmacosx-version-min=10.5
 SHLIBEXT = dylib
-SHLIBLDFLAGS = -dynamiclib -mmacosx-version-min=10.5
+SHLIBLDFLAGS = -dynamiclib
 SHLIBSUFFIX =
 else
 DEFINES = -D_LINUX -DLINUX -D_DLL_EXT=.so
