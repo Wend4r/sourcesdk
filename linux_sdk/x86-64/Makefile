@@ -93,7 +93,7 @@ endif
 
 # the CPU target for the build, must be i486 for now
 ARCH = x86_64
-ARCH_CFLAGS = -mtune=generic -march=core2 -mmmx -msse -msse2 -std=gnu++11 -fPIC
+ARCH_CFLAGS = -mtune=generic -arch x86_64 -mmmx -msse -msse2 -std=gnu++11 -fPIC
 
 ifeq "$(OS)" "Darwin"
 DEFINES = -D_OSX -DOSX -D_DLL_EXT=.dylib
@@ -108,7 +108,7 @@ SHLIBLDFLAGS = -shared -Wl,-Map,$@_map.txt
 SHLIBSUFFIX =
 endif
 
-DEFINES += -DCOMPILER_GCC -DPOSIX -DX64BITS -DPLATFORM_64BITS -DVPROF_LEVEL=1 -DSWDS -D_finite=finite -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
+DEFINES += -DCOMPILER_GCC -DPOSIX -DPLATFORM_64BITS -DVPROF_LEVEL=1 -DSWDS -D_finite=finite -Dstricmp=strcasecmp -D_stricmp=strcasecmp \
 	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp
 UNDEF = -Usprintf -Ustrncpy -UPROTECTED_THINGS_ENABLE
 
