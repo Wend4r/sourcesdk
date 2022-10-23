@@ -538,6 +538,8 @@ protected:
 	
 	CVValue_t					m_Value;
 
+	CVValue_t					m_ValueUnknown;
+
 	// Min/Max values
 	bool						m_bHasMin;
 	float						m_fMinVal;
