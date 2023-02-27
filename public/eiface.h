@@ -23,8 +23,9 @@
 #include "bitvec.h"
 #include "engine/iserverplugin.h"
 #include "tier1/bitbuf.h"
-#include "tier1/checksum_crc.h"
-#include "iclient.h"
+#include "iclient.h" 
+#include "google/protobuf/message.h"
+#include "steam/isteamremotestorage.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -61,21 +62,9 @@ class CGamestatsData;
 class CSteamID;
 class ISPSharedMemory;
 class CGamestatsData;
-class CEngineHltvInfo_t;
-class INetMessage;
-class HltvReplayParams_t;
-
-namespace google
-{
-	namespace protobuf
-	{
-		class Message;
-	}
-}
+class CEngineGotvSyncPacket;	// forward declare protobuf message here
 
 typedef struct player_info_s player_info_t;
-
-typedef uint64 PublishedFileId_t;
 
 //-----------------------------------------------------------------------------
 // defines
@@ -93,6 +82,55 @@ struct bbox_t
 {
 	Vector mins;
 	Vector maxs;
+};
+
+enum EncryptedMessageKeyType_t
+{
+	// Warning: do not renumber the key types as they get baked in demos
+	kEncryptedMessageKeyType_None = 0,
+	kEncryptedMessageKeyType_Private = 1,
+	kEncryptedMessageKeyType_Public = 2,
+};
+
+struct CEngineHltvInfo_t
+{
+	bool m_bBroadcastActive;		// Whether TV broadcast is active
+	bool m_bMasterProxy;			// Whether this is master proxy
+	float m_flDelay;				// TV delay
+	float m_flTime;					// TV match time
+	int m_nTvPort;					// TV port
+	int m_numSlots;					// Total number of TV slots
+	int m_numClients;				// Clients (spectators+proxies) count
+	int m_numProxies;				// Number of proxies
+	int m_numLocalSlots;			// Local number of TV slots
+	int m_numLocalClients;			// Local clients (spectators+proxies) count
+	int m_numLocalProxies;			// Local number of proxies
+	int m_numRelaySlots;			// Relay number of TV slots
+	int m_numRelayClients;			// Relay clients (spectators+proxies) count
+	int m_numRelayProxies;			// Relay number of proxies
+	int m_numExternalTotalViewers;	// External total viewers
+	int m_numExternalLinkedViewers;	// External linked viewers
+	uint32 m_relayAddress;			// Relay address
+	uint32 m_relayPort;				// Relay port
+};
+
+struct ClientReplayEventParams_t
+{
+	ClientReplayEventParams_t( int nEventType )
+	{
+		m_nEventType = nEventType;
+		m_flSlowdownLength = 0;
+		m_flSlowdownRate = 1.0f;
+		m_nPrimaryTargetEntIndex = -1; // unknown by default
+		m_flEventTime = -1.0; // unknown by default
+	}
+	int m_nEventType;
+
+	float m_flSlowdownLength;
+	float m_flSlowdownRate;
+
+	int m_nPrimaryTargetEntIndex;
+	float m_flEventTime;
 };
 
 //-----------------------------------------------------------------------------
@@ -194,11 +232,11 @@ public:
 	// Execute any commands currently in the command parser immediately (instead of once per frame)
 	virtual void		ServerExecute( void ) = 0;
 	// Issue the specified command to the specified client (mimics that client typing the command at the console).
-	virtual void		ClientCommand( edict_t *pEdict, const char *szFmt, ... ) FMTFUNCTION( 3, 4 ) = 0;
+	virtual void		ClientCommand( edict_t *pEdict, PRINTF_FORMAT_STRING const char *szFmt, ... ) FMTFUNCTION( 3, 4 ) = 0;
 
 	// Set the lightstyle to the specified value and network the change to any connected clients.  Note that val must not 
 	//  change place in memory (use MAKE_STRING) for anything that's not compiled into your mod.
-	virtual void		LightStyle( int style, const char *val ) = 0;
+	virtual void		LightStyle( int style, PRINTF_FORMAT_STRING const char *val ) = 0;
 
 	// Project a static decal onto the specified entity / model (for level placed decals in the .bsp)
 	virtual void		StaticDecal( const Vector &originInEntitySpace, int decalIndex, int entityIndex, int modelIndex, bool lowpriority ) = 0;
@@ -208,11 +246,11 @@ public:
 
 	// Begin a message from a server side entity to its client side counterpart (func_breakable glass, e.g.)
 	virtual bf_write	*EntityMessageBegin( int ent_index, ServerClass * ent_class, bool reliable ) = 0;
-	
-	// Finish the EntityMessage and dispatch to network layer
+	// Finish the Entity or UserMessage and dispatch to network layer
 	virtual void		MessageEnd( void ) = 0;
-	
-	virtual void		SendUserMessage( IRecipientFilter &filter, int message, const google::protobuf::Message &msg ) = 0;
+
+	// Send a protobuf based user message
+	virtual void		SendUserMessage( IRecipientFilter& filter, int message, const ::google::protobuf::Message &msg ) = 0;
 
 	// Print szMsg to the client console.
 	virtual void		ClientPrintf( edict_t *pEdict, const char *szMsg ) = 0;
@@ -370,9 +408,9 @@ public:
 
 	// Cleans up the cluster list
 	virtual void CleanUpEntityClusterList( PVSInfo_t *pPVSInfo ) = 0;
-	
-	virtual void SetAchievementMgr( IAchievementMgr * ) = 0;
-	virtual IAchievementMgr* GetAchievementMgr() = 0;
+
+	virtual void SetAchievementMgr( IAchievementMgr *pAchievementMgr ) =0;
+	virtual IAchievementMgr *GetAchievementMgr() = 0;
 
 	virtual int	GetAppID() = 0;
 	
@@ -425,7 +463,7 @@ public:
 	virtual bool IsCreatingReslist() = 0;
 	virtual bool IsCreatingXboxReslist() = 0;
 	virtual bool IsDedicatedServerForXbox() = 0;
-	virtual bool IsDedicatedServerForPS3() = 0;
+	virtual bool IsDedicatedServerForPS3( void ) = 0;
 
 	virtual void Pause( bool bPause, bool bForce = false ) = 0;
 
@@ -436,7 +474,7 @@ public:
 	virtual CGamestatsData *GetGamestatsData() = 0;
 
 	// Returns the SteamID of the specified player. It'll be NULL if the player hasn't authenticated yet.
-	virtual const CSteamID	*GetClientSteamID( const edict_t *pPlayerEdict, bool bValidatedIDOnly = false ) = 0;
+	virtual const CSteamID	*GetClientSteamID( const edict_t *pPlayerEdict, bool bRequireFullyAuthenticated = false ) = 0;
 
 	// Returns the SteamID of the game server
 	virtual const CSteamID	*GetGameServerSteamID() = 0;
@@ -450,15 +488,13 @@ public:
 	// Tells the engine to allocate paint surfaces
 	virtual bool HasPaintmap() = 0;
 
-	// Calls ShootPaintSphere
-	virtual bool SpherePaintSurface( const model_t *pModel, const Vector &, unsigned char, float, float ) = 0;
+	// Returns true if the surface paint colors changed
+	virtual bool SpherePaintSurface( const model_t *pModel, const Vector& vPosition, BYTE color, float flSphereRadius, float flPaintCoatPercent ) = 0;
 
-	virtual void SphereTracePaintSurface( const model_t *pModel, const Vector &, const Vector &, float, CUtlVector<unsigned char> & ) = 0;
-	
+	virtual void SphereTracePaintSurface( const model_t *pModel, const Vector& vPosition, const Vector& vContactNormal, float flSphereRadius, CUtlVector<BYTE>& surfColor ) = 0;
 	virtual void RemoveAllPaint() = 0;
-	
-	virtual void PaintAllSurfaces( unsigned char ) = 0;
-	virtual void RemovePaint( const model_t *pModel ) = 0;
+	virtual void PaintAllSurfaces( BYTE color ) = 0;
+	virtual void RemovePaint( const model_t* pModel ) = 0;
 
 	// Send a client command keyvalues
 	// keyvalues are deleted inside the function
@@ -467,38 +503,47 @@ public:
 	// Returns the XUID of the specified player. It'll be NULL if the player hasn't connected yet.
 	virtual uint64 GetClientXUID( edict_t *pPlayerEdict ) = 0;
 	virtual bool IsActiveApp() = 0;
-	
+
 	virtual void SetNoClipEnabled( bool bEnabled ) = 0;
-	
-	virtual void GetPaintmapDataRLE( CUtlVector<unsigned int> &mapdata ) = 0;
-	virtual void LoadPaintmapDataRLE( CUtlVector<unsigned int> &mapdata ) = 0;
-	virtual void SendPaintmapDataToClient( edict_t *pEdict ) = 0;
-	
+
+	virtual void GetPaintmapDataRLE( CUtlVector<uint32> &data ) = 0;
+	virtual void LoadPaintmapDataRLE( const CUtlVector< uint32 > &data ) = 0;
+	virtual void SendPaintmapDataToClient( edict_t *pPlayerEdict ) = 0;
+
+	// Gets the accumulated latency for the sounds related to choreos.
 	virtual float GetLatencyForChoreoSounds() = 0;
-	
+
 	virtual CrossPlayPlatform_t GetClientCrossPlayPlatform( int ent_num ) = 0;
-	
+
+	// Create the instance baseline for a serverclass if it doesn't exist in the engine's list already
 	virtual void EnsureInstanceBaseline( int ent_num ) = 0;
-	
-	virtual bool ReserveServerForQueuedGame( const char *szReservationPayload ) = 0;
-	
-	virtual bool GetEngineHltvInfo( CEngineHltvInfo_t &out ) = 0;
-	
-	virtual void AddHltvRelayProxyWhitelist( uint32 octet1, uint32 octet2, uint32 octet3, uint32 octet4, uint32 prefix) = 0;
-	
+
+	// Sets server reservation payload
+	virtual bool ReserveServerForQueuedGame( char const *szReservationPayload ) = 0;
+
+	// Get the TV information
+	virtual bool GetEngineHltvInfo( CEngineHltvInfo_t &info ) = 0;
+
+	// Add HLTV proxy whitelist to bypass password and Steam Auth checks upon connection, as CIDR a.b.c.d/numbits
+	virtual void AddHltvRelayProxyWhitelist( uint32 a, uint32 b, uint32 c, uint32 d, uint32 numbits ) = 0;
+
+	// Server version from the steam.inf, this will be compared to the GC version
 	virtual int GetServerVersion() const = 0;
-	
-	// Update counts of external viewers (Twitch.tv)
-	virtual void UpdateHltvExternalViewers( uint32 totalSpectators, uint32 spectatorsLinkedToSteam) = 0;
-	
-	virtual bool WasShutDownRequested( void ) const = 0;
-	virtual void *StartClientHltvReplay( int client , const HltvReplayParams_t & ) = 0;
-	virtual void *StopClientHltvReplay( int client ) = 0;
-	virtual int GetClientHltvReplayDelay( int client ) = 0;
-	virtual bool HasHltvReplay( void ) = 0;
-	virtual bool ClientCanStartHltvReplay( int client ) = 0;
-	virtual int ClientResetReplayRequestTime( int client ) = 0;
-	virtual bool AnyClientsInHltvReplayMode( void ) = 0;
+
+	// On master HLTV this call updates number of external viewers and which portion of those are linked with Steam
+	virtual void UpdateHltvExternalViewers( uint32 numTotalViewers, uint32 numLinkedViewers ) = 0;
+
+	// Check whether sv_shutdown was requested
+	virtual bool WasShutDownRequested() const = 0;
+
+	virtual bool StartClientHltvReplay( int nClientIndex, const HltvReplayParams_t &params ) = 0;
+	virtual void StopClientHltvReplay( int nClientIndex ) = 0;
+	virtual int GetClientHltvReplayDelay( int nClientIndex ) = 0;
+	virtual bool HasHltvReplay() = 0;
+	virtual bool ClientCanStartHltvReplay( int nClientIndex ) = 0;
+	virtual void ClientResetReplayRequestTime( int nClientIndex ) = 0;
+	virtual bool AnyClientsInHltvReplayMode() = 0;
+	virtual int GetLocalClientIndex( void ) = 0;
 };
 
 #define INTERFACEVERSION_SERVERGAMEDLL				"ServerGameDLL005"
@@ -585,10 +630,6 @@ public:
 	// Called once per frame even when no level is loaded...
 	virtual void			Think( bool finalTick ) = 0;
 
-#ifdef _XBOX
-	virtual void			GetTitleName( const char *pMapName, char* pTitleBuff, int titleBuffSize ) = 0;
-#endif
-
 	virtual void			PreSaveGameLoaded( char const *pSaveName, bool bCurrentlyInGame ) = 0;
 
 	// Returns true if the game DLL wants the server not to be made public.
@@ -607,8 +648,9 @@ public:
 	// Called after tools are initialized (i.e. when Foundry is initialized so we can get IServerFoundry).
 	virtual void			PostToolsInit() = 0;
 
-	// Called after the steam API has been activated post-level startup
-	virtual void			GameServerSteamAPIActivated( bool bActivated ) = 0;
+	// When bActive = true the function is called after the steam API has been activated post-level startup
+	// when bActive = false the function is called before the game server session will LogOff and all interfaces will shutdown
+	virtual void			GameServerSteamAPIActivated( bool bActive ) = 0;
 	
 	// Called to apply lobby settings to a dedicated server
 	virtual void			ApplyGameSettings( KeyValues *pKV ) = 0;
@@ -619,28 +661,67 @@ public:
 	virtual void			ServerHibernationUpdate( bool bHibernating ) = 0;
 
 	virtual bool			ShouldPreferSteamAuth() = 0;
-	
+
+	// Added for CS:GO - 
+	// In Competetive mode we do not want to allow direct-connect to Valve servers
 	virtual bool			ShouldAllowDirectConnect() = 0;
 	virtual bool			FriendsReqdForDirectConnect() = 0;
 	virtual bool			IsLoadTestServer() = 0;
+
+	// Is this an Official dedicated server for ranked matchmaking?
 	virtual bool			IsValveDS() = 0;
-	virtual KeyValues		*GetExtendedServerInfoForNewClient() = 0;
-	virtual void 			UpdateGCInformation() = 0;
-	virtual void 			ReportGCQueuedMatchStart( int32 iReservationStage, uint32 *puiConfirmedAccounts, int numConfirmedAccounts ) = 0;
+
+	// Builds extended server info for new connecting client
+	virtual KeyValues*		GetExtendedServerInfoForNewClient() = 0;
+
+	// Updates GC information for this server
+	virtual void UpdateGCInformation() = 0;
+
+	// Marks the queue matchmaking game as starting
+	virtual void ReportGCQueuedMatchStart( int32 iReservationStage, uint32 *puiConfirmedAccounts, int numConfirmedAccounts ) = 0;
+
+	// Get the published file id for the community map this server is running. 0 if non-ugc map or no map is running.
+	virtual PublishedFileId_t GetUGCMapFileID( const char* szMapPath ) = 0;
 	
-	virtual PublishedFileId_t	GetUGCMapFileID( const char *mapName ) = 0;
+	// Matchmaking game data buffer to set into SteamGameServer()->SetGameData
 	virtual void			GetMatchmakingGameData( char *buf, size_t bufSize ) = 0;
-	virtual bool			HasPendingMapDownloads() const = 0;
-	virtual void			UpdateUGCMap( PublishedFileId_t file ) = 0;
-	virtual int				GetMessageEncryptionKey( INetMessage *msg ) = 0;
-	virtual bool			ShouldHoldGameServerReservation( float flTime ) = 0;
-	virtual bool			OnPureServerFileValidationFailure( edict_t *pPlayer, const char *pszPathID, const char *pszFileName,
-								CRC32_t crcIOSequence, int eFileHashType, int cbFileLen, int nPackFileNumber, int nPackFileID ) = 0;
-	virtual void			PrecacheParticleSystemFile( const char *pszFilename ) = 0;
-	virtual void			ClientConnectionValidatePreNetChan( bool, const char *, int, unsigned long long ) = 0;
-	virtual void			OnEngineClientNetworkEvent( edict_t *, unsigned long long, int, void * ) = 0;
-	virtual void			GetNewestSubscribedFiles() = 0;
-	virtual bool			ValidateAndAddActiveCaster( const CSteamID & ) = 0;
+
+	// Returns true if server is in the process of updating the given map
+	virtual bool HasPendingMapDownloads( void ) const = 0;
+
+	virtual void UpdateUGCMap( PublishedFileId_t id ) = 0;
+
+	// Returns which encryption key to use for messages to be encrypted for TV
+	virtual EncryptedMessageKeyType_t GetMessageEncryptionKey( INetMessage *pMessage ) = 0;
+
+	// If server game dll needs more time before server process quits then
+	// it should return true to hold game server reservation from this interface method.
+	// If this method returns false then the server process will clear the reservation
+	// and might shutdown to meet uptime or memory limit requirements.
+	virtual bool ShouldHoldGameServerReservation( float flTimeElapsedWithoutClients ) = 0;
+
+	// Pure server validation failed for the given client, client supplied
+	// data is included in the payload
+	virtual void OnPureServerFileValidationFailure( edict_t *edictClient, const char *path, const char *fileName, uint32 crc, int32 hashType, int32 len, int packNumber, int packFileID ) = 0;
+
+	// Precaches particle systems defined in the specific file
+	virtual void PrecacheParticleSystemFile( const char *pParticleSystemFile ) = 0;
+
+	// Last chance validation on connect packet for the client, non-NULL return value
+	// causes the client connect to be aborted with the provided error
+	virtual char const * ClientConnectionValidatePreNetChan( bool bGameServer, char const *adr, int nAuthProtocol, uint64 ullSteamID ) = 0;
+
+	// Network channel notification from engine to game server code
+	virtual void OnEngineClientNetworkEvent( edict_t *edictClient, uint64 ullSteamID, int nEventType, void *pvParam ) = 0;
+
+	// Engine notifying GC with a message
+	virtual void EngineGotvSyncPacket( const CEngineGotvSyncPacket *pPkt ) = 0;
+
+	// GOTV client attempt redirect over SDR
+	virtual bool OnEngineClientProxiedRedirect( uint64 ullClient, const char *adrProxiedRedirect, const char *adrRegular ) = 0;
+
+	// Tell server about a line we will write to the log file which may be sent to remote listeners
+	virtual bool LogForHTTPListeners( const char* szLogLine ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -732,7 +813,7 @@ public:
 	// Get the ear position for a specified client
 	virtual void			ClientEarPosition( edict_t *pEntity, Vector *pEarOrigin ) = 0;
 
-	virtual bool			ClientReplayEvent( edict_t *player, void *event /* ClientReplayEventParams_t const& */ ) = 0;
+	virtual bool			ClientReplayEvent( edict_t *pEntity, const ClientReplayEventParams_t &params ) = 0;
 
 	// returns number of delay ticks if player is in Replay mode (0 = no delay)
 	virtual int				GetReplayDelay( edict_t *player, int& entity ) = 0;
@@ -755,8 +836,13 @@ public:
 
 	// The client has submitted a keyvalues command
 	virtual void			ClientCommandKeyValues( edict_t *pEntity, KeyValues *pKeyValues ) = 0;
-	
-	virtual void			ClientNameHandler( unsigned long long steamid, const char *name ) = 0;
+
+	// Server override for supplied client name
+	virtual const char *	ClientNameHandler( uint64 xuid, const char *pchName ) = 0;
+
+	// Client submitted a user command
+	virtual void			ClientSvcUserMessage( edict_t *pEntity, int nType, int nPassthrough, uint32 cbSize, const void *pvBuffer ) = 0;
+
 };
 
 #define INTERFACEVERSION_UPLOADGAMESTATS		"ServerUploadGameStats001"
