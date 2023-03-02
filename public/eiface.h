@@ -24,7 +24,7 @@
 #include "engine/iserverplugin.h"
 #include "tier1/bitbuf.h"
 #include "iclient.h" 
-#include "google/protobuf/message.h"
+// #include "google/protobuf/message.h"
 #include "steam/isteamremotestorage.h"
 
 //-----------------------------------------------------------------------------
@@ -63,6 +63,14 @@ class CSteamID;
 class ISPSharedMemory;
 class CGamestatsData;
 class CEngineGotvSyncPacket;	// forward declare protobuf message here
+
+namespace google
+{
+	namespace protobuf
+	{
+		class Message;
+	};
+};
 
 typedef struct player_info_s player_info_t;
 
