@@ -846,7 +846,7 @@ public:
 	}
 	static const char *SteamRender( uint64 ulSteamID )	// static method to render a uint64 representation of a steam ID to a string
 	{
-		return CSteamID(ulSteamID).SteamRender();
+		return CSteamID(ulSteamID).Render();
 	}
 
 	void SetFromString( const char *pchSteamID, EUniverse eDefaultUniverse );
