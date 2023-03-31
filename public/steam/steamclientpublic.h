@@ -10,6 +10,15 @@
 #include "steamtypes.h"
 #include "steamuniverse.h"
 
+#ifdef _S4N_
+	#define sprintf(...)
+#else
+	#include <stdio.h>
+	#ifndef NO_CSTEAMID_STL
+		#include <iostream>
+	#endif //NO_CSTEAMID_STL
+#endif
+
 // General result codes
 enum EResult
 {
