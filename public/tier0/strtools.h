@@ -387,7 +387,15 @@ inline char *V_strdup( const char *pSrc )
 // Returns the number of characters printed (not including the NULL), or maxLenInChars if truncation occurs.
 // pDest is always null-terminated.
 PLATFORM_INTERFACE int V_snprintf( OUT_Z_CAP(maxLenInChars) char *pDest, int maxLenInChars, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
+PLATFORM_INTERFACE int V_snprintfcat( OUT_Z_CAP(maxLenInChars) char *pDest, int maxLenInChars, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
+PLATFORM_INTERFACE int V_snprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
+PLATFORM_INTERFACE int V_snprintfcatNoSecurityDoNotUse( OUT_Z_CAP(maxLenInChars) char *pDest, int maxLenInChars, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
+
 PLATFORM_INTERFACE int V_vsnprintf( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
+PLATFORM_INTERFACE int V_vsnprintfcat( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
+PLATFORM_INTERFACE int V_vsnprintfRet( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
+PLATFORM_INTERFACE int V_vsnprintfSize( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFrmat, va_list params );
+PLATFORM_INTERFACE int V_vsnprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
 
 // gcc insists on only having format annotations on declarations, not definitions, which is why I have both.
 template <size_t maxLenInChars> int V_sprintf_safe( OUT_Z_ARRAY char (&pDest)[maxLenInChars], PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 2, 3 );
@@ -417,7 +425,7 @@ template <size_t maxLenInChars> int V_sprintfcat_safe( INOUT_Z_ARRAY char (&pDes
 	return result;
 }
 
-void _V_wcsncpy_bytes( OUT_Z_BYTECAP(maxLenInBytes) wchar_t *pDest, wchar_t const *pSrc, int maxLenInBytes );
+PLATFORM_INTERFACE void _V_wcsncpy_bytes( OUT_Z_BYTECAP(maxLenInBytes) wchar_t *pDest, wchar_t const *pSrc, int maxLenInBytes );
 #define V_wcsncpy_bytes _V_wcsncpy_bytes
 #define V_wcsncpy V_wcsncpy_bytes
 template <size_t maxLenInChars> void V_wcscpy_safe( OUT_Z_ARRAY wchar_t (&pDest)[maxLenInChars], wchar_t const *pSrc ) 
@@ -426,20 +434,20 @@ template <size_t maxLenInChars> void V_wcscpy_safe( OUT_Z_ARRAY wchar_t (&pDest)
 }
 
 #define COPY_ALL_CHARACTERS -1
-char *_V_strncat( INOUT_Z_CAP(maxLenInBytes) char *, const char *, size_t maxLenInBytes, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
+PLATFORM_INTERFACE char *_V_strncat( INOUT_Z_CAP(maxLenInBytes) char *, const char *, size_t maxLenInBytes, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
 #define V_strncat _V_strncat
 template <size_t cchDest> char *V_strcat_safe( INOUT_Z_ARRAY char (&pDest)[cchDest], const char *pSrc, int nMaxCharsToCopy=COPY_ALL_CHARACTERS )
 { 
 	return V_strncat( pDest, pSrc, static_cast<int>(cchDest), nMaxCharsToCopy ); 
 }
 
-wchar_t *V_wcsncat_cch( INOUT_Z_BYTECAP(maxLenInBytes) wchar_t *, const wchar_t *, int maxLenInBytes, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
-#define V_wcsncat V_wcsncat_cch
+PLATFORM_INTERFACE wchar_t *_V_wcsncat_cch( INOUT_Z_BYTECAP(maxLenInBytes) wchar_t *, const wchar_t *, int maxLenInBytes, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
+#define V_wcsncat _V_wcsncat_cch
 template <size_t cchDest> wchar_t *V_wcscat_safe( INOUT_Z_ARRAY wchar_t (&pDest)[cchDest], const wchar_t *pSrc, int nMaxCharsToCopy=COPY_ALL_CHARACTERS )
 { 
 	return V_wcsncat( pDest, pSrc, static_cast<int>(cchDest), nMaxCharsToCopy ); 
 }
-char *V_strnlwr(char *, size_t);
+// char *V_strnlwr(char *, size_t);
 
 // Unicode string conversion policies - what to do if an illegal sequence is encountered
 enum EStringConvertErrorPolicy
@@ -654,7 +662,7 @@ template <size_t maxLenInCharacters> int V_vsprintf_safe( OUT_Z_ARRAY char (&pDe
 PLATFORM_INTERFACE int V_vsnprintfRet( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
 template <size_t maxLenInCharacters> int V_vsprintfRet_safe( OUT_Z_ARRAY char (&pDest)[maxLenInCharacters], PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated ) { return V_vsnprintfRet( pDest, maxLenInCharacters, pFormat, params, pbTruncated ); }
 PLATFORM_INTERFACE int V_vsnprintfSize( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFrmat, va_list params );
-PLATFORM_INTERFACE int V_vsnprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
+PLATFORM_INTERFACE int V_vsnprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
 
 PLATFORM_INTERFACE int V_vsnwprintf_cch( OUT_Z_CAP(maxLenInCharacters) wchar_t *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const wchar_t *pFormat, va_list params );
 #define V_vsnwprintf V_vsnwprintf_cch
