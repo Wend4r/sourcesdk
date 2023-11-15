@@ -80,6 +80,29 @@ private:
 // class inlines
 //-----------------------------------------------------------------------------
 
+inline CUtlBinaryBlock::CUtlBinaryBlock( int growSize, int initSize ) 
+{
+	MEM_ALLOC_CREDIT();
+	m_Memory.Init( growSize, initSize );
+
+	m_nActualLength = 0;
+}
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength ) : m_Memory( (unsigned char*)pMemory, nSizeInBytes )
+{
+	m_nActualLength = nInitialLength;
+}
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( const void* pMemory, int nSizeInBytes ) : m_Memory( (const unsigned char*)pMemory, nSizeInBytes )
+{
+	m_nActualLength = nSizeInBytes;
+}
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( const CUtlBinaryBlock& src )
+{
+	Set( src.Get(), src.Length() );
+}
+
 #if VALVE_CPP11
 inline CUtlBinaryBlock::CUtlBinaryBlock( CUtlBinaryBlock&& src )
 : m_Memory( Move(src.m_Memory) )
@@ -155,20 +178,21 @@ public:
 	// Copy/move constructor/assignment
 	// Moves are extremely efficient as the underlying memory is not copied, just the pointers.
 	CUtlString( const CUtlString& string ) { Set( string.Get() ); }
+
 	CUtlString &operator=( const CUtlString &src ); // = default;
 	DLL_CLASS_IMPORT CUtlString &operator=( CBufferString & );
+	// Also can assign from a regular C-style string
+	CUtlString &operator=( const char *src );
 
 #if VALVE_CPP11
 	CUtlString( CUtlString&& moveFrom );    // = default;
 	CUtlString &operator=( CUtlString&& moveFrom ); // = default;
 #endif
 
-	// Also can assign from a regular C-style string
-	DLL_CLASS_IMPORT CUtlString &operator=( const char *src );
 
 	char *Access() { return Get(); }
-	DLL_CLASS_IMPORT const char	*Get( ) const;
-	DLL_CLASS_IMPORT char		*Get();
+	const char	*Get( ) const;
+	char		*Get();
 	DLL_CLASS_IMPORT char*		GetForModify();
 
 	void Clear() { Set( NULL ); }
@@ -216,21 +240,23 @@ public:
 
 	// Test for equality
 	DLL_CLASS_IMPORT bool operator==( const CUtlString &src ) const;
-	DLL_CLASS_IMPORT bool operator==( const char *src ) const;
+	DLL_CLASS_IMPORT bool operator==( const CBufferString &src ) const;
 	bool operator!=( const CUtlString &src ) const { return !operator==( src ); }
-	bool operator!=( const char *src ) const { return !operator==( src ); }
+	bool operator!=( const CBufferString &src ) const { return !operator==( src ); }
 
 	// If these are not defined, CUtlString as rhs will auto-convert
 	// to const char* and do logical operations on the raw pointers. Ugh.
 	inline friend bool operator==( const char *lhs, const CUtlString &rhs ) { return rhs.operator==( lhs ); }
 	inline friend bool operator!=( const char *lhs, const CUtlString &rhs ) { return rhs.operator!=( lhs ); }
 
+	DLL_CLASS_IMPORT CUtlString &operator+=( const CBufferString &rhs );
 	DLL_CLASS_IMPORT CUtlString &operator+=( const CUtlString &rhs );
 	DLL_CLASS_IMPORT CUtlString &operator+=( const char *rhs );
 	DLL_CLASS_IMPORT CUtlString &operator+=( char c );
 	DLL_CLASS_IMPORT CUtlString &operator+=( int rhs );
 	DLL_CLASS_IMPORT CUtlString &operator+=( double rhs );
-	
+
+	DLL_CLASS_IMPORT CUtlString operator+( const CUtlString &rhs )const;
 	DLL_CLASS_IMPORT CUtlString operator+( const char *pOther )const;
 	DLL_CLASS_IMPORT CUtlString operator+( int rhs )const;
 
@@ -357,6 +383,20 @@ private:
 // Inline methods
 //-----------------------------------------------------------------------------
 
+inline CUtlString &CUtlString::operator=( const CUtlString &src )
+{
+	Assert( !m_Storage.IsReadOnly() );
+	m_Storage = src.m_Storage;
+	return *this;
+}
+
+inline CUtlString &CUtlString::operator=( const char *src )
+{
+	Assert( !m_Storage.IsReadOnly() );
+	Set( src );
+	return *this;
+}
+
 #if VALVE_CPP11
 inline CUtlString::CUtlString( CUtlString&& moveFrom )
 : m_Storage( Move( moveFrom.m_Storage ) )
@@ -369,6 +409,38 @@ inline CUtlString& CUtlString::operator=( CUtlString&& moveFrom )
 	return *this;
 }
 #endif
+
+inline const char *CUtlString::Get( ) const
+{
+	if ( m_Storage.Length() == 0 )
+	{
+		return "";
+	}
+
+	return reinterpret_cast< const char* >( m_Storage.Get() );
+}
+
+inline char *CUtlString::Get()
+{
+	Assert( !m_Storage.IsReadOnly() );
+
+	if ( m_Storage.Length() == 0 )
+	{
+		// In general, we optimise away small mallocs for empty strings
+		// but if you ask for the non-const bytes, they must be writable
+		// so we can't return "" here, like we do for the const version - jd
+		m_Storage.SetLength( 1 );
+		m_Storage[ 0 ] = '\0';
+	}
+
+	return reinterpret_cast< char* >( m_Storage.Get() );
+}
+
+// Returns strlen
+inline int CUtlString::Length() const
+{
+	return m_Storage.Length() ? m_Storage.Length() - 1 : 0;
+}
 
 inline bool CUtlString::IsEmpty() const
 {
