@@ -311,8 +311,8 @@ public:
 
 	// Parses the next token, given a set of character breaks to stop at
 	// Returns the length of the token parsed in bytes (-1 if none parsed)
-	DLL_CLASS_IMPORT int				ParseToken( characterset_t *pBreaks, char *pTokenBuf, int nMaxLen, bool bParseComments = true );
-	DLL_CLASS_IMPORT int				ParseToken( characterset_t *pBreaks, CBufferString *, bool bParseComments = true );
+	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, char *pTokenBuf, int nMaxLen, bool bParseComments = true );
+	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, CBufferString *, bool bParseComments = true );
 
 	// Write stuff in
 	// Binary mode: it'll just write the bits directly in, and strings will be
