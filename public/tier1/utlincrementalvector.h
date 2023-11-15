@@ -6,15 +6,15 @@
 // it's intrusive: the class that is pointed to must contain and maintain an index
 #include "tier1/utlvector.h"
 
-template < class CLASS >
+template < class T, typename I >
 struct DefaultIncrementalVectorAccessor_t
 {
-	static int GetIndex( const CLASS * p ) { return p->m_nIncrementalVectorIndex; }
-	static void SetIndex( CLASS * p, int nIndex ) { p->m_nIncrementalVectorIndex = nIndex; }
+	static int GetIndex( const T * p ) { return p->m_nIncrementalVectorIndex; }
+	static void SetIndex( T * p, I nIndex ) { p->m_nIncrementalVectorIndex = nIndex; }
 };
 
 
-template <class T, class Accessor = DefaultIncrementalVectorAccessor_t< T > , class Allocator = CUtlMemory< T* > >
+template <class T, typename I = int, class Accessor = DefaultIncrementalVectorAccessor_t< T, I >, class Allocator = CUtlMemory< T*, I > >
 class CUtlIncrementalVector
 {
 public:
@@ -259,7 +259,7 @@ public:
 		}
 	}
 protected:
-	CUtlVector< T*, Allocator > m_data;	
+	CUtlVector< T*, I, Allocator > m_data;	
 };
 
 #define DECLARE_INCREMENTAL_VECTOR_TYPE(CLASS, MEMBER)											\

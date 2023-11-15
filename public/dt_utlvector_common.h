@@ -17,19 +17,19 @@
 typedef void (*EnsureCapacityFn)( void *pVoid, int offsetToUtlVector, int len );
 typedef void (*ResizeUtlVectorFn)( void *pVoid, int offsetToUtlVector, int len );
 
-template< class T >
-void UtlVector_InitializeAllocatedElements( T *pBase, int count )
+template< class T, typename I = size_t >
+void UtlVector_InitializeAllocatedElements( T *pBase, I count )
 {
 	memset( pBase, 0, count * sizeof( T ) );
 }
 
-template< class T, class A >
+template< class T, class I, class A >
 class UtlVectorTemplate
 {
 public:
-	static void ResizeUtlVector( void *pStruct, int offsetToUtlVector, int len )
+	static void ResizeUtlVector( void *pStruct, I offsetToUtlVector, I len )
 	{
-		CUtlVector<T,A> *pVec = (CUtlVector<T,A>*)((char*)pStruct + offsetToUtlVector);
+		CUtlVector<T,I,A> *pVec = (CUtlVector<T,I,A>*)((char*)pStruct + offsetToUtlVector);
 		if ( pVec->Count() < len )
 			pVec->AddMultipleToTail( len - pVec->Count() );
 		else if ( pVec->Count() > len )
@@ -38,7 +38,7 @@ public:
 		// Ensure capacity
 		pVec->EnsureCapacity( len );
 
-		int nNumAllocated = pVec->NumAllocated();
+		I nNumAllocated = pVec->NumAllocated();
 
 		// This is important to do because EnsureCapacity doesn't actually call the constructors
 		// on the elements, but we need them to be initialized, otherwise it'll have out-of-range
@@ -46,13 +46,13 @@ public:
 		UtlVector_InitializeAllocatedElements( pVec->Base() + pVec->Count(), nNumAllocated - pVec->Count() );
 	}
 
-	static void EnsureCapacity( void *pStruct, int offsetToUtlVector, int len )
+	static void EnsureCapacity( void *pStruct, I offsetToUtlVector, I len )
 	{
-		CUtlVector<T,A> *pVec = (CUtlVector<T,A>*)((char*)pStruct + offsetToUtlVector);
+		CUtlVector<T,I,A> *pVec = (CUtlVector<T,I,A>*)((char*)pStruct + offsetToUtlVector);
 
 		pVec->EnsureCapacity( len );
 		
-		int nNumAllocated = pVec->NumAllocated();
+		I nNumAllocated = pVec->NumAllocated();
 
 		// This is important to do because EnsureCapacity doesn't actually call the constructors
 		// on the elements, but we need them to be initialized, otherwise it'll have out-of-range
@@ -61,14 +61,14 @@ public:
 	}
 };
 
-template< class T, class A >
-inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( CUtlVector<T,A> &vec )
+template< class T, typename I, class A >
+inline ResizeUtlVectorFn GetResizeUtlVectorTemplate( CUtlVector<T,I,A> &vec )
 {
 	return &UtlVectorTemplate<T,A>::ResizeUtlVector;
 }
 
-template< class T, class A >
-inline EnsureCapacityFn GetEnsureCapacityTemplate( CUtlVector<T,A> &vec )
+template< class T, typename I, class A >
+inline EnsureCapacityFn GetEnsureCapacityTemplate( CUtlVector<T,I,A> &vec )
 {
 	return &UtlVectorTemplate<T,A>::EnsureCapacity;
 }

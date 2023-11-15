@@ -26,7 +26,7 @@
 #endif
 
 #ifdef ENGINE_DLL
-typedef CUtlVector<unsigned char, CHunkMemory<unsigned char> > CDispLightmapSamplePositions;
+typedef CUtlVector<unsigned char, int, CHunkMemory<unsigned char, int> > CDispLightmapSamplePositions;
 #else
 typedef CUtlVector<unsigned char> CDispLightmapSamplePositions;
 #endif

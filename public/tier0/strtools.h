@@ -85,7 +85,7 @@ PLATFORM_INTERFACE void V_CopyMemory3D( void *pDestAdr, void const *pSrcAdr,
 
 
 template< class T, class I > class CUtlMemory;
-template< class T, class A > class CUtlVector;
+template< class T, class I, class A > class CUtlVector;
 
 PLATFORM_INTERFACE const char *nexttoken(char *token, const char *str, char sep);
 
@@ -827,21 +827,21 @@ PLATFORM_INTERFACE bool _V_StrSubst( IN_Z const char *pIn, IN_Z const char *pMat
 // object you must call outStrings.PurgeAndDeleteElements between each call.
 // If you copy and retain pointers to any of the strings you must zero them before calling
 // PurgeAndDeleteElements to avoid having a pointer to freed memory.
-PLATFORM_OVERLOAD void V_SplitString( IN_Z const char *pString, IN_Z const char *pSeparator, CUtlVector< char *, CUtlMemory< char * , int > > &outStrings );
-PLATFORM_OVERLOAD void V_SplitString( const char *pString, const char *pSeparator, CUtlVector< CUtlString, CUtlMemory< CUtlString , int > > &outStrings, bool bIncludeEmptyStrings = false );
-PLATFORM_OVERLOAD void V_SplitStringInPlace( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, CUtlMemory< char * , int > > &outStrings );
-PLATFORM_OVERLOAD void V_SplitStringOnSpectators( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, CUtlMemory< char * , int > > &outStrings );
-PLATFORM_OVERLOAD void V_SplitStringOnSpectators( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< CUtlString, CUtlMemory< CUtlString , int > > &outStrings );
+PLATFORM_OVERLOAD void V_SplitString( IN_Z const char *pString, IN_Z const char *pSeparator, CUtlVector< char *, int, CUtlMemory< char *, int > > &outStrings );
+PLATFORM_OVERLOAD void V_SplitString( const char *pString, const char *pSeparator, CUtlVector< CUtlString, int, CUtlMemory< CUtlString, int > > &outStrings, bool bIncludeEmptyStrings = false );
+PLATFORM_OVERLOAD void V_SplitStringInPlace( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, int, CUtlMemory< char * , int > > &outStrings );
+PLATFORM_OVERLOAD void V_SplitStringOnSpectators( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, int, CUtlMemory< char * , int > > &outStrings );
+PLATFORM_OVERLOAD void V_SplitStringOnSpectators( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< CUtlString, int, CUtlMemory< CUtlString , int > > &outStrings );
 
 // Just like V_SplitString, but it can use multiple possible separators.
-PLATFORM_OVERLOAD void V_SplitString2( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, CUtlMemory< char * , int > > &outStrings );
-PLATFORM_OVERLOAD void V_SplitString2InPlace( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, CUtlMemory< char * , int > > &outStrings );
+PLATFORM_OVERLOAD void V_SplitString2( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, int, CUtlMemory< char * , int > > &outStrings );
+PLATFORM_OVERLOAD void V_SplitString2InPlace( const char *pString, const char **pSeparators, int nSeparators, CUtlVector< char *, int, CUtlMemory< char * , int > > &outStrings );
 
 // Split string for wide character strings
-PLATFORM_INTERFACE void V_SplitWString( const wchar_t *pString, const wchar_t *pSeparator, CUtlVector< wchar_t *, CUtlMemory< wchar_t * , int > > &outStrings );
+PLATFORM_INTERFACE void V_SplitWString( const wchar_t *pString, const wchar_t *pSeparator, CUtlVector< wchar_t *, int, CUtlMemory< wchar_t * , int > > &outStrings );
 
 // Just like V_SplitString, but for wide character strings
-PLATFORM_INTERFACE void V_SplitWString2( const wchar_t *pString, const wchar_t **pSeparators, int nSeparators, CUtlVector< wchar_t * , CUtlMemory< wchar_t * , int > > &outStrings );
+PLATFORM_INTERFACE void V_SplitWString2( const wchar_t *pString, const wchar_t **pSeparators, int nSeparators, CUtlVector< wchar_t * , int, CUtlMemory< wchar_t * , int > > &outStrings );
 
 // Returns false if the buffer is not large enough to hold the working directory name.
 PLATFORM_INTERFACE bool Plat_GetCurrentDirectory( char *pOut, int maxLen );
@@ -983,7 +983,7 @@ PLATFORM_INTERFACE char *V_UInt32ToString_Unsafe(uint32 nValue, char *pDest);
 PLATFORM_INTERFACE char *V_UInt64ToString_Unsafe(uint64 nValue, char *pDest);
 PLATFORM_INTERFACE char *V_FloatToString_Unsafe(float flValue, char *pDest);
 PLATFORM_INTERFACE char *V_DoubleToString_Unsafe(double fl64Value, char *pDest);
-PLATFORM_INTERFACE char *V_ParseURLQuery_Unsafe(const char *pchURL, CUtlVector< CBufferString, CUtlMemory< CBufferString, int > > &pDest);
+PLATFORM_INTERFACE char *V_ParseURLQuery_Unsafe(const char *pchURL, CUtlVector< CBufferString, int, CUtlMemory< CBufferString, int > > &pDest);
 
 PLATFORM_INTERFACE void V_StringParseError( int nFlags, IParsingErrorListener *err_listener, const char *pError, ...) FMTFUNCTION( 3, 4 );
 

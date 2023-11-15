@@ -415,7 +415,7 @@ m_LastAlloc( m_Elements.InvalidIterator() )
 template < class T, class I, typename L, class M >
 inline CUtlRBTree<T, I, L, M>::CUtlRBTree( const LessFunc_t &lessfunc ) : 
 m_LessFunc( lessfunc ),
-m_Elements( 0, 0 ),
+m_Elements( ),
 m_Root( InvalidIndex() ),
 m_NumElements( 0 ),
 m_FirstFree( InvalidIndex() ),

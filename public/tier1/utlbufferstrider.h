@@ -153,8 +153,8 @@ public:
 		refPtr = nCount ? Stride< T >( nCount ) : NULL;
 		return refPtr;
 	}
-	template < typename T, typename A >
-	T* operator()( T *&refPtr, const CUtlVector< T, A > &arr )
+	template < typename T, typename I, typename A >
+	T* operator()( T *&refPtr, const CUtlVector< T, I, A > &arr )
 	{
 		if ( arr.IsEmpty( ) )
 		{
