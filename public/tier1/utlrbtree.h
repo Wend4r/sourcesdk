@@ -33,8 +33,6 @@ public:
 
 #define DefLessFunc( type ) CDefOps< type >::LessFunc
 
-//-------------------------------------
-
 template <typename T>
 class CDefLess
 {
@@ -720,7 +718,8 @@ I  CUtlRBTree<T, I, L, M>::NewNode()
 			Assert( m_Elements.IsValidIterator( it ) );
 			if ( !m_Elements.IsValidIterator( it ) )
 			{
-				Error( "CUtlRBTree overflow!\n" );
+				Plat_FatalErrorFunc( "CUtlRBTree overflow with %u elements!\n", Count() );
+				DebuggerBreak();
 			}
 		}
 		m_LastAlloc = it;
@@ -1540,7 +1539,7 @@ I CUtlRBTree<T, I, L, M>::Insert( T const &insert )
 	bool leftchild = false;
 	FindInsertionPosition( insert, parent, leftchild );
 	I newNode = InsertAt( parent, leftchild );
-	CopyConstruct( &Element( newNode ), insert );
+	Element( newNode ) = insert;
 	return newNode;
 }
 
@@ -1582,7 +1581,7 @@ I CUtlRBTree<T, I, L, M>::InsertIfNotFound( T const &insert )
 	}
 
 	I newNode = InsertAt( parent, leftchild );
-	CopyConstruct( &Element( newNode ), insert );
+	Element( newNode ) = insert;
 	return newNode;
 }
 

@@ -70,6 +70,11 @@ public:
 	// Initialize with separately allocated buffer, setting the capacity and count.
 	// The container will not be growable.
 	CUtlVector( T* pMemory, I initialCapacity, I initialCount = 0 );
+
+	// Pass a type to raw allocator.
+	CUtlVector( I growSize, I initialCapacity, RawAllocatorType_t allocatorType );
+	CUtlVector( T* pMemory, I initialCapacity, I initialCount, RawAllocatorType_t allocatorType );
+
 	~CUtlVector();
 	
 	// Copy the array.
@@ -238,14 +243,24 @@ private:
 	void InPlaceQuickSort_r( I (__cdecl *pfnCompare)(const T *, const T *), I nLeft, I nRight );
 };
 
+template< class T, typename I = int >
+class CUtlVectorRaw : public CUtlVector< T, I, CUtlMemoryRaw<T, I> >
+{
+	typedef CUtlVector< T, I, CUtlMemoryRaw<T, I> > BaseClass;
+
+public:
+	explicit CUtlVectorRaw( I growSize = 0, I initSize = 0, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( growSize, initSize, allocatorType ) {}
+	CUtlVectorRaw( T* pMemory, I allocationCount, I numElements, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( pMemory, allocationCount, numElements, allocatorType ) {}
+};
 
 // this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
 template < class T, class I = int >
 class CUtlBlockVector : public CUtlVector< T, I, CUtlBlockMemory< T, I > >
 {
+	typedef CUtlVector< T, I, CUtlBlockMemory< T, I > > BaseClass;
+
 public:
-	explicit CUtlBlockVector( I growSize = 0, I initSize = 0 )
-		: CUtlVector< T, I, CUtlBlockMemory< T, I > >( growSize, initSize ) {}
+	explicit CUtlBlockVector( I growSize = 0, I initSize = 0 ) : BaseClass( growSize, initSize ) {}
 };
 
 //-----------------------------------------------------------------------------
@@ -256,8 +271,8 @@ template< class T, size_t MAX_SIZE >
 class CUtlVectorFixed : public CUtlVector< T, size_t, CUtlMemoryFixed<T, MAX_SIZE > >
 {
 	typedef CUtlVector< T, size_t, CUtlMemoryFixed<T, MAX_SIZE > > BaseClass;
-public:
 
+public:
 	// constructor, destructor
 	explicit CUtlVectorFixed( size_t growSize = 0, size_t initSize = 0 ) : BaseClass( growSize, initSize ) {}
 	CUtlVectorFixed( T* pMemory, size_t numElements ) : BaseClass( pMemory, numElements ) {}
@@ -302,8 +317,8 @@ template< class T, typename I = int >
 class CUtlVectorConservative : public CUtlVector< T, I, CUtlMemoryConservative<T, I> >
 {
 	typedef CUtlVector< T, I, CUtlMemoryConservative<T> > BaseClass;
-public:
 
+public:
 	// constructor, destructor
 	explicit CUtlVectorConservative( I growSize = 0, I initSize = 0 ) : BaseClass( growSize, initSize ) {}
 	CUtlVectorConservative( T* pMemory, I numElements ) : BaseClass( pMemory, numElements ) {}
@@ -630,6 +645,20 @@ inline CUtlVector<T, I, A>::CUtlVector( I growSize, I initSize )	:
 template< typename T, typename I, class A >
 inline CUtlVector<T, I, A>::CUtlVector( T* pMemory, I allocationCount, I numElements )	: 
 	m_Size(numElements), m_Memory(pMemory, allocationCount)
+{
+	ResetDbgInfo();
+}
+
+template< typename T, typename I, class A >
+inline CUtlVector<T, I, A>::CUtlVector( I growSize, I initSize, RawAllocatorType_t allocatorType )	: 
+	m_Size(0), m_Memory(growSize, initSize, allocatorType)
+{
+	ResetDbgInfo();
+}
+
+template< typename T, typename I, class A >
+inline CUtlVector<T, I, A>::CUtlVector( T* pMemory, I allocationCount, I numElements, RawAllocatorType_t allocatorType )	: 
+	m_Size(numElements), m_Memory(pMemory, allocationCount, allocatorType)
 {
 	ResetDbgInfo();
 }
@@ -1456,28 +1485,7 @@ private:
 	CUtlStringList( const CUtlStringList &other ); // copying directly will cause double-release of the same strings; maybe we need to do a deep copy, but unless and until such need arises, this will guard against double-release
 };
 
-
-
-// <Sergiy> placing it here a few days before Cert to minimize disruption to the rest of codebase
-class CSplitString: public CUtlVector<char*, int, CUtlMemory<char*, int> >
-{
-public:
-	CSplitString();
-	CSplitString(const char *pString, const char *pSeparator);
-	CSplitString(const char *pString, const char **pSeparators, int nSeparators);
-	~CSplitString();
-
-	void Set(const char *pString, const char **pSeparators, int nSeparators);
-
-	//
-	// NOTE: If you want to make Construct() public and implement Purge() here, you'll have to free m_szBuffer there
-	//
-private:
-	void Construct(const char *pString, const char **pSeparators, int nSeparators);
-	void PurgeAndDeleteElements();
-private:
-	char *m_szBuffer; // a copy of original string, with '\0' instead of separators
-};
-
+// Source1 legacy: CSplitString was declared here
+#include "tier0/splitstring.h"
 
 #endif // CCVECTOR_H

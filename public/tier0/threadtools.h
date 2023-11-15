@@ -822,11 +822,13 @@ typedef CThreadMutex CThreadFastMutex;
 class CThreadNullMutex
 {
 public:
-	static void Lock()				{}
-	static void Unlock()			{}
+	CThreadNullMutex( const char* pDebugName ) {}
 
-	static bool TryLock()			{ return true; }
-	static bool AssertOwnedByCurrentThread() { return true; }
+	static void Lock( const char *pFileName, int nLine )	{}
+	static void Unlock( const char *pFileName, int nLine )	{}
+
+	static bool TryLock( const char *pFileName, int nLine ) { return true; }
+	static bool AssertOwnedByCurrentThread() 				{ return true; }
 	static void SetTrace( bool b )	{}
 
 	static uint32 GetOwnerId() 		{ return 0;	}

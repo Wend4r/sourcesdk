@@ -93,7 +93,7 @@ endif
 
 # the CPU target for the build, must be i486 for now
 ARCH = x86_64
-ARCH_CFLAGS = -mtune=generic -mmmx -msse -msse2 -msse3 -msse4.1 -fPIC
+ARCH_CFLAGS = -mtune=generic -mmmx -msse -msse2 -msse3 -msse4 -msse4.1 -fPIC
 
 ifeq "$(OS)" "Darwin"
 DEFINES = -D_OSX -DOSX -D_DLL_EXT=.dylib

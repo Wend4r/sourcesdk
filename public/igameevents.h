@@ -20,6 +20,7 @@
 #include "tier0/utlstring.h"
 #include "tier1/bitbuf.h"
 #include "tier1/generichash.h"
+#include "tier1/keyvalues3.h"
 #include "entity2/entityinstance.h"
 
 class CMsgSource1LegacyGameEvent;
@@ -62,30 +63,6 @@ Valid data types are string, float, long, short, byte & bool. If a
 data field should not be broadcasted to clients, use the type "local".
 */
 
-struct GameEventKeySymbol_t
-{
-	inline GameEventKeySymbol_t(const char* keyName): m_nHashCode(0), m_pszKeyName(NULL)
-	{		
-		if (!keyName || !keyName[0])
-			return;
-
-		m_nHashCode = MurmurHash2LowerCase(keyName, strlen(keyName), 0x31415926);
-		m_pszKeyName = keyName;
-
-#if 0
-		if (g_bUpdateStringTokenDatabase)
-		{
-			RegisterStringToken(m_nHashCode, keyName, 0, true);
-		}
-#endif
-	}
-
-private:
-	unsigned int m_nHashCode;
-	const char* m_pszKeyName;
-};
-
-
 #define MAX_EVENT_NAME_LENGTH	32		// max game event name length
 #define MAX_EVENT_BITS			9		// max bits needed for an event index
 #define MAX_EVENT_NUMBER		(1<<MAX_EVENT_BITS)		// max number of events allowed
@@ -93,6 +70,8 @@ private:
 
 class KeyValues;
 class CGameEvent;
+struct ScriptVariant_t;
+typedef CKV3MemberName GameEventKeySymbol_t;
 
 abstract_class IToolGameEventAPI
 {
@@ -155,11 +134,9 @@ public:
 
 	virtual bool HasKey( const GameEventKeySymbol_t &keySymbol ) = 0;
 
-	// Something script vm related
-	virtual void unk001() = 0;
+	virtual void CreateVMTable(ScriptVariant_t &Table) = 0;
 
-	// Not based on keyvalues anymore as it seems like
-	virtual void* GetDataKeys() const = 0;
+	virtual KeyValues3 *GetDataKeys() const = 0;
 };
 
 #define EVENT_DEBUG_ID_INIT			42

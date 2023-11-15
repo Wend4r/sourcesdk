@@ -39,6 +39,7 @@ LIB_OBJS= \
 	$(LIB_OBJ_DIR)/rangecheckedvar.o \
 	$(LIB_OBJ_DIR)/tier1.o \
 	$(LIB_OBJ_DIR)/utlbufferutil.o \
+	$(LIB_OBJ_DIR)/keyvalues3.o \
 
 all: dirs $(NAME).$(SHLIBEXT)
 

@@ -229,9 +229,6 @@
     <ClCompile Include="sparsematrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="splitstring.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tier1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -247,7 +244,7 @@
     <ClCompile Include="utlsoacontainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utlstringtoken.cpp">
+    <ClCompile Include="keyvalues3.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -16,6 +16,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[1] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[2] )
@@ -28,6 +29,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[2] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[3] )
@@ -41,6 +43,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[3] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[4] )
@@ -55,6 +58,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[4] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[5] )
@@ -73,6 +77,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[5] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[6] )
@@ -93,6 +98,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[6] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[7] )
@@ -114,6 +120,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[7] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[8] )
@@ -136,6 +143,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[8] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[9] )
@@ -160,6 +168,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[9] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[10] )
@@ -186,6 +195,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[10] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[11] )
@@ -213,6 +223,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[11] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[12] )
@@ -241,6 +252,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[12] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[13] )
@@ -271,6 +283,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[13] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[14] )
@@ -303,6 +316,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[14] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[15] )
@@ -336,6 +350,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[15] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[16] )
@@ -370,6 +385,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[16] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[17] )
@@ -406,6 +422,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[17] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[18] )
@@ -444,6 +461,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[18] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[19] )
@@ -483,6 +501,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[19] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[20] )
@@ -523,6 +542,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[20] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[21] )
@@ -565,6 +585,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[21] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[22] )
@@ -609,6 +630,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[22] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[23] )
@@ -654,6 +676,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[23] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[24] )
@@ -700,6 +723,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[24] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[25] )
@@ -748,6 +772,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[25] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[26] )
@@ -798,6 +823,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[26] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[27] )
@@ -849,6 +875,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[27] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[28] )
@@ -901,6 +928,7 @@ FORCEINLINE CUtlStringToken( const char ( &str )[28] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 
 FORCEINLINE CUtlStringToken( const char ( &str )[29] )
@@ -955,5 +983,6 @@ FORCEINLINE CUtlStringToken( const char ( &str )[29] )
 	h *= m;
 	h ^= h >> 15;
 	m_nHashCode = h;
+	m_pString = (const char *)str;
 }
 

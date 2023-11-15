@@ -24,7 +24,7 @@
 #include "tier1/bitbuf.h"
 #include "tier1/utlmap.h"
 #include "tier0/utlstring.h"
-#include "tier1/bufferstring.h"
+#include "tier0/bufferstring.h"
 #include <steam/steamclientpublic.h>
 #include "playerslot.h"
 #include "playeruserid.h"

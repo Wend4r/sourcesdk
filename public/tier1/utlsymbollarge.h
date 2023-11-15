@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ? 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Defines a large symbol table (intp sized handles, can store more than 64k strings)
 //
@@ -13,11 +13,11 @@
 #pragma once
 #endif
 
-#include "tier0/stringpool.h"
 #include "tier0/threadtools.h"
-#include "tier0/vprof.h"
-#include "tier1/utltshash.h"
-#include "tier1/utltshash.h"
+#include "tier0/memblockallocator.h"
+#include "tier1/generichash.h"
+#include "tier1/utlvector.h"
+#include "tier1/utlhashtable.h"
 
 //-----------------------------------------------------------------------------
 // CUtlSymbolTableLarge:
@@ -29,7 +29,7 @@
 //     to the string data, the hash precedes it in memory and is used to speed up searching, etc.
 //-----------------------------------------------------------------------------
 
-typedef intp UtlSymLargeId_t;
+typedef unsigned int UtlSymLargeId_t;
 
 #define UTL_INVAL_SYMBOL_LARGE  ((UtlSymLargeId_t)~0)
 
@@ -39,85 +39,60 @@ public:
 	// constructor, destructor
 	CUtlSymbolLarge() 
 	{
-		u.m_Id = UTL_INVAL_SYMBOL_LARGE;
+		m_pString = NULL;
 	}
 
-	CUtlSymbolLarge( UtlSymLargeId_t id )
+	CUtlSymbolLarge( const char* pString )
 	{
-		u.m_Id = id;
+		m_pString = pString;
 	}
+
 	CUtlSymbolLarge( CUtlSymbolLarge const& sym )
 	{
-		u.m_Id = sym.u.m_Id; 
+		m_pString = sym.m_pString; 
 	}
 
 	// operator=
 	CUtlSymbolLarge& operator=( CUtlSymbolLarge const& src ) 
 	{ 
-		u.m_Id = src.u.m_Id; 
+		m_pString = src.m_pString; 
 		return *this; 
 	}
 
 	// operator==
 	bool operator==( CUtlSymbolLarge const& src ) const 
 	{ 
-		return u.m_Id == src.u.m_Id; 
+		return m_pString == src.m_pString; 
 	}
 
-	// operator==
-	bool operator==( UtlSymLargeId_t const& src ) const 
-	{ 
-		return u.m_Id == src; 
-	}
-
-	// operator==
+	// operator!=
 	bool operator!=( CUtlSymbolLarge const& src ) const 
 	{ 
-		return u.m_Id != src.u.m_Id; 
+		return m_pString != src.m_pString; 
 	}
 
-	// operator==
-	bool operator!=( UtlSymLargeId_t const& src ) const 
+	inline const char* String() const 
 	{ 
-		return u.m_Id != src; 
-	}
-
-	// Gets at the symbol
-	operator UtlSymLargeId_t const() const 
-	{ 
-		return u.m_Id; 
-	}
-
-	// Gets the string associated with the symbol
-	inline const char* String( ) const
-	{
-		if ( u.m_Id == UTL_INVAL_SYMBOL_LARGE )
+		if ( !m_pString )
 			return "";
-		return u.m_pAsString;
+		return m_pString; 
 	}
 
 	inline bool IsValid() const
 	{
-		return u.m_Id != UTL_INVAL_SYMBOL_LARGE ? true : false;
+		return m_pString != NULL;
 	}
 
 private:
 	// Disallowed
-	CUtlSymbolLarge( const char* pStr );       // they need to go through the table to assign the ptr
 	bool operator==( const char* pStr ) const; // disallow since we don't know if the table this is from was case sensitive or not... maybe we don't care
 
-	union
-	{
-		UtlSymLargeId_t m_Id;
-		char const *m_pAsString;
-	} u;
+	const char* m_pString;
 };
-
-#define MIN_STRING_POOL_SIZE	2048
 
 inline uint32 CUtlSymbolLarge_Hash( bool CASEINSENSITIVE, const char *pString, int len )
 {
-	return ( CASEINSENSITIVE ? HashStringCaseless( pString ) : HashString( pString ) ); 
+	return ( CASEINSENSITIVE ? MurmurHash2LowerCase( pString, len, 0x31415926 ) : MurmurHash2( pString, len, 0x31415926 ) ); 
 }
 
 typedef uint32 LargeSymbolTableHashDecoration_t; 
@@ -141,7 +116,7 @@ struct CUtlSymbolTableLargeBaseTreeEntry_t
 
 	CUtlSymbolLarge ToSymbol() const
 	{
-		return reinterpret_cast< UtlSymLargeId_t >( String() );
+		return CUtlSymbolLarge( String() );
 	}
 	
 	LargeSymbolTableHashDecoration_t HashValue() const
@@ -149,358 +124,266 @@ struct CUtlSymbolTableLargeBaseTreeEntry_t
 		return m_Hash;
 	}
 };
-	
-template< class TreeType, bool CASEINSENSITIVE >
-class CTreeEntryLess
-{
-public:
-	CTreeEntryLess( int ignored = 0 ) {} // permits default initialization to NULL in CUtlRBTree
-	bool operator!() const { return false; }
-	bool operator()( CUtlSymbolTableLargeBaseTreeEntry_t * const &left, CUtlSymbolTableLargeBaseTreeEntry_t * const &right ) const
-	{
-		// compare the hashes
-		if ( left->m_Hash == right->m_Hash )
-		{
-			// if the hashes match compare the strings
-			if ( !CASEINSENSITIVE )
-				return strcmp( left->String(), right->String() ) < 0;
-			else
-				return V_stricmp( left->String(), right->String() ) < 0;
-		}
-		else
-		{
-			return left->m_Hash < right->m_Hash;
-		}
-	}
-};
-	
-// For non-threaded versions, simply index into CUtlRBTree
-template< bool CASEINSENSITIVE >
-class CNonThreadsafeTree : public CUtlRBTree<CUtlSymbolTableLargeBaseTreeEntry_t *, intp, CTreeEntryLess< CNonThreadsafeTree< CASEINSENSITIVE >, CASEINSENSITIVE > >
-{
-public:
-	typedef CUtlRBTree<CUtlSymbolTableLargeBaseTreeEntry_t *, intp, CTreeEntryLess< CNonThreadsafeTree, CASEINSENSITIVE > > CNonThreadsafeTreeType;
-
-	CNonThreadsafeTree() : 
-		CNonThreadsafeTreeType( 0, 16 ) 
-	{
-	}
-	inline void Commit() 
-	{
-		// Nothing, only matters for thread-safe tables
-	}
-	inline intp Insert( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
-	{
-		return CNonThreadsafeTreeType::Insert( entry );
-	}
-	inline intp Find( CUtlSymbolTableLargeBaseTreeEntry_t *entry ) const
-	{
-		return CNonThreadsafeTreeType::Find( entry );
-	}
-	inline intp InvalidIndex() const
-	{
-		return CNonThreadsafeTreeType::InvalidIndex();
-	}
-	inline int GetElements( int nFirstElement, int nCount, CUtlSymbolLarge *pElements ) const
-	{
-		CUtlVector< CUtlSymbolTableLargeBaseTreeEntry_t * > list;
-		list.EnsureCount( nCount );
-		for ( int i = 0; i < nCount; ++i )
-		{
-			pElements[ i ] = CNonThreadsafeTreeType::Element( i )->ToSymbol();
-		}
-
-		return nCount;
-	}
-};
-
-// Since CUtlSymbolTableLargeBaseTreeEntry_t already has the hash 
-//  contained inside of it, don't need to recompute a hash here
-template < int BUCKET_COUNT, class KEYTYPE, bool CASEINSENSITIVE >
-class CCThreadsafeTreeHashMethod
-{
-public:
-	static int Hash( const KEYTYPE &key, int nBucketMask )
-	{
-		uint32 nHash = key->HashValue();
-		return ( nHash & nBucketMask );
-	}
-
-	static bool Compare( CUtlSymbolTableLargeBaseTreeEntry_t * const &lhs, CUtlSymbolTableLargeBaseTreeEntry_t * const &rhs )
-	{
-		if ( lhs->m_Hash != rhs->m_Hash )
-			return false;
-		if ( !CASEINSENSITIVE )
-		{
-			return ( !Q_strcmp( lhs->String(), rhs->String() ) ? true : false );
-		}
-
-		return ( !Q_stricmp( lhs->String(), rhs->String() ) ? true : false );
-	}
-};
-
-/*
-  NOTE:  So the only crappy thing about using a CUtlTSHash here is that the KEYTYPE is a CUtlSymbolTableLargeBaseTreeEntry_t ptr which has both the 
-   hash and the string since with strings there is a good chance of hash collision after you have a fair number of strings so we have to implement
-   a Compare method (above) which falls back to strcmp/stricmp if the hashes are equal.  This means that all of the data is in the KEYTYPE of the hash and the 
-   payload doesn't matter.  So I made the payload also be a pointer to a CUtlSymbolTableLargeBaseTreeEntry_t since that makes using the API more convenient
-
-  TODO:  If we have a CUtlTSHash that was all about the existence of the KEYTYPE and didn't require a payload (or template on 'void') then we could eliminate
-   50% of the pointer overhead used for this data structure.
-*/
-
-// Thread safe version is based on the 
-template < bool CASEINSENSITIVE >
-class CThreadsafeTree : public CUtlTSHash< CUtlSymbolTableLargeBaseTreeEntry_t *, 2048, CUtlSymbolTableLargeBaseTreeEntry_t *, CCThreadsafeTreeHashMethod< 2048, CUtlSymbolTableLargeBaseTreeEntry_t *, CASEINSENSITIVE > >
-{
-public:
-	typedef CUtlTSHash< CUtlSymbolTableLargeBaseTreeEntry_t *, 2048, CUtlSymbolTableLargeBaseTreeEntry_t *, CCThreadsafeTreeHashMethod< 2048, CUtlSymbolTableLargeBaseTreeEntry_t *, CASEINSENSITIVE > > CThreadsafeTreeType;
-
-	CThreadsafeTree() : 
-		CThreadsafeTreeType( 32 ) 
-	{
-	}
-	inline void Commit() 
-	{
-		CThreadsafeTreeType::Commit();
-	}
-	inline UtlTSHashHandle_t Insert( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
-	{
-		return CThreadsafeTreeType::Insert( entry, entry );
-	}
-	inline UtlTSHashHandle_t Find( CUtlSymbolTableLargeBaseTreeEntry_t *entry )
-	{
-		return CThreadsafeTreeType::Find( entry );
-	}
-	inline UtlTSHashHandle_t InvalidIndex() const
-	{
-		return CThreadsafeTreeType::InvalidHandle();
-	}
-	inline int GetElements( UtlTSHashHandle_t nFirstElement, int nCount, CUtlSymbolLarge *pElements ) const
-	{
-		CUtlVector< UtlTSHashHandle_t > list;
-		list.EnsureCount( nCount );
-		int c = CThreadsafeTreeType::GetElements( nFirstElement, nCount, list.Base() );
-		for ( int i = 0; i < c; ++i )
-		{
-			pElements[ i ] = CThreadsafeTreeType::Element( list[ i ] )->ToSymbol();
-		}
-		
-		return c;
-	}
-};
 
 // Base Class for threaded and non-threaded types
-template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE = MIN_STRING_POOL_SIZE >
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
 class CUtlSymbolTableLargeBase
 {
 public:
 	// constructor, destructor
-	CUtlSymbolTableLargeBase();
-	~CUtlSymbolTableLargeBase();
-	
+	CUtlSymbolTableLargeBase( int nGrowSize = 0, int nInitSize = 16, RawAllocatorType_t eAllocatorType = RawAllocator_Standard )
+		:	m_HashTable( 0, eAllocatorType ), 
+			m_MemBlocks( nGrowSize, nInitSize, eAllocatorType ), 
+			m_Mutex( "CUtlSymbolTableLargeBase" ), 
+			m_MemBlockAllocator( ( nInitSize > 0 ) ? 8 : 0, PAGE_SIZE, eAllocatorType ), 
+			m_nElementLimit( INT_MAX - 1 ), 
+			m_bThrowError( true )  { }
+
+	~CUtlSymbolTableLargeBase() { }
+
 	// Finds and/or creates a symbol based on the string
 	CUtlSymbolLarge AddString( const char* pString );
+	CUtlSymbolLarge AddString( const char* pString, int nLength );
 
 	// Finds the symbol for pString
 	CUtlSymbolLarge Find( const char* pString ) const;
-	
+	CUtlSymbolLarge Find( const char* pString, int nLength ) const;
+
 	// Remove all symbols in the table.
-	void  RemoveAll();
+	void RemoveAll();
+	void Purge();
+	
+private:
+	CUtlSymbolLarge AddString( unsigned int hash, const char* pString, int nLength );
+	CUtlSymbolLarge Find( unsigned int hash, const char* pString, int nLength ) const;
 
-	int GetNumStrings( void ) const
-	{
-		return m_Lookup.Count();
-	}
+	const char*		String( UtlSymLargeId_t id ) const;
+	unsigned int	HashValue( UtlSymLargeId_t id ) const;
 
-	void Commit()
-	{
-		m_Lookup.Commit();
-	}
-
-	// Returns elements in the table
-	int GetElements( int nFirstElement, int nCount, CUtlSymbolLarge *pElements ) const
-	{
-		return m_Lookup.GetElements( nFirstElement, nCount, pElements );
-	}
-
-	const char *GetElementString(int nElement) const
-	{
-		return m_Lookup.Element(nElement)->String();
-	}
-
-	uint64 GetMemoryUsage() const
-	{
-		uint64 unBytesUsed = 0u;
-
-		for ( int i=0; i < m_StringPools.Count(); i++ )
-		{
-			StringPool_t *pPool = m_StringPools[i];
-
-			unBytesUsed += (uint64)pPool->m_TotalLen;
-		}
-		return unBytesUsed;
-	}
-
-
-protected:
-
-	struct StringPool_t
-	{	
-		int m_TotalLen;		// How large is 
-		int m_SpaceUsed;
-		char m_Data[1];
+	struct UtlSymTableLargeAltKey
+	{ 
+		CUtlSymbolTableLargeBase*	m_pTable;
+		const char*					m_pString;
+		int							m_nLength;
 	};
 
-	TreeType m_Lookup;
+	struct UtlSymTableLargeHashFunctor
+	{
+		ptrdiff_t m_tableOffset;
 
-	// stores the string data
-	CUtlVector< StringPool_t * > m_StringPools;
+		UtlSymTableLargeHashFunctor()
+		{
+			m_tableOffset = 1024 - (uintp)(&((Hashtable_t*)1024)->GetHashRef());
+		}
 
-private:
-	int FindPoolWithSpace( int len ) const;
+		unsigned int operator()( UtlSymTableLargeAltKey k ) const
+		{
+			return CUtlSymbolLarge_Hash( CASEINSENSITIVE, k.m_pString, k.m_nLength );
+		}
+
+		unsigned int operator()( UtlSymLargeId_t k ) const
+		{
+			CUtlSymbolTableLargeBase* pTable = (CUtlSymbolTableLargeBase*)((uintp)this + m_tableOffset);
+
+			return pTable->HashValue( k );
+		}
+	};
+
+	struct UtlSymTableLargeEqualFunctor
+	{
+		ptrdiff_t m_tableOffset;
+
+		UtlSymTableLargeEqualFunctor()
+		{
+			m_tableOffset = 1024 - (uintp)(&((Hashtable_t*)1024)->GetEqualRef());
+		}
+		
+		bool operator()( UtlSymLargeId_t a, UtlSymLargeId_t b ) const 
+		{ 
+			CUtlSymbolTableLargeBase* pTable = (CUtlSymbolTableLargeBase*)((uintp)this + m_tableOffset);
+
+			if ( !CASEINSENSITIVE ) 
+				return strcmp( pTable->String( a ), pTable->String( b ) ) == 0; 
+			else
+				return V_stricmp_fast( pTable->String( a ), pTable->String( b ) ) == 0; 
+		}
+
+		bool operator()( UtlSymTableLargeAltKey a, UtlSymLargeId_t b ) const 
+		{ 
+			const char*	pString = a.m_pTable->String( b );
+
+			if ( a.m_nLength != ( int )V_strlen( pString ) )
+				return false;
+
+			if ( !CASEINSENSITIVE ) 
+				return strncmp( a.m_pString, pString, a.m_nLength ) == 0; 
+			else
+				return _V_strnicmp_fast( a.m_pString, pString, a.m_nLength ) == 0; 
+		}
+
+		bool operator()( UtlSymLargeId_t a, UtlSymTableLargeAltKey b ) const 
+		{ 
+			return operator()( b, a );
+		}
+	};
+
+	typedef CUtlHashtable< UtlSymLargeId_t, empty_t, UtlSymTableLargeHashFunctor, UtlSymTableLargeEqualFunctor, UtlSymTableLargeAltKey, CUtlMemoryRaw<CUtlHashtableEntry<UtlSymLargeId_t, empty_t>> > Hashtable_t;
+	typedef CUtlVectorRaw< MemBlockHandle_t > MemBlocksVec_t;
+
+	Hashtable_t					m_HashTable;
+	MemBlocksVec_t				m_MemBlocks;
+	MUTEX_TYPE					m_Mutex;
+	CUtlMemoryBlockAllocator	m_MemBlockAllocator;
+	int							m_nElementLimit;
+	bool						m_bThrowError;
 };
 
-//-----------------------------------------------------------------------------
-// constructor, destructor
-//-----------------------------------------------------------------------------
-template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
-inline CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE >::CUtlSymbolTableLargeBase() : 
-	m_StringPools( 8 )
-{
-}
-
-template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
-inline CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::~CUtlSymbolTableLargeBase()
-{
-	// Release the stringpool string data
-	RemoveAll();
-}
-
-template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
-inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::Find( const char* pString ) const
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::Find( unsigned int hash, const char* pString, int nLength ) const
 {	
-	VPROF( "CUtlSymbolLarge::Find" );
-	if (!pString)
+	UtlSymTableLargeAltKey key;
+	
+	key.m_pTable = ( CUtlSymbolTableLargeBase* )this;
+	key.m_pString = pString;
+	key.m_nLength = nLength;
+
+	UtlHashHandle_t h = m_HashTable.Find( key, hash );
+
+	if ( h == m_HashTable.InvalidHandle() )
 		return CUtlSymbolLarge();
 
-	// Passing this special invalid symbol makes the comparison function
-	// use the string passed in the context
-	int len = Q_strlen( pString ) + 1;
+	return CUtlSymbolLarge( String( m_HashTable[ h ] ) );
+}
 
-	CUtlSymbolTableLargeBaseTreeEntry_t *search = (CUtlSymbolTableLargeBaseTreeEntry_t *)_alloca( len + sizeof( LargeSymbolTableHashDecoration_t ) );
-	search->m_Hash = CUtlSymbolLarge_Hash( CASEINSENSITIVE, pString, len );
-	Q_memcpy( (char *)&search->m_String[ 0 ], pString, len );
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::AddString( unsigned int hash, const char* pString, int nLength )
+{	
+	if ( m_MemBlocks.Count() >= m_nElementLimit )
+	{
+		if ( m_bThrowError )
+		{
+			Plat_FatalErrorFunc( "FATAL ERROR: CUtlSymbolTableLarge element limit of %u exceeded\n", m_nElementLimit );
+			DebuggerBreak();
+		}
 
-	intp idx = const_cast< TreeType & >(m_Lookup).Find( search );
+		Warning( "ERROR: CUtlSymbolTableLarge element limit of %u exceeded\n", m_nElementLimit );
+	}
 
-	if ( idx == m_Lookup.InvalidIndex() )
-		return UTL_INVAL_SYMBOL_LARGE;
+	MemBlockHandle_t block = m_MemBlockAllocator.Alloc( nLength + sizeof( LargeSymbolTableHashDecoration_t ) + 1 );
 
-	const CUtlSymbolTableLargeBaseTreeEntry_t *entry = m_Lookup[ idx ];
+	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( block );
+
+	entry->m_Hash = hash;
+	char *pText = (char *)&entry->m_String[ 0 ];
+	memcpy( pText, pString, nLength );
+	pText[ nLength ] = '\0';
+
+	UtlSymLargeId_t id = m_MemBlocks.AddToTail( block + sizeof( LargeSymbolTableHashDecoration_t ) );
+
+	empty_t empty;
+	m_HashTable.Insert( id, empty, hash );
+
 	return entry->ToSymbol();
 }
 
-template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
-inline int CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::FindPoolWithSpace( int len )	const
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline const char* CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::String( UtlSymLargeId_t id ) const
 {
-	for ( int i=0; i < m_StringPools.Count(); i++ )
-	{
-		StringPool_t *pPool = m_StringPools[i];
+	return ( const char* )m_MemBlockAllocator.GetBlock( m_MemBlocks[ id ] );
+}
 
-		if ( (pPool->m_TotalLen - pPool->m_SpaceUsed) >= len )
-		{
-			return i;
-		}
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline unsigned int CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::HashValue( UtlSymLargeId_t id ) const
+{
+	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( m_MemBlocks[ id ] - sizeof( LargeSymbolTableHashDecoration_t ) );
+
+	return entry->HashValue();
+}
+
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::Find( const char* pString, int nLength ) const
+{	
+	CUtlSymbolLarge sym;
+
+	if ( pString && nLength > 0 && *pString )
+	{
+		unsigned int hash = CUtlSymbolLarge_Hash( CASEINSENSITIVE, pString, nLength );
+
+		m_Mutex.Lock( __FILE__, __LINE__ );
+
+		sym = Find( hash, pString, nLength );
+
+		m_Mutex.Unlock( __FILE__, __LINE__ );
 	}
 
-	return -1;
+	return sym;
 }
 
-//-----------------------------------------------------------------------------
-// Finds and/or creates a symbol based on the string
-//-----------------------------------------------------------------------------
-template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
-inline CUtlSymbolLarge CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::AddString( const char* pString )
-{
-	VPROF("CUtlSymbolLarge::AddString");
-	if (!pString) 
-		return UTL_INVAL_SYMBOL_LARGE;
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::Find( const char* pString ) const
+{	
+	return Find( pString, pString ? strlen( pString ) : 0 );
+}
 
-	CUtlSymbolLarge id = Find( pString );
-	if ( id != UTL_INVAL_SYMBOL_LARGE )
-		return id;
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::AddString( const char* pString, int nLength )
+{	
+	CUtlSymbolLarge sym;
 
-	int lenString = Q_strlen(pString) + 1; // length of just the string
-	int lenDecorated = lenString + sizeof(LargeSymbolTableHashDecoration_t); // and with its hash decoration
-	// make sure that all strings are aligned on 2-byte boundaries so the hashes will read correctly
-	// This assert seems to be invalid because LargeSymbolTableHashDecoration_t is always
-	// a uint32, by design.
-	//COMPILE_TIME_ASSERT(sizeof(LargeSymbolTableHashDecoration_t) == sizeof(intp));
-	lenDecorated = ALIGN_VALUE(lenDecorated, sizeof( LargeSymbolTableHashDecoration_t ) );
-
-	// Find a pool with space for this string, or allocate a new one.
-	int iPool = FindPoolWithSpace( lenDecorated );
-	if ( iPool == -1 )
+	if ( pString && nLength > 0 && *pString )
 	{
-		// Add a new pool.
-		int newPoolSize = MAX( lenDecorated + sizeof( StringPool_t ), POOL_SIZE );
-		StringPool_t *pPool = (StringPool_t*)malloc( newPoolSize );
+		unsigned int hash = CUtlSymbolLarge_Hash( CASEINSENSITIVE, pString, nLength );
 
-		pPool->m_TotalLen = newPoolSize - sizeof( StringPool_t );
-		pPool->m_SpaceUsed = 0;
-		iPool = m_StringPools.AddToTail( pPool );
+		m_Mutex.Lock( __FILE__, __LINE__ );
+
+		sym = Find( hash, pString, nLength );
+
+		if ( !sym.IsValid() )
+			sym = AddString( hash, pString, nLength );
+
+		m_Mutex.Unlock( __FILE__, __LINE__ );
 	}
 
-	// Compute a hash
-	LargeSymbolTableHashDecoration_t hash = CUtlSymbolLarge_Hash( CASEINSENSITIVE, pString, lenString );
-
-	// Copy the string in.
-	StringPool_t *pPool = m_StringPools[iPool];
-	// Assert( pPool->m_SpaceUsed < 0xFFFF );	// Pool could be bigger than 2k
-	// This should never happen, because if we had a string > 64k, it
-	// would have been given its entire own pool.
-	
-	CUtlSymbolTableLargeBaseTreeEntry_t *entry = ( CUtlSymbolTableLargeBaseTreeEntry_t * )&pPool->m_Data[ pPool->m_SpaceUsed ];
-	
-	pPool->m_SpaceUsed += lenDecorated;
-
-	entry->m_Hash = hash;
-	char *pText = (char *)&entry->m_String [ 0 ];
-	Q_memcpy( pText, pString, lenString );
-
-	// insert the string into the database
-	MEM_ALLOC_CREDIT();
-	return m_Lookup.Element( m_Lookup.Insert( entry ) )->ToSymbol();
+	return sym;
 }
 
-//-----------------------------------------------------------------------------
-// Remove all symbols in the table.
-//-----------------------------------------------------------------------------
-#ifdef ANALYZE_SUPPRESS // So that swig builds
-ANALYZE_SUPPRESS( 6001 ); // warning C6001: Using uninitialized memory '*m_StringPools.public: ...
-#endif
-template < class TreeType, bool CASEINSENSITIVE, size_t POOL_SIZE >
-inline void CUtlSymbolTableLargeBase<TreeType, CASEINSENSITIVE, POOL_SIZE>::RemoveAll()
-{
-	m_Lookup.Purge();
-
-	for ( int i=0; i < m_StringPools.Count(); i++ )
-		free( m_StringPools[i] );
-
-	m_StringPools.RemoveAll();
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::AddString( const char* pString )
+{	
+	return AddString( pString, pString ? ( int )V_strlen( pString ) : 0 );
 }
-#ifdef ANALYZE_UNSUPPRESS // So that swig builds
-ANALYZE_UNSUPPRESS(); // warning C6001: Using uninitialized memory '*m_StringPools.public: ...
-#endif
+
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline void CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::RemoveAll()
+{	
+	m_Mutex.Lock( __FILE__, __LINE__ );
+
+	m_MemBlocks.RemoveAll();
+	m_HashTable.RemoveAll();
+	m_MemBlockAllocator.RemoveAll();
+
+	m_Mutex.Unlock( __FILE__, __LINE__ );
+}
+
+template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
+inline void CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::Purge()
+{	
+	m_Mutex.Lock( __FILE__, __LINE__ );
+
+	m_MemBlocks.Purge();
+	m_HashTable.Purge();
+	m_MemBlockAllocator.Purge();
+
+	m_Mutex.Unlock( __FILE__, __LINE__ );
+}
 
 // Case-sensitive
-typedef CUtlSymbolTableLargeBase< CNonThreadsafeTree< false >, false > CUtlSymbolTableLarge;
+typedef CUtlSymbolTableLargeBase< false, 2048, CThreadNullMutex > CUtlSymbolTableLarge;
 // Case-insensitive
-typedef CUtlSymbolTableLargeBase< CNonThreadsafeTree< true >, true > CUtlSymbolTableLarge_CI;
+typedef CUtlSymbolTableLargeBase< true, 2048, CThreadNullMutex > CUtlSymbolTableLarge_CI;
 // Multi-threaded case-sensitive
-typedef CUtlSymbolTableLargeBase< CThreadsafeTree< false >, false > CUtlSymbolTableLargeMT;
+typedef CUtlSymbolTableLargeBase< false, 2048, CThreadMutex > CUtlSymbolTableLargeMT;
 // Multi-threaded case-insensitive
-typedef CUtlSymbolTableLargeBase< CThreadsafeTree< true >, true > CUtlSymbolTableLargeMT_CI;
+typedef CUtlSymbolTableLargeBase< true, 2048, CThreadMutex > CUtlSymbolTableLargeMT_CI;
 
 #endif // UTLSYMBOLLARGE_H

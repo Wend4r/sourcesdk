@@ -85,6 +85,8 @@ struct _CrtMemState;
 
 typedef size_t (*MemAllocFailHandler_t)( size_t );
 
+PLATFORM_INTERFACE void CMemAllocSystemInitialize();
+
 struct GenericMemoryStat_t
 {
 	const char *name;

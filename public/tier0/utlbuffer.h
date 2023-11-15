@@ -425,9 +425,7 @@ protected:
 	DLL_CLASS_IMPORT bool CheckPut( int size );
 	DLL_CLASS_IMPORT bool CheckGet( int size );
 
-	// NOTE: Pass in nPut here even though it is just a copy of m_Put.  This is almost always called immediately 
-	// after modifying m_Put and this lets it stay in a register
-	DLL_CLASS_IMPORT void AddNullTermination( int nPut );
+	DLL_CLASS_IMPORT void AddNullTermination();
 
 	// Methods to help with pretty-printing
 	bool WasLastCharacterCR();
@@ -1048,7 +1046,7 @@ inline void CUtlBuffer::PutObject( T *src )
 			m_Byteswap.SwapFieldsToTargetEndian<T>( (T*)PeekPut(), src );
 		}
 		m_Put += sizeof(T);
-		AddNullTermination( m_Put );
+		AddNullTermination( );
 	}
 }
 
@@ -1077,7 +1075,7 @@ inline void CUtlBuffer::PutTypeBin( T src )
 			m_Byteswap.SwapBufferToTargetEndian<T>( (T*)PeekPut(), &src );
 		}
 		m_Put += sizeof(T);
-		AddNullTermination( m_Put );
+		AddNullTermination( );
 	}
 }
 
@@ -1112,7 +1110,7 @@ inline void CUtlBuffer::PutTypeBin< float >( float src )
 		}
 
 		m_Put += sizeof(float);
-		AddNullTermination( m_Put );
+		AddNullTermination( );
 	}
 }
 
@@ -1150,7 +1148,7 @@ inline void CUtlBuffer::PutTypeBin< double >( double src )
 		}
 
 		m_Put += sizeof(double);
-		AddNullTermination( m_Put );
+		AddNullTermination( );
 	}
 }
 #endif
@@ -1370,7 +1368,7 @@ inline void CUtlBuffer::Clear()
 	m_Error = 0;
 	m_nOffset = 0;
 	m_nMaxPut = -1;
-	AddNullTermination( m_Put );
+	AddNullTermination( );
 }
 
 inline void CUtlBuffer::Purge()

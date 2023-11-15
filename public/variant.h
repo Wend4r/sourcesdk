@@ -13,7 +13,7 @@
 #include "entity2/entityidentity.h"
 #include "entityhandle.h"
 #include "tier0/utlscratchmemory.h"
-#include "tier1/bufferstring.h"
+#include "tier0/bufferstring.h"
 
 // Non-implemented classes/structs
 struct ResourceBindingBase_t;
