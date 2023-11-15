@@ -353,10 +353,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\strtools.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\public\tier1\utlmemory.h"
 				>
 			</File>

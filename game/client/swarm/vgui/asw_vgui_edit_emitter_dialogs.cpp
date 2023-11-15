@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "asw_vgui_edit_emitter_dialogs.h"
 #include "asw_vgui_edit_emitter.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <filesystem.h>
 #include "fmtstr.h"
 #include "convar.h"

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 
 #include "utlvector.h"
 
-// T is the type stored in the stack
+// T is the type stored in the queue
 template< class T, class M = CUtlMemory< T > > 
 class CUtlQueue
 {
@@ -40,13 +40,13 @@ public:
 	// return item at the end of the queue
 	T const& Tail();
 
-	// put a new item on the stack
+	// put a new item on the queue to the tail.
 	void	Insert( T const &element );
 
-	// checks if an element of this value already exists on the stack, returns true if it does
+	// checks if an element of this value already exists on the queue, returns true if it does
 	bool		Check( T const element );
 
-	// Returns the count of elements in the stack
+	// Returns the count of elements in the queue
 	int			Count() const { return m_heap.Count(); }
 	
 	// Is element index valid?

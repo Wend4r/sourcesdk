@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,7 +6,7 @@
 
 #include "VSignInDialog.h"
 #include "VAttractScreen.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 
 #include "vgui_controls/Label.h"
 #include "vgui_controls/Button.h"

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #include "studio.h"
 #include "tier1/utlmap.h"
 #include "tier1/utldict.h"
-#include "tier1/utlbuffer.h"
+#include "tier0/utlbuffer.h"
 #include "filesystem.h"
 #include "tier0/icommandline.h"
 

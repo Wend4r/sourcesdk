@@ -16,7 +16,7 @@
 #include "cl_animevent.h"
 #include "eventlist.h"
 #include "tools/bonelist.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "hltvcamera.h"
 #include "r_efx.h"
 #include "dlight.h"

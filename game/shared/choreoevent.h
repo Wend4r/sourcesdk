@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -21,7 +21,7 @@ class CUtlBuffer;
 class IChoreoStringPool;
 
 
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
 #include "expressionsample.h"
 #include "networkvar.h"

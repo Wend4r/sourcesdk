@@ -1,4 +1,4 @@
-//===== Copyright � 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -51,7 +51,7 @@ public:
 	// Set the size by which the memory grows
 	void Init( int nGrowSize = 0, int nInitSize = 0 );
 
-	// here to match CUtlMemory, but not used, so it can just return NULL
+	// here to match CUtlMemory, but only used by ResetDbgInfo, so it can just return NULL
 	T* Base() { return NULL; }
 	const T* Base() const { return NULL; }
 
@@ -166,7 +166,7 @@ protected:
 
 template< class T >
 CUtlFixedMemory<T>::CUtlFixedMemory( int nGrowSize, int nInitAllocationCount )
-: m_pBlocks( 0 ), m_nAllocationCount( 0 ), m_nGrowSize( 0 )
+	: m_pBlocks( 0 ), m_nAllocationCount( 0 ), m_nGrowSize( 0 )
 {
 	Init( nGrowSize, nInitAllocationCount );
 }

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -80,6 +80,13 @@ public:
 				cost += jumpPenalty * dist;
 			}
 
+			// if this is a 'damaging' area (Fire for example), add penalty
+			if ( area->IsDamaging() )
+			{
+				const float damagingPenalty = 100.0f;
+				cost += damagingPenalty * dist;
+			}
+
 			return cost;
 		}
 	}
@@ -102,6 +109,7 @@ template< typename CostFunctor >
 bool NavAreaBuildPath( CNavArea *startArea, CNavArea *goalArea, const Vector *goalPos, CostFunctor &costFunc, CNavArea **closestArea = NULL, float maxPathLength = 0.0f, int teamID = TEAM_ANY, bool ignoreNavBlockers = false )
 {
 	VPROF_BUDGET( "NavAreaBuildPath", "NextBotSpiky" );
+	SNPROF("NavAreaBuildPath");
 
 	if ( closestArea )
 	{
@@ -237,7 +245,7 @@ bool NavAreaBuildPath( CNavArea *startArea, CNavArea *goalArea, const Vector *go
 				how = (NavTraverseType)dir;
 				++searchIndex;
 
-				if ( IsX360() && searchIndex < floorList->Count() )
+				if ( IsGameConsole() && searchIndex < floorList->Count() )
 				{
 					PREFETCH360( floorList->Element( searchIndex ).area, 0  );
 				}
@@ -305,30 +313,9 @@ bool NavAreaBuildPath( CNavArea *startArea, CNavArea *goalArea, const Vector *go
 			}
 			else // if ( searchWhere == SEARCH_ELEVATORS )
 			{
-				const NavConnectVector &elevatorAreas = area->GetElevatorAreas();
-
-				elevator = area->GetElevator();
-
-				if ( elevator == NULL || searchIndex >= elevatorAreas.Count() )
-				{
-					// done searching connected areas
-					elevator = NULL;
-					break;
-				}
-
-				newArea = elevatorAreas[ searchIndex++ ].area;
-				if ( newArea->GetCenter().z > area->GetCenter().z )
-				{
-					how = GO_ELEVATOR_UP;
-				}
-				else
-				{
-					how = GO_ELEVATOR_DOWN;
-				}
-
-				length = -1.0f;
+				elevator = NULL;
+				break;
 			}
-
 
 			// don't backtrack
 			if ( newArea == area )
@@ -584,16 +571,6 @@ void SearchSurroundingAreas( CNavArea *startArea, const Vector &startPos, Functo
 					AddAreaToOpenList( ladder->m_bottomArea, area, startPos, maxRange );
 				}
 			}
-
-			if ( (options & EXCLUDE_ELEVATORS) == 0 )
-			{
-				const NavConnectVector &elevatorList = area->GetElevatorAreas();
-				FOR_EACH_VEC( elevatorList, it )
-				{
-					CNavArea *elevatorArea = elevatorList[ it ].area;
-					AddAreaToOpenList( elevatorArea, area, startPos, maxRange );
-				}
-			}
 		}
 	}
 }
@@ -780,7 +757,9 @@ CNavArea *FindMinimumCostArea( CNavArea *startArea, CostFunctor &costFunc )
 			continue;
 
 		// compute cost of this area
-		float cost = costFunc( area, startArea, NULL, NULL );
+
+		// HPE_FIX[pfreese]: changed this to only pass three parameters, in accord with the two functors above
+		float cost = costFunc( area, startArea, NULL );
 
 		if (cheapAreaSetCount < NUM_CHEAP_AREAS)
 		{

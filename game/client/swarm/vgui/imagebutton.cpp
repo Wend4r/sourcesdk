@@ -4,7 +4,7 @@
 #include <vgui_controls/Label.h>
 #include <vgui_controls/ImagePanel.h>
 #include <vgui/ISystem.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui/MouseCode.h>
 
 

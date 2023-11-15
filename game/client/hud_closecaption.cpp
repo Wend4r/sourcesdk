@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #include <ctype.h>
 #include "sentence.h"
 #include "hud_closecaption.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include <vgui_controls/Controls.h>
 #include <vgui/IVgui.h>
 #include <vgui/ISurface.h>

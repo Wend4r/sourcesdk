@@ -32,7 +32,7 @@ typedef int (*DedicatedMain_t)(int argc, char **argv);
 
 #if defined(WIN32)
 #define ENGINE_BIN(x) 		"bin\\" #x ".dll"
-#elif defined(LINUX)
+#elif defined(_LINUX)
 #define ENGINE_BIN(x) 		"bin/" #x "_srv.so"
 #define ENGINE_BIN_ALT(x)	"bin/" #x ".so"
 #define LIB_PATH 		"LD_LIBRARY_PATH"

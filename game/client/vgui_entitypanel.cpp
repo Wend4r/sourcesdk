@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This is a panel which is rendered on top of an entity
 //
@@ -12,7 +12,7 @@
 #include "c_BaseTFPlayer.h"
 #include "clientmode_commander.h"
 #include "hud_commander_statuspanel.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "commanderoverlaypanel.h"
 #include <vgui/IVGui.h>
 #include "cdll_util.h"

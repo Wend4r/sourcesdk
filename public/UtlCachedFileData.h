@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,8 +15,8 @@
 #include "filesystem.h" // FileNameHandle_t
 #include "utlrbtree.h"
 #include "utlbuffer.h"
-#include "UtlSortVector.h"
-#include "tier1/strtools.h"
+#include "utlsortvector.h"
+#include "tier0/strtools.h"
 
 #include "tier0/memdbgon.h"
 

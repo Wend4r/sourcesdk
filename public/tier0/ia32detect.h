@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -238,30 +238,24 @@ private:
 	{
 		uint32 m;
 
-#ifdef COMPILER_MSVC64
-		int data[4];
+		int data[4 + 1];
 		tchar * s1;
-		
-		s1 = (tchar *) &data[1];
-		s1[12] = '\0';
-		__cpuid(data, 0);
-		m = data[0];
-		vendor_name = s1;
-#else
-		tchar s1[13];
 
-		s1[12] = '\0';
-		__asm
-		{
-			xor	eax, eax;
-			cpuid;
-			mov	m, eax;
-			mov dword ptr s1 + 0, ebx;
-			mov dword ptr s1 + 4, edx;
-			mov dword ptr s1 + 8, ecx;
-		}
+		s1 = (tchar *) &data[1];
+		__cpuid(data, 0);
+		data[4] = 0;
+		// Returns something like this:
+		//  data[0] = 0x0000000b
+		//  data[1] = 0x756e6547 	Genu
+		//  data[2] = 0x6c65746e 	ntel
+		//  data[3] = 0x49656e69 	ineI
+		//  data[4] = 0x00000000
+
+		m = data[0];
+		int t = data[2];
+		data[2] = data[3];
+		data[3] = t;
 		vendor_name = s1;
-#endif
 		return m;
 	}
 

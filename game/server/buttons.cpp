@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ====
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ====
 //
 // Purpose: Implements buttons.
 //
@@ -10,7 +10,7 @@
 #include "spark.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "buttons.h"
 #include "eventqueue.h"
 

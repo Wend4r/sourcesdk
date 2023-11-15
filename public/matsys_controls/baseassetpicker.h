@@ -12,7 +12,7 @@
 
 #include "vgui_controls/EditablePanel.h"
 #include "vgui_controls/Frame.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "tier1/utllinkedlist.h"
 #include "filesystem.h"
 #include "assetpickerdefs.h"

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,8 +11,6 @@
 #pragma once
 #endif
 
-
-enum SolidType_t : unsigned char;
 class CEntityInstance;
 struct Ray_t;
 struct model_t;

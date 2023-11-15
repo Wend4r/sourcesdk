@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #endif
 
 #include "tier1/UtlVector.h"
-#include "tier1/UtlSymbol.h"
+#include "tier0/utlsymbol.h"
 
 #include "vgui_controls/EditablePanel.h"
 class VControlsListPanel;

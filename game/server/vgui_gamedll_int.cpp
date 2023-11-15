@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -13,7 +13,7 @@
 #include <vgui/IInput.h>
 #include "tier0/vprof.h"
 #include <vgui_controls/Panel.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 using namespace vgui;
 

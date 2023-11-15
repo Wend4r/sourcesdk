@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "sharedInterface.h"
 #include "materialsystem/IMaterial.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "materialsystem/IMaterialVar.h"
 #include "FunctionProxy.h"
 

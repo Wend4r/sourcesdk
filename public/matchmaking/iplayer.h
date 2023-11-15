@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2009, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2009, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,7 +8,7 @@
 #ifndef _IPLAYER_H_
 #define _IPLAYER_H_
 
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 
 struct UserProfileData
 {

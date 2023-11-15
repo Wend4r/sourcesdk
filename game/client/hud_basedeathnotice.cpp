@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Draws CSPort's death notices
 //
@@ -13,7 +13,7 @@
 #include <vgui_controls/panel.h>
 #include <vgui/ISurface.h>
 #include <vgui/ILocalize.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <game_controls/baseviewport.h>
 #include "clientmode_shared.h"
 #include "c_baseplayer.h"

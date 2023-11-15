@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include "materialsystem/imaterialvar.h"
 #include "c_sprite.h"
 #include "tier1/callqueue.h"
-#include "tier1/keyvalues.h"
+#include "tier0/keyvalues.h"
 #include "tier2/tier2.h"
 #include "filesystem.h"
 

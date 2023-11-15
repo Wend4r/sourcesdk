@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2008, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2008, Valve Corporation, All rights reserved. =======
 //
 // Purpose: Add entities to this system, and the Locator will maintain an arrow
 //			on the HUD that points to the entities when they are offscreen.
@@ -34,7 +34,7 @@
 #define LOCATOR_ICON_FX_FADE_OUT		0x00000800	// Set when deactivated so it can smoothly vanish
 #define LOCATOR_ICON_FX_FADE_IN			0x00001000	// Set when activated so it can smoothly appear
 
-#include "tier1/UtlSymbol.h"
+#include "tier0/utlsymbol.h"
 
 // See comments in UtlSymbol on why this is useful
 DECLARE_PRIVATE_SYMBOLTYPE( CGameInstructorSymbol );

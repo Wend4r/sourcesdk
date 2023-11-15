@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,7 +15,7 @@
 #include <memory.h>
 #include <stdarg.h>
 #include "tier0/dbg.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "predictioncopy.h"
 #include "engine/ivmodelinfo.h"
 #include "tier1/fmtstr.h"

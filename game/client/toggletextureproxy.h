@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,9 @@
 class IMaterial;
 class IMaterialVar;
 
+#ifdef _MSC_VER
 #pragma warning (disable : 4100)
+#endif
 
 class CBaseToggleTextureProxy : public IMaterialProxy
 {

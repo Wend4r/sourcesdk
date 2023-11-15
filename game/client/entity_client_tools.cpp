@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -6,7 +6,7 @@
 
 #include "cbase.h"
 #include "toolframework/itoolentity.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "sprite.h"
 #include "enginesprite.h"
 #include "beamdraw.h"
@@ -22,7 +22,9 @@
 #include "tier0/memdbgon.h"
 
 
+#ifdef _MSC_VER
 #pragma warning( disable: 4355 )  // warning C4355: 'this' : used in base member initializer list
+#endif
 
 class CClientTools;
 

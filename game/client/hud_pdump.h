@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 
 #include <vgui_controls/Panel.h>
 #include "hudelement.h"
-#include "tier1/UtlSortVector.h"
+#include "tier1/utlsortvector.h"
 
 namespace vgui
 {

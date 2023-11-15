@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include "vgui_controls/Button.h"
 #include "tier1/utllinkedlist.h"
 #include "tier1/UtlMap.h"
-#include "tier1/keyvalues.h"
+#include "tier0/keyvalues.h"
 #include "tier1/fmtstr.h"
 
 #ifndef _X360

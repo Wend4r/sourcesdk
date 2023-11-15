@@ -4,7 +4,7 @@
 //
 //===============================================================================
 
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "vgui_controls/Button.h"
 #include "layout_system_editor/state_node_panel.h"
 #include "layout_system_editor/rule_instance_node_panel.h"

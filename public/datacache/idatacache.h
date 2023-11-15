@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -16,7 +16,7 @@
 
 
 #include "tier0/dbg.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "tier3/tier3.h"
 
 class IDataCache;
@@ -179,6 +179,7 @@ enum DataCacheAddFlags_t
 abstract_class IDataCacheSection
 {
 public:
+	virtual ~IDataCacheSection() = 0;
 	//--------------------------------------------------------
 
 	virtual IDataCache *GetSharedCache() = 0;

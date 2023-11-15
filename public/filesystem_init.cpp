@@ -20,10 +20,10 @@
 #endif
 #include <stdio.h>
 #include <sys/stat.h>
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "filesystem_init.h"
 #include "tier0/icommandline.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "appframework/IAppSystemGroup.h"
 #include "tier1/smartptr.h"
 #if defined( _X360 )
@@ -36,7 +36,7 @@
 #include <tier0/memdbgon.h>
 
 #if !defined( _X360 )
-#define GAMEINFO_FILENAME			"GameInfo.txt"
+#define GAMEINFO_FILENAME			"gameinfo.txt"
 #else
 // The .xtx file is a TCR requirement, as .txt files cannot live on the DVD.
 // The .xtx file only exists outside the zips (same as .txt and is made during the image build) and is read to setup the search paths.
@@ -381,7 +381,17 @@ bool FileSystem_GetExecutableDir( char *exedir, int exeDirLen )
 	Q_StrRight( exedir, 4, ext, sizeof( ext ) );
 	if ( ext[0] != CORRECT_PATH_SEPARATOR || Q_stricmp( ext+1, "bin" ) != 0 )
 	{
+#if !defined(PLATFORM_64BITS)
 		Q_strncat( exedir, "\\bin", exeDirLen, COPY_ALL_CHARACTERS );
+#else
+#if defined(PLATFORM_WINDOWS)
+		Q_strncat( exedir, "\\bin\\win64", exeDirLen, COPY_ALL_CHARACTERS );
+#elif defined(PLATFORM_LINUX)
+		Q_strncat( exedir, "\\bin\\linux64", exeDirLen, COPY_ALL_CHARACTERS );
+#elif defined(PLATFORM_OSX)
+		Q_strncat( exedir, "\\bin\\osx64", exeDirLen, COPY_ALL_CHARACTERS );
+#endif
+#endif
 		Q_FixSlashes( exedir );
 	}
 	
@@ -1129,7 +1139,7 @@ FSReturnCode_t SetSteamInstallPath( char *steamInstallPath, int steamInstallPath
 	// under osx the bin lives in the bin/ folder, so step back one
 	Q_StripLastDir( steamInstallPath, steamInstallPathLen );
 	const char *pchSteamDLL = "libsteam.dylib";	
-#elif defined(LINUX)
+#elif defined(_LINUX) || defined(_LINUX)
 	// under linux the bin lives in the bin/ folder, so step back one
 	Q_StripLastDir( steamInstallPath, steamInstallPathLen );
 	const char *pchSteamDLL = "libsteam.so";

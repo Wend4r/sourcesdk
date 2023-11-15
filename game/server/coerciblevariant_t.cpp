@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,8 +11,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#ifdef _MSC_VER
 #pragma warning(disable: 4800) // yes, we really do want to coerce ints to bools, 
 							   // that's the whole point of this class.
+#endif
 
 coerciblevariant_t::~coerciblevariant_t()
 {

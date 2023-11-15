@@ -117,6 +117,11 @@ protected:
 	// Gets at the node element....
 	Node_t& InternalNode( I i ) { return m_Memory[i]; }
 	const Node_t& InternalNode( I i ) const { return m_Memory[i]; }
+
+	void ResetDbgInfo()
+	{
+		m_pElements = m_Memory.Base();
+	}
 	
 	// copy constructors not allowed
 	CUtlNTree( CUtlNTree<T, I> const& tree ) { Assert(0); }
@@ -126,6 +131,10 @@ protected:
 	I	m_FirstFree;
 	I	m_ElementCount;		// The number actually in the tree
 	I	m_MaxElementIndex;	// The max index we've ever assigned
+	
+	// For debugging purposes; 
+	// it's in release builds so this can be used in libraries correctly
+	Node_t  *m_pElements;
 };
    
    
@@ -138,6 +147,7 @@ CUtlNTree<T,I>::CUtlNTree( int growSize, int initSize ) :
 	m_Memory(growSize, initSize) 
 {
 	ConstructList();
+	ResetDbgInfo();
 }
 
 template <class T, class I>
@@ -145,6 +155,7 @@ CUtlNTree<T,I>::CUtlNTree( void* pMemory, int memsize ) :
 	m_Memory(pMemory, memsize/sizeof(T))
 {
 	ConstructList();
+	ResetDbgInfo();
 }
 
 template <class T, class I>
@@ -256,7 +267,8 @@ inline bool CUtlNTree<T,I>::IsValidIndex( I i ) const
 template <class T, class I>
 inline bool CUtlNTree<T,I>::IsInTree( I i ) const
 {
-	return (i < m_MaxElementIndex) && (i >= 0) && (InternalNode(i).m_PrevSibling != i);
+	bool bIndexPositive = ( 0 > (I)(-1) ) ? (i >= 0) : true;
+	return (i < m_MaxElementIndex) && bIndexPositive && (InternalNode(i).m_PrevSibling != i);
 }
 
 
@@ -268,6 +280,7 @@ void CUtlNTree<T, I>::EnsureCapacity( int num )
 {
 	MEM_ALLOC_CREDIT_CLASS();
 	m_Memory.EnsureCapacity(num);
+	ResetDbgInfo();
 }
 
 
@@ -281,6 +294,7 @@ void  CUtlNTree<T,I>::Purge()
 	m_Memory.Purge( );
 	m_FirstFree = InvalidIndex();
 	m_MaxElementIndex = 0;
+	ResetDbgInfo();
 }
 
 
@@ -320,6 +334,7 @@ I CUtlNTree<T,I>::AllocInternal( )
 	
 	Node_t &node = InternalNode( elem );
 	node.m_NextSibling = node.m_PrevSibling = node.m_Parent = node.m_FirstChild = INVALID_NTREE_IDX;
+	ResetDbgInfo();
 
 	// one more element baby
 	++m_ElementCount;

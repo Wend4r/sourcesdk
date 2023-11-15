@@ -13,7 +13,7 @@
 
 #include "vgui_controls/frame.h"
 #include "tier1/utlvector.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "p4lib/ip4.h"
 
 

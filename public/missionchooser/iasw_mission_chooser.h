@@ -4,7 +4,7 @@
 #pragma once
 #endif
 
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "utlvector.h"
 
 class IASW_Random_Missions;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Creates a Message box with a question in it and yes/no buttons
 //
@@ -12,7 +12,7 @@
 #pragma once
 #endif
 
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/MessageBox.h>
 #include <vgui_controls/Button.h>
 

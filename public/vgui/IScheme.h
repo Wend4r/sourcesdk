@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 
 #include "vgui/vgui.h"
 #include "tier0/interface.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 
 class Color;
 class KeyValues;

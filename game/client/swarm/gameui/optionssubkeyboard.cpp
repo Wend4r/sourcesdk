@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -18,7 +18,7 @@
 #include "vgui/Cursor.h"
 #include "vgui/IVGui.h"
 #include "vgui/ISurface.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "tier1/convar.h"
 #include "vgui/KeyCode.h"
 #include "vgui/MouseCode.h"
@@ -26,7 +26,7 @@
 #include "vgui/IInput.h"
 
 #include "FileSystem.h"
-#include "tier1/UtlBuffer.h"
+#include "tier0/utlbuffer.h"
 #include "igameuifuncs.h"
 #include "vstdlib/IKeyValuesSystem.h"
 #include "tier2/tier2.h"

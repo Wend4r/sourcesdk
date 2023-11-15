@@ -4,7 +4,7 @@
 #pragma once
 #endif
 
-#include "UtlSortVector.h"
+#include "utlsortvector.h"
 
 #ifdef CLIENT_DLL
 #define CASW_Holdout_Mode C_ASW_Holdout_Mode

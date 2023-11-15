@@ -13,7 +13,7 @@
 #include <vgui_controls/Tooltip.h>
 #include <vgui_controls/FileOpenDialog.h>
 #include <vgui_controls/perforcefilelistframe.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "filesystem.h"
 #include "TagList.h"
 #include "RoomTemplatePanel.h"

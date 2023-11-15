@@ -8,8 +8,8 @@
 #include <mathlib/ssemath.h>
 #include <mathlib/lightdesc.h>
 #include <assert.h>
+#include <tier0/utlbuffer.h>
 #include <tier1/utlvector.h>
-#include <tier1/utlbuffer.h>
 #include <mathlib/mathlib.h>
 #include <bspfile.h>
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,8 +13,9 @@
 
 #include "irecipientfilter.h"
 #include "const.h"
-#include "player.h"
 #include "bitvec.h"
+
+class CBasePlayer;
 
 //-----------------------------------------------------------------------------
 // Purpose: A generic filter for determining whom to send message/sounds etc. to and
@@ -64,8 +65,11 @@ public:
 	void			RemovePlayersFromBitMask( CPlayerBitVec& playerbits );
 
 	void			RemoveSplitScreenPlayers();
+	void			ReplaceSplitScreenPlayersWithOwners();
 
-private:
+	void			RemoveDuplicateRecipients();
+
+protected:
 
 	bool				m_bReliable;
 	int					m_Unk001;
@@ -92,6 +96,11 @@ public:
 	}
 };
 
+class CSingleUserAndReplayRecipientFilter : public CRecipientFilter
+{
+public:
+	CSingleUserAndReplayRecipientFilter( CBasePlayer *player );
+};
 //-----------------------------------------------------------------------------
 // Purpose: Simple class to create a filter for all players on a given team 
 //-----------------------------------------------------------------------------
@@ -194,7 +203,7 @@ public:
 		Filter( origin, attenuation );
 	}
 
-	CPASAttenuationFilter( CBaseEntity *entity, const char *lookupSound, HSOUNDSCRIPTHANDLE& handle ) :
+	CPASAttenuationFilter( CBaseEntity *entity, const char *lookupSound, HSOUNDSCRIPTHASH& handle ) :
 		CPASFilter( static_cast<const Vector&>(entity->GetSoundEmissionOrigin()) )
 	{
 		soundlevel_t level = CBaseEntity::LookupSoundLevel( lookupSound, handle );
@@ -202,7 +211,7 @@ public:
 		Filter( entity->GetSoundEmissionOrigin(), attenuation );
 	}
 
-	CPASAttenuationFilter( const Vector& origin, const char *lookupSound, HSOUNDSCRIPTHANDLE& handle ) :
+	CPASAttenuationFilter( const Vector& origin, const char *lookupSound, HSOUNDSCRIPTHASH& handle ) :
 		CPASFilter( origin )
 	{
 		soundlevel_t level = CBaseEntity::LookupSoundLevel( lookupSound, handle );

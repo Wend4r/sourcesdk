@@ -5,7 +5,7 @@
 #include <vgui_controls/Label.h>
 #include <vgui_controls/Menu.h>
 #include <vgui_controls/MessageBox.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/Tooltip.h>
 #include "vgui/missionchooser_tgaimagepanel.h"
 

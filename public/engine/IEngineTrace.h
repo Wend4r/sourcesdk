@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,13 +12,13 @@
 #pragma once
 #endif
 
-#include "entityhandle.h"
+#include "basehandle.h"
 #include "utlvector.h" //need CUtlVector for IEngineTrace::GetBrushesIn*()
 #include "mathlib/vector4d.h"
 #include "bspflags.h"
 
 class Vector;
-class CEntityInstance;
+class IHandleEntity;
 struct Ray_t;
 class CGameTrace;
 typedef CGameTrace trace_t;
@@ -28,6 +28,7 @@ class ITraceListData;
 class CPhysCollide;
 struct cplane_t;
 struct virtualmeshlist_t;
+class CBrushQuery;
 
 //-----------------------------------------------------------------------------
 // The standard trace filter... NOTE: Most normal traces inherit from CTraceFilter!!!
@@ -43,7 +44,7 @@ enum TraceType_t
 abstract_class ITraceFilter
 {
 public:
-	virtual bool ShouldHitEntity( CEntityInstance *pEntity, int contentsMask ) = 0;
+	virtual bool ShouldHitEntity( IHandleEntity *pEntity, int contentsMask ) = 0;
 	virtual TraceType_t	GetTraceType() const = 0;
 };
 
@@ -78,7 +79,7 @@ public:
 class CTraceFilterWorldOnly : public ITraceFilter
 {
 public:
-	bool ShouldHitEntity( CEntityInstance *pServerEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
 	{
 		return false;
 	}
@@ -91,7 +92,7 @@ public:
 class CTraceFilterWorldAndPropsOnly : public ITraceFilter
 {
 public:
-	bool ShouldHitEntity( CEntityInstance *pServerEntity, int contentsMask )
+	bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
 	{
 		return false;
 	}
@@ -104,7 +105,7 @@ public:
 class CTraceFilterHitAll : public CTraceFilter
 {
 public:
-	virtual bool ShouldHitEntity( CEntityInstance *pServerEntity, int contentsMask )
+	virtual bool ShouldHitEntity( IHandleEntity *pServerEntity, int contentsMask )
 	{ 
 		return true; 
 	}
@@ -124,13 +125,13 @@ abstract_class IEntityEnumerator
 {
 public:
 	// This gets called with each handle
-	virtual bool EnumEntity( CEntityInstance *pHandleEntity ) = 0; 
+	virtual bool EnumEntity( IHandleEntity *pHandleEntity ) = 0; 
 };
 
 
 struct BrushSideInfo_t
 {
-	Vector4D plane;			// The plane of the brush side
+	cplane_t plane;		// The plane of the brush side
 	unsigned short bevel;	// Bevel plane?
 	unsigned short thin;	// Thin?
 };
@@ -144,7 +145,7 @@ abstract_class IEngineTrace
 {
 public:
 	// Returns the contents mask + entity at a particular world-space position
-	virtual int		GetPointContents( const Vector &vecAbsPosition, int contentsMask = MASK_ALL, CEntityInstance** ppEntity = NULL ) = 0;
+	virtual int		GetPointContents( const Vector &vecAbsPosition, int contentsMask = MASK_ALL, IHandleEntity** ppEntity = NULL ) = 0;
 	
 	// Returns the contents mask of the world only @ the world-space position (static props are ignored)
 	virtual int		GetPointContents_WorldOnly( const Vector &vecAbsPosition, int contentsMask = MASK_ALL ) = 0;
@@ -157,7 +158,7 @@ public:
 	virtual int		GetPointContents_Collideable( ICollideable *pCollide, const Vector &vecAbsPosition ) = 0;
 
 	// Traces a ray against a particular entity
-	virtual void	ClipRayToEntity( const Ray_t &ray, unsigned int fMask, CEntityInstance *pEnt, trace_t *pTrace ) = 0;
+	virtual void	ClipRayToEntity( const Ray_t &ray, unsigned int fMask, IHandleEntity *pEnt, trace_t *pTrace ) = 0;
 
 	// Traces a ray against a particular entity
 	virtual void	ClipRayToCollideable( const Ray_t &ray, unsigned int fMask, ICollideable *pCollide, trace_t *pTrace ) = 0;
@@ -184,14 +185,14 @@ public:
 	virtual void	EnumerateEntities( const Vector &vecAbsMins, const Vector &vecAbsMaxs, IEntityEnumerator *pEnumerator ) = 0;
 
 	// Convert a handle entity to a collideable.  Useful inside enumer
-	virtual ICollideable *GetCollideable( CEntityInstance *pEntity ) = 0;
+	virtual ICollideable *GetCollideable( IHandleEntity *pEntity ) = 0;
 
 	// HACKHACK: Temp for performance measurments
 	virtual int GetStatByIndex( int index, bool bClear ) = 0;
 
 
 	//finds brushes in an AABB, prone to some false positives
-	virtual void GetBrushesInAABB( const Vector &vMins, const Vector &vMaxs, CUtlVector<int> *pOutput, int iContentsMask = 0xFFFFFFFF ) = 0;
+	virtual void GetBrushesInAABB( const Vector &vMins, const Vector &vMaxs, CBrushQuery *pQuery, int iContentsMask = 0xFFFFFFFF, int unknown = 0 ) = 0;
 
 	//Creates a CPhysCollide out of all displacements wholly or partially contained in the specified AABB
 	virtual CPhysCollide* GetCollidableFromDisplacementsInAABB( const Vector& vMins, const Vector& vMaxs ) = 0;
@@ -202,8 +203,9 @@ public:
 	// gets a specific diplacement mesh
 	virtual void GetDisplacementMesh( int nIndex, virtualmeshlist_t *pMeshTriList ) = 0;
 	
-	//retrieve brush planes and contents, returns true if data is being returned in the output pointers, false if the brush doesn't exist
-	virtual bool GetBrushInfo( int iBrush, CUtlVector<BrushSideInfo_t> *pBrushSideInfoOut, int *pContentsOut ) = 0;
+	// Retrieve brush planes and contents, returns 0 if the brush doesn't exist
+	// Returns number of sides filled out if there is space, negative number of required elements if not or null is given
+	virtual int GetBrushInfo( int iBrush, int *pContentsOut, BrushSideInfo_t *pBrushSideInfoOut, int iBrushSideInfoOutSize ) = 0;
 
 	virtual bool PointOutsideWorld( const Vector &ptTest ) = 0; //Tests a point to see if it's outside any playable area
 

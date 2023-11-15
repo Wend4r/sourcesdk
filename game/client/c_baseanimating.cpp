@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -23,7 +23,7 @@
 #include "engine/ivmodelinfo.h"
 #include "engine/IVDebugOverlay.h"
 #include "c_te_effect_dispatch.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "c_rope.h"
 #include "isaverestore.h"
 #include "datacache/imdlcache.h"

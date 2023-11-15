@@ -1,4 +1,4 @@
-//====== Copyright � 1996-2005, Valve Corporation, All rights reserved. =====//
+//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =====//
 //
 // Purpose: Client-side CBasePlayer.
 //
@@ -28,7 +28,7 @@
 #include "tier0/vprof.h"
 #include "filesystem.h"
 #include "bitbuf.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "particles_simple.h"
 #include "fx_water.h"
 #include "hltvcamera.h"

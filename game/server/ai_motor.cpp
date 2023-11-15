@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -34,8 +34,10 @@ void DebugNoteMovementFailure()
 }
 
 // a place to put breakpoints
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4189)
+#endif
 AIMoveResult_t DbgResult( AIMoveResult_t result )
 {
 	if ( result < AIMR_OK )

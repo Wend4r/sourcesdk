@@ -1,5 +1,5 @@
 #include "kv_editor_base_panel.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>

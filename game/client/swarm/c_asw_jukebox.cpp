@@ -2,7 +2,7 @@
 #include "c_asw_jukebox.h"
 #include "soundenvelope.h"
 #include "filesystem.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "gamestringpool.h"
 #include "fmtstr.h"
 

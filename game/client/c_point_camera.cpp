@@ -9,7 +9,7 @@
 #include "C_Point_Camera.h"
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
-#include "tier1/keyvalues.h"
+#include "tier0/keyvalues.h"
 
 
 // memdbgon must be the last include file in a .cpp file!!!

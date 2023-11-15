@@ -1,5 +1,5 @@
 #include "cbase.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <filesystem.h>
 #include "asw_map_scores.h"
 

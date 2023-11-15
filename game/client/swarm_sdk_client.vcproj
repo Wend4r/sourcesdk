@@ -9105,11 +9105,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\characterset.h"
+				RelativePath="..\..\public\tier0\characterset.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\checksum_md5.h"
+				RelativePath="..\..\public\tier0\checksum_md5.h"
 				>
 			</File>
 			<File
@@ -9289,7 +9289,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\appframework\IAppSystem.h"
+				RelativePath="..\..\public\appframework\iappsystem.h"
 				>
 			</File>
 			<File
@@ -9565,10 +9565,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\KeyValues.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\public\tier0\l2cache.h"
 				>
 			</File>
@@ -9602,10 +9598,6 @@
 			</File>
 			<File
 				RelativePath="..\..\public\tier0\memdbgon.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\public\tier1\mempool.h"
 				>
 			</File>
 			<File
@@ -9781,10 +9773,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\strtools.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\public\studio.h"
 				>
 			</File>
@@ -9810,10 +9798,6 @@
 			</File>
 			<File
 				RelativePath="..\..\public\tier1\utlbidirectionalset.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\public\tier1\utlbuffer.h"
 				>
 			</File>
 			<File
@@ -9861,7 +9845,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\utlsymbol.h"
+				RelativePath="..\..\public\tier0\utlsymbol.h"
 				>
 			</File>
 			<File

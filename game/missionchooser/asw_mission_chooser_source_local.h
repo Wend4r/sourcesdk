@@ -5,7 +5,7 @@
 #endif
 
 #include "missionchooser/iasw_mission_chooser_source.h"
-#include "tier1/UtlSortVector.h"
+#include "tier1/utlsortvector.h"
 #include "tier3/tier3dm.h"
 
 class IASW_Random_Missions;

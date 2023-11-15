@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Game & Client shared functions moved from physics.cpp
 //
@@ -15,7 +15,7 @@
 #include "vphysics/object_hash.h"
 #include "vphysics/friction.h"
 #include "coordsize.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "decals.h"
 #include "IEffects.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
@@ -31,7 +31,9 @@ IPhysics			*physics = NULL;
 IPhysicsObject		*g_PhysWorldObject = NULL;
 IPhysicsCollision	*physcollision = NULL;
 IPhysicsEnvironment	*physenv = NULL;
-
+#ifdef PORTAL
+IPhysicsEnvironment	*physenv_main = NULL;
+#endif
 IPhysicsSurfaceProps *physprops = NULL;
 // UNDONE: This hash holds both entity & IPhysicsObject pointer pairs
 // UNDONE: Split into separate hashes?
@@ -55,8 +57,10 @@ const objectparams_t g_PhysDefaultObjectParams =
 };
 
 PRECACHE_REGISTER_BEGIN( GLOBAL, PhysFrictionEffect )
+#ifndef DOTA_DLL
 	PRECACHE( PARTICLE_SYSTEM, "impact_physics_dust" )
 	PRECACHE( PARTICLE_SYSTEM, "impact_physics_sparks" )
+#endif
 PRECACHE_REGISTER_END()
 
 void CSolidSetDefaults::SetDefaults( void *pData )
@@ -297,6 +301,9 @@ bool PhysModelParseSolidByIndex( solid_t &solid, CBaseEntity *pEntity, vcollide_
 //-----------------------------------------------------------------------------
 IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles, solid_t *pSolid )
 {
+	if ( !physenv )
+		return NULL;
+
 	vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
 	if ( !pCollide || !pCollide->solidCount )
 		return NULL;
@@ -352,6 +359,9 @@ IPhysicsObject *PhysModelCreate( CBaseEntity *pEntity, int modelIndex, const Vec
 //-----------------------------------------------------------------------------
 IPhysicsObject *PhysModelCreateUnmoveable( CBaseEntity *pEntity, int modelIndex, const Vector &origin, const QAngle &angles )
 {
+	if ( !physenv )
+		return NULL;
+
 	vcollide_t *pCollide = modelinfo->GetVCollide( modelIndex );
 	if ( !pCollide || !pCollide->solidCount )
 		return NULL;
@@ -406,6 +416,9 @@ IPhysicsObject *PhysModelCreateUnmoveable( CBaseEntity *pEntity, int modelIndex,
 //-----------------------------------------------------------------------------
 IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide *pModel, const Vector &origin, const QAngle &angles, const char *pName, bool isStatic, solid_t *pSolid )
 {
+	if ( !physenv )
+		return NULL;
+
 	solid_t tmpSolid;
 	if ( !pSolid )
 	{
@@ -441,6 +454,9 @@ IPhysicsObject *PhysModelCreateCustom( CBaseEntity *pEntity, const CPhysCollide 
 //-----------------------------------------------------------------------------
 IPhysicsObject *PhysSphereCreate( CBaseEntity *pEntity, float radius, const Vector &origin, solid_t &solid )
 {
+	if ( !physenv )
+		return NULL;
+
 	int surfaceProp = -1;
 	if ( solid.surfaceprop[0] )
 	{
@@ -481,7 +497,11 @@ void PhysDestroyObject( IPhysicsObject *pObject, CBaseEntity *pEntity )
 	{
 		g_EntityCollisionHash->RemoveAllPairsForObject( pEntity );
 	}
-	physenv->DestroyObject( pObject );
+
+	if ( physenv )
+	{
+		physenv->DestroyObject( pObject );
+	}
 }
 
 void AddSurfacepropFile( const char *pFileName, IPhysicsSurfaceProps *pProps, IFileSystem *pFileSystem )
@@ -495,10 +515,6 @@ void AddSurfacepropFile( const char *pFileName, IPhysicsSurfaceProps *pProps, IF
 
 		// read the file
 		int nBufSize = len+1;
-		if ( IsXbox() )
-		{
-			nBufSize = AlignValue( nBufSize , 512 );
-		}
 		char *buffer = (char *)stackalloc( nBufSize );
 		pFileSystem->ReadEx( buffer, nBufSize, len, file );
 		pFileSystem->Close( file );
@@ -540,6 +556,9 @@ void PhysParseSurfaceData( IPhysicsSurfaceProps *pProps, IFileSystem *pFileSyste
 
 void PhysCreateVirtualTerrain( CBaseEntity *pWorld, const objectparams_t &defaultParams )
 {
+	if ( !physenv )
+		return;
+
 	char nameBuf[1024];
 	for ( int i = 0; i < MAX_MAP_DISPINFO; i++ )
 	{
@@ -565,6 +584,9 @@ IPhysicsObject *PhysCreateWorld_Shared( CBaseEntity *pWorld, vcollide_t *pWorldC
 {
 	solid_t solid;
 	fluid_t fluid;
+
+	if ( !physenv )
+		return NULL;
 
 	int surfaceData = physprops->GetSurfaceIndex( "default" );
 
@@ -975,7 +997,7 @@ void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, float ene
 	float volume = energy * energy;
 		
 	unsigned short soundName = psurf->sounds.scrapeRough;
-	short *soundHandle = &psurf->soundhandles.scrapeRough;
+	HSOUNDSCRIPTHASH *soundHandle = &psurf->soundhandles.scrapeRough;
 
 	if ( psurf->sounds.scrapeSmooth && phit->audio.roughnessFactor < psurf->audio.roughThreshold )
 	{
@@ -993,7 +1015,7 @@ void PhysFrictionSound( CBaseEntity *pEntity, IPhysicsObject *pObject, float ene
 // Input  : idx - 
 // Output : static void
 //-----------------------------------------------------------------------------
-static HSOUNDSCRIPTHANDLE PrecachePhysicsSoundByStringIndex( int idx )
+static HSOUNDSCRIPTHASH PrecachePhysicsSoundByStringIndex( int idx )
 {
 	// Only precache if a value was set in the script file...
 	if ( idx != 0 )
@@ -1001,7 +1023,7 @@ static HSOUNDSCRIPTHANDLE PrecachePhysicsSoundByStringIndex( int idx )
 		return CBaseEntity::PrecacheScriptSound( physprops->GetString( idx ) );
 	}
 
-	return SOUNDEMITTER_INVALID_HANDLE;
+	return SOUNDEMITTER_INVALID_HASH;
 }
 
 //-----------------------------------------------------------------------------
@@ -1031,4 +1053,15 @@ void PrecachePhysicsSounds()
 	}
 }
 
+float PhysGetEntityMass( CBaseEntity *pEntity )
+{
+	IPhysicsObject *pList[VPHYSICS_MAX_OBJECT_LIST_COUNT];
+	int physCount = pEntity->VPhysicsGetObjectList( pList, ARRAYSIZE(pList) );
+	float otherMass = 0;
+	for ( int i = 0; i < physCount; i++ )
+	{
+		otherMass += pList[i]->GetMass();
+	}
 
+	return otherMass;
+}

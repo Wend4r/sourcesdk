@@ -1,4 +1,4 @@
-//========== Copyright � 2005, Valve Corporation, All rights reserved. ========
+//========== Copyright © 2005, Valve Corporation, All rights reserved. ========
 //
 // Purpose: Tools for correctly implementing & handling reference counted
 //			objects
@@ -147,8 +147,8 @@ public:
 	operator bool()											{ return !BaseClass::operator!(); }
 
 	void SafeRelease()										{ if ( BaseClass::m_pObject ) BaseClass::m_pObject->Release(); BaseClass::m_pObject = 0; }
-	void AssignAddRef( T *pFrom )							{ SafeRelease(); if (pFrom) pFrom->AddRef(); BaseClass::m_pObject = pFrom; }
-	void AddRefAssignTo( T *&pTo )							{ ::SafeRelease( pTo ); if ( BaseClass::m_pObject ) BaseClass::m_pObject->AddRef(); pTo = BaseClass::m_pObject; }
+	void AssignAddRef( T *pFrom )							{ if (pFrom) pFrom->AddRef(); SafeRelease(); BaseClass::m_pObject = pFrom; }
+	void AddRefAssignTo( T *&pTo )							{ if ( BaseClass::m_pObject ) BaseClass::m_pObject->AddRef(); ::SafeRelease( pTo ); pTo = BaseClass::m_pObject; }
 };
 
 
@@ -348,8 +348,11 @@ public:
 //			referencing problems
 //-----------------------------------------------------------------------------
 
-#if 0
-template <class BASE_REFCOUNTED, int FINAL_REFS = 0, const char *pszName = NULL>
+#if defined( __clang__ )
+template <class BASE_REFCOUNTED, int FINAL_REFS, const char *pszName>
+#else
+template <class BASE_REFCOUNTED, int FINAL_REFS = 0, const char *pszName = (const char *)NULL>
+#endif
 class CRefDebug : public BASE_REFCOUNTED
 {
 public:
@@ -380,7 +383,6 @@ public:
 	}
 #endif
 };
-#endif
 
 //-----------------------------------------------------------------------------
 

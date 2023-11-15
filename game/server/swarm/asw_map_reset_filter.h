@@ -2,7 +2,7 @@
 #define _INCLUDED_ASW_MAP_RESET_FILTER_H
  
 #include "mapentities.h"
-#include "UtlSortVector.h"
+#include "utlsortvector.h"
 
 // Define the comparison function for sorting
 

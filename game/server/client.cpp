@@ -18,7 +18,7 @@
 #include "ndebugoverlay.h"
 #include "engine/IEngineSound.h"
 #include <ctype.h>
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "te_effect_dispatch.h"
 #include "globals.h"
 #include "nav_mesh.h"

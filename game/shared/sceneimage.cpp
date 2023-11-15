@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,10 +12,10 @@
 
 #include "lzma/lzma.h"
 
-#include "tier1/utlbuffer.h"
-#include "tier1/UtlStringMap.h"
+#include "tier0/utlbuffer.h"
+#include "tier1/utlstringmap.h"
 #include "tier1/utlvector.h"
-#include "tier1/UtlSortVector.h"
+#include "tier1/utlsortvector.h"
 
 #include "scriplib.h"
 #include "cmdlib.h"

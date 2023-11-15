@@ -1,4 +1,4 @@
-//===== Copyright © Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ Valve Corporation, All rights reserved. ======//
 #ifndef IGAMEUISYSTEMMGR_H
 #define IGAMEUISYSTEMMGR_H
 
@@ -22,7 +22,7 @@ class IMaterialProxy;
 
 // External includes
 #include "tier1/timeutils.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 #include "materialsystem/materialsystemutil.h"
 #include "materialsystem/imaterialsystem.h"
 #include "vgui_surfacelib/ifontsurface.h" 

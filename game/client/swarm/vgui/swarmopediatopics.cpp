@@ -4,7 +4,7 @@
 #include <vgui_controls/ListPanel.h>
 #include "SwarmopediaTopics.h"
 #include "SwarmopediaPanel.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "FileSystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

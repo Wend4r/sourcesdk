@@ -14,19 +14,7 @@
     <ClInclude Include="..\public\tier1\bitbuf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\cbyteswap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\public\tier1\callqueue.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\characterset.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\checksum_crc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\checksum_md5.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\CommandBuffer.h">
@@ -44,9 +32,6 @@
     <ClInclude Include="..\public\tier1\delegates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\diff.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\public\tier1\fmtstr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -62,22 +47,10 @@
     <ClInclude Include="..\public\tier1\interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\KeyValues.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\public\tier1\lzmaDecoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\lzss.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\mempool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\memstack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\netadr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\processor_detect.h">
@@ -92,25 +65,13 @@
     <ClInclude Include="..\public\tier1\smartptr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\stringpool.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\strtools.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\public\tier1\tier1.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\uniqueid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\utlbidirectionalset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\utlblockmemory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\utlbuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\utlbufferutil.h">
@@ -152,19 +113,13 @@
     <ClInclude Include="..\public\tier1\utlrbtree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\UtlSortVector.h">
+    <ClInclude Include="..\public\tier1\utlsortvector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\utlstack.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\utlstring.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\UtlStringMap.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\public\tier1\utlsymbol.h">
+    <ClInclude Include="..\public\tier1\utlstringmap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\public\tier1\utlvector.h">

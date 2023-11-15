@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 #include "vgui/IImage.h"
 #include "vgui/ILocalize.h"
 #include "vgui_controls/ImagePanel.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "VFlyoutMenu.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

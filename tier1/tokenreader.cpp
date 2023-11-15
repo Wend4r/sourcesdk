@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #include <string.h>
 #include "tokenreader.h"
 #include "tier0/platform.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "tier0/dbg.h"
 
 //-----------------------------------------------------------------------------

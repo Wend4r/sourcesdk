@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,7 +6,7 @@
 
 #include "cbase.h"
 #include "VGameSettings.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 
 #include <ctype.h>
 #include <vstdlib/random.h>

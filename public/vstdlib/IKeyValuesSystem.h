@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,18 +12,9 @@
 
 #include "vstdlib/vstdlib.h"
 
-class KeyValues;
-
-class HKeySymbol
-{
-	HKeySymbol() : nIndex(~0) { }
-	HKeySymbol(uint32 idx) : nIndex(idx) { }
-
-	inline uint32 Get() { return nIndex; }
-
-private:
-	uint32 nIndex;
-};
+// handle to a KeyValues key name symbol
+typedef int HKeySymbol;
+#define INVALID_KEY_SYMBOL (-1)
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to shared data repository for KeyValues (included in vgui_controls.lib)
@@ -32,9 +23,16 @@ private:
 class IKeyValuesSystem
 {
 public:
+	virtual ~IKeyValuesSystem() = 0;
+
+	// registers the size of the KeyValues in the specified instance
+	// so it can build a properly sized memory pool for the KeyValues objects
+	// the sizes will usually never differ but this is for versioning safety
+	virtual void RegisterSizeofKeyValues(int size) = 0;
+
 	// allocates/frees a KeyValues object from the shared mempool
-	virtual void *AllocKeyValuesMemory() = 0;
-	virtual void FreeKeyValuesMemory(KeyValues *pKV) = 0;
+	virtual void *AllocKeyValuesMemory(int size) = 0;
+	virtual void FreeKeyValuesMemory(void *pMem) = 0;
 
 	// symbol table access (used for key names)
 	virtual HKeySymbol GetSymbolForString( const char *name, bool bCreate = true ) = 0;
@@ -51,12 +49,6 @@ public:
 
 	// symbol table access from code with case-preserving requirements (used for key names)
 	virtual HKeySymbol GetSymbolForStringCaseSensitive( HKeySymbol &hCaseInsensitiveSymbol, const char *name, bool bCreate = true ) = 0;
-	virtual HKeySymbol GetCaseInsensitiveSymbolFromCaseSensitiveSymbol( HKeySymbol symbol ) = 0;
-	
-	virtual const char *CopyString( const char * ) = 0;
-	virtual void ReleaseStringCopy( const char * ) = 0;
-	virtual const wchar_t *CopyWString( const wchar_t * ) = 0;
-	virtual void ReleaseWStringCopy( const wchar_t * ) = 0;
 };
 
 VSTDLIB_INTERFACE IKeyValuesSystem *KeyValuesSystem();

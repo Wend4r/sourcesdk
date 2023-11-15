@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Contains the implementation of game rules for multiplayer.
 //
@@ -9,7 +9,7 @@
 #include "multiplay_gamerules.h"
 #include "viewport_panel_names.h"
 #include "gameeventdefs.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "filesystem.h"
 #include "mp_shareddefs.h"
 

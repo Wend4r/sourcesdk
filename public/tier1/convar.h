@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -18,8 +18,9 @@
 
 #include "tier0/dbg.h"
 #include "tier1/utlvector.h"
-#include "tier1/utlstring.h"
-#include "Color.h"
+#include "tier0/utlstring.h"
+#include "color.h"
+#include "splitscreenslot.h"
 #include "mathlib/vector4d.h"
 #include "playerslot.h"
 
@@ -51,7 +52,104 @@ class ConVarRefAbstract;
 class ConCommandRefAbstract;
 struct characterset_t;
 
-class ALIGN8 ConVarHandle
+#define ObscureConvarValue StoreValue
+#define nObscuring loc
+// This performs a simple, reversible obscuring of the floating point value passed in with
+// the obscuring val. This just ensures that we don't see the exact bits of fVal in memory 
+// when scanned by CheatEngine, etc.
+// Note that this function is actually called StoreValue by the compiler due to the preprocessor
+// define above.
+FORCEINLINE float ObscureConvarValue( float fVal, int nObscuring )
+{
+	union FloatIntUnion_t
+	{
+		float fValue;
+		int   nValue;
+	} a;
+
+	a.fValue = fVal;
+	a.nValue ^= nObscuring;
+
+	return a.fValue;
+}
+
+// Just masks the value to make it harder to find in memory using Cheat Engine.
+// Note that this function is actually called StoreValue by the compiler due to the preprocessor
+// define above.
+FORCEINLINE int ObscureConvarValue( int nVal, int nObscuring )
+{
+	return nVal ^ nObscuring;
+}
+
+#undef nObscuring
+
+//-----------------------------------------------------------------------------
+// Sources of console commands
+//-----------------------------------------------------------------------------
+enum cmd_source_t
+{
+	// Added to the console buffer by gameplay code.  Generally unrestricted.
+	kCommandSrcCode,
+
+	// Sent from code via engine->ClientCmd, which is restricted to commands visible
+	// via FCVAR_CLIENTCMD_CAN_EXECUTE.
+	kCommandSrcClientCmd,
+
+	// Typed in at the console or via a user key-bind.  Generally unrestricted, although
+	// the client will throttle commands sent to the server this way to 16 per second.
+	kCommandSrcUserInput,
+
+	// Came in over a net connection as a clc_stringcmd
+	// host_client will be valid during this state.
+	//
+	// Restricted to FCVAR_GAMEDLL commands (but not convars) and special non-ConCommand
+	// server commands hardcoded into gameplay code (e.g. "joingame")
+	kCommandSrcNetClient,
+
+	// Received from the server as the client
+	//
+	// Restricted to commands with FCVAR_SERVER_CAN_EXECUTE
+	kCommandSrcNetServer,
+
+	// Being played back from a demo file
+	//
+	// Not currently restricted by convar flag, but some commands manually ignore calls
+	// from this source.  FIXME: Should be heavily restricted as demo commands can come
+	// from untrusted sources.
+	kCommandSrcDemoFile,
+
+	// Invalid value used when cleared
+	kCommandSrcInvalid = -1
+};
+
+
+//-----------------------------------------------------------------------------
+// Any executable that wants to use ConVars need to implement one of
+// these to hook up access to console variables.
+//-----------------------------------------------------------------------------
+class IConCommandBaseAccessor
+{
+public:
+	// Flags is a combination of FCVAR flags in cvar.h.
+	// hOut is filled in with a handle to the variable.
+	virtual bool RegisterConCommandBase( ConCommandBase *pVar ) = 0;
+};
+
+
+//-----------------------------------------------------------------------------
+// Helper method for console development
+//-----------------------------------------------------------------------------
+#if defined( USE_VXCONSOLE )
+void ConVar_PublishToVXConsole();
+#else
+inline void ConVar_PublishToVXConsole() {}
+#endif
+
+
+#define COMMAND_COMPLETION_MAXITEMS		64
+#define COMMAND_COMPLETION_ITEM_LENGTH	64
+
+class ALIGN_N(sizeof(void*)) ConVarHandle
 {
 public:
     bool IsValid() { return value != kInvalidConVarHandle; }
@@ -63,7 +161,7 @@ private:
 
 private:
 	static const uint32 kInvalidConVarHandle = 0xFFFFFFFF;
-} ALIGN8_POST;
+} ALIGN_N(sizeof(void*));
 enum CommandTarget_t
 {
 	CT_NO_TARGET = -1,
@@ -94,7 +192,7 @@ private:
 	CPlayerSlot m_nPlayerSlot;
 };
 
-class ALIGN8 ConCommandHandle
+class ALIGN_N(sizeof(void *)) ConCommandHandle
 {
 public:
     bool IsValid() { return value != kInvalidConCommandHandle; }
@@ -112,22 +210,7 @@ private:
 
 private:
 	static const uint16 kInvalidConCommandHandle = 0xFFFF;
-} ALIGN8_POST;
-
-struct CSplitScreenSlot
-{
-	CSplitScreenSlot( int index )
-	{
-		m_Data = index;
-	}
-	
-	int Get() const
-	{
-		return m_Data;
-	}
-	
-	int m_Data;
-};
+} ALIGN_N_POST(sizeof(void*));
 
 //-----------------------------------------------------------------------------
 // ConVar flags
@@ -318,7 +401,7 @@ class CCommand
 public:
 	CCommand();
 	CCommand( int nArgC, const char **ppArgV );
-	bool Tokenize( const char *pCommand, characterset_t *pBreakSet = NULL );
+	bool Tokenize( const char *pCommand, cmd_source_t source, characterset_t *pBreakSet = NULL );
 	void Reset();
 
 	int ArgC() const;

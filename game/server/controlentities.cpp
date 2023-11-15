@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: contains entities who have no physical representation in the game, and who
 //		must be triggered by other entities to cause their effects.
@@ -8,7 +8,7 @@
 
 #include "cbase.h"
 #include "player.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

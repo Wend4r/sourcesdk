@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A panel "metaclass" is a name given to a particular type of 
 // panel with particular instance data. Such panels tend to be dynamically
@@ -9,11 +9,11 @@
 //=============================================================================//
 #include "cbase.h"
 #include "PanelMetaClassMgr.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/Panel.h>
 #include "UtlDict.h"
 #include "filesystem.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

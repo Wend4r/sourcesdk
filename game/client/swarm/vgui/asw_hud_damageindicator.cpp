@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Hud element that indicates the direction of damage taken by the player
 //
@@ -10,7 +10,7 @@
 #include "hud_macros.h"
 #include "iclientmode.h"
 #include "view.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/AnimationController.h>
 #include <vgui/ISurface.h>
 #include "vguimatsurface/IMatSystemSurface.h"

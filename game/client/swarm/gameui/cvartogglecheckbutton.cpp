@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,7 +8,7 @@
 #include "CvarToggleCheckButton.h"
 #include "EngineInterface.h"
 #include <vgui/IVGui.h>
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "tier1/convar.h"
 #include "IGameUIFuncs.h"
 

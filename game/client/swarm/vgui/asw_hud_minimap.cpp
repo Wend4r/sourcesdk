@@ -9,7 +9,7 @@
 
 #define PAIN_NAME "sprites/%d_pain.vmt"
 
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui/ISurface.h>
 #include <vgui/ISystem.h>
 #include <vgui_controls/AnimationController.h>

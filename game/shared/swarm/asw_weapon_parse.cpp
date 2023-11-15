@@ -1,5 +1,5 @@
 #include "cbase.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "asw_weapon_parse.h"
 
 FileWeaponInfo_t* CreateWeaponInfo()

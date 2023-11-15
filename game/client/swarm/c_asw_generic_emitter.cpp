@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "c_asw_mesh_emitter_entity.h"
 #include "c_asw_generic_emitter.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include <filesystem.h>
 #include "gamestringpool.h"
 #include "c_tracer.h"

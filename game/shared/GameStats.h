@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -11,7 +11,7 @@
 #endif
 
 #include "tier1/utldict.h"
-#include "tier1/utlbuffer.h"
+#include "tier0/utlbuffer.h"
 #include "igamesystem.h"
 
 const int GAMESTATS_VERSION = 1;

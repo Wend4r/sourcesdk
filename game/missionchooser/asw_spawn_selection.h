@@ -11,7 +11,7 @@
 
 #include "missionchooser/iasw_spawn_selection.h"
 #include "utlvector.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 
 
 class CASW_Entry : public IASWSpawnDefinitionEntry			

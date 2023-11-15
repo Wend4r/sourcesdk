@@ -20,7 +20,7 @@
 #include "saverestore_utlvector.h"
 #include "ai_baseactor.h"
 #include "AI_Criteria.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "checksum_crc.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "utlbuffer.h"

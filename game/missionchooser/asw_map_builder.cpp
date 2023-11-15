@@ -4,7 +4,7 @@
 #include "missionchooser/iasw_random_missions.h"
 #include "filesystem.h"
 #include "threadtools.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "asw_mission_chooser.h"
 #ifdef SUPPORT_VBSP_2
 #include "vbsp2lib/serializesimplebspfile.h"
@@ -22,7 +22,9 @@
 
 // includes needed for the creating of a new process and handling its output
 // ASW TODO: Handle Linux/Xbox way of doing this
+#ifdef _MSC_VER
 #pragma warning( disable : 4005 )
+#endif
 #include <windows.h>
 #include <iostream>
 

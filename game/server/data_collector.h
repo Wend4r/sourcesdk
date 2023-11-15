@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #define _DATA_COLLECTOR_H_
 
 #include <igameevents.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 /**
  * This class is used to monitor the event stream and

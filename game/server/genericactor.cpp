@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 #include "ai_basenpc.h"
 #include "ai_hull.h"
 #include "ai_baseactor.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
 

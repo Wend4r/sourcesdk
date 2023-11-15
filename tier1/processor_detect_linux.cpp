@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: linux dependant ASM code for CPU capability detection
 //
@@ -6,49 +6,68 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#define cpuid(in,a,b,c,d)												\
-	asm("pushl %%ebx\n\t" "cpuid\n\t" "movl %%ebx,%%esi\n\t" "pop %%ebx": "=a" (a), "=S" (b), "=c" (c), "=d" (d) : "a" (in));
+
+// NOTE: This has to be the last file included! (turned off below, since this is included like a header)
+#include "tier0/memdbgon.h"
+
+
+
+
+// Turn off memdbg macros (turned on up top) since this is included like a header
+#include "tier0/memdbgoff.h"
+
+static void cpuid(uint32 function, uint32& out_eax, uint32& out_ebx, uint32& out_ecx, uint32& out_edx)
+{
+#if defined(PLATFORM_64BITS)
+	asm("mov %%rbx, %%rsi\n\t"
+		"cpuid\n\t"
+		"xchg %%rsi, %%rbx"
+		: "=a" (out_eax),
+		  "=S" (out_ebx),
+		  "=c" (out_ecx),
+		  "=d" (out_edx)
+		: "a" (function) 
+	);
+#else
+	asm("mov %%ebx, %%esi\n\t"
+		"cpuid\n\t"
+		"xchg %%esi, %%ebx"
+		: "=a" (out_eax),
+		  "=S" (out_ebx),
+		  "=c" (out_ecx),
+		  "=d" (out_edx)
+		: "a" (function) 
+	);
+#endif
+}
 
 bool CheckMMXTechnology(void)
 {
-#ifndef PLATFORM_64BITS
-    unsigned long eax,ebx,edx,unused;
+    uint32 eax,ebx,edx,unused;
     cpuid(1,eax,ebx,unused,edx);
 
     return edx & 0x800000;
-#else
-    return true;
-#endif
 }
 
 bool CheckSSETechnology(void)
 {
-#ifndef PLATFORM_64BITS
-    unsigned long eax,ebx,edx,unused;
+    uint32 eax,ebx,edx,unused;
     cpuid(1,eax,ebx,unused,edx);
 
     return edx & 0x2000000L;
-#else
-    return true;
-#endif
 }
 
 bool CheckSSE2Technology(void)
 {
-#ifndef PLATFORM_64BITS
-    unsigned long eax,ebx,edx,unused;
+    uint32 eax,ebx,edx,unused;
     cpuid(1,eax,ebx,unused,edx);
 
     return edx & 0x04000000;
-#else
-    return true;
-#endif
 }
 
 bool Check3DNowTechnology(void)
 {
-#ifndef PLATFORM_64BITS
-    unsigned long eax, unused;
+    uint32 eax, unused;
     cpuid(0x80000000,eax,unused,unused,unused);
 
     if ( eax > 0x80000000L )
@@ -57,7 +76,5 @@ bool Check3DNowTechnology(void)
 		return ( eax & 1<<31 );
     }
     return false;
-#else
-    return true;
-#endif
 }
+

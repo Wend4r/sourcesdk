@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: UNDONE: Rename this to prop_vehicle.cpp !!!
 //
@@ -71,12 +71,16 @@ LINK_ENTITY_TO_CLASS( prop_vehicle, CPropVehicle );
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+#ifdef _MSC_VER
 #pragma warning (disable:4355)
+#endif
 CPropVehicle::CPropVehicle() : m_VehiclePhysics( this )
 {
 	SetVehicleType( VEHICLE_TYPE_CAR_WHEELS );
 }
+#ifdef _MSC_VER
 #pragma warning (default:4355)
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

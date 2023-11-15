@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Base combat character with no AI
 //
@@ -11,7 +11,7 @@
 #include "convar.h"
 #include "ai_basenpc.h"
 #include "ai_agent.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "ai_activity.h"
 #include "ai_schedule.h"
 #include "ai_default.h"

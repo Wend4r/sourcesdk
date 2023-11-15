@@ -21,9 +21,9 @@
 #include "studio.h"
 #include "explode.h"
 #include "utlrbtree.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "physics_impact_damage.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "filesystem.h"
 #include "scriptevent.h"
 #include "entityblocker.h"
@@ -46,7 +46,7 @@
 
 
 
-#include "vstdlib/ikeyvaluessystem.h"
+#include "vstdlib/IKeyValuesSystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

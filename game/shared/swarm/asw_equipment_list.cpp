@@ -2,7 +2,7 @@
 #include "asw_equipment_list.h"
 #include "filesystem.h"
 #include "weapon_parse.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #ifdef CLIENT_DLL
 	#include <vgui/ISurface.h>
 	#include <vgui/ISystem.h>

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,7 +11,7 @@
 #endif
 
 #include "igamesystem.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 // Phys prop spawnflags
 #define SF_PHYSPROP_START_ASLEEP				0x000001

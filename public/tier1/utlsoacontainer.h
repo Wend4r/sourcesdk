@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2007, Valve Corporation, All rights reserved. =======//
+//====== Copyright Â© 1996-2007, Valve Corporation, All rights reserved. =======//
 //
 // Purpose: 
 //
@@ -22,7 +22,6 @@
 #include "tier1/utlmemory.h"
 #include "tier1/utlblockmemory.h"
 #include "mathlib/ssemath.h"
-
 
 
 
@@ -437,29 +436,10 @@ protected:
 	void AllocateConstantMemory( void );
 };
 
-class CSOAAttributeReference;
 
 // define binary op class to allow this construct without temps:
 // dest( FBM_ATTR_RED ) = src( FBM_ATTR_BLUE ) + src( FBM_ATTR_GREEN )
-template<BINARYSIMDFUNCTION fn, class Ref> class CSOAAttributeReferenceBinaryOp
-{
-public:
-	Ref m_opA;
-	Ref m_opB;
-
-	CSOAAttributeReferenceBinaryOp( Ref const &a, Ref const & b )
-	{
-		a.CopyTo( m_opA );
-		b.CopyTo( m_opB );
-	}
-
-};
-
-#define DEFINE_OP( opname, fnname )										\
-FORCEINLINE CSOAAttributeReferenceBinaryOp<fnname, CSOAAttributeReference> operator opname( CSOAAttributeReference const &other ) const \
-{																		\
-	return CSOAAttributeReferenceBinaryOp<fnname, CSOAAttributeReference>( *this, other );		\
-}
+template<BINARYSIMDFUNCTION fn> class CSOAAttributeReferenceBinaryOp;
 
 class CSOAAttributeReference
 {
@@ -491,25 +471,54 @@ public:
 		m_pContainer->CopyAttrFrom( *other.m_pContainer, m_nAttributeID, other.m_nAttributeID );
 	}
 
-	// these operator overloads let you do
-	// dst[ATT1] = src1[ATT] + src2[ATT] with no temporaries generated
-	DEFINE_OP( +, AddSIMD );
-	DEFINE_OP( *, MulSIMD );
-	DEFINE_OP( -, SubSIMD );
-	DEFINE_OP( /, DivSIMD );
-
-	template<BINARYSIMDFUNCTION fn> FORCEINLINE void operator =( CSOAAttributeReferenceBinaryOp<fn, CSOAAttributeReference> const &op );
+	template<BINARYSIMDFUNCTION fn> FORCEINLINE void operator =( CSOAAttributeReferenceBinaryOp<fn> const &op );
 
 	FORCEINLINE void CopyTo( CSOAAttributeReference &other ) const; // since operator= is over-ridden
 };
 
 
-template<BINARYSIMDFUNCTION fn> FORCEINLINE void CSOAAttributeReference::operator =( CSOAAttributeReferenceBinaryOp<fn, CSOAAttributeReference> const &op )
+// define binary op class to allow this construct without temps:
+// dest( FBM_ATTR_RED ) = src( FBM_ATTR_BLUE ) + src( FBM_ATTR_GREEN )
+template<BINARYSIMDFUNCTION fn> class CSOAAttributeReferenceBinaryOp
+{
+public:
+	CSOAAttributeReference m_opA;
+	CSOAAttributeReference m_opB;
+
+	CSOAAttributeReferenceBinaryOp( CSOAAttributeReference const &a, CSOAAttributeReference const & b )
+	{
+		a.CopyTo( m_opA );
+		b.CopyTo( m_opB );
+	}
+
+};
+
+#define DEFINE_OP( opname, fnname )										\
+	FORCEINLINE CSOAAttributeReferenceBinaryOp<fnname> operator opname( CSOAAttributeReference const &left, CSOAAttributeReference const &right )  \
+{																		\
+	return CSOAAttributeReferenceBinaryOp<fnname>( left, right );		\
+}
+
+// these operator overloads let you do
+// dst[ATT1] = src1[ATT] + src2[ATT] with no temporaries generated
+DEFINE_OP( +, AddSIMD );
+DEFINE_OP( *, MulSIMD );
+DEFINE_OP( -, SubSIMD );
+DEFINE_OP( /, DivSIMD );
+
+
+template<BINARYSIMDFUNCTION fn> FORCEINLINE void CSOAAttributeReference::operator =( CSOAAttributeReferenceBinaryOp<fn> const &op )
 {
 	m_pContainer->AssertDataType( m_nAttributeID, ATTRDATATYPE_FLOAT );
 	fltx4 *pOut = m_pContainer->RowPtr<fltx4>( m_nAttributeID, 0 );
-	fltx4 *pInA = op.m_opA.m_pContainer->template RowPtr<fltx4>( op.m_opA.m_nAttributeID, 0 );
-	fltx4 *pInB = op.m_opB.m_pContainer->template RowPtr<fltx4>( op.m_opB.m_nAttributeID, 0 );
+	
+	// GCC on PS3 gets confused by this code, so we literally have to break it into multiple statements
+	CSOAContainer *pContainerA = op.m_opA.m_pContainer;
+	CSOAContainer *pContainerB = op.m_opB.m_pContainer;
+	
+	fltx4 *pInA = pContainerA->RowPtr< fltx4 >( op.m_opA.m_nAttributeID, 0 );
+	fltx4 *pInB = pContainerB->RowPtr< fltx4 >( op.m_opB.m_nAttributeID, 0 );
+
 	size_t nRowToRowStride = m_pContainer->RowToRowStep( m_nAttributeID ) / sizeof( fltx4 );
 	int nRowCtr = m_pContainer->NumRows() * m_pContainer->NumSlices();
 	do
@@ -576,8 +585,8 @@ template<BINARYSIMDFUNCTION fn1, BINARYSIMDFUNCTION fn2> void CSOAContainer::App
 			int nColCtr = NumQuadsPerRow();
 			do
 			{
-				*( pOut ) = fn1( fn2( *pOut, fl4FnArg2 ), fl4FnArg1 );
-				pOut++;
+				*pOut = fn1( fn2( *pOut, fl4FnArg2 ), fl4FnArg1 );
+                pOut++;
 			} while ( --nColCtr );
 			pOut += nRowToRowStride;
 		} while ( --nRowCtr );
@@ -614,8 +623,8 @@ template<BINARYSIMDFUNCTION fn> void CSOAContainer::ApplyBinaryFunctionToAttr( i
 			int nColCtr = NumQuadsPerRow();
 			do
 			{
-				*(pOut) = fn( *pOut, fl4FnArg1 );
-				pOut++;
+				*pOut = fn( *pOut, fl4FnArg1 );
+                pOut++;
 			} while ( --nColCtr );
 			pOut += nRowToRowStride;
 		} while ( --nRowCtr );
@@ -629,7 +638,7 @@ template<BINARYSIMDFUNCTION fn> float CSOAContainer::ReduceAttr( int nSrcAttr, f
 	fltx4 const *pIn = RowPtr<fltx4>( nSrcAttr, 0 );
 	size_t nRowToRowStride = RowToRowStep( nSrcAttr ) / sizeof( fltx4 );
 	int nRowCtr = NumRows() * NumSlices();
-	fltx4 fl4LastColumnMask = LoadAlignedSIMD( g_SIMD_SkipTailMask[NumCols() & 3 ] );
+	bi32x4 fl4LastColumnMask = (bi32x4)LoadAlignedSIMD( g_SIMD_SkipTailMask[NumCols() & 3 ] );
 	do
 	{
 		for( int i = 0; i < NumQuadsPerRow() - 1; i++ )

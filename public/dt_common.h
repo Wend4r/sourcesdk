@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,10 +15,10 @@
 
 #include "basetypes.h"
 #include "tier0/dbg.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include <stddef.h>
 
-#ifdef LINUX
+#ifdef _LINUX
 #undef offsetof
 #define offsetof(s,m)	(size_t)&(((s *)0)->m)
 #endif
@@ -82,6 +82,8 @@
 #define SPROP_CELL_COORD_INTEGRAL		(1<<17) // SPROP_CELL_COORD, but coordinates are rounded to integral boundaries
 
 #define SPROP_CHANGES_OFTEN				(1<<18)	// this is an often changed field, moved to head of sendtable so it gets a small index
+
+#define SPROP_VARINT					(1<<19)	// use var int encoded (google protobuf style), note you want to include SPROP_UNSIGNED if needed, its more efficient 
 
 #define SPROP_NUMFLAGBITS_NETWORKED		19
 

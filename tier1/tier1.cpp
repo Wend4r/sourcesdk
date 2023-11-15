@@ -8,10 +8,10 @@
 #include "tier0/dbg.h"
 #include "interfaces/interfaces.h"
 
-// for utlsortvector.h
-#ifndef _WIN32
-	void *g_pUtlSortVectorQSortContext = NULL;
-#endif
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -20,7 +20,7 @@
 //-----------------------------------------------------------------------------
 void ConnectTier1Libraries( CreateInterfaceFn *pFactoryList, int nFactoryCount )
 {
-	ConnectInterfaces( pFactoryList, nFactoryCount);
+	ConnectInterfaces( pFactoryList, nFactoryCount );
 }
 
 void DisconnectTier1Libraries()

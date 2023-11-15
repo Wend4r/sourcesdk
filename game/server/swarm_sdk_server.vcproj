@@ -6225,11 +6225,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\characterset.h"
+				RelativePath="..\..\public\tier0\characterset.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\tier1\checksum_md5.h"
+				RelativePath="..\..\public\tier0\checksum_md5.h"
 				>
 			</File>
 			<File
@@ -6429,7 +6429,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\public\appframework\IAppSystem.h"
+				RelativePath="..\..\public\appframework\iappsystem.h"
 				>
 			</File>
 			<File
@@ -6594,10 +6594,6 @@
 			</File>
 			<File
 				RelativePath="..\..\public\engine\ivmodelinfo.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\public\tier1\KeyValues.h"
 				>
 			</File>
 			<File
@@ -6846,10 +6842,6 @@
 			</File>
 			<File
 				RelativePath="..\..\public\tier1\stringpool.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\public\tier1\strtools.h"
 				>
 			</File>
 			<File

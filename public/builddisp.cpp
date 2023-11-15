@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include <malloc.h>
 #include "builddisp.h"
 #include "collisionutils.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "tier0/dbg.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -171,9 +171,11 @@ bool CalcBarycentricCooefs( Vector const &v0, Vector const &v1, Vector const &v2
 	return false;
 }
 
+#ifdef _MSC_VER
 // For some reason, the global optimizer screws up the recursion here.  disable the global optimizations to fix this.
 // IN VC++ 6.0
 #pragma optimize( "g", off )
+#endif
 
 CCoreDispSurface::CCoreDispSurface()
 {
@@ -2256,8 +2258,10 @@ int GetNodeNeighborNodeFromNeighborSurf( int power, int index, int direction, in
 
 
 
+#ifdef _MSC_VER
 // Turn the optimizer back on
 #pragma optimize( "", on )
+#endif
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

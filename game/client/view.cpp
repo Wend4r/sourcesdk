@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -22,7 +22,7 @@
 #include "mathlib/vmatrix.h"
 #include "rendertexture.h"
 #include "c_world.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "igameevents.h"
 #include "smoke_fog_overlay.h"
 #include "bitmap/tgawriter.h"

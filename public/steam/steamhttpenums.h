@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2010, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2010, Valve Corporation, All rights reserved. =======
 //
 // Purpose: HTTP related enums, stuff that is shared by both clients and servers, and our
 // UI projects goes here.
@@ -62,7 +62,6 @@ enum EHTTPStatusCode
 	k_EHTTPStatusCode305UseProxy =				305,
 	//k_EHTTPStatusCode306Unused =				306, (used in old HTTP spec, now unused in 1.1)
 	k_EHTTPStatusCode307TemporaryRedirect =		307,
-	k_EHTTPStatusCode308PermanentRedirect =		308,
 
 	// Error codes
 	k_EHTTPStatusCode400BadRequest =			400,

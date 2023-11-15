@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 // Implements local hooks into named renderable textures.
@@ -9,7 +9,7 @@
 #include "materialsystem/imesh.h"
 #include "materialsystem/ITexture.h"
 #include "materialsystem/MaterialSystemUtil.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "rendertexture.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

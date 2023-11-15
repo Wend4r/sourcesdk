@@ -15,18 +15,20 @@
 
 //-----------------------------------------------------------------------------
 // SteamNetworkingSockets config.
-#if !defined(STEAMNETWORKINGSOCKETS_STANDALONELIB) && !defined(STEAMNETWORKINGSOCKETS_STEAMAPI)
-	#define STEAMNETWORKINGSOCKETS_STEAMAPI
-#endif
+//#define STEAMNETWORKINGSOCKETS_STANDALONELIB // Comment this in to support compiling/linking with the standalone library / gamenetworkingsockets opensource
+#define STEAMNETWORKINGSOCKETS_STEAMAPI // Compiling/link with steam_api.h and Steamworks SDK
 //-----------------------------------------------------------------------------
 
+#if !defined( STEAMNETWORKINGSOCKETS_OPENSOURCE ) && !defined( STEAMNETWORKINGSOCKETS_STREAMINGCLIENT )
+	#define STEAMNETWORKINGSOCKETS_STEAM
+#endif
 #ifdef NN_NINTENDO_SDK // We always static link on Nintendo
 	#define STEAMNETWORKINGSOCKETS_STATIC_LINK
 #endif
 #if defined( STEAMNETWORKINGSOCKETS_STATIC_LINK )
 	#define STEAMNETWORKINGSOCKETS_INTERFACE extern "C"
 #elif defined( STEAMNETWORKINGSOCKETS_FOREXPORT )
-	#if defined( _WIN32 ) || defined( __ORBIS__ ) || defined( __PROSPERO__ )
+	#ifdef _WIN32
 		#define STEAMNETWORKINGSOCKETS_INTERFACE extern "C" __declspec( dllexport )
 	#else
 		#define STEAMNETWORKINGSOCKETS_INTERFACE extern "C" __attribute__((visibility("default")))
@@ -141,12 +143,6 @@ enum ESteamNetworkingIdentityType
 	// Basic platform-specific identifiers.
 	//
 	k_ESteamNetworkingIdentityType_SteamID = 16, // 64-bit CSteamID
-	k_ESteamNetworkingIdentityType_XboxPairwiseID = 17, // Publisher-specific user identity, as string
-	k_ESteamNetworkingIdentityType_SonyPSN = 18, // 64-bit ID
-	k_ESteamNetworkingIdentityType_GoogleStadia = 19, // 64-bit ID
-	//k_ESteamNetworkingIdentityType_NintendoNetworkServiceAccount,
-	//k_ESteamNetworkingIdentityType_EpicGameStore
-	//k_ESteamNetworkingIdentityType_WeGame
 
 	//
 	// Special identifiers.
@@ -275,15 +271,6 @@ struct SteamNetworkingIdentity
 	void SetSteamID64( uint64 steamID ); // Takes SteamID as raw 64-bit number
 	uint64 GetSteamID64() const; // Returns 0 if identity is not SteamID
 
-	bool SetXboxPairwiseID( const char *pszString ); // Returns false if invalid length
-	const char *GetXboxPairwiseID() const; // Returns nullptr if not Xbox ID
-
-	void SetPSNID( uint64 id );
-	uint64 GetPSNID() const; // Returns 0 if not PSN
-
-	void SetStadiaID( uint64 id );
-	uint64 GetStadiaID() const; // Returns 0 if not Stadia
-
 	void SetIPAddr( const SteamNetworkingIPAddr &addr ); // Set to specified IP:port
 	const SteamNetworkingIPAddr *GetIPAddr() const; // returns null if we are not an IP address.
 	void SetIPv4Addr( uint32 nIPv4, uint16 nPort ); // Set to specified IPv4:port
@@ -325,7 +312,6 @@ struct SteamNetworkingIdentity
 	enum {
 		k_cchMaxString = 128, // Max length of the buffer needed to hold any identity, formatted in string format by ToString
 		k_cchMaxGenericString = 32, // Max length of the string for generic string identities.  Including terminating '\0'
-		k_cchMaxXboxPairwiseID = 33, // Including terminating '\0'
 		k_cbMaxGenericBytes = 32,
 	};
 
@@ -338,10 +324,7 @@ struct SteamNetworkingIdentity
 	int m_cbSize;
 	union {
 		uint64 m_steamID64;
-		uint64 m_PSNID;
-		uint64 m_stadiaID;
 		char m_szGenericString[ k_cchMaxGenericString ];
-		char m_szXboxPairwiseID[ k_cchMaxXboxPairwiseID ];
 		uint8 m_genericBytes[ k_cbMaxGenericBytes ];
 		char m_szUnknownRawString[ k_cchMaxString ];
 		SteamNetworkingIPAddr m_ip;
@@ -1152,42 +1135,6 @@ enum ESteamNetworkingConfigValue
 	/// Default is 512k (524288 bytes)
 	k_ESteamNetworkingConfig_SendBufferSize = 9,
 
-	/// [connection int32] Upper limit on total size (in bytes) of received messages
-	/// that will be buffered waiting to be processed by the application.  If this limit
-	/// is exceeded, packets will be dropped.  This is to protect us from a malicious
-	/// peer flooding us with messages faster than we can process them.
-	/// 
-	/// This must be bigger than k_ESteamNetworkingConfig_RecvMaxMessageSize
-	k_ESteamNetworkingConfig_RecvBufferSize = 47,
-
-	/// [connection int32] Upper limit on the number of received messages that will
-	/// that will be buffered waiting to be processed by the application.  If this limit
-	/// is exceeded, packets will be dropped.  This is to protect us from a malicious
-	/// peer flooding us with messages faster than we can pull them off the wire.
-	k_ESteamNetworkingConfig_RecvBufferMessages = 48,
-
-	/// [connection int32] Maximum message size that we are willing to receive.
-	/// if a client attempts to send us a message larger than this, the connection
-	/// will be immediately closed.
-	///
-	/// Default is 512k (524288 bytes).  Note that the peer needs to be able to
-	/// send a message this big.  (See k_cbMaxSteamNetworkingSocketsMessageSizeSend.)
-	k_ESteamNetworkingConfig_RecvMaxMessageSize = 49,
-
-	/// [connection int32] Max number of message segments that can be received
-	/// in a single UDP packet.  While decoding a packet, if the number of segments
-	/// exceeds this, we will abort further packet processing.
-	///
-	/// The default is effectively unlimited.  If you know that you very rarely
-	/// send small packets, you can protect yourself from malicious senders by
-	/// lowering this number.
-	/// 
-	/// In particular, if you are NOT using the reliability layer and are only using
-	/// SteamNetworkingSockets for datagram transport, setting this to a very low
-	/// number may be beneficial.  (We recommend a value of 2.)  Make sure your sender
-	/// disables Nagle!
-	k_ESteamNetworkingConfig_RecvMaxSegmentsPerPacket = 50,
-
 	/// [connection int64] Get/set userdata as a configuration option.
 	/// The default value is -1.   You may want to set the user data as
 	/// a config value, instead of using ISteamNetworkingSockets::SetConnectionUserData
@@ -1223,12 +1170,9 @@ enum ESteamNetworkingConfigValue
 	//    ensure you have the current value.
 	k_ESteamNetworkingConfig_ConnectionUserData = 40,
 
-	/// [connection int32] Minimum/maximum send rate clamp, in bytes/sec.
-	/// At the time of this writing these two options should always be set to
-	/// the same value, to manually configure a specific send rate.  The default
-	/// value is 256K.  Eventually we hope to have the library estimate the bandwidth
-	/// of the channel and set the send rate to that estimated bandwidth, and these
-	/// values will only set limits on that send rate.
+	/// [connection int32] Minimum/maximum send rate clamp, 0 is no limit.
+	/// This value will control the min/max allowed sending rate that 
+	/// bandwidth estimation is allowed to reach.  Default is 0 (no-limit)
 	k_ESteamNetworkingConfig_SendRateMin = 10,
 	k_ESteamNetworkingConfig_SendRateMax = 11,
 
@@ -1535,11 +1479,7 @@ enum ESteamNetworkingConfigValue
 	/// route ping time and is then adjusted.)
 	k_ESteamNetworkingConfig_P2P_Transport_ICE_Penalty = 105,
 	k_ESteamNetworkingConfig_P2P_Transport_SDR_Penalty = 106,
-	k_ESteamNetworkingConfig_P2P_TURN_ServerList = 107,
-	k_ESteamNetworkingConfig_P2P_TURN_UserList = 108,
-	k_ESteamNetworkingConfig_P2P_TURN_PassList = 109,
 	//k_ESteamNetworkingConfig_P2P_Transport_LANBeacon_Penalty = 107,
-	k_ESteamNetworkingConfig_P2P_Transport_ICE_Implementation = 110,
 
 //
 // Settings for SDR relayed connections
@@ -1738,7 +1678,7 @@ inline SteamNetworkingPOPID CalculateSteamNetworkingPOPIDFromString( const char 
 	//
 	// There is also extra paranoia to make sure the bytes are not treated as signed.
 	SteamNetworkingPOPID result = (uint32)(uint8)pszCode[0] << 16U;
-	if ( result && pszCode[1] )
+	if ( pszCode[1] )
 	{
 		result |= ( (uint32)(uint8)pszCode[1] << 8U );
 		if ( pszCode[2] )
@@ -1804,18 +1744,8 @@ inline void SteamNetworkingIdentity::SetSteamID( CSteamID steamID ) { SetSteamID
 inline CSteamID SteamNetworkingIdentity::GetSteamID() const { return CSteamID( GetSteamID64() ); }
 inline void SteamNetworkingIdentity::SetSteamID64( uint64 steamID ) { m_eType = k_ESteamNetworkingIdentityType_SteamID; m_cbSize = sizeof( m_steamID64 ); m_steamID64 = steamID; }
 inline uint64 SteamNetworkingIdentity::GetSteamID64() const { return m_eType == k_ESteamNetworkingIdentityType_SteamID ? m_steamID64 : 0; }
-inline bool SteamNetworkingIdentity::SetXboxPairwiseID( const char *pszString ) { size_t l = strlen( pszString ); if ( l < 1 || l >= sizeof(m_szXboxPairwiseID) ) return false;
-	m_eType = k_ESteamNetworkingIdentityType_XboxPairwiseID; m_cbSize = int(l+1); memcpy( m_szXboxPairwiseID, pszString, m_cbSize ); return true; }
-inline const char *SteamNetworkingIdentity::GetXboxPairwiseID() const { return m_eType == k_ESteamNetworkingIdentityType_XboxPairwiseID ? m_szXboxPairwiseID : NULL; }
-inline void SteamNetworkingIdentity::SetPSNID( uint64 id ) { m_eType = k_ESteamNetworkingIdentityType_SonyPSN; m_cbSize = sizeof( m_PSNID ); m_PSNID = id; }
-inline uint64 SteamNetworkingIdentity::GetPSNID() const { return m_eType == k_ESteamNetworkingIdentityType_SonyPSN ? m_PSNID : 0; }
-inline void SteamNetworkingIdentity::SetStadiaID( uint64 id ) { m_eType = k_ESteamNetworkingIdentityType_GoogleStadia; m_cbSize = sizeof( m_stadiaID ); m_stadiaID = id; }
-inline uint64 SteamNetworkingIdentity::GetStadiaID() const { return m_eType == k_ESteamNetworkingIdentityType_GoogleStadia ? m_stadiaID : 0; }
 inline void SteamNetworkingIdentity::SetIPAddr( const SteamNetworkingIPAddr &addr ) { m_eType = k_ESteamNetworkingIdentityType_IPAddress; m_cbSize = (int)sizeof(m_ip); m_ip = addr; }
 inline const SteamNetworkingIPAddr *SteamNetworkingIdentity::GetIPAddr() const { return m_eType == k_ESteamNetworkingIdentityType_IPAddress ? &m_ip : NULL; }
-inline void SteamNetworkingIdentity::SetIPv4Addr( uint32 nIPv4, uint16 nPort ) { m_eType = k_ESteamNetworkingIdentityType_IPAddress; m_cbSize = (int)sizeof(m_ip); m_ip.SetIPv4( nIPv4, nPort ); }
-inline uint32 SteamNetworkingIdentity::GetIPv4() const { return m_eType == k_ESteamNetworkingIdentityType_IPAddress ? m_ip.GetIPv4() : 0; }
-inline ESteamNetworkingFakeIPType SteamNetworkingIdentity::GetFakeIPType() const { return m_eType == k_ESteamNetworkingIdentityType_IPAddress ? m_ip.GetFakeIPType() : k_ESteamNetworkingFakeIPType_Invalid; }
 inline void SteamNetworkingIdentity::SetLocalHost() { m_eType = k_ESteamNetworkingIdentityType_IPAddress; m_cbSize = (int)sizeof(m_ip); m_ip.SetIPv6LocalHost(); }
 inline bool SteamNetworkingIdentity::IsLocalHost() const { return m_eType == k_ESteamNetworkingIdentityType_IPAddress && m_ip.IsLocalHost(); }
 inline bool SteamNetworkingIdentity::SetGenericString( const char *pszString ) { size_t l = strlen( pszString ); if ( l >= sizeof(m_szGenericString) ) return false;

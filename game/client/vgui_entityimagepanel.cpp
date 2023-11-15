@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This is a panel which is rendered image on top of an entity
 //
@@ -7,7 +7,7 @@
 //=============================================================================//
 #include "cbase.h"
 #include "vgui_entityimagepanel.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "c_BaseTFPlayer.h"
 #include <vgui/IVGui.h>
 #include "vgui_BitmapImage.h"

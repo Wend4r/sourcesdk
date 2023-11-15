@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include "isaverestore.h"
 
 #include "filesystem.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "utldict.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

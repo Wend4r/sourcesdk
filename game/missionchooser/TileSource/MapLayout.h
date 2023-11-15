@@ -5,7 +5,7 @@
 #endif
 
 #include "Utlvector.h"
-#include "UtlSortvector.h"
+#include "utlsortvector.h"
 #include "ChunkFile.h"
 #include "RoomTemplate.h"
 #include "tilegen_core.h"

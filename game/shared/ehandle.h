@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,24 +11,36 @@
 #pragma once
 #endif
 
-#include "entity2/entitysystem.h"
-#include "entityhandle.h"
+#if defined( _DEBUG ) && defined( GAME_DLL )
+#include "tier0/dbg.h"
+#include "cbase.h"
+#endif
+
+
+#include "const.h"
+#include "basehandle.h"
+#include "entitylist_base.h"
+
+
+class IHandleEntity;
+
 
 // -------------------------------------------------------------------------------------------------- //
 // Game-code CBaseHandle implementation.
 // -------------------------------------------------------------------------------------------------- //
 
-inline CEntityInstance* CEntityHandle::Get() const
+inline IHandleEntity* CBaseHandle::Get() const
 {
-	extern CEntitySystem *g_pEntitySystem;
-	return g_pEntitySystem->GetBaseEntity( *this );
+	extern CBaseEntityList *g_pEntityList;
+	return g_pEntityList->LookupEntity( *this );
 }
+
 
 // -------------------------------------------------------------------------------------------------- //
 // CHandle.
 // -------------------------------------------------------------------------------------------------- //
 template< class T >
-class CHandle : public CEntityHandle
+class CHandle : public CBaseHandle
 {
 public:
 
@@ -137,7 +149,7 @@ inline bool CHandle<T>::operator!=( T *val ) const
 template<class T>
 void CHandle<T>::Set( const T* pVal )
 {
-	CBaseHandle::Set(pVal);
+	CBaseHandle::Set( reinterpret_cast<const IHandleEntity*>(pVal) );
 }
 
 template<class T>

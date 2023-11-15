@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======//
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======//
 //
 // Purpose: 
 //
@@ -14,7 +14,8 @@
 #endif
  
 #include "tier0/platform.h"
-#include "appframework/IAppSystem.h"
+#include "tier1/interface.h"
+#include "appframework/iappsystem.h"
 
 
 //-----------------------------------------------------------------------------
@@ -254,8 +255,7 @@ protected:
 			_executeExp; 												\
 			if ( ret == LR_DEBUGGER )									\
 			{															\
-				if ( !ShouldUseNewAssertDialog() || DoNewAssertDialog( __TFILE__, __LINE__, _msg ) ) \
-					DebuggerBreak();									\
+				DebuggerBreak();										\
 				if ( _bFatal )											\
 					_ExitOnFatalAssert( __TFILE__, __LINE__ );			\
 			}															\

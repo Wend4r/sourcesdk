@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Hint node utilities and functions
 //
@@ -15,7 +15,7 @@
 #include "ai_networkmanager.h"
 #include "ndebugoverlay.h"
 #include "animation.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "mapentities_shared.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

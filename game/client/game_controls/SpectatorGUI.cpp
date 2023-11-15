@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 #include <cdll_client_int.h>
 #include <globalvars_base.h>
 #include <cdll_util.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 #include "spectatorgui.h"
 

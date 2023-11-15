@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client DLL VGUI2 Viewport
 //
@@ -11,7 +11,9 @@
 // $NoKeywords: $
 //=============================================================================//
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4800  )  // disable forcing int to bool performance warning
+#endif
 
 #include "cbase.h"
 #include <cdll_client_int.h>
@@ -22,7 +24,7 @@
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/AnimationController.h>
 #include <vgui/ISurface.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui/IScheme.h>
 #include <vgui/IVGui.h>
 #include <vgui/ILocalize.h>

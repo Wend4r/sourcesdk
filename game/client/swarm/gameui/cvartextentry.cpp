@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 #include "EngineInterface.h"
 #include <vgui/IVGui.h>
 #include "IGameUIFuncs.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "tier1/convar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

@@ -9,7 +9,7 @@
 
 #include <networksystem/inetworkserializer.h>
 #include <tier1/utldelegate.h>
-#include <tier1/utlsymbol.h>
+#include <tier0/utlsymbol.h>
 #include <irecipientfilter.h>
 #include <inetchannel.h>
 

@@ -1,0 +1,9 @@
+# Visual Studio
+.vs/**
+
+# Build folders
+Debug/**
+Release/**
+x64/**
+
+*.vcxproj.user

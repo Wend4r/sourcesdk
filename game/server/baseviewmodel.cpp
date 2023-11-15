@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #include "animation.h"
 #include "baseviewmodel.h"
 #include "player.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "studio.h"
 #include "vguiscreen.h"
 #include "saverestore_utlvector.h"

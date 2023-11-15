@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #include "vgui_controls/EditablePanel.h"
 #include "vgui_controls/Frame.h"
 #include "vgui_controls/Button.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "vgui_controls/TextEntry.h"
 
 class CQCGenerator;

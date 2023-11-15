@@ -9,11 +9,11 @@
 #include "vector.h"
 #include "vector2d.h"
 #include "vector4d.h"
-#include "Color.h"
+#include "color.h"
 #include "entity2/entityidentity.h"
 #include "entityhandle.h"
+#include "tier0/utlscratchmemory.h"
 #include "tier1/bufferstring.h"
-#include "tier1/utlscratchmemory.h"
 
 // Non-implemented classes/structs
 struct ResourceBindingBase_t;

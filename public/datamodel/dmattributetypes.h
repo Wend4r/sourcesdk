@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2004, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -10,10 +10,10 @@
 #pragma once
 #endif
 
+#include "tier0/uniqueid.h"
+#include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
-#include "tier1/utlstring.h"
-#include "tier1/uniqueid.h"
-#include "Color.h"
+#include "color.h"
 #include "mathlib/vector2d.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector4d.h"

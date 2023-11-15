@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "view.h"
 #include "view_shared.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "bitmap/tgawriter.h"
 #include "iviewrender.h"
 #include "filesystem.h"

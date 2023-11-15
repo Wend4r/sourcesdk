@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,7 +8,7 @@
 #include "cmodel.h"
 #include "dispcoll_common.h"
 #include "collisionutils.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "tier0/vprof.h"
 #include "tier1/fmtstr.h"
 #include "tier1/utlhash.h"

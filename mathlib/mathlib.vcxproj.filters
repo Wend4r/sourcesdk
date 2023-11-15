@@ -66,9 +66,6 @@
     <ClCompile Include="ssenoise.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vector.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="vmatrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -140,14 +137,14 @@
     <ClInclude Include="..\public\mathlib\vplane.h">
       <Filter>Public Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="3dnow.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="noisedata.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="sse.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="3dnow.h">
+      <Filter>Public Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

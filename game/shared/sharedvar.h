@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,11 +13,13 @@
 
 #include "convar.h"
 #include "ispsharedmemory.h"
-#include "entityhandle.h"
+#include "basehandle.h"
 #include "isaverestore.h"
 
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4284 ) // warning C4284: return type for 'CNetworkVarT<int>::operator ->' is 'int *' (ie; not a UDT or reference to a UDT.  Will produce errors if applied using infix notation)
+#endif
 
 
 #if defined( GAME_DLL )
@@ -82,7 +84,7 @@ static bool SharedVar_IsEmpty( Type *pValue, int iCount = 1 )
 
 	for ( int i = 0; i < iNumBytes; ++i )
 	{
-		if ( pChar[i] != NULL )
+		if ( pChar[i] != '\0' )
 		{
 			return false;
 		}

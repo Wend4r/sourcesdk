@@ -16,7 +16,7 @@
 #include "asw_marine_profile.h"
 #include "ForceReadyPanel.h"
 #include "asw_gamerules.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "nb_mission_summary.h"
 #include "nb_mission_panel.h"
 #include "nb_mission_options.h"

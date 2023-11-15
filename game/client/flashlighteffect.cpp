@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include "view.h"
 #include "engine/ivdebugoverlay.h"
 #include "tier0/vprof.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "toolframework_client.h"
 
 #ifdef HL2_CLIENT_DLL

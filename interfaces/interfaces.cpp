@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A higher level link library for general use in the game and tools.
 //
@@ -387,45 +387,4 @@ void ReconnectInterface(CreateInterfaceFn factory, const char *pInterfaceName)
 		if (strcmp(iface.m_pInterfaceName, pInterfaceName) == 0)
 			ReconnectInterface(factory, iface.m_pInterfaceName, (void **)iface.m_ppGlobal);
 	}
-}
-
-// ------------------------------------------------------------------------------------ //
-// InterfaceReg.
-// ------------------------------------------------------------------------------------ //
-InterfaceReg *s_pInterfaceRegs = NULL;
-
-InterfaceReg::InterfaceReg(InstantiateInterfaceFn fn, const char *pName) :
-	m_pName(pName)
-{
-	m_CreateFn = fn;
-	m_pNext = s_pInterfaceRegs;
-	s_pInterfaceRegs = this;
-}
-
-// ------------------------------------------------------------------------------------ //
-// CreateInterface.
-// This is the primary exported function by a dll, referenced by name via dynamic binding
-// that exposes an opqaue function pointer to the interface.
-// ------------------------------------------------------------------------------------ //
-void* CreateInterface(const char *pName, int *pReturnCode)
-{
-	InterfaceReg *pCur;
-
-	for (pCur = s_pInterfaceRegs; pCur; pCur = pCur->m_pNext)
-	{
-		if (strcmp(pCur->m_pName, pName) == 0)
-		{
-			if (pReturnCode)
-			{
-				*pReturnCode = IFACE_OK;
-			}
-			return pCur->m_CreateFn();
-		}
-	}
-
-	if (pReturnCode)
-	{
-		*pReturnCode = IFACE_FAILED;
-	}
-	return NULL;
 }

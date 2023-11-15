@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client side implementation of CBaseCombatWeapon.
 //
@@ -13,7 +13,7 @@
 #include "engine/ivmodelinfo.h"
 #include "tier0/vprof.h"
 #include "hltvcamera.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
 

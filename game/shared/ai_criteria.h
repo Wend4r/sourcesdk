@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,7 +11,7 @@
 #endif
 
 #include "tier1/utlrbtree.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 #include "tier2/interval.h"
 #include "mathlib/compressed_vector.h"
 #include "../../public/responserules/response_types.h"

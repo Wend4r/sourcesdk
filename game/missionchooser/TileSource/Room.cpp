@@ -3,7 +3,7 @@
 #include "MapLayout.h"
 #include "RoomTemplate.h"
 #include "LevelTheme.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 
 #include <vgui/IVGui.h>
 #include "vgui_controls/Controls.h"

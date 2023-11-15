@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -16,15 +16,15 @@
 #include "choreoactor.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
-#include "tier1/strtools.h"
-#include "KeyValues.h"
+#include "tier0/strtools.h"
+#include "keyvalues.h"
 #include "ai_basenpc.h"
 #include "ai_navigator.h"
 #include "ai_moveprobe.h"
 #include "sceneentity.h"
 #include "ai_baseactor.h"
 #include "datacache/imdlcache.h"
-#include "tier1/byteswap.h"
+#include "tier0/byteswap.h"
 */
 
 // memdbgon must be the last include file in a .cpp file!!!

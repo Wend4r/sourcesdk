@@ -2,7 +2,7 @@
 #include <vgui_controls/TextEntry.h>
 #include <vgui_controls/Button.h>
 #include <vgui_controls/ComboBox.h>
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "kv_editor.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

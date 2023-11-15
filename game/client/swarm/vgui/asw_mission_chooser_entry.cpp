@@ -6,7 +6,7 @@
 #include <vgui_controls/TextImage.h>
 #include <vgui_controls/ImagePanel.h>
 #include <vgui_controls/Button.h>
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "FileSystem.h"
 #include <vgui_controls/Panel.h>
 #include <vgui/isurface.h>

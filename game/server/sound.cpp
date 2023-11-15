@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Entities relating to in-level sound effects.
 //
@@ -23,7 +23,7 @@
 #include "ndebugoverlay.h"
 #include "soundscape.h"
 #include "igamesystem.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "filesystem.h"
 #include "ambientgeneric.h"
 

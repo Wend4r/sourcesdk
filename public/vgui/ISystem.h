@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,8 +12,8 @@
 #pragma once
 #endif
 
-#include "tier0/interface.h"
-#include "tier1/keyvalues.h"
+#include "tier1/interface.h"
+#include "tier0/keyvalues.h"
 #include <vgui/VGUI.h>
 #include <vgui/KeyCode.h>
 

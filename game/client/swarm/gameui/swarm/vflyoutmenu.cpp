@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 #include "VFooterPanel.h"
 #include "VHybridButton.h"
 
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "vgui/ISurface.h"
 #include "vgui/IScheme.h"
 

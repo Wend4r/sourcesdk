@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 #include "nav_pathfind.h"
 #include "nav_node.h"
 #include "nav_colors.h"
-#include "Color.h"
+#include "color.h"
 #include "tier0/vprof.h"
 #include "collisionutils.h"
 #include "world.h"

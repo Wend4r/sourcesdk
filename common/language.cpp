@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2004, Valve Corporation, All rights reserved. =======
 //
 // Purpose: languages definition
 //
@@ -6,7 +6,7 @@
 
 #include "language.h"
 #include "tier0/dbg.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"

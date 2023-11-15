@@ -4,7 +4,7 @@
 #include <vgui/IScheme.h>
 #include <vgui_controls/Label.h>
 #include <vgui_controls/PanelListPanel.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 #include "theme_room_picker.h"
 #include "TileSource/LevelTheme.h"

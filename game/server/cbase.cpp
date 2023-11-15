@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ====
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ====
 /*
 Entity Data Descriptions
 
@@ -77,7 +77,7 @@ OUTPUTS:
 #include "entityinput.h"
 #include "entityoutput.h"
 #include "mempool.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "datacache/imdlcache.h"
 #include "env_debughistory.h"
 

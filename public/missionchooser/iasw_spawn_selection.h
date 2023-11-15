@@ -9,7 +9,7 @@
 #pragma once
 #endif
 
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "mathlib/vector.h"
 
 class IASWSpawnDefinitionEntry;

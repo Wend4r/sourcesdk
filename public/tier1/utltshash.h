@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -16,7 +16,7 @@
 
 #include <limits.h>
 #include "tier0/threadtools.h"
-#include "tier1/mempool.h"
+#include "tier0/mempool.h"
 #include "generichash.h"
 
 
@@ -183,7 +183,7 @@ private:
 //-----------------------------------------------------------------------------
 template<class T, int BUCKET_COUNT, class KEYTYPE, class HashFuncs, int nAlignment> 
 CUtlTSHash<T,BUCKET_COUNT,KEYTYPE,HashFuncs,nAlignment>::CUtlTSHash( int nAllocationCount ) :
-	m_EntryMemory( sizeof( HashFixedData_t ), nAllocationCount, CUtlMemoryPool::GROW_SLOW, MEM_ALLOC_CLASSNAME( HashFixedData_t ), nAlignment )
+	m_EntryMemory( sizeof( HashFixedData_t ), nAllocationCount, nAlignment, CUtlMemoryPool::GROW_SLOW, MEM_ALLOC_CLASSNAME( HashFixedData_t ) )
 {
 #ifdef _DEBUG
 	m_ContentionCheck = 0;

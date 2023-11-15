@@ -24,7 +24,7 @@
 #include "materialsystem/imaterialsystem.h"
 #include "DetailObjectSystem.h"
 #include "tier0/vprof.h"
-#include "tier1/mempool.h"
+#include "tier0/mempool.h"
 #include "vstdlib/jobthread.h"
 #include "datacache/imdlcache.h"
 #include "engine/IEngineTrace.h"

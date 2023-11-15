@@ -13,7 +13,7 @@
 #endif
 
 #include "utlvector.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "tilegen_class_interfaces.h"
 
 //-----------------------------------------------------------------------------

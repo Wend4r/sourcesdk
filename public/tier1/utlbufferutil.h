@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======//
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======//
 //
 // Purpose: 
 //
@@ -15,7 +15,7 @@
 #endif
 
 #include "tier1/utlvector.h"
-#include "tier1/utlbuffer.h"
+#include "tier0/utlbuffer.h"
 
 
 //-----------------------------------------------------------------------------

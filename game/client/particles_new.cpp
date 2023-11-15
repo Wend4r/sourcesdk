@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2006, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2006, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #include "particle_property.h"
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
-#include "tier1/keyvalues.h"
+#include "tier0/keyvalues.h"
 #include "model_types.h"
 #include "vprof.h"
 #include "datacache/iresourceaccesscontrol.h"

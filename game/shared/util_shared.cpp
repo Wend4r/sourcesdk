@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 #include "mathlib/IceKey.H"
 #include "checksum_crc.h"
 #include "particle_parse.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "icommandline.h"
 
 #ifdef CLIENT_DLL

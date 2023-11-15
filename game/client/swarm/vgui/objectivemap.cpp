@@ -12,7 +12,7 @@
 #include "ObjectiveTitlePanel.h"
 #include "ObjectiveDetailsPanel.h"
 #include <vgui/ISurface.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "filesystem.h"
 #include "asw_hud_minimap.h"
 #include "hud_element_helper.h"

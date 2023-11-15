@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,7 +7,7 @@
 #include "EngineInterface.h"
 #include "VGenericPanelList.h"
 #include "IAchievementMgr.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "VFooterPanel.h"
 #include "fmtstr.h"
 
@@ -42,7 +42,9 @@ using namespace BaseModUI;
 
 KeyValues *g_pPreloadedAchievementListItemLayout = NULL;
 
+#ifdef _MSC_VER
 #pragma warning( disable : 4800 ) // warning C4800: 'uint64' : forcing value to bool 'true' or 'false' (performance warning)
+#endif
 
 AchievementListItem::AchievementListItem( IAchievement *pAchievement ) : BaseClass( NULL, "AchievementListItem" )
 {

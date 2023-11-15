@@ -31,7 +31,7 @@
 #include "c_ai_basenpc.h"
 #include "apparent_velocity_helper.h"
 #include "c_baseanimatingoverlay.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "hltvcamera.h"
 #include "datacache/imdlcache.h"
 #include "toolframework/itoolframework.h"
@@ -263,9 +263,11 @@ CCurTimeScopeGuard::~CCurTimeScopeGuard()
 // Should these be somewhere else?
 #define PITCH 0
 
+#ifdef _MSC_VER
 // HACK HACK:  3/28/02 ywb Had to proxy around this or interpolation is borked in multiplayer, not sure what
 //  the issue is, just a global optimizer bug I presume
 #pragma optimize( "g", off )
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: Decodes animtime and notes when it changes
 // Input  : *pStruct - ( C_BaseEntity * ) used to flag animtime is changine
@@ -473,7 +475,9 @@ void RecvProxy_ToolRecording( const CRecvProxyData *pData, void *pStruct, void *
 	pEnt->SetToolRecording( pData->m_Value.m_Int != 0 );
 }
 
+#ifdef _MSC_VER
 #pragma optimize( "g", on )
+#endif
 
 // Expose it to the engine.
 IMPLEMENT_CLIENTCLASS(C_BaseEntity, DT_BaseEntity, CBaseEntity);

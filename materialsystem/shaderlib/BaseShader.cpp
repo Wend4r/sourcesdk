@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -17,7 +17,7 @@
 #include "shaderlib/commandbuilder.h"
 #include "renderparm.h"
 #include "mathlib/vmatrix.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "convar.h"
 #include "tier0/vprof.h"
 

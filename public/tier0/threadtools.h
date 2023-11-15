@@ -1,4 +1,4 @@
-//========== Copyright © 2005, Valve Corporation, All rights reserved. ========
+//========== Copyright ï¿½ 2005, Valve Corporation, All rights reserved. ========
 //
 // Purpose: A collection of utility classes to simplify thread handling, and
 //			as much as possible contain portability problems. Here avoiding 
@@ -274,6 +274,11 @@ inline bool ThreadInterlockedAssignIf( uint32 volatile *p, uint32 value, uint32 
 //inline int ThreadInterlockedCompareExchange( int volatile *p, int value, int comperand )	{ return ThreadInterlockedCompareExchange( (int32 volatile *)p, value, comperand ); }
 //inline bool ThreadInterlockedAssignIf( int volatile *p, int value, int comperand )	{ return ThreadInterlockedAssignIf( (int32 volatile *)p, value, comperand ); }
 
+#if defined( _WIN64 )
+typedef __m128i int128;
+inline int128 int128_zero()	{ return _mm_setzero_si128(); }
+PLATFORM_INTERFACE bool ThreadInterlockedAssignIf128( volatile int128 *pDest, const int128 &value, const int128 &comperand ) NOINLINE;
+#endif
 
 //-----------------------------------------------------------------------------
 // Access to VTune thread profiling
@@ -544,7 +549,7 @@ template <typename T>
 class CInterlockedPtr
 {
 public:
-	CInterlockedPtr() : m_value( 0 ) 				{ COMPILE_TIME_ASSERT( sizeof(T *) == sizeof(int32) ); /* Will need to rework operator+= for 64 bit */ }
+	CInterlockedPtr() : m_value( 0 ) 				{}
 	CInterlockedPtr( T *value ) : m_value( value ) 	{}
 
 	operator T *() const			{ return m_value; }
@@ -553,6 +558,23 @@ public:
 	bool operator==( T *rhs ) const	{ return ( m_value == rhs ); }
 	bool operator!=( T *rhs ) const	{ return ( m_value != rhs ); }
 
+#ifdef X64BITS
+	T* operator++() { return ((T*)ThreadInterlockedExchangeAdd64((int64*)&m_value, sizeof(T))) + 1; }
+	T* operator++(int) { return (T*)ThreadInterlockedExchangeAdd64((int64*)&m_value, sizeof(T)); }
+
+	T* operator--() { return ((T*)ThreadInterlockedExchangeAdd64((int64*)&m_value, -sizeof(T))) - 1; }
+	T* operator--(int) { return (T*)ThreadInterlockedExchangeAdd64((int64*)&m_value, -sizeof(T)); }
+
+	bool AssignIf(T* conditionValue, T* newValue) { return ThreadInterlockedAssignPointerToConstIf((void const**)&m_value, (void const*)newValue, (void const*)conditionValue); }
+
+	T* operator=(T* newValue) { ThreadInterlockedExchangePointerToConst((void const**)&m_value, (void const*)newValue); return newValue; }
+
+	void operator+=(int add) { ThreadInterlockedExchangeAdd64((int64*)&m_value, add * sizeof(T)); }
+	void operator-=(int subtract) { operator+=(-subtract); }
+
+	// Atomic add is like += except it returns the previous value as its return value
+	T* AtomicAdd(int add) { return (T*)ThreadInterlockedExchangeAdd64((int64*)&m_value, add * sizeof(T)); }
+#else
 	T *operator++()					{ return ((T *)ThreadInterlockedExchangeAdd( (int32 *)&m_value, sizeof(T) )) + 1; }
 	T *operator++(int)				{ return (T *)ThreadInterlockedExchangeAdd( (int32 *)&m_value, sizeof(T) ); }
 
@@ -568,6 +590,7 @@ public:
 
 	// Atomic add is like += except it returns the previous value as its return value
 	T *AtomicAdd( int add ) { return ( T * ) ThreadInterlockedExchangeAdd( (int32 *)&m_value, add * sizeof(T) ); }
+#endif
 
 	T *operator+( int rhs ) const		{ return m_value + rhs; }
 	T *operator-( int rhs ) const		{ return m_value - rhs; }
@@ -591,22 +614,22 @@ private:
 class PLATFORM_CLASS CThreadMutex
 {
 public:
-	CThreadMutex( const char* pDebugName );
+	CThreadMutex( const char* pDebugName = NULL );
 	~CThreadMutex();
 
 	//------------------------------------------------------
 	// Mutex acquisition/release. Const intentionally defeated.
 	//------------------------------------------------------
-	void Lock( const char *pFileName, int nLine );
-	void Lock( const char *pFileName, int nLine ) const		{ (const_cast<CThreadMutex *>(this))->Lock( pFileName, nLine ); }
-	void Unlock( const char *pFileName, int nLine );
-	void Unlock( const char *pFileName, int nLine ) const	{ (const_cast<CThreadMutex *>(this))->Unlock( pFileName, nLine ); }
+	void Lock( const char *pFileName = NULL, int nLine = 0 );
+	void Lock( const char *pFileName = NULL, int nLine = 0 ) const		{ (const_cast<CThreadMutex *>(this))->Lock( pFileName, nLine ); }
+	void Unlock( const char *pFileName = NULL, int nLine = 0 );
+	void Unlock( const char *pFileName = NULL, int nLine = 0 ) const	{ (const_cast<CThreadMutex *>(this))->Unlock( pFileName, nLine ); }
 
-	bool TryLock( const char *pFileName, int nLine );
-	bool TryLock( const char *pFileName, int nLine ) const	{ return (const_cast<CThreadMutex *>(this))->TryLock( pFileName, nLine ); }
+	bool TryLock( const char *pFileName = NULL, int nLine = 0 );
+	bool TryLock( const char *pFileName = NULL, int nLine = 0 ) const	{ return (const_cast<CThreadMutex *>(this))->TryLock( pFileName, nLine ); }
 
-	void LockSilent( const char *pFileName, int nLine ); // A Lock() operation which never spews.  Required by the logging system to prevent badness.
-	void UnlockSilent( const char *pFileName, int nLine ); // An Unlock() operation which never spews.  Required by the logging system to prevent badness.
+	void LockSilent( const char *pFileName = NULL, int nLine = 0 ); // A Lock() operation which never spews.  Required by the logging system to prevent badness.
+	void UnlockSilent( const char *pFileName = NULL, int nLine = 0 ); // An Unlock() operation which never spews.  Required by the logging system to prevent badness.
 
 	//------------------------------------------------------
 	// Use this to make deadlocks easier to track by asserting

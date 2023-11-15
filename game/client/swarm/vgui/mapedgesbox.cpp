@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "MapEdgesBox.h"
 #include "vgui/ISurface.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "SoftLine.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

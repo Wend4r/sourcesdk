@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 /*
 #include "AI_Criteria.h"
 #include "ai_speech.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "engine/IEngineSound.h"
 */
 

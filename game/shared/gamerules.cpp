@@ -8,7 +8,7 @@
 #include "gamerules.h"
 #include "ammodef.h"
 #include "tier0/vprof.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "iachievementmgr.h"
 
 #ifdef CLIENT_DLL

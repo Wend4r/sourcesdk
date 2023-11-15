@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,12 +12,65 @@
 
 #include <inetmsghandler.h>
 #include "tier0/platform.h"
+#include "userid.h"
 #include "tier1/utlvector.h"
 
 class IServer;
 class INetMessage;
+struct NetMessageCvar_t;
 class CMsg_CVars;
-struct USERID_t;
+
+enum CrossPlayPlatform_t
+{
+	CROSSPLAYPLATFORM_UNKNOWN = 0,
+	CROSSPLAYPLATFORM_PC,
+	CROSSPLAYPLATFORM_X360,
+	CROSSPLAYPLATFORM_PS3,
+
+	CROSSPLAYPLATFORM_LAST = CROSSPLAYPLATFORM_PS3,
+};
+
+inline bool IsCrossPlayPlatformAConsole( CrossPlayPlatform_t platform )
+{
+	return (platform == CROSSPLAYPLATFORM_X360) || (platform == CROSSPLAYPLATFORM_PS3);
+}
+
+//provide the compiled code's platform for convenience
+#if defined( _GAMECONSOLE )
+#	if defined( PLATFORM_X360 )
+#		define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_X360
+#	elif defined( PLATFORM_PS3 )
+#		define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_PS3
+#	else
+#pragma message( "Unknown console, please update this platform definition" )
+#		define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_UNKNOWN
+#	endif
+#else
+#	define CROSSPLAYPLATFORM_THISPLATFORM CROSSPLAYPLATFORM_PC
+#endif
+
+struct HltvReplayParams_t
+{
+	HltvReplayParams_t()
+	{
+		m_nPrimaryTargetEntIndex = 0;
+		m_flPlaybackSpeed = 1.0f;
+		m_flDelay = 10.0f;
+		m_flStopAt = 0.0f;
+		m_flSlowdownBeginAt = 0;
+		m_flSlowdownEndAt = 0;
+		m_flSlowdownRate = 1.0f;
+		m_bAbortCurrentReplay = false;
+	}
+	int m_nPrimaryTargetEntIndex;
+	float m_flDelay;
+	float m_flStopAt;
+	float m_flPlaybackSpeed;
+	float m_flSlowdownBeginAt;
+	float m_flSlowdownEndAt;
+	float m_flSlowdownRate;
+	bool m_bAbortCurrentReplay; // even if replay is in progress, restart it - this may cause a stutter on the client, so use with care
+};
 
 abstract_class IClient : public INetChannelHandler
 {
@@ -25,7 +78,7 @@ public:
 	virtual	~IClient() {}
 
 	// connect client
-	virtual void	Connect( const char * szName, int nUserID, INetChannel *pNetChannel, bool bFakePlayer, int, const CMsg_CVars *cvars ) = 0;
+	virtual void	Connect( const char * szName, int nUserID, INetChannel *pNetChannel, bool bFakePlayer, CrossPlayPlatform_t clientPlatform, const CMsg_CVars *pVecCvars = NULL ) = 0;
 
 	// set the client in a pending state waiting for a new game
 	virtual void	Inactivate( void ) = 0;
@@ -34,7 +87,9 @@ public:
 	virtual	void	Reconnect( void ) = 0;				// froce reconnect
 
 	// disconnects a client with a given reason
-	virtual void	Disconnect( /* ENetworkDisconnectionReason */ int reason ) = 0;
+	virtual void	Disconnect( const char *reason ) = 0;
+
+	virtual bool	ChangeSplitscreenUser( int nSplitScreenUserSlot ) = 0;
 
 	virtual int				GetPlayerSlot() const = 0; // returns client slot (usually entity number-1)
 	virtual int				GetUserID() const = 0; // unique ID on this server 
@@ -50,8 +105,8 @@ public:
 	virtual int		GetRate( void ) const = 0;
 	
 	// set/get updates/second rate
-	virtual void	SetUpdateRate( int nUpdateRate, bool bForce ) = 0;
-	virtual int		GetUpdateRate( void ) const = 0;	
+	virtual void	SetUpdateRate( float fUpdateRate, bool bForce ) = 0;
+	virtual float	GetUpdateRate( void ) const = 0;	
 
 	// clear complete object & free all memory 
 	virtual void	Clear( void ) = 0;
@@ -76,6 +131,10 @@ public:
 	virtual bool	IsFakeClient( void ) const = 0;
 	// returns true, if client is a HLTV proxy
 	virtual bool	IsHLTV( void ) const = 0;
+#if defined( REPLAY_ENABLED )
+	// returns true, if client is a Replay proxy
+	virtual bool	IsReplay( void ) const = 0;
+#endif
 	// returns true, if client hears this player
 	virtual bool	IsHearingClient(int index) const = 0;
 	// returns true, if client hears this player by proximity
@@ -96,6 +155,15 @@ public:
 	virtual int		GetNumPlayers() = 0;
 
 	virtual bool	IsHumanPlayer() const = 0;
+
+	virtual CrossPlayPlatform_t GetClientPlatform() const = 0;
+
+	virtual bool StartHltvReplay( const HltvReplayParams_t &params ) = 0;
+	virtual void StopHltvReplay() = 0;
+	virtual int GetHltvReplayDelay() = 0;
+	virtual const char * GetHltvReplayStatus()const { return ""; }
+	virtual bool CanStartHltvReplay() = 0;
+	virtual void ResetReplayRequestTime() = 0;
 };
 
 #endif // ICLIENT_H

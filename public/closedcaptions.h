@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -11,8 +11,8 @@
 #endif
 
 #include "captioncompiler.h"
-#include "tier1/utlsymbol.h"
-#include "tier1/UtlSortVector.h"
+#include "tier0/utlsymbol.h"
+#include "tier1/utlsortvector.h"
 
 FORWARD_DECLARE_HANDLE( memhandle_t );
 

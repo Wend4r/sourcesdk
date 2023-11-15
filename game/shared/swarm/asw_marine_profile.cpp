@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "asw_marine_profile.h"
 #include "filesystem.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "asw_util_shared.h"
 #include "stringpool.h"
 #ifdef CLIENT_DLL

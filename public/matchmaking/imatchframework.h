@@ -15,9 +15,9 @@
 class IMatchFramework;
 class IMatchSession;
 
-#include "appframework/iAppSystem.h"
+#include "appframework/iappsystem.h"
 
-#include "tier0/interface.h"
+#include "tier1/interface.h"
 #include "keyvalues.h"
 
 #if !defined( _X360 )
@@ -63,7 +63,8 @@ public:
 
 	// Get the match system
 	virtual IMatchSystem * GetMatchSystem() = 0;
-
+	
+	virtual void ApplySettings(KeyValues *pSettings ) = 0;
 
 	// Entry point to create session
 	virtual void CreateSession( KeyValues *pSettings ) = 0;
@@ -76,6 +77,10 @@ public:
 
 	// Close the session
 	virtual void CloseSession() = 0;
+	
+	virtual bool IsOnlineGame() = 0;
+	
+	virtual void UpdateTeamProperties( KeyValues *pProperties ) = 0;
 };
 
 #define IMATCHFRAMEWORK_VERSION_STRING "MATCHFRAMEWORK_001"

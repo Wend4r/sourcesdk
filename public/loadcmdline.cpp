@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: loads additional command line options from a config file
 //
 // $NoKeywords: $
 //=============================================================================//
 
-#include "KeyValues.h"
-#include "tier1/strtools.h"
+#include "keyvalues.h"
+#include "tier0/strtools.h"
 #include "FileSystem_Tools.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 
 // So we know whether or not we own argv's memory
 static bool sFoundConfigArgs = false;

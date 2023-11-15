@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,7 +7,7 @@
 
 #include "LabeledCommandComboBox.h"
 #include "EngineInterface.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui/ILocalize.h>
 
 // memdbgon must be the last include file in a .cpp file!!!

@@ -1,4 +1,4 @@
-//===== Copyright � 2005-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright © 2005-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: A higher level link library for general use in the game and tools.
 //
@@ -12,7 +12,7 @@
 #pragma once
 #endif
 
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "tier1/convar.h"
 
 //-----------------------------------------------------------------------------

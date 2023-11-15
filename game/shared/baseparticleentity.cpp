@@ -10,7 +10,7 @@
 #include "baseparticleentity.h"
 
 #ifdef CLIENT_DLL
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "toolframework_client.h"
 #endif
 

@@ -4,7 +4,7 @@
 //
 //===============================================================================
 
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "tilegen_mission_preprocessor.h"
 #include "tilegen_rule.h"
 

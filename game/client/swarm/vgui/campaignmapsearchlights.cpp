@@ -3,7 +3,7 @@
 #include "vgui/isurface.h"
 #include "asw_gamerules.h"
 #include "asw_campaign_info.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>

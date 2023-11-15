@@ -14,7 +14,7 @@
 #pragma once
 #endif
 
-#include "Color.h"
+#include "color.h"
 #include "icommandline.h"
 #include <stdio.h>
 
@@ -24,7 +24,9 @@
 #endif
 
 // Used by CColorizedLoggingListener
+#if defined( _WIN32 ) || (defined(POSIX) && !defined(_GAMECONSOLE))
 #include "tier0/win32consoleio.h"
+#endif
 
 /*
 	---- Logging System ----

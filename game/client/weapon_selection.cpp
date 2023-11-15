@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Weapon selection handling
 //
@@ -10,7 +10,7 @@
 #include "history_resource.h"
 #include "menu.h"
 #include "in_buttons.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "filesystem.h"
 #include "iinput.h"
 

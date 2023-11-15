@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Client explosions
 //
@@ -11,7 +11,7 @@
 #include "glow_overlay.h"
 #include "fx_explosion.h"
 #include "engine/ivdebugoverlay.h"
-#include "tier1/keyvalues.h"
+#include "tier0/keyvalues.h"
 #include "toolframework_client.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

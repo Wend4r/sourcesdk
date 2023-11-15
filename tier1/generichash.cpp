@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "tier0/basetypes.h"
 #include "tier0/platform.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "generichash.h"
 #include <ctype.h>
 

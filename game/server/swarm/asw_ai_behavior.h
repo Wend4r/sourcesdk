@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		blah blah blah
 //
@@ -18,7 +18,7 @@
 #pragma once
 #endif
 
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 #include "ai_behavior.h"
 #include "asw_alien.h"
 

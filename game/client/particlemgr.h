@@ -126,7 +126,7 @@ entities. Each one is useful under different conditions.
 #endif
 #include "tier1/utlintrusivelist.h"
 #include "tier1/utlobjectreference.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 
 
 //-----------------------------------------------------------------------------

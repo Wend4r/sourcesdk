@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -150,7 +150,7 @@ CPolyhedron *GetTempPolyhedron( unsigned short iVertices, unsigned short iLines,
 }
 
 
-Vector CPolyhedron::Center( void )
+Vector CPolyhedron::Center( void ) const
 {
 	if( iVertexCount == 0 )
 		return vec3_origin;

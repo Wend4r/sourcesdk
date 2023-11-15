@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/platwindow.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "inputsystem/InputEnums.h"
 #include "inputsystem/ButtonCode.h"
 #include "inputsystem/AnalogCode.h"

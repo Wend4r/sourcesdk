@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -23,7 +23,7 @@
 #include <vgui/IVGui.h>
 #include <vstdlib/IKeyValuesSystem.h>
 
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/ImageList.h>
 #include <vgui_controls/Label.h>
 #include <vgui_controls/SectionedListPanel.h>

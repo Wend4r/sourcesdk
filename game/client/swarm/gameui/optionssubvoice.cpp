@@ -1,4 +1,4 @@
-//========= Copyright © Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #include "EngineInterface.h"
 #include "ivoicetweak.h"
 #include "CvarToggleCheckButton.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "tier1/convar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

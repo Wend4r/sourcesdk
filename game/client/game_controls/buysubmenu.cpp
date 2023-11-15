@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,7 +8,7 @@
 #include "cbase.h"
 #include "BuySubMenu.h"
 
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/WizardPanel.h>
 #include <FileSystem.h>
 #include <game/client/iviewport.h>

@@ -9,7 +9,7 @@
 #include "TileSource/MapLayout.h"
 #include "TileSource/Room.h"
 #include "TileSource/RoomTemplate.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "asw_spawn_selection.h"
 #include "layout_system/tilegen_layout_system.h"
 

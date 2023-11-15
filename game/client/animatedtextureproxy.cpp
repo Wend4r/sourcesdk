@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -21,7 +21,9 @@ public:
 
 EXPOSE_MATERIAL_PROXY( CAnimatedTextureProxy, AnimatedTexture );
 
+#ifdef _MSC_VER
 #pragma warning (disable : 4100)
+#endif
 
 float CAnimatedTextureProxy::GetAnimationStartTime( void* pBaseEntity )
 {

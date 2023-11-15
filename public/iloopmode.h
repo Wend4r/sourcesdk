@@ -10,9 +10,9 @@
 #pragma once
 #endif
 
-#include <appframework/IAppSystem.h>
+#include <appframework/iappsystem.h>
 #include <inputsystem/InputEnums.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <engine/eventdispatcher.h>
 
 class ISource2WorldSession;

@@ -2,7 +2,7 @@
 #define _INCLUDED_TILE_CHECK_H
 
 #include "utlvector.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "vgui_controls/Frame.h"
 
 class CRoomTemplate;

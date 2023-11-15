@@ -1,10 +1,9 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //=============================================================================//
 
-#include "mathlib/mathlib.h"
 #include "rangecheckedvar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

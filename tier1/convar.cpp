@@ -1,6 +1,4 @@
-
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
-//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 // Purpose: 
 //
 // $NoKeywords: $
@@ -11,16 +9,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include "basetypes.h"
+#include "tier0/characterset.h"
+#include "tier0/utlbuffer.h"
 #include "tier1/convar.h"
-#include "tier1/strtools.h"
-#include "tier1/characterset.h"
+#include "tier0/strtools.h"
 #include "tier1/utlvector.h"
-#include "tier1/utlbuffer.h"
 #include "tier1/tier1.h"
+#ifdef CONVAR_WORK_FINISHED
 #include "tier1/convar_serverbounded.h"
+#endif // CONVAR_WORK_FINISHED
 #include "icvar.h"
 #include "tier0/dbg.h"
-#include "Color.h"
+#include "color.h"
 #if defined( _X360 )
 #include "xbox/xbox_console.h"
 #endif
@@ -300,11 +300,11 @@ CCommand::CCommand( int nArgC, const char **ppArgV )
 	for ( int i = 0; i < nArgC; ++i )
 	{
 		m_Args.AddToTail( pBuf );
-		int nLen = V_strlen( ppArgV[i] );
+		size_t nLen = V_strlen( ppArgV[i] );
 		memcpy( pBuf, ppArgV[i], nLen+1 );
 		if ( i == 0 )
 		{
-			m_nArgv0Size = nLen;
+			m_nArgv0Size = (int)nLen;
 		}
 		pBuf += nLen+1;
 
@@ -340,7 +340,7 @@ characterset_t* CCommand::DefaultBreakSet()
 	return &s_BreakSet;
 }
 
-bool CCommand::Tokenize( const char *pCommand, characterset_t *pBreakSet )
+bool CCommand::Tokenize( const char *pCommand, cmd_source_t source, characterset_t *pBreakSet )
 {
 	Reset();
 	if ( !pCommand )
@@ -355,7 +355,7 @@ bool CCommand::Tokenize( const char *pCommand, characterset_t *pBreakSet )
 	// Copy the current command into a temp buffer
 	// NOTE: This is here to avoid the pointers returned by DequeueNextCommand
 	// to become invalid by calling AddText. Is there a way we can avoid the memcpy?
-	int nLen = V_strlen( pCommand );
+	size_t nLen = V_strlen( pCommand );
 	if ( nLen >= COMMAND_MAX_LENGTH - 1 )
 	{
 		Warning( "CCommand::Tokenize: Encountered command which overflows the tokenizer buffer.. Skipping!\n" );
@@ -365,7 +365,7 @@ bool CCommand::Tokenize( const char *pCommand, characterset_t *pBreakSet )
 	memcpy( m_ArgSBuffer.Base(), pCommand, nLen + 1 );
 
 	// Parse the current command into the current command buffer
-	CUtlBuffer bufParse( m_ArgSBuffer.Base(), nLen, CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY);
+	CUtlBuffer bufParse( m_ArgSBuffer.Base(), (int)nLen, CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY);
 	int nArgvBufferSize = 0;
 	while ( bufParse.IsValid() && ( m_Args.Count() < COMMAND_MAX_ARGC ) )
 	{

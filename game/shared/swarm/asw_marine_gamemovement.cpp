@@ -4999,7 +4999,9 @@ surfacedata_t*	CASW_MarineGameMovement::GetSurfaceData()
 // Purpose: TF2 commander mode movement logic
 //-----------------------------------------------------------------------------
 
+#ifdef _MSC_VER
 #pragma warning (disable : 4701)
+#endif
 
 void CASW_MarineGameMovement::IsometricMove( void )
 {
@@ -5037,7 +5039,9 @@ void CASW_MarineGameMovement::IsometricMove( void )
 	mv->m_vecVelocity.Init();
 }
 
+#ifdef _MSC_VER
 #pragma warning (default : 4701)
+#endif
 
 // Expose our interface.
 static CASW_MarineGameMovement g_MarineGameMovement;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #include "soundenvelope.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "saverestore_utlvector.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "studio.h"
 #include "bone_setup.h"
 #include "collisionutils.h"

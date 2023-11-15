@@ -1,5 +1,5 @@
 #include "VMFExporter.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 
 #include "TileSource/RoomTemplate.h"
 #include "TileSource/Room.h"

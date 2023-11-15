@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2007, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2007, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -19,7 +19,7 @@
 #include "engine/IClientLeafSystem.h"
 #include "cdll_int.h"
 #include "IVRenderView.h"
-#include "tier1/mempool.h"
+#include "tier0/mempool.h"
 #include "tier1/refcount.h"
 
 

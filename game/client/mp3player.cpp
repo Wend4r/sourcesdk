@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======
 //
 // Purpose: A simple .mp3 player example
 //
@@ -8,7 +8,7 @@
 
 #if 0
 #include "mp3player.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "FileSystem.h"
 
 #include "vgui_controls/MenuButton.h"

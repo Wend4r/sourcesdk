@@ -58,7 +58,7 @@
 #include "IEffects.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "doors.h"
 #include "BasePropDoor.h"
 #include "saverestore_utlvector.h"

@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -17,7 +17,7 @@
 #include "materialsystem/IMaterialVar.h"
 #include "view_shared.h"
 #include "viewrender.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "toolframework/itoolframework.h"
 #include "toolframework_client.h"
 

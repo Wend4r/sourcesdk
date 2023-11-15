@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: TrackIR handling function
 //
@@ -21,7 +21,7 @@
 #include "vphysics_interface.h"
 #include <icvar.h>
 #include <baseentity_shared.h>
-#include "entityhandle.h"
+#include "basehandle.h"
 #include "ehandle.h"
 #include "utlvector.h"
 #include "cdll_client_int.h"

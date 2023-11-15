@@ -2,7 +2,7 @@
 #include "Room.h"
 #include "ChunkFile.h"
 #include "RoomTemplate.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "LevelTheme.h"
 #include "asw_spawn_selection.h"
 #include "asw_mission_chooser.h"

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #endif
 
 #include "tier1/utlvector.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 #include <vgui/VGUI.h>
 #include <vgui/Dar.h>
 #include <vgui/Cursor.h>

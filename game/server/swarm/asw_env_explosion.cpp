@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements an explosion entity and a support spark shower entity.
 //
@@ -10,7 +10,7 @@
 #include "asw_env_explosion.h"
 #include "dlight.h"
 #include "vstdlib/random.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "shareddefs.h"
 #include "asw_gamerules.h"
 #include "asw_fx_shared.h"

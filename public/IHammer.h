@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: The application object.
 //
@@ -7,7 +7,7 @@
 #ifndef IHAMMER_H
 #define IHAMMER_H
 
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 
 typedef struct tagMSG MSG;
 

@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======//
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 #pragma once
 #endif
 
-#include "tier1/utlbuffer.h"
+#include "tier0/utlbuffer.h"
 #include "filesystem.h"
 
 
@@ -39,6 +39,9 @@ public:
 
 	// Is the file open?
 	bool IsOpen() const;
+
+	// try flushing the file
+	bool TryFlushToFile( int nFlushToFileBytes );
 
 private:
 	// error flags

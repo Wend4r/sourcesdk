@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 
 #include "basemodui.h"
 #include "vgui_controls/TextEntry.h"
-#include "tier1/UtlString.h"
+#include "tier0/utlstring.h"
 
 namespace BaseModUI {
 

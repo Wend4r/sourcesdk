@@ -34,7 +34,7 @@
 #include "fx_explosion.h"
 #include "particles_localspace.h"
 #include "toolframework_client.h"
-#include "tier1/keyvalues.h"
+#include "tier0/keyvalues.h"
 #include "asw_fx_shared.h"
 #include "c_asw_alien.h"
 #include "shake.h"

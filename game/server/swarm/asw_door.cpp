@@ -14,7 +14,7 @@
 #include "explode.h"
 #include "utlrbtree.h"
 #include "physics_impact_damage.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "filesystem.h"
 #include "scriptevent.h"
 #include "entityblocker.h"

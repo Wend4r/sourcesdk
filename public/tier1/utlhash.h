@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -30,7 +30,7 @@ public:
 	typedef K KeyFunc_t;
 	
 	// constructor/deconstructor
-	CUtlHash( int bucketCount = 0, int growCount = 0, int initCount = 0,
+	explicit CUtlHash( int bucketCount = 0, int growCount = 0, int initCount = 0,
 		      CompareFunc_t compareFunc = 0, KeyFunc_t keyFunc = 0 );
 	~CUtlHash();
 
@@ -226,7 +226,7 @@ inline bool CUtlHash<Data, C, K>::DoFind( Data const &src, unsigned int *pBucket
 		*pBucket = ndxBucket = key % bucketCount;
 	}
 
-	int ndxKeyData;
+	int ndxKeyData = 0;
 	const CUtlVector<Data> &bucket = m_Buckets[ndxBucket];
 	int keyDataCount = bucket.Count();
 	for( ndxKeyData = 0; ndxKeyData < keyDataCount; ndxKeyData++ )
@@ -249,7 +249,7 @@ template<class Data, typename C, typename K>
 inline UtlHashHandle_t CUtlHash<Data, C, K>::Find( Data const &src ) const
 {
 	unsigned int ndxBucket;
-	int ndxKeyData;
+	int ndxKeyData = 0;
 
 	if ( DoFind( src, &ndxBucket, &ndxKeyData ) )
 	{
@@ -265,7 +265,7 @@ template<class Data, typename C, typename K>
 inline UtlHashHandle_t CUtlHash<Data, C, K>::Insert( Data const &src )
 {
 	unsigned int ndxBucket;
-	int ndxKeyData;
+	int ndxKeyData = 0;
 
 	if ( DoFind( src, &ndxBucket, &ndxKeyData ) )
 	{
@@ -283,7 +283,7 @@ template<class Data, typename C, typename K>
 inline UtlHashHandle_t CUtlHash<Data, C, K>::Insert( Data const &src, bool *pDidInsert )
 {
 	unsigned int ndxBucket;
-	int ndxKeyData;
+	int ndxKeyData = 0;
 
 	if ( DoFind( src, &ndxBucket, &ndxKeyData ) )
 	{
@@ -304,7 +304,7 @@ template<class Data, typename C, typename K>
 inline UtlHashHandle_t CUtlHash<Data, C, K>::AllocEntryFromKey( Data const &src )
 {
 	unsigned int ndxBucket;
-	int ndxKeyData;
+	int ndxKeyData = 0;
 
 	if ( DoFind( src, &ndxBucket, &ndxKeyData ) )
 	{
@@ -571,13 +571,13 @@ public:
 	template <typename HashData>
 	struct HashFastData_t_
 	{
-		uintp		m_uiKey;
+		uintp	m_uiKey;
 		HashData	m_Data;
 	};
 
 	typedef HashFastData_t_<Data> HashFastData_t;
 
-	unsigned int						m_uiBucketMask;	
+	uintp						m_uiBucketMask;	
 	CUtlVector<UtlHashFastHandle_t>		m_aBuckets;
 	CUtlFixedLinkedList<HashFastData_t>	m_aDataPool;
 
@@ -647,7 +647,7 @@ template<class Data, class HashFuncs> inline int CUtlHashFast<Data,HashFuncs>::C
 */
 
 //-----------------------------------------------------------------------------
-// Purpose: Insert data into the hash table given its key (unsigned int), with
+// Purpose: Insert data into the hash table given its key (uintp), with
 //          a check to see if the element already exists within the tree.
 //-----------------------------------------------------------------------------
 template<class Data, class HashFuncs> inline UtlHashFastHandle_t CUtlHashFast<Data,HashFuncs>::Insert( uintp uiKey, const Data &data )
@@ -661,7 +661,7 @@ template<class Data, class HashFuncs> inline UtlHashFastHandle_t CUtlHashFast<Da
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Insert data into the hash table given its key (unsigned int),
+// Purpose: Insert data into the hash table given its key (uintp),
 //          without a check to see if the element already exists within the tree.
 //-----------------------------------------------------------------------------
 template<class Data, class HashFuncs> inline UtlHashFastHandle_t CUtlHashFast<Data,HashFuncs>::FastInsert( uintp uiKey, const Data &data )
@@ -830,7 +830,7 @@ template<class Data, class HashFuncs> inline bool CUtlHashFast<Data,HashFuncs>::
 // Fixed Hash
 //
 // Number of buckets must be a power of 2.
-// Key must be 32-bits (unsigned int).
+// Key must be pointer-size (uintp).
 //
 typedef intp UtlHashFixedHandle_t;
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,8 +14,8 @@
 #endif
 
 #include "materialsystem/imaterialsystem.h"
+#include "tier0/memstack.h"
 #include "tier1/callqueue.h"
-#include "tier1/memstack.h"
 
 class IMaterialInternal;
 

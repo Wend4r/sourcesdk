@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -19,7 +19,7 @@
 #include "vgui_controls/Frame.h"
 #include "vgui_controls/QueryBox.h"
 #include "CvarToggleCheckButton.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "vgui/IInput.h"
 #include "vgui/ILocalize.h"
 #include "vgui/ISystem.h"

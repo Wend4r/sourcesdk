@@ -1,11 +1,11 @@
-//========== Copyright � 2005, Valve Corporation, All rights reserved. ========
+//========== Copyright © 2005, Valve Corporation, All rights reserved. ========
 //
 // Purpose: A class to wrap data for transport over a boundary like a thread
 //			or window.
 //
 //=============================================================================
 
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "tier0/basetypes.h"
 
 #ifndef UTLENVELOPE_H

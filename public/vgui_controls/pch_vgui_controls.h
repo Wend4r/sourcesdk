@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include "tier0/dbg.h"
 #include "tier0/valve_off.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 
 #include "tier0/valve_on.h"
 #include "tier0/memdbgon.h"

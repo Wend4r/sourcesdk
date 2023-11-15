@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -22,24 +22,24 @@
     <ProjectName>interfaces</ProjectName>
     <ProjectGuid>{E1DA8DB8-FB4C-4B14-91A6-98BCED6B9720}</ProjectGuid>
     <RootNamespace>tier1</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.19041.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -47,13 +47,7 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -74,12 +68,6 @@
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\lib\public\win64</OutDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\lib\public\win64\</OutDir>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
       <Command>
@@ -88,11 +76,10 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\public;..\public\tier0;..\public\tier1;..\public\interfaces;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_HAS_ITERATOR_DEBUGGING=0;_ALLOW_RUNTIME_LIBRARY_MISMATCH;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;_ALLOW_MSC_VER_MISMATCH;_ITERATOR_DEBUG_LEVEL=0;WIN32;_WIN32;COMPILER_MSVC;COMPILER_MSVC32;_DEBUG;DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_HAS_ITERATOR_DEBUGGING=0;_ALLOW_RUNTIME_LIBRARY_MISMATCH;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;_ALLOW_MSC_VER_MISMATCH;WIN32;_WIN32;COMPILER_MSVC;COMPILER_MSVC32;_DEBUG;DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>true</MinimalRebuild>
-      <ExceptionHandling>
-      </ExceptionHandling>
+      <ExceptionHandling>false</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -110,7 +97,8 @@
       </Command>
     </PreLinkEvent>
     <Lib>
-      <AdditionalDependencies>Rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>
+      </AdditionalDependencies>
     </Lib>
     <Xdcmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -162,8 +150,7 @@
       <AdditionalIncludeDirectories>..\public;..\public\tier0;..\public\tier1;..\public\interfaces;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_HAS_ITERATOR_DEBUGGING=0;_ALLOW_RUNTIME_LIBRARY_MISMATCH;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;_ALLOW_MSC_VER_MISMATCH;WIN32;_WIN32;COMPILER_MSVC;COMPILER_MSVC32;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
-      <ExceptionHandling>
-      </ExceptionHandling>
+      <ExceptionHandling>false</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -191,8 +178,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
     </Xdcmake>
     <Bscmake />
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  </ItemDefinitionGroup><ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <PreBuildEvent>
       <Command>
       </Command>
@@ -233,39 +219,26 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\public\tier1\bitbuf.h" />
-    <ClInclude Include="..\public\tier1\cbyteswap.h" />
     <ClInclude Include="..\public\tier1\callqueue.h" />
-    <ClInclude Include="..\public\tier1\characterset.h" />
-    <ClInclude Include="..\public\tier1\checksum_crc.h" />
-    <ClInclude Include="..\public\tier1\checksum_md5.h" />
     <ClInclude Include="..\public\tier1\CommandBuffer.h" />
     <ClInclude Include="..\public\tier1\convar.h" />
     <ClInclude Include="..\public\tier1\datamanager.h" />
     <ClInclude Include="..\public\datamap.h" />
     <ClInclude Include="..\public\tier1\delegates.h" />
-    <ClInclude Include="..\public\tier1\diff.h" />
     <ClInclude Include="..\public\tier1\fmtstr.h" />
     <ClInclude Include="..\public\tier1\functors.h" />
     <ClInclude Include="..\public\tier1\generichash.h" />
     <ClInclude Include="..\public\tier1\iconvar.h" />
     <ClInclude Include="..\public\tier1\interface.h" />
-    <ClInclude Include="..\public\tier1\KeyValues.h" />
     <ClInclude Include="..\public\tier1\lzmaDecoder.h" />
     <ClInclude Include="..\public\tier1\lzss.h" />
-    <ClInclude Include="..\public\tier1\mempool.h" />
-    <ClInclude Include="..\public\tier1\memstack.h" />
-    <ClInclude Include="..\public\tier1\netadr.h" />
     <ClInclude Include="..\public\tier1\processor_detect.h" />
     <ClInclude Include="..\public\tier1\rangecheckedvar.h" />
     <ClInclude Include="..\public\tier1\refcount.h" />
     <ClInclude Include="..\public\tier1\smartptr.h" />
-    <ClInclude Include="..\public\tier1\stringpool.h" />
-    <ClInclude Include="..\public\tier1\strtools.h" />
     <ClInclude Include="..\public\tier1\tier1.h" />
-    <ClInclude Include="..\public\tier1\uniqueid.h" />
     <ClInclude Include="..\public\tier1\utlbidirectionalset.h" />
     <ClInclude Include="..\public\tier1\utlblockmemory.h" />
-    <ClInclude Include="..\public\tier1\utlbuffer.h" />
     <ClInclude Include="..\public\tier1\utlbufferutil.h" />
     <ClInclude Include="..\public\tier1\utldict.h" />
     <ClInclude Include="..\public\tier1\utlenvelope.h" />
@@ -279,11 +252,9 @@
     <ClInclude Include="..\public\tier1\utlpriorityqueue.h" />
     <ClInclude Include="..\public\tier1\utlqueue.h" />
     <ClInclude Include="..\public\tier1\utlrbtree.h" />
-    <ClInclude Include="..\public\tier1\UtlSortVector.h" />
+    <ClInclude Include="..\public\tier1\utlsortvector.h" />
     <ClInclude Include="..\public\tier1\utlstack.h" />
-    <ClInclude Include="..\public\tier1\utlstring.h" />
-    <ClInclude Include="..\public\tier1\UtlStringMap.h" />
-    <ClInclude Include="..\public\tier1\utlsymbol.h" />
+    <ClInclude Include="..\public\tier1\utlstringmap.h" />
     <ClInclude Include="..\public\tier1\utlvector.h" />
     <ClInclude Include="..\common\xbox\xboxstubs.h" />
   </ItemGroup>

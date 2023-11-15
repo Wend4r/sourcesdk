@@ -1,4 +1,4 @@
-#include <appframework/IAppSystem.h>
+#include <appframework/iappsystem.h>
 #include <tier1/functors.h>
 
 class IEventQueue;

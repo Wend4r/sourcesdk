@@ -1,6 +1,6 @@
 #include "cbase.h"
 #include "asw_campaign_info.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <filesystem.h>
 #include "gamestringpool.h"
 

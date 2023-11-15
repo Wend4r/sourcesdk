@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #include "basecombatweapon.h"
 #include "player.h"			// For gEvilImpulse101 / CBasePlayer
 #include "gamerules.h"		// For g_pGameRules
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "ammodef.h"
 #include "baseviewmodel.h"
 #include "in_buttons.h"
@@ -19,7 +19,7 @@
 #include "game.h"
 #include "engine/IEngineSound.h"
 #include "sendproxy.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "vphysics/constraints.h"
 #include "npcevent.h"
 #include "igamesystem.h"

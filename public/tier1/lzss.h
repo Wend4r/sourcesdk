@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2007, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2007, Valve Corporation, All rights reserved. ============//
 //
 //	LZSS Codec. Designed for fast cheap gametime encoding/decoding. Compression results
 //	are	not aggresive as other alogrithms, but gets 2:1 on most arbitrary uncompressed data.
@@ -9,7 +9,7 @@
 #define _LZSS_H
 #pragma once
 
-#if !defined( _X360 )
+#if defined( PLAT_LITTLE_ENDIAN )
 #define LZSS_ID				(('S'<<24)|('S'<<16)|('Z'<<8)|('L'))
 #else
 #define LZSS_ID				(('L'<<24)|('Z'<<16)|('S'<<8)|('S'))

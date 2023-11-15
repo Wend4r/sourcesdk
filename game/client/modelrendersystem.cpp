@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2007, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2007, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -15,7 +15,7 @@
 #include "iviewrender.h"
 #include "tier3/tier3.h"
 #include <algorithm>
-#include "tier1/memstack.h"
+#include "tier0/memstack.h"
 #include "engine/ivdebugoverlay.h"
 #include "shaderapi/ishaderapi.h"
 #include "materialsystem/materialsystemutil.h"

@@ -2,7 +2,7 @@
 #include "VHybridButton.h"
 #include "vgui/ISurface.h"
 #include "vgui_controls/ProgressBar.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "IGameUIFuncs.h"
 #include "gameui_util.h"
 #include "vgui/IInput.h"

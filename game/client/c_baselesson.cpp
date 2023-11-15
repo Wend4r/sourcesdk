@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2008, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2008, Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Client handler implementations for instruction players how to play
 //
@@ -15,7 +15,7 @@
 #include "ammodef.h"
 #include "vprof.h"
 #include "view.h"
-#include "vstdlib/ikeyvaluessystem.h"
+#include "vstdlib/IKeyValuesSystem.h"
 
 #ifdef INFESTED_DLL
 	#include "c_asw_marine.h"

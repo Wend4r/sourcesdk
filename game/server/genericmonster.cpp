@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include "npcevent.h"
 #include "ai_basenpc.h"
 #include "ai_hull.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "engine/IEngineSound.h"
 #include "physics_bone_follower.h"
 #include "ai_baseactor.h"

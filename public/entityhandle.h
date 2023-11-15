@@ -140,6 +140,4 @@ inline const CEntityHandle &CEntityHandle::operator=( const CEntityInstance *pEn
 	return Set( pEntity );
 }
 
-typedef CEntityHandle CBaseHandle;
-
 #endif // ENTITYHANDLE_H

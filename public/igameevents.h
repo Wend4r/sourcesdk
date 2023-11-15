@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -16,21 +16,12 @@
 #pragma once
 #endif
 
-#include "interfaces/interfaces.h"
-#include "tier1/bitbuf.h"
-#include "tier1/generichash.h"
-#include "tier1/utlstring.h"
-#include "entity2/entityinstance.h"
+#include "tier1/interface.h"
 
-class CMsgSource1LegacyGameEvent;
-class CPlayerSlot;
-class CBasePlayer;
-class CEntityIndex;
-class CEntityHandle;
-class CBaseEntity;
-class CEntityInstance;
-class CBasePlayerController;
-class CBasePlayerPawn;
+#define INTERFACEVERSION_GAMEEVENTSMANAGER	"GAMEEVENTSMANAGER001"	// old game event manager, don't use it!
+#define INTERFACEVERSION_GAMEEVENTSMANAGER2	"GAMEEVENTSMANAGER002"	// new game event manager,
+
+#include "tier1/bitbuf.h"
 //-----------------------------------------------------------------------------
 // Purpose: Engine interface into global game event management
 //-----------------------------------------------------------------------------
@@ -62,29 +53,6 @@ Valid data types are string, float, long, short, byte & bool. If a
 data field should not be broadcasted to clients, use the type "local".
 */
 
-struct GameEventKeySymbol_t
-{
-	inline GameEventKeySymbol_t(const char* keyName): m_nHashCode(0), m_pszKeyName(NULL)
-	{		
-		if (!keyName || !keyName[0])
-			return;
-
-		m_nHashCode = MurmurHash2LowerCase(keyName, strlen(keyName), 0x31415926);
-		m_pszKeyName = keyName;
-
-#if 0
-		if (g_bUpdateStringTokenDatabase)
-		{
-			RegisterStringToken(m_nHashCode, keyName, 0, true);
-		}
-#endif
-	}
-
-private:
-	unsigned int m_nHashCode;
-	const char* m_pszKeyName;
-};
-
 
 #define MAX_EVENT_NAME_LENGTH	32		// max game event name length
 #define MAX_EVENT_BITS			9		// max bits needed for an event index
@@ -94,73 +62,37 @@ private:
 class KeyValues;
 class CGameEvent;
 
-abstract_class IToolGameEventAPI
-{
-	virtual void unk001( void * ) = 0;
-};
-
 abstract_class IGameEvent
 {
 public:
 	virtual ~IGameEvent() {};
 	virtual const char *GetName() const = 0;	// get event name
-	virtual int GetID() const = 0;
 
-	virtual bool IsReliable() const = 0; // if event handled reliable
-	virtual bool IsLocal() const = 0; // if event is never networked
-	virtual bool IsEmpty( const GameEventKeySymbol_t &keySymbol ) = 0; // check if data field exists
-
+	virtual bool  IsReliable() const = 0; // if event handled reliable
+	virtual bool  IsLocal() const = 0; // if event is never networked
+	virtual bool  IsEmpty(const char *keyName = NULL) = 0; // check if data field exists
+	
 	// Data access
-	virtual bool  GetBool( const GameEventKeySymbol_t &keySymbol, bool defaultValue = false ) = 0;
-	virtual int GetInt( const GameEventKeySymbol_t &keySymbol, int defaultValue = 0 ) = 0;
-	virtual uint64 GetUint64( const GameEventKeySymbol_t &keySymbol, uint64 defaultValue = 0 ) = 0;
-	virtual float GetFloat( const GameEventKeySymbol_t &keySymbol, float defaultValue = 0.0f ) = 0;
-	virtual const char *GetString( const GameEventKeySymbol_t &keySymbol, const char *defaultValue = "" ) = 0;
-	virtual void *GetPtr( const GameEventKeySymbol_t &keySymbol ) = 0;
+	virtual bool  GetBool( const char *keyName = NULL, bool defaultValue = false ) = 0;
+	virtual int   GetInt( const char *keyName = NULL, int defaultValue = 0 ) = 0;
+	virtual uint64 GetUint64( const char *keyName = NULL, uint64 defaultValue = 0 ) = 0;
+	virtual float GetFloat( const char *keyName = NULL, float defaultValue = 0.0f ) = 0;
+	virtual const char *GetString( const char *keyName = NULL, const char *defaultValue = "" ) = 0;
+	virtual const wchar_t *GetWString(char const *keyName = NULL, const wchar_t *defaultValue = L"") = 0;
+	virtual const void *GetPtr( const char *keyname = NULL, const void *defaultValues = NULL ) = 0;
 
-	virtual CEntityHandle GetEHandle( const GameEventKeySymbol_t &keySymbol, CEntityHandle defaultValue = CEntityHandle() ) = 0;
-
-	// Returns the entity instance, mostly used for _pawn keys, might return 0 if used on any other key (even on a controller).
-	virtual CEntityInstance *GetEntity( const GameEventKeySymbol_t &keySymbol, CEntityInstance *fallbackInstance = NULL ) = 0;
-	virtual CEntityIndex GetEntityIndex( const GameEventKeySymbol_t &keySymbol, CEntityIndex defaultValue = CEntityIndex( -1 ) ) = 0;
-
-	virtual CPlayerSlot GetPlayerSlot( const GameEventKeySymbol_t &keySymbol ) = 0;
-
-	virtual CEntityInstance *GetPlayerController( const GameEventKeySymbol_t &keySymbol ) = 0;
-	virtual CEntityInstance *GetPlayerPawn( const GameEventKeySymbol_t &keySymbol ) = 0;
-
-	// Returns the EHandle for the _pawn entity.
-	virtual CEntityHandle GetPawnEHandle( const GameEventKeySymbol_t &keySymbol ) = 0;
-	// Returns the CEntityIndex for the _pawn entity.
-	virtual CEntityIndex GetPawnEntityIndex( const GameEventKeySymbol_t &keySymbol ) = 0;
-
-	virtual void SetBool( const GameEventKeySymbol_t &keySymbol, bool value ) = 0;
-	virtual void SetInt( const GameEventKeySymbol_t &keySymbol, int value ) = 0;
-	virtual void SetUint64( const GameEventKeySymbol_t &keySymbol, uint64 value ) = 0;
-	virtual void SetFloat( const GameEventKeySymbol_t &keySymbol, float value ) = 0;
-	virtual void SetString( const GameEventKeySymbol_t &keySymbol, const char *value ) = 0;
-	virtual void SetPtr( const GameEventKeySymbol_t &keySymbol, void *value ) = 0;
-
-	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityIndex value ) = 0;
-	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityInstance *value ) = 0;
-
-	// Also sets the _pawn key
-	virtual void SetPlayer( const GameEventKeySymbol_t &keySymbol, CPlayerSlot value ) = 0;
-	// Also sets the _pawn key (Expects pawn entity to be passed)
-	virtual void SetPlayer( const GameEventKeySymbol_t &keySymbol, CEntityInstance *pawn ) = 0;
-
-	// Expects pawn entity to be passed, will set the controller entity as a controllerKeyName
-	// and pawn entity as a pawnKeyName.
-	virtual void SetPlayerRaw( const GameEventKeySymbol_t &controllerKeySymbol, const GameEventKeySymbol_t &pawnKeySymbol, CEntityInstance *pawn ) = 0;
-
-	virtual bool HasKey( const GameEventKeySymbol_t &keySymbol ) = 0;
-
-	// Something script vm related
-	virtual void unk001() = 0;
-
-	// Not based on keyvalues anymore as it seems like
-	virtual void* GetDataKeys() const = 0;
+	virtual void SetBool( const char *keyName, bool value ) = 0;
+	virtual void SetInt( const char *keyName, int value ) = 0;
+	virtual void SetUint64( const char *keyName, uint64 value ) = 0;
+	virtual void SetFloat( const char *keyName, float value ) = 0;
+	virtual void SetString( const char *keyName, const char *value ) = 0;
+	virtual void SetWString( const char *keyName, const wchar_t *value ) = 0;
+	virtual void SetPtr( const char *keyname, const void *value ) = 0;
+	
 };
+
+#define EVENT_DEBUG_ID_INIT			42
+#define EVENT_DEBUG_ID_SHUTDOWN		13
 
 abstract_class IGameEventListener2
 {
@@ -170,15 +102,17 @@ public:
 	// FireEvent is called by EventManager if event just occured
 	// KeyValue memory will be freed by manager if not needed anymore
 	virtual void FireGameEvent( IGameEvent *event ) = 0;
+
+	virtual int	 GetEventDebugID( void ) = 0;
 };
 
-abstract_class IGameEventManager2 : public IBaseInterface, public IToolGameEventAPI
+abstract_class IGameEventManager2 : public IBaseInterface
 {
 public:
 	virtual	~IGameEventManager2( void ) {};
 
 	// load game event descriptions from a file eg "resource\gameevents.res"
-	virtual int LoadEventsFromFile( const char *filename, bool bSearchAll ) = 0;
+	virtual int LoadEventsFromFile( const char *filename ) = 0;
 
 	// removes all and anything
 	virtual void  Reset() = 0;	
@@ -191,6 +125,8 @@ public:
 
 	// removes a listener 
 	virtual void RemoveListener( IGameEventListener2 *listener) = 0;
+	
+	virtual void AddListenerGlobal( IGameEventListener2 * listener, bool bIsServerSide ) = 0;
 
 	// create an event by name, but doesn't fire it. returns NULL is event is not
 	// known or no listener is registered for it. bForce forces the creation even if no listener is active
@@ -209,15 +145,64 @@ public:
 	virtual void FreeEvent( IGameEvent *event ) = 0;
 
 	// write/read event to/from bitbuffer
-	virtual bool SerializeEvent( IGameEvent *event, CMsgSource1LegacyGameEvent *ev ) = 0;
-	virtual IGameEvent *UnserializeEvent( const CMsgSource1LegacyGameEvent &ev ) = 0; // create new KeyValues, must be deleted
+	virtual bool SerializeEvent( IGameEvent *event, bf_write *buf ) = 0;
+	virtual IGameEvent *UnserializeEvent( bf_read *buf ) = 0; // create new KeyValues, must be deleted
 	
-	virtual int LookupEventId( const char *name ) = 0;
-	
-	virtual void PrintEventToString( IGameEvent *event, CUtlString &out ) = 0;
-
-	virtual bool HasEventDescriptor( const char *name ) = 0;
+	virtual KeyValues *GetEventDataTypes( IGameEvent *event ) = 0;
 };
+
+// the old game event manager interface, don't use it. Rest is legacy support:
+
+abstract_class IGameEventListener
+{
+public:
+	virtual	~IGameEventListener( void ) {};
+
+	// FireEvent is called by EventManager if event just occured
+	// KeyValue memory will be freed by manager if not needed anymore
+	virtual void FireGameEvent( KeyValues * event) = 0;
+};
+
+abstract_class IGameEventManager : public IBaseInterface
+{
+public:
+	virtual	~IGameEventManager( void ) {};
+	
+	// load game event descriptions from a file eg "resource\gameevents.res"
+	virtual int LoadEventsFromFile( const char * filename ) = 0;
+
+	// removes all and anything
+	virtual void  Reset() = 0;	
+				
+	virtual KeyValues *GetEvent(const char * name) = 0; // returns keys for event
+	
+	// adds a listener for a particular event
+	virtual bool AddListener( IGameEventListener * listener, const char * event, bool bIsServerSide ) = 0;
+	// registers for all known events
+	virtual bool AddListener( IGameEventListener * listener, bool bIsServerSide ) = 0; 
+	
+	// removes a listener 
+	virtual void RemoveListener( IGameEventListener * listener ) = 0;
+		
+	// fires an global event, specific event data is stored in KeyValues
+	// local listeners will receive the event instantly
+	// a network message will be send to all connected clients to invoke
+	// the same event there
+	virtual bool FireEvent( KeyValues * event ) = 0;
+
+	// fire a side server event, that it wont be broadcasted to player clients
+	virtual bool FireEventServerOnly( KeyValues * event ) = 0;
+
+	// fires an event only on this local client
+	// can be used to fake events coming over the network 
+	virtual bool FireEventClientOnly( KeyValues * event ) = 0;
+
+	// write/read event to/from bitbuffer
+	virtual bool SerializeKeyValues( KeyValues *event, bf_write *buf, CGameEvent *eventtype = NULL ) = 0;
+	virtual KeyValues *UnserializeKeyValue( bf_read *msg ) = 0; // create new KeyValues, must be deleted
+};
+
+
 
 
 #endif // IGAMEEVENTS_H

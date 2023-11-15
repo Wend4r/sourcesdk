@@ -5,7 +5,7 @@
 //
 //===============================================================================
 
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "tilegen_core.h"
 #include "tilegen_enum.h"
 #include "tilegen_rule.h"

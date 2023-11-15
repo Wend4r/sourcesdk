@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This is a panel which is rendered image on top of an entity
 //
@@ -6,9 +6,11 @@
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
+#ifdef _MSC_VER
 #pragma warning (disable: 4514)
+#endif
 #include "vgui_bitmappanel.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "panelmetaclassmgr.h"
 #include "vgui_BitmapImage.h"
 

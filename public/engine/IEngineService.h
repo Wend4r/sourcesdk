@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include <appframework/IAppSystem.h>
+#include <appframework/iappsystem.h>
 #include <inputsystem/InputEnums.h>
 #include <iloopmode.h>
 

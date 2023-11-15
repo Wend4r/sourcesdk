@@ -18,7 +18,7 @@
 #include "mapentities_shared.h"
 #include "debugoverlay_shared.h"
 #include "coordsize.h"
-#include "AI_Criteria.h"
+#include "vphysics/performance.h"
 
 #ifdef CLIENT_DLL
 	#include "c_te_effect_dispatch.h"
@@ -31,8 +31,6 @@
 	#include "func_break.h"
 
 	#include "GameStats.h"
-	#include "globalstate.h"
-	#include "world.h"
 
 #endif
 
@@ -42,7 +40,9 @@ ConVar hl2_episodic( "hl2_episodic", "1", FCVAR_REPLICATED );
 ConVar hl2_episodic( "hl2_episodic", "0", FCVAR_REPLICATED );
 #endif//HL2_EPISODIC
 
-
+#ifdef PORTAL
+	#include "portal_base2d_shared.h"
+#endif
 
 #include "rumble_shared.h"
 
@@ -58,10 +58,36 @@ ConVar hl2_episodic( "hl2_episodic", "0", FCVAR_REPLICATED );
 bool CBaseEntity::m_bAllowPrecache = false;
 bool CBaseEntity::sm_bAccurateTriggerBboxChecks = true;	// set to false for legacy behavior in ep1
 
+// Set default max values for entities based on the existing constants from elsewhere
+float k_flMaxEntityPosCoord = MAX_COORD_FLOAT;
+float k_flMaxEntityEulerAngle = 360.0 * 1000.0f; // really should be restricted to +/-180, but some code doesn't adhere to this.  It gets wrapped eventually
+float k_flMaxEntitySpeed = k_flMaxVelocity;
+float k_flMaxEntitySpinRate = k_flMaxAngularVelocity;
+
+ConVar  sv_clamp_unsafe_velocities( "sv_clamp_unsafe_velocities", "1", FCVAR_REPLICATED | FCVAR_RELEASE, "Whether the server will attempt to clamp velocities that could cause physics bugs or crashes." );
 
 ConVar	ai_shot_bias_min( "ai_shot_bias_min", "-1.0", FCVAR_REPLICATED );
 ConVar	ai_shot_bias_max( "ai_shot_bias_max", "1.0", FCVAR_REPLICATED );
 ConVar	ai_debug_shoot_positions( "ai_debug_shoot_positions", "0", FCVAR_REPLICATED | FCVAR_CHEAT );
+
+// Utility func to throttle rate at which the "reasonable position" spew goes out
+static double s_LastEntityReasonableEmitTime = -DBL_MAX;
+bool CheckEmitReasonablePhysicsSpew()
+{
+
+	// Reported recently?
+	double now = Plat_FloatTime();
+	if ( now >= s_LastEntityReasonableEmitTime && now < s_LastEntityReasonableEmitTime + 5.0 )
+	{
+		// Already reported recently
+		return false;
+	}
+
+	// Not reported recently.  Report it now
+	s_LastEntityReasonableEmitTime = now;
+	return true;
+}
+
 
 DEFINE_LOGGING_CHANNEL_NO_TAGS( LOG_DEVELOPER_VERBOSE, "DeveloperVerbose" );
 
@@ -166,6 +192,11 @@ void CBaseEntity::SetEffects( int nEffects )
 {
 	if ( nEffects != m_fEffects )
 	{
+#if defined ( CLIENT_DLL )
+		bool bFastReflectionChanged =
+			( (nEffects & EF_MARKED_FOR_FAST_REFLECTION ) != ( m_fEffects & EF_MARKED_FOR_FAST_REFLECTION ) );
+#endif
+
 #if !defined( CLIENT_DLL )
 #ifdef HL2_EPISODIC
 		// Hack for now, to avoid player emitting radius with his flashlight
@@ -201,6 +232,13 @@ void CBaseEntity::SetEffects( int nEffects )
 		DispatchUpdateTransmitState();
 #else
 		UpdateVisibility();
+		if ( bFastReflectionChanged )
+		{
+			OnFastReflectionRenderingChanged();
+		}
+		OnDisableShadowDepthRenderingChanged();
+		OnDisableCSMRenderingChanged();
+		OnShadowDepthRenderingCacheableStateChanged();
 #endif
 	}
 }
@@ -220,7 +258,8 @@ void CBaseEntity::AddEffects( int nEffects )
 #endif // HL2_EPISODIC
 #endif // !CLIENT_DLL
 
-	m_fEffects |= nEffects; 
+	m_fEffects |= nEffects;
+
 #if !defined( CLIENT_DLL )
 	if ( nEffects & ( EF_NOINTERP ) )
 	{
@@ -242,6 +281,15 @@ void CBaseEntity::AddEffects( int nEffects )
 		UpdateVisibility();
 #endif
 	}
+
+#ifdef CLIENT_DLL
+	if ( nEffects & EF_MARKED_FOR_FAST_REFLECTION )
+	{
+		OnFastReflectionRenderingChanged();
+	}
+	OnDisableShadowDepthRenderingChanged();
+	OnShadowDepthRenderingCacheableStateChanged();
+#endif
 }
 
 void CBaseEntity::SetBlocksLOS( bool bBlocksLOS )
@@ -345,6 +393,40 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		return true;
 	}
 
+	if ( FStrEq( szKeyName, "drawinfastreflection" ) )
+	{
+		int val = atoi( szValue );
+		if (val)
+		{
+			AddEffects( EF_MARKED_FOR_FAST_REFLECTION );
+		}
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "disableshadowdepth" ) )
+	{
+		int val = atoi( szValue );
+		if (val)
+		{
+			AddEffects( EF_NOSHADOWDEPTH );
+		}
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "shadowdepthnocache" ) )
+	{
+		int val = atoi( szValue );
+		if ( val == 1 )
+		{
+			AddEffects( EF_SHADOWDEPTH_NOCACHE );
+		}
+		else if ( val == 2 )
+		{
+			RemoveEffects( EF_SHADOWDEPTH_NOCACHE );
+		}
+		return true;
+	}
+
 	if ( FStrEq( szKeyName, "mins" ))
 	{
 		Vector mins;
@@ -367,6 +449,16 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		if (val)
 		{
 			AddEffects( EF_NORECEIVESHADOW );
+		}
+		return true;
+	}
+
+	if ( FStrEq( szKeyName, "disableflashlight" ))
+	{
+		int val = atoi( szValue );
+		if (val)
+		{
+			AddEffects( EF_NOFLASHLIGHT );
 		}
 		return true;
 	}
@@ -433,7 +525,7 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 	
 	if ( FStrEq( szKeyName, "targetname" ) )
 	{
-		m_iName = AllocPooledString( szValue );
+		SetName( AllocPooledString( szValue ) );
 		return true;
 	}
 
@@ -443,7 +535,12 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 		for ( datamap_t *dmap = GetDataDescMap(); dmap != NULL; dmap = dmap->baseMap )
 		{
 			if ( ::ParseKeyvalue(this, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue) )
+			{
+				//we don't know what changed, so mark us as fully invalid
+				if( edict() )
+					edict()->StateChanged();
 				return true;
+			}
 		}
 	}
 	else
@@ -471,6 +568,10 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 
 			if ( ::ParseKeyvalue(this, dmap->dataDesc, dmap->dataNumFields, szKeyName, szValue) )
 			{
+				//we don't know what changed, so mark us as fully invalid
+				if( edict() )
+					edict()->StateChanged();
+
 				if ( printKeyHits )
 					Msg( "(%s) key: %-16s value: %s\n", debugName, szKeyName, szValue );
 				
@@ -585,6 +686,12 @@ bool CBaseEntity::GetKeyValue( const char *szKeyName, char *szValue, int iMaxLen
 		return true;
 	}
 
+	if ( FStrEq( szKeyName, "disableflashlight" ))
+	{
+		Q_snprintf( szValue, iMaxLen, "%d", IsEffectActive( EF_NOFLASHLIGHT ) );
+		return true;
+	}
+
 	if ( FStrEq( szKeyName, "nodamageforces" ))
 	{
 		Q_snprintf( szValue, iMaxLen, "%d", IsEffectActive( EFL_NO_DAMAGE_FORCES ) );
@@ -662,10 +769,19 @@ void CBaseEntity::SetPredictionRandomSeed( const CUserCmd *cmd )
 	if ( !cmd )
 	{
 		m_nPredictionRandomSeed = -1;
+
+		#ifndef CLIENT_DLL
+		m_nPredictionRandomSeedServer = -1;
+		#endif
+
 		return;
 	}
 
 	m_nPredictionRandomSeed = ( cmd->random_seed );
+
+	#ifndef CLIENT_DLL
+	m_nPredictionRandomSeedServer = ( cmd->server_random_seed );
+	#endif
 }
 
 
@@ -688,7 +804,7 @@ void CBaseEntity::DecalTrace( trace_t *pTrace, char const *decalName )
 //-----------------------------------------------------------------------------
 // Purpose: Base handling for impacts against entities
 //-----------------------------------------------------------------------------
-void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, char *pCustomImpactName )
+void CBaseEntity::ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
 {
 	VPROF( "CBaseEntity::ImpactTrace" );
 	Assert( pTrace->m_pEnt );
@@ -783,11 +899,14 @@ int CBaseEntity::RegisterThinkContext( const char *szContext )
 BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szContext )
 {
 #if !defined( CLIENT_DLL )
-#ifdef _DEBUG
-#ifdef GNUC
-	COMPILE_TIME_ASSERT( sizeof(func) == 8 );
+#if defined( _DEBUG )
+#if defined( __clang__ ) 
+	COMPILE_TIME_ASSERT( sizeof( func ) == sizeof( m_pfnThink ) );
+#elif defined( GNUC ) || defined( COMPILER_PS3 ) || defined( PLATFORM_64BITS )
+	//lwss update: newer compilers will make class member pointers 2x the size of a pointer
+	COMPILE_TIME_ASSERT( sizeof(func) == 8 || sizeof(func) == 16 );
 #else
-	COMPILE_TIME_ASSERT( sizeof(func) == 4 );
+	COMPILE_TIME_ASSERT( sizeof(func) == 4 || sizeof(func) == 8 );
 #endif
 #endif
 #endif
@@ -798,7 +917,7 @@ BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szCont
 		m_pfnThink = func;
 #if !defined( CLIENT_DLL )
 #ifdef _DEBUG
-		FunctionCheck( *(reinterpret_cast<void **>(&m_pfnThink)), "BaseThinkFunc" ); 
+		FunctionCheck( reinterpret_cast<inputfunc_t>(m_pfnThink), "BaseThinkFunc" ); 
 #endif
 #endif
 		return m_pfnThink;
@@ -814,7 +933,7 @@ BASEPTR	CBaseEntity::ThinkSet( BASEPTR func, float thinkTime, const char *szCont
 	m_aThinkFunctions[ iIndex ].m_pfnThink = func;
 #if !defined( CLIENT_DLL )
 #ifdef _DEBUG
-	FunctionCheck( *(reinterpret_cast<void **>(&m_aThinkFunctions[ iIndex ].m_pfnThink)), szContext ); 
+	FunctionCheck( reinterpret_cast<inputfunc_t>(m_aThinkFunctions[ iIndex ].m_pfnThink), szContext ); 
 #endif
 #endif
 
@@ -1158,6 +1277,33 @@ int	CBaseEntity::GetNextThinkTick( int nContextIndex ) const
 	return m_aThinkFunctions[nContextIndex].m_nNextThinkTick; 
 }
 
+int CheckEntityVelocity( Vector &v )
+{
+	// If we're not clamping, then return that everything is fine, just fine.
+	if ( !sv_clamp_unsafe_velocities.GetBool() )
+		return 1;
+
+	float r = k_flMaxEntitySpeed;
+	if (
+		v.x > -r && v.x < r &&
+		v.y > -r && v.y < r &&
+		v.z > -r && v.z < r )
+	{
+		// The usual case.  It's totally reasonable
+		return 1;
+	}
+	float speed = v.Length();
+	if ( speed < k_flMaxEntitySpeed * 100.0f )
+	{
+		// Sort of suspicious.  Clamp it
+		v *= k_flMaxEntitySpeed / speed;
+		return 0;
+	}
+
+	// A terrible, horrible, no good, very bad velocity.
+	return -1;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: My physics object has been updated, react or extract data
@@ -1170,7 +1316,6 @@ void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 		{
 			if ( GetMoveParent() )
 			{
-				Log_Warning( LOG_DEVELOPER_VERBOSE, "Updating physics on object in hierarchy %s!\n", GetClassname());
 				return;
 			}
 			Vector origin;
@@ -1178,14 +1323,29 @@ void CBaseEntity::VPhysicsUpdate( IPhysicsObject *pPhysics )
 
 			pPhysics->GetPosition( &origin, &angles );
 
-			if ( !IsFinite( angles.x ) || !IsFinite( angles.y ) || !IsFinite( angles.x ) )
+			if ( !IsEntityQAngleReasonable( angles ) )
 			{
-				Msg( "Infinite angles from vphysics! (entity %s)\n", GetDebugName() );
+				if ( CheckEmitReasonablePhysicsSpew() )
+				{
+					Warning( "Ignoring bogus angles (%f,%f,%f) from vphysics! (entity %s)\n", angles.x, angles.y, angles.z, GetDebugName() );
+				}
 				angles = vec3_angle;
 			}
 #ifndef CLIENT_DLL 
 			Vector prevOrigin = GetAbsOrigin();
 #endif
+
+			if ( IsEntityPositionReasonable( origin ) )
+			{
+				SetAbsOrigin( origin );
+			}
+			else
+			{
+				if ( CheckEmitReasonablePhysicsSpew() )
+				{
+					Warning( "Ignoring unreasonable position (%f,%f,%f) from vphysics! (entity %s)\n", origin.x, origin.y, origin.z, GetDebugName() );
+				}
+			}
 
 			for ( int i = 0; i < 3; ++i )
 			{
@@ -1262,6 +1422,10 @@ IPhysicsObject *CBaseEntity::VPhysicsInitStatic( void )
 	{
 		pPhysicsObject = PhysModelCreateBox( this, WorldAlignMins(), WorldAlignMaxs(), GetAbsOrigin(), true );
 	}
+	else if ( GetSolid() == SOLID_OBB )
+	{
+		pPhysicsObject = PhysModelCreateOBB( this, CollisionProp()->OBBMins(), CollisionProp()->OBBMaxs(), GetAbsOrigin(), GetAbsAngles(), true );
+	}
 	else
 	{
 		pPhysicsObject = PhysModelCreateUnmoveable( this, GetModelIndex(), GetAbsOrigin(), GetAbsAngles() );
@@ -1286,6 +1450,7 @@ void CBaseEntity::VPhysicsSetObject( IPhysicsObject *pPhysics )
 #endif
 	if ( m_pPhysicsObject )
 	{
+		m_flNonShadowMass = m_pPhysicsObject->GetMass();
 #ifndef CLIENT_DLL
 		if ( m_pPhysicsObject->IsStatic() )
 		{
@@ -1297,6 +1462,20 @@ void CBaseEntity::VPhysicsSetObject( IPhysicsObject *pPhysics )
 	{
 		CollisionRulesChanged();
 	}
+}
+
+void CBaseEntity::VPhysicsSwapObject( IPhysicsObject *pSwap )
+{
+	if ( !pSwap )
+	{
+		PhysRemoveShadow(this);
+	}
+
+	if ( !m_pPhysicsObject )
+	{
+		Warning( "Bad vphysics swap for %s\n", STRING(m_iClassname) );
+	}
+	m_pPhysicsObject = pSwap;
 }
 
 //-----------------------------------------------------------------------------
@@ -1328,6 +1507,8 @@ bool CBaseEntity::VPhysicsInitSetup()
 	// If this entity already has a physics object, then it should have been deleted prior to making this call.
 	Assert(!m_pPhysicsObject);
 	VPhysicsDestroyObject();
+
+	m_flNonShadowMass = -1.0f;
 
 	// make sure absorigin / absangles are correct
 	return true;
@@ -1737,7 +1918,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 	int iSeed = 0;
 	if ( IsPlayer() )
 	{
-		iSeed = CBaseEntity::GetPredictionRandomSeed() & 255;
+		iSeed = CBaseEntity::GetPredictionRandomSeed( SERVER_PLATTIME_RNG ) & 255;
 	}
 
 	//-----------------------------------------------------
@@ -1775,21 +1956,40 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 
 		vecEnd = info.m_vecSrc + vecDir * info.m_flDistance;
 
-
+#ifdef PORTAL
+		CPortal_Base2D *pShootThroughPortal = NULL;
+		float fPortalFraction = 2.0f;
+#endif
 
 
 		if( IsPlayer() && info.m_iShots > 1 && iShot % 2 )
 		{
 			// Half of the shotgun pellets are hulls that make it easier to hit targets with the shotgun.
-
+#ifdef PORTAL
+			Ray_t rayBullet;
+			rayBullet.Init( info.m_vecSrc, vecEnd );
+			pShootThroughPortal = UTIL_Portal_FirstAlongRay( rayBullet, fPortalFraction );
+			if ( !UTIL_Portal_TraceRay_Bullets( pShootThroughPortal, rayBullet, MASK_SHOT, &traceFilter, &tr ) )
+			{
+				pShootThroughPortal = NULL;
+			}
+#else
 			AI_TraceHull( info.m_vecSrc, vecEnd, Vector( -3, -3, -3 ), Vector( 3, 3, 3 ), MASK_SHOT, &traceFilter, &tr );
-
+#endif //#ifdef PORTAL
 		}
 		else
 		{
-
+#ifdef PORTAL
+			Ray_t rayBullet;
+			rayBullet.Init( info.m_vecSrc, vecEnd );
+			pShootThroughPortal = UTIL_Portal_FirstAlongRay( rayBullet, fPortalFraction );
+			if ( !UTIL_Portal_TraceRay_Bullets( pShootThroughPortal, rayBullet, MASK_SHOT, &traceFilter, &tr ) )
+			{
+				pShootThroughPortal = NULL;
+			}
+#else
 			AI_TraceLine(info.m_vecSrc, vecEnd, MASK_SHOT, &traceFilter, &tr);
-
+#endif //#ifdef PORTAL
 		}
 
 		// Tracker 70354/63250:  ywb 8/2/07
@@ -1803,7 +2003,14 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			tr.fraction = 0.0f;
 		}
 
-
+	// bullet's final direction can be changed by passing through a portal
+#ifdef PORTAL
+		if ( !tr.startsolid && tr.fraction > 0.0f )
+		{
+			vecDir = tr.endpos - tr.startpos;
+			VectorNormalize( vecDir );
+		}
+#endif
 
 #ifdef GAME_DLL
 		if ( ai_debug_shoot_positions.GetBool() )
@@ -1816,11 +2023,24 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			Vector vBubbleStart = info.m_vecSrc;
 			Vector vBubbleEnd = tr.endpos;
 
-
+#ifdef PORTAL
+			if ( pShootThroughPortal )
+			{
+				vBubbleEnd = info.m_vecSrc + ( vecEnd - info.m_vecSrc ) * fPortalFraction;
+			}
+#endif //#ifdef PORTAL
 
 			CreateBubbleTrailTracer( vBubbleStart, vBubbleEnd, vecDir );
 			
+#ifdef PORTAL
+			if ( pShootThroughPortal )
+			{
+				Vector vTransformedIntersection;
+				UTIL_Portal_PointTransform( pShootThroughPortal->MatrixThisToLinked(), vBubbleEnd, vTransformedIntersection );
 
+				CreateBubbleTrailTracer( vTransformedIntersection, tr.endpos, vecDir );
+			}
+#endif //#ifdef PORTAL
 
 #endif //#ifdef GAME_DLL
 			bHitWater = true;
@@ -1967,11 +2187,37 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 				Tracer = tr;
 				Tracer.endpos = vecTracerDest;
 
-
+#ifdef PORTAL
+				if ( pShootThroughPortal )
+				{
+					Tracer.endpos = info.m_vecSrc + ( vecEnd - info.m_vecSrc ) * fPortalFraction;
+				}
+#endif //#ifdef PORTAL
 
 				MakeTracer( vecTracerSrc, Tracer, pAmmoDef->TracerType(info.m_iAmmoType) );
 
+#ifdef PORTAL
+				if ( pShootThroughPortal )
+				{
+					Vector vTransformedIntersection;
+					UTIL_Portal_PointTransform( pShootThroughPortal->MatrixThisToLinked(), Tracer.endpos, vTransformedIntersection );
+					ComputeTracerStartPosition( vTransformedIntersection, &vecTracerSrc );
 
+					Tracer.endpos = vecTracerDest;
+
+					MakeTracer( vecTracerSrc, Tracer, pAmmoDef->TracerType(info.m_iAmmoType) );
+
+					// Shooting through a portal, the damage direction is translated through the passed-through portal
+					// so the damage indicator hud animation is correct
+					Vector vDmgOriginThroughPortal;
+					UTIL_Portal_PointTransform( pShootThroughPortal->MatrixThisToLinked(), info.m_vecSrc, vDmgOriginThroughPortal );
+					g_MultiDamage.SetDamagePosition ( vDmgOriginThroughPortal );
+				}
+				else
+				{
+					g_MultiDamage.SetDamagePosition ( info.m_vecSrc );
+				}
+#endif //#ifdef PORTAL
 			}
 			else
 			{
@@ -1997,9 +2243,11 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 
 	if ( IsPlayer() && flCumulativeDamage > 0.0f )
 	{
-		CBasePlayer *pPlayer = static_cast< CBasePlayer * >( this );
+		#ifndef _GAMECONSOLE
 		CTakeDamageInfo dmgInfo( this, pAttacker, flCumulativeDamage, nDamageType );
+		CBasePlayer *pPlayer = static_cast< CBasePlayer * >( this );
 		gamestats->Event_WeaponHit( pPlayer, info.m_bPrimaryAttack, pPlayer->GetActiveWeapon()->GetClassname(), dmgInfo );
+		#endif
 	}
 #endif
 }
@@ -2012,7 +2260,7 @@ bool CBaseEntity::ShouldDrawUnderwaterBulletBubbles()
 {
 #if defined( HL2_DLL ) && defined( GAME_DLL )
 	CBaseEntity *pPlayer = ( gpGlobals->maxClients == 1 ) ? UTIL_GetLocalPlayer() : NULL;
-	return pPlayer && (pPlayer->GetWaterLevel() == 3);
+	return pPlayer && (pPlayer->GetWaterLevel() == WL_Eyes);
 #else
 	return false;
 #endif
@@ -2328,13 +2576,35 @@ void CBaseEntity::SetEffectEntity( CBaseEntity *pEffectEnt )
 }
 
 
-void CBaseEntity::ApplyLocalVelocityImpulse( const Vector &vecImpulse )
+void CBaseEntity::ApplyLocalVelocityImpulse( const Vector &inVecImpulse )
 {
 	// NOTE: Don't have to use GetVelocity here because local values
 	// are always guaranteed to be correct, unlike abs values which may 
 	// require recomputation
-	if (vecImpulse != vec3_origin )
+	if ( inVecImpulse != vec3_origin )
 	{
+		Vector vecImpulse = inVecImpulse;
+
+		// Safety check against receive a huge impulse, which can explode physics
+		switch ( CheckEntityVelocity( vecImpulse ) )
+		{
+		case -1:
+			Warning( "Discarding ApplyLocalVelocityImpulse(%f,%f,%f) on %s\n", vecImpulse.x, vecImpulse.y, vecImpulse.z, GetDebugName() );
+			Assert( false );
+			return;
+
+		case 0:
+			if ( CheckEmitReasonablePhysicsSpew() )
+			{
+				Warning( "Bad ApplyLocalVelocityImpulse(%f,%f,%f) on %s\n", vecImpulse.x, vecImpulse.y, vecImpulse.z, GetDebugName() );
+			}
+			Assert( false );
+			break;
+
+		default:
+			break;
+		};
+
 		if ( GetMoveType() == MOVETYPE_VPHYSICS )
 		{
 			IPhysicsObject *ppPhysObjs[ VPHYSICS_MAX_OBJECT_LIST_COUNT ];
@@ -2354,10 +2624,31 @@ void CBaseEntity::ApplyLocalVelocityImpulse( const Vector &vecImpulse )
 	}
 }
 
-void CBaseEntity::ApplyAbsVelocityImpulse( const Vector &vecImpulse )
+void CBaseEntity::ApplyAbsVelocityImpulse( const Vector &inVecImpulse )
 {
-	if (vecImpulse != vec3_origin )
+	if (inVecImpulse != vec3_origin )
 	{
+		Vector vecImpulse = inVecImpulse;
+
+		// Safety check against receive a huge impulse, which can explode physics
+		switch ( CheckEntityVelocity( vecImpulse ) )
+		{
+		case -1:
+			Warning( "Discarding ApplyAbsVelocityImpulse(%f,%f,%f) on %s\n", vecImpulse.x, vecImpulse.y, vecImpulse.z, GetDebugName() );
+			Assert( false );
+			return;
+
+		case 0:
+			if ( CheckEmitReasonablePhysicsSpew() )
+			{
+				Warning( "Bad ApplyAbsVelocityImpulse(%f,%f,%f) on %s\n", vecImpulse.x, vecImpulse.y, vecImpulse.z, GetDebugName() );
+			}
+			Assert( false );
+			return;
+		default:
+			break;
+		}
+
 		if ( GetMoveType() == MOVETYPE_VPHYSICS )
 		{
 			IPhysicsObject *ppPhysObjs[ VPHYSICS_MAX_OBJECT_LIST_COUNT ];
@@ -2381,6 +2672,17 @@ void CBaseEntity::ApplyLocalAngularVelocityImpulse( const AngularImpulse &angImp
 {
 	if (angImpulse != vec3_origin )
 	{
+		// Safety check against receive a huge impulse, which can explode physics
+		if ( !IsEntityAngularVelocityReasonable( angImpulse ) )
+		{
+			if ( CheckEmitReasonablePhysicsSpew() )
+			{
+				Warning( "Bad ApplyLocalAngularVelocityImpulse(%f,%f,%f) on %s\n", angImpulse.x, angImpulse.y, angImpulse.z, GetDebugName() );
+			}
+			Assert( false );
+			return;
+		}
+
 		if ( GetMoveType() == MOVETYPE_VPHYSICS )
 		{
 			IPhysicsObject *ppPhysObjs[ VPHYSICS_MAX_OBJECT_LIST_COUNT ];
@@ -2451,7 +2753,6 @@ void CBaseEntity::SetWaterType( int nType )
 		m_nWaterType |= 2;
 }
 
-ConVar	sv_alternateticks( "sv_alternateticks", ( IsX360() ) ? "1" : "0", FCVAR_SPONLY, "If set, server only simulates entities on even numbered ticks.\n" );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -2459,14 +2760,20 @@ ConVar	sv_alternateticks( "sv_alternateticks", ( IsX360() ) ? "1" : "0", FCVAR_S
 //-----------------------------------------------------------------------------
 bool CBaseEntity::IsSimulatingOnAlternateTicks()
 {
-
-
 	if ( gpGlobals->maxClients != 1 )
 	{
 		return false;
 	}
 
-	return sv_alternateticks.GetBool();
+	static ConVarRef sv_alternateticks( "sv_alternateticks" );
+	if ( sv_alternateticks.IsValid() )
+	{
+		return sv_alternateticks.GetBool();
+	}
+	else
+	{
+		return IsX360();
+	}
 }
 
 #ifdef CLIENT_DLL
@@ -2485,7 +2792,7 @@ bool CBaseEntity::IsToolRecording() const
 }
 #endif
 
-#if defined( CLIENT_DLL ) 
+#if defined( CLIENT_DLL ) && !defined( PORTAL2 )
 #define FAST_TRIGGER_TOUCH
 extern void TouchTriggerPlayerMovement( C_BaseEntity *pEntity );
 #endif
@@ -2535,68 +2842,7 @@ void CBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
 	}
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : set - 
-//-----------------------------------------------------------------------------
-void CBaseEntity::ModifyOrAppendCriteria( AI_CriteriaSet& set )
+void CBaseEntity::UpdateLastMadeNoiseTime( const char* pszSoundName /*= NULL */ )
 {
-	// TODO
-	// Append chapter/day?
-
-	set.AppendCriteria( "randomnum", UTIL_VarArgs("%d", RandomInt(0,100)) );
-	
-	// Append our classname and game name
-	set.AppendCriteria( "classname", GetClassname() );
-
-	const char *pEntityName = "";
-
-#ifdef CLIENT_DLL
-	pEntityName = GetEntityName();
-#else
-	pEntityName = GetEntityNameAsCStr();
-#endif
-
-	set.AppendCriteria( "name", pEntityName );
-
-	// Append our health
-	set.AppendCriteria( "health", UTIL_VarArgs( "%i", GetHealth() ) );
-
-	float healthfrac = 0.0f;
-	if ( GetMaxHealth() > 0 )
-	{
-		healthfrac = (float)GetHealth() / (float)GetMaxHealth();
-	}
-
-	set.AppendCriteria( "healthfrac", UTIL_VarArgs( "%.3f", healthfrac ) );
-
-	// Go through all the global states and append them
-
-#ifdef GAME_DLL
-	for ( int i = 0; i < GlobalEntity_GetNumGlobals(); i++ ) 
-	{
-		const char *szGlobalName = GlobalEntity_GetName(i);
-		int iGlobalState = (int)GlobalEntity_GetStateByIndex(i);
-		set.AppendCriteria( szGlobalName, UTIL_VarArgs( "%i", iGlobalState ) );
-	}
-
-	// Append map name
-	set.AppendCriteria( "map", gpGlobals->mapname.ToCStr() );
-
-	// Append anything from I/O or keyvalues pairs
-	AppendContextToCriteria( set );
-
-	if( hl2_episodic.GetBool() )
-	{
-		set.AppendCriteria( "episodic", "1" );
-	}
-
-	// Append anything from world I/O/keyvalues with "world" as prefix
-	CWorld *world = assert_cast< CWorld * >( CBaseEntity::Instance( INDEXENT( 0 ) ) );
-	if ( world )
-	{
-		world->AppendContextToCriteria( set, "world" );
-	}
-#endif
+	m_flLastMadeNoiseTime = gpGlobals->curtime;
 }

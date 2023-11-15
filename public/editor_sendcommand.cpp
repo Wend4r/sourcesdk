@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements an interface to the map editor for the execution of
 //			editor shell commands from another application. Commands allow the
@@ -14,7 +14,7 @@
 #endif
 #include <stdio.h>
 #include "editor_sendcommand.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "mathlib/vector.h"
 
 #if defined( _X360 )

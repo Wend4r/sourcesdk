@@ -4,7 +4,7 @@
 #include <vgui/IScheme.h>
 #include <vgui_controls/ImagePanel.h>
 #include <vgui_controls/Button.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 #include "TileGenDialog.h"
 #include "RoomTemplateListPanel.h"

@@ -1,11 +1,11 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Weapon data file parsing, shared by game & client dlls.
 //
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <tier0/mem.h>
 #include "filesystem.h"
 #include "utldict.h"

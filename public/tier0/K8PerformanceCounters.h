@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -75,8 +75,10 @@ enum UnitEncode
 
 #	pragma pack(pop)
 
+#ifdef _MSC_VER
 // Turn off the no return value warning in ReadCounter.
 #pragma warning( disable : 4035 )		
+#endif
 #define k8NUM_COUNTERS 4
 class k8BaseEvent
 {
@@ -258,7 +260,10 @@ public:
 
 
 };
+
+#ifdef _MSC_VER
 #pragma warning( default : 4035 )
+#endif
 
 
 

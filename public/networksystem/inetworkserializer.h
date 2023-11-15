@@ -8,9 +8,9 @@
 #include <platform.h>
 
 #include <networksystem/iprotobufbinding.h>
-#include <tier1/utlstring.h>
+#include <tier0/utlstring.h>
 #include <tier1/bitbuf.h>
-#include "Color.h"
+#include "color.h"
 
 enum NetworkValidationMode_t
 {

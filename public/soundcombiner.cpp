@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 #include "sentence.h"
 #include "filesystem.h"
 #include "tier2/riff.h"
-#include "tier1/utlbuffer.h"
+#include "tier0/utlbuffer.h"
 #include "snd_audio_source.h"
 #include "snd_wave_source.h"
 #include "AudioWaveOutput.h"

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: SSE Math primitives.
 //
@@ -15,9 +15,6 @@
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-#ifndef COMPILER_MSVC64
-// Implement for 64-bit Windows if needed.
 
 static const uint32 _sincos_masks[]	  = { (uint32)0x0,  (uint32)~0x0 };
 static const uint32 _sincos_inv_masks[] = { (uint32)~0x0, (uint32)0x0 };
@@ -62,8 +59,8 @@ _PS_EXTERN_CONST(am_pi_o_2, (float)(M_PI / 2.0));
 _PS_EXTERN_CONST(am_2_o_pi, (float)(2.0 / M_PI));
 _PS_EXTERN_CONST(am_pi_o_4, (float)(M_PI / 4.0));
 _PS_EXTERN_CONST(am_4_o_pi, (float)(4.0 / M_PI));
-_PS_EXTERN_CONST_TYPE(am_sign_mask, int32, 0x80000000);
-_PS_EXTERN_CONST_TYPE(am_inv_sign_mask, int32, ~0x80000000);
+_PS_EXTERN_CONST_TYPE(am_sign_mask, int32, static_cast<int32>(0x80000000));
+_PS_EXTERN_CONST_TYPE(am_inv_sign_mask, int32, static_cast<int32>(~0x80000000));
 _PS_EXTERN_CONST_TYPE(am_min_norm_pos,int32, 0x00800000);
 _PS_EXTERN_CONST_TYPE(am_mant_mask, int32, 0x7f800000);
 _PS_EXTERN_CONST_TYPE(am_inv_mant_mask, int32, ~0x7f800000);
@@ -87,7 +84,7 @@ float _SSE_Sqrt(float x)
 {
 	Assert( s_bMathlibInitialized );
 	float	root = 0.f;
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	_asm
 	{
 		sqrtss		xmm0, x
@@ -126,11 +123,11 @@ float _SSE_RSqrtAccurate(float x)
 // Intel / Kipps SSE RSqrt.  Significantly faster than above.
 float _SSE_RSqrtAccurate(float a)
 {
-	float x;
+	float x = 0.0;
 	float half = 0.5f;
 	float three = 3.f;
 
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	__asm
 	{
 		movss   xmm3, a;
@@ -162,7 +159,7 @@ float _SSE_RSqrtAccurate(float a)
 		: "m" (a), "m" (half), "m" (three)
 );
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 
 	return x;
@@ -176,7 +173,7 @@ float _SSE_RSqrtFast(float x)
 	Assert( s_bMathlibInitialized );
 
 	float rroot = 0.0f;
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	_asm
 	{
 		rsqrtss	xmm0, x
@@ -191,7 +188,7 @@ float _SSE_RSqrtFast(float x)
 		: "%xmm0"
 	);
 #else
-#error
+// #error
 #endif
 
 	return rroot;
@@ -216,7 +213,7 @@ float FASTCALL _SSE_VectorNormalize (Vector& vec)
 	// be much of a performance win, considering you will very likely miss 3 branch predicts in a row.
 	if ( v[0] || v[1] || v[2] )
 	{
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	float *r = &result[0];
 	_asm
 		{
@@ -267,7 +264,7 @@ float FASTCALL _SSE_VectorNormalize (Vector& vec)
             : "m" (*v)
  		);
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 		vec.x = result[0];
 		vec.y = result[1];
@@ -290,7 +287,7 @@ void FASTCALL _SSE_VectorNormalizeFast (Vector& vec)
 float _SSE_InvRSquared(const float* v)
 {
 	float	inv_r2 = 1.f;
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	_asm { // Intel SSE only routine
 		mov			eax, v
 		movss		xmm5, inv_r2		// x5 = 1.0, 0, 0, 0
@@ -331,7 +328,7 @@ float _SSE_InvRSquared(const float* v)
         : "m" (*v), "m" (inv_r2)
  		);
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 
 	return inv_r2;
@@ -339,7 +336,7 @@ float _SSE_InvRSquared(const float* v)
 
 void _SSE_SinCos(float x, float* s, float* c)
 {
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	float t4, t8, t12;
 
 	__asm
@@ -427,13 +424,13 @@ void _SSE_SinCos(float x, float* s, float* c)
 #elif defined _LINUX || defined __APPLE__
 //	#warning "_SSE_sincos NOT implemented!"
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 }
 
 float _SSE_cos( float x )
 {
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	float temp;
 	__asm
 	{
@@ -485,7 +482,7 @@ float _SSE_cos( float x )
 #elif defined _LINUX || defined __APPLE__
 //	#warning "_SSE_cos NOT implemented!"
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 
 	return x;
@@ -496,7 +493,7 @@ float _SSE_cos( float x )
 //-----------------------------------------------------------------------------
 void _SSE2_SinCos(float x, float* s, float* c)  // any x
 {
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	__asm
 	{
 		movss	xmm0, x
@@ -575,13 +572,13 @@ void _SSE2_SinCos(float x, float* s, float* c)  // any x
 #elif defined _LINUX || defined __APPLE__
 //	#warning "_SSE2_SinCos NOT implemented!"
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 }
 
 float _SSE2_cos(float x)  
 {
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	__asm
 	{
 		movss	xmm0, x
@@ -630,7 +627,7 @@ float _SSE2_cos(float x)
 #elif defined _LINUX || defined __APPLE__
 //	#warning "_SSE2_cos NOT implemented!"
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 
 	return x;
@@ -642,7 +639,7 @@ void VectorTransformSSE(const float *in1, const matrix3x4_t& in2, float *out1)
 	Assert( s_bMathlibInitialized );
 	Assert( in1 != out1 );
 
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	__asm
 	{
 		mov eax, in1;
@@ -690,7 +687,7 @@ void VectorTransformSSE(const float *in1, const matrix3x4_t& in2, float *out1)
 		out1[1] = DotProduct(in1, in2[1]) + in2[1][3];
 		out1[2] = DotProduct(in1, in2[2]) + in2[2][3];
 #else
-	#error "Not Implemented"
+	//#error "Not Implemented"
 #endif
 }
 
@@ -699,7 +696,7 @@ void VectorRotateSSE( const float *in1, const matrix3x4_t& in2, float *out1 )
 	Assert( s_bMathlibInitialized );
 	Assert( in1 != out1 );
 
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 	__asm
 	{
 		mov eax, in1;
@@ -744,11 +741,11 @@ void VectorRotateSSE( const float *in1, const matrix3x4_t& in2, float *out1 )
 		out1[1] = DotProduct( in1, in2[1] );
 		out1[2] = DotProduct( in1, in2[2] );
 #else
-	#error "Not Implemented"
+	// #error "Not Implemented"
 #endif
 }
 
-#ifdef _WIN32
+#if defined( _WIN32 ) && !defined( _WIN64 )
 void _declspec(naked) _SSE_VectorMA( const float *start, float scale, const float *direction, float *dest )
 {
 	// FIXME: This don't work!! It will overwrite memory in the write to dest
@@ -846,4 +843,3 @@ vec_t DotProduct (const vec_t *a, const vec_t *c)
 }
 */
 
-#endif // COMPILER_MSVC64 

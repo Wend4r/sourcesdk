@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -12,9 +12,11 @@
 
 #include "tier0/platform.h"
 
+#ifdef _MSC_VER
 // Get rid of a bunch of STL warnings!
 #pragma warning( push, 3 )
 #pragma warning( disable : 4018 )
+#endif
 
 #define VERSION "1.0.2"
 
@@ -207,6 +209,8 @@ enum PerfErrors
     E_ILLEGAL_OPERATION		= -10,
 };
 
+#ifdef _MSC_VER
 #pragma warning( pop )
+#endif
 
 #endif // PMELIB_H

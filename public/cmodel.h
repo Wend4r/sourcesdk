@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,7 +15,7 @@
 
 #include "trace.h"
 #include "tier0/dbg.h"
-#include "entityhandle.h"
+#include "basehandle.h"
 
 struct edict_t;
 struct model_t;

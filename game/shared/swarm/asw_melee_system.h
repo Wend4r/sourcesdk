@@ -2,7 +2,7 @@
 #define _INCLUDED_ASW_MELEE_SYSTEM_H
 
 #include "asw_marine_profile.h"
-#include "UtlSortVector.h"
+#include "utlsortvector.h"
 
 class CASW_Player;
 class CASW_Marine;

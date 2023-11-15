@@ -7,7 +7,7 @@
 #include <vgui_controls/Menu.h>
 #include <vgui_controls/MessageBox.h>
 #include "vgui/KeyCode.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "vgui_controls/AnimationController.h"
 
 #include "TileGenDialog.h"

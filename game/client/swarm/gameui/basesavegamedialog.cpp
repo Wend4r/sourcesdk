@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 #include "vgui_controls/ImagePanel.h"
 #include "vgui_controls/Button.h"
 #include "vgui_controls/tgaimagepanel.h"
-#include "tier1/utlbuffer.h"
+#include "tier0/utlbuffer.h"
 #include "tier2/resourceprecacher.h"
 #include <stdio.h>
 #include <stdlib.h>

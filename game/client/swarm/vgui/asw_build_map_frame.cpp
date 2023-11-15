@@ -17,7 +17,9 @@
 #include "asw_loading_panel.h"
 
 // includes needed for the creating of a new process and handling its output
+#ifdef _MSC_VER
 #pragma warning( disable : 4005 )
+#endif
 #include <windows.h>
 #include <iostream>
 

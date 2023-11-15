@@ -1,7 +1,7 @@
 #include "cbase.h"
 #include "PlayersWaitingPanel.h"
 #include "vgui/isurface.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/Label.h>
 #include "c_asw_game_resource.h"
 #include "c_playerresource.h"

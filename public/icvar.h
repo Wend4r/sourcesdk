@@ -1,4 +1,4 @@
-﻿//===== Copyright � 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -10,7 +10,9 @@
 #pragma once
 #endif
 
-#include "appframework/IAppSystem.h"
+#include "splitscreenslot.h"
+#include "appframework/iappsystem.h"
+
 #include "tier1/convar.h"
 #include "tier1/utlvector.h"
 #include "tier0/memalloc.h"

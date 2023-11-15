@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,7 +11,7 @@
 #endif
 
 #include "vgui_controls/Panel.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 
 using namespace vgui;
 

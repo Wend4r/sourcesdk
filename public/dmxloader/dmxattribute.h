@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2004, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -14,8 +14,8 @@
 #include "datamodel/dmattributetypes.h"
 #include "tier1/utlvector.h"
 #include "tier1/utlrbtree.h"
-#include "tier1/utlsymbol.h"
-#include "tier1/mempool.h"
+#include "tier0/utlsymbol.h"
+#include "tier0/mempool.h"
 #include "dmxloader/dmxloader.h"
 
 

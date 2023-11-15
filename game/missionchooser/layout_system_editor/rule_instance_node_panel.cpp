@@ -4,7 +4,7 @@
 //
 //===============================================================================
 
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "vgui_controls/Button.h"
 #include "vgui_controls/PanelListPanel.h"
 #include "vgui_controls/Tooltip.h"

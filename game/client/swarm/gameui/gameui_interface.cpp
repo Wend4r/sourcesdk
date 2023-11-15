@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Implements all the functions exported by the GameUI dll
 //
@@ -46,7 +46,7 @@
 // vgui2 interface
 // note that GameUI project uses ..\vgui2\include, not ..\utils\vgui\include
 #include "vgui/Cursor.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "vgui/ILocalize.h"
 #include "vgui/IPanel.h"
 #include "vgui/IScheme.h"

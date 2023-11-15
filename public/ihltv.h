@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -18,13 +18,14 @@
 class IServer;
 class IHLTVDirector;
 class IGameEvent;
-struct netadr_s;
-class CGameInfo;
+struct netadr_t;
 
 //-----------------------------------------------------------------------------
 // Interface the HLTV module exposes to the engine
 //-----------------------------------------------------------------------------
 #define INTERFACEVERSION_HLTVSERVER	"HLTVServer001"
+
+class CGameInfo;
 
 class IHLTVServer : public IBaseInterface
 {
@@ -38,17 +39,17 @@ public:
 	virtual void	GetLocalStats( int &proxies, int &slots, int &specs ) = 0; 
 	virtual void	GetGlobalStats( int &proxies, int &slots, int &specs ) = 0; 
 
-	virtual const netadr_s *GetRelayAddress( void ) = 0; // returns relay address
+	virtual const netadr_t *GetRelayAddress( void ) = 0; // returns relay address
 
 	virtual bool	IsMasterProxy( void ) = 0; // true, if this is the HLTV master proxy
 	virtual bool	IsDemoPlayback( void ) = 0; // true if this is a HLTV demo
 
 	virtual void	BroadcastEvent(IGameEvent *event) = 0; // send a director command to all specs
-	
-	virtual bool	IsRecording() = 0;
-	virtual const char	*GetRecordingDemoFilename ( void ) = 0;
-	virtual void	StartAutoRecording( void ) = 0;
-	virtual void	StopAutoRecording( const CGameInfo *pInfo ) = 0;	
+
+	virtual bool IsRecording(void) = 0;
+	virtual char *GetRecordingDemoFilename(void) = 0;
+	virtual int StartAutoRecording(void) = 0;
+	virtual void StopRecording(CGameInfo const *info) = 0;
 };
 
 #endif

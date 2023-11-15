@@ -7,7 +7,7 @@
 #include <vgui_controls/RichText.h>
 #include <vgui_controls/MessageBox.h>
 #include <vgui_controls/CheckButton.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 #include "TileGenDialog.h"
 #include "ThemeEditDialog.h"

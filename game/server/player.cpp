@@ -1,4 +1,4 @@
-//===== Copyright � 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: Functions dealing with the player.
 //
@@ -50,7 +50,7 @@
 #include "gamevars_shared.h"
 #include "world.h"
 #include "physobj.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "coordsize.h"
 #include "vphysics/player_controller.h"
 #include "saverestore_utlvector.h"

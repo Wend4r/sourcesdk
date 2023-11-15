@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Core types for the response rules -- criteria, responses, rules, and matchers.
 //
@@ -12,12 +12,12 @@
 #endif
 
 #include "tier1/utlrbtree.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 #include "tier2/interval.h"
 #include "mathlib/compressed_vector.h"
 #include "datamap.h"
 #include "soundflags.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 
 namespace ResponseRules 
 {

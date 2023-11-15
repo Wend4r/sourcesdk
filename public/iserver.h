@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -10,10 +10,10 @@
 #pragma once
 #endif
 
-#include <inetmsghandler.h>
-#include <edict.h>
-#include <tier1/checksum_crc.h>
-#include <engine/IEngineService.h>
+#include "inetmsghandler.h"
+#include "edict.h"
+#include "tier0/checksum_crc.h"
+#include "engine/IEngineService.h"
 
 class IGameSpawnGroupMgr;
 struct EventServerAdvanceTick_t;

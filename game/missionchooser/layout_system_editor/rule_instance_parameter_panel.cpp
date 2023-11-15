@@ -11,7 +11,7 @@
 #include "vgui_controls/Tooltip.h"
 #include "vgui_controls/FileOpenDialog.h"
 #include "vgui_controls/ComboBox.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "filesystem.h"
 #include "ThemesDialog.h"
 #include "LevelTheme.h"

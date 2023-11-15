@@ -16,7 +16,7 @@
 #include <vgui_controls/PropertySheet.h>
 #include "vgui/ISurface.h"
 #include <vgui/ILocalize.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 
 #include "TileGenDialog.h"
 #include "tilegen_pages.h"

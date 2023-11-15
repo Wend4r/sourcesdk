@@ -17,7 +17,7 @@
 #include <vgui/ILocalize.h>
 #include "vguicenterprint.h"
 #include "vgui/keycode.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include "ienginevgui.h"
 #include "c_playerresource.h"
 #include "ihudlcd.h"
@@ -1162,8 +1162,10 @@ void CBaseHudChat::OnTick( void )
 	}
 }
 
+#ifdef _MSC_VER
 // Release build is crashing on long strings...sigh
 #pragma optimize( "", off )
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1217,15 +1219,19 @@ int CBaseHudChat::ComputeBreakChar( int width, const char *text, int textlen )
 	return textlen;
 }
 
+#ifdef _MSC_VER
 #pragma optimize( "", on )
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *fmt - 
 //			... - 
 //-----------------------------------------------------------------------------
+#ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable: 4748 ) // /GS can not protect parameters and local variables from local buffer overrun because optimizations are disabled in function
+#endif
 void CBaseHudChat::Printf( int iFilter, const char *fmt, ... )
 {
 	va_list marker;
@@ -1237,8 +1243,10 @@ void CBaseHudChat::Printf( int iFilter, const char *fmt, ... )
 
 	ChatPrintf( 0, iFilter, "%s", msg );
 }
+#ifdef _MSC_VER
 #pragma warning( pop )
 #pragma optimize( "", on )
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

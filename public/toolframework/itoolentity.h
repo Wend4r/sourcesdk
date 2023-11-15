@@ -1,4 +1,4 @@
-//====== Copyright � 1996-2005, Valve Corporation, All rights reserved. =======
+//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -10,10 +10,10 @@
 #pragma once
 #endif
 
-#include "tier0/interface.h"
+#include "tier1/interface.h"
 #include "tier1/utlvector.h"
-#include "Color.h"
-#include "entityhandle.h"
+#include "color.h"
+#include "basehandle.h"
 #include "iclientrenderable.h"
 #include "engine/ishadowmgr.h"
 #include "engine/ivmodelinfo.h"
@@ -229,6 +229,8 @@ public:
 	
 	// Call UTIL_Remove on the entity.
 	virtual void RemoveEntity( int nHammerID ) = 0;
+	
+	virtual void *CreateItemEntityByName( const char *szSchemaName ) = 0;
 };
 
 #define VSERVERTOOLS_INTERFACE_VERSION "VSERVERTOOLS001"

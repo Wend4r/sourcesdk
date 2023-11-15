@@ -283,10 +283,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\vector.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\vmatrix.cpp"
 				>
 			</File>

@@ -1,4 +1,4 @@
-//===== Copyright � 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -23,10 +23,11 @@
 #include "bitvec.h"
 #include "tier1/bitbuf.h"
 #include "tier1/utlmap.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "tier1/bufferstring.h"
 #include <steam/steamclientpublic.h>
 #include "playerslot.h"
+#include "playeruserid.h"
 #include <iloopmode.h>
 
 //-----------------------------------------------------------------------------
@@ -106,26 +107,6 @@ struct bbox_t
 {
 	Vector mins;
 	Vector maxs;
-};
-
-class CPlayerUserId
-{
-public:
-	CPlayerUserId( int index )
-	{
-		_index = index;
-	}
-
-	int Get() const
-	{
-		return _index;
-	}
-
-	bool operator==( const CPlayerUserId &other ) const { return other._index == _index; }
-	bool operator!=( const CPlayerUserId &other ) const { return other._index != _index; }
-
-private:
-	short _index;
 };
 
 //-----------------------------------------------------------------------------

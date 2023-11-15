@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: An application framework 
 //
@@ -13,6 +13,7 @@
 #pragma once
 #endif
 
+#include "tier1/interface.h"
 #include "interfaces/interfaces.h"
 
 
@@ -47,7 +48,6 @@ enum AppSystemTier_t
 	APP_SYSTEM_TIER1,
 	APP_SYSTEM_TIER2,
 	APP_SYSTEM_TIER3,
-	APP_SYSTEM_TIER4,
 
 	APP_SYSTEM_TIER_OTHER,
 };
@@ -83,6 +83,7 @@ public:
 	// Reconnect to a particular interface
 	virtual void Reconnect( CreateInterfaceFn factory, const char *pInterfaceName ) = 0;
 
+	// Is this appsystem a singleton? (returns false if there can be multiple instances of this interface)
 	// Returns whether or not the app system is a singleton
 	virtual bool IsSingleton() = 0;
 	

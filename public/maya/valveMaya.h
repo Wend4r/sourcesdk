@@ -1,4 +1,4 @@
-//======= Copyright © 1996-2006, Valve Corporation, All rights reserved. ======
+//======= Copyright Â© 1996-2006, Valve Corporation, All rights reserved. ======
 //
 // Purpose:
 //
@@ -29,8 +29,8 @@
 
 // Valve Includes
 
-#include "tier1/stringpool.h"
-#include "tier1/utlstring.h"
+#include "tier0/stringpool.h"
+#include "tier0/utlstring.h"
 #include "tier1/utlstringmap.h"
 #include "tier1/utlvector.h"
 #include "tier0/interface.h"

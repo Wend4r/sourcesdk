@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 #include "vgui_controls/Frame.h"
 #include "matsys_controls/baseassetpicker.h"
 #include "datacache/imdlcache.h"

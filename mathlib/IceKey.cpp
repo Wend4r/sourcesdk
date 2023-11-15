@@ -10,6 +10,10 @@
 #pragma warning(disable: 4244)
 #endif
 
+#if __cplusplus < 201703L
+#define register
+#endif
+
 	/* Structure of a single round subkey */
 class IceSubkey {
     public:

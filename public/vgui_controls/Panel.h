@@ -24,9 +24,9 @@
 #include "vgui_controls/Controls.h"
 #include "vgui_controls/PHandle.h"
 #include "vgui_controls/PanelAnimationVar.h"
-#include "Color.h"
+#include "color.h"
 #include "vstdlib/IKeyValuesSystem.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlsymbol.h"
 #include "vgui_controls/BuildGroup.h"
 #include "dmxloader/dmxelement.h"
 

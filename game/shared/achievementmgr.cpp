@@ -10,7 +10,7 @@
 #endif
 #include "achievementmgr.h"
 #include "icommandline.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "filesystem.h"
 #include "inputsystem/InputEnums.h"
 #include "usermessages.h"

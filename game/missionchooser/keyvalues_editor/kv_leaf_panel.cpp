@@ -1,7 +1,7 @@
 #include "kv_leaf_panel.h"
 #include <vgui_controls/TextEntry.h>
 #include <vgui_controls/Button.h>
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "kv_editor.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

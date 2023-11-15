@@ -1,4 +1,4 @@
-//====== Copyright � 1996-2008, Valve Corporation, All rights reserved. =======
+//====== Copyright © 1996-2008, Valve Corporation, All rights reserved. =======
 //
 // Purpose: interface to utility functions in Steam
 //
@@ -6,6 +6,9 @@
 
 #ifndef ISTEAMUTILS_H
 #define ISTEAMUTILS_H
+#ifdef _WIN32
+#pragma once
+#endif
 
 #include "steam_api_common.h"
 
@@ -40,10 +43,10 @@ enum EGamepadTextInputLineMode
 
 enum EFloatingGamepadTextInputMode
 {
-	k_EFloatingGamepadTextInputModeModeSingleLine = 0,		// Enter dismisses the keyboard
-	k_EFloatingGamepadTextInputModeModeMultipleLines = 1,	// User needs to explictly close the keyboard
-	k_EFloatingGamepadTextInputModeModeEmail = 2,			// Keyboard layout is email, enter dismisses the keyboard
-	k_EFloatingGamepadTextInputModeModeNumeric = 3,			// Keyboard layout is numeric, enter dismisses the keyboard
+	k_EFloatingGamepadTextInputModeModeSingleLine = 0, // Enter dismisses the keyboard
+	k_EFloatingGamepadTextInputModeModeMultipleLines = 1, // User needs to explictly close the keyboard
+	k_EFloatingGamepadTextInputModeModeEmail = 2,
+	k_EFloatingGamepadTextInputModeModeNumeric = 3,
 
 };
 
@@ -56,6 +59,12 @@ enum ETextFilteringContext
 	k_ETextFilteringContextName = 3,	// Character or item name
 };
 
+
+// function prototype for warning message hook
+#if defined( POSIX )
+#define __cdecl
+#endif
+extern "C" typedef void (__cdecl *SteamAPIWarningMessageHook_t)(int, const char *);
 
 //-----------------------------------------------------------------------------
 // Purpose: interface to user independent utility functions
@@ -246,7 +255,7 @@ struct IPCountry_t
 
 
 //-----------------------------------------------------------------------------
-// Purpose: Fired when running on a handheld PC or laptop with less than 10 minutes of battery is left, fires then every minute
+// Purpose: Fired when running on a laptop and less than 10 minutes of battery is left, fires then every minute
 //-----------------------------------------------------------------------------
 struct LowBatteryPower_t
 {
@@ -308,7 +317,6 @@ struct GamepadTextInputDismissed_t
 	enum { k_iCallback = k_iSteamUtilsCallbacks + 14 };
 	bool m_bSubmitted;										// true if user entered & accepted text (Call ISteamUtils::GetEnteredGamepadTextInput() for text), false if canceled input
 	uint32 m_unSubmittedText;
-	AppId_t m_unAppID;
 };
 
 // k_iSteamUtilsCallbacks + 15 through 35 are taken
@@ -324,15 +332,6 @@ STEAM_CALLBACK_END(0)
 struct FloatingGamepadTextInputDismissed_t
 {
 	enum { k_iCallback = k_iSteamUtilsCallbacks + 38 };
-};
-
-//-----------------------------------------------------------------------------
-// The text filtering dictionary has changed
-//-----------------------------------------------------------------------------
-struct FilterTextDictionaryChanged_t
-{
-	enum { k_iCallback = k_iSteamUtilsCallbacks + 39 };
-	int m_eLanguage;	// One of ELanguage, or k_LegallyRequiredFiltering
 };
 
 #pragma pack( pop )

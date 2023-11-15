@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -8,7 +8,7 @@
 
 #include "IRunGameEngine.h"
 #include "EngineInterface.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "igameuifuncs.h"
 #include "tier1/convar.h"
 

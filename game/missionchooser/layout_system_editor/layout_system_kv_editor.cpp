@@ -5,7 +5,7 @@
 //
 //===============================================================================
 
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "ScrollingWindow.h"
 #include "layout_system/tilegen_mission_preprocessor.h"
 #include "layout_system_editor/mission_panel.h"

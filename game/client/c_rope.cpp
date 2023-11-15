@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2007, Valve Corporation, All rights reserved. ======//
+//===== Copyright Â© 1996-2007, Valve Corporation, All rights reserved. ======//
 //
 // Purpose: 
 //
@@ -15,12 +15,12 @@
 #include "tier0/vprof.h"
 #include "c_te_effect_dispatch.h"
 #include "collisionutils.h"
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <bitbuf.h>
 #include "utllinkedlist.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
+#include "tier0/memstack.h"
 #include "tier1/callqueue.h"
-#include "tier1/memstack.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

@@ -15,14 +15,15 @@
 #include <limits.h>
 
 #include "tier0/threadtools.h"
-#include "tier0/interface.h"
-#include "tier1/utlsymbol.h"
-#include "tier1/utlstring.h"
-#include "tier1/checksum_crc.h"
-#include "tier1/utldelegate.h"
+#include "tier0/memalloc.h"
+#include "tier0/tslist.h"
+#include "tier1/interface.h"
+#include "tier0/utlsymbol.h"
+#include "tier0/utlstring.h"
+//#include "tier1/functors.h" 
+#include "tier0/checksum_crc.h"
 #include "tier1/utlqueue.h"
-#include "tier1/bufferstring.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "tier2/tier2.h"
 
 //-----------------------------------------------------------------------------
@@ -97,6 +98,8 @@ enum PathTypeFilter_t
 	FILTER_NONE        = 0,	// no filtering, all search path types match
 	FILTER_CULLPACK    = 1,	// pack based search paths are culled (maps and zips)
 	FILTER_CULLNONPACK = 2,	// non-pack based search paths are culled
+	FILTER_CULLLOCALIZED,
+	FILTER_CULLLOCALIZED_ANY,
 };
 
 // search path querying (bit flags)
@@ -231,24 +234,26 @@ enum SearchPathAdd_t
 	PATH_ADD_TO_TAIL_ATINDEX,	// First path searched
 };
 
-// ??????
-enum SearchPathPriority_t
-{
-	PRIORITY_UNKNOWN,
-};
-
-// ??????
-enum GetSearchPathTypes_t
-{
-	
-};
-
 enum FilesystemOpenExFlags_t
 {
 	FSOPEN_UNBUFFERED		= (1 << 0),
 	FSOPEN_FORCE_TRACK_CRC	= (1 << 1),		// This makes it calculate a CRC for the file (if the file came from disk) regardless 
 											// of the IFileList passed to RegisterFileWhitelist.
 	FSOPEN_NEVERINPACK	    = (1 << 2),		// 360 only, hint to FS that file is not allowed to be in pack file
+};
+
+enum SearchPathPriority_t
+{
+	SEARCH_PATH_PRIORITY_DEFAULT = 0,
+	SEARCH_PATH_PRIORITY_LOOSE_FILES,
+	SEARCH_PATH_PRIORITY_VPK,
+};
+
+enum GetSearchPathTypes_t
+{
+	GET_SEARCH_PATH_NO_PACK_FILES = 0,
+	GET_SEARCH_PATH_NO_AUTO_MOUNTED,
+	GET_SEARCH_PATH_ALL,
 };
 
 #define FILESYSTEM_INVALID_HANDLE	( FileHandle_t )0
@@ -321,7 +326,8 @@ enum FSAsyncFlags_t
 enum EFileCRCStatus
 {
 	k_eFileCRCStatus_CantOpenFile,		// We don't have this file. 
-	k_eFileCRCStatus_GotCRC
+	k_eFileCRCStatus_GotCRC,
+	k_eFileCRCStatus_FileInVPK
 };
 
 // Used in CacheFileCRCs.
@@ -366,6 +372,29 @@ struct FileAsyncRequest_t
 	FSAllocFunc_t			pfnAlloc;			// custom allocator. can be null. not compatible with FSASYNC_FLAGS_FREEDATAPTR
 };
 
+struct MD5Value_t
+{
+	unsigned char bits[16];
+};
+
+struct FileHash_t
+{
+	int m_eFileHashType;
+	CRC32_t m_crcIOSequence;
+	MD5Value_t m_md5contents;
+	int m_cbFileLen;
+	int m_PackFileID;
+	int m_nPackFileNumber;
+};
+
+class CUnverifiedFileHash
+{
+public:
+	char m_PathID[MAX_PATH];
+	char m_Filename[MAX_PATH];
+	int m_nFileFraction;
+	FileHash_t m_FileHash;
+};
 
 class CUnverifiedCRCFile
 {
@@ -373,6 +402,21 @@ public:
 	char m_PathID[MAX_PATH];
 	char m_Filename[MAX_PATH];
 	CRC32_t m_CRC;
+};
+
+class IIoStats
+{
+public:
+	virtual void	OnFileSeek( int nTimeInMs ) = 0;
+	virtual void	OnFileRead( int nTimeInMs, int nBytesRead ) = 0;
+	virtual void	OnFileOpen( const char *pFileName ) = 0;
+	virtual int		GetNumberOfFileSeeks() = 0;
+	virtual int		GetTimeInFileSeek() = 0;
+	virtual int		GetNumberOfFileReads() = 0;
+	virtual int		GetTimeInFileReads() = 0;
+	virtual int		GetFileReadTotalSize() = 0;
+	virtual int		GetNumberOfFileOpens() = 0;
+	virtual void	Reset() = 0;
 };
 
 
@@ -405,7 +449,7 @@ public:
 
 // This is the minimal interface that can be implemented to provide access to
 // a named set of files.
-abstract_class IBaseFileSystem
+abstract_class IBaseFileSystem : public IAppSystem
 {
 public:
 	virtual int				Read( void* pOutput, int size, FileHandle_t file ) = 0;
@@ -436,55 +480,33 @@ public:
 	virtual bool			ReadFile( const char *pFileName, const char *pPath, CUtlBuffer &buf, int nMaxBytes = 0, int nStartingByte = 0, FSAllocFunc_t pfnAlloc = NULL ) = 0;
 	virtual bool			WriteFile( const char *pFileName, const char *pPath, CUtlBuffer &buf ) = 0;
 	virtual bool			UnzipFile( const char *pFileName, const char *pPath, const char *pDestination ) = 0;
-	virtual bool			CopyAFile( const char *pFileName, const char *pPath, const char *pDestination, bool bDontOverwrite = false ) = 0;
+	virtual bool			CopyAFile(const char *pFileName, const char *pPath, const char *pDestination, bool bDontOverwrite = false) = 0;
 };
 
 
 //-----------------------------------------------------------------------------
 // Main file system interface
 //-----------------------------------------------------------------------------
-abstract_class IFileSystem : public IAppSystem
+abstract_class IFileSystem : public IBaseFileSystem
 {
 public:
 	//--------------------------------------------------------
-	// IBaseFileSystem
+	// Steam operations
 	//--------------------------------------------------------
-	virtual int				Read(void* pOutput, int size, FileHandle_t file) = 0;
-	virtual int				Write(void const* pInput, int size, FileHandle_t file) = 0;
 
-	// if pathID is NULL, all paths will be searched for the file
-	virtual FileHandle_t	Open(const char *pFileName, const char *pOptions, const char *pathID = 0) = 0;
-	virtual void			Close(FileHandle_t file) = 0;
+	virtual bool			IsSteam() const = 0;
 
-
-	virtual void			Seek(FileHandle_t file, int pos, FileSystemSeek_t seekType) = 0;
-	virtual unsigned int	Tell(FileHandle_t file) = 0;
-	virtual unsigned int	Size(FileHandle_t file) = 0;
-	virtual unsigned int	Size(const char *pFileName, const char *pPathID = 0) = 0;
-
-	virtual void			Flush(FileHandle_t file) = 0;
-	virtual bool			Precache(const char *pFileName, const char *pPathID = 0) = 0;
-
-	virtual bool			FileExists(const char *pFileName, const char *pPathID = 0) = 0;
-	virtual bool			IsFileWritable(char const *pFileName, const char *pPathID = 0) = 0;
-	virtual bool			SetFileWritable(char const *pFileName, bool writable, const char *pPathID = 0) = 0;
-
-	virtual long			GetFileTime(const char *pFileName, const char *pPathID = 0) = 0;
-
-	//--------------------------------------------------------
-	// Reads/writes files to utlbuffers. Use this for optimal read performance when doing open/read/close
-	//--------------------------------------------------------
-	virtual bool			ReadFile(const char *pFileName, const char *pPath, CUtlBuffer &buf, int nMaxBytes = 0, int nStartingByte = 0, FSAllocFunc_t pfnAlloc = NULL) = 0;
-	virtual bool			WriteFile(const char *pFileName, const char *pPath, CUtlBuffer &buf) = 0;
-	virtual bool			UnzipFile(const char *pFileName, const char *pPath, const char *pDestination) = 0;
-	virtual bool			CopyAFile(const char *pFileName, const char *pPath, const char *pDestination, bool bDontOverwrite = false) = 0;
+	// Supplying an extra app id will mount this app in addition 
+	// to the one specified in the environment variable "steamappid"
+	// 
+	// If nExtraAppId is < -1, then it will mount that app ID only.
+	// (Was needed by the dedicated server b/c the "SteamAppId" env var only gets passed to steam.dll
+	// at load time, so the dedicated couldn't pass it in that way).
+	virtual	FilesystemMountRetval_t MountSteamContent( int nExtraAppId = -1 ) = 0;
 
 	//--------------------------------------------------------
 	// Search path manipulation
 	//--------------------------------------------------------
-
-	virtual void unk001() = 0;
-	virtual void unk002() = 0;
 
 	// Add paths in priority order (mod dir, game dir, ....)
 	// If one or more .pak files are in the specified directory, then they are
@@ -493,16 +515,16 @@ public:
 	//  override is cleared and the current .bsp is searched for an embedded PAK file
 	//  and this file becomes the highest priority search path ( i.e., it's looked at first
 	//   even before the mod's file system path ).
-	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL, SearchPathPriority_t priority = PRIORITY_UNKNOWN ) = 0;
+	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
 	virtual bool			RemoveSearchPath( const char *pPath, const char *pathID = 0 ) = 0;
-	
+
 	virtual SearchPathStateHandle_t		*SaveSearchPathState( const char *pszName ) const = 0;
 	virtual void			RestoreSearchPathState( SearchPathStateHandle_t *pState ) = 0;
 	virtual void			DestroySearchPathState( SearchPathStateHandle_t *pState ) = 0;
 
 	// Remove all search paths (including write path?)
 	virtual void			RemoveAllSearchPaths( void ) = 0;
-	
+
 	// Remove search paths associated with a given pathID
 	virtual void			RemoveSearchPaths( const char *szPathID ) = 0;
 
@@ -511,20 +533,19 @@ public:
 	// If there are currently no search paths with the specified path ID, then it will still
 	// remember it in case you add search paths with this path ID.
 	virtual void			MarkPathIDByRequestOnly( const char *pPathID, bool bRequestOnly ) = 0;
-
+	
 	virtual bool			IsFileInReadOnlySearchPath ( const char *pPathID, const char *pFileName ) = 0;
 	virtual void			SetSearchPathReadOnly( const char *pPathID, const char *, bool bReadOnly ) = 0;
 
 	// converts a partial path into a full path
-	virtual const char		*RelativePathToFullPath( const char *pFileName, const char *pPathID, CBufferString &pLocalPath, PathTypeFilter_t pathFilter = FILTER_NONE, PathTypeQuery_t *pPathType = NULL ) = 0;
+	virtual const char		*RelativePathToFullPath( const char *pFileName, const char *pPathID, char *pLocalPath, int localPathBufferSize, PathTypeFilter_t pathFilter = FILTER_NONE, PathTypeQuery_t *pPathType = NULL ) = 0;
 
-	virtual bool			GetWritePath(const char*, const char*, CBufferString &) = 0;
+	// Returns the search path, each path is separated by ;s. Returns the length of the string returned
+	virtual int				GetSearchPath( const char *pathID, bool bGetPackFiles, char *pPath, int nMaxLen ) = 0;
 
-	// Returns the nSearchPathsToGet amount of paths, each path is separated by ;s. Returns true if pathID has any paths
-	virtual bool			GetSearchPath( const char *pathID, GetSearchPathTypes_t pathType, CBufferString &pPath, int nSearchPathsToGet ) = 0;
-	
-	virtual void unk003() = 0;
-	virtual void unk004() = 0;
+	// interface for custom pack files > 4Gb
+	virtual bool			AddPackFile( const char *fullpath, const char *pathID ) = 0;
+	virtual bool			AddPackFile2( const char *fullpath, const char *pathID ) = 0;
 
 	//--------------------------------------------------------
 	// File manipulation operations
@@ -539,7 +560,7 @@ public:
 	// create a local directory structure
 	virtual void			CreateDirHierarchy( const char *path, const char *pathID = 0 ) = 0;
 
-	virtual void unk005() = 0;
+	virtual void			unk005() = 0;
 
 	// File I/O and info
 	virtual bool			IsDirectory( const char *pFileName, const char *pathID = 0 ) = 0;
@@ -556,9 +577,7 @@ public:
 
 	virtual bool			EndOfFile( FileHandle_t file ) = 0;
 
-	virtual const char		*ReadLine(FileHandle_t file, bool bStripNewline = true) = 0;
 	virtual char			*ReadLine( char *pOutput, int maxChars, FileHandle_t file ) = 0;
-
 	virtual int				FPrintf( FileHandle_t file, const char *pFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
 
 	//--------------------------------------------------------
@@ -566,8 +585,8 @@ public:
 	//--------------------------------------------------------
 
 	// load/unload modules
-	virtual HMODULE 		*LoadModule( const char *pFileName, const char *pPathID = 0, bool bValidatedDllOnly = true ) = 0;
-	virtual void			UnloadModule( HMODULE *pModule ) = 0;
+	virtual CSysModule 		*LoadModule( const char *pFileName, const char *pPathID = 0, bool bValidatedDllOnly = true ) = 0;
+	virtual void			UnloadModule( CSysModule *pModule ) = 0;
 
 	//--------------------------------------------------------
 	// File searching operations
@@ -580,20 +599,32 @@ public:
 	virtual void			FindClose( FileFindHandle_t handle ) = 0;
 
 	// Same as FindFirst, but you can filter by path ID, which can make it faster.
-	virtual const char		*FindFirstEx( const char *pWildCard, const char *pPathID, FileFindHandle_t *pHandle ) = 0;
+	virtual const char		*FindFirstEx( 
+		const char *pWildCard, 
+		const char *pPathID,
+		FileFindHandle_t *pHandle
+		) = 0;
 
-	virtual void			FindFileAbsoluteList( CUtlVector<CUtlString> &output, const char *pWildCard, const char *pPathID ) = 0;
+	virtual void			FindFileAbsoluteList(
+		CUtlVector<CUtlString> &output,
+		const char *pWildCard,
+		const char *pPathID
+		) = 0;
 
 	//--------------------------------------------------------
 	// File name and directory operations
 	//--------------------------------------------------------
 
+	// FIXME: This method is obsolete! Use RelativePathToFullPath instead!
+	// converts a partial path into a full path
+	virtual const char		*GetLocalPath( const char *pFileName, char *pLocalPath, int localPathBufferSize ) = 0;
+
 	// Returns true on success ( based on current list of search paths, otherwise false if 
 	//  it can't be resolved )
-	virtual bool			FullPathToRelativePath( const char *pFullpath, const char *pPathID, char *pRelative, int maxlen ) = 0;
+	virtual bool			FullPathToRelativePath( const char *pFullpath, char *pRelative, int maxlen ) = 0;
 
 	// Gets the current working directory
-	virtual bool			GetCurrentDirectory( CBufferString &pDirectory ) = 0;
+	virtual bool			GetCurrentDirectory( char* pDirectory, int maxlen ) = 0;
 
 	//--------------------------------------------------------
 	// Filename dictionary operations
@@ -601,10 +632,6 @@ public:
 
 	virtual FileNameHandle_t	FindOrAddFileName( char const *pFileName ) = 0;
 	virtual bool				String( const FileNameHandle_t& handle, char *buf, int buflen ) = 0;
-
-	virtual void unk006() = 0;
-	virtual void unk007() = 0;
-	virtual void unk008() = 0;
 
 	virtual void			Trace_DumpUnclosedFiles() = 0;
 
@@ -770,8 +797,7 @@ public:
 
 	virtual void			GetSearchPathsForPathID( const char*, GetSearchPathTypes_t, CUtlVector<CUtlString> & ) = 0;
 
-	virtual void			MarkContentCorrupt( bool bMissingFilesOnly, const char* pFile ) = 0;
-};
+	virtual void			MarkContentCorrupt( bool bMissingFilesOnly, const char* pFile ) = 0;};
 
 //-----------------------------------------------------------------------------
 
@@ -808,16 +834,19 @@ private:
 
 //-----------------------------------------------------------------------------
 
-inline unsigned IFileSystem::GetOptimalReadSize(FileHandle_t hFile, unsigned nLogicalSize)
-{
-	unsigned align;
-	if (GetOptimalIOConstraints(hFile, &align, NULL, NULL))
-		return AlignValue(nLogicalSize, align);
+inline unsigned IFileSystem::GetOptimalReadSize( FileHandle_t hFile, unsigned nLogicalSize ) 
+{ 
+	unsigned align; 
+	if ( GetOptimalIOConstraints( hFile, &align, NULL, NULL ) ) 
+		return AlignValue( nLogicalSize, align );
 	else
 		return nLogicalSize;
 }
 
 //-----------------------------------------------------------------------------
+
+// We include this here so it'll catch compile errors in VMPI early.
+// #include "filesystem_passthru.h"
 
 //-----------------------------------------------------------------------------
 // Async memory tracking

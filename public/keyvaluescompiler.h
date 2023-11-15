@@ -11,8 +11,8 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier1/utlbuffer.h"
-#include "tier1/utlsymbol.h"
+#include "tier0/utlbuffer.h"
+#include "tier0/utlsymbol.h"
 #include "tier1/utldict.h"
 
 class KeyValues;

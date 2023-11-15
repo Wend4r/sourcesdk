@@ -1,4 +1,4 @@
-//=== Copyright © 1996-2005, Valve Corporation, All rights reserved. ========//
+//=== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ========//
 //
 // Purpose: 
 //
@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "itempents.h"
 #include "effect_dispatch_data.h"
-#include "tier1/keyvalues.h"
+#include "tier0/keyvalues.h"
 #include "iefx.h"
 #include "ieffects.h"
 #include "toolframework_client.h"

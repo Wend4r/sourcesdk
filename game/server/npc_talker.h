@@ -20,9 +20,13 @@
 #undef min
 #undef max
 #endif
+#ifdef _MSC_VER
 #pragma warning(push)
+#endif
 #include <set>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 #endif
 
 #ifdef _WIN32

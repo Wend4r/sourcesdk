@@ -5,7 +5,7 @@
 #endif
 
 #include "Utlvector.h"
-#include "tier1/UtlSortVector.h"
+#include "tier1/utlsortvector.h"
 
 class CRoomTemplate;
 

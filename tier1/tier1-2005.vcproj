@@ -221,22 +221,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\characterset.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\checksum_crc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\checksum_md5.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\commandbuffer.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\convar.cpp"
 				>
 			</File>
@@ -245,31 +229,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\diff.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\generichash.cpp"
 				>
 			</File>
 			<File
 				RelativePath=".\interface.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\KeyValues.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\mempool.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\memstack.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\NetAdr.cpp"
 				>
 			</File>
 			<File
@@ -301,14 +265,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\stringpool.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\strtools.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\tier1.cpp"
 				>
 			</File>
@@ -317,23 +273,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\uniqueid.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\utlbuffer.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\utlbufferutil.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\utlstring.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\utlsymbol.cpp"
 				>
 			</File>
 		</Filter>
@@ -346,23 +286,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\cbyteswap.h"
-				>
-			</File>
-			<File
 				RelativePath="..\public\tier1\callqueue.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\characterset.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\checksum_crc.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\checksum_md5.h"
 				>
 			</File>
 			<File
@@ -386,10 +310,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\diff.h"
-				>
-			</File>
-			<File
 				RelativePath="..\public\tier1\fmtstr.h"
 				>
 			</File>
@@ -410,27 +330,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\KeyValues.h"
-				>
-			</File>
-			<File
 				RelativePath="..\public\tier1\lzmaDecoder.h"
 				>
 			</File>
 			<File
 				RelativePath="..\public\tier1\lzss.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\mempool.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\memstack.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\netadr.h"
 				>
 			</File>
 			<File
@@ -450,14 +354,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\stringpool.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\strtools.h"
-				>
-			</File>
-			<File
 				RelativePath="..\public\tier1\tier1.h"
 				>
 			</File>
@@ -466,19 +362,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\uniqueid.h"
-				>
-			</File>
-			<File
 				RelativePath="..\public\tier1\utlbidirectionalset.h"
 				>
 			</File>
 			<File
 				RelativePath="..\public\tier1\utlblockmemory.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\utlbuffer.h"
 				>
 			</File>
 			<File
@@ -534,7 +422,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\UtlSortVector.h"
+				RelativePath="..\public\tier1\utlsortvector.h"
 				>
 			</File>
 			<File
@@ -542,15 +430,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\utlstring.h"
+				RelativePath="..\public\tier1\utlstringmap.h"
 				>
 			</File>
 			<File
-				RelativePath="..\public\tier1\UtlStringMap.h"
-				>
-			</File>
-			<File
-				RelativePath="..\public\tier1\utlsymbol.h"
+				RelativePath="..\public\tier0\utlsymbol.h"
 				>
 			</File>
 			<File

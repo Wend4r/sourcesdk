@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,11 +11,11 @@
 #include "ModInfo.h"
 #include "vgui_controls/ComboBox.h"
 #include "vgui_controls/QueryBox.h"
-#include "tier1/KeyValues.h"
+#include "tier0/keyvalues.h"
 #include "tier1/convar.h"
 #include "vgui/IInput.h"
 #include "steam/steam_api.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 #include "gameui_util.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

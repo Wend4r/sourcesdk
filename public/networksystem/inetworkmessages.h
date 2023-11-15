@@ -9,11 +9,11 @@
 
 #include <networksystem/inetworkserializer.h>
 #include <tier1/bitbuf.h>
-#include <tier1/utlstring.h>
-#include <tier1/utlsymbol.h>
+#include <tier0/utlstring.h>
+#include <tier0/utlsymbol.h>
 #include <tier1/utldelegate.h>
 #include <tier0/logging.h>
-#include "Color.h"
+#include "color.h"
 
 class CSchemaClassBindingBase;
 class INetworkSerializerBindingBuildFilter;

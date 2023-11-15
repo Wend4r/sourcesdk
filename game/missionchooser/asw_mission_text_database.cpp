@@ -4,7 +4,7 @@
 
 #include "convar.h"
 #include "asw_mission_text_database.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "filesystem.h"
 #include "vstdlib/random.h"
 #include "vprof.h"

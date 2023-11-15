@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//====== Copyright Â© 1996-2003, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 
 
 #include "matsys_controls/proceduraltexturepanel.h"
-#include "tier1/utlstring.h"
+#include "tier0/utlstring.h"
 
 
 //-----------------------------------------------------------------------------

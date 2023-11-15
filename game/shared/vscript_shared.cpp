@@ -1,4 +1,4 @@
-//========== Copyright © 2008, Valve Corporation, All rights reserved. ========
+//========== Copyright ï¿½ 2008, Valve Corporation, All rights reserved. ========
 //
 // Purpose:
 //
@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "vscript_shared.h"
 #include "icommandline.h"
-#include "tier1/utlbuffer.h"
+#include "tier0/utlbuffer.h"
 #include "tier1/fmtstr.h"
 #include "filesystem.h"
 #include "characterset.h"

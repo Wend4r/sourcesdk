@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,8 +12,8 @@
 
 
 #include "const.h"
-#include "entityhandle.h"
-#include "tier1/utllinkedlist.h"
+#include "basehandle.h"
+#include "utllinkedlist.h"
 #include "ihandleentity.h"
 
 
@@ -24,6 +24,8 @@ public:
 	int				m_SerialNumber;
 	CEntInfo		*m_pPrev;
 	CEntInfo		*m_pNext;
+	string_t		m_iName;
+	string_t		m_iClassName;
 
 	void			ClearLinks();
 };

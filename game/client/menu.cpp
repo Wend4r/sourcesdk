@@ -19,7 +19,7 @@
 #include <vgui/vgui.h>
 #include <vgui/ISurface.h>
 #include <vgui/ilocalize.h>
-#include <KeyValues.h>
+#include <keyvalues.h>
 #include <vgui_controls/AnimationController.h>
 
 #define MAX_MENU_STRING	512

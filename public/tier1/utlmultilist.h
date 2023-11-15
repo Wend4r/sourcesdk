@@ -1,4 +1,4 @@
-//========= Copyright � 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Multiple linked list container class 
 //
@@ -145,6 +145,30 @@ protected:
 	I	m_FirstFree;
 	I	m_TotalElements;	
 	int	m_MaxElementIndex;	// The number allocated (use int so we can catch overflow)
+
+	void ResetDbgInfo()
+	{
+		m_pElements = m_Memory.Base();
+
+#ifdef _DEBUG
+		// Allocate space for the element list (which list is each element in)
+		if (m_Memory.NumAllocated() > 0)
+		{
+			if (!m_pElementList)
+			{
+				m_pElementList = (I*)malloc( m_Memory.NumAllocated() * sizeof(I) );
+			}
+			else
+			{
+				m_pElementList = (I*)realloc( m_pElementList, m_Memory.NumAllocated() * sizeof(I) );
+			}
+		}
+#endif
+	}
+
+	// For debugging purposes; 
+	// it's in release builds so this can be used in libraries correctly
+	ListElem_t  *m_pElements;
 };
    
    
@@ -180,6 +204,7 @@ void CUtlMultiList<T,I>::ConstructList( )
 	m_FirstFree = InvalidIndex();
 	m_TotalElements = 0;
 	m_MaxElementIndex = 0;
+	ResetDbgInfo();
 }
 
 
@@ -307,8 +332,10 @@ inline bool CUtlMultiList<T,I>::IndexInRange( int index ) // Static method
 
 	// Do a couple of static checks here: the invalid index should be (I)~0 given how we use m_MaxElementIndex,
 	// and 'I' should be unsigned (to avoid signed arithmetic errors for plausibly exhaustible ranges).
-	COMPILE_TIME_ASSERT( (I)M::INVALID_INDEX == (I)~0 );
-	COMPILE_TIME_ASSERT( ( sizeof(I) > 2 ) || ( ( (I)-1 ) > 0 ) );
+	// These COMPILE_TIME_ASSERT checks need to be in individual scopes to avoid build breaks
+	// on MacOS and Linux due to a gcc bug.
+	{ COMPILE_TIME_ASSERT( (I)M::INVALID_INDEX == (I)~0 ); }
+	{ COMPILE_TIME_ASSERT( ( sizeof(I) > 2 ) || ( ( (I)-1 ) > 0 ) ); }
 
 	return ( ( (I)index == index ) && ( (I)index != InvalidIndex() ) );
 }
@@ -341,6 +368,7 @@ template< class T, class I >
 void CUtlMultiList<T, I>::EnsureCapacity( int num )
 {
 	m_Memory.EnsureCapacity(num);
+	ResetDbgInfo();
 }
 
 
@@ -357,6 +385,7 @@ void  CUtlMultiList<T,I>::Purge()
 	m_FirstFree = InvalidIndex();
 	m_TotalElements = 0;
 	m_MaxElementIndex = 0;
+	ResetDbgInfo();
 }
 
 
@@ -372,7 +401,8 @@ I CUtlMultiList<T,I>::Alloc( )
 		// We can overflow before the utlmemory overflows, since we have have I != int
 		if ( !IndexInRange( m_MaxElementIndex ) )
 		{
-			ExecuteNTimes( 10, Warning( "CUtlMultiList overflow! (exhausted index range)\n" ) );
+			// We rarely if ever handle alloc failure. Continuing leads to corruption.
+			Error( "CUtlMultiList overflow! (exhausted index range)\n" );
 			return InvalidIndex();
 		}
 
@@ -382,10 +412,12 @@ I CUtlMultiList<T,I>::Alloc( )
 		if (m_MaxElementIndex == m_Memory.NumAllocated())
 		{
 			m_Memory.Grow();
+			ResetDbgInfo();
 			
 			if ( m_MaxElementIndex >= m_Memory.NumAllocated() )
 			{
-				ExecuteNTimes( 10, Warning( "CUtlMultiList overflow! (exhausted memory allocator)\n" ) );
+				// We rarely if ever handle alloc failure. Continuing leads to corruption.
+				Error( "CUtlMultiList overflow! (exhausted memory allocator)\n" );
 				return InvalidIndex();
 			}
 		}

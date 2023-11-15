@@ -1,5 +1,5 @@
 #include "asw_location_grid.h"
-#include "KeyValues.h"
+#include "keyvalues.h"
 #include "filesystem.h"
 #include "asw_mission_chooser.h"
 #include "asw_key_values_database.h"
