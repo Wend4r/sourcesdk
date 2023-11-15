@@ -69,7 +69,7 @@
 #define SP_MODEL_INDEX_BITS			13
 
 // How many bits to use to encode an edict.
-#define	MAX_EDICT_BITS				11			// # of bits needed to represent max edicts
+#define	MAX_EDICT_BITS				14			// # of bits needed to represent max edicts
 // Max # of edicts in a level
 #define	MAX_EDICTS					(1<<MAX_EDICT_BITS)
 
@@ -85,7 +85,7 @@
 #define NUM_ENT_ENTRIES			(1 << NUM_ENT_ENTRY_BITS)
 #define INVALID_EHANDLE_INDEX	0xFFFFFFFF
 
-#define NUM_SERIAL_NUM_BITS		16 // (32 - NUM_ENT_ENTRY_BITS)
+#define NUM_SERIAL_NUM_BITS		17 // (32 - NUM_ENT_ENTRY_BITS)
 #define NUM_SERIAL_NUM_SHIFT_BITS (32 - NUM_SERIAL_NUM_BITS)
 #define ENT_ENTRY_MASK			(( 1 << NUM_SERIAL_NUM_BITS) - 1)
 
@@ -104,7 +104,7 @@
 
 // a client can have up to 4 customization files (logo, sounds, models, txt).
 #define MAX_CUSTOM_FILES		4		// max 4 files
-#define MAX_CUSTOM_FILE_SIZE	524288	// Half a megabyte
+#define MAX_CUSTOM_FILE_SIZE	524288	// Half a megabyte	
 
 //
 // Constants shared by the engine and dlls
@@ -115,62 +115,60 @@
 // PLAYER SPECIFIC FLAGS FIRST BECAUSE WE USE ONLY A FEW BITS OF NETWORK PRECISION
 #define	FL_ONGROUND				(1<<0)	// At rest / on the ground
 #define FL_DUCKING				(1<<1)	// Player flag -- Player is fully crouched
-#define FL_ANIMDUCKING			(1<<2)	// Player flag -- Player is in the process of crouching or uncrouching but could be in transition
-                                        // examples:                                   Fully ducked:  FL_DUCKING &  FL_ANIMDUCKING
-                                        //           Previously fully ducked, unducking in progress:  FL_DUCKING & !FL_ANIMDUCKING
-                                        //                                           Fully unducked: !FL_DUCKING & !FL_ANIMDUCKING
-                                        //           Previously fully unducked, ducking in progress: !FL_DUCKING &  FL_ANIMDUCKING
-#define	FL_WATERJUMP			(1<<3)	// player jumping out of water
-#define FL_ONTRAIN				(1<<4) // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
-#define FL_INRAIN				(1<<5)	// Indicates the entity is standing in rain
-#define FL_FROZEN				(1<<6) // Player is frozen for 3rd person camera
-#define FL_ATCONTROLS			(1<<7) // Player can't move, but keeps key inputs for controlling another entity
-#define	FL_CLIENT				(1<<8)	// Is a player
-#define FL_FAKECLIENT			(1<<9)	// Fake client, simulated server side; don't send network messages to them
-// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
-#define	FL_INWATER				(1<<10)	// In water
+#define	FL_WATERJUMP			(1<<2)	// player jumping out of water
+#define FL_ONTRAIN				(1<<3) // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
+#define FL_INRAIN				(1<<4)	// Indicates the entity is standing in rain
+#define FL_FROZEN				(1<<5) // Player is frozen for 3rd person camera
+#define FL_ATCONTROLS			(1<<6) // Player can't move, but keeps key inputs for controlling another entity
+#define	FL_CLIENT				(1<<7)	// Is a player
+#define FL_FAKECLIENT			(1<<8)	// Fake client, simulated server side; don't send network messages to them
+#define	FL_INWATER				(1<<9)	// In water
 
 // NOTE if you move things up, make sure to change this value
-#define PLAYER_FLAG_BITS		11
+#define PLAYER_FLAG_BITS		10
 
-#define	FL_FLY					(1<<11)	// Changes the SV_Movestep() behavior to not need to be on ground
-#define	FL_SWIM					(1<<12)	// Changes the SV_Movestep() behavior to not need to be on ground (but stay in water)
-#define	FL_CONVEYOR				(1<<13)
-#define	FL_NPC					(1<<14)
-#define	FL_GODMODE				(1<<15)
-#define	FL_NOTARGET				(1<<16)
-#define	FL_AIMTARGET			(1<<17)	// set if the crosshair needs to aim onto the entity
-#define	FL_PARTIALGROUND		(1<<18)	// not all corners are valid
-#define FL_STATICPROP			(1<<19)	// Eetsa static prop!		
+// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
+#define	FL_FLY					(1<<10)	// Changes the SV_Movestep() behavior to not need to be on ground
+#define	FL_SWIM					(1<<11)	// Changes the SV_Movestep() behavior to not need to be on ground (but stay in water)
+#define	FL_CONVEYOR				(1<<12)
+#define	FL_NPC					(1<<13)
+#define	FL_GODMODE				(1<<14)
+#define	FL_NOTARGET				(1<<15)
+#define	FL_AIMTARGET			(1<<16)	// set if the crosshair needs to aim onto the entity
+#define	FL_PARTIALGROUND		(1<<17)	// not all corners are valid
+#define FL_STATICPROP			(1<<18)	// Eetsa static prop!		
+
 #ifdef PORTAL2
-#define FL_AFFECTED_BY_PAINT	(1<<20)
+#define FL_AFFECTED_BY_PAINT	(1<<19)
 #else
-#define FL_GRAPHED				(1<<20) // worldgraph has this ent listed as something that blocks a connection
+#define FL_GRAPHED				(1<<19) // worldgraph has this ent listed as something that blocks a connection
 #endif
-#define FL_GRENADE				(1<<21)
-#define FL_STEPMOVEMENT			(1<<22)	// Changes the SV_Movestep() behavior to not do any processing
-#define FL_DONTTOUCH			(1<<23)	// Doesn't generate touch functions, generates Untouch() for anything it was touching when this flag was set
-#define FL_BASEVELOCITY			(1<<24)	// Base velocity has been applied this frame (used to convert base velocity into momentum)
-#define FL_WORLDBRUSH			(1<<25)	// Not moveable/removeable brush entity (really part of the world, but represented as an entity for transparency or something)
-#define FL_OBJECT				(1<<26) // Terrible name. This is an object that NPCs should see. Missiles, for example.
-#define FL_KILLME				(1<<27)	// This entity is marked for death -- will be freed by game DLL
-#define FL_ONFIRE				(1<<28)	// You know...
-#define FL_DISSOLVING			(1<<29) // We're dissolving!
-#define FL_TRANSRAGDOLL			(1<<30) // In the process of turning into a client side ragdoll.
-#define FL_UNBLOCKABLE_BY_PLAYER (1<<31) // pusher that can't be blocked by the player
+
+#define FL_GRENADE				(1<<20)
+#define FL_STEPMOVEMENT			(1<<21)	// Changes the SV_Movestep() behavior to not do any processing
+#define FL_DONTTOUCH			(1<<22)	// Doesn't generate touch functions, generates Untouch() for anything it was touching when this flag was set
+#define FL_BASEVELOCITY			(1<<23)	// Base velocity has been applied this frame (used to convert base velocity into momentum)
+#define FL_WORLDBRUSH			(1<<24)	// Not moveable/removeable brush entity (really part of the world, but represented as an entity for transparency or something)
+#define FL_OBJECT				(1<<25) // Terrible name. This is an object that NPCs should see. Missiles, for example.
+#define FL_KILLME				(1<<26)	// This entity is marked for death -- will be freed by game DLL
+#define FL_ONFIRE				(1<<27)	// You know...
+#define FL_DISSOLVING			(1<<28) // We're dissolving!
+#define FL_TRANSRAGDOLL			(1<<29) // In the process of turning into a client side ragdoll.
+#define FL_UNBLOCKABLE_BY_PLAYER (1<<30) // pusher that can't be blocked by the player
+
 
 // FIXME[HPE]: this won't actually work - we're out of bits. :(
 #ifdef PORTAL2
-#define FL_UNPAINTABLE			(1<<32) // Unpaintable entities!
+#define FL_UNPAINTABLE			(1<<31) // Unpaintable entities!
 #else
-#define FL_FREEZING				(1<<32) // We're becoming frozen!
+#define FL_FREEZING				(1<<31) // We're becoming frozen!
 #endif
 
 // edict->movetype values
 enum MoveType_t
 {
 	MOVETYPE_NONE		= 0,	// never moves
-	MOVETYPE_ISOMETRIC,			// For players -- in TF2 commander view, etc.
+	MOVETYPE_ISOMETRIC,			// Previously isometric movetype
 	MOVETYPE_WALK,				// Player only - moving on the ground
 	MOVETYPE_STEP,				// gravity, special edge handling -- monsters use this
 	MOVETYPE_FLY,				// No gravity, but still collides with stuff
@@ -185,7 +183,7 @@ enum MoveType_t
 	// should always be defined as the last item in the list
 	MOVETYPE_LAST		= MOVETYPE_CUSTOM,
 
-	MOVETYPE_MAX_BITS	= 4
+	MOVETYPE_MAX_BITS	= 5
 };
 
 // edict->movecollide values
@@ -217,12 +215,14 @@ enum SolidType_t
 	SOLID_BSP			= 1,	// a BSP tree
 	SOLID_BBOX			= 2,	// an AABB
 	SOLID_OBB			= 3,	// an OBB (not implemented yet)
-	SOLID_OBB_YAW		= 4,	// an OBB, constrained so that it can only yaw
-	SOLID_CUSTOM		= 5,	// Always call into the entity for tests
+	// SOLID_SPHERE		= 4,
+	SOLID_POINT			= 5,
 	SOLID_VPHYSICS		= 6,	// solid vphysics object, get vcollide from the model and collide with that
+	SOLID_CAPSULE		= 7,
 	SOLID_LAST,
 };
 
+// GAMMACASE: Potentially obsolete
 enum SolidFlags_t
 {
 	FSOLID_CUSTOMRAYTEST		= 0x0001,	// Ignore solid type + always call into the entity for ray tests
@@ -250,14 +250,17 @@ inline bool IsSolid( SolidType_t solidType, int nSolidFlags )
 	return (solidType != SOLID_NONE) && ((nSolidFlags & FSOLID_NOT_SOLID) == 0);
 }
 
-
 // m_lifeState values
-#define	LIFE_ALIVE				0 // alive
-#define	LIFE_DYING				1 // playing death animation or still falling off of a ledge waiting to hit ground
-#define	LIFE_DEAD				2 // dead. lying still.
-#define LIFE_RESPAWNABLE		3
-#define LIFE_DISCARDBODY		4
+enum LifeState_t
+{
+	LIFE_ALIVE			= 0x0,	// alive
+	LIFE_DYING			= 0x1,	// playing death animation or still falling off of a ledge waiting to hit ground
+	LIFE_DEAD			= 0x2,	// dead. lying still.
+	LIFE_RESPAWNABLE	= 0x3,
+	LIFE_RESPAWNING		= 0x4
+};
 
+// GAMMACASE: Potentially obsolete
 // entity effects
 enum
 {
@@ -275,12 +278,7 @@ enum
 										// the parent is not in the PVS.
 	EF_ITEM_BLINK			= 0x100,	// blink an item so that the user notices it.
 	EF_PARENT_ANIMATES		= 0x200,	// always assume that the parent entity is animating
-	EF_MARKED_FOR_FAST_REFLECTION	= 0x400,	// marks an entity for reflection rendering when using $reflectonlymarkedentities material variable
-	EF_NOSHADOWDEPTH		= 0x800,	// Indicates this entity does not render into any shadow depthmap
-	EF_SHADOWDEPTH_NOCACHE	= 0x1000,	// Indicates this entity cannot be cached in shadow depthmap and should render every frame
-	EF_NOFLASHLIGHT         = 0x2000,
-	EF_NOCSM				= 0x4000,	// Indicates this entity does not render into the cascade shadow depthmap
-	EF_MAX_BITS = 15
+	EF_MAX_BITS = 10
 };
 
 #define EF_PARITY_BITS	3
@@ -346,6 +344,7 @@ enum RenderMode_t
 	kRenderTransAlphaAdd,	// src + dest*(1-a)
 	kRenderWorldGlow,		// Same as kRenderGlow but not fixed size in screen space
 	kRenderNone,			// Don't render.
+	kRenderDevVisualizer,
 
 	kRenderModeCount,		// must be last
 };
@@ -378,11 +377,23 @@ enum RenderFx_t
 	kRenderFxMax
 };
 
-enum Collision_Group_t
+enum BuiltInCollisionGroup_t
+{
+	COLLISION_GROUP_ALWAYS = 0,
+	COLLISION_GROUP_NONPHYSICAL = 1,
+	COLLISION_GROUP_TRIGGER = 2,
+	COLLISION_GROUP_CONDITIONALLY_SOLID = 3,
+	COLLISION_GROUP_FIRST_USER = 4,
+
+	COLLISION_GROUPS_MAX_ALLOWED = 64,
+};
+
+enum StandardCollisionGroups_t
 {
 	COLLISION_GROUP_NONE  = 0,
+	COLLISION_GROUP_DEFAULT = 4,
 	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
-	COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
+	// COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
 	COLLISION_GROUP_INTERACTIVE_DEBRIS,	// Collides with everything except other interactive debris or debris
 	COLLISION_GROUP_INTERACTIVE,	// Collides with everything except interactive debris or debris
 	COLLISION_GROUP_PLAYER,
@@ -403,6 +414,7 @@ enum Collision_Group_t
 	COLLISION_GROUP_NPC_ACTOR,		// Used so NPCs in scripts ignore the player.
 	COLLISION_GROUP_NPC_SCRIPTED,	// USed for NPCs in scripts that should not collide with each other
 	COLLISION_GROUP_PZ_CLIP,
+	COLLISION_GROUP_PROPS,
 
 #ifdef PORTAL2
 	COLLISION_GROUP_CAMERA_SOLID,		// Solid only to the camera's test trace
@@ -411,10 +423,12 @@ enum Collision_Group_t
 	COLLISION_GROUP_WEIGHTED_CUBE,		// Cubes need a collision group that acts roughly like COLLISION_GROUP_NONE but doesn't collide with debris or interactive
 #endif // PORTAL2
 
-	COLLISION_GROUP_DEBRIS_BLOCK_PROJECTILE, // Only collides with bullets
+	// COLLISION_GROUP_DEBRIS_BLOCK_PROJECTILE, // Only collides with bullets
 
 	LAST_SHARED_COLLISION_GROUP
 };
+
+typedef StandardCollisionGroups_t Collision_Group_t;
 
 #include "basetypes.h"
 
