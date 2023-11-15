@@ -85,7 +85,7 @@ private:
 	int m_Size;
 
 	// For easier access to the elements through the debugger
-	T* m_pElements;
+	// T* m_pElements;
 };
 
 
@@ -96,7 +96,7 @@ private:
 template< class T, class M >
 inline void CUtlStack<T,M>::ResetDbgInfo()
 {
-	m_pElements = m_Memory.Base();
+	// m_pElements = m_Memory.Base();
 }
 
 //-----------------------------------------------------------------------------

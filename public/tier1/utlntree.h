@@ -120,7 +120,7 @@ protected:
 
 	void ResetDbgInfo()
 	{
-		m_pElements = m_Memory.Base();
+		// m_pElements = m_Memory.Base();
 	}
 	
 	// copy constructors not allowed
@@ -134,7 +134,7 @@ protected:
 	
 	// For debugging purposes; 
 	// it's in release builds so this can be used in libraries correctly
-	Node_t  *m_pElements;
+	// Node_t  *m_pElements;
 };
    
    

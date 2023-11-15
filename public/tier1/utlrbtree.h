@@ -329,7 +329,7 @@ protected:
 	I m_FirstFree;
 	typename M::Iterator_t m_LastAlloc; // the last index allocated
 
-	Node_t* m_pElements;
+	// Node_t* m_pElements;
 
 	FORCEINLINE M const &Elements( void ) const
 	{
@@ -339,7 +339,7 @@ protected:
 
 	void ResetDbgInfo()
 	{
-		m_pElements = (Node_t*)m_Elements.Base();
+		// m_pElements = (Node_t*)m_Elements.Base();
 	}
 };
 
@@ -1696,7 +1696,7 @@ void CUtlRBTree<T, I, L, M>::Swap( CUtlRBTree< T, I, L > &that )
 	V_swap( m_Root, that.m_Root );
 	V_swap( m_NumElements, that.m_NumElements );
 	V_swap( m_FirstFree, that.m_FirstFree );
-	V_swap( m_pElements, that.m_pElements );
+	// V_swap( m_pElements, that.m_pElements );
 	V_swap( m_LastAlloc, that.m_LastAlloc );
 	Assert( IsValid() );
 	Assert( m_Elements.IsValidIterator( m_LastAlloc ) || ( m_NumElements == 0 && m_FirstFree == InvalidIndex() ) );

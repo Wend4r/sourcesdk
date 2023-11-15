@@ -148,7 +148,7 @@ protected:
 
 	void ResetDbgInfo()
 	{
-		m_pElements = m_Memory.Base();
+		// m_pElements = m_Memory.Base();
 
 #ifdef _DEBUG
 		// Allocate space for the element list (which list is each element in)
@@ -168,7 +168,7 @@ protected:
 
 	// For debugging purposes; 
 	// it's in release builds so this can be used in libraries correctly
-	ListElem_t  *m_pElements;
+	// ListElem_t  *m_pElements;
 };
    
    

@@ -374,7 +374,7 @@ protected:
 
 	// For debugging purposes; 
 	// it's in release builds so this can be used in libraries correctly
-	ListElem_t  *m_pElements;
+	// ListElem_t  *m_pElements;
 
 	FORCEINLINE M const &Memory( void ) const
 	{
@@ -383,7 +383,7 @@ protected:
 
 	void ResetDbgInfo()
 	{
-		m_pElements = m_Memory.Base();
+		// m_pElements = m_Memory.Base();
 	}
 };
 
