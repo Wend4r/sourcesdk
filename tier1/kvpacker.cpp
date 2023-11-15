@@ -110,7 +110,7 @@ bool KVPacker::WriteAsBinary( KeyValues *pNode, CUtlBuffer &buffer )
 			{
 				size_t nLength = dat->GetWString() ? Q_wcslen( dat->GetWString() ) : 0;
 				buffer.PutShort( (short)nLength );
-				for( int k = 0; k < nLength; ++ k )
+				for( int k = 0; k < (int)nLength; ++ k )
 				{
 					buffer.PutShort( ( unsigned short ) dat->GetWString()[k] );
 				}

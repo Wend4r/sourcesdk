@@ -397,7 +397,7 @@ bool CSceneImage::WriteSceneImageFile( CUtlBuffer &targetBuffer, bool bLittleEnd
 
 	if ( !bQuiet )
 	{
-		Msg( "Scenes: String Table: %d bytes\n", stringOffsets.Count() * sizeof( int ) );
+		Msg( "Scenes: String Table: %zd bytes\n", stringOffsets.Count() * sizeof( int ) );
 		Msg( "Scenes: String Pool: %d bytes\n", stringPool.TellPut() );
 	}
 
@@ -461,7 +461,7 @@ bool CSceneImage::WriteSceneImageFile( CUtlBuffer &targetBuffer, bool bLittleEnd
 			V_strncpy( szCleanName, g_SceneFiles[i].fileName.String(), sizeof( szCleanName ) );
 			V_strlower( szCleanName );
 			V_FixSlashes( szCleanName );
-			char *pName = V_stristr( szCleanName, "scenes\\" );
+			const char *pName = V_stristr( szCleanName, "scenes\\" );
 			if ( !pName )
 			{
 				// must have scenes\ in filename
@@ -744,7 +744,7 @@ bool CSceneImage::UpdateSceneImageFile( CUtlBuffer &targetBuffer, char const *pc
 		V_strncpy( szCleanName, pFilename, sizeof( szCleanName ) );
 		V_strlower( szCleanName );
 		V_FixSlashes( szCleanName );
-		char *pName = V_stristr( szCleanName, "scenes\\" );
+		const char *pName = V_stristr( szCleanName, "scenes\\" );
 		if ( !pName )
 		{
 			// must have scenes\ in filename

@@ -349,7 +349,7 @@ public:
 	// Assignment
 	CChoreoEvent&	operator=(const CChoreoEvent& src );
 
-	~CChoreoEvent( void );
+	virtual ~CChoreoEvent( void );
 
 	// ICurveDataAccessor methods
 	virtual bool	CurveHasEndTime();

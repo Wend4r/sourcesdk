@@ -92,7 +92,8 @@ class Color;
 //	 DebuggerBreak();
 //-----------------------------------------------------------------------------
 
-PLATFORM_INTERFACE void _ExitOnFatalAssert( const tchar* pFile, int line );
+// PLATFORM_INTERFACE void _ExitOnFatalAssert( const tchar* pFile, int line );
+#define _ExitOnFatalAssert(pFile, line) Plat_FatalError( "Exit on fatal assert: %s (%d)", (pFile), (line))
 
 #if defined( DBGFLAG_STRINGS_STRIP )
 #define DbgFlagMacro_ExitOnFatalAssert( pFile, line ) _ExitOnFatalAssert( "", 0 )

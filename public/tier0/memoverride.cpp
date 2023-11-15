@@ -566,6 +566,7 @@ ALLOC_CALL void * __cdecl _recalloc ( void * memblock, size_t count, size_t size
 	return pMem;
 }
 
+/**
 size_t _msize_base( void *pMem )
 {
 	return g_pMemAlloc->GetSize(pMem);
@@ -575,6 +576,7 @@ size_t _msize( void *pMem )
 {
 	return _msize_base(pMem);
 }
+*/
 
 size_t msize( void *pMem )
 {
@@ -640,7 +642,7 @@ size_t __cdecl _heapused( size_t *, size_t * )
 }
 
 #ifdef _WIN32
-#include <malloc.h>
+// #include <malloc.h>
 int __cdecl _heapwalk( _HEAPINFO * )
 {
 	return 0;
@@ -666,12 +668,12 @@ void *malloc_db( size_t nSize, const char *pFileName, int nLine )
 
 void free_db( void *pMem, const char *pFileName, int nLine )
 {
-	g_pMemAlloc->Free(pMem, pFileName, nLine);
+	g_pMemAlloc->Free2(pMem, pFileName, nLine);
 }
 
 void *realloc_db( void *pMem, size_t nSize, const char *pFileName, int nLine )
 {
-	return g_pMemAlloc->Realloc(pMem, nSize, pFileName, nLine);
+	return g_pMemAlloc->Realloc2(pMem, nSize, pFileName, nLine);
 }
 	
 } // end extern "C"
@@ -786,7 +788,7 @@ public:
 	{
 		if (m_nBlockUse == _CRT_BLOCK)
 		{
-			g_pMemAlloc->PushAllocDbgInfo(CRT_INTERNAL_FILE_NAME, 0);
+			MemAlloc_PushAllocDbgInfo(CRT_INTERNAL_FILE_NAME, 0);
 		}
 	}
 	
@@ -794,7 +796,7 @@ public:
 	{
 		if (m_nBlockUse == _CRT_BLOCK)
 		{
-			g_pMemAlloc->PopAllocDbgInfo();
+			MemAlloc_PopAllocDbgInfo();
 		}
 	}
 	
@@ -1350,7 +1352,7 @@ size_t __cdecl _CrtSetDebugFillThreshold( size_t _NewDebugFillThreshold)
 
 char * __cdecl _strdup ( const char * string )
 {
-	int nSize = strlen(string) + 1;
+	size_t nSize = strlen(string) + 1;
 	char *pCopy = (char*)AllocUnattributed( nSize );
 	if ( pCopy )
 		memcpy( pCopy, string, nSize );

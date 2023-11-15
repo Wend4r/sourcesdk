@@ -610,7 +610,7 @@ public:
 
 	~CJobSet()
 	{
-		for ( int i = 0; i < m_jobs.Count(); i++ )
+		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->Release();
 		}
@@ -628,7 +628,7 @@ public:
 
 	void Execute( bool bRelease = true )
 	{
-		for ( int i = 0; i < m_jobs.Count(); i++ )
+		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->Execute();
 			if ( bRelease )
@@ -645,7 +645,7 @@ public:
 
 	void Abort( bool bRelease = true )
 	{
-		for ( int i = 0; i < m_jobs.Count(); i++ )
+		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->Abort();
 			if ( bRelease )
@@ -662,7 +662,7 @@ public:
 
 	void WaitForFinish( bool bRelease = true )
 	{
-		for ( int i = 0; i < m_jobs.Count(); i++ )
+		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->WaitForFinish();
 			if ( bRelease )
@@ -679,11 +679,11 @@ public:
 
 	void WaitForFinish( IThreadPool *pPool, bool bRelease = true )
 	{
-		pPool->YieldWait( m_jobs.Base(), m_jobs.Count() );
+		pPool->YieldWait( m_jobs.Base(), (int)m_jobs.Count() );
 
 		if ( bRelease )
 		{
-			for ( int i = 0; i < m_jobs.Count(); i++ )
+			for ( int i = 0; i < (int)m_jobs.Count(); i++ )
 			{
 				m_jobs[i]->Release();
 			}

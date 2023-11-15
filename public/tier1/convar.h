@@ -441,7 +441,7 @@ inline int CCommand::MaxCommandLength()
 
 inline int CCommand::ArgC() const
 {
-	return m_Args.Count();
+	return (int)m_Args.Count();
 }
 
 inline const char **CCommand::ArgV() const

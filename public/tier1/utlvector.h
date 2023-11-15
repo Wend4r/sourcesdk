@@ -634,11 +634,18 @@ inline CUtlVector<T, I, A>::CUtlVector( T* pMemory, I allocationCount, I numElem
 	ResetDbgInfo();
 }
 
+#if defined(COMPILER_MSVC)
+#pragma warning(push)
+#pragma warning(disable : 4722)
+#endif
 template< typename T, typename I, class A >
 inline CUtlVector<T, I, A>::~CUtlVector()
 {
 	Purge();
 }
+#if defined(COMPILER_MSVC)
+#pragma warning(pop)
+#endif
 
 template< typename T, typename I, class A >
 inline CUtlVector<T, I, A>& CUtlVector<T, I, A>::operator=( const CUtlVector<T, I, A> &other )

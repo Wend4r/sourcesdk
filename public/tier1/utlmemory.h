@@ -709,9 +709,7 @@ inline I CUtlMemory<T,I>::Count() const
 template< class T, class I >
 inline bool CUtlMemory<T,I>::IsIdxValid( I i ) const
 {
-	// GCC warns if I is an unsigned type and we do a ">= 0" against it (since the comparison is always 0).
-	// We get the warning even if we cast inside the expression. It only goes away if we assign to another variable.
-	long x = i;
+	I x = i;
 	return ( x >= 0 ) && ( x < m_nAllocationCount ) && ( !IsDebug() || x != UTLMEMORY_BAD_LENGTH );
 }
 

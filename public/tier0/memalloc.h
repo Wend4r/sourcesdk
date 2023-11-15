@@ -34,6 +34,12 @@
 #endif
 #endif
 
+// Undefine this if using a compiler lacking threadsafe RTTI (like vc6)
+#define MEM_DEBUG_CLASSNAME 1
+
+// GAMMACASE: This forces any debug usage to be disabled, due to the IMemAlloc structure being incorrect
+// which causes random crashes if used! Added until proper solution is made.
+#define PREVENT_DEBUG_USAGE
 
 #if defined( _PS3 )
 // Define STEAM_SHARES_GAME_ALLOCATOR to make Steam use the game's tier0 memory allocator.

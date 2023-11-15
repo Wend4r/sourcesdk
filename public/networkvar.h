@@ -84,7 +84,7 @@ public:
 	{
 		if ( pData )
 		{
-			g_pMemAlloc->Free(pData, pFileName, nLine );
+			g_pMemAlloc->Free2(pData, pFileName, nLine );
 		}
 	}
 };
