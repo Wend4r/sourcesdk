@@ -38,6 +38,10 @@
 #define UTLMEMORY_TRACK_FREE()		((void)0)
 #endif
 
+// Used in debug mode.
+#define UTLMEMORY_BAD_ADDRESS 0xFEFEBAAD
+#define UTLMEMORY_BAD_LENGTH 0xFEFEBAAD
+
 
 //-----------------------------------------------------------------------------
 // The CUtlMemory class:
@@ -221,7 +225,7 @@ public:
 	CUtlMemoryFixed( T* pMemory, size_t numElements )			{ Assert( 0 ); 										}
 
 	// Can we use this index?
-	bool IsIdxValid( size_t i ) const							{ return (i >= 0) && (i < SIZE); }
+	bool IsIdxValid( size_t i ) const							{ return (i >= 0) && (i < SIZE) && (!IsDebug() || i != UTLMEMORY_BAD_LENGTH); }
 
 	// Specify the invalid ('null') index that we'll only return on failure
 	static const size_t INVALID_INDEX = -1; // For use with COMPILE_TIME_ASSERT
@@ -449,8 +453,8 @@ CUtlMemory<T,I>::~CUtlMemory()
 	Purge();
 
 #ifdef _DEBUG
-	m_pMemory = (T*)0xFEFEBAAD;
-	m_nAllocationCount = (I)0x7BADF00D;
+	m_pMemory = (T*)UTLMEMORY_BAD_ADDRESS;
+	m_nAllocationCount = (I)UTLMEMORY_BAD_LENGTH;
 #endif
 }
 
@@ -708,7 +712,7 @@ inline bool CUtlMemory<T,I>::IsIdxValid( I i ) const
 	// GCC warns if I is an unsigned type and we do a ">= 0" against it (since the comparison is always 0).
 	// We get the warning even if we cast inside the expression. It only goes away if we assign to another variable.
 	long x = i;
-	return ( x >= 0 ) && ( x < m_nAllocationCount );
+	return ( x >= 0 ) && ( x < m_nAllocationCount ) && ( !IsDebug() || x != UTLMEMORY_BAD_LENGTH );
 }
 
 //-----------------------------------------------------------------------------
@@ -858,6 +862,7 @@ void CUtlMemory<T,I>::Purge()
 		if (m_pMemory)
 		{
 			UTLMEMORY_TRACK_FREE();
+			Assert( m_pMemory != (T *)UTLMEMORY_BAD_ADDRESS );
 			free( (void*)m_pMemory );
 			m_pMemory = 0;
 		}
