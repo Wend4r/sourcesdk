@@ -793,6 +793,7 @@ UtlHashHandle_t CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, Tabl
 
 
 #if _DEBUG
+#include "valve_minmax_on.h"
 template <typename KeyT, typename ValueT, typename KeyHashT, typename KeyIsEqualT, typename AltKeyT, typename TableT>
 void CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DbgCheckIntegrity() const
 {
@@ -827,6 +828,7 @@ void CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DbgChe
 	clone.Purge();
 	free(tempbuf);
 }
+#include "valve_minmax_off.h"
 #endif
 
 //-----------------------------------------------------------------------
