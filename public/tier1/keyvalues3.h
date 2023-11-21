@@ -203,8 +203,23 @@ struct KV3BinaryBlob_t
 class CKV3MemberName : public CUtlStringToken
 {
 public:
-	using BaseClass = CUtlStringToken;
-	using BaseClass::BaseClass; // Emplace base constructors here.
+	typedef CUtlStringToken BaseClass;
+
+	inline CKV3MemberName(): BaseClass(0), m_pString("") {}
+	inline CKV3MemberName(const CUtlStringToken initToken, const char* pInitString): BaseClass(initToken), m_pString(pInitString) {} // Basicly used.
+	inline CKV3MemberName(const char* pInitString): BaseClass(MakeStringToken(pInitString)), m_pString(pInitString) {}
+	inline CKV3MemberName(const CUtlString &str): BaseClass(MakeStringToken(str)), m_pString(str.Get()) {}
+	inline CKV3MemberName& operator=(const CKV3MemberName& src)
+	{
+		m_nHashCode = src.m_nHashCode;
+		m_pString = src.m_pString;
+		return *this;
+	}
+
+	inline const char* GetString() const { return m_pString; }
+
+private:
+	const char* m_pString;
 };
 
 class KeyValues3
@@ -253,8 +268,8 @@ public:
 	void* GetPointer( void *defaultValue = ( void* )0 ) const { return ( GetSubType() == KV3_SUBTYPE_POINTER ) ? ( void* )m_UInt : defaultValue; }
 	void SetPointer( void* ptr ) { SetValue<uint64>( ( uint64 )ptr, KV3_TYPEEX_UINT, KV3_SUBTYPE_POINTER ); }
 	
-	CUtlStringToken GetStringToken( CUtlStringToken defaultValue = {0, NULL} ) const { return ( GetSubType() == KV3_SUBTYPE_STRING_TOKEN ) ? MakeStringToken( m_pString ) : defaultValue; }
-	void SetStringToken( const CUtlStringToken& token ) { SetValue<const char*>( token.m_pString, KV3_TYPEEX_STRING_EXTERN, KV3_SUBTYPE_STRING_TOKEN ); }
+	CUtlStringToken GetStringToken( CUtlStringToken defaultValue = 0 ) const { return ( GetSubType() == KV3_SUBTYPE_STRING_TOKEN ) ? CUtlStringToken( ( uint32 )m_UInt ) : defaultValue; }
+	void SetStringToken( const CUtlStringToken& token ) { SetValue<uint32>( token.m_nHashCode, KV3_TYPEEX_STRING_EXTERN, KV3_SUBTYPE_STRING_TOKEN ); }
 
 	CEntityHandle GetEHandle( CEntityHandle defaultValue = CEntityHandle() ) const { return ( GetSubType() == KV3_SUBTYPE_EHANDLE ) ? CEntityHandle( ( uint32 )m_UInt ) : defaultValue; }
 	void SetEHandle( const CEntityHandle& ehandle ) { SetValue<uint32>( ehandle.ToInt(), KV3_TYPEEX_UINT, KV3_SUBTYPE_EHANDLE ); }

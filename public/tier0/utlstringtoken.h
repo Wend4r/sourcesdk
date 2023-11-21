@@ -31,12 +31,11 @@ class CUtlStringToken
 {
 public:
 	#include "utlstringtoken_generated_constructors.h"
-
-	FORCEINLINE CUtlStringToken( uint32 nHashCode = 0, const char *pString = NULL ) : m_nHashCode( nHashCode ), m_pString( pString ) {}
+	FORCEINLINE CUtlStringToken( uint32 nHashCode = 0 ) : m_nHashCode( nHashCode ) {}
 
 	FORCEINLINE bool operator==( CUtlStringToken const &other ) const
 	{
-		return ( other.m_nHashCode == m_nHashCode && !V_strcmp(other.m_pString, m_pString) );
+		return ( other.m_nHashCode == m_nHashCode );
 	}
 
 	FORCEINLINE bool operator!=( CUtlStringToken const &other ) const
@@ -51,14 +50,12 @@ public:
 
 	/// access to the hash code for people who need to store thse as 32-bits, regardless of the
 	FORCEINLINE uint32 GetHashCode() const { return m_nHashCode; }
-	FORCEINLINE const char *GetString() const { return m_pString; }
 
 	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement pElement ) const;
 	DLL_CLASS_IMPORT static void TrackTokenCreation( const char *s1, const char *s2 );
 
 // private:
 	uint32 m_nHashCode;
-	char const *m_pString;
 };
 
 FORCEINLINE CUtlStringToken MakeStringToken( char const *pString, int nLen )
@@ -70,7 +67,7 @@ FORCEINLINE CUtlStringToken MakeStringToken( char const *pString, int nLen )
 		RegisterStringToken( nHashCode, pString );
 	}
 
-	return {nHashCode, pString};
+	return nHashCode;
 }
 
 FORCEINLINE CUtlStringToken MakeStringToken( char const *pString )

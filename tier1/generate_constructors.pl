@@ -1,8 +1,8 @@
 #!perl
 
-print `p4 edit ../public/tier1/utlstringtoken_generated_contructors.h`;
+print `p4 edit ../public/tier0/utlstringtoken_generated_contructors.h`;
 
-open( FOUT, ">../public/tier1/utlstringtoken_generated_contructors.h" ) || die "cant open output file";
+open( FOUT, ">../public/tier0/utlstringtoken_generated_contructors.h" ) || die "cant open output file";
 
 print FOUT "//===== Copyright © 1996-2009, Valve Corporation, All rights reserved. ======//\n";
 print FOUT "//\n";
