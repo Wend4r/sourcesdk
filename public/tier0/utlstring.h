@@ -34,12 +34,7 @@ class CUtlString
 public:
 	CUtlString() {}
 	CUtlString( const char *pString ) { Set( pString ); }
-
 	DLL_CLASS_IMPORT CUtlString( CBufferString & );
-
-	// Attaches the string to external memory. Useful for avoiding a copy
-	CUtlString( void* pMemory, int nSizeInBytes, int nInitialLength ) : m_Storage( pMemory, nSizeInBytes, nInitialLength ) {}
-	CUtlString( const void* pMemory, int nSizeInBytes ) : m_Storage( pMemory, nSizeInBytes ) {}
 
 	// Copy/move constructor/assignment
 	// Moves are extremely efficient as the underlying memory is not copied, just the pointers.
@@ -212,13 +207,9 @@ public:
 
 	void FixSlashes( char cSeparator = CORRECT_PATH_SEPARATOR )
 	{
-		for ( int nLength = Length() - 1; nLength >= 0; nLength-- )
+		if( m_pString )
 		{
-			char *pname = (char*)&m_Storage[ nLength ];
-			if ( *pname == INCORRECT_PATH_SEPARATOR || *pname == CORRECT_PATH_SEPARATOR )
-			{
-				*pname = cSeparator;
-			}
+			V_FixSlashes( m_pString, cSeparator );
 		}
 	}
 
@@ -233,16 +224,15 @@ public:
 
 	bool IsEqual_CaseInsensitive(const char *src) const
 	{
-		if (!src)
+		if ( !src )
 		{
 			return (Length() == 0);
 		}
-		return (V_stricmp(Get(), src) == 0);
+		return ( V_stricmp( Get(), src ) == 0 );
 	}
 
-
 private:
-	CUtlBinaryBlock m_Storage;
+	char *m_pString = NULL;
 };
 
 //-----------------------------------------------------------------------------
@@ -251,61 +241,47 @@ private:
 
 inline CUtlString &CUtlString::operator=( const CUtlString &src )
 {
-	Assert( !m_Storage.IsReadOnly() );
-	m_Storage = src.m_Storage;
+	Set( src.Get() );
 	return *this;
 }
 
 inline CUtlString &CUtlString::operator=( const char *src )
 {
-	Assert( !m_Storage.IsReadOnly() );
 	Set( src );
 	return *this;
 }
 
 #if VALVE_CPP11
 inline CUtlString::CUtlString( CUtlString&& moveFrom )
-: m_Storage( Move( moveFrom.m_Storage ) )
+: m_pString( Move( moveFrom.Get() ) )
 {
 }
 
 inline CUtlString& CUtlString::operator=( CUtlString&& moveFrom )
 {
-	m_Storage = Move( moveFrom.m_Storage );
+	m_pString = Move( moveFrom.Get() );
 	return *this;
 }
 #endif
 
 inline const char *CUtlString::Get( ) const
 {
-	if ( m_Storage.Length() == 0 )
+	if ( !m_pString )
 	{
 		return "";
 	}
-
-	return reinterpret_cast< const char* >( m_Storage.Get() );
+	return m_pString;
 }
 
 inline char *CUtlString::Get()
 {
-	Assert( !m_Storage.IsReadOnly() );
-
-	if ( m_Storage.Length() == 0 )
-	{
-		// In general, we optimise away small mallocs for empty strings
-		// but if you ask for the non-const bytes, they must be writable
-		// so we can't return "" here, like we do for the const version - jd
-		m_Storage.SetLength( 1 );
-		m_Storage[ 0 ] = '\0';
-	}
-
-	return reinterpret_cast< char* >( m_Storage.Get() );
+	return m_pString;
 }
 
 // Returns strlen
 inline int CUtlString::Length() const
 {
-	return m_Storage.Length() ? m_Storage.Length() - 1 : 0;
+	return this->m_pString ? V_strlen( this->m_pString ) : 0;
 }
 
 inline bool CUtlString::IsEmpty() const
