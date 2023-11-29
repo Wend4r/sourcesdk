@@ -1,4 +1,4 @@
-//====== Copyright � 1996-2004, Valve Corporation, All rights reserved. =======
+//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
 //
 // Purpose: 
 //
@@ -6,7 +6,8 @@
 
 #ifndef UTLBINARYBLOCK_H
 #define UTLBINARYBLOCK_H
-#ifdef _WIN32
+
+#ifdef COMPILER_MSVC
 #pragma once
 #endif
 
@@ -21,14 +22,29 @@ class CUtlBinaryBlock
 {
 public:
 	CUtlBinaryBlock( int growSize = 0, int initSize = 0 );
+	~CUtlBinaryBlock()
+	{
+#ifdef _DEBUG
+		m_nActualLength = 0x7BADF00D;
+#else
+		m_nActualLength = 0;
+#endif
+	}
 
 	// NOTE: nInitialLength indicates how much of the buffer starts full
 	CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength );
 	CUtlBinaryBlock( const void* pMemory, int nSizeInBytes );
+	
 	CUtlBinaryBlock( const CUtlBinaryBlock& src );
+	DLL_CLASS_IMPORT CUtlBinaryBlock &operator=( const CUtlBinaryBlock &src );
 
-	void		Get( void *pValue, int nMaxLen ) const;
-	void		Set( const void *pValue, int nLen );
+#if VALVE_CPP11
+	CUtlBinaryBlock( CUtlBinaryBlock&& src );
+	DLL_CLASS_IMPORT CUtlBinaryBlock &operator=( CUtlBinaryBlock&& src );
+#endif
+
+	DLL_CLASS_IMPORT void		Get( void *pValue, int nMaxLen ) const;
+	DLL_CLASS_IMPORT void		Set( const void *pValue, int nLen );
 	const void	*Get( ) const;
 	void		*Get( );
 
@@ -36,17 +52,16 @@ public:
 	const unsigned char& operator[]( int i ) const;
 
 	int			Length() const;
-	void		SetLength( int nLength );	// Undefined memory will result
+	DLL_CLASS_IMPORT void		SetLength( int nLength );	// Undefined memory will result
 	bool		IsEmpty() const;
 	void		Clear();
 	void		Purge();
 
 	bool		IsReadOnly() const;
 
-	CUtlBinaryBlock &operator=( const CUtlBinaryBlock &src );
 
 	// Test for equality
-	bool operator==( const CUtlBinaryBlock &src ) const;
+	DLL_CLASS_IMPORT bool operator==( const CUtlBinaryBlock &src ) const;
 
 private:
 	CUtlMemory<unsigned char> m_Memory;
@@ -57,6 +72,39 @@ private:
 //-----------------------------------------------------------------------------
 // class inlines
 //-----------------------------------------------------------------------------
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( int growSize, int initSize ) 
+{
+	MEM_ALLOC_CREDIT();
+	m_Memory.Init( growSize, initSize );
+
+	m_nActualLength = 0;
+}
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength ) : m_Memory( (unsigned char*)pMemory, nSizeInBytes )
+{
+	m_nActualLength = nInitialLength;
+}
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( const void* pMemory, int nSizeInBytes ) : m_Memory( (const unsigned char*)pMemory, nSizeInBytes )
+{
+	m_nActualLength = nSizeInBytes;
+}
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( const CUtlBinaryBlock& src )
+{
+	Set( src.Get(), src.Length() );
+}
+
+#if VALVE_CPP11
+inline CUtlBinaryBlock::CUtlBinaryBlock( CUtlBinaryBlock&& src )
+: m_Memory( Move(src.m_Memory) )
+, m_nActualLength( src.m_nActualLength )
+{
+	src.m_nActualLength = 0;
+}
+#endif
+
 inline const void *CUtlBinaryBlock::Get( ) const
 {
 	return m_Memory.Base();
@@ -103,5 +151,5 @@ inline void CUtlBinaryBlock::Purge()
 	m_Memory.Purge();
 }
 
-#endif // UTLBINARYBLOCK_H
 
+#endif // UTLBINARYBLOCK_H
