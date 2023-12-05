@@ -103,7 +103,7 @@ void CUtlLeanVectorBase<T, I>::EnsureCapacity( int num, bool force )
 	
 	if ( num > nMaxAllocationCount )
 	{
-		Msg( "%s allocation count overflow( %llu > %llu )\n", __FUNCTION__, num, nMaxAllocationCount );
+		Msg( "%s allocation count overflow( %llu > %llu )\n", __FUNCTION__, ( uint64 )num, ( uint64 )nMaxAllocationCount );
 		Plat_FatalErrorFunc( "%s allocation count overflow", __FUNCTION__ );
 		DebuggerBreak();
 	}
@@ -253,7 +253,7 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I>::EnsureCapacity( int num, bool for
 	{
 		if ( num > nMaxAllocationCount )
 		{
-			Msg( "%s allocation count overflow( %llu > %llu )\n", __FUNCTION__, (uint64)num, (uint64)nMaxAllocationCount );
+			Msg( "%s allocation count overflow( %llu > %llu )\n", __FUNCTION__, ( uint64 )num, ( uint64 )nMaxAllocationCount );
 			Plat_FatalErrorFunc( "%s allocation count overflow", __FUNCTION__ );
 			DebuggerBreak();
 		}
