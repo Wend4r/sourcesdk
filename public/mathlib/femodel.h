@@ -1,4 +1,4 @@
-//========= Copyright © Valve Corporation, All rights reserved. ============//
+//========= Copyright Â© Valve Corporation, All rights reserved. ============//
 #ifndef RUBIKON_FEM_HIERARCHY_HDR
 #define RUBIKON_FEM_HIERARCHY_HDR
 
@@ -21,7 +21,7 @@ inline void RemapNode( TInt &refNode, const CUtlVector< int > &remap )
 }
 
 template< class T >
-class CUtlVectorAligned : public CUtlVector < T, CUtlMemoryAligned<T, VALIGNOF( T ) > >
+class CUtlVectorAligned : public CUtlVectorBase < T, size_t, CUtlMemoryAligned<T, VALIGNOF( T ) > >
 {};
 
 //////////////////////////////////////////////////////////////////////////

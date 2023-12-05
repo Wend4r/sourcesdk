@@ -6,7 +6,7 @@
 
 //#include "tier0/memdbg_for_headers.h"
 
-template< class T, class A >
+template< class T, class I, class A >
 class CUtlVector;
 
 
@@ -120,7 +120,7 @@ public:
 		return NULL; // we didn't allocate anything yet!
 	}
 	template< typename T, typename A >
-	T* operator()( T*& pDummy, const CUtlVector< T, A > &arr )
+	T* operator()( T*& pDummy, const CUtlVector< T, I, A > &arr )
 	{
 		( *this )( pDummy, arr.Count( ) );
 		return NULL; // we didn't allocate anything yet

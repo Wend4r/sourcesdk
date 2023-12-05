@@ -18,12 +18,12 @@
 
 #ifdef ENGINE_DLL
 template<typename T>
-class CDispVector : public CUtlVector<T, int, CHunkMemory<T> >
+class CDispVector : public CUtlVectorBase<T, int, CHunkMemory<T> >
 {
 };
 #else
 template<typename T>
-class CDispVector : public CUtlVector<T, int, CUtlMemoryAligned<T, int, 16> >
+class CDispVector : public CUtlVectorBase<T, int, CUtlMemoryAligned<T, int, 16> >
 {
 };
 #endif

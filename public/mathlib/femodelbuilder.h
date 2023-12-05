@@ -10,7 +10,7 @@
 
 
 template <typename T>
-class CUtlVectorOfPointers: public CUtlVector< T * >
+class CUtlVectorOfPointers: public CUtlVectorBase< T * >
 {
 public:
 	~CUtlVectorOfPointers( )
