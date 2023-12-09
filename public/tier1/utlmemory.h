@@ -180,43 +180,43 @@ protected:
 // The CUtlMemory class:
 // A growable memory class which doubles in size by default.
 //-----------------------------------------------------------------------------
-template< class T, size_t SIZE >
-class CUtlMemoryFixedGrowable : public CUtlMemory< T, size_t >
+template< class T, size_t SIZE, class I = int >
+class CUtlMemoryFixedGrowable : public CUtlMemory< T, I >
 {
-	typedef CUtlMemory< T, size_t > BaseClass;
+	typedef CUtlMemory< T, I > BaseClass;
 
 public:
-	CUtlMemoryFixedGrowable( size_t nGrowSize = 0, size_t nInitSize = SIZE ) : BaseClass( m_pFixedMemory, SIZE ) 
+	CUtlMemoryFixedGrowable( I nGrowSize = 0, I nInitSize = SIZE ) : BaseClass( m_pFixedMemory, SIZE ) 
 	{
 		Assert( nInitSize == 0 || nInitSize == SIZE );
-		m_nMallocGrowSize = nGrowSize;
+		// m_nMallocGrowSize = nGrowSize;
 	}
 
-	void Grow( size_t nCount = 1 )
+	void Grow( I nCount = 1 )
 	{
-		if ( this->IsExternallyAllocated() )
-		{
-			this->ConvertToGrowableMemory( m_nMallocGrowSize );
-		}
+		// if ( this->IsExternallyAllocated() )
+		// {
+		// 	this->ConvertToGrowableMemory( m_nMallocGrowSize );
+		// }
 		BaseClass::Grow( nCount );
 	}
 
-	void EnsureCapacity( size_t num )
+	void EnsureCapacity( I num )
 	{
 		if ( CUtlMemory<T>::m_nAllocationCount >= num )
 			return;
 
-		if ( this->IsExternallyAllocated() )
-		{
-			// Can't grow a buffer whose memory was externally allocated 
-			this->ConvertToGrowableMemory( m_nMallocGrowSize );
-		}
+		// if ( this->IsExternallyAllocated() )
+		// {
+		// 	// Can't grow a buffer whose memory was externally allocated 
+		// 	this->ConvertToGrowableMemory( m_nMallocGrowSize );
+		// }
 
 		BaseClass::EnsureCapacity( num );
 	}
 
 private:
-	size_t m_nMallocGrowSize;
+	// I m_nMallocGrowSize;
 	T m_pFixedMemory[ SIZE ];
 };
 
