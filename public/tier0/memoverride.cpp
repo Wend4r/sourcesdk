@@ -417,7 +417,7 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 //-----------------------------------------------------------------------------
 // Standard functions in the CRT that we're going to override to call our allocator
 //-----------------------------------------------------------------------------
-#if defined(_WIN32) && !defined(_STATIC_LINKED)
+#if !defined(_STATIC_LINKED)
 
 // this magic only works under win32
 // under linux this malloc() overrides the libc malloc() and so we
