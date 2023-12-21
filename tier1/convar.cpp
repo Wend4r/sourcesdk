@@ -81,6 +81,29 @@ public:
 			}
 		}
 	}
+
+	static void UnregisterAll()
+	{
+		if (s_bConCommandsRegistered && g_pCVar)
+		{
+			s_bConCommandsRegistered = false;
+
+			for(int i = 0; i < GetCommandRegList()->Count(); i++)
+			{
+				ConCommand *pCmd = GetCommandRegList()->Element(i);
+
+				if( pCmd )
+				{
+					ConCommandRefAbstract *pRef = pCmd->GetRef();
+
+					if( pRef )
+					{
+						pRef->handle.Unregister();
+					}
+				}
+			}
+		}
+	}
 private:
 
 	// GAMMACASE: Required to prevent static initialization order problem https://isocpp.org/wiki/faq/ctors#static-init-order
@@ -180,6 +203,8 @@ void ConVar_Unregister( )
 {
 	if ( !g_pCVar || !s_bRegistered )
 		return;
+
+	ConCommandRegList::UnregisterAll();
 
 	s_bRegistered = false;
 }
