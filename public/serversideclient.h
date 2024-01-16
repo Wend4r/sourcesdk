@@ -5,6 +5,12 @@
 #pragma once
 #endif
 
+#include "inetchannel.h"
+#include "playerslot.h"
+#include "playeruserid.h"
+#include "steam/steamclientpublic.h"
+#include "tier0/utlstring.h"
+
 class CServerSideClient
 {
 public:
