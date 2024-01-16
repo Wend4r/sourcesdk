@@ -242,20 +242,6 @@ enum FilesystemOpenExFlags_t
 	FSOPEN_NEVERINPACK	    = (1 << 2),		// 360 only, hint to FS that file is not allowed to be in pack file
 };
 
-enum SearchPathPriority_t
-{
-	SEARCH_PATH_PRIORITY_DEFAULT = 0,
-	SEARCH_PATH_PRIORITY_LOOSE_FILES,
-	SEARCH_PATH_PRIORITY_VPK,
-};
-
-enum GetSearchPathTypes_t
-{
-	GET_SEARCH_PATH_NO_PACK_FILES = 0,
-	GET_SEARCH_PATH_NO_AUTO_MOUNTED,
-	GET_SEARCH_PATH_ALL,
-};
-
 #define FILESYSTEM_INVALID_HANDLE	( FileHandle_t )0
 
 //-----------------------------------------------------------------------------
