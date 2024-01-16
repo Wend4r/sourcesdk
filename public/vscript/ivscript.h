@@ -116,12 +116,8 @@
 #endif
 
 class CUtlBuffer;
-
-//-----------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------
-
-#define VSCRIPT_INTERFACE_VERSION		"VScriptManager009"
+class CCommand;
+class CCommandContext;
 
 //-----------------------------------------------------------------------------
 //
@@ -132,12 +128,21 @@ class IScriptVM;
 enum ScriptLanguage_t
 {
 	SL_NONE,
-	SL_GAMEMONKEY,
-	SL_SQUIRREL,
 	SL_LUA,
-	SL_PYTHON,
 
-	SL_DEFAULT = SL_SQUIRREL
+	SL_DEFAULT = SL_LUA
+};
+
+class IScriptDebugger
+{
+public:
+	virtual bool		StartDebugging( const char *pszIDEKey ) = 0;
+	virtual void		StopDebugging() = 0;
+	virtual void		ConnectVM( void * ) = 0;
+	virtual void		Update( void * ) = 0;
+	virtual const char	*GetIDEKey() = 0;
+	virtual void		HandleOutputMsg( const char *, void * ) = 0;
+	virtual void		HandleErrorMsg( const char *, void * ) = 0;
 };
 
 class IScriptManager : public IAppSystem
@@ -145,6 +150,7 @@ class IScriptManager : public IAppSystem
 public:
 	virtual IScriptVM *CreateVM( ScriptLanguage_t language = SL_DEFAULT ) = 0;
 	virtual void DestroyVM( IScriptVM * ) = 0;
+	virtual IScriptDebugger *GetDebugger() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -158,31 +164,27 @@ DECLARE_POINTER_HANDLE( HSCRIPT );
 // 
 //-----------------------------------------------------------------------------
 
-enum ExtendedFieldType
-{
-	FIELD_TYPEUNKNOWN = FIELD_TYPECOUNT,
-	FIELD_CSTRING,
-	FIELD_HSCRIPT,
-	FIELD_VARIANT,
-};
+#include "variant.h"
 
-typedef int ScriptDataType_t;
-struct ScriptVariant_t;
+typedef uint8 ScriptDataType_t;
+typedef CVariant ScriptVariant_t;
+
+#define SCRIPT_VARIANT_NULL ScriptVariant_t()
 
 template <typename T> struct ScriptDeducer { /*enum { FIELD_TYPE = FIELD_TYPEUNKNOWN };*/ };
 #define DECLARE_DEDUCE_FIELDTYPE( fieldType, type ) template<> struct ScriptDeducer<type> { enum { FIELD_TYPE = fieldType }; };
 
-DECLARE_DEDUCE_FIELDTYPE( FIELD_VOID,		void );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_FLOAT,		float );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_CSTRING,	const char * );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_CSTRING,	char * );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_VECTOR,		Vector );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_VECTOR,		const Vector &);
-DECLARE_DEDUCE_FIELDTYPE( FIELD_INTEGER,	int );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_BOOLEAN,	bool );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_CHARACTER,	char );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_HSCRIPT,	HSCRIPT );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_VARIANT,	ScriptVariant_t );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_VOID, void );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_FLOAT, float );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_CSTRING, const char * );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_CSTRING, char * );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_VECTOR, Vector );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_VECTOR, const Vector & );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_INTEGER, int );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_BOOLEAN, bool );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_CHARACTER, char );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_HSCRIPT, HSCRIPT );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_VARIANT, ScriptVariant_t );
 
 #define ScriptDeduceType( T ) ScriptDeducer<T>::FIELD_TYPE
 
@@ -230,14 +232,24 @@ struct ScriptFuncDescriptor_t
 	{
 		m_pszFunction = NULL;
 		m_ReturnType = FIELD_TYPEUNKNOWN;
+		m_iVariantCount = 0;
+		m_iParamCount = 0;
+		memset(m_Parameters, 0, sizeof(m_Parameters));
 		m_pszDescription = NULL;
+		m_pszParameterNames = NULL;
 	}
 
 	const char *m_pszScriptName;
 	const char *m_pszFunction;
 	const char *m_pszDescription;
 	ScriptDataType_t m_ReturnType;
-	CUtlVector<ScriptDataType_t> m_Parameters;
+	uint8 m_iVariantCount;
+	uint8 m_iParamCount;
+	ScriptDataType_t m_Parameters[12];
+
+	// Any/all parameter names. Read as a buffer of null-termed strings.
+	// If first is NULL / 0-len, no parameter names are present.
+	const char *m_pszParameterNames;
 };
 
 
@@ -303,200 +315,6 @@ enum SVFlags_t
 {
 	SV_FREE = 0x01,
 };
-
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4800)
-#endif
-struct ScriptVariant_t
-{
-	ScriptVariant_t() :						m_type( FIELD_VOID ), m_flags( 0 )		{ m_pVector = 0; }
-	ScriptVariant_t( int val ) :			m_type( FIELD_INTEGER ), m_flags( 0 )	{ m_int = val;}
-	ScriptVariant_t( float val ) :			m_type( FIELD_FLOAT ), m_flags( 0 )		{ m_float = val; }
-	ScriptVariant_t( double val ) :			m_type( FIELD_FLOAT ), m_flags( 0 )		{ m_float = (float)val; }
-	ScriptVariant_t( char val ) :			m_type( FIELD_CHARACTER ), m_flags( 0 )	{ m_char = val; }
-	ScriptVariant_t( bool val ) :			m_type( FIELD_BOOLEAN ), m_flags( 0 )	{ m_bool = val; }
-	ScriptVariant_t( HSCRIPT val ) :		m_type( FIELD_HSCRIPT ), m_flags( 0 )	{ m_hScript = val; }
-
-	ScriptVariant_t( const Vector &val, bool bCopy = false ) :	m_type( FIELD_VECTOR ), m_flags( 0 )	{ if ( !bCopy ) { m_pVector = &val; } else { m_pVector = new Vector( val ); m_flags |= SV_FREE; } }
-	ScriptVariant_t( const Vector *val, bool bCopy = false ) :	m_type( FIELD_VECTOR ), m_flags( 0 )	{ if ( !bCopy ) { m_pVector = val; } else { m_pVector = new Vector( *val ); m_flags |= SV_FREE; } }
-	ScriptVariant_t( const char *val , bool bCopy = false ) :	m_type( FIELD_CSTRING ), m_flags( 0 )	{ if ( !bCopy ) { m_pszString = val; } else { m_pszString = strdup( val ); m_flags |= SV_FREE; } }
-
-	bool IsNull() const						{ return (m_type == FIELD_VOID ); }
-
-	operator int() const					{ Assert( m_type == FIELD_INTEGER );	return m_int; }
-	operator float() const					{ Assert( m_type == FIELD_FLOAT );		return m_float; }
-	operator const char *() const			{ Assert( m_type == FIELD_CSTRING );	return ( m_pszString ) ? m_pszString : ""; }
-	operator const Vector &() const			{ Assert( m_type == FIELD_VECTOR );		static Vector vecNull(0, 0, 0); return (m_pVector) ? *m_pVector : vecNull; }
-	operator char() const					{ Assert( m_type == FIELD_CHARACTER );	return m_char; }
-	operator bool() const					{ Assert( m_type == FIELD_BOOLEAN );	return m_bool; }
-	operator HSCRIPT() const				{ Assert( m_type == FIELD_HSCRIPT );	return m_hScript; }
-
-	void operator=( int i ) 				{ m_type = FIELD_INTEGER; m_int = i; }
-	void operator=( float f ) 				{ m_type = FIELD_FLOAT; m_float = f; }
-	void operator=( double f ) 				{ m_type = FIELD_FLOAT; m_float = (float)f; }
-	void operator=( const Vector &vec )		{ m_type = FIELD_VECTOR; m_pVector = &vec; }
-	void operator=( const Vector *vec )		{ m_type = FIELD_VECTOR; m_pVector = vec; }
-	void operator=( const char *psz )		{ m_type = FIELD_CSTRING; m_pszString = psz; }
-	void operator=( char c )				{ m_type = FIELD_CHARACTER; m_char = c; }
-	void operator=( bool b ) 				{ m_type = FIELD_BOOLEAN; m_bool = b; }
-	void operator=( HSCRIPT h ) 			{ m_type = FIELD_HSCRIPT; m_hScript = h; }
-
-	void Free()								{ if ( ( m_flags & SV_FREE ) && ( m_type == FIELD_HSCRIPT || m_type == FIELD_VECTOR || m_type == FIELD_CSTRING ) ) delete m_pszString; } // Generally only needed for return results
-
-	template <typename T>
-	T Get()
-	{
-		T value;
-		AssignTo( &value );
-		return value;
-	}
-
-	template <typename T>
-	bool AssignTo( T *pDest )
-	{
-		ScriptDataType_t destType = ScriptDeduceType( T );
-		if ( destType == FIELD_TYPEUNKNOWN )
-		{
-			DevWarning( "Unable to convert script variant to unknown type\n" );
-		}
-		if ( destType == m_type )
-		{
-			*pDest = *this;
-			return true;
-		}
-
-		if ( m_type != FIELD_VECTOR && m_type != FIELD_CSTRING && destType != FIELD_VECTOR && destType != FIELD_CSTRING )
-		{
-			switch ( m_type )
-			{
-			case FIELD_VOID:		*pDest = 0; break;
-			case FIELD_INTEGER:		*pDest = m_int; return true;
-			case FIELD_FLOAT:		*pDest = m_float; return true;
-			case FIELD_CHARACTER:	*pDest = m_char; return true;
-			case FIELD_BOOLEAN:		*pDest = m_bool; return true;
-			case FIELD_HSCRIPT:		*pDest = m_hScript; return true;
-			}
-		}
-		else
-		{
-			DevWarning( "No free conversion of %s script variant to %s right now\n",
-				ScriptFieldTypeName( m_type ), ScriptFieldTypeName<T>() );
-			if ( destType != FIELD_VECTOR )
-			{
-				*pDest = 0;
-			}
-		}
-		return false;
-	}
-
-	bool AssignTo( float *pDest )
-	{
-		switch( m_type )
-		{
-		case FIELD_VOID:		*pDest = 0; return false;
-		case FIELD_INTEGER:		*pDest = m_int; return true;
-		case FIELD_FLOAT:		*pDest = m_float; return true;
-		case FIELD_BOOLEAN:		*pDest = m_bool; return true;
-		default:
-			DevWarning( "No conversion from %s to float now\n", ScriptFieldTypeName( m_type ) );
-			return false;
-		}
-	}
-
-	bool AssignTo( int *pDest )
-	{
-		switch( m_type )
-		{
-		case FIELD_VOID:		*pDest = 0; return false;
-		case FIELD_INTEGER:		*pDest = m_int; return true;
-		case FIELD_FLOAT:		*pDest = m_float; return true;
-		case FIELD_BOOLEAN:		*pDest = m_bool; return true;
-		default:
-			DevWarning( "No conversion from %s to int now\n", ScriptFieldTypeName( m_type ) );
-			return false;
-		}
-	}
-
-	bool AssignTo( bool *pDest )
-	{
-		switch( m_type )
-		{
-		case FIELD_VOID:		*pDest = 0; return false;
-		case FIELD_INTEGER:		*pDest = m_int; return true;
-		case FIELD_FLOAT:		*pDest = m_float; return true;
-		case FIELD_BOOLEAN:		*pDest = m_bool; return true;
-		default:
-			DevWarning( "No conversion from %s to bool now\n", ScriptFieldTypeName( m_type ) );
-			return false;
-		}
-	}
-
-	bool AssignTo( char **pDest )
-	{
-		DevWarning( "No free conversion of string or vector script variant right now\n" );
-		// If want to support this, probably need to malloc string and require free on other side [3/24/2008 tom]
-		bool bResult = false;
-
-		// @Wend4r : Sensitive to high char * (after ISO C++14).
-		// Possible crash if used incorrectly.
-		{
-			bResult = *pDest != nullptr;
-
-			if( bResult )
-			{
-				**pDest = '\0';
-			}
-		}
-
-		return bResult;
-	}
-
-	bool AssignTo( ScriptVariant_t *pDest )
-	{
-		pDest->m_type = m_type;
-		if ( m_type == FIELD_VECTOR ) 
-		{
-			pDest->m_pVector = new Vector;
-			((Vector *)(pDest->m_pVector))->Init( m_pVector->x, m_pVector->y, m_pVector->z );
-			pDest->m_flags |= SV_FREE;
-		}
-		else if ( m_type == FIELD_CSTRING ) 
-		{
-			pDest->m_pszString = strdup( m_pszString );
-			pDest->m_flags |= SV_FREE;
-		}
-		else
-		{
-			pDest->m_int = m_int;
-		}
-		return false;
-	}
-
-	union
-	{
-		int				m_int;
-		float			m_float;
-		const char *	m_pszString;
-		const Vector *	m_pVector;
-		char			m_char;
-		bool			m_bool;
-		HSCRIPT			m_hScript;
-	};
-
-	int16				m_type;
-	int16				m_flags;
-
-private:
-};
-
-#define SCRIPT_VARIANT_NULL ScriptVariant_t()
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
-
 
 //-----------------------------------------------------------------------------
 // 
@@ -635,19 +453,26 @@ enum ScriptStatus_t
 	SCRIPT_RUNNING,
 };
 
+class CSquirrelMetamethodDelegateImpl;
+
 class IScriptVM
 {
 public:
 	virtual bool Init() = 0;
 	virtual void Shutdown() = 0;
 
-	virtual bool ConnectDebugger() = 0;
-	virtual void DisconnectDebugger() = 0;
-
 	virtual ScriptLanguage_t GetLanguage() = 0;
 	virtual const char *GetLanguageName() = 0;
+	
+	virtual void *GetInternalVM() = 0;
 
 	virtual void AddSearchPath( const char *pszSearchPath ) = 0;
+	
+	virtual void ClearTypeMap() = 0;
+	
+	virtual void EnableLocalDiskAccess() = 0;
+	
+	virtual void ForwardConsoleCommand(const CCommandContext &, const CCommand &) = 0;
 
 	//--------------------------------------------------------
  
@@ -676,12 +501,13 @@ public:
 	// Scope
 	//--------------------------------------------------------
 	virtual HSCRIPT CreateScope( const char *pszScope, HSCRIPT hParent = NULL ) = 0;
+	virtual void ReferenceScope( HSCRIPT hScript ) = 0;
 	virtual void ReleaseScope( HSCRIPT hScript ) = 0;
 
 	//--------------------------------------------------------
 	// Script functions
 	//--------------------------------------------------------
-	virtual HSCRIPT LookupFunction( const char *pszFunction, HSCRIPT hScope = NULL ) = 0;
+	virtual HSCRIPT LookupFunction( const char *pszFunction, HSCRIPT hScope = NULL, bool raw = false ) = 0;
 	virtual void ReleaseFunction( HSCRIPT hScript ) = 0;
 
 	//--------------------------------------------------------
@@ -697,7 +523,7 @@ public:
 	//--------------------------------------------------------
 	// External classes
 	//--------------------------------------------------------
-	virtual bool RegisterClass( ScriptClassDesc_t *pClassDesc ) = 0;
+	virtual bool RegisterScriptClass( ScriptClassDesc_t *pClassDesc ) = 0;
 
 	//--------------------------------------------------------
 	// External instances. Note class will be auto-registered.
@@ -724,24 +550,39 @@ public:
 
 	virtual bool SetValue( HSCRIPT hScope, const char *pszKey, const char *pszValue ) = 0;
 	virtual bool SetValue( HSCRIPT hScope, const char *pszKey, const ScriptVariant_t &value ) = 0;
+	virtual bool SetValue( HSCRIPT hScope, int nIndex, const ScriptVariant_t &value ) = 0;
+
 	bool SetValue( const char *pszKey, const ScriptVariant_t &value )																{ return SetValue(NULL, pszKey, value ); }
 
+	virtual bool SetEnumValue(HSCRIPT hScope, const char *pszEnumName, const char *pszValueName, int value, const char *pszDescription) = 0;
+	virtual bool CreateKeyValuesFromTable(HSCRIPT hScope, const char* unk1, void* fUnk, void* unk2) = 0;
+
 	virtual void CreateTable( ScriptVariant_t &Table ) = 0;
+	virtual bool IsTable( HSCRIPT hScope ) = 0;
 	virtual int	GetNumTableEntries( HSCRIPT hScope ) = 0;
+	virtual int GetNumElements( HSCRIPT hScope ) = 0;
 	virtual int GetKeyValue( HSCRIPT hScope, int nIterator, ScriptVariant_t *pKey, ScriptVariant_t *pValue ) = 0;
 
 	virtual bool GetValue( HSCRIPT hScope, const char *pszKey, ScriptVariant_t *pValue ) = 0;
+	virtual bool GetValue( HSCRIPT hScope, int nIndex, ScriptVariant_t *pValue ) = 0;
 	bool GetValue( const char *pszKey, ScriptVariant_t *pValue )																	{ return GetValue(NULL, pszKey, pValue ); }
+	virtual bool GetScalarValue( HSCRIPT hScope, ScriptVariant_t *pValue ) = 0;
 	virtual void ReleaseValue( ScriptVariant_t &value ) = 0;
 
 	virtual bool ClearValue( HSCRIPT hScope, const char *pszKey ) = 0;
 	bool ClearValue( const char *pszKey)																							{ return ClearValue( NULL, pszKey ); }
-
+	
+	virtual HSCRIPT CreateArray( ScriptVariant_t & ) = 0;
+	virtual bool IsArray( HSCRIPT hScope ) = 0;
+	virtual int GetArrayCount( HSCRIPT hScope ) = 0;
+	virtual void ArrayAddToTail( HSCRIPT hScope, const ScriptVariant_t &pValue ) = 0;
+	
 	//----------------------------------------------------------------------------
 
 	virtual void WriteState( CUtlBuffer *pBuffer ) = 0;
 	virtual void ReadState( CUtlBuffer *pBuffer ) = 0;
-	virtual void RemoveOrphanInstances() = 0;
+	
+	virtual void CollectGarbage( const char *, bool ) = 0;
 
 	virtual void DumpState() = 0;
 
@@ -751,6 +592,19 @@ public:
 	//----------------------------------------------------------------------------
 
 	virtual bool RaiseException( const char *pszExceptionText ) = 0;
+
+	virtual HSCRIPT GetRootTable() = 0;
+
+	virtual HSCRIPT CopyHandle( HSCRIPT hScope ) = 0;
+
+	virtual int GetIdentity( HSCRIPT hScope ) = 0;
+
+	class ISquirrelMetamethodDelegate;
+
+	virtual void *MakeSquirrelMetamethod_Get( HSCRIPT&, const char*, ISquirrelMetamethodDelegate *, bool ) = 0;
+	virtual void DestroySquirrelMetamethod_Get( CSquirrelMetamethodDelegateImpl * ) = 0;
+
+	virtual int GetKeyValue2( HSCRIPT hScope, int iterator, ScriptVariant_t *pKey, ScriptVariant_t *pValue ) = 0;
 
 	//----------------------------------------------------------------------------
 	// Call API
