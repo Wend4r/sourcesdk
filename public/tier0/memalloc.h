@@ -63,8 +63,14 @@
 
 #include <stddef.h>
 #ifdef _LINUX
-#undef offsetof
-#define offsetof(s,m)	(size_t)&(((s *)0)->m)
+#ifndef offsetof
+	#ifdef GNUC
+		#define offsetof( type, var ) __builtin_offsetof( type, var )
+	#else
+		#include <stddef.h>
+		#define offsetof(s,m)	(size_t)&(((s *)0)->m)
+	#endif
+#endif
 #endif
 
 #define MEMALLOC_SUPPORTS_ALIGNED_ALLOCATIONS 1
