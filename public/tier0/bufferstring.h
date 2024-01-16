@@ -284,6 +284,23 @@ public:
 		return StringFuncs<char>::EmptyString();
 	}
 
+	void Clear()
+	{
+		m_nTotalCount = 0;
+		m_nAllocated = 0;
+
+		if (IsHeapAllocated() && m_Memory.m_pString)
+		{
+#if PLATFORM_WINDOWS
+			g_pMemAlloc->Free((void*)m_Memory.m_pString);
+#else
+			delete[] m_Memory.m_pString;
+#endif
+		}
+
+		m_Memory.m_pString = 0;
+	}
+
 private:
 	int m_nTotalCount;
 	int m_nAllocated;
