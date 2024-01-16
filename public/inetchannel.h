@@ -10,22 +10,32 @@
 #pragma once
 #endif
 
-#include "tier0/platform.h"
 #include "inetchannelinfo.h"
-#include "tier1/bitbuf.h"
+#include "tier0/platform.h"
 #include "tier0/netadr.h"
-#include "tier1/ns_address.h"
+#include "tier1/bitbuf.h"
+#include "tier1/utldelegate.h"
+#include <eiface.h>
 
-class	IDemoRecorder;
+class	IDemoRecorderBase;
+class IInstantReplayIntercept;
+class	IInstantReplayIntercept;
 class	INetMessage;
 class	INetChannelHandler;
 class	INetChannelInfo;
 class	INetMessageBinder;
-typedef struct netpacket_s netpacket_t;
+class	INetworkMessageProcessingPreFilter;
+class	INetMessageDispatcher;
+class	InstantReplayMessage_t;
+class	CUtlSlot;
+
+DECLARE_HANDLE_32BIT(CSplitScreenPlayerSlot);
+DECLARE_POINTER_HANDLE(NetMessageHandle_t);
+
 
 #ifndef NET_PACKET_ST_DEFINED
 #define NET_PACKET_ST_DEFINED
-typedef struct netpacket_s
+struct NetPacket_t
 {
 	ns_address		from;		// sender address
 	int				source;		// received source 
@@ -35,20 +45,24 @@ typedef struct netpacket_s
 	int				size;		// size in bytes
 	int				wiresize;   // size in bytes before decompression
 	bool			stream;		// was send as stream
-	struct netpacket_s *pNext;	// for internal use, should be NULL in public
-} netpacket_t;
+	struct NetPacket_t *pNext;	// for internal use, should be NULL in public
+};
 #endif // NET_PACKET_ST_DEFINED
 
+enum NetChannelBufType_t
+{
+	BUF_RELIABLE = 0,
+	BUF_UNRELIABLE,
+	BUF_VOICE,
+};
 
 abstract_class INetChannel : public INetChannelInfo
 {
 public:
 	virtual	~INetChannel( void ) {};
 
-	virtual void	SetDataRate(float rate) = 0;
-
-	virtual bool	RegisterMessage(INetMessageBinder *msg) = 0;
-	virtual bool	UnregisterMessage(INetMessageBinder *msg) = 0;
+	virtual size_t 	GetTotalPacketBytes( int, int ) const = 0;
+	virtual size_t 	GetTotalPacketReliableBytes( int, int ) const = 0;
 	virtual void	SetTimeout(float seconds, bool bForceExact = false) = 0;
 	virtual void	SetDemoRecorder(IDemoRecorder *recorder) = 0;
 	virtual void	SetChallengeNr(unsigned int chnr) = 0;
@@ -70,35 +84,16 @@ public:
 	virtual void	DenyFile(const char *filename, unsigned int transferID, bool bIsReplayDemoFile ) = 0;
 	virtual void	RequestFile_OLD(const char *filename, unsigned int transferID) = 0;	// get rid of this function when we version the 
 	virtual void	SetChoked( void ) = 0;
-	virtual int		SendDatagram(bf_write *data) = 0;		
-	virtual bool	Transmit(bool onlyReliable = false) = 0;
+	virtual bool	Transmit( const char *, bf_write * ) = 0;
 
-	virtual const ns_address &GetRemoteAddress( void ) const = 0;
-	virtual INetChannelHandler *GetMsgHandler( void ) const = 0;
+	virtual const netadr_t	&GetRemoteAddress( void ) const = 0;
 	virtual int				GetDropNumber( void ) const = 0;
 	virtual int				GetSocket( void ) const = 0;
 	virtual unsigned int	GetChallengeNr( void ) const = 0;
 	virtual void			GetSequenceData( int &nOutSequenceNr, int &nInSequenceNr, int &nOutSequenceNrAck ) = 0;
 	virtual void			SetSequenceData( int nOutSequenceNr, int nInSequenceNr, int nOutSequenceNrAck ) = 0;
-		
-	virtual void	UpdateMessageStats( int msggroup, int bits) = 0;
-	virtual bool	CanPacket( void ) const = 0;
-	virtual bool	IsOverflowed( void ) const = 0;
-	virtual bool	IsTimedOut( void ) const  = 0;
-	virtual bool	HasPendingReliableData( void ) = 0;
-
-	virtual void	SetFileTransmissionMode(bool bBackgroundMode) = 0;
-	virtual void	SetCompressionMode( bool bUseCompression ) = 0;
-	virtual unsigned int RequestFile(const char *filename, bool bIsReplayDemoFile ) = 0;
-	virtual float	GetTimeSinceLastReceived( void ) const = 0;	// get time since last received packet in seconds
-
-	virtual void	SetMaxBufferSize(bool bReliable, int nBytes, bool bVoice = false ) = 0;
-
-	virtual bool	IsNull() const = 0;
-	virtual int		GetNumBitsWritten( bool bReliable ) = 0;
-	virtual void	SetInterpolationAmount( float flInterpolationAmount ) = 0;
-	virtual void	SetRemoteFramerate( float flFrameTime, float flFrameTimeStdDeviation, float flFrameStartTimeStdDeviation ) = 0;
-
+	virtual int		GetNumBitsWritten(NetChannelBufType_t bufferType) const = 0;
+	virtual void	SetCompressionMode( bool ) = 0;
 	// Max # of payload bytes before we must split/fragment the packet
 	virtual void	SetMaxRoutablePayloadSize( int nSplitSize ) = 0;
 	virtual int		GetMaxRoutablePayloadSize() = 0;
