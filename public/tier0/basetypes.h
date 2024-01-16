@@ -20,8 +20,8 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-#ifndef schema
-#define schema namespace ValveSchemaMarker {}
+#ifndef valve_schema
+#define valve_schema namespace ValveSchemaMarker {} // 'schema' marco will conflict with google/protobuf/message.h
 #endif
 #define noschema
 #define schema_pragma( ... )
