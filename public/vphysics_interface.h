@@ -12,7 +12,7 @@
 #endif
 
 
-#include "tier1/interface.h"
+#include "tier0/interface.h"
 #include "appframework/iappsystem.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector4d.h"

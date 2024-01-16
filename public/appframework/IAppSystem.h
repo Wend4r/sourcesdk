@@ -13,7 +13,7 @@
 #pragma once
 #endif
 
-#include "tier1/interface.h"
+#include "tier0/interface.h"
 #include "interfaces/interfaces.h"
 
 

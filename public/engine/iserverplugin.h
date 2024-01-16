@@ -14,7 +14,7 @@
 #endif
 
 #include "edict.h"
-#include "tier1/interface.h"
+#include "tier0/interface.h"
 #include "tier0/keyvalues.h"
 
 class CCommand;

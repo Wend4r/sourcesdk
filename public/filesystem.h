@@ -17,7 +17,7 @@
 #include "tier0/threadtools.h"
 #include "tier0/memalloc.h"
 #include "tier0/tslist.h"
-#include "tier1/interface.h"
+#include "tier0/interface.h"
 #include "tier0/utlsymbol.h"
 #include "tier0/utlstring.h"
 //#include "tier1/functors.h" 
