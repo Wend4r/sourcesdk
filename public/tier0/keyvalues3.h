@@ -3,11 +3,6 @@
 #include "utlstring.h"
 
 class KeyValues3;
-class CKeyValues3Array;
-class CKeyValues3Table;
-class CKeyValues3Cluster;
-class CKeyValues3ArrayCluster;
-class CKeyValues3TableCluster;
 class CKeyValues3Context;
 struct KV1ToKV3Translation_t;
 struct KV3ToKV1Translation_t;
