@@ -14,6 +14,7 @@
 #include <inputsystem/InputEnums.h>
 #include <iloopmode.h>
 
+struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;
 class IAddonListChangeNotify;
 

@@ -91,7 +91,6 @@ class CNavData;
 struct EconItemInfo_t;
 struct EconControlPointInfo_t;
 class CEntityHandle;
-struct RenderDeviceInfo_t;
 struct RenderMultisampleType_t;
 class GameSessionConfiguration_t;
 struct StringTableDef_t;
