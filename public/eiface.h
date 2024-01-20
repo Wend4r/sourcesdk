@@ -31,7 +31,9 @@
 #include <iloopmode.h>
 
 //FIXME (@Wend4r): entiry into Google Protobuf without errors
+#ifndef _WIN32
 #include <bits/byteswap.h>
+#endif
 
 #ifndef bswap_16
 #	define bswap_16( x ) __bswap_16( x )
@@ -44,9 +46,9 @@
 #ifndef bswap_64
 #	define bswap_64( x ) __bswap_64( x )
 #endif
+//FIXME: <end>
 
 #include "network_connection.pb.h"
-//FIXME: <end>
 
 //-----------------------------------------------------------------------------
 // forward declarations
