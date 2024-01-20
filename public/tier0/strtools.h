@@ -987,6 +987,9 @@ PLATFORM_INTERFACE char *V_ParseURLQuery_Unsafe(const char *pchURL, CUtlVector< 
 
 PLATFORM_INTERFACE void V_StringParseError( int nFlags, IParsingErrorListener *err_listener, const char *pError, ...) FMTFUNCTION( 3, 4 );
 
+// Compares two strings with the support of wildcarding only for the first arg (includes '*' for multiple and '?' for single char usages)
+PLATFORM_INTERFACE int V_CompareNameWithWildcards(const char *wildcarded_string, const char *compare_to, bool case_sensitive = false);
+
 // Parses string equivalent of ("true", "false", "yes", "no", "1", "0") to the boolean value
 // where default_value is what would be returned if parsing has failed
 PLATFORM_INTERFACE bool V_StringToBool(const char *buf, bool default_value, bool *successful = NULL, char **remainder = NULL, uint flags = PARSING_FLAG_NONE, IParsingErrorListener *err_listener = NULL);
