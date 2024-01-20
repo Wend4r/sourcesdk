@@ -1,6 +1,6 @@
 #include "entityidentity.h"
 #include "entitysystem.h"
-#include "tier1/strtools.h"
+#include "tier0/strtools.h"
 
 bool CEntityIdentity::NameMatches( const char* szName ) const
 {
