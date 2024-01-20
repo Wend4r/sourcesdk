@@ -639,6 +639,17 @@ public:
 	CCopyableUtlVectorFixed( CCopyableUtlVectorFixed const& vec ) { this->CopyArray( vec.Base(), vec.Count() ); }
 };
 
+//-----------------------------------------------------------------------------
+// The CNetworkUtlVectorBase class:
+//-----------------------------------------------------------------------------
+template< class T, typename I = int, typename A = CUtlMemory< T, I > >
+class CNetworkUtlVectorBase : public CUtlVectorBase< T, I, A >
+{
+	typedef CUtlVectorBase< T, I, A > BaseClass;
+public:
+	using BaseClass::BaseClass;
+};
+
 // TODO (Ilya): It seems like all the functions in CUtlVector are simple enough that they should be inlined.
 
 //-----------------------------------------------------------------------------
