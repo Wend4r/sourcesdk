@@ -87,6 +87,11 @@ public:
 		return m_EHandle.GetEntryIndex();
 	}
 
+	inline SpawnGroupHandle_t GetSpawnGroup() const
+	{
+		return m_hSpawnGroup;
+	}
+
 	bool NameMatches( const char* szName ) const;
 	bool ClassMatches( const char* szClassName ) const;
 

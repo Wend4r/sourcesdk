@@ -13,14 +13,12 @@
 #include "color.h"
 #include "entity2/entityidentity.h"
 #include "entityhandle.h"
-#include "tier0/utlscratchmemory.h"
+#include "resourcefile/resourcetype.h"
 #include "tier0/bufferstring.h"
+#include "tier0/utlscratchmemory.h"
+#include "resourcefile/resourcetype.h"
 
 FORWARD_DECLARE_HANDLE( HSCRIPT );
-
-// Non-implemented classes/structs
-struct ResourceBindingBase_t;
-typedef const ResourceBindingBase_t *ResourceHandle_t;
 
 // ========
 

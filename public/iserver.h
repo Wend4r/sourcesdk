@@ -10,11 +10,11 @@
 #pragma once
 #endif
 
-#include "inetmsghandler.h"
-#include "edict.h"
-#include "tier0/checksum_crc.h"
-#include "engine/IEngineService.h"
-#include "resourcefile/resourcetype.h"
+#include <inetmsghandler.h>
+#include <edict.h>
+#include <resourcefile/resourcetype.h>
+#include <tier0/checksum_crc.h>
+#include <engine/IEngineService.h>
 
 class IGameSpawnGroupMgr;
 struct EventServerAdvanceTick_t;
@@ -34,7 +34,7 @@ abstract_class INetworkGameServer : public IConnectionlessPacketHandler
 public:
 	virtual	void	Init( const GameSessionConfiguration_t &, const char * ) = 0;
 	virtual void	SetGameSpawnGroupMgr( IGameSpawnGroupMgr * ) = 0;
-	virtual void	SetGameSessionManifest( HGameResourceManifest * ) = 0;
+	virtual void	SetGameSessionManifest( HGameResourceManifest ) = 0;
 	virtual void	RegisterLoadingSpawnGroups( CUtlVector<unsigned int> & ) = 0;
 	virtual void	Shutdown( void ) = 0;
 	virtual void	AddRef( void ) = 0;
@@ -61,7 +61,6 @@ public:
 	virtual const char *GetAddonName( void ) const = 0;
 	virtual bool	IsBackgroundMap( void ) const = 0;
 	virtual float	GetTime( void ) const = 0;	// returns game world time
-	virtual int		GetMapVersion( void ) const = 0;
 	virtual void	ActivateServer( void ) = 0;
 	virtual void	PrepareForAssetLoad( void ) = 0;
 	virtual int		GetServerNetworkAddress( void ) = 0;
