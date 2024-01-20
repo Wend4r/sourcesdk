@@ -12,6 +12,7 @@
 #include "tier0/utlbuffer.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
+#include "tier0/utlstring.h"
 #include "tier1/generichash.h"
 #include "tier1/utlhashtable.h"
 #include "tier1/utlleanvector.h"
@@ -57,6 +58,8 @@ enum KV3Type_t : uint8
 	KV3_TYPE_BINARY_BLOB,
 	KV3_TYPE_ARRAY,
 	KV3_TYPE_TABLE,
+
+	KV3_TYPE_COUNT,
 };
 
 enum KV3TypeOpt_t : uint8
@@ -149,6 +152,8 @@ enum KV3SubType_t : uint8
 
 	KV3_SUBTYPE_STRING_TOKEN,
 	KV3_SUBTYPE_EHANDLE,
+
+	KV3_SUBTYPE_COUNT,
 };
 
 enum KV3ArrayAllocType_t
@@ -158,16 +163,58 @@ enum KV3ArrayAllocType_t
 	KV3_ARRAY_ALLOC_EXTERN_FREE = 2,
 };
 
+enum KV3ToStringFlags_t
+{
+	KV3_TO_STRING_NONE = 0,
+	KV3_TO_STRING_DONT_CLEAR_BUFF = (1 << 0),
+	KV3_TO_STRING_DONT_APPEND_STRINGS = (1 << 1),
+	KV3_TO_STRING_APPEND_ONLY_NUMERICS = (1 << 2),
+	KV3_TO_STRING_RETURN_NON_NUMERICS = (1 << 3),
+};
+
 enum KV3MetaDataFlags_t
 {
 	KV3_METADATA_MULTILINE_STRING = (1 << 0),
 	KV3_METADATA_SINGLE_QUOTED_STRING = (1 << 1),
 };
 
+namespace KV3Helpers
+{
+
+// https://www.chessprogramming.org/BitScan
+inline int BitScanFwd( uint64 bb ) 
+{
+	static const int index64[64] = {
+		0,  47,  1, 56, 48, 27,  2, 60,
+		57, 49, 41, 37, 28, 16,  3, 61,
+		54, 58, 35, 52, 50, 42, 21, 44,
+		38, 32, 29, 23, 17, 11,  4, 62,
+		46, 55, 26, 59, 40, 36, 15, 53,
+		34, 51, 20, 43, 31, 22, 10, 45,
+		25, 39, 14, 33, 19, 30,  9, 24,
+		13, 18,  8, 12,  7,  6,  5, 63
+	};
+
+	const uint64 debruijn64 = 0x03f79d71b4cb0a89ull;
+	Assert( bb != 0 );
+	return index64[ ( ( bb ^ ( bb - 1 ) ) * debruijn64 ) >> 58 ];
+}
+
+// https://www.chessprogramming.org/Population_Count
+inline int PopCount( uint64 x )
+{
+	x =  x - ( ( x >> 1 ) & 0x5555555555555555ull );
+    x = ( x & 0x3333333333333333ull ) + ( ( x >> 2 ) & 0x3333333333333333ull );
+    x = ( x + ( x >> 4 ) ) & 0x0f0f0f0f0f0f0f0full;
+    x = ( x * 0x0101010101010101ull ) >> 56;
+    return ( int )x;
+}
+
+}
+
 struct KV3MetaData_t
 {
 	KV3MetaData_t() : m_nLine( 0 ), m_nColumn( 0 ), m_nFlags( 0 ) {}
-	~KV3MetaData_t() {}
 
 	void Clear()
 	{
@@ -242,6 +289,11 @@ public:
 	KV3TypeEx_t GetTypeEx() const	{ return ( KV3TypeEx_t )m_TypeEx; }
 	KV3SubType_t GetSubType() const	{ return ( KV3SubType_t )m_SubType; }
 
+	const char* GetTypeAsString() const;
+	const char* GetSubTypeAsString() const;
+
+	const char* ToString( CBufferString& buff, uint flags = KV3_TO_STRING_NONE ) const;
+
 	void SetToNull() { PrepareForType( KV3_TYPEEX_NULL, KV3_SUBTYPE_NULL ); }
 
 	bool GetBool( bool defaultValue = false ) const			{ return GetValue<bool>( defaultValue ); }
@@ -275,11 +327,11 @@ public:
 	void* GetPointer( void *defaultValue = ( void* )0 ) const { return ( GetSubType() == KV3_SUBTYPE_POINTER ) ? ( void* )m_UInt : defaultValue; }
 	void SetPointer( void* ptr ) { SetValue<uint64>( ( uint64 )ptr, KV3_TYPEEX_UINT, KV3_SUBTYPE_POINTER ); }
 	
-	CUtlStringToken GetStringToken( CUtlStringToken defaultValue = 0 ) const { return ( GetSubType() == KV3_SUBTYPE_STRING_TOKEN ) ? CUtlStringToken( ( uint32 )m_UInt ) : defaultValue; }
-	void SetStringToken( const CUtlStringToken& token ) { SetValue<uint32>( token.m_nHashCode, KV3_TYPEEX_STRING_EXTERN, KV3_SUBTYPE_STRING_TOKEN ); }
+	CUtlStringToken GetStringToken( CUtlStringToken defaultValue = CUtlStringToken() ) const { return ( GetSubType() == KV3_SUBTYPE_STRING_TOKEN ) ? CUtlStringToken( ( uint32 )m_UInt ) : defaultValue; }
+	void SetStringToken( CUtlStringToken token ) { SetValue<uint32>( token.m_nHashCode, KV3_TYPEEX_UINT, KV3_SUBTYPE_STRING_TOKEN ); }
 
 	CEntityHandle GetEHandle( CEntityHandle defaultValue = CEntityHandle() ) const { return ( GetSubType() == KV3_SUBTYPE_EHANDLE ) ? CEntityHandle( ( uint32 )m_UInt ) : defaultValue; }
-	void SetEHandle( const CEntityHandle& ehandle ) { SetValue<uint32>( ehandle.ToInt(), KV3_TYPEEX_UINT, KV3_SUBTYPE_EHANDLE ); }
+	void SetEHandle( CEntityHandle ehandle ) { SetValue<uint32>( ehandle.ToInt(), KV3_TYPEEX_UINT, KV3_SUBTYPE_EHANDLE ); }
 
 	const char* GetString( const char *defaultValue = "" ) const;
 	void SetString( const char* pString, KV3SubType_t subtype = KV3_SUBTYPE_STRING );
@@ -290,21 +342,22 @@ public:
 	void SetToBinaryBlob( const byte* blob, int size );
 	void SetToBinaryBlobExternal( const byte* blob, int size, bool free_mem );
 
-	Color GetColor( Color defaultValue = Color( 0, 0, 0, 255 ) ) const;
+	Color GetColor( const Color &defaultValue = Color( 0, 0, 0, 255 ) ) const;
 	void SetColor( const Color &color );
 
-	Vector GetVector( Vector defaultValue = Vector( 0.0f, 0.0f, 0.0f ) ) const							{ return GetVecBasedObj<Vector>( 3, defaultValue ); }
-	Vector2D GetVector2D( Vector2D defaultValue = Vector2D( 0.0f, 0.0f ) ) const						{ return GetVecBasedObj<Vector2D>( 2, defaultValue ); }
-	Vector4D GetVector4D( Vector4D defaultValue = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f ) ) const			{ return GetVecBasedObj<Vector4D>( 4, defaultValue ); }
-	Quaternion GetQuaternion( Quaternion defaultValue = Quaternion( 0.0f, 0.0f, 0.0f, 0.0f ) ) const	{ return GetVecBasedObj<Quaternion>( 4, defaultValue ); }
-	QAngle GetQAngle( QAngle defaultValue = QAngle( 0.0f, 0.0f, 0.0f ) ) const							{ return GetVecBasedObj<QAngle>( 3, defaultValue ); }
-	matrix3x4_t GetMatrix3x4( matrix3x4_t defaultValue = matrix3x4_t( Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ) ) ) const { return GetVecBasedObj<matrix3x4_t>( 3*4, defaultValue ); }
+	Vector GetVector( const Vector &defaultValue = Vector( 0.0f, 0.0f, 0.0f ) ) const						{ return GetVecBasedObj<Vector>( 3, defaultValue ); }
+	Vector2D GetVector2D( const Vector2D &defaultValue = Vector2D( 0.0f, 0.0f ) ) const						{ return GetVecBasedObj<Vector2D>( 2, defaultValue ); }
+	Vector4D GetVector4D( const Vector4D &defaultValue = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f ) ) const			{ return GetVecBasedObj<Vector4D>( 4, defaultValue ); }
+	Quaternion GetQuaternion( const Quaternion &defaultValue = Quaternion( 0.0f, 0.0f, 0.0f, 0.0f ) ) const	{ return GetVecBasedObj<Quaternion>( 4, defaultValue ); }
+	QAngle GetQAngle( const QAngle &defaultValue = QAngle( 0.0f, 0.0f, 0.0f ) ) const						{ return GetVecBasedObj<QAngle>( 3, defaultValue ); }
+	matrix3x4_t GetMatrix3x4( const matrix3x4_t &defaultValue = matrix3x4_t( Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ) ) ) const { return GetVecBasedObj<matrix3x4_t>( 3*4, defaultValue ); }
 
 	void SetVector( const Vector &vec )				{ SetVecBasedObj<Vector>( vec, 3, KV3_SUBTYPE_VECTOR ); }
 	void SetVector2D( const Vector2D &vec2d )		{ SetVecBasedObj<Vector2D>( vec2d, 2, KV3_SUBTYPE_VECTOR2D ); }
 	void SetVector4D( const Vector4D &vec4d )		{ SetVecBasedObj<Vector4D>( vec4d, 4, KV3_SUBTYPE_VECTOR4D ); }
 	void SetQuaternion( const Quaternion &quat )	{ SetVecBasedObj<Quaternion>( quat, 4, KV3_SUBTYPE_QUATERNION ); }
 	void SetQAngle( const QAngle &ang )				{ SetVecBasedObj<QAngle>( ang, 3, KV3_SUBTYPE_QANGLE ); }
+	void SetMatrix3x4( const matrix3x4_t &matrix )	{ SetVecBasedObj<matrix3x4_t>( matrix, 3*4, KV3_SUBTYPE_MATRIX3X4 ); }
 
 	int GetArrayElementCount() const;
 	KeyValues3** GetArrayBase();
@@ -318,12 +371,15 @@ public:
 	void RemoveArrayElement( int elem ) { RemoveArrayElements( elem, 1 ); }
 
 	int GetMemberCount() const;
-	KeyValues3* GetMember( KV3MemberId_t id ) const;
+	KeyValues3* GetMember( KV3MemberId_t id );
+	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
 	const char* GetMemberName( KV3MemberId_t id ) const;
 	CKV3MemberName GetMemberNameEx( KV3MemberId_t id ) const;
 	unsigned int GetMemberHash( KV3MemberId_t id ) const;
-	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = NULL ) const;
+	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = NULL );
 	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = NULL );
+	bool TableHasBadNames() const;
+	void SetTableHasBadNames( bool bHasBadNames );
 	void SetToEmptyTable();
 	bool RemoveMember( KV3MemberId_t id );
 	bool RemoveMember( const KeyValues3* kv );
@@ -351,10 +407,10 @@ private:
 	template < typename T > T GetValue( T defaultValue ) const;
 	template < typename T > void SetValue( T value, KV3TypeEx_t type, KV3SubType_t subtype );
 
-	template < typename T > T GetVecBasedObj( int size, T defaultValue ) const;
+	template < typename T > T GetVecBasedObj( int size, const T &defaultValue ) const;
 	template < typename T > void SetVecBasedObj( const T &obj, int size, KV3SubType_t subtype );
 
-	template< typename T >
+	template < typename T >
 	void NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree );
 	void NormalizeArray();
 
@@ -396,7 +452,7 @@ private:
 		
 		CKeyValues3Table* m_pTable;
 
-		uint64 m_Value;
+		uint64 m_nData;
 		void* m_pData;
 		char m_Data[1];
 	};
@@ -409,8 +465,7 @@ COMPILE_TIME_ASSERT(sizeof(KeyValues3) == 16);
 class CKeyValues3Array
 {
 public:
-	CKeyValues3Array( int cluster_elem = -1 ) : m_nClusterElement( cluster_elem ) {}
-	~CKeyValues3Array() {}
+	CKeyValues3Array( int cluster_elem = -1 );
 
 	int GetClusterElement() const { return m_nClusterElement; }
 	CKeyValues3ArrayCluster* GetCluster() const;
@@ -439,25 +494,23 @@ private:
 class CKeyValues3Table
 {
 public:
-	CKeyValues3Table( int cluster_elem = -1 ) :
-		m_nClusterElement( cluster_elem ),
-		m_pFastSearch( NULL ),
-		m_bHasBadNames( false ) {}
-
-	~CKeyValues3Table() {}
+	CKeyValues3Table( int cluster_elem = -1 );
 
 	int GetClusterElement() const { return m_nClusterElement; }
 	CKeyValues3TableCluster* GetCluster() const;
 	CKeyValues3Context* GetContext() const;
 
 	int GetMemberCount() const { return m_Hashes.Count(); }
-	KeyValues3* GetMember( KV3MemberId_t id ) const { return m_Members[ id ]; }
+	KeyValues3* GetMember( KV3MemberId_t id ) { return m_Members[ id ]; }
+	const KeyValues3* GetMember( KV3MemberId_t id ) const { return m_Members[ id ]; }
 	const char* GetMemberName( KV3MemberId_t id ) const { return m_Names[ id ]; }
 	unsigned int GetMemberHash( KV3MemberId_t id ) const { return m_Hashes[ id ]; }
 	void EnableFastSearch();
 	KV3MemberId_t FindMember( const KeyValues3* kv ) const;
 	KV3MemberId_t FindMember( const CKV3MemberName &name );
 	KV3MemberId_t CreateMember( const CKV3MemberName &name );
+	bool HasBadNames() const { return m_bHasBadNames; }
+	void SetHasBadNames( bool bHasBadNames ) { m_bHasBadNames = bHasBadNames; }
 	void CopyFrom( const CKeyValues3Table* pSrc );
 	void RemoveMember( KV3MemberId_t id );
 	void RemoveAll( int nAllocSize = 0 );
@@ -473,7 +526,6 @@ private:
 
 	struct kv3tablefastsearch_t {
 		kv3tablefastsearch_t() : m_ignore( false ), m_ignores_counter( 0 ) {}
-		~kv3tablefastsearch_t() {}
 
 		void Clear()
 		{
@@ -500,19 +552,8 @@ private:
 class CKeyValues3Cluster
 {
 public:
-	CKeyValues3Cluster( CKeyValues3Context* context ) : 
-		m_pContext( context ), 
-		m_nAllocatedElements( 0 ),
-		m_pMetaData( NULL ), 
-		m_pNextFree( NULL ) 
-	{
-		memset( &m_KeyValues, 0, sizeof( m_KeyValues ) );
-	}
-
-	~CKeyValues3Cluster() 
-	{
-		FreeMetaData();
-	}
+	CKeyValues3Cluster( CKeyValues3Context* context );
+	~CKeyValues3Cluster();
 
 	KeyValues3* Alloc( KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
 	void Free( int element );
@@ -525,8 +566,8 @@ public:
 	KV3MetaData_t* GetMetaData( int element ) const;
 
 	CKeyValues3Context* GetContext() const { return m_pContext; }
-	int NumAllocated() const;
-	bool IsFree() const { return (m_nAllocatedElements != 0x7fffffffffffffffull); }
+	int NumAllocated() const { return KV3Helpers::PopCount( m_nAllocatedElements ); }
+	bool IsFree() const { return ( m_nAllocatedElements != 0x7fffffffffffffffull ); }
 	CKeyValues3Cluster* GetNextFree() const { return m_pNextFree; }
 	void SetNextFree( CKeyValues3Cluster* free ) { m_pNextFree = free; }
 
@@ -547,69 +588,30 @@ private:
 	friend CKeyValues3Cluster* KeyValues3::GetCluster() const;
 };
 
-class CKeyValues3ArrayCluster
+template < class T >
+class CKeyValues3ClusterT
 {
 public:
-	CKeyValues3ArrayCluster( CKeyValues3Context* context ) : 
-		m_pContext( context ), 
-		m_nAllocatedElements( 0 ),
-		m_pNextFree( NULL )
-	{
-		memset( &m_Arrays, 0, sizeof( m_Arrays ) );
-	}
+	CKeyValues3ClusterT( CKeyValues3Context* context );
 
-	~CKeyValues3ArrayCluster() {}
-
-	CKeyValues3Array* Alloc();
+	T* Alloc();
 	void Free( int element );
-	void Clear() { Purge(); };
+	void Clear() { Purge(); }
 	void Purge();
 
 	CKeyValues3Context* GetContext() const { return m_pContext; }
-	int NumAllocated() const;
-	bool IsFree() const { return (m_nAllocatedElements != 0x7fffffffffffffffull); }
-	CKeyValues3ArrayCluster* GetNextFree() const { return m_pNextFree; }
-	void SetNextFree( CKeyValues3ArrayCluster* free ) { m_pNextFree = free; }
+	int NumAllocated() const { return KV3Helpers::PopCount( m_nAllocatedElements ); }
+	bool IsFree() const { return ( m_nAllocatedElements != 0x7fffffffffffffffull ); }
+	CKeyValues3ClusterT* GetNextFree() const { return m_pNextFree; }
+	void SetNextFree( CKeyValues3ClusterT* free ) { m_pNextFree = free; }
 
 private:
-	CKeyValues3Context*		 	m_pContext;
-	uint64						m_nAllocatedElements;
-	CKeyValues3Array			m_Arrays[KV3_CLUSTER_MAX_ELEMENTS];
-	CKeyValues3ArrayCluster* 	m_pNextFree;
+	CKeyValues3Context*		m_pContext;
+	uint64					m_nAllocatedElements;
+	T						m_Elements[KV3_CLUSTER_MAX_ELEMENTS];
+	CKeyValues3ClusterT*	m_pNextFree;
 
 	friend CKeyValues3ArrayCluster* CKeyValues3Array::GetCluster() const;
-};
-
-class CKeyValues3TableCluster
-{
-public:
-	CKeyValues3TableCluster( CKeyValues3Context* context ) : 
-		m_pContext( context ), 
-		m_nAllocatedElements( 0 ),
-		m_pNextFree( NULL )
-	{
-		memset( &m_Tables, 0, sizeof( m_Tables ) );
-	}
-
-	~CKeyValues3TableCluster() {}
-
-	CKeyValues3Table* Alloc();
-	void Free( int element );
-	void Clear() { Purge(); };
-	void Purge();
-
-	CKeyValues3Context* GetContext() const { return m_pContext; }
-	int NumAllocated() const;
-	bool IsFree() const { return (m_nAllocatedElements != 0x7fffffffffffffffull); }
-	CKeyValues3TableCluster* GetNextFree() const { return m_pNextFree; }
-	void SetNextFree( CKeyValues3TableCluster* free ) { m_pNextFree = free; }
-
-private:
-	CKeyValues3Context*		 	m_pContext;
-	uint64						m_nAllocatedElements;
-	CKeyValues3Table			m_Tables[KV3_CLUSTER_MAX_ELEMENTS];
-	CKeyValues3TableCluster* 	m_pNextFree;
-
 	friend CKeyValues3TableCluster* CKeyValues3Table::GetCluster() const;
 };
 
@@ -663,16 +665,17 @@ public:
 	
 	// gets the pre-allocated kv if we indicated its existence when creating the context
 	KeyValues3* Root();
+	const KeyValues3* Root() const { return const_cast<CKeyValues3Context*>(this)->Root(); }
 
-	bool IsMetaDataEnabled() const { return m_bMetaDataEnabled; };
+	bool IsMetaDataEnabled() const { return m_bMetaDataEnabled; }
 	// returns true if the desired format was converted to another after loading via LoadKV3*
-	bool IsFormatConverted() const { return m_bFormatConverted; };
-	bool IsRootAvailabe() const { return m_bRootAvailabe; };
+	bool IsFormatConverted() const { return m_bFormatConverted; }
+	bool IsRootAvailabe() const { return m_bRootAvailabe; }
 
 	// filled in after loading via LoadKV3* in binary encoding
-	const CUtlBuffer& GetBinaryData() const { return m_BinaryData; }
+	CUtlBuffer& GetBinaryData() { return m_BinaryData; }
 
-	IParsingErrorListener* GetParsingErrorListener() const { return m_pParsingErrorListener; };
+	IParsingErrorListener* GetParsingErrorListener() const { return m_pParsingErrorListener; }
 	void SetParsingErrorListener( IParsingErrorListener* listener ) { m_pParsingErrorListener = listener; }
 
 	const char* AllocString( const char* pString );
@@ -732,7 +735,7 @@ template <> inline void KeyValues3::SetDirect( float32 value )	{ m_Double = ( fl
 template <> inline void KeyValues3::SetDirect( float64 value )	{ m_Double = value; }  
 
 template < typename T >
-T KeyValues3::GetVecBasedObj( int size, T defaultValue ) const
+T KeyValues3::GetVecBasedObj( int size, const T &defaultValue ) const
 {
 	T obj;
 	if ( !ReadArrayFloat32( size, obj.Base() ) )
@@ -773,11 +776,11 @@ void KeyValues3::SetValue( T value, KV3TypeEx_t type, KV3SubType_t subtype )
 	SetDirect<T>( value );
 }
 
-template< typename T >
+template < typename T >
 void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree )
 {
 	m_TypeEx = KV3_TYPEEX_ARRAY;
-	m_Value = 0;
+	m_nData = 0;
 	Alloc();
 
 	m_pArray->SetCount( size, type, subtype );
@@ -811,7 +814,7 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 
 			m_bFreeArrayMemory = false;
 			m_nNumArrayElements = size;
-			m_Value = 0;
+			m_nData = 0;
 			memcpy( m_Data, data, size * sizeof( T ) );
 
 			if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
@@ -826,19 +829,19 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 
 		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN )
 		{
-			m_pData = (void*)data;
 			m_bFreeArrayMemory = false;
+			m_pData = (void*)data;
 		}
 		else if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
 		{
-			m_pData = (void*)data;
 			m_bFreeArrayMemory = true;
+			m_pData = (void*)data;
 		}
 		else
 		{
+			m_bFreeArrayMemory = true;	
 			m_pData = malloc( size * sizeof( T ) );
 			memcpy( m_pData, data, size * sizeof( T ) );
-			m_bFreeArrayMemory = true;
 		}
 	}
 	else
@@ -854,6 +857,50 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
 			free( (void*)data );
 	}
+}
+
+template < class T >
+CKeyValues3ClusterT< T >::CKeyValues3ClusterT( CKeyValues3Context* context ) : 
+	m_pContext( context ), 
+	m_nAllocatedElements( 0 ),
+	m_pNextFree( NULL )
+{
+	memset( &m_Elements, 0, sizeof( m_Elements ) );
+}
+
+template < class T >
+T* CKeyValues3ClusterT< T >::Alloc()
+{
+	Assert( IsFree() );
+	int element = KV3Helpers::BitScanFwd( ~m_nAllocatedElements );
+	m_nAllocatedElements |= ( 1ull << element );
+	T* pElement = &m_Elements[ element ];
+	Construct( pElement, element );
+	return pElement;
+}
+
+template < class T >
+void CKeyValues3ClusterT< T >::Free( int element )
+{
+	Assert( element >= 0 && element < KV3_CLUSTER_MAX_ELEMENTS );
+	T* pElement = &m_Elements[ element ];
+	Destruct( pElement );
+	memset( (void *)pElement, 0, sizeof( T ) );
+	m_nAllocatedElements &= ~( 1ull << element );
+}
+
+template < class T >
+void CKeyValues3ClusterT< T >::Purge()
+{
+	uint64 mask = 1;
+	for ( int i = 0; i < KV3_CLUSTER_MAX_ELEMENTS; ++i )
+	{
+		if ( ( m_nAllocatedElements & mask ) != 0 )
+			m_Elements[ i ].Purge( true );
+		mask <<= 1;
+	}
+
+	m_nAllocatedElements = 0;
 }
 
 template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
@@ -887,6 +934,8 @@ template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
 void CKeyValues3Context::Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head, VECTOR_TYPE &vec )
 {
 	CLUSTER_TYPE* cluster = element->GetCluster();
+
+	Assert( cluster != NULL && cluster->GetContext() == m_pContext );
 
 	cluster->Free( element->GetClusterElement() );
 

@@ -31,11 +31,7 @@ class IHandleEntity;
 
 inline IHandleEntity* CBaseHandle::Get() const
 {
-	/*
-	extern CBaseEntityList *g_pEntityList;
-	return g_pEntityList->LookupEntity( *this );
-	*/
-	return nullptr;
+	return GameEntitySystem()->GetBaseEntity( *this );
 }
 
 

@@ -12,9 +12,19 @@
 
 #include "vstdlib/vstdlib.h"
 
-// handle to a KeyValues key name symbol
-typedef int HKeySymbol;
-#define INVALID_KEY_SYMBOL (-1)
+class KeyValues;
+
+class HKeySymbol
+{
+public:
+	HKeySymbol() : nIndex(~0) { }
+	HKeySymbol(uint32 idx) : nIndex(idx) { }
+
+	inline uint32 Get() { return nIndex; }
+
+private:
+	uint32 nIndex;
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to shared data repository for KeyValues (included in vgui_controls.lib)

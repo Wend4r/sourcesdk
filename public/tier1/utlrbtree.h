@@ -43,7 +43,6 @@ public:
 	inline bool operator!() const { return false; }
 };
 
-
 //-------------------------------------
 
 inline bool StringLessThan( const char * const &lhs, const char * const &rhs)			{ 

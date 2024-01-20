@@ -735,15 +735,18 @@ typedef void * HINSTANCE;
 #define  FLOAT32_MAX		FLT_MAX
 #define  FLOAT64_MAX		DBL_MAX
 
-#ifdef GNUC
+#define offsetof_by_class(s,m)	( (size_t)&(((s *)0x1000000)->m) - 0x1000000u )
+#if defined(GNUC) && !defined(__clang__)
 #undef offsetof
 // Note: can't use builtin offsetof because many use cases (esp. in templates) wouldn't compile due to restrictions on the builtin offsetof
 //#define offsetof( type, var ) __builtin_offsetof( type, var ) 
-#define offsetof(s,m)	( (size_t)&(((s *)0x1000000)->m) - 0x1000000u )
+#define offsetof(s,m)	offsetof_by_class(s,m)
 #else
 #include <stddef.h>
+#if !defined(__clang__)
 #undef offsetof
 #define offsetof(s,m)	(size_t)&(((s *)0)->m)
+#endif
 #endif
 
 
@@ -2252,7 +2255,7 @@ inline void Destruct( float __attribute__((__vector_size__(16)))* pMemory )
 //	};
 
 #define GET_OUTER( OuterType, OuterMember ) \
-   ( ( OuterType * ) ( (uint8 *)this - offsetof( OuterType, OuterMember ) ) )
+   ( ( OuterType * ) ( (uint8 *)this - offsetof_by_class( OuterType, OuterMember ) ) )
 
 
 /*	TEMPLATE_FUNCTION_TABLE()

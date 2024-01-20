@@ -380,20 +380,11 @@ enum RenderFx_t
 enum BuiltInCollisionGroup_t
 {
 	COLLISION_GROUP_ALWAYS = 0,
-	COLLISION_GROUP_NONPHYSICAL = 1,
-	COLLISION_GROUP_TRIGGER = 2,
-	COLLISION_GROUP_CONDITIONALLY_SOLID = 3,
-	COLLISION_GROUP_FIRST_USER = 4,
-
-	COLLISION_GROUPS_MAX_ALLOWED = 64,
-};
-
-enum StandardCollisionGroups_t
-{
-	COLLISION_GROUP_NONE  = 0,
-	COLLISION_GROUP_DEFAULT = 4,
-	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world and static stuff
-	// COLLISION_GROUP_DEBRIS_TRIGGER, // Same as debris, but hits triggers
+	COLLISION_GROUP_NEVER,
+	COLLISION_GROUP_TRIGGER,
+	COLLISION_GROUP_CONDITIONALLY_SOLID,
+	COLLISION_GROUP_DEFAULT,
+	COLLISION_GROUP_DEBRIS,			// Collides with nothing but world, static stuff and triggers
 	COLLISION_GROUP_INTERACTIVE_DEBRIS,	// Collides with everything except other interactive debris or debris
 	COLLISION_GROUP_INTERACTIVE,	// Collides with everything except interactive debris or debris
 	COLLISION_GROUP_PLAYER,
@@ -428,6 +419,7 @@ enum StandardCollisionGroups_t
 	LAST_SHARED_COLLISION_GROUP
 };
 
+typedef BuiltInCollisionGroup_t StandardCollisionGroups_t;
 typedef StandardCollisionGroups_t Collision_Group_t;
 
 #include "basetypes.h"

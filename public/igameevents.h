@@ -70,7 +70,7 @@ data field should not be broadcasted to clients, use the type "local".
 
 class KeyValues;
 class CGameEvent;
-struct ScriptVariant_t;
+
 typedef CKV3MemberName GameEventKeySymbol_t;
 
 abstract_class IToolGameEventAPI
@@ -119,14 +119,14 @@ public:
 	virtual void SetFloat( const GameEventKeySymbol_t &keySymbol, float value ) = 0;
 	virtual void SetString( const GameEventKeySymbol_t &keySymbol, const char *value ) = 0;
 	virtual void SetPtr( const GameEventKeySymbol_t &keySymbol, void *value ) = 0;
-
+	
+	virtual void SetEntity(const GameEventKeySymbol_t &keySymbol, CEntityInstance *value) = 0;
 	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityIndex value ) = 0;
-	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityInstance *value ) = 0;
 
-	// Also sets the _pawn key
-	virtual void SetPlayer( const GameEventKeySymbol_t &keySymbol, CPlayerSlot value ) = 0;
 	// Also sets the _pawn key (Expects pawn entity to be passed)
 	virtual void SetPlayer( const GameEventKeySymbol_t &keySymbol, CEntityInstance *pawn ) = 0;
+	// Also sets the _pawn key
+	virtual void SetPlayer( const GameEventKeySymbol_t &keySymbol, CPlayerSlot value ) = 0;
 
 	// Expects pawn entity to be passed, will set the controller entity as a controllerKeyName
 	// and pawn entity as a pawnKeyName.
@@ -134,9 +134,9 @@ public:
 
 	virtual bool HasKey( const GameEventKeySymbol_t &keySymbol ) = 0;
 
-	virtual void CreateVMTable(ScriptVariant_t &Table) = 0;
+	virtual void CreateVMTable( ScriptVariant_t &Table ) = 0;
 
-	virtual KeyValues3 *GetDataKeys() const = 0;
+	virtual KeyValues3* GetDataKeys() const = 0;
 };
 
 #define EVENT_DEBUG_ID_INIT			42

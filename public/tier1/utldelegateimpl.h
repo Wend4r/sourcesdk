@@ -143,8 +143,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-
-namespace detail // we'll hide the implementation details in a nested namespace.
+namespace utldelegate // we'll hide the implementation utldelegates in a nested namespace.
 {	
 
 //		implicit_cast< >
@@ -580,7 +579,7 @@ struct SimplifyMemFunc< sizeof( unknown_inheritance_struct ) >
 
 #endif // MS/Intel hacks
 
-}  // namespace detail
+}  // namespace utldelegate
 
 ////////////////////////////////////////////////////////////////////////////////
 //						Fast Delegates, part 2:
@@ -633,8 +632,8 @@ class CUtlAbstractDelegate
 protected: 
 	// the data is protected, not private, because many
 	// compilers have problems with template friends.
-	typedef void (detail::GenericClass::*GenericMemFuncType)(); // arbitrary MFP.
-	detail::GenericClass *m_pthis;
+	typedef void (utldelegate::GenericClass::*GenericMemFuncType)(); // arbitrary MFP.
+	utldelegate::GenericClass *m_pthis;
 	GenericMemFuncType m_pFunction;
 
 #if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
@@ -726,7 +725,7 @@ public:
 	// It's used in cases where I've cached off a delegate previously
 	void UnsafeThisPointerSlam( void *pThis )
 	{
-		m_pthis = (detail::GenericClass*)( pThis );
+		m_pthis = (utldelegate::GenericClass*)( pThis );
 	}
 
 	const void *UnsafeGetThisPtr() const
@@ -766,7 +765,7 @@ protected:
 // necessary typedefs.
 // This class does everything else.
 
-namespace detail 
+namespace utldelegate 
 {
 
 template < class GenericMemFunc, class StaticFuncPtr, class UnvoidStaticFuncPtr>
@@ -936,7 +935,7 @@ public:
 };
 
 
-} // namespace detail
+} // namespace utldelegate
 
 ////////////////////////////////////////////////////////////////////////////////
 //						Fast Delegates, part 3:
@@ -978,15 +977,15 @@ public:
 // allows "if (dg==0) ..." to compile.
 
 //N=0
-template<class RetType=detail::DefaultVoid>
+template<class RetType=utldelegate::DefaultVoid>
 class FastDelegate0 
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)();
 	typedef RetType (*UnvoidStaticFunctionPtr)();
-	typedef RetType (detail::GenericClass::*GenericMemFn)();
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)();
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1022,23 +1021,23 @@ public:
 	template < class X, class Y >
 	FastDelegate0(Y *pthis, DesiredRetType (X::* function_to_bind)() ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); 
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind); 
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)()) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate0(const Y *pthis, DesiredRetType (X::* function_to_bind)() const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)() const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1104,15 +1103,15 @@ private:	// Invoker for static functions
 };
 
 //N=1
-template<class Param1, class RetType=detail::DefaultVoid>
+template<class Param1, class RetType=utldelegate::DefaultVoid>
 class FastDelegate1 
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1148,23 +1147,23 @@ public:
 	template < class X, class Y >
 	FastDelegate1(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1) ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); 
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind); 
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1)) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate1(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1230,15 +1229,15 @@ private:	// Invoker for static functions
 };
 
 //N=2
-template<class Param1, class Param2, class RetType=detail::DefaultVoid>
+template<class Param1, class Param2, class RetType=utldelegate::DefaultVoid>
 class FastDelegate2 
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1274,23 +1273,23 @@ public:
 	template < class X, class Y >
 	FastDelegate2(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2) ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); 
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind); 
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2)) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate2(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1356,15 +1355,15 @@ private:	// Invoker for static functions
 };
 
 //N=3
-template<class Param1, class Param2, class Param3, class RetType=detail::DefaultVoid>
+template<class Param1, class Param2, class Param3, class RetType=utldelegate::DefaultVoid>
 class FastDelegate3 
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1400,23 +1399,23 @@ public:
 	template < class X, class Y >
 	FastDelegate3(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3) ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); 
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind); 
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3)) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate3(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3) const)
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1482,15 +1481,15 @@ private:	// Invoker for static functions
 };
 
 //N=4
-template<class Param1, class Param2, class Param3, class Param4, class RetType=detail::DefaultVoid>
+template<class Param1, class Param2, class Param3, class Param4, class RetType=utldelegate::DefaultVoid>
 class FastDelegate4 
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1526,23 +1525,23 @@ public:
 	template < class X, class Y >
 	FastDelegate4(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4) ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); 
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind); 
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4)) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate4(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1608,15 +1607,15 @@ private:	// Invoker for static functions
 };
 
 //N=5
-template<class Param1, class Param2, class Param3, class Param4, class Param5, class RetType=detail::DefaultVoid>
+template<class Param1, class Param2, class Param3, class Param4, class Param5, class RetType=utldelegate::DefaultVoid>
 class FastDelegate5
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1652,23 +1651,23 @@ public:
 	template < class X, class Y >
 	FastDelegate5(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5)) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate5(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1734,15 +1733,15 @@ private:	// Invoker for static functions
 };
 
 //N=6
-template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class RetType=detail::DefaultVoid>
+template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class RetType=utldelegate::DefaultVoid>
 class FastDelegate6 
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1778,23 +1777,23 @@ public:
 	template < class X, class Y >
 	FastDelegate6(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind); 
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind); 
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6)) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate6(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6) const) 
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1860,15 +1859,15 @@ private:	// Invoker for static functions
 };
 
 //N=7
-template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class RetType=detail::DefaultVoid>
+template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class RetType=utldelegate::DefaultVoid>
 class FastDelegate7
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -1904,23 +1903,23 @@ public:
 	template < class X, class Y >
 	FastDelegate7(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) )
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7))
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);	
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);	
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate7(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const)
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7) const)
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -1986,15 +1985,15 @@ private:	// Invoker for static functions
 };
 
 //N=8
-template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class RetType=detail::DefaultVoid>
+template<class Param1, class Param2, class Param3, class Param4, class Param5, class Param6, class Param7, class Param8, class RetType=utldelegate::DefaultVoid>
 class FastDelegate8 
 {
 private:
-	typedef typename detail::DefaultVoidToVoid<RetType>::type DesiredRetType;
+	typedef typename utldelegate::DefaultVoidToVoid<RetType>::type DesiredRetType;
 	typedef DesiredRetType (*StaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8);
 	typedef RetType (*UnvoidStaticFunctionPtr)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8);
-	typedef RetType (detail::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8);
-	typedef detail::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
+	typedef RetType (utldelegate::GenericClass::*GenericMemFn)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8);
+	typedef utldelegate::ClosurePtr<GenericMemFn, StaticFunctionPtr, UnvoidStaticFunctionPtr> ClosureType;
 	ClosureType m_Closure;
 public:
 	// Typedefs to aid generic programming
@@ -2030,23 +2029,23 @@ public:
 	template < class X, class Y >
 	FastDelegate8(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) ) 
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);
 	}
 	template < class X, class Y >
 	inline void Bind(Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8))
 	{
-		m_Closure.bindmemfunc(detail::implicit_cast<X*>(pthis), function_to_bind);
+		m_Closure.bindmemfunc(utldelegate::implicit_cast<X*>(pthis), function_to_bind);
 	}
 	// Binding to const member functions.
 	template < class X, class Y >
 	FastDelegate8(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const)
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X*>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X*>(pthis), function_to_bind);	
 	}
 	template < class X, class Y >
 	inline void Bind(const Y *pthis, DesiredRetType (X::* function_to_bind)(Param1 p1, Param2 p2, Param3 p3, Param4 p4, Param5 p5, Param6 p6, Param7 p7, Param8 p8) const)
 	{
-		m_Closure.bindconstmemfunc(detail::implicit_cast<const X *>(pthis), function_to_bind);	
+		m_Closure.bindconstmemfunc(utldelegate::implicit_cast<const X *>(pthis), function_to_bind);	
 	}
 	// Static functions. We convert them into a member function call.
 	// This constructor also provides implicit conversion
@@ -2518,7 +2517,7 @@ public:
 // So, I have to use a macro.
 
 #ifdef FASTDLGT_VC6
-#define FASTDLGT_RETTYPE detail::VoidToDefaultVoid<RetType>::type
+#define FASTDLGT_RETTYPE utldelegate::VoidToDefaultVoid<RetType>::type
 #else 
 #define FASTDLGT_RETTYPE RetType
 #endif
@@ -2695,7 +2694,6 @@ CUtlDelegate< FASTDLGT_RETTYPE ( Param1, Param2, Param3, Param4, Param5, Param6,
 { 
 	return CUtlDelegate< FASTDLGT_RETTYPE ( Param1, Param2, Param3, Param4, Param5, Param6, Param7, Param8 ) >(func);
 }
-
 
 // clean up after ourselves...
 #undef FASTDLGT_RETTYPE

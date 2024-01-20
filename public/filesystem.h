@@ -33,9 +33,6 @@
 class CUtlBuffer;
 class KeyValues;
 class IFileList;
-struct SearchPathStateHandle_t;
-class ILowLevelFileIO;
-class CSteamID;
 
 typedef void * FileHandle_t;
 typedef int FileFindHandle_t;
@@ -435,7 +432,9 @@ public:
 
 // This is the minimal interface that can be implemented to provide access to
 // a named set of files.
-abstract_class IBaseFileSystem : public IAppSystem
+#define BASEFILESYSTEM_INTERFACE_VERSION		"VBaseFileSystem011"
+
+abstract_class IBaseFileSystem
 {
 public:
 	virtual int				Read( void* pOutput, int size, FileHandle_t file ) = 0;
@@ -466,14 +465,13 @@ public:
 	virtual bool			ReadFile( const char *pFileName, const char *pPath, CUtlBuffer &buf, int nMaxBytes = 0, int nStartingByte = 0, FSAllocFunc_t pfnAlloc = NULL ) = 0;
 	virtual bool			WriteFile( const char *pFileName, const char *pPath, CUtlBuffer &buf ) = 0;
 	virtual bool			UnzipFile( const char *pFileName, const char *pPath, const char *pDestination ) = 0;
-	virtual bool			CopyAFile(const char *pFileName, const char *pPath, const char *pDestination, bool bDontOverwrite = false) = 0;
 };
 
 
 //-----------------------------------------------------------------------------
 // Main file system interface
 //-----------------------------------------------------------------------------
-abstract_class IFileSystem : public IBaseFileSystem
+abstract_class IFileSystem : public IAppSystem, public IBaseFileSystem
 {
 public:
 	//--------------------------------------------------------
@@ -504,10 +502,6 @@ public:
 	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
 	virtual bool			RemoveSearchPath( const char *pPath, const char *pathID = 0 ) = 0;
 
-	virtual SearchPathStateHandle_t		*SaveSearchPathState( const char *pszName ) const = 0;
-	virtual void			RestoreSearchPathState( SearchPathStateHandle_t *pState ) = 0;
-	virtual void			DestroySearchPathState( SearchPathStateHandle_t *pState ) = 0;
-
 	// Remove all search paths (including write path?)
 	virtual void			RemoveAllSearchPaths( void ) = 0;
 
@@ -520,8 +514,7 @@ public:
 	// remember it in case you add search paths with this path ID.
 	virtual void			MarkPathIDByRequestOnly( const char *pPathID, bool bRequestOnly ) = 0;
 	
-	virtual bool			IsFileInReadOnlySearchPath ( const char *pPathID, const char *pFileName ) = 0;
-	virtual void			SetSearchPathReadOnly( const char *pPathID, const char *, bool bReadOnly ) = 0;
+	virtual bool			BUnknown() = 0;
 
 	// converts a partial path into a full path
 	virtual const char		*RelativePathToFullPath( const char *pFileName, const char *pPathID, char *pLocalPath, int localPathBufferSize, PathTypeFilter_t pathFilter = FILTER_NONE, PathTypeQuery_t *pPathType = NULL ) = 0;
@@ -531,7 +524,6 @@ public:
 
 	// interface for custom pack files > 4Gb
 	virtual bool			AddPackFile( const char *fullpath, const char *pathID ) = 0;
-	virtual bool			AddPackFile2( const char *fullpath, const char *pathID ) = 0;
 
 	//--------------------------------------------------------
 	// File manipulation operations
@@ -545,8 +537,6 @@ public:
 
 	// create a local directory structure
 	virtual void			CreateDirHierarchy( const char *path, const char *pathID = 0 ) = 0;
-
-	virtual void			unk005() = 0;
 
 	// File I/O and info
 	virtual bool			IsDirectory( const char *pFileName, const char *pathID = 0 ) = 0;
@@ -619,18 +609,87 @@ public:
 	virtual FileNameHandle_t	FindOrAddFileName( char const *pFileName ) = 0;
 	virtual bool				String( const FileNameHandle_t& handle, char *buf, int buflen ) = 0;
 
-	virtual void			Trace_DumpUnclosedFiles() = 0;
+	//--------------------------------------------------------
+	// Asynchronous file operations
+	//--------------------------------------------------------
 
+	//------------------------------------
+	// Global operations
+	//------------------------------------
+			FSAsyncStatus_t	AsyncRead( const FileAsyncRequest_t &request, FSAsyncControl_t *phControl = NULL )	{ return AsyncReadMultiple( &request, 1, phControl ); 	}
+	virtual FSAsyncStatus_t	AsyncReadMultiple( const FileAsyncRequest_t *pRequests, int nRequests,  FSAsyncControl_t *phControls = NULL ) = 0;
+	virtual FSAsyncStatus_t	AsyncAppend(const char *pFileName, const void *pSrc, int nSrcBytes, bool bFreeMemory, FSAsyncControl_t *pControl = NULL ) = 0;
+	virtual FSAsyncStatus_t	AsyncAppendFile(const char *pAppendToFileName, const char *pAppendFromFileName, FSAsyncControl_t *pControl = NULL ) = 0;
+	virtual void			AsyncFinishAll( int iToPriority = 0 ) = 0;
+	virtual void			AsyncFinishAllWrites() = 0;
+	virtual FSAsyncStatus_t	AsyncFlush() = 0;
+	virtual bool			AsyncSuspend() = 0;
+	virtual bool			AsyncResume() = 0;
+
+	//------------------------------------
+	// Functions to hold a file open if planning on doing mutiple reads. Use is optional,
+	// and is taken only as a hint
+	//------------------------------------
+	virtual FSAsyncStatus_t	AsyncBeginRead( const char *pszFile, FSAsyncFile_t *phFile ) = 0;
+	virtual FSAsyncStatus_t	AsyncEndRead( FSAsyncFile_t hFile ) = 0;
+
+	//------------------------------------
+	// Request management
+	//------------------------------------
+	virtual FSAsyncStatus_t	AsyncFinish( FSAsyncControl_t hControl, bool wait = true ) = 0;
+	virtual FSAsyncStatus_t	AsyncGetResult( FSAsyncControl_t hControl, void **ppData, int *pSize ) = 0;
+	virtual FSAsyncStatus_t	AsyncAbort( FSAsyncControl_t hControl ) = 0;
+	virtual FSAsyncStatus_t	AsyncStatus( FSAsyncControl_t hControl ) = 0;
+	// set a new priority for a file already in the queue
+	virtual FSAsyncStatus_t	AsyncSetPriority(FSAsyncControl_t hControl, int newPriority) = 0;
+	virtual void			AsyncAddRef( FSAsyncControl_t hControl ) = 0;
+	virtual void			AsyncRelease( FSAsyncControl_t hControl ) = 0;
+
+	//--------------------------------------------------------
+	// Remote resource management
+	//--------------------------------------------------------
+
+	// starts waiting for resources to be available
+	// returns FILESYSTEM_INVALID_HANDLE if there is nothing to wait on
+	virtual WaitForResourcesHandle_t WaitForResources( const char *resourcelist ) = 0;
+	// get progress on waiting for resources; progress is a float [0, 1], complete is true on the waiting being done
+	// returns false if no progress is available
+	// any calls after complete is true or on an invalid handle will return false, 0.0f, true
+	virtual bool			GetWaitForResourcesProgress( WaitForResourcesHandle_t handle, float *progress /* out */ , bool *complete /* out */ ) = 0;
+	// cancels a progress call
+	virtual void			CancelWaitForResources( WaitForResourcesHandle_t handle ) = 0;
+
+	// hints that a set of files will be loaded in near future
+	// HintResourceNeed() is not to be confused with resource precaching.
+	virtual int				HintResourceNeed( const char *hintlist, int forgetEverything ) = 0;
+	// returns true if a file is on disk
+	virtual bool			IsFileImmediatelyAvailable(const char *pFileName) = 0;
+	
+	// copies file out of pak/bsp/steam cache onto disk (to be accessible by third-party code)
+	virtual void			GetLocalCopy( const char *pFileName ) = 0;
+
+	//--------------------------------------------------------
+	// Debugging operations
+	//--------------------------------------------------------
+
+	// Dump to printf/OutputDebugString the list of files that have not been closed
+	virtual void			PrintOpenedFiles( void ) = 0;
 	virtual void			PrintSearchPaths( void ) = 0;
 
 	// output
 	virtual void			SetWarningFunc( void (*pfnWarning)( const char *fmt, ... ) ) = 0;
 	virtual void			SetWarningLevel( FileWarningLevel_t level ) = 0;
+	virtual void			AddLoggingFunc( void (*pfnLogFunc)( const char *fileName, const char *accessType ) ) = 0;
+	virtual void			RemoveLoggingFunc( FileSystemLoggingFunc_t logFunc ) = 0;
 
 	// Returns the file system statistics retreived by the implementation.  Returns NULL if not supported.
 	virtual const FileSystemStatistics *GetFilesystemStatistics() = 0;
 
-	virtual FileHandle_t	OpenEx( const char *pFileName, const char *pOptions, unsigned flags = 0, const char *pathID = 0 ) = 0;
+	//--------------------------------------------------------
+	// Start of new functions after Lost Coast release (7/05)
+	//--------------------------------------------------------
+
+	virtual FileHandle_t	OpenEx( const char *pFileName, const char *pOptions, unsigned flags = 0, const char *pathID = 0, char **ppszResolvedFilename = NULL ) = 0;
 
 	// Extended version of read provides more context to allow for more optimal reading
 	virtual int				ReadEx( void* pOutput, int sizeDest, int size, FileHandle_t file ) = 0;
@@ -645,6 +704,9 @@ public:
 	virtual IBlockingFileItemList *RetrieveBlockingFileAccessInfo() = 0;
 #endif
 
+	virtual void SetupPreloadData() = 0;
+	virtual void DiscardPreloadData() = 0;
+
 	// Fixme, we could do these via a string embedded into the compiled data, etc...
 	enum KeyValuesPreloadType_t
 	{
@@ -656,8 +718,16 @@ public:
 
 	// If the "PreloadedData" hasn't been purged, then this'll try and instance the KeyValues using the fast path of compiled keyvalues loaded during startup.
 	// Otherwise, it'll just fall through to the regular KeyValues loading routines
-	virtual bool		LoadKeyValues( KeyValues& head, KeyValuesPreloadType_t type, char const *filename, char const *pPathID = 0 ) = 0;
 	virtual KeyValues	*LoadKeyValues( KeyValuesPreloadType_t type, char const *filename, char const *pPathID = 0 ) = 0;
+	virtual bool		LoadKeyValues( KeyValues& head, KeyValuesPreloadType_t type, char const *filename, char const *pPathID = 0 ) = 0;
+
+	virtual FSAsyncStatus_t	AsyncWrite(const char *pFileName, const void *pSrc, int nSrcBytes, bool bFreeMemory, bool bAppend = false, FSAsyncControl_t *pControl = NULL ) = 0;
+	virtual FSAsyncStatus_t	AsyncWriteFile(const char *pFileName, const CUtlBuffer *pSrc, int nSrcBytes, bool bFreeMemory, bool bAppend = false, FSAsyncControl_t *pControl = NULL ) = 0;
+	// Async read functions with memory blame
+	FSAsyncStatus_t			AsyncReadCreditAlloc( const FileAsyncRequest_t &request, const char *pszFile, int line, FSAsyncControl_t *phControl = NULL )	{ return AsyncReadMultipleCreditAlloc( &request, 1, pszFile, line, phControl ); 	}
+	virtual FSAsyncStatus_t	AsyncReadMultipleCreditAlloc( const FileAsyncRequest_t *pRequests, int nRequests, const char *pszFile, int line, FSAsyncControl_t *phControls = NULL ) = 0;
+
+	virtual FSAsyncStatus_t AsyncDirectoryScan( const char* pSearchSpec, bool recurseFolders,  void* pContext, FSAsyncScanAddFunc_t pfnAdd, FSAsyncScanCompleteFunc_t pfnDone, FSAsyncControl_t *pControl = NULL ) = 0;
 
 	virtual bool			GetFileTypeForFullPath( char const *pFullPath, wchar_t *buf, size_t bufSizeInBytes ) = 0;
 
@@ -669,17 +739,23 @@ public:
 	// Optimal IO operations
 	//--------------------------------------------------------
 	virtual bool		GetOptimalIOConstraints( FileHandle_t hFile, unsigned *pOffsetAlign, unsigned *pSizeAlign, unsigned *pBufferAlign ) = 0;
-	inline unsigned		GetOptimalReadSize(FileHandle_t hFile, unsigned nLogicalSize);
+	inline unsigned		GetOptimalReadSize( FileHandle_t hFile, unsigned nLogicalSize );
 	virtual void		*AllocOptimalReadBuffer( FileHandle_t hFile, unsigned nSize = 0, unsigned nOffset = 0 ) = 0;
 	virtual void		FreeOptimalReadBuffer( void * ) = 0;
 
 	//--------------------------------------------------------
 	//
 	//--------------------------------------------------------
+	virtual void		BeginMapAccess() = 0;
+	virtual void		EndMapAccess() = 0;
+
+	// Returns true on success, otherwise false if it can't be resolved
+	virtual bool		FullPathToRelativePathEx( const char *pFullpath, const char *pPathId, char *pRelative, int maxlen ) = 0;
+
 	virtual int			GetPathIndex( const FileNameHandle_t &handle ) = 0;
 	virtual long		GetPathTime( const char *pPath, const char *pPathID ) = 0;
 
-	// virtual DVDMode_t	GetDVDMode() = 0;
+	virtual DVDMode_t	GetDVDMode() = 0;
 
 	//--------------------------------------------------------
 	// Whitelisting for pure servers.
@@ -687,7 +763,7 @@ public:
 
 	// This should be called ONCE at startup. Multiplayer games (gameinfo.txt does not contain singleplayer_only)
 	// want to enable this so sv_pure works.
-	virtual void			EnableWhitelistFileTracking( bool bEnable ) = 0;
+	virtual void			EnableWhitelistFileTracking( bool bEnable, bool bCacheAllVPKHashes, bool bRecalculateAndCheckHashes ) = 0;
 
 	// This is called when the client connects to a server using a pure_server_whitelist.txt file.
 	//
@@ -718,7 +794,7 @@ public:
 	// As the server loads whitelists when it transitions maps, it calls this to calculate CRCs for any files marked
 	// with check_crc.   Then it calls CheckCachedFileCRC later when it gets client requests to verify CRCs.
 	virtual void			CacheFileCRCs( const char *pPathname, ECacheCRCType eType, IFileList *pFilter ) = 0;
-	virtual EFileCRCStatus	CheckCachedFileCRC( const char *pPathID, const char *pRelativeFilename, CRC32_t *pCRC ) = 0;
+	virtual EFileCRCStatus	CheckCachedFileHash( const char *pPathID, const char *pRelativeFilename, int nFileFraction, FileHash_t *pFileHash ) = 0;
 
 	// Fills in the list of files that have been loaded off disk and have not been verified.
 	// Returns the number of files filled in (between 0 and nMaxFiles).
@@ -726,7 +802,7 @@ public:
 	// This also removes any files it's returning from the unverified CRC list, so they won't be
 	// returned from here again.
 	// The client sends batches of these to the server to verify.
-	virtual int				GetUnverifiedCRCFiles( CUnverifiedCRCFile *pFiles, int nMaxFiles ) = 0;
+	virtual int				GetUnverifiedCRCFiles( CUnverifiedFileHash *pFiles, int nMaxFiles ) = 0;
 	
 	// Control debug message output.
 	// Pass a combination of WHITELIST_SPEW_ flags.
@@ -734,56 +810,47 @@ public:
 	virtual void			SetWhitelistSpewFlags( int flags ) = 0;
 
 	// Installs a callback used to display a dirty disk dialog
-	// virtual void			InstallDirtyDiskReportFunc( FSDirtyDiskReportFunc_t func ) = 0;
+	virtual void			InstallDirtyDiskReportFunc( FSDirtyDiskReportFunc_t func ) = 0;
 
-	// virtual bool			IsLaunchedFromXboxHDD() = 0;
-	// virtual bool			IsInstalledToXboxHDDCache() = 0;
-	// virtual bool			IsDVDHosted() = 0;
-	// virtual bool			IsInstallAllowed() = 0;
+	virtual bool			IsLaunchedFromXboxHDD() = 0;
+	virtual bool			IsInstalledToXboxHDDCache() = 0;
+	virtual bool			IsDVDHosted() = 0;
+	virtual bool			IsInstallAllowed() = 0;
 
 	virtual int				GetSearchPathID( char *pPath, int nMaxLen ) = 0;
+	virtual bool			FixupSearchPathsAfterInstall() = 0;
+	
+	virtual FSDirtyDiskReportFunc_t		GetDirtyDiskReportFunc() = 0;
 
-	// virtual bool			FixupSearchPathsAfterInstall() = 0;
-	// virtual FSDirtyDiskReportFunc_t		GetDirtyDiskReportFunc() = 0;
+	virtual void AddVPKFile( char const *pszName, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
+	virtual void RemoveVPKFile( char const *pszName ) = 0;
+	virtual void GetVPKFileNames( CUtlVector<CUtlString> &destVector ) = 0;
+	virtual void			RemoveAllMapSearchPaths() = 0;
+	virtual void			SyncDvdDevCache() = 0;
 
-	virtual void AddVPKFile( const char *pszName, const char *, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
-	virtual void RemoveVPKFile( const char *pszName, const char * ) = 0;
-	virtual bool IsVPKFileLoaded( const char *pszName ) = 0;
-	virtual void EnableAutoVPKFileLoading( bool ) = 0;
-	virtual void GetAutoVPKFileLoading( void ) = 0;
+	virtual bool			GetStringFromKVPool( CRC32_t poolKey, unsigned int key, char *pOutBuff, int buflen ) = 0;
 
-	virtual void unk009() = 0;
-	virtual void unk010() = 0;
-	virtual void unk011() = 0;
-	virtual void unk012() = 0;
-
-	/*
-	//These doesn't particularly match the up to date binary, but leaving a note that they were here before!
-
-	virtual void AddUGCVPKFile( uint64 ugcId, const char *, SearchPathAdd_t ) = 0;
-	virtual void RemoveUGCVPKFile( uint64 ugcId, const char * ) = 0;
-	virtual bool IsUGCVPKFileLoaded( uint64 ugcId ) = 0;
-	*/
-
-	virtual void ParseUGCHandleFromFilename( const char *, char ** )const = 0;
-	virtual void CreateFilenameForUGCFile( char *, int, uint64 ugcId, const char *, char ) const = 0;
-	virtual void OpenUGCFile( uint64 ugcId ) = 0;
+	virtual bool			DiscoverDLC( int iController ) = 0;
+	virtual int				IsAnyDLCPresent( bool *pbDLCSearchPathMounted = NULL ) = 0;
+	virtual bool			GetAnyDLCInfo( int iDLC, unsigned int *pLicenseMask, wchar_t *pTitleBuff, int nOutTitleSize ) = 0;
+	virtual int				IsAnyCorruptDLC() = 0;
+	virtual bool			GetAnyCorruptDLCInfo( int iCorruptDLC, wchar_t *pTitleBuff, int nOutTitleSize ) = 0;
+	virtual bool			AddDLCSearchPaths() = 0;
+	virtual bool			IsSpecificDLCPresent( unsigned int nDLCPackage ) = 0;
 
 	// call this to look for CPU-hogs during loading processes. When you set this, a breakpoint
 	// will be issued whenever the indicated # of seconds go by without an i/o request.  Passing
 	// 0.0 will turn off the functionality.
 	virtual void            SetIODelayAlarm( float flThreshhold ) = 0;
 	
-	virtual bool			DeleteDirectory( const char *pFileName, const char *pathID = 0 ) = 0;
-	virtual bool			DeleteDirectoryAndContents_R( const char *pFileName, const char *pathID, bool ) = 0;
+	virtual bool			AddXLSPUpdateSearchPath( const void *pData, int nSize ) = 0;
 	
-	virtual bool			IsPathInvalidForFilesystem( const char *pFileName ) = 0;
+	virtual IIoStats		*GetIoStats() = 0;
 	
-	virtual void			GetAvailableDrives( CUtlVector<CUtlString> &drives ) = 0;
-
-	virtual void			GetSearchPathsForPathID( const char*, GetSearchPathTypes_t, CUtlVector<CUtlString> & ) = 0;
-
-	virtual void			MarkContentCorrupt( bool bMissingFilesOnly, const char* pFile ) = 0;};
+	virtual void			CacheAllVPKFileHashes( bool bCacheAllVPKHashes, bool bRecalculateAndCheckHashes ) = 0;
+	virtual bool			CheckVPKFileHash( int PackFileID, int nPackFileNumber, int nFileFraction, MD5Value_t &md5Value ) = 0;
+	virtual void			GetVPKFileStatisticsKV( KeyValues *pKV ) = 0;
+};
 
 //-----------------------------------------------------------------------------
 
@@ -831,7 +898,7 @@ inline unsigned IFileSystem::GetOptimalReadSize( FileHandle_t hFile, unsigned nL
 
 //-----------------------------------------------------------------------------
 
-// We include this here so it'll catch compile errors in VMPI early.
+// // We include this here so it'll catch compile errors in VMPI early.
 // #include "filesystem_passthru.h"
 
 //-----------------------------------------------------------------------------
