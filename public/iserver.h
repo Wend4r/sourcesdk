@@ -14,6 +14,7 @@
 #include "edict.h"
 #include "tier0/checksum_crc.h"
 #include "engine/IEngineService.h"
+#include "resourcefile/resourcetype.h"
 
 class IGameSpawnGroupMgr;
 struct EventServerAdvanceTick_t;
@@ -27,13 +28,6 @@ class CServerChangelevelState;
 class ISource2WorldSession;
 class INetworkGameClient;
 class GameSessionConfiguration_t;
-
-typedef int HGameResourceManifest;
-
-enum ESpawnGroupUnloadOption
-{
-
-};
 
 abstract_class INetworkGameServer : public IConnectionlessPacketHandler
 {
@@ -58,7 +52,7 @@ public:
 	virtual void	ServerSimulate( const EventServerSimulate_t & ) = 0;
 	virtual void	ServerPostSimulate( const EventServerPostSimulate_t & ) = 0;
 	virtual void	LoadSpawnGroup( const SpawnGroupDesc_t & ) = 0;
-	virtual void	AsyncUnloadSpawnGroup( unsigned int, ESpawnGroupUnloadOption ) = 0;
+	virtual void	AsyncUnloadSpawnGroup( unsigned int, /* ESpawnGroupUnloadOption */ int ) = 0;
 	virtual void	PrintSpawnGroupStatus( void ) const = 0;
 	virtual float	GetTimescale( void ) const = 0; // returns the game time scale (multiplied in conjunction with host_timescale)
 	virtual bool	IsSaveRestoreAllowed( void ) const = 0;
@@ -76,7 +70,7 @@ public:
 	virtual void	SynchronouslySpawnGroup( SpawnGroupHandle_t ) = 0;
 	virtual void	SetServerState( server_state_t ) = 0;
 	virtual void	SpawnServer( const char * ) = 0;
-	virtual void	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
+	virtual int		GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t, const char * ) = 0;
 	virtual CUtlVector<INetworkGameClient *> *StartChangeLevel( const char *, const char *pszLandmark, void * ) = 0;
 	virtual void	FinishChangeLevel( CServerChangelevelState * ) = 0;

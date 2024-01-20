@@ -788,6 +788,7 @@ private:
 		bool MoveToHeap();
 
 	private:
+		/*
 		//-----------------------------------------------------------------------------
 		// Purpose: Needed facts for string class to work
 		//-----------------------------------------------------------------------------
@@ -808,6 +809,7 @@ private:
 			// but this code does take this dependency.
 			COMPILE_TIME_ASSERT(0 == '\0');
 		}
+		*/
 	};
 
 private: // data
