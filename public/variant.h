@@ -5,6 +5,7 @@
 #pragma once
 #endif
 
+#include "string_t.h"
 #include "datamap.h"
 #include "vector.h"
 #include "vector2d.h"
@@ -14,6 +15,8 @@
 #include "entityhandle.h"
 #include "tier1/bufferstring.h"
 #include "tier1/utlscratchmemory.h"
+
+FORWARD_DECLARE_HANDLE( HSCRIPT );
 
 // Non-implemented classes/structs
 struct ResourceBindingBase_t;
@@ -59,7 +62,7 @@ private:
 	static CUtlScratchMemoryPool *sm_pMemoryPool;
 };
 
-inline const char *VariantFieldTypeName(int16 eType)
+inline const char *VariantFieldTypeName(fieldtype_t eType)
 {
 	switch(eType)
 	{
@@ -132,7 +135,7 @@ DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_EHANDLE, CEntityHandle);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_RESOURCE, ResourceHandle_t);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_UTLSTRINGTOKEN, CUtlStringToken);
 
-#define VariantDeduceType( T ) VariantTypeDeducer<T>::FIELD_TYPE
+#define VariantDeduceType( T ) (fieldtype_t)VariantTypeDeducer<T>::FIELD_TYPE
 #undef DECLARE_DEDUCE_VARIANT_FIELDTYPE
 
 template <typename T>
@@ -796,7 +799,7 @@ public:
 	template <typename T>
 	bool AssignTo(T *pDest)
 	{
-		int16 destType = VariantDeduceType(T);
+		fieldtype_t destType = VariantDeduceType(T);
 		if(destType == FIELD_VOID)
 		{
 			return false;
@@ -969,8 +972,7 @@ public:
 		ResourceHandle_t m_hResource;
 	};
 
-	// fieldtype_t
-	int16 m_type;
+	fieldtype_t m_type;
 
 	// CVFlags_t flags
 	uint16 m_flags;

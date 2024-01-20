@@ -652,18 +652,6 @@ private:
 #endif
 };
 
-class CThreadEmptyMutex
-{
-public:
-	CThreadEmptyMutex( const char* pDebugName ) { }
-	~CThreadEmptyMutex() { }
-
-	inline void Lock( const char *pFileName, int nLine ) { }
-	inline void Lock( const char *pFileName, int nLine ) const { }
-	inline void Unlock( const char *pFileName, int nLine ) { }
-	inline void Unlock( const char *pFileName, int nLine ) const { }
-};
-
 //-----------------------------------------------------------------------------
 //
 // An alternative mutex that is useful for cases when thread contention is 
@@ -799,11 +787,13 @@ typedef CThreadMutex CThreadFastMutex;
 class CThreadNullMutex
 {
 public:
-	static void Lock()				{}
-	static void Unlock()			{}
+	CThreadNullMutex( const char* pDebugName ) {}
 
-	static bool TryLock()			{ return true; }
-	static bool AssertOwnedByCurrentThread() { return true; }
+	static void Lock( const char *pFileName, int nLine )	{}
+	static void Unlock( const char *pFileName, int nLine )	{}
+
+	static bool TryLock( const char *pFileName, int nLine ) { return true; }
+	static bool AssertOwnedByCurrentThread() 				{ return true; }
 	static void SetTrace( bool b )	{}
 
 	static uint32 GetOwnerId() 		{ return 0;	}
@@ -880,8 +870,8 @@ private:
 	MUTEX_TYPE &m_lock;
 
 	// Disallow copying
-	CAutoLockT<MUTEX_TYPE>( const CAutoLockT<MUTEX_TYPE> & );
-	CAutoLockT<MUTEX_TYPE> &operator=( const CAutoLockT<MUTEX_TYPE> & );
+	CAutoLockT( const CAutoLockT<MUTEX_TYPE> & );
+	CAutoLockT &operator=( const CAutoLockT<MUTEX_TYPE> & );
 };
 
 typedef CAutoLockT<CThreadMutex> CAutoLock;
