@@ -22,6 +22,7 @@
 #include "tier1/generichash.h"
 #include "tier1/keyvalues3.h"
 #include "entity2/entityinstance.h"
+#include "vscript/ivscript.h"
 
 class CMsgSource1LegacyGameEvent;
 class CPlayerSlot;

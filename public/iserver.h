@@ -23,6 +23,7 @@ struct EventServerProcessNetworking_t;
 struct EventServerSimulate_t;
 struct EventServerPostSimulate_t;
 struct server_state_t;
+struct SpawnGroupDesc_t;
 class IPrerequisite;
 class CServerChangelevelState;
 class ISource2WorldSession;
