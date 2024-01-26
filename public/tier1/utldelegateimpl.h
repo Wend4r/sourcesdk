@@ -517,7 +517,7 @@ struct SimplifyMemFunc<SINGLE_MEMFUNCPTR_SIZE + 3*sizeof(int) >
 // is internally defined as:
 struct unknown_inheritance_struct
 {
-	typedef void (detail::GenericClass::*FuncAddress_t)(); // arbitrary MFP.
+	typedef void (*FuncAddress_t)(); // arbitrary MFP.
 	FuncAddress_t funcaddress; // points to the actual member function
 	int delta;		// #bytes to be added to the 'this' pointer
 	int vtordisp;		// #bytes to add to 'this' to find the vtable

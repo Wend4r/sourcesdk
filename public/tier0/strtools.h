@@ -26,6 +26,8 @@
 #include <wctype.h>
 #endif
 
+#include <stdarg.h>
+
 // Forward declaration
 class CBufferString;
 class CUtlBuffer;
