@@ -195,7 +195,7 @@ inline bool ThreadInterlockedAssignIf( int32 volatile *p, int32 value, int32 com
 	return __sync_bool_compare_and_swap( p, comperand, value );
 }
 
-#elif ( defined( COMPILER_MSVC32 ) && ( _MSC_VER >= 1310 ) )
+#elif ( defined( COMPILER_MSVC ) && ( _MSC_VER >= 1310 ) )
 // windows 32 implemnetation using compiler intrinsics
 #define USE_INTRINSIC_INTERLOCKED
 
