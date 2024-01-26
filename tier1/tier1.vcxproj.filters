@@ -104,9 +104,6 @@
     <ClInclude Include="..\public\tier1\utlblockmemory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\public\tier1\utlbufferutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\public\tier1\utlcommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -176,6 +173,9 @@
     <ClInclude Include="..\common\xbox\xboxstubs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\public\tier1\CommandBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="appinstance.cpp">
@@ -197,9 +197,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="generichash.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="interface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="kvpacker.cpp">

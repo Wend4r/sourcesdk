@@ -230,7 +230,6 @@
     <ClCompile Include="convar.cpp" />
     <ClCompile Include="datamanager.cpp" />
     <ClCompile Include="generichash.cpp" />
-    <ClCompile Include="interface.cpp" />
     <ClCompile Include="kvpacker.cpp" />
     <ClCompile Include="lzmaDecoder.cpp" />
     <ClCompile Include="lzss.cpp" />
