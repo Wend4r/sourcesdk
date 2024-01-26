@@ -227,10 +227,10 @@ public:
 	DLL_CLASS_IMPORT bool			IsBigEndian( void );
 
 	// Resets the buffer; but doesn't free memory
-	DLL_CLASS_IMPORT void			Clear();
+	void			Clear();
 
 	// Clears out the buffer; frees memory
-	DLL_CLASS_IMPORT void			Purge();
+	void			Purge();
 
 	// Dump the buffer to stdout
 	DLL_CLASS_IMPORT void			Spew( );
