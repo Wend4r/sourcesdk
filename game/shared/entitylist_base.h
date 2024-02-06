@@ -141,7 +141,7 @@ inline CBaseHandle CBaseEntityList::GetNetworkableHandle( int iEntity ) const
 
 inline IHandleEntity* CBaseEntityList::LookupEntity( const CBaseHandle &handle ) const
 {
-	if ( handle.m_Index == INVALID_EHANDLE_INDEX )
+	if ( handle.ToInt() == INVALID_EHANDLE_INDEX )
 		return NULL;
 
 	// You can use this to determine when something is trying to resolve
