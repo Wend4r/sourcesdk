@@ -32,7 +32,6 @@ class CKeyValues3Cluster;
 template < class T > class CKeyValues3ClusterT;
 typedef CKeyValues3ClusterT< CKeyValues3Array > CKeyValues3ArrayCluster;
 typedef CKeyValues3ClusterT< CKeyValues3Table > CKeyValues3TableCluster;
-
 typedef int32 KV3MemberId_t;
 #define KV3_INVALID_MEMBER ((KV3MemberId_t)-1)
 

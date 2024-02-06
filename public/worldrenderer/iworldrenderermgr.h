@@ -17,7 +17,7 @@ class CWorldVisibility;
 class IWorldLoadUnloadCallback;
 class IWorldVPKOverrideManager;
 
-class IWorldRendererMgr : public IAppSystem
+abstract_class IWorldRendererMgr : public IAppSystem
 {
 public:
 	virtual IWorldReference *CreateWorld( CreateWorldInfo_t &info ) = 0;

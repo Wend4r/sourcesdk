@@ -53,7 +53,7 @@ public:
 	virtual void	ServerSimulate( const EventServerSimulate_t & ) = 0;
 	virtual void	ServerPostSimulate( const EventServerPostSimulate_t & ) = 0;
 	virtual void	LoadSpawnGroup( const SpawnGroupDesc_t & ) = 0;
-	virtual void	AsyncUnloadSpawnGroup( unsigned int, /* ESpawnGroupUnloadOption */ int ) = 0;
+	virtual void	AsyncUnloadSpawnGroup( unsigned int, /*ESpawnGroupUnloadOption*/ int ) = 0;
 	virtual void	PrintSpawnGroupStatus( void ) const = 0;
 	virtual float	GetTimescale( void ) const = 0; // returns the game time scale (multiplied in conjunction with host_timescale)
 	virtual bool	IsSaveRestoreAllowed( void ) const = 0;
@@ -70,7 +70,7 @@ public:
 	virtual void	SynchronouslySpawnGroup( SpawnGroupHandle_t ) = 0;
 	virtual void	SetServerState( server_state_t ) = 0;
 	virtual void	SpawnServer( const char * ) = 0;
-	virtual int		GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
+	virtual int 	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t, const char * ) = 0;
 	virtual CUtlVector<INetworkGameClient *> *StartChangeLevel( const char *, const char *pszLandmark, void * ) = 0;
 	virtual void	FinishChangeLevel( CServerChangelevelState * ) = 0;
