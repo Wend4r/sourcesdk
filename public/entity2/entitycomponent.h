@@ -6,8 +6,9 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/utlstring.h"
+#include "tier0/utlstringtoken.h"
 #include "tier1/utlsymbollarge.h"
-#include "tier1/utlstring.h"
 #include "datamap.h"
 
 class CEntityIdentity;

@@ -47,9 +47,6 @@ template <class T, class I = int, int COMPARE_TYPE = k_eDictCompareTypeCaseInsen
 class CUtlDict
 {
 public:
-	typedef const char* KeyType_t;
-	typedef T ElemType_t;
-
 	// constructor, destructor
 	// Left at growSize = 0, the memory will first allocate 1 element and double in size
 	// at each increment.
@@ -65,16 +62,13 @@ public:
 	const T&   operator[]( I i ) const;
 
 	// gets element names
-	//char	   *GetElementName( I i );
+	char	   *GetElementName( I i );
 	char const *GetElementName( I i ) const;
 
 	void		SetElementName( I i, char const *pName );
 
 	// Number of elements
 	unsigned int Count() const;
-
-	// Number of allocated slots
-	I MaxElement() const;
 	
 	// Checks if a node is valid and in the tree
 	bool  IsValidIndex( I i ) const;
@@ -88,7 +82,6 @@ public:
 	
 	// Find method
 	I  Find( const char *pName ) const;
-	bool HasElement( const char *pName ) const;
 	
 	// Remove methods
 	void	RemoveAt( I i );
@@ -154,8 +147,8 @@ inline const T& CUtlDict<T, I, COMPARE_TYPE>::Element( I i ) const
 template <class T, class I, int COMPARE_TYPE>
 inline char *CUtlDict<T, I, COMPARE_TYPE>::GetElementName( I i )
 {
-	return const_cast< char* >( m_Elements.Key( i ) );
-}*/
+	return (char *)m_Elements.Key( i );
+}
 
 template <class T, class I, int COMPARE_TYPE>
 inline char const *CUtlDict<T, I, COMPARE_TYPE>::GetElementName( I i ) const
@@ -182,7 +175,7 @@ inline void CUtlDict<T, I, COMPARE_TYPE>::SetElementName( I i, char const *pName
 	// TODO:  This makes a copy of the old element
 	// TODO:  This relies on the rb tree putting the most recently
 	//  removed element at the head of the insert list
-	free( const_cast< char* >( m_Elements.Key( i ) ) );
+	free( (void *)m_Elements.Key( i ) );
 	m_Elements.Reinsert( strdup( pName ), i );
 }
 
@@ -195,14 +188,6 @@ inline unsigned int CUtlDict<T, I, COMPARE_TYPE>::Count() const
 	return m_Elements.Count(); 
 }
 
-//-----------------------------------------------------------------------------
-// Number of allocated slots
-//-----------------------------------------------------------------------------
-template <class T, class I>
-inline I CUtlDict<T, I>::MaxElement() const
-{
-	return m_Elements.MaxElement();
-}
 	
 //-----------------------------------------------------------------------------
 // Checks if a node is valid and in the tree
@@ -230,7 +215,7 @@ inline I CUtlDict<T, I, COMPARE_TYPE>::InvalidIndex()
 template <class T, class I, int COMPARE_TYPE>
 void CUtlDict<T, I, COMPARE_TYPE>::RemoveAt(I elem) 
 {
-	free( const_cast< char* >( m_Elements.Key( elem ) ) );
+	free( (void *)m_Elements.Key( elem ) );
 	m_Elements.RemoveAt(elem);
 }
 
@@ -258,8 +243,7 @@ void CUtlDict<T, I, COMPARE_TYPE>::RemoveAll()
 	typename DictElementMap_t::IndexType_t index = m_Elements.FirstInorder();
 	while ( index != m_Elements.InvalidIndex() )
 	{
-		const char* p = m_Elements.Key( index );
-		free( const_cast< char* >( p ) );
+		free( (void *)m_Elements.Key( index ) );
 		index = m_Elements.NextInorder( index );
 	}
 
@@ -280,8 +264,7 @@ void CUtlDict<T, I, COMPARE_TYPE>::PurgeAndDeleteElements()
 	I index = m_Elements.FirstInorder();
 	while ( index != m_Elements.InvalidIndex() )
 	{
-		const char* p = m_Elements.Key( index );
-		free( const_cast< char* >( p ) );
+		free( (void *)m_Elements.Key( index ) );
 		delete m_Elements[index];
 		index = m_Elements.NextInorder( index );
 	}
@@ -319,18 +302,6 @@ I CUtlDict<T, I, COMPARE_TYPE>::Find( const char *pName ) const
 		return m_Elements.Find( pName );
 	else
 		return InvalidIndex();
-}
-
-//-----------------------------------------------------------------------------
-// returns true if we already have this node
-//-----------------------------------------------------------------------------
-template <class T, class I> 
-bool CUtlDict<T, I>::HasElement( const char *pName ) const
-{
-	if ( pName )
-		return m_Elements.IsValidIndex( m_Elements.Find( pName ) );
-	else
-		return false;
 }
 
 
