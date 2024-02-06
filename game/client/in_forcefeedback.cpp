@@ -4,7 +4,7 @@
 //
 //=============================================================================
 #include <windows.h>
-#include "basehandle.h"
+#include "entityhandle.h"
 #include "UtlVector.h"
 #include "usercmd.h"
 #include "cdll_client_int.h"

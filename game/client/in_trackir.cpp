@@ -21,7 +21,7 @@
 #include "vphysics_interface.h"
 #include <icvar.h>
 #include <baseentity_shared.h>
-#include "basehandle.h"
+#include "entityhandle.h"
 #include "ehandle.h"
 #include "utlvector.h"
 #include "cdll_client_int.h"

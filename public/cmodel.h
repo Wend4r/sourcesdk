@@ -15,7 +15,7 @@
 
 #include "trace.h"
 #include "tier0/dbg.h"
-#include "basehandle.h"
+#include "entityhandle.h"
 
 struct edict_t;
 struct model_t;

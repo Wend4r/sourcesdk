@@ -13,7 +13,7 @@
 #include "tier0/interface.h"
 #include "tier1/utlvector.h"
 #include "color.h"
-#include "basehandle.h"
+#include "entityhandle.h"
 #include "iclientrenderable.h"
 #include "engine/ishadowmgr.h"
 #include "engine/ivmodelinfo.h"

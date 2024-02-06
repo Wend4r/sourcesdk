@@ -13,7 +13,7 @@
 
 #include "convar.h"
 #include "ispsharedmemory.h"
-#include "basehandle.h"
+#include "entityhandle.h"
 #include "isaverestore.h"
 
 

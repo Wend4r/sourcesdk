@@ -18,7 +18,7 @@
 
 
 #include "const.h"
-#include "basehandle.h"
+#include "entityhandle.h"
 #include "entitylist_base.h"
 
 

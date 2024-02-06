@@ -16,7 +16,7 @@
 #include "convar.h"
 
 #if defined( CLIENT_DLL ) || defined( GAME_DLL )
-	#include "basehandle.h"
+	#include "entityhandle.h"
 #endif
 
 #ifdef _MSC_VER

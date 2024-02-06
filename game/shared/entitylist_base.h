@@ -12,7 +12,7 @@
 
 
 #include "const.h"
-#include "basehandle.h"
+#include "entityhandle.h"
 #include "utllinkedlist.h"
 #include "ihandleentity.h"
 

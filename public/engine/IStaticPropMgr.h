@@ -14,7 +14,7 @@
 #include "interface.h"
 #include "mathlib/vector.h"
 #include "utlvector.h"
-#include "basehandle.h"
+#include "entityhandle.h"
 
 
 //-----------------------------------------------------------------------------

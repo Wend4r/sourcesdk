@@ -12,7 +12,7 @@
 #pragma once
 #endif
 
-#include "basehandle.h"
+#include "entityhandle.h"
 #include "utlvector.h" //need CUtlVector for IEngineTrace::GetBrushesIn*()
 #include "mathlib/vector4d.h"
 #include "bspflags.h"
