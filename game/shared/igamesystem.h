@@ -255,6 +255,8 @@ public:
 	GS_EVENT_IMPL( ClientPreEntityThink );
 
 	virtual void unk_1271( const void *const msg ) = 0;
+	virtual void unk_1272( const void *const msg ) = 0;
+	virtual void unk_1273( const void *const msg ) = 0;
 
 	// Gets called each frame
 	GS_EVENT_IMPL( ClientUpdate );
@@ -342,6 +344,8 @@ public:
 	GS_EVENT( ClientPreEntityThink ) {}
 
 	virtual void unk_1271( const void *const msg ) {}
+	virtual void unk_1272( const void *const msg ) {}
+	virtual void unk_1273( const void *const msg ) {}
 
 	// Gets called each frame
 	GS_EVENT( ClientUpdate ) {}

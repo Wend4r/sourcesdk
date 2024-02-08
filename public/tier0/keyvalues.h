@@ -102,6 +102,12 @@ public:
 		TYPE_NUMTYPES,
 	};
 
+protected:
+	// AMNOTE: Valve scrapped the public-facing version of these,
+	// so we have to expose as protected for the scaffolds below in KeyValues.
+	char const *Internal_GetString( const char *defaultValue, char *szBuf, size_t maxlen );
+	const wchar_t *Internal_GetWString( const wchar_t *defaultValue, wchar_t *szBuf, size_t maxlen );
+
 private:
 	DLL_CLASS_IMPORT IKeyValuesSystem *KVSystem() const;
 
@@ -292,7 +298,7 @@ public:
 	// Set bCreate to true to create the key if it doesn't already exist (which ensures a valid pointer will be returned)
 	DLL_CLASS_IMPORT KeyValues *FindKey( HKeySymbol keySymbol ) const;
 	DLL_CLASS_IMPORT const KeyValues *FindKey( const char *keyName ) const;
-	DLL_CLASS_IMPORT KeyValues *FindKey( const char *keyName, bool bCreate );
+	DLL_CLASS_IMPORT KeyValues *FindKey( const char *keyName, bool bCreate = false );
 	DLL_CLASS_IMPORT KeyValues *FindKeyAndParent( const char *keyName, KeyValues **pParent, bool );
 	DLL_CLASS_IMPORT bool FindAndDeleteSubKey( const char *keyName );
 
