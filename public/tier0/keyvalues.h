@@ -84,6 +84,8 @@ private:
 
 class CKeyValues_Data
 {
+	friend class KeyValues;
+
 public:
 	// Data type
 	enum types_t
@@ -317,18 +319,17 @@ public:
 	// NOTE: GetFirstSubKey/GetNextKey will iterate keys AND values. Use the functions 
 	// below if you want to iterate over just the keys or just the values.
 	//
-	DLL_CLASS_IMPORT KeyValues *GetFirstSubKey() const;	// returns the first subkey in the list
-	DLL_CLASS_IMPORT KeyValues *FindLastSubKey() const;
-	DLL_CLASS_IMPORT KeyValues *GetNextKey() const;		// returns the next subkey
+	DLL_CLASS_IMPORT KeyValues *GetFirstSubKey();	// returns the first subkey in the list
+	DLL_CLASS_IMPORT KeyValues *FindLastSubKey();	// returns the LAST subkey in the list.  This requires a linked list iteration to find the key.  Returns NULL if we don't have any children
+	DLL_CLASS_IMPORT KeyValues *GetNextKey();		// returns the next subkey
 	DLL_CLASS_IMPORT void SetNextKey( KeyValues *pDat );
 
-	DLL_CLASS_IMPORT KeyValues *FindLastSubKey();	// returns the LAST subkey in the list.  This requires a linked list iteration to find the key.  Returns NULL if we don't have any children
 
-	bool BInteriorNode() const
+	bool BInteriorNode()
 	{
 		return GetFirstSubKey() != NULL;
 	}
-	bool BLeafNode() const
+	bool BLeafNode()
 	{
 		return GetFirstSubKey() == NULL;
 	}
@@ -345,33 +346,22 @@ public:
 	//     {
 	//         Msg( "Int value: %d\n", pValue->GetInt() );  // Assuming pValue->GetDataType() == TYPE_INT...
 	//     }
-	DLL_CLASS_IMPORT KeyValues* GetFirstTrueSubKey() const;
-	DLL_CLASS_IMPORT KeyValues* GetNextTrueSubKey() const;
+	DLL_CLASS_IMPORT KeyValues* GetFirstTrueSubKey();
+	DLL_CLASS_IMPORT KeyValues* GetNextTrueSubKey();
 
-	DLL_CLASS_IMPORT KeyValues* GetFirstValue() const;	// When you get a value back, you can use GetX and pass in NULL to get the value.
-	DLL_CLASS_IMPORT KeyValues* GetNextValue() const;
+	DLL_CLASS_IMPORT KeyValues* GetFirstValue();	// When you get a value back, you can use GetX and pass in NULL to get the value.
+	DLL_CLASS_IMPORT KeyValues* GetNextValue();
 
 	// Data access
 	DLL_CLASS_IMPORT int GetInt( const char *keyName = NULL, int defaultValue = 0 ) const;
 	DLL_CLASS_IMPORT uint64 GetUint64( const char *keyName = NULL, uint64 defaultValue = 0 ) const;
 	DLL_CLASS_IMPORT float GetFloat( const char *keyName = NULL, float defaultValue = 0.0f ) const;
-	DLL_CLASS_IMPORT const char *GetString( const char *keyName = NULL, const char *defaultValue = "", char *pszOut = NULL, size_t maxlen = 0 );
-	DLL_CLASS_IMPORT const wchar_t *GetWString( const char *keyName = NULL, const wchar_t *defaultValue = L"", char *pszOut = NULL, size_t maxlen = 0 );
+	const char *GetString( const char *keyName = NULL, const char *defaultValue = "", char *pszOut = NULL, size_t maxlen = 0 );
+	const wchar_t *GetWString( const char *keyName = NULL, const wchar_t *defaultValue = L"", wchar_t *pszOut = NULL, size_t maxlen = 0 );
 	DLL_CLASS_IMPORT void *GetPtr( const char *keyName = NULL, void *defaultValue = (void *)0 ) const;
 	DLL_CLASS_IMPORT Color GetColor( const char *keyName = NULL, const Color &defaultColor = Color( 0, 0, 0, 0 ) ) const;
 	DLL_CLASS_IMPORT bool GetBool( const char *keyName = NULL, bool defaultValue = false ) const { return GetInt( keyName, defaultValue ? 1 : 0 ) ? true : false; }
 	DLL_CLASS_IMPORT bool IsEmpty( const char *keyName = NULL ) const;
-
-	// Data access
-	int GetInt( HKeySymbol keySymbol, int defaultValue = 0 ) const;
-	uint64 GetUint64( HKeySymbol keySymbol, uint64 defaultValue = 0 ) const;
-	float GetFloat( HKeySymbol keySymbol, float defaultValue = 0.0f ) const;
-	const char *GetString( HKeySymbol keySymbol, const char *defaultValue = "");
-	const wchar_t *GetWString( HKeySymbol keySymbol, const wchar_t *defaultValue = L"");
-	void *GetPtr( HKeySymbol keySymbol, void *defaultValue = (void *)0 ) const;
-	Color GetColor( HKeySymbol keySymbol, const Color &defaultColor = Color( 0, 0, 0, 0 ) ) const;
-	bool GetBool( HKeySymbol keySymbol, bool defaultValue = false ) const { return GetInt( keySymbol, defaultValue ? 1 : 0 ) ? true : false; }
-	bool IsEmpty( HKeySymbol keySymbol ) const;
 
 	// Key writing
 	DLL_CLASS_IMPORT void SetWString( const char *keyName, const wchar_t *value );
@@ -546,52 +536,17 @@ struct KeyValuesUnpackStructure
 //-----------------------------------------------------------------------------
 // inline methods
 //-----------------------------------------------------------------------------
-inline int KeyValues::GetInt( HKeySymbol keySymbol, int defaultValue ) const
+
+inline const char *KeyValues::GetString( const char *keyName, const char *defaultValue, char *pszOut, size_t maxlen )
 {
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->GetInt( (const char *)NULL, defaultValue ) : defaultValue;
+	KeyValues *dat = FindKey( keyName );
+	return dat ? dat->Internal_GetString( defaultValue, pszOut, maxlen ) : defaultValue;
 }
 
-inline uint64 KeyValues::GetUint64( HKeySymbol keySymbol, uint64 defaultValue ) const
+inline const wchar_t *KeyValues::GetWString( const char *keyName, const wchar_t *defaultValue, wchar_t *pszOut, size_t maxlen )
 {
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->GetUint64( (const char *)NULL, defaultValue ) : defaultValue;
-}
-
-inline float KeyValues::GetFloat( HKeySymbol keySymbol, float defaultValue ) const
-{
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->GetFloat( (const char *)NULL, defaultValue ) : defaultValue;
-}
-
-inline const char *KeyValues::GetString( HKeySymbol keySymbol, const char *defaultValue )
-{
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->GetString( (const char *)NULL, defaultValue ) : defaultValue;
-}
-
-inline const wchar_t *KeyValues::GetWString( HKeySymbol keySymbol, const wchar_t *defaultValue )
-{
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->GetWString( (const char *)NULL, defaultValue ) : defaultValue;
-}
-
-inline void *KeyValues::GetPtr( HKeySymbol keySymbol, void *defaultValue ) const
-{
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->GetPtr( (const char *)NULL, defaultValue ) : defaultValue;
-}
-
-inline Color KeyValues::GetColor( HKeySymbol keySymbol, const Color &defaultColor ) const
-{
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->GetColor( (const char *)NULL, defaultColor ) : defaultColor;
-}
-
-inline bool KeyValues::IsEmpty( HKeySymbol keySymbol ) const
-{
-	KeyValues *dat = FindKey( keySymbol );
-	return dat ? dat->IsEmpty() : true;
+	KeyValues *dat = FindKey( keyName );
+	return dat ? dat->Internal_GetWString( defaultValue, pszOut, maxlen ) : defaultValue;
 }
 
 inline KeyValues::types_t KeyValues::GetDataType( void ) const
