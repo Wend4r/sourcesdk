@@ -67,8 +67,8 @@ public:
 	// Simulation ticks - does not increase when game is paused
 	int				tickcount;
 
-	// Simulation tick interval
-	float			interval_per_tick;
+	// Non-zero when during movement processing, it's the part after the decimal point of the "when" field in player's subtick moves.
+	float			m_flSubtickFraction;
 
 	// interpolation amount ( client-only ) based on fraction of next tick which has elapsed
 	float			interpolation_amount;
