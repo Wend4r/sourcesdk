@@ -38,7 +38,6 @@ private:
 	virtual void unk_14() = 0;
 	virtual void unk_15() = 0;
 	virtual void unk_16() = 0;
-	virtual void unk_17() = 0;
 public:
 	virtual void ClientPrintf(const char*, ...) = 0;
 	virtual bool IsFakeClient() = 0;
@@ -66,18 +65,18 @@ private:
 	INetChannel* m_NetChannel; // 80 | 96
 	[[maybe_unused]] char pad3[0x4];
 	int32 m_nSignonState; // 92 | 108
-	[[maybe_unused]] char pad4[0x32];
-	bool m_bFakePlayer; // 146 | 162
-	[[maybe_unused]] char pad5[0x5];
-	CPlayerUserId m_UserID; // 152 | 168
+	[[maybe_unused]] char pad4[0x38];
+	bool m_bFakePlayer; // 152 | 168
+	[[maybe_unused]] char pad5[0x7];
+	CPlayerUserId m_UserID; // 160 | 176
 	[[maybe_unused]] char pad6[0x1];
-	CSteamID m_SteamID; // 155 | 171
-	[[maybe_unused]] char pad7[0x1D];
-	CPlayerSlot m_nClientSlot; // 192 | 208
-	CEntityIndex m_nEntityIndex; // 196 | 212
-	CUtlString m_Name; // 200 | 216
-	[[maybe_unused]] char pad8[0x908];
-	bool m_bFullyAuthenticated; // 2498 | 2514
+	CSteamID m_SteamID; // 163 | 179
+	[[maybe_unused]] char pad7[0x25];
+	CPlayerSlot m_nClientSlot; // 208 | 224
+	CEntityIndex m_nEntityIndex; // 212 | 228
+	CUtlString m_Name; // 216 | 232
+	[[maybe_unused]] char pad8[0x8F2];
+	bool m_bFullyAuthenticated; // 2514 | 2530
 };
 #pragma pack(pop)
 
