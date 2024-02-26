@@ -2522,31 +2522,6 @@ PLATFORM_INTERFACE const char * GetPlatformSpecificFileName(const char * FileNam
 
 #include "tier0/valve_on.h"
 
-#if defined(TIER0_DLL_EXPORT)
-#undef stricmp
-#undef strcmpi
-#define stricmp(s1,s2) V_tier0_stricmp( s1, s2 )
-#define strcmpi(s1,s2) V_tier0_stricmp( s1, s2 )
-#else
-int	_V_stricmp	  (const char *s1, const char *s2 );
-int	V_strncasecmp (const char *s1, const char *s2, int n);
-
-// A special high-performance case-insensitive compare function that in
-// a single call distinguishes between exactly matching strings,
-// strings equal in case-insensitive way, and not equal strings:
-//   returns 0 if strings match exactly
-//   returns >0 if strings match in a case-insensitive way, but do not match exactly
-//   returns <0 if strings do not match even in a case-insensitive way
-int	_V_stricmp_NegativeForUnequal	  ( const char *s1, const char *s2 );
-
-#undef stricmp
-#undef strcmpi
-#define stricmp(s1,s2) _V_stricmp(s1, s2)
-#define strcmpi(s1,s2) _V_stricmp(s1, s2)
-#undef strnicmp
-#define strnicmp V_strncasecmp 
-#endif
-
 // Use AlignedByteArray_t if you need an appropriately aligned array of T with no constructor (e.g CUtlMemoryFixed):
 //  - usage:		AlignedByteArray_t< NUM, T >
 //  - same as:		byte[ NUM*sizeof(T) ]
@@ -2640,14 +2615,6 @@ DECLARE_ALIGNED_BYTE_ARRAY(16);
 DECLARE_ALIGNED_BYTE_ARRAY(32);
 DECLARE_ALIGNED_BYTE_ARRAY(64);
 DECLARE_ALIGNED_BYTE_ARRAY(128);
-
-// Tier0 uses this for faster stricmp.
-PLATFORM_INTERFACE int V_tier0_stricmp( const char *a, const char *b );
-
-PLATFORM_INTERFACE void V_tier0_strncpy( char *a, const char *b, int n );
-PLATFORM_INTERFACE char *V_tier0_strncat( char *a, const char *b, int n, int m = -1 );
-PLATFORM_INTERFACE int V_tier0_vsnprintf( char *a, int n, PRINTF_FORMAT_STRING const char *f, va_list l ) FMTFUNCTION( 3, 0 );
-PLATFORM_INTERFACE int V_tier0_snprintf( char *a, int n, PRINTF_FORMAT_STRING const char *f, ... ) FMTFUNCTION( 3, 4 );
 
 //-----------------------------------------------------------------------------
 

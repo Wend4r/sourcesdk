@@ -123,6 +123,12 @@ PLATFORM_INTERFACE int			V_strcmp32( const wchar_t *s1, const wchar_t *s2 );
 PLATFORM_INTERFACE int			_V_strncmp (const char *s1, const char *s2, int count);
 PLATFORM_INTERFACE int			_V_strnicmp_fast( const char *s1, const char *s2, int n );
 PLATFORM_INTERFACE int			V_stricmp_fast( const char *s1, const char *s2 );
+// A special high-performance case-insensitive compare function that in
+// a single call distinguishes between exactly matching strings,
+// strings equal in case-insensitive way, and not equal strings:
+//   returns 0 if strings match exactly
+//   returns >0 if strings match in a case-insensitive way, but do not match exactly
+//   returns <0 if strings do not match even in a case-insensitive way
 PLATFORM_INTERFACE int			V_stricmp_fast_NegativeForUnequal( const char *s1, const char *s2 );
 
 PLATFORM_INTERFACE char*		V_tier0_strstr( const char *haystack, const char *needle );
