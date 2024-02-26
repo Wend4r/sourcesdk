@@ -409,6 +409,9 @@ struct GenericVirtualClass : virtual public GenericClass
 };
 
 // __virtual_inheritance classes go here
+#ifdef _MSC_VER
+#pragma warning( disable : 4121 )
+#endif
 
 template <>
 struct SimplifyMemFunc< sizeof( virtual_inheritance_struct ) >
