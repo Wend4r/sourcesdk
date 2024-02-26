@@ -1,3 +1,10 @@
+#ifndef TIER0_KEYVALUES3_H
+#define TIER0_KEYVALUES3_H
+
+#ifdef COMPILER_MSVC
+#pragma once
+#endif
+
 #include "platform.h"
 #include "utlbuffer.h"
 #include "utlstring.h"
@@ -79,3 +86,5 @@ PLATFORM_OVERLOAD bool SaveKV3Text_NoHeader( const KeyValues3* kv, CUtlString* e
 PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, CBufferString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, CUtlString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3ToFile( const KV3ID_t& encoding, const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, const char* filename, const char* path, uint flags = KV3_SAVE_TEXT_NONE );
+
+#endif // TIER0_KEYVALUES3_H
