@@ -153,6 +153,10 @@ public:
 	virtual void FireGameEvent( IGameEvent *event ) = 0;
 };
 
+#ifdef _WIN32
+#undef CreateEvent
+#endif
+
 abstract_class IGameEventManager2 : public IBaseInterface, public IToolGameEventAPI
 {
 public:
