@@ -94,7 +94,7 @@ public:
 		TYPE_NUMTYPES,
 	};
 
-private:
+protected:
 	DLL_CLASS_IMPORT IKeyValuesSystem *KVSystem() const;
 
 	DLL_CLASS_IMPORT Color ResolveColorValue() const;
