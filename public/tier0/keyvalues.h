@@ -350,7 +350,7 @@ public:
 	const wchar_t *GetWString( const char *keyName = NULL, const wchar_t *defaultValue = L"", wchar_t *pszOut = NULL, size_t maxlen = 0 );
 	DLL_CLASS_IMPORT void *GetPtr( const char *keyName = NULL, void *defaultValue = (void *)0 ) const;
 	DLL_CLASS_IMPORT Color GetColor( const char *keyName = NULL, const Color &defaultColor = Color( 0, 0, 0, 0 ) ) const;
-	DLL_CLASS_IMPORT bool GetBool( const char *keyName = NULL, bool defaultValue = false ) const { return GetInt( keyName, defaultValue ? 1 : 0 ) ? true : false; }
+	bool GetBool( const char *keyName = NULL, bool defaultValue = false ) const { return GetInt( keyName, defaultValue ? 1 : 0 ) ? true : false; }
 	DLL_CLASS_IMPORT bool IsEmpty( const char *keyName = NULL ) const;
 
 	// Key writing
