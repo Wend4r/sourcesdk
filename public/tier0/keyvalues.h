@@ -27,17 +27,6 @@
 #include "color.h"
 #include "exprevaluator.h"
 
-
-#define FOR_EACH_SUBKEY( kvRoot, kvSubKey ) \
-	for ( KeyValues * kvSubKey = kvRoot->GetFirstSubKey(); kvSubKey != NULL; kvSubKey = kvSubKey->GetNextKey() )
-
-#define FOR_EACH_TRUE_SUBKEY( kvRoot, kvSubKey ) \
-	for ( KeyValues * kvSubKey = kvRoot->GetFirstTrueSubKey(); kvSubKey != NULL; kvSubKey = kvSubKey->GetNextTrueSubKey() )
-
-#define FOR_EACH_VALUE( kvRoot, kvValue ) \
-	for ( KeyValues * kvValue = kvRoot->GetFirstValue(); kvValue != NULL; kvValue = kvValue->GetNextValue() )
-
-
 class IBaseFileSystem;
 class IFileSystem;
 class CUtlBuffer;
@@ -64,6 +53,7 @@ class CKeyValuesGrowableStringTable;
 
 #define FOR_EACH_VALUE( kvRoot, kvValue ) \
 	for ( KeyValues * kvValue = kvRoot->GetFirstValue(); kvValue != NULL; kvValue = kvValue->GetNextValue() )
+
 DECLARE_POINTER_HANDLE( HTemporaryKeyValueAllocationScope );
 
 class CTemporaryKeyValues
