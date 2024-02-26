@@ -409,8 +409,12 @@ struct GenericVirtualClass : virtual public GenericClass
 };
 
 // __virtual_inheritance classes go here
-#ifdef _MSC_VER
+#ifdef COMPILER_MSVC64
 #pragma warning( disable : 4121 )
+class __multiple_inheritance TestMultiClass;
+class __virtual_inheritance TestVirtualClass;
+const int kDelegMultiInhMemPtrSize = sizeof(void (TestMultiClass::*)());
+const int kDelegVirtualInhMemPtrSize = sizeof(void (TestVirtualClass::*)());
 #endif
 
 template <>
@@ -421,9 +425,7 @@ struct SimplifyMemFunc< sizeof( virtual_inheritance_struct ) >
 		GenericMemFuncType &bound_func) 
 	{
 #ifdef COMPILER_MSVC64
-		class __multiple_inheritance TestMultiClass;
-		class __virtual_inheritance TestVirtualClass;
-		COMPILE_TIME_ASSERT( sizeof(void (TestMultiClass::*)()) == sizeof(void (TestVirtualClass::*)()) );
+		COMPILE_TIME_ASSERT( kDelegMultiInhMemPtrSize == kDelegVirtualInhMemPtrSize );
 #endif
 
 		// This exists entirely so we can have an assert about it below.
