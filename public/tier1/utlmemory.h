@@ -507,7 +507,7 @@ CUtlMemory<T,I>::~CUtlMemory()
 	Purge();
 
 #ifdef _DEBUG
-	m_pMemory = (T*)UTLMEMORY_BAD_ADDRESS;
+	m_pMemory = (T*)(size_t)UTLMEMORY_BAD_ADDRESS;
 	m_nAllocationCount = (I)UTLMEMORY_BAD_LENGTH;
 #endif
 }
@@ -914,7 +914,7 @@ void CUtlMemory<T,I>::Purge()
 		if (m_pMemory)
 		{
 			UTLMEMORY_TRACK_FREE();
-			Assert( m_pMemory != (T *)UTLMEMORY_BAD_ADDRESS );
+			Assert( m_pMemory != (T *)(size_t)UTLMEMORY_BAD_ADDRESS );
 			free( (void*)m_pMemory );
 			m_pMemory = 0;
 		}
