@@ -20,6 +20,7 @@
 #include "const.h"
 #include "entityhandle.h"
 #include "entitylist_base.h"
+#include "entity2/entitysystem.h"
 
 
 class IHandleEntity;
