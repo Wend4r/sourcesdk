@@ -416,11 +416,11 @@ friend class ConVar<T>;
 	inline void GetStringMinValue( char* dst, size_t len ) const		{ ValueToString( GetMinValue( ), dst, len ); }
 	inline void GetStringMaxValue( char* dst, size_t len ) const		{ ValueToString( GetMaxValue( ), dst, len ); }
 
-	inline void SetStringValue( const char* src, const CSplitScreenSlot& index = 0 ) const { SetValue( ValueFromString( src ), index ); }
+	inline void SetStringValue( const char* src, const CSplitScreenSlot& index = 0 ) { SetValue( ValueFromString( src ), index ); }
 
-	inline void SetStringDefaultValue( const char* src ) const	{ SetDefaultValue( ValueFromString( src ) ); }
-	inline void SetStringMinValue( const char* src ) const		{ SetMinValue( ValueFromString( src ) ); }
-	inline void SetStringMaxValue( const char* src ) const		{ SetMaxValue( ValueFromString( src ) ); }
+	inline void SetStringDefaultValue( const char* src )	{ SetDefaultValue( ValueFromString( src ) ); }
+	inline void SetStringMinValue( const char* src )		{ SetMinValue( ValueFromString( src ) ); }
+	inline void SetStringMaxValue( const char* src )		{ SetMaxValue( ValueFromString( src ) ); }
 
 protected:
 	static inline void ValueToString( const T& value, char* dst, size_t length ) { CConVarBaseData::ValueToString<T>( value, dst, length ); };
