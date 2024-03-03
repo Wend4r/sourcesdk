@@ -293,8 +293,8 @@ template<> inline void CConVarBaseData::ValueToString<uint16_t>( const uint16_t&
 template<> inline void CConVarBaseData::ValueToString<int16_t>( const int16_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%d", val ); }
 template<> inline void CConVarBaseData::ValueToString<uint32_t>( const uint32_t& val, char* dst, size_t length )		{ snprintf( dst, length, "%u", val ); }
 template<> inline void CConVarBaseData::ValueToString<int32_t>( const int32_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%d", val ); }
-template<> inline void CConVarBaseData::ValueToString<uint64_t>( const uint64_t& val, char* dst, size_t length )		{ snprintf( dst, length, "%lu", val ); }
-template<> inline void CConVarBaseData::ValueToString<int64_t>( const int64_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%ld", val ); }
+template<> inline void CConVarBaseData::ValueToString<uint64_t>( const uint64_t& val, char* dst, size_t length )		{ snprintf( dst, length, "%lu", (unsigned long)val ); }
+template<> inline void CConVarBaseData::ValueToString<int64_t>( const int64_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%ld", (long)val ); }
 template<> inline void CConVarBaseData::ValueToString<float>( const float& val, char* dst, size_t length )				{ snprintf( dst, length, "%f", val ); }
 template<> inline void CConVarBaseData::ValueToString<double>( const double& val, char* dst, size_t length )			{ snprintf( dst, length, "%lf", val ); }
 template<> inline void CConVarBaseData::ValueToString<const char*>( const char*const& val, char* dst, size_t length )	{ memcpy( dst, val, length ); }
@@ -309,8 +309,8 @@ template<> inline uint16_t CConVarBaseData::ValueFromString<uint16_t>( const cha
 template<> inline int16_t CConVarBaseData::ValueFromString<int16_t>( const char* val )			{ int ret; sscanf(val, "%d", &ret); return ret; }
 template<> inline uint32_t CConVarBaseData::ValueFromString<uint32_t>( const char* val )		{ uint32_t ret; sscanf(val, "%u", &ret); return ret; }
 template<> inline int32_t CConVarBaseData::ValueFromString<int32_t>( const char* val )			{ int32_t ret; sscanf(val, "%d", &ret); return ret; }
-template<> inline uint64_t CConVarBaseData::ValueFromString<uint64_t>( const char* val )		{ uint64_t ret; sscanf(val, "%lu", &ret); return ret; }
-template<> inline int64_t CConVarBaseData::ValueFromString<int64_t>( const char* val )			{ int64_t ret; sscanf(val, "%ld", &ret); return ret; }
+template<> inline uint64_t CConVarBaseData::ValueFromString<uint64_t>( const char* val )		{ uint64_t ret; sscanf(val, "%lu", (unsigned long *)&ret); return ret; }
+template<> inline int64_t CConVarBaseData::ValueFromString<int64_t>( const char* val )			{ int64_t ret; sscanf(val, "%ld", (long *)&ret); return ret; }
 template<> inline float CConVarBaseData::ValueFromString<float>( const char* val )				{ float ret; sscanf(val, "%f", &ret); return ret; }
 template<> inline double CConVarBaseData::ValueFromString<double>( const char* val )			{ double ret; sscanf(val, "%lf", &ret); return ret; }
 template<> inline const char* CConVarBaseData::ValueFromString<const char*>( const char* val )	{ return val; }
