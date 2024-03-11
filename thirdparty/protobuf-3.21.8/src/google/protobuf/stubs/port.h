@@ -280,6 +280,20 @@ static inline uint64_t bswap_64(uint64_t x) {
 #define bswap_64(x) bswap_64(x)
 #endif
 
+//FIXME (@Wend4r): Linux side hasn't definitions
+#else
+#	include <bits/byteswap.h>
+
+#	ifndef bswap_16
+#		define bswap_16(x) __bswap_16(x)
+#	endif
+#	ifndef bswap_32
+#		define bswap_32(x) __bswap_32(x)
+#	endif
+#	ifndef bswap_64
+#		define bswap_64(x) __bswap_64(x)
+#	endif
+
 #endif
 
 // ===================================================================
