@@ -304,20 +304,14 @@ public:
 	DLL_CLASS_IMPORT void SwapSubKey( KeyValues *pExistingSubKey, KeyValues *pNewSubKey );	// Swaps an existing subkey for a new one, DOES NOT DELETE THE OLD ONE but takes ownership of the new one
 	DLL_CLASS_IMPORT void ElideSubKey( KeyValues *pSubKey );	// Removes a subkey but inserts all of its children in its place, in-order (flattens a tree, like firing a manager!)
 
-#if _WIN32
-#define METHOD_CONST const
-#else
-#define METHOD_CONST
-#endif
-
 	// Key iteration.
 	//
 	// NOTE: GetFirstSubKey/GetNextKey will iterate keys AND values. Use the functions 
 	// below if you want to iterate over just the keys or just the values.
 	//
-	DLL_CLASS_IMPORT KeyValues *GetFirstSubKey() METHOD_CONST;	// returns the first subkey in the list
-	DLL_CLASS_IMPORT KeyValues *FindLastSubKey() METHOD_CONST;	// returns the LAST subkey in the list.  This requires a linked list iteration to find the key.  Returns NULL if we don't have any children
-	DLL_CLASS_IMPORT KeyValues *GetNextKey() METHOD_CONST;		// returns the next subkey
+	DLL_CLASS_IMPORT KeyValues *GetFirstSubKey();	// returns the first subkey in the list
+	DLL_CLASS_IMPORT KeyValues *FindLastSubKey();	// returns the LAST subkey in the list.  This requires a linked list iteration to find the key.  Returns NULL if we don't have any children
+	DLL_CLASS_IMPORT KeyValues *GetNextKey();		// returns the next subkey
 	DLL_CLASS_IMPORT void SetNextKey( KeyValues *pDat );
 
 
@@ -330,7 +324,7 @@ public:
 		return GetFirstSubKey() == NULL;
 	}
 	//
-	// These functions can be used to treat it like a true key/values tree instead of 
+	// These functions can be used to treat it like a true key/values tree instead of
 	// confusing values with keys.
 	//
 	// So if you wanted to iterate all subkeys, then all values, it would look like this:
@@ -342,11 +336,11 @@ public:
 	//     {
 	//         Msg( "Int value: %d\n", pValue->GetInt() );  // Assuming pValue->GetDataType() == TYPE_INT...
 	//     }
-	DLL_CLASS_IMPORT KeyValues* GetFirstTrueSubKey() METHOD_CONST;
-	DLL_CLASS_IMPORT KeyValues* GetNextTrueSubKey() METHOD_CONST;
+	DLL_CLASS_IMPORT KeyValues* GetFirstTrueSubKey();
+	DLL_CLASS_IMPORT KeyValues* GetNextTrueSubKey();
 
-	DLL_CLASS_IMPORT KeyValues* GetFirstValue() METHOD_CONST;	// When you get a value back, you can use GetX and pass in NULL to get the value.
-	DLL_CLASS_IMPORT KeyValues* GetNextValue() METHOD_CONST;
+	DLL_CLASS_IMPORT KeyValues* GetFirstValue();	// When you get a value back, you can use GetX and pass in NULL to get the value.
+	DLL_CLASS_IMPORT KeyValues* GetNextValue();
 
 	// Data access
 	DLL_CLASS_IMPORT int GetInt( const char *keyName = NULL, int defaultValue = 0 ) const;
