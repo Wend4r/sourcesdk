@@ -169,7 +169,8 @@ public:
 	virtual void  Reset() = 0;	
 
 	// adds a listener for a particular event
-	virtual bool AddListener( IGameEventListener2 *listener, const char *name, bool bServerSide ) = 0;
+	// returns the descriptor index. -1 is invalid
+	virtual int AddListener( IGameEventListener2 *listener, const char *name, bool bServerSide ) = 0;
 
 	// returns true if this listener is listens to given event
 	virtual bool FindListener( IGameEventListener2 *listener, const char *name ) = 0;
