@@ -269,12 +269,11 @@ public:
 	int				m_iCurBit;
 	
 private:
+	const char		*m_pDebugName;
 
 	// Errors?
 	bool			m_bOverflow;
-
 	bool			m_bAssertOnOverflow;
-	const char		*m_pDebugName;
 };
 
 
@@ -513,13 +512,14 @@ public:
 	
 	float			ReadBitAngle( int numbits );
 
-	unsigned int	ReadUBitLong( int numbits );
+	unsigned int	ReadUBitLong( int numbits ) RESTRICT;
+	unsigned int	ReadUBitLongNoInline( int numbits ) RESTRICT;
 	unsigned int	PeekUBitLong( int numbits );
 	int				ReadSBitLong( int numbits );
 
 	// reads an unsigned integer with variable bit length
 	unsigned int	ReadUBitVar();
-	
+
 	// reads a varint encoded integer
 	uint32			ReadVarInt32();
 	uint64			ReadVarInt64();
@@ -601,6 +601,8 @@ public:
 
 
 private:	
+	const char		*m_pDebugName;
+
 	// used by varbit reads internally
 	inline int CountRunOfZeros();
 
@@ -609,8 +611,6 @@ private:
 
 	// For debugging..
 	bool			m_bAssertOnOverflow;
-
-	const char		*m_pDebugName;
 };
 
 //-----------------------------------------------------------------------------
@@ -712,7 +712,6 @@ inline float old_bf_read::ReadBitFloat()
 	m_iCurBit += 32;
 	return *((float*)&val);
 }
-
 
 inline unsigned int old_bf_read::ReadUBitLong( int numbits )
 {

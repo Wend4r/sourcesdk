@@ -15,12 +15,11 @@
 #endif
 
 #include "platform.h"
-
+#include "tier1/utlvector.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
-struct UniqueId_t;
 class CUtlBuffer;
 
 

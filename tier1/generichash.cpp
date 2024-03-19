@@ -83,21 +83,7 @@ static unsigned g_nRandomValues[256] =
 //-----------------------------------------------------------------------------
 unsigned FASTCALL HashString( const char *pszKey )
 {
-	const uint8 *k =   (const uint8 *)pszKey;
-	unsigned 	even = 0,
-				odd  = 0,
-				n;
-
-	while ((n = *k++) != 0)
-	{
-		even = g_nRandomValues[odd ^ n];
-		if ((n = *k++) != 0)
-			odd = g_nRandomValues[even ^ n];
-		else
-			break;
-	}
-
-	return (even << 8) | odd ;
+	return MurmurHash2( pszKey, strlen( pszKey ), 0x3501A674 );
 }
 
 
@@ -106,27 +92,13 @@ unsigned FASTCALL HashString( const char *pszKey )
 //-----------------------------------------------------------------------------
 unsigned FASTCALL HashStringCaseless( const char *pszKey )
 {
-	const uint8 *k = (const uint8 *) pszKey;
-	unsigned	even = 0,
-				odd  = 0,
-				n;
-
-	while ((n = toupper(*k++)) != 0)
-	{
-		even = g_nRandomValues[odd ^ n];
-		if ((n = toupper(*k++)) != 0)
-			odd = g_nRandomValues[even ^ n];
-		else
-			break;
-	}
-
-	return (even << 8) | odd;
+	return MurmurHash2LowerCase( pszKey, 0x3501A674 );
 }
 
 //-----------------------------------------------------------------------------
 // 32 bit conventional case-insensitive string 
 //-----------------------------------------------------------------------------
-uint32 FASTCALL HashStringCaselessConventional( const char *pszKey )
+unsigned FASTCALL HashStringFastCaselessConventional( const char *pszKey )
 {
 	uint32 hash = 0xAAAAAAAA; // Alternating 1's and 0's to maximize the effect of the later multiply and add
 	hash += ( 2 * (uint32)V_strlen( pszKey ) ); // Add the string length * 2 to the hash to give it more variety
@@ -134,6 +106,21 @@ uint32 FASTCALL HashStringCaselessConventional( const char *pszKey )
 	for( ; *pszKey ; pszKey++ )
 	{
 		hash = ( ( hash << 5 ) + hash ) + (uint8)tolower(*pszKey);
+	}
+
+	return hash;
+}
+
+//-----------------------------------------------------------------------------
+// 32 bit conventional case-sensitive string 
+//-----------------------------------------------------------------------------
+unsigned FASTCALL HashStringConventional( const char *pszKey )
+{
+	unsigned hash = 0xAAAAAAAA; // Alternating 1's and 0's to maximize the effect of the later multiply and add
+
+	for(; *pszKey; pszKey++)
+	{
+		hash = ((hash << 5) + hash) + (uint8)*pszKey;
 	}
 
 	return hash;

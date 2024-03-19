@@ -672,12 +672,14 @@ void *malloc_db( size_t nSize, const char *pFileName, int nLine )
 
 void free_db( void *pMem, const char *pFileName, int nLine )
 {
-	g_pMemAlloc->Free2(pMem, pFileName, nLine);
+	// g_pMemAlloc->Free2(pMem, pFileName, nLine);
+	g_pMemAlloc->Free(pMem);
 }
 
 void *realloc_db( void *pMem, size_t nSize, const char *pFileName, int nLine )
 {
-	return g_pMemAlloc->Realloc2(pMem, nSize, pFileName, nLine);
+	// return g_pMemAlloc->Realloc2(pMem, nSize, pFileName, nLine);
+	return g_pMemAlloc->Realloc(pMem, nSize);
 }
 	
 } // end extern "C"
@@ -861,7 +863,8 @@ void *__cdecl _realloc_dbg( void *pMem, size_t nNewSize, int nBlockUse,
 							const char *pFileName, int nLine )
 {
 	AttribIfCrt();
-	return g_pMemAlloc->Realloc2(pMem, nNewSize, pFileName, nLine);
+	// return g_pMemAlloc->Realloc2(pMem, nNewSize, pFileName, nLine);
+	return g_pMemAlloc->Realloc(pMem, nNewSize);
 }
 
 void *__cdecl _expand_dbg( void *pMem, size_t nNewSize, int nBlockUse,

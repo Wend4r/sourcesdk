@@ -193,9 +193,6 @@
     <ClCompile Include="convar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="datamanager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="generichash.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

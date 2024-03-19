@@ -228,7 +228,6 @@
     <ClCompile Include="checksum_sha1.cpp" />
     <ClCompile Include="circularbuffer.cpp" />
     <ClCompile Include="convar.cpp" />
-    <ClCompile Include="datamanager.cpp" />
     <ClCompile Include="generichash.cpp" />
     <ClCompile Include="kvpacker.cpp" />
     <ClCompile Include="lzmaDecoder.cpp" />

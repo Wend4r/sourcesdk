@@ -17,7 +17,6 @@
 
 #include "platform.h"
 
-
 struct characterset_t
 {
 	char set[256];
@@ -30,7 +29,7 @@ struct characterset_t
 // Input  : *pSetBuffer - pointer to the buffer for the group
 //			*pSetString - list of characters to flag
 //-----------------------------------------------------------------------------
-DLL_IMPORT void CharacterSetBuild( characterset_t *pSetBuffer, const char *pSetString );
+PLATFORM_INTERFACE void CharacterSetBuild( characterset_t *pSetBuffer, const char *pSetString );
 
 
 //-----------------------------------------------------------------------------

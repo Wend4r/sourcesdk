@@ -13,6 +13,7 @@
 #pragma once
 #endif
 
+#include "tier0/memblockallocator.h"
 #include "tier0/platform.h"
 #include "tier0/stringpool.h"
 #include "tier0/threadtools.h"
@@ -42,7 +43,6 @@ public:
 	// constructor, destructor
 	CUtlSymbol() : m_Id(UTL_INVAL_SYMBOL) {}
 	CUtlSymbol( UtlSymId_t id ) : m_Id(id) {}
-	CUtlSymbol( const char* pStr );
 	CUtlSymbol( CUtlSymbol const& sym ) : m_Id(sym.m_Id) {}
 	
 	// operator=
@@ -50,40 +50,19 @@ public:
 	
 	// operator==
 	bool operator==( CUtlSymbol const& src ) const { return m_Id == src.m_Id; }
-	bool operator==( const char* pStr ) const;
-	
+
 	// Is valid?
 	bool IsValid() const { return m_Id != UTL_INVAL_SYMBOL; }
 	
 	// Gets at the symbol
 	operator UtlSymId_t () const { return m_Id; }
-	
-	// Gets the string associated with the symbol
-	const char* String( ) const;
-
-	// Modules can choose to disable the static symbol table so to prevent accidental use of them.
-	static void DisableStaticSymbolTable();
-
-	// Methods with explicit locking mechanism. Only use for optimization reasons.
-	static void LockTableForRead();
-	static void UnlockTableForRead();
-	const char * StringNoLock() const;
 
 protected:
+	CUtlSymbol( const char* pStr );
+	bool operator==( const char* pStr ) const;
+	const char* String( ) const;
+
 	UtlSymId_t   m_Id;
-		
-	// Initializes the symbol table
-	static void Initialize();
-	
-	// returns the current symbol table
-	static CUtlSymbolTableMT* CurrTable();
-		
-	// The standard global symbol table
-	static CUtlSymbolTableMT* s_pSymbolTable; 
-
-	static bool s_bAllowStaticSymbolTable;
-
-	friend class CCleanupUtlSymbolTable;
 };
 
 
@@ -108,33 +87,52 @@ public:
 	DLL_CLASS_IMPORT ~CUtlSymbolTable();
 	
 	// Finds and/or creates a symbol based on the string
-	DLL_CLASS_IMPORT CUtlSymbol AddString( const char* pString, bool* created );
+	DLL_CLASS_IMPORT CUtlSymbol AddString( const char* pString, bool* created = NULL );
+	DLL_CLASS_IMPORT CUtlSymbol AddString( const char* pString, int nLength, bool* created = NULL );
 
 	// Finds the symbol for pString
 	DLL_CLASS_IMPORT CUtlSymbol Find( const char* pString ) const;
-	DLL_CLASS_IMPORT CUtlSymbol Find( const char* pString, int iLength ) const;
+	DLL_CLASS_IMPORT CUtlSymbol Find( const char* pString, int nLength ) const;
 	
 	// Look up the string associated with a particular symbol
 	DLL_CLASS_IMPORT const char* String( CUtlSymbol id ) const;
-
-	inline bool HasElement(const char* pStr) const
-	{
-		return Find(pStr) != CUtlSymbol(UTL_INVAL_SYMBOL);
-	}
 	
 	// Remove all symbols in the table.
-	DLL_CLASS_IMPORT void  RemoveAll();
+	DLL_CLASS_IMPORT void RemoveAll();
+	DLL_CLASS_IMPORT void Purge();
+
+	// Returns elements in the table
+	DLL_CLASS_IMPORT int GetElements( int nFirstElement, int nCount, CUtlSymbol *pElements ) const;
+
+	DLL_CLASS_IMPORT size_t GetMemoryUsage() const;
+
+	DLL_CLASS_IMPORT void SetPageSize( unsigned int nSize );
+
+	DLL_CLASS_IMPORT bool SaveToBuffer( CUtlBuffer& buff ) const;
+	DLL_CLASS_IMPORT bool RestoreFromBuffer( CUtlBuffer& buff );
 
 	int GetNumStrings( void ) const
 	{
-		return m_Lookup.Count();
+		return m_MemBlocks.Count();
 	}
 
-	// We store one of these at the beginning of every string to speed
-	// up comparisons.
-	typedef unsigned short hashDecoration_t; 
-
 protected:
+	struct UtlSymTableAltKey
+	{ 
+		const CUtlSymbolTable*	m_pTable;
+		const char*				m_pString;
+		int						m_nLength;
+	};
+
+	struct UtlSymTableHashFunctor
+	{
+		ptrdiff_t m_ownerOffset;
+
+		UtlSymTableHashFunctor();
+		unsigned int operator()( UtlSymTableAltKey k ) const;
+		unsigned int operator()( int k ) const;
+	};
+
 	class CStringPoolIndex
 	{
 	public:
@@ -154,7 +152,7 @@ protected:
 		unsigned short m_iPool;		// Index into m_StringPools.
 		unsigned short m_iOffset;	// Index into the string pool.
 	};
-	
+
 	class CStringPoolSearcher : public CStringPoolIndex
 	{
 	public:
@@ -170,44 +168,24 @@ protected:
 		unsigned short m_nStringHash;
 	};
 
-	class CLess
+	struct UtlSymTableEqualFunctor
 	{
-	public:
-		CLess( int ignored = 0 ) {} // permits default initialization to NULL in CUtlRBTree
-		bool operator!() const { return false; }
-		bool operator()( const CStringPoolIndex &left, const CStringPoolIndex &right ) const;
+		ptrdiff_t m_ownerOffset;
+
+		UtlSymTableEqualFunctor();
+		bool operator()( int a, int b ) const;
+		bool operator()( UtlSymTableAltKey a, int b ) const;
+		bool operator()( int a, UtlSymTableAltKey b ) const;
 	};
 
-	// Stores the symbol lookup
-	class CTree : public CUtlRBTree<CStringPoolIndex, unsigned short, CLess>
-	{
-	public:
-		CTree(  int growSize, int initSize ) : CUtlRBTree<CStringPoolIndex, unsigned short, CLess>( growSize, initSize ) {}
-		friend class CUtlSymbolTable::CLess; // Needed to allow CLess to calculate pointer to symbol table
-	};
+	typedef CUtlHashtable<int, empty_t, UtlSymTableHashFunctor, UtlSymTableEqualFunctor, UtlSymTableAltKey> Hashtable_t;
+	typedef CUtlVector<MemBlockHandle_t> MemBlocksVec_t;
 
-	struct StringPool_t
-	{	
-		int m_TotalLen;		// How large is 
-		int m_SpaceUsed;
-		char m_Data[1];
-	};
-
-	CTree m_Lookup;
+	Hashtable_t					m_HashTable;
+	MemBlocksVec_t				m_MemBlocks;
+	CUtlMemoryBlockAllocator	m_MemBlockAllocator;
 
 	bool m_bInsensitive;
-
-	// stores the string data
-	CUtlVector<StringPool_t*> m_StringPools;
-	uint8 unknown[56];
-private:
-	int FindPoolWithSpace( int len ) const;
-	const char* StringFromIndex( const CStringPoolIndex &index ) const;
-	const char* DecoratedStringFromIndex( const CStringPoolIndex &index ) const;
-
-	friend class CLess;
-	friend class CSymbolHash;
-
 };
 
 class CUtlSymbolTableMT :  public CUtlSymbolTable
@@ -220,25 +198,41 @@ public:
 
 	CUtlSymbol AddString( const char* pString, bool* created = NULL )
 	{
-		m_lock.LockForWrite();
+		m_lock.LockForWrite( __FILE__, __LINE__ );
 		CUtlSymbol result = CUtlSymbolTable::AddString( pString, created );
-		m_lock.UnlockWrite();
+		m_lock.UnlockWrite( __FILE__, __LINE__ );
+		return result;
+	}
+
+	CUtlSymbol AddString( const char* pString, int nLength, bool* created = NULL )
+	{
+		m_lock.LockForWrite( __FILE__, __LINE__ );
+		CUtlSymbol result = CUtlSymbolTable::AddString( pString, nLength, created );
+		m_lock.UnlockWrite( __FILE__, __LINE__ );
 		return result;
 	}
 
 	CUtlSymbol Find( const char* pString ) const
 	{
-		m_lock.LockForWrite();
+		m_lock.LockForWrite( __FILE__, __LINE__ );
 		CUtlSymbol result = CUtlSymbolTable::Find( pString );
-		m_lock.UnlockWrite();
+		m_lock.UnlockWrite( __FILE__, __LINE__ );
+		return result;
+	}
+
+	CUtlSymbol Find( const char* pString, int nLength ) const
+	{
+		m_lock.LockForWrite( __FILE__, __LINE__ );
+		CUtlSymbol result = CUtlSymbolTable::Find( pString, nLength );
+		m_lock.UnlockWrite( __FILE__, __LINE__ );
 		return result;
 	}
 
 	const char* String( CUtlSymbol id ) const
 	{
-		m_lock.LockForRead();
+		m_lock.LockForRead( __FILE__, __LINE__ );
 		const char *pszResult = CUtlSymbolTable::String( id );
-		m_lock.UnlockRead();
+		m_lock.UnlockRead( __FILE__, __LINE__ );
 		return pszResult;
 	}
 

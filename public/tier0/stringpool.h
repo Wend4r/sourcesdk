@@ -14,8 +14,7 @@
 
 #include "utlrbtree.h"
 #include "utlvector.h"
-#include "tier0/utlbuffer.h"
-#include "generichash.h"
+#include "utlbuffer.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Allocates memory for strings, checking for duplicates first,
@@ -37,10 +36,6 @@ public:
 	DLL_CLASS_IMPORT unsigned int Count() const;
 
 	DLL_CLASS_IMPORT const char * Allocate( const char *pszValue );
-	// This feature is deliberately not supported because it's pretty dangerous
-	// given current uses of CStringPool, which assume they can copy string pointers without
-	// any refcounts.
-	//void Free( const char *pszValue );
 	DLL_CLASS_IMPORT void FreeAll();
 
 	// searches for a string already in the pool
@@ -49,6 +44,7 @@ public:
 protected:
 	typedef CUtlRBTree<const char *, unsigned short> CStrSet;
 
+	CThreadFastMutex m_Mutex;
 	CStrSet m_Strings;
 };
 
@@ -60,10 +56,10 @@ protected:
 //
 // At some point this should replace CStringPool
 //-----------------------------------------------------------------------------
-// template<class T> // S2: only is unsigned short .
 class CCountedStringPool
 {
-private: // HACK, hash_item_t structure should not be public.
+public: // HACK, hash_item_t structure should not be public.
+
 	struct hash_item_t
 	{
 		char*			pString;
@@ -90,7 +86,7 @@ public:
 
 	DLL_CLASS_IMPORT void			FreeAll();
 
-	DLL_CLASS_IMPORT char			*FindString( const char* pIntrinsic ); 
+	DLL_CLASS_IMPORT char			*FindString( const char* pIntrinsic );
 	DLL_CLASS_IMPORT char			*ReferenceString( const char* pIntrinsic );
 	DLL_CLASS_IMPORT void			DereferenceString( const char* pIntrinsic );
 
@@ -103,9 +99,6 @@ public:
 
 	DLL_CLASS_IMPORT bool			SaveToBuffer( CUtlBuffer &buffer );
 	DLL_CLASS_IMPORT bool			RestoreFromBuffer( CUtlBuffer &buffer );
-
-	// Debug helper method to validate that we didn't overflow
-	void			VerifyNotOverflowed( unsigned int value )  { Assert( value < 0xffff ); };
 };
 
 #endif // STRINGPOOL_H

@@ -11,8 +11,10 @@
 #pragma once
 #endif
 
+#include "memalloc.h"
+#include "strtools.h"
 #include "tier1/utlmemory.h"
-#include "tier0/strtools.h"
+
 #include "limits.h"
 
 //-----------------------------------------------------------------------------

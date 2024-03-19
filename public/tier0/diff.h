@@ -9,7 +9,10 @@
 
 #ifndef DIFF_H
 #define DIFF_H
+
+#ifdef _WIN32
 #pragma once
+#endif
 
 #include "platform.h"
 
@@ -27,5 +30,4 @@ PLATFORM_INTERFACE void ApplyDiffs(uint8 const *OldBlock, uint8 const *DiffList,
 PLATFORM_INTERFACE int FindDiffsLowMemory(uint8 const *NewBlock, uint8 const *OldBlock,
 					   int NewSize, int OldSize, int &DiffListSize,uint8 *Output,uint32 OutSize);
 
-#endif
-
+#endif // DIFF_H

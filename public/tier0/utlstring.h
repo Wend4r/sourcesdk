@@ -12,8 +12,9 @@
 
 
 #include "platform.h"
-#include "tier1/utlmemory.h"
+#include "tier0/memalloc.h"
 #include "tier0/strtools.h"
+#include "tier1/utlmemory.h"
 #include "limits.h"
 
 #include "utlbinaryblock.h"

@@ -1094,6 +1094,11 @@ unsigned int old_bf_read::PeekUBitLong( int numbits )
 	return r;
 }
 
+unsigned int old_bf_read::ReadUBitLongNoInline( int numbits )
+{
+	return ReadUBitLong( numbits );
+}
+
 // Append numbits least significant bits from data to the current bit stream
 int old_bf_read::ReadSBitLong( int numbits )
 {

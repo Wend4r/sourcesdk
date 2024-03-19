@@ -31,7 +31,6 @@ DO_CC += -o $@ -c $<
 LIB_OBJS= \
 	$(LIB_OBJ_DIR)/bitbuf.o \
 	$(LIB_OBJ_DIR)/convar.o \
-	$(LIB_OBJ_DIR)/datamanager.o \
 	$(LIB_OBJ_DIR)/generichash.o \
 	$(LIB_OBJ_DIR)/interface.o \
 	$(LIB_OBJ_DIR)/newbitbuf.o \
