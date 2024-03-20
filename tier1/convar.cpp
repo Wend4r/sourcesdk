@@ -234,7 +234,7 @@ CCommand::CCommand( int nArgC, const char **ppArgV )
 	for ( int i = 0; i < nArgC; ++i )
 	{
 		m_Args.AddToTail( pBuf );
-		int nLen = V_strlen( ppArgV[i] );
+		int nLen = ( int )V_strlen( ppArgV[i] );
 		memcpy( pBuf, ppArgV[i], nLen+1 );
 		if ( i == 0 )
 		{
@@ -289,7 +289,7 @@ bool CCommand::Tokenize( const char *pCommand, characterset_t *pBreakSet )
 	// Copy the current command into a temp buffer
 	// NOTE: This is here to avoid the pointers returned by DequeueNextCommand
 	// to become invalid by calling AddText. Is there a way we can avoid the memcpy?
-	int nLen = V_strlen( pCommand );
+	int nLen = ( int )V_strlen( pCommand );
 	if ( nLen >= COMMAND_MAX_LENGTH - 1 )
 	{
 		Warning( "CCommand::Tokenize: Encountered command which overflows the tokenizer buffer.. Skipping!\n" );

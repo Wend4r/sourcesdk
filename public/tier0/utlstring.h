@@ -282,7 +282,7 @@ inline char *CUtlString::Get()
 // Returns strlen
 inline int CUtlString::Length() const
 {
-	return this->m_pString ? V_strlen( this->m_pString ) : 0;
+	return this->m_pString ? ( int )V_strlen( this->m_pString ) : 0;
 }
 
 inline bool CUtlString::IsEmpty() const
