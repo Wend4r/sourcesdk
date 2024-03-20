@@ -293,9 +293,9 @@ public:
 // A array class with a fixed allocation scheme backed by a dynamic one
 //-----------------------------------------------------------------------------
 template< class T, size_t MAX_SIZE >
-class CUtlVectorFixedGrowable : public CUtlVectorBase< T, size_t, CUtlMemoryFixedGrowable<T, MAX_SIZE > >
+class CUtlVectorFixedGrowable : public CUtlVectorBase< T, size_t, CUtlMemoryFixedGrowable<T, MAX_SIZE, size_t > >
 {
-	typedef CUtlVectorBase< T, size_t, CUtlMemoryFixedGrowable<T, MAX_SIZE > > BaseClass;
+	typedef CUtlVectorBase< T, size_t, CUtlMemoryFixedGrowable<T, MAX_SIZE, size_t > > BaseClass;
 
 public:
 	// constructor, destructor
