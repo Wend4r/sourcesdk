@@ -748,6 +748,11 @@ void KeyValues3::SetVecBasedObj( const T &obj, int size, KV3SubType_t subtype )
 	AllocArray<float32>( size, obj.Base(), KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT32, subtype, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32 );
 }
 
+#ifdef COMPILER_MSVC
+#pragma warning(push)
+#pragma warning(disable : 4800)
+#endif
+
 template < typename T >
 T KeyValues3::GetValue( T defaultValue ) const
 {
@@ -767,6 +772,10 @@ T KeyValues3::GetValue( T defaultValue ) const
 			return defaultValue;
 	}
 }
+
+#ifdef COMPILER_MSVC
+#pragma warning(pop)
+#endif
 
 template < typename T >
 void KeyValues3::SetValue( T value, KV3TypeEx_t type, KV3SubType_t subtype )
