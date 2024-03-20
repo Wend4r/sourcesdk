@@ -209,7 +209,7 @@ private:
 		bool operator()( UtlSymTableLargeAltKey a, UtlSymLargeId_t b ) const 
 		{ 
 			const char* pString = a.m_pTable->String( b );
-			int nLength = strlen( pString );
+			int nLength = ( int )strlen( pString );
 
 			if ( a.m_nLength != nLength )
 				return false;
