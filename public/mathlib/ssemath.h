@@ -5744,7 +5744,7 @@ public:
 
 	FORCEINLINE void Init( void )
 	{
-		for( int i = 0; i < ARRAYSIZE( m_Mins ); i++ )
+		for( size_t i = 0; i < ARRAYSIZE( m_Mins ); i++ )
 		{
 			m_Mins[i] = Four_FLT_MAX;
 			m_Maxes[i] = Four_Negative_FLT_MAX;

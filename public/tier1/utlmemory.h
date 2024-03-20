@@ -764,7 +764,7 @@ template< class T, class I >
 inline bool CUtlMemory<T,I>::IsIdxValid( I i ) const
 {
 	I x = i;
-	return ( x >= 0 ) && ( x < m_nAllocationCount ) && ( !IsDebug() || x != UTLMEMORY_BAD_LENGTH );
+	return ( x >= 0 ) && ( x < m_nAllocationCount ) && ( !IsDebug() || x != ( I )UTLMEMORY_BAD_LENGTH );
 }
 
 //-----------------------------------------------------------------------------
@@ -1018,7 +1018,7 @@ inline void CUtlMemoryRaw<T, I>::EnsureCapacity( I num )
 	if ( this->m_nAllocationCount >= num )
 		return;
 
-	if ( num > ( SIZE_MAX / sizeof(T) ) )
+	if ( num > ( I )( SIZE_MAX / sizeof(T) ) )
 	{
 		Plat_FatalErrorFunc( "%s: Invalid capacity %u\n", __FUNCTION__, num );
 		DebuggerBreak();
