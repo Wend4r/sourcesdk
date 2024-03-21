@@ -18,6 +18,7 @@
 #include "tier0/stringpool.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlbuffer.h"
+#include "tier1/utlhashtable.h"
 #include "tier1/utlrbtree.h"
 #include "tier1/utlvector.h"
 #include "tier1/utllinkedlist.h"
