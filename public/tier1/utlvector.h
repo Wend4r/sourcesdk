@@ -276,15 +276,15 @@ public:
 // The CUtlVectorFixed class:
 // A array class with a fixed allocation scheme
 //-----------------------------------------------------------------------------
-template< class T, size_t MAX_SIZE >
-class CUtlVectorFixed : public CUtlVectorBase< T, size_t, CUtlMemoryFixed<T, MAX_SIZE > >
+template< class T, int MAX_SIZE >
+class CUtlVectorFixed : public CUtlVectorBase< T, int, CUtlMemoryFixed<T, MAX_SIZE > >
 {
-	typedef CUtlVectorBase< T, size_t, CUtlMemoryFixed<T, MAX_SIZE > > BaseClass;
+	typedef CUtlVectorBase< T, int, CUtlMemoryFixed<T, MAX_SIZE > > BaseClass;
 
 public:
 	// constructor, destructor
-	explicit CUtlVectorFixed( size_t growSize = 0, size_t initSize = 0 ) : BaseClass( growSize, initSize ) {}
-	CUtlVectorFixed( T* pMemory, size_t numElements ) : BaseClass( pMemory, numElements ) {}
+	explicit CUtlVectorFixed( int growSize = 0, int initSize = 0 ) : BaseClass( growSize, initSize ) {}
+	CUtlVectorFixed( T* pMemory, int numElements ) : BaseClass( pMemory, numElements ) {}
 };
 
 
@@ -292,25 +292,25 @@ public:
 // The CUtlVectorFixedGrowable class:
 // A array class with a fixed allocation scheme backed by a dynamic one
 //-----------------------------------------------------------------------------
-template< class T, size_t MAX_SIZE >
-class CUtlVectorFixedGrowable : public CUtlVectorBase< T, size_t, CUtlMemoryFixedGrowable<T, MAX_SIZE > >
+template< class T, int MAX_SIZE >
+class CUtlVectorFixedGrowable : public CUtlVectorBase< T, int, CUtlMemoryFixedGrowable<T, MAX_SIZE, int > >
 {
-	typedef CUtlVectorBase< T, size_t, CUtlMemoryFixedGrowable<T, MAX_SIZE > > BaseClass;
+	typedef CUtlVectorBase< T, int, CUtlMemoryFixedGrowable< T, MAX_SIZE > > BaseClass;
 
 public:
 	// constructor, destructor
-	explicit CUtlVectorFixedGrowable( size_t growSize = 0 ) : BaseClass( growSize, MAX_SIZE ) {}
+	explicit CUtlVectorFixedGrowable( int growSize = 0 ) : BaseClass( growSize, MAX_SIZE ) {}
 };
 
 // A fixed growable vector that's castable to CUtlVector
-template< class T, size_t FIXED_SIZE >
-class CUtlVectorFixedGrowableCompat : public CUtlVectorBase< T, size_t >
+template< class T, int FIXED_SIZE >
+class CUtlVectorFixedGrowableCompat : public CUtlVectorBase< T, int >
 {
-	typedef CUtlVectorBase< T, size_t > BaseClass;
+	typedef CUtlVectorBase< T, int > BaseClass;
 
 public:
 	// constructor, destructor
-	CUtlVectorFixedGrowableCompat(size_t growSize = 0) : BaseClass(nullptr, FIXED_SIZE, growSize)
+	CUtlVectorFixedGrowableCompat( int growSize = 0 ) : BaseClass( nullptr, FIXED_SIZE, growSize )
 	{
 		this->m_Memory.m_pMemory = m_FixedMemory.Base();
 	}

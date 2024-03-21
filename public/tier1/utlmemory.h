@@ -56,7 +56,7 @@ template< class T, class I = int >
 class CUtlMemory
 {
 	template< class A, class B, class C> friend class CUtlVector;
-	template< class A, size_t C> friend class CUtlVectorFixedGrowableCompat;
+	template< class A, int C> friend class CUtlVectorFixedGrowableCompat;
 
 	template< class A, class C> friend class CUtlMemoryRaw;
 
