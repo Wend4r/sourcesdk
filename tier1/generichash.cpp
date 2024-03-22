@@ -83,7 +83,7 @@ static unsigned g_nRandomValues[256] =
 //-----------------------------------------------------------------------------
 unsigned FASTCALL HashString( const char *pszKey )
 {
-	return MurmurHash2( pszKey, ( int )strlen( pszKey ), 0x3501A674 );
+	return MurmurHash2( pszKey, (uint32)V_strlen( pszKey ), 0x3501A674 );
 }
 
 
