@@ -120,7 +120,7 @@ public:
 	}
 };
 
-template <typename KeyT, typename ValueT = empty_t, typename KeyHashT = DefaultHashFunctor<KeyT>, typename KeyIsEqualT = DefaultEqualFunctor<KeyT>, typename AlternateKeyT = typename ArgumentTypeInfo<KeyT>::Alt_t, typename TableT = CUtlMemoryRaw< CUtlHashtableEntry< KeyT, ValueT > > >
+template <typename KeyT, typename ValueT = empty_t, typename KeyHashT = DefaultHashFunctor<KeyT>, typename KeyIsEqualT = DefaultEqualFunctor<KeyT>, typename AlternateKeyT = typename ArgumentTypeInfo<KeyT>::Alt_t, typename TableT = CUtlMemory_RawAllocator< CUtlHashtableEntry< KeyT, ValueT > > >
 class CUtlHashtable
 {
 public:
@@ -351,7 +351,7 @@ void CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DoReal
 {
 	Assert( !m_bSizeLocked ); 
 
-	CUtlMemoryRaw<entry_t> oldTable;
+	CUtlMemory_RawAllocator<entry_t> oldTable;
 	entry_t * RESTRICT pOldBase = NULL;
 	int nOldSize = m_nTableSize;
 

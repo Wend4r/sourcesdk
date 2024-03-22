@@ -49,7 +49,7 @@ private:
 		byte*			m_pMemory;
 	};
 
-	typedef CUtlVectorRaw<MemPage_t> MemPagesVec_t;
+	typedef CUtlVector_RawAllocator<MemPage_t> MemPagesVec_t;
 
 	unsigned int			m_nMaxPagesExp;
 	unsigned int			m_nPageIndexMask;

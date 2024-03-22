@@ -226,8 +226,8 @@ private:
 		}
 	};
 
-	typedef CUtlHashtable< UtlSymLargeId_t, empty_t, UtlSymTableLargeHashFunctor, UtlSymTableLargeEqualFunctor, UtlSymTableLargeAltKey, CUtlMemoryRaw<CUtlHashtableEntry<UtlSymLargeId_t, empty_t>> > Hashtable_t;
-	typedef CUtlVectorRaw< MemBlockHandle_t > MemBlocksVec_t;
+	typedef CUtlHashtable< UtlSymLargeId_t, empty_t, UtlSymTableLargeHashFunctor, UtlSymTableLargeEqualFunctor, UtlSymTableLargeAltKey, CUtlMemory_RawAllocator<CUtlHashtableEntry<UtlSymLargeId_t, empty_t>> > Hashtable_t;
+	typedef CUtlVector_RawAllocator< MemBlockHandle_t > MemBlocksVec_t;
 
 	Hashtable_t					m_HashTable;
 	MemBlocksVec_t				m_MemBlocks;

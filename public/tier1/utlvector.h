@@ -253,13 +253,13 @@ public:
 };
 
 template< class T, typename I = int >
-class CUtlVectorRaw : public CUtlVectorBase< T, I, CUtlMemoryRaw<T, I> >
+class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlMemory_RawAllocator<T, I> >
 {
-	typedef CUtlVectorBase< T, I, CUtlMemoryRaw<T, I> > BaseClass;
+	typedef CUtlVectorBase< T, I, CUtlMemory_RawAllocator<T, I> > BaseClass;
 
 public:
-	explicit CUtlVectorRaw( I growSize = 0, I initSize = 0, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( growSize, initSize, allocatorType ) {}
-	CUtlVectorRaw( T* pMemory, I allocationCount, I numElements, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( pMemory, allocationCount, numElements, allocatorType ) {}
+	explicit CUtlVector_RawAllocator( I growSize = 0, I initSize = 0, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( growSize, initSize, allocatorType ) {}
+	CUtlVector_RawAllocator( T* pMemory, I allocationCount, I numElements, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( pMemory, allocationCount, numElements, allocatorType ) {}
 };
 
 // this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
