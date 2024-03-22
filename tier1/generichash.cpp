@@ -11,11 +11,11 @@
 #include "tier0/platform.h"
 #include "tier0/strtools.h"
 #include "generichash.h"
-#include <ctype.h>
 
 // NOTE: This has to be the last file included!
 #include "tier0/memdbgon.h"
 
+#define TOLOWERU( c ) ( ( uint32 ) ( ( ( c >= 'A' ) && ( c <= 'Z' ) )? c + 32 : c ) )
 
 //-----------------------------------------------------------------------------
 //
@@ -105,7 +105,7 @@ unsigned FASTCALL HashStringFastCaselessConventional( const char *pszKey )
 
 	for( ; *pszKey ; pszKey++ )
 	{
-		hash = ( ( hash << 5 ) + hash ) + (uint8)tolower(*pszKey);
+		hash = ( ( hash << 5 ) + hash ) + (uint8)TOLOWERU(*pszKey);
 	}
 
 	return hash;
@@ -341,7 +341,6 @@ uint32 MurmurHash2( const void * key, int len, uint32 seed )
 	return h;
 }
 
-#define TOLOWERU( c ) ( ( uint32 ) ( ( ( c >= 'A' ) && ( c <= 'Z' ) )? c + 32 : c ) )
 uint32 MurmurHash2LowerCase( char const *pString, int len, uint32 nSeed )
 {
 	char *p = ( char * ) stackalloc( len + 1 );
