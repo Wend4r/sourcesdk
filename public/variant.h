@@ -891,6 +891,7 @@ public:
 			case FIELD_EHANDLE:			CopyData(*(CEntityHandle *)pData, false); return;
 			case FIELD_RESOURCE:		CopyData(*(ResourceHandle_t *)pData, false); return;
 			case FIELD_UTLSTRINGTOKEN:	CopyData(*(CUtlStringToken *)pData, false); return;
+			default:					return;
 		}
 	}
 
@@ -927,6 +928,7 @@ public:
 			case FIELD_COLOR32:			{ Color clr; if((successful = AssignTo(&clr))) { CopyData(clr, true); } break; }
 			case FIELD_QANGLE:			{ QAngle ang; if((successful = AssignTo(&ang))) { CopyData(ang, true); } break; }
 			case FIELD_QUATERNION:		{ Quaternion quat; if((successful = AssignTo(&quat))) { CopyData(quat, true); } break; }
+			default:					return false;
 		}
 
 		if(successful)
