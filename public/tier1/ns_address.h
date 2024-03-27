@@ -368,8 +368,9 @@ struct ns_address
 		{
 		case NSAT_P2P:
 			return m_steamID.IsType<T> ( );
+		default:
+			return false;
 		};
-		return false;
 	}
 
 	template <typename T> T *Get ( void )
@@ -379,8 +380,9 @@ struct ns_address
 		{
 		case NSAT_P2P:
 			return m_steamID.Get<T> ( );
+		default:
+			return NULL;
 		};
-		return NULL;
 	}
 
 	template <typename T> const T *Get ( void ) const
@@ -390,8 +392,9 @@ struct ns_address
 		{
 		case NSAT_P2P:
 			return m_steamID.Get<T> ( );
+		default:
+			return NULL;
 		};
-		return NULL;
 	}
 
 	template <typename T> T &AsType ( void )
@@ -401,10 +404,11 @@ struct ns_address
 		{
 		case NSAT_P2P:
 			return m_steamID.AsType<T> ( );
+		default:
+			Assert ( false );
+			static T dummy;
+			return dummy;
 		};
-		Assert ( false );
-		static T dummy;
-		return dummy;
 	}
 
 	template <typename T> const T &AsType ( void ) const
@@ -414,10 +418,11 @@ struct ns_address
 		{
 		case NSAT_P2P:
 			return m_steamID.AsType<T> ( );
+		default:
+			Assert ( false );
+			static T dummy;
+			return dummy;
 		};
-		Assert ( false );
-		static T dummy;
-		return dummy;
 	}
 
 	bool SetFromString( const char *s )
