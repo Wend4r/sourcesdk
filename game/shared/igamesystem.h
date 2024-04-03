@@ -309,9 +309,9 @@ public:
 
 	// Init, shutdown
 	// return true on success. false to abort DLL init!
-	virtual bool Init() { return true; }
-	virtual void PostInit() {}
-	virtual void Shutdown() {}
+	virtual bool Init() override { return true; }
+	virtual void PostInit() override {}
+	virtual void Shutdown() override {}
 
 	// Game init, shutdown
 	GS_EVENT( GameInit ) {}
@@ -343,9 +343,9 @@ public:
 
 	GS_EVENT( ClientPreEntityThink ) {}
 
-	virtual void unk_1271( const void *const msg ) {}
-	virtual void unk_1272( const void *const msg ) {}
-	virtual void unk_1273( const void *const msg ) {}
+	virtual void unk_1271( const void *const msg ) override {}
+	virtual void unk_1272( const void *const msg ) override {}
+	virtual void unk_1273( const void *const msg ) override {}
 
 	// Gets called each frame
 	GS_EVENT( ClientUpdate ) {}
@@ -359,13 +359,13 @@ public:
 	GS_EVENT( ServerPostEntityThink ) {}
 	GS_EVENT( ServerPreClientUpdate ) {}
 
-	virtual void unk_1277( const void *const msg ) {}
-	virtual void unk_1278( const void *const msg ) {}
+	virtual void unk_1277( const void *const msg ) override {}
+	virtual void unk_1278( const void *const msg ) override {}
 
 	GS_EVENT( ServerGamePostSimulate ) {}
 	GS_EVENT( ClientGamePostSimulate ) {}
 
-	virtual void unk_1281( const void *const msg ) {}
+	virtual void unk_1281( const void *const msg ) override {}
 
 	GS_EVENT( GameFrameBoundary ) {}
 	GS_EVENT( OutOfGameFrameBoundary ) {}
@@ -373,16 +373,16 @@ public:
 	GS_EVENT( SaveGame ) {}
 	GS_EVENT( RestoreGame ) {}
 
-	virtual void unk_1285( const void *const msg ) {}
-	virtual void unk_1286( const void *const msg ) {}
-	virtual void unk_1287( const void *const msg ) {}
-	virtual void unk_1288( const void *const msg ) {}
-	virtual void unk_1289( const void *const msg ) {}
+	virtual void unk_1285( const void *const msg ) override {}
+	virtual void unk_1286( const void *const msg ) override {}
+	virtual void unk_1287( const void *const msg ) override {}
+	virtual void unk_1288( const void *const msg ) override {}
+	virtual void unk_1289( const void *const msg ) override {}
 
-	virtual const char* GetName() { return m_pName; }
-	virtual void SetGameSystemGlobalPtrs(void* pValue) {}
-	virtual void SetName(const char* pName) { m_pName = pName; }
-	virtual bool DoesGameSystemReallocate() { return false; }
+	virtual const char* GetName() override { return m_pName; }
+	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}
+	virtual void SetName(const char* pName) override { m_pName = pName; }
+	virtual bool DoesGameSystemReallocate() override { return false; }
 	virtual ~CBaseGameSystem() {}
 
 private:
