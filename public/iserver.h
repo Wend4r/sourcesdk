@@ -16,6 +16,7 @@
 #include <tier0/checksum_crc.h>
 #include <engine/IEngineService.h>
 #include <netadr.h>
+#include <ns_address.h>
 
 class IGameSpawnGroupMgr;
 struct EventServerAdvanceTick_t;
