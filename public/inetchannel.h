@@ -12,41 +12,53 @@
 
 #include "tier0/platform.h"
 #include "inetchannelinfo.h"
+#include "steam/steamnetworkingtypes.h"
 #include "tier1/bitbuf.h"
-#include "tier0/netadr.h"
-#include "tier1/ns_address.h"
+#include "tier1/netadr.h"
+#include "tier1/utldelegate.h"
+#include <eiface.h>
 
-class	IDemoRecorder;
+class	IDemoRecorderBase;
+class	IInstantReplayIntercept;
 class	INetMessage;
 class	INetChannelHandler;
+class	INetChannel;
 class	INetChannelInfo;
 class	INetMessageBinder;
-typedef struct netpacket_s netpacket_t;
-
-DECLARE_HANDLE_32BIT(CSplitScreenPlayerSlot);
-DECLARE_POINTER_HANDLE(NetMessageHandle_t);
+class	INetworkMessageProcessingPreFilter;
+class	INetworkSerializable;
+class	INetMessageDispatcher;
+class	InstantReplayMessage_t;
+class	CUtlSlot;
 
 #ifndef NET_PACKET_ST_DEFINED
 #define NET_PACKET_ST_DEFINED
-typedef struct netpacket_s
+struct NetPacket_t
 {
-	ns_address		from;		// sender address
-	int				source;		// received source 
+	netadr_t		from;		// sender IP
+	int				source;		// received source
 	double			received;	// received time
 	unsigned char	*data;		// pointer to raw packet data
 	bf_read			message;	// easy bitbuf data access
 	int				size;		// size in bytes
 	int				wiresize;   // size in bytes before decompression
 	bool			stream;		// was send as stream
-	struct netpacket_s *pNext;	// for internal use, should be NULL in public
-} netpacket_t;
+	struct NetPacket_t *pNext;	// for internal use, should be NULL in public
+};
 #endif // NET_PACKET_ST_DEFINED
 
-enum NetChannelBufType_t
+enum NetChannelBufType_t : int8
 {
-	BUF_RELIABLE = 0,
-	BUF_UNRELIABLE,
+	BUF_DEFAULT = -1,
+	BUF_UNRELIABLE = 0,
+	BUF_RELIABLE,
 	BUF_VOICE,
+};
+
+abstract_class INetworkMessageProcessingPreFilter
+{
+public:
+	virtual bool FilterMessage( INetworkSerializable *pNetMessage, const void *pData, INetChannel *pChannel ) = 0;
 };
 
 abstract_class INetChannel : public INetChannelInfo
@@ -54,76 +66,82 @@ abstract_class INetChannel : public INetChannelInfo
 public:
 	virtual	~INetChannel( void ) {};
 
-	virtual void	SetDataRate(float rate) = 0;
-
-	virtual bool	RegisterMessage(INetMessageBinder *msg) = 0;
-	virtual bool	UnregisterMessage(INetMessageBinder *msg) = 0;
-	virtual void	SetTimeout(float seconds, bool bForceExact = false) = 0;
-	virtual void	SetDemoRecorder(IDemoRecorder *recorder) = 0;
-	virtual void	SetChallengeNr(unsigned int chnr) = 0;
-	
 	virtual void	Reset( void ) = 0;
 	virtual void	Clear( void ) = 0;
-	virtual void	Shutdown(const char *reason) = 0;
+	virtual void	Shutdown( ENetworkDisconnectionReason reason ) = 0;
 	
-	virtual void	ProcessPlayback( void ) = 0;
-    virtual bool    ProcessStream( void ) = 0;
-	virtual void	ProcessPacket( struct netpacket_s* packet, bool bHasHeader ) = 0;
-			
-	virtual bool	SendNetMsg(INetMessage &msg, bool bForceReliable = false, bool bVoice = false ) = 0;
-#ifdef POSIX
-	FORCEINLINE bool SendNetMsg(INetMessage const &msg, bool bForceReliable = false, bool bVoice = false ) { return SendNetMsg( *( (INetMessage *) &msg ), bForceReliable, bVoice ); }
-#endif
-	virtual bool	SendData(bf_write &msg, bool bReliable = true) = 0;
-	virtual bool	SendFile(const char *filename, unsigned int transferID, bool bIsReplayDemoFile ) = 0;
-	virtual void	DenyFile(const char *filename, unsigned int transferID, bool bIsReplayDemoFile ) = 0;
-	virtual void	RequestFile_OLD(const char *filename, unsigned int transferID) = 0;	// get rid of this function when we version the 
-	virtual void	SetChoked( void ) = 0;
-	virtual int		SendDatagram(bf_write *data) = 0;		
-	virtual bool	Transmit(bool onlyReliable = false) = 0;
+	virtual HSteamNetConnection GetSteamNetConnection( void ) const = 0;
+	
+	virtual bool	SendNetMessage( INetworkSerializable *pNetMessage, const void *pData, NetChannelBufType_t bufType ) = 0;
+	virtual bool	SendData( bf_write &msg, NetChannelBufType_t bufferType ) = 0;
+	virtual int		Transmit( const char *pDebugName, bf_write *data ) = 0;
+	virtual void	SetBitsToSend( void ) = 0;
+	virtual int		SendMessages( const char *pDebugName, bf_write *data ) = 0;
+	virtual void	ClearBitsToSend( void ) = 0;
 
-	virtual const ns_address &GetRemoteAddress( void ) const = 0;
-	virtual INetChannelHandler *GetMsgHandler( void ) const = 0;
-	virtual int				GetDropNumber( void ) const = 0;
-	virtual int				GetSocket( void ) const = 0;
-	virtual unsigned int	GetChallengeNr( void ) const = 0;
-	virtual void			GetSequenceData( int &nOutSequenceNr, int &nInSequenceNr, int &nOutSequenceNrAck ) = 0;
-	virtual void			SetSequenceData( int nOutSequenceNr, int nInSequenceNr, int nOutSequenceNrAck ) = 0;
-		
-	virtual void	UpdateMessageStats( int msggroup, int bits) = 0;
+	virtual const netadr_t &GetRemoteAddress( void ) const = 0;
+
+	virtual void	UpdateMessageStats( int msggroup, int bits, bool ) = 0;
+	
+	virtual void	unk001( void ) = 0;
+	
 	virtual bool	CanPacket( void ) const = 0;
 	virtual bool	IsOverflowed( void ) const = 0;
-	virtual bool	IsTimedOut( void ) const  = 0;
 	virtual bool	HasPendingReliableData( void ) = 0;
-
-	virtual void	SetFileTransmissionMode(bool bBackgroundMode) = 0;
-	virtual void	SetCompressionMode( bool bUseCompression ) = 0;
-	virtual unsigned int RequestFile(const char *filename, bool bIsReplayDemoFile ) = 0;
-	virtual float	GetTimeSinceLastReceived( void ) const = 0;	// get time since last received packet in seconds
-
-	virtual void	SetMaxBufferSize(bool bReliable, int nBytes, bool bVoice = false ) = 0;
-
-	virtual bool	IsNull() const = 0;
-	virtual int		GetNumBitsWritten( bool bReliable ) = 0;
-	virtual void	SetInterpolationAmount( float flInterpolationAmount ) = 0;
-	virtual void	SetRemoteFramerate( float flFrameTime, float flFrameTimeStdDeviation, float flFrameStartTimeStdDeviation ) = 0;
-
-	// Max # of payload bytes before we must split/fragment the packet
-	virtual void	SetMaxRoutablePayloadSize( int nSplitSize ) = 0;
-	virtual int		GetMaxRoutablePayloadSize() = 0;
 
 	// For routing messages to a different handler
 	virtual bool	SetActiveChannel( INetChannel *pNewChannel ) = 0;
-	virtual void	AttachSplitPlayer( int nSplitPlayerSlot, INetChannel *pChannel ) = 0;
-	virtual void	DetachSplitPlayer( int nSplitPlayerSlot ) = 0;
+	
+	virtual void	AttachSplitPlayer( CSplitScreenSlot nSlot, INetChannel *pChannel ) = 0;
+	virtual void	DetachSplitPlayer( CSplitScreenSlot nSlot ) = 0;
 
-	virtual bool	IsRemoteDisconnected() const = 0;
+	virtual void	SetMinDataRate( int rate ) = 0;
+	virtual void	SetMaxDataRate( int rate ) = 0;
 
-	virtual bool	WasLastMessageReliable() const = 0; // True if the last (or currently processing) message was sent via the reliable channel
+	virtual void	SetTimeout( float seconds, bool bForceExact = false ) = 0;
+	virtual bool	IsTimedOut( void ) const = 0;
+	virtual void	UpdateLastReceivedTime( void ) = 0;
 
-	virtual const unsigned char * GetChannelEncryptionKey() const = 0;	// Returns a buffer with channel encryption key data (network layer determines the buffer size)
+	virtual void	SetRemoteFramerate( float flFrameTime, float flFrameTimeStdDeviation, float flFrameStartTimeStdDeviation, float flLoss, float flUnfilteredFrameTime ) = 0;					
+	virtual bool	IsRemoteDisconnected( ENetworkDisconnectionReason &reason ) const = 0;
 
-	virtual bool	EnqueueVeryLargeAsyncTransfer( INetMessage &msg ) = 0;	// Enqueues a message for a large async transfer
+	virtual void	SetNetMessageDispatcher( INetMessageDispatcher *pDispatcher ) = 0;
+	virtual INetMessageDispatcher *GetNetMessageDispatcher( void ) const = 0;
+	
+	virtual void	StartRegisteringMessageHandlers( void ) = 0;
+	virtual void	FinishRegisteringMessageHandlers( void ) = 0;
+	
+	virtual void	RegisterNetMessageHandlerAbstract( CUtlSlot *nSlot, const CUtlAbstractDelegate &delegate, int nParamCount, INetworkSerializable *pNetMessage, int nPriority ) = 0;
+	virtual void	UnregisterNetMessageHandlerAbstract( CUtlSlot *nSlot, const CUtlAbstractDelegate &delegate, INetworkSerializable *pNetMessage ) = 0;
+	
+	virtual void	SetChallengeNr( unsigned int challenge ) = 0;
+	virtual int		GetNumBitsWritten( NetChannelBufType_t bufferType ) const = 0;
+	virtual void	SetDemoRecorder( IDemoRecorderBase *pDemoRecorder ) = 0;
+	virtual void	SetInstantReplayIntercept( IInstantReplayIntercept *pInstantReplayIntercept ) = 0;
+	virtual bool	IsNull( void ) const = 0;
+	virtual bool	ProcessDemoPacket( NetPacket_t *packet ) = 0;
+	virtual bool	WasLastMessageReliable( void ) const = 0;
+	
+	virtual void	InstallMessageFilter( INetworkMessageProcessingPreFilter *pFilter ) = 0;
+	virtual void	UninstallMessageFilter( INetworkMessageProcessingPreFilter *pFilter ) = 0;
+	
+	virtual void	PostReceivedNetMessage( INetworkSerializable *pNetMessage, const void *pData, const NetChannelBufType_t *pBufType, int nBits, int nInSequenceNr ) = 0;
+	virtual void	InsertReplayMessage( InstantReplayMessage_t &msg ) = 0;
+	virtual bool	HasQueuedPackets( int nMessageId ) const = 0;
+
+	virtual void	SetPendingDisconnect( ENetworkDisconnectionReason reason ) = 0;
+	virtual ENetworkDisconnectionReason GetPendingDisconnect( void ) const = 0;
+
+	virtual void	SuppressTransmit( bool suppress ) = 0;
+	virtual bool	IsSuppressingTransmit( void ) const = 0;
+	
+	virtual EResult	SendMessage( const void *pData, uint32 cbData, int nSendFlags ) = 0;
+	
+	virtual int		GetCurrentMessageBits( void ) const = 0;
+	virtual int		GetCurrentMessageInSequenceNr( void ) const = 0;
+
+	virtual void	unk101( void ) = 0;
+	virtual void	unk102( void ) = 0;
 };
 
 
