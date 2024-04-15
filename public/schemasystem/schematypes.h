@@ -329,6 +329,14 @@ struct SchemaClassInfoData_t
 	uint m_nFlags2;
 	
 	SchemaClassManipulatorFn_t m_pfnManipulator;
+
+	CSchemaClassInfo* GetParent()
+	{
+		if (!m_pBaseClasses)
+			return nullptr;
+
+		return m_pBaseClasses->m_pClass;
+	}
 };
 
 class CSchemaClassInfo : public SchemaClassInfoData_t
