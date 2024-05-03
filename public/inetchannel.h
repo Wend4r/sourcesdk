@@ -58,6 +58,7 @@ enum NetChannelBufType_t : int8
 abstract_class INetworkMessageProcessingPreFilter
 {
 public:
+	// Filter incoming messages from the netchan, return true to filter out (block) the further processing of the message
 	virtual bool FilterMessage( INetworkSerializable *pNetMessage, const void *pData, INetChannel *pChannel ) = 0;
 };
 
@@ -127,7 +128,7 @@ public:
 	
 	virtual void	PostReceivedNetMessage( INetworkSerializable *pNetMessage, const void *pData, const NetChannelBufType_t *pBufType, int nBits, int nInSequenceNr ) = 0;
 	virtual void	InsertReplayMessage( InstantReplayMessage_t &msg ) = 0;
-	virtual bool	HasQueuedPackets( int nMessageId ) const = 0;
+	virtual bool	HasQueuedNetMessages( int nMessageId ) const = 0;
 
 	virtual void	SetPendingDisconnect( ENetworkDisconnectionReason reason ) = 0;
 	virtual ENetworkDisconnectionReason GetPendingDisconnect( void ) const = 0;
@@ -135,10 +136,10 @@ public:
 	virtual void	SuppressTransmit( bool suppress ) = 0;
 	virtual bool	IsSuppressingTransmit( void ) const = 0;
 	
-	virtual EResult	SendMessage( const void *pData, uint32 cbData, int nSendFlags ) = 0;
+	virtual EResult	SendRawMessage( const void *pData, uint32 cbData, int nSendFlags ) = 0;
 	
-	virtual int		GetCurrentMessageBits( void ) const = 0;
-	virtual int		GetCurrentMessageInSequenceNr( void ) const = 0;
+	virtual int		GetCurrentNetMessageBits( void ) const = 0;
+	virtual int		GetCurrentNetMessageInSequenceNr( void ) const = 0;
 
 	virtual void	unk101( void ) = 0;
 	virtual void	unk102( void ) = 0;

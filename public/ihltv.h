@@ -19,6 +19,7 @@ class IServer;
 class IHLTVDirector;
 class IGameEvent;
 struct netadr_t;
+class CGameInfo;
 
 //-----------------------------------------------------------------------------
 // Interface the HLTV module exposes to the engine
