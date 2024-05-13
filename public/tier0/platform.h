@@ -736,17 +736,14 @@ typedef void * HINSTANCE;
 #define  FLOAT64_MAX		DBL_MAX
 
 #define offsetof_by_class(s,m)	( (size_t)&(((s *)0x1000000)->m) - 0x1000000u )
-#if defined(GNUC) && !defined(__clang__)
-#undef offsetof
-// Note: can't use builtin offsetof because many use cases (esp. in templates) wouldn't compile due to restrictions on the builtin offsetof
-//#define offsetof( type, var ) __builtin_offsetof( type, var ) 
-#define offsetof(s,m)	offsetof_by_class(s,m)
-#else
-#include <stddef.h>
-#if !defined(__clang__)
-#undef offsetof
-#define offsetof(s,m)	(size_t)&(((s *)0)->m)
-#endif
+
+#ifndef offsetof
+	#ifdef GNUC
+		#define offsetof( type, var ) __builtin_offsetof( type, var )
+	#else
+		#include <stddef.h>
+		#define offsetof(s,m)	(size_t)&(((s *)0)->m)
+	#endif
 #endif
 
 
