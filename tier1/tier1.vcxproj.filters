@@ -187,9 +187,6 @@
     <ClCompile Include="checksum_sha1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="circularbuffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="convar.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

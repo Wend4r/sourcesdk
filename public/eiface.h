@@ -73,7 +73,20 @@ class CNavData;
 struct EconItemInfo_t;
 struct EconControlPointInfo_t;
 class CEntityHandle;
-struct RenderMultisampleType_t;
+struct RenderDeviceInfo_t;
+
+enum RenderMultisampleType_t : uint8
+{
+	RENDER_MULTISAMPLE_INVALID = 0xFF,
+	RENDER_MULTISAMPLE_NONE = 0,
+	RENDER_MULTISAMPLE_2X,
+	RENDER_MULTISAMPLE_4X,
+	RENDER_MULTISAMPLE_6X,
+	RENDER_MULTISAMPLE_8X,
+	RENDER_MULTISAMPLE_16X,
+	RENDER_MULTISAMPLE_TYPE_COUNT
+};
+
 class GameSessionConfiguration_t;
 struct StringTableDef_t;
 class ILoopModePrerequisiteRegistry;
@@ -464,7 +477,7 @@ public:
 	// This is also where an entity can force other entities to be transmitted if it refers to them
 	// with ehandles.
 	virtual void			CheckTransmit( CCheckTransmitInfo **pInfoInfoList, int nInfoCount, CBitVec<16384> &unionTransmitEdicts, const Entity2Networkable_t **pNetworkables,
-								const uint16 *pEntityIndicies, int nEntityIndices ) = 0;
+								const uint16 *pEntityIndicies, int nEntityIndices, bool bEnablePVSBits ) = 0;
 	
 	// TERROR: Perform any PVS cleanup before a full update
 	virtual void			PrepareForFullUpdate( CEntityIndex nPlayerEntityIndex ) = 0;

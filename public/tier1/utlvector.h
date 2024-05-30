@@ -1468,6 +1468,11 @@ public:
 class CUtlStringList : public CUtlVectorAutoPurge< char *>
 {
 public:
+	~CUtlStringList()
+	{
+		PurgeAndDeleteElements();
+	}
+
 	void CopyAndAddToTail( char const *pString )			// clone the string and add to the end
 	{
 		char *pNewStr = new char[1 + strlen( pString )];
@@ -1501,8 +1506,17 @@ public:
 	{
 		V_SplitString2( pString, pSeparators, nSeparators, *this );
 	}
+
 private:
 	CUtlStringList( const CUtlStringList &other ); // copying directly will cause double-release of the same strings; maybe we need to do a deep copy, but unless and until such need arises, this will guard against double-release
+	inline void PurgeAndDeleteElements()
+	{
+		for( int i = 0; i < m_Size; i++ )
+		{
+			delete[] Element(i);
+		}
+		Purge();
+	}
 };
 
 // Source1 legacy: CSplitString was declared here

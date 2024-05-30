@@ -277,6 +277,7 @@ public:
 	GS_EVENT_IMPL( ClientGamePostSimulate );
 
 	virtual void unk_1281( const void *const msg ) = 0;
+	virtual void unk_1282( const void *const msg ) = 0;
 
 	GS_EVENT_IMPL( GameFrameBoundary );
 	GS_EVENT_IMPL( OutOfGameFrameBoundary );
@@ -289,6 +290,7 @@ public:
 	virtual void unk_1287( const void *const msg ) = 0;
 	virtual void unk_1288( const void *const msg ) = 0;
 	virtual void unk_1289( const void *const msg ) = 0;
+	virtual void unk_1290( const void *const msg ) = 0;
 
 	virtual const char* GetName() = 0;
 	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;
@@ -365,7 +367,8 @@ public:
 	GS_EVENT( ServerGamePostSimulate ) {}
 	GS_EVENT( ClientGamePostSimulate ) {}
 
-	virtual void unk_1281( const void *const msg ) override {}
+	virtual void unk_1281( const void *const msg ) {}
+	virtual void unk_1282( const void *const msg ) {}
 
 	GS_EVENT( GameFrameBoundary ) {}
 	GS_EVENT( OutOfGameFrameBoundary ) {}
@@ -373,11 +376,12 @@ public:
 	GS_EVENT( SaveGame ) {}
 	GS_EVENT( RestoreGame ) {}
 
-	virtual void unk_1285( const void *const msg ) override {}
-	virtual void unk_1286( const void *const msg ) override {}
-	virtual void unk_1287( const void *const msg ) override {}
-	virtual void unk_1288( const void *const msg ) override {}
-	virtual void unk_1289( const void *const msg ) override {}
+	virtual void unk_1285( const void *const msg ) {}
+	virtual void unk_1286( const void *const msg ) {}
+	virtual void unk_1287( const void *const msg ) {}
+	virtual void unk_1288( const void *const msg ) {}
+	virtual void unk_1289( const void *const msg ) {}
+	virtual void unk_1290( const void *const msg ) {}
 
 	virtual const char* GetName() override { return m_pName; }
 	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}

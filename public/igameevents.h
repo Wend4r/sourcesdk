@@ -74,11 +74,6 @@ class CGameEvent;
 
 typedef CKV3MemberName GameEventKeySymbol_t;
 
-abstract_class IToolGameEventAPI
-{
-	virtual void unk001( void * ) = 0;
-};
-
 abstract_class IGameEvent
 {
 public:
@@ -157,7 +152,7 @@ public:
 #undef CreateEvent
 #endif
 
-abstract_class IGameEventManager2 : public IBaseInterface, public IToolGameEventAPI
+abstract_class IGameEventManager2 : public IBaseInterface
 {
 public:
 	virtual	~IGameEventManager2( void ) {};

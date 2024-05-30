@@ -11,12 +11,6 @@
 #pragma once
 #endif
 
-#include "entityinstance.h"
-class CBaseEntity : public CEntityInstance
-{
-};
-
-#if 0
 #define TEAMNUM_NUM_BITS	6
 
 #include <ctype.h>
@@ -2974,7 +2968,5 @@ FORCEINLINE bool EntityNamesMatch( const char *pszQuery, string_t nameToMatch )
 
 	return EntityNamesMatchCStrings( pszQuery, pszNameToMatch );
 }
-
-#endif
 
 #endif // BASEENTITY_H

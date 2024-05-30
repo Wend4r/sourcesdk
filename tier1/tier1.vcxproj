@@ -226,7 +226,6 @@
     <ClCompile Include="appinstance.cpp" />
     <ClCompile Include="bitbuf.cpp" />
     <ClCompile Include="checksum_sha1.cpp" />
-    <ClCompile Include="circularbuffer.cpp" />
     <ClCompile Include="convar.cpp" />
     <ClCompile Include="generichash.cpp" />
     <ClCompile Include="kvpacker.cpp" />

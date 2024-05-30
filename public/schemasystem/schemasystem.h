@@ -43,9 +43,7 @@ public:
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic>			Type_Atomic( const char* pszAtomicName, uint16 nSize, uint8 nAlignment ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_T>		Type_Atomic_T( const char* pszAtomicName, uint16 nSize, uint8 nAlignment, CSchemaType* pTemplateType ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_CollectionOfT> Type_Atomic_CollectionOfT( const char* pszAtomicName, uint16 nSize, uint8 nAlignment, uint16 nElementSize, CSchemaType* pTemplateType, SchemaAtomicManipulatorFn_t manipulator ) = 0;
-	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_TF>		Type_Atomic_TF( const char* pszAtomicName, uint16 nSize, uint8 nAlignment, CSchemaType* pTemplateType, int nFuncPtrSize ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_TT>		Type_Atomic_TT( const char* pszAtomicName, uint16 nSize, uint8 nAlignment, CSchemaType* pTemplateType, CSchemaType* pTemplateType2 ) = 0;
-	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_TTF>		Type_Atomic_TTF( const char* pszAtomicName, uint16 nSize, uint8 nAlignment, CSchemaType* pTemplateType, CSchemaType* pTemplateType2, int nFuncPtrSize ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_I>		Type_Atomic_I( const char* pszAtomicName, uint16 nSize, uint8 nAlignment, int nInterger ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_DeclaredClass>	Type_DeclaredClass( const char* pszClassName ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_DeclaredEnum>	Type_DeclaredEnum( const char* pszEnumName ) = 0;
@@ -56,9 +54,7 @@ public:
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic>			FindType_Atomic( int nAtomicID ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_T>		FindType_Atomic_T( int nAtomicID, CSchemaType* pTemplateType ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_CollectionOfT> FindType_Atomic_CollectionOfT( int nAtomicID, CSchemaType* pTemplateType, SchemaAtomicManipulatorFn_t manipulator ) = 0;
-	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_TF>		FindType_Atomic_TF( int nAtomicID, CSchemaType* pTemplateType, int nFuncPtrSize ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_TT> 		FindType_Atomic_TT( int nAtomicID, CSchemaType* pTemplateType, CSchemaType* pTemplateType2 ) = 0;
-	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_TTF> 		FindType_Atomic_TTF( int nAtomicID, CSchemaType* pTemplateType, CSchemaType* pTemplateType2, int nFuncPtrSize ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_I> 		FindType_Atomic_I( int nAtomicID, int nInteger ) = 0;
 	
 	virtual CSchemaType_DeclaredClass* FindType_DeclaredClass( const char* pszClassName ) = 0;
@@ -90,17 +86,15 @@ public:
 	bool m_bBuiltinTypesInitialized;
 	CSchemaType_Builtin m_BuiltinTypes[SCHEMA_BUILTIN_COUNT];
 	
-	CSchemaPtrMap<CSchemaType*, CSchemaType_Ptr*>					m_Ptrs;
+	CSchemaPtrMap<SchemaMetaInfoHandle_t<CSchemaType>, CSchemaType_Ptr*> m_Ptrs;
 	CSchemaPtrMap<int, CSchemaType_Atomic*>							m_Atomics;
 	CSchemaPtrMap<AtomicTypeInfo_T_t, CSchemaType_Atomic_T*>		m_AtomicsT;
 	CSchemaPtrMap<AtomicTypeInfo_T_t, CSchemaType_Atomic_CollectionOfT*> m_AtomicsCollectionOfT;
-	CSchemaPtrMap<AtomicTypeInfo_TF_t, CSchemaType_Atomic_TF*>		m_AtomicsTF;
 	CSchemaPtrMap<AtomicTypeInfo_TT_t, CSchemaType_Atomic_TT*>		m_AtomicsTT;
-	CSchemaPtrMap<AtomicTypeInfo_TTF_t, CSchemaType_Atomic_TTF*>	m_AtomicsTTF;
 	CSchemaPtrMap<AtomicTypeInfo_I_t, CSchemaType_Atomic_I*>		m_AtomicsI;
 	CSchemaPtrMap<uint, CSchemaType_DeclaredClass*>					m_DeclaredClasses;
 	CSchemaPtrMap<uint, CSchemaType_DeclaredEnum*> 					m_DeclaredEnums;
-	CSchemaPtrMap<int, const SchemaAtomicTypeInfo_t*> 				m_AtomicInfos;
+	CSchemaPtrMap<int, SchemaMetaInfoHandle_t<SchemaAtomicTypeInfo_t>> m_AtomicInfos;
 	CSchemaPtrMap<TypeAndCountInfo_t, CSchemaType_FixedArray*> 		m_FixedArrays;
 	CSchemaPtrMap<int, CSchemaType_Bitfield*> 						m_Bitfields;
 	

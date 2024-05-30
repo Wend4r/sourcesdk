@@ -11,6 +11,14 @@
 #pragma once
 #endif
 
+enum GlobalVarsUsageWarning_t
+{
+	GV_RENDERTIME_CALLED_DURING_SIMULATION,
+	GV_CURTIME_CALLED_DURING_RENDERING
+};
+
+typedef void (*FnGlobalVarsWarningFunc)(GlobalVarsUsageWarning_t);
+
 class CSaveRestoreData;
 
 //-----------------------------------------------------------------------------
@@ -38,9 +46,22 @@ public:
 	// Absolute frame counter - continues to increase even if game is paused
 	int				framecount;
 	// Non-paused frametime
-	float			absoluteframetime;
-	
-	float			absoluteframestarttimestddev;
+	float absoluteframetime;
+	float absoluteframestarttimestddev;
+
+	int maxClients;
+
+	// zer0k: Command queue related
+	int unknown1;
+	int unknown2;
+	int unknown3;
+	int unknown4;
+	int unknown5;
+
+	FnGlobalVarsWarningFunc m_pfnWarningFunc;
+
+	// Time spent on last server or client frame (has nothing to do with think intervals)
+	float frametime;
 
 	// Current time 
 	//
@@ -57,12 +78,15 @@ public:
 	//
 	//   - During prediction, this is based on the client's current tick:
 	//     [client_current_tick * tick_interval]
-	float			curtime;
-	
-	// Time spent on last server or client frame (has nothing to do with think intervals)
-	float			frametime;
-	// current maxplayers setting
-	int				maxClients;
+	float curtime;
+	float rendertime;
+
+	// zer0k: Command queue + interpolation related 
+	float unknown6;
+	float unknown7;
+
+	bool m_bInSimulation;
+	bool m_bEnableAssertions;
 
 	// Simulation ticks - does not increase when game is paused
 	int				tickcount;

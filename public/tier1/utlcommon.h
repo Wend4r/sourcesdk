@@ -1,4 +1,4 @@
-//========= Copyright © 2011, Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ 2011, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: common helpers for reuse among various Utl containers
 //
@@ -11,6 +11,7 @@
 #pragma once
 
 #include "strtools.h"
+#include "tier0/utlstringtoken.h"
 
 //-----------------------------------------------------------------------------
 // Henry Goffin (henryg) was here. Questions? Bugs? Go slap him around a bit.
@@ -184,6 +185,7 @@ template <> struct DefaultHashFunctor<signed long long> : Mix64HashFunctor { };
 template <> struct DefaultHashFunctor<unsigned long long> : Mix64HashFunctor { };
 template <> struct DefaultHashFunctor<void*> : PointerHashFunctor { };
 template <> struct DefaultHashFunctor<const void*> : PointerHashFunctor { };
+template <> struct DefaultHashFunctor<CUtlStringToken> : Mix32HashFunctor { };
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
 template <> struct DefaultHashFunctor<wchar_t> : Mix32HashFunctor { };
 #endif
