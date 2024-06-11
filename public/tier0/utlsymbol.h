@@ -336,8 +336,7 @@ public:
 	DLL_CLASS_IMPORT bool				RestoreFromBuffer( CUtlBuffer &buffer );
 
 private:
-	CCountedStringPool m_PathStringPool;
-	CCountedStringPool m_FileStringPool;
+	CCountedStringPool_CI	m_StringPool;
 	mutable CThreadSpinRWLock m_lock;
 };
 

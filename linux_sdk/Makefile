@@ -101,8 +101,8 @@ DEFINES += -DCOMPILER_GCC -DPOSIX -DVPROF_LEVEL=1 -DSWDS -D_finite=finite -Dstri
 	-D_strnicmp=strncasecmp -Dstrnicmp=strncasecmp -D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp
 UNDEF = -Usprintf -Ustrncpy -UPROTECTED_THINGS_ENABLE
 
-BASE_CFLAGS = -fno-strict-aliasing -Wall -Werror -Wno-conversion -Wno-overloaded-virtual -Wno-non-virtual-dtor -Wno-invalid-offsetof \
-	      -Wno-unused
+BASE_CFLAGS = -fPIC -fno-strict-aliasing -Wall -Wsign-compare -Wno-conversion -Wno-overloaded-virtual -Wno-non-virtual-dtor -Wno-invalid-offsetof \
+	      -Wno-unknown-pragmas -Wno-unused -Wno-c++11-narrowing -Wno-register
 SHLIBCFLAGS = -fPIC
 
 # Flags passed to the c compiler

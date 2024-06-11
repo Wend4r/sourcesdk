@@ -556,6 +556,9 @@ void * __cdecl _recalloc_crt(void *ptr, size_t count, size_t size)
 	return _recalloc_base( ptr, count, size );
 }
 
+#if 0
+// AMNOTE: Read the comment on _recalloc_base to see the reason of this being disabled
+
 ALLOC_CALL void * __cdecl _recalloc ( void * memblock, size_t count, size_t size )
 {
 	void *pMem = ReallocUnattributed( memblock, size * count );
@@ -565,6 +568,7 @@ ALLOC_CALL void * __cdecl _recalloc ( void * memblock, size_t count, size_t size
 	}
 	return pMem;
 }
+#endif
 
 /**
 size_t _msize_base( void *pMem )

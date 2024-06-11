@@ -398,4 +398,5 @@ inline CTransform matrix3x4_t::ToCTransform() const
 }
 
 
-#endif // TRANSFORM
+#endif // TRANSFORM_H
+
