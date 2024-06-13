@@ -25,6 +25,8 @@
 #include "vscript/ivscript.h"
 
 class CMsgSource1LegacyGameEvent;
+template<typename PROTO_TYPE>
+class CNetMessagePB;
 class CPlayerSlot;
 class CBasePlayer;
 class CEntityIndex;
@@ -190,8 +192,8 @@ public:
 	virtual void FreeEvent( IGameEvent *event ) = 0;
 
 	// write/read event to/from bitbuffer
-	virtual bool SerializeEvent( IGameEvent *event, CMsgSource1LegacyGameEvent *ev ) = 0;
-	virtual IGameEvent *UnserializeEvent( const CMsgSource1LegacyGameEvent &ev ) = 0; // create new KeyValues, must be deleted
+	virtual bool SerializeEvent( IGameEvent *event, CNetMessagePB<CMsgSource1LegacyGameEvent> *ev ) = 0;
+	virtual IGameEvent *UnserializeEvent( const CNetMessagePB<CMsgSource1LegacyGameEvent> &ev ) = 0; // create new KeyValues, must be deleted
 	
 	virtual int LookupEventId( const char *name ) = 0;
 	
