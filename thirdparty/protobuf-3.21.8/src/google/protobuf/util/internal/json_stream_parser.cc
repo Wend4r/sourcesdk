@@ -44,6 +44,7 @@
 #include <google/protobuf/util/internal/object_writer.h>
 #include <google/protobuf/util/internal/json_escaping.h>
 
+#undef isdigit
 
 namespace google {
 namespace protobuf {
@@ -598,7 +599,7 @@ util::Status JsonStreamParser::ParseNumberHelper(NumberResult* result) {
   // we do not support hex or octal notations.
   for (; index < length; ++index) {
     char c = data[index];
-    if (isdigit(c)) continue;
+    if (std::isdigit(c)) continue;
     if (c == '.' || c == 'e' || c == 'E') {
       floating = true;
       continue;
