@@ -6,13 +6,15 @@
 #endif
 
 #include "platform.h"
-#include "utlbuffer.h"
-#include "utlstring.h"
 
+class CUtlString;
+class CUtlBuffer;
+class CBufferString;
 class KeyValues3;
 class CKeyValues3Context;
 struct KV1ToKV3Translation_t;
 struct KV3ToKV1Translation_t;
+
 /* 
 	KeyValues3 is a data storage format. See https://developer.valvesoftware.com/wiki/KeyValues3
 	Supports various specific data types targeted at the Source2.
