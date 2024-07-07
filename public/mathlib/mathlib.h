@@ -171,6 +171,7 @@ struct matrix3x4_t
 	inline void Transpose();
 
 	inline QAngle ToQAngle() const;
+	inline CTransform ToTransform() const;
 	inline RadianEuler ToRadianEuler() const;
 	inline Quaternion ToQuaternion() const;
 
@@ -2931,6 +2932,29 @@ inline void matrix3x4_t::Init( const Vector &axis_of_rotation, float degrees, co
 {
 	MatrixBuildRotationAboutAxis( axis_of_rotation, degrees, *this );
 	SetOrigin( pos );
+}
+
+inline QAngle matrix3x4_t::ToQAngle() const
+{
+	QAngle out;
+	MatrixAngles( *this, out );
+	return out;
+}
+
+// matrix3x4_t::ToTransform() : see "transform.h"
+
+inline RadianEuler matrix3x4_t::ToRadianEuler() const
+{
+	RadianEuler out;
+	MatrixAngles( *this, out );
+	return out;
+}
+
+inline Quaternion matrix3x4_t::ToQuaternion() const
+{
+	Quaternion out;
+	MatrixQuaternion( *this, out );
+	return out;
 }
 
 inline void matrix3x4_t::SetToIdentity()

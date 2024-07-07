@@ -375,6 +375,7 @@ inline void CTransform::RotateAABB( const Vector &vecMinsIn, const Vector &vecMa
 {
 	ToMatrix().RotateAABB( vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
 }
+
 inline void CTransform::RotateAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const
 {
 	ToMatrix().RotateAABBByInverse( vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
@@ -383,16 +384,12 @@ inline void CTransform::RotateAABBByInverse( const Vector &vecMinsIn, const Vect
 inline void CTransform::InverseTR( CTransform &out ) const
 {
 	matrix3x4_t xForm = ToMatrix();
-	out = xForm.InverseTR().ToCTransform();
+	out = xForm.InverseTR().ToTransform();
 }
 
 
 // transform conversion operators on matrix3x4_t
-inline void matrix3x4_t::InitFromCTransform( const CTransform &transform )
-{
-	TransformMatrix( transform, *this );
-}
-inline CTransform matrix3x4_t::ToCTransform() const
+inline CTransform matrix3x4_t::ToTransform() const
 {
 	return MatrixTransform( *this );
 }
