@@ -46,10 +46,6 @@ public:
 	CGlobalVars( bool bIsClient );
 
 public:
-
-	int unknown8;
-	int unknown9;
-	
 	// Current map
 	string_t		mapname;
 	string_t		mapGroupName;

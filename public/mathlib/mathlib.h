@@ -114,7 +114,7 @@ class matrix3x4a_t;
 struct matrix3x4_t
 {
 	matrix3x4_t() {}
-	matrix3x4_t( 
+	matrix3x4_t(
 		float m00, float m01, float m02, float m03,
 		float m10, float m11, float m12, float m13,
 		float m20, float m21, float m22, float m23 )
@@ -136,34 +136,26 @@ struct matrix3x4_t
 	// Creates a matrix where the X axis = forward
 	// the Y axis = left, and the Z axis = up
 	//-----------------------------------------------------------------------------
-	void Init( const Vector& xAxis, const Vector& yAxis, const Vector& zAxis, const Vector &vecOrigin )
-	{
-		m_flMatVal[0][0] = xAxis.x; m_flMatVal[0][1] = yAxis.x; m_flMatVal[0][2] = zAxis.x; m_flMatVal[0][3] = vecOrigin.x;
-		m_flMatVal[1][0] = xAxis.y; m_flMatVal[1][1] = yAxis.y; m_flMatVal[1][2] = zAxis.y; m_flMatVal[1][3] = vecOrigin.y;
-		m_flMatVal[2][0] = xAxis.z; m_flMatVal[2][1] = yAxis.z; m_flMatVal[2][2] = zAxis.z; m_flMatVal[2][3] = vecOrigin.z;
-	}
+	inline void Init( const Vector &xAxis, const Vector &yAxis, const Vector &zAxis, const Vector &vecOrigin );
+	inline void Init( const QAngle &angs, const Vector &pos );
+	inline void Init( const QAngle &angs );
+	inline void Init( const RadianEuler &angs, const Vector &pos );
+	inline void Init( const RadianEuler &angs );
+	inline void Init( const Quaternion &quat, const Vector &pos );
+	inline void Init( const Quaternion &quat );
+	inline void Init( const Vector &fwd );
+	inline void Init( const Vector &fwd, const Vector &pos );
+	inline void Init( const Vector &axis_of_rotation, float degrees );
+	inline void Init( const Vector &axis_of_rotation, float degrees, const Vector &pos );
 
 	//-----------------------------------------------------------------------------
 	// Creates a matrix where the X axis = forward
 	// the Y axis = left, and the Z axis = up
 	//-----------------------------------------------------------------------------
-	matrix3x4_t( const Vector& xAxis, const Vector& yAxis, const Vector& zAxis, const Vector &vecOrigin )
+	matrix3x4_t( const Vector &xAxis, const Vector &yAxis, const Vector &zAxis, const Vector &vecOrigin )
 	{
 		Init( xAxis, yAxis, zAxis, vecOrigin );
 	}
-
-	inline void InitFromQAngles( const QAngle &angles, const Vector &vPosition );
-	inline void InitFromQAngles( const QAngle &angles );
-	inline void InitFromRadianEuler( const RadianEuler &angles, const Vector &vPosition );
-	inline void InitFromRadianEuler( const RadianEuler &angles );
-	inline void InitFromCTransform( const CTransform &transform );
-	inline void InitFromQuaternion( const Quaternion &orientation, const Vector &vPosition );
-	inline void InitFromQuaternion( const Quaternion &orientation );
-	inline void InitFromDiagonal( const Vector &vDiagonal );
-
-	inline Quaternion ToQuaternion() const;
-	inline QAngle ToQAngle() const;
-	inline CTransform ToCTransform() const;
 
 	inline void SetToIdentity();
 
@@ -172,20 +164,54 @@ struct matrix3x4_t
 	/// then call this.
 	FORCEINLINE void ScaleUpper3x3Matrix( float flScale );
 
-	/// modify the origin
-	inline void SetOrigin( Vector const & p )
-	{
-		m_flMatVal[0][3] = p.x;
-		m_flMatVal[1][3] = p.y;
-		m_flMatVal[2][3] = p.z;
-	}
+	inline void ConcatRotations( const matrix3x4_t &other );
+	inline void ConcatTransforms( const matrix3x4_t &other );
 
-	/// return the origin
-	inline Vector GetOrigin( void ) const
-	{
-		Vector vecRet( m_flMatVal[ 0 ][ 3 ], m_flMatVal[ 1 ][ 3 ], m_flMatVal[ 2 ][ 3 ] );
-		return vecRet;
-	}
+	inline void Multiply( const matrix3x4_t &other );
+	inline void Transpose();
+
+	inline QAngle ToQAngle() const;
+	inline RadianEuler ToRadianEuler() const;
+	inline Quaternion ToQuaternion() const;
+
+	inline float RowDotProduct( int row, const Vector &in ) const;
+	inline float ColumnDotProduct( MatrixAxisType_t column, const Vector &in ) const;
+
+	inline Vector GetColumn( MatrixAxisType_t column ) const;
+	inline void SetColumn( const Vector &in, MatrixAxisType_t column );
+
+	inline void SetOrigin( const Vector &pos ) { SetColumn( pos, ORIGIN ); }
+	inline Vector GetOrigin() const { return GetColumn( ORIGIN ); }
+
+	inline Vector GetForward() const { return GetColumn( FORWARD_AXIS ); }
+	inline Vector GetLeft() const { return GetColumn( LEFT_AXIS ); }
+	inline Vector GetRight() const { return -GetColumn( LEFT_AXIS ); }
+	inline Vector GetUp() const { return GetColumn( UP_AXIS ); }
+	
+	inline Vector GetRow(int nRow) const { return *(Vector*)(m_flMatVal[nRow]); }
+	inline void SetRow(int nRow, const Vector& vRow) { m_flMatVal[nRow][0] = vRow.x; m_flMatVal[nRow][1] = vRow.y; m_flMatVal[nRow][2] = vRow.z; }
+	
+	inline void GetVectors( Vector *fwd, Vector *right, Vector *up ) const;
+
+	inline matrix3x4_t GetInverse() const;
+	inline matrix3x4_t GetInverseTranspose() const;
+
+	inline Vector Transform( const Vector &in ) const;
+	inline Vector TransformByInverse( const Vector &in ) const;
+
+	inline void TransformAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+	inline void TransformAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+	
+	inline QAngle TransformToLocalSpace( const QAngle &angles ) const;
+	inline QAngle TransformToWorldSpace( const QAngle &angles ) const;
+
+	inline Vector Rotate( const Vector &in ) const;
+	inline Vector RotateByInverse( const Vector &in ) const;
+
+	inline void RotateAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+	inline void RotateAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
+
+	inline bool IsEqualEnough( const matrix3x4_t &other, float flTolerance = 1e-5 ) const;
 
 	inline void Invalidate( void )
 	{
@@ -230,23 +256,11 @@ struct matrix3x4_t
 	inline Vector TransformVectorByInverse( const Vector &v0 ) const;
 	inline Vector RotateVectorByInverse( const Vector &v0 ) const;
 	inline Vector RotateExtents( const Vector &vBoxExtents ) const; // these are extents and must remain positive/symmetric after rotation
-	inline void TransformAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
-	inline void TransformAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
-	inline void RotateAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
-	inline void RotateAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const;
 	inline void TransformPlane( const cplane_t &inPlane, cplane_t &outPlane ) const;
 	inline void TransformPlaneByInverse( const cplane_t &inPlane, cplane_t &outPlane ) const;
 	inline float GetOrthogonalityError() const;
 	inline float GetDeterminant( )const;
 	inline float GetSylvestersCriterion()const; // for symmetrical matrices only: should be >0 iff it's a positive definite matrix
-
-	inline Vector GetColumn( MatrixAxisType_t nColumn ) const;
-	inline void SetColumn( const Vector &vColumn, MatrixAxisType_t nColumn );
-	inline Vector GetForward() const { return GetColumn( FORWARD_AXIS ); }
-	inline Vector GetLeft() const { return GetColumn( LEFT_AXIS ); }
-	inline Vector GetUp() const { return GetColumn( UP_AXIS ); }
-	inline Vector GetRow( int nRow ) const { return *(Vector *)(m_flMatVal[nRow]); }
-	inline void SetRow( int nRow, const Vector &vRow ) { m_flMatVal[nRow][0] = vRow.x; m_flMatVal[nRow][1] = vRow.y; m_flMatVal[nRow][2] = vRow.z; }
 
 	inline void InverseTR( matrix3x4_t &out ) const;
 	inline matrix3x4_t InverseTR() const;
@@ -2862,88 +2876,61 @@ inline float Approach( float target, float value, float speed )
 #endif
 }
 
-
-// return a 0..1 value based on the position of x between edge0 and edge1
-inline float smoothstep_bounds(float edge0, float edge1, float x)
+inline void matrix3x4_t::Init( const Vector &xAxis, const Vector &yAxis, const Vector &zAxis, const Vector &vecOrigin )
 {
-	x = clamp((x - edge0)/(edge1 - edge0),0,1);
-	return x*x*(3 - 2*x);
+	MatrixInitialize( *this, vecOrigin, xAxis, yAxis, zAxis );
 }
 
-// return a value between edge0 and edge1 based on the 0..1 value of x
-inline float interpstep(float edge0, float edge1, float x)
+inline void matrix3x4_t::Init( const QAngle &angs, const Vector &pos )
 {
-	return edge0 + (x * ( edge1 - edge0 ));
+	AngleMatrix( angs, pos, *this );
 }
 
-// on PPC we can do this truncate without converting to int
-#if defined(_X360) || defined(_PS3)
-inline double TruncateFloatToIntAsFloat( double flVal )
+inline void matrix3x4_t::Init( const QAngle &angs )
 {
-#if defined(_X360)
-	double flIntFormat = __fctiwz( flVal );
-	return __fcfid( flIntFormat );
-#elif defined(_PS3)
-#if defined(__SPU__)
-	int iVal = int(flVal);
-	return static_cast<double>(iVal);
-#else
-	double flIntFormat = __builtin_fctiwz( flVal );
-	return __builtin_fcfid( flIntFormat );
-#endif
-#endif
-}
-#endif
-
-inline double SubtractIntegerPart( double flVal )
-{
-#if defined(_X360) || defined(_PS3)
-	return flVal - TruncateFloatToIntAsFloat(flVal);
-#else
-	return flVal - int(flVal);
-#endif
+	AngleMatrix( angs, *this );
 }
 
-
-inline void matrix3x4_t::InitFromQAngles( const QAngle &angles, const Vector &vPosition )
+inline void matrix3x4_t::Init( const RadianEuler &angs, const Vector &pos )
 {
-	AngleMatrix( angles, vPosition, *this );
-}
-inline void matrix3x4_t::InitFromQAngles( const QAngle &angles ) { InitFromQAngles( angles, vec3_origin ); }
-
-inline void matrix3x4_t::InitFromRadianEuler( const RadianEuler &angles, const Vector &vPosition )
-{
-	AngleMatrix( angles, vPosition, *this );
+	AngleMatrix( angs, pos, *this );
 }
 
-inline void matrix3x4_t::InitFromRadianEuler( const RadianEuler &angles ) { InitFromRadianEuler( angles, vec3_origin ); }
-
-inline void matrix3x4_t::InitFromQuaternion( const Quaternion &orientation, const Vector &vPosition )
+inline void matrix3x4_t::Init( const RadianEuler &angs )
 {
-	QuaternionMatrix( orientation, vPosition, *this );
+	AngleMatrix( angs, *this );
 }
 
-inline void matrix3x4_t::InitFromDiagonal( const Vector &vDiagonal )
+inline void matrix3x4_t::Init( const Quaternion &quat, const Vector &pos )
 {
-	SetToIdentity();
-	m_flMatVal[ 0 ][ 0 ] = vDiagonal.x;
-	m_flMatVal[ 1 ][ 1 ] = vDiagonal.y;
-	m_flMatVal[ 2 ][ 2 ] = vDiagonal.z;
+	QuaternionMatrix( quat, pos, *this );
 }
 
-
-inline void matrix3x4_t::InitFromQuaternion( const Quaternion &orientation ) { InitFromQuaternion( orientation, vec3_origin ); }
-
-inline Quaternion matrix3x4_t::ToQuaternion() const
+inline void matrix3x4_t::Init( const Quaternion &quat )
 {
-	return MatrixQuaternion( *this );
+	QuaternionMatrix( quat, *this );
 }
 
-inline QAngle matrix3x4_t::ToQAngle() const
+inline void matrix3x4_t::Init( const Vector &fwd )
 {
-	QAngle tmp;
-	MatrixAngles( *this, tmp );
-	return tmp;
+	VectorMatrix( fwd, *this );
+}
+
+inline void matrix3x4_t::Init( const Vector &fwd, const Vector &pos )
+{
+	VectorMatrix( fwd, *this );
+	SetOrigin( pos );
+}
+
+inline void matrix3x4_t::Init( const Vector &axis_of_rotation, float degrees )
+{
+	MatrixBuildRotationAboutAxis( axis_of_rotation, degrees, *this );
+}
+
+inline void matrix3x4_t::Init( const Vector &axis_of_rotation, float degrees, const Vector &pos )
+{
+	MatrixBuildRotationAboutAxis( axis_of_rotation, degrees, *this );
+	SetOrigin( pos );
 }
 
 inline void matrix3x4_t::SetToIdentity()
@@ -3022,13 +3009,43 @@ inline void matrix3x4_t::TransformAABBByInverse( const Vector &vecMinsIn, const 
 	::ITransformAABB( *this, vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
 }
 
+inline QAngle matrix3x4_t::TransformToLocalSpace( const QAngle &angles ) const
+{
+	return TransformAnglesToLocalSpace( angles, *this );
+}
+
+inline QAngle matrix3x4_t::TransformToWorldSpace( const QAngle &angles ) const
+{
+	return TransformAnglesToWorldSpace( angles, *this );
+}
+
+inline Vector matrix3x4_t::Rotate( const Vector &in ) const
+{
+	Vector out;
+	VectorRotate( in, *this, out );
+	return out;
+}
+
+inline Vector matrix3x4_t::RotateByInverse( const Vector &in ) const
+{
+	Vector out;
+	VectorIRotate( in, *this, out );
+	return out;
+}
+
 inline void matrix3x4_t::RotateAABB( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const
 {
 	::RotateAABB( *this, vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
 }
+
 inline void matrix3x4_t::RotateAABBByInverse( const Vector &vecMinsIn, const Vector &vecMaxsIn, Vector &vecMinsOut, Vector &vecMaxsOut ) const
 {
 	::IRotateAABB( *this, vecMinsIn, vecMaxsIn, vecMinsOut, vecMaxsOut );
+}
+
+inline bool matrix3x4_t::IsEqualEnough( const matrix3x4_t &other, float flTolerance ) const
+{
+	return MatricesAreEqual( *this, other, flTolerance );
 }
 
 inline void matrix3x4_t::TransformPlane( const cplane_t &inPlane, cplane_t &outPlane ) const
@@ -3051,7 +3068,7 @@ inline float matrix3x4_t::GetOrthogonalityError() const
 inline matrix3x4_t Quaternion::ToMatrix() const
 {
 	matrix3x4_t mat;
-	mat.InitFromQuaternion( *this );
+	mat.Init( *this );
 	return mat;
 }
 
