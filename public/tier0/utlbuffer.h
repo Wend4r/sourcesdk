@@ -252,9 +252,11 @@ public:
 	float			GetFloat( );
 	double			GetDouble( );
 	void *			GetPtr();
-	void			GetString( char* pString, int nMaxChars );
-	bool			Get( void* pMem, int size );
-	void			GetLine( char* pLine, int nMaxChars );
+	DLL_CLASS_IMPORT void	GetString( char* pString, int nMaxChars = 0 );
+	DLL_CLASS_IMPORT void	GetString( const CBufferString & );
+	DLL_CLASS_IMPORT void	Get( void* pMem, int size );
+	DLL_CLASS_IMPORT void	GetLine( char* pLine, int nMaxChars = 0 );
+
 
 	// Used for getting objects that have a byteswap datadesc defined
 	template <typename T> void GetObjects( T *dest, int count = 1 );
