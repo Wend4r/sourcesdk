@@ -11,9 +11,10 @@
 #endif
 
 #include <appframework/iappsystem.h>
+#include <engine/eventdispatcher.h>
 #include <inputsystem/InputEnums.h>
 #include <keyvalues.h>
-#include <engine/eventdispatcher.h>
+#include <splitscreenslot.h>
 
 class ISource2WorldSession;
 class ISceneView;

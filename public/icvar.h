@@ -74,29 +74,7 @@ union CVValue_t
 static_assert(sizeof(float) == sizeof(int32_t), "Wrong float type size for ConVar!");
 static_assert(sizeof(double) == sizeof(int64_t), "Wrong double type size for ConVar!");
 
-struct CSplitScreenSlot
-{
-	CSplitScreenSlot() :
-	m_Data(0)
-	{}
-	
-	CSplitScreenSlot( int index )
-	{
-		m_Data = index;
-	}
-	
-	int Get() const
-	{
-		return m_Data;
-	}
-
-	operator int() const
-	{
-		return m_Data;
-	}
-	
-	int m_Data;
-};
+#include "splitscreenslot.h"
 
 //-----------------------------------------------------------------------------
 // Called when a ConVar changes value
