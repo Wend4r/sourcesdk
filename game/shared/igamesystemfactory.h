@@ -63,16 +63,26 @@ private:
 	const char* m_pName;
 
 public:
-	static IGameSystem* GetGlobalPtrByName(const char* pName)
+	static CBaseGameSystemFactory* GetFactoryByName(const char* pName)
 	{
 		CBaseGameSystemFactory* pFactoryList = *CBaseGameSystemFactory::sm_pFirst;
 		while (pFactoryList)
 		{
 			if (strcmp(pFactoryList->m_pName, pName) == 0)
 			{
-				return pFactoryList->GetStaticGameSystem();
+				return pFactoryList;
 			}
 			pFactoryList = pFactoryList->m_pNext;
+		}
+		return nullptr;
+	}
+
+	static IGameSystem* GetGlobalPtrByName(const char* pName)
+	{
+		CBaseGameSystemFactory* pFactory = GetFactoryByName(pName);
+		if (pFactory)
+		{
+			return pFactory->GetStaticGameSystem();
 		}
 		return nullptr;
 	}
