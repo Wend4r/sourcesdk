@@ -7,6 +7,7 @@
 
 #include <tier1/utldelegate.h>
 #include <tier1/utlmap.h>
+#include <tier1/utlvector.h>
 
 class ISchemaBinding;
 

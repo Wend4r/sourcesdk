@@ -13,6 +13,9 @@
 
 #include "iloopmode.h"
 
+#include <entity2/entityidentity.h>
+#include <tier0/utlstring.h>
+
 /*
 * AMNOTE: To create your own gamesystem, you need to inherit from CBaseGameSystem or CAutoGameSystem,
 * and define the events that you are interested in receiving via the GS_EVENT macro, example:
