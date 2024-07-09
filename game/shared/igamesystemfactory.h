@@ -63,6 +63,11 @@ private:
 	const char* m_pName;
 
 public:
+	const char *GetName() const
+	{
+		return m_pName;
+	}
+
 	static CBaseGameSystemFactory* GetFactoryByName(const char* pName)
 	{
 		CBaseGameSystemFactory* pFactoryList = *CBaseGameSystemFactory::sm_pFirst;
