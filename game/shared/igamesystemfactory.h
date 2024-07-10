@@ -68,6 +68,16 @@ public:
 		return m_pName;
 	}
 
+	static void PrintFactories(void (*pfnFunc)(const char *pName))
+	{
+		CBaseGameSystemFactory* pFactoryList = *CBaseGameSystemFactory::sm_pFirst;
+		while (pFactoryList)
+		{
+			pfnFunc(pFactoryList->m_pName);
+			pFactoryList = pFactoryList->m_pNext;
+		}
+	}
+
 	static CBaseGameSystemFactory* GetFactoryByName(const char* pName)
 	{
 		CBaseGameSystemFactory* pFactoryList = *CBaseGameSystemFactory::sm_pFirst;
