@@ -6,8 +6,8 @@
 //
 //===========================================================================//
 
-#ifndef TIER1_STRTOOLS_H
-#define TIER1_STRTOOLS_H
+#ifndef TIER0_STRTOOLS_H
+#define TIER0_STRTOOLS_H
 
 #ifdef _WIN32
 #pragma once
@@ -1628,4 +1628,4 @@ PLATFORM_INTERFACE int V_isbreakablewspace32( wchar_t ch );
 PLATFORM_INTERFACE int V_StrTrim( char *pStr );
 
 
-#endif	// TIER1_STRTOOLS_H
+#endif	// TIER0_STRTOOLS_H
