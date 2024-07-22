@@ -205,34 +205,6 @@ public:
 	// IsEmpty() is more efficient than Length() == 0
 	bool IsEmpty() const;
 
-	// From Src2
-
-	void FixSlashes( char cSeparator = CORRECT_PATH_SEPARATOR )
-	{
-		if( m_pString )
-		{
-			V_FixSlashes( m_pString, cSeparator );
-		}
-	}
-
-	bool IsEqual_CaseSensitive( const char *src ) const
-	{
-		if ( !src )
-		{
-			return ( Length() == 0 );
-		}
-		return ( V_strcmp( Get(), src ) == 0 );
-	}
-
-	bool IsEqual_CaseInsensitive(const char *src) const
-	{
-		if ( !src )
-		{
-			return (Length() == 0);
-		}
-		return ( V_stricmp( Get(), src ) == 0 );
-	}
-
 private:
 	// AllocMemory allocates enough space for length characters plus a terminating zero.
 	// Previous characters are preserved, the buffer is null-terminated, but new characters
