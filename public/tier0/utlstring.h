@@ -216,6 +216,32 @@ private:
 	char *m_pString = NULL;
 };
 
+//	// If these are not defined, CUtlConstString as rhs will auto-convert
+//	// to const char* and do logical operations on the raw pointers. Ugh.
+//	inline friend bool operator<( const T *lhs, const CUtlConstStringBase &rhs ) { return rhs.Compare( lhs ) > 0; }
+//	inline friend bool operator==( const T *lhs, const CUtlConstStringBase &rhs ) { return rhs.Compare( lhs ) == 0; }
+//	inline friend bool operator!=( const T *lhs, const CUtlConstStringBase &rhs ) { return rhs.Compare( lhs ) != 0; }
+
+inline bool operator==( const char *pString, const CUtlString &utlString )
+{
+	return utlString.IsEqual_CaseSensitive( pString );
+}
+
+inline bool operator!=( const char *pString, const CUtlString &utlString )
+{
+	return !utlString.IsEqual_CaseSensitive( pString );
+}
+
+inline bool operator==( const CUtlString &utlString, const char *pString )
+{
+	return utlString.IsEqual_CaseSensitive( pString );
+}
+
+inline bool operator!=( const CUtlString &utlString, const char *pString )
+{
+	return !utlString.IsEqual_CaseSensitive( pString );
+}
+
 //-----------------------------------------------------------------------------
 // Inline methods
 //-----------------------------------------------------------------------------
@@ -240,6 +266,18 @@ inline CUtlString::CUtlString( const CUtlString &string )
 	: m_pString( NULL )
 {
 	Set( string.Get() );
+}
+
+inline CUtlString &CUtlString::operator=( const CUtlString &src )
+{
+	SetDirect( src.Get(), src.Length() );
+	return *this;
+}
+
+inline CUtlString &CUtlString::operator=( const char *src )
+{
+	Set( src );
+	return *this;
 }
 
 inline CUtlString::~CUtlString()
