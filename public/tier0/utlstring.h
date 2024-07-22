@@ -431,4 +431,15 @@ int CUtlConstStringBase<T>::Compare( const T *rhs ) const
 typedef	CUtlConstStringBase<char>		CUtlConstString;
 typedef	CUtlConstStringBase<wchar_t>	CUtlConstWideString;
 
+//-----------------------------------------------------------------------------
+// Helper functor objects.
+//-----------------------------------------------------------------------------
+
+template < typename T > struct UTLConstStringCaselessStringLessFunctor { bool operator()( const CUtlConstStringBase<T>& a, const char *b ) const { return StringFuncs<T>::CaselessCompare( a.Get(), b ) < 0; } };
+template < typename T > struct UTLConstStringCaselessStringEqualFunctor { bool operator()( const CUtlConstStringBase<T>& a, const char *b ) const { return StringFuncs<T>::CaselessCompare( a.Get(), b ) == 0; } };
+
+// Helper function for CUtlMaps with a CUtlString key
+inline bool UtlStringLessFunc( const CUtlString &lhs, const CUtlString &rhs ) { return V_strcmp( lhs.Get(), rhs.Get() ) < 0; } 
+inline bool UtlStringCaseInsensitiveLessFunc( const CUtlString &lhs, const CUtlString &rhs ) { return V_stricmp( lhs.Get(), rhs.Get() ) < 0; } 
+
 #endif // UTLSTRING_H
