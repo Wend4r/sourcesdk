@@ -37,7 +37,11 @@ class IFileList;
 
 struct SearchPathStateHandle_t;
 typedef void * FileHandle_t;
-typedef int FileFindHandle_t;
+struct FileFindHandle_t
+{
+	IFileSystem *m_pFileSystem;
+	intp m_nFindDataIndex;
+};
 typedef void (*FileSystemLoggingFunc_t)( const char *fileName, const char *accessType );
 typedef int WaitForResourcesHandle_t;
 
