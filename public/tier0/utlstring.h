@@ -428,17 +428,7 @@ int CUtlConstStringBase<T>::Compare( const T *rhs ) const
 	}
 }
 
-inline CUtlString CUtlString::operator+( const char *pOther )const
-{
-	CUtlString s = *this;
-	s += pOther;
-	return s;
-}
-
-
-
 typedef	CUtlConstStringBase<char>		CUtlConstString;
 typedef	CUtlConstStringBase<wchar_t>	CUtlConstWideString;
-
 
 #endif // UTLSTRING_H
