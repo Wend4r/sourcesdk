@@ -50,6 +50,42 @@ public:
 	typedef T ElemType_t;
 	typedef I IndexType_t;
 
+	struct Node_t
+	{
+		Node_t()
+		{
+		}
+
+		Node_t( const Node_t &from )
+		  : key( from.key ),
+			elem( from.elem )
+		{
+		}
+
+		KeyType_t	key;
+		ElemType_t	elem;
+	};
+
+	class CKeyLess
+	{
+	public:
+		CKeyLess( const LessFunc_t& lessFunc ) : m_LessFunc(lessFunc) {}
+
+		bool operator!() const
+		{
+			return !m_LessFunc;
+		}
+
+		bool operator()( const Node_t &left, const Node_t &right ) const
+		{
+			return m_LessFunc( left.key, right.key );
+		}
+
+		LessFunc_t m_LessFunc;
+	};
+
+	typedef CUtlRBTree<Node_t, I, CKeyLess> CTree;
+
 	// constructor, destructor
 	// Left at growSize = 0, the memory will first allocate 1 element and double in size
 	// at each increment.
@@ -61,6 +97,16 @@ public:
 
 	CUtlMap( LessFunc_t lessfunc )
 	 : m_Tree( CKeyLess( lessfunc ) )
+	{
+	}
+
+	CUtlMap( const CUtlMap<K, T, I, LessFunc_t> &init )
+	 : m_Tree( init.m_Tree )
+	{
+	}
+
+	CUtlMap( const CTree &initTree )
+	 : m_Tree( initTree )
 	{
 	}
 	
@@ -231,43 +277,6 @@ public:
 	{
 		m_Tree.Swap( that.m_Tree );
 	}
-
-
-	struct Node_t
-	{
-		Node_t()
-		{
-		}
-
-		Node_t( const Node_t &from )
-		  : key( from.key ),
-			elem( from.elem )
-		{
-		}
-
-		KeyType_t	key;
-		ElemType_t	elem;
-	};
-	
-	class CKeyLess
-	{
-	public:
-		CKeyLess( const LessFunc_t& lessFunc ) : m_LessFunc(lessFunc) {}
-
-		bool operator!() const
-		{
-			return !m_LessFunc;
-		}
-
-		bool operator()( const Node_t &left, const Node_t &right ) const
-		{
-			return m_LessFunc( left.key, right.key );
-		}
-
-		LessFunc_t m_LessFunc;
-	};
-
-	typedef CUtlRBTree<Node_t, I, CKeyLess> CTree;
 
 	CTree *AccessTree()	{ return &m_Tree; }
 

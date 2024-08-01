@@ -208,7 +208,10 @@ public:
 	// LessFunc_t is required, but may be set after the constructor using SetLessFunc() below
 	explicit CUtlRBTree( int growSize = 0, int initSize = 0, const LessFunc_t &lessfunc = 0 );
 	explicit CUtlRBTree( const LessFunc_t &lessfunc );
+	CUtlRBTree( CUtlRBTree<T, I, L, M> const &tree );
 	~CUtlRBTree( );
+
+	CUtlRBTree<T, I, L, M>& operator=( const CUtlRBTree<T, I, L, M> &other );
 
 	void EnsureCapacity( int num );
 
@@ -310,10 +313,6 @@ public:
 	// swap in place
 	void Swap( CUtlRBTree< T, I, L > &that );
 
-private:
-	// Can't copy the tree this way!
-	CUtlRBTree<T, I, L, M>& operator=( const CUtlRBTree<T, I, L, M> &other );
-
 protected:
 	enum NodeColor_t
 	{
@@ -351,9 +350,6 @@ protected:
 	// Insertion, removal
 	I  InsertAt( I parent, bool leftchild, bool bConstructElement );
 
-	// copy constructors not allowed
-	CUtlRBTree( CUtlRBTree<T, I, L, M> const &tree );
-
 	// Inserts a node into the tree, doesn't copy the data in.
 	void FindInsertionPosition( T const &insert, I &parent, bool &leftchild );
 
@@ -376,7 +372,6 @@ protected:
 	{
 		return m_Elements;
 	}
-
 
 	void ResetDbgInfo()
 	{
@@ -465,10 +460,25 @@ m_LastAlloc( m_Elements.InvalidIterator() )
 	ResetDbgInfo();
 }
 
+template < class T, class I, typename L, class M >
+CUtlRBTree<T, I, L, M>::CUtlRBTree( CUtlRBTree<T, I, L, M> const &tree )
+ :  m_LessFunc( tree.m_LessFunc ), 
+    m_LastAlloc( m_Elements.InvalidIterator() )
+{
+	CopyFrom( tree );
+	ResetDbgInfo();
+}
+
 template < class T, class I, typename L, class M > 
 inline CUtlRBTree<T, I, L, M>::~CUtlRBTree()
 {
 	Purge();
+}
+
+template < class T, class I, typename L, class M >
+CUtlRBTree<T, I, L, M>& CUtlRBTree<T, I, L, M>::operator=( CUtlRBTree<T, I, L, M> const &other )
+{
+	CopyFrom( other );
 }
 
 template < class T, class I, typename L, class M >
