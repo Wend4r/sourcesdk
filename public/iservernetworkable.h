@@ -28,6 +28,7 @@
 
 class ServerClass;
 class SendTable;
+class vis_info_t;
 struct edict_t;
 class CBaseEntity;
 class CSerialEntity;
@@ -37,11 +38,17 @@ class CBaseNetworkable;
 class CCheckTransmitInfo
 {
 public:
-	CBitVec<MAX_EDICTS>	*m_pTransmitEntity;	// entity n is already marked for transmission
-	CBitVec<MAX_EDICTS>	*m_pTransmitAlways; // entity n is always send even if not in PVS (HLTV and Replay only)
-
-	// TODO: This is incomplete and may require further reversing in the future.
-};
+	CBitVec<MAX_EDICTS>* m_pTransmitEntity;	// 0
+	CBitVec<MAX_EDICTS>* m_pUnkBitVec;		// 8
+	CBitVec<MAX_EDICTS>* m_pUnkBitVec2;		// 16
+	CBitVec<MAX_EDICTS>* m_pUnkBitVec3;		// 24
+	CBitVec<MAX_EDICTS>* m_pTransmitAlways; // 32
+	CUtlVector<int> m_unk40;				// 40
+	vis_info_t* m_VisInfo;					// 64
+	[[maybe_unused]] byte m_unk72[0x200];	// 72
+	CEntityIndex m_nClientEntityIndex;		// 584
+	bool m_bFullUpdate;						// 588
+}; // sizeof unknown(
 
 //-----------------------------------------------------------------------------
 // Stores information necessary to perform PVS testing.
