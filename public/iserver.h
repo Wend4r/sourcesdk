@@ -248,9 +248,9 @@ public:
 	CUtlString m_GameType; // 904
 	char pad912[8]; // 912
 	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect; // 920
-	CServerSideClientBase * m_pHostClient; // 944
-	IGameSpawnGroupMgr * m_pSpawnGroupMgr2;
-	void * m_unk960; // 960
+	CServerSideClientBase* m_pHostClient; // 944
+	IGameSpawnGroupMgr* m_pSpawnGroupMgr2;
+	void* m_unk960; // 960
 	HGameResourceManifest m_pGameSessionManifest; // 968
 	char pad976[8]; // 976
 	uint64 m_nReservationCookie; // 984
