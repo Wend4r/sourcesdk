@@ -19,7 +19,6 @@
 #include <netadr.h>
 #include <ns_address.h>
 #include <serversideclient.h>
-#include <serversideclient.h>
 #include <netmessages.pb.h>
 
 class IGameSpawnGroupMgr;
