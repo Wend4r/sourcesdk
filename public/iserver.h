@@ -230,7 +230,7 @@ public:
 	char pad664[20]; // 664
 	CUtlMemory<byte> m_unk688; // 688
 	char pad704[16]; // 704
-	int m_nActiveSpawnGroup; // 720
+	SpawnGroupHandle_t m_hActiveSpawnGroup; // 720
 	int m_nMaxclients; // 724
 	int m_nSpawnCount; // 728
 	int serverclasses; // 732
