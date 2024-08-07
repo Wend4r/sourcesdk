@@ -200,7 +200,7 @@ public:
 	// @boeing666: offsets only for linux
 	void (*SetServerTick)(int tick); // 8
 	char pad16[16]; // 16
-	IGameSpawnGroupMgr * m_pSpawnGroupMgr; // 32
+	IGameSpawnGroupMgr* m_pSpawnGroupMgr; // 32
 	char pad40[8]; // 40
 	int	m_State; // 48
 	int m_nRefCount; // 52
