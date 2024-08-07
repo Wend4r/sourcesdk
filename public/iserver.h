@@ -18,6 +18,7 @@
 #include <engine/precache.h>
 #include <netadr.h>
 #include <ns_address.h>
+#include <framesnapshot.h>
 #include <serversideclient.h>
 #include <netmessages.pb.h>
 
