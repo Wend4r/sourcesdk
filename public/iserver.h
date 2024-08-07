@@ -231,7 +231,7 @@ public:
 	CUtlMemory<byte> m_unk688; // 688
 	char pad704[16]; // 704
 	SpawnGroupHandle_t m_hActiveSpawnGroup; // 720
-	int m_nMaxclients; // 724
+	int m_nMaxClients; // 724
 	int m_nSpawnCount; // 728
 	int serverclasses; // 732
 	int serverclassbits; // 736
