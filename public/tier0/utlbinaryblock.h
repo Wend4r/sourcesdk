@@ -36,7 +36,9 @@ public:
 	// NOTE: nInitialLength indicates how much of the buffer starts full
 	CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength );
 	CUtlBinaryBlock( const void* pMemory, int nSizeInBytes );
-	
+
+	CUtlBinaryBlock( const char* pString );
+
 	CUtlBinaryBlock( const CUtlBinaryBlock& src );
 	DLL_CLASS_IMPORT CUtlBinaryBlock &operator=( const CUtlBinaryBlock &src );
 
@@ -91,6 +93,10 @@ inline CUtlBinaryBlock::CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nI
 inline CUtlBinaryBlock::CUtlBinaryBlock( const void* pMemory, int nSizeInBytes ) : m_Memory( (const unsigned char*)pMemory, nSizeInBytes )
 {
 	m_nActualLength = nSizeInBytes;
+}
+
+inline CUtlBinaryBlock::CUtlBinaryBlock( const char* pString ) : CUtlBinaryBlock( (const void*)pString, V_strlen(pString) )
+{
 }
 
 inline CUtlBinaryBlock::CUtlBinaryBlock( const CUtlBinaryBlock& src )
