@@ -42,40 +42,24 @@ enum MapLoadType_t
 class CGlobalVars : public CGlobalVarsBase
 {	
 public:
-
-	CGlobalVars( bool bIsClient );
+	CGlobalVars();
 
 public:
 	// Current map
 	string_t		mapname;
-	string_t		mapGroupName;
-	int				mapversion;
 	string_t		startspot;
 	MapLoadType_t	eLoadType;		// How the current map was loaded
-	bool			bMapLoadFailed;	// Map has failed to load, we need to kick back to the main menu
+	bool mp_teamplay;
 
-	// game specific flags
-	bool			deathmatch;
-	bool			coop;
-	bool			teamplay;
 	// current maxentities
 	int				maxEntities;
 
 	int				serverCount;
-	edict_t			*pEdicts;
 };
-
-inline CGlobalVars::CGlobalVars( bool bIsClient ) : 
-	CGlobalVarsBase( bIsClient )
-{
-	serverCount = 0;
-}
-
 
 class CPlayerState;
 class IServerNetworkable;
 class IServerEntity;
-
 
 #define FL_EDICT_CHANGED	(1<<0)	// Game DLL sets this when the entity state changes
 									// Mutually exclusive with FL_EDICT_PARTIAL_CHANGE.
