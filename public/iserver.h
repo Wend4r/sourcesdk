@@ -17,6 +17,7 @@
 #include <engine/IEngineService.h>
 #include <engine/precache.h>
 #include <netadr.h>
+#include <qlimits.h>
 #include <ns_address.h>
 #include <framesnapshot.h>
 #include <serversideclient.h>
@@ -40,6 +41,7 @@ class CSVCMsg_ServerInfo_t;
 class CServerSideClientBase;
 class CCLCMsg_SplitPlayerConnect_t;
 class CNetworkStringTableContainer;
+class CNetworkServerSpawnGroupCreatePrerequisites;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -198,7 +200,6 @@ public:
 	virtual void	CalculateCPUUsage() = 0;
 public:
 	// @boeing666: offsets only for linux
-	void (*SetServerTick)(int tick); // 8
 	char pad16[16]; // 16
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr; // 32
 	char pad40[8]; // 40
@@ -275,9 +276,10 @@ public:
 	CUtlString m_szStartspot; // 1200
 	bf_write m_FullSendTables; // 1208
 	CUtlMemory<byte> m_FullSendTablesBuffer; // 1248
-	bool m_bLoadedPlugins; // 1264
 	CPrecacheItem generic_precache[MAX_GENERIC]; // 1264
+	char pad9456[8]; // 9456
 	CPrecacheItem decal_precache[MAX_BASE_DECALS]; // 9464
+	char pad17656[8]; // 17656
 	INetworkStringTable* m_pGenericPrecacheTable; // 17664
 	INetworkStringTable* m_pDecalPrecacheTable; // 17672
 	CPureServerWhitelist* m_pPureServerWhitelist; // 17680

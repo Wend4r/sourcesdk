@@ -15,6 +15,10 @@
 #include <networksystem/inetworksystem.h>
 #include <netmessages.pb.h>
 
+class CHLTVServer;
+class INetMessage;
+class CNetworkGameServerBase;
+
 struct HltvReplayStats_t {
 	enum FailEnum_t {
 		FAILURE_ALREADY_IN_REPLAY,
@@ -171,8 +175,11 @@ public:
 };
 
 // not full class reversed
-class CHLTVClient : public CServerSideClientBase {
+class CHLTVClient : public CServerSideClientBase
+{
 public:
+	virtual ~CHLTVClient() = 0;
+
 	CNetworkGameServerBase* m_pHLTV; // 2904
 	CUtlString m_szPassword; // 2912
 	CUtlString m_szChatGroup; // 2920

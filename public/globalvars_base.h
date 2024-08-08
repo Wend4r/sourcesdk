@@ -26,25 +26,14 @@ class CSaveRestoreData;
 //-----------------------------------------------------------------------------
 class CGlobalVarsBase
 {
-public:
-
-	CGlobalVarsBase( bool bIsClient );
-	
-	// This can be used to filter debug output or to catch the client or server in the act.
-	bool IsClient() const;
-	
-	bool IsRemoteClient() const;
-
-	// for encoding m_flSimulationTime, m_flAnimTime
-	int GetNetworkBase( int nTick, int nEntity );
 
 public:
-	
-	// Absolute time (per frame still - Use Plat_FloatTime() for a high precision real time 
+	// Absolute time (per frame still - Use Plat_FloatTime() for a high precision real time
 	//  perf clock, but not that it doesn't obey host_timescale/host_framerate)
-	float			realtime;
+	float realtime;
 	// Absolute frame counter - continues to increase even if game is paused
-	int				framecount;
+	int framecount;
+
 	// Non-paused frametime
 	float absoluteframetime;
 	float absoluteframestarttimestddev;
@@ -63,17 +52,17 @@ public:
 	// Time spent on last server or client frame (has nothing to do with think intervals)
 	float frametime;
 
-	// Current time 
+	// Current time
 	//
 	// On the client, this (along with tickcount) takes a different meaning based on what
 	// piece of code you're in:
-	// 
+	//
 	//   - While receiving network packets (like in PreDataUpdate/PostDataUpdate and proxies),
 	//     this is set to the SERVER TICKCOUNT for that packet. There is no interval between
 	//     the server ticks.
 	//     [server_current_Tick * tick_interval]
 	//
-	//   - While rendering, this is the exact client clock 
+	//   - While rendering, this is the exact client clock
 	//     [client_current_tick * tick_interval + interpolation_amount]
 	//
 	//   - During prediction, this is based on the client's current tick:
@@ -81,7 +70,7 @@ public:
 	float curtime;
 	float rendertime;
 
-	// zer0k: Command queue + interpolation related 
+	// zer0k: Command queue + interpolation related
 	float unknown6;
 	float unknown7;
 
@@ -93,57 +82,9 @@ public:
 
 	int unknown8;
 	int unknown9;
-	
+
 	// Non-zero when during movement processing, it's the part after the decimal point of the "when" field in player's subtick moves.
-	float			m_flSubtickFraction;
-
-	// interpolation amount ( client-only ) based on fraction of next tick which has elapsed
-	float			interpolation_amount;
-	int				simTicksThisFrame;
-
-	int				network_protocol;
-
-	// current saverestore data
-	CSaveRestoreData *pSaveData;
-
-private:
-	// Set to true in client code.
-	bool			m_bClient;
-
-public:
-	bool			m_bRemoteClient;
-	
-private:
-	// 100 (i.e., tickcount is rounded down to this base and then the "delta" from this base is networked
-	int				nTimestampNetworkingBase;   
-	// 32 (entindex() % nTimestampRandomizeWindow ) is subtracted from gpGlobals->tickcount to set the networking basis, prevents
-	//  all of the entities from forcing a new PackedEntity on the same tick (i.e., prevents them from getting lockstepped on this)
-	int				nTimestampRandomizeWindow;  
-	
+	float m_flSubtickFraction;
 };
-
-inline int CGlobalVarsBase::GetNetworkBase( int nTick, int nEntity )
-{
-	int nEntityMod = nEntity % nTimestampRandomizeWindow;
-	int nBaseTick = nTimestampNetworkingBase * (int)( ( nTick - nEntityMod ) / nTimestampNetworkingBase );
-	return nBaseTick;
-}
-
-inline CGlobalVarsBase::CGlobalVarsBase( bool bIsClient ) :
-	m_bClient( bIsClient ),
-	nTimestampNetworkingBase( 100 ),
-	nTimestampRandomizeWindow( 32 )
-{
-}
-
-inline bool CGlobalVarsBase::IsClient() const
-{
-	return m_bClient;
-}
-
-inline bool CGlobalVarsBase::IsRemoteClient() const
-{
-	return m_bRemoteClient;
-}
 
 #endif // GLOBALVARS_BASE_H
