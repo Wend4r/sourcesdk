@@ -7,11 +7,12 @@
 
 #include <playerslot.h>
 #include <playeruserid.h>
-#include <protocol.h>
+// #include <protocol.h> // @Wend4r: use <netmessages.pb.h> instead.
 #include <entity2/entityidentity.h>
 #include <steam/steamclientpublic.h>
 #include <engine/clientframe.h>
 #include <tier0/utlstring.h>
+#include <tier1/ns_address.h>
 #include <networksystem/inetworksystem.h>
 #include <netmessages.pb.h>
 
@@ -74,7 +75,7 @@ public:
 	bool IsFakeClient() const { return m_bFakePlayer; };
 	bool IsHLTV() const { return m_bIsHLTV; }
 	bool IsFullyAuthenticated() { return m_bFullyAuthenticated; }
-	const netadr_t* GetRemoteAddress() const { return &m_nAddr.GetAddress(); }
+	const netadr_t* GetRemoteAddress() const { return m_nAddr.Get<netadr_t>(); }
 	void ForceFullUpdate() { m_nForceWaitForTick = m_nDeltaTick = -1; }
 public:
 	[[maybe_unused]] void* m_pVT1; // INetworkMessageProcessingPreFilter
