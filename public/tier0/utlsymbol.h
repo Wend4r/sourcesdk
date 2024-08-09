@@ -58,11 +58,6 @@ public:
 	// Gets at the symbol
 	operator UtlSymId_t () const { return m_Id; }
 
-protected:
-	CUtlSymbol( const char* pStr );
-	bool operator==( const char* pStr ) const;
-	const char* String( ) const;
-
 	UtlSymId_t   m_Id;
 };
 
