@@ -177,17 +177,17 @@ public:
 
 	// UtlBuffer objects should not be copyable; we do a slow copy if you use this but it asserts.
 	// (REI: I'd like to delete these but we have some python bindings that currently rely on being able to copy these objects)
-	DLL_CLASS_IMPORT CUtlBuffer( const CUtlBuffer& ); // = delete;
-	DLL_CLASS_IMPORT CUtlBuffer& operator= ( const CUtlBuffer& ); // = delete;
+	CUtlBuffer( const CUtlBuffer& ) = delete;
+	CUtlBuffer& operator= ( const CUtlBuffer& ) = delete;
 
 #if VALVE_CPP11
 	// UtlBuffer is non-copyable (same as CUtlMemory), but it is moveable.  We would like to declare these with '= default'
 	// but unfortunately VS2013 isn't fully C++11 compliant, so we have to manually declare these in the boilerplate way.
-	DLL_CLASS_IMPORT CUtlBuffer( CUtlBuffer&& moveFrom ); // = default;
-	DLL_CLASS_IMPORT CUtlBuffer& operator= ( CUtlBuffer&& moveFrom ); // = default;
+	CUtlBuffer( CUtlBuffer&& moveFrom ) = default;
+	CUtlBuffer& operator= ( CUtlBuffer&& moveFrom ) = default;
 #endif
 
-	DLL_CLASS_IMPORT unsigned char	GetFlags() const;
+	unsigned char	GetFlags() const;
 
 	// NOTE: This will assert if you attempt to recast it in a way that
 	// is not compatible. The only valid conversion is binary-> text w/CRLF
@@ -197,21 +197,18 @@ public:
 	DLL_CLASS_IMPORT void			EnsureCapacity( int num );
 
 	// Access for direct read into buffer
-	DLL_CLASS_IMPORT void *			AccessForDirectRead( int nBytes );
+	void *			AccessForDirectRead( int nBytes );
 
 	// Attaches the buffer to external memory....
 	DLL_CLASS_IMPORT void			SetExternalBuffer( void* pMemory, int nSize, int nInitialPut, int nFlags = 0 );
 	DLL_CLASS_IMPORT bool			IsExternallyAllocated() const;
 	DLL_CLASS_IMPORT void			AssumeMemory( void *pMemory, int nSize, int nInitialPut, int nFlags = 0 );
-	DLL_CLASS_IMPORT void			*Detach();
+	void			*Detach();
 	DLL_CLASS_IMPORT void*			DetachMemory();
 
 	// copies data from another buffer
-	DLL_CLASS_IMPORT void			CopyBuffer( const CUtlBuffer &buffer );
-	DLL_CLASS_IMPORT void			CopyBuffer( const void *pubData, int cubData );
-
-	DLL_CLASS_IMPORT void			Swap( CUtlBuffer &buf );
-	DLL_CLASS_IMPORT void			Swap( CUtlMemory<uint8> &mem );
+	void			CopyBuffer( const CUtlBuffer &buffer );
+	void			CopyBuffer( const void *pubData, int cubData );
 
 
 	FORCEINLINE void ActivateByteSwappingIfBigEndian( void )
@@ -226,6 +223,8 @@ public:
 	DLL_CLASS_IMPORT void			SetBigEndian( bool bigEndian );
 	DLL_CLASS_IMPORT bool			IsBigEndian( void );
 
+	DLL_CLASS_IMPORT void	AlignBuffer( int alignment );
+
 	// Resets the buffer; but doesn't free memory
 	void			Clear();
 
@@ -233,7 +232,13 @@ public:
 	void			Purge();
 
 	// Dump the buffer to stdout
-	DLL_CLASS_IMPORT void			Spew( );
+	void			Spew( );
+
+	DLL_CLASS_IMPORT void Swap( CUtlBuffer &other );
+	DLL_CLASS_IMPORT void Swap( CUtlMemory<unsigned char> &other );
+
+	DLL_CLASS_IMPORT bool WriteToFile( const char *, bool );
+	DLL_CLASS_IMPORT bool WriteToFileIfDifferent( const char * );
 
 	// Read stuff out.
 	// Binary mode: it'll just read the bits directly in, and characters will be
@@ -253,9 +258,10 @@ public:
 	double			GetDouble( );
 	void *			GetPtr();
 	DLL_CLASS_IMPORT void	GetString( char* pString, int nMaxChars = 0 );
-	DLL_CLASS_IMPORT void	GetString( const CBufferString & );
-	DLL_CLASS_IMPORT void	Get( void* pMem, int size );
+	DLL_CLASS_IMPORT void	GetString( CBufferString *pString );
+	DLL_CLASS_IMPORT bool	Get( void* pMem, int size );
 	DLL_CLASS_IMPORT void	GetLine( char* pLine, int nMaxChars = 0 );
+	DLL_CLASS_IMPORT void	GetLine( CBufferString *pLine );
 
 
 	// Used for getting objects that have a byteswap datadesc defined
@@ -268,7 +274,7 @@ public:
 	// This version of GetString converts \" to \\ and " to \, etc.
 	// It also reads a " at the beginning and end of the string
 	DLL_CLASS_IMPORT void			GetDelimitedString( CUtlCharConversion *pConv, char *pString, int nMaxChars = 0 );
-	DLL_CLASS_IMPORT void			GetDelimitedString( CUtlCharConversion *pConv, CBufferString * );
+	DLL_CLASS_IMPORT void			GetDelimitedString( CUtlCharConversion *pConv, CBufferString *pString );
 	DLL_CLASS_IMPORT char			GetDelimitedChar( CUtlCharConversion *pConv );
 
 	// This will return the # of characters of the string about to be read out
@@ -295,7 +301,8 @@ public:
 	DLL_CLASS_IMPORT void			EatWhiteSpace();
 
 	// Eats C++ style comments
-	DLL_CLASS_IMPORT bool			EatCPPComment();
+	DLL_CLASS_IMPORT bool	EatCPPComment();
+	DLL_CLASS_IMPORT bool	EatCComment( int * );
 
 	// (For text buffers only)
 	// Parse a token from the buffer:
@@ -342,6 +349,11 @@ public:
 	// It also places " at the beginning and end of the string
 	DLL_CLASS_IMPORT void			PutDelimitedString( CUtlCharConversion *pConv, const char *pString );
 	DLL_CLASS_IMPORT void			PutDelimitedChar( CUtlCharConversion *pConv, char c );
+
+	DLL_CLASS_IMPORT bool	PutFileContent( const char *pString );
+	DLL_CLASS_IMPORT void	PutJSONString( const char *pString );
+
+	DLL_CLASS_IMPORT void	PutZeros( int nCount );
 
 	// Just like printf, writes a terminating zero in binary mode
 	DLL_CLASS_IMPORT void			Printf( PRINTF_FORMAT_STRING const char* pFmt, ... ) FMTFUNCTION( 2, 3 );
