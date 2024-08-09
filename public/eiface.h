@@ -91,7 +91,7 @@ class GameSessionConfiguration_t;
 struct StringTableDef_t;
 class ILoopModePrerequisiteRegistry;
 struct URLArgument_t;
-struct vis_info_t;
+class vis_info_t;
 class IHLTVServer;
 class CCompressedResourceManifest;
 class ILoadingSpawnGroup;

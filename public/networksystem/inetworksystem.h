@@ -40,7 +40,7 @@ enum ENSAddressType
 	kAddressMax
 };
 
-class ns_address; // <tier1/ns_address.h>
+struct ns_address; // <tier1/ns_address.h>
 
 enum
 {
