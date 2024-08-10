@@ -71,8 +71,8 @@ public:
 	virtual bool UnserializeMessageInternal( bf_read &pBuf, CNetMessage *pData ) = 0;
 	virtual bool SerializeMessageInternal( bf_write &pBuf, const CNetMessage *pData ) = 0;
 
-	virtual void UnkFunction() = 0;
-
+	// Returns nullptr if failed to unserialize, reason is written to err_reason
+	virtual CNetMessage *UnserializeFromStream(bf_read &pBuf, CUtlString &err_reason) = 0;
 	virtual bool SerializeAbstract(bf_write &pBuf, INetworkMessageInternal *pNetMessage, const CNetMessage *pData) = 0;
 
 	virtual CNetMessage *AllocateAndCopyConstructNetMessageAbstract(INetworkMessageInternal *pNetMessage, const CNetMessage *pFrom) = 0;
