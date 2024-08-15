@@ -105,7 +105,7 @@ DLL_IMPORT unsigned long STDCALL GetCurrentThreadId();
 
 inline void ThreadPause()
 {
-#if defined( COMPILER_GCC )
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC )
 	__asm __volatile( "pause" );
 #elif defined ( COMPILER_MSVC64 )
 	_mm_pause();
@@ -967,7 +967,7 @@ template<typename T> T strip_cv_quals_for_mutex(const T&);
 template<typename T> T strip_cv_quals_for_mutex(volatile T&);
 template<typename T> T strip_cv_quals_for_mutex(const volatile T&);
 
-#ifdef COMPILER_GCC
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC )
 #define AUTO_LOCK( mutex ) \
 	AUTO_LOCK_( typename CAutoLockTypeDeducer<sizeof(mutex)>::Type_t, mutex )
 #else

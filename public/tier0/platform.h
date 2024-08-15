@@ -63,7 +63,11 @@
 
 #endif // SN_TARGET_PS3 
 
-#ifdef __GCC__
+#if defined(__clang__)
+#define COMPILER_CLANG 1
+#elif defined(_MSC_VER)
+#define COMPILER_MSVC 1
+#elif defined(__GNUC__)
 #define COMPILER_GCC 1
 #endif
 
@@ -91,8 +95,8 @@
 	#ifndef COMPILER_PS3
 	#error "for PS3, VPC must define COMPILER_PS3 macro just like it does for COMPILER_MSVCX360 macro"
 	#endif
-	#if !defined( COMPILER_SNC ) && !defined( COMPILER_GCC )
-	#error "for PS3, VPC must define COMPILER_SNC or COMPILER_GCC macro, depending on the target compiler, just like it does for COMPILER_MSVCX360 macro"
+	#if !defined( COMPILER_SNC ) && !defined( COMPILER_CLANG ) && !defined( COMPILER_GCC )
+	#error "for PS3, VPC must define COMPILER_SNC, COMPILER_CLANG or COMPILER_GCC macro, depending on the target compiler, just like it does for COMPILER_MSVCX360 macro"
 	#endif
 #endif
 
@@ -192,7 +196,7 @@
 #endif // ! ( _PS3 && COMPILER_SNC )
 
 #if  defined(__cplusplus)
-#if defined( COMPILER_GCC ) || defined( COMPILER_PS3 )
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC ) || defined( COMPILER_PS3 )
 	#include <new>
 #else
 	#include <new.h>
@@ -411,7 +415,7 @@
 #define MSVC 1
 #endif
 
-#ifdef COMPILER_GCC
+#if defined( __GNUC__ )
 #define GNUC 1
 #endif
 
@@ -833,7 +837,7 @@ typedef void * HINSTANCE;
 	#define DEFAULT_VC_WARNING( x ) __pragma(warning(default:4310) )
 
 
-#elif defined ( COMPILER_GCC ) || defined( COMPILER_SNC )
+#elif defined( COMPILER_CLANG ) || defined ( COMPILER_GCC ) || defined( COMPILER_SNC )
 
 	#if defined( COMPILER_SNC ) || defined( PLATFORM_64BITS )
 		#define  STDCALL
@@ -1094,7 +1098,7 @@ typedef void * HINSTANCE;
 //-----------------------------------------------------------------------------
 // Stack-based allocation related helpers
 //-----------------------------------------------------------------------------
-#if defined( COMPILER_GCC ) || defined( COMPILER_SNC )
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC ) || defined( COMPILER_SNC )
 
 	#define stackalloc( _size )		alloca( ALIGN_VALUE( _size, 16 ) )
 
@@ -1129,7 +1133,7 @@ typedef void * HINSTANCE;
 	#define DebuggerBreak()		__asm { int 3 }
 #elif COMPILER_MSVCX360
 	#define DebuggerBreak()		DebugBreak()
-#elif COMPILER_GCC
+#elif COMPILER_CLANG || COMPILER_GCC
 	#if defined( _PS3 )
 		#if defined( __SPU__ )
 			#define DebuggerBreak() __asm volatile ("stopd $0,$0,$0")
@@ -1375,7 +1379,7 @@ typedef int socklen_t;
 
 	#endif
 
-#elif defined ( COMPILER_GCC )
+#elif defined( COMPILER_CLANG ) || defined ( COMPILER_GCC )
 
 // Works for PS3 
 	inline void SetupFPUControlWord()
@@ -2563,7 +2567,7 @@ PLATFORM_INTERFACE const char * GetPlatformSpecificFileName(const char * FileNam
 // !!! NOTE: if you get a compile error here, you are using VALIGNOF on an abstract type :NOTE !!!
 #define VALIGNOF_PORTABLE( type ) ( sizeof( AlignOf_t<type> ) - sizeof( type ) )
 
-#if defined( COMPILER_GCC ) || defined( COMPILER_MSVC )
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC ) || defined( COMPILER_MSVC )
 #define VALIGNOF( type ) __alignof( type )
 #define VALIGNOF_TEMPLATE_SAFE( type ) VALIGNOF_PORTABLE( type )
 #else

@@ -4,7 +4,7 @@
 #include "tier0/memdbgon.h"
 
 // Nasty hack to redefine gcc's offsetof which doesn't like GET_OUTER macro
-#ifdef COMPILER_GCC
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC )
 #undef offsetof
 #define offsetof(s,m)	(size_t)&(((s *)0)->m)
 #endif

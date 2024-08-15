@@ -1,4 +1,4 @@
-//========= Copyright © Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ Valve Corporation, All rights reserved. ============//
 #ifndef HIERARCHICAL_BIT_VEC_HDR
 #define HIERARCHICAL_BIT_VEC_HDR
 
@@ -90,7 +90,7 @@ public:
 			uint nBaseLevel1 = nItLevel1 * 32;
 			while( nLevel1Bits )
 			{
-#ifdef COMPILER_GCC
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC )
 				uint32 nOffsetLevel1 = __builtin_ctz( nLevel1Bits );
 #else
 				unsigned long nOffsetLevel1;
@@ -106,7 +106,7 @@ public:
 					uint nBaseLevel0 = nItLevel0 * 32;
 					do
 					{
-#ifdef COMPILER_GCC
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC )
 						uint32 nOffsetLevel0 = __builtin_ctz( nLevel0Bits );
 #else
 						unsigned long nOffsetLevel0;
