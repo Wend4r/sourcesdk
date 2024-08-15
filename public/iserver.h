@@ -10,17 +10,19 @@
 #pragma once
 #endif
 
-#include <iloopmode.h>
-#include <inetmsghandler.h>
 #include <edict.h>
-#include <resourcefile/resourcetype.h>
-#include <tier0/checksum_crc.h>
 #include <engine/IEngineService.h>
 #include <engine/precache.h>
-#include <netadr.h>
-#include <qlimits.h>
-#include <ns_address.h>
 #include <framesnapshot.h>
+#include <iloopmode.h>
+#include <inetmsghandler.h>
+#include <netadr.h>
+#include <networkstringtabledefs.h>
+#include <ns_address.h>
+#include <playeruserid.h>
+#include <qlimits.h>
+#include <resourcefile/resourcetype.h>
+#include <tier0/checksum_crc.h>
 
 class IGameSpawnGroupMgr;
 struct EventServerAdvanceTick_t;
