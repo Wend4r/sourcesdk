@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "utlstring.h"
 
 typedef int TABLEID;

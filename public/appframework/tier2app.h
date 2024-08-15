@@ -19,7 +19,7 @@
 #endif
 
 
-#include "appframework/AppFramework.h"
+#include "appframework/appframework.h"
 #include "tier2/tier2dm.h"
 #include "tier1/convar.h"
 

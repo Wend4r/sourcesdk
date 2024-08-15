@@ -13,7 +13,7 @@
 #pragma once
 #endif
 
-#include "appframework/IAppSystemGroup.h"
+#include "appframework/iappsystemgroup.h"
 #include "ilaunchabledll.h"
 
 //-----------------------------------------------------------------------------
