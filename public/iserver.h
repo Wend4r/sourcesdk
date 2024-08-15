@@ -10,6 +10,7 @@
 #pragma once
 #endif
 
+#include <iloopmode.h>
 #include <inetmsghandler.h>
 #include <edict.h>
 #include <resourcefile/resourcetype.h>
@@ -20,8 +21,6 @@
 #include <qlimits.h>
 #include <ns_address.h>
 #include <framesnapshot.h>
-#include <serversideclient.h>
-#include <netmessages.pb.h>
 
 class IGameSpawnGroupMgr;
 struct EventServerAdvanceTick_t;
@@ -45,8 +44,6 @@ class CNetworkServerSpawnGroupCreatePrerequisites;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
-
-class GameSessionConfiguration_t : CBaseCmdKeyValues<CSVCMsg_GameSessionConfiguration> { };
 
 struct SplitDisconnect_t {
 	CServerSideClientBase* m_pUser;

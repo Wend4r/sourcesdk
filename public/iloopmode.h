@@ -15,6 +15,7 @@
 #include <inputsystem/InputEnums.h>
 #include <keyvalues.h>
 #include <splitscreenslot.h>
+#include <netmessages.pb.h>
 
 class ISource2WorldSession;
 class ISceneView;
@@ -105,11 +106,9 @@ struct CBaseCmdKeyValues : T
 	KeyValues* m_pKeyValues;
 };
 
-class GameSessionConfiguration_t;
-
-/*class GameSessionConfiguration_t : CBaseCmdKeyValues<CSVCMsg_GameSessionConfiguration>
+class GameSessionConfiguration_t : CBaseCmdKeyValues<CSVCMsg_GameSessionConfiguration>
 {
-};*/
+};
 
 abstract_class IPrerequisiteRegistry
 {
