@@ -75,8 +75,6 @@ public:
 	// returns game world tick
 	virtual int		GetServerTick( void ) const = 0;
 
-	virtual void	SetFinalSimulationTickThisFrame( int ) = 0;
-
 	// returns current client limit
 	virtual int		GetMaxClients( void ) const = 0;
 
