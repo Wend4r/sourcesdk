@@ -106,7 +106,7 @@ struct CBaseCmdKeyValues : T
 	KeyValues* m_pKeyValues;
 };
 
-class GameSessionConfiguration_t : CBaseCmdKeyValues<CSVCMsg_GameSessionConfiguration>
+class GameSessionConfiguration_t : public CBaseCmdKeyValues<CSVCMsg_GameSessionConfiguration>
 {
 };
 
