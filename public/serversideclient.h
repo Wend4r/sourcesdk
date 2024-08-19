@@ -5,6 +5,7 @@
 #pragma once
 #endif
 
+#include <inetchannel.h>
 #include <playerslot.h>
 #include <playeruserid.h>
 // #include <protocol.h> // @Wend4r: use <netmessages.pb.h> instead.
@@ -14,11 +15,32 @@
 #include <tier0/utlstring.h>
 #include <tier1/ns_address.h>
 #include <networksystem/inetworksystem.h>
+
 #include <netmessages.pb.h>
+#include <network_connection.pb.h>
 
 class CHLTVServer;
 class INetMessage;
 class CNetworkGameServerBase;
+
+class CNETMsg_Tick_t;
+class CNETMsg_StringCmd_t;
+class CNETMsg_SpawnGroup_LoadCompleted_t;
+class CCLCMsg_ClientInfo_t;
+class CCLCMsg_BaselineAck_t;
+class CCLCMsg_LoadingProgress_t;
+class CCLCMsg_SplitPlayerConnect_t;
+class CCLCMsg_SplitPlayerDisconnect_t;
+class CCLCMsg_CmdKeyValues_t;
+class CCLCMsg_Move_t;
+class CCLCMsg_ProcessVoiceData_t;
+class CCLCMsg_FileCRCCheck_t;
+class CCLCMsg_RespondCvarValue_t;
+class NetMessageSplitscreenUserChanged_t;
+class NetMessagePacketStart_t;
+class NetMessagePacketEnd_t;
+class NetMessageConnectionClosed_t;
+class NetMessageConnectionCrashed_t;
 
 struct HltvReplayStats_t {
 	enum FailEnum_t {
@@ -60,23 +82,169 @@ public:
 // class CServerSideClientBase: CUtlSlot, INetworkChannelNotify, INetworkMessageProcessingPreFilter;
 class CServerSideClientBase
 {
-	virtual ~CServerSideClientBase() = 0;
+	virtual void UnkDestructor() = 0;
+
 public:
-	INetChannel* GetNetChannel() const { return m_NetChannel; };
-	CPlayerSlot GetPlayerSlot() const { return m_nClientSlot; };
-	CEntityIndex GetEntityIndex() const { return m_nEntityIndex; };
-	CPlayerUserId GetUserID() const { return m_UserID; };
-	int GetSignonState() const { return m_nSignonState; }
-	CSteamID GetClientSteamID() const { return m_SteamID; }
-	const char* GetClientName() const { return m_Name; };
-	bool IsConnected() const { return m_nSignonState >= SIGNONSTATE_CONNECTED; };
-	bool IsSpawned() const { return m_nSignonState >= SIGNONSTATE_NEW; };
-	bool IsActive() const { return m_nSignonState == SIGNONSTATE_FULL; };
-	bool IsFakeClient() const { return m_bFakePlayer; };
-	bool IsHLTV() const { return m_bIsHLTV; }
-	bool IsFullyAuthenticated() { return m_bFullyAuthenticated; }
-	const netadr_t* GetRemoteAddress() const { return m_nAddr.Get<netadr_t>(); }
-	void ForceFullUpdate() { m_nForceWaitForTick = m_nDeltaTick = -1; }
+	virtual ~CServerSideClientBase() = 0;
+
+public:
+	CPlayerSlot              GetPlayerSlot() const { return m_nClientSlot; }
+	CPlayerUserId            GetUserID() const { return m_UserID; }
+	CEntityIndex             GetEntityIndex() const { return m_nEntityIndex; }
+	CSteamID                 GetClientSteamID() const { return m_SteamID; }
+	const char              *GetClientName() const { return m_Name; }
+	INetChannel             *GetNetChannel() const { return m_NetChannel; }
+	const netadr_t          *GetRemoteAddress() const { return m_nAddr.Get<netadr_t>(); }
+	CNetworkGameServerBase  *GetServer() const { return m_Server; }
+
+	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, bool bFakePlayer, bool bSplitClient, int iClientPlatform ) = 0;
+	virtual void             Inactivate() = 0;
+	virtual void             Reactivate( CPlayerSlot nSlot ) = 0;
+	virtual void             SetServer( CNetworkGameServer *pNetServer ) = 0;
+	virtual void             Reconnect() = 0;
+	virtual void             Disconnect( ENetworkDisconnectionReason reason ) = 0;
+	virtual bool             CheckConnect() = 0;
+
+private:
+	virtual void             unk_10() = 0;
+
+public:
+	virtual void             SetRate( int nRate ) = 0;
+	virtual void             SetUpdateRate( float fUpdateRate ) = 0;
+	virtual int              GetRate() = 0;
+
+	virtual void             Clear() = 0;
+
+	virtual void             ExecuteStringCommand( const CNETMsg_StringCmd& msg ) = 0;
+	virtual void             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
+
+private:
+	virtual void             unk_17() = 0;
+
+public:
+	virtual void             ClientPrintf( PRINTF_FORMAT_STRING const char*, ...) = 0;
+
+	bool                     IsConnected() const { return m_nSignonState >= SIGNONSTATE_CONNECTED; }
+	bool                     IsSpawned() const { return m_nSignonState >= SIGNONSTATE_NEW; }
+	bool                     IsActive() const { return m_nSignonState == SIGNONSTATE_FULL; }
+	virtual bool             IsFakeClient() const { return m_bFakePlayer; }
+	virtual bool             IsHLTV() = 0;
+
+	// Is an actual human player or splitscreen player (not a bot and not a HLTV slot)
+	virtual bool             IsHumanPlayer() const { return false; }
+	virtual bool             IsHearingClient( CPlayerSlot nSlot ) const { return false; }
+	virtual bool             IsLowViolenceClient() const { return m_bLowViolence; }
+
+	virtual bool             IsSplitScreenUser() const { return m_bSplitScreenUser; }
+	int                      GetClientPlatform() const { return m_ClientPlatform; } // CrossPlayPlatform_t
+
+public: // Message Handlers
+	virtual bool             ProcessTick( const CNETMsg_Tick_t& msg ) = 0;
+	virtual bool             ProcessStringCmd( const CNETMsg_StringCmd_t& msg ) = 0;
+
+private:
+	virtual bool             unk_27() = 0;
+	virtual bool             unk_28() = 0;
+
+public:
+	virtual bool             ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) = 0;
+	virtual bool             ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) = 0;
+	virtual bool             ProcessBaselineAck( const CCLCMsg_BaselineAck_t &msg ) = 0;
+	virtual bool             ProcessLoadingProgress( const CCLCMsg_LoadingProgress_t &msg ) = 0;
+	virtual bool             ProcessSplitPlayerConnect( const CCLCMsg_SplitPlayerConnect_t &msg ) = 0;
+	virtual bool             ProcessSplitPlayerDisconnect( const CCLCMsg_SplitPlayerDisconnect_t &msg ) = 0;
+	virtual bool             ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) = 0;
+
+private:
+	virtual bool             unk_36() = 0;
+	virtual bool             unk_37() = 0;
+
+public:
+	virtual bool             ProcessMove( const CCLCMsg_Move_t &msg ) = 0;
+	virtual bool             ProcessVoiceData( const CCLCMsg_ProcessVoiceData_t &msg ) = 0;
+	virtual bool             ProcessFileCRCCheck( const CCLCMsg_FileCRCCheck_t &msg ) = 0;
+	virtual bool             ProcessRespondCvarValue( const CCLCMsg_RespondCvarValue_t *msg ) = 0;
+
+	virtual bool             ProcessPacketStart( const NetMessagePacketStart_t &msg ) = 0;
+	virtual bool             ProcessPacketEnd( const NetMessagePacketEnd_t &msg ) = 0;
+	virtual bool             ProcessConnectionClosed( const NetMessageConnectionClosed_t &msg ) = 0;
+	virtual bool             ProcessConnectionCrashed( const NetMessageConnectionCrashed_t &msg ) = 0;
+
+public:
+	virtual bool             ProcessChangeSplitscreenUser( const NetMessageSplitscreenUserChanged_t &msg ) = 0;
+
+private:
+	virtual bool             unk_47() = 0;
+	virtual bool             unk_48() = 0;
+	virtual bool             unk_49() = 0;
+
+public:
+	virtual void             ConnectionStart( INetChannel *pNetChannel ) = 0;
+
+private: // SpawnGroup something.
+	virtual void             unk_51() = 0;
+	virtual void             unk_52() = 0;
+
+public:
+	virtual void             ExecuteDelayedCall( void * ) = 0;
+
+	virtual bool             UpdateAcknowledgedFramecount( int tick ) = 0;
+	void                     ForceFullUpdate() { UpdateAcknowledgedFramecount(-1); }
+
+	virtual bool             ShouldSendMessages() = 0;
+	virtual void             UpdateSendState() = 0;
+
+	virtual const CMsgPlayerInfo &GetPlayerInfo() const { return m_playerInfo; }
+
+	virtual void             UpdateUserSettings() = 0;
+	virtual void             ResetUserSettings() = 0;
+
+private:
+	virtual void             unk_60() = 0;
+
+public:
+	virtual void             SendSignonData() = 0;
+	virtual void             SpawnPlayer() = 0;
+	virtual void             ActivatePlayer() = 0;
+
+	virtual void             SetName( const char *name ) = 0;
+	virtual void             SetUserCVar( const char *cvar, const char *value ) = 0;
+
+	int                      GetSignonState() const { return m_nSignonState; }
+
+	virtual void             FreeBaselines() = 0;
+
+	bool                     IsFullyAuthenticated( void ) { return m_bFullyAuthenticated; }
+	void                     SetFullyAuthenticated( void ) { m_bFullyAuthenticated = true; }
+
+	virtual CServerSideClientBase *GetSplitScreenOwner() { return m_pAttachedTo; }
+
+	virtual int              GetNumPlayers() = 0;
+
+	virtual void             ShouldReceiveStringTableUserData() = 0;
+
+private:
+	virtual void             unk_70( CPlayerSlot nSlot ) = 0;
+	virtual void             unk_71() = 0;
+	virtual void             unk_72() = 0;
+
+public:
+	virtual int              GetHltvLastSendTick() = 0;
+
+private:
+	virtual void             unk_74() = 0;
+	virtual void             unk_75() = 0;
+	virtual void             unk_76() = 0;
+
+public:
+	virtual void             Await() = 0;
+
+	virtual void             MarkToKick() = 0;
+	virtual void             UnmarkToKick() = 0;
+
+	virtual bool             ProcessSignonStateMsg( int state ) = 0;
+	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
+
 public:
 	[[maybe_unused]] void* m_pVT1; // INetworkMessageProcessingPreFilter
 	CUtlString m_unk16; // 16
@@ -152,6 +320,7 @@ class CServerSideClient : public CServerSideClientBase
 {
 public:
 	virtual ~CServerSideClient() = 0;
+
 public:
 	CPlayerBitVec m_VoiceStreams; // 2904
 	CPlayerBitVec m_VoiceProximity; // 2912
@@ -181,6 +350,7 @@ class CHLTVClient : public CServerSideClientBase
 public:
 	virtual ~CHLTVClient() = 0;
 
+public:
 	CNetworkGameServerBase* m_pHLTV; // 2904
 	CUtlString m_szPassword; // 2912
 	CUtlString m_szChatGroup; // 2920
