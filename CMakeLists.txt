@@ -33,6 +33,7 @@ set(SOURCESDK_PROTO_FILES
 	common/valveextensions
 )
 
+set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
 set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
 
 include("cmake/platform/shared.cmake")
@@ -45,6 +46,7 @@ endif()
 
 include("cmake/sourcesdk.cmake")
 include("cmake/sourcesdk/proto.cmake")
+include("cmake/sourcesdk/targets/entity2.cmake")
 include("cmake/sourcesdk/targets/tier1.cmake")
 
 add_library(${PROJECT_NAME} ${SOURCESDK_SOURCE_FILES})
@@ -63,4 +65,4 @@ target_link_options(${PROJECT_NAME} PRIVATE ${PLATFORM_LINKER_OPTIONS} ${SOURCES
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINTIONS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PLATFORM_INCLUDE_DIR} ${SOURCESDK_INCLUDE_DIR})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBRARIES} ${SOURCESDK_PROTOBUF_STATIC_LIBRARY} ${SOURCESDK_TIER1_NAME})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBRARIES} ${SOURCESDK_PROTOBUF_STATIC_LIBRARY} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_TIER1_NAME})
