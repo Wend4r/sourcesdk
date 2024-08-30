@@ -1,0 +1,83 @@
+name: Build on Windows
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/**.yml'
+      - 'cmake/**'
+      - 'external/**'
+      - 'include/**'
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'trigger-build.txt'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '.github/workflows/**.yml'
+      - 'cmake/**'
+      - 'external/**'
+      - 'include/**'
+      - 'src/**'
+      - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'trigger-build.txt'
+
+env:
+  CMAKE_RELEASE_PRESET_NAME: Windows/Release
+  CMAKE_RELEASE_PRESET_PUBLIC_NAME: Release
+  CMAKE_RELEASE_CONFIG_NAME: Release
+  CMAKE_RELEASE_OUTPUT_PATTERN: build/Windows/Release/Release/*
+  CMAKE_CC: cl
+  CMAKE_CXX: cl
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+        fetch-depth: 0
+
+    - name: Set up environment variables
+      run: |
+        echo "REPOSITORY_NAME=$(basename ${env:GITHUB_REPOSITORY})" | Out-File -FilePath $env:GITHUB_ENV -Append
+        echo "ABSOLUTE_PATH=${env:GITHUB_WORKSPACE}" | Out-File -FilePath $env:GITHUB_ENV -Append
+      shell: pwsh
+
+    - name: Configure Git to treat current directory as safe
+      run: git config --global --add safe.directory $env:GITHUB_WORKSPACE
+      shell: pwsh
+
+    - name: Get latest tag
+      id: get-latest-tag
+      run: |
+        if ((git tag) -eq $null) {
+          echo "No tags found"
+          echo "LATEST_TAG=none" | Out-File -FilePath $env:GITHUB_ENV -Append
+        } else {
+          $LATEST_TAG = git describe --tags (git rev-list --tags --max-count=1)
+          echo "LATEST_TAG=$LATEST_TAG" | Out-File -FilePath $env:GITHUB_ENV -Append
+        }
+      shell: pwsh
+
+    - name: Release - Configure CMake
+      run: >
+        cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
+        -DCMAKE_C_COMPILER=${{ env.CMAKE_CC }}
+        -DCMAKE_CXX_COMPILER=${{ env.CMAKE_CXX }}
+
+    - name: Release - Build
+      run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}
+
+    - name: Release - Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}_${{ env.CMAKE_RELEASE_PRESET_PUBLIC_NAME }}
+        path: ${{ env.CMAKE_RELEASE_OUTPUT_PATTERN }}
