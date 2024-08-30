@@ -34,6 +34,7 @@ set(SOURCESDK_PROTO_FILES
 )
 
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
+set(SOURCESDK_INTERFACES_DIR "${SOURCESDK_DIR}/interfaces")
 set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
 set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
 
@@ -48,6 +49,7 @@ endif()
 include("cmake/sourcesdk.cmake")
 include("cmake/sourcesdk/proto.cmake")
 include("cmake/sourcesdk/targets/entity2.cmake")
+include("cmake/sourcesdk/targets/interfaces.cmake")
 include("cmake/sourcesdk/targets/mathlib.cmake")
 include("cmake/sourcesdk/targets/tier1.cmake")
 
@@ -67,4 +69,4 @@ target_link_options(${PROJECT_NAME} PRIVATE ${PLATFORM_LINKER_OPTIONS} ${SOURCES
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINTIONS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PLATFORM_INCLUDE_DIR} ${SOURCESDK_INCLUDE_DIR})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBRARIES} ${SOURCESDK_PROTOBUF_STATIC_LIBRARY} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LINK_LIBRARIES} ${SOURCESDK_PROTOBUF_STATIC_LIBRARY} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
