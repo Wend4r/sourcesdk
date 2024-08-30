@@ -1,0 +1,72 @@
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+if(POLICY CMP0092)
+	cmake_policy(SET CMP0092 NEW) # Don't add -W3 warning level by default.
+endif()
+
+project(sourcesdk
+	VERSION 2.0.0
+	DESCRIPTION "Source SDK"
+	HOMEPAGE_URL "https://github.com/Wend4r/sourcesdk"
+	LANGUAGES C CXX
+)
+
+string(REGEX REPLACE "^[^-]*-" "" PROJECT_NAME_SUBSTRING "${PROJECT_NAME}")
+string(TOLOWER "${PROJECT_NAME_SUBSTRING}" PROJECT_NAME_LOWER)
+string(TOUPPER "${PROJECT_NAME_SUBSTRING}" PROJECT_NAME_UPPER)
+
+set(PROJECT_OUTPUT_NAME "${PROJECT_NAME_SUBSTRING}")
+
+set(PROJECT_AUTHOR "AlliedModders (Wend4r's fork)")
+set(PROJECT_DESCRIPTION_FULL "Source SDK toolkit")
+string(TIMESTAMP PROJECT_BUILD_DATE "%Y-%m-%d")
+string(TIMESTAMP PROJECT_BUILD_TIME "%H:%M:%S")
+
+set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
+set(SOURCESDK_PROTO_FILES
+	common/connectionless_netmessages
+	common/engine_gcmessages
+	common/netmessages
+	common/networkbasetypes
+	common/network_connection
+	common/valveextensions
+)
+
+set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
+set(SOURCESDK_INTERFACES_DIR "${SOURCESDK_DIR}/interfaces")
+set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
+set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
+
+include("cmake/platform/shared.cmake")
+
+if(LINUX)
+	include("cmake/platform/linux.cmake")
+elseif(WINDOWS)
+	include("cmake/platform/windows.cmake")
+endif()
+
+include("cmake/sourcesdk.cmake")
+include("cmake/sourcesdk/proto.cmake")
+include("cmake/sourcesdk/targets/entity2.cmake")
+include("cmake/sourcesdk/targets/interfaces.cmake")
+include("cmake/sourcesdk/targets/mathlib.cmake")
+include("cmake/sourcesdk/targets/tier1.cmake")
+
+add_library(${PROJECT_NAME} ${SOURCESDK_SOURCE_FILES})
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 17)
+set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD_REQUIRED ON)
+set_property(TARGET ${PROJECT_NAME} PROPERTY C_EXTENSIONS OFF)
+
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_EXTENSIONS OFF)
+
+target_compile_options(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILER_OPTIONS} ${SOURCESDK_COMPILER_OPTIONS})
+target_link_options(${PROJECT_NAME} PRIVATE ${PLATFORM_LINKER_OPTIONS} ${SOURCESDK_LINKER_OPTIONS})
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINTIONS})
+target_include_directories(${PROJECT_NAME} PRIVATE ${PLATFORM_INCLUDE_DIR} ${SOURCESDK_INCLUDE_DIR})
+
+target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${SOURCESDK_LINK_LIBRARIES} ${SOURCESDK_PROTOBUF_STATIC_LIBRARY} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
