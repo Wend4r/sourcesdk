@@ -2,7 +2,7 @@ name: Build on Windows
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "citadel", "cs2" ]
     paths:
       - '.github/workflows/**.yml'
       - 'cmake/**'
@@ -19,7 +19,7 @@ on:
       - 'CMakePresets.json'
       - 'trigger-build.txt'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "citadel", "cs2" ]
     paths:
       - '.github/workflows/**.yml'
       - 'cmake/**'
