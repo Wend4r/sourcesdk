@@ -73,7 +73,7 @@ set(SOURCESDK_SOURCE_FILES
 	${SOURCESDK_DIR}/public/tier0/memoverride.cpp
 )
 
-if(LINUX)
+if(WINDOWS)
 	# Is not usable on CMake Windows, because CMake default link libraries always link ucrt.lib
 	set(SOURCESDK_LINK_LIBRARIES
 		${SOURCESDK_LINK_LIBRARIES}
