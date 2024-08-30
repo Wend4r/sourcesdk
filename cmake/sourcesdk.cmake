@@ -69,18 +69,11 @@ set(SOURCESDK_INCLUDE_DIR
 
 set(SOURCESDK_SOURCE_FILES
 	${SOURCESDK_SOURCE_FILES}
-
-	${SOURCESDK_DIR}/entity2/entityidentity.cpp
-	${SOURCESDK_DIR}/entity2/entitysystem.cpp
-	${SOURCESDK_DIR}/entity2/entitykeyvalues.cpp
 )
 
 if(LINUX)
-	set(SOURCESDK_SOURCE_FILES
-		${SOURCESDK_SOURCE_FILES}
-
-		${SOURCESDK_DIR}/public/tier0/memoverride.cpp # Is not usable on CMake Windows, because CMake default link libraries always link ucrt.lib
-	)
+	# Is not usable on CMake Windows, because CMake default link libraries always link ucrt.lib
+	list(APPEND SOURCESDK_SOURCE_FILES ${SOURCESDK_DIR}/public/tier0/memoverride.cpp)
 endif()
 
 set(SOURCESDK_LIB_DIR ${SOURCESDK_DIR}/lib)
