@@ -41,6 +41,7 @@ class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
 class NetMessageConnectionClosed_t;
 class NetMessageConnectionCrashed_t;
+class CNetworkGameServer;
 
 struct HltvReplayStats_t {
 	enum FailEnum_t {
