@@ -53,7 +53,7 @@ include("cmake/sourcesdk/targets/interfaces.cmake")
 include("cmake/sourcesdk/targets/mathlib.cmake")
 include("cmake/sourcesdk/targets/tier1.cmake")
 
-add_library(${PROJECT_NAME} ${SOURCESDK_SOURCE_FILES})
+add_library(${PROJECT_NAME} ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCE_FILES})
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 17)
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD_REQUIRED ON)
