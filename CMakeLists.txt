@@ -30,6 +30,9 @@ set(SOURCESDK_PROTO_FILES
 	common/netmessages
 	common/networkbasetypes
 	common/network_connection
+	common/steamnetworkingsockets_messages_certs
+	common/steamnetworkingsockets_messages_udp
+	common/steamnetworkingsockets_messages
 	common/valveextensions
 )
 
