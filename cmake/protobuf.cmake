@@ -10,3 +10,6 @@ set(${PROTOBUF_NAME}_INSTALL OFF CACHE BOOL "Install protobuf binaries and files
 set(${PROTOBUF_NAME}_BUILD_TESTS OFF CACHE BOOL "Build tests")
 add_subdirectory(${PROTOBUF_DIR} ${PROTOBUF_BINARY_DIR})
 set_target_properties(${PROTOBUF_LIB_NAME} PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+if(WIN32)
+	set_target_properties(${PROTOBUF_LIB_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
