@@ -26,6 +26,8 @@ set(THIRDPARTY_DIR "thirdparty")
 set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf-3.21.8")
 set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
+option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
+
 set(SOURCESDK_PROTO_DIRS
 	common
 	game/shared
