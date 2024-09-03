@@ -1,3 +1,7 @@
+if(NOT PROTOBUF_DIR)
+	message(FATAL_ERROR "PROTOBUF_DIR is empty")
+endif()
+
 if(NOT SOURCESDK_DIR)
 	message(FATAL_ERROR "SOURCESDK_DIR is empty")
 endif()
@@ -9,14 +13,11 @@ endif()
 ## Generate protobuf source & headers
 if(LINUX)
 	set(SOURCESDK_PROTOC_EXECUTABLE ${SOURCESDK_DIR}/devtools/bin/linux/protoc)
-	set(SOURCESDK_PROTOBUF_STATIC_LIBRARY ${SOURCESDK_LIB_DIR}/linux64/release/libprotobuf.a)
 elseif(WINDOWS)
 	set(SOURCESDK_PROTOC_EXECUTABLE ${SOURCESDK_DIR}/devtools/bin/protoc.exe)
-	set(SOURCESDK_PROTOBUF_STATIC_LIBRARY ${SOURCESDK_LIB_DIR}/public/win64/2015/libprotobuf.lib)
 endif()
 
-set(SOURCESDK_PROTOBUF_DIR "${SOURCESDK_DIR}/thirdparty/protobuf-3.21.8")
-set(SOURCESDK_PROTOBUF_SOURCE_DIR "${SOURCESDK_PROTOBUF_DIR}/src")
+set(SOURCESDK_PROTOBUF_SOURCE_DIR "${PROTOBUF_DIR}/src")
 list(APPEND SOURCESDK_INCLUDE_DIR ${SOURCESDK_PROTOBUF_SOURCE_DIR})
 
 set(SOURCESDK_PROTO_FILENAME_FILES
