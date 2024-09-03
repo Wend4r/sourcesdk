@@ -2,9 +2,11 @@ set(PLATFORM_COMPILER_OPTIONS
 	${PLATFORM_COMPILER_OPTIONS}
 
 	-Wall
+	-Wno-attributes -Wno-ignored-attributes
 	-Wno-conversion -Wno-overloaded-virtual
+	-Wno-delete-non-virtual-dtor -Wno-non-virtual-dtor
 	-Wno-invalid-offsetof -Wno-invalid-noreturn
-	-Wno-non-virtual-dtor -Wno-delete-non-virtual-dtor
+	-Wno-sign-compare
 	-Wno-unused -Wno-register
 	-Wno-narrowing
 	-Wno-ordered-compare-function-pointers
