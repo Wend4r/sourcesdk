@@ -2,7 +2,8 @@ set(PLATFORM_COMPILER_OPTIONS
 	${PLATFORM_COMPILER_OPTIONS}
 
 	-Wall
-	-Wno-conversion -Wno-overloaded-virtual -Wno-invalid-offsetof
+	-Wno-conversion -Wno-overloaded-virtual
+	-Wno-invalid-offsetof -Wno-invalid-noreturn
 	-Wno-non-virtual-dtor -Wno-delete-non-virtual-dtor
 	-Wno-unused -Wno-register
 	-Wno-narrowing
