@@ -43,15 +43,28 @@ env:
   CMAKE_RELEASE_PRESET_NAME: Release
   CMAKE_RELEASE_CONFIG_NAME: Release
   CMAKE_RELEASE_OUTPUT_PATTERN: build/Release/*.a
-  CLANG_CC: clang
-  CLANG_CXX: clang++
 
 jobs:
   build:
+    name: ${{ matrix.compiler.name }}
     runs-on: ubuntu-latest
     container: registry.gitlab.steamos.cloud/steamrt/sniper/sdk
 
     strategy:
+      matrix:
+        compiler:
+          [
+            {
+              name: Clang,
+              cc: clang,
+              cxx: clang++,
+            },
+            {
+              name: GCC,
+              cc: gcc-12,
+              cxx: g++-12,
+            }
+        ]
       fail-fast: false
 
     steps:
@@ -64,7 +77,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build
+        sudo apt-get install -y ninja-build ${{ matrix.compiler.cc }}
 
     - name: Set up environment variables
       run: |
@@ -85,34 +98,34 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
         fi
 
-    - name: Debug - Configure CMake (Clang)
+    - name: Debug - Configure CMake
       run: >
         cmake --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }}
-        -DCMAKE_C_COMPILER=${{ env.CLANG_CC }}
-        -DCMAKE_CLANG_CXX_COMPILER=${{ env.CLANG_CXX }}
+        -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
+        -DCMAKE_CLANG_CXX_COMPILER=${{ matrix.compiler.cxx }}
 
-    - name: Debug - Build (Clang)
+    - name: Debug - Build
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
 
     - name: Debug - Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.CLANG_CC }}-${{ env.CMAKE_DEBUG_PRESET_NAME }}
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ matrix.compiler.name }}-${{ env.CMAKE_DEBUG_PRESET_NAME }}
         path: |
           ${{ env.CMAKE_DEBUG_OUTPUT_PATTERN }}
 
-    - name: Release - Configure CMake (Clang)
+    - name: Release - Configure CMake
       run: >
         cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
-        -DCMAKE_C_COMPILER=${{ env.CLANG_CC }}
-        -DCMAKE_CLANG_CXX_COMPILER=${{ env.CLANG_CXX }}
+        -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
+        -DCMAKE_CLANG_CXX_COMPILER=${{ matrix.compiler.cxx }}
 
-    - name: Release - Build (Clang)
+    - name: Release - Build
       run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}
 
     - name: Release - Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.CLANG_CC }}-${{ env.CMAKE_RELEASE_PRESET_NAME }}
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ matrix.compiler.name }}-${{ env.CMAKE_RELEASE_PRESET_NAME }}
         path: |
           ${{ env.CMAKE_RELEASE_OUTPUT_PATTERN }}
