@@ -43,8 +43,8 @@ env:
   CMAKE_RELEASE_PRESET_NAME: Release
   CMAKE_RELEASE_CONFIG_NAME: Release
   CMAKE_RELEASE_OUTPUT_PATTERN: build/Release/*.a
-  CMAKE_CC: clang
-  CMAKE_CXX: clang++
+  CLANG_CC: clang
+  CLANG_CXX: clang++
 
 jobs:
   build:
@@ -88,31 +88,31 @@ jobs:
     - name: Debug - Configure CMake (Clang)
       run: >
         cmake --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }}
-        -DCMAKE_C_COMPILER=${{ env.CMAKE_CC }}
-        -DCMAKE_CXX_COMPILER=${{ env.CMAKE_CXX }}
+        -DCMAKE_C_COMPILER=${{ env.CLANG_CC }}
+        -DCMAKE_CLANG_CXX_COMPILER=${{ env.CLANG_CXX }}
 
-    - name: Debug - Build
+    - name: Debug - Build (Clang)
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
 
     - name: Debug - Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}_${{ env.CMAKE_DEBUG_PRESET_NAME }}
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.CLANG_CC }}-${{ env.CMAKE_DEBUG_PRESET_NAME }}
         path: |
           ${{ env.CMAKE_DEBUG_OUTPUT_PATTERN }}
 
     - name: Release - Configure CMake (Clang)
       run: >
         cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
-        -DCMAKE_C_COMPILER=${{ env.CMAKE_CC }}
-        -DCMAKE_CXX_COMPILER=${{ env.CMAKE_CXX }}
+        -DCMAKE_C_COMPILER=${{ env.CLANG_CC }}
+        -DCMAKE_CLANG_CXX_COMPILER=${{ env.CLANG_CXX }}
 
-    - name: Release - Build
+    - name: Release - Build (Clang)
       run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}
 
     - name: Release - Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}_${{ env.CMAKE_RELEASE_PRESET_NAME }}
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.CLANG_CC }}-${{ env.CMAKE_RELEASE_PRESET_NAME }}
         path: |
           ${{ env.CMAKE_RELEASE_OUTPUT_PATTERN }}
