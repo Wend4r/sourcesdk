@@ -8,8 +8,8 @@ set_target_properties(${PROTOBUF_PROTOC_NAME} PROPERTIES
 	CXX_EXTENSIONS OFF
 )
 
-if(WIN32)
-	set_target_properties(${PROTOBUF_PROTOC_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+if(WINDOWS)
+	set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 target_compile_options(${PROTOBUF_PROTOC_NAME} PRIVATE ${PLATFORM_COMPILER_OPTIONS})

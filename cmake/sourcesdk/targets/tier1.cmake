@@ -55,7 +55,8 @@ set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES
 )
 
 set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES OUTPUT_NAME ${SOURCESDK_TIER1_OUTPUT_NAME})
-if(WIN32)
+
+if(WINDOWS)
 	set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
