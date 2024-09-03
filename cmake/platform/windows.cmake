@@ -10,7 +10,7 @@ set(PLATFORM_COMPILER_OPTIONS
 	${PLATFORM_COMPILER_OPTIONS}
 
 	/wd4005 /wd4819 /wd4828 /wd5033
-	/permissive- /utf-8
+	/permissive- /utf-8 /MP
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
