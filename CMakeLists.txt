@@ -58,6 +58,11 @@ elseif(WINDOWS)
 endif()
 
 include("cmake/protobuf.cmake")
+include("cmake/protobuf/targets/libprotobuf-lite.cmake")
+include("cmake/protobuf/targets/libprotobuf.cmake")
+include("cmake/protobuf/targets/libprotoc.cmake")
+include("cmake/protobuf/targets/protoc.cmake")
+
 include("cmake/sourcesdk.cmake")
 include("cmake/sourcesdk/proto.cmake")
 include("cmake/sourcesdk/targets/entity2.cmake")
@@ -87,4 +92,4 @@ target_link_options(${PROJECT_NAME} PRIVATE ${PLATFORM_LINKER_OPTIONS} ${SOURCES
 target_compile_definitions(${PROJECT_NAME} PRIVATE ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINTIONS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PLATFORM_INCLUDE_DIR} ${SOURCESDK_INCLUDE_DIR})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${PROTOBUF_NAME}::${PROTOBUF_LIB_NAME} ${SOURCESDK_LINK_LIBRARIES} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${PROTOBUF_LIB_NAME} ${SOURCESDK_LINK_LIBRARIES} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})

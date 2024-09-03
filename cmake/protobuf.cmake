@@ -3,20 +3,12 @@ if(NOT PROTOBUF_DIR)
 endif()
 
 set(PROTOBUF_NAME "protobuf")
-set(PROTOBUF_LIB_NAME "lib${PROTOBUF_NAME}")
-set(PROTOBUF_BINARY_DIR "${PROTOBUF_NAME}")
+set(PROTOBUF_LIBPPROTOBUF_LITE_NAME "libprotobuf-lite")
+set(PROTOBUF_LIBPPROTOBUF_NAME "libprotobuf")
+set(PROTOBUF_LIBPROTOC_NAME "libprotoc")
+set(PROTOBUF_PROTOC_NAME "protoc")
 
 set(${PROTOBUF_NAME}_INSTALL OFF CACHE BOOL "Install protobuf binaries and files")
 set(${PROTOBUF_NAME}_BUILD_TESTS OFF CACHE BOOL "Build tests")
 
 add_subdirectory(${PROTOBUF_DIR} ${PROTOBUF_BINARY_DIR})
-
-set_target_properties(${PROTOBUF_LIB_NAME} PROPERTIES
-	CXX_STANDARD 11
-	CXX_STANDARD_REQUIRED ON
-	CXX_EXTENSIONS OFF
-)
-
-if(WIN32)
-	set_target_properties(${PROTOBUF_LIB_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-endif()
