@@ -24,6 +24,11 @@ string(TIMESTAMP PROJECT_BUILD_TIME "%H:%M:%S")
 
 set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
+set(SOURCESDK_PROTO_DIRS
+	common
+	game/shared
+)
+
 set(SOURCESDK_PROTO_FILES
 	common/connectionless_netmessages
 	common/engine_gcmessages
@@ -34,6 +39,7 @@ set(SOURCESDK_PROTO_FILES
 	common/steamnetworkingsockets_messages_udp
 	common/steamnetworkingsockets_messages
 	common/valveextensions
+	game/shared/usermessages
 )
 
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
