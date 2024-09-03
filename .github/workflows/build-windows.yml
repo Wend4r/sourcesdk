@@ -37,6 +37,10 @@ on:
       - 'trigger-build.txt'
 
 env:
+  CMAKE_DEBUG_PRESET_NAME: Windows/Debug
+  CMAKE_DEBUG_PRESET_PUBLIC_NAME: Debug
+  CMAKE_DEBUG_CONFIG_NAME: Debug
+  CMAKE_DEBUG_OUTPUT_PATTERN: build/Windows/Debug/Debug/*
   CMAKE_RELEASE_PRESET_NAME: Windows/Release
   CMAKE_RELEASE_PRESET_PUBLIC_NAME: Release
   CMAKE_RELEASE_CONFIG_NAME: Release
@@ -78,6 +82,21 @@ jobs:
           echo "LATEST_TAG=$LATEST_TAG" | Out-File -FilePath $env:GITHUB_ENV -Append
         }
       shell: pwsh
+
+    - name: Debug - Configure CMake
+      run: >
+        cmake --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }}
+        -DCMAKE_C_COMPILER=${{ env.CMAKE_CC }}
+        -DCMAKE_CXX_COMPILER=${{ env.CMAKE_CXX }}
+
+    - name: Debug - Build
+      run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
+
+    - name: Debug - Upload build artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}_${{ env.CMAKE_DEBUG_PRESET_PUBLIC_NAME }}
+        path: ${{ env.CMAKE_DEBUG_OUTPUT_PATTERN }}
 
     - name: Release - Configure CMake
       run: >
