@@ -6,7 +6,7 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64-bit
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
 
-		-DPLATFORM_64BITS -DX64BITS
+		PLATFORM_64BITS X64BITS
 	)
 else()
 	set(SIZEOF_BITS ${CMAKE_SIZEOF_VOID_P})
@@ -18,12 +18,13 @@ if(LINUX)
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
 
-		-DPOSIX
-		-D_LINUX -DLINUX
+		POSIX
+		_LINUX LINUX
 
-		-Dstricmp=strcasecmp -D_stricmp=strcasecmp -D_strnicmp=strncasecmp
-		-Dstrnicmp=strncasecmp -D_snprintf=snprintf
-		-D_vsnprintf=vsnprintf -D_alloca=alloca -Dstrcmpi=strcasecmp
+		_stricmp=strcasecmp stricmp=strcasecmp strcmpi=strcasecmp
+		_strnicmp=strncasecmp strnicmp=strncasecmp
+		_snprintf=snprintf _vsnprintf=vsnprintf
+		_alloca=alloca 
 	)
 endif()
 
@@ -31,7 +32,7 @@ if(WINDOWS)
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
 
-		-D_WIN32 -DWIN32
+		_WIN32 WIN32
 	)
 endif()
 
@@ -39,7 +40,7 @@ if(MSVC)
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
 
-		-DCOMPILER_MSVC -DCOMPILER_MSVC64
+		COMPILER_MSVC COMPILER_MSVC64
 	)
 endif()
 
@@ -47,7 +48,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(PLATFORM_COMPILE_DEFINITIONS
 		${PLATFORM_COMPILE_DEFINITIONS}
 
-		-D_DEBUG -DDEBUG
+		_DEBUG DEBUG
 	)
 endif()
 

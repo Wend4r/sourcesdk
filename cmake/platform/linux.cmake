@@ -32,9 +32,9 @@ set(PLATFORM_LINKER_OPTIONS
 set(PLATFORM_COMPILE_DEFINITIONS
 	${PLATFORM_COMPILE_DEFINITIONS}
 
-	-Dbswap_16=__bswap_16
-	-Dbswap_32=__bswap_32
-	-Dbswap_64=__bswap_64
+	bswap_16=__bswap_16
+	bswap_32=__bswap_32
+	bswap_64=__bswap_64
 
-	-D_GLIBCXX_USE_CXX11_ABI=0
+	_GLIBCXX_USE_CXX11_ABI=0
 )
