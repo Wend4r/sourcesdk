@@ -1,3 +1,7 @@
+if(NOT ${${PROTOBUF_NAME}_BUILD_LIBPROTOC})
+	return()
+endif()
+
 if(NOT PROTOBUF_LIBPROTOC_NAME)
 	message(FATAL_ERROR "PROTOBUF_LIBPROTOC_NAME is empty")
 endif()

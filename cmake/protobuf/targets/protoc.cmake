@@ -1,3 +1,7 @@
+if(NOT ${${PROTOBUF_NAME}_BUILD_PROTOC_BINARIES})
+	return()
+endif()
+
 if(NOT PROTOBUF_PROTOC_NAME)
 	message(FATAL_ERROR "PROTOBUF_PROTOC_NAME is empty")
 endif()
