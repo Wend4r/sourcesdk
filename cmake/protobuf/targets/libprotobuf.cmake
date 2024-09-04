@@ -9,7 +9,7 @@ set_target_properties(${PROTOBUF_LIBPPROTOBUF_NAME} PROPERTIES
 )
 
 if(WINDOWS)
-	set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	set_target_properties(${PROTOBUF_LIBPPROTOBUF_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
 
 target_compile_options(${PROTOBUF_LIBPPROTOBUF_NAME} PRIVATE ${PLATFORM_COMPILER_OPTIONS})
