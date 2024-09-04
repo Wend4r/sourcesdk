@@ -1,3 +1,7 @@
+if(NOT SOURCESDK_DIR)
+	message(FATAL_ERROR "SOURCESDK_DIR is empty")
+endif()
+
 if(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64-bit
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
@@ -51,16 +55,17 @@ endif()
 set(SOURCESDK_INCLUDE_DIR
 	${SOURCESDK_INCLUDE_DIR}
 
-	common
-	game/shared
-	game/server
-	public/engine
-	public/entity2
-	public/game/server
-	public/mathlib
-	public/tier0
-	public/tier1
-	public
+	${SOURCESDK_DIR}/common
+	${SOURCESDK_DIR}/game/shared
+	${SOURCESDK_DIR}/game/server
+	${SOURCESDK_DIR}/public/engine
+	${SOURCESDK_DIR}/public/entity2
+	${SOURCESDK_DIR}/public/game/server
+	${SOURCESDK_DIR}/public/mathlib
+	${SOURCESDK_DIR}/public/tier0
+	${SOURCESDK_DIR}/public/tier1
+	${SOURCESDK_DIR}/public
+	${SOURCESDK_DIR}
 )
 
 if(LINUX AND SOURCESDK_MALLOC_OVERRIDE)
@@ -68,11 +73,11 @@ if(LINUX AND SOURCESDK_MALLOC_OVERRIDE)
 		${SOURCESDK_SOURCE_FILES}
 
 		# memoverride.cpp is not usable on CMake Windows, because CMake default link libraries always link ucrt.lib
-		public/tier0/memoverride.cpp
+		${SOURCESDK_DIR}/public/tier0/memoverride.cpp
 	)
 endif()
 
-set(SOURCESDK_LIB_DIR lib)
+set(SOURCESDK_LIB_DIR ${SOURCESDK_DIR}/lib)
 
 if(WINDOWS)
 	set(SOURCESDK_LIB_PLATFORM_DIR "${SOURCESDK_LIB_DIR}/public/win64")

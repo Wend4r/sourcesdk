@@ -1,3 +1,7 @@
+if(NOT SOURCESDK_DIR)
+	message(FATAL_ERROR "SOURCESDK_DIR is empty")
+endif()
+
 if(NOT SOURCESDK_ENTITY2_DIR)
 	message(FATAL_ERROR "SOURCESDK_ENTITY2_DIR is empty")
 endif()
@@ -20,15 +24,15 @@ set(SOURCESDK_ENTITY2_COMPILE_DEFINTIONS
 )
 
 set(SOURCESDK_ENTITY2_INCLUDE_DIR
-	common
+	${SOURCESDK_DIR}/common
 	${SOURCESDK_PROTOBUF_SOURCE_DIR}
 
-	game/shared
-	public/entity2
-	public/mathlib
-	public/tier0
-	public/tier1
-	public
+	${SOURCESDK_DIR}/game/shared
+	${SOURCESDK_DIR}/public/entity2
+	${SOURCESDK_DIR}/public/mathlib
+	${SOURCESDK_DIR}/public/tier0
+	${SOURCESDK_DIR}/public/tier1
+	${SOURCESDK_DIR}/public
 )
 
 set(SOURCESDK_ENTITY2_SOURCE_FILES

@@ -1,3 +1,7 @@
+if(NOT SOURCESDK_DIR)
+	message(FATAL_ERROR "SOURCESDK_DIR is empty")
+endif()
+
 if(NOT SOURCESDK_TIER1_DIR)
 	message(FATAL_ERROR "SOURCESDK_TIER1_DIR is empty")
 endif()
@@ -21,9 +25,9 @@ set(SOURCESDK_TIER1_COMPILE_DEFINTIONS
 )
 
 set(SOURCESDK_TIER1_INCLUDE_DIR
-	public/tier0
-	public/tier1
-	public
+	${SOURCESDK_DIR}/public/tier0
+	${SOURCESDK_DIR}/public/tier1
+	${SOURCESDK_DIR}/public
 )
 
 set(SOURCESDK_TIER1_SOURCE_FILES
