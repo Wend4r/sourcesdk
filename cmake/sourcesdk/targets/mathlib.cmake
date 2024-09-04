@@ -1,7 +1,3 @@
-if(NOT SOURCESDK_DIR)
-	message(FATAL_ERROR "SOURCESDK_DIR is empty")
-endif()
-
 if(NOT SOURCESDK_MATHLIB_DIR)
 	message(FATAL_ERROR "SOURCESDK_MATHLIB_DIR is empty")
 endif()
@@ -24,10 +20,10 @@ set(SOURCESDK_MATHLIB_COMPILE_DEFINTIONS
 )
 
 set(SOURCESDK_MATHLIB_INCLUDE_DIR
-	${SOURCESDK_DIR}/public/mathlib
-	${SOURCESDK_DIR}/public/tier0
-	${SOURCESDK_DIR}/public/tier1
-	${SOURCESDK_DIR}/public
+	public/mathlib
+	public/tier0
+	public/tier1
+	public
 )
 
 set(SOURCESDK_MATHLIB_SOURCE_FILES

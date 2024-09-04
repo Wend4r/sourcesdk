@@ -26,7 +26,6 @@ set(DEVTOOLS_DIR "devtools")
 set(DEVTOOLS_BIN_DIR "${DEVTOOLS_DIR}/bin")
 set(THIRDPARTY_DIR "thirdparty")
 set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
-set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 
@@ -48,10 +47,10 @@ set(SOURCESDK_PROTO_FILES
 	game/shared/usermessages
 )
 
-set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
-set(SOURCESDK_INTERFACES_DIR "${SOURCESDK_DIR}/interfaces")
-set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
-set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
+set(SOURCESDK_ENTITY2_DIR "entity2")
+set(SOURCESDK_INTERFACES_DIR "interfaces")
+set(SOURCESDK_MATHLIB_DIR "mathlib")
+set(SOURCESDK_TIER1_DIR "tier1")
 
 include("cmake/platform/shared.cmake")
 
