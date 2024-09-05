@@ -48,6 +48,6 @@ foreach(PROTO_FILENAME IN LISTS SOURCESDK_PROTO_FILENAME_FILES)
 			WORKING_DIRECTORY ${SOURCESDK_DIR}
 		)
 	else()
-		message(STATUS "Compiled ${PROTO_SOURCE_BASE_FILENAME} is exists")
+		message(STATUS "Compiled ${PROTO_FILENAME} is exists")
 	endif()
 endforeach()
