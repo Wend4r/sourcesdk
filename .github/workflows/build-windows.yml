@@ -45,6 +45,7 @@ env:
   CMAKE_RELEASE_PRESET_PUBLIC_NAME: Release
   CMAKE_RELEASE_CONFIG_NAME: Release
   CMAKE_RELEASE_OUTPUT_PATTERN: build/Windows/Release/Release/*
+  SOURCESDK_MALLOC_OVERRIDE: ON
   MSVC_CC: cl
   MSVC_CXX: cl
   MSVC_NAME: MSVC
@@ -90,6 +91,7 @@ jobs:
         cmake --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }}
         -DCMAKE_C_COMPILER=${{ env.MSVC_CC }}
         -DCMAKE_CXX_COMPILER=${{ env.MSVC_CXX }}
+        -DSOURCESDK_MALLOC_OVERRIDE=${{ env.SOURCESDK_MALLOC_OVERRIDE }}
 
     - name: Debug - Build
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
@@ -105,6 +107,7 @@ jobs:
         cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
         -DCMAKE_C_COMPILER=${{ env.MSVC_CC }}
         -DCMAKE_CXX_COMPILER=${{ env.MSVC_CXX }}
+        -DSOURCESDK_MALLOC_OVERRIDE=${{ env.SOURCESDK_MALLOC_OVERRIDE }}
 
     - name: Release - Build
       run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}

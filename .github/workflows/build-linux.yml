@@ -43,6 +43,7 @@ env:
   CMAKE_RELEASE_PRESET_NAME: Release
   CMAKE_RELEASE_CONFIG_NAME: Release
   CMAKE_RELEASE_OUTPUT_PATTERN: build/Release/*.a
+  SOURCESDK_MALLOC_OVERRIDE: ON
 
 jobs:
   build:
@@ -103,6 +104,7 @@ jobs:
         cmake --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }}
         -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
         -DCMAKE_CLANG_CXX_COMPILER=${{ matrix.compiler.cxx }}
+        -DSOURCESDK_MALLOC_OVERRIDE=${{ env.SOURCESDK_MALLOC_OVERRIDE }}
 
     - name: Debug - Build
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
@@ -119,6 +121,7 @@ jobs:
         cmake --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }}
         -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
         -DCMAKE_CLANG_CXX_COMPILER=${{ matrix.compiler.cxx }}
+        -DSOURCESDK_MALLOC_OVERRIDE=${{ env.SOURCESDK_MALLOC_OVERRIDE }}
 
     - name: Release - Build
       run: cmake --build --preset ${{ env.CMAKE_RELEASE_PRESET_NAME }} --parallel --config ${{ env.CMAKE_RELEASE_CONFIG_NAME }}
