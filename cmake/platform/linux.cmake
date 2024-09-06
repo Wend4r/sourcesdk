@@ -9,7 +9,6 @@ set(PLATFORM_COMPILER_OPTIONS
 	-Wno-sign-compare
 	-Wno-unused -Wno-register
 	-Wno-narrowing
-	-Wno-ordered-compare-function-pointers
 
 	-mtune=generic -mmmx -msse -msse2 -msse3 -msse4 -msse4.1
 	-fvisibility=default -fPIC
