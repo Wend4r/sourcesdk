@@ -2,6 +2,7 @@ set(PLATFORM_COMPILER_OPTIONS
 	${PLATFORM_COMPILER_OPTIONS}
 
 	-Wall
+	-Wno-array-bounds
 	-Wno-attributes -Wno-ignored-attributes
 	-Wno-conversion -Wno-overloaded-virtual
 	-Wno-delete-non-virtual-dtor -Wno-non-virtual-dtor
