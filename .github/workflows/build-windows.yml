@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "citadel", "cs2" ]
     paths:
-      - '.github/workflows/**.yml'
+      - '.github/workflows/build-windows.yml'
       - 'cmake/**'
       - 'common/**'
       - 'entity2/**'
@@ -21,7 +21,7 @@ on:
   pull_request:
     branches: [ "citadel", "cs2" ]
     paths:
-      - '.github/workflows/**.yml'
+      - '.github/workflows/build-windows.yml'
       - 'cmake/**'
       - 'common/**'
       - 'entity2/**'
