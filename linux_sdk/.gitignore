@@ -1,5 +1,0 @@
-# Binary object files
-*.o
-
-# Local dynamic libraries for links
-*.so
