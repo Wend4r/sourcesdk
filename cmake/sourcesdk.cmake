@@ -54,18 +54,6 @@ endif()
 
 set(SOURCESDK_INCLUDE_DIRS
 	${SOURCESDK_INCLUDE_DIRS}
-
-	${SOURCESDK_DIR}/common
-	${SOURCESDK_DIR}/game/shared
-	${SOURCESDK_DIR}/game/server
-	${SOURCESDK_DIR}/public/engine
-	${SOURCESDK_DIR}/public/entity2
-	${SOURCESDK_DIR}/public/game/server
-	${SOURCESDK_DIR}/public/mathlib
-	${SOURCESDK_DIR}/public/tier0
-	${SOURCESDK_DIR}/public/tier1
-	${SOURCESDK_DIR}/public
-	${SOURCESDK_DIR}
 )
 
 if(LINUX AND SOURCESDK_MALLOC_OVERRIDE)
