@@ -75,7 +75,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        brew install cmake ninja
+        brew install ninja
 
     - name: Set up environment variables
       run: |
