@@ -7,6 +7,7 @@ set(PLATFORM_COMPILER_OPTIONS
 	-Wno-conversion -Wno-overloaded-virtual
 	-Wno-delete-non-virtual-dtor -Wno-non-virtual-dtor
 	-Wno-deprecated-declarations
+	-Wno-dynamic-exception-spec
 	-Wno-invalid-offsetof -Wno-invalid-noreturn
 	-Wno-sign-compare
 	-Wno-unused -Wno-register
