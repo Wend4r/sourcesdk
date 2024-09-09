@@ -73,6 +73,7 @@ include(cmake/sourcesdk/proto/generate.cmake)
 include(cmake/sourcesdk/targets/entity2.cmake)
 include(cmake/sourcesdk/targets/interfaces.cmake)
 include(cmake/sourcesdk/targets/mathlib.cmake)
+include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
 
