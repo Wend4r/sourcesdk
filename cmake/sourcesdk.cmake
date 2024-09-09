@@ -74,7 +74,7 @@ set(SOURCESDK_LINK_LIBRARIES
 if(WINDOWS)
 	set(SOURCESDK_PLATFORM_DIR "win64")
 elseif(LINUX)
-	set(SOURCESDK_PLATFORM_DIR "linux64")
+	set(SOURCESDK_PLATFORM_DIR "linuxsteamrt64")
 else()
 	message(FATAL_ERROR "Unsupported platform")
 endif()
