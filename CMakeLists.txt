@@ -55,10 +55,12 @@ set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
 
 include(cmake/platform/shared.cmake)
 
-if(LINUX)
-	include(cmake/platform/linux.cmake)
-elseif(WINDOWS)
+if(WINDOWS)
 	include(cmake/platform/windows.cmake)
+elseif(LINUX)
+	include(cmake/platform/linux.cmake)
+elseif(MACOS)
+	include(cmake/platform/macos.cmake)
 endif()
 
 include(cmake/protobuf.cmake)
@@ -96,6 +98,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 
 if(WINDOWS)
 	set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(MACOS)
+	set_target_properties(${PROJECT_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
 endif()
 
 target_compile_options(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILER_OPTIONS} ${SOURCESDK_COMPILER_OPTIONS})

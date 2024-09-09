@@ -14,6 +14,8 @@ set_target_properties(${PROTOBUF_PROTOC_NAME} PROPERTIES
 
 if(WINDOWS)
 	set_target_properties(${PROTOBUF_PROTOC_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(MACOS)
+	set_target_properties(${PROTOBUF_PROTOC_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
 endif()
 
 target_compile_options(${PROTOBUF_PROTOC_NAME} PRIVATE ${PLATFORM_COMPILER_OPTIONS})

@@ -14,7 +14,13 @@ else()
 	message(FATAL_ERROR "${SIZEOF_BITS}-bit platform is not supported")
 endif()
 
-if(LINUX)
+if(WINDOWS)
+	set(SOURCESDK_COMPILE_DEFINTIONS
+		${SOURCESDK_COMPILE_DEFINTIONS}
+
+		_WIN32 WIN32
+	)
+elseif(LINUX)
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
 
@@ -26,13 +32,12 @@ if(LINUX)
 		_snprintf=snprintf _vsnprintf=vsnprintf
 		_alloca=alloca 
 	)
-endif()
-
-if(WINDOWS)
+elseif(APPLE)
 	set(SOURCESDK_COMPILE_DEFINTIONS
 		${SOURCESDK_COMPILE_DEFINTIONS}
 
-		_WIN32 WIN32
+		POSIX
+		OSX _OSX
 	)
 endif()
 
@@ -75,6 +80,8 @@ if(WINDOWS)
 	set(SOURCESDK_PLATFORM_DIR "win64")
 elseif(LINUX)
 	set(SOURCESDK_PLATFORM_DIR "linuxsteamrt64")
+elseif(APPLE)
+	set(SOURCESDK_PLATFORM_DIR "osx64")
 else()
 	message(FATAL_ERROR "Unsupported platform")
 endif()
