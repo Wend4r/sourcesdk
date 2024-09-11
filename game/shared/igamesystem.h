@@ -207,9 +207,9 @@ GS_EVENT_MSG( RestoreGame )
 	const CUtlVector<CEntityHandle> *m_pEntityList;
 };
 
-#define GS_EVENT_IMPL( name ) virtual void name(const Event##name##_t* const msg) = 0;
-#define GS_EVENT( name ) virtual void name(const Event##name##_t* const msg) override
-#define GS_EVENT_MEMBER( gamesystem, name ) void gamesystem::name(const Event##name##_t* const msg)
+#define GS_EVENT_IMPL( name ) virtual void name(const Event##name##_t& msg) = 0;
+#define GS_EVENT( name ) virtual void name(const Event##name##_t& msg) override
+#define GS_EVENT_MEMBER( gamesystem, name ) void gamesystem::name(const Event##name##_t& msg)
 
 //-----------------------------------------------------------------------------
 // Game systems are singleton objects in the client + server codebase responsible for
