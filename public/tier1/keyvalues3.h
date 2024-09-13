@@ -278,6 +278,12 @@ private:
 class KeyValues3
 {
 public:
+	friend class CKeyValues3Array;
+	friend class CKeyValues3Cluster;
+	friend class CKeyValues3ContextBase;
+	friend class CKeyValues3Context;
+	friend class CKeyValues3Table;
+
 	KeyValues3( KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
 	~KeyValues3();
 

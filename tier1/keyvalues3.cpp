@@ -119,7 +119,8 @@ void KeyValues3::Free( bool bClearingContext )
 			}
 			else
 			{
-				delete m_pArray;
+				m_pArray->Purge( true );
+				free( m_pArray );
 			}
 
 			m_pArray = NULL;
@@ -138,7 +139,8 @@ void KeyValues3::Free( bool bClearingContext )
 			}
 			else
 			{
-				delete m_pTable;
+				m_pTable->Purge( true );
+				free( m_pTable );
 			}
 
 			m_pTable = NULL;
@@ -1195,7 +1197,10 @@ void CKeyValues3Array::SetCount( int count, KV3TypeEx_t type, KV3SubType_t subty
 		if ( context )
 			context->FreeKV( m_Elements[ i ] );
 		else
-			delete m_Elements[ i ];
+		{
+			m_Elements[ i ]->Free( true );
+			free( m_Elements[ i ] );
+		}
 	}
 
 	m_Elements.SetCount( count );
@@ -1242,10 +1247,15 @@ void CKeyValues3Array::RemoveMultiple( int elem, int num )
 
 	for ( int i = 0; i < num; ++i )
 	{
+		auto &Element = m_Elements[ elem + i ];
+
 		if ( context )
-			context->FreeKV( m_Elements[ elem + i ] );
+			context->FreeKV( Element );
 		else
-			delete m_Elements[ elem + i ];
+		{
+			Element->Free( true );
+			free( Element );
+		}
 	}
 
 	m_Elements.RemoveMultiple( elem, num );
@@ -1264,7 +1274,8 @@ void CKeyValues3Array::Purge( bool bClearingContext )
 		}
 		else
 		{
-			delete m_Elements[ iter ];
+			m_Elements[ iter ]->Free( true );
+			free( m_Elements[ iter ] );
 		}
 	}
 
@@ -1437,7 +1448,8 @@ void CKeyValues3Table::RemoveMember( KV3MemberId_t id )
 	}
 	else
 	{
-		delete m_Members[ id ];
+		m_Members[ id ]->Free( true );
+		free( m_Members[ id ] );
 		free( (void*)m_Names[ id ] );
 	}
 
@@ -1465,7 +1477,8 @@ void CKeyValues3Table::RemoveAll( int nAllocSize )
 		}
 		else
 		{
-			delete m_Members[i]; 
+			m_Members[i]->Free( true );
+			free( m_Members[i] );
 			free( (void*)m_Names[i] );
 		}
 	}
@@ -1491,7 +1504,8 @@ void CKeyValues3Table::RemoveAll( int nAllocSize )
 		}
 		else
 		{
-			delete m_pFastSearch;
+			m_pFastSearch->Clear();
+			free( m_pFastSearch );
 			m_pFastSearch = NULL;
 		}
 	}
@@ -1510,13 +1524,17 @@ void CKeyValues3Table::Purge( bool bClearingContext )
 		}
 		else
 		{
-			delete m_Members[i]; 
+			m_Members[i]->Free( true );
+			free( m_Members[i] );
 			free( (void*)m_Names[i] );
 		}
 	}
 
 	if ( m_pFastSearch )
-		delete m_pFastSearch;
+	{
+		m_pFastSearch->Clear();
+		free( m_pFastSearch );
+	}
 	m_pFastSearch = NULL;
 
 	m_Hashes.Purge();
@@ -1613,7 +1631,9 @@ void CKeyValues3Cluster::EnableMetaData( bool bEnable )
 void CKeyValues3Cluster::FreeMetaData()
 {
 	if ( m_pMetaData )
-		delete m_pMetaData;
+	{
+		free( m_pMetaData );
+	}
 	m_pMetaData = NULL;
 }
 
@@ -1691,7 +1711,7 @@ void CKeyValues3ContextBase::Purge()
 	FOR_EACH_LEANVEC( m_KV3Clusters, iter )
 	{
 		m_KV3Clusters[ iter ]->Purge();
-		delete m_KV3Clusters[ iter ];
+		free( m_KV3Clusters[ iter ] );
 	}
 
 	m_KV3Clusters.Purge();
@@ -1699,7 +1719,8 @@ void CKeyValues3ContextBase::Purge()
 	FOR_EACH_LEANVEC( m_ArrayClusters, iter )
 	{
 		m_ArrayClusters[ iter ]->Purge();
-		delete m_ArrayClusters[ iter ];
+		free( m_ArrayClusters[ iter ] );
+		m_ArrayClusters[ iter ]->Purge();
 	}
 
 	m_pArrayFreeCluster = NULL;
@@ -1708,7 +1729,7 @@ void CKeyValues3ContextBase::Purge()
 	FOR_EACH_LEANVEC( m_TableClusters, iter )
 	{
 		m_TableClusters[ iter ]->Purge();
-		delete m_TableClusters[ iter ];
+		free( m_TableClusters[ iter ] );
 	}
 
 	m_pTableFreeCluster = NULL;
