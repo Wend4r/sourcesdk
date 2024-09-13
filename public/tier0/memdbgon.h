@@ -57,6 +57,7 @@
 		
 		#include "tier0/valve_off.h"
 		#include <cstddef>
+		#include <glob.h>
 		#include <new>
 		#include <sys/types.h>
 		#if !defined( DID_THE_OPERATOR_NEW )
@@ -120,9 +121,9 @@ extern const char *g_pszModule;
 // Debug path
 #if defined(USE_MEM_DEBUG)
 
-#define malloc(s)				MemAlloc_Alloc( s )
-#define realloc(p, s)			g_pMemAlloc->Realloc( p, s )
-#define _aligned_malloc( s, a )	MemAlloc_AllocAlignedFileLine( s, a )
+#define malloc(s)				MemAlloc_Alloc( s, __FILE__, __LINE__)
+#define realloc(p, s)			g_pMemAlloc->Realloc( p, s/*, __FILE__, __LINE__*/ )
+#define _aligned_malloc( s, a )	MemAlloc_AllocAlignedFileLine( s, a, __FILE__, __LINE__ )
 
 #define _malloc_dbg(s, t, f, l)	WHYCALLINGTHISDIRECTLY(s)
 
@@ -139,6 +140,7 @@ extern const char *g_pszModule;
 	#if defined(__AFX_H__) && defined(DEBUG_NEW)
 		#define new DEBUG_NEW
 	#else
+		#undef new
 		#define MEMALL_DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 		#define new MEMALL_DEBUG_NEW
 	#endif
@@ -282,4 +284,4 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString)
 #endif
 #endif // _INC_CRTDBG
 
-#endif // !STEAM && !NO_MALLOC_OVERRIDE
+#endif // !STEAM && !NO_MALLOC_OVERRIDE && !__SPU__
