@@ -479,6 +479,7 @@ template < class T, class I, typename L, class M >
 CUtlRBTree<T, I, L, M>& CUtlRBTree<T, I, L, M>::operator=( CUtlRBTree<T, I, L, M> const &other )
 {
 	CopyFrom( other );
+	return *this;
 }
 
 template < class T, class I, typename L, class M >
