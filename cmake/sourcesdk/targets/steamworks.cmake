@@ -8,4 +8,6 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 	${SOURCESDK_PUBLIC_STEAM_INCLUDE_DIR}
 )
 
-append_sourcesdk_shared_library(SOURCESDK_LINK_LIBRARIES steam_api)
+if(SOURCESDK_LINK_STEAMWORKS)
+	append_sourcesdk_shared_library(SOURCESDK_LINK_LIBRARIES steam_api)
+endif()
