@@ -491,7 +491,7 @@ inline void CUtlRBTree<T, I, L, M>::EnsureCapacity( int num )
 template < class T, class I, typename L, class M >
 inline void CUtlRBTree<T, I, L, M>::CopyFrom( const CUtlRBTree<T, I, L, M> &other )
 {
-	Purge();
+	// Purge();
 
 	{
 		const uintp nOtherSize = other.m_Elements.Count();
@@ -502,8 +502,9 @@ inline void CUtlRBTree<T, I, L, M>::CopyFrom( const CUtlRBTree<T, I, L, M> &othe
 
 		const auto *pOtherBase = other.m_Elements.Base();
 
-		for(uintp n = 0; n < nOtherSize; n++)
+		for ( uintp n = 0; n < nOtherSize; n++ )
 		{
+			Construct( &pBase[n] );
 			pBase[n] = pOtherBase[n];
 		}
 	}
