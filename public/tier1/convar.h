@@ -188,6 +188,43 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// Purpose: The base console invoked command/cvar interface
+//-----------------------------------------------------------------------------
+class ConCommandBase
+{
+	friend class CCvar;
+	friend class ConCommand;
+
+protected:
+						ConCommandBase( void );
+public:
+
+						~ConCommandBase( void );
+	// Check flag
+	bool				IsFlagSet( int64 flag ) const;
+	// Set flag
+	void				AddFlags( int64 flags );
+	// Clear flag
+	void				RemoveFlags( int64 flags );
+
+	int64				GetFlags() const;
+
+	// Return name of cvar
+	const char			*GetName( void ) const;
+
+	// Return help text for cvar
+	const char			*GetHelpText( void ) const;
+
+private:	
+	// Static data
+	const char 					*m_pszName;
+	const char 					*m_pszHelpString;
+	
+	// ConVar flags
+	int64						m_nFlags;
+};
+
+//-----------------------------------------------------------------------------
 // Command tokenizer
 //-----------------------------------------------------------------------------
 class CCommand

@@ -197,6 +197,76 @@ void ConVar_Unregister( )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Default constructor
+//-----------------------------------------------------------------------------
+ConCommandBase::ConCommandBase( void )
+{
+	m_pszName       = NULL;
+	m_pszHelpString = NULL;
+
+	m_nFlags = 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+ConCommandBase::~ConCommandBase( void )
+{
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Return name of the command/var
+// Output : const char
+//-----------------------------------------------------------------------------
+const char *ConCommandBase::GetName( void ) const
+{
+	return m_pszName;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : flag - 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool ConCommandBase::IsFlagSet( int64 flag ) const
+{
+	return ( flag & m_nFlags ) ? true : false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : flags - 
+//-----------------------------------------------------------------------------
+void ConCommandBase::AddFlags( int64 flags )
+{
+	m_nFlags |= flags;
+
+#ifdef ALLOW_DEVELOPMENT_CVARS
+	m_nFlags &= ~FCVAR_DEVELOPMENTONLY;
+#endif
+}
+
+void ConCommandBase::RemoveFlags( int64 flags )
+{
+	m_nFlags &= ~flags;
+}
+
+int64 ConCommandBase::GetFlags( void ) const
+{
+	return m_nFlags;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : const char
+//-----------------------------------------------------------------------------
+const char *ConCommandBase::GetHelpText( void ) const
+{
+	return m_pszHelpString;
+}
+
+//-----------------------------------------------------------------------------
 // Global methods
 //-----------------------------------------------------------------------------
 static characterset_t s_BreakSet;
