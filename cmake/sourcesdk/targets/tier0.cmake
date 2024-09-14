@@ -8,4 +8,6 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 	${SOURCESDK_PUBLIC_TIER0_INCLUDE_DIR}
 )
 
-append_sourcesdk_shared_library(SOURCESDK_LINK_LIBRARIES tier0)
+if(SOURCESDK_LINK_TIER0)
+	append_sourcesdk_shared_library(SOURCESDK_LINK_LIBRARIES tier0)
+endif()

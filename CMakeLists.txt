@@ -28,8 +28,9 @@ set(THIRDPARTY_DIR "thirdparty")
 set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
 set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
-option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
+option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
+option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 
 set(SOURCESDK_PROTO_DIRS
 	common
