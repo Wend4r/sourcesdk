@@ -75,6 +75,8 @@ public:
 	CUtlVectorBase( I growSize, I initialCapacity, RawAllocatorType_t allocatorType );
 	CUtlVectorBase( T* pMemory, I initialCapacity, I initialCount, RawAllocatorType_t allocatorType );
 
+	CUtlVectorBase( CUtlVectorBase const& vec );
+
 	~CUtlVectorBase();
 	
 	// Copy the array.
@@ -212,9 +214,6 @@ public:
 	template <class F> void SortPredicate( F &&predicate );
 
 protected:
-	// Can't copy this unless we explicitly do it!
-	CUtlVectorBase( CUtlVectorBase const& vec ) { Assert(0); }
-
 	// Grows the vector
 	void GrowVector( I num = 1 );
 
@@ -679,6 +678,13 @@ inline CUtlVectorBase<T, I, A>::CUtlVectorBase( I growSize, I initSize, RawAlloc
 template< typename T, typename I, class A >
 inline CUtlVectorBase<T, I, A>::CUtlVectorBase( T* pMemory, I allocationCount, I numElements, RawAllocatorType_t allocatorType )	: 
 	m_Size(numElements), m_Memory(pMemory, allocationCount, allocatorType)
+{
+	ResetDbgInfo();
+}
+
+template< typename T, typename I, class A >
+inline CUtlVectorBase<T, I, A>::CUtlVectorBase( CUtlVectorBase const& vec )	: 
+	m_Size(vec.m_Size), m_Memory(vec.m_Memory)
 {
 	ResetDbgInfo();
 }
