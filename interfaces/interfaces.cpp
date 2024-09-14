@@ -365,6 +365,8 @@ InterfaceReg::InterfaceReg(InstantiateInterfaceFn fn, const char *pName) :
 	s_pInterfaceRegs = this;
 }
 
+#ifndef CREATE_INTEFACE_OVERRIDE
+
 // ------------------------------------------------------------------------------------ //
 // CreateInterface.
 // This is the primary exported function by a dll, referenced by name via dynamic binding
@@ -392,3 +394,5 @@ void* CreateInterface(const char *pName, int *pReturnCode)
 	}
 	return NULL;
 }
+
+#endif // CREATE_INTEFACE_OVERRIDE
