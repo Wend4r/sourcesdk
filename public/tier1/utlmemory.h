@@ -67,8 +67,7 @@ public:
 	CUtlMemory( const T* pMemory, I numElements );
 	~CUtlMemory();
 
-	CUtlMemory( const CUtlMemory& ) = delete;
-	CUtlMemory& operator=( const CUtlMemory& ) = delete;
+	CUtlMemory( const CUtlMemory& );
 
 	CUtlMemory( CUtlMemory&& moveFrom );
 	CUtlMemory& operator=( CUtlMemory&& moveFrom );
@@ -468,6 +467,14 @@ CUtlMemory<T,I>::~CUtlMemory()
 	m_pMemory = (T*)(size_t)UTLMEMORY_BAD_ADDRESS;
 	m_nAllocationCount = (I)UTLMEMORY_BAD_LENGTH;
 #endif
+}
+
+template< class T, class I >
+CUtlMemory<T,I>::CUtlMemory( const CUtlMemory& moveFrom )
+: m_pMemory(moveFrom.m_pMemory)
+, m_nAllocationCount(moveFrom.m_nAllocationCount)
+, m_nGrowSize(moveFrom.m_nGrowSize)
+{
 }
 
 template< class T, class I >
