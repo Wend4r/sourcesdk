@@ -185,8 +185,8 @@ public:
 	CUtlHashtable( entry_t* pMemory, unsigned int nCount, const KeyHashT &hash = KeyHashT(), KeyIsEqualT const &eq = KeyIsEqualT() )
 		: m_nUsed(0), m_nTableSize(0), m_nMinSize(8), m_bSizeLocked(false), m_eq(eq), m_hash(hash) { SetExternalBuffer( pMemory, nCount ); }
 
-	CUtlHashtable(const CUtlHashtable& init)
-		: m_nUsed(init.m_nUsed), m_nTableSize(init.m_nTableSize), m_nMinSize(init.m_nMinSize), m_bSizeLocked(init.m_bSizeLocked), m_eq(init.m_eq), m_hash(init.m_hash) { InitTable(); }
+	CUtlHashtable( const CUtlHashtable& init )
+		: m_nUsed(init.m_nUsed), m_nTableSize(init.m_nTableSize), m_nMinSize(init.m_nMinSize), m_bSizeLocked(init.m_bSizeLocked), m_eq(init.m_eq), m_hash(init.m_hash) { }
 
 	~CUtlHashtable() { RemoveAll(); }
 
