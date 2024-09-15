@@ -55,7 +55,7 @@ class CCLCMsg_Move_t : public CNetMessagePB<CCLCMsg_Move>
 {
 };
 
-class CCLCMsg_ProcessVoiceData_t : public CNetMessagePB<CCLCMsg_ProcessVoiceData>
+class CCLCMsg_VoiceData_t : public CNetMessagePB<CCLCMsg_VoiceData>
 {
 };
 

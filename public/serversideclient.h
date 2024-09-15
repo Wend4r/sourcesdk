@@ -144,7 +144,7 @@ private:
 
 public:
 	virtual bool             ProcessMove( const CCLCMsg_Move_t &msg ) = 0;
-	virtual bool             ProcessVoiceData( const CCLCMsg_ProcessVoiceData_t &msg ) = 0;
+	virtual bool             ProcessVoiceData( const CCLCMsg_VoiceData_t &msg ) = 0;
 	virtual bool             ProcessFileCRCCheck( const CCLCMsg_FileCRCCheck_t &msg ) = 0;
 	virtual bool             ProcessRespondCvarValue( const CCLCMsg_RespondCvarValue_t &msg ) = 0;
 
