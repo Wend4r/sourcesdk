@@ -67,10 +67,13 @@ public:
 	CUtlMemory( const T* pMemory, I numElements );
 	~CUtlMemory();
 
-	CUtlMemory( const CUtlMemory& );
+	CUtlMemory( const CUtlMemory&moveFrom );
+	CUtlMemory& operator=( CUtlMemory& moveFrom );
 
 	CUtlMemory( CUtlMemory&& moveFrom );
 	CUtlMemory& operator=( CUtlMemory&& moveFrom );
+
+	void CopyFrom( const CUtlMemory& from );
 
 	// Set the size by which the memory grows
 	void Init( I nGrowSize = 0, I nInitSize = 0 );
@@ -471,10 +474,22 @@ CUtlMemory<T,I>::~CUtlMemory()
 
 template< class T, class I >
 CUtlMemory<T,I>::CUtlMemory( const CUtlMemory& moveFrom )
-: m_pMemory(moveFrom.m_pMemory)
-, m_nAllocationCount(moveFrom.m_nAllocationCount)
-, m_nGrowSize(moveFrom.m_nGrowSize)
 {
+	CopyFrom( moveFrom );
+}
+
+template< class T, class I >
+CUtlMemory<T,I>& CUtlMemory<T,I>::operator=( CUtlMemory& moveFrom )
+{
+	CopyFrom( moveFrom );
+	return *this;
+}
+
+template< class T, class I >
+void CUtlMemory<T,I>::CopyFrom( const CUtlMemory& from )
+{
+	Init( from.m_nAllocationCount, from.m_nGrowSize );
+	memcpy( m_pMemory, from.m_pMemory, from.m_nAllocationCount * sizeof(T) );
 }
 
 template< class T, class I >
@@ -506,7 +521,6 @@ CUtlMemory<T,I>& CUtlMemory<T,I>::operator=( CUtlMemory&& moveFrom )
 	m_pMemory = pMemory;
 	m_nAllocationCount = nAllocationCount;
 	m_nGrowSize = nGrowSize;
-
 	return *this;
 }
 
@@ -1164,6 +1178,11 @@ public:
 	CUtlMemory_RawAllocator( T* pMemory, I numElements ) { Assert( 0 ); }
 	~CUtlMemory_RawAllocator();
 
+	CUtlMemory_RawAllocator( const CUtlMemory_RawAllocator &init );
+	const CUtlMemory_RawAllocator< T, I > &operator=( const CUtlMemory_RawAllocator &from );
+
+	void CopyFrom( const CUtlMemory_RawAllocator &from );
+
 	// Can we use this index?
 	bool IsIdxValid( I i ) const						{ return (i >= 0) && (i < NumAllocated()); }
 	static I InvalidIndex()							{ return -1; }
@@ -1254,9 +1273,36 @@ CUtlMemory_RawAllocator<T, I>::CUtlMemory_RawAllocator( I nGrowSize, I nInitAllo
 }
 
 template< class T, typename I >
+CUtlMemory_RawAllocator<T, I>::CUtlMemory_RawAllocator( const CUtlMemory_RawAllocator &init )
+{
+	CopyFrom( init );
+}
+
+template< class T, typename I >
+const CUtlMemory_RawAllocator< T, I > &CUtlMemory_RawAllocator<T, I>::operator=( const CUtlMemory_RawAllocator<T, I> &from )
+{
+	CopyFrom( from );
+	return *this;
+}
+
+template< class T, typename I >
 CUtlMemory_RawAllocator<T, I>::~CUtlMemory_RawAllocator()
 {
 	Purge();
+}
+
+
+template< class T, typename I >
+void CUtlMemory_RawAllocator<T, I>::CopyFrom( const CUtlMemory_RawAllocator<T, I> &from )
+{
+	Msg("CUtlMemory_RawAllocator<T, I>::CopyFrom\n");
+
+	m_pMemory = from.m_pMemory;
+	m_nAllocationCount = from.m_nAllocationCount;
+	m_nGrowSize = from.m_nGrowSize;
+
+	SetRawAllocatorType( from.GetRawAllocatorType() );
+	EnsureCapacity( from.m_nGrowSize );
 }
 
 //-----------------------------------------------------------------------------

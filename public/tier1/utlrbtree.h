@@ -463,10 +463,9 @@ m_LastAlloc( m_Elements.InvalidIterator() )
 template < class T, class I, typename L, class M >
 inline CUtlRBTree<T, I, L, M>::CUtlRBTree( CUtlRBTree<T, I, L, M> const &tree )
  :  m_LessFunc( tree.m_LessFunc ), 
-    m_LastAlloc( m_Elements.InvalidIterator() )
+    m_LastAlloc( tree.m_Elements.InvalidIterator() )
 {
 	CopyFrom( tree );
-	ResetDbgInfo();
 }
 
 template < class T, class I, typename L, class M > 
