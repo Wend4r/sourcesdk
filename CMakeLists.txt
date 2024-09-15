@@ -43,6 +43,7 @@ set(SOURCESDK_PROTO_FILES
 	common/engine_gcmessages
 	common/netmessages
 	common/networkbasetypes
+	common/networksystem_protomessages
 	common/network_connection
 	common/steamnetworkingsockets_messages_certs
 	common/steamnetworkingsockets_messages_udp
