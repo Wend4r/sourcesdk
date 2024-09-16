@@ -1295,8 +1295,6 @@ CUtlMemory_RawAllocator<T, I>::~CUtlMemory_RawAllocator()
 template< class T, typename I >
 void CUtlMemory_RawAllocator<T, I>::CopyFrom( const CUtlMemory_RawAllocator<T, I> &from )
 {
-	Msg("CUtlMemory_RawAllocator<T, I>::CopyFrom\n");
-
 	m_pMemory = from.m_pMemory;
 	m_nAllocationCount = from.m_nAllocationCount;
 	m_nGrowSize = from.m_nGrowSize;
