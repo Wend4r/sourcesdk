@@ -31,6 +31,7 @@ set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
 option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
 option(SOURCESDK_LINK_STEAMWORKS "Link with Steam API" ON)
+option(SOURCESDK_LINK_STRIP_CPP_EXPORTS "Strip C++/STL export funcitons. Need \"patchelf\" package" OFF)
 option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 
 set(SOURCESDK_PROTO_DIRS
