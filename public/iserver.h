@@ -18,6 +18,7 @@
 #include <inetmsghandler.h>
 #include <netadr.h>
 #include <networkstringtabledefs.h>
+#include <networksystem/netmessage.h>
 #include <ns_address.h>
 #include <playeruserid.h>
 #include <qlimits.h>
@@ -38,7 +39,6 @@ class ISource2WorldSession;
 class INetworkGameClient;
 class KeyValues3;
 class CPureServerWhitelist;
-class CSVCMsg_ServerInfo_t;
 class CServerSideClientBase;
 class CCLCMsg_SplitPlayerConnect_t;
 class CNetworkStringTableContainer;
@@ -46,6 +46,10 @@ class CNetworkServerSpawnGroupCreatePrerequisites;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
+
+class CSVCMsg_ServerInfo_t : public CNetMessagePB<CSVCMsg_ServerInfo>
+{
+};
 
 struct SplitDisconnect_t {
 	CServerSideClientBase* m_pUser;
