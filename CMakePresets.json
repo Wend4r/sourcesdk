@@ -8,11 +8,7 @@
 			"description": "Build using Ninja generator",
 			"generator": "Ninja",
 			"binaryDir": "${sourceDir}/build/${presetName}",
-			"hidden": true,
-			"cacheVariables":
-			{
-				"SOURCESDK_LINK_STRIP_CPP_EXPORTS": true
-			}
+			"hidden": true
 		},
 		{
 			"name": "Debug",
