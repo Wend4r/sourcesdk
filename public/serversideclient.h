@@ -101,8 +101,10 @@ public:
 	virtual void             ExecuteStringCommand( const CNETMsg_StringCmd& msg ) = 0;
 	virtual void             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 
+#ifdef LINUX
 private:
 	virtual void             unk_17() = 0;
+#endif
 
 public:
 	virtual void             ClientPrintf( PRINTF_FORMAT_STRING const char*, ...) = 0;
