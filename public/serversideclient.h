@@ -13,6 +13,7 @@
 #include <entity2/entityidentity.h>
 #include <steam/steamclientpublic.h>
 #include <engine/clientframe.h>
+#include <tier0/annotations.h>
 #include <tier0/utlstring.h>
 #include <tier1/ns_address.h>
 #include <networksystem/inetworksystem.h>
