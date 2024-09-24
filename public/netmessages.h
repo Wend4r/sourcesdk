@@ -12,6 +12,7 @@
 #endif
 
 #include <networksystem/netmessage.h>
+#include <netmessages.pb.h>
 #include <networkbasetypes.pb.h>
 #include <networksystem_protomessages.pb.h>
 
