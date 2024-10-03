@@ -14,13 +14,13 @@
 #endif
 
 #include <limits.h>
-#include "tier0/bufferstring.h"
-#include "tier0/threadtools.h"
-#include "tier0/mempool.h"
 #include "tier1/generichash.h"
 
 #define DEBUG_STRINGTOKENS 0
 #define STRINGTOKEN_MURMURHASH_SEED 0x31415926
+
+class IFormatOutputStream;
+class CFormatStringElement;
 
 // See VStringTokenSystem001
 // Interact with stringtokendatabase.txt
@@ -72,7 +72,7 @@ FORCEINLINE CUtlStringToken MakeStringToken( char const *pString, int nLen )
 
 FORCEINLINE CUtlStringToken MakeStringToken( char const *pString )
 {
-	return MakeStringToken( pString, ( int )V_strlen(pString) );
+	return MakeStringToken( pString, ( int )strlen(pString) );
 }
 
 #endif // UTLSTRINGTOKEN_H
