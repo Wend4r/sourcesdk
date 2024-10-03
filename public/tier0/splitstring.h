@@ -8,7 +8,7 @@
 #include "tier1/utlvector.h"
 
 // <Sergiy> placing it here a few days before Cert to minimize disruption to the rest of codebase
-class CSplitString: public CUtlVector<char*, CUtlMemory<char*, int> >
+class CSplitString: public CUtlVector<char*, int, CUtlMemory<char*, int> >
 {
 public:
 	CSplitString(const char *pString, const char *pSeparator, bool bIncludeSeparators = false)
