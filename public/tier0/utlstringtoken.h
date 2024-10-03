@@ -75,9 +75,4 @@ FORCEINLINE CUtlStringToken MakeStringToken( char const *pString )
 	return MakeStringToken( pString, ( int )V_strlen(pString) );
 }
 
-FORCEINLINE CUtlStringToken MakeStringToken( CUtlString &str )
-{
-	return MakeStringToken( str.Get(), str.Length() );
-}
-
 #endif // UTLSTRINGTOKEN_H
