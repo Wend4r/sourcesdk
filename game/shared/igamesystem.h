@@ -352,11 +352,11 @@ public:
 
 	GS_EVENT( ClientPreEntityThink ) {}
 
-	virtual void unk_001( const void *const msg ) {}
-	virtual void unk_002( const void *const msg ) {}
-	virtual void unk_003( const void *const msg ) {}
-	virtual void unk_004( const void *const msg ) {}
-	virtual void unk_005( const void *const msg ) {}
+	virtual void unk_001( const void *const msg ) override {}
+	virtual void unk_002( const void *const msg ) override {}
+	virtual void unk_003( const void *const msg ) override {}
+	virtual void unk_004( const void *const msg ) override {}
+	virtual void unk_005( const void *const msg ) override {}
 
 	// Gets called each frame
 	GS_EVENT( ClientUpdate ) {}
@@ -370,16 +370,16 @@ public:
 	GS_EVENT( ServerPostEntityThink ) {}
 	GS_EVENT( ServerPreClientUpdate ) {}
 
-	virtual void unk_101( const void *const msg ) {}
-	virtual void unk_102( const void *const msg ) {}
-	virtual void unk_103( const void *const msg ) {}
-	virtual void unk_104( const void *const msg ) {}
+	virtual void unk_101( const void *const msg ) override {}
+	virtual void unk_102( const void *const msg ) override {}
+	virtual void unk_103( const void *const msg ) override {}
+	virtual void unk_104( const void *const msg ) override {}
 
 	GS_EVENT( ServerGamePostSimulate ) {}
 	GS_EVENT( ClientGamePostSimulate ) {}
 
-	virtual void unk_201( const void *const msg ) {}
-	virtual void unk_202( const void *const msg ) {}
+	virtual void unk_201( const void *const msg ) override {}
+	virtual void unk_202( const void *const msg ) override {}
 
 	GS_EVENT( GameFrameBoundary ) {}
 	GS_EVENT( OutOfGameFrameBoundary ) {}
@@ -387,17 +387,17 @@ public:
 	GS_EVENT( SaveGame ) {}
 	GS_EVENT( RestoreGame ) {}
 
-	virtual void unk_301( const void *const msg ) {}
-	virtual void unk_302( const void *const msg ) {}
-	virtual void unk_303( const void *const msg ) {}
-	virtual void unk_304( const void *const msg ) {}
-	virtual void unk_305( const void *const msg ) {}
-	virtual void unk_306( const void *const msg ) {}
+	virtual void unk_301( const void *const msg ) override {}
+	virtual void unk_302( const void *const msg ) override {}
+	virtual void unk_303( const void *const msg ) override {}
+	virtual void unk_304( const void *const msg ) override {}
+	virtual void unk_305( const void *const msg ) override {}
+	virtual void unk_306( const void *const msg ) override {}
 
-	virtual const char* GetName() { return m_pName; }
-	virtual void SetGameSystemGlobalPtrs(void* pValue) {}
-	virtual void SetName(const char* pName) { m_pName = pName; }
-	virtual bool DoesGameSystemReallocate() { return false; }
+	virtual const char* GetName() override { return m_pName; }
+	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}
+	virtual void SetName(const char* pName) override { m_pName = pName; }
+	virtual bool DoesGameSystemReallocate() override { return false; }
 	virtual ~CBaseGameSystem() {}
 
 private:
