@@ -256,23 +256,24 @@ struct KV3BinaryBlob_t
 class CKV3MemberName : public CUtlStringToken
 {
 public:
-	typedef CUtlStringToken BaseClass;
+	inline CKV3MemberName(const char* pszString): m_nHashCode(), m_pszString("")
+	{	
+		if (!pszString || !pszString[0])
+			return;
 
-	inline CKV3MemberName(): BaseClass(0), m_pString("") {}
-	inline CKV3MemberName(const CUtlStringToken initToken, const char* pInitString): BaseClass(initToken), m_pString(pInitString) {} // Basicly used.
-	inline CKV3MemberName(const char* pInitString): BaseClass(MakeStringToken(pInitString)), m_pString(pInitString) {}
-	inline CKV3MemberName(const CUtlString &str): BaseClass(MakeStringToken(str)), m_pString(str.Get()) {}
-	inline CKV3MemberName& operator=(const CKV3MemberName& src)
-	{
-		m_nHashCode = src.m_nHashCode;
-		m_pString = src.m_pString;
-		return *this;
+		m_nHashCode = MakeStringToken( pszString );
+		m_pszString = pszString;
 	}
 
-	inline const char* GetString() const { return m_pString; }
+	inline CKV3MemberName(): m_nHashCode(), m_pszString("") {}
+	inline CKV3MemberName(unsigned int nHashCode, const char* pszString = ""): m_nHashCode(nHashCode), m_pszString(pszString) {}
+
+	inline unsigned int GetHashCode() const { return m_nHashCode.GetHashCode(); }
+	inline const char* GetString() const { return m_pszString; }
 
 private:
-	const char* m_pString;
+	CUtlStringToken m_nHashCode;
+	const char* m_pszString;
 };
 
 class KeyValues3
@@ -333,7 +334,7 @@ public:
 	void SetPointer( void* ptr ) { SetValue<uint64>( ( uint64 )ptr, KV3_TYPEEX_UINT, KV3_SUBTYPE_POINTER ); }
 	
 	CUtlStringToken GetStringToken( CUtlStringToken defaultValue = CUtlStringToken() ) const { return ( GetSubType() == KV3_SUBTYPE_STRING_TOKEN ) ? CUtlStringToken( ( uint32 )m_UInt ) : defaultValue; }
-	void SetStringToken( CUtlStringToken token ) { SetValue<uint32>( token.m_nHashCode, KV3_TYPEEX_UINT, KV3_SUBTYPE_STRING_TOKEN ); }
+	void SetStringToken( CUtlStringToken token ) { SetValue<uint32>( token.GetHashCode(), KV3_TYPEEX_UINT, KV3_SUBTYPE_STRING_TOKEN ); }
 
 	CEntityHandle GetEHandle( CEntityHandle defaultValue = CEntityHandle() ) const { return ( GetSubType() == KV3_SUBTYPE_EHANDLE ) ? CEntityHandle( ( uint32 )m_UInt ) : defaultValue; }
 	void SetEHandle( CEntityHandle ehandle ) { SetValue<uint32>( ehandle.ToInt(), KV3_TYPEEX_UINT, KV3_SUBTYPE_EHANDLE ); }

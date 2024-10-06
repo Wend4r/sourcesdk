@@ -18,6 +18,8 @@
 #include "tier0/utlscratchmemory.h"
 #include "resourcefile/resourcetype.h"
 
+#include "tier0/memdbgon.h"
+
 FORWARD_DECLARE_HANDLE( HSCRIPT );
 
 // ========
@@ -977,5 +979,7 @@ typedef CVariantBase<CVariantDefaultAllocator> CVariant;
 typedef CVariantBase<CEntityVariantAllocator> CEntityVariant;
 
 typedef CVariant variant_t;
+
+#include "tier0/memdbgoff.h"
 
 #endif // CVARIANT_H
