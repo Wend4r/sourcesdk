@@ -15,7 +15,7 @@
 #pragma once
 #endif
 
-PLATFORM_INTERFACE MurmurHash3_32( const void *key, size_t len, uint32 seed, bool bCaselessStringVariant = false );
+PLATFORM_INTERFACE uint32 MurmurHash3_32( void const *key, size_t len, uint32 seed, bool bCaselessStringVariant = false );
 
 inline uint32 MurmurHash3String( const char *pszKey, size_t len )
 {

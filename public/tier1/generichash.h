@@ -138,8 +138,6 @@ uint32 MurmurHash2( const void *key, int len, uint32 seed );
 uint32 MurmurHash2LowerCase( char const *pString, uint32 nSeed );
 uint32 MurmurHash2LowerCase( char const *pString, int nLength, uint32 nSeed );
 
-PLATFORM_INTERFACE uint32 MurmurHash3_32( void const *key, size_t len, uint32 seed, bool bCaselessStringVariant = false );
-
 // MurmurHash2, 64-bit version
 uint64 MurmurHash64( const void *key, int len, uint32 seed );
 
