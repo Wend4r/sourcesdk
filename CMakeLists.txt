@@ -33,6 +33,7 @@ option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
 option(SOURCESDK_LINK_STEAMWORKS "Link with Steam API" ON)
 option(SOURCESDK_LINK_STRIP_CPP_EXPORTS "Strip C++/STL export funcitons. Need \"patchelf\" package" OFF)
 option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
+option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time library by MSVC" ON)
 
 set(SOURCESDK_PROTO_DIRS
 	common
@@ -102,7 +103,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 if(WINDOWS)
-	set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	if(SOURCESDK_MSVC_RUNTIME_LIBRARY)
+		set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	endif()
 elseif(MACOS)
 	set_target_properties(${PROJECT_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
 endif()

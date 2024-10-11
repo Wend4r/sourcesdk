@@ -63,7 +63,9 @@ set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES
 set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES OUTPUT_NAME ${SOURCESDK_TIER1_OUTPUT_NAME})
 
 if(WINDOWS)
-	set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	if(SOURCESDK_MSVC_RUNTIME_LIBRARY)
+		set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+	endif()
 elseif(MACOS)
 	set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
 endif()
