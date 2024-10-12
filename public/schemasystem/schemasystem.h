@@ -6,8 +6,8 @@
 #endif
 
 #include "tier0/threadtools.h"
+#include "tier0/utlstring.h"
 #include "tier1/convar.h"
-#include "tier1/utlstring.h"
 #include "tier1/UtlStringMap.h"
 #include "tier1/utltshash.h"
 #include "tier1/utlvector.h"
