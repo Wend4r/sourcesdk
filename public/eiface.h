@@ -365,7 +365,7 @@ public:
 abstract_class ISource2Server : public IAppSystem
 {
 public:
-	virtual bool			Unknown0() const = 0;
+	virtual bool			unk_001() const = 0;
 
 	virtual void			SetGlobals( CGlobalVars *pGlobals ) = 0;
 
@@ -422,7 +422,9 @@ public:
 	virtual void			RegisterNavListener( INavListener *pNavListener ) = 0;
 	virtual void			UnregisterNavListener( INavListener *pNavListener ) = 0;
 	virtual void			*GetSpawnDebugInterface( void ) = 0;
-	virtual void			*Unknown1( void ) = 0;
+
+	virtual void			unk_101() = 0;
+
 	virtual IToolGameSimulationAPI *GetToolGameSimulationAPI( void ) = 0;
 	virtual void			GetAnimationActivityList( CUtlVector<CUtlString> &activityList ) = 0;
 	virtual void			GetAnimationEventList( CUtlVector<CUtlString> &eventList ) = 0;
@@ -445,6 +447,9 @@ public:
 	virtual void			GetDefaultScaleForModel( const char *pModelName, bool bCheckLoadoutScale ) = 0;
 	virtual void			GetDefaultScaleForCharacter( const char *pCharacterName, bool bCheckLoadoutScale ) = 0;
 	virtual void			GetDefaultControlPointAutoUpdates( const char *pParticleSystemName, CUtlVector<EconControlPointInfo_t> &autoUpdates ) = 0;
+
+	virtual void			unk_201();
+
 	virtual void			GetCharacterNameForModel( const char *pModelName, bool bCheckItemModifiers, CUtlString &characterName ) = 0;
 	virtual void			GetModelNameForCharacter( const char *pCharacterNamel, int nIndex, CBufferString &modelName ) = 0;
 	virtual void			GetCharacterList( CUtlVector<CUtlString> &characterNames ) = 0;
@@ -453,6 +458,9 @@ public:
 	virtual void			*GetEconItemSystem( void ) = 0;
 
 	virtual void			ServerConVarChanged( const char *pVarName, const char *pValue ) = 0;
+
+	// Returns a list of values and names corresponding to HitGroup_t enum
+	virtual void			GetHitGroupEnumInfo( CUtlVector<int> &values, CUtlVector<CUtlString> &names ) = 0;
 };
 
 //-----------------------------------------------------------------------------

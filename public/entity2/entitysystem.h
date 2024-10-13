@@ -230,7 +230,9 @@ private:
 		CEntityHandle m_hEnt;
 		CEntityInstance* m_pEnt;
 		const CEntityKeyValues* m_pKeyValues;
-		bool m_Unk1;
+
+		// AMNOTE: Seems to be checked along side m_pKeyValues before its usage
+		bool m_bEntityKeyValuesInitialized;
 	};
 
 	struct DestructionInfo_t
