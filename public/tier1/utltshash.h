@@ -180,7 +180,7 @@ private:
 //-----------------------------------------------------------------------------
 template<class T, int BUCKET_COUNT, class KEYTYPE, class HashFuncs> 
 CUtlTSHash<T,BUCKET_COUNT,KEYTYPE,HashFuncs>::CUtlTSHash( int nAllocationCount ) :
-	m_EntryMemory( sizeof( HashFixedDatas_t ), nAllocationCount, alignof( HashFixedData_t ), UTLMEMORYPOOL_GROW_SLOW, MEM_ALLOC_CLASSNAME( HashFixedData_t ) )
+	m_EntryMemory( sizeof( HashFixedData_t ), nAllocationCount, alignof( HashFixedData_t ), UTLMEMORYPOOL_GROW_SLOW, MEM_ALLOC_CLASSNAME( HashFixedData_t ) )
 {
 	m_ContentionCheck = 0;
 	m_bNeedsCommit = false;
