@@ -38,6 +38,7 @@ option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time librar
 set(SOURCESDK_PROTO_DIRS
 	common
 	game/shared
+	gcsdk
 )
 
 set(SOURCESDK_PROTO_FILES
@@ -52,6 +53,10 @@ set(SOURCESDK_PROTO_FILES
 	common/steamnetworkingsockets_messages
 	common/valveextensions
 	game/shared/usermessages
+
+	gcsdk/steammessages
+	gcsdk/gcsdk_gcmessages
+	gcsdk/gcsystemmsgs
 )
 
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")

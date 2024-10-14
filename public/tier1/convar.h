@@ -362,7 +362,7 @@ struct ConCommandCreation_t : CVarCreationBase_t
 };
 static_assert(sizeof(ConCommandCreation_t) == 0x40, "ConCommandCreation_t is of the wrong size!");
 
-class ConCommand
+class ConCommand : public ConCommandBase
 {
 public:
 	ConCommand( const char *pName, FnCommandCallback_t callback,
