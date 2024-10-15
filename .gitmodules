@@ -1,3 +1,6 @@
 [submodule "Protocol Buffers"]
 	path = thirdparty/protobuf
 	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "Game Protobufs"]
+	path = thirdparty/protobufs
+	url = https://github.com/SteamDatabase/Protobufs.git

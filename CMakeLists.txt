@@ -22,12 +22,14 @@ set(PROJECT_DESCRIPTION_FULL "Source SDK toolkit")
 string(TIMESTAMP PROJECT_BUILD_DATE "%Y-%m-%d")
 string(TIMESTAMP PROJECT_BUILD_TIME "%H:%M:%S")
 
-set(DEVTOOLS_DIR "devtools")
-set(DEVTOOLS_BIN_DIR "${DEVTOOLS_DIR}/bin")
-set(THIRDPARTY_DIR "thirdparty")
-set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
 set(SOURCESDK_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(DEVTOOLS_DIR "${SOURCESDK_DIR}/devtools")
+set(DEVTOOLS_BIN_DIR "${DEVTOOLS_DIR}/bin")
+set(THIRDPARTY_DIR "${SOURCESDK_DIR}/thirdparty")
+set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
+set(PROTOBUFS_DIR "${THIRDPARTY_DIR}/protobufs")
 
+set(SOURCESDK_GAME_DIR "csgo" CACHE STRING "Game directory name")
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
 option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
 option(SOURCESDK_LINK_STEAMWORKS "Link with Steam API" ON)
@@ -35,28 +37,58 @@ option(SOURCESDK_LINK_STRIP_CPP_EXPORTS "Strip C++/STL export funcitons. Need \"
 option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time library by MSVC" ON)
 
+set(SOURCESDK_PROTO_DIR "${PROTOBUFS_DIR}/${SOURCESDK_GAME_DIR}")
+set(SOURCESDK_PROTO_OUTPUT_DIR "${SOURCESDK_DIR}/common")
+
+if(NOT EXISTS "${SOURCESDK_PROTO_DIR}")
+	message(FATAL_ERROR "Game \"${SOURCESDK_GAME_DIR}\" is not supported")
+endif()
+
 set(SOURCESDK_PROTO_DIRS
-	common
-	game/shared
-	gcsdk
+	${SOURCESDK_PROTO_DIR}
 )
 
 set(SOURCESDK_PROTO_FILES
-	common/connectionless_netmessages
-	common/engine_gcmessages
-	common/netmessages
-	common/networkbasetypes
-	common/networksystem_protomessages
-	common/network_connection
-	common/steamnetworkingsockets_messages_certs
-	common/steamnetworkingsockets_messages_udp
-	common/steamnetworkingsockets_messages
-	common/valveextensions
-	game/shared/usermessages
-
-	gcsdk/steammessages
-	gcsdk/gcsdk_gcmessages
-	gcsdk/gcsystemmsgs
+	base_gcmessages
+	base_gcmessages_csgo
+	c_peer2peer_netmessages
+	clientmessages
+	connectionless_netmessages
+	cs_gameevents
+	cs_usercmd
+	cstrike15_gcmessages
+	cstrike15_usermessages
+	demo
+	econ_gcmessages
+	engine_gcmessages
+	enums_clientserver
+	fatdemo
+	gameevents
+	gcsdk_gcmessages
+	gcsystemmsgs
+	netmessages
+	network_connection
+	networkbasetypes
+	networksystem_protomessages
+	steamdatagram_messages_auth
+	steamdatagram_messages_sdr
+	steammessages
+	steammessages_base
+	steammessages_cloud.steamworkssdk
+	steammessages_gamenetworkingui
+	steammessages_helprequest.steamworkssdk
+	steammessages_oauth.steamworkssdk
+	steammessages_player.steamworkssdk
+	steammessages_publishedfile.steamworkssdk
+	steammessages_unified_base.steamworkssdk
+	steamnetworkingsockets_messages
+	steamnetworkingsockets_messages_certs
+	steamnetworkingsockets_messages_udp
+	te
+	uifontfile_format
+	usercmd
+	usermessages
+	valveextensions
 )
 
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
@@ -119,6 +151,6 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_OPTIONS} ${SOUR
 target_link_options(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_OPTIONS} ${SOURCESDK_LINK_OPTIONS})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINITIONS})
-target_include_directories(${PROJECT_NAME} PUBLIC ${PLATFORM_INCLUDE_DIRS} ${SOURCESDK_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${PLATFORM_INCLUDE_DIRS} ${SOURCESDK_INCLUDE_DIRS} ${SOURCESDK_PROTO_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${PROTOBUF_LIBPPROTOBUF_NAME} ${SOURCESDK_LINK_LIBRARIES} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
