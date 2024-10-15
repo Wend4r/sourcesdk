@@ -48,7 +48,7 @@ set(SOURCESDK_PROTO_DIRS
 	${SOURCESDK_PROTO_DIR}
 )
 
-set(SOURCESDK_PROTO_FILES
+set(SOURCESDK_PROTOS
 	base_gcmessages
 	base_gcmessages_csgo
 	c_peer2peer_netmessages
