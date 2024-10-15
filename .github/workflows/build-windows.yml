@@ -11,6 +11,7 @@ on:
       - 'entity2/**'
       - 'game/server/**'
       - 'game/shared/**'
+      - 'gcsdk/**'
       - 'interfaces/**'
       - 'lib/win64/**'
       - 'mathlib/**'
