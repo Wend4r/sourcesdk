@@ -37,60 +37,6 @@ option(SOURCESDK_LINK_STRIP_CPP_EXPORTS "Strip C++/STL export funcitons. Need \"
 option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time library by MSVC" ON)
 
-set(SOURCESDK_PROTO_DIR "${PROTOBUFS_DIR}/${SOURCESDK_GAME_DIR}")
-set(SOURCESDK_PROTO_OUTPUT_DIR "${SOURCESDK_DIR}/common")
-
-if(NOT EXISTS "${SOURCESDK_PROTO_DIR}")
-	message(FATAL_ERROR "Game \"${SOURCESDK_GAME_DIR}\" is not supported")
-endif()
-
-set(SOURCESDK_PROTO_DIRS
-	${SOURCESDK_PROTO_DIR}
-)
-
-set(SOURCESDK_PROTOS
-	base_gcmessages
-	base_gcmessages_csgo
-	c_peer2peer_netmessages
-	clientmessages
-	connectionless_netmessages
-	cs_gameevents
-	cs_usercmd
-	cstrike15_gcmessages
-	cstrike15_usermessages
-	demo
-	econ_gcmessages
-	engine_gcmessages
-	enums_clientserver
-	fatdemo
-	gameevents
-	gcsdk_gcmessages
-	gcsystemmsgs
-	netmessages
-	network_connection
-	networkbasetypes
-	networksystem_protomessages
-	steamdatagram_messages_auth
-	steamdatagram_messages_sdr
-	steammessages
-	steammessages_base
-	steammessages_cloud.steamworkssdk
-	steammessages_gamenetworkingui
-	steammessages_helprequest.steamworkssdk
-	steammessages_oauth.steamworkssdk
-	steammessages_player.steamworkssdk
-	steammessages_publishedfile.steamworkssdk
-	steammessages_unified_base.steamworkssdk
-	steamnetworkingsockets_messages
-	steamnetworkingsockets_messages_certs
-	steamnetworkingsockets_messages_udp
-	te
-	uifontfile_format
-	usercmd
-	usermessages
-	valveextensions
-)
-
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
 set(SOURCESDK_INTERFACES_DIR "${SOURCESDK_DIR}/interfaces")
 set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
@@ -111,6 +57,8 @@ include(cmake/protobuf/targets/libprotobuf-lite.cmake)
 include(cmake/protobuf/targets/libprotobuf.cmake)
 include(cmake/protobuf/targets/libprotoc.cmake)
 include(cmake/protobuf/targets/protoc.cmake)
+
+include(cmake/protobufs.cmake)
 
 include(cmake/sourcesdk.cmake)
 include(cmake/sourcesdk/proto.cmake)
@@ -151,6 +99,6 @@ target_compile_options(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_OPTIONS} ${SOUR
 target_link_options(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_OPTIONS} ${SOURCESDK_LINK_OPTIONS})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINITIONS})
-target_include_directories(${PROJECT_NAME} PUBLIC ${PLATFORM_INCLUDE_DIRS} ${SOURCESDK_INCLUDE_DIRS} ${SOURCESDK_PROTO_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${PLATFORM_INCLUDE_DIRS} ${SOURCESDK_INCLUDE_DIRS})
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${PROTOBUF_LIBPPROTOBUF_NAME} ${SOURCESDK_LINK_LIBRARIES} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
