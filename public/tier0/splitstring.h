@@ -9,7 +9,7 @@
 #include "tier1/utlvector.h"
 
 // <Sergiy> placing it here a few days before Cert to minimize disruption to the rest of codebase
-class CSplitString : public CUtlVector<char *, int, CUtlMemory<char *, int>>
+class CSplitString : public CUtlVector<char *>
 {
 public:
 	// Splits the string based on separator provided
