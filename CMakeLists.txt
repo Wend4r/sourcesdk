@@ -61,6 +61,7 @@ include(cmake/protobuf/targets/protoc.cmake)
 include(cmake/protobufs.cmake)
 
 include(cmake/sourcesdk.cmake)
+include(cmake/sourcesdk/game.cmake)
 include(cmake/sourcesdk/proto.cmake)
 include(cmake/sourcesdk/proto/generate.cmake)
 include(cmake/sourcesdk/targets/game/server.cmake)
