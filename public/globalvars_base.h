@@ -85,6 +85,11 @@ public:
 
 	// Non-zero when during movement processing, it's the part after the decimal point of the "when" field in player's subtick moves.
 	float m_flSubtickFraction;
+
+#ifdef DEADLOCK
+	// Simulation tick interval
+	float interval_per_tick;
+#endif
 };
 
 #endif // GLOBALVARS_BASE_H
