@@ -411,11 +411,8 @@ protected:
 // Special case for string handling
 template<> inline void CConVarData<const char*>::SetValue(const char*const& value, const CSplitScreenSlot& index)
 {
-	char* data = new char[256];
-	memcpy(data, value, 256);
-
-	delete[] m_value[index];
-	m_value[index] = data;
+	auto data = reinterpret_cast<CUtlString*>( &m_value[index] );
+	data->Set( value );
 }
 
 // For some types it makes no sense to clamp

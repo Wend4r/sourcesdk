@@ -495,6 +495,38 @@ protected:
 };
 
 template<typename T>
+class ConVarRef : public BaseConVar
+{
+public:
+	ConVarRef() {
+		m_Handle.Invalidate( );
+		m_ConVarData = nullptr;
+	}
+
+	explicit ConVarRef( const char *pName ) {
+		Init( pName );
+	}
+
+	bool Init( const char *pName ) {
+		m_Handle = g_pCVar->FindConVar( pName );
+		if (!m_Handle.IsValid()) {
+			return false;
+		}
+
+		m_ConVarData = g_pCVar->GetConVar( m_Handle );
+		return true;
+	}
+
+	const T& GetValue( const CSplitScreenSlot& index = CSplitScreenSlot() ) {
+		return reinterpret_cast<ConVar<T>*>(this)->GetValue( index );
+	}
+
+	void SetValue( const T& val, const CSplitScreenSlot& index = CSplitScreenSlot() ) {
+		reinterpret_cast<ConVar<T>*>(this)->SetValue( val, index );
+	}
+};
+
+template<typename T>
 class ConVar : public BaseConVar
 {
 public:
