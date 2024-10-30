@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright ï¿½ 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -68,22 +68,20 @@ public:
 	virtual float		GetAvgLatency( void ) const = 0;	// average packet latency in seconds
 	virtual float		GetEngineLatency( void ) const = 0;	// current latency (RTT), more accurate but jittering
 	
-	virtual void		unk001( void ) const = 0;
-	virtual void		unk002( void ) const = 0;
-	
 	virtual float		GetAvgLoss( int flow ) const = 0;	 // avg packet loss[0..1]
+	virtual float		GetAvgChoke(int flow) const = 0;
 	virtual float		GetAvgData( int flow ) const = 0;	 // data flow in bytes/sec
 	virtual float		GetAvgPackets( int flow ) const = 0; // avg packets/sec
 	virtual int			GetTotalData( int flow ) const = 0;	 // total flow in/out in bytes
 	virtual int			GetTotalPackets( int flow ) const = 0;
 	virtual int			GetSequenceNr( int flow ) const = 0;	// last send seq number
 	virtual float		GetTimeSinceLastReceived( void ) const = 0;	// get time since last recieved packet in seconds
-	virtual void		GetRemoteFramerate( float *pflFrameTime, float *pflFrameTimeStdDeviation, float *pflFrameStartTimeStdDeviation, float *pflUnfilteredFrameTime ) const = 0;
+	virtual void		GetRemoteFramerate( float *pflFrameTime, float *pflFrameTimeStdDeviation, float *pflFrameStartTimeStdDeviation ) const = 0;
 
 	virtual float		GetTimeoutSeconds( void ) const = 0;
 	virtual float		GetTimeUntilTimeout( void ) const = 0;
 	
-	virtual void		unk101( void ) const = 0;
+	virtual void		unk001() = 0;
 	
 	virtual void		ResetLatencyStats( int channel ) = 0;
 	virtual SNetChannelLatencyStats *GetLatencyStats( int channel ) const = 0;
@@ -92,6 +90,8 @@ public:
 	virtual void		SetInterpolationAmount( float flInterpolationAmount, float flUpdateRate ) = 0;
 	virtual void		SetNumPredictionErrors( int num ) = 0;
 	virtual void		SetShowNetMessages( bool show ) = 0;
+
+	virtual void		unk101() = 0;
 };
 
 #endif // INETCHANNELINFO_H

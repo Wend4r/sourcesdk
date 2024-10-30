@@ -59,7 +59,7 @@ abstract_class INetworkMessageProcessingPreFilter
 {
 public:
 	// Filter incoming messages from the netchan, return true to filter out (block) the further processing of the message
-	virtual bool FilterMessage( INetworkMessageInternal *pNetMessage, const CNetMessage *pData, INetChannel *pChannel ) = 0;
+	virtual bool FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0;
 };
 
 abstract_class INetChannel : public INetChannelInfo
@@ -84,7 +84,7 @@ public:
 
 	virtual void	UpdateMessageStats( int msggroup, int bits, bool ) = 0;
 	
-	virtual void	unk001( void ) = 0;
+	virtual void	unk011() = 0;
 	
 	virtual bool	CanPacket( void ) const = 0;
 	virtual bool	IsOverflowed( void ) const = 0;
@@ -103,7 +103,9 @@ public:
 	virtual bool	IsTimedOut( void ) const = 0;
 	virtual void	UpdateLastReceivedTime( void ) = 0;
 
-	virtual void	SetRemoteFramerate( float flFrameTime, float flFrameTimeStdDeviation, float flFrameStartTimeStdDeviation, float flLoss, float flUnfilteredFrameTime ) = 0;					
+	virtual void	unk111() = 0;
+	virtual void	unk112() = 0;
+	
 	virtual bool	IsRemoteDisconnected( ENetworkDisconnectionReason &reason ) const = 0;
 
 	virtual void	SetNetMessageDispatcher( INetMessageDispatcher *pDispatcher ) = 0;
@@ -115,13 +117,11 @@ public:
 	virtual void	RegisterNetMessageHandlerAbstract( CUtlSlot *nSlot, const CUtlAbstractDelegate &delegate, int nParamCount, INetworkMessageInternal *pNetMessage, int nPriority ) = 0;
 	virtual void	UnregisterNetMessageHandlerAbstract( CUtlSlot *nSlot, const CUtlAbstractDelegate &delegate, INetworkMessageInternal *pNetMessage ) = 0;
 	
-	virtual void	SetChallengeNr( unsigned int challenge ) = 0;
 	virtual int		GetNumBitsWritten( NetChannelBufType_t bufferType ) const = 0;
 	virtual void	SetDemoRecorder( IDemoRecorderBase *pDemoRecorder ) = 0;
 	virtual void	SetInstantReplayIntercept( IInstantReplayIntercept *pInstantReplayIntercept ) = 0;
 	virtual bool	IsNull( void ) const = 0;
 	virtual bool	ProcessDemoPacket( NetPacket_t *packet ) = 0;
-	virtual bool	WasLastMessageReliable( void ) const = 0;
 	
 	virtual void	InstallMessageFilter( INetworkMessageProcessingPreFilter *pFilter ) = 0;
 	virtual void	UninstallMessageFilter( INetworkMessageProcessingPreFilter *pFilter ) = 0;
@@ -141,8 +141,7 @@ public:
 	virtual int		GetCurrentNetMessageBits( void ) const = 0;
 	virtual int		GetCurrentNetMessageInSequenceNr( void ) const = 0;
 
-	virtual void	unk101( void ) = 0;
-	virtual void	unk102( void ) = 0;
+	virtual void	unk211() = 0;
 };
 
 
