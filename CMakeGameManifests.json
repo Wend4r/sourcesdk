@@ -2,7 +2,7 @@
 	"core":
 	{
 		"name": "Core",
-		"dir": "core",
+		"game_dir": "core",
 		"defines":
 		{
 			"CORE": null,
@@ -30,7 +30,7 @@
 	"csgo":
 	{
 		"name": "Counter-Strike: Global Offensive",
-		"dir": "csgo",
+		"game_dir": "csgo",
 		"protobufs_dir": "csgo",
 		"defines":
 		{
@@ -53,7 +53,7 @@
 	"citadel":
 	{
 		"name": "Citadel",
-		"dir": "citadel",
+		"game_dir": "citadel",
 		"defines":
 		{
 			"CITADEL": 103,
@@ -76,6 +76,7 @@
 
 	"dota":
 	{
+		"game_dir": "dota",
 		"defines":
 		{
 			"DOTA": 24,
@@ -101,7 +102,7 @@
 		"inherits": ["core"],
 
 		"name": "Dota Underlords",
-		"dir": "dac",
+		"game_dir": "dac",
 		"protobufs_dir": "underlords",
 		"defines":
 		{
