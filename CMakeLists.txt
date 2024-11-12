@@ -75,8 +75,6 @@ include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
 
-message("SOURCESDK_COMPILE_DEFINITIONS = ${SOURCESDK_COMPILE_DEFINITIONS}")
-
 add_library(${PROJECT_NAME} ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCE_FILES})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
