@@ -14,6 +14,10 @@ else()
 	message(FATAL_ERROR "${SIZEOF_BITS}-bit platform is not supported")
 endif()
 
+set(SOURCESDK_PROTO_DIRS
+	${SOURCESDK_PROTO_DIRS}
+)
+
 if(WINDOWS)
 	set(SOURCESDK_COMPILE_DEFINITIONS
 		${SOURCESDK_COMPILE_DEFINITIONS}

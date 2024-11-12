@@ -29,7 +29,7 @@ set(THIRDPARTY_DIR "${SOURCESDK_DIR}/thirdparty")
 set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
 set(PROTOBUFS_DIR "${THIRDPARTY_DIR}/protobufs")
 
-set(SOURCESDK_GAME_DIR "csgo" CACHE STRING "Game directory name")
+set(SOURCESDK_GAME_TARGET "cs2" CACHE STRING "Game name. See CMakeGameManifests.json")
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
 option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
 option(SOURCESDK_LINK_STEAMWORKS "Link with Steam API" ON)
@@ -58,10 +58,9 @@ include(cmake/protobuf/targets/libprotobuf.cmake)
 include(cmake/protobuf/targets/libprotoc.cmake)
 include(cmake/protobuf/targets/protoc.cmake)
 
-include(cmake/protobufs.cmake)
-
 include(cmake/sourcesdk.cmake)
-include(cmake/sourcesdk/game.cmake)
+include(cmake/sourcesdk/manifests.cmake)
+include(cmake/sourcesdk/manifests/proto.cmake)
 include(cmake/sourcesdk/proto.cmake)
 include(cmake/sourcesdk/proto/generate.cmake)
 include(cmake/sourcesdk/targets/game/server.cmake)
@@ -75,6 +74,8 @@ include(cmake/sourcesdk/targets/public.cmake)
 include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
+
+message("SOURCESDK_COMPILE_DEFINITIONS = ${SOURCESDK_COMPILE_DEFINITIONS}")
 
 add_library(${PROJECT_NAME} ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCE_FILES})
 

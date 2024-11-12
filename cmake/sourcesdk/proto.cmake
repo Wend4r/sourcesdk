@@ -6,6 +6,40 @@ if(NOT SOURCESDK_DIR)
 	message(FATAL_ERROR "SOURCESDK_DIR is empty")
 endif()
 
+set(SOURCESDK_PROTO_OUTPUT_DIR "${SOURCESDK_DIR}/common")
+
+set(SOURCESDK_SKIP_PROTOS
+	steammessages_base # steammessages instead
+	base_gcmessages_csgo # base_gcmessages instead
+)
+
+foreach(PROTO_DIR ${SOURCESDK_PROTO_DIRS})
+	if(EXISTS ${PROTO_DIR})
+		file(GLOB PROTO_FILENAMES "${PROTO_DIR}/*.proto")
+
+		list(APPEND SOURCESDK_PROTO_FILENAMES ${PROTO_FILENAMES})
+	else()
+		message(WARNING "Proto directory \"${PROTO_DIR}\" is not exists")
+	endif()
+endforeach()
+
+if(SOURCESDK_PROTOS)
+	foreach(PROTO ${SOURCESDK_PROTOS})
+
+		if(PROTO IN_LIST SOURCESDK_SKIP_PROTOS)
+			message(WARNING "Ignore skipped ${PROTO} proto")
+		endif()
+	endforeach()
+else()
+	foreach(PROTO_FILENAME ${SOURCESDK_PROTO_FILENAMES})
+		get_filename_component(PROTO "${PROTO_FILENAME}" NAME_WLE)
+
+		if(NOT PROTO IN_LIST SOURCESDK_SKIP_PROTOS)
+			list(APPEND SOURCESDK_PROTOS "${PROTO}")
+		endif()
+	endforeach()
+endif()
+
 set(SOURCESDK_PROTOC_EXECUTABLE "${DEVTOOLS_BIN_DIR}/${SOURCESDK_PLATFORM_DIR}/${PROTOBUF_PROTOC_NAME}${CMAKE_EXECUTABLE_SUFFIX}")
 
 set(SOURCESDK_PROTOBUF_SOURCE_DIR "${PROTOBUF_DIR}/src")

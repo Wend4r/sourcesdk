@@ -1,0 +1,112 @@
+{
+	"core":
+	{
+		"name": "Core",
+		"dir": "core",
+		"defines":
+		{
+			"CORE": null,
+			"SE_CORE": null
+		}
+	},
+
+	"dcg":
+	{
+		"name": "Artifact",
+		"defines":
+		{
+			"DCG": 101,
+			"SE_DCG": 101
+		}
+	},
+	"artifact":
+	{
+		"inherits": ["core", "dcg"],
+
+		"name": "Artifact Foundry",
+		"protobufs_dir": "artifact"
+	},
+
+	"csgo":
+	{
+		"name": "Counter-Strike: Global Offensive",
+		"dir": "csgo",
+		"protobufs_dir": "csgo",
+		"defines":
+		{
+			"CSGO": 23,
+			"SE_CSGO": 23
+		}
+	},
+	"cs2":
+	{
+		"inherits": ["core", "csgo"],
+
+		"name": "Counter-Strike 2",
+		"defines":
+		{
+			"CS2": 25,
+			"SE_CS2": 25
+		}
+	},
+
+	"citadel":
+	{
+		"name": "Citadel",
+		"dir": "citadel",
+		"defines":
+		{
+			"CITADEL": 103,
+			"SE_CITADEL": 103
+		}
+	},
+
+	"deadlock":
+	{
+		"inherits": ["core", "citadel"],
+
+		"name": "Deadlock",
+		"protobufs_dir": "deadlock",
+		"defines":
+		{
+			"DEADLOCK": 104,
+			"SE_DEADLOCK": 104
+		}
+	},
+
+	"dota":
+	{
+		"defines":
+		{
+			"DOTA": 24,
+			"SE_DOTA": 24
+		}
+	},
+
+	"dota2":
+	{
+		"inherits": ["core", "dota"],
+
+		"name": "Dota 2",
+		"protobufs_dir": "dota2",
+		"defines":
+		{
+			"DOTA2": 100,
+			"SE_DOTA2": 100
+		}
+	},
+
+	"underlords":
+	{
+		"inherits": ["core"],
+
+		"name": "Dota Underlords",
+		"dir": "dac",
+		"protobufs_dir": "underlords",
+		"defines":
+		{
+			"UNDERLORDS": 102,
+			"SE_UNDERLORDS": 102
+		}
+	}
+}
