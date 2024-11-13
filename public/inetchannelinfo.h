@@ -71,6 +71,9 @@ public:
 	virtual float		GetAvgLoss( int flow ) const = 0;	 // avg packet loss[0..1]
 	virtual float		GetAvgChoke(int flow) const = 0;
 	virtual float		GetAvgData( int flow ) const = 0;	 // data flow in bytes/sec
+	
+	virtual float		unk001( int flow ) const = 0;
+	
 	virtual float		GetAvgPackets( int flow ) const = 0; // avg packets/sec
 	virtual int			GetTotalData( int flow ) const = 0;	 // total flow in/out in bytes
 	virtual int			GetTotalPackets( int flow ) const = 0;
@@ -81,7 +84,7 @@ public:
 	virtual float		GetTimeoutSeconds( void ) const = 0;
 	virtual float		GetTimeUntilTimeout( void ) const = 0;
 	
-	virtual void		unk001() = 0;
+	virtual void		unk101() = 0;
 	
 	virtual void		ResetLatencyStats( int channel ) = 0;
 	virtual SNetChannelLatencyStats *GetLatencyStats( int channel ) const = 0;
@@ -91,7 +94,8 @@ public:
 	virtual void		SetNumPredictionErrors( int num ) = 0;
 	virtual void		SetShowNetMessages( bool show ) = 0;
 
-	virtual void		unk101() = 0;
+	virtual void		unk201() = 0;
+	virtual void		unk202() = 0;
 };
 
 #endif // INETCHANNELINFO_H
