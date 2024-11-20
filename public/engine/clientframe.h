@@ -48,9 +48,9 @@ public:
 	virtual ~CClientFrameManager(void) = default;
 
 public:
-	char pad120[120];
+	[[maybe_used]] char pad120[120];
 	CUtlMemoryPool< CClientFrame >	m_ClientFramePool;
-	CClientFrame	*m_Frames;		// updates can be delta'ed from here
+	CClientFrame	*m_Frames = NULL;		// updates can be delta'ed from here
 }; // sizeof 288
 
 #endif // CLIENTFRAME_H

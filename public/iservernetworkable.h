@@ -45,10 +45,10 @@ public:
 	CBitVec<MAX_EDICTS>* m_pTransmitAlways; // 32
 	CUtlVector<int> m_unk40;				// 40
 	vis_info_t* m_VisInfo;					// 64
-	[[maybe_unused]] byte m_unk72[0x200];	// 72
-	CEntityIndex m_nClientEntityIndex;		// 584
-	bool m_bFullUpdate;						// 588
-}; // sizeof unknown(
+	[[maybe_unused]] byte m_unk72[0x200];	// 72 // Fills by 0xFF each byte.
+	CEntityIndex m_nClientEntityIndex = -1;	// 584
+	bool m_bFullUpdate = false;				// 588
+}; // sizeof 592
 
 //-----------------------------------------------------------------------------
 // Stores information necessary to perform PVS testing.

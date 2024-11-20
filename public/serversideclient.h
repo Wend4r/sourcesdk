@@ -14,6 +14,7 @@
 #include <steam/steamclientpublic.h>
 #include <engine/clientframe.h>
 #include <tier0/annotations.h>
+#include <tier0/circularbuffer.h>
 #include <tier0/utlstring.h>
 #include <tier1/ns_address.h>
 #include <networksystem/inetworksystem.h>
@@ -232,12 +233,16 @@ public:
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
 
 public:
-	[[maybe_unused]] void* m_pVT1; // INetworkMessageProcessingPreFilter
+	void* m_pVT1; // INetworkMessageProcessingPreFilter
 	CUtlString m_unk16; // 16
+
+private:
 	[[maybe_unused]] char pad24[0x16]; // 24
 #ifdef __linux__
 	[[maybe_unused]] char pad46[0x10]; // 46
 #endif
+
+public:
 	void (*RebroadcastSource)(int msgID); // 64
 	CUtlString m_UserIDString; // 72
 	CUtlString m_Name; // 80
@@ -271,7 +276,11 @@ public:
 	bool m_bConVarsInited; // 297
 	bool m_bIsHLTV; // 298
 	bool m_bIsReplay; // 299
+
+private:
 	[[maybe_unused]] char pad29[0xA];
+
+public:
 	uint32 m_nSendtableCRC; // 312
 	int m_ClientPlatform; // 316
 	int m_nSignonTick; // 320
@@ -285,22 +294,35 @@ public:
 	CFrameSnapshot* m_pBaseline; // 432
 	int m_nBaselineUpdateTick; // 440
 	CBitVec<MAX_EDICTS>	m_BaselinesSent; // 444
-	int m_nBaselineUsed; // 2492
-	int m_nLoadingProgress; // 2496
-	int m_nForceWaitForTick; // 2500
-	bool m_bLowViolence; // 2504
-	bool m_bSomethingWithAddressType; // 2505
-	bool m_bFullyAuthenticated; // 2506
-	bool m_bUnkBool2507; // 2507
-	float m_fNextMessageTime; // 2508
-	float m_fSnapshotInterval; // 2512
-	float m_fAuthenticatedTime; // 2516
-	[[maybe_unused]] char pad168[0x124]; // 2520
-	[[maybe_unused]] char pad1658[0x24]; // 2816 something in CServerSideClientBase::ExecuteStringCommand
-	CNetworkStatTrace m_Trace; // 2848
-	int m_spamCommandsCount; // 2888 if the value is greater than 16, the player will be kicked with reason 39
-	double m_lastExecutedCommand; // 2896 if command executed more than once per second, ++m_spamCommandCount
-};
+	int m_nBaselineUsed = 0; // 2492
+	int m_nLoadingProgress = 0; // 2496
+	int m_nForceWaitForTick = -1; // 2500
+	CCircularBuffer m_UnkBuffer = {1024}; // 2504 (24 bytes)
+	bool m_bLowViolence = false; // 2528
+	bool m_bSomethingWithAddressType = true; // 2529
+	bool m_bFullyAuthenticated = false; // 2530
+	bool m_bUnk1 = false; // 2531
+	bool m_bUnk2 = false; // 2532
+	bool m_bUnk3 = false; // 2533
+	bool m_bUnk4 = false; // 2534
+	bool m_bUnk5 = false; // 2535
+	float m_fNextMessageTime = 0.0f; // 2536
+	float m_fSnapshotInterval = -1.0f; // 2540
+	float m_fAuthenticatedTime = 0.0f; // 2544
+
+private:
+	// CSVCMsg_PacketEntities_t m_packetmsg;  // 2552
+	[[maybe_unused]] char pad2552[0x138]; // 2552
+
+public:
+	CNetworkStatTrace m_Trace; // 2864
+	int m_spamCommandsCount = 0; // 2904 if the value is greater than 16, the player will be kicked with reason 39
+	int m_unknown = 0; // 2908
+	double m_lastExecutedCommand = 0.0; // 2912 if command executed more than once per second, ++m_spamCommandCount
+
+private:
+	[[maybe_unused]] char pad2920[0x20]; // 2920
+}; // sizeof 2952
 
 class CServerSideClient : public CServerSideClientBase
 {
@@ -308,27 +330,35 @@ public:
 	virtual ~CServerSideClient() = 0;
 
 public:
-	CPlayerBitVec m_VoiceStreams; // 2904
-	CPlayerBitVec m_VoiceProximity; // 2912
-	CCheckTransmitInfo m_PackInfo; // 2920
-	CClientFrameManager m_FrameManager; // 3520
-	CClientFrame* m_pCurrentFrame; // 3808
-	float m_flLastClientCommandQuotaStart; // 3816
-	float m_flTimeClientBecameFullyConnected; // 3820
-	bool m_bVoiceLoopback; // 3824
-	int m_nHltvReplayDelay; // 3828
-	CHLTVServer* m_pHltvReplayServer; // 3832
-	int m_nHltvReplayStopAt; // 3840
-	int m_nHltvReplayStartAt; // 3844
-	int m_nHltvReplaySlowdownBeginAt; // 3848
-	int m_nHltvReplaySlowdownEndAt; // 3852
-	float m_flHltvReplaySlowdownRate; // 3856
-	int m_nHltvLastSendTick; // 3860
-	float m_flHltvLastReplayRequestTime; // 3864
-	CUtlVector<INetMessage*> m_HltvQueuedMessages; // 3872
-	HltvReplayStats_t m_HltvReplayStats; // 3896
-	void* m_pLastJob; // 3952
-};
+	CPlayerBitVec m_VoiceStreams; // 2952
+	CPlayerBitVec m_VoiceProximity; // 2960
+	CCheckTransmitInfo m_PackInfo; // 2968
+	CClientFrameManager m_FrameManager; // 3568
+
+private:
+	[[maybe_used]] char pad3856[8]; // 3856
+
+public:
+	float m_flLastClientCommandQuotaStart = 0.0f; // 3864
+	float m_flTimeClientBecameFullyConnected = -1.0f; // 3868
+	bool m_bVoiceLoopback = false; // 3872
+	bool m_bUnk10 = false; // 3873
+	int m_nHltvReplayDelay = 0; // 3876
+	CHLTVServer* m_pHltvReplayServer; // 3880
+	int m_nHltvReplayStopAt; // 3888
+	int m_nHltvReplayStartAt; // 3892
+	int m_nHltvReplaySlowdownBeginAt; // 3896
+	int m_nHltvReplaySlowdownEndAt; // 3900
+	float m_flHltvReplaySlowdownRate; // 3904
+	int m_nHltvLastSendTick; // 3908
+	float m_flHltvLastReplayRequestTime; // 3912
+	CUtlVector<INetMessage*> m_HltvQueuedMessages; // 3920
+	HltvReplayStats_t m_HltvReplayStats; // 3944
+	void* m_pLastJob; // 4000
+
+private:
+	[[maybe_used]] char pad3984[8]; // 4008
+}; // sizeof 4016
 
 // not full class reversed
 class CHLTVClient : public CServerSideClientBase
@@ -337,20 +367,26 @@ public:
 	virtual ~CHLTVClient() = 0;
 
 public:
-	CNetworkGameServerBase* m_pHLTV; // 2904
-	CUtlString m_szPassword; // 2912
-	CUtlString m_szChatGroup; // 2920
-	double m_fLastSendTime; // 2928
-	double m_flLastChatTime; // 2936
-	int m_nLastSendTick; // 2944
-	[[maybe_unused]] char pad2948[0x4]; // 2948
-	int m_nFullFrameTime; // 2952
-	[[maybe_unused]] char pad2956[0x4]; // 2956
-	[[maybe_unused]] char pad2960[0x4]; // 2960
-	bool m_bNoChat; // 2964
-	bool m_bUnkBool; // 2965
-	bool m_bUnkBool2; // 2966
-	bool m_bUnkBool3; // 2967
-}; // sizeof 3008
+	CNetworkGameServerBase* m_pHLTV; // 2952
+	CUtlString m_szPassword; // 2960
+	CUtlString m_szChatGroup; // 2968 // "all" or "group%d"
+	double m_fLastSendTime = 0.0; // 2976
+	double m_flLastChatTime = 0.0; // 2984
+	int m_nLastSendTick = 0; // 2992
+	int m_unknown2 = 0; // 2996
+	int m_nFullFrameTime = 0; // 3000
+	int m_unknown3 = 0;  // 3004
+
+private:
+	[[maybe_unused]] char pad2960[0x4]; // 3008
+
+public:
+	bool m_bNoChat = false; // 3012
+	bool m_bUnkBool = false; // 3013
+	bool m_bUnkBool2 = false; // 3014
+	bool m_bUnkBool3 = false; // 3015
+
+	[[maybe_used]] char pad3976[0x28]; // 2984
+}; // sizeof 3056
 
 #endif // SERVERSIDECLIENT_H
