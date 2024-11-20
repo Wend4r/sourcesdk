@@ -256,23 +256,28 @@ struct KV3BinaryBlob_t
 class CKV3MemberName : public CUtlStringToken
 {
 public:
-	inline CKV3MemberName(const char* pszString): m_nHashCode(), m_pszString("")
-	{	
-		if (!pszString || !pszString[0])
-			return;
-
-		m_nHashCode = MakeStringToken( pszString );
-		m_pszString = pszString;
+	template<int N>
+	FORCEINLINE CKV3MemberName(const char (&szInit)[N]) :
+		CUtlStringToken(szInit),
+		m_pszString((const char *)szInit)
+	{
+		Assert(szInit[0]);
 	}
 
-	inline CKV3MemberName(): m_nHashCode(), m_pszString("") {}
-	inline CKV3MemberName(unsigned int nHashCode, const char* pszString = ""): m_nHashCode(nHashCode), m_pszString(pszString) {}
+	static CKV3MemberName Make(const char *pszInit)
+	{
+		Assert(pszInit && pszInit[0]);
 
-	inline unsigned int GetHashCode() const { return m_nHashCode.GetHashCode(); }
+		return CKV3MemberName(MakeStringToken(pszInit), pszInit);
+	}
+
+	inline CKV3MemberName(): CUtlStringToken(), m_pszString("") {}
+	inline CKV3MemberName(const CUtlStringToken &nToken, const char* pszString = ""): CUtlStringToken(nToken), m_pszString(pszString) {}
+	inline CKV3MemberName(unsigned int nHashCode, const char* pszString = ""): CUtlStringToken(nHashCode), m_pszString(pszString) {}
+
 	inline const char* GetString() const { return m_pszString; }
 
 private:
-	CUtlStringToken m_nHashCode;
 	const char* m_pszString;
 };
 
