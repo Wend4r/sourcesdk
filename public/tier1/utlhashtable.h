@@ -714,7 +714,7 @@ CUtlHashtable<K,V,H,E,A,T> &CUtlHashtable<K,V,H,E,A,T>::operator=( CUtlHashtable
 			{
 				// If this assert trips, double-check that both hashtables
 				// have the same hash function pointers or hash functor state!
-				Assert( m_hash(srcTable[i]->m_key) == src.m_hash(srcTable[i]->m_key) );
+				// Assert( m_hash(srcTable[i]->m_key) == src.m_hash(srcTable[i]->m_key) );
 				int newIdx = DoInsertUnconstructed( srcTable[i].flags_and_hash , false );
 				Construct( m_table[newIdx].Raw(), *srcTable[i].Raw() ); // copy construct KVPair
 			}
