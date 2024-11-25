@@ -475,6 +475,7 @@ CUtlMemory<T,I>::~CUtlMemory()
 template< class T, class I >
 CUtlMemory<T,I>::CUtlMemory( const CUtlMemory& moveFrom )
 {
+	m_pMemory = NULL;
 	CopyFrom( moveFrom );
 }
 
