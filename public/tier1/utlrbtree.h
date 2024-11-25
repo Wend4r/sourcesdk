@@ -1563,11 +1563,11 @@ void CUtlRBTree<T, I, L, M>::SetLessFunc( const typename CUtlRBTree<T, I, L, M>:
 	{
 		m_LessFunc = func;
 	}
-	else if ( Count() > 0 )
-	{
-		// need to re-sort the tree here....
-		Assert(0);
-	}
+	// else if ( Count() > 0 )
+	// {
+	// 	// need to re-sort the tree here....
+	// 	Assert(0);
+	// }
 }
 
 
