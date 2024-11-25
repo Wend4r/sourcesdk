@@ -489,8 +489,12 @@ CUtlMemory<T,I>& CUtlMemory<T,I>::operator=( CUtlMemory& moveFrom )
 template< class T, class I >
 void CUtlMemory<T,I>::CopyFrom( const CUtlMemory& from )
 {
-	Init( from.m_nAllocationCount, from.m_nGrowSize );
-	memcpy( m_pMemory, from.m_pMemory, from.m_nAllocationCount * sizeof(T) );
+	Init( from.m_nGrowSize, from.m_nAllocationCount );
+
+	if( m_pMemory )
+	{
+		memcpy( m_pMemory, from.m_pMemory, from.m_nAllocationCount * sizeof(T) );
+	}
 }
 
 template< class T, class I >
