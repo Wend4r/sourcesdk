@@ -187,21 +187,17 @@ public:
 	template<typename T>
 	inline const CConVarData<T>* Cast() const
 	{
-		if (this->m_eVarType == TranslateConVarType<T>())
-		{
-			return reinterpret_cast<const CConVarData<T>*>(this);
-		}
-		return nullptr;
+		Assert(this->m_eVarType == TranslateConVarType<T>());
+
+		return reinterpret_cast<const CConVarData<T>*>(this);
 	}
 
 	template<typename T>
 	inline CConVarData<T>* Cast()
 	{
-		if (this->m_eVarType == TranslateConVarType<T>())
-		{
-			return reinterpret_cast<CConVarData<T>*>(this);
-		}
-		return nullptr;
+		Assert(this->m_eVarType == TranslateConVarType<T>());
+
+		return reinterpret_cast<const CConVarData<T>*>(this);
 	}
 
 	CConVarBaseData() :
