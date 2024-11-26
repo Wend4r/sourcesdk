@@ -13,6 +13,7 @@
 #include "appframework/iappsystem.h"
 #include "tier0/characterset.h"
 #include "tier0/memalloc.h"
+#include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
 #include "mathlib/vector4d.h"
 #include <cstdint>
@@ -171,6 +172,7 @@ template<> constexpr EConVarType TranslateConVarType<uint64_t>( void )	{ return 
 template<> constexpr EConVarType TranslateConVarType<float>( void )		{ return EConVarType_Float32; }
 template<> constexpr EConVarType TranslateConVarType<double>( void )	{ return EConVarType_Float64; }
 template<> constexpr EConVarType TranslateConVarType<const char*>( void ){ return EConVarType_String; }
+template<> constexpr EConVarType TranslateConVarType<CUtlString>( void ){ return EConVarType_String; }
 template<> constexpr EConVarType TranslateConVarType<Color>( void )		{ return EConVarType_Color; }
 template<> constexpr EConVarType TranslateConVarType<Vector2D>( void )	{ return EConVarType_Vector2; }
 template<> constexpr EConVarType TranslateConVarType<Vector>( void )	{ return EConVarType_Vector3; }
@@ -260,8 +262,7 @@ protected:
 
 template<> inline void CConVarBaseData::ValueToString<bool>( const bool& val, char* dst, size_t length )
 {
-	const char* src = ( val ) ? "true" : "false";
-	memcpy( dst, src, length );
+	strncpy( dst, val ? "true" : "false", length );
 }
 template<> inline void CConVarBaseData::ValueToString<uint16_t>( const uint16_t& val, char* dst, size_t length )		{ snprintf( dst, length, "%u", val ); }
 template<> inline void CConVarBaseData::ValueToString<int16_t>( const int16_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%d", val ); }
@@ -272,13 +273,14 @@ template<> inline void CConVarBaseData::ValueToString<int64_t>( const int64_t& v
 template<> inline void CConVarBaseData::ValueToString<float>( const float& val, char* dst, size_t length )				{ snprintf( dst, length, "%f", val ); }
 template<> inline void CConVarBaseData::ValueToString<double>( const double& val, char* dst, size_t length )			{ snprintf( dst, length, "%lf", val ); }
 template<> inline void CConVarBaseData::ValueToString<const char*>( const char*const& val, char* dst, size_t length )	{ memcpy( dst, val, length ); }
+template<> inline void CConVarBaseData::ValueToString<CUtlString>( const CUtlString& val, char* dst, size_t length )	{ strncpy( dst, val.Get(), length ); }
 template<> inline void CConVarBaseData::ValueToString<Color>( const Color& val, char* dst, size_t length )				{ snprintf( dst, length, "%d %d %d %d", val.r(), val.g(), val.b(), val.a() ); }
 template<> inline void CConVarBaseData::ValueToString<Vector2D>( const Vector2D& val, char* dst, size_t length )		{ snprintf( dst, length, "%f %f", val.x, val.y ); }
 template<> inline void CConVarBaseData::ValueToString<Vector>( const Vector& val, char* dst, size_t length )			{ snprintf( dst, length, "%f %f %f", val.x, val.y, val.z ); }
 template<> inline void CConVarBaseData::ValueToString<Vector4D>( const Vector4D& val, char* dst, size_t length )		{ snprintf( dst, length, "%f %f %f %f", val.x, val.y, val.z, val.w ); }
 template<> inline void CConVarBaseData::ValueToString<QAngle>( const QAngle& val, char* dst, size_t length )			{ snprintf( dst, length, "%f %f %f", val.x, val.y, val.z ); }
 
-template<> inline bool CConVarBaseData::ValueFromString<bool>( const char* val )				{ if (strcmp(val, "true") == 0 || strcmp(val, "1") == 0) { return true; } return false; }
+template<> inline bool CConVarBaseData::ValueFromString<bool>( const char* val )				{ return !strcmp(val, "true") || !strcmp(val, "1"); }
 template<> inline uint16_t CConVarBaseData::ValueFromString<uint16_t>( const char* val )		{ unsigned int ret; sscanf(val, "%u", &ret); return ret; }
 template<> inline int16_t CConVarBaseData::ValueFromString<int16_t>( const char* val )			{ int ret; sscanf(val, "%d", &ret); return ret; }
 template<> inline uint32_t CConVarBaseData::ValueFromString<uint32_t>( const char* val )		{ uint32_t ret; sscanf(val, "%u", &ret); return ret; }
@@ -288,6 +290,7 @@ template<> inline int64_t CConVarBaseData::ValueFromString<int64_t>( const char*
 template<> inline float CConVarBaseData::ValueFromString<float>( const char* val )				{ float ret; sscanf(val, "%f", &ret); return ret; }
 template<> inline double CConVarBaseData::ValueFromString<double>( const char* val )			{ double ret; sscanf(val, "%lf", &ret); return ret; }
 template<> inline const char* CConVarBaseData::ValueFromString<const char*>( const char* val )	{ return val; }
+template<> inline CUtlString CConVarBaseData::ValueFromString<CUtlString>( const char* val )	{ return {val}; }
 template<> inline Color CConVarBaseData::ValueFromString<Color>( const char* val )				{ int r, g, b, a; sscanf(val, "%d %d %d %d", &r, &g, &b, &a); return Color(r, g, b, a); }
 template<> inline Vector2D CConVarBaseData::ValueFromString<Vector2D>( const char* val )		{ float x, y; sscanf(val, "%f %f", &x, &y); return Vector2D(x, y); }
 template<> inline Vector CConVarBaseData::ValueFromString<Vector>( const char* val )			{ float x, y, z; sscanf(val, "%f %f %f", &x, &y, &z); return Vector(x, y, z); }

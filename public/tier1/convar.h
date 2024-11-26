@@ -447,7 +447,7 @@ static CConVarBaseData* GetInvalidConVar( EConVarType type )
 		new CConVarData<uint64_t>(),
 		new CConVarData<float>(),
 		new CConVarData<double>(),
-		new CConVarData<const char*>(),
+		new CConVarData<CUtlString>(),
 		new CConVarData<Color>(),
 		new CConVarData<Vector2D>(),
 		new CConVarData<Vector>(),
