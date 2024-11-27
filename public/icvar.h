@@ -191,7 +191,7 @@ public:
 	{
 		Assert(this->m_eVarType == TranslateConVarType<T>());
 
-		return reinterpret_cast<const CConVarData<T>*>(this);
+		return reinterpret_cast<CConVarData<T>*>(this);
 	}
 
 	template<typename T>
@@ -199,7 +199,7 @@ public:
 	{
 		Assert(this->m_eVarType == TranslateConVarType<T>());
 
-		return reinterpret_cast<const CConVarData<T>*>(this);
+		return reinterpret_cast<CConVarData<T>*>(this);
 	}
 
 	CConVarBaseData() :
