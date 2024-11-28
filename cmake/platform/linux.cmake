@@ -28,7 +28,7 @@ endif()
 set(PLATFORM_LINK_OPTIONS
 	${PLATFORM_LINK_OPTIONS}
 
-	-Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/sym/version_script.lds
+	-Wl,--version-script,${SOURCESDK_SYMBOLS_DIR}/version_script.lds
 )
 
 set(PLATFORM_COMPILE_DEFINITIONS

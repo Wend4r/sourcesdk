@@ -40,6 +40,7 @@ option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time librar
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
 set(SOURCESDK_INTERFACES_DIR "${SOURCESDK_DIR}/interfaces")
 set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
+set(SOURCESDK_SYMBOLS_DIR "${SOURCESDK_DIR}/sym")
 set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
 
 include(cmake/platform/shared.cmake)
