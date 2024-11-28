@@ -28,6 +28,8 @@ endif()
 
 set(PLATFORM_LINK_OPTIONS
 	${PLATFORM_LINK_OPTIONS}
+
+	-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/sym/exported_symbols.lds
 )
 
 set(PLATFORM_COMPILE_DEFINITIONS
