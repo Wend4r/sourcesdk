@@ -30,7 +30,7 @@ set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
 set(PROTOBUFS_DIR "${THIRDPARTY_DIR}/protobufs")
 
 set(SOURCESDK_GAME_TARGET "cs2" CACHE STRING "Game name. See CMakeGameManifests.json")
-option(SOURCESDK_COMPILE_PROTOBUF "Compile Protocol Buffers" OFF)
+option(SOURCESDK_COMPILE_PROTOBUF "Compile Protocol Buffers" ON)
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
 option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
 option(SOURCESDK_LINK_STEAMWORKS "Link with Steam API" ON)
