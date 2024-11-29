@@ -30,6 +30,7 @@ set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
 set(PROTOBUFS_DIR "${THIRDPARTY_DIR}/protobufs")
 
 set(SOURCESDK_GAME_TARGET "cs2" CACHE STRING "Game name. See CMakeGameManifests.json")
+option(SOURCESDK_COMPILE_PROTOBUF "Compile Protocol Buffers" OFF)
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
 option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
 option(SOURCESDK_LINK_STEAMWORKS "Link with Steam API" ON)
@@ -43,6 +44,14 @@ set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
 set(SOURCESDK_SYMBOLS_DIR "${SOURCESDK_DIR}/sym")
 set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
 
+set(SOURCESDK_NEEDED_PROTOS
+	netmessages
+	network_connection
+	networkbasetypes
+	networksystem_protomessages
+	usermessages
+)
+
 include(cmake/platform/shared.cmake)
 
 if(WINDOWS)
@@ -53,11 +62,13 @@ elseif(MACOS)
 	include(cmake/platform/macos.cmake)
 endif()
 
-include(cmake/protobuf.cmake)
-include(cmake/protobuf/targets/libprotobuf-lite.cmake)
-include(cmake/protobuf/targets/libprotobuf.cmake)
-include(cmake/protobuf/targets/libprotoc.cmake)
-include(cmake/protobuf/targets/protoc.cmake)
+if(SOURCESDK_COMPILE_PROTOBUF)
+	include(cmake/protobuf.cmake)
+	include(cmake/protobuf/targets/libprotobuf-lite.cmake)
+	include(cmake/protobuf/targets/libprotobuf.cmake)
+	include(cmake/protobuf/targets/libprotoc.cmake)
+	include(cmake/protobuf/targets/protoc.cmake)
+endif()
 
 include(cmake/sourcesdk.cmake)
 include(cmake/sourcesdk/manifests.cmake)
@@ -76,7 +87,15 @@ include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
 
-add_library(${PROJECT_NAME} ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCE_FILES})
+if(SOURCESDK_COMPILE_PROTOBUF)
+	add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCE_FILES})
+else()
+	if(SOURCESDK_SOURCE_FILES)
+		add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES})
+	else()
+		return()
+	endif()
+endif()
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	C_STANDARD 17
@@ -102,4 +121,8 @@ target_link_options(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_OPTIONS} ${SOURCESDK_
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINITIONS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${PLATFORM_INCLUDE_DIRS} ${SOURCESDK_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${PROTOBUF_LIBPPROTOBUF_NAME} ${SOURCESDK_LINK_LIBRARIES} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${SOURCESDK_LINK_LIBRARIES} ${SOURCESDK_ENTITY2_NAME} ${SOURCESDK_INTERFACES_NAME} ${SOURCESDK_MATHLIB_NAME} ${SOURCESDK_TIER1_NAME})
+
+if(SOURCESDK_COMPILE_PROTOBUF)
+	target_link_libraries(${PROJECT_NAME} PUBLIC ${PROTOBUF_LIBPPROTOBUF_NAME})
+endif()
