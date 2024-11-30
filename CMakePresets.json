@@ -20,9 +20,15 @@
 			"name": "VisualStudioBase",
 			"inherits": "Base",
 
+			"condition":
+			{
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			},
+
 			"generator": "Visual Studio 17 2022",
 			"description": "Build using Visual Studio generator",
-			"condition": null,
 			"hidden": true
 		},
 
