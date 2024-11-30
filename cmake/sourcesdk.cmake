@@ -92,6 +92,9 @@ endif()
 
 set(SOURCESDK_LIB_PLATFORM_DIR "${SOURCESDK_LIB_DIR}/${SOURCESDK_PLATFORM_DIR}")
 
+set(SOURCESDK_PATCHELF_EXE "patchelf${CMAKE_EXECUTABLE_SUFFIX}")
+set(SOURCESDK_PATCHELF_EXECUTABLE "${DEVTOOLS_BIN_DIR}/${SOURCESDK_PLATFORM_DIR}/${SOURCESDK_PATCHELF_EXE}")
+
 function(append_sourcesdk_shared_library VAR_NAME LIB_NAME)
 	set(SOURCESDK_SHARED_LIBRARY_LIB_NAME "${CMAKE_SHARED_LIBRARY_PREFIX}${LIB_NAME}")
 
@@ -113,7 +116,7 @@ function(append_sourcesdk_shared_library VAR_NAME LIB_NAME)
 
 			message(STATUS "Patching ${SOURCESDK_SHARED_LIBRARY_LIB} ...")
 			execute_process(
-				COMMAND bash -c "readelf -Ws --dyn-syms ${SOURCESDK_SHARED_LIBRARY_LIB} | awk '{print $8}' | grep -E '_ZS|_ZNS|_ZNKS|_ZN9__gnu_cxx|_ZNK9__gnu_cxx|_ZTIS|_ZTT|_ZTSS|_Zd|_Zn|_NSd|St[0-9]|Si[0-9]' | awk '{print substr($0, 3)}' | awk '{print \"_Z\" $0 \" XX\" $0}' >> ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map && patchelf --output ${SOURCESDK_SHARED_LIBRARY_LIB} --rename-dynamic-symbols ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map ${SOURCESDK_SHARED_LIBRARY_LIB}"
+				COMMAND bash -c "readelf -Ws --dyn-syms ${SOURCESDK_SHARED_LIBRARY_LIB} | awk '{print $8}' | grep -E '_ZS|_ZNS|_ZNKS|_ZN9__gnu_cxx|_ZNK9__gnu_cxx|_ZTIS|_ZTT|_ZTSS|_Zd|_Zn|_NSd|St[0-9]|Si[0-9]' | awk '{print substr($0, 3)}' | awk '{print \"_Z\" $0 \" XX\" $0}' >> ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map && ${SOURCESDK_PATCHELF_EXECUTABLE} --output ${SOURCESDK_SHARED_LIBRARY_LIB} --rename-dynamic-symbols ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map ${SOURCESDK_SHARED_LIBRARY_LIB}"
 				WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 			)
 		endif()
