@@ -28,9 +28,15 @@ endif()
 
 set(PLATFORM_LINK_OPTIONS
 	${PLATFORM_LINK_OPTIONS}
-
-	-Wl,-exported_symbols_list,${SOURCESDK_SYMBOLS_DIR}/exported_symbols.lds
 )
+
+if(SOURCESDK_CONFIGURE_EXPORT_MAP)
+	set(PLATFORM_LINK_OPTIONS
+		${PLATFORM_LINK_OPTIONS}
+
+		-Wl,-exported_symbols_list,${SOURCESDK_SYMBOLS_DIR}/exported_symbols.lds
+	)
+endif()
 
 set(PLATFORM_COMPILE_DEFINITIONS
 	${PLATFORM_COMPILE_DEFINITIONS}
