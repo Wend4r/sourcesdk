@@ -365,6 +365,24 @@ public:
 	void AddListenerEntity(IEntityListener* pListener);
 	void RemoveListenerEntity(IEntityListener* pListener);
 
+	bool IsEntityPtr(void *pTest)
+	{
+		if (!pTest)
+			return false;
+
+		CEntityIdentity* m_pFirstActiveEntity = m_EntityList.m_pFirstActiveEntity;
+		if (!m_pFirstActiveEntity)
+			return false;
+
+		while (pTest != m_pFirstActiveEntity->m_pInstance)
+		{
+			m_pFirstActiveEntity = m_pFirstActiveEntity->m_pNext;
+			if (!m_pFirstActiveEntity)
+				return false;
+		}
+		return true;
+	}
+
 public:
 	int m_iMaxNetworkedEntIndex;
 	int m_iNetworkedEntCount;
