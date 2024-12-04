@@ -51,11 +51,11 @@ public:
 class CBaseGameSystemFactory : public IGameSystemFactory
 {
 protected:
-	CBaseGameSystemFactory(const char* pName)
+	explicit CBaseGameSystemFactory(const char* pName)
 	{
 		m_pName = pName;
-		m_pNext = *CBaseGameSystemFactory::sm_pFirst;
-		*CBaseGameSystemFactory::sm_pFirst = this;
+		m_pNext = *sm_pFirst;
+		*sm_pFirst = this;
 	}
 
 private:
@@ -63,6 +63,29 @@ private:
 	const char* m_pName;
 
 public:
+	//void Destroy() {
+	//	CBaseGameSystemFactory* pFactoryCurrent = *sm_pFirst;
+	//	CBaseGameSystemFactory* pFactoryPrevious = nullptr;
+	//	while (pFactoryCurrent != nullptr)
+	//	{
+	//		if (strcmp(pFactoryCurrent->m_pName, m_pName) == 0)
+	//		{
+	//			if (pFactoryPrevious == nullptr)
+	//			{
+	//				*sm_pFirst = pFactoryCurrent->m_pNext;
+	//			}
+	//			else
+	//			{
+	//				pFactoryPrevious->m_pNext = pFactoryCurrent->m_pNext;
+	//			}
+	//			delete pFactoryCurrent;
+	//			return;
+	//		}
+	//		pFactoryPrevious = pFactoryCurrent;
+	//		pFactoryCurrent = pFactoryCurrent->m_pNext;
+	//	}
+	//}
+
 	const char *GetName() const
 	{
 		return m_pName;
@@ -70,7 +93,7 @@ public:
 
 	static void PrintFactories(void (*pfnFunc)(const char *pName))
 	{
-		CBaseGameSystemFactory* pFactoryList = *CBaseGameSystemFactory::sm_pFirst;
+		CBaseGameSystemFactory* pFactoryList = *sm_pFirst;
 		while (pFactoryList)
 		{
 			pfnFunc(pFactoryList->m_pName);
@@ -80,7 +103,7 @@ public:
 
 	static CBaseGameSystemFactory* GetFactoryByName(const char* pName)
 	{
-		CBaseGameSystemFactory* pFactoryList = *CBaseGameSystemFactory::sm_pFirst;
+		CBaseGameSystemFactory* pFactoryList = *sm_pFirst;
 		while (pFactoryList)
 		{
 			if (strcmp(pFactoryList->m_pName, pName) == 0)
@@ -194,6 +217,17 @@ public:
 
 private:
 	U** m_ppGlobalPointer;
+};
+
+abstract_class IGameSystemEventDispatcher
+{
+public:
+	virtual ~IGameSystemEventDispatcher() {}
+};
+
+class CGameSystemEventDispatcher : public IGameSystemEventDispatcher
+{
+	CUtlVector<CUtlVector<IGameSystem*>>* m_funcListeners;
 };
 
 #endif // IGAMESYSTEMFACTORY_H
