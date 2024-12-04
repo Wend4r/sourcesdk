@@ -228,6 +228,7 @@ public:
 
 class CGameSystemEventDispatcher : public IGameSystemEventDispatcher
 {
+public:
 	CUtlVector<CUtlVector<IGameSystem*>>* m_funcListeners;
 };
 
