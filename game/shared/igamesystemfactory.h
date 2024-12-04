@@ -63,28 +63,29 @@ private:
 	const char* m_pName;
 
 public:
-	//void Destroy() {
-	//	CBaseGameSystemFactory* pFactoryCurrent = *sm_pFirst;
-	//	CBaseGameSystemFactory* pFactoryPrevious = nullptr;
-	//	while (pFactoryCurrent != nullptr)
-	//	{
-	//		if (strcmp(pFactoryCurrent->m_pName, m_pName) == 0)
-	//		{
-	//			if (pFactoryPrevious == nullptr)
-	//			{
-	//				*sm_pFirst = pFactoryCurrent->m_pNext;
-	//			}
-	//			else
-	//			{
-	//				pFactoryPrevious->m_pNext = pFactoryCurrent->m_pNext;
-	//			}
-	//			delete pFactoryCurrent;
-	//			return;
-	//		}
-	//		pFactoryPrevious = pFactoryCurrent;
-	//		pFactoryCurrent = pFactoryCurrent->m_pNext;
-	//	}
-	//}
+	void Destroy()
+	{
+		CBaseGameSystemFactory* pFactoryCurrent = *sm_pFirst;
+		CBaseGameSystemFactory* pFactoryPrevious = nullptr;
+		while (pFactoryCurrent)
+		{
+			if (strcmp(pFactoryCurrent->m_pName, m_pName) == 0)
+			{
+				if (pFactoryPrevious == nullptr)
+				{
+					*sm_pFirst = pFactoryCurrent->m_pNext;
+				}
+				else
+				{
+					pFactoryPrevious->m_pNext = pFactoryCurrent->m_pNext;
+				}
+				delete pFactoryCurrent;
+				return;
+			}
+			pFactoryPrevious = pFactoryCurrent;
+			pFactoryCurrent = pFactoryCurrent->m_pNext;
+		}
+	}
 
 	const char *GetName() const
 	{
