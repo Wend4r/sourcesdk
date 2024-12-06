@@ -600,6 +600,18 @@ public:
 		this->UpdateValue( newValue, index, (const CVValue_t*)&newValue, (const CVValue_t*)&oldValue, szNewValue, szOldValue );
 	}
 
+	inline void SetStringValue( const char* szNewValue, size_t len, const CSplitScreenSlot& index = CSplitScreenSlot() )
+	{
+		auto newValue = CConVarData<T>::ValueFromString(szNewValue);
+
+		char szOldValue[256];
+		GetConVarData()->GetStringValue( szOldValue, sizeof(szOldValue), index );
+
+		// Deep copy
+		T oldValue = this->GetValue( );
+		this->UpdateValue( newValue, index, (const CVValue_t*)&newValue, (const CVValue_t*)&oldValue, szNewValue, szOldValue );
+	}
+
 	inline void GetStringValue( char* dst, size_t len, const CSplitScreenSlot& index = 0 ) const { GetConVarData()->GetStringValue( dst, len, index ); }
 
 	inline void GetStringDefaultValue( char* dst, size_t len ) const	{ GetConVarData()->GetStringDefaultValue( dst, len ); }
