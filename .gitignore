@@ -1,5 +1,5 @@
 # Workspaces
-/.vs*
+/.vs
 
 # Build files. Must be published in Releases
 /build*
