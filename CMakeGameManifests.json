@@ -1,22 +1,64 @@
 {
+	"sdk_base":
+	{
+		"name": "Source SDK Base",
+
+		"game_dir": null,
+
+		"defines":
+		{
+			"SE_EPISODEONE": 1,
+			"SE_DARKMESSIAH": 2,
+			"SE_ORANGEBOX": 3,
+			"SE_BLOODYGOODTIME": 4,
+			"SE_EYE": 5,
+			"SE_CSS": 6,
+			"SE_HL2DM": 7,
+			"SE_DODS": 8,
+			"SE_SDK2013": 9,
+			"SE_PVKII": 10,
+			"SE_BMS": 11,
+			"SE_TF2": 12,
+			"SE_LEFT4DEAD": 13,
+			"SE_NUCLEARDAWN": 14,
+			"SE_CONTAGION": 15,
+			"SE_LEFT4DEAD2": 16,
+			"SE_ALIENSWARM": 17,
+			"SE_PORTAL2": 18,
+			"SE_BLADE": 19,
+			"SE_INSURGENCY": 20,
+			"SE_DOI": 21,
+			"SE_MCV": 22,
+			"SE_CSGO": 23,
+			"SE_DOTA": 24,
+			"SE_CS2": 25,
+			"SE_MOCK": 26,
+			"SE_DOTA2": 100,
+			"SE_DCG": 101,
+			"SE_UNDERLORDS": 102,
+			"SE_CITADEL": 103,
+			"SE_DEADLOCK": 104
+		}
+	},
+
 	"core":
 	{
 		"name": "Core",
 		"game_dir": "core",
+
 		"defines":
 		{
-			"CORE": null,
-			"SE_CORE": null
+			"CORE": null
 		}
 	},
 
 	"dcg":
 	{
 		"name": "Artifact",
+
 		"defines":
 		{
-			"DCG": 101,
-			"SE_DCG": 101
+			"DCG": 101
 		}
 	},
 	"artifact":
@@ -30,53 +72,55 @@
 	"csgo":
 	{
 		"name": "Counter-Strike: Global Offensive",
+
 		"game_dir": "csgo",
 		"protobufs_dir": "csgo",
+
 		"defines":
 		{
-			"CSGO": 23,
-			"SE_CSGO": 23
+			"CSGO": 23
 		}
 	},
 	"cs2":
 	{
-		"inherits": ["core", "csgo"],
-
 		"name": "Counter-Strike 2",
+		"inherits": ["sdk_base", "core", "csgo"],
+
 		"defines":
 		{
-			"CS2": 25,
-			"SE_CS2": 25
+			"CS2": 25
 		}
 	},
 
 	"citadel":
 	{
 		"name": "Citadel",
+
 		"game_dir": "citadel",
+
 		"defines":
 		{
-			"CITADEL": 103,
-			"SE_CITADEL": 103
+			"CITADEL": 103
 		}
 	},
 
 	"deadlock":
 	{
+		"name": "Deadlock",
 		"inherits": ["core", "citadel"],
 
-		"name": "Deadlock",
 		"protobufs_dir": "deadlock",
+
 		"defines":
 		{
-			"DEADLOCK": 104,
-			"SE_DEADLOCK": 104
+			"DEADLOCK": 104
 		}
 	},
 
 	"dota":
 	{
 		"game_dir": "dota",
+
 		"defines":
 		{
 			"DOTA": 24,
@@ -86,28 +130,28 @@
 
 	"dota2":
 	{
-		"inherits": ["core", "dota"],
-
 		"name": "Dota 2",
+		"inherits": ["sdk_base", "core", "dota"],
+
 		"protobufs_dir": "dota2",
+
 		"defines":
 		{
-			"DOTA2": 100,
-			"SE_DOTA2": 100
+			"DOTA2": 100
 		}
 	},
 
 	"underlords":
 	{
+		"name": "Dota Underlords",
 		"inherits": ["core"],
 
-		"name": "Dota Underlords",
 		"game_dir": "dac",
 		"protobufs_dir": "underlords",
+
 		"defines":
 		{
-			"UNDERLORDS": 102,
-			"SE_UNDERLORDS": 102
+			"UNDERLORDS": 102
 		}
 	}
 }

@@ -26,7 +26,7 @@ function(sourcesdk_parse_game_manifests
 	PROTOBUFS_DIR_VAR
 	DEFINES_VAR
 )
-	set(INHERIT_DEFINES)
+	set(INHERIT_DEFINES_LIST)
 	string(FIND ${CONTENT} "${TARGET}" TARGET_POSITION)
 
 	if(TARGET_POSITION EQUAL -1)
@@ -63,10 +63,9 @@ function(sourcesdk_parse_game_manifests
 		set(INHERIT_NAME)
 		set(INHERIT_DIR)
 		set(INHERIT_PROTOBUFS_DIR)
+		set(INHERIT_DEFINES)
 
 		foreach(INHERIT_TARGET IN LISTS INHERITS_LIST)
-			message(STATUS "\t└── Configure \"${INHERIT_TARGET}\" inherit game")
-
 			sourcesdk_parse_game_manifests(
 				${CONTENT}
 				${INHERIT_TARGET}
@@ -81,12 +80,18 @@ function(sourcesdk_parse_game_manifests
 				INHERIT_PROTOBUFS_DIR
 				INHERIT_DEFINES
 			)
+
+			set(INHERIT_DEFINES_LIST
+				${INHERIT_DEFINES_LIST}
+				${INHERIT_DEFINES}
+			)
+
+			message(STATUS "\t┌── Configured \"${INHERIT_TARGET}\" (${INHERIT_NAME}) inherit game")
 		endforeach()
 
 		set(${NAME_VAR} ${INHERIT_NAME} PARENT_SCOPE)
 		set(${DIR_VAR} ${INHERIT_DIR} PARENT_SCOPE)
 		set(${PROTOBUFS_DIR_VAR} ${INHERIT_PROTOBUFS_DIR} PARENT_SCOPE)
-		set(${DEFINES_VAR} ${INHERIT_DEFINES} PARENT_SCOPE)
 	endif()
 
 	# "name"
@@ -153,15 +158,16 @@ function(sourcesdk_parse_game_manifests
 
 	set(DEFINES_RESULT)
 	extract_defines(${DEFINES_OBJECT_CONTENT} DEFINES_RESULT)
-	set(${DEFINES_VAR} ${INHERIT_DEFINES} ${DEFINES_RESULT} PARENT_SCOPE)
+	set(${DEFINES_VAR}
+		${INHERIT_DEFINES_LIST}
+		${DEFINES_RESULT}
+	PARENT_SCOPE)
 endfunction()
 
 set(SOURCESDK_MANIFESTS_GAME_NAME)
 set(SOURCESDK_MANIFESTS_GAME_DIR)
 set(SOURCESDK_MANIFESTS_GAME_PROTO_DIR)
 set(SOURCESDK_MANIFESTS_GAME_DEFINES)
-
-message(STATUS "Configure \"${SOURCESDK_GAME_TARGET}\" manifest")
 
 set(SOURCESDK_MANIFESTS_FILENAME "${CMAKE_CURRENT_SOURCE_DIR}/CMakeGameManifests.json")
 file(READ "${SOURCESDK_MANIFESTS_FILENAME}" SOURCESDK_MANIFESTS_CONTENT)
@@ -187,3 +193,5 @@ list(APPEND SOURCESDK_COMPILE_DEFINITIONS
 
 	${SOURCESDK_MANIFESTS_GAME_DEFINES}
 )
+
+message(STATUS "Configured \"${SOURCESDK_GAME_TARGET}\" (${SOURCESDK_MANIFESTS_GAME_NAME}) game target")
