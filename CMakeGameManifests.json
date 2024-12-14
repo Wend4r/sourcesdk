@@ -48,7 +48,8 @@
 
 		"defines":
 		{
-			"CORE": null
+			"CORE": null,
+			"SOURCE_ENGINE": null
 		}
 	},
 
@@ -58,7 +59,8 @@
 
 		"defines":
 		{
-			"DCG": 101
+			"DCG": 101,
+			"SOURCE_ENGINE": 101
 		}
 	},
 	"artifact":
@@ -78,7 +80,8 @@
 
 		"defines":
 		{
-			"CSGO": 23
+			"CSGO": 23,
+			"SOURCE_ENGINE": 23
 		}
 	},
 	"cs2":
@@ -88,7 +91,8 @@
 
 		"defines":
 		{
-			"CS2": 25
+			"CS2": 25,
+			"SOURCE_ENGINE": 25
 		}
 	},
 
@@ -100,7 +104,8 @@
 
 		"defines":
 		{
-			"CITADEL": 103
+			"CITADEL": 103,
+			"SOURCE_ENGINE": 103
 		}
 	},
 
@@ -113,7 +118,8 @@
 
 		"defines":
 		{
-			"DEADLOCK": 104
+			"DEADLOCK": 104,
+			"SOURCE_ENGINE": 104
 		}
 	},
 
@@ -123,7 +129,8 @@
 
 		"defines":
 		{
-			"DOTA": 24
+			"DOTA": 24,
+			"SOURCE_ENGINE": 24
 		}
 	},
 
@@ -136,7 +143,8 @@
 
 		"defines":
 		{
-			"DOTA2": 100
+			"DOTA2": 100,
+			"SOURCE_ENGINE": 100
 		}
 	},
 
@@ -150,7 +158,8 @@
 
 		"defines":
 		{
-			"UNDERLORDS": 102
+			"UNDERLORDS": 102,
+			"SOURCE_ENGINE": 102
 		}
 	}
 }
