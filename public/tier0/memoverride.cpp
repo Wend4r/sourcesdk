@@ -435,10 +435,10 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 #define FREE_CALL
 #endif
 
+#ifndef _WIN32
 extern "C"
 {
 	
-#ifndef _WIN32
 ALLOC_CALL void *malloc( size_t nSize )
 {
 	return AllocUnattributed( nSize );
@@ -452,7 +452,6 @@ FREE_CALL void free( void *pMem )
 	g_pMemAlloc->Free(pMem, ::g_pszModule, 0 );
 #endif
 }
-#endif
 
 ALLOC_CALL void *realloc( void *pMem, size_t nSize )
 {
@@ -467,6 +466,7 @@ ALLOC_CALL void *calloc( size_t nCount, size_t nElementSize )
 }
 
 } // end extern "C"
+#endif // !defined( _WIN32 )
 
 //-----------------------------------------------------------------------------
 // Non-standard MSVC functions that we're going to override to call our allocator
@@ -848,6 +848,8 @@ void *__cdecl _malloc_dbg( size_t nSize, int nBlockUse,
 	return MemAlloc_Alloc(nSize, pFileName, nLine);
 }
 
+#ifndef _WIN32
+
 #if ( defined(_MSC_VER) && ( _MSC_VER >= 1600 ) ) || defined( _X360 )
 void *__cdecl _calloc_dbg_impl( size_t nNum, size_t nSize, int nBlockUse, 
 								const char * szFileName, int nLine, int * errno_tmp )
@@ -855,8 +857,6 @@ void *__cdecl _calloc_dbg_impl( size_t nNum, size_t nSize, int nBlockUse,
 	return _calloc_dbg( nNum, nSize, nBlockUse, szFileName, nLine );
 }
 #endif
-
-#ifndef _WIN32
 
 void *__cdecl _calloc_dbg( size_t nNum, size_t nSize, int nBlockUse,
 							const char *pFileName, int nLine )
