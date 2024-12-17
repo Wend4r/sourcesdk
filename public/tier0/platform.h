@@ -2214,9 +2214,9 @@ inline void Destruct( T* pMemory )
 {
 	pMemory->~T();
 
-#ifdef _DEBUG
-	memset( (void*)pMemory, 0xDD, sizeof(T) );
-#endif
+// #ifdef _DEBUG
+// 	memset( (void*)pMemory, 0xDD, sizeof(T) );
+// #endif
 }
 
 // [will] - Fixing a clang compile: unable to create a pseudo-destructor (aka a destructor that does nothing) for float __attribute__((__vector_size__(16)))
@@ -2226,9 +2226,9 @@ inline void Destruct( T* pMemory )
 template <>
 inline void Destruct( float __attribute__((__vector_size__(16)))* pMemory )
 {
-#ifdef _DEBUG
-	memset( pMemory, 0xDD, sizeof( float __attribute__((__vector_size__(16))) ) );
-#endif
+// #ifdef _DEBUG
+// 	memset( pMemory, 0xDD, sizeof( float __attribute__((__vector_size__(16))) ) );
+// #endif
 }
 
 #endif // __clang__
