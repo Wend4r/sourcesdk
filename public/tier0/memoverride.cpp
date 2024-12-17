@@ -438,6 +438,7 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 extern "C"
 {
 	
+#ifndef _WIN32
 ALLOC_CALL void *malloc( size_t nSize )
 {
 	return AllocUnattributed( nSize );
@@ -451,6 +452,7 @@ FREE_CALL void free( void *pMem )
 	g_pMemAlloc->Free(pMem, ::g_pszModule, 0 );
 #endif
 }
+#endif
 
 ALLOC_CALL void *realloc( void *pMem, size_t nSize )
 {
@@ -854,6 +856,8 @@ void *__cdecl _calloc_dbg_impl( size_t nNum, size_t nSize, int nBlockUse,
 }
 #endif
 
+#ifndef _WIN32
+
 void *__cdecl _calloc_dbg( size_t nNum, size_t nSize, int nBlockUse,
 							const char *pFileName, int nLine )
 {
@@ -862,6 +866,8 @@ void *__cdecl _calloc_dbg( size_t nNum, size_t nSize, int nBlockUse,
 	memset(pMem, 0, nSize * nNum);
 	return pMem;
 }
+
+#endif
 
 void *__cdecl _realloc_dbg( void *pMem, size_t nNewSize, int nBlockUse,
 							const char *pFileName, int nLine )
@@ -1116,6 +1122,8 @@ _CRT_REPORT_HOOK __cdecl _CrtSetReportHook( _CRT_REPORT_HOOK pfnNewHook )
 	return NULL;
 }
 
+#if false
+
 int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
         int nLine, const char * szModule, const char * szFormat, ... )
 {
@@ -1127,6 +1135,8 @@ int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
 
 	return 0;
 }
+
+#endif
 
 #if _MSC_VER >= 1400
 
@@ -1140,7 +1150,7 @@ void __cdecl _invalid_parameter_noinfo(void)
 
 #endif /* defined( _DEBUG ) */
 
-#if defined( _DEBUG ) || defined( USE_MEM_DEBUG )
+#if !defined( _WIN32 ) && ( defined( _DEBUG ) || defined( USE_MEM_DEBUG ) )
 
 int __cdecl __crtMessageWindowW( int nRptType, const wchar_t * szFile, const wchar_t * szLine,
 								 const wchar_t * szModule, const wchar_t * szUserMessage )
@@ -1186,7 +1196,7 @@ int __cdecl _CrtSetReportHook2( int mode, _CRT_REPORT_HOOK pfnNewHook )
 }
  
 
-#endif  /* defined( _DEBUG ) || defined( USE_MEM_DEBUG ) */
+#endif  /* !defined( _WIN32 ) && ( defined( _DEBUG ) || defined( USE_MEM_DEBUG ) ) */
 
 extern "C" int __crtDebugCheckCount = FALSE;
 
