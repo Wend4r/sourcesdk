@@ -48,8 +48,7 @@
 
 		"defines":
 		{
-			"CORE": null,
-			"SOURCE_ENGINE": null
+			"CORE": null
 		}
 	},
 
@@ -80,8 +79,7 @@
 
 		"defines":
 		{
-			"CSGO": 23,
-			"SOURCE_ENGINE": 23
+			"CSGO": 23
 		}
 	},
 	"cs2":
@@ -104,8 +102,7 @@
 
 		"defines":
 		{
-			"CITADEL": 103,
-			"SOURCE_ENGINE": 103
+			"CITADEL": 103
 		}
 	},
 
@@ -129,8 +126,7 @@
 
 		"defines":
 		{
-			"DOTA": 24,
-			"SOURCE_ENGINE": 24
+			"DOTA": 24
 		}
 	},
 
