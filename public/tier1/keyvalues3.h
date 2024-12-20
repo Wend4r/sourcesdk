@@ -37,7 +37,7 @@ typedef int32 KV3MemberId_t;
 
 enum
 {
-	KV3_CONTEXT_SIZE = 1584
+	KV3_CONTEXT_SIZE = 4608
 };
 
 enum
