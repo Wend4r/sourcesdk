@@ -196,6 +196,7 @@ private:
 	EntityKVAllocatorType_t m_eAllocatorType;
 	CUtlLeanVector<EntityIOConnectionDescFat_t, int> m_connectionDescs;
 };
+COMPILE_TIME_ASSERT( sizeof(CEntityKeyValues) == 56 );
 
 inline CEntityKeyValues::Iterator_t CEntityKeyValues::First() const
 {
