@@ -1379,24 +1379,25 @@ KV3MemberId_t CKeyValues3Table::CreateMember( const CKV3MemberName &name )
 	if ( m_Hashes.Count() >= 128 && !m_pFastSearch )
 		EnableFastSearch();
 
-	int iNewIndex = m_Hashes.AddToTail(name.GetHashCode());
-
-	KV3MemberId_t memberId = m_Hashes.Count() - 1;
+	KV3MemberId_t memberId = m_Hashes.AddToTail( name.GetHashCode() );
 
 	CKeyValues3Context* context = GetContext();
 
-	if ( context )
+	if ( memberId < ARRAYSIZE(m_Members) )
 	{
-		m_Members[iNewIndex] = context->AllocKV();
-		m_Names[iNewIndex] = context->AllocString( name.GetString() );
-	}
-	else
-	{
-		m_Members[iNewIndex] = new KeyValues3;
-		m_Names[iNewIndex] = strdup( name.GetString() );
-	}
+		if ( context )
+		{
+			m_Members[memberId] = context->AllocKV();
+			m_Names[memberId] = context->AllocString( name.GetString() );
+		}
+		else
+		{
+			m_Members[memberId] = new KeyValues3;
+			m_Names[memberId] = strdup( name.GetString() );
+		}
 
-	m_IsExternalName[iNewIndex] = false;
+		m_IsExternalName[memberId] = false;
+	}
 
 	if ( m_pFastSearch && !m_pFastSearch->m_ignore )
 		m_pFastSearch->m_member_ids.Insert( name.GetHashCode(), memberId );
