@@ -529,9 +529,9 @@ public:
 
 private:
 	typedef CUtlLeanVectorFixedGrowable<unsigned int, 8, int>	HashesVec_t;
-	typedef CUtlLeanVectorFixedGrowable<KeyValues3*, 8, int>	MembersVec_t;
-	typedef CUtlLeanVectorFixedGrowable<const char*, 8, int>	NamesVec_t;
-	typedef CUtlLeanVectorFixedGrowable<bool, 8, int>			IsExternalNameVec_t;
+	typedef KeyValues3*											MembersVec_t;
+	typedef const char*											NamesVec_t;
+	typedef bool												IsExternalNameVec_t;
 	
 	int m_nClusterElement;
 
@@ -554,9 +554,9 @@ private:
 	} *m_pFastSearch;
 
 	HashesVec_t 				m_Hashes;
-	MembersVec_t 				m_Members;
-	NamesVec_t 					m_Names;
-	IsExternalNameVec_t			m_IsExternalName; // didn't find this used when deleting a table
+	MembersVec_t 				m_Members[8];
+	NamesVec_t 					m_Names[8];
+	IsExternalNameVec_t			m_IsExternalName[8]; // didn't find this used when deleting a table
 	bool						m_bHasBadNames;
 };
 

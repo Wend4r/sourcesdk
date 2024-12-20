@@ -1379,7 +1379,7 @@ KV3MemberId_t CKeyValues3Table::CreateMember( const CKV3MemberName &name )
 	if ( m_Hashes.Count() >= 128 && !m_pFastSearch )
 		EnableFastSearch();
 
-	*m_Hashes.AddToTailGetPtr() = name.GetHashCode();
+	int iNewIndex = m_Hashes.AddToTail(name.GetHashCode());
 
 	KV3MemberId_t memberId = m_Hashes.Count() - 1;
 
@@ -1387,16 +1387,16 @@ KV3MemberId_t CKeyValues3Table::CreateMember( const CKV3MemberName &name )
 
 	if ( context )
 	{
-		*m_Members.AddToTailGetPtr() = context->AllocKV();
-		*m_Names.AddToTailGetPtr() = context->AllocString( name.GetString() );
+		m_Members[iNewIndex] = context->AllocKV();
+		m_Names[iNewIndex] = context->AllocString( name.GetString() );
 	}
 	else
 	{
-		*m_Members.AddToTailGetPtr() = new KeyValues3;
-		*m_Names.AddToTailGetPtr() = strdup( name.GetString() );
+		m_Members[iNewIndex] = new KeyValues3;
+		m_Names[iNewIndex] = strdup( name.GetString() );
 	}
 
-	m_IsExternalName.AddToTail( false );
+	m_IsExternalName[iNewIndex] = false;
 
 	if ( m_pFastSearch && !m_pFastSearch->m_ignore )
 		m_pFastSearch->m_member_ids.Insert( name.GetHashCode(), memberId );
@@ -1411,9 +1411,6 @@ void CKeyValues3Table::CopyFrom( const CKeyValues3Table* pSrc )
 	RemoveAll( nNewSize );
 
 	m_Hashes.SetCount( nNewSize );
-	m_Members.SetCount( nNewSize );
-	m_Names.SetCount( nNewSize );
-	m_IsExternalName.SetCount( nNewSize );
 
 	CKeyValues3Context* context = GetContext();
 
@@ -1457,9 +1454,6 @@ void CKeyValues3Table::RemoveMember( KV3MemberId_t id )
 	}
 
 	m_Hashes.Remove( id );
-	m_Members.Remove( id );
-	m_Names.Remove( id );
-	m_IsExternalName.Remove( id );
 
 	if ( m_pFastSearch )
 	{
@@ -1487,16 +1481,10 @@ void CKeyValues3Table::RemoveAll( int nAllocSize )
 	}
 
 	m_Hashes.RemoveAll();
-	m_Members.RemoveAll();
-	m_Names.RemoveAll();
-	m_IsExternalName.RemoveAll();
 
 	if ( nAllocSize > 0 )
 	{
 		m_Hashes.EnsureCapacity( nAllocSize );
-		m_Members.EnsureCapacity( nAllocSize );
-		m_Names.EnsureCapacity( nAllocSize );
-		m_IsExternalName.EnsureCapacity( nAllocSize );
 	}
 
 	if ( m_pFastSearch )
@@ -1541,9 +1529,6 @@ void CKeyValues3Table::Purge( bool bClearingContext )
 	m_pFastSearch = NULL;
 
 	m_Hashes.Purge();
-	m_Members.Purge();
-	m_Names.Purge();
-	m_IsExternalName.Purge();
 }
 
 CKeyValues3Cluster::CKeyValues3Cluster( CKeyValues3Context* context ) : 
