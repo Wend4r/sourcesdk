@@ -496,7 +496,7 @@ public:
 	void Purge( bool bClearingContext );
 
 private:
-	typedef CUtlLeanVectorFixedGrowable<KeyValues3*, 4, int> ElementsVec_t;
+	typedef CUtlLeanVectorFixedGrowable<KeyValues3*, 6, int> ElementsVec_t;
 	
 	int				m_nClusterElement;
 	ElementsVec_t 	m_Elements;  
