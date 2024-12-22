@@ -722,22 +722,6 @@ KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pC
 	return m_pTable->GetMember( id );
 }
 
-bool KeyValues3::TableHasBadNames() const
-{
-	if ( GetType() != KV3_TYPE_TABLE )
-		return false;
-
-	return m_pTable->HasBadNames();
-}
-
-void KeyValues3::SetTableHasBadNames( bool bHasBadNames )
-{
-	if ( GetType() != KV3_TYPE_TABLE )
-		return;
-
-	m_pTable->SetHasBadNames( bHasBadNames );
-}
-
 void KeyValues3::SetToEmptyTable()
 {
 	PrepareForType( KV3_TYPEEX_TABLE, KV3_SUBTYPE_TABLE );
@@ -1287,9 +1271,62 @@ void CKeyValues3Array::Purge( bool bClearingContext )
 
 CKeyValues3Table::CKeyValues3Table( int cluster_elem ) :
 	m_nClusterElement( cluster_elem ),
+	m_nAllocatedChunks( KV3_TABLE_MAX_FIXED_MEMBERS ),
 	m_pFastSearch( NULL ),
-	m_bHasBadNames( false ) 
+	m_nCount( 0 ),
+	m_nInitialSize( KV3_TABLE_MAX_FIXED_MEMBERS ),
+	m_bIsDynamicallySized( false )
 {
+}
+
+
+//-----------------------------------------------------------------------------
+// Gets the base address (can change when adding elements!)
+//-----------------------------------------------------------------------------
+
+inline void* CKeyValues3Table::Base()
+{
+	if ( m_nCount )
+	{
+		if ( m_bIsDynamicallySized )
+			return m_Data.m_pChunks;
+
+		return &m_Data.m_FixedAlloc;
+	}
+
+	return NULL;
+}
+
+CKeyValues3Table::Hash_t* CKeyValues3Table::HashesBase()
+{
+	if ( m_bIsDynamicallySized )
+		return &m_Data.m_pChunks[0].m_Hash;
+
+	return &m_Data.m_FixedAlloc.m_Hashes[0];
+}
+
+CKeyValues3Table::Member_t* CKeyValues3Table::MembersBase()
+{
+	if ( m_bIsDynamicallySized )
+		return &m_Data.m_pChunks[KV3Helpers::CalcAlighedChunk( m_nAllocatedChunks ) / 8].m_Member;
+
+	return &m_Data.m_FixedAlloc.m_Members[0];
+}
+
+CKeyValues3Table::Name_t* CKeyValues3Table::NamesBase()
+{
+	if ( m_bIsDynamicallySized )
+		return &m_Data.m_pChunks[( KV3Helpers::CalcAlighedChunk( m_nAllocatedChunks ) / 8 ) + m_nAllocatedChunks].m_Name;
+
+	return &m_Data.m_FixedAlloc.m_Names[0];
+}
+
+CKeyValues3Table::IsExternalName_t* CKeyValues3Table::IsExternalNameBase()
+{
+	if ( m_bIsDynamicallySized )
+		return &m_Data.m_pChunks[( KV3Helpers::CalcAlighedChunk( m_nAllocatedChunks ) / 8 ) + m_nAllocatedChunks * 2].m_IsExternalName;
+
+	return &m_Data.m_FixedAlloc.m_IsExternalName[0];
 }
 
 CKeyValues3TableCluster* CKeyValues3Table::GetCluster() const
@@ -1310,6 +1347,27 @@ CKeyValues3Context* CKeyValues3Table::GetContext() const
 		return NULL;
 }
 
+KeyValues3* CKeyValues3Table::GetMember( KV3MemberId_t id )
+{
+	Assert( 0 <= id && id < m_nCount );
+
+	return MembersBase()[id];
+}
+
+const CKeyValues3Table::Name_t CKeyValues3Table::GetMemberName( KV3MemberId_t id ) const
+{
+	Assert( 0 <= id && id < m_nCount );
+
+	return NamesBase()[id];
+}
+
+const CKeyValues3Table::Hash_t CKeyValues3Table::GetMemberHash( KV3MemberId_t id ) const
+{
+	Assert( 0 <= id && id < m_nCount );
+
+	return HashesBase()[id];
+}
+
 void CKeyValues3Table::EnableFastSearch()
 {
 	if ( m_pFastSearch )
@@ -1317,18 +1375,93 @@ void CKeyValues3Table::EnableFastSearch()
 	else
 		m_pFastSearch = new kv3tablefastsearch_t;
 
-	for ( int i = 0; i < m_Hashes.Count(); ++i )
-		m_pFastSearch->m_member_ids.Insert( m_Hashes[i], i );
+	const Hash_t* pHashes = HashesBase();
+
+	for ( int i = 0; i < m_nCount; ++i )
+	{
+		m_pFastSearch->m_member_ids.Insert( pHashes[i], i );
+	}
 
 	m_pFastSearch->m_ignore = false;
 	m_pFastSearch->m_ignores_counter = 0;
 }
 
+void CKeyValues3Table::EnsureMemberCapacity( int num, bool force, bool dont_move )
+{
+	if ( num <= m_nAllocatedChunks )
+		return;
+
+	const int nMinAllocated = KV3_MIN_CHUNKS;
+	const int nMaxAllocated = KV3_MAX_CHUNKS;
+	const int nAllocatedChunksSize = m_nAllocatedChunks * sizeof(void*);
+	const int nAllocatedChunksDoubleSize = nAllocatedChunksSize * 2;
+	int nNewAllocatedChunks = m_nAllocatedChunks;
+
+	if ( num > nMaxAllocated )
+	{
+		Plat_FatalErrorFunc( "%s member count overflow (%u)\n", __FUNCTION__, num );
+		DebuggerBreak();
+	}
+
+	if ( force )
+	{
+		nNewAllocatedChunks = num;
+	}
+	else
+	{
+		if ( nNewAllocatedChunks < nMinAllocated )
+			nNewAllocatedChunks = nMinAllocated;
+
+		while ( nNewAllocatedChunks < num )
+		{
+			if ( nNewAllocatedChunks < nMaxAllocated/2 )
+				nNewAllocatedChunks = MAX( nNewAllocatedChunks*2, nMinAllocated );
+			else
+				nNewAllocatedChunks = nMaxAllocated;
+		}
+	}
+
+	const int nAlignedChunk = KV3Helpers::CalcAlighedChunk( nNewAllocatedChunks );
+	const int nNewSize = nAlignedChunk + nNewAllocatedChunks * ( nMinAllocated * ( sizeof(Hash_t) + sizeof(Member_t) + sizeof(Name_t) + sizeof(IsExternalName_t) ) );
+
+	void* pNew = m_bIsDynamicallySized ? realloc( m_Data.m_pChunks, nNewSize ) : malloc( nNewSize );
+
+	uintp nNewAddress = (uintp)pNew;
+
+	bool bDontMove = true;
+
+	if ( m_nCount )
+		bDontMove = dont_move;
+
+	if ( !bDontMove )
+	{
+		if ( m_bIsDynamicallySized )
+		{
+			memmove( (void*)( nNewAddress + nAlignedChunk + nAllocatedChunksDoubleSize ), IsExternalNameBase(), m_nCount * sizeof(IsExternalName_t) );
+			memmove( (void*)( nNewAddress + nAlignedChunk + nAllocatedChunksSize ), NamesBase(), m_nCount * sizeof(Name_t) );
+			memmove( (void*)( nNewAddress + nAlignedChunk ), MembersBase(), m_nCount * sizeof(Member_t) );
+		}
+		else
+		{
+			memmove( pNew, HashesBase(), m_nAllocatedChunks * sizeof(Hash_t) );
+			memmove( (void*)( nNewAddress + nAlignedChunk ), MembersBase(), m_nAllocatedChunks * sizeof(Member_t) );
+			memmove( (void*)( nNewAddress + nAlignedChunk + nAllocatedChunksSize ), NamesBase(), m_nAllocatedChunks * sizeof(Name_t) );
+			memmove( (void*)( nNewAddress + nAlignedChunk + nAllocatedChunksDoubleSize ), IsExternalNameBase(), m_nCount * sizeof(IsExternalName_t) );
+		}
+	}
+
+	m_Data.m_pChunks = (Data_t::DynamicBuffer_t *)pNew;
+	m_nAllocatedChunks = nNewAllocatedChunks;
+	m_bIsDynamicallySized = true;
+}
+
 KV3MemberId_t CKeyValues3Table::FindMember( const KeyValues3* kv ) const
 {
-	for ( int i = 0; i < m_Hashes.Count(); ++i )
+	const Member_t* pMembers = MembersBase();
+
+	for ( int i = 0; i < m_nCount; ++i )
 	{
-		if ( m_Members[i] == kv )
+		if ( pMembers[i] == kv )
 			return i;
 	}
 
@@ -1364,9 +1497,11 @@ KV3MemberId_t CKeyValues3Table::FindMember( const CKV3MemberName &name )
 	}
 	else
 	{
-		for ( int i = 0; i < m_Hashes.Count(); ++i )
+		const Hash_t* pHashes = HashesBase();
+
+		for ( int i = 0; i < m_nCount; ++i )
 		{
-			if ( m_Hashes[i] == name.GetHashCode() )
+			if ( pHashes[i] == name.GetHashCode() )
 				return i;
 		}
 	}
@@ -1376,63 +1511,72 @@ KV3MemberId_t CKeyValues3Table::FindMember( const CKV3MemberName &name )
 
 KV3MemberId_t CKeyValues3Table::CreateMember( const CKV3MemberName &name )
 {
-	if ( m_Hashes.Count() >= 128 && !m_pFastSearch )
+	if ( GetMemberCount() >= 128 && !m_pFastSearch )
 		EnableFastSearch();
 
-	KV3MemberId_t memberId = m_Hashes.AddToTail( name.GetHashCode() );
+	KV3MemberId_t memberId = m_nCount;
+
+	int nNewSize = m_nCount + 1;
+
+	if ( nNewSize > KV3_TABLE_MAX_FIXED_MEMBERS )
+		EnsureMemberCapacity( nNewSize );
 
 	CKeyValues3Context* context = GetContext();
 
-	if ( memberId < ARRAYSIZE(m_Members) )
-	{
-		if ( context )
-		{
-			m_Members[memberId] = context->AllocKV();
-			m_Names[memberId] = context->AllocString( name.GetString() );
-		}
-		else
-		{
-			m_Members[memberId] = new KeyValues3;
-			m_Names[memberId] = strdup( name.GetString() );
-		}
+	Member_t* pMembers = MembersBase();
+	Name_t* pNames = NamesBase();
 
-		m_IsExternalName[memberId] = false;
+	if ( context )
+	{
+		pMembers[memberId] = context->AllocKV();
+		pNames[memberId] = context->AllocString( name.GetString() );
+	}
+	else
+	{
+		pMembers[memberId] = new KeyValues3;
+		pNames[memberId] = strdup( name.GetString() );
 	}
 
 	if ( m_pFastSearch && !m_pFastSearch->m_ignore )
 		m_pFastSearch->m_member_ids.Insert( name.GetHashCode(), memberId );
+
+	m_nCount = nNewSize;
 
 	return memberId;
 }
 
 void CKeyValues3Table::CopyFrom( const CKeyValues3Table* pSrc )
 {
-	int nNewSize = pSrc->m_Hashes.Count();
+	int nNewSize = m_nCount;
 
 	RemoveAll( nNewSize );
 
-	m_Hashes.SetCount( nNewSize );
-
 	CKeyValues3Context* context = GetContext();
+
+	Hash_t* pHashes = HashesBase();
+	Member_t* pMembers = MembersBase();
+	Name_t* pNames = NamesBase();
+
+	const Hash_t* pCopyHashes = pSrc->HashesBase();
+	const Member_t* pCopyMembers = pSrc->MembersBase();
+	const Name_t* pCopyNames = pSrc->NamesBase();
 
 	for ( int i = 0; i < nNewSize; ++i )
 	{
-		m_Hashes[i] = pSrc->m_Hashes[i];
+		pHashes[i] = pCopyHashes[i];
 
 		if ( context )
 		{
-			m_Members[i] = context->AllocKV();
-			m_Names[i] = context->AllocString( pSrc->m_Names[i] );
+			pMembers[i] = context->AllocKV();
+			pNames[i] = context->AllocString( pCopyNames[i] );
 		}
 		else
 		{
-			m_Members[i] = new KeyValues3;
-			m_Names[i] = strdup( pSrc->m_Names[i] );
+			pMembers[i] = new KeyValues3;
+			pNames[i] = strdup( pCopyNames[i] );
 		}
 
-		m_IsExternalName[i] = false;
-
-		*m_Members[i] = *pSrc->m_Members[i];
+		*pCopyMembers[i] = *pCopyMembers[i];
 	}
 
 	if ( nNewSize >= 128 )
@@ -1443,50 +1587,59 @@ void CKeyValues3Table::RemoveMember( KV3MemberId_t id )
 {
 	CKeyValues3Context* context = GetContext();
 
+	Member_t* pMembers = MembersBase();
+	Name_t* pNames = NamesBase();
+
 	if ( context ) 
 	{
-		context->FreeKV( m_Members[ id ] );
+		context->FreeKV( pMembers[ id ] );
 	}
 	else
 	{
-		m_Members[ id ]->Free( true );
-		free( m_Members[ id ] );
-		free( (void*)m_Names[ id ] );
+		pMembers[ id ]->Free( true );
+		free( pMembers[ id ] );
+		free( (void*)pNames[ id ] );
 	}
-
-	m_Hashes.Remove( id );
 
 	if ( m_pFastSearch )
 	{
 		m_pFastSearch->m_ignore = true;
 		m_pFastSearch->m_ignores_counter = 1;
 	}
+
+	m_nCount--;
 }
 
 void CKeyValues3Table::RemoveAll( int nAllocSize )
 {
 	CKeyValues3Context* context = GetContext();
 
-	for ( int i = 0; i < m_Hashes.Count(); ++i )
+	Member_t* pMembers = MembersBase();
+	Name_t* pNames = NamesBase();
+
+	for ( int i = 0; i < m_nCount; ++i )
 	{
 		if ( context )
 		{
-			context->FreeKV( m_Members[i] );
+			context->FreeKV( pMembers[i] );
 		}
 		else
 		{
-			m_Members[i]->Free( true );
-			free( m_Members[i] );
-			free( (void*)m_Names[i] );
+			pMembers[i]->Free( true );
+			free( pMembers[i] );
+			free( (void*)pNames[i] );
 		}
 	}
 
-	m_Hashes.RemoveAll();
-
-	if ( nAllocSize > 0 )
+	if ( nAllocSize > KV3_TABLE_MAX_FIXED_MEMBERS )
 	{
-		m_Hashes.EnsureCapacity( nAllocSize );
+		EnsureMemberCapacity( nAllocSize, true, true );
 	}
+	else if ( m_bIsDynamicallySized )
+	{
+		free( m_Data.m_pChunks );
+	}
+	m_nCount = nAllocSize;
 
 	if ( m_pFastSearch )
 	{
@@ -1507,20 +1660,30 @@ void CKeyValues3Table::Purge( bool bClearingContext )
 {
 	CKeyValues3Context* context = GetContext();
 
-	for ( int i = 0; i < m_Hashes.Count(); ++i )
+	Member_t* pMembers = MembersBase();
+	Name_t* pNames = NamesBase();
+
+	for ( int i = 0; i < m_nCount; ++i )
 	{
 		if ( context )
 		{
 			if ( !bClearingContext )
-				context->FreeKV( m_Members[i] );
+				context->FreeKV( pMembers[i] );
 		}
 		else
 		{
-			m_Members[i]->Free( true );
-			free( m_Members[i] );
-			free( (void*)m_Names[i] );
+			pMembers[i]->Free( true );
+			free( pMembers[i] );
+			free( (void*)pNames[i] );
 		}
 	}
+
+	if ( m_bIsDynamicallySized )
+	{
+		free( m_Data.m_pChunks );
+	}
+	m_nAllocatedChunks = 0;
+	m_nCount = 0;
 
 	if ( m_pFastSearch )
 	{
@@ -1528,8 +1691,6 @@ void CKeyValues3Table::Purge( bool bClearingContext )
 		free( m_pFastSearch );
 	}
 	m_pFastSearch = NULL;
-
-	m_Hashes.Purge();
 }
 
 CKeyValues3Cluster::CKeyValues3Cluster( CKeyValues3Context* context ) : 
