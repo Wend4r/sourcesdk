@@ -91,12 +91,9 @@ include(cmake/sourcesdk/targets/tier1.cmake)
 if(SOURCESDK_COMPILE_PROTOBUF)
 	add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCE_FILES})
 else()
-	if(SOURCESDK_SOURCE_FILES)
-		add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES})
-	else()
-		return()
-	endif()
+	add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES})
 endif()
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	C_STANDARD 17
