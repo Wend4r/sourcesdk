@@ -239,11 +239,10 @@ public:
 		m_nInteractsExclude = 0;
 		m_nInteractsAs = 0;
 		
-		m_nEntityIdsToIgnore[0] = -1;
-		m_nEntityIdsToIgnore[1] = -1;
-		
-		m_nOwnerIdsToIgnore[0] = -1;
-		m_nOwnerIdsToIgnore[1] = -1;
+		m_nEntityIdsToIgnore[0] = static_cast<uint32>(-1);
+		m_nEntityIdsToIgnore[1] = static_cast<uint32>(-1);
+		m_nOwnerIdsToIgnore[0] = static_cast<uint32>(-1);
+		m_nOwnerIdsToIgnore[1] = static_cast<uint32>(-1);
 		
 		m_nHierarchyIds[0] = 0;
 		m_nHierarchyIds[1] = 0;
