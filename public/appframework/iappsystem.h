@@ -13,6 +13,7 @@
 #pragma once
 #endif
 
+#include "tier0/utlstring.h"
 #include "tier0/interface.h"
 #include "interfaces/interfaces.h"
 
@@ -130,6 +131,16 @@ class CTier0AppSystem : public CBaseAppSystem< IInterface >
 {
 };
 
+abstract_class CAppSystemDict
+{
+public:
+    virtual ~CAppSystemDict() = 0;
+    virtual void Init() = 0;
+    virtual CUtlString GetConsoleLogFilename() = 0;
+    virtual void ChangeLogFileSuffix(const char* suffix) = 0;
+    virtual void CreateApplication() = 0;
+    virtual void OnAppSystemLoaded() = 0;
+};
 
 #endif // IAPPSYSTEM_H
 
