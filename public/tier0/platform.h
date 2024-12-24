@@ -1127,7 +1127,9 @@ typedef void * HINSTANCE;
 //-----------------------------------------------------------------------------
 // Used to break into the debugger
 //-----------------------------------------------------------------------------
-#ifdef COMPILER_MSVC64
+#ifdef COMPILER_MSVC
+	#define DebuggerBreak()		__debugbreak()
+#elif COMPILER_MSVC64
 	#define DebuggerBreak()		__debugbreak()
 #elif COMPILER_MSVC32
 	#define DebuggerBreak()		__asm { int 3 }

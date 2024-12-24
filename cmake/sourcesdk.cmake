@@ -72,6 +72,13 @@ if(SOURCESDK_MALLOC_OVERRIDE)
 		# memoverride.cpp is not usable on CMake Windows, because CMake default link libraries always link ucrt.lib
 		${SOURCESDK_DIR}/public/tier0/memoverride.cpp
 	)
+else()
+	set(SOURCESDK_SOURCE_FILES
+		${SOURCESDK_SOURCE_FILES}
+
+		# dummy cpp file
+		${SOURCESDK_DIR}/public/main.cpp
+	)
 endif()
 
 set(SOURCESDK_LIB_DIR "${SOURCESDK_DIR}/lib")
