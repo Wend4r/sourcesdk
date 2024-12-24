@@ -95,7 +95,7 @@ inline CUtlBinaryBlock::CUtlBinaryBlock( const void* pMemory, int nSizeInBytes )
 	m_nActualLength = nSizeInBytes;
 }
 
-inline CUtlBinaryBlock::CUtlBinaryBlock( const char* pString ) : CUtlBinaryBlock( (const void*)pString, V_strlen(pString) )
+inline CUtlBinaryBlock::CUtlBinaryBlock( const char* pString ) : CUtlBinaryBlock( (const void*)pString, static_cast<int>(V_strlen(pString)) )
 {
 }
 

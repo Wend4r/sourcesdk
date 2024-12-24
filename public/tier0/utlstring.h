@@ -298,7 +298,7 @@ inline int CUtlString::Length() const
 {
 	if(m_pString)
 	{
-		return V_strlen( m_pString );
+		return static_cast<int>(V_strlen( m_pString ));
 	}
 	return 0;
 }
