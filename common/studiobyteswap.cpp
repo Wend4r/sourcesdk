@@ -255,7 +255,7 @@ T DestNative( T *idx )
 // Fake header declaration for easier phy swapping
 struct swapcompactsurfaceheader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int		size;
 	int		vphysicsID;
 	short	version;
@@ -281,7 +281,7 @@ END_BYTESWAP_DATADESC()
 #endif
 struct legacysurfaceheader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int		size;
 	float	mass_center[3];
 	float	rotation_inertia[3];

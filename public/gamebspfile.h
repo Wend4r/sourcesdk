@@ -68,7 +68,7 @@ enum DetailPropType_t
 //-----------------------------------------------------------------------------
 struct DetailObjectDictLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	char	m_Name[DETAIL_NAME_LENGTH];		// model name
 };
 
@@ -77,7 +77,7 @@ struct DetailObjectDictLump_t
 //-----------------------------------------------------------------------------
 struct DetailSpriteDictLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	// NOTE: All detail prop sprites must lie in the material detail/detailsprites
 	Vector2D	m_UL;		// Coordinate of upper left 
 	Vector2D	m_LR;		// Coordinate of lower right
@@ -87,7 +87,7 @@ struct DetailSpriteDictLump_t
 
 struct DetailObjectLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_DetailModel;		// either index into DetailObjectDictLump_t or DetailPropSpriteLump_t
@@ -110,7 +110,7 @@ struct DetailObjectLump_t
 //-----------------------------------------------------------------------------
 struct DetailPropLightstylesLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	ColorRGBExp32	m_Lighting;
 	unsigned char	m_Style;
 };
@@ -148,13 +148,13 @@ enum
 
 struct StaticPropDictLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	char	m_Name[STATIC_PROP_NAME_LENGTH];		// model name
 };
 
 struct StaticPropLumpV4_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -171,7 +171,7 @@ struct StaticPropLumpV4_t
 
 struct StaticPropLumpV5_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -189,7 +189,7 @@ struct StaticPropLumpV5_t
 
 struct StaticPropLumpV6_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -209,7 +209,7 @@ struct StaticPropLumpV6_t
 
 struct StaticPropLumpV7_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -230,7 +230,7 @@ struct StaticPropLumpV7_t
 
 struct StaticPropLumpV8_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -253,7 +253,7 @@ struct StaticPropLumpV8_t
 
 struct StaticPropLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector			m_Origin;
 	QAngle			m_Angles;
 	unsigned short	m_PropType;
@@ -277,7 +277,7 @@ struct StaticPropLump_t
 
 struct StaticPropLeafLump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short	m_Leaf;
 };
 

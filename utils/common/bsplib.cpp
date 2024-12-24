@@ -1693,7 +1693,7 @@ void DecompressVis (byte *in, byte *decompressed)
 //-----------------------------------------------------------------------------
 struct swapcollideheader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int		size;
 	int		vphysicsID;
 	short	version;
@@ -1702,7 +1702,7 @@ struct swapcollideheader_t
 
 struct swapcompactsurfaceheader_t : swapcollideheader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int		surfaceSize;
 	Vector	dragAxisAreas;
 	int		axisMapSize;
@@ -1710,7 +1710,7 @@ struct swapcompactsurfaceheader_t : swapcollideheader_t
 
 struct swapmoppsurfaceheader_t : swapcollideheader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int moppSize;
 };
 

@@ -25,7 +25,7 @@
 #pragma pack(1) //X360TBD
 typedef struct BitmapGlyph_s
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	short	x;
 	short	y;
 	short	w;
@@ -37,7 +37,7 @@ typedef struct BitmapGlyph_s
 
 typedef struct BitmapFont_s
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int				m_id;
 	int				m_Version;
 	short			m_PageWidth;

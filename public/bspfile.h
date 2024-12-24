@@ -379,7 +379,7 @@ enum
 
 struct lump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int		fileofs, filelen;
 	int		version;		// default to zero
 	char	fourCC[4];		// default to ( char )0, ( char )0, ( char )0, ( char )0
@@ -387,7 +387,7 @@ struct lump_t
 
 struct BSPHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			ident;
 	int			m_nVersion;	
 	lump_t		lumps[HEADER_LUMPS];
@@ -400,7 +400,7 @@ struct BSPHeader_t
 
 struct dflagslump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	uint32 m_LevelFlags;						// LVLFLAGS_xxx
 };
 
@@ -415,7 +415,7 @@ struct lumpfileheader_t
 
 struct dgamelumpheader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int lumpCount;
 
 	// dgamelump_t follow this
@@ -431,7 +431,7 @@ typedef int GameLumpId_t;
 
 struct dgamelump_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	GameLumpId_t	id;
 	unsigned short	flags;
 	unsigned short	version;
@@ -443,7 +443,7 @@ extern int g_MapRevision;
 
 struct dmodel_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector		mins, maxs;
 	Vector		origin;					// for sounds or lights
 	int			headnode;
@@ -469,7 +469,7 @@ struct dphyslevelpolytope_t
 
 struct DiskPhysics2Polytope_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int32 offsetPolytope; // this is the offset to the serialized data of this polytope
 	int32 offsetInertia;
 };
@@ -477,7 +477,7 @@ struct DiskPhysics2Polytope_t
 /*
 struct DiskPhysics2LevelMesh_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	DataLinker::Offset_t<void> polymesh; // this is polysoup in data version 0xC0000002, and polytope in 0xC0000001
 	int32 flags;
 
@@ -516,7 +516,7 @@ struct dphysdisp_t
 
 struct dprophull_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int m_nVertCount;
 	int m_nVertStart;
 	int m_nSurfaceProp;
@@ -525,28 +525,28 @@ struct dprophull_t
 
 struct dprophulltris_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int m_nIndexStart;
 	int m_nIndexCount;
 };
 
 struct dpropcollision_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int m_nHullCount;
 	int m_nHullStart;
 };
 
 struct dvertex_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector	point;
 };
 
 // planes (x&~1) and (x&~1)+1 are always opposites
 struct dplane_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector	normal;
 	float	dist;
 	int		type;		// PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
@@ -558,7 +558,7 @@ struct dplane_t
 
 struct dnode_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			planenum;
 	int			children[2];	// negative numbers are -(leafs+1), not nodes
 	short		mins[3];		// for frustom culling
@@ -571,7 +571,7 @@ struct dnode_t
 
 typedef struct texinfo_s
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	float		textureVecsTexelsPerWorldUnits[2][4];			// [s/t][xyz offset]
 	float		lightmapVecsLuxelsPerWorldUnits[2][4];			// [s/t][xyz offset] - length is in units of texels/area
 	int			flags;				// miptex flags + overrides
@@ -582,7 +582,7 @@ typedef struct texinfo_s
 
 struct dtexdata_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector		reflectivity;
 	int			nameStringTableID;				// index into g_StringTable for the texture name
 	int			width, height;					// source image
@@ -601,7 +601,7 @@ enum
 
 struct doccluderdata_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			flags;
 	int			firstpoly;				// index into doccluderpolys
 	int			polycount;
@@ -621,7 +621,7 @@ struct doccluderdataV1_t
 
 struct doccluderpolydata_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			firstvertexindex;		// index into doccludervertindices
 	int			vertexcount;
 	int			planenum;
@@ -632,7 +632,7 @@ struct doccluderpolydata_t
 struct CDispSubNeighbor
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short		GetNeighborIndex() const		{ return m_iNeighbor; }
 	NeighborSpan		GetSpan() const					{ return (NeighborSpan)m_Span; }
 	NeighborSpan		GetNeighborSpan() const			{ return (NeighborSpan)m_NeighborSpan; }
@@ -658,7 +658,7 @@ public:
 class CDispNeighbor
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	void				SetInvalid()	{ m_SubNeighbors[0].SetInvalid(); m_SubNeighbors[1].SetInvalid(); }
 	
 	// Returns false if there isn't anything touching this edge.
@@ -675,7 +675,7 @@ public:
 class CDispCornerNeighbors
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	void			SetInvalid()	{ m_nNeighbors = 0; }
 
 
@@ -688,7 +688,7 @@ public:
 class CDispVert
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector		m_vVector;		// Vector field defining displacement volume.
 	float		m_flDist;		// Displacement distances.
 	float		m_flAlpha;		// "per vertex" alpha values.
@@ -703,7 +703,7 @@ public:
 class CDispTri
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short m_uiTags;		// Displacement triangle tags.
 };
 
@@ -712,7 +712,7 @@ public:
 class CDispMultiBlend
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 
 	Vector4D	m_vMultiBlend;
 	Vector4D	m_vAlphaBlend;
@@ -725,7 +725,7 @@ public:
 class ddispinfo_t
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			NumVerts() const		{ return NUM_DISP_POWER_VERTS(power); }
 	int			NumTris() const			{ return NUM_DISP_POWER_TRIS(power); }
 
@@ -759,7 +759,7 @@ public:
 // counterclockwise use of the edge in a face
 struct dedge_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short	v[2];		// vertex numbers
 };
 
@@ -773,7 +773,7 @@ enum dprimitive_type
 
 struct dprimitive_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned char type;
 	unsigned short	firstIndex;
 	unsigned short	indexCount;
@@ -783,13 +783,13 @@ struct dprimitive_t
 
 struct dprimvert_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector		pos;
 };
 
 struct dface_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short	planenum;
 	byte		side;	// faces opposite to the node's plane direction
 	byte		onNode; // 1 of on node, 0 if in leaf
@@ -868,7 +868,7 @@ inline void dface_t::SetDynamicShadowsEnabled( bool bEnabled )
 
 struct dfaceid_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short	hammerfaceid;
 };
 
@@ -887,15 +887,15 @@ struct dfaceid_t
 #endif
 struct dleaf_version_0_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int				contents;			// OR of all brushes (not needed?)
 
 	short			cluster;
 
-	BEGIN_BITFIELD( bf );
+	BEGIN_BITFIELD( bf )
 	short			area:9;
 	short			flags:7;			// Per leaf flags.
-	END_BITFIELD();
+	END_BITFIELD()
 
 	short			mins[3];			// for frustum culling
 	short			maxs[3];
@@ -914,15 +914,15 @@ struct dleaf_version_0_t
 // version 1
 struct dleaf_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int				contents;			// OR of all brushes (not needed?)
 
 	short			cluster;
 
-	BEGIN_BITFIELD( bf );
+	BEGIN_BITFIELD( bf )
 	short			area:9;
 	short			flags:7;			// Per leaf flags.
-	END_BITFIELD();
+	END_BITFIELD()
 
 	short			mins[3];			// for frustum culling
 	short			maxs[3];
@@ -950,7 +950,7 @@ struct dleaf_t
 // and a sampling position encoded as a 0.8 fraction (mins=0,maxs=255) of the leaf's bounding box
 struct dleafambientlighting_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	CompressedLightCube	cube;
 	byte x;		// fixed point fraction of leaf bounds
 	byte y;		// fixed point fraction of leaf bounds
@@ -960,7 +960,7 @@ struct dleafambientlighting_t
 
 struct dleafambientindex_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 
 	unsigned short ambientSampleCount;
 	unsigned short firstAmbientSample;
@@ -968,7 +968,7 @@ struct dleafambientindex_t
 
 struct dbrushside_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short	planenum;		// facing out of the leaf
 	short			texinfo;
 	short			dispinfo;		// displacement info (BSPVERSION 7)
@@ -978,7 +978,7 @@ struct dbrushside_t
 
 struct dbrush_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			firstside;
 	int			numsides;
 	int			contents;
@@ -1004,7 +1004,7 @@ struct dvis_t
 // hearable even if the vis info says that it should be
 struct dareaportal_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short	m_PortalKey;		// Entities have a key called portalnumber (and in vbsp a variable
 									// called areaportalnum) which is used
 									// to bind them to the area portals by comparing with this value.
@@ -1020,14 +1020,14 @@ struct dareaportal_t
 
 struct darea_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int		numareaportals;
 	int		firstareaportal;
 };
 
 struct dleafwaterdata_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	float	surfaceZ;
 	float	minZ;
 	short	surfaceTexInfoID;
@@ -1036,7 +1036,7 @@ struct dleafwaterdata_t
 class CFaceMacroTextureInfo
 {
 public:
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	// This looks up into g_TexDataStringTable, which looks up into g_TexDataStringData.
 	// 0xFFFF if the face has no macro texture.
 	unsigned short m_MacroTextureNameID;	
@@ -1061,7 +1061,7 @@ enum emittype_t
 // Old version of the worldlight struct, used for backward compatibility loading.
 struct dworldlight_version0_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector		origin;
 	Vector		intensity;
 	Vector		normal;			// for surfaces and spotlights
@@ -1084,7 +1084,7 @@ struct dworldlight_version0_t
 
 struct dworldlight_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	Vector		origin;
 	Vector		intensity;
 	Vector		normal;			// for surfaces and spotlights
@@ -1108,7 +1108,7 @@ struct dworldlight_t
 
 struct dcubemapsample_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			origin[3];			// position of light snapped to the nearest integer
 									// the filename for the vtf file is derived from the position
 	unsigned char size;				// 0 - default
@@ -1123,7 +1123,7 @@ struct dcubemapsample_t
 
 struct doverlay_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int			nId;
 	short		nTexInfo;
 
@@ -1174,7 +1174,7 @@ inline unsigned short doverlay_t::GetRenderOrder() const
 
 struct doverlayfade_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 
 	float flFadeDistMinSq;
 	float flFadeDistMaxSq;
@@ -1183,7 +1183,7 @@ struct doverlayfade_t
 
 struct doverlaysystemlevel_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 
 	unsigned char nMinCPULevel;
 	unsigned char nMaxCPULevel;
@@ -1198,7 +1198,7 @@ struct doverlaysystemlevel_t
 #define WATEROVERLAY_RENDER_ORDER_MASK			0xC000	// top 2 bits set
 struct dwateroverlay_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int				nId;
 	short			nTexInfo;
 
@@ -1272,14 +1272,14 @@ struct epair_t
 #define MAX_LIGHTMAPPAGE_HEIGHT	128
 typedef struct nameForDatadesc_dlightmappage_t // unnamed structs collide in the datadesc macros
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	byte	data[MAX_LIGHTMAPPAGE_WIDTH*MAX_LIGHTMAPPAGE_HEIGHT];
 	byte	palette[256*4];
 } dlightmappage_t;
 
 typedef struct nameForDatadesc_dlightmappageinfo_t // unnamed structs collide in the datadesc macros
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	byte			page;			// lightmap page [0..?]
 	byte			offset[2];		// offset into page (s,t)
 	byte			pad;			// unused

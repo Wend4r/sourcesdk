@@ -197,7 +197,7 @@ struct QuadTessVertex_t
 
 struct MeshBoneRemap_t   // see BoneStateChangeHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int m_nActualBoneIndex;
 	int m_nSrcBoneIndex;
 };

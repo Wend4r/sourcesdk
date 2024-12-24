@@ -29,14 +29,14 @@ namespace OptimizedModel
 
 struct BoneStateChangeHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int hardwareID;
 	int newBoneID;
 };
 
 struct Vertex_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	// these index into the mesh's vert[origMeshVertID]'s bones
 	unsigned char boneWeightIndex[MAX_NUM_BONES_PER_VERT];
 	unsigned char numBones;
@@ -59,7 +59,7 @@ enum StripHeaderFlags_t
 // A strip is a piece of a stripgroup that is divided by bones 
 struct StripHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int numIndices;				// indexOffset offsets into the mesh's index array
 	int indexOffset;
 
@@ -97,7 +97,7 @@ enum StripGroupFlags_t
 // a single index buffer
 struct StripGroupHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	// These are the arrays of all verts and indices for this mesh.  strips index into this.
 	int numVerts;
 	int vertOffset;
@@ -146,7 +146,7 @@ enum MeshFlags_t {
 // A mesh has a material associated with it.
 struct MeshHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int numStripGroups;
 	int stripGroupHeaderOffset;
 	inline StripGroupHeader_t *pStripGroup( int i ) const 
@@ -159,7 +159,7 @@ struct MeshHeader_t
 
 struct ModelLODHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int numMeshes;
 	int meshOffset;
 	float switchPoint;
@@ -174,7 +174,7 @@ struct ModelLODHeader_t
 // There are a bunch of model LODs stored inside potentially due to the qc $lod command
 struct ModelHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int numLODs; // garymcthack - this is also specified in FileHeader_t
 	int lodOffset;
 	inline ModelLODHeader_t *pLOD( int i ) const 
@@ -186,7 +186,7 @@ struct ModelHeader_t
 
 struct BodyPartHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int numModels;
 	int modelOffset;
 	inline ModelHeader_t *pModel( int i ) const 
@@ -198,7 +198,7 @@ struct BodyPartHeader_t
 
 struct MaterialReplacementHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	short materialID;
 	int replacementMaterialNameOffset;
 	inline const char *pMaterialReplacementName( void )
@@ -210,7 +210,7 @@ struct MaterialReplacementHeader_t
 
 struct MaterialReplacementListHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int numReplacements;
 	int replacementOffset;
 	inline MaterialReplacementHeader_t *pMaterialReplacement( int i ) const
@@ -222,7 +222,7 @@ struct MaterialReplacementListHeader_t
 
 struct FileHeader_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	// file version as defined by OPTIMIZED_MODEL_FILE_VERSION
 	int version;
 

@@ -136,7 +136,7 @@ struct animevent_t
 // -Jeep
 struct mstudioevent_for_client_server_t
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	float				cycle;
 #ifdef CLIENT_DLL
 	union

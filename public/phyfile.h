@@ -13,7 +13,7 @@
 
 typedef struct phyheader_s
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	int		size;
 	int		id;
 	int		solidCount;

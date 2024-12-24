@@ -18,7 +18,7 @@
 
 struct ZIP_EndOfCentralDirRecord
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned int	signature; // 4 bytes PK56
 	unsigned short	numberOfThisDisk;  // 2 bytes
 	unsigned short	numberOfTheDiskWithStartOfCentralDirectory; // 2 bytes
@@ -32,7 +32,7 @@ struct ZIP_EndOfCentralDirRecord
 
 struct ZIP_FileHeader
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned int	signature; //  4 bytes PK12 
 	unsigned short	versionMadeBy; // version made by 2 bytes 
 	unsigned short	versionNeededToExtract; // version needed to extract 2 bytes 
@@ -57,7 +57,7 @@ struct ZIP_FileHeader
 
 struct ZIP_LocalFileHeader
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned int	signature; //local file header signature 4 bytes PK34 
 	unsigned short	versionNeededToExtract; // version needed to extract 2 bytes 
 	unsigned short	flags; // general purpose bit flag 2 bytes 
@@ -88,7 +88,7 @@ struct ZIP_LocalFileHeader
 
 struct ZIP_PreloadHeader 
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned int Version;					// VERSION
 	unsigned int DirectoryEntries;			// Number of zip directory entries.
 	unsigned int PreloadDirectoryEntries;	// Number of preloaded directory entries (equal or less than the zip dir).
@@ -97,14 +97,14 @@ struct ZIP_PreloadHeader
 
 struct ZIP_PreloadDirectoryEntry
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
     unsigned int Length;					// Length of the file's preload data in bytes
     unsigned int DataOffset;				// Offset the file data in the .zip, relative to the logical beginning of the preload file.
 };
 
 struct ZIP_PreloadRemapTable
 {
-	DECLARE_BYTESWAP_DATADESC();
+	DECLARE_BYTESWAP_DATADESC()
 	unsigned short PreloadIndex;			// Index into preload directory, entry marked invalid if no preload entry present
 };
 

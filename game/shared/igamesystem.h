@@ -228,34 +228,34 @@ public:
 	virtual void Shutdown() = 0;
 
 	// Game init, shutdown
-	GS_EVENT_IMPL( GameInit );
-	GS_EVENT_IMPL( GameShutdown );
-	GS_EVENT_IMPL( GamePostInit );
-	GS_EVENT_IMPL( GamePreShutdown );
+	GS_EVENT_IMPL( GameInit )
+	GS_EVENT_IMPL( GameShutdown )
+	GS_EVENT_IMPL( GamePostInit )
+	GS_EVENT_IMPL( GamePreShutdown )
 
-	GS_EVENT_IMPL( BuildGameSessionManifest );
+	GS_EVENT_IMPL( BuildGameSessionManifest )
 
-	GS_EVENT_IMPL( GameActivate );
+	GS_EVENT_IMPL( GameActivate )
 
-	GS_EVENT_IMPL( ClientFullySignedOn );
-	GS_EVENT_IMPL( Disconnect );
+	GS_EVENT_IMPL( ClientFullySignedOn )
+	GS_EVENT_IMPL( Disconnect )
 
-	GS_EVENT_IMPL( GameDeactivate );
+	GS_EVENT_IMPL( GameDeactivate )
 
-	GS_EVENT_IMPL( SpawnGroupPrecache );
-	GS_EVENT_IMPL( SpawnGroupUncache );
-	GS_EVENT_IMPL( PreSpawnGroupLoad );
-	GS_EVENT_IMPL( PostSpawnGroupLoad );
-	GS_EVENT_IMPL( PreSpawnGroupUnload );
-	GS_EVENT_IMPL( PostSpawnGroupUnload );
-	GS_EVENT_IMPL( ActiveSpawnGroupChanged );
+	GS_EVENT_IMPL( SpawnGroupPrecache )
+	GS_EVENT_IMPL( SpawnGroupUncache )
+	GS_EVENT_IMPL( PreSpawnGroupLoad )
+	GS_EVENT_IMPL( PostSpawnGroupLoad )
+	GS_EVENT_IMPL( PreSpawnGroupUnload )
+	GS_EVENT_IMPL( PostSpawnGroupUnload )
+	GS_EVENT_IMPL( ActiveSpawnGroupChanged )
 
-	GS_EVENT_IMPL( ClientPostDataUpdate );
+	GS_EVENT_IMPL( ClientPostDataUpdate )
 
 	// Called before rendering
-	GS_EVENT_IMPL( ClientPreRender );
+	GS_EVENT_IMPL( ClientPreRender )
 
-	GS_EVENT_IMPL( ClientPreEntityThink );
+	GS_EVENT_IMPL( ClientPreEntityThink )
 
 	virtual void unk_001( const void *const msg ) = 0;
 	virtual void unk_002( const void *const msg ) = 0;
@@ -264,33 +264,33 @@ public:
 	virtual void unk_005( const void *const msg ) = 0;
 
 	// Gets called each frame
-	GS_EVENT_IMPL( ClientUpdate );
+	GS_EVENT_IMPL( ClientUpdate )
 
 	// Called after rendering
-	GS_EVENT_IMPL( ClientPostRender );
+	GS_EVENT_IMPL( ClientPostRender )
 
 	// Called each frame before entities think
-	GS_EVENT_IMPL( ServerPreEntityThink );
+	GS_EVENT_IMPL( ServerPreEntityThink )
 	// called after entities think
-	GS_EVENT_IMPL( ServerPostEntityThink );
-	GS_EVENT_IMPL( ServerPreClientUpdate );
+	GS_EVENT_IMPL( ServerPostEntityThink )
+	GS_EVENT_IMPL( ServerPreClientUpdate )
 
 	virtual void unk_101( const void *const msg ) = 0;
 	virtual void unk_102( const void *const msg ) = 0;
 	virtual void unk_103( const void *const msg ) = 0;
 	virtual void unk_104( const void *const msg ) = 0;
 
-	GS_EVENT_IMPL( ServerGamePostSimulate );
-	GS_EVENT_IMPL( ClientGamePostSimulate );
+	GS_EVENT_IMPL( ServerGamePostSimulate )
+	GS_EVENT_IMPL( ClientGamePostSimulate )
 
 	virtual void unk_201( const void *const msg ) = 0;
 	virtual void unk_202( const void *const msg ) = 0;
 
-	GS_EVENT_IMPL( GameFrameBoundary );
-	GS_EVENT_IMPL( OutOfGameFrameBoundary );
+	GS_EVENT_IMPL( GameFrameBoundary )
+	GS_EVENT_IMPL( OutOfGameFrameBoundary )
 
-	GS_EVENT_IMPL( SaveGame );
-	GS_EVENT_IMPL( RestoreGame );
+	GS_EVENT_IMPL( SaveGame )
+	GS_EVENT_IMPL( RestoreGame )
 
 	virtual void unk_301( const void *const msg ) = 0;
 	virtual void unk_302( const void *const msg ) = 0;
