@@ -231,33 +231,23 @@ inline int CalcAlighedChunk( int nCount )
 
 struct KV3MetaData_t
 {
-	KV3MetaData_t() : m_nLine( 0 ), m_nColumn( 0 ), m_nFlags( 0 ) {}
+	KV3MetaData_t() : m_pNext( NULL ), m_pszString( NULL ) {}
 
 	void Clear()
 	{
-		m_nLine = 0;
-		m_nColumn = 0;
-		m_nFlags = 0;
-		m_sName = CUtlSymbolLarge();
-		m_Comments.RemoveAll();
+		m_pNext = NULL;
+
+		free( m_pszString );
+		m_pszString = NULL;
 	}
 
 	void Purge()
 	{
-		m_nLine = 0;
-		m_nColumn = 0;
-		m_nFlags = 0;
-		m_sName = CUtlSymbolLarge();
-		m_Comments.Purge();
+		free( m_pszString );
 	}
 
-	typedef CUtlMap<int, CBufferStringGrowable<8>, int, CDefLess<int>> CommentsMap_t;
-	
-	int 			m_nLine;
-	int 			m_nColumn;
-	uint			m_nFlags;
-	CUtlSymbolLarge m_sName;
-	CommentsMap_t 	m_Comments;
+	KV3MetaData_t *m_pNext;
+	char *m_pszString;
 };
 
 struct KV3BinaryBlob_t
@@ -615,6 +605,25 @@ public:
 	CKeyValues3Cluster( CKeyValues3Context* context );
 	~CKeyValues3Cluster();
 
+	union KeyValues3ClusterNode
+	{
+		KeyValues3 m_KeyValue;
+		KeyValues3ClusterNode *m_pNextFree;
+
+		KeyValues3ClusterNode() :
+			m_pNextFree( NULL )
+		{
+		};
+
+		~KeyValues3ClusterNode()
+		{
+			m_KeyValue.~KeyValues3();
+		}
+	};
+
+	KeyValues3ClusterNode* Head() { return &m_KeyValues[ 0 ]; }
+	const KeyValues3ClusterNode* Head() const { return &m_KeyValues[ 0 ]; }
+
 	KeyValues3* Alloc( KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
 	void Free( int element );
 	void Clear();
@@ -628,22 +637,23 @@ public:
 	CKeyValues3Context* GetContext() const { return m_pContext; }
 	int NumAllocated() const { return KV3Helpers::PopCount( m_nAllocatedElements ); }
 	bool IsFree() const { return ( m_nAllocatedElements != 0x7fffffffffffffffull ); }
-	CKeyValues3Cluster* GetNextFree() const { return m_pNextFree; }
-	void SetNextFree( CKeyValues3Cluster* free ) { m_pNextFree = free; }
-
-	KeyValues3* Head() { return &m_KeyValues[ 0 ]; }
-	const KeyValues3* Head() const { return &m_KeyValues[ 0 ]; }
+	CKeyValues3Cluster* GetNextFree() const { return m_pNext; }
+	void SetNextFree( CKeyValues3Cluster* free ) { m_pNext = free; }
 
 private:
-	CKeyValues3Context*	m_pContext;
-	uint64				m_nAllocatedElements;
-	KeyValues3			m_KeyValues[KV3_CLUSTER_MAX_ELEMENTS];
-
-	struct kv3metadata_t {
+	struct kv3metadata_t
+	{
 		KV3MetaData_t m_elements[KV3_CLUSTER_MAX_ELEMENTS];
-	} *m_pMetaData;
+	};
 
-	CKeyValues3Cluster*	m_pNextFree;
+	CKeyValues3Context*			m_pContext;
+	KeyValues3ClusterNode*		m_pNextFreeNode;
+	int							m_nAllocatedElements;
+	int							m_nElementCount;
+	CKeyValues3Cluster*			m_pPrev;
+	CKeyValues3Cluster*			m_pNext;
+	kv3metadata_t*				m_pMetaData;
+	KeyValues3ClusterNode		m_KeyValues[KV3_CLUSTER_MAX_ELEMENTS];
 
 	friend CKeyValues3Cluster* KeyValues3::GetCluster() const;
 };
@@ -685,30 +695,36 @@ public:
 	void Purge();
 
 protected:
-	typedef CUtlLeanVectorFixedGrowable<CKeyValues3Cluster*, 8, int>		KV3ClustersVec_t;
-	typedef CUtlLeanVectorFixedGrowable<CKeyValues3ArrayCluster*, 4, int>	ArrayClustersVec_t;
-	typedef CUtlLeanVectorFixedGrowable<CKeyValues3TableCluster*, 4, int>	TableClustersVec_t;
+	typedef CUtlLeanVectorFixedGrowable<CKeyValues3ArrayCluster*, 1, int>	ArrayClustersVec_t;
+	typedef CUtlLeanVectorFixedGrowable<CKeyValues3TableCluster*, 1, int>	TableClustersVec_t;
 
-	CKeyValues3Context*			m_pContext;
-	CUtlBuffer					m_BinaryData;
-	
-	CKeyValues3Cluster			m_KV3BaseCluster;
-	KV3ClustersVec_t			m_KV3Clusters;
-	CKeyValues3Cluster*			m_pKV3FreeCluster;
-	
-	ArrayClustersVec_t			m_ArrayClusters;
-	CKeyValues3ArrayCluster*	m_pArrayFreeCluster;
-	
-	TableClustersVec_t			m_TableClusters;
-	CKeyValues3TableCluster*	m_pTableFreeCluster;
+	CKeyValues3Context* 			m_pContext;
+	CUtlBuffer						m_BinaryData; // 8
+	CKeyValues3Cluster				m_KV3BaseCluster; // 72
+	CKeyValues3Cluster* 			m_pKV3FreeCluster; // 4168
+	CKeyValues3Cluster* 			m_pKV3FreeCluster2;
+	CKeyValues3Cluster* 			m_pKV3UnkCluster; // 4184
+	CKeyValues3Cluster* 			m_pKV3UnkCluster2;
 
-	CUtlSymbolTableLarge		m_Symbols;
+	CKeyValues3ArrayCluster* 		m_pArrayCluster; // 4200
+	CKeyValues3ArrayCluster* 		m_pArrayClusterCopy; // 4208
+	CKeyValues3ArrayCluster* 		m_pEmptyArrayCluster; // 4216
+	CKeyValues3ArrayCluster* 		m_pEmptyArrayClusterCopy; // 4224
+	ArrayClustersVec_t				m_ArrayClusters;
 
-	bool						m_bMetaDataEnabled : 1;
-	bool						m_bFormatConverted : 1;
-	bool						m_bRootAvailabe : 1;
+	CKeyValues3TableCluster* 		m_pTableCluster; // 4248
+	CKeyValues3TableCluster* 		m_pTableClusterCopy; // 4256
+	CKeyValues3TableCluster* 		m_nEmptyTableCluster; // 4264
+	CKeyValues3TableCluster* 		m_nEmptyTableClusterCopy; // 4272
+	TableClustersVec_t				m_TableClusters;
 
-	IParsingErrorListener*		m_pParsingErrorListener;
+	CUtlSymbolTableLarge 			m_Symbols; // 4296
+
+	bool m_bMetaDataEnabled : 1;
+	bool m_bFormatConverted : 1;
+	bool m_bRootAvailabe : 1;
+
+	IParsingErrorListener* m_pParsingErrorListener;
 };
 
 class CKeyValues3Context : public CKeyValues3ContextBase
@@ -750,14 +766,17 @@ private:
 	template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
 	ELEMENT_TYPE* Alloc( CLUSTER_TYPE *&head, VECTOR_TYPE &vec );
 
+	template< class ELEMENT_TYPE, class CLUSTER_TYPE >
+	void Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head );
+
 	template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
 	void Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head, VECTOR_TYPE &vec );
 
-	CKeyValues3Array* AllocArray() { return Alloc<CKeyValues3Array, CKeyValues3ArrayCluster, ArrayClustersVec_t>( m_pArrayFreeCluster, m_ArrayClusters ); }
-	CKeyValues3Table* AllocTable() { return Alloc<CKeyValues3Table, CKeyValues3TableCluster, TableClustersVec_t>( m_pTableFreeCluster, m_TableClusters ); }
+	CKeyValues3Array* AllocArray() { return Alloc<CKeyValues3Array, CKeyValues3ArrayCluster, ArrayClustersVec_t>( m_pArrayClusterCopy, m_ArrayClusters ); }
+	CKeyValues3Table* AllocTable() { return Alloc<CKeyValues3Table, CKeyValues3TableCluster, TableClustersVec_t>( m_pTableClusterCopy, m_TableClusters ); }
 
-	void FreeArray( CKeyValues3Array* arr ) { Free<CKeyValues3Array, CKeyValues3ArrayCluster, ArrayClustersVec_t>( arr, NULL, m_pArrayFreeCluster, m_ArrayClusters ); }
-	void FreeTable( CKeyValues3Table* table ) { Free<CKeyValues3Table, CKeyValues3TableCluster, TableClustersVec_t>( table, NULL, m_pTableFreeCluster, m_TableClusters ); }
+	void FreeArray( CKeyValues3Array* arr ) { Free<CKeyValues3Array, CKeyValues3ArrayCluster, ArrayClustersVec_t>( arr, NULL, m_pArrayClusterCopy, m_ArrayClusters ); }
+	void FreeTable( CKeyValues3Table* table ) { Free<CKeyValues3Table, CKeyValues3TableCluster, TableClustersVec_t>( table, NULL, m_pTableClusterCopy, m_TableClusters ); }
 
 private:
 	uint8 pad[ KV3_CONTEXT_SIZE - ( sizeof( BaseClass ) % KV3_CONTEXT_SIZE ) ];
@@ -999,6 +1018,51 @@ ELEMENT_TYPE* CKeyValues3Context::Alloc( CLUSTER_TYPE *&head, VECTOR_TYPE &vec )
 	return element;
 }
 
+template< class ELEMENT_TYPE, class CLUSTER_TYPE >
+void CKeyValues3Context::Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head )
+{
+	CLUSTER_TYPE* cluster = element->GetCluster();
+
+	Assert( cluster != NULL && cluster->GetContext() == m_pContext );
+
+	cluster->Free( element->GetClusterElement() );
+
+	int num_allocated = cluster->NumAllocated();
+
+	if ( !num_allocated )
+	{
+		if ( cluster == base )
+			return;
+
+		if ( head != cluster )
+		{
+			CLUSTER_TYPE* cur = head;
+
+			while ( cur )
+			{
+				CLUSTER_TYPE* next = cur->GetNextFree();
+				if ( next == cluster )
+					break;
+				cur = next;
+			}
+
+			if ( cur )
+				cur->SetNextFree( cluster->GetNextFree() );
+		}
+		else
+		{
+			head = cluster->GetNextFree();
+		}
+
+		delete cluster;
+	}
+	else if ( num_allocated == ( KV3_CLUSTER_MAX_ELEMENTS - 1 ) )
+	{
+		cluster->SetNextFree( head );
+		head = cluster;
+	}
+}
+
 template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
 void CKeyValues3Context::Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head, VECTOR_TYPE &vec )
 {
@@ -1017,7 +1081,7 @@ void CKeyValues3Context::Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTE
 
 		vec.FindAndFastRemove( cluster );
 
-		if ( head != cluster  )
+		if ( head != cluster )
 		{
 			CLUSTER_TYPE* cur = head;
 
