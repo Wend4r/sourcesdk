@@ -733,13 +733,13 @@ inline unsigned int old_bf_read::ReadUBitLong( int numbits )
 	dword1 >>= (m_iCurBit & 31); // Get the bits we're interested in.
 
 	m_iCurBit += numbits;
-	unsigned int ret = dword1;
+	unsigned int b = dword1;
 
 	// Does it span this dword?
 	if ( (m_iCurBit-1) >> 5 == idword1 )
 	{
 		if (numbits != 32)
-			ret &= g_ExtraMasks[numbits];
+            b &= g_ExtraMasks[numbits];
 	}
 	else
 	{
@@ -750,10 +750,10 @@ inline unsigned int old_bf_read::ReadUBitLong( int numbits )
 
 		// No need to mask since we hit the end of the dword.
 		// Shift the second dword's part into the high bits.
-		ret |= (dword2 << (numbits - nExtraBits));
+		b |= (dword2 << (numbits - nExtraBits));
 	}
 
-	return ret;
+	return b;
 }
 
 
@@ -1306,24 +1306,24 @@ FORCEINLINE float CBitRead::ReadFloat( void )
 #endif
 FORCEINLINE unsigned int CBitRead::ReadUBitVar( void )
 {
-	unsigned int ret = ReadUBitLong( 6 );
-	switch( ret & ( 16 | 32 ) )
+	unsigned int b = ReadUBitLong(6 );
+	switch(b & (16 | 32 ) )
 	{
 		case 16:
-			ret = ( ret & 15 ) | ( ReadUBitLong( 4 ) << 4 );
-			Assert( ret >= 16);
+            b = (b & 15 ) | ( ReadUBitLong(4 ) << 4 );
+			Assert(b >= 16);
 			break;
 				
 		case 32:
-			ret = ( ret & 15 ) | ( ReadUBitLong( 8 ) << 4 );
-			Assert( ret >= 256);
+            b = (b & 15 ) | ( ReadUBitLong(8 ) << 4 );
+			Assert(b >= 256);
 			break;
 		case 48:
-			ret = ( ret & 15 ) | ( ReadUBitLong( 32 - 4 ) << 4 );
-			Assert( ret >= 4096 );
+            b = (b & 15 ) | ( ReadUBitLong(32 - 4 ) << 4 );
+			Assert(b >= 4096 );
 			break;
 	}
-	return ret;
+	return b;
 }
 #ifdef _WIN32
 #pragma warning(pop)
