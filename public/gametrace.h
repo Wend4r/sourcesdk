@@ -374,7 +374,7 @@ public:
 		m_nInteractsWith = 0;
 		m_nInteractsExclude = 0;
 		m_nEntityId = 0;
-		m_nOwnerId = -1;
+		m_nOwnerId = static_cast<uint32>(-1);
 		m_nHierarchyId = 0;
 		m_nCollisionGroup = COLLISION_GROUP_ALWAYS;
 		m_nCollisionFunctionMask = FCOLLISION_FUNC_DEFAULT;
