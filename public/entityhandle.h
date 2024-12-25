@@ -41,6 +41,7 @@ public:
 	bool operator <(const CEntityInstance* pEnt) const;
 
 	// Assign a value to the handle.
+	const CEntityHandle& operator=(const CEntityHandle& other);
 	const CEntityHandle& operator=(const CEntityInstance* pEntity);
 	const CEntityHandle& Set(const CEntityInstance* pEntity);
 
@@ -139,6 +140,12 @@ inline bool CEntityHandle::operator !=(const CEntityInstance* pEnt) const
 inline bool CEntityHandle::operator <(const CEntityHandle& other) const
 {
 	return m_Index < other.m_Index;
+}
+
+inline const CEntityHandle &CEntityHandle::operator=( const CEntityHandle& other )
+{
+    m_Index = other.m_Index;
+    return *this;
 }
 
 inline const CEntityHandle &CEntityHandle::operator=( const CEntityInstance *pEntity )

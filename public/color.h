@@ -34,6 +34,9 @@ public:
 	{
 		SetColor(_r, _g, _b, _a);
 	}
+    Color(const Color& rhs) {
+        SetRawColor( rhs.GetRawColor() );
+    }
 	
 	// set the color
 	// r - red component (0-255)
@@ -56,9 +59,9 @@ public:
 		_a = _color[3];
 	}
 
-	void SetRawColor( int color32 )
+	void SetRawColor( int color )
 	{
-		*((int *)this) = color32;
+		*((int *)this) = color;
 	}
 
 	int GetRawColor() const
