@@ -702,13 +702,13 @@ inline float old_bf_read::ReadBitFloat()
 		return 0.0f;
 
 	int bit = m_iCurBit & 0x7;
-	int byte = m_iCurBit >> 3;
-	val = m_pData[byte] >> bit;
-	val |= ((int)m_pData[byte + 1]) << (8 - bit);
-	val |= ((int)m_pData[byte + 2]) << (16 - bit);
-	val |= ((int)m_pData[byte + 3]) << (24 - bit);
+	int b = m_iCurBit >> 3;
+	val = m_pData[b] >> bit;
+	val |= ((int)m_pData[b + 1]) << (8 - bit);
+	val |= ((int)m_pData[b + 2]) << (16 - bit);
+	val |= ((int)m_pData[b + 3]) << (24 - bit);
 	if (bit != 0)
-		val |= ((int)m_pData[byte + 4]) << (32 - bit);
+		val |= ((int)m_pData[b + 4]) << (32 - bit);
 	m_iCurBit += 32;
 	return *((float*)&val);
 }

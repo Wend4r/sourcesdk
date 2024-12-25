@@ -600,7 +600,7 @@ public:
 		this->UpdateValue( newValue, index, (const CVValue_t*)&newValue, (const CVValue_t*)&oldValue, szNewValue, szOldValue );
 	}
 
-	inline void SetStringValue( const char* szNewValue, size_t len, const CSplitScreenSlot& index = CSplitScreenSlot() )
+	inline void SetStringValue( const char* szNewValue, size_t, const CSplitScreenSlot& index = CSplitScreenSlot() )
 	{
 		auto newValue = CConVarData<T>::ValueFromString(szNewValue);
 
@@ -618,15 +618,15 @@ public:
 	inline void GetStringMinValue( char* dst, size_t len ) const		{ GetConVarData()->GetStringMinValue( dst, len ); }
 	inline void GetStringMaxValue( char* dst, size_t len ) const		{ GetConVarData()->GetStringMaxValue( dst, len ); }
 private:
-	void Init(ConVarHandle defaultHandle, EConVarType type)
+	void Init(ConVarHandle defaultHandle, EConVarType)
 	{
 		this->m_Handle.Invalidate( );
 		this->m_ConVarData = nullptr;
 
 		if ( g_pCVar )
 		{
-			auto cvar = g_pCVar->GetConVar( defaultHandle );
-			this->m_ConVarData = ( cvar && cvar->Cast<T>( ) ) ? cvar : nullptr;
+			auto pCVar = g_pCVar->GetConVar(defaultHandle );
+			this->m_ConVarData = (pCVar && pCVar->Cast<T>( ) ) ? pCVar : nullptr;
 			if ( !this->m_ConVarData )
 			{
 				this->m_ConVarData = GetInvalidConVar( TranslateConVarType<T>( ) );
@@ -637,9 +637,9 @@ private:
 		this->m_Handle = defaultHandle;
 	}
 
-	void Register(const char* name, int32_t flags, const char* description, ConVarCreation_t& cvar)
+	void Register(const char* name, int32_t flags, const char* description, ConVarCreation_t& pCVar)
 	{
-		this->m_ConVarData = GetInvalidConVar( cvar.m_eVarType );
+		this->m_ConVarData = GetInvalidConVar(pCVar.m_eVarType );
 		this->m_Handle.Invalidate();
 
 		if (!CommandLine()->HasParm("-tools")
@@ -655,14 +655,14 @@ private:
 			flags |= FCVAR_DEVELOPMENTONLY;
 		}
 
-		cvar.m_pszName = name;
-		cvar.m_pszHelpString = description;
-		cvar.m_nFlags = flags;
+        pCVar.m_pszName = name;
+        pCVar.m_pszHelpString = description;
+        pCVar.m_nFlags = flags;
 
-		cvar.m_pHandle = &this->m_Handle;
-		cvar.m_pConVarData = &this->m_ConVarData;
+        pCVar.m_pHandle = &this->m_Handle;
+        pCVar.m_pConVarData = &this->m_ConVarData;
 
-		SetupConVar(cvar);
+		SetupConVar(pCVar);
 	}
 
 	inline void UpdateValue( const T& value, const CSplitScreenSlot& index, const CVValue_t* newValue, const CVValue_t* oldValue, const char* szNewValue, const char* szOldValue )
