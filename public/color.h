@@ -34,9 +34,6 @@ public:
 	{
 		SetColor(_r, _g, _b, _a);
 	}
-    Color(const Color& rhs) {
-        SetRawColor( rhs.GetRawColor() );
-    }
 	
 	// set the color
 	// r - red component (0-255)
