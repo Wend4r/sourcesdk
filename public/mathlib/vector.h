@@ -221,7 +221,7 @@ public:
 
 #ifndef VECTOR_NO_SLOW_OPERATIONS
 	// copy constructors
-//	Vector(const Vector &vOther);
+    Vector(const Vector &vOther) = default;
 
 	// arithmetic operations
 	Vector	operator-(void) const;
@@ -380,7 +380,9 @@ public:
 	// Construction/destruction:
 	VectorByValue(void) : Vector() {} 
 	VectorByValue(vec_t X, vec_t Y, vec_t Z) : Vector( X, Y, Z ) {}
+#ifdef VECTOR_NO_SLOW_OPERATIONS
 	VectorByValue(const VectorByValue& vOther) { *this = vOther; }
+#endif
 };
 
 
@@ -2382,6 +2384,7 @@ public:
 
 #ifndef VECTOR_NO_SLOW_OPERATIONS
 	// copy constructors
+    QAngle(const QAngle& vOther) = default;
 
 	// arithmetic operations
 	QAngle	operator-(void) const;
@@ -2411,7 +2414,9 @@ public:
 	// Construction/destruction:
 	QAngleByValue(void) : QAngle() {} 
 	QAngleByValue(vec_t X, vec_t Y, vec_t Z) : QAngle( X, Y, Z ) {}
+#ifdef VECTOR_NO_SLOW_OPERATIONS
 	QAngleByValue(const QAngleByValue& vOther) { *this = vOther; }
+#endif
 };
 
 
