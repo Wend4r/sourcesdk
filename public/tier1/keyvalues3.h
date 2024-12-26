@@ -29,9 +29,8 @@
 class CKeyValues3Array;
 class CKeyValues3Table;
 class CKeyValues3Cluster;
-template < class T > class CKeyValues3ClusterT;
-typedef CKeyValues3ClusterT< CKeyValues3Array > CKeyValues3ArrayCluster;
-typedef CKeyValues3ClusterT< CKeyValues3Table > CKeyValues3TableCluster;
+class CKeyValues3ArrayCluster;
+class CKeyValues3TableCluster;
 typedef int32 KV3MemberId_t;
 #define KV3_INVALID_MEMBER ((KV3MemberId_t)-1)
 
@@ -51,7 +50,10 @@ enum
 
 enum
 {
-	KV3_CONTEXT_SIZE = 4608
+	KV3_CONTEXT_SIZE = 4608,
+
+	KV3_ARRAY_INIT_SIZE = 32,
+	KV3_TABLE_INIT_SIZE = 64
 };
 
 enum
@@ -300,6 +302,7 @@ public:
 	friend class CKeyValues3Table;
 
 	KeyValues3( KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
+	KeyValues3( int cluster_elem, KV3TypeEx_t type, KV3SubType_t subtype );
 	~KeyValues3();
 
 	CKeyValues3Context* GetContext() const;
@@ -344,13 +347,13 @@ public:
 	void SetFloat( float32 value )	{ SetValue<float32>( value, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32 ); }
 	void SetDouble( float64 value )	{ SetValue<float64>( value, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT64 ); }
 
-	void* GetPointer( void *defaultValue = ( void* )0 ) const { return ( GetSubType() == KV3_SUBTYPE_POINTER ) ? ( void* )m_UInt : defaultValue; }
+	void* GetPointer( void *defaultValue = ( void* )0 ) const { return ( GetSubType() == KV3_SUBTYPE_POINTER ) ? ( void* )m_Data.m_UInt : defaultValue; }
 	void SetPointer( void* ptr ) { SetValue<uint64>( ( uint64 )ptr, KV3_TYPEEX_UINT, KV3_SUBTYPE_POINTER ); }
 	
-	CUtlStringToken GetStringToken( CUtlStringToken defaultValue = CUtlStringToken() ) const { return ( GetSubType() == KV3_SUBTYPE_STRING_TOKEN ) ? CUtlStringToken( ( uint32 )m_UInt ) : defaultValue; }
+	CUtlStringToken GetStringToken( CUtlStringToken defaultValue = CUtlStringToken() ) const { return ( GetSubType() == KV3_SUBTYPE_STRING_TOKEN ) ? CUtlStringToken( ( uint32 )m_Data.m_UInt ) : defaultValue; }
 	void SetStringToken( CUtlStringToken token ) { SetValue<uint32>( token.GetHashCode(), KV3_TYPEEX_UINT, KV3_SUBTYPE_STRING_TOKEN ); }
 
-	CEntityHandle GetEHandle( CEntityHandle defaultValue = CEntityHandle() ) const { return ( GetSubType() == KV3_SUBTYPE_EHANDLE ) ? CEntityHandle( ( uint32 )m_UInt ) : defaultValue; }
+	CEntityHandle GetEHandle( CEntityHandle defaultValue = CEntityHandle() ) const { return ( GetSubType() == KV3_SUBTYPE_EHANDLE ) ? CEntityHandle( ( uint32 )m_Data.m_UInt ) : defaultValue; }
 	void SetEHandle( CEntityHandle ehandle ) { SetValue<uint32>( ehandle.ToInt(), KV3_TYPEEX_UINT, KV3_SUBTYPE_EHANDLE ); }
 
 	const char* GetString( const char *defaultValue = "" ) const;
@@ -406,10 +409,40 @@ public:
 	KeyValues3& operator=( const KeyValues3& src );
 	
 private:
-	KeyValues3( int cluster_elem, KV3TypeEx_t type, KV3SubType_t subtype );	
 	KeyValues3( const KeyValues3& other );
 
-	void Alloc();
+	union Data_t
+	{
+		Data_t() : m_nMemory(0)
+		{
+		}
+
+		bool	m_Bool;
+		int64	m_Int;
+		uint64	m_UInt;
+		float64	m_Double;
+
+		const char* m_pString;
+		char m_szStringShort[8];
+
+		KV3BinaryBlob_t* m_pBinaryBlob;
+
+		CKeyValues3Array*	m_pArray;
+		float32*			m_f32Array;
+		float64*			m_f64Array;
+		int16*				m_i16Array;
+		int32*				m_i32Array;
+		uint8				m_u8ArrayShort[8];
+		int16				m_i16ArrayShort[4];
+
+		CKeyValues3Table* m_pTable;
+
+		uint64 m_nMemory;
+		void* m_pMemory;
+		char m_Memory[1];
+	};
+
+	void Alloc( int nAllocSize = 0, Data_t Data = {}, int nValidBytes = 0, uint8 nTypeEx = 0 );
 	void Free( bool bClearingContext = false );
 	void ResolveUnspecified();
 	void PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype );
@@ -447,33 +480,7 @@ private:
 	uint64 m_nClusterElement : 6;
 	uint64 m_nNumArrayElements : 5;
 	uint64 m_nReserved : 27;
-	
-	union
-	{
-		bool 	m_Bool;
-		int64 	m_Int;
-		uint64 	m_UInt;
-		float64	m_Double;
-		
-		const char* m_pString;
-		char m_szStringShort[8];
-		
-		KV3BinaryBlob_t* m_pBinaryBlob;
-
-		CKeyValues3Array* 	m_pArray;
-		float32*			m_f32Array;
-		float64*			m_f64Array;
-		int16*				m_i16Array;
-		int32*				m_i32Array;
-		uint8				m_u8ArrayShort[8];
-		int16				m_i16ArrayShort[4];
-		
-		CKeyValues3Table* m_pTable;
-
-		uint64 m_nData;
-		void* m_pData;
-		char m_Data[1];
-	};
+	Data_t m_Data;
 
 	friend class CKeyValues3Cluster;
 	friend class CKeyValues3Context;
@@ -525,7 +532,7 @@ public:
 	typedef const char*		Name_t;
 	typedef bool			IsExternalName_t;
 
-	CKeyValues3Table( int cluster_elem = -1 );
+	CKeyValues3Table( int alloc_size = 0, int cluster_elem = -1 );
 
 	// Gets the base address (can change when adding elements!)
 	void* Base();
@@ -608,27 +615,57 @@ private:
 };
 COMPILE_TIME_ASSERT(sizeof(CKeyValues3Table) == 192);
 
-class CKeyValues3Cluster
+union KeyValues3ClusterNode
+{
+	KeyValues3 m_KeyValue;
+	KeyValues3ClusterNode* m_pNextFree;
+
+	KeyValues3ClusterNode() : m_pNextFree( NULL ) {}
+	~KeyValues3ClusterNode() {}
+};
+
+class CKeyValues3BaseCluster {
+public:
+	CKeyValues3BaseCluster( CKeyValues3Context* context );
+
+	void Purge();
+	void Clear() { Purge(); }
+
+	CKeyValues3Context* GetContext() const { return m_pContext; }
+	int NumAllocated() const { return KV3Helpers::PopCount(m_nAllocatedElements); }
+
+	bool IsFree() const { return (m_nAllocatedElements != 0x7fffffffffffffffull); }
+	KeyValues3ClusterNode* GetNextFree() const { return m_pNextFreeNode; }
+	void SetNextFree( KeyValues3ClusterNode* free ) { m_pNextFreeNode = free; }
+
+	void EnableMetaData( bool bEnable );
+	void FreeMetaData();
+	KV3MetaData_t* GetMetaData( int element ) const;
+
+	friend CKeyValues3ArrayCluster* CKeyValues3Array::GetCluster() const;
+	friend CKeyValues3TableCluster* CKeyValues3Table::GetCluster() const;
+
+public:
+	struct kv3metadata_t
+	{
+		KV3MetaData_t m_elements[KV3_CLUSTER_MAX_ELEMENTS];
+	};
+
+	CKeyValues3Context* m_pContext;
+	KeyValues3ClusterNode* m_pNextFreeNode;
+	uint m_nAllocatedElements;
+	int m_nElementCount;
+	CKeyValues3Cluster* m_pPrev;
+	CKeyValues3Cluster* m_pNext;
+	kv3metadata_t* m_pMetaData;
+};
+COMPILE_TIME_ASSERT(sizeof(CKeyValues3BaseCluster) == 48);
+
+class CKeyValues3Cluster : public CKeyValues3BaseCluster
 {
 public:
 	CKeyValues3Cluster( CKeyValues3Context* context );
 	~CKeyValues3Cluster();
-
-	union KeyValues3ClusterNode
-	{
-		KeyValues3 m_KeyValue;
-		KeyValues3ClusterNode *m_pNextFree;
-
-		KeyValues3ClusterNode() :
-			m_pNextFree( NULL )
-		{
-		};
-
-		~KeyValues3ClusterNode()
-		{
-			m_KeyValue.~KeyValues3();
-		}
-	};
 
 	KeyValues3ClusterNode* Head() { return &m_KeyValues[ 0 ]; }
 	const KeyValues3ClusterNode* Head() const { return &m_KeyValues[ 0 ]; }
@@ -639,59 +676,45 @@ public:
 	void PurgeElements();
 	void Purge();
 
-	void EnableMetaData( bool bEnable );
-	void FreeMetaData();
-	KV3MetaData_t* GetMetaData( int element ) const;
-
-	CKeyValues3Context* GetContext() const { return m_pContext; }
-	int NumAllocated() const { return KV3Helpers::PopCount( m_nAllocatedElements ); }
-	bool IsFree() const { return ( m_nAllocatedElements != 0x7fffffffffffffffull ); }
-	CKeyValues3Cluster* GetNextFree() const { return m_pNext; }
-	void SetNextFree( CKeyValues3Cluster* free ) { m_pNext = free; }
-
 private:
-	struct kv3metadata_t
-	{
-		KV3MetaData_t m_elements[KV3_CLUSTER_MAX_ELEMENTS];
-	};
-
-	CKeyValues3Context*			m_pContext;
-	KeyValues3ClusterNode*		m_pNextFreeNode;
-	int							m_nAllocatedElements;
-	int							m_nElementCount;
-	CKeyValues3Cluster*			m_pPrev;
-	CKeyValues3Cluster*			m_pNext;
-	kv3metadata_t*				m_pMetaData;
-	KeyValues3ClusterNode		m_KeyValues[KV3_CLUSTER_MAX_ELEMENTS];
+	KeyValues3ClusterNode m_KeyValues[KV3_CLUSTER_MAX_ELEMENTS];
 
 	friend CKeyValues3Cluster* KeyValues3::GetCluster() const;
 };
+COMPILE_TIME_ASSERT(sizeof(CKeyValues3Cluster) == 16 * (KV3_CLUSTER_MAX_ELEMENTS + 3));
 
-template < class T >
-class CKeyValues3ClusterT
+class CKeyValues3ArrayCluster : public CKeyValues3BaseCluster
 {
 public:
-	CKeyValues3ClusterT( CKeyValues3Context* context );
+	CKeyValues3ArrayCluster( CKeyValues3Context* context );
 
-	T* Alloc();
-	void Free( int element );
-	void Clear() { Purge(); }
-	void Purge();
+	union CKeyValues3ArrayNode
+	{
+		CKeyValues3Array m_Array;
+		CKeyValues3ArrayNode* m_pNextFree;
 
-	CKeyValues3Context* GetContext() const { return m_pContext; }
-	int NumAllocated() const { return KV3Helpers::PopCount( m_nAllocatedElements ); }
-	bool IsFree() const { return ( m_nAllocatedElements != 0x7fffffffffffffffull ); }
-	CKeyValues3ClusterT* GetNextFree() const { return m_pNextFree; }
-	void SetNextFree( CKeyValues3ClusterT* free ) { m_pNextFree = free; }
+		CKeyValues3ArrayNode() : m_pNextFree( NULL ) {}
+		~CKeyValues3ArrayNode() {}
+	};
 
-private:
-	CKeyValues3Context*		m_pContext;
-	uint64					m_nAllocatedElements;
-	T						m_Elements[KV3_CLUSTER_MAX_ELEMENTS];
-	CKeyValues3ClusterT*	m_pNextFree;
+	CKeyValues3ArrayNode m_Elements[KV3_ARRAY_INIT_SIZE];
+};
 
-	friend CKeyValues3ArrayCluster* CKeyValues3Array::GetCluster() const;
-	friend CKeyValues3TableCluster* CKeyValues3Table::GetCluster() const;
+class CKeyValues3TableCluster : public CKeyValues3BaseCluster
+{
+public:
+	CKeyValues3TableCluster( CKeyValues3Context* context );
+
+	union CKeyValues3TableNode
+	{
+		CKeyValues3Table m_Table;
+		CKeyValues3TableNode* m_pNextFree;
+
+		CKeyValues3TableNode() : m_pNextFree( NULL ) {}
+		~CKeyValues3TableNode() {}
+	};
+
+	CKeyValues3TableNode m_Elements[KV3_TABLE_INIT_SIZE];
 };
 
 class CKeyValues3ContextBase
@@ -704,34 +727,35 @@ public:
 	void Purge();
 
 protected:
-	typedef CUtlLeanVectorFixedGrowable<CKeyValues3ArrayCluster*, 1, int>	ArrayClustersVec_t;
-	typedef CUtlLeanVectorFixedGrowable<CKeyValues3TableCluster*, 1, int>	TableClustersVec_t;
+	CKeyValues3Context* m_pContext;
+	CUtlBuffer m_BinaryData;                            // 8
+	CKeyValues3Cluster m_KV3BaseCluster;                // 72
+	CKeyValues3Cluster* m_pKV3FreeClusterAllocator;     // 4168
+	CKeyValues3Cluster* m_pKV3FreeClusterAllocatorCopy; // 4176
+	CKeyValues3Cluster* m_pKV3UnkCluster;               // 4184
+	CKeyValues3Cluster* m_pKV3UnkCluster2;              // 4192
 
-	CKeyValues3Context* 			m_pContext;
-	CUtlBuffer						m_BinaryData; // 8
-	CKeyValues3Cluster				m_KV3BaseCluster; // 72
-	CKeyValues3Cluster* 			m_pKV3FreeCluster; // 4168
-	CKeyValues3Cluster* 			m_pKV3FreeCluster2;
-	CKeyValues3Cluster* 			m_pKV3UnkCluster; // 4184
-	CKeyValues3Cluster* 			m_pKV3UnkCluster2;
+	CKeyValues3ArrayCluster* m_pArrayCluster;           // 4200
+	CKeyValues3ArrayCluster* m_pArrayClusterCopy;       // 4208
+	CKeyValues3ArrayCluster* m_pEmptyArrayCluster;      // 4216
+	CKeyValues3ArrayCluster* m_pEmptyArrayClusterCopy;  // 4224
+	int m_nArrayClusterSize;                           // 4232
+	int m_nArrayClusterAllocationCount;                // 4236
+	CKeyValues3Array* m_pDynamicArray;                 // 4240
 
-	CKeyValues3ArrayCluster* 		m_pArrayCluster; // 4200
-	CKeyValues3ArrayCluster* 		m_pArrayClusterCopy; // 4208
-	CKeyValues3ArrayCluster* 		m_pEmptyArrayCluster; // 4216
-	CKeyValues3ArrayCluster* 		m_pEmptyArrayClusterCopy; // 4224
-	ArrayClustersVec_t				m_ArrayClusters;
+	CKeyValues3TableCluster* m_pTableCluster;           // 4248
+	CKeyValues3TableCluster* m_pTableClusterCopy;       // 4256
+	CKeyValues3TableCluster* m_pEmptyTableCluster;      // 4264
+	CKeyValues3TableCluster* m_pEmptyTableClusterCopy;  // 4272
+	int m_nTableClusterSize;                           // 4280
+	int m_nTableClusterAllocationCount;                // 4284
+	CKeyValues3Table* m_pDynamicTable;                 // 4288
 
-	CKeyValues3TableCluster* 		m_pTableCluster; // 4248
-	CKeyValues3TableCluster* 		m_pTableClusterCopy; // 4256
-	CKeyValues3TableCluster* 		m_nEmptyTableCluster; // 4264
-	CKeyValues3TableCluster* 		m_nEmptyTableClusterCopy; // 4272
-	TableClustersVec_t				m_TableClusters;
+	CUtlSymbolTableLarge m_Symbols; // 4296
 
-	CUtlSymbolTableLarge 			m_Symbols; // 4296
-
-	bool m_bMetaDataEnabled : 1;
-	bool m_bFormatConverted : 1;
-	bool m_bRootAvailabe : 1;
+	bool m_bMetaDataEnabled: 1; // 4432
+	bool m_bFormatConverted: 1;
+	bool m_bRootAvailabe: 1;
 
 	IParsingErrorListener* m_pParsingErrorListener;
 };
@@ -772,20 +796,14 @@ public:
 	void Purge();
 
 private:
-	template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
-	ELEMENT_TYPE* Alloc( CLUSTER_TYPE *&head, VECTOR_TYPE &vec );
+	CKeyValues3Array* AllocArray( int nAllocSize );
+	CKeyValues3Table* AllocTable( int nAllocSize );
 
-	template< class ELEMENT_TYPE, class CLUSTER_TYPE >
-	void Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head );
+	template<class ELEMENT_TYPE, class CLUSTER_TYPE, class TABLE_TYPE>
+	void Free( ELEMENT_TYPE* element, CLUSTER_TYPE* base, CLUSTER_TYPE*& head, TABLE_TYPE *pTable );
 
-	template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
-	void Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head, VECTOR_TYPE &vec );
-
-	CKeyValues3Array* AllocArray() { return Alloc<CKeyValues3Array, CKeyValues3ArrayCluster, ArrayClustersVec_t>( m_pArrayClusterCopy, m_ArrayClusters ); }
-	CKeyValues3Table* AllocTable() { return Alloc<CKeyValues3Table, CKeyValues3TableCluster, TableClustersVec_t>( m_pTableClusterCopy, m_TableClusters ); }
-
-	void FreeArray( CKeyValues3Array* arr ) { Free<CKeyValues3Array, CKeyValues3ArrayCluster, ArrayClustersVec_t>( arr, NULL, m_pArrayClusterCopy, m_ArrayClusters ); }
-	void FreeTable( CKeyValues3Table* table ) { Free<CKeyValues3Table, CKeyValues3TableCluster, TableClustersVec_t>( table, NULL, m_pTableClusterCopy, m_TableClusters ); }
+	void FreeArray( CKeyValues3Array* arr ) { Assert( 0 ); }
+	void FreeTable( CKeyValues3Table* table ) { Assert( 0 ); }
 
 private:
 	uint8 pad[ KV3_CONTEXT_SIZE - ( sizeof( BaseClass ) % KV3_CONTEXT_SIZE ) ];
@@ -809,18 +827,18 @@ template <> inline float32 KeyValues3::FromString( float32 defaultValue ) const	
 template <> inline float64 KeyValues3::FromString( float64 defaultValue ) const	{ return V_StringToFloat64( GetString(), defaultValue ); }
 
 template < typename T > inline void KeyValues3::SetDirect( T value ) { Assert( 0 ); }
-template <> inline void KeyValues3::SetDirect( bool value )		{ m_Bool = value; }
-template <> inline void KeyValues3::SetDirect( char8 value )	{ m_Int = ( int64 )value; }  
-template <> inline void KeyValues3::SetDirect( int8 value )		{ m_Int = ( int64 )value; }  
-template <> inline void KeyValues3::SetDirect( uint8 value )	{ m_UInt = ( uint64 )value; }  
-template <> inline void KeyValues3::SetDirect( int16 value )	{ m_Int = ( int64 )value; }  
-template <> inline void KeyValues3::SetDirect( uint16 value )	{ m_UInt = ( uint64 )value; }  
-template <> inline void KeyValues3::SetDirect( int32 value )	{ m_Int = ( int64 )value; } 
-template <> inline void KeyValues3::SetDirect( uint32 value )	{ m_UInt = ( uint64 )value; }  
-template <> inline void KeyValues3::SetDirect( int64 value )	{ m_Int = value; }  
-template <> inline void KeyValues3::SetDirect( uint64 value )	{ m_UInt = value; }  
-template <> inline void KeyValues3::SetDirect( float32 value )	{ m_Double = ( float64 )value; }
-template <> inline void KeyValues3::SetDirect( float64 value )	{ m_Double = value; }  
+template <> inline void KeyValues3::SetDirect( bool value )		{ m_Data.m_Bool = value; }
+template <> inline void KeyValues3::SetDirect( char8 value )	{ m_Data.m_Int = ( int64 )value; }
+template <> inline void KeyValues3::SetDirect( int8 value )		{ m_Data.m_Int = ( int64 )value; }
+template <> inline void KeyValues3::SetDirect( uint8 value )	{ m_Data.m_UInt = ( uint64 )value; }
+template <> inline void KeyValues3::SetDirect( int16 value )	{ m_Data.m_Int = ( int64 )value; }
+template <> inline void KeyValues3::SetDirect( uint16 value )	{ m_Data.m_UInt = ( uint64 )value; }
+template <> inline void KeyValues3::SetDirect( int32 value )	{ m_Data.m_Int = ( int64 )value; }
+template <> inline void KeyValues3::SetDirect( uint32 value )	{ m_Data.m_UInt = ( uint64 )value; }
+template <> inline void KeyValues3::SetDirect( int64 value )	{ m_Data.m_Int = value; }
+template <> inline void KeyValues3::SetDirect( uint64 value )	{ m_Data.m_UInt = value; }
+template <> inline void KeyValues3::SetDirect( float32 value )	{ m_Data.m_Double = ( float64 )value; }
+template <> inline void KeyValues3::SetDirect( float64 value )	{ m_Data.m_Double = value; }
 
 template < typename T >
 T KeyValues3::GetVecBasedObj( int size, const T &defaultValue ) const
@@ -848,13 +866,13 @@ T KeyValues3::GetValue( T defaultValue ) const
 	switch ( GetType() )
 	{
 		case KV3_TYPE_BOOL:
-			return ( T )m_Bool;
+			return ( T )m_Data.m_Bool;
 		case KV3_TYPE_INT:
-			return ( T )m_Int;
+			return ( T )m_Data.m_Int;
 		case KV3_TYPE_UINT:
-			return ( GetSubType() != KV3_SUBTYPE_POINTER ) ? ( T )m_UInt : defaultValue;
+			return ( GetSubType() != KV3_SUBTYPE_POINTER ) ? ( T )m_Data.m_UInt : defaultValue;
 		case KV3_TYPE_DOUBLE:
-			return ( T )m_Double;
+			return ( T )m_Data.m_Double;
 		case KV3_TYPE_STRING:
 			return FromString<T>( defaultValue );
 		default:
@@ -877,13 +895,13 @@ template < typename T >
 void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree )
 {
 	m_TypeEx = KV3_TYPEEX_ARRAY;
-	m_nData = 0;
+	m_Data.m_nMemory = 0;
 	Alloc();
 
-	m_pArray->SetCount( size, type, subtype );
+	m_Data.m_pArray->SetCount( size, type, subtype );
 
-	KeyValues3** arr = m_pArray->Base();
-	for ( int i = 0; i < m_pArray->Count(); ++i )
+	KeyValues3** arr = m_Data.m_pArray->Base();
+	for ( int i = 0; i < m_Data.m_pArray->Count(); ++i )
 		arr[ i ]->SetDirect( data[ i ] );
 
 	if ( bFree )
@@ -903,7 +921,7 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 
 			m_bFreeArrayMemory = false;
 			m_nNumArrayElements = size;
-			m_pData = (void*)data;
+			m_Data.m_pMemory = (void*)data;
 		}
 		else
 		{
@@ -911,8 +929,8 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 
 			m_bFreeArrayMemory = false;
 			m_nNumArrayElements = size;
-			m_nData = 0;
-			memcpy( m_Data, data, size * sizeof( T ) );
+			m_Data.m_pMemory = NULL;
+			memcpy( &m_Data.m_pMemory, data, size * sizeof( T ) );
 
 			if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
 				free( (void*)data );
@@ -927,28 +945,28 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN )
 		{
 			m_bFreeArrayMemory = false;
-			m_pData = (void*)data;
+			m_Data.m_pMemory = (void*)data;
 		}
 		else if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
 		{
 			m_bFreeArrayMemory = true;
-			m_pData = (void*)data;
+			m_Data.m_pMemory = (void*)data;
 		}
 		else
 		{
 			m_bFreeArrayMemory = true;	
-			m_pData = malloc( size * sizeof( T ) );
-			memcpy( m_pData, data, size * sizeof( T ) );
+			m_Data.m_pMemory = malloc( size * sizeof( T ) );
+			memcpy( m_Data.m_pMemory, data, size * sizeof( T ) );
 		}
 	}
 	else
 	{
 		PrepareForType( KV3_TYPEEX_ARRAY, subtype );
 
-		m_pArray->SetCount( size, type_elem, subtype_elem );
+		m_Data.m_pArray->SetCount( size, type_elem, subtype_elem );
 
-		KeyValues3** arr = m_pArray->Base();
-		for ( int i = 0; i < m_pArray->Count(); ++i )
+		KeyValues3** arr = m_Data.m_pArray->Base();
+		for ( int i = 0; i < m_Data.m_pArray->Count(); ++i )
 			arr[ i ]->SetValue<T>( data[ i ], type_elem, subtype_elem );
 
 		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
@@ -956,79 +974,8 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 	}
 }
 
-template < class T >
-CKeyValues3ClusterT< T >::CKeyValues3ClusterT( CKeyValues3Context* context ) : 
-	m_pContext( context ), 
-	m_nAllocatedElements( 0 ),
-	m_pNextFree( NULL )
-{
-	memset( &m_Elements, 0, sizeof( m_Elements ) );
-}
-
-template < class T >
-T* CKeyValues3ClusterT< T >::Alloc()
-{
-	Assert( IsFree() );
-	int element = KV3Helpers::BitScanFwd( ~m_nAllocatedElements );
-	m_nAllocatedElements |= ( 1ull << element );
-	T* pElement = &m_Elements[ element ];
-	Construct( pElement, element );
-	return pElement;
-}
-
-template < class T >
-void CKeyValues3ClusterT< T >::Free( int element )
-{
-	Assert( element >= 0 && element < KV3_CLUSTER_MAX_ELEMENTS );
-	T* pElement = &m_Elements[ element ];
-	Destruct( pElement );
-	memset( (void *)pElement, 0, sizeof( T ) );
-	m_nAllocatedElements &= ~( 1ull << element );
-}
-
-template < class T >
-void CKeyValues3ClusterT< T >::Purge()
-{
-	uint64 mask = 1;
-	for ( int i = 0; i < KV3_CLUSTER_MAX_ELEMENTS; ++i )
-	{
-		if ( ( m_nAllocatedElements & mask ) != 0 )
-			m_Elements[ i ].Purge( true );
-		mask <<= 1;
-	}
-
-	m_nAllocatedElements = 0;
-}
-
-template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
-ELEMENT_TYPE* CKeyValues3Context::Alloc( CLUSTER_TYPE *&head, VECTOR_TYPE &vec )
-{
-	ELEMENT_TYPE* element;
-
-	if ( head )
-	{
-		element = head->Alloc();
-
-		if ( !head->IsFree() )
-		{
-			CLUSTER_TYPE* cluster = head->GetNextFree();
-			head->SetNextFree( NULL );
-			head = cluster;
-		}
-	}
-	else
-	{
-		CLUSTER_TYPE* cluster = new CLUSTER_TYPE( m_pContext );
-		*vec.AddToTailGetPtr() = cluster;
-		head = cluster;
-		element = cluster->Alloc();
-	}
-
-	return element;
-}
-
-template< class ELEMENT_TYPE, class CLUSTER_TYPE >
-void CKeyValues3Context::Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head )
+template<class ELEMENT_TYPE, class CLUSTER_TYPE, class TABLE_TYPE>
+void CKeyValues3Context::Free( ELEMENT_TYPE* element, CLUSTER_TYPE* base, CLUSTER_TYPE*& head, TABLE_TYPE *pTable )
 {
 	CLUSTER_TYPE* cluster = element->GetCluster();
 
@@ -1043,52 +990,7 @@ void CKeyValues3Context::Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTE
 		if ( cluster == base )
 			return;
 
-		if ( head != cluster )
-		{
-			CLUSTER_TYPE* cur = head;
-
-			while ( cur )
-			{
-				CLUSTER_TYPE* next = cur->GetNextFree();
-				if ( next == cluster )
-					break;
-				cur = next;
-			}
-
-			if ( cur )
-				cur->SetNextFree( cluster->GetNextFree() );
-		}
-		else
-		{
-			head = cluster->GetNextFree();
-		}
-
-		delete cluster;
-	}
-	else if ( num_allocated == ( KV3_CLUSTER_MAX_ELEMENTS - 1 ) )
-	{
-		cluster->SetNextFree( head );
-		head = cluster;
-	}
-}
-
-template< class ELEMENT_TYPE, class CLUSTER_TYPE, class VECTOR_TYPE >
-void CKeyValues3Context::Free( ELEMENT_TYPE *element, CLUSTER_TYPE *base, CLUSTER_TYPE *&head, VECTOR_TYPE &vec )
-{
-	CLUSTER_TYPE* cluster = element->GetCluster();
-
-	Assert( cluster != NULL && cluster->GetContext() == m_pContext );
-
-	cluster->Free( element->GetClusterElement() );
-
-	int num_allocated = cluster->NumAllocated();
-
-	if ( !num_allocated )
-	{
-		if ( cluster == base )
-			return;
-
-		vec.FindAndFastRemove( cluster );
+		// vec.FindAndFastRemove( cluster );
 
 		if ( head != cluster )
 		{
