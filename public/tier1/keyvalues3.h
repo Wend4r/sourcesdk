@@ -653,9 +653,9 @@ public:
 	void Clear() { Purge(); }
 
 	CKeyValues3Context* GetContext() const { return m_pContext; }
-	int NumAllocated() const { return KV3Helpers::PopCount(m_nAllocatedElements); }
+	int NumAllocated() const { return KV3Helpers::PopCount( m_nAllocatedElements ); }
 
-	bool IsFree() const { return (m_nAllocatedElements != 0x7fffffffffffffffull); }
+	bool IsFree() const { return m_nAllocatedElements != -1; }
 	KeyValues3ClusterNode* GetNextFree() const { return m_pNextFreeNode; }
 	void SetNextFree( KeyValues3ClusterNode* free ) { m_pNextFreeNode = free; }
 
@@ -674,7 +674,7 @@ public:
 
 	CKeyValues3Context* m_pContext;
 	KeyValues3ClusterNode* m_pNextFreeNode;
-	uint m_nAllocatedElements;
+	int m_nAllocatedElements;
 	int m_nElementCount;
 	CKeyValues3Cluster* m_pPrev;
 	CKeyValues3Cluster* m_pNext;

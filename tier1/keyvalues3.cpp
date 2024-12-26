@@ -1869,7 +1869,7 @@ void CKeyValues3Table::Purge( bool bClearingContext )
 
 CKeyValues3BaseCluster::CKeyValues3BaseCluster( CKeyValues3Context* context ) : 
 	m_pContext( context ), 
-	m_nAllocatedElements( 0 ),
+	m_nAllocatedElements( -1 ),
 	m_nElementCount( 0 ),
 	m_pPrev( NULL ),
 	m_pNext( NULL ),
@@ -2001,8 +2001,8 @@ void CKeyValues3Cluster::Clear()
 	}
 }
 
-CKeyValues3ArrayCluster::CKeyValues3ArrayCluster(CKeyValues3Context* context) :
-	CKeyValues3BaseCluster(context)
+CKeyValues3ArrayCluster::CKeyValues3ArrayCluster( CKeyValues3Context* context ) :
+	CKeyValues3BaseCluster( context )
 {
 	m_nAllocatedElements = KV3_ARRAY_INIT_SIZE;
 
@@ -2020,8 +2020,8 @@ CKeyValues3ArrayCluster::CKeyValues3ArrayCluster(CKeyValues3Context* context) :
 	m_pNextFreeNode = (KeyValues3ClusterNode*)&m_Elements[0];
 }
 
-CKeyValues3TableCluster::CKeyValues3TableCluster(CKeyValues3Context* context) :
-	CKeyValues3BaseCluster(context)
+CKeyValues3TableCluster::CKeyValues3TableCluster( CKeyValues3Context* context ) :
+	CKeyValues3BaseCluster( context )
 {
 	m_nAllocatedElements = KV3_TABLE_INIT_SIZE;
 
