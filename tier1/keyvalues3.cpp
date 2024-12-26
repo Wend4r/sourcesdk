@@ -256,7 +256,7 @@ void KeyValues3::Free( bool bClearingContext )
 			else
 			{
 				m_Data.m_pTable->Purge( true );
-				free( m_Data.m_pTable );
+				g_pMemAlloc->RegionFree( MEMALLOC_REGION_FREE_4, m_Data.m_pTable );
 			}
 
 			m_Data.m_pTable = NULL;
