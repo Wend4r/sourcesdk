@@ -1150,9 +1150,22 @@ KeyValues3& KeyValues3::operator=( const KeyValues3& src )
 	return *this;
 }
 
-CKeyValues3Array::CKeyValues3Array( int cluster_elem ) : 
-	m_nClusterElement( cluster_elem ) 
+CKeyValues3Array::CKeyValues3Array( int alloc_size, int cluster_elem ) :
+	m_nCount(0),
+	m_bIsDynamicallySized(false)
 {
+	m_nClusterElement = cluster_elem;
+
+	if ( alloc_size >= 256 )
+	{
+		m_nInitialSize = -1;
+		m_nClusterElement = alloc_size;
+	}
+	else
+	{
+		m_nInitialSize = KV3_ARRAY_MAX_FIXED_MEMBERS;
+		m_nClusterElement = KV3_ARRAY_MAX_FIXED_MEMBERS;
+	}
 }
 
 CKeyValues3ArrayCluster* CKeyValues3Array::GetCluster() const
@@ -1173,46 +1186,76 @@ CKeyValues3Context* CKeyValues3Array::GetContext() const
 		return NULL;
 }
 
+KeyValues3** CKeyValues3Array::Base()
+{
+	if ( m_bIsDynamicallySized )
+		return &m_Data.m_pChunks[0];
+
+	return &m_Data.m_Members[0];
+}
+
+KeyValues3* CKeyValues3Array::Element( int i )
+{
+	Assert( 0 <= i && i < m_nCount );
+
+	return Base()[i];
+}
+
 void CKeyValues3Array::SetCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
-	int nOldSize = m_Elements.Count();
+	int nOldSize = m_nCount;
 
 	CKeyValues3Context* context = GetContext();
 
 	for ( int i = count; i < nOldSize; ++i )
 	{
+		KeyValues3 *pElement = m_Data.m_Members[i];
+
 		if ( context )
-			context->FreeKV( m_Elements[ i ] );
+			context->FreeKV( pElement );
 		else
 		{
-			m_Elements[ i ]->Free( true );
-			free( m_Elements[ i ] );
+			pElement->Free( true );
+			free( pElement );
 		}
 	}
 
-	m_Elements.SetCount( count );
+	KeyValues3 **pNew = &m_Data.m_Members[0];
+
+	if ( count > nOldSize && count > KV3_ARRAY_MAX_FIXED_MEMBERS )
+	{
+		pNew = (KeyValues3**)( m_bIsDynamicallySized ? realloc( m_Data.m_pChunks, count ) : malloc( count ) );
+
+		memmove( pNew, Base(), m_nAllocatedChunks * sizeof(KeyValues3*) );
+
+		m_Data.m_pChunks = pNew;
+		m_nAllocatedChunks = count;
+		m_bIsDynamicallySized = true;
+	}
+
+	m_nCount = count;
 
 	for ( int i = nOldSize; i < count; ++i )
 	{
 		if ( context )
-			m_Elements[ i ] = context->AllocKV( type, subtype );
+			pNew[i] = context->AllocKV(type, subtype);
 		else
-			m_Elements[ i ] = new KeyValues3( type, subtype );
+			pNew[i] = new KeyValues3(type, subtype);
 	}
 }
 
 KeyValues3** CKeyValues3Array::InsertBeforeGetPtr( int elem, int num )
 {
-	KeyValues3** kv = m_Elements.InsertBeforeGetPtr( elem, num );
+	KeyValues3** kv = Base();
 
 	CKeyValues3Context* context = GetContext();
 
 	for ( int i = 0; i < num; ++i )
 	{
 		if ( context )
-			m_Elements[ elem + i ] = context->AllocKV();
+			kv[elem + i] = context->AllocKV();
 		else
-			m_Elements[ elem + i ] = new KeyValues3;
+			kv[elem + i] = new KeyValues3;
 	}
 
 	return kv;
@@ -1220,21 +1263,25 @@ KeyValues3** CKeyValues3Array::InsertBeforeGetPtr( int elem, int num )
 
 void CKeyValues3Array::CopyFrom( const CKeyValues3Array* pSrc )
 {
-	int nNewSize = pSrc->m_Elements.Count();
+	KeyValues3** kv = Base();
+	KeyValues3* const * pSrcKV = pSrc->Base();
+
+	int nNewSize = pSrc->Count();
 
 	SetCount( nNewSize );
 
 	for ( int i = 0; i < nNewSize; ++i )
-		*m_Elements[i] = *pSrc->m_Elements[i];
+		*kv[i] = *pSrcKV[i];
 }
 
 void CKeyValues3Array::RemoveMultiple( int elem, int num )
 {
 	CKeyValues3Context* context = GetContext();
+	KeyValues3 **kv = Base();
 
-	for ( int i = 0; i < num; ++i )
+	for ( int i = 0; i <= num; ++i )
 	{
-		auto &Element = m_Elements[ elem + i ];
+		auto &Element = kv[ elem + i ];
 
 		if ( context )
 			context->FreeKV( Element );
@@ -1244,29 +1291,31 @@ void CKeyValues3Array::RemoveMultiple( int elem, int num )
 			free( Element );
 		}
 	}
-
-	m_Elements.RemoveMultiple( elem, num );
 }
 
 void CKeyValues3Array::Purge( bool bClearingContext )
 { 
 	CKeyValues3Context* context = GetContext();
+	KeyValues3 **kv = Base();
 
-	FOR_EACH_LEANVEC( m_Elements, iter )
+	for ( int i = 0; i < m_nCount; i++ )
 	{
 		if ( context )
 		{
 			if ( !bClearingContext )
-				context->FreeKV( m_Elements[ iter ] );
+				context->FreeKV( kv[ i ] );
 		}
 		else
 		{
-			m_Elements[ iter ]->Free( true );
-			free( m_Elements[ iter ] );
+			kv[ i ]->Free( true );
+			free( kv[ i ] );
 		}
 	}
 
-	m_Elements.Purge();
+	if ( m_bIsDynamicallySized )
+		free( m_Data.m_pChunks );
+
+	m_nCount = 0;
 }
 
 CKeyValues3Table::CKeyValues3Table( int cluster_elem ) :

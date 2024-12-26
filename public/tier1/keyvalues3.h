@@ -46,6 +46,7 @@ enum
 enum
 {
 	KV3_TABLE_MAX_FIXED_MEMBERS = 8,
+	KV3_ARRAY_MAX_FIXED_MEMBERS = 6,
 };
 
 enum
@@ -482,31 +483,39 @@ COMPILE_TIME_ASSERT(sizeof(KeyValues3) == 16);
 class CKeyValues3Array
 {
 public:
-	CKeyValues3Array( int cluster_elem = -1 );
+	CKeyValues3Array( int alloc_size = 0, int cluster_elem = -1 );
 
 	int GetClusterElement() const { return m_nClusterElement; }
 	CKeyValues3ArrayCluster* GetCluster() const;
 	CKeyValues3Context* GetContext() const;
-		
-	KeyValues3** Base() { return m_Elements.Base(); }
-	KeyValues3* const * Base() const { return m_Elements.Base(); }
 
-	KeyValues3* Element( int i ) { return m_Elements[ i ]; }
-	const KeyValues3* Element( int i ) const { return m_Elements[ i ]; }
+	KeyValues3** Base();
+	KeyValues3* const * Base() const { return const_cast<CKeyValues3Array*>(this)->Base(); }
+	KeyValues3* Element( int i );
+	const KeyValues3* Element( int i ) const { return const_cast<CKeyValues3Array*>(this)->Element( i ); }
+	int Count() const { return m_nCount; }
 
-	int Count() const { return m_Elements.Count(); }
 	void SetCount( int count, KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
 	KeyValues3** InsertBeforeGetPtr( int elem, int num );
 	void CopyFrom( const CKeyValues3Array* pSrc );
 	void RemoveMultiple( int elem, int num );
 	void Purge( bool bClearingContext );
 
-private:
-	typedef CUtlLeanVectorFixedGrowable<KeyValues3*, 6, int> ElementsVec_t;
-	
-	int				m_nClusterElement;
-	ElementsVec_t 	m_Elements;  
+public:
+	int m_nClusterElement;
+	int m_nAllocatedChunks;
+
+	int m_nCount;
+	int8 m_nInitialSize;
+	bool m_bIsDynamicallySized;
+
+	union Data_t
+	{
+		KeyValues3* m_Members[KV3_ARRAY_MAX_FIXED_MEMBERS];
+		KeyValues3** m_pChunks;
+	} m_Data;
 };
+COMPILE_TIME_ASSERT(sizeof(CKeyValues3Array) == 64);
 
 class CKeyValues3Table
 {
