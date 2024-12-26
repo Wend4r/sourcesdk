@@ -546,7 +546,7 @@ public:
 
 	int GetMemberCount() const { return m_nCount; }
 	Member_t GetMember( KV3MemberId_t id );
-	const Member_t GetMember( KV3MemberId_t id ) const;
+	const Member_t GetMember( KV3MemberId_t id ) const { return const_cast<CKeyValues3Table*>(this)->GetMember( id ); }
 	const Name_t GetMemberName( KV3MemberId_t id ) const;
 	const Hash_t GetMemberHash( KV3MemberId_t id ) const;
 	void EnableFastSearch();
