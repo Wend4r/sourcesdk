@@ -917,6 +917,7 @@ const char* KeyValues3::GetSubTypeAsString() const
 		"soundevent",
 		"subclass",
 		"entity_name",
+		"localize",
 		"unspecified",
 		"null",
 		"binary_blob",
