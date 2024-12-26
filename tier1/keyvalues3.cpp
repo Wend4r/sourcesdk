@@ -40,7 +40,7 @@ KeyValues3::~KeyValues3()
 	Free(); 
 };
 
-void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, uint8 nTypeEx )
+void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, KV3TypeEx_t nTypeEx )
 {
 	switch ( GetTypeEx() )
 	{
@@ -48,14 +48,17 @@ void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, uint8 nTyp
 		{
 			if ( nValidBytes <= 0 )
 			{
-				if ( m_bExternalStorage )
+				CKeyValues3Context* context;
+
+				if ( m_bExternalStorage || !( context = GetContext() ) || !( m_Data.m_pArray = context->AllocArray( nAllocSize ) ) )
 				{
 					if ( nAllocSize <= 0 )
 						nAllocSize = KV3_ARRAY_MAX_FIXED_MEMBERS;
 
-					[[maybe_unused]] int nSize = 8 * nAllocSize + 16;
+					int nSize = nAllocSize * sizeof(void*) + 16;
 
-					CKeyValues3Array *pNewArray = new CKeyValues3Array( nAllocSize );
+					CKeyValues3Array* pNewArray = (CKeyValues3Array*)g_pMemAlloc->RegionAlloc( MEMALLOC_REGION_ALLOC_4, nSize );
+					Construct( pNewArray, nAllocSize );
 
 					m_bFreeArrayMemory = true;
 					m_TypeEx = nTypeEx;
@@ -64,7 +67,7 @@ void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, uint8 nTyp
 			}
 			else
 			{
-				int nSize = nAllocSize > 0 ? ( 8 * nAllocSize + 16 ) : 24;
+				int nSize = nAllocSize > 0 ? ( nAllocSize * sizeof(void*) + 16 ) : 24;
 
 				if ( nSize > nValidBytes )
 				{
@@ -72,7 +75,7 @@ void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, uint8 nTyp
 					DebuggerBreak();
 				}
 
-				Construct( Data.m_pTable );
+				Construct( Data.m_pArray, nAllocSize );
 
 				m_bFreeArrayMemory = false;
 				m_TypeEx = nTypeEx;
@@ -84,16 +87,7 @@ void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, uint8 nTyp
 		{
 			if ( nAllocSize <= 0 )
 			{
-				CKeyValues3Table* pTable {};
-
-				CKeyValues3Context* context = GetContext();
-
-				if ( m_bExternalStorage && context )
-				{
-					pTable = context->AllocTable( nAllocSize );
-				}
-				else
-					AssertMsg( 0, "KeyValues3::AllocTable are not implemented" );
+				CKeyValues3Table* pTable = AllocTable( nAllocSize );
 
 				m_bFreeArrayMemory = true;
 				m_Data.m_pTable = pTable;
@@ -131,6 +125,73 @@ void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, uint8 nTyp
 		default: 
 			break;
 	}
+}
+
+CKeyValues3Table* KeyValues3::AllocTable( int nAllocSize )
+{
+	CKeyValues3Table* pResult = NULL;
+
+	if ( m_bExternalStorage )
+	{
+		CKeyValues3Context* context = GetContext();
+
+		if ( context )
+		{
+			int iTableClusterSize = context->GetTableClusterSize();
+			int iTableClusterAllocationCount = context->GetTableClusterAllocationCount();
+
+			int nNewSize = nAllocSize > 0 ? ( KV3Helpers::CalcAlighedChunk( nAllocSize ) * 17 * nAllocSize + 31 ) : 39;
+			const int nNewSizeDiff = ( nNewSize & KV3_CHUNK_BITMASK ) + sizeof(void*);
+
+			if ( iTableClusterSize >= iTableClusterAllocationCount ||
+			     nNewSizeDiff > ( iTableClusterAllocationCount - iTableClusterSize ) )
+			{
+				if ( nAllocSize <= KV3_TABLE_MAX_FIXED_MEMBERS )
+				{
+					pResult = context->AllocTable( nAllocSize );
+				}
+			}
+			else // Ensure a dynamic table copacity.
+			{
+				CKeyValues3Table* pDynamicTable = context->DynamicTableBase();
+
+				KeyValues3TableNode* pNewTableNode = (KeyValues3TableNode*)( (uintp)pDynamicTable + iTableClusterSize );
+
+				pResult = &pNewTableNode->m_Table;
+
+				const int nMinAllocated = std::numeric_limits<int>::digits;
+				const int nMaxAllocated = (std::numeric_limits<int>::max)();
+				int nNewAllocated = nNewSizeDiff + iTableClusterSize;
+
+				while ( nNewAllocated < iTableClusterAllocationCount )
+				{
+					if ( iTableClusterAllocationCount < nMaxAllocated/2 )
+						iTableClusterAllocationCount = MAX( iTableClusterAllocationCount*2, nMinAllocated );
+					else
+						iTableClusterAllocationCount = nMaxAllocated;
+				}
+
+				context->m_pDynamicTable = (CKeyValues3Table*)realloc( pDynamicTable, nNewAllocated );
+				context->m_nTableClusterSize = nNewAllocated;
+				context->m_nTableClusterAllocationCount = iTableClusterAllocationCount;
+
+				pNewTableNode->m_pNextFree = (KeyValues3TableNode*)( (uintp)pNewTableNode + nNewSizeDiff );
+
+				Construct( pResult, nAllocSize );
+			}
+		}
+	}
+
+	if ( pResult )
+		return pResult;
+
+	if ( nAllocSize <= 0 )
+		nAllocSize = KV3_TABLE_MAX_FIXED_MEMBERS;
+
+	pResult = (CKeyValues3Table*)g_pMemAlloc->RegionAlloc( MEMALLOC_REGION_ALLOC_4, KV3Helpers::CalcAlighedChunk( nAllocSize ) + 17 * nAllocSize + 24 );
+	Construct( pResult, nAllocSize );
+
+	return pResult;
 }
 
 void KeyValues3::Free( bool bClearingContext )
@@ -1991,7 +2052,6 @@ CKeyValues3ContextBase::CKeyValues3ContextBase( CKeyValues3Context* context ) :
 	m_pEmptyArrayClusterCopy( NULL ),
 	m_nArrayClusterSize( 0 ),
 	m_nArrayClusterAllocationCount( 0 ),
-	m_pDynamicArray( NULL ),
 
 	m_pTableCluster( NULL ),
 	m_pTableClusterCopy( NULL ),
@@ -1999,7 +2059,6 @@ CKeyValues3ContextBase::CKeyValues3ContextBase( CKeyValues3Context* context ) :
 	m_pEmptyTableClusterCopy( NULL ),
 	m_nTableClusterSize( 0 ),
 	m_nTableClusterAllocationCount( 0 ),
-	m_pDynamicTable( NULL ),
 
 	m_pParsingErrorListener( NULL )
 {
@@ -2008,6 +2067,22 @@ CKeyValues3ContextBase::CKeyValues3ContextBase( CKeyValues3Context* context ) :
 CKeyValues3ContextBase::~CKeyValues3ContextBase()
 {
 	Purge();
+}
+
+CKeyValues3Array* CKeyValues3ContextBase::DynamicArrayBase()
+{
+	if (m_nArrayClusterAllocationCount)
+		return m_pDynamicArray;
+
+	return NULL;
+}
+
+CKeyValues3Table* CKeyValues3ContextBase::DynamicTableBase()
+{
+	if (m_nTableClusterAllocationCount)
+		return m_pDynamicTable;
+
+	return NULL;
 }
 
 void CKeyValues3ContextBase::Clear()
@@ -2070,7 +2145,7 @@ void CKeyValues3Context::Purge()
 		m_KV3BaseCluster.Alloc();
 }
 
-CKeyValues3Array* CKeyValues3Context::AllocArray(int nAllocSize)
+CKeyValues3Array* CKeyValues3Context::AllocArray( int nAllocSize )
 {
 	CKeyValues3Array* pArray = NULL;
 
@@ -2157,10 +2232,11 @@ CKeyValues3Array* CKeyValues3Context::AllocArray(int nAllocSize)
 	return pArray;
 }
 
-CKeyValues3Table* CKeyValues3Context::AllocTable(int nAllocSize) {
+CKeyValues3Table* CKeyValues3Context::AllocTable( int nAllocSize )
+{
 	CKeyValues3Table* pTable = nullptr;
 
-	int nSize = nAllocSize > 0 ? ( ( 17 * nAllocSize + ( KV3Helpers::CalcAlighedChunk(nAllocSize) + 31) & KV3_CHUNK_BITMASK ) + KV3_TABLE_MAX_FIXED_MEMBERS ) : 40;
+	int nSize = nAllocSize > 0 ? ( ( 17 * nAllocSize + ( KV3Helpers::CalcAlighedChunk(nAllocSize) + 31 ) & KV3_CHUNK_BITMASK ) + KV3_TABLE_MAX_FIXED_MEMBERS ) : 40;
 
 	if ( ( m_nTableClusterSize >= m_nTableClusterAllocationCount) || ( m_nTableClusterAllocationCount - m_nTableClusterSize < nSize ) )
 	{
@@ -2185,7 +2261,7 @@ CKeyValues3Table* CKeyValues3Context::AllocTable(int nAllocSize) {
 				Construct( pTable, nAllocSize, nClusterElement );
 			}
 
-			int nAllocatedElements = (2 * pAllocator->m_nAllocatedElements) >> 1;
+			int nAllocatedElements = ( 2 * pAllocator->m_nAllocatedElements ) >> 1;
 
 			if ( pAllocator->m_nElementCount == nAllocatedElements )
 			{

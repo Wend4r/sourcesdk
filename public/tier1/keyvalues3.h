@@ -15,12 +15,13 @@
 #include "tier0/utlstring.h"
 #include "tier1/generichash.h"
 #include "tier1/utlhashtable.h"
-#include "tier1/utlleanvector.h"
 #include "tier1/utlmap.h"
 #include "tier1/utlsymbollarge.h"
 #include "mathlib/vector4d.h"
 #include "color.h"
 #include "entityhandle.h"
+
+#include <limits>
 
 #include "tier0/memdbgon.h"
 
@@ -44,8 +45,8 @@ enum
 
 enum
 {
-	KV3_TABLE_MAX_FIXED_MEMBERS = 8,
 	KV3_ARRAY_MAX_FIXED_MEMBERS = 6,
+	KV3_TABLE_MAX_FIXED_MEMBERS = 8,
 };
 
 enum
@@ -442,7 +443,8 @@ private:
 		char m_Memory[1];
 	};
 
-	void Alloc( int nAllocSize = 0, Data_t Data = {}, int nValidBytes = 0, uint8 nTypeEx = 0 );
+	void Alloc( int nAllocSize = 0, Data_t Data = {}, int nValidBytes = 0, KV3TypeEx_t nTypeEx = KV3_TYPEEX_INVALID );
+	CKeyValues3Table* AllocTable( int nAllocSize );
 	void Free( bool bClearingContext = false );
 	void ResolveUnspecified();
 	void PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype );
@@ -615,6 +617,24 @@ private:
 };
 COMPILE_TIME_ASSERT(sizeof(CKeyValues3Table) == 192);
 
+struct KeyValues3ArrayNode
+{
+	KeyValues3ArrayNode* m_pNextFree;
+	CKeyValues3Table m_Table;
+
+	KeyValues3ArrayNode() : m_pNextFree( NULL ) {}
+	~KeyValues3ArrayNode() {}
+};
+
+struct KeyValues3TableNode
+{
+	KeyValues3TableNode* m_pNextFree;
+	CKeyValues3Table m_Table;
+
+	KeyValues3TableNode() : m_pNextFree( NULL ) {}
+	~KeyValues3TableNode() {}
+};
+
 union KeyValues3ClusterNode
 {
 	KeyValues3 m_KeyValue;
@@ -723,6 +743,16 @@ public:
 	CKeyValues3ContextBase( CKeyValues3Context* context );
 	~CKeyValues3ContextBase();
 
+	int GetArrayClusterSize() const { return m_nArrayClusterSize; }
+	int GetArrayClusterAllocationCount() const { return m_nArrayClusterAllocationCount; }
+	CKeyValues3Array* DynamicArrayBase();
+	const CKeyValues3Array* DynamicArrayBase() const { return const_cast<CKeyValues3ContextBase*>(this)->DynamicArrayBase(); };
+
+	int GetTableClusterSize() const { return m_nTableClusterSize; }
+	int GetTableClusterAllocationCount() const { return m_nTableClusterAllocationCount; }
+	CKeyValues3Table* DynamicTableBase();
+	const CKeyValues3Table* DynamicTableBase() const { return const_cast<CKeyValues3ContextBase*>(this)->DynamicTableBase(); }
+
 	void Clear();
 	void Purge();
 
@@ -739,17 +769,17 @@ protected:
 	CKeyValues3ArrayCluster* m_pArrayClusterCopy;       // 4208
 	CKeyValues3ArrayCluster* m_pEmptyArrayCluster;      // 4216
 	CKeyValues3ArrayCluster* m_pEmptyArrayClusterCopy;  // 4224
-	int m_nArrayClusterSize;                           // 4232
-	int m_nArrayClusterAllocationCount;                // 4236
-	CKeyValues3Array* m_pDynamicArray;                 // 4240
+	int m_nArrayClusterSize;                            // 4232
+	int m_nArrayClusterAllocationCount;                 // 4236
+	CKeyValues3Array* m_pDynamicArray;                  // 4240
 
 	CKeyValues3TableCluster* m_pTableCluster;           // 4248
 	CKeyValues3TableCluster* m_pTableClusterCopy;       // 4256
 	CKeyValues3TableCluster* m_pEmptyTableCluster;      // 4264
 	CKeyValues3TableCluster* m_pEmptyTableClusterCopy;  // 4272
-	int m_nTableClusterSize;                           // 4280
-	int m_nTableClusterAllocationCount;                // 4284
-	CKeyValues3Table* m_pDynamicTable;                 // 4288
+	int m_nTableClusterSize;                            // 4280
+	int m_nTableClusterAllocationCount;                 // 4284
+	CKeyValues3Table* m_pDynamicTable;                  // 4288
 
 	CUtlSymbolTableLarge m_Symbols; // 4296
 
@@ -758,6 +788,8 @@ protected:
 	bool m_bRootAvailabe: 1;
 
 	IParsingErrorListener* m_pParsingErrorListener;
+
+	friend class KeyValues3;
 };
 
 class CKeyValues3Context : public CKeyValues3ContextBase
