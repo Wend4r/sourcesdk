@@ -430,12 +430,18 @@ private:
 		KV3BinaryBlob_t* m_pBinaryBlob;
 
 		CKeyValues3Array*	m_pArray;
-		float32*			m_f32Array;
-		float64*			m_f64Array;
-		int16*				m_i16Array;
-		int32*				m_i32Array;
-		uint8				m_u8ArrayShort[8];
-		int16				m_i16ArrayShort[4];
+
+		union Array_t
+		{
+			float32* m_f32;
+			Vector *m_vec;
+			QAngle *m_ang;
+			float64* m_f64;
+			int16* m_i16;
+			int32* m_i32;
+			uint8 m_u8Short[8];
+			int16 m_i16Short[4];
+		} m_Array;
 
 		CKeyValues3Table* m_pTable;
 
@@ -928,8 +934,7 @@ template < typename T >
 void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree )
 {
 	m_TypeEx = KV3_TYPEEX_ARRAY;
-	m_Data.m_nMemory = 0;
-	Alloc();
+	Alloc( size );
 
 	m_Data.m_pArray->SetCount( size, type, subtype );
 

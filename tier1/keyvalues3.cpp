@@ -50,7 +50,7 @@ void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, KV3TypeEx_
 			{
 				CKeyValues3Context* context;
 
-				if ( m_bExternalStorage || !( context = GetContext() ) || !( m_Data.m_pArray = context->AllocArray( nAllocSize ) ) )
+				if ( !m_bExternalStorage || !( context = GetContext() ) || !( m_Data.m_pArray = context->AllocArray( nAllocSize ) ) )
 				{
 					if ( nAllocSize <= 0 )
 						nAllocSize = KV3_ARRAY_MAX_FIXED_MEMBERS;
@@ -61,7 +61,6 @@ void KeyValues3::Alloc( int nAllocSize, Data_t Data, int nValidBytes, KV3TypeEx_
 					Construct( pNewArray, nAllocSize );
 
 					m_bFreeArrayMemory = true;
-					m_TypeEx = nTypeEx;
 					m_Data.m_pArray = pNewArray;
 				}
 			}
@@ -236,7 +235,7 @@ void KeyValues3::Free( bool bClearingContext )
 			else
 			{
 				m_Data.m_pArray->Purge( true );
-				free( m_Data.m_pArray );
+				g_pMemAlloc->RegionFree( MEMALLOC_REGION_FREE_4, m_Data.m_pArray );
 			}
 
 			m_Data.m_pArray = NULL;
@@ -345,7 +344,6 @@ void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype )
 	{
 		Free();
 		m_TypeEx = type;
-		m_Data.m_nMemory = 0;
 		Alloc();
 	}
 
@@ -534,20 +532,16 @@ int KeyValues3::GetArrayElementCount() const
 
 KeyValues3** KeyValues3::GetArrayBase()
 {
-	if ( GetType() != KV3_TYPE_ARRAY )
+	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
 		return NULL;
-
-	NormalizeArray();
 
 	return m_Data.m_pArray->Base();
 }
 
 KeyValues3* KeyValues3::GetArrayElement( int elem )
 {
-	if ( GetType() != KV3_TYPE_ARRAY )
+	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
 		return NULL;
-
-	NormalizeArray();
 
 	if ( elem < 0 || elem >= m_Data.m_pArray->Count() )
 		return NULL;
@@ -557,40 +551,32 @@ KeyValues3* KeyValues3::GetArrayElement( int elem )
 
 KeyValues3* KeyValues3::InsertArrayElementBefore( int elem )
 {
-	if ( GetType() != KV3_TYPE_ARRAY )
+	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
 		return NULL;
-
-	NormalizeArray();
 
 	return *m_Data.m_pArray->InsertBeforeGetPtr( elem, 1 );
 }
 
 KeyValues3* KeyValues3::AddArrayElementToTail()
 {
-	if ( GetType() != KV3_TYPE_ARRAY )
-		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
-	else
-		NormalizeArray();
+	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
+		return NULL;
 
 	return *m_Data.m_pArray->InsertBeforeGetPtr( m_Data.m_pArray->Count(), 1 );
 }
 
 void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
-	if ( GetType() != KV3_TYPE_ARRAY )
-		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
-	else
-		NormalizeArray();
+	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
+		return;
 
 	m_Data.m_pArray->SetCount( count, type, subtype );
 }
 
 void KeyValues3::RemoveArrayElements( int elem, int num )
 {
-	if ( GetType() != KV3_TYPE_ARRAY )
+	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
 		return;
-
-	NormalizeArray();
 
 	m_Data.m_pArray->RemoveMultiple( elem, num );
 }
@@ -601,35 +587,35 @@ void KeyValues3::NormalizeArray()
 	{
 		case KV3_TYPEEX_ARRAY_FLOAT32:
 		{
-			NormalizeArray<float32>( KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32, m_nNumArrayElements, m_Data.m_f32Array, m_bFreeArrayMemory );
+			NormalizeArray<float32>( KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32, m_nNumArrayElements, m_Data.m_Array.m_f32, m_bFreeArrayMemory );
 			break;
 		}
 		case KV3_TYPEEX_ARRAY_FLOAT64:
 		{
-			NormalizeArray<float64>( KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT64, m_nNumArrayElements, m_Data.m_f64Array, m_bFreeArrayMemory );
+			NormalizeArray<float64>( KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT64, m_nNumArrayElements, m_Data.m_Array.m_f64, m_bFreeArrayMemory );
 			break;
 		}
 		case KV3_TYPEEX_ARRAY_INT16:
 		{
-			NormalizeArray<int16>( KV3_TYPEEX_INT, KV3_SUBTYPE_INT16, m_nNumArrayElements, m_Data.m_i16Array, m_bFreeArrayMemory );
+			NormalizeArray<int16>( KV3_TYPEEX_INT, KV3_SUBTYPE_INT16, m_nNumArrayElements, m_Data.m_Array.m_i16, m_bFreeArrayMemory );
 			break;
 		}
 		case KV3_TYPEEX_ARRAY_INT32:
 		{
-			NormalizeArray<int32>( KV3_TYPEEX_INT, KV3_SUBTYPE_INT32, m_nNumArrayElements, m_Data.m_i32Array, m_bFreeArrayMemory );
+			NormalizeArray<int32>( KV3_TYPEEX_INT, KV3_SUBTYPE_INT32, m_nNumArrayElements, m_Data.m_Array.m_i32, m_bFreeArrayMemory );
 			break;
 		}
 		case KV3_TYPEEX_ARRAY_UINT8_SHORT:
 		{
 			uint8 u8ArrayShort[8];
-			memcpy( u8ArrayShort, m_Data.m_u8ArrayShort, sizeof( u8ArrayShort ) );
+			memcpy( u8ArrayShort, m_Data.m_Array.m_u8Short, sizeof( u8ArrayShort ) );
 			NormalizeArray<uint8>( KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT8, m_nNumArrayElements, u8ArrayShort, false );
 			break;
 		}
 		case KV3_TYPEEX_ARRAY_INT16_SHORT:
 		{
 			int16 i16ArrayShort[4];
-			memcpy( i16ArrayShort, m_Data.m_u8ArrayShort, sizeof( i16ArrayShort ) );
+			memcpy( i16ArrayShort, m_Data.m_Array.m_u8Short, sizeof( i16ArrayShort ) );
 			NormalizeArray<int16>( KV3_TYPEEX_INT, KV3_SUBTYPE_INT16, m_nNumArrayElements, i16ArrayShort, false );
 			break;
 		}
@@ -668,14 +654,14 @@ bool KeyValues3::ReadArrayInt32( int dest_size, int32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( int32 )m_Data.m_u8ArrayShort[ i ];
+					data[ i ] = ( int32 )m_Data.m_Array.m_u8Short[ i ];
 				break;
 			}
 			case KV3_TYPEEX_ARRAY_INT32:
 			{
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
-				memcpy( data, m_Data.m_i32Array, count * sizeof( int32 ) );
+				memcpy( data, m_Data.m_Array.m_i32, count * sizeof( int32 ) );
 				break;
 			}
 			case KV3_TYPEEX_ARRAY_UINT8_SHORT:
@@ -683,7 +669,7 @@ bool KeyValues3::ReadArrayInt32( int dest_size, int32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( int32 )m_Data.m_u8ArrayShort[ i ];
+					data[ i ] = ( int32 )m_Data.m_Array.m_u8Short[ i ];
 				break;
 			}
 			case KV3_TYPEEX_ARRAY_INT16_SHORT:
@@ -691,7 +677,7 @@ bool KeyValues3::ReadArrayInt32( int dest_size, int32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( int32 )m_Data.m_u8ArrayShort[ i ];
+					data[ i ] = ( int32 )m_Data.m_Array.m_u8Short[ i ];
 				break;
 			}
 			default: 
@@ -734,7 +720,7 @@ bool KeyValues3::ReadArrayFloat32( int dest_size, float32* data ) const
 			{
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
-				memcpy( data, m_Data.m_f32Array, count * sizeof( float32 ) );
+				memcpy( data, m_Data.m_Array.m_f32, count * sizeof( float32 ) );
 				break;
 			}
 			case KV3_TYPEEX_ARRAY_FLOAT64:
@@ -742,7 +728,7 @@ bool KeyValues3::ReadArrayFloat32( int dest_size, float32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( float32 )m_Data.m_f64Array[ i ];
+					data[ i ] = ( float32 )m_Data.m_Array.m_f64[ i ];
 				break;
 			}
 			default: 
@@ -1079,7 +1065,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%g", m_Data.m_f32Array[i] );
+							buff.AppendFormat( "%g", m_Data.m_Array.m_f32[i] );
 							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
 						}
 						return buff.ToGrowable()->Get();
@@ -1088,7 +1074,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%g", m_Data.m_f64Array[i] );
+							buff.AppendFormat( "%g", m_Data.m_Array.m_f64[i] );
 							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
 						}
 						return buff.ToGrowable()->Get();
@@ -1097,7 +1083,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%d", m_Data.m_u8ArrayShort[i] );
+							buff.AppendFormat( "%d", m_Data.m_Array.m_i16Short[i] );
 							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
 						}
 						return buff.ToGrowable()->Get();
@@ -1106,7 +1092,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%d", m_Data.m_i32Array[i] );
+							buff.AppendFormat( "%d", m_Data.m_Array.m_i32[i] );
 							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
 						}
 						return buff.ToGrowable()->Get();
@@ -1115,7 +1101,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%u", m_Data.m_u8ArrayShort[i] );
+							buff.AppendFormat( "%u", m_Data.m_Array.m_u8Short[i] );
 							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
 						}
 						return buff.ToGrowable()->Get();
@@ -1124,7 +1110,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%d", m_Data.m_u8ArrayShort[i] );
+							buff.AppendFormat( "%d", m_Data.m_Array.m_i16Short[i] );
 							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
 						}
 						return buff.ToGrowable()->Get();
@@ -1215,22 +1201,22 @@ void KeyValues3::CopyFrom( const KeyValues3* pSrc )
 					break;
 				}
 				case KV3_TYPEEX_ARRAY_FLOAT32:
-					AllocArray<float32>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_f32Array, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT32, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32 );
+					AllocArray<float32>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_f32, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT32, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32 );
 					break;
 				case KV3_TYPEEX_ARRAY_FLOAT64:
-					AllocArray<float64>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_f64Array, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT64, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT64 );
+					AllocArray<float64>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_f64, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT64, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT64 );
 					break;
 				case KV3_TYPEEX_ARRAY_INT16:
-					AllocArray<int16>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_i16Array, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
+					AllocArray<int16>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_i16, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
 					break;
 				case KV3_TYPEEX_ARRAY_INT32:
-					AllocArray<int32>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_i32Array, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_INT32, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT32 );
+					AllocArray<int32>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_i32, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_INT32, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT32 );
 					break;
 				case KV3_TYPEEX_ARRAY_UINT8_SHORT:
-					AllocArray<uint8>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_u8ArrayShort, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_UINT8_SHORT, KV3_TYPEEX_INVALID, eSrcSubType, KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT8 );
+					AllocArray<uint8>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_u8Short, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_UINT8_SHORT, KV3_TYPEEX_INVALID, eSrcSubType, KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT8 );
 					break;
 				case KV3_TYPEEX_ARRAY_INT16_SHORT:
-					AllocArray<int16>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_i16ArrayShort, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
+					AllocArray<int16>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_i16Short, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
 					break;
 				default:
 					break;
@@ -1270,12 +1256,12 @@ CKeyValues3Array::CKeyValues3Array( int alloc_size, int cluster_elem ) :
 	if ( alloc_size >= 256 )
 	{
 		m_nInitialSize = -1;
-		m_nClusterElement = alloc_size;
+		m_nAllocatedChunks = alloc_size;
 	}
 	else
 	{
 		m_nInitialSize = KV3_ARRAY_MAX_FIXED_MEMBERS;
-		m_nClusterElement = KV3_ARRAY_MAX_FIXED_MEMBERS;
+		m_nAllocatedChunks = KV3_ARRAY_MAX_FIXED_MEMBERS;
 	}
 }
 
@@ -1333,26 +1319,31 @@ void CKeyValues3Array::SetCount( int count, KV3TypeEx_t type, KV3SubType_t subty
 
 	KeyValues3 **pNew = &m_Data.m_Members[0];
 
-	if ( count > nOldSize && count > KV3_ARRAY_MAX_FIXED_MEMBERS )
+	if ( count > MAX( KV3_ARRAY_MAX_FIXED_MEMBERS, m_nAllocatedChunks ) )
 	{
 		pNew = (KeyValues3**)( m_bIsDynamicallySized ? realloc( m_Data.m_pChunks, count ) : malloc( count ) );
 
-		memmove( pNew, Base(), m_nAllocatedChunks * sizeof(KeyValues3*) );
+		memmove( pNew, Base(), count * sizeof(KeyValues3*) );
 
 		m_Data.m_pChunks = pNew;
-		m_nAllocatedChunks = count;
+
+		if ( count > m_nAllocatedChunks )
+		{
+			m_nAllocatedChunks = count;
+		}
+
 		m_bIsDynamicallySized = true;
 	}
-
-	m_nCount = count;
 
 	for ( int i = nOldSize; i < count; ++i )
 	{
 		if ( context )
-			pNew[i] = context->AllocKV(type, subtype);
+			pNew[i] = context->AllocKV( type, subtype );
 		else
-			pNew[i] = new KeyValues3(type, subtype);
+			pNew[i] = new KeyValues3( type, subtype );
 	}
+
+	m_nCount = count;
 }
 
 KeyValues3** CKeyValues3Array::InsertBeforeGetPtr( int elem, int num )
@@ -2375,10 +2366,11 @@ KeyValues3* CKeyValues3Context::AllocKV( KV3TypeEx_t type, KV3SubType_t subtype 
 
 	CKeyValues3Cluster* pAllocator = m_pKV3FreeClusterAllocator;
 
-	if (pAllocator) {
+	if (pAllocator)
+	{
 		kv = m_pKV3FreeClusterAllocator->Alloc( type, subtype );
 
-		int nAllocatedElements = (2 * pAllocator->m_nAllocatedElements) >> 1;
+		int nAllocatedElements = ( 2 * pAllocator->m_nAllocatedElements ) >> 1;
 
 		if (pAllocator->m_nElementCount == nAllocatedElements)
 		{
