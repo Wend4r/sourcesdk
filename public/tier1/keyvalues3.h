@@ -238,17 +238,20 @@ struct KV3MetaData_t
 {
 	KV3MetaData_t() : m_pNext( NULL ), m_pszString( NULL ) {}
 
-	void Clear()
-	{
-		m_pNext = NULL;
-
-		free( m_pszString );
-		m_pszString = NULL;
-	}
-
 	void Purge()
 	{
-		free( m_pszString );
+		if ( m_pszString )
+		{
+			free( m_pszString );
+		}
+	}
+
+	void Clear()
+	{
+		Purge();
+
+		m_pNext = NULL;
+		m_pszString = NULL;
 	}
 
 	KV3MetaData_t *m_pNext;

@@ -2426,8 +2426,6 @@ void CKeyValues3Context::FreeKV( KeyValues3* kv )
 	CKeyValues3Context* context;
 	KV3MetaData_t* metadata = kv->GetMetaData( &context );
 
-	Assert( context == m_pContext );
-
 	if ( metadata )
 		metadata->Clear();
 

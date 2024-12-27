@@ -2258,7 +2258,7 @@ inline void Destruct( float __attribute__((__vector_size__(16)))* pMemory )
 //	};
 
 #define GET_OUTER( OuterType, OuterMember ) \
-   ( ( OuterType * ) ( (uint8 *)this - offsetof_by_class( OuterType, OuterMember ) ) )
+   ( ( OuterType * ) ( (uint8 *)this - offsetof( OuterType, OuterMember ) ) )
 
 
 /*	TEMPLATE_FUNCTION_TABLE()
