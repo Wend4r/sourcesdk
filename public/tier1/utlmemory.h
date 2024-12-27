@@ -893,9 +893,9 @@ inline void CUtlMemory<T,I>::EnsureCapacity( I num )
 template< class T, class I >
 void CUtlMemory<T,I>::Purge()
 {
-	if ( !IsExternallyAllocated() )
+	if ( m_nGrowSize && !IsExternallyAllocated() )
 	{
-		if (m_pMemory)
+		if ( m_pMemory )
 		{
 			UTLMEMORY_TRACK_FREE();
 			Assert( m_pMemory != (T *)(size_t)UTLMEMORY_BAD_ADDRESS );
