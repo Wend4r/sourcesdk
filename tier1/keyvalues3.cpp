@@ -1761,8 +1761,10 @@ void CKeyValues3Table::RemoveMember( KV3MemberId_t id )
 {
 	CKeyValues3Context* context = GetContext();
 
+	Hash_t* pHashes = HashesBase();
 	Member_t* pMembers = MembersBase();
 	Name_t* pNames = NamesBase();
+	IsExternalName_t* pIsExternalNames = IsExternalNameBase();
 
 	if ( context ) 
 	{
@@ -1774,6 +1776,19 @@ void CKeyValues3Table::RemoveMember( KV3MemberId_t id )
 		free( pMembers[ id ] );
 		free( (void*)pNames[ id ] );
 	}
+
+	KV3MemberId_t nShiftFrom = id + 1;
+
+	if ( nShiftFrom <= m_nCount )
+	{
+		int nHighElements = m_nCount - nShiftFrom;
+
+		memmove( &pHashes[id], &pHashes[nShiftFrom], nHighElements * sizeof(Hash_t) );
+		memmove( &pMembers[id], &pMembers[nShiftFrom], nHighElements * sizeof(Member_t) );
+		memmove( &pNames[id], &pNames[nShiftFrom], nHighElements * sizeof(Name_t) );
+		memmove( &pIsExternalNames[id], &pIsExternalNames[nShiftFrom], nHighElements * sizeof(IsExternalName_t) );
+	}
+
 
 	if ( m_pFastSearch )
 	{
