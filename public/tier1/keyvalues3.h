@@ -435,7 +435,11 @@ private:
 		{
 			float32* m_f32;
 			Vector *m_vec;
+			Vector2D *m_vec2;
+			Vector4D *m_vec4;
+			Quaternion *m_qua;
 			QAngle *m_ang;
+			matrix3x4_t *m_mat;
 			float64* m_f64;
 			int16* m_i16;
 			int32* m_i32;
@@ -487,8 +491,9 @@ private:
 	uint64 m_SubType : 8;
 	uint64 m_nFlags : 8;
 	uint64 m_nClusterElement : 6;
+	uint64 m_nReserved : 10;
 	uint64 m_nNumArrayElements : 5;
-	uint64 m_nReserved : 27;
+	uint64 m_nReserved2 : 17;
 	Data_t m_Data;
 
 	friend class CKeyValues3Cluster;
