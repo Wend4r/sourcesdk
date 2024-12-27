@@ -1559,15 +1559,7 @@ bool CUtlRBTree<T, I, L, M>::IsValid() const
 template < class T, class I, typename L, class M >  
 void CUtlRBTree<T, I, L, M>::SetLessFunc( const typename CUtlRBTree<T, I, L, M>::LessFunc_t &func )
 {
-	if (!m_LessFunc)
-	{
-		m_LessFunc = func;
-	}
-	// else if ( Count() > 0 )
-	// {
-	// 	// need to re-sort the tree here....
-	// 	Assert(0);
-	// }
+	m_LessFunc = func;
 }
 
 
