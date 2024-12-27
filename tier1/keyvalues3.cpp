@@ -254,10 +254,7 @@ void KeyValues3::Free( bool bClearingContext )
 					context->FreeTable( m_Data.m_pTable );
 			}
 			else
-			{
-				m_Data.m_pTable->Purge( true );
 				g_pMemAlloc->RegionFree( MEMALLOC_REGION_FREE_4, m_Data.m_pTable );
-			}
 
 			m_Data.m_pTable = NULL;
 			break;
@@ -1872,6 +1869,7 @@ void CKeyValues3Table::Purge( bool bClearingContext )
 		free( m_Data.m_pChunks );
 	}
 	m_nAllocatedChunks = 0;
+	m_bIsDynamicallySized = false;
 	m_nCount = 0;
 
 	if ( m_pFastSearch )
