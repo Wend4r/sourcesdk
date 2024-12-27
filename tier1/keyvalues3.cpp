@@ -1590,7 +1590,7 @@ void CKeyValues3Table::EnsureMemberCapacity( int num, bool force, bool dont_move
 	const int nAllocatedChunksSize = nNewAllocatedChunks * sizeof(void*);
 	const int nAllocatedChunksDoubleSize = nAllocatedChunksSize * 2;
 	const int nAlignedChunk = KV3Helpers::CalcAlighedChunk( nNewAllocatedChunks );
-	const int nNewSize = nAlignedChunk + nNewAllocatedChunks * ( nMinAllocated * ( sizeof(Hash_t) + sizeof(Member_t) + sizeof(Name_t) + sizeof(IsExternalName_t) ) );
+	const int nNewSize = nAlignedChunk + nNewAllocatedChunks * ( sizeof(Member_t) + sizeof(Name_t) + sizeof(IsExternalName_t) );
 
 	void* pNew = m_bIsDynamicallySized ? realloc( m_Data.m_pChunks, nNewSize ) : malloc( nNewSize );
 
