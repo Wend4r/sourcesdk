@@ -1561,8 +1561,6 @@ void CKeyValues3Table::EnsureMemberCapacity( int num, bool force, bool dont_move
 
 	const int nMinAllocated = KV3_MIN_CHUNKS;
 	const int nMaxAllocated = KV3_MAX_CHUNKS;
-	const int nAllocatedChunksSize = m_nAllocatedChunks * sizeof(void*);
-	const int nAllocatedChunksDoubleSize = nAllocatedChunksSize * 2;
 	int nNewAllocatedChunks = m_nAllocatedChunks;
 
 	if ( num > nMaxAllocated )
@@ -1589,6 +1587,8 @@ void CKeyValues3Table::EnsureMemberCapacity( int num, bool force, bool dont_move
 		}
 	}
 
+	const int nAllocatedChunksSize = nNewAllocatedChunks * sizeof(void*);
+	const int nAllocatedChunksDoubleSize = nAllocatedChunksSize * 2;
 	const int nAlignedChunk = KV3Helpers::CalcAlighedChunk( nNewAllocatedChunks );
 	const int nNewSize = nAlignedChunk + nNewAllocatedChunks * ( nMinAllocated * ( sizeof(Hash_t) + sizeof(Member_t) + sizeof(Name_t) + sizeof(IsExternalName_t) ) );
 
