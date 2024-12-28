@@ -17,10 +17,17 @@ public:
 		return m_Data;
 	}
 
-	bool operator==(const CPlayerSlot &other) const {
+	operator int() const
+	{
+		return m_Data;
+	}
+
+	bool operator==(const CPlayerSlot &other) const
+	{
 		return other.m_Data == m_Data;
 	}
-	bool operator!=(const CPlayerSlot &other) const {
+	bool operator!=(const CPlayerSlot &other) const
+	{
 		return other.m_Data != m_Data;
 	}
 
