@@ -112,6 +112,7 @@ public:
 	virtual void             ClientPrintf( PRINTF_FORMAT_STRING const char*, ...) = 0;
 
 	bool                     IsConnected() const { return m_nSignonState >= SIGNONSTATE_CONNECTED; }
+	bool                     IsInGame() const { return m_nSignonState == SIGNONSTATE_FULL; }
 	bool                     IsSpawned() const { return m_nSignonState >= SIGNONSTATE_NEW; }
 	bool                     IsActive() const { return m_nSignonState == SIGNONSTATE_FULL; }
 	virtual bool             IsFakeClient() const { return m_bFakePlayer; }
