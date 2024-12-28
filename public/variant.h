@@ -969,6 +969,10 @@ public:
 		ResourceHandle_t m_hResource;
 	};
 
+#if CITADEL
+	void *pad[2];
+#endif
+
 	fieldtype_t m_type;
 
 	// CVFlags_t flags
