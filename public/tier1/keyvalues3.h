@@ -272,29 +272,34 @@ struct KV3BinaryBlob_t
 class CKV3MemberName : public CUtlStringToken
 {
 public:
-	template<int N>
-	FORCEINLINE CKV3MemberName(const char (&szInit)[N]) :
-		CUtlStringToken(szInit),
-		m_pszString((const char *)szInit)
+	inline CKV3MemberName( const CUtlStringToken &nToken, const char* pszString ): CUtlStringToken( nToken ), m_pszString( pszString ) {}
+	inline CKV3MemberName( const CUtlStringToken &nToken = 0 ): CKV3MemberName( nToken, "" ) {}
+	template< uintp N > FORCEINLINE CKV3MemberName( const char (&szInit)[N] ) : CUtlStringToken( szInit ), m_pszString( (const char *)szInit ) {}
+
+	static CKV3MemberName Make( const char *pszInit )
 	{
-		Assert(szInit[0]);
+		Assert( pszInit && pszInit[0] );
+
+		return CKV3MemberName( MakeStringToken(pszInit), pszInit );
 	}
-
-	static CKV3MemberName Make(const char *pszInit)
-	{
-		Assert(pszInit && pszInit[0]);
-
-		return CKV3MemberName(MakeStringToken(pszInit), pszInit);
-	}
-
-	inline CKV3MemberName(): CUtlStringToken(), m_pszString("") {}
-	inline CKV3MemberName(const CUtlStringToken &nToken, const char* pszString = ""): CUtlStringToken(nToken), m_pszString(pszString) {}
-	inline CKV3MemberName(unsigned int nHashCode, const char* pszString = ""): CUtlStringToken(nHashCode), m_pszString(pszString) {}
 
 	inline const char* GetString() const { return m_pszString; }
 
 private:
-	const char* m_pszString;
+	const char* m_pszString = "";
+};
+
+class CKV3MemberNameWithStorage : public CKV3MemberName
+{
+public:
+	inline CKV3MemberNameWithStorage( const CUtlStringToken &nToken, const char* pszString ): CKV3MemberName( nToken, pszString ), m_Storage( pszString ) {}
+	inline CKV3MemberNameWithStorage( const CUtlStringToken &nToken = 0 ): CKV3MemberNameWithStorage( nToken, "" ) {}
+	template< uintp N > FORCEINLINE CKV3MemberNameWithStorage( const char (&szInit)[N] ) : CKV3MemberName( szInit ), m_Storage( (const char*)szInit ) {}
+
+	inline const CBufferString &GetStorage() const { return m_Storage; }
+
+private:
+	CBufferStringGrowable< 32, false > m_Storage;
 };
 
 class KeyValues3

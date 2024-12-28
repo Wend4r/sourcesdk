@@ -236,15 +236,8 @@ public:
 		}
 	}
 
-	CBufferStringGrowable(const CBufferStringGrowable& other) : m_nTotalCount(0), m_nAllocated(STACK_ALLOCATION_MARKER | (MAX_SIZE & LENGTH_MASK))
-	{
-		memset(m_Memory.m_szString, 0, sizeof(m_Memory.m_szString));
-		if (AllowHeapAllocation)
-		{
-			m_nAllocated |= ALLOW_HEAP_ALLOCATION;
-		}
-		Insert(0, other.Get());
-	}
+	CBufferStringGrowable(const char* pOther) : CBufferStringGrowable() { Insert(0, pOther); }
+	CBufferStringGrowable(const CBufferStringGrowable& other) : CBufferStringGrowable(other.Get()) {}
 
 	~CBufferStringGrowable()
 	{
