@@ -512,6 +512,11 @@ struct colorVec
 	unsigned r, g, b, a;
 };
 
+struct colorVec4
+{
+	float r, g, b, a;
+};
+
 
 #ifndef NOTE_UNUSED
 #define NOTE_UNUSED(x)	(void)(x)	// for pesky compiler / lint warnings

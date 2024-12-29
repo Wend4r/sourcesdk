@@ -34,6 +34,10 @@ public:
 	{
 		SetColor(_r, _g, _b, _a);
 	}
+	explicit Color(const colorVec4& vector)
+	{
+		SetColor(static_cast<int>(vector.r), static_cast<int>(vector.g), static_cast<int>(vector.b), static_cast<int>(vector.a));
+	}
 	
 	// set the color
 	// r - red component (0-255)
@@ -42,10 +46,10 @@ public:
 	// a - alpha component, controls transparency (0 - transparent, 255 - opaque);
 	void SetColor(int _r, int _g, int _b, int _a = 0)
 	{
-		_color[0] = (unsigned char)_r;
-		_color[1] = (unsigned char)_g;
-		_color[2] = (unsigned char)_b;
-		_color[3] = (unsigned char)_a;
+		_color[0] = static_cast<unsigned char>(_r);
+		_color[1] = static_cast<unsigned char>(_g);
+		_color[2] = static_cast<unsigned char>(_b);
+		_color[3] = static_cast<unsigned char>(_a);
 	}
 
 	void GetColor(int &_r, int &_g, int &_b, int &_a) const
@@ -113,6 +117,16 @@ public:
 		newColor.g = _color[1];
 		newColor.b = _color[2];
 		newColor.a = _color[3];
+		return newColor;
+	}
+
+	colorVec4 ToVector4D() const
+	{
+		colorVec4 newColor;
+		newColor.r = static_cast<float>(_color[0]);
+		newColor.g = static_cast<float>(_color[1]);
+		newColor.b = static_cast<float>(_color[2]);
+		newColor.a = static_cast<float>(_color[3]);
 		return newColor;
 	}
 
