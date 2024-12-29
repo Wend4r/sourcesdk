@@ -13,10 +13,10 @@
 #pragma once
 #endif
 
-#include "tier0/utlstring.h"
-#include "tier0/interface.h"
 #include "interfaces/interfaces.h"
-
+#include "tier0/interface.h"
+#include "tier0/utlstring.h"
+#include "tier1/UtlStringMap.h"
 
 //-----------------------------------------------------------------------------
 // Specifies a module + interface name for initialization
@@ -131,15 +131,67 @@ class CTier0AppSystem : public CBaseAppSystem< IInterface >
 {
 };
 
+using FactoryFn = void* (*)(char const*, int*);
+
 abstract_class CAppSystemDict
 {
 public:
-    virtual ~CAppSystemDict() = 0;
-    virtual void Init() = 0;
-    virtual CUtlString GetConsoleLogFilename() = 0;
-    virtual void ChangeLogFileSuffix(const char* suffix) = 0;
-    virtual void CreateApplication() = 0;
-    virtual void OnAppSystemLoaded() = 0;
+	virtual ~CAppSystemDict() = 0;
+	virtual void Init() = 0;
+	virtual CUtlString GetConsoleLogFilename() = 0;
+	virtual void ChangeLogFileSuffix(const char* suffix) = 0;
+	virtual void CreateApplication() = 0;
+	virtual void OnAppSystemLoaded() = 0;
+
+	struct ModuleInfo_t
+	{
+		const char* m_pModuleName;
+		void* m_hModule;
+		int m_nRefCount;
+	};
+
+	struct AppSystem_t
+	{
+		const char* m_pModuleName;
+		void* m_pInterfaceName;
+		void* m_pSystem;
+		void* m_hModule;
+		int m_nPhase;
+		bool m_bInvisible;
+	};
+
+	CUtlVector<ModuleInfo_t> m_Modules;
+	CUtlVector<AppSystem_t> m_Systems;
+	CUtlVector<FactoryFn> m_NonAppSystemFactories;
+	CUtlStringList m_ModuleSearchPath;
+	CUtlStringMap<short unsigned int> m_SystemDict; // 104
+	int m_nExpectedShutdownLoggingStateIndex; // 256
+	void* m_pDefaultLoggingListener; // 264
+	void* m_pGameInfo; // 272
+	void* m_pApplicationInfo; // 280
+	void* m_hInstance; // 288
+	void* m_pUnknown; // 296
+	bool m_bIsConsoleApp; // 304
+	bool m_bInToolsMode; // 305
+	bool m_bIsInDeveloperMode; // 306
+	bool m_bIsGameApp; // 307
+	bool m_bIsDedicatedServer; // 308
+	CUtlString unk; // 312
+	CUtlString m_UILanguage; // 320
+	CUtlString m_AudioLanguage; // 328
+	CUtlString m_ModPath; // 336
+	CUtlString m_ExecutablePath; // 344
+	CUtlString m_ModSubDir; // 352
+	CUtlString m_ContentPath; // 360
+	void* m_pApplication; // 368
+	bool m_bInitialized; // 376
+	bool m_bSuppressCOMInitialization;
+	int m_nAppSystemPhase;
+	int unk2;
+	bool m_bIsRetail; // 388
+	bool m_bIsLowViolence; // 389
+	bool m_bInvokedPreShutdown; // 390
+	//.... more unknown fields
 };
 
 #endif // IAPPSYSTEM_H
