@@ -93,8 +93,8 @@ public:
 	m_handleIndex(handle)
 	{}
 
-	bool IsValid( ) const { return m_convarIndex != 0xFFFF; }
-	void Invalidate( )
+	bool IsValid() const { return m_convarIndex != 0xFFFF; }
+	void Invalidate()
 	{
 		m_convarIndex = 0xFFFF;
 		m_handleIndex = 0x0;
@@ -102,6 +102,16 @@ public:
 
 	uint16_t GetConVarIndex() const { return m_convarIndex; }
 	uint32_t GetIndex() const { return m_handleIndex; }
+
+	bool operator==(const ConVarHandle& other) const
+	{
+		return m_convarIndex == other.m_convarIndex && m_handleIndex == other.m_handleIndex;
+	}
+
+	bool operator!=(const ConVarHandle& other) const
+	{
+		return !(*this == other);
+	}
 
 private:
 	uint16_t m_convarIndex;
@@ -118,8 +128,8 @@ public:
 	m_handleIndex(handle)
 	{}
 
-	bool IsValid( ) const { return m_concommandIndex != 0xFFFF; }
-	void Invalidate( )
+	bool IsValid() const { return m_concommandIndex != 0xFFFF; }
+	void Invalidate()
 	{
 		m_concommandIndex = 0xFFFF;
 		m_handleIndex = 0x0;
@@ -127,6 +137,16 @@ public:
 
 	uint32_t GetConCommandIndex() const { return m_concommandIndex; }
 	uint32_t GetIndex() const { return m_handleIndex; }
+
+	bool operator==(const ConCommandHandle& other) const
+	{
+		return m_concommandIndex == other.m_concommandIndex && m_handleIndex == other.m_handleIndex;
+	}
+
+	bool operator!=(const ConCommandHandle& other) const
+	{
+		return !(*this == other);
+	}
 
 private:
 	uint32_t m_concommandIndex;
