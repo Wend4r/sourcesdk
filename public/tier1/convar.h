@@ -503,6 +503,11 @@ public:
 		m_ConVarData = nullptr;
 	}
 
+	ConVarRef( ConVarHandle handle, CConVarBaseData* conVarData ) {
+		m_Handle = handle;
+		m_ConVarData = conVarData;
+	}
+
 	explicit ConVarRef( const char *pName ) {
 		Init( pName );
 	}
@@ -524,6 +529,15 @@ public:
 	void SetValue( const T& val, const CSplitScreenSlot& index = CSplitScreenSlot() ) {
 		reinterpret_cast<ConVar<T>*>(this)->SetValue( val, index );
 	}
+
+	void SetStringValue( const char* szNewValue, size_t size, const CSplitScreenSlot& index = CSplitScreenSlot() ) {
+		return reinterpret_cast<ConVar<T>*>(this)->SetStringValue( szNewValue, size, index );
+	}
+
+	void GetStringValue( char* dst, size_t len, const CSplitScreenSlot& index = 0 ) const {
+		return reinterpret_cast<ConVar<T>*>(this)->GetStringValue( dst, len, index );
+	}
+
 };
 
 template<typename T>
