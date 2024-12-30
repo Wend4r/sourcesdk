@@ -522,8 +522,8 @@ public:
 		return true;
 	}
 
-	const T& GetValue( const CSplitScreenSlot& index = CSplitScreenSlot() ) {
-		return reinterpret_cast<ConVar<T>*>(this)->GetValue( index );
+	const T& GetValue( const CSplitScreenSlot& index = CSplitScreenSlot() ) const {
+		return reinterpret_cast<const ConVar<T>*>(this)->GetValue( index );
 	}
 
 	void SetValue( const T& val, const CSplitScreenSlot& index = CSplitScreenSlot() ) {
@@ -535,7 +535,7 @@ public:
 	}
 
 	void GetStringValue( char* dst, size_t len, const CSplitScreenSlot& index = 0 ) const {
-		return reinterpret_cast<ConVar<T>*>(this)->GetStringValue( dst, len, index );
+		return reinterpret_cast<const ConVar<T>*>(this)->GetStringValue( dst, len, index );
 	}
 
 };
