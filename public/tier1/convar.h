@@ -546,7 +546,7 @@ class ConVar : public BaseConVar
 public:
 	using FnChangeCallback_t = void(*)(ConVar<T>* ref, const CSplitScreenSlot nSlot, const T* pNewValue, const T* pOldValue);
 
-	ConVar(const char* name, int32_t flags, const char* description, const T& value, FnChangeCallback_t cb = nullptr)
+	ConVar(const char* name, int64_t flags, const char* description, const T& value, FnChangeCallback_t cb = nullptr)
 	{
 		this->Init(INVALID_CONVAR_HANDLE, TranslateConVarType<T>());
 
@@ -559,7 +559,7 @@ public:
 		this->Register(name, flags &~ FCVAR_DEVELOPMENTONLY, description, setup);
 	}
 
-	ConVar(const char* name, int32_t flags, const char* description, const T& value, bool min, const T& minValue, bool max, const T& maxValue, FnChangeCallback_t cb = nullptr)
+	ConVar(const char* name, int64_t flags, const char* description, const T& value, bool min, const T& minValue, bool max, const T& maxValue, FnChangeCallback_t cb = nullptr)
 	{
 		this->Init(INVALID_CONVAR_HANDLE, TranslateConVarType<T>());
 
@@ -651,7 +651,7 @@ private:
 		this->m_Handle = defaultHandle;
 	}
 
-	void Register(const char* name, int32_t flags, const char* description, ConVarCreation_t& pCVar)
+	void Register(const char* name, int64_t flags, const char* description, ConVarCreation_t& pCVar)
 	{
 		this->m_ConVarData = GetInvalidConVar(pCVar.m_eVarType );
 		this->m_Handle.Invalidate();
