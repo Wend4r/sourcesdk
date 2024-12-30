@@ -88,9 +88,12 @@ typedef void(*FnChangeCallbackGlobal_t)(BaseConVar* ref, CSplitScreenSlot nSlot,
 class ConVarHandle
 {
 public:
-	ConVarHandle( uint16_t index = -1, uint32_t handle = -1) :
-	m_convarIndex(index),
-	m_handleIndex(handle)
+	ConVarHandle(uint64_t value) :
+		m_Index(value)
+	{}
+	ConVarHandle(uint16_t index = -1, uint32_t handle = -1) :
+		m_convarIndex(index),
+		m_handleIndex(handle)
 	{}
 
 	bool IsValid() const { return m_convarIndex != 0xFFFF; }
@@ -103,6 +106,11 @@ public:
 	uint16_t GetConVarIndex() const { return m_convarIndex; }
 	uint32_t GetIndex() const { return m_handleIndex; }
 
+	operator uint64_t() const
+	{
+		return m_Index;
+	}
+
 	bool operator==(const ConVarHandle& other) const
 	{
 		return m_convarIndex == other.m_convarIndex && m_handleIndex == other.m_handleIndex;
@@ -114,8 +122,15 @@ public:
 	}
 
 private:
-	uint16_t m_convarIndex;
-	uint32_t m_handleIndex;
+	union
+	{
+		uint64_t m_Index;
+		struct
+		{
+			uint16_t m_convarIndex;
+			uint32_t m_handleIndex;
+		};
+	};
 };
 
 static const ConVarHandle INVALID_CONVAR_HANDLE = ConVarHandle();
@@ -123,9 +138,12 @@ static const ConVarHandle INVALID_CONVAR_HANDLE = ConVarHandle();
 class ConCommandHandle
 {
 public:
-	ConCommandHandle( uint16_t index = -1, uint32_t handle = -1) :
-	m_concommandIndex(index),
-	m_handleIndex(handle)
+	ConCommandHandle(uint64_t value) :
+		m_Index(value)
+	{}
+	ConCommandHandle(uint16_t index = -1, uint32_t handle = -1) :
+		m_concommandIndex(index),
+		m_handleIndex(handle)
 	{}
 
 	bool IsValid() const { return m_concommandIndex != 0xFFFF; }
@@ -138,6 +156,11 @@ public:
 	uint32_t GetConCommandIndex() const { return m_concommandIndex; }
 	uint32_t GetIndex() const { return m_handleIndex; }
 
+	operator uint64_t() const
+	{
+		return m_Index;
+	}
+
 	bool operator==(const ConCommandHandle& other) const
 	{
 		return m_concommandIndex == other.m_concommandIndex && m_handleIndex == other.m_handleIndex;
@@ -149,8 +172,15 @@ public:
 	}
 
 private:
-	uint32_t m_concommandIndex;
-	uint32_t m_handleIndex;
+	union
+	{
+		uint64_t m_Index;
+		struct
+		{
+			uint32_t m_concommandIndex;
+			uint32_t m_handleIndex;
+		};
+	};
 };
 
 static const ConCommandHandle INVALID_CONCOMMAND_HANDLE = ConCommandHandle();
