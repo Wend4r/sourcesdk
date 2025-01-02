@@ -8,7 +8,7 @@
 class CPlayerSlot
 {
 public:
-	CPlayerSlot(int slot) : m_Data(slot)
+	CPlayerSlot( int slot ) : m_Data( slot )
 	{
 	}
 
@@ -22,14 +22,10 @@ public:
 		return m_Data;
 	}
 
-	bool operator==(const CPlayerSlot &other) const
-	{
-		return other.m_Data == m_Data;
-	}
-	bool operator!=(const CPlayerSlot &other) const
-	{
-		return other.m_Data != m_Data;
-	}
+	static CPlayerSlot InvalidIndex() { return ( CPlayerSlot )-1; }
+
+	bool operator==( const CPlayerSlot &other ) const { return other.m_Data == m_Data; }
+	bool operator!=( const CPlayerSlot &other ) const { return other.m_Data != m_Data; }
 
 private:
 	int m_Data;
