@@ -473,9 +473,8 @@ CUtlMemory<T,I>::~CUtlMemory()
 }
 
 template< class T, class I >
-CUtlMemory<T,I>::CUtlMemory( const CUtlMemory& moveFrom )
+CUtlMemory<T,I>::CUtlMemory( const CUtlMemory& moveFrom ) : m_pMemory( 0 ), m_nAllocationCount( 0 )
 {
-	m_pMemory = NULL;
 	CopyFrom( moveFrom );
 }
 
@@ -1270,15 +1269,16 @@ private:
 //-----------------------------------------------------------------------------
 
 template< class T, typename I >
-CUtlMemory_RawAllocator<T, I>::CUtlMemory_RawAllocator( I nGrowSize, I nInitAllocationCount, RawAllocatorType_t eAllocatorType ) : m_pMemory(0), 
-	m_nAllocationCount(0), m_nGrowSize(nGrowSize & ~(PLATFORM_ALLOC_MARKER | UNUSED_MARKER))
+CUtlMemory_RawAllocator<T, I>::CUtlMemory_RawAllocator( I nGrowSize, I nInitAllocationCount, RawAllocatorType_t eAllocatorType ) : m_pMemory( 0 ), 
+	m_nAllocationCount( 0 ), m_nGrowSize( nGrowSize & ~(PLATFORM_ALLOC_MARKER | UNUSED_MARKER) )
 {
 	SetRawAllocatorType( eAllocatorType );
 	EnsureCapacity( nInitAllocationCount );
 }
 
 template< class T, typename I >
-CUtlMemory_RawAllocator<T, I>::CUtlMemory_RawAllocator( const CUtlMemory_RawAllocator &init )
+CUtlMemory_RawAllocator<T, I>::CUtlMemory_RawAllocator( const CUtlMemory_RawAllocator &init ) : m_pMemory( 0 ), 
+	m_nAllocationCount( 0 )
 {
 	CopyFrom( init );
 }
@@ -1300,16 +1300,7 @@ CUtlMemory_RawAllocator<T, I>::~CUtlMemory_RawAllocator()
 template< class T, typename I >
 void CUtlMemory_RawAllocator<T, I>::CopyFrom( const CUtlMemory_RawAllocator<T, I> &from )
 {
-	const size_t nSize = from.m_nAllocationCount * sizeof(T);
-	size_t adjustedSize;
-	m_pMemory = (T*)CRawAllocator::Alloc( from.GetRawAllocatorType(), nSize, &adjustedSize );
-	m_nAllocationCount = ( I )( adjustedSize / sizeof(T) );
-
-	if ( m_pMemory )
-	{
-		memcpy( m_pMemory, from.m_pMemory, nSize );
-	}
-
+	m_nAllocationCount = 0;
 	m_nGrowSize = from.m_nGrowSize;
 
 	SetRawAllocatorType( from.GetRawAllocatorType() );
