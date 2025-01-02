@@ -16,7 +16,7 @@
 #include "interfaces/interfaces.h"
 #include "tier0/interface.h"
 #include "tier0/utlstring.h"
-#include "tier1/UtlStringMap.h"
+#include "tier1/utlstringmap.h"
 
 //-----------------------------------------------------------------------------
 // Specifies a module + interface name for initialization
@@ -164,7 +164,7 @@ public:
 	CUtlVector<AppSystem_t> m_Systems;
 	CUtlVector<FactoryFn> m_NonAppSystemFactories;
 	CUtlStringList m_ModuleSearchPath;
-	CUtlStringMap<short unsigned int> m_SystemDict; // 104
+	CUtlStringMap<UtlSymId_t> m_SystemDict; // 104
 	int m_nExpectedShutdownLoggingStateIndex; // 256
 	void* m_pDefaultLoggingListener; // 264
 	void* m_pGameInfo; // 272

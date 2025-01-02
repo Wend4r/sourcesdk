@@ -6,17 +6,17 @@
 
 #ifndef UTLSTRINGMAP_H
 #define UTLSTRINGMAP_H
+
 #ifdef _WIN32
 #pragma once
 #endif
 
-#include "utlsymbol.h"
+#include "tier0/utlsymbol.h"
 
 template <class T>
 class CUtlStringMap
 {
 public:
-	typedef UtlSymId_t IndexType_t;
 	CUtlStringMap( bool caseInsensitive = true, int initsize = 32 ) : 
 		  m_Vector( initsize ),
 		  m_SymbolTable( 0, 32, caseInsensitive )
@@ -27,7 +27,7 @@ public:
 	T& operator[]( const char *pString )
 	{
 		CUtlSymbol symbol = m_SymbolTable.AddString( pString );
-		int index = ( int )( UtlSymId_t )symbol;
+		int index = ( int )symbol;
 		if( m_Vector.Count() <= index )
 		{
 			m_Vector.EnsureCount( index + 1 );
@@ -36,13 +36,13 @@ public:
 	}
 
 	// Get data by the string's symbol table ID - only used to retrieve a pre-existing symbol, not create a new one!
-	T& operator[]( UtlSymId_t n )
+	T& operator[]( CUtlSymbol n )
 	{
 		Assert( n <= m_Vector.Count() );
 		return m_Vector[n];
 	}
 
-	const T& operator[]( UtlSymId_t n ) const
+	const T& operator[]( CUtlSymbol n ) const
 	{
 		Assert( n <= m_Vector.Count() );
 		return m_Vector[n];
@@ -59,15 +59,15 @@ public:
 		return m_SymbolTable.Find( pString ).IsValid();
 	}
 
-	UtlSymId_t Find( const char *pString ) const
+	CUtlSymbol Find( const char *pString ) const
 	{
 		return m_SymbolTable.Find( pString );
 	}
 
-	UtlSymId_t AddString( const char *pString, bool* created = NULL )
+	CUtlSymbol AddString( const char *pString, bool* created = NULL )
 	{
 		CUtlSymbol symbol = m_SymbolTable.AddString( pString, created );
-		int index = ( int )( UtlSymId_t )symbol;
+		int index = ( int )symbol;
 		if( m_Vector.Count() <= index )
 		{
 			m_Vector.EnsureCount( index + 1 );
@@ -79,10 +79,10 @@ public:
 	/// its location in the same operation. Returns the 
 	/// newly created index (or the one that was just 
 	/// overwritten, if pString already existed.)
-	UtlSymId_t Insert( const char *pString, const T &item )
+	CUtlSymbol Insert( const char *pString, const T &item )
 	{
 		CUtlSymbol symbol = m_SymbolTable.AddString( pString );
-		UtlSymId_t index = symbol; // implicit coercion
+		CUtlSymbol index = symbol; // implicit coercion
 		if ( m_Vector.Count() > index ) 
 		{
 			// this string is already in the dictionary.
@@ -104,7 +104,7 @@ public:
 	}
 
 	/// iterate, not in any particular order.
-	IndexType_t First() const 
+	CUtlSymbol First() const 
 	{
 		if ( Count() > 0 )
 		{
@@ -116,20 +116,20 @@ public:
 		}
 	}
 
-	static UtlSymId_t InvalidIndex()
+	static CUtlSymbol InvalidIndex()
 	{
-		return UTL_INVAL_SYMBOL;
+		return {};
 	}
 
 	// iterators (for uniformity with other map types)
-	inline UtlSymId_t Head() const
+	inline CUtlSymbol Head() const
 	{
-		return m_SymbolTable.GetNumStrings() > 0 ? 0 : InvalidIndex();
+		return m_SymbolTable.GetNumStrings() > 0 ? CUtlSymbol( 0 )  : InvalidIndex();
 	}
 
-	inline UtlSymId_t Next( const UtlSymId_t &i ) const
+	inline CUtlSymbol Next( const CUtlSymbol &i ) const
 	{
-		UtlSymId_t n = i+1;
+		CUtlSymbol n = i+1;
 		return n < m_SymbolTable.GetNumStrings() ? n : InvalidIndex();
 	}
 
