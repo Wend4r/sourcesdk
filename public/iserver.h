@@ -41,6 +41,7 @@ class KeyValues3;
 class CPureServerWhitelist;
 class CServerSideClientBase;
 class CCLCMsg_SplitPlayerConnect_t;
+class C2S_CONNECT_Message;
 class CNetworkStringTableContainer;
 class CNetworkServerSpawnGroupCreatePrerequisites;
 
@@ -189,7 +190,7 @@ public:
 
 	virtual void	StartHLTVMaster() = 0;
 
-	virtual CServerSideClientBase *ConnectClient( const char *pszName, ns_address *pAddr, int socket, CCLCMsg_SplitPlayerConnect_t *pSplitPlayer,
+	virtual CServerSideClientBase *ConnectClient( const char *pszName, ns_address *pAddr, void *pNetInfo, C2S_CONNECT_Message *pConnectMsg,
 												  const char *pszChallenge, const byte *pAuthTicket, int nAuthTicketLength, bool bIsLowViolence ) = 0;
 	virtual CServerSideClientBase *CreateNewClient( CPlayerSlot slot ) = 0;
 	
