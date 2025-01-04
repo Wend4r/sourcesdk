@@ -1881,36 +1881,54 @@ inline uint64 Plat_Rdtsc()
 			memcpy( this, &src, sizeof(_classname) );	\
 			return *this;								\
 		}
-	
+
+PLATFORM_INTERFACE uint64 Plat_CPUTickFrequency();
+
+class CBufferString;
+
+
+#define PROCESSOR_DESC_ID (1 << 0)
+#define PROCESSOR_DESC_PROC (1 << 1)
+#define PROCESSOR_DESC_NO_INSTRUCTION_SET (1 << 2)
+
+#define PROCESSOR_DESC_ALL (PROCESSOR_DESC_ID | PROCESSOR_DESC_PROC)
+
 // Processor Information:
 struct CPUInformation
 {
-	int	 m_Size;		// Size of this structure, for forward compatability.
+	int	 m_Size;                    // Size of this structure, for forward compatability.
 
-	uint8 m_nLogicalProcessors;		// Number op logical processors.
-	uint8 m_nPhysicalProcessors;	// Number of physical processors
+	uint16 m_nLogicalProcessors;    // Number op logical processors.
+	uint16 m_nPhysicalProcessors;   // Number of physical processors.
+	uint16 m_nECores;               // Number of efficiency processors.
+	uint16 m_nPCores;               // Number of performance processors.
 
-	bool m_bRDTSC : 1,	// Is RDTSC supported?
-		 m_bCMOV  : 1,  // Is CMOV supported?
-		 m_bFCMOV : 1,  // Is FCMOV supported?
-		 m_bSSE	  : 1,	// Is SSE supported?
-		 m_bSSE2  : 1,	// Is SSE2 Supported?
-		 m_b3DNow : 1,	// Is 3DNow! Supported?
-		 m_bMMX   : 1,	// Is MMX supported?
-		 m_bHT	  : 1;	// Is HyperThreading supported?
+	bool m_bRDTSC       : 1,	// Is RDTSC supported? // 12
+	     m_bCMOV        : 1,	// Is CMOV supported?
+	     m_bUnk1        : 1,
+	     m_bUnk2        : 1,
+	     m_bFCMOV       : 1,	// Is FCMOV supported?
+	     m_bSSE         : 1,	// Is SSE supported?
+	     m_bSSE2        : 1;	// Is SSE2 Supported?
 
+	bool m_bMMX	        : 1,	// Is MMX supported? // 13
+	     m_bUnk3        : 1,
+	     m_bUnk4        : 1,
+	     m_bSSE3        : 1,
+	     m_bSSSE3       : 1,
+	     m_bSSE4a       : 1,
+	     m_bSSE41       : 1,
+	     m_bSSE42       : 1;
 
-	bool m_bSSE3 : 1,
-		 m_bSSSE3 : 1,
-		 m_bSSE4a : 1,
-		 m_bSSE41 : 1,
-		 m_bSSE42 : 1,
-		 m_bAVX   : 1;  // Is AVX supported?
+	bool m_bAVX         : 1,
+	     m_bHasAVX      : 1,	// Is AVX supported?
+	     m_bAVX2        : 1,
+	     m_bHasEPCores  : 1;	// Indicates Intel based efficiency/performance cores.
 
-	int64 m_Speed;						// In cycles per second.
+	int64 m_Speed;              // In cycles per second // 16
 
-	tchar* m_szProcessorID;				// Processor vendor Identification.
-	tchar* m_szProcessorBrand;			// Processor brand string, if available
+	tchar* m_szProcessorID;     // Processor vendor Identification. // 24
+	tchar* m_szProcessorBrand;  // Processor brand string, if available. // 32
 
 	uint32 m_nModel;
 	uint32 m_nFeatures[ 3 ];
@@ -1922,7 +1940,13 @@ struct CPUInformation
 	uint32 m_nL3CacheDesc;
 
 	CPUInformation(): m_Size(0){}
+
+	DLL_CLASS_IMPORT bool GetAMDFamily( uint32 *pUnk = NULL );
+	DLL_CLASS_IMPORT const char *GetDescription( CBufferString *pOut, uint32 eFlags = PROCESSOR_DESC_ALL ) const;
+	DLL_CLASS_IMPORT bool GetWinLevelRevision( uint16 *pUnk = NULL, uint16 *pUnk2 = NULL );
+	DLL_CLASS_IMPORT bool GetIAFamilyModelStepping( uint32 *pUnk = NULL, uint32 *pUnk2 = NULL, uint32 *pUnk3 = NULL );
 };
+COMPILE_TIME_ASSERT(sizeof(CPUInformation) == 80);
 
 #ifdef __clang__
 #pragma clang diagnostic push
