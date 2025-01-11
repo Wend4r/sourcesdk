@@ -19,9 +19,6 @@
 #define USE_MEM_DEBUG 1
 #endif
 
-// If debug build or ndebug and not already included MS custom alloc files, or already included this file
-#if (defined(_DEBUG) || !defined(_INC_CRTDBG)) || defined(MEMDBGON_H)
-
 #include "tier0/basetypes.h"
 
 #include "tier0/valve_off.h"
@@ -271,17 +268,6 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString)
 
 #endif // USE_MEM_DEBUG
 
-#define MEMDBGON_H // Defined here so can be used above
-
-#else
-
-#if defined(USE_MEM_DEBUG)
-#ifndef _STATIC_LINKED
-#pragma message ("Note: file includes crtdbg.h directly, therefore will cannot use memdbgon.h in non-debug build")
-#else
-#error "Error: file includes crtdbg.h directly, therefore will cannot use memdbgon.h in non-debug build. Not recoverable in static build"
-#endif
-#endif
-#endif // _INC_CRTDBG
+#define MEMDBGON_H // Defined here so can be used abov
 
 #endif // !STEAM && !NO_MALLOC_OVERRIDE && !__SPU__
