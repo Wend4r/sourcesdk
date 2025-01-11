@@ -18,9 +18,11 @@
 #include <string.h>
 #include "tier0/platform.h"
 #include "tier0/rawallocator.h"
+#include "tier0/utlmemory.h"
 
 #include "tier0/memalloc.h"
 #include "mathlib/mathlib.h"
+
 #include "tier0/memdbgon.h"
 
 #ifndef SIZE_MAX
@@ -433,7 +435,7 @@ private:
 
 template< class T, class I >
 CUtlMemory<T,I>::CUtlMemory( I nGrowSize, I nInitAllocationCount ) : m_pMemory(0), 
-	m_nAllocationCount( nInitAllocationCount ), m_nGrowSize( nGrowSize )
+	m_nAllocationCount( nInitAllocationCount ), m_nGrowSize( nGrowSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER) )
 {
 	ValidateGrowSize();
 	Assert( nGrowSize >= 0 );
@@ -533,7 +535,7 @@ void CUtlMemory<T,I>::Init( I nGrowSize /*= 0*/, I nInitSize /*= 0*/ )
 {
 	Purge();
 
-	m_nGrowSize = nGrowSize;
+	m_nGrowSize = nGrowSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
 	m_nAllocationCount = nInitSize;
 	ValidateGrowSize();
 	Assert( nGrowSize >= 0 );
@@ -566,7 +568,7 @@ void CUtlMemory<T,I>::ConvertToGrowableMemory( I nGrowSize )
 	if ( !IsExternallyAllocated() )
 		return;
 
-	m_nGrowSize = nGrowSize;
+	m_nGrowSize = nGrowSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
 	if (m_nAllocationCount)
 	{
 		UTLMEMORY_TRACK_ALLOC();
@@ -622,6 +624,8 @@ void CUtlMemory<T,I>::AssumeMemory( T* pMemory, I numElements )
 	// Simply take the pointer but don't mark us as external
 	m_pMemory = pMemory;
 	m_nAllocationCount = numElements;
+
+	m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
 }
 
 template< class T, class I >
@@ -702,7 +706,7 @@ void CUtlMemory<T,I>::SetGrowSize( I nSize )
 {
 	Assert( !IsExternallyAllocated() );
 	Assert( nSize >= 0 );
-	m_nGrowSize = nSize;
+	m_nGrowSize |= nSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
 	ValidateGrowSize();
 }
 
@@ -750,57 +754,20 @@ inline bool CUtlMemory<T,I>::IsIdxValid( I i ) const
 	return ( x >= 0 ) && ( x < m_nAllocationCount ) && ( !IsDebug() || x != ( I )UTLMEMORY_BAD_LENGTH );
 }
 
-//-----------------------------------------------------------------------------
-// Grows the memory
-//-----------------------------------------------------------------------------
-template<class I = int>
-inline I UtlMemory_CalcNewAllocationCount( I nAllocationCount, I nGrowSize, I nNewSize, I nBytesItem )
-{
-	if ( nGrowSize )
-	{ 
-		nAllocationCount = ((1 + ((nNewSize - 1) / nGrowSize)) * nGrowSize);
-	}
-	else 
-	{
-		if ( !nAllocationCount )
-		{
-			// Compute an allocation which is at least as big as a cache line...
-			nAllocationCount = (31 + nBytesItem) / nBytesItem;
-			// If the requested amount is larger then compute an allocation which
-			// is exactly the right size. Otherwise we can end up with wasted memory
-			// when CUtlVector::EnsureCount(n) is called.
-			if ( nAllocationCount < nNewSize )
-				nAllocationCount = nNewSize;
-		}
-
-		while (nAllocationCount < nNewSize)
-		{
-#ifndef _X360
-			nAllocationCount *= 2;
-#else
-			I nNewAllocationCount = ( nAllocationCount * 9) / 8; // 12.5 %
-			if ( nNewAllocationCount > nAllocationCount )
-				nAllocationCount = nNewAllocationCount;
-			else
-				nAllocationCount *= 2;
-#endif
-		}
-	}
-
-	return nAllocationCount;
-}
-
 template< class T, class I >
 void CUtlMemory<T,I>::Grow( I num )
 {
 	Assert( num > 0 );
 
-	if ( IsExternallyAllocated() )
+	if ( IsReadOnly() )
 	{
 		// Can't grow a buffer whose memory was externally allocated 
 		Assert(0);
 		return;
 	}
+
+	if ( ( ( int64 )m_nAllocationCount + num ) > INT_MAX )
+		UtlMemory_FailedAllocation( m_nAllocationCount, num );
 
 	// Make sure we have at least numallocated + num allocations.
 	// Use the grow rules specified for this memory (in m_nGrowSize)
@@ -808,46 +775,40 @@ void CUtlMemory<T,I>::Grow( I num )
 
 	UTLMEMORY_TRACK_FREE();
 
-	I nNewAllocationCount = UtlMemory_CalcNewAllocationCount<I>( m_nAllocationCount, m_nGrowSize, nAllocationRequested, sizeof(T) );
+	I nNewAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )m_nAllocationCount, ( int )( m_nGrowSize & ~( EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER ) ), ( int )nAllocationRequested, ( int )sizeof(T) );
 
 	// if m_nAllocationRequested wraps index type I, recalculate
-	if ( ( I )( I )nNewAllocationCount < nAllocationRequested )
+	if ( nNewAllocationCount < nAllocationRequested )
 	{
-		if ( ( I )( I )nNewAllocationCount == 0 && ( I )( I )( nNewAllocationCount - 1 ) >= nAllocationRequested )
+		if ( nNewAllocationCount == 0 && ( int )( I )( nNewAllocationCount - 1 ) >= nAllocationRequested )
 		{
 			--nNewAllocationCount; // deal w/ the common case of m_nAllocationCount == MAX_USHORT + 1
 		}
 		else
 		{
-			if ( ( I )( I )nAllocationRequested != nAllocationRequested )
+			if ( nAllocationRequested != nAllocationRequested )
 			{
 				// we've been asked to grow memory to a size s.t. the index type can't address the requested amount of memory
 				Assert( 0 );
 				return;
 			}
-			while ( ( I )( I )nNewAllocationCount < nAllocationRequested )
+			while ( nNewAllocationCount < nAllocationRequested )
 			{
 				nNewAllocationCount = ( nNewAllocationCount + nAllocationRequested ) / 2;
 			}
 		}
 	}
 
+	MEM_ALLOC_CREDIT_CLASS();
+	m_pMemory = (T*)UtlMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( nNewAllocationCount * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ));
+	Assert( m_pMemory );
+
+	if ( IsExternallyAllocated() )
+		m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+
 	m_nAllocationCount = nNewAllocationCount;
 
 	UTLMEMORY_TRACK_ALLOC();
-
-	if (m_pMemory)
-	{
-		MEM_ALLOC_CREDIT_CLASS();
-		m_pMemory = (T*)realloc( m_pMemory, m_nAllocationCount * sizeof(T) );
-		Assert( m_pMemory );
-	}
-	else
-	{
-		MEM_ALLOC_CREDIT_CLASS();
-		m_pMemory = (T*)malloc( m_nAllocationCount * sizeof(T) );
-		Assert( m_pMemory );
-	}
 }
 
 
@@ -860,7 +821,7 @@ inline void CUtlMemory<T,I>::EnsureCapacity( I num )
 	if (m_nAllocationCount >= num)
 		return;
 
-	if ( IsExternallyAllocated() )
+	if ( IsReadOnly() )
 	{
 		// Can't grow a buffer whose memory was externally allocated 
 		Assert(0);
@@ -869,22 +830,17 @@ inline void CUtlMemory<T,I>::EnsureCapacity( I num )
 
 	UTLMEMORY_TRACK_FREE();
 
+	MEM_ALLOC_CREDIT_CLASS();
+	m_pMemory = (T*)UtlMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( num * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ) );
+	Assert( m_pMemory );
+
+	if ( IsExternallyAllocated() )
+		m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+
 	m_nAllocationCount = num;
 
 	UTLMEMORY_TRACK_ALLOC();
-
-	if (m_pMemory)
-	{
-		MEM_ALLOC_CREDIT_CLASS();
-		m_pMemory = (T*)realloc( m_pMemory, m_nAllocationCount * sizeof(T) );
-	}
-	else
-	{
-		MEM_ALLOC_CREDIT_CLASS();
-		m_pMemory = (T*)malloc( m_nAllocationCount * sizeof(T) );
-	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Memory deallocation
@@ -924,7 +880,7 @@ void CUtlMemory<T,I>::Purge( I numElements )
 		return;
 	}
 
-	if ( IsExternallyAllocated() )
+	if ( IsReadOnly() )
 	{
 		// Can't shrink a buffer whose memory was externally allocated, fail silently like purge 
 		return;
@@ -946,13 +902,17 @@ void CUtlMemory<T,I>::Purge( I numElements )
 
 	UTLMEMORY_TRACK_FREE();
 
-	m_nAllocationCount = numElements;
-	
-	UTLMEMORY_TRACK_ALLOC();
-
 	// Allocation count > 0, shrink it down.
 	MEM_ALLOC_CREDIT_CLASS();
-	m_pMemory = (T*)realloc( m_pMemory, m_nAllocationCount * sizeof(T) );
+	m_pMemory = (T*)UtlMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( numElements * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ) );
+	Assert( m_pMemory );
+
+	if ( IsExternallyAllocated() )
+		m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+
+	m_nAllocationCount = numElements;
+
+	UTLMEMORY_TRACK_ALLOC();
 }
 
 //-----------------------------------------------------------------------------
@@ -1101,7 +1061,7 @@ void CUtlMemoryAligned<T, I, nAlignment>::Grow( I num )
 	// Use the grow rules specified for this memory (in m_nGrowSize)
 	I nAllocationRequested = CUtlMemory<T>::m_nAllocationCount + num;
 
-	CUtlMemory<T>::m_nAllocationCount = UtlMemory_CalcNewAllocationCount<I>( CUtlMemory<T>::m_nAllocationCount, CUtlMemory<T>::m_nGrowSize, nAllocationRequested, sizeof(T) );
+	CUtlMemory<T>::m_nAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )CUtlMemory<T>::m_nAllocationCount, ( int )CUtlMemory<T>::m_nGrowSize, ( int )nAllocationRequested, ( int )sizeof(T) );
 
 	UTLMEMORY_TRACK_ALLOC();
 
@@ -1231,7 +1191,7 @@ public:
 
 	// Set the size by which the memory grows
 	void SetGrowSize( I size );
-	
+
 	RawAllocatorType_t GetRawAllocatorType() const;
 
 	class Iterator_t
@@ -1259,8 +1219,8 @@ private:
 	};
 
 	T* m_pMemory;
-	int m_nAllocationCount;
-	int m_nGrowSize;
+	I m_nAllocationCount;
+	I m_nGrowSize;
 };
 
 
