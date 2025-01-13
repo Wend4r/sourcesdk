@@ -27,11 +27,51 @@ class CFormatStringElement;
 PLATFORM_INTERFACE bool g_bUpdateStringTokenDatabase;
 PLATFORM_INTERFACE void RegisterStringToken( uint32 nHashCode, const char *pStart, const char *pEnd = NULL, bool bExtraAddToDatabase = true );
 
+#define TOLOWERU( c ) ( ( uint32 ) ( ( ( c >= 'A' ) && ( c <= 'Z' ) )? c + 32 : c ) )
 class CUtlStringToken
 {
 public:
-	#include "utlstringtoken_generated_constructors.h"
 	FORCEINLINE CUtlStringToken( uint32 nHashCode = 0 ) : m_nHashCode( nHashCode ) {}
+	template < uintp N > FORCEINLINE CUtlStringToken( const char (&str)[N] )
+	{
+		constexpr uint m = 0x5bd1e995;
+		constexpr int r = 24;
+
+		uint nLength = static_cast< uint >( N - 1 );
+
+		uint32 h = STRINGTOKEN_MURMURHASH_SEED ^ nLength;
+
+		const char* pstr = reinterpret_cast< const char* >(str);
+
+		while ( nLength >= 4 )
+		{
+			uint32 k = TOLOWERU( pstr[0] ) | ( TOLOWERU( pstr[1] ) << 8 ) | ( TOLOWERU( pstr[2] ) << 16 ) | ( TOLOWERU( pstr[3] ) << 24 );
+
+			k *= m;
+			k ^= k >> r;
+			k *= m;
+
+			h *= m;
+			h ^= k;
+
+			pstr += 4;
+			nLength -= 4;
+		}
+
+		switch ( nLength )
+		{
+			case 3: h ^= TOLOWERU( pstr[2] ) << 16; [[fallthrough]];
+			case 2: h ^= TOLOWERU( pstr[1] ) << 8;  [[fallthrough]];
+			case 1: h ^= TOLOWERU( pstr[0] );
+			        h *= m;
+		}
+
+		h ^= h >> 13;
+		h *= m;
+		h ^= h >> 15;
+
+		m_nHashCode = h;
+	}
 
 	FORCEINLINE bool operator==( CUtlStringToken const &other ) const
 	{
@@ -62,7 +102,7 @@ FORCEINLINE CUtlStringToken MakeStringToken( char const *pString, int nLen )
 {
 	uint32 nHashCode = MurmurHash2LowerCase( pString, nLen, STRINGTOKEN_MURMURHASH_SEED );
 
-	if(g_bUpdateStringTokenDatabase)
+	if ( g_bUpdateStringTokenDatabase )
 	{
 		RegisterStringToken( nHashCode, pString );
 	}
