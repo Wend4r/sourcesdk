@@ -19,6 +19,18 @@ class CBufferString;
 struct SchemaAtomicTypeInfo_t;
 struct datamap_t;
 
+class CSchemaType_Builtin;
+class CSchemaType_Ptr;
+class CSchemaType_Atomic;
+class CSchemaType_Atomic_T;
+class CSchemaType_Atomic_CollectionOfT;
+class CSchemaType_Atomic_TT;
+class CSchemaType_Atomic_I;
+class CSchemaType_DeclaredClass;
+class CSchemaType_DeclaredEnum;
+class CSchemaType_FixedArray;
+class CSchemaType_Bitfield;
+
 enum SchemaClassFlags1_t
 {
 	SCHEMA_CF1_HAS_VIRTUAL_MEMBERS = (1 << 0),
@@ -92,30 +104,50 @@ enum SchemaBuiltinType_t
 	SCHEMA_BUILTIN_TYPE_COUNT,
 };
 
+// Works in combination with SchemaClassManipulatorFn_t
 enum SchemaClassManipulatorAction_t
 {
+	// Registers pObject in a schemasystem
 	SCHEMA_CLASS_MANIPULATOR_ACTION_REGISTER = 0,
 	SCHEMA_CLASS_MANIPULATOR_ACTION_REGISTER_PRE,
+
+	// Allocates object on the heap and constructs it in place, pObject is unused
 	SCHEMA_CLASS_MANIPULATOR_ACTION_ALLOCATE,
+	// Deallocates pObject
 	SCHEMA_CLASS_MANIPULATOR_ACTION_DEALLOCATE,
+
+	// Constructs pObject in place
 	SCHEMA_CLASS_MANIPULATOR_ACTION_CONSTRUCT_IN_PLACE,
+	// Destructs pObject in place
 	SCHEMA_CLASS_MANIPULATOR_ACTION_DESCTRUCT_IN_PLACE,
+
+	// Returns schema binding of pObject
 	SCHEMA_CLASS_MANIPULATOR_ACTION_GET_SCHEMA_BINDING,
 };
 
+// Works in combination with SchemaCollectionManipulatorFn_t
 enum SchemaCollectionManipulatorAction_t
 {
+	// Returns count of the collection, index1 & index2 is unused
 	SCHEMA_COLLECTION_MANIPULATOR_ACTION_GET_COUNT = 0,
+
+	// Returns element from the collection at index1, index2 is unused
 	SCHEMA_COLLECTION_MANIPULATOR_ACTION_GET_ELEMENT_CONST,
 	SCHEMA_COLLECTION_MANIPULATOR_ACTION_GET_ELEMENT,
+
+	// Swaps elements in a collection, index1 & index2 is first and second elements to swap
 	SCHEMA_COLLECTION_MANIPULATOR_ACTION_SWAP_ELEMENTS,
+	// Inserts elements to a collection at index1 where index2 is how much elements to insert
 	SCHEMA_COLLECTION_MANIPULATOR_ACTION_INSERT_BEFORE,
+	// Removes elements from a collection at index1 where index2 is how much elements to remove
 	SCHEMA_COLLECTION_MANIPULATOR_ACTION_REMOVE_MULTIPLE,
+
+	// Sets the count of a collection of size index1, index2 is unused
 	SCHEMA_COLLECTION_MANIPULATOR_ACTION_SET_COUNT,
 };
 
-typedef void* (*SchemaClassManipulatorFn_t)(SchemaClassManipulatorAction_t, void*, void*);
-typedef void* (*SchemaCollectionManipulatorFn_t)(SchemaCollectionManipulatorAction_t, void*, void*, void*);
+typedef void *(*SchemaClassManipulatorFn_t)(SchemaClassManipulatorAction_t eAction, void *pObject);
+typedef void *(*SchemaCollectionManipulatorFn_t)(SchemaCollectionManipulatorAction_t eAction, void *pCollection, int index1, int index2);
 
 inline uint32 CSchemaType_Hash( const char *pString, int len )
 {
@@ -145,25 +177,52 @@ class CSchemaType
 {
 public:
 	virtual bool IsValid() { return false; }
-	virtual const char* ToString( CBufferString& buff, bool bDontClearBuff ) { return ""; }
-	virtual void SpewDescription( LoggingChannelID_t channelID, const char* pszName ) {}
-	virtual bool GetSizeAndAlignment( int& nSize, uint8& nAlignment ) { return false; }
-	virtual bool CanReinterpretAs( const CSchemaType* pType ) { return false; }
-	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnerType() { return SchemaMetaInfoHandle_t<CSchemaType>(); }
-	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnermostType() { return SchemaMetaInfoHandle_t<CSchemaType>(); }
-	virtual bool IsA( const CSchemaType* pType ) { return false; }
-	virtual bool InternalMatchInnerAs( SchemaTypeCategory_t eTypeCategory, SchemaAtomicCategory_t eAtomicCategory ) { return false; }
+	virtual const char *ToString( CBufferString &buff, bool bDontClearBuff ) { return ""; }
+	virtual void SpewDescription( LoggingChannelID_t channelID, const char *pszName ) {}
+	virtual bool GetSizeAndAlignment( int &nSize, uint8 &nAlignment ) { return false; }
+	virtual bool CanReinterpretAs( const CSchemaType *pType ) { return false; }
+	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnerType() { return nullptr; }
+	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnermostType() { return nullptr; }
+
+	// Returns true if pType is this object
+	virtual bool IsA( const CSchemaType *pType ) { return false; }
+	virtual CSchemaType *InternalMatchInnerAs( SchemaTypeCategory_t eTypeCategory, SchemaAtomicCategory_t eAtomicCategory ) { return nullptr; }
 	
-	virtual void unk001() {}
-	virtual void unk002() {}
-	virtual void unk003() {}
-	virtual void unk004() {}
-	virtual void unk005() {}
-	virtual void unk006() {}
+	// Returns true if this type matches pType type traits
+	virtual bool IsTypeByType( const CSchemaType *pType ) { return false; }
+	// Returns true if this type name matches szName
+	virtual bool IsTypeByName( const char *szName ) { return false; }
+
+	// Returns true if this type is builtin and matches eType
+	virtual bool IsBuiltinType( SchemaBuiltinType_t eType ) { return false; }
+	// Returns true if this type is atomic and matches nAtomicID
+	virtual bool IsAtomicType( int nAtomicID ) { return false; }
+	// Returns true if this type is declared class and matches szClassName
+	virtual bool IsDeclaredClass( const char *szClassName ) { return false; }
+	// Returns true if this type is declared enum and matches szEnumName
+	virtual bool IsDeclaredEnum( const char *szEnumName ) { return false; };
 	
-	virtual bool DependsOnlyOnUnresolvedOrGlobalTypes( ISchemaSystemTypeScope* pTypeScope ) { return false; }
+	virtual bool DependsOnlyOnUnresolvedOrGlobalTypes( ISchemaSystemTypeScope *pTypeScope ) { return false; };
 	
 	virtual ~CSchemaType() = 0;
+
+	template <typename T>
+	bool IsA() { Assert( false ); return false; }
+
+	template <> bool IsA<CSchemaType_Builtin>()			{ return m_eTypeCategory == SCHEMA_TYPE_BUILTIN; }
+	template <> bool IsA<CSchemaType_Ptr>()				{ return m_eTypeCategory == SCHEMA_TYPE_POINTER; }
+	template <> bool IsA<CSchemaType_Atomic>()			{ return m_eTypeCategory == SCHEMA_TYPE_ATOMIC; }
+	template <> bool IsA<CSchemaType_Atomic_T>()		{ return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_T; }
+	template <> bool IsA<CSchemaType_Atomic_CollectionOfT>() { return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_COLLECTION_OF_T; }
+	template <> bool IsA<CSchemaType_Atomic_TT>()		{ return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_TT; }
+	template <> bool IsA<CSchemaType_Atomic_I>()		{ return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_I; }
+	template <> bool IsA<CSchemaType_DeclaredClass>()	{ return m_eTypeCategory == SCHEMA_TYPE_DECLARED_CLASS; }
+	template <> bool IsA<CSchemaType_DeclaredEnum>()	{ return m_eTypeCategory == SCHEMA_TYPE_DECLARED_ENUM; }
+	template <> bool IsA<CSchemaType_FixedArray>()		{ return m_eTypeCategory == SCHEMA_TYPE_FIXED_ARRAY; }
+	template <> bool IsA<CSchemaType_Bitfield>()		{ return m_eTypeCategory == SCHEMA_TYPE_BITFIELD; }
+
+	template <typename T>
+	T *ReinterpretAs() { return (IsA<T>()) ? (T *)this : nullptr; }
 
 public:
 	CUtlString m_sTypeName;
@@ -205,6 +264,7 @@ class CSchemaType_Atomic_CollectionOfT : public CSchemaType_Atomic_T
 public:
 	SchemaCollectionManipulatorFn_t m_pfnManipulator;
 	uint16 m_nElementSize;
+	uint64 m_nFixedBufferCount;
 };
 
 class CSchemaType_Atomic_TT : public CSchemaType_Atomic_T
