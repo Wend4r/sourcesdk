@@ -144,15 +144,15 @@ public:
 class CSchemaType
 {
 public:
-	virtual bool IsValid() { return false; }
-	virtual const char* ToString( CBufferString& buff, bool bDontClearBuff ) { return ""; }
+	virtual bool IsValid() const { return false; }
+	virtual const char* ToString( CBufferString& buff, bool bDontClearBuff ) const { return ""; }
 	virtual void SpewDescription( LoggingChannelID_t channelID, const char* pszName ) {}
-	virtual bool GetSizeAndAlignment( int& nSize, uint8& nAlignment ) { return false; }
-	virtual bool CanReinterpretAs( const CSchemaType* pType ) { return false; }
-	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnerType() { return SchemaMetaInfoHandle_t<CSchemaType>(); }
-	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnermostType() { return SchemaMetaInfoHandle_t<CSchemaType>(); }
-	virtual bool IsA( const CSchemaType* pType ) { return false; }
-	virtual bool InternalMatchInnerAs( SchemaTypeCategory_t eTypeCategory, SchemaAtomicCategory_t eAtomicCategory ) { return false; }
+	virtual bool GetSizeAndAlignment( int& nSize, uint8& nAlignment ) const { return false; }
+	virtual bool CanReinterpretAs( const CSchemaType* pType ) const { return false; }
+	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnerType() const { return SchemaMetaInfoHandle_t<CSchemaType>(); }
+	virtual SchemaMetaInfoHandle_t<CSchemaType> GetInnermostType() const { return SchemaMetaInfoHandle_t<CSchemaType>(); }
+	virtual bool IsA( const CSchemaType* pType ) const { return false; }
+	virtual bool InternalMatchInnerAs( SchemaTypeCategory_t eTypeCategory, SchemaAtomicCategory_t eAtomicCategory ) const { return false; }
 	
 	virtual void unk001() {}
 	virtual void unk002() {}
@@ -161,7 +161,7 @@ public:
 	virtual void unk005() {}
 	virtual void unk006() {}
 	
-	virtual bool DependsOnlyOnUnresolvedOrGlobalTypes( ISchemaSystemTypeScope* pTypeScope ) { return false; }
+	virtual bool DependsOnlyOnUnresolvedOrGlobalTypes( ISchemaSystemTypeScope* pTypeScope ) const { return false; }
 	
 	virtual ~CSchemaType() = 0;
 
