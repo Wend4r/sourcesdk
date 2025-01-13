@@ -25,21 +25,32 @@ enum SchemaClassFlags1_t
 	SCHEMA_CF1_IS_ABSTRACT = (1 << 1),
 	SCHEMA_CF1_HAS_TRIVIAL_CONSTRUCTOR = (1 << 2),
 	SCHEMA_CF1_HAS_TRIVIAL_DESTRUCTOR = (1 << 3),
+
+#if defined(CS2) || defined(DOTA2) || defined(DEADLOCK)
 	SCHEMA_CF1_LIMITED_METADATA = (1 << 4),
 	SCHEMA_CF1_INHERITANCE_DEPTH_CALCULATED = (1 << 5),
 	SCHEMA_CF1_MODULE_LOCAL_TYPE_SCOPE = (1 << 6),
 	SCHEMA_CF1_GLOBAL_TYPE_SCOPE = (1 << 7),
 	SCHEMA_CF1_CONSTRUCT_ALLOWED = (1 << 8),
 	SCHEMA_CF1_CONSTRUCT_DISALLOWED = (1 << 9),
+
 	SCHEMA_CF1_INFO_TAG_MNetworkAssumeNotNetworkable = (1 << 10),
 	SCHEMA_CF1_INFO_TAG_MNetworkNoBase = (1 << 11),
 	SCHEMA_CF1_INFO_TAG_MIgnoreTypeScopeMetaChecks = (1 << 12),
 	SCHEMA_CF1_INFO_TAG_MDisableDataDescValidation = (1 << 13),
 	SCHEMA_CF1_INFO_TAG_MClassHasEntityLimitedDataDesc = (1 << 14),
 	SCHEMA_CF1_INFO_TAG_MClassHasCustomAlignedNewDelete = (1 << 15),
-	SCHEMA_CF1_UNK016 = (1 << 16),
+	SCHEMA_CF1_INFO_TAG_MNonConstructibleClassBase = (1 << 16),
 	SCHEMA_CF1_INFO_TAG_MConstructibleClassBase = (1 << 17),
 	SCHEMA_CF1_INFO_TAG_MHasKV3TransferPolymorphicClassname = (1 << 18),
+#else
+	SCHEMA_CF1_HAS_NOSCHEMA_MEMBERS = (1 << 4),
+
+	SCHEMA_CF1_IS_PARENT_CLASSES_PARSED = (1 << 5),
+	SCHEMA_CF1_IS_LOCAL_TYPE_SCOPE = (1 << 6),
+	SCHEMA_CF1_IS_GLOBAL_TYPE_SCOPE = (1 << 7),
+	SCHEMA_CF1_IS_SCHEMA_VALIDATED = (1 << 10),
+#endif // defined(CS2) || defined(DOTA2) || defined(DEADLOCK)
 };
 
 enum SchemaClassFlags2_t {};
