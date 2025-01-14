@@ -571,7 +571,7 @@ KeyValues3* KeyValues3::GetArrayElement( int elem )
 KeyValues3* KeyValues3::InsertArrayElementBefore( int elem )
 {
 	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
-		return NULL;
+		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
 
 	return *m_Data.m_pArray->InsertMultipleBefore( this, elem, 1 );
 }
@@ -579,7 +579,7 @@ KeyValues3* KeyValues3::InsertArrayElementBefore( int elem )
 KeyValues3* KeyValues3::AddArrayElementToTail()
 {
 	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
-		return NULL;
+		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
 
 	return *m_Data.m_pArray->InsertMultipleBefore( this, m_Data.m_pArray->Count(), 1 );
 }
@@ -587,7 +587,7 @@ KeyValues3* KeyValues3::AddArrayElementToTail()
 void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
 	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
-		return;
+		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
 
 	m_Data.m_pArray->SetCount( this, count, type, subtype );
 }
@@ -1390,7 +1390,7 @@ CKeyValues3Array::Element_t* CKeyValues3Array::InsertMultipleBefore( KeyValues3 
 
 	m_nCount = new_size;
 
-	return base;
+	return &base[from];
 }
 
 void CKeyValues3Array::CopyFrom( KeyValues3 *parent, const CKeyValues3Array* pSrc )
