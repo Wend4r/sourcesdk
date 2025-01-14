@@ -448,6 +448,28 @@ struct AtomicTypeInfo_T_t
 	SchemaCollectionManipulatorFn_t m_pfnManipulator;
 };
 
+struct AtomicTypeInfo_CollectionOfT_t
+{
+	bool operator<( const AtomicTypeInfo_CollectionOfT_t &rhs ) const
+	{
+		if(m_nAtomicID != rhs.m_nAtomicID)
+			return m_nAtomicID < rhs.m_nAtomicID;
+
+		if(m_pTemplateType != rhs.m_pTemplateType)
+			return m_pTemplateType < rhs.m_pTemplateType;
+
+		if(m_nFixedBufferCount != rhs.m_nFixedBufferCount)
+			return m_nFixedBufferCount < rhs.m_nFixedBufferCount;
+
+		return (void *)m_pfnManipulator < (void *)rhs.m_pfnManipulator;
+	}
+
+	int m_nAtomicID;
+	CSchemaType *m_pTemplateType;
+	uint64 m_nFixedBufferCount;
+	SchemaCollectionManipulatorFn_t m_pfnManipulator;
+};
+
 struct AtomicTypeInfo_TT_t
 {
 	bool operator<( const AtomicTypeInfo_TT_t& rhs ) const 
