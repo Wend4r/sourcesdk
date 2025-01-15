@@ -96,6 +96,7 @@ public:
 
 	virtual void		unk201() = 0;
 	virtual void		unk202() = 0;
+	virtual void		unk203() = 0;
 };
 
 #endif // INETCHANNELINFO_H

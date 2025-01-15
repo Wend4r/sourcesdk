@@ -318,7 +318,7 @@ public:
 	virtual bool IsClientLowViolence( CPlayerSlot nSlot ) = 0;
 
 	// Kicks the slot with the specified NetworkDisconnectionReason
-	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason ) = 0;
+	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason, const char *szInternalReason = nullptr ) = 0;
 
 #if 0 // Don't really match the binary
 	virtual void GetAllSpawnGroupsWithPVS( CUtlVector<SpawnGroupHandle_t> *spawnGroups, CUtlVector<IPVS *> *pOut ) = 0;
