@@ -993,7 +993,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 	if ( ( flags & KV3_TO_STRING_DONT_CLEAR_BUFF ) != 0 )
 		flags &= ~KV3_TO_STRING_DONT_APPEND_STRINGS;
 	else
-		buff.ToGrowable()->Clear();
+		buff.Clear();
 
 	KV3Type_t type = GetType();
 
@@ -1001,7 +1001,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 	{
 		case KV3_TYPE_NULL:
 		{
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 		case KV3_TYPE_BOOL:
 		{
@@ -1010,34 +1010,34 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 			if ( ( flags & KV3_TO_STRING_DONT_APPEND_STRINGS ) != 0 )
 				return str;
 
-			buff.Insert( buff.ToGrowable()->GetTotalNumber(), str );
-			return buff.ToGrowable()->Get();
+			buff.Insert( buff.Length(), str );
+			return buff.Get();
 		}
 		case KV3_TYPE_INT:
 		{
 			buff.AppendFormat( "%lld", m_Data.m_Int );
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 		case KV3_TYPE_UINT:
 		{
 			if ( GetSubType() == KV3_SUBTYPE_POINTER )
 			{
 				if ( ( flags & KV3_TO_STRING_APPEND_ONLY_NUMERICS ) == 0 )
-					buff.Insert( buff.ToGrowable()->GetTotalNumber(), "<pointer>" );
+					buff.Insert( buff.Length(), "<pointer>" );
 
 				if ( ( flags & KV3_TO_STRING_RETURN_NON_NUMERICS ) == 0 )
 					return nullptr;
 
-				return buff.ToGrowable()->Get();
+				return buff.Get();
 			}
 			
 			buff.AppendFormat( "%llu", m_Data.m_UInt );
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 		case KV3_TYPE_DOUBLE:
 		{
 			buff.AppendFormat( "%g", m_Data.m_Double );
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 		case KV3_TYPE_STRING:
 		{
@@ -1046,8 +1046,8 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 			if ( ( flags & KV3_TO_STRING_DONT_APPEND_STRINGS ) != 0 )
 				return str;
 
-			buff.Insert( buff.ToGrowable()->GetTotalNumber(), str );
-			return buff.ToGrowable()->Get();
+			buff.Insert( buff.Length(), str );
+			return buff.Get();
 		}
 		case KV3_TYPE_BINARY_BLOB:
 		{
@@ -1057,7 +1057,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 			if ( ( flags & KV3_TO_STRING_RETURN_NON_NUMERICS ) == 0 )
 				return nullptr;
 
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 		case KV3_TYPE_ARRAY:
 		{
@@ -1070,7 +1070,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					case KV3_TYPEEX_ARRAY:
 					{
 						bool unprintable = false;
-						CBufferStringGrowable<128> temp;
+						CBufferStringN<128> temp;
 
 						CKeyValues3Array::Element_t* arr = m_Data.m_pArray->Base();
 						for ( int i = 0; i < elements; ++i )
@@ -1097,68 +1097,68 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 							if ( unprintable )
 								break;
 
-							if ( i != elements - 1 ) temp.Insert( temp.ToGrowable()->GetTotalNumber(), " " );
+							if ( i != elements - 1 ) temp.Insert( temp.Length(), " " );
 						}
 
 						if ( unprintable )
 							break;
 
-						buff.Insert( buff.ToGrowable()->GetTotalNumber(), temp.Get() );
-						return buff.ToGrowable()->Get();
+						buff.Insert( buff.Length(), temp.Get() );
+						return buff.Get();
 					}
 					case KV3_TYPEEX_ARRAY_FLOAT32:
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
 							buff.AppendFormat( "%g", m_Data.m_Array.m_f32[i] );
-							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
-						return buff.ToGrowable()->Get();
+						return buff.Get();
 					}
 					case KV3_TYPEEX_ARRAY_FLOAT64:
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
 							buff.AppendFormat( "%g", m_Data.m_Array.m_f64[i] );
-							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
-						return buff.ToGrowable()->Get();
+						return buff.Get();
 					}
 					case KV3_TYPEEX_ARRAY_INT16:
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
 							buff.AppendFormat( "%d", m_Data.m_Array.m_i16Short[i] );
-							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
-						return buff.ToGrowable()->Get();
+						return buff.Get();
 					}
 					case KV3_TYPEEX_ARRAY_INT32:
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
 							buff.AppendFormat( "%d", m_Data.m_Array.m_i32[i] );
-							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
-						return buff.ToGrowable()->Get();
+						return buff.Get();
 					}
 					case KV3_TYPEEX_ARRAY_UINT8_SHORT:
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
 							buff.AppendFormat( "%u", m_Data.m_Array.m_u8Short[i] );
-							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
-						return buff.ToGrowable()->Get();
+						return buff.Get();
 					}
 					case KV3_TYPEEX_ARRAY_INT16_SHORT:
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
 							buff.AppendFormat( "%d", m_Data.m_Array.m_i16Short[i] );
-							if ( i != elements - 1 ) buff.Insert( buff.ToGrowable()->GetTotalNumber(), " " );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
-						return buff.ToGrowable()->Get();
+						return buff.Get();
 					}
 					default:
 						break;
@@ -1171,7 +1171,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 			if ( ( flags & KV3_TO_STRING_RETURN_NON_NUMERICS ) == 0 )
 				return nullptr;
 
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 		case KV3_TYPE_TABLE:
 		{
@@ -1181,7 +1181,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 			if ( ( flags & KV3_TO_STRING_RETURN_NON_NUMERICS ) == 0 )
 				return nullptr;
 
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 		default: 
 		{
@@ -1191,7 +1191,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 			if ( ( flags & KV3_TO_STRING_RETURN_NON_NUMERICS ) == 0 )
 				return nullptr;
 
-			return buff.ToGrowable()->Get();
+			return buff.Get();
 		}
 	}
 }

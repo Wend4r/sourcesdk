@@ -935,7 +935,7 @@ public:
 
 	const char *ToString()
 	{
-		static CBufferStringGrowable<200> szBuf;
+		static CBufferStringN<200> szBuf;
 		AssignTo(szBuf);
 		return szBuf.Get();
 	}
