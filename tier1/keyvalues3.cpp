@@ -584,6 +584,24 @@ KeyValues3* KeyValues3::ArrayAddElementToTail()
 	return *m_Data.m_pArray->InsertMultipleBefore( this, m_Data.m_pArray->Count(), 1 );
 }
 
+void KeyValues3::ArraySwapItems( int idx1, int idx2 )
+{
+	if(GetTypeEx() != KV3_TYPEEX_ARRAY)
+		return;
+
+	if(idx1 < 0 || idx1 >= m_Data.m_pArray->Count())
+		return;
+
+	if(idx2 < 0 || idx2 >= m_Data.m_pArray->Count())
+		return;
+
+	auto base = GetArrayBase();
+
+	auto temp = base[idx1];
+	base[idx1] = base[idx2];
+	base[idx2] = temp;
+}
+
 void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
 	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
@@ -767,6 +785,14 @@ int KeyValues3::GetMemberCount() const
 		return 0;
 	
 	return m_Data.m_pTable->GetMemberCount();
+}
+
+CKeyValues3Table *KeyValues3::GetTableRaw()
+{
+	if(GetType() != KV3_TYPE_TABLE)
+		return nullptr;
+
+	return m_Data.m_pTable;
 }
 
 KeyValues3* KeyValues3::GetMember( KV3MemberId_t id )
