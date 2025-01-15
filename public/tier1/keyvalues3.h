@@ -275,6 +275,14 @@ enum KV3MetaDataFlags_t
 	KV3_METADATA_SINGLE_QUOTED_STRING = (1 << 1),
 };
 
+enum KeyValues3Flag_t : uint8
+{
+	KEYVALUES3_FLAG_NONE = 0,
+	KEYVALUES3_FLAG_RESOURCE_REFERENCE = (1 << 0),
+	KEYVALUES3_FLAG_MULTILINE_STRING = (1 << 1),
+	KEYVALUES3_FLAG_LAST_VALUE = (1 << 2)
+};
+
 namespace KV3Helpers
 {
 	template <typename T, typename... Ts>
@@ -392,6 +400,18 @@ public:
 
 	CKeyValues3Context* GetContext() const;
 	KV3MetaData_t* GetMetaData( CKeyValues3Context** ppCtx = nullptr ) const;
+
+	bool HasFlag( KeyValues3Flag_t flag ) const { return (m_nFlags & flag) != 0; }
+	bool HasAnyFlags() const { return m_nFlags != 0; }
+	KeyValues3Flag_t GetAllFlags() const { return (KeyValues3Flag_t)m_nFlags; }
+	void SetAllFlags( KeyValues3Flag_t flags ) { m_nFlags |= flags; }
+	void SetFlag( KeyValues3Flag_t flag, bool state )
+	{
+		if(state)
+			m_nFlags |= flag;
+		else
+			m_nFlags &= ~flag;
+	}
 
 	KV3Type_t GetType() const		{ return ( KV3Type_t )( m_TypeEx & 0xF ); }
 	KV3TypeEx_t GetTypeEx() const	{ return ( KV3TypeEx_t )m_TypeEx; }
