@@ -19,17 +19,15 @@ class CBufferString;
 struct SchemaAtomicTypeInfo_t;
 struct datamap_t;
 
-class CSchemaType_Builtin;
-class CSchemaType_Ptr;
-class CSchemaType_Atomic;
-class CSchemaType_Atomic_T;
-class CSchemaType_Atomic_CollectionOfT;
-class CSchemaType_Atomic_TT;
-class CSchemaType_Atomic_I;
-class CSchemaType_DeclaredClass;
-class CSchemaType_DeclaredEnum;
-class CSchemaType_FixedArray;
-class CSchemaType_Bitfield;
+template <typename T>
+struct SchemaTypeMap {};
+
+#define SCHEMATYPE_ENTRY( type, type_cat, atomic_cat ) template <> struct SchemaTypeMap<type> \
+{ \
+	static const SchemaTypeCategory_t type_category = type_cat; \
+	static const SchemaAtomicCategory_t atomic_category = atomic_cat; \
+	static inline bool Match( CSchemaType *ptr ) { return ptr->m_eTypeCategory == type_category && ptr->m_eAtomicCategory == atomic_category; } \
+};
 
 enum SchemaClassFlags1_t
 {
@@ -207,19 +205,7 @@ public:
 	virtual ~CSchemaType() = 0;
 
 	template <typename T>
-	bool IsA() { Assert( false ); return false; }
-
-	template <> bool IsA<CSchemaType_Builtin>()			{ return m_eTypeCategory == SCHEMA_TYPE_BUILTIN; }
-	template <> bool IsA<CSchemaType_Ptr>()				{ return m_eTypeCategory == SCHEMA_TYPE_POINTER; }
-	template <> bool IsA<CSchemaType_Atomic>()			{ return m_eTypeCategory == SCHEMA_TYPE_ATOMIC; }
-	template <> bool IsA<CSchemaType_Atomic_T>()		{ return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_T; }
-	template <> bool IsA<CSchemaType_Atomic_CollectionOfT>() { return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_COLLECTION_OF_T; }
-	template <> bool IsA<CSchemaType_Atomic_TT>()		{ return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_TT; }
-	template <> bool IsA<CSchemaType_Atomic_I>()		{ return IsA<CSchemaType_Atomic>() && m_eAtomicCategory == SCHEMA_ATOMIC_I; }
-	template <> bool IsA<CSchemaType_DeclaredClass>()	{ return m_eTypeCategory == SCHEMA_TYPE_DECLARED_CLASS; }
-	template <> bool IsA<CSchemaType_DeclaredEnum>()	{ return m_eTypeCategory == SCHEMA_TYPE_DECLARED_ENUM; }
-	template <> bool IsA<CSchemaType_FixedArray>()		{ return m_eTypeCategory == SCHEMA_TYPE_FIXED_ARRAY; }
-	template <> bool IsA<CSchemaType_Bitfield>()		{ return m_eTypeCategory == SCHEMA_TYPE_BITFIELD; }
+	bool IsA() { return SchemaTypeMap<T>::Match( this ); }
 
 	template <typename T>
 	T *ReinterpretAs() { return (IsA<T>()) ? (T *)this : nullptr; }
@@ -307,6 +293,18 @@ class CSchemaType_Bitfield : public CSchemaType
 public:
 	int m_nBitfieldCount;
 };
+
+SCHEMATYPE_ENTRY( CSchemaType_Builtin, SCHEMA_TYPE_BUILTIN, SCHEMA_ATOMIC_INVALID );
+SCHEMATYPE_ENTRY( CSchemaType_Ptr, SCHEMA_TYPE_POINTER, SCHEMA_ATOMIC_INVALID );
+SCHEMATYPE_ENTRY( CSchemaType_Atomic, SCHEMA_TYPE_ATOMIC, SCHEMA_ATOMIC_PLAIN );
+SCHEMATYPE_ENTRY( CSchemaType_Atomic_T, SCHEMA_TYPE_ATOMIC, SCHEMA_ATOMIC_T );
+SCHEMATYPE_ENTRY( CSchemaType_Atomic_CollectionOfT, SCHEMA_TYPE_ATOMIC, SCHEMA_ATOMIC_COLLECTION_OF_T );
+SCHEMATYPE_ENTRY( CSchemaType_Atomic_TT, SCHEMA_TYPE_ATOMIC, SCHEMA_ATOMIC_TT );
+SCHEMATYPE_ENTRY( CSchemaType_Atomic_I, SCHEMA_TYPE_ATOMIC, SCHEMA_ATOMIC_I );
+SCHEMATYPE_ENTRY( CSchemaType_DeclaredClass, SCHEMA_TYPE_DECLARED_CLASS, SCHEMA_ATOMIC_INVALID );
+SCHEMATYPE_ENTRY( CSchemaType_DeclaredEnum, SCHEMA_TYPE_DECLARED_ENUM, SCHEMA_ATOMIC_INVALID );
+SCHEMATYPE_ENTRY( CSchemaType_FixedArray, SCHEMA_TYPE_FIXED_ARRAY, SCHEMA_ATOMIC_INVALID );
+SCHEMATYPE_ENTRY( CSchemaType_Bitfield, SCHEMA_TYPE_BITFIELD, SCHEMA_ATOMIC_INVALID );
 
 struct SchemaMetadataEntryData_t
 {
