@@ -1269,6 +1269,54 @@ KeyValues3& KeyValues3::operator=( const KeyValues3& src )
 	return *this;
 }
 
+void CKeyValues3Iterator::Init( KeyValues3 *kv )
+{
+	m_Stack.Purge();
+
+	if(kv)
+	{
+		auto entry = m_Stack.AddToTailGetPtr();
+		entry->m_nIndex = -1;
+		entry->m_pKV = kv;
+	}
+}
+
+void CKeyValues3Iterator::Advance()
+{
+	while(m_Stack.Count() > 0)
+	{
+		auto &entry = m_Stack[m_Stack.Count() - 1];
+		auto kv = entry.m_pKV;
+
+		if(kv->GetType() == KV3_TYPE_ARRAY)
+		{
+			entry.m_nIndex++;
+
+			if(entry.m_nIndex < kv->GetArrayElementCount())
+			{
+				auto new_entry = m_Stack.AddToTailGetPtr();
+				new_entry->m_nIndex = -1;
+				new_entry->m_pKV = kv->GetArrayElement( entry.m_nIndex );
+				return;
+			}
+		}
+		else if(kv->GetType() == KV3_TYPE_TABLE)
+		{
+			entry.m_nIndex++;
+
+			if(entry.m_nIndex < kv->GetMemberCount())
+			{
+				auto new_entry = m_Stack.AddToTailGetPtr();
+				new_entry->m_nIndex = -1;
+				new_entry->m_pKV = kv->GetMember( entry.m_nIndex );
+				return;
+			}
+		}
+
+		m_Stack.RemoveMultipleFromTail( 1 );
+	}
+}
+
 CKeyValues3Array::CKeyValues3Array( int cluster_elem, int alloc_size ) :
 	m_nClusterElement( cluster_elem ),
 	m_nAllocatedChunks( alloc_size ),

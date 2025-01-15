@@ -46,6 +46,11 @@ struct KV3ToKV1Translation_t;
 	2. Directly through the constructor.
 */
 
+// Quick way to iterate across whole kv3, to access currently iterated kv3 use iter.Get()
+// Mostly useful to iterate unnamed data, like arrays of primitives
+#define FOR_EACH_KV3( kv, iter ) \
+	for ( CKeyValues3Iterator iter( kv ); iter.IsValid(); iter.Advance() )
+
 struct KV3ID_t
 {
 	const char* m_name;
@@ -605,6 +610,29 @@ private:
 	friend class CKeyValues3Array;
 };
 COMPILE_TIME_ASSERT(sizeof(KeyValues3) == 16);
+
+class CKeyValues3Iterator
+{
+public:
+	CKeyValues3Iterator() : m_Stack() {}
+	CKeyValues3Iterator( KeyValues3 *kv ) : CKeyValues3Iterator() { Init( kv ); }
+
+	void Init( KeyValues3 *kv );
+
+	void Advance();
+
+	KeyValues3 *Get() const { return IsValid() ? m_Stack[m_Stack.Count() - 1].m_pKV : nullptr; }
+	bool IsValid() const { return m_Stack.Count() > 0; }
+
+private:
+	struct StackEntry_t
+	{
+		KeyValues3 *m_pKV;
+		int m_nIndex;
+	};
+
+	CUtlVectorFixedGrowable<StackEntry_t, 4> m_Stack;
+};
 
 class CKeyValues3Array
 {
