@@ -20,10 +20,11 @@
 #endif
 #endif
 
+#include "platform.h"
 #include "utlvector.h"
 #include "Color.h"
 #include "exprevaluator.h"
-#include <vstdlib/IKeyValuesSystem.h>
+#include "IKeyValuesSystem.h"
 
 class IFileSystem;
 class CUtlBuffer;
@@ -49,15 +50,15 @@ typedef void *FileHandle_t;
 
 DECLARE_POINTER_HANDLE( HTemporaryKeyValueAllocationScope );
 
+PLATFORM_INTERFACE KeyValues *KeyValuesFromJSON( CUtlBuffer *buf, bool allow_unterminated = false, bool *parsed_successfully = nullptr );
+PLATFORM_INTERFACE bool KeyValuesToJSON( KeyValues *kv, CUtlBuffer *buf );
+
 class CTemporaryKeyValues
 {
-	CTemporaryKeyValues() : m_pKeyValues(nullptr), m_hScope() {}
+	CTemporaryKeyValues() : m_pKeyValues( nullptr ), m_hScope() {}
 	~CTemporaryKeyValues()
 	{
-		// GAMMACASE: TODO: Complete with actual KeyValuesSystem call once it's reversed too.
-#if 0
-		KeyValuesSystem()->ReleaseTemporaryAllocationScope( m_hScope );
-#endif
+		KeyValuesSystem()->ReleaseTemporaryKeyValues( this );
 	}
 
 private:

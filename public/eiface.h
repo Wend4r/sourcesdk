@@ -483,7 +483,7 @@ public:
 
 //-----------------------------------------------------------------------------
 // Just an interface version name for the random number interface
-// See vstdlib/random.h for the interface definition
+// See tier1/random.h for the interface definition
 // NOTE: If you change this, also change VENGINE_CLIENT_RANDOM_INTERFACE_VERSION in cdll_int.h
 //-----------------------------------------------------------------------------
 #define VENGINE_SERVER_RANDOM_INTERFACE_VERSION	"VEngineRandom001"
