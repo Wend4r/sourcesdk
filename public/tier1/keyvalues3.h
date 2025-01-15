@@ -361,7 +361,7 @@ public:
 	}
 
 	inline CKV3MemberName(): m_nHashCode(), m_pszString("") {}
-	inline CKV3MemberName(unsigned int nHashCode, const char* pszString = ""): m_nHashCode(nHashCode), m_pszString(pszString) {}
+	inline CKV3MemberName( CUtlStringToken nHashCode, const char* pszString = ""): m_nHashCode(nHashCode), m_pszString(pszString) {}
 
 	inline unsigned int GetHashCode() const { return m_nHashCode.GetHashCode(); }
 	inline const char* GetString() const { return m_pszString; }
@@ -465,22 +465,24 @@ public:
 	int GetArrayElementCount() const;
 	KeyValues3** GetArrayBase();
 	KeyValues3* GetArrayElement( int elem );
-	KeyValues3* InsertArrayElementBefore( int elem );
-	KeyValues3* InsertArrayElementAfter( int elem ) { return InsertArrayElementBefore( elem + 1 ); }
-	KeyValues3* AddArrayElementToTail();
+	KeyValues3* ArrayInsertElementBefore( int elem );
+	KeyValues3* ArrayInsertElementAfter( int elem ) { return ArrayInsertElementBefore( elem + 1 ); }
+	KeyValues3* ArrayAddElementToTail();
 	void SetArrayElementCount( int count, KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
-	void SetToEmptyArray() { SetArrayElementCount( 0 ); }
-	void RemoveArrayElements( int elem, int num );
-	void RemoveArrayElement( int elem ) { RemoveArrayElements( elem, 1 ); }
+	void SetToEmptyArray() { PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY ); }
+	void ArrayRemoveElements( int elem, int num );
+	void ArrayRemoveElement( int elem ) { ArrayRemoveElements( elem, 1 ); }
 
 	int GetMemberCount() const;
 	KeyValues3* GetMember( KV3MemberId_t id );
 	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
 	const char* GetMemberName( KV3MemberId_t id ) const;
 	CKV3MemberName GetMemberNameEx( KV3MemberId_t id ) const;
-	unsigned int GetMemberHash( KV3MemberId_t id ) const;
-	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = NULL );
-	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = NULL );
+	CUtlStringToken GetMemberHash( KV3MemberId_t id ) const;
+
+	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = nullptr );
+	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = nullptr );
+
 	void SetToEmptyTable();
 	bool RemoveMember( KV3MemberId_t id );
 	bool RemoveMember( const KeyValues3* kv );
@@ -558,7 +560,7 @@ private:
 	void CopyFrom( const KeyValues3* pSrc );
 
 	int GetClusterElement() const { return m_nClusterElement; }
-	void SetClusterElement( int element ) { m_bExternalStorage = (element == -1); m_nClusterElement = element; }
+	void SetClusterElement( int element ) { m_bContextIndependent = (element == -1); m_nClusterElement = element; }
 	CKeyValues3Cluster* GetCluster() const;
 
 	template < typename T > T FromString( T defaultValue ) const;
@@ -585,7 +587,7 @@ private:
 	static constexpr size_t TotalSizeWithoutStaticData() { return sizeof(KeyValues3) - TotalSizeOfData( 0 ); }
 
 private:
-	uint64 m_bExternalStorage : 1;
+	uint64 m_bContextIndependent : 1;
 	uint64 m_bFreeArrayMemory : 1;
 	uint64 m_TypeEx : 8;
 	uint64 m_SubType : 8;
@@ -671,13 +673,12 @@ COMPILE_TIME_ASSERT(sizeof(CKeyValues3Array) == 64);
 class CKeyValues3Table
 {
 public:
-	enum : uint8
+	enum
 	{
-		TABLEFL_NONE = 0,
-		TABLEFL_NAME_EXTERNAL = (1 << 0)
+		MEMBER_FLAG_EXTERNAL_NAME = (1 << 0)
 	};
 
-	typedef uint32			Hash_t;
+	typedef CUtlStringToken	Hash_t;
 	typedef KeyValues3*		Member_t;
 	typedef const char*		Name_t;
 	typedef uint8			Flags_t;
