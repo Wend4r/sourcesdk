@@ -21,7 +21,7 @@
 #include "igameevents.h"
 #include "convar.h"
 #include "color.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineTrace.h"
 #include "tier2/tier2.h"
 #include "game/server/iplayerinfo.h"

@@ -9,7 +9,7 @@
 #include "ai_motor.h"
 #include "basecombatweapon.h"
 #include "animation.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "h_cycler.h"
 #include "Sprite.h"
 

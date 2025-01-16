@@ -17,7 +17,7 @@
 #include "bspfile.h"
 #include "mathlib/mathlib.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "soundflags.h"
 #include "ispatialpartition.h"
 #include "igamesystem.h"

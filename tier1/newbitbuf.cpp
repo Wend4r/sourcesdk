@@ -12,7 +12,7 @@
 #include "mathlib/mathlib.h"
 #include "tier0/strtools.h"
 #include "bitvec.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 // FIXME: Can't use this until we get multithreaded allocations in tier0 working for tools
 // This is used by VVIS and fails to link

@@ -27,7 +27,7 @@
 #include "explode.h" // temp (sjb)
 #include "smoke_trail.h" // temp (sjb)
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "ar2_explosion.h"
 #include "te_effect_dispatch.h"

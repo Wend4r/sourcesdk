@@ -12,7 +12,7 @@
 #include "globalstate.h"
 #include "ndebugoverlay.h"
 #include "saverestore_utlvector.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "gameinterface.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

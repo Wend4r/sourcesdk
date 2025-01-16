@@ -20,7 +20,7 @@
 #include "tier0/basetypes.h"
 
 // For RandomFloat()
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 #include "tier0/dbg.h"
 #include "mathlib/math_pfns.h"

@@ -32,7 +32,7 @@
 // Next, include vstdlib
 #include "vstdlib/vstdlib.h"
 #include "tier0/strtools.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "tier0/keyvalues.h"
 #include "tier1/utlmemory.h"
 #include "tier1/utlrbtree.h"

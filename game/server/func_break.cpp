@@ -14,7 +14,7 @@
 #include "in_buttons.h"
 #include "physics.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "globals.h"

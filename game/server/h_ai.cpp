@@ -6,7 +6,7 @@
 
 #include "cbase.h"
 #include "game.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "movevars_shared.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

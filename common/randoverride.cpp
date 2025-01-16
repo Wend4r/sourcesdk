@@ -6,7 +6,7 @@
 #if !defined(_STATIC_LINKED) || defined(_SHARED_LIB)
 
 #include "stdlib.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

@@ -12,7 +12,7 @@
 #include "soundent.h"
 #include "func_break.h"		// For materials
 #include "player.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "ai_utils.h"
 #include "EntityFlame.h"
 

@@ -9,7 +9,7 @@
 #include "keyvalues.h"
 #include "vgui/isurface.h"
 #include "EngineInterface.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "fmtstr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

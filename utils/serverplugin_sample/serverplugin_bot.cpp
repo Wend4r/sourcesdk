@@ -21,7 +21,7 @@
 #include "game/server/iplayerinfo.h"
 #include "igameevents.h"
 #include "convar.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "../../game/shared/in_buttons.h"
 #include "../../game/shared/shareddefs.h"
 //#include "../../game_shared/util_shared.h"

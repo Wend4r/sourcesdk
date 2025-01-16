@@ -7,7 +7,7 @@
 
 #include "cbase.h"
 #include "test_stressentities.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "world.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

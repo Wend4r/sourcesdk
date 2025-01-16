@@ -1,4 +1,4 @@
-//========== Copyright © 2005, Valve Corporation, All rights reserved. ========
+//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
 // Purpose:	A utility for a discrete job-oriented worker thread.
 //
@@ -34,7 +34,7 @@
 #include "tier1/utlvector.h"
 #include "tier1/functors.h"
 
-#include "vstdlib/vstdlib.h"
+#include "platform.h"
 
 #ifndef JOBTHREAD_H
 #define JOBTHREAD_H
@@ -91,28 +91,16 @@ enum JobPriority_t
 {
 	JP_LOW,
 	JP_NORMAL,
-	JP_HIGH,
-	JP_IMMEDIATE,
-
-	JP_NUM_PRIORITIES,
-
-	// Priority aliases for game jobs
-	JP_FRAME			= JP_NORMAL,
-	JP_FRAME_SEGMENT	= JP_HIGH,
+	JP_HIGH
 };
 
 #define TP_MAX_POOL_THREADS	64
 struct ThreadPoolStartParams_t
 {
-	ThreadPoolStartParams_t( bool bIOThreads = false, unsigned nThreads = (unsigned)-1, int *pAffinities = NULL, ThreeState_t fDistribute = TRS_NONE, unsigned nStackSize = (unsigned)-1, int iThreadPriority = SHRT_MIN )
-		: nThreads( nThreads ), nThreadsMax( -1 ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority ), bIOThreads( bIOThreads )
+	ThreadPoolStartParams_t( bool bIOThreads = false, unsigned nThreads = -1, int *pAffinities = NULL, ThreeState_t fDistribute = TRS_NONE, unsigned nStackSize = -1, int iThreadPriority = SHRT_MIN )
+		: bIOThreads( bIOThreads ), nThreads( nThreads ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority )
 	{
-		bExecOnThreadPoolThreadsOnly = false;
-#if defined( DEDICATED ) && IsPlatformLinux()
-		bEnableOnLinuxDedicatedServer = false; // by default, thread pools don't start up on Linux DS
-#endif
-
-		bUseAffinityTable = ( pAffinities != NULL ) && ( fDistribute == TRS_TRUE ) && ( nThreads != (unsigned)-1 );
+		bUseAffinityTable = ( pAffinities != NULL ) && ( fDistribute == TRS_TRUE ) && ( nThreads != -1 );
 		if ( bUseAffinityTable )
 		{
 			// user supplied an optional 1:1 affinity mapping to override normal distribute behavior
@@ -125,7 +113,6 @@ struct ThreadPoolStartParams_t
 	}
 
 	int				nThreads;
-	int				nThreadsMax;
 	ThreeState_t	fDistribute;
 	int				nStackSize;
 	int				iThreadPriority;
@@ -133,10 +120,6 @@ struct ThreadPoolStartParams_t
 
 	bool			bIOThreads : 1;
 	bool			bUseAffinityTable : 1;
-	bool			bExecOnThreadPoolThreadsOnly : 1;
-#if defined( DEDICATED ) && IsPlatformLinux()
-	bool			bEnableOnLinuxDedicatedServer : 1;
-#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -460,12 +443,12 @@ class CJob : public CRefCounted1<IRefCounted, CRefCountServiceMT>
 public:
 	CJob( JobPriority_t priority = JP_NORMAL )
 	  : m_status( JOB_STATUS_UNSERVICED ),
+		m_ThreadPoolData( JOB_NO_DATA ),
 		m_priority( priority ),
 		m_flags( 0 ),
-		m_iServicingThread( -1 ),
-		m_ThreadPoolData( JOB_NO_DATA ),
 		m_pThreadPool( NULL ),
-		m_CompleteEvent( true )
+		m_CompleteEvent( true ),
+		m_iServicingThread( -1 )
 	{
 	}
 
@@ -497,9 +480,9 @@ public:
 	//-----------------------------------------------------
 	// Try to acquire ownership (to satisfy). If you take the lock, you must either execute or abort.
 	//-----------------------------------------------------
-	bool TryLock()										{ return m_mutex.TryLock(__FILE__, __LINE__); }
-	void Lock()											{ m_mutex.Lock(__FILE__, __LINE__); }
-	void Unlock()										{ m_mutex.Unlock(__FILE__, __LINE__); }
+	bool TryLock() volatile							{ return m_mutex.TryLock(); }
+	void Lock() volatile 								{ m_mutex.Lock(); }
+	void Unlock() volatile								{ m_mutex.Unlock(); }
 
 	//-----------------------------------------------------
 	// Thread event support (safe for NULL this to simplify code )
@@ -529,17 +512,13 @@ private:
 
 	JobStatus_t			m_status;
 	JobPriority_t		m_priority;
-	CThreadMutex		m_mutex;
+	CThreadFastMutex	m_mutex;
 	unsigned char		m_flags;
 	char				m_iServicingThread;
 	short				m_reserved;
 	ThreadPoolData_t	m_ThreadPoolData;
 	IThreadPool *		m_pThreadPool;
 	CThreadEvent		m_CompleteEvent;
-
-#if defined( THREAD_PARENT_STACK_TRACE_ENABLED )
-	void *				m_ParentStackTrace[THREAD_PARENT_STACK_TRACE_LENGTH];
-#endif
 
 private:
 	//-----------------------------------------------------
@@ -610,7 +589,7 @@ public:
 
 	~CJobSet()
 	{
-		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
+		for ( int i = 0; i < m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->Release();
 		}
@@ -628,7 +607,7 @@ public:
 
 	void Execute( bool bRelease = true )
 	{
-		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
+		for ( int i = 0; i < m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->Execute();
 			if ( bRelease )
@@ -645,7 +624,7 @@ public:
 
 	void Abort( bool bRelease = true )
 	{
-		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
+		for ( int i = 0; i < m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->Abort();
 			if ( bRelease )
@@ -662,7 +641,7 @@ public:
 
 	void WaitForFinish( bool bRelease = true )
 	{
-		for ( int i = 0; i < (int)m_jobs.Count(); i++ )
+		for ( int i = 0; i < m_jobs.Count(); i++ )
 		{
 			m_jobs[i]->WaitForFinish();
 			if ( bRelease )
@@ -679,11 +658,11 @@ public:
 
 	void WaitForFinish( IThreadPool *pPool, bool bRelease = true )
 	{
-		pPool->YieldWait( m_jobs.Base(), (int)m_jobs.Count() );
+		pPool->YieldWait( m_jobs.Base(), m_jobs.Count() );
 
 		if ( bRelease )
 		{
-			for ( int i = 0; i < (int)m_jobs.Count(); i++ )
+			for ( int i = 0; i < m_jobs.Count(); i++ )
 			{
 				m_jobs[i]->Release();
 			}
@@ -714,16 +693,14 @@ private:
 // Work splitting: array split, best when cost per item is roughly equal
 //-----------------------------------------------------------------------------
 
-#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4389)
 #pragma warning(disable:4018)
 #pragma warning(disable:4701)
-#endif
 
 #define DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL(N) \
 	template <typename FUNCTION_CLASS, typename FUNCTION_RETTYPE FUNC_TEMPLATE_FUNC_PARAMS_##N FUNC_TEMPLATE_ARG_PARAMS_##N, typename ITERTYPE1, typename ITERTYPE2> \
-	void IterRangeParallel(FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_SEPARATOR_##N FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
+	void IterRangeParallel(FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
 	{ \
 		const int MAX_THREADS = 16; \
 		int nIdle = g_pThreadPool->NumIdleThreads(); \
@@ -758,7 +735,7 @@ FUNC_GENERATE_ALL( DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL );
 
 #define DEFINE_MEMBER_ITER_RANGE_PARALLEL(N) \
 	template <typename OBJECT_TYPE, typename FUNCTION_CLASS, typename FUNCTION_RETTYPE FUNC_TEMPLATE_FUNC_PARAMS_##N FUNC_TEMPLATE_ARG_PARAMS_##N, typename ITERTYPE1, typename ITERTYPE2> \
-	void IterRangeParallel(OBJECT_TYPE *pObject, FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_SEPARATOR_##N FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
+	void IterRangeParallel(OBJECT_TYPE *pObject, FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
 	{ \
 		const int MAX_THREADS = 16; \
 		int nIdle = g_pThreadPool->NumIdleThreads(); \
@@ -898,10 +875,8 @@ protected:
 };
 
 
-#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4189)
-#endif
 
 template <typename ITEM_TYPE, class ITEM_PROCESSOR_TYPE, int ID_TO_PREVENT_COMDATS_IN_PROFILES = 1>
 class CParallelProcessor
@@ -1011,9 +986,7 @@ private:
 
 };
 
-#ifdef _MSC_VER
 #pragma warning(pop)
-#endif
 
 template <typename ITEM_TYPE> 
 inline void ParallelProcess( ITEM_TYPE *pItems, unsigned nItems, void (*pfnProcess)( ITEM_TYPE & ), void (*pfnBegin)() = NULL, void (*pfnEnd)() = NULL, int nMaxParallel = INT_MAX )
@@ -1378,17 +1351,7 @@ inline JobStatus_t CJob::Execute()
 		{
 			// Service it
 			m_status = JOB_STATUS_INPROGRESS;
-
-#if defined( THREAD_PARENT_STACK_TRACE_ENABLED )
-			//replace thread parent trace with job parent
-			{
-				CStackTop_ReferenceParentStack stackTop( m_ParentStackTrace, ARRAYSIZE( m_ParentStackTrace ) );
-				result = m_status = DoExecute();
-			}
-#else
 			result = m_status = DoExecute();
-#endif			
-			
 			DoCleanup();
 			m_CompleteEvent.Set();
 			break;

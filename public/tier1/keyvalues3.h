@@ -35,6 +35,25 @@ class CKeyValues3Context;
 struct KV1ToKV3Translation_t;
 struct KV3ToKV1Translation_t;
 
+/* 
+	KeyValues3 is a data storage format. See https://developer.valvesoftware.com/wiki/KeyValues3
+	Supports various specific data types targeted at the Source2.
+	Each specific type corresponds to one of the basic types.
+
+	There are 2 ways to create KeyValues3:
+
+	1. Via CKeyValues3Context:
+	- KV's, arrays and tables are stored in fixed memory blocks (clusters) and therefore memory is allocated only when clusters are created.
+	- Supports metadata and some other things.
+
+	2. Directly through the constructor.
+*/
+
+// Quick way to iterate across whole kv3, to access currently iterated kv3 use iter.Get()
+// Mostly useful to iterate unnamed data, like arrays of primitives
+#define FOR_EACH_KV3( kv, iter ) \
+	for ( CKeyValues3Iterator iter( kv ); iter.IsValid(); iter.Advance() 
+
 typedef int32 KV3MemberId_t;
 #define KV3_INVALID_MEMBER ((KV3MemberId_t)-1)
 
@@ -199,6 +218,14 @@ enum KV3MetaDataFlags_t
 	KV3_METADATA_SINGLE_QUOTED_STRING = (1 << 1),
 };
 
+enum KeyValues3Flag_t : uint8
+{
+	KEYVALUES3_FLAG_NONE = 0,
+	KEYVALUES3_FLAG_RESOURCE_REFERENCE = (1 << 0),
+	KEYVALUES3_FLAG_MULTILINE_STRING = (1 << 1),
+	KEYVALUES3_FLAG_LAST_VALUE = (1 << 2)
+};
+
 namespace KV3Helpers
 {
 	template <typename T, typename... Ts>
@@ -307,7 +334,7 @@ public:
 	inline const CBufferString &GetStorage() const { return m_Storage; }
 
 private:
-	CBufferStringGrowable< 32, false > m_Storage;
+	CBufferStringGrowable< 32 > m_Storage;
 };
 
 template<size_t SIZE, typename T>
@@ -327,6 +354,18 @@ public:
 	CKeyValues3Context* GetContext() const;
 	KV3MetaData_t* GetMetaData( CKeyValues3Context** ppCtx = nullptr ) const;
 
+	bool HasFlag( KeyValues3Flag_t flag ) const { return (m_nFlags & flag) != 0; }
+	bool HasAnyFlags() const { return m_nFlags != 0; }
+	KeyValues3Flag_t GetAllFlags() const { return (KeyValues3Flag_t)m_nFlags; }
+	void SetAllFlags( KeyValues3Flag_t flags ) { m_nFlags |= flags; }
+	void SetFlag( KeyValues3Flag_t flag, bool state )
+	{
+		if(state)
+			m_nFlags |= flag;
+		else
+			m_nFlags &= ~flag;
+	}
+
 	KV3Type_t GetType() const		{ return ( KV3Type_t )( m_TypeEx & 0xF ); }
 	KV3TypeEx_t GetTypeEx() const	{ return ( KV3TypeEx_t )m_TypeEx; }
 	KV3SubType_t GetSubType() const	{ return ( KV3SubType_t )m_SubType; }
@@ -337,6 +376,7 @@ public:
 	const char* ToString( CBufferString& buff, uint flags = KV3_TO_STRING_NONE ) const;
 
 	void SetToNull() { PrepareForType( KV3_TYPEEX_NULL, KV3_SUBTYPE_NULL ); }
+	bool IsNull() const { return GetType() == KV3_TYPE_NULL; }
 
 	bool GetBool( bool defaultValue = false ) const			{ return GetValue<bool>( defaultValue ); }
 	char8 GetChar( char8 defaultValue = 0 ) const			{ return GetValue<char8>( defaultValue ); }
@@ -402,34 +442,107 @@ public:
 	void SetMatrix3x4( const matrix3x4_t &matrix )	{ SetVecBasedObj<matrix3x4_t>( matrix, 3*4, KV3_SUBTYPE_MATRIX3X4 ); }
 
 	int GetArrayElementCount() const;
-	KeyValues3** GetArrayBase();
-	KeyValues3* GetArrayElement( int elem );
-	KeyValues3* InsertArrayElementBefore( int elem );
-	KeyValues3* InsertArrayElementAfter( int elem ) { return InsertArrayElementBefore( elem + 1 ); }
-	KeyValues3* AddArrayElementToTail();
 	void SetArrayElementCount( int count, KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
-	void SetToEmptyArray() { SetArrayElementCount( 0 ); }
-	void RemoveArrayElements( int elem, int num );
-	void RemoveArrayElement( int elem ) { RemoveArrayElements( elem, 1 ); }
 
+	void SetToEmptyArray() { PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY ); }
+	KeyValues3** GetArrayBase();
+
+	KeyValues3* GetArrayElement( int elem );
+	const KeyValues3 *GetArrayElement( int elem ) const { return const_cast<KeyValues3 *>(this)->GetArrayElement( elem ); }
+
+	KeyValues3* ArrayInsertElementBefore( int elem );
+	KeyValues3* ArrayInsertElementAfter( int elem ) { return ArrayInsertElementBefore( elem + 1 ); }
+	KeyValues3* ArrayAddElementToTail();
+
+	void ArraySwapItems( int idx1, int idx2 );
+
+	void ArrayRemoveElements( int elem, int num );
+	void ArrayRemoveElement( int elem ) { ArrayRemoveElements( elem, 1 ); }
+
+	void SetToEmptyTable();
 	int GetMemberCount() const;
+
+	CKeyValues3Table *GetTableRaw();
+	CKeyValues3Table *GetTableRaw() const { return const_cast<KeyValues3 *>(this)->GetTableRaw(); };
+
 	KeyValues3* GetMember( KV3MemberId_t id );
 	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
+
 	const char* GetMemberName( KV3MemberId_t id ) const;
 	CKV3MemberName GetMemberNameEx( KV3MemberId_t id ) const;
-	unsigned int GetMemberHash( KV3MemberId_t id ) const;
-	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = NULL );
-	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = NULL );
-	void SetToEmptyTable();
+
+	CUtlStringToken GetMemberHash( KV3MemberId_t id ) const;
+
+	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = nullptr );
+	const KeyValues3 *FindMember( const CKV3MemberName &name, KeyValues3 *defaultValue = nullptr ) const { return const_cast<KeyValues3 *>(this)->FindMember( name, defaultValue ); };
+	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = nullptr );
+
 	bool RemoveMember( KV3MemberId_t id );
 	bool RemoveMember( const KeyValues3* kv );
 	bool RemoveMember( const CKV3MemberName &name );
 
-	KeyValues3& operator=( const KeyValues3& src );
-	
-private:
-	KeyValues3( const KeyValues3& other );
+	bool GetMemberBool( const CKV3MemberName &name, bool defaultValue = false ) const { auto kv = FindMember( name ); return kv ? kv->GetBool( defaultValue ) : defaultValue; }
+	char8 GetMemberChar( const CKV3MemberName &name, char8 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetChar( defaultValue ) : defaultValue; }
+	uchar32 GetMemberUChar32( const CKV3MemberName &name, uchar32 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetUChar32( defaultValue ) : defaultValue; }
+	int8 GetMemberInt8( const CKV3MemberName &name, int8 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetInt8( defaultValue ) : defaultValue; }
+	uint8 GetMemberUInt8( const CKV3MemberName &name, uint8 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetUInt8( defaultValue ) : defaultValue; }
+	int16 GetMemberShort( const CKV3MemberName &name, int16 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetShort( defaultValue ) : defaultValue; }
+	uint16 GetMemberUShort( const CKV3MemberName &name, uint16 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetUShort( defaultValue ) : defaultValue; }
+	int32 GetMemberInt( const CKV3MemberName &name, int32 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetInt( defaultValue ) : defaultValue; }
+	uint32 GetMemberUInt( const CKV3MemberName &name, uint32 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetUInt( defaultValue ) : defaultValue; }
+	int64 GetMemberInt64( const CKV3MemberName &name, int64 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetInt64( defaultValue ) : defaultValue; }
+	uint64 GetMemberUInt64( const CKV3MemberName &name, uint64 defaultValue = 0 ) const { auto kv = FindMember( name ); return kv ? kv->GetUInt64( defaultValue ) : defaultValue; }
+	float32 GetMemberFloat( const CKV3MemberName &name, float32 defaultValue = 0.0f ) const { auto kv = FindMember( name ); return kv ? kv->GetFloat( defaultValue ) : defaultValue; }
+	float64 GetMemberDouble( const CKV3MemberName &name, float64 defaultValue = 0.0 ) const { auto kv = FindMember( name ); return kv ? kv->GetDouble( defaultValue ) : defaultValue; }
+	void *GetMemberPointer( const CKV3MemberName &name, void *defaultValue = (void *)0 ) const { auto kv = FindMember( name ); return kv ? kv->GetPointer( defaultValue ) : defaultValue; }
+	CUtlStringToken GetMemberStringToken( const CKV3MemberName &name, CUtlStringToken defaultValue = CUtlStringToken() ) const { auto kv = FindMember( name ); return kv ? kv->GetStringToken( defaultValue ) : defaultValue; }
+	CEntityHandle GetMemberEHandle( const CKV3MemberName &name, CEntityHandle defaultValue = CEntityHandle() ) const { auto kv = FindMember( name ); return kv ? kv->GetEHandle( defaultValue ) : defaultValue; }
+	const char *GetMemberString( const CKV3MemberName &name, const char *defaultValue = "" ) const { auto kv = FindMember( name ); return kv ? kv->GetString( defaultValue ) : defaultValue; }
+	Color GetMemberColor( const CKV3MemberName &name, const Color &defaultValue = Color( 0, 0, 0, 255 ) ) const { auto kv = FindMember( name ); return kv ? kv->GetColor( defaultValue ) : defaultValue; }
+	Vector GetMemberVector( const CKV3MemberName &name, const Vector &defaultValue = Vector( 0.0f, 0.0f, 0.0f ) ) const { auto kv = FindMember( name ); return kv ? kv->GetVector( defaultValue ) : defaultValue; }
+	Vector2D GetMemberVector2D( const CKV3MemberName &name, const Vector2D &defaultValue = Vector2D( 0.0f, 0.0f ) ) const { auto kv = FindMember( name ); return kv ? kv->GetVector2D( defaultValue ) : defaultValue; }
+	Vector4D GetMemberVector4D( const CKV3MemberName &name, const Vector4D &defaultValue = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f ) ) const { auto kv = FindMember( name ); return kv ? kv->GetVector4D( defaultValue ) : defaultValue; }
+	Quaternion GetMemberQuaternion( const CKV3MemberName &name, const Quaternion &defaultValue = Quaternion( 0.0f, 0.0f, 0.0f, 0.0f ) ) const { auto kv = FindMember( name ); return kv ? kv->GetQuaternion( defaultValue ) : defaultValue; }
+	QAngle GetMemberQAngle( const CKV3MemberName &name, const QAngle &defaultValue = QAngle( 0.0f, 0.0f, 0.0f ) ) const { auto kv = FindMember( name ); return kv ? kv->GetQAngle( defaultValue ) : defaultValue; }
+	matrix3x4_t GetMemberMatrix3x4( const CKV3MemberName &name, const matrix3x4_t &defaultValue = matrix3x4_t( Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ) ) ) const { auto kv = FindMember( name ); return kv ? kv->GetMatrix3x4( defaultValue ) : defaultValue; }
 
+	void SetMemberToNull( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToNull(); }
+	void SetMemberToEmptyArray( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyArray(); }
+	void SetMemberToEmptyTable( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyTable(); }
+	void SetMemberToBinaryBlob( const CKV3MemberName &name, const byte *blob, int size ) { FindOrCreateMember( name )->SetToBinaryBlob( blob, size ); }
+	void SetMemberToBinaryBlobExternal( const CKV3MemberName &name, const byte *blob, int size, bool free_mem ) { FindOrCreateMember( name )->SetToBinaryBlobExternal( blob, size, free_mem ); }
+	void SetMemberToCopyOfValue( const CKV3MemberName &name, KeyValues3 *other ) { FindOrCreateMember( name )->CopyFrom( other ); }
+
+	void SetMemberBool( const CKV3MemberName &name, bool value ) { FindOrCreateMember( name )->SetBool( value ); }
+	void SetMemberChar( const CKV3MemberName &name, char8 value ) { FindOrCreateMember( name )->SetChar( value ); }
+	void SetMemberUChar32( const CKV3MemberName &name, uchar32 value ) { FindOrCreateMember( name )->SetUChar32( value ); }
+	void SetMemberInt8( const CKV3MemberName &name, int8 value ) { FindOrCreateMember( name )->SetInt8( value ); }
+	void SetMemberUInt8( const CKV3MemberName &name, uint8 value ) { FindOrCreateMember( name )->SetUInt8( value ); }
+	void SetMemberShort( const CKV3MemberName &name, int16 value ) { FindOrCreateMember( name )->SetShort( value ); }
+	void SetMemberUShort( const CKV3MemberName &name, uint16 value ) { FindOrCreateMember( name )->SetUShort( value ); }
+	void SetMemberInt( const CKV3MemberName &name, int32 value ) { FindOrCreateMember( name )->SetInt( value ); }
+	void SetMemberUInt( const CKV3MemberName &name, uint32 value ) { FindOrCreateMember( name )->SetUInt( value ); }
+	void SetMemberInt64( const CKV3MemberName &name, int64 value ) { FindOrCreateMember( name )->SetInt64( value ); }
+	void SetMemberUInt64( const CKV3MemberName &name, uint64 value ) { FindOrCreateMember( name )->SetUInt64( value ); }
+	void SetMemberFloat( const CKV3MemberName &name, float32 value ) { FindOrCreateMember( name )->SetFloat( value ); }
+	void SetMemberDouble( const CKV3MemberName &name, float64 value ) { FindOrCreateMember( name )->SetDouble( value ); }
+	void SetMemberPointer( const CKV3MemberName &name, void *ptr ) { FindOrCreateMember( name )->SetPointer( ptr ); }
+	void SetMemberStringToken( const CKV3MemberName &name, CUtlStringToken token ) { FindOrCreateMember( name )->SetStringToken( token ); }
+	void SetMemberEHandle( const CKV3MemberName &name, CEntityHandle ehandle ) { FindOrCreateMember( name )->SetEHandle( ehandle ); }
+	void SetMemberString( const CKV3MemberName &name, const char *pString, KV3SubType_t subtype = KV3_SUBTYPE_STRING ) { FindOrCreateMember( name )->SetString( pString, subtype ); }
+	void SetMemberStringExternal( const CKV3MemberName &name, const char *pString, KV3SubType_t subtype = KV3_SUBTYPE_STRING ) { FindOrCreateMember( name )->SetStringExternal( pString, subtype ); }
+	void SetMemberColor( const CKV3MemberName &name, const Color &color ) { FindOrCreateMember( name )->SetColor( color ); }
+	void SetMemberVector( const CKV3MemberName &name, const Vector &vec ) { FindOrCreateMember( name )->SetVector( vec ); }
+	void SetMemberVector2D( const CKV3MemberName &name, const Vector2D &vec2d ) { FindOrCreateMember( name )->SetVector2D( vec2d ); }
+	void SetMemberVector4D( const CKV3MemberName &name, const  Vector4D &vec4d ) { FindOrCreateMember( name )->SetVector4D( vec4d ); }
+	void SetMemberQuaternion( const CKV3MemberName &name, const Quaternion &quat ) { FindOrCreateMember( name )->SetQuaternion( quat ); }
+	void SetMemberQAngle( const CKV3MemberName &name, const QAngle &ang ) { FindOrCreateMember( name )->SetQAngle( ang ); }
+	void SetMemberMatrix3x4( const CKV3MemberName &name, const matrix3x4_t &matrix ) { FindOrCreateMember( name )->SetMatrix3x4( matrix ); }
+
+	KeyValues3& operator=( const KeyValues3& src );
+	KeyValues3( const KeyValues3 &other ) : KeyValues3() { CopyFrom( &other ); }
+
+private:
 	union Data_t
 	{
 		Data_t() : m_nMemory(0)
@@ -497,7 +610,7 @@ private:
 	void CopyFrom( const KeyValues3* pSrc );
 
 	int GetClusterElement() const { return m_nClusterElement; }
-	void SetClusterElement( int element ) { m_bExternalStorage = (element == -1); m_nClusterElement = element; }
+	void SetClusterElement( int element ) { m_bContextIndependent = (element == -1); m_nClusterElement = element; }
 	CKeyValues3Cluster* GetCluster() const;
 
 	template < typename T > T FromString( T defaultValue ) const;
@@ -524,7 +637,7 @@ private:
 	static constexpr size_t TotalSizeWithoutStaticData() { return sizeof(KeyValues3) - TotalSizeOfData( 0 ); }
 
 private:
-	uint64 m_bExternalStorage : 1;
+	uint64 m_bContextIndependent : 1;
 	uint64 m_bFreeArrayMemory : 1;
 	uint64 m_TypeEx : 8;
 	uint64 m_SubType : 8;
@@ -542,6 +655,29 @@ private:
 	friend class CKeyValues3Array;
 };
 COMPILE_TIME_ASSERT(sizeof(KeyValues3) == 16);
+
+class CKeyValues3Iterator
+{
+public:
+	CKeyValues3Iterator() : m_Stack() {}
+	CKeyValues3Iterator( KeyValues3 *kv ) : CKeyValues3Iterator() { Init( kv ); }
+
+	void Init( KeyValues3 *kv );
+
+	void Advance();
+
+	KeyValues3 *Get() const { return IsValid() ? m_Stack[m_Stack.Count() - 1].m_pKV : nullptr; }
+	bool IsValid() const { return m_Stack.Count() > 0; }
+
+private:
+	struct StackEntry_t
+	{
+		KeyValues3 *m_pKV;
+		int m_nIndex;
+	};
+
+	CUtlVectorFixedGrowable<StackEntry_t, 4> m_Stack;
+};
 
 class CKeyValues3Array
 {
@@ -610,13 +746,12 @@ COMPILE_TIME_ASSERT(sizeof(CKeyValues3Array) == 64);
 class CKeyValues3Table
 {
 public:
-	enum : uint8
+	enum
 	{
-		TABLEFL_NONE = 0,
-		TABLEFL_NAME_EXTERNAL = (1 << 0)
+		MEMBER_FLAG_EXTERNAL_NAME = (1 << 0)
 	};
 
-	typedef uint32			Hash_t;
+	typedef CUtlStringToken	Hash_t;
 	typedef KeyValues3*		Member_t;
 	typedef const char*		Name_t;
 	typedef uint8			Flags_t;

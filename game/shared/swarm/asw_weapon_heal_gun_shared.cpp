@@ -25,7 +25,7 @@
 #include "asw_triggers.h"
 #endif
 
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "asw_trace_filter_shot.h"
 #include "particle_parse.h"

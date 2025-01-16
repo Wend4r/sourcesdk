@@ -23,7 +23,7 @@
 #include "team.h"
 #include "sendproxy.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "baseentity.h"
 #include "collisionutils.h"
 #include "coordsize.h"

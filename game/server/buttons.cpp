@@ -8,7 +8,7 @@
 #include "doors.h"
 #include "ndebugoverlay.h"
 #include "spark.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "tier0/strtools.h"
 #include "buttons.h"

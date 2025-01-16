@@ -30,7 +30,7 @@
 #include "ai_speech.h"
 #include "game.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "ndebugoverlay.h"
 #include "env_debughistory.h"
 #include "ai_behavior.h"

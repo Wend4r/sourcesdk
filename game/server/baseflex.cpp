@@ -12,7 +12,7 @@
 #include "choreoevent.h"
 #include "choreoscene.h"
 #include "choreoactor.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "tier0/strtools.h"
 #include "keyvalues.h"

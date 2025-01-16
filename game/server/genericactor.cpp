@@ -15,7 +15,7 @@
 #include "ai_hull.h"
 #include "ai_baseactor.h"
 #include "tier0/strtools.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

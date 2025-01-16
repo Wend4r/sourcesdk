@@ -29,7 +29,7 @@
 #include "asw_weapon_ammo_bag_shared.h"
 #endif
 
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "IEffects.h"
 

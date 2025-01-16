@@ -6,7 +6,7 @@
 #include "asw_mission_text_database.h"
 #include "keyvalues.h"
 #include "filesystem.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "vprof.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

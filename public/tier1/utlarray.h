@@ -17,7 +17,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 #define FOR_EACH_ARRAY( vecName, iteratorName ) \
 	for ( int iteratorName = 0; (vecName).IsUtlArray && iteratorName < (vecName).Count(); iteratorName++ )

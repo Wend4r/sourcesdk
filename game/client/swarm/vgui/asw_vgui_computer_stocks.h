@@ -9,7 +9,7 @@
 #include "vgui_controls\ComboBox.h"
 #include "vgui/IScheme.h"
 #include "asw_vgui_ingame_panel.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 class C_ASW_Hack_Computer;
 class ImageButton;

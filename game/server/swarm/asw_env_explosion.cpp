@@ -9,7 +9,7 @@
 #include "decals.h"
 #include "asw_env_explosion.h"
 #include "dlight.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "tier0/strtools.h"
 #include "shareddefs.h"
 #include "asw_gamerules.h"

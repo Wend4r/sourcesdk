@@ -17,7 +17,7 @@
 #include "game.h"			
 #include "ai_interactions.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "movevars_shared.h"
 #include "npcevent.h"

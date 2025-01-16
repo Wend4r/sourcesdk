@@ -9,7 +9,7 @@
 #define ENV_METEOR_SHARED_H
 #pragma once
 
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "mathlib/vector.h"
 #include "utlvector.h"
 

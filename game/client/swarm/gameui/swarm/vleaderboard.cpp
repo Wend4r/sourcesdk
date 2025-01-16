@@ -17,7 +17,7 @@
 #include "vgui_controls/Button.h"
 #include "vgui_controls/ImagePanel.h"
 #include "vgui/ILocalize.h"
-#include "vstdlib/random.h"	// remove once we have real data in the leaderboard
+#include "tier1/random.h"	// remove once we have real data in the leaderboard
 #include "VFlyoutMenu.h"
 #include "VHybridButton.h"
 #include "VDropDownMenu.h"

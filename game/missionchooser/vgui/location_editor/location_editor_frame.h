@@ -12,7 +12,7 @@
 #include "vgui/mousecode.h"
 #include "vgui/IScheme.h"
 #include "ConfigManager.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 class CScrollingWindow;
 class CKV_Editor_Base_Panel;

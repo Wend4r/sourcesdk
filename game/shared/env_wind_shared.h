@@ -9,7 +9,7 @@
 #define ENV_WIND_SHARED_H
 
 #include "utllinkedlist.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "tier0/dbg.h"
 #include "mathlib/vector.h"
 #include <float.h>

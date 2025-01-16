@@ -11,7 +11,7 @@
 #include "vbsp2lib/simplemapfile.h"
 #include "vbsp2lib/simplebspfile.h"
 #endif
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "tilegen_core.h"
 #include "MapLayout.h"
 #include "layout_system/tilegen_layout_system.h"

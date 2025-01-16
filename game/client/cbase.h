@@ -21,7 +21,7 @@ struct studiohdr_t;
 #include "vprof.h"
 
 #include "tier0/strtools.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "tier1/utlvector.h"
 
 #include "const.h"

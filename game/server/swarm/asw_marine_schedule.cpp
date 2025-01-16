@@ -23,7 +23,7 @@
 #include "npcevent.h"
 #include "entitylist.h"
 #include "activitylist.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "sceneentity.h"
 #include "asw_marine.h"

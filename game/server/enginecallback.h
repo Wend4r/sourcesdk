@@ -13,14 +13,14 @@
 #endif
 
 #ifdef POSIX
-#define random random_valve// stdlib.h defined random()..., and so does vstdlib/random.h
+#define random random_valve// stdlib.h defined random()..., and so does tier1/random.h
 #endif
 
 #include "tier3/tier3.h"
 #include "tier2/tier2_logging.h"
 
 class IFileSystem;				// include FileSystem.h
-class IUniformRandomStream;		// include vstdlib/random.h
+class IUniformRandomStream;		// include tier1/random.h
 class IEngineSound;				// include engine/IEngineSound.h
 class IVEngineServer;
 class IStaticPropMgrServer;

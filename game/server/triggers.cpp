@@ -14,7 +14,7 @@
 #include "ndebugoverlay.h"
 #include "globalstate.h"
 #include "filters.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "triggers.h"
 #include "saverestoretypes.h"
 #include "hierarchy.h"

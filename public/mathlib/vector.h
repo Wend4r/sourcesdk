@@ -43,7 +43,7 @@
 #include "mathlib/vector2d.h"
 #include "mathlib/math_pfns.h"
 #include "tier0/memalloc.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 // Uncomment this to add extra Asserts to check for NANs, uninitialized vecs, etc.
 //#define VECTOR_PARANOIA	1

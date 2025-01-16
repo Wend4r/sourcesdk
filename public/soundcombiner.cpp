@@ -14,7 +14,7 @@
 #include "snd_wave_source.h"
 #include "AudioWaveOutput.h"
 #include "ifaceposersound.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "checksum_crc.h"
 
 #define WAVEOUTPUT_BITSPERCHANNEL		16

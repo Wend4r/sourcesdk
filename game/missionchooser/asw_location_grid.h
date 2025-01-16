@@ -9,7 +9,7 @@ class KeyValues;
 #include "missionchooser/iasw_mission_chooser.h"
 #include "utlvector.h"
 #include "color.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 
 class CASW_KeyValuesDatabase;
 class CASW_Location;

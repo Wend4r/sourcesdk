@@ -10,7 +10,7 @@
 #include "explode.h"
 #include "ai_basenpc.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "tier0/strtools.h"
 #include "shareddefs.h"
 

@@ -9,7 +9,7 @@
 #include "keyvalues.h"
 
 #include <ctype.h>
-#include <vstdlib/random.h>
+#include <tier1/random.h>
 
 #include "VDropDownMenu.h"
 #include "VHybridButton.h"

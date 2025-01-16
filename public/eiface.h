@@ -300,7 +300,7 @@ public:
 	virtual bool IsClientLowViolence( CPlayerSlot nSlot ) = 0;
 
 	// Kicks the slot with the specified NetworkDisconnectionReason
-	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason ) = 0;
+	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason, const char *szInternalReason = nullptr ) = 0;
 
 #if 0 // Don't really match the binary
 	virtual void GetAllSpawnGroupsWithPVS( CUtlVector<SpawnGroupHandle_t> *spawnGroups, CUtlVector<IPVS *> *pOut ) = 0;
@@ -465,7 +465,7 @@ public:
 
 //-----------------------------------------------------------------------------
 // Just an interface version name for the random number interface
-// See vstdlib/random.h for the interface definition
+// See tier1/random.h for the interface definition
 // NOTE: If you change this, also change VENGINE_CLIENT_RANDOM_INTERFACE_VERSION in cdll_int.h
 //-----------------------------------------------------------------------------
 #define VENGINE_SERVER_RANDOM_INTERFACE_VERSION	"VEngineRandom001"

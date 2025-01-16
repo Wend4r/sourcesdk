@@ -34,7 +34,7 @@
 #include "team.h"
 #include "particle_smokegrenade.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "engine/IEngineSound.h"
 #include "movehelper_server.h"
 #include "igamemovement.h"

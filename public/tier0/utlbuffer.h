@@ -37,7 +37,7 @@ class CBufferString;
 //	{ '\t', "t" }
 // END_CHAR_CONVERSION( CStringConversion, '\\' )
 //-----------------------------------------------------------------------------
-class CUtlCharConversion
+class DLL_CLASS_IMPORT CUtlCharConversion
 {
 public:
 	struct ConversionArray_t
@@ -46,17 +46,24 @@ public:
 		const char *m_pReplacementString;
 	};
 
-	DLL_CLASS_IMPORT CUtlCharConversion( char nEscapeChar, const char *pDelimiter, int nCount, ConversionArray_t *pArray );
-	DLL_CLASS_IMPORT char GetEscapeChar() const;
-	DLL_CLASS_IMPORT const char *GetDelimiter() const;
-	DLL_CLASS_IMPORT int GetDelimiterLength() const;
+	CUtlCharConversion( char nEscapeChar, const char *pDelimiter, int nCount, const ConversionArray_t *pArray );
 
-	DLL_CLASS_IMPORT const char *GetConversionString( char c ) const;
-	DLL_CLASS_IMPORT int GetConversionLength( char c ) const;
-	DLL_CLASS_IMPORT int MaxConversionLength() const;
+	CUtlCharConversion( CUtlCharConversion &&rhs );
+	CUtlCharConversion( const CUtlCharConversion &rhs );
+
+	CUtlCharConversion &operator=( CUtlCharConversion &&rhs );
+	CUtlCharConversion &operator=( const CUtlCharConversion &rhs );
+
+	char GetEscapeChar() const;
+	const char *GetDelimiter() const;
+	int GetDelimiterLength() const;
+
+	const char *GetConversionString( char c ) const;
+	int GetConversionLength( char c ) const;
+	int MaxConversionLength() const;
 
 	// Finds a conversion for the passed-in string, returns length
-	DLL_CLASS_IMPORT virtual char FindConversion( const char *pString, int *pLength );
+	virtual char FindConversion( const char *pString, int *pLength );
 
 protected:
 	struct ConversionInfo_t
@@ -70,8 +77,8 @@ protected:
 	int m_nDelimiterLength;
 	int m_nCount;
 	int m_nMaxConversionLength;
-	char m_pList[256];
-	ConversionInfo_t m_pReplacements[256];
+	char m_pList[255];
+	ConversionInfo_t m_pReplacements[255];
 };
 
 #define BEGIN_CHAR_CONVERSION( _name, _delimiter, _escapeChar )	\
@@ -91,12 +98,12 @@ protected:
 //-----------------------------------------------------------------------------
 // Character conversions for C strings
 //-----------------------------------------------------------------------------
-CUtlCharConversion *GetCStringCharConversion();
+PLATFORM_INTERFACE CUtlCharConversion *GetCStringCharConversion();
 
 //-----------------------------------------------------------------------------
-// Character conversions for quoted strings, with no escape sequences
+// Character conversions for JSON strings
 //-----------------------------------------------------------------------------
-CUtlCharConversion *GetNoEscCharConversion();
+PLATFORM_INTERFACE CUtlCharConversion *GetJSONCharConversion();
 
 
 //-----------------------------------------------------------------------------
@@ -107,27 +114,18 @@ CUtlCharConversion *GetNoEscCharConversion();
 
 
 
-typedef unsigned short ushort;
-
 template < class A >
 static const char *GetFmtStr( int nRadix = 10, bool bPrint = true ) { Assert( 0 ); return ""; }
-#if defined( LINUX ) || defined( _LINUX ) || defined( __clang__ ) || ( defined( _MSC_VER ) && _MSC_VER >= 1900 )
-template <> const char *GetFmtStr< short >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%hd"; }
-template <> const char *GetFmtStr< ushort >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%hu"; }
-template <> const char *GetFmtStr< int >		( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%d"; }
-template <> const char *GetFmtStr< uint >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 || nRadix == 16 ); return nRadix == 16 ? "%x" : "%u"; }
-template <> const char *GetFmtStr< int64 >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%lld"; }
-template <> const char *GetFmtStr< float >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%f"; }
-template <> const char *GetFmtStr< double >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return bPrint ? "%.15lf" : "%lf"; } // force Printf to print DBL_DIG=15 digits of precision for doubles - defaults to FLT_DIG=6
-#else
-template <> static const char *GetFmtStr< short >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%hd"; }
-template <> static const char *GetFmtStr< ushort >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%hu"; }
-template <> static const char *GetFmtStr< int >		( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%d"; }
-template <> static const char *GetFmtStr< uint >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 || nRadix == 16 ); return nRadix == 16 ? "%x" : "%u"; }
-template <> static const char *GetFmtStr< int64 >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%lld"; }
-template <> static const char *GetFmtStr< float >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%f"; }
-template <> static const char *GetFmtStr< double >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return bPrint ? "%.15lf" : "%lf"; } // force Printf to print DBL_DIG=15 digits of precision for doubles - defaults to FLT_DIG=6
-#endif
+
+template <> inline const char *GetFmtStr< short >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%hd"; }
+template <> inline const char *GetFmtStr< uint16 >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%hu"; }
+template <> inline const char *GetFmtStr< int >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%d"; }
+template <> inline const char *GetFmtStr< uint >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 || nRadix == 16 ); return nRadix == 16 ? "%x" : "%u"; }
+template <> inline const char *GetFmtStr< int64 >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%lld"; }
+template <> inline const char *GetFmtStr< float >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return "%f"; }
+template <> inline const char *GetFmtStr< double >	( int nRadix, bool bPrint ) { Assert( nRadix == 10 ); return bPrint ? "%.15lf" : "%lf"; } // force Printf to print DBL_DIG=15 digits of precision for doubles - defaults to FLT_DIG=6
+
+
 //-----------------------------------------------------------------------------
 // Command parsing..
 //-----------------------------------------------------------------------------

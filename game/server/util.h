@@ -24,7 +24,7 @@
 #include "server_class.h"
 #include "shake.h"
 
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include <string.h>
 
 #include "utlvector.h"

@@ -6,7 +6,7 @@
 //=============================================================================//
 
 #include "rrbase.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "utlbuffer.h"
 #include "tier2/interval.h"
 #include "fmtstr.h"

@@ -20,7 +20,7 @@
 #include "baseparticleentity.h"
 #include "ndebugoverlay.h"
 #include "IEffects.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "env_wind_shared.h"
 #include "filesystem.h"
 #include "engine/IEngineSound.h"

@@ -12,7 +12,7 @@
 #endif
 
 #include "utlvector.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "tilegen_class_interfaces.h"
 #include "tilegen_expressions.h"
 #include "RoomTemplate.h"

@@ -21,7 +21,7 @@
 #include "GameUI_Interface.h"
 #include "game/client/IGameClientExports.h"
 #include "fmtstr.h"
-#include "vstdlib/random.h"
+#include "tier1/random.h"
 #include "utlbuffer.h"
 #include "filesystem/IXboxInstaller.h"
 #include "tier1/tokenset.h"
