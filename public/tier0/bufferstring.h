@@ -298,7 +298,7 @@ class CBufferStringN : public CBufferString
 public:
 	static const size_t DATA_SIZE = ALIGN_VALUE( SIZE - sizeof( char[8] ), 8 );
 
-	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( DATA_SIZE, bAllowHeapAllocation ) {}
+	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( DATA_SIZE, bAllowHeapAllocation ), m_FixedData{} {}
 	CBufferStringN( const char *pString, bool bAllowHeapAllocation = true ) : CBufferStringN( bAllowHeapAllocation )
 	{
 		Insert( 0, pString );
