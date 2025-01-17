@@ -52,7 +52,7 @@ struct KV3ToKV1Translation_t;
 // Quick way to iterate across whole kv3, to access currently iterated kv3 use iter.Get()
 // Mostly useful to iterate unnamed data, like arrays of primitives
 #define FOR_EACH_KV3( kv, iter ) \
-	for ( CKeyValues3Iterator iter( kv ); iter.IsValid(); iter.Advance() 
+	for ( CKeyValues3Iterator iter( kv ); iter.IsValid(); iter.Advance() )
 
 typedef int32 KV3MemberId_t;
 #define KV3_INVALID_MEMBER ((KV3MemberId_t)-1)
