@@ -2018,7 +2018,7 @@ void CKeyValues3Context::FreeKV( KeyValues3* kv )
 	if ( metadata )
 		metadata->Clear();
 
-	// Free<KeyValues3, CKeyValues3Cluster>( kv, &m_KV3BaseCluster, m_pKV3FreeCluster );
+	Free<CKeyValues3Cluster, KeyValues3>( kv, m_KV3PartialClusters, m_KV3FullClusters );
 }
 
 #include "tier0/memdbgoff.h"
