@@ -164,12 +164,12 @@ public:
 
 	CEntityKeyValues& operator=( const CEntityKeyValues& src ) { CopyFrom( &src ); return *this; }
 
-private:
-	CEntityKeyValues( const CEntityKeyValues& other );
-
-	// Use public setters for all available types instead
+public:
 	KeyValues3* SetKeyValue( const EntityKeyId_t &id, const char* pAttributeName = NULL );
 	void SetString( KeyValues3* kv, const char* string );
+
+private:
+	CEntityKeyValues( const CEntityKeyValues& other );
 
 	void ReleaseAllComplexKeys();
 	void ValidateAllocator();
