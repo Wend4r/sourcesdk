@@ -29,6 +29,17 @@ set(THIRDPARTY_DIR "${SOURCESDK_DIR}/thirdparty")
 set(GAME_PROTOBUFS_DIR "${THIRDPARTY_DIR}/game_protobufs")
 set(PROTOBUF_DIR "${THIRDPARTY_DIR}/protobuf")
 
+set(GAME_PROTOBUFS_NAME "Game Protobufs")
+set(PROTOBUF_NAME "Protocol Buffer")
+
+if(NOT EXISTS "${GAME_PROTOBUFS_DIR}")
+	message(FATAL_ERROR "Directory \"${GAME_PROTOBUFS_DIR}\" (${GAME_PROTOBUFS_NAME}) hasn't found. Did you clone recursively?")
+endif()
+
+if(NOT EXISTS "${PROTOBUF_DIR}")
+	message(FATAL_ERROR "Directory \"${PROTOBUF_DIR}\" (${PROTOBUF_NAME}) hasn't found. Did you clone recursively?")
+endif()
+
 set(SOURCESDK_GAME_TARGET "cs2" CACHE STRING "Game name. See CMakeGameManifests.json")
 option(SOURCESDK_COMPILE_PROTOBUF "Compile Protocol Buffers" ON)
 option(SOURCESDK_CONFIGURE_EXPORT_MAP "Configure export symbols/map (Unix only)" ON)
