@@ -5,6 +5,8 @@
 #pragma once
 #endif
 
+#define INVALID_PLAYER_SLOT -1
+
 class CPlayerSlot
 {
 public:
@@ -22,7 +24,7 @@ public:
 		return m_Data;
 	}
 
-	static CPlayerSlot InvalidIndex() { return ( CPlayerSlot )-1; }
+	static CPlayerSlot InvalidIndex() { return ( CPlayerSlot )INVALID_PLAYER_SLOT; }
 
 	bool operator==( const CPlayerSlot &other ) const { return other.m_Data == m_Data; }
 	bool operator!=( const CPlayerSlot &other ) const { return other.m_Data != m_Data; }
