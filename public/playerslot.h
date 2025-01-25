@@ -19,6 +19,11 @@ public:
 		return m_Data;
 	}
 
+	int GetClientIndex() const
+	{
+		return m_Data + 1;
+	}
+
 	operator int() const
 	{
 		return m_Data;
