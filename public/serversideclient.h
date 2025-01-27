@@ -100,7 +100,7 @@ public:
 
 	virtual void             Clear() = 0;
 
-	virtual void             ExecuteStringCommand( const CNETMsg_StringCmd_t& msg ) = 0;
+	virtual bool             ExecuteStringCommand( const CNETMsg_StringCmd_t& msg ) = 0; // "false" trigger an anti spam counter to kick a client.
 	virtual void             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 
 #ifdef LINUX
