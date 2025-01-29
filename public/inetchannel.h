@@ -58,7 +58,7 @@ enum NetChannelBufType_t : int8
 abstract_class INetworkChannelNotify
 {
 public:
-	virtual void ConnectionStart( INetChannel *pChannel ) = 0;	// called first time network channel is established
+	virtual void OnShutdownChannel( INetChannel *pChannel ) = 0;
 };
 
 abstract_class INetworkMessageProcessingPreFilter

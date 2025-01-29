@@ -328,7 +328,7 @@ public:
 	double m_lastExecutedCommand = 0.0; // 2912 if command executed more than once per second, ++m_spamCommandCount
 
 private:
-	[[maybe_unused]] char pad2920[0x24]; // 2920
+	[[maybe_unused]] char pad2920[0x28]; // 2920
 };
 #ifdef __linux__
 COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 2960);
