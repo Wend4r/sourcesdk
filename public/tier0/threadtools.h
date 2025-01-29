@@ -11,6 +11,7 @@
 
 #include <limits.h>
 
+#include "basetypes.h"
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
 

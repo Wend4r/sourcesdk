@@ -17,6 +17,7 @@
 #include <tier0/circularbuffer.h>
 #include <tier0/utlstring.h>
 #include <tier1/ns_address.h>
+#include <tier1/utlslot.h>
 #include <networksystem/inetworksystem.h>
 
 #include <netmessages.pb.h>
@@ -48,13 +49,14 @@ struct HltvReplayStats_t {
 	uint nNetAbortReplays;
 	uint nFailedReplays[NUM_FAILURES];
 }; // sizeof 56
-
+COMPILE_TIME_ASSERT(sizeof(HltvReplayStats_t) == 56);
 
 struct Spike_t {
 public:
 	CUtlString m_szDesc;
 	int m_nBits;
-}; // sizeof 16
+};
+COMPILE_TIME_ASSERT(sizeof(Spike_t) == 16);
 
 class CNetworkStatTrace {
 public:
@@ -62,13 +64,11 @@ public:
 	int m_nMinWarningBytes;
 	int m_nStartBit;
 	int m_nCurBit;
-}; // sizeof 40
+};
+COMPILE_TIME_ASSERT(sizeof(CNetworkStatTrace) == 40);
 
-// class CServerSideClientBase: CUtlSlot, INetworkChannelNotify, INetworkMessageProcessingPreFilter;
-class CServerSideClientBase
+class CServerSideClientBase : public CUtlSlot, public INetworkChannelNotify, public INetworkMessageProcessingPreFilter
 {
-	virtual void UnkDestructor() = 0;
-
 public:
 	virtual ~CServerSideClientBase() = 0;
 
@@ -233,14 +233,9 @@ public:
 	virtual bool             ProcessSignonStateMsg( int state ) = 0;
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
 
-public:
-	void* m_pVT1; // INetworkMessageProcessingPreFilter
-	CUtlString m_unk16; // 16
-
-private:
-	[[maybe_unused]] char pad24[0x16]; // 24
 #ifdef __linux__
-	[[maybe_unused]] char pad46[0x10]; // 46
+private:
+	[[maybe_unused]] char pad46[0x10]; // 40
 #endif
 
 public:
@@ -264,7 +259,7 @@ public:
 	bool m_bFakePlayer; // 176
 	bool m_bSendingSnapshot; // 177
 	[[maybe_unused]] char pad6[0x5];
-	CPlayerUserId m_UserID; // 184
+	CPlayerUserId m_UserID = -1; // 184
 	bool m_bReceivedPacket; // 186
 	CSteamID m_SteamID; // 187
 	CSteamID m_UnkSteamID; // 195
@@ -303,13 +298,10 @@ public:
 	bool m_bSomethingWithAddressType = true; // 2529
 	bool m_bFullyAuthenticated = false; // 2530
 	bool m_bUnk1 = false; // 2531
-	bool m_bUnk2 = false; // 2532
-	bool m_bUnk3 = false; // 2533
-	bool m_bUnk4 = false; // 2534
-	bool m_bUnk5 = false; // 2535
-	float m_fNextMessageTime = 0.0f; // 2536
-	float m_fSnapshotInterval = -1.0f; // 2540
-	float m_fAuthenticatedTime = 0.0f; // 2544
+	int m_nUnk;
+	float m_fAuthenticatedTime = -1.0f; // 2536
+	float m_fUnk; // 2540
+	float m_fUnk2; // 2548
 
 private:
 	// CSVCMsg_PacketEntities_t m_packetmsg;  // 2552
@@ -322,8 +314,11 @@ public:
 	double m_lastExecutedCommand = 0.0; // 2912 if command executed more than once per second, ++m_spamCommandCount
 
 private:
-	[[maybe_unused]] char pad2920[0x20]; // 2920
-}; // sizeof 2952
+	[[maybe_unused]] char pad2920[0x24]; // 2920
+};
+#ifdef __linux__
+COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 2960);
+#endif
 
 class CServerSideClient : public CServerSideClientBase
 {
@@ -359,7 +354,10 @@ public:
 
 private:
 	[[maybe_used]] char pad3984[8]; // 4008
-}; // sizeof 4016
+};
+#ifdef __linux__
+COMPILE_TIME_ASSERT(sizeof(CServerSideClient) == 4016);
+#endif
 
 // not full class reversed
 class CHLTVClient : public CServerSideClientBase
@@ -368,26 +366,27 @@ public:
 	virtual ~CHLTVClient() = 0;
 
 public:
-	CNetworkGameServerBase* m_pHLTV; // 2952
-	CUtlString m_szPassword; // 2960
-	CUtlString m_szChatGroup; // 2968 // "all" or "group%d"
-	double m_fLastSendTime = 0.0; // 2976
-	double m_flLastChatTime = 0.0; // 2984
-	int m_nLastSendTick = 0; // 2992
-	int m_unknown2 = 0; // 2996
-	int m_nFullFrameTime = 0; // 3000
-	int m_unknown3 = 0;  // 3004
-
-private:
-	[[maybe_unused]] char pad2960[0x4]; // 3008
+	CNetworkGameServerBase* m_pHLTV; // 2960
+	CUtlString m_szPassword; // 2968
+	CUtlString m_szChatGroup; // 2976 // "all" or "group%d"
+	double m_fLastSendTime = 0.0; // 2984
+	double m_flLastChatTime = 0.0; // 2992
+	int m_nLastSendTick = 0; // 2996
+	int m_unknown2 = 0; // 3000
+	int m_nFullFrameTime = 0; // 3008
+	int m_unknown3 = 0;  // 3012
 
 public:
-	bool m_bNoChat = false; // 3012
-	bool m_bUnkBool = false; // 3013
-	bool m_bUnkBool2 = false; // 3014
-	bool m_bUnkBool3 = false; // 3015
+	bool m_bNoChat = false; // 3016
+	bool m_bUnkBool = false; // 3017
+	bool m_bUnkBool2 = false; // 3018
+	bool m_bUnkBool3 = false; // 3019
 
-	[[maybe_used]] char pad3976[0x28]; // 2984
-}; // sizeof 3056
+private:
+	[[maybe_used]] char pad3976[0x24]; // 3020
+};
+#ifdef __linux__
+COMPILE_TIME_ASSERT(sizeof(CHLTVClient) == 3056);
+#endif
 
 #endif // SERVERSIDECLIENT_H

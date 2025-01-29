@@ -19,7 +19,7 @@
 #include <string.h>
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
-#include "tier0/threadtools.h"
+#include "tier1/threadtools.h"
 #include "tier1/utlmemory.h"
 #include "tier1/utlblockmemory.h"
 #include "tier0/strtools.h"
@@ -44,7 +44,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// The CUtlVector class:
+// The CUtlVectorBase class:
 // A growable array class which doubles in size by default.
 // It will always keep all elements consecutive in memory, and may move the
 // elements around in memory (via a PvRealloc) when elements are inserted or
@@ -242,13 +242,23 @@ private:
 	void InPlaceQuickSort_r( I (__cdecl *pfnCompare)(const T *, const T *), I nLeft, I nRight );
 };
 
-template< class T, typename I = int, class A = CUtlMemory< T, I > >
+template < class T, typename I = int, class A = CUtlMemory< T, I > >
 class CUtlVector : public CUtlVectorBase< T, I, A >
 {
 	typedef CUtlVectorBase< T, I, A > BaseClass;
 
 public:
 	using BaseClass::BaseClass;
+};
+
+template < class VEC, class LOCK = CCopyableLock<CThreadFastMutex> >
+class CUtlVectorMT : public VEC, public LOCK
+{
+	typedef VEC BaseClass;
+	typedef LOCK Mutex_t;
+
+public:
+	// ...
 };
 
 template< class T, typename I = int >

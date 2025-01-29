@@ -29,7 +29,7 @@ class	INetworkMessageProcessingPreFilter;
 class	INetworkMessageInternal;
 class	INetMessageDispatcher;
 class	InstantReplayMessage_t;
-class	CUtlSlot;
+struct	CUtlSlot;
 
 #ifndef NET_PACKET_ST_DEFINED
 #define NET_PACKET_ST_DEFINED
@@ -53,6 +53,12 @@ enum NetChannelBufType_t : int8
 	BUF_UNRELIABLE = 0,
 	BUF_RELIABLE,
 	BUF_VOICE,
+};
+
+abstract_class INetworkChannelNotify
+{
+public:
+	// ...
 };
 
 abstract_class INetworkMessageProcessingPreFilter

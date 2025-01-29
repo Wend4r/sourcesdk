@@ -15,7 +15,7 @@
 #include <inetchannel.h>
 #include <entity2/entityidentity.h>
 
-class CUtlSlot;
+struct CUtlSlot;
 
 #define GAMEEVENTSYSTEM_INTERFACE_VERSION "GameEventSystemServerV001"
 
