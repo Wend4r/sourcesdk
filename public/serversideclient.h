@@ -233,13 +233,10 @@ public:
 	virtual bool             ProcessSignonStateMsg( int state ) = 0;
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
 
-#ifdef __linux__
-private:
-	[[maybe_unused]] char pad46[0x10]; // 40
-#endif
+public: // INetworkMessageProcessingPreFilter
+	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0; // "Client %d(%s) tried to send a RebroadcastSourceId msg.\n"
 
 public:
-	void (*RebroadcastSource)(int msgID); // 64
 	CUtlString m_UserIDString; // 72
 	CUtlString m_Name; // 80
 	CPlayerSlot m_nClientSlot; // 88
@@ -260,7 +257,7 @@ public:
 	bool m_bSendingSnapshot; // 177
 	[[maybe_unused]] char pad6[0x5];
 	CPlayerUserId m_UserID = -1; // 184
-	bool m_bReceivedPacket; // 186
+	bool m_bReceivedPacket;	// true, if client received a packet after the last send packet
 	CSteamID m_SteamID; // 187
 	CSteamID m_UnkSteamID; // 195
 	CSteamID m_UnkSteamID2; // 203 from auth ticket
@@ -284,24 +281,41 @@ public:
 	int m_UnkVariable3; // 328
 	int m_nStringTableAckTick; // 332
 	int m_UnkVariable4; // 336
-	CFrameSnapshot* m_pLastSnapshot; // 344
+	CFrameSnapshot* m_pLastSnapshot;	// last send snapshot
 	CUtlVector<void*> m_vecLoadedSpawnGroups; // 352
 	CMsgPlayerInfo m_playerInfo; // 376
 	CFrameSnapshot* m_pBaseline; // 432
 	int m_nBaselineUpdateTick; // 440
 	CBitVec<MAX_EDICTS>	m_BaselinesSent; // 444
-	int m_nBaselineUsed = 0; // 2492
-	int m_nLoadingProgress = 0; // 2496
-	int m_nForceWaitForTick = -1; // 2500
+	int	m_nBaselineUsed;		// 0/1 toggling flag, singaling client what baseline to use
+	int	m_nLoadingProgress;	// 0..100 progress, only valid during loading
+
+	// This is used when we send out a nodelta packet to put the client in a state where we wait 
+	// until we get an ack from them on this packet.
+	// This is for 3 reasons:
+	// 1. A client requesting a nodelta packet means they're screwed so no point in deluging them with data.
+	//    Better to send the uncompressed data at a slow rate until we hear back from them (if at all).
+	// 2. Since the nodelta packet deletes all client entities, we can't ever delta from a packet previous to it.
+	// 3. It can eat up a lot of CPU on the server to keep building nodelta packets while waiting for
+	//    a client to get back on its feet.
+	int m_nForceWaitForTick = -1;
+
 	CCircularBuffer m_UnkBuffer = {1024}; // 2504 (24 bytes)
-	bool m_bLowViolence = false; // 2528
+	bool m_bLowViolence = false;		// true if client is in low-violence mode (L4D server needs to know)
 	bool m_bSomethingWithAddressType = true; // 2529
 	bool m_bFullyAuthenticated = false; // 2530
 	bool m_bUnk1 = false; // 2531
 	int m_nUnk;
-	float m_fAuthenticatedTime = -1.0f; // 2536
-	float m_fUnk; // 2540
-	float m_fUnk2; // 2548
+
+	// The datagram is written to after every frame, but only cleared
+	// when it is sent out to the client.  overflow is tolerated.
+
+	// Time when we should send next world state update ( datagram )
+	float m_fNextMessageTime = 0.0f;
+	float m_fAuthenticatedTime = -1.0f;
+
+	// Default time to wait for next message
+	float m_fSnapshotInterval = 0.0f;
 
 private:
 	// CSVCMsg_PacketEntities_t m_packetmsg;  // 2552
