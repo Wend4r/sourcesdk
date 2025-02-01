@@ -20,7 +20,7 @@ struct CUtlSignaller_Base
 
 struct CUtlSlot
 {
-	CUtlVectorMT< CUtlVector<CUtlSignaller_Base*> > m_ConnectedSignallers;
+	CUtlVectorMT< CUtlVector<CUtlSignaller_Base*>, CCopyableLock<CThreadFastMutex> > m_ConnectedSignallers;
 
 	void* m_pData;
 

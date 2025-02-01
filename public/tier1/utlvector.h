@@ -251,16 +251,6 @@ public:
 	using BaseClass::BaseClass;
 };
 
-template < class VEC, class LOCK = CCopyableLock<CThreadFastMutex> >
-class CUtlVectorMT : public VEC, public LOCK
-{
-	typedef VEC BaseClass;
-	typedef LOCK Mutex_t;
-
-public:
-	// ...
-};
-
 template< class T, typename I = int >
 class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlMemory_RawAllocator<T, I> >
 {
@@ -279,6 +269,24 @@ class CUtlBlockVector : public CUtlVectorBase< T, I, CUtlBlockMemory< T, I > >
 
 public:
 	explicit CUtlBlockVector( I growSize = 0, I initSize = 0 ) : BaseClass( growSize, initSize ) {}
+};
+
+//-----------------------------------------------------------------------------
+// The CUtlVectorMT class:
+// An array class with spurious mutex protection. Nothing is actually protected
+// unless you call Lock and Unlock. Also, the Mutex_t is actually not a type
+// but a member which probably isn't used.
+//-----------------------------------------------------------------------------
+template< class BASE_UTLVECTOR, class MUTEX_TYPE = CThreadFastMutex >
+class CUtlVectorMT : public BASE_UTLVECTOR, public MUTEX_TYPE
+{
+	typedef BASE_UTLVECTOR BaseClass;
+public:
+	// MUTEX_TYPE Mutex_t;
+
+	// constructor, destructor
+	explicit CUtlVectorMT( int growSize = 0, int initSize = 0 ) : BaseClass( growSize, initSize ) {}
+	CUtlVectorMT( typename BaseClass::ElemType_t* pMemory, int numElements ) : BaseClass( pMemory, numElements ) {}
 };
 
 //-----------------------------------------------------------------------------
