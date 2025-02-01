@@ -274,6 +274,7 @@ private:
 	// Errors?
 	bool			m_bOverflow;
 	bool			m_bAssertOnOverflow;
+	bool			m_bBytesAreMultiples;
 };
 
 

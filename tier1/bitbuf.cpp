@@ -157,14 +157,12 @@ void bf_write::StartWriting( void *pData, int nBytes, int iStartBit, int nBits )
 {
 	// Make sure it's dword aligned and padded.
 	DEBUG_LINK_CHECK;
-	Assert( (nBytes % 4) == 0 );
-	Assert(((uintp)pData & 3) == 0);
 
 	// The writing code will overrun the end of the buffer if it isn't dword aligned, so truncate to force alignment
 	nBytes &= ~3;
 
 	m_pData = (unsigned char*)pData;
-	m_nDataBytes = nBytes;
+	m_nDataBytes = 256; // @Wend4r: This limits the Source 2 engine from handling longer packets.
 
 	if ( nBits == -1 )
 	{
@@ -178,6 +176,7 @@ void bf_write::StartWriting( void *pData, int nBytes, int iStartBit, int nBits )
 
 	m_iCurBit = iStartBit;
 	m_bOverflow = false;
+	m_bBytesAreMultiples = ((uintp)pData & 3) == 0;
 }
 
 void bf_write::Reset()
