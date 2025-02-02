@@ -997,6 +997,10 @@ protected:
 	public:
 		struct ListEntry
 		{
+			ListEntry() : m_pNext( nullptr )
+			{
+			}
+
 			ListEntry *m_pNext;
 			NODE m_Value;
 		};
@@ -1555,7 +1559,7 @@ inline void CKeyValues3ContextBase::NodeList<NODE>::Clear()
 	{
 		for(auto iter = Head(); iter; iter = iter->m_pNext)
 		{
-			Destruct( iter );
+			Destruct( &iter->m_Value );
 		}
 	}
 
