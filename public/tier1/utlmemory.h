@@ -494,7 +494,7 @@ void CUtlMemory<T,I>::CopyFrom( const CUtlMemory& from )
 
 	if( m_pMemory )
 	{
-		memcpy( m_pMemory, from.m_pMemory, from.m_nAllocationCount * sizeof(T) );
+		memcpy( (void*)m_pMemory, (const void*)from.m_pMemory, from.m_nAllocationCount * sizeof(T) );
 	}
 }
 
