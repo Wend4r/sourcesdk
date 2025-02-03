@@ -5,7 +5,7 @@
 #pragma once
 #endif
 
-#define INVALID_PLAYER_SLOT -1
+#define INVALID_PLAYER_SLOT CPlayerSlot(-1)
 
 class CPlayerSlot
 {
