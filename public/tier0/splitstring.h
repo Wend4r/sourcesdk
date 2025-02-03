@@ -8,6 +8,8 @@
 #include "tier0/bufferstring.h"
 #include "tier1/utlvector.h"
 
+#include "tier0/memdbgon.h"
+
 // <Sergiy> placing it here a few days before Cert to minimize disruption to the rest of codebase
 class CSplitString : public CUtlVector<char *>
 {
@@ -34,8 +36,8 @@ public:
 
 	~CSplitString()
 	{
-		if (m_szBuffer)
-			delete[] m_szBuffer;
+		if ( m_szBuffer )
+			free( (void *)m_szBuffer );
 	}
 
 	// Works the same way as CSplitString::Split with the only exception that it allows you 
@@ -55,5 +57,7 @@ private:
 	char *m_szBuffer; // a copy of original string, with '\0' instead of separators
 	int m_nBufferSize;
 };
+
+#include "tier0/memdbgoff.h"
 
 #endif //#ifndef SPLITSTRING_H

@@ -227,7 +227,8 @@ void KeyValues3::FreeMember( KeyValues3 *member )
 	}
 	else
 	{
-		delete member;
+		Destruct( &member );
+		free( (void *)member );
 	}
 }
 
@@ -1834,8 +1835,11 @@ void CKeyValues3Table::RemoveAll( KeyValues3 *parent, int new_size )
 
 void CKeyValues3Table::PurgeFastSearch()
 {
-	if(m_pFastSearch)
-		delete m_pFastSearch;
+	if ( m_pFastSearch )
+	{
+		Destruct( &m_pFastSearch );
+		free( (void *)m_pFastSearch );
+	}
 
 	m_pFastSearch = nullptr;
 }
