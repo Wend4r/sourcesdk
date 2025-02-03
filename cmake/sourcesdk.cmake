@@ -120,12 +120,18 @@ function(append_sourcesdk_shared_library VAR_NAME LIB_NAME)
 
 		if(NOT EXISTS ${SOURCESDK_BINARY_SHARED_LIBRARY_LIB})
 			configure_file(${SOURCESDK_APPEND_SHARED_LIBRARY_LIB} ${SOURCESDK_BINARY_SHARED_LIBRARY_LIB} COPYONLY)
+		endif()
 
-			message(STATUS "Patching ${SOURCESDK_SHARED_LIBRARY_LIB} ...")
-			execute_process(
-				COMMAND bash -c "readelf -Ws --dyn-syms ${SOURCESDK_SHARED_LIBRARY_LIB} | awk '{print $8}' | grep -E '_ZS|_ZNS|_ZNKS|_ZN9__gnu_cxx|_ZNK9__gnu_cxx|_ZTIS|_ZTT|_ZTSS|_Zd|_Zn|_NSd|St[0-9]|Si[0-9]' | awk '{print substr($0, 3)}' | awk '{print \"_Z\" $0 \" XX\" $0}' >> ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map && ${SOURCESDK_PATCHELF_EXECUTABLE} --output ${SOURCESDK_SHARED_LIBRARY_LIB} --rename-dynamic-symbols ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map ${SOURCESDK_SHARED_LIBRARY_LIB}"
-				WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-			)
+		message(STATUS "Patching ${SOURCESDK_SHARED_LIBRARY_LIB} ...")
+		execute_process(
+			COMMAND bash -c "readelf -Ws --dyn-syms ${SOURCESDK_SHARED_LIBRARY_LIB} | awk '{print $8}' | grep -E '_ZS|_ZNS|_ZNKS|_ZN9__gnu_cxx|_ZNK9__gnu_cxx|_ZTIS|_ZTT|_ZTSS|_Zd|_Zn|_NSd|St[0-9]|Si[0-9]' | awk '{print substr($0, 3)}' | awk '{print \"_Z\" $0 \" XX\" $0}' >> ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map && ${SOURCESDK_PATCHELF_EXECUTABLE} --output ${SOURCESDK_SHARED_LIBRARY_LIB} --rename-dynamic-symbols ${SOURCESDK_SHARED_LIBRARY_LIB_NAME}.map ${SOURCESDK_SHARED_LIBRARY_LIB}"
+			WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+			RESULT_VARIABLE SOURCESDK_PATCHELF_RESULT
+			ERROR_VARIABLE SOURCESDK_PATCHELF_ERROR
+		)
+
+		if(NOT SOURCESDK_PATCHELF_RESULT EQUAL 0)
+			message(FATAL_ERROR "Failed to execute (${SOURCESDK_PATCHELF_RESULT}):\n${SOURCESDK_PATCHELF_ERROR}")
 		endif()
 
 		set(SOURCESDK_TARGET_SHARED_LIBRARY_LIB "${SOURCESDK_BINARY_SHARED_LIBRARY_LIB}")
