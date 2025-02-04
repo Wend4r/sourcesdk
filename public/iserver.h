@@ -153,11 +153,14 @@ public:
 	virtual ~CNetworkGameServerBase() = 0;
 	
 	virtual void	SetMaxClients( int nMaxClients ) = 0;
-	
-	virtual void	unk301() = 0;
-	virtual bool	ProcessConnectionlessPacket( const ns_address *addr, bf_read *bf ) = 0; // process a connectionless packet
 
+public: // IConnectionlessPacketHandler
+	virtual bool	ProcessConnectionlessPacket( netpacket_t *packet ) = 0; // process a connectionless packet
 
+private:
+	virtual bool	unk301( const ns_address *addr, bf_read *bf ) = 0;
+
+public:
 	virtual CPlayerUserId GetPlayerUserId( CPlayerSlot slot ) = 0;
 	virtual const char *GetPlayerNetworkIDString( CPlayerSlot slot ) = 0;
 	
