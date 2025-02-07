@@ -29,12 +29,18 @@
 
 class ServerClass;
 class SendTable;
-class vis_info_t;
 struct edict_t;
 class CBaseEntity;
 class CSerialEntity;
 class CBaseNetworkable;
 
+struct vis_info_t
+{
+	const uint32 *m_pVisBits;
+	uint32 m_uVisBitsBufSize;
+	float m_flVisibleRadius;
+	SpawnGroupHandle_t m_SpawnGroupHandle;
+};
 
 class CCheckTransmitInfo
 {
