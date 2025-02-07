@@ -1,0 +1,18 @@
+if(NOT SOURCESDK_GAME_TARGET)
+	message(FATAL_ERROR "SOURCESDK_GAME_TARGET is empty")
+endif()
+
+if(DEFINED SOURCESDK_GAME_TARGET_PREV AND NOT "${SOURCESDK_GAME_TARGET_PREV}" STREQUAL "${SOURCESDK_GAME_TARGET}")
+	message(STATUS "Detected change the game from \"${SOURCESDK_GAME_TARGET_PREV}\" to \"${SOURCESDK_GAME_TARGET}\"")
+	message(STATUS "The proto headers of the previous game will be deleted")
+
+	file(GLOB SOURCESDK_PREV_PROTO_HEADERS "${SOURCESDK_COMMON_DIR}/*.pb.*")
+
+	if(SOURCESDK_PREV_PROTO_HEADERS)
+		foreach(PROTO_HEADER ${SOURCESDK_PREV_PROTO_HEADERS})
+			get_filename_component(PROTO_HEADER_FILENAME "${PROTO_HEADER}" NAME)
+			message(STATUS "Deleting ${PROTO_HEADER_FILENAME}")
+			file(REMOVE ${PROTO_HEADER})
+		endforeach()
+	endif()
+endif()
