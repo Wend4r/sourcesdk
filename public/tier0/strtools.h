@@ -54,12 +54,6 @@ abstract_class IParsingErrorListener
 #define PARSING_FLAG_USE_BASE_AUTO					(1 << 7) // Use auto detection of a number base when parsing (uses https://en.cppreference.com/w/cpp/string/basic_string/stol under the hood, so same base rules applies)
 #define PARSING_FLAG_USE_BASE_16					(1 << 8) // Use base of 16 when parsing
 
-#ifdef _WIN64
-#define str_size unsigned int
-#else
-#define str_size size_t
-#endif
-
 
 /// 3d memcpy. Copy (up-to) 3 dimensional data with arbitrary source and destination
 /// strides. Optimizes to just a single memcpy when possible. For 2d data, set numslices to 1.
