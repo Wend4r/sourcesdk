@@ -126,8 +126,8 @@ function(append_sourcesdk_shared_library VAR_NAME LIB_NAME LIB_FILENAME_OUT IMPL
 			if(NOT SOURCESDK_PATCHELF_RESULT EQUAL 0)
 				message(FATAL_ERROR "Failed to execute (${SOURCESDK_PATCHELF_RESULT}):\n${SOURCESDK_PATCHELF_ERROR}")
 			endif()
-		endif()
 
-		set(${LIB_FILENAME_OUT} "${SOURCESDK_BINARY_SHARED_LIBRARY_LIB}" PARENT_SCOPE)
+			set(${LIB_FILENAME_OUT} "${SOURCESDK_BINARY_SHARED_LIBRARY_LIB}" PARENT_SCOPE)
+		endif()
 	endif()
 endfunction()
