@@ -285,6 +285,11 @@ public:
 		return m_pSpawnGroup;
 	}
 
+	IPVS *GetPVS() const
+	{
+		return m_pPVS;
+	}
+
 private:
 	ISpawnGroup *m_pSpawnGroup;
 	bool m_bSpawnGroupPrecacheDispatched;
