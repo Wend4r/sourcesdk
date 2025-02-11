@@ -34,6 +34,14 @@ class CBaseEntity;
 class CSerialEntity;
 class CBaseNetworkable;
 
+struct vis_info_t
+{
+	uint32 m_uVisBitsBufSize;
+	SpawnGroupHandle_t m_SpawnGroupHandle;
+	uint16 m_VisBits[256]; // Fills 0xFFFF each byte by default to full vision.
+};
+COMPILE_TIME_ASSERT(sizeof(vis_info_t) == 520);
+
 class CCheckTransmitInfo
 {
 public:
@@ -43,9 +51,7 @@ public:
 	CBitVec<MAX_EDICTS>* m_pUnkBitVec3;		// 24
 	CBitVec<MAX_EDICTS>* m_pTransmitAlways; // 32
 	CUtlVector<CPlayerSlot> m_vecTargetSlots;	// 40
-	uint32 m_uVisBitsBufSize;				// 64
-	SpawnGroupHandle_t m_SpawnGroupHandle;	// 68
-	uint16 m_VisBits[256];					// Fills 0xFFFF each byte by default to full vision.
+	vis_info_t m_VisInfo;					// 64
 	CPlayerSlot m_nPlayerSlot; 				// 584
 	bool m_bFullUpdate = false;				// 588
 };
