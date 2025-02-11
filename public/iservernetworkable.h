@@ -34,28 +34,22 @@ class CBaseEntity;
 class CSerialEntity;
 class CBaseNetworkable;
 
-struct vis_info_t
-{
-	const uint32 *m_pVisBits;
-	uint32 m_uVisBitsBufSize;
-	float m_flVisibleRadius;
-	SpawnGroupHandle_t m_SpawnGroupHandle;
-};
-
 class CCheckTransmitInfo
 {
 public:
-	CBitVec<MAX_EDICTS>* m_pTransmitEntity;	// 0
-	CBitVec<MAX_EDICTS>* m_pUnkBitVec;		// 8
+	CBitVec<MAX_EDICTS>* m_pTransmit;		// 0
+	CBitVec<MAX_EDICTS>* m_pTransmitNonPlayers;	// 8
 	CBitVec<MAX_EDICTS>* m_pUnkBitVec2;		// 16
 	CBitVec<MAX_EDICTS>* m_pUnkBitVec3;		// 24
 	CBitVec<MAX_EDICTS>* m_pTransmitAlways; // 32
-	CUtlVector<int> m_unk40;				// 40
-	vis_info_t* m_VisInfo;					// 64
-	[[maybe_unused]] byte m_unk72[0x200];	// 72 // Fills by 0xFF each byte.
-	CPlayerSlot m_nPlayerSlot = INVALID_PLAYER_SLOT; // 584
+	CUtlVector<CPlayerSlot> m_vecTargetSlots;	// 40
+	uint32 m_uVisBitsBufSize;				// 64
+	SpawnGroupHandle_t m_SpawnGroupHandle;	// 68
+	uint16 m_VisBits[256];					// Fills 0xFFFF each byte by default to full vision.
+	CPlayerSlot m_nPlayerSlot; 				// 584
 	bool m_bFullUpdate = false;				// 588
-}; // sizeof 592
+};
+COMPILE_TIME_ASSERT(sizeof(CCheckTransmitInfo) == 592);
 
 //-----------------------------------------------------------------------------
 // Stores information necessary to perform PVS testing.
