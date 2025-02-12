@@ -38,7 +38,7 @@ struct vis_info_t
 {
 	uint32 m_uVisBitsBufSize;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
-	uint16 m_VisBits[256]; // Fills 0xFFFF each byte by default to full vision.
+	CBitVec<4096> m_VisBits;
 };
 COMPILE_TIME_ASSERT(sizeof(vis_info_t) == 520);
 
