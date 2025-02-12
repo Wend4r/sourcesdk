@@ -45,7 +45,7 @@ COMPILE_TIME_ASSERT(sizeof(vis_info_t) == 520);
 class CCheckTransmitInfo
 {
 public:
-	CBitVec<MAX_EDICTS>* m_pTransmit;		// 0
+	CBitVec<MAX_EDICTS>* m_pTransmitEntity;		// 0
 	CBitVec<MAX_EDICTS>* m_pTransmitNonPlayers;	// 8
 	CBitVec<MAX_EDICTS>* m_pUnkBitVec2;		// 16
 	CBitVec<MAX_EDICTS>* m_pUnkBitVec3;		// 24
