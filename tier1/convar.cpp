@@ -557,6 +557,8 @@ void ConVarRefAbstract::Init( ConVarRef ref, EConVarType type )
 
 void ConVarRefAbstract::InvalidateConVarData( EConVarType type )
 {
+	InvalidateRef();
+
 	if(type == EConVarType_Invalid)
 		m_ConVarData = GetInvalidConVarData( EConVarType_Invalid );
 	else
