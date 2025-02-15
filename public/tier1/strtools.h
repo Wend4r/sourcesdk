@@ -310,6 +310,46 @@ PLATFORM_INTERFACE float64 V_StringToFloat64Raw(const char *buf, float64 default
 // Parses string as a float32 value, if the parsing fails, default_value is returned, doesn't perform error checking/reporting
 PLATFORM_INTERFACE float32 V_StringToFloat32Raw(const char *buf, float32 default_value, bool *successful = NULL, char **remainder = NULL);
 
+// Templatised and shortened version of the generic V_StringTo* functions
+// these are silent, so you won't get error console warnings if parsing fails by default
+template <typename T>
+inline bool V_StringToValue( const char *string, T &value, uint flags = PARSING_FLAG_SKIP_ASSERT | PARSING_FLAG_SKIP_WARNING );
+
+template <> inline bool V_StringToValue<bool>( const char *string, bool &value, uint flags )
+{ bool success = false; value = V_StringToBool( string, false, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<int8>( const char *string, int8 &value, uint flags )
+{ bool success = false; value = V_StringToInt8( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<uint8>( const char *string, uint8 &value, uint flags )
+{ bool success = false; value = V_StringToUint8( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<int16>( const char *string, int16 &value, uint flags )
+{ bool success = false; value = V_StringToInt16( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<uint16>( const char *string, uint16 &value, uint flags )
+{ bool success = false; value = V_StringToUint16( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<int32>( const char *string, int32 &value, uint flags )
+{ bool success = false; value = V_StringToInt32( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<uint32>( const char *string, uint32 &value, uint flags )
+{ bool success = false; value = V_StringToUint32( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<int64>( const char *string, int64 &value, uint flags )
+{ bool success = false; value = V_StringToInt64( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<uint64>( const char *string, uint64 &value, uint flags )
+{ bool success = false; value = V_StringToUint64( string, 0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<float32>( const char *string, float32 &value, uint flags )
+{ bool success = false; value = V_StringToFloat32( string, 0.0f, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<float64>( const char *string, float64 &value, uint flags )
+{ bool success = false; value = V_StringToFloat64( string, 0.0, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<Vector>( const char *string, Vector &value, uint flags )
+{ bool success = false; V_StringToVector( string, value, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<Vector2D>( const char *string, Vector2D &value, uint flags )
+{ bool success = false; V_StringToVector2D( string, value, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<Vector4D>( const char *string, Vector4D &value, uint flags )
+{ bool success = false; V_StringToVector4D( string, value, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<Color>( const char *string, Color &value, uint flags )
+{ bool success = false; V_StringToColor( string, value, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<QAngle>( const char *string, QAngle &value, uint flags )
+{ bool success = false; V_StringToQAngle( string, value, &success, nullptr, flags ); return success; }
+template <> inline bool V_StringToValue<Quaternion>( const char *string, Quaternion &value, uint flags )
+{ bool success = false; V_StringToQuaternion( string, value, &success, nullptr, flags ); return success; }
+
 // returns string immediately following prefix, (ie str+strlen(prefix)) or NULL if prefix not found
 PLATFORM_INTERFACE const char *_V_StringAfterPrefix( const char *str, const char *prefix );
 PLATFORM_INTERFACE const char *_V_StringAfterPrefixCaseSensitive( const char *str, const char *prefix );
