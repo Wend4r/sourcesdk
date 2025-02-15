@@ -742,7 +742,7 @@ struct CVarTypeTraits
 	{
 		m_TypeName = name;
 		m_ByteSize = sizeof( T );
-		m_IsPrimitive = std::is_literal_type_v<T>;
+		m_IsPrimitive = std::is_pod_v<T>;
 
 		Construct = &CvarTypeTrait_ConstructFn<T>;
 		Copy = &CvarTypeTrait_CopyFn<T>;
@@ -1298,7 +1298,7 @@ inline CUtlString ConVarRefAbstract::GetString( CSplitScreenSlot slot ) const
 template<typename T>
 inline T ConVarRefAbstract::ConvertFromPrimitiveTo( CSplitScreenSlot slot ) const
 {
-	if constexpr(std::is_literal_type_v<T>)
+	if constexpr(std::is_pod_v<T>)
 	{
 		CVValue_t *value = m_ConVarData->ValueOrDefault( slot );
 
@@ -1365,7 +1365,7 @@ template<> inline void ConVarRefAbstract::SetAs( CUtlString value, CSplitScreenS
 template<typename T>
 inline void ConVarRefAbstract::ConvertToPrimitiveFrom( CSplitScreenSlot slot, T value ) const
 {
-	if constexpr(std::is_literal_type_v<T>)
+	if constexpr(std::is_pod_v<T>)
 	{
 		switch(GetType())
 		{
