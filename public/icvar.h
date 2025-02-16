@@ -16,484 +16,46 @@
 #include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
 #include "mathlib/vector4d.h"
+#include "convar.h"
 #include <cstdint>
 
-// TO-DO: Remove Metamod ConVar PR is finished
-class ConCommandBase;
+// Shorthand helper to iterate registered convars
+// Example usage:
+// FOR_EACH_CONVAR( iter )
+// {
+//     ConVarRefAbstract aref( iter );
+//     Msg( "%s = %d\n", aref.GetName(), aref.GetInt() );
+// 
+//     /* or use typed version, but make sure to check its validity after,
+//        since it would be invalid on type mismatch */
+// 
+//     CConVarRef<int> cref( iter );
+//     if(cref.IsValidRef())
+//         Msg( "%s = %d\n", cref.GetName(), cref.Get() );
+// }
+#define FOR_EACH_CONVAR( iter ) for(ConVarRef iter = g_pCVar->FindFirstConVar(); iter.IsValidRef(); iter = g_pCVar->FindNextConVar( iter ))
 
-class BaseConVar;
-class ConCommand;
-class CCommand;
-class CCommandContext;
-class ICVarListenerCallbacks;
-class IConVarListener;
-struct ConVarCreation_t;
-struct ConCommandCreation_t;
+// Shorthand helper to iterate registered concommands
+#define FOR_EACH_CONCOMMAND( iter ) for(ConCommandRef iter = icvar->FindFirstConCommand(); iter.IsValidRef(); iter = icvar->FindNextConCommand( iter ))
+
+
 struct ConVarSnapshot_t;
 class KeyValues;
-
-template<typename T>
-class ConVar;
-
-union CVValue_t
-{
-	template<typename T>
-	inline CVValue_t& operator=(const T& other);
-
-	inline operator bool() const			{ return m_bValue; }
-	inline operator int16_t() const			{ return m_i16Value; }
-	inline operator uint16_t() const		{ return m_u16Value; }
-	inline operator int32_t() const			{ return m_i32Value; }
-	inline operator uint32_t() const		{ return m_u32Value; }
-	inline operator int64_t() const			{ return m_i64Value; }
-	inline operator uint64_t() const		{ return m_u64Value; }
-	inline operator float() const			{ return m_flValue; }
-	inline operator double() const			{ return m_dbValue; }
-	inline operator const char*() const		{ return m_szValue; }
-	inline operator const Color&() const	{ return m_clrValue; }
-	inline operator const Vector2D&() const	{ return m_vec2Value; }
-	inline operator const Vector&() const	{ return m_vec3Value; }
-	inline operator const Vector4D&() const	{ return m_vec4Value; }
-	inline operator const QAngle&() const 	{ return m_angValue; }
-
-	bool		m_bValue;
-	int16_t		m_i16Value;
-	uint16_t	m_u16Value;
-	int32_t		m_i32Value;
-	uint32_t	m_u32Value;
-	int64_t		m_i64Value;
-	uint64_t	m_u64Value;
-	float		m_flValue;
-	double		m_dbValue;
-	const char*	m_szValue;
-	Color		m_clrValue;
-	Vector2D	m_vec2Value;
-	Vector		m_vec3Value;
-	Vector4D	m_vec4Value;
-	QAngle		m_angValue;
-};
-static_assert(sizeof(float) == sizeof(int32_t), "Wrong float type size for ConVar!");
-static_assert(sizeof(double) == sizeof(int64_t), "Wrong double type size for ConVar!");
-
-#include "splitscreenslot.h"
 
 //-----------------------------------------------------------------------------
 // Called when a ConVar changes value
 //-----------------------------------------------------------------------------
-typedef void(*FnChangeCallbackGlobal_t)(BaseConVar* ref, CSplitScreenSlot nSlot, const char *pNewValue, const char *pOldValue);
+typedef void(*FnChangeCallbackGlobal_t)(ConVarRefAbstract* ref, CSplitScreenSlot nSlot, const char *pNewValue, const char *pOldValue);
 
 //-----------------------------------------------------------------------------
-// Purpose: Replaces the ConVar* and ConCommand*
+// ConVar & ConCommand creation listener callbacks
 //-----------------------------------------------------------------------------
-class ConVarHandle
+class ICVarListenerCallbacks
 {
 public:
-	ConVarHandle(uint64_t value) :
-		m_Index(value)
-	{}
-	ConVarHandle(uint16_t index = -1, uint32_t handle = -1) :
-		m_convarIndex(index),
-		m_handleIndex(handle)
-	{}
-
-	bool IsValid() const { return m_convarIndex != 0xFFFF; }
-	void Invalidate()
-	{
-		m_convarIndex = 0xFFFF;
-		m_handleIndex = 0x0;
-	}
-
-	uint16_t GetConVarIndex() const { return m_convarIndex; }
-	uint32_t GetIndex() const { return m_handleIndex; }
-
-	operator uint64_t() const
-	{
-		return m_Index;
-	}
-
-	bool operator==(const ConVarHandle& other) const
-	{
-		return m_convarIndex == other.m_convarIndex && m_handleIndex == other.m_handleIndex;
-	}
-
-	bool operator!=(const ConVarHandle& other) const
-	{
-		return !(*this == other);
-	}
-
-private:
-	union
-	{
-		uint64_t m_Index;
-		struct
-		{
-			uint16_t m_convarIndex;
-			uint32_t m_handleIndex;
-		};
-	};
+	virtual void OnConVarCreated( ConVarRefAbstract *pNewCvar ) {};
+	virtual void OnConCommandCreated( ConCommand *pNewCommand ) {};
 };
-
-static const ConVarHandle INVALID_CONVAR_HANDLE = ConVarHandle();
-
-class ConCommandHandle
-{
-public:
-	ConCommandHandle(uint64_t value) :
-		m_Index(value)
-	{}
-	ConCommandHandle(uint16_t index = -1, uint32_t handle = -1) :
-		m_concommandIndex(index),
-		m_handleIndex(handle)
-	{}
-
-	bool IsValid() const { return m_concommandIndex != 0xFFFF; }
-	void Invalidate()
-	{
-		m_concommandIndex = 0xFFFF;
-		m_handleIndex = 0x0;
-	}
-
-	uint32_t GetConCommandIndex() const { return m_concommandIndex; }
-	uint32_t GetIndex() const { return m_handleIndex; }
-
-	operator uint64_t() const
-	{
-		return m_Index;
-	}
-
-	bool operator==(const ConCommandHandle& other) const
-	{
-		return m_concommandIndex == other.m_concommandIndex && m_handleIndex == other.m_handleIndex;
-	}
-
-	bool operator!=(const ConCommandHandle& other) const
-	{
-		return !(*this == other);
-	}
-
-private:
-	union
-	{
-		uint64_t m_Index;
-		struct
-		{
-			uint32_t m_concommandIndex;
-			uint32_t m_handleIndex;
-		};
-	};
-};
-
-static const ConCommandHandle INVALID_CONCOMMAND_HANDLE = ConCommandHandle();
-
-//-----------------------------------------------------------------------------
-// Purpose: Internal structure of ConVar objects
-//-----------------------------------------------------------------------------
-enum EConVarType : int16_t
-{
-	EConVarType_Invalid = -1,
-	EConVarType_Bool,
-	EConVarType_Int16,
-	EConVarType_UInt16,
-	EConVarType_Int32,
-	EConVarType_UInt32,
-	EConVarType_Int64,
-	EConVarType_UInt64,
-	EConVarType_Float32,
-	EConVarType_Float64,
-	EConVarType_String,
-	EConVarType_Color,
-	EConVarType_Vector2,
-	EConVarType_Vector3,
-	EConVarType_Vector4,
-	EConVarType_Qangle,
-	EConVarType_MAX
-};
-
-template<typename T>
-constexpr EConVarType TranslateConVarType();
-
-template<> constexpr EConVarType TranslateConVarType<bool>( void )		{ return EConVarType_Bool; }
-template<> constexpr EConVarType TranslateConVarType<int16_t>( void )	{ return EConVarType_Int16; }
-template<> constexpr EConVarType TranslateConVarType<uint16_t>( void )	{ return EConVarType_UInt16; }
-template<> constexpr EConVarType TranslateConVarType<int32_t>( void )	{ return EConVarType_Int32; }
-template<> constexpr EConVarType TranslateConVarType<uint32_t>( void )	{ return EConVarType_UInt32; }
-template<> constexpr EConVarType TranslateConVarType<int64_t>( void )	{ return EConVarType_Int64; }
-template<> constexpr EConVarType TranslateConVarType<uint64_t>( void )	{ return EConVarType_UInt64; }
-template<> constexpr EConVarType TranslateConVarType<float>( void )		{ return EConVarType_Float32; }
-template<> constexpr EConVarType TranslateConVarType<double>( void )	{ return EConVarType_Float64; }
-template<> constexpr EConVarType TranslateConVarType<const char*>( void ){ return EConVarType_String; }
-template<> constexpr EConVarType TranslateConVarType<CUtlString>( void ){ return EConVarType_String; }
-template<> constexpr EConVarType TranslateConVarType<Color>( void )		{ return EConVarType_Color; }
-template<> constexpr EConVarType TranslateConVarType<Vector2D>( void )	{ return EConVarType_Vector2; }
-template<> constexpr EConVarType TranslateConVarType<Vector>( void )	{ return EConVarType_Vector3; }
-template<> constexpr EConVarType TranslateConVarType<Vector4D>( void )	{ return EConVarType_Vector4; }
-template<> constexpr EConVarType TranslateConVarType<QAngle>( void )	{ return EConVarType_Qangle; }
-template<> constexpr EConVarType TranslateConVarType<void*>( void )		{ return EConVarType_Invalid; }
-
-constexpr const char* GetConVarTypeName(EConVarType type) {
-	switch (type) {
-		case EConVarType_Invalid: return "Invalid";
-		case EConVarType_Bool:    return "Bool";
-		case EConVarType_Int16:   return "Int16";
-		case EConVarType_UInt16:  return "UInt16";
-		case EConVarType_Int32:   return "Int32";
-		case EConVarType_UInt32:  return "UInt32";
-		case EConVarType_Int64:   return "Int64";
-		case EConVarType_UInt64:  return "UInt64";
-		case EConVarType_Float32: return "Float32";
-		case EConVarType_Float64: return "Float64";
-		case EConVarType_String:  return "String";
-		case EConVarType_Color:   return "Color";
-		case EConVarType_Vector2: return "Vector2";
-		case EConVarType_Vector3: return "Vector3";
-		case EConVarType_Vector4: return "Vector4";
-		case EConVarType_Qangle:  return "QAngle";
-		case EConVarType_MAX:     return "MAX";
-		default:                  return "Unknown";
-	}
-}
-
-template<typename T>
-class CConVarData;
-
-class CConVarBaseData
-{
-public:
-	template<typename T>
-	inline const CConVarData<T>* Cast() const
-	{
-		Assert(this->m_eVarType == TranslateConVarType<T>());
-
-		return reinterpret_cast<CConVarData<T>*>(this);
-	}
-
-	template<typename T>
-	inline CConVarData<T>* Cast()
-	{
-		Assert(this->m_eVarType == TranslateConVarType<T>());
-
-		return reinterpret_cast<CConVarData<T>*>(this);
-	}
-
-	CConVarBaseData() :
-		m_pszName("<undefined>"),
-		m_defaultValue(nullptr),
-		m_minValue(nullptr),
-		m_maxValue(nullptr),
-		m_pszHelpString("This convar is being accessed prior to ConVar_Register being called"),
-		m_eVarType(EConVarType_Invalid)
-	{
-	}
-
-	inline const char*	GetName( void ) const			{ return m_pszName; }
-	inline const char*	GetDescription( void ) const	{ return m_pszHelpString; }
-	inline EConVarType	GetType( void ) const			{ return m_eVarType; }
-
-	inline bool HasDefaultValue( ) const	{ return m_defaultValue != nullptr; }
-	inline bool HasMinValue( ) const		{ return m_minValue != nullptr; }
-	inline bool HasMaxValue( ) const		{ return m_maxValue  != nullptr; }
-
-	inline int	GetTimesChanged( void ) const	{ return m_iTimesChanged; }
-	inline void	SetTimesChanged( int val )		{ m_iTimesChanged = val; }
-
-	inline bool		IsFlagSet( int64_t flag ) const		{ return ( flag & m_nFlags ) ? true : false; }
-	inline void		AddFlags( int64_t flags )			{ m_nFlags |= flags; }
-	inline void		RemoveFlags( int64_t flags )		{ m_nFlags &= ~flags; }
-	inline int64_t	GetFlags( void ) const				{ return m_nFlags; }
-
-	inline int		GetCallbackIndex( void ) const		{ return m_iCallbackIndex; }
-protected:
-	template<typename T>
-	static inline void ValueToString( const T& val, char* dst, size_t length );
-
-	template<typename T>
-	static T ValueFromString( const char* val );
-
-	const char* m_pszName;
-
-	void* m_defaultValue;
-	void* m_minValue;
-	void* m_maxValue;
-	const char* m_pszHelpString;
-	EConVarType m_eVarType;
-
-	// This gets copied from the ConVarDesc_t on creation
-	short unk1;
-
-	unsigned int m_iTimesChanged;
-	int64 m_nFlags;
-	unsigned int m_iCallbackIndex;
-
-	// Used when setting default, max, min values from the ConVarDesc_t
-	// although that's not the only place of usage
-	// flags seems to be:
-	// (1 << 0) Skip setting value to split screen slots and also something keyvalues related
-	// (1 << 1) Skip setting default value
-	// (1 << 2) Skip setting min/max values
-	int m_nUnknownAllocFlags;
-};
-
-template<> inline void CConVarBaseData::ValueToString<bool>( const bool& val, char* dst, size_t length )
-{
-	strncpy( dst, val ? "true" : "false", length );
-}
-template<> inline void CConVarBaseData::ValueToString<uint16_t>( const uint16_t& val, char* dst, size_t length )		{ snprintf( dst, length, "%u", val ); }
-template<> inline void CConVarBaseData::ValueToString<int16_t>( const int16_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%d", val ); }
-template<> inline void CConVarBaseData::ValueToString<uint32_t>( const uint32_t& val, char* dst, size_t length )		{ snprintf( dst, length, "%u", val ); }
-template<> inline void CConVarBaseData::ValueToString<int32_t>( const int32_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%d", val ); }
-template<> inline void CConVarBaseData::ValueToString<uint64_t>( const uint64_t& val, char* dst, size_t length )		{ snprintf( dst, length, "%lu", (unsigned long)val ); }
-template<> inline void CConVarBaseData::ValueToString<int64_t>( const int64_t& val, char* dst, size_t length )			{ snprintf( dst, length, "%ld", (long)val ); }
-template<> inline void CConVarBaseData::ValueToString<float>( const float& val, char* dst, size_t length )				{ snprintf( dst, length, "%f", val ); }
-template<> inline void CConVarBaseData::ValueToString<double>( const double& val, char* dst, size_t length )			{ snprintf( dst, length, "%lf", val ); }
-template<> inline void CConVarBaseData::ValueToString<const char*>( const char*const& val, char* dst, size_t length )	{ memcpy( dst, val, length ); }
-template<> inline void CConVarBaseData::ValueToString<CUtlString>( const CUtlString& val, char* dst, size_t length )	{ strncpy( dst, val.Get(), length ); }
-template<> inline void CConVarBaseData::ValueToString<Color>( const Color& val, char* dst, size_t length )				{ snprintf( dst, length, "%d %d %d %d", val.r(), val.g(), val.b(), val.a() ); }
-template<> inline void CConVarBaseData::ValueToString<Vector2D>( const Vector2D& val, char* dst, size_t length )		{ snprintf( dst, length, "%f %f", val.x, val.y ); }
-template<> inline void CConVarBaseData::ValueToString<Vector>( const Vector& val, char* dst, size_t length )			{ snprintf( dst, length, "%f %f %f", val.x, val.y, val.z ); }
-template<> inline void CConVarBaseData::ValueToString<Vector4D>( const Vector4D& val, char* dst, size_t length )		{ snprintf( dst, length, "%f %f %f %f", val.x, val.y, val.z, val.w ); }
-template<> inline void CConVarBaseData::ValueToString<QAngle>( const QAngle& val, char* dst, size_t length )			{ snprintf( dst, length, "%f %f %f", val.x, val.y, val.z ); }
-
-template<> inline bool CConVarBaseData::ValueFromString<bool>( const char* val )				{ return !strcmp(val, "true") || !strcmp(val, "1"); }
-template<> inline uint16_t CConVarBaseData::ValueFromString<uint16_t>( const char* val )		{ unsigned int ret; sscanf(val, "%u", &ret); return ret; }
-template<> inline int16_t CConVarBaseData::ValueFromString<int16_t>( const char* val )			{ int ret; sscanf(val, "%d", &ret); return ret; }
-template<> inline uint32_t CConVarBaseData::ValueFromString<uint32_t>( const char* val )		{ uint32_t ret; sscanf(val, "%u", &ret); return ret; }
-template<> inline int32_t CConVarBaseData::ValueFromString<int32_t>( const char* val )			{ int32_t ret; sscanf(val, "%d", &ret); return ret; }
-template<> inline uint64_t CConVarBaseData::ValueFromString<uint64_t>( const char* val )		{ uint64_t ret; sscanf(val, "%lu", (unsigned long *)&ret); return ret; }
-template<> inline int64_t CConVarBaseData::ValueFromString<int64_t>( const char* val )			{ int64_t ret; sscanf(val, "%ld", (long *)&ret); return ret; }
-template<> inline float CConVarBaseData::ValueFromString<float>( const char* val )				{ float ret; sscanf(val, "%f", &ret); return ret; }
-template<> inline double CConVarBaseData::ValueFromString<double>( const char* val )			{ double ret; sscanf(val, "%lf", &ret); return ret; }
-template<> inline const char* CConVarBaseData::ValueFromString<const char*>( const char* val )	{ return val; }
-template<> inline CUtlString CConVarBaseData::ValueFromString<CUtlString>( const char* val )	{ return {val}; }
-template<> inline Color CConVarBaseData::ValueFromString<Color>( const char* val )				{ int r, g, b, a; sscanf(val, "%d %d %d %d", &r, &g, &b, &a); return Color(r, g, b, a); }
-template<> inline Vector2D CConVarBaseData::ValueFromString<Vector2D>( const char* val )		{ float x, y; sscanf(val, "%f %f", &x, &y); return Vector2D(x, y); }
-template<> inline Vector CConVarBaseData::ValueFromString<Vector>( const char* val )			{ float x, y, z; sscanf(val, "%f %f %f", &x, &y, &z); return Vector(x, y, z); }
-template<> inline Vector4D CConVarBaseData::ValueFromString<Vector4D>( const char* val )		{ float x, y, z, w; sscanf(val, "%f %f %f %f", &x, &y, &z, &w); return Vector4D(x, y, z, w); }
-template<> inline QAngle CConVarBaseData::ValueFromString<QAngle>( const char* val )			{ float x, y, z; sscanf(val, "%f %f %f", &x, &y, &z); return QAngle(x, y, z); }
-
-template<typename T>
-class CConVarData : public CConVarBaseData
-{
-public:
-friend class ConVar<T>;
-	CConVarData()
-	{
-		m_defaultValue = new T();
-		m_minValue = new T();
-		m_maxValue = new T();
-		m_eVarType = TranslateConVarType<T>();
-	}
-
-	~CConVarData()
-	{
-		delete m_defaultValue;
-		delete m_minValue;
-		delete m_eVarType;
-	}
-
-	inline const T&	GetDefaultValue( ) const	{ return *reinterpret_cast<T*>(m_defaultValue); }
-	inline const T&	GetMinValue( ) const		{ return *reinterpret_cast<T*>(m_minValue); }
-	inline const T&	GetMaxValue( ) const		{ return *reinterpret_cast<T*>(m_maxValue); }
-
-	inline void SetDefaultValue(const T& value)
-	{
-		if (!m_defaultValue)
-		{
-			m_defaultValue = new T();
-		}
-		*reinterpret_cast<T*>(m_defaultValue) = value;
-	}
-	inline void SetMinValue(const T& value)
-	{
-		if (!m_minValue)
-		{
-			m_minValue = new T();
-		}
-		*reinterpret_cast<T*>(m_minValue) = value;
-	}
-	inline void SetMaxValue(const T& value)
-	{
-		if (!m_maxValue)
-		{
-			m_maxValue = new T();
-		}
-		*reinterpret_cast<T*>(m_maxValue) = value;
-	}
-
-	inline void RemoveDefaultValue( )
-	{
-		if (m_defaultValue)
-		{
-			delete reinterpret_cast<T*>(m_defaultValue);
-		}
-		m_defaultValue = nullptr;
-	}
-	inline void RemoveMinValue( )
-	{
-		if (m_minValue)
-		{
-			delete reinterpret_cast<T*>(m_minValue);
-		}
-		m_minValue = nullptr;
-	}
-	inline void RemoveMaxValue( )
-	{
-		if (m_maxValue)
-		{
-			delete reinterpret_cast<T*>(m_maxValue);
-		}
-		m_maxValue = nullptr;
-	}
-
-	inline const T& Clamp(const T& value) const
-	{
-		if (HasMinValue() && value < GetMinValue())
-		{
-			return GetMinValue();
-		}
-		if (HasMaxValue() && value > GetMaxValue())
-		{
-			return GetMaxValue();
-		}
-		return value;
-	}
-
-	inline const T&	GetValue( const CSplitScreenSlot& index = 0 ) const		{ return m_value[index]; }
-	inline void SetValue(const T& value, const CSplitScreenSlot& index = 0) { m_value[index] = value; }
-
-	inline void GetStringValue( char* dst, size_t len, const CSplitScreenSlot& index = 0 ) const { ValueToString( GetValue( index ), dst, len ); }
-
-	inline void GetStringDefaultValue( char* dst, size_t len ) const	{ ValueToString( GetDefaultValue( ), dst, len ); }
-	inline void GetStringMinValue( char* dst, size_t len ) const		{ ValueToString( GetMinValue( ), dst, len ); }
-	inline void GetStringMaxValue( char* dst, size_t len ) const		{ ValueToString( GetMaxValue( ), dst, len ); }
-
-	inline void SetStringValue( const char* src, const CSplitScreenSlot& index = 0 ) { SetValue( ValueFromString( src ), index ); }
-
-	inline void SetStringDefaultValue( const char* src )	{ SetDefaultValue( ValueFromString( src ) ); }
-	inline void SetStringMinValue( const char* src )		{ SetMinValue( ValueFromString( src ) ); }
-	inline void SetStringMaxValue( const char* src )		{ SetMaxValue( ValueFromString( src ) ); }
-
-protected:
-	static inline void ValueToString( const T& value, char* dst, size_t length ) { CConVarBaseData::ValueToString<T>( value, dst, length ); };
-
-	static T ValueFromString( const char* val ) { return CConVarBaseData::ValueFromString<T>( val ); };
-
-	T m_value[MAX_SPLITSCREEN_CLIENTS];
-};
-
-// Special case for string handling
-template<> inline void CConVarData<const char*>::SetValue(const char*const& value, const CSplitScreenSlot& index)
-{
-	auto data = reinterpret_cast<CUtlString*>( &m_value[index] );
-	data->Set( value );
-}
-
-// For some types it makes no sense to clamp
-template<> inline const char*const& CConVarData<const char*>::Clamp(const char*const& value) const { return value; }
-template<> inline const Color& CConVarData<Color>::Clamp(const Color& value) const { return value; }
-template<> inline const Vector2D& CConVarData<Vector2D>::Clamp(const Vector2D& value) const { return value; }
-template<> inline const Vector& CConVarData<Vector>::Clamp(const Vector& value) const { return value; }
-template<> inline const Vector4D& CConVarData<Vector4D>::Clamp(const Vector4D& value) const { return value; }
-template<> inline const QAngle& CConVarData<QAngle>::Clamp(const QAngle& value) const { return value; }
 
 //-----------------------------------------------------------------------------
 // Purpose: DLL interface to ConVars/ConCommands
@@ -501,55 +63,192 @@ template<> inline const QAngle& CConVarData<QAngle>::Clamp(const QAngle& value) 
 abstract_class ICvar : public IAppSystem
 {
 public:
-	// bAllowDeveloper - Allows finding convars with FCVAR_DEVELOPMENTONLY flag
-	virtual ConVarHandle	FindConVar( const char *name, bool bAllowDeveloper = false ) = 0;
-	virtual ConVarHandle	FindFirstConVar() = 0;
-	virtual ConVarHandle	FindNextConVar( ConVarHandle prev ) = 0;
-	virtual void			CallChangeCallback( ConVarHandle cvarid, const CSplitScreenSlot nSlot, const CVValue_t* pNewValue, const CVValue_t* pOldValue ) = 0;
+	// allow_defensive - Allows finding convars with FCVAR_DEFENSIVE flag
+	virtual ConVarRef		FindConVar( const char *name, bool allow_defensive = false ) = 0;
+	virtual ConVarRef		FindFirstConVar() = 0;
+	virtual ConVarRef		FindNextConVar( ConVarRef prev ) = 0;
+	virtual void			CallChangeCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t* pNewValue, const CVValue_t* pOldValue ) = 0;
 
-	virtual ConCommandHandle	FindCommand( const char *name ) = 0;
-	virtual ConCommandHandle	FindFirstCommand() = 0;
-	virtual ConCommandHandle	FindNextCommand( ConCommandHandle prev ) = 0;
-	virtual void				DispatchConCommand( ConCommandHandle cmd, const CCommandContext &ctx, const CCommand &args ) = 0;
+	// allow_defensive - Allows finding commands with FCVAR_DEFENSIVE flag
+	virtual ConCommandRef	FindConCommand( const char *name, bool allow_defensive = false ) = 0;
+	virtual ConCommandRef	FindFirstConCommand() = 0;
+	virtual ConCommandRef	FindNextConCommand( ConCommandRef prev ) = 0;
+	virtual void			DispatchConCommand( ConCommandRef cmd, const CCommandContext &ctx, const CCommand &args ) = 0;
 
 	// Install a global change callback (to be called when any convar changes) 
 	virtual void			InstallGlobalChangeCallback( FnChangeCallbackGlobal_t callback ) = 0;
 	virtual void			RemoveGlobalChangeCallback( FnChangeCallbackGlobal_t callback ) = 0;
-	virtual void			CallGlobalChangeCallbacks( BaseConVar* ref, CSplitScreenSlot nSlot, const char* newValue, const char* oldValue ) = 0;
-	// Reverts cvars which contain a specific flag
-	virtual void			RevertFlaggedConVars( int nFlag ) = 0;
+	virtual void			CallGlobalChangeCallbacks( ConVarRefAbstract* ref, CSplitScreenSlot nSlot, const char* newValue, const char* oldValue ) = 0;
+
+	// Reverts cvars to default values which contain a specific flag,
+	// cvars with a flag FCVAR_COMMANDLINE_ENFORCED would be skipped
+	virtual void			ResetConVarsToDefaultValuesByFlag( uint64 nFlag ) = 0;
 
 	virtual void			SetMaxSplitScreenSlots( int nSlots ) = 0;
 	virtual int				GetMaxSplitScreenSlots() const = 0;
 
-	virtual void	RegisterCreationListeners( ICVarListenerCallbacks *callbacks ) = 0;
-	virtual void	RemoveCreationListeners( ICVarListenerCallbacks *callbacks ) = 0;
+	virtual void			RegisterCreationListeners( ICVarListenerCallbacks *callbacks ) = 0;
+	virtual void			RemoveCreationListeners( ICVarListenerCallbacks *callbacks ) = 0;
 
-	virtual void	unk1() = 0;
+	virtual void			unk001() = 0;
 
-	virtual void	ResetConVarsToDefaultValues( const char *pszPrefix ) = 0;
+	// Reverts cvars to default values which match pszPrefix string,
+	// ignores FCVAR_COMMANDLINE_ENFORCED
+	virtual void				ResetConVarsToDefaultValuesByName( const char *pszPrefix ) = 0;
 
 	virtual ConVarSnapshot_t	*TakeConVarSnapshot( void ) = 0;
 	virtual void				ResetConVarsToSnapshot( ConVarSnapshot_t *pSnapshot ) = 0;
-	virtual void				DestroyConVarSnapshot( ConVarSnapshot_t *pSnaoshot ) = 0;
+	virtual void				DestroyConVarSnapshot( ConVarSnapshot_t *pSnapshot ) = 0;
 
-	virtual characterset_t	GetCharacterSet( void ) = 0;
-	virtual void			SetConVarsFromGameInfo( KeyValues *pKV ) = 0;
+	virtual characterset_t		*GetCharacterSet( void ) = 0;
+	virtual void				SetConVarsFromGameInfo( KeyValues *pKV ) = 0;
 
-	virtual void	unk2() = 0;
+	// Removes FCVAR_DEVELOPMENTONLY | FCVAR_DEFENSIVE from all cvars and concommands
+	// that have FCVAR_DEFENSIVE set
+	virtual void				StripDevelopmentFlags() = 0;
 
 	// Register, unregister vars
-	virtual void		RegisterConVar( const ConVarCreation_t& setup, int64 nAdditionalFlags, ConVarHandle* pCvarRef, CConVarBaseData** pCvar ) = 0;
-	virtual void		UnregisterConVar( ConVarHandle handle ) = 0;
-	virtual CConVarBaseData*	GetConVar( ConVarHandle handle ) = 0;
+	virtual void				RegisterConVar( const ConVarCreation_t& setup, uint64 nAdditionalFlags, ConVarRef* pCvarRef, ConVarData** pCvarData ) = 0;
+	// Unregisters convar change callback, but leaves the convar in the lists,
+	// so all ConVarRefs would still be valid as well as searching for it.
+	// Expects ref to have registered index to be set (is set on convar creation)
+	virtual void				UnregisterConVarCallbacks( ConVarRef cvar ) = 0;
+	// Returns convar data or nullptr if not found
+	virtual ConVarData*			GetConVarData( ConVarRef cvar ) = 0;
 
 	// Register, unregister commands
-	virtual ConCommandHandle	RegisterConCommand( const ConCommandCreation_t& setup, int64 nAdditionalFlags = 0 ) = 0;
-	virtual void				UnregisterConCommand( ConCommandHandle handle ) = 0;
-	virtual ConCommand*			GetCommand( ConCommandHandle handle ) = 0;
+	virtual ConCommandRef		RegisterConCommand( const ConCommandCreation_t& setup, uint64 nAdditionalFlags = 0 ) = 0;
+	// Unregisters concommand callbacks, but leaves the command in the lists,
+	// so all ConCommandRefs would still be valid as well as searching for it.
+	// Expects ref to have registered index to be set (is set on command creation)
+	virtual void				UnregisterConCommandCallbacks( ConCommandRef cmd ) = 0;
+	// Returns command info or empty <unknown> command struct if not found, never nullptr
+	virtual ConCommandData*		GetConCommandData( ConCommandRef cmd ) = 0;
 
-	virtual void QueueThreadSetValue( BaseConVar* ref, CSplitScreenSlot nSlot, CVValue_t* value ) = 0;
+	// Queues up value (creates a copy of it) to be set when convar is ready to be edited
+	virtual void				QueueThreadSetValue( ConVarRefAbstract* ref, CSplitScreenSlot nSlot, CVValue_t* value ) = 0;
 };
+
+#include "memdbgon.h"
+
+// AMNOTE: CCvar definition is mostly for reference and is reverse engineered
+// You shouldn't be using this to directly register cvars/concommands, use its interface instead when possible
+class CCvar : public ICvar
+{
+public:
+	static const int kMemoryBufferChunkMaxSize = 8192;
+	static const int kStringBufferChunkMaxSize = 2048;
+
+	// Allocates memory in its internal buffer, can't be freed
+	// (other than freeing internal buffers completely), so is leaky and thus use cautiously
+	// AMNOTE: Mostly used for allocating CVValue_t and ConVarData/ConCommandData objects
+	void *AllocateMemory( int size )
+	{
+		int aligned_size = ALIGN_VALUE( size, 8 );
+		
+		if(aligned_size + m_CurrentMemoryBufferSize > kMemoryBufferChunkMaxSize)
+		{
+			m_CurrentMemoryBufferSize = 0;
+			*m_MemoryBuffer.AddToTailGetPtr() = (uint8 *)malloc( kMemoryBufferChunkMaxSize );
+		}
+
+		int offs = m_CurrentMemoryBufferSize;
+		m_CurrentMemoryBufferSize += aligned_size;
+
+		return &m_MemoryBuffer[m_MemoryBuffer.Count() - 1][offs];
+	}
+
+	// Allocates memory in its internal string buffer, can't be freed
+	// (other than freeing internal buffers completely), so is leaky and thus use cautiously
+	// AMNOTE: Mostly used for allocating cvar/concommand names
+	const char *AllocateString( const char *string )
+	{
+		if(!string || !string[0])
+			return "";
+
+		int strlen = V_strlen( string ) + 1;
+
+		if(strlen + m_CurrentStringsBufferSize > kStringBufferChunkMaxSize)
+		{
+			m_CurrentStringsBufferSize = 0;
+			*m_StringsBuffer.AddToTailGetPtr() = (char *)malloc( kStringBufferChunkMaxSize );
+		}
+
+		int offs = m_CurrentStringsBufferSize;
+		m_CurrentStringsBufferSize += strlen;
+
+		char *base = &m_StringsBuffer[m_StringsBuffer.Count() - 1][offs];
+		V_memmove( base, string, strlen );
+
+		return base;
+	}
+
+	struct CConVarChangeCallbackNode_t
+	{
+		FnGenericChangeCallback_t m_pCallback;
+
+		// Register index of cvar which change cb comes from
+		int m_ConVarIndex;
+	};
+
+	struct ConCommandCallbackInfoNode_t
+	{
+		ConCommandCallbackInfo_t m_CB;
+
+		// Register index of concommand which completion cb comes from
+		int m_ConCmdIndex;
+		// Index in a linkedlist of callbackinfos
+		uint16 m_CallbackInfoIndex;
+	};
+
+	struct QueuedConVarSet_t
+	{
+		ConVarRefAbstract *m_ConVar;
+		CSplitScreenSlot m_Slot;
+		CVValue_t *m_Value;
+	};
+
+	CUtlVector<char *> m_StringsBuffer;
+	CUtlVector<uint8 *> m_MemoryBuffer;
+	int m_CurrentStringsBufferSize;
+	int m_CurrentMemoryBufferSize;
+
+	CUtlLinkedList<ConVarData *> m_ConVarList;
+	CUtlHashtable<CUtlStringToken, uint16> m_ConVarHashes;
+	CUtlLinkedList<CConVarChangeCallbackNode_t> m_ConVarChangeCBList;
+	int m_ConVarCount;
+
+	CUtlVector<ICVarListenerCallbacks *> m_CvarCreationListeners;
+	CUtlVector<FnChangeCallbackGlobal_t> m_GlobalChangeCBList;
+
+	CUtlLinkedList<ConCommandData> m_ConCommandList;
+	CUtlHashtable<CUtlStringToken, uint16> m_ConCommandHashes;
+	CUtlLinkedList<ConCommandCallbackInfoNode_t, unsigned short, true> m_CallbackInfoList;
+	int m_ConCommandCount;
+
+	int m_SplitScreenSlots;
+
+	CThreadMutex m_Mutex;
+	characterset_t m_CharacterSet;
+	KeyValues *m_GameInfoKV;
+
+	uint8 m_CvarDefaultValues[EConVarType_MAX][128];
+
+	CUtlVector<QueuedConVarSet_t> m_SetValueQueue;
+
+	CConCommandMemberAccessor<CCvar> m_FindCmd;
+	CConCommandMemberAccessor<CCvar> m_DumpChannelsCmd;
+	CConCommandMemberAccessor<CCvar> m_LogLevelCmd;
+	CConCommandMemberAccessor<CCvar> m_LogVerbosityCmd;
+	CConCommandMemberAccessor<CCvar> m_LogColorCmd;
+	CConCommandMemberAccessor<CCvar> m_LogFlagsCmd;
+	CConCommandMemberAccessor<CCvar> m_DifferencesCmd;
+	CConCommandMemberAccessor<CCvar> m_CvarListCmd;
+	CConCommandMemberAccessor<CCvar> m_HelpCmd;
+	CConCommandMemberAccessor<CCvar> m_FindFlagsCmd;
+};
+
+#include "memdbgoff.h"
 
 //-----------------------------------------------------------------------------
 // These global names are defined by tier1.h, duplicated here so you

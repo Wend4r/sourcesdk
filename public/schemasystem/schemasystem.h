@@ -180,20 +180,12 @@ public:
 	int m_nNumConnections;
 	CThreadFastMutex m_Mutex;
 
-#ifdef CONVAR_WORK_FINISHED
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaListBindings;
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaAllListBindings;
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaDumpBinding;
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaDetailedClassLayout;
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaStats;
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaMetaStats;
-#else
-#ifdef _WIN32
-	uint8 pad[288];
-#else
-	uint8 pad[384];
-#endif // _WIN32
-#endif // CONVAR_WORK_FINISHED
 	
 	CUtlVector<void*> m_LoadedModules;
 	CUtlVector<DetectedSchemaMismatch_t> m_DetectedSchemaMismatches;
