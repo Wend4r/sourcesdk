@@ -13,6 +13,8 @@
 #include "strtools.h"
 #include "tier0/utlstringtoken.h"
 
+#include <type_traits>
+
 //-----------------------------------------------------------------------------
 // Henry Goffin (henryg) was here. Questions? Bugs? Go slap him around a bit.
 //-----------------------------------------------------------------------------
@@ -47,6 +49,9 @@ struct CTypeEquals<A, B, true, false> : CTypeEquals< const volatile A, const vol
 
 template <typename A, typename B>
 struct CTypeEquals<A, B, false, true> : CTypeEquals< A&, B& > {};
+
+template <typename A>
+constexpr bool CTypePOD = std::is_standard_layout_v<A> && std::is_trivial_v<A>;
 
 // CUtlKeyValuePair is intended for use with key-lookup containers.
 // Because it is specialized for "empty_t" values, one container can

@@ -18,8 +18,8 @@
 
 #include "tier0/characterset.h"
 #include "tier0/dbg.h"
-#include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
+#include "utlcommon.h"
 #include "mathlib/vector4d.h"
 #include "bufferstring.h"
 #include "color.h"
@@ -28,7 +28,6 @@
 
 #include <cstdint>
 #include <cinttypes>
-#include <type_traits>
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -743,7 +742,7 @@ struct CVarTypeTraits
 	{
 		m_TypeName = name;
 		m_ByteSize = sizeof( T );
-		m_IsPrimitive = std::is_pod_v<T>;
+		m_IsPrimitive = CTypePOD<T>;
 
 		Construct = &CvarTypeTrait_ConstructFn<T>;
 		Copy = &CvarTypeTrait_CopyFn<T>;
@@ -1086,7 +1085,7 @@ public:
 	// (which will happen in callbacks), so the solution is to do a static_cast to
 	// CConVarRef<T> yourself on the cvar you receive in a callback and call .Set() on it
 	template <typename T>
-	void SetAs( T value, CSplitScreenSlot slot = -1 );
+	void SetAs( const T &value, CSplitScreenSlot slot = -1 );
 
 	// Attempts to set value as a bool, does type conversion if possible,
 	// if no such action is available for CvarType/bool combo, no action would be done
@@ -1136,7 +1135,7 @@ protected:
 	T ConvertFromPrimitiveTo( CSplitScreenSlot slot ) const;
 	// Does type conversion from type T to CvarType, only valid for primitive types
 	template <typename T>
-	void ConvertToPrimitiveFrom( CSplitScreenSlot slot, T value ) const;
+	void ConvertToPrimitiveFrom( CSplitScreenSlot slot, const T &value ) const;
 
 	// Initialises this cvar, if ref is invalid, ConVarData would be initialised to invalid convar data of a set type
 	void Init( ConVarRef ref, EConVarType type = EConVarType_Invalid );
@@ -1299,7 +1298,7 @@ inline CUtlString ConVarRefAbstract::GetString( CSplitScreenSlot slot ) const
 template<typename T>
 inline T ConVarRefAbstract::ConvertFromPrimitiveTo( CSplitScreenSlot slot ) const
 {
-	if constexpr(std::is_pod_v<T>)
+	if constexpr(CTypePOD<T>)
 	{
 		CVValue_t *value = m_ConVarData->ValueOrDefault( slot );
 
@@ -1339,7 +1338,7 @@ inline void CConVarRef<T>::Set( const T &value, CSplitScreenSlot slot )
 }
 
 template<typename T>
-inline void ConVarRefAbstract::SetAs( T value, CSplitScreenSlot slot )
+inline void ConVarRefAbstract::SetAs( const T &value, CSplitScreenSlot slot )
 {
 	if(GetType() == TranslateConVarType<T>())
 	{
@@ -1359,15 +1358,15 @@ inline void ConVarRefAbstract::SetAs( T value, CSplitScreenSlot slot )
 	}
 }
 
-template<> inline void ConVarRefAbstract::SetAs( CUtlString value, CSplitScreenSlot slot )
+template<> inline void ConVarRefAbstract::SetAs( const CUtlString &value, CSplitScreenSlot slot )
 {
 	SetString( value, slot );
 }
 
 template<typename T>
-inline void ConVarRefAbstract::ConvertToPrimitiveFrom( CSplitScreenSlot slot, T value ) const
+inline void ConVarRefAbstract::ConvertToPrimitiveFrom( CSplitScreenSlot slot, const T &value ) const
 {
-	if constexpr(std::is_pod_v<T>)
+	if constexpr(CTypePOD<T>)
 	{
 		switch(GetType())
 		{
