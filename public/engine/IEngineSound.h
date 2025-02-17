@@ -14,7 +14,7 @@
 
 
 #include "basetypes.h"
-#include "interface.h"
+#include "interfaces/interfaces.h"
 #include "soundflags.h"
 #include "irecipientfilter.h"
 #include "utlvector.h"
