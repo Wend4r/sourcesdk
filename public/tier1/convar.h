@@ -81,30 +81,6 @@ template<> constexpr EConVarType TranslateConVarType<Vector4D>( void )	{ return 
 template<> constexpr EConVarType TranslateConVarType<QAngle>( void )	{ return EConVarType_Qangle; }
 template<> constexpr EConVarType TranslateConVarType<void*>( void )		{ return EConVarType_Invalid; }
 
-constexpr const char* GetConVarTypeName(EConVarType type)
-{
-	switch (type) {
-		case EConVarType_Invalid: return "Invalid";
-		case EConVarType_Bool:    return "Bool";
-		case EConVarType_Int16:   return "Int16";
-		case EConVarType_UInt16:  return "UInt16";
-		case EConVarType_Int32:   return "Int32";
-		case EConVarType_UInt32:  return "UInt32";
-		case EConVarType_Int64:   return "Int64";
-		case EConVarType_UInt64:  return "UInt64";
-		case EConVarType_Float32: return "Float32";
-		case EConVarType_Float64: return "Float64";
-		case EConVarType_String:  return "String";
-		case EConVarType_Color:   return "Color";
-		case EConVarType_Vector2: return "Vector2";
-		case EConVarType_Vector3: return "Vector3";
-		case EConVarType_Vector4: return "Vector4";
-		case EConVarType_Qangle:  return "QAngle";
-		case EConVarType_MAX:     return "MAX";
-		default:                  return "Unknown";
-	}
-}
-
 union CVValue_t
 {
 	static CVValue_t *InvalidValue()
