@@ -969,6 +969,7 @@ public:
 	ConVarRef() : m_ConVarAccessIndex( kInvalidAccessIndex ), m_ConVarRegisteredIndex( 0 ) {}
 	ConVarRef( uint16 convar_idx ) : m_ConVarAccessIndex( convar_idx ), m_ConVarRegisteredIndex( 0 ) {}
 	ConVarRef( uint16 convar_idx, int registered_idx ) : m_ConVarAccessIndex( convar_idx ), m_ConVarRegisteredIndex( registered_idx ) {}
+	ConVarRef( uint64 handle ) : m_Handle( handle ) {}
 
 	ConVarRef( const char *name, bool allow_defensive = false );
 
@@ -977,11 +978,23 @@ public:
 	uint16 GetAccessIndex() const { return m_ConVarAccessIndex; }
 	int GetRegisteredIndex() const { return m_ConVarRegisteredIndex; }
 
+	operator uint64() const
+	{
+		return m_Handle;
+	}
+
 protected:
-	// Index into internal linked list of concommands
-	uint16 m_ConVarAccessIndex;
-	// ConVar registered positional index
-	int m_ConVarRegisteredIndex;
+	union
+	{
+		uint64 m_Handle;
+		struct
+		{
+			// Index into internal linked list of concommands
+			uint16 m_ConVarAccessIndex;
+			// ConVar registered positional index
+			int m_ConVarRegisteredIndex;
+		};
+	};
 };
 
 class ConVarRefAbstract : public ConVarRef
