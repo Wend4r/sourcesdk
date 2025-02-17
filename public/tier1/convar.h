@@ -1001,6 +1001,11 @@ public:
 		Init( *this, type );
 	}
 
+	ConVarRefAbstract( ConVarRef ref, ConVarData *data )
+		: BaseClass( ref ), m_ConVarData( data )
+	{
+	}
+
 	ConVarRefAbstract( const ConVarRefAbstract &ref )
 		: BaseClass(), m_ConVarData( nullptr )
 	{
