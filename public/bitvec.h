@@ -205,31 +205,30 @@ inline int CalcNumIntsForBits( int numBits )	{ return (numBits + (BITS_PER_INT-1
 // http://graphics.stanford.edu/~seander/bithacks.html#PopulationCountSetParallel
 inline uint PopulationCount( uint32 v )
 {
-	uint32 const w = v - ((v >> 1) & 0x55555555);
-	uint32 const x = (w & 0x33333333) + ((w >> 2) & 0x33333333);
-	return ((x + (x >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+	uint32 const w = v - ( ( v >> 1 ) & 0x55555555 );
+	uint32 const x = ( w & 0x33333333 ) + ( ( w >> 2 ) & 0x33333333 );
+	return ( ( (x + ( x >> 4 ) ) & 0xF0F0F0F ) * 0x1010101 ) >> 24;
 }
 
 inline uint PopulationCount( uint64 v )
 {
-	uint64 const w = v - ((v >> 1) & 0x5555555555555555ull);
-	uint64 const x = (w & 0x3333333333333333ull) + ((w >> 2) & 0x3333333333333333ull);
-	return ( ( x + ( x >> 4 ) & 0x0F0F0F0F0F0F0F0Full ) * 0x0101010101010101ull ) >> 56; // [Sergiy] I'm not sure if it's faster to multiply here to reduce the bit sum further first, so feel free to optimize, please
+	uint64 const w = v - ( ( v >> 1 ) & 0x5555555555555555ull );
+	uint64 const x = ( w & 0x3333333333333333ull ) + ( ( w >> 2 ) & 0x3333333333333333ull );
+	return ( ( ( ( x + ( x >> 4 ) ) & 0x0F0F0F0F0F0F0F0Full ) * 0x0101010101010101ull ) >> 56 ); // [Sergiy] I'm not sure if it's faster to multiply here to reduce the bit sum further first, so feel free to optimize, please
 }
 
 inline uint PopulationCount( uint16 v )
 {
-	uint16 const w = v - ((v >> 1) & 0x5555);
-	uint16 const x = (w & 0x3333) + ((w >> 2) & 0x3333);
-	return ( ( x + ( x >> 4 ) & 0x0F0F) * 0x101 ) >> 8;
+	uint16 const w = v - ( ( v >> 1 ) & 0x5555 );
+	uint16 const x = ( w & 0x3333 ) + ( ( w >> 2 ) & 0x3333 );
+	return ( ( (x + ( x >> 4 ) ) & 0x0F0F ) * 0x101 ) >> 8;
 }
-
 
 inline uint PopulationCount( uint8 v )
 {
-	uint8 const w = v - ( ( v >> 1 ) & 0x55);
+	uint8 const w = v - ( ( v >> 1 ) & 0x55 );
 	uint8 const x = ( w & 0x33 ) +  ( ( w >> 2 ) & 0x33 );
-	return x + ( x >> 4 ) & 0x0F;
+	return ( x + ( x >> 4 ) ) & 0x0F;
 }
 
 
