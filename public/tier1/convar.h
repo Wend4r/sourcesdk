@@ -551,7 +551,7 @@ public:
 	const char *GetHelpText() const { return GetRawData()->GetHelpText(); }
 	bool HasHelpText() const { return GetRawData()->HasHelpText(); }
 
-	bool IsFlagSet( uint64 flag ) const { return GetRawData()->GetFlags(); }
+	bool IsFlagSet( uint64 flag ) const { return GetRawData()->IsFlagSet( flag ); }
 	void AddFlags( uint64 flags ) { GetRawData()->AddFlags( flags ); }
 	void RemoveFlags( uint64 flags ) { GetRawData()->RemoveFlags( flags ); }
 	uint64 GetFlags() const { return GetRawData()->GetFlags(); }
