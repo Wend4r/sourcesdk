@@ -969,7 +969,7 @@ public:
 		ResourceHandle_t m_hResource;
 	};
 
-#if CITADEL
+#ifdef CITADEL
 	void *pad[2];
 #endif
 
