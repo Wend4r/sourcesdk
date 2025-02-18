@@ -12,6 +12,7 @@
 #endif
 
 #include "iloopmode.h"
+#include "igamesystemfactory.h"
 
 #include <entity2/entityidentity.h>
 #include <tier0/utlstring.h>
@@ -48,7 +49,6 @@ struct EngineLoopState_t;
 class ISpawnGroupPrerequisiteRegistry;
 class IEntityPrecacheConfiguration;
 struct EntitySpawnInfo_t;
-
 
 #define GS_EVENT_MSG( name ) struct Event##name##_t
 #define GS_EVENT_MSG_CHILD( name, parent ) struct Event##name##_t : Event##parent##_t
@@ -220,6 +220,13 @@ GS_EVENT_MSG( RestoreGame )
 //-----------------------------------------------------------------------------
 abstract_class IGameSystem
 {
+public:
+	struct FactoryInfo_t
+	{
+		CBaseGameSystemFactory *m_pFactory;
+		bool m_bHasBeenAdded;
+	};
+
 public:
 	// Init, shutdown
 	// return true on success. false to abort DLL init!
