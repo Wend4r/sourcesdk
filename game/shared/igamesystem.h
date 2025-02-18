@@ -299,7 +299,7 @@ public:
 	virtual void unk_305( const void *const msg ) = 0;
 	virtual void unk_306( const void *const msg ) = 0;
 
-	virtual const char* GetName() = 0;
+	virtual const char* GetName() const = 0;
 	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;
 	virtual void SetName(const char* pName) = 0;
 	virtual bool DoesGameSystemReallocate() = 0;
@@ -394,7 +394,7 @@ public:
 	virtual void unk_305( const void *const msg ) override {}
 	virtual void unk_306( const void *const msg ) override {}
 
-	virtual const char* GetName() override { return m_pName; }
+	virtual const char* GetName() const override { return m_pName; }
 	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}
 	virtual void SetName(const char* pName) override { m_pName = pName; }
 	virtual bool DoesGameSystemReallocate() override { return false; }
