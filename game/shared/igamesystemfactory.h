@@ -220,6 +220,13 @@ private:
 	U** m_ppGlobalPointer;
 };
 
+struct AddedGameSystem_t
+{
+	IGameSystem *m_pGameSystem;
+	int m_nPriority;
+	int m_nInsertionOrder;
+};
+
 abstract_class IGameSystemEventDispatcher
 {
 public:
@@ -231,5 +238,6 @@ class CGameSystemEventDispatcher : public IGameSystemEventDispatcher
 public:
 	CUtlVector<CUtlVector<IGameSystem*>>* m_funcListeners;
 };
+
 
 #endif // IGAMESYSTEMFACTORY_H
