@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -1158,7 +1158,7 @@ int CProtoSniper::IRelationPriority( CBaseEntity *pTarget )
 		if ( flDistance <= SNIPER_PROTECTION_MINDIST )
  		{
  			float flBonus = (1.0 - (flDistance / SNIPER_PROTECTION_MINDIST)) * SNIPER_PROTECTION_PRIORITYCAP;
-			priority += (int)flBonus;
+			priority += flBonus;
 
 			if ( m_debugOverlays & OVERLAY_NPC_SELECTED_BIT )
 			{
@@ -1439,7 +1439,7 @@ int CProtoSniper::SelectSchedule ( void )
 	if( HasCondition( COND_SNIPER_SWEEP_TARGET ) )
 	{
 		// Sweep a target. Scripted by level designers!
-		if( m_hSweepTarget && m_hSweepTarget->HasSpawnFlags( SF_SNIPERTARGET_NOINTERRUPT ) || m_bSweepHighestPriority )
+		if( ( m_hSweepTarget && m_hSweepTarget->HasSpawnFlags( SF_SNIPERTARGET_NOINTERRUPT ) ) || m_bSweepHighestPriority )
 		{
 			return SCHED_PSNIPER_SWEEP_TARGET_NOINTERRUPT;
 		}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "sdk_basegrenade_projectile.h"
 
-extern ConVar sv_gravity;
+float GetCurrentGravity( void );
 
 
 #ifdef CLIENT_DLL
@@ -120,7 +120,7 @@ END_NETWORK_TABLE()
 			return;
 		}
 
-		CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, (int)GetAbsVelocity().Length( ), 0.2 );
+		CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, GetAbsVelocity().Length( ), 0.2 );
 
 		SetNextThink( gpGlobals->curtime + 0.2 );
 

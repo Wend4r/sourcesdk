@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -18,10 +18,9 @@
 #endif
 
 #include <stdlib.h>
+#include <minmax.h>
 
 #include <math.h>
-
-#include <tier0/basetypes.h>
 
 static int current_ndims;
 static struct QuantizedValue *current_root;
@@ -198,8 +197,8 @@ static void UpdateStats(struct QuantizedValue *v)
 		N+=s->Count;
 		for(j=0;j<current_ndims;j++)
 		{
-			uint8 v=s->Value[j];
-			Means[j]+=v*s->Count;
+			uint8 val=s->Value[j];
+			Means[j]+=val*s->Count;
 		}
 	}
 	for(j=0;j<current_ndims;j++)
@@ -316,7 +315,7 @@ static void SubdivideNode(struct QuantizedValue *n, int whichdim)
 		// extrema instead. LocalMean[i][0] will be the point with the lowest
 		// value on the dimension and LocalMean[i][1] the one with the lowest
 		// value.
-		for(int i=0;i<current_ndims;i++)
+		for(i=0;i<current_ndims;i++)
 		{
 			LocalMean[i][0]=minS->Value[i];
 			LocalMean[i][1]=maxS->Value[i];
@@ -412,8 +411,8 @@ static void Label(struct QuantizedValue *q, int updatecolor)
 		else
 			for(int i=0;i<current_ndims;i++)
 			{
-				q->Mins[i]=MIN(q->Children[0]->Mins[i],q->Children[1]->Mins[i]);
-				q->Maxs[i]=MAX(q->Children[0]->Maxs[i],q->Children[1]->Maxs[i]);
+				q->Mins[i]=min(q->Children[0]->Mins[i],q->Children[1]->Mins[i]);
+				q->Maxs[i]=max(q->Children[0]->Maxs[i],q->Children[1]->Maxs[i]);
 			}
 	}
 }    

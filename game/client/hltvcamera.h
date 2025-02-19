@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include "gameeventlistener.h"
+#include "GameEventListener.h"
 
 class C_HLTVCamera : CGameEventListener
 {
@@ -27,7 +27,8 @@ public:
 	void SetMode(int iMode);
 	void SetChaseCamParams( float flOffset, float flDistance, float flTheta, float flPhi  );
 	void SpecNextPlayer( bool bInverse );
-	void SpecNamedPlayer( const char *szPlayerName );
+	// See UTIL_PlayerByCommandArg for what all might go in here.
+	void SpecPlayerByPredicate( const char *szPlayerSearch );
 	void ToggleChaseAsFirstPerson();
 	bool IsPVSLocked();
 	void SetAutoDirector( bool bActive );

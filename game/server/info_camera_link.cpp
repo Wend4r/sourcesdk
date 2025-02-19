@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -150,8 +150,8 @@ void PointCameraSetupVisibility( CBaseEntity *pPlayer, int area, unsigned char *
 		pCameraEnt->SetActive( false );
 	}
 	
-	int nNext;
-	for ( int i = g_InfoCameraLinkList.Head(); i != g_InfoCameraLinkList.InvalidIndex(); i = nNext )
+	intp nNext;
+	for ( intp i = g_InfoCameraLinkList.Head(); i != g_InfoCameraLinkList.InvalidIndex(); i = nNext )
 	{
 		nNext = g_InfoCameraLinkList.Next( i );
 

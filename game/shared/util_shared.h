@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Shared util code between client and server.
 //
@@ -17,6 +17,7 @@
 #include "engine/IEngineTrace.h"
 #include "engine/IStaticPropMgr.h"
 #include "shared_classnames.h"
+#include "steam/steamuniverse.h"
 
 #ifdef CLIENT_DLL
 #include "cdll_client_int.h"
@@ -107,6 +108,7 @@ inline CBaseEntity *EntityFromEntityHandle( IHandleEntity *pHandleEntity )
 #endif
 }
 
+typedef bool (*ShouldHitFunc_t)( IHandleEntity *pHandleEntity, int contentsMask );
 
 //-----------------------------------------------------------------------------
 // traceline methods
@@ -116,8 +118,8 @@ class CTraceFilterSimple : public CTraceFilter
 public:
 	// It does have a base, but we'll never network anything below here..
 	DECLARE_CLASS_NOBASE( CTraceFilterSimple );
-	
-	CTraceFilterSimple( const IHandleEntity *passentity, int collisionGroup );
+
+	CTraceFilterSimple( const IHandleEntity *passentity, int collisionGroup, ShouldHitFunc_t pExtraShouldHitCheckFn = NULL );
 	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
 	virtual void SetPassEntity( const IHandleEntity *pPassEntity ) { m_pPassEnt = pPassEntity; }
 	virtual void SetCollisionGroup( int iCollisionGroup ) { m_collisionGroup = iCollisionGroup; }
@@ -127,6 +129,8 @@ public:
 private:
 	const IHandleEntity *m_pPassEnt;
 	int m_collisionGroup;
+	ShouldHitFunc_t m_pExtraShouldHitCheckFunction;
+
 };
 
 class CTraceFilterSkipTwoEntities : public CTraceFilterSimple
@@ -302,9 +306,9 @@ inline void UTIL_TraceHull( const Vector &vecAbsStart, const Vector &vecAbsEnd, 
 }
 
 inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask, 
-						  const IHandleEntity *ignore, int collisionGroup, trace_t *ptr )
+						  const IHandleEntity *ignore, int collisionGroup, trace_t *ptr, ShouldHitFunc_t pExtraShouldHitCheckFn = NULL )
 {
-	CTraceFilterSimple traceFilter( ignore, collisionGroup );
+	CTraceFilterSimple traceFilter( ignore, collisionGroup, pExtraShouldHitCheckFn );
 
 	enginetrace->TraceRay( ray, mask, &traceFilter, ptr );
 	
@@ -313,6 +317,7 @@ inline void UTIL_TraceRay( const Ray_t &ray, unsigned int mask,
 		DebugDrawLine( ptr->startpos, ptr->endpos, 255, 0, 0, true, -1.0f );
 	}
 }
+
 
 // Sweeps a particular entity through the world
 void UTIL_TraceEntity( CBaseEntity *pEntity, const Vector &vecAbsStart, const Vector &vecAbsEnd, unsigned int mask, trace_t *ptr );
@@ -355,11 +360,35 @@ void		UTIL_StringToFloatArray( float *pVector, int count, const char *pString );
 void		UTIL_StringToColor32( color32 *color, const char *pString );
 
 CBasePlayer *UTIL_PlayerByIndex( int entindex );
+// Helper for use with console commands and the like.
+// Returns NULL if not found or if the provided arg would match multiple players.
+// Currently accepts, in descending priority:
+//  - Formatted SteamID ([U:1:1234])
+//  - SteamID64 (76561123412341234)
+//  - Legacy SteamID (STEAM_0:1:1234)
+//  - UserID preceded by a pound (#4)
+//  - Partial name match (if unique)
+//  - UserID not preceded by a pound*
+//
+// *Does not count as ambiguous with higher priority items
+CBasePlayer* UTIL_PlayerByCommandArg( const char *arg );
+
+CBasePlayer* UTIL_PlayerByUserId( int userID );
+CBasePlayer* UTIL_PlayerByName( const char *name ); // not case sensitive
+// Finds a player who has this non-ambiguous substring.  Also not case sensitive.
+CBasePlayer* UTIL_PlayerByPartialName( const char *name );
+
+// Get the name of a player for display, filtered for profanity and slurs
+char *UTIL_GetFilteredPlayerName( int iPlayerIndex, char *pszName );
+char *UTIL_GetFilteredPlayerName( const CSteamID &steamID, char *pszName );
+wchar_t *UTIL_GetFilteredPlayerNameAsWChar( int iPlayerIndex, const char *pszName, wchar_t *pwszName );
+wchar_t *UTIL_GetFilteredPlayerNameAsWChar( const CSteamID &steamID, const char *pszName, wchar_t *pwszName );
+
+// Get chat text filtered for profanity and slurs
+char *UTIL_GetFilteredChatText( int iPlayerIndex, char *pszText, int nTextBufferSize );
 
 // decodes a buffer using a 64bit ICE key (inplace)
 void		UTIL_DecodeICE( unsigned char * buffer, int size, const unsigned char *key);
-
-unsigned short UTIL_GetAchievementEventMask( void );	
 
 
 //--------------------------------------------------------------------------------------------------------------
@@ -415,6 +444,75 @@ inline float DistanceToRay( const Vector &pos, const Vector &rayStart, const Vec
 	return range;
 }
 
+
+//--------------------------------------------------------------------------------------------------------------
+/**
+* Macro for creating an interface that when inherited from automatically maintains a list of instances
+* that inherit from that interface.
+*/
+
+// interface for entities that want to a auto maintained global list
+#define DECLARE_AUTO_LIST( interfaceName ) \
+	class interfaceName; \
+	abstract_class interfaceName \
+	{ \
+	public: \
+		interfaceName( bool bAutoAdd = true ); \
+		virtual ~interfaceName(); \
+		static void AddToAutoList( interfaceName *pElement ) { m_##interfaceName##AutoList.AddToTail( pElement ); } \
+		static void RemoveFromAutoList( interfaceName *pElement ) { m_##interfaceName##AutoList.FindAndFastRemove( pElement ); } \
+		static const CUtlVector< interfaceName* >& AutoList( void ) { return m_##interfaceName##AutoList; } \
+	private: \
+		static CUtlVector< interfaceName* > m_##interfaceName##AutoList; \
+	};
+
+// Creates the auto add/remove constructor/destructor...
+// Pass false to the constructor to not auto add
+#define IMPLEMENT_AUTO_LIST( interfaceName ) \
+	CUtlVector< class interfaceName* > interfaceName::m_##interfaceName##AutoList; \
+	interfaceName::interfaceName( bool bAutoAdd ) \
+	{ \
+		if ( bAutoAdd ) \
+		{ \
+			AddToAutoList( this ); \
+		} \
+	} \
+	interfaceName::~interfaceName() \
+	{ \
+		RemoveFromAutoList( this ); \
+	}
+
+//--------------------------------------------------------------------------------------------------------------
+// You can use this if you need an autolist without an extra interface type involved.
+// To use this, just inherit (class Mine : public TAutoList<Mine> {)
+template< class T >
+class TAutoList
+{
+public:
+	typedef CUtlVector< T* > AutoListType;
+
+	static AutoListType &GetAutoList()
+	{
+		return m_autolist;
+	}
+
+protected:
+	TAutoList()
+	{
+		m_autolist.AddToTail( static_cast< T* >( this ) );
+	}
+
+	virtual ~TAutoList()
+	{
+		m_autolist.FindAndFastRemove( static_cast< T* >( this ) );
+	}
+
+private:
+	static AutoListType m_autolist;
+};
+
+template< class T >
+CUtlVector< T* > TAutoList< T >::m_autolist;
 
 //--------------------------------------------------------------------------------------------------------------
 /**
@@ -530,11 +628,69 @@ public:
 private:
 	float m_duration;
 	float m_timestamp;
-	float Now( void ) const;		// work-around since client header doesn't like inlined gpGlobals->curtime
+	virtual float Now( void ) const;		// work-around since client header doesn't like inlined gpGlobals->curtime
 };
 
-const char* ReadAndAllocStringValue( KeyValues *pSub, const char *pName, const char *pFilename = NULL );
+class RealTimeCountdownTimer : public CountdownTimer
+{
+	virtual float Now( void ) const OVERRIDE
+	{
+		return Plat_FloatTime();
+	}
+};
+
+char* ReadAndAllocStringValue( KeyValues *pSub, const char *pName, const char *pFilename = NULL );
 
 int UTIL_StringFieldToInt( const char *szValue, const char **pValueStrings, int iNumStrings );
+
+//-----------------------------------------------------------------------------
+// Holidays
+//-----------------------------------------------------------------------------
+
+// Used at level change and round start to re-calculate which holiday is active
+void				UTIL_CalculateHolidays();
+
+bool				UTIL_IsHolidayActive( /*EHoliday*/ int eHoliday );
+/*EHoliday*/ int	UTIL_GetHolidayForString( const char* pszHolidayName );
+
+// This will return the first active holiday string it can find. In the case of multiple
+// holidays overlapping, the list order will act as priority.
+const char		   *UTIL_GetActiveHolidayString();
+
+const char *UTIL_GetRandomSoundFromEntry( const char* pszEntryName );
+
+/// Clamp and round float vals to int.  The values are in the 0...255 range.
+Color FloatRGBAToColor( float r, float g, float b, float a );
+float LerpFloat( float x0, float x1, float t );
+Color LerpColor( const Color &c0, const Color &c1, float t );
+
+// Global econ-level helper functionality.
+EUniverse GetUniverse();
+
+CSteamID SteamIDFromDecimalString( const char *pszUint64InDecimal );
+
+//-----------------------------------------------------------------------------
+// Try to parse an un-ambiguous steamID from a string
+//
+//  Accepts
+//  - Formatted SteamID ([U:1:1234])
+//  - SteamID64 (76561123412341234)
+//  - Legacy SteamID (STEAM_0:1:1234) (if bAllowSteam2)
+//-----------------------------------------------------------------------------
+CSteamID UTIL_SteamIDFromProperString( const char *pszInputRaw, bool bAllowSteam2 = true );
+
+//-----------------------------------------------------------------------------
+// Try to parse a string referring to a steam account to a CSteamID.
+//
+//   This is intended for fuzzy user input -- NOT guaranteed to find a unique
+//   or un-ambiugous result
+//-----------------------------------------------------------------------------
+CSteamID UTIL_GuessSteamIDFromFuzzyInput( const char *pszInputRaw, bool bCurrentUniverseOnly = true );
+
+// This will return the first active operation string it can find. In the case of multiple
+// operations overlapping, the list order will act as priority.
+const char		   *UTIL_GetActiveOperationString();
+
+const char *GetCleanMapName( const char *pszUnCleanMapName, char (&pszTmp)[256] );
 
 #endif // UTIL_SHARED_H

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -31,9 +31,9 @@ BEGIN_DATADESC( CSatchelCharge )
 	DEFINE_FIELD( m_bIsAttached, FIELD_BOOLEAN ),
 
 	// Function Pointers
-	DEFINE_ENTITYFUNC( SatchelTouch ),
-	DEFINE_THINKFUNC( SatchelThink ),
-	DEFINE_USEFUNC( SatchelUse ),
+	DEFINE_FUNCTION( SatchelTouch ),
+	DEFINE_FUNCTION( SatchelThink ),
+	DEFINE_FUNCTION( SatchelUse ),
 
 END_DATADESC()
 
@@ -61,9 +61,9 @@ void CSatchelCharge::Spawn( void )
 
 	UTIL_SetSize(this, Vector( -6, -6, -2), Vector(6, 6, 2));
 
-	SetTouch( &CSatchelCharge::SatchelTouch );
-	SetUse( &CSatchelCharge::SatchelUse );
-	SetThink( &CSatchelCharge::SatchelThink );
+	SetTouch( SatchelTouch );
+	SetUse( SatchelUse );
+	SetThink( SatchelThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	m_flDamage		= sk_plr_dmg_satchel.GetFloat();
@@ -114,7 +114,7 @@ void CSatchelCharge::KillSlideSound(void)
 void CSatchelCharge::SatchelUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
 	KillSlideSound();
-	SetThink( &CBaseGrenade::Detonate );
+	SetThink( Detonate );
 	SetNextThink( gpGlobals->curtime );
 }
 

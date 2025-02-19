@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -267,7 +267,7 @@ IterationRetval_t CFireSphere::EnumElement( IHandleEntity *pHandleEntity )
 int FireSystem_GetFiresInSphere( CFire **pList, int listMax, bool onlyActiveFires, const Vector &origin, float radius )
 {
 	CFireSphere sphereEnum( pList, listMax, onlyActiveFires, origin, radius );
-	partition->EnumerateElementsInSphere( PARTITION_ENGINE_NON_STATIC_EDICTS, origin, radius, false, &sphereEnum );
+	::partition->EnumerateElementsInSphere( PARTITION_ENGINE_NON_STATIC_EDICTS, origin, radius, false, &sphereEnum );
 
 	return sphereEnum.GetCount();
 }
@@ -980,7 +980,7 @@ void CFire::Update( float simTime )
 	if ( m_flDamageTime <= gpGlobals->curtime )
 	{
 		m_flDamageTime = gpGlobals->curtime + fire_dmginterval.GetFloat();
-		outputDamage = (int)((fire_dmgbase.GetFloat() + outputHeat * fire_dmgscale.GetFloat() * m_flDamageScale) * fire_dmginterval.GetFloat());
+		outputDamage = (fire_dmgbase.GetFloat() + outputHeat * fire_dmgscale.GetFloat() * m_flDamageScale) * fire_dmginterval.GetFloat();
 		if ( outputDamage )
 		{
 			damage = true;
@@ -997,7 +997,7 @@ void CFire::Update( float simTime )
 		}
 		else if ( FClassnameIs( pOther, "env_fire" ) )
 		{
-			if ( fireCount < (int)ARRAYSIZE(pFires) )
+			if ( fireCount < ARRAYSIZE(pFires) )
 			{
 				pFires[fireCount] = (CFire *)pOther;
 				fireCount++;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: The TF Game rules 
 //
@@ -68,9 +68,6 @@ IMPLEMENT_NETWORKCLASS_ALIASED( SDKGameRulesProxy, DT_SDKGameRulesProxy )
 	END_SEND_TABLE()
 #endif
 
-#ifndef CLIENT_DLL
-	ConVar sk_plr_dmg_grenade( "sk_plr_dmg_grenade","0");		
-#endif
 
 #ifdef CLIENT_DLL
 
@@ -84,7 +81,7 @@ IMPLEMENT_NETWORKCLASS_ALIASED( SDKGameRulesProxy, DT_SDKGameRulesProxy )
 	class CVoiceGameMgrHelper : public IVoiceGameMgrHelper
 	{
 	public:
-		virtual bool		CanPlayerHearPlayer( CBasePlayer *pListener, CBasePlayer *pTalker, bool &bProximity )
+		virtual bool		CanPlayerHearPlayer( CBasePlayer *pListener, CBasePlayer *pTalker )
 		{
 			// Dead players can only be heard by other dead team mates
 			if ( pTalker->IsAlive() == false )
@@ -108,7 +105,7 @@ IMPLEMENT_NETWORKCLASS_ALIASED( SDKGameRulesProxy, DT_SDKGameRulesProxy )
 	// --------------------------------------------------------------------------------------------------- //
 
 	// NOTE: the indices here must match TEAM_TERRORIST, TEAM_CT, TEAM_SPECTATOR, etc.
-	const char *sTeamNames[] =
+	char *sTeamNames[] =
 	{
 		"Unassigned",
 		"Spectator",
@@ -134,7 +131,7 @@ IMPLEMENT_NETWORKCLASS_ALIASED( SDKGameRulesProxy, DT_SDKGameRulesProxy )
 	CSDKGameRules::CSDKGameRules()
 	{
 		// Create the team managers
-		for ( int i = 0; i < (int)ARRAYSIZE( sTeamNames ); i++ )
+		for ( int i = 0; i < ARRAYSIZE( sTeamNames ); i++ )
 		{
 			CTeam *pTeam = static_cast<CTeam*>(CreateEntityByName( "sdk_team_manager" ));
 			pTeam->Init( sTeamNames[i], i );
@@ -295,7 +292,7 @@ bool CSDKGameRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 	if ( collisionGroup0 > collisionGroup1 )
 	{
 		// swap so that lowest is always first
-		V_swap(collisionGroup0,collisionGroup1);
+		swap(collisionGroup0,collisionGroup1);
 	}
 	
 	//Don't stand on COLLISION_GROUP_WEAPON
@@ -337,7 +334,6 @@ CAmmoDef* GetAmmoDef()
 		// def.AddAmmoType( BULLET_PLAYER_50AE,		DMG_BULLET, TRACER_LINE, 0, 0, "ammo_50AE_max",		2400, 0, 10, 14 );
 		def.AddAmmoType( AMMO_GRENADE, DMG_BLAST, TRACER_LINE, 0, 0,	1/*max carry*/, 1, 0 );
 		def.AddAmmoType( AMMO_BULLETS, DMG_BULLET, TRACER_LINE, 0, 0,	1/*max carry*/, 1, 0 );
-		def.AddAmmoType( AMMO_GAUSS, DMG_SHOCK,	TRACER_NONE, "sdk_jeep_weapon_damage", "sdk_jeep_weapon_damage", "sdk_jeep_max_rounds", BULLET_IMPULSE(650, 8000), 0 );
 	}
 
 	return &def;

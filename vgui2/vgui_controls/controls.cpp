@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -29,7 +29,7 @@ bool VGui_InitInterfacesList( const char *moduleName, CreateInterfaceFn *factory
 
 	// If you hit this error, then you need to include memoverride.cpp in the project somewhere or else
 	// you'll get crashes later when vgui_controls allocates KeyValues and vgui tries to delete them.
-#if !defined(NO_MALLOC_OVERRIDE)
+#if !defined(NO_MALLOC_OVERRIDE) && defined( WIN32 )
 	if ( _heapmin() != 1 )
 	{
 		Assert( false );
@@ -39,13 +39,6 @@ bool VGui_InitInterfacesList( const char *moduleName, CreateInterfaceFn *factory
 	// keep a record of this module name
 	strncpy(g_szControlsModuleName, moduleName, sizeof(g_szControlsModuleName));
 	g_szControlsModuleName[sizeof(g_szControlsModuleName) - 1] = 0;
-
-	// initialize our locale (must be done for every vgui dll/exe)
-	// "" makes it use the default locale, required to make iswprint() work correctly in different languages
-	setlocale(LC_CTYPE, "");
-	setlocale(LC_TIME, "");
-	setlocale(LC_COLLATE, "");
-	setlocale(LC_MONETARY, "");
 
 	// NOTE: Vgui expects to use these interfaces which are defined in tier3.lib
 	if ( !g_pVGui || !g_pVGuiInput || !g_pVGuiPanel || 

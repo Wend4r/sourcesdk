@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -31,19 +31,16 @@ MEMALLOC_DEFINE_EXTERNAL_TRACKING(CMemoryStack);
 //-----------------------------------------------------------------------------
 
 CMemoryStack::CMemoryStack()
- :	m_pNextAlloc( NULL ),
+ : 	m_pNextAlloc( NULL ),
 	m_pCommitLimit( NULL ),
 	m_pAllocLimit( NULL ),
 	m_pBase( NULL ),
-	m_maxSize( 0 ),
-#if defined (_LINUX) || defined (__APPLE__)
-	m_alignment( 16 )
-#elif defined(_WIN32)
-	m_alignment( 16 ),
+#if defined(_WIN32)
  	m_commitSize( 0 ),
-	m_minCommit( 0 )
+	m_minCommit( 0 ),
 #endif
-
+ 	m_maxSize( 0 ),
+	m_alignment( 16 )
 {
 }
 	

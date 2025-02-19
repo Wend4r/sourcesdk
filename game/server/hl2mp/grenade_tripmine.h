@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -25,8 +25,9 @@ public:
 	void Spawn( void );
 	void Precache( void );
 
+#if 0 // FIXME: OnTakeDamage_Alive() is no longer called now that base grenade derives from CBaseAnimating
 	int OnTakeDamage_Alive( const CTakeDamageInfo &info );
-	
+#endif	
 	void WarningThink( void );
 	void PowerupThink( void );
 	void BeamBreakThink( void );

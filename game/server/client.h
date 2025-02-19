@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -27,6 +27,12 @@ void ClientGamePrecache( void );
 const char *GetGameDescription( void );
 void Host_Say( edict_t *pEdict, bool teamonly );
 
+enum eAllowPointServerCommand {
+	eAllowNever,
+	eAllowOfficial,
+	eAllowAlways
+};
 
+extern eAllowPointServerCommand sAllowPointServerCommand;
 
 #endif		// CLIENT_H

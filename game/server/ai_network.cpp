@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Base combat character with no AI
 //
@@ -47,13 +47,13 @@ public:
 class CNodeFilter : public INodeListFilter
 {
 public:
-	CNodeFilter( CAI_BaseNPC *pNPC, const Vector &pos ) : m_pos(pos), m_pNPC(pNPC) 
+	CNodeFilter( CAI_BaseNPC *pNPC, const Vector &pos ) : m_pNPC(pNPC), m_pos(pos) 
 	{
 		if ( m_pNPC )
 			m_capabilities = m_pNPC->CapabilitiesGet();
 	}
 
-	CNodeFilter( const Vector &pos ) : m_pos(pos), m_pNPC(NULL)
+	CNodeFilter( const Vector &pos ) : m_pNPC(NULL), m_pos(pos) 
 	{
 	}
 
@@ -528,7 +528,7 @@ CAI_Node *CAI_Network::AddNode( const Vector &origin, float yaw )
 
 	if (m_iNumNodes >= MAX_NODES)
 	{
-		DevMsg( "ERROR: too many nodes in map, deleting last node.\n", MAX_NODES );
+		DevMsg( "ERROR: too many nodes in map, deleting last node.\n" );
 		m_iNumNodes--;
 	}
 

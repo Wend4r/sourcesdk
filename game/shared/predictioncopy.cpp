@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,8 +11,7 @@
 
 #if defined( CLIENT_DLL )
 
-#include "IGameSystem.h"
-#include <typeinfo.h>
+#include "igamesystem.h"
 
 #endif
 #include <memory.h>
@@ -125,7 +124,8 @@ void CPredictionCopy::ReportFieldsDiffer( const char *fmt, ... )
 		Msg( "\n" );
 	}
 
-	Msg( "%03i %s::%s - %s",
+	Msg( "[Tick %d] %03i %s::%s - %s",
+		gpGlobals->tickcount,
 		m_nErrorCount,
 		m_pCurrentClassName,
 		fieldname,
@@ -515,17 +515,17 @@ void CPredictionCopy::DescribeQuaternion( difftype_t dt, Quaternion* outValue, c
 
 		for ( int j = 0; j < 4; j++ )
 		{
-			delta[i] = outValue[i][j] - inValue[i][j];
+			delta[j] = outValue[i][j] - inValue[i][j];
 		}
 
 		ReportFieldsDiffer( "quaternion[] differs (1st diff) (net %f %f %f %f - pred %f %f %f %f) delta(%f %f %f %f)\n", 
-			inValue->x, inValue->y, inValue->z, inValue->w,
-			outValue->x, outValue->y, outValue->z, outValue->w,
-			delta.x, delta.y, delta.z, delta.w );
+			(float)inValue[i][0], (float)inValue[i][1], (float)inValue[i][2], (float)inValue[i][3],
+			(float)outValue[i][0], (float)outValue[i][1], (float)outValue[i][2], (float)outValue[i][3],
+			delta[0], delta[1], delta[2], delta[3] );
 	}
 
 	DescribeFields( dt, "quaternion (%f %f %f %f)\n", 
-					outValue->x, outValue->y, outValue->z, outValue->w );
+					(float)outValue[0][0], (float)outValue[0][1], (float)outValue[0][2], (float)outValue[0][3] );
 }
 
 void CPredictionCopy::WatchQuaternion( difftype_t dt, Quaternion& outValue, const Quaternion &inValue )
@@ -533,7 +533,7 @@ void CPredictionCopy::WatchQuaternion( difftype_t dt, Quaternion& outValue, cons
 	if ( m_pWatchField != m_pCurrentField )
 		return;
 
-	WatchMsg( "quaternion (%f %f %f %f)", outValue[0], outValue[1], outValue[2], outValue[3] );
+	WatchMsg( "quaternion (%f %f %f %f)", (float)outValue[0], (float)outValue[1], (float)outValue[2], (float)outValue[3] );
 }
 
 void CPredictionCopy::WatchQuaternion( difftype_t dt, Quaternion* outValue, const Quaternion *inValue, int count )
@@ -655,6 +655,8 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareInt( int *outvalue, const in
 	if ( !m_bErrorCheck )
 		return DIFFERS;
 
+	difftype_t retval = IDENTICAL;
+
 	if ( CanCheck() )
 	{
 		for ( int i = 0; i < count; i++ )
@@ -662,12 +664,21 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareInt( int *outvalue, const in
 			if ( outvalue[ i ] == invalue[ i ] )
 				continue;
 
+			if ( m_pCurrentField->flags & FTYPEDESC_ONLY_ERROR_IF_ABOVE_ZERO_TO_ZERO_OR_BELOW_ETC )
+			{
+				if ( ( outvalue[i] > 0 ) == ( invalue[i] > 0 ) )
+				{
+					retval = WITHINTOLERANCE;
+					continue;
+				}
+			}
+
 			ReportFieldsDiffer( "int differs (net %i pred %i) diff(%i)\n", invalue[i], outvalue[i], outvalue[i] - invalue[i] );
 			return DIFFERS;
 		}
 	}
 
-	return IDENTICAL;
+	return retval;
 }
 
 void CPredictionCopy::CopyBool( difftype_t dt, bool *outvalue, const bool *invalue, int count )
@@ -728,6 +739,15 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareFloat( float *outvalue, cons
 		{
 			if ( outvalue[ i ] == invalue[ i ] )
 				continue;
+
+			if ( m_pCurrentField->flags & FTYPEDESC_ONLY_ERROR_IF_ABOVE_ZERO_TO_ZERO_OR_BELOW_ETC )
+			{
+				if ( ( outvalue[i] > 0.0f ) == ( invalue[i] > 0.0f ) )
+				{
+					retval = WITHINTOLERANCE;
+					continue;
+				}
+			}
 
 			if ( usetolerance &&
 				( fabs( outvalue[ i ] - invalue[ i ] ) <= tolerance ) )
@@ -934,7 +954,7 @@ CPredictionCopy::difftype_t CPredictionCopy::CompareQuaternion( Quaternion* outV
 
 			for ( int j = 0; j < 4; j++ )
 			{
-				delta[i] = outValue[i][j] - inValue[i][j];
+				delta[j] = outValue[i][j] - inValue[i][j];
 			}
 
 			if ( tolerance > 0.0f )
@@ -1261,7 +1281,7 @@ static typedescription_t *FindFieldByName_R( const char *fieldname, datamap_t *d
 			}
 		}
 
-		if ( !stricmp( td->fieldName, fieldname ) )
+		if ( !V_stricmp( td->fieldName, fieldname ) )
 		{
 			return td;
 		}
@@ -1593,7 +1613,7 @@ void CPredictionDescribeData::DescribeQuaternion( const Quaternion *inValue, int
 
 void CPredictionDescribeData::DescribeEHandle( EHANDLE const *invalue, int count )
 {
-	Describe( "EHandle (%p)\n", invalue->Get() );
+	Describe( "EHandle (%p)\n", (void *)invalue[ 0 ] );
 }
 
 void CPredictionDescribeData::DescribeFields_R( int chain_count, datamap_t *pRootMap, typedescription_t *pFields, int fieldCount )

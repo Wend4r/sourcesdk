@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,6 +15,7 @@
 	#include "c_hl2mp_player.h"
 #else
 
+	#include "nav_mesh.h"
 	#include "eventqueue.h"
 	#include "player.h"
 	#include "gamerules.h"
@@ -32,10 +33,6 @@
 	#include "voice_gamemgr.h"
 	#include "hl2mp_gameinterface.h"
 	#include "hl2mp_cvars.h"
-
-#ifdef DEBUG	
-	#include "hl2mp_bot_temp.h"
-#endif
 
 extern void respawn(CBaseEntity *pEdict, bool fCopyCorpse);
 
@@ -175,7 +172,7 @@ static const char *s_PreserveEnts[] =
 #endif
 
 // NOTE: the indices here must match TEAM_TERRORIST, TEAM_CT, TEAM_SPECTATOR, etc.
-const char *sTeamNames[] =
+char *sTeamNames[] =
 {
 	"Unassigned",
 	"Spectator",
@@ -187,7 +184,7 @@ CHL2MPRules::CHL2MPRules()
 {
 #ifndef CLIENT_DLL
 	// Create the team managers
-	for ( size_t i = 0; i < ARRAYSIZE( sTeamNames ); i++ )
+	for ( int i = 0; i < ARRAYSIZE( sTeamNames ); i++ )
 	{
 		CTeam *pTeam = static_cast<CTeam*>(CreateEntityByName( "team_manager" ));
 		pTeam->Init( sTeamNames[i], i );
@@ -205,6 +202,7 @@ CHL2MPRules::CHL2MPRules()
 	m_bCompleteReset = false;
 	m_bHeardAllPlayersReady = false;
 	m_bAwaitingReadyRestart = false;
+	m_bChangelevelDone = false;
 
 #endif
 }
@@ -239,7 +237,7 @@ void CHL2MPRules::CreateStandardEntities( void )
 	g_pLastCombineSpawn = NULL;
 	g_pLastRebelSpawn = NULL;
 
-#ifdef _DEBUG
+#ifdef DBGFLAG_ASSERT
 	CBaseEntity *pEnt = 
 #endif
 	CBaseEntity::Create( "hl2mp_gamerules", vec3_origin, vec3_angle );
@@ -301,7 +299,11 @@ void CHL2MPRules::Think( void )
 		// check to see if we should change levels now
 		if ( m_flIntermissionEndTime < gpGlobals->curtime )
 		{
-			ChangeLevel(); // intermission is over
+			if ( !m_bChangelevelDone )
+			{
+				ChangeLevel(); // intermission is over
+				m_bChangelevelDone = true;
+			}
 		}
 
 		return;
@@ -839,7 +841,11 @@ const char *CHL2MPRules::GetGameDescription( void )
 	return "Deathmatch"; 
 } 
 
-
+bool CHL2MPRules::IsConnectedUserInfoChangeAllowed( CBasePlayer *pPlayer )
+{
+	return true;
+}
+ 
 float CHL2MPRules::GetMapRemainingTime()
 {
 	// if timelimit is disabled, return 0
@@ -860,6 +866,37 @@ void CHL2MPRules::Precache( void )
 {
 	CBaseEntity::PrecacheScriptSound( "AlyxEmp.Charge" );
 }
+
+#ifdef GAME_DLL
+bool CHL2MPRules::IsOfficialMap( void )
+{ 
+	static const char *s_OfficialMaps[] =
+	{
+		"devtest",
+		"dm_lockdown",
+		"dm_overwatch",
+		"dm_powerhouse",
+		"dm_resistance",
+		"dm_runoff",
+		"dm_steamlab",
+		"dm_underpass",
+		"halls3",
+	};
+
+	char szCurrentMap[MAX_MAP_NAME];
+	Q_strncpy( szCurrentMap, STRING( gpGlobals->mapname ), sizeof( szCurrentMap ) );
+
+	for ( int i = 0; i < ARRAYSIZE( s_OfficialMaps ); ++i )
+	{
+		if ( !Q_stricmp( s_OfficialMaps[i], szCurrentMap ) )
+		{
+			return true;
+		}
+	}
+
+	return BaseClass::IsOfficialMap();
+}
+#endif
 
 bool CHL2MPRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 {
@@ -940,32 +977,6 @@ CAmmoDef *GetAmmoDef()
 		"Automatically switch to picked up weapons (if more powerful)" );
 
 #else
-
-#ifdef DEBUG
-
-	// Handler for the "bot" command.
-	void Bot_f()
-	{		
-		// Look at -count.
-		int count = 1;
-		count = clamp( count, 1, 16 );
-
-		int iTeam = TEAM_COMBINE;
-				
-		// Look at -frozen.
-		bool bFrozen = false;
-			
-		// Ok, spawn all the bots.
-		while ( --count >= 0 )
-		{
-			BotPutInServer( bFrozen, iTeam );
-		}
-	}
-
-
-	ConCommand cc_Bot( "bot", Bot_f, "Add a bot.", FCVAR_CHEAT );
-
-#endif
 
 	bool CHL2MPRules::FShouldSwitchWeapon( CBasePlayer *pPlayer, CBaseCombatWeapon *pWeapon )
 	{		
@@ -1049,6 +1060,13 @@ void CHL2MPRules::RestartGame()
 		gameeventmanager->FireEvent( event );
 	}
 }
+
+#ifdef GAME_DLL
+void CHL2MPRules::OnNavMeshLoad( void )
+{
+	TheNavMesh->SetPlayerSpawnName( "info_player_deathmatch" );
+}
+#endif
 
 void CHL2MPRules::CleanUpMap()
 {

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -117,6 +117,9 @@ void ScrollBarSlider::RecomputeNobPosFromValue()
 	float fvalue = (float)(_value - _range[0]);
 	float frangewindow = (float)(_rangeWindow);
 	float fper = ( frange != frangewindow ) ? fvalue / ( frange-frangewindow ) : 0;
+
+//	Msg( "fwide: %f  ftall: %f  frange: %f  fvalue: %f  frangewindow: %f  fper: %f\n",
+//		fwide, ftall, frange, fvalue, frangewindow, fper );
 
 	if ( frangewindow > 0 )
 	{
@@ -243,6 +246,11 @@ void ScrollBarSlider::RecomputeValueFromNobPos()
 
 	// Clamp final result
 	_value = ( _value < (_range[1] - _rangeWindow) ) ? _value : (_range[1] - _rangeWindow);
+
+	if (_value < _range[0])
+	{
+		_value = _range[0];
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -314,7 +322,30 @@ void ScrollBarSlider::ApplySchemeSettings(IScheme *pScheme)
 	SetFgColor(GetSchemeColor("ScrollBarSlider.FgColor", pScheme));
 	SetBgColor(GetSchemeColor("ScrollBarSlider.BgColor", pScheme));
 
-	_ScrollBarSliderBorder = pScheme->GetBorder("ButtonBorder");
+	IBorder *newBorder = pScheme->GetBorder2("ScrollBarSliderBorder");
+
+	if ( newBorder )
+	{
+		_ScrollBarSliderBorder = newBorder;
+	}
+	else
+	{
+		_ScrollBarSliderBorder = pScheme->GetBorder("ButtonBorder");
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void ScrollBarSlider::ApplySettings( KeyValues *pInResourceData )
+{
+	BaseClass::ApplySettings( pInResourceData );
+
+	const char *pButtonBorderName = pInResourceData->GetString( "ButtonBorder", NULL );
+	if ( pButtonBorderName )
+	{
+		_ScrollBarSliderBorder = vgui::scheme()->GetIScheme( GetScheme() )->GetBorder( pButtonBorderName );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -328,29 +359,37 @@ void ScrollBarSlider::Paint()
 	if ( !IsSliderVisible() )	
 		return;
 
+	int nRepeats = Max( QuickPropScale( 1 ), 1 );
 	Color col = GetFgColor();
 	surface()->DrawSetColor(col);
 
 	if (_vertical)
 	{
-		// Nob
-		surface()->DrawFilledRect(0, _nobPos[0], wide - 1, _nobPos[1]);
+		if ( GetPaintBackgroundType() == 2 )
+		{
+			DrawBox( nRepeats, _nobPos[0], wide - nRepeats, _nobPos[1] - _nobPos[0], col, 1.0f );
+		}
+		else
+		{
+			// Nob
+			surface()->DrawFilledRect(0, _nobPos[0], wide - nRepeats, _nobPos[1]);
+		}
 
 		// border
 		if (_ScrollBarSliderBorder)
 		{
-			_ScrollBarSliderBorder->Paint(0, _nobPos[0], wide - 1, _nobPos[1]);
+			_ScrollBarSliderBorder->Paint2(0, _nobPos[0], wide - nRepeats, _nobPos[1], -1, 0, 0, nRepeats );
 		}
 	}
 	else
 	{
 		// horizontal nob
-		surface()->DrawFilledRect(_nobPos[0], 0, _nobPos[1], tall );
+		surface()->DrawFilledRect(_nobPos[0], nRepeats, _nobPos[1], tall - nRepeats * 2 );
 
 		// border
 		if (_ScrollBarSliderBorder)
 		{
-			_ScrollBarSliderBorder->Paint(_nobPos[0] - 1, 1, _nobPos[1], tall );
+			_ScrollBarSliderBorder->Paint2(_nobPos[0] - nRepeats, nRepeats, _nobPos[1], tall, -1, 0, 0, nRepeats );
 		}
 	}
 
@@ -416,7 +455,6 @@ void ScrollBarSlider::OnCursorMoved(int x,int y)
 
 	int wide, tall;
 	GetPaintSize(wide, tall);
-	tall;
 
 	if (_vertical)
 	{

@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -96,6 +96,10 @@ IClientNetworkable* CClientEntityList::GetClientNetworkable( int entnum )
 {
 	Assert( entnum >= 0 );
 	Assert( entnum < MAX_EDICTS );
+	if ( entnum < 0 || entnum >= MAX_EDICTS )
+	{
+		return NULL;
+	}
 	return m_EntityCacheInfo[entnum].m_pNetworkable;
 }
 
@@ -133,7 +137,7 @@ int CClientEntityList::GetMaxEntities( void )
 //-----------------------------------------------------------------------------
 int CClientEntityList::HandleToEntIndex( ClientEntityHandle_t handle )
 {
-	if ( handle == INVALID_EHANDLE_INDEX )
+	if ( handle == INVALID_EHANDLE )
 		return -1;
 	C_BaseEntity *pEnt = GetBaseEntityFromHandle( handle );
 	return pEnt ? pEnt->entindex() : -1; 
@@ -379,6 +383,7 @@ void CClientEntityList::OnRemoveEntity( IHandleEntity *pEnt, CBaseHandle handle 
 	RemovePVSNotifier( pUnknown );
 
 	C_BaseEntity *pBaseEntity = pUnknown->GetBaseEntity();
+
 
 	if ( pBaseEntity )
 	{

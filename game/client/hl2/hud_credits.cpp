@@ -1,13 +1,13 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //=============================================================================//
 
+#include "cbase.h"
 #include "hudelement.h"
 #include "hud_numericdisplay.h"
 #include <vgui_controls/Panel.h>
-#include "cbase.h"
 #include "hud.h"
 #include "hud_suitpower.h"
 #include "hud_macros.h"
@@ -215,8 +215,8 @@ void CHudCredits::ReadNames( KeyValues *pKeyValue )
 	while ( pKVNames )
 	{
 		creditname_t Credits;
-		Q_strcpy( Credits.szCreditName, pKVNames->GetName());
-		Q_strcpy( Credits.szFontName, pKeyValue->GetString( Credits.szCreditName, "Default" ) );
+		V_strcpy_safe( Credits.szCreditName, pKVNames->GetName() );
+		V_strcpy_safe( Credits.szFontName, pKeyValue->GetString( Credits.szCreditName, "Default" ) );
 
 		m_CreditsList.AddToTail( Credits );
 		pKVNames = pKVNames->GetNextKey();

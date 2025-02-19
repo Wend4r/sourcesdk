@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -49,6 +49,7 @@ private:
 	CNetworkVar( float, m_flFogStart );
 	CNetworkVar( float, m_flFogEnd );
 	CNetworkVar( float, m_flFogMaxDensity );
+	CNetworkVar( bool, m_bFogRadial );
 	CNetworkVar( bool, m_bActive );
 	CNetworkVar( bool, m_bUseScreenAspectRatio );
 

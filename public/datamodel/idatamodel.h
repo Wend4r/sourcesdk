@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -90,18 +90,16 @@ enum DmFileId_t
 //-----------------------------------------------------------------------------
 // Handle to an CDmAttribute
 //-----------------------------------------------------------------------------
-enum DmAttributeHandle_t
+enum DmAttributeHandle_t  : intp
 {  
-	DMATTRIBUTE_HANDLE_INVALID = 0xffffffff
+	DMATTRIBUTE_HANDLE_INVALID = (DmAttributeHandle_t)(intp)(~((uintp)(0)))
 };
 
 //-----------------------------------------------------------------------------
 // Handle to an DmAttributeList_t
 //-----------------------------------------------------------------------------
-enum DmAttributeReferenceIterator_t
-{  
-	DMATTRIBUTE_REFERENCE_ITERATOR_INVALID = 0
-};
+typedef uintp DmAttributeReferenceIterator_t;
+#define	DMATTRIBUTE_REFERENCE_ITERATOR_INVALID 0
 
 //-----------------------------------------------------------------------------
 // element framework interface
@@ -196,8 +194,8 @@ public:
 };
 
 // convert legacy elements to non-legacy elements
-// legacy formats include: binary_vN, keyvalues2_v1, keyvalues2_flat_v1, xml, xml_flat
-//   where N is a version number 
+// legacy formats include: sfm_vN, binary_vN, keyvalues2_v1, keyvalues2_flat_v1, xml, xml_flat
+//   where N is a version number (1..9 for sfm, 1..2 for binary)
 class IDmLegacyUpdater
 {
 public:
@@ -209,7 +207,7 @@ public:
 };
 
 // converts old elements to new elements
-// current formats include: animset presets, particle definitions, exported maya character, etc.
+// current formats include: sfm session, animset presets, particle definitions, exported maya character, etc.
 class IDmFormatUpdater
 {
 public:

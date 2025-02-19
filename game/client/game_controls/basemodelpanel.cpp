@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2006, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -90,6 +90,21 @@ void CModelPanel::ApplySettings( KeyValues *inResourceData )
 			ParseModelInfo( pData );
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CModelPanel::OnCommand( const char *command )
+{
+	if (!Q_strnicmp("animation", command, 9))
+	{
+		UpdateModel();
+		SetSequence( command + 9 + 1 );
+		return;
+	}
+
+	BaseClass::OnCommand(command);
 }
 
 //-----------------------------------------------------------------------------
@@ -349,6 +364,23 @@ const char *CModelPanel::GetModelName( void )
 	return m_pModelInfo->m_pszModelName;
 }
 
+void CModelPanel::SetBodyGroup( const char* pszBodyGroupName, int nGroup )
+{
+	if ( !m_pModelInfo )
+		return;
+
+	if ( !m_hModel.Get() )
+		return;
+
+	int nBodyGroupNum = m_hModel->FindBodygroupByName( pszBodyGroupName );
+
+	if ( nBodyGroupNum == -1 )
+		return;
+
+	m_pModelInfo->m_mapBodygroupValues.InsertOrReplace( nBodyGroupNum, nGroup );
+	m_bPanelDirty = true;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -388,6 +420,11 @@ void CModelPanel::SetupModel( void )
 	if ( m_pModelInfo->m_nSkin >= 0 )
 	{
 		pEnt->m_nSkin = m_pModelInfo->m_nSkin;
+	}
+
+	FOR_EACH_MAP_FAST( m_pModelInfo->m_mapBodygroupValues, i )
+	{
+		pEnt->SetBodygroup( m_pModelInfo->m_mapBodygroupValues.Key( i ), m_pModelInfo->m_mapBodygroupValues[ i ] );
 	}
 
 	// do we have any animation information?
@@ -476,20 +513,12 @@ void CModelPanel::InitCubeMaps()
 	}
 }
 
+
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: If the panel is marked as dirty, update it and mark it as clean
 //-----------------------------------------------------------------------------
-void CModelPanel::Paint()
+void CModelPanel::UpdateModel()
 {
-	BaseClass::Paint();
-
-	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
-
-	if ( !pLocalPlayer || !m_pModelInfo )
-		return;
-
-	MDLCACHE_CRITICAL_SECTION();
-
 	if ( m_bPanelDirty )
 	{
 		InitCubeMaps();
@@ -504,6 +533,24 @@ void CModelPanel::Paint()
 
 		m_bPanelDirty = false;
 	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CModelPanel::Paint()
+{
+	BaseClass::Paint();
+
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+
+	if ( !pLocalPlayer || !m_pModelInfo )
+		return;
+
+	MDLCACHE_CRITICAL_SECTION();
+
+	UpdateModel();
 
 	if ( !m_hModel.Get() )
 		return;
@@ -522,7 +569,7 @@ void CModelPanel::Paint()
 	}
 
 	Vector vecExtraModelOffset( 0, 0, 0 );
-	float flWidthRatio = engine->GetScreenAspectRatio() / ( 4.0f / 3.0f );
+	float flWidthRatio = ((float)w / (float)h ) / ( 4.0f / 3.0f );
 
 	// is this a player model?
 	if ( Q_strstr( GetModelName(), "models/player/" ) )
@@ -548,10 +595,16 @@ void CModelPanel::Paint()
 		m_hModel->FrameAdvance( gpGlobals->frametime );
 	}
 
+	CMatRenderContextPtr pRenderContext( materials );
+	
+	// figure out what our viewport is right now
+	int viewportX, viewportY, viewportWidth, viewportHeight;
+	pRenderContext->GetViewport( viewportX, viewportY, viewportWidth, viewportHeight );
+
 	// Now draw it.
 	CViewSetup view;
-	view.x = x + m_pModelInfo->m_vecViewportOffset.x;
-	view.y = y + m_pModelInfo->m_vecViewportOffset.y;
+	view.x = x + m_pModelInfo->m_vecViewportOffset.x + viewportX; // we actually want to offset by the 
+	view.y = y + m_pModelInfo->m_vecViewportOffset.y + viewportY; // viewport origin here because Push3DView expects global coords below
 	view.width = w;
 	view.height = h;
 
@@ -565,7 +618,7 @@ void CModelPanel::Paint()
 	view.zNear = VIEW_NEARZ;
 	view.zFar = 1000;
 
-	CMatRenderContextPtr pRenderContext( materials );
+	
 
 	// Not supported by queued material system - doesn't appear to be necessary
 //	ITexture *pLocalCube = pRenderContext->GetLocalCubemap();
@@ -691,8 +744,22 @@ bool CModelPanel::SetSequence( const char *pszName )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+void CModelPanel::SetSkin( int nSkin )
+{
+	if ( m_pModelInfo )
+	{
+		m_pModelInfo->m_nSkin = nSkin;
+		m_bPanelDirty = true;
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 void CModelPanel::OnSetAnimation( KeyValues *data )
 {
+	UpdateModel();
+
 	// If there's no model, these commands will be ignored.
 	Assert(m_hModel);
 

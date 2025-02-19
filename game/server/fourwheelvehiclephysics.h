@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A base class that deals with four-wheel vehicles
 //
@@ -178,7 +178,7 @@ inline int CFourWheelVehiclePhysics::GetSpeed() const
 
 inline int CFourWheelVehiclePhysics::GetMaxSpeed() const
 {
-	return (int)INS2MPH(m_pVehicle->GetVehicleParams().engine.maxSpeed);
+	return INS2MPH(m_pVehicle->GetVehicleParams().engine.maxSpeed);
 }
 
 inline int CFourWheelVehiclePhysics::GetRPM() const

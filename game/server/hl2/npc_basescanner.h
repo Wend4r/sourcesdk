@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -79,7 +79,7 @@ public:
 	void			Event_Killed( const CTakeDamageInfo &info );
 	int				OnTakeDamage_Alive( const CTakeDamageInfo &info );
 	int				OnTakeDamage_Dying( const CTakeDamageInfo &info );
-	void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+	void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	void			Gib(void);
 
 	void			OnStateChange( NPC_STATE eOldState, NPC_STATE eNewState );
@@ -100,7 +100,7 @@ public:
 	void			DeathSound( const CTakeDamageInfo &info );
 	void			AlertSound( void );
 	void			PainSound( const CTakeDamageInfo &info );
-	virtual const char	*GetScannerSoundPrefix( void ) { return ""; }
+	virtual char	*GetScannerSoundPrefix( void ) { return ""; }
 	void			ScannerEmitSound( const char *pszSoundName );
 
 	int				MeleeAttack1Conditions ( float flDot, float flDist );
@@ -124,7 +124,7 @@ public:
 	void			InputSetDistanceOverride( inputdata_t &inputdata );
 
 protected:
-	virtual const char	*GetEngineSound( void ) { return NULL; }
+	virtual char		*GetEngineSound( void ) { return NULL; }
 	void				PlayFlySound(void);
 
 	void				SetBanking( float flInterval );

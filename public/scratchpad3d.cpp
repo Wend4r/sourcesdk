@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,11 +12,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#if defined _LINUX && !defined __stdcall
-#define __stdcall
-#endif
-
-#ifndef _LINUX
+#ifndef POSIX
 // NOTE - linux doesn't need any of this code!
 
 extern "C"
@@ -421,7 +417,7 @@ void CScratchPad3D::DrawText( const char *pStr, const CTextParams &params )
 	CCommand_Text *cmd = new CCommand_Text;
 	m_Commands.AddToTail( cmd );
 
-	cmd->m_String.CopyArray( pStr, strlen( pStr ) + 1 );
+	cmd->m_String.CopyArray( pStr, V_strlen( pStr ) + 1 );
 	cmd->m_TextParams = params;
 
 	AutoFlush();
@@ -436,7 +432,7 @@ void CScratchPad3D::Clear()
 	{
 #ifdef _WIN32
 		Sleep( 5 );
-#elif _LINUX
+#elif POSIX
 		usleep( 5 );
 #endif
 	}
@@ -455,7 +451,7 @@ void CScratchPad3D::Flush()
 	{
 #ifdef _WIN32
 		Sleep( 5 );
-#elif _LINUX
+#elif POSIX
 		usleep( 5 );
 #endif
 	}
@@ -635,5 +631,5 @@ IScratchPad3D* ScratchPad3D_Create( char const *pFilename )
 	CScratchPad3D *pRet = new CScratchPad3D( pFilename, pFileSystem, true );
 	return pRet;
 }
-#endif // _LINUX
+#endif // POSIX
 

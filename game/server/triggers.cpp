@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Spawn and use functions for editor-placed triggers.
 //
@@ -33,6 +33,7 @@
 #include "ai_behavior_follow.h"
 #include "ai_behavior_lead.h"
 #include "gameinterface.h"
+#include "ilagcompensationmanager.h"
 
 #ifdef HL2_DLL
 #include "hl2_player.h"
@@ -105,6 +106,7 @@ BEGIN_DATADESC( CBaseTrigger )
 	// Inputs	
 	DEFINE_INPUTFUNC( FIELD_VOID, "Enable", InputEnable ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Disable", InputDisable ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "DisableAndEndTouch", InputDisableAndEndTouch ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "Toggle", InputToggle ),
 	DEFINE_INPUTFUNC( FIELD_VOID, "TouchTest", InputTouchTest ),
 
@@ -144,6 +146,29 @@ void CBaseTrigger::InputEnable( inputdata_t &inputdata )
 //------------------------------------------------------------------------------
 void CBaseTrigger::InputDisable( inputdata_t &inputdata )
 { 
+	Disable();
+}
+
+//------------------------------------------------------------------------------
+// Purpose: Input handler to call EndTouch on all touching entities, and then
+//			turn off this trigger
+//------------------------------------------------------------------------------
+void CBaseTrigger::InputDisableAndEndTouch( inputdata_t &inputdata )
+{
+	// EndTouch may delete an arbitrary number of entities from the touch list
+	for ( int i = m_hTouchingEntities.Count() - 1; i >= 0; i = m_hTouchingEntities.Count() - 1 )
+	{
+		if ( m_hTouchingEntities[i] )
+		{
+			EndTouch( m_hTouchingEntities[ i ] );
+			Assert( i > m_hTouchingEntities.Count() - 1 );
+		}
+		else
+		{
+			m_hTouchingEntities.Remove( i );
+		}
+	}
+
 	Disable();
 }
 
@@ -303,6 +328,19 @@ int CBaseTrigger::DrawDebugTextOverlays(void)
 	return text_offset;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Return true if the specified point is within this zone
+//-----------------------------------------------------------------------------
+bool CBaseTrigger::PointIsWithin( const Vector &vecPoint )
+{
+	Ray_t ray;
+	trace_t tr;
+	ICollideable *pCollide = CollisionProp();
+	ray.Init( vecPoint, vecPoint );
+	enginetrace->ClipRayToCollideable( ray, MASK_ALL, pCollide, &tr );
+	return ( tr.startsolid );
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -379,24 +417,37 @@ bool CBaseTrigger::PassesTriggerFilters(CBaseEntity *pOther)
 
 		bool bOtherIsPlayer = pOther->IsPlayer();
 
-		if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_IN_VEHICLES) && bOtherIsPlayer )
+		if ( bOtherIsPlayer )
 		{
-			if ( !((CBasePlayer*)pOther)->IsInAVehicle() )
+			CBasePlayer *pPlayer = (CBasePlayer*)pOther;
+			if ( !pPlayer->IsAlive() )
 				return false;
 
-			// Make sure we're also not exiting the vehicle at the moment
-			IServerVehicle *pVehicleServer = ((CBasePlayer*)pOther)->GetVehicle();
-			if ( pVehicleServer == NULL )
-				return false;
-			
-			if ( pVehicleServer->IsPassengerExiting() )
-				return false;
-		}
+			if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_IN_VEHICLES) )
+			{
+				if ( !pPlayer->IsInAVehicle() )
+					return false;
 
-		if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_OUT_OF_VEHICLES) && bOtherIsPlayer )
-		{
-			if ( ((CBasePlayer*)pOther)->IsInAVehicle() )
-				return false;
+				// Make sure we're also not exiting the vehicle at the moment
+				IServerVehicle *pVehicleServer = pPlayer->GetVehicle();
+				if ( pVehicleServer == NULL )
+					return false;
+
+				if ( pVehicleServer->IsPassengerExiting() )
+					return false;
+			}
+
+			if ( HasSpawnFlags(SF_TRIGGER_ONLY_CLIENTS_OUT_OF_VEHICLES) )
+			{
+				if ( pPlayer->IsInAVehicle() )
+					return false;
+			}
+
+			if ( HasSpawnFlags( SF_TRIGGER_DISALLOW_BOTS ) )
+			{
+				if ( pPlayer->IsFakeClient() )
+					return false;
+			}
 		}
 
 		CBaseFilter *pFilter = m_hFilter.Get();
@@ -448,6 +499,7 @@ void CBaseTrigger::StartTouch(CBaseEntity *pOther)
 		{
 			// First entity to touch us that passes our filters
 			m_OnStartTouchAll.FireOutput( pOther, this );
+			StartTouchAll();
 		}
 	}
 }
@@ -484,6 +536,10 @@ void CBaseTrigger::EndTouch(CBaseEntity *pOther)
 			{
 				m_hTouchingEntities.Remove( i );
 			}
+			else if ( hOther->IsPlayer() && !hOther->IsAlive() )
+			{
+				m_hTouchingEntities.Remove( i );
+			}
 			else
 			{
 				bFoundOtherTouchee = true;
@@ -495,6 +551,7 @@ void CBaseTrigger::EndTouch(CBaseEntity *pOther)
 		if ( !bFoundOtherTouchee /*&& !m_bDisabled*/ )
 		{
 			m_OnEndTouchAll.FireOutput(pOther, this);
+			EndTouchAll();
 		}
 	}
 }
@@ -502,7 +559,7 @@ void CBaseTrigger::EndTouch(CBaseEntity *pOther)
 //-----------------------------------------------------------------------------
 // Purpose: Return true if the specified entity is touching us
 //-----------------------------------------------------------------------------
-bool CBaseTrigger::IsTouching( CBaseEntity *pOther )
+bool CBaseTrigger::IsTouching( const CBaseEntity *pOther ) const
 {
 	EHANDLE hOther;
 	hOther = pOther;
@@ -599,8 +656,8 @@ void CTriggerRemove::Touch( CBaseEntity *pOther )
 BEGIN_DATADESC( CTriggerHurt )
 
 	// Function Pointers
-	DEFINE_FUNCTION( RadiationThink ),
-	DEFINE_FUNCTION( HurtThink ),
+	DEFINE_FUNCTION( CTriggerHurtShim::RadiationThinkShim ),
+	DEFINE_FUNCTION( CTriggerHurtShim::HurtThinkShim ),
 
 	// Fields
 	DEFINE_FIELD( m_flOriginalDamage, FIELD_FLOAT ),
@@ -626,6 +683,7 @@ END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( trigger_hurt, CTriggerHurt );
 
+IMPLEMENT_AUTO_LIST( ITriggerHurtAutoList );
 
 //-----------------------------------------------------------------------------
 // Purpose: Called when spawning, after keyvalues have been handled.
@@ -642,7 +700,7 @@ void CTriggerHurt::Spawn( void )
 	SetThink( NULL );
 	if (m_bitsDamageInflict & DMG_RADIATION)
 	{
-		SetThink ( &CTriggerHurt::RadiationThink );
+		SetThink ( &CTriggerHurtShim::RadiationThinkShim );
 		SetNextThink( gpGlobals->curtime + random->RandomFloat(0.0, 0.5) );
 	}
 }
@@ -686,6 +744,15 @@ void CTriggerHurt::RadiationThink( void )
 bool CTriggerHurt::HurtEntity( CBaseEntity *pOther, float damage )
 {
 	if ( !pOther->m_takedamage || !PassesTriggerFilters(pOther) )
+		return false;
+
+	// If player is disconnected, we're probably in this routine via the
+	//  PhysicsRemoveTouchedList() function to make sure all Untouch()'s are called for the
+	//  player. Calling TakeDamage() in this case can get into the speaking criteria, which
+	//  will then loop through the control points and the touched list again. We shouldn't
+	//  need to hurt players that are disconnected, so skip all of this...
+	bool bPlayerDisconnected = pOther->IsPlayer() && ( ((CBasePlayer *)pOther)->IsConnected() == false );
+	if ( bPlayerDisconnected )
 		return false;
 
 	if ( damage < 0 )
@@ -827,9 +894,27 @@ void CTriggerHurt::Touch( CBaseEntity *pOther )
 {
 	if ( m_pfnThink == NULL )
 	{
-		SetThink( &CTriggerHurt::HurtThink );
+		SetThink( &CTriggerHurtShim::HurtThinkShim );
 		SetNextThink( gpGlobals->curtime );
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Checks if this point is in any trigger_hurt zones with positive damage
+//-----------------------------------------------------------------------------
+bool IsTakingTriggerHurtDamageAtPoint( const Vector &vecPoint )
+{
+	for ( int i = 0; i < ITriggerHurtAutoList::AutoList().Count(); i++ )
+	{
+		// Some maps use trigger_hurt with negative values as healing triggers; don't consider those
+		CTriggerHurt *pTrigger = static_cast<CTriggerHurt*>( ITriggerHurtAutoList::AutoList()[i] );
+		if ( !pTrigger->m_bDisabled && pTrigger->PointIsWithin( vecPoint ) && pTrigger->m_flDamage > 0.f )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 
@@ -1522,6 +1607,7 @@ void CChangeLevel::WarnAboutActiveLead( void )
 void CChangeLevel::ChangeLevelNow( CBaseEntity *pActivator )
 {
 	CBaseEntity	*pLandmark;
+	levellist_t	levels[16];
 
 	Assert(!FStrEq(m_szMapName, ""));
 
@@ -1680,13 +1766,6 @@ int BuildChangeList( levellist_t *pLevelList, int maxList )
 {
 	return CChangeLevel::ChangeList( pLevelList, maxList );
 }
-
-struct collidelist_t
-{
-	const CPhysCollide	*pCollide;
-	Vector			origin;
-	QAngle			angles;
-};
 
 
 // NOTE: This routine is relatively slow.  If you need to use it for per-frame work, consider that fact.
@@ -2234,7 +2313,7 @@ void CTriggerPush::Touch( CBaseEntity *pOther )
 #endif
 
 			Vector vecPush = (m_flPushSpeed * vecAbsDir);
-			if ( pOther->GetFlags() & FL_BASEVELOCITY )
+			if ( ( pOther->GetFlags() & FL_BASEVELOCITY ) && !lagcompensation->IsCurrentlyDoingLagCompensation() )
 			{
 				vecPush = vecPush + pOther->GetBaseVelocity();
 			}
@@ -2274,8 +2353,8 @@ class CTriggerTeleport : public CBaseTrigger
 public:
 	DECLARE_CLASS( CTriggerTeleport, CBaseTrigger );
 
-	void Spawn( void );
-	void Touch( CBaseEntity *pOther );
+	virtual void Spawn( void ) OVERRIDE;
+	virtual void Touch( CBaseEntity *pOther ) OVERRIDE;
 
 	string_t m_iLandmark;
 
@@ -2290,13 +2369,10 @@ BEGIN_DATADESC( CTriggerTeleport )
 
 END_DATADESC()
 
-
-
 void CTriggerTeleport::Spawn( void )
 {
 	InitTrigger();
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Teleports the entity that touched us to the location of our target,
@@ -2378,6 +2454,46 @@ void CTriggerTeleport::Touch( CBaseEntity *pOther )
 
 LINK_ENTITY_TO_CLASS( info_teleport_destination, CPointEntity );
 
+
+//-----------------------------------------------------------------------------
+// Teleport Relative trigger
+//-----------------------------------------------------------------------------
+class CTriggerTeleportRelative : public CBaseTrigger
+{
+public:
+	DECLARE_CLASS(CTriggerTeleportRelative, CBaseTrigger);
+
+	virtual void Spawn( void ) OVERRIDE;
+	virtual void Touch( CBaseEntity *pOther ) OVERRIDE;
+
+	Vector m_TeleportOffset;
+
+	DECLARE_DATADESC();
+};
+
+LINK_ENTITY_TO_CLASS( trigger_teleport_relative, CTriggerTeleportRelative );
+BEGIN_DATADESC( CTriggerTeleportRelative )
+	DEFINE_KEYFIELD( m_TeleportOffset, FIELD_VECTOR, "teleportoffset" )
+END_DATADESC()
+
+
+void CTriggerTeleportRelative::Spawn( void )
+{
+	InitTrigger();
+}
+
+void CTriggerTeleportRelative::Touch( CBaseEntity *pOther )
+{
+	if ( !PassesTriggerFilters(pOther) )
+	{
+		return;
+	}
+
+	const Vector finalPos = m_TeleportOffset + WorldSpaceCenter();
+	const Vector *momentum = &vec3_origin;
+
+	pOther->Teleport( &finalPos, NULL, momentum );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Saves the game when the player touches the trigger. Can be enabled or disabled
@@ -2964,7 +3080,7 @@ void CTriggerCamera::Enable( void )
 			{
 				if ( pOtherCamera == this )
 				{
-					// what the hell do you think you are doing?
+					// what do you think you are doing?
 					Warning("Viewcontrol %s was enabled twice in a row!\n", GetDebugName());
 					return;
 				}
@@ -3021,7 +3137,7 @@ void CTriggerCamera::Enable( void )
 			else
 			{
 				m_iAttachmentIndex = m_hTarget->GetBaseAnimating()->LookupAttachment( STRING(m_iszTargetAttachment) );
-				if ( !m_iAttachmentIndex )
+				if ( m_iAttachmentIndex <= 0 )
 				{
 					Warning("%s could not find attachment %s on target %s.\n", GetClassname(), STRING(m_iszTargetAttachment), STRING(m_hTarget->GetEntityName()) );
 				}
@@ -3123,10 +3239,9 @@ void CTriggerCamera::Disable( void )
 		{
 			((CBasePlayer*)m_hPlayer.Get())->GetActiveWeapon()->RemoveEffects( EF_NODRAW );
 		}
+		//return the player to previous takedamage state
+		m_hPlayer->m_takedamage = m_nOldTakeDamage;
 	}
-
-	//return the player to previous takedamage state
-	m_hPlayer->m_takedamage = m_nOldTakeDamage;
 
 	m_state = USE_OFF;
 	m_flReturnTime = gpGlobals->curtime;
@@ -3414,7 +3529,7 @@ static void PlayCDTrack( int iTrack )
 	// UNDONE: Move this to engine sound
 	if ( iTrack < -1 || iTrack > 30 )
 	{
-		Warning( "TriggerCDAudio - Track %d out of range\n" );
+		Warning( "TriggerCDAudio - Track %d out of range\n", iTrack );
 		return;
 	}
 
@@ -3424,10 +3539,7 @@ static void PlayCDTrack( int iTrack )
 	}
 	else
 	{
-		char string [ 64 ];
-
-		Q_snprintf( string,sizeof(string), "cd play %3d\n", iTrack );
-		engine->ClientCommand ( pClient, string);
+		engine->ClientCommand ( pClient, "cd play %3d\n", iTrack);
 	}
 }
 
@@ -3636,7 +3748,7 @@ void CTriggerProximity::MeasureThink( void )
 //
 // ##################################################################################
 
-#define MAX_WIND_CHANGE		5
+#define MAX_WIND_CHANGE		5.0f
 
 //------------------------------------------------------------------------------
 // Purpose :
@@ -3655,7 +3767,7 @@ public:
 			return IMotionEvent::SIM_NOTHING;
 
 		// Get a cosine modulated noise between 5 and 20 that is object specific
-		int nNoiseMod = 5+(int)pObject%15; // 
+		int nNoiseMod = 5+(int)(intp)pObject%15; // 
 
 		// Turn wind yaw direction into a vector and add noise
 		QAngle vWindAngle = vec3_angle;	
@@ -3764,7 +3876,7 @@ END_DATADESC()
 void CTriggerWind::Spawn( void )
 {
 	m_bSwitch = true;
-	m_nDirBase = (int)GetLocalAngles().y;
+	m_nDirBase = GetLocalAngles().y;
 
 	BaseClass::Spawn();
 
@@ -3887,7 +3999,7 @@ void CTriggerWind::WindThink( void )
 
 		// Set new target direction and speed
 		m_nSpeedTarget = m_nSpeedBase + random->RandomInt( -m_nSpeedNoise, m_nSpeedNoise );
-		m_nDirTarget = (int)UTIL_AngleMod( m_nDirBase + random->RandomInt(-m_nDirNoise, m_nDirNoise) );
+		m_nDirTarget = UTIL_AngleMod( m_nDirBase + random->RandomInt(-m_nDirNoise, m_nDirNoise) );
 	}
 	else
 	{
@@ -3902,7 +4014,7 @@ void CTriggerWind::WindThink( void )
 		if (abs(m_nDirTarget - m_nDirCurrent) > MAX_WIND_CHANGE)
 		{
 
-			m_nDirCurrent = (int)UTIL_ApproachAngle( m_nDirTarget, m_nDirCurrent, MAX_WIND_CHANGE );
+			m_nDirCurrent = UTIL_ApproachAngle( m_nDirTarget, m_nDirCurrent, MAX_WIND_CHANGE );
 			bDone = false;
 		}
 		
@@ -4030,8 +4142,8 @@ END_DATADESC()
 void CTriggerImpact::Spawn( void )
 {	
 	// Clamp date in case user made an error
-	m_flNoise = clamp(m_flNoise,0,1);
-	m_flViewkick = clamp(m_flViewkick,0,1);
+	m_flNoise = clamp(m_flNoise,0.f,1.f);
+	m_flViewkick = clamp(m_flViewkick,0.f,1.f);
 
 	// Always start disabled
 	m_bDisabled = true;
@@ -4665,7 +4777,7 @@ IMotionEvent::simresult_e CTriggerVPhysicsMotion::Simulate( IPhysicsMotionContro
 	if ( HasGravityScale() )
 	{
 		// assume object already has 1.0 gravities applied to it, so apply the additional amount
-		linear.z -= (m_gravityScale-1) * sv_gravity.GetFloat();
+		linear.z -= (m_gravityScale-1) * GetCurrentGravity();
 	}
 
 	if ( HasLinearForce() )
@@ -4787,6 +4899,78 @@ void CServerRagdollTrigger::EndTouch(CBaseEntity *pOther)
 	if ( pCombatChar )
 	{
 		pCombatChar->m_bForceServerRagdoll = false;
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: A trigger that adds impulse to touching entities
+//-----------------------------------------------------------------------------
+class CTriggerApplyImpulse : public CBaseTrigger
+{
+public:
+	DECLARE_CLASS( CTriggerApplyImpulse, CBaseTrigger );
+	DECLARE_DATADESC();
+
+	CTriggerApplyImpulse();
+
+	void Spawn( void );
+
+	void InputApplyImpulse( inputdata_t& );
+
+private:
+	Vector m_vecImpulseDir;
+	float m_flForce;
+};
+
+
+BEGIN_DATADESC( CTriggerApplyImpulse )
+	DEFINE_KEYFIELD( m_vecImpulseDir, FIELD_VECTOR, "impulse_dir" ),
+	DEFINE_KEYFIELD( m_flForce, FIELD_FLOAT, "force" ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "ApplyImpulse", InputApplyImpulse ),
+END_DATADESC()
+
+
+LINK_ENTITY_TO_CLASS( trigger_apply_impulse, CTriggerApplyImpulse );
+
+
+CTriggerApplyImpulse::CTriggerApplyImpulse()
+{
+	m_flForce = 300.f;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CTriggerApplyImpulse::Spawn()
+{
+	// Convert pushdir from angles to a vector
+	Vector vecAbsDir;
+	QAngle angPushDir = QAngle(m_vecImpulseDir.x, m_vecImpulseDir.y, m_vecImpulseDir.z);
+	AngleVectors(angPushDir, &vecAbsDir);
+
+	// Transform the vector into entity space
+	VectorIRotate( vecAbsDir, EntityToWorldTransform(), m_vecImpulseDir );
+
+	BaseClass::Spawn();
+
+	InitTrigger();
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CTriggerApplyImpulse::InputApplyImpulse( inputdata_t& )
+{
+	Vector vecImpulse = m_flForce * m_vecImpulseDir;
+	FOR_EACH_VEC( m_hTouchingEntities, i )
+	{
+		if ( m_hTouchingEntities[i] )
+		{
+			m_hTouchingEntities[i]->ApplyAbsVelocityImpulse( vecImpulse );
+		}
 	}
 }
 

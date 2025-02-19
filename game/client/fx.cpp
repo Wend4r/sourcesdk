@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,16 +12,16 @@
 #include "dlight.h"
 #include "iefx.h"
 #include "clientsideeffects.h"
-#include "ClientEffectPrecacheSystem.h"
+#include "clienteffectprecachesystem.h"
 #include "glow_overlay.h"
 #include "effect_dispatch_data.h"
 #include "c_te_effect_dispatch.h"
 #include "tier0/vprof.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "effect_color_tables.h"
 #include "iviewrender_beams.h"
 #include "view.h"
-#include "ieffects.h"
+#include "IEffects.h"
 #include "fx.h"
 #include "c_te_legacytempents.h"
 #include "toolframework_client.h"
@@ -36,14 +36,18 @@ CLIENTEFFECT_MATERIAL( "effects/muzzleflash1" )
 CLIENTEFFECT_MATERIAL( "effects/muzzleflash2" )
 CLIENTEFFECT_MATERIAL( "effects/muzzleflash3" )
 CLIENTEFFECT_MATERIAL( "effects/muzzleflash4" )
+#ifndef CSTRIKE_DLL
 CLIENTEFFECT_MATERIAL( "effects/bluemuzzle" )
 CLIENTEFFECT_MATERIAL( "effects/gunshipmuzzle" )
 CLIENTEFFECT_MATERIAL( "effects/gunshiptracer" )
+#ifndef HL2MP
 CLIENTEFFECT_MATERIAL( "effects/huntertracer" )
+#endif
 CLIENTEFFECT_MATERIAL( "sprites/physcannon_bluelight2" )
 CLIENTEFFECT_MATERIAL( "effects/combinemuzzle1" )
 CLIENTEFFECT_MATERIAL( "effects/combinemuzzle2" )
 CLIENTEFFECT_MATERIAL( "effects/combinemuzzle2_nocull" )
+#endif
 CLIENTEFFECT_REGISTER_END()
 #endif
 
@@ -112,7 +116,7 @@ void FX_RicochetSound( const Vector& pos )
 bool FX_GetAttachmentTransform( ClientEntityHandle_t hEntity, int attachmentIndex, Vector *origin, QAngle *angles )
 {
 	// Validate our input
-	if ( ( hEntity == INVALID_EHANDLE_INDEX ) || ( attachmentIndex < 1 ) )
+	if ( ( hEntity == INVALID_EHANDLE ) || ( attachmentIndex < 1 ) )
 	{
 		if ( origin != NULL )
 		{
@@ -299,6 +303,12 @@ void FX_MuzzleEffectAttached(
 	bool bOneFrame )
 {
 	VPROF_BUDGET( "FX_MuzzleEffect", VPROF_BUDGETGROUP_PARTICLE_RENDERING );
+
+	// If the material isn't available, let's not do anything.
+	if ( g_Mat_SMG_Muzzleflash[0] == NULL )
+	{
+		return;
+	}
 	
 	CSmartPtr<CLocalSpaceEmitter> pSimple = CLocalSpaceEmitter::Create( "MuzzleFlash", hEntity, attachmentIndex );
 	Assert( pSimple );
@@ -393,7 +403,7 @@ void FX_MuzzleEffectAttached(
 	KeyValues *pInitializers = pEmitter->FindKey( "initializers", true );
 
 	KeyValues *pPosition = pInitializers->FindKey( "DmeLinearAttachedPositionInitializer", true );
-	pPosition->SetPtr( "entindex", (void*)pEnt->entindex() );
+	pPosition->SetPtr( "entindex", (void*)(intp)pEnt->entindex() );
 	pPosition->SetInt( "attachmentIndex", attachmentIndex );
 	pPosition->SetFloat( "linearOffsetX", 2.0f * scale );
 
@@ -510,9 +520,9 @@ CSmartPtr<CSimpleEmitter> FX_Smoke( const Vector &origin, const Vector &velocity
 		pParticle->m_flLifetime = 0.0f;
 		pParticle->m_flDieTime = flDietime;
 		pParticle->m_vecVelocity = velocity;
-		for( int i = 0; i < 3; ++i )
+		for( int j = 0; j < 3; ++j )
 		{
-			pParticle->m_uchColor[i] = pColor[i];
+			pParticle->m_uchColor[j] = pColor[j];
 		}
 		pParticle->m_uchStartAlpha	= iAlpha;
 		pParticle->m_uchEndAlpha	= 0;
@@ -663,10 +673,10 @@ public:
 
 			// Randomize the color a little
 			int color[3][2];
-			for( int i = 0; i < 3; ++i )
+			for( int j = 0; j < 3; ++j )
 			{
-				color[i][0] = MAX( 0, m_SpurtColor[i] - 64 );
-				color[i][1] = MIN( 255, m_SpurtColor[i] + 64 );
+				color[j][0] = MAX( 0, m_SpurtColor[j] - 64 );
+				color[j][1] = MIN( 255, m_SpurtColor[j] + 64 );
 			}
 			pParticle->m_uchColor[0] = random->RandomInt( color[0][0], color[0][1] );
 			pParticle->m_uchColor[1] = random->RandomInt( color[1][0], color[1][1] );
@@ -1077,7 +1087,6 @@ void FX_Tesla( const CTeslaInfo &teslaInfo )
 			{
 				// Move it towards the camera
 				Vector vecFlash = tr.endpos;
-				Vector vecForward;
 				AngleVectors( MainViewAngles(), &vecForward );
 				vecFlash -= (vecForward * 8);
 

@@ -1,16 +1,18 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================//
 
+#ifdef _WIN32
 #include <direct.h>
+#endif
 #include "mathlib/mathlib.h"
 #include "bitmap/tgawriter.h"
 #include "tier1/strtools.h"
 #include "vtf/vtf.h"
-#include "tier1/UtlBuffer.h"
+#include "tier1/utlbuffer.h"
 #include "tier0/dbg.h"
 #include "tier0/icommandline.h"
 #include "tier1/utlbuffer.h"
@@ -37,7 +39,7 @@ static void PFMWrite( float *pFloatImage, const char *pFilename, int width, int 
 
 SpewRetval_t VTF2TGAOutputFunc( SpewType_t spewType, char const *pMsg )
 {
-	printf( pMsg );
+	printf( "%s", pMsg );
 	fflush( stdout );
 
 	if (spewType == SPEW_ERROR)
@@ -108,12 +110,12 @@ int main( int argc, char **argv )
 	}
 
 	fseek( vtfFp, 0, SEEK_END );
-	int srcVTFLength = ftell( vtfFp );
+	int srcVTFLength = (int)ftell( vtfFp );
 	fseek( vtfFp, 0, SEEK_SET );
 
 	CUtlBuffer buf;
 	buf.EnsureCapacity( srcVTFLength );
-	int nBytesRead = fread( buf.Base(), 1, srcVTFLength, vtfFp );
+	int nBytesRead = (int)fread( buf.Base(), 1, srcVTFLength, vtfFp );
 	fclose( vtfFp );
 	buf.SeekPut( CUtlBuffer::SEEK_HEAD, nBytesRead );
 
@@ -133,6 +135,7 @@ int main( int argc, char **argv )
 	Msg( "TEXTUREFLAGS_CLAMPS=%s\n", ( pTex->Flags() & TEXTUREFLAGS_CLAMPS ) ? "true" : "false" );
 	Msg( "TEXTUREFLAGS_CLAMPT=%s\n", ( pTex->Flags() & TEXTUREFLAGS_CLAMPT ) ? "true" : "false" );
 	Msg( "TEXTUREFLAGS_CLAMPU=%s\n", ( pTex->Flags() & TEXTUREFLAGS_CLAMPU ) ? "true" : "false" );
+	Msg( "TEXTUREFLAGS_BORDER=%s\n", ( pTex->Flags() & TEXTUREFLAGS_BORDER ) ? "true" : "false" );
 	Msg( "TEXTUREFLAGS_ANISOTROPIC=%s\n", ( pTex->Flags() & TEXTUREFLAGS_ANISOTROPIC ) ? "true" : "false" );
 	Msg( "TEXTUREFLAGS_HINT_DXT5=%s\n", ( pTex->Flags() & TEXTUREFLAGS_HINT_DXT5 ) ? "true" : "false" );
 	Msg( "TEXTUREFLAGS_SRGB=%s\n", ( pTex->Flags() & TEXTUREFLAGS_SRGB ) ? "true" : "false" );
@@ -186,7 +189,7 @@ int main( int argc, char **argv )
 				for ( int z = 0; z < iDepth; ++z )
 				{
 					// Construct output filename
-					char *pTempNameBuf = (char *)stackalloc( iTGANameLen + 13 );
+					char *pTempNameBuf = new char[iTGANameLen + 13];//(char *)stackalloc( iTGANameLen + 13 );
 					Q_strncpy( pTempNameBuf, pOutFileNameBase, iTGANameLen + 1 );
 					char *pExt = Q_strrchr( pTempNameBuf, '.' );
 					if ( pExt )
@@ -305,6 +308,8 @@ int main( int argc, char **argv )
 					{
 						PFMWrite( ( float * )pDstImage, pTempNameBuf, iWidth, iHeight );
 					}
+
+					delete[] pTempNameBuf;
 				}
 			}
 		}

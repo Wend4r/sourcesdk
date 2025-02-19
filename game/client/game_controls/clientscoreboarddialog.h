@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,7 +13,7 @@
 
 #include <vgui_controls/EditablePanel.h>
 #include <game/client/iviewport.h>
-#include "gameeventlistener.h"
+#include "GameEventListener.h"
 
 #define TYPE_NOTEAM			0	// NOTEAM must be zero :)
 #define TYPE_TEAM			1	// a section for a single team	
@@ -47,7 +47,13 @@ public:
 	virtual bool HasInputElements( void ) { return true; }
 	virtual void ShowPanel( bool bShow );
 
-	virtual bool ShowAvatars() { return IsPC(); }
+	virtual bool ShowAvatars() 
+	{ 
+#ifdef CSS_PERF_TEST
+		return false;
+#endif
+		return IsPC(); 
+	}
 
 	// both vgui::Frame and IViewPortPanel define these, so explicitly define them here as passthroughs to vgui
 	vgui::VPANEL GetVPanel( void ) { return BaseClass::GetVPanel(); }
@@ -58,6 +64,8 @@ public:
 	virtual void FireGameEvent( IGameEvent *event);
 
 	virtual void UpdatePlayerAvatar( int playerIndex, KeyValues *kv );
+
+	virtual GameActionSet_t GetPreferredActionSet() { return GAME_ACTION_SET_NONE;  }
 			
 protected:
 	MESSAGE_FUNC_INT( OnPollHideCode, "PollHideCode", code );
@@ -90,16 +98,18 @@ protected:
 	int s_VoiceImage[5];
 	int TrackerImage;
 	int	m_HLTVSpectators;
+	int m_ReplaySpectators;
 	float m_fNextUpdateTime;
+
+	bool m_bAllowGrowth = true;
 
 	void MoveLabelToFront(const char *textEntryName);
 	void MoveToCenterOfScreen();
 
 	vgui::ImageList				*m_pImageList;
-	int							m_iImageAvatars[MAX_PLAYERS+1];
-	CUtlMap<int,int>			m_mapAvatarsToImageList;
+	CUtlMap<CSteamID,int>		m_mapAvatarsToImageList;
 
-	CPanelAnimationVarAliasType( int, m_iAvatarWidth, "avatar_width", "34", "proportional_int" );
+	CPanelAnimationVarAliasType( int, m_iAvatarWidth, "avatar_width", "18", "proportional_int" );
 	CPanelAnimationVarAliasType( int, m_iNameWidth, "name_width", "136", "proportional_int" );
 	CPanelAnimationVarAliasType( int, m_iClassWidth, "class_width", "35", "proportional_int" );
 	CPanelAnimationVarAliasType( int, m_iScoreWidth, "score_width", "35", "proportional_int" );

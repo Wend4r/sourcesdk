@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -114,6 +114,7 @@ public:
 	bool	m_bDoorGroup;
 	bool	m_bLocked;				// Whether the door is locked
 	bool	m_bIgnoreDebris;
+	bool	m_bIgnoreNonPlayerEntsOnBlock;	// Non-player entities should never block.  This variable needs more letters.
 	
 	FuncDoorSpawnPos_t m_eSpawnPosition;
 
@@ -148,6 +149,8 @@ public:
 	
 	bool		ShouldLoopMoveSound( void ) { return m_bLoopMoveSound; }
 	bool		m_bLoopMoveSound;			// Move sound loops until stopped
+
+	virtual bool ShouldBlockNav() const OVERRIDE { return false; }
 
 private:
 	void ChainUse( void );	///< Chains +use on through to m_ChainTarget

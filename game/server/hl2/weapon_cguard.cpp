@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Combine guard gun, strider destroyer
 //
@@ -122,8 +122,8 @@ public:
 		TE_ConcussiveExplosion( filter, 0.0,
 			&GetAbsOrigin(),//position
 			1.0f,	//scale
-			(int)(256*magnitude),	//radius
-			(int)(175*magnitude),	//magnitude
+			256*magnitude,	//radius
+			175*magnitude,	//magnitude
 			&vecForward );	//normal
 		
 		int	colorRamp = random->RandomInt( 128, 255 );

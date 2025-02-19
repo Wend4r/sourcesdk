@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -28,6 +28,7 @@ enum LightType_OptimizationFlags_t
 	LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION0 = 1,
 	LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION1 = 2,
 	LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION2 = 4,
+	LIGHTTYPE_OPTIMIZATIONFLAGS_DERIVED_VALUES_CALCED = 8,
 };
 
 struct LightDesc_t 
@@ -57,9 +58,7 @@ public:
 
 	void RecalculateDerivedValues(void);			 // calculate m_xxDot, m_Type for changed parms
 
-	LightDesc_t(void)
-	{
-	}
+	LightDesc_t() = default;
 
 	// constructors for various useful subtypes
 
@@ -101,6 +100,11 @@ public:
 	bool IsDirectionWithinLightCone(const Vector &rdir) const
 	{
 		return ((m_Type!=MATERIAL_LIGHT_SPOT) || (rdir.Dot(m_Direction)>=m_PhiDot));
+	}
+
+	float OneOverThetaDotMinusPhiDot() const
+	{
+		return OneOver_ThetaDot_Minus_PhiDot;
 	}
 };
 

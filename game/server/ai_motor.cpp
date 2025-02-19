@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -34,18 +34,14 @@ void DebugNoteMovementFailure()
 }
 
 // a place to put breakpoints
-#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4189)
-#endif
 AIMoveResult_t DbgResult( AIMoveResult_t result )
 {
-#ifdef _MSC_VER
 	if ( result < AIMR_OK )
 	{
-		//int breakHere = 1;
+		int breakHere = 1;
 	}
-#endif
 
 	switch ( result )
 	{
@@ -170,7 +166,7 @@ AIMotorMoveResult_t CAI_Motor::MoveGroundStep( const Vector &newPos, CBaseEntity
 		// skip tiny steps, but notify the shadow object of any large steps
 		if ( moveTrace.flStepUpDistance > 0.1f )
 		{
-			float height = clamp( moveTrace.flStepUpDistance, 0, StepHeight() );
+			float height = clamp( moveTrace.flStepUpDistance, 0.f, StepHeight() );
 			IPhysicsObject *pPhysicsObject = GetOuter()->VPhysicsGetObject();
 			if ( pPhysicsObject )
 			{
@@ -751,11 +747,10 @@ void CAI_Motor::UpdateYaw( int yawSpeed )
 
 	GetOuter()->SetUpdatedYaw();
 
-	float yaw = static_cast<float>(yawSpeed);
 	float ideal, current, newYaw;
 	
-	if ( yaw == -1.0f )
-		yaw = GetYawSpeed();
+	if ( yawSpeed == -1 )
+		yawSpeed = GetYawSpeed();
 
 	// NOTE: GetIdealYaw() will never exactly be reached because UTIL_AngleMod
 	// also truncates the angle to 16 bits of resolution. So lets truncate it here.
@@ -765,7 +760,7 @@ void CAI_Motor::UpdateYaw( int yawSpeed )
 	// FIXME: this needs a proper interval
 	float dt = MIN( 0.2, gpGlobals->curtime - GetLastThink() );
 	
-	newYaw = AI_ClampYaw( yaw * 10.0f, current, ideal, dt );
+	newYaw = AI_ClampYaw( (float)yawSpeed * 10.0, current, ideal, dt );
 		
 	if (newYaw != current)
 	{
@@ -913,7 +908,7 @@ AIMoveResult_t CAI_Motor::MoveNormalExecute( const AILocalMoveGoal_t &move )
 		AIMR_BLOCKED_WORLD,                      // AIM_PARTIAL_HIT_WORLD
 		AIMR_BLOCKED_WORLD,                      // AIM_PARTIAL_HIT_TARGET
 	};
-	Assert( (AIMotorMoveResult_t)ARRAYSIZE( moveResults ) == AIM_NUM_RESULTS && fMotorResult >= 0 && fMotorResult <= (AIMotorMoveResult_t)ARRAYSIZE( moveResults ) );
+	Assert( ARRAYSIZE( moveResults ) == AIM_NUM_RESULTS && fMotorResult >= 0 && fMotorResult <= ARRAYSIZE( moveResults ) );
 	
 	AIMoveResult_t result = moveResults[fMotorResult];
 	

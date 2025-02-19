@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -76,7 +76,7 @@ public:
 	static void ShutdownAllSystems();
 	static void LevelInitPreEntityAllSystems( char const* pMapName );
 	static void LevelInitPostEntityAllSystems();
-	static void LevelShutdownPreClearSteamAPIContextAllSystems();
+	static void LevelShutdownPreClearSteamAPIContextAllSystems(); // Called prior to steamgameserverapicontext->Clear()
 	static void LevelShutdownPreEntityAllSystems();
 	static void LevelShutdownPostEntityAllSystems();
 

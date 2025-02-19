@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Player for HL1.
 //
@@ -15,8 +15,7 @@
 
 extern int gEvilImpulse101;
 
-// Linux compile needs this
-extern void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
+ConVar sv_motd_unload_on_dismissal( "sv_motd_unload_on_dismissal", "0", 0, "If enabled, the MOTD contents will be unloaded when the player closes the MOTD." );
 
 #define SDK_PLAYER_MODEL "models/player/terror.mdl"
 
@@ -60,41 +59,19 @@ void TE_PlayerAnimEvent( CBasePlayer *pPlayer, PlayerAnimEvent_t event, int nDat
 	g_TEPlayerAnimEvent.Create( filter, 0 );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Filters updates to a variable so that only non-local players see
-// the changes.  This is so we can send a low-res origin to non-local players
-// while sending a hi-res one to the local player.
-// Input  : *pVarData - 
-//			*pOut - 
-//			objectID - 
-//-----------------------------------------------------------------------------
-
-void* SendProxy_SendNonLocalDataTable( const SendProp *pProp, const void *pStruct, const void *pVarData, CSendProxyRecipients *pRecipients, int objectID )
-{
-	pRecipients->SetAllRecipients();
-	pRecipients->ClearRecipient( objectID - 1 );
-	return ( void * )pVarData;
-}
-REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendNonLocalDataTable );
-
 // -------------------------------------------------------------------------------- //
 // Tables.
 // -------------------------------------------------------------------------------- //
+BEGIN_DATADESC( CSDKPlayer )
+DEFINE_THINKFUNC( SDKPushawayThink ),
+END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( player, CSDKPlayer );
 PRECACHE_REGISTER(player);
 
 BEGIN_SEND_TABLE_NOBASE( CSDKPlayer, DT_SDKLocalPlayerExclusive )
 	SendPropInt( SENDINFO( m_iShotsFired ), 8, SPROP_UNSIGNED ),
-	// send a hi-res origin to the local player for use in prediction
-	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_NOSCALE|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
 END_SEND_TABLE()
-
-BEGIN_SEND_TABLE_NOBASE( CSDKPlayer, DT_SDKNonLocalPlayerExclusive )
-	// send a lo-res origin to other players
-	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD_MP_LOWPRECISION|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
-END_SEND_TABLE()
-
 
 IMPLEMENT_SERVERCLASS_ST( CSDKPlayer, DT_SDKPlayer )
 	SendPropExclude( "DT_BaseAnimating", "m_flPoseParameter" ),
@@ -102,7 +79,6 @@ IMPLEMENT_SERVERCLASS_ST( CSDKPlayer, DT_SDKPlayer )
 	SendPropExclude( "DT_BaseAnimating", "m_nSequence" ),
 	SendPropExclude( "DT_BaseEntity", "m_angRotation" ),
 	SendPropExclude( "DT_BaseAnimatingOverlay", "overlay_vars" ),
-	SendPropExclude( "DT_BaseEntity", "m_vecOrigin" ),
 	
 	// playeranimstate and clientside animation takes care of these on the client
 	SendPropExclude( "DT_ServerAnimationData" , "m_flCycle" ),	
@@ -110,10 +86,9 @@ IMPLEMENT_SERVERCLASS_ST( CSDKPlayer, DT_SDKPlayer )
 
 	// Data that only gets sent to the local player.
 	SendPropDataTable( "sdklocaldata", 0, &REFERENCE_SEND_TABLE(DT_SDKLocalPlayerExclusive), SendProxy_SendLocalDataTable ),
-	SendPropDataTable( "sdknonlocaldata", 0, &REFERENCE_SEND_TABLE(DT_SDKNonLocalPlayerExclusive), SendProxy_SendNonLocalDataTable ),
 
-	SendPropAngle( SENDINFO_VECTORELEM2(m_angEyeAngles, 0, x), 11 ),
-	SendPropAngle( SENDINFO_VECTORELEM2(m_angEyeAngles, 1, y), 11 ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angEyeAngles, 0), 11 ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angEyeAngles, 1), 11 ),
 	SendPropEHandle( SENDINFO( m_hRagdoll ) ),
 
 	SendPropInt( SENDINFO( m_iThrowGrenadeCounter ), THROWGRENADE_COUNTER_BITS, SPROP_UNSIGNED ),
@@ -264,7 +239,8 @@ void CSDKPlayer::InitialSpawn( void )
 	data->SetString( "title", title );		// info panel title
 	data->SetString( "type", "1" );			// show userdata from stringtable entry
 	data->SetString( "msg",	"motd" );		// use this stringtable entry
-	data->SetString( "cmd", "impulse 101" );// exec this command if panel closed
+	data->SetInt( "cmd", TEXTWINDOW_CMD_IMPULSE101 );// exec this command if panel closed
+	data->SetBool( "unload", sv_motd_unload_on_dismissal.GetBool() );
 
 	ShowViewPortPanel( PANEL_INFO, true, data );
 

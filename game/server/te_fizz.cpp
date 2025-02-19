@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -68,7 +68,7 @@ CTEFizz::~CTEFizz( void )
 void CTEFizz::Test( const Vector& current_origin, const QAngle& current_angles )
 {
 	// Fill in data
-	m_nModelIndex = CBaseEntity::PrecacheModel( "sprites/bubble.vmt" );;
+	m_nModelIndex = CBaseEntity::PrecacheModel( "sprites/bubble.vmt" );
 	m_nDensity = 200;
 	m_nEntity = 1;
 	m_nCurrent = 100;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -376,7 +376,7 @@ void CNPC_Launcher::LauncherThink( void )
 		// Otherwise look for enemy to fire at
 		else
 		{
-			GetSenses()->Look((int)m_flMaxAttackDist);
+			GetSenses()->Look(m_flMaxAttackDist);
 			CBaseEntity* pBestEnemy = BestEnemy();
 
 			if (pBestEnemy)

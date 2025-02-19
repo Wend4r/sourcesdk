@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -169,7 +169,7 @@ void CEnvTonemapController::InputSetBloomScaleRange( inputdata_t &inputdata )
 		return;
 	}
 	m_flCustomBloomScale=bloom_max;
-	m_flCustomBloomScale=bloom_min;
+	m_flCustomBloomScaleMinimum=bloom_min;
 }
 
 //-----------------------------------------------------------------------------

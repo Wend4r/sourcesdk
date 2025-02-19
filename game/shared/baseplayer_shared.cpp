@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements shared baseplayer class functionality
 //
@@ -9,6 +9,9 @@
 #include "movevars_shared.h"
 #include "util_shared.h"
 #include "datacache/imdlcache.h"
+#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
+#include "tf_gamerules.h"
+#endif
 
 #if defined( CLIENT_DLL )
 
@@ -17,8 +20,9 @@
 	#include "c_basedoor.h"
 	#include "c_world.h"
 	#include "view.h"
-
+	#include "client_virtualreality.h"
 	#define CRecipientFilter C_RecipientFilter
+	#include "sourcevr/isourcevirtualreality.h"
 
 #else
 
@@ -33,13 +37,22 @@
 	
 #endif
 
+#if defined( CSTRIKE_DLL )
+#include "weapon_c4.h"
+#endif // CSTRIKE_DLL
+
 #include "in_buttons.h"
 #include "engine/IEngineSound.h"
 #include "tier0/vprof.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "decals.h"
 #include "obstacle_pushaway.h"
+#ifdef SIXENSE
+#include "sixense/in_sixense.h"
+#endif
 
+// NVNT haptic utils
+#include "haptics/haptic_utils.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -63,6 +76,12 @@
 			if ( !pEntity->VPhysicsGetObject() )
 				return false;
 
+#if defined( CSTRIKE_DLL )
+			// don't push the bomb!
+			if ( dynamic_cast<CC4*>( pEntity ) )
+				return false;
+#endif // CSTRIKE_DLL
+
 			return g_pGameRules->CanEntityBeUsePushed( pEntity );
 		}
 	};
@@ -74,14 +93,47 @@ ConVar mp_usehwmmodels( "mp_usehwmmodels", "0", NULL, "Enable the use of the hw 
 
 bool UseHWMorphModels()
 {
-#ifdef CLIENT_DLL 
-	if ( mp_usehwmmodels.GetInt() == 0 )
-		return g_pMaterialSystemHardwareConfig->HasFastVertexTextures();
-
-	return mp_usehwmmodels.GetInt() > 0;
-#else
+// #ifdef CLIENT_DLL 
+// 	if ( mp_usehwmmodels.GetInt() == 0 )
+// 		return g_pMaterialSystemHardwareConfig->HasFastVertexTextures();
+// 
+// 	return mp_usehwmmodels.GetInt() > 0;
+// #else
+// 	return false;
+// #endif
 	return false;
-#endif
+}
+
+void CopySoundNameWithModifierToken( char *pchDest, const char *pchSource, int nMaxLenInChars, const char *pchToken )
+{
+	// Copy the sound name
+	int nSource = 0;
+	int nDest = 0;
+	bool bFoundPeriod = false;
+
+	while ( pchSource[ nSource ] != '\0' && nDest < nMaxLenInChars - 2 )
+	{
+		pchDest[ nDest ] = pchSource[ nSource ];
+		nDest++;
+		nSource++;
+
+		if ( !bFoundPeriod && pchSource[ nSource - 1 ] == '.' )
+		{
+			// Insert special token after the period
+			bFoundPeriod = true;
+
+			int nToken = 0;
+
+			while ( pchToken[ nToken ] != '\0' && nDest < nMaxLenInChars - 2 )
+			{
+				pchDest[ nDest ] = pchToken[ nToken ];
+				nDest++;
+				nToken++;
+			}
+		}
+	}
+
+	pchDest[ nDest ] = '\0';
 }
 
 //-----------------------------------------------------------------------------
@@ -91,6 +143,16 @@ bool UseHWMorphModels()
 float CBasePlayer::GetTimeBase( void ) const
 {
 	return m_nTickBase * TICK_INTERVAL;
+}
+
+float CBasePlayer::GetPlayerMaxSpeed()
+{
+	// player max speed is the lower limit of m_flMaxSpeed and sv_maxspeed
+	float fMaxSpeed = sv_maxspeed.GetFloat();
+	if ( MaxSpeed() > 0.0f && MaxSpeed() < fMaxSpeed )
+		fMaxSpeed = MaxSpeed();
+
+	return fMaxSpeed;
 }
 
 //-----------------------------------------------------------------------------
@@ -280,7 +342,7 @@ Vector CBasePlayer::EyePosition( )
 #ifdef CLIENT_DLL
 		if ( IsObserver() )
 		{
-			if ( m_iObserverMode == OBS_MODE_CHASE )
+			if ( GetObserverMode() == OBS_MODE_CHASE || GetObserverMode() == OBS_MODE_POI )
 			{
 				if ( IsLocalPlayer() )
 				{
@@ -303,17 +365,17 @@ const Vector CBasePlayer::GetPlayerMins( void ) const
 {
 	if ( IsObserver() )
 	{
-		return VEC_OBS_HULL_MIN;	
+		return VEC_OBS_HULL_MIN_SCALED( this );	
 	}
 	else
 	{
 		if ( GetFlags() & FL_DUCKING )
 		{
-			return VEC_DUCK_HULL_MIN;
+			return VEC_DUCK_HULL_MIN_SCALED( this );
 		}
 		else
 		{
-			return VEC_HULL_MIN;
+			return VEC_HULL_MIN_SCALED( this );
 		}
 	}
 }
@@ -327,17 +389,17 @@ const Vector CBasePlayer::GetPlayerMaxs( void ) const
 {	
 	if ( IsObserver() )
 	{
-		return VEC_OBS_HULL_MAX;	
+		return VEC_OBS_HULL_MAX_SCALED( this );	
 	}
 	else
 	{
 		if ( GetFlags() & FL_DUCKING )
 		{
-			return VEC_DUCK_HULL_MAX;
+			return VEC_DUCK_HULL_MAX_SCALED( this );
 		}
 		else
 		{
-			return VEC_HULL_MAX;
+			return VEC_HULL_MAX_SCALED( this );
 		}
 	}
 }
@@ -364,6 +426,23 @@ void CBasePlayer::CacheVehicleView( void )
 		// Get our view for this frame
 		pVehicle->GetVehicleViewPosition( nRole, &m_vecVehicleViewOrigin, &m_vecVehicleViewAngles, &m_flVehicleViewFOV );
 		m_nVehicleViewSavedFrame = gpGlobals->framecount;
+
+#ifdef CLIENT_DLL
+		if( UseVR() )
+		{
+			C_BaseAnimating *pVehicleAnimating = dynamic_cast<C_BaseAnimating *>( pVehicle );
+			if( pVehicleAnimating )
+			{
+				int eyeAttachmentIndex = pVehicleAnimating->LookupAttachment( "vehicle_driver_eyes" );
+
+				Vector vehicleEyeOrigin;
+				QAngle vehicleEyeAngles;
+				pVehicleAnimating->GetAttachment( eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles );
+
+				g_ClientVirtualReality.OverrideTorsoTransform( vehicleEyeOrigin, vehicleEyeAngles );
+			}
+		}
+#endif
 	}
 }
 
@@ -501,7 +580,11 @@ void CBasePlayer::UpdateStepSound( surfacedata_t *psurface, const Vector &vecOri
 
 		SetStepSoundTime( STEPSOUNDTIME_ON_LADDER, bWalking );
 	}
+#ifdef CSTRIKE_DLL
+	else if ( enginetrace->GetPointContents( knee ) & MASK_WATER )  // we want to use the knee for Cstrike, not the waist
+#else
 	else if ( GetWaterLevel() == WL_Waist )
+#endif // CSTRIKE_DLL
 	{
 		static int iSkipStep = 0;
 
@@ -613,8 +696,11 @@ void CBasePlayer::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, flo
 	}
 	else
 	{
-		IPhysicsSurfaceProps *physprops = MoveHelper()->GetSurfaceProps();
-		const char *pSoundName = physprops->GetString( stepSoundName );
+		const char *pSoundName = MoveHelper()->GetSurfaceProps()->GetString( stepSoundName );
+
+		// Give child classes an opportunity to override.
+		pSoundName = GetOverrideStepSound( pSoundName );
+
 		if ( !CBaseEntity::GetParametersForSound( pSoundName, params, NULL ) )
 			return;
 
@@ -640,13 +726,27 @@ void CBasePlayer::PlayStepSound( Vector &vecOrigin, surfacedata_t *psurface, flo
 	EmitSound_t ep;
 	ep.m_nChannel = CHAN_BODY;
 	ep.m_pSoundName = params.soundname;
+#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
+	if( TFGameRules()->IsMannVsMachineMode() )
+	{
+		ep.m_flVolume = params.volume;
+	}
+	else
+	{
+		ep.m_flVolume = fvol;
+	}
+#else
 	ep.m_flVolume = fvol;
+#endif
 	ep.m_SoundLevel = params.soundlevel;
 	ep.m_nFlags = 0;
 	ep.m_nPitch = params.pitch;
 	ep.m_pOrigin = &vecOrigin;
 
 	EmitSound( filter, entindex(), ep );
+
+	// Kyle says: ugggh. This function may as well be called "PerformPileOfDesperateGameSpecificFootstepHacks".
+	OnEmitFootstepSound( params, vecOrigin, fvol );
 }
 
 void CBasePlayer::UpdateButtonState( int nUserCmdButtonMask )
@@ -934,7 +1034,7 @@ void CBasePlayer::SelectItem( const char *pstr, int iSubType )
 	// Make sure the current weapon can be holstered
 	if ( GetActiveWeapon() )
 	{
-		if ( !GetActiveWeapon()->CanHolster() )
+		if ( !GetActiveWeapon()->CanHolster() && !pItem->ForceWeaponSwitch() )
 			return;
 
 		ResetAutoaim( );
@@ -1249,7 +1349,7 @@ void CBasePlayer::PlayerUse ( void )
 				if ( pTrain && !(m_nButtons & IN_JUMP) && (GetFlags() & FL_ONGROUND) && (pTrain->ObjectCaps() & FCAP_DIRECTIONAL_USE) && pTrain->OnControls(this) )
 				{
 					m_afPhysicsFlags |= PFLAG_DIROVERRIDE;
-					m_iTrain = TrainSpeed((int)pTrain->m_flSpeed, (int)((CFuncTrackTrain*)pTrain)->GetMaxSpeed());
+					m_iTrain = TrainSpeed(pTrain->m_flSpeed, ((CFuncTrackTrain*)pTrain)->GetMaxSpeed());
 					m_iTrain |= TRAIN_NEW;
 					EmitSound( "Player.UseTrain" );
 					return;
@@ -1398,7 +1498,7 @@ void CBasePlayer::SmoothViewOnStairs( Vector& eyeOrigin )
 	}
 }
 
-/*static bool IsWaterContents( int contents )
+static bool IsWaterContents( int contents )
 {
 	if ( contents & MASK_WATER )
 		return true;
@@ -1407,7 +1507,7 @@ void CBasePlayer::SmoothViewOnStairs( Vector& eyeOrigin )
 //		return true;
 
 	return false;
-}*/
+}
 
 void CBasePlayer::ResetObserverMode()
 {
@@ -1441,6 +1541,11 @@ void CBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, 
 
 	if ( !pVehicle )
 	{
+#if defined( CLIENT_DLL )
+		if( UseVR() )
+			g_ClientVirtualReality.CancelTorsoTransformOverride();
+#endif
+
 		if ( IsObserver() )
 		{
 			CalcObserverView( eyeOrigin, eyeAngles, fov );
@@ -1454,6 +1559,11 @@ void CBasePlayer::CalcView( Vector &eyeOrigin, QAngle &eyeAngles, float &zNear, 
 	{
 		CalcVehicleView( pVehicle, eyeOrigin, eyeAngles, zNear, zFar, fov );
 	}
+	// NVNT update fov on the haptics dll for input scaling.
+#if defined( CLIENT_DLL )
+	if(IsLocalPlayer() && haptics)
+		haptics->UpdatePlayerFOV(fov);
+#endif
 }
 
 
@@ -1480,9 +1590,18 @@ void CBasePlayer::CalcPlayerView( Vector& eyeOrigin, QAngle& eyeAngles, float& f
 #endif
 
 	VectorCopy( EyePosition(), eyeOrigin );
-
+#ifdef SIXENSE
+	if ( g_pSixenseInput->IsEnabled() )
+	{
+		VectorCopy( EyeAngles() + GetEyeAngleOffset(), eyeAngles );
+	}
+	else
+	{
+		VectorCopy( EyeAngles(), eyeAngles );
+	}
+#else
 	VectorCopy( EyeAngles(), eyeAngles );
-
+#endif
 
 #if defined( CLIENT_DLL )
 	if ( !prediction->InPrediction() )
@@ -1583,6 +1702,7 @@ void CBasePlayer::CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float&
 		case OBS_MODE_IN_EYE	:	CalcInEyeCamView( eyeOrigin, eyeAngles, fov );
 									break;
 
+		case OBS_MODE_POI		: // PASSTIME
 		case OBS_MODE_CHASE		:	CalcChaseCamView( eyeOrigin, eyeAngles, fov  );
 									break;
 
@@ -1676,7 +1796,6 @@ float CBasePlayer::GetFOVDistanceAdjustFactor()
 	// If FOV is lower, then we're "zoomed" in and this will give a factor < 1 so apparent LOD distances can be
 	//  shorted accordingly
 	return localFOV / defaultFOV;
-
 }
 
 //-----------------------------------------------------------------------------
@@ -1729,6 +1848,25 @@ void CBasePlayer::SharedSpawn()
 	m_Local.m_flFallVelocity = 0;
 
 	SetBloodColor( BLOOD_COLOR_RED );
+	// NVNT inform haptic dll we have just spawned local player
+#ifdef CLIENT_DLL
+	if(IsLocalPlayer() &&haptics)
+		haptics->LocalPlayerReset();
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool CBasePlayer::IsLerpingFOV( void ) const
+{
+	// If it's immediate, just do it
+	if (m_Local.m_flFOVRate == 0.0f)
+		return false;
+
+	float deltaTime = (float)(gpGlobals->curtime - m_flFOVTime) / m_Local.m_flFOVRate;
+	return deltaTime < 1.f;
 }
 
 
@@ -1751,6 +1889,8 @@ int CBasePlayer::GetDefaultFOV( void ) const
 #endif
 
 	int iFOV = ( m_iDefaultFOV == 0 ) ? g_pGameRules->DefaultFOV() : m_iDefaultFOV;
+	if ( iFOV > MAX_FOV )
+		iFOV = MAX_FOV;
 
 	return iFOV;
 }
@@ -1904,6 +2044,13 @@ void CBasePlayer::SetPlayerUnderwater( bool state )
 {
 	if ( m_bPlayerUnderwater != state )
 	{
+#if defined( WIN32 ) && !defined( _X360 ) 
+		// NVNT turn on haptic drag when underwater
+		if(state)
+			HapticSetDrag(this,1);
+		else
+			HapticSetDrag(this,0);
+#endif
 		m_bPlayerUnderwater = state;
 
 #ifdef CLIENT_DLL
@@ -1930,6 +2077,7 @@ bool fogparams_t::operator !=( const fogparams_t& other ) const
 {
 	if ( this->enable != other.enable ||
 		this->blend != other.blend ||
+		this->radial != other.radial ||
 		!VectorsAreEqual(this->dirPrimary, other.dirPrimary, 0.01f ) || 
 		this->colorPrimary.Get() != other.colorPrimary.Get() ||
 		this->colorSecondary.Get() != other.colorSecondary.Get() ||
@@ -1948,15 +2096,3 @@ bool fogparams_t::operator !=( const fogparams_t& other ) const
 	return false;
 }
 
-void CBasePlayer::IncrementEFNoInterpParity()
-{
-	// Only matters in multiplayer
-	if ( gpGlobals->maxClients == 1 )
-		return;
-	m_ubEFNoInterpParity = (m_ubEFNoInterpParity + 1) % NOINTERP_PARITY_MAX;
-}
-
-int CBasePlayer::GetEFNoInterpParity() const
-{
-	return (int)m_ubEFNoInterpParity;
-}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements an interface to the map editor for the execution of
 //			editor shell commands from another application. Commands allow the
@@ -193,7 +193,7 @@ EditorSendResult_t Editor_SendCommand(const char *pszCommand, bool bShowUI)
 		//
 
 		COPYDATASTRUCT CopyData;
-		CopyData.cbData = strlen(pszCommand) + 1;
+		CopyData.cbData = V_strlen(pszCommand) + 1;
 		CopyData.dwData = 0;
 		CopyData.lpData = (void *)pszCommand;
 		

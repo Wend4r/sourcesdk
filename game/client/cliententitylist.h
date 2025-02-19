@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,8 +15,8 @@
 #include "tier0/dbg.h"
 #include "icliententitylist.h"
 #include "iclientunknown.h"
-#include "UtlLinkedList.h"
-#include "UtlVector.h"
+#include "utllinkedlist.h"
+#include "utlvector.h"
 #include "icliententityinternal.h"
 #include "ispatialpartition.h"
 #include "cdll_util.h"
@@ -78,7 +78,7 @@ public:
 
 
 // Maximum size of entity list
-#define INVALID_CLIENTENTITY_HANDLE CBaseHandle( INVALID_EHANDLE_INDEX )
+#define INVALID_CLIENTENTITY_HANDLE CBaseHandle( INVALID_EHANDLE )
 
 
 //
@@ -278,9 +278,9 @@ inline CUtlLinkedList<CClientEntityList::CPVSNotifyInfo,unsigned short>& CClient
 inline ClientEntityHandle_t CClientEntityList::EntIndexToHandle( int entnum )
 {
 	if ( entnum < -1 )
-		return INVALID_EHANDLE_INDEX;
-	IClientUnknown *pUnk = GetListedEntity( entnum );
-	return pUnk ? pUnk->GetRefEHandle() : INVALID_EHANDLE_INDEX; 
+		return INVALID_EHANDLE;
+	IClientUnknown* pUnk = GetListedEntity(entnum);
+	return pUnk ? pUnk->GetRefEHandle() : INVALID_EHANDLE;
 }
 
 

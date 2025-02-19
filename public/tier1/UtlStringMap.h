@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -35,14 +35,20 @@ public:
 	// Get data by the string's symbol table ID - only used to retrieve a pre-existing symbol, not create a new one!
 	T& operator[]( UtlSymId_t n )
 	{
-		Assert( n <= m_Vector.Count() );
+		Assert( n >=0 && n <= m_Vector.Count() );
 		return m_Vector[n];
 	}
 
 	const T& operator[]( UtlSymId_t n ) const
 	{
-		Assert( n <= m_Vector.Count() );
+		Assert( n >=0 && n <= m_Vector.Count() );
 		return m_Vector[n];
+	}
+
+	unsigned int Count() const
+	{
+		Assert( m_Vector.Count() == m_SymbolTable.GetNumStrings() );
+		return m_Vector.Count();
 	}
 
 	bool Defined( const char *pString ) const

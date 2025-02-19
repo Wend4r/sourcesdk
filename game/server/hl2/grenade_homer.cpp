@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Grenade used by the city scanner
 //
@@ -145,7 +145,7 @@ void CGrenadeHomer::SetSpin(float flSpinMagnitude, float flSpinSpeed)
 {
 	m_flSpinMagnitude	= flSpinMagnitude;
 	m_flSpinSpeed		= flSpinSpeed;
-	m_flSpinOffset		= random->RandomInt((int)-m_flSpinSpeed, (int)m_flSpinSpeed);
+	m_flSpinOffset		= random->RandomInt(-m_flSpinSpeed,m_flSpinSpeed);
 }
 
 //------------------------------------------------------------------------------
@@ -608,7 +608,7 @@ void CGrenadeHomer::AimThink( void )
 			while (flTimeToUse > 0)
 			{
 				vecNewVelocity = (flCurHomingStrength * vTargetDir) + ((1 - flCurHomingStrength) * vCurDir);
-				flTimeToUse =- 0.1;
+				flTimeToUse = -0.1;
 			}
 			VectorNormalize(vecNewVelocity);
 			vecNewVelocity *= flTargetSpeed;
@@ -628,7 +628,7 @@ void CGrenadeHomer::AimThink( void )
 	}
 
 	// Add in gravity
-	vecImpulse.z -= GetGravity() * sv_gravity.GetFloat() * gpGlobals->frametime;
+	vecImpulse.z -= GetGravity() * GetCurrentGravity() * gpGlobals->frametime;
 	ApplyAbsVelocityImpulse( vecImpulse );
 
 	QAngle angles;

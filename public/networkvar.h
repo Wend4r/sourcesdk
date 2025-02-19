@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -18,11 +18,10 @@
 	#include "basehandle.h"
 #endif
 
-#ifdef _MSC_VER
-#pragma warning( disable : 4284 ) // warning C4284: return type for 'CNetworkVarT<int>::operator ->' is 'int *' (ie; not a UDT or reference to a UDT.  Will produce errors if applied using infix notation)
-#endif
 
-#define MyOffsetOf( type, var ) ( (int)&((type*)0)->var )
+#pragma warning( disable : 4284 ) // warning C4284: return type for 'CNetworkVarT<int>::operator ->' is 'int *' (ie; not a UDT or reference to a UDT.  Will produce errors if applied using infix notation)
+
+#define MyOffsetOf( type, var ) ( (int)(intp)&((type*)0)->var )
 
 #ifdef _DEBUG
 	extern bool g_bUseNetworkVars;
@@ -178,12 +177,53 @@ static inline void DispatchNetworkStateChanged( T *pObj, void *pVar )
 	}; \
 	NetworkVar_##name name; 
 
+template<typename T>
+FORCEINLINE void NetworkVarConstruct( T &x ) { x = T(0); }
+FORCEINLINE void NetworkVarConstruct( color32_s &x ) { x.r = x.g = x.b = x.a = 0; }
 
+template <typename T>
+inline bool NetworkParanoidUnequal( const T &a, const T &b )
+{
+	return a != b;
+}
+
+template <>
+inline bool NetworkParanoidUnequal( const float &a, const float &b )
+{
+	//return 0 != memcmp( &a, &b, sizeof( a ) );
+	union
+	{
+		float f32;
+		uint32 u32;
+	} p, q;
+	p.f32 = a;
+	q.f32 = b;
+	return p.u32 != q.u32;
+}
+
+template <>
+inline bool NetworkParanoidUnequal( const double &a, const double &b )
+{
+	// return 0 != memcmp( &a, &b, sizeof( a ) );
+	union
+	{
+		double f64;
+		uint64 u64;
+	} p, q;
+	p.f64 = a;
+	q.f64 = b;
+	return p.u64 != q.u64;
+}
 
 template< class Type, class Changer >
 class CNetworkVarBase
 {
 public:
+	inline CNetworkVarBase()
+	{
+		NetworkVarConstruct( m_Value );
+	}
+
 	template< class C >
 	const Type& operator=( const C &val ) 
 	{ 
@@ -195,10 +235,17 @@ public:
 	{ 
 		return Set( ( const Type )val.m_Value ); 
 	}
+
+	FORCEINLINE const Type& SetDirect( const Type &val )
+	{
+		NetworkStateChanged();
+		m_Value = val;
+		return m_Value;
+	}
 	
 	const Type& Set( const Type &val )
 	{
-		if ( memcmp( &m_Value, &val, sizeof(Type) ) )
+		if ( NetworkParanoidUnequal( m_Value, val ) )
 		{
 			NetworkStateChanged();
 			m_Value = val;
@@ -326,7 +373,7 @@ public:
 
 	const Type& operator=( const Type &val ) 
 	{ 
-		return Set( val ); 
+		return this->Set( val ); 
 	}
 
 	const Type& operator=( const CNetworkColor32Base<Type,Changer> &val ) 
@@ -348,7 +395,7 @@ protected:
 	{
 		if ( out != in )
 		{
-			this->NetworkStateChanged();
+			CNetworkVarBase< Type, Changer >::NetworkStateChanged();
 			out = in;
 		}
 	}
@@ -389,12 +436,12 @@ public:
 
 	bool operator==( const Type &val ) const 
 	{ 
-		return CNetworkVectorBase<Type,Changer>::m_Value == (Type)val; 
+		return !NetworkParanoidUnequal( this->m_Value, ( Type )val );
 	}
 
 	bool operator!=( const Type &val ) const 
 	{
-		return CNetworkVectorBase<Type,Changer>::m_Value != (Type)val; 
+		return NetworkParanoidUnequal( this->m_Value, val );
 	}
 
 	const Type operator+( const Type &val ) const 
@@ -430,7 +477,7 @@ public:
 private:
 	inline void DetectChange( float &out, float in ) 
 	{
-		if ( out != in ) 
+		if ( NetworkParanoidUnequal( out, in ) )
 		{
 			this->NetworkStateChanged();
 			out = in;
@@ -449,7 +496,7 @@ public:
 		SetX( ix );
 		SetY( iy );
 		SetZ( iz );
-		SetZ( iw );
+		SetW( iw );
 	}
 	
 	const Type& operator=( const Type &val ) 
@@ -519,7 +566,7 @@ private:
 	{
 		if ( out != in ) 
 		{
-			this->NetworkStateChanged();
+			CNetworkQuaternionBase<Type,Changer>::NetworkStateChanged();
 			out = in;
 		}
 	}
@@ -528,6 +575,8 @@ private:
 
 // Network ehandle wrapper.
 #if defined( CLIENT_DLL ) || defined( GAME_DLL )
+	inline void NetworkVarConstruct( CBaseHandle &x ) {}
+
 	template< class Type, class Changer >
 	class CNetworkHandleBase : public CNetworkVarBase< CBaseHandle, Changer >
 	{
@@ -670,6 +719,7 @@ private:
 	class NetworkVar_##name \
 	{ \
 	public: \
+		NetworkVar_##name() { m_Value[0] = '\0'; } \
 		operator const char*() const { return m_Value; } \
 		const char* Get() const { return m_Value; } \
 		char* GetForModify() \
@@ -699,8 +749,12 @@ private:
 	class NetworkVar_##name \
 	{ \
 	public: \
-		template <typename T> friend int ServerClassInit(T *); \
-		template <typename T> friend datamap_t *DataMapInit(T *); \
+		inline NetworkVar_##name() \
+		{ \
+			for ( int i = 0 ; i < count ; ++i ) \
+				NetworkVarConstruct( m_Value[i] ); \
+		} \
+		template <typename T> friend int ServerClassInit(T *);	\
 		const type& operator[]( int i ) const \
 		{ \
 			return Get( i ); \
@@ -731,9 +785,9 @@ private:
 		const type* Base() const { return m_Value; } \
 		int Count() const { return count; } \
 	protected: \
-		inline void NetworkStateChanged( int index ) \
+		inline void NetworkStateChanged( int net_change_index ) \
 		{ \
-			CHECK_USENETWORKVARS ((ThisClass*)(((char*)this) - MyOffsetOf(ThisClass,name)))->stateChangedFn( &m_Value[index] ); \
+			CHECK_USENETWORKVARS ((ThisClass*)(((char*)this) - MyOffsetOf(ThisClass,name)))->stateChangedFn( &m_Value[net_change_index] ); \
 		} \
 		type m_Value[count]; \
 	}; \

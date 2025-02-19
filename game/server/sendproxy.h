@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: implements various common send proxies
 //
@@ -27,8 +27,8 @@ SendProp SendPropBool(
 SendProp SendPropEHandle(
 	const char *pVarName,
 	int offset,
-	int flags = 0,
 	int sizeofVar=SIZEOF_IGNORE,
+	int flags = 0,
 	SendVarProxyFn proxyFn=SendProxy_EHandleToInt );
 
 SendProp SendPropTime(
@@ -46,8 +46,8 @@ SendProp SendPropPredictableId(
 SendProp SendPropIntWithMinusOneFlag(
 	const char *pVarName,
 	int offset,
-	int bits,
 	int sizeofVar=SIZEOF_IGNORE,
+	int bits=-1,
 	SendVarProxyFn proxyFn=SendProxy_IntAddOne );
 
 

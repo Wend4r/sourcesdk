@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Defines and structures for the BSP file format.
 //
@@ -376,7 +376,9 @@ struct lump_t
 	DECLARE_BYTESWAP_DATADESC();
 	int		fileofs, filelen;
 	int		version;		// default to zero
-	char	fourCC[4];		// default to ( char )0, ( char )0, ( char )0, ( char )0
+	// this field was char fourCC[4] previously, but was unused, favoring the LUMP IDs above instead. It has been
+	// repurposed for compression.  0 implies the lump is not compressed.
+	int		uncompressedSize; // default to zero
 };
 
 
@@ -384,7 +386,7 @@ struct dheader_t
 {
 	DECLARE_BYTESWAP_DATADESC();
 	int			ident;
-	int			version;	
+	int			version;
 	lump_t		lumps[HEADER_LUMPS];
 	int			mapRevision;				// the map's revision (iteration, version) number (added BSPVERSION 6)
 };
@@ -419,7 +421,7 @@ struct dgamelumpheader_t
 // This is expected to be a four-CC code ('lump')
 typedef int GameLumpId_t;
 
-// 360 only: game lump is compressed, filelen reflects original size
+// game lump is compressed, filelen reflects original size
 // use next entry fileofs to determine actual disk lump compressed size
 // compression stage ensures a terminal null dictionary entry
 #define GAMELUMPFLAG_COMPRESSED	0x0001
@@ -624,6 +626,7 @@ public:
 #define DISPTRI_TAG_BUILDABLE		(1<<2)
 #define DISPTRI_FLAG_SURFPROP1		(1<<3)
 #define DISPTRI_FLAG_SURFPROP2		(1<<4)
+#define DISPTRI_TAG_REMOVE			(1<<5)
 
 class CDispTri
 {
@@ -660,7 +663,7 @@ public:
 	CDispCornerNeighbors	m_CornerNeighbors[4];	// Indexed by CORNER_ defines.
 
 	enum unnamed { ALLOWEDVERTS_SIZE = PAD_NUMBER( MAX_DISPVERTS, 32 ) / 32 };
-	unsigned long	m_AllowedVerts[ALLOWEDVERTS_SIZE];	// This is built based on the layout and sizes of our neighbors
+	uint32	m_AllowedVerts[ALLOWEDVERTS_SIZE];	// This is built based on the layout and sizes of our neighbors
 														// and tells us which vertices are allowed to be active.
 };
 
@@ -791,9 +794,7 @@ struct dfaceid_t
 #if defined( _X360 )
 #pragma bitfield_order( push, lsb_to_msb )
 #endif
-#ifdef _MSC_VER
 #pragma warning( disable:4201 )	// C4201: nonstandard extension used: nameless struct/union
-#endif
 struct dleaf_version_0_t
 {
 	DECLARE_BYTESWAP_DATADESC();
@@ -847,9 +848,7 @@ struct dleaf_t
 	// Precaculated light info for entities.
 //	CompressedLightCube m_AmbientLighting;
 };
-#ifdef _MSC_VER
 #pragma warning( default:4201 )	// C4201: nonstandard extension used: nameless struct/union
-#endif
 #if defined( _X360 )
 #pragma bitfield_order( pop )
 #endif
@@ -1032,7 +1031,6 @@ public:
 
 inline void doverlay_t::SetFaceCount( unsigned short count )
 {
-	Assert( (count & OVERLAY_RENDER_ORDER_MASK) == 0 );
 	m_nFaceCountAndRenderOrder &= OVERLAY_RENDER_ORDER_MASK;
 	m_nFaceCountAndRenderOrder |= (count & ~OVERLAY_RENDER_ORDER_MASK);
 }
@@ -1044,7 +1042,6 @@ inline unsigned short doverlay_t::GetFaceCount() const
 
 inline void doverlay_t::SetRenderOrder( unsigned short order )
 {
-	Assert( order < OVERLAY_NUM_RENDER_ORDERS );
 	m_nFaceCountAndRenderOrder &= ~OVERLAY_RENDER_ORDER_MASK;
 	m_nFaceCountAndRenderOrder |= (order << (16 - OVERLAY_RENDER_ORDER_NUM_BITS));	// leave 2 bits for render order.
 }
@@ -1096,7 +1093,6 @@ public:
 
 inline void dwateroverlay_t::SetFaceCount( unsigned short count )
 {
-	Assert( (count & WATEROVERLAY_RENDER_ORDER_MASK) == 0 );
 	m_nFaceCountAndRenderOrder &= WATEROVERLAY_RENDER_ORDER_MASK;
 	m_nFaceCountAndRenderOrder |= (count & ~WATEROVERLAY_RENDER_ORDER_MASK);
 }
@@ -1108,7 +1104,6 @@ inline unsigned short dwateroverlay_t::GetFaceCount() const
 
 inline void dwateroverlay_t::SetRenderOrder( unsigned short order )
 {
-	Assert( order < WATEROVERLAY_NUM_RENDER_ORDERS );
 	m_nFaceCountAndRenderOrder &= ~WATEROVERLAY_RENDER_ORDER_MASK;
 	m_nFaceCountAndRenderOrder |= ( order << ( 16 - WATEROVERLAY_RENDER_ORDER_NUM_BITS ) );	// leave 2 bits for render order.
 }

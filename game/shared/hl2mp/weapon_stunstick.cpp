@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Stun Stick- beating stick with a zappy end
 //
@@ -20,7 +20,7 @@
 	
 	#include "iviewrender_beams.h"
 	#include "beam_shared.h"
-	#include "materialsystem/IMaterial.h"
+	#include "materialsystem/imaterial.h"
 	#include "model_types.h"
 	#include "c_te_effect_dispatch.h"
 	#include "fx_quad.h"
@@ -94,6 +94,8 @@ public:
 #endif
 	
 	float		GetDamageForActivity( Activity hitActivity );
+
+	virtual bool	PlayFleshyHittySoundOnHit() const { return true; }
 
 	CWeaponStunStick( const CWeaponStunStick & );
 
@@ -201,6 +203,9 @@ void CWeaponStunStick::Precache()
 	PrecacheScriptSound( "Weapon_StunStick.Deactivate" );
 
 	PrecacheModel( STUNSTICK_BEAM_MATERIAL );
+	PrecacheModel( "sprites/light_glow02_add.vmt" );
+	PrecacheModel( "effects/blueflare1.vmt" );
+	PrecacheModel( "sprites/light_glow02_add_noz.vmt" );
 }
 
 //-----------------------------------------------------------------------------
@@ -344,7 +349,7 @@ void CWeaponStunStick::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseComba
 			VectorMA( pOperator->Weapon_ShootPosition(), 32, vecDirection, vecEnd );
 			// Stretch the swing box down to catch low level physics objects
 			CBaseEntity *pHurt = pOperator->CheckTraceHullAttack( pOperator->Weapon_ShootPosition(), vecEnd, 
-				Vector(-16,-16,-40), Vector(16,16,16), (int)GetDamageForActivity( GetActivity() ), DMG_CLUB, 0.5f, false );
+				Vector(-16,-16,-40), Vector(16,16,16), GetDamageForActivity( GetActivity() ), DMG_CLUB, 0.5f, false );
 			
 			// did I hit someone?
 			if ( pHurt )
@@ -493,7 +498,7 @@ bool CWeaponStunStick::GetStunState( void )
 bool UTIL_GetWeaponAttachment( C_BaseCombatWeapon *pWeapon, int attachmentID, Vector &absOrigin, QAngle &absAngles )
 {
 	// This is already correct in third-person
-	if ( pWeapon && pWeapon->IsCarriedByLocalPlayer() == false )
+	if ( pWeapon && pWeapon->ShouldDrawUsingViewModel() == false )
 	{
 		return pWeapon->GetAttachment( attachmentID, absOrigin, absAngles );
 	}
@@ -521,7 +526,7 @@ bool UTIL_GetWeaponAttachment( C_BaseCombatWeapon *pWeapon, int attachmentID, Ve
 void C_WeaponStunStick::SetupAttachmentPoints( void )
 {
 	// Setup points for both types of views
-	if ( IsCarriedByLocalPlayer() )
+	if ( ShouldDrawUsingViewModel() )
 	{
 		const char *szBeamAttachNamesTop[NUM_BEAM_ATTACHMENTS] =
 		{
@@ -595,7 +600,7 @@ void C_WeaponStunStick::ClientThink( void )
 	if ( IsEffectActive( EF_NODRAW ) )
 		return;
 
-	if ( IsCarriedByLocalPlayer() )
+	if ( ShouldDrawUsingViewModel() )
 	{
 		// Update our effects
 		if ( gpGlobals->frametime != 0.0f && ( random->RandomInt( 0, 3 ) == 0 ) )
@@ -674,7 +679,7 @@ bool C_WeaponStunStick::InSwing( void )
 	int activity = GetActivity();
 
 	// FIXME: This is needed until the actual animation works
-	if ( IsCarriedByLocalPlayer() == false )
+	if ( ShouldDrawUsingViewModel() == false )
 		return true;
 
 	// These are the swing activities this weapon can play
@@ -844,7 +849,7 @@ void C_WeaponStunStick::DrawFirstPersonEffects( void )
 //-----------------------------------------------------------------------------
 void C_WeaponStunStick::DrawEffects( void )
 {
-	if ( IsCarriedByLocalPlayer() )
+	if ( ShouldDrawUsingViewModel() )
 	{
 		DrawFirstPersonEffects();
 	}

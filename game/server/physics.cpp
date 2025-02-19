@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Interface layer for ipion IVP physics.
 //
@@ -243,9 +243,9 @@ void CPhysicsHook::LevelInitPreEntity()
 
 	physenv->SetObjectEventHandler( &g_Collisions );
 	
-	physenv->SetSimulationTimestep( DEFAULT_TICK_INTERVAL ); // 15 ms per tick
+	physenv->SetSimulationTimestep( gpGlobals->interval_per_tick ); // 15 ms per tick
 	// HL Game gravity, not real-world gravity
-	physenv->SetGravity( Vector( 0, 0, -sv_gravity.GetFloat() ) );
+	physenv->SetGravity( Vector( 0, 0, -GetCurrentGravity() ) );
 	g_PhysAverageSimTime = 0;
 
 	g_PhysWorldObject = PhysCreateWorld( GetWorldEntity() );
@@ -779,7 +779,7 @@ static void ReportPenetration( CBaseEntity *pEntity, float duration )
 			pEntity->m_debugOverlays |= OVERLAY_ABSBOX_BIT;
 		}
 
-		pEntity->AddTimedOverlay( UTIL_VarArgs("VPhysics Penetration Error (%s)!", pEntity->GetDebugName()), (int)duration );
+		pEntity->AddTimedOverlay( UTIL_VarArgs("VPhysics Penetration Error (%s)!", pEntity->GetDebugName()), duration );
 	}
 }
 
@@ -1068,7 +1068,7 @@ void CCollisionEvent::FluidStartTouch( IPhysicsObject *pObject, IPhysicsFluidCon
 		return;
 
 	pEntity->AddEFlags( EFL_TOUCHING_FLUID );
-	pEntity->OnEntityEvent( ENTITY_EVENT_WATER_TOUCH, (void*)pFluid->GetContents() );
+	pEntity->OnEntityEvent( ENTITY_EVENT_WATER_TOUCH, (void*)(intp)pFluid->GetContents() );
 
 	float timeSinceLastCollision = DeltaTimeSinceLastFluid( pEntity );
 	if ( timeSinceLastCollision < 0.5f )
@@ -1124,7 +1124,7 @@ void CCollisionEvent::FluidEndTouch( IPhysicsObject *pObject, IPhysicsFluidContr
 	}
 
 	pEntity->RemoveEFlags( EFL_TOUCHING_FLUID );
-	pEntity->OnEntityEvent( ENTITY_EVENT_WATER_UNTOUCH, (void*)pFluid->GetContents() );
+	pEntity->OnEntityEvent( ENTITY_EVENT_WATER_UNTOUCH, (void*)(intp)pFluid->GetContents() );
 }
 
 class CSkipKeys : public IVPhysicsKeyHandler
@@ -1280,16 +1280,25 @@ static void CallbackReport( CBaseEntity *pEntity )
 
 CON_COMMAND(physics_highlight_active, "Turns on the absbox for all active physics objects")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	IterateActivePhysicsEntities( CallbackHighlight );
 }
 
 CON_COMMAND(physics_report_active, "Lists all active physics objects")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	IterateActivePhysicsEntities( CallbackReport );
 }
 
 CON_COMMAND_F(surfaceprop, "Reports the surface properties at the cursor", FCVAR_CHEAT )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
 
 	trace_t tr;
@@ -1317,7 +1326,7 @@ CON_COMMAND_F(surfaceprop, "Reports the surface properties at the cursor", FCVAR
 		
 		// Calculate distance to surface that was hit
 		Vector vecVelocity = tr.startpos - tr.endpos;
-		int length = (int)vecVelocity.Length();
+		int length = vecVelocity.Length();
 
 		Msg("Hit surface \"%s\" (entity %s, model \"%s\" %s), texture \"%s\"\n", physprops->GetPropName( tr.surface.surfaceProps ), tr.m_pEnt->GetClassname(), pModelName, modelStuff.Access(), tr.surface.name);
 		Msg("Distance to surface: %d\n", length );
@@ -1531,21 +1540,33 @@ void PhysicsCommand( const CCommand &args, void (*func)( CBaseEntity *pEntity ) 
 
 CON_COMMAND(physics_constraints, "Highlights constraint system graph for an entity")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	PhysicsCommand( args, DebugConstraints );
 }
 
 CON_COMMAND(physics_debug_entity, "Dumps debug info for an entity")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	PhysicsCommand( args, OutputVPhysicsDebugInfo );
 }
 
 CON_COMMAND(physics_select, "Dumps debug info for an entity")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	PhysicsCommand( args, MarkVPhysicsDebug );
 }
 
 CON_COMMAND( physics_budget, "Times the cost of each active object" )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	int activeCount = physenv->GetActiveObjectCount();
 
 	IPhysicsObject **pActiveList = NULL;
@@ -1585,7 +1606,7 @@ CON_COMMAND( physics_budget, "Times the cost of each active object" )
 		float totalTime = 0.f;
 		g_Collisions.BufferTouchEvents( true );
 		float full = engine->Time();
-		physenv->Simulate( DEFAULT_TICK_INTERVAL );
+		physenv->Simulate( gpGlobals->interval_per_tick );
 		full = engine->Time() - full;
 		float lastTime = full;
 
@@ -1602,7 +1623,7 @@ CON_COMMAND( physics_budget, "Times the cost of each active object" )
 				PhysForceEntityToSleep( ents[j], ents[j]->VPhysicsGetObject() );
 			}
 			float start = engine->Time();
-			physenv->Simulate( DEFAULT_TICK_INTERVAL );
+			physenv->Simulate( gpGlobals->interval_per_tick );
 			float end = engine->Time();
 
 			float elapsed = end - start;
@@ -1950,7 +1971,7 @@ friction_t *CCollisionEvent::FindFriction( CBaseEntity *pObject )
 {
 	friction_t *pFree = NULL;
 
-	for ( size_t i = 0; i < ARRAYSIZE(m_current); i++ )
+	for ( int i = 0; i < ARRAYSIZE(m_current); i++ )
 	{
 		if ( !m_current[i].pObject && !pFree )
 			pFree = &m_current[i];
@@ -2061,7 +2082,7 @@ float CCollisionEvent::DeltaTimeSinceLastFluid( CBaseEntity *pEntity )
 
 void CCollisionEvent::UpdateFrictionSounds( void )
 {
-	for ( size_t i = 0; i < ARRAYSIZE(m_current); i++ )
+	for ( int i = 0; i < ARRAYSIZE(m_current); i++ )
 	{
 		if ( m_current[i].patch )
 		{
@@ -2393,7 +2414,7 @@ int CCollisionEvent::AddDamageInflictor( IPhysicsObject *pInflictorPhysics, floa
 
 void CCollisionEvent::LevelShutdown( void )
 {
-	for ( size_t i = 0; i < ARRAYSIZE(m_current); i++ )
+	for ( int i = 0; i < ARRAYSIZE(m_current); i++ )
 	{
 		if ( m_current[i].patch )
 		{
@@ -2589,7 +2610,7 @@ void PhysCollisionScreenShake( gamevcollisionevent_t *pEvent, int index )
 	if ( mass >= VPHYSICS_LARGE_OBJECT_MASS && pEvent->pObjects[otherIndex]->IsStatic() && 
 		!(pEvent->pObjects[index]->GetGameFlags() & FVPHYSICS_PENETRATING) )
 	{
-		mass = clamp(mass, VPHYSICS_LARGE_OBJECT_MASS, 2000);
+		mass = clamp(mass, VPHYSICS_LARGE_OBJECT_MASS, 2000.f);
 		if ( pEvent->collisionSpeed > 30 && pEvent->deltaCollisionTime > 0.25f )
 		{
 			Vector vecPos;

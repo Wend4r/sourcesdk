@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Contains entities for implementing/changing game rules dynamically within each BSP.
 //
@@ -619,8 +619,7 @@ bool CGamePlayerEquip::KeyValue( const char *szKeyName, const char *szValue )
 			if ( !m_weaponNames[i] )
 			{
 				char tmp[128];
-
-				UTIL_StripToken( szKeyName, tmp );
+				UTIL_StripToken( szKeyName, tmp, Q_ARRAYSIZE( tmp ) );
 
 				m_weaponNames[i] = AllocPooledString(tmp);
 				m_weaponCount[i] = atoi(szValue);
@@ -647,12 +646,7 @@ void CGamePlayerEquip::Touch( CBaseEntity *pOther )
 
 void CGamePlayerEquip::EquipPlayer( CBaseEntity *pEntity )
 {
-	CBasePlayer *pPlayer = NULL;
-
-	if ( pEntity->IsPlayer() )
-	{
-		pPlayer = (CBasePlayer *)pEntity;
-	}
+	CBasePlayer *pPlayer = ToBasePlayer(pEntity);
 
 	if ( !pPlayer )
 		return;

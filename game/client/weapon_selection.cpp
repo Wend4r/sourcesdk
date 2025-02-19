@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Weapon selection handling
 //
@@ -13,6 +13,7 @@
 #include <KeyValues.h>
 #include "filesystem.h"
 #include "iinput.h"
+#include "inputsystem/iinputsystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -101,6 +102,7 @@ void CBaseHudWeaponSelection::Reset(void)
 	// Start hidden
 	m_bSelectionVisible = false;
 	m_flSelectionTime = gpGlobals->curtime;
+	gHUD.UnlockRenderGroup( gHUD.LookupRenderGroupIndexByName( "weapon_selection" ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -154,13 +156,19 @@ void CBaseHudWeaponSelection::ProcessInput()
 	if ( !pPlayer )
 		return;
 
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
+
 	// Check to see if the player is in VGUI mode...
 	if ( pPlayer->IsInVGuiInputMode() && !pPlayer->IsInViewModelVGuiInputMode() )
 	{
 		// If so, close weapon selection when they press fire
 		if ( gHUD.m_iKeyBits & IN_ATTACK )
 		{
-			if ( HUDTYPE_PLUS != hud_fastswitch.GetInt() )
+			if ( HUDTYPE_PLUS != nFastswitchMode )
 			{
 				// Swallow the button
 				gHUD.m_iKeyBits &= ~IN_ATTACK;
@@ -178,7 +186,7 @@ void CBaseHudWeaponSelection::ProcessInput()
 		if ( IsWeaponSelectable() )
 		{
 #ifndef TF_CLIENT_DLL
-			if ( HUDTYPE_PLUS != hud_fastswitch.GetInt() )
+			if ( HUDTYPE_PLUS != nFastswitchMode )
 #endif
 			{
 				// Swallow the button
@@ -207,6 +215,7 @@ bool CBaseHudWeaponSelection::IsInSelectionMode()
 void CBaseHudWeaponSelection::OpenSelection( void )
 {
 	m_bSelectionVisible = true;
+	gHUD.LockRenderGroup( gHUD.LookupRenderGroupIndexByName( "weapon_selection" ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -215,6 +224,7 @@ void CBaseHudWeaponSelection::OpenSelection( void )
 void CBaseHudWeaponSelection::HideSelection( void )
 {
 	m_bSelectionVisible = false;
+	gHUD.UnlockRenderGroup( gHUD.LookupRenderGroupIndexByName( "weapon_selection" ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -222,8 +232,14 @@ void CBaseHudWeaponSelection::HideSelection( void )
 //-----------------------------------------------------------------------------
 bool CBaseHudWeaponSelection::CanBeSelectedInHUD( C_BaseCombatWeapon *pWeapon )
 {
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
+
 	// Xbox: In plus type, weapons without ammo can still be selected in the HUD
-	if( HUDTYPE_PLUS == hud_fastswitch.GetInt() )
+	if( HUDTYPE_PLUS == nFastswitchMode )
 	{
 		return pWeapon->VisibleInWeaponSelection();
 	}
@@ -247,6 +263,12 @@ int	CBaseHudWeaponSelection::KeyInput( int down, ButtonCode_t keynum, const char
 		HideSelection();
 		// returning 0 indicates, we've handled it, no more action needs to be taken
 		return 0;
+	}
+
+	if ( down >= 1 && keynum >= KEY_1 && keynum <= KEY_9 )
+	{
+		if ( HandleHudMenuInput( keynum - KEY_0 ) )
+			return 0;
 	}
 
 	// let someone else handle it
@@ -273,7 +295,13 @@ void CBaseHudWeaponSelection::OnWeaponPickup( C_BaseCombatWeapon *pWeapon )
 //------------------------------------------------------------------------
 void CBaseHudWeaponSelection::UserCmd_Slot1(void)
 {
-	if( HUDTYPE_CAROUSEL == hud_fastswitch.GetInt() )
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
+
+	if( HUDTYPE_CAROUSEL == nFastswitchMode )
 	{
 		UserCmd_LastWeapon();
 	}
@@ -285,7 +313,13 @@ void CBaseHudWeaponSelection::UserCmd_Slot1(void)
 
 void CBaseHudWeaponSelection::UserCmd_Slot2(void)
 {
-	if( HUDTYPE_CAROUSEL == hud_fastswitch.GetInt() )
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
+
+	if( HUDTYPE_CAROUSEL == nFastswitchMode )
 	{
 		UserCmd_NextWeapon();
 	}
@@ -297,7 +331,13 @@ void CBaseHudWeaponSelection::UserCmd_Slot2(void)
 
 void CBaseHudWeaponSelection::UserCmd_Slot3(void)
 {
-	if( HUDTYPE_CAROUSEL == hud_fastswitch.GetInt() )
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
+
+	if( HUDTYPE_CAROUSEL == nFastswitchMode )
 	{
 		engine->ClientCmd( "phys_swap" );
 	}
@@ -309,7 +349,13 @@ void CBaseHudWeaponSelection::UserCmd_Slot3(void)
 
 void CBaseHudWeaponSelection::UserCmd_Slot4(void)
 {
-	if( HUDTYPE_CAROUSEL == hud_fastswitch.GetInt() )
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
+
+	if( HUDTYPE_CAROUSEL == nFastswitchMode )
 	{
 		UserCmd_PrevWeapon();
 	}
@@ -364,6 +410,20 @@ bool CBaseHudWeaponSelection::IsHudMenuTakingInput()
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: returns true if the CHudMenu handles the slot command
+//-----------------------------------------------------------------------------
+bool CBaseHudWeaponSelection::HandleHudMenuInput( int iSlot )
+{
+	CHudMenu *pHudMenu = GET_HUDELEMENT( CHudMenu );
+	if ( !pHudMenu || !pHudMenu->IsMenuOpen() )
+		return false;
+
+	pHudMenu->SelectMenuItem( iSlot );
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: returns true if the weapon selection hud should be hidden because
 //          the CHudMenu is open
 //-----------------------------------------------------------------------------
@@ -383,10 +443,8 @@ bool CBaseHudWeaponSelection::IsHudMenuPreventingWeaponSelection()
 void CBaseHudWeaponSelection::SelectSlot( int iSlot )
 {
 	// A menu may be overriding weapon selection commands
-	CHudMenu *pHudMenu = GET_HUDELEMENT( CHudMenu );
-	if ( pHudMenu && IsHudMenuTakingInput() )	
-	{ 
-		pHudMenu->SelectMenuItem( iSlot );  // slots are one off the key numbers
+	if ( HandleHudMenuInput( iSlot ) )
+	{
 		return;
 	}
 
@@ -417,8 +475,14 @@ void CBaseHudWeaponSelection::UserCmd_NextWeapon(void)
 	if ( !BaseClass::ShouldDraw() )
 		return;
 
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
+
 	CycleToNextWeapon();
-	if( hud_fastswitch.GetInt() > 0 )
+	if( nFastswitchMode > 0 )
 	{
 		SelectWeapon();
 	}
@@ -434,9 +498,14 @@ void CBaseHudWeaponSelection::UserCmd_PrevWeapon(void)
 	if ( !BaseClass::ShouldDraw() )
 		return;
 
-	CycleToPrevWeapon();
+	int nFastswitchMode = hud_fastswitch.GetInt();
+	if ( ::input->IsSteamControllerActive() )
+	{
+		nFastswitchMode = HUDTYPE_FASTSWITCH;
+	}
 
-	if( hud_fastswitch.GetInt() > 0 )
+	CycleToPrevWeapon();
+	if( nFastswitchMode > 0 )
 	{
 		SelectWeapon();
 	}

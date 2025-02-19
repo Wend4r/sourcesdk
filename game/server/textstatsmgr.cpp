@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -58,7 +58,7 @@ char *CTextStatsMgr::GetStatsFilename( void )
 	return m_szStatFilename;
 }
 
-void CTextStatsMgr::SetStatsFilename( const char *sFilename )
+void CTextStatsMgr::SetStatsFilename( char *sFilename )
 {
 	Assert( sFilename && sFilename[0] );
 

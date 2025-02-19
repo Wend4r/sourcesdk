@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,7 +11,7 @@
 
 #include "cbase.h"
 #include <bitbuf.h>
-#include "engine/IVDebugOverlay.h"
+#include "engine/ivdebugoverlay.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -134,16 +134,19 @@ void C_Fish::ClientThink()
 {
 	if (FishDebug.GetBool())
 	{
-		debugoverlay->AddLineOverlay( m_pos, m_actualPos, 255, 0, 0, true, 0.1f );
-		switch( m_localLifeState )
+		if ( debugoverlay )
 		{
-			case LIFE_DYING:
-				debugoverlay->AddTextOverlay( m_pos, 0.1f, "DYING" );
-				break;
+			debugoverlay->AddLineOverlay( m_pos, m_actualPos, 255, 0, 0, true, 0.1f );
+			switch( m_localLifeState )
+			{
+				case LIFE_DYING:
+					debugoverlay->AddTextOverlay( m_pos, 0.1f, "DYING" );
+					break;
 
-			case LIFE_DEAD:
-				debugoverlay->AddTextOverlay( m_pos, 0.1f, "DEAD" );
-				break;
+				case LIFE_DEAD:
+					debugoverlay->AddTextOverlay( m_pos, 0.1f, "DEAD" );
+					break;
+			}
 		}
 	}
 

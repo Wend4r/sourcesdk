@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements the zombie, a horrific once-human headcrab victim.
 //
@@ -684,7 +684,7 @@ float CNPC_BaseZombie::GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDa
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo infoCopy = info;
 
@@ -702,7 +702,7 @@ void CNPC_BaseZombie::TraceAttack( const CTakeDamageInfo &info, const Vector &ve
 		infoCopy.ScaleDamage( 0.625 );
 	}
 
-	BaseClass::TraceAttack( infoCopy, vecDir, ptr );
+	BaseClass::TraceAttack( infoCopy, vecDir, ptr, pAccumulator );
 }
 
 
@@ -893,9 +893,6 @@ int CNPC_BaseZombie::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 		case RELEASE_SCHEDULED:
 			SetCondition( COND_ZOMBIE_RELEASECRAB );
 			break;
-
-		default:
-			break;
 		}
 
 		if( ShouldBecomeTorso( info, flDamageThreshold ) )
@@ -952,10 +949,12 @@ int CNPC_BaseZombie::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 //-----------------------------------------------------------------------------
 void CNPC_BaseZombie::MakeAISpookySound( float volume, float duration )
 {
+#ifdef HL2_EPISODIC
 	if ( HL2GameRules()->IsAlyxInDarknessMode() )
 	{
-		CSoundEnt::InsertSound( SOUND_COMBAT, EyePosition(), (int)volume, duration, this, SOUNDENT_CHANNEL_SPOOKY_NOISE );
+		CSoundEnt::InsertSound( SOUND_COMBAT, EyePosition(), volume, duration, this, SOUNDENT_CHANNEL_SPOOKY_NOISE );
 	}
+#endif // HL2_EPISODIC
 }
 
 //-----------------------------------------------------------------------------
@@ -1019,7 +1018,7 @@ void CNPC_BaseZombie::MoanSound( envelopePoint_t *pEnvelope, int iEnvelopeSize )
 
 	float duration = ENVELOPE_CONTROLLER.SoundPlayEnvelope( m_pMoanSound, SOUNDCTRL_CHANGE_VOLUME, pEnvelope, iEnvelopeSize );
 
-	float flPitch = random->RandomInt( (int)m_flMoanPitch + zombie_changemin.GetInt(), (int)m_flMoanPitch + zombie_changemax.GetInt() );
+	float flPitch = random->RandomInt( m_flMoanPitch + zombie_changemin.GetInt(), m_flMoanPitch + zombie_changemax.GetInt() );
 	ENVELOPE_CONTROLLER.SoundChangePitch( m_pMoanSound, flPitch, 0.3 );
 
 	m_flNextMoanSound = gpGlobals->curtime + duration + 9999;
@@ -1216,7 +1215,7 @@ void CNPC_BaseZombie::Ignite( float flFlameLifetime, bool bNPCOnly, float flSize
 #endif // HL2_EPISODIC
 
 	// Set the zombie up to burn to death in about ten seconds.
-	SetHealth( (int)MIN( m_iHealth, FLAME_DIRECT_DAMAGE_PER_SEC * (ZOMBIE_BURN_TIME + random->RandomFloat( -ZOMBIE_BURN_TIME_NOISE, ZOMBIE_BURN_TIME_NOISE)) ) );
+	SetHealth( MIN( m_iHealth, FLAME_DIRECT_DAMAGE_PER_SEC * (ZOMBIE_BURN_TIME + random->RandomFloat( -ZOMBIE_BURN_TIME_NOISE, ZOMBIE_BURN_TIME_NOISE)) ) );
 
 	// FIXME: use overlays when they come online
 	//AddOverlay( ACT_ZOM_WALK_ON_FIRE, false );
@@ -1574,29 +1573,29 @@ void CNPC_BaseZombie::HandleAnimEvent( animevent_t *pEvent )
 	
 	if ( pEvent->event == AE_ZOMBIE_ATTACK_RIGHT )
 	{
-		QAngle viewPunch = QAngle(-15.0f, -20.0f, -10.0f);
-		Vector right, forward, velocityPunch;
+		Vector right, forward;
 		AngleVectors( GetLocalAngles(), &forward, &right, NULL );
 		
 		right = right * 100;
 		forward = forward * 200;
-		velocityPunch = right + forward;
 
-		ClawAttack( GetClawAttackRange(), sk_zombie_dmg_one_slash.GetInt(), viewPunch, velocityPunch, ZOMBIE_BLOOD_RIGHT_HAND );
+		QAngle qa( -15, -20, -10 );
+		Vector vec = right + forward;
+		ClawAttack( GetClawAttackRange(), sk_zombie_dmg_one_slash.GetFloat(), qa, vec, ZOMBIE_BLOOD_RIGHT_HAND );
 		return;
 	}
 
 	if ( pEvent->event == AE_ZOMBIE_ATTACK_LEFT )
 	{
-		QAngle viewPunch = QAngle(-15.0f, -20.0f, -10.0f);
-		Vector right, forward, velocityPunch;
+		Vector right, forward;
 		AngleVectors( GetLocalAngles(), &forward, &right, NULL );
 
 		right = right * -100;
 		forward = forward * 200;
-		velocityPunch = right + forward;
 
-		ClawAttack( GetClawAttackRange(), sk_zombie_dmg_one_slash.GetInt(), viewPunch, velocityPunch, ZOMBIE_BLOOD_LEFT_HAND );
+		QAngle qa( -15, 20, -10 );
+		Vector vec = right + forward;
+		ClawAttack( GetClawAttackRange(), sk_zombie_dmg_one_slash.GetFloat(), qa, vec, ZOMBIE_BLOOD_LEFT_HAND );
 		return;
 	}
 
@@ -1606,7 +1605,7 @@ void CNPC_BaseZombie::HandleAnimEvent( animevent_t *pEvent )
 		QAngle qaPunch( 45, random->RandomInt(-5,5), random->RandomInt(-5,5) );
 		AngleVectors( GetLocalAngles(), &forward );
 		forward = forward * 200;
-		ClawAttack( GetClawAttackRange(), sk_zombie_dmg_one_slash.GetInt(), qaPunch, forward, ZOMBIE_BLOOD_BOTH_HANDS );
+		ClawAttack( GetClawAttackRange(), sk_zombie_dmg_one_slash.GetFloat(), qaPunch, forward, ZOMBIE_BLOOD_BOTH_HANDS );
 		return;
 	}
 
@@ -1629,7 +1628,7 @@ void CNPC_BaseZombie::HandleAnimEvent( animevent_t *pEvent )
 
 		pString = nexttoken( token, pString, ' ' );
 
-		if ( token == '\0' )
+		if ( !token )
 		{
 			Warning( "AE_ZOMBIE_POPHEADCRAB event format missing velocity parameter! Usage: event AE_ZOMBIE_POPHEADCRAB \"<BoneName> <Speed>\" \n" );
 			return;
@@ -1918,9 +1917,6 @@ int CNPC_BaseZombie::SelectSchedule ( void )
 			// Wander around a bit so we don't look like a dingus.
 			return SCHED_ZOMBIE_WANDER_MEDIUM;
 		}
-		break;
-
-	default:
 		break;
 	}
 
@@ -2626,9 +2622,6 @@ Activity CNPC_BaseZombie::NPC_TranslateActivity( Activity baseAct )
 				// I'm on fire. Put ME out.
 				return ( Activity )ACT_IDLE_ON_FIRE;
 			}
-
-			default:
-				break;
 		}
 	}
 

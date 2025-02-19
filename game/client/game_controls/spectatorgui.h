@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #endif
 
 #include <vgui/IScheme.h>
-#include <vgui/keycode.h>
+#include <vgui/KeyCode.h>
 #include <vgui_controls/Frame.h>
 #include <vgui_controls/EditablePanel.h>
 #include <vgui_controls/Button.h>
@@ -68,6 +68,10 @@ public:
 	virtual bool ShouldShowPlayerLabel( int specmode );
 
 	virtual Color GetBlackBarColor( void ) { return BLACK_BAR_COLOR; }
+
+	virtual const char *GetResFile( void );
+
+	virtual GameActionSet_t GetPreferredActionSet() { return GAME_ACTION_SET_SPECTATOR; }
 	
 protected:
 
@@ -96,6 +100,8 @@ protected:
 	// bool m_bHelpShown;
 	// bool m_bInsetVisible;
 	bool m_bSpecScoreboard;
+
+	int m_iWasSteamController = -1;
 };
 
 
@@ -124,6 +130,8 @@ public:
 	virtual bool IsVisible() { return BaseClass::IsVisible(); }
 	vgui::VPANEL GetVPanel( void ) { return BaseClass::GetVPanel(); }
 	virtual void SetParent(vgui::VPANEL parent) { BaseClass::SetParent(parent); }
+
+	virtual GameActionSet_t GetPreferredActionSet() { return GAME_ACTION_SET_SPECTATOR; }
 
 private:
 	// VGUI2 overrides

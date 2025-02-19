@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -90,6 +90,7 @@ protected:
 	// Helpers to call pre and post think for player, and to call think if a think function is set
 	void			RunPreThink( C_BasePlayer *player );
 	void			RunThink (C_BasePlayer *ent, double frametime );
+	void			CheckMovingGround( C_BasePlayer* player, double frametime );
 	void			RunPostThink( C_BasePlayer *player );
 
 private:
@@ -131,7 +132,7 @@ private:
 	bool			m_bInPrediction;
 	bool			m_bFirstTimePredicted;
 	bool			m_bOldCLPredictValue;
-
+	bool			m_bEnginePaused;
 
 	// Last network origin for local player
 	int				m_nPreviousStartFrame;
@@ -139,6 +140,8 @@ private:
 	int				m_nCommandsPredicted;
 	int				m_nServerCommandsAcknowledged;
 	int				m_bPreviousAckHadErrors;
+	int				m_bPreviousAckErrorTriggersFullLatchReset;
+	CUtlVector< CHandle< CBaseEntity > > m_EntsWithPredictionErrorsInLastAck;
 	int				m_nIncomingPacketNumber;
 
 #endif

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		SLAM 
 //
@@ -75,6 +75,7 @@ public:
 	bool				Deploy( void );
 	bool				Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
 
+	const CUtlVector< CBaseEntity* > &GetSatchelVector();
 
 	CWeapon_SLAM();
 
@@ -85,6 +86,8 @@ public:
 
 private:
 	CWeapon_SLAM( const CWeapon_SLAM & );
+
+	CUtlVector< CBaseEntity* > m_SatchelVector;
 };
 
 

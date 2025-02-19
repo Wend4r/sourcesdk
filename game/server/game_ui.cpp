@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Entities that capture the player's UI and move it into game design
 //			as outputs.
@@ -170,7 +170,7 @@ void CGameUI::Deactivate( CBaseEntity *pActivator )
 	}
 	else
 	{
-		Warning("%s Deactivate(): I have no player when called by %s!\n", GetEntityName().ToCStr(), pActivator->GetEntityName().ToCStr());
+		Warning("%s Deactivate(): I have no player when called by %s!\n", GetEntityName().ToCStr(), pActivator ? pActivator->GetEntityName().ToCStr() : NULL);
 	}
 	
 	// Stop thinking
@@ -202,7 +202,7 @@ void CGameUI::InputActivate( inputdata_t &inputdata )
 		// Otherwise try to use the activator
 		if ( inputdata.pActivator == NULL || inputdata.pActivator->IsPlayer() == false )
 		{
-			Warning( "%s InputActivate: invalid or missing !activator!\n", GetEntityName().ToCStr(), inputdata.value.String() );
+			Warning( "%s InputActivate: invalid or missing !activator!\n", GetEntityName().ToCStr() );
 			return;
 		}
 

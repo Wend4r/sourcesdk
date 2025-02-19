@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -26,7 +26,7 @@
 #include "collisionutils.h"
 #include "hl2_shareddefs.h"
 #include "rumble_shared.h"
-#include "GameStats.h"
+#include "gamestats.h"
 
 #ifdef PORTAL
 	#include "portal_util_shared.h"
@@ -44,7 +44,7 @@
 static ConVar sk_apc_missile_damage("sk_apc_missile_damage", "15");
 ConVar rpg_missle_use_custom_detonators( "rpg_missle_use_custom_detonators", "1" );
 
-#define APC_MISSILE_DAMAGE	sk_apc_missile_damage.GetInt()
+#define APC_MISSILE_DAMAGE	sk_apc_missile_damage.GetFloat()
 
 const char *g_pLaserDotThink = "LaserThinkContext";
 
@@ -91,7 +91,7 @@ public:
 
 // a list of laser dots to search quickly
 CEntityClassList<CLaserDot> g_LaserDotList;
-template <> CLaserDot *CEntityClassList<CLaserDot>::m_pClassList = NULL;
+template <>  CLaserDot *CEntityClassList<CLaserDot>::m_pClassList = NULL;
 CLaserDot *GetLaserDotList()
 {
 	return g_LaserDotList.m_pClassList;
@@ -341,7 +341,7 @@ void CMissile::ShotDown( void )
 void CMissile::DoExplosion( void )
 {
 	// Explode
-	ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity(), (int)GetDamage(), CMissile::EXPLOSION_RADIUS, 
+	ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity(), GetDamage(), CMissile::EXPLOSION_RADIUS, 
 		SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
 }
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -574,7 +574,7 @@ void CIncremental::AddLightsForActiveLights()
 
 		// Copy the light information.
 		pLight->m_Light = dl->light;
-		pLight->m_flMaxIntensity = MAX( dl->light.intensity[0], MAX( dl->light.intensity[1], dl->light.intensity[2] ) );
+		pLight->m_flMaxIntensity = max( dl->light.intensity[0], max( dl->light.intensity[1], dl->light.intensity[2] ) );
 	}
 }
 
@@ -609,8 +609,8 @@ bool CIncremental::LoadIncrementalFile()
 
 		FileRead( fp, pLight->m_Light );
 		pLight->m_flMaxIntensity = 
-			MAX( pLight->m_Light.intensity.x, 
-				MAX( pLight->m_Light.intensity.y, pLight->m_Light.intensity.z ) );
+			max( pLight->m_Light.intensity.x, 
+				max( pLight->m_Light.intensity.y, pLight->m_Light.intensity.z ) );
 
 		int nFaces;
 		FileRead( fp, nFaces );

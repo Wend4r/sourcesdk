@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 // This class is a message box that has two buttons, ok and cancel instead of
@@ -17,7 +17,7 @@
 #include <tier0/memdbgon.h>
 
 #ifndef max
-#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
 
 using namespace vgui;
@@ -91,17 +91,17 @@ void QueryBox::PerformLayout()
 	
 	int btnWide, btnTall;
 	m_pCancelButton->GetContentSize(btnWide, btnTall);
-	btnWide = MAX(oldWide, btnWide + 10);
-	btnTall = MAX(oldTall, btnTall + 10);
+	btnWide = max(oldWide, btnWide + QuickPropScale( 10 ));
+	btnTall = max(oldTall, btnTall + QuickPropScale( 10 ));
 	m_pCancelButton->SetSize(btnWide, btnTall);
 
 //nt boxWidth, boxTall;
 	GetSize(boxWidth, boxTall);
-//	wide = MAX(wide, btnWide * 2 + 100);
+//	wide = max(wide, btnWide * 2 + 100);
 //	SetSize(wide, tall);
 
-	m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide())-1 + x, tall - m_pOkButton->GetTall() - 15);
-	m_pCancelButton->SetPos((wide/2) + x+16, tall - m_pCancelButton->GetTall() - 15);
+	m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide())- QuickPropScale( 1 ) + x, tall - m_pOkButton->GetTall() - QuickPropScale( 15 ));
+	m_pCancelButton->SetPos((wide/2) + x+ QuickPropScale( 16 ), tall - m_pCancelButton->GetTall() - QuickPropScale( 15 ) );
 
 }
 
@@ -191,18 +191,30 @@ void QueryBox::SetCancelButtonText(const wchar_t* wszButtonText)
 	InvalidateLayout();
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void QueryBox::OnKeyCodeTyped(KeyCode code)
+void QueryBox::OnKeyCodeTyped( KeyCode code )
 {
-	if (code == KEY_ESCAPE)
+	if ( code == KEY_ESCAPE )
 	{
 		OnCommand("Cancel");
 	}
 	else
 	{
 		Frame::OnKeyCodeTyped(code);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void QueryBox::OnKeyCodePressed( KeyCode code )
+{
+	if ( code == KEY_XBUTTON_B )
+	{
+		OnCommand("Cancel");
+	}
+	else
+	{
+		Frame::OnKeyCodePressed(code);
 	}
 }
 

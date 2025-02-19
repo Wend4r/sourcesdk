@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Base class for many flying NPCs
 //
@@ -336,6 +336,8 @@ void CAI_BasePhysicsFlyingBot::TranslateNavGoal( CBaseEntity *pTarget, Vector &c
 //-----------------------------------------------------------------------------
 IMotionEvent::simresult_e CAI_BasePhysicsFlyingBot::Simulate( IPhysicsMotionController *pController, IPhysicsObject *pObject, float deltaTime, Vector &linear, AngularImpulse &angular )
 {
+	static int count;
+
 	IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
 	// Assert( pPhysicsObject );
 	if (!pPhysicsObject) 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -45,7 +45,7 @@
 const char *g_pLaserDotThink = "LaserThinkContext";
 
 static ConVar sk_apc_missile_damage("sk_apc_missile_damage", "15");
-#define APC_MISSILE_DAMAGE	sk_apc_missile_damage.GetInt()
+#define APC_MISSILE_DAMAGE	sk_apc_missile_damage.GetFloat()
 
 #endif
 
@@ -360,7 +360,7 @@ void CMissile::ShotDown( void )
 void CMissile::DoExplosion( void )
 {
 	// Explode
-	ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity(), (int)GetDamage(), (int)(GetDamage() * 2), 
+	ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity(), GetDamage(), GetDamage() * 2, 
 		SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this);
 }
 
@@ -1248,7 +1248,7 @@ void CAPCMissile::ComputeActualDotPosition( CLaserDot *pLaserDot, Vector *pActua
 
 #define	RPG_BEAM_SPRITE		"effects/laser1.vmt"
 #define	RPG_BEAM_SPRITE_NOZ	"effects/laser1_noz.vmt"
-#define	RPG_LASER_SPRITE	"sprites/redglow1"
+#define	RPG_LASER_SPRITE	"sprites/redglow1.vmt"
 
 //=============================================================================
 // RPG
@@ -1361,7 +1361,6 @@ void CWeaponRPG::Precache( void )
 	PrecacheScriptSound( "Missile.Accelerate" );
 
 	// Laser dot...
-	PrecacheModel( "sprites/redglow1.vmt" );
 	PrecacheModel( RPG_LASER_SPRITE );
 	PrecacheModel( RPG_BEAM_SPRITE );
 	PrecacheModel( RPG_BEAM_SPRITE_NOZ );
@@ -1860,7 +1859,7 @@ void CWeaponRPG::GetWeaponAttachment( int attachmentId, Vector &outVector, Vecto
 {
 	QAngle	angles;
 
-	if ( IsCarriedByLocalPlayer() )
+	if ( ShouldDrawUsingViewModel() )
 	{
 		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 		
@@ -1904,7 +1903,7 @@ void CWeaponRPG::InitBeam( void )
 
 	CBaseEntity *pEntity = NULL;
 
-	if ( IsCarriedByLocalPlayer() )
+	if ( ShouldDrawUsingViewModel() )
 	{
 		CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 		
@@ -1924,12 +1923,12 @@ void CWeaponRPG::InitBeam( void )
 	beamInfo.m_vecStart = vec3_origin;
 	beamInfo.m_vecEnd = vec3_origin;
 	
-	beamInfo.m_pszModelName = ( IsCarriedByLocalPlayer() ) ? RPG_BEAM_SPRITE_NOZ : RPG_BEAM_SPRITE;
+	beamInfo.m_pszModelName = ( ShouldDrawUsingViewModel() ) ? RPG_BEAM_SPRITE_NOZ : RPG_BEAM_SPRITE;
 	
 	beamInfo.m_flHaloScale = 0.0f;
 	beamInfo.m_flLife = 0.0f;
 	
-	if ( IsCarriedByLocalPlayer() )
+	if ( ShouldDrawUsingViewModel() )
 	{
 		beamInfo.m_flWidth = 2.0f;
 		beamInfo.m_flEndWidth = 2.0f;
@@ -1994,7 +1993,7 @@ void CWeaponRPG::DrawEffects( void )
 
 	float scale = 8.0f + random->RandomFloat( -2.0f, 2.0f );
 
-	int	attachmentID = ( IsCarriedByLocalPlayer() ) ? RPG_GUIDE_ATTACHMENT : RPG_GUIDE_ATTACHMENT_3RD;
+	int	attachmentID = ( ShouldDrawUsingViewModel() ) ? RPG_GUIDE_ATTACHMENT : RPG_GUIDE_ATTACHMENT_3RD;
 
 	GetWeaponAttachment( attachmentID, vecAttachment, &vecDir );
 

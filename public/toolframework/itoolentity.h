@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -220,9 +220,6 @@ public:
 	virtual void RadiusDamage( const CTakeDamageInfo &info, const Vector &vecSrc, float flRadius, int iClassIgnore, CBaseEntity *pEntityIgnore ) = 0;
 
 	virtual ITempEntsSystem *GetTempEntsSystem( void ) = 0;
-	
-	// Only in VSERVERTOOLS003 and later
-	
 	virtual CBaseTempEntity *GetTempEntList( void ) = 0;
 
 	virtual CGlobalEntityList *GetEntityList( void ) = 0;
@@ -246,10 +243,12 @@ public:
 };
 
 typedef IServerTools IServerTools001;
+typedef IServerTools IServerTools002;
 
 #define VSERVERTOOLS_INTERFACE_VERSION_1	"VSERVERTOOLS001"
-#define VSERVERTOOLS_INTERFACE_VERSION		"VSERVERTOOLS002"
-#define VSERVERTOOLS_INTERFACE_VERSION_INT	2
+#define VSERVERTOOLS_INTERFACE_VERSION_2	"VSERVERTOOLS002"
+#define VSERVERTOOLS_INTERFACE_VERSION		"VSERVERTOOLS003"
+#define VSERVERTOOLS_INTERFACE_VERSION_INT	3
 
 //-----------------------------------------------------------------------------
 // Purpose: Client side tool interace (right now just handles IClientRenderables).

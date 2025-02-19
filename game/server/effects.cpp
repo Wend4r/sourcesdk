@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements a grab bag of visual effects entities.
 //
@@ -988,7 +988,7 @@ void CTestEffect::Think( void )
 		for (i = 0; i < m_iBeam; i++)
 		{
 			t = (gpGlobals->curtime - m_flBeamTime[i]) / ( 3 + m_flStartTime - m_flBeamTime[i]);
-			m_pBeam[i]->SetBrightness( (int)(255 * t) );
+			m_pBeam[i]->SetBrightness( 255 * t );
 			// m_pBeam[i]->SetScrollRate( 20 * t );
 		}
 		SetNextThink( gpGlobals->curtime + 0.1f );
@@ -1169,11 +1169,11 @@ void CBlood::InputEmitBlood( inputdata_t &inputdata )
 {
 	if ( HasSpawnFlags( SF_BLOOD_STREAM ) )
 	{
-		UTIL_BloodStream( BloodPosition(inputdata.pActivator), Direction(), Color(), (int)BloodAmount() );
+		UTIL_BloodStream( BloodPosition(inputdata.pActivator), Direction(), Color(), BloodAmount() );
 	}
 	else
 	{
-		UTIL_BloodDrips( BloodPosition(inputdata.pActivator), Direction(), Color(), (int)BloodAmount() );
+		UTIL_BloodDrips( BloodPosition(inputdata.pActivator), Direction(), Color(), BloodAmount() );
 	}
 
 	if ( HasSpawnFlags( SF_BLOOD_DECAL ) )
@@ -1210,7 +1210,7 @@ void CBlood::InputEmitBlood( inputdata_t &inputdata )
 			nFlags |= FX_BLOODSPRAY_GORE;
 		}
 
-		UTIL_BloodSpray(GetAbsOrigin(), Direction(), Color(), (int)BloodAmount(), nFlags);
+		UTIL_BloodSpray(GetAbsOrigin(), Direction(), Color(), BloodAmount(), nFlags);
 	}
 }
 
@@ -1491,7 +1491,7 @@ BEGIN_DATADESC( CPrecipitation )
 	DEFINE_KEYFIELD( m_nPrecipType, FIELD_INTEGER, "preciptype" ),
 END_DATADESC()
 
-// Just send the normal entity crap
+// Just send the normal entity stuff
 IMPLEMENT_SERVERCLASS_ST( CPrecipitation, DT_Precipitation)
 	SendPropInt( SENDINFO( m_nPrecipType ), Q_log2( NUM_PRECIPITATION_TYPES ) + 1, SPROP_UNSIGNED )
 END_SEND_TABLE()
@@ -1539,7 +1539,7 @@ public:
 	DECLARE_SERVERCLASS();
 
 private:
-#ifdef _LINUX
+#ifdef POSIX
 	CEnvWindShared m_EnvWindShared; // FIXME - fails to compile as networked var due to operator= problem
 #else
 	CNetworkVarEmbedded( CEnvWindShared, m_EnvWindShared );
@@ -1615,7 +1615,7 @@ void CEnvWind::Spawn( void )
 	SetSolid( SOLID_NONE );
 	AddEffects( EF_NODRAW );
 
-	m_EnvWindShared.Init( entindex(), 0, gpGlobals->frametime, (int)GetLocalAngles().y, 0 );
+	m_EnvWindShared.Init( entindex(), 0, gpGlobals->frametime, GetLocalAngles().y, 0 );
 
 	SetThink( &CEnvWind::WindThink );
 	SetNextThink( gpGlobals->curtime );
@@ -1897,7 +1897,7 @@ void CEnvMuzzleFlash::Spawn()
 	{
 		CBaseAnimating *pAnim = GetParent()->GetBaseAnimating();
 		int nParentAttachment = pAnim->LookupAttachment( STRING(m_iszParentAttachment) );
-		if ( nParentAttachment != 0 )
+		if ( nParentAttachment > 0 )
 		{
 			SetParent( GetParent(), nParentAttachment );
 			SetLocalOrigin( vec3_origin );
@@ -2307,6 +2307,13 @@ void EffectsPrecache( void *pUser )
 	{
 		CBaseEntity::PrecacheScriptSound( "HudChat.Message" );
 	}
+
+#ifdef TF_DLL
+	// For tempfx.
+	CBaseEntity::PrecacheModel( "models/weapons/shells/shell_cigarrette.mdl" );
+	CBaseEntity::PrecacheModel( "models/player/gibs/soldiergib007.mdl" );
+	CBaseEntity::PrecacheModel( "models/player/gibs/soldiergib008.mdl" );
+#endif
 }
 
 PRECACHE_REGISTER_FN( EffectsPrecache );

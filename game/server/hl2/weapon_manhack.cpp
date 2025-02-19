@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -61,7 +61,7 @@ void CWeapon_Manhack::Spawn( )
 
 	FallInit();// get ready to fall down.
 
-	m_flBladeYaw = 0.0f;
+	m_flBladeYaw = NULL;
 	AddSolidFlags( FSOLID_NOT_SOLID );
 }
 

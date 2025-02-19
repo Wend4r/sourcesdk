@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Base NPC character with AI
 //
@@ -1746,7 +1746,7 @@ public:
 
 	void				MakeDamageBloodDecal( int cCount, float flNoise, trace_t *ptr, Vector vecDir );
 	virtual float		GetHitgroupDamageMultiplier( int iHitGroup, const CTakeDamageInfo &info );
-	void				TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+	void				TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	void				DecalTrace( trace_t *pTrace, char const *decalName );
 	void				ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName );
 	virtual	bool		PlayerInSpread( const Vector &sourcePos, const Vector &targetPos, float flSpread, float maxDistOffCenter, bool ignoreHatedPlayers = true );
@@ -1761,7 +1761,6 @@ public:
 
 	virtual Activity	GetFlinchActivity( bool bHeavyDamage, bool bGesture );
 	
-	virtual bool		ShouldGib( const CTakeDamageInfo &info ) { return false; }	// Always ragdoll, unless specified by the leaf class
 	virtual bool		Event_Gibbed( const CTakeDamageInfo &info );
 	virtual void		Event_Killed( const CTakeDamageInfo &info );
 
@@ -2151,7 +2150,7 @@ inline void CAI_BaseNPC::FireBullets( int cShots, const Vector &vecSrc,
 	info.m_flDistance = flDistance;
 	info.m_iAmmoType = iAmmoType;
 	info.m_iTracerFreq = iTracerFreq;
-	info.m_iDamage = iDamage;
+	info.m_flDamage = iDamage;
 	info.m_pAttacker = pAttacker;
 	info.m_nFlags = bFirstShotAccurate ? FIRE_BULLETS_FIRST_SHOT_ACCURATE : 0;
 
@@ -2304,7 +2303,7 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		typedef derivedClass CNpc; \
 		const char *pszClassName = #derivedClass; \
 		\
-		CUtlVector<char *> schedulesToLoad; \
+		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
 		CAI_NamespaceInfos scheduleIds; \
 		CAI_NamespaceInfos taskIds; \
@@ -2320,7 +2319,7 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 		typedef derivedClass CNpc; \
 		const char *pszClassName = #derivedClass; \
 		\
-		CUtlVector<char *> schedulesToLoad; \
+		CUtlVector<const char *> schedulesToLoad; \
 		CUtlVector<AIScheduleLoadFunc_t> reqiredOthers; \
 		CAI_NamespaceInfos scheduleIds; \
 		CAI_NamespaceInfos taskIds; \
@@ -2332,18 +2331,18 @@ typedef CHandle<CAI_BaseNPC> AIHANDLE;
 #define EXTERN_SCHEDULE( id ) \
 	scheduleIds.PushBack( #id, id ); \
 	extern const char * g_psz##id; \
-	schedulesToLoad.AddToTail( (char *)g_psz##id );
+	schedulesToLoad.AddToTail( g_psz##id );
 
 //-----------------
 
 #define DEFINE_SCHEDULE( id, text ) \
 	scheduleIds.PushBack( #id, id ); \
 	const char * g_psz##id = \
-			"\n	Schedule" \
-			"\n		" #id \
-			text \
-			"\n"; \
-	schedulesToLoad.AddToTail( (char *)g_psz##id );
+		"\n	Schedule" \
+		"\n		" #id \
+		text \
+		"\n"; \
+	schedulesToLoad.AddToTail( g_psz##id );
 	
 //-----------------
 

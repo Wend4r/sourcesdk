@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include "engine/IEngineSound.h"
 #include "dlight.h"
 #include "iefx.h"
-#include "soundemittersystem/isoundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "filesystem.h"
 #include "KeyValues.h"
 
@@ -272,8 +272,8 @@ void C_SlideshowDisplay::BuildSlideShowImagesList( void )
 
 		if ( bLoaded )
 		{
-			char szKeywords[ 256 ];
-			Q_strcpy( szKeywords, pMaterialKeys->GetString( "%keywords", "" ) );
+			char szKeywords[ 256 ] = {0};
+			V_strcpy_safe( szKeywords, pMaterialKeys->GetString( "%keywords", "" ) );
 
 			char *pchKeyword = szKeywords;
 
@@ -306,7 +306,7 @@ void C_SlideshowDisplay::BuildSlideShowImagesList( void )
 				{
 					// Couldn't find the list, so create it
 					iList = m_SlideMaterialLists.AddToTail( new SlideMaterialList_t );
-					Q_strcpy( m_SlideMaterialLists[ iList ]->szSlideKeyword, pchKeyword );
+					V_strcpy_safe( m_SlideMaterialLists[iList]->szSlideKeyword, pchKeyword );
 				}
 
 				// Add material index to this list
@@ -329,7 +329,7 @@ void C_SlideshowDisplay::BuildSlideShowImagesList( void )
 		{
 			// Couldn't find the generic list, so create it
 			iList = m_SlideMaterialLists.AddToHead( new SlideMaterialList_t );
-			Q_strcpy( m_SlideMaterialLists[ iList ]->szSlideKeyword, "" );
+			V_strcpy_safe( m_SlideMaterialLists[iList]->szSlideKeyword, "" );
 		}
 
 		// Add material index to this list

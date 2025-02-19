@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -28,7 +28,11 @@ HMODULE win32DLLHandle;
 BOOL WINAPI DllMain( HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved )
 {
 	// ensure data sizes are stable
+#ifdef PLATFORM_64BITS
+	if ( sizeof(inputfunc_t) != sizeof(void*) )
+#else
 	if ( sizeof(inputfunc_t) != sizeof(int) )
+#endif
 	{
 		Assert( sizeof(inputfunc_t) == sizeof(int) );
 		return FALSE;

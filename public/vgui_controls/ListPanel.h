@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -49,7 +49,7 @@ public:
 	}
 
 	KeyValues		*kv;
-	unsigned int 	userData;
+	uintp		 	userData;
 	KeyValues		*m_pDragData;
 	bool			m_bImage;
 	int				m_nImageIndex;
@@ -68,6 +68,7 @@ typedef int __cdecl SortFunc(
 class ListPanel : public Panel
 {
 	DECLARE_CLASS_SIMPLE( ListPanel, Panel );
+
 public:
 	ListPanel(Panel *parent, const char *panelName);
 	~ListPanel();
@@ -114,17 +115,17 @@ public:
 	// DATA HANDLING
 	// data->GetName() is used to uniquely identify an item
 	// data sub items are matched against column header name to be used in the table
-	virtual int AddItem(const KeyValues *data, unsigned int userData, bool bScrollToItem, bool bSortOnAdd); // Takes a copy of the data for use in the table. Returns the index the item is at.
+	virtual int AddItem(const KeyValues *data, uintp userData, bool bScrollToItem, bool bSortOnAdd); // Takes a copy of the data for use in the table. Returns the index the item is at.
 	void SetItemDragData( int itemID, const KeyValues *data ); // Makes a copy of the keyvalues to store in the table. Used when dragging from the table. Only used if the caller enables drag support
 	virtual int	GetItemCount( void );			// returns the number of VISIBLE items
 	virtual int GetItem(const char *itemName);	// gets the row index of an item by name (data->GetName())
 	virtual KeyValues *GetItem(int itemID); // returns pointer to data the row holds
 	virtual int GetItemCurrentRow(int itemID);		// returns -1 if invalid index or item not visible
 	virtual int GetItemIDFromRow(int currentRow);			// returns -1 if invalid row
-	virtual unsigned int GetItemUserData(int itemID);
+	virtual uintp GetItemUserData(int itemID);
 	virtual ListPanelItem *GetItemData(int itemID);
-	virtual void SetUserData( int itemID, unsigned int userData );
-	virtual int GetItemIDFromUserData( unsigned int userData );
+	virtual void SetUserData( int itemID, uintp userData );
+	virtual int GetItemIDFromUserData( uintp userData );
 	virtual void ApplyItemChanges(int itemID); // applies any changes to the data, performed by modifying the return of GetItem() above
 	virtual void RemoveItem(int itemID); // removes an item from the table (changing the indices of all following items)
 	virtual void RereadAllItems(); // updates the view with the new data
@@ -132,7 +133,7 @@ public:
 	virtual void RemoveAll();		// clears and deletes all the memory used by the data items
 	virtual void DeleteAllItems();	// obselete, use RemoveAll();
 
-	virtual void GetCellText(int itemID, int column, wchar_t *buffer, int bufferSize); // returns the data held by a specific cell
+	virtual void GetCellText(int itemID, int column, OUT_Z_BYTECAP(bufferSizeInBytes) wchar_t *buffer, int bufferSizeInBytes); // returns the data held by a specific cell
 	virtual IImage *GetCellImage(int itemID, int column); //, ImagePanel *&buffer); // returns the image held by a specific cell
 
 	// Use these until they return InvalidItemID to iterate all the items.
@@ -213,6 +214,14 @@ public:
 
 	MESSAGE_FUNC_INT( ResizeColumnToContents, "ResizeColumnToContents", column );
 
+#ifdef _X360
+	virtual void NavigateTo();
+#endif
+	/// Version number for file format of user config.  This defaults to 1,
+	/// and if you rearrange columns you can increment it to cause any old
+	/// user configs (which will be screwed up) to be discarded.
+	int m_nUserConfigFileVersion;
+
 protected:
 	// PAINTING
 	virtual Panel *GetCellRenderer(int row, int column);
@@ -226,7 +235,11 @@ protected:
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	virtual void OnMousePressed( MouseCode code );
 	virtual void OnMouseDoublePressed( MouseCode code );
-	virtual void OnKeyCodeTyped( KeyCode code );
+#ifdef _X360
+	virtual void OnKeyCodePressed(KeyCode code);
+#else
+	virtual void OnKeyCodePressed( KeyCode code );
+#endif
 	MESSAGE_FUNC( OnSliderMoved, "ScrollBarSliderMoved" );
 	MESSAGE_FUNC_INT_INT( OnColumnResized, "ColumnResized", column, delta );
 	MESSAGE_FUNC_INT( OnSetSortColumn, "SetSortColumn", column );

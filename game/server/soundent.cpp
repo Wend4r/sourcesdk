@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -517,7 +517,7 @@ void CSoundEnt::Initialize ( void )
   	int i;
 	int iSound;
 
-	m_cLastActiveSounds = 0;
+	m_cLastActiveSounds;
 	m_iFreeSound = 0;
 	m_iActiveSound = SOUNDLIST_EMPTY;
 

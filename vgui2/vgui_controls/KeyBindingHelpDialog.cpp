@@ -1,8 +1,9 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //=============================================================================
+
 #include "vgui_controls/KeyBindingHelpDialog.h"
 #include "vgui_controls/ListPanel.h"
 #include "vgui/ISurface.h"
@@ -12,8 +13,12 @@
 #include "vgui/ISystem.h"
 #include "KeyValues.h"
 #include "vgui/Cursor.h"
-#include "tier1/UtlDict.h"
+#include "tier1/utldict.h"
 #include "vgui_controls/KeyBoardEditorDialog.h"
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 
 using namespace vgui;
 
@@ -201,18 +206,18 @@ void CKeyBindingHelpDialog::GetMappingList( Panel *panel, CUtlVector< PanelKeyBi
 }
 
 
-void CKeyBindingHelpDialog::AnsiText( char const *token, char *out, size_t buflen )
+void CKeyBindingHelpDialog::AnsiText( char const *token, char *out, int nBuflen )
 {
 	out[ 0 ] = 0;
 
 	wchar_t *str = g_pVGuiLocalize->Find( token );
 	if ( !str )
 	{
-		Q_strncpy( out, token, buflen );
+		Q_strncpy( out, token, nBuflen );
 	}
 	else
 	{
-		g_pVGuiLocalize->ConvertUnicodeToANSI( str, out, buflen );
+		g_pVGuiLocalize->ConvertUnicodeToANSI( str, out, nBuflen );
 	}
 }
 
@@ -244,9 +249,9 @@ void CKeyBindingHelpDialog::PopulateList()
 			}
 			if ( k == c )
 			{
-				int k = maps.AddToTail( );
-				maps[k].m_pMap = map;
-				maps[k].m_pPanel = pPanel;
+				int iMap = maps.AddToTail( );
+				maps[iMap].m_pMap = map;
+				maps[iMap].m_pPanel = pPanel;
 			}
 			map = map->baseMap;
 		}
@@ -263,7 +268,7 @@ void CKeyBindingHelpDialog::PopulateList()
 	for ( i = 0; i < c; ++i )
 	{
 		PanelKeyBindingMap *m = maps[ i ].m_pMap;
-		Panel *pPanel = maps[i].m_pPanel;
+		pPanel = maps[i].m_pPanel;
 		Assert( m );
 
 		int bindings = m->boundkeys.Count();

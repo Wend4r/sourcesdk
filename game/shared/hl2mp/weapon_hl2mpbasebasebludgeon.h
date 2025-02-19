@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		The class from which all bludgeon melee
 //				weapons are derived. 
@@ -52,6 +52,8 @@ public:
 	virtual	float	GetDamageForActivity( Activity hitActivity )	{	return	1.0f;	}
 
 	CBaseHL2MPBludgeonWeapon( const CBaseHL2MPBludgeonWeapon & );
+
+	virtual bool	PlayFleshyHittySoundOnHit() const { return false; }
 
 protected:
 	virtual	void	ImpactEffect( trace_t &trace );

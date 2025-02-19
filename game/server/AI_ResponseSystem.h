@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -18,6 +18,7 @@
 abstract_class IResponseFilter
 {
 public:
+	virtual ~IResponseFilter(){}
 	virtual bool IsValidResponse( ResponseType_t type, const char *pszValue ) = 0;
 };
 

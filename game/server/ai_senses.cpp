@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -41,13 +41,18 @@ CAI_SensedObjectsManager g_AI_SensedObjectsManager;
 
 //-----------------------------------------------------------------------------
 
-#pragma pack(push, 1)
+#pragma pack(push)
+#pragma pack(1)
 
 struct AISightIterVal_t
 {
 	char  array;
 	short iNext;
 	char  SeenArray;
+
+#ifdef PLATFORM_64BITS
+	uint32 unused;
+#endif
 };
 
 #pragma pack(pop)
@@ -253,7 +258,7 @@ CBaseEntity *CAI_Senses::GetFirstSeenEntity( AISightIter_t *pIter, seentype_t iS
 	pIterVal->SeenArray = (char)iSeenType;
 	int iFirstArray = ( iSeenType == SEEN_ALL ) ? 0 : iSeenType;
 
-	for ( int i = iFirstArray; i < (int)ARRAYSIZE( m_SeenArrays ); i++ )
+	for ( int i = iFirstArray; i < ARRAYSIZE( m_SeenArrays ); i++ )
 	{
 		if ( m_SeenArrays[i]->Count() != 0 )
 		{
@@ -271,11 +276,11 @@ CBaseEntity *CAI_Senses::GetFirstSeenEntity( AISightIter_t *pIter, seentype_t iS
 
 CBaseEntity *CAI_Senses::GetNextSeenEntity( AISightIter_t *pIter ) const	
 { 
-	if ( ((int)*pIter) != -1 )
+	if ( ((intp)*pIter) != -1 )
 	{
 		AISightIterVal_t *pIterVal = (AISightIterVal_t *)pIter;
 		
-		for ( int i = pIterVal->array;  i < (int)ARRAYSIZE( m_SeenArrays ); i++ )
+		for ( int i = pIterVal->array;  i < ARRAYSIZE( m_SeenArrays ); i++ )
 		{
 			for ( int j = pIterVal->iNext; j < m_SeenArrays[i]->Count(); j++ )
 			{
@@ -569,7 +574,7 @@ CSound* CAI_Senses::GetFirstHeardSound( AISoundIter_t *pIter )
 		return NULL;
 	}
 	
-	*pIter = (AISoundIter_t)iFirst;
+	*pIter = (AISoundIter_t)(intp)iFirst;
 	return CSoundEnt::SoundPointerForIndex( iFirst );
 }
 
@@ -580,7 +585,7 @@ CSound* CAI_Senses::GetNextHeardSound( AISoundIter_t *pIter )
 	if ( !*pIter )
 		return NULL;
 
-	int iCurrent = (int)*pIter;
+	int iCurrent = size_cast<int>( (intp)*pIter );
 	
 	Assert( iCurrent != SOUNDLIST_EMPTY );
 	if ( iCurrent == SOUNDLIST_EMPTY )
@@ -596,7 +601,7 @@ CSound* CAI_Senses::GetNextHeardSound( AISoundIter_t *pIter )
 		return NULL;
 	}
 	
-	*pIter = (AISoundIter_t)iCurrent;
+	*pIter = (AISoundIter_t)(intp)iCurrent;
 	return CSoundEnt::SoundPointerForIndex( iCurrent );
 }
 
@@ -653,7 +658,7 @@ void CAI_Senses::PerformSensing( void )
 	//  Look	
 	// -----------------
 	if( !HasSensingFlags(SENSING_FLAGS_DONT_LOOK) )
-		Look( static_cast<int>(m_LookDist) );
+		Look( m_LookDist );
 	
 	// ------------------
 	//  Listen

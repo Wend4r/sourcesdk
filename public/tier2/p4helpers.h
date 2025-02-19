@@ -1,4 +1,4 @@
-//====== Copyright c 1996-2007, Valve Corporation, All rights reserved. =======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,7 +15,7 @@
 
 #include "tier1/utlstring.h"
 #include "tier1/smartptr.h"
-
+#include "p4lib/ip4.h"
 
 //
 // Class representing file operations
@@ -33,8 +33,20 @@ public:
 	// Opens the file for add
 	virtual bool Add( void );
 
+	// Reverts the file
+	virtual bool Revert( void );
+	
+	// Marks the file for delete
+	virtual bool Delete( void );
+
 	// Is the file in perforce?
 	virtual bool IsFileInPerforce();
+
+	// Changes the file to the specified filetype.
+	virtual bool SetFileType( const CUtlString& desiredFileType );
+
+	// Get the state of a file
+	virtual P4FileState_t GetFileState();
 
 protected:
 	// The filename that this class instance represents
@@ -53,6 +65,7 @@ public:
 	virtual bool Edit( void ) { return true; }
 	virtual bool Add( void ) { return true; }
 	virtual bool IsFileInPerforce() { return false; }
+	virtual bool SetFileType(const CUtlString& desiredFileType) { return true; }
 };
 
 
@@ -122,11 +135,45 @@ protected:
 class CP4AutoEditAddFile
 {
 public:
-	explicit CP4AutoEditAddFile( char const *szFilename ) : m_spImpl( g_p4factory->AccessFile( szFilename ) )
+	explicit CP4AutoEditAddFile( char const *szFilename ) 
+	: m_spImpl( g_p4factory->AccessFile( szFilename ) )
+	, m_bHasDesiredFileType( false )
 	{ 
 		m_spImpl->Edit(); 
 	}
-	~CP4AutoEditAddFile( void ) { m_spImpl->Add(); }
+
+	explicit CP4AutoEditAddFile( char const *szFilename, const char *szFiletype ) 
+	: m_spImpl( g_p4factory->AccessFile( szFilename ) )
+	, m_sFileType(szFiletype)
+	, m_bHasDesiredFileType( true )
+	{ 
+		m_spImpl->Edit(); 
+		m_spImpl->SetFileType( m_sFileType );
+	}
+
+	~CP4AutoEditAddFile( void ) 
+	{ 
+		m_spImpl->Add(); 
+		if ( m_bHasDesiredFileType )
+			m_spImpl->SetFileType( m_sFileType );
+	}
+
+	CP4File * File() const { return m_spImpl.Get(); }
+
+protected:
+	CPlainAutoPtr< CP4File > m_spImpl;
+	CUtlString m_sFileType;
+	bool m_bHasDesiredFileType;
+};
+
+
+//
+// CP4AutoRevert - reverts the file upon construction
+//
+class CP4AutoRevertFile
+{
+public:
+	explicit CP4AutoRevertFile( char const *szFilename ) : m_spImpl( g_p4factory->AccessFile( szFilename ) ) { m_spImpl->Revert(); }
 
 	CP4File * File() const { return m_spImpl.Get(); }
 

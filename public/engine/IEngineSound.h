@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client-server neutral sound interface
 //
@@ -26,6 +26,7 @@
 class Vector;
 
 // Handy defines for EmitSound
+#define SOUND_FROM_UI_PANEL			-2		// Sound being played inside a UI panel on the client
 #define SOUND_FROM_LOCAL_PLAYER		-1
 #define SOUND_FROM_WORLD			0
 
@@ -42,15 +43,44 @@ class Vector;
 #define SNDLEVEL_FROM_COMPATIBILITY_MODE( x )	((soundlevel_t)(int)( (x) - 256 ))
 
 // Tells if the given sndlevel is marked as compatibility mode.
-#define SNDLEVEL_IS_COMPATIBILITY_MODE( x )		( (x) >= 256 )
+#define SNDLEVEL_IS_COMPATIBILITY_MODE( x )		( (x) >= soundlevel_t(256) )
 
 
-	
+// IAudioOutputStream from source2
+// a separate stream that connects to the main output
+class IAudioOutputStream
+{
+public:
+	virtual ~IAudioOutputStream() {}
+	// queue a set of samples for output.  
+	// NOTE: nSampleCount is the number of samples being written to each channel, not the total # of all channels' samples
+	virtual void WriteAudioData( const int16 *pData, uint nSampleCount, uint nChannels ) = 0;
+
+	// change output volume (will be ramped linearly per sample over one mix quantum)
+	virtual void SetVolume( float flVolume ) = 0;
+
+	// how many samples are queued to play?
+	virtual uint32 QueuedSampleCount() = 0;
+
+	// how many samples can we write in a WriteAudioData call without truncation in the internal buffer?
+	virtual uint32 MaxWriteSampleCount() = 0;
+
+	// how many samples of latency
+	virtual uint32 LatencySamplesCount() = 0;
+
+	virtual void Pause() = 0;
+	virtual void Resume() = 0;
+};
+
+
+
 //-----------------------------------------------------------------------------
 // Client-server neutral effects interface
 //-----------------------------------------------------------------------------
 #define IENGINESOUND_CLIENT_INTERFACE_VERSION	"IEngineSoundClient003"
 #define IENGINESOUND_SERVER_INTERFACE_VERSION	"IEngineSoundServer003"
+
+struct AudioState_t;
 
 abstract_class IEngineSound
 {
@@ -72,15 +102,15 @@ public:
 	// NOTE: setting iEntIndex to -1 will cause the sound to be emitted from the local
 	// player (client-side only)
 	virtual void EmitSound( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSample, 
-		float flVolume, float flAttenuation, int iFlags = 0, int iPitch = PITCH_NORM, int iSpecialDSP = 0,
+		float flVolume, float flAttenuation, int iFlags = 0, int iPitch = PITCH_NORM, int iSpecialDSP = 0, 
 		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1 ) = 0;
 
 	virtual void EmitSound( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSample, 
-		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM,  int iSpecialDSP = 0,
+		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM, int iSpecialDSP = 0, 
 		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1 ) = 0;
 
 	virtual void EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, int iChannel, int iSentenceIndex, 
-		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM,  int iSpecialDSP = 0,
+		float flVolume, soundlevel_t iSoundlevel, int iFlags = 0, int iPitch = PITCH_NORM,int iSpecialDSP = 0, 
 		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1 ) = 0;
 
 	virtual void StopSound( int iEntIndex, int iChannel, const char *pSample ) = 0;
@@ -116,6 +146,15 @@ public:
 	virtual void	PrecacheSentenceGroup( const char *pGroupName ) = 0;
 	virtual void	NotifyBeginMoviePlayback() = 0;
 	virtual void	NotifyEndMoviePlayback() = 0;
+
+	// create/destroy an audio stream
+	virtual IAudioOutputStream *CreateOutputStream( uint nSampleRate, uint nChannels, uint nBits ) = 0;
+	virtual void DestroyOutputStream( IAudioOutputStream *pStream ) = 0;
+
+	// Force an update, for instances where we are otherwise deadlocked from the main loop.
+	virtual void	ManualUpdate( const AudioState_t *pListenerState ) = 0;
+	// Force an extra update.
+	virtual void	ExtraUpdate() = 0;
 };
 
 

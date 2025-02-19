@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -37,7 +37,7 @@ ConVar voice_serverdebug( "voice_serverdebug", "0" );
 
 // Set game rules to allow all clients to talk to each other.
 // Muted players still can't talk to each other.
-ConVar sv_alltalk( "sv_alltalk", "0", FCVAR_NOTIFY, "Players can hear all other players, no team restrictions" );
+ConVar sv_alltalk( "sv_alltalk", "0", FCVAR_NOTIFY | FCVAR_REPLICATED, "Players can hear all other players, no team restrictions" );
 
 
 CVoiceGameMgr g_VoiceGameMgr;
@@ -48,7 +48,8 @@ CVoiceGameMgr g_VoiceGameMgr;
 // ------------------------------------------------------------------------ //
 
 // Find a player with a case-insensitive name search.
-/*static CBasePlayer* FindPlayerByName(const char *pTestName)
+#if 0
+static CBasePlayer* FindPlayerByName(const char *pTestName)
 {
 	for(int i=1; i <= gpGlobals->maxClients; i++)
 	{
@@ -68,7 +69,8 @@ CVoiceGameMgr g_VoiceGameMgr;
 	}
 
 	return NULL;
-}*/
+}
+#endif
 
 static void VoiceServerDebug( const char *pFmt, ... )
 {
@@ -162,8 +164,8 @@ bool CVoiceGameMgr::ClientCommand( CBasePlayer *pPlayer, const CCommand &args )
 	{
 		for(int i=1; i < args.ArgC(); i++)
 		{
-			unsigned long mask = 0;
-			sscanf( args[i], "%p", (void**)&mask);
+			uint32 mask = 0;
+			sscanf( args[i], "%x", &mask);
 
 			if( i <= VOICE_MAX_PLAYERS_DW )
 			{
@@ -193,6 +195,7 @@ bool CVoiceGameMgr::ClientCommand( CBasePlayer *pPlayer, const CCommand &args )
 		return false;
 	}
 }
+
 
 void CVoiceGameMgr::UpdateMasks()
 {

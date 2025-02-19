@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Crows. Simple ambient birds that fly away when they hear gunfire or
 //			when anything gets too close to them.
@@ -95,7 +95,7 @@ void CNPC_Crow::Spawn( void )
 	AddSpawnFlags( SF_NPC_FADE_CORPSE );
 #endif // _XBOX
 
-	const char *szModel = (char *)STRING( GetModelName() );
+	char *szModel = (char *)STRING( GetModelName() );
 	if (!szModel || !*szModel)
 	{
 		szModel = "models/crow.mdl";
@@ -239,7 +239,7 @@ void CNPC_Crow::HandleAnimEvent( animevent_t *pEvent )
 		// How fast does the crow need to travel to reach the hop goal given gravity?
 		//
 		float flHopDistance = ( m_vSavePosition - GetLocalOrigin() ).Length();
-		float gravity = sv_gravity.GetFloat();
+		float gravity = GetCurrentGravity();
 		if ( gravity <= 1 )
 		{
 			gravity = 1;
@@ -738,7 +738,7 @@ void CNPC_Crow::Takeoff( const Vector &vGoal )
 	}
 }
 
-void CNPC_Crow::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CNPC_Crow::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo	newInfo = info;
 
@@ -752,7 +752,7 @@ void CNPC_Crow::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, 
 		newInfo.SetDamageForce( puntDir );
 	}
 
-	BaseClass::TraceAttack( newInfo, vecDir, ptr );
+	BaseClass::TraceAttack( newInfo, vecDir, ptr, pAccumulator );
 }
 
 
@@ -1244,9 +1244,6 @@ int CNPC_Crow::SelectSchedule( void )
 
 			// TODO: need idle flying behaviors!
 		}
-
-		default:
-			break;
 	}
 
 	return BaseClass::SelectSchedule();

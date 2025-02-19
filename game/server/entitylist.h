@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -107,9 +107,6 @@ public:
 	void RemoveListenerEntity( IEntityListener *pListener );
 
 	void ReportEntityFlagsChanged( CBaseEntity *pEntity, unsigned int flagsOld, unsigned int flagsNow );
-	// Schedule this entity for notification once client messages have been sent
-	void AddPostClientMessageEntity( CBaseEntity *pEntity );
-	void PostClientMessagesSent();
 
 	// entity is about to be removed, notify the listeners
 	void NotifyCreateEntity( CBaseEntity *pEnt );
@@ -136,20 +133,21 @@ public:
 
 	// search functions
 	bool		 IsEntityPtr( void *pTest );
-	CBaseEntity *FindEntityByClassname( CBaseEntity *pStartEntity, const char *szName );
+	CBaseEntity *FindEntityByClassname( CBaseEntity *pStartEntity, const char *szName, IEntityFindFilter *pFilter = NULL );
 	CBaseEntity *FindEntityByName( CBaseEntity *pStartEntity, const char *szName, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL );
 	CBaseEntity *FindEntityByName( CBaseEntity *pStartEntity, string_t iszName, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL )
 	{
 		return FindEntityByName( pStartEntity, STRING(iszName), pSearchingEntity, pActivator, pCaller, pFilter );
 	}
-	CBaseEntity *FindEntityInSphere( CBaseEntity *pStartEntity, const Vector &vecCenter, float flRadius );
-	CBaseEntity *FindEntityByTarget( CBaseEntity *pStartEntity, const char *szName );
-	CBaseEntity *FindEntityByModel( CBaseEntity *pStartEntity, const char *szModelName );
+	CBaseEntity *FindEntityInSphere( CBaseEntity *pStartEntity, const Vector &vecCenter, float flRadius, IEntityFindFilter *pFilter = NULL );
+	CBaseEntity *FindEntityByTarget( CBaseEntity *pStartEntity, const char *szName, IEntityFindFilter *pFilter = NULL );
+	CBaseEntity *FindEntityByModel( CBaseEntity *pStartEntity, const char *szModelName, IEntityFindFilter *pFilter = NULL );
 
-	CBaseEntity *FindEntityByNameNearest( const char *szName, const Vector &vecSrc, float flRadius, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL );
-	CBaseEntity *FindEntityByNameWithin( CBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL );
-	CBaseEntity *FindEntityByClassnameNearest( const char *szName, const Vector &vecSrc, float flRadius );
-	CBaseEntity *FindEntityByClassnameWithin( CBaseEntity *pStartEntity , const char *szName, const Vector &vecSrc, float flRadius );
+	CBaseEntity *FindEntityByNameNearest( const char *szName, const Vector &vecSrc, float flRadius, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL );
+	CBaseEntity *FindEntityByNameWithin( CBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL, IEntityFindFilter *pFilter = NULL );
+	CBaseEntity *FindEntityByClassnameNearest( const char *szName, const Vector &vecSrc, float flRadius, IEntityFindFilter *pFilter = NULL );
+	CBaseEntity *FindEntityByClassnameWithin( CBaseEntity *pStartEntity , const char *szName, const Vector &vecSrc, float flRadius, IEntityFindFilter *pFilter = NULL );
+	CBaseEntity *FindEntityByClassnameWithin( CBaseEntity *pStartEntity , const char *szName, const Vector &vecMins, const Vector &vecMaxs, IEntityFindFilter *pFilter = NULL );
 
 	CBaseEntity *FindEntityGeneric( CBaseEntity *pStartEntity, const char *szName, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL );
 	CBaseEntity *FindEntityGenericWithin( CBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL );
@@ -157,7 +155,6 @@ public:
 	
 	CBaseEntity *FindEntityNearestFacing( const Vector &origin, const Vector &facing, float threshold);
 	CBaseEntity *FindEntityClassNearestFacing( const Vector &origin, const Vector &facing, float threshold, char *classname);
-	CBaseEntity *FindEntityByNetname( CBaseEntity *pStartEntity, const char *szModelName );
 
 	CBaseEntity *FindEntityProcedural( const char *szName, CBaseEntity *pSearchingEntity = NULL, CBaseEntity *pActivator = NULL, CBaseEntity *pCaller = NULL );
 	

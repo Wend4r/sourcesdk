@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -24,6 +24,9 @@ BEGIN_NETWORK_TABLE( CHL2MPMachineGun, DT_HL2MPMachineGun )
 END_NETWORK_TABLE()
 
 BEGIN_PREDICTION_DATA( CHL2MPMachineGun )
+#ifdef CLIENT_DLL
+	DEFINE_PRED_FIELD( m_nShotsFired, FIELD_INTEGER, 0 ),
+#endif
 END_PREDICTION_DATA()
 
 //=========================================================

@@ -1,4 +1,4 @@
-//====== Copyright Â© 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: An entity that spawns and controls a particle system
 //
@@ -29,10 +29,12 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE(CParticleSystem, DT_ParticleSystem)
 
 	SendPropArray3( SENDINFO_ARRAY3(m_hControlPointEnts), SendPropEHandle( SENDINFO_ARRAY(m_hControlPointEnts) ) ),
 	SendPropArray3( SENDINFO_ARRAY3(m_iControlPointParents), SendPropInt( SENDINFO_ARRAY(m_iControlPointParents), 3, SPROP_UNSIGNED ) ),
+	SendPropBool( SENDINFO(m_bWeatherEffect) ),
 END_SEND_TABLE()
 
 BEGIN_DATADESC( CParticleSystem )
 	DEFINE_KEYFIELD( m_bStartActive,	FIELD_BOOLEAN, "start_active" ),
+	DEFINE_KEYFIELD( m_bWeatherEffect,	FIELD_BOOLEAN, "flag_as_weather" ),
 	DEFINE_FIELD( m_bActive,			FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flStartTime,		FIELD_TIME ),
 	DEFINE_KEYFIELD( m_iszEffectName,	FIELD_STRING, "effect_name" ),
@@ -102,7 +104,6 @@ BEGIN_DATADESC( CParticleSystem )
 	DEFINE_KEYFIELD( m_iszControlPointNames[61], FIELD_STRING, "cpoint62" ),
 	DEFINE_KEYFIELD( m_iszControlPointNames[62], FIELD_STRING, "cpoint63" ),
 
-	/* This causes a cannot apply ‘offsetof’ when ‘operator[]’ is overloaded error in GCC 4.2
 	DEFINE_KEYFIELD( m_iControlPointParents[0], FIELD_CHARACTER, "cpoint1_parent" ),
 	DEFINE_KEYFIELD( m_iControlPointParents[1], FIELD_CHARACTER, "cpoint2_parent" ),
 	DEFINE_KEYFIELD( m_iControlPointParents[2], FIELD_CHARACTER, "cpoint3_parent" ),
@@ -110,15 +111,6 @@ BEGIN_DATADESC( CParticleSystem )
 	DEFINE_KEYFIELD( m_iControlPointParents[4], FIELD_CHARACTER, "cpoint5_parent" ),
 	DEFINE_KEYFIELD( m_iControlPointParents[5], FIELD_CHARACTER, "cpoint6_parent" ),
 	DEFINE_KEYFIELD( m_iControlPointParents[6], FIELD_CHARACTER, "cpoint7_parent" ),
-	*/
-
-	DEFINE_KEYFIELD_NETARRAY( m_iControlPointParents, 0, FIELD_CHARACTER, "cpoint1_parent" ),
-	DEFINE_KEYFIELD_NETARRAY( m_iControlPointParents, 1, FIELD_CHARACTER, "cpoint2_parent" ),
-	DEFINE_KEYFIELD_NETARRAY( m_iControlPointParents, 2, FIELD_CHARACTER, "cpoint3_parent" ),
-	DEFINE_KEYFIELD_NETARRAY( m_iControlPointParents, 3, FIELD_CHARACTER, "cpoint4_parent" ),
-	DEFINE_KEYFIELD_NETARRAY( m_iControlPointParents, 4, FIELD_CHARACTER, "cpoint5_parent" ),
-	DEFINE_KEYFIELD_NETARRAY( m_iControlPointParents, 5, FIELD_CHARACTER, "cpoint6_parent" ),
-	DEFINE_KEYFIELD_NETARRAY( m_iControlPointParents, 6, FIELD_CHARACTER, "cpoint7_parent" ),
 	
 	DEFINE_AUTO_ARRAY( m_hControlPointEnts, FIELD_EHANDLE ),
 
@@ -131,6 +123,13 @@ END_DATADESC()
 
 LINK_ENTITY_TO_CLASS( info_particle_system, CParticleSystem );
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CParticleSystem::CParticleSystem()
+{
+	m_bWeatherEffect = false;
+}
 
 //-----------------------------------------------------------------------------
 // Precache 
@@ -138,7 +137,7 @@ LINK_ENTITY_TO_CLASS( info_particle_system, CParticleSystem );
 void CParticleSystem::Precache( void )
 {
 	const char *pParticleSystemName = STRING( m_iszEffectName );
-	if ( pParticleSystemName == NULL || pParticleSystemName[0] == 0 )
+	if ( pParticleSystemName == NULL || pParticleSystemName[0] == '\0' )
 	{
 		Warning( "info_particle_system (%s) has no particle system name specified!\n", GetEntityName().ToCStr() );
 	}

@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -134,7 +134,7 @@ void CDebugHistory::DumpDebugHistory( int iCategory )
 
 	// Find the start of the oldest whole debug line.
 	const char *pszLine = m_DebugLineEnd[iCategory] + 1;
-	if ( (size_t)(pszLine - m_DebugLines[iCategory]) >= sizeof(m_DebugLines[iCategory]) )
+	if ( (pszLine - m_DebugLines[iCategory]) >= sizeof(m_DebugLines[iCategory]) )
 	{
 		pszLine = m_DebugLines[iCategory];
 	}
@@ -147,7 +147,7 @@ void CDebugHistory::DumpDebugHistory( int iCategory )
 		pszLine++;
 
 		// Have we looped?
-		if ( (size_t)(pszLine - m_DebugLines[iCategory]) >= sizeof(m_DebugLines[iCategory]) )
+		if ( (pszLine - m_DebugLines[iCategory]) >= sizeof(m_DebugLines[iCategory]) )
 		{
 			pszLine = m_DebugLines[iCategory];
 		}
@@ -172,7 +172,7 @@ void CDebugHistory::DumpDebugHistory( int iCategory )
 			if ( szMsgBuffer[0] != '\0' )
 			{
 				// Found a full line, so print it
-				Msg( szMsgBuffer );
+				Msg( "%s", szMsgBuffer );
 			}
 
 			// Clear the buffer
@@ -187,7 +187,7 @@ void CDebugHistory::DumpDebugHistory( int iCategory )
 		pszLine++;
 
 		// Have we looped?
-		if ( (size_t)(pszLine - m_DebugLines[iCategory]) >= sizeof(m_DebugLines[iCategory]) )
+		if ( (pszLine - m_DebugLines[iCategory]) >= sizeof(m_DebugLines[iCategory]) )
 		{
 			pszLine = m_DebugLines[iCategory];
 		}
@@ -319,6 +319,9 @@ void AddDebugHistoryLine( int iCategory, const char *pszLine )
 //-----------------------------------------------------------------------------
 void CC_DebugHistory_AddLine( const CCommand &args )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	if ( args.ArgC() < 3 )
 	{
 		Warning("Incorrect parameters. Format: <category id> <line>\n");
@@ -336,6 +339,9 @@ static ConCommand dbghist_addline( "dbghist_addline", CC_DebugHistory_AddLine, "
 //-----------------------------------------------------------------------------
 void CC_DebugHistory_Dump( const CCommand &args )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	if ( args.ArgC() < 2 )
 	{
 		Warning("Incorrect parameters. Format: <category id>\n");

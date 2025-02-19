@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Dr. Breen, the oft maligned genius, heroically saving humanity from 
 //			its own worst enemy, itself.
@@ -69,7 +69,7 @@ void CNPC_Breen::HandleAnimEvent( animevent_t *pEvent )
 //-----------------------------------------------------------------------------
 int CNPC_Breen::GetSoundInterests ( void )
 {
-	return	0;
+	return	NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -79,7 +79,7 @@ void CNPC_Breen::Spawn()
 {
 	// Breen is allowed to use multiple models, because he has a torso version for monitors.
 	// He defaults to his normal model.
-	const char *szModel = (char *)STRING( GetModelName() );
+	char *szModel = (char *)STRING( GetModelName() );
 	if (!szModel || !*szModel)
 	{
 		szModel = "models/breen.mdl";

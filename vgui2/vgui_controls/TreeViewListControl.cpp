@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -301,7 +301,7 @@ void CTreeViewListControl::DrawTitleBars()
 		}
 		else
 		{
-			int textRight = MIN( right, rightEdge );
+			int textRight = min( right, rightEdge );
 
 			int midx = (left+textRight)/2;
 			int midy = (top+bottom)/2;
@@ -309,7 +309,7 @@ void CTreeViewListControl::DrawTitleBars()
 			surface()->DrawSetTextPos( midx - wide/2, midy - tall/2 );
 		}
 		
-		surface()->DrawPrintText( unicodeString, strlen( pTitleString ) );
+		surface()->DrawPrintText( unicodeString, V_strlen( pTitleString ) );
 	}
 }
 

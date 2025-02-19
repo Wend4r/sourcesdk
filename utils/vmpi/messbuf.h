@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -41,6 +41,16 @@ class MessageBuffer {
 		void	clear(int minsize);
 		void	reset(int minsize);
 		void	print(FILE * ofile, int num);	
+
+		void *GetReadPointer()
+		{
+			return ( void * )( data + offset );
+		}
+
+		int GetReadBytesLeft()
+		{
+			return len - offset;
+		}
 
 	private:
 		void	resize(int minsize);

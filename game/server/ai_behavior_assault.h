@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -226,7 +226,7 @@ public:
 	bool IsForcingCrouch( void );
 	bool IsUrgent( void );
 
-	CRallyPoint *FindBestRallyPointInRadius( const Vector &vecCenter, float flRadius );;
+	CRallyPoint *FindBestRallyPointInRadius( const Vector &vecCenter, float flRadius );
 
 	void Disable( void ) { m_AssaultCue = CUE_NO_ASSAULT; m_bHitRallyPoint = false; m_bHitAssaultPoint = false; }
 

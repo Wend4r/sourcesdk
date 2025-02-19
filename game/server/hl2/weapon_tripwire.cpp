@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -86,7 +86,7 @@ void CWeapon_Tripwire::Precache( void )
 //------------------------------------------------------------------------------
 void CWeapon_Tripwire::SetPickupTouch( void )
 {
-	SetTouch(&CWeapon_Tripwire::TripwireTouch);
+	SetTouch(TripwireTouch);
 }
 
 //-----------------------------------------------------------------------------

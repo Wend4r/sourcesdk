@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: implements various common send proxies
 //
@@ -27,7 +27,7 @@ void SendProxy_EHandleToInt( const SendProp *pProp, const void *pStruct, const v
 
 	if ( pHandle && pHandle->Get() )
 	{
-		int iSerialNum = pHandle->GetSerialNumber() & (1 << NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS) - 1;
+		int iSerialNum = pHandle->GetSerialNumber() & ( (1 << NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS) - 1 );
 		pOut->m_Int = pHandle->GetEntryIndex() | (iSerialNum << MAX_EDICT_BITS);
 	}
 	else
@@ -63,8 +63,8 @@ SendProp SendPropBool(
 SendProp SendPropEHandle(
 	const char *pVarName,
 	int offset,
-	int flags,
 	int sizeofVar,
+	int flags,
 	SendVarProxyFn proxyFn )
 {
 	return SendPropInt( pVarName, offset, sizeofVar, NUM_NETWORKED_EHANDLE_BITS, SPROP_UNSIGNED|flags, proxyFn );
@@ -106,7 +106,8 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_OnlyToTeam );
 #define TIME_BITS 24
 
 // This table encodes edict data.
-/*static void SendProxy_Time( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
+#if 0
+static void SendProxy_Time( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
 	float clock_base = floor( gpGlobals->curtime );
 	float t = *( float * )pVarData;
@@ -118,7 +119,8 @@ REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_OnlyToTeam );
 	addt = clamp( addt, -maxoffset, maxoffset );
 
 	pOut->m_Int = addt;
-}*/
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 

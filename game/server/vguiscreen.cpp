@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This is an entity that represents a vgui screen
 //
@@ -58,7 +58,7 @@ END_DATADESC()
 CVGuiScreen::CVGuiScreen()
 {
 	m_nOverlayMaterial = OVERLAY_MATERIAL_INVALID_STRING;
-	m_hPlayerOwner = 0;
+	m_hPlayerOwner = INVALID_EHANDLE;
 }
 
 

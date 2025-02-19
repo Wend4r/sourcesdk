@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: VCR mode records a client's game and allows you to 
 //			play it back and reproduce it exactly. When playing it back, nothing
@@ -24,8 +24,8 @@
 #include "tier0/vcr_shared.h"
 #include "tier0/dbg.h"
 
-#if defined _LINUX || defined __APPLE__
-DBG_INTERFACE void BuildCmdLine( int argc, tchar **argv );
+#ifdef POSIX
+DBG_INTERFACE const char *BuildCmdLine( int argc, char **argv, bool fAddSteam = true );
 tchar *GetCommandLine();
 #endif
 
@@ -67,6 +67,11 @@ enum VCRMode_t
 	VCR_Playback
 };
 
+#ifdef PLATFORM_64BITS
+typedef uint64 VCRThreadId_t;
+#else
+typedef uint32 VCRThreadId_t;
+#endif
 
 //-----------------------------------------------------------------------------
 // Functions.
@@ -190,7 +195,7 @@ typedef struct VCR_s
 		void *lpStartAddress,
 		void *lpParameter,
 		unsigned long dwCreationFlags,
-		unsigned long *lpThreadID );
+		VCRThreadId_t *lpThreadID );
 	
 	unsigned long (*Hook_WaitForSingleObject)(
 		void *handle,

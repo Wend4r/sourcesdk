@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -50,6 +50,9 @@ float MOVE_HEIGHT_EPSILON = 0.0625f;
 
 CON_COMMAND( ai_set_move_height_epsilon, "Set how high AI bumps up ground walkers when checking steps" )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	if ( args.ArgC() > 1 )
 	{
 		float newEps = atof( args[1] );
@@ -828,7 +831,7 @@ void CAI_MoveProbe::JumpMoveLimit( const Vector &vecStart, const Vector &vecEnd,
 	// FIXME: add max jump velocity callback?  Look at the velocity in the jump animation?  use ideal running speed?
 	float maxHorzVel = GetOuter()->GetMaxJumpSpeed();
 
-	Vector gravity = Vector(0, 0, sv_gravity.GetFloat() * GetOuter()->GetJumpGravity() );
+	Vector gravity = Vector(0, 0, GetCurrentGravity() * GetOuter()->GetJumpGravity() );
 
 	if ( gravity.z < 0.01 )
 	{

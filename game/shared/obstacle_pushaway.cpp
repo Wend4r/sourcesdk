@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,14 +8,20 @@
 #include "obstacle_pushaway.h"
 #include "props_shared.h"
 
-//-----------------------------------------------------------------------------------------------------
-ConVar sv_pushaway_force( "sv_pushaway_force", "30000", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "How hard physics objects are pushed away from the players on the server." );
-ConVar sv_pushaway_min_player_speed( "sv_pushaway_min_player_speed", "75", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "If a player is moving slower than this, don't push away physics objects (enables ducking behind things)." );
-ConVar sv_pushaway_max_force( "sv_pushaway_max_force", "1000", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "Maximum amount of force applied to physics objects by players." );
-ConVar sv_pushaway_clientside( "sv_pushaway_clientside", "0", FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY, "Clientside physics push away (0=off, 1=only localplayer, 1=all players)" );
+#if defined( CSTRIKE_DLL )
+#define SV_PUSH_CONVAR_FLAGS  (FCVAR_REPLICATED)
+#else
+#define SV_PUSH_CONVAR_FLAGS  (FCVAR_REPLICATED | FCVAR_DEVELOPMENTONLY)
+#endif // CSTRIKE_DLL
 
-ConVar sv_pushaway_player_force( "sv_pushaway_player_force", "200000", FCVAR_REPLICATED | FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "How hard the player is pushed away from physics objects (falls off with inverse square of distance)." );
-ConVar sv_pushaway_max_player_force( "sv_pushaway_max_player_force", "10000", FCVAR_REPLICATED | FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "Maximum of how hard the player is pushed away from physics objects." );
+//-----------------------------------------------------------------------------------------------------
+ConVar sv_pushaway_force( "sv_pushaway_force", "30000", SV_PUSH_CONVAR_FLAGS, "How hard physics objects are pushed away from the players on the server." );
+ConVar sv_pushaway_min_player_speed( "sv_pushaway_min_player_speed", "75", SV_PUSH_CONVAR_FLAGS, "If a player is moving slower than this, don't push away physics objects (enables ducking behind things)." );
+ConVar sv_pushaway_max_force( "sv_pushaway_max_force", "1000", SV_PUSH_CONVAR_FLAGS, "Maximum amount of force applied to physics objects by players." );
+ConVar sv_pushaway_clientside( "sv_pushaway_clientside", "0", SV_PUSH_CONVAR_FLAGS, "Clientside physics push away (0=off, 1=only localplayer, 1=all players)" );
+
+ConVar sv_pushaway_player_force( "sv_pushaway_player_force", "200000", SV_PUSH_CONVAR_FLAGS | FCVAR_CHEAT, "How hard the player is pushed away from physics objects (falls off with inverse square of distance)." );
+ConVar sv_pushaway_max_player_force( "sv_pushaway_max_player_force", "10000", SV_PUSH_CONVAR_FLAGS | FCVAR_CHEAT, "Maximum of how hard the player is pushed away from physics objects." );
 
 #ifdef CLIENT_DLL
 ConVar sv_turbophysics( "sv_turbophysics", "0", FCVAR_REPLICATED, "Turns on turbo physics" );
@@ -176,7 +182,7 @@ int GetPushawayEnts( CBaseCombatCharacter *pPushingEntity, CBaseEntity **ents, i
 		enumerator = physPropEnum;
 	}
 
-	partition->EnumerateElementsAlongRay( PartitionMask, ray, false, enumerator );
+	::partition->EnumerateElementsAlongRay( PartitionMask, ray, false, enumerator );
 
 	int numHit = enumerator->m_nAlreadyHit;
 

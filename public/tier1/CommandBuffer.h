@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2006, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -28,7 +28,7 @@ class CUtlBuffer;
 //-----------------------------------------------------------------------------
 // Invalid command handle
 //-----------------------------------------------------------------------------
-typedef int CommandHandle_t;
+typedef intp CommandHandle_t;
 enum
 {
 	COMMAND_BUFFER_INVALID_COMMAND_HANDLE = 0
@@ -80,6 +80,12 @@ public:
 	// Specifies a max limit of the args buffer. For unittesting. Size == 0 means use default
 	void LimitArgumentBufferSize( int nSize );
 
+	void SetWaitEnabled( bool bEnable )		{ m_bWaitEnabled = bEnable; }
+	bool IsWaitEnabled( void )				{ return m_bWaitEnabled; }
+
+	int GetArgumentBufferSize() { return m_nArgSBufferSize; }
+	int GetMaxArgumentBufferSize() { return m_nMaxArgSBufferLength; }
+
 private:
 	enum
 	{
@@ -94,11 +100,11 @@ private:
 	};
 
 	// Insert a command into the command queue at the appropriate time
-	void InsertCommandAtAppropriateTime( int hCommand );
+	void InsertCommandAtAppropriateTime( intp hCommand );
 						   
 	// Insert a command into the command queue
 	// Only happens if it's inserted while processing other commands
-	void InsertImmediateCommand( int hCommand );
+	void InsertImmediateCommand( intp hCommand );
 
 	// Insert a command into the command queue
 	bool InsertCommand( const char *pArgS, int nCommandSize, int nTick );
@@ -113,15 +119,16 @@ private:
 	bool ParseArgV0( CUtlBuffer &buf, char *pArgv0, int nMaxLen, const char **pArgs );
 
 	char	m_pArgSBuffer[ ARGS_BUFFER_LENGTH ];
-	//int		m_nLastUsedArgSSize;
+	int		m_nLastUsedArgSSize;
 	int		m_nArgSBufferSize;
 	CUtlFixedLinkedList< Command_t >	m_Commands;
 	int		m_nCurrentTick;
 	int		m_nLastTickToProcess;
 	int		m_nWaitDelayTicks;
-	int		m_hNextCommand;
+	intp	m_hNextCommand;
 	int		m_nMaxArgSBufferLength;
 	bool	m_bIsProcessingCommands;
+	bool	m_bWaitEnabled;
 
 	// NOTE: This is here to avoid the pointers returned by DequeueNextCommand
 	// to become invalid by calling AddText. Is there a way we can avoid the memcpy?

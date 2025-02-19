@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: combine ball -	can be held by the super physcannon and launched
 //							by the AR2's alt-fire
@@ -25,7 +25,7 @@
 #include "hl2_player.h"
 #include "eventqueue.h"
 #include "physics_collisionevent.h"
-#include "GameStats.h"
+#include "gamestats.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -100,11 +100,11 @@ CBasePlayer *CPropCombineBall::HasPhysicsAttacker( float dt )
 {
 	// Must have an owner
 	if ( GetOwnerEntity() == NULL )
-		return false;
+		return NULL;
 
 	// Must be a player
 	if ( GetOwnerEntity()->IsPlayer() == false )
-		return false;
+		return NULL;
 
 	// We don't care about the time passed in
 	return static_cast<CBasePlayer *>(GetOwnerEntity());
@@ -240,7 +240,7 @@ END_SEND_TABLE()
 //-----------------------------------------------------------------------------
 // Gets at the spawner
 //-----------------------------------------------------------------------------
-inline CFuncCombineBallSpawner *CPropCombineBall::GetSpawner()
+CFuncCombineBallSpawner *CPropCombineBall::GetSpawner()
 {
 	return m_hSpawner;
 }
@@ -706,38 +706,41 @@ void CPropCombineBall::WhizSoundThink()
 	pPhysicsObject->GetPosition( &vecPosition, NULL );
 	pPhysicsObject->GetVelocity( &vecVelocity, NULL );
 	
-	CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
-	if ( pPlayer )
+	if ( gpGlobals->maxClients == 1 )
 	{
-		Vector vecDelta;
-		VectorSubtract( pPlayer->GetAbsOrigin(), vecPosition, vecDelta );
-		VectorNormalize( vecDelta );
-		if ( DotProduct( vecDelta, vecVelocity ) > 0.5f )
+		CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
+		if ( pPlayer )
 		{
-			Vector vecEndPoint;
-			VectorMA( vecPosition, 2.0f * TICK_INTERVAL, vecVelocity, vecEndPoint );
-			float flDist = CalcDistanceToLineSegment( pPlayer->GetAbsOrigin(), vecPosition, vecEndPoint );
-			if ( flDist < 200.0f )
+			Vector vecDelta;
+			VectorSubtract( pPlayer->GetAbsOrigin(), vecPosition, vecDelta );
+			VectorNormalize( vecDelta );
+			if ( DotProduct( vecDelta, vecVelocity ) > 0.5f )
 			{
-				CPASAttenuationFilter filter( vecPosition, ATTN_NORM );
-
-				EmitSound_t ep;
-				ep.m_nChannel = CHAN_STATIC;
-				if ( hl2_episodic.GetBool() )
+				Vector vecEndPoint;
+				VectorMA( vecPosition, 2.0f * TICK_INTERVAL, vecVelocity, vecEndPoint );
+				float flDist = CalcDistanceToLineSegment( pPlayer->GetAbsOrigin(), vecPosition, vecEndPoint );
+				if ( flDist < 200.0f )
 				{
-					ep.m_pSoundName = "NPC_CombineBall_Episodic.WhizFlyby";
-				}
-				else
-				{
-					ep.m_pSoundName = "NPC_CombineBall.WhizFlyby";
-				}
-				ep.m_flVolume = 1.0f;
-				ep.m_SoundLevel = SNDLVL_NORM;
+					CPASAttenuationFilter filter( vecPosition, ATTN_NORM );
 
-				EmitSound( filter, entindex(), ep );
+					EmitSound_t ep;
+					ep.m_nChannel = CHAN_STATIC;
+					if ( hl2_episodic.GetBool() )
+					{
+						ep.m_pSoundName = "NPC_CombineBall_Episodic.WhizFlyby";
+					}
+					else
+					{
+						ep.m_pSoundName = "NPC_CombineBall.WhizFlyby";
+					}
+					ep.m_flVolume = 1.0f;
+					ep.m_SoundLevel = SNDLVL_NORM;
 
-				SetContextThink( &CPropCombineBall::WhizSoundThink, gpGlobals->curtime + 0.5f, s_pWhizThinkContext );
-				return;
+					EmitSound( filter, entindex(), ep );
+
+					SetContextThink( &CPropCombineBall::WhizSoundThink, gpGlobals->curtime + 0.5f, s_pWhizThinkContext );
+					return;
+				}
 			}
 		}
 	}
@@ -1100,7 +1103,7 @@ void CPropCombineBall::DoExplosion( )
 
 	if( hl2_episodic.GetBool() )
 	{
-		CSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_EXPLOSION, WorldSpaceCenter(), 180, 0.25, this );
+		CSoundEnt::InsertSound( SOUND_COMBAT | SOUND_CONTEXT_EXPLOSION, WorldSpaceCenter(), 180.0f, 0.25, this );
 	}
 
 	// Turn us off and wait because we need our trails to finish up properly
@@ -1230,7 +1233,7 @@ void CPropCombineBall::OnHitEntity( CBaseEntity *pHitEntity, float flSpeed, int 
 
 					if ( pHitEntity->IsNPC() && pHitEntity->Classify() != CLASS_PLAYER_ALLY_VITAL && hl2_episodic.GetBool() == true )
 					{
-						if ( pHitEntity->Classify() != CLASS_PLAYER_ALLY || pHitEntity->Classify() == CLASS_PLAYER_ALLY && m_bStruckEntity == false )
+						if ( pHitEntity->Classify() != CLASS_PLAYER_ALLY || ( pHitEntity->Classify() == CLASS_PLAYER_ALLY && m_bStruckEntity == false ) )
 						{
 							info.SetDamage( pHitEntity->GetMaxHealth() );
 							m_bStruckEntity = true;

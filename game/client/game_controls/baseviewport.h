@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 #include <utlqueue.h> // a vector based queue template to manage our VGUI menu queue
 #include <vgui_controls/Frame.h>
 #include "vguitextwindow.h"
-#include "vgui/isurface.h"
+#include "vgui/ISurface.h"
 #include "commandmenu.h"
 #include <igameevents.h>
 
@@ -69,6 +69,21 @@ public:
 	virtual int GetDeathMessageStartHeight( void );	
 
 	// virtual void ChatInputPosition( int *x, int *y );
+
+	// Check if any panel other than the scoreboard is visible
+	virtual bool IsAnyPanelVisibleExceptScores();
+
+	// Walk through all the panels. Handler should be an object taking an IViewPortPanel*
+	template<typename THandler> void ForEachPanel( THandler handler )
+	{
+		FOR_EACH_VEC( m_Panels, i )
+		{
+			handler( m_Panels[i] );
+		}
+	}
+
+	// Check if the named panel is visible
+	virtual bool IsPanelVisible( const char* panel );
 	
 public: // IGameEventListener:
 	virtual void FireGameEvent( IGameEvent * event);
@@ -115,7 +130,7 @@ protected:
 		virtual void OnMousePressed(MouseCode code) { }// don't respond to mouse clicks
 		virtual vgui::VPANEL IsWithinTraverse( int x, int y, bool traversePopups )
 		{
-			return NULL;
+			return ( vgui::VPANEL )0;
 		}
 
 	};

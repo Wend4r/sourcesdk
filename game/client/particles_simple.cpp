@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,10 +7,10 @@
 #include "cbase.h"
 #include "particles_simple.h"
 #include "env_wind_shared.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 #include "toolframework_client.h"
 #include "toolframework/itoolframework.h"
-#include "vstdlib/ikeyvaluessystem.h"
+#include "vstdlib/IKeyValuesSystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

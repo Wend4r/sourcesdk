@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: HUD Target ID element
 //
@@ -9,7 +9,7 @@
 #include "hudelement.h"
 #include "c_hl2mp_player.h"
 #include "c_playerresource.h"
-#include "vgui_EntityPanel.h"
+#include "vgui_entitypanel.h"
 #include "iclientmode.h"
 #include "vgui/ILocalize.h"
 #include "hl2mp_gamerules.h"
@@ -63,6 +63,7 @@ CTargetID::CTargetID( const char *pElementName ) :
 	m_iLastEntIndex = 0;
 
 	SetHiddenBits( HIDEHUD_MISCSTATUS );
+	SetSize( ScreenWidth(), ScreenHeight() );
 }
 
 //-----------------------------------------------------------------------------
@@ -70,6 +71,7 @@ CTargetID::CTargetID( const char *pElementName ) :
 //-----------------------------------------------------------------------------
 void CTargetID::Init( void )
 {
+	SetSize( ScreenWidth(), ScreenHeight() );
 };
 
 void CTargetID::ApplySchemeSettings( vgui::IScheme *scheme )
@@ -79,6 +81,8 @@ void CTargetID::ApplySchemeSettings( vgui::IScheme *scheme )
 	m_hFont = scheme->GetFont( "TargetID", IsProportional() );
 
 	SetPaintBackgroundEnabled( false );
+
+	SetSize( ScreenWidth(), ScreenHeight() );
 }
 
 //-----------------------------------------------------------------------------

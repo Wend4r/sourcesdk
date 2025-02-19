@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -20,6 +20,10 @@ public:
 
 					CFunc_LOD();
 	virtual 		~CFunc_LOD();
+
+#ifdef TF_DLL
+	virtual bool	IsFuncLOD( void ) const OVERRIDE { return true; }
+#endif // TF_DLL
 
 
 	// When the viewer is between:

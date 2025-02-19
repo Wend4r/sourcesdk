@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,7 +11,7 @@
 #include "beam_shared.h"
 #include "ivieweffects.h"
 #include "beamdraw.h"
-#include "engine/IVDebugOverlay.h"
+#include "engine/ivdebugoverlay.h"
 #include "engine/ivmodelinfo.h"
 #include "view.h"
 #include "fx.h"
@@ -438,7 +438,7 @@ int	Beam_t::GetFxBlend( )
 extern bool g_bRenderingScreenshot;
 extern ConVar r_drawviewmodel;
 
-int Beam_t::DrawModel( int flags )
+int Beam_t::DrawModel( int ignored )
 {
 #ifdef PORTAL
 	if ( ( !g_pPortalRender->IsRenderingPortal() && !m_bDrawInMainRender ) || 
@@ -1733,15 +1733,21 @@ void CViewRenderBeams::DrawBeamFollow( const model_t* pSprite, Beam_t *pbeam,
 	}
 	if (!pnew && div != 0)
 	{
-		VectorCopy( pbeam->attachment[0], delta );
-		debugoverlay->ScreenPosition( pbeam->attachment[0], screenLast );
-		debugoverlay->ScreenPosition( particles->org, screen );
+		if ( debugoverlay )
+		{
+			VectorCopy( pbeam->attachment[0], delta );
+			debugoverlay->ScreenPosition( pbeam->attachment[0], screenLast );
+			debugoverlay->ScreenPosition( particles->org, screen );
+		}
 	}
 	else if (particles && particles->next)
 	{
-		VectorCopy( particles->org, delta );
-		debugoverlay->ScreenPosition( particles->org, screenLast );
-		debugoverlay->ScreenPosition( particles->next->org, screen );
+		if ( debugoverlay )
+		{
+			VectorCopy( particles->org, delta );
+			debugoverlay->ScreenPosition( particles->org, screenLast );
+			debugoverlay->ScreenPosition( particles->next->org, screen );
+		}
 		particles = particles->next;
 	}
 	else
@@ -1803,7 +1809,7 @@ void CViewRenderBeams::DrawBeamWithHalo(	Beam_t*			pbeam,
 
 	distToLine = ( CurrentViewOrigin() - out ).Length();
 
-	float scaleColor[4];
+	float scaleColor[3];
 	float dotScale = 1.0f;
 	
 	// Use beam width
@@ -1812,13 +1818,12 @@ void CViewRenderBeams::DrawBeamWithHalo(	Beam_t*			pbeam,
 	if ( distToLine < distThreshold )
 	{
 		dotScale = RemapVal( distToLine, distThreshold, pbeam->width, 1.0f, 0.0f );
-		dotScale = clamp( dotScale, 0, 1 );
+		dotScale = clamp( dotScale, 0.f, 1.f );
 	}
 
 	scaleColor[0] = color[0] * dotScale;
 	scaleColor[1] = color[1] * dotScale;
 	scaleColor[2] = color[2] * dotScale;
-	scaleColor[3] = color[3] * dotScale;
 
 	if( pbeam->flags & FBEAM_HALOBEAM )
 	{
@@ -1850,7 +1855,7 @@ void CViewRenderBeams::DrawBeamWithHalo(	Beam_t*			pbeam,
 		haloScale *= pbeam->haloScale;
 		
 		float colorFade = fade*fade;
-		colorFade = clamp( colorFade, 0, 1 );
+		colorFade = clamp( colorFade, 0.f, 1.f );
 
 		float haloColor[3];
 		VectorScale( srcColor, colorFade * haloFractionVisible, haloColor );
@@ -2190,8 +2195,8 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFi
 			//float fOldWidth = pbeam->GetEndWidth();
 			C_BaseEntity *pOldStartEntity = pbeam->GetStartEntityPtr();
 			C_BaseEntity *pOldEndEntity = pbeam->GetEndEntityPtr();
-			int iOldStartAttachement = pbeam->GetStartAttachment();
-			int iOldEndAttachement = pbeam->GetEndAttachment();
+			int iOldStartAttachment = pbeam->GetStartAttachment();
+			int iOldEndAttachment = pbeam->GetEndAttachment();
 			int iOldType = pbeam->GetType();
 
 			// Get the transformed positions of the sub beam in the other portal's space
@@ -2225,8 +2230,8 @@ void CViewRenderBeams::DrawBeam( C_Beam* pbeam, ITraceFilter *pEntityBeamTraceFi
 				pbeam->SetStartEntity( pOldStartEntity );
 			if ( pOldEndEntity )
 				pbeam->SetEndEntity( pOldEndEntity );
-			pbeam->SetStartAttachment( iOldStartAttachement );
-			pbeam->SetEndAttachment( iOldEndAttachement );
+			pbeam->SetStartAttachment( iOldStartAttachment );
+			pbeam->SetEndAttachment( iOldEndAttachment );
 			pbeam->SetType( iOldType );
 
 			// Doesn't use a hallow or taper the beam because we recursed

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,10 +14,11 @@
 
 class C_BaseEntity;
 class C_LocalTempEntity;
+class C_PhysPropClientside;
 struct model_t;
 
 #include "mempool.h"
-#include "UtlLinkedList.h"
+#include "utllinkedlist.h"
 
 #if defined( CSTRIKE_DLL ) || defined( SDK_DLL )
 enum
@@ -47,12 +48,14 @@ public:
 	virtual void				Update( void ) = 0;
 	virtual void				Clear( void ) = 0;
 
+	virtual C_LocalTempEntity	*FindTempEntByID( int nID, int nSubID ) = 0;
+
 	virtual void				BloodSprite( const Vector &org, int r, int g, int b, int a, int modelIndex, int modelIndex2, float size ) = 0;
 	virtual void				RicochetSprite( const Vector &pos, model_t *pmodel, float duration, float scale ) = 0;
 	virtual void				MuzzleFlash( int type, ClientEntityHandle_t hEntity, int attachmentIndex, bool firstPerson ) = 0;
 	virtual void				MuzzleFlash( const Vector &pos1, const QAngle &angles, int type, ClientEntityHandle_t hEntity, bool firstPerson ) = 0;
 	virtual void				EjectBrass( const Vector& pos1, const QAngle& angles, const QAngle& gunAngles, int type ) = 0;
-	virtual C_LocalTempEntity   *SpawnTempModel( model_t *pModel, const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecVelocity, float flLifeTime, int iFlags ) = 0;
+	virtual C_LocalTempEntity   *SpawnTempModel( const model_t *pModel, const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecVelocity, float flLifeTime, int iFlags ) = 0;
 	virtual void				BreakModel( const Vector &pos, const QAngle &angles, const Vector &size, const Vector &dir, float random, float life, int count, int modelIndex, char flags) = 0;
 	virtual void				Bubbles( const Vector &mins, const Vector &maxs, float height, int modelIndex, int count, float speed ) = 0;
 	virtual void				BubbleTrail( const Vector &start, const Vector &end, float flWaterZ, int modelIndex, int count, float speed ) = 0;
@@ -72,6 +75,7 @@ public:
 	virtual void				PlaySound ( C_LocalTempEntity *pTemp, float damp ) = 0;
 	virtual void				PhysicsProp( int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects = 0 ) = 0;
 	virtual C_LocalTempEntity	*ClientProjectile( const Vector& vecOrigin, const Vector& vecVelocity, const Vector& vecAccel, int modelindex, int lifetime, CBaseEntity *pOwner, const char *pszImpactEffect = NULL, const char *pszParticleEffect = NULL ) = 0;
+	virtual C_PhysPropClientside		*PhysicsProp( const model_t *pModel, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects = 0, int nModelIndex = -1 ) = 0;
 };
 
 
@@ -96,6 +100,8 @@ public:
 	virtual void			Update( void );
 	virtual void			Clear( void );
 
+	virtual C_LocalTempEntity	*FindTempEntByID( int nID, int nSubID );
+
 	// Legacy temp entities still supported
 	virtual void			BloodSprite( const Vector &org, int r, int g, int b, int a, int modelIndex, int modelIndex2, float size );
 	virtual void			RicochetSprite( const Vector &pos, model_t *pmodel, float duration, float scale );
@@ -118,15 +124,16 @@ public:
 
 	virtual void			PlaySound ( C_LocalTempEntity *pTemp, float damp );
 	virtual void			EjectBrass( const Vector &pos1, const QAngle &angles, const QAngle &gunAngles, int type );
-	virtual C_LocalTempEntity		*SpawnTempModel( model_t *pModel, const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecVelocity, float flLifeTime, int iFlags );
+	virtual C_LocalTempEntity		*SpawnTempModel( const model_t *pModel, const Vector &vecOrigin, const QAngle &vecAngles, const Vector &vecVelocity, float flLifeTime, int iFlags );
 	void					RocketFlare( const Vector& pos );
 	void					HL1EjectBrass( const Vector &vecPosition, const QAngle &angAngles, const Vector &vecVelocity, int nType );
 	void					CSEjectBrass( const Vector &vecPosition, const QAngle &angAngles, int nType, int nShellType, CBasePlayer *pShooter );
 	void					PhysicsProp( int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects = 0 );
 	C_LocalTempEntity		*ClientProjectile( const Vector& vecOrigin, const Vector& vecVelocity, const Vector& vecAcceleration, int modelindex, int lifetime, CBaseEntity *pOwner, const char *pszImpactEffect = NULL, const char *pszParticleEffect = NULL );
+	C_PhysPropClientside	*PhysicsProp( const model_t *pModel, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, int flags, int effects = 0, int modelindex = -1 );
 
 // Data
-private:
+public:
 	enum
 	{ 
 		MAX_TEMP_ENTITIES = 500,
@@ -134,6 +141,7 @@ private:
 		MAX_TEMP_ENTITY_STUDIOMODEL = 50,
 	};
 
+private:
 	// Global temp entity pool
 	CClassMemoryPool< C_LocalTempEntity >	m_TempEntsPool;
 	CUtlLinkedList< C_LocalTempEntity *, unsigned short >	m_TempEnts;
@@ -160,8 +168,8 @@ private:
 
 // Internal methods also available to children
 protected:
-	C_LocalTempEntity		*TempEntAlloc( const Vector& org, model_t *model );
-	C_LocalTempEntity		*TempEntAllocHigh( const Vector& org, model_t *model );
+	C_LocalTempEntity		*TempEntAlloc( const Vector& org, const model_t *model );
+	C_LocalTempEntity		*TempEntAllocHigh( const Vector& org, const model_t *model );
 
 // Material handle caches
 private:

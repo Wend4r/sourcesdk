@@ -1,8 +1,9 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //=============================================================================
+
 #include "vgui_controls/KeyBoardEditorDialog.h"
 #include "vgui_controls/ListPanel.h"
 #include "vgui_controls/Button.h"
@@ -13,7 +14,11 @@
 #include "vgui/ILocalize.h"
 #include "KeyValues.h"
 #include "vgui/Cursor.h"
-#include "tier1/UtlDict.h"
+#include "tier1/utldict.h"
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 
 using namespace vgui;
 
@@ -22,9 +27,9 @@ static char *CopyString( const char *in )
 	if ( !in )
 		return NULL;
 
-	int len = strlen( in );
+	int len = V_strlen( in );
 	char *n = new char[ len + 1 ];
-	Q_strncpy( n, in, len  + 1 );
+	V_strncpy( n, in, len  + 1 );
 	return n;
 }
 
@@ -420,10 +425,8 @@ void CKeyBoardEditorPage::BindKey( KeyCode code )
 			if ( binding && Q_stricmp( kbMap->bindingname, binding->bindingname ) )
 			{
 				// Key is already rebound!!!
-				char warning[ 512 ];
-				Q_snprintf( warning, sizeof( warning ), "Can't bind to '%S', key is already bound to '%s'\n",
+				Warning( "Can't bind to '%S', key is already bound to '%s'\n",
 					Panel::KeyCodeToDisplayString( code ), binding->bindingname );
-				Warning( warning );
 				return;
 			}
 
@@ -440,10 +443,8 @@ void CKeyBoardEditorPage::BindKey( KeyCode code )
 			if ( binding && Q_stricmp( bindingMap->bindingname, binding->bindingname ) )
 			{
 				// Key is already rebound!!!
-				char warning[ 512 ];
-				Q_snprintf( warning, sizeof( warning ), "Can't bind to '%S', key is already bound to '%s'\n",
+				Warning( "Can't bind to '%S', key is already bound to '%s'\n",
 					Panel::KeyCodeToDisplayString( code ), binding->bindingname );
-				Warning( warning );
 				return;
 			}
 
@@ -557,18 +558,18 @@ static bool BindingLessFunc( KeyValues * const & lhs, KeyValues * const &rhs )
 	return ( Q_stricmp( p1->GetString( "Action" ), p2->GetString( "Action" ) ) < 0 ) ? true : false;
 }
 
-void CKeyBoardEditorPage::AnsiText( char const *token, char *out, size_t buflen )
+void CKeyBoardEditorPage::AnsiText( char const *token, char *out, int nBuflen )
 {
 	out[ 0 ] = 0;
 
 	wchar_t *str = g_pVGuiLocalize->Find( token );
 	if ( !str )
 	{
-		Q_strncpy( out, token, buflen );
+		V_strncpy( out, token, nBuflen );
 	}
 	else
 	{
-		g_pVGuiLocalize->ConvertUnicodeToANSI( str, out, buflen );
+		g_pVGuiLocalize->ConvertUnicodeToANSI( str, out, nBuflen );
 	}
 }
 

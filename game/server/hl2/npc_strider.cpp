@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Giant walking strider thing!
 //
@@ -111,7 +111,7 @@ ConVar strider_missile_suppress_time( "strider_missile_suppress_time", "3" );
 
 //-----------------------------------------------------------------------------
 
-extern ConVar sv_gravity;
+float GetCurrentGravity( void );
 
 extern void CreateConcussiveBlast( const Vector &origin, const Vector &surfaceNormal, CBaseEntity *pOwner, float magnitude );
 
@@ -1130,7 +1130,7 @@ void CNPC_Strider::GatherConditions()
 					   !WeaponLOSCondition( GetAdjustedOrigin(), GetEnemy()->BodyTarget( GetAdjustedOrigin() ), false ) ) )
 				{
 #if 0
-					if ( !HasCondition( COND_STRIDER_SHOULD_CROUCH ) && !HasCondition( COND_STRIDER_SHOULD_CROUCH ) )
+					if ( !HasCondition( COND_STRIDER_SHOULD_CROUCH ) )
 						SetIdealHeight( MIN( GetMaxHeight(), GetHeight() + 75.0 * 0.1 ) ); // default to rising up
 #endif
 					GatherHeightConditions( GetAdjustedOrigin(), GetEnemy() );
@@ -1161,7 +1161,7 @@ void CNPC_Strider::GatherConditions()
 //---------------------------------------------------------
 void CNPC_Strider::GatherHeightConditions( const Vector &vTestPos, CBaseEntity *pEntity )
 {
-	if ( HasCondition( COND_STRIDER_SHOULD_CROUCH ) && HasCondition( COND_STRIDER_SHOULD_CROUCH ) )
+	if ( HasCondition( COND_STRIDER_SHOULD_CROUCH ) )
 		return;
 
 	float maxZ = (GetAbsOrigin().z - (GetMaxHeightModel() - GetMaxHeight()));
@@ -1292,7 +1292,7 @@ void CNPC_Strider::BuildScheduleTestBits()
 		SetCustomInterruptCondition( COND_STRIDER_HAS_CANNON_TARGET );
 	}
 
-	if( IsCurSchedule( SCHED_IDLE_WALK ) || IsCurSchedule( SCHED_IDLE_STAND ) && hl2_episodic.GetBool() )
+	if( IsCurSchedule( SCHED_IDLE_WALK ) || ( IsCurSchedule( SCHED_IDLE_STAND ) && hl2_episodic.GetBool() ) )
 	{
 		SetCustomInterruptCondition(COND_STRIDER_SHOULD_CROUCH);
 	}
@@ -1715,7 +1715,7 @@ void CNPC_Strider::RunTask( const Task_t *pTask )
 			// This doesn't work right now. (sjb)
 			Vector vecVelocity = GetAbsVelocity();
 
-			vecVelocity.z -= (sv_gravity.GetFloat() * 0.1);
+			vecVelocity.z -= (GetCurrentGravity() * 0.1);
 
 			SetAbsVelocity( vecVelocity );
 
@@ -2997,7 +2997,7 @@ void CNPC_Strider::HuntSound()
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CNPC_Strider::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr )
+void CNPC_Strider::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo info = inputInfo;
 
@@ -3045,7 +3045,7 @@ void CNPC_Strider::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &
 		}
 	}
 
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //---------------------------------------------------------
@@ -3102,15 +3102,15 @@ int CNPC_Strider::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 			{
 				if( g_pGameRules->IsSkillLevel(SKILL_EASY) )
 				{
-					damage = GetMaxHealth() / sk_strider_num_missiles1.GetInt();
+					damage = GetMaxHealth() / sk_strider_num_missiles1.GetFloat();
 				}
 				else if( g_pGameRules->IsSkillLevel(SKILL_HARD) )
 				{
-					damage = GetMaxHealth() / sk_strider_num_missiles3.GetInt();
+					damage = GetMaxHealth() / sk_strider_num_missiles3.GetFloat();
 				}
 				else // Medium, or unspecified
 				{
-					damage = GetMaxHealth() / sk_strider_num_missiles2.GetInt();
+					damage = GetMaxHealth() / sk_strider_num_missiles2.GetFloat();
 				}
 			}
 
@@ -3213,7 +3213,7 @@ int CNPC_Strider::TakeDamageFromCombineBall( const CTakeDamageInfo &info )
 
 	m_iHealth -= damage;
 
-	return (int)damage;
+	return damage;
 }
 
 //---------------------------------------------------------

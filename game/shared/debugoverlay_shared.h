@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -30,6 +30,7 @@ namespace NDebugOverlay
 	void	Grid( const Vector &vPosition );
 	void	Text( const Vector &origin, const char *text, bool bViewCheck, float flDuration );
 	void	ScreenText( float fXpos, float fYpos, const char *text, int r, int g, int b, int a, float flDuration);
+	void	ScreenTextLine( float flXpos, float flYpos, int iLine, const char *text, int r, int g, int b, int a, float duration );
 	void	Cross3D(const Vector &position, const Vector &mins, const Vector &maxs, int r, int g, int b, bool noDepthTest, float flDuration );
 	void	Cross3D(const Vector &position, float size, int r, int g, int b, bool noDepthTest, float flDuration );
 	void	Cross3DOriented( const Vector &position, const QAngle &angles, float size, int r, int g, int b, bool noDepthTest, float flDuration );
@@ -41,6 +42,7 @@ namespace NDebugOverlay
 	void	YawArrow( const Vector &startPos, float yaw, float length, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration);
 	void	VertArrow( const Vector &startPos, const Vector &endPos, float width, int r, int g, int b, int a, bool noDepthTest, float flDuration);
 	void	Axis( const Vector &position, const QAngle &angles, float size, bool noDepthTest, float flDuration );
+	void	Sphere( const Vector &center, float radius, int r, int g, int b, bool noDepthTest, float flDuration );
 	void	Circle( const Vector &position, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration );
 	void	Circle( const Vector &position, const QAngle &angles, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration );
 	void	Circle( const Vector &position, const Vector &xAxis, const Vector &yAxis, float radius, int r, int g, int b, int a, bool bNoDepthTest, float flDuration );

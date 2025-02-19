@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A base class for model-based doors. The exact movement required to
 //			open or close the door is not dictated by this class, only that
@@ -21,6 +21,7 @@
 #include "props.h"
 #include "locksounds.h"
 #include "entityoutput.h"
+#include "nav.h"
 
 extern ConVar g_debug_doors;
 
@@ -73,6 +74,13 @@ public:
 
 	virtual void GetNPCOpenData(CAI_BaseNPC *pNPC, opendata_t &opendata) = 0;
 	virtual float GetOpenInterval(void) = 0;
+
+	enum DoorExtent_t
+	{
+		DOOR_EXTENT_OPEN = 1,
+		DOOR_EXTENT_CLOSED = 2,
+	};
+	virtual void ComputeDoorExtent( Extent *extent, unsigned int extentType ) = 0;	// extent contains the volume encompassing by the door in the specified states
 	// }
 
 protected:

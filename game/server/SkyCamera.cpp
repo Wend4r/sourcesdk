@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -55,6 +55,7 @@ BEGIN_DATADESC( CSkyCamera )
 	DEFINE_KEYFIELD( m_skyboxData.fog.start,			FIELD_FLOAT, "fogstart" ),
 	DEFINE_KEYFIELD( m_skyboxData.fog.end,				FIELD_FLOAT, "fogend" ),
 	DEFINE_KEYFIELD( m_skyboxData.fog.maxdensity,		FIELD_FLOAT, "fogmaxdensity" ),
+	DEFINE_KEYFIELD( m_skyboxData.fog.radial,			FIELD_BOOLEAN, "fogradial" ),
 
 END_DATADESC()
 
@@ -62,7 +63,6 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 // List of maps in HL2 that we must apply our skybox fog fixup hack to
 //-----------------------------------------------------------------------------
-#ifdef HL2_DLL
 static const char *s_pBogusFogMaps[] =
 {
 	"d1_canals_01",
@@ -86,7 +86,6 @@ static const char *s_pBogusFogMaps[] =
 	"d3_citadel_01",
 	NULL
 };
-#endif
 
 //-----------------------------------------------------------------------------
 // Constructor, destructor
@@ -95,6 +94,7 @@ CSkyCamera::CSkyCamera()
 {
 	g_SkyList.Insert( this );
 	m_skyboxData.fog.maxdensity = 1.0f;
+	m_skyboxData.fog.radial = false;
 }
 
 CSkyCamera::~CSkyCamera()
@@ -137,10 +137,10 @@ void CSkyCamera::Activate( )
 		{
 			if ( !Q_stricmp( s_pBogusFogMaps[i], STRING(gpGlobals->mapname) ) )
 			{
-				m_skyboxData.fog.colorPrimary.SetR( (byte)(( m_skyboxData.fog.colorPrimary.GetR() + m_skyboxData.fog.colorSecondary.GetR() ) * 0.5f) );
-				m_skyboxData.fog.colorPrimary.SetG( (byte)(( m_skyboxData.fog.colorPrimary.GetG() + m_skyboxData.fog.colorSecondary.GetG() ) * 0.5f) );
-				m_skyboxData.fog.colorPrimary.SetB( (byte)(( m_skyboxData.fog.colorPrimary.GetB() + m_skyboxData.fog.colorSecondary.GetB() ) * 0.5f) );
-				m_skyboxData.fog.colorPrimary.SetA( (byte)(( m_skyboxData.fog.colorPrimary.GetA() + m_skyboxData.fog.colorSecondary.GetA() ) * 0.5f) );
+				m_skyboxData.fog.colorPrimary.SetR( ( m_skyboxData.fog.colorPrimary.GetR() + m_skyboxData.fog.colorSecondary.GetR() ) * 0.5f );
+				m_skyboxData.fog.colorPrimary.SetG( ( m_skyboxData.fog.colorPrimary.GetG() + m_skyboxData.fog.colorSecondary.GetG() ) * 0.5f );
+				m_skyboxData.fog.colorPrimary.SetB( ( m_skyboxData.fog.colorPrimary.GetB() + m_skyboxData.fog.colorSecondary.GetB() ) * 0.5f );
+				m_skyboxData.fog.colorPrimary.SetA( ( m_skyboxData.fog.colorPrimary.GetA() + m_skyboxData.fog.colorSecondary.GetA() ) * 0.5f );
 				m_skyboxData.fog.colorSecondary = m_skyboxData.fog.colorPrimary;
 			}
 		}

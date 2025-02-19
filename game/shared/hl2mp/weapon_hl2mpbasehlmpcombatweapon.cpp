@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -40,10 +40,16 @@ BEGIN_DATADESC( CBaseHL2MPCombatWeapon )
 
 END_DATADESC()
 
-#endif
+#else
 
 BEGIN_PREDICTION_DATA( CBaseHL2MPCombatWeapon )
+	// misyl: We are not perfect at predicting these, and we also don't have to be.
+	DEFINE_PRED_FIELD( m_flTimeWeaponIdle, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_PRED_FIELD( m_flNextPrimaryAttack, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_NOERRORCHECK ),
+	DEFINE_PRED_FIELD( m_flNextSecondaryAttack, FIELD_FLOAT, FTYPEDESC_OVERRIDE | FTYPEDESC_NOERRORCHECK ),
 END_PREDICTION_DATA()
+
+#endif
 
 extern ConVar sk_auto_reload_time;
 

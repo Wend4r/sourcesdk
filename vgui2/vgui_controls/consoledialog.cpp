@@ -1,11 +1,11 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //===========================================================================//
 
-#include "vgui_controls/ConsoleDialog.h"
+#include "vgui_controls/consoledialog.h"
 
 #include "vgui/IInput.h"
 #include "vgui/IScheme.h"
@@ -22,7 +22,7 @@
 #include "tier1/convar.h"
 #include "tier1/convar_serverbounded.h"
 #include "icvar.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 
 #include <stdlib.h>
 
@@ -88,7 +88,7 @@ public:
 		}
 		else if ( code == KEY_ENTER )
 		{
-			PostMessage( GetParent()->GetVPanel(), new KeyValues( "Command", "command", "submit" ) );
+			// submit is the default button whose click event will have been called already
 		}
 		else
 		{
@@ -169,7 +169,7 @@ const char *CHistoryItem::GetExtra() const
 void CHistoryItem::SetText( const char *text, const char *extra )
 {
 	delete[] m_text;
-	int len = strlen( text ) + 1;
+	int len = V_strlen( text ) + 1;
 
 	m_text = new char[ len ];
 	Q_memset( m_text, 0x0, len );
@@ -179,7 +179,7 @@ void CHistoryItem::SetText( const char *text, const char *extra )
 	{
 		m_bHasExtra = true;
 		delete[] m_extraText;
-		int elen = strlen( extra ) + 1;
+		int elen = V_strlen( extra ) + 1;
 		m_extraText = new char[ elen ];
 		Q_memset( m_extraText, 0x0, elen);
 		Q_strncpy( m_extraText, extra, elen );
@@ -309,7 +309,7 @@ CConsolePanel::CConsolePanel( vgui::Panel *pParent, const char *pName, bool bSta
 	m_pHistory->SetVerticalScrollbar( !m_bStatusVersion );
 	if ( m_bStatusVersion )
 	{
-		m_pHistory->SetDrawOffsets( 3, 3 );
+		m_pHistory->SetDrawOffsets( QuickPropScale( 3 ), QuickPropScale( 3 ) );
 	}
 	m_pHistory->GotoTextEnd();
 	
@@ -629,8 +629,8 @@ void CConsolePanel::OnAutoComplete(bool reverse)
 	}
 
 	m_pEntry->SetText(completedText);
-	m_pEntry->SelectNone();
 	m_pEntry->GotoTextEnd();
+	m_pEntry->SelectNone();
 
 	m_iNextCompletion++;
 }
@@ -841,12 +841,12 @@ void CConsolePanel::PerformLayout()
 
 	if ( !m_bStatusVersion )
 	{
-		const int inset = 8;
-		const int entryHeight = 24;
-		const int topHeight = 4;
-		const int entryInset = 4;
-		const int submitWide = 64;
-		const int submitInset = 7; // x inset to pull the submit button away from the frame grab
+		const int inset = QuickPropScale( 8 );
+		const int entryHeight = QuickPropScale( 24 );
+		const int topHeight = QuickPropScale( 4 );
+		const int entryInset = QuickPropScale( 4 );
+		const int submitWide = QuickPropScale( 64 );
+		const int submitInset = QuickPropScale( 7 ); // x inset to pull the submit button away from the frame grab
 
 		m_pHistory->SetPos(inset, inset + topHeight); 
 		m_pHistory->SetSize(wide - (inset * 2), tall - (entryInset * 2 + inset * 2 + topHeight + entryHeight));
@@ -861,7 +861,7 @@ void CConsolePanel::PerformLayout()
 	}
 	else
 	{
-		const int inset = 2;
+		const int inset = QuickPropScale( 2 );
 
 		int entryWidth = wide / 2;
 		if ( wide > 400 )
@@ -966,14 +966,17 @@ void CConsolePanel::AddToHistory( const char *commandText, const char *extraText
 	}
 
 	// strip the space off the end of the command before adding it to the history
-	char *command = static_cast<char *>( _alloca( (strlen( commandText ) + 1 ) * sizeof( char ) ));
+	// If this code gets cleaned up then we should remove the redundant calls to strlen,
+	// the check for whether _alloca succeeded, and should use V_strncpy instead of the
+	// error prone memset/strncpy sequence.
+	char *command = static_cast<char *>( _alloca( (V_strlen( commandText ) + 1 ) * sizeof( char ) ));
 	if ( command )
 	{
-		memset( command, 0x0, strlen( commandText ) + 1 );
-		strncpy( command, commandText, strlen( commandText ));
-		if ( command[ strlen( command ) -1 ] == ' ' )
+		memset( command, 0x0, V_strlen( commandText ) + 1 );
+		V_strncpy( command, commandText, V_strlen( commandText ) + 1 );
+		if ( command[ V_strlen( command ) -1 ] == ' ' )
 		{
-			 command[ strlen( command ) -1 ] = '\0';
+			 command[ V_strlen( command ) -1 ] = '\0';
 		}
 	}
 
@@ -982,14 +985,14 @@ void CConsolePanel::AddToHistory( const char *commandText, const char *extraText
 
 	if ( extraText )
 	{
-		extra = static_cast<char *>( malloc( (strlen( extraText ) + 1 ) * sizeof( char ) ));
+		extra = static_cast<char *>( malloc( (V_strlen( extraText ) + 1 ) * sizeof( char ) ));
 		if ( extra )
 		{
-			memset( extra, 0x0, strlen( extraText ) + 1 );
-			strncpy( extra, extraText, strlen( extraText )); // +1 to dodge the starting quote
-			
+			memset( extra, 0x0, V_strlen( extraText ) + 1 );
+			V_strncpy( extra, extraText, V_strlen( extraText ) + 1 ); // +1 to dodge the starting quote
+
 			// Strip trailing spaces
-			int i = strlen( extra ) - 1; 
+			int i = V_strlen( extra ) - 1; 
 			while ( i >= 0 &&  // Check I before referencing i == -1 into the extra array!
 				extra[ i ] == ' ' )
 			{
@@ -1016,7 +1019,7 @@ void CConsolePanel::AddToHistory( const char *commandText, const char *extraText
 				continue;
 
 			// stricmp so two commands with the same starting text get added
-			if ( stricmp( item->GetExtra(), extra ) )	
+			if ( stricmp( item->GetExtra(), extra ) )
 				continue;
 		}
 		m_CommandHistory.Remove( i );
@@ -1030,6 +1033,14 @@ void CConsolePanel::AddToHistory( const char *commandText, const char *extraText
 	RebuildCompletionList( m_szPartialText );
 
 	free( extra );
+}
+
+void CConsolePanel::GetConsoleText( char *pchText, int nBufSize ) const
+{
+	wchar_t *temp = new wchar_t[nBufSize];
+	m_pHistory->GetText( 0, temp, nBufSize * (int)sizeof( wchar_t ) );
+	g_pVGuiLocalize->ConvertUnicodeToANSI( temp, pchText, nBufSize );
+	delete[] temp;
 }
 
 //-----------------------------------------------------------------------------
@@ -1079,7 +1090,7 @@ void CConsolePanel::DumpConsoleTextToFile()
 			g_pVGuiLocalize->ConvertUnicodeToANSI(buf, ansi, sizeof(ansi));
 
 			// write to disk
-			int len = strlen(ansi);
+			int len = V_strlen(ansi);
 			for (int i = 0; i < len; i++)
 			{
 				// preceed newlines with a return
@@ -1120,6 +1131,7 @@ CConsoleDialog::CConsoleDialog( vgui::Panel *pParent, const char *pName, bool bS
 	SetVisible( false );
 	SetTitle( "#Console_Title", true );
 	m_pConsolePanel = new CConsolePanel( this, "ConsolePage", bStatusVersion );
+	m_pConsolePanel->AddActionSignalTarget( this );
 }
 
 void CConsoleDialog::OnScreenSizeChanged( int iOldWide, int iOldTall )
@@ -1228,3 +1240,14 @@ void CConsoleDialog::DumpConsoleTextToFile()
 }
 
 
+void CConsoleDialog::OnKeyCodePressed( vgui::KeyCode code )
+{
+	if ( code == KEY_XBUTTON_B )
+	{
+		Hide();
+	}
+	else
+	{
+		BaseClass::OnKeyCodePressed(code);
+	}
+}

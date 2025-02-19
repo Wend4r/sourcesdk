@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -44,7 +44,7 @@ CBaseEntity *CTempEntTester::Create( const Vector &vecOrigin, const QAngle &vecA
 	if ( single_te && single_te[0] )
 	{
 		Q_strncpy( classname, single_te ,sizeof(classname));
-		Q_strlower( classname );
+		strlwr( classname );
 	}
 	else
 	{
@@ -81,7 +81,7 @@ void CTempEntTester::Spawn( void )
 	{
 		char name[ 128 ];
 		Q_strncpy( name, m_pCurrent->GetName() ,sizeof(name));
-		Q_strlower( name );
+		strlwr( name );
 		if ( strstr( name, m_szClass ) )
 		{
 			break;

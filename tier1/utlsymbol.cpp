@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Defines a symbol table
 //
@@ -6,15 +6,32 @@
 // $NoKeywords: $
 //=============================================================================//
 
-#ifdef _MSC_VER
 #pragma warning (disable:4514)
-#endif
 
 #include "utlsymbol.h"
 #include "KeyValues.h"
 #include "tier0/threadtools.h"
 #include "tier0/memdbgon.h"
 #include "stringpool.h"
+#include "utlhashtable.h"
+#include "utlstring.h"
+
+// Ensure that everybody has the right compiler version installed. The version
+// number can be obtained by looking at the compiler output when you type 'cl'
+// and removing the last two digits and the periods: 16.00.40219.01 becomes 160040219
+#ifdef _MSC_FULL_VER
+	#if _MSC_FULL_VER > 160000000
+		// VS 2010
+		#if _MSC_FULL_VER < 160040219
+			#error You must install VS 2010 SP1
+		#endif
+	#else
+		// VS 2005
+		#if _MSC_FULL_VER < 140050727
+			#error You must install VS 2005 SP1
+		#endif
+	#endif
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -130,10 +147,16 @@ bool CUtlSymbolTable::CLess::operator()( const CStringPoolIndex &i1, const CStri
 	const char* str2 = (i2 == INVALID_STRING_INDEX) ? pTable->m_pUserSearchString :
 													  pTable->StringFromIndex( i2 );
 
+	if ( !str1 && str2 )
+		return false;
+	if ( !str2 && str1 )
+		return true;
+	if ( !str1 && !str2 )
+		return false;
 	if ( !pTable->m_bInsensitive )
-		return strcmp( str1, str2 ) < 0;
+		return V_strcmp( str1, str2 ) < 0;
 	else
-		return strcmpi( str1, str2 ) < 0;
+		return V_stricmp( str1, str2 ) < 0;
 }
 
 
@@ -202,14 +225,14 @@ CUtlSymbol CUtlSymbolTable::AddString( const char* pString )
 	if (id.IsValid())
 		return id;
 
-	int len = strlen(pString) + 1;
+	int len = V_strlen(pString) + 1;
 
 	// Find a pool with space for this string, or allocate a new one.
 	int iPool = FindPoolWithSpace( len );
 	if ( iPool == -1 )
 	{
 		// Add a new pool.
-		int newPoolSize = MAX( len, MIN_STRING_POOL_SIZE );
+		int newPoolSize = max( len, MIN_STRING_POOL_SIZE );
 		StringPool_t *pPool = (StringPool_t*)malloc( sizeof( StringPool_t ) + newPoolSize - 1 );
 		pPool->m_TotalLen = newPoolSize;
 		pPool->m_SpaceUsed = 0;
@@ -265,6 +288,22 @@ void CUtlSymbolTable::RemoveAll()
 }
 
 
+
+class CUtlFilenameSymbolTable::HashTable : public CUtlStableHashtable<CUtlConstString>
+{
+};
+
+CUtlFilenameSymbolTable::CUtlFilenameSymbolTable()
+{
+	m_Strings = new HashTable;
+}
+
+CUtlFilenameSymbolTable::~CUtlFilenameSymbolTable()
+{
+	delete m_Strings;
+}
+
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pFileName - 
@@ -289,7 +328,7 @@ FileNameHandle_t CUtlFilenameSymbolTable::FindOrAddFileName( const char *pFileNa
 	Q_strncpy( fn, pFileName, sizeof( fn ) );
 	Q_RemoveDotSlashes( fn );
 #ifdef _WIN32
-	strlwr( fn );
+	Q_strlower( fn );
 #endif
 
 	// Split the filename into constituent parts
@@ -301,18 +340,20 @@ FileNameHandle_t CUtlFilenameSymbolTable::FindOrAddFileName( const char *pFileNa
 	// not found, lock and look again
 	FileNameHandleInternal_t handle;
 	m_lock.LockForWrite();
-	handle.path = m_StringPool.FindStringHandle( basepath );
-	handle.file = m_StringPool.FindStringHandle( filename );
-	if ( handle.path && handle.file )
-	{
+	handle.path = m_Strings->Insert( basepath ) + 1;
+	handle.file = m_Strings->Insert( filename ) + 1;
+	//handle.path = m_StringPool.FindStringHandle( basepath );
+	//handle.file = m_StringPool.FindStringHandle( filename );
+	//if ( handle.path != m_Strings.InvalidHandle() && handle.file )
+	//{
 		// found
-		m_lock.UnlockWrite();
-		return *( FileNameHandle_t * )( &handle );
-	}
+	//	m_lock.UnlockWrite();
+	//	return *( FileNameHandle_t * )( &handle );
+	//}
 
 	// safely add it
-	handle.path = m_StringPool.ReferenceStringHandle( basepath );
-	handle.file = m_StringPool.ReferenceStringHandle( filename );
+	//handle.path = m_StringPool.ReferenceStringHandle( basepath );
+	//handle.file = m_StringPool.ReferenceStringHandle( filename );
 	m_lock.UnlockWrite();
 
 	return *( FileNameHandle_t * )( &handle );
@@ -330,7 +371,7 @@ FileNameHandle_t CUtlFilenameSymbolTable::FindFileName( const char *pFileName )
 	Q_strncpy( fn, pFileName, sizeof( fn ) );
 	Q_RemoveDotSlashes( fn );
 #ifdef _WIN32
-	strlwr( fn );
+	Q_strlower( fn );
 #endif
 
 	// Split the filename into constituent parts
@@ -341,9 +382,13 @@ FileNameHandle_t CUtlFilenameSymbolTable::FindFileName( const char *pFileName )
 
 	FileNameHandleInternal_t handle;
 
+	Assert( (uint16)(m_Strings->InvalidHandle() + 1) == 0 );
+
 	m_lock.LockForRead();
-	handle.path = m_StringPool.FindStringHandle(basepath);
-	handle.file = m_StringPool.FindStringHandle(filename);
+	handle.path = m_Strings->Find(basepath) + 1;
+	handle.file = m_Strings->Find(filename) + 1;
+	//handle.path = m_StringPool.FindStringHandle(basepath);
+	//handle.file = m_StringPool.FindStringHandle(filename);
 	m_lock.UnlockRead();
 
 	if ( handle.path == 0 || handle.file == 0 )
@@ -362,14 +407,16 @@ bool CUtlFilenameSymbolTable::String( const FileNameHandle_t& handle, char *buf,
 	buf[ 0 ] = 0;
 
 	FileNameHandleInternal_t *internal = ( FileNameHandleInternal_t * )&handle;
-	if ( !internal )
+	if ( !internal || !internal->file || !internal->path )
 	{
 		return false;
 	}
 
 	m_lock.LockForRead();
-	const char *path = m_StringPool.HandleToString(internal->path);
-	const char *fn = m_StringPool.HandleToString(internal->file);
+	//const char *path = m_StringPool.HandleToString(internal->path);
+	//const char *fn = m_StringPool.HandleToString(internal->file);
+	const char *path = (*m_Strings)[ internal->path - 1 ].Get();
+	const char *fn = (*m_Strings)[ internal->file - 1].Get();
 	m_lock.UnlockRead();
 
 	if ( !path || !fn )
@@ -385,13 +432,5 @@ bool CUtlFilenameSymbolTable::String( const FileNameHandle_t& handle, char *buf,
 
 void CUtlFilenameSymbolTable::RemoveAll()
 {
-	m_StringPool.FreeAll();
-}
-
-void CUtlFilenameSymbolTable::SpewStrings()
-{
-	m_lock.LockForRead();
-	m_StringPool.SpewStrings();
-	m_lock.UnlockRead();
-
+	m_Strings->Purge();
 }

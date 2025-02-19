@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -23,7 +23,8 @@
 #include "vphysics/constraints.h"
 #include "world.h"
 #include "rumble_shared.h"
-
+// NVNT for airboat weapon fire
+#include "haptics/haptic_utils.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -111,7 +112,7 @@ public:
 	void			DampenForwardMotion( Vector &vecVehicleEyePos, QAngle &vecVehicleEyeAngles, float flFrameTime );
 	void			DampenUpMotion( Vector &vecVehicleEyePos, QAngle &vecVehicleEyeAngles, float flFrameTime );
 
-	virtual void	TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+	virtual void	TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	virtual int		OnTakeDamage( const CTakeDamageInfo &info );
 
 	void VPhysicsUpdate( IPhysicsObject *pPhysics );
@@ -733,7 +734,7 @@ void CPropAirboat::ExitVehicle( int nRole )
 	ep.m_pSoundName = "Airboat_engine_stop";
 	ep.m_flVolume = controller.SoundGetVolume( m_pEngineSound );
 	ep.m_SoundLevel = SNDLVL_NORM;
-	ep.m_nPitch = (int)controller.SoundGetPitch( m_pEngineSound );
+	ep.m_nPitch = controller.SoundGetPitch( m_pEngineSound );
 
 	EmitSound( filter, entindex(), ep );
 	m_VehiclePhysics.TurnOff();
@@ -818,7 +819,7 @@ Vector CPropAirboat::GetSmoothedVelocity( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropAirboat::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr )
+void CPropAirboat::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo info = inputInfo;
 	if ( ptr->hitbox != VEHICLE_HITBOX_DRIVER )
@@ -829,7 +830,7 @@ void CPropAirboat::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &
 		}
 	}
 
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //-----------------------------------------------------------------------------
@@ -842,7 +843,7 @@ void CPropAirboat::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &
 //-----------------------------------------------------------------------------
 bool CPropAirboat::ShouldDrawWaterImpacts( void )
 {
-	// The airboat spits out so much crap that we need to do cheaper versions
+	// The airboat spits out so much stuff that we need to do cheaper versions
 	// of the impact effects. Also, we need to do less of them.
 	if ( m_flLastImpactEffectTime >= gpGlobals->curtime )
 		return false;
@@ -857,7 +858,7 @@ bool CPropAirboat::ShouldDrawWaterImpacts( void )
 //-----------------------------------------------------------------------------
 void CPropAirboat::DoImpactEffect( trace_t &tr, int nDamageType )
 {
-	// The airboat spits out so much crap that we need to do cheaper versions
+	// The airboat spits out so much stuff that we need to do cheaper versions
 	// of the impact effects. Also, we need to do less of them.
 	if ( m_flLastImpactEffectTime == gpGlobals->curtime )
 		return;
@@ -931,9 +932,7 @@ void CPropAirboat::VPhysicsFriction( IPhysicsObject *pObject, float energy, int 
 //-----------------------------------------------------------------------------
 // This fixes an optimizer bug that was causing targetYaw and targetPitch to
 // always be reported as clamped, thus disabling the gun. Ack!
-#ifdef _MSC_VER
 #pragma optimize("", off)
-#endif
 void CPropAirboat::AimGunAt( const Vector &aimPos, float flInterval )
 {
 	matrix3x4_t gunMatrix;
@@ -983,9 +982,8 @@ void CPropAirboat::AimGunAt( const Vector &aimPos, float flInterval )
 	m_aimPitch = GetPoseParameter( AIRBOAT_GUN_PITCH );
 	m_aimYaw = GetPoseParameter( AIRBOAT_GUN_YAW );
 }
-#ifdef _MSC_VER
 #pragma optimize("", on)
-#endif
+
 
 //-----------------------------------------------------------------------------
 // Removes the ammo...
@@ -1565,6 +1563,9 @@ void CPropAirboat::DoMuzzleFlash( void )
 //-----------------------------------------------------------------------------
 #define GUN_WINDUP_TIME 1.5f
 
+// NVNT Convar for airboat gun magnitude
+ConVar hap_airboat_gun_mag("hap_airboat_gun_mag", "3", 0);
+
 void CPropAirboat::FireGun( )
 {
 	// Get the gun position.
@@ -1598,6 +1599,11 @@ void CPropAirboat::FireGun( )
 	
 	CAmmoDef *pAmmoDef = GetAmmoDef();
 	int ammoType = pAmmoDef->Index( "AirboatGun" );
+
+#if defined( WIN32 ) && !defined( _X360 ) 
+	// NVNT punch the players haptics by the magnitude cvar each round fired
+	HapticPunch(m_hPlayer,0,0,hap_airboat_gun_mag.GetFloat());
+#endif
 
 	FireBulletsInfo_t info;
 	info.m_vecSrc = vecGunPosition;
@@ -1863,8 +1869,8 @@ void CPropAirboat::CreateDangerSounds( void )
 
 		// 0.7 seconds ahead
 		vecSpot = vecStart + vecDir * (speed * 0.7f);
-		CSoundEnt::InsertSound( SOUND_DANGER, vecSpot, (int)radius, soundDuration, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
-		CSoundEnt::InsertSound( SOUND_PHYSICS_DANGER, vecSpot, (int)radius, soundDuration, this, SOUNDENT_CHANNEL_REPEATED_PHYSICS_DANGER );
+		CSoundEnt::InsertSound( SOUND_DANGER, vecSpot, radius, soundDuration, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
+		CSoundEnt::InsertSound( SOUND_PHYSICS_DANGER, vecSpot, radius, soundDuration, this, SOUNDENT_CHANNEL_REPEATED_PHYSICS_DANGER );
 		//NDebugOverlay::Box(vecSpot, Vector(-radius,-radius,-radius),Vector(radius,radius,radius), 255, 0, 255, 0, soundDuration);
 
 #if 0
@@ -2082,12 +2088,12 @@ float CPropAirboat::CalculatePhysicsStressDamage( vphysics_objectstress_t *pStre
 //-----------------------------------------------------------------------------
 void CPropAirboat::ApplyStressDamage( IPhysicsObject *pPhysics )
 {
-	vphysics_objectstress_t stressOut = {0.0f, 0.0f, false, false};
+	vphysics_objectstress_t stressOut;
 	float damage = CalculatePhysicsStressDamage( &stressOut, pPhysics );
 	if ( ( damage > 0 ) &&  ( m_hPlayer != NULL ) )
 	{
 		CTakeDamageInfo dmgInfo( GetWorldEntity(), GetWorldEntity(), vec3_origin, vec3_origin, damage, DMG_CRUSH );
-		dmgInfo.SetDamageForce( Vector( 0, 0, -stressOut.receivedStress * sv_gravity.GetFloat() * gpGlobals->frametime ) );
+		dmgInfo.SetDamageForce( Vector( 0, 0, -stressOut.receivedStress * GetCurrentGravity() * gpGlobals->frametime ) );
 		dmgInfo.SetDamagePosition( GetAbsOrigin() );
 		m_hPlayer->TakeDamage( dmgInfo );
 	}

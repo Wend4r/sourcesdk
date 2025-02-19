@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -35,9 +35,9 @@ const DmElementHandle_t DMELEMENT_HANDLE_INVALID;
 
 #else // PERFORM_HANDLE_TYPECHECKING
 
-enum DmElementHandle_t
+enum DmElementHandle_t : intp
 {
-	DMELEMENT_HANDLE_INVALID = 0xffffffff
+	DMELEMENT_HANDLE_INVALID = (DmElementHandle_t)(intp)(~((uintp)(0)))
 };
 
 #endif // PERFORM_HANDLE_TYPECHECKING

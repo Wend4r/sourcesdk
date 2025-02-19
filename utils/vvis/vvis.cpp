@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -212,7 +212,7 @@ void ClusterMerge (int clusternum)
 	{
 		p = leaf->portals[i];
 		if (p->status != stat_done)
-			Error ("portal not done %d %d %d\n", i, p, portals);
+			Error ("portal not done %d %p %p\n", i, p, portals);
 		for (j=0 ; j<portallongs ; j++)
 			((long *)portalvector)[j] |= ((long *)p->portalvis)[j];
 		pnum = p - portals;
@@ -302,11 +302,13 @@ void CalcPortalVis (void)
 	}
 
 
+#ifdef MPI
     if (g_bUseMPI) 
 	{
  		RunMPIPortalFlow();
 	}
 	else 
+#endif
 	{
 		RunThreadsOnIndividual (g_numportals*2, true, PortalFlow);
 	}
@@ -331,11 +333,13 @@ void CalcVis (void)
 {
 	int		i;
 
+#ifdef MPI
 	if (g_bUseMPI) 
 	{
 		RunMPIBasePortalVis();
 	}
 	else 
+#endif
 	{
 	    RunThreadsOnIndividual (g_numportals*2, true, BasePortalVis);
 	}
@@ -360,7 +364,7 @@ void CalcVis (void)
 	}
 
 		
-	Msg ("Optimized: %d visible clusters (%.2f%%)\n", count, totalvis, count*100/totalvis);
+	Msg ("Optimized: %d visible clusters (%.2f%%)\n", count, count*100.0/totalvis);
 	Msg ("Total clusters visible: %i\n", totalvis);
 	Msg ("Average clusters visible: %i\n", totalvis / portalclusters);
 }
@@ -414,6 +418,7 @@ void LoadPortals (char *name)
 	FILE *f;
 
 	// Open the portal file.
+#ifdef MPI
 	if ( g_bUseMPI )
 	{
 		// If we're using MPI, copy off the file to a temporary first. This will download the file
@@ -448,6 +453,7 @@ void LoadPortals (char *name)
 		f = fopen( tempFile, "rSTD" ); // read only, sequential, temporary, delete on close
 	}
 	else
+#endif
 	{
 		f = fopen( name, "r" );
 	}
@@ -971,6 +977,7 @@ int ParseCommandLine( int argc, char **argv )
 		// NOTE: the -mpi checks must come last here because they allow the previous argument 
 		// to be -mpi as well. If it game before something else like -game, then if the previous
 		// argument was -mpi and the current argument was something valid like -game, it would skip it.
+#ifdef MPI
 		else if ( !Q_strncasecmp( argv[i], "-mpi", 4 ) || !Q_strncasecmp( argv[i-1], "-mpi", 4 ) )
 		{
 			if ( stricmp( argv[i], "-mpi" ) == 0 )
@@ -980,6 +987,7 @@ int ParseCommandLine( int argc, char **argv )
 			if ( i == argc - 1 )
 				break;
 		}
+#endif
 		else if (argv[i][0] == '-')
 		{
 			Warning("VBSP: Unknown option \"%s\"\n\n", argv[i]);
@@ -1016,7 +1024,9 @@ void PrintUsage( int argc, char **argv )
 		"\n"
 		"  -v (or -verbose): Turn on verbose output (also shows more command\n"
 		"  -fast           : Only do first quick pass on vis calculations.\n"
+#ifdef MPI
 		"  -mpi            : Use VMPI to distribute computations.\n"
+#endif
 		"  -low            : Run as an idle-priority process.\n"
 		"                    env_fog_controller specifies one.\n"
 		"\n"
@@ -1026,7 +1036,9 @@ void PrintUsage( int argc, char **argv )
 		"Other options:\n"
 		"  -novconfig      : Don't bring up graphical UI on vproject errors.\n"
 		"  -radius_override: Force a vis radius, regardless of whether an\n"
+#ifdef MPI
 		"  -mpi_pw <pw>    : Use a password to choose a specific set of VMPI workers.\n"
+#endif
 		"  -threads        : Control the number of threads vbsp uses (defaults to the #\n"
 		"                    or processors on your machine).\n"
 		"  -nosort         : Don't sort portals (sorting is an optimization).\n"
@@ -1072,6 +1084,7 @@ int RunVVis( int argc, char **argv )
 {
 	char	portalfile[1024];
 	char		source[1024];
+	char		mapFile[1024];
 	double		start, end;
 
 
@@ -1079,17 +1092,25 @@ int RunVVis( int argc, char **argv )
 
 	verbose = false;
 
-	Q_StripExtension( argv[ argc - 1 ], source, sizeof( source ) );
-	CmdLib_InitFileSystem( argv[ argc - 1 ] );
-
-	Q_FileBase( source, source, sizeof( source ) );
-
 	LoadCmdLineFromFile( argc, argv, source, "vvis" );
 	int i = ParseCommandLine( argc, argv );
 
-	// This part is just for VMPI. VMPI's file system needs the basedir in front of all filenames,
+	CmdLib_InitFileSystem( argv[ argc - 1 ] );
+
+	// The ExpandPath is just for VMPI. VMPI's file system needs the basedir in front of all filenames,
 	// so we prepend qdir here.
-	strcpy( source, ExpandPath( source ) );
+
+	// XXX(johns): Somewhat preserving legacy behavior here to avoid changing tool behavior, there's no specific rhyme
+	//             or reason to this. We get just the base name we were passed, discarding any directory or extension
+	//             information. We then ExpandPath() it (see VMPI comment above), and tack on .bsp for the file access
+	//             parts.
+	V_FileBase( argv[ argc - 1 ], mapFile, sizeof( mapFile ) );
+	V_strncpy( mapFile, ExpandPath( mapFile ), sizeof( mapFile ) );
+	V_strncat( mapFile, ".bsp", sizeof( mapFile ) );
+
+	// Source is just the mapfile without an extension at this point...
+	V_strncpy( source, mapFile, sizeof( mapFile ) );
+	V_StripExtension( source, source, sizeof( source ) );
 
 	if (i != argc - 1)
 	{
@@ -1100,8 +1121,9 @@ int RunVVis( int argc, char **argv )
 
 	start = Plat_FloatTime();
 
-
+#ifdef MPI
 	if (!g_bUseMPI)
+#endif
 	{
 		// Setup the logfile.
 		char logFile[512];
@@ -1114,13 +1136,11 @@ int RunVVis( int argc, char **argv )
 	{
 		SetLowPriority();
 	}
-	
+
 	ThreadSetDefault ();
 
-	char	targetPath[1024];
-	GetPlatformMapPath( source, targetPath, 0, 1024 );
-	Msg ("reading %s\n", targetPath);
-	LoadBSPFile (targetPath);
+	Msg ("reading %s\n", mapFile);
+	LoadBSPFile (mapFile);
 	if (numnodes == 0 || numfaces == 0)
 		Error ("Empty map");
 	ParseEntities ();
@@ -1151,7 +1171,7 @@ int RunVVis( int argc, char **argv )
 		Q_StripExtension( portalfile, portalfile, sizeof( portalfile ) );
 	}
 	strcat (portalfile, ".prt");
-	
+
 	Msg ("reading %s\n", portalfile);
 	LoadPortals (portalfile);
 
@@ -1162,17 +1182,17 @@ int RunVVis( int argc, char **argv )
 		CalcPAS ();
 
 		// We need a mapping from cluster to leaves, since the PVS
-		// deals with clusters for both CalcVisibleFogVolumes and 
+		// deals with clusters for both CalcVisibleFogVolumes and
 		BuildClusterTable();
 
 		CalcVisibleFogVolumes();
 		CalcDistanceFromLeavesToWater();
 
-		visdatasize = vismap_p - dvisdata;	
+		visdatasize = vismap_p - dvisdata;
 		Msg ("visdatasize:%i  compressed from %i\n", visdatasize, originalvismapsize*2);
 
-		Msg ("writing %s\n", targetPath);
-		WriteBSPFile (targetPath);	
+		Msg ("writing %s\n", mapFile);
+		WriteBSPFile (mapFile);
 	}
 	else
 	{
@@ -1180,16 +1200,18 @@ int RunVVis( int argc, char **argv )
 		{
 			Error("Invalid cluster trace: %d to %d, valid range is 0 to %d\n", g_TraceClusterStart, g_TraceClusterStop, portalclusters-1 );
 		}
+#ifdef MPI
 		if ( g_bUseMPI )
 		{
 			Warning("Can't compile trace in MPI mode\n");
 		}
+#endif
 		CalcVisTrace ();
 		WritePortalTrace(source);
 	}
-	
+
 	end = Plat_FloatTime();
-	
+
 	char str[512];
 	GetHourMinuteSecondsString( (int)( end - start ), str, sizeof( str ) );
 	Msg( "%s elapsed\n", str );
@@ -1214,13 +1236,19 @@ int main (int argc, char **argv)
 	InstallAllocationFunctions();
 	InstallSpewFunction();
 
+#ifdef MPI
 	VVIS_SetupMPI( argc, argv );
+#endif
 
 	// Install an exception handler.
+#ifdef MPI
 	if ( g_bUseMPI && !g_bMPIMaster )
 		SetupToolsMinidumpHandler( VMPI_ExceptionFilter );
 	else
+#endif
+	{
 		SetupDefaultToolsMinidumpHandler();
+	}
 
 	return RunVVis( argc, argv );
 }

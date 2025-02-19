@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -69,6 +69,7 @@ private:
 class ICurveDataAccessor
 {
 public:
+	virtual ~ICurveDataAccessor(){}
 	virtual float	GetDuration() = 0;
 	virtual bool	CurveHasEndTime() = 0; // only matters for events
 	virtual int		GetDefaultCurveType() = 0;

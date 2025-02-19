@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -7,8 +7,13 @@
 #include "cbase.h"
 #include "c_baseplayer.h"
 #include "menu.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 #include "multiplay_gamerules.h"
+#if defined ( TF_CLIENT_DLL )
+#include "tf_gc_client.h"
+#include "hud_basechat.h"
+#include "hud_chat.h"
+#endif // TF_CLIENT_DLL
 
 static int g_ActiveVoiceMenu = 0;
 
@@ -22,6 +27,21 @@ void OpenVoiceMenu( int index )
 	if ( !pPlayer->IsAlive() || pPlayer->IsObserver() )
 		return;
 
+#if defined ( TF_CLIENT_DLL )
+	if ( GTFGCClientSystem() && GTFGCClientSystem()->BHaveChatSuspensionInCurrentMatch() )
+	{
+		CBaseHudChat *pHUDChat = ( CBaseHudChat * ) GET_HUDELEMENT( CHudChat );
+		if ( pHUDChat )
+		{
+			char szLocalized[100];
+			g_pVGuiLocalize->ConvertUnicodeToANSI( g_pVGuiLocalize->Find( "#TF_Voice_Unavailable" ), szLocalized, sizeof( szLocalized ) );
+			pHUDChat->ChatPrintf( 0, CHAT_FILTER_NONE, "%s ", szLocalized );
+		}
+		
+		return;
+	}
+#endif // TF_CLIENT_DLL 
+
 	CHudMenu *pMenu = (CHudMenu *) gHUD.FindElement( "CHudMenu" );
 	if ( !pMenu )
 		return;
@@ -29,9 +49,12 @@ void OpenVoiceMenu( int index )
 	// if they hit the key again, close the menu
 	if ( g_ActiveVoiceMenu == index )
 	{
-		pMenu->HideMenu();
-		g_ActiveVoiceMenu = 0;
-		return;
+		if ( pMenu->IsMenuOpen() )
+		{
+			pMenu->HideMenu();
+			g_ActiveVoiceMenu = 0;
+			return;
+		}
 	}
 
 	if ( index > 0 && index < 9 )

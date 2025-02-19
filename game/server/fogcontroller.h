@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -45,6 +45,7 @@ public:
 	void InputSetColorSecondary(inputdata_t &data);
 	void InputSetFarZ( inputdata_t &data );
 	void InputSetAngles( inputdata_t &inputdata );
+	void InputSetRadial( inputdata_t& inputdata );
 	void InputSetMaxDensity( inputdata_t &inputdata );
 
 	void InputSetColorLerpTo(inputdata_t &data);

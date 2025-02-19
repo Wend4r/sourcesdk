@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -33,7 +33,7 @@ class CBrowseButton : public vgui::Button
 public:
 	CBrowseButton( vgui::Panel *pParent );
 	~CBrowseButton();
-	void InitBrowseInfo( int x, int y, char *pszName, const char *pszDir, char *pszFilter, char *pszField );
+	void InitBrowseInfo( int x, int y, const char *pszName, const char *pszDir, const char *pszFilter, const char *pszField );
 
 private:
 	char *pszStartingDirectory;
@@ -79,9 +79,9 @@ struct QCInfo
 	{
 		pQCGenerator = pPanel;
 
-		Q_strcpy( pszSMDPath, "" );
-		Q_strcpy( pszCollisionPath, "" );
-		Q_strcpy( pszSurfaceProperty, "default" );
+		V_strcpy_safe( pszSMDPath, "" );
+		V_strcpy_safe( pszCollisionPath, "" );
+		V_strcpy_safe( pszSurfaceProperty, "default" );
 		bStaticProp = false;
 		bMostlyOpaque = false;
 		bDisableCollision = false;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ====
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -37,6 +37,8 @@
 #include "props.h"
 #include "rumble_shared.h"
 #include "particle_parse.h"
+// NVNT turret recoil
+#include "haptics/haptic_utils.h"
 
 #ifdef HL2_DLL
 #include "hl2_player.h"
@@ -827,7 +829,7 @@ void CFuncTank::Spawn( void )
 
 	m_sightOrigin = WorldBarrelPosition(); // Point at the end of the barrel
 
-	if ( m_spread > (int)MAX_FIRING_SPREADS )
+	if ( m_spread > MAX_FIRING_SPREADS )
 	{
 		m_spread = 0;
 	}
@@ -1126,6 +1128,10 @@ void CFuncTank::StopControl()
 // Purpose:
 // Called each frame by the player's ItemPostFrame
 //-----------------------------------------------------------------------------
+
+// NVNT turret recoil
+ConVar hap_turret_mag("hap_turret_mag", "5", 0);
+
 void CFuncTank::ControllerPostFrame( void )
 {
 	// Make sure we have a contoller.
@@ -1146,7 +1152,7 @@ void CFuncTank::ControllerPostFrame( void )
 	AngleVectors( GetAbsAngles(), &forward );
 	m_fireLast = gpGlobals->curtime - (1/m_fireRate) - 0.01;  // to make sure the gun doesn't fire too many bullets
 	
-	int bulletCount = (int)((gpGlobals->curtime - m_fireLast) * m_fireRate);
+	int bulletCount = (gpGlobals->curtime - m_fireLast) * m_fireRate;
 	
 	if( HasSpawnFlags( SF_TANK_AIM_ASSISTANCE ) )
 	{
@@ -1165,7 +1171,11 @@ void CFuncTank::ControllerPostFrame( void )
 	}
 	
 	Fire( bulletCount, WorldBarrelPosition(), forward, pPlayer, false );
-	
+ 
+#if defined( WIN32 ) && !defined( _X360 ) 
+	// NVNT apply a punch on the player each time fired
+	HapticPunch(pPlayer,0,0,hap_turret_mag.GetFloat());
+#endif	
 	// HACKHACK -- make some noise (that the AI can hear)
 	CSoundEnt::InsertSound( SOUND_COMBAT, WorldSpaceCenter(), FUNCTANK_FIREVOLUME, 0.2 );
 	
@@ -1420,7 +1430,7 @@ float CFuncTank::GetRandomFireTime( void )
 //-----------------------------------------------------------------------------
 int CFuncTank::GetRandomBurst( void )
 {
-	return random->RandomInt( (int)m_fireRate-2, (int)m_fireRate+2 );
+	return random->RandomInt( m_fireRate-2, m_fireRate+2 );
 }
 
 //-----------------------------------------------------------------------------
@@ -2018,7 +2028,7 @@ void CFuncTank::AimFuncTankAtTarget( void )
 
 	SetMoveDoneTime( 0.1 );
 
-	if ( CanFire() && ( (fabs(distX) <= m_pitchTolerance) && (fabs(distY) <= m_yawTolerance) || (m_spawnflags & SF_TANK_LINEOFSIGHT) ) )
+	if ( CanFire() && ( ( (fabs(distX) <= m_pitchTolerance) && (fabs(distY) <= m_yawTolerance) ) || (m_spawnflags & SF_TANK_LINEOFSIGHT) ) )
 	{
 		bool fire = false;
 		Vector forward;
@@ -2117,7 +2127,7 @@ void CFuncTank::FiringSequence( const Vector &barrelEnd, const Vector &forward, 
 {
 	if ( m_fireLast != 0 )
 	{
-		int bulletCount = (int)((gpGlobals->curtime - m_fireLast) * m_fireRate);
+		int bulletCount = (gpGlobals->curtime - m_fireLast) * m_fireRate;
 		
 		if ( bulletCount > 0 )
 		{
@@ -2237,7 +2247,7 @@ void CFuncTank::Fire( int bulletCount, const Vector &barrelEnd, const Vector &fo
 		}
 		else
 		{
-			CSoundEnt::InsertSound( SOUND_MOVE_AWAY, barrelEnd + forward * 32.0f, 32, 0.2f, pAttacker, SOUNDENT_CHANNEL_WEAPON );
+			CSoundEnt::InsertSound( SOUND_MOVE_AWAY, barrelEnd + forward * 32.0f, 32.0f, 0.2f, pAttacker, SOUNDENT_CHANNEL_WEAPON );
 		}
 	}
 
@@ -2444,7 +2454,7 @@ void CFuncTankGun::Fire( int bulletCount, const Vector &barrelEnd, const Vector 
 
 	info.m_flDistance = MAX_TRACE_LENGTH;
 	info.m_iTracerFreq = 1;
-	info.m_iDamage = m_iBulletDamage;
+	info.m_flDamage = m_iBulletDamage;
 	info.m_iPlayerDamage = m_iBulletDamageVsPlayer;
 	info.m_pAttacker = pAttacker;
 	info.m_pAdditionalIgnoreEnt = GetParent();
@@ -2963,7 +2973,7 @@ void CFuncTankAirboatGun::DoMuzzleFlash( void )
 //-----------------------------------------------------------------------------
 void CFuncTankAirboatGun::DoImpactEffect( trace_t &tr, int nDamageType )
 {
-	// The airboat spits out so much crap that we need to do cheaper versions
+	// The airboat spits out so much stuff that we need to do cheaper versions
 	// of the impact effects. Also, we need to do less of them.
 	if ( m_flLastImpactEffectTime == gpGlobals->curtime )
 		return;
@@ -3530,7 +3540,7 @@ void CMortarShell::FlyThink()
 	if ( gpGlobals->curtime > m_flNPCWarnTime )
 	{
 		// Warn the AI. Make this radius a little larger than the explosion will be, and make the sound last a little longer.
-		CSoundEnt::InsertSound ( SOUND_DANGER | SOUND_CONTEXT_MORTAR, GetAbsOrigin(), (int)(MORTAR_BLAST_RADIUS * 1.25), (m_flImpactTime - m_flNPCWarnTime) + 0.15 );
+		CSoundEnt::InsertSound ( SOUND_DANGER | SOUND_CONTEXT_MORTAR, GetAbsOrigin(), MORTAR_BLAST_RADIUS * 1.25, (m_flImpactTime - m_flNPCWarnTime) + 0.15 );
 		m_flNPCWarnTime = FLT_MAX;
 	}
 
@@ -3544,11 +3554,11 @@ void CMortarShell::FlyThink()
 
 	// Beam updates START
 
-	m_pBeamEffect[0]->SetBrightness( (int)(255 * curve1) );
+	m_pBeamEffect[0]->SetBrightness( 255 * curve1 );
 	m_pBeamEffect[0]->SetWidth( 64.0f * curve1 );
 	m_pBeamEffect[0]->SetEndWidth( 64.0f * curve1 );
 
-	m_pBeamEffect[1]->SetBrightness( (int)(255 * curve1) );
+	m_pBeamEffect[1]->SetBrightness( 255 * curve1 );
 	m_pBeamEffect[1]->SetWidth( 8.0f * curve1 );
 	m_pBeamEffect[1]->SetEndWidth( 8.0f * curve1 );
 
@@ -3556,14 +3566,14 @@ void CMortarShell::FlyThink()
 
 	if ( m_pBeamEffect[2] )
 	{
-		m_pBeamEffect[2]->SetBrightness( (int)(255 * curve2) );
+		m_pBeamEffect[2]->SetBrightness( 255 * curve2 );
 		m_pBeamEffect[2]->SetWidth( 32.0f * curve2 );
 		m_pBeamEffect[2]->SetEndWidth( 32.0f * curve2 );
 	}
 
 	if ( m_pBeamEffect[3] )
 	{
-		m_pBeamEffect[3]->SetBrightness( (int)(255 * curve2) );
+		m_pBeamEffect[3]->SetBrightness( 255 * curve2 );
 		m_pBeamEffect[3]->SetWidth( 8.0f * curve2 );
 		m_pBeamEffect[3]->SetEndWidth( 8.0f * curve2 );
 	}
@@ -3700,11 +3710,11 @@ void CMortarShell::FadeThink( void )
 
 	// Beam updates START
 
-	m_pBeamEffect[0]->SetBrightness( (int)(255 * curve1) );
+	m_pBeamEffect[0]->SetBrightness( 255 * curve1 );
 	m_pBeamEffect[0]->SetWidth( 64.0f * curve1 );
 	m_pBeamEffect[0]->SetEndWidth( 64.0f * curve1 );
 
-	m_pBeamEffect[1]->SetBrightness( (int)(255 * curve1) );
+	m_pBeamEffect[1]->SetBrightness( 255 * curve1 );
 	m_pBeamEffect[1]->SetWidth( 8.0f * curve1 );
 	m_pBeamEffect[1]->SetEndWidth( 8.0f * curve1 );
 
@@ -3712,14 +3722,14 @@ void CMortarShell::FadeThink( void )
 
 	if ( m_pBeamEffect[2] )
 	{
-		m_pBeamEffect[2]->SetBrightness( (int)(255 * curve2) );
+		m_pBeamEffect[2]->SetBrightness( 255 * curve2 );
 		m_pBeamEffect[2]->SetWidth( 32.0f * curve2 );
 		m_pBeamEffect[2]->SetEndWidth( 32.0f * curve2 );
 	}
 
 	if ( m_pBeamEffect[3] )
 	{
-		m_pBeamEffect[3]->SetBrightness( (int)(255 * curve2) );
+		m_pBeamEffect[3]->SetBrightness( 255 * curve2 );
 		m_pBeamEffect[3]->SetWidth( 8.0f * curve2 );
 		m_pBeamEffect[3]->SetEndWidth( 8.0f * curve2 );
 	}
@@ -4259,7 +4269,7 @@ void CFuncTankCombineCannon::FuncTankPostThink()
 
 				if( trLOS.fraction < trShoot.fraction )
 				{
-					// Damn block LOS brushes.
+					// block LOS brushes.
 					continue;
 				}
 
@@ -4344,7 +4354,7 @@ void CFuncTankCombineCannon::Fire( int bulletCount, const Vector &barrelEnd, con
 	DestroyBeam();
 	m_flTimeBeamOn = gpGlobals->curtime + 0.2f;
 
-	m_flTimeNextSweep = gpGlobals->curtime + random->RandomInt( 1, 2 );
+	m_flTimeNextSweep = gpGlobals->curtime + random->RandomInt( 1.0f, 2.0f );
 }
 
 //---------------------------------------------------------

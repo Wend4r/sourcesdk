@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -148,7 +148,7 @@ void CGrenadeAR2::GrenadeAR2Think( void )
 		}
 	}
 
-	// The old way of making danger sounds would scare the crap out of EVERYONE between you and where the grenade
+	// The old way of making danger sounds would scare EVERYONE between you and where the grenade
 	// was going to hit. The radius of the danger sound now 'blossoms' over the grenade's lifetime, making it seem
 	// dangerous to a larger area downrange than it does from where it was fired.
 	if( m_fDangerRadius <= AR2_GRENADE_MAX_DANGER_RADIUS )
@@ -156,7 +156,7 @@ void CGrenadeAR2::GrenadeAR2Think( void )
 		m_fDangerRadius += ( AR2_GRENADE_MAX_DANGER_RADIUS * 0.05 );
 	}
 
-	CSoundEnt::InsertSound( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, (int)m_fDangerRadius, 0.2, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
+	CSoundEnt::InsertSound( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, m_fDangerRadius, 0.2, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
 }
 
 void CGrenadeAR2::Event_Killed( const CTakeDamageInfo &info )

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Player for HL2.
 //
@@ -91,6 +91,7 @@ public:
 
 	DECLARE_SERVERCLASS();
 	DECLARE_DATADESC();
+	DECLARE_ENT_SCRIPTDESC();
 
 	virtual void		CreateCorpse( void ) { CopyToBodyQue( this ); };
 
@@ -241,7 +242,6 @@ public:
 	virtual	bool		IsHoldingEntity( CBaseEntity *pEnt );
 	virtual void		ForceDropOfCarriedPhysObjects( CBaseEntity *pOnlyIfHoldindThis );
 	virtual float		GetHeldObjectMass( IPhysicsObject *pHeldObject );
-	virtual CBaseEntity	*GetHeldObject( void );
 
 	virtual bool		IsFollowingPhysics( void ) { return (m_afPhysicsFlags & PFLAG_ONBARNACLE) > 0; }
 	void				InputForceDropPhysObjects( inputdata_t &data );
@@ -261,7 +261,8 @@ public:
 	void  HandleAdmireGlovesAnimation( void );
 	void  StartAdmireGlovesAnimation( void );
 	
-	void  HandleSpeedChanges( void );
+	void HandleSpeedChanges( CMoveData *mv );
+	void ReduceTimers( CMoveData* mv );
 
 	void SetControlClass( Class_T controlClass ) { m_nControlClass = controlClass; }
 	
@@ -305,8 +306,6 @@ private:
 	//  the player and not to other players.
 	CNetworkVarEmbedded( CHL2PlayerLocalData, m_HL2Local );
 
-	float				m_flTimeAllSuitDevicesOff;
-
 	bool				m_bSprintEnabled;		// Used to disable sprint temporarily
 	bool				m_bIsAutoSprinting;		// A proxy for holding down the sprint key.
 	float				m_fAutoSprintMinTime;	// Minimum time to maintain autosprint regardless of player speed. 
@@ -331,7 +330,6 @@ private:
 	bool				m_bIgnoreFallDamageResetAfterImpact;
 
 	// Suit power fields
-	float				m_flSuitPowerLoad;	// net suit power drain (total of all device's drainrates)
 	float				m_flAdmireGlovesAnimTime;
 
 	float				m_flNextFlashlightCheckTime;

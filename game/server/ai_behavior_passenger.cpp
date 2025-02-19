@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Behavior for NPCs riding in cars (with boys)
 //
@@ -62,9 +62,9 @@ END_DATADESC();
 // Constructor
 //-----------------------------------------------------------------------------
 CAI_PassengerBehavior::CAI_PassengerBehavior( void ) : 
-m_PassengerState( PASSENGER_STATE_OUTSIDE ),
-m_hVehicle( NULL ),
-m_bEnabled( false ),
+m_bEnabled( false ), 
+m_hVehicle( NULL ), 
+m_PassengerState( PASSENGER_STATE_OUTSIDE ), 
 m_PassengerIntent( PASSENGER_INTENT_NONE ),
 m_nTransitionSequence( -1 )
 {
@@ -231,7 +231,7 @@ void CAI_PassengerBehavior::InitVehicleState( void )
 	m_vehicleState.m_flNextWarningTime = gpGlobals->curtime;
 	m_vehicleState.m_vecLastAngles = m_hVehicle->GetAbsAngles();
 
-	Vector localVelocity(0.0f, 0.0f, 0.0f);
+	Vector	localVelocity;
 	GetLocalVehicleVelocity( &m_vehicleState.m_vecLastLocalVelocity );
 
 	m_vehicleState.m_flLastSpeedSqr = localVelocity.LengthSqr();

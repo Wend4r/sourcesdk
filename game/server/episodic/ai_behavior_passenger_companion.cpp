@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Companion NPCs riding in cars
 //
@@ -80,13 +80,13 @@ BEGIN_SIMPLE_DATADESC( FailPosition_t )
 END_DATADESC();
 
 CAI_PassengerBehaviorCompanion::CAI_PassengerBehaviorCompanion( void ) : 
-m_flNextJostleTime( 0.0f ),
-m_flNextOverturnWarning( 0.0f ),
-m_flOverturnedDuration( 0.0f ),
 m_flUnseenDuration( 0.0f ),
+m_flNextOverturnWarning( 0.0f ),
+m_flOverturnedDuration( 0.0f ), 
 m_nExitAttempts( 0 ),
+m_flNextEnterAttempt( 0.0f ),
 m_flLastLateralLean( 0.0f ),
-m_flNextEnterAttempt( 0.0f )
+m_flNextJostleTime( 0.0f )
 {
 	memset( &m_vehicleState, 0, sizeof( m_vehicleState ) );
 	m_VehicleMonitor.ClearMark();
@@ -110,7 +110,7 @@ void CAI_PassengerBehaviorCompanion::Enable( CPropJeepEpisodic *pVehicle, bool b
 
 			// This will slam us into the right position and clean up
 			FinishEnterVehicle();
-			GetOuter()->AddEffects( EF_NOINTERP );
+			GetOuter()->IncrementInterpolationFrame();
 
 			// Start our schedule immediately
 			ClearSchedule( "Immediate entry to vehicle" );
@@ -818,8 +818,8 @@ bool CAI_PassengerBehaviorCompanion::CanEnterVehicleImmediately( int *pResultSeq
 	float	flSeatDistSqr;
 	int		nNearestSequence = -1;
 	int		nSequence;
-	Vector	vecNearestPos(0.0f, 0.0f, 0.0f);
-	QAngle	vecNearestAngles(0.0f, 0.0f, 0.0f);
+	Vector	vecNearestPos;
+	QAngle	vecNearestAngles;
 
 	// Test each animation (sorted by priority) for the best match
 	for ( int i = 0; i < pEntryAnims->Count(); i++ )
@@ -896,7 +896,7 @@ void CAI_PassengerBehaviorCompanion::EnterVehicleImmediately( void )
 
 	// Put us there and get going (no interpolation!)
 	GetOuter()->Teleport( &m_vecTargetPosition, &m_vecTargetAngles, &vec3_origin );
-	GetOuter()->AddEffects( EF_NOINTERP );
+	GetOuter()->IncrementInterpolationFrame();
 }
 
 //-----------------------------------------------------------------------------
@@ -1244,7 +1244,7 @@ bool CAI_PassengerBehaviorCompanion::ExitStuckVehicle( void )
 	// Teleport to the destination 
 	// TODO: Make sure that the player can't see this!
 	GetOuter()->Teleport( &vecExitPos, &vec3_angle, &vec3_origin );
-	GetOuter()->AddEffects( EF_NOINTERP );
+	GetOuter()->IncrementInterpolationFrame();
 
 	return true;
 }

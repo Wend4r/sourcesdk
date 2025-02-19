@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -16,7 +16,7 @@
 #include "ai_memory.h"
 #include "soundent.h"
 #include "rumble_shared.h"
-#include "GameStats.h"
+#include "gamestats.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -449,7 +449,7 @@ int CWeaponSMG1::WeaponRangeAttack2Condition( float flDot, float flDist )
 
 	if ( ( vecTarget - npcOwner->GetLocalOrigin() ).Length2D() <= COMBINE_MIN_GRENADE_CLEAR_DIST )
 	{
-		// crap, I don't want to blow myself up
+		// I don't want to blow myself up
 		m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.
 		return (COND_NONE);
 	}
@@ -464,7 +464,7 @@ int CWeaponSMG1::WeaponRangeAttack2Condition( float flDot, float flDist )
 		//Check to see if the default relationship is hatred, and if so intensify that
 		if ( npcOwner->IRelationType( pTarget ) == D_LI )
 		{
-			// crap, I might blow my own guy up. Don't throw a grenade and don't check again for a while.
+			// I might blow my own guy up. Don't throw a grenade and don't check again for a while.
 			m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.
 			return (COND_WEAPON_BLOCKED_BY_FRIEND);
 		}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: provides an interface for dlls to query information about players from the game dll
 //
@@ -145,6 +145,7 @@ public:
 	virtual const int GetMaxHealth() = 0;
 	// the last user input from this player
 	virtual CBotCmd GetLastUserCommand() = 0;
+
 	virtual bool IsReplay() = 0;
 };
 

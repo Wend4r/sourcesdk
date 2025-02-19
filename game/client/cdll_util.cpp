@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,9 +9,9 @@
 #include <stdarg.h>
 #include "hud.h"
 #include "itextmessage.h"
-#include "materialsystem/IMaterial.h"
-#include "materialsystem/ITexture.h"
-#include "materialsystem/IMaterialSystem.h"
+#include "materialsystem/imaterial.h"
+#include "materialsystem/itexture.h"
+#include "materialsystem/imaterialsystem.h"
 #include "imovehelper.h"
 #include "checksum_crc.h"
 #include "decals.h"
@@ -27,11 +27,13 @@
 #include <vgui/ILocalize.h>
 #include "view.h"
 #include "ixboxsystem.h"
+#include "inputsystem/iinputsystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
-
-
+																						
+ConVar localplayer_visionflags( "localplayer_visionflags", "0", FCVAR_DEVELOPMENTONLY );
+																						
 //-----------------------------------------------------------------------------
 // ConVars
 //-----------------------------------------------------------------------------
@@ -49,7 +51,7 @@ extern ConVar cl_leveloverview;
 //			... - 
 // Output : char
 //-----------------------------------------------------------------------------
-char *VarArgs( char *format, ... )
+char *VarArgs( const char *format, ... )
 {
 	va_list		argptr;
 	static char		string[1024];
@@ -78,7 +80,49 @@ int GetLocalPlayerIndex( void )
 	if ( player )
 		return player->entindex();
 	else
-		return  0;	// game not started yet
+		return 0;	// game not started yet
+}
+
+// NOTE: cache these because this gets executed hundreds of times per frame
+static int g_nLocalPlayerVisionFlagsWeaponsCheck = 0;
+static int g_nLocalPlayerVisionFlags = 0;
+int GetLocalPlayerVisionFilterFlags( bool bWeaponsCheck /*= false */ )
+{
+	return bWeaponsCheck ? g_nLocalPlayerVisionFlagsWeaponsCheck : g_nLocalPlayerVisionFlags;
+}
+
+void UpdateLocalPlayerVisionFlags()
+{
+	g_nLocalPlayerVisionFlagsWeaponsCheck = 0;
+	g_nLocalPlayerVisionFlags = 0;
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( pPlayer )
+	{
+		g_nLocalPlayerVisionFlagsWeaponsCheck = pPlayer->GetVisionFilterFlags( true );
+		g_nLocalPlayerVisionFlags = pPlayer->GetVisionFilterFlags( false );
+	}
+}
+
+bool IsLocalPlayerUsingVisionFilterFlags( int nFlags, bool bWeaponsCheck /* = false */ )
+{
+	int nLocalPlayerFlags = GetLocalPlayerVisionFilterFlags( bWeaponsCheck );
+
+	if ( !bWeaponsCheck )
+	{
+		// We can only modify the RJ flags with normal checks that won't take the forced kill cam flags that can happen in weapon checks
+		int nRJShaderFlags = nLocalPlayerFlags;
+		if ( nRJShaderFlags != 0 && GameRules() && !GameRules()->AllowMapVisionFilterShaders() )
+		{
+			nRJShaderFlags = 0;
+		}
+
+		if ( nRJShaderFlags != localplayer_visionflags.GetInt() )
+		{
+			localplayer_visionflags.SetValue( nRJShaderFlags );
+		}
+	}
+
+	return ( nLocalPlayerFlags & nFlags ) == nFlags;
 }
 
 bool IsLocalPlayerSpectator( void )
@@ -343,7 +387,7 @@ void UTIL_Tracer( const Vector &vecStart, const Vector &vecEnd, int iEntIndex, i
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-void UTIL_ImpactTrace( trace_t *pTrace, int iDamageType, char *pCustomImpactName )
+void UTIL_ImpactTrace( trace_t *pTrace, int iDamageType, const char *pCustomImpactName )
 {
 	C_BaseEntity *pEntity = pTrace->m_pEnt;
 
@@ -486,10 +530,37 @@ bool GetVectorInScreenSpace( Vector pos, int& iX, int& iY, Vector *vecOffset )
 
 	// Transform to screen space
 	int iFacing = ScreenTransform( pos, screen );
-	iX =  0.5 * screen[0] * ScreenWidth();
-	iY = -0.5 * screen[1] * ScreenHeight();
-	iX += 0.5 * ScreenWidth();
-	iY += 0.5 * ScreenHeight();
+	iX = 0.5f * ( 1.0f + screen[0] ) * ScreenWidth();
+	iY = 0.5f * ( 1.0f - screen[1] ) * ScreenHeight();
+
+	// Make sure the player's facing it
+	if ( iFacing )
+	{
+		// We're actually facing away from the Target. Stomp the screen position.
+		iX = -640;
+		iY = -640;
+		return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get the x & y positions of a world position in HUD space
+//			Returns true if it's onscreen
+//-----------------------------------------------------------------------------
+bool GetVectorInHudSpace( Vector pos, int& iX, int& iY, Vector *vecOffset )
+{
+	Vector screen;
+
+	// Apply the offset, if one was specified
+	if ( vecOffset != NULL )
+		pos += *vecOffset;
+
+	// Transform to HUD space
+	int iFacing = HudTransform( pos, screen );
+	iX = 0.5f * ( 1.0f + screen[0] ) * ScreenWidth();
+	iY = 0.5f * ( 1.0f - screen[1] ) * ScreenHeight();
 
 	// Make sure the player's facing it
 	if ( iFacing )
@@ -510,6 +581,15 @@ bool GetVectorInScreenSpace( Vector pos, int& iX, int& iY, Vector *vecOffset )
 bool GetTargetInScreenSpace( C_BaseEntity *pTargetEntity, int& iX, int& iY, Vector *vecOffset )
 {
 	return GetVectorInScreenSpace( pTargetEntity->WorldSpaceCenter(), iX, iY, vecOffset );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Get the x & y positions of an entity in Vgui space
+//			Returns true if it's onscreen
+//-----------------------------------------------------------------------------
+bool GetTargetInHudSpace( C_BaseEntity *pTargetEntity, int& iX, int& iY, Vector *vecOffset )
+{
+	return GetVectorInHudSpace( pTargetEntity->WorldSpaceCenter(), iX, iY, vecOffset );
 }
 
 
@@ -594,7 +674,7 @@ IterationRetval_t CFlaggedEntitiesEnum::EnumElement( IHandleEntity *pHandleEntit
 int UTIL_EntitiesInBox( C_BaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask, int partitionMask )
 {
 	CFlaggedEntitiesEnum boxEnum( pList, listMax, flagMask );
-	partition->EnumerateElementsInBox( partitionMask, mins, maxs, false, &boxEnum );
+	::partition->EnumerateElementsInBox( partitionMask, mins, maxs, false, &boxEnum );
 	
 	return boxEnum.GetCount();
 
@@ -612,10 +692,26 @@ int UTIL_EntitiesInBox( C_BaseEntity **pList, int listMax, const Vector &mins, c
 int UTIL_EntitiesInSphere( C_BaseEntity **pList, int listMax, const Vector &center, float radius, int flagMask, int partitionMask )
 {
 	CFlaggedEntitiesEnum sphereEnum( pList, listMax, flagMask );
-	partition->EnumerateElementsInSphere( partitionMask, center, radius, false, &sphereEnum );
+	::partition->EnumerateElementsInSphere( partitionMask, center, radius, false, &sphereEnum );
 
 	return sphereEnum.GetCount();
 
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Pass in an array of pointers and an array size, it fills the array and returns the number inserted
+// Input  : **pList - 
+//			listMax - 
+//			&ray - 
+//			flagMask - 
+// Output : int
+//-----------------------------------------------------------------------------
+int UTIL_EntitiesAlongRay( C_BaseEntity **pList, int listMax, const Ray_t &ray, int flagMask, int partitionMask )
+{
+	CFlaggedEntitiesEnum rayEnum( pList, listMax, flagMask );
+	::partition->EnumerateElementsAlongRay( partitionMask, ray, false, &rayEnum );
+
+	return rayEnum.GetCount();
 }
 
 CEntitySphereQuery::CEntitySphereQuery( const Vector &center, float radius, int flagMask, int partitionMask )
@@ -632,48 +728,6 @@ CBaseEntity *CEntitySphereQuery::GetCurrentEntity()
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Slightly modified strtok. Does not modify the input string. Does
-//			not skip over more than one separator at a time. This allows parsing
-//			strings where tokens between separators may or may not be present:
-//
-//			Door01,,,0 would be parsed as "Door01"  ""  ""  "0"
-//			Door01,Open,,0 would be parsed as "Door01"  "Open"  ""  "0"
-//
-// Input  : token - Returns with a token, or zero length if the token was missing.
-//			str - String to parse.
-//			sep - Character to use as separator. UNDONE: allow multiple separator chars
-// Output : Returns a pointer to the next token to be parsed.
-//-----------------------------------------------------------------------------
-const char *nexttoken(char *token, const char *str, char sep)
-{
-	if ((str == NULL) || (*str == '\0'))
-	{
-		*token = '\0';
-		return(NULL);
-	}
-
-	//
-	// Copy everything up to the first separator into the return buffer.
-	// Do not include separators in the return buffer.
-	//
-	while ((*str != sep) && (*str != '\0'))
-	{
-		*token++ = *str++;
-	}
-	*token = '\0';
-
-	//
-	// Advance the pointer unless we hit the end of the input string.
-	//
-	if (*str == '\0')
-	{
-		return(str);
-	}
-
-	return(++str);
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : font - 
 //			*str - 
@@ -681,13 +735,27 @@ const char *nexttoken(char *token, const char *str, char sep)
 //-----------------------------------------------------------------------------
 int UTIL_ComputeStringWidth( vgui::HFont& font, const char *str )
 {
-	int pixels = 0;
-	char *p = (char *)str;
+	float pixels = 0;
+	const char *p = str;
+	const char *pAfter = p + 1;
+	const char *pBefore = "\0";
 	while ( *p )
 	{
-		pixels += vgui::surface()->GetCharacterWidth( font, *p++ );
+#if USE_GETKERNEDCHARWIDTH
+		float wide, abcA;
+		vgui::surface()->GetKernedCharWidth( font, *p, *pBefore, *pAfter, wide, abcA );
+		pixels += wide;
+#else
+		pixels += vgui::surface()->GetCharacterWidth( font, *p );
+#endif
+		pBefore = p;
+		p++;
+		if ( *p )
+			pAfter = p + 1; 
+		else
+			pAfter = "\0";
 	}
-	return pixels;
+	return (int)ceil(pixels);
 }
 
 
@@ -699,13 +767,27 @@ int UTIL_ComputeStringWidth( vgui::HFont& font, const char *str )
 //-----------------------------------------------------------------------------
 int UTIL_ComputeStringWidth( vgui::HFont& font, const wchar_t *str )
 {
-	int pixels = 0;
-	wchar_t *p = (wchar_t *)str;
+	float pixels = 0;
+	const wchar_t *p = str;
+	const wchar_t *pAfter = p + 1;
+	const wchar_t *pBefore = L"\0";
 	while ( *p )
 	{
-		pixels += vgui::surface()->GetCharacterWidth( font, *p++ );
+#if USE_GETKERNEDCHARWIDTH
+		float wide, abcA;
+		vgui::surface()->GetKernedCharWidth( font, *p, *pBefore, *pAfter, wide, abcA );
+		pixels += wide;
+#else
+		pixels += vgui::surface()->GetCharacterWidth( font, *p );
+#endif
+		pBefore = p;
+		p++;
+		if ( *p )
+			pAfter = p + 1; 
+		else
+			pAfter = L"\0";
 	}
-	return pixels;
+	return (int)ceil(pixels);
 }
 
 //-----------------------------------------------------------------------------
@@ -718,6 +800,8 @@ int UTIL_ComputeStringWidth( vgui::HFont& font, const wchar_t *str )
 
 void UTIL_MakeSafeName( const char *oldName, char *newName, int newNameBufSize )
 {
+	Assert( newNameBufSize >= sizeof(newName[0]) );
+
 	int newpos = 0;
 
 	for( const char *p=oldName; *p != 0 && newpos < newNameBufSize-1; p++ )
@@ -776,14 +860,20 @@ const char * UTIL_SafeName( const char *oldName )
 //			for consistency with other APIs.  If inbufsizebytes is 0 a NULL-terminated
 //			input buffer is assumed, or you can pass the size of the input buffer if
 //			not NULL-terminated.
+//
+//			If actionset is other than GAME_ACTION_SET_NONE (the default), then a lookup is first
+//			attempted for a Steam Controller binding in the given action set. If none if found, fallback
+//			is to the usual keyboard binding path.
 //-----------------------------------------------------------------------------
-void UTIL_ReplaceKeyBindings( const wchar_t *inbuf, int inbufsizebytes, wchar_t *outbuf, int outbufsizebytes )
+void UTIL_ReplaceKeyBindings( const wchar_t *inbuf, int inbufsizebytes, OUT_Z_BYTECAP(outbufsizebytes) wchar_t *outbuf, int outbufsizebytes, GameActionSet_t actionset )
 {
+	Assert( outbufsizebytes >= sizeof(outbuf[0]) );
+	// copy to a new buf if there are vars
+	outbuf[0]=0;
+
 	if ( !inbuf || !inbuf[0] )
 		return;
 
-	// copy to a new buf if there are vars
-	outbuf[0]=0;
 	int pos = 0;
 	const wchar_t *inbufend = NULL;
 	if ( inbufsizebytes > 0 )
@@ -811,6 +901,19 @@ void UTIL_ReplaceKeyBindings( const wchar_t *inbuf, int inbufsizebytes, wchar_t 
 				char binding[64];
 				g_pVGuiLocalize->ConvertUnicodeToANSI( token, binding, sizeof(binding) );
 
+				// Find a Steam Controller mapping, if an action set was specified and steam controller is active.
+				const char* sc_origin = nullptr;
+				if ( actionset != GAME_ACTION_SET_NONE && g_pInputSystem->IsSteamControllerActive() )
+				{
+					auto origin = g_pInputSystem->GetSteamControllerActionOrigin( *binding == '+' ? binding + 1 : binding, actionset );
+					if ( origin != k_EControllerActionOrigin_None )
+					{
+						auto pSteamController = g_pInputSystem->SteamControllerInterface();
+						sc_origin = pSteamController ? pSteamController->GetStringForActionOrigin( origin ) : "";
+					}
+				}
+
+				// Find also the keyboard mapping
 				const char *key = engine->Key_LookupBinding( *binding == '+' ? binding + 1 : binding );
 				if ( !key )
 				{
@@ -838,7 +941,20 @@ void UTIL_ReplaceKeyBindings( const wchar_t *inbuf, int inbufsizebytes, wchar_t 
 				}
 				Q_strupr( friendlyName );
 
-				wchar_t *locName = g_pVGuiLocalize->Find( friendlyName );
+				const wchar_t* locName = nullptr;
+
+				// If we got a Steam Controller key description, use that, otherwise use the (possibly localized) key name
+				CStrAutoEncode sc_origin_encoded( sc_origin );
+
+				if ( sc_origin )
+				{
+					locName = sc_origin_encoded.ToWString();
+				}
+				else
+				{
+					locName = g_pVGuiLocalize->Find( friendlyName );
+				}
+
 				if ( !locName || wcslen(locName) <= 0)
 				{
 					g_pVGuiLocalize->ConvertANSIToUnicode( friendlyName, token, sizeof(token) );
@@ -943,7 +1059,7 @@ static unsigned char ComputeDistanceFade( C_BaseEntity *pEntity, float flMinDist
 
 	if( flMinDist > flMaxDist )
 	{
-		V_swap( flMinDist, flMaxDist );
+		::V_swap( flMinDist, flMaxDist );
 	}
 
 	// If a negative value is provided for the min fade distance, then base it off the max.
@@ -1192,4 +1308,70 @@ int UTIL_GetMapKeyCount( const char *pszCustomKey )
 	}
 
 	return iCount;
+}
+
+bool UTIL_HasLoadedAnyMap()
+{
+	char szFilename[ _MAX_PATH ];
+	if ( !UTIL_GetMapLoadCountFileName( MAP_KEY_FILE, szFilename, _MAX_PATH ) )
+		return false;
+
+	return g_pFullFileSystem->FileExists( szFilename, "MOD" );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Performs a near-miss check of pEntity against the local player.
+//			Plays pszNearMissSound in their ears and returns true when a near-
+//			miss is detected.
+//-----------------------------------------------------------------------------
+bool UTIL_BPerformNearMiss( const CBaseEntity* pEntity, const char* pszNearMissSound, float flNearMissDistanceThreshold )
+{
+	// Check against the local player. If we're near him play a near miss sound.
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( !pLocalPlayer || !pLocalPlayer->IsAlive() )
+		return false;
+
+	// Can't hear near miss sounds from friendly arrows.
+	if ( pLocalPlayer->GetTeamNumber() == pEntity->GetTeamNumber() )
+		return false;
+
+	Vector vecPlayerPos = pLocalPlayer->GetAbsOrigin();
+	Vector vecArrowPos = pEntity->GetAbsOrigin(), forward;
+	AngleVectors( pEntity->GetAbsAngles(), &forward );
+	Vector vecArrowDest = pEntity->GetAbsOrigin() + forward * 200.f;
+
+	// If the arrow is moving away from the player just stop checking.
+	float dist1 = vecArrowPos.DistToSqr( vecPlayerPos );
+	float dist2 = vecArrowDest.DistToSqr( vecPlayerPos );
+	if ( dist2 > dist1 )
+	{
+		return true;
+	}
+
+	// Check to see if the arrow is passing near the player.
+	Vector vecClosestPoint;
+	float dist;
+	CalcClosestPointOnLineSegment( vecPlayerPos, vecArrowPos, vecArrowDest, vecClosestPoint, &dist );
+	dist = vecPlayerPos.DistTo( vecClosestPoint );
+	if ( dist > flNearMissDistanceThreshold )
+		return false;
+
+	// The arrow is passing close to the local player.
+
+	// If the arrow is about to hit something, don't play the sound and stop this check.
+	trace_t tr;
+	UTIL_TraceLine( vecArrowPos, vecArrowPos + forward * 400.f, CONTENTS_HITBOX|CONTENTS_MONSTER|CONTENTS_SOLID, pEntity, COLLISION_GROUP_NONE, &tr );
+	if ( tr.DidHit() )
+		return true;
+
+	// We're good for a near miss!
+	float soundlen = 0;
+	EmitSound_t params;
+	params.m_flSoundTime = 0;
+	params.m_pSoundName = pszNearMissSound;
+	params.m_pflSoundDuration = &soundlen;
+	CSingleUserRecipientFilter localFilter( pLocalPlayer );
+	CBaseEntity::EmitSound( localFilter, pLocalPlayer->entindex(), params );
+
+	return true;
 }

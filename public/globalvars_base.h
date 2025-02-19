@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -74,6 +74,11 @@ public:
 
 	// current saverestore data
 	CSaveRestoreData *pSaveData;
+	
+	int			ClampedMaxClients( int nMaxCount )
+	{
+		return min( maxClients, nMaxCount );
+	}
 
 private:
 	// Set to true in client code.

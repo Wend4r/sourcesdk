@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -301,7 +301,7 @@ bool CSDKPlayerAnimState::IsOuterGrenadePrimed()
 	}
 	else
 	{
-		return false;
+		return NULL;
 	}
 }
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client side implementation of CBaseCombatWeapon.
 //
@@ -39,7 +39,7 @@ C_BaseCombatWeapon *GetActiveWeapon( void )
 void C_BaseCombatWeapon::SetDormant( bool bDormant )
 {
 	// If I'm going from active to dormant and I'm carried by another player, holster me.
-	if ( !IsDormant() && bDormant && !IsCarriedByLocalPlayer() )
+	if ( !IsDormant() && bDormant && GetOwner() && !IsCarriedByLocalPlayer() )
 	{
 		Holster( NULL );
 	}
@@ -78,12 +78,12 @@ void C_BaseCombatWeapon::NotifyShouldTransmit( ShouldTransmitState_t state )
 //-----------------------------------------------------------------------------
 // Purpose: To wrap PORTAL mod specific functionality into one place
 //-----------------------------------------------------------------------------
-static inline bool ShouldDrawLocalPlayer( void )
+static inline bool ShouldDrawLocalPlayerViewModel( void )
 {
 #if defined( PORTAL )
-	return true;
+	return false;
 #else
-	return C_BasePlayer::ShouldDrawLocalPlayer();
+	return !C_BasePlayer::ShouldDrawLocalPlayer();
 #endif
 }
 
@@ -104,6 +104,17 @@ void C_BaseCombatWeapon::OnRestore()
 
 int C_BaseCombatWeapon::GetWorldModelIndex( void )
 {
+	if ( GameRules() )
+	{
+		const char *pBaseName = modelinfo->GetModelName( modelinfo->GetModel( m_iWorldModelIndex ) );
+		const char *pTranslatedName = GameRules()->TranslateEffectForVisionFilter( "weapons", pBaseName );
+
+		if ( pTranslatedName != pBaseName )
+		{
+			return modelinfo->GetModelIndex( pTranslatedName );
+		}
+	}
+
 	return m_iWorldModelIndex;
 }
 
@@ -125,7 +136,7 @@ void C_BaseCombatWeapon::OnDataChanged( DataUpdateType_t updateType )
 
 	// check if weapon is carried by local player
 	bool bIsLocalPlayer = pPlayer && pPlayer == pOwner;
-	if ( bIsLocalPlayer && !ShouldDrawLocalPlayer() )
+	if ( bIsLocalPlayer && ShouldDrawLocalPlayerViewModel() )		// TODO: figure out the purpose of the ShouldDrawLocalPlayer() test.
 	{
 		// If I was just picked up, or created & immediately carried, add myself to this client's list of weapons
 		if ( (m_iState != WEAPON_NOT_CARRIED ) && (m_iOldState == WEAPON_NOT_CARRIED) )
@@ -145,11 +156,17 @@ void C_BaseCombatWeapon::OnDataChanged( DataUpdateType_t updateType )
 	}
 	else // weapon carried by other player or not at all
 	{
-		// See comment below
-		EnsureCorrectRenderingModel();
+		int overrideModelIndex = CalcOverrideModelIndex();
+		if( overrideModelIndex != -1 && overrideModelIndex != GetModelIndex() )
+		{
+			SetModelIndex( overrideModelIndex );
+		}
 	}
 
-	UpdateVisibility();
+	if ( updateType == DATA_UPDATE_CREATED )
+	{
+		UpdateVisibility();
+	}
 
 	m_iOldState = m_iState;
 
@@ -186,10 +203,10 @@ ShadowType_t C_BaseCombatWeapon::ShadowCastType()
 	if (!IsBeingCarried())
 		return SHADOWS_RENDER_TO_TEXTURE;
 
-	if (IsCarriedByLocalPlayer())
+	if (IsCarriedByLocalPlayer() && !C_BasePlayer::ShouldDrawLocalPlayer())
 		return SHADOWS_NONE;
 
-	return (m_iState != WEAPON_IS_CARRIED_BY_PLAYER) ? SHADOWS_RENDER_TO_TEXTURE : SHADOWS_NONE;
+	return SHADOWS_RENDER_TO_TEXTURE;
 }
 
 //-----------------------------------------------------------------------------
@@ -244,8 +261,8 @@ void C_BaseCombatWeapon::DrawCrosshair()
 	}		 
 */
 
-	CHudCrosshair *crosshair = GET_HUDELEMENT( CHudCrosshair );
-	if ( !crosshair )
+	CHudCrosshair *pCrosshair = GET_HUDELEMENT( CHudCrosshair );
+	if ( !pCrosshair )
 		return;
 
 	// Find out if this weapon's auto-aimed onto a target
@@ -258,16 +275,16 @@ void C_BaseCombatWeapon::DrawCrosshair()
 		{
 			clr[3] = 255;
 
-			crosshair->SetCrosshair( GetWpnData().iconAutoaim, clr );
+			pCrosshair->SetCrosshair( GetWpnData().iconAutoaim, clr );
 		}
 		else if ( GetWpnData().iconCrosshair )
 		{
 			clr[3] = 255;
-			crosshair->SetCrosshair( GetWpnData().iconCrosshair, clr );
+			pCrosshair->SetCrosshair( GetWpnData().iconCrosshair, clr );
 		}
 		else
 		{
-			crosshair->ResetCrosshair();
+			pCrosshair->ResetCrosshair();
 		}
 	}
 	else
@@ -276,11 +293,11 @@ void C_BaseCombatWeapon::DrawCrosshair()
 
 		// zoomed crosshairs
 		if (bOnTarget && GetWpnData().iconZoomedAutoaim)
-			crosshair->SetCrosshair(GetWpnData().iconZoomedAutoaim, white);
+			pCrosshair->SetCrosshair(GetWpnData().iconZoomedAutoaim, white);
 		else if ( GetWpnData().iconZoomedCrosshair )
-			crosshair->SetCrosshair( GetWpnData().iconZoomedCrosshair, white );
+			pCrosshair->SetCrosshair( GetWpnData().iconZoomedCrosshair, white );
 		else
-			crosshair->ResetCrosshair();
+			pCrosshair->ResetCrosshair();
 	}
 }
 
@@ -301,6 +318,17 @@ bool C_BaseCombatWeapon::IsCarriedByLocalPlayer( void )
 
 	return ( GetOwner() == C_BasePlayer::GetLocalPlayer() );
 }
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns true if this client is carrying this weapon and is
+//			using the view models
+//-----------------------------------------------------------------------------
+bool C_BaseCombatWeapon::ShouldDrawUsingViewModel( void )
+{
+	return IsCarriedByLocalPlayer() && !C_BasePlayer::ShouldDrawLocalPlayer();
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns true if this weapon is the local client's currently wielded weapon
@@ -336,7 +364,7 @@ bool C_BaseCombatWeapon::GetShootPosition( Vector &vOrigin, QAngle &vAngles )
 	}
 
 	QAngle vDummy;
-	if ( IsActiveByLocalPlayer() && !ShouldDrawLocalPlayer() )
+	if ( IsActiveByLocalPlayer() && ShouldDrawLocalPlayerViewModel() )
 	{
 		C_BasePlayer *player = ToBasePlayer( pEnt );
 		C_BaseViewModel *vm = player ? player->GetViewModel( 0 ) : NULL;
@@ -396,8 +424,15 @@ bool C_BaseCombatWeapon::ShouldDraw( void )
 		if ( !bIsActive )
 			return false;
 
-		// 3rd person mode
-		if ( ShouldDrawLocalPlayer() )
+		if ( !pOwner->ShouldDraw() )
+		{
+			// Our owner is invisible.
+			// This also tests whether the player is zoomed in, in which case you don't want to draw the weapon.
+			return false;
+		}
+
+		// 3rd person mode?
+		if ( !ShouldDrawLocalPlayerViewModel() )
 			return true;
 
 		// don't draw active weapon if not in some kind of 3rd person mode, the viewmodel will do that
@@ -457,38 +492,46 @@ int C_BaseCombatWeapon::DrawModel( int flags )
 			return false;
 	}
 
-	// See comment below
-	EnsureCorrectRenderingModel();
-
 	return BaseClass::DrawModel( flags );
 }
 
-// If the local player is visible (thirdperson mode, tf2 taunts, etc., then make sure that we are using the 
-//  w_ (world) model not the v_ (view) model or else the model can flicker, etc.
-// Otherwise, if we're not the local player, always use the world model
-void C_BaseCombatWeapon::EnsureCorrectRenderingModel()
-{
+
+//-----------------------------------------------------------------------------
+// Allows the client-side entity to override what the network tells it to use for
+// a model. This is used for third person mode, specifically in HL2 where the
+// the weapon timings are on the view model and not the world model. That means the
+// server needs to use the view model, but the client wants to use the world model.
+//-----------------------------------------------------------------------------
+int C_BaseCombatWeapon::CalcOverrideModelIndex() 
+{ 
 	C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
 	if ( localplayer && 
 		localplayer == GetOwner() &&
-		!ShouldDrawLocalPlayer() )
+		ShouldDrawLocalPlayerViewModel() )
 	{
-		return;
+		return BaseClass::CalcOverrideModelIndex();
 	}
-
-	// BRJ 10/14/02
-	// FIXME: Remove when Yahn's client-side prediction is done
-	// It's a hacky workaround for the model indices fighting
-	// (GetRenderBounds uses the model index, which is for the view model)
-	SetModelIndex( GetWorldModelIndex() );
-
-	// Validate our current sequence just in case ( in theory the view and weapon models should have the same sequences for sequences that overlap at least )
-	CStudioHdr *pStudioHdr = GetModelPtr();
-	if ( pStudioHdr && 
-		GetSequence() >= pStudioHdr->GetNumSeq() )
+	else
 	{
-		SetSequence( 0 );
+		return GetWorldModelIndex();
 	}
+}
+
+bool C_BaseCombatWeapon::PredictionErrorShouldResetLatchedForAllPredictables( void )
+{
+#ifdef HL2MP
+	// misyl: Although I have tried to fix many of the pred errors in HL2MP.
+	// Still many remain, and many things remain unpredictable without a rewrite of the weapon code.
+	//
+	// As a workaround, if this weapon is not tangible (ie. has an owner/in inventory).
+	// Don't reset every latched var for every predictable ever if we have a pred error on a weapon.
+	//
+	// This might be useful for other games as well, but needs wider testing there.
+	if ( GetOwner() )
+		return false;
+#endif
+
+	return BaseClass::PredictionErrorShouldResetLatchedForAllPredictables();
 }
 
 //-----------------------------------------------------------------------------

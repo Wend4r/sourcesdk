@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -498,7 +498,7 @@ void CNPC_CScanner::HandleAnimEvent( animevent_t *pEvent )
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-const char *CNPC_CScanner::GetEngineSound( void )
+char *CNPC_CScanner::GetEngineSound( void )
 {
 	if( m_bIsClawScanner )
 		return "NPC_SScanner.FlyLoop";
@@ -1298,7 +1298,7 @@ void CNPC_CScanner::PrescheduleThink(void)
 Disposition_t CNPC_CScanner::IRelationType(CBaseEntity *pTarget)
 {
 	// If it's the player and they are a criminal, we hates them
-	if ( pTarget->Classify() == CLASS_PLAYER )
+	if ( pTarget && pTarget->Classify() == CLASS_PLAYER )
 	{
 		if ( GlobalEntity_GetState("gordon_precriminal") == GLOBAL_ON )
 			return D_NU;
@@ -1834,12 +1834,12 @@ void CNPC_CScanner::SpotlightUpdate(void)
 	}
 	else if (m_flSpotlightCurLength > m_flSpotlightMaxLength)		
 	{
-		m_hSpotlightTarget->SetRenderColorA( (byte)((1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength))) );
+		m_hSpotlightTarget->SetRenderColorA( (1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength)) );
 		m_hSpotlight->SetFadeLength(m_flSpotlightMaxLength);
 	}
 	else
 	{
-		m_hSpotlightTarget->SetRenderColorA( 1 );
+		m_hSpotlightTarget->SetRenderColorA( 1.0 );
 		m_hSpotlight->SetFadeLength(m_flSpotlightCurLength);
 	}
 
@@ -2261,7 +2261,7 @@ void CNPC_CScanner::StartTask( const Task_t *pTask )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-const char *CNPC_CScanner::GetScannerSoundPrefix( void )
+char *CNPC_CScanner::GetScannerSoundPrefix( void )
 {
 	if( m_bIsClawScanner )
 		return "NPC_SScanner";
@@ -2312,7 +2312,10 @@ bool CNPC_CScanner::OverrideMove( float flInterval )
 		Vector vMoveTargetPos(0,0,0);
 		CBaseEntity *pMoveTarget = NULL;
 		
-		if ( !GetNavigator()->IsGoalActive() || ( GetNavigator()->GetCurWaypointFlags() | bits_WP_TO_PATHCORNER ) )
+		// The original line of code was, due to the accidental use of '|' instead of
+		// '&', always true. Replacing with 'true' to suppress the warning without changing
+		// the (long-standing) behavior.
+		if ( true ) //!GetNavigator()->IsGoalActive() || ( GetNavigator()->GetCurWaypointFlags() | bits_WP_TO_PATHCORNER ) )
 		{
 			// Select move target 
 			if ( GetTarget() != NULL )
@@ -2604,9 +2607,6 @@ float CNPC_CScanner::GetGoalDistance( void )
 	
 	case SCANNER_FLY_FOLLOW:
 		return ( SCANNER_FOLLOW_DIST );
-		break;
-
-	default:
 		break;
 	}
 

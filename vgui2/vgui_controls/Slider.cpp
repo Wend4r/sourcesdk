@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -26,12 +26,14 @@
 
 using namespace vgui;
 
+DECLARE_BUILD_FACTORY( Slider );
+
 static const float NOB_SIZE = 8.0f;
 
 //-----------------------------------------------------------------------------
 // Purpose: Create a slider bar with ticks underneath it
 //-----------------------------------------------------------------------------
-Slider::Slider(Panel *parent, const char *panelName ) : Panel(parent, panelName)
+Slider::Slider(Panel *parent, const char *panelName ) : BaseClass(parent, panelName)
 {
 	m_bIsDragOnRepositionNob = false;
 	_dragging = false;
@@ -45,15 +47,15 @@ Slider::Slider(Panel *parent, const char *panelName ) : Panel(parent, panelName)
 	_leftCaption = NULL;
 	_rightCaption = NULL;
 
-	SetThumbWidth( 8 );
-	RecomputeNobPosFromValue();
-	AddActionSignalTarget(this);
-	SetBlockDragChaining( true );
-
 	_subrange[ 0 ] = 0;
 	_subrange[ 1 ] = 0;
 	m_bUseSubRange = false;
 	m_bInverted = false;
+
+	SetThumbWidth( QuickPropScale( 8 ) );
+	RecomputeNobPosFromValue();
+	AddActionSignalTarget(this);
+	SetBlockDragChaining( true );
 }
 
 // This allows the slider to behave like it's larger than what's actually being drawn
@@ -235,7 +237,9 @@ void Slider::SetInverted( bool bInverted )
 void Slider::SendSliderMovedMessage()
 {	
 	// send a changed message
-	PostActionSignal(new KeyValues("SliderMoved", "position", _value));
+	KeyValues *pParams = new KeyValues("SliderMoved", "position", _value);
+	pParams->SetPtr( "panel", this );
+	PostActionSignal( pParams );
 }
 
 //-----------------------------------------------------------------------------
@@ -244,7 +248,9 @@ void Slider::SendSliderMovedMessage()
 void Slider::SendSliderDragStartMessage()
 {	
 	// send a message
-	PostActionSignal(new KeyValues("SliderDragStart", "position", _value));
+	KeyValues *pParams = new KeyValues("SliderDragStart", "position", _value);
+	pParams->SetPtr( "panel", this );
+	PostActionSignal( pParams );
 }
 
 //-----------------------------------------------------------------------------
@@ -253,7 +259,9 @@ void Slider::SendSliderDragStartMessage()
 void Slider::SendSliderDragEndMessage()
 {	
 	// send a message
-	PostActionSignal(new KeyValues("SliderDragEnd", "position", _value));
+	KeyValues *pParams = new KeyValues("SliderDragEnd", "position", _value);
+	pParams->SetPtr( "panel", this );
+	PostActionSignal( pParams );
 }
 
 
@@ -270,6 +278,10 @@ void Slider::ApplySchemeSettings(IScheme *pScheme)
 
 	m_TickColor = pScheme->GetColor( "Slider.TextColor", GetFgColor() );
 	m_TrackColor = pScheme->GetColor( "Slider.TrackColor", GetFgColor() );
+
+#ifdef _X360
+	m_DepressedBgColor = GetSchemeColor("Slider.NobFocusColor", pScheme);
+#endif
 
 	m_DisabledTextColor1 = pScheme->GetColor( "Slider.DisabledTextColor1", GetFgColor() );
 	m_DisabledTextColor2 = pScheme->GetColor( "Slider.DisabledTextColor2", GetFgColor() );
@@ -322,10 +334,37 @@ void Slider::ApplySettings(KeyValues *inResourceData)
 	int thumbWidth = inResourceData->GetInt("thumbwidth", 0);
 	if (thumbWidth != 0)
 	{
-		SetThumbWidth(thumbWidth);
+		SetThumbWidth(QuickPropScale(thumbWidth));
 	}
 
 	SetTickCaptions(left, right);
+
+	int nNumTicks = inResourceData->GetInt( "numTicks", -1 );
+	if ( nNumTicks >= 0 )
+	{
+		SetNumTicks( nNumTicks );
+	}
+
+	int nCurrentRange[2];
+	GetRange( nCurrentRange[0], nCurrentRange[1] );
+	KeyValues *pRangeMin = inResourceData->FindKey( "rangeMin", false );
+	KeyValues *pRangeMax = inResourceData->FindKey( "rangeMax", false );
+	bool bDoClamp = false;
+	if ( pRangeMin )
+	{
+		_range[0] = inResourceData->GetInt( "rangeMin" );
+		bDoClamp = true;
+	}
+	if ( pRangeMax )
+	{
+		_range[1] = inResourceData->GetInt( "rangeMax" );
+		bDoClamp = true;
+	}
+
+	if ( bDoClamp )
+	{
+		ClampRange();
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -347,9 +386,9 @@ void Slider::GetTrackRect( int& x, int& y, int& w, int& h )
 	GetPaintSize( wide, tall );
 
 	x = 0;
-	y = 8;
+	y = QuickPropScale( 8 );
 	w = wide - (int)_nobSize;
-	h = 4;
+	h = QuickPropScale( 4 );
 }
 
 //-----------------------------------------------------------------------------
@@ -385,7 +424,7 @@ void Slider::DrawTicks()
 	float pixelspertick = freepixels / ( m_nNumTicks );
 
 	y += (int)_nobSize;
-	int tickHeight = 5;
+	int tickHeight = QuickPropScale( 5 );
 
     if (IsEnabled())
     {
@@ -394,7 +433,7 @@ void Slider::DrawTicks()
     	{
     		int xpos = (int)( leftpixel + i * pixelspertick );
     
-    		surface()->DrawFilledRect( xpos, y, xpos + 1, y + tickHeight );
+    		surface()->DrawFilledRect( xpos, y, xpos + QuickPropScale( 1 ), y + tickHeight );
     	}
     }
     else
@@ -403,13 +442,13 @@ void Slider::DrawTicks()
     	for ( int i = 0; i <= m_nNumTicks; i++ )
     	{
     		int xpos = (int)( leftpixel + i * pixelspertick );
-    		surface()->DrawFilledRect( xpos+1, y+1, xpos + 2, y + tickHeight + 1 );
+    		surface()->DrawFilledRect( xpos+QuickPropScale(1), y+QuickPropScale(1), xpos + QuickPropScale(2), y + tickHeight + QuickPropScale(1) );
     	}
         surface()->DrawSetColor( m_DisabledTextColor2 ); //vgui::Color( 127, 140, 127, 255 ) );
     	for ( int i = 0; i <= m_nNumTicks; i++ )
     	{
     		int xpos = (int)( leftpixel + i * pixelspertick );
-    		surface()->DrawFilledRect( xpos, y, xpos + 1, y + tickHeight );
+    		surface()->DrawFilledRect( xpos, y, xpos + QuickPropScale(1), y + tickHeight );
     	}
     }
 }
@@ -425,7 +464,7 @@ void Slider::DrawTickLabels()
 
 	// Figure out how to draw the ticks
 //	GetPaintSize( wide, tall );
-	y += (int)NOB_SIZE + 4;
+	y += (int)QuickPropScale( NOB_SIZE + 4 );
 
 	// Draw Start and end range values
     if (IsEnabled())
@@ -477,9 +516,16 @@ void Slider::DrawNob()
 	int wide,tall;
 	GetTrackRect( x, y, wide, tall );
 	Color col = GetFgColor();
+#ifdef _X360
+	if(HasFocus())
+	{
+		col = m_DepressedBgColor;
+	}
+#endif
 	surface()->DrawSetColor(col);
 
-	int nobheight = 16;
+	int nRepeats = Max( QuickPropScale( 1 ), 1 );
+	int nobheight = QuickPropScale( 16 );
 
 	surface()->DrawFilledRect(
 		_nobPos[0], 
@@ -489,11 +535,13 @@ void Slider::DrawNob()
 	// border
 	if (_sliderBorder)
 	{
-		_sliderBorder->Paint(
+		_sliderBorder->Paint2(
 			_nobPos[0], 
 			y + tall / 2 - nobheight / 2, 
 			_nobPos[1], 
-			y + tall / 2 + nobheight / 2);
+			y + tall / 2 + nobheight / 2,
+			-1, 0, 0,
+			nRepeats );
 	}
 }
 
@@ -564,6 +612,8 @@ void Slider::PaintBackground()
 {
 	BaseClass::PaintBackground();
 	
+	int nRepeats = Max( QuickPropScale( 1 ), 1 );
+
 	int x, y;
 	int wide,tall;
 
@@ -573,7 +623,7 @@ void Slider::PaintBackground()
 	surface()->DrawFilledRect( x, y, x + wide, y + tall );
 	if (_insetBorder)
 	{
-		_insetBorder->Paint( x, y, x + wide, y + tall );
+		_insetBorder->Paint2( x, y, x + wide, y + tall, -1, 0, 0, nRepeats );
 	}
 }
 
@@ -585,26 +635,34 @@ void Slider::SetRange(int min,int max)
 	_range[0]=min;
 	_range[1]=max;
 
+	ClampRange();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Sanity check and clamp the range if necessary.
+//-----------------------------------------------------------------------------
+void Slider::ClampRange()
+{
 	if ( _range[0] < _range[1] )
 	{
 		if(_value<_range[0])
 		{
-			SetValue( _range[0] );
+			SetValue( _range[0], false );
 		}
 		else if( _value>_range[1])
 		{
-			SetValue( _range[1] );
+			SetValue( _range[1], false );
 		}
 	}
 	else
 	{
 		if(_value<_range[1])
 		{
-			SetValue( _range[1] );
+			SetValue( _range[1], false );
 		}
 		else if( _value>_range[0])
 		{
-			SetValue( _range[0] );
+			SetValue( _range[0], false );
 		}
 	}
 }
@@ -766,6 +824,31 @@ void Slider::OnMouseDoublePressed(MouseCode code)
 }
 
 //-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+#ifdef _X360
+void Slider::OnKeyCodePressed(KeyCode code)
+{
+	switch ( GetBaseButtonCode( code ) )
+	{
+	case KEY_XBUTTON_LEFT:
+	case KEY_XSTICK1_LEFT:
+	case KEY_XSTICK2_LEFT:
+		SetValue(GetValue() - 1);
+		break;
+	case KEY_XBUTTON_RIGHT:
+	case KEY_XSTICK1_RIGHT:
+	case KEY_XSTICK2_RIGHT:
+		SetValue(GetValue() + 1);
+		break;
+	default:
+		BaseClass::OnKeyCodePressed(code);
+		break;
+	}
+}
+#endif
+
+//-----------------------------------------------------------------------------
 // Purpose: Handle key presses
 //-----------------------------------------------------------------------------
 void Slider::OnKeyCodeTyped(KeyCode code)
@@ -836,6 +919,10 @@ void Slider::OnMouseReleased(MouseCode code)
 	{
 		_dragging=false;
 		input()->SetMouseCapture(null);
+	}
+
+	if ( IsEnabled() )
+	{
 		SendSliderDragEndMessage();
 	}
 }

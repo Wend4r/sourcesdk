@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -65,7 +65,7 @@ CBasePlayerAnimState::CBasePlayerAnimState()
 	m_flEyePitch = 0.0f;
 	m_bCurrentFeetYawInitialized = false;
 	m_flCurrentTorsoYaw = 0.0f;
-	m_flCurrentTorsoYaw = TURN_NONE;
+	m_nTurningInPlace = TURN_NONE;
 	m_flMaxGroundSpeed = 0.0f;
 	m_flStoredCycle = 0.0f;
 
@@ -269,7 +269,7 @@ void CBasePlayerAnimState::ComputeMainSequence()
 	int animDesired = SelectWeightedSequence( TranslateActivity(idealActivity) );
 
 #if !defined( HL1_CLIENT_DLL ) && !defined ( HL1_DLL )
-	if ( pPlayer->GetSequenceActivity( pPlayer->GetSequence() ) == pPlayer->GetSequenceActivity( animDesired ) )
+	if ( !ShouldResetMainSequence( pPlayer->GetSequence(), animDesired ) )
 		return;
 #endif
 
@@ -289,8 +289,13 @@ void CBasePlayerAnimState::ComputeMainSequence()
 #endif
 }
 
+bool CBasePlayerAnimState::ShouldResetMainSequence( int iCurrentSequence, int iNewSequence )
+{
+	if ( !GetOuter() )
+		return false;
 
-
+	return GetOuter()->GetSequenceActivity( iCurrentSequence ) != GetOuter()->GetSequenceActivity( iNewSequence );
+}
 
 
 void CBasePlayerAnimState::UpdateAimSequenceLayers(
@@ -362,10 +367,10 @@ void CBasePlayerAnimState::UpdateAimSequenceLayers(
 	}
 	
 	pDest0->m_flWeight *= flWeightScale * flAimSequenceWeight;
-	pDest0->m_flWeight = clamp( pDest0->m_flWeight, 0.0f, 1.0f );
+	pDest0->m_flWeight = clamp( (float)pDest0->m_flWeight, 0.0f, 1.0f );
 
 	pDest1->m_flWeight *= flWeightScale * flAimSequenceWeight;
-	pDest1->m_flWeight = clamp( pDest1->m_flWeight, 0.0f, 1.0f );
+	pDest1->m_flWeight = clamp( (float)pDest1->m_flWeight, 0.0f, 1.0f );
 
 	pDest0->m_flCycle = pDest1->m_flCycle = flCycle;
 }
@@ -373,11 +378,9 @@ void CBasePlayerAnimState::UpdateAimSequenceLayers(
 
 void CBasePlayerAnimState::OptimizeLayerWeights( int iFirstLayer, int nLayers )
 {
-	int i;
-
 	// Find the total weight of the blended layers, not including the idle layer (iFirstLayer)
 	float totalWeight = 0.0f;
-	for ( i=1; i < nLayers; i++ )
+	for ( int i=1; i < nLayers; i++ )
 	{
 		CAnimationLayer *pLayer = m_pOuter->GetAnimOverlay( iFirstLayer+i );
 		if ( pLayer->IsActive() && pLayer->m_flWeight > 0.0f )
@@ -387,11 +390,11 @@ void CBasePlayerAnimState::OptimizeLayerWeights( int iFirstLayer, int nLayers )
 	}
 
 	// Set the idle layer's weight to be 1 minus the sum of other layer weights
-	CAnimationLayer *pLayer = m_pOuter->GetAnimOverlay( iFirstLayer );
-	if ( pLayer->IsActive() && pLayer->m_flWeight > 0.0f )
+	CAnimationLayer *pLayerFirst = m_pOuter->GetAnimOverlay( iFirstLayer );
+	if ( pLayerFirst->IsActive() && pLayerFirst->m_flWeight > 0.0f )
 	{
-		pLayer->m_flWeight = 1.0f - totalWeight;
-		pLayer->m_flWeight = MAX(pLayer->m_flWeight, 0.0f);
+		pLayerFirst->m_flWeight = 1.0f - totalWeight;
+		pLayerFirst->m_flWeight = MAX( (float)pLayerFirst->m_flWeight, 0.0f);
 	}
 
 	// This part is just an optimization. Since we have the walk/run animations weighted on top of 
@@ -400,7 +403,7 @@ void CBasePlayerAnimState::OptimizeLayerWeights( int iFirstLayer, int nLayers )
 	//
 	// So it saves us blending a couple animation layers whenever a guy is walking or running full speed.
 	int iLastOne = -1;
-	for ( i=0; i < nLayers; i++ )
+	for ( int i=0; i < nLayers; i++ )
 	{
 		CAnimationLayer *pLayer = m_pOuter->GetAnimOverlay( iFirstLayer+i );
 		if ( pLayer->IsActive() && pLayer->m_flWeight > 0.99 )
@@ -521,7 +524,7 @@ float CBasePlayerAnimState::CalcMovementPlaybackRate( bool *bIsMoving )
 		{
 			// Note this gets set back to 1.0 if sequence changes due to ResetSequenceInfo below
 			flReturnValue = speed / flGroundSpeed;
-			flReturnValue = clamp( flReturnValue, 0.01, 10 );	// don't go nuts here.
+			flReturnValue = clamp( flReturnValue, 0.01f, 10.f );	// don't go nuts here.
 		}
 		*bIsMoving = true;
 	}
@@ -721,7 +724,7 @@ void CBasePlayerAnimState::ComputePoseParam_BodyPitch( CStudioHdr *pStudioHdr )
 	{
 		flPitch -= 360.0f;
 	}
-	flPitch = clamp( flPitch, -90, 90 );
+	flPitch = clamp( flPitch, -90.f, 90.f );
 
 	// See if we have a blender for pitch
 	int pitch = GetOuter()->LookupPoseParameter( pStudioHdr, "body_pitch" );
@@ -1044,21 +1047,23 @@ void CBasePlayerAnimState::DebugShowAnimState( int iStartLine )
 			m_angRender[YAW], g_flLastBodyYaw, g_flLastBodyPitch, m_vLastMovePose.x, m_vLastMovePose.y );
 	}
 
-	// Draw a red triangle on the ground for the eye yaw.
-	float flBaseSize = 10;
-	float flHeight = 80;
-	Vector vBasePos = GetOuter()->GetAbsOrigin() + Vector( 0, 0, 3 );
-	QAngle angles( 0, 0, 0 );
-	angles[YAW] = m_flEyeYaw;
-	Vector vForward, vRight, vUp;
-	AngleVectors( angles, &vForward, &vRight, &vUp );
-	debugoverlay->AddTriangleOverlay( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 255, 0, 0, 255, false, 0.01 );
+	if ( debugoverlay)
+	{
+		// Draw a red triangle on the ground for the eye yaw.
+		float flBaseSize = 10;
+		float flHeight = 80;
+		Vector vBasePos = GetOuter()->GetAbsOrigin() + Vector( 0, 0, 3 );
+		QAngle angles( 0, 0, 0 );
+		angles[YAW] = m_flEyeYaw;
+		Vector vForward, vRight, vUp;
+		AngleVectors( angles, &vForward, &vRight, &vUp );
+		debugoverlay->AddTriangleOverlay( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 255, 0, 0, 255, false, 0.01 );
 
-	// Draw a blue triangle on the ground for the body yaw.
-	angles[YAW] = m_angRender[YAW];
-	AngleVectors( angles, &vForward, &vRight, &vUp );
-	debugoverlay->AddTriangleOverlay( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 0, 0, 255, 255, false, 0.01 );
-
+		// Draw a blue triangle on the ground for the body yaw.
+		angles[YAW] = m_angRender[YAW];
+		AngleVectors( angles, &vForward, &vRight, &vUp );
+		debugoverlay->AddTriangleOverlay( vBasePos+vRight*flBaseSize/2, vBasePos-vRight*flBaseSize/2, vBasePos+vForward*flHeight, 0, 0, 255, 255, false, 0.01 );
+	}
 }
 
 // -----------------------------------------------------------------------------

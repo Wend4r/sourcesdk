@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Mirrors the movement of a camera about a given point.
 //
@@ -157,7 +157,7 @@ void CLogicMirrorMovement::Think()
 	{
 		// If we will never find a target, we don't have a use... shutdown
 		if ( m_strMirrorTarget == NULL_STRING )
-			SetNextThink ( 0.0f );
+			SetNextThink ( NULL );
 
 		//BUGBUG: If m_strSetMirrorTarget doesn't exist in ent list, we get per-think searches with no results ever...
 		SetMirrorTarget ( STRING(m_strMirrorTarget) );

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -39,6 +39,7 @@ public:
 	bool				IsBreatherActive( void ) { return m_HL2Local.m_bitsActiveDevices & bits_SUIT_DEVICE_BREATHER; }
 
 	virtual int			DrawModel( int flags );
+	virtual	void		BuildTransformations( CStudioHdr *hdr, Vector *pos, Quaternion q[], const matrix3x4_t& cameraTransform, int boneMask, CBoneBitList &boneComputed );
 
 	LadderMove_t		*GetLadderMove() { return &m_HL2Local.m_LadderMove; }
 	virtual void		ExitLadder();
@@ -50,6 +51,9 @@ public:
 	void			PerformClientSideNPCSpeedModifiers( float flFrameTime, CUserCmd *pCmd );
 
 	bool				IsWeaponLowered( void ) { return m_HL2Local.m_bWeaponLowered; }
+
+	virtual void	HandleSpeedChanges( CMoveData *mv ){}
+	virtual void	ReduceTimers( CMoveData *mv ){}
 
 public:
 

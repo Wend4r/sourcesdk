@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -135,10 +135,10 @@ private:
 	struct CircleObstacles_t
 	{
 		CircleObstacles_t( const Vector &center, float radius, CBaseEntity *pEntity, AI_MoveSuggType_t type )
-		 :	center(center),
-			radius(radius),
-			type(type),
-			hEntity(pEntity)
+		 :	center(center), 
+			radius(radius), 
+			hEntity(pEntity),
+			type(type)
 		{
 		}
 		

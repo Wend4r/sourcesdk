@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,15 +8,15 @@
 #include "cbase.h"
 #include "c_smoke_trail.h"
 #include "fx.h"
-#include "engine/IVDebugOverlay.h"
-#include "engine/ienginesound.h"
+#include "engine/ivdebugoverlay.h"
+#include "engine/IEngineSound.h"
 #include "c_te_effect_dispatch.h"
 #include "glow_overlay.h"
 #include "fx_explosion.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "toolframework_client.h"
 #include "view.h"
-#include "ClientEffectPrecacheSystem.h"
+#include "clienteffectprecachesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -396,12 +396,12 @@ void C_SmokeTrail::CleanupToolRecordingState( KeyValues *msg )
 	{
 		int nId = m_pSmokeEmitter->AllocateToolParticleEffectId();
 
-		KeyValues *msg = new KeyValues( "OldParticleSystem_Create" );
-		msg->SetString( "name", "C_SmokeTrail" );
-		msg->SetInt( "id", nId );
-		msg->SetFloat( "time", gpGlobals->curtime );
+		KeyValues *oldmsg = new KeyValues( "OldParticleSystem_Create" );
+		oldmsg->SetString( "name", "C_SmokeTrail" );
+		oldmsg->SetInt( "id", nId );
+		oldmsg->SetFloat( "time", gpGlobals->curtime );
 
-		KeyValues *pRandomEmitter = msg->FindKey( "DmeRandomEmitter", true );
+		KeyValues *pRandomEmitter = oldmsg->FindKey( "DmeRandomEmitter", true );
 		pRandomEmitter->SetInt( "count", m_SpawnRate );	// particles per second, when duration is < 0
 		pRandomEmitter->SetFloat( "duration", -1 );
 		pRandomEmitter->SetInt( "active", bEmitterActive );
@@ -418,7 +418,7 @@ void C_SmokeTrail::CleanupToolRecordingState( KeyValues *msg )
 
 		// FIXME: Until we can interpolate ent logs during emission, this can't work
 		KeyValues *pPosition = pInitializers->FindKey( "DmePositionPointToEntityInitializer", true );
-		pPosition->SetPtr( "entindex", (void*)pEnt->entindex() );
+		pPosition->SetPtr( "entindex", (void*)(intp)pEnt->entindex() );
 		pPosition->SetInt( "attachmentIndex", m_nAttachment );
 		pPosition->SetFloat( "randomDist", m_SpawnRadius );
 		pPosition->SetFloat( "startx", pEnt->GetAbsOrigin().x );
@@ -430,7 +430,7 @@ void C_SmokeTrail::CleanupToolRecordingState( KeyValues *msg )
  		pLifetime->SetFloat( "maxLifetime", m_ParticleLifetime );
 
 		KeyValues *pVelocity = pInitializers->FindKey( "DmeAttachmentVelocityInitializer", true );
-		pVelocity->SetPtr( "entindex", (void*)entindex() );
+		pVelocity->SetPtr( "entindex", (void*)(intp)entindex() );
 		pVelocity->SetFloat( "minAttachmentSpeed", m_MinDirectedSpeed );
  		pVelocity->SetFloat( "maxAttachmentSpeed", m_MaxDirectedSpeed );
  		pVelocity->SetFloat( "minRandomSpeed", m_MinSpeed );
@@ -445,10 +445,11 @@ void C_SmokeTrail::CleanupToolRecordingState( KeyValues *msg )
  		pRollSpeed->SetFloat( "maxRollSpeed", 1.0f );
 
 		KeyValues *pColor = pInitializers->FindKey( "DmeRandomValueColorInitializer", true );
-		Color c( 
-			clamp( m_StartColor.x * 255.0f, 0, 255 ),
-			clamp( m_StartColor.y * 255.0f, 0, 255 ),
-			clamp( m_StartColor.z * 255.0f, 0, 255 ), 255 );
+		Color c(
+			FastFToC( clamp( m_StartColor.x, 0.f, 1.f ) ),
+			FastFToC( clamp( m_StartColor.y, 0.f, 1.f ) ),
+			FastFToC( clamp( m_StartColor.z, 0.f, 1.f ) ),
+			255 );
 		pColor->SetColor( "startColor", c );
 		pColor->SetFloat( "minStartValueDelta", -0.2f );
  		pColor->SetFloat( "maxStartValueDelta", 0.2f );
@@ -486,18 +487,18 @@ void C_SmokeTrail::CleanupToolRecordingState( KeyValues *msg )
 		pEmitter2->SetString( "material", "particle/particle_noisesphere" );
 		pEmitterParent2->AddSubKey( pEmitter2 );
 
-		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
-		msg->deleteThis();
+		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, oldmsg );
+		oldmsg->deleteThis();
 	}
 	else 
 	{
-		KeyValues *msg = new KeyValues( "OldParticleSystem_ActivateEmitter" );
-		msg->SetInt( "id", m_pSmokeEmitter->GetToolParticleEffectId() );
-		msg->SetInt( "emitter", 0 );
-		msg->SetInt( "active", bEmitterActive );
-		msg->SetFloat( "time", gpGlobals->curtime );
-		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
-		msg->deleteThis();
+		KeyValues *oldmsg = new KeyValues( "OldParticleSystem_ActivateEmitter" );
+		oldmsg->SetInt( "id", m_pSmokeEmitter->GetToolParticleEffectId() );
+		oldmsg->SetInt( "emitter", 0 );
+		oldmsg->SetInt( "active", bEmitterActive );
+		oldmsg->SetFloat( "time", gpGlobals->curtime );
+		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, oldmsg );
+		oldmsg->deleteThis();
 	}
 }
 
@@ -770,8 +771,6 @@ void C_RocketTrail::Update( float fTimeDelta )
 	
 	if ( m_bDamaged )
 	{
-		SimpleParticle	*pParticle;
-		Vector			offset;
 		Vector			offsetColor;
 
 		CSmartPtr<CEmberEffect>	pEmitter = CEmberEffect::Create("C_RocketTrail::damaged");
@@ -1508,7 +1507,6 @@ void C_FireTrail::Update( float fTimeDelta )
 		numPuffs = clamp( numPuffs, 1, 32 );
 
 		SimpleParticle	*pParticle;
-		Vector			offset;
 		Vector			offsetColor;
 		float			step = moveLength / numPuffs;
 
@@ -1917,12 +1915,12 @@ void C_DustTrail::CleanupToolRecordingState( KeyValues *msg )
 	{
 		int nId = m_pDustEmitter->AllocateToolParticleEffectId();
 
-		KeyValues *msg = new KeyValues( "OldParticleSystem_Create" );
-		msg->SetString( "name", "C_DustTrail" );
-		msg->SetInt( "id", nId );
-		msg->SetFloat( "time", gpGlobals->curtime );
+		KeyValues *oldmsg = new KeyValues( "OldParticleSystem_Create" );
+		oldmsg->SetString( "name", "C_DustTrail" );
+		oldmsg->SetInt( "id", nId );
+		oldmsg->SetFloat( "time", gpGlobals->curtime );
 
-		KeyValues *pEmitter = msg->FindKey( "DmeSpriteEmitter", true );
+		KeyValues *pEmitter = oldmsg->FindKey( "DmeSpriteEmitter", true );
 		pEmitter->SetString( "material", "particle/smokesprites_0001" );
 		pEmitter->SetInt( "count", m_SpawnRate );	// particles per second, when duration is < 0
 		pEmitter->SetFloat( "duration", -1 ); // FIXME
@@ -1932,7 +1930,7 @@ void C_DustTrail::CleanupToolRecordingState( KeyValues *msg )
 
 		// FIXME: Until we can interpolate ent logs during emission, this can't work
 		KeyValues *pPosition = pInitializers->FindKey( "DmePositionPointToEntityInitializer", true );
-		pPosition->SetPtr( "entindex", (void*)pEnt->entindex() );
+		pPosition->SetPtr( "entindex", (void*)(intp)pEnt->entindex() );
 		pPosition->SetInt( "attachmentIndex", GetParentAttachment() );
 		pPosition->SetFloat( "randomDist", m_SpawnRadius );
 		pPosition->SetFloat( "startx", pEnt->GetAbsOrigin().x );
@@ -1960,9 +1958,10 @@ void C_DustTrail::CleanupToolRecordingState( KeyValues *msg )
 
 		KeyValues *pColor = pInitializers->FindKey( "DmeRandomValueColorInitializer", true );
 		Color c( 
-			clamp( m_Color.x * 255.0f, 0, 255 ),
-			clamp( m_Color.y * 255.0f, 0, 255 ),
-			clamp( m_Color.z * 255.0f, 0, 255 ), 255 );
+			FastFToC( clamp( m_Color.x, 0.f, 1.f ) ),
+			FastFToC( clamp( m_Color.y, 0.f, 1.f ) ),
+			FastFToC( clamp( m_Color.z, 0.f, 1.f ) ),
+			255 );
 		pColor->SetColor( "startColor", c );
 		pColor->SetFloat( "minStartValueDelta", 0.0f );
  		pColor->SetFloat( "maxStartValueDelta", 0.0f );
@@ -1995,17 +1994,17 @@ void C_DustTrail::CleanupToolRecordingState( KeyValues *msg )
 		pUpdaters->FindKey( "DmeColorUpdater", true );
 		pUpdaters->FindKey( "DmeSizeUpdater", true );
 
-		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
-		msg->deleteThis();
+		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, oldmsg );
+		oldmsg->deleteThis();
 	}
 	else 
 	{
-		KeyValues *msg = new KeyValues( "OldParticleSystem_ActivateEmitter" );
-		msg->SetInt( "id", m_pDustEmitter->GetToolParticleEffectId() );
-		msg->SetInt( "emitter", 0 );
-		msg->SetInt( "active", bEmitterActive );
-		msg->SetFloat( "time", gpGlobals->curtime );
-		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, msg );
-		msg->deleteThis();
+		KeyValues *oldmsg = new KeyValues( "OldParticleSystem_ActivateEmitter" );
+		oldmsg->SetInt( "id", m_pDustEmitter->GetToolParticleEffectId() );
+		oldmsg->SetInt( "emitter", 0 );
+		oldmsg->SetInt( "active", bEmitterActive );
+		oldmsg->SetFloat( "time", gpGlobals->curtime );
+		ToolFramework_PostToolMessage( HTOOLHANDLE_INVALID, oldmsg );
+		oldmsg->deleteThis();
 	}
 }

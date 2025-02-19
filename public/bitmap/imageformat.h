@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -15,9 +15,7 @@
 
 enum NormalDecodeMode_t
 {
-	NORMAL_DECODE_NONE			= 0,
-	NORMAL_DECODE_ATI2N			= 1,
-	NORMAL_DECODE_ATI2N_ALPHA	= 2
+	NORMAL_DECODE_NONE			= 0
 };
 
 // Forward declaration
@@ -29,10 +27,8 @@ typedef enum _D3DFORMAT D3DFORMAT;
 // The various image format types
 //-----------------------------------------------------------------------------
 
-#ifdef _MSC_VER
-// don't bitch that inline functions aren't used!!!!
+// don't complain that inline functions aren't used!!!!
 #pragma warning(disable : 4514)
-#endif
 
 enum ImageFormat 
 {
@@ -102,12 +98,32 @@ enum ImageFormat
 	IMAGE_FORMAT_LE_BGRA8888,
 #endif
 
+	IMAGE_FORMAT_DXT1_RUNTIME,
+	IMAGE_FORMAT_DXT5_RUNTIME,
+
 	NUM_IMAGE_FORMATS
 };
+
+#if ( defined( POSIX  ) || defined( DX_TO_GL_ABSTRACTION ) ) && !defined( USE_DXVK )
+#include "togl/dxformats.h"
+#endif
+
+#ifdef USE_DXVK
+#include <d3d9.h>
+#endif
 
 //-----------------------------------------------------------------------------
 // Color structures
 //-----------------------------------------------------------------------------
+struct BGRA8888_t;
+struct BGRX8888_t;
+struct RGBA8888_t;
+struct RGB888_t;
+struct BGR888_t;
+struct BGR565_t;
+struct BGRA5551_t;
+struct BGRA4444_t;
+struct RGBX5551_t;
 
 struct BGRA8888_t
 {
@@ -122,20 +138,28 @@ struct BGRA8888_t
 	}
 };
 
+struct BGRX8888_t
+{
+	unsigned char b;		// change the order of names to change the 
+	unsigned char g;		//  order of the output ARGB or BGRA, etc...
+	unsigned char r;		//  Last one is MSB, 1st is LSB.
+	unsigned char x;
+	inline BGRX8888_t& operator=( const BGRX8888_t& in )
+	{
+		*( unsigned int * )this = *( unsigned int * ) &in;
+		return *this;
+	}
+};
+
 struct RGBA8888_t
 {
 	unsigned char r;		// change the order of names to change the 
 	unsigned char g;		//  order of the output ARGB or BGRA, etc...
 	unsigned char b;		//  Last one is MSB, 1st is LSB.
 	unsigned char a;
-	inline RGBA8888_t& operator=( const BGRA8888_t& in )
-	{
-		r = in.r;
-		g = in.g;
-		b = in.b;
-		a = in.a;
-		return *this;
-	}
+	inline RGBA8888_t& operator=( const BGRA8888_t& in );
+	inline RGBA8888_t& operator=( const RGB888_t& in );
+	inline RGBA8888_t& operator=( const BGRX8888_t& in );
 };
 
 struct RGB888_t
@@ -249,6 +273,37 @@ struct RGBX5551_t
 	}
 };
 
+
+//-----------------------------------------------------------------------------
+// Conversion assignments
+//-----------------------------------------------------------------------------
+RGBA8888_t& RGBA8888_t::operator=( const BGRA8888_t& in )
+{
+	r = in.r;
+	g = in.g;
+	b = in.b;
+	a = in.a;
+	return *this;
+}
+
+RGBA8888_t& RGBA8888_t::operator=( const RGB888_t& in )
+{
+	r = in.r;
+	g = in.g;
+	b = in.b;
+	a = 0xFF;
+	return *this;
+}
+
+RGBA8888_t& RGBA8888_t::operator=( const BGRX8888_t& in )
+{
+	r = in.r;
+	g = in.g;
+	b = in.b;
+	a = 0xFF;
+	return *this;
+}
+
 //-----------------------------------------------------------------------------
 // some important constants
 //-----------------------------------------------------------------------------
@@ -261,7 +316,7 @@ struct RGBX5551_t
 //-----------------------------------------------------------------------------
 struct ImageFormatInfo_t
 {
-	char* m_pName;
+	const char* m_pName;
 	int m_NumBytes;
 	int m_NumRedBits;
 	int m_NumGreeBits;
@@ -304,10 +359,8 @@ namespace ImageLoader
 	// convert back and forth from D3D format to ImageFormat, regardless of
 	// whether it's supported or not
 	//-----------------------------------------------------------------------------
-	#ifdef _WIN32
 	ImageFormat D3DFormatToImageFormat( D3DFORMAT format );
 	D3DFORMAT ImageFormatToD3DFormat( ImageFormat format );
-	#endif
 
 	// Flags for ResampleRGBA8888
 	enum
@@ -397,6 +450,9 @@ namespace ImageLoader
 							   int height,	int depth, ImageFormat imageFormat, float srcGamma, float dstGamma, 
 							   int numLevels = 0 );
 
+	// Low quality mipmap generation, but way faster. 
+	void GenerateMipmapLevelsLQ( unsigned char* pSrc, unsigned char* pDst, int width, int height, 
+		                         ImageFormat imageFormat, int numLevels );
 
 	//-----------------------------------------------------------------------------
 	// operations on square images (src and dst can be the same)
@@ -460,6 +516,10 @@ namespace ImageLoader
 		return ( info.m_NumRedBits > 8 || info.m_NumGreeBits > 8 || info.m_NumBlueBits > 8 || info.m_NumAlphaBits > 8 );
 	}
 
+	inline bool IsRuntimeCompressed( ImageFormat fmt )
+	{
+		return ( fmt == IMAGE_FORMAT_DXT1_RUNTIME ) || ( fmt == IMAGE_FORMAT_DXT5_RUNTIME );
+	}
 
 } // end namespace ImageLoader
 

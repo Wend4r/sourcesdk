@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -72,7 +72,7 @@ public:
 	const char					*m_pNetworkName;
 	SendTable					*m_pTable;
 	ServerClass					*m_pNext;
-	int						m_ClassID;	// Managed by the engine.
+	int							m_ClassID;	// Managed by the engine.
 
 	// This is an index into the network string table (sv.GetInstanceBaselineTable()).
 	int							m_InstanceBaselineIndex; // INVALID_STRING_INDEX if not initialized yet.
@@ -82,12 +82,18 @@ public:
 class CBaseNetworkable;
 
 // If you do a DECLARE_SERVERCLASS, you need to do this inside the class definition.
-#define DECLARE_SERVERCLASS()									\
+#define DECLARE_SERVERCLASS_IMPL( MAYBE_OVERRIDE )				\
 	public:														\
-		virtual ServerClass* GetServerClass();					\
+		virtual ServerClass* GetServerClass() MAYBE_OVERRIDE;   \
 		static SendTable *m_pClassSendTable;					\
 		template <typename T> friend int ServerClassInit(T *);	\
-		virtual int YouForgotToImplementOrDeclareServerClass();	\
+		virtual int YouForgotToImplementOrDeclareServerClass() MAYBE_OVERRIDE;
+#define DECLARE_SERVERCLASS() \
+	DECLARE_SERVERCLASS_IMPL( /* override */; )
+// With warnings set to inconsistent-override, marking this properly as override would create warnings in all old files.
+// Instead, as files are converted to use override, just upgrade to this
+#define DECLARE_SERVERCLASS_OVERRIDE() \
+	DECLARE_SERVERCLASS_IMPL( OVERRIDE )
 
 #define DECLARE_SERVERCLASS_NOBASE()							\
 	public:														\

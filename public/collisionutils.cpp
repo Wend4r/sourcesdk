@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Common collision utility methods
 //
@@ -130,7 +130,7 @@ float IntersectRayWithTriangle( const Ray_t& ray,
 	if ((t < -boxt) || (t > 1.0f + boxt))
 		return -1.0f;
 
-	return clamp( t, 0, 1 );
+	return clamp( t, 0.f, 1.f );
 }
 
 //-----------------------------------------------------------------------------
@@ -228,7 +228,7 @@ int IntersectTriangleWithPlaneBarycentric( const Vector& org, const Vector& edge
 	{
 		pIntersection[ptIdx].x = - ( orgDotNormal - plane.w + edgeVDotNormal) / 
 			( edgeUDotNormal - edgeVDotNormal);
-		pIntersection[ptIdx].y = 1.0f - pIntersection[ptIdx].x;;
+		pIntersection[ptIdx].y = 1.0f - pIntersection[ptIdx].x;
 		if ((pIntersection[ptIdx].x >= 0.0f) && (pIntersection[ptIdx].x <= 1.0f) &&
 			 (pIntersection[ptIdx].y >= 0.0f) && (pIntersection[ptIdx].y <= 1.0f))
 			++ptIdx;
@@ -1370,9 +1370,16 @@ bool IntersectRayWithOBB( const Vector &vecRayStart, const Vector &vecRayDelta,
 
 	// delta was prescaled by the current t, so no need to see if this intersection
 	// is closer
-	trace_t boxTrace;
 	if ( !IntersectRayWithBox( start, extent, vecOBBMins, vecOBBMaxs, flTolerance, pTrace ) )
 		return false;
+
+	// Fix up the start/end pos and fraction
+	Vector vecTemp;
+	VectorTransform( pTrace->endpos, matOBBToWorld, vecTemp );
+	pTrace->endpos = vecTemp;
+
+	pTrace->startpos = vecRayStart;
+	pTrace->fraction *= 2.0f;
 
 	// Fix up the plane information
 	float flSign = pTrace->plane.normal[ pTrace->plane.type ];
@@ -1381,6 +1388,7 @@ bool IntersectRayWithOBB( const Vector &vecRayStart, const Vector &vecRayDelta,
 	pTrace->plane.normal[2] = flSign * matOBBToWorld[2][pTrace->plane.type];
 	pTrace->plane.dist = DotProduct( pTrace->endpos, pTrace->plane.normal );
 	pTrace->plane.type = 3;
+
 	return true;
 }
 
@@ -1917,9 +1925,9 @@ QuadBarycentricRetval_t PointInQuadToBarycentric( const Vector &v1, const Vector
 	// NOTE: axisU[0][projAxes[0]] < axisU[0][projAxes[1]], 
 	//       this is done to decrease error when dividing later
 	//
-	if( FloatMakePositive( axisU[0][(int)projAxes[0]] ) < FloatMakePositive( axisU[0][(int)projAxes[1]] ) )
+	if( FloatMakePositive( axisU[0][projAxes[0]] ) < FloatMakePositive( axisU[0][projAxes[1]] ) )
 	{
-		int tmp = (int)projAxes[0];
+		int tmp = projAxes[0];
 		projAxes[0] = projAxes[1];
 		projAxes[1] = tmp;
 	}
@@ -1948,21 +1956,21 @@ QuadBarycentricRetval_t PointInQuadToBarycentric( const Vector &v1, const Vector
 	double s = 0.0, t = 0.0;
 	double A, negB, C;
 
-	A = ( axisU[0][(int)projAxes[1]] * axisV[0][(int)projAxes[0]] ) - 
-		( axisU[0][(int)projAxes[0]] * axisV[0][(int)projAxes[1]] ) - 
-		( axisU[1][(int)projAxes[1]] * axisV[0][(int)projAxes[0]] ) + 
-		( axisU[1][(int)projAxes[0]] * axisV[0][(int)projAxes[1]] );
-	C = ( v1[(int)projAxes[1]] * axisU[0][(int)projAxes[0]] ) - 
-		( point[(int)projAxes[1]] * axisU[0][(int)projAxes[0]] ) - 
-		( v1[(int)projAxes[0]] * axisU[0][(int)projAxes[1]] ) + 
-		( point[(int)projAxes[0]] * axisU[0][(int)projAxes[1]] );
+	A = ( axisU[0][projAxes[1]] * axisV[0][projAxes[0]] ) - 
+		( axisU[0][projAxes[0]] * axisV[0][projAxes[1]] ) - 
+		( axisU[1][projAxes[1]] * axisV[0][projAxes[0]] ) + 
+		( axisU[1][projAxes[0]] * axisV[0][projAxes[1]] );
+	C = ( v1[projAxes[1]] * axisU[0][projAxes[0]] ) - 
+		( point[projAxes[1]] * axisU[0][projAxes[0]] ) - 
+		( v1[projAxes[0]] * axisU[0][projAxes[1]] ) + 
+		( point[projAxes[0]] * axisU[0][projAxes[1]] );
 	negB = C - 
-		  ( v1[(int)projAxes[1]] * axisU[1][(int)projAxes[0]] ) + 
-		  ( point[(int)projAxes[1]] * axisU[1][(int)projAxes[0]] ) + 
-		  ( v1[(int)projAxes[0]] * axisU[1][(int)projAxes[1]] ) - 
-		  ( point[(int)projAxes[0]] * axisU[1][(int)projAxes[1]] ) + 
-		  ( axisU[0][(int)projAxes[1]] * axisV[0][(int)projAxes[0]] ) - 
-		  ( axisU[0][(int)projAxes[0]] * axisV[0][(int)projAxes[1]] );
+		  ( v1[projAxes[1]] * axisU[1][projAxes[0]] ) + 
+		  ( point[projAxes[1]] * axisU[1][projAxes[0]] ) + 
+		  ( v1[projAxes[0]] * axisU[1][projAxes[1]] ) - 
+		  ( point[projAxes[0]] * axisU[1][projAxes[1]] ) + 
+		  ( axisU[0][projAxes[1]] * axisV[0][projAxes[0]] ) - 
+		  ( axisU[0][projAxes[0]] * axisV[0][projAxes[1]] );
 
 	if( ( A > -PIQ_PLANE_EPSILON ) && ( A < PIQ_PLANE_EPSILON ) )
 	{
@@ -2008,7 +2016,7 @@ QuadBarycentricRetval_t PointInQuadToBarycentric( const Vector &v1, const Vector
 		double QPlus = ( negB + quad ) / ( 2.0f * A );
 		double QMinus = ( negB - quad ) / ( 2.0f * A );
 
-		ResolveQuadratic( QPlus, QMinus, axisU[0], axisU[1], axisV[0], axisV[1], v1, point, (int)projAxes[0], s, t );
+		ResolveQuadratic( QPlus, QMinus, axisU[0], axisU[1], axisV[0], axisV[1], v1, point, projAxes[0], s, t );
 	}
 
 	if( !bFlipped )

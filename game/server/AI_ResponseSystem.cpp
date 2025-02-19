@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -646,7 +646,7 @@ public:
 
 		if ( !p )
 		{
-			Error( "AI_ResponseSystem:  Unxpected TokenWaiting() with NULL buffer in %s", m_ScriptStack[ 0 ].name );
+			Error( "AI_ResponseSystem:  Unxpected TokenWaiting() with NULL buffer in %p", m_ScriptStack[ 0 ].name );
 			return false;
 		}
 
@@ -1228,7 +1228,7 @@ float CResponseSystem::ScoreCriteriaAgainstRule( const AI_CriteriaSet& set, int 
 	{
 		if ( bBeingWatched )
 		{
-			DevMsg("Rule '%s' is disabled.\n" );
+			DevMsg("Rule '%s' is disabled.\n", m_Rules.GetElementName( irule ) );
 		}
 		return 0.0f;
 	}
@@ -1457,7 +1457,7 @@ int CResponseSystem::SelectWeightedResponseFromResponseGroup( ResponseGroup *g, 
 	{
 		for ( i = 0; i < fakedDepletes.Count(); i++ )
 		{
-			g->group[ fakedDepletes[ i ] ].depletioncount = 0;;
+			g->group[ fakedDepletes[ i ] ].depletioncount = 0;
 		}
 	}
 
@@ -1737,7 +1737,7 @@ bool CResponseSystem::FindBestResponse( const AI_CriteriaSet& set, AI_Response& 
 	bool showResult = ( iDbgResponse == 1 || iDbgResponse == 2 );
 
 	// Look for match. verbose mode used to be at level 2, but disabled because the writers don't actually care for that info.
-	int bestRule = FindBestMatchingRule( set, false ); 
+	int bestRule = FindBestMatchingRule( set, iDbgResponse == 3 ); 
 
 	ResponseType_t responseType = RESPONSE_NONE;
 	AI_ResponseParams rp;
@@ -3036,6 +3036,9 @@ IResponseSystem *g_pResponseSystem = &defaultresponsesytem;
 
 CON_COMMAND( rr_reloadresponsesystems, "Reload all response system scripts." )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	defaultresponsesytem.ReloadAllResponseSystems();
 
 #if defined( TF_DLL )

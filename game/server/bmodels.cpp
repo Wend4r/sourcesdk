@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Spawn, think, and use functions for common brush entities.
 //
@@ -12,6 +12,12 @@
 #include "engine/IEngineSound.h"
 #include "globals.h"
 #include "filters.h"
+
+/// XXX(JohnS): This was never fully implemented, and thus func_rotating was broken in TF2 from 2007 - 2018.  Bandwidth
+//              it intended to save is less significant now, but ideally it could be seamlessly clientside (with work -
+//              c_funcrotating is a stub that does nothing).  As few official maps use it at all, favoring it working in
+//              TF2 at all over small bandwidth savings.
+// #define CFUNCROTATING_CLIENTSIDE_SUPPORT
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -67,7 +73,7 @@ bool CFuncWall::CreateVPhysics( void )
 		int contents = modelinfo->GetModelContents( GetModelIndex() );
 		if ( ! (contents & (MASK_SOLID|MASK_PLAYERSOLID|MASK_NPCSOLID)) )
 		{
-			// leave the physics shadow there in case it has crap constrained to it
+			// leave the physics shadow there in case it has stuff constrained to it
 			// but disable collisions with it
 			pPhys->EnableCollisions( false );
 		}
@@ -421,7 +427,6 @@ public:
 	DECLARE_SERVERCLASS();
 
 protected:
-
 	bool SpinDown( float flTargetSpeed );
 	float GetMoveSpeed( float flSpeed );
 
@@ -499,8 +504,10 @@ END_DATADESC()
 extern void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_FuncRotatingOrigin( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
+#ifdef CFUNCROTATING_CLIENTSIDE_SUPPORT
 	CFuncRotating *entity = (CFuncRotating*)pStruct;
 	Assert( entity );
+
 	if ( entity->HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
 	{
 		const Vector *v = &entity->m_vecClientOrigin;
@@ -509,10 +516,12 @@ void SendProxy_FuncRotatingOrigin( const SendProp *pProp, const void *pStruct, c
 		pOut->m_Vector[ 2 ] = v->z;
 		return;
 	}
+#endif
 
 	SendProxy_Origin( pProp, pStruct, pData, pOut, iElement, objectID );
 }
 
+/*
 extern void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_FuncRotatingAngles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
@@ -529,17 +538,48 @@ void SendProxy_FuncRotatingAngles( const SendProp *pProp, const void *pStruct, c
 
 	SendProxy_Angles( pProp, pStruct, pData, pOut, iElement, objectID );
 }
+*/
+void SendProxy_FuncRotatingAngle( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID)
+{
+	CFuncRotating *entity = (CFuncRotating*)pStruct;
+	Assert( entity );
+
+	vec_t const *qa = (vec_t *)pData;
+	vec_t const *ea = entity->GetLocalAngles().Base();
+	NOTE_UNUSED(ea);
+	// Assert its actually an index into m_angRotation if not this won't work
+
+	Assert( (uintp)qa >= (uintp)ea && (uintp)qa < (uintp)ea + sizeof( QAngle ));
+
+#ifdef CFUNCROTATING_CLIENTSIDE_SUPPORT
+	if ( entity->HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
+	{
+		const QAngle *a = &entity->m_vecClientAngles;
+
+		pOut->m_Float = anglemod( (*a)[ qa - ea ] );
+		return;
+	}
+#endif
+
+	pOut->m_Float = anglemod( *qa );
+
+	Assert( IsFinite( pOut->m_Float ) );
+}
+
 
 extern void SendProxy_SimulationTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID );
 void SendProxy_FuncRotatingSimulationTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
 {
+#ifdef CFUNCROTATING_CLIENTSIDE_SUPPORT
 	CFuncRotating *entity = (CFuncRotating*)pStruct;
 	Assert( entity );
+
 	if ( entity->HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
 	{
 		pOut->m_Int = 0;
 		return;
 	}
+#endif
 
 	SendProxy_SimulationTime( pProp, pStruct, pVarData, pOut, iElement, objectID );
 }
@@ -550,7 +590,10 @@ IMPLEMENT_SERVERCLASS_ST(CFuncRotating, DT_FuncRotating)
 	SendPropExclude( "DT_BaseEntity", "m_flSimulationTime" ),
 
 	SendPropVector(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_FuncRotatingOrigin ),
-	SendPropQAngles(SENDINFO(m_angRotation), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngles ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 0), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 1), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle ),
+	SendPropAngle( SENDINFO_VECTORELEM(m_angRotation, 2), 13, SPROP_CHANGES_OFTEN, SendProxy_FuncRotatingAngle ),
+
 	SendPropInt(SENDINFO(m_flSimulationTime), SIMULATION_TIME_WINDOW_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN|SPROP_ENCODED_AGAINST_TICKCOUNT, SendProxy_FuncRotatingSimulationTime),
 END_SEND_TABLE()
 
@@ -568,7 +611,7 @@ bool CFuncRotating::KeyValue( const char *szKeyName, const char *szValue )
 	else if (FStrEq(szKeyName, "Volume"))
 	{
 		m_flVolume = atof(szValue) / 10.0;
-		m_flVolume = clamp(m_flVolume, 0.0, 1.0f);
+		m_flVolume = clamp(m_flVolume, 0.0f, 1.0f);
 	}
 	else
 	{ 
@@ -584,7 +627,7 @@ bool CFuncRotating::KeyValue( const char *szKeyName, const char *szValue )
 //-----------------------------------------------------------------------------
 void CFuncRotating::Spawn( )
 {
-#ifdef TF_DLL
+#if defined( CFUNCROTATING_CLIENTSIDE_SUPPORT )
 	AddSpawnFlags( SF_BRUSH_ROTATE_CLIENTSIDE );
 #endif
 
@@ -711,11 +754,13 @@ void CFuncRotating::Spawn( )
 		SetSolid( SOLID_BSP );
 	}
 
+#ifdef CFUNCROTATING_CLIENTSIDE_SUPPORT
 	if ( HasSpawnFlags(SF_BRUSH_ROTATE_CLIENTSIDE) )
 	{
 		m_vecClientOrigin = GetLocalOrigin();
 		m_vecClientAngles = GetLocalAngles();
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -800,11 +845,11 @@ void CFuncRotating::RampPitchVol( void )
 	// Calc volume and pitch as % of maximum vol and pitch.
 	//
 	float fpct = fabs(m_flSpeed) / m_flMaxSpeed;
-	float fvol = clamp(m_flVolume * fpct, 0, 1);			  // slowdown volume ramps down to 0
+	float fvol = clamp(m_flVolume * fpct, 0.f, 1.f);			  // slowdown volume ramps down to 0
 
 	float fpitch = FANPITCHMIN + (FANPITCHMAX - FANPITCHMIN) * fpct;	
 	
-	int pitch = (int)clamp(fpitch, 0, 255);
+	int pitch = clamp(FastFloatToSmallInt(fpitch), 0, 255);
 	if (pitch == PITCH_NORM)
 	{
 		pitch = PITCH_NORM - 1;
@@ -1221,7 +1266,7 @@ void CFuncRotating::InputSetSpeed( inputdata_t &inputdata )
 	float flSpeed = inputdata.value.Float();
 	m_bReversed = flSpeed < 0 ? true : false;
 	flSpeed = fabs(flSpeed);
-	SetTargetSpeed( clamp( flSpeed, 0, 1 ) * m_flMaxSpeed );
+	SetTargetSpeed( clamp( flSpeed, 0.f, 1.f ) * m_flMaxSpeed );
 }
 
 

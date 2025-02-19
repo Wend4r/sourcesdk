@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Game-specific impact effect hooks
 //
@@ -13,7 +13,7 @@
 #include "particles_localspace.h"
 #include "dlight.h"
 #include "iefx.h"
-#include "ClientEffectPrecacheSystem.h"
+#include "clienteffectprecachesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -329,22 +329,11 @@ void AR2ExplosionCallback( const CEffectData &data )
 	
 	float radius = data.m_flRadius * 0.15f;
 
-	unsigned int flags;
-
 	// Base vertical shaft
 	FXLineData_t lineData;
 
 	start = data.m_vOrigin;
 	end = start + ( data.m_vNormal * random->RandomFloat( radius*2.0f, radius*4.0f ) );
-
-	if ( random->RandomInt( 0, 1 ) )
-	{
-		flags |= FXSTATICLINE_FLIP_HORIZONTAL;
-	}
-	else
-	{
-		flags = 0;
-	}
 
 	lineData.m_flDieTime = lifetime;
 	
@@ -367,15 +356,6 @@ void AR2ExplosionCallback( const CEffectData &data )
 	// Inner filler shaft
 	start = data.m_vOrigin;
 	end = start + ( data.m_vNormal * random->RandomFloat( 16, radius*0.25f ) );
-
-	if ( random->RandomInt( 0, 1 ) )
-	{
-		flags |= FXSTATICLINE_FLIP_HORIZONTAL;
-	}
-	else
-	{
-		flags = 0;
-	}
 
 	lineData.m_flDieTime = lifetime - 0.1f;
 	

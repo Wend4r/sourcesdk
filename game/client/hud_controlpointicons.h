@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -17,9 +17,10 @@
 #include <vgui_controls/ImagePanel.h>
 #include "vgui_controls/EditablePanel.h"
 #include "vgui_controls/AnimationController.h"
-#include "vgui_controls/circularprogressbar.h"
-#include <vgui/isurface.h>
-#include "iconpanel.h"
+#include "vgui_controls/CircularProgressBar.h"
+#include <vgui/ISurface.h>
+#include "tf_controls.h"
+#include "IconPanel.h"
 
 #define PULSE_TIME_PER_ICON		1.5f
 
@@ -38,6 +39,8 @@ extern ConVar mp_blockstyle;
 #define CAP_BOX_INDENT_X				XRES(2)
 #define CAP_BOX_INDENT_Y				YRES(2)
 
+#define CP_TEXTURE_COUNT	8
+
 class CControlPointIcon;
 
 // Options for how the cap progress teardrop positions itself around the cap point icon
@@ -46,6 +49,35 @@ enum
 	CP_DIR_N,
 	CP_DIR_NW,
 	CP_DIR_NE,
+};
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+class CControlPointCountdown : public vgui::EditablePanel
+{
+	DECLARE_CLASS_SIMPLE( CControlPointCountdown, vgui::EditablePanel );
+
+public:
+	CControlPointCountdown(Panel *parent, const char *name);
+
+	virtual void ApplySchemeSettings( IScheme *scheme );
+	virtual void PerformLayout();
+	virtual void OnTick( void );
+
+	void SetUnlockTime( float flTime );
+	float GetUnlockTime( void ){ return m_flUnlockTime; }
+
+private:
+
+	bool	m_bFire5SecRemain;
+	bool	m_bFire4SecRemain;
+	bool	m_bFire3SecRemain;
+	bool	m_bFire2SecRemain;
+	bool	m_bFire1SecRemain;
+	bool	m_bFire0SecRemain;
+
+	int		m_flUnlockTime;
 };
 
 //-----------------------------------------------------------------------------
@@ -84,7 +116,9 @@ class CControlPointIconSwoop : public vgui::ImagePanel, public CGameEventListene
 {
 	DECLARE_CLASS_SIMPLE( CControlPointIconSwoop, vgui::ImagePanel );
 public:
-	CControlPointIconSwoop(Panel *parent, const char *name) : vgui::ImagePanel( parent, name )
+	CControlPointIconSwoop(Panel *parent, const char *name, bool bDown = true ) 
+		: vgui::ImagePanel( parent, name )
+		, m_bDown( bDown )
 	{
 		SetImage( "../sprites/obj_icons/capture_highlight" );
 		SetShouldScaleImage( true );
@@ -98,7 +132,8 @@ public:
 		if (GetImage())
 		{
 			surface()->DrawSetColor(255, 255, 255, 255);
-			int iYPos = RemapValClamped( flElapsedTime, 0, STARTCAPANIM_SWOOP_LENGTH, 0, GetTall() );
+			int iYPos =  m_bDown ? RemapValClamped( flElapsedTime, 0, STARTCAPANIM_SWOOP_LENGTH, 0, GetTall() )
+								 : RemapValClamped( flElapsedTime, 0, STARTCAPANIM_SWOOP_LENGTH, 0, -GetTall() );
 			GetImage()->SetPos( 0, iYPos );
 			GetImage()->Paint();
 		}
@@ -133,6 +168,7 @@ public:
 
 private:
 	float				m_flStartCapAnimStart;
+	bool				m_bDown;
 };
 
 //-----------------------------------------------------------------------------
@@ -277,20 +313,48 @@ public:
 	void		 SetCapProgressDir( int iDir ) { m_iCapProgressDir = iDir; }
 	void		 FakePulse( float flTime );
 	bool		 IsVisible( void );
+	virtual void Paint( void );
+	bool		 IsPointUnlockCountdownRunning( void );
+
+	virtual void FireGameEvent( IGameEvent *event );
+
+	void SetUnlockTime( float flTime )
+	{
+		if ( m_pCountdown )
+		{
+			m_pCountdown->SetUnlockTime( flTime );
+		}
+	}
+
+	void SetTimerTime( float flTime ); // used to display CCPTimerLogic countdowns
+
+private:
+	virtual void OnTick();
 
 private:
 	int								m_iCPIndex;
 	vgui::ImagePanel				*m_pOverlayImage;
 	CControlPointIconPulseable		*m_pBaseImage;
 	CControlPointIconCapArrow		*m_pCapImage;
-	CControlPointIconSwoop			*m_pCapHighlightImage;
-	CControlPointIconCapturePulse	*m_pCapPulseImage;
+	DHANDLE< CControlPointIconSwoop	>	m_pCapHighlightImage;
+	DHANDLE< CControlPointIconCapturePulse > m_pCapPulseImage;
 	vgui::ImagePanel				*m_pCapPlayerImage;
 	vgui::Label						*m_pCapNumPlayers;
 	bool							m_bSwipeUp;
 	float							m_flStartCapAnimStart;
 	int								m_iCapProgressDir;
 	int								m_iPrevCappers;
+	bool							m_bCachedLockedState;
+
+	bool							m_bCachedCountdownState;
+	CControlPointCountdown			*m_pCountdown;
+
+	DHANDLE< CExLabel >				m_pCPTimerLabel; // used to display CCPTimerLogic countdowns
+	DHANDLE< vgui::ImagePanel >		m_pCPTimerBG; // used to display CCPTimerLogic countdowns
+	float							m_flCPTimerTime;
+	bool							m_bRedText;
+	Color							m_cRegularColor;
+	Color							m_cHighlightColor;
 };
 
 //-----------------------------------------------------------------------------
@@ -340,8 +404,8 @@ public:
 	}
 
 private:
-	int m_iCPTextures[8];
-	int m_iCPCappingTextures[8];
+	int m_iCPTextures[CP_TEXTURE_COUNT];
+	int m_iCPCappingTextures[CP_TEXTURE_COUNT];
 	int m_iTeamBaseTextures[MAX_TEAMS];
 
 	int m_iBackgroundTexture;

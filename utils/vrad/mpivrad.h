@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -17,9 +17,6 @@
 	#define VMPI_SUBPACKETID_VIS_LEAFS			0
 	#define VMPI_SUBPACKETID_BUILDFACELIGHTS	1
 	#define VMPI_SUBPACKETID_PLIGHTDATA_RESULTS	2
-
-// DistributeWork owns this packet ID.
-#define VMPI_DISTRIBUTEWORK_PACKETID			2
 
 
 // Called first thing in the exe.

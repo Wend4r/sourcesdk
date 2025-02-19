@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A moving vehicle that is used as a battering ram
 //
@@ -717,7 +717,7 @@ bool CFourWheelVehiclePhysics::Think()
 	m_nLastSpeed = m_nSpeed;
 	m_nSpeed = ( int )carSpeed;
 	m_nRPM = ( int )carState.engineRPM;
-	m_nHasBoost = (int)vehicleData.engine.boostDelay;	// if we have any boost delay, vehicle has boost ability
+	m_nHasBoost = vehicleData.engine.boostDelay;	// if we have any boost delay, vehicle has boost ability
 
 	m_pVehicle->Update( gpGlobals->frametime, m_controls);
 
@@ -787,10 +787,7 @@ bool CFourWheelVehiclePhysics::Think()
 	#define STEER_DAMPING	0.8
 	float flSteer = GetPoseParameter( m_poseParameters[VEH_STEER] );
 	float flPhysicsSteer = carState.steeringAngle / vehicleData.steering.degreesSlow;
-	float value = (STEER_DAMPING * flSteer) + ((1 - STEER_DAMPING) * flPhysicsSteer);
-	if (!IsFinite(value))
-		value = 0;
-	SetPoseParameter( m_poseParameters[VEH_STEER], value );
+	SetPoseParameter( m_poseParameters[VEH_STEER], (STEER_DAMPING * flSteer) + ((1 - STEER_DAMPING) * flPhysicsSteer) );
 
 	m_actionValue += m_actionSpeed * m_actionScale * gpGlobals->frametime;
 	SetPoseParameter( m_poseParameters[VEH_ACTION], m_actionValue );
@@ -1388,7 +1385,7 @@ void CFourWheelVehiclePhysics::UpdateDriverControls( CUserCmd *cmd, float flFram
 		m_bLastThrottle = false;
 	}
 
-	float flSpeedPercentage = clamp( m_nSpeed / m_flMaxSpeed, 0, 1 );
+	float flSpeedPercentage = clamp( m_nSpeed / m_flMaxSpeed, 0.f, 1.f );
 	vbs_sound_update_t params;
 	params.Defaults();
 	params.bReverse = (m_controls.throttle < 0);

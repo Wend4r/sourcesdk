@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		barnacle - stationary ceiling mounted 'fishing' monster	
 //
@@ -35,7 +35,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-extern ConVar	sv_gravity;
+float GetCurrentGravity( void );
 ConVar	sk_barnacle_health( "sk_barnacle_health","0");
 
 static ConVar npc_barnacle_swallow( "npc_barnacle_swallow", "0", 0, "Use prototype swallow code." );
@@ -402,7 +402,7 @@ void CNPC_Barnacle::PlayerHasIlluminatedNPC( CBasePlayer *pPlayer, float flDot )
 	// Create a sound to scare friendly allies away from the base on the barnacle
 	if( IsAlive() )
 	{
- 		CSoundEnt::InsertSound( SOUND_MOVE_AWAY | SOUND_CONTEXT_ALLIES_ONLY, m_vecTip, 60, FLASHLIGHT_NPC_CHECK_INTERVAL );
+ 		CSoundEnt::InsertSound( SOUND_MOVE_AWAY | SOUND_CONTEXT_ALLIES_ONLY, m_vecTip, 60.0f, FLASHLIGHT_NPC_CHECK_INTERVAL );
 	}
 }
 
@@ -893,7 +893,7 @@ void CNPC_Barnacle::PullEnemyTorwardsMouth( bool bAdjustEnemyOrigin )
 			{
 				// get us there in a second
 				Vector desiredVelocity;
-				float distToMove = MIN(distFromCenter, 24.0f * dt);
+				float distToMove = min(distFromCenter, 24.0f * dt);
 				desiredVelocity.x = vToCenter.x * distToMove;
 				desiredVelocity.y = vToCenter.y * distToMove;
 				desiredVelocity.z = 0;
@@ -1810,7 +1810,10 @@ void CNPC_Barnacle::SwallowPrey( void )
 
 #if HL2_EPISODIC
 		// digest poisonous things for just a moment before being killed by them (it looks wierd if it's instant)
-		m_flDigestFinish = gpGlobals->curtime + m_bSwallowingPoison ? 0.48f : 10.0f;
+		// Parentheses were probably intended around the ?: part of the expression, but putting them there now
+		// would change the behavior which is undesirable, so parentheses were placed around the '+' to suppress
+		// compiler warnings.
+		m_flDigestFinish = ( gpGlobals->curtime + m_bSwallowingPoison ) ? 0.48f : 10.0f;
 #else
 		m_flDigestFinish = gpGlobals->curtime + 10.0;
 #endif
@@ -1972,7 +1975,7 @@ void CNPC_Barnacle::UpdateTongue( void )
 
 	// Compute the rest length of the tongue based on the spring. 
 	// This occurs when mg == kx or x = mg/k
-	float flRestStretch = (BARNACLE_TONGUE_TIP_MASS * sv_gravity.GetFloat()) / BARNACLE_TONGUE_SPRING_CONSTANT_HANGING;
+	float flRestStretch = (BARNACLE_TONGUE_TIP_MASS * GetCurrentGravity()) / BARNACLE_TONGUE_SPRING_CONSTANT_HANGING;
 
 	// FIXME: HACK!!!! The code above doesn't quite make the tip end up in the right place.
 	// but it should. So, we're gonna hack it the rest of the way.
@@ -1989,7 +1992,7 @@ void CNPC_Barnacle::SpawnDeathGibs( void )
 	bool bDroppedAny = false;
 
 	// Drop a random number of gibs
-	for ( size_t i=0; i < ARRAYSIZE(m_szGibNames); i++ )
+	for ( int i=0; i < ARRAYSIZE(m_szGibNames); i++ )
 	{
 		if ( random->RandomInt( 0, 1 ) )
 		{
@@ -2296,7 +2299,7 @@ void CNPC_Barnacle::Precache()
 	PrecacheModel("models/barnacle.mdl");
 
 	// Precache all gibs
-	for ( size_t i=0; i < ARRAYSIZE(m_szGibNames); i++ )
+	for ( int i=0; i < ARRAYSIZE(m_szGibNames); i++ )
 	{
 		PrecacheModel( m_szGibNames[i] );
 	}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,9 +8,9 @@
 #include "cbase.h"
 #include "idebugoverlaypanel.h"
 #include "overlaytext.h"
-#include <vgui/IVgui.h>
-#include "engine/IVDebugOverlay.h"
-#include "vguimatsurface/imatsystemsurface.h"
+#include <vgui/IVGui.h>
+#include "engine/ivdebugoverlay.h"
+#include "VGuiMatSurface/IMatSystemSurface.h"
 #include <vgui_controls/Panel.h>
 #include <vgui_controls/Controls.h>
 #include <vgui/IScheme.h>
@@ -90,12 +90,16 @@ void CDebugOverlay::ApplySchemeSettings(vgui::IScheme *pScheme)
 //-----------------------------------------------------------------------------
 void CDebugOverlay::OnTick( void )
 {
-	SetVisible( ShouldDraw() );
+	bool bVisible = ShouldDraw();
+	if ( IsVisible() != bVisible )
+	{
+		SetVisible( bVisible );
+	}
 }
 
 bool CDebugOverlay::ShouldDraw( void )
 {
-	if ( debugoverlay->GetFirst() )
+	if ( debugoverlay && debugoverlay->GetFirst() )
 		return true;
 	return false;
 }
@@ -105,6 +109,9 @@ bool CDebugOverlay::ShouldDraw( void )
 //-----------------------------------------------------------------------------
 void CDebugOverlay::Paint()
 {
+	if (!debugoverlay)
+		return;
+
 	OverlayText_t* pCurrText = debugoverlay->GetFirst();
 	while (pCurrText) 
 	{
@@ -125,7 +132,7 @@ void CDebugOverlay::Paint()
 				{
 					float xPos		= screenPos[0];
 					float yPos		= screenPos[1]+ (pCurrText->lineOffset*13); // Line spacing;
-					g_pMatSystemSurface->DrawColoredText( m_hFont, xPos, yPos, r, g, b, a, pCurrText->text );
+					g_pMatSystemSurface->DrawColoredText( m_hFont, xPos, yPos, r, g, b, a, "%s", pCurrText->text );
 				}
 			}
 			else
@@ -134,7 +141,7 @@ void CDebugOverlay::Paint()
 				{	
 					float xPos		= screenPos[0];
 					float yPos		= screenPos[1]+ (pCurrText->lineOffset*13); // Line spacing;
-					g_pMatSystemSurface->DrawColoredText( m_hFont, xPos, yPos, r, g, b, a, pCurrText->text );
+					g_pMatSystemSurface->DrawColoredText( m_hFont, xPos, yPos, r, g, b, a, "%s", pCurrText->text );
 				}
 			}
 		}
@@ -162,7 +169,8 @@ public:
 		if ( debugOverlayPanel )
 		{
 			debugOverlayPanel->SetParent( (vgui::Panel *)NULL );
-			delete debugOverlayPanel;
+			debugOverlayPanel->MarkForDeletion();
+			debugOverlayPanel = NULL;
 		}
 	}
 };
@@ -173,5 +181,8 @@ IDebugOverlayPanel *debugoverlaypanel =  ( IDebugOverlayPanel * )&g_DebugOverlay
 
 void DebugDrawLine( const Vector& vecAbsStart, const Vector& vecAbsEnd, int r, int g, int b, bool test, float duration )
 {
-	debugoverlay->AddLineOverlay( vecAbsStart + Vector( 0,0,0.1), vecAbsEnd + Vector( 0,0,0.1), r,g,b, test, duration );
+	if ( debugoverlay )
+	{
+		debugoverlay->AddLineOverlay( vecAbsStart + Vector( 0,0,0.1), vecAbsEnd + Vector( 0,0,0.1), r,g,b, test, duration );
+	}
 }

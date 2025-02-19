@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,11 +10,22 @@
 #pragma once
 #endif
 
+class CEnvSoundscape;
 
-class CEnvSoundscape : public CPointEntity
+struct ss_update_t
+{
+	CBasePlayer *pPlayer;
+	CEnvSoundscape	*pCurrentSoundscape;
+	Vector		playerPosition;
+	float		currentDistance;
+	int			traceCount;
+	bool		bInRange;
+};
+
+class CEnvSoundscape : public CServerOnlyPointEntity
 {
 public:
-	DECLARE_CLASS( CEnvSoundscape, CPointEntity );
+	DECLARE_CLASS( CEnvSoundscape, CServerOnlyPointEntity );
 	DECLARE_DATADESC();
 
 	CEnvSoundscape();
@@ -23,9 +34,8 @@ public:
 	bool KeyValue( const char *szKeyName, const char *szValue );
 	void Spawn( void );
 	void Precache( void );
-	void Update( void );
+	void UpdateForPlayer( ss_update_t &update );
 	void WriteAudioParamsTo( audioparams_t &audio );
-	virtual int UpdateTransmitState();
 	bool InRangeOfPlayer( CBasePlayer *pPlayer );
 	void DrawDebugGeometryOverlays( void );
 
@@ -42,14 +52,13 @@ private:
 	void Disable( void );
 	void Enable( void );
 
-	bool UpdatePlayersInPVS();
-
 
 public:
 	COutputEvent	m_OnPlay;
 	float	m_flRadius;
 	string_t m_soundscapeName;
 	int		m_soundscapeIndex;
+	int		m_soundscapeEntityId;
 	string_t m_positionNames[NUM_AUDIO_LOCAL_SOUNDS];
 	
 	// If this is set, then this soundscape ignores all its parameters and uses
@@ -59,12 +68,6 @@ public:
 
 private:
 
-	// Updated every couple seconds. Then we check against these players often.
-	CUtlVector<CBasePlayerHandle> m_hPlayersInPVS;
-
-	// Next time to update the m_hPlayersInPVS list.
-	float m_flNextUpdatePlayersInPVS;
-	
 	bool	m_bDisabled;
 };
 

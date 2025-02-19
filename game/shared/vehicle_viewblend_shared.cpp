@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Used to calculate the player's view in the vehicle
 //
@@ -290,7 +290,10 @@ void SharedVehicleViewSmoothing(CBasePlayer *pPlayer,
 
 				pData->pVehicle->GetAttachmentLocal( eyeAttachmentIndex, localEyeOrigin, localEyeAngles );
 #ifdef CLIENT_DLL
-				engine->SetViewAngles( localEyeAngles );
+				if ( pPlayer->IsLocalPlayer() )
+				{
+					engine->SetViewAngles( localEyeAngles );
+				}
 #endif
 			}
 		}
@@ -334,7 +337,7 @@ void SharedVehicleViewSmoothing(CBasePlayer *pPlayer,
 	// If we're playing an entry or exit animation...
 	if ( bRunningAnim || pData->bRunningEnterExit )
 	{
-		float flSplineFrac = clamp( SimpleSpline( frac ), 0, 1 );
+		float flSplineFrac = clamp( SimpleSpline( frac ), 0.f, 1.f );
 
 		// Blend out the error between the player's initial eye angles and the animation's initial
 		// eye angles over the duration of the animation. 

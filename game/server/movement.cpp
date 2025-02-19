@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: MOVEMENT ENTITIES TEST
 //
@@ -146,9 +146,9 @@ void CPathKeyFrame::CalculateFrameDuration( void )
 			float x = 0;
 			for ( int i = 0; i < 3; i++ )
 			{
-				if ( fabs(ang[i]) > x )
+				if ( abs(ang[i]) > x )
 				{
-					x = fabs(ang[i]);
+					x = abs(ang[i]);
 				}
 			}
 

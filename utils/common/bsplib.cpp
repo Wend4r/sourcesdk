@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,26 +11,30 @@
 #include "bsplib.h"
 #include "zip_utils.h"
 #include "scriplib.h"
-#include "UtlLinkedList.h"
-#include "BSPTreeData.h"
-#include "CModel.h"
-#include "GameBSPFile.h"
+#include "utllinkedlist.h"
+#include "bsptreedata.h"
+#include "cmodel.h"
+#include "gamebspfile.h"
 #include "materialsystem/imaterial.h"
 #include "materialsystem/hardwareverts.h"
-#include "UtlBuffer.h"
-#include "UtlRBTree.h"
-#include "UtlSymbol.h"
-#include "UtlString.h"
+#include "utlbuffer.h"
+#include "utlrbtree.h"
+#include "utlsymbol.h"
+#include "utlstring.h"
 #include "checksum_crc.h"
 #include "physdll.h"
 #include "tier0/dbg.h"
 #include "lumpfiles.h"
 #include "vtf/vtf.h"
+#include "lzma/lzma.h"
+#include "tier1/lzmaDecoder.h"
+
+#include "tier0/memdbgon.h"
 
 //=============================================================================
 
 // Boundary each lump should be aligned to
-#define LUMP_ALIGNMENT	4	
+#define LUMP_ALIGNMENT	4
 
 // Data descriptions for byte swapping - only needed
 // for structures that are written to file for use by the game.
@@ -45,7 +49,7 @@ BEGIN_BYTESWAP_DATADESC( lump_t )
 	DEFINE_FIELD( fileofs, FIELD_INTEGER ),
 	DEFINE_FIELD( filelen, FIELD_INTEGER ),
 	DEFINE_FIELD( version, FIELD_INTEGER ),
-	DEFINE_ARRAY( fourCC, FIELD_CHARACTER, 4 ),
+	DEFINE_FIELD( uncompressedSize, FIELD_INTEGER ),
 END_BYTESWAP_DATADESC()
 
 BEGIN_BYTESWAP_DATADESC( dflagslump_t )
@@ -460,7 +464,7 @@ BEGIN_BYTESWAP_DATADESC( FileHeader_t )
 END_BYTESWAP_DATADESC()
 } // end namespace
 
-static char *s_LumpNames[] = {
+static const char *s_LumpNames[] = {
 	"LUMP_ENTITIES",						// 0
 	"LUMP_PLANES",							// 1
 	"LUMP_TEXDATA",							// 2
@@ -703,7 +707,7 @@ template< class T > static void AddLump( int lumpnum, CUtlVector<T> &data, int v
 dheader_t		*g_pBSPHeader;
 FileHandle_t	g_hBSPFile;
 
-struct 
+struct Lump_t
 {
 	void	*pLumps[HEADER_LUMPS];
 	int		size[HEADER_LUMPS];
@@ -815,9 +819,10 @@ void ClearPakFile( IZip *pak )
 // Input  : *relativename - 
 //			*fullpath - 
 //-----------------------------------------------------------------------------
-void AddFileToPak( IZip *pak, const char *relativename, const char *fullpath )
+void AddFileToPak( IZip *pak, const char *relativename, const char *fullpath, IZip::eCompressionType compressionType )
 {
-	pak->AddFileToZip( relativename, fullpath );
+	DevMsg( "Adding file to pakfile [ %s ]\n", fullpath );
+	pak->AddFileToZip( relativename, fullpath, compressionType );
 }
 
 //-----------------------------------------------------------------------------
@@ -826,9 +831,65 @@ void AddFileToPak( IZip *pak, const char *relativename, const char *fullpath )
 //			*data - 
 //			length - 
 //-----------------------------------------------------------------------------
-void AddBufferToPak( IZip *pak, const char *pRelativeName, void *data, int length, bool bTextMode )
+void AddBufferToPak( IZip *pak, const char *pRelativeName, void *data, int length, bool bTextMode, IZip::eCompressionType compressionType )
 {
-	pak->AddBufferToZip( pRelativeName, data, length, bTextMode );
+	pak->AddBufferToZip( pRelativeName, data, length, bTextMode, compressionType );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Add entire directory to .bsp PAK lump as named file
+// Input  : *relativename - 
+//			*data - 
+//			length - 
+//-----------------------------------------------------------------------------
+void AddDirToPak( IZip *pak, const char *pDirPath, const char *pPakPrefix )
+{
+	if ( !g_pFullFileSystem->IsDirectory( pDirPath ) )
+	{
+		Warning( "Passed non-directory to AddDirToPak [ %s ]\n", pDirPath );
+		return;
+	}
+
+	DevMsg( "Adding directory to pakfile [ %s ]\n", pDirPath );
+
+	// Enumerate dir
+	char szEnumerateDir[MAX_PATH] = { 0 };
+	V_snprintf( szEnumerateDir, sizeof( szEnumerateDir ), "%s/*.*", pDirPath );
+	V_FixSlashes( szEnumerateDir );
+
+	FileFindHandle_t handle;
+	const char *szFindResult = g_pFullFileSystem->FindFirst( szEnumerateDir, &handle );
+	do
+	{
+		if ( szFindResult[0] != '.' )
+		{
+			char szPakName[MAX_PATH] = { 0 };
+			char szFullPath[MAX_PATH] = { 0 };
+			if ( pPakPrefix )
+			{
+				V_snprintf( szPakName, sizeof( szPakName ), "%s/%s", pPakPrefix, szFindResult );
+			}
+			else
+			{
+				V_strncpy( szPakName, szFindResult, sizeof( szPakName ) );
+			}
+			V_snprintf( szFullPath, sizeof( szFullPath ), "%s/%s", pDirPath, szFindResult );
+			V_FixDoubleSlashes( szFullPath );
+			V_FixDoubleSlashes( szPakName );
+
+			if ( g_pFullFileSystem->FindIsDirectory( handle ) )
+			{
+				// Recurse
+				AddDirToPak( pak, szFullPath, szPakName );
+			}
+			else
+			{
+				// Just add this file
+				AddFileToPak( pak, szPakName, szFullPath );
+			}
+		}
+		szFindResult = g_pFullFileSystem->FindNext( handle );
+	} while ( szFindResult);
 }
 
 //-----------------------------------------------------------------------------
@@ -1212,7 +1273,7 @@ int	TexDataStringTable_AddOrFindString( const char *pString )
 		}
 	}
 
-	int len = strlen( pString );
+	int len = V_strlen( pString );
 	int outOffset = g_TexDataStringData.AddMultipleToTail( len+1, pString );
 	int outIndex = g_TexDataStringTable.AddToTail( outOffset );
 	return outIndex;
@@ -1290,14 +1351,11 @@ static void AddOcclusionLump( )
 		3 * sizeof(int);
 
 	lump_t *lump = &g_pBSPHeader->lumps[LUMP_OCCLUSION];
-	
+
 	lump->fileofs = g_pFileSystem->Tell( g_hBSPFile );
 	lump->filelen = nLumpLength;
 	lump->version = LUMP_OCCLUSION_VERSION;
-	lump->fourCC[0] = ( char )0;
-	lump->fourCC[1] = ( char )0;
-	lump->fourCC[2] = ( char )0;
-	lump->fourCC[3] = ( char )0;
+	lump->uncompressedSize = 0;
 
 	// Data is swapped in place, so the 'Count' variables aren't safe to use after they're written
 	WriteData( FIELD_INTEGER, &nOccluderCount );
@@ -2213,6 +2271,11 @@ void LoadBSPFile( const char *filename )
 	CopyLump( FIELD_CHARACTER, LUMP_TEXDATA_STRING_DATA, g_TexDataStringData );
 	CopyLump( FIELD_INTEGER, LUMP_TEXDATA_STRING_TABLE, g_TexDataStringTable );
 
+	// It's assumed by other code that the data lump is filled with C strings. We need to make sure that 
+	// the buffer as a whole ends with a '\0'.
+	if ( g_TexDataStringData.Count() > 0 && g_TexDataStringData.Tail() != 0 )
+		Error( "Cannot load corrupted bsp file %s", filename );
+
 	g_nOverlayCount = CopyLump( LUMP_OVERLAYS, g_Overlays );
 	g_nWaterOverlayCount = CopyLump( LUMP_WATEROVERLAYS, g_WaterOverlays );
 	CopyLump( LUMP_OVERLAY_FADES, g_OverlayFades );
@@ -2231,12 +2294,12 @@ void LoadBSPFile( const char *filename )
 	CopyLump( FIELD_SHORT, LUMP_LEAFMINDISTTOWATER, g_LeafMinDistToWater );
 
 	/*
-	int crap;
-	for( crap = 0; crap < g_nBSPStringTable; crap++ )
+	int junk;
+	for( junk = 0; junk < g_nBSPStringTable; junk++ )
 	{
-		Msg( "stringtable %d", ( int )crap );
-		Msg( " %d:",  ( int )g_BSPStringTable[crap] );
-		puts( &g_BSPStringData[g_BSPStringTable[crap]] );
+		Msg( "stringtable %d", ( int )junk );
+		Msg( " %d:",  ( int )g_BSPStringTable[junk] );
+		puts( &g_BSPStringData[g_BSPStringTable[junk]] );
 		puts( "\n" );
 	}
 	*/
@@ -2484,14 +2547,11 @@ static void AddLumpInternal( int lumpnum, void *data, int len, int version )
 	g_Lumps.size[lumpnum] = 0;	// mark it written
 
 	lump = &g_pBSPHeader->lumps[lumpnum];
-	
+
 	lump->fileofs = g_pFileSystem->Tell( g_hBSPFile );
 	lump->filelen = len;
 	lump->version = version;
-	lump->fourCC[0] = ( char )0;
-	lump->fourCC[1] = ( char )0;
-	lump->fourCC[2] = ( char )0;
-	lump->fourCC[3] = ( char )0;
+	lump->uncompressedSize = 0;
 
 	SafeWrite( g_hBSPFile, data, len );
 
@@ -2730,11 +2790,44 @@ void WriteLumpToFile( char *filename, int lump )
 	SafeWrite (lumpfile, (byte *)g_pBSPHeader + ofs, length);
 }
 
+void	WriteLumpToFile( char *filename, int lump, int nLumpVersion, void *pBuffer, size_t nBufLen )
+{
+	char lumppre[MAX_PATH];	
+	if ( !GenerateNextLumpFileName( filename, lumppre, MAX_PATH ) )
+	{
+		Warning( "Failed to find valid lump filename for bsp %s.\n", filename );
+		return;
+	}
+
+	// Open the file
+	FileHandle_t lumpfile = g_pFileSystem->Open(lumppre, "wb");
+	if ( !lumpfile )
+	{
+		Error ("Error opening %s! (Check for write enable)\n",filename);
+		return;
+	}
+
+	// Write the header
+	lumpfileheader_t lumpHeader;
+	lumpHeader.lumpID = lump;
+	lumpHeader.lumpVersion = nLumpVersion;
+	lumpHeader.lumpLength = (int)nBufLen;
+	lumpHeader.mapRevision = LittleLong( g_MapRevision );
+	lumpHeader.lumpOffset = sizeof(lumpfileheader_t);	// Lump starts after the header
+	SafeWrite( lumpfile, &lumpHeader, sizeof(lumpfileheader_t));
+
+	// Write the lump
+	SafeWrite( lumpfile, pBuffer, (int)nBufLen );
+
+	g_pFileSystem->Close( lumpfile );
+}
+
+
 //============================================================================
 #define ENTRIES(a)		(sizeof(a)/sizeof(*(a)))
 #define ENTRYSIZE(a)	(sizeof(*(a)))
 
-int ArrayUsage( char *szItem, int items, int maxitems, int itemsize )
+int ArrayUsage( const char *szItem, int items, int maxitems, int itemsize )
 {
 	float	percentage = maxitems ? items * 100.0 / maxitems : 0.0;
 
@@ -2751,7 +2844,7 @@ int ArrayUsage( char *szItem, int items, int maxitems, int itemsize )
 	return items * itemsize;
 }
 
-int GlobUsage( char *szItem, int itemstorage, int maxstorage )
+int GlobUsage( const char *szItem, int itemstorage, int maxstorage )
 {
 	float	percentage = maxstorage ? itemstorage * 100.0 / maxstorage : 0.0;
     Msg("%-17.17s     [variable]    %8i/%-8i (%4.1f%%) ", 
@@ -2912,6 +3005,7 @@ epair_t *ParseEpair (void)
 	if (strlen(token) >= MAX_KEY-1)
 		Error ("ParseEpar: token too long");
 	e->key = copystring(token);
+
 	GetToken (false);
 	if (strlen(token) >= MAX_VALUE-1)
 		Error ("ParseEpar: token too long");
@@ -2989,7 +3083,7 @@ Generates the dentdata string from all the entities
 void UnparseEntities (void)
 {
 	epair_t	*ep;
-	char	line[2048];
+	char	line[2048 + 16];
 	int		i;
 	char	key[1024], value[1024];
 
@@ -3011,7 +3105,7 @@ void UnparseEntities (void)
 			strcpy (value, ep->value);
 			StripTrailing (value);
 				
-			sprintf(line, "\"%s\" \"%s\"\n", key, value);
+			V_sprintf_safe(line, "\"%s\" \"%s\"\n", key, value);
 			buffer.PutString( line );
 		}
 		buffer.PutString("}\n");
@@ -3080,6 +3174,14 @@ vec_t	FloatForKeyWithDefault (entity_t *ent, char *key, float default_value)
 int		IntForKey (entity_t *ent, char *key)
 {
 	char *k = ValueForKey (ent, key);
+	return atol(k);
+}
+
+int		IntForKeyWithDefault(entity_t *ent, char *key, int nDefault )
+{
+	char *k = ValueForKey (ent, key);
+	if ( !k[0] )
+		return nDefault;
 	return atol(k);
 }
 
@@ -3303,10 +3405,10 @@ public:
 	int LeafCount() const;
 
 	// Enumerates the leaves along a ray, box, etc.
-	bool EnumerateLeavesAtPoint( Vector const& pt, ISpatialLeafEnumerator* pEnum, int context );
-	bool EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, ISpatialLeafEnumerator* pEnum, int context );
-	bool EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, int context );
-	bool EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, int context );
+	bool EnumerateLeavesAtPoint( Vector const& pt, ISpatialLeafEnumerator* pEnum, intp context );
+	bool EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, ISpatialLeafEnumerator* pEnum, intp context );
+	bool EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, intp context );
+	bool EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, intp context );
 };
 
 
@@ -3325,7 +3427,7 @@ int CToolBSPTree::LeafCount() const
 //-----------------------------------------------------------------------------
 
 bool CToolBSPTree::EnumerateLeavesAtPoint( Vector const& pt, 
-									ISpatialLeafEnumerator* pEnum, int context )
+									ISpatialLeafEnumerator* pEnum, intp context )
 {
 	int node = 0;
 	while( node >= 0 )
@@ -3352,7 +3454,7 @@ bool CToolBSPTree::EnumerateLeavesAtPoint( Vector const& pt,
 //-----------------------------------------------------------------------------
 
 static bool EnumerateLeavesInBox_R( int node, Vector const& mins, 
-				Vector const& maxs, ISpatialLeafEnumerator* pEnum, int context )
+				Vector const& maxs, ISpatialLeafEnumerator* pEnum, intp context )
 {
 	Vector cornermin, cornermax;
 
@@ -3399,7 +3501,7 @@ static bool EnumerateLeavesInBox_R( int node, Vector const& mins,
 }
 
 bool CToolBSPTree::EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, 
-									ISpatialLeafEnumerator* pEnum, int context )
+									ISpatialLeafEnumerator* pEnum, intp context )
 {
 	return EnumerateLeavesInBox_R( 0, mins, maxs, pEnum, context );
 }
@@ -3409,7 +3511,7 @@ bool CToolBSPTree::EnumerateLeavesInBox( Vector const& mins, Vector const& maxs,
 //-----------------------------------------------------------------------------
 
 static bool EnumerateLeavesInSphere_R( int node, Vector const& origin, 
-				float radius, ISpatialLeafEnumerator* pEnum, int context )
+				float radius, ISpatialLeafEnumerator* pEnum, intp context )
 {
 	while( node >= 0 )
 	{
@@ -3440,7 +3542,7 @@ static bool EnumerateLeavesInSphere_R( int node, Vector const& origin,
 	return pEnum->EnumerateLeaf( - node - 1, context );
 }
 
-bool CToolBSPTree::EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, int context )
+bool CToolBSPTree::EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, intp context )
 {
 	return EnumerateLeavesInSphere_R( 0, center, radius, pEnum, context );
 }
@@ -3451,7 +3553,7 @@ bool CToolBSPTree::EnumerateLeavesInSphere( Vector const& center, float radius, 
 //-----------------------------------------------------------------------------
 
 static bool EnumerateLeavesAlongRay_R( int node, Ray_t const& ray, 
-	Vector const& start, Vector const& end, ISpatialLeafEnumerator* pEnum, int context )
+	Vector const& start, Vector const& end, ISpatialLeafEnumerator* pEnum, intp context )
 {
 	float front,back;
 
@@ -3514,7 +3616,7 @@ static bool EnumerateLeavesAlongRay_R( int node, Ray_t const& ray,
 	return pEnum->EnumerateLeaf( - node - 1, context );
 }
 
-bool CToolBSPTree::EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, int context )
+bool CToolBSPTree::EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, intp context )
 {
 	if (!ray.m_IsSwept)
 	{
@@ -3553,7 +3655,7 @@ ISpatialQuery* ToolBSPTree()
 // FIXME: Do we want this in the IBSPTree interface?
 
 static bool EnumerateNodesAlongRay_R( int node, Ray_t const& ray, float start, float end,
-	IBSPNodeEnumerator* pEnum, int context )
+	IBSPNodeEnumerator* pEnum, intp context )
 {
 	float front, back;
 	float startDotN, deltaDotN;
@@ -3622,7 +3724,7 @@ static bool EnumerateNodesAlongRay_R( int node, Ray_t const& ray, float start, f
 }
 
 
-bool EnumerateNodesAlongRay( Ray_t const& ray, IBSPNodeEnumerator* pEnum, int context )
+bool EnumerateNodesAlongRay( Ray_t const& ray, IBSPNodeEnumerator* pEnum, intp context )
 {
 	Vector end;
 	VectorAdd( ray.m_Start, ray.m_Delta, end );
@@ -3661,19 +3763,6 @@ void BuildClusterTable( void )
 			memcpy( g_ClusterLeaves[i].leafs.Base(), leafList, sizeof(int) * leafCount );
 		}
 	}
-}
-
-// There's a version of this in host.cpp!!!  Make sure that they match.
-void GetPlatformMapPath( const char *pMapPath, char *pPlatformMapPath, int dxlevel, int maxLength )
-{
-	Q_StripExtension( pMapPath, pPlatformMapPath, maxLength );
-
-//	if( dxlevel <= 60 )
-//	{
-//		Q_strncat( pPlatformMapPath, "_dx60", maxLength, COPY_ALL_CHARACTERS );
-//	}
-
-	Q_strncat( pPlatformMapPath, ".bsp", maxLength, COPY_ALL_CHARACTERS );
 }
 
 // There's a version of this in checksum_engine.cpp!!! Make sure that they match.
@@ -3829,7 +3918,7 @@ const char *ResolveStaticPropToModel( const char *pPropName )
 //-----------------------------------------------------------------------------
 void ConvertPakFileContents( const char *pInFilename )
 {
-	IZip *newPakFile = IZip::CreateZip( false );
+	IZip *newPakFile = IZip::CreateZip( NULL );
 
 	CUtlBuffer sourceBuf;
 	CUtlBuffer targetBuf;
@@ -3937,7 +4026,7 @@ void ConvertPakFileContents( const char *pInFilename )
 		if ( !bConverted )
 		{
 			// straight copy
-			AddBufferToPak( newPakFile, relativeName, sourceBuf.Base(), sourceBuf.TellMaxPut(), false );
+			AddBufferToPak( newPakFile, relativeName, sourceBuf.Base(), sourceBuf.TellMaxPut(), false, IZip::eCompressionType_None );
 		}
 		else
 		{
@@ -3945,7 +4034,7 @@ void ConvertPakFileContents( const char *pInFilename )
 			V_StripExtension( relativeName, relativeName, sizeof( relativeName ) );
 			V_strcat( relativeName, ".360", sizeof( relativeName ) );
 			V_strcat( relativeName, pExt, sizeof( relativeName ) );
-			AddBufferToPak( newPakFile, relativeName, targetBuf.Base(), targetBuf.TellMaxPut(), false );
+			AddBufferToPak( newPakFile, relativeName, targetBuf.Base(), targetBuf.TellMaxPut(), false, IZip::eCompressionType_None );
 		}
 
 		if ( V_stristr( relativeName, ".hdr" ) || V_stristr( relativeName, "_hdr" ) )
@@ -4365,21 +4454,28 @@ bool CompressGameLump( dheader_t *pInBSPHeader, dheader_t *pOutBSPHeader, CUtlBu
 	dgamelumpheader_t* pInGameLumpHeader = (dgamelumpheader_t*)(((byte *)pInBSPHeader) + pInBSPHeader->lumps[LUMP_GAME_LUMP].fileofs);
 	dgamelump_t* pInGameLump = (dgamelump_t*)(pInGameLumpHeader + 1);
 
-	byteSwap.ActivateByteSwapping( true );
-	byteSwap.SwapFieldsToTargetEndian( pInGameLumpHeader );
-	byteSwap.SwapFieldsToTargetEndian( pInGameLump, pInGameLumpHeader->lumpCount );
+	if ( IsX360() )
+	{
+		byteSwap.ActivateByteSwapping( true );
+		byteSwap.SwapFieldsToTargetEndian( pInGameLumpHeader );
+		byteSwap.SwapFieldsToTargetEndian( pInGameLump, pInGameLumpHeader->lumpCount );
+	}
 
 	unsigned int newOffset = outputBuffer.TellPut();
-	outputBuffer.Put( pInGameLumpHeader, sizeof( dgamelumpheader_t ) );
-	outputBuffer.Put( pInGameLump, pInGameLumpHeader->lumpCount * sizeof( dgamelump_t ) );
+	// Make room for gamelump header and gamelump structs, which we'll write at the end
+	outputBuffer.SeekPut( CUtlBuffer::SEEK_CURRENT, sizeof( dgamelumpheader_t ) );
+	outputBuffer.SeekPut( CUtlBuffer::SEEK_CURRENT, pInGameLumpHeader->lumpCount * sizeof( dgamelump_t ) );
 
-	dgamelumpheader_t* pOutGameLumpHeader = (dgamelumpheader_t*)((byte *)outputBuffer.Base() + newOffset);
-	dgamelump_t* pOutGameLump = (dgamelump_t*)(pOutGameLumpHeader + 1);
+	// Start with input lumps, and fixup
+	dgamelumpheader_t sOutGameLumpHeader = *pInGameLumpHeader;
+	CUtlBuffer sOutGameLumpBuf;
+	sOutGameLumpBuf.Put( pInGameLump, pInGameLumpHeader->lumpCount * sizeof( dgamelump_t ) );
+	dgamelump_t *sOutGameLump = (dgamelump_t *)sOutGameLumpBuf.Base();
 
 	// add a dummy terminal gamelump
 	// purposely NOT updating the .filelen to reflect the compressed size, but leaving as original size
 	// callers use the next entry offset to determine compressed size
-	pOutGameLumpHeader->lumpCount++;
+	sOutGameLumpHeader.lumpCount++;
 	dgamelump_t dummyLump = { 0 };
 	outputBuffer.Put( &dummyLump, sizeof( dgamelump_t ) );
 
@@ -4388,62 +4484,130 @@ bool CompressGameLump( dheader_t *pInBSPHeader, dheader_t *pOutBSPHeader, CUtlBu
 		CUtlBuffer inputBuffer;
 		CUtlBuffer compressedBuffer;
 
-		pOutGameLump[i].fileofs = AlignBuffer( outputBuffer, 4 );
+		sOutGameLump[i].fileofs = AlignBuffer( outputBuffer, 4 );
 
 		if ( pInGameLump[i].filelen )
 		{
-			inputBuffer.SetExternalBuffer( ((byte *)pInBSPHeader) + pInGameLump[i].fileofs, pInGameLump[i].filelen, pInGameLump[i].filelen );
+			if ( pInGameLump[i].flags & GAMELUMPFLAG_COMPRESSED )
+			{
+				byte *pCompressedLump = ((byte *)pInBSPHeader) + pInGameLump[i].fileofs;
+				if ( CLZMA::IsCompressed( pCompressedLump ) )
+				{
+					inputBuffer.EnsureCapacity( CLZMA::GetActualSize( pCompressedLump ) );
+					unsigned int outSize = CLZMA::Uncompress( pCompressedLump, (unsigned char *)inputBuffer.Base() );
+					inputBuffer.SeekPut( CUtlBuffer::SEEK_CURRENT, outSize );
+					if ( outSize != CLZMA::GetActualSize( pCompressedLump ) )
+					{
+						Warning( "Decompressed size differs from header, BSP may be corrupt\n" );
+					}
+				}
+				else
+				{
+					Assert( CLZMA::IsCompressed( pCompressedLump ) );
+					Warning( "Unsupported BSP: Unrecognized compressed game lump\n" );
+				}
 
-			bool bCompressed = pCompressFunc( inputBuffer, compressedBuffer );
+			}
+			else
+			{
+				inputBuffer.SetExternalBuffer( ((byte *)pInBSPHeader) + pInGameLump[i].fileofs,
+				                               pInGameLump[i].filelen, pInGameLump[i].filelen );
+			}
+
+			bool bCompressed = pCompressFunc ? pCompressFunc( inputBuffer, compressedBuffer ) : false;
 			if ( bCompressed )
 			{
-				pOutGameLump[i].flags |= GAMELUMPFLAG_COMPRESSED;
+				sOutGameLump[i].flags |= GAMELUMPFLAG_COMPRESSED;
 
 				outputBuffer.Put( compressedBuffer.Base(), compressedBuffer.TellPut() );
 				compressedBuffer.Purge();
 			}
 			else
 			{
-				// as is
+				// as is, clear compression flag from input lump
+				sOutGameLump[i].flags &= ~GAMELUMPFLAG_COMPRESSED;
 				outputBuffer.Put( inputBuffer.Base(), inputBuffer.TellPut() );
 			}
 		}
 	}
 
 	// fix the dummy terminal lump
-	int lastLump = pOutGameLumpHeader->lumpCount-1;
-	pOutGameLump[lastLump].fileofs = outputBuffer.TellPut();
+	int lastLump = sOutGameLumpHeader.lumpCount-1;
+	sOutGameLump[lastLump].fileofs = outputBuffer.TellPut();
 
-	// fix the output for 360, swapping it back
-	byteSwap.SwapFieldsToTargetEndian( pOutGameLump, pOutGameLumpHeader->lumpCount );
-	byteSwap.SwapFieldsToTargetEndian( pOutGameLumpHeader );
+	if ( IsX360() )
+	{
+		// fix the output for 360, swapping it back
+		byteSwap.SwapFieldsToTargetEndian( sOutGameLump, sOutGameLumpHeader.lumpCount );
+		byteSwap.SwapFieldsToTargetEndian( &sOutGameLumpHeader );
+	}
 
 	pOutBSPHeader->lumps[LUMP_GAME_LUMP].fileofs = newOffset;
 	pOutBSPHeader->lumps[LUMP_GAME_LUMP].filelen = outputBuffer.TellPut() - newOffset;
+	// We set GAMELUMPFLAG_COMPRESSED and handle compression at the sub-lump level, this whole lump is not
+	// decompressable as a block.
+	pOutBSPHeader->lumps[LUMP_GAME_LUMP].uncompressedSize = 0;
+
+	// Rewind to start and write lump headers
+	unsigned int endOffset = outputBuffer.TellPut();
+	outputBuffer.SeekPut( CUtlBuffer::SEEK_HEAD, newOffset );
+	outputBuffer.Put( &sOutGameLumpHeader, sizeof( dgamelumpheader_t ) );
+	outputBuffer.Put( sOutGameLumpBuf.Base(), sOutGameLumpBuf.TellPut() );
+	outputBuffer.SeekPut( CUtlBuffer::SEEK_HEAD, endOffset );
 
 	return true;
 }
 
-bool CompressBSP( CUtlBuffer &inputBuffer, CUtlBuffer &outputBuffer, CompressFunc_t pCompressFunc )
+//-----------------------------------------------------------------------------
+// Compress callback for RepackBSP
+//-----------------------------------------------------------------------------
+bool RepackBSPCallback_LZMA( CUtlBuffer &inputBuffer, CUtlBuffer &outputBuffer )
 {
-	CByteswap	byteSwap;
-
-	dheader_t *pInBSPHeader = (dheader_t *)inputBuffer.Base();
-	if ( pInBSPHeader->ident != BigLong( IDBSPHEADER ) || !pCompressFunc )
+	if ( !inputBuffer.TellPut() )
 	{
-		// only compress 360 bsp's
+		// nothing to do
 		return false;
 	}
 
-	// bsp is 360, swap the header back
-	byteSwap.ActivateByteSwapping( true );
-	byteSwap.SwapFieldsToTargetEndian( pInBSPHeader );
+	unsigned int originalSize = inputBuffer.TellPut() - inputBuffer.TellGet();
+	unsigned int compressedSize = 0;
+	unsigned char *pCompressedOutput = LZMA_Compress( (unsigned char *)inputBuffer.Base() + inputBuffer.TellGet(),
+													  originalSize, &compressedSize );
+	if ( pCompressedOutput )
+	{
+		outputBuffer.Put( pCompressedOutput, compressedSize );
+		DevMsg( "Compressed bsp lump %u -> %u bytes\n", originalSize, compressedSize );
+		free( pCompressedOutput );
+		return true;
+	}
 
-	// output will be smaller, use input size as upper bound
-	outputBuffer.EnsureCapacity( inputBuffer.TellMaxPut() );
+	return false;
+}
+
+
+bool RepackBSP( CUtlBuffer &inputBuffer, CUtlBuffer &outputBuffer, CompressFunc_t pCompressFunc, IZip::eCompressionType packfileCompression )
+{
+	dheader_t *pInBSPHeader = (dheader_t *)inputBuffer.Base();
+	// The 360 swaps this header to disk. For some reason.
+	if ( pInBSPHeader->ident != ( IsX360() ? BigLong( IDBSPHEADER ) : IDBSPHEADER ) )
+	{
+		Warning( "RepackBSP given invalid input data\n" );
+		return false;
+	}
+
+	CByteswap	byteSwap;
+	if ( IsX360() )
+	{
+		// bsp is 360, swap the header back
+		byteSwap.ActivateByteSwapping( true );
+		byteSwap.SwapFieldsToTargetEndian( pInBSPHeader );
+	}
+
+	unsigned int headerOffset = outputBuffer.TellPut();
 	outputBuffer.Put( pInBSPHeader, sizeof( dheader_t ) );
 
-	dheader_t *pOutBSPHeader = (dheader_t *)outputBuffer.Base();
+	// This buffer grows dynamically, don't keep pointers to it around. Write out header at end.
+	dheader_t sOutBSPHeader = *pInBSPHeader;
 
 	// must adhere to input lump's offset order and process according to that, NOT lump num
 	// sort by offset order
@@ -4462,12 +4626,13 @@ bool CompressBSP( CUtlBuffer &inputBuffer, CUtlBuffer &outputBuffer, CompressFun
 		SortedLump_t *pSortedLump = &sortedLumps[i];
 		int lumpNum = pSortedLump->lumpNum;
 
-		if ( !pSortedLump->pLump->filelen )
-		{
-			// degenerate
-			pOutBSPHeader->lumps[lumpNum].fileofs = 0;
-		}
-		else
+		// Should be set below, don't copy over old data
+		sOutBSPHeader.lumps[lumpNum].fileofs = 0;
+		sOutBSPHeader.lumps[lumpNum].filelen = 0;
+		// Only set by compressed lumps
+		sOutBSPHeader.lumps[lumpNum].uncompressedSize = 0;
+
+		if ( pSortedLump->pLump->filelen ) // Otherwise its degenerate
 		{
 			int alignment = 4;
 			if ( lumpNum == LUMP_PAKFILE )
@@ -4476,49 +4641,114 @@ bool CompressBSP( CUtlBuffer &inputBuffer, CUtlBuffer &outputBuffer, CompressFun
 			}
 			unsigned int newOffset = AlignBuffer( outputBuffer, alignment );
 
-			// only set by compressed lumps, hides the uncompressed size
-			*((unsigned int *)pOutBSPHeader->lumps[lumpNum].fourCC) = 0;
-
 			CUtlBuffer inputBuffer;
-			inputBuffer.SetExternalBuffer( ((byte *)pInBSPHeader) + pSortedLump->pLump->fileofs, pSortedLump->pLump->filelen, pSortedLump->pLump->filelen );
+			if ( pSortedLump->pLump->uncompressedSize )
+			{
+				byte *pCompressedLump = ((byte *)pInBSPHeader) + pSortedLump->pLump->fileofs;
+				if ( CLZMA::IsCompressed( pCompressedLump ) && pSortedLump->pLump->uncompressedSize == CLZMA::GetActualSize( pCompressedLump ) )
+				{
+					inputBuffer.EnsureCapacity( CLZMA::GetActualSize( pCompressedLump ) );
+					unsigned int outSize = CLZMA::Uncompress( pCompressedLump, (unsigned char *)inputBuffer.Base() );
+					inputBuffer.SeekPut( CUtlBuffer::SEEK_CURRENT, outSize );
+					if ( outSize != pSortedLump->pLump->uncompressedSize )
+					{
+						Warning( "Decompressed size differs from header, BSP may be corrupt\n" );
+					}
+				}
+				else
+				{
+					Assert( CLZMA::IsCompressed( pCompressedLump ) &&
+					        pSortedLump->pLump->uncompressedSize == CLZMA::GetActualSize( pCompressedLump ) );
+					Warning( "Unsupported BSP: Unrecognized compressed lump\n" );
+				}
+			}
+			else
+			{
+				// Just use input
+				inputBuffer.SetExternalBuffer( ((byte *)pInBSPHeader) + pSortedLump->pLump->fileofs,
+				                               pSortedLump->pLump->filelen, pSortedLump->pLump->filelen );
+			}
 
 			if ( lumpNum == LUMP_GAME_LUMP )
 			{
 				// the game lump has to have each of its components individually compressed
-				CompressGameLump( pInBSPHeader, pOutBSPHeader, outputBuffer, pCompressFunc );
+				CompressGameLump( pInBSPHeader, &sOutBSPHeader, outputBuffer, pCompressFunc );
 			}
 			else if ( lumpNum == LUMP_PAKFILE )
 			{
-				// add as is
-				pOutBSPHeader->lumps[lumpNum].fileofs = newOffset;
-				outputBuffer.Put( inputBuffer.Base(), inputBuffer.TellPut() );
+				IZip *newPakFile = IZip::CreateZip( NULL );
+				IZip *oldPakFile = IZip::CreateZip( NULL );
+				oldPakFile->ParseFromBuffer( inputBuffer.Base(), inputBuffer.Size() );
+
+				int id = -1;
+				int fileSize;
+				while ( 1 )
+				{
+					char relativeName[MAX_PATH];
+					id = GetNextFilename( oldPakFile, id, relativeName, sizeof( relativeName ), fileSize );
+					if ( id == -1 )
+						break;
+
+					CUtlBuffer sourceBuf;
+					CUtlBuffer targetBuf;
+
+					bool bOK = ReadFileFromPak( oldPakFile, relativeName, false, sourceBuf );
+					if ( !bOK )
+					{
+						Error( "Failed to load '%s' from lump pak for repacking.\n", relativeName );
+						continue;
+					}
+
+					AddBufferToPak( newPakFile, relativeName, sourceBuf.Base(), sourceBuf.TellMaxPut(), false, packfileCompression );
+
+					DevMsg( "Repacking BSP: Created '%s' in lump pak\n", relativeName );
+				}
+
+				// save new pack to buffer
+				newPakFile->SaveToBuffer( outputBuffer );
+				sOutBSPHeader.lumps[lumpNum].fileofs = newOffset;
+				sOutBSPHeader.lumps[lumpNum].filelen = outputBuffer.TellPut() - newOffset;
+				// Note that this *lump* is uncompressed, it just contains a packfile that uses compression, so we're
+				// not setting lumps[lumpNum].uncompressedSize
+
+				IZip::ReleaseZip( oldPakFile );
+				IZip::ReleaseZip( newPakFile );
 			}
 			else
 			{
 				CUtlBuffer compressedBuffer;
-				bool bCompressed = pCompressFunc( inputBuffer, compressedBuffer );
+				bool bCompressed = pCompressFunc ? pCompressFunc( inputBuffer, compressedBuffer ) : false;
 				if ( bCompressed )
 				{
-					// placing the uncompressed size in the unused fourCC, will decode at runtime
-					*((unsigned int *)pOutBSPHeader->lumps[lumpNum].fourCC) = BigLong( inputBuffer.TellPut() );
-					pOutBSPHeader->lumps[lumpNum].filelen = compressedBuffer.TellPut();
-					pOutBSPHeader->lumps[lumpNum].fileofs = newOffset;
+					sOutBSPHeader.lumps[lumpNum].uncompressedSize = inputBuffer.TellPut();
+					sOutBSPHeader.lumps[lumpNum].filelen = compressedBuffer.TellPut();
+					sOutBSPHeader.lumps[lumpNum].fileofs = newOffset;
 					outputBuffer.Put( compressedBuffer.Base(), compressedBuffer.TellPut() );
 					compressedBuffer.Purge();
 				}
 				else
 				{
 					// add as is
-					pOutBSPHeader->lumps[lumpNum].fileofs = newOffset;
+					sOutBSPHeader.lumps[lumpNum].fileofs = newOffset;
+					sOutBSPHeader.lumps[lumpNum].filelen = inputBuffer.TellPut();
 					outputBuffer.Put( inputBuffer.Base(), inputBuffer.TellPut() );
 				}
 			}
 		}
 	}
 
-	// fix the output for 360, swapping it back
-	byteSwap.SetTargetBigEndian( true );
-	byteSwap.SwapFieldsToTargetEndian( pOutBSPHeader );
+	if ( IsX360() )
+	{
+		// fix the output for 360, swapping it back
+		byteSwap.SetTargetBigEndian( true );
+		byteSwap.SwapFieldsToTargetEndian( &sOutBSPHeader );
+	}
+
+	// Write out header
+	unsigned int endOffset = outputBuffer.TellPut();
+	outputBuffer.SeekPut( CUtlBuffer::SEEK_HEAD, headerOffset );
+	outputBuffer.Put( &sOutBSPHeader, sizeof( sOutBSPHeader ) );
+	outputBuffer.SeekPut( CUtlBuffer::SEEK_HEAD, endOffset );
 
 	return true;
 }
@@ -4726,12 +4956,12 @@ bool SwapBSPFile( const char *pInFilename, const char *pOutFilename, bool bSwapO
 		}
 
 		CUtlBuffer outputBuffer;
-		if ( !CompressBSP( inputBuffer, outputBuffer, pCompressFunc ) )
+		if ( !RepackBSP( inputBuffer, outputBuffer, pCompressFunc, IZip::eCompressionType_None ) )
 		{
-			Warning( "Error! Failed to compress BSP '%s'!\n", pOutFilename ); 
+			Warning( "Error! Failed to compress BSP '%s'!\n", pOutFilename );
 			return false;
 		}
-	
+
 		g_hBSPFile = SafeOpenWrite( pOutFilename );
 		if ( !g_hBSPFile )
 		{

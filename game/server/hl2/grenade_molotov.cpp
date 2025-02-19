@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Flaming bottle thrown from the hand
 //
@@ -37,8 +37,8 @@ BEGIN_DATADESC( CGrenade_Molotov )
 	DEFINE_FIELD( m_pFireTrail, FIELD_CLASSPTR ),
 
 	// Function Pointers
-	DEFINE_ENTITYFUNC( MolotovTouch ),
-	DEFINE_THINKFUNC( MolotovThink ),
+	DEFINE_FUNCTION( MolotovTouch ),
+	DEFINE_FUNCTION( MolotovThink ),
 
 END_DATADESC()
 
@@ -49,14 +49,13 @@ void CGrenade_Molotov::Spawn( void )
 	SetMoveType( MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_BOUNCE );
 	SetSolid( SOLID_BBOX ); 
 	SetCollisionGroup( COLLISION_GROUP_PROJECTILE );
-	RemoveEffects( EF_NOINTERP );
 
 	SetModel( "models/weapons/w_molotov.mdl");
 
 	UTIL_SetSize(this, Vector( -6, -6, -2), Vector(6, 6, 2));
 
-	SetTouch( &CGrenade_Molotov::MolotovTouch );
-	SetThink( &CGrenade_Molotov::MolotovThink );
+	SetTouch( MolotovTouch );
+	SetThink( MolotovThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	m_flDamage		= sk_plr_dmg_molotov.GetFloat();

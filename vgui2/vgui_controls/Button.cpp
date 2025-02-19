@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Basic button control
 //
@@ -6,7 +6,7 @@
 //=============================================================================//
 
 #include <stdio.h>
-#include <UtlSymbol.h>
+#include <utlsymbol.h>
 
 #include <vgui/IBorder.h>
 #include <vgui/IInput.h>
@@ -70,10 +70,12 @@ void Button::Init()
 	_depressedBorder = NULL;
 	_keyFocusBorder = NULL;
 	m_bSelectionStateSaved = false;
+	m_bStaySelectedOnClick = false;
+	m_bStaySelectedOnClick = false;
 	m_sArmedSoundName = UTL_INVAL_SYMBOL;
 	m_sDepressedSoundName = UTL_INVAL_SYMBOL;
 	m_sReleasedSoundName = UTL_INVAL_SYMBOL;
-	SetTextInset(6, 0);
+	SetTextInset( QuickPropScale( 6 ), 0);
 	SetMouseClickEnabled( MOUSE_LEFT, true );
 	SetButtonActivationType(ACTIVATE_ONPRESSEDANDRELEASED);
 
@@ -88,6 +90,8 @@ void Button::Init()
 	REGISTER_COLOR_AS_OVERRIDABLE( _armedBgColor, "armedBgColor_override" );
 	REGISTER_COLOR_AS_OVERRIDABLE( _depressedFgColor, "depressedFgColor_override" );
 	REGISTER_COLOR_AS_OVERRIDABLE( _depressedBgColor, "depressedBgColor_override" );
+	REGISTER_COLOR_AS_OVERRIDABLE( _selectedFgColor, "selectedFgColor_override" );
+	REGISTER_COLOR_AS_OVERRIDABLE( _selectedBgColor, "selectedBgColor_override" );
 	REGISTER_COLOR_AS_OVERRIDABLE( _keyboardFocusColor, "keyboardFocusColor_override" );
 	REGISTER_COLOR_AS_OVERRIDABLE( _blinkFgColor, "blinkFgColor_override" );
 }
@@ -134,6 +138,12 @@ void Button::SetSelected( bool state )
 		RecalculateDepressedState();
 		InvalidateLayout(false);
 	}
+
+	if ( !m_bStayArmedOnClick && state && _buttonFlags.IsFlagSet( ARMED ) )
+	{
+		_buttonFlags.SetFlag( ARMED,  false );
+		InvalidateLayout(false);
+	}
 }
 
 void Button::SetBlink( bool state )
@@ -171,7 +181,14 @@ void Button::RecalculateDepressedState( void )
 	}
 	else
 	{
-		newState = _buttonFlags.IsFlagSet( FORCE_DEPRESSED ) ? true : (_buttonFlags.IsFlagSet(ARMED) && _buttonFlags.IsFlagSet( SELECTED ) );
+		if ( m_bStaySelectedOnClick && _buttonFlags.IsFlagSet( SELECTED ) )
+		{
+			newState = false;
+		}
+		else
+		{
+			newState = _buttonFlags.IsFlagSet( FORCE_DEPRESSED ) ? true : (_buttonFlags.IsFlagSet(ARMED) && _buttonFlags.IsFlagSet( SELECTED ) );
+		}
 	}
 
 	_buttonFlags.SetFlag( DEPRESSED, newState );
@@ -238,7 +255,6 @@ void Button::PlayButtonReleasedSound()
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Purpose:	Activate a button click.
 //-----------------------------------------------------------------------------
@@ -247,7 +263,17 @@ void Button::DoClick()
 	SetSelected(true);
 	FireActionSignal();
 	PlayButtonReleasedSound();
-	SetSelected(false);
+
+	static ConVarRef vgui_nav_lock( "vgui_nav_lock" );
+	if ( ( !vgui_nav_lock.IsValid() || vgui_nav_lock.GetInt() == 0 ) && NavigateActivate() )
+	{
+		vgui_nav_lock.SetValue( 1 );
+	}
+
+	if ( !m_bStaySelectedOnClick )
+	{
+		SetSelected(false);
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -285,6 +311,32 @@ void Button::DrawFocusBox( bool bEnable )
 	_buttonFlags.SetFlag( DRAW_FOCUS_BOX, bEnable );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void Button::NavigateTo()
+{
+	BaseClass::NavigateTo();
+
+	SetArmed( true );
+
+	if ( IsPC() )
+	{
+		RequestFocus( 0 );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void Button::NavigateFrom()
+{
+	BaseClass::NavigateFrom();
+
+	SetArmed( false );
+
+	OnKeyCodeReleased( KEY_XBUTTON_A );
+}
 	
 //-----------------------------------------------------------------------------
 // Purpose:	Paint button on screen
@@ -333,6 +385,8 @@ Color Button::GetButtonFgColor()
 			return _depressedFgColor;
 		if (_buttonFlags.IsFlagSet( ARMED ))
 			return _armedFgColor;
+		if (_buttonFlags.IsFlagSet( SELECTED))
+			return _selectedFgColor;
 		return _defaultFgColor;
 	}
 
@@ -342,6 +396,8 @@ Color Button::GetButtonFgColor()
 		cBlendedColor = _depressedFgColor;
 	else if (_buttonFlags.IsFlagSet( ARMED ))
 		cBlendedColor = _armedFgColor;
+	else if (_buttonFlags.IsFlagSet( SELECTED ))
+		cBlendedColor = _selectedFgColor;
 	else
 		cBlendedColor = _defaultFgColor;
 
@@ -367,6 +423,8 @@ Color Button::GetButtonBgColor()
 		return _depressedBgColor;
 	if (_buttonFlags.IsFlagSet( ARMED ))
 		return _armedBgColor;
+	if (_buttonFlags.IsFlagSet( SELECTED ))
+		return _selectedBgColor;
 	return _defaultBgColor;
 }
 
@@ -406,6 +464,9 @@ void Button::ApplySchemeSettings(IScheme *pScheme)
 	_armedFgColor = GetSchemeColor("Button.ArmedTextColor", _defaultFgColor, pScheme);
 	_armedBgColor = GetSchemeColor("Button.ArmedBgColor", _defaultBgColor, pScheme);
 
+	_selectedFgColor = GetSchemeColor("Button.SelectedTextColor", _selectedFgColor, pScheme);
+	_selectedBgColor = GetSchemeColor("Button.SelectedBgColor", _selectedBgColor, pScheme);
+
 	_depressedFgColor = GetSchemeColor("Button.DepressedTextColor", _defaultFgColor, pScheme);
 	_depressedBgColor = GetSchemeColor("Button.DepressedBgColor", _defaultBgColor, pScheme);
 	_keyboardFocusColor = GetSchemeColor("Button.FocusBorderColor", Color(0,0,0,255), pScheme);
@@ -442,6 +503,19 @@ void Button::SetArmedColor(Color fgColor, Color bgColor)
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Set armed button colors
+//-----------------------------------------------------------------------------
+void Button::SetSelectedColor(Color fgColor, Color bgColor)
+{
+	if (!(_selectedFgColor == fgColor && _selectedBgColor == bgColor))
+	{
+		_selectedFgColor = fgColor;
+		_selectedBgColor = bgColor;
+
+		InvalidateLayout(false);
+	}
+}
 //-----------------------------------------------------------------------------
 // Purpose: Set depressed button colors
 //-----------------------------------------------------------------------------
@@ -537,13 +611,9 @@ void Button::SetAsCurrentDefaultButton(int state)
 		if (state)
 		{
 			// post a message up notifying our nav group that we're now the default button
-			if (GetVParent())
-			{
-				KeyValues *msg = new KeyValues("CurrentDefaultButtonSet");
-				msg->SetInt("button", ToHandle() );
-
-				ivgui()->PostMessage(GetVParent(), msg, GetVPanel());
-			}
+			KeyValues *msg = new KeyValues( "CurrentDefaultButtonSet" );
+			msg->SetInt( "button", ToHandle() );
+			CallParentFunction( msg );
 		}
 
 		InvalidateLayout();
@@ -563,13 +633,9 @@ void Button::SetAsDefaultButton(int state)
 		if (state)
 		{
 			// post a message up notifying our nav group that we're now the default button
-			if (GetVParent())
-			{
-				KeyValues *msg = new KeyValues("DefaultButtonSet");
-				msg->SetInt("button", ToHandle() );
-
-				ivgui()->PostMessage(GetVParent(), msg, GetVPanel());
-			}
+			KeyValues *msg = new KeyValues( "DefaultButtonSet" );
+			msg->SetInt( "button", ToHandle() );
+			CallParentFunction( msg );
 		}
 
 		InvalidateLayout();
@@ -622,6 +688,15 @@ void Button::SetReleasedSound(const char *sound)
 	}
 }
 
+inline int MouseCodeToMask( MouseCode code )
+{
+	// MouseCodes do not start at zero. Make them start at zero before trying to fit them into a 32 bit mask..
+	// Otherwise, you would be trying to set bit 107 of an integer, and that would be bad.
+	const int recode = code - MOUSE_FIRST;
+	AssertMsg1( recode >= 0 && recode < 32, "MouseCode %d is invalid and cannot fit into a 32-bit mask\n", code );
+	return 1 << recode ;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Set button to be mouse clickable or not.
 //-----------------------------------------------------------------------------
@@ -630,12 +705,12 @@ void Button::SetMouseClickEnabled(MouseCode code,bool state)
 	if(state)
 	{
 		//set bit to 1
-		_mouseClickMask|=1<<((int)(code+1));
+		_mouseClickMask |= MouseCodeToMask(code); //set bit to 1
 	}
 	else
 	{
 		//set bit to 0
-		_mouseClickMask&=~(1<<((int)(code+1)));
+		_mouseClickMask &= ~MouseCodeToMask(code); //set bit to 0
 	}	
 }
 
@@ -644,7 +719,7 @@ void Button::SetMouseClickEnabled(MouseCode code,bool state)
 //-----------------------------------------------------------------------------
 bool Button::IsMouseClickEnabled(MouseCode code)
 {
-	if(_mouseClickMask&(1<<((int)(code+1))))
+	if ( _mouseClickMask & MouseCodeToMask(code) )
 	{
 		return true;
 	}
@@ -696,8 +771,18 @@ void Button::FireActionSignal()
 			&& !strnicmp(_actionMessage->GetString("command", ""), "url ", strlen("url "))
 			&& strstr(_actionMessage->GetString("command", ""), "://"))
 		{
-			// it's a command to launch a url, run it
-			system()->ShellExecute("open", _actionMessage->GetString("command", "      ") + 4);
+			const char* pszURL = _actionMessage->GetString("command", "      ") + 4;
+			// XXX ShellExecuting random URLs is questionable at any point, but lets at least make sure it's an expected
+			//     protocol.
+			if ( Q_strncmp( pszURL, "http://", 7 ) != 0 && Q_strncmp( pszURL, "https://", 8 ) != 0 )
+			{
+				Warning( "Invalid URL in FireActionSignal '%s'\n", pszURL );
+			}
+			else
+			{
+				// it's a command to launch a url, run it
+				system()->ShellExecute("open", pszURL);
+			}
 		}
 		PostActionSignal(_actionMessage->MakeCopy());
 	}
@@ -767,6 +852,8 @@ void Button::GetSettings( KeyValues *outResourceData )
 //-----------------------------------------------------------------------------
 void Button::ApplySettings( KeyValues *inResourceData )
 {
+	SetTextInset( QuickPropScale( 6 ), 0 );
+
 	BaseClass::ApplySettings(inResourceData);
 
 	const char *cmd = inResourceData->GetString("command", "");
@@ -791,6 +878,9 @@ void Button::ApplySettings( KeyValues *inResourceData )
 		m_bSelectionStateSaved = true;
 	}
 
+	m_bStaySelectedOnClick = inResourceData->GetBool( "stayselectedonclick", false );
+	m_bStayArmedOnClick = inResourceData->GetBool( "stay_armed_on_click", false );
+
 	const char *sound = inResourceData->GetString("sound_armed", "");
 	if (*sound)
 	{
@@ -806,6 +896,10 @@ void Button::ApplySettings( KeyValues *inResourceData )
 	{
 		SetReleasedSound(sound);
 	}
+
+	_activationType = (ActivationType_t)inResourceData->GetInt( "button_activation_type",
+		this->IsToggleButton() ? ACTIVATE_ONRELEASED : ACTIVATE_ONPRESSEDANDRELEASED
+	);
 }
 
 
@@ -833,9 +927,9 @@ void Button::OnSetState(int state)
 //-----------------------------------------------------------------------------
 void Button::OnCursorEntered()
 {
-	if (IsEnabled())
+	if (IsEnabled() && !IsSelected() )
 	{
-		SetArmed(true);
+		SetArmed( true );
 	}
 }
 
@@ -844,9 +938,9 @@ void Button::OnCursorEntered()
 //-----------------------------------------------------------------------------
 void Button::OnCursorExited()
 {
-	if ( !_buttonFlags.IsFlagSet( BUTTON_KEY_DOWN ) )
+	if ( !_buttonFlags.IsFlagSet( BUTTON_KEY_DOWN ) && !IsSelected() )
 	{
-		SetArmed(false);
+		SetArmed( false );
 	}
 }
 
@@ -921,12 +1015,16 @@ void Button::OnMouseReleased(MouseCode code)
 	if (!IsSelected() && _activationType == ACTIVATE_ONPRESSEDANDRELEASED)
 		return;
 
-	// it has to be both enabled and (mouse over the button or using a key) to fire
-	if ( IsEnabled() && ( GetVPanel() == input()->GetMouseOver() || _buttonFlags.IsFlagSet( BUTTON_KEY_DOWN ) ) )
+	Panel* pMouseOverPanel = ipanel()->GetPanel( input()->GetMouseOver(), GetControlsModuleName() );
+
+	// It has to be both enabled and (mouse over the button or using a key) to fire
+	// or the panel that the mouse is over has us as its mouse handler
+	if ( IsEnabled() && ( GetVPanel() == input()->GetMouseOver() || _buttonFlags.IsFlagSet( BUTTON_KEY_DOWN ) 
+		 || ( pMouseOverPanel && pMouseOverPanel->GetMouseHandlerPanel() == this ) ) )
 	{
 		DoClick();
 	}
-	else
+	else if ( !m_bStaySelectedOnClick )
 	{
 		SetSelected(false);
 	}
@@ -940,7 +1038,18 @@ void Button::OnMouseReleased(MouseCode code)
 //-----------------------------------------------------------------------------
 void Button::OnKeyCodePressed(KeyCode code)
 {
-	if (code == KEY_SPACE || code == KEY_ENTER)
+	KeyCode localCode = GetBaseButtonCode( code );
+
+	if( ( localCode == KEY_XBUTTON_A || localCode == STEAMCONTROLLER_A ) && IsEnabled() )
+	{
+		SetArmed( true );
+		_buttonFlags.SetFlag( BUTTON_KEY_DOWN );
+		if( _activationType != ACTIVATE_ONRELEASED )
+		{
+			DoClick();
+		}
+	}
+	else if (code == KEY_SPACE || code == KEY_ENTER)
 	{
 		SetArmed(true);
 		_buttonFlags.SetFlag( BUTTON_KEY_DOWN );
@@ -953,26 +1062,43 @@ void Button::OnKeyCodePressed(KeyCode code)
 	else
 	{
 		_buttonFlags.ClearFlag( BUTTON_KEY_DOWN );
-		BaseClass::OnKeyCodePressed(code);
+		BaseClass::OnKeyCodePressed( code );
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Button::OnKeyCodeReleased(KeyCode code)
+void Button::OnKeyCodeReleased( KeyCode keycode )
 {
-	if (_buttonFlags.IsFlagSet( BUTTON_KEY_DOWN ) && (code == KEY_SPACE || code == KEY_ENTER))
+	vgui::KeyCode code = GetBaseButtonCode( keycode );
+
+	if ( _buttonFlags.IsFlagSet( BUTTON_KEY_DOWN ) && ( code == KEY_XBUTTON_A || code == KEY_XBUTTON_START || code == STEAMCONTROLLER_A ) )
+	{
+		SetArmed( true );
+		if( _activationType != ACTIVATE_ONPRESSED )
+		{
+			DoClick();
+		}
+	}
+	else if (_buttonFlags.IsFlagSet( BUTTON_KEY_DOWN ) && (code == KEY_SPACE || code == KEY_ENTER))
 	{
 		SetArmed(true);
 		OnMouseReleased(MOUSE_LEFT);
 	}
 	else
 	{
-		BaseClass::OnKeyCodeReleased(code);
+		BaseClass::OnKeyCodeReleased( keycode );
 	}
 	_buttonFlags.ClearFlag( BUTTON_KEY_DOWN );
-	SetArmed(false);
+
+	if ( !( code == KEY_XSTICK1_UP || code == KEY_XSTICK1_DOWN || code == KEY_XSTICK1_LEFT || code == KEY_XSTICK1_RIGHT || 
+			code == KEY_XSTICK2_UP || code == KEY_XSTICK2_DOWN || code == KEY_XSTICK2_LEFT || code == KEY_XSTICK2_RIGHT || 
+			code == KEY_XBUTTON_UP || code == KEY_XBUTTON_DOWN || code == KEY_XBUTTON_LEFT || code == KEY_XBUTTON_RIGHT || 
+			keycode == KEY_UP|| keycode == KEY_DOWN || keycode == KEY_LEFT || keycode == KEY_RIGHT ) )
+	{
+		SetArmed( false );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -980,11 +1106,12 @@ void Button::OnKeyCodeReleased(KeyCode code)
 //-----------------------------------------------------------------------------
 void Button::DrawFocusBorder(int tx0, int ty0, int tx1, int ty1)
 {
+	int nSize = QuickPropScale( 1 );
 	surface()->DrawSetColor(_keyboardFocusColor);
-	DrawDashedLine(tx0, ty0, tx1, ty0+1, 1, 1);		// top
-	DrawDashedLine(tx0, ty0, tx0+1, ty1, 1, 1);		// left
-	DrawDashedLine(tx0, ty1-1, tx1, ty1, 1, 1);		// bottom
-	DrawDashedLine(tx1-1, ty0, tx1, ty1, 1, 1);		// right
+	DrawDashedLine(tx0, ty0, tx1, ty0+1, nSize, nSize );		// top
+	DrawDashedLine(tx0, ty0, tx0+1, ty1, nSize, nSize );		// left
+	DrawDashedLine(tx0, ty1-1, tx1, ty1, nSize, nSize );		// bottom
+	DrawDashedLine(tx1-1, ty0, tx1, ty1, nSize, nSize );		// right
 }
 
 //-----------------------------------------------------------------------------
@@ -994,6 +1121,7 @@ void Button::SizeToContents()
 {
 	int wide, tall;
 	GetContentSize(wide, tall);
-	SetSize(wide + Label::Content, tall + Label::Content);
-}
 
+	int nBuffer = QuickPropScale( Label::Content );
+	SetSize(wide + nBuffer, tall + nBuffer);
+}

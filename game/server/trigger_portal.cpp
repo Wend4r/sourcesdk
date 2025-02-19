@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Entity which teleports touched entities and reorients their physics
 //
@@ -275,7 +275,7 @@ void CTriggerPortal::DisableForIncomingEntity( CBaseEntity *pEntity )
 	// Start thinking, and remove the other as soon as it's not touching me.
 	// Needs to be done in addition to EndTouch, because entities may move fast
 	// enough through the portal to come out not touching the other portal.
-	SetContextThink( &CTriggerPortal::DisabledThink, gpGlobals->curtime + 0.1, TRIGGER_DISABLED_THINK );
+	SetContextThink( DisabledThink, gpGlobals->curtime + 0.1, TRIGGER_DISABLED_THINK );
 }
 
 //-----------------------------------------------------------------------------
@@ -299,7 +299,7 @@ void CTriggerPortal::DisabledThink( void )
 		}
 	}
 
-	SetContextThink( &CTriggerPortal::DisabledThink, gpGlobals->curtime + 0.1, TRIGGER_DISABLED_THINK );
+	SetContextThink( DisabledThink, gpGlobals->curtime + 0.1, TRIGGER_DISABLED_THINK );
 }
 
 //-----------------------------------------------------------------------------

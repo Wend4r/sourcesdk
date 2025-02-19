@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,8 +7,8 @@
 #include "cbase.h"
 #include "fx.h"
 #include "fx_sparks.h"
-#include "ClientEffectPrecacheSystem.h"
-#include "particle_simple3D.h"
+#include "clienteffectprecachesystem.h"
+#include "particle_simple3d.h"
 #include "decals.h"
 #include "engine/IEngineSound.h"
 #include "c_te_particlesystem.h"
@@ -78,10 +78,11 @@ void FX_CacheMaterialHandles( void )
 	g_Mat_SMG_Muzzleflash[1] = ParticleMgr()->GetPMaterial( "effects/muzzleflash2" );
 	g_Mat_SMG_Muzzleflash[2] = ParticleMgr()->GetPMaterial( "effects/muzzleflash3" );
 	g_Mat_SMG_Muzzleflash[3] = ParticleMgr()->GetPMaterial( "effects/muzzleflash4" );
-
+#ifndef CSTRIKE_DLL
 	g_Mat_Combine_Muzzleflash[0] = ParticleMgr()->GetPMaterial( "effects/combinemuzzle1" );
 	g_Mat_Combine_Muzzleflash[1] = ParticleMgr()->GetPMaterial( "effects/combinemuzzle2" );
 	g_Mat_Combine_Muzzleflash[2] = ParticleMgr()->GetPMaterial( "effects/strider_muzzle" );
+#endif
 #endif
 }
 
@@ -187,7 +188,8 @@ static void CreateFleckParticles( const Vector& origin, const Vector &color, tra
 
 	float	colorRamp;
 
-	int	numFlecks = random->RandomInt( 4, 16 ) * iScale;
+	float fScale = g_pParticleSystemMgr->ParticleThrottleScaling() * (float)iScale;
+	int	numFlecks = (int)( 0.5f + fScale * (float)( random->RandomInt( 4, 16 ) ) );
 
 	FleckParticle	*pFleckParticle;
 
@@ -1083,6 +1085,12 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 	CSmartPtr<CDustParticle> pSimple = CDustParticle::Create( "dust" );
 	pSimple->SetSortOrigin( origin );
 
+	// Three types of particle, ideally we want 4 of each.
+	float fNumParticles = 4.0f * g_pParticleSystemMgr->ParticleThrottleScaling();
+	int nParticles1 = (int)( 0.50f + fNumParticles );
+	int nParticles2 = (int)( 0.83f + fNumParticles );		// <-- most visible particle type.
+	int nParticles3 = (int)( 0.17f + fNumParticles );
+
 	SimpleParticle	*pParticle;
 
 	Vector	color;
@@ -1090,9 +1098,14 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 
 	GetColorForSurface( tr, &color );
 
+	// To get a decent spread even when scaling down the number of particles...
+	const static int nParticleIdArray[4] = {3,1,2,0};
+
 	int i;
-	for ( i = 0; i < 4; i++ )
+	for ( i = 0; i < nParticles1; i++ )
 	{
+		int nId = nParticleIdArray[i];
+
 		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), g_Mat_DustPuff[0], origin );
 
 		if ( pParticle != NULL )
@@ -1105,7 +1118,7 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			
 			VectorNormalize( pParticle->m_vecVelocity );
 
-			float	fForce = random->RandomFloat( 250, 500 ) * i;
+			float	fForce = random->RandomFloat( 250, 500 ) * nId;
 
 			// scaled
 			pParticle->m_vecVelocity *= fForce * flScale;
@@ -1117,7 +1130,7 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
 			// scaled
-			pParticle->m_uchStartSize	= ( unsigned char )( flScale * random->RandomInt( 3, 4 ) * (i+1) );
+			pParticle->m_uchStartSize	= ( unsigned char )( flScale * random->RandomInt( 3, 4 ) * (nId+1) );
 
 			// scaled
 			pParticle->m_uchEndSize		= ( unsigned char )( flScale * pParticle->m_uchStartSize * 4 );
@@ -1131,8 +1144,10 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 	}			
 
 	//Dust specs
-	for ( i = 0; i < 4; i++ )
+	for ( i = 0; i < nParticles2; i++ )
 	{
+		int nId = nParticleIdArray[i];
+
 		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), g_Mat_BloodPuff[0], origin );
 
 		if ( pParticle != NULL )
@@ -1145,7 +1160,7 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			
 			VectorNormalize( pParticle->m_vecVelocity );
 
-			float	fForce = random->RandomFloat( 250, 500 ) * i;
+			float	fForce = random->RandomFloat( 250, 500 ) * nId;
 
 			pParticle->m_vecVelocity *= fForce;
 			
@@ -1155,7 +1170,7 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 			pParticle->m_uchColor[1]	= MIN( 1.0f, color[1] * colorRamp ) * 255.0f;
 			pParticle->m_uchColor[2]	= MIN( 1.0f, color[2] * colorRamp ) * 255.0f;
 			
-			pParticle->m_uchStartSize	= random->RandomInt( 2, 4 ) * (i+1);
+			pParticle->m_uchStartSize	= random->RandomInt( 2, 4 ) * (nId+1);
 			pParticle->m_uchEndSize		= pParticle->m_uchStartSize * 2;
 			
 			pParticle->m_uchStartAlpha	= 255;
@@ -1167,8 +1182,10 @@ void FX_DustImpact( const Vector &origin, trace_t *tr, float flScale )
 	}
 
 	//Impact hit
-	for ( i = 0; i < 4; i++ )
+	for ( i = 0; i < nParticles3; i++ )
 	{
+		//int nId = nParticleIdArray[i];
+
 		pParticle = (SimpleParticle *) pSimple->AddParticle( sizeof( SimpleParticle ), g_Mat_DustPuff[0], origin );
 
 		if ( pParticle != NULL )

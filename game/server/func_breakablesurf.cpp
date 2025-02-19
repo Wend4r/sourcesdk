@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A planar textured surface that breaks into increasingly smaller fragments
 //			as it takes damage. Undamaged pieces remain attached to the world
@@ -19,6 +19,15 @@
 #include "globals.h"
 #include "physics_impact_damage.h"
 #include "te_effect_dispatch.h"
+
+//=============================================================================
+// HPE_BEGIN
+// [dwenger] Necessary for stats tracking
+//=============================================================================
+#include "gamestats.h"
+//=============================================================================
+// HPE_END
+//=============================================================================
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -100,8 +109,6 @@ void CWindowPane::PaneTouch( CBaseEntity *pOther )
 //------------------------------------------------------------------------------
 void CWindowPane::Die( void )
 {
-	Vector flForce = -1 * GetAbsVelocity();
-
 	CPASFilter filter( GetAbsOrigin() );
 	te->ShatterSurface( filter, 0.0,
 					 &GetAbsOrigin(), &GetAbsAngles(), 
@@ -276,10 +283,10 @@ void CBreakableSurface::SurfaceTouch( CBaseEntity *pOther )
 	PanePos(vTouchPos, &flMaxsWidth, &flMaxsHeight);
 
 	int nMinWidth = Floor2Int(MAX(0,		MIN(flMinsWidth,flMaxsWidth)));
-	int nMaxWidth = Ceil2Int(fpmin(m_nNumWide,MAX(flMinsWidth,flMaxsWidth)));
+	int nMaxWidth = Ceil2Int(MIN(m_nNumWide,MAX(flMinsWidth,flMaxsWidth)));
 
 	int nMinHeight = Floor2Int(MAX(0,		MIN(flMinsHeight,flMaxsHeight)));
-	int nMaxHeight = Ceil2Int(fpmin(m_nNumHigh,MAX(flMinsHeight,flMaxsHeight)));
+	int nMaxHeight = Ceil2Int(MIN(m_nNumHigh,MAX(flMinsHeight,flMaxsHeight)));
 
 	Vector vHitVel;
 	pOther->GetVelocity( &vHitVel, NULL );
@@ -349,8 +356,20 @@ int CBreakableSurface::OnTakeDamage( const CTakeDamageInfo &info )
 //------------------------------------------------------------------------------
 // Purpose: Accepts damage and breaks if health drops below zero.
 //------------------------------------------------------------------------------
-void CBreakableSurface::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CBreakableSurface::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
+    //=============================================================================
+    // HPE_BEGIN:
+    // [dwenger] Window break stat tracking
+    //=============================================================================
+
+    // Make sure this pane has not already been shattered
+    bool bWasBroken = m_bIsBroken;
+
+    //=============================================================================
+    // HPE_END
+    //=============================================================================
+
 	// Decrease health
 	m_iHealth -= info.GetDamage();
 	m_OnHealthChanged.Set( m_iHealth, info.GetAttacker(), this );
@@ -367,11 +386,26 @@ void CBreakableSurface::TraceAttack( const CTakeDamageInfo &info, const Vector &
 		// Figure out which panel has taken the damage and break it
 		float flWidth,flHeight;
 		PanePos(ptr->endpos,&flWidth,&flHeight);
-		int nWidth  = (int)flWidth;
-		int nHeight = (int)flHeight;
+		int nWidth  = flWidth;
+		int nHeight = flHeight;
 		
 		if ( ShatterPane(nWidth, nHeight,vecDir*500,ptr->endpos) )
 		{
+            //=============================================================================
+            // HPE_BEGIN:
+            // [dwenger] Window break stat tracking
+            //=============================================================================
+
+            CBasePlayer* pAttacker = ToBasePlayer(info.GetAttacker());
+            if ( ( pAttacker ) && ( !bWasBroken ) )
+            {
+                gamestats->Event_WindowShattered( pAttacker );
+            }
+
+            //=============================================================================
+            // HPE_END
+            //=============================================================================
+
 			// Do an impact hit
 			CEffectData	data;
 
@@ -438,8 +472,8 @@ void CBreakableSurface::TraceAttack( const CTakeDamageInfo &info, const Vector &
 			{
 				PanePos(ptr->endpos,&flWidth,&flHeight);
 			}
-			int nWidth  = (int)flWidth;
-			int nHeight = (int)flHeight;
+			int nWidth  = flWidth;
+			int nHeight = flHeight;
 
 			// Blow out a roughly circular patch of tile with some randomness
 			for (int width =nWidth-4;width<nWidth+4;width++)
@@ -458,6 +492,21 @@ void CBreakableSurface::TraceAttack( const CTakeDamageInfo &info, const Vector &
 		// ----------------------------------------
 		else
 		{
+            //=============================================================================
+            // HPE_BEGIN:
+            // [pfreese] Window break stat tracking
+            //=============================================================================
+
+            CBasePlayer* pAttacker = ToBasePlayer(info.GetAttacker());
+            if ( ( pAttacker ) && ( !bWasBroken ) )
+            {
+                gamestats->Event_WindowShattered( pAttacker );
+            }
+
+            //=============================================================================
+            // HPE_END
+            //=============================================================================
+
 			float flDot = DotProduct(m_vNormal,vecDir);
 
 #ifdef CSTRIKE_DLL

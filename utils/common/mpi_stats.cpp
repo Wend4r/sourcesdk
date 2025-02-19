@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -393,13 +393,13 @@ public:
 // -------------------------------------------------------------------------------- //
 
 // This is the spew output before it has connected to the MySQL database.
-CCriticalSection g_SpewTextCS;
+CVMPICriticalSection g_SpewTextCS;
 CUtlVector<char> g_SpewText( 1024 );
 
 
 void VMPI_Stats_SpewHook( const char *pMsg )
 {
-	CCriticalSectionLock csLock( &g_SpewTextCS );
+	CVMPICriticalSectionLock csLock( &g_SpewTextCS );
 	csLock.Lock();
 
 		// Queue the text up so we can send it to the DB right away when we connect.
@@ -410,7 +410,7 @@ void VMPI_Stats_SpewHook( const char *pMsg )
 void PerfThread_SendSpewText()
 {
 	// Send the spew text to the database.
-	CCriticalSectionLock csLock( &g_SpewTextCS );
+	CVMPICriticalSectionLock csLock( &g_SpewTextCS );
 	csLock.Lock();
 		
 		if ( g_SpewText.Count() > 0 )
@@ -750,7 +750,7 @@ void RunJobWatchApp( char *pCmdLine )
 		if ( s1 || s2 )
 		{
 			// Get rid of the last slash.
-			s1 = MAX( s1, s2 );
+			s1 = max( s1, s2 );
 			s1[0] = 0;
 		
 			if ( !CreateProcess( 
@@ -821,7 +821,7 @@ void StatsDB_InitStatsDatabase(
 		if ( dbInfo.m_HostName[0] != 0 )
 		{
 			if ( !VMPI_Stats_Init_Worker( dbInfo.m_HostName, dbInfo.m_DBName, dbInfo.m_UserName, jobPrimaryID ) )
-				Error( "VMPI_Stats_Init_Worker( %s, %s, %d ) failed.\n", dbInfo.m_HostName, dbInfo.m_DBName, dbInfo.m_UserName, jobPrimaryID );
+				Error( "VMPI_Stats_Init_Worker( %s, %s, %s, %d ) failed.\n", dbInfo.m_HostName, dbInfo.m_DBName, dbInfo.m_UserName, jobPrimaryID );
 		}
 	}
 }

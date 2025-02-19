@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -32,6 +32,10 @@ enum MaterialSystem_Config_Flags_t
 	MATSYS_VIDCFG_FLAGS_LIMIT_WINDOWED_SIZE			= ( 1 << 13 ),
 	MATSYS_VIDCFG_FLAGS_SCALE_TO_OUTPUT_RESOLUTION  = ( 1 << 14 ),
 	MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS      = ( 1 << 15 ),
+	MATSYS_VIDCFG_FLAGS_DISABLE_PHONG               = ( 1 << 16 ),
+	MATSYS_VIDCFG_FLAGS_VR_MODE						= ( 1 << 17 ),
+	MATSYS_VIDCFG_FLAGS_NO_WINDOW_BORDER			= ( 1 << 18 ),
+	MATSYS_VIDCFG_FLAGS_LIGHTMAP_BICUBIC			= ( 1 << 19 ),
 };
 
 struct MaterialSystemHardwareIdentifier_t
@@ -44,8 +48,13 @@ struct MaterialSystemHardwareIdentifier_t
 struct MaterialSystem_Config_t
 {
 	bool Windowed() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_WINDOWED ) != 0; }
+	bool NoWindowBorder() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_NO_WINDOW_BORDER ) != 0; }
 	bool Resizing() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_RESIZING ) != 0; }
+#ifdef CSS_PERF_TEST
+	bool WaitForVSync() const { return false; }//( m_Flags & MATSYS_VIDCFG_FLAGS_NO_WAIT_FOR_VSYNC ) == 0; }
+#else
 	bool WaitForVSync() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_NO_WAIT_FOR_VSYNC ) == 0; }
+#endif
 	bool Stencil() const { return (m_Flags & MATSYS_VIDCFG_FLAGS_STENCIL ) != 0; }
 	bool ForceTrilinear() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_FORCE_TRILINEAR ) != 0; }
 	bool ForceHWSync() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_FORCE_HWSYNC ) != 0; }
@@ -54,10 +63,13 @@ struct MaterialSystem_Config_t
 	bool UseParallaxMapping() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_ENABLE_PARALLAX_MAPPING ) != 0; }
 	bool UseZPrefill() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_USE_Z_PREFILL ) != 0; }
 	bool ReduceFillrate() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_REDUCE_FILLRATE ) != 0; }
+	bool LightmapBicubic() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_LIGHTMAP_BICUBIC ) != 0; }
 	bool HDREnabled() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_ENABLE_HDR ) != 0; }
 	bool LimitWindowedSize() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_LIMIT_WINDOWED_SIZE ) != 0; }
 	bool ScaleToOutputResolution() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_SCALE_TO_OUTPUT_RESOLUTION ) != 0; }
 	bool UsingMultipleWindows() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS ) != 0; }
+	bool UsePhong() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_DISABLE_PHONG ) == 0; }
+	bool VRMode() const { return ( m_Flags & MATSYS_VIDCFG_FLAGS_VR_MODE) != 0; }
 	bool ShadowDepthTexture() const { return m_bShadowDepthTexture; }
 	bool MotionBlur() const { return m_bMotionBlur; }
 	bool SupportFlashlight() const { return m_bSupportFlashlight; }
@@ -134,12 +146,15 @@ struct MaterialSystem_Config_t
 	bool m_bMotionBlur;
 	bool m_bSupportFlashlight;
 
+	int m_nVRModeAdapter;
+
 	MaterialSystem_Config_t()
 	{
 		memset( this, 0, sizeof( *this ) );
 
 		// video config defaults
 		SetFlag( MATSYS_VIDCFG_FLAGS_WINDOWED, false );
+		SetFlag( MATSYS_VIDCFG_FLAGS_NO_WINDOW_BORDER, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_RESIZING, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_NO_WAIT_FOR_VSYNC, true );
 		SetFlag( MATSYS_VIDCFG_FLAGS_STENCIL, false );
@@ -150,9 +165,12 @@ struct MaterialSystem_Config_t
 		SetFlag( MATSYS_VIDCFG_FLAGS_ENABLE_PARALLAX_MAPPING, true );
 		SetFlag( MATSYS_VIDCFG_FLAGS_USE_Z_PREFILL, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_REDUCE_FILLRATE, false );
+		SetFlag( MATSYS_VIDCFG_FLAGS_LIGHTMAP_BICUBIC, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_LIMIT_WINDOWED_SIZE, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_SCALE_TO_OUTPUT_RESOLUTION, false );
 		SetFlag( MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS, false );
+		SetFlag( MATSYS_VIDCFG_FLAGS_DISABLE_PHONG, false );
+		SetFlag( MATSYS_VIDCFG_FLAGS_VR_MODE, false );
 
 		m_VideoMode.m_Width = 640;
 		m_VideoMode.m_Height = 480;
@@ -174,6 +192,8 @@ struct MaterialSystem_Config_t
 		m_bShadowDepthTexture = false;
 		m_bMotionBlur = false;
 		m_bSupportFlashlight = true;
+
+		m_nVRModeAdapter = -1;
 
 		// misc defaults
 		bAllowCheats = false;

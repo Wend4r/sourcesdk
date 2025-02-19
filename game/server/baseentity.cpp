@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: The base class from which all game entities are derived.
 //
@@ -61,6 +61,12 @@
 #include "ModelSoundsCache.h"
 #include "env_debughistory.h"
 #include "tier1/utlstring.h"
+#include "utlhashtable.h"
+#include "vscript_server.h"
+
+#if defined( TF_DLL )
+#include "tf_gamerules.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -81,6 +87,7 @@ bool CBaseEntity::sm_bDisableTouchFuncs = false;	// Disables PhysicsTouch and Ph
 bool CBaseEntity::sm_bAccurateTriggerBboxChecks = true;	// set to false for legacy behavior in ep1
 
 int CBaseEntity::m_nPredictionRandomSeed = -1;
+int CBaseEntity::m_nPredictionRandomSeedServer = -1;
 CBasePlayer *CBaseEntity::m_pPredictionPlayer = NULL;
 
 // Used to make sure nobody calls UpdateTransmitState directly.
@@ -89,8 +96,9 @@ int g_nInsideDispatchUpdateTransmitState = 0;
 // When this is false, throw an assert in debug when GetAbsAnything is called. Used when hierachy is incomplete/invalid.
 bool CBaseEntity::s_bAbsQueriesValid = true;
 
-
 ConVar sv_netvisdist( "sv_netvisdist", "10000", FCVAR_CHEAT | FCVAR_DEVELOPMENTONLY, "Test networking visibility distance" );
+
+ConVar sv_script_think_interval("sv_script_think_interval", "0.1");
 
 // This table encodes edict data.
 void SendProxy_AnimTime( const SendProp *pProp, const void *pStruct, const void *pVarData, DVariant *pOut, int iElement, int objectID )
@@ -184,18 +192,11 @@ void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *p
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
 
-	const Vector *v = &entity->GetLocalOrigin();
+	const Vector *v;
 
-	if ( g_bTestMoveTypeStepSimulation && 
-		entity && 
-		( entity->GetMoveType() == MOVETYPE_STEP ) &&
-		entity->HasDataObjectType( STEPSIMULATION ) )
+	if ( !entity->UseStepSimulationNetworkOrigin( &v ) )
 	{
-		StepSimulationData *step = ( StepSimulationData * )entity->GetDataObject( STEPSIMULATION );
-		if ( entity->ComputeStepSimulationNetworkOrigin( step ) )
-		{
-			v = &step->m_vecNetworkOrigin;
-		}
+		v = &entity->GetLocalOrigin();
 	}
 
 	pOut->m_Vector[ 0 ] = v->x;
@@ -203,23 +204,54 @@ void SendProxy_Origin( const SendProp *pProp, const void *pStruct, const void *p
 	pOut->m_Vector[ 2 ] = v->z;
 }
 
+//--------------------------------------------------------------------------------------------------------
+// Used when breaking up origin, note we still have to deal with StepSimulation
+//--------------------------------------------------------------------------------------------------------
+void SendProxy_OriginXY( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+
+	if ( !entity->UseStepSimulationNetworkOrigin( &v ) )
+	{
+		v = &entity->GetLocalOrigin();
+	}
+
+	pOut->m_Vector[ 0 ] = v->x;
+	pOut->m_Vector[ 1 ] = v->y;
+}
+
+//--------------------------------------------------------------------------------------------------------
+// Used when breaking up origin, note we still have to deal with StepSimulation
+//--------------------------------------------------------------------------------------------------------
+void SendProxy_OriginZ( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+{
+	CBaseEntity *entity = (CBaseEntity*)pStruct;
+	Assert( entity );
+
+	const Vector *v;
+
+	if ( !entity->UseStepSimulationNetworkOrigin( &v ) )
+	{
+		v = &entity->GetLocalOrigin();
+	}
+
+	pOut->m_Float = v->z;
+}
+
+
 void SendProxy_Angles( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
 	CBaseEntity *entity = (CBaseEntity*)pStruct;
 	Assert( entity );
 
-	const QAngle *a = &entity->GetLocalAngles();
+	const QAngle *a;
 
-	if ( g_bTestMoveTypeStepSimulation &&
-		entity && 
-		( entity->GetMoveType() == MOVETYPE_STEP ) &&
-		entity->HasDataObjectType( STEPSIMULATION ) )
+	if ( !entity->UseStepSimulationNetworkAngles( &a ) )
 	{
-		StepSimulationData *step = ( StepSimulationData * )entity->GetDataObject( STEPSIMULATION );
-		if ( entity->ComputeStepSimulationNetworkAngles( step ) )
-		{
-			a = &step->m_angNetworkAngles;
-		}
+		a = &entity->GetLocalAngles();
 	}
 
 	pOut->m_Vector[ 0 ] = anglemod( a->x );
@@ -238,6 +270,7 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropVector	(SENDINFO(m_vecOrigin), -1,  SPROP_COORD|SPROP_CHANGES_OFTEN, 0.0f, HIGH_DEFAULT, SendProxy_Origin ),
 #endif
 
+	SendPropInt		(SENDINFO( m_ubInterpolationFrame ), NOINTERP_PARITY_MAX_BITS, SPROP_UNSIGNED ),
 	SendPropModelIndex(SENDINFO(m_nModelIndex)),
 	SendPropDataTable( SENDINFO_DT( m_Collision ), &REFERENCE_SEND_TABLE(DT_CollisionProperty) ),
 	SendPropInt		(SENDINFO(m_nRenderFX),		8, SPROP_UNSIGNED ),
@@ -272,12 +305,50 @@ IMPLEMENT_SERVERCLASS_ST_NOBASE( CBaseEntity, DT_BaseEntity )
 	SendPropInt		(SENDINFO(m_bAnimatedEveryTick),		1, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO( m_bAlternateSorting )),
 
+#ifdef TF_DLL
+	SendPropArray3( SENDINFO_ARRAY3(m_nModelIndexOverrides), SendPropInt( SENDINFO_ARRAY(m_nModelIndexOverrides), SP_MODEL_INDEX_BITS, 0 ) ),
+#endif
+
 END_SEND_TABLE()
 
+
+// dynamic models
+class CBaseEntityModelLoadProxy
+{
+protected:
+	class Handler final : public IModelLoadCallback
+	{
+	public:
+		explicit Handler( CBaseEntity *pEntity ) : m_pEntity(pEntity) { }
+		virtual void OnModelLoadComplete( const model_t *pModel );
+		CBaseEntity* m_pEntity;
+	};
+	Handler* m_pHandler;
+
+public:
+	explicit CBaseEntityModelLoadProxy( CBaseEntity *pEntity ) : m_pHandler( new Handler( pEntity ) ) { }
+	~CBaseEntityModelLoadProxy() { delete m_pHandler; }
+	void Register( int nModelIndex ) const { modelinfo->RegisterModelLoadCallback( nModelIndex, m_pHandler ); }
+	operator CBaseEntity * () const { return m_pHandler->m_pEntity; }
+
+private:
+	CBaseEntityModelLoadProxy( const CBaseEntityModelLoadProxy& );
+	CBaseEntityModelLoadProxy& operator=( const CBaseEntityModelLoadProxy& );
+};
+
+static CUtlHashtable< CBaseEntityModelLoadProxy, empty_t, PointerHashFunctor, PointerEqualFunctor, CBaseEntity * > sg_DynamicLoadHandlers;
+
+void CBaseEntityModelLoadProxy::Handler::OnModelLoadComplete( const model_t *pModel )
+{
+	m_pEntity->OnModelLoadComplete( pModel );
+	sg_DynamicLoadHandlers.Remove( m_pEntity ); // NOTE: destroys *this!
+}
 
 
 CBaseEntity::CBaseEntity( bool bServerOnly )
 {
+	m_pAttributes = NULL;
+
 	COMPILE_TIME_ASSERT( MOVETYPE_LAST < (1 << MOVETYPE_MAX_BITS) );
 	COMPILE_TIME_ASSERT( MOVECOLLIDE_COUNT < (1 << MOVECOLLIDE_MAX_BITS) );
 
@@ -296,6 +367,7 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	m_iParentAttachment = 0;
 	CollisionProp()->Init( this );
 	NetworkProp()->Init( this );
+	m_bForcePurgeFixedupStrings = false;
 
 	// NOTE: THIS MUST APPEAR BEFORE ANY SetMoveType() or SetNextThink() calls
 	AddEFlags( EFL_NO_THINK_FUNCTION | EFL_NO_GAME_PHYSICS_SIMULATION | EFL_USE_PARTITION_WHEN_NOT_SOLID );
@@ -320,6 +392,11 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 	SetSolid( SOLID_NONE );
 	ClearSolidFlags();
 
+	m_nModelIndex = 0;
+	m_bDynamicModelAllowed = false;
+	m_bDynamicModelPending = false;
+	m_bDynamicModelSetBounds = false;
+
 	SetMoveType( MOVETYPE_NONE );
 	SetOwnerEntity( NULL );
 	SetCheckUntouch( false );
@@ -341,6 +418,24 @@ CBaseEntity::CBaseEntity( bool bServerOnly )
 #ifndef _XBOX
 	AddEFlags( EFL_USE_PARTITION_WHEN_NOT_SOLID );
 #endif
+
+	m_bTruceValidForEnt = false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Scale up our physics hull and test against the new one
+// Input  : *pNewCollide - New collision hull
+//-----------------------------------------------------------------------------
+void CBaseEntity::SetScaledPhysics( IPhysicsObject *pNewObject )
+{
+	if ( pNewObject )
+	{
+		AddSolidFlags( FSOLID_CUSTOMBOXTEST | FSOLID_CUSTOMRAYTEST );
+	}
+	else
+	{
+		RemoveSolidFlags( FSOLID_CUSTOMBOXTEST | FSOLID_CUSTOMRAYTEST );
+	}
 }
 
 extern bool g_bDisableEhandleAccess;
@@ -354,6 +449,9 @@ CBaseEntity::~CBaseEntity( )
 	// case where friction sounds are added between the call to UpdateOnRemove + ~CBaseEntity
 	PhysCleanupFrictionSounds( this );
 
+	Assert( !IsDynamicModelIndex( m_nModelIndex ) );
+	Verify( !sg_DynamicLoadHandlers.Remove( this ) );
+
 	// In debug make sure that we don't call delete on an entity without setting
 	//  the disable flag first!
 	// EHANDLE accessors will check, in debug, for access to entities during destruction of
@@ -364,11 +462,18 @@ CBaseEntity::~CBaseEntity( )
 
 	VPhysicsDestroyObject();
 
+	if ( m_hScriptInstance )
+	{
+		g_pScriptVM->RemoveInstance( m_hScriptInstance );
+		m_hScriptInstance = NULL;
+	}
+
 	// Need to remove references to this entity before EHANDLES go null
 	{
 		g_bDisableEhandleAccess = false;
 		CBaseEntity::PhysicsRemoveTouchedList( this );
 		CBaseEntity::PhysicsRemoveGroundList( this );
+		SetGroundEntity( NULL ); // remove us from the ground entity if we are on it
 		DestroyAllDataObjects();
 		g_bDisableEhandleAccess = true;
 
@@ -483,7 +588,6 @@ void CBaseEntity::ValidateDataDescription(void)
 #endif // _DEBUG
 
 
-
 //-----------------------------------------------------------------------------
 // Sets the collision bounds + the size
 //-----------------------------------------------------------------------------
@@ -492,12 +596,87 @@ void CBaseEntity::SetCollisionBounds( const Vector& mins, const Vector &maxs )
 	m_Collision.SetCollisionBounds( mins, maxs );
 }
 
+//-----------------------------------------------------------------------------
+// Vscript: Gets the min collision bounds, centered on object
+//-----------------------------------------------------------------------------
+Vector CBaseEntity::ScriptGetBoundingMins( void )
+{
+	return m_Collision.OBBMins();
+}
+
+//-----------------------------------------------------------------------------
+// Vscript: Gets the max collision bounds, centered on object
+//-----------------------------------------------------------------------------
+Vector CBaseEntity::ScriptGetBoundingMaxs( void )
+{
+	return m_Collision.OBBMaxs();
+}
+
+//-----------------------------------------------------------------------------
+// Vscript: Gets the min collision bounds, centered on object, taking the object's orientation into account
+//-----------------------------------------------------------------------------
+Vector CBaseEntity::ScriptGetBoundingMinsOriented( void )
+{
+	Vector vecResult;
+	vecResult.Init( FLT_MAX, FLT_MAX, FLT_MAX );
+
+	// Build a rotation matrix from orientation
+	matrix3x4_t fRotateMatrix;
+	AngleMatrix( GetAbsAngles(), fRotateMatrix );
+
+	const Vector& vMaxs = m_Collision.OBBMaxs();
+	const Vector& vMins = m_Collision.OBBMins();
+
+	Vector vecPos;
+	for ( int i = 0; i < 8; ++i )
+	{
+		vecPos[ 0 ] = ( i & 0x1 ) ? vMaxs[ 0 ] : vMins[ 0 ];
+		vecPos[ 1 ] = ( i & 0x2 ) ? vMaxs[ 1 ] : vMins[ 1 ];
+		vecPos[ 2 ] = ( i & 0x4 ) ? vMaxs[ 2 ] : vMins[ 2 ];
+
+		VectorRotate( vecPos, fRotateMatrix, vecPos );
+
+		vecResult = vecResult.Min( vecPos );
+	}
+
+	return vecResult;
+}
+
+//-----------------------------------------------------------------------------
+// Vscript: Gets the max collision bounds, centered on object, taking the object's orientation into account
+//-----------------------------------------------------------------------------
+Vector CBaseEntity::ScriptGetBoundingMaxsOriented( void )
+{
+	Vector vecResult;
+	vecResult.Init( -FLT_MAX, -FLT_MAX, -FLT_MAX );
+
+	// Build a rotation matrix from orientation
+	matrix3x4_t fRotateMatrix;
+	AngleMatrix( GetAbsAngles(), fRotateMatrix );
+
+	const Vector& vMaxs = m_Collision.OBBMaxs();
+	const Vector& vMins = m_Collision.OBBMins();
+
+	Vector vecPos;
+	for ( int i = 0; i < 8; ++i )
+	{
+		vecPos[ 0 ] = ( i & 0x1 ) ? vMaxs[ 0 ] : vMins[ 0 ];
+		vecPos[ 1 ] = ( i & 0x2 ) ? vMaxs[ 1 ] : vMins[ 1 ];
+		vecPos[ 2 ] = ( i & 0x4 ) ? vMaxs[ 2 ] : vMins[ 2 ];
+
+		VectorRotate( vecPos, fRotateMatrix, vecPos );
+
+		vecResult = vecResult.Max( vecPos );
+	}
+
+	return vecResult;
+}
 
 void CBaseEntity::StopFollowingEntity( )
 {
 	if( !IsFollowingEntity() )
 	{
-		Assert( IsEffectActive( EF_BONEMERGE ) == 0 );
+//		Assert( IsEffectActive( EF_BONEMERGE ) == 0 );
 		return;
 	}
 
@@ -525,6 +704,64 @@ void CBaseEntity::SetClassname( const char *className )
 	m_iClassname = AllocPooledString( className );
 }
 
+void CBaseEntity::SetModelIndex( int index )
+{
+	if ( IsDynamicModelIndex( index ) && !(GetBaseAnimating() && m_bDynamicModelAllowed) )
+	{
+		AssertMsg( false, "dynamic model support not enabled on server entity" );
+		index = -1;
+	}
+
+	if ( index != m_nModelIndex )
+	{
+		if ( m_bDynamicModelPending )
+		{
+			sg_DynamicLoadHandlers.Remove( this );
+		}
+		
+		modelinfo->ReleaseDynamicModel( m_nModelIndex );
+		modelinfo->AddRefDynamicModel( index );
+		m_nModelIndex = index;
+		
+		m_bDynamicModelSetBounds = false;
+
+		if ( IsDynamicModelIndex( index ) )
+		{
+			m_bDynamicModelPending = true;
+			sg_DynamicLoadHandlers[ sg_DynamicLoadHandlers.Insert( this ) ].Register( index );
+		}
+		else
+		{
+			m_bDynamicModelPending = false;
+			OnNewModel();
+		}
+	}
+	DispatchUpdateTransmitState();
+}
+
+void CBaseEntity::ClearModelIndexOverrides( void )
+{
+#ifdef TF_DLL
+	for ( int index = 0 ; index < MAX_VISION_MODES ; index++ )
+	{
+		m_nModelIndexOverrides.Set( index, 0 );
+	}
+#endif
+}
+
+void CBaseEntity::SetModelIndexOverride( int index, int nValue )
+{
+#ifdef TF_DLL
+	if ( ( index >= VISION_MODE_NONE ) && ( index < MAX_VISION_MODES ) )
+	{
+		if ( nValue != m_nModelIndexOverrides[index] )
+		{
+			m_nModelIndexOverrides.Set( index, nValue );
+		}	
+	}
+#endif
+}
+	  
 // position to shoot at
 Vector CBaseEntity::BodyTarget( const Vector &posSrc, bool bNoisy) 
 { 
@@ -536,12 +773,6 @@ Vector CBaseEntity::HeadTarget( const Vector &posSrc )
 {
 	return EyePosition();
 }
-
-void CBaseEntity::SetViewOffset( const Vector &vecOffset )
-{
-	m_vecViewOffset = vecOffset;
-}
-
 
 
 struct TimedOverlay_t
@@ -563,8 +794,8 @@ void CBaseEntity::AddTimedOverlay( const char *msg, int endTime )
 	int len = strlen(msg);
 	pNewTO->msg = new char[len + 1];
 	Q_strncpy(pNewTO->msg,msg, len+1);
-	pNewTO->msgEndTime = (int)gpGlobals->curtime + endTime;
-	pNewTO->msgStartTime = (int)gpGlobals->curtime;
+	pNewTO->msgEndTime = gpGlobals->curtime + endTime;
+	pNewTO->msgStartTime = gpGlobals->curtime;
 	pNewTO->pNextTimedOverlay = m_pTimedOverlay;
 	m_pTimedOverlay = pNewTO;
 }
@@ -705,7 +936,7 @@ void CBaseEntity::DrawTimedOverlays(void)
 			// If messages aren't paused fade out
 			if (!CBaseEntity::Debug_IsPaused())
 			{
-				nAlpha = (int)(255*((gpGlobals->curtime - pTO->msgStartTime)/(pTO->msgEndTime - pTO->msgStartTime)));
+				nAlpha = 255*((gpGlobals->curtime - pTO->msgStartTime)/(pTO->msgEndTime - pTO->msgStartTime));
 			}
 			int r = 185;
 			int g = 145;
@@ -1030,7 +1261,7 @@ void CBaseEntity::SetParent( CBaseEntity *pParentEntity, int iAttachment )
 		}
 	}
 	// set the move parent if we have one
-	if ( edict() )
+	if ( edict() || IsEFlagSet( EFL_FORCE_ALLOW_MOVEPARENT ) )
 	{
 		// add ourselves to the list
 		LinkChild( m_pParent, this );
@@ -1117,7 +1348,7 @@ void CBaseEntity::ValidateEntityConnections()
 			typedescription_t *dataDesc = &dmap->dataDesc[i];
 			if ( ( dataDesc->fieldType == FIELD_CUSTOM ) && ( dataDesc->flags & FTYPEDESC_OUTPUT ) )
 			{
-				CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((int)this + (int)dataDesc->fieldOffset[0]);
+				CBaseEntityOutput *pOutput = (CBaseEntityOutput *)((intp)this + (int)dataDesc->fieldOffset[0]);
 				if ( pOutput->NumberOfElements() )
 					return;
 			}
@@ -1150,7 +1381,7 @@ void CBaseEntity::FireNamedOutput( const char *pszOutput, variant_t variant, CBa
 			typedescription_t *dataDesc = &dmap->dataDesc[i];
 			if ( ( dataDesc->fieldType == FIELD_CUSTOM ) && ( dataDesc->flags & FTYPEDESC_OUTPUT ) )
 			{
-				CBaseEntityOutput *pOutput = ( CBaseEntityOutput * )( ( int )this + ( int )dataDesc->fieldOffset[0] );
+				CBaseEntityOutput *pOutput = ( CBaseEntityOutput * )( ( intp )this + ( int )dataDesc->fieldOffset[0] );
 				if ( !Q_stricmp( dataDesc->externalName, pszOutput ) )
 				{
 					pOutput->FireOutput( variant, pActivator, pCaller, flDelay );
@@ -1161,6 +1392,32 @@ void CBaseEntity::FireNamedOutput( const char *pszOutput, variant_t variant, CBa
 
 		dmap = dmap->baseMap;
 	}
+}
+
+CBaseEntityOutput *CBaseEntity::FindNamedOutput( const char *pszOutput )
+{
+	if ( pszOutput == NULL )
+		return NULL;
+
+	datamap_t *dmap = GetDataDescMap();
+	while ( dmap )
+	{
+		int fields = dmap->dataNumFields;
+		for ( int i = 0; i < fields; i++ )
+		{
+			typedescription_t *dataDesc = &dmap->dataDesc[i];
+			if ( ( dataDesc->fieldType == FIELD_CUSTOM ) && ( dataDesc->flags & FTYPEDESC_OUTPUT ) )
+			{
+				CBaseEntityOutput *pOutput = ( CBaseEntityOutput * )( ( intp )this + ( int )dataDesc->fieldOffset[0] );
+				if ( !Q_stricmp( dataDesc->externalName, pszOutput ) )
+				{
+					return pOutput;
+				}
+			}
+		}
+		dmap = dmap->baseMap;
+	}
+	return NULL;
 }
 
 void CBaseEntity::Activate( void )
@@ -1210,16 +1467,30 @@ int CBaseEntity::TakeHealth( float flHealth, int bitsDamageType )
 	if ( !edict() || m_takedamage < DAMAGE_YES )
 		return 0;
 
+	int iMax = GetMaxHealth();
+
 // heal
-	if ( m_iHealth >= m_iMaxHealth )
+	if ( m_iHealth >= iMax )
 		return 0;
 
 	const int oldHealth = m_iHealth;
 
 	m_iHealth += flHealth;
 
-	if (m_iHealth > m_iMaxHealth)
-		m_iHealth = m_iMaxHealth;
+	if (m_iHealth > iMax)
+		m_iHealth = iMax;
+
+	if ( m_iHealth > oldHealth && IsPlayer() )
+	{
+		IGameEvent *event = gameeventmanager->CreateEvent( "take_health" );
+		if ( event )
+		{
+			event->SetInt( "amount", m_iHealth - oldHealth );
+			event->SetInt( "total", m_iHealth );
+			event->SetInt( "entindex", entindex());			
+			gameeventmanager->FireEvent( event );
+		}
+	}
 
 	return m_iHealth - oldHealth;
 }
@@ -1292,12 +1563,89 @@ int CBaseEntity::OnTakeDamage( const CTakeDamageInfo &info )
 }
 
 //-----------------------------------------------------------------------------
+// VScript: Scale damage done and call OnTakeDamage
+//-----------------------------------------------------------------------------
+void CBaseEntity::ScriptTakeDamage( float flDamage, int nDamageType, HSCRIPT hAttacker )
+{
+	CBaseEntity *pAttacker = ToEnt( hAttacker );
+	if ( !pAttacker )
+		pAttacker = this;
+
+	CTakeDamageInfo info( pAttacker, pAttacker, flDamage, nDamageType );
+	TakeDamage( info );
+}
+
+//-----------------------------------------------------------------------------
+// VScript: Scale damage done and call OnTakeDamage
+//-----------------------------------------------------------------------------
+void CBaseEntity::ScriptTakeDamageEx( HSCRIPT hInflictor, HSCRIPT hAttacker, HSCRIPT hWeapon, const Vector damageForce, const Vector damagePosition, float flDamage, int ndamageType )
+{
+	CBaseEntity* pInflictor = ToEnt( hInflictor );
+	CBaseEntity* pAttacker = ToEnt( hAttacker );
+	CBaseEntity* pWeapon = ToEnt( hWeapon );
+
+	CTakeDamageInfo info( pInflictor, pAttacker, pWeapon, damageForce, damagePosition, flDamage, ndamageType );
+	TakeDamage( info );
+}
+
+void CBaseEntity::ScriptTakeDamageCustom( HSCRIPT hInflictor, HSCRIPT hAttacker, HSCRIPT hWeapon, const Vector damageForce, const Vector damagePosition, float flDamage, int ndamageType, int nCustomDamageType )
+{
+	CBaseEntity* pInflictor = ToEnt( hInflictor );
+	CBaseEntity* pAttacker = ToEnt( hAttacker );
+	CBaseEntity* pWeapon = ToEnt( hWeapon );
+
+	CTakeDamageInfo info( pInflictor, pAttacker, pWeapon, damageForce, damagePosition, flDamage, ndamageType );
+	info.SetDamageCustom( nCustomDamageType );
+	TakeDamage( info );
+}
+
+Vector CBaseEntity::GetPhysVelocity() const
+{
+	if ( VPhysicsGetObject() )
+	{
+		Vector velocity;
+		VPhysicsGetObject()->GetVelocity( &velocity, nullptr );
+		return velocity;
+	}
+
+	return vec3_origin;
+}
+
+void CBaseEntity::SetPhysVelocity( const Vector &velocity )
+{
+	if ( VPhysicsGetObject() )
+	{
+		VPhysicsGetObject()->SetVelocity( &velocity, nullptr );
+	}
+}
+
+Vector CBaseEntity::GetPhysAngularVelocity() const
+{
+	if ( VPhysicsGetObject() )
+	{
+		Vector angularImpulse;
+		VPhysicsGetObject()->GetVelocity( nullptr, &angularImpulse );
+		return angularImpulse;
+	}
+
+	return vec3_origin;
+}
+
+void CBaseEntity::SetPhysAngularVelocity( const Vector &angularImpulse )
+{
+	if ( VPhysicsGetObject() )
+	{
+		VPhysicsGetObject()->SetVelocity( nullptr, &angularImpulse );
+	}
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Scale damage done and call OnTakeDamage
 //-----------------------------------------------------------------------------
-void CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
+int CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 {
 	if ( !g_pGameRules )
-		return;
+		return 0;
 
 	bool bHasPhysicsForceDamage = !g_pGameRules->Damage_NoPhysicsForce( inputInfo.GetDamageType() );
 	if ( bHasPhysicsForceDamage && inputInfo.GetDamageType() != DMG_GENERIC )
@@ -1329,12 +1677,12 @@ void CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 	// Make sure our damage filter allows the damage.
 	if ( !PassesDamageFilter( inputInfo ))
 	{
-		return;
+		return 0;
 	}
 
 	if( !g_pGameRules->AllowDamage(this, inputInfo) )
 	{
-		return;
+		return 0;
 	}
 
 	if ( PhysIsInCallback() )
@@ -1356,8 +1704,64 @@ void CBaseEntity::TakeDamage( const CTakeDamageInfo &inputInfo )
 
 		//Msg("%s took %.2f Damage, at %.2f\n", GetClassname(), info.GetDamage(), gpGlobals->curtime );
 
-		OnTakeDamage( info );
+		if ( ScriptHookEnabled( "OnTakeDamage" ) )
+		{
+			IScriptVM *pVM = g_pScriptVM;
+
+			ScriptVariant_t varTable;
+			pVM->CreateTable( varTable );
+		
+			pVM->SetValue( varTable, "const_entity", ToHScript( this ) );  // Purely informational.
+			pVM->SetValue( varTable, "inflictor", ToHScript( info.GetInflictor() ) );
+			pVM->SetValue( varTable, "weapon", ToHScript( info.GetWeapon() ) );
+			pVM->SetValue( varTable, "attacker", ToHScript( info.GetAttacker() ) );
+			pVM->SetValue( varTable, "damage", info.GetDamage() );
+			pVM->SetValue( varTable, "max_damage", info.GetMaxDamage() );
+			pVM->SetValue( varTable, "damage_bonus", info.GetDamageBonus() );
+			pVM->SetValue( varTable, "damage_bonus_provider", ToHScript( info.GetDamageBonusProvider() ) );
+			pVM->SetValue( varTable, "const_base_damage", info.GetBaseDamage() ); // Purely informational.
+			pVM->SetValue( varTable, "damage_force", info.GetDamageForce() );
+			pVM->SetValue( varTable, "damage_for_force_calc", info.GetDamageForForceCalc() );
+			pVM->SetValue( varTable, "damage_position", info.GetDamagePosition() );
+			pVM->SetValue( varTable, "reported_position", info.GetReportedPosition() );
+			pVM->SetValue( varTable, "damage_type", info.GetDamageType() );
+			pVM->SetValue( varTable, "damage_custom", info.GetDamageCustom() );
+			pVM->SetValue( varTable, "damage_stats", info.GetDamageStats() );
+			pVM->SetValue( varTable, "force_friendly_fire", info.IsForceFriendlyFire() );
+			pVM->SetValue( varTable, "ammo_type", info.GetAmmoType() );
+			pVM->SetValue( varTable, "player_penetration_count", info.GetPlayerPenetrationCount() );
+			pVM->SetValue( varTable, "damaged_other_players", info.GetDamagedOtherPlayers() );
+			pVM->SetValue( varTable, "crit_type", (int)info.GetCritType() );
+			pVM->SetValue( varTable, "early_out", false );
+
+			if ( RunScriptHook( "OnTakeDamage", varTable ) )
+			{
+				info.SetInflictor( ToEnt( pVM->Get<HSCRIPT>( varTable, "inflictor" ) ) );
+				info.SetWeapon( ToEnt( pVM->Get<HSCRIPT>( varTable, "weapon" ) ) );
+				info.SetAttacker( ToEnt( pVM->Get<HSCRIPT>( varTable, "attacker" ) ) );
+				info.SetDamage( pVM->Get<float>( varTable, "damage" ) );
+				info.SetMaxDamage( pVM->Get<float>( varTable, "max_damage" ) );
+				info.SetDamageBonus( pVM->Get<float>( varTable, "damage_bonus" ), ToEnt( pVM->Get<HSCRIPT>( varTable, "damage_bonus_provider" ) ) );
+				info.SetDamageForce( pVM->Get<Vector>( varTable, "damage_force" ) );
+				info.SetDamageForForceCalc( pVM->Get<float>( varTable, "damage_for_force_calc" ) );
+				info.SetDamagePosition( pVM->Get<Vector>( varTable, "damage_position" ) );
+				info.SetReportedPosition( pVM->Get<Vector>( varTable, "reported_position" ) );
+				info.SetDamageType( pVM->Get<int>( varTable, "damage_type" ) );
+				info.SetDamageCustom( pVM->Get<int>( varTable, "damage_custom" ) );
+				info.SetDamageStats( pVM->Get<int>( varTable, "damage_stats" ) );
+				info.SetForceFriendlyFire( pVM->Get<bool>( varTable, "force_friendly_fire" ) );
+				info.SetAmmoType( pVM->Get<int>( varTable, "ammo_type" ) );
+				info.SetPlayerPenetrationCount( pVM->Get<int>( varTable, "player_penetration_count" ) );
+				info.SetDamagedOtherPlayers( pVM->Get<int>( varTable, "damaged_other_players" ) );
+				info.SetCritType( (CTakeDamageInfo::ECritType) pVM->Get<int>( varTable, "crit_type" ) );
+				if ( pVM->Get<bool>( varTable, "early_out" ) )
+					return info.GetDamage();
+			}
+		}
+
+		return OnTakeDamage( info );
 	}
+	return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -1415,35 +1819,22 @@ int CBaseEntity::VPhysicsTakeDamage( const CTakeDamageInfo &info )
 		// setup the damage force & position inside the CTakeDamageInfo (Utility functions for this are in
 		// takedamageinfo.cpp. If you think the damage shouldn't cause force (unlikely!) then you can set the 
 		// damage type to DMG_GENERIC, or | DMG_CRUSH if you need to preserve the damage type for purposes of HUD display.
+#if !defined( TF_DLL )
 		Assert( force != vec3_origin && offset != vec3_origin );
+#else
+		// this was spamming the console for Payload maps in TF (trigger_hurt entity on the front of the cart)
+		if ( !TFGameRules() || TFGameRules()->GetGameType() != TF_GAMETYPE_ESCORT )
+		{
+			Assert( force != vec3_origin && offset != vec3_origin );
+		}
+#endif
 
 		unsigned short gameFlags = VPhysicsGetObject()->GetGameFlags();
 		if ( gameFlags & FVPHYSICS_PLAYER_HELD )
 		{
 			// if the player is holding the object, use it's real mass (player holding reduced the mass)
-
-			CBasePlayer *pPlayer = NULL;
-			
-			if ( AI_IsSinglePlayer() )
-			{
-				pPlayer = UTIL_GetLocalPlayer();
-			}
-			else
-			{
-				// See which MP player is holding the physics object and then use that player to get the real mass of the object.
-				// This is ugly but better than having linkage between an object and its "holding" player.
-				for ( int i = 1; i <= gpGlobals->maxClients; i++ )
-				{
-					CBasePlayer *tempPlayer = UTIL_PlayerByIndex( i );
-					if ( tempPlayer && (tempPlayer->GetHeldObject() == this ) )
-					{
-						pPlayer = tempPlayer;
-						break;
-					}
-				}
-			}
-
- 			if ( pPlayer )
+			CBasePlayer *pPlayer = UTIL_GetLocalPlayer();
+			if ( pPlayer )
 			{
 				float mass = pPlayer->GetHeldObjectMass( VPhysicsGetObject() );
 				if ( mass != 0.0f )
@@ -1544,12 +1935,16 @@ class CThinkContextsSaveDataOps : public CDefSaveRestoreOps
 		// Now write out all the functions
 		for ( int i = 0; i < pUtlVector->Size(); i++ )
 		{
+#ifdef WIN32
 			void **ppV = (void**)&((*pUtlVector)[i].m_pfnThink);
+#else
+			BASEPTR *ppV = &((*pUtlVector)[i].m_pfnThink);
+#endif
 			bool bHasFunc = (*ppV != NULL);
 			pSave->WriteBool( &bHasFunc, 1 );
 			if ( bHasFunc )
 			{
-				pSave->WriteFunction( pOwner->GetDataDescMap(), "m_pfnThink", (int *)(char *)ppV, 1 );
+				pSave->WriteFunction( pOwner->GetDataDescMap(), "m_pfnThink", (inputfunc_t **)ppV, 1 );
 			}
 		}
 		pSave->EndBlock();
@@ -1572,12 +1967,17 @@ class CThinkContextsSaveDataOps : public CDefSaveRestoreOps
 		{
 			bool bHasFunc;
 			pRestore->ReadBool( &bHasFunc, 1 );
+#ifdef WIN32
 			void **ppV = (void**)&((*pUtlVector)[i].m_pfnThink);
+#else
+			BASEPTR *ppV = &((*pUtlVector)[i].m_pfnThink);
+			Q_memset( (void *)ppV, 0x0, sizeof(inputfunc_t) );
+#endif
 			if ( bHasFunc )
 			{
 				SaveRestoreRecordHeader_t header;
 				pRestore->ReadHeader( &header );
-				pRestore->ReadFunction( pOwner->GetDataDescMap(), ppV, 1, header.size );
+				pRestore->ReadFunction( pOwner->GetDataDescMap(), (inputfunc_t **)ppV, 1, header.size );
 			}
 			else
 			{
@@ -1637,6 +2037,10 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_FIELD( m_flSimulationTime, FIELD_TIME ),
 	DEFINE_FIELD( m_nLastThinkTick, FIELD_TICK ),
 
+	DEFINE_FIELD( m_iszScriptId, FIELD_STRING ),
+	DEFINE_KEYFIELD( m_iszVScripts, FIELD_STRING, "vscripts" ),
+	DEFINE_KEYFIELD( m_iszScriptThinkFunction, FIELD_STRING, "thinkfunction" ),
+
 	DEFINE_KEYFIELD( m_nNextThinkTick, FIELD_TICK, "nextthink" ),
 	DEFINE_KEYFIELD( m_fEffects, FIELD_INTEGER, "effects" ),
 	DEFINE_KEYFIELD( m_clrRender, FIELD_COLOR32, "rendercolor" ),
@@ -1681,17 +2085,17 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_EMBEDDED( m_Collision ),
 	DEFINE_EMBEDDED( m_Network ),
 
-	DEFINE_FIELD( m_MoveType, FIELD_CHARACTER ),
+	DEFINE_KEYFIELD( m_MoveType, FIELD_CHARACTER, "MoveType" ),
 	DEFINE_FIELD( m_MoveCollide, FIELD_CHARACTER ),
 	DEFINE_FIELD( m_hOwnerEntity, FIELD_EHANDLE ),
-	DEFINE_FIELD( m_CollisionGroup, FIELD_INTEGER ),
+	DEFINE_KEYFIELD( m_CollisionGroup, FIELD_INTEGER, "CollisionGroup" ),
 	DEFINE_PHYSPTR( m_pPhysicsObject),
 	DEFINE_FIELD( m_flElasticity, FIELD_FLOAT ),
 	DEFINE_KEYFIELD( m_flShadowCastDistance, FIELD_FLOAT, "shadowcastdist" ),
 	DEFINE_FIELD( m_flDesiredShadowCastDistance, FIELD_FLOAT ),
 
 	DEFINE_INPUT( m_iInitialTeamNum, FIELD_INTEGER, "TeamNum" ),
-	DEFINE_FIELD( m_iTeamNum, FIELD_INTEGER ),
+	DEFINE_KEYFIELD( m_iTeamNum, FIELD_INTEGER, "teamnumber" ),
 
 //	DEFINE_FIELD( m_bSentLastFrame, FIELD_INTEGER ),
 
@@ -1789,6 +2193,11 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_INPUTFUNC( FIELD_STRING, "FireUser3", InputFireUser3 ),
 	DEFINE_INPUTFUNC( FIELD_STRING, "FireUser4", InputFireUser4 ),
 
+	DEFINE_INPUTFUNC( FIELD_STRING, "RunScriptFile", InputRunScriptFile ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "RunScriptCode", InputRunScript ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "CallScriptFunction", InputCallScriptFunction ),
+	DEFINE_INPUTFUNC( FIELD_VOID, "TerminateScriptScope", InputTerminateScriptScope ),
+
 	DEFINE_OUTPUT( m_OnUser1, "OnUser1" ),
 	DEFINE_OUTPUT( m_OnUser2, "OnUser2" ),
 	DEFINE_OUTPUT( m_OnUser3, "OnUser3" ),
@@ -1804,11 +2213,202 @@ BEGIN_DATADESC_NO_BASE( CBaseEntity )
 	DEFINE_FUNCTION( SUB_CallUseToggle ),
 	DEFINE_THINKFUNC( ShadowCastDistThink ),
 
+	DEFINE_THINKFUNC( ScriptThink ),
+
+	DEFINE_FIELD( m_bForcePurgeFixedupStrings, FIELD_BOOLEAN ),
+
 	DEFINE_FIELD( m_hEffectEntity, FIELD_EHANDLE ),
 
 	//DEFINE_FIELD( m_DamageModifiers, FIELD_?? ), // can't save?
 	// DEFINE_FIELD( m_fDataObjectTypes, FIELD_INTEGER ),
+
+#ifdef TF_DLL
+	DEFINE_ARRAY( m_nModelIndexOverrides, FIELD_INTEGER, MAX_VISION_MODES ),
+#endif
+
 END_DATADESC()
+
+DEFINE_SCRIPT_INSTANCE_HELPER( CBaseEntity, &g_BaseEntityScriptInstanceHelper )
+
+BEGIN_ENT_SCRIPTDESC_ROOT( CBaseEntity, "Root class of all server-side entities" )
+	DEFINE_SCRIPTFUNC_NAMED( ConnectOutputToScript, "ConnectOutput", "Adds an I/O connection that will call the named function when the specified output fires"  )
+	DEFINE_SCRIPTFUNC_NAMED( DisconnectOutputFromScript, "DisconnectOutput", "Removes a connected script function from an I/O event."  )
+	
+	DEFINE_SCRIPTFUNC( GetHealth, "" )
+	DEFINE_SCRIPTFUNC( SetHealth, "" )
+	DEFINE_SCRIPTFUNC( GetMaxHealth, "" )
+	DEFINE_SCRIPTFUNC( SetMaxHealth, "" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptTakeDamage, "TakeDamage", "(flDamage, nDamageType, hAttacker)" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptTakeDamageEx, "TakeDamageEx", "(hInflictor, hAttacker, hWeapon, vecDamageForce, vecDamagePosition, flDamage, nDamageType)" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptTakeDamageCustom, "TakeDamageCustom", "(hInflictor, hAttacker, hWeapon, vecDamageForce, vecDamagePosition, flDamage, nDamageType, nCustomDamageType)" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetModelName, "GetModelName", "Returns the name of the model" )
+	DEFINE_SCRIPTFUNC( SetModel, "Set a model for this entity" )
+	DEFINE_SCRIPTFUNC( IsPlayer, "" )
+	DEFINE_SCRIPTFUNC_NAMED( entindex, "GetEntityIndex", "" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptPrecacheModel, "PrecacheModel", "" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptPrecacheScriptSound, "PrecacheScriptSound", "" )
+	// dota had a SetModel here too, but i dont think we need it
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptEmitSound, "EmitSound", "Plays a sound from this entity." )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptStopSound, "StopSound", "Stops a sound on this entity." )
+	DEFINE_SCRIPTFUNC_NAMED( VScriptPrecacheScriptSound, "PrecacheSoundScript", "Precache a sound for later playing." )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSoundDuration, "GetSoundDuration", "Returns float duration of the sound. Takes soundname and optional actormodelname.")
+
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptInputKill, "Kill", "" )
+	DEFINE_SCRIPTFUNC( GetClassname, "" )
+	DEFINE_SCRIPTFUNC_NAMED( GetEntityNameAsCStr, "GetName", "" )
+	DEFINE_SCRIPTFUNC( GetPreTemplateName, "Get the entity name stripped of template unique decoration" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetEHandle, "GetEntityHandle", "Get the entity as an EHANDLE" )
+
+	DEFINE_SCRIPTFUNC_NAMED( GetAbsOrigin, "GetOrigin", "This is GetAbsOrigin with a funny script name for some reason. Not changing it for legacy compat though."  )
+	DEFINE_SCRIPTFUNC( SetAbsOrigin, "SetAbsOrigin" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetOrigin, "SetOrigin", "THIS DOESNT CALL SetAbsOrigin IT CALLS Teleport"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetForward, "GetForwardVector", "Get the forward vector of the entity"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetRight, "GetRightVector", "Get the right vector of the entity"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetLeft, "GetLeftVector", "!!!LEGACY FOR COMPAT!!! Get the **right** vector of the entity. This is purely for compatibility. DO NOT USE ME. Use GetRightVector!"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetUp, "GetUpVector", "Get the up vector of the entity"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetForward, "SetForwardVector", "Set the orientation of the entity to have this forward vector"  )
+
+	// im not sure these do anything useful...
+	DEFINE_SCRIPTFUNC( GetAbsVelocity, "Returns the current absolute velocity of the entity" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetVelocity, "GetVelocity", "!!!LEGACY FOR COMPAT!!! Use GetAbsVelocity" )
+	DEFINE_SCRIPTFUNC( SetAbsVelocity, "Sets the current absolute velocity of the entity" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetVelocity, "SetVelocity", "!!!LEGACY FOR COMPAT!!! Use SetAbsVelocity" )
+
+// 	DEFINE_SCRIPTFUNC_NAMED( SetLocalVelocity, "SetLocalVelocity", ""  )
+	DEFINE_SCRIPTFUNC( GetLocalVelocity, "Get Entity relative velocity" )
+	DEFINE_SCRIPTFUNC( GetBaseVelocity, "Get Base velocity" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetLocalAngularVelocity, "SetAngularVelocity", "Set the local angular velocity - takes float pitch,yaw,roll velocities"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetLocalAngularVelocity, "GetAngularVelocity", "Get the local angular velocity - returns a vector of pitch,yaw,roll"  )
+
+	DEFINE_SCRIPTFUNC( ApplyAbsVelocityImpulse, "Apply a Velocity Impulse" )
+	DEFINE_SCRIPTFUNC( ApplyLocalAngularVelocityImpulse, "Apply an Ang Velocity Impulse" )
+
+	DEFINE_SCRIPTFUNC( GetFriction, "Get PLAYER friction, ignored for objects" )
+
+	DEFINE_SCRIPTFUNC( SetFriction, "Set PLAYER friction, ignored for objects" )
+	DEFINE_SCRIPTFUNC( SetGravity, "Set PLAYER gravity, ignored for objects" )
+#if defined( ENABLE_FRICTION_OVERRIDE )
+	DEFINE_SCRIPTFUNC( OverrideFriction, "Takes duration, value for a temporary override" )
+#endif
+
+	DEFINE_SCRIPTFUNC_NAMED( WorldSpaceCenter, "GetCenter", "Get vector to center of object - absolute coords")
+	DEFINE_SCRIPTFUNC_NAMED( ScriptEyePosition, "EyePosition", "Get vector to eye position - absolute coords")
+
+	DEFINE_SCRIPTFUNC( SetAbsAngles, "Set entity pitch, yaw, roll as QAngles")
+	DEFINE_SCRIPTFUNC( GetAbsAngles, "Get entity pitch, yaw, roll as QAngles")
+
+	DEFINE_SCRIPTFUNC( GetLocalOrigin, "" )
+	DEFINE_SCRIPTFUNC( GetLocalAngles, "" )
+	DEFINE_SCRIPTFUNC( SetLocalOrigin, "" )
+	DEFINE_SCRIPTFUNC( SetLocalAngles, "" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetAngles, "SetAngles", "!!!LEGACY FOR COMPAT!!! DO NOT USE ME. Set entity pitch, yaw, roll")
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetAngles, "GetAngles", "!!!LEGACY FOR COMPAT!!! DO NOT USE ME. Get entity pitch, yaw, roll as a vector")
+
+	//DEFINE_SCRIPTFUNC_NAMED( AddContextForScript, "SetContext", "SetContext( name , value, duration ): store any key/value pair in this entity's dialog contexts. Value must be a string. Will last for duration (set -1 to mean 'forever')." )
+	//DEFINE_SCRIPTFUNC_NAMED( AddContextForScriptNumeric, "SetContextNum", "SetContext( name , value, duration ): store any key/value pair in this entity's dialog contexts. Value must be a number (int or float). Will last for duration (set -1 to mean 'forever')." )
+	//DEFINE_SCRIPTFUNC_NAMED( GetContextForScript, "GetContext", "GetContext( name ): looks up a context and returns it if available. May return string, float, or null (if the context isn't found)" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetSize, "SetSize", ""  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetBoundingMins, "GetBoundingMins", "Get a vector containing min bounds, centered on object")
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetBoundingMaxs, "GetBoundingMaxs", "Get a vector containing max bounds, centered on object")
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetBoundingMinsOriented, "GetBoundingMinsOriented", "Get a vector containing min bounds, centered on object, taking the object's orientation into account" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetBoundingMaxsOriented, "GetBoundingMaxsOriented", "Get a vector containing max bounds, centered on object, taking the object's orientation into account" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptUtilRemove, "Destroy", ""  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetOwner, "SetOwner", ""  )
+	DEFINE_SCRIPTFUNC_NAMED( GetTeamNumber, "GetTeam", ""  )
+	DEFINE_SCRIPTFUNC_NAMED( ChangeTeam, "SetTeam", ""  )
+	
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetMoveParent, "GetMoveParent", "If in hierarchy, retrieves the entity's parent" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetRootMoveParent, "GetRootMoveParent", "If in hierarchy, walks up the hierarchy to find the root parent" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptFirstMoveChild,  "FirstMoveChild", "" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptNextMovePeer, "NextMovePeer", "" )
+
+	DEFINE_SCRIPTFUNC_NAMED( KeyValueFromString, "__KeyValueFromString", SCRIPT_HIDE )
+	DEFINE_SCRIPTFUNC_NAMED( KeyValueFromFloat, "__KeyValueFromFloat", SCRIPT_HIDE )
+	DEFINE_SCRIPTFUNC_NAMED( KeyValueFromInt, "__KeyValueFromInt", SCRIPT_HIDE )
+	DEFINE_SCRIPTFUNC_NAMED( KeyValueFromVector, "__KeyValueFromVector", SCRIPT_HIDE )
+
+	DEFINE_SCRIPTFUNC( KeyValueFromString, "Executes KeyValue with a string" )
+	DEFINE_SCRIPTFUNC( KeyValueFromFloat, "Executes KeyValue with a float" )
+	DEFINE_SCRIPTFUNC( KeyValueFromInt, "Executes KeyValue with an int" )
+	DEFINE_SCRIPTFUNC( KeyValueFromVector, "Executes KeyValue with a vector" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetModelKeyValues, "GetModelKeyValues", "Get a KeyValue class instance on this entity's model")
+
+	DEFINE_SCRIPTFUNC( ValidateScriptScope, "Ensure that an entity's script scope has been created" )
+	DEFINE_SCRIPTFUNC( GetScriptScope, "Retrieve the script-side data associated with an entity" )
+	DEFINE_SCRIPTFUNC( GetScriptId, "Retrieve the unique identifier used to refer to the entity within the scripting system" )
+	DEFINE_SCRIPTFUNC( GetScriptThinkFunc, "Retrieve the name of the current script think func" )
+	DEFINE_SCRIPTFUNC_NAMED( GetScriptOwnerEntity, "GetOwner", "Gets this entity's owner" )
+	DEFINE_SCRIPTFUNC_NAMED( SetScriptOwnerEntity, "SetOwner", "Sets this entity's owner" )
+	DEFINE_SCRIPTFUNC( entindex, "" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptEnableDraw, "EnableDraw",  "Disable drawing (sets EF_NODRAW)" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptDisableDraw, "DisableDraw", "Enable drawing (removes EF_NODRAW)" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetDrawEnabled, "SetDrawEnabled", "Enables drawing if you pass true, disables drawing if you pass false." )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptDispatchSpawn, "DispatchSpawn", "Alternative dispatch spawn, same as the one in CEntities, for convenience." )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptEyeAngles, "EyeAngles", "Returns the entity's eye angles" ) 
+	DEFINE_SCRIPTFUNC_NAMED( ScriptLocalEyeAngles, "LocalEyeAngles", "Returns the entity's local eye angles" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptTeleport, "Teleport", "Teleports this entity" )
+
+	DEFINE_SCRIPTFUNC( GetPhysVelocity, "" )
+	DEFINE_SCRIPTFUNC( GetPhysAngularVelocity, "" )
+	DEFINE_SCRIPTFUNC( SetPhysVelocity, "" )
+	DEFINE_SCRIPTFUNC( SetPhysAngularVelocity, "" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetMoveType, "GetMoveType", "")
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetMoveType, "SetMoveType", "" )
+
+	DEFINE_SCRIPTFUNC( AddFlag, "" )
+	DEFINE_SCRIPTFUNC( RemoveFlag, "" )
+	DEFINE_SCRIPTFUNC( ToggleFlag, "" )
+	DEFINE_SCRIPTFUNC( GetFlags, "" )
+	DEFINE_SCRIPTFUNC( ClearFlags, "" )
+
+	DEFINE_SCRIPTFUNC( GetEFlags, "" )
+	DEFINE_SCRIPTFUNC( SetEFlags, "" )
+	DEFINE_SCRIPTFUNC( AddEFlags, "" )
+	DEFINE_SCRIPTFUNC( RemoveEFlags, "" )
+	DEFINE_SCRIPTFUNC( IsEFlagSet, "" )
+
+	DEFINE_SCRIPTFUNC( ClearSolidFlags, "" )
+	DEFINE_SCRIPTFUNC( RemoveSolidFlags, "" )
+	DEFINE_SCRIPTFUNC( AddSolidFlags, "" )
+	DEFINE_SCRIPTFUNC( IsSolidFlagSet, "" )
+	DEFINE_SCRIPTFUNC( SetSolidFlags, "" )
+	DEFINE_SCRIPTFUNC( IsSolid, "" )
+
+	DEFINE_SCRIPTFUNC( GetCollisionGroup, "" )
+	DEFINE_SCRIPTFUNC( SetCollisionGroup, "" )
+
+	DEFINE_SCRIPTFUNC( GetGravity, "" )
+	DEFINE_SCRIPTFUNC( SetGravity, "" )
+
+	DEFINE_SCRIPTFUNC( GetFriction, "" )
+	DEFINE_SCRIPTFUNC( SetFriction, "" )
+
+	DEFINE_SCRIPTFUNC( GetWaterLevel, "" )
+	DEFINE_SCRIPTFUNC( SetWaterLevel, "" )
+
+	DEFINE_SCRIPTFUNC( GetWaterType, "" )
+	DEFINE_SCRIPTFUNC( SetWaterType, "" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetSolid, "GetSolid", "" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetSolid, "SetSolid", "" )
+	
+	DEFINE_SCRIPTFUNC( TerminateScriptScope, "Clear the current script scope for this entity" )
+
+	DEFINE_SCRIPTFUNC_NAMED( ScriptAcceptInput, "AcceptInput", "Generate a synchronous I/O event" )
+	DEFINE_SCRIPTFUNC( IsAlive, "" )
+END_SCRIPTDESC();
 
 // For code error checking
 extern bool g_bReceivedChainedUpdateOnRemove;
@@ -1875,6 +2475,21 @@ void CBaseEntity::UpdateOnRemove( void )
 		GlobalEntity_SetState( m_iGlobalname, GLOBAL_DEAD );
 	}
 
+	// Remove the fixed up name from this entity
+	// we need to do this now since we will set the name to nothing later
+	if( m_bForcePurgeFixedupStrings )
+	{	
+		if( m_iName != NULL_STRING )	
+		{
+			RemovePooledString( STRING( m_iName ) );
+		}
+
+		if( m_iszScriptId != NULL_STRING )	
+		{
+			RemovePooledString( STRING( m_iszScriptId ) );
+		}
+	}
+
 	VPhysicsDestroyObject();
 
 	// This is only here to allow the MOVETYPE_NONE to be set without the
@@ -1898,6 +2513,23 @@ void CBaseEntity::UpdateOnRemove( void )
 	}
 
 	SetGroundEntity( NULL );
+
+	if ( m_bDynamicModelPending )
+	{
+		sg_DynamicLoadHandlers.Remove( this );
+	}
+	
+	if ( IsDynamicModelIndex( m_nModelIndex ) )
+	{
+		modelinfo->ReleaseDynamicModel( m_nModelIndex ); // no-op if not dynamic
+		m_nModelIndex = -1;
+	}
+
+	if ( m_hScriptInstance )
+	{
+		g_pScriptVM->RemoveInstance( m_hScriptInstance );
+		m_hScriptInstance = NULL;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -2194,7 +2826,7 @@ static void CheckPushedEntity( CBaseEntity *pEntity, pushblock_t &params )
 				else
 				{
 					fraction = dist / expectedDist;
-					fraction = clamp(fraction, 0, 1);
+					fraction = clamp(fraction, 0.f, 1.f);
 				}
 			}
 		}
@@ -2245,7 +2877,7 @@ static void CheckPushedEntity( CBaseEntity *pEntity, pushblock_t &params )
 				}
 
 				float t = expectedDist != 0.0f ? fabsf(deltaAngle / expectedDist) : 1.0f;
-				t = clamp(t,0,1);
+				t = clamp(t,0.f,1.f);
 				fraction = MAX(fraction, t);
 			}
 			else
@@ -2447,7 +3079,7 @@ void CBaseEntity::PhysicsTouchTriggers( const Vector *pPrevAbsOrigin )
 		Assert(CollisionProp());
 		bool isTriggerCheckSolids = IsSolidFlagSet( FSOLID_TRIGGER );
 		bool isSolidCheckTriggers = IsSolid() && !isTriggerCheckSolids;		// NOTE: Moving triggers (items, ammo etc) are not 
-																			// checked against other triggers ot reduce the number of touchlinks created
+																			// checked against other triggers to reduce the number of touchlinks created
 		if ( !(isSolidCheckTriggers || isTriggerCheckSolids) )
 			return;
 
@@ -2804,10 +3436,11 @@ TraceAttack
 //-----------------------------------------------------------------------------
 bool CBaseEntity::PassesDamageFilter( const CTakeDamageInfo &info )
 {
-	if (m_hDamageFilter)
+	if ( m_hDamageFilter )
 	{
-		CBaseFilter *pFilter = (CBaseFilter *)(m_hDamageFilter.Get());
-		return pFilter->PassesDamageFilter(info);
+		CBaseFilter *pFilter = dynamic_cast< CBaseFilter * >( m_hDamageFilter.Get() );
+		if ( pFilter )
+			return pFilter->PassesDamageFilter(info);
 	}
 
 	return true;
@@ -2816,7 +3449,7 @@ bool CBaseEntity::PassesDamageFilter( const CTakeDamageInfo &info )
 FORCEINLINE bool NamesMatch( const char *pszQuery, string_t nameToMatch )
 {
 	if ( nameToMatch == NULL_STRING )
-		return (*pszQuery == 0 || *pszQuery == '*');
+		return (!pszQuery || *pszQuery == 0 || *pszQuery == '*');
 
 	const char *pszNameToMatch = STRING(nameToMatch);
 
@@ -2826,9 +3459,16 @@ FORCEINLINE bool NamesMatch( const char *pszQuery, string_t nameToMatch )
 
 	while ( *pszNameToMatch && *pszQuery )
 	{
-		char cName = *pszNameToMatch;
-		char cQuery = *pszQuery;
-		if ( cName != cQuery && tolower(cName) != tolower(cQuery) ) // people almost always use lowercase, so assume that first
+		unsigned char cName = *pszNameToMatch;
+		unsigned char cQuery = *pszQuery;
+		// simple ascii case conversion
+		if ( cName == cQuery )
+			;
+		else if ( cName - 'A' <= (unsigned char)'Z' - 'A' && cName - 'A' + 'a' == cQuery )
+			;
+		else if ( cName - 'a' <= (unsigned char)'z' - 'a' && cName - 'a' + 'A' == cQuery )
+			;
+		else
 			break;
 		++pszNameToMatch;
 		++pszQuery;
@@ -3061,15 +3701,6 @@ int CBaseEntity::Restore( IRestore &restore )
 		m_hGroundEntity->AddEntityToGroundList( this );
 	}
 
-	// Tracker 22129
-	// This is a hack to make sure that the entity is added to the AddPostClientMessageEntity
-	//  list so that EF_NOINTERP can be cleared at the end of the frame.  Otherwise, a restored entity
-	//  with this flag will not interpolate until the next time the flag is set.  ywb
-	if ( IsEffectActive( EF_NOINTERP ) )
-	{
-		AddEffects( EF_NOINTERP );
-	}
-
 	return status;
 }
 
@@ -3090,6 +3721,19 @@ void CBaseEntity::OnSave( IEntitySaveUtils *pUtils )
 //-----------------------------------------------------------------------------
 void CBaseEntity::OnRestore()
 {
+#if defined( PORTAL ) || defined( HL2_EPISODIC ) || defined ( HL2_DLL ) || defined( HL2_LOSTCOAST )
+	// We had a short period during the 2013 beta where the FL_* flags had a bogus value near the top, so detect
+	// these bad saves and just give up. Only saves from the short beta period should have been effected.
+	if ( GetFlags() & FL_FAKECLIENT )
+	{
+		char szMsg[256];
+		V_snprintf( szMsg, sizeof(szMsg), "\nInvalid save, unable to load. Please run \"map %s\" to restart this level manually\n\n", gpGlobals->mapname.ToCStr() );
+		Msg( "%s", szMsg );
+		
+		engine->ServerCommand("wait;wait;disconnect;showconsole\n");
+	}
+#endif
+
 	SimThink_EntityChanged( this );
 
 	// touchlinks get recomputed
@@ -3198,7 +3842,7 @@ void CBaseEntity::FunctionCheck( void *pFunction, const char *name )
 	// Note, if you crash here and your class is using multiple inheritance, it is
 	// probably the case that CBaseEntity (or a descendant) is not the first
 	// class in your list of ancestors, which it must be.
-	if (pFunction && !UTIL_FunctionToName( GetDataDescMap(), pFunction ) )
+	if (pFunction && !UTIL_FunctionToName( GetDataDescMap(), (inputfunc_t *)pFunction ) )
 	{
 		Warning( "FUNCTION NOT IN TABLE!: %s:%s (%08lx)\n", STRING(m_iClassname), name, (unsigned long)pFunction );
 		Assert(0);
@@ -3467,19 +4111,19 @@ void CBaseEntity::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 
 	pInfo->m_pTransmitEdict->Set( index );
 
-	// HLTV needs to know if this entity is culled by PVS limits
+	// HLTV/Replay need to know if this entity is culled by PVS limits
 	if ( pInfo->m_pTransmitAlways )
 	{
-		// in HLTV mode always transmit entitys with move-parents
-		// HLTV can't resolve the mode-parents relationships 
+		// in HLTV/Replay mode always transmit entitys with move-parents
+		// HLTV/Replay can't resolve the mode-parents relationships 
 		if ( bAlways || pNetworkParent )
 		{
-			// tell HLTV that this entity is always transmitted
+			// tell HLTV/Replay that this entity is always transmitted
 			pInfo->m_pTransmitAlways->Set( index );
 		}
 		else 
 		{
-			// HLTV will PVS cull this entity, so update the 
+			// HLTV/Replay will PVS cull this entity, so update the 
 			// node/cluster infos if necessary
 			m_Network.RecomputePVSInformation();
 		}
@@ -3577,7 +4221,7 @@ void CBaseEntity::DrawInputOverlay(const char *szInputName, CBaseEntity *pCaller
 	{
 		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) <-- (%s)\n", gpGlobals->curtime, szInputName, pCaller ? pCaller->GetDebugName() : NULL);
 	}
-	AddTimedOverlay(bigstring, 10);
+	AddTimedOverlay(bigstring, 10.0);
 
 	if ( Value.FieldType() == FIELD_INTEGER )
 	{
@@ -3608,7 +4252,7 @@ void CBaseEntity::DrawOutputOverlay(CEventAction *ev)
 	{
 		Q_snprintf( bigstring,sizeof(bigstring), "%3.1f  (%s) --> (%s)\n", gpGlobals->curtime,  STRING(ev->m_iTargetInput), STRING(ev->m_iTarget));
 	}
-	AddTimedOverlay(bigstring, 10);
+	AddTimedOverlay(bigstring, 10.0);
 
 	// Now print to the console
 	if ( ev->m_flDelay )
@@ -3632,7 +4276,7 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 	{
 	case ENTITY_EVENT_WATER_TOUCH:
 		{
-			int nContents = (int)pEventData;
+			int nContents = size_cast< int >( (intp)pEventData );
 			if ( !nContents || (nContents & CONTENTS_WATER) )
 			{
 				++m_nWaterTouch;
@@ -3646,7 +4290,7 @@ void CBaseEntity::OnEntityEvent( EntityEvent_t event, void *pEventData )
 
 	case ENTITY_EVENT_WATER_UNTOUCH:
 		{
-			int nContents = (int)pEventData;
+			int nContents = size_cast< int >( (intp)pEventData );
 			if ( !nContents || (nContents & CONTENTS_WATER) )
 			{
 				--m_nWaterTouch;
@@ -3736,7 +4380,7 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 					{
 						Q_snprintf( szBuffer, sizeof(szBuffer), "(%0.2f) input <NULL>: %s.%s(%s)\n", gpGlobals->curtime, GetDebugName(), szInputName, Value.String() );
 					}
-					DevMsg( 2, szBuffer );
+					DevMsg( 2, "%s", szBuffer );
 					ADD_DEBUG_HISTORY( HISTORY_ENTITY_IO, szBuffer );
 
 					if (m_debugOverlays & OVERLAY_MESSAGE_BIT)
@@ -3773,7 +4417,36 @@ bool CBaseEntity::AcceptInput( const char *szInputName, CBaseEntity *pActivator,
 						data.value = Value;
 						data.nOutputID = outputID;
 
-						(this->*pfnInput)( data );
+						// Now, see if there's a function named Input<Name of Input> in this entity's script file. 
+						// If so, execute it and let it decide whether to allow the default behavior to also execute.
+						bool bCallInputFunc = true; // Always assume default behavior (do call the input function)
+						ScriptVariant_t functionReturn;
+
+						if ( m_ScriptScope.IsInitialized() )
+						{
+							char szScriptFunctionName[255];
+							Q_strcpy( szScriptFunctionName, "Input" );
+							Q_strcat( szScriptFunctionName, szInputName, 255 );
+
+							g_pScriptVM->SetValue( "activator", ( pActivator ) ? ScriptVariant_t( pActivator->GetScriptInstance() ) : SCRIPT_VARIANT_NULL );
+							g_pScriptVM->SetValue( "caller", ( pCaller ) ? ScriptVariant_t( pCaller->GetScriptInstance() ) : SCRIPT_VARIANT_NULL );
+
+							if( CallScriptFunction( szScriptFunctionName, &functionReturn ) )
+							{
+								bCallInputFunc = functionReturn;
+							}
+						}
+
+						if( bCallInputFunc )
+						{
+							(this->*pfnInput)( data );
+						}
+					
+						if ( m_ScriptScope.IsInitialized() )
+						{
+							g_pScriptVM->ClearValue( "activator" );
+							g_pScriptVM->ClearValue( "caller" );
+						}
 					}
 					else if ( dmap->dataDesc[i].flags & FTYPEDESC_KEY )
 					{
@@ -3906,6 +4579,13 @@ void CBaseEntity::InputSetDamageFilter( inputdata_t &inputdata )
 }
 
 //-----------------------------------------------------------------------------
+void CBaseEntity::ScriptInputKill( void )
+{
+	inputdata_t dummy;
+	InputKill( dummy );
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Dispatch effects on this entity
 //-----------------------------------------------------------------------------
 void CBaseEntity::InputDispatchEffect( inputdata_t &inputdata )
@@ -4009,7 +4689,7 @@ void CBaseEntity::SetParentAttachment( const char *szInputName, const char *szAt
 
 	// Lookup the attachment
 	int iAttachment = pAnimating->LookupAttachment( szAttachment );
-	if ( !iAttachment )
+	if ( iAttachment <= 0 )
 	{
 		Warning("ERROR: Tried to %s for entity %s (%s), but it has no attachment named %s.\n", szInputName, GetClassname(), GetDebugName(), szAttachment );
 		return;
@@ -4130,19 +4810,14 @@ void CBaseEntity::SetModel( const char *szModelName )
 	UTIL_SetModel( this, szModelName );
 }
 
+//------------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// Purpose: Called once per frame after the server frame loop has finished and after all messages being
-//  sent to clients have been sent.  NOTE: Only called if scheduled via AddPostClientMessageEntity() !
-//-----------------------------------------------------------------------------
-void CBaseEntity::PostClientMessagesSent( void )
+CStudioHdr *CBaseEntity::OnNewModel()
 {
-	// Remove nointerp flags from entity after every frame
-	if ( IsEffectActive( EF_NOINTERP ) )
-	{
-		RemoveEffects( EF_NOINTERP );
-	}
+	// Do nothing.
+	return NULL;
 }
+
 
 //================================================================================
 // TEAM HANDLING
@@ -4172,7 +4847,7 @@ CTeam *CBaseEntity::GetTeam( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: Returns true if these players are both in at least one team together
 //-----------------------------------------------------------------------------
-bool CBaseEntity::InSameTeam( CBaseEntity *pEntity ) const
+bool CBaseEntity::InSameTeam( const CBaseEntity *pEntity ) const
 {
 	if ( !pEntity )
 		return false;
@@ -4276,7 +4951,7 @@ static void TeleportEntity( CBaseEntity *pSourceEntity, TeleportListEntry_t &ent
 
 		if ( newPosition )
 		{
-			pTeleport->AddEffects( EF_NOINTERP );
+			pTeleport->IncrementInterpolationFrame();
 			UTIL_SetOrigin( pTeleport, *newPosition );
 		}
 	}
@@ -4360,6 +5035,17 @@ void CBaseEntity::Teleport( const Vector *newPosition, const QAngle *newAngles, 
 	for (i = 0; i < teleportList.Count(); i++)
 	{
 		teleportList[i].pEntity->CollisionRulesChanged();
+	}
+
+	if ( IsPlayer() )
+	{
+		// Tell the client being teleported
+		IGameEvent *event = gameeventmanager->CreateEvent( "base_player_teleported" );
+		if ( event )
+		{
+			event->SetInt( "entindex", entindex() );
+			gameeventmanager->FireEventClientSide( event );
+		}
 	}
 
 	Assert( g_TeleportStack[index] == this );
@@ -4649,7 +5335,7 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 							char token[256];
 							const char *pOptions = pEvent->pszOptions();
 							nexttoken( token, pOptions, ' ' );
-							if ( token[0] != '\0' ) 
+							if ( token[0] ) 
 							{
 								PrecacheParticleSystem( token );
 							}
@@ -4731,11 +5417,10 @@ void CBaseEntity::PrecacheModelComponents( int nModelIndex )
 // Input  : *name - model name
 // Output : int -- model index for model
 //-----------------------------------------------------------------------------
-int CBaseEntity::PrecacheModel( const char *name )
+int CBaseEntity::PrecacheModel( const char *name, bool bPreload )
 {
 	if ( !name || !*name )
 	{
-		Msg( "Attempting to precache model, but model name is NULL\n");
 		return -1;
 	}
 
@@ -4744,8 +5429,7 @@ int CBaseEntity::PrecacheModel( const char *name )
 	{
 		if ( !engine->IsModelPrecached( name ) )
 		{
-			Assert( !"CBaseEntity::PrecacheModel:  too late" );
-			Warning( "Late precache of %s\n", name );
+			DevMsg( "Late precache of %s -- not necessarily a bug now that we allow ~everything to be dynamically loaded.\n", name );
 		}
 	}
 #if defined( WATCHACCESS )
@@ -4755,7 +5439,7 @@ int CBaseEntity::PrecacheModel( const char *name )
 	}
 #endif
 
-	int idx = engine->PrecacheModel( name, true );
+	int idx = engine->PrecacheModel( name, bPreload );
 	if ( idx != -1 )
 	{
 		PrecacheModelComponents( idx );
@@ -4774,6 +5458,87 @@ int CBaseEntity::PrecacheModel( const char *name )
 void CBaseEntity::Remove( )
 {
 	UTIL_Remove( this );
+}
+
+//-----------------------------------------------------------------------------
+// VScript access to model's key values
+// for iteration and value access, use:
+//	ScriptFindKey, ScriptGetFirstSubKey, ScriptGetString, 
+//	ScriptGetInt, ScriptGetFloat, ScriptGetNextKey
+//-----------------------------------------------------------------------------
+HSCRIPT CBaseEntity::ScriptGetModelKeyValues( void )
+{
+	KeyValues *pModelKeyValues = new KeyValues("");
+	HSCRIPT hScript = NULL;
+	const char *pszModelName = modelinfo->GetModelName( GetModel() );
+	const char *pBuffer = modelinfo->GetModelKeyValueText( GetModel() ) ;
+
+	if ( pModelKeyValues->LoadFromBuffer( pszModelName, pBuffer ) )
+	{
+		// UNDONE: how does destructor get called on this
+		m_pScriptModelKeyValues = new CScriptKeyValues( pModelKeyValues );
+
+		// UNDONE: who calls ReleaseInstance on this??? Does name need to be unique???
+
+		hScript = g_pScriptVM->RegisterInstance( m_pScriptModelKeyValues );
+		
+		/* 
+		KeyValues *pParticleEffects = pModelKeyValues->FindKey("Particles");
+		if ( pParticleEffects )
+		{						   
+			// Start grabbing the sounds and slotting them in
+			for ( KeyValues *pSingleEffect = pParticleEffects->GetFirstSubKey(); pSingleEffect; pSingleEffect = pSingleEffect->GetNextKey() )
+			{
+				const char *pParticleEffectName = pSingleEffect->GetString( "name", "" );
+				PrecacheParticleSystem( pParticleEffectName );
+			}
+		}
+		*/
+	}
+	
+	
+
+	return hScript;
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CBaseEntity::ScriptPrecacheModel( const char *name )
+{
+	PrecacheModel( name );
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CBaseEntity::ScriptPrecacheScriptSound( const char *name )
+{
+	PrecacheScriptSound( name );
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+bool CBaseEntity::ScriptAcceptInput( const char *pInputName, const char *pValue, HSCRIPT hActivator, HSCRIPT hCaller )
+{
+	if ( V_isempty( pInputName ) )
+		return false;
+
+	if ( !pValue )
+	{
+		pValue = "";
+	}
+
+	variant_t variant;
+	variant.SetString( AllocPooledString( pValue ) );
+	return AcceptInput( pInputName, ToEnt( hActivator ), ToEnt( hCaller ), variant, 0 );
 }
 
 //   Entity degugging console commands
@@ -4804,6 +5569,76 @@ void ConsoleFireTargets( CBasePlayer *pPlayer, const char *name)
 }
 
 //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
+void DumpScriptScope( CBasePlayer* pPlayer, const char *name)
+{
+	CBaseEntity *pEntity = NULL;
+	while ( (pEntity = GetNextCommandEntity( pPlayer, name, pEntity )) != NULL )
+	{
+		if( pEntity->m_ScriptScope.IsInitialized() )
+		{
+			Msg("----Script Dump for entity %s\n", pEntity->GetDebugName() );
+			HSCRIPT hDumpScopeFunc = g_pScriptVM->LookupFunction( "__DumpScope" );
+			g_pScriptVM->Call( hDumpScopeFunc, NULL, true, NULL, 1,(HSCRIPT)pEntity->m_ScriptScope );
+			Msg("----End Script Dump\n" );
+		}
+		else
+		{
+			DevWarning( "ent_script_dump: Entity %s has no script scope!\n", pEntity->GetDebugName() );
+		}
+	}
+}
+
+//------------------------------------------------------------------------------
+// ent_call is used to call a function on current target, or on a name pattern match
+void CC_Ent_Call( const CCommand& args )
+{
+    if (args.ArgC() >= 1)
+    {
+        const char *entname = args.ArgC() > 2 ? args[2] : "";
+        CBasePlayer *pPlayer = UTIL_GetCommandClient();
+        CBaseEntity *pEntity = NULL;
+        while ( (pEntity = GetNextCommandEntity( pPlayer, entname, pEntity )) != NULL )
+        {
+            ScriptVariant_t rval;
+            if (!pEntity->CallScriptFunction( args[1], &rval, true ) )
+            { 
+                HSCRIPT hFunc;
+                hFunc = g_pScriptVM->LookupFunction( args[1] );
+                if ( hFunc )
+                {
+                    g_pScriptVM->Call( hFunc, NULL, true, &rval, ToHScript(pEntity) );
+                }
+                else
+                {
+#ifdef TERROR
+                    hFunc = TheDirector->GetScriptScope( CDirector::CHALLENGE_SCRIPT )->LookupFunction( args[1] );
+                    // @TODO: why does this not work... it "should" be identical to the call above that does work, right?
+                    // hFunc = g_pScriptVM->LookupFunction( args[1], HSCRIPT(TheDirector->GetScriptScope( CDirector::CHALLENGE_SCRIPT )));
+                    if ( hFunc )
+                        TheDirector->GetScriptScope( CDirector::CHALLENGE_SCRIPT )->Call( hFunc, &rval, ToHScript(pEntity) );
+                    else
+                    {
+                        hFunc = TheDirector->GetScriptScope( CDirector::MAP_SCRIPT )->LookupFunction( args[1] );
+                        if ( hFunc )
+                            TheDirector->GetScriptScope( CDirector::MAP_SCRIPT )->Call( hFunc, &rval, ToHScript(pEntity) );
+                        else
+                            Warning("Couldn't find function %s anywhere!\n", args[1]);
+                    }
+#else
+					Warning("Couldn't find function %s anywhere!\n", args[1]);
+#endif
+                }
+            }
+        }
+    }
+    else
+        Warning("Can't ent_call w/o arguments!\n");
+}
+
+static ConCommand ent_call("ent_call", CC_Ent_Call, "ent_call <funcname> <option:entname> calls function on current look target or filtername, checks on ent, then root, then mode, then map scope", FCVAR_CHEAT);
+
+//------------------------------------------------------------------------------
 // Purpose : 
 // Input   :
 // Output  :
@@ -4820,6 +5655,13 @@ void CC_Ent_Text( const CCommand& args )
 	SetDebugBits(UTIL_GetCommandClient(),args[1],OVERLAY_TEXT_BIT);
 }
 static ConCommand ent_text("ent_text", CC_Ent_Text, "Displays text debugging information about the given entity(ies) on top of the entity (See Overlay Text)\n\tArguments:   	{entity_name} / {class_name} / no argument picks what player is looking at ", FCVAR_CHEAT);
+
+//------------------------------------------------------------------------------
+void CC_Ent_Script_Dump( const CCommand& args )
+{
+	DumpScriptScope(UTIL_GetCommandClient(),args[1]);
+}
+static ConCommand ent_script_dump("ent_script_dump", CC_Ent_Script_Dump, "Dumps the names and values of this entity's script scope to the console\n\tArguments:   	{entity_name} / {class_name} / no argument picks what player is looking at ", FCVAR_CHEAT);
 
 //------------------------------------------------------------------------------
 void CC_Ent_BBox( const CCommand& args )
@@ -4988,6 +5830,7 @@ void CC_Find_Ent( const CCommand& args )
 {
 	if ( args.ArgC() < 2 )
 	{
+		Msg( "Total entities: %d (%d edicts)\n", gEntList.NumberOfEntities(), gEntList.NumberOfEdicts() );
 		Msg( "Format: find_ent <substring>\n" );
 		return;
 	}
@@ -5106,8 +5949,6 @@ void CC_Ent_Dump( const CCommand& args )
 								}
 							}
 							break;
-						default:
-							break;
 						}
 
 						// don't print out the duplicate keys
@@ -5144,11 +5985,6 @@ void CC_Ent_FireTarget( const CCommand& args )
 }
 static ConCommand firetarget("firetarget", CC_Ent_FireTarget, 0, FCVAR_CHEAT);
 
-static bool UtlStringLessFunc( const CUtlString &lhs, const CUtlString &rhs )
-{
-	return Q_stricmp( lhs.String(), rhs.String() ) < 0;
-}
-
 class CEntFireAutoCompletionFunctor : public ICommandCallback, public ICommandCompletionCallback
 {
 public:
@@ -5178,11 +6014,20 @@ public:
 			// people complained about users resetting the rcon password if the server briefly turned on cheats like this:
 			//    give point_servercommand
 			//    ent_fire point_servercommand command "rcon_password mynewpassword"
-			if ( gpGlobals->maxClients > 1 && V_stricmp( target, "point_servercommand" ) == 0 )
+			//
+			// Robin: Unfortunately, they get around point_servercommand checks with this:
+			//	  ent_create point_servercommand; ent_setname mine; ent_fire mine command "rcon_password mynewpassword"
+			// So, I'm removing the ability for anyone to execute ent_fires on dedicated servers (we can't check to see if
+			// this command is going to connect with a point_servercommand entity here, because they could delay the event and create it later).
+			if ( engine->IsDedicatedServer() )
 			{
-				if ( engine->IsDedicatedServer() )
+				// We allow people with disabled autokick to do it, because they already have rcon.
+				if ( pPlayer->IsAutoKickDisabled() == false )
 					return;
-					
+			}
+			else if ( gpGlobals->maxClients > 1 )
+			{
+				// On listen servers with more than 1 player, only allow the host to issue ent_fires.
 				CBasePlayer *pHostPlayer = UTIL_GetListenServerHost();
 				if ( pPlayer != pHostPlayer )
 					return;
@@ -5224,7 +6069,7 @@ public:
 		char *space = Q_strstr( substring, " " );
 		if ( space )
 		{
-			return EntFire_AutoCompleteInput( partial, commands );;
+			return EntFire_AutoCompleteInput( partial, commands );
 		}
 		else
 		{
@@ -5373,6 +6218,9 @@ static ConCommand ent_fire("ent_fire", &g_EntFireAutoComplete, "Usage:\n   ent_f
 
 void CC_Ent_CancelPendingEntFires( const CCommand& args )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	CBasePlayer *pPlayer = ToBasePlayer( UTIL_GetCommandClient() );
 	if (!pPlayer)
 		return;
@@ -5549,42 +6397,53 @@ void CBaseEntity::CalcAbsolutePosition( void )
 	if (!IsEFlagSet( EFL_DIRTY_ABSTRANSFORM ))
 		return;
 
-	RemoveEFlags( EFL_DIRTY_ABSTRANSFORM );
-
-	// Plop the entity->parent matrix into m_rgflCoordinateFrame
-	AngleMatrix( m_angRotation, m_vecOrigin, m_rgflCoordinateFrame );
-
-	CBaseEntity *pMoveParent = GetMoveParent();
-	if ( !pMoveParent )
 	{
-		// no move parent, so just copy existing values
-		m_vecAbsOrigin = m_vecOrigin;
-		m_angAbsRotation = m_angRotation;
-		if ( HasDataObjectType( POSITIONWATCHER ) )
+		AUTO_LOCK( m_CalcAbsolutePositionMutex );
+
+		// Test again under the lock, in case another thread did the work in the interim
+		if ( !IsEFlagSet( EFL_DIRTY_ABSTRANSFORM ) )
 		{
-			ReportPositionChanged( this );
+			return;
 		}
-		return;
+
+		// Plop the entity->parent matrix into m_rgflCoordinateFrame
+		AngleMatrix( m_angRotation, m_vecOrigin, m_rgflCoordinateFrame );
+
+		CBaseEntity *pMoveParent = GetMoveParent();
+		if ( !pMoveParent )
+		{
+			// no move parent, so just copy existing values
+			m_vecAbsOrigin = m_vecOrigin;
+			m_angAbsRotation = m_angRotation;
+		}
+		else
+		{
+			// concatenate with our parent's transform
+			matrix3x4_t tmpMatrix, scratchSpace;
+			ConcatTransforms( GetParentToWorldTransform( scratchSpace ), m_rgflCoordinateFrame, tmpMatrix );
+			MatrixCopy( tmpMatrix, m_rgflCoordinateFrame );
+
+			// pull our absolute position out of the matrix
+			MatrixGetColumn( m_rgflCoordinateFrame, 3, m_vecAbsOrigin );
+
+			// if we have any angles, we have to extract our absolute angles from our matrix
+			if ( ( m_angRotation == vec3_angle ) && ( m_iParentAttachment == 0 ) )
+			{
+				// just copy our parent's absolute angles
+				VectorCopy( pMoveParent->GetAbsAngles(), m_angAbsRotation );
+			}
+			else
+			{
+				MatrixAngles( m_rgflCoordinateFrame, m_angAbsRotation );
+			}
+		}
+
+		ThreadMemoryBarrier();
+		RemoveEFlags( EFL_DIRTY_ABSTRANSFORM );
 	}
 
-	// concatenate with our parent's transform
-	matrix3x4_t tmpMatrix, scratchSpace;
-	ConcatTransforms( GetParentToWorldTransform( scratchSpace ), m_rgflCoordinateFrame, tmpMatrix );
-	MatrixCopy( tmpMatrix, m_rgflCoordinateFrame );
-
-	// pull our absolute position out of the matrix
-	MatrixGetColumn( m_rgflCoordinateFrame, 3, m_vecAbsOrigin ); 
-
-	// if we have any angles, we have to extract our absolute angles from our matrix
-	if (( m_angRotation == vec3_angle ) && ( m_iParentAttachment == 0 ))
-	{
-		// just copy our parent's absolute angles
-		VectorCopy( pMoveParent->GetAbsAngles(), m_angAbsRotation );
-	}
-	else
-	{
-		MatrixAngles( m_rgflCoordinateFrame, m_angAbsRotation );
-	}
+	// Do this callback *after* we have updated the position, and (importantly) after we clear the dirty flag, because this callback can potentially
+	// end up recursively calling back in here, so the dirty flag must be cleared to break the recursion in that case.
 	if ( HasDataObjectType( POSITIONWATCHER ) )
 	{
 		ReportPositionChanged( this );
@@ -5683,6 +6542,8 @@ matrix3x4_t& CBaseEntity::GetParentToWorldTransform( matrix3x4_t &tempMatrix )
 
 	if ( m_iParentAttachment != 0 )
 	{
+		MDLCACHE_CRITICAL_SECTION();
+
 		CBaseAnimating *pAnimating = pMoveParent->GetBaseAnimating();
 		if ( pAnimating && pAnimating->GetAttachment( m_iParentAttachment, tempMatrix ) )
 		{
@@ -5850,17 +6711,27 @@ void CBaseEntity::SetAbsAngularVelocity( const QAngle &vecAbsAngVelocity )
 }
 */
 
-
 //-----------------------------------------------------------------------------
 // Methods that modify local physics state, and let us know to compute abs state later
 //-----------------------------------------------------------------------------
 void CBaseEntity::SetLocalOrigin( const Vector& origin )
 {
-	if ( !origin.IsValid() )
+	// Safety check against NaN's or really huge numbers
+	if ( !IsEntityPositionReasonable( origin ) )
 	{
-		AssertMsg( 0, "Bad origin set" );
+		if ( CheckEmitReasonablePhysicsSpew() )
+		{
+			Warning( "Bad SetLocalOrigin(%f,%f,%f) on %s\n", origin.x, origin.y, origin.z, GetDebugName() );
+		}
+		Assert( false );
 		return;
 	}
+
+//	if ( !origin.IsValid() )
+//	{
+//		AssertMsg( 0, "Bad origin set" );
+//		return;
+//	}
 
 	if (m_vecOrigin != origin)
 	{
@@ -5873,7 +6744,7 @@ void CBaseEntity::SetLocalOrigin( const Vector& origin )
 #endif
 		
 		InvalidatePhysicsRecursive( POSITION_CHANGED );
-		m_vecOrigin = origin;
+		m_vecOrigin.SetDirect( origin );
 		SetSimulationTime( gpGlobals->curtime );
 	}
 }
@@ -5888,25 +6759,64 @@ void CBaseEntity::SetLocalAngles( const QAngle& angles )
 	//        handling things like +/-180 degrees properly. This should be revisited.
 	//QAngle angleNormalize( AngleNormalize( angles.x ), AngleNormalize( angles.y ), AngleNormalize( angles.z ) );
 
+	// Safety check against NaN's or really huge numbers
+	if ( !IsEntityQAngleReasonable( angles ) )
+	{
+		if ( CheckEmitReasonablePhysicsSpew() )
+		{
+			Warning( "Bad SetLocalAngles(%f,%f,%f) on %s\n", angles.x, angles.y, angles.z, GetDebugName() );
+		}
+		AssertMsg( false, "Bad SetLocalAngles(%f,%f,%f) on %s\n", angles.x, angles.y, angles.z, GetDebugName() );
+		return;
+	}
+
 	if (m_angRotation != angles)
 	{
 		InvalidatePhysicsRecursive( ANGLES_CHANGED );
-		m_angRotation = angles;
+		m_angRotation.SetDirect( angles );
 		SetSimulationTime( gpGlobals->curtime );
 	}
 }
 
-void CBaseEntity::SetLocalVelocity( const Vector &vecVelocity )
+void CBaseEntity::SetLocalVelocity( const Vector &inVecVelocity )
 {
+	Vector vecVelocity = inVecVelocity;
+
+	// Safety check against receive a huge impulse, which can explode physics
+	switch ( CheckEntityVelocity( vecVelocity ) )
+	{
+		case -1:
+			Warning( "Discarding SetLocalVelocity(%f,%f,%f) on %s\n", vecVelocity.x, vecVelocity.y, vecVelocity.z, GetDebugName() );
+			Assert( false );
+			return;
+		case 0:
+			if ( CheckEmitReasonablePhysicsSpew() )
+			{
+				Warning( "Clamping SetLocalVelocity(%f,%f,%f) on %s\n", inVecVelocity.x, inVecVelocity.y, inVecVelocity.z, GetDebugName() );
+			}
+			break;
+	}
+
 	if (m_vecVelocity != vecVelocity)
 	{
 		InvalidatePhysicsRecursive( VELOCITY_CHANGED );
-		m_vecVelocity = vecVelocity;
+		m_vecVelocity.SetDirect( vecVelocity );
 	}
 }
 
 void CBaseEntity::SetLocalAngularVelocity( const QAngle &vecAngVelocity )
 {
+	// Safety check against NaN's or really huge numbers
+	if ( !IsEntityQAngleVelReasonable( vecAngVelocity ) )
+	{
+		if ( CheckEmitReasonablePhysicsSpew() )
+		{
+			Warning( "Bad SetLocalAngularVelocity(%f,%f,%f) on %s\n", vecAngVelocity.x, vecAngVelocity.y, vecAngVelocity.z, GetDebugName() );
+		}
+		Assert( false );
+		return;
+	}
+
 	if (m_vecAngVelocity != vecAngVelocity)
 	{
 //		InvalidatePhysicsRecursive( EFL_DIRTY_ABSANGVELOCITY );
@@ -5914,6 +6824,22 @@ void CBaseEntity::SetLocalAngularVelocity( const QAngle &vecAngVelocity )
 	}
 }
 
+void CBaseEntity::ScriptSetLocalAngularVelocity( float pitchVel, float yawVel, float rollVel )
+{
+	QAngle qa;
+	qa.Init(pitchVel,yawVel,rollVel);
+	SetLocalAngularVelocity(qa);
+}
+
+const Vector &CBaseEntity::ScriptGetLocalAngularVelocity( void )
+{
+	QAngle qa = GetLocalAngularVelocity();
+	static Vector v;
+	v.x = qa.x;
+	v.y = qa.y;
+	v.z = qa.z;
+	return v;
+}
 
 //-----------------------------------------------------------------------------
 // Sets the local position from a transform
@@ -6274,6 +7200,337 @@ void CBaseEntity::InputFireUser4( inputdata_t& inputdata )
 	m_OnUser4.FireOutput( inputdata.pActivator, this );
 }
 
+//---------------------------------------------------------
+// Use the string as the filename of a script file
+// that should be loaded from disk, compiled, and run.
+//---------------------------------------------------------
+void CBaseEntity::InputRunScriptFile( inputdata_t& inputdata )
+{
+	if( !ValidateScriptScope() )
+	{
+		DevMsg("\n***\nFAILED to create private ScriptScope. ABORTING script\n***\n");
+		return;
+	}
+
+	// Josh: Set up activator/caller here, as we may not have has a valid script scope prior
+	// for the input system to have set these up for us.
+	if ( m_ScriptScope.IsInitialized() )
+	{
+		g_pScriptVM->SetValue( "activator", ( inputdata.pActivator ) ? ScriptVariant_t( inputdata.pActivator->GetScriptInstance() ) : SCRIPT_VARIANT_NULL );
+		g_pScriptVM->SetValue( "caller", ( inputdata.pCaller ) ? ScriptVariant_t( inputdata.pCaller->GetScriptInstance() ) : SCRIPT_VARIANT_NULL );
+	}
+
+	RunScriptFile( inputdata.value.String() );
+
+	if ( m_ScriptScope.IsInitialized() )
+	{
+		g_pScriptVM->ClearValue( "activator" );
+		g_pScriptVM->ClearValue( "caller" );
+	}
+}
+
+//---------------------------------------------------------
+// Send the string to the VM as source code and execute it
+//---------------------------------------------------------
+void CBaseEntity::RunScriptCodeInput( inputdata_t &inputdata, const char *pszCode )
+{
+	if( !ValidateScriptScope() )
+	{
+		DevMsg("\n***\nFAILED to create private ScriptScope. ABORTING script\n***\n");
+		return;
+	}
+
+	// Josh: Set up activator/caller here, as we may not have has a valid script scope prior
+	// for the input system to have set these up for us.
+	if ( m_ScriptScope.IsInitialized() )
+	{
+		g_pScriptVM->SetValue( "activator", ( inputdata.pActivator ) ? ScriptVariant_t( inputdata.pActivator->GetScriptInstance() ) : SCRIPT_VARIANT_NULL );
+		g_pScriptVM->SetValue( "caller", ( inputdata.pCaller ) ? ScriptVariant_t( inputdata.pCaller->GetScriptInstance() ) : SCRIPT_VARIANT_NULL );
+	}
+
+	RunScript( pszCode, "InputRunScript" );
+
+	if ( m_ScriptScope.IsInitialized() )
+	{
+		g_pScriptVM->ClearValue( "activator" );
+		g_pScriptVM->ClearValue( "caller" );
+	}
+}
+
+void CBaseEntity::InputRunScript( inputdata_t& inputdata )
+{
+	const char *pszRawScriptCode = inputdata.value.String();
+	{
+		const int nRawScriptCodeLen = V_strlen( pszRawScriptCode );
+		const int nRawScriptCodeSize = nRawScriptCodeLen + 1;
+
+		CUtlString szScriptCode;
+		szScriptCode.SetLength( nRawScriptCodeLen );
+		if ( V_StrSubst( inputdata.value.String(), "`", "\"", szScriptCode.GetForModify(), nRawScriptCodeSize, true ) )
+		{
+			RunScriptCodeInput( inputdata, szScriptCode.Get() );
+			return;
+		}
+	}
+
+	RunScriptCodeInput( inputdata, pszRawScriptCode );
+}
+
+void CBaseEntity::TerminateScriptScope()
+{
+	m_ScriptScope.Term();
+}
+
+void CBaseEntity::InputTerminateScriptScope( inputdata_t &inputdata )
+{
+	TerminateScriptScope();
+}
+
+//---------------------------------------------------------
+// Make an explicit function call.
+//---------------------------------------------------------
+void CBaseEntity::InputCallScriptFunction( inputdata_t& inputdata )
+{
+	CallScriptFunction( inputdata.value.String(), NULL );
+}
+
+// #define VMPROFILE	// define to profile vscript calls
+
+#ifdef VMPROFILE
+float g_debugCumulativeTime = 0.0;		
+float g_debugCounter = 0;
+
+#define START_VMPROFILE float debugStartTime = Plat_FloatTime();
+#define UPDATE_VMPROFILE \
+	g_debugCumulativeTime += Plat_FloatTime() - debugStartTime; \
+	g_debugCounter++; \
+	if ( g_debugCounter >= 500 ) \
+	{ \
+		DevMsg("***VSCRIPT PROFILE***: %s %s: %6.4f milliseconds\n", "500 vscript function calls", "", g_debugCumulativeTime*1000.0 ); \
+		g_debugCounter = 0; \
+		g_debugCumulativeTime = 0.0; \
+	} \
+
+#else
+
+#define START_VMPROFILE
+#define UPDATE_VMPROFILE
+
+#endif // VMPROFILE
+
+//-----------------------------------------------------------------------------
+// Returns true if the function was located and called. false otherwise.
+// NOTE:	Assumes the function takes no parameters at the moment.
+//-----------------------------------------------------------------------------
+bool CBaseEntity::CallScriptFunction( const char *pFunctionName, ScriptVariant_t *pFunctionReturn, bool bNoDelegation )
+{
+	START_VMPROFILE
+
+	if( !ValidateScriptScope() )
+	{
+		DevMsg("\n***\nFAILED to create private ScriptScope. ABORTING script\n***\n");
+		return false;
+	}
+
+
+	HSCRIPT hFunc = m_ScriptScope.LookupFunction( pFunctionName, bNoDelegation );
+
+	if( hFunc )
+	{
+		// Kind of a hack to make glados.nut easier to work with...
+		// When a script function is called by connecting the function to an entity output,
+		// the entity who is connected to the output and who has this function in their scope
+		// will be set to 'owninginstance'. In this situation, it can be a different instance than 'self'.
+		g_pScriptVM->SetValue( "owninginstance", ScriptVariant_t( GetScriptInstance() ) );
+		m_ScriptScope.Call( hFunc, pFunctionReturn );
+		m_ScriptScope.ReleaseFunction( hFunc );
+		g_pScriptVM->ClearValue( "owninginstance" );
+
+		UPDATE_VMPROFILE
+
+		return true;
+	}
+
+	return false;
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::ConnectOutputToScript( const char *pszOutput, const char *pszScriptFunc )
+{
+	CBaseEntityOutput *pOutput = FindNamedOutput( pszOutput );
+	if ( !pOutput )
+	{
+		DevMsg( 2, "Script failed to find output \"%s\"\n", pszOutput );
+		return;
+	}
+
+	string_t iszSelf = AllocPooledString( "!self" ); // @TODO: cache this [4/25/2008 tom]
+	CEventAction *pAction = pOutput->GetFirstAction();
+	while ( pAction )
+	{
+		if ( pAction->m_iTarget == iszSelf && 
+			 pAction->m_flDelay == 0 && 
+			 pAction->m_nTimesToFire == EVENT_FIRE_ALWAYS && 
+			 V_strcmp( STRING(pAction->m_iTargetInput), "CallScriptFunction" ) == 0 &&
+			 V_strcmp( STRING(pAction->m_iParameter), pszScriptFunc ) == 0 )
+		{
+			return;
+		}
+		pAction = pAction->m_pNext;
+	}
+
+	pAction = new CEventAction( NULL );
+	pAction->m_iTarget = iszSelf;
+	pAction->m_iTargetInput = AllocPooledString( "CallScriptFunction" );
+	pAction->m_iParameter = AllocPooledString( pszScriptFunc );
+	pOutput->AddEventAction( pAction );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::DisconnectOutputFromScript( const char *pszOutput, const char *pszScriptFunc )
+{
+	CBaseEntityOutput *pOutput = FindNamedOutput( pszOutput );
+	if ( !pOutput )
+	{
+		DevMsg( 2, "Script failed to find output \"%s\"\n", pszOutput );
+		return;
+	}
+
+	string_t iszSelf = AllocPooledString( "!self" ); // @TODO: cache this [4/25/2008 tom]
+	CEventAction *pAction = pOutput->GetFirstAction();
+	while ( pAction )
+	{
+		if ( pAction->m_iTarget == iszSelf && 
+			 pAction->m_flDelay == 0 && 
+			 pAction->m_nTimesToFire == EVENT_FIRE_ALWAYS && 
+			 V_strcmp( STRING(pAction->m_iTargetInput), "CallScriptFunction" ) == 0 &&
+			 V_strcmp( STRING(pAction->m_iParameter), pszScriptFunc ) == 0 )
+		{
+			pOutput->RemoveEventAction( pAction );
+			delete pAction;
+			return;
+		}
+		pAction = pAction->m_pNext;
+	}
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void CBaseEntity::ScriptThink( void )
+{
+	ScriptVariant_t varThinkRetVal;
+	if( CallScriptFunction( m_iszScriptThinkFunction.ToCStr(), &varThinkRetVal ) )
+	{
+		float flThinkFrequency = 0.0f;
+		if ( !varThinkRetVal.AssignTo( &flThinkFrequency ) )
+		{
+			// use default think interval if script think function doesn't provide one
+			flThinkFrequency = sv_script_think_interval.GetFloat();
+		}
+		SetContextThink( &CBaseEntity::ScriptThink,
+			gpGlobals->curtime + flThinkFrequency, "ScriptThink" );
+	}
+	else
+	{
+		DevWarning("%s FAILED to call script think function %s!\n", GetDebugName(), STRING(m_iszScriptThinkFunction) );
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+const char *CBaseEntity::GetScriptId()
+{
+	return STRING( m_iszScriptId );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+const char *CBaseEntity::GetScriptThinkFunc()
+{
+	return STRING( m_iszScriptThinkFunction );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+HSCRIPT CBaseEntity::GetScriptScope()
+{
+	return m_ScriptScope;
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+HSCRIPT CBaseEntity::ScriptGetMoveParent( void )
+{
+	return ToHScript( GetMoveParent() );
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+HSCRIPT CBaseEntity::ScriptGetRootMoveParent()
+{
+	return ToHScript( GetRootMoveParent() );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+HSCRIPT CBaseEntity::ScriptFirstMoveChild( void )
+{
+	return ToHScript( FirstMoveChild() );
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+HSCRIPT CBaseEntity::ScriptNextMovePeer( void )
+{
+	return ToHScript( NextMovePeer() );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Load, compile, and run a script file from disk.
+// Input  : *pScriptFile - The filename of the script file.
+//			bUseRootScope - If true, runs this script in the root scope, not
+//							in this entity's private scope.
+//-----------------------------------------------------------------------------
+bool CBaseEntity::RunScriptFile( const char *pScriptFile, bool bUseRootScope )
+{
+	if( !ValidateScriptScope() )
+	{
+		DevMsg("\n***\nFAILED to create private ScriptScope. ABORTING script\n***\n");
+		return false;
+	}
+
+	if( bUseRootScope )
+	{
+		return VScriptRunScript( pScriptFile );
+	}
+	else
+	{
+		return VScriptRunScript( pScriptFile, m_ScriptScope, true );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Compile and execute a discrete string of script source code
+// Input  : *pScriptText - A string containing script code to compile and run
+//-----------------------------------------------------------------------------
+bool CBaseEntity::RunScript( const char *pScriptText, const char *pDebugFilename )
+{
+	if( !ValidateScriptScope() )
+	{
+		DevMsg("\n***\nFAILED to create private ScriptScope. ABORTING script\n***\n");
+		return false;
+	}
+
+	if( m_ScriptScope.Run( pScriptText, pDebugFilename ) == SCRIPT_ERROR )
+	{
+		DevWarning(" Entity %s encountered an error in RunScript()\n", GetDebugName() );
+	}
+
+	return true;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -6421,23 +7678,19 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 	AI_Response result;
 	bool found = rs->FindBestResponse( set, result );
 	if ( !found )
-	{
 		return;
-	}
 
 	// Handle the response here...
-	char response[ 256 ];
-	result.GetResponse( response, sizeof( response ) );
+	const char *szResponse = result.GetResponsePtr();
 	switch ( result.GetType() )
 	{
 	case RESPONSE_SPEAK:
-		{
-			EmitSound( response );
-		}
+		EmitSound( szResponse );
 		break;
+
 	case RESPONSE_SENTENCE:
 		{
-			int sentenceIndex = SENTENCEG_Lookup( response );
+			int sentenceIndex = SENTENCEG_Lookup( szResponse );
 			if( sentenceIndex == -1 )
 			{
 				// sentence not found
@@ -6449,16 +7702,13 @@ void CBaseEntity::DispatchResponse( const char *conceptName )
 			CBaseEntity::EmitSentenceByIndex( filter, entindex(), CHAN_VOICE, sentenceIndex, 1, result.GetSoundLevel(), 0, PITCH_NORM );
 		}
 		break;
-	case RESPONSE_SCENE:
-		{
-			// Try to fire scene w/o an actor
-			InstancedScriptedScene( NULL, response );
-		}
-		break;
-	case RESPONSE_PRINT:
-		{
 
-		}
+	case RESPONSE_SCENE:
+		// Try to fire scene w/o an actor
+		InstancedScriptedScene( NULL, szResponse );
+		break;
+
+	case RESPONSE_PRINT:
 		break;
 	default:
 		// Don't know how to handle .vcds!!!
@@ -6523,164 +7773,187 @@ CAI_BaseNPC	*CBaseEntity::MyNPCPointer( void )
 ConVar step_spline( "step_spline", "0" );
 
 //-----------------------------------------------------------------------------
-// Purpose: Run one tick's worth of faked origin simulation
+// Purpose: Run one tick's worth of faked simulation
 // Input  : *step - 
 //-----------------------------------------------------------------------------
-bool CBaseEntity::ComputeStepSimulationNetworkOrigin( StepSimulationData *step )
+void CBaseEntity::ComputeStepSimulationNetwork( StepSimulationData *step )
 {
 	if ( !step )
 	{
 		Assert( !"ComputeStepSimulationNetworkOriginAndAngles with NULL step\n" );
-		return false;
+		return;
 	}
 
-	// It's inactive
-	if ( !step->m_bOriginActive )
+	// Don't run again if we've already calculated this tick
+	if ( step->m_nLastProcessTickCount == gpGlobals->tickcount )
 	{
-		return false;
+		return;
 	}
 
 	step->m_nLastProcessTickCount = gpGlobals->tickcount;
 
-	// First see if any external code moved the entity
-	if ( GetStepOrigin() != step->m_Next.vecOrigin )
+	// Origin
+	// It's inactive
+	if ( step->m_bOriginActive )
 	{
-		step->m_bOriginActive = false;
-		return false;
-	}
-
-	// Compute interpolated info based on tick interval
-	float frac = 1.0f;
-	int tickdelta = step->m_Next.nTickCount - step->m_Previous.nTickCount;
-	if ( tickdelta > 0 )
-	{
-		frac = (float)( gpGlobals->tickcount - step->m_Previous.nTickCount ) / (float) tickdelta;
-		frac = clamp( frac, 0.0f, 1.0f );
-	}
-
-	if (step->m_Previous2.nTickCount == 0 || step->m_Previous2.nTickCount >= step->m_Previous.nTickCount)
-	{
-		Vector delta = step->m_Next.vecOrigin - step->m_Previous.vecOrigin;
-		VectorMA( step->m_Previous.vecOrigin, frac, delta, step->m_vecNetworkOrigin );
-	}
-	else if (!step_spline.GetBool())
-	{
-		StepSimulationStep *pOlder = &step->m_Previous;
-		StepSimulationStep *pNewer = &step->m_Next;
-
-		if (step->m_Discontinuity.nTickCount > step->m_Previous.nTickCount)
+		// First see if any external code moved the entity
+		if ( GetStepOrigin() != step->m_Next.vecOrigin )
 		{
-			if (gpGlobals->tickcount > step->m_Discontinuity.nTickCount)
+			step->m_bOriginActive = false;
+		}
+		else
+		{
+			// Compute interpolated info based on tick interval
+			float frac = 1.0f;
+			int tickdelta = step->m_Next.nTickCount - step->m_Previous.nTickCount;
+			if ( tickdelta > 0 )
 			{
-				pOlder = &step->m_Discontinuity;
+				frac = (float)( gpGlobals->tickcount - step->m_Previous.nTickCount ) / (float) tickdelta;
+				frac = clamp( frac, 0.0f, 1.0f );
+			}
+		
+			if (step->m_Previous2.nTickCount == 0 || step->m_Previous2.nTickCount >= step->m_Previous.nTickCount)
+			{
+				Vector delta = step->m_Next.vecOrigin - step->m_Previous.vecOrigin;
+				VectorMA( step->m_Previous.vecOrigin, frac, delta, step->m_vecNetworkOrigin );
+			}
+			else if (!step_spline.GetBool())
+			{
+				StepSimulationStep *pOlder = &step->m_Previous;
+				StepSimulationStep *pNewer = &step->m_Next;
+		
+				if (step->m_Discontinuity.nTickCount > step->m_Previous.nTickCount)
+				{
+					if (gpGlobals->tickcount > step->m_Discontinuity.nTickCount)
+					{
+						pOlder = &step->m_Discontinuity;
+					}
+					else
+					{
+						pNewer = &step->m_Discontinuity;
+					}
+		
+					tickdelta = pNewer->nTickCount - pOlder->nTickCount;
+					if ( tickdelta > 0 )
+					{
+						frac = (float)( gpGlobals->tickcount - pOlder->nTickCount ) / (float) tickdelta;
+						frac = clamp( frac, 0.0f, 1.0f );
+					}
+				}
+		
+				Vector delta = pNewer->vecOrigin - pOlder->vecOrigin;
+				VectorMA( pOlder->vecOrigin, frac, delta, step->m_vecNetworkOrigin );
 			}
 			else
 			{
-				pNewer = &step->m_Discontinuity;
-			}
-
-			tickdelta = pNewer->nTickCount - pOlder->nTickCount;
-			if ( tickdelta > 0 )
-			{
-				frac = (float)( gpGlobals->tickcount - pOlder->nTickCount ) / (float) tickdelta;
-				frac = clamp( frac, 0.0f, 1.0f );
+				Hermite_Spline( step->m_Previous2.vecOrigin, step->m_Previous.vecOrigin, step->m_Next.vecOrigin, frac, step->m_vecNetworkOrigin );
 			}
 		}
-
-		Vector delta = pNewer->vecOrigin - pOlder->vecOrigin;
-		VectorMA( pOlder->vecOrigin, frac, delta, step->m_vecNetworkOrigin );
 	}
-	else
+
+	// Angles
+	if ( step->m_bAnglesActive )
 	{
-		Hermite_Spline( step->m_Previous2.vecOrigin, step->m_Previous.vecOrigin, step->m_Next.vecOrigin, frac, step->m_vecNetworkOrigin );
+		// See if external code changed the orientation of the entity
+		if ( GetStepAngles() != step->m_angNextRotation )
+		{
+			step->m_bAnglesActive = false;
+		}
+		else
+		{
+			// Compute interpolated info based on tick interval
+			float frac = 1.0f;
+			int tickdelta = step->m_Next.nTickCount - step->m_Previous.nTickCount;
+			if ( tickdelta > 0 )
+			{
+				frac = (float)( gpGlobals->tickcount - step->m_Previous.nTickCount ) / (float) tickdelta;
+				frac = clamp( frac, 0.0f, 1.0f );
+			}
+		
+			if (step->m_Previous2.nTickCount == 0 || step->m_Previous2.nTickCount >= step->m_Previous.nTickCount)
+			{
+				// Pure blend between start/end orientations
+				Quaternion outangles;
+				QuaternionBlend( step->m_Previous.qRotation, step->m_Next.qRotation, frac, outangles );
+				QuaternionAngles( outangles, step->m_angNetworkAngles );
+			}
+			else if (!step_spline.GetBool())
+			{
+				StepSimulationStep *pOlder = &step->m_Previous;
+				StepSimulationStep *pNewer = &step->m_Next;
+		
+				if (step->m_Discontinuity.nTickCount > step->m_Previous.nTickCount)
+				{
+					if (gpGlobals->tickcount > step->m_Discontinuity.nTickCount)
+					{
+						pOlder = &step->m_Discontinuity;
+					}
+					else
+					{
+						pNewer = &step->m_Discontinuity;
+					}
+		
+					tickdelta = pNewer->nTickCount - pOlder->nTickCount;
+					if ( tickdelta > 0 )
+					{
+						frac = (float)( gpGlobals->tickcount - pOlder->nTickCount ) / (float) tickdelta;
+						frac = clamp( frac, 0.0f, 1.0f );
+					}
+				}
+		
+				// Pure blend between start/end orientations
+				Quaternion outangles;
+				QuaternionBlend( pOlder->qRotation, pNewer->qRotation, frac, outangles );
+				QuaternionAngles( outangles, step->m_angNetworkAngles );
+			}
+			else
+			{
+				// FIXME: enable spline interpolation when turning is debounced.
+				Quaternion outangles;
+				Hermite_Spline( step->m_Previous2.qRotation, step->m_Previous.qRotation, step->m_Next.qRotation, frac, outangles );
+				QuaternionAngles( outangles, step->m_angNetworkAngles );
+			}
+		}
 	}
 
-	return true;
 }
 
 
-
 //-----------------------------------------------------------------------------
-// Purpose: Run one tick's worth of faked angles simulation
-// Input  : *step - 
-//-----------------------------------------------------------------------------
-bool CBaseEntity::ComputeStepSimulationNetworkAngles( StepSimulationData *step )
+bool CBaseEntity::UseStepSimulationNetworkOrigin( const Vector **out_v )
 {
-	if ( !step )
+	Assert( out_v );
+
+
+	if ( g_bTestMoveTypeStepSimulation &&
+		GetMoveType() == MOVETYPE_STEP &&
+		HasDataObjectType( STEPSIMULATION ) )
 	{
-		Assert( !"ComputeStepSimulationNetworkOriginAndAngles with NULL step\n" );
-		return false;
+		StepSimulationData *step = ( StepSimulationData * )GetDataObject( STEPSIMULATION );
+		ComputeStepSimulationNetwork( step );
+		*out_v = &step->m_vecNetworkOrigin;
+
+		return step->m_bOriginActive;
 	}
 
-	// It's inactive
-	if ( !step->m_bAnglesActive )
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+bool CBaseEntity::UseStepSimulationNetworkAngles( const QAngle **out_a )
+{
+	Assert( out_a );
+
+	if ( g_bTestMoveTypeStepSimulation &&
+		GetMoveType() == MOVETYPE_STEP &&
+		HasDataObjectType( STEPSIMULATION ) )
 	{
-		return false;
+		StepSimulationData *step = ( StepSimulationData * )GetDataObject( STEPSIMULATION );
+		ComputeStepSimulationNetwork( step );
+		*out_a = &step->m_angNetworkAngles;
+		return step->m_bAnglesActive;
 	}
-
-	step->m_nLastProcessTickCount = gpGlobals->tickcount;
-
-	// See if external code changed the orientation of the entity
-	if ( GetStepAngles() != step->m_angNextRotation )
-	{
-		step->m_bAnglesActive = false;
-		return false;
-	}
-
-	// Compute interpolated info based on tick interval
-	float frac = 1.0f;
-	int tickdelta = step->m_Next.nTickCount - step->m_Previous.nTickCount;
-	if ( tickdelta > 0 )
-	{
-		frac = (float)( gpGlobals->tickcount - step->m_Previous.nTickCount ) / (float) tickdelta;
-		frac = clamp( frac, 0.0f, 1.0f );
-	}
-
-	if (step->m_Previous2.nTickCount == 0 || step->m_Previous2.nTickCount >= step->m_Previous.nTickCount)
-	{
-		// Pure blend between start/end orientations
-		Quaternion outangles;
-		QuaternionBlend( step->m_Previous.qRotation, step->m_Next.qRotation, frac, outangles );
-		QuaternionAngles( outangles, step->m_angNetworkAngles );
-	}
-	else if (!step_spline.GetBool())
-	{
-		StepSimulationStep *pOlder = &step->m_Previous;
-		StepSimulationStep *pNewer = &step->m_Next;
-
-		if (step->m_Discontinuity.nTickCount > step->m_Previous.nTickCount)
-		{
-			if (gpGlobals->tickcount > step->m_Discontinuity.nTickCount)
-			{
-				pOlder = &step->m_Discontinuity;
-			}
-			else
-			{
-				pNewer = &step->m_Discontinuity;
-			}
-
-			tickdelta = pNewer->nTickCount - pOlder->nTickCount;
-			if ( tickdelta > 0 )
-			{
-				frac = (float)( gpGlobals->tickcount - pOlder->nTickCount ) / (float) tickdelta;
-				frac = clamp( frac, 0.0f, 1.0f );
-			}
-		}
-
-		// Pure blend between start/end orientations
-		Quaternion outangles;
-		QuaternionBlend( pOlder->qRotation, pNewer->qRotation, frac, outangles );
-		QuaternionAngles( outangles, step->m_angNetworkAngles );
-	}
-	else
-	{
-		// FIXME: enable spline interpolation when turning is debounced.
-		Quaternion outangles;
-		Hermite_Spline( step->m_Previous2.qRotation, step->m_Previous.qRotation, step->m_Next.qRotation, frac, outangles );
-		QuaternionAngles( outangles, step->m_angNetworkAngles );
-	}
-
-	return true;
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -6783,7 +8056,7 @@ void CBaseEntity::EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, 
 {
 	CUtlVector< Vector > dummy;
 	enginesound->EmitSentenceByIndex( filter, iEntIndex, iChannel, iSentenceIndex, 
-		flVolume, iSoundlevel, iFlags, iPitch, pOrigin, pDirection, &dummy, bUpdatePositions, soundtime );
+		flVolume, iSoundlevel, iFlags, iPitch, 0, pOrigin, pDirection, &dummy, bUpdatePositions, soundtime );
 }
 
 
@@ -6792,7 +8065,8 @@ void CBaseEntity::SetRefEHandle( const CBaseHandle &handle )
 	m_RefEHandle = handle;
 	if ( edict() )
 	{
-		edict()->m_NetworkSerialNumber = (m_RefEHandle.GetSerialNumber() & (1 << NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS) - 1);
+		COMPILE_TIME_ASSERT( NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS <= 8*sizeof( edict()->m_NetworkSerialNumber ) );
+		edict()->m_NetworkSerialNumber = m_RefEHandle.GetSerialNumber() & ( (1 << NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS) - 1 );
 	}
 }
 
@@ -6926,8 +8200,8 @@ void CBaseEntity::SUB_PerformFadeOut( void )
 		dt = 0.1f;
 	}
 	m_nRenderMode = kRenderTransTexture;
-	int speed = (int)MAX(1,256*dt); // fade out over 1 second
-	SetRenderColorA( (byte)UTIL_Approach( 0, m_clrRender->a, speed ) );
+	int speed = MAX(1,256*dt); // fade out over 1 second
+	SetRenderColorA( UTIL_Approach( 0, m_clrRender->a, speed ) );
 }
 
 bool CBaseEntity::SUB_AllowedToFade( void )
@@ -6973,6 +8247,194 @@ void CBaseEntity::SUB_FadeOut( void  )
 	}
 }
 
+//-----------------------------------------------------------------------------
+//
+//-----------------------------------------------------------------------------
+HSCRIPT CBaseEntity::GetScriptInstance()
+{
+	if ( !m_hScriptInstance )
+	{
+		if ( m_iszScriptId == NULL_STRING )
+		{
+			char *szName = (char *)stackalloc( 1024 );
+			g_pScriptVM->GenerateUniqueKey( ( m_iName != NULL_STRING ) ? STRING(GetEntityName()) : GetClassname(), szName, 1024 );
+			m_iszScriptId = AllocPooledString( szName );
+		}
+
+		m_hScriptInstance = g_pScriptVM->RegisterInstance( GetScriptDesc(), this );
+		g_pScriptVM->SetInstanceUniqeId( m_hScriptInstance, STRING(m_iszScriptId) );
+	}
+	return m_hScriptInstance;
+}
+
+//-----------------------------------------------------------------------------
+// Using my edict, cook up a unique VScript scope that's private to me, and
+// persistent.
+//-----------------------------------------------------------------------------
+bool CBaseEntity::ValidateScriptScope()
+{
+	if ( !m_ScriptScope.IsInitialized() )
+	{
+		if( scriptmanager == NULL )
+		{
+			ExecuteOnce( DevMsg( "Cannot execute script because scripting is disabled (-scripting)\n" ) );
+			return false;
+		}
+
+		if( g_pScriptVM == NULL )
+		{
+			ExecuteOnce( DevMsg(" Cannot execute script because there is no available VM\n" ) );
+			return false;
+		}
+
+		// Force instance creation
+		GetScriptInstance();
+
+		EHANDLE hThis;
+		hThis.Set( this );
+
+		bool bResult = m_ScriptScope.Init( STRING(m_iszScriptId) );
+
+		if( !bResult )
+		{
+			DevMsg("%s couldn't create ScriptScope!\n", GetDebugName() );
+			return false;
+		}
+		g_pScriptVM->SetValue( m_ScriptScope, "self", GetScriptInstance() );
+	}
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:	Run all of the vscript files that are set in this entity's VSCRIPTS
+//			field in Hammer. The list is space-delimited.
+//-----------------------------------------------------------------------------
+void CBaseEntity::RunVScripts()
+{
+	if( m_iszVScripts == NULL_STRING )
+	{
+		return;
+	}
+
+	ValidateScriptScope();
+
+	// All functions we want to have call chained instead of overwritten
+	// by other scripts in this entities list.
+	static const char * sCallChainFunctions[] = 
+	{
+		"OnPostSpawn",
+		"Precache"
+	};
+
+	ScriptLanguage_t language = g_pScriptVM->GetLanguage();
+
+	// Make a call chainer for each in this entities scope
+	for ( int j = 0; j < ARRAYSIZE( sCallChainFunctions ); ++j )
+	{
+		
+		if ( language == SL_PYTHON )
+		{
+			// UNDONE - handle call chaining in python
+			;
+		}
+		else if ( language == SL_SQUIRREL )
+		{
+			//TODO: For perf, this should be precompiled and the %s should be passed as a parameter
+			HSCRIPT hCreateChainScript = g_pScriptVM->CompileScript( CFmtStr( "%sCallChain <- CSimpleCallChainer(\"%s\", self.GetScriptScope(), true)", sCallChainFunctions[j], sCallChainFunctions[j] ) );
+			g_pScriptVM->Run( hCreateChainScript, (HSCRIPT)m_ScriptScope ); 
+			g_pScriptVM->ReleaseScript( hCreateChainScript );
+		}
+	}
+
+	char szScriptsList[255];
+	V_strcpy_safe( szScriptsList, STRING(m_iszVScripts) );
+	CUtlStringList szScripts;
+
+	V_SplitString( szScriptsList, " ", szScripts);
+
+	for( int i = 0 ; i < szScripts.Count() ; i++ )
+	{
+		Log_Msg( LOG_VScript, "%s executing script: %s\n", GetDebugName(), szScripts[i] );
+
+		RunScriptFile( szScripts[i], IsWorld() );
+
+		for ( int j = 0; j < ARRAYSIZE( sCallChainFunctions ); ++j )
+		{
+			if ( language == SL_PYTHON )
+			{
+				// UNDONE - handle call chaining in python
+				;
+			}
+			else if ( language == SL_SQUIRREL )
+			{
+				//TODO: For perf, this should be precompiled and the %s should be passed as a parameter.
+				HSCRIPT hRunPostScriptExecute = g_pScriptVM->CompileScript( CFmtStr( "%sCallChain.PostScriptExecute()", sCallChainFunctions[j] ) );
+				g_pScriptVM->Run( hRunPostScriptExecute, (HSCRIPT)m_ScriptScope ); 
+				g_pScriptVM->ReleaseScript( hRunPostScriptExecute );
+			}
+		}
+	}
+
+	if( m_iszScriptThinkFunction != NULL_STRING )
+	{
+		SetContextThink( &CBaseEntity::ScriptThink, gpGlobals->curtime + sv_script_think_interval.GetFloat(), "ScriptThink" );
+	}
+}
+
+
+//--------------------------------------------------------------------------------------------------
+// This is called during entity spawning and after restore to allow scripts to precache any 
+// resources they need.
+//--------------------------------------------------------------------------------------------------
+void CBaseEntity::RunPrecacheScripts( void )
+{
+	if( m_iszVScripts == NULL_STRING )
+	{
+		return;
+	}
+	
+	HSCRIPT hScriptPrecache = m_ScriptScope.LookupFunction( "DispatchPrecache" );
+	if ( hScriptPrecache )
+	{
+		g_pScriptVM->Call( hScriptPrecache, m_ScriptScope );
+		m_ScriptScope.ReleaseFunction( hScriptPrecache );
+	}
+}
+
+void CBaseEntity::RunOnPostSpawnScripts( void )
+{
+	if( m_iszVScripts == NULL_STRING )
+	{
+		return;
+	}
+
+	HSCRIPT hFuncConnect = g_pScriptVM->LookupFunction("ConnectOutputs");
+	if ( hFuncConnect )
+	{
+		g_pScriptVM->Call( hFuncConnect, NULL, true, NULL, (HSCRIPT)m_ScriptScope );
+		g_pScriptVM->ReleaseFunction( hFuncConnect );
+	}
+
+	HSCRIPT hFuncDisp = m_ScriptScope.LookupFunction( "DispatchOnPostSpawn" );
+	if ( hFuncDisp )
+	{
+		variant_t variant;
+		variant.SetString( MAKE_STRING("DispatchOnPostSpawn") );
+		g_EventQueue.AddEvent( this, "CallScriptFunction", variant, 0, this, this );
+		m_ScriptScope.ReleaseFunction( hFuncDisp );
+		
+	}
+	}
+
+HSCRIPT	CBaseEntity::GetScriptOwnerEntity()
+{
+	return ToHScript( GetOwnerEntity() );
+}
+
+void CBaseEntity::SetScriptOwnerEntity( HSCRIPT pOwner )
+{
+	SetOwnerEntity( ToEnt( pOwner ) );
+}
 
 inline bool AnyPlayersInHierarchy_R( CBaseEntity *pEnt )
 {
@@ -7005,11 +8467,78 @@ bool CBaseEntity::DoesHavePlayerChild()
 
 
 //------------------------------------------------------------------------------
+void CBaseEntity::IncrementInterpolationFrame()
+{
+	m_ubInterpolationFrame = (m_ubInterpolationFrame + 1) % NOINTERP_PARITY_MAX;
+}
+
+//------------------------------------------------------------------------------
+
+void CBaseEntity::OnModelLoadComplete( const model_t* model )
+{
+	Assert( m_bDynamicModelPending && IsDynamicModelIndex( m_nModelIndex ) );
+	Assert( model == modelinfo->GetModel( m_nModelIndex ) );
+	
+	m_bDynamicModelPending = false;
+	
+	if ( m_bDynamicModelSetBounds )
+	{
+		m_bDynamicModelSetBounds = false;
+		SetCollisionBoundsFromModel();
+	}
+
+	OnNewModel();
+}
+
+//------------------------------------------------------------------------------
+
+void CBaseEntity::SetCollisionBoundsFromModel()
+{
+	if ( IsDynamicModelLoading() )
+	{
+		m_bDynamicModelSetBounds = true;
+		return;
+	}
+
+	if ( const model_t *pModel = GetModel() )
+	{
+		Vector mns, mxs;
+		modelinfo->GetModelBounds( pModel, mns, mxs );
+		UTIL_SetSize( this, mns, mxs );
+	}
+}
+
+
+//------------------------------------------------------------------------------
 // Purpose: Create an NPC of the given type
 //------------------------------------------------------------------------------
 void CC_Ent_Create( const CCommand& args )
 {
 	MDLCACHE_CRITICAL_SECTION();
+
+	CBasePlayer *pPlayer = UTIL_GetCommandClient();
+	if (!pPlayer)
+	{
+		return;
+	}
+
+	// Don't allow regular users to create point_servercommand entities for the same reason as blocking ent_fire
+	if ( !Q_stricmp( args[1], "point_servercommand" ) )
+	{
+		if ( engine->IsDedicatedServer() )
+		{
+			// We allow people with disabled autokick to do it, because they already have rcon.
+			if ( pPlayer->IsAutoKickDisabled() == false )
+				return;
+		}
+		else if ( gpGlobals->maxClients > 1 )
+		{
+			// On listen servers with more than 1 player, only allow the host to create point_servercommand.
+			CBasePlayer *pHostPlayer = UTIL_GetListenServerHost();
+			if ( pPlayer != pHostPlayer )
+				return;
+		}
+	}
 
 	bool allowPrecache = CBaseEntity::IsPrecacheAllowed();
 	CBaseEntity::SetAllowPrecache( true );
@@ -7019,9 +8548,18 @@ void CC_Ent_Create( const CCommand& args )
 	if (entity)
 	{
 		entity->Precache();
+
+		// Pass in any additional parameters.
+		for ( int i = 2; i + 1 < args.ArgC(); i += 2 )
+		{
+			const char *pKeyName = args[i];
+			const char *pValue = args[i+1];
+			entity->KeyValue( pKeyName, pValue );
+		}
+
 		DispatchSpawn(entity);
+
 		// Now attempt to drop into the world
-		CBasePlayer* pPlayer = UTIL_GetCommandClient();
 		trace_t tr;
 		Vector forward;
 		pPlayer->EyeVectors( &forward );
@@ -7035,10 +8573,12 @@ void CC_Ent_Create( const CCommand& args )
 			entity->Teleport( &tr.endpos, NULL, NULL );
 			UTIL_DropToFloor( entity, MASK_SOLID );
 		}
+
+		entity->Activate();
 	}
 	CBaseEntity::SetAllowPrecache( allowPrecache );
 }
-static ConCommand ent_create("ent_create", CC_Ent_Create, "Creates an entity of the given type where the player is looking.", FCVAR_GAMEDLL | FCVAR_CHEAT);
+static ConCommand ent_create("ent_create", CC_Ent_Create, "Creates an entity of the given type where the player is looking.  Additional parameters can be passed in in the form: ent_create <entity name> <param 1 name> <param 1> <param 2 name> <param 2>...<param N name> <param N>", FCVAR_GAMEDLL | FCVAR_CHEAT);
 
 //------------------------------------------------------------------------------
 // Purpose: Teleport a specified entity to where the player is looking
@@ -7072,13 +8612,19 @@ bool CC_GetCommandEnt( const CCommand& args, CBaseEntity **ent, Vector *vecTarge
 	}
 
 	CBasePlayer *pPlayer = UTIL_GetCommandClient();
+	if ( !pPlayer )
+	{
+		Msg( "Command must originate from a player\n" );
+		return false;
+	}
+
 	if ( vecTargetPoint )
 	{
 		trace_t tr;
 		Vector forward;
 		pPlayer->EyeVectors( &forward );
 		UTIL_TraceLine(pPlayer->EyePosition(),
-			pPlayer->EyePosition() + forward * MAX_TRACE_LENGTH,MASK_NPCSOLID, 
+			pPlayer->EyePosition() + forward * MAX_TRACE_LENGTH,MASK_NPCSOLID,
 			pPlayer, COLLISION_GROUP_NONE, &tr );
 
 		if ( tr.fraction != 1.0 )

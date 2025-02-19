@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -39,6 +39,10 @@ public:
 	// This will be called when the regenerator needs to be deleted
 	// which will happen when the texture is destroyed
 	virtual void Release() = 0;
+
+	// (erics): This should have a virtual destructor, but would be ABI breaking (non-versioned interface implemented
+	//          by the game)
+//	virtual ~ITextureRegenerator(){}
 };
 
 abstract_class ITexture
@@ -78,7 +82,7 @@ public:
 
 	// If rect is not specified, reconstruct all bits, otherwise just
 	// reconstruct a subrect.
-	virtual void Download( Rect_t *pRect = 0 ) = 0;
+	virtual void Download( Rect_t *pRect = 0, int nAdditionalCreationFlags = 0 ) = 0;
 
 	// Uses for stats. . .get the approximate size of the texture in it's current format.
 	virtual int GetApproximateVidMemBytes( void ) const = 0;
@@ -117,6 +121,19 @@ public:
 
 	// Force LOD override (automatically downloads the texture)
 	virtual void ForceLODOverride( int iNumLodsOverrideUpOrDown ) = 0;
+
+	// Save texture to a file.
+	virtual bool SaveToFile( const char *fileName ) = 0;
+
+	// Copy this texture, which must be a render target or a renderable texture, to the destination texture, 
+	// which must have been created with the STAGING bit.
+	virtual void CopyToStagingTexture( ITexture* pDstTex ) = 0;
+
+	// Set that this texture should return true for the call "IsError"
+	virtual void SetErrorTexture( bool bIsErrorTexture ) = 0;
+
+	// Download textures, except return true if we were successful and false if we were not.
+	virtual bool BDownload( Rect_t *pRect = 0, int nAdditionalCreationFlags = 0 ) = 0;
 };
 
 

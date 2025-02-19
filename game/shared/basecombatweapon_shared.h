@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,12 +10,14 @@
 #pragma once
 #endif
 
+#include "sharedInterface.h"
 #include "vphysics_interface.h"
 #include "predictable_entity.h"
 #include "soundflags.h"
 #include "weapon_parse.h"
 #include "baseviewmodel_shared.h"
 #include "weapon_proficiency.h"
+#include "utlmap.h"
 
 #if defined( CLIENT_DLL )
 #define CBaseCombatWeapon C_BaseCombatWeapon
@@ -23,7 +25,7 @@
 
 // Hacky
 #if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
-#include "item_base.h"
+#include "econ_entity.h"
 #endif // TF_CLIENT_DLL || TF_DLL
 
 #if !defined( CLIENT_DLL )
@@ -53,8 +55,7 @@ class CUserCmd;
 // Put this in your derived class definition to declare it's activity table
 // UNDONE: Cascade these?
 #define DECLARE_ACTTABLE()		static acttable_t m_acttable[];\
-	acttable_t *ActivityList( void );\
-	int ActivityListCount( void );
+	virtual acttable_t *ActivityList( int &iActivityCount ) OVERRIDE;
 
 // You also need to include the activity table itself in your class' implementation:
 // e.g.
@@ -71,8 +72,7 @@ class CUserCmd;
 // activity table.
 // UNDONE: Cascade these?
 #define IMPLEMENT_ACTTABLE(className) \
-	acttable_t *className::ActivityList( void ) { return m_acttable; } \
-	int className::ActivityListCount( void ) { return ARRAYSIZE(m_acttable); } \
+	acttable_t *className::ActivityList( int &iActivityCount ) { iActivityCount = ARRAYSIZE(m_acttable); return m_acttable; }
 
 typedef struct
 {
@@ -117,11 +117,35 @@ namespace vgui2
 // Purpose: Base weapon class, shared on client and server
 //-----------------------------------------------------------------------------
 
-#if defined USES_PERSISTENT_ITEMS
-#define BASECOMBATWEAPON_DERIVED_FROM		CBaseAttributableItem
+#if defined USES_ECON_ITEMS
+#define BASECOMBATWEAPON_DERIVED_FROM		CEconEntity
 #else 
 #define BASECOMBATWEAPON_DERIVED_FROM		CBaseAnimating
 #endif 
+
+//-----------------------------------------------------------------------------
+// Collect trace attacks for weapons that fire multiple projectiles per attack that also penetrate
+//-----------------------------------------------------------------------------
+class CDmgAccumulator
+{
+public:
+	CDmgAccumulator( void );
+	~CDmgAccumulator();
+
+#ifdef GAME_DLL
+	virtual void Start( void ) { m_bActive = true; }
+	virtual void AccumulateMultiDamage( const CTakeDamageInfo &info, CBaseEntity *pEntity );
+	virtual void Process( void );
+
+private:
+	CTakeDamageInfo					m_updatedInfo;
+	CUtlMap< int, CTakeDamageInfo >	m_TargetsDmgInfo;
+#endif	// GAME_DLL
+
+private:
+	bool							m_bActive;
+
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: Client side rep of CBaseTFCombatWeapon 
@@ -133,9 +157,15 @@ public:
 	DECLARE_CLASS( CBaseCombatWeapon, BASECOMBATWEAPON_DERIVED_FROM );
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
+#ifdef GAME_DLL
+	DECLARE_ENT_SCRIPTDESC();
+#endif
 
 							CBaseCombatWeapon();
 	virtual 				~CBaseCombatWeapon();
+
+	virtual bool			IsBaseCombatWeapon( void ) const { return true; }
+	virtual CBaseCombatWeapon *MyCombatWeaponPointer( void ) { return this; }
 
 	// A derived weapon class should return true here so that weapon sounds, etc, can
 	//  apply the proper filter
@@ -163,6 +193,7 @@ public:
 	// Weapon Pickup For Player
 	virtual void			SetPickupTouch( void );
 	virtual void 			DefaultTouch( CBaseEntity *pOther );	// default weapon touch
+	virtual void			GiveTo( CBaseEntity *pOther );
 
 	// HUD Hints
 	virtual bool			ShouldDisplayAltFireHUDHint();
@@ -178,7 +209,7 @@ public:
 	virtual bool			SendWeaponAnim( int iActivity );
 	virtual void			SendViewModelAnim( int nSequence );
 	float					GetViewModelSequenceDuration();	// Return how long the current view model sequence is.
-	bool					IsViewModelSequenceFinished( void ); // Returns if the viewmodel's current animation is finished
+	bool					IsViewModelSequenceFinished( void ) const; // Returns if the viewmodel's current animation is finished
 
 	virtual void			SetViewModel();
 
@@ -194,7 +225,7 @@ public:
 	bool					UsesSecondaryAmmo( void );					// returns true if the weapon actually uses secondary ammo
 	void					GiveDefaultAmmo( void );
 	
-	virtual bool			CanHolster( void ) { return TRUE; };		// returns true if the weapon can be holstered
+	virtual bool			CanHolster( void ) const { return TRUE; };		// returns true if the weapon can be holstered
 	virtual bool			DefaultDeploy( char *szViewModel, char *szWeaponModel, int iActivity, char *szAnimExt );
 	virtual bool			CanDeploy( void ) { return true; }			// return true if the weapon's allowed to deploy
 	virtual bool			Deploy( void );								// returns true is deploy was successful
@@ -203,6 +234,10 @@ public:
 	virtual void			SetWeaponVisible( bool visible );
 	virtual bool			IsWeaponVisible( void );
 	virtual bool			ReloadOrSwitchWeapons( void );
+	virtual void			OnActiveStateChanged( int iOldState ) { return; }
+	virtual bool			HolsterOnDetach() { return false; }
+	virtual bool			IsHolstered(){ return false; }
+	virtual void			Detach() {}
 
 	// Weapon behaviour
 	virtual void			ItemPreFrame( void );					// called each frame by the player PreThink
@@ -213,8 +248,16 @@ public:
 	virtual void			HandleFireOnEmpty();					// Called when they have the attack button down
 																	// but they are out of ammo. The default implementation
 																	// either reloads, switches weapons, or plays an empty sound.
+	virtual bool			CanPerformSecondaryAttack() const;
+
+	virtual bool			ShouldBlockPrimaryFire() { return false; }
+
 #ifdef CLIENT_DLL
 	virtual void			CreateMove( float flInputSampleTime, CUserCmd *pCmd, const QAngle &vecOldViewAngles ) {}
+	virtual int				CalcOverrideModelIndex() OVERRIDE;
+
+	// misyl: If weapon mispred's don't reset all the player's variables.
+	virtual bool PredictionErrorShouldResetLatchedForAllPredictables( void ) OVERRIDE;
 #endif
 
 	virtual bool			IsWeaponZoomed() { return false; }		// Is this weapon in its 'zoomed in' mode?
@@ -225,6 +268,10 @@ public:
 	virtual void			AbortReload( void );
 	virtual bool			Reload( void );
 	bool					DefaultReload( int iClipSize1, int iClipSize2, int iActivity );
+	bool					ReloadsSingly( void ) const;
+
+	virtual bool			AutoFiresFullClip( void ) const { return false; }
+	virtual void			UpdateAutoFire( void );
 
 	// Weapon firing
 	virtual void			PrimaryAttack( void );						// do "+ATTACK"
@@ -264,7 +311,7 @@ public:
 
 	virtual void			SetActivity( Activity act, float duration );
 	inline void				SetActivity( Activity eActivity ) { m_Activity = eActivity; }
-	inline Activity			GetActivity( void ) { return m_Activity; }
+	inline Activity			GetActivity( void ) const { return m_Activity; }
 
 	virtual void			AddViewKick( void );	// Add in the view kick for the weapon
 
@@ -289,6 +336,8 @@ public:
 	//All weapons can be picked up by NPCs by default
 	virtual bool			CanBePickedUpByNPCs( void ) { return true;	}
 
+	virtual int				GetSkinOverride() const { return -1; }
+
 public:
 
 	// Weapon info accessors for data in the weapon's data file
@@ -303,6 +352,7 @@ public:
 	virtual int				GetWeight( void ) const;
 	virtual bool			AllowsAutoSwitchTo( void ) const;
 	virtual bool			AllowsAutoSwitchFrom( void ) const;
+	virtual bool			ForceWeaponSwitch( void ) const { return false; }
 	virtual int				GetWeaponFlags( void ) const;
 	virtual int				GetSlot( void ) const;
 	virtual int				GetPosition( void ) const;
@@ -319,8 +369,8 @@ public:
 
 	virtual int				GetPrimaryAmmoType( void )  const { return m_iPrimaryAmmoType; }
 	virtual int				GetSecondaryAmmoType( void )  const { return m_iSecondaryAmmoType; }
-	int						Clip1() const { return m_iClip1; }
-	int						Clip2() const { return m_iClip2; }
+	virtual int				Clip1() { return m_iClip1; }
+	virtual int				Clip2() { return m_iClip2; }
 
 	// Ammo quantity queries for weapons that do not use clips. These are only
 	// used to determine how much ammo is in a weapon that does not have an owner.
@@ -341,11 +391,11 @@ public:
 	virtual CHudTexture const	*GetSpriteZoomedAutoaim( void ) const;
 
 	virtual Activity		ActivityOverride( Activity baseAct, bool *pRequired );
-	virtual	acttable_t*		ActivityList( void ) { return NULL; }
-	virtual	int				ActivityListCount( void ) { return 0; }
+	virtual	acttable_t*		ActivityList( int &iActivityCount ) { return NULL; }
 
 	virtual void			Activate( void );
 
+	virtual bool ShouldUseLargeViewModelVROverride() { return false; }
 public:
 // Server Only Methods
 #if !defined( CLIENT_DLL )
@@ -395,17 +445,34 @@ public:
 	void					InputHideWeapon( inputdata_t &inputdata );
 	void					Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 
+	virtual CDmgAccumulator	*GetDmgAccumulator( void ) { return NULL; }
+
+	void					SetSoundsEnabled( bool bSoundsEnabled ) { m_bSoundsEnabled = bSoundsEnabled; }
+
+	void					SetCustomViewModel( const char *pszCustomViewModel );
+	void					SetCustomViewModelModelIndex( int nCustomViewModelModelIndex );
+
 // Client only methods
 #else
 
 	virtual void			BoneMergeFastCullBloat( Vector &localMins, Vector &localMaxs, const Vector &thisEntityMins, const Vector &thisEntityMaxs  ) const;
-	virtual bool			OnFireEvent( C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options ) { return false; }
+
+	virtual bool			OnFireEvent( C_BaseViewModel *pViewModel, const Vector& origin, const QAngle& angles, int event, const char *options ) 
+	{ 
+#if defined USES_ECON_ITEMS
+		return BaseClass::OnFireEvent( pViewModel, origin, angles, event, options );
+#else
+		return false; 
+#endif
+	}
 
 	// Should this object cast shadows?
 	virtual ShadowType_t	ShadowCastType();
 	virtual void			SetDormant( bool bDormant );
 	virtual void			OnDataChanged( DataUpdateType_t updateType );
 	virtual void			OnRestore();
+
+	virtual void			RestartParticleEffect( void ) {}
 
 	virtual void			Redraw(void);
 	virtual void			ViewModelDrawn( CBaseViewModel *pViewModel );
@@ -417,6 +484,7 @@ public:
 	
 	// Weapon state checking
 	virtual bool			IsCarriedByLocalPlayer( void );
+	virtual bool			ShouldDrawUsingViewModel( void );
 	virtual bool			IsActiveByLocalPlayer( void );
 
 	bool					IsBeingCarried() const;
@@ -441,11 +509,13 @@ public:
 	virtual int				GetWorldModelIndex( void );
 
 	virtual void			GetToolRecordingState( KeyValues *msg );
-	void					EnsureCorrectRenderingModel();
 
-#if !defined USES_PERSISTENT_ITEMS
+	virtual void			GetWeaponCrosshairScale( float &flScale ) { flScale = 1.f; }
+
+#if !defined USES_ECON_ITEMS
 	// Viewmodel overriding
 	virtual bool			ViewModel_IsTransparent( void ) { return IsTransparent(); }
+	virtual bool			ViewModel_IsUsingFBTexture( void ) { return UsesPowerOfTwoFrameBufferTexture(); }
 	virtual bool			IsOverridingViewmodel( void ) { return false; };
 	virtual int				DrawOverriddenViewmodel( C_BaseViewModel *pViewmodel, int flags ) { return 0; };
 	bool					WantsToOverrideViewmodelAttachments( void ) { return false; }
@@ -458,12 +528,50 @@ public:
 	virtual bool			Lower( void ) { return false; }
 
 	virtual void			HideThink( void );
+	virtual bool			CanReload( void );
+
+	virtual float			GetNextSecondaryAttackDelay( void ) { return 0.5f; } // This is for setting the next attack timer from inside SecondaryAttack()
+
+	void SetClip1( int nClip )
+	{
+		if ( UsesClipsForAmmo1() )
+		{
+			m_iClip1 = nClip;
+		}
+		else
+		{
+			SetPrimaryAmmoCount( m_iClip1 );
+			m_iClip1 = WEAPON_NOCLIP;
+		}
+	}
+	void SetClip2( int nClip )
+	{
+		if ( UsesClipsForAmmo1() )
+		{
+			m_iClip2 = nClip;
+		}
+		else
+		{
+			SetPrimaryAmmoCount( m_iClip2 );
+			m_iClip2 = WEAPON_NOCLIP;
+		}
+	}
 
 private:
 	typedef CHandle< CBaseCombatCharacter > CBaseCombatCharacterHandle;
 	CNetworkVar( CBaseCombatCharacterHandle, m_hOwner );				// Player carrying this weapon
 
 protected:
+#if defined ( TF_CLIENT_DLL ) || defined ( TF_DLL )
+	// Regulate crit frequency to reduce client-side seed hacking
+	void					AddToCritBucket( float flAmount );
+	void					RemoveFromCritBucket( float flAmount ) { m_flCritTokenBucket -= flAmount; }
+	bool					IsAllowedToWithdrawFromCritBucket( float flDamage );
+
+	float					m_flCritTokenBucket;
+	int						m_nCritChecks;
+	int						m_nCritSeedRequests;
+#endif // TF
 
 public:
 
@@ -477,6 +585,7 @@ public:
 	// Weapon state
 	bool					m_bInReload;			// Are we in the middle of a reload;
 	bool					m_bFireOnEmpty;			// True when the gun is empty and the player is still holding down the attack key(s)
+	bool					m_bFiringWholeClip;		// Are we in the middle of firing the whole clip;
 	// Weapon art
 	CNetworkVar( int, m_iViewModelIndex );
 	CNetworkVar( int, m_iWorldModelIndex );
@@ -488,6 +597,12 @@ public:
 
 	bool					SetIdealActivity( Activity ideal );
 	void					MaintainIdealActivity( void );
+
+#ifdef CLIENT_DLL
+	virtual const Vector&	GetViewmodelOffset() { return vec3_origin; }
+#endif // CLIENT_DLL
+
+	virtual bool			UsesCenterFireProjectile( void ) const { return false; }
 
 private:
 	Activity				m_Activity;
@@ -503,6 +618,9 @@ public:
 
 	IMPLEMENT_NETWORK_VAR_FOR_DERIVED( m_nNextThinkTick );
 
+#ifdef CLIENT_DLL
+	static void				RecvProxy_WeaponState( const CRecvProxyData *pData, void *pStruct, void *pOut );
+#endif
 	int						WeaponState() const { return m_iState; }
 
 	// Weapon data
@@ -518,17 +636,15 @@ public:
 	float					m_fMinRange2;			// What's the closest this weapon can be used?
 	float					m_fMaxRange1;			// What's the furthest this weapon can be used?
 	float					m_fMaxRange2;			// What's the furthest this weapon can be used?
-	bool					m_bReloadsSingly;		// Tryue if this weapon reloads 1 round at a time
+	bool					m_bReloadsSingly;		// True if this weapon reloads 1 round at a time
 	float					m_fFireDuration;		// The amount of time that the weapon has sustained firing
 	int						m_iSubType;
 
 	float					m_flUnlockTime;
 	EHANDLE					m_hLocker;				// Who locked this weapon.
 
-#if defined(CSTRIKE_DLL) && defined(CLIENT_DLL)
-	bool					m_bInReloadAnimation;
-#endif
-	
+	CNetworkVar( bool, m_bFlipViewModel );
+
 	IPhysicsConstraint		*GetConstraint() { return m_pConstraint; }
 
 private:
@@ -542,10 +658,15 @@ private:
 	float					m_flHudHintPollTime;	// When to poll the weapon again for whether it should display a hud hint.
 	float					m_flHudHintMinDisplayTime; // if the hint is squelched before this, reset my counter so we'll display it again.
 	
+	CNetworkVar( short, m_nCustomViewmodelModelIndex );
+
 	// Server only
 #if !defined( CLIENT_DLL )
 
+	bool					m_bSoundsEnabled;
+
 	// Outputs
+protected:
 	COutputEvent			m_OnPlayerUse;		// Fired when the player uses the weapon.
 	COutputEvent			m_OnPlayerPickup;	// Fired when the player picks up the weapon.
 	COutputEvent			m_OnNPCPickup;		// Fired when an NPC picks up the weapon.

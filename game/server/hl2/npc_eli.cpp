@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Dr. Eli Vance, earths last great hope, single-handedly fighting
 //			off both an evil alien invasion, as well as trying to stop 
@@ -72,7 +72,7 @@ void CNPC_Eli::HandleAnimEvent( animevent_t *pEvent )
 //-----------------------------------------------------------------------------
 int CNPC_Eli::GetSoundInterests ( void )
 {
-	return	0;
+	return	NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ void CNPC_Eli::Spawn()
 {
 	// Eli is allowed to use multiple models, because he appears in the pod.
 	// He defaults to his normal model.
-	const char *szModel = (char *)STRING( GetModelName() );
+	char *szModel = (char *)STRING( GetModelName() );
 	if (!szModel || !*szModel)
 	{
 		szModel = "models/eli.mdl";

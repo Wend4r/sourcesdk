@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -92,7 +92,7 @@ void CGenericActor::HandleAnimEvent( animevent_t *pEvent )
 //=========================================================
 int CGenericActor::GetSoundInterests ( void )
 {
-	return	0;
+	return	NULL;
 }
 
 //=========================================================
@@ -245,6 +245,7 @@ extern ConVar	flex_talk;
 
 
 extern const char *predef_flexcontroller_names[];
+extern int predef_flexcontroller_names_count;
 extern float predef_flexcontroller_values[7][30];
 
 void CFlextalkActor::SetFlexTarget( LocalFlexController_t flexnum, float value )
@@ -269,7 +270,7 @@ void CFlextalkActor::SetFlexTarget( LocalFlexController_t flexnum, float value )
 	if (1 || random->RandomFloat( 0.0, 1.0 ) < 0.2)
 	{
 		value2 = random->RandomFloat( value - 0.2, value + 0.2 );
-		value2 = clamp( value2, 0.0, 1.0 );
+		value2 = clamp( value2, 0.0f, 1.0f );
 	}
 
 
@@ -321,7 +322,7 @@ void CFlextalkActor::ProcessSceneEvents( void )
 				m_flextarget[m_flexnum] = 0;
 			}
 
-			for (i = 0; i < 35 && predef_flexcontroller_names[i]; i++)
+			for (i = 0; i < predef_flexcontroller_names_count && predef_flexcontroller_names[i]; i++)
 			{
 				m_flexnum = LookupFlex( predef_flexcontroller_names[i] );
 				m_flextarget[m_flexnum] = predef_flexcontroller_values[j][i];
@@ -372,7 +373,7 @@ void CFlextalkActor::ProcessSceneEvents( void )
 						{
 							m_flexnum = LookupFlex( szTemp );
 
-							if (m_flexnum != -1 && m_flextarget[m_flexnum] != 1)
+							if (m_flexnum != LocalFlexController_t(-1) && m_flextarget[m_flexnum] != 1)
 							{
 								m_flextarget[m_flexnum] = 1.0;
 								// SetFlexTarget( m_flexnum );

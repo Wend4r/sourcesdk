@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -191,8 +191,8 @@ bool IsLeafAmbientSurfaceLight( dworldlight_t *wl )
 	if ( wl->style != 0 )
 		return false;
 
-	float intensity = MAX( wl->intensity[0], wl->intensity[1] );
-	intensity = MAX( intensity, wl->intensity[2] );
+	float intensity = max( wl->intensity[0], wl->intensity[1] );
+	intensity = max( intensity, wl->intensity[2] );
 	
 	return (intensity * g_flWorldLightMinEmitSurfaceDistanceRatio) < g_flWorldLightMinEmitSurface;
 }
@@ -345,7 +345,7 @@ void AddSampleToList( CUtlVector<ambientsample_t> &list, const Vector &samplePos
 				for (int s = 0; s < 3; s++ )
 				{
 					float dc = fabs(list[i].cube[k][s] - list[j].cube[k][s]);
-					maxDC = MAX(maxDC,dc);
+					maxDC = max(maxDC,dc);
 				}
 				totalDC += maxDC;
 			}
@@ -452,8 +452,8 @@ float AABBDistance( const Vector &mins0, const Vector &maxs0, const Vector &mins
 	Vector delta;
 	for ( int i = 0; i < 3; i++ )
 	{
-		float greatestMin = MAX(mins0[i], mins1[i]);
-		float leastMax = MIN(maxs0[i], maxs1[i]);
+		float greatestMin = max(mins0[i], mins1[i]);
+		float leastMax = min(maxs0[i], maxs1[i]);
 		delta[i] = (greatestMin < leastMax) ? 0 : (leastMax - greatestMin);
 	}
 	return delta.Length();
@@ -463,7 +463,7 @@ float AABBDistance( const Vector &mins0, const Vector &maxs0, const Vector &mins
 class CLeafList : public ISpatialLeafEnumerator
 {
 public:
-	virtual bool EnumerateLeaf( int leaf, int context )
+	virtual bool EnumerateLeaf( int leaf, intp context )
 	{
 		m_list.AddToTail(leaf);
 		return true;
@@ -533,9 +533,9 @@ void ComputeAmbientForLeaf( int iThread, int leafID, CUtlVector<ambientsample_t>
 	int xSize = (dleafs[leafID].maxs[0] - dleafs[leafID].mins[0]) / 32;
 	int ySize = (dleafs[leafID].maxs[1] - dleafs[leafID].mins[1]) / 32;
 	int zSize = (dleafs[leafID].maxs[2] - dleafs[leafID].mins[2]) / 64;
-	xSize = MAX(xSize,1);
-	ySize = MAX(xSize,1);
-	zSize = MAX(xSize,1);
+	xSize = max(xSize,1);
+	ySize = max(xSize,1);
+	zSize = max(xSize,1);
 	// generate update 128 candidate samples, always at least one sample
 	int volumeCount = xSize * ySize * zSize;
 	if ( g_bFastAmbient )
@@ -584,6 +584,7 @@ static void ThreadComputeLeafAmbient( int iThread, void *pUserData )
 	}
 }
 
+#ifdef MPI
 void VMPI_ProcessLeafAmbient( int iThread, uint64 iLeaf, MessageBuffer *pBuf )
 {
 	CUtlVector<ambientsample_t> list;
@@ -615,7 +616,7 @@ void VMPI_ReceiveLeafAmbientResults( uint64 leafID, MessageBuffer *pBuf, int iWo
 		pBuf->read(g_LeafAmbientSamples[leafID].Base(), nSamples * sizeof(ambientsample_t) );
 	}
 }
-
+#endif
 
 void ComputePerLeafAmbientLighting()
 {
@@ -642,13 +643,15 @@ void ComputePerLeafAmbientLighting()
 
 	g_LeafAmbientSamples.SetCount(numleafs);
 
+#ifdef MPI
 	if ( g_bUseMPI )
 	{
 		// Distribute the work among the workers.
 		VMPI_SetCurrentStage( "ComputeLeafAmbientLighting" );
-		DistributeWork( numleafs, VMPI_DISTRIBUTEWORK_PACKETID, VMPI_ProcessLeafAmbient, VMPI_ReceiveLeafAmbientResults );
+		DistributeWork( numleafs, VMPI_ProcessLeafAmbient, VMPI_ReceiveLeafAmbientResults );
 	}
 	else
+#endif
 	{
 		RunThreadsOn(numleafs, true, ThreadComputeLeafAmbient);
 	}

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -40,7 +40,7 @@ void CRagdollLowViolenceManager::SetLowViolence( const char *pMapName )
 
 #if !defined( CLIENT_DLL )
 	// the server doesn't worry about low violence during multiplayer games
-	if ( g_pGameRules->IsMultiplayer() )
+	if ( g_pGameRules && g_pGameRules->IsMultiplayer() )
 	{
 		m_bLowViolence = false;
 	}
@@ -184,6 +184,11 @@ static void RagdollAddSolid( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragdoll, 
 
 		if ( boneIndex >= 0 )
 		{
+			if ( params.fixedConstraints )
+			{
+				solid.params.mass = 1000.f;
+			}
+
 			solid.params.rotInertiaLimit = 0.1;
 			solid.params.pGameData = params.pGameData;
 			int surfaceData = physprops->GetSurfaceIndex( solid.surfaceprop );
@@ -223,7 +228,7 @@ static void RagdollAddConstraint( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 		ragdollelement_t &childElement = ragdoll.list[constraint.childIndex];
 		// save parent index
 		childElement.parentIndex = constraint.parentIndex;
-
+	
 		if ( params.jointFrictionScale > 0 )
 		{
 			for ( int k = 0; k < 3; k++ )
@@ -239,7 +244,19 @@ static void RagdollAddConstraint( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 		// UNDONE: We could transform the constraint limit axes relative to the bone space
 		// using this data.  Do we need that feature?
 		SetIdentityMatrix( constraint.constraintToReference );
-		childElement.pConstraint = pPhysEnv->CreateRagdollConstraint( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject, ragdoll.pGroup, constraint );
+		if ( params.fixedConstraints )
+		{
+			// Makes the ragdoll a statue...
+			constraint_fixedparams_t fixed;
+			fixed.Defaults();
+			fixed.InitWithCurrentObjectState( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject );
+			fixed.constraint.Defaults();
+			childElement.pConstraint = pPhysEnv->CreateFixedConstraint( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject, ragdoll.pGroup, fixed );
+		}
+		else
+		{
+			childElement.pConstraint = pPhysEnv->CreateRagdollConstraint( childElement.pObject, ragdoll.list[constraint.parentIndex].pObject, ragdoll.pGroup, constraint );
+		}
 	}
 }
 
@@ -316,8 +333,8 @@ void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, int model
 			const char *pBlock = pParse->GetCurrentBlockName();
 			if ( !strcmpi( pBlock, "collisionrules" ) )
 			{
-				IPhysicsCollisionSet *pSet = physics->FindOrCreateCollisionSet( modelIndex, ragdoll.listCount );
-				CRagdollCollisionRules rules(pSet);
+				IPhysicsCollisionSet *pSetRules = physics->FindOrCreateCollisionSet( modelIndex, ragdoll.listCount );
+				CRagdollCollisionRules rules( pSetRules );
 				pParse->ParseCustom( (void *)&rules, &rules );
 				bFoundRules = true;
 			}
@@ -609,7 +626,7 @@ void RagdollSolveSeparation( ragdoll_t &ragdoll, CBaseEntity *pEntity )
 {
 	byte needsFix[256];
 	int fixCount = 0;
-	Assert(ragdoll.listCount <= (int)ARRAYSIZE(needsFix));
+	Assert(ragdoll.listCount<=ARRAYSIZE(needsFix));
 	for ( int i = 0; i < ragdoll.listCount; i++ )
 	{
 		needsFix[i] = 0;
@@ -725,8 +742,12 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 		return false;
 	*/
 
+	// Bail if we have a null ragdoll pointer.
+	if ( !pRagdoll->m_pRagdoll )
+		return true;
+
 	Vector vMins, vMaxs;
-		
+
 	Vector origin = pRagdoll->m_pRagdoll->GetRagdollOrigin();
 	pRagdoll->m_pRagdoll->GetRagdollBounds( vMins, vMaxs );
 
@@ -734,8 +755,11 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 	{
 		if ( g_debug_ragdoll_removal.GetBool() )
 		{
-			debugoverlay->AddBoxOverlay( origin, vMins, vMaxs, QAngle( 0, 0, 0 ), 0, 255, 0, 16, 5 );
-			debugoverlay->AddLineOverlay( origin, origin + Vector( 0, 0, 64 ), 0, 255, 0, true, 5 );
+			if ( debugoverlay )
+			{
+				debugoverlay->AddBoxOverlay( origin, vMins, vMaxs, QAngle( 0, 0, 0 ), 0, 255, 0, 16, 5 );
+				debugoverlay->AddLineOverlay( origin, origin + Vector( 0, 0, 64 ), 0, 255, 0, true, 5 );
+			}
 		}
 
 		return true;
@@ -744,8 +768,11 @@ bool ShouldRemoveThisRagdoll( CBaseAnimating *pRagdoll )
 	{
 		if ( g_debug_ragdoll_removal.GetBool() )
 		{
-			debugoverlay->AddBoxOverlay( origin, vMins, vMaxs, QAngle( 0, 0, 0 ), 0, 0, 255, 16, 5 );
-			debugoverlay->AddLineOverlay( origin, origin + Vector( 0, 0, 64 ), 0, 0, 255, true, 5 );
+			if ( debugoverlay )
+			{
+				debugoverlay->AddBoxOverlay( origin, vMins, vMaxs, QAngle( 0, 0, 0 ), 0, 0, 255, 16, 5 );
+				debugoverlay->AddLineOverlay( origin, origin + Vector( 0, 0, 64 ), 0, 0, 255, true, 5 );
+			}
 		}
 
 		return true;
@@ -1026,14 +1053,14 @@ void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImpo
 		{
 			int iIndex = m_LRUImportantRagdolls.Head();
 
-			CBaseAnimating *pRagdoll = m_LRUImportantRagdolls[iIndex].Get();
+			CBaseAnimating *pRagdollLRU = m_LRUImportantRagdolls[iIndex].Get();
 
-			if ( pRagdoll )
+			if ( pRagdollLRU )
 			{
 #ifdef CLIENT_DLL
-				pRagdoll->SUB_Remove();
+				pRagdollLRU->SUB_Remove();
 #else
-				pRagdoll->SUB_StartFadeOut( 0 );
+				pRagdollLRU->SUB_StartFadeOut( 0 );
 #endif
 				m_LRUImportantRagdolls.Remove(iIndex);
 			}
@@ -1066,7 +1093,7 @@ void CRagdollLRURetirement::MoveToTopOfLRU( CBaseAnimating *pRagdoll, bool bImpo
 
 
 
-C_EntityDissolve *DissolveEffect( C_BaseAnimating *pTarget, float flTime )
+C_EntityDissolve *DissolveEffect( C_BaseEntity *pTarget, float flTime )
 {
 	C_EntityDissolve *pDissolve = new C_EntityDissolve;
 

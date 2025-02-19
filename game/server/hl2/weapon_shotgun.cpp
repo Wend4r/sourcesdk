@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A shotgun.
 //
@@ -17,7 +17,7 @@
 #include "in_buttons.h"
 #include "soundent.h"
 #include "vstdlib/random.h"
-#include "GameStats.h"
+#include "gamestats.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

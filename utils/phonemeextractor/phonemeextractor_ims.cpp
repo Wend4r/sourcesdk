@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -663,7 +663,7 @@ bool FuzzyWordMatch( char const *w1, char const *w2 )
 	int len1 = strlen( w1 );
 	int len2 = strlen( w2 );
 
-	int minlen = MIN( len1, len2 );
+	int minlen = min( len1, len2 );
 
 	// Found a match
 	if ( !strnicmp( w1, w2, minlen ) )
@@ -683,7 +683,7 @@ bool FuzzyWordMatch( char const *w1, char const *w2 )
 
 	while ( *p1 )
 	{
-		if ( isalpha( *p1 ) )
+		if ( V_isalpha( *p1 ) )
 		{
 			word1.AddToTail( *p1 );
 		}
@@ -692,7 +692,7 @@ bool FuzzyWordMatch( char const *w1, char const *w2 )
 
 	while ( *p2 )
 	{
-		if ( isalpha( *p2 ) )
+		if ( V_isalpha( *p2 ) )
 		{
 			word2.AddToTail( *p2 );
 		}
@@ -720,7 +720,7 @@ bool FuzzyWordMatch( char const *w1, char const *w2 )
 
 	while ( *p2 )
 	{
-		if ( isalpha( *p2 ) )
+		if ( V_isalpha( *p2 ) )
 		{
 			word2.AddToTail( *p2 );
 		}
@@ -971,7 +971,7 @@ char const *CPhonemeExtractorLipSinc::ApplyTBWordRules( char const *word )
 			continue;
 		}
 
-		if ( !isprint( *in ) )
+		if ( !V_isprint( *in ) )
 		{
 			in++;
 			continue;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -29,7 +29,7 @@ class CAI_WaypointList;
 class CAI_Network;
 struct AIMoveTrace_t;
 struct AILocalMoveGoal_t;
-typedef int AI_TaskFailureCode_t;
+typedef intp AI_TaskFailureCode_t;
 
 //-----------------------------------------------------------------------------
 // Debugging tools
@@ -43,7 +43,7 @@ extern ConVar ai_debug_nav;
 	do \
 	{ \
 		if (DbgNav()) \
-			DevMsg( pAI, CFmtStr( "[Nav] %s", static_cast<const char *>(pszMsg) ) ); \
+			DevMsg( pAI, "[Nav] %s", static_cast<const char *>(pszMsg) ); \
 	} while (0)
 #define DbgNavMsg1( pAI, pszMsg, a ) DbgNavMsg( pAI, CFmtStr(static_cast<const char *>(pszMsg), (a) ) )
 #define DbgNavMsg2( pAI, pszMsg, a, b ) DbgNavMsg( pAI, CFmtStr(static_cast<const char *>(pszMsg), (a), (b) ) )
@@ -225,16 +225,16 @@ struct AI_NavGoal_t
 
 struct AI_ProgressFlyPathParams_t
 {
-	AI_ProgressFlyPathParams_t( unsigned collisionMask, 
-							   	float strictPointTolerance = 32.0, float blockTolerance = 0.0,
-							   	float waypointTolerance = 100, float goalTolerance = 12,
-							   	AI_NpcBlockHandling_t blockHandling = AISF_BLOCK )
-	 :	collisionMask( collisionMask ),
-		strictPointTolerance( strictPointTolerance ),
-		blockTolerance( blockTolerance ),
-		waypointTolerance( waypointTolerance ),
-		goalTolerance( goalTolerance ),
-		blockHandling( blockHandling ),
+	AI_ProgressFlyPathParams_t( unsigned _collisionMask, 
+							   	float _strictPointTolerance = 32.0, float _blockTolerance = 0.0,
+							   	float _waypointTolerance = 100, float _goalTolerance = 12,
+							   	AI_NpcBlockHandling_t _blockHandling = AISF_BLOCK )
+	 :	collisionMask( _collisionMask ),
+		strictPointTolerance( _strictPointTolerance ),
+		blockTolerance( _blockTolerance ),
+		waypointTolerance( _waypointTolerance ),
+		goalTolerance( _goalTolerance ),
+		blockHandling( _blockHandling ),
 		pTarget( NULL ),
 		bTrySimplify( true )
 	{
@@ -663,12 +663,12 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t   type,
 	dest(AIN_NO_DEST),
 	destNode(AIN_NO_NODE),
 	activity(activity),
-	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID ),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
 	flags(flags),
-	pTarget(pTarget)
+	pTarget(pTarget),
+	arrivalActivity( AIN_DEF_ACTIVITY ),
+	arrivalSequence( ACT_INVALID )
 {
 }
 
@@ -681,12 +681,12 @@ inline AI_NavGoal_t::AI_NavGoal_t( const Vector &dest,
 	dest(dest),
 	destNode(AIN_NO_NODE),
 	activity(activity),
-	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID ),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
 	flags(flags),
-	pTarget(pTarget)
+	pTarget(pTarget),
+	arrivalActivity( AIN_DEF_ACTIVITY ),
+	arrivalSequence( ACT_INVALID )
 {
 }
 
@@ -700,12 +700,12 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t 	type,
 	dest(dest),
 	destNode(AIN_NO_NODE),
 	activity(activity),
-	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID ),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
 	flags(flags),
-	pTarget(pTarget)
+	pTarget(pTarget),
+	arrivalActivity( AIN_DEF_ACTIVITY ),
+	arrivalSequence( ACT_INVALID )
 {
 }
 
@@ -718,12 +718,12 @@ inline AI_NavGoal_t::AI_NavGoal_t( AI_PathNode_t destNode,
 	dest(AIN_NO_DEST),
 	destNode(destNode),
 	activity(activity),
-	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID ),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
 	flags(flags),
-	pTarget(pTarget)
+	pTarget(pTarget),
+	arrivalActivity( AIN_DEF_ACTIVITY ),
+	arrivalSequence( ACT_INVALID )
 {
 }
 
@@ -737,12 +737,12 @@ inline AI_NavGoal_t::AI_NavGoal_t( GoalType_t	 type,
 	dest(AIN_NO_DEST),
 	destNode(destNode),
 	activity(activity),
-	arrivalActivity( AIN_DEF_ACTIVITY ),
-	arrivalSequence( ACT_INVALID ),
 	tolerance(tolerance),
 	maxInitialSimplificationDist(-1),
 	flags(flags),
-	pTarget(pTarget)
+	pTarget(pTarget),
+	arrivalActivity( AIN_DEF_ACTIVITY ),
+	arrivalSequence( ACT_INVALID )
 {
 }
 

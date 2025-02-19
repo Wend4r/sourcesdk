@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -185,7 +185,7 @@ void CWordTag::SetWord( const char *word )
 	if ( !word || !word[ 0 ] )
 		return;
 
-	int len = strlen( word ) + 1;
+	int len = V_strlen( word ) + 1;
 	m_pszWord = new char[ len ];
 	Assert( m_pszWord );
 	Q_strncpy( m_pszWord, word, len );
@@ -360,7 +360,7 @@ static CCLanguage g_CCLanguageLookup[] =
 	{ CC_FRENCH,	"french",		150,	0,		0 },
 	{ CC_GERMAN,	"german",		0,		150,	0 },
 	{ CC_ITALIAN,	"italian",		0,		150,	150 },
-	{ CC_KOREAN,	"korean",		150,	0,		150 },
+	{ CC_KOREAN,	"koreana",		150,	0,		150 },
 	{ CC_SCHINESE,	"schinese",		150,	0,		150 },
 	{ CC_SPANISH,	"spanish",		0,		0,		150 },
 	{ CC_TCHINESE,	"tchinese",		150,	0,		150 },
@@ -508,7 +508,6 @@ void CSentence::ParseWords( CUtlBuffer& buf )
 			// Parse phoneme
 			int code;
 			char phonemename[ 256 ];
-			float start, end;
 			float volume;
 
 			code = atoi( token );
@@ -561,13 +560,14 @@ void CSentence::ParseEmphasis( CUtlBuffer& buf )
 	}
 }
 
-// This is obsolete, so it doesn't do anything with the data which is parsed.
+// This is obsolete, so it doesn't do anything with the data which is parsed, but is needed to advance the correct
+// amount in the stream.
 void CSentence::ParseCloseCaption( CUtlBuffer& buf )
 {
 	char token[ 4096 ];
 	while ( 1 )
 	{
-		// Format is 
+		// Format is
 		// language_name
 		// {
 		//   PHRASE char streamlength "streambytes" starttime endtime
@@ -611,12 +611,19 @@ void CSentence::ParseCloseCaption( CUtlBuffer& buf )
 
 			buf.GetString( token );
 			cc_length = atoi( token );
-			Assert( cc_length >= 0 && cc_length < sizeof( cc_stream ) );
+
+			if ( cc_length < 0 || (unsigned int)cc_length >= ARRAYSIZE( cc_stream ) )
+			{
+				Warning( "Invalid CloseCaption data - segment length %d is out of bounds\n", cc_length );
+				AssertMsg( false, "Invalid CloseCaption data" );
+				break;
+			}
+
 			// Skip space
 			buf.GetChar();
 			buf.Get( cc_stream, cc_length );
 			cc_stream[ cc_length ] = 0;
-			
+
 			// Skip space
 			buf.GetChar();
 			buf.GetString( token );
@@ -670,6 +677,10 @@ void CSentence::ParseDataVersionOnePointZero( CUtlBuffer& buf )
 	{
 		buf.GetString( token );
 		if ( strlen( token ) <= 0 )
+			break;
+		
+		// end of block, return
+		if ( !V_strcmp( token, "}" ) )
 			break;
 
 		char section[ 256 ];
@@ -780,7 +791,7 @@ void CSentence::CacheSaveToBuffer( CUtlBuffer& buf, int version )
 			CEmphasisSample *sample = &m_EmphasisSamples[i];
 			Assert( sample );
 			buf.PutFloat( sample->time );
-			short scaledValue = clamp( (short)( sample->value * 32767 ), 0, 32767 );
+			short scaledValue = clamp( (short)( sample->value * 32767 ), (short)0, (short)32767 );
 			buf.PutShort( scaledValue );
 		}
 		buf.PutChar( GetVoiceDuck() ? 1 : 0 );
@@ -1096,7 +1107,7 @@ void CSentence::ResetToBase( void )
 void CSentence::MarkNewPhraseBase( void )
 {
 #if PHONEME_EDITOR
-	m_nResetWordBase = MAX( m_Words.Size(), 0 );
+	m_nResetWordBase = max( m_Words.Size(), 0 );
 #endif
 }
 
@@ -1304,9 +1315,9 @@ void CSentence::Append( float starttime, const CSentence& src )
 
 		// Offset times
 		int c = newWord->m_Phonemes.Count();
-		for ( int i = 0; i < c; ++i )
+		for ( int j = 0; j < c; ++j )
 		{
-			CPhonemeTag *tag = newWord->m_Phonemes[ i ];
+			CPhonemeTag *tag = newWord->m_Phonemes[ j ];
 			tag->AddStartTime( starttime );
 			tag->AddEndTime( starttime );
 		}
@@ -1491,10 +1502,10 @@ float CSentence::GetIntensity( float time, float endtime )
 	int end = i + 1;
 	int next = i + 2;
 
-	prev = MAX( -1, prev );
-	start = MAX( -1, start );
-	end = MIN( end, GetNumSamples() );
-	next = MIN( next, GetNumSamples() );
+	prev = max( -1, prev );
+	start = max( -1, start );
+	end = min( end, GetNumSamples() );
+	next = min( next, GetNumSamples() );
 
 	CEmphasisSample *esPre = GetBoundedSample( prev, endtime );
 	CEmphasisSample *esStart = GetBoundedSample( start, endtime );
@@ -1678,7 +1689,7 @@ bool CSentence::ShouldSplitWord( char in )
 	if ( in <= 32 )
 		return true;
 
-	if ( in >= 128 )
+	if ( (unsigned char)in > SCHAR_MAX )
 		return true;
 
 	if ( ispunct( in ) )

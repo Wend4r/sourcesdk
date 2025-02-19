@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -120,6 +120,8 @@ public:
 	void CleanUpMap();
 	void CheckRestartGame();
 	void RestartGame();
+
+	void OnNavMeshLoad( void );
 	
 #ifndef CLIENT_DLL
 	virtual Vector VecItemRespawnSpot( CItem *pItem );
@@ -135,6 +137,9 @@ public:
 	const char *GetChatFormat( bool bTeamOnly, CBasePlayer *pPlayer );
 
 #endif
+
+	bool IsOfficialMap( void );
+
 	virtual void ClientDisconnected( edict_t *pClient );
 
 	bool CheckGameOver( void );
@@ -145,6 +150,8 @@ public:
 	
 	bool	IsTeamplay( void ) { return m_bTeamPlayEnabled;	}
 	void	CheckAllPlayersReady( void );
+
+	virtual bool IsConnectedUserInfoChangeAllowed( CBasePlayer *pPlayer );
 	
 private:
 	
@@ -157,7 +164,9 @@ private:
 	bool m_bAwaitingReadyRestart;
 	bool m_bHeardAllPlayersReady;
 
-
+#ifndef CLIENT_DLL
+	bool m_bChangelevelDone;
+#endif
 };
 
 inline CHL2MPRules* HL2MPRules()

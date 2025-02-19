@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -365,7 +365,7 @@ STRIPLIST::iterator FindBestCachedStrip(STRIPLIST *pstriplist,
     // make sure we keep the list in order and always pull off
     // the first dude.
     if(istriplistbest != pstriplist->begin())
-        V_swap(*istriplistbest, *pstriplist->begin());
+        swap(*istriplistbest, *pstriplist->begin());
 
     return pstriplist->begin();
 }

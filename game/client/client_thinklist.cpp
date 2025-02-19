@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -120,7 +120,7 @@ void CClientThinkList::SetNextClientThink( ClientEntityHandle_t hEnt, float flNe
 	// Add it to the list if it's not already in there.
 	if ( hThink == INVALID_THINK_HANDLE )
 	{
-		hThink = (ClientThinkHandle_t)m_ThinkEntries.AddToTail();
+		hThink = (ClientThinkHandle_t)(uintp)m_ThinkEntries.AddToTail();
 		pThink->SetThinkHandle( hThink );
 
 		ThinkEntry_t *pEntry = GetThinkEntry( hThink );
@@ -158,7 +158,7 @@ void CClientThinkList::RemoveThinkable( ClientThinkHandle_t hThink )
 	{
 		pThink->SetThinkHandle( INVALID_THINK_HANDLE );
 	}
-	m_ThinkEntries.Remove( (unsigned long)hThink );
+	m_ThinkEntries.Remove( (uintp)hThink );
 }
 
 
@@ -304,7 +304,7 @@ void CClientThinkList::PerformThinkFunctions()
 		if ( hThink != INVALID_THINK_HANDLE )
 		{
 			// This can happen if the same think handle was removed twice
-			if ( !m_ThinkEntries.IsInList( (unsigned long)hThink ) )
+			if ( !m_ThinkEntries.IsInList( (uintp)hThink ) )
 				continue;
 
 			// NOTE: This is necessary for the case where the client entity handle

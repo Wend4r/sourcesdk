@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -60,7 +60,7 @@ public:
 	void			MsgFunc_SayText( bf_read &msg );
 	void			MsgFunc_TextMsg( bf_read &msg );
 	
-	void			ChatPrintf( int iPlayerIndex, const char *fmt, ... );
+	void			ChatPrintf( int iPlayerIndex, PRINTF_FORMAT_STRING const char *fmt, ... );
 
 	int				GetChatInputOffset( void );
 };

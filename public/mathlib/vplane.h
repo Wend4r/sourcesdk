@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -29,7 +29,7 @@ typedef int SideType;
 class VPlane
 {
 public:
-				VPlane();
+				VPlane() = default;
 				VPlane(const Vector &vNormal, vec_t dist);
 
 	void		Init(const Vector &vNormal, vec_t dist);
@@ -77,9 +77,6 @@ private:
 //-----------------------------------------------------------------------------
 // Inlines.
 //-----------------------------------------------------------------------------
-inline VPlane::VPlane()
-{
-}
 
 inline VPlane::VPlane(const Vector &vNormal, vec_t dist)
 {

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -20,7 +20,7 @@
 using namespace vgui;
 
 #ifndef max
-#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
 
 vgui::Panel *MessageBox_Factory()
@@ -146,8 +146,8 @@ void MessageBox::ApplySchemeSettings(IScheme *pScheme)
 	m_pMessageLabel->GetContentSize(wide, tall);
 	m_pMessageLabel->SetSize(wide, tall);
 
-	wide += 100;
-	tall += 100;
+	wide += QuickPropScale( 100 );
+	tall += QuickPropScale( 100 );
 	SetSize(wide, tall);
 
 	if ( m_bShowMessageBoxOverCursor )
@@ -257,8 +257,8 @@ void MessageBox::PerformLayout()
 	
 	int btnWide, btnTall;
 	m_pOkButton->GetContentSize(btnWide, btnTall);
-	btnWide = MAX(oldWide, btnWide + 10);
-	btnTall = MAX(oldTall, btnTall + 10);
+	btnWide = max(oldWide, btnWide + QuickPropScale( 10 ));
+	btnTall = max(oldTall, btnTall + QuickPropScale( 10 ));
 	m_pOkButton->SetSize(btnWide, btnTall);
 
 	int btnWide2 = 0, btnTall2 = 0;
@@ -267,26 +267,26 @@ void MessageBox::PerformLayout()
 		m_pCancelButton->GetSize(oldWide, oldTall);
 		
 		m_pCancelButton->GetContentSize(btnWide2, btnTall2);
-		btnWide2 = MAX(oldWide, btnWide2 + 10);
-		btnTall2 = MAX(oldTall, btnTall2 + 10);
+		btnWide2 = max(oldWide, btnWide2 + 10);
+		btnTall2 = max(oldTall, btnTall2 + 10);
 		m_pCancelButton->SetSize(btnWide2, btnTall2);
 	}
 
-	boxWidth = MAX(boxWidth, m_pMessageLabel->GetWide() + 100);
-	boxWidth = MAX(boxWidth, (btnWide + btnWide2) * 2 + 30);
+	boxWidth = max(boxWidth, m_pMessageLabel->GetWide() + QuickPropScale( 100 ));
+	boxWidth = max(boxWidth, (btnWide + btnWide2) * 2 + QuickPropScale( 30 ));
 	SetSize(boxWidth, boxTall);
 
 	GetSize(boxWidth, boxTall);
 
-	m_pMessageLabel->SetPos((wide/2)-(m_pMessageLabel->GetWide()/2) + x, y + 15);
+	m_pMessageLabel->SetPos((wide/2)-(m_pMessageLabel->GetWide()/2) + x, y + QuickPropScale( 5 ) );
 	if ( !m_pCancelButton->IsVisible() )
 	{
-		m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - 15);
+		m_pOkButton->SetPos((wide/2)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - QuickPropScale( 15 ));
 	}
 	else
 	{
-		m_pOkButton->SetPos((wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - 15);
-		m_pCancelButton->SetPos((3*wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - 15);
+		m_pOkButton->SetPos((wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - QuickPropScale( 15 ));
+		m_pCancelButton->SetPos((3*wide/4)-(m_pOkButton->GetWide()/2) + x, tall - m_pOkButton->GetTall() - QuickPropScale( 15 ));
 	}
 
 	BaseClass::PerformLayout();

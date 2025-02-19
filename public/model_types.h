@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -22,12 +22,19 @@
 #define STUDIO_ITEM_BLINK				0x00000040
 #define STUDIO_NOSHADOWS				0x00000080
 #define STUDIO_WIREFRAME_VCOLLIDE		0x00000100
+#define STUDIO_NO_OVERRIDE_FOR_ATTACH	0x00000200
 
-// Not a studio flag, but used to flag model as a non-sorting brush model
-#define STUDIO_TRANSPARENCY				0x80000000
+// Not a studio flag, but used to flag when we want studio stats
+#define STUDIO_GENERATE_STATS			0x01000000
+
+// Not a studio flag, but used to flag model as using shadow depth material override
+#define STUDIO_SSAODEPTHTEXTURE			0x08000000
 
 // Not a studio flag, but used to flag model as using shadow depth material override
 #define STUDIO_SHADOWDEPTHTEXTURE		0x40000000
+
+// Not a studio flag, but used to flag model as a non-sorting brush model
+#define STUDIO_TRANSPARENCY				0x80000000
 
 
 enum modtype_t

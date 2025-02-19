@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -546,12 +546,12 @@ void CWateryDeathLeech::LeechThink( void )
 			dt = 0.1f;
 		}
 		m_nRenderMode = kRenderTransTexture;
-		int speed = (int)MAX(1,256*dt); // fade out over 1 second
+		int speed = MAX(1,256*dt); // fade out over 1 second
 
 		if ( m_iFadeState == -1 )
-			 SetRenderColorA( (byte)UTIL_Approach( 0, m_clrRender->a, speed ) );
+			 SetRenderColorA( UTIL_Approach( 0, m_clrRender->a, speed ) );
 		else
-			 SetRenderColorA( (byte)UTIL_Approach( 255, m_clrRender->a, speed ) );
+			 SetRenderColorA( UTIL_Approach( 255, m_clrRender->a, speed ) );
 
 		if ( m_clrRender->a == 0 )
 		{

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -172,6 +172,7 @@ public:
 	virtual int			DrawModel( int flags );
 	virtual bool		IsTransparent( void );
 	virtual bool		ShouldDraw();
+	virtual bool		IgnoresZBuffer( void ) const { return true; }
 	virtual void		OnDataChanged( DataUpdateType_t updateType );
 
 	virtual bool		OnPredictedEntityRemove( bool isbeingremoved, C_BaseEntity *predicted );

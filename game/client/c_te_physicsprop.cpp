@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 #include "cbase.h"
 #include "c_basetempentity.h"
 #include "c_te_legacytempents.h"
-#include "tier1/keyvalues.h"
+#include "tier1/KeyValues.h"
 #include "toolframework_client.h"
 #include "tier0/vprof.h"
 
@@ -123,10 +123,10 @@ static inline void RecordPhysicsProp( const Vector& start, const QAngle &angles,
 // Purpose: 
 //-----------------------------------------------------------------------------
 void TE_PhysicsProp( IRecipientFilter& filter, float delay,
-	int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, bool breakmodel, int effects )
+	int modelindex, int skin, const Vector& pos, const QAngle &angles, const Vector& vel, bool breakmodel, int fEffects )
 {
-	tempents->PhysicsProp( modelindex, skin, pos, angles, vel, breakmodel, effects );
-	RecordPhysicsProp( pos, angles, vel, modelindex, breakmodel, skin, effects );
+	tempents->PhysicsProp( modelindex, skin, pos, angles, vel, breakmodel, fEffects );
+	RecordPhysicsProp( pos, angles, vel, modelindex, breakmodel, skin, fEffects );
 }
 
 //-----------------------------------------------------------------------------

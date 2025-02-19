@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -60,7 +60,7 @@ void CBaseRopePhysics::Restart()
 
 void CBaseRopePhysics::ResetSpringLength( float flSpringDist )
 {
-	m_flSpringDist = MAX( flSpringDist, 0 );
+	m_flSpringDist = max( flSpringDist, 0.f );
 	m_flSpringDistSqr = m_flSpringDist * m_flSpringDist;
 
 	for( int i=0; i < NumSprings(); i++ )

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -17,7 +17,7 @@
 #include "tier0/memdbgon.h"
 
 #ifndef min
-#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
+#define min(a, b)  (((a) < (b)) ? (a) : (b))
 #endif
 
 using namespace vgui;
@@ -60,6 +60,12 @@ CBitmapImagePanel::CBitmapImagePanel( Panel *parent, char const *panelName,
 
 	m_bgColor = Color(255, 255, 255, 255);
 }
+CBitmapImagePanel::~CBitmapImagePanel()
+{
+	delete [] m_pszImageName;
+	delete [] m_pszColorName;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -89,7 +95,7 @@ void CBitmapImagePanel::ComputeImagePosition(int &x, int &y, int &w, int &h)
 	{
 		float xScale = (float)panelWide / (float)imageWide;
 		float yScale = (float)panelTall / (float)imageTall;
-		float scale = MIN( xScale, yScale );
+		float scale = min( xScale, yScale );
 
 		w = (int) (imageWide * scale);
 		h = (int) (imageTall * scale);
@@ -153,9 +159,11 @@ void CBitmapImagePanel::PaintBorder()
 	int x, y, w, h;
 	ComputeImagePosition(x, y, w, h);
 
+	int nRepeats = Max( QuickPropScale( 1 ), 1 );
+
 	IBorder *pBorder = GetBorder();
 	if ( pBorder )
-		pBorder->Paint( x, y, x+w, y+h, -1, 0, 0 );
+		pBorder->Paint2( x, y, x+w, y+h, -1, 0, 0, nRepeats );
 }
 
 //-----------------------------------------------------------------------------

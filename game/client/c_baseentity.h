@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A base class for the client-side representation of entities.
 //
@@ -16,10 +16,11 @@
 #endif
 
 #include "mathlib/vector.h"
-#include "IClientEntityInternal.h"
-#include "engine/IVModelRender.h"
+#include "icliententityinternal.h"
+#include "engine/ivmodelinfo.h"
+#include "engine/ivmodelrender.h"
 #include "client_class.h"
-#include "IClientShadowMgr.h"
+#include "iclientshadowmgr.h"
 #include "ehandle.h"
 #include "iclientunknown.h"
 #include "client_thinklist.h"
@@ -56,6 +57,8 @@ class CTakeDamageInfo;
 class C_BaseCombatCharacter;
 class CEntityMapData;
 class ConVar;
+class CDmgAccumulator;
+class IHasAttributes;
 
 struct CSoundParameters;
 
@@ -99,7 +102,7 @@ struct VarMapping_t
 
 																	
 
-#define DECLARE_INTERPOLATION
+#define DECLARE_INTERPOLATION()
 
 
 // How many data slots to use when in multiplayer.
@@ -166,7 +169,6 @@ struct thinkfunc_t
 #define ENTCLIENTFLAG_DONTUSEIK					0x0002		// Don't use IK on this entity even if its model has IK.
 #define ENTCLIENTFLAG_ALWAYS_INTERPOLATE		0x0004		// Used by view models.
 
-
 //-----------------------------------------------------------------------------
 // Purpose: Base client side entity object
 //-----------------------------------------------------------------------------
@@ -190,13 +192,14 @@ public:
 	
 	// FireBullets uses shared code for prediction.
 	virtual void					FireBullets( const FireBulletsInfo_t &info );
+	virtual void					ModifyFireBulletsDamage( CTakeDamageInfo* dmgInfo ) {}
 	virtual bool					ShouldDrawUnderwaterBulletBubbles();
 	virtual bool					ShouldDrawWaterImpacts( void ) { return true; }
 	virtual bool					HandleShotImpactingWater( const FireBulletsInfo_t &info, 
 		const Vector &vecEnd, ITraceFilter *pTraceFilter, Vector *pVecTracerDest );
 	virtual ITraceFilter*			GetBeamTraceFilter( void );
-	virtual void					DispatchTraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
-	virtual void					TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+	virtual void					DispatchTraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
+	virtual void					TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator = NULL );
 	virtual void					DoImpactEffect( trace_t &tr, int nDamageType );
 	virtual void					MakeTracer( const Vector &vecTracerSrc, const trace_t &tr, int iTracerType );
 	virtual int						GetTracerAttachment( void );
@@ -271,6 +274,7 @@ public:
 	bool					HasRecordedThisFrame() const;
 	virtual void			RecordToolMessage();
 
+	// used to exclude entities from being recorded in the SFM tools
 	void					DontRecordInTools();
 	bool					ShouldRecordInTools() const;
 
@@ -294,6 +298,7 @@ public:
 	virtual bool					IsTwoPass( void );
 	virtual bool					UsesPowerOfTwoFrameBufferTexture();
 	virtual bool					UsesFullFrameBufferTexture();
+	virtual bool					IgnoresZBuffer( void ) const;
 	virtual const model_t			*GetModel( void ) const;
 	virtual int						DrawModel( int flags );
 	virtual void					ComputeFxBlend( void );
@@ -331,6 +336,7 @@ public:
 	// save out interpolated values
 	virtual void					PreDataUpdate( DataUpdateType_t updateType );
 	virtual void					PostDataUpdate( DataUpdateType_t updateType );
+	virtual void					OnDataUnchangedInPVS();
 
 	virtual void					ValidateModelIndex( void );
 
@@ -481,6 +487,7 @@ public:
 
 	int								GetModelIndex( void ) const;
 	void							SetModelIndex( int index );
+	virtual int						CalcOverrideModelIndex() { return -1; }
 
 	// These methods return a *world-aligned* box relative to the absorigin of the entity.
 	// This is used for collision purposes and is *not* guaranteed
@@ -511,6 +518,7 @@ public:
 
 	// Used when the collision prop is told to ask game code for the world-space surrounding box
 	virtual void					ComputeWorldSpaceSurroundingBox( Vector *pVecWorldMins, Vector *pVecWorldMaxs );
+	virtual float						GetHealthBarHeightOffset() const { return 0.f; }
 
 	// Returns the entity-to-world transform
 	matrix3x4_t						&EntityToWorldTransform();
@@ -564,18 +572,20 @@ public:
 	virtual bool					GetAttachmentVelocity( int number, Vector &originVel, Quaternion &angleVel );
 
 	// Team handling
-	virtual C_Team					*GetTeam( void );
+	virtual C_Team					*GetTeam( void ) const;
 	virtual int						GetTeamNumber( void ) const;
 	virtual void					ChangeTeam( int iTeamNum );			// Assign this entity to a team.
 	virtual int						GetRenderTeamNumber( void );
-	virtual bool					InSameTeam( C_BaseEntity *pEntity );	// Returns true if the specified entity is on the same team as this one
+	virtual bool					InSameTeam( const C_BaseEntity *pEntity ) const;	// Returns true if the specified entity is on the same team as this one
 	virtual bool					InLocalTeam( void );
 
 	// ID Target handling
 	virtual bool					IsValidIDTarget( void ) { return false; }
-	virtual char					*GetIDString( void ) { return ""; };
+	virtual const char				*GetIDString( void ) { return ""; };
 
 	// See CSoundEmitterSystem
+	virtual void ModifyEmitSoundParams( EmitSound_t &params );
+
 	void	EmitSound( const char *soundname, float soundtime = 0.0f, float *duration = NULL );  // Override for doing the general case of CPASAttenuationFilter( this ), and EmitSound( filter, entindex(), etc. );
 	void	EmitSound( const char *soundname, HSOUNDSCRIPTHANDLE& handle, float soundtime = 0.0f, float *duration = NULL );  // Override for doing the general case of CPASAttenuationFilter( this ), and EmitSound( filter, entindex(), etc. );
 	void	StopSound( const char *soundname );
@@ -679,7 +689,7 @@ public:
 
 	virtual bool					ShouldDraw();
 	inline	bool					IsVisible() const { return m_hRender != INVALID_CLIENT_RENDER_HANDLE; }
-			void					UpdateVisibility();
+	virtual void					UpdateVisibility();
 	
 	// Returns true if the entity changes its position every frame on the server but it doesn't
 	// set animtime. In that case, the client returns true here so it copies the server time to
@@ -722,7 +732,7 @@ public:
 	// Reset internal fields
 	virtual void					Clear( void );
 	// Helper to draw raw brush models
-	virtual int						DrawBrushModel( bool bSort, bool bShadowDepth );
+	virtual int						DrawBrushModel( bool bTranslucent, int nFlags, bool bTwoPass );
 
 	// returns the material animation start time
 	virtual float					GetTextureAnimationStartTime();
@@ -736,6 +746,8 @@ public:
 	virtual void					SetHealth(int iHealth) {}
 	virtual int						GetHealth() const { return 0; }
 	virtual int						GetMaxHealth() const { return 1; }
+	virtual bool					IsVisibleToTargetID( void ) const { return false; }
+	virtual bool					IsHealthBarVisible( void ) const { return false; }
 
 	// Returns the health fraction
 	float							HealthFraction() const;
@@ -762,6 +774,10 @@ public:
 	// A method to apply a decal to an entity
 	virtual void					AddDecal( const Vector& rayStart, const Vector& rayEnd,
 										const Vector& decalCenter, int hitbox, int decalIndex, bool doTrace, trace_t& tr, int maxLODToDecal = ADDDECAL_TO_ALL_LODS );
+
+	virtual void					AddColoredDecal( const Vector& rayStart, const Vector& rayEnd,
+		const Vector& decalCenter, int hitbox, int decalIndex, bool doTrace, trace_t& tr, Color cColor, int maxLODToDecal = ADDDECAL_TO_ALL_LODS );
+
 	// A method to remove all decals from an entity
 	void							RemoveAllDecals( void );
 
@@ -800,6 +816,7 @@ public:
 	void							PreEntityPacketReceived( int commands_acknowledged );
 	void							PostEntityPacketReceived( void );
 	bool							PostNetworkDataReceived( int commands_acknowledged );
+	virtual bool					PredictionErrorShouldResetLatchedForAllPredictables( void ) { return true; } //legacy behavior is that any prediction error causes all predictables to reset latched
 	bool							GetPredictionEligible( void ) const;
 	void							SetPredictionEligible( bool canpredict );
 
@@ -984,6 +1001,7 @@ public:
 
 	bool							IsInWorld( void ) { return true; }
 
+	bool							IsWorld() { return entindex() == 0; }
 	/////////////////
 
 	virtual bool					IsPlayer( void ) const { return false; };
@@ -991,8 +1009,12 @@ public:
 	virtual C_BaseCombatCharacter	*MyCombatCharacterPointer( void ) { return NULL; }
 	virtual bool					IsNPC( void ) { return false; }
 	C_AI_BaseNPC					*MyNPCPointer( void ); 
+	virtual bool					IsNextBot() { return false; }
 	// TF2 specific
 	virtual bool					IsBaseObject( void ) const { return false; }
+	virtual bool					IsBaseCombatWeapon( void ) const { return false; }
+	virtual class C_BaseCombatWeapon		*MyCombatWeaponPointer() { return NULL; }
+	virtual bool					IsCombatItem( void ) const { return false; }
 
 	virtual bool					IsBaseTrain( void ) const { return false; }
 
@@ -1022,10 +1044,11 @@ public:
 	void				SetModelByIndex( int nModelIndex );
 
 	// Set model... (NOTE: Should only be used by client-only entities
-	// Returns false if the model name is bogus
+	// Returns false if the model name is bogus or otherwise can't be loaded
 	bool				SetModel( const char *pModelName );
 
 	void				SetModelPointer( const model_t *pModel );
+
 
 	// Access movetype and solid.
 	void				SetMoveType( MoveType_t val, MoveCollide_t moveCollide = MOVECOLLIDE_DEFAULT );	// Set to one of the MOVETYPE_ defines.
@@ -1054,8 +1077,16 @@ public:
 	const Vector&		GetBaseVelocity() const;
 	void				SetBaseVelocity( const Vector& v );
 
-	const Vector&		GetViewOffset() const;
-	void				SetViewOffset( const Vector& v );
+	virtual const Vector &GetViewOffset() const;
+	virtual void		  SetViewOffset( const Vector& v );
+
+#ifdef SIXENSE
+	const Vector&		GetEyeOffset() const;
+	void				SetEyeOffset( const Vector& v );
+
+	const QAngle &		GetEyeAngleOffset() const;
+	void				SetEyeAngleOffset( const QAngle & qa );
+#endif
 
 	// Invalidates the abs state of all children
 	void InvalidatePhysicsRecursive( int nChangeFlags );
@@ -1117,12 +1148,18 @@ public:
 	float	GetSimulationTime() const;
 	void	SetSimulationTime( float st );
 
+	float	GetCreateTime()										{ return m_flCreateTime; }
+	void	SetCreateTime( float flCreateTime )					{ m_flCreateTime = flCreateTime; }
+
 	int		GetCreationTick() const;
+
+	virtual void ClientAdjustStartSoundParams( EmitSound_t &params ) {}
+	virtual void ClientAdjustStartSoundParams( StartSoundParams_t& params ) {}
 
 #ifdef _DEBUG
 	void FunctionCheck( void *pFunction, const char *name );
 
-	ENTITYFUNCPTR TouchSet( ENTITYFUNCPTR func, const char *name ) 
+	ENTITYFUNCPTR TouchSet( ENTITYFUNCPTR func, char *name ) 
 	{ 
 		//COMPILE_TIME_ASSERT( sizeof(func) == 4 );
 		m_pfnTouch = func; 
@@ -1143,7 +1180,17 @@ public:
 	// Sets the origin + angles to match the last position received
 	void MoveToLastReceivedPosition( bool force = false );
 
+	// Return the IHasAttributes interface for this base entity. Removes the need for:
+	//	dynamic_cast< IHasAttributes * >( pEntity );
+	// Which is remarkably slow.
+	// GetAttribInterface( CBaseEntity *pEntity ) in attribute_manager.h uses
+	//  this function, tests for NULL, and Asserts m_pAttributes == dynamic_cast.
+	inline IHasAttributes *GetHasAttributesInterfacePtr() const { return m_pAttributes; }
+
 protected:
+	// NOTE: m_pAttributes needs to be set in the leaf class constructor.
+	IHasAttributes *m_pAttributes;
+
 	// Only meant to be called from subclasses
 	void DestroyModelInstance();
 
@@ -1177,13 +1224,13 @@ protected:
 
 	// Returns INTERPOLATE_STOP or INTERPOLATE_CONTINUE.
 	// bNoMoreChanges is set to 1 if you can call RemoveFromInterpolationList on the entity.
-	int BaseInterpolatePart1( float &currentTime, Vector &oldOrigin, QAngle &oldAngles, int &bNoMoreChanges );
-	void BaseInterpolatePart2( Vector &oldOrigin, QAngle &oldAngles, int nChangeFlags );
+	int BaseInterpolatePart1( float &currentTime, Vector &oldOrigin, QAngle &oldAngles, Vector &oldVel, int &bNoMoreChanges );
+	void BaseInterpolatePart2( Vector &oldOrigin, QAngle &oldAngles, Vector &oldVel, int nChangeFlags );
 
 
 public:
 	// Accessors for above
-	static int						GetPredictionRandomSeed( void );
+	static int						GetPredictionRandomSeed( bool bUseUnSyncedServerPlatTime = false );
 	static void						SetPredictionRandomSeed( const CUserCmd *cmd );
 	static C_BasePlayer				*GetPredictionPlayer( void );
 	static void						SetPredictionPlayer( C_BasePlayer *player );
@@ -1249,8 +1296,7 @@ public:
 private:
 	
 	// Model for rendering
-	const model_t					*model;	
-
+	const model_t					*model;
 
 public:
 	// Time animation sequence or frame was last changed
@@ -1260,6 +1306,10 @@ public:
 	float							m_flSimulationTime;
 	float							m_flOldSimulationTime;
 	
+	float							m_flCreateTime;
+
+	byte							m_ubInterpolationFrame;
+	byte							m_ubOldInterpolationFrame;
 
 private:
 	// Effects to apply
@@ -1278,6 +1328,8 @@ public:
 	// Should we be interpolating?
 	static bool						IsInterpolationEnabled();
 
+	// Should we interpolate this tick?  (Used to be EF_NOINTERP)
+	bool							IsNoInterpolationFrame();
 
 	// 
 	int								m_nNextThinkTick;
@@ -1285,6 +1337,10 @@ public:
 
 	// Object model index
 	short							m_nModelIndex;
+
+#ifdef TF_CLIENT_DLL
+	int								m_nModelIndexOverrides[MAX_VISION_MODES];
+#endif
 
 	char							m_takedamage;
 	char							m_lifeState;
@@ -1340,6 +1396,9 @@ public:
 	// used by SourceTV since move-parents may be missing when child spawns.
 	void							HierarchyUpdateMoveParent();
 
+	virtual bool					IsDeflectable() { return false; }
+
+	bool			IsCombatCharacter() { return MyCombatCharacterPointer() == NULL ? false : true; }
 protected:
 	int								m_nFXComputeFrame;
 
@@ -1376,15 +1435,22 @@ protected:
 	// Object eye position
 	Vector							m_vecViewOffset;
 
+#if defined(SIXENSE)
+	Vector							m_vecEyeOffset;
+	QAngle							m_EyeAngleOffset;    
+#endif
 	// Allow studio models to tell us what their m_nBody value is
 	virtual int						GetStudioBody( void ) { return 0; }
 
-private:
-	friend void OnRenderStart();
-
+public:
 	// This can be used to setup the entity as a client-only entity. It gets an entity handle,
 	// a render handle, and is put into the spatial partition.
 	bool InitializeAsClientEntityByIndex( int iIndex, RenderGroup_t renderGroup );
+
+	void TrackAngRotation( bool bTrack );
+
+private:
+	friend void OnRenderStart();
 
 	// Figure out the smoothly interpolated origin for all server entities. Happens right before
 	// letting all entities simulate.
@@ -1423,6 +1489,7 @@ private:
 
 	// methods related to decal adding
 	void AddStudioDecal( const Ray_t& ray, int hitbox, int decalIndex, bool doTrace, trace_t& tr, int maxLODToDecal = ADDDECAL_TO_ALL_LODS );
+	void AddColoredStudioDecal( const Ray_t& ray, int hitbox, int decalIndex, bool doTrace, trace_t& tr, Color cColor, int maxLODToDecal );
 	void AddBrushModelDecal( const Ray_t& ray, const Vector& decalCenter, int decalIndex, bool doTrace, trace_t& tr );
 
 	void ComputePackedOffsets( void );
@@ -1451,6 +1518,7 @@ private:
 
 	// Object velocity
 	Vector							m_vecVelocity;
+	CInterpolatedVar< Vector >		m_iv_vecVelocity;
 
 	Vector							m_vecAbsVelocity;
 
@@ -1626,6 +1694,23 @@ protected:
 
 	CThreadFastMutex m_CalcAbsolutePositionMutex;
 	CThreadFastMutex m_CalcAbsoluteVelocityMutex;
+
+#ifdef TF_CLIENT_DLL
+	// TF prevents drawing of any entity attached to players that aren't items in the inventory of the player.
+	// This is to prevent servers creating fake cosmetic items and attaching them to players.
+public:
+	virtual bool ValidateEntityAttachedToPlayer( bool &bShouldRetry );
+	bool EntityDeemedInvalid( void ) { return (m_bValidatedOwner && m_bDeemedInvalid); }
+protected:
+	bool m_bValidatedOwner;
+	bool m_bDeemedInvalid;
+	bool m_bWasDeemedInvalid;
+	RenderMode_t m_PreviousRenderMode;
+	color32 m_PreviousRenderColor;
+#endif
+
+private:
+	bool	m_bOldShouldDraw;
 };
 
 EXTERN_RECV_TABLE(DT_BaseEntity);
@@ -1700,6 +1785,26 @@ inline const matrix3x4_t &C_BaseEntity::EntityToWorldTransform() const
 	Assert( s_bAbsQueriesValid );
 	const_cast<C_BaseEntity*>(this)->CalcAbsolutePosition();
 	return m_rgflCoordinateFrame; 
+}
+
+inline const Vector& C_BaseEntity::GetNetworkOrigin() const
+{
+	return m_vecNetworkOrigin;
+}
+
+inline const QAngle& C_BaseEntity::GetNetworkAngles() const
+{
+	return m_angNetworkAngles;
+}
+
+inline const model_t *C_BaseEntity::GetModel( void ) const
+{
+	return model;
+}
+
+inline int C_BaseEntity::GetModelIndex( void ) const
+{
+	return m_nModelIndex;
 }
 
 //-----------------------------------------------------------------------------
@@ -1983,16 +2088,6 @@ inline unsigned char CBaseEntity::GetParentAttachment() const
 	return m_iParentAttachment;
 }
 
-inline const Vector& CBaseEntity::GetViewOffset() const 
-{ 
-	return m_vecViewOffset; 
-}
-
-inline void CBaseEntity::SetViewOffset( const Vector& v ) 
-{ 
-	m_vecViewOffset = v; 
-}
-
 inline ClientRenderHandle_t CBaseEntity::GetRenderHandle() const 
 { 
 	return m_hRender; 
@@ -2002,6 +2097,30 @@ inline ClientRenderHandle_t& CBaseEntity::RenderHandle()
 {
 	return m_hRender;
 }
+
+#ifdef SIXENSE
+
+inline const Vector& CBaseEntity::GetEyeOffset() const 
+{ 
+	return m_vecEyeOffset; 
+}
+
+inline void CBaseEntity::SetEyeOffset( const Vector& v ) 
+{ 
+	m_vecEyeOffset = v; 
+}
+
+inline const QAngle & CBaseEntity::GetEyeAngleOffset() const 
+{ 
+	return m_EyeAngleOffset; 
+}
+
+inline void CBaseEntity::SetEyeAngleOffset( const QAngle & qa ) 
+{ 
+	m_EyeAngleOffset = qa; 
+}
+
+#endif
 
 //-----------------------------------------------------------------------------
 // Methods to cast away const
@@ -2037,6 +2156,14 @@ inline VarMapping_t* C_BaseEntity::GetVarMapping()
 inline bool	C_BaseEntity::IsInterpolationEnabled()
 {
 	return s_bInterpolate;
+}
+
+//-----------------------------------------------------------------------------
+// Should we be interpolating during this frame? (was EF_NOINTERP)
+//-----------------------------------------------------------------------------
+inline bool C_BaseEntity::IsNoInterpolationFrame()
+{
+	return m_ubOldInterpolationFrame != m_ubInterpolationFrame;
 }
 
 //-----------------------------------------------------------------------------

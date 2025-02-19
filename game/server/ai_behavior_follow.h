@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -100,7 +100,7 @@ struct AI_FollowGroup_t;
 struct AI_FollowManagerInfoHandle_t
 {
 	AI_FollowGroup_t *m_pGroup;
-	int m_hFollower;
+	intp m_hFollower;
 };
 
 //-------------------------------------

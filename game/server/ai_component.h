@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -14,7 +14,7 @@
 
 class CAI_BaseNPC;
 class CAI_Enemies;
-typedef int AI_TaskFailureCode_t;
+typedef intp AI_TaskFailureCode_t;
 struct Task_t;
 
 //-----------------------------------------------------------------------------
@@ -124,7 +124,7 @@ public:
 	void *operator new( size_t nBytes )
 	{
 		MEM_ALLOC_CREDIT();
-		void *pResult = g_pMemAlloc->Alloc( nBytes );
+		void *pResult = MemAlloc_Alloc( nBytes );
 		memset( pResult, 0, nBytes );
 		return pResult;
 	};
@@ -132,7 +132,7 @@ public:
 	void *operator new( size_t nBytes, int nBlockUse, const char *pFileName, int nLine )
 	{
 		MEM_ALLOC_CREDIT();
-		void *pResult = g_pMemAlloc->Alloc( nBytes, pFileName, nLine );
+		void *pResult = MemAlloc_Alloc( nBytes, pFileName, nLine );
 		memset( pResult, 0, nBytes );
 		return pResult;
 	}

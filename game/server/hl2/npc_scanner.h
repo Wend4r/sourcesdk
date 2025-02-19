@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -48,7 +48,7 @@ public:
 	void			Precache(void);
 	void			RunTask( const Task_t *pTask );
 	int				SelectSchedule(void);
-	virtual const char	*GetScannerSoundPrefix( void );
+	virtual char	*GetScannerSoundPrefix( void );
 	void			Spawn(void);
 	void			Activate();
 	void			StartTask( const Task_t *pTask );
@@ -73,7 +73,7 @@ public:
 
 	void			Event_Killed( const CTakeDamageInfo &info );
 
-	const char		*GetEngineSound( void );
+	char			*GetEngineSound( void );
 
 	virtual float	MinGroundDist(void);
 	virtual void	AdjustScannerVelocity( void );

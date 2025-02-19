@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -24,7 +24,7 @@
 #include "sentence.h"
 #include "tier0/dbg.h"
 #include "tier0/icommandline.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 
 // Extract phoneme grammar id
 #define EP_GRAM_ID			101
@@ -330,7 +330,7 @@ bool BuildRules( ISpRecoGrammar* cpRecoGrammar, SPSTATEHANDLE *root, CUtlVector<
 
 	if ( numrules > 1 )
 	{
-		for ( int skip = 1; skip <= MIN( MAX_WORD_SKIP, numrules ); skip++ )
+		for ( int skip = 1; skip <= min( MAX_WORD_SKIP, numrules ); skip++ )
 		{
 			OutputDebugString( va( "Opt transition from Root to %s\r\n", (*rules)[ 0 ].plaintext ) );
 
@@ -1034,8 +1034,8 @@ void MergeWords( CWordTag *w1, CWordTag *w2 )
 {
 	unsigned int start, end;
 
-	start = MIN( w1->m_uiStartByte, w2->m_uiStartByte );
-	end = MAX( w1->m_uiEndByte, w2->m_uiEndByte );
+	start = min( w1->m_uiStartByte, w2->m_uiStartByte );
+	end = max( w1->m_uiEndByte, w2->m_uiEndByte );
 
 	unsigned int mid = ( start + end ) / 2;
 

@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -109,7 +109,7 @@ static bool GetKeyValueFromBuffer( CUtlBuffer &buf, char **key, char **val )
 			{
 				*scan = '\0';
 				scan++;
-				// got a key and a value, so get the hell out of here.
+				// got a key and a value, so get out of here.
 				return true;
 			}
 			if( *scan == '\0' )

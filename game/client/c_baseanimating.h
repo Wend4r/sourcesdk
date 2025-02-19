@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,13 +14,13 @@
 
 #include "c_baseentity.h"
 #include "studio.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "ragdoll.h"
 #include "mouthinfo.h"
 // Shared activities
 #include "ai_activity.h"
 #include "animationlayer.h"
-#include "sequence_transitioner.h"
+#include "sequence_Transitioner.h"
 #include "bone_accessor.h"
 #include "bone_merge_cache.h"
 #include "ragdoll_shared.h"
@@ -46,6 +46,7 @@ class CBoneBitList;
 class CBoneList;
 class KeyValues;
 class CJiggleBones;
+class IBoneSetup;
 FORWARD_DECLARE_HANDLE( memhandle_t );
 typedef unsigned short MDLHandle_t;
 
@@ -87,7 +88,7 @@ typedef unsigned int			ClientSideAnimationListHandle_t;
 #define		INVALID_CLIENTSIDEANIMATION_LIST_HANDLE	(ClientSideAnimationListHandle_t)~0
 
 
-class C_BaseAnimating : public C_BaseEntity
+class C_BaseAnimating : public C_BaseEntity, private IModelLoadCallback
 {
 public:
 	DECLARE_CLASS( C_BaseAnimating, C_BaseEntity );
@@ -145,11 +146,15 @@ public:
 	virtual bool SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, int boneMask, float currentTime );
 	virtual void UpdateIKLocks( float currentTime );
 	virtual void CalculateIKLocks( float currentTime );
+	virtual bool ShouldDraw();
+	virtual void UpdateVisibility() OVERRIDE;
 	virtual int DrawModel( int flags );
 	virtual int	InternalDrawModel( int flags );
 	virtual bool OnInternalDrawModel( ClientModelRenderInfo_t *pInfo );
 	virtual bool OnPostInternalDrawModel( ClientModelRenderInfo_t *pInfo );
 	void		DoInternalDrawModel( ClientModelRenderInfo_t *pInfo, DrawModelState_t *pState, matrix3x4_t *pBoneToWorldArray = NULL );
+
+	virtual IMaterial* GetEconWeaponMaterialOverride( int iTeam ) { return NULL; }
 
 	//
 	virtual CMouthInfo *GetMouth();
@@ -159,6 +164,7 @@ public:
 	virtual void DoAnimationEvents( CStudioHdr *pStudio );
 	virtual void FireEvent( const Vector& origin, const QAngle& angles, int event, const char *options );
 	virtual void FireObsoleteEvent( const Vector& origin, const QAngle& angles, int event, const char *options );
+	virtual const char* ModifyEventParticles( const char* token ) { return token; }
 
 	// Parses and distributes muzzle flash events
 	virtual bool DispatchMuzzleEffect( const char *options, bool isFirstPerson );
@@ -166,6 +172,7 @@ public:
 	// virtual	void AllocateMaterials( void );
 	// virtual	void FreeMaterials( void );
 
+	virtual void ValidateModelIndex( void );
 	virtual CStudioHdr *OnNewModel( void );
 	CStudioHdr	*GetModelPtr() const;
 	void InvalidateMdlCache();
@@ -178,9 +185,10 @@ public:
 	virtual	void StandardBlendingRules( CStudioHdr *pStudioHdr, Vector pos[], Quaternion q[], float currentTime, int boneMask );
 	void UnragdollBlend( CStudioHdr *hdr, Vector pos[], Quaternion q[], float currentTime );
 
-	void MaintainSequenceTransitions( CStudioHdr *hdr, float flCycle, float flPoseParameter[], Vector pos[], Quaternion q[], int boneMask );
+	void MaintainSequenceTransitions( IBoneSetup &boneSetup, float flCycle, Vector pos[], Quaternion q[] );
+	virtual void AccumulateLayers( IBoneSetup &boneSetup, Vector pos[], Quaternion q[], float currentTime );
 
-	virtual void AccumulateLayers( CStudioHdr *hdr, Vector pos[], Quaternion q[], float poseparam[], float currentTime, int boneMask );
+	virtual void ChildLayerBlend( Vector pos[], Quaternion q[], float currentTime, int boneMask );
 
 	// Attachments
 	int		LookupAttachment( const char *pAttachmentName );
@@ -201,14 +209,37 @@ public:
 	int		LookupBone( const char *szName );
 	void	GetBonePosition( int iBone, Vector &origin, QAngle &angles );
 	void	GetBoneTransform( int iBone, matrix3x4_t &pBoneToWorld );
-	
+
+	//=============================================================================
+	// HPE_BEGIN:
+	// [menglish] Finds the bone associated with the given hitbox
+	//=============================================================================
+
+	int		GetHitboxBone( int hitboxIndex );
+
+	//=============================================================================
+	// HPE_END
+	//=============================================================================
+
+	// Bone attachments
+	virtual void		AttachEntityToBone( C_BaseAnimating* attachTarget, int boneIndexAttached=-1, Vector bonePosition=Vector(0,0,0), QAngle boneAngles=QAngle(0,0,0) );
+	void				AddBoneAttachment( C_BaseAnimating* newBoneAttachment );
+	void				RemoveBoneAttachment( C_BaseAnimating* boneAttachment );
+	void				RemoveBoneAttachments();
+	void				DestroyBoneAttachments();
+	void				MoveBoneAttachments( C_BaseAnimating* attachTarget );
+	int					GetNumBoneAttachments();
+	C_BaseAnimating*	GetBoneAttachment( int i );
+	virtual void		NotifyBoneAttached( C_BaseAnimating* attachTarget );
+	virtual void		UpdateBoneAttachments( void );
 
 	//bool solveIK(float a, float b, const Vector &Foot, const Vector &Knee1, Vector &Knee2);
 	//void DebugIK( mstudioikchain_t *pikchain );
 
 	virtual void					PreDataUpdate( DataUpdateType_t updateType );
 	virtual void					PostDataUpdate( DataUpdateType_t updateType );
-	
+	virtual int						RestoreData( const char *context, int slot, int type );
+
 	virtual void					NotifyShouldTransmit( ShouldTransmitState_t state );
 	virtual void					OnPreDataChanged( DataUpdateType_t updateType );
 	virtual void					OnDataChanged( DataUpdateType_t updateType );
@@ -219,7 +250,7 @@ public:
 	void							ForceClientSideAnimationOn();
 	
 	void							AddToClientSideAnimationList();
-	void							RemoveFromClientSideAnimationList();
+	void							RemoveFromClientSideAnimationList( bool bBeingDestroyed = false );
 
 	virtual bool					IsSelfAnimating();
 	virtual void					ResetLatched();
@@ -246,6 +277,8 @@ public:
 	bool							GetAttachmentLocal( int iAttachment, Vector &origin, QAngle &angles );
 	bool                            GetAttachmentLocal( int iAttachment, Vector &origin );
 
+	bool							GetRootBone( matrix3x4_t &rootBone );
+
 	// Should this object cast render-to-texture shadows?
 	virtual ShadowType_t			ShadowCastType();
 
@@ -257,9 +290,10 @@ public:
 
 	// returns true if we're currently being ragdolled
 	bool							IsRagdoll() const;
+	bool							IsAboutToRagdoll() const;
 	virtual C_BaseAnimating			*BecomeRagdollOnClient();
 	C_BaseAnimating					*CreateRagdollCopy();
-	bool							InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1, const matrix3x4_t *pCurrentBonePosition, float boneDt );
+	bool							InitAsClientRagdoll( const matrix3x4_t *pDeltaBones0, const matrix3x4_t *pDeltaBones1, const matrix3x4_t *pCurrentBonePosition, float boneDt, bool bFixedConstraints=false );
 	void							IgniteRagdoll( C_BaseAnimating *pSource );
 	void							TransferDissolveFrom( C_BaseAnimating *pSource );
 	virtual void					SaveRagdollInfo( int numbones, const matrix3x4_t &cameraTransform, CBoneAccessor &pBoneToWorld );
@@ -267,8 +301,8 @@ public:
 	virtual void					Clear( void );
 	void							ClearRagdoll();
 	void							CreateUnragdollInfo( C_BaseAnimating *pRagdoll );
-	void							ForceSetupBonesAtTime( matrix3x4_t *pBonesOut, float flTime );
-	virtual void					GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt );
+	bool							ForceSetupBonesAtTime( matrix3x4_t *pBonesOut, float flTime );
+	virtual bool					GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt );
 
 	// For shadows rendering the correct body + sequence...
 	virtual int GetBody()			{ return m_nBody; }
@@ -279,11 +313,15 @@ public:
 	inline float					GetPlaybackRate();
 	inline void						SetPlaybackRate( float rate );
 
-	void							SetModelWidthScale( float scale );
-	float							GetModelWidthScale() const;
+	void							SetModelScale( float scale, float change_duration = 0.0f  );
+	float							GetModelScale() const { return m_flModelScale; }
+	inline bool						IsModelScaleFractional() const;  /// very fast way to ask if the model scale is < 1.0f  (faster than if (GetModelScale() < 1.0f) )
+	inline bool						IsModelScaled() const;
+	void							UpdateModelScale( void );
+	virtual	void					RefreshCollisionBounds( void );
 
 	int								GetSequence();
-	void							SetSequence(int nSequence);
+	virtual void					SetSequence(int nSequence);
 	inline void						ResetSequence(int nSequence);
 	float							GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSequence );
 	inline float					GetSequenceGroundSpeed( int iSequence ) { return GetSequenceGroundSpeed(GetModelPtr(), iSequence); }
@@ -297,6 +335,7 @@ public:
 	char const						*GetSequenceName( int iSequence ); 
 	char const						*GetSequenceActivityName( int iSequence );
 	Activity						GetSequenceActivity( int iSequence );
+	KeyValues						*GetSequenceKeyValues( int iSequence );
 	virtual void					StudioFrameAdvance(); // advance animation frame to some time in the future
 
 	// Clientside animation
@@ -305,6 +344,8 @@ public:
 	virtual void					UpdateClientSideAnimation();
 	void							ClientSideAnimationChanged();
 	virtual unsigned int			ComputeClientSideAnimationFlags();
+
+	virtual void ResetClientsideFrame( void ) { SetCycle( 0 ); }
 
 	void SetCycle( float flCycle );
 	float GetCycle() const;
@@ -386,11 +427,12 @@ public:
 	void InitModelEffects( void );
 
 	// Sometimes the server wants to update the client's cycle to get the two to run in sync (for proper hit detection)
-	virtual void SetServerIntendedCycle( float intended ) { intended; }
+	virtual void SetServerIntendedCycle( float intended ) { (void)intended; }
 	virtual float GetServerIntendedCycle( void ) { return -1.0f; }
 
 	// For prediction
 	int								SelectWeightedSequence ( int activity );
+	int								SelectWeightedSequenceFromModifiers( Activity activity, CUtlSymbol *pActivityModifiers, int iModifierCount );
 	void							ResetSequenceInfo( void );
 	float							SequenceDuration( void );
 	float							SequenceDuration( CStudioHdr *pStudioHdr, int iSequence );
@@ -406,6 +448,7 @@ public:
 	virtual bool					ShouldResetSequenceOnNewModel( void );
 
 	virtual bool					IsViewModel() const;
+	virtual void					UpdateOnRemove( void );
 
 protected:
 	// View models scale their attachment positions to account for FOV. To get the unmodified
@@ -425,6 +468,8 @@ protected:
 
 	virtual bool					CalcAttachments();
 
+	virtual bool					ShouldFlipViewModel();
+
 private:
 	// This method should return true if the bones have changed + SetupBones needs to be called
 	virtual float					LastBoneChangedTime() { return FLT_MAX; }
@@ -440,8 +485,6 @@ private:
 	void							AddBaseAnimatingInterpolatedVars();
 	void							RemoveBaseAnimatingInterpolatedVars();
 
-	void							LockStudioHdr();
-	void							UnlockStudioHdr();
 public:
 	CRagdoll						*m_pRagdoll;
 
@@ -485,6 +528,14 @@ protected:
 	// Client-side animation
 	bool							m_bClientSideFrameReset;
 
+	// Bone attachments. Used for attaching one BaseAnimating to another's bones.
+	// Client side only.
+	CUtlVector<CHandle<C_BaseAnimating> > m_BoneAttachments;
+	int								m_boneIndexAttached;
+	Vector							m_bonePosition;
+	QAngle							m_boneAngles;
+	CHandle<C_BaseAnimating>		m_pAttachedTo;
+
 protected:
 
 	float							m_fadeMinDist;
@@ -501,7 +552,7 @@ private:
 	// Mouth lipsync/envelope following values
 	CMouthInfo						m_mouth;
 
-	CNetworkVar( float, m_flModelWidthScale );
+	CNetworkVar( float, m_flModelScale );
 
 	// Animation blending factors
 	float							m_flPoseParameter[MAXSTUDIOPOSEPARAM];
@@ -545,7 +596,10 @@ protected:
 	float							m_flCycle;
 	CInterpolatedVar< float >		m_iv_flCycle;
 	float							m_flOldCycle;
+	bool							m_bNoModelParticles;
+
 private:
+	float							m_flOldModelScale;
 	int								m_nOldSequence;
 	CBoneMergeCache					*m_pBoneMergeCache;	// This caches the strcmp lookups that it has to do
 														// when merg
@@ -558,7 +612,7 @@ private:
 	// Calculated attachment points
 	CUtlVector<CAttachmentData>		m_Attachments;
 
-	void							SetupBones_AttachmentHelper( CStudioHdr *pStudioHdr );
+	bool							SetupBones_AttachmentHelper( CStudioHdr *pStudioHdr );
 
 	EHANDLE							m_hLightingOrigin;
 	EHANDLE							m_hLightingOriginRelative;
@@ -568,11 +622,26 @@ private:
 	unsigned char m_nOldMuzzleFlashParity;
 
 	bool							m_bInitModelEffects;
+	bool							m_bDelayInitModelEffects;
+
+	// Dynamic models
+	bool							m_bDynamicModelAllowed;
+	bool							m_bDynamicModelPending;
+	bool							m_bResetSequenceInfoOnLoad;
+	CRefCountedModelIndex			m_AutoRefModelIndex;
+public:
+	void							EnableDynamicModels() { m_bDynamicModelAllowed = true; }
+	bool							IsDynamicModelLoading() const { return m_bDynamicModelPending; }
+private:
+	virtual void					OnModelLoadComplete( const model_t* pModel );
 
 private:
+	void							LockStudioHdr();
+	void							UnlockStudioHdr();
 	mutable CStudioHdr				*m_pStudioHdr;
 	mutable MDLHandle_t				m_hStudioHdr;
 	CThreadFastMutex				m_StudioHdrInitLock;
+	bool							m_bHasAttachedParticles;
 };
 
 enum 
@@ -679,27 +748,36 @@ inline float C_BaseAnimating::GetCycle() const
 
 inline CStudioHdr *C_BaseAnimating::GetModelPtr() const
 { 
+	if ( IsDynamicModelLoading() )
+		return NULL;
+
 #ifdef _DEBUG
 	// GetModelPtr() is often called before OnNewModel() so go ahead and set it up first chance.
-	static IDataCacheSection *pModelCache = datacache->FindSection( "ModelData" );
-	AssertOnce( pModelCache->IsFrameLocking() );
+//	static IDataCacheSection *pModelCache = datacache->FindSection( "ModelData" );
+//	AssertOnce( pModelCache->IsFrameLocking() );
 #endif
-	if ( !m_pStudioHdr && GetModel() )
+	if ( !m_pStudioHdr )
 	{
 		const_cast<C_BaseAnimating *>(this)->LockStudioHdr();
 	}
-	return ( m_pStudioHdr && m_pStudioHdr->IsValid() ) ? m_pStudioHdr : NULL;
+	Assert( m_pStudioHdr ? m_pStudioHdr->GetRenderHdr() == mdlcache->GetStudioHdr(m_hStudioHdr) : m_hStudioHdr == MDLHANDLE_INVALID );
+	return m_pStudioHdr;
 }
 
 
 inline void C_BaseAnimating::InvalidateMdlCache()
 {
 	UnlockStudioHdr();
-	if ( m_pStudioHdr != NULL )
-	{
-		delete m_pStudioHdr;
-		m_pStudioHdr = NULL;
-	}
+}
+
+inline bool C_BaseAnimating::IsModelScaleFractional() const
+{
+	return ( m_flModelScale < 1.0f );
+}
+
+inline bool C_BaseAnimating::IsModelScaled() const
+{
+	return ( m_flModelScale > 1.0f+FLT_EPSILON || m_flModelScale < 1.0f-FLT_EPSILON );
 }
 
 //-----------------------------------------------------------------------------
@@ -737,6 +815,6 @@ void SetColumn( Vector &src, int column, matrix3x4_t& dest );
 EXTERN_RECV_TABLE(DT_BaseAnimating);
 
 
-extern void DevMsgRT( char const* pMsg, ... );
+extern void DevMsgRT( PRINTF_FORMAT_STRING char const* pMsg, ... );
 
 #endif // C_BASEANIMATING_H

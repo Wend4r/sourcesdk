@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -239,7 +239,7 @@ private:
 		m_nTempIndex = nIndex;
 	}
 
-	friend void EnableThreadedMaterialVarAccess( bool bEnable, IMaterialVar **ppParams, int nVarCount );
+	friend void EnableThreadedMaterialVarAccess( bool bEnable );
 };
 
 #endif // IMATERIALVAR_H

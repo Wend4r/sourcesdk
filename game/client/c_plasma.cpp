@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,7 +10,7 @@
 #include "tempent.h"
 #include "iefx.h"
 #include "decals.h"
-#include "IViewRender.h"
+#include "iviewrender.h"
 #include "engine/ivmodelinfo.h"
 #include "view.h"
 
@@ -464,10 +464,10 @@ void C_Plasma::Update( void )
 			C_BaseEntity *ent = cl_entitylist->GetEnt( 0 );
 			if ( ent )
 			{
-				int index = decalsystem->GetDecalIndexForName( "PlasmaGlowFade" );
-				if ( index >= 0 )
+				int iDecal = decalsystem->GetDecalIndexForName( "PlasmaGlowFade" );
+				if ( iDecal >= 0 )
 				{
-					effects->DecalShoot( index, 0, ent->GetModel(), ent->GetAbsOrigin(), ent->GetAbsAngles(), GetAbsOrigin(), 0, 0 );
+					effects->DecalShoot( iDecal, 0, ent->GetModel(), ent->GetAbsOrigin(), ent->GetAbsAngles(), GetAbsOrigin(), 0, 0 );
 				}
 			}
 		}

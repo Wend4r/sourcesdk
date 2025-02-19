@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -110,7 +110,7 @@ protected:
 	
 	float			m_flGlowObstructionScale;	
 	bool			m_bCacheGlowObstruction;			// Flags to cache obstruction scales
-	bool			m_bCacheSkyObstruction;				
+	bool			m_bCacheSkyObstruction;				// Used in IFM poster rendering
 
 private:
 	short			m_bActivated;

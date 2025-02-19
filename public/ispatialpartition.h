@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -83,6 +83,9 @@ class IPartitionEnumerator
 {
 public:
 	virtual IterationRetval_t EnumElement( IHandleEntity *pHandleEntity ) = 0;
+	// XXX(johns): This should have a virtual destructor, but would be ABI breaking (non-versioned interface implemented
+	//             by the game)
+	// virtual ~IPartitionEnumerator(){}
 };
 
 
@@ -110,6 +113,9 @@ enum
 abstract_class ISpatialPartition
 {
 public:
+	// Add a virtual destructor to silence the clang warning.
+	// This is harmless but not important since the only derived class
+	// doesn't have a destructor.
 	virtual ~ISpatialPartition() {}
 
 	// Create/destroy a handle for this dude in our system. Destroy

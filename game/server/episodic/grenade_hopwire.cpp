@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Gravity well device
 //
@@ -38,7 +38,7 @@ class CGravityVortexController : public CBaseEntity
 
 public:
 	
-		CGravityVortexController( void ) : m_flMass( 0.0f ), m_flEndTime( 0.0f ), m_flRadius( 256.0f ), m_flStrength( 256.0f ) {}	
+			CGravityVortexController( void ) : m_flEndTime( 0.0f ), m_flRadius( 256 ), m_flStrength( 256 ), m_flMass( 0.0f ) {}	
 	float	GetConsumedMass( void ) const;
 
 	static CGravityVortexController *Create( const Vector &origin, float radius, float strength, float duration );
@@ -554,7 +554,7 @@ void CGrenadeHopwire::Detonate( void )
 	SetVelocity( hopVel, hopAngle );
 
 	// Get the time until the apex of the hop
-	float apexTime = sqrt( hopHeight / sv_gravity.GetFloat() );
+	float apexTime = sqrt( hopHeight / GetCurrentGravity() );
 
 	// Explode at the apex
 	SetThink( &CGrenadeHopwire::CombatThink );

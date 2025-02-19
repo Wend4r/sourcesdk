@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -268,7 +268,7 @@ public:
 				if ( !m_pParent->IsWithin( screenx, screeny ) )
 				{
 					Panel *page = reinterpret_cast< Panel * >( data->GetPtr( "propertypage" ) );
-					PropertySheet *sheet = reinterpret_cast< PropertySheet * >( data->GetPtr( "propertysheet" ) );
+					sheet = reinterpret_cast< PropertySheet * >( data->GetPtr( "propertysheet" ) );
 					char const *title = data->GetString( "tabname", "" );
 					if ( !page || !sheet )
 						return;
@@ -338,7 +338,7 @@ public:
 			GetSize(wide, tall);
 			GetContentSize(contentWide, contentTall);
 
-			wide = MAX(m_bMaxTabWidth, contentWide + 10);  // 10 = 5 pixels margin on each side
+			wide = max(m_bMaxTabWidth, contentWide + 10);  // 10 = 5 pixels margin on each side
 			wide += m_pContextLabel ? 10 : 0;
 			SetSize(wide, tall);
 		}
@@ -351,8 +351,6 @@ public:
 
 	virtual void ApplySettings( KeyValues *inResourceData )
 	{
-		BaseClass::ApplySettings(inResourceData);
-
 		const char *pBorder = inResourceData->GetString("activeborder_override", "");
 		if (*pBorder)
 		{
@@ -363,6 +361,7 @@ public:
 		{
 			m_pNormalBorder = scheme()->GetIScheme(GetScheme())->GetBorder( pBorder );
 		}
+		BaseClass::ApplySettings(inResourceData);
 	}
 
 	virtual void OnCommand( char const *cmd )
@@ -476,6 +475,7 @@ public:
 	}
 };
 
+
 }; // namespace vgui
 
 //-----------------------------------------------------------------------------
@@ -498,6 +498,8 @@ PropertySheet::PropertySheet(
 	m_tabFont = 0;
 	m_bDraggableTabs = draggableTabs;
 	m_pTabKV = NULL;
+	m_iTabHeight = 0;
+    m_iTabHeightSmall = 0;
 
 	if ( m_bDraggableTabs )
 	{
@@ -525,6 +527,8 @@ PropertySheet::PropertySheet(Panel *parent, const char *panelName, ComboBox *com
 	m_tabFont = 0;
 	m_bDraggableTabs = false;
 	m_pTabKV = NULL;
+	m_iTabHeight = 0;
+    m_iTabHeightSmall = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -556,7 +560,9 @@ void PropertySheet::SetDraggableTabs( bool state )
 void PropertySheet::SetSmallTabs( bool state )
 {
 	m_bSmallTabs = state;
-	m_tabFont = scheme()->GetIScheme( GetScheme() )->GetFont( m_bSmallTabs ? "DefaultVerySmall" : "Default" );
+	if ( m_bOverrideTabFont )
+		return;
+	m_tabFont = scheme()->GetIScheme( GetScheme() )->GetFont( m_bSmallTabs ? "DefaultVerySmall" : "Default", IsProportional() );
 	int c = m_PageTabs.Count();
 	for ( int i = 0; i < c ; ++i )
 	{
@@ -564,6 +570,22 @@ void PropertySheet::SetSmallTabs( bool state )
 		Assert( tab );
 		tab->SetFont( m_tabFont );
 	}
+}
+
+void PropertySheet::SetTabFont( vgui::HFont hFont )
+{
+	if ( m_tabFont == hFont )
+		return;
+
+	m_tabFont = hFont;
+	int c = m_PageTabs.Count();
+	for ( int i = 0; i < c ; ++i )
+	{
+		PageTab *tab = m_PageTabs[ i ];
+		Assert( tab );
+		tab->SetFont( m_tabFont );
+	}
+	m_bOverrideTabFont = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -686,6 +708,18 @@ void PropertySheet::SetActivePage(Panel *page)
 //-----------------------------------------------------------------------------
 void PropertySheet::SetTabWidth(int pixels)
 {
+	if ( pixels < 0 )
+	{
+		if( !_activeTab )
+			return;
+
+		int nTall;
+		_activeTab->GetContentSize( pixels, nTall );
+	}
+
+	if ( _tabWidth == pixels )
+		return;
+
 	_tabWidth = pixels;
 	InvalidateLayout();
 }
@@ -742,7 +776,7 @@ int PropertySheet::GetNumPages()
 // Purpose: returns the name contained in the active tab
 // Input  : a text buffer to contain the output 
 //-----------------------------------------------------------------------------
-void PropertySheet::GetActiveTabTitle(char *textOut, int bufferLen)
+void PropertySheet::GetActiveTabTitle (char *textOut, int bufferLen )
 {
 	if(_activeTab) _activeTab->GetText(textOut, bufferLen);
 }
@@ -751,14 +785,25 @@ void PropertySheet::GetActiveTabTitle(char *textOut, int bufferLen)
 // Purpose: returns the name contained in the active tab
 // Input  : a text buffer to contain the output 
 //-----------------------------------------------------------------------------
-bool PropertySheet::GetTabTitle(int i, char *textOut, int bufferLen)
+bool PropertySheet::GetTabTitle( int i, char *textOut, int bufferLen )
 {
-	if (i < 0 && i > m_PageTabs.Count()) 
+	if ( i < 0 || i >= m_PageTabs.Count() ) 
 	{
 		return false;
 	}
 
 	m_PageTabs[i]->GetText(textOut, bufferLen);
+	return true;
+}
+
+bool PropertySheet::SetTabTitle( int i, char *pchTitle )
+{
+	if ( i < 0 || i >= m_PageTabs.Count() ) 
+	{
+		return false;
+	}
+
+	m_PageTabs[ i ]->SetText( pchTitle );
 	return true;
 }
 
@@ -869,7 +914,7 @@ void PropertySheet::ApplySchemeSettings(IScheme *pScheme)
 	SetBorder(pBorder);
 	m_flPageTransitionEffectTime = atof(pScheme->GetResourceString("PropertySheet.TransitionEffectTime"));
 
-	m_tabFont = pScheme->GetFont( m_bSmallTabs ? "DefaultVerySmall" : "Default" );
+	m_tabFont = pScheme->GetFont( m_bSmallTabs ? "DefaultVerySmall" : "Default", IsProportional() );
 
 	if ( m_pTabKV )
 	{
@@ -879,11 +924,26 @@ void PropertySheet::ApplySchemeSettings(IScheme *pScheme)
 		}
 	}
 
-	if ( !IsProportional() )
+
+	//=============================================================================
+	// HPE_BEGIN:
+	// [tj] Here, we used to use a single size variable and overwrite it when we scaled.
+	//		This led to problems when we changes resolutions, so now we recalcuate the absolute 
+	//      size from the relative size each time (based on proportionality)
+	//=============================================================================
+	if ( IsProportional() )
 	{
-		m_iTabHeight = scheme()->GetProportionalNormalizedValueEx( GetScheme(), m_iTabHeight );
-		m_iTabHeightSmall = scheme()->GetProportionalNormalizedValueEx( GetScheme(), m_iTabHeightSmall );
+		m_iTabHeight = scheme()->GetProportionalScaledValueEx( GetScheme(), m_iSpecifiedTabHeight );
+		m_iTabHeightSmall = scheme()->GetProportionalScaledValueEx( GetScheme(), m_iSpecifiedTabHeightSmall );
 	}
+	else
+	{
+		m_iTabHeight = m_iSpecifiedTabHeight;
+		m_iTabHeightSmall = m_iSpecifiedTabHeightSmall;
+	}
+	//=============================================================================
+	// HPE_END
+	//=============================================================================
 }
 
 //-----------------------------------------------------------------------------
@@ -930,18 +990,21 @@ void PropertySheet::PaintBorder()
 	if (!border)
 		return;
 
+	int nRepeats = Max( QuickPropScale( 1 ), 1 );
+
 	// draw the border, but with a break at the active tab
 	int px = 0, py = 0, pwide = 0, ptall = 0;
 	if (_activeTab)
 	{
 		_activeTab->GetBounds(px, py, pwide, ptall);
-		ptall -= 1;
+		ptall -= nRepeats;
 	}
+
 
 	// draw the border underneath the buttons, with a break
 	int wide, tall;
 	GetSize(wide, tall);
-	border->Paint(0, py + ptall, wide, tall, IBorder::SIDE_TOP, px + 1, px + pwide - 1);
+	border->Paint2(0, py + ptall, wide, tall, IBorder::SIDE_TOP, px + nRepeats, px + pwide - nRepeats, nRepeats);
 }
 
 //-----------------------------------------------------------------------------
@@ -983,6 +1046,17 @@ void PropertySheet::PerformLayout()
 
             int width, tall;
             m_PageTabs[i]->GetSize(width, tall);
+
+			if ( m_bTabFitText )
+			{
+				m_PageTabs[i]->SizeToContents();
+				width = m_PageTabs[i]->GetWide();
+
+				int iXInset, iYInset;
+				m_PageTabs[i]->GetTextInset( &iXInset, &iYInset );
+				width += (iXInset * 2);
+			}
+
 			if (m_PageTabs[i] == _activeTab)
 			{
 				// active tab is taller
@@ -1040,7 +1114,7 @@ void PropertySheet::OnTabPressed(Panel *panel)
 //-----------------------------------------------------------------------------
 Panel *PropertySheet::GetPage(int i) 
 {
-	if(i<0 && i>m_Pages.Count()) 
+	if(i<0 || i>=m_Pages.Count()) 
 	{
 		return NULL;
 	}
@@ -1097,6 +1171,15 @@ void PropertySheet::RemoveAllPages()
 	}
 }
 
+void PropertySheet::DeleteAllPages()
+{
+	int c = m_Pages.Count();
+	for ( int i = c - 1; i >= 0 ; --i )
+	{
+		DeletePage( m_Pages[ i ].page );
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: deletes the page associated with panel
 // Input  : *panel - the panel of the page to remove
@@ -1131,7 +1214,7 @@ void PropertySheet::RemovePage(Panel *panel)
 	{
 		_activePage = NULL;
 		// if this page is currently active, backup to the page before this.
-		ChangeActiveTab( MAX( location - 1, 0 ) ); 
+		ChangeActiveTab( max( location - 1, 0 ) ); 
 	}
 
 	PerformLayout();
@@ -1160,7 +1243,15 @@ void PropertySheet::ChangeActiveTab( int index )
 		if ( m_Pages.Count() > 0 )
 		{
 			_activePage = NULL;
-			ChangeActiveTab( 0 );
+
+			if ( index < 0 )
+			{
+				ChangeActiveTab( m_Pages.Count() - 1 );
+			}
+			else
+			{
+				ChangeActiveTab( 0 );
+			}
 		}
 		return;
 	}
@@ -1309,13 +1400,13 @@ void PropertySheet::OnOpenContextMenu( KeyValues *params )
 //-----------------------------------------------------------------------------
 // Purpose: Handle key presses, through tabs.
 //-----------------------------------------------------------------------------
-void PropertySheet::OnKeyCodeTyped(KeyCode code)
+void PropertySheet::OnKeyCodePressed(KeyCode code)
 {
 	bool shift = (input()->IsKeyDown(KEY_LSHIFT) || input()->IsKeyDown(KEY_RSHIFT));
 	bool ctrl = (input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL));
 	bool alt = (input()->IsKeyDown(KEY_LALT) || input()->IsKeyDown(KEY_RALT));
 	
-	if ( ctrl && shift && alt && code == KEY_B)
+	if ( ctrl && shift && alt && code == KEY_B )
 	{
 		// enable build mode
 		EditablePanel *ep = dynamic_cast< EditablePanel * >( GetActivePage() );
@@ -1328,27 +1419,37 @@ void PropertySheet::OnKeyCodeTyped(KeyCode code)
 
 	if ( IsKBNavigationEnabled() )
 	{
-		switch (code)
+		ButtonCode_t nButtonCode = GetBaseButtonCode( code );
+
+		switch ( nButtonCode )
 		{
 			// for now left and right arrows just open or close submenus if they are there.
 		case KEY_RIGHT:
+		case KEY_XBUTTON_RIGHT:
+		case KEY_XSTICK1_RIGHT:
+		case KEY_XSTICK2_RIGHT:
+		case STEAMCONTROLLER_DPAD_RIGHT:
 			{
 				ChangeActiveTab(_activeTabIndex+1);
 				break;
 			}
 		case KEY_LEFT:
+		case KEY_XBUTTON_LEFT:
+		case KEY_XSTICK1_LEFT:
+		case KEY_XSTICK2_LEFT:
+		case STEAMCONTROLLER_DPAD_LEFT:
 			{
 				ChangeActiveTab(_activeTabIndex-1);
 				break;
 			}
 		default:
-			BaseClass::OnKeyCodeTyped(code);
+			BaseClass::OnKeyCodePressed(code);
 			break;
 		}
 	}
 	else
 	{
-		BaseClass::OnKeyCodeTyped(code);
+		BaseClass::OnKeyCodePressed(code);
 	}
 }
 

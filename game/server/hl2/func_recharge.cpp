@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -123,7 +123,7 @@ void CRecharge::Spawn()
 
 	SetModel( STRING( GetModelName() ) );
 
-	UpdateJuice( (int)MaxJuice() );
+	UpdateJuice( MaxJuice() );
 
 	m_nState = 0;			
 
@@ -303,7 +303,7 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 
 void CRecharge::Recharge(void)
 {
-	UpdateJuice( (int)MaxJuice() );
+	UpdateJuice( MaxJuice() );
 	m_nState = 0;			
 	SetThink( &CRecharge::SUB_DoNothing );
 }
@@ -318,7 +318,7 @@ void CRecharge::Off(void)
 
 	m_iOn = 0;
 
-	if ((!m_iJuice) &&  ( ( m_iReactivate = (int)g_pGameRules->FlHEVChargerRechargeTime() ) > 0) )
+	if ((!m_iJuice) &&  ( ( m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime() ) > 0) )
 	{
 		SetNextThink( gpGlobals->curtime + m_iReactivate );
 		SetThink(&CRecharge::Recharge);
@@ -449,17 +449,17 @@ void CNewRecharge::SetInitialCharge( void )
 	if ( HasSpawnFlags( SF_KLEINER_RECHARGER ) )
 	{
 		// The charger in Kleiner's lab.
-		m_iMaxJuice =  25;
+		m_iMaxJuice =  25.0f;
 		return;
 	}
 
 	if ( HasSpawnFlags( SF_CITADEL_RECHARGER ) )
 	{
-		m_iMaxJuice =  sk_suitcharger_citadel.GetInt();
+		m_iMaxJuice =  sk_suitcharger_citadel.GetFloat();
 		return;
 	}
 
-	m_iMaxJuice =  sk_suitcharger.GetInt();
+	m_iMaxJuice =  sk_suitcharger.GetFloat();
 }
 
 void CNewRecharge::Spawn()
@@ -477,7 +477,7 @@ void CNewRecharge::Spawn()
 
 	SetInitialCharge();
 
-	UpdateJuice( (int)MaxJuice() );
+	UpdateJuice( MaxJuice() );
 
 	m_nState = 0;		
 	m_iCaps	= FCAP_CONTINUOUS_USE;
@@ -728,7 +728,7 @@ void CNewRecharge::Recharge(void)
 	EmitSound( "SuitRecharge.Start" );
 	ResetSequence( LookupSequence( "idle" ) );
 
-	UpdateJuice( (int)MaxJuice() );
+	UpdateJuice( MaxJuice() );
 
 	m_nState = 0;		
 	m_flJuice = m_iJuice;
@@ -760,11 +760,11 @@ void CNewRecharge::Off(void)
 		{
 			if ( HasSpawnFlags( SF_CITADEL_RECHARGER ) )
 			{
-				m_iReactivate = (int)(g_pGameRules->FlHEVChargerRechargeTime() * 2);
+				m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime() * 2;
 			}
 			else
 			{
-				m_iReactivate = (int)g_pGameRules->FlHEVChargerRechargeTime();
+				m_iReactivate = g_pGameRules->FlHEVChargerRechargeTime();
 			}
 			SetNextThink( gpGlobals->curtime + m_iReactivate );
 			SetThink(&CNewRecharge::Recharge);

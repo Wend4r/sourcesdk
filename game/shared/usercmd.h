@@ -51,9 +51,9 @@ public:
 		weaponselect = 0;
 		weaponsubtype = 0;
 		random_seed = 0;
-//#ifdef GAME_DLL
+#ifdef GAME_DLL
 		server_random_seed = 0;
-//#endif
+#endif
 		mousedx = 0;
 		mousedy = 0;
 
@@ -79,9 +79,9 @@ public:
 		weaponselect		= src.weaponselect;
 		weaponsubtype		= src.weaponsubtype;
 		random_seed			= src.random_seed;
-//#ifdef GAME_DLL
+#ifdef GAME_DLL
 		server_random_seed = src.server_random_seed;
-//#endif
+#endif
 		mousedx				= src.mousedx;
 		mousedy				= src.mousedy;
 
@@ -157,9 +157,9 @@ public:
 	int		weaponsubtype;
 
 	int		random_seed;	// For shared random functions
-//#ifdef GAME_DLL
+#ifdef GAME_DLL
 	int		server_random_seed; // Only the server populates this seed
-//#endif
+#endif
 
 	short	mousedx;		// mouse accum in x from create move
 	short	mousedy;		// mouse accum in y from create move

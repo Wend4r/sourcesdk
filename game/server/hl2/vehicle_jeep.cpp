@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -28,7 +28,8 @@
 #include "vehicle_jeep.h"
 #include "eventqueue.h"
 #include "rumble_shared.h"
-
+// NVNT haptic utils
+#include "haptics/haptic_utils.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -276,7 +277,7 @@ void CPropJeep::DoImpactEffect( trace_t &tr, int nDamageType )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CPropJeep::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr )
+void CPropJeep::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo info = inputInfo;
 	if ( ptr->hitbox != VEHICLE_HITBOX_DRIVER )
@@ -287,7 +288,7 @@ void CPropJeep::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vec
 		}
 	}
 
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //-----------------------------------------------------------------------------
@@ -882,6 +883,9 @@ void CPropJeep::DrawBeam( const Vector &startPos, const Vector &endPos, float wi
 	pBeam->SetEndWidth( 0.1f );
 }
 
+// NVNT Convar for jeep cannon magnitude
+ConVar hap_jeep_cannon_mag("hap_jeep_cannon_mag", "10", 0);
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -901,6 +905,10 @@ void CPropJeep::FireCannon( void )
 	Vector aimDir;
 	GetCannonAim( &aimDir );
 
+#if defined( WIN32 ) && !defined( _X360 ) 
+	// NVNT apply a punch on fire
+	HapticPunch(m_hPlayer,0,0,hap_jeep_cannon_mag.GetFloat());
+#endif
 	FireBulletsInfo_t info( 1, m_vecGunOrigin, aimDir, VECTOR_CONE_1DEGREES, MAX_TRACE_LENGTH, m_nAmmoType );
 
 	info.m_nFlags = FIRE_BULLETS_ALLOW_WATER_SURFACE_IMPACTS;
@@ -1417,8 +1425,8 @@ void CPropJeep::CreateDangerSounds( void )
 
 		// 0.3 seconds ahead of the jeep
 		vecSpot = vecStart + vecDir * (speed * 1.1f);
-		CSoundEnt::InsertSound( SOUND_DANGER | SOUND_CONTEXT_PLAYER_VEHICLE, vecSpot, (int)radius, soundDuration, this, 0 );
-		CSoundEnt::InsertSound( SOUND_PHYSICS_DANGER | SOUND_CONTEXT_PLAYER_VEHICLE, vecSpot, (int)radius, soundDuration, this, 1 );
+		CSoundEnt::InsertSound( SOUND_DANGER | SOUND_CONTEXT_PLAYER_VEHICLE, vecSpot, radius, soundDuration, this, 0 );
+		CSoundEnt::InsertSound( SOUND_PHYSICS_DANGER | SOUND_CONTEXT_PLAYER_VEHICLE, vecSpot, radius, soundDuration, this, 1 );
 		//NDebugOverlay::Box(vecSpot, Vector(-radius,-radius,-radius),Vector(radius,radius,radius), 255, 0, 255, 0, soundDuration);
 
 #if 0

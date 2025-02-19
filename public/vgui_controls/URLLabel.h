@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -36,6 +36,7 @@ protected:
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	virtual const char *GetDescription( void );
 
+	bool IsValidURL( const char *pszURL );
 	const char *GetURL( void ) { return m_pszURL; }
 
 private:

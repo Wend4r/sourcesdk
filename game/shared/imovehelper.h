@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -46,7 +46,7 @@ enum
 typedef CBaseHandle EntityHandle_t;
 
 
-#define INVALID_ENTITY_HANDLE INVALID_EHANDLE_INDEX
+#define INVALID_ENTITY_HANDLE INVALID_EHANDLE
 
 //-----------------------------------------------------------------------------
 // Functions the engine provides to IGameMovement to assist in its movement.
@@ -67,7 +67,7 @@ public:
 	virtual void	ProcessImpacts( void ) = 0;
 	
 	// Numbered line printf
-	virtual void	Con_NPrintf( int idx, char const* fmt, ... ) = 0;
+	virtual void	Con_NPrintf( int idx, PRINTF_FORMAT_STRING char const* fmt, ... ) = 0;
 
 	// These have separate server vs client impementations
 	virtual void	StartSound( const Vector& origin, int channel, char const* sample, float volume, soundlevel_t soundlevel, int fFlags, int pitch ) = 0;
@@ -83,6 +83,9 @@ public:
 	virtual IPhysicsSurfaceProps *GetSurfaceProps( void ) = 0;
 
 	virtual bool IsWorldEntity( const CBaseHandle &handle ) = 0;
+
+	// sets the entity being moved
+	virtual void	SetHost( CBasePlayer *host ) = 0;
 
 protected:
 	// Inherited classes can call this to set the singleton

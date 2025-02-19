@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client DLL VGUI2 Viewport
 //
@@ -21,7 +21,7 @@
 #include <KeyValues.h>
 #include <vgui/Cursor.h>
 #include <vgui/IScheme.h>
-#include <vgui/IVGUI.h>
+#include <vgui/IVGui.h>
 #include <vgui/ILocalize.h>
 #include <vgui/VGUI.h>
 

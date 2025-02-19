@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This is the soldier version of the combine, analogous to the HL1 grunt.
 //
@@ -62,15 +62,15 @@ void CNPC_CombineS::Spawn( void )
 	if( IsElite() )
 	{
 		// Stronger, tougher.
-		SetHealth( sk_combine_guard_health.GetInt() );
-		SetMaxHealth( sk_combine_guard_health.GetInt() );
-		SetKickDamage( sk_combine_guard_kick.GetInt() );
+		SetHealth( sk_combine_guard_health.GetFloat() );
+		SetMaxHealth( sk_combine_guard_health.GetFloat() );
+		SetKickDamage( sk_combine_guard_kick.GetFloat() );
 	}
 	else
 	{
-		SetHealth( sk_combine_s_health.GetInt() );
-		SetMaxHealth( sk_combine_s_health.GetInt() );
-		SetKickDamage( sk_combine_s_kick.GetInt() );
+		SetHealth( sk_combine_s_health.GetFloat() );
+		SetMaxHealth( sk_combine_s_health.GetFloat() );
+		SetKickDamage( sk_combine_s_kick.GetFloat() );
 	}
 
 	CapabilitiesAdd( bits_CAP_ANIMATEDFACE );
@@ -166,7 +166,7 @@ void CNPC_CombineS::PrescheduleThink( void )
 		{
 			if( FInViewCone( pSound->GetSoundReactOrigin() ) )
 			{
-				DevMsg( "OH CRAP!\n" );
+				DevMsg( "OH NO!\n" );
 				NDebugOverlay::Line( EyePosition(), pSound->GetSoundReactOrigin(), 0, 0, 255, false, 2.0f );
 			}
 		}
@@ -390,7 +390,7 @@ bool CNPC_CombineS::IsHeavyDamage( const CTakeDamageInfo &info )
 	// Shotgun blasts where at least half the pellets hit me are heavy damage
 	if ( info.GetDamageType() & DMG_BUCKSHOT )
 	{
-		int iHalfMax = (int)(sk_plr_dmg_buckshot.GetFloat() * sk_plr_num_shotgun_pellets.GetInt() * 0.5);
+		int iHalfMax = sk_plr_dmg_buckshot.GetFloat() * sk_plr_num_shotgun_pellets.GetInt() * 0.5;
 		if ( info.GetDamage() >= iHalfMax )
 			return true;
 	}

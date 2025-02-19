@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -74,6 +74,9 @@ public:
 	RecvVarProxyFn m_Int32ToInt32;
 	RecvVarProxyFn m_FloatToFloat;
 	RecvVarProxyFn m_VectorToVector;
+#ifdef SUPPORTS_INT64
+	RecvVarProxyFn m_Int64ToInt64;
+#endif
 };
 extern CStandardRecvProxies g_StandardRecvProxies;
 
@@ -134,7 +137,7 @@ public:
 
 public:
 
-	const char				*m_pVarName;
+	const char              *m_pVarName;
 	SendPropType			m_RecvType;
 	int						m_Flags;
 	int						m_StringBufferSize;
@@ -280,26 +283,32 @@ inline bool RecvTable::IsInMainList() const
 		return 1; \
 	}
 
+// Normal offset of is invalid on non-array-types, this is dubious as hell. The rest of the codebase converted to the
+// legit offsetof from the C headers, so we'll use the old impl here to avoid exposing temptation to others
+#define _hacky_dtrecv_offsetof(s,m)	( (size_t)&(((s *)0x1000000)->m) - 0x1000000u )
 
-#define RECVINFO(varName)						#varName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
-#define RECVINFO_NAME(varName, remoteVarName)	#remoteVarName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
-#define RECVINFO_STRING(varName)				#varName, offsetof(currentRecvDTClass, varName), STRINGBUFSIZE(currentRecvDTClass, varName)
+#define RECVINFO(varName)						#varName, _hacky_dtrecv_offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
+#define RECVINFO_NAME(varName, remoteVarName)	#remoteVarName, _hacky_dtrecv_offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
+#define RECVINFO_STRING(varName)				#varName, _hacky_dtrecv_offsetof(currentRecvDTClass, varName), STRINGBUFSIZE(currentRecvDTClass, varName)
 #define RECVINFO_BASECLASS(tableName)			RecvPropDataTable("this", 0, 0, &REFERENCE_RECV_TABLE(tableName))
-#define RECVINFO_ARRAY(varName)					#varName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName[0]), sizeof(((currentRecvDTClass*)0)->varName)/sizeof(((currentRecvDTClass*)0)->varName[0])
+#define RECVINFO_ARRAY(varName)					#varName, _hacky_dtrecv_offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName[0]), sizeof(((currentRecvDTClass*)0)->varName)/sizeof(((currentRecvDTClass*)0)->varName[0])
 
 // Just specify the name and offset. Used for strings and data tables.
-#define RECVINFO_NOSIZE(varName)				#varName, offsetof(currentRecvDTClass, varName)
+#define RECVINFO_NOSIZE(varName)				#varName, _hacky_dtrecv_offsetof(currentRecvDTClass, varName)
 #define RECVINFO_DT(varName)					RECVINFO_NOSIZE(varName)
-#define RECVINFO_DTNAME(varName,remoteVarName)	#remoteVarName, offsetof(currentRecvDTClass, varName)
-
+#define RECVINFO_DTNAME(varName,remoteVarName)	#remoteVarName, _hacky_dtrecv_offsetof(currentRecvDTClass, varName)
 
 void RecvProxy_FloatToFloat  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_VectorToVector( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_VectorXYToVectorXY( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_QuaternionToQuaternion( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_Int32ToInt8   ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_Int32ToInt16  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_StringToString( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_Int32ToInt32  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+#ifdef SUPPORTS_INT64
+void RecvProxy_Int64ToInt64  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
+#endif
 
 // StaticDataTable does *pOut = pData.
 void DataTableRecvProxy_StaticDataTable(const RecvProp *pProp, void **pOut, void *pData, int objectID);
@@ -322,6 +331,14 @@ RecvProp RecvPropVector(
 	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
 	int flags=0, 
 	RecvVarProxyFn varProxy=RecvProxy_VectorToVector
+	);
+
+RecvProp RecvPropVectorXY(
+	const char *pVarName, 
+	int offset, 
+	int sizeofVar=SIZEOF_IGNORE,	// Handled by RECVINFO macro, but set to SIZEOF_IGNORE if you don't want to bother.
+	int flags=0, 
+	RecvVarProxyFn varProxy=RecvProxy_VectorXYToVectorXY
 	);
 
 // This is here so the RecvTable can look more like the SendTable.

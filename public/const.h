@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -20,9 +20,12 @@
 
 // the message a server sends when a clients steam login is expired
 #define INVALID_STEAM_TICKET "Invalid STEAM UserID Ticket\n"
-#define INVALID_STEAM_LOGON "No Steam logon\n"
 #define INVALID_STEAM_VACBANSTATE "VAC banned from secure server\n"
 #define INVALID_STEAM_LOGGED_IN_ELSEWHERE "This Steam account is being used in another location\n"
+#define INVALID_STEAM_LOGON_NOT_CONNECTED "Client not connected to Steam\n"
+#define INVALID_STEAM_LOGON_TICKET_CANCELED "Client left game (Steam auth ticket has been canceled)\n"
+
+#define CLIENTNAME_TIMED_OUT "%s timed out"
 
 // This is the default, see shareddefs.h for mod-specific value, which can override this
 #define DEFAULT_TICK_INTERVAL	(0.015)				// 15 msec is the default
@@ -43,12 +46,20 @@
 #define MAX_PLAYERS_PER_CLIENT		1	// One player per PC
 #endif
 
-#define MAX_MAP_NAME				32	
+// Max decorated map name, with things like workshop/cp_foo.ugc123456
+#define MAX_MAP_NAME				96
+
+// Max name used in save files. Needs to be left at 32 for SourceSDK compatibility.
+#define MAX_MAP_NAME_SAVE			32
+
+// Max non-decorated map name for e.g. server browser (just cp_foo)
+#define MAX_DISPLAY_MAP_NAME		32
+
 #define	MAX_NETWORKID_LENGTH		64  // num chars for a network (i.e steam) ID
 
 // BUGBUG: Reconcile with or derive this from the engine's internal definition!
 // FIXME: I added an extra bit because I needed to make it signed
-#define SP_MODEL_INDEX_BITS			11
+#define SP_MODEL_INDEX_BITS			13
 
 // How many bits to use to encode an edict.
 #define	MAX_EDICT_BITS				11			// # of bits needed to represent max edicts
@@ -63,12 +74,13 @@
 #define SIGNED_GUID_LEN 32 // Hashed CD Key (32 hex alphabetic chars + 0 terminator )
 
 // Used for networking ehandles.
-#define NUM_ENT_ENTRY_BITS		(MAX_EDICT_BITS + 1)
+#define NUM_ENT_ENTRY_BITS		(MAX_EDICT_BITS + 2)
 #define NUM_ENT_ENTRIES			(1 << NUM_ENT_ENTRY_BITS)
-#define ENT_ENTRY_MASK			(NUM_ENT_ENTRIES - 1)
 #define INVALID_EHANDLE_INDEX	0xFFFFFFFF
 
-#define NUM_SERIAL_NUM_BITS		(32 - NUM_ENT_ENTRY_BITS)
+#define NUM_SERIAL_NUM_BITS		16 // (32 - NUM_ENT_ENTRY_BITS)
+#define NUM_SERIAL_NUM_SHIFT_BITS (32 - NUM_SERIAL_NUM_BITS)
+#define ENT_ENTRY_MASK			(( 1 << NUM_SERIAL_NUM_BITS) - 1)
 
 
 // Networked ehandles use less bits to encode the serial number.
@@ -85,7 +97,7 @@
 
 // a client can have up to 4 customization files (logo, sounds, models, txt).
 #define MAX_CUSTOM_FILES		4		// max 4 files
-#define MAX_CUSTOM_FILE_SIZE	131072	
+#define MAX_CUSTOM_FILE_SIZE	524288	// Half a megabyte
 
 //
 // Constants shared by the engine and dlls
@@ -94,8 +106,52 @@
 
 // CBaseEntity::m_fFlags
 // PLAYER SPECIFIC FLAGS FIRST BECAUSE WE USE ONLY A FEW BITS OF NETWORK PRECISION
+// This top block is for singleplayer games only....no HL2:DM (which defines HL2_DLL)
+#if !defined( HL2MP ) && ( defined( PORTAL ) || defined( HL2_EPISODIC ) || defined ( HL2_DLL ) || defined( HL2_LOSTCOAST ) )
 #define	FL_ONGROUND				(1<<0)	// At rest / on the ground
 #define FL_DUCKING				(1<<1)	// Player flag -- Player is fully crouched
+#define	FL_WATERJUMP			(1<<2)	// player jumping out of water
+#define FL_ONTRAIN				(1<<3) // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
+#define FL_INRAIN				(1<<4)	// Indicates the entity is standing in rain
+#define FL_FROZEN				(1<<5) // Player is frozen for 3rd person camera
+#define FL_ATCONTROLS			(1<<6) // Player can't move, but keeps key inputs for controlling another entity
+#define	FL_CLIENT				(1<<7)	// Is a player
+#define FL_FAKECLIENT			(1<<8)	// Fake client, simulated server side; don't send network messages to them
+// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
+#define	FL_INWATER				(1<<9)	// In water
+
+// NOTE if you move things up, make sure to change this value
+#define PLAYER_FLAG_BITS		10
+
+#define	FL_FLY					(1<<10)	// Changes the SV_Movestep() behavior to not need to be on ground
+#define	FL_SWIM					(1<<11)	// Changes the SV_Movestep() behavior to not need to be on ground (but stay in water)
+#define	FL_CONVEYOR				(1<<12)
+#define	FL_NPC					(1<<13)
+#define	FL_GODMODE				(1<<14)
+#define	FL_NOTARGET				(1<<15)
+#define	FL_AIMTARGET			(1<<16)	// set if the crosshair needs to aim onto the entity
+#define	FL_PARTIALGROUND		(1<<17)	// not all corners are valid
+#define FL_STATICPROP			(1<<18)	// Eetsa static prop!		
+#define FL_GRAPHED				(1<<19) // worldgraph has this ent listed as something that blocks a connection
+#define FL_GRENADE				(1<<20)
+#define FL_STEPMOVEMENT			(1<<21)	// Changes the SV_Movestep() behavior to not do any processing
+#define FL_DONTTOUCH			(1<<22)	// Doesn't generate touch functions, generates Untouch() for anything it was touching when this flag was set
+#define FL_BASEVELOCITY			(1<<23)	// Base velocity has been applied this frame (used to convert base velocity into momentum)
+#define FL_WORLDBRUSH			(1<<24)	// Not moveable/removeable brush entity (really part of the world, but represented as an entity for transparency or something)
+#define FL_OBJECT				(1<<25) // Terrible name. This is an object that NPCs should see. Missiles, for example.
+#define FL_KILLME				(1<<26)	// This entity is marked for death -- will be freed by game DLL
+#define FL_ONFIRE				(1<<27)	// You know...
+#define FL_DISSOLVING			(1<<28) // We're dissolving!
+#define FL_TRANSRAGDOLL			(1<<29) // In the process of turning into a client side ragdoll.
+#define FL_UNBLOCKABLE_BY_PLAYER (1<<30) // pusher that can't be blocked by the player
+#else
+#define	FL_ONGROUND				(1<<0)	// At rest / on the ground
+#define FL_DUCKING				(1<<1)	// Player flag -- Player is fully crouched
+#define FL_ANIMDUCKING			(1<<2)	// Player flag -- Player is in the process of crouching or uncrouching but could be in transition
+// examples:                                   Fully ducked:  FL_DUCKING &  FL_ANIMDUCKING
+//           Previously fully ducked, unducking in progress:  FL_DUCKING & !FL_ANIMDUCKING
+//                                           Fully unducked: !FL_DUCKING & !FL_ANIMDUCKING
+//           Previously fully unducked, ducking in progress: !FL_DUCKING &  FL_ANIMDUCKING
 #define	FL_WATERJUMP			(1<<3)	// player jumping out of water
 #define FL_ONTRAIN				(1<<4) // Player is _controlling_ a train, so movement commands should be ignored on client during prediction.
 #define FL_INRAIN				(1<<5)	// Indicates the entity is standing in rain
@@ -103,11 +159,12 @@
 #define FL_ATCONTROLS			(1<<7) // Player can't move, but keeps key inputs for controlling another entity
 #define	FL_CLIENT				(1<<8)	// Is a player
 #define FL_FAKECLIENT			(1<<9)	// Fake client, simulated server side; don't send network messages to them
+// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
 #define	FL_INWATER				(1<<10)	// In water
+
 // NOTE if you move things up, make sure to change this value
 #define PLAYER_FLAG_BITS		11
 
-// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
 #define	FL_FLY					(1<<11)	// Changes the SV_Movestep() behavior to not need to be on ground
 #define	FL_SWIM					(1<<12)	// Changes the SV_Movestep() behavior to not need to be on ground (but stay in water)
 #define	FL_CONVEYOR				(1<<13)
@@ -129,6 +186,7 @@
 #define FL_DISSOLVING			(1<<29) // We're dissolving!
 #define FL_TRANSRAGDOLL			(1<<30) // In the process of turning into a client side ragdoll.
 #define FL_UNBLOCKABLE_BY_PLAYER (1<<31) // pusher that can't be blocked by the player
+#endif
 
 // edict->movetype values
 enum MoveType_t
@@ -292,7 +350,7 @@ enum
 // if this is changed, update common/MaterialSystem/Sprite.cpp
 enum RenderMode_t
 {	
-	kRenderNormal,			// src
+	kRenderNormal = 0,		// src
 	kRenderTransColor,		// c*a+dest*(1-a)
 	kRenderTransTexture,	// src*a+dest*(1-a)
 	kRenderGlow,			// src*a+dest -- No Z buffer checks -- Fixed size in screen space
@@ -303,6 +361,8 @@ enum RenderMode_t
 	kRenderTransAlphaAdd,	// src + dest*(1-a)
 	kRenderWorldGlow,		// Same as kRenderGlow but not fixed size in screen space
 	kRenderNone,			// Don't render.
+
+	kRenderModeCount,		// must be last
 };
 
 enum RenderFx_t

@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -20,19 +20,17 @@
 #include "tier0/memalloc.h"
 #include "tier0/memdbgon.h"
 
-#ifdef _MSC_VER
 #pragma warning (disable:4100)
 #pragma warning (disable:4514)
-#endif
 
 //-----------------------------------------------------------------------------
 
-#ifdef UTLMEMORY_TRACK
-#define UTLMEMORY_TRACK_ALLOC()		MemAlloc_RegisterAllocation( "Sum of all UtlFixedMemory", 0, NumAllocated() * sizeof(T), NumAllocated() * sizeof(T), 0 )
-#define UTLMEMORY_TRACK_FREE()		if ( !m_pMemory ) ; else MemAlloc_RegisterDeallocation( "Sum of all UtlFixedMemory", 0, NumAllocated() * sizeof(T), NumAllocated() * sizeof(T), 0 )
+#ifdef UTLFIXEDMEMORY_TRACK
+#define UTLFIXEDMEMORY_TRACK_ALLOC()		MemAlloc_RegisterAllocation( "Sum of all UtlFixedMemory", 0, NumAllocated() * sizeof(T), NumAllocated() * sizeof(T), 0 )
+#define UTLFIXEDMEMORY_TRACK_FREE()		if ( !m_pMemory ) ; else MemAlloc_RegisterDeallocation( "Sum of all UtlFixedMemory", 0, NumAllocated() * sizeof(T), NumAllocated() * sizeof(T), 0 )
 #else
-#define UTLMEMORY_TRACK_ALLOC()		((void)0)
-#define UTLMEMORY_TRACK_FREE()		((void)0)
+#define UTLFIXEDMEMORY_TRACK_ALLOC()		((void)0)
+#define UTLFIXEDMEMORY_TRACK_FREE()		((void)0)
 #endif
 
 
@@ -64,7 +62,7 @@ public:
 	public:
 		Iterator_t( BlockHeader_t *p, int i ) : m_pBlockHeader( p ), m_nIndex( i ) {}
 		BlockHeader_t *m_pBlockHeader;
-		int m_nIndex;
+		intp m_nIndex;
 
 		bool operator==( const Iterator_t it ) const	{ return m_pBlockHeader == it.m_pBlockHeader && m_nIndex == it.m_nIndex; }
 		bool operator!=( const Iterator_t it ) const	{ return m_pBlockHeader != it.m_pBlockHeader || m_nIndex != it.m_nIndex; }
@@ -82,15 +80,15 @@ public:
 
 		return pHeader->m_pNext ? Iterator_t( pHeader->m_pNext, 0 ) : InvalidIterator();
 	}
-	int GetIndex( const Iterator_t &it ) const
+	intp GetIndex( const Iterator_t &it ) const
 	{
 		Assert( IsValidIterator( it ) );
 		if ( !IsValidIterator( it ) )
 			return InvalidIndex();
 
-		return ( int )( HeaderToBlock( it.m_pBlockHeader ) + it.m_nIndex );
+		return ( intp )( HeaderToBlock( it.m_pBlockHeader ) + it.m_nIndex );
 	}
-	bool IsIdxAfter( int i, const Iterator_t &it ) const
+	bool IsIdxAfter( intp i, const Iterator_t &it ) const
 	{
 		Assert( IsValidIterator( it ) );
 		if ( !IsValidIterator( it ) )
@@ -107,23 +105,26 @@ public:
 		return false;
 	}
 	bool IsValidIterator( const Iterator_t &it ) const	{ return it.m_pBlockHeader && it.m_nIndex >= 0 && it.m_nIndex < it.m_pBlockHeader->m_nBlockSize; }
-	Iterator_t InvalidIterator() const					{ return Iterator_t( NULL, -1 ); }
+	Iterator_t InvalidIterator() const					{ return Iterator_t( NULL, INVALID_INDEX ); }
 
 	// element access
-	T& operator[]( int i );
-	const T& operator[]( int i ) const;
-	T& Element( int i );
-	const T& Element( int i ) const;
+	T& operator[]( intp i );
+	const T& operator[]( intp i ) const;
+	T& Element( intp i );
+	const T& Element( intp i ) const;
 
 	// Can we use this index?
-	bool IsIdxValid( int i ) const;
-	static int InvalidIndex() { return 0; }
+	bool IsIdxValid( intp i ) const;
+
+	// Specify the invalid ('null') index that we'll only return on failure
+	static const intp INVALID_INDEX = 0; // For use with COMPILE_TIME_ASSERT
+	static intp InvalidIndex() { return INVALID_INDEX; }
 
 	// Size
 	int NumAllocated() const;
 	int Count() const { return NumAllocated(); }
 
-	// Grows memory by MAX(num,growsize), and returns the allocation index/ptr
+	// Grows memory by max(num,growsize), and returns the allocation index/ptr
 	void Grow( int num = 1 );
 
 	// Makes sure we've got at least this much memory
@@ -136,7 +137,7 @@ protected:
 	// Fast swap - WARNING: Swap invalidates all ptr-based indices!!!
 	void Swap( CUtlFixedMemory< T > &mem );
 
-	bool IsInBlock( int i, BlockHeader_t *pBlockHeader ) const
+	bool IsInBlock( intp i, BlockHeader_t *pBlockHeader ) const
 	{
 		T *p = ( T* )i;
 		const T *p0 = HeaderToBlock( pBlockHeader );
@@ -146,7 +147,7 @@ protected:
 	struct BlockHeader_t
 	{
 		BlockHeader_t *m_pNext;
-		int m_nBlockSize;
+		intp m_nBlockSize;
 	};
 
 	const T *HeaderToBlock( const BlockHeader_t *pHeader ) const { return ( T* )( pHeader + 1 ); }
@@ -195,11 +196,6 @@ void CUtlFixedMemory<T>::Init( int nGrowSize /* = 0 */, int nInitSize /* = 0 */ 
 {
 	Purge();
 
-	if ( nGrowSize == 0)
-	{
-		// Compute an allocation which is at least as big as a cache line...
-		nGrowSize = ( 31 + sizeof( T ) ) / sizeof( T );
-	}
 	m_nGrowSize = nGrowSize;
 
 	Grow( nInitSize );
@@ -209,28 +205,28 @@ void CUtlFixedMemory<T>::Init( int nGrowSize /* = 0 */, int nInitSize /* = 0 */ 
 // element access
 //-----------------------------------------------------------------------------
 template< class T >
-inline T& CUtlFixedMemory<T>::operator[]( int i )
+inline T& CUtlFixedMemory<T>::operator[]( intp i )
 {
 	Assert( IsIdxValid(i) );
 	return *( T* )i;
 }
 
 template< class T >
-inline const T& CUtlFixedMemory<T>::operator[]( int i ) const
+inline const T& CUtlFixedMemory<T>::operator[]( intp i ) const
 {
 	Assert( IsIdxValid(i) );
 	return *( T* )i;
 }
 
 template< class T >
-inline T& CUtlFixedMemory<T>::Element( int i )
+inline T& CUtlFixedMemory<T>::Element( intp i )
 {
 	Assert( IsIdxValid(i) );
 	return *( T* )i;
 }
 
 template< class T >
-inline const T& CUtlFixedMemory<T>::Element( int i ) const
+inline const T& CUtlFixedMemory<T>::Element( intp i ) const
 {
 	Assert( IsIdxValid(i) );
 	return *( T* )i;
@@ -251,7 +247,7 @@ inline int CUtlFixedMemory<T>::NumAllocated() const
 // Is element index valid?
 //-----------------------------------------------------------------------------
 template< class T >
-inline bool CUtlFixedMemory<T>::IsIdxValid( int i ) const
+inline bool CUtlFixedMemory<T>::IsIdxValid( intp i ) const
 {
 #ifdef _DEBUG
 	for ( BlockHeader_t *pbh = m_pBlocks; pbh; pbh = pbh->m_pNext )

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -49,7 +49,7 @@ typedef IClientNetworkable*	(*CreateEventFn)();
 class ClientClass
 {
 public:
-	ClientClass( char *pNetworkName, CreateClientClassFn createFn, CreateEventFn createEventFn, RecvTable *pRecvTable )
+	ClientClass( const char *pNetworkName, CreateClientClassFn createFn, CreateEventFn createEventFn, RecvTable *pRecvTable )
 	{
 		m_pNetworkName	= pNetworkName;
 		m_pCreateFn		= createFn;
@@ -69,17 +69,23 @@ public:
 public:
 	CreateClientClassFn		m_pCreateFn;
 	CreateEventFn			m_pCreateEventFn;	// Only called for event objects.
-	char					*m_pNetworkName;
+	const char				*m_pNetworkName;
 	RecvTable				*m_pRecvTable;
 	ClientClass				*m_pNext;
 	int						m_ClassID;	// Managed by the engine.
 };
 
-#define DECLARE_CLIENTCLASS() \
-	virtual int YouForgotToImplementOrDeclareClientClass();\
-	virtual ClientClass* GetClientClass();\
-	static RecvTable *m_pClassRecvTable; \
+#define DECLARE_CLIENTCLASS_IMPL( MAYBE_OVERRIDE )                         \
+	virtual int YouForgotToImplementOrDeclareClientClass() MAYBE_OVERRIDE; \
+	virtual ClientClass* GetClientClass() MAYBE_OVERRIDE;                  \
+	static RecvTable *m_pClassRecvTable;                                   \
 	DECLARE_CLIENTCLASS_NOBASE()
+#define DECLARE_CLIENTCLASS() \
+	DECLARE_CLIENTCLASS_IMPL( /* override */; )
+// With warnings set to inconsistent-override, marking this properly as override would create warnings in all old files.
+// Instead, as files are converted to use override, just upgrade to this
+#define DECLARE_CLIENTCLASS_OVERRIDE() \
+	DECLARE_CLIENTCLASS_IMPL( OVERRIDE )
 
 
 // This can be used to give all datatables access to protected and private members of the class.
@@ -131,8 +137,8 @@ public:
 // is responsible for freeing itself.
 #define IMPLEMENT_CLIENTCLASS_EVENT(clientClassName, dataTable, serverClassName)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
-	static clientClassName __g_##clientClassName##; \
-	static IClientNetworkable* _##clientClassName##_CreateObject() {return &__g_##clientClassName##;}\
+	static clientClassName __g_##clientClassName; \
+	static IClientNetworkable* _##clientClassName##_CreateObject() {return &__g_##clientClassName;}\
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
 													NULL,\
 													_##clientClassName##_CreateObject, \

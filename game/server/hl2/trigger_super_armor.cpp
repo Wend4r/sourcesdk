@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Spawn and use functions for editor-placed triggers.
 //
@@ -57,7 +57,7 @@ END_DATADESC()
 static const char *s_pRechargeThinkContext = "RechargeThink";
 
 
-void CTriggerSuperArmor::Precache()
+void CTriggerSuperAmmor::Precache()
 {
 	BaseClass::Precache();
 
@@ -120,7 +120,7 @@ void CTriggerSuperArmor::StartTouch( CBaseEntity *pOther )
 
 	if ( m_hTouchingEntities.Count() == 1 )
 	{
-		SetContextThink( &CTriggerSuperArmor::RechargeThink, gpGlobals->curtime + 0.01f, s_pRechargeThinkContext );
+		SetContextThink( RechargeThink, gpGlobals->curtime + 0.01f, s_pRechargeThinkContext );
 		pOther->EmitSound( "TriggerSuperArmor.StartCharging" );
 		m_flLoopingSoundTime = 0.56f + gpGlobals->curtime;
 	}
@@ -175,5 +175,5 @@ void CTriggerSuperArmor::RechargeThink()
 		}
 	}
 
-	SetContextThink( &CTriggerSuperArmor::RechargeThink, gpGlobals->curtime + 0.1f, s_pRechargeThinkContext );
+	SetContextThink( RechargeThink, gpGlobals->curtime + 0.1f, s_pRechargeThinkContext );
 }

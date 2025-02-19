@@ -16,18 +16,11 @@
 #include "appframework/IAppSystem.h"
 
 #if defined( DX_TO_GL_ABSTRACTION )
-#if !defined(DEDICATED)
 #include "togl/linuxwin/glmgrbasics.h"
 #include "togl/linuxwin/glmdisplay.h"
-#endif
 
 class GLMDisplayDB;
 class CShowPixelsParams;
-
-#if defined(DEDICATED)
-typedef void *PseudoGLContextPtr;
-class GLMRendererInfoFields;
-#endif
 #endif
 
 // if you rev this version also update materialsystem/cmaterialsystem.cpp CMaterialSystem::Connect as it defines the string directly

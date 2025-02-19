@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: FIXME: This will ultimately become a more generic implementation
 //
@@ -90,7 +90,7 @@ void CAI_BehaviorAlyxInjured::PopulateActivityMap( void )
 	m_ActivityMap.RemoveAll();
 
 	// Add all translations
-	for ( size_t i = 0; i < ARRAYSIZE( map ); i++ )
+	for ( int i = 0; i < ARRAYSIZE( map ); i++ )
 	{
 		Assert( m_ActivityMap.Find( map[i].activity ) == m_ActivityMap.InvalidIndex() );
 		m_ActivityMap.Insert( map[i].activity, map[i].translation );

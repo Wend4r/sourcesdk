@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -34,7 +34,6 @@ CPolyhedron *ConvertLinkedGeometryToPolyhedron( GeneratePolyhedronFromPlanes_Uno
 //#define DEBUG_DUMP_POLYHEDRONS_TO_NUMBERED_GLVIEWS //dumps successfully generated polyhedrons
 
 #ifdef _DEBUG
-#include "filesystem.h"
 void DumpPolyhedronToGLView( const CPolyhedron *pPolyhedron, const char *pFilename, const VMatrix *pTransform );
 void DumpPlaneToGlView( const float *pPlane, float fGrayScale, const char *pszFileName, const VMatrix *pTransform );
 void DumpLineToGLView( const Vector &vPoint1, const Vector &vColor1, const Vector &vPoint2, const Vector &vColor2, float fThickness, FILE *pFile );
@@ -103,19 +102,19 @@ CPolyhedron_AllocByNew *CPolyhedron_AllocByNew::Allocate( unsigned short iVertic
 class CPolyhedron_TempMemory : public CPolyhedron
 {
 public:
-#ifdef _DEBUG
+#ifdef DBGFLAG_ASSERT
 	int iReferenceCount;
 #endif
 
 	virtual void Release( void )
 	{
-#ifdef _DEBUG
+#ifdef DBGFLAG_ASSERT
 		--iReferenceCount;
 #endif
 	}
 
 	CPolyhedron_TempMemory( void )
-#ifdef _DEBUG
+#ifdef DBGFLAG_ASSERT
 		: iReferenceCount( 0 )
 #endif
 	{ };
@@ -128,7 +127,7 @@ static CPolyhedron_TempMemory s_TempMemoryPolyhedron;
 CPolyhedron *GetTempPolyhedron( unsigned short iVertices, unsigned short iLines, unsigned short iIndices, unsigned short iPolygons ) //grab the temporary polyhedron. Avoids new/delete for quick work. Can only be in use by one chunk of code at a time
 {
 	AssertMsg( s_TempMemoryPolyhedron.iReferenceCount == 0, "Temporary polyhedron memory being rewritten before released" );
-#ifdef _DEBUG
+#ifdef DBGFLAG_ASSERT
 	++s_TempMemoryPolyhedron.iReferenceCount;
 #endif
 	s_TempMemoryPolyhedron_Buffer.SetCount( (sizeof( Vector ) * iVertices) +
@@ -857,8 +856,8 @@ const char * DumpPolyhedronCutHistory( const CUtlVector<CPolyhedron *> &DumpedHi
 
 #else
 
-#define AssertMsg_DumpPolyhedron(condition, message)
-#define Assert_DumpPolyhedron(condition)
+#define AssertMsg_DumpPolyhedron(condition, message) NULL;
+#define Assert_DumpPolyhedron(condition) NULL;
 
 #endif
 
@@ -1016,7 +1015,7 @@ CPolyhedron *ClipLinkedGeometry( GeneratePolyhedronFromPlanes_UnorderedPolygonLL
 
 			//Scan for onplane points connected to only other onplane/dead points, these points get downgraded to dead status.
 			{
-				GeneratePolyhedronFromPlanes_UnorderedPointLL *pActivePointWalk = pAllPoints;
+				pActivePointWalk = pAllPoints;
 				do
 				{
 					if( pActivePointWalk->pPoint->planarity == POINT_ONPLANE )
@@ -1332,25 +1331,6 @@ CPolyhedron *ClipLinkedGeometry( GeneratePolyhedronFromPlanes_UnorderedPolygonLL
 						float fInvTotalDist = 1.0f/(pDeadPoint->fPlaneDist - pLivingPoint->fPlaneDist); //subtraction because the living index is known to be negative
 						pNewPoint->ptPosition = (pLivingPoint->ptPosition * (pDeadPoint->fPlaneDist * fInvTotalDist)) - (pDeadPoint->ptPosition * (pLivingPoint->fPlaneDist * fInvTotalDist));
 
-#if ( 0 && defined( _DEBUG ) )
-						float fDebugDist = vNormal.Dot( pNewPoint->ptPosition ) - fPlaneDist; //just for looking at in watch windows
-						AssertMsg_DumpPolyhedron( fabs( fDebugDist ) < fOnPlaneEpsilon, "Generated split point is far from plane" );
-
-						//verify that the new point isn't sitting on top of another
-						{
-							GeneratePolyhedronFromPlanes_UnorderedPointLL *pActivePointWalk = pAllPoints;
-							do
-							{
-								if( pActivePointWalk->pPoint != pNewPoint )
-								{
-									Vector vDiff = pActivePointWalk->pPoint->ptPosition - pNewPoint->ptPosition;
-
-									AssertMsg_DumpPolyhedron( vDiff.Length() > fOnPlaneEpsilon, "Generated a point on top of another" );
-								}
-								pActivePointWalk = pActivePointWalk->pNext;
-							} while( pActivePointWalk );
-						}
-#endif
 
 						pNewPoint->planarity = POINT_ONPLANE;
 						pNewPoint->fPlaneDist = 0.0f;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -21,7 +21,7 @@
 namespace vgui
 {
 class Panel;
-typedef unsigned long HFont;
+typedef uint32 HFont;
 }
 
 abstract_class IMessageChars
@@ -47,7 +47,7 @@ public:
 	// Remove all messages with the specified ID (passed into DrawStringForTime).
 	virtual void		RemoveStringsByID( int messageID ) = 0;
 
-	virtual void		GetStringLength( vgui::HFont pCustomFont, int *width, int *height, const char *fmt, ... ) = 0;
+	virtual void		GetStringLength( vgui::HFont pCustomFont, int *width, int *height, PRINTF_FORMAT_STRING const char *fmt, ... ) = 0;
 
 	virtual void		Clear( void ) = 0;
 };

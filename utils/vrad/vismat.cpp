@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -467,11 +467,13 @@ BuildVisMatrix
 */
 void BuildVisMatrix (void)
 {
+#ifdef MPI
 	if ( g_bUseMPI )
 	{
 		RunMPIBuildVisLeafs();
 	}
 	else 
+#endif
 	{
 		RunThreadsOn (dvis->numclusters, true, BuildVisLeafs);
 	}

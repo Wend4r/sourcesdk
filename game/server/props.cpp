@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: static_prop - don't move, don't animate, don't do anything.
 //			physics_prop - move, take damage, but don't animate
@@ -39,8 +39,12 @@
 #include "datacache/imdlcache.h"
 #include "doors.h"
 #include "physics_collisionevent.h"
-#include "GameStats.h"
+#include "gamestats.h"
 #include "vehicle_base.h"
+
+#ifdef TF_DLL
+#include "nav_mesh/tf_nav_mesh.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -367,8 +371,8 @@ void CBaseProp::DrawDebugGeometryOverlays( void )
 		{
 			// Remap health to green brightness
 			float flG = RemapVal( m_iHealth, 0, 100, 64, 255 );
-			flG = clamp( flG, 0, 255 );
-			NDebugOverlay::EntityBounds(this, 0, (int)flG, 0, 0, 0 );
+			flG = clamp( flG, 0.f, 255.f );
+			NDebugOverlay::EntityBounds(this, 0, flG, 0, 0, 0 );
 		}
 	}
 }
@@ -446,7 +450,7 @@ void CBreakableProp::Ignite( float flFlameLifetime, bool bNPCOnly, float flSize,
 	}
 
 	// Frighten AIs, just in case this is an exploding thing.
-	CSoundEnt::InsertSound( SOUND_DANGER, GetAbsOrigin(), 128, 1.0f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
+	CSoundEnt::InsertSound( SOUND_DANGER, GetAbsOrigin(), 128.0f, 1.0f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
 }
 
 //-----------------------------------------------------------------------------
@@ -740,6 +744,8 @@ BEGIN_DATADESC( CBreakableProp )
 	DEFINE_FIELD( m_createTick, FIELD_INTEGER ),
 	DEFINE_FIELD( m_hBreaker, FIELD_EHANDLE ),
 	DEFINE_KEYFIELD( m_PerformanceMode, FIELD_INTEGER, "PerformanceMode" ),
+
+	DEFINE_KEYFIELD( m_iszBreakModelMessage, FIELD_STRING, "BreakModelMessage" ),
 
 	DEFINE_FIELD( m_flDmgModBullet, FIELD_FLOAT ),
 	DEFINE_FIELD( m_flDmgModClub, FIELD_FLOAT ),
@@ -1114,7 +1120,7 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		}
 
 		// Change my health so that I burn for flBurnTime seconds.
-		float flIdealHealth = fpmin( m_iHealth, FLAME_DIRECT_DAMAGE_PER_SEC *  flBurnTime );
+		float flIdealHealth = MIN( m_iHealth, FLAME_DIRECT_DAMAGE_PER_SEC *  flBurnTime );
 		float flIdealDamage = m_iHealth - flIdealHealth;
 
 		// Scale the damage to do ideal damage.
@@ -1155,7 +1161,7 @@ int CBreakableProp::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	int ret = BaseClass::OnTakeDamage( info );
 
 	// Output the new health as a percentage of max health [0..1]
-	float flRatio = clamp( (float)m_iHealth / (float)m_iMaxHealth, 0, 1 );
+	float flRatio = clamp( (float)m_iHealth / (float)m_iMaxHealth, 0.f, 1.f );
 	m_OnHealthChanged.Set( flRatio, info.GetAttacker(), this );
 	m_OnTakeDamage.FireOutput( info.GetAttacker(), this );
 
@@ -1235,7 +1241,7 @@ bool CBreakableProp::UpdateHealth( int iNewHealth, CBaseEntity *pActivator )
 		}
 
 		// Output the new health as a percentage of max health [0..1]
-		float flRatio = clamp( (float)m_iHealth / (float)m_iMaxHealth, 0, 1 );
+		float flRatio = clamp( (float)m_iHealth / (float)m_iMaxHealth, 0.f, 1.f );
 		m_OnHealthChanged.Set( flRatio, pActivator, this );
 
 		if ( m_iHealth <= 0 )
@@ -1515,7 +1521,7 @@ void CBreakableProp::OnPhysGunDrop( CBasePlayer *pPhysGunUser, PhysGunDrop_t Rea
 
 	SetPhysicsAttacker( pPhysGunUser, gpGlobals->curtime );
 
-	if( Reason == static_cast<PhysGunDrop_t>(PUNTED_BY_CANNON) )
+	if( (int)Reason == (int)PUNTED_BY_CANNON )
 	{
 		PlayPuntSound(); 
 	}
@@ -1691,14 +1697,15 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 	{
 		if( HasInteraction( PROPINTER_PHYSGUN_BREAK_EXPLODE ) )
 		{
-			ExplosionCreate( WorldSpaceCenter(), angles, pAttacker, (int)m_explodeDamage, (int)m_explodeRadius, 
+			ExplosionCreate( WorldSpaceCenter(), angles, pAttacker, m_explodeDamage, m_explodeRadius, 
 				SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE | SF_ENVEXPLOSION_SURFACEONLY | SF_ENVEXPLOSION_NOSOUND,
 				0.0f, this );
 			EmitSound("PropaneTank.Burst");
 		}
 		else
 		{
-			ExplosionCreate( WorldSpaceCenter(), angles, pAttacker, (int)m_explodeDamage, (int)m_explodeRadius, 
+			float flScale = GetModelScale();
+			ExplosionCreate( WorldSpaceCenter(), angles, pAttacker, m_explodeDamage * flScale, m_explodeRadius * flScale,
 				SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE | SF_ENVEXPLOSION_SURFACEONLY,
 				0.0f, this );
 		}
@@ -1718,8 +1725,23 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 		// collide with debris being ejected by breaking
 		params.defCollisionGroup = COLLISION_GROUP_INTERACTIVE;
 	}
-
 	params.defBurstScale = 100;
+
+	if ( m_iszBreakModelMessage != NULL_STRING )
+	{
+		CPVSFilter filter( GetAbsOrigin() );
+		UserMessageBegin( filter, STRING( m_iszBreakModelMessage ) );
+		WRITE_SHORT( GetModelIndex() );
+		WRITE_VEC3COORD( GetAbsOrigin() );
+		WRITE_ANGLES( GetAbsAngles() );
+		MessageEnd();
+
+#ifndef HL2MP
+		UTIL_Remove( this );
+#endif
+		return;
+	}
+
 	// in multiplayer spawn break models as clientside temp ents
 	if ( gpGlobals->maxClients > 1 && breakable_multiplayer.GetBool() )
 	{
@@ -1761,7 +1783,7 @@ void CBreakableProp::Break( CBaseEntity *pBreaker, const CTakeDamageInfo &info )
 	{
 		if ( bExploded == false )
 		{
-			ExplosionCreate( origin, angles, pAttacker, 1, (int)m_explodeRadius, 
+			ExplosionCreate( origin, angles, pAttacker, 1, m_explodeRadius, 
 				SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSMOKE, 0.0f, this );			
 		}
 
@@ -1793,6 +1815,8 @@ LINK_ENTITY_TO_CLASS( dynamic_prop, CDynamicProp );
 LINK_ENTITY_TO_CLASS( prop_dynamic, CDynamicProp );	
 LINK_ENTITY_TO_CLASS( prop_dynamic_override, CDynamicProp );	
 
+IMPLEMENT_AUTO_LIST( IPhysicsPropAutoList );
+
 BEGIN_DATADESC( CDynamicProp )
 
 	// Fields
@@ -1804,6 +1828,7 @@ BEGIN_DATADESC( CDynamicProp )
 	DEFINE_KEYFIELD( m_flMinRandAnimTime, FIELD_FLOAT, "MinAnimTime"),
 	DEFINE_KEYFIELD( m_flMaxRandAnimTime, FIELD_FLOAT, "MaxAnimTime"),
 	DEFINE_KEYFIELD( m_bStartDisabled, FIELD_BOOLEAN, "StartDisabled" ),
+	DEFINE_KEYFIELD( m_bDisableBoneFollowers, FIELD_BOOLEAN, "DisableBoneFollowers" ),
 	DEFINE_FIELD(	 m_bUseHitboxesForRenderBox, FIELD_BOOLEAN ),
 	DEFINE_FIELD(	m_nPendingSequence, FIELD_SHORT ),
 		
@@ -1816,7 +1841,6 @@ BEGIN_DATADESC( CDynamicProp )
 	DEFINE_INPUTFUNC( FIELD_VOID,		"Disable",		InputTurnOff ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"EnableCollision",	InputEnableCollision ),
 	DEFINE_INPUTFUNC( FIELD_VOID,		"DisableCollision",	InputDisableCollision ),
-	DEFINE_INPUTFUNC( FIELD_FLOAT,		"SetPlaybackRate",	InputSetPlaybackRate ),
 
 	// Outputs
 	DEFINE_OUTPUT( m_pOutputAnimBegun, "OnAnimationBegun" ),
@@ -1918,6 +1942,18 @@ void CDynamicProp::Spawn( )
 	}
 
 	//m_debugOverlays |= OVERLAY_ABSBOX_BIT;
+
+#ifdef TF_DLL
+	const char *pszModelName = modelinfo->GetModelName( GetModel() );
+	if ( pszModelName && pszModelName[0] )
+	{
+		if ( FStrEq( pszModelName, "models/bots/boss_bot/carrier_parts.mdl" ) )
+		{
+			SetModelIndexOverride( VISION_MODE_NONE, modelinfo->GetModelIndex( pszModelName ) );
+			SetModelIndexOverride( VISION_MODE_ROME, modelinfo->GetModelIndex( "models/bots/tw2/boss_bot/twcarrier_addon.mdl" ) );
+		}
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1962,7 +1998,10 @@ bool CDynamicProp::CreateVPhysics( void )
 	if ( GetSolid() == SOLID_NONE || ((GetSolidFlags() & FSOLID_NOT_SOLID) && HasSpawnFlags(SF_DYNAMICPROP_NO_VPHYSICS)))
 		return true;
 
-	CreateBoneFollowers();
+	if ( !m_bDisableBoneFollowers )
+	{
+		CreateBoneFollowers();
+	}
 
 	if ( m_BoneFollowerManager.GetNumBoneFollowers() )
 	{
@@ -2217,14 +2256,6 @@ void CDynamicProp::InputSetAnimation( inputdata_t &inputdata )
 void CDynamicProp::InputSetDefaultAnimation( inputdata_t &inputdata )
 {
 	m_iszDefaultAnim = inputdata.value.StringID();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CDynamicProp::InputSetPlaybackRate( inputdata_t &inputdata )
-{
-	SetPlaybackRate( inputdata.value.Float() );
 }
 
 //-----------------------------------------------------------------------------
@@ -3193,7 +3224,7 @@ int CPhysicsProp::DrawDebugTextOverlays(void)
 				text_offset++;
 			}
 
-			Q_snprintf(tempstr, sizeof(tempstr),"Skin: %d", m_nSkin );
+			Q_snprintf(tempstr, sizeof(tempstr),"Skin: %d", m_nSkin.Get() );
 			EntityText( text_offset, tempstr, 0);
 			text_offset++;
 
@@ -4674,6 +4705,8 @@ public:
 
 	void	InputSetSpeed(inputdata_t &inputdata);
 
+	virtual void ComputeDoorExtent( Extent *extent, unsigned int extentType );	// extent contains the volume encompassing open + closed states
+
 	DECLARE_DATADESC();
 
 private:
@@ -4789,8 +4822,12 @@ void CPropDoorRotating::Spawn()
 	// that the model already be set.
 	if ( IsHingeOnLeft() )
 	{
-		V_swap( m_angRotationOpenForward, m_angRotationOpenBack );
+		::V_swap( m_angRotationOpenForward, m_angRotationOpenBack );
 	}
+
+#ifdef TF_DLL
+	TheTFNavMesh()->OnDoorCreated( this );
+#endif
 
 	// Figure out our volumes of movement as this door opens
 	CalculateDoorVolume( GetLocalAngles(), m_angRotationOpenForward, &m_vecForwardBoundsMin, &m_vecForwardBoundsMax );
@@ -4991,6 +5028,33 @@ void CPropDoorRotating::OnRestore( void )
 	// Figure out our volumes of movement as this door opens
 	CalculateDoorVolume( GetLocalAngles(), m_angRotationOpenForward, &m_vecForwardBoundsMin, &m_vecForwardBoundsMax );
 	CalculateDoorVolume( GetLocalAngles(), m_angRotationOpenBack, &m_vecBackBoundsMin, &m_vecBackBoundsMax );
+}
+
+// extent contains the volume encompassing open + closed states
+void CPropDoorRotating::ComputeDoorExtent( Extent *extent, unsigned int extentType )
+{
+	if ( !extent )
+		return;
+
+	if ( extentType & DOOR_EXTENT_CLOSED )
+	{
+		Extent closedExtent;
+		CalculateDoorVolume( m_angRotationClosed, m_angRotationClosed, &extent->lo, &extent->hi );
+
+		if ( extentType & DOOR_EXTENT_OPEN )
+		{
+			Extent openExtent;
+			UTIL_ComputeAABBForBounds( m_vecForwardBoundsMin, m_vecForwardBoundsMax, m_vecBackBoundsMin, m_vecBackBoundsMax, &openExtent.lo, &openExtent.hi );
+			extent->Encompass( openExtent );
+		}
+	}
+	else if ( extentType & DOOR_EXTENT_OPEN )
+	{
+		UTIL_ComputeAABBForBounds( m_vecForwardBoundsMin, m_vecForwardBoundsMax, m_vecBackBoundsMin, m_vecBackBoundsMax, &extent->lo, &extent->hi );
+	}
+
+	extent->lo += GetAbsOrigin();
+	extent->hi += GetAbsOrigin();
 }
 
 //-----------------------------------------------------------------------------
@@ -5222,7 +5286,7 @@ void CPropDoorRotating::BeginOpening(CBaseEntity *pOpenAwayFrom)
 	// Make respectful entities move away from our path
 	if( !HasSpawnFlags(SF_DOOR_SILENT_TO_NPCS) )
 	{
-		CSoundEnt::InsertSound( SOUND_MOVE_AWAY, volumeCenter, (int)volumeRadius, 0.5f, pOpenAwayFrom );
+		CSoundEnt::InsertSound( SOUND_MOVE_AWAY, volumeCenter, volumeRadius, 0.5f, pOpenAwayFrom );
 	}
 
 	// Do final setup
@@ -5912,6 +5976,161 @@ CPhysicsProp* CreatePhysicsProp( const char *pModelName, const Vector &vTraceSta
 	CBaseEntity::SetAllowPrecache( bAllowPrecache );
 
 	return pProp;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Scale the object to a new size, taking its render verts and physical verts into account
+//-----------------------------------------------------------------------------
+bool UTIL_CreateScaledPhysObject( CBaseAnimating *pInstance, float flScale )
+{
+	// Don't scale NPCs
+	if ( pInstance->MyCombatCharacterPointer() )
+		return false;
+
+	// FIXME: This needs to work for ragdolls!
+
+	// Get our object
+	IPhysicsObject *pObject = pInstance->VPhysicsGetObject();
+	if ( pObject == NULL )
+	{
+		AssertMsg( 0, "UTIL_CreateScaledPhysObject: Failed to scale physics for object-- It has no physics." );
+		return false;
+	}
+
+	// See if our current physics object is motion disabled
+	bool bWasMotionDisabled = ( pObject->IsMotionEnabled() == false );
+	bool bWasStatic			= ( pObject->IsStatic() );
+
+	vcollide_t *pCollide = modelinfo->GetVCollide( pInstance->GetModelIndex() );
+	if ( pCollide == NULL || pCollide->solidCount == 0 )
+		return NULL;
+
+	CPhysCollide *pNewCollide = pCollide->solids[0];	// FIXME: Needs to iterate over the solids
+
+	if ( flScale != 1.0f )
+	{
+		// Create a query to get more information from the collision object
+		ICollisionQuery *pQuery = physcollision->CreateQueryModel( pCollide->solids[0] );	// FIXME: This should iterate over all solids!
+		if ( pQuery == NULL )
+			return false;
+
+		// Create a container to hold all the convexes we'll create
+		const int nNumConvex = pQuery->ConvexCount();
+		CPhysConvex **pConvexes = (CPhysConvex **) stackalloc( sizeof(CPhysConvex *) * nNumConvex );
+
+		// For each convex, collect the verts and create a convex from it we'll retain for later
+		for ( int i = 0; i < nNumConvex; i++ )
+		{
+			int nNumTris = pQuery->TriangleCount( i );
+			int nNumVerts = nNumTris * 3;
+			// FIXME: Really?  stackalloc?
+			Vector *pVerts = (Vector *) stackalloc( sizeof(Vector) * nNumVerts );
+			Vector **ppVerts = (Vector **) stackalloc( sizeof(Vector *) * nNumVerts );
+			for ( int j = 0; j < nNumTris; j++ )
+			{
+				// Get all the verts for this triangle and scale them up
+				pQuery->GetTriangleVerts( i, j, pVerts+(j*3) );
+				*(pVerts+(j*3)) *= flScale;
+				*(pVerts+(j*3)+1) *= flScale;
+				*(pVerts+(j*3)+2) *= flScale;
+
+				// Setup our pointers (blech!)
+				*(ppVerts+(j*3)) = pVerts+(j*3);
+				*(ppVerts+(j*3)+1) = pVerts+(j*3)+1;
+				*(ppVerts+(j*3)+2) = pVerts+(j*3)+2;
+			}
+
+			// Convert it back to a convex
+			pConvexes[i] = physcollision->ConvexFromVerts( ppVerts, nNumVerts );
+			Assert( pConvexes[i] != NULL );
+			if ( pConvexes[i] == NULL )
+				return false;
+		}
+
+		// Clean up
+		physcollision->DestroyQueryModel( pQuery );
+
+		// Create a collision model from all the convexes
+		pNewCollide = physcollision->ConvertConvexToCollide( pConvexes, nNumConvex );
+		if ( pNewCollide == NULL )
+			return false;
+	}
+
+	// Get our solid info
+	solid_t tmpSolid;
+	if ( !PhysModelParseSolidByIndex( tmpSolid, pInstance, pInstance->GetModelIndex(), -1 ) )
+		return false;
+
+	// Physprops get keyvalues that effect the mass, this block is to respect those fields when we scale
+	CPhysicsProp *pPhysInstance = dynamic_cast<CPhysicsProp*>( pInstance );
+	if ( pPhysInstance )
+	{
+		if ( pPhysInstance->GetMassScale() > 0 )
+		{
+			tmpSolid.params.mass *= pPhysInstance->GetMassScale();
+		}
+
+		PhysSolidOverride( tmpSolid, pPhysInstance->GetPhysOverrideScript() );
+	}			
+
+	// Scale our mass up as well
+	tmpSolid.params.mass *= flScale;
+	tmpSolid.params.volume = physcollision->CollideVolume( pNewCollide );
+
+	// Get our surface prop info
+	int surfaceProp = -1;
+	if ( tmpSolid.surfaceprop[0] )
+	{
+		surfaceProp = physprops->GetSurfaceIndex( tmpSolid.surfaceprop );
+	}
+
+	// Now put it all back (phew!)
+	IPhysicsObject *pNewObject = NULL;
+	if ( bWasStatic )
+	{
+		pNewObject = physenv->CreatePolyObjectStatic( pNewCollide, surfaceProp, pInstance->GetAbsOrigin(), pInstance->GetAbsAngles(), &tmpSolid.params );
+	}
+	else
+	{
+		pNewObject = physenv->CreatePolyObject( pNewCollide, surfaceProp, pInstance->GetAbsOrigin(), pInstance->GetAbsAngles(), &tmpSolid.params );
+	}
+	Assert( pNewObject );
+
+	pInstance->VPhysicsDestroyObject();
+	pInstance->VPhysicsSetObject( pNewObject );
+
+	// Increase our model bounds
+	const model_t *pModel = modelinfo->GetModel( pInstance->GetModelIndex() );
+	if ( pModel )
+	{
+		Vector mins, maxs;
+		modelinfo->GetModelBounds( pModel, mins, maxs );
+		pInstance->SetCollisionBounds( mins*flScale, maxs*flScale );
+	}
+
+	// Scale the base model as well
+	pInstance->SetModelScale( flScale );
+
+	if ( pInstance->GetParent() )
+	{
+		pNewObject->SetShadow( 1e4, 1e4, false, false );
+		pNewObject->UpdateShadow( pInstance->GetAbsOrigin(), pInstance->GetAbsAngles(), false, 0 );
+	}
+
+	if ( bWasMotionDisabled )
+	{
+		pNewObject->EnableMotion( false );
+	}
+	else
+	{
+		// Make sure we start awake!
+		pNewObject->Wake();
+	}
+
+	// Blargh
+	pInstance->SetScaledPhysics( ( flScale != 1.0f ) ? pNewObject : NULL );
+
+	return true;
 }
 
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -1043,7 +1043,7 @@ void CAI_AssaultBehavior::InitializeBehavior()
 	m_bHitRallyPoint = false;
 	m_bHitAssaultPoint = false;
 
-	m_hAssaultPoint = false;
+	m_hAssaultPoint = 0;
 
 	m_bDiverting = false;
 	m_flLastSawAnEnemyAt = 0;
@@ -1111,9 +1111,6 @@ bool CAI_AssaultBehavior::PollAssaultCue( void )
 	case CUE_COMMANDER:
 		// Player told me to go, so go!
 		return m_ReceivedAssaultCue == CUE_COMMANDER;
-		break;
-
-	default:
 		break;
 	}
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -67,7 +67,7 @@ public:
 	virtual bool ClientCommand( CBaseEntity *pEdict, const CCommand &args );
 	virtual void ClientSettingsChanged( CBasePlayer *pPlayer );
 	virtual bool IsTeamplay( void );
-	virtual bool FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker );
+	virtual bool FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker, const CTakeDamageInfo &info );
 	virtual int PlayerRelationship( CBaseEntity *pPlayer, CBaseEntity *pTarget );
 	virtual bool PlayerCanHearChat( CBasePlayer *pListener, CBasePlayer *pSpeaker );
 	virtual const char *GetTeamID( CBaseEntity *pEntity );
@@ -87,7 +87,7 @@ public:
 	virtual bool TimerMayExpire( void ) { return true; }
 
 	// A game has been won by the specified team
-	virtual void SetWinningTeam( int team, int iWinReason, bool bForceMapReset = true, bool bSwitchTeams = false, bool bDontAddScore = false ) { return; }
+	virtual void SetWinningTeam( int team, int iWinReason, bool bForceMapReset = true, bool bSwitchTeams = false, bool bDontAddScore = false, bool bFinal = false ) { return; }
 	virtual void SetStalemate( int iReason, bool bForceMapReset = true, bool bSwitchTeams = false ) { return; }
 
 	// Used to determine if all players should switch teams
@@ -100,6 +100,8 @@ public:
 	virtual bool ShouldScrambleTeams( void ){ return m_bScrambleTeams; }
 	virtual void HandleScrambleTeams( void ){ return; }
 
+	virtual bool PointsMayAlwaysBeBlocked(){ return false; }
+	
 protected:
 	bool m_DisableDeathMessages;
 

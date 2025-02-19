@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,6 +7,10 @@
 #include "vgui_controls/MessageDialog.h"
 #include "vgui/ILocalize.h"
 #include "vgui/ISurface.h"
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
+
 
 //-----------------------------------------------------------------------------
 // CMessageDialog
@@ -184,7 +188,7 @@ void CMessageDialog::ApplySchemeSettings( vgui::IScheme *pScheme )
 
 	// position the buttons with even horizontal spacing
 	int xpos = 0;
-	int ypos = GetTall() - MAX( nButtonTall, nTextTall ) - m_ButtonMargin;
+	int ypos = GetTall() - max( nButtonTall, nTextTall ) - m_ButtonMargin;
 	int nSpacing = ( GetWide() - nTotalWide ) / ( cButtons + 1 );
 	for ( int i = 0; i < MAX_BUTTONS; ++i )
 	{
@@ -234,7 +238,7 @@ void CMessageDialog::ApplySchemeSettings( vgui::IScheme *pScheme )
 		// If we're animating, we push our text label in, and reduce its width
 		int iX,iY,iW,iH;
 		m_pMsg->GetBounds( iX, iY, iW, iH );
-		m_pMsg->SetBounds( iX + m_ActivityIndent, iY, MAX(0,iW-m_ActivityIndent), iH );
+		m_pMsg->SetBounds( iX + m_ActivityIndent, iY, max(0,iW-m_ActivityIndent), iH );
 	}
 
 	// Invalidate the scheme on our message label so that it recalculates 
@@ -303,13 +307,15 @@ void CMessageDialog::OnKeyCodePressed( vgui::KeyCode code )
 		return;
 	}
 
-	switch ( code )
+	switch ( GetBaseButtonCode( code ) )
 	{
 	case KEY_XBUTTON_A:
+	case STEAMCONTROLLER_A:
 		DoCommand( BTN_A );
 		break;
 
 	case KEY_XBUTTON_B:
+	case STEAMCONTROLLER_B:
 		DoCommand( BTN_B );
 		break;
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Item pickup history displayed onscreen when items are picked up.
 //
@@ -88,8 +88,8 @@ void CHudHistoryResource::SetHistoryGap( int iNewHistoryGap )
 void CHudHistoryResource::AddToHistory( C_BaseCombatWeapon *weapon )
 {
 	// don't draw exhaustable weapons (grenades) since they'll have an ammo pickup icon as well
-	if ( weapon->GetWpnData().iFlags & ITEM_FLAG_EXHAUSTIBLE )
-		return;
+ 	if ( weapon->GetWpnData().iFlags & ITEM_FLAG_EXHAUSTIBLE )
+ 		return;
 
 	int iId = weapon->entindex();
 
@@ -116,6 +116,16 @@ void CHudHistoryResource::AddToHistory( int iType, int iId, int iCount )
 	{
 		if ( !iCount )
 			return;
+
+#if defined( CSTRIKE_DLL )
+		// don't leave blank gaps for ammo we're not going to display
+		const FileWeaponInfo_t *pWpnInfo = gWR.GetWeaponFromAmmo( iId );
+		if ( pWpnInfo && ( pWpnInfo->iMaxClip1 >= 0 || pWpnInfo->iMaxClip2 >= 0 ) )
+		{
+			if ( !pWpnInfo->iconSmall )
+				return;
+		}
+#endif
 
 		// clear out any ammo pickup denied icons, since we can obviously pickup again
 		for ( int i = 0; i < m_PickupHistory.Count(); i++ )
@@ -173,7 +183,7 @@ void CHudHistoryResource::AddIconToHistory( int iType, int iId, C_BaseCombatWeap
 	m_PickupHistory.EnsureCount(m_iCurrentHistorySlot + 1);
 
 	// default to just writing to the first slot
-	HIST_ITEM *freeslot = &m_PickupHistory[m_iCurrentHistorySlot++];
+	HIST_ITEM *freeslot = &m_PickupHistory[m_iCurrentHistorySlot];
 
 	if ( iType == HISTSLOT_AMMODENIED && freeslot->DisplayTime )
 	{
@@ -195,6 +205,8 @@ void CHudHistoryResource::AddIconToHistory( int iType, int iId, C_BaseCombatWeap
 	{
 		freeslot->DisplayTime = gpGlobals->curtime + hud_drawhistory_time.GetFloat();
 	}
+
+	++m_iCurrentHistorySlot;
 }
 
 
@@ -339,6 +351,16 @@ void CHudHistoryResource::Paint( void )
 						itemIcon = gWR.GetAmmoIconFromWeapon( m_PickupHistory[i].iId );
 						itemAmmoIcon = NULL;
 					}
+
+#ifdef CSTRIKE_DLL
+					// show grenades as the weapon icon
+					if ( pWpnInfo && pWpnInfo->iFlags & ITEM_FLAG_EXHAUSTIBLE )	
+					{
+						itemIcon = pWpnInfo->iconActive;
+						itemAmmoIcon = NULL;
+						bHalfHeight = false;
+					}
+#endif
 
 					iAmount = m_PickupHistory[i].iCount;
 				}

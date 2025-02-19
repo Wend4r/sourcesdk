@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Defines the tasks for default AI.
 //
@@ -21,9 +21,9 @@ class CStringRegistry;
 // ----------------------------------------------------------------------
 
 // Codes are either one of the enumerated types below, or a string (similar to Windows resource IDs)
-typedef int AI_TaskFailureCode_t;
+typedef intp AI_TaskFailureCode_t;
 
-enum AI_BaseTaskFailureCodes_t
+enum AI_BaseTaskFailureCodes_t : intp
 {
 	NO_TASK_FAILURE,
 	FAIL_NO_TARGET,
@@ -63,7 +63,7 @@ inline bool IsPathTaskFailure( AI_TaskFailureCode_t code )
 }
 
 const char *TaskFailureToString( AI_TaskFailureCode_t code );
-inline int MakeFailCode( const char *pszGeneralError ) { return (int)pszGeneralError; }
+inline AI_TaskFailureCode_t MakeFailCode( const char *pszGeneralError ) { return (AI_TaskFailureCode_t)(intp)pszGeneralError; }
 
 
 enum TaskStatus_e 

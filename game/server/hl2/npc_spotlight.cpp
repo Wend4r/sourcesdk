@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,11 +7,11 @@
 
 #include "cbase.h"
 #include "ai_basenpc.h"
-#include "ai_default.h"
-#include "ai_senses.h"
+#include "AI_Default.h"
+#include "AI_Senses.h"
 #include "ai_node.h"	  // for hint defintions
 #include "ai_network.h"
-#include "ai_hint.h"
+#include "AI_Hint.h"
 #include "ai_squad.h"
 #include "beam_shared.h"
 #include "globalstate.h"
@@ -445,7 +445,7 @@ CBaseEntity* CNPC_Spotlight::BestInspectTarget(void)
 	{
 		flSearchDist = SPOTLIGHT_ENTITY_SEARCH_DIST;
 	}
-	for ( CEntitySphereQuery sphere( vSearchOrigin, SPOTLIGHT_ENTITY_SEARCH_DIST ); (pEntity = sphere.GetCurrentEntity()) != NULL; sphere.NextEntity() )
+	for ( CEntitySphereQuery sphere( vSearchOrigin, SPOTLIGHT_ENTITY_SEARCH_DIST ); pEntity = sphere.GetCurrentEntity(); sphere.NextEntity() )
 	{
 		if (pEntity->GetFlags() & (FL_CLIENT|FL_NPC))
 		{
@@ -1344,12 +1344,12 @@ void CNPC_Spotlight::SpotlightUpdate(void)
 	}
 	else if (m_flSpotlightCurLength > m_flSpotlightMaxLength)		
 	{
-		m_pSpotlightTarget->SetRenderColorA( (byte)((1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength))) );
+		m_pSpotlightTarget->SetRenderColorA( (1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength)) );
 		m_pSpotlight->SetFadeLength(m_flSpotlightMaxLength);
 	}
 	else
 	{
-		m_pSpotlightTarget->SetRenderColorA( 1 );
+		m_pSpotlightTarget->SetRenderColorA( 1.0 );
 		m_pSpotlight->SetFadeLength(m_flSpotlightCurLength);
 	}
 
@@ -1468,7 +1468,7 @@ void CNPC_Spotlight::Spawn(void)
 	else
 	{
 		NPCInit();
-		SetThink(&CAI_BaseNPC::CallNPCThink);
+		SetThink(CallNPCThink);
 	}
 
 	AddEffects( EF_NODRAW );

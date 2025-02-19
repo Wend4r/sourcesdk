@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Base class for helicopters & helicopter-type vehicles
 //
@@ -682,7 +682,7 @@ void CBaseHelicopter::UpdateEnemy()
 	// be sure and change my prevseen/lastseen timers.
 	if( m_lifeState == LIFE_ALIVE )
 	{
-		GetSenses()->Look( (int)EnemySearchDistance() );
+		GetSenses()->Look( EnemySearchDistance() );
 
 		GetEnemies()->RefreshMemories();
 		ChooseEnemy();
@@ -842,7 +842,7 @@ void CBaseHelicopter::UpdatePlayerDopplerShift( )
 			float velReceiver = DotProduct( pPlayer->GetAbsVelocity(), dir );
 			float velTransmitter = -DotProduct( GetAbsVelocity(), dir );
 			// speed of sound == 13049in/s
-			int iPitch = (int)(100 * ((1 - velReceiver / 13049) / (1 + velTransmitter / 13049)));
+			int iPitch = 100 * ((1 - velReceiver / 13049) / (1 + velTransmitter / 13049));
 #else
 			// This is a bogus doppler shift, but I like it better
 			float relV = DotProduct( GetAbsVelocity() - pPlayer->GetAbsVelocity(), dir );
@@ -1264,14 +1264,14 @@ void CBaseHelicopter::DrawDebugGeometryOverlays(void)
 // Input  :
 // Output : 
 //-----------------------------------------------------------------------------
-void CBaseHelicopter::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CBaseHelicopter::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	// Take no damage from trace attacks unless it's blast damage. RadiusDamage() sometimes calls
 	// TraceAttack() as a means for delivering blast damage. Usually when the explosive penetrates
 	// the target. (RPG missiles do this sometimes).
 	if( info.GetDamageType() & (DMG_BLAST|DMG_AIRBOAT) )
 	{
-		BaseClass::TraceAttack( info, vecDir, ptr );
+		BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 	}
 }
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -98,9 +98,12 @@ void CRecipientFilter::AddAllPlayers( void )
 	}
 }
 
-void CRecipientFilter::AddRecipient( CBasePlayer *player )
+void CRecipientFilter::AddRecipient( const CBasePlayer *player )
 {
 	Assert( player );
+
+	if ( !player )
+		return;
 
 	int index = player->entindex();
 
@@ -338,7 +341,7 @@ CTeamRecipientFilter::CTeamRecipientFilter( int team, bool isReliable )
 		if ( pPlayer->GetTeamNumber() != team )
 		{
 			//If we're in the spectator team then we should be getting whatever messages the person I'm spectating gets.
-			if ( pPlayer->GetTeamNumber() == TEAM_SPECTATOR && (pPlayer->GetObserverMode() == OBS_MODE_IN_EYE || pPlayer->GetObserverMode() == OBS_MODE_CHASE) )
+			if ( pPlayer->GetTeamNumber() == TEAM_SPECTATOR && (pPlayer->GetObserverMode() == OBS_MODE_IN_EYE || pPlayer->GetObserverMode() == OBS_MODE_CHASE || pPlayer->GetObserverMode() == OBS_MODE_POI) )
 			{
 				if ( pPlayer->GetObserverTarget() )
 				{
@@ -396,8 +399,8 @@ void CPASAttenuationFilter::Filter( const Vector& origin, float attenuation /*= 
 		}
 
 #ifndef _XBOX
-		// never remove the HLTV bot
-		if ( player->IsHLTV() )
+		// never remove the HLTV or Replay bot
+		if ( player->IsHLTV() || player->IsReplay() )
 			continue;
 #endif
 

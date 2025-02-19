@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // npc_blob - experimental, cpu-intensive monster made of lots of smaller elements
 //
@@ -717,7 +717,7 @@ void CNPC_Blob::DoBlobBatchedAI( int iStart, int iEnd )
 	float flMySine;
 	float flAmplitude = npc_blob_sin_amplitude.GetFloat();
 	float flMyAmplitude;
-	Vector vecRight = Vector(0.0f, 0.0f, 0.0f);
+	Vector vecRight;
 	Vector vecForward;
 
 	// Local fields for attract/repel

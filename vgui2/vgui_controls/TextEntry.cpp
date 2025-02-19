@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
-#include <UtlVector.h>
+#include <utlvector.h>
 
 #include <vgui/Cursor.h>
 #include <vgui/IInput.h>
@@ -37,14 +37,15 @@ enum
 
 using namespace vgui;
 
-static const int DRAW_OFFSET_X = 3,DRAW_OFFSET_Y = 1; 
+#define DRAW_OFFSET_X() QuickPropScale( 3 )
+#define DRAW_OFFSET_Y() QuickPropScale( 1 )
 
 DECLARE_BUILD_FACTORY( TextEntry );
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-TextEntry::TextEntry(Panel *parent, const char *panelName) : Panel(parent, panelName)
+TextEntry::TextEntry(Panel *parent, const char *panelName) : BaseClass(parent, panelName)
 {
 	SetTriplePressAllowed( true );
 
@@ -107,6 +108,12 @@ TextEntry::TextEntry(Panel *parent, const char *panelName) : Panel(parent, panel
 
 	// If keyboard focus is in an edit control, don't chain keyboard mappings up to parents since it could mess with typing in text.
 	SetAllowKeyBindingChainToParent( false );
+
+	REGISTER_COLOR_AS_OVERRIDABLE( _disabledFgColor, "disabledFgColor_override" );
+	REGISTER_COLOR_AS_OVERRIDABLE( _disabledBgColor, "disabledBgColor_override" );
+	REGISTER_COLOR_AS_OVERRIDABLE( _selectionColor, "selectionColor_override" );
+	REGISTER_COLOR_AS_OVERRIDABLE( _selectionTextColor, "selectionTextColor_override" );
+	REGISTER_COLOR_AS_OVERRIDABLE( _defaultSelectionBG2Color, "defaultSelectionBG2Color_override" );
 }
 
 
@@ -137,8 +144,8 @@ void TextEntry::ApplySchemeSettings(IScheme *pScheme)
 
 	SetBorder( pScheme->GetBorder("ButtonDepressedBorder"));
 
-	_font = pScheme->GetFont("Default", IsProportional() );
-	_smallfont = pScheme->GetFont( "DefaultVerySmall", IsProportional() );
+	if ( _font == INVALID_FONT ) _font = pScheme->GetFont("Default", IsProportional() );
+	if ( _smallfont == INVALID_FONT ) _smallfont = pScheme->GetFont( "DefaultVerySmall", IsProportional() );
 
 	SetFont( _font );
 }
@@ -253,7 +260,7 @@ void TextEntry::SetText(const char *text)
 		}
 	}
 
-	size_t len = strlen( text );
+	int len = V_strlen( text );
 	if ( len < 1023 )
 	{
 		wchar_t unicode[ 1024 ];
@@ -262,7 +269,7 @@ void TextEntry::SetText(const char *text)
 	}
 	else
 	{
-		size_t lenUnicode = ( len * sizeof( wchar_t ) + 4 );
+		int lenUnicode = ( int )( len * sizeof( wchar_t ) + 4 );
 		wchar_t *unicode = ( wchar_t * ) malloc( lenUnicode );
 			g_pVGuiLocalize->ConvertANSIToUnicode( text, unicode, lenUnicode );
 			SetText( unicode );
@@ -282,7 +289,7 @@ void TextEntry::SetText(const wchar_t *wszText)
 	{
 		wszText = L"";
 	}
-	int textLen = wcslen(wszText);
+	int textLen = V_wcslen(wszText);
 	m_TextStream.RemoveAll();
 	m_TextStream.EnsureCapacity(textLen);
 
@@ -382,7 +389,7 @@ void TextEntry::CursorToPixelSpace(int cursorPos, int &cx, int &cy)
 {
 	int yStart = GetYStart();
 	
-	int x = DRAW_OFFSET_X, y = yStart;
+	int x = DRAW_OFFSET_X(), y = yStart;
 	_pixelsIndent = 0;
 	int lineBreakIndexIndex = 0;
 	
@@ -456,7 +463,7 @@ int TextEntry::PixelToCursorSpace(int cx, int cy)
 	
 	// where to Start reading
 	int yStart = GetYStart();
-	int x = DRAW_OFFSET_X, y = yStart;
+	int x = DRAW_OFFSET_X(), y = yStart;
 	_pixelsIndent = 0;
 	int lineBreakIndexIndex = 0;
 	
@@ -492,7 +499,7 @@ int TextEntry::PixelToCursorSpace(int cx, int cy)
 			onRightLine = true;
 			_putCursorAtEnd = true;	// this will make the text scroll up if needed
 		}
-		else if (cy >= y && (cy < (y + fontTall + DRAW_OFFSET_Y)))
+		else if (cy >= y && (cy < (y + fontTall + DRAW_OFFSET_Y())))
 		{
 			onRightLine = true;
 		}
@@ -505,7 +512,7 @@ int TextEntry::PixelToCursorSpace(int cx, int cy)
 			if (cx > GetWide())	  // off right side of window
 			{
 			}
-			else if (cx < (DRAW_OFFSET_X + _pixelsIndent) || cy < yStart)	 // off left side of window
+			else if (cx < (DRAW_OFFSET_X() + _pixelsIndent) || cy < yStart)	 // off left side of window
 			{
 				return i; // move cursor one to left
 			}
@@ -610,7 +617,7 @@ bool TextEntry::NeedsEllipses( HFont font, int *pIndex )
 {
 	Assert( pIndex );
 	*pIndex = -1;
-	int wide = DRAW_OFFSET_X; // buffer on left and right end of text.
+	int wide = DRAW_OFFSET_X(); // buffer on left and right end of text.
 	for ( int i = 0; i < m_TextStream.Count(); ++i )
 	{	
 		wide += getCharWidth( font , m_TextStream[i] );
@@ -628,6 +635,8 @@ bool TextEntry::NeedsEllipses( HFont font, int *pIndex )
 //-----------------------------------------------------------------------------
 void TextEntry::PaintBackground()
 {
+	BaseClass::PaintBackground();
+
 	// draw background
 	Color col;
 	if (IsEnabled())
@@ -640,13 +649,14 @@ void TextEntry::PaintBackground()
 	}
 	Color saveBgColor = col;
 
-	surface()->DrawSetColor(col);
 	int wide, tall;
 	GetSize( wide, tall );
-	surface()->DrawFilledRect(0, 0, wide, tall);
+
+//	surface()->DrawSetColor(col);
+//	surface()->DrawFilledRect(0, 0, wide, tall);
 
 	// where to Start drawing
-	int x = DRAW_OFFSET_X + _pixelsIndent, y = GetYStart();
+	int x = DRAW_OFFSET_X() + _pixelsIndent, y = GetYStart();
 
 	m_nLangInset = 0;
 
@@ -662,7 +672,7 @@ void TextEntry::PaintBackground()
 			 wcsicmp( shortcode, L"EN" ) )
 		{
 			m_nLangInset = 0;
-			langlen = wcslen( shortcode );
+			langlen = V_wcslen( shortcode );
 			for ( int i = 0; i < langlen; ++i )
 			{
 				m_nLangInset += getCharWidth( _smallfont, shortcode[ i ] );
@@ -949,8 +959,8 @@ void TextEntry::PerformLayout()
 // moves x,y to the Start of the next line of text
 void TextEntry::AddAnotherLine(int &cx, int &cy)
 {
-	cx = DRAW_OFFSET_X + _pixelsIndent;
-	cy += (surface()->GetFontTall(_font) + DRAW_OFFSET_Y);
+	cx = DRAW_OFFSET_X() + _pixelsIndent;
+	cy += (surface()->GetFontTall(_font) + DRAW_OFFSET_Y());
 }
 
 
@@ -978,7 +988,7 @@ void TextEntry::RecalculateLineBreaks()
 	}
 	
 	int charWidth;
-	int x = DRAW_OFFSET_X, y = DRAW_OFFSET_Y;
+	int x = DRAW_OFFSET_X(), y = DRAW_OFFSET_Y();
 		
 	int wordStartIndex = 0;
 	int wordLength = 0;
@@ -1116,7 +1126,7 @@ void TextEntry::LayoutVerticalScrollBarSlider()
 		_vertScrollBar->SetSize(_vertScrollBar->GetWide(), tall - ibottom - itop);
 		
 		// calculate how many lines we can fully display
-		int displayLines = tall / (surface()->GetFontTall(_font) + DRAW_OFFSET_Y);
+		int displayLines = tall / (surface()->GetFontTall(_font) + DRAW_OFFSET_Y());
 		int numLines = m_LineBreaks.Count();
 		
 		if (numLines <= displayLines)
@@ -1273,6 +1283,7 @@ void TextEntry::CreateEditMenu()
 		delete m_pEditMenu;
 	m_pEditMenu = new Menu(this, "EditMenu");
 	
+	m_pEditMenu->SetFont( _font );
 	
 	// add cut/copy/paste drop down options if its editable, just copy if it is not
 	if (_editable && !_hideText)
@@ -1304,6 +1315,8 @@ void TextEntry::CreateEditMenu()
 			// Create a submenu
 			Menu *subMenu = new Menu( this, "LanguageMenu" );
 
+			subMenu->SetFont( _font );
+
 			for ( int i = 0; i < count; ++i )
 			{
 				int id = subMenu->AddCheckableMenuItem( "Language", UnlocalizeUnicode( langs[ i ].menuname ), new KeyValues( "DoLanguageChanged", "handle", langs[ i ].handleValue ), this );
@@ -1330,6 +1343,8 @@ void TextEntry::CreateEditMenu()
 			// Create a submenu
 			Menu *subMenu = new Menu( this, "ConversionModeMenu" );
 
+			subMenu->SetFont( _font );
+
 			for ( int i = 0; i < count; ++i )
 			{
 				int id = subMenu->AddCheckableMenuItem( "ConversionMode", UnlocalizeUnicode( modes[ i ].menuname ), new KeyValues( "DoConversionModeChanged", "handle", modes[ i ].handleValue ), this );
@@ -1355,6 +1370,8 @@ void TextEntry::CreateEditMenu()
 
 			// Create a submenu
 			Menu *subMenu = new Menu( this, "SentenceModeMenu" );
+
+			subMenu->SetFont( _font );
 
 			for ( int i = 0; i < count; ++i )
 			{
@@ -1421,7 +1438,7 @@ void TextEntry::OnCursorExited() // outside of window recieve drag scrolling tic
 //-----------------------------------------------------------------------------
 // Purpose: Handle selection of text by mouse
 //-----------------------------------------------------------------------------
-void TextEntry::OnCursorMoved(int x, int y)
+void TextEntry::OnCursorMoved(int ignX, int ignY)
 {
 	if (_mouseSelection)
 	{
@@ -1583,6 +1600,54 @@ void TextEntry::OnMouseCaptureLost()
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Only pass some keys upwards 
+// everything else we don't relay to the parent
+//-----------------------------------------------------------------------------
+void TextEntry::OnKeyCodePressed(KeyCode code)
+{
+	// Pass enter on only if _catchEnterKey isn't set
+	if ( code == KEY_ENTER )
+	{
+		if ( !_catchEnterKey )
+		{
+			Panel::OnKeyCodePressed( code );
+			return;
+		}
+	}
+	
+	// Forward on just a few key codes, everything else can be handled by TextEntry itself
+	switch ( code )
+	{
+		case KEY_F1:
+		case KEY_F2:
+		case KEY_F3:
+		case KEY_F4:
+		case KEY_F5:
+		case KEY_F6:
+		case KEY_F7:
+		case KEY_F8:
+		case KEY_F9:
+		case KEY_F10:
+		case KEY_F11:
+		case KEY_F12:
+		case KEY_ESCAPE:
+		case KEY_APP:
+			Panel::OnKeyCodePressed( code );
+			return;
+	}
+	
+	// Pass on the joystick and mouse codes
+	if ( IsMouseCode(code) || IsNovintButtonCode(code) || IsJoystickCode(code) || IsJoystickButtonCode(code) ||
+	     IsJoystickPOVCode(code) || IsJoystickAxisCode(code) )
+	{
+		Panel::OnKeyCodePressed( code );
+		return;
+	}
+	    
+}
+
+
+//-----------------------------------------------------------------------------
 // Purpose: Masks which keys get chained up
 //			Maps keyboard input to text window functions.
 //-----------------------------------------------------------------------------
@@ -1594,9 +1659,10 @@ void TextEntry::OnKeyCodeTyped(KeyCode code)
 	bool shift = (input()->IsKeyDown(KEY_LSHIFT) || input()->IsKeyDown(KEY_RSHIFT));
 	bool ctrl = (input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL));
 	bool alt = (input()->IsKeyDown(KEY_LALT) || input()->IsKeyDown(KEY_RALT));
+	bool winkey = (input()->IsKeyDown(KEY_LWIN) || input()->IsKeyDown(KEY_RWIN));
 	bool fallThrough = false;
 	
-	if (ctrl)
+	if ( ( ctrl || ( winkey && IsOSX() ) ) && !alt)
 	{
 		switch(code)
 		{
@@ -1838,7 +1904,7 @@ void TextEntry::OnKeyCodeTyped(KeyCode code)
 				// if there is a scroll bar scroll down one rangewindow
 				if (_multiline)
 				{
-					int displayLines = GetTall() / (surface()->GetFontTall(_font) + DRAW_OFFSET_Y);
+					int displayLines = GetTall() / (surface()->GetFontTall(_font) + DRAW_OFFSET_Y());
 					// move the cursor down
 					for (int i=0; i < displayLines; i++)
 					{
@@ -1868,7 +1934,7 @@ void TextEntry::OnKeyCodeTyped(KeyCode code)
 				
 				if (_multiline)
 				{
-					int displayLines = GetTall() / (surface()->GetFontTall(_font) + DRAW_OFFSET_Y);
+					int displayLines = GetTall() / (surface()->GetFontTall(_font) + DRAW_OFFSET_Y());
 					// move the cursor down
 					for (int i=0; i < displayLines; i++)
 					{
@@ -2321,7 +2387,7 @@ int TextEntry::GetYStart()
 	if (_multiline)
 	{
 		// just Start from the top
-		return DRAW_OFFSET_Y;
+		return DRAW_OFFSET_Y();
 	}
 
 	int fontTall = surface()->GetFontTall(_font);
@@ -2344,7 +2410,7 @@ void TextEntry::MoveCursor(int line, int pixelsAcross)
 	
 	int yStart = GetYStart();
 	
-	int x = DRAW_OFFSET_X, y = yStart;
+	int x = DRAW_OFFSET_X(), y = yStart;
 	int lineBreakIndexIndex = 0;
 	_pixelsIndent = 0;
 	int i;
@@ -2941,7 +3007,7 @@ void TextEntry::CalcBreakIndex()
 // Purpose: Insert a string into the text buffer, this is just a series
 //			of char inserts because we have to check each char is ok to insert
 //-----------------------------------------------------------------------------
-void TextEntry::InsertString(wchar_t *wszText)
+void TextEntry::InsertString(const wchar_t *wszText)
 {
 	SaveUndoState();
 
@@ -3290,7 +3356,7 @@ void TextEntry::CopySelected()
 			buf.AddToTail(m_TextStream[i]);
 		}
 		buf.AddToTail('\0');
-		system()->SetClipboardText(buf.Base(), x1 - x0);
+		system()->SetClipboardText(buf.Base(), buf.Count());
 	}
 	
 	// have to request focus if we used the menu
@@ -3308,9 +3374,6 @@ void TextEntry::CopySelected()
 //-----------------------------------------------------------------------------
 void TextEntry::Paste()
 {
-	if (_hideText)
-		return;
-	
 	if (!IsEditable())
 		return;
 
@@ -3416,7 +3479,7 @@ int TextEntry::GetStartDrawIndex(int &lineBreakIndexIndex)
 	{
 		// check to see if the cursor is off the screen-multiline case
 		HFont font = _font;
-		int displayLines = GetTall() / (surface()->GetFontTall(font) + DRAW_OFFSET_Y);
+		int displayLines = GetTall() / (surface()->GetFontTall(font) + DRAW_OFFSET_Y());
 		if (displayLines < 1)
 		{
 			displayLines = 1;
@@ -3458,7 +3521,7 @@ int TextEntry::GetStartDrawIndex(int &lineBreakIndexIndex)
 			while ( !done )
 			{
 				done = true;
-				int x = DRAW_OFFSET_X;
+				int x = DRAW_OFFSET_X();
 				for (int i = _currentStartIndex; i < m_TextStream.Count(); i++)
 				{
 					done = false;
@@ -3540,15 +3603,16 @@ int TextEntry::GetValueAsInt()
 //-----------------------------------------------------------------------------
 // Purpose: Get a string from text buffer
 // Input:	offset - index to Start reading from 
-//			bufLen - length of string
+//			bufLenInBytes - length of string
 //-----------------------------------------------------------------------------
-void TextEntry::GetText(char *buf, int bufLen)
+void TextEntry::GetText(OUT_Z_BYTECAP(bufLenInBytes) char *buf, int bufLenInBytes)
 {
+	Assert(bufLenInBytes >= sizeof(buf[0]));
 	if (m_TextStream.Count())
 	{
 		// temporarily null terminate the text stream so we can use the conversion function
 		int nullTerminatorIndex = m_TextStream.AddToTail((wchar_t)0);
-		g_pVGuiLocalize->ConvertUnicodeToANSI(m_TextStream.Base(), buf, bufLen);
+		g_pVGuiLocalize->ConvertUnicodeToANSI(m_TextStream.Base(), buf, bufLenInBytes);
 		m_TextStream.FastRemove(nullTerminatorIndex);
 	}
 	else
@@ -3563,12 +3627,13 @@ void TextEntry::GetText(char *buf, int bufLen)
 // Input:	offset - index to Start reading from 
 //			bufLen - length of string
 //-----------------------------------------------------------------------------
-void TextEntry::GetText(wchar_t *wbuf, int bufLenInBytes)
+void TextEntry::GetText(OUT_Z_BYTECAP(bufLenInBytes) wchar_t *wbuf, int bufLenInBytes)
 {
+	Assert(bufLenInBytes >= sizeof(wbuf[0]));
 	int len = m_TextStream.Count();
 	if (m_TextStream.Count())
 	{
-		int terminator = MIN(len, (bufLenInBytes / (int)sizeof(wchar_t)) - 1);
+		int terminator = min(len, (bufLenInBytes / (int)sizeof(wchar_t)) - 1);
 		wcsncpy(wbuf, m_TextStream.Base(), terminator);
 		wbuf[terminator] = 0;
 	}
@@ -3581,18 +3646,18 @@ void TextEntry::GetText(wchar_t *wbuf, int bufLenInBytes)
 void TextEntry::GetTextRange( wchar_t *buf, int from, int numchars )
 {
 	int len = m_TextStream.Count();
-	int cpChars = MAX( 0, MIN( numchars, len - from ) );
+	int cpChars = max( 0, min( numchars, len - from ) );
 	
-	wcsncpy( buf, m_TextStream.Base() + MAX( 0, MIN( len, from ) ), cpChars );
+	wcsncpy( buf, m_TextStream.Base() + max( 0, min( len, from ) ), cpChars );
 	buf[ cpChars ] = 0;
 }
 
 void TextEntry::GetTextRange( char *buf, int from, int numchars )
 {
 	int len = m_TextStream.Count();
-	int cpChars = MAX( 0, MIN( numchars, len - from ) );
+	int cpChars = max( 0, min( numchars, len - from ) );
 
-	g_pVGuiLocalize->ConvertUnicodeToANSI( m_TextStream.Base() + MAX( 0, MIN( len, from ) ), buf, cpChars + 1 );
+	g_pVGuiLocalize->ConvertUnicodeToANSI( m_TextStream.Base() + max( 0, min( len, from ) ), buf, cpChars + 1 );
 	buf[ cpChars ] = 0;
 }
 
@@ -3639,9 +3704,9 @@ bool TextEntry::RequestInfo(KeyValues *outputData)
 	}
 	else if (!stricmp(outputData->GetName(), "GetState"))
 	{
-		wchar_t wbuf[64];
-		GetText(wbuf, sizeof(wbuf));
-		outputData->SetInt("state", _wtoi(wbuf));
+		char buf[64];
+		GetText(buf, sizeof(buf));
+		outputData->SetInt("state", atoi(buf));
 		return true;
 	}
 	return BaseClass::RequestInfo(outputData);
@@ -3671,14 +3736,16 @@ void TextEntry::OnSetState(int state)
 void TextEntry::ApplySettings( KeyValues *inResourceData )
 {
 	BaseClass::ApplySettings( inResourceData );
-//	_font = scheme()->GetFont(GetScheme(), "Default", IsProportional() );
-//	SetFont( _font );
+
+	_font = scheme()->GetIScheme( GetScheme() )->GetFont( inResourceData->GetString( "font", "Default" ), IsProportional() );
+	SetFont( _font );
 
 	SetTextHidden((bool)inResourceData->GetInt("textHidden", 0));
 	SetEditable((bool)inResourceData->GetInt("editable", 1));
 	SetMaximumCharCount(inResourceData->GetInt("maxchars", -1));
 	SetAllowNumericInputOnly(inResourceData->GetInt("NumericInputOnly", 0));
 	SetAllowNonAsciiCharacters(inResourceData->GetInt("unicode", 0));
+	SelectAllOnFirstFocus(inResourceData->GetInt("selectallonfirstfocus", 0));
 }
 
 //-----------------------------------------------------------------------------
@@ -3721,7 +3788,7 @@ void TextEntry::SetToFullHeight()
 	int wide, tall;
 	GetSize(wide, tall);
 	
-	tall = GetNumLines() * (surface()->GetFontTall(_font) + DRAW_OFFSET_Y) + DRAW_OFFSET_Y + 2;
+	tall = GetNumLines() * (surface()->GetFontTall(_font) + DRAW_OFFSET_Y()) + DRAW_OFFSET_Y() + 2;
 	SetSize (wide, tall);
 	PerformLayout();
 	
@@ -3770,7 +3837,7 @@ void TextEntry::SetToFullWidth()
 		return;
 	
 	PerformLayout();
-	int wide = 2*DRAW_OFFSET_X; // buffer on left and right end of text.
+	int wide = 2*DRAW_OFFSET_X(); // buffer on left and right end of text.
 	
 	// loop through all the characters and sum their widths	
 	for (int i = 0; i < m_TextStream.Count(); ++i)
@@ -3779,7 +3846,7 @@ void TextEntry::SetToFullWidth()
 	}
 	
 	// height of one line of text
-	int tall = (surface()->GetFontTall(_font) + DRAW_OFFSET_Y) + DRAW_OFFSET_Y + 2;
+	int tall = (surface()->GetFontTall(_font) + DRAW_OFFSET_Y()) + DRAW_OFFSET_Y() + 2;
 	
 	SetSize (wide, tall);
 	PerformLayout();
@@ -4160,14 +4227,14 @@ void TextEntry::OnPanelDropped( CUtlVector< KeyValues * >& msglist )
 	}
 	else if ( !Q_stricmp( cmd, "append" ) )
 	{
-		int newLen = wcslen( newText );
+		int newLen = V_wcslen( newText );
 		int curLen = m_TextStream.Count();
 
-		size_t outsize = sizeof( wchar_t ) * ( newLen + curLen + 1 );
+		int outsize = (int)( sizeof( wchar_t ) * ( newLen + curLen + 1 ) );
 		wchar_t *out = (wchar_t *)_alloca( outsize );
 		Q_memset( out, 0, outsize );
 		wcsncpy( out, m_TextStream.Base(), curLen );
-		wcsncat( out, newText, wcslen( newText ) );
+		wcsncat( out, newText, V_wcslen( newText ) );
 		out[ newLen + curLen ] = L'\0';
 		SetText( out );
 		_dataChanged = true;
@@ -4175,13 +4242,13 @@ void TextEntry::OnPanelDropped( CUtlVector< KeyValues * >& msglist )
 	}
 	else if ( !Q_stricmp( cmd, "prepend" ) )
 	{
-		int newLen = wcslen( newText );
+		int newLen = V_wcslen( newText );
 		int curLen = m_TextStream.Count();
 
-		size_t outsize = sizeof( wchar_t ) * ( newLen + curLen + 1 );
+		int outsize = (int)( sizeof( wchar_t ) * ( newLen + curLen + 1 ) );
 		wchar_t *out = (wchar_t *)_alloca( outsize );
 		Q_memset( out, 0, outsize );
-		wcsncpy( out, newText, wcslen( newText ) );
+		wcsncpy( out, newText, V_wcslen( newText ) );
 		wcsncat( out, m_TextStream.Base(), curLen );
 		out[ newLen + curLen ] = L'\0';
 		SetText( out );

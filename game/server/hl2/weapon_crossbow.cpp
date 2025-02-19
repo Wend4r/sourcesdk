@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -22,7 +22,7 @@
 #include "SpriteTrail.h"
 #include "beam_shared.h"
 #include "rumble_shared.h"
-#include "GameStats.h"
+#include "gamestats.h"
 #include "decals.h"
 
 #ifdef PORTAL
@@ -407,7 +407,7 @@ void CCrossbowBolt::BubbleThink( void )
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	// Make danger sounds out in front of me, to scare snipers back into their hole
-	CSoundEnt::InsertSound( SOUND_DANGER_SNIPERONLY, GetAbsOrigin() + GetAbsVelocity() * 0.2, 120, 0.5f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
+	CSoundEnt::InsertSound( SOUND_DANGER_SNIPERONLY, GetAbsOrigin() + GetAbsVelocity() * 0.2, 120.0f, 0.5f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
 
 	if ( GetWaterLevel()  == 0 )
 		return;

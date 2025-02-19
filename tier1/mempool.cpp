@@ -1,17 +1,12 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //===========================================================================//
 
-#include "tier0/basetypes.h"
 #include "mempool.h"
 #include <stdio.h>
-#ifdef __APPLE__
-#include <sys/malloc.h>
-#else
 #include <malloc.h>
-#endif
 #include <memory.h>
 #include "tier0/dbg.h"
 #include <ctype.h>
@@ -19,14 +14,14 @@
 
 // Should be last include
 #include "tier0/memdbgon.h"
-
-MemoryPoolReportFunc_t CMemoryPool::g_ReportFunc = 0;
+ 
+MemoryPoolReportFunc_t CUtlMemoryPool::g_ReportFunc = 0;
 
 //-----------------------------------------------------------------------------
 // Error reporting...  (debug only)
 //-----------------------------------------------------------------------------
 
-void CMemoryPool::SetErrorReportFunc( MemoryPoolReportFunc_t func )
+void CUtlMemoryPool::SetErrorReportFunc( MemoryPoolReportFunc_t func )
 {
 	g_ReportFunc = func;
 }
@@ -34,10 +29,10 @@ void CMemoryPool::SetErrorReportFunc( MemoryPoolReportFunc_t func )
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CMemoryPool::CMemoryPool( int blockSize, int numElements, int growMode, const char *pszAllocOwner, int nAlignment )
+CUtlMemoryPool::CUtlMemoryPool( int blockSize, int numElements, int growMode, const char *pszAllocOwner, int nAlignment )
 {
 #ifdef _X360
-	if( numElements > 0 && growMode != GROW_NONE )
+	if( numElements > 0 && growMode != UTLMEMORYPOOL_GROW_NONE )
 	{
 		numElements = 1;
 	}
@@ -45,7 +40,7 @@ CMemoryPool::CMemoryPool( int blockSize, int numElements, int growMode, const ch
 
 	m_nAlignment = ( nAlignment != 0 ) ? nAlignment : 1;
 	Assert( IsPowerOfTwo( m_nAlignment ) );
-	m_BlockSize = blockSize < (int)sizeof(void*) ? sizeof(void*) : blockSize;
+	m_BlockSize = blockSize < sizeof(void*) ? sizeof(void*) : blockSize;
 	m_BlockSize = AlignValue( m_BlockSize, m_nAlignment );
 	m_BlocksPerBlob = numElements;
 	m_PeakAlloc = 0;
@@ -64,7 +59,7 @@ CMemoryPool::CMemoryPool( int blockSize, int numElements, int growMode, const ch
 //			any further use.
 // Input  : *memPool - the mempool to shutdown
 //-----------------------------------------------------------------------------
-CMemoryPool::~CMemoryPool()
+CUtlMemoryPool::~CUtlMemoryPool()
 {
 	if (m_BlocksAllocated > 0)
 	{
@@ -77,7 +72,7 @@ CMemoryPool::~CMemoryPool()
 //-----------------------------------------------------------------------------
 // Resets the pool
 //-----------------------------------------------------------------------------
-void CMemoryPool::Init()
+void CUtlMemoryPool::Init()
 {
 	m_NumBlobs = 0;
 	m_BlocksAllocated = 0;
@@ -89,7 +84,7 @@ void CMemoryPool::Init()
 //-----------------------------------------------------------------------------
 // Frees everything
 //-----------------------------------------------------------------------------
-void CMemoryPool::Clear()
+void CUtlMemoryPool::Clear()
 {
 	// Free everything..
 	CBlob *pNext;
@@ -105,7 +100,7 @@ void CMemoryPool::Clear()
 // Purpose: Reports memory leaks 
 //-----------------------------------------------------------------------------
 
-void CMemoryPool::ReportLeaks()
+void CUtlMemoryPool::ReportLeaks()
 {
 	if (!g_ReportFunc)
 		return;
@@ -156,24 +151,24 @@ void CMemoryPool::ReportLeaks()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CMemoryPool::AddNewBlob()
+void CUtlMemoryPool::AddNewBlob()
 {
 	MEM_ALLOC_CREDIT_(m_pszAllocOwner);
 
 	int sizeMultiplier;
 
-	if( m_GrowMode == GROW_SLOW )
+	if( m_GrowMode == UTLMEMORYPOOL_GROW_SLOW )
 	{
 		sizeMultiplier = 1;
 	}
 	else
 	{
-		if ( m_GrowMode == GROW_NONE )
+		if ( m_GrowMode == UTLMEMORYPOOL_GROW_NONE )
 		{
 			// Can only have one allocation when we're in this mode
 			if( m_NumBlobs != 0 )
 			{
-				Assert( !"CMemoryPool::AddNewBlob: mode == GROW_NONE" );
+				Assert( !"CUtlMemoryPool::AddNewBlob: mode == UTLMEMORYPOOL_GROW_NONE" );
 				return;
 			}
 		}
@@ -211,13 +206,13 @@ void CMemoryPool::AddNewBlob()
 }
 
 
-void* CMemoryPool::Alloc()
+void* CUtlMemoryPool::Alloc()
 {
 	return Alloc( m_BlockSize );
 }
 
 
-void* CMemoryPool::AllocZero()
+void* CUtlMemoryPool::AllocZero()
 {
 	return AllocZero( m_BlockSize );
 }
@@ -227,7 +222,7 @@ void* CMemoryPool::AllocZero()
 // Purpose: Allocs a single block of memory from the pool.  
 // Input  : amount - 
 //-----------------------------------------------------------------------------
-void *CMemoryPool::Alloc( size_t amount )
+void *CUtlMemoryPool::Alloc( size_t amount )
 {
 	void *returnBlock;
 
@@ -236,10 +231,10 @@ void *CMemoryPool::Alloc( size_t amount )
 
 	if( !m_pHeadOfFreeList )
 	{
-		// returning NULL is fine in GROW_NONE
-		if( m_GrowMode == GROW_NONE )
+		// returning NULL is fine in UTLMEMORYPOOL_GROW_NONE
+		if( m_GrowMode == UTLMEMORYPOOL_GROW_NONE )
 		{
-			//Assert( !"CMemoryPool::Alloc: tried to make new blob with GROW_NONE" );
+			//Assert( !"CUtlMemoryPool::Alloc: tried to make new blob with UTLMEMORYPOOL_GROW_NONE" );
 			return NULL;
 		}
 
@@ -249,12 +244,12 @@ void *CMemoryPool::Alloc( size_t amount )
 		// still failure, error out
 		if( !m_pHeadOfFreeList )
 		{
-			Assert( !"CMemoryPool::Alloc: ran out of memory" );
+			Assert( !"CUtlMemoryPool::Alloc: ran out of memory" );
 			return NULL;
 		}
 	}
 	m_BlocksAllocated++;
-	m_PeakAlloc = MAX(m_PeakAlloc, m_BlocksAllocated);
+	m_PeakAlloc = max(m_PeakAlloc, m_BlocksAllocated);
 
 	returnBlock = m_pHeadOfFreeList;
 
@@ -268,12 +263,12 @@ void *CMemoryPool::Alloc( size_t amount )
 // Purpose: Allocs a single block of memory from the pool, zeroes the memory before returning
 // Input  : amount - 
 //-----------------------------------------------------------------------------
-void *CMemoryPool::AllocZero( size_t amount )
+void *CUtlMemoryPool::AllocZero( size_t amount )
 {
 	void *mem = Alloc( amount );
 	if ( mem )
 	{
-		V_memset( mem, 0x00, amount );
+		memset( mem, 0x00, amount );
 	}
 	return mem;
 }
@@ -282,7 +277,7 @@ void *CMemoryPool::AllocZero( size_t amount )
 // Purpose: Frees a block of memory
 // Input  : *memBlock - the memory to free
 //-----------------------------------------------------------------------------
-void CMemoryPool::Free( void *memBlock )
+void CUtlMemoryPool::Free( void *memBlock )
 {
 	if ( !memBlock )
 		return;  // trying to delete NULL pointer, ignore

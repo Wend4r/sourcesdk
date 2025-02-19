@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,11 +9,13 @@
 #include "ammodef.h"
 #include "tier0/vprof.h"
 #include "KeyValues.h"
-#include "achievementmgr.h"
+#include "iachievementmgr.h"
+#include "gamestringpool.h"
 
 #ifdef CLIENT_DLL
 
 	#include "usermessages.h"
+	#include "c_user_message_register.h"
 
 #else
 
@@ -25,7 +27,8 @@
 	#include "voice_gamemgr.h"
 	#include "globalstate.h"
 	#include "player_resource.h"
-#include "GameStats.h"
+	#include "tactical_mission.h"
+	#include "gamestats.h"
 
 #endif
 
@@ -35,6 +38,11 @@
 
 ConVar g_Language( "g_Language", "0", FCVAR_REPLICATED );
 ConVar sk_autoaim_mode( "sk_autoaim_mode", "1", FCVAR_ARCHIVE | FCVAR_REPLICATED );
+
+#ifndef CLIENT_DLL
+ConVar log_verbose_enable( "log_verbose_enable", "0", FCVAR_GAMEDLL, "Set to 1 to enable verbose server log on the server." );
+ConVar log_verbose_interval( "log_verbose_interval", "3.0", FCVAR_GAMEDLL, "Determines the interval (in seconds) for the verbose server log." );
+#endif // CLIENT_DLL
 
 static CViewVectors g_DefaultViewVectors(
 	Vector( 0, 0, 64 ),			//VEC_VIEW (m_vView)
@@ -115,6 +123,12 @@ bool CGameRules::IsBonusChallengeTimeBased( void )
 	return true;
 }
 
+bool CGameRules::IsLocalPlayer( int nEntIndex )
+{
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+	return ( pLocalPlayer && pLocalPlayer == ClientEntityList().GetEnt( nEntIndex ) );
+}
+
 CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" )
 {
 	Assert( !g_pGameRules );
@@ -140,6 +154,8 @@ CGameRules::CGameRules() : CAutoGameSystemPerFrame( "CGameRules" )
 
 	GetVoiceGameMgr()->Init( g_pVoiceGameMgrHelper, gpGlobals->maxClients );
 	ClearMultiDamage();
+
+	m_flNextVerboseLogOutput = 0.0f;
 }
 
 //-----------------------------------------------------------------------------
@@ -247,7 +263,10 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 			return;
 	}
 	GlobalEntity_Add( "skill.cfg", STRING(gpGlobals->mapname), GLOBAL_ON );
+
+#if !defined( TF_DLL ) && !defined( DOD_DLL )
 	char	szExec[256];
+#endif 
 
 	ConVarRef skill( "skill" );
 
@@ -261,10 +280,14 @@ void CGameRules::RefreshSkillData ( bool forceUpdate )
 	engine->ServerCommand( szExec );
 	engine->ServerExecute();
 #else
+
+#if !defined( TF_DLL ) && !defined( DOD_DLL )
 	Q_snprintf( szExec,sizeof(szExec), "exec skill%d.cfg\n", GetSkillLevel() );
 
 	engine->ServerCommand( szExec );
 	engine->ServerExecute();
+#endif // TF_DLL && DOD_DLL
+
 #endif // HL2_DLL
 #endif // CLIENT_DLL
 }
@@ -556,6 +579,15 @@ void CGameRules::Think()
 {
 	GetVoiceGameMgr()->Update( gpGlobals->frametime );
 	SetSkillLevel( skill.GetInt() );
+
+	if ( log_verbose_enable.GetBool() )
+	{
+		if ( m_flNextVerboseLogOutput < gpGlobals->curtime )
+		{
+			ProcessVerboseLogOutput();
+			m_flNextVerboseLogOutput = gpGlobals->curtime + log_verbose_interval.GetFloat();
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -618,8 +650,17 @@ void CGameRules::MarkAchievement( IRecipientFilter& filter, char const *pchAchie
 
 CGameRules::~CGameRules()
 {
+	RevertSavedConvars();
+
 	Assert( g_pGameRules == this );
 	g_pGameRules = NULL;
+}
+
+void CGameRules::LevelShutdownPostEntity()
+{
+#ifdef CLIENT_DLL
+	RevertSavedConvars();
+#endif
 }
 
 bool CGameRules::SwitchToNextBestWeapon( CBaseCombatCharacter *pPlayer, CBaseCombatWeapon *pCurrentWeapon )
@@ -637,7 +678,7 @@ bool CGameRules::ShouldCollide( int collisionGroup0, int collisionGroup1 )
 	if ( collisionGroup0 > collisionGroup1 )
 	{
 		// swap so that lowest is always first
-		V_swap(collisionGroup0,collisionGroup1);
+		::V_swap(collisionGroup0,collisionGroup1);
 	}
 
 #ifndef HL2MP
@@ -787,6 +828,17 @@ const char *CGameRules::GetChatPrefix( bool bTeamOnly, CBasePlayer *pPlayer )
 	return "";
 }
 
+void CGameRules::CheckHaptics(CBasePlayer* pPlayer)
+{
+	// NVNT see if the client of pPlayer is using a haptic device.
+	const char *pszHH = engine->GetClientConVarValue( pPlayer->entindex(), "hap_HasDevice" );
+	if( pszHH )
+	{
+		int iHH = atoi( pszHH );
+		pPlayer->SetHaptics( iHH != 0 );
+	}
+}
+
 void CGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 {
 	const char *pszName = engine->GetClientConVarValue( pPlayer->entindex(), "name" );
@@ -821,6 +873,88 @@ void CGameRules::ClientSettingsChanged( CBasePlayer *pPlayer )
 		iFov = clamp( iFov, 75, 90 );
 		pPlayer->SetDefaultFOV( iFov );
 	}
+
+	// NVNT see if this user is still or has began using a haptic device
+	const char *pszHH = engine->GetClientConVarValue( pPlayer->entindex(), "hap_HasDevice" );
+	if( pszHH )
+	{
+		int iHH = atoi( pszHH );
+		pPlayer->SetHaptics( iHH != 0 );
+	}
 }
 
+CTacticalMissionManager *CGameRules::TacticalMissionManagerFactory( void )
+{
+	return new CTacticalMissionManager;
+}
+
+#endif
+
+void CGameRules::SaveConvar( const ConVarRef & cvar )
+{
+	Assert( cvar.IsValid() );
+
+	const string_t cvarName = AllocPooledString( cvar.GetName() );
+	if ( HasSavedConvar( cvarName ) )
+		return;
+
+#ifdef GAME_DLL
+	// Send saved replicated convars to the client so that it can reset them if the player disconnects during the mission.
+	if ( cvar.IsFlagSet( FCVAR_REPLICATED ) )
+	{
+		CReliableBroadcastRecipientFilter filter;
+		UserMessageBegin( filter, "SavedConvar" );
+		WRITE_STRING( cvar.GetName() );
+		MessageEnd();
+	}
+#endif
+	m_SavedConvars.AddToTail( cvarName );
+}
+
+void CGameRules::RevertSavedConvars()
+{
+	// revert saved convars
+	FOR_EACH_VEC( m_SavedConvars, iter )
+	{
+		const char *pszName = STRING( m_SavedConvars[ iter ] );
+		ConVarRef cvar( pszName );
+		if ( cvar.IsValid() )
+		{
+			//Msg( ">>> [%s] Revert %s: %s -> %s\n", (IsServerDll()?"SV":"CL"), cvar.GetName(), cvar.GetString(), cvar.GetDefault() );
+			cvar.SetValue( cvar.GetDefault() );
+		}
+	}
+	m_SavedConvars.Purge();
+}
+
+bool CGameRules::HasSavedConvar( const string_t cvarName )
+{
+	int idx = m_SavedConvars.Find( cvarName );
+	return idx != m_SavedConvars.InvalidIndex();
+}
+
+#ifdef CLIENT_DLL
+void __MsgFunc_SavedConvar( bf_read &msg )
+{
+	Assert( GameRules() );
+	if ( !GameRules() )
+	{
+		return;
+	}
+
+	char szKey[ 2048 ];
+	bool bReadKey = msg.ReadString( szKey, sizeof( szKey ) );
+	Assert( bReadKey );
+	if ( bReadKey )
+	{
+		ConVarRef cvar( szKey );
+		Assert( cvar.IsValid() );
+		Assert( cvar.IsFlagSet( FCVAR_REPLICATED ) );
+		if ( cvar.IsValid() && cvar.IsFlagSet( FCVAR_REPLICATED ) )
+		{
+			GameRules()->SaveConvar( cvar );
+		}
+	}
+}
+USER_MESSAGE_REGISTER( SavedConvar );
 #endif

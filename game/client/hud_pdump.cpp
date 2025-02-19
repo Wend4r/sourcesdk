@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -20,9 +20,11 @@ static CPDumpPanel *g_pPDumpPanel = NULL;
 // OKAY, so typeinfo.h somewhere re-enables a bunch of warnings about float to int conversion, etc., that
 //  we pragma'd away in platform.h, so this little compiler specific hack will eliminate those warnings while
 //  retaining our own warning setup...ywb
+#if defined( WIN32 ) && _MSC_VER <= 1920
 #pragma warning( push )
 #include <typeinfo.h>
 #pragma warning( pop )
+#endif
 
 using namespace vgui;
 
@@ -257,8 +259,8 @@ void CPDumpPanel::Paint()
 	// Now output the strings
 	int x[5];
 	x[0] = 20;
-	int columnwidth = 375;
-	int numcols = ScreenWidth() / columnwidth;
+	int columnwidth = 640;
+	int numcols = GetWide() / columnwidth;
 	int i;
 
 	numcols = clamp( numcols, 1, 5 );
@@ -347,7 +349,7 @@ void CPDumpPanel::Paint()
 
 		y += fonttall;
 
-		if ( y >= ScreenHeight() - fonttall - 60 )
+		if ( y >= GetTall() - fonttall - 60 )
 		{
 			y = starty;
 			col++;
@@ -367,8 +369,8 @@ void CPDumpPanel::Paint()
 
 
 	// Draw a legend now
-	int xpos = ScreenWidth() - textSizeWide - 5;
-	y = ScreenHeight() - 7 * fonttall - 80;
+	int xpos = GetWide() - textSizeWide - 5;
+	y = GetTall() - 7 * fonttall - 80;
 
 	// Not networked, no differences
 	PredictionDumpColor( false, false, false, false, r, g, b, a );

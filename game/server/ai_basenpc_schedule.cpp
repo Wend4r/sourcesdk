@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Functions and data pertaining to the NPCs' AI scheduling system.
 //			Implements default NPC tasks and schedules.
@@ -1254,7 +1254,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		{
 			if (!GetHintNode())
 			{
-				SetHintNode( CAI_HintManager::FindHint( this, HINT_NONE, (int)pTask->flTaskData, 2000 ) );
+				SetHintNode( CAI_HintManager::FindHint( this, HINT_NONE, pTask->flTaskData, 2000 ) );
 			}
 			if (GetHintNode())
 			{
@@ -1452,7 +1452,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		break;
 
 	case TASK_SET_SCHEDULE:
-		if ( !SetSchedule( (int)pTask->flTaskData ) )
+		if ( !SetSchedule( pTask->flTaskData ) )
 			TaskFail(FAIL_SCHEDULE_NOT_FOUND);
 		break;
 
@@ -2384,7 +2384,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 					}
 					else
 					{
-						int iSequence = LookupSequence(STRING(GetHintNode()->HintActivityName()));;
+						int iSequence = LookupSequence(STRING(GetHintNode()->HintActivityName()));
 						if ( iSequence != ACT_INVALID )
 							GetNavigator()->SetArrivalSequence( iSequence );
 					}
@@ -2713,7 +2713,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 		}
 	case TASK_SPEAK_SENTENCE:
 		{
-			SpeakSentence((int)pTask->flTaskData);	
+			SpeakSentence(pTask->flTaskData);	
 			TaskComplete();
 			break;
 		}
@@ -3045,7 +3045,7 @@ void CAI_BaseNPC::StartTask( const Task_t *pTask )
 			{
 				int iMinDist, iMaxDist, iParameter;
 
-				iParameter = (int)pTask->flTaskData;
+				iParameter = pTask->flTaskData;
 
 				iMinDist = iParameter / 10000;
 				iMaxDist = iParameter - (iMinDist * 10000);
@@ -3275,7 +3275,7 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 						DbgNavMsg( this, "Jump landed\n" );
 						SetNavType( NAV_GROUND ); // this assumes that NAV_JUMP only happens with npcs that use NAV_GROUND as base movement
 					}
-					else if (GetSmoothedVelocity().Length() > 0.01) // use an EPSILON damnit!!
+					else if (GetSmoothedVelocity().Length() > 0.01) // use an EPSILON
 					{
 						// wait until you land
 						break;
@@ -3584,7 +3584,6 @@ void CAI_BaseNPC::RunTask( const Task_t *pTask )
 					{
 					case ACT_WALK_AIM:	curActivity = ACT_WALK;	break;
 					case ACT_RUN_AIM:	curActivity = ACT_RUN;	break;
-					default:	break;
 					}
 
 					if ( curActivity != followActivity )

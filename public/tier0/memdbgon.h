@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This header, which must be the final include in a .cpp (or .h) file,
 // causes all crt methods to use debugging versions of the memory allocators.
@@ -11,17 +11,9 @@
 // to include this potentially multiple times (since we can deactivate debugging
 // by including memdbgoff.h)
 
-#if !defined(NO_MALLOC_OVERRIDE) && defined(POSIX)
-#define NO_MALLOC_OVERRIDE
-#endif
-
 #if !defined(STEAM) && !defined(NO_MALLOC_OVERRIDE)
 
 // SPECIAL NOTE #2: This must be the final include in a .cpp or .h file!!!
-
-#if defined(_DEBUG) && !defined(USE_MEM_DEBUG)
-#define USE_MEM_DEBUG 1
-#endif
 
 // If debug build or ndebug and not already included MS custom alloc files, or already included this file
 #if (defined(_DEBUG) || !defined(_INC_CRTDBG)) || defined(MEMDBGON_H)
@@ -33,16 +25,12 @@
 #include <wchar.h>
 #endif
 #include <string.h>
-#if defined __APPLE__
-#include <stdlib.h>
-#else
 #include <malloc.h>
-#endif
 #include "commonmacros.h"
 #include "memalloc.h"
 
 #if defined(USE_MEM_DEBUG)
-	#if defined(_LINUX) || defined(__APPLE__)
+	#if defined( POSIX )
 	
 		#define _NORMAL_BLOCK 1
 		
@@ -50,20 +38,19 @@
 		#include <glob.h>
 		#include <new>
 		#include <sys/types.h>
-		
 		#if !defined( DID_THE_OPERATOR_NEW )
-			#define DID_THE_OPERATOR_NEW
-			inline void* operator new( size_t nSize, int blah, const char *pFileName, int nLine )
-			{
-				return g_pMemAlloc->Alloc( nSize, pFileName, nLine );
-			}
-			inline void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine )
-			{
-				return g_pMemAlloc->Alloc( nSize, pFileName, nLine );
-			}
+                        #define DID_THE_OPERATOR_NEW
+			// posix doesn't have a new of this form, so we impl our own
+			#ifdef OSX
+				void* operator new( size_t nSize, int blah, const char *pFileName, int nLine ) throw (std::bad_alloc);
+				void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine ) throw (std::bad_alloc);
+			#else
+				void* operator new( size_t nSize, int blah, const char *pFileName, int nLine );
+				void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine );
+			#endif
 		#endif
-	
-	#else // defined(_LINUX)
+
+	#else // defined(POSIX)
 	
 		// Include crtdbg.h and make sure _DEBUG is set to 1.
 		#if !defined(_DEBUG)
@@ -74,7 +61,7 @@
 			#include <crtdbg.h>
 		#endif // !defined(_DEBUG)
 	
-	#endif // defined(_LINUX)
+	#endif // defined(POSIX)
 #endif
 
 #include "tier0/memdbgoff.h"
@@ -115,14 +102,19 @@ inline void *MemAlloc_InlineCallocMemset( void *pMem, size_t nCount, size_t nEle
 #define realloc(p, s)			g_pMemAlloc->Realloc( p, s, __FILE__, __LINE__ )
 #define _aligned_malloc( s, a )	MemAlloc_AllocAligned( s, a, __FILE__, __LINE__ )
 
+#ifdef _malloc_dbg
+#undef _malloc_dbg
+#endif
 #define _malloc_dbg(s, t, f, l)	WHYCALLINGTHISDIRECTLY(s)
 
+#if !defined( POSIX )
 #if defined(__AFX_H__) && defined(DEBUG_NEW)
 	#define new DEBUG_NEW
 #else
 	#undef new
 	#define MEMALL_DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 	#define new MEMALL_DEBUG_NEW
+#endif
 #endif
 
 #undef _strdup
@@ -180,9 +172,10 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString, const char *pFileName,
 #define realloc(p, s)			g_pMemAlloc->Realloc( p, s )
 #define _aligned_malloc( s, a )	MemAlloc_AllocAligned( s, a )
 
-#ifndef _malloc_dbg
-#define _malloc_dbg(s, t, f, l)	WHYCALLINGTHISDIRECTLY(s)
+#ifdef _malloc_dbg
+#undef _malloc_dbg
 #endif
+#define _malloc_dbg(s, t, f, l)	WHYCALLINGTHISDIRECTLY(s)
 
 #undef new
 
@@ -248,4 +241,74 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString)
 #endif
 #endif // _INC_CRTDBG
 
+#else
+
+// Needed for MEM_ALLOC_CREDIT(), MemAlloc_Alloc(), etc.
+
+#include "memalloc.h"
+
+#if !defined( VALVE_ALLOCS_DEFINED )
+#define VALVE_ALLOCS_DEFINED
+
+#include "tier0/mem.h"
+
+inline void *valve_malloc_check_oom( size_t size )
+{
+	void *ptr = malloc( size );
+	if ( !ptr )
+		MemAllocOOMError( size );
+	return ptr;
+}
+
+inline void *valve_realloc_check_oom( void *ptr, size_t size )
+{
+	void *ret = realloc( ptr, size );
+	if ( !ret )
+		MemAllocOOMError( size );
+	return ret;
+}
+
+inline void *valve_calloc_check_oom( size_t num, size_t size )
+{
+	void *ptr = calloc( num, size );
+	if (!ptr)
+		MemAllocOOMError( num * size );
+	return ptr;
+}
+
+inline void *valve_memalign_check_oom( size_t alignment, size_t size )
+{
+	void *ptr = memalign( alignment, size );
+	if (!ptr)
+		MemAllocOOMError(size);
+	return ptr;
+}
+
+inline void *valve_aligned_malloc_check_oom( size_t size, size_t alignment )
+{
+	void *ptr = _aligned_malloc( size, alignment );
+	if (!ptr)
+		MemAllocOOMError( size );
+	return ptr;
+}
+
+
+#endif // VALVE_ALLOCS_DEFINED
+
+#define malloc valve_malloc_check_oom
+#define realloc valve_realloc_check_oom
+#define calloc valve_calloc_check_oom
+#define memalign valve_memalign_check_oom
+#define _aligned_malloc valve_aligned_malloc_check_oom
+
 #endif // !STEAM && !NO_MALLOC_OVERRIDE
+
+#if defined( NO_MALLOC_OVERRIDE )
+
+#undef malloc
+#undef realloc
+#undef calloc
+#undef memalign
+#undef _aligned_malloc
+
+#endif // NO_MALLOC_OVERRIDE

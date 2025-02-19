@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: A hideous, putrescent, pus-filled undead carcass atop which a vile
 //			nest of filthy poisonous headcrabs lurks.
@@ -722,7 +722,7 @@ void CNPC_PoisonZombie::HandleAnimEvent( animevent_t *pEvent )
 		QAngle qaPunch( 45, random->RandomInt(-5, 5), random->RandomInt(-5, 5) );
 		AngleVectors( GetLocalAngles(), &forward );
 		forward = forward * 200;
-		ClawAttack( GetClawAttackRange(), sk_zombie_poison_dmg_spit.GetInt(), qaPunch, forward, ZOMBIE_BLOOD_BITE );
+		ClawAttack( GetClawAttackRange(), sk_zombie_poison_dmg_spit.GetFloat(), qaPunch, forward, ZOMBIE_BLOOD_BITE );
 		return;
 	}
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,6 +12,7 @@
 #include "choreoevent.h"
 #include "choreoactor.h"
 #include "choreochannel.h"
+#include "minmax.h"
 #include "mathlib/mathlib.h"
 #include "tier1/strtools.h"
 #include "choreoscene.h"
@@ -787,9 +788,9 @@ float CFlexAnimationTrack::GetFracIntensity( float time, int type )
 	prev = MAX( -1, prev );
 	next = MIN( next, rampCount );
 
-	bool clamp[ 2 ];
-	CExpressionSample *esPre = GetBoundedSample( prev, clamp[ 0 ], type );
-	CExpressionSample *esNext = GetBoundedSample( next, clamp[ 1 ], type );
+	bool bclamp[ 2 ];
+	CExpressionSample *esPre = GetBoundedSample( prev, bclamp[ 0 ], type );
+	CExpressionSample *esNext = GetBoundedSample( next, bclamp[ 1 ], type );
 
 	float dt = esEnd->time - esStart->time;
 
@@ -1654,9 +1655,9 @@ float CCurveData::GetIntensity( ICurveDataAccessor *data, float time )
 	prev = MAX( -1, prev );
 	next = MIN( next, rampCount );
 
-	bool clamp[ 2 ];
-	CExpressionSample *esPre = GetBoundedSample( data, prev, clamp[ 0 ] );
-	CExpressionSample *esNext = GetBoundedSample( data, next, clamp[ 1 ] );
+	bool bclamp[ 2 ];
+	CExpressionSample *esPre = GetBoundedSample( data, prev, bclamp[ 0 ] );
+	CExpressionSample *esNext = GetBoundedSample( data, next, bclamp[ 1 ] );
 
 	float dt = esEnd->time - esStart->time;
 
@@ -1665,12 +1666,12 @@ float CCurveData::GetIntensity( ICurveDataAccessor *data, float time )
 	Vector vEnd( esEnd->time, esEnd->value, 0 );
 	Vector vNext( esNext->time, esNext->value, 0 );
 
-	if ( clamp[ 0 ] )
+	if ( bclamp[ 0 ] )
 	{
 		vPre.x = vStart.x;
 	}
 
-	if ( clamp[ 1 ] )
+	if ( bclamp[ 1 ] )
 	{
 		vNext.x = vEnd.x;
 	}
@@ -1836,9 +1837,9 @@ float CCurveData::GetIntensityArea( ICurveDataAccessor *data, float time )
 	prev = MAX( -1, prev );
 	next = MIN( next, rampCount );
 
-	bool clamp[ 2 ];
-	CExpressionSample *esPre = GetBoundedSample( data, prev, clamp[ 0 ] );
-	CExpressionSample *esNext = GetBoundedSample( data, next, clamp[ 1 ] );
+	bool bclamp[ 2 ];
+	CExpressionSample *esPre = GetBoundedSample( data, prev, bclamp[ 0 ] );
+	CExpressionSample *esNext = GetBoundedSample( data, next, bclamp[ 1 ] );
 
 	float dt = esEnd->time - esStart->time;
 
@@ -1847,12 +1848,12 @@ float CCurveData::GetIntensityArea( ICurveDataAccessor *data, float time )
 	Vector vEnd( esEnd->time, esEnd->value, 0 );
 	Vector vNext( esNext->time, esNext->value, 0 );
 
-	if ( clamp[ 0 ] )
+	if ( bclamp[ 0 ] )
 	{
 		vPre.x = vStart.x;
 	}
 
-	if ( clamp[ 1 ] )
+	if ( bclamp[ 1 ] )
 	{
 		vNext.x = vEnd.x;
 	}
@@ -2075,8 +2076,8 @@ public:
 	{
 		if ( ARRAYSIZE( g_NameMap ) != CChoreoEvent::NUM_TYPES )
 		{
-			Error( "g_NameMap contains %i entries, CChoreoEvent::NUM_TYPES == %i!",
-				ARRAYSIZE( g_NameMap ), CChoreoEvent::NUM_TYPES );
+			Error( "g_NameMap contains %llu entries, CChoreoEvent::NUM_TYPES == %i!",
+				(uint64)(ARRAYSIZE( g_NameMap )), CChoreoEvent::NUM_TYPES );
 		}
 		for ( int i = 0; i < CChoreoEvent::NUM_TYPES; ++i )
 		{
@@ -2157,8 +2158,8 @@ public:
 	{
 		if ( ARRAYSIZE( g_CCNameMap ) != CChoreoEvent::NUM_CC_TYPES )
 		{
-			Error( "g_CCNameMap contains %i entries, CChoreoEvent::NUM_CC_TYPES == %i!",
-				ARRAYSIZE( g_CCNameMap ), CChoreoEvent::NUM_CC_TYPES );
+			Error( "g_CCNameMap contains %llu entries, CChoreoEvent::NUM_CC_TYPES == %i!",
+				(uint64)(ARRAYSIZE( g_CCNameMap )), CChoreoEvent::NUM_CC_TYPES );
 		}
 		for ( int i = 0; i < CChoreoEvent::NUM_CC_TYPES; ++i )
 		{
@@ -3926,7 +3927,7 @@ static void CleanupTokenName( char const *in, char *dest, int destlen )
 	char *out = dest;
 	while ( *in && ( out - dest ) < destlen )
 	{
-		if ( isalnum( *in ) ||   // lowercase, uppercase, digits and underscore are valid
+		if ( V_isalnum( *in ) ||   // lowercase, uppercase, digits and underscore are valid
 			*in == '_' )
 		{
 			*out++ = *in;
@@ -3977,7 +3978,7 @@ bool CChoreoEvent::ComputeCombinedBaseFileName( char *dest, int destlen, bool cr
 		}
 	}
 
-	size_t len = Q_strlen( pvcd );
+	int len = Q_strlen( pvcd );
 
 	if ( len > 0 && ( len + 1 ) < ( sizeof( vcdpath ) - 1 ) )
 	{
@@ -4147,7 +4148,7 @@ void CChoreoEvent::SaveToBuffer( CUtlBuffer& buf, CChoreoScene *pScene, IChoreoS
 		buf.PutShort( pStringPool->FindOrAddString( rt->GetName() ) );
 
 		Assert( rt->GetPercentage() >= 0.0f && rt->GetPercentage() <= 1.0f );
-		unsigned char p = static_cast<unsigned char>(rt->GetPercentage() * 255.0f);
+		unsigned char p = rt->GetPercentage() * 255.0f;
 		buf.PutUnsignedChar( p );
 	}
 
@@ -4163,7 +4164,7 @@ void CChoreoEvent::SaveToBuffer( CUtlBuffer& buf, CChoreoScene *pScene, IChoreoS
 
 		// save as u0.8
 		Assert( tt->GetPercentage() >= 0.0f && tt->GetPercentage() <= 1.0f );
-		unsigned char p = static_cast<unsigned char>(tt->GetPercentage() * 255.0f);
+		unsigned char p = tt->GetPercentage() * 255.0f;
 		buf.PutUnsignedChar( p );
 
 		// Don't save locked state, it's only used by the editor tt->GetLocked()
@@ -4184,7 +4185,7 @@ void CChoreoEvent::SaveToBuffer( CUtlBuffer& buf, CChoreoScene *pScene, IChoreoS
 
 			// save as u4.12
 			Assert( abstag->GetPercentage() >= 0.0f && abstag->GetPercentage() <= 15.0f );
-			unsigned short p = static_cast<unsigned short>(abstag->GetPercentage() * 4096.0f);
+			unsigned short p = abstag->GetPercentage() * 4096.0f;
 			buf.PutUnsignedShort( p );
 		}
 	}
@@ -4340,7 +4341,7 @@ bool CChoreoEvent::RestoreFromBuffer( CUtlBuffer& buf, CChoreoScene *pScene, ICh
 		char cctoken[ 256 ];
 		pStringPool->GetString( buf.GetShort(), cctoken, sizeof( cctoken ) );
 		SetCloseCaptionToken( cctoken );
-		int flags = buf.GetChar();
+		flags = buf.GetChar();
 		if ( flags & ( 1<<0 ) )
 		{
 			SetUsingCombinedFile( true );
@@ -4370,7 +4371,7 @@ void CCurveData::SaveToBuffer( CUtlBuffer& buf, IChoreoStringPool *pStringPool )
 		buf.PutFloat( sample->time );
 
 		Assert( sample->value >= 0.0f && sample->value <= 1.0f );
-		unsigned char v = static_cast<unsigned char>(sample->value * 255.0f);
+		unsigned char v = sample->value * 255.0f;
 		buf.PutUnsignedChar( v );
 	}	
 }
@@ -4420,7 +4421,7 @@ void CChoreoEvent::SaveFlexAnimationsToBuffer( CUtlBuffer& buf, IChoreoStringPoo
 			buf.PutFloat( s->time );
 
 			Assert( s->value >= 0.0f && s->value <= 1.0f );
-			unsigned char v = static_cast<unsigned char>(s->value * 255.0f);
+			unsigned char v = s->value * 255.0f;
 			buf.PutUnsignedChar( v );
 
 			buf.PutUnsignedShort( s->GetCurveType() );
@@ -4442,7 +4443,7 @@ void CChoreoEvent::SaveFlexAnimationsToBuffer( CUtlBuffer& buf, IChoreoStringPoo
 				buf.PutFloat( s->time );
 
 				Assert( s->value >= 0.0f && s->value <= 1.0f );
-				unsigned char v = static_cast<unsigned char>(s->value * 255.0f);
+				unsigned char v = s->value * 255.0f;
 				buf.PutUnsignedChar( v );
 
 				buf.PutUnsignedShort( s->GetCurveType() );
@@ -4482,7 +4483,7 @@ bool CChoreoEvent::RestoreFlexAnimationsFromBuffer( CUtlBuffer& buf, IChoreoStri
 
 		if ( track->IsComboType() )
 		{
-			int s = buf.GetUnsignedShort();
+			s = buf.GetUnsignedShort();
 			for ( int j = 0; j < s; ++j )
 			{
 				float t, v;

@@ -1,12 +1,12 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
-#include "c_AI_BaseNPC.h"
-#include "engine/IVDebugOverlay.h"
+#include "c_ai_basenpc.h"
+#include "engine/ivdebugoverlay.h"
 
 #if defined( HL2_DLL ) || defined( HL2_EPISODIC )
 #include "c_basehlplayer.h"
@@ -135,9 +135,12 @@ void C_AI_BaseNPC::ClientThink( void )
 			int g = 255 * fFade;
 			int b = 0 * fFade;
 
-			debugoverlay->AddLineOverlay( p1, p2, r, g, b, true, 0.05f );
-			debugoverlay->AddLineOverlay( p2, p3, r, g, b, true, 0.05f );
-			debugoverlay->AddLineOverlay( p3, p1, r, g, b, true, 0.05f );
+			if ( debugoverlay )
+			{
+				debugoverlay->AddLineOverlay( p1, p2, r, g, b, true, 0.05f );
+				debugoverlay->AddLineOverlay( p2, p3, r, g, b, true, 0.05f );
+				debugoverlay->AddLineOverlay( p3, p1, r, g, b, true, 0.05f );
+			}
 		}
 	}
 #endif
@@ -153,9 +156,13 @@ void C_AI_BaseNPC::OnDataChanged( DataUpdateType_t type )
 	}
 }
 
-void C_AI_BaseNPC::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt )
+bool C_AI_BaseNPC::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt )
 {
-	ForceSetupBonesAtTime( pDeltaBones0, gpGlobals->curtime - boneDt );
+	bool bRet = true;
+
+	if ( !ForceSetupBonesAtTime( pDeltaBones0, gpGlobals->curtime - boneDt ) )
+		bRet = false;
+
 	GetRagdollCurSequenceWithDeathPose( this, pDeltaBones1, gpGlobals->curtime, m_iDeathPose, m_iDeathFrame );
 	float ragdollCreateTime = PhysGetSyncCreateTime();
 	if ( ragdollCreateTime != gpGlobals->curtime )
@@ -164,11 +171,15 @@ void C_AI_BaseNPC::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x
 		// so initialize the ragdoll at that time so that it will reach the current
 		// position at curtime.  Otherwise the ragdoll will simulate forward from curtime
 		// and pop into the future a bit at this point of transition
-		ForceSetupBonesAtTime( pCurrentBones, ragdollCreateTime );
+		if ( !ForceSetupBonesAtTime( pCurrentBones, ragdollCreateTime ) )
+			bRet = false;
 	}
 	else
 	{
-		SetupBones( pCurrentBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+		if ( !SetupBones( pCurrentBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, gpGlobals->curtime ) )
+			bRet = false;
 	}
+
+	return bRet;
 }
 

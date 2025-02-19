@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -102,9 +102,9 @@ void PrintFlags( int flags )
 	PRNFLAG( TEXTUREFLAGS_DEPTHRENDERTARGET	           )
 	PRNFLAG( TEXTUREFLAGS_NODEBUGOVERRIDE              )
 	PRNFLAG( TEXTUREFLAGS_SINGLECOPY		           )
-	PRNFLAG( TEXTUREFLAGS_UNUSED_00080000		       )
-	PRNFLAG( TEXTUREFLAGS_UNUSED_00100000			   )
-	PRNFLAG( TEXTUREFLAGS_UNUSED_00200000              )
+	PRNFLAG( TEXTUREFLAGS_STAGING_MEMORY		       )
+	PRNFLAG( TEXTUREFLAGS_IMMEDIATE_CLEANUP			   )
+	PRNFLAG( TEXTUREFLAGS_IGNORE_PICMIP                )
 	PRNFLAG( TEXTUREFLAGS_UNUSED_00400000			   )
 	PRNFLAG( TEXTUREFLAGS_NODEPTHBUFFER                )
 	PRNFLAG( TEXTUREFLAGS_UNUSED_01000000              )
@@ -113,8 +113,8 @@ void PrintFlags( int flags )
 	PRNFLAG( TEXTUREFLAGS_SSBUMP                       )
 	PRNFLAG( TEXTUREFLAGS_UNUSED_10000000              )
 	PRNFLAG( TEXTUREFLAGS_BORDER					   )
-	PRNFLAG( TEXTUREFLAGS_UNUSED_40000000			   )
-	PRNFLAG( TEXTUREFLAGS_UNUSED_80000000			   )
+	PRNFLAG( TEXTUREFLAGS_STREAMABLE_COARSE			   )
+	PRNFLAG( TEXTUREFLAGS_STREAMABLE_FINE			   )
 
 #undef PRNFLAG
 
@@ -408,10 +408,10 @@ int main( int argc, char **argv )
 				}
 				else if ( numBytes1 != numBytes2 )
 				{
-					printf( "%s different resource %s size %s != %s\n", 
+					printf( "%s different resource %s size %lld != %lld\n", 
 						argv[1],
 						ResourceToString( uiResType ),
-						numBytes1, numBytes2 );
+						(long long)numBytes1, (long long)numBytes2 );
 					bMatch = false;
 				}
 				else if ( memcmp( pvResData1, pvResData2, numBytes1 ) != 0 )

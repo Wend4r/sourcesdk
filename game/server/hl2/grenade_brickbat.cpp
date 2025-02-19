@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Things thrown from the hand
 //
@@ -9,6 +9,7 @@
 #include "ammodef.h"
 #include "gamerules.h"
 #include "grenade_brickbat.h"
+#include "weapon_brickbat.h"
 #include "soundent.h"
 #include "decals.h"
 #include "IEffects.h"
@@ -25,8 +26,8 @@ BEGIN_DATADESC( CGrenade_Brickbat )
 	DEFINE_FIELD( m_bBounceToFlat, FIELD_BOOLEAN ),
 
 	// Function Pointers
-	DEFINE_ENTITYFUNC( BrickbatTouch ),
-	DEFINE_THINKFUNC( BrickbatThink ),
+	DEFINE_FUNCTION( BrickbatTouch ),
+	DEFINE_FUNCTION( BrickbatThink ),
 
 END_DATADESC()
 
@@ -34,10 +35,9 @@ LINK_ENTITY_TO_CLASS( brickbat, CGrenade_Brickbat );
 
 void CGrenade_Brickbat::Spawn( void )
 {
-	RemoveEffects( EF_NOINTERP );
 	SetCollisionGroup( COLLISION_GROUP_PROJECTILE );
-	SetTouch( &CGrenade_Brickbat::BrickbatTouch );
-	SetThink( &CGrenade_Brickbat::BrickbatThink );
+	SetTouch( BrickbatTouch );
+	SetThink( BrickbatThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	m_takedamage = DAMAGE_YES;

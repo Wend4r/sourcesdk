@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -1670,20 +1670,20 @@ void CAntlionTemplateMaker::DrawDebugGeometryOverlays( void )
 
 	if ( m_debugOverlays & OVERLAY_TEXT_BIT )
 	{
-		int r, g, b;
+		float r, g, b;
 
 		// Color by active state
 		if ( m_bDisabled )
 		{
-			r = 255;
-			g = 0;
-			b = 0;
+			r = 255.0f;
+			g = 0.0f;
+			b = 0.0f;
 		}
 		else
 		{
-			r = 0;
-			g = 255;
-			b = 0;
+			r = 0.0f;
+			g = 255.0f;
+			b = 0.0f;
 		}
 
 		// Draw ourself

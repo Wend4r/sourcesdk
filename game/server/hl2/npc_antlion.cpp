@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Antlion - nasty bug
 //
@@ -636,7 +636,7 @@ void CNPC_Antlion::Event_Killed( const CTakeDamageInfo &info )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void CNPC_Antlion::MeleeAttack( float distance, float damage, QAngle& viewPunch, Vector& shove )
+void CNPC_Antlion::MeleeAttack( float distance, float damage, QAngle &viewPunch, Vector &shove )
 {
 	Vector vecForceDir;
 
@@ -650,7 +650,7 @@ void CNPC_Antlion::MeleeAttack( float distance, float damage, QAngle& viewPunch,
 		return;
 	}
 
-	CBaseEntity *pHurt = CheckTraceHullAttack( distance, -Vector(16,16,32), Vector(16,16,32), (int)damage, DMG_SLASH, 5.0f );
+	CBaseEntity *pHurt = CheckTraceHullAttack( distance, -Vector(16,16,32), Vector(16,16,32), damage, DMG_SLASH, 5.0f );
 
 	if ( pHurt )
 	{
@@ -927,7 +927,7 @@ Vector VecCheckThrowTolerance( CBaseEntity *pEdict, const Vector &vecSpot1, Vect
 {
 	flSpeed = MAX( 1.0f, flSpeed );
 
-	float flGravity = sv_gravity.GetFloat();
+	float flGravity = GetCurrentGravity();
 
 	Vector vecGrenadeVel = (vecSpot2 - vecSpot1);
 
@@ -1053,8 +1053,6 @@ void CNPC_Antlion::DelaySquadAttack( float flDuration )
 //-----------------------------------------------------------------------------
 void CNPC_Antlion::HandleAnimEvent( animevent_t *pEvent )
 {
-	QAngle viewPunch;
-	Vector shove;
 #ifdef HL2_EPISODIC
 		// Handle the spit event
 		if ( pEvent->event == AE_ANTLION_WORKER_SPIT )
@@ -1163,25 +1161,25 @@ void CNPC_Antlion::HandleAnimEvent( animevent_t *pEvent )
 
 	if ( pEvent->event == AE_ANTLION_MELEE_HIT1 )
 	{
-		viewPunch = QAngle(20.0f, 0.0f, -12.0f);
-		shove = Vector(-250.0f, 1.0f, 1.0f);
-		MeleeAttack( ANTLION_MELEE1_RANGE, sk_antlion_swipe_damage.GetFloat(), viewPunch, shove );
+		QAngle qa( 20.0f, 0.0f, -12.0f );
+		Vector vec( -250.0f, 1.0f, 1.0f );
+		MeleeAttack( ANTLION_MELEE1_RANGE, sk_antlion_swipe_damage.GetFloat(), qa, vec );
 		return;
 	}
 
 	if ( pEvent->event == AE_ANTLION_MELEE_HIT2 )
 	{
-		viewPunch = QAngle(20.0f, 0.0f, 0.0f);
-		shove = Vector(-350.0f, 1.0f, 1.0f);
-		MeleeAttack( ANTLION_MELEE1_RANGE, sk_antlion_swipe_damage.GetFloat(), viewPunch, shove );
+		QAngle qa( 20.0f, 0.0f, 0.0f );
+		Vector vec( -350.0f, 1.0f, 1.0f );
+		MeleeAttack( ANTLION_MELEE1_RANGE, sk_antlion_swipe_damage.GetFloat(), qa, vec );
 		return;
 	}
 
 	if ( pEvent->event == AE_ANTLION_MELEE_POUNCE )
 	{
-		viewPunch = QAngle(4.0f, 0.0f, 0.0f);
-		shove = Vector(-250.0f, 1.0f, 1.0f);
-		MeleeAttack( ANTLION_MELEE2_RANGE, sk_antlion_swipe_damage.GetFloat(), viewPunch, shove );
+		QAngle qa( 4.0f, 0.0f, 0.0f );
+		Vector vec( -250.0f, 1.0f, 1.0f );
+		MeleeAttack( ANTLION_MELEE2_RANGE, sk_antlion_swipe_damage.GetFloat(), qa, vec );
 		return;
 	}
 		
@@ -1290,7 +1288,7 @@ void CNPC_Antlion::HandleAnimEvent( animevent_t *pEvent )
 
 	if ( pEvent->event == AE_ANTLION_WORKER_EXPLODE_WARN )
 	{
-		CSoundEnt::InsertSound( SOUND_PHYSICS_DANGER, GetAbsOrigin(), sk_antlion_worker_burst_radius.GetInt(), 0.5f, this );
+		CSoundEnt::InsertSound( SOUND_PHYSICS_DANGER, GetAbsOrigin(), sk_antlion_worker_burst_radius.GetFloat(), 0.5f, this );
 		return;
 	}
 
@@ -2658,7 +2656,7 @@ inline bool CNPC_Antlion::IsFlipped( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_Antlion::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CNPC_Antlion::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo newInfo = info;
 
@@ -2672,7 +2670,7 @@ void CNPC_Antlion::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDi
 		if ( newInfo.GetDamageType() & (DMG_CRUSH|DMG_PHYSGUN) )
 		{
 			PainSound( newInfo );
-			Vector vecForce = ( vecShoveDir * random->RandomInt( 500, 1000 ) ) + Vector(0.0f, 0.0f, 64.0f);
+			Vector vecForce = ( vecShoveDir * random->RandomInt( 500.0f, 1000.0f ) ) + Vector(0,0,64.0f);
 			CascadePush( vecForce );
 			ApplyAbsVelocityImpulse( vecForce );
 			SetGroundEntity( NULL );
@@ -2699,7 +2697,7 @@ void CNPC_Antlion::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDi
 					SetCondition( COND_ANTLION_FLIPPED );
 				}
 
-				Vector vecForce = ( vecShoveDir * random->RandomInt( 500, 1000 ) ) + Vector(0.0f, 0.0f, 64.0f);
+				Vector vecForce = ( vecShoveDir * random->RandomInt( 500.0f, 1000.0f ) ) + Vector(0,0,64.0f);
 
 				CascadePush( vecForce );
 				ApplyAbsVelocityImpulse( vecForce );
@@ -2715,14 +2713,14 @@ void CNPC_Antlion::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDi
 					SetCondition( COND_ANTLION_FLIPPED );
 
 					//Get tossed!
-					ApplyAbsVelocityImpulse( ( vecShoveDir * random->RandomInt( 500, 1000 ) ) + Vector(0.0f, 0.0f, 64.0f) );
+					ApplyAbsVelocityImpulse( ( vecShoveDir * random->RandomInt( 500.0f, 1000.0f ) ) + Vector(0,0,64.0f) );
 					SetGroundEntity( NULL );
 				}
 			}
 		}
 	}
 
-	BaseClass::TraceAttack( newInfo, vecDir, ptr );
+	BaseClass::TraceAttack( newInfo, vecDir, ptr, pAccumulator );
 }
 
 void CNPC_Antlion::StopLoopingSounds( void )
@@ -3317,15 +3315,14 @@ void CNPC_Antlion::BurrowUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE
 bool CNPC_Antlion::CheckLanding( void )
 {
 	trace_t	tr;
-	Vector	testPos, shove = Vector( -250.0f, 1.0f, 1.0f );
-	QAngle	viewPunch = QAngle( 4.0f, 0.0f, 0.0f );
+	Vector	testPos;
 
 	//Amount of time to predict forward
 	const float	timeStep = 0.1f;
 
 	//Roughly looks one second into the future
 	testPos = GetAbsOrigin() + ( GetAbsVelocity() * timeStep );
-	testPos[2] -= ( 0.5 * sv_gravity.GetFloat() * GetGravity() * timeStep * timeStep);
+	testPos[2] -= ( 0.5 * GetCurrentGravity() * GetGravity() * timeStep * timeStep);
 
 	if ( g_debug_antlion.GetInt() == 2 )
 	{
@@ -3355,7 +3352,11 @@ bool CNPC_Antlion::CheckLanding( void )
 				CBasePlayer *pPlayer = ToBasePlayer( GetEnemy() );
 
 				if ( pPlayer && pPlayer->IsInAVehicle() == false )
-					 MeleeAttack( ANTLION_MELEE1_RANGE, sk_antlion_swipe_damage.GetFloat(), viewPunch, shove );
+				{
+					QAngle qa( 4.0f, 0.0f, 0.0f );
+					Vector vec( -250.0f, 1.0f, 1.0f );
+					MeleeAttack( ANTLION_MELEE1_RANGE, sk_antlion_swipe_damage.GetFloat(), qa, vec );
+				}
 			}
 
 			SetAbsVelocity( GetAbsVelocity() * 0.33f );
@@ -4361,7 +4362,7 @@ void CNPC_Antlion::InputJumpAtTarget( inputdata_t &inputdata )
 
 	// initial jump, sets baseline for minJumpHeight
 	Vector vecApex;
-	Vector rawJumpVel = GetMoveProbe()->CalcJumpLaunchVelocity(GetAbsOrigin(), targetPos, sv_gravity.GetFloat() * GetJumpGravity(), &minJumpHeight, maxHorzVel, &vecApex );
+	Vector rawJumpVel = GetMoveProbe()->CalcJumpLaunchVelocity(GetAbsOrigin(), targetPos, GetCurrentGravity() * GetJumpGravity(), &minJumpHeight, maxHorzVel, &vecApex );
 
 	if ( g_debug_antlion.GetInt() == 2 )
 	{

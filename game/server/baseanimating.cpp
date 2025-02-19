@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Base class for all animating characters and objects.
 //
@@ -26,6 +26,7 @@
 #include "physics_prop_ragdoll.h"
 #include "datacache/idatacache.h"
 #include "smoke_trail.h"
+#include "props.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -191,7 +192,7 @@ BEGIN_DATADESC( CBaseAnimating )
 	DEFINE_FIELD( m_hLightingOrigin, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_hLightingOriginRelative, FIELD_EHANDLE ),
 
-	DEFINE_FIELD( m_flModelWidthScale, FIELD_FLOAT ),
+	DEFINE_FIELD( m_flModelScale, FIELD_FLOAT ),
 	DEFINE_FIELD( m_flDissolveStartTime, FIELD_TIME ),
 
  // DEFINE_FIELD( m_boneCacheHandle, memhandle_t ),
@@ -208,6 +209,12 @@ BEGIN_DATADESC( CBaseAnimating )
 	DEFINE_INPUT( m_fadeMinDist, FIELD_FLOAT, "fademindist" ),
 	DEFINE_INPUT( m_fadeMaxDist, FIELD_FLOAT, "fademaxdist" ),
 	DEFINE_KEYFIELD( m_flFadeScale, FIELD_FLOAT, "fadescale" ),
+
+	DEFINE_KEYFIELD( m_flModelScale, FIELD_FLOAT, "modelscale" ),
+	DEFINE_INPUTFUNC( FIELD_VECTOR, "SetModelScale", InputSetModelScale ),
+	DEFINE_INPUTFUNC( FIELD_STRING, "SetModel", InputSetModel ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetCycle", InputSetCycle ),
+	DEFINE_INPUTFUNC( FIELD_FLOAT, "SetPlaybackRate", InputSetPlaybackRate ),
 
 	DEFINE_FIELD( m_fBoneCacheFlags, FIELD_SHORT ),
 
@@ -231,7 +238,7 @@ IMPLEMENT_SERVERCLASS_ST(CBaseAnimating, DT_BaseAnimating)
 
 	SendPropInt		( SENDINFO(m_nHitboxSet),ANIMATION_HITBOXSET_BITS, SPROP_UNSIGNED ),
 
-	SendPropFloat	( SENDINFO(m_flModelWidthScale), 6, SPROP_ROUNDUP, 0.0f, 1.0f ),
+	SendPropFloat	( SENDINFO(m_flModelScale) ),
 
 	SendPropArray3  ( SENDINFO_ARRAY3(m_flPoseParameter), SendPropFloat(SENDINFO_ARRAY(m_flPoseParameter), ANIMATION_POSEPARAMETER_BITS, 0, 0.0f, 1.0f ) ),
 	
@@ -243,9 +250,9 @@ IMPLEMENT_SERVERCLASS_ST(CBaseAnimating, DT_BaseAnimating)
 	SendPropInt( SENDINFO( m_bClientSideAnimation ), 1, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_bClientSideFrameReset ), 1, SPROP_UNSIGNED ),
 
-	SendPropInt( SENDINFO( m_nNewSequenceParity ), EF_PARITY_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ),
-	SendPropInt( SENDINFO( m_nResetEventsParity ), EF_PARITY_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ),
-	SendPropInt( SENDINFO( m_nMuzzleFlashParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED|SPROP_CHANGES_OFTEN ),
+	SendPropInt( SENDINFO( m_nNewSequenceParity ), EF_PARITY_BITS, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO( m_nResetEventsParity ), EF_PARITY_BITS, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO( m_nMuzzleFlashParity ), EF_MUZZLEFLASH_BITS, SPROP_UNSIGNED ),
 
 	SendPropEHandle( SENDINFO( m_hLightingOrigin ) ),
 	SendPropEHandle( SENDINFO( m_hLightingOriginRelative ) ),
@@ -259,19 +266,62 @@ IMPLEMENT_SERVERCLASS_ST(CBaseAnimating, DT_BaseAnimating)
 
 END_SEND_TABLE()
 
+BEGIN_ENT_SCRIPTDESC( CBaseAnimating, CBaseEntity, "Animating models" )
+	#ifdef PORTAL2
+	DEFINE_SCRIPTFUNC( GetObjectScaleLevel, "The scale size of the entity" )
+	#endif // PORTAL2
+	DEFINE_SCRIPTFUNC( LookupAttachment, "Get the named attachement id"  )
+	DEFINE_SCRIPTFUNC( GetAttachmentBone, "Get the named attachement's parent bone index"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetBoneOrigin, "GetBoneOrigin", "Get the bone id's origin vector"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetBoneAngles, "GetBoneAngles", "Get the bone id's angles as a p,y,r vector"  )
+	DEFINE_SCRIPTFUNC( LookupActivity, "Get the named activity index"  )
+	DEFINE_SCRIPTFUNC( LookupBone, "Get the named bone index"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptLookupSequence, "LookupSequence", "Looks up a sequence by sequence name or activity name"  )
+	DEFINE_SCRIPTFUNC( SetSequence, "Set a sequence by id"  )
+	DEFINE_SCRIPTFUNC( ResetSequence, "Reset a sequence by id. If the id is different than the current sequence, switch to the new sequence"  )
+	DEFINE_SCRIPTFUNC( GetSequence, "Get the current sequence id"  )
+	DEFINE_SCRIPTFUNC( GetSequenceActivityName, "Get the activity name for a sequence by id"  )
+	DEFINE_SCRIPTFUNC( GetSequenceName, "Get a sequence name by id"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetSequenceDuration, "GetSequenceDuration", "Get a sequence duration by id"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetAttachmentOrigin, "GetAttachmentOrigin", "Get the attachement id's origin vector"  )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptGetAttachmentAngles, "GetAttachmentAngles", "Get the attachement id's angles as a p,y,r vector"  )
+	DEFINE_SCRIPTFUNC( IsSequenceFinished, "Ask whether the main sequence is done playing" )
+	DEFINE_SCRIPTFUNC( SetBodygroup, "Sets a bodygroup")
+	DEFINE_SCRIPTFUNC( GetBodygroup, "Get a bodygroup by id")
+	DEFINE_SCRIPTFUNC( GetBodygroupName, "Get the bodygroup id's name")
+	DEFINE_SCRIPTFUNC( FindBodygroupByName, "Find a bodygroup id by name")
+	DEFINE_SCRIPTFUNC( GetBodygroupPartName, "Get name by group and part")
+	DEFINE_SCRIPTFUNC( StopAnimation, "Stop the current animation (same as SetPlaybackRate 0.0)" )
+	DEFINE_SCRIPTFUNC( SetPlaybackRate, "Set the current playback rate." )
+	DEFINE_SCRIPTFUNC( GetPlaybackRate, "Set the current playback rate." )
+	DEFINE_SCRIPTFUNC( GetModelScale, "" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetModelScale, "SetModelScale", "(scale, change_duration) Changes a model's scale over time" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetPoseParameter, "SetPoseParameter", "(id, value) Sets a pose parameter value" )
+	DEFINE_SCRIPTFUNC( GetSkin, "Gets the current skin index." )
+	DEFINE_SCRIPTFUNC( SetSkin, "Sets the skin." )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptSetModel, "SetModelSimple", "Set a model for this entity. Matches easier behaviour of the SetModel input, automatically precaches, maintains sequence/cycle if possible." )
+	DEFINE_SCRIPTFUNC( SetCycle, "Sets the models current cycle" )
+	DEFINE_SCRIPTFUNC( GetCycle, "Gets the models current cycle" )
+	DEFINE_SCRIPTFUNC( BecomeRagdollOnClient, "Becomes a ragdoll with a force" )
+	DEFINE_SCRIPTFUNC( StudioFrameAdvance, "Advance animation frame to some time in the future with an automatically calculated interval" )
+	DEFINE_SCRIPTFUNC( StudioFrameAdvanceManual, "Advance animation frame to some time in the future with a manual interval" )
+	DEFINE_SCRIPTFUNC_NAMED( ScriptDispatchAnimEvents, "DispatchAnimEvents", "Dispatch animation events to a CBaseAnimating" )
+	DEFINE_SCRIPTFUNC_WRAPPED( LookupPoseParameter, "Looks up a pose parameter index by name" );
+END_SCRIPTDESC();
 
 CBaseAnimating::CBaseAnimating()
 {
 	m_vecForce.GetForModify().Init();
 	m_nForceBone = 0;
 
+	m_bResetSequenceInfoOnLoad = false;
 	m_bClientSideAnimation = false;
 	m_pIk = NULL;
 	m_iIKCounter = 0;
 
 	InitStepHeightAdjust();
 
-	m_flModelWidthScale = 1.0f;
+	m_flModelScale = 1.0f;
 	// initialize anim clock
 	m_flAnimTime = gpGlobals->curtime;
 	m_flPrevAnimTime = gpGlobals->curtime;
@@ -311,6 +361,15 @@ void CBaseAnimating::Activate()
 	BaseClass::Activate();
 	SetLightingOrigin( m_iszLightingOrigin );
 	SetLightingOriginRelative( m_iszLightingOriginRelative );
+
+	// Scaled physics objects (re)create their physics here
+	if ( m_flModelScale != 1.0f && VPhysicsGetObject() )
+	{	
+		// sanity check to make sure 'm_flModelScale' is in sync with the 
+		Assert( m_flModelScale > 0.0f );
+
+		UTIL_CreateScaledPhysObject( this, m_flModelScale );
+	}
 }
 
 
@@ -341,6 +400,8 @@ void CBaseAnimating::SetTransmit( CCheckTransmitInfo *pInfo, bool bAlways )
 int CBaseAnimating::Restore( IRestore &restore )
 {
 	int result = BaseClass::Restore( restore );
+	if ( m_flModelScale <= 0.0f )
+		m_flModelScale = 1.0f;
 	LockStudioHdr();
 	return result;
 }
@@ -385,12 +446,12 @@ float CBaseAnimating::GetAnimTimeInterval( void ) const
 	if (m_flAnimTime < gpGlobals->curtime)
 	{
 		// estimate what it'll be this frame
-		flInterval = clamp( gpGlobals->curtime - m_flAnimTime, 0, MAX_ANIMTIME_INTERVAL );
+		flInterval = clamp( gpGlobals->curtime - m_flAnimTime, 0.f, MAX_ANIMTIME_INTERVAL );
 	}
 	else
 	{
 		// report actual
-		flInterval = clamp( m_flAnimTime - m_flPrevAnimTime, 0, MAX_ANIMTIME_INTERVAL );
+		flInterval = clamp( m_flAnimTime - m_flPrevAnimTime, 0.f, MAX_ANIMTIME_INTERVAL );
 	}
 	return flInterval;
 }
@@ -428,7 +489,7 @@ void CBaseAnimating::StudioFrameAdvanceInternal( CStudioHdr *pStudioHdr, float f
 			m_flAnimTime.Get(), m_flPrevAnimTime, flInterval, GetCycle() );
 	*/
  
-	m_flGroundSpeed = GetSequenceGroundSpeed( pStudioHdr, GetSequence() );
+	m_flGroundSpeed = GetSequenceGroundSpeed( pStudioHdr, GetSequence() ) * GetModelScale();
 
 	// Msg("%s : %s : %5.1f\n", GetClassname(), GetSequenceName( GetSequence() ), GetCycle() );
 	InvalidatePhysicsRecursive( ANIMATION_CHANGED );
@@ -454,7 +515,6 @@ void CBaseAnimating::StudioFrameAdvanceManual( float flInterval )
 	if ( !pStudioHdr )
 		return;
 
-	UpdateModelWidthScale();
 	m_flAnimTime = gpGlobals->curtime;
 	m_flPrevAnimTime = m_flAnimTime - flInterval;
 	float flCycleRate = GetSequenceCycleRate( pStudioHdr, GetSequence() ) * m_flPlaybackRate;
@@ -474,8 +534,6 @@ void CBaseAnimating::StudioFrameAdvance()
 		return;
 	}
 
-	UpdateModelWidthScale();
-
 	if ( !m_flPrevAnimTime )
 	{
 		m_flPrevAnimTime = m_flAnimTime;
@@ -483,10 +541,10 @@ void CBaseAnimating::StudioFrameAdvance()
 
 	// Time since last animation
 	float flInterval = gpGlobals->curtime - m_flAnimTime;
-	flInterval = clamp( flInterval, 0, MAX_ANIMTIME_INTERVAL );
+	flInterval = clamp( flInterval, 0.f, MAX_ANIMTIME_INTERVAL );
 
 	//Msg( "%i %s interval %f\n", entindex(), GetClassname(), flInterval );
-	if (flInterval <= 0.001)
+	if (flInterval <= 0.001f)
 	{
 		// Msg("%s : %s : %5.3f (skip)\n", GetClassname(), GetSequenceName( GetSequence() ), GetCycle() );
 		return;
@@ -597,6 +655,68 @@ void CBaseAnimating::InputSetLightingOrigin( inputdata_t &inputdata )
 	SetLightingOrigin( strLightingOrigin );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: SetModelScale input handler
+//-----------------------------------------------------------------------------
+void CBaseAnimating::InputSetModelScale( inputdata_t &inputdata )
+{
+	Vector vecScale;
+	inputdata.value.Vector3D( vecScale );
+
+	SetModelScale( vecScale.x, vecScale.y );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: SetModel input handler
+//-----------------------------------------------------------------------------
+void CBaseAnimating::ScriptSetModel( const char *pszModel )
+{
+	if ( !pszModel || !*pszModel )
+		return;
+
+	const bool bPrecacheAllowed = CBaseEntity::IsPrecacheAllowed();
+	CBaseEntity::SetAllowPrecache( true );
+	{
+		if ( PrecacheModel( pszModel, false ) != -1 )
+		{
+			// Josh:
+			// We need to maintain the current sequence as when changing models
+			// on a nextbot, etc, we want the activity to be able to complete.
+			// Otherwise things get stuck.
+			// So, get the current sequence name, and then look it back up
+			// after.
+			const char *pszCurrentSequence = GetSequenceName( GetSequence() );
+			SetModelName( AllocPooledString( pszModel ) );
+			SetModel( pszModel );
+			int nNewSequence = LookupSequence( pszCurrentSequence );
+			if ( nNewSequence != -1 )
+				SetSequence( nNewSequence );
+		}
+	}
+	CBaseEntity::SetAllowPrecache( bPrecacheAllowed );
+}
+
+void CBaseAnimating::InputSetModel( inputdata_t &inputdata )
+{
+	const char *pszModel = inputdata.value.String();
+	ScriptSetModel( pszModel );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: SetCycle input handler
+//-----------------------------------------------------------------------------
+void CBaseAnimating::InputSetCycle( inputdata_t &inputdata )
+{
+	SetCycle( inputdata.value.Float() );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: SetPlaybackRate input handler
+//-----------------------------------------------------------------------------
+void CBaseAnimating::InputSetPlaybackRate( inputdata_t &inputdata )
+{
+	SetPlaybackRate( inputdata.value.Float() );
+}
 
 //=========================================================
 // SelectWeightedSequence
@@ -604,7 +724,7 @@ void CBaseAnimating::InputSetLightingOrigin( inputdata_t &inputdata )
 int CBaseAnimating::SelectWeightedSequence ( Activity activity )
 {
 	Assert( activity != ACT_INVALID );
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	return ::SelectWeightedSequence( GetModelPtr(), activity, GetSequence() );
 }
 
@@ -612,8 +732,15 @@ int CBaseAnimating::SelectWeightedSequence ( Activity activity )
 int CBaseAnimating::SelectWeightedSequence ( Activity activity, int curSequence )
 {
 	Assert( activity != ACT_INVALID );
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	return ::SelectWeightedSequence( GetModelPtr(), activity, curSequence );
+}
+
+int CBaseAnimating::SelectWeightedSequenceFromModifiers( Activity activity, CUtlSymbol *pActivityModifiers, int iModifierCount )
+{
+	Assert( activity != ACT_INVALID );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
+	return GetModelPtr()->SelectWeightedSequenceFromModifiers( activity, pActivityModifiers, iModifierCount );
 }
 
 //=========================================================
@@ -621,7 +748,7 @@ int CBaseAnimating::SelectWeightedSequence ( Activity activity, int curSequence 
 //=========================================================
 void CBaseAnimating::ResetActivityIndexes ( void )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	::ResetActivityIndexes( GetModelPtr() );
 }
 
@@ -630,7 +757,7 @@ void CBaseAnimating::ResetActivityIndexes ( void )
 //=========================================================
 void CBaseAnimating::ResetEventIndexes ( void )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	::ResetEventIndexes( GetModelPtr() );
 }
 
@@ -642,7 +769,7 @@ void CBaseAnimating::ResetEventIndexes ( void )
 //=========================================================
 int CBaseAnimating::SelectHeaviestSequence ( Activity activity )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	return ::SelectHeaviestSequence( GetModelPtr(), activity );
 }
 
@@ -654,7 +781,7 @@ int CBaseAnimating::SelectHeaviestSequence ( Activity activity )
 //-----------------------------------------------------------------------------
 int CBaseAnimating::LookupActivity( const char *label )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	return ::LookupActivity( GetModelPtr(), label );
 }
 
@@ -662,7 +789,7 @@ int CBaseAnimating::LookupActivity( const char *label )
 //=========================================================
 int CBaseAnimating::LookupSequence( const char *label )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	return ::LookupSequence( GetModelPtr(), label );
 }
 
@@ -702,7 +829,7 @@ float CBaseAnimating::GetSequenceMoveYaw( int iSequence )
 {
 	Vector				vecReturn;
 	
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	::GetSequenceLinearMotion( GetModelPtr(), iSequence, GetPoseParameterArray(), &vecReturn );
 
 	if (vecReturn.Length() > 0)
@@ -738,7 +865,7 @@ float CBaseAnimating::GetSequenceMoveDist( CStudioHdr *pStudioHdr, int iSequence
 //-----------------------------------------------------------------------------
 void CBaseAnimating::GetSequenceLinearMotion( int iSequence, Vector *pVec )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	::GetSequenceLinearMotion( GetModelPtr(), iSequence, GetPoseParameterArray(), pVec );
 }
 
@@ -857,8 +984,14 @@ void CBaseAnimating::ResetSequenceInfo ( )
 		SetSequence( 0 );
 	}
 
+	if ( IsDynamicModelLoading() )
+	{
+		m_bResetSequenceInfoOnLoad = true;
+		return;
+	}
+
 	CStudioHdr *pStudioHdr = GetModelPtr();
-	m_flGroundSpeed = GetSequenceGroundSpeed( pStudioHdr, GetSequence() );
+	m_flGroundSpeed = GetSequenceGroundSpeed( pStudioHdr, GetSequence() ) * GetModelScale();
 	m_bSequenceLoops = ((GetSequenceFlags( pStudioHdr, GetSequence() ) & STUDIO_LOOPING) != 0);
 	// m_flAnimTime = gpGlobals->time;
 	m_flPlaybackRate = 1.0;
@@ -879,7 +1012,7 @@ void CBaseAnimating::ResetSequenceInfo ( )
 //=========================================================
 bool CBaseAnimating::IsValidSequence( int iSequence )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	CStudioHdr* pstudiohdr = GetModelPtr( );
 	if (iSequence < 0 || iSequence >= pstudiohdr->GetNumSeq())
 	{
@@ -892,11 +1025,20 @@ bool CBaseAnimating::IsValidSequence( int iSequence )
 //=========================================================
 void CBaseAnimating::SetSequence( int nSequence )
 {
-	Assert( GetModelPtr( ) && ( nSequence < GetModelPtr( )->GetNumSeq() ) && ( GetModelPtr( )->GetNumSeq() < (1 << ANIMATION_SEQUENCE_BITS) ) );
+	Assert( nSequence == 0 || IsDynamicModelLoading() || ( GetModelPtr( ) && ( nSequence < GetModelPtr( )->GetNumSeq() ) && ( GetModelPtr( )->GetNumSeq() < (1 << ANIMATION_SEQUENCE_BITS) ) ) );
 	m_nSequence = nSequence;
 }
 
+//=========================================================
+//=========================================================
+float CBaseAnimating::ScriptGetSequenceDuration( int iSequence )
+{
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	if ( IsDynamicModelLoading() )
+		return 0.1f;
 
+	return SequenceDuration( GetModelPtr(), iSequence );
+}
 
 //=========================================================
 //=========================================================
@@ -924,14 +1066,11 @@ float CBaseAnimating::GetSequenceCycleRate( CStudioHdr *pStudioHdr, int iSequenc
 {
 	float t = SequenceDuration( pStudioHdr, iSequence );
 
-	if (t > 0.0f)
+	if ( t != 0.0f )
 	{
 		return 1.0f / t;
 	}
-	else
-	{
-		return 1.0f / 0.1f;
-	}
+	return t;
 }
 
 
@@ -960,7 +1099,7 @@ float CBaseAnimating::GetSequenceGroundSpeed( CStudioHdr *pStudioHdr, int iSeque
 
 	if (t > 0)
 	{
-		return GetSequenceMoveDist( pStudioHdr, iSequence ) / t;
+		return ( GetSequenceMoveDist( pStudioHdr, iSequence ) / t );
 	}
 	else
 	{
@@ -1083,7 +1222,8 @@ void CBaseAnimating::DispatchAnimEvents ( CBaseAnimating *eventHandler )
 				(float)flCycleRate );
 		}
 		*/
-		eventHandler->HandleAnimEvent( &event );
+		if ( eventHandler )
+			eventHandler->HandleAnimEvent( &event );
 
 		// FAILSAFE:
 		// If HandleAnimEvent has somehow reset my internal pointer
@@ -1364,9 +1504,11 @@ float CBaseAnimating::EdgeLimitPoseParameter( int iParameter, float flValue, flo
 //-----------------------------------------------------------------------------
 int CBaseAnimating::LookupBone( const char *szName )
 {
-	Assert( GetModelPtr() );
-
-	return Studio_BoneIndexByName( GetModelPtr(), szName );
+	const CStudioHdr *pStudioHdr = GetModelPtr();
+	Assert( pStudioHdr );
+	if ( !pStudioHdr )
+		return -1;
+	return Studio_BoneIndexByName( pStudioHdr, szName );
 }
 
 
@@ -1521,7 +1663,7 @@ void CBaseAnimating::UpdateStepOrigin()
 				m_flEstIkFloor = m_flEstIkFloor * 0.2 + m_flIKGroundMinHeight * 0.8;
 
 				// don't let heigth difference between min and max exceed step height
-				float bias = clamp( (m_flIKGroundMaxHeight - m_flIKGroundMinHeight) - height, 0, height );
+				float bias = clamp( (m_flIKGroundMaxHeight - m_flIKGroundMinHeight) - height, 0.f, height );
 				// save off reasonable offset
 				m_flEstIkOffset = clamp( m_flEstIkFloor - GetAbsOrigin().z, -height + bias, 0.0f );
 				return;
@@ -1599,9 +1741,12 @@ void CBaseAnimating::CalculateIKLocks( float currentTime )
 					enginetrace->TraceRay( ray, MASK_SOLID, &traceFilter, &trace );
 
 					/*
-					debugoverlay->AddBoxOverlay( p1, Vector(-r,-r,0), Vector(r,r,1), QAngle( 0, 0, 0 ), 255, 0, 0, 0, 1.0f );
-					debugoverlay->AddBoxOverlay( trace.endpos, Vector(-r,-r,0), Vector(r,r,1), QAngle( 0, 0, 0 ), 255, 0, 0, 0, 1.0f );
-					debugoverlay->AddLineOverlay( p1, trace.endpos, 255, 0, 0, 0, 1.0f );
+					if ( debugoverlay )
+					{
+						debugoverlay->AddBoxOverlay( p1, Vector(-r,-r,0), Vector(r,r,1), QAngle( 0, 0, 0 ), 255, 0, 0, 0, 1.0f );
+						debugoverlay->AddBoxOverlay( trace.endpos, Vector(-r,-r,0), Vector(r,r,1), QAngle( 0, 0, 0 ), 255, 0, 0, 0, 1.0f );
+						debugoverlay->AddLineOverlay( p1, trace.endpos, 255, 0, 0, 0, 1.0f );
+					}
 					*/
 
 					if (trace.startsolid)
@@ -1746,7 +1891,7 @@ void CBaseAnimating::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
 	
 	MDLCACHE_CRITICAL_SECTION();
 
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 
 	CStudioHdr *pStudioHdr = GetModelPtr( );
 
@@ -1768,26 +1913,29 @@ void CBaseAnimating::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
 
 	if ( CanSkipAnimation() )
 	{
-		InitPose( pStudioHdr, pos, q, boneMask );
+		IBoneSetup boneSetup( pStudioHdr, boneMask, GetPoseParameterArray() );
+		boneSetup.InitPose( pos, q );
 		// Msg( "%.03f : %s:%s not in pvs\n", gpGlobals->curtime, GetClassname(), GetEntityName().ToCStr() );
 	}
 	else 
-	if ( m_pIk )
 	{
-		// FIXME: pass this into Studio_BuildMatrices to skip transforms
-		CBoneBitList boneComputed;
-		m_iIKCounter++;
-		m_pIk->Init( pStudioHdr, GetAbsAngles(), adjOrigin, gpGlobals->curtime, m_iIKCounter, boneMask );
-		GetSkeleton( pStudioHdr, pos, q, boneMask );
+		if ( m_pIk )
+		{
+			// FIXME: pass this into Studio_BuildMatrices to skip transforms
+			CBoneBitList boneComputed;
+			m_iIKCounter++;
+			m_pIk->Init( pStudioHdr, GetAbsAngles(), adjOrigin, gpGlobals->curtime, m_iIKCounter, boneMask );
+			GetSkeleton( pStudioHdr, pos, q, boneMask );
 
-		m_pIk->UpdateTargets( pos, q, pBoneToWorld, boneComputed );
-		CalculateIKLocks( gpGlobals->curtime );
-		m_pIk->SolveDependencies( pos, q, pBoneToWorld, boneComputed );
-	}
-	else
-	{
-		// Msg( "%.03f : %s:%s\n", gpGlobals->curtime, GetClassname(), GetEntityName().ToCStr() );
-		GetSkeleton( pStudioHdr, pos, q, boneMask );
+			m_pIk->UpdateTargets( pos, q, pBoneToWorld, boneComputed );
+			CalculateIKLocks( gpGlobals->curtime );
+			m_pIk->SolveDependencies( pos, q, pBoneToWorld, boneComputed );
+		}
+		else
+		{
+			// Msg( "%.03f : %s:%s\n", gpGlobals->curtime, GetClassname(), GetEntityName().ToCStr() );
+			GetSkeleton( pStudioHdr, pos, q, boneMask );
+		}
 	}
 	
 	CBaseAnimating *pParent = dynamic_cast< CBaseAnimating* >( GetMoveParent() );
@@ -1823,6 +1971,7 @@ void CBaseAnimating::SetupBones( matrix3x4_t *pBoneToWorld, int boneMask )
 		pos, 
 		q, 
 		-1,
+		GetModelScale(), // Scaling
 		pBoneToWorld,
 		boneMask );
 
@@ -1882,6 +2031,53 @@ bool CBaseAnimating::GetAttachment( const char *szName, Vector &absOrigin, QAngl
 {																
 	return GetAttachment( LookupAttachment( szName ), absOrigin, absAngles );
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns the world location and world angles of an attachment to vscript caller
+// Input  : attachment name
+// Output :	location and angles
+//-----------------------------------------------------------------------------
+Vector CBaseAnimating::ScriptGetAttachmentOrigin( int iAttachment )
+{	
+	Vector absOrigin;
+	QAngle qa;
+
+	CBaseAnimating::GetAttachment( iAttachment, absOrigin, qa );
+
+	return absOrigin;
+}
+
+QAngle CBaseAnimating::ScriptGetAttachmentAngles( int iAttachment )
+{	
+	Vector absOrigin;
+	QAngle qa;
+
+	CBaseAnimating::GetAttachment( iAttachment, absOrigin, qa );
+	return qa;
+}
+
+//-----------------------------------------------------------------------------
+Vector CBaseAnimating::ScriptGetBoneOrigin( int iBone )
+{
+	Vector vOrigin;
+	QAngle qAngles;
+
+	GetBonePosition( iBone, vOrigin, qAngles );
+
+	return vOrigin;
+}
+
+//-----------------------------------------------------------------------------
+QAngle CBaseAnimating::ScriptGetBoneAngles( int iBone )
+{
+	Vector vOrigin;
+	QAngle qAngles;
+
+	GetBonePosition( iBone, vOrigin, qAngles );
+
+	return qAngles;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns the world location and world angles of an attachment
@@ -2050,7 +2246,7 @@ void CBaseAnimating::GetEyeballs( Vector &origin, QAngle &angles )
 //=========================================================
 int CBaseAnimating::FindTransitionSequence( int iCurrentSequence, int iGoalSequence, int *piDir )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 
 	if (piDir == NULL)
 	{
@@ -2097,8 +2293,9 @@ int CBaseAnimating::GetExitNode( int iSequence )
 
 void CBaseAnimating::SetBodygroup( int iGroup, int iValue )
 {
-	Assert( GetModelPtr() );
-
+	// SetBodygroup is not supported on pending dynamic models. Wait for it to load!
+	// XXX TODO we could buffer up the group and value if we really needed to. -henryg
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	int newBody = m_nBody;
 	::SetBodygroup( GetModelPtr( ), newBody, iGroup, iValue );
 	m_nBody = newBody;
@@ -2106,44 +2303,44 @@ void CBaseAnimating::SetBodygroup( int iGroup, int iValue )
 
 int CBaseAnimating::GetBodygroup( int iGroup )
 {
-	Assert( GetModelPtr() );
-
-	return ::GetBodygroup( GetModelPtr( ), m_nBody, iGroup );
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	return IsDynamicModelLoading() ? 0 : ::GetBodygroup( GetModelPtr( ), m_nBody, iGroup );
 }
 
 const char *CBaseAnimating::GetBodygroupName( int iGroup )
 {
-	Assert( GetModelPtr() );
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	return IsDynamicModelLoading() ? "" : ::GetBodygroupName( GetModelPtr( ), iGroup );
+}
 
-	return ::GetBodygroupName( GetModelPtr( ), iGroup );
+const char *CBaseAnimating::GetBodygroupPartName( int iGroup, int iPart )
+{
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	return IsDynamicModelLoading() ? "" : ::GetBodygroupPartName( GetModelPtr( ), iGroup, iPart );
 }
 
 int CBaseAnimating::FindBodygroupByName( const char *name )
 {
-	Assert( GetModelPtr() );
-
-	return ::FindBodygroupByName( GetModelPtr( ), name );
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	return IsDynamicModelLoading() ? -1 : ::FindBodygroupByName( GetModelPtr( ), name );
 }
 
 int CBaseAnimating::GetBodygroupCount( int iGroup )
 {
-	Assert( GetModelPtr() );
-
-	return ::GetBodygroupCount( GetModelPtr( ), iGroup );
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	return IsDynamicModelLoading() ? 0 : ::GetBodygroupCount( GetModelPtr( ), iGroup );
 }
 
 int CBaseAnimating::GetNumBodyGroups( void )
 {
-	Assert( GetModelPtr() );
-
-	return ::GetNumBodyGroups( GetModelPtr( ) );
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	return IsDynamicModelLoading() ? 0 : ::GetNumBodyGroups( GetModelPtr( ) );
 }
 
 int CBaseAnimating::ExtractBbox( int sequence, Vector& mins, Vector& maxs )
 {
-	Assert( GetModelPtr() );
-
-	return ::ExtractBbox( GetModelPtr( ), sequence, mins, maxs );
+	Assert( IsDynamicModelLoading() || GetModelPtr() );
+	return IsDynamicModelLoading() ? 0 : ::ExtractBbox( GetModelPtr( ), sequence, mins, maxs );
 }
 
 //=========================================================
@@ -2460,8 +2657,11 @@ void CBaseAnimating::SetModel( const char *szModelName )
 {
 	MDLCACHE_CRITICAL_SECTION();
 
+	// delete exiting studio model container
 	UnlockStudioHdr();
-
+	delete m_pStudioHdr;
+	m_pStudioHdr = NULL;
+	
 	if ( szModelName[0] )
 	{
 		int modelIndex = modelinfo->GetModelIndex( szModelName );
@@ -2471,27 +2671,18 @@ void CBaseAnimating::SetModel( const char *szModelName )
 			Msg( "Setting CBaseAnimating to non-studio model %s  (type:%i)\n",	szModelName, modelinfo->GetModelType( model ) );
 		}
 	}
-	Studio_DestroyBoneCache( m_boneCacheHandle );
-	m_boneCacheHandle = 0;
+
+	if ( m_boneCacheHandle )
+	{
+		Studio_DestroyBoneCache( m_boneCacheHandle );
+		m_boneCacheHandle = 0;
+	}
 
 	UTIL_SetModel( this, szModelName );
 
-	// delete exiting studio model container
-	if (m_pStudioHdr != NULL)
-	{
-		delete m_pStudioHdr;
-		m_pStudioHdr = NULL;
-	}
-
-
-	if ( GetModelPtr() )
-	{
-		InitBoneControllers( );
-
-		// TODO: what other model data should be initialized?
-		SetSequence( 0 );
-	}
-
+	InitBoneControllers( );
+	SetSequence( 0 );
+	
 	PopulatePoseParameters();
 }
 
@@ -2527,7 +2718,7 @@ void CBaseAnimating::LockStudioHdr()
 
 			if ( pStudioHdrContainer && pStudioHdrContainer->GetVirtualModel() )
 			{
-				MDLHandle_t hVirtualModel = (MDLHandle_t)reinterpret_cast<intptr_t>(pStudioHdrContainer->GetRenderHdr()->virtualModel);
+				MDLHandle_t hVirtualModel = VoidPtrToMDLHandle(pStudioHdrContainer->GetRenderHdr()->VirtualModel());
 				mdlcache->LockStudioHdr( hVirtualModel );
 			}
 			m_pStudioHdr = pStudioHdrContainer; // must be last to ensure virtual model correctly set up
@@ -2545,7 +2736,7 @@ void CBaseAnimating::UnlockStudioHdr()
 			mdlcache->UnlockStudioHdr( modelinfo->GetCacheHandle( mdl ) );
 			if ( m_pStudioHdr->GetVirtualModel() )
 			{
-				MDLHandle_t hVirtualModel = (MDLHandle_t)reinterpret_cast<intptr_t>(m_pStudioHdr->GetRenderHdr()->virtualModel);
+				MDLHandle_t hVirtualModel = VoidPtrToMDLHandle(m_pStudioHdr->GetRenderHdr()->VirtualModel());
 				mdlcache->UnlockStudioHdr( hVirtualModel );
 			}
 		}
@@ -2616,6 +2807,19 @@ void CBaseAnimating::InvalidateBoneCache( void )
 
 bool CBaseAnimating::TestCollision( const Ray_t &ray, unsigned int fContentsMask, trace_t& tr )
 {
+	// Return a special case for scaled physics objects
+	if ( GetModelScale() != 1.0f )
+	{
+		IPhysicsObject *pPhysObject = VPhysicsGetObject();
+		Vector vecPosition;
+		QAngle vecAngles;
+		pPhysObject->GetPosition( &vecPosition, &vecAngles );
+		const CPhysCollide *pScaledCollide = pPhysObject->GetCollide();
+		physcollision->TraceBox( ray, pScaledCollide, vecPosition, vecAngles, &tr );
+		
+		return tr.DidHit();
+	}
+
 	if ( IsSolidFlagSet( FSOLID_CUSTOMRAYTEST ))
 	{
 		if (!TestHitboxes( ray, fContentsMask, tr ))
@@ -2647,7 +2851,7 @@ bool CBaseAnimating::TestHitboxes( const Ray_t &ray, unsigned int fContentsMask,
 	matrix3x4_t *hitboxbones[MAXSTUDIOBONES];
 	pcache->ReadCachedBonePointers( hitboxbones, pStudioHdr->numbones() );
 
-	if ( TraceToStudio( physprops, ray, pStudioHdr, set, hitboxbones, fContentsMask, tr ) )
+	if ( TraceToStudio( physprops, ray, pStudioHdr, set, hitboxbones, fContentsMask, GetAbsOrigin(), GetModelScale(), tr ) )
 	{
 		mstudiobbox_t *pbox = set->pHitbox( tr.hitbox );
 		mstudiobone_t *pBone = pStudioHdr->pBone(pbox->bone);
@@ -2696,7 +2900,7 @@ void CBaseAnimating::InitBoneControllers ( void ) // FIXME: rename
 //=========================================================
 float CBaseAnimating::SetBoneController ( int iController, float flValue )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 
 	CStudioHdr *pmodel = (CStudioHdr*)GetModelPtr();
 
@@ -2713,7 +2917,7 @@ float CBaseAnimating::SetBoneController ( int iController, float flValue )
 //=========================================================
 float CBaseAnimating::GetBoneController ( int iController )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 
 	CStudioHdr *pmodel = (CStudioHdr*)GetModelPtr();
 
@@ -2769,21 +2973,22 @@ void CBaseAnimating::GetSkeleton( CStudioHdr *pStudioHdr, Vector pos[], Quaterni
 		return;
 	}
 
-	InitPose( pStudioHdr, pos, q, boneMask );
+	IBoneSetup boneSetup( pStudioHdr, boneMask, GetPoseParameterArray() );
+	boneSetup.InitPose( pos, q );
 
-	AccumulatePose( pStudioHdr, m_pIk, pos, q, GetSequence(), GetCycle(), GetPoseParameterArray(), boneMask, 1.0, gpGlobals->curtime );
+	boneSetup.AccumulatePose( pos, q, GetSequence(), GetCycle(), 1.0, gpGlobals->curtime, m_pIk );
 
 	if ( m_pIk )
 	{
 		CIKContext auto_ik;
 		auto_ik.Init( pStudioHdr, GetAbsAngles(), GetAbsOrigin(), gpGlobals->curtime, 0, boneMask );
-		CalcAutoplaySequences( pStudioHdr, &auto_ik, pos, q, GetPoseParameterArray(), boneMask, gpGlobals->curtime );
+		boneSetup.CalcAutoplaySequences( pos, q, gpGlobals->curtime, &auto_ik );
 	}
 	else
 	{
-		CalcAutoplaySequences( pStudioHdr, NULL, pos, q, GetPoseParameterArray(), boneMask, gpGlobals->curtime );
+		boneSetup.CalcAutoplaySequences( pos, q, gpGlobals->curtime, NULL );
 	}
-	CalcBoneAdj( pStudioHdr, pos, q, GetEncodedControllerArray(), boneMask );
+	boneSetup.CalcBoneAdj( pos, q, GetEncodedControllerArray() );
 }
 
 int CBaseAnimating::DrawDebugTextOverlays(void) 
@@ -2903,7 +3108,7 @@ void CBaseAnimating::SetHitboxSet( int setnum )
 //-----------------------------------------------------------------------------
 void CBaseAnimating::SetHitboxSetByName( const char *setname )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	m_nHitboxSet = FindHitboxSetByName( GetModelPtr(), setname );
 }
 
@@ -2922,7 +3127,7 @@ int CBaseAnimating::GetHitboxSet( void )
 //-----------------------------------------------------------------------------
 const char *CBaseAnimating::GetHitboxSetName( void )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	return ::GetHitboxSetName( GetModelPtr(), m_nHitboxSet );
 }
 
@@ -2932,7 +3137,7 @@ const char *CBaseAnimating::GetHitboxSetName( void )
 //-----------------------------------------------------------------------------
 int CBaseAnimating::GetHitboxSetCount( void )
 {
-	Assert( GetModelPtr() );
+	AssertMsg( GetModelPtr(), "GetModelPtr NULL. %s", STRING(GetEntityName()) ? STRING(GetEntityName()) : "" );
 	return ::GetHitboxSetCount( GetModelPtr() );
 }
 
@@ -2985,7 +3190,7 @@ void CBaseAnimating::DrawServerHitboxes( float duration /*= 0.0f*/, bool monocol
 			b = ( int ) ( 255.0f * hullcolor[j][2] );
 		}
 
-		NDebugOverlay::BoxAngles( position, pbox->bbmin, pbox->bbmax, angles, r, g, b, 0 ,duration );
+		NDebugOverlay::BoxAngles( position, pbox->bbmin * GetModelScale(), pbox->bbmax * GetModelScale(), angles, r, g, b, 0 ,duration );
 	}
 }
 
@@ -3066,7 +3271,7 @@ bool CBaseAnimating::ComputeHitboxSurroundingBox( Vector *pVecWorldMins, Vector 
 
 		if ( pMatrix )
 		{
-			TransformAABB( *pMatrix, pbox->bbmin, pbox->bbmax, vecBoxAbsMins, vecBoxAbsMaxs );
+			TransformAABB( *pMatrix, pbox->bbmin * GetModelScale(), pbox->bbmax * GetModelScale(), vecBoxAbsMins, vecBoxAbsMaxs );
 			VectorMin( *pVecWorldMins, vecBoxAbsMins, *pVecWorldMins );
 			VectorMax( *pVecWorldMaxs, vecBoxAbsMaxs, *pVecWorldMaxs );
 		}
@@ -3165,7 +3370,8 @@ void CBaseAnimating::CopyAnimationDataFrom( CBaseAnimating *pSource )
 	this->SetModelName( pSource->GetModelName() );
 	this->SetModelIndex( pSource->GetModelIndex() );
 	this->SetCycle( pSource->GetCycle() );
-	this->SetEffects( pSource->GetEffects() | EF_NOINTERP );
+	this->SetEffects( pSource->GetEffects() );
+	this->IncrementInterpolationFrame();
 	this->SetSequence( pSource->GetSequence() );
 	this->m_flAnimTime = pSource->m_flAnimTime;
 	this->m_nBody = pSource->m_nBody;
@@ -3253,58 +3459,64 @@ void CBaseAnimating::DoMuzzleFlash()
 // Purpose: 
 // Input  : scale - 
 //-----------------------------------------------------------------------------
-void CBaseAnimating::SetModelWidthScale( float scale, float change_duration /*= 0.0f*/  )
+void CBaseAnimating::SetModelScale( float scale, float change_duration /*= 0.0f*/  )
 {
 	if ( change_duration > 0.0f )
 	{
-		ModelWidthScale *mvs = ( ModelWidthScale * )CreateDataObject( MODELWIDTHSCALE );
-		mvs->m_flModelWidthScaleStart = m_flModelWidthScale;
-		mvs->m_flModelWidthScaleGoal = scale;
-		mvs->m_flModelWidthScaleStartTime = gpGlobals->curtime;
-		mvs->m_flModelWidthScaleFinishTime = mvs->m_flModelWidthScaleStartTime + change_duration;
+		ModelScale *mvs = ( ModelScale * )CreateDataObject( MODELSCALE );
+		mvs->m_flModelScaleStart = m_flModelScale;
+		mvs->m_flModelScaleGoal = scale;
+		mvs->m_flModelScaleStartTime = gpGlobals->curtime;
+		mvs->m_flModelScaleFinishTime = mvs->m_flModelScaleStartTime + change_duration;
+		SetContextThink( &CBaseAnimating::UpdateModelScale, gpGlobals->curtime, "UpdateModelScaleThink" );
 	}
 	else
 	{
-		m_flModelWidthScale = scale;
-		if ( HasDataObjectType( MODELWIDTHSCALE ) )
+		m_flModelScale = scale;
+		RefreshCollisionBounds();
+
+		if ( HasDataObjectType( MODELSCALE ) )
 		{
-			DestroyDataObject( MODELWIDTHSCALE );
+			DestroyDataObject( MODELSCALE );
 		}
 	}
 }
 
-void CBaseAnimating::UpdateModelWidthScale()
+void CBaseAnimating::UpdateModelScale()
 {
-	ModelWidthScale *mvs = ( ModelWidthScale * )GetDataObject( MODELWIDTHSCALE );
+	ModelScale *mvs = ( ModelScale * )GetDataObject( MODELSCALE );
 	if ( !mvs )
 	{
 		return;
 	}
 
-	float dt = mvs->m_flModelWidthScaleFinishTime - mvs->m_flModelWidthScaleStartTime;
+	float dt = mvs->m_flModelScaleFinishTime - mvs->m_flModelScaleStartTime;
 	Assert( dt > 0.0f );
 
-	float frac = ( gpGlobals->curtime - mvs->m_flModelWidthScaleStartTime ) / dt;
+	float frac = ( gpGlobals->curtime - mvs->m_flModelScaleStartTime ) / dt;
 	frac = clamp( frac, 0.0f, 1.0f );
 
-	if ( gpGlobals->curtime >= mvs->m_flModelWidthScaleFinishTime )
+	if ( gpGlobals->curtime >= mvs->m_flModelScaleFinishTime )
 	{
-		m_flModelWidthScale = mvs->m_flModelWidthScaleGoal;
-		DestroyDataObject( MODELWIDTHSCALE );
+		m_flModelScale = mvs->m_flModelScaleGoal;
+		DestroyDataObject( MODELSCALE );
 	}
 	else
 	{
-		m_flModelWidthScale = Lerp( frac, mvs->m_flModelWidthScaleStart, mvs->m_flModelWidthScaleGoal );
+		m_flModelScale = Lerp( frac, mvs->m_flModelScaleStart, mvs->m_flModelScaleGoal );
+	}
+
+	RefreshCollisionBounds();
+
+	if ( frac < 1.f )
+	{
+		SetContextThink( &CBaseAnimating::UpdateModelScale, gpGlobals->curtime, "UpdateModelScaleThink" );
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : float
-//-----------------------------------------------------------------------------
-float CBaseAnimating::GetModelWidthScale() const
+void CBaseAnimating::RefreshCollisionBounds( void )
 {
-	return m_flModelWidthScale;
+	CollisionProp()->RefreshScaledCollisionBounds();
 }
 
 //-----------------------------------------------------------------------------
@@ -3527,4 +3739,30 @@ bool CBaseAnimating::PrefetchSequence( int iSequence )
 bool CBaseAnimating::IsSequenceLooping( CStudioHdr *pStudioHdr, int iSequence )
 {
 	return (::GetSequenceFlags( pStudioHdr, iSequence ) & STUDIO_LOOPING) != 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: model-change notification. Fires on dynamic load completion as well
+//-----------------------------------------------------------------------------
+CStudioHdr *CBaseAnimating::OnNewModel()
+{
+	(void) BaseClass::OnNewModel();
+
+	// TODO: if dynamic, validate m_Sequence and apply queued body group settings?
+	if ( IsDynamicModelLoading() )
+	{
+		// Called while dynamic model still loading -> new model, clear deferred state
+		m_bResetSequenceInfoOnLoad = false;
+		return NULL;
+	}
+
+	CStudioHdr *hdr = GetModelPtr(); 
+
+	if ( m_bResetSequenceInfoOnLoad )
+	{
+		m_bResetSequenceInfoOnLoad = false;
+		ResetSequenceInfo();
+	}
+
+	return hdr;
 }

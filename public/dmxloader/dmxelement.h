@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2004, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -65,16 +65,16 @@ struct DmxElementUnpackStructure_t
 		{ \
 
 #define DMXELEMENT_UNPACK_FLTX4( _attributeName, _defaultString, _varName )	\
-	{ _attributeName, _defaultString, CDmAttributeInfo<float>::AttributeType(), offsetof( DestStructType_t, _varName ), sizeof( fltx4 ), NULL },
+	{ _attributeName, _defaultString, CDmAttributeInfo<float>::AttributeType(), (int)offsetof( DestStructType_t, _varName ), sizeof( fltx4 ), NULL },
 #define DMXELEMENT_UNPACK_FIELD( _attributeName, _defaultString, _type, _varName )	\
-	{ _attributeName, _defaultString, CDmAttributeInfo<_type>::AttributeType(), offsetof( DestStructType_t, _varName ), sizeof( ((DestStructType_t *)0)->_varName), NULL },
+	{ _attributeName, _defaultString, CDmAttributeInfo<_type>::AttributeType(), (int)offsetof( DestStructType_t, _varName ), sizeof( ((DestStructType_t *)0)->_varName), NULL },
 #define DMXELEMENT_UNPACK_FIELD_STRING( _attributeName, _defaultString, _varName )	\
 	{ _attributeName, _defaultString, AT_STRING, offsetof( DestStructType_t, _varName ), sizeof( ((DestStructType_t *)0)->_varName), NULL },
 
 #define DMXELEMENT_UNPACK_FIELD_USERDATA( _attributeName, _defaultString, _type, _varName, _userData )	\
-	{ _attributeName, _defaultString, CDmAttributeInfo<_type>::AttributeType(), offsetof( DestStructType_t, _varName ), sizeof( ((DestStructType_t *)0)->_varName), _userData },
+	{ _attributeName, _defaultString, CDmAttributeInfo<_type>::AttributeType(), (int)offsetof( DestStructType_t, _varName ), sizeof( ((DestStructType_t *)0)->_varName), _userData },
 #define DMXELEMENT_UNPACK_FIELD_STRING_USERDATA( _attributeName, _defaultString, _varName, _userData )	\
-	{ _attributeName, _defaultString, AT_STRING, offsetof( DestStructType_t, _varName ), sizeof( ((DestStructType_t *)0)->_varName), _userData },
+	{ _attributeName, _defaultString, AT_STRING, (int)offsetof( DestStructType_t, _varName ), sizeof( ((DestStructType_t *)0)->_varName), _userData },
 
 #define END_DMXELEMENT_UNPACK( _structName, _varName )			\
 			{ NULL, NULL, AT_UNKNOWN, 0, 0, NULL }				\
@@ -134,12 +134,17 @@ public:
 	template< class T > CDmxAttribute* SetValue( const char *pAttributeName, const T& value );
 
 	// Method to unpack data into a structure
-	void UnpackIntoStructure( void *pData, const DmxElementUnpackStructure_t *pUnpack ) const;
+	void UnpackIntoStructure( void *pData, size_t DataSizeInBytes, const DmxElementUnpackStructure_t *pUnpack ) const;
 
 	// Creates attributes based on the unpack structure
-	void AddAttributesFromStructure( const void *pData, const DmxElementUnpackStructure_t *pUnpack );
+	template <typename T>
+	void AddAttributesFromStructure( const T *pData, const DmxElementUnpackStructure_t *pUnpack )
+	{
+		AddAttributesFromStructure_Internal( pData, sizeof(T), pUnpack );
+	}
 
 private:
+	void AddAttributesFromStructure_Internal( const void *pData, size_t byteCount, const DmxElementUnpackStructure_t *pUnpack );
 	typedef CUtlSortVector< CDmxAttribute*, CDmxAttributeLess > AttributeList_t;
 
 	CDmxElement( const char *pType );

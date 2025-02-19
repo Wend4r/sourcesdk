@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 //=============================================================================
 #ifndef BASEMULTIPLAYERPLAYER_H
@@ -15,6 +15,7 @@ class CBaseMultiplayerPlayer : public CAI_ExpresserHost<CBasePlayer>
 {
 
 	DECLARE_CLASS( CBaseMultiplayerPlayer, CAI_ExpresserHost<CBasePlayer> );
+	DECLARE_ENT_SCRIPTDESC();
 
 public:
 
@@ -28,11 +29,12 @@ public:
 
 	virtual bool			SpeakIfAllowed( AIConcept_t concept, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
 	virtual IResponseSystem *GetResponseSystem();
-	AI_Response				*SpeakConcept( int iConcept );
+	bool					SpeakConcept( AI_Response& response, int iConcept );
 	virtual bool			SpeakConceptIfAllowed( int iConcept, const char *modifiers = NULL, char *pszOutResponseChosen = NULL, size_t bufsize = 0, IRecipientFilter *filter = NULL );
 
 	virtual bool		CanHearAndReadChatFrom( CBasePlayer *pPlayer );
 	virtual bool		CanSpeak( void ) { return true; }
+	virtual bool		CanBeAutobalanced() { return true; }
 
 	virtual void		Precache( void )
 	{
@@ -71,7 +73,7 @@ public:
 
 	virtual int	CalculateTeamBalanceScore( void );
 
-	void AwardAchievement( int iAchievement );
+	void AwardAchievement( int iAchievement, int iCount = 1 );
 	int	GetPerLifeCounterKV( const char *name );
 	void SetPerLifeCounterKV( const char *name, int value );
 	void ResetPerLifeCounters( void );
@@ -84,12 +86,11 @@ public:
 	float m_flAreaCaptureScoreAccumulator;
 	float m_flCapPointScoreRate;
 
-#if !defined(NO_STEAM)
-	//----------------------------
-	// Steam handling
-	bool		GetSteamID( CSteamID *pID );
-	uint64		GetSteamIDAsUInt64( void );
-#endif
+	float GetConnectionTime( void ) { return m_flConnectionTime; }
+
+	// Command rate limiting.
+	bool ShouldRunRateLimitedCommand( const CCommand &args );
+	bool ShouldRunRateLimitedCommand( const char *pszCommand );
 
 protected:
 	virtual CAI_Expresser *CreateExpresser( void );
@@ -105,6 +106,9 @@ private:
 	int m_iBalanceScore;	// a score used to determine which players are switched to balance the teams
 
 	KeyValues	*m_pAchievementKV;
+
+	// This lets us rate limit the commands the players can execute so they don't overflow things like reliable buffers.
+	CUtlDict<float,int>	m_RateLimitLastCommandTimes;
 };
 
 //-----------------------------------------------------------------------------

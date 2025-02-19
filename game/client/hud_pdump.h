@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -68,9 +68,9 @@ private:
 
 	EHANDLE			m_hDumpEntity;
 
-	CPanelAnimationVar( vgui::HFont, m_FontSmall, "ItemFont", "DefaultVerySmall" );
-	CPanelAnimationVar( vgui::HFont, m_FontMedium, "LabelFont", "DefaultSmall" );
-	CPanelAnimationVar( vgui::HFont, m_FontBig, "TitleFont", "Trebuchet24" );
+	CPanelAnimationVar( vgui::HFont, m_FontSmall, "ItemFont", "PDumpVerySmall" );
+	CPanelAnimationVar( vgui::HFont, m_FontMedium, "LabelFont", "PDumpSmall" );
+	CPanelAnimationVar( vgui::HFont, m_FontBig, "TitleFont", "PDump" );
 };
 
 CPDumpPanel *GetPDumpPanel();

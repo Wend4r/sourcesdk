@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -127,7 +127,7 @@ void CGenericNPC::HandleAnimEvent( animevent_t *pEvent )
 //=========================================================
 int CGenericNPC::GetSoundInterests ( void )
 {
-	return	0;
+	return	NULL;
 }
 
 //=========================================================

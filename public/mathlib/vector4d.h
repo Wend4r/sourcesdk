@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -38,7 +38,11 @@ public:
 	vec_t x, y, z, w;
 
 	// Construction/destruction
-	Vector4D(void);
+#ifdef _DEBUG
+	Vector4D();
+#else
+	Vector4D() = default;
+#endif
 	Vector4D(vec_t X, vec_t Y, vec_t Z, vec_t W);
 	Vector4D(const float *pFloat);
 
@@ -76,7 +80,14 @@ public:
 	Vector4D&	operator*=(const Vector4D &v);			
 	Vector4D&	operator*=(float s);
 	Vector4D&	operator/=(const Vector4D &v);		
-	Vector4D&	operator/=(float s);					
+	Vector4D&	operator/=(float s);				
+
+	Vector4D	operator-( void ) const;
+	Vector4D	operator*( float fl ) const;
+	Vector4D	operator/( float fl ) const;
+	Vector4D	operator*( const Vector4D& v ) const;
+	Vector4D	operator+( const Vector4D& v ) const;
+	Vector4D	operator-( const Vector4D& v ) const;
 
 	// negate the Vector4D components
 	void	Negate(); 
@@ -132,11 +143,7 @@ const Vector4D vec4_invalid( FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX );
 // SSE optimized routines
 //-----------------------------------------------------------------------------
 
-#ifdef _WIN32
-class __declspec(align(16)) Vector4DAligned : public Vector4D
-#elif defined _LINUX || defined __APPLE__
-class __attribute__((aligned(16))) Vector4DAligned : public Vector4D
-#endif
+class ALIGN16 Vector4DAligned : public Vector4D
 {
 public:
 	Vector4DAligned(void) {}
@@ -154,7 +161,7 @@ private:
 
 	// No assignment operators either...
 	Vector4DAligned& operator=( Vector4DAligned const& src );
-};
+} ALIGN16_POST;
 
 //-----------------------------------------------------------------------------
 // Vector4D related operations
@@ -205,13 +212,13 @@ void Vector4DLerp(Vector4D const& src1, Vector4D const& src2, vec_t t, Vector4D&
 // constructors
 //-----------------------------------------------------------------------------
 
+#ifdef _DEBUG
 inline Vector4D::Vector4D(void)									
 { 
-#ifdef _DEBUG
 	// Initialize to NAN to catch errors
 	x = y = z = w = VEC_T_NAN;
-#endif
 }
+#endif
 
 inline Vector4D::Vector4D(vec_t X, vec_t Y, vec_t Z, vec_t W )
 { 
@@ -249,10 +256,10 @@ inline void Vector4D::Init( vec_t ix, vec_t iy, vec_t iz, vec_t iw )
 
 inline void Vector4D::Random( vec_t minVal, vec_t maxVal )
 {
-	x = minVal + ((vec_t)rand() / RAND_MAX) * (maxVal - minVal);
-	y = minVal + ((vec_t)rand() / RAND_MAX) * (maxVal - minVal);
-	z = minVal + ((vec_t)rand() / RAND_MAX) * (maxVal - minVal);
-	w = minVal + ((vec_t)rand() / RAND_MAX) * (maxVal - minVal);
+	x = minVal + ((vec_t)rand() / VALVE_RAND_MAX) * (maxVal - minVal);
+	y = minVal + ((vec_t)rand() / VALVE_RAND_MAX) * (maxVal - minVal);
+	z = minVal + ((vec_t)rand() / VALVE_RAND_MAX) * (maxVal - minVal);
+	w = minVal + ((vec_t)rand() / VALVE_RAND_MAX) * (maxVal - minVal);
 }
 
 inline void Vector4DClear( Vector4D& a )
@@ -436,6 +443,52 @@ inline Vector4D& Vector4D::operator/=(Vector4D const& v)
 	w /= v.w;
 	Assert( IsValid() );
 	return *this;
+}
+
+inline Vector4D Vector4D::operator-(void) const
+{ 
+	return Vector4D(-x,-y,-z,-w);				
+}
+
+inline Vector4D Vector4D::operator+(const Vector4D& v) const	
+{ 
+	Vector4D res;
+	Vector4DAdd( *this, v, res );
+	return res;	
+}
+
+inline Vector4D Vector4D::operator-(const Vector4D& v) const	
+{ 
+	Vector4D res;
+	Vector4DSubtract( *this, v, res );
+	return res;	
+}
+
+
+inline Vector4D Vector4D::operator*(float fl) const	
+{ 
+	Vector4D res;
+	Vector4DMultiply( *this, fl, res );
+	return res;	
+}
+
+inline Vector4D Vector4D::operator*(const Vector4D& v) const	
+{ 
+	Vector4D res;
+	Vector4DMultiply( *this, v, res );
+	return res;	
+}
+
+inline Vector4D Vector4D::operator/(float fl) const	
+{ 
+	Vector4D res;
+	Vector4DDivide( *this, fl, res );
+	return res;	
+}
+
+inline Vector4D operator*( float fl, const Vector4D& v )	
+{ 
+	return v * fl; 
 }
 
 inline void Vector4DAdd( Vector4D const& a, Vector4D const& b, Vector4D& c )

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client side view model implementation. Responsible for drawing
 //			the view model.
@@ -18,12 +18,29 @@
 #include "tools/bonelist.h"
 #include <KeyValues.h>
 #include "hltvcamera.h"
+#ifdef TF_CLIENT_DLL
+	#include "tf_weaponbase.h"
+#endif
+
+#if defined( REPLAY_ENABLED )
+#include "replay/replaycamera.h"
+#include "replay/ireplaysystem.h"
+#include "replay/ienginereplay.h"
+#endif
+
+// NVNT haptics system interface
+#include "haptics/ihaptics.h"
+
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 #ifdef CSTRIKE_DLL
 	ConVar cl_righthand( "cl_righthand", "1", FCVAR_ARCHIVE, "Use right-handed view models." );
+#endif
+
+#ifdef TF_CLIENT_DLL
+	ConVar cl_flipviewmodels( "cl_flipviewmodels", "0", FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_NOT_CONNECTED, "Flip view models." );
 #endif
 
 void PostToolMessage( HTOOLHANDLE hEntity, KeyValues *msg );
@@ -39,8 +56,8 @@ void FormatViewModelAttachment( Vector &vOrigin, bool bInverse )
 	// aspect ratio cancels out, so only need one factor
 	// the difference between the screen coordinates of the 2 systems is the ratio
 	// of the coefficients of the projection matrices (tan (fov/2) is that coefficient)
-	float factorX = worldx / viewx;
-
+	// NOTE: viewx was coming in as 0 when folks set their viewmodel_fov to 0 and show their weapon.
+	float factorX = viewx ? ( worldx / viewx ) : 0.0f;
 	float factorY = factorX;
 	
 	// Get the coordinates in the viewer's space.
@@ -117,6 +134,10 @@ void C_BaseViewModel::FireEvent( const Vector& origin, const QAngle& angles, int
 	C_BaseCombatWeapon *pWeapon = GetActiveWeapon();
 	if ( pWeapon )
 	{
+		// NVNT notify the haptics system of our viewmodel's event
+		if ( haptics )
+			haptics->ProcessHapticEvent(4,"Weapons",pWeapon->GetName(),"AnimationEvents",VarArgs("%i",event));
+
 		bool bResult = pWeapon->OnFireEvent( this, origin, angles, event, options );
 		if ( !bResult )
 		{
@@ -144,7 +165,10 @@ bool C_BaseViewModel::Interpolate( float currentTime )
 		float curtime = pPlayer ? pPlayer->GetFinalPredictedTime() : gpGlobals->curtime;
 		elapsed_time = curtime - m_flAnimTime;
 		// Adjust for interpolated partial frame
-		elapsed_time += ( gpGlobals->interpolation_amount * TICK_INTERVAL );
+		if ( !engine->IsPaused() )
+		{
+			elapsed_time += ( gpGlobals->interpolation_amount * TICK_INTERVAL );
+		}
 	}
 
 	// Prediction errors?	
@@ -153,7 +177,7 @@ bool C_BaseViewModel::Interpolate( float currentTime )
 		elapsed_time = 0;
 	}
 
-	float dt = elapsed_time * GetSequenceCycleRate( pStudioHdr, GetSequence() );
+	float dt = elapsed_time * GetSequenceCycleRate( pStudioHdr, GetSequence() ) * GetPlaybackRate();
 	if ( dt >= 1.0f )
 	{
 		if ( !IsSequenceLooping( GetSequence() ) )
@@ -171,7 +195,7 @@ bool C_BaseViewModel::Interpolate( float currentTime )
 }
 
 
-inline bool C_BaseViewModel::ShouldFlipViewModel()
+bool C_BaseViewModel::ShouldFlipViewModel()
 {
 #ifdef CSTRIKE_DLL
 	// If cl_righthand is set, then we want them all right-handed.
@@ -182,7 +206,15 @@ inline bool C_BaseViewModel::ShouldFlipViewModel()
 		return pInfo->m_bAllowFlipping && pInfo->m_bBuiltRightHanded != cl_righthand.GetBool();
 	}
 #endif
-	
+
+#ifdef TF_CLIENT_DLL
+	CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
+	if ( pWeapon )
+	{
+		return pWeapon->m_bFlipViewModel != cl_flipviewmodels.GetBool();
+	}
+#endif
+
 	return false;
 }
 
@@ -232,6 +264,13 @@ bool C_BaseViewModel::ShouldDraw()
 		return ( HLTVCamera()->GetMode() == OBS_MODE_IN_EYE &&
 				 HLTVCamera()->GetPrimaryTarget() == GetOwner()	);
 	}
+#if defined( REPLAY_ENABLED )
+	else if ( g_pEngineClientReplay->IsPlayingReplayDemo() )
+	{
+		return ( ReplayCamera()->GetMode() == OBS_MODE_IN_EYE &&
+				 ReplayCamera()->GetPrimaryTarget() == GetOwner() );
+	}
+#endif
 	else
 	{
 		return BaseClass::ShouldDraw();
@@ -263,14 +302,20 @@ int C_BaseViewModel::DrawModel( int flags )
 		GetColorModulation( color );
 		render->SetColorModulation(	color );
 	}
-	
-	CMatRenderContextPtr pRenderContext( materials );
-	
-	if ( ShouldFlipViewModel() )
-		pRenderContext->CullMode( MATERIAL_CULLMODE_CW );
-
+		
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
 	C_BaseCombatWeapon *pWeapon = GetOwningWeapon();
+
+#ifdef TF_CLIENT_DLL
+	CTFWeaponBase* pTFWeapon = dynamic_cast<CTFWeaponBase*>( pWeapon );
+	if ( ( flags & STUDIO_RENDER ) && pTFWeapon && pTFWeapon->m_viewmodelStatTrakAddon )
+	{
+		pTFWeapon->m_viewmodelStatTrakAddon->RemoveEffects( EF_NODRAW );
+		pTFWeapon->m_viewmodelStatTrakAddon->DrawModel( flags );
+		pTFWeapon->m_viewmodelStatTrakAddon->AddEffects( EF_NODRAW );
+	}
+#endif
+
 	int ret;
 	// If the local player's overriding the viewmodel rendering, let him do it
 	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
@@ -286,8 +331,6 @@ int C_BaseViewModel::DrawModel( int flags )
 		ret = BaseClass::DrawModel( flags );
 	}
 
-	pRenderContext->CullMode( MATERIAL_CULLMODE_CCW );
-
 	// Now that we've rendered, reset the animation restart flag
 	if ( flags & STUDIO_RENDER )
 	{
@@ -301,6 +344,22 @@ int C_BaseViewModel::DrawModel( int flags )
 			pWeapon->ViewModelDrawn( this );
 		}
 	}
+
+	return ret;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+int C_BaseViewModel::InternalDrawModel( int flags )
+{
+	CMatRenderContextPtr pRenderContext( materials );
+	if ( ShouldFlipViewModel() )
+		pRenderContext->CullMode( MATERIAL_CULLMODE_CW );
+
+	int ret = BaseClass::InternalDrawModel( flags );
+
+	pRenderContext->CullMode( MATERIAL_CULLMODE_CCW );
 
 	return ret;
 }
@@ -358,6 +417,27 @@ bool C_BaseViewModel::IsTransparent( void )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool C_BaseViewModel::UsesPowerOfTwoFrameBufferTexture( void )
+{
+	// See if the local player wants to override the viewmodel's rendering
+	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( pPlayer && pPlayer->IsOverridingViewmodel() )
+	{
+		return pPlayer->ViewModel_IsUsingFBTexture();
+	}
+
+	C_BaseCombatWeapon *pWeapon = GetOwningWeapon();
+	if ( pWeapon && pWeapon->IsOverridingViewmodel() )
+	{
+		return pWeapon->ViewModel_IsUsingFBTexture();
+	}
+
+	return BaseClass::UsesPowerOfTwoFrameBufferTexture();
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: If the animation parity of the weapon has changed, we reset cycle to avoid popping
 //-----------------------------------------------------------------------------
 void C_BaseViewModel::UpdateAnimationParity( void )
@@ -401,7 +481,7 @@ void C_BaseViewModel::PostDataUpdate( DataUpdateType_t updateType )
 void C_BaseViewModel::AddEntity( void )
 {
 	// Server says don't interpolate this frame, so set previous info to new info.
-	if ( IsEffectActive(EF_NOINTERP) )
+	if ( IsNoInterpolationFrame() )
 	{
 		ResetLatched();
 	}

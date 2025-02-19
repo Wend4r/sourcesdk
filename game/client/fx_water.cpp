@@ -1,12 +1,12 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //=============================================================================//
 
 #include "cbase.h"
-#include "ClientEffectPrecacheSystem.h"
-#include "FX_Sparks.h"
+#include "clienteffectprecachesystem.h"
+#include "fx_sparks.h"
 #include "iefx.h"
 #include "c_te_effect_dispatch.h"
 #include "particles_ez.h"
@@ -73,38 +73,6 @@ void UTIL_GetNormalizedColorTintAndLuminosity( const Vector &color, Vector *tint
 
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Retrieve and alter lighting for splashes
-// Input  : position - point to check
-//			*color - tint of the lighting at this point
-//			*luminosity - adjusted luminosity at this point
-//-----------------------------------------------------------------------------
-inline void FX_GetSplashLighting( Vector position, Vector *color, float *luminosity )
-{
-	// Compute our lighting at our position
-	Vector totalColor = engine->GetLightForPoint( position, true );
-
-	// Get our lighting information
-	UTIL_GetNormalizedColorTintAndLuminosity( totalColor, color, luminosity );
-
-	// Fake a specular highlight (too dim otherwise)
-	if ( luminosity != NULL )
-	{
-		*luminosity = MIN( 1.0f, (*luminosity) * 4.0f );
-
-		// Clamp so that we never go completely translucent
-		if ( *luminosity < 0.25f )
-		{
-			*luminosity = 0.25f;
-		}
-	}
-
-	// Only take a quarter of the tint, mostly we want to be white
-	if ( color != NULL )
-	{
-		(*color) = ( (*color) * 0.25f ) + Vector( 0.75f, 0.75f, 0.75f );
-	}
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -1008,7 +1008,7 @@ void CNPC_Combine::StartTask( const Task_t *pTask )
 			info.SetAttacker( this );
 			info.SetInflictor( this );
 			info.SetDamage( m_iHealth );
-			info.SetDamageType( (int)pTask->flTaskData );
+			info.SetDamageType( pTask->flTaskData );
 			info.SetDamageForce( Vector( 0.1, 0.1, 0.1 ) );
 
 			TakeDamage( info );
@@ -1336,9 +1336,6 @@ Activity CNPC_Combine::NPC_TranslateActivity( Activity eNewActivity )
 		case ACT_RUN:
 			eNewActivity = ACT_RUN_AIM;
 			break;
-
-		default:
-			break;
 		}
 	}
 
@@ -1439,9 +1436,6 @@ void CNPC_Combine::AnnounceEnemyType( CBaseEntity *pEnemy )
 	case CLASS_BARNACLE:
 		pSentenceName = "COMBINE_MONST_PARASITES";
 		break;
-
-	default:
-		break;
 	}
 
 	m_Sentences.Speak( pSentenceName, SENTENCE_PRIORITY_HIGH );
@@ -1477,9 +1471,6 @@ void CNPC_Combine::AnnounceEnemyKill( CBaseEntity *pEnemy )
 
 	case CLASS_HEADCRAB:
 	case CLASS_BARNACLE:
-		break;
-
-	default:
 		break;
 	}
 
@@ -1877,9 +1868,6 @@ int CNPC_Combine::SelectSchedule( void )
 			if ( nSched != SCHED_NONE )
 				return nSched;
 		}
-		break;
-
-	default:
 		break;
 	}
 
@@ -2810,7 +2798,7 @@ bool CNPC_Combine::CanThrowGrenade( const Vector &vecTarget )
 	{
 		if (m_pSquad->SquadMemberInRange( vecTarget, COMBINE_MIN_GRENADE_CLEAR_DIST ))
 		{
-			// crap, I might blow my own guy up. Don't throw a grenade and don't check again for a while.
+			// I might blow my own guy up. Don't throw a grenade and don't check again for a while.
 			m_flNextGrenadeCheck = gpGlobals->curtime + 1; // one full second.
 
 			// Tell my squad members to clear out so I can get a grenade in

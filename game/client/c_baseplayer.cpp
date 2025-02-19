@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =====//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client-side CBasePlayer.
 //
@@ -36,9 +36,30 @@
 #include "view_scene.h"
 #include "c_vguiscreen.h"
 #include "datacache/imdlcache.h"
-#include "vgui/isurface.h"
+#include "vgui/ISurface.h"
 #include "voice_status.h"
 #include "fx.h"
+#include "dt_utlvector_recv.h"
+#include "cam_thirdperson.h"
+#if defined( REPLAY_ENABLED )
+#include "replay/replaycamera.h"
+#include "replay/ireplaysystem.h"
+#include "replay/ienginereplay.h"
+#endif
+#include "steam/steam_api.h"
+#include "sourcevr/isourcevirtualreality.h"
+#include "client_virtualreality.h"
+
+#ifdef TF_CLIENT_DLL
+#include "tf_gamerules.h"
+#endif
+
+#if defined USES_ECON_ITEMS
+#include "econ_wearable.h"
+#endif
+
+// NVNT haptics system interface
+#include "haptics/ihaptics.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -82,16 +103,38 @@ static ConVar	cl_smoothtime	(
 	true, 2.0
 	 );
 
+#ifdef CSTRIKE_DLL
+ConVar	spec_freeze_time( "spec_freeze_time", "5.0", FCVAR_CHEAT | FCVAR_REPLICATED, "Time spend frozen in observer freeze cam." );
+ConVar	spec_freeze_traveltime( "spec_freeze_traveltime", "0.7", FCVAR_CHEAT | FCVAR_REPLICATED, "Time taken to zoom in to frame a target in observer freeze cam.", true, 0.01, false, 0 );
+ConVar	spec_freeze_distance_min( "spec_freeze_distance_min", "80", FCVAR_CHEAT, "Minimum random distance from the target to stop when framing them in observer freeze cam." );
+ConVar	spec_freeze_distance_max( "spec_freeze_distance_max", "90", FCVAR_CHEAT, "Maximum random distance from the target to stop when framing them in observer freeze cam." );
+#else
 ConVar	spec_freeze_time( "spec_freeze_time", "4.0", FCVAR_CHEAT | FCVAR_REPLICATED, "Time spend frozen in observer freeze cam." );
 ConVar	spec_freeze_traveltime( "spec_freeze_traveltime", "0.4", FCVAR_CHEAT | FCVAR_REPLICATED, "Time taken to zoom in to frame a target in observer freeze cam.", true, 0.01, false, 0 );
 ConVar	spec_freeze_distance_min( "spec_freeze_distance_min", "96", FCVAR_CHEAT, "Minimum random distance from the target to stop when framing them in observer freeze cam." );
 ConVar	spec_freeze_distance_max( "spec_freeze_distance_max", "200", FCVAR_CHEAT, "Maximum random distance from the target to stop when framing them in observer freeze cam." );
+#endif
+
+static ConVar	cl_first_person_uses_world_model ( "cl_first_person_uses_world_model", "0", FCVAR_NONE, "Causes the third person model to be drawn instead of the view model" );
+
+ConVar demo_fov_override( "demo_fov_override", "0", FCVAR_CLIENTDLL | FCVAR_DONTRECORD, "If nonzero, this value will be used to override FOV during demo playback." );
+
+// This only needs to be approximate - it just controls the distance to the pivot-point of the head ("the neck") of the in-game character, not the player's real-world neck length.
+// Ideally we would find this vector by subtracting the neutral-pose difference between the head bone (the pivot point) and the "eyes" attachment point.
+// However, some characters don't have this attachment point, and finding the neutral pose is a pain.
+// This value is found by hand, and a good value depends more on the in-game models than on actual human shapes.
+ConVar cl_meathook_neck_pivot_ingame_up( "cl_meathook_neck_pivot_ingame_up", "7.0" );
+ConVar cl_meathook_neck_pivot_ingame_fwd( "cl_meathook_neck_pivot_ingame_fwd", "3.0" );
+
+static ConVar	cl_clean_textures_on_death( "cl_clean_textures_on_death", "0", FCVAR_DEVELOPMENTONLY,  "If enabled, attempts to purge unused textures every time a freeze cam is shown" );
+
 
 void RecvProxy_LocalVelocityX( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_LocalVelocityY( const CRecvProxyData *pData, void *pStruct, void *pOut );
 void RecvProxy_LocalVelocityZ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
 void RecvProxy_ObserverTarget( const CRecvProxyData *pData, void *pStruct, void *pOut );
+void RecvProxy_ObserverMode  ( const CRecvProxyData *pData, void *pStruct, void *pOut );
 
 // -------------------------------------------------------------------------------- //
 // RecvTable for CPlayerState.
@@ -134,6 +177,7 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropInt		(RECVINFO(m_bDrawViewmodel)),
 	RecvPropInt		(RECVINFO(m_bWearingSuit)),
 	RecvPropBool	(RECVINFO(m_bPoisoned)),
+	RecvPropBool	(RECVINFO(m_bForceLocalPlayerDraw)),
 	RecvPropFloat	(RECVINFO(m_flStepSize)),
 	RecvPropInt		(RECVINFO(m_bAllowAutoMovement)),
 
@@ -145,6 +189,7 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	// 3d skybox fog data
 	RecvPropInt( RECVINFO( m_skybox3d.fog.enable ) ),
 	RecvPropInt( RECVINFO( m_skybox3d.fog.blend ) ),
+	RecvPropInt( RECVINFO( m_skybox3d.fog.radial ) ),
 	RecvPropVector( RECVINFO( m_skybox3d.fog.dirPrimary ) ),
 	RecvPropInt( RECVINFO( m_skybox3d.fog.colorPrimary ) ),
 	RecvPropInt( RECVINFO( m_skybox3d.fog.colorSecondary ) ),
@@ -166,7 +211,9 @@ BEGIN_RECV_TABLE_NOBASE( CPlayerLocalData, DT_Local )
 	RecvPropVector( RECVINFO( m_audio.localSound[7] ) ),
 	RecvPropInt( RECVINFO( m_audio.soundscapeIndex ) ),
 	RecvPropInt( RECVINFO( m_audio.localBits ) ),
-	RecvPropEHandle( RECVINFO( m_audio.ent ) ),
+	RecvPropInt( RECVINFO( m_audio.entIndex ) ),
+
+	RecvPropString( RECVINFO( m_szScriptOverlayMaterial ) ),
 END_RECV_TABLE()
 
 // -------------------------------------------------------------------------------- //
@@ -215,10 +262,19 @@ END_RECV_TABLE()
 // -------------------------------------------------------------------------------- //
 // DT_BasePlayer datatable.
 // -------------------------------------------------------------------------------- //
+
+#if defined USES_ECON_ITEMS
+	EXTERN_RECV_TABLE(DT_AttributeList);
+#endif
+
 	IMPLEMENT_CLIENTCLASS_DT(C_BasePlayer, DT_BasePlayer, CBasePlayer)
 		// We have both the local and nonlocal data in here, but the server proxies
 		// only send one.
 		RecvPropDataTable( "localdata", 0, 0, &REFERENCE_RECV_TABLE(DT_LocalPlayerExclusive) ),
+
+#if defined USES_ECON_ITEMS
+		RecvPropDataTable(RECVINFO_DT(m_AttributeList),0, &REFERENCE_RECV_TABLE(DT_AttributeList) ),
+#endif
 
 		RecvPropDataTable(RECVINFO_DT(pl), 0, &REFERENCE_RECV_TABLE(DT_PlayerState), DataTableRecvProxy_StaticDataTable),
 
@@ -241,14 +297,16 @@ END_RECV_TABLE()
 		RecvPropInt		(RECVINFO(m_fFlags)),
 
 
-		RecvPropInt		(RECVINFO(m_iObserverMode) ),
+		RecvPropInt		(RECVINFO(m_iObserverMode), 0, RecvProxy_ObserverMode ),
 		RecvPropEHandle	(RECVINFO(m_hObserverTarget), RecvProxy_ObserverTarget ),
 		RecvPropArray	( RecvPropEHandle( RECVINFO( m_hViewModel[0] ) ), m_hViewModel ),
 		
 
 		RecvPropString( RECVINFO(m_szLastPlaceName) ),
 
-		RecvPropInt( RECVINFO( m_ubEFNoInterpParity ) ),
+#if defined USES_ECON_ITEMS
+		RecvPropUtlVector( RECVINFO_UTLVECTOR( m_hMyWearables ), MAX_WEARABLES_SENT_FROM_SERVER,	RecvPropEHandle(NULL, 0, 0) ),
+#endif
 
 	END_RECV_TABLE()
 
@@ -268,6 +326,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( CPlayerLocalData )
 	// DEFINE_PRED_TYPEDESCRIPTION( m_fog, fogparams_t ),
 	// DEFINE_PRED_TYPEDESCRIPTION( m_audio, audioparams_t ),
 	DEFINE_FIELD( m_nStepside, FIELD_INTEGER ),
+	DEFINE_FIELD( m_bPrevForceLocalPlayerDraw, FIELD_BOOLEAN ),
 
 	DEFINE_PRED_FIELD( m_iHideHUD, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 #if PREDICTION_ERROR_CHECK_LEVEL > 1
@@ -280,6 +339,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( CPlayerLocalData )
 	DEFINE_PRED_FIELD( m_bDrawViewmodel, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_bWearingSuit, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_bPoisoned, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
+	DEFINE_PRED_FIELD( m_bForceLocalPlayerDraw, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_bAllowAutoMovement, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
 
 	DEFINE_PRED_FIELD( m_bDucked, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
@@ -291,6 +351,7 @@ BEGIN_PREDICTION_DATA_NO_BASE( CPlayerLocalData )
 	DEFINE_PRED_FIELD_TOL( m_flFallVelocity, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, 0.5f ),
 //	DEFINE_PRED_FIELD( m_nOldButtons, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD( m_nOldButtons, FIELD_INTEGER ),
+	DEFINE_FIELD( m_flOldForwardMove, FIELD_FLOAT ),
 	DEFINE_PRED_FIELD( m_flStepSize, FIELD_FLOAT, FTYPEDESC_INSENDTABLE ),
 	DEFINE_FIELD( m_flFOVRate, FIELD_FLOAT ),
 
@@ -308,7 +369,7 @@ BEGIN_PREDICTION_DATA( C_BasePlayer )
 
 	DEFINE_PRED_FIELD( m_hVehicle, FIELD_EHANDLE, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD_TOL( m_flMaxspeed, FIELD_FLOAT, FTYPEDESC_INSENDTABLE, 0.5f ),
-	DEFINE_PRED_FIELD( m_iHealth, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
+	DEFINE_PRED_FIELD( m_iHealth, FIELD_INTEGER, FTYPEDESC_INSENDTABLE | FTYPEDESC_ONLY_ERROR_IF_ABOVE_ZERO_TO_ZERO_OR_BELOW_ETC ),
 	DEFINE_PRED_FIELD( m_iBonusProgress, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_iBonusChallenge, FIELD_INTEGER, FTYPEDESC_INSENDTABLE ),
 	DEFINE_PRED_FIELD( m_fOnTarget, FIELD_BOOLEAN, FTYPEDESC_INSENDTABLE ),
@@ -383,6 +444,15 @@ C_BasePlayer::C_BasePlayer() : m_iv_vecViewOffset( "C_BasePlayer::m_iv_vecViewOf
 	m_pSurfaceData = NULL;
 	m_surfaceFriction = 1.0f;
 	m_chTextureType = 0;
+
+	m_flNextAchievementAnnounceTime = 0;
+
+	m_bFiredWeapon = false;
+
+	m_nForceVisionFilterFlags = 0;
+	m_nLocalPlayerVisionFlags = 0;
+
+	ListenForGameEvent( "base_player_teleported" );
 }
 
 //-----------------------------------------------------------------------------
@@ -396,12 +466,15 @@ C_BasePlayer::~C_BasePlayer()
 		s_pLocalPlayer = NULL;
 	}
 
-	if (m_pFlashlight)
-	{
-		delete m_pFlashlight;
-	}
+	delete m_pFlashlight;
 }
 
+static float s_flLocalPlayerSpawnTime = -1.0f;
+
+bool ShouldHaveLocalPlayerPickupTimelineEvents()
+{
+	return gpGlobals->curtime >= s_flLocalPlayerSpawnTime + 1.0f;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -412,8 +485,8 @@ void C_BasePlayer::Spawn( void )
 	ClearFlags();
 	AddFlag( FL_CLIENT );
 
-	int effects = GetEffects() & EF_NOSHADOW;
-	SetEffects( effects );
+	int fEffects = GetEffects() & EF_NOSHADOW;
+	SetEffects( fEffects );
 
 	m_iFOV	= 0;	// init field of view.
 
@@ -426,6 +499,11 @@ void C_BasePlayer::Spawn( void )
 	SharedSpawn();
 
 	m_bWasFreezeFraming = false;
+
+	m_bFiredWeapon = false;
+
+	if ( IsLocalPlayer() )
+		s_flLocalPlayerSpawnTime = gpGlobals->curtime;
 }
 
 //-----------------------------------------------------------------------------
@@ -448,13 +526,28 @@ bool C_BasePlayer::IsHLTV() const
 	return ( IsLocalPlayer() && engine->IsHLTV() );	
 }
 
-CBaseEntity	*C_BasePlayer::GetObserverTarget() const	// returns players targer or NULL
+bool C_BasePlayer::IsReplay() const
+{
+#if defined( REPLAY_ENABLED )
+	return ( IsLocalPlayer() && g_pEngineClientReplay->IsPlayingReplayDemo() );
+#else
+	return false;
+#endif
+}
+
+CBaseEntity	*C_BasePlayer::GetObserverTarget() const	// returns players target or NULL
 {
 #ifndef _XBOX
-	if ( IsHLTV() )
+	if ( IsHLTV() && HLTVCamera() )
 	{
 		return HLTVCamera()->GetPrimaryTarget();
 	}
+#if defined( REPLAY_ENABLED )
+	if ( IsReplay() )
+	{
+		return ReplayCamera()->GetPrimaryTarget();
+	}
+#endif
 #endif
 	
 	if ( GetObserverMode() == OBS_MODE_ROAMING )
@@ -463,6 +556,30 @@ CBaseEntity	*C_BasePlayer::GetObserverTarget() const	// returns players targer o
 	}
 	else
 	{
+		if ( IsLocalPlayer() && UseVR() )
+		{
+			// In VR mode, certain views cause disorientation and nausea. So let's not.
+			switch ( m_iObserverMode )
+			{
+			case OBS_MODE_NONE:			// not in spectator mode
+			case OBS_MODE_FIXED:		// view from a fixed camera position
+			case OBS_MODE_IN_EYE:		// follow a player in first person view
+			case OBS_MODE_CHASE:		// follow a player in third person view
+			case OBS_MODE_POI:			// PASSTIME point of interest - game objective, big fight, anything interesting
+			case OBS_MODE_ROAMING:		// free roaming
+				return m_hObserverTarget;
+				break;
+			case OBS_MODE_DEATHCAM:		// special mode for death cam animation
+			case OBS_MODE_FREEZECAM:	// zooms to a target, and freeze-frames on them
+				// These are both terrible - they get overriden to chase, but here we change it to "chase" your own body (which will be ragdolled).
+				return (const_cast<C_BasePlayer*>(this))->GetBaseEntity();
+				break;
+			default:
+				assert ( false );
+				break;
+			}
+		}
+
 		return m_hObserverTarget;
 	}
 }
@@ -492,17 +609,71 @@ void C_BasePlayer::SetObserverTarget( EHANDLE hObserverTarget )
 		{
 			ResetToneMapping(1.0);
 		}
+		// NVNT notify haptics of changed player
+		if ( haptics )
+			haptics->OnPlayerChanged();
+
+		if ( IsLocalPlayer() )
+		{
+			// On a change of viewing mode or target, we may want to reset both head and torso to point at the new target.
+			g_ClientVirtualReality.AlignTorsoAndViewToWeapon();
+		}
 	}
 }
+
+
+void C_BasePlayer::SetObserverMode ( int iNewMode )
+{
+	if ( m_iObserverMode != iNewMode )
+	{
+		m_iObserverMode = iNewMode;
+		if ( IsLocalPlayer() )
+		{
+			// On a change of viewing mode or target, we may want to reset both head and torso to point at the new target.
+			g_ClientVirtualReality.AlignTorsoAndViewToWeapon();
+		}
+	}
+}
+
 
 int C_BasePlayer::GetObserverMode() const 
 { 
 #ifndef _XBOX
-	if ( IsHLTV() )
+	if ( IsHLTV() && HLTVCamera() )
 	{
 		return HLTVCamera()->GetMode();
 	}
+#if defined( REPLAY_ENABLED )
+	if ( IsReplay() )
+	{
+		return ReplayCamera()->GetMode();
+	}
 #endif
+#endif
+
+	if ( IsLocalPlayer() && UseVR() )
+	{
+		// IN VR mode, certain views cause disorientation and nausea. So let's not.
+		switch ( m_iObserverMode )
+		{
+		case OBS_MODE_NONE:			// not in spectator mode
+		case OBS_MODE_FIXED:		// view from a fixed camera position
+		case OBS_MODE_IN_EYE:		// follow a player in first person view
+		case OBS_MODE_CHASE:		// follow a player in third person view
+		case OBS_MODE_POI:			// PASSTIME point of interest - game objective, big fight, anything interesting
+		case OBS_MODE_ROAMING:		// free roaming
+			return m_iObserverMode;
+			break;
+		case OBS_MODE_DEATHCAM:		// special mode for death cam animation
+		case OBS_MODE_FREEZECAM:	// zooms to a target, and freeze-frames on them
+			// These are both terrible - just do chase of your ragdoll.
+			return OBS_MODE_CHASE;
+			break;
+		default:
+			assert ( false );
+			break;
+		}
+	}
 
 	return m_iObserverMode; 
 }
@@ -510,6 +681,11 @@ int C_BasePlayer::GetObserverMode() const
 bool C_BasePlayer::ViewModel_IsTransparent( void )
 {
 	return IsTransparent();
+}
+
+bool C_BasePlayer::ViewModel_IsUsingFBTexture( void )
+{
+	return UsesPowerOfTwoFrameBufferTexture();
 }
 
 //-----------------------------------------------------------------------------
@@ -557,6 +733,20 @@ surfacedata_t* C_BasePlayer::GetGroundSurface()
 	return physprops->GetSurfaceData( trace.surface.surfaceProps );
 }
 
+void C_BasePlayer::FireGameEvent( IGameEvent *event )
+{
+	if ( FStrEq( event->GetName(), "base_player_teleported" ) )
+	{
+		const int index_ = event->GetInt( "entindex" );
+		if ( index_ == entindex() && IsLocalPlayer() )
+		{
+			// In VR, we want to make sure our head and body
+			// are aligned after we teleport.
+			g_ClientVirtualReality.AlignTorsoAndViewToWeapon();
+		}
+	}
+
+}
 
 //-----------------------------------------------------------------------------
 // returns the player name
@@ -611,8 +801,6 @@ void C_BasePlayer::OnPreDataChanged( DataUpdateType_t updateType )
 void C_BasePlayer::PreDataUpdate( DataUpdateType_t updateType )
 {
 	BaseClass::PreDataUpdate( updateType );
-
-	m_ubOldEFNoInterpParity = m_ubEFNoInterpParity;
 }
 
 //-----------------------------------------------------------------------------
@@ -639,6 +827,9 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 			Assert( s_pLocalPlayer == NULL );
 			s_pLocalPlayer = this;
 
+			if ( IsLocalPlayer() )
+				s_flLocalPlayerSpawnTime = gpGlobals->curtime;
+
 			// Reset our sound mixed in case we were in a freeze cam when we
 			// changed level, which would cause the snd_soundmixer to be left modified.
 			ConVar *pVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
@@ -646,7 +837,7 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 		}
 	}
 
-	bool bForceEFNoInterp = ( m_ubOldEFNoInterpParity != m_ubEFNoInterpParity );
+	bool bForceEFNoInterp = IsNoInterpolationFrame();
 
 	if ( IsLocalPlayer() )
 	{
@@ -658,7 +849,7 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 
 		// estimate velocity for non local players
 		float flTimeDelta = m_flSimulationTime - m_flOldSimulationTime;
-		if ( flTimeDelta > 0  &&  !( IsEffectActive(EF_NOINTERP) || bForceEFNoInterp ) )
+		if ( flTimeDelta > 0  &&  !( IsNoInterpolationFrame() || bForceEFNoInterp ) )
 		{
 			Vector newVelo = (GetNetworkOrigin() - GetOldOrigin()  ) / flTimeDelta;
 			SetAbsVelocity( newVelo);
@@ -676,6 +867,15 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 		{
 			SetLocalViewAngles( angles );
 			m_flOldPlayerZ = GetLocalOrigin().z;
+			// NVNT the local player has just been created.
+			//   set in the "on_foot" navigation.
+			if ( haptics )
+			{
+				haptics->LocalPlayerReset();
+				haptics->SetNavigationClass("on_foot");
+				haptics->ProcessHapticEvent(2,"Movement","BasePlayer");
+			}
+		
 		}
 		SetLocalAngles( angles );
 
@@ -686,17 +886,33 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 			m_flFreezeFrameDistance = RandomFloat( spec_freeze_distance_min.GetFloat(), spec_freeze_distance_max.GetFloat() );
 			m_flFreezeZOffset = RandomFloat( -30, 20 );
 			m_bSentFreezeFrame = false;
+			m_nForceVisionFilterFlags = 0;
+
+			C_BaseEntity *target = GetObserverTarget();
+			if ( target && target->IsPlayer() )
+			{
+				C_BasePlayer *player = ToBasePlayer( target );
+				if ( player )
+				{
+					m_nForceVisionFilterFlags = player->GetVisionFilterFlags();
+					CalculateVisionUsingCurrentFlags();
+				}
+			}
 
 			IGameEvent *pEvent = gameeventmanager->CreateEvent( "show_freezepanel" );
 			if ( pEvent )
 			{
-				pEvent->SetInt( "killer", GetObserverTarget() ? GetObserverTarget()->entindex() : 0 );
+				pEvent->SetInt( "killer", target ? target->entindex() : 0 );
 				gameeventmanager->FireEventClientSide( pEvent );
 			}
 
 			// Force the sound mixer to the freezecam mixer
 			ConVar *pVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
 			pVar->SetValue( "FreezeCam_Only" );
+
+			// When we start, give unused textures an opportunity to unload
+			if ( cl_clean_textures_on_death.GetBool() )
+				g_pMaterialSystem->UncacheUnusedMaterials( false );
 		}
 		else if ( m_bWasFreezeFraming && GetObserverMode() != OBS_MODE_FREEZECAM )
 		{
@@ -710,6 +926,27 @@ void C_BasePlayer::PostDataUpdate( DataUpdateType_t updateType )
 
 			ConVar *pVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
 			pVar->Revert();
+
+			m_nForceVisionFilterFlags = 0;
+			CalculateVisionUsingCurrentFlags();
+		}
+		
+		// force calculate vision when the local vision flags changed
+		int nCurrentLocalPlayerVisionFlags = GetLocalPlayerVisionFilterFlags();
+		if ( m_nLocalPlayerVisionFlags != nCurrentLocalPlayerVisionFlags )
+		{
+			CalculateVisionUsingCurrentFlags();
+			m_nLocalPlayerVisionFlags = nCurrentLocalPlayerVisionFlags;
+		}
+
+		if ( m_Local.m_bPrevForceLocalPlayerDraw != m_Local.m_bForceLocalPlayerDraw )
+		{
+#ifdef TF_CLIENT_DLL
+			CTFPlayer *pTFPlayer = ToTFPlayer( this );
+			if ( pTFPlayer )
+				pTFPlayer->FlushAllPlayerVisibilityState();
+#endif
+			m_Local.m_bPrevForceLocalPlayerDraw = m_Local.m_bForceLocalPlayerDraw;
 		}
 	}
 
@@ -1086,8 +1323,7 @@ void C_BasePlayer::AddEntity( void )
 	}
 
 	// Server says don't interpolate this frame, so set previous info to new info.
-	if ( IsEffectActive(EF_NOINTERP) || 
-		Teleported() )
+	if ( IsNoInterpolationFrame() || Teleported() )
 	{
 		ResetLatched();
 	}
@@ -1200,22 +1436,19 @@ bool C_BasePlayer::ShouldInterpolate()
 
 bool C_BasePlayer::ShouldDraw()
 {
-	return ( !IsLocalPlayer() || C_BasePlayer::ShouldDrawLocalPlayer() || (GetObserverMode() == OBS_MODE_DEATHCAM ) ) &&
-		   BaseClass::ShouldDraw();
+	return ShouldDrawThisPlayer() && BaseClass::ShouldDraw();
 }
 
 int C_BasePlayer::DrawModel( int flags )
 {
-	// if local player is spectating this player in first person mode, don't draw it
-	C_BasePlayer * player = C_BasePlayer::GetLocalPlayer();
-
-	if ( player && player->IsObserver() )
+#ifndef PORTAL
+	// In Portal this check is already performed as part of
+	// C_Portal_Player::DrawModel()
+	if ( !ShouldDrawThisPlayer() )
 	{
-		if ( player->GetObserverMode() == OBS_MODE_IN_EYE &&
-			 player->GetObserverTarget() == this )
-			return 0;
+		return 0;
 	}
-
+#endif
 	return BaseClass::DrawModel( flags );
 }
 
@@ -1226,12 +1459,22 @@ Vector C_BasePlayer::GetChaseCamViewOffset( CBaseEntity *target )
 {
 	C_BasePlayer *player = ToBasePlayer( target );
 	
-	if ( player && player->IsAlive() )
+	if ( player )
 	{
-		if( player->GetFlags() & FL_DUCKING )
-			return VEC_DUCK_VIEW;
+		if ( player->IsAlive() )
+		{
+			if ( player->GetFlags() & FL_DUCKING )
+			{
+				return VEC_DUCK_VIEW_SCALED( player );
+			}
 
-		return VEC_VIEW;
+			return VEC_VIEW_SCALED( player );
+		}
+		else
+		{
+			// assume it's the players ragdoll
+			return VEC_DEAD_VIEWHEIGHT_SCALED( player );
+		}
 	}
 
 	// assume it's the players ragdoll
@@ -1277,21 +1520,67 @@ void C_BasePlayer::CalcChaseCamView(Vector& eyeOrigin, QAngle& eyeAngles, float&
 	else if ( IsLocalPlayer() )
 	{
 		engine->GetViewAngles( viewangles );
+		if ( UseVR() )
+		{
+			// Don't let people play with the pitch - they drive it into the ground or into the air and 
+			// it's distracting at best, nauseating at worst (e.g. when it clips through the ground plane).
+			viewangles[PITCH] = 20.0f;
+		}
 	}
 	else
 	{
 		viewangles = EyeAngles();
 	}
 
+	//=============================================================================
+	// HPE_BEGIN:
+	// [Forrest] Fix for (at least one potential case of) CSB-194.  Spectating someone
+	// who is headshotted by a teammate and then switching to chase cam leaves
+	// you with a permanent roll to the camera that doesn't decay and is not reset
+	// even when switching to different players or at the start of the next round
+	// if you are still a spectator.  (If you spawn as a player, the view is reset.
+	// if you switch spectator modes, the view is reset.)
+	//=============================================================================
+#ifdef CSTRIKE_DLL
+	// The chase camera adopts the yaw and pitch of the previous camera, but the camera
+	// should not roll.
+	viewangles.z = 0;
+#endif
+	//=============================================================================
+	// HPE_END
+	//=============================================================================
+
 	m_flObserverChaseDistance += gpGlobals->frametime*48.0f;
 
-	float flMaxDistance = CHASE_CAM_DISTANCE;
+	float flMinDistance = CHASE_CAM_DISTANCE_MIN;
+	float flMaxDistance = CHASE_CAM_DISTANCE_MAX;
+	
 	if ( target && target->IsBaseTrain() )
 	{
 		// if this is a train, we want to be back a little further so we can see more of it
 		flMaxDistance *= 2.5f;
 	}
-	m_flObserverChaseDistance = clamp( m_flObserverChaseDistance, 16, flMaxDistance );
+
+	if ( target )
+	{
+		C_BaseAnimating *pTargetAnimating = target->GetBaseAnimating();
+		if ( pTargetAnimating )
+		{
+			float flScaleSquared = pTargetAnimating->GetModelScale() * pTargetAnimating->GetModelScale();
+			flMinDistance *= flScaleSquared;
+			flMaxDistance *= flScaleSquared;
+			m_flObserverChaseDistance = flMaxDistance;
+		}
+	}
+
+	if ( target && !target->IsPlayer() && target->IsNextBot() )
+	{
+		// if this is a boss, we want to be back a little further so we can see more of it
+		flMaxDistance *= 2.5f;
+		m_flObserverChaseDistance = flMaxDistance;
+	}
+
+	m_flObserverChaseDistance = clamp( m_flObserverChaseDistance, flMinDistance, flMaxDistance );
 	
 	AngleVectors( viewangles, &forward );
 
@@ -1333,11 +1622,11 @@ void C_BasePlayer::CalcRoamingView(Vector& eyeOrigin, QAngle& eyeAngles, float& 
 	
 	if ( spec_track.GetInt() > 0 )
 	{
-		C_BaseEntity *target =  ClientEntityList().GetBaseEntity( spec_track.GetInt() );
+		C_BaseEntity *pTarget =  ClientEntityList().GetBaseEntity( spec_track.GetInt() );
 
-		if ( target )
+		if ( pTarget )
 		{
-			Vector v = target->GetAbsOrigin(); v.z += 54;
+			Vector v = pTarget->GetAbsOrigin(); v.z += 54;
 			QAngle a; VectorAngles( v - eyeOrigin, a );
 
 			NormalizeAngles( a );
@@ -1368,7 +1657,7 @@ void C_BasePlayer::CalcFreezeCamView( Vector& eyeOrigin, QAngle& eyeAngles, floa
 
 	// Zoom towards our target
 	float flCurTime = (gpGlobals->curtime - m_flFreezeFrameStartTime);
-	float flBlendPerc = clamp( flCurTime / spec_freeze_traveltime.GetFloat(), 0, 1 );
+	float flBlendPerc = clamp( flCurTime / spec_freeze_traveltime.GetFloat(), 0.f, 1.f );
 	flBlendPerc = SimpleSpline( flBlendPerc );
 
 	Vector vecCamDesired = pTarget->GetObserverCamOrigin();	// Returns ragdoll origin if they're ragdolled
@@ -1377,12 +1666,12 @@ void C_BasePlayer::CalcFreezeCamView( Vector& eyeOrigin, QAngle& eyeAngles, floa
 	if ( pTarget->IsAlive() )
 	{
 		// Look at their chest, not their head
-		Vector maxs = GameRules()->GetViewVectors()->m_vHullMax;
+		Vector maxs = pTarget->GetBaseAnimating() ? VEC_HULL_MAX_SCALED( pTarget->GetBaseAnimating() ) : VEC_HULL_MAX;
 		vecCamTarget.z -= (maxs.z * 0.5);
 	}
 	else
 	{
-		vecCamTarget.z += VEC_DEAD_VIEWHEIGHT.z;	// look over ragdoll, not through
+		vecCamTarget.z += pTarget->GetBaseAnimating() ? VEC_DEAD_VIEWHEIGHT_SCALED( pTarget->GetBaseAnimating() ).z : VEC_DEAD_VIEWHEIGHT.z;	// look over ragdoll, not through
 	}
 
 	// Figure out a view position in front of the target
@@ -1466,20 +1755,25 @@ void C_BasePlayer::CalcInEyeCamView(Vector& eyeOrigin, QAngle& eyeAngles, float&
 	// Apply punch angle
 	VectorAdd( eyeAngles, GetPunchAngle(), eyeAngles );
 
+#if defined( REPLAY_ENABLED )
+	if( engine->IsHLTV() || g_pEngineClientReplay->IsPlayingReplayDemo() )
+#else
 	if( engine->IsHLTV() )
+#endif
 	{
+		C_BaseAnimating *pTargetAnimating = target->GetBaseAnimating();
 		if ( target->GetFlags() & FL_DUCKING )
 		{
-			eyeOrigin += VEC_DUCK_VIEW;
+			eyeOrigin += pTargetAnimating ? VEC_DUCK_VIEW_SCALED( pTargetAnimating ) : VEC_DUCK_VIEW;
 		}
 		else
 		{
-			eyeOrigin += VEC_VIEW;
+			eyeOrigin += pTargetAnimating ? VEC_VIEW_SCALED( pTargetAnimating ) : VEC_VIEW;
 		}
 	}
 	else
 	{
-		Vector offset = m_vecViewOffset;
+		Vector offset = GetViewOffset();
 #ifdef HL2MP
 		offset = target->GetViewOffset();
 #endif
@@ -1488,6 +1782,12 @@ void C_BasePlayer::CalcInEyeCamView(Vector& eyeOrigin, QAngle& eyeAngles, float&
 
 	engine->SetViewAngles( eyeAngles );
 }
+
+float C_BasePlayer::GetDeathCamInterpolationTime()
+{
+	return DEATH_ANIMATION_TIME;
+}
+
 
 void C_BasePlayer::CalcDeathCamView(Vector& eyeOrigin, QAngle& eyeAngles, float& fov)
 {
@@ -1500,24 +1800,25 @@ void C_BasePlayer::CalcDeathCamView(Vector& eyeOrigin, QAngle& eyeAngles, float&
 		eyeAngles = EyeAngles();
 	}
 
-	float interpolation = ( gpGlobals->curtime - m_flDeathTime ) / DEATH_ANIMATION_TIME;
+	float interpolation = ( gpGlobals->curtime - m_flDeathTime ) / GetDeathCamInterpolationTime();
 	interpolation = clamp( interpolation, 0.0f, 1.0f );
 
 	m_flObserverChaseDistance += gpGlobals->frametime*48.0f;
-	m_flObserverChaseDistance = clamp( m_flObserverChaseDistance, 16, CHASE_CAM_DISTANCE );
+	m_flObserverChaseDistance = clamp( m_flObserverChaseDistance, ( CHASE_CAM_DISTANCE_MIN * 2 ), CHASE_CAM_DISTANCE_MAX );
 
 	QAngle aForward = eyeAngles;
 	Vector origin = EyePosition();			
 
+	// NOTE:  This will create the ragdoll in CSS if m_hRagdoll is set, but m_pRagdoll is not yet presetn
 	IRagdoll *pRagdoll = GetRepresentativeRagdoll();
 	if ( pRagdoll )
 	{
 		origin = pRagdoll->GetRagdollOrigin();
-		origin.z += VEC_DEAD_VIEWHEIGHT.z; // look over ragdoll, not through
+		origin.z += VEC_DEAD_VIEWHEIGHT_SCALED( this ).z;
 	}
 	
 	if ( pKiller && pKiller->IsPlayer() && (pKiller != this) ) 
-	{
+	{														
 		Vector vKiller = pKiller->EyePosition() - origin;
 		QAngle aKiller; VectorAngles( vKiller, aKiller );
 		InterpolateAngles( aForward, aKiller, eyeAngles, interpolation );
@@ -1584,15 +1885,129 @@ void C_BasePlayer::ThirdPersonSwitch( bool bThirdperson )
 {
 	// We've switch from first to third, or vice versa.
 	UpdateVisibility();
+
+	// Update the visibility of anything bone attached to us.
+	if ( IsLocalPlayer() )
+	{
+		bool bShouldDrawLocalPlayer = ShouldDrawLocalPlayer();
+		for ( int i=0; i<GetNumBoneAttachments(); ++i )
+		{
+			C_BaseAnimating* pBoneAttachment = GetBoneAttachment( i );
+			if ( pBoneAttachment )
+			{
+				if ( bShouldDrawLocalPlayer )
+				{
+					pBoneAttachment->RemoveEffects( EF_NODRAW );
+				}
+				else
+				{
+					pBoneAttachment->AddEffects( EF_NODRAW );
+				}
+			}
+		}
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: single place to decide whether the camera is in the first-person position
+//          NOTE - ShouldDrawLocalPlayer() can be true even if the camera is in the first-person position, e.g. in VR.
+//-----------------------------------------------------------------------------
+/*static*/ bool C_BasePlayer::LocalPlayerInFirstPersonView()
+{
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( pLocalPlayer == NULL )
+	{
+		return false;
+	}
+
+	if ( pLocalPlayer->m_Local.m_bForceLocalPlayerDraw )
+	{
+		return false;
+	}
+
+#ifdef TF_CLIENT_DLL
+	if ( TFGameRules() && TFGameRules()->IsCompetitiveMode() && TFGameRules()->PlayersAreOnMatchSummaryStage() )
+	{
+		return false;
+	}
+#endif
+
+	int ObserverMode = pLocalPlayer->GetObserverMode();
+	if ( ( ObserverMode == OBS_MODE_NONE ) || ( ObserverMode == OBS_MODE_IN_EYE ) )
+	{
+		return !input->CAM_IsThirdPerson() && ( !ToolsEnabled() || !ToolFramework_IsThirdPersonCamera() );
+	}
+
+	// Not looking at the local player, e.g. in a replay in third person mode or freelook.
+	return false;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: single place to decide whether the local player should draw
 //-----------------------------------------------------------------------------
-bool C_BasePlayer::ShouldDrawLocalPlayer()
+/*static*/ bool C_BasePlayer::ShouldDrawLocalPlayer()
 {
-	return input->CAM_IsThirdPerson() || ( ToolsEnabled() && ToolFramework_IsThirdPersonCamera() );
+	if ( !UseVR() )
+	{
+		return !LocalPlayerInFirstPersonView() || cl_first_person_uses_world_model.GetBool();
+	}
+
+	static ConVarRef vr_first_person_uses_world_model( "vr_first_person_uses_world_model" );
+	return !LocalPlayerInFirstPersonView() || vr_first_person_uses_world_model.GetBool();
 }
+
+
+
+//-----------------------------------------------------------------------------
+// Purpose: single place to decide whether the camera is in the first-person position
+//          NOTE - ShouldDrawLocalPlayer() can be true even if the camera is in the first-person position, e.g. in VR.
+//-----------------------------------------------------------------------------
+bool C_BasePlayer::InFirstPersonView()
+{
+	if ( IsLocalPlayer() )
+	{
+		return LocalPlayerInFirstPersonView();
+	}
+	C_BasePlayer *pLocalPlayer = C_BasePlayer::GetLocalPlayer();
+	if ( pLocalPlayer == NULL )
+	{
+		return false;
+	}
+	// If this is who we're observing in first person, it's counted as the "local" player.
+	if ( pLocalPlayer->GetObserverMode() == OBS_MODE_IN_EYE && pLocalPlayer->GetObserverTarget() == ToBasePlayer(this) )
+	{
+		return LocalPlayerInFirstPersonView();
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: single place to decide whether the player is being drawn with the standard model (i.e. not the viewmodel)
+//          NOTE - ShouldDrawLocalPlayer() can be true even if the camera is in the first-person position, e.g. in VR.
+//-----------------------------------------------------------------------------
+bool C_BasePlayer::ShouldDrawThisPlayer()
+{
+	if ( !InFirstPersonView() )
+	{
+		return true;
+	}
+	if ( !UseVR() && cl_first_person_uses_world_model.GetBool() )
+	{
+		return true;
+	}
+	if ( UseVR() )
+	{
+		static ConVarRef vr_first_person_uses_world_model( "vr_first_person_uses_world_model" );
+		if ( vr_first_person_uses_world_model.GetBool() )
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1663,6 +2078,16 @@ void C_BasePlayer::PostThink( void )
 
 	if ( IsAlive())
 	{
+		// Need to do this on the client to avoid prediction errors
+		if ( GetFlags() & FL_DUCKING )
+		{
+			SetCollisionBounds( VEC_DUCK_HULL_MIN, VEC_DUCK_HULL_MAX );
+		}
+		else
+		{
+			SetCollisionBounds( VEC_HULL_MIN, VEC_HULL_MAX );
+		}
+		
 		if ( !CommentaryModeShouldSwallowInput( this ) )
 		{
 			// do weapon stuff
@@ -1717,9 +2142,8 @@ void C_BasePlayer::GetToolRecordingState( KeyValues *msg )
 	// then this code can (should!) be removed
 	if ( state.m_bThirdPerson )
 	{
-		Vector cam_ofs;
-		::input->CAM_GetCameraOffset( cam_ofs );
-
+		const Vector& cam_ofs = g_ThirdPersonManager.GetCameraOffsetAngles();
+		
 		QAngle camAngles;
 		camAngles[ PITCH ] = cam_ofs[ PITCH ];
 		camAngles[ YAW ] = cam_ofs[ YAW ];
@@ -1761,26 +2185,32 @@ void C_BasePlayer::Simulate()
 	}
 
 	BaseClass::Simulate();
+	if ( IsNoInterpolationFrame() || Teleported() )
+	{
+		ResetLatched();
+	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : CBaseViewModel
+//		Consider using GetRenderedWeaponModel() instead - it will get the
+//		viewmodel or the active weapon as appropriate.
 //-----------------------------------------------------------------------------
-C_BaseViewModel *C_BasePlayer::GetViewModel( int index /*= 0*/ )
+C_BaseViewModel *C_BasePlayer::GetViewModel( int index_ /*= 0*/, bool bObserverOK )
 {
-	Assert( index >= 0 && index < MAX_VIEWMODELS );
+	Assert( index_ >= 0 && index_ < MAX_VIEWMODELS );
 
-	C_BaseViewModel *vm = m_hViewModel[ index ];
+	C_BaseViewModel *vm = m_hViewModel[index_];
 	
-	if ( GetObserverMode() == OBS_MODE_IN_EYE )
+	if ( bObserverOK && GetObserverMode() == OBS_MODE_IN_EYE )
 	{
 		C_BasePlayer *target =  ToBasePlayer( GetObserverTarget() );
 
 		// get the targets viewmodel unless the target is an observer itself
 		if ( target && target != this && !target->IsObserver() )
 		{
-			vm = target->GetViewModel( index );
+			vm = target->GetViewModel( index_ );
 		}
 	}
 
@@ -1841,7 +2271,7 @@ void C_BasePlayer::PlayPlayerJingle()
 	if ( !filesystem->FileExists( fullsoundname ) )
 	{
 		char custname[ 512 ];
-		Q_snprintf( custname, sizeof( custname ), "downloads/%s.dat", soundhex );
+		Q_snprintf( custname, sizeof( custname ), "download/user_custom/%c%c/%s.dat", soundhex[0], soundhex[1], soundhex );
 		// it may have been downloaded but not copied under materials folder
 		if ( !filesystem->FileExists( custname ) )
 			return; // not downloaded yet
@@ -1849,7 +2279,7 @@ void C_BasePlayer::PlayPlayerJingle()
 		// copy from download folder to materials/temp folder
 		// this is done since material system can access only materials/*.vtf files
 
-		if ( !engine->CopyFile( custname, fullsoundname) )
+		if ( !engine->CopyLocalFile( custname, fullsoundname) )
 			return;
 	}
 
@@ -1944,10 +2374,12 @@ void C_BasePlayer::PhysicsSimulate( void )
 	}
 
 	// Run the next command
+	MoveHelper()->SetHost( this );
 	prediction->RunCommand( 
 		this, 
 		&ctx->cmd, 
 		MoveHelper() );
+	MoveHelper()->SetHost( NULL );
 #endif
 }
 
@@ -1999,6 +2431,16 @@ bool C_BasePlayer::IsUseableEntity( CBaseEntity *pEntity, unsigned int requiredC
 //-----------------------------------------------------------------------------
 float C_BasePlayer::GetFOV( void )
 {
+	// Allow users to override the FOV during demo playback
+	bool bUseDemoOverrideFov = engine->IsPlayingDemo() && demo_fov_override.GetFloat() > 0.0f;
+#if defined( REPLAY_ENABLED )
+	bUseDemoOverrideFov = bUseDemoOverrideFov && !g_pEngineClientReplay->IsPlayingReplayDemo();
+#endif
+	if ( bUseDemoOverrideFov )
+	{
+		return clamp( demo_fov_override.GetFloat(), 10.0f, 90.0f );
+	}
+
 	if ( GetObserverMode() == OBS_MODE_IN_EYE )
 	{
 		C_BasePlayer *pTargetPlayer = dynamic_cast<C_BasePlayer*>( GetObserverTarget() );
@@ -2123,6 +2565,15 @@ void RecvProxy_ObserverTarget( const CRecvProxyData *pData, void *pStruct, void 
 	pPlayer->SetObserverTarget( hTarget );
 }
 
+void RecvProxy_ObserverMode( const CRecvProxyData *pData, void *pStruct, void *pOut )
+{
+	C_BasePlayer *pPlayer = (C_BasePlayer *) pStruct;
+
+	Assert( pPlayer );
+
+	pPlayer->SetObserverMode ( pData->m_Value.m_Int );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Remove this player from a vehicle
 //-----------------------------------------------------------------------------
@@ -2209,7 +2660,7 @@ void C_BasePlayer::NotePredictionError( const Vector &vDelta )
 // offset curtime and setup bones at that time using fake interpolation
 // fake interpolation means we don't have reliable interpolation history (the local player doesn't animate locally)
 // so we just modify cycle and origin directly and use that as a fake guess
-void C_BasePlayer::ForceSetupBonesAtTimeFakeInterpolation( matrix3x4_t *pBonesOut, float curtimeOffset )
+bool C_BasePlayer::ForceSetupBonesAtTimeFakeInterpolation( matrix3x4_t *pBonesOut, float curtimeOffset )
 {
 	// we don't have any interpolation data, so fake it
 	float cycle = m_flCycle;
@@ -2224,37 +2675,44 @@ void C_BasePlayer::ForceSetupBonesAtTimeFakeInterpolation( matrix3x4_t *pBonesOu
 	m_flCycle = fmod( 10 + cycle + m_flPlaybackRate * curtimeOffset, 1.0f );
 	SetLocalOrigin( origin + curtimeOffset * GetLocalVelocity() );
 	// Setup bone state to extrapolate physics velocity
-	SetupBones( pBonesOut, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, gpGlobals->curtime + curtimeOffset );
+	bool bSuccess = SetupBones( pBonesOut, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, gpGlobals->curtime + curtimeOffset );
 
 	m_flCycle = cycle;
 	SetLocalOrigin( origin );
+	return bSuccess;
 }
 
-void C_BasePlayer::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt )
+bool C_BasePlayer::GetRagdollInitBoneArrays( matrix3x4_t *pDeltaBones0, matrix3x4_t *pDeltaBones1, matrix3x4_t *pCurrentBones, float boneDt )
 {
 	if ( !IsLocalPlayer() )
-	{
-		BaseClass::GetRagdollInitBoneArrays(pDeltaBones0, pDeltaBones1, pCurrentBones, boneDt);
-		return;
-	}
-	ForceSetupBonesAtTimeFakeInterpolation( pDeltaBones0, -boneDt );
-	ForceSetupBonesAtTimeFakeInterpolation( pDeltaBones1, 0 );
+		return BaseClass::GetRagdollInitBoneArrays(pDeltaBones0, pDeltaBones1, pCurrentBones, boneDt);
+
+	bool bSuccess = true;
+
+	if ( !ForceSetupBonesAtTimeFakeInterpolation( pDeltaBones0, -boneDt ) )
+		bSuccess = false;
+	if ( !ForceSetupBonesAtTimeFakeInterpolation( pDeltaBones1, 0 ) )
+		bSuccess = false;
+
 	float ragdollCreateTime = PhysGetSyncCreateTime();
 	if ( ragdollCreateTime != gpGlobals->curtime )
 	{
-		ForceSetupBonesAtTimeFakeInterpolation( pCurrentBones, ragdollCreateTime - gpGlobals->curtime );
+		if ( !ForceSetupBonesAtTimeFakeInterpolation( pCurrentBones, ragdollCreateTime - gpGlobals->curtime ) )
+			bSuccess = false;
 	}
 	else
 	{
-		SetupBones( pCurrentBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, gpGlobals->curtime );
+		if ( !SetupBones( pCurrentBones, MAXSTUDIOBONES, BONE_USED_BY_ANYTHING, gpGlobals->curtime ) )
+			bSuccess = false;
 	}
+	return bSuccess;
 }
 
 
 void C_BasePlayer::GetPredictionErrorSmoothingVector( Vector &vOffset )
 {
 #if !defined( NO_ENTITY_PREDICTION )
-	if ( engine->IsPlayingDemo() || !cl_smooth.GetInt() || !cl_predict->GetInt() )
+	if ( engine->IsPlayingDemo() || !cl_smooth.GetInt() || !cl_predict->GetInt() || engine->IsPaused() )
 	{
 		vOffset.Init();
 		return;
@@ -2411,6 +2869,165 @@ void C_BasePlayer::UpdateFogBlend( void )
 	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool C_BasePlayer::GetSteamID( CSteamID *pID )
+{
+	// try to make this a little more efficient
+
+	player_info_t pi;
+	if ( engine->GetPlayerInfo( entindex(), &pi ) )
+	{
+		if ( pi.friendsID && steamapicontext && steamapicontext->SteamUtils() )
+		{
+			pID->InstancedSet( pi.friendsID, 1, GetUniverse(), k_EAccountTypeIndividual );
+
+			return true;
+		}
+	}
+	return false;
+}
+
+#if defined USES_ECON_ITEMS
+//-----------------------------------------------------------------------------
+// Purpose: Update the visibility of our worn items.
+//-----------------------------------------------------------------------------
+void C_BasePlayer::UpdateWearables( void )
+{
+	for ( int i=0; i<m_hMyWearables.Count(); ++i )
+	{
+		CEconWearable* pItem = m_hMyWearables[i];
+		if ( pItem )
+		{
+			pItem->ValidateModelIndex();
+			pItem->UpdateVisibility();
+			pItem->CreateShadow();
+		}
+	}
+}
+#endif // USES_ECON_ITEMS
+
+
+//-----------------------------------------------------------------------------
+// Purpose: In meathook mode, fix the bone transforms to hang the user's own
+//			avatar under the camera.
+//-----------------------------------------------------------------------------
+void C_BasePlayer::BuildFirstPersonMeathookTransformations( CStudioHdr *hdr, Vector *pos, Quaternion q[], const matrix3x4_t& cameraTransform, int boneMask, CBoneBitList &boneComputed, const char *pchHeadBoneName )
+{
+	// Handle meathook mode. If we aren't rendering, just use last frame's transforms
+	if ( !InFirstPersonView() )
+		return;
+
+	// If we're in third-person view, don't do anything special.
+	// If we're in first-person view rendering the main view and using the viewmodel, we shouldn't have even got here!
+	// If we're in first-person view rendering the main view(s), meathook and headless.
+	// If we're in first-person view rendering shadowbuffers/reflections, don't do anything special either (we could do meathook but with a head?)
+	if ( IsAboutToRagdoll() )
+	{
+		// We're re-animating specifically to set up the ragdoll.
+		// Meathook can push the player through the floor, which makes the ragdoll fall through the world, which is no good.
+		// So do nothing.
+		return;
+	}
+
+	if ( !DrawingMainView() )
+	{
+		return;
+	}
+
+	// If we aren't drawing the player anyway, don't mess with the bones. This can happen in Portal.
+	if( !ShouldDrawThisPlayer() )
+	{
+		return;
+	}
+
+	m_BoneAccessor.SetWritableBones( BONE_USED_BY_ANYTHING );
+
+	int iHead = LookupBone( pchHeadBoneName );
+	if ( iHead == -1 )
+	{
+		return;
+	}
+
+	matrix3x4_t &mHeadTransform = GetBoneForWrite( iHead );
+
+	// "up" on the head bone is along the negative Y axis - not sure why.
+	//Vector vHeadTransformUp ( -mHeadTransform[0][1], -mHeadTransform[1][1], -mHeadTransform[2][1] );
+	//Vector vHeadTransformFwd ( mHeadTransform[0][1], mHeadTransform[1][1], mHeadTransform[2][1] );
+	Vector vHeadTransformTranslation ( mHeadTransform[0][3], mHeadTransform[1][3], mHeadTransform[2][3] );
+
+
+	// Find out where the player's head (driven by the HMD) is in the world.
+	// We can't move this with animations or effects without causing nausea, so we need to move
+	// the whole body so that the animated head is in the right place to match the player-controlled head.
+	Vector vHeadUp;
+	Vector vRealPivotPoint;
+	if( UseVR() )
+	{
+		VMatrix mWorldFromMideye = g_ClientVirtualReality.GetWorldFromMidEye();
+
+		// What we do here is:
+		// * Take the required eye pos+orn - the actual pose the player is controlling with the HMD.
+		// * Go downwards in that space by cl_meathook_neck_pivot_ingame_* - this is now the neck-pivot in the game world of where the player is actually looking.
+		// * Now place the body of the animated character so that the head bone is at that position.
+		// The head bone is the neck pivot point of the in-game character.
+
+		Vector vRealMidEyePos = mWorldFromMideye.GetTranslation();
+		vRealPivotPoint = vRealMidEyePos - ( mWorldFromMideye.GetUp() * cl_meathook_neck_pivot_ingame_up.GetFloat() ) - ( mWorldFromMideye.GetForward() * cl_meathook_neck_pivot_ingame_fwd.GetFloat() );
+	}
+	else
+	{
+		// figure out where to put the body from the aim angles
+		Vector vForward, vRight, vUp;
+		AngleVectors( MainViewAngles(), &vForward, &vRight, &vUp );
+		
+		vRealPivotPoint = MainViewOrigin() - ( vUp * cl_meathook_neck_pivot_ingame_up.GetFloat() ) - ( vForward * cl_meathook_neck_pivot_ingame_fwd.GetFloat() );		
+	}
+
+	Vector vDeltaToAdd = vRealPivotPoint - vHeadTransformTranslation;
+
+
+	// Now add this offset to the entire skeleton.
+	for (int i = 0; i < hdr->numbones(); i++)
+	{
+		// Only update bones reference by the bone mask.
+		if ( !( hdr->boneFlags( i ) & boneMask ) )
+		{
+			continue;
+		}
+		matrix3x4_t& bone = GetBoneForWrite( i );
+		Vector vBonePos;
+		MatrixGetTranslation ( bone, vBonePos );
+		vBonePos += vDeltaToAdd;
+		MatrixSetTranslation ( vBonePos, bone );
+	}
+
+	// Then scale the head to zero, but leave its position - forms a "neck stub".
+	// This prevents us rendering junk all over the screen, e.g. inside of mouth, etc.
+	MatrixScaleByZero( mHeadTransform );
+
+	// TODO: right now we nuke the hats by shrinking them to nothing,
+	// but it feels like we should do something more sensible.
+	// For example, for one sniper taunt he takes his hat off and waves it - would be nice to see it then.
+	int iHelm = LookupBone( "prp_helmet" );
+	if ( iHelm != -1 )
+	{
+		// Scale the helmet.
+		matrix3x4_t  &transformhelmet = GetBoneForWrite( iHelm );
+		MatrixScaleByZero( transformhelmet );
+	}
+
+	iHelm = LookupBone( "prp_hat" );
+	if ( iHelm != -1 )
+	{
+		matrix3x4_t  &transformhelmet = GetBoneForWrite( iHelm );
+		MatrixScaleByZero( transformhelmet );
+	}
+}
+
+
+
 void CC_DumpClientSoundscapeData( const CCommand& args )
 {
 	C_BasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
@@ -2419,8 +3036,9 @@ void CC_DumpClientSoundscapeData( const CCommand& args )
 
 	Msg("Client Soundscape data dump:\n");
 	Msg("   Position: %.2f %.2f %.2f\n", pPlayer->GetAbsOrigin().x, pPlayer->GetAbsOrigin().y, pPlayer->GetAbsOrigin().z );
-	Msg("   soundscape index: %d\n", pPlayer->m_Local.m_audio.soundscapeIndex );
-	Msg("   entity index: %d\n", pPlayer->m_Local.m_audio.ent.Get() ? pPlayer->m_Local.m_audio.ent->entindex() : -1 );
+	Msg("   soundscape index: %d\n", pPlayer->m_Local.m_audio.soundscapeIndex.Get() );
+	Msg("   entity index: %d\n", pPlayer->m_Local.m_audio.entIndex.Get() );
+#if 0
 	if ( pPlayer->m_Local.m_audio.ent.Get() )
 	{
 		Msg("   entity pos: %.2f %.2f %.2f\n", pPlayer->m_Local.m_audio.ent.Get()->GetAbsOrigin().x, pPlayer->m_Local.m_audio.ent.Get()->GetAbsOrigin().y, pPlayer->m_Local.m_audio.ent.Get()->GetAbsOrigin().z );
@@ -2429,6 +3047,7 @@ void CC_DumpClientSoundscapeData( const CCommand& args )
 			Msg("     ENTITY IS DORMANT\n");
 		}
 	}
+#endif
 	bool bFoundOne = false;
 	for ( int i = 0; i < NUM_AUDIO_LOCAL_SOUNDS; i++ )
 	{

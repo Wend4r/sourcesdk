@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -158,6 +158,7 @@ CPlayerAnimState::CPlayerAnimState( CHL2MP_Player *outer )
 void CPlayerAnimState::Update()
 {
 	m_angRender = GetOuter()->GetLocalAngles();
+	m_angRender[ PITCH ] = m_angRender[ ROLL ] = 0.0f;
 
 	ComputePoseParam_BodyYaw();
 	ComputePoseParam_BodyPitch(GetOuter()->GetModelPtr());
@@ -325,6 +326,7 @@ void CPlayerAnimState::ComputePoseParam_BodyPitch( CStudioHdr *pStudioHdr )
 	QAngle absangles = GetOuter()->GetAbsAngles();
 	absangles.x = 0.0f;
 	m_angRender = absangles;
+	m_angRender[ PITCH ] = m_angRender[ ROLL ] = 0.0f;
 
 	// See if we have a blender for pitch
 	GetOuter()->SetPoseParameter( pStudioHdr, "aim_pitch", flPitch );
@@ -385,6 +387,7 @@ void CPlayerAnimState::ComputePoseParam_BodyLookYaw( void )
 	QAngle absangles = GetOuter()->GetAbsAngles();
 	absangles.y = AngleNormalize( absangles.y );
 	m_angRender = absangles;
+	m_angRender[ PITCH ] = m_angRender[ ROLL ] = 0.0f;
 
 	// See if we even have a blender for pitch
 	int upper_body_yaw = GetOuter()->LookupPoseParameter( "aim_yaw" );
@@ -508,6 +511,7 @@ void CPlayerAnimState::ComputePoseParam_BodyLookYaw( void )
 	absangles = GetOuter()->GetAbsAngles();
 	absangles.y = m_flCurrentFeetYaw;
 	m_angRender = absangles;
+	m_angRender[ PITCH ] = m_angRender[ ROLL ] = 0.0f;
 
 	GetOuter()->SetPoseParameter( upper_body_yaw, clamp( m_flCurrentTorsoYaw, -60.0f, 60.0f ) );
 

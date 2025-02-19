@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2006, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -461,7 +461,7 @@ void CEP2GameStats::Event_LoadGame( void )
 		return;
 
 	char name[ 512 ];
-	Q_snprintf( name, sizeof( name ), "SAVE/%s", pchSaveFile );
+	Q_snprintf( name, sizeof( name ), "save/%s", pchSaveFile );
 	Q_DefaultExtension( name, IsX360() ? ".360.sav" : ".sav", sizeof( name ) );
 	Q_FixSlashes( name );
 	Q_strlower( name );

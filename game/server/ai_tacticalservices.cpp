@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ====
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 //=============================================================================
 
@@ -347,7 +347,7 @@ int CAI_TacticalServices::FindCoverNode(const Vector &vNearPos, const Vector &vT
 
 	MARK_TASK_EXPENSIVE();
 
-	DebugFindCover( g_AIDebugFindCoverNode, GetOuter()->EyePosition(), vThreatEyePos, 0, 255, 255 );
+	DebugFindCover( NO_NODE, GetOuter()->EyePosition(), vThreatEyePos, 0, 255, 255 );
 
 	int iMyNode = GetPathfinder()->NearestNodeToPoint( vNearPos );
 
@@ -748,7 +748,7 @@ bool CAI_TacticalServices::FindLateralLos( const Vector &vecThreat, Vector *pRes
 	int iDelta = COVER_DELTA;
 
 	// If we're limited in how far we're allowed to move laterally, don't bother checking past it
-	int iMaxLateralDelta = (int)GetOuter()->GetMaxTacticalLateralMovement();
+	int iMaxLateralDelta = GetOuter()->GetMaxTacticalLateralMovement();
 	if ( iMaxLateralDelta != MAXTACLAT_IGNORE && iMaxLateralDelta < iDelta )
 	{
 		iChecks = 1;

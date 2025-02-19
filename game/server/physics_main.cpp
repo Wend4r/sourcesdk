@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Physics simulation for non-havok/ipion objects
 //
@@ -7,11 +7,15 @@
 
 
 #include "cbase.h"
-#ifdef _WIN32
+#if defined( WIN32 ) && _MSC_VER <= 1920
 #include "typeinfo.h"
 // BUGBUG: typeinfo stomps some of the warning settings (in yvals.h)
 #pragma warning(disable:4244)
-#elif _LINUX
+#elif defined( WIN32 )
+#include <typeinfo>
+// BUGBUG: typeinfo stomps some of the warning settings (in yvals.h)
+#pragma warning(disable:4244)
+#elif POSIX
 #include <typeinfo>
 #else
 #error "need typeinfo defined"
@@ -126,7 +130,7 @@ void CPhysicsPushedEntities::UnlinkPusherList( int *pPusherHandles )
 {
 	for ( int i = m_rgPusher.Count(); --i >= 0; )
 	{
-		pPusherHandles[i] = partition->HideElement( m_rgPusher[i].m_pEntity->CollisionProp()->GetPartitionHandle() );
+		pPusherHandles[i] = ::partition->HideElement( m_rgPusher[i].m_pEntity->CollisionProp()->GetPartitionHandle() );
 	}
 }
 
@@ -134,7 +138,7 @@ void CPhysicsPushedEntities::RelinkPusherList( int *pPusherHandles )
 {
 	for ( int i = m_rgPusher.Count(); --i >= 0; )
 	{
-		partition->UnhideElement( m_rgPusher[i].m_pEntity->CollisionProp()->GetPartitionHandle(), pPusherHandles[i] );
+		::partition->UnhideElement( m_rgPusher[i].m_pEntity->CollisionProp()->GetPartitionHandle(), pPusherHandles[i] );
 	}
 }
 
@@ -294,7 +298,10 @@ bool CPhysicsPushedEntities::SpeculativelyCheckPush( PhysicsPushedInfo_t &info, 
 				return true;
 		}
 		pBlocker->SetAbsOrigin( pushDestPosition );
+
+#ifndef TF_DLL
 		DevMsg(1, "Ignoring player blocking train!\n");
+#endif
 		return true;
 	}
 	return false;
@@ -447,8 +454,8 @@ void CPhysicsPushedEntities::StoreMovedEntities( physicspushlist_t &list )
 	list.localOrigin = m_rootPusherStartLocalOrigin;
 	list.localAngles = m_rootPusherStartLocalAngles;
 	list.pushedCount = CountMovedEntities();
-	Assert(list.pushedCount < (int)ARRAYSIZE(list.pushedEnts));
-	if ( list.pushedCount > (int)ARRAYSIZE(list.pushedEnts) )
+	Assert(list.pushedCount < ARRAYSIZE(list.pushedEnts));
+	if ( list.pushedCount > ARRAYSIZE(list.pushedEnts) )
 	{
 		list.pushedCount = ARRAYSIZE(list.pushedEnts);
 	}
@@ -573,7 +580,7 @@ private:
 			if ( m_collisionGroups[i] == collisionGroup )
 				return;
 		}
-		if ( m_collisionGroupCount < (int)ARRAYSIZE(m_collisionGroups) )
+		if ( m_collisionGroupCount < ARRAYSIZE(m_collisionGroups) )
 		{
 			m_collisionGroups[m_collisionGroupCount] = collisionGroup;
 			m_collisionGroupCount++;
@@ -693,7 +700,7 @@ void CPhysicsPushedEntities::GenerateBlockingEntityList()
 
 		Vector vecAbsMins, vecAbsMaxs;
 		pPusher->CollisionProp()->WorldSpaceAABB( &vecAbsMins, &vecAbsMaxs );
-		partition->EnumerateElementsInBox( PARTITION_ENGINE_NON_STATIC_EDICTS, vecAbsMins, vecAbsMaxs, false, &blockerEnum );
+		::partition->EnumerateElementsInBox( PARTITION_ENGINE_NON_STATIC_EDICTS, vecAbsMins, vecAbsMaxs, false, &blockerEnum );
 
 		//Go back throught the generated list.
 	}
@@ -733,19 +740,22 @@ void CPhysicsPushedEntities::GenerateBlockingEntityListAddBox( const Vector &vec
 			}
 		}
 
-		partition->EnumerateElementsInBox( PARTITION_ENGINE_NON_STATIC_EDICTS, vecAbsMins, vecAbsMaxs, false, &blockerEnum );
+		::partition->EnumerateElementsInBox( PARTITION_ENGINE_NON_STATIC_EDICTS, vecAbsMins, vecAbsMaxs, false, &blockerEnum );
 
 		//Go back throught the generated list.
 	}
 }
 
-
+#ifdef TF_DLL
+#include "tf_logic_robot_destruction.h"
+#endif
 //-----------------------------------------------------------------------------
 // Purpose: Gets a list of all entities hierarchically attached to the root 
 //-----------------------------------------------------------------------------
 void CPhysicsPushedEntities::SetupAllInHierarchy( CBaseEntity *pParent )
 {
-	if (!pParent)
+	// Server-only entities do not have a valid partition
+	if ( !pParent || pParent->IsEFlagSet( EFL_SERVER_ONLY ) )
 		return;
 
 	VPROF("CPhysicsPushedEntities::SetupAllInHierarchy");
@@ -783,6 +793,7 @@ void CPhysicsPushedEntities::RotateRootEntity( CBaseEntity *pRoot, float movetim
 	// rotate the pusher to it's final position
 	QAngle angles = pRoot->GetLocalAngles();
 	angles += pRoot->GetLocalAngularVelocity() * movetime;
+
 	pRoot->SetLocalAngles( angles );
 	
 	// Compute the change in absangles
@@ -958,7 +969,7 @@ void CBaseEntity::PhysicsDispatchThink( BASEPTR thinkFunc )
 			{
 #ifdef _WIN32
 				Msg( "%s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).raw_name(), time );
-#elif _LINUX
+#elif POSIX
 				Msg( "%s(%s) thinking for %.02f ms!!!\n", GetClassname(), typeid(this).name(), time );
 #else
 #error "typeinfo"
@@ -1189,7 +1200,7 @@ void CBaseEntity::PhysicsAddHalfGravity( float timestep )
 
 	// Add 1/2 of the total gravitational effects over this timestep
 	Vector vecAbsVelocity = GetAbsVelocity();
-	vecAbsVelocity[2] -= ( 0.5 * ent_gravity * sv_gravity.GetFloat() * timestep );
+	vecAbsVelocity[2] -= ( 0.5 * ent_gravity * GetCurrentGravity() * timestep );
 	vecAbsVelocity[2] += GetBaseVelocity()[2] * gpGlobals->frametime;
 	SetAbsVelocity( vecAbsVelocity );
 
@@ -1377,7 +1388,7 @@ void CBaseEntity::PerformPush( float movetime )
 		m_pBlocker = pBlocker;
 		if (m_pBlocker.ToInt() != hPrevBlocker)
 		{
-			if (hPrevBlocker != (int)INVALID_EHANDLE_INDEX)
+			if (hPrevBlocker != INVALID_EHANDLE_INDEX)
 			{
 				EndBlocked();
 			}
@@ -1837,7 +1848,9 @@ void CBaseEntity::PhysicsStepRunTimestep( float timestep )
 {
 	bool	wasonground;
 	bool	inwater;
+#if 0
 	bool	hitsound = false;
+#endif
 	float	speed, newspeed, control;
 	float	friction;
 
@@ -1858,10 +1871,12 @@ void CBaseEntity::PhysicsStepRunTimestep( float timestep )
 		{
 			if ( !( ( GetFlags() & FL_SWIM ) && ( GetWaterLevel() > 0 ) ) )
 			{
-				if ( GetAbsVelocity()[2] < ( sv_gravity.GetFloat() * -0.1 ) )
+#if 0
+				if ( GetAbsVelocity()[2] < ( GetCurrentGravity() * -0.1 ) )
 				{
 					hitsound = true;
 				}
+#endif
 
 				if ( !inwater )
 				{

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -100,15 +100,6 @@ LINK_ENTITY_TO_CLASS( weapon_sdk_base, CWeaponSDKBase );
 
 #endif
 
-#ifdef CLIENT_DLL
-bool CWeaponSDKBase::ShouldPredict()
-{
-       if ( GetOwner() && GetOwner() == C_BasePlayer::GetLocalPlayer())
-               return true;
-
-       return BaseClass::ShouldPredict();
-}
-#endif
 // ----------------------------------------------------------------------------- //
 // CWeaponCSBase implementation. 
 // ----------------------------------------------------------------------------- //

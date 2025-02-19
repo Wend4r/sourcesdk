@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Player for SDK Game
 //
@@ -9,7 +9,8 @@
 #define SDK_PLAYER_H
 #pragma once
 
-#include "basemultiplayerplayer.h"
+
+#include "player.h"
 #include "server_class.h"
 #include "sdk_playeranimstate.h"
 #include "sdk_shareddefs.h"
@@ -18,12 +19,13 @@
 //=============================================================================
 // >> SDK Game player
 //=============================================================================
-class CSDKPlayer : public CBaseMultiplayerPlayer, public ISDKPlayerAnimStateHelpers
+class CSDKPlayer : public CBasePlayer, public ISDKPlayerAnimStateHelpers
 {
 public:
-	DECLARE_CLASS( CSDKPlayer, CBaseMultiplayerPlayer );
+	DECLARE_CLASS( CSDKPlayer, CBasePlayer );
 	DECLARE_SERVERCLASS();
 	DECLARE_PREDICTABLE();
+	DECLARE_DATADESC();
 
 	CSDKPlayer();
 	~CSDKPlayer();

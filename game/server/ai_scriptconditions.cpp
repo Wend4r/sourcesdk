@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -401,7 +401,7 @@ bool CAI_ScriptConditions::EvalPlayerInVehicle( const EvalArgs_t &args )
 		return false;
 
 	// Desired states must match
-	return ( !!args.pPlayer->IsInAVehicle() == m_fPlayerInVehicle );
+	return args.pPlayer->IsInAVehicle() == ( m_fPlayerInVehicle == TRS_TRUE );
 }
 
 //-----------------------------------------------------------------------------
@@ -421,7 +421,7 @@ bool CAI_ScriptConditions::EvalActorInVehicle( const EvalArgs_t &args )
 		return false;
 
 	// Desired states must match
-	return ( !!pBCC->IsInAVehicle() == m_fActorInVehicle );
+	return pBCC->IsInAVehicle() == ( m_fActorInVehicle == TRS_TRUE );
 }
 
 //-----------------------------------------------------------------------------

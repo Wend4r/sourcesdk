@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,22 +13,23 @@
 #pragma once
 #endif
 
-
+#include "tier0/platform.h"
 #include "tier1/interface.h"
+#include "imaterialsystem.h"
 
+//-----------------------------------------------------------------------------
+// GL helpers
+//-----------------------------------------------------------------------------
+FORCEINLINE bool IsEmulatingGL()
+{
+	static bool bIsEmulatingGL = ( Plat_GetCommandLineA() ) ? ( strstr( Plat_GetCommandLineA(), "-r_emulate_gl" ) != NULL ) : false;
+	return bIsEmulatingGL;
+}
 
 //-----------------------------------------------------------------------------
 // Material system interface version
 //-----------------------------------------------------------------------------
 #define MATERIALSYSTEM_HARDWARECONFIG_INTERFACE_VERSION		"MaterialSystemHardwareConfig012"
-
-// HDRFIXME NOTE: must match common_ps_fxc.h
-enum HDRType_t
-{
-	HDR_TYPE_NONE,
-	HDR_TYPE_INTEGER,
-	HDR_TYPE_FLOAT,
-};
 
 // For now, vertex compression is simply "on or off" (for the sake of simplicity
 // and MeshBuilder perf.), but later we may support multiple flavours.
@@ -85,9 +86,10 @@ public:
 	virtual bool HasSetDeviceGammaRamp() const = 0;
 	DEFCONFIGMETHOD( bool, SupportsCompressedTextures(), true );
 	virtual VertexCompressionType_t SupportsCompressedVertices() const = 0;
-	DEFCONFIGMETHOD( bool, SupportsNormalMapCompression(), true );
+	virtual bool SupportsNormalMapCompression() const { return false; }
 	DEFCONFIGMETHOD( bool, SupportsVertexAndPixelShaders(), true );
 	DEFCONFIGMETHOD( bool, SupportsPixelShaders_1_4(), true );
+	DEFCONFIGMETHOD( bool, SupportsStaticControlFlow(), true );
 	DEFCONFIGMETHOD( bool, SupportsPixelShaders_2_0(), true );
 	DEFCONFIGMETHOD( bool,  SupportsVertexShaders_2_0(), true );
 	virtual int  MaximumAnisotropicLevel() const = 0;	// 0 means no anisotropic filtering
@@ -146,6 +148,10 @@ public:
 
 	// Does the card support sRGB reads/writes?
 	DEFCONFIGMETHOD( bool, SupportsSRGB(), true );
+	DEFCONFIGMETHOD( bool, FakeSRGBWrite(), false );
+	DEFCONFIGMETHOD( bool, CanDoSRGBReadFromRTs(), true );
+
+	virtual bool SupportsGLMixedSizeTargets() const = 0;
 
 	virtual bool IsAAEnabled() const = 0;	// Is antialiasing being used?
 
@@ -186,6 +192,10 @@ public:
 
 	virtual bool SupportsBorderColor( void ) const = 0;
 	virtual bool SupportsFetch4( void ) const = 0;
+	virtual bool CanStretchRectFromTextures( void ) const = 0;
+
+	inline bool ShouldAlwaysUseShaderModel2bShaders() const { return IsOpenGL(); }
+	inline bool PlatformRequiresNonNullPixelShaders() const { return IsOpenGL(); }
 };
 
 #endif // IMATERIALSYSTEMHARDWARECONFIG_H

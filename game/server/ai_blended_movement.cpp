@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -301,20 +301,20 @@ void CAI_BlendedMotor::SetMoveScriptAnim( float flNewSpeed )
 
 	SetPlaybackRate( m_flCurrRate );
 	// calc weight of idle animation layer that suppresses the run animation
-	float flWeight = 0.0;
-	if (GetIdealSpeed() > 0.0)
+	float flWeight = 0.0f;
+	if (GetIdealSpeed() > 0.0f)
 	{
-		flWeight = 1.0 - (flNewSpeed / (GetIdealSpeed()  * GetPlaybackRate()));
+		flWeight = 1.0f - (flNewSpeed / (GetIdealSpeed()  * GetPlaybackRate()));
 	}
-	if (flWeight < 0.0)
+	if (flWeight < 0.0f)
 	{
 		m_flCurrRate = flNewSpeed / GetIdealSpeed();
-		m_flCurrRate = clamp( m_flCurrRate, 0.0, 1.0 );
+		m_flCurrRate = clamp( m_flCurrRate, 0.0f, 1.0f );
 		SetPlaybackRate( m_flCurrRate );
 		flWeight = 0.0;
 	}
 	// Msg("weight %.3f rate %.3f\n", flWeight, m_flCurrRate );
-	m_flCurrRate = MIN( m_flCurrRate + (1.0 - m_flCurrRate) * 0.8, 1.0 );
+	m_flCurrRate = MIN( m_flCurrRate + (1.0 - m_flCurrRate) * 0.8f, 1.0f );
 
 	if (m_nSavedGoalActivity == ACT_INVALID)
 	{
@@ -974,7 +974,7 @@ int CAI_BlendedMotor::BuildInsertNode( int i, float flTime )
 
 	Assert( flTime > 0.0 );
 
-	for (; i < m_scriptTurn.Count() - 1; i++)
+	for (i; i < m_scriptTurn.Count() - 1; i++)
 	{
 		if (m_scriptTurn[i].flTime < flTime)
 		{
@@ -1054,7 +1054,7 @@ void CAI_BlendedMotor::BuildVelocityScript( const AILocalMoveGoal_t &move )
 		}
 
 		m_flPredictiveSpeedAdjust = 1.1 - fabs( flDelta );
-		m_flPredictiveSpeedAdjust = clamp( m_flPredictiveSpeedAdjust, (flHeight > 0.0) ? 0.5 : 0.8, 1.0 );
+		m_flPredictiveSpeedAdjust = clamp( m_flPredictiveSpeedAdjust, (flHeight > 0.0f) ? 0.5f : 0.8f, 1.0f );
 
 		/*
 		if ((GetOuter()->m_debugOverlays & OVERLAY_NPC_SELECTED_BIT))
@@ -1080,16 +1080,16 @@ void CAI_BlendedMotor::BuildVelocityScript( const AILocalMoveGoal_t &move )
 		}
 
 		float newSpeedAdjust = 1.1 - fabs( flDelta );
-		newSpeedAdjust = clamp( newSpeedAdjust, (flHeight > 0.0) ? 0.5 : 0.8, 1.0 );
+		newSpeedAdjust = clamp( newSpeedAdjust, (flHeight > 0.0f) ? 0.5f : 0.8f, 1.0f );
 
 		// debounce speed adjust
 		if (newSpeedAdjust < m_flReactiveSpeedAdjust)
 		{
-			m_flReactiveSpeedAdjust = m_flReactiveSpeedAdjust * 0.2 + newSpeedAdjust * 0.8;
+			m_flReactiveSpeedAdjust = m_flReactiveSpeedAdjust * 0.2f + newSpeedAdjust * 0.8f;
 		}
 		else
 		{
-			m_flReactiveSpeedAdjust = m_flReactiveSpeedAdjust * 0.5 + newSpeedAdjust * 0.5;
+			m_flReactiveSpeedAdjust = m_flReactiveSpeedAdjust * 0.5f + newSpeedAdjust * 0.5f;
 		}
 
 		// filter through origins
@@ -1193,7 +1193,7 @@ void CAI_BlendedMotor::BuildVelocityScript( const AILocalMoveGoal_t &move )
 				{
 					float minJumpHeight = 0;
 					float maxHorzVel = MAX( GetCurSpeed(), 100 );
-					float gravity = sv_gravity.GetFloat() * GetOuter()->GetGravity();
+					float gravity = GetCurrentGravity() * GetOuter()->GetGravity();
 					Vector vecApex;
 					Vector rawJumpVel = GetMoveProbe()->CalcJumpLaunchVelocity(script.vecLocation, pNext->vecLocation, gravity, &minJumpHeight, maxHorzVel, &vecApex );
 
@@ -1223,8 +1223,6 @@ void CAI_BlendedMotor::BuildVelocityScript( const AILocalMoveGoal_t &move )
 				script.flMaxVelocity = 0;
 				break;
 			*/
-			default:
-				break;
 			}
 		}
 		else
@@ -1741,11 +1739,11 @@ bool CAI_BlendedMotor::AddTurnGesture( float flYD )
 			SetLayerPlaybackRate( iLayer, 1.0 );
 			float actualDuration = GetOuter()->GetLayerDuration( iLayer );
 
-			float rate = random->RandomFloat( 0.5, 1.1 );
+			float rate = random->RandomFloat( 0.5f, 1.1f );
 			float diff = fabs( flYD );
-			float speed = (diff / (turnCompletion * actualDuration / rate)) * 0.1;
+			float speed = (diff / (turnCompletion * actualDuration / rate)) * 0.1f;
 
-			speed = clamp( speed, 15, 35 );
+			speed = clamp( speed, 15.f, 35.f );
 			speed = MIN( speed, diff );
 
 			actualDuration = (diff / (turnCompletion * speed)) * 0.1 ;
@@ -1866,7 +1864,7 @@ float ChangeDistance( float flInterval, float flGoalDistance, float flGoalVeloci
 		// I need to speed up
 		flNewVelocity = flCurVelocity + flGoalAccel * flInterval;
 		if (flNewVelocity > flGoalVelocity)
-			flGoalVelocity = flGoalVelocity;
+			flNewVelocity = flGoalVelocity;
 	}
 	else if (flNewVelocity < flIdealVelocity)
 	{

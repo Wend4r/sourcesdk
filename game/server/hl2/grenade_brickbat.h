@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Things thrown from the hand 
 //
@@ -15,7 +15,8 @@
 #define	GRENADEBRICKBAT_H
 
 #include "basegrenade_shared.h"
-#include "weapon_brickbat.h"
+
+enum BrickbatAmmo_t;
 
 class CGrenade_Brickbat : public CBaseGrenade
 {

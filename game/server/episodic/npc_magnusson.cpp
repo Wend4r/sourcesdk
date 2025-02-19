@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ====
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Dr. Magnusson, a grumpy bastard who builds satellites and rockets
 //			at the White Forest missile silo. Instantly unlikeable, he is also
@@ -72,7 +72,7 @@ void CNPC_Magnusson::HandleAnimEvent( animevent_t *pEvent )
 //-----------------------------------------------------------------------------
 int CNPC_Magnusson::GetSoundInterests ( void )
 {
-	return	0;
+	return	NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ int CNPC_Magnusson::GetSoundInterests ( void )
 void CNPC_Magnusson::Spawn()
 {
 	// Allow custom model usage (mostly for monitors)
-	const char *szModel = (char *)STRING( GetModelName() );
+	char *szModel = (char *)STRING( GetModelName() );
 	if (!szModel || !*szModel)
 	{
 		szModel = "models/magnusson.mdl";

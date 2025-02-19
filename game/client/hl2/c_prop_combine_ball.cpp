@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,13 +6,13 @@
 
 #include "cbase.h"
 #include "c_prop_combine_ball.h"
-#include "materialsystem/IMaterial.h"
+#include "materialsystem/imaterial.h"
 #include "model_types.h"
 #include "c_physicsprop.h"
 #include "c_te_effect_dispatch.h"
 #include "fx_quad.h"
 #include "fx.h"
-#include "ClientEffectPrecacheSystem.h"
+#include "clienteffectprecachesystem.h"
 #include "view.h"
 #include "view_scene.h"
 #include "beamdraw.h"

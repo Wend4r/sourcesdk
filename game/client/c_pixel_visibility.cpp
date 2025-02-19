@@ -1,25 +1,45 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //
 //===========================================================================//
+
 #include "cbase.h"
 #include "c_pixel_visibility.h"
 #include "materialsystem/imesh.h"
 #include "materialsystem/imaterial.h"
-#include "ClientEffectPrecacheSystem.h"
+#include "clienteffectprecachesystem.h"
 #include "view.h"
+#include "viewrender.h"
 #include "utlmultilist.h"
 #include "vprof.h"
+#include "icommandline.h"
+#include "sourcevr/isourcevirtualreality.h"
 
 static void PixelvisDrawChanged( IConVar *pPixelvisVar, const char *pOld, float flOldValue );
 
 ConVar r_pixelvisibility_partial( "r_pixelvisibility_partial", "1" );
-ConVar r_dopixelvisibility( "r_dopixelvisibility", "1" );
+ConVar r_dopixelvisibility( "r_dopixelvisibility", "1", FCVAR_ALLOWED_IN_COMPETITIVE );
 ConVar r_drawpixelvisibility( "r_drawpixelvisibility", "0", 0, "Show the occlusion proxies", PixelvisDrawChanged );
 ConVar r_pixelvisibility_spew( "r_pixelvisibility_spew", "0" );
+
+#ifdef OSX
+	// GLMgr will set this one to "1" if it senses the new post-10.6.4 driver (m_hasPerfPackage1)
+	ConVar gl_can_query_fast( "gl_can_query_fast", "0" );
+	
+	static bool	HasFastQueries( void )
+	{
+		return gl_can_query_fast.GetBool();
+	}
+#else
+	// non OSX path
+	static bool	HasFastQueries( void )
+	{
+		return true;
+	}
+#endif
 
 extern ConVar building_cubemaps;
 
@@ -325,7 +345,7 @@ float CPixelVisibilityQuery::GetFractionVisible( float fadeTimeInv )
 
 			if ( r_pixelvisibility_spew.GetBool() && CurrentViewID() == 0 ) 
 			{
-				DevMsg( 1, "Pixels visible: %d (qh:%d) Pixels possible: %d (qh:%d) (frame:%d)\n", pixels, m_queryHandle, pixelsPossible, m_queryHandleCount, gpGlobals->framecount );
+				DevMsg( 1, "Pixels visible: %d (qh:%p) Pixels possible: %d (qh:%p) (frame:%d)\n", pixels, m_queryHandle, pixelsPossible, m_queryHandleCount, gpGlobals->framecount );
 			}
 
 			if ( pixels < 0 || pixelsPossible < 0 )
@@ -356,7 +376,7 @@ float CPixelVisibilityQuery::GetFractionVisible( float fadeTimeInv )
 
 			if ( r_pixelvisibility_spew.GetBool() && CurrentViewID() == 0 ) 
 			{
-				DevMsg( 1, "Pixels visible: %d (qh:%d) (frame:%d)\n", pixels, m_queryHandle, gpGlobals->framecount );
+				DevMsg( 1, "Pixels visible: %d (qh:%p) (frame:%d)\n", pixels, m_queryHandle, gpGlobals->framecount );
 			}
 
 			if ( pixels < 0 )
@@ -395,7 +415,7 @@ void CPixelVisibilityQuery::IssueQuery( IMatRenderContext *pRenderContext, float
 
 		if ( r_pixelvisibility_spew.GetBool() && CurrentViewID() == 0 ) 
 		{
-			DevMsg( 1, "Draw Proxy: qh:%d org:<%d,%d,%d> (frame:%d)\n", m_queryHandle, (int)m_origin[0], (int)m_origin[1], (int)m_origin[2], gpGlobals->framecount );
+			DevMsg( 1, "Draw Proxy: qh:%p org:<%d,%d,%d> (frame:%d)\n", m_queryHandle, (int)m_origin[0], (int)m_origin[1], (int)m_origin[2], gpGlobals->framecount );
 		}
 
 		m_clipFraction = PixelVisibility_DrawProxy( pRenderContext, m_queryHandle, m_origin, proxySize, proxyAspect, pMaterial, sizeIsScreenSpace );
@@ -410,7 +430,7 @@ void CPixelVisibilityQuery::IssueQuery( IMatRenderContext *pRenderContext, float
 		}
 	}
 #ifndef PORTAL // FIXME: In portal we query visibility multiple times per frame because of portal renders!
-	Assert(m_frameIssued != gpGlobals->framecount);
+	Assert ( ( m_frameIssued != gpGlobals->framecount ) || UseVR() );
 #endif
 
 	m_frameIssued = gpGlobals->framecount;
@@ -500,7 +520,10 @@ CPixelVisibilitySystem::CPixelVisibilitySystem() : CAutoGameSystem( "CPixelVisib
 // Level init, shutdown
 void CPixelVisibilitySystem::LevelInitPreEntity()
 {
-	m_hwCanTestGlows = r_dopixelvisibility.GetBool() && engine->GetDXSupportLevel() >= 80;
+	bool fastqueries = HasFastQueries();
+	// printf("\n ** fast queries: %s **", fastqueries?"true":"false" );
+	
+	m_hwCanTestGlows = r_dopixelvisibility.GetBool() && fastqueries && engine->GetDXSupportLevel() >= 80;
 	if ( m_hwCanTestGlows )
 	{
 		CMatRenderContextPtr pRenderContext( materials );
@@ -794,6 +817,8 @@ void PixelVisibility_EndCurrentView()
 
 void PixelVisibility_EndScene()
 {
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
+
 	g_PixelVisibilitySystem.EndScene();
 }
 
@@ -811,7 +836,8 @@ float PixelVisibility_FractionVisible( const pixelvis_queryparams_t &params, pix
 
 bool PixelVisibility_IsAvailable()
 {
-	return r_dopixelvisibility.GetBool() && g_PixelVisibilitySystem.SupportsOcclusion();
+	bool fastqueries = HasFastQueries();
+	return r_dopixelvisibility.GetBool() && fastqueries && g_PixelVisibilitySystem.SupportsOcclusion();
 }
 
 //this originally called a class function of CPixelVisibiltySystem to keep the work clean, but that function needed friend access to CPixelVisibilityQuery 

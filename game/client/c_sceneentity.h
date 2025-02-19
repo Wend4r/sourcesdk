@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2007, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,6 +12,7 @@
 #endif
 
 #include "ichoreoeventcallback.h"
+#include "choreoscene.h"
 
 class C_SceneEntity : public C_BaseEntity, public IChoreoEventCallback
 {
@@ -65,8 +66,10 @@ private:
 	virtual void			DispatchStartExpression( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
 	virtual void			DispatchEndExpression( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
 	virtual void			DispatchStartGesture( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
+	virtual void			DispatchProcessGesture( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
 	virtual void			DispatchEndGesture( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
 	virtual void			DispatchStartSequence( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
+	virtual void			DispatchProcessSequence( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
 	virtual void			DispatchEndSequence( CChoreoScene *scene, C_BaseFlex *actor, CChoreoEvent *event );
 	void					DispatchProcessLoop( CChoreoScene *scene, CChoreoEvent *event );
 
@@ -77,7 +80,9 @@ private:
 	void					ClearSceneEvents( CChoreoScene *scene, bool canceled );
 	void					SetCurrentTime( float t, bool forceClientSync );
 
-	bool					GetHWMorphSceneFileName( const char *pFilename, char *pHWMFilename );
+
+	template <size_t maxLenInChars>
+	bool					GetHWMorphSceneFileName( const char *pFilename, OUT_Z_ARRAY char (&hwmFilename)[maxLenInChars] ) const;
 
 private:
 
@@ -110,6 +115,82 @@ private:
 	};
 
 	CUtlVector< QueuedEvents_t > m_QueuedEvents;
+};
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+template <size_t maxLenInChars>
+bool C_SceneEntity::GetHWMorphSceneFileName( const char *pFilename, OUT_Z_ARRAY char( &hwmFilename )[ maxLenInChars ] ) const
+{
+	extern bool UseHWMorphVCDs();
+
+	// Make sure it's all zeros.
+	V_memset( hwmFilename, 0, sizeof( hwmFilename ) );
+
+	// Are we even using hardware morph?
+	if ( !UseHWMorphVCDs() )
+		return false;
+
+	// Multi-player only!
+	if ( !m_bMultiplayer )
+		return false;
+
+	// Do we have a valid filename?
+	if ( !( pFilename && pFilename[ 0 ] ) )
+		return false;
+
+	// Check to see if we already have an player/hwm/* filename.
+	if ( ( V_strstr( pFilename, "/high" ) != NULL ) || ( V_strstr( pFilename, "\\high" ) != NULL ) )
+	{
+		V_strcpy_safe( hwmFilename, pFilename );
+		return true;
+	}
+
+	// Find the hardware morph scene name and pass that along as well.
+	char szScene[ MAX_PATH ];
+	V_strcpy_safe( szScene, pFilename );
+
+	char szSceneHWM[ MAX_PATH ];
+	szSceneHWM[ 0 ] = '\0';
+
+	char *pszToken = strtok( szScene, "/\\" );
+	while ( pszToken != NULL )
+	{
+		if ( !V_stricmp( pszToken, "low" ) )
+		{
+			V_strcat_safe( szSceneHWM, "high", sizeof( szSceneHWM ) );
+		}
+		else
+		{
+			V_strcat_safe( szSceneHWM, pszToken, sizeof( szSceneHWM ) );
+		}
+
+		pszToken = strtok( NULL, "/\\" );
+		if ( pszToken != NULL )
+		{
+			V_strcat_safe( szSceneHWM, "\\", sizeof( szSceneHWM ) );
+		}
+	}
+
+	V_strcpy_safe( hwmFilename, szSceneHWM );
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Binary compiled VCDs get their strings from a pool
+//-----------------------------------------------------------------------------
+class CChoreoStringPool : public IChoreoStringPool
+{
+public:
+	short FindOrAddString( const char *pString )
+	{
+		// huh?, no compilation at run time, only fetches
+		Assert( 0 );
+		return -1;
+	}
+
+	bool GetString( short stringId, char *buff, int buffSize );
 };
 
 #endif // C_SCENEENTITY_H

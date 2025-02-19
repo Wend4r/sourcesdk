@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements health kits and wall mounted health chargers.
 //
@@ -11,6 +11,7 @@
 #include "items.h"
 #include "in_buttons.h"
 #include "engine/IEngineSound.h"
+#include "item_healthkit.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -150,39 +151,6 @@ public:
 LINK_ENTITY_TO_CLASS( item_healthvial, CHealthVial );
 PRECACHE_REGISTER( item_healthvial );
 
-//-----------------------------------------------------------------------------
-// Wall mounted health kit. Heals the player when used.
-//-----------------------------------------------------------------------------
-class CWallHealth : public CBaseToggle
-{
-public:
-	DECLARE_CLASS( CWallHealth, CBaseToggle );
-
-	void Spawn( );
-	void Precache( void );
-	int  DrawDebugTextOverlays(void);
-	bool CreateVPhysics(void);
-	void Off(void);
-	void Recharge(void);
-	bool KeyValue(  const char *szKeyName, const char *szValue );
-	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() | m_iCaps; }
-
-	float m_flNextCharge; 
-	int		m_iReactivate ; // DeathMatch Delay until reactvated
-	int		m_iJuice;
-	int		m_iOn;			// 0 = off, 1 = startup, 2 = going
-	float   m_flSoundTime;
-
-	int		m_nState;
-	int		m_iCaps;
-
-	COutputFloat m_OutRemainingHealth;
-	COutputEvent m_OnPlayerUse;
-
-	DECLARE_DATADESC();
-};
-
 LINK_ENTITY_TO_CLASS(func_healthcharger, CWallHealth);
 
 
@@ -243,7 +211,7 @@ void CWallHealth::Spawn(void)
 
 	SetModel( STRING( GetModelName() ) );
 
-	m_iJuice = sk_healthcharger.GetInt();
+	m_iJuice = sk_healthcharger.GetFloat();
 
 	m_nState = 0;	
 	
@@ -388,7 +356,7 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 void CWallHealth::Recharge(void)
 {
 	EmitSound( "WallHealth.Recharge" );
-	m_iJuice = sk_healthcharger.GetInt();
+	m_iJuice = sk_healthcharger.GetFloat();
 	m_nState = 0;			
 	SetThink( NULL );
 }
@@ -405,7 +373,7 @@ void CWallHealth::Off(void)
 
 	m_iOn = 0;
 
-	if ((!m_iJuice) &&  ( ( m_iReactivate = (int)g_pGameRules->FlHealthChargerRechargeTime() ) > 0) )
+	if ((!m_iJuice) &&  ( ( m_iReactivate = g_pGameRules->FlHealthChargerRechargeTime() ) > 0) )
 	{
 		SetNextThink( gpGlobals->curtime + m_iReactivate );
 		SetThink(&CWallHealth::Recharge);
@@ -413,43 +381,6 @@ void CWallHealth::Off(void)
 	else
 		SetThink( NULL );
 }
-
-//-----------------------------------------------------------------------------
-// Wall mounted health kit. Heals the player when used.
-//-----------------------------------------------------------------------------
-class CNewWallHealth : public CBaseAnimating
-{
-public:
-	DECLARE_CLASS( CNewWallHealth, CBaseAnimating );
-
-	void Spawn( );
-	void Precache( void );
-	int  DrawDebugTextOverlays(void);
-	bool CreateVPhysics(void);
-	void Off(void);
-	void Recharge(void);
-	bool KeyValue(  const char *szKeyName, const char *szValue );
-	void Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
-	virtual int	ObjectCaps( void ) { return BaseClass::ObjectCaps() | m_iCaps; }
-
-	float m_flNextCharge; 
-	int		m_iReactivate ; // DeathMatch Delay until reactvated
-	int		m_iJuice;
-	int		m_iOn;			// 0 = off, 1 = startup, 2 = going
-	float   m_flSoundTime;
-
-	int		m_nState;
-	int		m_iCaps;
-
-	COutputFloat m_OutRemainingHealth;
-	COutputEvent m_OnPlayerUse;
-
-	void StudioFrameAdvance ( void );
-
-	float m_flJuice;
-
-	DECLARE_DATADESC();
-};
 
 LINK_ENTITY_TO_CLASS( item_healthcharger, CNewWallHealth);
 
@@ -520,7 +451,7 @@ void CNewWallHealth::Spawn(void)
 
 	ResetSequence( LookupSequence( "idle" ) );
 
-	m_iJuice = sk_healthcharger.GetInt();
+	m_iJuice = sk_healthcharger.GetFloat();
 
 	m_nState = 0;	
 	
@@ -699,7 +630,7 @@ void CNewWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 void CNewWallHealth::Recharge(void)
 {
 	EmitSound( "WallHealth.Recharge" );
-	m_flJuice = m_iJuice = sk_healthcharger.GetInt();
+	m_flJuice = m_iJuice = sk_healthcharger.GetFloat();
 	m_nState = 0;
 
 	ResetSequence( LookupSequence( "idle" ) );
@@ -732,7 +663,7 @@ void CNewWallHealth::Off(void)
 	{
 		if ((!m_iJuice) && g_pGameRules->FlHealthChargerRechargeTime() > 0 )
 		{
-			m_iReactivate = (int)g_pGameRules->FlHealthChargerRechargeTime();
+			m_iReactivate = g_pGameRules->FlHealthChargerRechargeTime();
 			SetNextThink( gpGlobals->curtime + m_iReactivate );
 			SetThink(&CNewWallHealth::Recharge);
 		}

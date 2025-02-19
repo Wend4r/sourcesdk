@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -28,6 +28,8 @@ CRagdoll::CRagdoll()
 	m_ragdoll.listCount = 0;
 	m_vecLastOrigin.Init();
 	m_flLastOriginChangeTime = - 1.0f;
+	
+	m_lastUpdate = -FLT_MAX;
 }
 
 #define DEFINE_RAGDOLL_ELEMENT( i ) \
@@ -70,6 +72,7 @@ BEGIN_SIMPLE_DATADESC( CRagdoll )
 
 END_DATADESC()
 
+
 IPhysicsObject *CRagdoll::GetElement( int elementNum )
 { 
 	return m_ragdoll.list[elementNum].pObject;
@@ -94,7 +97,8 @@ void CRagdoll::Init(
 	const matrix3x4_t *pDeltaBones0, 
 	const matrix3x4_t *pDeltaBones1, 
 	const matrix3x4_t *pCurrentBonePosition, 
-	float dt )
+	float dt,
+	bool bFixedConstraints )
 {
 	ragdollparams_t params;
 	params.pGameData = static_cast<void *>( ent );
@@ -107,6 +111,7 @@ void CRagdoll::Init(
 	params.pCurrentBones = pCurrentBonePosition;
 	params.jointFrictionScale = 1.0;
 	params.allowStretch = false;
+	params.fixedConstraints = bFixedConstraints;
 	RagdollCreate( m_ragdoll, params, physenv );
 	ent->VPhysicsSetObject( NULL );
 	ent->VPhysicsSetObject( m_ragdoll.list[0].pObject );
@@ -212,6 +217,34 @@ void CRagdoll::VPhysicsUpdate( IPhysicsObject *pPhysics )
 	// See if we should go to sleep...
 	CheckSettleStationaryRagdoll();
 }
+
+//=============================================================================
+// HPE_BEGIN:
+// [menglish] Transforms a vector from the given bone's space to world space
+//=============================================================================
+ 
+bool CRagdoll::TransformVectorToWorld(int iBoneIndex, const Vector *vPosition, Vector *vOut)
+{
+	int listIndex = -1;
+	if( iBoneIndex >= 0 && iBoneIndex < m_ragdoll.listCount)
+	{
+		for ( int i = 0; i < m_ragdoll.listCount; ++i )
+		{
+			if(m_ragdoll.boneIndex[i] == iBoneIndex)
+				listIndex = i;
+		}
+		if(listIndex != -1)
+		{
+			m_ragdoll.list[listIndex].pObject->LocalToWorld(vOut, *vPosition);
+			return true;
+		}
+	}
+	return false;
+}
+ 
+//=============================================================================
+// HPE_END
+//=============================================================================
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -320,10 +353,11 @@ CRagdoll *CreateRagdoll(
 	const matrix3x4_t *pDeltaBones0, 
 	const matrix3x4_t *pDeltaBones1, 
 	const matrix3x4_t *pCurrentBonePosition,
-	float dt )
+	float dt,
+	bool bFixedConstraints )
 {
 	CRagdoll *pRagdoll = new CRagdoll;
-	pRagdoll->Init( ent, pstudiohdr, forceVector, forceBone, pDeltaBones0, pDeltaBones1, pCurrentBonePosition, dt );
+	pRagdoll->Init( ent, pstudiohdr, forceVector, forceBone, pDeltaBones0, pDeltaBones1, pCurrentBonePosition, dt, bFixedConstraints );
 
 	if ( !pRagdoll->IsValid() )
 	{
@@ -355,7 +389,7 @@ public:
 
 	void GetRenderBounds( Vector& theMins, Vector& theMaxs );
 	virtual void AddEntity( void );
-	virtual void AccumulateLayers( CStudioHdr *hdr, Vector pos[], Quaternion q[], float poseparam[], float currentTime, int boneMask );
+	virtual void AccumulateLayers( IBoneSetup &boneSetup, Vector pos[], Quaternion q[], float currentTime );
 	virtual void BuildTransformations( CStudioHdr *pStudioHdr, Vector *pos, Quaternion q[], const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
 	IPhysicsObject *GetElement( int elementNum );
 	virtual void UpdateOnRemove();
@@ -522,13 +556,13 @@ void C_ServerRagdoll::AddEntity( void )
 	m_flBlendWeightCurrent = Approach( m_flBlendWeight, m_flBlendWeightCurrent, gpGlobals->frametime * 5.0f );
 }
 
-void C_ServerRagdoll::AccumulateLayers( CStudioHdr *hdr, Vector pos[], Quaternion q[], float poseparam[], float currentTime, int boneMask )
+void C_ServerRagdoll::AccumulateLayers( IBoneSetup &boneSetup, Vector pos[], Quaternion q[], float currentTime )
 {
-	BaseClass::AccumulateLayers( hdr, pos, q, poseparam, currentTime, boneMask );
+	BaseClass::AccumulateLayers( boneSetup, pos, q, currentTime );
 
-	if ( m_nOverlaySequence >= 0 && m_nOverlaySequence < hdr->GetNumSeq() )
+	if ( m_nOverlaySequence >= 0 && m_nOverlaySequence < boneSetup.GetStudioHdr()->GetNumSeq() )
 	{
-		AccumulatePose( hdr, m_pIk, pos, q, m_nOverlaySequence, GetCycle(), poseparam, boneMask, m_flBlendWeightCurrent, currentTime );
+		boneSetup.AccumulatePose( pos, q, m_nOverlaySequence, GetCycle(), m_flBlendWeightCurrent, currentTime, m_pIk );
 	}
 }
 
@@ -552,20 +586,20 @@ void C_ServerRagdoll::BuildTransformations( CStudioHdr *hdr, Vector *pos, Quater
 	int i;
 	for ( i = 0; i < m_elementCount; i++ )
 	{
-		int index = m_boneIndex[i];
-		if ( index >= 0 )
+		int iBone = m_boneIndex[i];
+		if ( iBone >= 0 )
 		{
-			if ( hdr->boneFlags(index) & boneMask )
+			if ( hdr->boneFlags( iBone ) & boneMask )
 			{
-				boneSimulated[index] = true;
-				matrix3x4_t &matrix = GetBoneForWrite( index );
+				boneSimulated[iBone] = true;
+				matrix3x4_t &matrix = GetBoneForWrite( iBone );
 
 				if ( m_flBlendWeightCurrent != 0.0f && pSeqDesc && 
 					 // FIXME: this bone access is illegal
-					 pSeqDesc->weight( index ) != 0.0f )
+					 pSeqDesc->weight( iBone ) != 0.0f )
 				{
 					// Use the animated bone position instead
-					boneSimulated[index] = false;
+					boneSimulated[iBone] = false;
 				}
 				else
 				{	
@@ -669,8 +703,8 @@ public:
 		if ( GetMoveParent() )
 		{
 			// HACKHACK: Force the attached bone to be set up
-			int index = m_boneIndex[m_ragdollAttachedObjectIndex];
-			int boneFlags = GetModelPtr()->boneFlags(index);
+			int iBone = m_boneIndex[m_ragdollAttachedObjectIndex];
+			int boneFlags = GetModelPtr()->boneFlags( iBone );
 			if ( !(boneFlags & boneMask) )
 			{
 				// BUGBUG: The attached bone is required and this call is going to skip it, so force it
@@ -689,7 +723,7 @@ public:
 			return;
 
 		float frac = RemapVal( gpGlobals->curtime, m_parentTime, m_parentTime+ATTACH_INTERP_TIME, 0, 1 );
-		frac = clamp( frac, 0, 1 );
+		frac = clamp( frac, 0.f, 1.f );
 		// interpolate offset over some time
 		Vector offset = m_vecOffset * (1-frac);
 
@@ -711,8 +745,8 @@ public:
 
 		if ( parent )
 		{
-			int index = m_boneIndex[m_ragdollAttachedObjectIndex];
-			const matrix3x4_t &matrix = GetBone( index );
+			int iBone = m_boneIndex[m_ragdollAttachedObjectIndex];
+			const matrix3x4_t &matrix = GetBone( iBone );
 			Vector ragOrigin;
 			VectorTransform( m_attachmentPointRagdollSpace, matrix, ragOrigin );
 			offset = worldOrigin - ragOrigin;
@@ -726,11 +760,11 @@ public:
 			if ( !( hdr->boneFlags( i ) & boneMask ) )
 				continue;
 
-			Vector pos;
+			Vector vPos;
 			matrix3x4_t &matrix = GetBoneForWrite( i );
-			MatrixGetColumn( matrix, 3, pos );
-			pos += offset;
-			MatrixSetColumn( pos, 3, matrix );
+			MatrixGetColumn( matrix, 3, vPos );
+			vPos += offset;
+			MatrixSetColumn( vPos, 3, matrix );
 		}
 	}
 	void OnDataChanged( DataUpdateType_t updateType );

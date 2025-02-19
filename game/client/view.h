@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -13,9 +13,7 @@
 #pragma once
 #endif
 
-#if _DEBUG
-extern bool g_bRenderingCameraView;		// For debugging (frustum fix for cameras)...
-#endif
+extern bool g_bRenderingCameraView;
 
 class VMatrix;
 class Vector;
@@ -53,7 +51,6 @@ const VMatrix &CurrentWorldToViewMatrix();
 const Vector &CurrentViewForward();
 const Vector &CurrentViewRight();
 const Vector &CurrentViewUp();
-enum view_id_t CurrentViewID();
 
 void AllowCurrentViewAccess( bool allow );
 bool IsCurrentViewAccessAllowed();

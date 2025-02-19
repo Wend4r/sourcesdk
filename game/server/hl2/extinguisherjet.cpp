@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -101,7 +101,7 @@ void CExtinguisherJet::TurnOn( void )
 		m_bEnabled = m_bEmit = true;
 	}
 	
-	SetThink( &CExtinguisherJet::ExtinguishThink );
+	SetThink( ExtinguishThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 }
 

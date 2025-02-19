@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -47,7 +47,7 @@ void CBaseGrenadeConcussion::FallThink(void)
 		Remove( );
 		return;
 	}
-	CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, (int)GetAbsVelocity().Length(), 0.2 );
+	CSoundEnt::InsertSound ( SOUND_DANGER, GetAbsOrigin() + GetAbsVelocity() * 0.5, GetAbsVelocity().Length( ), 0.2 );
 
 	SetNextThink( gpGlobals->curtime + random->RandomFloat(0.05, 0.1) );
 

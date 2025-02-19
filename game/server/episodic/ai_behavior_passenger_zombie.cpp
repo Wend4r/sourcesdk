@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Zombies on cars!
 //
@@ -73,8 +73,8 @@ impactdamagetable_t gZombiePassengerImpactDamageTable =
 // Constructor
 //-----------------------------------------------------------------------------
 CAI_PassengerBehaviorZombie::CAI_PassengerBehaviorZombie( void ) : 
+m_flLastVerticalLean( 0.0f ), 
 m_flLastLateralLean( 0.0f ),
-m_flLastVerticalLean( 0.0f ),
 m_flNextLeapTime( 0.0f )
 {
 }

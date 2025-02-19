@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -323,7 +323,7 @@ void CNPC_Manhack::PrescheduleThink( void )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CNPC_Manhack::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CNPC_Manhack::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	g_vecAttackDir = vecDir;
 
@@ -339,7 +339,7 @@ void CNPC_Manhack::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDi
 		g_pEffects->Sparks( ptr->endpos, 1, 1, &ptr->plane.normal );
 	}
 
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //-----------------------------------------------------------------------------
@@ -1203,7 +1203,7 @@ void CNPC_Manhack::TurnHeadRandomly(float flInterval )
 	while (timeToUse > 0)
 	{
 		m_fHeadYaw	   = (iRate * m_fHeadYaw) + (1-iRate)*desYaw;
-		timeToUse =- 0.1;
+		timeToUse = -0.1;
 	}
 }
 
@@ -1590,7 +1590,7 @@ void CNPC_Manhack::Bump( CBaseEntity *pHitEntity, float flInterval, trace_t &tr 
 		if (moveVec.z < 0)
 		{
 			float floorZ = GetFloorZ(GetAbsOrigin());
-			if (fabs(GetAbsOrigin().z - floorZ) < 36.0f)
+			if (abs(GetAbsOrigin().z - floorZ) < 36)
 			{
 				moveVec.z = 0;
 			}
@@ -1812,11 +1812,11 @@ void CNPC_Manhack::PlayFlySound(void)
 			float flDistFactor;
 
 			flDistFactor = MIN( 1.0, 1 - flEnemyDist / MANHACK_PITCH_DIST1 ); 
-			iPitch1 = (int)(MANHACK_MIN_PITCH1 + ( ( MANHACK_MAX_PITCH1 - MANHACK_MIN_PITCH1 ) * flDistFactor)); 
+			iPitch1 = MANHACK_MIN_PITCH1 + ( ( MANHACK_MAX_PITCH1 - MANHACK_MIN_PITCH1 ) * flDistFactor); 
 
 			// NOTE: MANHACK_PITCH_DIST2 must be < MANHACK_PITCH_DIST1
 			flDistFactor = MIN( 1.0, 1 - flEnemyDist / MANHACK_PITCH_DIST2 ); 
-			iPitch2 = (int)(MANHACK_MIN_PITCH2 + ( ( MANHACK_MAX_PITCH2 - MANHACK_MIN_PITCH2 ) * flDistFactor)); 
+			iPitch2 = MANHACK_MIN_PITCH2 + ( ( MANHACK_MAX_PITCH2 - MANHACK_MIN_PITCH2 ) * flDistFactor); 
 
 			m_nEnginePitch1 = iPitch1;
 			m_flEnginePitch1Time = gpGlobals->curtime + 0.1f;
@@ -1993,7 +1993,7 @@ void CNPC_Manhack::MoveExecute_Alive(float flInterval)
 		{
 			m_vCurrentBanking.x = (iRate * m_vCurrentBanking.x) + (1 - iRate)*(m_vTargetBanking.x);
 			m_vCurrentBanking.z = (iRate * m_vCurrentBanking.z) + (1 - iRate)*(m_vTargetBanking.z);
-			timeToUse =- 0.1;
+			timeToUse = -0.1;
 		}
 		angles.x = m_vCurrentBanking.x;
 		angles.z = m_vCurrentBanking.z;
@@ -2129,7 +2129,7 @@ void CNPC_Manhack::MoveExecute_Dead(float flInterval)
 	newVelocity = newVelocity + (newVelocity * 1.5 * flInterval );
 
 	// Lose lift
-	newVelocity.z -= 0.02*flInterval*(sv_gravity.GetFloat());
+	newVelocity.z -= 0.02*flInterval*(GetCurrentGravity());
 
 	// ----------------------------------------------------------------------------------------
 	// Add in any forced velocity

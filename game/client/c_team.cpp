@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Client side CTeam class
 //
@@ -151,7 +151,10 @@ int C_Team::Get_Ping( void )
 //-----------------------------------------------------------------------------
 int C_Team::Get_Number_Players( void )
 {
-	return m_aPlayers.Size();
+	int nCount = m_aPlayers.Size();
+	if ( nCount > MAX_PLAYERS )
+		return MAX_PLAYERS;
+	return nCount;
 }
 
 //-----------------------------------------------------------------------------

@@ -1,12 +1,12 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================//
 #include "cbase.h"
-#include "IViewRender.h"
-#include "ClientEffectPrecacheSystem.h"
+#include "iviewrender.h"
+#include "clienteffectprecachesystem.h"
 #include "studio.h"
 #include "bone_setup.h"
 #include "engine/ivmodelinfo.h"
@@ -14,7 +14,7 @@
 #include "engine/IEngineSound.h"
 #include "iefx.h"
 #include "dlight.h"
-#include "tier0/ICommandLine.h"
+#include "tier0/icommandline.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -217,7 +217,7 @@ void C_FireSmoke::RemoveClientOnly(void)
 	// Remove from the client entity list.
 	ClientEntityList().RemoveEntity( GetClientHandle() );
 
-	partition->Remove( PARTITION_CLIENT_SOLID_EDICTS | PARTITION_CLIENT_RESPONSIVE_EDICTS | PARTITION_CLIENT_NON_STATIC_EDICTS, CollisionProp()->GetPartitionHandle() );
+	::partition->Remove( PARTITION_CLIENT_SOLID_EDICTS | PARTITION_CLIENT_RESPONSIVE_EDICTS | PARTITION_CLIENT_NON_STATIC_EDICTS, CollisionProp()->GetPartitionHandle() );
 
 	RemoveFromLeafSystem();
 }
@@ -332,7 +332,12 @@ void C_EntityFlame::CreateEffect( void )
 		m_hEffect = NULL;
 	}
 
+#ifdef TF_CLIENT_DLL
+	m_hEffect = ParticleProp()->Create( "burningplayer_red", PATTACH_ABSORIGIN_FOLLOW );
+#else
 	m_hEffect = ParticleProp()->Create( "burning_character", PATTACH_ABSORIGIN_FOLLOW );
+#endif
+
 	if ( m_hEffect )
 	{
 		C_BaseEntity *pEntity = m_hEntAttached;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: BSP Building tool
 //
@@ -66,6 +66,8 @@ int			g_nDXLevel = 0; // default dxlevel if you don't specify it on the command-
 CUtlVector<int> g_SkyAreas;
 char		outbase[32];
 
+char		g_szEmbedDir[MAX_PATH] = { 0 };
+
 // HLTOOLS: Introduce these calcs to make the block algorithm proportional to the proper 
 // world coordinate extents.  Assumes square spatial constraints.
 #define BLOCKS_SIZE		1024
@@ -125,7 +127,7 @@ node_t	*BlockTree (int xl, int yl, int xh, int yh)
 		normal[1] = 0;
 		normal[2] = 0;
 		dist = mid*BLOCKS_SIZE;
-		node->planenum = FindFloatPlane (normal, dist);
+		node->planenum = g_MainMap->FindFloatPlane (normal, dist);
 		node->children[0] = BlockTree ( mid, yl, xh, yh);
 		node->children[1] = BlockTree ( xl, yl, mid-1, yh);
 	}
@@ -136,7 +138,7 @@ node_t	*BlockTree (int xl, int yl, int xh, int yh)
 		normal[1] = 1;
 		normal[2] = 0;
 		dist = mid*BLOCKS_SIZE;
-		node->planenum = FindFloatPlane (normal, dist);
+		node->planenum = g_MainMap->FindFloatPlane (normal, dist);
 		node->children[0] = BlockTree ( xl, mid, xh, yh);
 		node->children[1] = BlockTree ( xl, yl, xh, mid-1);
 	}
@@ -216,21 +218,21 @@ void ProcessWorldModel (void)
 	//
 	// perform per-block operations
 	//
-	if (block_xh * BLOCKS_SIZE > map_maxs[0])
+	if (block_xh * BLOCKS_SIZE > g_MainMap->map_maxs[0])
 	{
-		block_xh = floor(map_maxs[0]/BLOCKS_SIZE);
+		block_xh = floor(g_MainMap->map_maxs[0]/BLOCKS_SIZE);
 	}
-	if ( (block_xl+1) * BLOCKS_SIZE < map_mins[0])
+	if ( (block_xl+1) * BLOCKS_SIZE < g_MainMap->map_mins[0])
 	{
-		block_xl = floor(map_mins[0]/BLOCKS_SIZE);
+		block_xl = floor(g_MainMap->map_mins[0]/BLOCKS_SIZE);
 	}
-	if (block_yh * BLOCKS_SIZE > map_maxs[1])
+	if (block_yh * BLOCKS_SIZE > g_MainMap->map_maxs[1])
 	{
-		block_yh = floor(map_maxs[1]/BLOCKS_SIZE);
+		block_yh = floor(g_MainMap->map_maxs[1]/BLOCKS_SIZE);
 	}
-	if ( (block_yl+1) * BLOCKS_SIZE < map_mins[1])
+	if ( (block_yl+1) * BLOCKS_SIZE < g_MainMap->map_mins[1])
 	{
-		block_yl = floor(map_mins[1]/BLOCKS_SIZE);
+		block_yl = floor(g_MainMap->map_mins[1]/BLOCKS_SIZE);
 	}
 
 	// HLTOOLS: updated to +/- MAX_COORD_INTEGER ( new world size limits / worldsize.h )
@@ -271,11 +273,11 @@ void ProcessWorldModel (void)
 
 		tree->mins[0] = (block_xl)*BLOCKS_SIZE;
 		tree->mins[1] = (block_yl)*BLOCKS_SIZE;
-		tree->mins[2] = map_mins[2] - 8;
+		tree->mins[2] = g_MainMap->map_mins[2] - 8;
 
 		tree->maxs[0] = (block_xh+1)*BLOCKS_SIZE;
 		tree->maxs[1] = (block_yh+1)*BLOCKS_SIZE;
-		tree->maxs[2] = map_maxs[2] + 8;
+		tree->maxs[2] = g_MainMap->map_maxs[2] + 8;
 
 		//
 		// perform the global operations
@@ -471,7 +473,7 @@ static tree_t *ClipOccluderBrushes( )
 {
 	// Create a list of all occluder brushes in the level
 	CUtlVector< mapbrush_t * > mapBrushes( 1024, 1024 );
-	for ( entity_num=0; entity_num < num_entities; ++entity_num )
+	for ( entity_num=0; entity_num < g_MainMap->num_entities; ++entity_num )
 	{
 		if (!IsFuncOccluder(entity_num))
 			continue;
@@ -481,7 +483,7 @@ static tree_t *ClipOccluderBrushes( )
 		int i;
 		for ( i = e->firstbrush; i < end; ++i )
 		{
-			mapBrushes.AddToTail( &mapbrushes[i] );
+			mapBrushes.AddToTail( &g_MainMap->mapbrushes[i] );
 		}
 	}
 
@@ -519,7 +521,7 @@ static void GenerateOccluderSideList( int nEntity, CUtlVector<side_t*> &occluder
 	int i, j;
 	for ( i = e->firstbrush; i < end; ++i )
 	{
-		mapbrush_t *mb = &mapbrushes[i];
+		mapbrush_t *mb = &g_MainMap->mapbrushes[i];
 		for ( j = 0; j < mb->numsides; ++j )
 		{
 			occluderSides.AddToTail( &(mb->original_sides[j]) );
@@ -760,9 +762,9 @@ void FixupOnlyEntsOccluderEntities()
 
 void MarkNoDynamicShadowSides()
 {
-	for ( int iSide=0; iSide < nummapbrushsides; iSide++ )
+	for ( int iSide=0; iSide < g_MainMap->nummapbrushsides; iSide++ )
 	{
-		brushsides[iSide].m_bDynamicShadowsEnabled = true;
+		g_MainMap->brushsides[iSide].m_bDynamicShadowsEnabled = true;
 	}
 
 	for ( int i=0; i < g_NoDynamicShadowSides.Count(); i++ )
@@ -770,10 +772,10 @@ void MarkNoDynamicShadowSides()
 		int brushSideID = g_NoDynamicShadowSides[i];
 	
 		// Find the side with this ID.
-		for ( int iSide=0; iSide < nummapbrushsides; iSide++ )
+		for ( int iSide=0; iSide < g_MainMap->nummapbrushsides; iSide++ )
 		{
-			if ( brushsides[iSide].id == brushSideID )
-				brushsides[iSide].m_bDynamicShadowsEnabled = false;
+			if ( g_MainMap->brushsides[iSide].id == brushSideID )
+				g_MainMap->brushsides[iSide].m_bDynamicShadowsEnabled = false;
 		}
 	}
 }
@@ -783,7 +785,7 @@ void MarkNoDynamicShadowSides()
 //-----------------------------------------------------------------------------
 static void Compute3DSkyboxAreas( node_t *headnode, CUtlVector<int>& areas )
 {
-	for (int i = 0; i < num_entities; ++i)
+	for (int i = 0; i < g_MainMap->num_entities; ++i)
 	{
 		char* pEntity = ValueForKey(&entities[i], "classname");
 		if (!strcmp(pEntity, "sky_camera"))
@@ -831,7 +833,8 @@ void ProcessModels (void)
 
 	for ( entity_num=0; entity_num < num_entities; ++entity_num )
 	{
-		if (!entities[entity_num].numbrushes)
+		entity_t *pEntity = &entities[entity_num];
+		if ( !pEntity->numbrushes )
 			continue;
 
 		qprintf ("############### model %i ###############\n", nummodels);
@@ -894,6 +897,12 @@ int RunVBSP( int argc, char **argv )
 	Q_StripExtension( ExpandArg( argv[ argc-1 ] ), source, sizeof( source ) );
 	Q_FileBase( source, mapbase, sizeof( mapbase ) );
 	strlwr( mapbase );
+
+	// Maintaining legacy behavior here to avoid breaking tools: regardless of the extension we are passed, we strip it
+	// to get the "source" name, and append extensions as desired...
+	char		mapFile[1024];
+	V_strncpy( mapFile, source, sizeof( mapFile ) );
+	V_strncat( mapFile, ".bsp", sizeof( mapFile ) );
 
 	LoadCmdLineFromFile( argc, argv, mapbase, "vbsp" );
 
@@ -1094,7 +1103,7 @@ int RunVBSP( int argc, char **argv )
 		{
 			// nothing to do here, but don't bail on this option
 		}
-		else if ( !Q_stricmp( argv[i], "-vproject" ) || !Q_stricmp( argv[i], "-game" ) )
+		else if ( !Q_stricmp( argv[i], "-vproject" ) || !Q_stricmp( argv[i], "-game" ) || !Q_stricmp( argv[i], "-insert_search_path" ) )
 		{
 			++i;
 		}
@@ -1127,6 +1136,19 @@ int RunVBSP( int argc, char **argv )
 		else if ( !Q_stricmp( argv[i], "-FullMinidumps" ) )
 		{
 			EnableFullMinidumps( true );
+		}
+		else if ( !Q_stricmp( argv[i], "-embed" ) && i < argc - 1 )
+		{
+			V_MakeAbsolutePath( g_szEmbedDir, sizeof( g_szEmbedDir ), argv[++i], "." );
+			V_FixSlashes( g_szEmbedDir );
+			if ( !V_RemoveDotSlashes( g_szEmbedDir ) )
+			{
+				Error( "Bad -embed - Can't resolve pathname for '%s'", g_szEmbedDir );
+				break;
+			}
+			V_StripTrailingSlash( g_szEmbedDir );
+			g_pFullFileSystem->AddSearchPath( g_szEmbedDir, "GAME", PATH_ADD_TO_TAIL );
+			g_pFullFileSystem->AddSearchPath( g_szEmbedDir, "MOD", PATH_ADD_TO_TAIL );
 		}
 		else if (argv[i][0] == '-')
 		{
@@ -1161,6 +1183,9 @@ int RunVBSP( int argc, char **argv )
 			"                what affects visibility.\n"
 			"  -nowater    : Get rid of water brushes.\n"
 			"  -low        : Run as an idle-priority process.\n"
+			"  -embed <directory>  : Use <directory> as an additional search path for assets\n"
+			"                        and embed all assets in this directory into the compiled\n"
+			"                        map\n"
 			"\n"
 			"  -vproject <directory> : Override the VPROJECT environment variable.\n"
 			"  -game <directory>     : Same as -vproject.\n"
@@ -1219,6 +1244,17 @@ int RunVBSP( int argc, char **argv )
 		CmdLib_Exit( 1 );
 	}
 
+	// Sanity check
+	if ( *g_szEmbedDir && ( onlyents || onlyprops ) )
+	{
+		Warning( "-embed only makes sense alongside full BSP compiles.\n"
+		         "\n"
+		         "Use the bspzip utility to update embedded files.\n" );
+		DeleteCmdLine( argc, argv );
+		CmdLib_Cleanup();
+		CmdLib_Exit( 1 );
+	}
+
 	start = Plat_FloatTime();
 
 	// Run in the background?
@@ -1260,7 +1296,7 @@ int RunVBSP( int argc, char **argv )
 	sprintf( materialPath, "%smaterials", gamedir );
 	InitMaterialSystem( materialPath, CmdLib_GetFileSystemFactory() );
 	Msg( "materialPath: %s\n", materialPath );
-	
+
 	// delete portal and line files
 	sprintf (path, "%s.prt", source);
 	remove (path);
@@ -1268,11 +1304,17 @@ int RunVBSP( int argc, char **argv )
 	remove (path);
 
 	strcpy (name, ExpandArg (argv[i]));	
-	Q_DefaultExtension (name, ".vmf", sizeof( name ) );
 
-	char platformBSPFileName[1024];
-	GetPlatformMapPath( source, platformBSPFileName, g_nDXLevel, 1024 );
-	
+	const char *pszExtension = V_GetFileExtension( name );
+	if ( !pszExtension )
+	{
+		V_SetExtension( name, ".vmm", sizeof( name ) );
+		if ( !FileExists( name ) )
+		{
+			V_SetExtension( name, ".vmf", sizeof( name ) );
+		}
+	}
+
 	// if we're combining materials, load the script file
 	if ( g_ReplaceMaterials )
 	{
@@ -1284,8 +1326,10 @@ int RunVBSP( int argc, char **argv )
 	//
 	if (onlyents)
 	{
-		LoadBSPFile (platformBSPFileName);
+		LoadBSPFile (mapFile);
 		num_entities = 0;
+		// Clear out the cubemap samples since they will be reparsed even with -onlyents
+		g_nCubemapSamples = 0;
 
 		// Mark as stale since the lighting could be screwed with new ents.
 		AddBufferToPak( GetPakFile(), "stale.txt", "stale", strlen( "stale" ) + 1, false );
@@ -1314,12 +1358,12 @@ int RunVBSP( int argc, char **argv )
 		// Doing this here because stuff abov may filter out entities
 		UnparseEntities ();
 
-		WriteBSPFile (platformBSPFileName);
+		WriteBSPFile (mapFile);
 	}
 	else if (onlyprops)
 	{
 		// In the only props case, deal with static + detail props only
-		LoadBSPFile (platformBSPFileName);
+		LoadBSPFile (mapFile);
 
 		LoadMapFile(name);
 		SetModelNumbers();
@@ -1332,7 +1376,7 @@ int RunVBSP( int argc, char **argv )
 		LoadEmitDetailObjectDictionary( gamedir );
 		EmitDetailObjects();
 
-		WriteBSPFile (platformBSPFileName);
+		WriteBSPFile (mapFile);
 	}
 	else
 	{
@@ -1341,9 +1385,9 @@ int RunVBSP( int argc, char **argv )
 		//
 
 		// Load just the file system from the bsp
-		if( g_bKeepStaleZip && FileExists( platformBSPFileName ) )
+		if( g_bKeepStaleZip && FileExists( mapFile ) )
 		{
-			LoadBSPFile_FileSystemOnly (platformBSPFileName);
+			LoadBSPFile_FileSystemOnly (mapFile);
 			// Mark as stale since the lighting could be screwed with new ents.
 			AddBufferToPak( GetPakFile(), "stale.txt", "stale", strlen( "stale" ) + 1, false );
 		}
@@ -1360,6 +1404,13 @@ int RunVBSP( int argc, char **argv )
 		SetLightStyles ();
 		LoadEmitDetailObjectDictionary( gamedir );
 		ProcessModels ();
+
+		// Add embed dir if provided
+		if ( *g_szEmbedDir )
+		{
+			AddDirToPak( GetPakFile(), g_szEmbedDir );
+			WriteBSPFile( mapFile );
+		}
 	}
 
 	end = Plat_FloatTime();

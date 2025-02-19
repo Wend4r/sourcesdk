@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -381,7 +381,7 @@ public:
 	int		BloodColor( void ) { return DONT_BLEED; }
 	Class_T Classify ( void ) { return CLASS_COMBINE_GUNSHIP; }
 	virtual int	OnTakeDamage_Alive( const CTakeDamageInfo &info );
-	virtual void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+	virtual void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	virtual int OnTakeDamage( const CTakeDamageInfo &info );
 
 	// Shot spread
@@ -888,9 +888,9 @@ END_DATADESC()
 // Purpose :
 //------------------------------------------------------------------------------
 CNPC_AttackHelicopter::CNPC_AttackHelicopter() : 
+	m_bNonCombat( false ),
 	m_flGracePeriod( 2.0f ),
-	m_bBombsExplodeOnContact( false ),
-	m_bNonCombat( false )
+	m_bBombsExplodeOnContact( false )
 {
 	m_flMaxSpeed = 0;
 }
@@ -1603,7 +1603,7 @@ void CNPC_AttackHelicopter::InputSetHealthFraction( inputdata_t &inputdata )
 	// Sets the health fraction, no damage effects
 	if ( inputdata.value.Float() > 0 )
 	{
-		SetHealth( (int)(GetMaxHealth() * inputdata.value.Float() * 0.01f) );
+		SetHealth( GetMaxHealth() * inputdata.value.Float() * 0.01f );
 	}
 }
 
@@ -2357,7 +2357,7 @@ bool CNPC_AttackHelicopter::DoGunCharging( )
 	case SHOOT_MODE_FAST:
 		{
 			int nBurstCount = sk_helicopter_burstcount.GetInt();
-			m_nRemainingBursts = random->RandomInt( nBurstCount, 2 * nBurstCount );
+			m_nRemainingBursts = random->RandomInt( nBurstCount, 2.0 * nBurstCount );
 			m_flIdleTimeDelay = 0.1f * ( m_nRemainingBursts - nBurstCount );
 		}
 		break;
@@ -2469,7 +2469,7 @@ void CNPC_AttackHelicopter::ShootAtFacingDirection( const Vector &vBasePos, cons
 #ifdef HL2_EPISODIC 
 	if( GetEnemy() != NULL )
 	{
-		CSoundEnt::InsertSound( SOUND_DANGER, GetEnemy()->WorldSpaceCenter(), 180, 0.5f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
+		CSoundEnt::InsertSound( SOUND_DANGER, GetEnemy()->WorldSpaceCenter(), 180.0f, 0.5f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
 	}
 #endif//HL2_EPISODIC
 
@@ -2740,7 +2740,7 @@ bool CNPC_AttackHelicopter::IsBombDropFair( const Vector &vecBombStartPos, const
 		// dx = 0.5 * a * t^2
 		Vector vecTarget = GetEnemy()->BodyTarget( GetAbsOrigin(), false );
 		float dz = vecBombStartPos.z - vecTarget.z;
-		float dt = (dz > 0.0f) ? sqrt( 2 * dz / sv_gravity.GetFloat() ) : 0.0f;
+		float dt = (dz > 0.0f) ? sqrt( 2 * dz / GetCurrentGravity() ) : 0.0f;
 
 		// Where will the enemy be in that time?
 		Vector vecEnemyVel = GetEnemy()->GetSmoothedVelocity();
@@ -2926,7 +2926,7 @@ void CNPC_AttackHelicopter::InputDropBombAtTargetInternal( inputdata_t &inputdat
 		Warning("Bomb target %s is above the chopper!\n", STRING( strBombTarget ) );
 		return;
 	}
-	float dt = sqrt( 2 * dz / sv_gravity.GetFloat() );
+	float dt = sqrt( 2 * dz / GetCurrentGravity() );
 
 	// Compute the velocity that would make it happen
 	Vector vecVelocity;
@@ -3449,7 +3449,7 @@ void CNPC_AttackHelicopter::DropCorpse( int nDamage )
 
 	// Clamp damage to prevent ridiculous ragdoll velocity
 	if( nDamage > 250.0f )
-		nDamage = 250;
+		nDamage = 250.0f;
 
 	m_flLastCorpseFall = gpGlobals->curtime + 3.0;
 
@@ -3470,7 +3470,7 @@ void CNPC_AttackHelicopter::DropCorpse( int nDamage )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_AttackHelicopter::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CNPC_AttackHelicopter::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	// Take no damage from trace attacks unless it's blast damage. RadiusDamage() sometimes calls
 	// TraceAttack() as a means for delivering blast damage. Usually when the explosive penetrates
@@ -3479,7 +3479,7 @@ void CNPC_AttackHelicopter::TraceAttack( const CTakeDamageInfo &info, const Vect
 		 ( info.GetInflictor()->Classify() == CLASS_MISSILE ) || 
 		 ( info.GetAttacker()->Classify() == CLASS_MISSILE ) )
 	{
-		BaseClass::BaseClass::TraceAttack( info, vecDir, ptr );
+		BaseClass::BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 	}
 }
 
@@ -3596,7 +3596,7 @@ int CNPC_AttackHelicopter::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		{
 			if ( nPrevHealth != GetMaxHealth() )
 			{
-				DropCorpse( (int)info.GetDamage() );
+				DropCorpse( info.GetDamage() );
 			}
 		}
 
@@ -3744,6 +3744,8 @@ void CNPC_AttackHelicopter::Event_Killed( const CTakeDamageInfo &info )
 			return;
 		}
 	}
+
+	SendOnKilledGameEvent( info );
 
 	Chopper_BecomeChunks( this );
 	StopLoopingSounds();
@@ -5216,7 +5218,7 @@ void CGrenadeHelicopter::WarningBlinkerThink()
 	}
 
 	// Frighten people
-	CSoundEnt::InsertSound ( SOUND_DANGER, WorldSpaceCenter(), g_helicopter_bomb_danger_radius.GetInt(), 0.2f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
+	CSoundEnt::InsertSound ( SOUND_DANGER, WorldSpaceCenter(), g_helicopter_bomb_danger_radius.GetFloat(), 0.2f, this, SOUNDENT_CHANNEL_REPEATED_DANGER );
 
 #ifdef HL2_EPISODIC
 	if( gpGlobals->curtime >= m_flBlinkFastTime )
@@ -5364,8 +5366,8 @@ int CGrenadeHelicopter::OnTakeDamage( const CTakeDamageInfo &info )
 //------------------------------------------------------------------------------
 void CGrenadeHelicopter::DoExplosion( const Vector &vecOrigin, const Vector &vecVelocity )
 {
-	ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity() ? GetOwnerEntity() : this, sk_helicopter_grenadedamage.GetInt(), 
-		sk_helicopter_grenaderadius.GetInt(), (SF_ENVEXPLOSION_NOSPARKS|SF_ENVEXPLOSION_NODLIGHTS|SF_ENVEXPLOSION_NODECAL|SF_ENVEXPLOSION_NOFIREBALL|SF_ENVEXPLOSION_NOPARTICLES), 
+	ExplosionCreate( GetAbsOrigin(), GetAbsAngles(), GetOwnerEntity() ? GetOwnerEntity() : this, sk_helicopter_grenadedamage.GetFloat(), 
+		sk_helicopter_grenaderadius.GetFloat(), (SF_ENVEXPLOSION_NOSPARKS|SF_ENVEXPLOSION_NODLIGHTS|SF_ENVEXPLOSION_NODECAL|SF_ENVEXPLOSION_NOFIREBALL|SF_ENVEXPLOSION_NOPARTICLES), 
 		sk_helicopter_grenadeforce.GetFloat(), this );
 
 	if ( GetShakeAmplitude() )

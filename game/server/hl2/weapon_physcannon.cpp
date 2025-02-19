@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Physics cannon
 //
@@ -39,7 +39,9 @@
 #include "model_types.h"
 #include "ai_interactions.h"
 #include "rumble_shared.h"
-#include "GameStats.h"
+#include "gamestats.h"
+// NVNT haptic utils
+#include "haptics/haptic_utils.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -329,7 +331,7 @@ static QAngle AlignAngles( const QAngle &angles, float cosineAlignAngle )
 }
 
 
-/*static void TraceCollideAgainstBBox( const CPhysCollide *pCollide, const Vector &start, const Vector &end, const QAngle &angles, const Vector &boxOrigin, const Vector &mins, const Vector &maxs, trace_t *ptr )
+static void TraceCollideAgainstBBox( const CPhysCollide *pCollide, const Vector &start, const Vector &end, const QAngle &angles, const Vector &boxOrigin, const Vector &mins, const Vector &maxs, trace_t *ptr )
 {
 	physcollision->TraceBox( boxOrigin, boxOrigin + (start-end), mins, maxs, pCollide, start, angles, ptr );
 
@@ -340,7 +342,7 @@ static QAngle AlignAngles( const QAngle &angles, float cosineAlignAngle )
 		ptr->plane.dist = -ptr->plane.dist;
 		ptr->plane.normal *= -1;
 	}
-}*/
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Finds the nearest ragdoll sub-piece to a location and returns it
@@ -512,6 +514,9 @@ private:
 
 	bool			m_bAllowObjectOverhead; // Can the player hold this object directly overhead? (Default is NO)
 
+	// NVNT player controlling this grab controller
+	CBasePlayer*	m_pControllingPlayer;
+
 	friend class CWeaponPhysCannon;
 };
 
@@ -560,6 +565,8 @@ CGrabController::CGrabController( void )
 	m_vecPreferredCarryAngles = vec3_angle;
 	m_bHasPreferredCarryAngles = false;
 	m_flDistanceOffset = 0;
+	// NVNT constructing m_pControllingPlayer to NULL
+	m_pControllingPlayer = NULL;
 }
 
 CGrabController::~CGrabController( void )
@@ -769,6 +776,9 @@ void CGrabController::AttachEntity( CBasePlayer *pPlayer, CBaseEntity *pEntity, 
 		pList[i]->SetMass( REDUCED_CARRY_MASS / flFactor );
 		pList[i]->SetDamping( NULL, &damping );
 	}
+
+	// NVNT setting m_pControllingPlayer to the player attached
+	m_pControllingPlayer = pPlayer;
 	
 	// Give extra mass to the phys object we're actually picking up
 	pPhys->SetMass( REDUCED_CARRY_MASS );
@@ -1037,6 +1047,10 @@ void CPlayerPickupController::Init( CBasePlayer *pPlayer, CBaseEntity *pObject )
 	Pickup_OnPhysGunPickup( pObject, m_pPlayer, PICKED_UP_BY_PLAYER );
 	
 	m_grabController.AttachEntity( pPlayer, pObject, pPhysics, false, vec3_origin, false );
+	// NVNT apply a downward force to simulate the mass of the held object.
+#if defined( WIN32 ) && !defined( _X360 )
+	HapticSetConstantForce(m_pPlayer,clamp(m_grabController.GetLoadWeight()*0.1,1,6)*Vector(0,-1,0));
+#endif
 	
 	m_pPlayer->m_Local.m_iHideHUD |= HIDEHUD_WEAPONSELECTION;
 	m_pPlayer->SetUseEntity( this );
@@ -1058,7 +1072,11 @@ void CPlayerPickupController::Shutdown( bool bThrown )
 	}
 
 	m_grabController.DetachEntity( bClearVelocity );
-
+	// NVNT if we have a player, issue a zero constant force message
+#if defined( WIN32 ) && !defined( _X360 )
+	if(m_pPlayer)
+		HapticSetConstantForce(m_pPlayer,Vector(0,0,0));
+#endif
 	if ( pObject != NULL )
 	{
 		Pickup_OnPhysGunDrop( pObject, m_pPlayer, bThrown ? THROWN_BY_PLAYER : DROPPED_BY_PLAYER );
@@ -2403,6 +2421,10 @@ bool CWeaponPhysCannon::AttachObject( CBaseEntity *pObject, const Vector &vPosit
 
 	if( pOwner )
 	{
+#if defined( WIN32 ) && !defined( _X360 )
+		// NVNT set the players constant force to simulate holding mass
+		HapticSetConstantForce(pOwner,clamp(m_grabController.GetLoadWeight()*0.05,1,5)*Vector(0,-1,0));
+#endif
 		pOwner->EnableSprint( false );
 
 		float	loadWeight = ( 1.0f - GetLoadPercentage() );
@@ -2859,6 +2881,10 @@ void CWeaponPhysCannon::DetachObject( bool playSound, bool wasLaunched )
 		{
 			pOwner->RumbleEffect( RUMBLE_357, 0, RUMBLE_FLAG_RESTART );
 		}
+#if defined( WIN32 ) && !defined( _X360 )
+		// NVNT clear constant force
+		HapticSetConstantForce(pOwner,Vector(0,0,0));
+#endif
 	}
 
 	CBaseEntity *pObject = m_grabController.GetAttached();
@@ -3352,7 +3378,7 @@ void CWeaponPhysCannon::LaunchObject( const Vector &vecDir, float flForce )
 		int		i;
 
 		UTIL_TraceLine( vecStart, vecStart + vecDir * flForce, MASK_SHOT, pObject, COLLISION_GROUP_NONE, &tr );
-		iLength = (int)((tr.startpos - tr.endpos).Length());
+		iLength = ( tr.startpos - tr.endpos ).Length();
 		vecSpot = vecStart + vecDir * PHYSCANNON_DANGER_SOUND_RADIUS;
 
 		for( i = PHYSCANNON_DANGER_SOUND_RADIUS ; i < iLength ; i += PHYSCANNON_DANGER_SOUND_RADIUS )
@@ -3832,7 +3858,7 @@ void CWeaponPhysCannon::DoEffectClosed( void )
 	// Turn off the center sprite
 	if ( m_hCenterSprite != NULL )
 	{
-		m_hCenterSprite->SetBrightness( 0, 0.1f );
+		m_hCenterSprite->SetBrightness( 0.0, 0.1f );
 		m_hCenterSprite->SetScale( 0.0f, 0.1f );
 		m_hCenterSprite->TurnOff();
 	}
@@ -3861,7 +3887,7 @@ void CWeaponPhysCannon::DoEffectClosed( void )
 		if ( m_hGlowSprites[i] != NULL )
 		{
 			m_hGlowSprites[i]->TurnOn();
-			m_hGlowSprites[i]->SetBrightness( 16, 0.2f );
+			m_hGlowSprites[i]->SetBrightness( 16.0f, 0.2f );
 			m_hGlowSprites[i]->SetScale( 0.3f * flScaleFactor, 0.2f );
 		}
 	}
@@ -3885,7 +3911,7 @@ void CWeaponPhysCannon::DoMegaEffectClosed( void )
 	// Turn off the center sprite
 	if ( m_hCenterSprite != NULL )
 	{
-		m_hCenterSprite->SetBrightness( 0, 0.1f );
+		m_hCenterSprite->SetBrightness( 0.0, 0.1f );
 		m_hCenterSprite->SetScale( 0.0f, 0.1f );
 		m_hCenterSprite->TurnOff();
 	}
@@ -3914,7 +3940,7 @@ void CWeaponPhysCannon::DoMegaEffectClosed( void )
 		if ( m_hGlowSprites[i] != NULL )
 		{
 			m_hGlowSprites[i]->TurnOn();
-			m_hGlowSprites[i]->SetBrightness( 16, 0.2f );
+			m_hGlowSprites[i]->SetBrightness( 16.0f, 0.2f );
 			m_hGlowSprites[i]->SetScale( 0.3f * flScaleFactor, 0.2f );
 		}
 	}
@@ -3967,7 +3993,7 @@ void CWeaponPhysCannon::DoEffectReady( )
 		if ( m_hGlowSprites[i] != NULL )
 		{
 			m_hGlowSprites[i]->TurnOn();
-			m_hGlowSprites[i]->SetBrightness( 32, 0.2f );
+			m_hGlowSprites[i]->SetBrightness( 32.0f, 0.2f );
 			m_hGlowSprites[i]->SetScale( 0.4f * flScaleFactor, 0.2f );
 		}
 	}
@@ -4021,7 +4047,7 @@ void CWeaponPhysCannon::DoEffectHolding( )
 		if ( m_hGlowSprites[i] != NULL )
 		{
 			m_hGlowSprites[i]->TurnOn();
-			m_hGlowSprites[i]->SetBrightness( 64, 0.2f );
+			m_hGlowSprites[i]->SetBrightness( 64.0f, 0.2f );
 			m_hGlowSprites[i]->SetScale( 0.5f * flScaleFactor, 0.2f );
 		}
 	}
@@ -4079,7 +4105,7 @@ void CWeaponPhysCannon::DoEffectLaunch( Vector *pos )
 	{
 		m_hBlastSprite->TurnOn();
 		m_hBlastSprite->SetScale( 2.0f, 0.1f );
-		m_hBlastSprite->SetBrightness( 0, 0.1f );
+		m_hBlastSprite->SetBrightness( 0.0f, 0.1f );
 	}
 }
 
@@ -4185,7 +4211,7 @@ void CWeaponPhysCannon::DoMegaEffectHolding( void )
 		if ( m_hGlowSprites[i] != NULL )
 		{
 			m_hGlowSprites[i]->TurnOn();
-			m_hGlowSprites[i]->SetBrightness( 32, 0.2f );
+			m_hGlowSprites[i]->SetBrightness( 32.0f, 0.2f );
 			m_hGlowSprites[i]->SetScale( 0.25f * flScaleFactor, 0.2f );
 		}
 	}
@@ -4233,7 +4259,7 @@ void CWeaponPhysCannon::DoMegaEffectReady( void )
 		if ( m_hGlowSprites[i] != NULL )
 		{
 			m_hGlowSprites[i]->TurnOn();
-			m_hGlowSprites[i]->SetBrightness( 24, 0.2f );
+			m_hGlowSprites[i]->SetBrightness( 24.0f, 0.2f );
 			m_hGlowSprites[i]->SetScale( 0.2f * flScaleFactor, 0.2f );
 		}
 	}

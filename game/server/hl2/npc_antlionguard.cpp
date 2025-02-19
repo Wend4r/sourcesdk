@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:	Antlion Guard
 //
@@ -254,7 +254,7 @@ public:
 	virtual void	UpdateEfficiency( bool bInPVS )	{ SetEfficiency( ( GetSleepState() != AISS_AWAKE ) ? AIE_DORMANT : AIE_NORMAL ); SetMoveEfficiency( AIME_NORMAL ); }
 	virtual void	PrescheduleThink( void );
 	virtual void	GatherConditions( void );
-	virtual void	TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+	virtual void	TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	virtual void	StartTask( const Task_t *pTask );
 	virtual void	RunTask( const Task_t *pTask );
 	virtual void	StopLoopingSounds();
@@ -1641,7 +1641,7 @@ void CNPC_AntlionGuard::Footstep( bool bHeavy )
 	}
 }
 
-extern ConVar sv_gravity;
+float GetCurrentGravity( void );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1665,7 +1665,7 @@ void CNPC_AntlionGuard::GetPhysicsShoveDir( CBaseEntity *pObject, float flMass, 
 		vecToss = VecCheckThrow( this, vecStart, vecTarget, flSpeed * 1.25f, 1.0f );
 		if ( vecToss == vec3_origin )
 		{
-			const float flGravity = sv_gravity.GetFloat();
+			const float flGravity = GetCurrentGravity();
 
 			vecToss = (vecTarget - vecStart);
 
@@ -2245,8 +2245,8 @@ int CNPC_AntlionGuard::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 			const float flNumDamagePhases =	5.0f;
 
 			float flDenom = ( (float) GetMaxHealth() / flNumDamagePhases );
-			int nPreDamagePhase = (int)ceil(nPreHealth / flDenom);
-			int nPostDamagePhase = (int)ceil(GetHealth() / flDenom);
+			int nPreDamagePhase = ceil( (float) nPreHealth / flDenom );
+			int nPostDamagePhase = ceil( (float) GetHealth() / flDenom );
 			if ( nPreDamagePhase != nPostDamagePhase )
 			{
 				bTakeHeavyDamage = true;
@@ -2278,7 +2278,7 @@ int CNPC_AntlionGuard::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 //			*ptr - 
 //			bitsDamageType - 
 //-----------------------------------------------------------------------------
-void CNPC_AntlionGuard::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr )
+void CNPC_AntlionGuard::TraceAttack( const CTakeDamageInfo &inputInfo, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	CTakeDamageInfo info = inputInfo;
 
@@ -2298,7 +2298,7 @@ void CNPC_AntlionGuard::TraceAttack( const CTakeDamageInfo &inputInfo, const Vec
 		info.SetDamage( 1.0f );
 	}
 
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //-----------------------------------------------------------------------------
@@ -2786,7 +2786,7 @@ bool CNPC_AntlionGuard::HandleChargeImpact( Vector vecImpact, CBaseEntity *pEnti
 
 	else
 	{
-		// If we hit a physics prop, smack the crap out of it. (large rocks)
+		// If we hit a physics prop, smack the heck out of it. (large rocks)
 		// Factor the object mass into it, because we want to move it no matter how heavy it is.
 		if ( pEntity->GetMoveType() == MOVETYPE_VPHYSICS )
 		{
@@ -3151,7 +3151,7 @@ void CNPC_AntlionGuard::SummonAntlions( void )
 
 	// Only spawn up to our max count
 	int iSpawnPoint = 0;
-	for ( int i = 0; (m_iNumLiveAntlions < ANTLIONGUARD_SUMMON_COUNT) && (iSpawnPoint < (int)ARRAYSIZE(sAntlionSpawnPositions)); i++ )
+	for ( int i = 0; (m_iNumLiveAntlions < ANTLIONGUARD_SUMMON_COUNT) && (iSpawnPoint < ARRAYSIZE(sAntlionSpawnPositions)); i++ )
 	{
 		// Determine spawn position for the antlion
 		Vector vecSpawn = GetAbsOrigin() + ( sAntlionSpawnPositions[iSpawnPoint].flForward * vecForward ) + ( sAntlionSpawnPositions[iSpawnPoint].flRight * vecRight );

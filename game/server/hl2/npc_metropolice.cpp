@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -995,9 +995,6 @@ void CNPC_MetroPolice::AnnounceEnemyType( CBaseEntity *pEnemy )
 		case CLASS_BARNACLE:
 			pSentenceName = "METROPOLICE_MONST_PARASITES";
 			break;
-
-		default:
-			break;
 		}
 
 		m_Sentences.Speak( pSentenceName, SENTENCE_PRIORITY_HIGH );
@@ -1052,9 +1049,6 @@ void CNPC_MetroPolice::AnnounceEnemyKill( CBaseEntity *pEnemy )
 	case CLASS_HEADCRAB:
 	case CLASS_BARNACLE:
 		pSentenceName = "METROPOLICE_KILL_PARASITES";
-		break;
-
-	default:
 		break;
 	}
 
@@ -1154,7 +1148,7 @@ CBaseEntity *CNPC_MetroPolice::GetEnemyAirboat() const
 {
 	// Should this be a condition??
 	if ( !GetEnemy() || !GetEnemy()->IsPlayer() )
-		return false;
+		return NULL;
 
 	return static_cast<CBasePlayer*>( GetEnemy() )->GetVehicleEntity(); 
 }
@@ -1216,8 +1210,8 @@ void CNPC_MetroPolice::OnUpdateShotRegulator( )
 				
 				float factor = (dist - MIN_PISTOL_MODIFY_DIST) / (MAX_PISTOL_MODIFY_DIST - MIN_PISTOL_MODIFY_DIST);
 				
-				int nMinBurst = (int)(MIN_MIN_PISTOL_BURST + ( MAX_MIN_PISTOL_BURST - MIN_MIN_PISTOL_BURST ) * (1.0 - factor));
-				int nMaxBurst = (int)(MIN_MAX_PISTOL_BURST + ( MAX_MAX_PISTOL_BURST - MIN_MAX_PISTOL_BURST ) * (1.0 - factor));
+				int		nMinBurst			= MIN_MIN_PISTOL_BURST + ( MAX_MIN_PISTOL_BURST - MIN_MIN_PISTOL_BURST ) * (1.0 - factor);
+				int		nMaxBurst			= MIN_MAX_PISTOL_BURST + ( MAX_MAX_PISTOL_BURST - MIN_MAX_PISTOL_BURST ) * (1.0 - factor);
 				float	flMinRestInterval	= MIN_MIN_PISTOL_REST_INTERVAL + ( MAX_MIN_PISTOL_REST_INTERVAL - MIN_MIN_PISTOL_REST_INTERVAL ) * factor;
 				float	flMaxRestInterval	= MIN_MAX_PISTOL_REST_INTERVAL + ( MAX_MAX_PISTOL_REST_INTERVAL - MIN_MAX_PISTOL_REST_INTERVAL ) * factor;
 				
@@ -1712,7 +1706,7 @@ int CNPC_MetroPolice::AimBurstAtSetupHitCount( float flDistToTarget, float flCur
 			flShotFactor += s_pShotCountFraction[nv][nu+1] * fu * (1.0f - fv);
 			flShotFactor += s_pShotCountFraction[nv+1][nu+1] * fu * fv;
 
-			int nExtraShots = (int)(nHitCount * flShotFactor);
+			int nExtraShots = nHitCount * flShotFactor;
 			m_nMaxBurstHits += random->RandomInt( nExtraShots, nExtraShots + 1 );
 			return nExtraShots;
 		}
@@ -2618,7 +2612,7 @@ void CNPC_MetroPolice::IdleSound( void )
 
 			if ( m_Sentences.Speak( pQuestion[bIsCriminal][nQuestionType] ) >= 0 )
 			{
-				GetSquad()->BroadcastInteraction( g_interactionMetrocopIdleChatter, (void*)(METROPOLICE_CHATTER_RESPONSE + nQuestionType), this );
+				GetSquad()->BroadcastInteraction( g_interactionMetrocopIdleChatter, (void*)(intp)(METROPOLICE_CHATTER_RESPONSE + nQuestionType), this );
 				m_nIdleChatterType = METROPOLICE_CHATTER_WAIT_FOR_RESPONSE;
 			}
 		}
@@ -2989,7 +2983,7 @@ bool CNPC_MetroPolice::HandleInteraction(int interactionType, void *data, CBaseC
 
 	if ( interactionType == g_interactionMetrocopIdleChatter )
 	{
-		m_nIdleChatterType = (int)data;
+		m_nIdleChatterType = (int)(intp)data;
 		return true;
 	}
 
@@ -3823,7 +3817,7 @@ bool CNPC_MetroPolice::IsHeavyDamage( const CTakeDamageInfo &info )
 //-----------------------------------------------------------------------------
 // TraceAttack
 //-----------------------------------------------------------------------------
-void CNPC_MetroPolice::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CNPC_MetroPolice::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	// This is needed so we can keep track of the direction of the shot
 	// because we're going to use it to choose the flinch animation
@@ -3843,7 +3837,7 @@ void CNPC_MetroPolice::TraceAttack( const CTakeDamageInfo &info, const Vector &v
 		}
 	}
 
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //-----------------------------------------------------------------------------
@@ -4187,9 +4181,6 @@ int CNPC_MetroPolice::SelectSchedule( void )
 					return nResult;
 			}
 			break;
-
-		default:
-			break;
 		}
 	}
 
@@ -4376,7 +4367,7 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 	{
 	case TASK_METROPOLICE_WAIT_FOR_SENTENCE:
 		{
-			if ( FOkToMakeSound( (int)pTask->flTaskData ) )
+			if ( FOkToMakeSound( pTask->flTaskData ) )
 			{
 				TaskComplete();
 			}
@@ -4450,7 +4441,7 @@ void CNPC_MetroPolice::StartTask( const Task_t *pTask )
 			info.SetAttacker( this );
 			info.SetInflictor( this );
 			info.SetDamage( m_iHealth );
-			info.SetDamageType( (int)pTask->flTaskData );
+			info.SetDamageType( pTask->flTaskData );
 			info.SetDamageForce( Vector( 0.1, 0.1, 0.1 ) );
 
 			TakeDamage( info );
@@ -4687,7 +4678,7 @@ void CNPC_MetroPolice::RunTask( const Task_t *pTask )
 
 	case TASK_METROPOLICE_WAIT_FOR_SENTENCE:
 		{
-			if ( FOkToMakeSound( (int)pTask->flTaskData ) )
+			if ( FOkToMakeSound( pTask->flTaskData ) )
 			{
 				TaskComplete();
 			}
@@ -4874,7 +4865,7 @@ int CNPC_MetroPolice::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 	{
 		// Keep track of recent damage by my attacker. If it seems like we're
 		// being killed, consider running off and hiding.
-		m_nRecentDamage = (int)(m_nRecentDamage + info.GetDamage());
+		m_nRecentDamage += info.GetDamage();
 		m_flRecentDamageTime = gpGlobals->curtime;
 	}
 

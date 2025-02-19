@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -178,6 +178,26 @@ bool CWeapon_SLAM::Holster( CBaseCombatWeapon *pSwitchingTo )
 	SetThink(NULL);
 	return BaseClass::Holster(pSwitchingTo);
 }
+
+#ifdef GAME_DLL
+const CUtlVector< CBaseEntity* > &CWeapon_SLAM::GetSatchelVector()
+{
+	m_SatchelVector.RemoveAll();
+
+	CBaseEntity* pEntity = NULL;
+
+	while ( ( pEntity = gEntList.FindEntityByClassname( pEntity, "npc_satchel" ) ) != NULL )
+	{
+		CSatchelCharge* pSatchel = dynamic_cast< CSatchelCharge* >( pEntity );
+		if ( pSatchel->m_bIsLive && pSatchel->GetThrower() && GetOwner() && pSatchel->GetThrower() == GetOwner() )
+		{
+			m_SatchelVector.AddToTail( pSatchel );
+		}
+	}
+
+	return m_SatchelVector;
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: SLAM has no reload, but must call weapon idle to update state

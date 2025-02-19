@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +14,7 @@
 #pragma once
 #endif
 
-
+#include "zip_utils.h"
 #include "bspfile.h"
 #include "utlvector.h"
 #include "utlstring.h"
@@ -196,8 +196,9 @@ extern int			g_PhysDispSize;
 IZip				*GetPakFile( void );
 IZip				*GetSwapPakFile( void );
 void				ClearPakFile( IZip *pak );
-void				AddFileToPak( IZip *pak, const char *pRelativeName, const char *fullpath );
-void				AddBufferToPak( IZip *pak, const char *pRelativeName, void *data, int length, bool bTextMode );
+void				AddFileToPak( IZip *pak, const char *pRelativeName, const char *fullpath, IZip::eCompressionType compressionType = IZip::eCompressionType_None );
+void				AddBufferToPak( IZip *pak, const char *pRelativeName, void *data, int length, bool bTextMode, IZip::eCompressionType compressionType = IZip::eCompressionType_None );
+void				AddDirToPak( IZip *pak, const char *pDirPath, const char *pPakPrefix = NULL );
 bool				FileExistsInPak( IZip *pak, const char *pRelativeName );
 bool				ReadFileFromPak( IZip *pak, const char *pRelativeName, bool bTextMode, CUtlBuffer &buf );
 void				RemoveFileFromPak( IZip *pak, const char *pRelativeName );
@@ -295,10 +296,15 @@ void	WriteBSPFile( const char *filename, char *pUnused = NULL );
 void	PrintBSPFileSizes(void);
 void	PrintBSPPackDirectory(void);
 void	ReleasePakFileLumps(void);
+
+bool	RepackBSPCallback_LZMA( CUtlBuffer &inputBuffer, CUtlBuffer &outputBuffer );
+bool	RepackBSP( CUtlBuffer &inputBuffer, CUtlBuffer &outputBuffer, CompressFunc_t pCompressFunc, IZip::eCompressionType packfileCompression );
 bool	SwapBSPFile( const char *filename, const char *swapFilename, bool bSwapOnLoad, VTFConvertFunc_t pVTFConvertFunc, VHVFixupFunc_t pVHVFixupFunc, CompressFunc_t pCompressFunc );
+
 bool	GetPakFileLump( const char *pBSPFilename, void **pPakData, int *pPakSize );
 bool	SetPakFileLump( const char *pBSPFilename, const char *pNewFilename, void *pPakData, int pakSize );
 void	WriteLumpToFile( char *filename, int lump );
+void	WriteLumpToFile( char *filename, int lump, int nLumpVersion, void *pBuffer, size_t nBufLen );
 bool	GetBSPDependants( const char *pBSPFilename, CUtlVector< CUtlString > *pList );
 void	UnloadBSPFile();
 
@@ -310,13 +316,14 @@ void 	SetKeyValue (entity_t *ent, const char *key, const char *value);
 char 	*ValueForKey (entity_t *ent, char *key);
 // will return "" if not present
 int		IntForKey (entity_t *ent, char *key);
+int		IntForKeyWithDefault(entity_t *ent, char *key, int nDefault );
 vec_t	FloatForKey (entity_t *ent, char *key);
 vec_t	FloatForKeyWithDefault (entity_t *ent, char *key, float default_value);
 void 	GetVectorForKey (entity_t *ent, char *key, Vector& vec);
 void 	GetVector2DForKey (entity_t *ent, char *key, Vector2D& vec);
 void 	GetAnglesForKey (entity_t *ent, char *key, QAngle& vec);
 epair_t *ParseEpair (void);
-
+void StripTrailing (char *e);
 
 // Build a list of the face's vertices (index into dvertexes).
 // points must be able to hold pFace->numedges indices.
@@ -363,7 +370,7 @@ public:
 //-----------------------------------------------------------------------------
 // Enumerates nodes + leafs in front to back order...
 //-----------------------------------------------------------------------------
-bool EnumerateNodesAlongRay( Ray_t const& ray, IBSPNodeEnumerator* pEnum, int context );
+bool EnumerateNodesAlongRay( Ray_t const& ray, IBSPNodeEnumerator* pEnum, intp context );
 
 
 //-----------------------------------------------------------------------------
@@ -379,8 +386,6 @@ extern CUtlVector<clusterlist_t> g_ClusterLeaves;
 
 // Call this to build the mapping from cluster to leaves
 void BuildClusterTable( );
-
-void GetPlatformMapPath( const char *pMapPath, char *pPlatformMapPath, int dxlevel, int maxLength );
 
 void SetHDRMode( bool bHDR );
 

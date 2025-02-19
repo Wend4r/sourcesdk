@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -385,7 +385,7 @@ bool CAI_BaseActor::ProcessSceneEvent( CSceneEventInfo *info, CChoreoScene *scen
 			info->m_bIsMoving = IsMoving();
 
 			// Msg("%f : %f - %f\n", scene->GetTime(), event->GetStartTime(), event->GetEndTime() );
-			float flTime = clamp( scene->GetTime(), event->GetStartTime(), event->GetEndTime() - 0.1 );
+			float flTime = clamp( scene->GetTime(), event->GetStartTime(), event->GetEndTime() - 0.1f );
 			float intensity = event->GetIntensity( flTime );
 
 			// clamp in-ramp to 0.5 seconds
@@ -675,8 +675,6 @@ bool CAI_BaseActor::CheckSceneEventCompletion( CSceneEventInfo *info, float curr
 				}
 			}
 		}
-		default:
-			break;
 	}
 
 	return BaseClass::CheckSceneEventCompletion( info, currenttime, scene, event );
@@ -806,7 +804,7 @@ float CAI_BaseActor::HeadTargetValidity(const Vector &lookTargetPos)
 	Vector vFacing = BodyDirection3D();
 
 	int iForward = LookupAttachment( "forward" );
-	if (iForward)
+	if ( iForward > 0 )
 	{
 		Vector tmp1;
 		GetAttachment( iForward, tmp1, &vFacing, NULL, NULL );
@@ -826,7 +824,7 @@ float CAI_BaseActor::HeadTargetValidity(const Vector &lookTargetPos)
 	// only look if target is within +-135 degrees
 	// scale 1..-0.707 == 1..1,  -.707..-1 == 1..0
 	// 	X * b + b = 1 == 1 / (X + 1) = b, 3.4142
-	float flInterest = clamp( 3.4142 + 3.4142 * dotPr, 0, 1 );
+	float flInterest = clamp( 3.4142f + 3.4142f * dotPr, 0.f, 1.f );
 
 	// stop looking when point too close 
 	if (flDist < MAX_FULL_LOOK_TARGET_DIST)
@@ -995,12 +993,12 @@ void CAI_BaseActor::UpdateHeadControl( const Vector &vHeadTarget, float flHeadIn
 		Vector vTargetLocal;
 		VectorNormalize( vTargetDir );
 		VectorIRotate( vTargetDir, forwardToWorld, vTargetLocal );
-		vTargetLocal.z *= clamp( vTargetLocal.x, 0.1, 1.0 );
+		vTargetLocal.z *= clamp( vTargetLocal.x, 0.1f, 1.0f );
 		VectorNormalize( vTargetLocal );
 		VectorRotate( vTargetLocal, forwardToWorld, vTargetDir );
 
 		// clamp local influence when target is behind the head
-		flHeadInfluence = flHeadInfluence * clamp( vTargetLocal.x * 2.0 + 2.0, 0.0, 1.0 );
+		flHeadInfluence = flHeadInfluence * clamp( vTargetLocal.x * 2.0f + 2.0f, 0.0f, 1.0f );
 	}
 
 	Studio_AlignIKMatrix( targetXform, vTargetDir );
@@ -1541,7 +1539,7 @@ void CAI_BaseActor::MaintainLookTargets( float flInterval )
 		if (active[i]->IsThis( this ))
 		{
 			int iForward = LookupAttachment( "forward" );
-			if (iForward)
+			if ( iForward > 0)
 			{
 				Vector tmp1;
 				GetAttachment( iForward, tmp1, &dir, NULL, NULL );
@@ -1785,8 +1783,6 @@ void CAI_BaseActor::PlayExpressionForState( NPC_STATE state )
 		{
 			SetExpression( STRING(m_iszDeathExpression) );
 		}
-		break;
-	default:
 		break;
 	}
 }

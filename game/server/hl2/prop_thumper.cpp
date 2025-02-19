@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements the big scary boom-boom machine Antlions fear.
 //
@@ -88,7 +88,7 @@ END_DATADESC()
 
 void CPropThumper::Spawn( void )
 {
-	const char *szModel = (char *)STRING( GetModelName() );
+	char *szModel = (char *)STRING( GetModelName() );
 	if (!szModel || !*szModel)
 	{
 		szModel = THUMPER_MODEL_NAME;
@@ -210,7 +210,7 @@ void CPropThumper::Thump ( void )
 	}
 
 	EmitSound( "coast.thumper_dust" );
-	CSoundEnt::InsertSound ( SOUND_THUMPER, GetAbsOrigin(), (int)(THUMPER_RADIUS * m_flPlaybackRate), THUMPER_SOUND_DURATION, this );
+	CSoundEnt::InsertSound ( SOUND_THUMPER, GetAbsOrigin(), THUMPER_RADIUS * m_flPlaybackRate, THUMPER_SOUND_DURATION, this );
 
 	if ( thumper_show_radius.GetBool() )
 	{

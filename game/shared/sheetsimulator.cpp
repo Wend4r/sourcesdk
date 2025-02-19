@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:			The Escort's Shield weapon effect
 //
@@ -398,7 +398,7 @@ void CSheetSimulator::InitPosition( int i )
 		// collision plane
 		Vector delta;
 		VectorSubtract( m_ControlPoints[i], m_Origin, delta );
-		int maxdist = (int)VectorNormalize( delta ); 
+		int maxdist = VectorNormalize( delta ); 
 		float dist = (m_pCollisionPlanes[i].dist - DotProduct( m_Origin, m_pCollisionPlanes[i].normal )) / 
 			DotProduct( delta, m_pCollisionPlanes[i].normal );
 
@@ -635,7 +635,7 @@ bool CIterativeSheetSimulator::Think( )
 	else
 	{
 		// Simulate it a bunch of times
-		Simulate(m_TimeStep, (int)m_SubSteps);
+		Simulate(m_TimeStep, m_SubSteps);
 
 		// Reset the collision point for collision detect
 		m_CurrentCollisionPt = 0;

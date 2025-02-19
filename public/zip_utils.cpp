@@ -1,12 +1,19 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //=============================================================================//
 
+// If we are going to include windows.h then we need to disable protected_things.h
+// or else we get many warnings.
+#undef PROTECTED_THINGS_ENABLE
 #include <tier0/platform.h>
 #ifdef IS_WINDOWS_PC
 #include <windows.h>
+#else
+#define INVALID_HANDLE_VALUE (void *)0
+#define FILE_BEGIN SEEK_SET
+#define FILE_END SEEK_END
 #endif
 #include "utlbuffer.h"
 #include "utllinkedlist.h"
@@ -15,6 +22,15 @@
 #include "checksum_crc.h"
 #include "byteswap.h"
 #include "utlstring.h"
+
+#include "tier1/lzmaDecoder.h"
+
+// Not every user of zip utils wants to link LZMA encoder
+#ifdef ZIP_SUPPORT_LZMA_ENCODE
+#include "lzma/lzma.h"
+#endif
+
+#include "tier0/memdbgon.h"
 
 // Data descriptions for byte swapping - only needed
 // for structures that are written to file for use by the game.
@@ -49,8 +65,6 @@ BEGIN_BYTESWAP_DATADESC( ZIP_FileHeader )
 	DEFINE_FIELD( relativeOffsetOfLocalHeader, FIELD_INTEGER ),
 END_BYTESWAP_DATADESC()
 
-#if !defined( SWDS )
-
 BEGIN_BYTESWAP_DATADESC( ZIP_LocalFileHeader )
 	DEFINE_FIELD( signature, FIELD_INTEGER ),
 	DEFINE_FIELD( versionNeededToExtract, FIELD_SHORT ),
@@ -77,6 +91,7 @@ BEGIN_BYTESWAP_DATADESC( ZIP_PreloadDirectoryEntry )
 	DEFINE_FIELD( DataOffset, FIELD_INTEGER ),
 END_BYTESWAP_DATADESC()
 
+#ifdef WIN32
 //-----------------------------------------------------------------------------
 // For >2 GB File Support
 //-----------------------------------------------------------------------------
@@ -153,6 +168,76 @@ public:
 		return bSuccess && ( numBytesWritten == size );
 	}
 };
+#else
+class CWin32File
+{
+public:
+	static HANDLE CreateTempFile( CUtlString &WritePath, CUtlString &FileName )
+	{
+		FILE *hFile = (FILE *)INVALID_HANDLE_VALUE;
+
+		char tempFileName[MAX_PATH];
+		if ( WritePath.IsEmpty() )
+		{
+			char mktName[MAX_PATH];
+
+			// use a safe name in the cwd
+			// mktemp requires a writable string.
+			V_strcpy_safe( mktName, "_fstXXXXXX.tmp" );
+			int nFileDescriptor = mkstemps( mktName, 4 );
+			if ( nFileDescriptor == -1 )
+			{
+				return INVALID_HANDLE_VALUE;
+			}
+			
+			FileName = mktName;
+			hFile = fdopen( nFileDescriptor, "rw+" );
+		}
+		else
+		{
+			char uniqueFilename[MAX_PATH];
+			static int counter = 0;
+			time_t now = time( NULL );
+			struct tm *tm = localtime( &now );
+			V_sprintf_safe( uniqueFilename, "%d_%d_%d_%d_%d.tmp", tm->tm_wday, tm->tm_hour, tm->tm_min, tm->tm_sec, ++counter );
+
+			char tempFileName[MAX_PATH];
+			V_ComposeFileName( WritePath.String(), uniqueFilename, tempFileName, sizeof( tempFileName ) );
+
+			FileName = tempFileName;
+			hFile = fopen( tempFileName, "rw+" );
+		}
+
+		return (HANDLE)hFile;
+	}
+
+	static unsigned int FileSeek( HANDLE hFile, unsigned int distance, DWORD MoveMethod )
+	{
+		if ( fseeko( (FILE *)hFile, distance, MoveMethod ) == 0 )
+		{
+			return FileTell( hFile );
+		}
+		return 0;
+	}
+
+	static unsigned int FileTell( HANDLE hFile )
+	{
+		return ftello( (FILE *)hFile );
+	}
+
+	static bool FileRead( HANDLE hFile, void *pBuffer, unsigned int size )
+	{
+		size_t bytesRead = fread( pBuffer, 1, size, (FILE *)hFile );
+		return bytesRead == size;
+	}
+
+	static bool FileWrite( HANDLE hFile, void *pBuffer, unsigned int size )
+	{
+		size_t bytesWrtitten = fwrite( pBuffer, 1, size, (FILE *)hFile );
+		return bytesWrtitten == size;
+	}
+};
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to allow abstraction of zip file output methods, and
@@ -174,7 +259,7 @@ public:
 	CBufferStream( CUtlBuffer& buff ) : IWriteStream(), m_buff( &buff ) {}
 
 	// Implementing IWriteStream method
-	virtual void Put( const void* pMem, int size ) { m_buff->Put( pMem, size ); }
+	virtual void Put( const void* pMem, int size ) {m_buff->Put( pMem, size );}
 
 	// Implementing IWriteStream method
 	virtual unsigned int Tell( void ) { return m_buff->TellPut(); }
@@ -199,11 +284,13 @@ public:
 		{
 			fwrite( pMem, size, 1, m_file ); 
 		}
+#ifdef WIN32
 		else
 		{
 			DWORD numBytesWritten;
 			WriteFile( m_hFile, pMem, size, &numBytesWritten, NULL );
 		}
+#endif
 	}
 
 	// Implementing IWriteStream method
@@ -215,7 +302,11 @@ public:
 		}
 		else
 		{
+#ifdef WIN32
 			return CWin32File::FileTell( m_hFile );
+#else
+			return 0;
+#endif
 		} 
 	}
 
@@ -241,13 +332,13 @@ public:
 	void			Reset( void );
 
 	// Add file to zip under relative name
-	void			AddFileToZip( const char *relativename, const char *fullpath );
+	void			AddFileToZip( const char *relativename, const char *fullpath, IZip::eCompressionType compressionType );
 
 	// Delete file from zip
 	void			RemoveFileFromZip( const char *relativename );
 
 	// Add buffer to zip as a file with given name
-	void			AddBufferToZip( const char *relativename, void *data, int length, bool bTextMode );
+	void			AddBufferToZip( const char *relativename, void *data, int length, bool bTextMode, IZip::eCompressionType compressionType );
 
 	// Check if a file already exists in the zip.
 	bool			FileExistsInZip( const char *relativename );
@@ -293,9 +384,12 @@ private:
 
 	typedef struct
 	{
-		CUtlSymbol			m_Name;
-		unsigned int		filepos;
-		int					filelen;
+		CUtlSymbol             m_Name;
+		unsigned int           filepos;
+		int                    filelen;
+		int                    uncompressedLen;
+		CRC32_t                crc32;
+		IZip::eCompressionType compressionType;
 	} TmpFileInfo_t;
 
 	CByteswap		m_Swap;
@@ -325,18 +419,25 @@ private:
 		CUtlSymbol		m_Name;
 
 		// Lenth of data element
-		int				m_Length;
+		int				m_nCompressedSize;
+
+		// Original, uncompressed size
+		int				m_nUncompressedSize;
+
 		// Raw data, could be null and data may be in disk write cache
 		void			*m_pData;
 
 		// Offset in Zip ( set and valid during final write )
 		unsigned int	m_ZipOffset;
-		// CRC of blob ( set and valid during final write )
+		// CRC of blob
 		CRC32_t			m_ZipCRC;
 
 		// Location of data in disk cache
 		unsigned int	m_DiskCacheOffset;
 		unsigned int	m_SourceDiskOffset;
+
+		// The compression used on the data if any
+		IZip::eCompressionType m_eCompressionType;
 	};
 
 	// For fast name lookup and sorting
@@ -355,12 +456,14 @@ private:
 CZipFile::CZipEntry::CZipEntry( void )
 {
 	m_Name = "";
-	m_Length = 0;
+	m_nCompressedSize = 0;
+	m_nUncompressedSize = 0;
 	m_pData = NULL;
 	m_ZipOffset = 0;
 	m_ZipCRC = 0;
 	m_DiskCacheOffset = 0;
 	m_SourceDiskOffset = 0;
+	m_eCompressionType = IZip::eCompressionType_None;
 }
 
 //-----------------------------------------------------------------------------
@@ -370,12 +473,14 @@ CZipFile::CZipEntry::CZipEntry( void )
 CZipFile::CZipEntry::CZipEntry( const CZipFile::CZipEntry& src )
 {
 	m_Name = src.m_Name;
-	m_Length = src.m_Length;
+	m_nCompressedSize = src.m_nCompressedSize;
+	m_nUncompressedSize = src.m_nUncompressedSize;
+	m_eCompressionType = src.m_eCompressionType;
 
-	if ( src.m_Length > 0 && src.m_pData )
+	if ( src.m_nCompressedSize > 0 && src.m_pData )
 	{
-		m_pData = malloc( src.m_Length );
-		memcpy( m_pData, src.m_pData, src.m_Length );
+		m_pData = malloc( src.m_nCompressedSize );
+		memcpy( m_pData, src.m_pData, src.m_nCompressedSize );
 	}
 	else
 	{
@@ -441,8 +546,13 @@ void CZipFile::Reset( void )
 
 	if ( m_hDiskCacheWriteFile != INVALID_HANDLE_VALUE )
 	{
+#ifdef WIN32
 		CloseHandle( m_hDiskCacheWriteFile );
 		DeleteFile( m_DiskCacheName.String() );
+#else
+		fclose( (FILE *)m_hDiskCacheWriteFile );
+		unlink( m_DiskCacheName.String() );
+#endif
 		m_hDiskCacheWriteFile = INVALID_HANDLE_VALUE;
 	}
 
@@ -528,23 +638,30 @@ void CZipFile::ParseFromBuffer( void *buffer, int bufferlength )
 	// Start from beginning
 	buf.SeekGet( CUtlBuffer::SEEK_HEAD, 0 );
 
-	unsigned int offset;
 	ZIP_EndOfCentralDirRecord rec = { 0 };
 
+#ifdef DBGFLAG_ASSERT
 	bool bFoundEndOfCentralDirRecord = false;
-	for ( offset = fileLen - sizeof( ZIP_EndOfCentralDirRecord ); offset >= 0; offset-- )
+#endif
+	unsigned int offset = fileLen - sizeof( ZIP_EndOfCentralDirRecord );
+	// If offset is ever greater than startOffset then it means that it has
+	// wrapped. This used to be a tautological >= 0 test.
+	ANALYZE_SUPPRESS( 6293 ); // warning C6293: Ill-defined for-loop: counts down from minimum
+	for ( unsigned int startOffset = offset; offset <= startOffset; offset-- )
 	{
 		buf.SeekGet( CUtlBuffer::SEEK_HEAD, offset );
 		buf.GetObjects( &rec );
 		if ( rec.signature == PKID( 5, 6 ) )
 		{
+#ifdef DBGFLAG_ASSERT
 			bFoundEndOfCentralDirRecord = true;
+#endif
 
 			// Set any xzip configuration
 			if ( rec.commentLength )
 			{
-				char commentString[128];
-				int commentLength = MIN( rec.commentLength, sizeof( commentString ) );
+				char commentString[128] = { 0 };
+				int commentLength = (int)Min( (size_t)rec.commentLength, sizeof( commentString ) - 1 );
 				buf.Get( commentString, commentLength );
 				commentString[commentLength] = '\0';
 				ParseXZipCommentString( commentString );
@@ -558,7 +675,7 @@ void CZipFile::ParseFromBuffer( void *buffer, int bufferlength )
 		}
 	}
 	Assert( bFoundEndOfCentralDirRecord );
-	
+
 	// Make sure there are some files to parse
 	int numzipfiles = rec.nCentralDirectoryEntries_Total;
 	if ( numzipfiles <= 0 )
@@ -580,20 +697,27 @@ void CZipFile::ParseFromBuffer( void *buffer, int bufferlength )
 		ZIP_FileHeader zipFileHeader;
 		buf.GetObjects( &zipFileHeader );
 		Assert( zipFileHeader.signature == PKID( 1, 2 ) );
-		Assert( zipFileHeader.compressionMethod == 0 );
-		
-		char tmpString[1024];
-		buf.Get( tmpString, zipFileHeader.fileNameLength );
-		tmpString[zipFileHeader.fileNameLength] = '\0';
+		if ( zipFileHeader.compressionMethod != IZip::eCompressionType_None &&
+		     zipFileHeader.compressionMethod != IZip::eCompressionType_LZMA )
+		{
+			Assert( false );
+			Warning( "Opening ZIP file with unsupported compression type\n");
+		}
+
+		char tmpString[MAX_PATH] = { 0 };
+		buf.Get( tmpString, Min( (unsigned int)zipFileHeader.fileNameLength, (unsigned int)sizeof( tmpString ) - 1 ) );
 		Q_strlower( tmpString );
 
 		// can determine actual filepos, assuming a well formed zip
 		newfiles[i].m_Name = tmpString;
 		newfiles[i].filelen = zipFileHeader.compressedSize;
+		newfiles[i].uncompressedLen = zipFileHeader.uncompressedSize;
+		newfiles[i].crc32 = zipFileHeader.crc32;
 		newfiles[i].filepos = zipFileHeader.relativeOffsetOfLocalHeader +
-								sizeof( ZIP_LocalFileHeader ) + 
-								zipFileHeader.fileNameLength + 
-								zipFileHeader.extraFieldLength;
+		                      sizeof( ZIP_LocalFileHeader ) +
+		                      zipFileHeader.fileNameLength +
+		                      zipFileHeader.extraFieldLength;
+		newfiles[i].compressionType = (IZip::eCompressionType)zipFileHeader.compressionMethod;
 
 		int nextOffset;
 		if ( m_bCompatibleFormat )
@@ -612,16 +736,19 @@ void CZipFile::ParseFromBuffer( void *buffer, int bufferlength )
 	{
 		CZipEntry e;
 		e.m_Name = newfiles[i].m_Name;
-		e.m_Length = newfiles[i].filelen;
-		
+		e.m_nCompressedSize = newfiles[i].filelen;
+		e.m_ZipCRC = newfiles[i].crc32;
+		e.m_nUncompressedSize = newfiles[i].uncompressedLen;
+		e.m_eCompressionType = newfiles[i].compressionType;
+
 		// Make sure length is reasonable
-		if ( e.m_Length > 0 )
+		if ( e.m_nCompressedSize > 0 )
 		{
-			e.m_pData = malloc( e.m_Length );
+			e.m_pData = malloc( e.m_nCompressedSize );
 
 			// Copy in data
 			buf.SeekGet( CUtlBuffer::SEEK_HEAD, newfiles[i].filepos );
-			buf.Get( e.m_pData, e.m_Length );
+			buf.Get( e.m_pData, e.m_nCompressedSize );
 		}
 		else
 		{
@@ -641,26 +768,42 @@ void CZipFile::ParseFromBuffer( void *buffer, int bufferlength )
 //-----------------------------------------------------------------------------
 HANDLE CZipFile::ParseFromDisk( const char *pFilename )
 {
+#ifdef WIN32
 	HANDLE hFile = CreateFile( pFilename, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+	if ( hFile == INVALID_HANDLE_VALUE )
+	{
+		// not found
+		return NULL;
+	}	
+#else
+	HANDLE hFile = fopen( pFilename, "rw+" );
 	if ( !hFile )
 	{
 		// not found
 		return NULL;
 	}	
+#endif
 
 	unsigned int fileLen = CWin32File::FileSeek( hFile, 0, FILE_END );
 	CWin32File::FileSeek( hFile, 0, FILE_BEGIN );
 	if ( fileLen < sizeof( ZIP_EndOfCentralDirRecord ) )
 	{
 		// bad format
+#ifdef WIN32
 		CloseHandle( hFile );
+#else
+		fclose( (FILE *)hFile );
+#endif
 		return NULL;
 	}
 
 	// need to get the central dir
-	unsigned int offset;
 	ZIP_EndOfCentralDirRecord rec = { 0 };
-	for ( offset = fileLen - sizeof( ZIP_EndOfCentralDirRecord ); offset >= 0; offset-- )
+	unsigned int offset = fileLen - sizeof( ZIP_EndOfCentralDirRecord );
+	// If offset is ever greater than startOffset then it means that it has
+	// wrapped. This used to be a tautological >= 0 test.
+	ANALYZE_SUPPRESS( 6293 ); // warning C6293: Ill-defined for-loop: counts down from minimum
+	for ( unsigned int startOffset = offset; offset <= startOffset; offset-- )
 	{
 		CWin32File::FileSeek( hFile, offset, FILE_BEGIN );
 		
@@ -672,10 +815,10 @@ HANDLE CZipFile::ParseFromDisk( const char *pFilename )
 			// Set any xzip configuration
 			if ( rec.commentLength )
 			{
-				char commentString[128];
-				int commentLength = MIN( rec.commentLength, sizeof( commentString ) );
+				char commentString[128] = { 0 };
+				int commentLength = min( (int)rec.commentLength, (int)sizeof( commentString ) - 1 );
 				CWin32File::FileRead( hFile, commentString, commentLength );
-				commentString[commentLength] = '\0';
+				commentString[ commentLength ] = '\0';
 				ParseXZipCommentString( commentString );
 			}
 			break;
@@ -692,7 +835,11 @@ HANDLE CZipFile::ParseFromDisk( const char *pFilename )
 	if ( numZipFiles <= 0 )
 	{
 		// No files
+#ifdef WIN32
 		CloseHandle( hFile );
+#else
+		fclose( (FILE *)hFile );
+#endif
 		return NULL;
 	}
 
@@ -710,26 +857,35 @@ HANDLE CZipFile::ParseFromDisk( const char *pFilename )
 		ZIP_FileHeader zipFileHeader;
 		zipDirBuff.GetObjects( &zipFileHeader );
 
-		if ( zipFileHeader.signature != PKID( 1, 2 ) ||  zipFileHeader.compressionMethod != 0 )
+		if ( zipFileHeader.signature != PKID( 1, 2 )
+		     || ( zipFileHeader.compressionMethod != IZip::eCompressionType_None
+		          && zipFileHeader.compressionMethod != IZip::eCompressionType_LZMA ) )
 		{
 			// bad contents
+#ifdef WIN32
 			CloseHandle( hFile );
+#else
+			fclose( (FILE *)hFile );
+#endif
 			return NULL;
 		}
-		
-		char fileName[1024];
-		zipDirBuff.Get( fileName, zipFileHeader.fileNameLength );
-		fileName[zipFileHeader.fileNameLength] = '\0';
+
+		char fileName[MAX_PATH] = { 0 };
+		zipDirBuff.Get( fileName, Min( zipFileHeader.fileNameLength, ( unsigned short )( sizeof( fileName ) - 1 ) ) );
 		Q_strlower( fileName );
 
 		// can determine actual filepos, assuming a well formed zip
 		CZipEntry e;
 		e.m_Name = fileName;
-		e.m_Length = zipFileHeader.compressedSize;
+		e.m_nCompressedSize = zipFileHeader.compressedSize;
+		e.m_nUncompressedSize = zipFileHeader.uncompressedSize;
+		e.m_ZipCRC = zipFileHeader.crc32;
 		e.m_SourceDiskOffset = zipFileHeader.relativeOffsetOfLocalHeader +
-								sizeof( ZIP_LocalFileHeader ) + 
-								zipFileHeader.fileNameLength + 
-								zipFileHeader.extraFieldLength;
+		                       sizeof( ZIP_LocalFileHeader ) +
+		                       zipFileHeader.fileNameLength +
+		                       zipFileHeader.extraFieldLength;
+		e.m_eCompressionType = (IZip::eCompressionType)zipFileHeader.compressionMethod;
+
 		// Add to tree
 		m_Files.Insert( e );
 
@@ -805,7 +961,7 @@ static void CopyTextData( char *pDst, const char *pSrc, int dstSize, int srcSize
 	const char *pSrcEnd = pSrc + srcSize;
 	char *pDstScan = pDst;
 
-#ifdef _DEBUG
+#ifdef DBGFLAG_ASSERT
 	char *pDstEnd = pDst + dstSize;
 #endif
 
@@ -834,19 +990,85 @@ static void CopyTextData( char *pDst, const char *pSrc, int dstSize, int srcSize
 //			*data - 
 //			length - 
 //-----------------------------------------------------------------------------
-void CZipFile::AddBufferToZip( const char *relativename, void *data, int length, bool bTextMode )
+void CZipFile::AddBufferToZip( const char *relativename, void *data, int length, bool bTextMode, IZip::eCompressionType compressionType )
 {
 	// Lower case only
 	char name[512];
 	Q_strcpy( name, relativename );
 	Q_strlower( name );
 
-	int dstLength = length;
+	int outLength = length;
+	int uncompressedLength = length;
+	void *outData = data;
+	CUtlBuffer textTransform;
+	CUtlBuffer compressionTransform;
+
 	if ( bTextMode )
 	{
-		dstLength = GetLengthOfBinStringAsText( ( const char * )data, length );
+		int textLen = GetLengthOfBinStringAsText( ( const char * )outData, outLength );
+		textTransform.EnsureCapacity( textLen );
+		CopyTextData( (char *)textTransform.Base(), (char *)outData, textLen, outLength );
+
+		outData = (void *)textTransform.Base();
+		outLength = textLen;
+		uncompressedLength = textLen;
 	}
-	
+
+	// uncompressed data final at this point (CRC is before compression)
+	CRC32_t zipCRC;
+	CRC32_Init( &zipCRC );
+	CRC32_ProcessBuffer( &zipCRC, outData, outLength );
+	CRC32_Final( &zipCRC );
+
+#ifdef ZIP_SUPPORT_LZMA_ENCODE
+	if ( compressionType == IZip::eCompressionType_LZMA )
+	{
+		unsigned int compressedSize = 0;
+		unsigned char *pCompressedOutput = LZMA_Compress( (unsigned char *)outData, outLength, &compressedSize );
+		if ( !pCompressedOutput || compressedSize < sizeof( lzma_header_t ) )
+		{
+			Warning( "ZipFile: LZMA compression failed\n" );
+			return;
+		}
+
+		// Fixup LZMA header for ZIP payload usage
+		// The output of LZMA_Compress uses lzma_header_t, defined alongside it.
+		//
+		// ZIP payload format, see ZIP spec 5.8.8:
+		//  LZMA Version Information 2 bytes
+		//  LZMA Properties Size 2 bytes
+		//  LZMA Properties Data variable, defined by "LZMA Properties Size"
+		unsigned int nZIPHeader = 2 + 2 + sizeof( lzma_header_t().properties );
+		unsigned int finalCompressedSize = compressedSize - sizeof( lzma_header_t ) + nZIPHeader;
+		compressionTransform.EnsureCapacity( finalCompressedSize );
+
+		// LZMA version
+		compressionTransform.PutUnsignedChar( LZMA_SDK_VERSION_MAJOR );
+		compressionTransform.PutUnsignedChar( LZMA_SDK_VERSION_MINOR );
+		// properties size
+		uint16 nSwappedPropertiesSize = LittleWord( sizeof( lzma_header_t().properties ) );
+		compressionTransform.Put( &nSwappedPropertiesSize, sizeof( nSwappedPropertiesSize ) );
+		// properties
+		compressionTransform.Put( &(((lzma_header_t *)pCompressedOutput)->properties), sizeof( lzma_header_t().properties ) );
+		// payload
+		compressionTransform.Put( pCompressedOutput + sizeof( lzma_header_t ), compressedSize - sizeof( lzma_header_t ) );
+
+		// Free original
+		free( pCompressedOutput );
+		pCompressedOutput = NULL;
+
+		outData = (void *)compressionTransform.Base();
+		outLength = finalCompressedSize;
+		// (Not updating uncompressedLength)
+	}
+	else
+#endif
+	/* else from ifdef */ if ( compressionType != IZip::eCompressionType_None )
+	{
+		Error( "Calling AddBufferToZip with unknown compression type\n" );
+		return;
+	}
+
 	// See if entry is in list already
 	CZipEntry e;
 	e.m_Name = name;
@@ -861,23 +1083,17 @@ void CZipFile::AddBufferToZip( const char *relativename, void *data, int length,
 			free( update->m_pData );
 		}
 
-		if ( bTextMode )
-		{
-			update->m_pData = malloc( dstLength );
-			CopyTextData( ( char * )update->m_pData, ( char * )data, dstLength, length );
-			update->m_Length = dstLength;
-		}
-		else
-		{
-			update->m_pData = malloc( length );
-			memcpy( update->m_pData, data, length );
-			update->m_Length = length;
-		}
+		update->m_eCompressionType = compressionType;
+		update->m_pData = malloc( outLength );
+		memcpy( update->m_pData, outData, outLength );
+		update->m_nCompressedSize = outLength;
+		update->m_nUncompressedSize = uncompressedLength;
+		update->m_ZipCRC = zipCRC;
 
 		if ( m_hDiskCacheWriteFile != INVALID_HANDLE_VALUE )
 		{
 			update->m_DiskCacheOffset = CWin32File::FileTell( m_hDiskCacheWriteFile );
-			CWin32File::FileWrite( m_hDiskCacheWriteFile, update->m_pData, update->m_Length );
+			CWin32File::FileWrite( m_hDiskCacheWriteFile, update->m_pData, update->m_nCompressedSize );
 			free( update->m_pData );
 			update->m_pData = NULL;
 		}
@@ -885,24 +1101,19 @@ void CZipFile::AddBufferToZip( const char *relativename, void *data, int length,
 	else
 	{
 		// Create a new entry
-		e.m_Length = dstLength;
-		if ( dstLength > 0 )
+		e.m_nCompressedSize = outLength;
+		e.m_nUncompressedSize = uncompressedLength;
+		e.m_eCompressionType = compressionType;
+		e.m_ZipCRC = zipCRC;
+		if ( outLength > 0 )
 		{
-			if ( bTextMode )
-			{
-				e.m_pData = malloc( dstLength );
-				CopyTextData( (char *)e.m_pData, ( char * )data, dstLength, length );
-			}
-			else
-			{
-				e.m_pData = malloc( length );
-				memcpy( e.m_pData, data, length );
-			}
-	
+			e.m_pData = malloc( outLength );
+			memcpy( e.m_pData, outData, outLength );
+
 			if ( m_hDiskCacheWriteFile != INVALID_HANDLE_VALUE )
 			{
 				e.m_DiskCacheOffset = CWin32File::FileTell( m_hDiskCacheWriteFile );
-				CWin32File::FileWrite( m_hDiskCacheWriteFile, e.m_pData, e.m_Length );
+				CWin32File::FileWrite( m_hDiskCacheWriteFile, e.m_pData, e.m_nCompressedSize );
 				free( e.m_pData );
 				e.m_pData = NULL;
 			}
@@ -922,38 +1133,11 @@ void CZipFile::AddBufferToZip( const char *relativename, void *data, int length,
 //-----------------------------------------------------------------------------
 bool CZipFile::ReadFileFromZip( const char *pRelativeName, bool bTextMode, CUtlBuffer &buf )
 {
-	// Lower case only
-	char pName[512];
-	Q_strncpy( pName, pRelativeName, 512 );
-	Q_strlower( pName );
-
-	// See if entry is in list already
-	CZipEntry e;
-	e.m_Name = pName;
-	int nIndex = m_Files.Find( e );
-	if ( nIndex == m_Files.InvalidIndex() )
-	{
-		// not found
-		return false;
-	}
-
-	CZipEntry *pEntry = &m_Files[ nIndex ];
-	if ( bTextMode )
-	{
-		buf.SetBufferType( true, false );
-		ReadTextData( (char*)pEntry->m_pData, pEntry->m_Length, buf );
-	}
-	else
-	{
-		buf.SetBufferType( false, false );
-		buf.Put( pEntry->m_pData, pEntry->m_Length );
-	}
-
-	return true;
+	return ReadFileFromZip( 0, pRelativeName, bTextMode, buf );
 }
 
 //-----------------------------------------------------------------------------
-// Reads a file from the zip
+// Reads a file from the zip. Requires the zip file handle if this zip was loaded via ParseFromDisk
 //-----------------------------------------------------------------------------
 bool CZipFile::ReadFileFromZip( HANDLE hZipFile, const char *pRelativeName, bool bTextMode, CUtlBuffer &buf )
 {
@@ -974,26 +1158,62 @@ bool CZipFile::ReadFileFromZip( HANDLE hZipFile, const char *pRelativeName, bool
 
 	CZipEntry *pEntry = &m_Files[nIndex];
 
-	void *pData = malloc( pEntry->m_Length );
-	CWin32File::FileSeek( hZipFile, pEntry->m_SourceDiskOffset, FILE_BEGIN );
-	if ( !CWin32File::FileRead( hZipFile, pData, pEntry->m_Length ) )
+	void *pData = pEntry->m_pData;
+	CUtlBuffer readBuffer;
+	if ( !pData && hZipFile )
 	{
-		free( pData );
-		return false;
+		readBuffer.EnsureCapacity( pEntry->m_nCompressedSize );
+		CWin32File::FileSeek( hZipFile, pEntry->m_SourceDiskOffset, FILE_BEGIN );
+		if ( !CWin32File::FileRead( hZipFile, readBuffer.Base(), pEntry->m_nCompressedSize ) )
+		{
+			return false;
+		}
+
+		pData = readBuffer.Base();
+	}
+
+	CUtlBuffer decompressTransform;
+	if ( pEntry->m_eCompressionType != IZip::eCompressionType_None )
+	{
+		if ( pEntry->m_eCompressionType == IZip::eCompressionType_LZMA )
+		{
+			decompressTransform.EnsureCapacity( pEntry->m_nUncompressedSize );
+
+			CLZMAStream decompressStream;
+			decompressStream.InitZIPHeader( pEntry->m_nCompressedSize, pEntry->m_nUncompressedSize );
+
+			unsigned int nCompressedBytesRead = 0;
+			unsigned int nOutputBytesWritten = 0;
+			bool bSuccess = decompressStream.Read( (unsigned char *)pData, pEntry->m_nCompressedSize,
+												   (unsigned char *)decompressTransform.Base(), decompressTransform.Size(),
+												   nCompressedBytesRead, nOutputBytesWritten );
+			if ( !bSuccess ||
+			     (int)nCompressedBytesRead != pEntry->m_nCompressedSize ||
+			     (int)nOutputBytesWritten != pEntry->m_nUncompressedSize )
+			{
+				Error( "Zip: Failed decompressing LZMA data\n" );
+				return false;
+			}
+
+			pData = decompressTransform.Base();
+		}
+		else
+		{
+			Error( "Unsupported compression type in Zip file: %u\n", pEntry->m_eCompressionType );
+			return false;
+		}
 	}
 
 	if ( bTextMode )
 	{
 		buf.SetBufferType( true, false );
-		ReadTextData( (const char *)pData, pEntry->m_Length, buf );
+		ReadTextData( (const char *)pData, pEntry->m_nUncompressedSize, buf );
 	}
 	else
 	{
 		buf.SetBufferType( false, false );
-		buf.Put( pData, pEntry->m_Length );
+		buf.Put( pData, pEntry->m_nUncompressedSize );
 	}
-
-	free( pData );
 
 	return true;
 }
@@ -1022,7 +1242,7 @@ bool CZipFile::FileExistsInZip( const char *pRelativeName )
 //-----------------------------------------------------------------------------
 // Purpose: Adds a new file to the zip.
 //-----------------------------------------------------------------------------
-void CZipFile::AddFileToZip( const char *relativename, const char *fullpath )
+void CZipFile::AddFileToZip( const char *relativename, const char *fullpath, IZip::eCompressionType compressionType )
 {
 	FILE *temp = fopen( fullpath, "rb" );
 	if ( !temp )
@@ -1039,8 +1259,8 @@ void CZipFile::AddFileToZip( const char *relativename, const char *fullpath )
 	fclose( temp );
 
 	// Now add as a buffer
-	AddBufferToZip( relativename, buf, size, false );
-	
+	AddBufferToZip( relativename, buf, size, false, compressionType );
+
 	free( buf );
 }
 
@@ -1132,23 +1352,23 @@ unsigned int CZipFile::CalculateSize( void )
 	for ( int i = m_Files.FirstInorder(); i != m_Files.InvalidIndex(); i = m_Files.NextInorder( i ) )
 	{
 		CZipEntry *e = &m_Files[ i ];
-		
-		if ( e->m_Length == 0 )
+
+		if ( e->m_nCompressedSize == 0 )
 			continue;
 
 		// local file header
 		size += sizeof( ZIP_LocalFileHeader );
-		size += strlen( e->m_Name.String() );
+		size += V_strlen( e->m_Name.String() );
 
 		// every file has a directory header that duplicates the filename 
-		dirHeaders += sizeof( ZIP_FileHeader ) + strlen( e->m_Name.String() );
+		dirHeaders += sizeof( ZIP_FileHeader ) + V_strlen( e->m_Name.String() );
 
 		// calculate padding
 		if ( m_AlignmentSize != 0 )
 		{
 			// round up to next boundary
 			unsigned int nextBoundary = ( size + m_AlignmentSize ) & ~( m_AlignmentSize - 1 );
-			
+
 			// the directory header also duplicates the padding
 			dirHeaders += nextBoundary - size;
 
@@ -1156,7 +1376,7 @@ unsigned int CZipFile::CalculateSize( void )
 		}
 
 		// data size
-		size += e->m_Length;
+		size += e->m_nCompressedSize;
 	}
 
 	size += dirHeaders;
@@ -1202,7 +1422,7 @@ int CZipFile::GetNextFilename( int id, char *pBuffer, int bufferSize, int &fileS
 	CZipEntry *e = &m_Files[id];
 
 	Q_strncpy( pBuffer, e->m_Name.String(), bufferSize );
-	fileSize = e->m_Length;
+	fileSize = e->m_nUncompressedSize;
 
 	return id;
 }
@@ -1227,8 +1447,42 @@ void CZipFile::SaveToDisk( HANDLE hOutFile )
 //-----------------------------------------------------------------------------
 void CZipFile::SaveToBuffer( CUtlBuffer& buf )
 {
+	// Estimate size for buffer, since the linear growth of CUtlBuffer is a virtual memory steamroller. This is
+	// best-effort. Ideally CUtlBuffer's growth strategy would be sane and this would be unnecessary.
+	int sizeEstimate = 0;
+	for ( int i = m_Files.FirstInorder(); i != m_Files.InvalidIndex(); i = m_Files.NextInorder( i ) )
+	{
+		CZipEntry *e = &m_Files[i];
+		Assert( e );
+
+		int nameLen = V_strlen( e->m_Name.String() );
+		// Both the per-file header and central directory have these
+		sizeEstimate += 2 * sizeof( ZIP_LocalFileHeader );
+		sizeEstimate += 2 * nameLen;
+		sizeEstimate += 2 * CalculatePadding( nameLen, e->m_ZipOffset );
+		sizeEstimate += sizeof( ZIP_EndOfCentralDirRecord );
+		sizeEstimate += e->m_nCompressedSize;
+		// XZip comment string, max 128
+		sizeEstimate += 128;
+		// We align things to m_AlignmentSize at two points
+		sizeEstimate += m_AlignmentSize * 2;
+	}
+
+	int start = buf.TellPut();
+	buf.EnsureCapacity( start + sizeEstimate );
 	CBufferStream stream( buf );
+
 	SaveDirectory( stream );
+
+	int end = buf.TellPut();
+	if ( start + sizeEstimate < end )
+	{
+		Warning( "ZIP Output overshot buffer estimate: Estimated %i, actual %i\n", sizeEstimate, end - start );
+	}
+	else
+	{
+		DevMsg( "Wrote ZIP buffer, estimated size %i, actual size %i\n", sizeEstimate, end - start );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1246,8 +1500,15 @@ void CZipFile::SaveDirectory( IWriteStream& stream )
 
 	if ( m_hDiskCacheWriteFile != INVALID_HANDLE_VALUE )
 	{
+#ifdef WIN32
 		FlushFileBuffers( m_hDiskCacheWriteFile );
+#else
+		fflush( (FILE *)m_hDiskCacheWriteFile );
+#endif
 	}
+
+	// Might be writing a zip into a larger stream
+	unsigned int zipOffsetInStream = stream.Tell();
 
 	int i;
 	for ( i = m_Files.FirstInorder(); i != m_Files.InvalidIndex(); i = m_Files.NextInorder( i ) )
@@ -1256,47 +1517,50 @@ void CZipFile::SaveDirectory( IWriteStream& stream )
 		Assert( e );
 
 		// Fix up the offset
-		e->m_ZipOffset = stream.Tell();
+		e->m_ZipOffset = stream.Tell() - zipOffsetInStream;
 
-		if ( e->m_Length > 0 && ( m_hDiskCacheWriteFile != INVALID_HANDLE_VALUE ) )
-		{	
+		if ( e->m_nCompressedSize > 0 && ( m_hDiskCacheWriteFile != INVALID_HANDLE_VALUE ) )
+		{
 			// get the data back from the write cache
-			e->m_pData = malloc( e->m_Length );
+			e->m_pData = malloc( e->m_nCompressedSize );
 			if ( e->m_pData )
 			{
 				CWin32File::FileSeek( m_hDiskCacheWriteFile, e->m_DiskCacheOffset, FILE_BEGIN );
-				CWin32File::FileRead( m_hDiskCacheWriteFile, e->m_pData, e->m_Length );
+				CWin32File::FileRead( m_hDiskCacheWriteFile, e->m_pData, e->m_nCompressedSize );
 			}
 		}
 
-		if ( e->m_Length > 0 && e->m_pData != NULL )
+		if ( e->m_nCompressedSize > 0 && e->m_pData != NULL )
 		{
 			ZIP_LocalFileHeader hdr = { 0 };
 			hdr.signature = PKID( 3, 4 );
-			hdr.versionNeededToExtract = 10;  // This is the version that the winzip that I have writes.
+			hdr.versionNeededToExtract = 10;  // No special features or even compression here, set to 1.0
+#ifdef ZIP_SUPPORT_LZMA_ENCODE
+			if ( e->m_eCompressionType == IZip::eCompressionType_LZMA )
+			{
+				// Per ZIP spec 5.8.8
+				hdr.versionNeededToExtract = 63;
+			}
+#endif
 			hdr.flags = 0;
-			hdr.compressionMethod = 0; // NO COMPRESSION!
+			hdr.compressionMethod = e->m_eCompressionType;
 			hdr.lastModifiedTime = 0;
 			hdr.lastModifiedDate = 0;
-
-			CRC32_Init( &e->m_ZipCRC );
-			CRC32_ProcessBuffer( &e->m_ZipCRC, e->m_pData, e->m_Length );
-			CRC32_Final( &e->m_ZipCRC );
 			hdr.crc32 = e->m_ZipCRC;
-			
+
 			const char *pFilename = e->m_Name.String();
-			hdr.compressedSize = e->m_Length;
-			hdr.uncompressedSize = e->m_Length;
-			hdr.fileNameLength = strlen( pFilename );
+			hdr.compressedSize = e->m_nCompressedSize;
+			hdr.uncompressedSize = e->m_nUncompressedSize;
+			hdr.fileNameLength = V_strlen( pFilename );
 			hdr.extraFieldLength = CalculatePadding( hdr.fileNameLength, e->m_ZipOffset );
 			int extraFieldLength = hdr.extraFieldLength;
-			
+
 			// Swap header in place
 			m_Swap.SwapFieldsToTargetEndian( &hdr );
 			stream.Put( &hdr, sizeof( hdr ) );
-			stream.Put( pFilename, strlen( pFilename ) );
+			stream.Put( pFilename, V_strlen( pFilename ) );
 			stream.Put( pPaddingBuffer, extraFieldLength );
-			stream.Put( e->m_pData, e->m_Length );
+			stream.Put( e->m_pData, e->m_nCompressedSize );
 
 			if ( m_hDiskCacheWriteFile != INVALID_HANDLE_VALUE )
 			{
@@ -1313,7 +1577,7 @@ void CZipFile::SaveDirectory( IWriteStream& stream )
 		CWin32File::FileSeek( m_hDiskCacheWriteFile, 0, FILE_END );
 	}
 
-	unsigned int centralDirStart = stream.Tell();
+	unsigned int centralDirStart = stream.Tell() - zipOffsetInStream;
 	if ( m_AlignmentSize )
 	{
 		// align the central directory starting position
@@ -1331,22 +1595,29 @@ void CZipFile::SaveDirectory( IWriteStream& stream )
 	{
 		CZipEntry *e = &m_Files[i];
 		Assert( e );
-		
-		if ( e->m_Length > 0 && e->m_pData != NULL )
+
+		if ( e->m_nCompressedSize > 0 && e->m_pData != NULL )
 		{
 			ZIP_FileHeader hdr = { 0 };
 			hdr.signature = PKID( 1, 2 );
 			hdr.versionMadeBy = 20;				// This is the version that the winzip that I have writes.
-			hdr.versionNeededToExtract = 10;	// This is the version that the winzip that I have writes.
+			hdr.versionNeededToExtract = 10;  // No special features or even compression here, set to 1.0
+#ifdef ZIP_SUPPORT_LZMA_ENCODE
+			if ( e->m_eCompressionType == IZip::eCompressionType_LZMA )
+			{
+				// Per ZIP spec 5.8.8
+				hdr.versionNeededToExtract = 63;
+			}
+#endif
 			hdr.flags = 0;
-			hdr.compressionMethod = 0;
+			hdr.compressionMethod = e->m_eCompressionType;
 			hdr.lastModifiedTime = 0;
 			hdr.lastModifiedDate = 0;
 			hdr.crc32 = e->m_ZipCRC;
 
-			hdr.compressedSize = e->m_Length;
-			hdr.uncompressedSize = e->m_Length;
-			hdr.fileNameLength = strlen( e->m_Name.String() );
+			hdr.compressedSize = e->m_nCompressedSize;
+			hdr.uncompressedSize = e->m_nUncompressedSize;
+			hdr.fileNameLength = V_strlen( e->m_Name.String() );
 			hdr.extraFieldLength = CalculatePadding( hdr.fileNameLength, e->m_ZipOffset );
 			hdr.fileCommentLength = 0;
 			hdr.diskNumberStart = 0;
@@ -1358,7 +1629,7 @@ void CZipFile::SaveDirectory( IWriteStream& stream )
 			// Swap the header in place
 			m_Swap.SwapFieldsToTargetEndian( &hdr );
 			stream.Put( &hdr, sizeof( hdr ) );
-			stream.Put( e->m_Name.String(), strlen( e->m_Name.String() ) );
+			stream.Put( e->m_Name.String(), V_strlen( e->m_Name.String() ) );
 			if ( m_bCompatibleFormat )
 			{
 				stream.Put( pPaddingBuffer, extraFieldLength );
@@ -1374,7 +1645,7 @@ void CZipFile::SaveDirectory( IWriteStream& stream )
 		}
 	}
 
-	unsigned int centralDirEnd = stream.Tell();
+	unsigned int centralDirEnd = stream.Tell() - zipOffsetInStream;
 	if ( m_AlignmentSize )
 	{
 		// align the central directory starting position
@@ -1417,56 +1688,57 @@ public:
 	CZip( const char *pDiskCacheWritePath, bool bSortByName );
 	virtual ~CZip();
 
-	virtual void			Reset();
+	virtual void			Reset() OVERRIDE;
 
 	// Add a single file to a zip - maintains the zip's previous alignment state
-	virtual void			AddFileToZip( const char *relativename, const char *fullpath );
+	virtual void			AddFileToZip( const char *relativename, const char *fullpath, eCompressionType compressionType ) OVERRIDE;
 
 	// Whether a file is contained in a zip - maintains alignment
-	virtual bool			FileExistsInZip( const char *pRelativeName );
+	virtual bool			FileExistsInZip( const char *pRelativeName ) OVERRIDE;
 
 	// Reads a file from the zip - maintains alignement
-	virtual bool			ReadFileFromZip( const char *pRelativeName, bool bTextMode, CUtlBuffer &buf );
-	virtual bool			ReadFileFromZip( HANDLE hZipFile, const char *relativename, bool bTextMode, CUtlBuffer &buf );
+	virtual bool			ReadFileFromZip( const char *pRelativeName, bool bTextMode, CUtlBuffer &buf ) OVERRIDE;
+	virtual bool			ReadFileFromZip( HANDLE hZipFile, const char *relativename, bool bTextMode, CUtlBuffer &buf ) OVERRIDE;
 
 	// Removes a single file from the zip - maintains alignment
-	virtual void			RemoveFileFromZip( const char *relativename );
+	virtual void			RemoveFileFromZip( const char *relativename ) OVERRIDE;
 
 	// Gets next filename in zip, for walking the directory - maintains alignment
-	virtual int				GetNextFilename( int id, char *pBuffer, int bufferSize, int &fileSize );
+	virtual int				GetNextFilename( int id, char *pBuffer, int bufferSize, int &fileSize ) OVERRIDE;
 
 	// Prints the zip's contents - maintains alignment
-	virtual void			PrintDirectory( void );
+	virtual void			PrintDirectory( void ) OVERRIDE;
 
 	// Estimate the size of the Zip (including header, padding, etc.)
-	virtual unsigned int	EstimateSize( void );
+	virtual unsigned int	EstimateSize( void ) OVERRIDE;
 
 	// Add buffer to zip as a file with given name - uses current alignment size, default 0 (no alignment)
-	virtual void			AddBufferToZip( const char *relativename, void *data, int length, bool bTextMode );
+	virtual void			AddBufferToZip( const char *relativename, void *data, int length,
+											bool bTextMode, eCompressionType compressionType ) OVERRIDE;
 
-	// Writes out zip file to a buffer - uses current alignment size 
+	// Writes out zip file to a buffer - uses current alignment size
 	// (set by file's previous alignment, or a call to ForceAlignment)
-	virtual void			SaveToBuffer( CUtlBuffer& outbuf );
+	virtual void			SaveToBuffer( CUtlBuffer& outbuf ) OVERRIDE;
 
-	// Writes out zip file to a filestream - uses current alignment size 
+	// Writes out zip file to a filestream - uses current alignment size
 	// (set by file's previous alignment, or a call to ForceAlignment)
-	virtual void			SaveToDisk( FILE *fout );
-	virtual void			SaveToDisk( HANDLE hOutFile );
+	virtual void			SaveToDisk( FILE *fout ) OVERRIDE;
+	virtual void			SaveToDisk( HANDLE hOutFile ) OVERRIDE;
 
-	// Reads a zip file from a buffer into memory - sets current alignment size to 
+	// Reads a zip file from a buffer into memory - sets current alignment size to
 	// the file's alignment size, unless overridden by a ForceAlignment call)
-	virtual void			ParseFromBuffer( void *buffer, int bufferlength );
-	virtual HANDLE			ParseFromDisk( const char *pFilename );
+	virtual void			ParseFromBuffer( void *buffer, int bufferlength ) OVERRIDE;
+	virtual HANDLE			ParseFromDisk( const char *pFilename ) OVERRIDE;
 
 	// Forces a specific alignment size for all subsequent file operations, overriding files' previous alignment size.
 	// Return to using files' individual alignment sizes by passing FALSE.
-	virtual void			ForceAlignment( bool aligned, bool bCompatibleFormat, unsigned int alignmentSize );
+	virtual void			ForceAlignment( bool aligned, bool bCompatibleFormat, unsigned int alignmentSize ) OVERRIDE;
 
 	// Sets the endianess of the zip
-	virtual void			SetBigEndian( bool bigEndian );
-	virtual void			ActivateByteSwapping( bool bActivate );
+	virtual void			SetBigEndian( bool bigEndian ) OVERRIDE;
+	virtual void			ActivateByteSwapping( bool bActivate ) OVERRIDE;
 
-	virtual unsigned int	GetAlignment();
+	virtual unsigned int	GetAlignment() OVERRIDE;
 
 private:
 	CZipFile				m_ZipFile;
@@ -1475,11 +1747,11 @@ private:
 static CUtlLinkedList< CZip* > g_ZipUtils;
 
 IZip *IZip::CreateZip( const char *pDiskCacheWritePath, bool bSortByName )
-{ 
+{
 	CZip *pZip = new CZip( pDiskCacheWritePath, bSortByName );
 	g_ZipUtils.AddToTail( pZip );
 
-	return pZip; 
+	return pZip;
 }
 
 void IZip::ReleaseZip( IZip *pZip )
@@ -1508,9 +1780,9 @@ void CZip::ActivateByteSwapping( bool bActivate )
 	m_ZipFile.ActivateByteSwapping( bActivate );
 }
 
-void CZip::AddFileToZip( const char *relativename, const char *fullpath )
+void CZip::AddFileToZip( const char *relativename, const char *fullpath, eCompressionType compressionType )
 {
-	m_ZipFile.AddFileToZip( relativename, fullpath );
+	m_ZipFile.AddFileToZip( relativename, fullpath, compressionType );
 }
 
 bool CZip::FileExistsInZip( const char *pRelativeName )
@@ -1554,9 +1826,9 @@ unsigned int CZip::EstimateSize( void )
 }
 
 // Add buffer to zip as a file with given name
-void CZip::AddBufferToZip( const char *relativename, void *data, int length, bool bTextMode )
+void CZip::AddBufferToZip( const char *relativename, void *data, int length, bool bTextMode, eCompressionType compressionType )
 {
-	m_ZipFile.AddBufferToZip( relativename, data, length, bTextMode );
+	m_ZipFile.AddBufferToZip( relativename, data, length, bTextMode, compressionType );
 }
 
 void CZip::SaveToBuffer( CUtlBuffer& outbuf )
@@ -1596,4 +1868,3 @@ unsigned int CZip::GetAlignment()
 	return m_ZipFile.GetAlignment();
 }
 
-#endif // SWDS

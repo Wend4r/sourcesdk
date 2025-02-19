@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Base combat character with no AI
 //
@@ -59,7 +59,7 @@ int	CAmmoDef::PlrDamage(int nAmmoIndex)
 	{
 		if ( m_AmmoType[nAmmoIndex].pPlrDmgCVar )
 		{
-			return m_AmmoType[nAmmoIndex].pPlrDmgCVar->GetInt();
+			return m_AmmoType[nAmmoIndex].pPlrDmgCVar->GetFloat();
 		}
 
 		return 0;
@@ -84,7 +84,7 @@ int	CAmmoDef::NPCDamage(int nAmmoIndex)
 	{
 		if ( m_AmmoType[nAmmoIndex].pNPCDmgCVar )
 		{
-			return m_AmmoType[nAmmoIndex].pNPCDmgCVar->GetInt();
+			return m_AmmoType[nAmmoIndex].pNPCDmgCVar->GetFloat();
 		}
 
 		return 0;
@@ -108,7 +108,7 @@ int	CAmmoDef::MaxCarry(int nAmmoIndex)
 	if ( m_AmmoType[nAmmoIndex].pMaxCarry == USE_CVAR )
 	{
 		if ( m_AmmoType[nAmmoIndex].pMaxCarryCVar )
-			return m_AmmoType[nAmmoIndex].pMaxCarryCVar->GetInt();
+			return m_AmmoType[nAmmoIndex].pMaxCarryCVar->GetFloat();
 
 		return 0;
 	}

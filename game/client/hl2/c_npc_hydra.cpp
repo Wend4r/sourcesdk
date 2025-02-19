@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,7 +7,7 @@
 #include "cbase.h"
 #include "bone_setup.h"
 #include "c_ai_basenpc.h"
-#include "engine/IVDebugOverlay.h"
+#include "engine/ivdebugoverlay.h"
 #include "tier0/vprof.h"
 #include "soundinfo.h"
 
@@ -149,7 +149,7 @@ void  C_NPC_Hydra::StandardBlendingRules( Vector pos[], Quaternion q[], float cu
 {
 	VPROF( "C_NPC_Hydra::StandardBlendingRules" );
 
-	const studiohdr_t *hdr = GetModelPtr()->GetRenderHdr();
+	studiohdr_t *hdr = GetModelPtr();
 	if ( !hdr )
 	{
 		return;
@@ -169,7 +169,7 @@ void  C_NPC_Hydra::StandardBlendingRules( Vector pos[], Quaternion q[], float cu
 		{
 			poseparam[i] = 0;
 		}
-		CalcPose( GetModelPtr(), NULL, pos, q, 0.0f, 0.0f, poseparam, BONE_USED_BY_ANYTHING );
+		CalcPose( hdr, NULL, pos, q, 0.0f, 0.0f, poseparam, BONE_USED_BY_ANYTHING );
 
 		// allocate arrays
 		if (m_boneLength)

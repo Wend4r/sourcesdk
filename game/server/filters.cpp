@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -536,7 +536,7 @@ bool CFilterEnemy::PassesProximityFilter( CBaseEntity *pCaller, CBaseEntity *pEn
 	float flSmallerRadius = m_flRadius;
 	if ( flSmallerRadius > flLargerRadius )
 	{
-		V_swap( flLargerRadius, flSmallerRadius );
+		::V_swap( flLargerRadius, flSmallerRadius );
 	}
 
 	float flDist;	

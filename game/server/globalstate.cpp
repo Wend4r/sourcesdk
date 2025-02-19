@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -228,6 +228,9 @@ int GlobalEntity_GetNumGlobals( void )
 
 CON_COMMAND(dump_globals, "Dump all global entities/states")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	gGlobalState.DumpGlobals();
 }
 
@@ -316,5 +319,8 @@ void ShowServerGameTime()
 
 CON_COMMAND(server_game_time, "Gives the game time in seconds (server's curtime)")
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	ShowServerGameTime();
 }

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements an explosion entity and a support spark shower entity.
 //
@@ -307,7 +307,7 @@ void CEnvExplosion::InputExplode( inputdata_t &inputdata )
 	}
 
 	//Get the damage override if specified
-	int	iRadius = ( m_iRadiusOverride > 0 ) ? m_iRadiusOverride : static_cast<int>(m_iMagnitude * 2.5f);
+	int	iRadius = ( m_iRadiusOverride > 0 ) ? m_iRadiusOverride : ( m_iMagnitude * 2.5f );
 
 	CPASFilter filter( vecExplodeOrigin );
 	te->Explosion( filter, 0.0,
@@ -388,7 +388,7 @@ void ExplosionCreate( const Vector &center, const QAngle &angles,
 
 	CEnvExplosion *pExplosion = (CEnvExplosion*)CBaseEntity::Create( "env_explosion", center, angles, pOwner );
 	Q_snprintf( buf,sizeof(buf), "%3d", magnitude );
-	const char *szKeyName = "iMagnitude";
+	char *szKeyName = "iMagnitude";
 	char *szValue = buf;
 	pExplosion->KeyValue( szKeyName, szValue );
 

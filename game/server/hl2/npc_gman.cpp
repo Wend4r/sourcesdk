@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: The G-Man, misunderstood servant of the people
 //
@@ -10,7 +10,6 @@
 //-----------------------------------------------------------------------------
 // Generic NPC - purely for scripted sequence work.
 //-----------------------------------------------------------------------------
-
 #include "cbase.h"
 #include "npcevent.h"
 #include "ai_basenpc.h"
@@ -85,7 +84,7 @@ void CNPC_GMan::HandleAnimEvent( animevent_t *pEvent )
 //-----------------------------------------------------------------------------
 int CNPC_GMan::GetSoundInterests ( void )
 {
-	return 0;
+	return NULL;
 }
 
 

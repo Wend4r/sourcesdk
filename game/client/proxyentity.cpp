@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,7 +6,7 @@
 //=============================================================================//
 #include "cbase.h"
 #include "proxyentity.h"
-#include "IClientRenderable.h"
+#include "iclientrenderable.h"
 #include "toolframework_client.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
@@ -21,12 +21,15 @@ void CEntityMaterialProxy::Release( void )
 }
 
 //-----------------------------------------------------------------------------
-// Helper class to deal with floating point inputs
+//
 //-----------------------------------------------------------------------------
 void CEntityMaterialProxy::OnBind( void *pRenderable )
 {
 	if( !pRenderable )
+	{
+		OnBindNotEntity( pRenderable );
 		return;
+	}
 
 	IClientRenderable *pRend = ( IClientRenderable* )pRenderable;
 	C_BaseEntity *pEnt = pRend->GetIClientUnknown()->GetBaseEntity();
@@ -37,5 +40,9 @@ void CEntityMaterialProxy::OnBind( void *pRenderable )
 		{
 			ToolFramework_RecordMaterialParams( GetMaterial() );
 		}
+	}
+	else
+	{
+		OnBindNotEntity( pRenderable );
 	}
 }

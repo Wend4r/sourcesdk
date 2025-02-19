@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -74,7 +74,8 @@
 #define SPROP_COORD_MP					(1<<13) // Like SPROP_COORD, but special handling for multiplayer games
 #define SPROP_COORD_MP_LOWPRECISION 	(1<<14) // Like SPROP_COORD, but special handling for multiplayer games where the fractional component only gets a 3 bits instead of 5
 #define SPROP_COORD_MP_INTEGRAL			(1<<15) // SPROP_COORD_MP, but coordinates are rounded to integral boundaries
-#define SPROP_VARINT					SPROP_NORMAL
+
+#define SPROP_VARINT					SPROP_NORMAL	// reuse existing flag so we don't break demo. note you want to include SPROP_UNSIGNED if needed, its more efficient
 
 #define SPROP_NUMFLAGBITS_NETWORKED		16
 
@@ -99,20 +100,28 @@
 
 class SendProp;
 
+// The day we do this, we break all mods until they recompile.
+//#define SUPPORTS_INT64
 
 typedef enum
 {
 	DPT_Int=0,
 	DPT_Float,
 	DPT_Vector,
-	DPT_VectorXY,
+	DPT_VectorXY, // Only encodes the XY of a vector, ignores Z
 	DPT_String,
 	DPT_Array,	// An array of the base types (can't be of datatables).
 	DPT_DataTable,
 #if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
 	DPT_Quaternion,
 #endif
+
+#ifdef SUPPORTS_INT64
+	DPT_Int64,
+#endif
+
 	DPT_NUMSendPropTypes
+
 } SendPropType;
 
 
@@ -138,6 +147,10 @@ public:
 							Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f)", 
 								m_Vector[0], m_Vector[1], m_Vector[2] );
 							break;
+						case DPT_VectorXY :
+							Q_snprintf( text, sizeof(text), "(%.3f,%.3f)", 
+								m_Vector[0], m_Vector[1] );
+							break;
 #if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
 						case DPT_Quaternion :
 							Q_snprintf( text, sizeof(text), "(%.3f,%.3f,%.3f %.3f)", 
@@ -156,6 +169,11 @@ public:
 						case DPT_DataTable :
 							Q_snprintf( text, sizeof(text), "DataTable" ); 
 							break;
+#ifdef SUPPORTS_INT64
+						case DPT_Int64:
+							Q_snprintf( text, sizeof(text), "%I64d", m_Int64 );
+							break;
+#endif
 						default :
 							Q_snprintf( text, sizeof(text), "DVariant type %i unknown", m_Type ); 
 							break;
@@ -167,13 +185,17 @@ public:
 	union
 	{
 		float	m_Float;
-		long	m_Int;
-		char	*m_pString;
+		int		m_Int;
+		const char	*m_pString;
 		void	*m_pData;	// For DataTables.
 #if 0 // We can't ship this since it changes the size of DTVariant to be 20 bytes instead of 16 and that breaks MODs!!!
 		float	m_Vector[4];
 #else
 		float	m_Vector[3];
+#endif
+
+#ifdef SUPPORTS_INT64
+		int64	m_Int64;
 #endif
 	};
 	SendPropType	m_Type;

@@ -1,12 +1,12 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // This is a helper class designed to help with the chains of modal dialogs
 // encountered when trying to open or save a particular file
 //
 //=============================================================================
 
-#include "vgui_controls/fileopenstatemachine.h"
-#include "tier1/keyvalues.h"
+#include "vgui_controls/FileOpenStateMachine.h"
+#include "tier1/KeyValues.h"
 #include "vgui_controls/FileOpenDialog.h"
 #include "vgui_controls/MessageBox.h"
 #include "vgui_controls/perforcefilelistframe.h"
@@ -14,6 +14,7 @@
 #include "filesystem.h"
 #include "p4lib/ip4.h"
 #include "tier2/tier2.h"
+#include "tier0/icommandline.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -380,6 +381,13 @@ void FileOpenStateMachine::SaveFile( KeyValues *pContextKeyValues, const char *p
 	m_SaveFileType = pFileType;
 	m_OpenFileType = NULL;
 	m_OpenFileName = NULL;
+
+	// Clear the P4 dialog flag for SDK users and licensees without Perforce
+	if ( CommandLine()->FindParm( "-nop4" ) )
+	{
+		nFlags &= ~FOSM_SHOW_PERFORCE_DIALOGS;
+	}
+
 	m_bShowPerforceDialogs = ( nFlags & FOSM_SHOW_PERFORCE_DIALOGS ) != 0;
 	m_bShowSaveQuery = ( nFlags & FOSM_SHOW_SAVE_QUERY ) != 0;
 	m_bIsOpeningFile = false;

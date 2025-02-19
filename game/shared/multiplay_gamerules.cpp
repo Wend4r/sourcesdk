@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Contains the implementation of game rules for multiplayer.
 //
@@ -6,12 +6,14 @@
 //=============================================================================//
 
 #include "cbase.h"
+#include "cdll_int.h"
 #include "multiplay_gamerules.h"
 #include "viewport_panel_names.h"
 #include "gameeventdefs.h"
 #include <KeyValues.h>
 #include "filesystem.h"
 #include "mp_shareddefs.h"
+#include "utlbuffer.h"
 
 #ifdef CLIENT_DLL
 
@@ -35,6 +37,20 @@
 	#include "team.h"
 	#include "usermessages.h"
 	#include "tier0/icommandline.h"
+
+#ifdef NEXT_BOT
+	#include "NextBotManager.h"
+#endif
+
+#ifdef TF_DLL
+	#include <unordered_set>
+	#include "hl2orange.spa.h"
+#endif
+
+// TODO Why did we add this to the base class guys.
+#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
+	#include "player_vs_environment/tf_population_manager.h"
+#endif
 
 #endif
 
@@ -73,11 +89,44 @@ ConVar mp_timelimit( "mp_timelimit", "0", FCVAR_NOTIFY|FCVAR_REPLICATED, "game t
 #endif
 					);
 
+ConVar fraglimit( "mp_fraglimit","0", FCVAR_NOTIFY|FCVAR_REPLICATED, "The number of kills at which the map ends");
+
+ConVar mp_show_voice_icons( "mp_show_voice_icons", "1", FCVAR_REPLICATED, "Show overhead player voice icons when players are speaking.\n" );
+
 #ifdef GAME_DLL
 
-ConVar tv_delaymapchange( "tv_delaymapchange", "0", 0, "Delays map change until broadcast is complete" );
+ConVar tv_delaymapchange( "tv_delaymapchange", "0", FCVAR_NONE, "Delays map change until broadcast is complete" );
+ConVar tv_delaymapchange_protect( "tv_delaymapchange_protect", "1", FCVAR_NONE, "Protect against doing a manual map change if HLTV is broadcasting and has not caught up with a major game event such as round_end" );
 
 ConVar mp_restartgame( "mp_restartgame", "0", FCVAR_GAMEDLL, "If non-zero, game will restart in the specified number of seconds" );
+ConVar mp_restartgame_immediate( "mp_restartgame_immediate", "0", FCVAR_GAMEDLL, "If non-zero, game will restart immediately" );
+
+ConVar mp_mapcycle_empty_timeout_seconds( "mp_mapcycle_empty_timeout_seconds", "0", FCVAR_REPLICATED, "If nonzero, server will cycle to the next map if it has been empty on the current map for N seconds");
+
+void cc_SkipNextMapInCycle()
+{
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
+	if ( MultiplayRules() )
+	{
+		MultiplayRules()->SkipNextMapInCycle();
+	}
+}
+
+void cc_GotoNextMapInCycle()
+{
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
+	if ( MultiplayRules() )
+	{
+		MultiplayRules()->ChangeLevel();
+	}
+}
+
+ConCommand skip_next_map( "skip_next_map", cc_SkipNextMapInCycle, "Skips the next map in the map rotation for the server." );
+ConCommand changelevel_next( "changelevel_next", cc_GotoNextMapInCycle, "Immediately changes to the next map in the map rotation for the server." );
 
 #ifndef TF_DLL		// TF overrides the default value of this convar
 ConVar mp_waitingforplayers_time( "mp_waitingforplayers_time", "0", FCVAR_GAMEDLL, "WaitingForPlayers time length in seconds" );
@@ -220,6 +269,8 @@ bool CMultiplayRules::Damage_ShouldNotBleed( int iDmgType )
 CMultiplayRules::CMultiplayRules()
 {
 #ifndef CLIENT_DLL
+	m_flTimeLastMapChangeOrPlayerWasConnected = 0.0f;
+
 	RefreshSkillData( true );
 
 	// 11/8/98
@@ -238,9 +289,9 @@ CMultiplayRules::CMultiplayRules()
 
 		if ( cfgfile && cfgfile[0] )
 		{
-			char szCommand[256];
+			char szCommand[MAX_PATH];
 
-			Msg( "Executing dedicated server config file\n" );
+			Log( "Executing dedicated server config file %s\n", cfgfile );
 			Q_snprintf( szCommand,sizeof(szCommand), "exec %s\n", cfgfile );
 			engine->ServerCommand( szCommand );
 		}
@@ -252,15 +303,17 @@ CMultiplayRules::CMultiplayRules()
 
 		if ( cfgfile && cfgfile[0] )
 		{
-			char szCommand[256];
+			char szCommand[MAX_PATH];
 
-			Msg( "Executing listen server config file\n" );
+			Log( "Executing listen server config file %s\n", cfgfile );
 			Q_snprintf( szCommand,sizeof(szCommand), "exec %s\n", cfgfile );
 			engine->ServerCommand( szCommand );
 		}
 	}
 
 	nextlevel.SetValue( "" );
+	LoadMapCycleFile();
+
 #endif
 
 	LoadVoiceCommandScript();
@@ -301,8 +354,17 @@ bool CMultiplayRules::Init()
 
 		// suitcharger
 #ifndef TF_DLL
-		ConVarRef suitcharger( "sk_suitcharger" );
+//=============================================================================
+// HPE_BEGIN:
+// [menglish] CS doesn't have the suitcharger either
+//=============================================================================
+#ifndef CSTRIKE_DLL
+ConVarRef suitcharger( "sk_suitcharger" );
 		suitcharger.SetValue( 30 );
+ #endif
+//=============================================================================
+// HPE_END
+//=============================================================================
 #endif
 	}
 
@@ -342,6 +404,52 @@ bool CMultiplayRules::Init()
 					GoToIntermission();
 					return;
 				}
+			}
+		}
+	}
+
+	//=========================================================
+	//=========================================================
+	void CMultiplayRules::FrameUpdatePostEntityThink()
+	{
+		BaseClass::FrameUpdatePostEntityThink();
+
+		float flNow = Plat_FloatTime();
+
+		// Update time when client was last connected
+		if ( m_flTimeLastMapChangeOrPlayerWasConnected <= 0.0f )
+		{
+			m_flTimeLastMapChangeOrPlayerWasConnected = flNow;
+		}
+		else
+		{
+			for( int iPlayerIndex = 1 ; iPlayerIndex <= MAX_PLAYERS; iPlayerIndex++ )
+			{
+				player_info_t pi;
+				if ( !engine->GetPlayerInfo( iPlayerIndex, &pi ) )
+					continue;
+#if defined( REPLAY_ENABLED )
+				if ( pi.ishltv || pi.isreplay || pi.fakeplayer )
+#else
+				if ( pi.ishltv || pi.fakeplayer )
+#endif
+					continue;
+
+				m_flTimeLastMapChangeOrPlayerWasConnected = flNow;
+				break;
+			}
+		}
+
+		// Check if we should cycle the map because we've been empty
+		// for long enough
+		if ( mp_mapcycle_empty_timeout_seconds.GetInt() > 0 )
+		{
+			int iIdleSeconds = (int)( flNow - m_flTimeLastMapChangeOrPlayerWasConnected );
+			if ( iIdleSeconds >= mp_mapcycle_empty_timeout_seconds.GetInt() )
+			{
+
+				Log( "Server has been empty for %d seconds on this map, cycling map as per mp_mapcycle_empty_timeout_seconds\n", iIdleSeconds );
+				ChangeLevel();
 			}
 		}
 	}
@@ -544,7 +652,7 @@ bool CMultiplayRules::Init()
 
 	//=========================================================
 	//=========================================================
-	bool CMultiplayRules::FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker )
+	bool CMultiplayRules::FPlayerCanTakeDamage( CBasePlayer *pPlayer, CBaseEntity *pAttacker, const CTakeDamageInfo &info )
 	{
 		return true;
 	}
@@ -737,7 +845,11 @@ bool CMultiplayRules::Init()
 						// If the inflictor is the killer,  then it must be their current weapon doing the damage
 						if ( pScorer->GetActiveWeapon() )
 						{
+#ifdef HL1MP_DLL
+							killer_weapon_name = pScorer->GetActiveWeapon()->GetClassname();
+#else
 							killer_weapon_name = pScorer->GetActiveWeapon()->GetDeathNoticeName();
+#endif
 						}
 					}
 					else
@@ -756,9 +868,9 @@ bool CMultiplayRules::Init()
 			{
 				killer_weapon_name += 7;
 			}
-			else if ( strncmp( killer_weapon_name, "NPC_", 8 ) == 0 )
+			else if ( strncmp( killer_weapon_name, "NPC_", 4 ) == 0 )
 			{
-				killer_weapon_name += 8;
+				killer_weapon_name += 4;
 			}
 			else if ( strncmp( killer_weapon_name, "func_", 5 ) == 0 )
 			{
@@ -773,7 +885,9 @@ bool CMultiplayRules::Init()
 			event->SetInt("attacker", killer_ID );
 			event->SetInt("customkill", info.GetDamageCustom() );
 			event->SetInt("priority", 7 );	// HLTV event priority, not transmitted
-			
+#ifdef HL1MP_DLL
+			event->SetString("weapon", killer_weapon_name );
+#endif			
 			gameeventmanager->FireEvent( event );
 		}
 
@@ -1027,9 +1141,10 @@ bool CMultiplayRules::Init()
 
 		float flWaitTime = mp_chattime.GetInt();
 
-		if ( tv_delaymapchange.GetBool() && HLTVDirector()->IsActive() )	
+		if ( tv_delaymapchange.GetBool() )
 		{
-			flWaitTime = MAX ( flWaitTime, HLTVDirector()->GetDelay() );
+			if ( HLTVDirector()->IsActive() )	
+				flWaitTime = MAX( flWaitTime, HLTVDirector()->GetDelay() );
 		}
 				
 		m_flIntermissionEndTime = gpGlobals->curtime + flWaitTime;
@@ -1045,29 +1160,32 @@ bool CMultiplayRules::Init()
 		}
 	}
 
-	void StripChar(char *szBuffer, const char cWhiteSpace )
+	// Strip ' ' and '\n' characters from string.
+	static void StripWhitespaceChars( char *szBuffer )
 	{
+		char *szOut = szBuffer;
 
-		while ( char *pSpace = strchr( szBuffer, cWhiteSpace ) )
+		for ( char *szIn = szOut; *szIn; szIn++ )
 		{
-			char *pNextChar = pSpace + sizeof(char);
-			V_strcpy( pSpace, pNextChar );
+			if ( *szIn != ' ' && *szIn != '\r' )
+				*szOut++ = *szIn;
 		}
+		*szOut = '\0';
 	}
 
 	void CMultiplayRules::GetNextLevelName( char *pszNextMap, int bufsize, bool bRandom /* = false */ )
 	{
-		const char *mapcfile = mapcyclefile.GetString();
-		Assert( mapcfile != NULL );
+		char mapcfile[MAX_PATH];
+		DetermineMapCycleFilename( mapcfile, sizeof(mapcfile), false );
 
 		// Check the time of the mapcycle file and re-populate the list of level names if the file has been modified
-		const int nMapCycleTimeStamp = filesystem->GetPathTime( mapcfile, "GAME" );
+		const int nMapCycleTimeStamp = filesystem->GetPathTime( mapcfile, "MOD" );
 
 		if ( 0 == nMapCycleTimeStamp )
 		{
 			// Map cycle file does not exist, make a list containing only the current map
-			char *szCurrentMapName = new char[32];
-			Q_strncpy( szCurrentMapName, STRING(gpGlobals->mapname), 32 );
+			char *szCurrentMapName = new char[MAX_MAP_NAME];
+			Q_strncpy( szCurrentMapName, STRING(gpGlobals->mapname), MAX_MAP_NAME );
 			m_MapList.AddToTail( szCurrentMapName );
 		}
 		else
@@ -1075,65 +1193,16 @@ bool CMultiplayRules::Init()
 			// If map cycle file has changed or this is the first time through ...
 			if ( m_nMapCycleTimeStamp != nMapCycleTimeStamp )
 			{
-				// Reset map index and map cycle timestamp
-				m_nMapCycleTimeStamp = nMapCycleTimeStamp;
-				m_nMapCycleindex = 0;
-
-				// Clear out existing map list. Not using Purge() because I don't think that it will do a 'delete []'
-				for ( int i = 0; i < m_MapList.Count(); i++ )
-				{
-					delete [] m_MapList[i];
-				}
-
-				m_MapList.RemoveAll();
-
-				// Repopulate map list from mapcycle file
-				int nFileLength;
-				char *aFileList = (char*)UTIL_LoadFileForMe( mapcfile, &nFileLength );
-				if ( aFileList && nFileLength )
-				{
-					V_SplitString( aFileList, "\n", m_MapList );
-
-					for ( int i = 0; i < m_MapList.Count(); i++ )
-					{
-						bool bIgnore = false;
-
-						// Strip out the spaces in the name
-						StripChar( m_MapList[i] , '\r');
-						StripChar( m_MapList[i] , ' ');
-						
-						if ( !engine->IsMapValid( m_MapList[i] ) )
-						{
-							bIgnore = true;
-
-							// If the engine doesn't consider it a valid map remove it from the lists
-							char szWarningMessage[MAX_PATH];
-							V_snprintf( szWarningMessage, MAX_PATH, "Invalid map '%s' included in map cycle file. Ignored.\n", m_MapList[i] );
-							Warning( szWarningMessage );
-						}
-						else if ( !Q_strncmp( m_MapList[i], "//", 2 ) )
-						{
-							bIgnore = true;
-						}
-
-						if ( bIgnore )
-						{
-							delete [] m_MapList[i];
-							m_MapList.Remove( i );
-							--i;
-						}
-					}
-
-					UTIL_FreeFile( (byte *)aFileList );
-				}
+				// Reload
+				LoadMapCycleFile();
 			}
 		}
 
 		// If somehow we have no maps in the list then add the current one
 		if ( 0 == m_MapList.Count() )
 		{
-			char *szDefaultMapName = new char[32];
-			Q_strncpy( szDefaultMapName, STRING(gpGlobals->mapname), 32 );
+			char *szDefaultMapName = new char[MAX_MAP_NAME];
+			Q_strncpy( szDefaultMapName, STRING(gpGlobals->mapname), MAX_MAP_NAME );
 			m_MapList.AddToTail( szDefaultMapName );
 		}
 
@@ -1146,11 +1215,191 @@ bool CMultiplayRules::Init()
 		Q_strncpy( pszNextMap, m_MapList[m_nMapCycleindex], bufsize);
 	}
 
+	void CMultiplayRules::DetermineMapCycleFilename( char *pszResult, int nSizeResult, bool bForceSpew )
+	{
+		static char szLastResult[ MAX_PATH ];
+
+		const char *pszVar = mapcyclefile.GetString();
+		if ( *pszVar == '\0' )
+		{
+			if ( bForceSpew || V_stricmp( szLastResult, "__novar") )
+			{
+				Msg( "mapcyclefile convar not set.\n" );
+				V_strcpy_safe( szLastResult, "__novar" );
+			}
+			*pszResult = '\0';
+			return;
+		}
+
+		// Check cfg/foo first.  Resolve dot-slashes only on the concatonated path, since "../foo" is valid if it
+		// matches "cfg/../foo".
+		//
+		// XXX Everything is awful bonus, V_RemoveDotSlashes("a/../b") returns false and the invalid "/b" parse, and the
+		//     comment there says "for backwards compat".  So we do "/cfg/%s" and then trim the first character on
+		//     success because why not.
+		char szRecommendedNameWithSlash[ MAX_PATH ] = { 0 };
+		V_sprintf_safe( szRecommendedNameWithSlash, "/cfg/%s", pszVar );
+		char *pszRecommendedName = szRecommendedNameWithSlash + 1;
+		if ( !V_RemoveDotSlashes( szRecommendedNameWithSlash ) ||
+		     szRecommendedNameWithSlash[0] != CORRECT_PATH_SEPARATOR || !*pszRecommendedName )
+		{
+			if ( bForceSpew || V_stricmp( szLastResult, "__novar") )
+			{
+				Msg( "mapcyclefile convar is not a valid path.\n" );
+				V_strcpy_safe( szLastResult, "__novar" );
+			}
+			*pszResult = '\0';
+			return;
+		}
+
+		// First, look for a mapcycle file in the cfg directory, which is preferred
+		V_strncpy( pszResult, pszRecommendedName, nSizeResult );
+		if ( filesystem->FileExists( pszResult, "MOD" ) )
+		{
+			if ( bForceSpew || V_stricmp( szLastResult, pszResult) )
+			{
+				Msg( "Using map cycle file '%s'.\n", pszResult );
+				V_strcpy_safe( szLastResult, pszResult );
+			}
+			return;
+		}
+
+		// Nope?  Try the root.  Resolve dot-slashes in the path in isolation since "../foo" is now not allowed from
+		// there.  Same note as above about V_RemoveDotSlashes being actually broken.
+		char szCleanPathWithSlash[ MAX_PATH ] = { 0 };
+		V_sprintf_safe( szCleanPathWithSlash, "/%s", pszVar );
+		char *pszCleanPath = szCleanPathWithSlash + 1;
+		if ( !V_RemoveDotSlashes( szCleanPathWithSlash ) || szCleanPathWithSlash[0] != CORRECT_PATH_SEPARATOR || !pszCleanPath )
+		{
+			if ( bForceSpew || V_stricmp( szLastResult, "__novar") )
+			{
+				Msg( "mapcyclefile convar is not a valid path.\n" );
+				V_strcpy_safe( szLastResult, "__novar" );
+			}
+			*pszResult = '\0';
+			return;
+		}
+
+
+		V_strncpy( pszResult, pszCleanPath, nSizeResult );
+		if ( filesystem->FileExists( pszResult, "MOD" ) )
+		{
+			if ( bForceSpew || V_stricmp( szLastResult, pszResult) )
+			{
+				Msg( "Using map cycle file '%s'.  ('%s' was not found.)\n", pszResult, pszRecommendedName );
+				V_strcpy_safe( szLastResult, pszResult );
+			}
+			return;
+		}
+
+		// Nope?  Use the default.
+		if ( !V_stricmp( pszCleanPath, "mapcycle.txt" ) )
+		{
+			V_strncpy( pszResult, "cfg/mapcycle_default.txt", nSizeResult );
+			if ( filesystem->FileExists( pszResult, "MOD" ) )
+			{
+				if ( bForceSpew || V_stricmp( szLastResult, pszResult) )
+				{
+					Msg( "Using map cycle file '%s'.  ('%s' was not found.)\n", pszResult, pszRecommendedName );
+					V_strcpy_safe( szLastResult, pszResult );
+				}
+				return;
+			}
+		}
+
+		// Failed
+		*pszResult = '\0';
+		if ( bForceSpew || V_stricmp( szLastResult, "__notfound") )
+		{
+			Msg( "Map cycle file '%s' was not found.\n", pszRecommendedName );
+			V_strcpy_safe( szLastResult, "__notfound" );
+		}
+	}
+
+	void CMultiplayRules::LoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVector<char *> &mapList )
+	{
+		CMultiplayRules::RawLoadMapCycleFileIntoVector( pszMapCycleFile, mapList );
+	}
+
+	void CMultiplayRules::RawLoadMapCycleFileIntoVector( const char *pszMapCycleFile, CUtlVector<char *> &mapList )
+	{
+		CUtlBuffer buf;
+		if ( !filesystem->ReadFile( pszMapCycleFile, "MOD", buf ) )
+			return;
+		buf.PutChar( 0 );
+		V_SplitString( (char*)buf.Base(), "\n", mapList );
+
+		for ( int i = 0; i < mapList.Count(); i++ )
+		{
+			bool bIgnore = false;
+
+			// Strip out ' ' and '\r' chars.
+			StripWhitespaceChars( mapList[i] );
+
+			if ( !Q_strncmp( mapList[i], "//", 2 ) || mapList[i][0] == '\0' )
+			{
+				bIgnore = true;
+			}
+
+			if ( bIgnore )
+			{
+				delete [] mapList[i];
+				mapList.Remove( i );
+				--i;
+			}
+		}
+	}
+
+	void CMultiplayRules::FreeMapCycleFileVector( CUtlVector<char *> &mapList )
+	{
+		// Clear out existing map list. Not using Purge() or PurgeAndDeleteAll() because they won't delete [] each element.
+		for ( int i = 0; i < mapList.Count(); i++ )
+		{
+			delete [] mapList[i];
+		}
+
+		mapList.RemoveAll();
+	}
+
+	bool CMultiplayRules::IsManualMapChangeOkay( const char **pszReason )
+	{
+		if ( HLTVDirector()->IsActive() && ( HLTVDirector()->GetDelay() >= HLTV_MIN_DIRECTOR_DELAY ) )
+		{
+			if ( tv_delaymapchange.GetBool() && tv_delaymapchange_protect.GetBool() )
+			{
+				float flLastEvent = GetLastMajorEventTime();
+				if ( flLastEvent > -1 )
+				{
+					if ( flLastEvent > ( gpGlobals->curtime - ( HLTVDirector()->GetDelay() + 3 ) ) ) // +3 second delay to prevent instant change after a major event
+					{
+						*pszReason = "\n***WARNING*** Map change blocked. HLTV is broadcasting and has not caught up to the last major game event yet.\nYou can disable this check by setting the value of the server convar \"tv_delaymapchange_protect\" to 0.\n";
+						return false;
+					}
+				}
+			}
+		}
+
+		return true;
+	}
+
+	bool CMultiplayRules::IsMapInMapCycle( const char *pszName )
+	{
+		for ( int i = 0; i < m_MapList.Count(); i++ )
+		{
+			if ( V_stricmp( pszName, m_MapList[i] ) == 0 )
+			{
+				return true;
+			}
+		}	
+
+		return false;
+	}
+
 	void CMultiplayRules::ChangeLevel( void )
 	{
-		char szNextMap[32];
+		char szNextMap[MAX_MAP_NAME];
 
-		if ( nextlevel.GetString() && *nextlevel.GetString() && engine->IsMapValid( nextlevel.GetString() ) )
+		if ( nextlevel.GetString() && *nextlevel.GetString() )
 		{
 			Q_strncpy( szNextMap, nextlevel.GetString(), sizeof( szNextMap ) );
 		}
@@ -1160,10 +1409,141 @@ bool CMultiplayRules::Init()
 			IncrementMapCycleIndex();
 		}
 
-		g_fGameOver = true;
-		Msg( "CHANGE LEVEL: %s\n", szNextMap );
-		engine->ChangeLevel( szNextMap, NULL );
+		ChangeLevelToMap( szNextMap );
 	}
+
+	void CMultiplayRules::LoadMapCycleFile( void )
+	{
+		int nOldCycleIndex = m_nMapCycleindex;
+		m_nMapCycleindex = 0;
+
+		char mapcfile[MAX_PATH];
+		DetermineMapCycleFilename( mapcfile, sizeof(mapcfile), false );
+
+		FreeMapCycleFileVector( m_MapList );
+
+		const int nMapCycleTimeStamp = filesystem->GetPathTime( mapcfile, "MOD" );
+		m_nMapCycleTimeStamp = nMapCycleTimeStamp;
+
+		// Repopulate map list from mapcycle file
+		LoadMapCycleFileIntoVector( mapcfile, m_MapList );
+
+		// Load server's mapcycle into network string table for client-side voting
+		if ( g_pStringTableServerMapCycle )
+		{
+			CUtlString sFileList;
+			for ( int i = 0; i < m_MapList.Count(); i++ )
+			{
+				sFileList += m_MapList[i];
+				sFileList += '\n';
+			}
+
+			g_pStringTableServerMapCycle->AddString( CBaseEntity::IsServer(), "ServerMapCycle", sFileList.Length() + 1, sFileList.String() );
+		}
+
+#if defined ( TF_DLL ) || defined ( TF_CLIENT_DLL )
+		if ( g_pStringTableServerPopFiles )
+		{
+			// Search for all pop files that are prefixed with the current map name
+			CUtlString sFileList;
+
+			CUtlVector< CUtlString > defaultPopFiles;
+			CPopulationManager::FindDefaultPopulationFileShortNames( defaultPopFiles );
+
+			FOR_EACH_VEC( defaultPopFiles, idx )
+			{
+				sFileList += defaultPopFiles[ idx ];
+				sFileList += "\n";
+			}
+
+			if ( sFileList.Length() > 0 )
+			{
+				g_pStringTableServerPopFiles->AddString( CBaseEntity::IsServer(), "ServerPopFiles", sFileList.Length() + 1, sFileList.String() );
+			}
+		}
+
+		if ( g_pStringTableServerMapCycleMvM )
+		{
+			ConVarRef tf_mvm_missioncyclefile( "tf_mvm_missioncyclefile" );
+			KeyValues *pKV = new KeyValues( tf_mvm_missioncyclefile.GetString() );
+			if ( pKV->LoadFromFile( g_pFullFileSystem, tf_mvm_missioncyclefile.GetString(), "MOD" ) )
+			{
+				CUtlVector<CUtlString> mapList;
+
+				// Parse the maps and send a list to each client for vote options
+				int iMaxCat = pKV->GetInt( "categories", 0 );
+				for ( int iCat = 1; iCat <= iMaxCat; iCat++ )
+				{
+					KeyValues *pCategory = pKV->FindKey( UTIL_VarArgs( "%d", iCat ), false );
+					if ( pCategory )
+					{
+						int iMapCount = pCategory->GetInt( "count", 0 );
+						for ( int iMap = 1; iMap <= iMapCount; ++iMap )
+						{
+							KeyValues *pMission = pCategory->FindKey( UTIL_VarArgs( "%d", iMap ), false );
+							if ( pMission )
+							{
+								const char *pszMap = pMission->GetString( "map", "" );
+								int iIdx = mapList.Find( pszMap );
+								if ( !mapList.IsValidIndex( iIdx ) )
+								{
+									mapList.AddToTail( pszMap );
+								}
+							}
+						}
+					}
+				}
+
+				if ( mapList.Count() )
+				{
+					CUtlString sFileList;
+					for ( int i = 0; i < mapList.Count(); i++ )
+					{
+						sFileList += mapList[i];
+						sFileList += '\n';
+					}
+
+					g_pStringTableServerMapCycleMvM->AddString( CBaseEntity::IsServer(), "ServerMapCycleMvM", sFileList.Length() + 1, sFileList.String() );
+				}
+
+				pKV->deleteThis();
+			}
+		}
+#endif
+
+		// If the current map is in the same location in the new map cycle, keep that index. This gives better behavior
+		// when reloading a map cycle that has the current map in it multiple times.
+		int nOldPreviousMap = ( nOldCycleIndex == 0 ) ? ( m_MapList.Count() - 1 ) : ( nOldCycleIndex - 1 );
+		if ( nOldCycleIndex >= 0 && nOldCycleIndex < m_MapList.Count() &&
+		     nOldPreviousMap >= 0 && nOldPreviousMap < m_MapList.Count() &&
+		     V_strcmp( STRING( gpGlobals->mapname ), m_MapList[ nOldPreviousMap ] ) == 0 )
+		{
+			// The old index is still valid, and falls after our current map in the new cycle, use it
+			m_nMapCycleindex = nOldCycleIndex;
+		}
+		else
+		{
+			// Otherwise, if the current map selection is in the list, set m_nMapCycleindex to the map that follows it.
+			for ( int i = 0; i < m_MapList.Count(); i++ )
+			{
+				if ( V_strcmp( STRING( gpGlobals->mapname ), m_MapList[i] ) == 0 )
+				{
+					m_nMapCycleindex = i;
+					IncrementMapCycleIndex();
+					break;
+				}
+			}
+		}
+	}
+
+	void CMultiplayRules::ChangeLevelToMap( const char *pszMap )
+	{
+		g_fGameOver = true;
+		m_flTimeLastMapChangeOrPlayerWasConnected = 0.0f;
+		Msg( "CHANGE LEVEL: %s\n", pszMap );
+		engine->ChangeLevel( pszMap, NULL );
+	}
+
 
 #endif		
 
@@ -1222,6 +1602,24 @@ bool CMultiplayRules::Init()
 	}
 
 #ifndef CLIENT_DLL
+
+	void CMultiplayRules::SkipNextMapInCycle()
+	{
+		char szSkippedMap[MAX_MAP_NAME];
+		char szNextMap[MAX_MAP_NAME];
+
+		GetNextLevelName( szSkippedMap, sizeof( szSkippedMap ) );
+		IncrementMapCycleIndex();
+		GetNextLevelName( szNextMap, sizeof( szNextMap ) );
+
+		Msg( "Skipping: %s\tNext map: %s\n", szSkippedMap, szNextMap );
+
+		if ( nextlevel.GetString() && *nextlevel.GetString() )
+		{
+			Msg( "Warning! \"nextlevel\" is set to \"%s\" and will override the next map to be played.\n", nextlevel.GetString() );
+		}
+	}
+
 	void CMultiplayRules::IncrementMapCycleIndex()
 	{
 		// Reset index if we've passed the end of the map list
@@ -1243,7 +1641,7 @@ bool CMultiplayRules::Init()
 
 			CBaseMultiplayerPlayer *pMultiPlayerPlayer = dynamic_cast< CBaseMultiplayerPlayer * >( pPlayer );
 
-			if ( pMultiPlayerPlayer )
+			if ( pMultiPlayerPlayer && pMultiPlayerPlayer->ShouldRunRateLimitedCommand( pcmd ) )
 			{
 				int iMenu = atoi( args[1] );
 				int iItem = atoi( args[2] );
@@ -1253,37 +1651,62 @@ bool CMultiplayRules::Init()
 
 			return true;
 		}
-		else if ( FStrEq( pcmd, "achievement_earned" ) )
-		{
-			CBaseMultiplayerPlayer *pPlayer = static_cast<CBaseMultiplayerPlayer*>( pEdict );
-			if ( pPlayer && pPlayer->ShouldAnnounceAchievement() )
-			{
-				// let's check this came from the client .dll and not the console
-				unsigned short mask = UTIL_GetAchievementEventMask();
-				int iPlayerID = pPlayer->GetUserID();
-
-				int iAchievement = atoi( args[1] ) ^ mask;
-				int code = ( iPlayerID ^ iAchievement ) ^ mask;
-
-				if ( code == atoi( args[2] ) )
-				{
-					IGameEvent * event = gameeventmanager->CreateEvent( "achievement_earned" );
-					if ( event )
-					{
-						event->SetInt( "player", pEdict->entindex() );
-						event->SetInt( "achievement", iAchievement );
-						gameeventmanager->FireEvent( event );
-					}
-
-					pPlayer->OnAchievementEarned( iAchievement );
-				}
-			}
-
-			return true;
-		}
 
 		return BaseClass::ClientCommand( pEdict, args );
+	}
 
+#ifdef TF_DLL
+	#define ACHIEVEMENT_LIST_(id) id
+	#define ACHIEVEMENT_LIST(className, achievementID, achievementName, iPointValue) \
+		ACHIEVEMENT_LIST_(achievementID),
+
+	static const std::unordered_set<int> g_ValidAchiementIdxs = {{
+		#include "achievements_tf_list.inc"
+	}};
+
+	#undef ACHIEVEMENT_LIST
+#endif
+
+	void CMultiplayRules::ClientCommandKeyValues( edict_t *pEntity, KeyValues *pKeyValues )
+	{
+		CBaseMultiplayerPlayer *pPlayer = dynamic_cast< CBaseMultiplayerPlayer * >( CBaseEntity::Instance( pEntity ) );
+
+		if ( !pPlayer )
+			return;
+
+		char const *pszCommand = pKeyValues->GetName();
+		if ( pszCommand && pszCommand[0] )
+		{
+			if ( FStrEq( pszCommand, "AchievementEarned" ) )
+			{
+				if ( !pPlayer->ShouldAnnounceAchievement() )
+					return;
+
+				int nAchievementID = pKeyValues->GetInt( "achievementID" );
+
+#ifdef TF_DLL
+				// Josh:
+				// Bots are using this as a back-channel to communicate on our servers
+				// with invalid achievement indexes.
+				// I did want to use achievementmgr but that isn't available on the server --
+				// nor are the achievement's actually DECLARED (they rely on a bunch of client code)
+				// so we have a list of achievements in achievements_tf_list.inc.
+				// Let's validate the achievement is actually valid before continuing...
+				if ( g_ValidAchiementIdxs.find( nAchievementID ) == g_ValidAchiementIdxs.end() )
+					return;
+#endif
+
+				IGameEvent * event = gameeventmanager->CreateEvent( "achievement_earned" );
+				if ( event )
+				{
+					event->SetInt( "player", pPlayer->entindex() );
+					event->SetInt( "achievement", nAchievementID );
+					gameeventmanager->FireEvent( event );
+				}
+
+				pPlayer->OnAchievementEarned( nAchievementID );
+			}
+		}
 	}
 
 	VoiceCommandMenuItem_t *CMultiplayRules::VoiceCommand( CBaseMultiplayerPlayer *pPlayer, int iMenu, int iItem )
@@ -1362,6 +1785,17 @@ bool CMultiplayRules::Init()
 				}
 
 				pPlayer->NoteSpokeVoiceCommand( szResponse );
+
+#ifdef NEXT_BOT
+				// let bots react to player's voice commands
+				CUtlVector< INextBot * > botVector;
+				TheNextBots().CollectAllBots( &botVector );
+
+				for( int i=0; i<botVector.Count(); ++i )
+				{
+					botVector[i]->OnActorEmoted( pPlayer, pItem->m_iConcept );
+				}
+#endif
 			}
 			else
 			{
@@ -1380,7 +1814,7 @@ bool CMultiplayRules::Init()
 		return ( !engine->IsDedicatedServer()&& CommandLine()->CheckParm( "-bugbait" ) && sv_cheats->GetBool() );
 	}
 
-	void CMultiplayRules::HaveAllPlayersSpeakConceptIfAllowed( int iConcept )
+	void CMultiplayRules::HaveAllPlayersSpeakConceptIfAllowed( int iConcept, int iTeam /* = TEAM_UNASSIGNED */, const char *modifiers /* = NULL */ )
 	{
 		CBaseMultiplayerPlayer *pPlayer;
 		for ( int i = 1; i <= gpGlobals->maxClients; i++ )
@@ -1390,19 +1824,75 @@ bool CMultiplayRules::Init()
 			if ( !pPlayer )
 				continue;
 
-			pPlayer->SpeakConceptIfAllowed( iConcept );
+			if ( iTeam != TEAM_UNASSIGNED )
+			{
+				if ( pPlayer->GetTeamNumber() != iTeam )
+					continue;
+			}
+
+			pPlayer->SpeakConceptIfAllowed( iConcept, modifiers );
 		}
 	}
 
+	void CMultiplayRules::RandomPlayersSpeakConceptIfAllowed( int iConcept, int iNumRandomPlayer /*= 1*/, int iTeam /*= TEAM_UNASSIGNED*/, const char *modifiers /*= NULL*/ )
+	{
+		CUtlVector< CBaseMultiplayerPlayer* > speakCandidates;
+
+		CBaseMultiplayerPlayer *pPlayer;
+		for ( int i = 1; i <= gpGlobals->maxClients; i++ )
+		{
+			pPlayer = ToBaseMultiplayerPlayer( UTIL_PlayerByIndex( i ) );
+
+			if ( !pPlayer )
+				continue;
+
+			if ( iTeam != TEAM_UNASSIGNED )
+			{
+				if ( pPlayer->GetTeamNumber() != iTeam )
+					continue;
+			}
+
+			speakCandidates.AddToTail( pPlayer );
+		}
+
+		int iSpeaker = iNumRandomPlayer;
+		while ( iSpeaker > 0 && speakCandidates.Count() > 0 )
+		{
+			int iRandomSpeaker = RandomInt( 0, speakCandidates.Count() - 1 );
+			speakCandidates[ iRandomSpeaker ]->SpeakConceptIfAllowed( iConcept, modifiers );
+			speakCandidates.FastRemove( iRandomSpeaker );
+			iSpeaker--;
+		}
+	}
+
+	void CMultiplayRules::ClientSettingsChanged( CBasePlayer *pPlayer )
+	{
+		// NVNT see if this user is still or has began using a haptic device
+		const char *pszHH = engine->GetClientConVarValue( pPlayer->entindex(), "hap_HasDevice" );
+		if( pszHH )
+		{
+			int iHH = atoi( pszHH );
+			pPlayer->SetHaptics( iHH != 0 );
+		}
+
+	}
 	void CMultiplayRules::GetTaggedConVarList( KeyValues *pCvarTagList )
 	{
 		BaseClass::GetTaggedConVarList( pCvarTagList );
 
+		// sv_gravity
 		KeyValues *pGravity = new KeyValues( "sv_gravity" );
 		pGravity->SetString( "convar", "sv_gravity" );
 		pGravity->SetString( "tag", "gravity" );
 
 		pCvarTagList->AddSubKey( pGravity );
+
+		// sv_alltalk
+		KeyValues *pAllTalk = new KeyValues( "sv_alltalk" );
+		pAllTalk->SetString( "convar", "sv_alltalk" );
+		pAllTalk->SetString( "tag", "alltalk" );
+
+		pCvarTagList->AddSubKey( pAllTalk );
 	}
 
 #else

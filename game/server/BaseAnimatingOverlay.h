@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -165,6 +165,7 @@ public:
 
 	void	SetLayerCycle( int iLayer, float flCycle );
 	void	SetLayerCycle( int iLayer, float flCycle, float flPrevCycle );
+	void	SetLayerCycle( int iLayer, float flCycle, float flPrevCycle, float flLastEventCheck );
 	float	GetLayerCycle( int iLayer );
 
 	void	SetLayerPlaybackRate( int iLayer, float flPlaybackRate );

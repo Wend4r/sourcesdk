@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2006, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: noise() primitives.
 //
@@ -130,8 +130,8 @@ float SparseConvolutionNoise(Vector const &pnt, float (*pNoiseShapeFunction)(flo
 									  pNoiseShapeFunction );
 			}
 #ifdef MEASURE_RANGE
-	fmin1=MIN(sum_out,fmin1);
-	fmax1=MAX(sum_out,fmax1);
+	fmin1=min(sum_out,fmin1);
+	fmax1=max(sum_out,fmax1);
 #endif
 	return RemapValClamped( sum_out, .544487, 9.219176, 0.0, 1.0 );
 }

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -23,7 +23,6 @@ class CSDKPlayer;
 #define AMMO_BULLETS			"AMMO_BULLETS"
 #define AMMO_ROCKETS			"AMMO_ROCKETS"
 #define AMMO_GRENADE			"AMMO_GRENADE"
-#define AMMO_GAUSS				"AMMO_GAUSS"
 
 //--------------------------------------------------------------------------------------------------------
 //
@@ -60,9 +59,7 @@ public:
 	#ifdef GAME_DLL
 		DECLARE_DATADESC();
 	#endif
-	#ifdef CLIENT_DLL
-       virtual bool ShouldPredict();
-	#endif
+
 	// All predicted weapons need to implement and return true
 	virtual bool	IsPredicted() const { return true; }
 	virtual SDKWeaponID GetWeaponID( void ) const { return WEAPON_NONE; }

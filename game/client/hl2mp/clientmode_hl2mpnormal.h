@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -17,11 +17,6 @@
 #include <vgui/Cursor.h>
 
 class CHudViewport;
-
-namespace vgui
-{
-	typedef unsigned long HScheme;
-}
 
 
 //-----------------------------------------------------------------------------

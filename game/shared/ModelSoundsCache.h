@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -25,6 +25,7 @@ public:
 
 	CModelSoundsCache();
 	CModelSoundsCache( const CModelSoundsCache& src );
+	virtual ~CModelSoundsCache(){}
 
 	void PrecacheSoundList();
 

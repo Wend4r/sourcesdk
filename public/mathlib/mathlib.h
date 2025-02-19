@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,12 +8,137 @@
 #define MATH_LIB_H
 
 #include <math.h>
+#include "minmax.h"
 #include "tier0/basetypes.h"
+#include "tier0/commonmacros.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector2d.h"
 #include "tier0/dbg.h"
 
 #include "mathlib/math_pfns.h"
+
+// For MMX intrinsics
+#include <xmmintrin.h>
+
+// XXX remove me
+#undef clamp
+
+// Uncomment this to enable FP exceptions in parts of the code.
+// This can help track down FP bugs. However the code is not
+// FP exception clean so this not a turnkey operation.
+//#define FP_EXCEPTIONS_ENABLED
+
+
+#ifdef FP_EXCEPTIONS_ENABLED
+#include <float.h> // For _clearfp and _controlfp_s
+#endif
+
+// FPExceptionDisabler and FPExceptionEnabler taken from my blog post
+// at http://www.altdevblogaday.com/2012/04/20/exceptional-floating-point/
+
+// Declare an object of this type in a scope in order to suppress
+// all floating-point exceptions temporarily. The old exception
+// state will be reset at the end.
+class FPExceptionDisabler
+{
+public:
+#ifdef FP_EXCEPTIONS_ENABLED
+	FPExceptionDisabler();
+	~FPExceptionDisabler();
+
+private:
+	unsigned int mOldValues;
+#else
+	FPExceptionDisabler() {}
+	~FPExceptionDisabler() {}
+#endif
+
+private:
+	// Make the copy constructor and assignment operator private
+	// and unimplemented to prohibit copying.
+	FPExceptionDisabler(const FPExceptionDisabler&);
+	FPExceptionDisabler& operator=(const FPExceptionDisabler&);
+};
+
+// Declare an object of this type in a scope in order to enable a
+// specified set of floating-point exceptions temporarily. The old
+// exception state will be reset at the end.
+// This class can be nested.
+class FPExceptionEnabler
+{
+public:
+	// Overflow, divide-by-zero, and invalid-operation are the FP
+	// exceptions most frequently associated with bugs.
+#ifdef FP_EXCEPTIONS_ENABLED
+	FPExceptionEnabler(unsigned int enableBits = _EM_OVERFLOW | _EM_ZERODIVIDE | _EM_INVALID);
+	~FPExceptionEnabler();
+
+private:
+	unsigned int mOldValues;
+#else
+	FPExceptionEnabler(unsigned int enableBits = 0)
+	{
+	}
+	~FPExceptionEnabler()
+	{
+	}
+#endif
+
+private:
+	// Make the copy constructor and assignment operator private
+	// and unimplemented to prohibit copying.
+	FPExceptionEnabler(const FPExceptionEnabler&);
+	FPExceptionEnabler& operator=(const FPExceptionEnabler&);
+};
+
+
+
+#ifdef DEBUG  // stop crashing edit-and-continue
+FORCEINLINE float clamp( float val, float minVal, float maxVal )
+{
+	if ( maxVal < minVal )
+		return maxVal;
+	else if( val < minVal )
+		return minVal;
+	else if( val > maxVal )
+		return maxVal;
+	else
+		return val;
+}
+#else // DEBUG
+FORCEINLINE float clamp( float val, float minVal, float maxVal )
+{
+#if defined( PLATFORM_INTEL )
+	_mm_store_ss( &val,
+		_mm_min_ss(
+			_mm_max_ss(
+				_mm_load_ss(&val),
+				_mm_load_ss(&minVal) ),
+			_mm_load_ss(&maxVal) ) );
+#else
+	val = fpmax(minVal, val);
+	val = fpmin(maxVal, val);
+#endif
+	return val;
+}
+#endif // DEBUG
+
+//
+// Returns a clamped value in the range [min, max].
+//
+template< class T >
+inline T clamp( T const &val, T const &minVal, T const &maxVal )
+{
+	if ( maxVal < minVal )
+		return maxVal;
+	else if( val < minVal )
+		return minVal;
+	else if( val > maxVal )
+		return maxVal;
+	else
+		return val;
+}
+
 
 // plane_t structure
 // !!! if this is changed, it must be changed in asm code too !!!
@@ -110,7 +235,8 @@ bool R_CullBoxSkipNear( const Vector& mins, const Vector& maxs, const Frustum_t 
 
 struct matrix3x4_t
 {
-	matrix3x4_t() {}
+	matrix3x4_t() = default;
+
 	matrix3x4_t( 
 		float m00, float m01, float m02, float m03,
 		float m10, float m11, float m12, float m13,
@@ -224,12 +350,12 @@ FORCEINLINE void VectorClear(vec_t *a)
 
 FORCEINLINE float VectorMaximum(const vec_t *v)
 {
-	return MAX( v[0], MAX( v[1], v[2] ) );
+	return max( v[0], max( v[1], v[2] ) );
 }
 
 FORCEINLINE float VectorMaximum(const Vector& v)
 {
-	return MAX( v.x, MAX( v.y, v.z ) );
+	return max( v.x, max( v.y, v.z ) );
 }
 
 FORCEINLINE void VectorScale (const float* in, vec_t scale, float* out)
@@ -254,7 +380,7 @@ inline void VectorNegate(vec_t *a)
 }
 
 
-//#define VectorMaximum(a)		( MAX( (a)[0], MAX( (a)[1], (a)[2] ) ) )
+//#define VectorMaximum(a)		( max( (a)[0], max( (a)[1], (a)[2] ) ) )
 #define Vector2Clear(x)			{(x)[0]=(x)[1]=0;}
 #define Vector2Negate(x)		{(x)[0]=-((x)[0]);(x)[1]=-((x)[1]);}
 #define Vector2Copy(a,b)		{(b)[0]=(a)[0];(b)[1]=(a)[1];}
@@ -281,10 +407,10 @@ FORCEINLINE void VectorMAInline( const Vector& start, float scale, const Vector&
 	dest.z=start.z+direction.z*scale;
 }
 
-//FORCEINLINE void VectorMA( const Vector& start, float scale, const Vector& direction, Vector& dest )
-//{
-//	VectorMAInline(start, scale, direction, dest);
-//}
+FORCEINLINE void VectorMA( const Vector& start, float scale, const Vector& direction, Vector& dest )
+{
+	VectorMAInline(start, scale, direction, dest);
+}
 
 FORCEINLINE void VectorMA( const float * start, float scale, const float *direction, float *dest )
 {
@@ -309,34 +435,6 @@ inline vec_t RoundInt (vec_t in)
 }
 
 int Q_log2(int val);
-
-// Math routines done in optimized assembly math package routines
-void inline SinCos( float radians, float *sine, float *cosine )
-{
-#if defined( _X360 )
-	XMScalarSinCos( sine, cosine, radians );
-#elif defined( _WIN32 )
-	_asm
-	{
-		fld		DWORD PTR [radians]
-		fsincos
-
-		mov edx, DWORD PTR [cosine]
-		mov eax, DWORD PTR [sine]
-
-		fstp DWORD PTR [edx]
-		fstp DWORD PTR [eax]
-	}
-#elif defined( _LINUX ) || defined ( __APPLE__ )
-	double __cosr, __sinr;
- 	__asm __volatile__
-    		("fsincos"
-     	: "=t" (__cosr), "=u" (__sinr) : "0" (radians));
-
-  	*sine = __sinr;
-  	*cosine = __cosr;
-#endif
-}
 
 #define SIN_TABLE_SIZE	256
 #define FTOIBIAS		12582912.f
@@ -374,11 +472,6 @@ FORCEINLINE T Square( T const &a )
 	return a * a;
 }
 
-
-FORCEINLINE bool IsPowerOfTwo( uint x )
-{
-	return ( x & ( x - 1 ) ) == 0;
-}
 
 // return the smallest power of two >= x.
 // returns 0 if x == 0 or x > 0x80000000 (ie numbers that would be negative if x was signed)
@@ -445,6 +538,19 @@ bool MatricesAreEqual( const matrix3x4_t &src1, const matrix3x4_t &src2, float f
 
 void MatrixGetColumn( const matrix3x4_t &in, int column, Vector &out );
 void MatrixSetColumn( const Vector &in, int column, matrix3x4_t &out );
+
+inline void MatrixGetTranslation( const matrix3x4_t &in, Vector &out )
+{
+	MatrixGetColumn ( in, 3, out );
+}
+
+inline void MatrixSetTranslation( const Vector &in, matrix3x4_t &out )
+{
+	MatrixSetColumn ( in, 3, out );
+}
+
+void MatrixScaleBy ( const float flScale, matrix3x4_t &out );
+void MatrixScaleByZero ( matrix3x4_t &out );
 
 //void DecomposeRotation( const matrix3x4_t &mat, float *out );
 void ConcatRotations (const matrix3x4_t &in1, const matrix3x4_t &in2, matrix3x4_t &out);
@@ -525,7 +631,7 @@ inline float RemapValClamped( float val, float A, float B, float C, float D)
 template <class T>
 FORCEINLINE T Lerp( float flPercent, T const &A, T const &B )
 {
-	return (T)(A + (B - A) * flPercent);
+	return A + (B - A) * flPercent;
 }
 
 FORCEINLINE float Sqr( float f )
@@ -606,7 +712,7 @@ template<> FORCEINLINE QAngleByValue Lerp<QAngleByValue>( float flPercent, const
 #endif // VECTOR_NO_SLOW_OPERATIONS
 
 
-// Swap two of anything.
+/// Same as swap(), but won't cause problems with std::swap
 template <class T> 
 FORCEINLINE void V_swap( T& x, T& y )
 {
@@ -621,15 +727,11 @@ template <class T> FORCEINLINE T AVG(T a, T b)
 }
 
 // number of elements in an array of static size
-#define NELEMS(x) ((sizeof(x))/sizeof(x[0]))
+#define NELEMS(x) ARRAYSIZE(x)
 
 // XYZ macro, for printf type functions - ex printf("%f %f %f",XYZ(myvector));
 #define XYZ(v) (v).x,(v).y,(v).z
 
-//
-// Returns a clamped value in the range [min, max].
-//
-#define V_clamp(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
 inline float Sign( float x )
 {
@@ -1066,13 +1168,15 @@ inline float SimpleSplineRemapValClamped( float val, float A, float B, float C, 
 	if ( A == B )
 		return val >= B ? D : C;
 	float cVal = (val - A) / (B - A);
-	cVal = V_clamp( cVal, 0.0f, 1.0f );
+	cVal = clamp( cVal, 0.0f, 1.0f );
 	return C + (D - C) * SimpleSpline( cVal );
 }
 
 FORCEINLINE int RoundFloatToInt(float f)
 {
-#if defined( _X360 )
+#if defined( PLATFORM_INTEL )
+	return _mm_cvtss_si32(_mm_load_ss(&f));
+#elif defined( _X360 )
 #ifdef Assert
 	Assert( IsFPUControlWordSet() );
 #endif
@@ -1083,63 +1187,18 @@ FORCEINLINE int RoundFloatToInt(float f)
 	};
 	flResult = __fctiw( f );
 	return pResult[1];
-#else // !X360
-	int nResult;
-#if defined( _WIN32 )
-	__asm
-	{
-		fld f
-		fistp nResult
-	}
-#elif defined( _LINUX ) || defined( __APPLE__ )
-	__asm __volatile__ (
-		"fistpl %0;": "=m" (nResult): "t" (f) : "st"
-	);
-#endif
-	return nResult;
+#else
+#error Unknown architecture
 #endif
 }
 
 FORCEINLINE unsigned char RoundFloatToByte(float f)
 {
-#if defined( _X360 )
+	int nResult = RoundFloatToInt(f);
 #ifdef Assert
-	Assert( IsFPUControlWordSet() );
+	Assert( (nResult & ~0xFF) == 0 );
 #endif
-	union
-	{
-		double flResult;
-		int pIntResult[2];
-		unsigned char pResult[8];
-	};
-	flResult = __fctiw( f );
-#ifdef Assert
-	Assert( pIntResult[1] >= 0 && pIntResult[1] <= 255 );
-#endif
-	return pResult[8];
-
-#else // !X360
-	
-	int nResult;
-
-#if defined( _WIN32 )
-	__asm
-	{
-		fld f
-		fistp nResult
-	}
-#elif defined( _LINUX ) || defined( __APPLE__ )
-	__asm __volatile__ (
-		"fistpl %0;": "=m" (nResult): "t" (f) : "st"
-	);
-#endif
-
-#ifdef Assert
-	Assert( nResult >= 0 && nResult <= 255 );
-#endif 
-	return nResult;
-
-#endif
+	return (unsigned char) nResult;
 }
 
 FORCEINLINE unsigned long RoundFloatToUnsignedLong(float f)
@@ -1159,22 +1218,41 @@ FORCEINLINE unsigned long RoundFloatToUnsignedLong(float f)
 	return pResult[1];
 #else  // !X360
 	
+#if defined( PLATFORM_WINDOWS_PC64 )
+	uint nRet = ( uint ) f;
+	if ( nRet & 1 )
+	{
+		if ( ( f - floor( f ) >= 0.5 ) )
+		{
+			nRet++;
+		}
+	}
+	else
+	{
+		if ( ( f - floor( f ) > 0.5 ) )
+		{
+			nRet++;
+		}
+	}
+	return nRet;
+#else // PLATFORM_WINDOWS_PC64
 	unsigned char nResult[8];
 
-#if defined( _WIN32 )
-	__asm
-	{
-		fld f
-		fistp       qword ptr nResult
-	}
-#elif defined( _LINUX ) || defined( __APPLE__ )
-	__asm __volatile__ (
-		"fistpl %0;": "=m" (nResult): "t" (f) : "st"
-	);
-#endif
+	#if defined( _WIN32 )
+		__asm
+		{
+			fld f
+			fistp       qword ptr nResult
+		}
+	#elif POSIX
+		__asm __volatile__ (
+			"fistpl %0;": "=m" (nResult): "t" (f) : "st"
+		);
+	#endif
 
-	return *((unsigned long*)nResult);
-#endif
+		return *((unsigned long*)nResult);
+#endif // PLATFORM_WINDOWS_PC64
+#endif // !X360
 }
 
 FORCEINLINE bool IsIntegralValue( float flValue, float flTolerance = 0.001f )
@@ -1194,76 +1272,54 @@ FORCEINLINE int Float2Int( float a )
 	flResult = __fctiwz( a );
 	return pResult[1];
 #else  // !X360
-	
-	int RetVal;
-
-#if defined( _WIN32 )
-	int CtrlwdHolder;
-	int CtrlwdSetter;
-	__asm 
-	{
-		fld    a					// push 'a' onto the FP stack
-		fnstcw CtrlwdHolder		// store FPU control word
-		movzx  eax, CtrlwdHolder	// move and zero extend word into eax
-		and    eax, 0xFFFFF3FF	// set all bits except rounding bits to 1
-		or     eax, 0x00000C00	// set rounding mode bits to round towards zero
-		mov    CtrlwdSetter, eax	// Prepare to set the rounding mode -- prepare to enter plaid!
-		fldcw  CtrlwdSetter		// Entering plaid!
-		fistp  RetVal				// Store and converted (to int) result
-		fldcw  CtrlwdHolder		// Restore control word
-	}
-#elif defined( _LINUX ) || defined ( __APPLE__ ) 
-	RetVal = static_cast<int>( a );
-#endif
-
-	return RetVal;
+	// Rely on compiler to generate CVTTSS2SI on x86
+	return (int) a;
 #endif
 }
 
 // Over 15x faster than: (int)floor(value)
 inline int Floor2Int( float a )
 {
-   int RetVal;
-
-#if defined( _X360 )
-	RetVal = (int)floor( a );
-#elif defined( _WIN32 )
-   int CtrlwdHolder;
-   int CtrlwdSetter;
-   __asm 
-   {
-      fld    a					// push 'a' onto the FP stack
-      fnstcw CtrlwdHolder		// store FPU control word
-      movzx  eax, CtrlwdHolder	// move and zero extend word into eax
-      and    eax, 0xFFFFF3FF	// set all bits except rounding bits to 1
-      or     eax, 0x00000400	// set rounding mode bits to round down
-      mov    CtrlwdSetter, eax	// Prepare to set the rounding mode -- prepare to enter plaid!
-      fldcw  CtrlwdSetter		// Entering plaid!
-      fistp  RetVal				// Store floored and converted (to int) result
-      fldcw  CtrlwdHolder		// Restore control word
-   }
-#elif defined( _LINUX ) || defined( __APPLE__ )
+	int RetVal;
+#if defined( PLATFORM_INTEL )
+	// Convert to int and back, compare, subtract one if too big
+	__m128 a128 = _mm_set_ss(a);
+	RetVal = _mm_cvtss_si32(a128);
+    __m128 rounded128 = _mm_cvt_si2ss(_mm_setzero_ps(), RetVal);
+	RetVal -= _mm_comigt_ss( rounded128, a128 );
+#else
 	RetVal = static_cast<int>( floor(a) );
 #endif
-
 	return RetVal;
 }
 
 //-----------------------------------------------------------------------------
 // Fast color conversion from float to unsigned char
 //-----------------------------------------------------------------------------
-FORCEINLINE unsigned char FastFToC( float c )
+FORCEINLINE unsigned int FastFToC( float c )
 {
-	volatile float dc;
-
-	// ieee trick
-	dc = c * 255.0f + (float)(1 << 23);
-	
-	// return the lsb
-#if defined( _X360 )
-	return ((unsigned char*)&dc)[3];
+#if VALVE_LITTLE_ENDIAN
+	// IEEE float bit manipulation works for values between [0, 1<<23)
+	union { float f; int i; } convert = { c*255.0f + (float)(1<<23) };
+	return convert.i & 255;
 #else
-	return *(unsigned char*)&dc;
+	// consoles CPUs suffer from load-hit-store penalty
+	return Float2Int( c * 255.0f );
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// Fast conversion from float to integer with magnitude less than 2**22
+//-----------------------------------------------------------------------------
+FORCEINLINE int FastFloatToSmallInt( float c )
+{
+#if VALVE_LITTLE_ENDIAN
+	// IEEE float bit manipulation works for values between [-1<<22, 1<<22)
+	union { float f; int i; } convert = { c + (float)(3<<22) };
+	return (convert.i & ((1<<23)-1)) - (1<<22);
+#else
+	// consoles CPUs suffer from load-hit-store penalty
+	return Float2Int( c );
 #endif
 }
 
@@ -1275,35 +1331,22 @@ FORCEINLINE unsigned char FastFToC( float c )
 inline float ClampToMsec( float in )
 {
 	int msec = Floor2Int( in * 1000.0f + 0.5f );
-	return msec / 1000.0f;
+	return 0.001f * msec;
 }
 
 // Over 15x faster than: (int)ceil(value)
 inline int Ceil2Int( float a )
 {
    int RetVal;
-
-#if defined( _X360 )
-	RetVal = (int)ceil( a );
-#elif defined( _WIN32 )
-   int CtrlwdHolder;
-   int CtrlwdSetter;
-   __asm 
-   {
-      fld    a					// push 'a' onto the FP stack
-      fnstcw CtrlwdHolder		// store FPU control word
-      movzx  eax, CtrlwdHolder	// move and zero extend word into eax
-      and    eax, 0xFFFFF3FF	// set all bits except rounding bits to 1
-      or     eax, 0x00000800	// set rounding mode bits to round down
-      mov    CtrlwdSetter, eax	// Prepare to set the rounding mode -- prepare to enter plaid!
-      fldcw  CtrlwdSetter		// Entering plaid!
-      fistp  RetVal				// Store floored and converted (to int) result
-      fldcw  CtrlwdHolder		// Restore control word
-   }
-#elif defined( _LINUX ) || defined( __APPLE__ )
-	RetVal = static_cast<int>( ceil(a) );
+#if defined( PLATFORM_INTEL )
+   // Convert to int and back, compare, add one if too small
+   __m128 a128 = _mm_load_ss(&a);
+   RetVal = _mm_cvtss_si32(a128);
+   __m128 rounded128 = _mm_cvt_si2ss(_mm_setzero_ps(), RetVal);
+   RetVal += _mm_comilt_ss( rounded128, a128 );
+#else
+   RetVal = static_cast<int>( ceil(a) );
 #endif
-
 	return RetVal;
 }
 
@@ -1419,7 +1462,7 @@ FORCEINLINE unsigned char LinearToLightmap( float f )
 
 FORCEINLINE void ColorClamp( Vector& color )
 {
-	float maxc = MAX( color.x, MAX( color.y, color.z ) );
+	float maxc = max( color.x, max( color.y, color.z ) );
 	if ( maxc > 1.0f )
 	{
 		float ooMax = 1.0f / maxc;
@@ -1915,10 +1958,10 @@ FORCEINLINE unsigned int * PackNormal_SHORT2( float nx, float ny, float nz, unsi
 	ny *= 16384.0f;
 
 	// '0' and '32768' values are invalid encodings
-	nx = MAX( nx, 1.0f );		// Make sure there are no zero values
-	ny = MAX( ny, 1.0f );
-	nx = MIN( nx, 32767.0f );	// Make sure there are no 32768 values
-	ny = MIN( ny, 32767.0f );
+	nx = max( nx, 1.0f );		// Make sure there are no zero values
+	ny = max( ny, 1.0f );
+	nx = min( nx, 32767.0f );	// Make sure there are no 32768 values
+	ny = min( ny, 32767.0f );
 
 	if ( nz < 0.0f )
 		nx = -nx;				// Set the sign bit for z
@@ -2067,6 +2110,47 @@ void RGBtoHSV( const Vector &rgb, Vector &hsv );
 //-----------------------------------------------------------------------------
 void HSVtoRGB( const Vector &hsv, Vector &rgb );
 
+
+//-----------------------------------------------------------------------------
+// Fast version of pow and log
+//-----------------------------------------------------------------------------
+
+float FastLog2(float i);			// log2( i )
+float FastPow2(float i);			// 2^i
+float FastPow(float a, float b);	// a^b
+float FastPow10( float i );			// 10^i
+
+//-----------------------------------------------------------------------------
+// For testing float equality
+//-----------------------------------------------------------------------------
+
+inline bool CloseEnough( float a, float b, float epsilon = EQUAL_EPSILON )
+{
+	return fabs( a - b ) <= epsilon;
+}
+
+inline bool CloseEnough( const Vector &a, const Vector &b, float epsilon = EQUAL_EPSILON )
+{
+	return fabs( a.x - b.x ) <= epsilon &&
+		fabs( a.y - b.y ) <= epsilon &&
+		fabs( a.z - b.z ) <= epsilon;
+}
+
+// Fast compare
+// maxUlps is the maximum error in terms of Units in the Last Place. This 
+// specifies how big an error we are willing to accept in terms of the value
+// of the least significant digit of the floating point numberï¿½s 
+// representation. maxUlps can also be interpreted in terms of how many 
+// representable floats we are willing to accept between A and B. 
+// This function will allow maxUlps-1 floats between A and B.
+bool AlmostEqual(float a, float b, int maxUlps = 10);
+
+inline bool AlmostEqual( const Vector &a, const Vector &b, int maxUlps = 10)
+{
+	return AlmostEqual( a.x, b.x, maxUlps ) &&
+		AlmostEqual( a.y, b.y, maxUlps ) &&
+		AlmostEqual( a.z, b.z, maxUlps );
+}
 
 
 #endif	// MATH_BASE_H

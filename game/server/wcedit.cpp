@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Namespace for functions having to do with WC Edit mode
 //
@@ -437,7 +437,7 @@ void NWCEdit::DestroyAILink( CBasePlayer *pPlayer )
 		else if (status == Editor_OK)
 		{
 			// Create dynamic link and mark the link
-			CAI_DynamicLink* pNewLink	= (CAI_DynamicLink*)CreateEntityByName("info_node_link" );;
+			CAI_DynamicLink* pNewLink	= (CAI_DynamicLink*)CreateEntityByName("info_node_link" );
 			pNewLink->m_nSrcID			= pAILink->m_iSrcID;
 			pNewLink->m_nDestID			= pAILink->m_iDestID;
 			pNewLink->m_nLinkState		= LINK_OFF;
@@ -740,6 +740,9 @@ END_DATADESC()
 
 CON_COMMAND( hammer_update_entity, "Updates the entity's position/angles when in edit mode" )
 {
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
+
 	if ( args.ArgC() < 2 )
 	{
 		CBasePlayer *pPlayer = UTIL_GetCommandClient();
@@ -768,6 +771,9 @@ CON_COMMAND( hammer_update_safe_entities, "Updates entities in the map that can 
 {
 	int iCount = 0;
 	CBaseEntity *pEnt = NULL;
+
+	if ( !UTIL_IsCommandIssuedByServerAdmin() )
+		return;
 
 	Msg("\n====================================================\nPerforming Safe Entity Update\n" );
 

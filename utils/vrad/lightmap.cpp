@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -90,8 +90,8 @@ int CNormalList::FindOrAddNormal( Vector const &vNormal )
 	for( int iDim=0; iDim < 3; iDim++ )
 	{
 		gi[iDim] = (int)( ((vNormal[iDim] + 1.0f) * 0.5f) * NUM_SUBDIVS - 0.000001f );
-		gi[iDim] = MIN( gi[iDim], NUM_SUBDIVS );
-		gi[iDim] = MAX( gi[iDim], 0 );
+		gi[iDim] = min( gi[iDim], NUM_SUBDIVS );
+		gi[iDim] = max( gi[iDim], 0 );
 	}
 
 	// Look for a matching vector in there.
@@ -408,7 +408,7 @@ void ErrorLightInfo(const char *s, lightinfo_t *l)
 	//
 	else
 	{
-		Warning("%s at (degenerate face)\n\tmaterial=%s\n", TexDataStringTable_GetString( dtexdata[tex->texdata].nameStringTableID ));
+		Warning("%s at (degenerate face)\n\tmaterial=%s\n", s, TexDataStringTable_GetString( dtexdata[tex->texdata].nameStringTableID ));
 	}
 }
 
@@ -661,8 +661,9 @@ bool BuildFacesamples( lightinfo_t *pLightInfo, facelight_t *pFaceLight )
 															  pTex->lightmapVecsLuxelsPerWorldUnits[1] ) ) );
 
 	// allocate a large number of samples for creation -- get copied later!
-	char sampleData[sizeof(sample_t)*SINGLE_BRUSH_MAP*2];
-	sample_t *samples = (sample_t*)sampleData; // use a char array to speed up the debug version.
+	CUtlVector<sample_t> sampleData;
+	sampleData.SetCount( SINGLE_BRUSH_MAP * 2 );
+	sample_t *samples = sampleData.Base();
 	sample_t *pSamples = samples;
 
 	// lightmap space winding
@@ -1326,8 +1327,8 @@ bool CanLeafTraceToSky( int iLeaf )
 	for ( int j = 0; j < NUMVERTEXNORMALS; j+=4 )
 	{
 		// search back to see if we can hit a sky brush
-		delta.LoadAndSwizzle( g_anorms[j], g_anorms[MIN( j+1, NUMVERTEXNORMALS-1 )],
-			g_anorms[MIN( j+2, NUMVERTEXNORMALS-1 )], g_anorms[MIN( j+3, NUMVERTEXNORMALS-1 )] );
+		delta.LoadAndSwizzle( g_anorms[j], g_anorms[min( j+1, NUMVERTEXNORMALS-1 )],
+			g_anorms[min( j+2, NUMVERTEXNORMALS-1 )], g_anorms[min( j+3, NUMVERTEXNORMALS-1 )] );
 		delta *= -MAX_TRACE_LENGTH;
 		delta += center4;
 
@@ -2816,18 +2817,18 @@ static void ComputeLightmapGradients( SSE_SampleInfo_t& info, bool const* pHasPr
 
 			if (sample.t > 0)
 			{
-				if (sample.s > 0)   gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j-1-w] ) );
-				gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j-w] ) );
-				if (sample.s < w-1) gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j+1-w] ) );
+				if (sample.s > 0)   gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j-1-w] ) );
+				gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j-w] ) );
+				if (sample.s < w-1) gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j+1-w] ) );
 			}
 			if (sample.t < h-1)
 			{
-				if (sample.s > 0)   gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j-1+w] ) );
-				gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j+w] ) );
-				if (sample.s < w-1) gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j+1+w] ) );
+				if (sample.s > 0)   gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j-1+w] ) );
+				gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j+w] ) );
+				if (sample.s < w-1) gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j+1+w] ) );
 			}
-			if (sample.s > 0)   gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j-1] ) );
-			if (sample.s < w-1) gradient[i] = MAX( gradient[i], fabs( pIntensity[j] - pIntensity[j+1] ) );
+			if (sample.s > 0)   gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j-1] ) );
+			if (sample.s < w-1) gradient[i] = max( gradient[i], fabs( pIntensity[j] - pIntensity[j+1] ) );
 		}
 	}
 }
@@ -3118,7 +3119,7 @@ void BuildFacelights (int iThread, int facenum)
 		int nSample = 4 * grp;
 
 		sample_t *sample = sampleInfo.m_pFaceLight->sample + nSample;
-		int numSamples = MIN ( 4, sampleInfo.m_pFaceLight->numsamples - nSample );
+		int numSamples = min ( 4, sampleInfo.m_pFaceLight->numsamples - nSample );
 
 		FourVectors positions;
 		FourVectors normals;
@@ -3173,7 +3174,9 @@ void BuildFacelights (int iThread, int facenum)
 		}
 	}
 
+#ifdef MPI
 	if (!g_bUseMPI) 
+#endif
 	{
 		//
 		// This is done on the master node when MPI is used
@@ -3547,30 +3550,51 @@ static void LinearToBumpedLightmap(
 // Convert a RGBExp32 to a RGBA8888
 // This matches the engine's conversion, so the lighting result is consistent.
 //-----------------------------------------------------------------------------
-void ConvertRGBExp32ToRGBA8888( const ColorRGBExp32 *pSrc, unsigned char *pDst )
+void ConvertRGBExp32ToRGBA8888( const ColorRGBExp32 *pSrc, unsigned char *pDst, Vector* _optOutLinear )
 {
 	Vector		linearColor;
-	Vector		vertexColor;
 
 	// convert from ColorRGBExp32 to linear space
 	linearColor[0] = TexLightToLinear( ((ColorRGBExp32 *)pSrc)->r, ((ColorRGBExp32 *)pSrc)->exponent );
 	linearColor[1] = TexLightToLinear( ((ColorRGBExp32 *)pSrc)->g, ((ColorRGBExp32 *)pSrc)->exponent );
 	linearColor[2] = TexLightToLinear( ((ColorRGBExp32 *)pSrc)->b, ((ColorRGBExp32 *)pSrc)->exponent );
 
+	ConvertLinearToRGBA8888( &linearColor, pDst );
+	if ( _optOutLinear )
+		*_optOutLinear = linearColor;
+}
+
+//-----------------------------------------------------------------------------
+// Converts a RGBExp32 to a linear color value.
+//-----------------------------------------------------------------------------
+void ConvertRGBExp32ToLinear(const ColorRGBExp32 *pSrc, Vector* pDst)
+{
+
+	(*pDst)[0] = TexLightToLinear(((ColorRGBExp32 *)pSrc)->r, ((ColorRGBExp32 *)pSrc)->exponent);
+	(*pDst)[1] = TexLightToLinear(((ColorRGBExp32 *)pSrc)->g, ((ColorRGBExp32 *)pSrc)->exponent);
+	(*pDst)[2] = TexLightToLinear(((ColorRGBExp32 *)pSrc)->b, ((ColorRGBExp32 *)pSrc)->exponent);
+}
+
+//-----------------------------------------------------------------------------
+// Converts a linear color value (suitable for combining linearly) to an RBGA8888 value expected by the engine.
+//-----------------------------------------------------------------------------
+void ConvertLinearToRGBA8888(const Vector *pSrcLinear, unsigned char *pDst)
+{
+	Vector		vertexColor;
+
 	// convert from linear space to lightmap space
 	// cannot use mathlib routine directly because it doesn't match
 	// the colorspace version found in the engine, which *is* the same sequence here
-	vertexColor[0] = LinearToVertexLight( linearColor[0] );
-	vertexColor[1] = LinearToVertexLight( linearColor[1] );
-	vertexColor[2] = LinearToVertexLight( linearColor[2] );
+	vertexColor[0] = LinearToVertexLight((*pSrcLinear)[0]);
+	vertexColor[1] = LinearToVertexLight((*pSrcLinear)[1]);
+	vertexColor[2] = LinearToVertexLight((*pSrcLinear)[2]);
 
 	// this is really a color normalization with a floor
-	ColorClamp( vertexColor );
+	ColorClamp(vertexColor);
 
 	// final [0..255] scale
-	pDst[0] = RoundFloatToByte( vertexColor[0] * 255.0f );
-	pDst[1] = RoundFloatToByte( vertexColor[1] * 255.0f );
-	pDst[2] = RoundFloatToByte( vertexColor[2] * 255.0f );
+	pDst[0] = RoundFloatToByte(vertexColor[0] * 255.0f);
+	pDst[1] = RoundFloatToByte(vertexColor[1] * 255.0f);
+	pDst[2] = RoundFloatToByte(vertexColor[2] * 255.0f);
 	pDst[3] = 255;
 }
-

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -494,9 +494,6 @@ int CFastZombie::SelectSchedule ( void )
 			return SCHED_ZOMBIE_WANDER_MEDIUM;
 		}
 		break;
-
-	default:
-		break;
 	}
 
 	return BaseClass::SelectSchedule();
@@ -550,7 +547,7 @@ void CFastZombie::PrescheduleThink( void )
 			int iPitch;
 
 			m_flDistFactor = MIN( 1.0, 1 - flDistNoBBox / FASTZOMBIE_EXCITE_DIST ); 
-			iPitch = (int)(FASTZOMBIE_MIN_PITCH + ( ( FASTZOMBIE_MAX_PITCH - FASTZOMBIE_MIN_PITCH ) * m_flDistFactor)); 
+			iPitch = FASTZOMBIE_MIN_PITCH + ( ( FASTZOMBIE_MAX_PITCH - FASTZOMBIE_MIN_PITCH ) * m_flDistFactor); 
 			ENVELOPE_CONTROLLER.SoundChangePitch( m_pMoanSound, iPitch, FASTZOMBIE_SOUND_UPDATE_FREQ );
 		}
 
@@ -1083,11 +1080,11 @@ void CFastZombie::HandleAnimEvent( animevent_t *pEvent )
 	if ( pEvent->event == AE_ZOMBIE_ATTACK_RIGHT )
 	{
 		Vector right;
-		QAngle viewPunch(-3.0f, -5.0f, -3.0f);
 		AngleVectors( GetLocalAngles(), NULL, &right, NULL );
 		right = right * -50;
 
-		ClawAttack( GetClawAttackRange(), 3, viewPunch, right, ZOMBIE_BLOOD_RIGHT_HAND );
+		QAngle angle( -3, -5, -3  );
+		ClawAttack( GetClawAttackRange(), 3, angle, right, ZOMBIE_BLOOD_RIGHT_HAND );
 		return;
 	}
 
@@ -1095,9 +1092,9 @@ void CFastZombie::HandleAnimEvent( animevent_t *pEvent )
 	{
 		Vector right;
 		AngleVectors( GetLocalAngles(), NULL, &right, NULL );
-		QAngle viewPunch(-3.0f, -5.0f, -3.0f);
 		right = right * 50;
-		ClawAttack( GetClawAttackRange(), 3, viewPunch, right, ZOMBIE_BLOOD_LEFT_HAND );
+		QAngle angle( -3, 5, -3 );
+		ClawAttack( GetClawAttackRange(), 3, angle, right, ZOMBIE_BLOOD_LEFT_HAND );
 		return;
 	}
 
@@ -1172,7 +1169,7 @@ void CFastZombie::LeapAttack( void )
 	{
 		Vector vecEnemyPos = pEnemy->WorldSpaceCenter();
 
-		float gravity = sv_gravity.GetFloat();
+		float gravity = GetCurrentGravity();
 		if ( gravity <= 1 )
 		{
 			gravity = 1;
@@ -1480,10 +1477,10 @@ void CFastZombie::LeapAttackTouch( CBaseEntity *pOther )
 
 	Vector forward;
 	AngleVectors( GetLocalAngles(), &forward );
+	forward *= 500;
 	QAngle qaPunch( 15, random->RandomInt(-5,5), random->RandomInt(-5,5) );
-	Vector velocityPunch = forward * 5;
-
-	ClawAttack( GetClawAttackRange(), 5, qaPunch, velocityPunch, ZOMBIE_BLOOD_BOTH_HANDS );
+	
+	ClawAttack( GetClawAttackRange(), 5, qaPunch, forward, ZOMBIE_BLOOD_BOTH_HANDS );
 
 	SetTouch( NULL );
 }

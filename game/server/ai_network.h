@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -84,7 +84,7 @@ public:
 // Purpose: Stores a node graph through which an AI may pathfind
 //-----------------------------------------------------------------------------
 
-class CAI_Network : public IPartitionEnumerator
+class CAI_Network final : public IPartitionEnumerator
 {
 public:
 	CAI_Network();

@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2006, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: particle system definitions
 //
@@ -87,7 +87,11 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CParticleSystemQuery, IParticleSystemQuery, P
 #endif
 
 static CThreadFastMutex s_LightMutex;
-static CThreadFastMutex s_BoneMutex;
+
+// This mutex exists because EntityToWorldTransform was not threadsafe, and could potentially have been called from multiple
+// particle update threads. It has now been fixed to be threadsafe, so this mutex can safely just be a no-op (meaingful perf win for this).
+// static CThreadFastMutex s_BoneMutex;
+static CThreadNullMutex s_BoneMutex;
 
 //-----------------------------------------------------------------------------
 // Inherited from IParticleSystemQuery
@@ -173,12 +177,12 @@ bool CParticleSystemQuery::MovePointInsideControllingObject(
 #endif
 }
 
-#ifndef GAME_DLL
 static float GetSurfaceCoord( float flRand, float flMinX, float flMaxX )
 {
 	return Lerp( flRand, flMinX, flMaxX );
+
 }
-#endif
+
 
 void CParticleSystemQuery::GetRandomPointsOnControllingObjectHitBox( 
 	CParticleCollection *pParticles,
@@ -231,7 +235,7 @@ void CParticleSystemQuery::GetRandomPointsOnControllingObjectHitBox(
 					{
 						bSucesss = true;
 						
-						Vector vecWorldPosition;
+						Vector vecWorldPosition(0, 0, 0);
 						float u = 0, v = 0, w = 0;
 						int nHitbox = 0;
 						int nNumIters = nNumTrysToGetAPointInsideTheModel;
@@ -252,9 +256,9 @@ void CParticleSystemQuery::GetRandomPointsOnControllingObjectHitBox(
 								float flTryW = pParticles->RandomFloat( flRandMin, flRandMax );
 
 								Vector vecLocalPosition;
-								vecLocalPosition.x = GetSurfaceCoord( flTryU, pBox->bbmin.x, pBox->bbmax.x );
-								vecLocalPosition.y = GetSurfaceCoord( flTryV, pBox->bbmin.y, pBox->bbmax.y );
-								vecLocalPosition.z = GetSurfaceCoord( flTryW, pBox->bbmin.z, pBox->bbmax.z );
+								vecLocalPosition.x = GetSurfaceCoord( flTryU, pBox->bbmin.x * pAnimating->GetModelScale(), pBox->bbmax.x * pAnimating->GetModelScale() );
+								vecLocalPosition.y = GetSurfaceCoord( flTryV, pBox->bbmin.y * pAnimating->GetModelScale(), pBox->bbmax.y * pAnimating->GetModelScale() );
+								vecLocalPosition.z = GetSurfaceCoord( flTryW, pBox->bbmin.z * pAnimating->GetModelScale(), pBox->bbmax.z * pAnimating->GetModelScale() );
 
 								Vector vecTryWorldPosition;
 
@@ -308,7 +312,7 @@ void CParticleSystemQuery::GetRandomPointsOnControllingObjectHitBox(
 
 			
 
-			Vector vecWorldPosition;
+			Vector vecWorldPosition(0, 0, 0);
 			float u = 0, v = 0, w = 0;
 			int nHitbox = 0;
 			int nNumIters = nNumTrysToGetAPointInsideTheModel;
@@ -559,7 +563,7 @@ static CollisionGroupNameRecord_t s_NameMap[]={
 
 int CParticleSystemQuery::GetCollisionGroupFromName( const char *pszCollisionGroupName )
 {
-	for(size_t i = 0; i < ARRAYSIZE( s_NameMap ); i++ )
+	for(int i = 0; i < ARRAYSIZE( s_NameMap ); i++ )
 	{
 		if ( ! stricmp( s_NameMap[i].m_pszGroupName, pszCollisionGroupName ) )
 			return s_NameMap[i].m_nGroupID;

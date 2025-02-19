@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Utility code.
 //
@@ -124,7 +124,7 @@ void CEffectsServer::Smoke( const Vector &origin, int mModel, float flScale, flo
 	CPVSFilter filter( origin );
 	if ( !SuppressTE( filter ) )
 	{
-		te->Smoke( filter, 0.0, &origin, mModel, flScale * 0.1f, (int)flFramerate );
+		te->Smoke( filter, 0.0, &origin, mModel, flScale * 0.1f, flFramerate );
 	}
 }
 

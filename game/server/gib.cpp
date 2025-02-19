@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		A gib is a chunk of a body, or a piece of wood/metal/rocks/etc.
 //
@@ -591,7 +591,7 @@ void CGib::Spawn( const char *szGibModel )
 	m_nRenderMode = kRenderNormal;
 	m_nRenderFX = kRenderFxNone;
 	
-	// hopefully this will fix the VELOCITY TOO LOW crap
+	// hopefully this will fix the VELOCITY TOO LOW stuff
 	m_takedamage = DAMAGE_EVENTS_ONLY;
 	SetSolid( SOLID_BBOX );
 	AddSolidFlags( FSOLID_NOT_STANDABLE );

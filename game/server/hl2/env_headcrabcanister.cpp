@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -824,7 +824,7 @@ void CEnvHeadcrabCanister::SetLanded( void )
 	SetSolid( SOLID_VPHYSICS );
 	VPhysicsInitStatic();
 	
-	AddEffects( EF_NOINTERP );
+	IncrementInterpolationFrame();
 	m_bLanded = true;
 }
 
@@ -906,7 +906,7 @@ void CEnvHeadcrabCanister::Detonate( )
 		SetAbsOrigin( m_vecImpactPosition );
 		SetModel( ENV_HEADCRABCANISTER_BROKEN_MODEL );
 		SetMoveType( MOVETYPE_NONE );
-		AddEffects( EF_NOINTERP );
+		IncrementInterpolationFrame();
 		m_bLanded = true;
 		
 		// Become invisible so our trail can finish up
@@ -937,7 +937,7 @@ void CEnvHeadcrabCanister::Detonate( )
 	if ( !HasSpawnFlags( SF_NO_IMPACT_EFFECTS ) )
 	{
 		// Normal explosion
-		ExplosionCreate( m_vecImpactPosition, GetAbsAngles(), this, 50, 500, 
+		ExplosionCreate( m_vecImpactPosition, GetAbsAngles(), this, 50.0f, 500.0f, 
 			SF_ENVEXPLOSION_NODLIGHTS | SF_ENVEXPLOSION_NOSPARKS | SF_ENVEXPLOSION_NODAMAGE | SF_ENVEXPLOSION_NOSOUND, 1300.0f );
 			
 		// Dust explosion

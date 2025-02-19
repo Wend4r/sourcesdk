@@ -1,9 +1,10 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
 //=============================================================================//
-
+#undef strncpy // we use std::string below that needs a good strncpy define
+#undef sprintf // "
 #include "cbase.h"
 
 #include "ai_behavior_lead.h"
@@ -268,7 +269,7 @@ bool CAI_LeadBehavior::GetClosestPointOnRoute( const Vector &targetPos, Vector *
 	float		flNearestDist	= 999999999;
 	float		flPathDist, flPathDist2D;
 
-	Vector vecNearestPoint = Vector(0.0f, 0.0f, 0.0f);
+	Vector vecNearestPoint(0, 0, 0);
 	Vector vecPrevPos = GetOuter()->GetAbsOrigin();
 	for ( ; (waypoint != NULL) ; waypoint = waypoint->GetNext() )
 	{
@@ -923,7 +924,7 @@ void CAI_LeadBehavior::RunTask( const Task_t *pTask )
 					if ( distance > m_retrievedistance )
 					{
 						Activity followActivity = ACT_WALK;
-						if ( GetOuter()->GetState() == NPC_STATE_COMBAT || (!bWithinZ || distance < (m_retrievedistance*4)) && GetOuter()->GetState() != NPC_STATE_COMBAT ) 
+						if ( GetOuter()->GetState() == NPC_STATE_COMBAT || ( (!bWithinZ || distance < (m_retrievedistance*4)) && GetOuter()->GetState() != NPC_STATE_COMBAT ) )
 						{
 							followActivity = ACT_RUN;
 						}
@@ -934,7 +935,6 @@ void CAI_LeadBehavior::RunTask( const Task_t *pTask )
 						{
 						case ACT_WALK_AIM:	curActivity = ACT_WALK;	break;
 						case ACT_RUN_AIM:	curActivity = ACT_RUN;	break;
-						default:	break;
 						}
 						
 						if ( curActivity != followActivity )
@@ -1540,24 +1540,24 @@ void CAI_LeadGoal::InputActivate( inputdata_t &inputdata )
 		m_flRetrieveDistance = m_flLeadDistance + LEAD_MIN_RETRIEVEDIST_OFFSET;
 	}
 
-	AI_LeadArgs_t leadArgs = { 
-		GetGoalEntityName(), 
-		STRING(m_iszWaitPointName), 
-		m_spawnflags, 
-		m_flWaitDistance, 
-		m_flLeadDistance, 
-		m_flRetrieveDistance, 
+	AI_LeadArgs_t leadArgs = {
+		GetGoalEntityName(),
+		STRING(m_iszWaitPointName),
+		(unsigned)m_spawnflags,
+		m_flWaitDistance,
+		m_flLeadDistance,
+		m_flRetrieveDistance,
 		m_flSuccessDistance,
-		m_bRun, 
-		m_iRetrievePlayer, 
-		m_iRetrieveWaitForSpeak, 
-		m_iComingBackWaitForSpeak, 
+		m_bRun,
+		m_iRetrievePlayer,
+		m_iRetrieveWaitForSpeak,
+		m_iComingBackWaitForSpeak,
 		m_bStopScenesWhenPlayerLost,
 		m_bDontSpeakStart,
 		m_bLeadDuringCombat,
 		m_bGagLeader,
 	};
-	
+
 	pBehavior->LeadPlayer( leadArgs, this );
 }
 

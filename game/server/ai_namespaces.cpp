@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -90,12 +90,12 @@ int CAI_GlobalNamespace::NextGlobalBase() const
 //
 
 CAI_LocalIdSpace::CAI_LocalIdSpace( bool fIsRoot )
- :	m_globalBase( (fIsRoot) ? 0 : -1 ),
+ : 	m_pGlobalNamespace( NULL ),
+ 	m_pParentIDSpace( NULL ),
+ 	m_globalBase( (fIsRoot) ? 0 : -1 ),
  	m_localBase( (fIsRoot) ? 0 : MAX_STRING_INDEX ),
  	m_localTop( -1 ),
- 	m_globalTop( -1 ),
- 	m_pParentIDSpace( NULL ),
-	m_pGlobalNamespace( NULL )
+ 	m_globalTop( -1 )
 {
 };
 

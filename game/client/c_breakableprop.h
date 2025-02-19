@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -22,6 +22,10 @@ public:
 	C_BreakableProp();
 	
 	virtual void SetFadeMinMax( float fademin, float fademax );
+
+	//virtual bool	ShouldPredict( void ) OVERRIDE;
+	//virtual C_BasePlayer *GetPredictionOwner( void ) OVERRIDE;
+	virtual bool PredictionErrorShouldResetLatchedForAllPredictables( void ) OVERRIDE { return false; }
 
 	// Copy fade from another breakable prop
 	void CopyFadeFrom( C_BreakableProp *pSource );

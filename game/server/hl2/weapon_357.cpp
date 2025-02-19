@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		357 - hand gun
 //
@@ -18,7 +18,7 @@
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
 #include "te_effect_dispatch.h"
-#include "GameStats.h"
+#include "gamestats.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

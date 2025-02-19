@@ -1,4 +1,4 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -165,7 +165,7 @@ public:
 		}
 	}
 
-	void EndBenchmark()
+	virtual void EndBenchmark( void )
 	{
 		// Write out the results if we're running the build scripts.
 		float flRunTime = Benchmark_ValidTime() - m_fl_ValidTime_BenchmarkStartTime;
@@ -363,13 +363,13 @@ public:
 
 	virtual float RandomFloat( float nMin, float nMax )
 	{
-		return m_RandomStream.RandomFloat( nMin, nMax );
+		return m_RandomStream.RandomInt( nMin, nMax );
 	}
 
 
 private:
 	
-	typedef enum EBenchmarkState
+	enum EBenchmarkState
 	{
 		BENCHMARKSTATE_NOT_RUNNING,
 		BENCHMARKSTATE_START_WAIT,

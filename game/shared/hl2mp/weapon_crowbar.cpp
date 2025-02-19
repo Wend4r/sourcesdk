@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		Crowbar - an old favorite
 //
@@ -114,7 +114,7 @@ void CWeaponCrowbar::HandleAnimEventMeleeHit( animevent_t *pEvent, CBaseCombatCh
 	Vector vecEnd;
 	VectorMA( pOperator->Weapon_ShootPosition(), 50, vecDirection, vecEnd );
 	CBaseEntity *pHurt = pOperator->CheckTraceHullAttack( pOperator->Weapon_ShootPosition(), vecEnd, 
-		Vector(-16,-16,-16), Vector(36,36,36), (int)GetDamageForActivity( GetActivity() ), DMG_CLUB, 0.75 );
+		Vector(-16,-16,-16), Vector(36,36,36), GetDamageForActivity( GetActivity() ), DMG_CLUB, 0.75 );
 	
 	// did I hit someone?
 	if ( pHurt )

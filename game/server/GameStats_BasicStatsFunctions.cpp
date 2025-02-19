@@ -1,11 +1,11 @@
-//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 //=============================================================================
 
 #include "cbase.h"
-#include "GameStats.h"
+#include "gamestats.h"
 
 void BasicGameStatsRecord_t::Clear()
 {
@@ -155,7 +155,7 @@ bool BasicGameStats_t::ParseFromBuffer( CUtlBuffer& buf, int iBufferStatsVersion
 	for ( int i = 0; i < c; ++i )
 	{
 		char mapname[ 256 ];
-		buf.GetString( mapname, sizeof( mapname ) );
+		buf.GetString( mapname );
 
 		BasicGameStatsRecord_t *rec = FindOrAddRecordForMap( mapname );
 		bool valid= rec->ParseFromBuffer( buf, iBufferStatsVersion );

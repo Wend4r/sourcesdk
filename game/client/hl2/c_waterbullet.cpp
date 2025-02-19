@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -85,7 +85,7 @@ public:
 				sParticle->m_flDieTime		= 0.2f;
 
 				sParticle->m_flRoll			= random->RandomInt( 0, 360 );
-				sParticle->m_flRollDelta	= random->RandomInt( -4, 4 );;
+				sParticle->m_flRollDelta	= random->RandomInt( -4, 4 );
 
 				unsigned char color = random->RandomInt( 200, 255 );
 

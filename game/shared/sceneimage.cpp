@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -10,8 +10,7 @@
 #include "iscenetokenprocessor.h"
 #include "scenefilecache/SceneImageFile.h"
 
-//#include "lzma/lzma.h"
-extern unsigned char *LZMA_Compress(unsigned char *buffer, unsigned int bufsize, unsigned int *outsize, unsigned int unk = 18);
+#include "lzma/lzma.h"
 
 #include "tier1/utlbuffer.h"
 #include "tier1/UtlStringMap.h"
@@ -107,7 +106,7 @@ public:
 		int &nOffset = m_StringMap[pString];
 		nOffset = m_nOffset;
 		// advance by string and null
-		m_nOffset += strlen( pString ) + 1;
+		m_nOffset += V_strlen( pString ) + 1;
 
 		stringId = m_StringMap.Find( pString );
 		Assert( stringId >= 0 && stringId <= 32767 );
@@ -151,9 +150,9 @@ public:
 			offsets.AddToTail( currentOffset );
 
 			const char *pString = m_StringMap.String( i );
-			buffer.Put( pString, strlen( pString ) + 1 ); 
+			buffer.Put( pString, V_strlen( pString ) + 1 ); 
 
-			currentOffset += strlen( pString ) + 1;
+			currentOffset += V_strlen( pString ) + 1;
 		}
 		Assert( currentOffset == m_nOffset );
 
@@ -259,7 +258,9 @@ bool CreateTargetFile_VCD( const char *pSourceName, const char *pTargetName, boo
 	pChoreoScene->SaveToBinaryBuffer( g_SceneFiles[iScene].compiledBuffer, crcSource, &g_ChoreoStringPool );
 
 	unsigned int compressedSize;
-	unsigned char *pCompressedBuffer = LZMA_Compress( (unsigned char *)g_SceneFiles[iScene].compiledBuffer.Base(), g_SceneFiles[iScene].compiledBuffer.TellMaxPut(), &compressedSize );
+	unsigned char *pCompressedBuffer = LZMA_OpportunisticCompress( (unsigned char *)g_SceneFiles[iScene].compiledBuffer.Base(),
+	                                                               g_SceneFiles[iScene].compiledBuffer.TellMaxPut(),
+	                                                               &compressedSize );
 	if ( pCompressedBuffer )
 	{
 		// replace the compiled buffer with the compressed version
@@ -369,7 +370,7 @@ bool CSceneImage::CreateSceneImageFile( CUtlBuffer &targetBuffer, char const *pc
 
 	if ( !bQuiet )
 	{
-		Msg( "Scenes: String Table: %d bytes\n", stringOffsets.Count() * sizeof( int ) );
+		Msg( "Scenes: String Table: %llu bytes\n", (uint64)(stringOffsets.Count() * sizeof( int )) );
 		Msg( "Scenes: String Pool: %d bytes\n", stringPool.TellMaxPut() );
 	}
 
@@ -435,7 +436,7 @@ bool CSceneImage::CreateSceneImageFile( CUtlBuffer &targetBuffer, char const *pc
 			Error( "CreateSceneImageFile: Unexpected lack of scenes prefix on %s\n", g_SceneFiles[i].fileName.String() );
 		}
 
-		CRC32_t crcFilename = CRC32_ProcessSingleBuffer( pName, strlen( pName ) );
+		CRC32_t crcFilename = CRC32_ProcessSingleBuffer( pName, V_strlen( pName ) );
 		imageEntry.crcFilename = crcFilename;
 
 		// temp store an index to its file, fixup later, necessary to access post sort

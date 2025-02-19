@@ -1,11 +1,10 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //
 //=============================================================================//
-
 #include "cbase.h"
 
 #include "npc_talker.h"
@@ -38,7 +37,7 @@ BEGIN_DATADESC( CNPCSimpleTalker )
 END_DATADESC()
 
 // array of friend names
-const char *CNPCSimpleTalker::m_szFriends[TLK_CFRIENDS] = 
+char *CNPCSimpleTalker::m_szFriends[TLK_CFRIENDS] = 
 {
 	"NPC_barney",
 	"NPC_scientist",
@@ -313,7 +312,7 @@ void CNPCSimpleTalker::Event_Killed( const CTakeDamageInfo &info )
 CBaseEntity	*CNPCSimpleTalker::EnumFriends( CBaseEntity *pPrevious, int listNumber, bool bTrace )
 {
 	CBaseEntity *pFriend = pPrevious;
-	const char *pszFriend;
+	char *pszFriend;
 	trace_t tr;
 	Vector vecCheck;
 
@@ -766,7 +765,7 @@ int CNPCSimpleTalker::PlayScriptedSentence( const char *pszSentence, float delay
 	m_useTime = gpGlobals->curtime + delay;
 
 	// Stop all idle speech until after the sentence has completed
-	DeferAllIdleSpeech( delay + random->RandomFloat( 3.0f, 5.0f ) );
+	DeferAllIdleSpeech( delay + random->RandomInt( 3.0f, 5.0f ) );
 
 	return sentenceIndex;
 }
@@ -1127,7 +1126,7 @@ bool CNPCSimpleTalker::ShouldSpeakRandom( int iChance, float flModifier )
 		if ( !flModifier )
 			return false;
 
-		iChance = (int)floor( (float)iChance / flModifier );
+		iChance = floor( (float)iChance / flModifier );
 	}
 
 	return (random->RandomInt(0,iChance) == 0);

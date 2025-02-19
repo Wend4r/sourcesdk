@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -34,7 +34,7 @@ public:
 	char				*GetStatsFilename( void );
 
 	// Set the filename to write stats to, if none is specified when writing
-	void				SetStatsFilename( const char *sFilename );
+	void				SetStatsFilename( char *sFilename );
 
 private:
 	char	m_szStatFilename[ MAX_PATH ];

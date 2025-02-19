@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This is the molotov weapon
 //
@@ -12,7 +12,7 @@
 #include	"basehlcombatweapon.h"
 #include	"basecombatcharacter.h"
 #include	"ai_basenpc.h"
-#include	"ai_memory.h"
+#include	"AI_Memory.h"
 #include	"player.h"
 #include	"gamerules.h"		// For g_pGameRules
 #include	"weapon_molotov.h"
@@ -76,7 +76,7 @@ void CWeaponMolotov::Spawn( void )
 //------------------------------------------------------------------------------
 void CWeaponMolotov::SetPickupTouch( void )
 {
-	SetTouch(&CWeaponMolotov::MolotovTouch);
+	SetTouch(MolotovTouch);
 }
 
 //-----------------------------------------------------------------------------
@@ -275,7 +275,7 @@ int CWeaponMolotov::WeaponRangeAttack1Condition( float flDot, float flDist )
 		Vector			vecToss;
 		CBaseEntity*	pBlocker	= NULL;
 		float			throwDist	= (throwStart - vecTarget).Length();
-		float			fGravity	= sv_gravity.GetFloat();
+		float			fGravity	= GetCurrentGravity();
 		float			throwLimit	= pNPC->ThrowLimit(throwStart, vecTarget, fGravity, 35, WorldAlignMins(), WorldAlignMaxs(), pEnemy, &vecToss, &pBlocker);
 
 		// If I can make the throw (or most of the throw)

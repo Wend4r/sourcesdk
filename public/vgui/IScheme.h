@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -16,12 +16,13 @@
 #include "tier1/interface.h"
 
 class Color;
+class KeyValues;
 
 namespace vgui
 {
 
-typedef unsigned long HScheme;
-typedef unsigned long HTexture;
+typedef uint32 HScheme;
+typedef uint32 HTexture;
 
 class IBorder;
 class IImage;
@@ -47,6 +48,26 @@ public:
 
 	// colors
 	virtual Color GetColor(const char *colorName, Color defaultColor) = 0;
+	
+	// Get the number of borders
+	virtual int GetBorderCount() const = 0;
+
+	// Get the border at the given index
+	virtual IBorder *GetBorderAtIndex( int iIndex ) = 0;
+
+	// Get the number of fonts
+	virtual int GetFontCount() const = 0;
+
+	// Get the font at the given index
+	virtual HFont GetFontAtIndex( int iIndex ) = 0;	
+
+	// Get color data
+	virtual const KeyValues *GetColorData() const = 0;
+
+	// returns a pointer to an existing border
+	virtual IBorder* GetBorder2( const char* borderName ) = 0;
+
+	virtual VPANEL GetSizingPanel() = 0;
 };
 
 
@@ -98,9 +119,22 @@ public:
 	virtual int GetProportionalScaledValueEx( HScheme scheme, int normalizedValue ) = 0;
 	virtual int GetProportionalNormalizedValueEx( HScheme scheme, int scaledValue ) = 0;
 
-#ifdef _XBOX
-	virtual void DeleteImage( const char *pImageName ) = 0;
-#endif
+	int QuickPropScaleCond( bool bScale, HScheme scheme, int normalizedValue )
+	{
+		if ( !bScale )
+			return normalizedValue;
+		return this->GetProportionalScaledValueEx( scheme, normalizedValue );
+	}
+
+	// misyl: Added this to scale much quicker and easier
+	// lots of things were broken with scaling.
+	// Not a real virtual method etc, just a helper to derp into existing code.
+	#define QuickPropScale( x ) ( ::vgui::scheme()->QuickPropScaleCond( this->IsProportional(), this->GetScheme(), ( x ) ) )
+
+	// Returns true if image evicted, false otherwise
+	virtual bool DeleteImage( const char *pImageName ) = 0;
+
+	virtual void UpdateBorders() = 0;
 };
 
 #define VGUI_SCHEME_INTERFACE_VERSION "VGUI_Scheme010"

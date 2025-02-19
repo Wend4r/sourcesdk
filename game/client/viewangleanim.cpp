@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -100,7 +100,9 @@ CON_COMMAND( viewanim_save, "Save current animation to file" )
 
 	if ( g_pTestAnimation )
 	{	
-		g_pTestAnimation->SaveAsAnimFile( args[1] );
+		char szOutput[ MAX_PATH ];
+		V_FixupPathName( szOutput, sizeof(szOutput), args[1] );
+		g_pTestAnimation->SaveAsAnimFile( szOutput );
 	}
 	else
 	{

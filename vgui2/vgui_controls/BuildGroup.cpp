@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -39,6 +39,8 @@
 #include <vgui_controls/EditablePanel.h>
 #include <vgui_controls/MessageBox.h>
 #include "filesystem.h"
+#include "tier0/icommandline.h"
+#include "const.h"
 
 #if defined( _X360 )
 #include "xbox/xbox_win32stubs.h"
@@ -47,6 +49,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
+ConVar vgui_cache_res_files( "vgui_cache_res_files", "1" );
+
 using namespace vgui;
 
 //-----------------------------------------------------------------------------
@@ -54,6 +58,7 @@ using namespace vgui;
 //-----------------------------------------------------------------------------
 IMPLEMENT_HANDLES( BuildGroup, 20 )
 
+CUtlDict< KeyValues* > BuildGroup::m_dictCachedResFiles;
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
@@ -79,9 +84,6 @@ BuildGroup::BuildGroup(Panel *parentPanel, Panel *contextPanel)
 	for (int i=0; i<4; ++i)
 		_rulerNumber[i] = NULL;
 	SetContextPanel(contextPanel);
-	_controlGroup = NULL;
-	_groupDeltaX = 0;
-	_groupDeltaX = 0;
 	_showRulers = false;
 
 }
@@ -312,8 +314,8 @@ bool BuildGroup::CursorMoved(int x, int y, Panel *panel)
 		
 		if (_dragMouseCode == MOUSE_RIGHT)
 		{
-			int newW = MAX( 1, _dragStartPanelSize[ 0 ] + x - _dragStartCursorPos[0] );
-			int newH = MAX( 1, _dragStartPanelSize[ 1 ] + y - _dragStartCursorPos[1] );
+			int newW = max( 1, _dragStartPanelSize[ 0 ] + x - _dragStartCursorPos[0] );
+			int newH = max( 1, _dragStartPanelSize[ 1 ] + y - _dragStartCursorPos[1] );
 
 			bool shift = ( input()->IsKeyDown(KEY_LSHIFT) || input()->IsKeyDown(KEY_RSHIFT) );
 			bool ctrl = ( input()->IsKeyDown(KEY_LCONTROL) || input()->IsKeyDown(KEY_RCONTROL) );
@@ -677,7 +679,7 @@ bool BuildGroup::KeyCodeTyped(KeyCode code, Panel *panel)
 		ApplySnap(panel);
 
 		panel->Repaint();
-		if (panel->GetVParent() != NULL)
+		if (panel->GetVParent() != 0)
 		{
 			panel->PostMessage(panel->GetVParent(), new KeyValues("Repaint"));
 		}
@@ -870,27 +872,76 @@ void BuildGroup::PanelAdded(Panel *panel)
 //-----------------------------------------------------------------------------
 // Purpose: loads the control settings from file
 //-----------------------------------------------------------------------------
-void BuildGroup::LoadControlSettings(const char *controlResourceName, const char *pathID, KeyValues *pPreloadedKeyValues)
+void BuildGroup::LoadControlSettings(const char *controlResourceName, const char *pathID, KeyValues *pPreloadedKeyValues, KeyValues *pConditions)
 {
+	if ( !controlResourceName || !controlResourceName[ 0 ] )
+	{
+		Warning( "LoadControlSettings failed! Invalid resource filename!\n" );
+		return;
+	}
+
 	// make sure the file is registered
 	RegisterControlSettingsFile(controlResourceName, pathID);
 
 	// Use the keyvalues they passed in or load them.
 	KeyValues *rDat = pPreloadedKeyValues;
-	if ( !rDat )
+
+	bool bUsePrecaching = vgui_cache_res_files.GetBool();
+	bool bUsingPrecachedSourceKeys = false;
+	bool bShouldCacheKeys = true;
+	bool bDeleteKeys = false;
+
+	while ( !rDat )
 	{
+		if ( bUsePrecaching )
+		{
+			int nIndex = m_dictCachedResFiles.Find( controlResourceName );
+			if ( nIndex != m_dictCachedResFiles.InvalidIndex() )
+			{
+				rDat = m_dictCachedResFiles[nIndex];
+				bUsingPrecachedSourceKeys = true;
+				bDeleteKeys = false;
+				bShouldCacheKeys = false;
+				break;
+			}
+		}
+
 		// load the resource data from the file
-		rDat  = new KeyValues(controlResourceName);
+		rDat = new KeyValues( controlResourceName );
 
 		// check the skins directory first, if an explicit pathID hasn't been set
 		bool bSuccess = false;
-		if (!pathID)
+		if ( !pathID )
 		{
-			bSuccess = rDat->LoadFromFile(g_pFullFileSystem, controlResourceName, "SKIN");
+			bSuccess = rDat->LoadFromFile( g_pFullFileSystem, controlResourceName, "SKIN" );
 		}
-		if (!bSuccess)
+
+		if ( !V_stricmp( CommandLine()->ParmValue( "-game", "hl2" ), "tf" ) )
 		{
-			bSuccess = rDat->LoadFromFile(g_pFullFileSystem, controlResourceName, pathID);
+			if ( !bSuccess )
+			{
+				bSuccess = rDat->LoadFromFile( g_pFullFileSystem, controlResourceName, "custom_mod" );
+			}
+			if ( !bSuccess )
+			{
+				bSuccess = rDat->LoadFromFile( g_pFullFileSystem, controlResourceName, "vgui" );
+			}
+			if ( !bSuccess )
+			{
+				bSuccess = rDat->LoadFromFile( g_pFullFileSystem, controlResourceName, "BSP" );
+			}
+			// only allow to load loose files when using insecure mode
+			if ( !bSuccess && CommandLine()->FindParm( "-insecure" ) )
+			{
+				bSuccess = rDat->LoadFromFile( g_pFullFileSystem, controlResourceName, pathID );
+			}
+		}
+		else
+		{
+			if ( !bSuccess )
+			{
+				bSuccess = rDat->LoadFromFile( g_pFullFileSystem, controlResourceName, pathID );
+			}
 		}
 
 		if ( bSuccess )
@@ -907,7 +958,28 @@ void BuildGroup::LoadControlSettings(const char *controlResourceName, const char
 					rDat->ProcessResolutionKeys( "_minmode" );
 				}
 			}
+			bDeleteKeys = true;
+			bShouldCacheKeys = true;
 		}
+		else
+		{
+			Warning( "Failed to load %s\n", controlResourceName );
+		}
+		break;
+	}
+
+	if ( pConditions && pConditions->GetFirstSubKey() )
+	{
+		if ( bUsingPrecachedSourceKeys )
+		{
+			// ProcessConditionalKeys modifies the KVs in place.  We dont want
+			// that to happen to our cached keys
+			rDat = rDat->MakeCopy();
+			bDeleteKeys = true;
+		}
+
+		ProcessConditionalKeys(rDat, pConditions);
+		bShouldCacheKeys = false;
 	}
 
 	// save off the resource name
@@ -934,9 +1006,61 @@ void BuildGroup::LoadControlSettings(const char *controlResourceName, const char
 		m_pParentPanel->Repaint();
 	}
 
-	if ( rDat != pPreloadedKeyValues )
+	if ( bShouldCacheKeys && bUsePrecaching )
 	{
+		Assert( m_dictCachedResFiles.Find( controlResourceName ) == m_dictCachedResFiles.InvalidIndex() );
+		m_dictCachedResFiles.Insert( controlResourceName, rDat );
+	}
+	else if ( bDeleteKeys )
+	{
+		Assert( m_dictCachedResFiles.Find( controlResourceName ) != m_dictCachedResFiles.InvalidIndex() || pConditions || pPreloadedKeyValues );
 		rDat->deleteThis();
+	}
+}
+
+void BuildGroup::ProcessConditionalKeys( KeyValues *pData, KeyValues *pConditions )
+{
+	// for each condition, look for it in keys
+	// if its a positive condition, promote all of its children, replacing values
+
+	if ( pData )
+	{
+		KeyValues *pSubKey = pData->GetFirstSubKey();
+		if ( !pSubKey )
+		{
+			// not a block
+			return;
+		}
+
+		for ( ; pSubKey != NULL; pSubKey = pSubKey->GetNextKey() )
+		{
+			// recursively descend each sub block
+			ProcessConditionalKeys( pSubKey, pConditions );
+
+			KeyValues *pCondition = pConditions->GetFirstSubKey();
+			for ( ; pCondition != NULL; pCondition = pCondition->GetNextKey() )
+			{
+				// if we match any conditions in this sub block, copy up
+				KeyValues *pConditionBlock = pSubKey->FindKey( pCondition->GetName() );
+				if ( pConditionBlock )
+				{
+					KeyValues *pOverridingKey;
+					for ( pOverridingKey = pConditionBlock->GetFirstSubKey(); pOverridingKey != NULL; pOverridingKey = pOverridingKey->GetNextKey() )
+					{
+						KeyValues *pExistingKey = pSubKey->FindKey( pOverridingKey->GetName() );
+						if ( pExistingKey )
+						{
+							pExistingKey->SetStringValue( pOverridingKey->GetString() );
+						}
+						else
+						{
+							KeyValues *copy = pOverridingKey->MakeCopy();
+							pSubKey->AddSubKey( copy );
+						}
+					}				
+				}
+			}			
+		}		
 	}
 }
 
@@ -1109,6 +1233,8 @@ void BuildGroup::DeleteAllControlsCreatedByControlSettingsFile()
 //-----------------------------------------------------------------------------
 void BuildGroup::ApplySettings( KeyValues *resourceData )
 {
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
+
 	// loop through all the keys, applying them wherever
 	for (KeyValues *controlKeys = resourceData->GetFirstSubKey(); controlKeys != NULL; controlKeys = controlKeys->GetNextKey())
 	{
@@ -1209,6 +1335,7 @@ Panel *BuildGroup::NewControl( KeyValues *controlKeys, int x, int y)
 	Panel *newPanel = NULL;
 	if (controlKeys)
 	{
+//		Warning( "Creating new control \"%s\" of type \"%s\"\n", controlKeys->GetString( "fieldName" ), controlKeys->GetString( "ControlName" ) );
 		KeyValues *keyVal = new KeyValues("ControlFactory", "ControlName", controlKeys->GetString("ControlName"));
 		m_pBuildContext->RequestInfo(keyVal);
 		// returns NULL on failure
@@ -1297,9 +1424,9 @@ void BuildGroup::GetSettings( KeyValues *resourceData )
 		// do not get setting for ruler labels.
 		if (_showRulers) // rulers are visible
 		{
-			for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 4; j++)
 			{
-				if (panel == _rulerNumber[i])
+				if (panel == _rulerNumber[j])
 				{
 					isRuler = true;
 					break;
@@ -1396,4 +1523,28 @@ KeyValues *BuildGroup::GetDialogVariables()
 	}
 
 	return NULL;
+}
+
+bool BuildGroup::PrecacheResFile( const char* pszResFileName )
+{
+	KeyValues *pkvResFile = new KeyValues( pszResFileName );
+	if ( pkvResFile->LoadFromFile( g_pFullFileSystem, pszResFileName, "GAME" ) )
+	{
+		Assert( m_dictCachedResFiles.Find( pszResFileName ) == m_dictCachedResFiles.InvalidIndex() );
+		m_dictCachedResFiles.Insert( pszResFileName, pkvResFile );
+		return true;
+	}
+
+	return false;
+}
+
+void BuildGroup::ClearResFileCache()
+{
+	int nIndex = m_dictCachedResFiles.First();
+	while( m_dictCachedResFiles.IsValidIndex( nIndex ) )
+	{
+		m_dictCachedResFiles[ nIndex ]->deleteThis();
+		nIndex = m_dictCachedResFiles.Next( nIndex );
+	}
+	m_dictCachedResFiles.Purge();
 }

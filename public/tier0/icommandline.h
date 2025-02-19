@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -37,6 +37,20 @@ public:
 	virtual int			ParmCount() const = 0;
 	virtual int			FindParm( const char *psz ) const = 0;	// Returns 0 if not found.
 	virtual const char* GetParm( int nIndex ) const = 0;
+	
+	// copies the string passwed
+	virtual void SetParm( int nIndex, char const *pNewParm ) =0;
+
+	virtual const char *ParmValueByIndex( int nIndex, const char *pDefaultVal = 0 ) const = 0;
+
+	// A bool return of whether param exists, useful for just checking if param that is just a flag is set
+	virtual bool		HasParm( const char *psz ) const = 0;
+
+	virtual const char **GetParms() const = 0;
+
+	// Newer call with flag to control paramfile behavior
+	virtual void		CreateCmdLine1( const char *commandline, bool bParseParamFiles ) = 0;
+	virtual void		CreateCmdLine1( int argc, char **argv, bool bParseParamFiles ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -51,3 +65,4 @@ PLATFORM_INTERFACE ICommandLine *CommandLine_Tier0();
 #endif
 
 #endif // TIER0_ICOMMANDLINE_H
+

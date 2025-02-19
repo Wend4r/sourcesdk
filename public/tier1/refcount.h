@@ -1,4 +1,4 @@
-//========== Copyright © 2005, Valve Corporation, All rights reserved. ========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Tools for correctly implementing & handling reference counted
 //			objects
@@ -13,6 +13,40 @@
 #if defined( _WIN32 )
 #pragma once
 #endif
+
+template <typename T>
+inline void SafeAssign(T** ppInoutDst, T* pInoutSrc )
+{
+	Assert( ppInoutDst );
+
+	// Do addref before release
+	if ( pInoutSrc )
+		( pInoutSrc )->AddRef();
+
+	// Do addref before release
+	if ( *ppInoutDst )
+		( *ppInoutDst )->Release();
+
+	// Do the assignment
+	( *ppInoutDst ) = pInoutSrc;
+}
+
+template <typename T>
+inline void SafeAddRef( T* pObj )
+{
+	if ( pObj )
+		pObj->AddRef();
+}
+
+template <typename T>
+inline void SafeRelease( T** ppInoutPtr )
+{
+	Assert( ppInoutPtr  );
+	if ( *ppInoutPtr )
+		( *ppInoutPtr )->Release();
+
+	( *ppInoutPtr ) = NULL;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose:	Implement a standard reference counted interface. Use of this
@@ -159,8 +193,8 @@ public:
 class CRefMT
 {
 public:
-	static int Increment( int *p) { return ThreadInterlockedIncrement( (long *)p ); }
-	static int Decrement( int *p) { return ThreadInterlockedDecrement( (long *)p ); }
+	static int Increment( int *p) { return ThreadInterlockedIncrement( (int32 *)p ); }
+	static int Decrement( int *p) { return ThreadInterlockedDecrement( (int32 *)p ); }
 };
 
 class CRefST
@@ -348,8 +382,7 @@ public:
 //			referencing problems
 //-----------------------------------------------------------------------------
 
-#if 0
-template <class BASE_REFCOUNTED, int FINAL_REFS = 0, const char *pszName = NULL>
+template <class BASE_REFCOUNTED, int FINAL_REFS, const char *pszName>
 class CRefDebug : public BASE_REFCOUNTED
 {
 public:
@@ -380,7 +413,6 @@ public:
 	}
 #endif
 };
-#endif
 
 //-----------------------------------------------------------------------------
 

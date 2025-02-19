@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Basic BOT handling.
 //
@@ -116,7 +116,7 @@ CBasePlayer *BotPutInServer( bool bFrozen )
 }
 
 // Handler for the "bot" command.
-CON_COMMAND_F( bot_add, "Add a bot.", FCVAR_CHEAT )
+CON_COMMAND_F( "bot_add", "Add a bot.", FCVAR_CHEAT )
 {
 	// Look at -count.
 	int count = args.FindArgInt( "-count", 1 );
@@ -249,7 +249,7 @@ void Bot_UpdateDirection( CSDKBot *pBot )
 	float angledelta = 15.0;
 	QAngle angle;
 
-	int maxtries = (int)(360.0 / angledelta);
+	int maxtries = (int)360.0/angledelta;
 
 	if ( pBot->m_bLastTurnToRight )
 	{
@@ -268,7 +268,7 @@ void Bot_UpdateDirection( CSDKBot *pBot )
 
 		vecEnd = vecSrc + forward * 10;
 
-		UTIL_TraceHull( vecSrc, vecEnd, VEC_HULL_MIN, VEC_HULL_MAX, 
+		UTIL_TraceHull( vecSrc, vecEnd, VEC_HULL_MIN_SCALED( pBot ), VEC_HULL_MAX_SCALED( pBot ), 
 			MASK_PLAYERSOLID, pBot, COLLISION_GROUP_NONE, &trace );
 
 		if ( trace.fraction == 1.0 )
@@ -340,9 +340,7 @@ void Bot_HandleSendCmd( CSDKBot *pBot )
 	if ( strlen( bot_sendcmd.GetString() ) > 0 )
 	{
 		//send the cmd from this bot
-		CCommand args;
-		args.Tokenize( bot_sendcmd.GetString() );
-		pBot->ClientCommand( args );
+		pBot->ClientCommand( bot_sendcmd.GetString() );
 
 		bot_sendcmd.SetValue("");
 	}
@@ -462,16 +460,10 @@ void Bot_Think( CSDKBot *pBot )
 
 		Bot_FlipOut( pBot, cmd );
 
-		// Fix up the m_fEffects flags
-		pBot->PostClientMessagesSent();
-
-		
-		
 		cmd.viewangles = pBot->GetLocalAngles();
 		cmd.upmove = 0;
 		cmd.impulse = 0;
 	}
-
 
 	float frametime = gpGlobals->frametime;
 	RunPlayerMove( pBot, cmd, frametime );

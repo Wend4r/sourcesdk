@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -805,7 +805,7 @@ CPathTrack *CAI_TrackPather::FindClosestPointOnPath( CPathTrack *pPath,
 	float		flPathDist, flPathDist2D;
 
 	// NOTE: Gotta do it this crazy way because paths can be one-way.
-	Vector vecNearestPoint = Vector(0.0f, 0.0f, 0.0f);
+	Vector vecNearestPoint;
 	Vector vecNearestPathSegment;
 	for ( int i = 0; i < 2; ++i )
 	{

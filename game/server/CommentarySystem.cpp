@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: The system for handling director's commentary style production info in-game.
 //
@@ -19,7 +19,7 @@
 #include "isaverestore.h"
 #include "eventqueue.h"
 #include "saverestore_utlvector.h"
-#include "GameStats.h"
+#include "gamestats.h"
 #include "ai_basenpc.h"
 #include "Sprite.h"
 
@@ -352,7 +352,10 @@ public:
 		InitCommentary();
 
 		IGameEvent *event = gameeventmanager->CreateEvent( "playing_commentary" );
-		gameeventmanager->FireEventClientSide( event );
+		if ( event )
+		{
+			gameeventmanager->FireEventClientSide( event );
+		}
 	}
 
 	CPointCommentaryNode *GetNodeUnderCrosshair()
@@ -839,7 +842,7 @@ void CC_CommentaryChanged( IConVar *pConVar, const char *pOldString, float flOld
 		g_CommentarySystem.SetCommentaryMode( var.GetBool() );
 	}
 }
-ConVar commentary("commentary", "0", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX, "Desired commentary mode state.", CC_CommentaryChanged );
+ConVar commentary( "commentary", "0", FCVAR_NONE, "Desired commentary mode state.", CC_CommentaryChanged );
 
 //-----------------------------------------------------------------------------
 // Purpose: We need to revert back any convar changes that are made by the
@@ -881,7 +884,7 @@ bool IsListeningToCommentary( void )
 void CPointCommentaryNode::Spawn( void )
 {
 	// No model specified?
-	const char *szModel = (char *)STRING( GetModelName() );
+	char *szModel = (char *)STRING( GetModelName() );
 	if (!szModel || !*szModel)
 	{
 		szModel = "models/extras/info_speech.mdl";
@@ -1244,7 +1247,7 @@ void CPointCommentaryNode::UpdateViewThink( void )
 
 		// Blend to the target position over time. 
  		float flCurTime = (gpGlobals->curtime - m_flStartTime);
- 		float flBlendPerc = clamp( flCurTime / 2.0, 0, 1 );
+ 		float flBlendPerc = clamp( flCurTime * 0.5f, 0.f, 1.f );
 
 		// Figure out the current view position
 		Vector vecCurEye;
@@ -1269,7 +1272,7 @@ void CPointCommentaryNode::UpdateViewPostThink( void )
  		// Blend back to the player's position over time.
    		float flCurTime = (gpGlobals->curtime - m_flFinishedTime);
 		float flTimeToBlend = MIN( 2.0, m_flFinishedTime - m_flStartTime ); 
- 		float flBlendPerc = 1.0 - clamp( flCurTime / flTimeToBlend, 0, 1 );
+ 		float flBlendPerc = 1.0f - clamp( flCurTime / flTimeToBlend, 0.f, 1.f );
 
 		//Msg("OUT: CurTime %.2f, BlendTime: %.2f, Blend: %.3f\n", flCurTime, flTimeToBlend, flBlendPerc );
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -54,8 +54,8 @@ inline float cube( float f )
 
 CAI_PlaneSolver::CAI_PlaneSolver( CAI_BaseNPC *pNpc ) 
  :	m_pNpc( pNpc ),
-	m_PrevTarget( FLT_MAX, FLT_MAX, FLT_MAX ),
 	m_fSolvedPrev( false ),
+	m_PrevTarget( FLT_MAX, FLT_MAX, FLT_MAX ),
 	m_PrevSolution( 0 ),
 	m_ClosestHaveBeenToCurrent( FLT_MAX ),
 	m_TimeLastProgress( FLT_MAX ),

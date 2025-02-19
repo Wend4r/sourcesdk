@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Default schedules.
 //
@@ -331,8 +331,6 @@ int CAI_BaseNPC::TranslateSchedule( int scheduleType )
 				return SCHED_ALERT_WALK;
 			case NPC_STATE_COMBAT:
 				return SCHED_COMBAT_WALK;
-			default:
-				break;
 			}
 		}
 		break;

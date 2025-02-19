@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2006, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: generates 4 randum numbers in the range 0..1 quickly, using SIMD
 //
@@ -81,7 +81,7 @@ int GetSIMDRandContext( void )
 {
 	for(;;)
 	{
-		for(int i=0; i < (int)NELEMS( s_SIMDRandContexts ); i++)
+		for(int i=0; i < NELEMS( s_SIMDRandContexts ); i++)
 		{
 			if ( ! s_nRandContextsInUse[i] )				// available?
 			{

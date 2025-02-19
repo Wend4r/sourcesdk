@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ====
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Advisors. Large sluglike aliens with creepy psychic powers!
 //
@@ -433,10 +433,8 @@ int __cdecl AdvisorStagingComparator(const EHANDLE *pe1, const EHANDLE *pe2)
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4706)
-#endif
 
 void CNPC_Advisor::Activate()
 {
@@ -470,10 +468,8 @@ void CNPC_Advisor::Activate()
 	AssertMsg(m_hvStagingPositions.Count() > 0, "You did not specify any staging positions in the advisor's staging_ent_names !");
 #endif
 }
-
-#ifdef _MSC_VER
 #pragma warning(pop)
-#endif
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -821,7 +817,7 @@ void CNPC_Advisor::RunTask( const Task_t *pTask )
 				// swap them if necessary (1 must be the bottom)
 				if (m_levitateCallback.m_vecGoalPos1.z > m_levitateCallback.m_vecGoalPos2.z)
 				{
-					V_swap(m_levitateCallback.m_vecGoalPos1,m_levitateCallback.m_vecGoalPos2);
+					swap(m_levitateCallback.m_vecGoalPos1,m_levitateCallback.m_vecGoalPos2);
 				}
 
 				m_levitateCallback.m_flFloat = 0.06f; // this is an absolute accumulation upon gravity
@@ -1075,7 +1071,7 @@ void CNPC_Advisor::RunTask( const Task_t *pTask )
 #endif
 
 // helper function for testing whether or not an avisor is allowed to grab an object
-/*static bool AdvisorCanPickObject(CBasePlayer *pPlayer, CBaseEntity *pEnt)
+static bool AdvisorCanPickObject(CBasePlayer *pPlayer, CBaseEntity *pEnt)
 {
 	Assert( pPlayer != NULL );
 
@@ -1098,7 +1094,7 @@ void CNPC_Advisor::RunTask( const Task_t *pTask )
 	}
 
 	return true;
-}*/
+}
 
 
 #if NPC_ADVISOR_HAS_BEHAVIOR
@@ -1863,7 +1859,7 @@ CAdvisorLevitate::simresult_e	CAdvisorLevitate::Simulate( IPhysicsMotionControll
 		// if an object was recently thrown, just zero out its gravity.
 		if (pAdvisor->DidThrow(static_cast<CBaseEntity *>(pObject->GetGameData())))
 		{
-			linear = Vector( 0, 0, sv_gravity.GetFloat() );
+			linear = Vector( 0, 0, GetCurrentGravity() );
 			
 			return SIM_GLOBAL_ACCELERATION;
 		}
@@ -1881,12 +1877,12 @@ CAdvisorLevitate::simresult_e	CAdvisorLevitate::Simulate( IPhysicsMotionControll
 				if (pos.z > m_vecGoalPos2.z)
 				{
 					// turn around move down
-					linear = Vector( 0, 0, Square((1.0f - m_flFloat)) * sv_gravity.GetFloat() );
+					linear = Vector( 0, 0, Square((1.0f - m_flFloat)) * GetCurrentGravity() );
 					angular = Vector( 0, -5, 0 );
 				}
 				else
 				{	// keep moving up 
-					linear = Vector( 0, 0, (1.0f + m_flFloat) * sv_gravity.GetFloat() );
+					linear = Vector( 0, 0, (1.0f + m_flFloat) * GetCurrentGravity() );
 					angular = Vector( 0, 0, 10 );
 				}
 			}
@@ -1895,12 +1891,12 @@ CAdvisorLevitate::simresult_e	CAdvisorLevitate::Simulate( IPhysicsMotionControll
 				if (pos.z < m_vecGoalPos1.z)
 				{
 					// turn around move up
-					linear = Vector( 0, 0, Square((1.0f + m_flFloat)) * sv_gravity.GetFloat() );
+					linear = Vector( 0, 0, Square((1.0f + m_flFloat)) * GetCurrentGravity() );
 					angular = Vector( 0, 5, 0 );
 				}
 				else
 				{	// keep moving down
-					linear = Vector( 0, 0, (1.0f - m_flFloat) * sv_gravity.GetFloat() );
+					linear = Vector( 0, 0, (1.0f - m_flFloat) * GetCurrentGravity() );
 					angular = Vector( 0, 0, 10 );
 				}
 			}
@@ -1924,7 +1920,7 @@ CAdvisorLevitate::simresult_e	CAdvisorLevitate::Simulate( IPhysicsMotionControll
 		VectorNormalize( vecDir2 );
 		*/
 	
-		linear = Vector( 0, 0, m_flFloat * sv_gravity.GetFloat() );// + m_flFloat * 0.5 * ( vecDir1 + vecDir2 );
+		linear = Vector( 0, 0, m_flFloat * GetCurrentGravity() );// + m_flFloat * 0.5 * ( vecDir1 + vecDir2 );
 		angular = Vector( 0, 0, 10 );
 		
 		return SIM_GLOBAL_ACCELERATION;

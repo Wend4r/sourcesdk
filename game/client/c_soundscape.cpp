@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Soundscapes.txt resource file processor
 //
@@ -8,7 +8,7 @@
 
 #include "cbase.h"
 #include <KeyValues.h>
-#include "engine/ienginesound.h"
+#include "engine/IEngineSound.h"
 #include "filesystem.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "soundchars.h"
@@ -89,7 +89,7 @@ public:
 
 	void OnStopAllSounds()
 	{
-		m_params.ent.Set( NULL );
+		m_params.entIndex = 0;
 		m_params.soundscapeIndex = -1;
 		m_loopingSounds.Purge();
 		m_randomSounds.Purge();
@@ -150,11 +150,11 @@ public:
 		{
 			Msg( "- %d: %s\n", i, m_soundscapes[i]->GetName() );
 		}
-		if ( m_forcedSoundscapeIndex )
+		if ( m_forcedSoundscapeIndex >= 0 )
 		{
 			Msg( "- PLAYING DEBUG SOUNDSCAPE: %d [%s]\n", m_forcedSoundscapeIndex, SoundscapeNameByIndex(m_forcedSoundscapeIndex) );
 		}
-		Msg( "- CURRENT SOUNDSCAPE: %d [%s]\n", m_params.soundscapeIndex, SoundscapeNameByIndex(m_params.soundscapeIndex) );
+		Msg( "- CURRENT SOUNDSCAPE: %d [%s]\n", m_params.soundscapeIndex.Get(), SoundscapeNameByIndex(m_params.soundscapeIndex) );
 		Msg( "----------------------------------\n\n" );
 	}
 
@@ -390,7 +390,7 @@ void C_SoundscapeSystem::Shutdown()
 	m_loopingSounds.RemoveAll();
 	m_randomSounds.RemoveAll();
 	m_soundscapes.RemoveAll();
-	m_params.ent.Set( NULL );
+	m_params.entIndex = 0;
 	m_params.soundscapeIndex = -1;
 
 	while ( m_SoundscapeScripts.Count() > 0 )
@@ -554,12 +554,12 @@ void C_SoundscapeSystem::Update( float frametime )
 
 void C_SoundscapeSystem::UpdateAudioParams( audioparams_t &audio )
 {
-	if ( m_params.soundscapeIndex == audio.soundscapeIndex && m_params.ent.Get() == audio.ent.Get() )
+	if ( m_params.soundscapeIndex == audio.soundscapeIndex && m_params.entIndex == audio.entIndex )
 		return;
 
 	m_params = audio;
 	m_forcedSoundscapeIndex = -1;
-	if ( audio.ent.Get() && audio.soundscapeIndex >= 0 && audio.soundscapeIndex < m_soundscapes.Count() )
+	if ( audio.entIndex > 0 && audio.soundscapeIndex >= 0 && audio.soundscapeIndex < m_soundscapes.Count() )
 	{
 		DevReportSoundscapeName( audio.soundscapeIndex );
 		StartNewSoundscape( m_soundscapes[audio.soundscapeIndex] );
@@ -567,7 +567,7 @@ void C_SoundscapeSystem::UpdateAudioParams( audioparams_t &audio )
 	else
 	{
 		// bad index (and the soundscape file actually existed...)
-		if ( audio.ent.Get() != 0 &&
+		if ( audio.entIndex > 0 &&
 			 audio.soundscapeIndex != -1 )
 		{
 			DevMsg(1, "Error: Bad soundscape!\n");

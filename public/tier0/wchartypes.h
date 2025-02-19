@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:	All of our code is completely Unicode.  Instead of char, you should
 //			use wchar, uint8, or char8, as explained below.
@@ -20,12 +20,9 @@
 // Temporarily turn off Valve defines
 #include "tier0/valve_off.h"
 
-#if defined _WIN32 && !defined _WCHAR_T_DEFINED
+#if !defined(_WCHAR_T_DEFINED) && !defined(GNUC)
 typedef unsigned short wchar_t;
 #define _WCHAR_T_DEFINED
-#elif (defined _LINUX || defined __APPLE__) && !defined __WCHAR_TYPE__
-typedef unsigned short wchar_t;
-#define __WCHAR_TYPE__
 #endif
 
 // char8
@@ -89,6 +86,14 @@ typedef char tchar;
 #define tstring string
 #define __TFILE__ __FILE__
 #define TCHAR_IS_CHAR
+#endif
+
+#if defined( _MSC_VER ) || defined( WIN32 )
+typedef wchar_t uchar16;
+typedef unsigned int uchar32;
+#else
+typedef unsigned short uchar16;
+typedef wchar_t uchar32;
 #endif
 
 #ifdef FORCED_UNICODE

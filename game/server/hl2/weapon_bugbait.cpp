@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #include "in_buttons.h"
 #include "antlion_maker.h"
 #include "grenade_bugbait.h"
-#include "GameStats.h"
+#include "gamestats.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -71,7 +71,9 @@ IMPLEMENT_SERVERCLASS_ST(CWeaponBugBait, DT_WeaponBugBait)
 END_SEND_TABLE()
 
 LINK_ENTITY_TO_CLASS( weapon_bugbait, CWeaponBugBait );
+#ifndef HL2MP
 PRECACHE_WEAPON_REGISTER( weapon_bugbait );
+#endif
 
 BEGIN_DATADESC( CWeaponBugBait )
 
@@ -166,7 +168,7 @@ void CWeaponBugBait::Drop( const Vector &vecVelocity )
 
 		pSporeExplosion->m_flSpawnRate			= 16.0f;
 		pSporeExplosion->m_flParticleLifetime	= 0.5f;
-		pSporeExplosion->SetRenderColor( 0, (int)0.5f, (int)0.25f, (int)0.15f );
+		pSporeExplosion->SetRenderColor( 0.0f, 0.5f, 0.25f, 0.15f );
 
 		pSporeExplosion->m_flStartSize			= 32;
 		pSporeExplosion->m_flEndSize			= 48;

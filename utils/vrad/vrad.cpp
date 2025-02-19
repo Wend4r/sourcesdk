@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -34,7 +34,7 @@ every surface must be divided into at least two patches each axis
 */
 
 CUtlVector<CPatch>		g_Patches;			
-CUtlVector<int>			g_FacePatches;		// constains all patches, children first
+CUtlVector<int>			g_FacePatches;		// contains all patches, children first
 CUtlVector<int>			faceParents;		// contains only root patches, use next parent to iterate
 CUtlVector<int>			clusterChildren;
 CUtlVector<Vector>		emitlight;
@@ -60,6 +60,8 @@ bool		g_bDumpRtEnv = false;
 bool		bRed2Black = true;
 bool		g_bFastAmbient = false;
 bool        g_bNoSkyRecurse = false;
+bool		g_bDumpPropLightmaps = false;
+
 
 int			junk;
 
@@ -69,7 +71,6 @@ float		lightscale = 1.0;
 float		dlight_threshold = 0.1;  // was DIRECT_LIGHT constant
 
 char		source[MAX_PATH] = "";
-char		platformPath[MAX_PATH] = "";
 
 char		level_name[MAX_PATH] = "";	// map filename, without extension or path info
 
@@ -283,7 +284,7 @@ void ReadLightFile (char *filename)
 			texlights[j].filename = filename;
 			file_texlights ++;
 			
-			num_texlights = MAX( num_texlights, j + 1 );
+			num_texlights = max( num_texlights, j + 1 );
 		}
 	}
 	qprintf ( "[%i texlights parsed from '%s']\n\n", file_texlights, filename);
@@ -818,7 +819,7 @@ int CreateChildPatch( int nParentIndex, winding_t *pWinding, float flArea, const
 			if ( (child->face_maxs[i] == child->maxs[i] || child->face_mins[i] == child->mins[i] )
 			  && total[i] > minchop )
 			{
-				child->chop = MAX( minchop, child->chop / 2 );
+				child->chop = max( minchop, child->chop / 2 );
 				break;
 			}
 		}
@@ -878,7 +879,7 @@ void SubdividePatch( int ndxPatch )
 			if (patch->chop > minchop)
 			{
 				bSubdivide = true;
-				patch->chop = MAX( minchop, patch->chop / 2 );
+				patch->chop = max( minchop, patch->chop / 2 );
 			}
 		}
 	}
@@ -2019,12 +2020,14 @@ bool RadWorld_Go()
 	}
 
 	// build initial facelights
+#ifdef MPI
 	if (g_bUseMPI) 
 	{
 		// RunThreadsOnIndividual (numfaces, true, BuildFacelights);
 		RunMPIBuildFacelights();
 	}
 	else 
+#endif
 	{
 		RunThreadsOnIndividual (numfaces, true, BuildFacelights);
 	}
@@ -2078,13 +2081,19 @@ bool RadWorld_Go()
 		StaticDispMgr()->InsertPatchSampleDataIntoHashTable();
 		StaticDispMgr()->EndTimer();
 
+#ifdef MPI
 		// blend bounced light into direct light and save
 		VMPI_SetCurrentStage( "FinalLightFace" );
 		if ( !g_bUseMPI || g_bMPIMaster )
+#endif
+		{
 			RunThreadsOnIndividual (numfaces, true, FinalLightFace);
+		}
 		
 		// Distribute the lighting data to workers.
+#ifdef MPI
 		VMPI_DistributeLightData();
+#endif
 			
 		Msg("FinalLightFace Done\n"); fflush(stdout);
 	}
@@ -2119,6 +2128,7 @@ void InitDumpPatchesFiles()
 	}
 }
 
+extern IFileSystem *g_pOriginalPassThruFileSystem;
 
 void VRAD_LoadBSP( char const *pFilename )
 {
@@ -2141,7 +2151,9 @@ void VRAD_LoadBSP( char const *pFilename )
 	// so we prepend qdir here.
 	strcpy( source, ExpandPath( source ) );
 
+#ifdef MPI
 	if ( !g_bUseMPI )
+#endif
 	{
 		// Setup the logfile.
 		char logFile[512];
@@ -2178,12 +2190,28 @@ void VRAD_LoadBSP( char const *pFilename )
 	Q_DefaultExtension(incrementfile, ".r0", sizeof(incrementfile));
 	Q_DefaultExtension(source, ".bsp", sizeof( source ));
 
-	GetPlatformMapPath( source, platformPath, 0, MAX_PATH );
-
-	Msg( "Loading %s\n", platformPath );
+	Msg( "Loading %s\n", source );
+#ifdef MPI
 	VMPI_SetCurrentStage( "LoadBSPFile" );
-	LoadBSPFile (platformPath);
-	
+#endif
+	LoadBSPFile (source);
+
+	// Add this bsp to our search path so embedded resources can be found
+#ifdef MPI
+	if ( g_bUseMPI && g_bMPIMaster )
+	{
+		// MPI Master, MPI workers don't need to do anything
+		g_pOriginalPassThruFileSystem->AddSearchPath(source, "GAME", PATH_ADD_TO_HEAD);
+		g_pOriginalPassThruFileSystem->AddSearchPath(source, "MOD", PATH_ADD_TO_HEAD);
+	}
+	else if ( !g_bUseMPI )
+#endif
+	{
+		// Non-MPI
+		g_pFullFileSystem->AddSearchPath(source, "GAME", PATH_ADD_TO_HEAD);
+		g_pFullFileSystem->AddSearchPath(source, "MOD", PATH_ADD_TO_HEAD);
+	}
+
 	// now, set whether or not static prop lighting is present
 	if (g_bStaticPropLighting)
 		g_LevelFlags |= g_bHDR? LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_HDR : LVLFLAGS_BAKED_STATIC_PROP_LIGHTING_NONHDR;
@@ -2308,9 +2336,11 @@ void VRAD_Finish()
 		PrintBSPFileSizes();
 	}
 
-	Msg( "Writing %s\n", platformPath );
+	Msg( "Writing %s\n", source );
+#ifdef MPI
 	VMPI_SetCurrentStage( "WriteBSPFile" );
-	WriteBSPFile(platformPath);
+#endif
+	WriteBSPFile(source);
 
 	if ( g_bDumpPatches )
 	{
@@ -2350,6 +2380,8 @@ void VRAD_Init()
 int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 {
 	*onlydetail = false;
+
+	int mapArg = -1;
 
 	// default to LDR
 	SetHDRMode( false );
@@ -2404,21 +2436,26 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 		{
 			g_bLargeDispSampleRadius = true;
 		}
+		else if (!Q_stricmp( argv[i], "-dumppropmaps"))
+		{
+			g_bDumpPropLightmaps = true;
+		}
 		else if (!Q_stricmp(argv[i],"-bounce"))
 		{
 			if ( ++i < argc )
 			{
-				numbounce = atoi (argv[i]);
-				if ( numbounce < 0 )
+				int bounceParam = atoi (argv[i]);
+				if ( bounceParam < 0 )
 				{
 					Warning("Error: expected non-negative value after '-bounce'\n" );
-					return 1;
+					return -1;
 				}
+				numbounce = (unsigned)bounceParam;
 			}
 			else
 			{
 				Warning("Error: expected a value after '-bounce'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-verbose") || !Q_stricmp(argv[i],"-v"))
@@ -2433,13 +2470,13 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 				if ( numthreads <= 0 )
 				{
 					Warning("Error: expected positive value after '-threads'\n" );
-					return 1;
+					return -1;
 				}
 			}
 			else
 			{
 				Warning("Error: expected a value after '-threads'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if ( !Q_stricmp(argv[i], "-lights" ) )
@@ -2451,7 +2488,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected a filepath after '-lights'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-noextra"))
@@ -2487,7 +2524,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected a scale factor after '-extrasky'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-centersamples"))
@@ -2503,7 +2540,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected an angle after '-smooth'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-dlightmap"))
@@ -2521,7 +2558,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected a value after '-luxeldensity'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if( !Q_stricmp( argv[i], "-low" ) )
@@ -2547,7 +2584,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected an angular extent value (0..180) '-softsun'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if ( !Q_stricmp( argv[i], "-maxdispsamplesize" ) )
@@ -2559,7 +2596,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning( "Error: expected a sample size after '-maxdispsamplesize'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if ( stricmp( argv[i], "-StopOnExit" ) == 0 )
@@ -2576,7 +2613,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 		else if ( !Q_stricmp( argv[i], CMDLINEOPTION_NOVCONFIG ) )
 		{
 		}
-		else if ( !Q_stricmp( argv[i], "-vproject" ) || !Q_stricmp( argv[i], "-game" ) )
+		else if ( !Q_stricmp( argv[i], "-vproject" ) || !Q_stricmp( argv[i], "-game" ) || !Q_stricmp( argv[i], "-insert_search_path" ) )
 		{
 			++i;
 		}
@@ -2600,13 +2637,13 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 				if ( maxchop < 1 )
 				{
 					Warning("Error: expected positive value after '-maxchop'\n" );
-					return 1;
+					return -1;
 				}
 			}
 			else
 			{
 				Warning("Error: expected a value after '-maxchop'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-chop"))
@@ -2617,14 +2654,14 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 				if ( minchop < 1 )
 				{
 					Warning("Error: expected positive value after '-chop'\n" );
-					return 1;
+					return -1;
 				}
-				minchop = MIN( minchop, maxchop );
+				minchop = min( minchop, maxchop );
 			}
 			else
 			{
 				Warning("Error: expected a value after '-chop'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if ( !Q_stricmp( argv[i], "-dispchop" ) )
@@ -2635,13 +2672,13 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 				if ( dispchop < 1.0f )
 				{
 					Warning( "Error: expected positive value after '-dipschop'\n" );
-					return 1;
+					return -1;
 				}
 			}
 			else
 			{
 				Warning( "Error: expected a value after '-dispchop'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if ( !Q_stricmp( argv[i], "-disppatchradius" ) )
@@ -2652,13 +2689,13 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 				if ( g_MaxDispPatchRadius < 10.0f )
 				{
 					Warning( "Error: g_MaxDispPatchRadius < 10.0\n" );
-					return 1;
+					return -1;
 				}
 			}
 			else
 			{
 				Warning( "Error: expected a value after '-disppatchradius'\n" );
-				return 1;
+				return -1;
 			}
 		}
 
@@ -2672,7 +2709,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected a value after '-scale'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-ambient"))
@@ -2686,7 +2723,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected three color values after '-ambient'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-dlight"))
@@ -2698,7 +2735,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected a value after '-dlight'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-sky"))
@@ -2710,7 +2747,7 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected a value after '-sky'\n" );
-				return 1;
+				return -1;
 			}
 		}
 		else if (!Q_stricmp(argv[i],"-notexscale"))
@@ -2726,10 +2763,11 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			else
 			{
 				Warning("Error: expected a light threshold after '-coring'\n" );
-				return 1;
+				return -1;
 			}
 		}
 #endif
+#ifdef MPI
 		// NOTE: the -mpi checks must come last here because they allow the previous argument 
 		// to be -mpi as well. If it game before something else like -game, then if the previous
 		// argument was -mpi and the current argument was something valid like -game, it would skip it.
@@ -2742,13 +2780,18 @@ int ParseCommandLine( int argc, char **argv, bool *onlydetail )
 			if ( i == argc - 1 && V_stricmp( argv[i], "-mpi_ListParams" ) != 0 )
 				break;
 		}
+#endif
+		else if ( mapArg == -1 )
+		{
+			mapArg = i;
+		}
 		else
 		{
-			break;
+			return -1;
 		}
 	}
 
-	return i;
+	return mapArg;
 }
 
 
@@ -2780,7 +2823,9 @@ void PrintUsage( int argc, char **argv )
 		"  -final          : High quality processing. equivalent to -extrasky 16.\n"
 		"  -extrasky n     : trace N times as many rays for indirect light and sky ambient.\n"
 		"  -low            : Run as an idle-priority process.\n"
+#ifdef MPI
 		"  -mpi            : Use VMPI to distribute computations.\n"
+#endif
 		"  -rederror       : Show errors in red.\n"
 		"\n"
 		"  -vproject <directory> : Override the VPROJECT environment variable.\n"
@@ -2803,7 +2848,9 @@ void PrintUsage( int argc, char **argv )
 		"  -dlightmap      : Force direct lighting into different lightmap than\n"
 		"                    radiosity.\n"
 		"  -stoponexit	   : Wait for a keypress on exit.\n"
+#ifdef MPI
 		"  -mpi_pw <pw>    : Use a password to choose a specific set of VMPI workers.\n"
+#endif
 		"  -nodetaillight  : Don't light detail props.\n"
 		"  -centersamples  : Move sample centers.\n"
 		"  -luxeldensity # : Rescale all luxels by the specified amount (default: 1.0).\n"
@@ -2860,7 +2907,6 @@ void PrintUsage( int argc, char **argv )
 #endif
 }
 
-
 int RunVRAD( int argc, char **argv )
 {
 #if defined(_MSC_VER) && ( _MSC_VER >= 1310 )
@@ -2875,12 +2921,17 @@ int RunVRAD( int argc, char **argv )
 
 	bool onlydetail;
 	int i = ParseCommandLine( argc, argv, &onlydetail );
-	if (i != argc - 1)
+	if (i == -1)
 	{
 		PrintUsage( argc, argv );
 		DeleteCmdLine( argc, argv );
 		CmdLib_Exit( 1 );
 	}
+
+	// Initialize the filesystem, so additional commandline options can be loaded
+	Q_StripExtension( argv[ i ], source, sizeof( source ) );
+	CmdLib_InitFileSystem( argv[ i ] );
+	Q_FileBase( source, source, sizeof( source ) );
 
 	VRAD_LoadBSP( argv[i] );
 
@@ -2893,7 +2944,9 @@ int RunVRAD( int argc, char **argv )
 
 	VRAD_Finish();
 
+#ifdef MPI
 	VMPI_SetCurrentStage( "master done" );
+#endif
 
 	DeleteCmdLine( argc, argv );
 	CmdLib_Cleanup();
@@ -2908,19 +2961,18 @@ int VRAD_Main(int argc, char **argv)
 	VRAD_Init();
 
 	// This must come first.
+#ifdef MPI
 	VRAD_SetupMPI( argc, argv );
+#endif
 
-	// Initialize the filesystem, so additional commandline options can be loaded
-	Q_StripExtension( argv[ argc - 1 ], source, sizeof( source ) );
-	CmdLib_InitFileSystem( argv[ argc - 1 ] );
-	Q_FileBase( source, source, sizeof( source ) );
-
+#ifdef MPI
 #if !defined( _DEBUG )
 	if ( g_bUseMPI && !g_bMPIMaster )
 	{
 		SetupToolsMinidumpHandler( VMPI_ExceptionFilter );
 	}
 	else
+#endif
 #endif
 	{
 		LoadCmdLineFromFile( argc, argv, source, "vrad" ); // Don't do this if we're a VMPI worker..

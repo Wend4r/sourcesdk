@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -232,7 +232,7 @@ void CPropJetski::Think(void)
 		int iSequence = SelectWeightedSequence( ACT_IDLE );
 		if ( iSequence > ACTIVITY_NOT_AVAILABLE )
 		{
-			SetCycle(0);
+			m_flCycle = 0;
 			m_flAnimTime = gpGlobals->curtime;
 			ResetSequence( iSequence );
 			ResetClientsideFrame();

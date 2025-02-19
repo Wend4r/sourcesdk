@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -22,6 +22,7 @@
 #include "vmpi_tools_shared.h"
 #include <conio.h>
 #include "scratchpad_helpers.h"
+#include "tier0/fasttimer.h"
 
 
 #define VMPI_VVIS_PACKET_ID						1
@@ -35,9 +36,6 @@
 	#define VMPI_SUBPACKETID_BASEPORTALVIS_SYNC	11
 	#define VMPI_SUBPACKETID_PORTALFLOW_SYNC	12
 	#define VMPI_SUBPACKETID_MC_ADDR			13
-
-// DistributeWork owns this packet ID.
-#define VMPI_DISTRIBUTEWORK_PACKETID			2
 
 
 extern bool fastvis;
@@ -107,7 +105,6 @@ bool VVIS_DispatchFn( MessageBuffer *pBuf, int iSource, int iPacketID )
 	}
 }
 CDispatchReg g_VVISDispatchReg( VMPI_VVIS_PACKET_ID, VVIS_DispatchFn ); // register to handle the messages we want
-CDispatchReg g_DistributeWorkReg( VMPI_DISTRIBUTEWORK_PACKETID, DistributeWorkDispatch );
 
 
 
@@ -181,7 +178,7 @@ void ReceiveBasePortalVis( uint64 iWorkUnit, MessageBuffer *pBuf, int iWorker )
 	portal_t * p = &portals[iWorkUnit];
 	if ( p->portalflood != 0 || p->portalfront != 0 || p->portalvis != 0) 
 	{
-		Msg("Duplicate portal %d\n", iWorkUnit);
+		Msg("Duplicate portal %llu\n", iWorkUnit);
 	}
 	
 	if ( pBuf->getLen() - pBuf->getOffset() != portalbytes*2 )
@@ -224,7 +221,6 @@ void RunMPIBasePortalVis()
 	g_CPUTime.Init();
 	double elapsed = DistributeWork( 
 		g_numportals * 2,		// # work units
-		VMPI_DISTRIBUTEWORK_PACKETID,	// packet ID
 		ProcessBasePortalVis,	// Worker function to process work units
 		ReceiveBasePortalVis	// Master function to receive work results
 		);
@@ -605,7 +601,6 @@ void RunMPIPortalFlow()
 	g_CPUTime.Init();
 	double elapsed = DistributeWork( 
 		g_numportals * 2,		// # work units
-		VMPI_DISTRIBUTEWORK_PACKETID,	// packet ID
 		ProcessPortalFlow,		// Worker function to process work units
 		ReceivePortalFlow		// Master function to receive work results
 		);
@@ -628,7 +623,7 @@ void RunMPIPortalFlow()
 		Msg( "VVIS worker finished. Over and out.\n" );
 		VMPI_SetCurrentStage( "worker done" );
 
-		CmdLib_Exit( 0 );
+		Plat_ExitProcess( 0 );
 	}
 
 	if ( g_bMPIMaster )

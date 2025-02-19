@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements a sniper rifle weapon.
 //			
@@ -364,7 +364,7 @@ void CWeaponSniperRifle::Zoom( void )
 		return;
 	}
 
-	if (m_nZoomLevel >= (int)(sizeof(g_nZoomFOV) / sizeof(g_nZoomFOV[0])))
+	if (m_nZoomLevel >= sizeof(g_nZoomFOV) / sizeof(g_nZoomFOV[0]))
 	{
 		if ( pPlayer->SetFOV( this, 0 ) )
 		{

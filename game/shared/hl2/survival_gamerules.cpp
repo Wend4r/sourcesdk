@@ -1,3 +1,4 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
 #include "cbase.h"
 
 #ifdef HL2_EPISODIC
@@ -206,7 +207,7 @@ void CHalfLife2Survival::ParseSurvivalSettings( KeyValues *pSubKey )
 		}
 		else if ( !stricmp( pTestKey->GetName(), "spawnhealth" ) )
 		{
-			m_SurvivalSettings.m_iSpawnHealth = pTestKey->GetInt( 0, 100 );
+			m_SurvivalSettings.m_iSpawnHealth = pTestKey->GetInt( NULL, 100 );
 		}
 		else if ( !stricmp( pTestKey->GetName(), "allowedpickups" ) )
 		{

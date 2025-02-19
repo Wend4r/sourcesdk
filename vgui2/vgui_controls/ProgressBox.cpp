@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -26,7 +26,7 @@
 using namespace vgui;
 
 #ifndef max
-#define MAX(a,b)            (((a) > (b)) ? (a) : (b))
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
 
 //-----------------------------------------------------------------------------

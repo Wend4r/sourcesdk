@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -79,7 +79,7 @@ bool CFuncBrush::CreateVPhysics( void )
 		int contents = modelinfo->GetModelContents( GetModelIndex() );
 		if ( ! (contents & (MASK_SOLID|MASK_PLAYERSOLID|MASK_NPCSOLID)) )
 		{
-			// leave the physics shadow there in case it has crap constrained to it
+			// leave the physics shadow there in case it has stuff constrained to it
 			// but disable collisions with it
 			pPhys->EnableCollisions( false );
 		}
@@ -191,7 +191,7 @@ void CFuncBrush::TurnOn( void )
 }
 
 
-bool CFuncBrush::IsOn( void )
+bool CFuncBrush::IsOn( void ) const
 {
 	return !IsEffectActive( EF_NODRAW );
 }

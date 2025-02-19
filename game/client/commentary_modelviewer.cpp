@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2006, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -7,7 +7,7 @@
 
 #include "cbase.h"
 #include "vgui/IInput.h"
-#include <vgui/IVGUI.h>
+#include <vgui/IVGui.h>
 #include "commentary_modelviewer.h"
 #include "iclientmode.h"
 #include "baseviewport.h"
@@ -194,7 +194,7 @@ void CCommentaryModelViewer::HandleMovementInput( void )
 	{
 		if ( m_bTranslating ) 
 		{
-			m_pModelPanel->m_pModelInfo->m_vecOriginOffset.y = clamp( m_pModelPanel->m_pModelInfo->m_vecOriginOffset.y + m_flYawSpeed, -100, 100 );
+			m_pModelPanel->m_pModelInfo->m_vecOriginOffset.y = clamp( m_pModelPanel->m_pModelInfo->m_vecOriginOffset.y + m_flYawSpeed, -100.f, 100.f );
 		}
 		else
 		{
@@ -228,7 +228,7 @@ void CCommentaryModelViewer::HandleMovementInput( void )
 	{
 		if ( m_bTranslating ) 
 		{
-			m_pModelPanel->m_pModelInfo->m_vecOriginOffset.z = clamp( m_pModelPanel->m_pModelInfo->m_vecOriginOffset.z + m_flZoomSpeed, -100, 300 );
+			m_pModelPanel->m_pModelInfo->m_vecOriginOffset.z = clamp( m_pModelPanel->m_pModelInfo->m_vecOriginOffset.z + m_flZoomSpeed, -100.f, 300.f );
 		}
 		else
 		{

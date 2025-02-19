@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ====
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // To give an NPC the ability to shoot while moving:
 //
@@ -138,8 +138,6 @@ void CAI_MoveAndShootOverlay::UpdateMoveShootActivity( bool bMoveAimAtEnemy )
 		case ACT_RUN:
 			newActivity = ACT_RUN_AIM;
 			break;
-		default:
-			break;
 		}
 	}
 	else
@@ -151,8 +149,6 @@ void CAI_MoveAndShootOverlay::UpdateMoveShootActivity( bool bMoveAimAtEnemy )
 			break;
 		case ACT_RUN_AIM:
 			newActivity = ACT_RUN;
-			break;
-		default:
 			break;
 		}
 	}

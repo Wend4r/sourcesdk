@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -492,8 +492,8 @@ bool CAI_Navigator::SetGoal( const AI_NavGoal_t &goal, unsigned flags )
 		DbgNavMsg(  GetOuter(), "Failed to pathfind to nav goal:\n" );
 		DbgNavMsg1( GetOuter(), "   Type:      %s\n", AIGetGoalTypeText( goal.type) );
 		DbgNavMsg1( GetOuter(), "   Dest:      %s\n", NavVecToString( goal.dest ) );
-		DbgNavMsg1( GetOuter(), "   Dest node: %d\n", goal.destNode );
-		DbgNavMsg1( GetOuter(), "   Target:    %#x\n", goal.pTarget );
+		DbgNavMsg1( GetOuter(), "   Dest node: %p\n", goal.destNode );
+		DbgNavMsg1( GetOuter(), "   Target:    %p\n", goal.pTarget );
 
 		if ( flags & AIN_DISCARD_IF_FAIL )
 			ClearPath();
@@ -503,8 +503,8 @@ bool CAI_Navigator::SetGoal( const AI_NavGoal_t &goal, unsigned flags )
 		DbgNavMsg(  GetOuter(), "New goal set:\n" );
 		DbgNavMsg1( GetOuter(), "   Type:         %s\n", AIGetGoalTypeText( goal.type) );
 		DbgNavMsg1( GetOuter(), "   Dest:         %s\n", NavVecToString( goal.dest ) );
-		DbgNavMsg1( GetOuter(), "   Dest node:    %d\n", goal.destNode );
-		DbgNavMsg1( GetOuter(), "   Target:       %#x\n", goal.pTarget );
+		DbgNavMsg1( GetOuter(), "   Dest node:    %p\n", goal.destNode );
+		DbgNavMsg1( GetOuter(), "   Target:       %p\n", goal.pTarget );
 		DbgNavMsg1( GetOuter(), "   Tolerance:    %.1f\n", GetPath()->GetGoalTolerance() );
 		DbgNavMsg1( GetOuter(), "   Waypoint tol: %.1f\n", GetPath()->GetWaypointTolerance() );
 		DbgNavMsg1( GetOuter(), "   Activity:     %s\n", GetOuter()->GetActivityName(GetPath()->GetMovementActivity()) );
@@ -1221,14 +1221,17 @@ float CAI_Navigator::GetPathTimeToGoal()
 
 AI_PathNode_t CAI_Navigator::GetNearestNode()
 {
-	return (AI_PathNode_t)( GetPathfinder()->NearestNodeToNPC() );
+#ifdef WIN32
+	COMPILE_TIME_ASSERT( (intp)AIN_NO_NODE == (intp)NO_NODE );
+#endif
+	return (AI_PathNode_t)(intp)( GetPathfinder()->NearestNodeToNPC() );
 }
 
 //-----------------------------------------------------------------------------
 
 Vector CAI_Navigator::GetNodePos( AI_PathNode_t node )
 {
-	return GetNetwork()->GetNode((int)node)->GetPosition(GetHullType());
+	return GetNetwork()->GetNode((intp)node)->GetPosition(GetHullType());
 }
 
 //-----------------------------------------------------------------------------
@@ -2054,7 +2057,7 @@ bool CAI_Navigator::DelayNavigationFailure( const AIMoveTrace_t &trace )
 
 // @TODO (toml 11-12-02): right now, physics can pull the box back pretty far even though a hull
 // trace said we could make the move. Jay is looking into it. For now, if the NPC physics shadow
-// is active, allow for a bugger tolerance
+// is active, allow for a larger tolerance
 extern ConVar npc_vphysics;
 
 bool test_it = false;
@@ -2324,9 +2327,6 @@ bool CAI_Navigator::PreMove()
 				GetMotor()->MoveJumpStop();
 				break;
 			}
-
-			default:
-				break;
 		}
 
 		SetNavType( NAV_GROUND );
@@ -2531,8 +2531,6 @@ bool CAI_Navigator::Move( float flInterval )
 						case NAV_GROUND:
 						case NAV_FLY:
 							OnMoveBlocked( &moveResult );
-							break;
-						default:
 							break;
 						}
 						break;
@@ -3823,9 +3821,6 @@ bool CAI_Navigator::DoFindPath( void )
 			}
 		}
 		break;
-	
-	default:
-		break;
 	}
 
 	return returnCode;
@@ -4138,18 +4133,18 @@ void CAI_Navigator::DrawDebugRouteOverlay(void)
 	if (waypoint)
 	{
 		Vector RGB = GetRouteColor(waypoint->NavType(), waypoint->Flags());
-		NDebugOverlay::Line(GetLocalOrigin(), waypoint->GetPos(), (int)RGB[0], (int)RGB[1], (int)RGB[2], true,0);
+		NDebugOverlay::Line(GetLocalOrigin(), waypoint->GetPos(), RGB[0],RGB[1],RGB[2], true,0);
 	}
 
 	while (waypoint) 
 	{
 		Vector RGB = GetWaypointColor(waypoint->NavType());
-		NDebugOverlay::Box(waypoint->GetPos(), Vector(-3,-3,-3), Vector(3,3,3), (int)RGB[0], (int)RGB[1], (int)RGB[2], true, 0);
+		NDebugOverlay::Box(waypoint->GetPos(), Vector(-3,-3,-3),Vector(3,3,3), RGB[0],RGB[1],RGB[2], true,0);
 
 		if (waypoint->GetNext()) 
 		{
 			Vector RGB = GetRouteColor(waypoint->GetNext()->NavType(), waypoint->GetNext()->Flags());
-			NDebugOverlay::Line(waypoint->GetPos(), waypoint->GetNext()->GetPos(), (int)RGB[0], (int)RGB[1], (int)RGB[2], true, 0);
+			NDebugOverlay::Line(waypoint->GetPos(), waypoint->GetNext()->GetPos(),RGB[0],RGB[1],RGB[2], true,0);
 		}
 		waypoint = waypoint->GetNext();
 	}

@@ -1,4 +1,4 @@
-//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -73,13 +73,23 @@ typedef struct player_info_s player_info_t;
 #define DLLEXPORT /* */
 #endif
 
-#define INTERFACEVERSION_VENGINESERVER	"VEngineServer023"
+#define INTERFACEVERSION_VENGINESERVER_VERSION_21	"VEngineServer021"
+#define INTERFACEVERSION_VENGINESERVER_VERSION_22	"VEngineServer022"
+#define INTERFACEVERSION_VENGINESERVER				"VEngineServer023"
 #define INTERFACEVERSION_VENGINESERVER_INT			23
 
 struct bbox_t
 {
 	Vector mins;
 	Vector maxs;
+};
+
+struct WorkshopMapDesc_t
+{
+	char	szMapName[MAX_PATH];
+	char	szOriginalMapName[MAX_PATH];
+	uint32	uTimestamp;
+	bool	bDownloaded;
 };
 
 //-----------------------------------------------------------------------------
@@ -90,16 +100,16 @@ abstract_class IVEngineServer
 public:
 	// Tell engine to change level ( "changelevel s1\n" or "changelevel2 s1 s2\n" )
 	virtual void		ChangeLevel( const char *s1, const char *s2 ) = 0;
-	
+
 	// Ask engine whether the specified map is a valid map file (exists and has valid version number).
 	virtual int			IsMapValid( const char *filename ) = 0;
-	
+
 	// Is this a dedicated server?
 	virtual bool		IsDedicatedServer( void ) = 0;
-	
+
 	// Is in Hammer editing mode?
 	virtual int			IsInEditMode( void ) = 0;
-	
+
 	// Add to the server/client lookup/precache table, the specified string is given a unique index
 	// NOTE: The indices for PrecacheModel are 1 based
 	//  a 0 returned from those methods indicates the model or sound was not correctly precached
@@ -178,7 +188,7 @@ public:
 	// Execute any commands currently in the command parser immediately (instead of once per frame)
 	virtual void		ServerExecute( void ) = 0;
 	// Issue the specified command to the specified client (mimics that client typing the command at the console).
-	virtual void		ClientCommand( edict_t *pEdict, const char *szFmt, ... ) = 0;
+	virtual void		ClientCommand( edict_t *pEdict, PRINTF_FORMAT_STRING const char *szFmt, ... ) = 0;
 
 	// Set the lightstyle to the specified value and network the change to any connected clients.  Note that val must not 
 	//  change place in memory (use MAKE_STRING) for anything that's not compiled into your mod.
@@ -203,10 +213,10 @@ public:
 	// SINGLE PLAYER/LISTEN SERVER ONLY (just matching the client .dll api for this)
 	// Prints the formatted string to the notification area of the screen ( down the right hand edge
 	//  numbered lines starting at position 0
-	virtual void		Con_NPrintf( int pos, const char *fmt, ... ) = 0;
+	virtual void		Con_NPrintf( int pos, PRINTF_FORMAT_STRING const char *fmt, ... ) = 0;
 	// SINGLE PLAYER/LISTEN SERVER ONLY(just matching the client .dll api for this)
 	// Similar to Con_NPrintf, but allows specifying custom text color and duration information
-	virtual void		Con_NXPrintf( const struct con_nprint_s *info, const char *fmt, ... ) = 0;
+	virtual void		Con_NXPrintf( const struct con_nprint_s *info, PRINTF_FORMAT_STRING const char *fmt, ... ) = 0;
 
 	// Change a specified player's "view entity" (i.e., use the view entity position/orientation for rendering the client view)
 	virtual void		SetView( const edict_t *pClient, const edict_t *pViewent ) = 0;
@@ -338,7 +348,7 @@ public:
 
 	// Tells the engine we can immdiately re-use all edict indices
 	// even though we may not have waited enough time
-	virtual void			AllowImmediateEdictReuse( ) = 0;
+	virtual void			AllowImmediateEdictReuse( ) = 0;	
 
 	// Returns true if the engine is an internal build. i.e. is using the internal bugreporter.
 	virtual bool		IsInternalBuild( void ) = 0;
@@ -410,8 +420,6 @@ public:
 	// Server version from the steam.inf, this will be compared to the GC version
 	virtual int GetServerVersion() const = 0;
 
-	// Only in VEngineServer022 and later
-	
 	// Get sv.GetTime()
 	virtual float GetServerTime() const = 0;
 
@@ -444,17 +452,20 @@ public:
 	};
 	virtual eFindMapResult FindMap( /* in/out */ char *pMapName, int nMapNameMax ) = 0;
 	
-	virtual IReplaySystem *GetReplay() = 0;
+	virtual void SetPausedForced( bool bPaused, float flDuration = -1.f ) = 0;
 };
 
-#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_4	"ServerGameDLL004"
-#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_5	"ServerGameDLL005"
-#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_6	"ServerGameDLL006"
-#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_7	"ServerGameDLL007"
+// These only differ in new items added to the end
+typedef IVEngineServer IVEngineServer021;
+typedef IVEngineServer IVEngineServer022;
+
+
 #define INTERFACEVERSION_SERVERGAMEDLL_VERSION_8	"ServerGameDLL008"
 #define INTERFACEVERSION_SERVERGAMEDLL_VERSION_9	"ServerGameDLL009"
-#define INTERFACEVERSION_SERVERGAMEDLL				"ServerGameDLL010"
-#define INTERFACEVERSION_SERVERGAMEDLL_INT			10
+#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_10	"ServerGameDLL010"
+#define INTERFACEVERSION_SERVERGAMEDLL_VERSION_11	"ServerGameDLL011"
+#define INTERFACEVERSION_SERVERGAMEDLL				"ServerGameDLL012"
+#define INTERFACEVERSION_SERVERGAMEDLL_INT			12
 
 class IServerGCLobby;
 
@@ -630,6 +641,11 @@ public:
 
 	// Called to see if the game server is okay with a manual changelevel or map command
 	virtual bool			IsManualMapChangeOkay( const char **pszReason ) = 0;
+
+	// Josh: Allows the engine over all workshop maps and get some information about them.
+	// Used primarily for listmaps code.
+	// Returns true if uIndex was valid, false if invalid.
+	virtual bool			GetWorkshopMap( uint32 uIndex, WorkshopMapDesc_t *pDesc ) = 0;
 };
 
 typedef IServerGameDLL IServerGameDLL008;
@@ -672,7 +688,8 @@ public:
 };
 
 #define INTERFACEVERSION_SERVERGAMECLIENTS_VERSION_3	"ServerGameClients003"
-#define INTERFACEVERSION_SERVERGAMECLIENTS				"ServerGameClients004"
+#define INTERFACEVERSION_SERVERGAMECLIENTS_VERSION_4	"ServerGameClients004"
+#define INTERFACEVERSION_SERVERGAMECLIENTS				"ServerGameClients005"
 
 //-----------------------------------------------------------------------------
 // Purpose: Player / Client related functions
@@ -737,10 +754,13 @@ public:
 
 	// Hook for player spawning
 	virtual void			ClientSpawned( edict_t *pPlayer ) = 0;
+
+	// Hook for player voice
+	virtual void			ClientVoice( edict_t *pPlayer ) = 0;
 };
 
 typedef IServerGameClients IServerGameClients003;
-
+typedef IServerGameClients IServerGameClients004;
 
 #define INTERFACEVERSION_UPLOADGAMESTATS		"ServerUploadGameStats001"
 
@@ -821,6 +841,9 @@ public:
 	virtual bool SteamIDAllowedToConnect( const CSteamID &steamId ) const = 0;
 	virtual void UpdateServerDetails(void) = 0;
 	virtual bool ShouldHibernate() = 0;
+
+	virtual bool MatchAllowsNameChanges() = 0;
+	virtual bool GetPlayerGCMatchName( const CSteamID &steamId, char *pszOutGCMatchName, size_t nGCMatchNameLen ) = 0;
 };
 
 #endif // EIFACE_H

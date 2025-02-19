@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:	'weapon' what lets the player controll the rollerbuddy.
 //
@@ -8,7 +8,7 @@
 
 #include "cbase.h"
 #include "basehlcombatweapon.h"
-#include "npcevent.h"
+#include "NPCevent.h"
 #include "basecombatcharacter.h"
 #include "ai_basenpc.h"
 #include "player.h"
@@ -70,8 +70,8 @@ void CPortableThumper::Spawn( void )
 	SetSolid( SOLID_BBOX );
 	UTIL_SetSize( this, vecBBMin, vecBBMax );
 
-	SetThink( &CPortableThumper::ThumpThink );
-	SetUse( &CPortableThumper::ThumperUse );
+	SetThink( ThumpThink );
+	SetUse( ThumperUse );
 	SetNextThink( gpGlobals->curtime + thumpFrequency.GetFloat() );
 }
 

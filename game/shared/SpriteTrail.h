@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -53,6 +53,7 @@ public:
 	bool IsInSkybox() const;
 	void Spawn( void );
 	void Precache( void );
+	void SetTransmit( bool bTransmit = true ) { m_bDrawForMoveParent = bTransmit; }
 
 #if defined( CLIENT_DLL ) 
 	// Client only code
@@ -65,9 +66,15 @@ public:
 	virtual void OnDataChanged( DataUpdateType_t updateType );
 	virtual void GetRenderBounds( Vector& mins, Vector& maxs );
 	virtual void ClientThink();
+
+	virtual bool ValidateEntityAttachedToPlayer( bool &bShouldRetry );
+
 #else
 	// Server only code
+
+	virtual int ShouldTransmit( const CCheckTransmitInfo *pInfo );
 	static CSpriteTrail *SpriteTrailCreate( const char *pSpriteName, const Vector &origin, bool animate );
+
 #endif
 
 private:
@@ -75,8 +82,8 @@ private:
 	enum
 	{
 		// NOTE: # of points max must be a power of two!
-		MAX_SPRITE_TRAIL_POINTS	= 64,
-		MAX_SPRITE_TRAIL_MASK = 0x3F,
+		MAX_SPRITE_TRAIL_POINTS	= 256,
+		MAX_SPRITE_TRAIL_MASK = MAX_SPRITE_TRAIL_POINTS - 1,
 	};
 
 	TrailPoint_t *GetTrailPoint( int n );
@@ -106,6 +113,12 @@ private:
 
 	string_t m_iszSpriteName;
 	bool	m_bAnimate;
+	bool	m_bDrawForMoveParent;
+
+#if defined( CLIENT_DLL )
+public:
+	void SetUpdateTime(float setTo){ m_flUpdateTime = setTo; }
+#endif
 };
 
 #endif // SPRITETRAIL_H

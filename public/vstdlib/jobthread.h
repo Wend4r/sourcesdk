@@ -1,4 +1,4 @@
-//========== Copyright ? 2005, Valve Corporation, All rights reserved. ========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:	A utility for a discrete job-oriented worker thread.
 //
@@ -33,6 +33,7 @@
 #include "tier1/utllinkedlist.h"
 #include "tier1/utlvector.h"
 #include "tier1/functors.h"
+#include "tier0/vprof_telemetry.h"
 
 #include "vstdlib/vstdlib.h"
 
@@ -100,7 +101,9 @@ struct ThreadPoolStartParams_t
 	ThreadPoolStartParams_t( bool bIOThreads = false, unsigned nThreads = -1, int *pAffinities = NULL, ThreeState_t fDistribute = TRS_NONE, unsigned nStackSize = -1, int iThreadPriority = SHRT_MIN )
 		: bIOThreads( bIOThreads ), nThreads( nThreads ), fDistribute( fDistribute ), nStackSize( nStackSize ), iThreadPriority( iThreadPriority ), nThreadsMax( -1 )
 	{
-		bUseAffinityTable = ( pAffinities != NULL ) && ( fDistribute == TRS_TRUE ) && ( nThreads != -1 );
+		bExecOnThreadPoolThreadsOnly = false;
+
+		bUseAffinityTable = ( pAffinities != NULL ) && ( fDistribute == TRS_TRUE ) && ( nThreads != (unsigned)-1 );
 		if ( bUseAffinityTable )
 		{
 			// user supplied an optional 1:1 affinity mapping to override normal distribute behavior
@@ -121,6 +124,7 @@ struct ThreadPoolStartParams_t
 
 	bool			bIOThreads : 1;
 	bool			bUseAffinityTable : 1;
+	bool			bExecOnThreadPoolThreadsOnly : 1;
 };
 
 //-----------------------------------------------------------------------------
@@ -706,15 +710,16 @@ private:
 // Work splitting: array split, best when cost per item is roughly equal
 //-----------------------------------------------------------------------------
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4389)
 #pragma warning(disable:4018)
 #pragma warning(disable:4701)
+#endif
 
-#if !defined(__clang__) && ( !defined( GNUC ) || ( defined( GNUC ) && __GNUC_MINOR__ < 3 ) )
 #define DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL(N) \
 	template <typename FUNCTION_CLASS, typename FUNCTION_RETTYPE FUNC_TEMPLATE_FUNC_PARAMS_##N FUNC_TEMPLATE_ARG_PARAMS_##N, typename ITERTYPE1, typename ITERTYPE2> \
-	void IterRangeParallel(FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
+	void IterRangeParallel(FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_ADDL_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
 	{ \
 		const int MAX_THREADS = 16; \
 		int nIdle = g_pThreadPool->NumIdleThreads(); \
@@ -749,7 +754,7 @@ FUNC_GENERATE_ALL( DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL );
 
 #define DEFINE_MEMBER_ITER_RANGE_PARALLEL(N) \
 	template <typename OBJECT_TYPE, typename FUNCTION_CLASS, typename FUNCTION_RETTYPE FUNC_TEMPLATE_FUNC_PARAMS_##N FUNC_TEMPLATE_ARG_PARAMS_##N, typename ITERTYPE1, typename ITERTYPE2> \
-	void IterRangeParallel(OBJECT_TYPE *pObject, FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_BASE_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
+	void IterRangeParallel(OBJECT_TYPE *pObject, FUNCTION_RETTYPE ( FUNCTION_CLASS::*pfnProxied )( ITERTYPE1, ITERTYPE2 FUNC_ADDL_TEMPLATE_FUNC_PARAMS_##N ), ITERTYPE1 from, ITERTYPE2 to FUNC_ARG_FORMAL_PARAMS_##N ) \
 	{ \
 		const int MAX_THREADS = 16; \
 		int nIdle = g_pThreadPool->NumIdleThreads(); \
@@ -781,7 +786,6 @@ FUNC_GENERATE_ALL( DEFINE_NON_MEMBER_ITER_RANGE_PARALLEL );
 	}
 
 FUNC_GENERATE_ALL( DEFINE_MEMBER_ITER_RANGE_PARALLEL );
-#endif // GCC 
 
 //-----------------------------------------------------------------------------
 // Work splitting: competitive, best when cost per item varies a lot
@@ -854,6 +858,8 @@ public:
 
 	void Run( ITEM_TYPE *pItems, unsigned nItems, int nMaxParallel = INT_MAX, IThreadPool *pThreadPool = NULL )
 	{
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "Run %s %d", m_szDescription, nItems );
+
 		if ( nItems == 0 )
 			return;
 
@@ -914,6 +920,8 @@ public:
 private:
 	void DoExecute()
 	{
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "DoExecute %s", m_szDescription );
+
 		if ( m_pItems < m_pLimit )
 		{
 			m_ItemProcessor.Begin();
@@ -988,9 +996,9 @@ public:
 			int i = g_pThreadPool->NumIdleThreads();
 
 			if ( nMaxParallel < i)
-		{
+			{
 				i = nMaxParallel;
-		}
+			}
 
 			while( i-- )
 			{
@@ -1013,6 +1021,8 @@ public:
 private:
 	void DoExecute()
 	{
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "DoExecute %s", m_szDescription );
+
 		m_ItemProcessor.Begin();
 
 		long lLimit = m_lLimit;
@@ -1114,6 +1124,8 @@ protected:
 private:
 	void DoExecute()
 	{
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "DoExecute %s", m_szDescription );
+
 		static_cast<Derived *>( this )->OnBegin();
 
 		while ( static_cast<Derived *>( this )->OnProcess() )
@@ -1135,7 +1147,7 @@ private:
 // Raw thread launching
 //-----------------------------------------------------------------------------
 
-inline unsigned FunctorExecuteThread( void *pParam )
+inline uintp FunctorExecuteThread( void *pParam )
 {
 	CFunctor *pFunctor = (CFunctor *)pParam;
 	(*pFunctor)();
@@ -1224,6 +1236,8 @@ inline JobStatus_t CJob::Execute()
 		return m_status;
 	}
 
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s %s %d", __FUNCTION__, Describe(), m_status );
+
 	AUTO_LOCK( m_mutex );
 	AddRef();
 
@@ -1266,6 +1280,8 @@ inline JobStatus_t CJob::Execute()
 
 inline JobStatus_t CJob::TryExecute()
 {
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s %s %d", __FUNCTION__, Describe(), m_status );
+
 	// TryLock() would only fail if another thread has entered
 	// Execute() or Abort()
 	if ( !IsFinished() && TryLock() )
@@ -1286,6 +1302,8 @@ inline JobStatus_t CJob::Abort( bool bDiscard )
 		return m_status;
 	}
 
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s %s %d", __FUNCTION__, Describe(), m_status );
+
 	AUTO_LOCK( m_mutex );
 	AddRef();
 
@@ -1296,6 +1314,8 @@ inline JobStatus_t CJob::Abort( bool bDiscard )
 	case JOB_STATUS_UNSERVICED:
 	case JOB_STATUS_PENDING:
 		{
+			tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "CJob::DoAbort" );
+
 			result = m_status = DoAbort( bDiscard );
 			if ( bDiscard )
 				DoCleanup();
@@ -1322,4 +1342,3 @@ inline JobStatus_t CJob::Abort( bool bDiscard )
 //-----------------------------------------------------------------------------
 
 #endif // JOBTHREAD_H
-

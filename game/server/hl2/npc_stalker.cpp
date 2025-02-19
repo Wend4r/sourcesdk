@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -757,9 +757,6 @@ int CNPC_Stalker::SelectSchedule( void )
 
 			break;
 		}
-
-		default:
-			break;
 	}
 
 	// no special cases here, call the base class
@@ -1264,7 +1261,7 @@ void CNPC_Stalker::HandleAnimEvent( animevent_t *pEvent )
 		{
 			CBaseEntity *pHurt;
 
-			pHurt = CheckTraceHullAttack( 32, Vector(-16,-16,-16), Vector(16,16,16), sk_stalker_melee_dmg.GetInt(), DMG_SLASH );
+			pHurt = CheckTraceHullAttack( 32, Vector(-16,-16,-16), Vector(16,16,16), sk_stalker_melee_dmg.GetFloat(), DMG_SLASH );
 
 			if ( pHurt )
 			{

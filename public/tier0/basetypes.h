@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,7 +8,6 @@
 #ifndef BASETYPES_H
 #define BASETYPES_H
 
-#include "tier0/platform.h"
 #include "commonmacros.h"
 #include "wchartypes.h"
 
@@ -43,11 +42,7 @@
 #define NULL 0
 #endif
 
-#if defined _LINUX && !defined __APPLE__
-typedef unsigned int uintptr_t;
-#elif defined __APPLE__
 #include <stdint.h>
-#endif
 
 #define ExecuteNTimes( nTimes, x )	\
 	{								\
@@ -64,7 +59,7 @@ typedef unsigned int uintptr_t;
 
 
 template <typename T>
-inline T AlignValue( T val, unsigned alignment )
+inline T AlignValue( T val, uintptr_t alignment )
 {
 	return (T)( ( (uintptr_t)val + alignment - 1 ) & ~( alignment - 1 ) );
 }
@@ -76,10 +71,11 @@ inline T AlignValue( T val, unsigned alignment )
 	( ((number) + ((boundary)-1)) / (boundary) ) * (boundary)
 
 // In case this ever changes
-#if defined M_PI
-# undef M_PI
-#endif
+#if !defined(M_PI) && !defined(HAVE_M_PI)
 #define M_PI			3.14159265358979323846
+#endif
+
+#include "valve_minmax_on.h"
 
 // #define COMPILETIME_MAX and COMPILETIME_MIN for max/min in constant expressions
 #define COMPILETIME_MIN( a, b ) ( ( ( a ) < ( b ) ) ? ( a ) : ( b ) )
@@ -92,29 +88,57 @@ inline T AlignValue( T val, unsigned alignment )
 #define MAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
 #endif
 
-#if !defined(_X360)
-FORCEINLINE float fpmin( float a, float b )
+#ifdef __cplusplus
+
+// This is the preferred clamp operator. Using the clamp macro can lead to
+// unexpected side-effects or more expensive code. Even the clamp (all
+// lower-case) function can generate more expensive code because of the
+// mixed types involved.
+template< class T >
+T Clamp( T const &val, T const &minVal, T const &maxVal )
 {
-	return ( a < b ) ? a : b;
+	if( val < minVal )
+		return minVal;
+	else if( val > maxVal )
+		return maxVal;
+	else
+		return val;
 }
 
-FORCEINLINE float fpmax( float a, float b )
+// This is the preferred Min operator. Using the MIN macro can lead to unexpected
+// side-effects or more expensive code.
+template< class T >
+T Min( T const &val1, T const &val2 )
 {
-	return ( a > b ) ? a : b;
+	return val1 < val2 ? val1 : val2;
 }
+
+// This is the preferred Max operator. Using the MAX macro can lead to unexpected
+// side-effects or more expensive code.
+template< class T >
+T Max( T const &val1, T const &val2 )
+{
+	return val1 > val2 ? val1 : val2;
+}
+
 #endif
 
-#ifdef __cplusplus
-	template< class T >
-	inline T clamp( T const &val, T const &minVal, T const &maxVal )
-	{
-		if( val < minVal )
-			return minVal;
-		else if( val > maxVal )
-			return maxVal;
-		else
-			return val;
-	}
+#ifndef USE_DXVK_NATIVE
+#ifndef DONT_DEFINE_BOOL // Needed for Cocoa stuff to compile.
+typedef int BOOL;
+#endif
+typedef unsigned char BYTE;
+#else
+#include <windows.h>
+#endif
+typedef int qboolean;
+typedef unsigned char byte;
+typedef unsigned short word;
+
+#ifdef _WIN32
+typedef wchar_t ucs2; // under windows wchar_t is ucs2
+#else
+typedef unsigned short ucs2;
 #endif
 
 #ifndef FALSE
@@ -122,18 +146,9 @@ FORCEINLINE float fpmax( float a, float b )
 #define TRUE (!FALSE)
 #endif
 
-
-typedef int BOOL;
-typedef int qboolean;
-typedef unsigned long ULONG;
-typedef unsigned char BYTE;
-typedef unsigned char byte;
-typedef unsigned short word;
-
-#if !defined __APPLE__
-typedef unsigned int uintptr_t;
+#ifdef POSIX
+#include <stdint.h>
 #endif
-
 
 enum ThreeState_t
 {
@@ -144,31 +159,38 @@ enum ThreeState_t
 
 typedef float vec_t;
 
+#if defined(__GNUC__)
+#define fpmin __builtin_fminf
+#define fpmax __builtin_fmaxf
+#elif !defined(_X360)
+static inline float fpmin( float a, float b )
+{
+	return a > b  ? b : a;
+}
 
-// FIXME: this should move 
-#ifndef __cplusplus
-#define true TRUE
-#define false FALSE
+static inline float fpmax( float a, float b )
+{
+	return a >= b ? a : b;
+}
 #endif
+
 
 //-----------------------------------------------------------------------------
 // look for NANs, infinities, and underflows. 
 // This assumes the ANSI/IEEE 754-1985 standard
 //-----------------------------------------------------------------------------
 
-#ifdef __cplusplus
-
-inline unsigned long& FloatBits( vec_t& f )
+inline unsigned int& FloatBits( vec_t& f )
 {
-	return *reinterpret_cast<unsigned long*>(&f);
+	return *reinterpret_cast<unsigned int*>(&f);
 }
 
-inline unsigned long const& FloatBits( vec_t const& f )
+inline unsigned int const& FloatBits( vec_t const& f )
 {
-	return *reinterpret_cast<unsigned long const*>(&f);
+	return *reinterpret_cast<unsigned int const*>(&f);
 }
 
-inline vec_t BitsToFloat( unsigned long i )
+inline vec_t BitsToFloat( unsigned int i )
 {
 	return *reinterpret_cast<vec_t*>(&i);
 }
@@ -178,47 +200,35 @@ inline bool IsFinite( vec_t f )
 	return ((FloatBits(f) & 0x7F800000) != 0x7F800000);
 }
 
-inline unsigned long FloatAbsBits( vec_t f )
+inline unsigned int FloatAbsBits( vec_t f )
 {
 	return FloatBits(f) & 0x7FFFFFFF;
 }
 
+// Given today's processors, I cannot think of any circumstance
+// where bit tricks would be faster than fabs. henryg 8/16/2011
+#ifdef _MSC_VER
+#ifndef _In_
+#define _In_
+#endif
+extern "C" _Check_return_ __inline float __CRTDECL fabsf(_In_ float _X);
+#else
+#include <math.h>
+#endif
+
 inline float FloatMakeNegative( vec_t f )
 {
-	return BitsToFloat( FloatBits(f) | 0x80000000 );
+	return -fabsf(f);
 }
 
-#if defined( WIN32 )
-
-//#include <math.h>
-// Just use prototype from math.h
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-	double __cdecl fabs(double);
-#ifdef __cplusplus
-}
-#endif
-
-// In win32 try to use the intrinsic fabs so the optimizer can do it's thing inline in the code
-#pragma intrinsic( fabs )
-// Also, alias float make positive to use fabs, too
-// NOTE:  Is there a perf issue with double<->float conversion?
 inline float FloatMakePositive( vec_t f )
 {
-	return (float)fabs( f );
+	return fabsf(f);
 }
-#else
-inline float FloatMakePositive( vec_t f )
-{
-	return BitsToFloat( FloatBits(f) & 0x7FFFFFFF );
-}
-#endif
 
 inline float FloatNegate( vec_t f )
 {
-	return BitsToFloat( FloatBits(f) ^ 0x80000000 );
+	return -f;
 }
 
 
@@ -227,7 +237,7 @@ inline float FloatNegate( vec_t f )
 
 #define VEC_T_NAN FLOAT32_NAN
 
-#endif
+
 
 // FIXME: why are these here?  Hardly anyone actually needs them.
 struct color24
@@ -254,17 +264,14 @@ struct colorVec
 
 
 #ifndef NOTE_UNUSED
-#define NOTE_UNUSED(x)	(x = x)	// for pesky compiler / lint warnings
+#define NOTE_UNUSED(x)	(void)(x)	// for pesky compiler / lint warnings
 #endif
-#ifdef __cplusplus
 
 struct vrect_t
 {
 	int				x,y,width,height;
 	vrect_t			*pnext;
 };
-
-#endif
 
 
 //-----------------------------------------------------------------------------
