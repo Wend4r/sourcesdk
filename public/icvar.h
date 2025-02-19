@@ -113,6 +113,11 @@ public:
 	// so all ConVarRefs would still be valid as well as searching for it.
 	// Expects ref to have registered index to be set (is set on convar creation)
 	virtual void				UnregisterConVarCallbacks( ConVarRef cvar ) = 0;
+#ifdef DOTA2
+	// Prevents default value initialisation on convars if state equals true and queues them instead,
+	// unlocks and initialises queued convars to default values if state is false
+	virtual void				LockConVarValueInitialisation( bool state ) = 0;
+#endif
 	// Returns convar data or nullptr if not found
 	virtual ConVarData*			GetConVarData( ConVarRef cvar ) = 0;
 
@@ -235,6 +240,11 @@ public:
 	uint8 m_CvarDefaultValues[EConVarType_MAX][128];
 
 	CUtlVector<QueuedConVarSet_t> m_SetValueQueue;
+
+#ifdef DOTA2
+	CUtlVector<ConVarRef> m_SetToDefaultValueQueue;
+	bool m_LockDefaultValueInit;
+#endif
 
 	CConCommandMemberAccessor<CCvar> m_FindCmd;
 	CConCommandMemberAccessor<CCvar> m_DumpChannelsCmd;
