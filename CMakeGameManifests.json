@@ -64,9 +64,9 @@
 	},
 	"artifact":
 	{
+		"name": "Artifact Foundry",
 		"inherits": ["core", "dcg"],
 
-		"name": "Artifact Foundry",
 		"protobufs_dir": "artifact"
 	},
 
@@ -115,13 +115,14 @@
 
 		"defines":
 		{
-			"DEADLOCK": 104,
-			"SOURCE_ENGINE": 104
+			"DEADLOCK": 26,
+			"SOURCE_ENGINE": 26
 		}
 	},
 
 	"dota":
 	{
+		"name": "Dota Base",
 		"game_dir": "dota",
 
 		"defines":

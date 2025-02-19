@@ -10,7 +10,7 @@ set(SOURCESDK_PROTO_OUTPUT_DIR "${SOURCESDK_COMMON_DIR}")
 set(SOURCESDK_PROTOC_EXE "protoc${CMAKE_EXECUTABLE_SUFFIX}")
 
 set(SOURCESDK_SKIP_PROTOS
-	steammessages_base # steammessages instead
+	# steammessages_base # steammessages instead
 	base_gcmessages_csgo # base_gcmessages instead
 )
 
