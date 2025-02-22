@@ -1182,9 +1182,9 @@ public:
 	const T &Get( CSplitScreenSlot slot = -1 ) const { return *reinterpret_cast<T *>(m_ConVarData->ValueOrDefault( slot )); }
 	void Set( const T &value, CSplitScreenSlot slot = -1 );
 
-	const T &GetDefault() const { *reinterpret_cast<T *>(m_ConVarData->DefaultValue()); }
-	const T &GetMin() const { *reinterpret_cast<T *>(m_ConVarData->MinValue()); }
-	const T &GetMax() const { *reinterpret_cast<T *>(m_ConVarData->MaxValue()); }
+	const T &GetDefault() const { return *reinterpret_cast<T *>(m_ConVarData->DefaultValue()); }
+	const T &GetMin() const { return *reinterpret_cast<T *>(m_ConVarData->MinValue()); }
+	const T &GetMax() const { return *reinterpret_cast<T *>(m_ConVarData->MaxValue()); }
 
 protected:
 	CConVarRef() : BaseClass() {}
