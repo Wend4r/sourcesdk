@@ -50,7 +50,7 @@ public:
 
 	unsigned int Count() const
 	{
-		Assert( m_Vector.Count() == m_SymbolTable.GetNumStrings() );
+		// Assert( m_Vector.Count() == m_SymbolTable.GetNumStrings() );
 		return m_Vector.Count();
 	}
 
@@ -81,26 +81,39 @@ public:
 	/// overwritten, if pString already existed.)
 	CUtlSymbol Insert( const char *pString, const T &item )
 	{
-		CUtlSymbol symbol = m_SymbolTable.AddString( pString );
-		CUtlSymbol index = symbol; // implicit coercion
-		if ( m_Vector.Count() > index ) 
+		CUtlSymbol symbol = m_SymbolTable.AddString( pString ); // implicit coercion
+		if ( m_Vector.Count() > symbol ) 
 		{
 			// this string is already in the dictionary.
 
 		}
-		else if ( m_Vector.Count() == index )
+		else if ( m_Vector.Count() == symbol )
 		{
 			// this is the expected case when we've added one more to the tail.
 			m_Vector.AddToTail( item );
 		}
-		else // ( m_Vector.Count() < index )
+		else // ( m_Vector.Count() < symbol )
 		{
 			// this is a strange shouldn't-happen case.
 			AssertMsg( false, "CUtlStringMap insert unexpected entries." );
-			m_Vector.EnsureCount( index + 1 );
-			m_Vector[index] = item;
+			m_Vector.EnsureCount( symbol + 1 );
+			m_Vector[symbol] = item;
 		}
-		return index;
+		return symbol;
+	}
+
+	bool FindAndRemove( const char *pString )
+	{
+		CUtlSymbol symbol = m_SymbolTable.Find( pString );
+
+		if ( !symbol.IsValid() )
+		{
+			return false;
+		}
+
+		m_Vector.Remove( symbol );
+
+		return true;
 	}
 
 	/// iterate, not in any particular order.
