@@ -261,7 +261,7 @@ void KeyValues3::Free( bool bClearingContext )
 		}
 		case KV3_TYPEEX_ARRAY:
 		{
-			FreeArray( m_Data.m_pArray );
+			FreeArray( m_Data.m_pArray, bClearingContext );
 
 			m_bFreeArrayMemory = false;
 			m_Data.m_pArray = nullptr;
@@ -270,7 +270,7 @@ void KeyValues3::Free( bool bClearingContext )
 		}
 		case KV3_TYPEEX_TABLE:
 		{
-			FreeTable( m_Data.m_pTable );
+			FreeTable( m_Data.m_pTable, bClearingContext );
 
 			m_bFreeArrayMemory = false;
 			m_Data.m_pTable = nullptr;
@@ -367,13 +367,6 @@ void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype )
 	}
 
 	m_SubType = subtype;
-}
-
-void KeyValues3::OnClearContext()
-{ 
-	Free( true ); 
-	m_TypeEx = KV3_TYPEEX_NULL; 
-	m_Data.m_nMemory = 0;
 }
 
 CKeyValues3Cluster* KeyValues3::GetCluster() const
