@@ -1806,7 +1806,11 @@ PLATFORM_INTERFACE void				Plat_ExitProcess( int nCode );
 
 PLATFORM_INTERFACE bool				Plat_ShouldCollectMiniDumpsForFatalErrors();
 
+#ifdef DEADLOCK
+#define Plat_FatalErrorFunc Plat_FatalError
+#else
 PLATFORM_INTERFACE void				Plat_FatalErrorFunc( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
+#endif
 
 //called to exit the process due to a fatal error. This allows for the application to handle providing a hook as well which can be called
 //before exiting

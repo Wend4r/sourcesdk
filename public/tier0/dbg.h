@@ -346,6 +346,7 @@ DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_CONSOLE );
 DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_VERBOSE );
 
 // Legacy logging functions
+#define Plat_FatalError( ... ) do { Log_Error( LOG_GENERAL, ##__VA_ARGS__ ); Plat_ExitProcess( EXIT_FAILURE ); } while( 0 )
 
 // These functions do not return.
 void Error( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
@@ -358,8 +359,6 @@ inline void Error( const tchar* pMsg, ... )
 	va_end(params);
 	Plat_FatalErrorFunc( "%s", szBuffer );
 }
-
-#define Plat_FatalError( ... ) do { Log_Error( LOG_GENERAL, ##__VA_ARGS__ ); Plat_ExitProcess( EXIT_FAILURE ); } while( 0 )
 
 #if defined( DBGFLAG_STRINGS_STRIP )
 
