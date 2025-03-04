@@ -112,6 +112,7 @@ public:
 		}
 
 		m_Vector.Remove( symbol );
+		m_SymbolTable.Remove( symbol );
 
 		return true;
 	}

@@ -92,7 +92,12 @@ public:
 	
 	// Look up the string associated with a particular symbol
 	DLL_CLASS_IMPORT const char* String( CUtlSymbol id ) const;
-	
+
+	void Remove( CUtlSymbol id )
+	{
+		m_HashTable.Remove( id );
+	}
+
 	// Remove all symbols in the table.
 	DLL_CLASS_IMPORT void RemoveAll();
 	DLL_CLASS_IMPORT void Purge();
