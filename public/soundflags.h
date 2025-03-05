@@ -115,7 +115,7 @@ enum soundlevel_t
 //-----------------------------------------------------------------------------
 // Flags to be or-ed together for the iFlags field
 //-----------------------------------------------------------------------------
-enum SoundFlags_t
+enum SoundFlags_t : uint16
 {
 	SOUND_NONE			= 0,			// to keep the compiler happy
 
