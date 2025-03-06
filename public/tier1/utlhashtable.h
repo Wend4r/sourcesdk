@@ -291,12 +291,12 @@ public:
 	//  it is up to the caller to ensure that they are compatible!)
 	void Swap( CUtlHashtable &other ) { m_table.Swap(other.m_table); ::V_swap(m_nUsed, other.m_nUsed); ::V_swap(m_nTableSize, other.m_nTableSize); }
 
-    // GetMemoryUsage returns all memory held by this class
-    // and its held classes.  It does not include sizeof(*this).
-    size_t GetMemoryUsage() const
-    {
-        return m_table.AllocSize();
-    }
+	// GetMemoryUsage returns all memory held by this class
+	// and its held classes.  It does not include sizeof(*this).
+	size_t GetMemoryUsage() const
+	{
+		return m_table.AllocSize();
+	}
 
 	size_t GetReserveCount( )const
 	{
@@ -531,7 +531,6 @@ int CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DoInser
 	return idx;
 }
 
-
 // Key lookup. Can also return previous-in-chain if result is a chained slot.
 template <typename KeyT, typename ValueT, typename KeyHashT, typename KeyIsEqualT, typename AltKeyT, typename TableT>
 template <typename KeyParamT>
@@ -643,6 +642,7 @@ int CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DoRemov
 	unsigned int slotmask = m_nTableSize-1;
 	handle_t previous = (handle_t) -1;
 	int idx = (int) DoLookup<KeyParamT>( x, h, &previous );
+
 	if (idx == -1)
 	{
 		return -1;

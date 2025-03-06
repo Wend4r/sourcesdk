@@ -14,38 +14,52 @@
 #endif
 
 #include <limits.h>
+#include <string.h>
+#include "bufferstring.h"
 #include "tier1/generichash.h"
 
 #define DEBUG_STRINGTOKENS 0
 #define STRINGTOKEN_MURMURHASH_SEED 0x31415926
 
+// Macros are intended to be used between CUtlStringToken (always lowercase)
+#define MAKE_STRINGTOKEN(pstr) CUtlStringToken::Hash( (pstr), strlen(pstr), STRINGTOKEN_MURMURHASH_SEED )
+#define MAKE_STRINGTOKEN_UTL(containerName) CUtlStringToken::Hash( (containerName).Get(), (containerName).Length(), STRINGTOKEN_MURMURHASH_SEED )
+
 class IFormatOutputStream;
 class CFormatStringElement;
+
 
 // See VStringTokenSystem001
 // Interact with stringtokendatabase.txt
 PLATFORM_INTERFACE bool g_bUpdateStringTokenDatabase;
 PLATFORM_INTERFACE void RegisterStringToken( uint32 nHashCode, const char *pStart, const char *pEnd = NULL, bool bExtraAddToDatabase = true );
 
-#define TOLOWERU( c ) ( ( uint32 ) ( ( ( c >= 'A' ) && ( c <= 'Z' ) )? c + 32 : c ) )
+#define TOLOWERU( c ) ( ( uint32 ) ( ( ( c >= 'A' ) && ( c <= 'Z' ) ) ? ( c | ( 1 << 5 ) ) : c ) )
 class CUtlStringToken
 {
 public:
-	FORCEINLINE CUtlStringToken( uint32 nHashCode = 0 ) : m_nHashCode( nHashCode ) {}
-	template < uintp N > FORCEINLINE CUtlStringToken( const char (&str)[N] )
+	static constexpr uint32 sm_nMagic    = 0x5bd1e995;
+	static constexpr uint32 sm_nRotation = 24;
+
+	template< bool CASEINSENSITIVE = true >
+	FORCEINLINE static uint32 Hash( const char *pString, int n, uint32 nSeed = STRINGTOKEN_MURMURHASH_SEED )
 	{
-		constexpr uint m = 0x5bd1e995;
-		constexpr int r = 24;
+		// They're not really 'magic', they just happen to work well.
 
-		uint nLength = static_cast< uint >( N - 1 );
+		constexpr uint32 m = sm_nMagic;
+		constexpr uint32 r = sm_nRotation;
 
-		uint32 h = STRINGTOKEN_MURMURHASH_SEED ^ nLength;
+		// Initialize the hash to a 'random' value
 
-		const char* pstr = reinterpret_cast< const char* >(str);
+		uint32 nLength = static_cast< uint32 >( n );
+
+		uint32 h = nSeed ^ nLength;
+
+		// Mix 4 bytes at a time into the hash
 
 		while ( nLength >= 4 )
 		{
-			uint32 k = TOLOWERU( pstr[0] ) | ( TOLOWERU( pstr[1] ) << 8 ) | ( TOLOWERU( pstr[2] ) << 16 ) | ( TOLOWERU( pstr[3] ) << 24 );
+			uint32 k = CASEINSENSITIVE ? ( TOLOWERU( pString[ 0 ] ) | ( TOLOWERU( pString[ 1 ] ) << 8 ) | ( TOLOWERU( pString[ 2 ] ) << 16 ) | ( TOLOWERU( pString[ 3 ] ) << 24 ) ) : LittleDWord( *(uint32 *)pString );
 
 			k *= m;
 			k ^= k >> r;
@@ -54,65 +68,129 @@ public:
 			h *= m;
 			h ^= k;
 
-			pstr += 4;
+			pString += 4;
 			nLength -= 4;
 		}
 
+		// Handle the last few bytes of the input array
+
 		switch ( nLength )
 		{
-			case 3: h ^= TOLOWERU( pstr[2] ) << 16; [[fallthrough]];
-			case 2: h ^= TOLOWERU( pstr[1] ) << 8;  [[fallthrough]];
-			case 1: h ^= TOLOWERU( pstr[0] );
-			        h *= m;
-		}
+		case 3: h ^= ( CASEINSENSITIVE ? TOLOWERU( pString[ 2 ] ) : pString[ 2 ] ) << 16; [[fallthrough]];
+		case 2: h ^= ( CASEINSENSITIVE ? TOLOWERU( pString[ 1 ] ) : pString[ 1 ] ) << 8;  [[fallthrough]];
+		case 1: h ^= ( CASEINSENSITIVE ? TOLOWERU( pString[ 0 ] ) : pString[ 0 ] );
+			h *= m;
+		};
+
+		// Do a few final mixes of the hash to ensure the last few
+		// bytes are well-incorporated.
 
 		h ^= h >> 13;
 		h *= m;
 		h ^= h >> 15;
 
-		m_nHashCode = h;
+		return h;
 	}
 
-	FORCEINLINE bool operator==( CUtlStringToken const &other ) const
-	{
-		return ( other.m_nHashCode == m_nHashCode );
-	}
+	CUtlStringToken( uint32 nHashCode = 0 ) : m_nHashCode( nHashCode ) {}
+	template < uintp N > constexpr CUtlStringToken( const char (&str)[N] ) : m_nHashCode( Make( str, N - 1 ) ) {}
+	CUtlStringToken( const char *pString, int nLen ) : m_nHashCode( Hash( pString, nLen ) ) {}
+	CUtlStringToken( const char *pString ) : CUtlStringToken( pString, strlen(pString) ) {}
+	CUtlStringToken( const CUtlString &str ) : CUtlStringToken( str.Get(), str.Length() ) {}
+	CUtlStringToken( const CBufferString &buffer ) : CUtlStringToken( buffer.Get(), buffer.Length() ) {}
 
-	FORCEINLINE bool operator!=( CUtlStringToken const &other ) const
-	{
-		return !operator==( other );
-	}
-	
-	FORCEINLINE bool operator<( CUtlStringToken const &other ) const
-	{
-		return ( m_nHashCode < other.m_nHashCode );
-	}
+	// operator==
+	// aka CUtlStringTokenHashMethod.
+	bool operator==( const uint32 nHash ) const { return m_nHashCode == nHash; }
+	bool operator==( const CUtlStringToken &other ) const { return operator==( other.GetHashCode() ); }
+	bool operator==( const char *pString ) const { return operator==( MAKE_STRINGTOKEN( pString ) ); }
+	bool operator==( const CUtlString &str ) const { return operator==( MAKE_STRINGTOKEN_UTL( str ) ); }
+	bool operator==( const CBufferString &buffer ) const { return operator==( MAKE_STRINGTOKEN_UTL( buffer ) ); }
+
+	// operator!=
+	bool operator!=( const uint32 nHash ) const { return !operator==( nHash ); }
+	bool operator!=( const CUtlStringToken &other ) const { return !operator==( other ); }
+	bool operator!=( const char *pString ) const { return !operator==( pString ); }
+	bool operator!=( const CUtlString &str ) const { return !operator==( str ); }
+	bool operator!=( const CBufferString &buffer ) const { return !operator==( buffer ); }
+
+	// opertator<
+	bool operator<( const uint32 nHash ) const { return ( m_nHashCode < nHash ); }
+	bool operator<( CUtlStringToken const &other ) const { return operator<( other.GetHashCode() ); }
+	bool operator<( const char *pString ) const { return operator<( MAKE_STRINGTOKEN( pString ) ); }
+	bool operator<( const CUtlString &str ) const { return !operator<( MAKE_STRINGTOKEN_UTL( str ) ); }
+	bool operator<( const CBufferString &buffer ) const { return !operator<( MAKE_STRINGTOKEN_UTL( buffer ) ); }
 
 	/// access to the hash code for people who need to store thse as 32-bits, regardless of the
-	FORCEINLINE uint32 GetHashCode() const { return m_nHashCode; }
+	operator uint32() const { return m_nHashCode; }
+	uint32 GetHashCode() const { return m_nHashCode; }
 
 	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement pElement ) const;
-	DLL_CLASS_IMPORT static void TrackTokenCreation( const char *s1, const char *s2 );
+	DLL_CLASS_IMPORT static bool TrackTokenCreation( const char *s1, const char *s2 );
 
-// private:
+private:
 	uint32 m_nHashCode;
 };
 
-FORCEINLINE CUtlStringToken MakeStringToken( char const *pString, int nLen )
+// To compare in CUtlHash< Data, C, K >
+class CUtlStringTokenHashMethod
 {
-	uint32 nHashCode = MurmurHash2LowerCase( pString, nLen, STRINGTOKEN_MURMURHASH_SEED );
+public:
+	CUtlStringTokenHashMethod( int ) {}
 
+	bool operator()( const CUtlStringToken &nLHS, const CUtlStringToken &nRHS ) const { return nLHS == nRHS; }
+	static bool Compare( const CUtlStringToken &nLHS, const CUtlStringToken &nRHS ) { return nLHS == nRHS; }
+};
+
+FORCEINLINE bool TrackStringToken( uint32 nHash, const char *pString )
+{
 	if ( g_bUpdateStringTokenDatabase )
 	{
-		RegisterStringToken( nHashCode, pString );
+		RegisterStringToken( nHash, pString );
+
+		return true;
 	}
 
-	return nHashCode;
+	return false;
 }
 
-FORCEINLINE CUtlStringToken MakeStringToken( char const *pString )
+template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
+FORCEINLINE uint32 MakeStringToken( const char *pString, int nLen )
 {
-	return MakeStringToken( pString, ( int )strlen(pString) );
+	uint32 nHash = CASEINSENSITIVE ? MurmurHash2LowerCase( pString, nLen, STRINGTOKEN_MURMURHASH_SEED ) : MurmurHash2( pString, nLen, STRINGTOKEN_MURMURHASH_SEED );
+
+	if constexpr ( TRACKCREATION )
+		TrackStringToken( nHash, pString );
+
+	return nHash;
+}
+
+template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
+FORCEINLINE uint32 MakeStringToken( const char *pString )
+{
+	return MakeStringToken< CASEINSENSITIVE, TRACKCREATION >( pString, strlen(pString) );
+}
+
+template< bool CASEINSENSITIVE = true, uintp SIZE = 128 >
+FORCEINLINE uint32 HashStringWithBuffer( const char *pString, int nLen = -1 )
+{
+	CBufferStringN< SIZE > buffer( pString, nLen );
+
+	if constexpr ( CASEINSENSITIVE )
+		buffer.ToLowerFast();
+
+	return CUtlStringToken::Hash< CASEINSENSITIVE >( buffer.Get(), buffer.Length() );
+}
+
+template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
+FORCEINLINE CUtlStringToken MakeStringToken2( const char *pString, int nLen = -1 )
+{
+	CUtlStringToken nHashToken = HashStringWithBuffer< CASEINSENSITIVE >( pString, nLen );
+
+	if constexpr ( TRACKCREATION )
+		TrackStringToken( nHashToken, pString );
+
+	return nHashToken;
 }
 
 #endif // UTLSTRINGTOKEN_H

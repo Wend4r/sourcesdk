@@ -13,6 +13,9 @@
 
 #include "tier0/utlsymbol.h"
 
+#define FOR_EACH_STRING_MAP( mapName, iter ) \
+	for ( auto iter = (mapName).First(); iter < (mapName).GetNumStrings() && iter != (mapName).InvalidIndex(); iter = (mapName).Next( iter ) )
+
 template <class T>
 class CUtlStringMap
 {
@@ -111,7 +114,8 @@ public:
 			return false;
 		}
 
-		m_Vector.Remove( symbol );
+		Destruct( &m_Vector[ symbol ] );
+		m_Vector[ symbol ] = {};
 		m_SymbolTable.Remove( symbol );
 
 		return true;

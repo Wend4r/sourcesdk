@@ -14,10 +14,7 @@
 #include "platform.h"
 #include "tier0/memalloc.h"
 #include "tier0/strtools.h"
-#include "tier1/utlmemory.h"
 #include "limits.h"
-
-#include "utlbinaryblock.h"
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t) -1)
@@ -213,7 +210,7 @@ private:
 	DLL_CLASS_IMPORT void FreeMemoryBlock();
 
 private:
-	char *m_pString = NULL;
+	char *m_pString;
 };
 
 //	// If these are not defined, CUtlConstString as rhs will auto-convert

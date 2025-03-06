@@ -11,6 +11,7 @@
 #endif
 
 #include "tier1/utlbufferutil.h"
+#include "tier0/utlbinaryblock.h"
 #include "tier0/utlbuffer.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector2d.h"
