@@ -364,25 +364,42 @@ struct KV3BinaryBlob_t
 class CKV3MemberName
 {
 public:
-	inline CKV3MemberName(const char* pszString): m_nHashCode(), m_pszString("")
-	{	
-		if (!pszString || !pszString[0])
-			return;
+	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CUtlStringToken( szInit ), m_pszString( (const char *)szInit ) {}
+	CKV3MemberName( const char* pszString, int nLen ) : CUtlStringToken( MakeStringToken2( pszString, nLen ) ), m_pszString( pszString ) {}
+	CKV3MemberName( uint32 nHash = 0, const char* pszString = StringFuncs<char>::EmptyString() ) : CUtlStringToken( nHash ), m_pszString( pszString ) {}
 
-		m_nHashCode = MakeStringToken( pszString );
-		m_pszString = pszString;
+	static CKV3MemberName Make( const char *pszInit, int nLen = -1 )
+	{
+		Assert( pszInit && pszInit[0] );
+
+		return CKV3MemberName( pszInit, nLen );
 	}
 
-	inline CKV3MemberName(): m_nHashCode(), m_pszString("") {}
-	inline CKV3MemberName( CUtlStringToken nHashCode, const char* pszString = ""): m_nHashCode(nHashCode), m_pszString(pszString) {}
-
-	inline unsigned int GetHashCode() const { return m_nHashCode.GetHashCode(); }
-	inline const char* GetString() const { return m_pszString; }
+	const char* GetString() const { return m_pszString; }
 
 private:
-	CUtlStringToken m_nHashCode;
 	const char* m_pszString;
 };
+
+using KeyValues3LowercaseHash_t = CUtlStringToken;
+using CKeyValues3StringAndHash = CKV3MemberName;
+
+// Pulse thing
+class CKV3MemberNameWithStorage : public CKV3MemberName
+{
+public:
+	template< uintp N > constexpr CKV3MemberNameWithStorage( const char (&szInit)[N] ) : CKV3MemberName( szInit ), m_Storage( (const char*)szInit, N - 1 ) {}
+	CKV3MemberNameWithStorage( const char* pszString, int nLen ): CKV3MemberName( pszString, nLen ), m_Storage( pszString, nLen ) {}
+	CKV3MemberNameWithStorage( uint32 nHash = 0, const char* pszString = StringFuncs<char>::EmptyString(), int nLen = -1  ) : CKV3MemberName( nHash, pszString ), m_Storage( pszString, nLen ) {}
+
+	const CBufferString &GetStorage() const { return m_Storage; }
+
+private:
+	CBufferStringN< 32 > m_Storage;
+};
+
+// Pulse thing
+using CKV3MemberNameSet = KeyValues3; // Allocates with KV_TYPE_ARRAY.
 
 template<size_t SIZE, typename T>
 class CKeyValues3ClusterImpl;
@@ -509,18 +526,23 @@ public:
 	void SetToEmptyTable();
 	int GetMemberCount() const;
 
-	CKeyValues3Table *GetTableRaw();
-	CKeyValues3Table *GetTableRaw() const { return const_cast<KeyValues3 *>(this)->GetTableRaw(); };
+	CKeyValues3Array *GetArray();
+	const CKeyValues3Array *GetArray() const { return const_cast<KeyValues3 *>(this)->GetArray(); };
+
+	CKeyValues3Table *GetTable();
+	const CKeyValues3Table *GetTable() const { return const_cast<KeyValues3 *>(this)->GetTable(); };
 
 	KeyValues3* GetMember( KV3MemberId_t id );
 	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
-
 	const char* GetMemberName( KV3MemberId_t id ) const;
-	CKV3MemberName GetMemberNameEx( KV3MemberId_t id ) const;
-
 	CUtlStringToken GetMemberHash( KV3MemberId_t id ) const;
+	CKV3MemberName GetKV3MemberName( KV3MemberId_t id ) const;
 
-	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = nullptr );
+protected:
+	KeyValues3* Internal_FindMember( const CKV3MemberName &name, KV3MemberId_t &next, KeyValues3* defaultValue = nullptr );
+
+public:
+	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = nullptr ) { KV3MemberId_t next = KV3_INVALID_MEMBER; return Internal_FindMember( name, next, defaultValue ); }
 	const KeyValues3 *FindMember( const CKV3MemberName &name, KeyValues3 *defaultValue = nullptr ) const { return const_cast<KeyValues3 *>(this)->FindMember( name, defaultValue ); };
 	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = nullptr );
 
@@ -797,10 +819,10 @@ public:
 		MEMBER_FLAG_EXTERNAL_NAME = (1 << 0)
 	};
 
-	typedef CUtlStringToken	Hash_t;
-	typedef KeyValues3*		Member_t;
-	typedef const char*		Name_t;
-	typedef uint8			Flags_t;
+	typedef KeyValues3LowercaseHash_t	Hash_t;
+	typedef KeyValues3*					Member_t;
+	typedef const char*					Name_t;
+	typedef uint8						Flags_t;
 
 	static const size_t DATA_SIZE = KV3_TABLE_MAX_FIXED_MEMBERS;
 	static const size_t DATA_ALIGNMENT = KV3Helpers::PackAlignOf<Hash_t, Member_t, Name_t, Flags_t>();
@@ -824,8 +846,9 @@ public:
 	void EnableFastSearch();
 	void EnsureMemberCapacity( int num, bool force = false, bool dont_move = false );
 
+	KV3MemberId_t Internal_FindMember( const CKV3MemberName &name, KV3MemberId_t &next );
+	KV3MemberId_t FindMember( const CKV3MemberName &name ) { KV3MemberId_t next = KV3_INVALID_MEMBER; return Internal_FindMember( name, next ); }
 	KV3MemberId_t FindMember( const KeyValues3* kv ) const;
-	KV3MemberId_t FindMember( const CKV3MemberName &name );
 	KV3MemberId_t CreateMember( KeyValues3 *parent, const CKV3MemberName &name, bool name_external = false );
 
 	void CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src );
@@ -868,7 +891,8 @@ private:
 	int m_nClusterElement;
 	int m_nAllocatedChunks;
 
-	struct kv3tablefastsearch_t {
+	struct kv3tablefastsearch_t
+	{
 		kv3tablefastsearch_t() : m_ignore( false ), m_ignores_counter( 0 ) {}
 		~kv3tablefastsearch_t() { Clear(); }
 

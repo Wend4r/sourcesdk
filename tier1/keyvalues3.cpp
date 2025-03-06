@@ -533,32 +533,32 @@ void KeyValues3::SetColor( const Color &color )
 
 int KeyValues3::GetArrayElementCount() const
 {
-	if ( GetType() != KV3_TYPE_ARRAY )
+	const CKeyValues3Array *pArray = GetArray();
+
+	if ( !pArray )
 		return 0;
 
-	if ( GetTypeEx() == KV3_TYPEEX_ARRAY )
-		return m_Data.m_pArray->Count();
-	else
-		return m_nNumArrayElements;
+	return GetTypeEx() == KV3_TYPEEX_ARRAY ? pArray->Count() : m_nNumArrayElements;
 }
 
 KeyValues3** KeyValues3::GetArrayBase()
 {
-	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
+	CKeyValues3Array *pArray = GetArray();
+
+	if ( !pArray )
 		return nullptr;
 
-	return m_Data.m_pArray->Base();
+	return pArray->Base();
 }
 
 KeyValues3* KeyValues3::GetArrayElement( int elem )
 {
-	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
+	CKeyValues3Array *pArray = GetArray();
+
+	if ( !pArray || elem < 0 || elem >= pArray->Count() )
 		return nullptr;
 
-	if ( elem < 0 || elem >= m_Data.m_pArray->Count() )
-		return nullptr;
-
-	return m_Data.m_pArray->Element( elem );
+	return pArray->Element( elem );
 }
 
 KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
@@ -566,7 +566,11 @@ KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
 		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
 
-	return *m_Data.m_pArray->InsertMultipleBefore( this, elem, 1 );
+	CKeyValues3Array *pArray = GetArray();
+
+	Assert( pArray );
+
+	return *pArray->InsertMultipleBefore( this, elem, 1 );
 }
 
 KeyValues3* KeyValues3::ArrayAddElementToTail()
@@ -574,21 +578,27 @@ KeyValues3* KeyValues3::ArrayAddElementToTail()
 	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
 		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
 
-	return *m_Data.m_pArray->InsertMultipleBefore( this, m_Data.m_pArray->Count(), 1 );
+	CKeyValues3Array *pArray = GetArray();
+
+	Assert( pArray );
+
+	return *pArray->InsertMultipleBefore( this, pArray->Count(), 1 );
 }
 
 void KeyValues3::ArraySwapItems( int idx1, int idx2 )
 {
-	if(GetTypeEx() != KV3_TYPEEX_ARRAY)
+	CKeyValues3Array *pArray = GetArray();
+
+	if ( !pArray )
 		return;
 
-	if(idx1 < 0 || idx1 >= m_Data.m_pArray->Count())
+	if(idx1 < 0 || idx1 >= pArray->Count())
 		return;
 
-	if(idx2 < 0 || idx2 >= m_Data.m_pArray->Count())
+	if(idx2 < 0 || idx2 >= pArray->Count())
 		return;
 
-	auto base = GetArrayBase();
+	auto base = pArray->Base();
 
 	auto temp = base[idx1];
 	base[idx1] = base[idx2];
@@ -600,15 +610,20 @@ void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t
 	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
 		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
 
-	m_Data.m_pArray->SetCount( this, count, type, subtype );
+	CKeyValues3Array *pArray = GetArray();
+
+	Assert( pArray );
+	pArray->SetCount( this, count, type, subtype );
 }
 
 void KeyValues3::ArrayRemoveElements( int elem, int num )
 {
-	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
+	CKeyValues3Array *pArray = GetArray();
+
+	if ( !pArray )
 		return;
 
-	m_Data.m_pArray->RemoveMultiple( this, elem, num );
+	pArray->RemoveMultiple( this, elem, num );
 }
 
 void KeyValues3::NormalizeArray()
@@ -774,13 +789,20 @@ bool KeyValues3::ReadArrayFloat32( int dest_size, float32* data ) const
 
 int KeyValues3::GetMemberCount() const
 {
-	if ( GetType() != KV3_TYPE_TABLE )
-		return 0;
-	
-	return m_Data.m_pTable->GetMemberCount();
+	const CKeyValues3Table *pTable = GetTable();
+
+	return pTable ? pTable->GetMemberCount() : 0;
 }
 
-CKeyValues3Table *KeyValues3::GetTableRaw()
+CKeyValues3Array *KeyValues3::GetArray()
+{
+	if(GetType() != KV3_TYPE_ARRAY)
+		return nullptr;
+
+	return m_Data.m_pArray;
+}
+
+CKeyValues3Table *KeyValues3::GetTable()
 {
 	if(GetType() != KV3_TYPE_TABLE)
 		return nullptr;
@@ -790,47 +812,57 @@ CKeyValues3Table *KeyValues3::GetTableRaw()
 
 KeyValues3* KeyValues3::GetMember( KV3MemberId_t id )
 {
-	if ( GetType() != KV3_TYPE_TABLE || id < 0 || id >= m_Data.m_pTable->GetMemberCount() )
+	CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
 		return nullptr;
 	
-	return m_Data.m_pTable->GetMember( id );
+	return pTable->GetMember( id );
 }
 
 const char* KeyValues3::GetMemberName( KV3MemberId_t id ) const
 {
-	if ( GetType() != KV3_TYPE_TABLE || id < 0 || id >= m_Data.m_pTable->GetMemberCount() )
+	const CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
 		return nullptr;
 	
-	return m_Data.m_pTable->GetMemberName( id );
+	return pTable->GetMemberName( id );
 }
 
-CKV3MemberName KeyValues3::GetMemberNameEx( KV3MemberId_t id ) const
+CKV3MemberName KeyValues3::GetKV3MemberName( KV3MemberId_t id ) const
 {
-	if ( GetType() != KV3_TYPE_TABLE || id < 0 || id >= m_Data.m_pTable->GetMemberCount() )
+	const CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
 		return CKV3MemberName();
 
-	return CKV3MemberName( m_Data.m_pTable->GetMemberHash( id ), m_Data.m_pTable->GetMemberName( id ) );
+	return CKV3MemberName( pTable->GetMemberHash( id ), pTable->GetMemberName( id ) );
 }
 
 CUtlStringToken KeyValues3::GetMemberHash( KV3MemberId_t id ) const
 {
-	if ( GetType() != KV3_TYPE_TABLE || id < 0 || id >= m_Data.m_pTable->GetMemberCount() )
+	const CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
 		return CUtlStringToken();
 	
-	return m_Data.m_pTable->GetMemberHash( id );
+	return pTable->GetMemberHash( id );
 }
 
-KeyValues3* KeyValues3::FindMember( const CKV3MemberName &name, KeyValues3* defaultValue )
+KeyValues3* KeyValues3::Internal_FindMember( const CKV3MemberName &name, KV3MemberId_t &next, KeyValues3* defaultValue )
 {
-	if ( GetType() != KV3_TYPE_TABLE )
+	CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable )
 		return defaultValue;
 
-	KV3MemberId_t id = m_Data.m_pTable->FindMember( name );
+	KV3MemberId_t id = pTable->Internal_FindMember( name, next );
 
 	if ( id == KV3_INVALID_MEMBER )
 		return defaultValue;
 
-	return m_Data.m_pTable->GetMember( id );
+	return pTable->GetMember( id );
 }
 
 KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pCreated )
@@ -838,14 +870,18 @@ KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pC
 	if ( GetType() != KV3_TYPE_TABLE )
 		PrepareForType( KV3_TYPEEX_TABLE, KV3_SUBTYPE_TABLE );
 
-	KV3MemberId_t id = m_Data.m_pTable->FindMember( name );
+	CKeyValues3Table *pTable = GetTable();
+
+	Assert( pTable );
+
+	KV3MemberId_t id = pTable->FindMember( name );
 
 	if ( id == KV3_INVALID_MEMBER )
 	{
 		if ( pCreated )
 			*pCreated = true;
 
-		id = m_Data.m_pTable->CreateMember( this, name );
+		id = pTable->CreateMember( this, name );
 	}
 	else
 	{
@@ -853,51 +889,55 @@ KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pC
 			*pCreated = false;
 	}
 
-	return m_Data.m_pTable->GetMember( id );
+	return pTable->GetMember( id );
 }
 
 void KeyValues3::SetToEmptyTable()
 {
 	PrepareForType( KV3_TYPEEX_TABLE, KV3_SUBTYPE_TABLE );
-	m_Data.m_pTable->RemoveAll( this );
+	GetTable()->RemoveAll( this );
 }
 
 bool KeyValues3::RemoveMember( KV3MemberId_t id )
 {
-	if ( GetType() != KV3_TYPE_TABLE || id < 0 || id >= m_Data.m_pTable->GetMemberCount() )
+	if ( GetType() != KV3_TYPE_TABLE || id < 0 || id >= GetTable()->GetMemberCount() )
 		return false;
 
-	m_Data.m_pTable->RemoveMember( this, id );
+	GetTable()->RemoveMember( this, id );
 
 	return true;
 }
 
 bool KeyValues3::RemoveMember( const KeyValues3* kv )
 {
-	if ( GetType() != KV3_TYPE_TABLE )
+	CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable )
 		return false;
 
-	KV3MemberId_t id = m_Data.m_pTable->FindMember( kv );
+	KV3MemberId_t id = GetTable()->FindMember( kv );
 
 	if ( id == KV3_INVALID_MEMBER )
 		return false;
 
-	m_Data.m_pTable->RemoveMember( this, id );
+	pTable->RemoveMember( this, id );
 
 	return true;
 }
 
 bool KeyValues3::RemoveMember( const CKV3MemberName &name )
 {
-	if ( GetType() != KV3_TYPE_TABLE )
+	CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable )
 		return false;
 
-	KV3MemberId_t id = m_Data.m_pTable->FindMember( name );
+	KV3MemberId_t id = pTable->FindMember( name );
 
 	if ( id == KV3_INVALID_MEMBER )
 		return false;
 
-	m_Data.m_pTable->RemoveMember( this, id );
+	pTable->RemoveMember( this, id );
 
 	return true;
 }
@@ -1267,7 +1307,7 @@ void KeyValues3::CopyFrom( const KeyValues3* pSrc )
 		case KV3_TYPE_TABLE:
 		{
 			SetToEmptyTable();
-			m_Data.m_pTable->CopyFrom( this, pSrc->m_Data.m_pTable );
+			GetTable()->CopyFrom( this, pSrc->GetTable() );
 			break;
 		}
 		default:
@@ -1573,7 +1613,7 @@ void CKeyValues3Table::EnableFastSearch()
 
 	for ( int i = 0; i < m_nCount; ++i )
 	{
-		m_pFastSearch->m_member_ids.Insert( pHashes[i].GetHashCode(), i );
+		m_pFastSearch->m_member_ids.Insert( pHashes[i], i );
 	}
 
 	m_pFastSearch->m_ignore = false;
@@ -1622,20 +1662,7 @@ void CKeyValues3Table::EnsureMemberCapacity( int count, bool force, bool dont_mo
 	m_bIsDynamicallySized = true;
 }
 
-KV3MemberId_t CKeyValues3Table::FindMember( const KeyValues3* kv ) const
-{
-	const Member_t* pMembers = MembersBase();
-
-	for ( int i = 0; i < m_nCount; ++i )
-	{
-		if ( pMembers[i] == kv )
-			return i;
-	}
-
-	return KV3_INVALID_MEMBER;
-}
-
-KV3MemberId_t CKeyValues3Table::FindMember( const CKV3MemberName &name )
+KV3MemberId_t CKeyValues3Table::Internal_FindMember( const CKV3MemberName &name, KV3MemberId_t &next )
 {
 	bool bFastSearch = false;
 
@@ -1650,28 +1677,45 @@ KV3MemberId_t CKeyValues3Table::FindMember( const CKV3MemberName &name )
 			}
 		}
 		else
-		{
 			bFastSearch = true;
-		}
 	}
 
 	if ( bFastSearch )
 	{
-		UtlHashHandle_t h = m_pFastSearch->m_member_ids.Find( name.GetHashCode() );
+		UtlHashHandle_t h = m_pFastSearch->m_member_ids.Find( name );
 
 		if ( h != m_pFastSearch->m_member_ids.InvalidHandle() )
-			return m_pFastSearch->m_member_ids[ h ];
+		{
+			KV3MemberId_t res = m_pFastSearch->m_member_ids[ h ];
+
+			next = res + 1;
+
+			return res;
+		}
 	}
 	else
 	{
 		const Hash_t* pHashes = HashesBase();
 
-		for ( int i = 0; i < m_nCount; ++i )
-		{
-			if ( pHashes[i] == name.GetHashCode() )
+		for ( KV3MemberId_t i = 0; i < m_nCount; ++i )
+			if ( pHashes[i] == name )
+			{
+				next = i + 1;
+
 				return i;
-		}
+			}
 	}
+
+	return KV3_INVALID_MEMBER;
+}
+
+KV3MemberId_t CKeyValues3Table::FindMember( const KeyValues3* kv ) const
+{
+	const Member_t* pMembers = MembersBase();
+
+	for ( int i = 0; i < m_nCount; ++i )
+		if ( pMembers[i] == kv )
+			return i;
 
 	return KV3_INVALID_MEMBER;
 }
