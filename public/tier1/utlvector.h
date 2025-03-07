@@ -25,6 +25,7 @@
 #include "tier0/strtools.h"
 
 #include <algorithm>
+#include <initializer_list>
 
 #define FOR_EACH_VEC( vecName, iteratorName ) \
 	for ( int iteratorName = 0; (vecName).IsUtlVector && iteratorName < (vecName).Count(); iteratorName++ )
@@ -249,6 +250,8 @@ class CUtlVector : public CUtlVectorBase< T, I, A >
 
 public:
 	using BaseClass::BaseClass;
+
+	CUtlVector( const std::initializer_list< T > elements );
 };
 
 template< class T, typename I = int >
@@ -1475,9 +1478,21 @@ void CUtlVectorBase<T, I, A>::Validate( CValidator &validator, char *pchName )
 }
 #endif // DBGFLAG_VALIDATE
 
+template < class T, typename I, class A >
+CUtlVector< T, I, A >::CUtlVector( const std::initializer_list< T > elements )
+{
+	this->EnsureCapacity( elements.size() );
+
+	for ( const auto& elem : elements )
+	{
+		this->AddToTail(elem);
+	}
+}
+
 // A vector class for storing pointers, so that the elements pointed to by the pointers are deleted
 // on exit.
-template<class T, typename I = int> class CUtlVectorAutoPurge : public CUtlVector< T, I, CUtlMemory< T, I > >
+template< class T, typename I = int >
+class CUtlVectorAutoPurge : public CUtlVector< T, I, CUtlMemory< T, I > >
 {
 public:
 	~CUtlVectorAutoPurge( void )
