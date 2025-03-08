@@ -11,7 +11,8 @@
 #pragma once
 #endif
 
-#include "string.h"
+#include <string.h>
+#include "tier0/dbg.h"
 #include "igamesystem.h"
 
 /*
@@ -33,7 +34,7 @@
 * and its callbacks should trigger.
 */
 
-using GameSystemListeners_t = CUtlVector< CUtlVector< const IGameSystem * > >;
+using GameSystemListeners_t = CUtlVector< CUtlVector< IGameSystem * > >;
 
 abstract_class IGameSystemFactory
 {
@@ -232,8 +233,8 @@ struct AddedGameSystem_t
 abstract_class IGameSystemEventDispatcher
 {
 public:
-	virtual void RegisterListener( GameSystemEventId_t id, const IGameSystem *pSystem ) = 0;
-	virtual void UnregisterListener( const IGameSystem *pSystem ) = 0;
+	virtual void RegisterListener( GameSystemEventId_t id, IGameSystem *pSystem ) = 0;
+	virtual void UnregisterListener( IGameSystem *pSystem ) = 0;
 };
 
 class CGameSystemEventDispatcher : public IGameSystemEventDispatcher
@@ -241,17 +242,10 @@ class CGameSystemEventDispatcher : public IGameSystemEventDispatcher
 public:
 	CGameSystemEventDispatcher( GameSystemListeners_t *pListeners ) : m_funcListeners( pListeners ) {}
 
-	void RegisterListener( GameSystemEventId_t id, const IGameSystem *pSystem ) override
-	{
-		m_funcListeners->InsertAfter( id, {pSystem} );
-	}
+	GameSystemListeners_t &GetListenersRef() { Assert( m_funcListeners ); return *m_funcListeners; }
 
-	void UnregisterListener( const IGameSystem *pSystem ) override
-	{
-		for ( auto &it : *m_funcListeners )
-			if ( it.FindAndRemove( pSystem ) )
-				break;
-	}
+	void RegisterListener( GameSystemEventId_t id, IGameSystem *pSystem ) override { GetListenersRef().InsertAfter( id, {pSystem} ); }
+	void UnregisterListener( IGameSystem *pSystem ) override { for ( auto &it : GetListenersRef() ) if ( it.FindAndRemove( pSystem ) ) break; }
 
 private:
 	GameSystemListeners_t *m_funcListeners;
