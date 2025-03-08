@@ -1485,7 +1485,7 @@ CUtlVector< T, I, A >::CUtlVector( const std::initializer_list< T > elements )
 
 	for ( const auto& elem : elements )
 	{
-		this->AddToTail(elem);
+		this->AddToTail( elem );
 	}
 }
 

@@ -15,6 +15,7 @@
 
 #include <entity2/entityidentity.h>
 #include <tier0/utlstring.h>
+#include <tier1/utlvector.h>
 
 /*
 * AMNOTE: To create your own gamesystem, you need to inherit from CBaseGameSystem or CAutoGameSystem,
@@ -49,6 +50,8 @@ class ISpawnGroupPrerequisiteRegistry;
 class IEntityPrecacheConfiguration;
 struct EntitySpawnInfo_t;
 class CBaseGameSystemFactory;
+
+typedef int GameSystemEventId_t;
 
 #define GS_EVENT_MSG( name ) struct Event##name##_t
 #define GS_EVENT_MSG_CHILD( name, parent ) struct Event##name##_t : Event##parent##_t
@@ -223,6 +226,8 @@ abstract_class IGameSystem
 public:
 	struct FactoryInfo_t
 	{
+		FactoryInfo_t() : m_pFactory( NULL ), m_bHasBeenAdded( false ) {}
+
 		CBaseGameSystemFactory *m_pFactory;
 		bool m_bHasBeenAdded;
 	};

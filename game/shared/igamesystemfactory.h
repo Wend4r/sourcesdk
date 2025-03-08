@@ -33,6 +33,8 @@
 * and its callbacks should trigger.
 */
 
+using GameSystemListeners_t = CUtlVector< CUtlVector< const IGameSystem * > >;
+
 abstract_class IGameSystemFactory
 {
 public:
@@ -230,13 +232,29 @@ struct AddedGameSystem_t
 abstract_class IGameSystemEventDispatcher
 {
 public:
-	virtual ~IGameSystemEventDispatcher() {}
+	virtual void RegisterListener( GameSystemEventId_t id, const IGameSystem *pSystem ) = 0;
+	virtual void UnregisterListener( const IGameSystem *pSystem ) = 0;
 };
 
 class CGameSystemEventDispatcher : public IGameSystemEventDispatcher
 {
 public:
-	CUtlVector<CUtlVector<IGameSystem*>>* m_funcListeners;
+	CGameSystemEventDispatcher( GameSystemListeners_t *pListeners ) : m_funcListeners( pListeners ) {}
+
+	void RegisterListener( GameSystemEventId_t id, const IGameSystem *pSystem ) override
+	{
+		m_funcListeners->InsertAfter( id, {pSystem} );
+	}
+
+	void UnregisterListener( const IGameSystem *pSystem ) override
+	{
+		for ( auto &it : *m_funcListeners )
+			if ( it.FindAndRemove( pSystem ) )
+				break;
+	}
+
+private:
+	GameSystemListeners_t *m_funcListeners;
 };
 
 
