@@ -226,7 +226,7 @@ abstract_class IGameSystem
 public:
 	struct FactoryInfo_t
 	{
-		FactoryInfo_t() : m_pFactory( NULL ), m_bHasBeenAdded( false ) {}
+		FactoryInfo_t() : m_pFactory( NULL ), m_bHasBeenAdded( true ) {}
 
 		CBaseGameSystemFactory *m_pFactory;
 		bool m_bHasBeenAdded;
