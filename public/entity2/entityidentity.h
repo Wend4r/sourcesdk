@@ -42,6 +42,11 @@ public:
 		return _index;
 	}
 
+	operator int() const
+	{
+		return _index;
+	}
+
 	bool operator==( const CEntityIndex &other ) const { return other._index == _index; }
 	bool operator!=( const CEntityIndex &other ) const { return other._index != _index; }
 	
