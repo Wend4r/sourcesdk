@@ -58,6 +58,50 @@ private:
 	int m_nBufferSize;
 };
 
+// easy string list class with dynamically allocated strings. For use with V_SplitString, etc.
+// Frees the dynamic strings in destructor.
+class CUtlStringList : public CUtlVectorAutoPurge< char * >
+{
+public:
+	CUtlStringList() {}
+
+	CUtlStringList( char const *pString, const char **pSeparators, int nSeparators = -1 )
+	{
+		SplitString( pString, pSeparators, nSeparators );
+	}
+
+	~CUtlStringList()
+	{
+		PurgeAndDeleteElements();
+	}
+
+	void CopyAndAddToTail( char const *pString )			// clone the string and add to the end
+	{
+		char *pNewStr = new char[1 + strlen( pString )];
+		V_strcpy( pNewStr, pString );
+		AddToTail( pNewStr );
+	}
+
+	static int __cdecl SortFunc( char * const * sz1, char * const * sz2 )
+	{
+		return strcmp( *sz1, *sz2 );
+	}
+
+	PLATFORM_CLASS void SplitString( char const *pString, char const * const *pSeparator, int nSeparators = -1 );
+
+private:
+	CUtlStringList( const CUtlStringList &other ); // copying directly will cause double-release of the same strings; maybe we need to do a deep copy, but unless and until such need arises, this will guard against double-release
+	inline void PurgeAndDeleteElements()
+	{
+		for( int i = 0; i < m_Size; i++ )
+		{
+			delete[] Element(i);
+		}
+		Purge();
+	}
+};
+
+
 #include "tier0/memdbgoff.h"
 
 #endif //#ifndef SPLITSTRING_H
