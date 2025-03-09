@@ -227,8 +227,7 @@ void KeyValues3::FreeMember( KeyValues3 *member )
 	}
 	else
 	{
-		Destruct( member );
-		free( (void *)member );
+		Delete( member );
 	}
 }
 
@@ -262,7 +261,7 @@ void KeyValues3::Free( bool bClearingContext )
 		}
 		case KV3_TYPEEX_ARRAY:
 		{
-			FreeArray( m_Data.m_pArray );
+			FreeArray( m_Data.m_pArray, bClearingContext );
 
 			m_bFreeArrayMemory = false;
 			m_Data.m_pArray = nullptr;
@@ -271,7 +270,7 @@ void KeyValues3::Free( bool bClearingContext )
 		}
 		case KV3_TYPEEX_TABLE:
 		{
-			FreeTable( m_Data.m_pTable );
+			FreeTable( m_Data.m_pTable, bClearingContext );
 
 			m_bFreeArrayMemory = false;
 			m_Data.m_pTable = nullptr;
@@ -368,13 +367,6 @@ void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype )
 	}
 
 	m_SubType = subtype;
-}
-
-void KeyValues3::OnClearContext()
-{ 
-	Free( true ); 
-	m_TypeEx = KV3_TYPEEX_NULL; 
-	m_Data.m_nMemory = 0;
 }
 
 CKeyValues3Cluster* KeyValues3::GetCluster() const
@@ -1883,8 +1875,7 @@ void CKeyValues3Table::PurgeFastSearch()
 {
 	if ( m_pFastSearch )
 	{
-		Destruct( &m_pFastSearch );
-		free( (void *)m_pFastSearch );
+		Delete( m_pFastSearch );
 	}
 
 	m_pFastSearch = nullptr;
@@ -1916,7 +1907,7 @@ void CKeyValues3Table::PurgeContent( KeyValues3 *parent, bool bClearingContext )
 
 void CKeyValues3Table::PurgeBuffers()
 {
-	if(m_bIsDynamicallySized)
+	if ( m_bIsDynamicallySized )
 	{
 		free( m_pDynamicBuffer );
 		m_nAllocatedChunks = m_nInitialSize;

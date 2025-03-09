@@ -80,6 +80,10 @@
 #pragma once
 #endif
 
+#if !defined(_X360) && defined(_WIN32)
+#include "winlite.h"
+#endif
+
 #if defined (_PS3)
 
 #if defined( __SPU__ )
@@ -117,6 +121,10 @@
 
 #endif
 
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+#include <stddef.h>
+
 #include "wchartypes.h"
 #include "tier0/valve_off.h"
 
@@ -135,6 +143,17 @@
 #if !defined( NO_STEAM_GAMECOORDINATOR )
 	#define NO_STEAM_GAMECOORDINATOR
 #endif
+#ifdef POSIX
+// need this for _alloca
+#include <alloca.h>
+#include <unistd.h>
+#include <signal.h>
+#include <time.h>
+#include <stdarg.h>
+#else
+#endif
+
+#include <string.h>
 
 #if defined( OSX )
 	#include <malloc/malloc.h>
@@ -202,6 +221,10 @@
 	#include <new.h>
 #endif
 #endif
+// Pull in the /analyze code annotations.
+#include "annotations.h"
+
+class CBufferString;
 
 //-----------------------------------------------------------------------------
 // Old-school defines we don't want to use moving forward
@@ -548,6 +571,15 @@ typedef union __attribute__ ((aligned (16)))
 	float m128_f32[4];
 } l_m128;
 
+// From steam/steamtypes.h
+// RTime32
+// We use this 32 bit time representing real world time.
+// It offers 1 second resolution beginning on January 1, 1970 (Unix time)
+typedef uint32 RTime32;
+
+typedef float				float32;
+typedef double				float64;
+
 typedef __vector float __vector4;
 typedef __vector4 __m128;
 
@@ -741,18 +773,13 @@ typedef void * HINSTANCE;
 
 #define offsetof_by_class(s,m)	( (size_t)&(((s *)0x1000000)->m) - 0x1000000u )
 
-#ifndef offsetof
+#if !defined( offsetof )
 	#ifdef GNUC
 		#define offsetof( type, var ) __builtin_offsetof( type, var )
 	#else
-		#include <stddef.h>
 		#define offsetof(s,m)	(size_t)&(((s *)0)->m)
 	#endif
-#endif
-
-
-#define  FLOAT32_MIN		FLT_MIN
-#define  FLOAT64_MIN		DBL_MIN
+#endif // !defined( offsetof )
 
 //-----------------------------------------------------------------------------
 // Long is evil because it's treated differently by different compilers
@@ -934,6 +961,7 @@ typedef void * HINSTANCE;
 #define ALIGN16
 #define ALIGN32
 #define ALIGN128
+#define ALIGN_N( _align_ )
 
 #undef ALIGN16_POST
 #define ALIGN4_POST DECL_ALIGN(4)
@@ -941,6 +969,7 @@ typedef void * HINSTANCE;
 #define ALIGN16_POST DECL_ALIGN(16)
 #define ALIGN32_POST DECL_ALIGN(32)
 #define ALIGN128_POST DECL_ALIGN(128)
+#define ALIGN_N_POST( _align_ ) DECL_ALIGN( _align_ )
 #else
 // MSVC has the align at the start of the struct
 // PS3 SNC supports both
@@ -949,14 +978,25 @@ typedef void * HINSTANCE;
 #define ALIGN16 DECL_ALIGN(16)
 #define ALIGN32 DECL_ALIGN(32)
 #define ALIGN128 DECL_ALIGN(128)
+#define ALIGN_N( _align_ ) DECL_ALIGN( _align_ )
 
 #define ALIGN4_POST
 #define ALIGN8_POST
 #define ALIGN16_POST
 #define ALIGN32_POST
 #define ALIGN128_POST
+#define ALIGN_N_POST( _align_ )
 #endif
 
+// !!! NOTE: if you get a compile error here, you are using VALIGNOF on an abstract type :NOTE !!!
+#define VALIGNOF_PORTABLE( type ) ( sizeof( AlignOf_t<type> ) - sizeof( type ) )
+
+#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC ) || defined( COMPILER_MSVC )
+#define VALIGNOF( type ) __alignof( type )
+#define VALIGNOF_TEMPLATE_SAFE( type ) VALIGNOF_PORTABLE( type )
+#else
+#error "PORT: Code only tested with MSVC! Must validate with new compiler, and use built-in keyword if available."
+#endif
 
 //-----------------------------------------------------------------------------
 // Macro to assist in asserting constant invariants during compilation
@@ -1155,6 +1195,7 @@ static bool sPS3_SuppressAssertsInThisFile = false; // you can throw this in the
 #else
 #error DebuggerBreak() is not defined for this platform!
 #endif
+#define	DebuggerBreakIfDebugging() if ( !Plat_IsInDebugSession() ) ; else DebuggerBreak()
 
 #if defined( _X360 ) || defined( _PS3 )
 	#if defined( fsel )
@@ -1207,16 +1248,14 @@ inline bool Plat_IsInDebugSession() { return false; }
 #define Plat_DebugString(s) ((void)0)
 #endif
 
-#define	DebuggerBreakIfDebugging() if ( !Plat_IsInDebugSession() ) ; else DebuggerBreak()
-
 
 //-----------------------------------------------------------------------------
 // Message Box
 //-----------------------------------------------------------------------------
 #if defined( PLATFORM_WINDOWS_PC )
-PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessage );
+PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessage, HWND hwnd = nullptr );
 #else
-#define Plat_MessageBox( t, m ) ((void)0)
+#define Plat_MessageBox( ... ) ((void)0)
 #endif
 
 
@@ -1302,6 +1341,14 @@ typedef int socklen_t;
 
 // need macro for constant expression
 #define ALIGN_VALUE( val, alignment ) ( ( val + alignment - 1 ) & ~( alignment - 1 ) ) 
+
+#if ( defined(__SANITIZE_ADDRESS__) && __SANITIZE_ADDRESS__ )
+	#define NO_ASAN __attribute__((no_sanitize("address")))
+	#define NO_ASAN_FORCEINLINE NO_ASAN inline
+#else
+	#define NO_ASAN
+	#define NO_ASAN_FORCEINLINE FORCEINLINE
+#endif
 
 // Force a function call site -not- to inlined. (useful for profiling)
 #define DONT_INLINE(a) (((int)(a)+1)?(a):(a))
@@ -1493,7 +1540,7 @@ inline T WordSwapC( T w )
 {
    uint16 temp;
 
-   PLAT_COMPILE_TIME_ASSERT( sizeof( T ) == sizeof(uint16) );
+   COMPILE_TIME_ASSERT( sizeof( T ) == sizeof(uint16) );
 
    temp  = ((*((uint16 *)&w) & 0xff00) >> 8);
    temp |= ((*((uint16 *)&w) & 0x00ff) << 8);
@@ -1506,7 +1553,7 @@ inline T DWordSwapC( T dw )
 {
    uint32 temp;
 
-   PLAT_COMPILE_TIME_ASSERT( sizeof( T ) == sizeof(uint32) );
+   COMPILE_TIME_ASSERT( sizeof( T ) == sizeof(uint32) );
 
    temp  =   *((uint32 *)&dw) 				>> 24;
    temp |= ((*((uint32 *)&dw) & 0x00FF0000) >> 8);
@@ -1522,7 +1569,7 @@ inline T QWordSwapC( T dw )
 	// Assert sizes passed to this are already correct, otherwise
 	// the cast to uint64 * below is unsafe and may have wrong results 
 	// or even crash.
-	PLAT_COMPILE_TIME_ASSERT( sizeof( dw ) == sizeof(uint64) );
+	COMPILE_TIME_ASSERT( sizeof( dw ) == sizeof(uint64) );
 
 	uint64 temp;
 
@@ -1542,66 +1589,31 @@ inline T QWordSwapC( T dw )
 // Fast swaps
 //-------------------------------------
 
-#if defined( COMPILER_MSVCX360 )
+//-------------------------------------
+// Fast swaps
+//-------------------------------------
 
-	#define WordSwap  WordSwap360Intr
-	#define DWordSwap DWordSwap360Intr
+#if defined _MSC_VER		// MSVC (What about MinGW and Clang for Windows)
 
-	template <typename T>
-	inline T WordSwap360Intr( T w )
-	{
-		T output;
-		__storeshortbytereverse( w, 0, &output );
-		return output;
-	}
+#define WordSwap(d) _byteswap_ushort(d)
+#define DWordSwap(d) ((uint32)(_byteswap_ulong( (unsigned long) d)))
+#define QWordSwap(d) _byteswap_uint64(d)
 
-	template <typename T>
-	inline T DWordSwap360Intr( T dw )
-	{
-		T output;
-		__storewordbytereverse( dw, 0, &output );
-		return output;
-	}
+#elif defined __GNUC__		// GCC or Clang
 
-#elif defined( COMPILER_MSVC32 )
+#define WordSwap(d) __builtin_bswap16(d)
+#define DWordSwap(d) __builtin_bswap32(d)
+#define QWordSwap(d) __builtin_bswap64(d)
 
-	#define WordSwap  WordSwapAsm
-	#define DWordSwap DWordSwapAsm
+#else						// N/A, native code
 
-	#pragma warning(push)
-	#pragma warning (disable:4035) // no return value
+#pragma message( "TODO: Using non-intrinsic byteswap functions..." )
 
-	template <typename T>
-	inline T WordSwapAsm( T w )
-	{
-	   __asm
-	   {
-		  mov ax, w
-		  xchg al, ah
-	   }
-	}
-
-	template <typename T>
-	inline T DWordSwapAsm( T dw )
-	{
-	   __asm
-	   {
-		  mov eax, dw
-		  bswap eax
-	   }
-	}
-
-	#pragma warning(pop)
-
-#else
-
-	#define WordSwap  WordSwapC
-	#define DWordSwap DWordSwapC
+#define WordSwap WordSwapC
+#define DWordSwap DWordSwapC
+#define QWordSwap QWordSwapC
 
 #endif
-
-// No ASM implementation for this yet
-#define QWordSwap QWordSwapC
 
 //-------------------------------------
 // The typically used methods.
@@ -1743,24 +1755,15 @@ inline void SwapFloat( float *pOut, const float *pIn )		{ SafeSwapFloat( pOut, p
 	}
 #endif
 
-// Silences a number of warnings on 360 compiles.
-inline uint64 CastPtrToUint64( const void *p )
+inline uint64 CastPtrToUint64( const void* p )
 {
-	return (uint64)( (uintp)p );
+	return (uint64) ( (uintp) p );
 }
 
-inline int64 CastPtrToInt64( const void *p )
+inline int64 CastPtrToInt64( const void* p )
 {
-	return (int64)( (uintp)p );
+	return (int64) ( (uintp) p );
 }
-
-
-// When in benchmark mode, the timer returns a simple incremented value each time you call it.
-//
-// It should not be changed after startup unless you really know what you're doing. The only place
-// that should do this is the benchmark code itself so it can output a legit duration.
-PLATFORM_INTERFACE void				Plat_SetBenchmarkMode( bool bBenchmarkMode );	
-PLATFORM_INTERFACE bool				Plat_IsInBenchmarkMode();
 
 // Returns true if running in test mode.
 // Test mode is turned on if -testmode is on the command line or the VALVE_TESTMODE environment variable is defined.
@@ -1771,7 +1774,9 @@ PLATFORM_INTERFACE uint64		    Plat_GetTime();
 
 PLATFORM_INTERFACE double			Plat_FloatTime();		// Returns time in seconds since the module was loaded.
 PLATFORM_INTERFACE uint32			Plat_MSTime();			// Time in milliseconds.
+PLATFORM_INTERFACE uint64			Plat_MSTime64();		// Time in milliseconds.
 PLATFORM_INTERFACE uint64			Plat_USTime();			// Time in microseconds.
+PLATFORM_INTERFACE char *			Plat_ctime64( const time_t *timep, char *buf, size_t bufsize );
 PLATFORM_INTERFACE uint64			Plat_GetClockStart();	// Snapshot of the clock when app started.
 PLATFORM_INTERFACE int32			Plat_timezone( void );
 PLATFORM_INTERFACE int32			Plat_daylight( void );
@@ -1788,19 +1793,27 @@ PLATFORM_INTERFACE struct tm *		Plat_localtime( const time_t *timep, struct tm *
 PLATFORM_INTERFACE void				Plat_GetTimeString( struct tm *pTime, char *pOut, int nMaxBytes );
 
 // converts a time_t to a struct tm without the local time conversion of ConvertToLocalTime
-PLATFORM_INTERFACE void				Platform_gmtime( uint64 nTime, struct tm *pTime );
-PLATFORM_INTERFACE time_t			Plat_timegm( struct tm *timeptr );
-// Compatibility definition:
-inline struct tm *	Plat_gmtime( const time_t *timep, struct tm *result ) { Platform_gmtime( *timep, result ); return result; }
-
-// Other time functions
-PLATFORM_INTERFACE char *Plat_ctime( const time_t *timep, char *buf, size_t bufsize );
+PLATFORM_INTERFACE struct tm*		Plat_gmtime64( const time_t *nTime, struct tm *pTime );
+PLATFORM_INTERFACE time_t			Plat_timegm64( struct tm *timeptr );
+PLATFORM_INTERFACE struct tm *		Plat_localtime64( const time_t *timep, struct tm *result );
 
 typedef class CSysModule* PlatModule_t;
 #define PLAT_MODULE_INVALID ((PlatModule_t)0)
 
 // Get the process' executable filename.
 PLATFORM_INTERFACE void				Plat_GetModuleFilename( char *pOut, int nMaxBytes );
+PLATFORM_INTERFACE bool				Plat_GetExecutablePath( char* pBuff, size_t nBuff );
+PLATFORM_INTERFACE int				Plat_GetExecutablePathUTF8( CBufferString *buf );
+
+PLATFORM_INTERFACE const char *		Plat_GetGameDirectory( int unknown=0 );
+
+PLATFORM_INTERFACE int				Plat_chmod(const char *filename, int pmode);
+PLATFORM_INTERFACE size_t			Plat_FileSize(const char *pFileName);
+PLATFORM_INTERFACE bool				Plat_IsDirectory(const char *pFilepath);
+PLATFORM_INTERFACE bool				Plat_FileIsReadOnly(const char *pFileName);
+PLATFORM_INTERFACE bool				Plat_FileExists( const char *pFileName, int flags );
+
+PLATFORM_INTERFACE char const *		Plat_GetEnv( char const *pEnvVarName );
 
 PLATFORM_INTERFACE void				Plat_ExitProcess( int nCode );
 
@@ -1829,12 +1842,6 @@ inline bool			Plat_NeedsLowFragmentation() { return true; }
 #else
 inline bool			Plat_NeedsLowFragmentation() { return false; }
 #endif
-
-PLATFORM_INTERFACE int Plat_chmod(const char *filename, int pmode);
-PLATFORM_INTERFACE bool Plat_FileExists(const char *pFileName);
-PLATFORM_INTERFACE size_t Plat_FileSize(const char *pFileName);
-PLATFORM_INTERFACE bool Plat_IsDirectory(const char *pFilepath);
-PLATFORM_INTERFACE bool Plat_FileIsReadOnly(const char *pFileName);
 
 #if defined( _WIN32 ) && defined( _MSC_VER ) && ( _MSC_VER >= 1400 )
 extern "C" unsigned __int64 __rdtsc();
@@ -1886,56 +1893,45 @@ inline uint64 Plat_Rdtsc()
 			return *this;								\
 		}
 
-PLATFORM_INTERFACE uint64 Plat_CPUTickFrequency();
-
-class CBufferString;
-
-
-#define PROCESSOR_DESC_ID (1 << 0)
-#define PROCESSOR_DESC_PROC (1 << 1)
-#define PROCESSOR_DESC_NO_INSTRUCTION_SET (1 << 2)
-
-#define PROCESSOR_DESC_ALL (PROCESSOR_DESC_ID | PROCESSOR_DESC_PROC)
-
 // Processor Information:
 struct CPUInformation
 {
-	int	 m_Size;                    // Size of this structure, for forward compatability.
+	int	 m_Size;		// Size of this structure, for forward compatability.
 
-	uint16 m_nLogicalProcessors;    // Number op logical processors.
-	uint16 m_nPhysicalProcessors;   // Number of physical processors.
-	uint16 m_nECores;               // Number of efficiency processors.
-	uint16 m_nPCores;               // Number of performance processors.
+	uint16 m_nLogicalProcessors;	// Number op logical processors.
+	uint16 m_nPhysicalProcessors;	// Number of physical processors
 
-	bool m_bRDTSC       : 1,	// Is RDTSC supported? // 12
-	     m_bCMOV        : 1,	// Is CMOV supported?
-	     m_bUnk1        : 1,
-	     m_bUnk2        : 1,
-	     m_bFCMOV       : 1,	// Is FCMOV supported?
-	     m_bSSE         : 1,	// Is SSE supported?
-	     m_bSSE2        : 1;	// Is SSE2 Supported?
+	uint16 m_nECores; // Number of E-Cores
+	uint16 m_nPCores; // Number of P-Cores
 
-	bool m_bMMX	        : 1,	// Is MMX supported? // 13
-	     m_bUnk3        : 1,
-	     m_bUnk4        : 1,
-	     m_bSSE3        : 1,
-	     m_bSSSE3       : 1,
-	     m_bSSE4a       : 1,
-	     m_bSSE41       : 1,
-	     m_bSSE42       : 1;
-
-	bool m_bAVX         : 1,
-	     m_bHasAVX      : 1,	// Is AVX supported?
-	     m_bAVX2        : 1,
-	     m_bHasEPCores  : 1;	// Indicates Intel based efficiency/performance cores.
-
-	int64 m_Speed;              // In cycles per second // 16
-
-	tchar* m_szProcessorID;     // Processor vendor Identification. // 24
-	tchar* m_szProcessorBrand;  // Processor brand string, if available. // 32
+	bool m_bRDTSC : 1;	// Is RDTSC supported?
+	bool m_bRDTSCP : 1;	// Is RDTSCP supported?
+	bool m_bInvariantTSC : 1;
+	bool m_bCMOV  : 1;  // Is CMOV supported?
+	bool m_bFCMOV : 1;  // Is FCMOV supported?
+	bool m_bSSE	  : 1;	// Is SSE supported?
+	bool m_bSSE2  : 1;	// Is SSE2 Supported?
+	bool m_b3DNow : 1;	// Is 3DNow! Supported?
+	bool m_bMMX   : 1;	// Is MMX supported?
+	bool m_bHT    : 1;	// Is HyperThreading supported?
+	bool m_bSSE3  : 1;
+	bool m_bPCLMULQDQ : 1;
+	bool m_bSSSE3 : 1;
+	bool m_bSSE4a : 1;
+	bool m_bSSE41 : 1;
+	bool m_bSSE42 : 1;
+	bool m_bAVX   : 1;		// Is AVX supported?
+	bool m_bAVXDisabled : 1;// Is AVX disabled by the system requirements?
+	bool m_bAVX2 : 1;
+	bool m_bECores : 1;		// Has E-Cores?
+	bool m_bHYBRID : 1;		// Is using Hybrid Architecture?
+	
+	char* m_szProcessorID;		// Processor vendor Identification.
+	char* m_szProcessorBrand;	// Processor brand string, if available
 
 	uint32 m_nModel;
 	uint32 m_nFeatures[ 3 ];
+
 	uint32 m_nL1CacheSizeKb;
 	uint32 m_nL1CacheDesc;
 	uint32 m_nL2CacheSizeKb;
@@ -1943,70 +1939,70 @@ struct CPUInformation
 	uint32 m_nL3CacheSizeKb;
 	uint32 m_nL3CacheDesc;
 
-	CPUInformation(): m_Size(0){}
+	struct ProcessorInfo
+	{
+		uint16 m_PhysicalId;
+		uint8 m_CoreId;
 
-	DLL_CLASS_IMPORT bool GetAMDFamily( uint32 *pUnk = NULL );
-	DLL_CLASS_IMPORT const char *GetDescription( CBufferString *pOut, uint32 eFlags = PROCESSOR_DESC_ALL ) const;
-	DLL_CLASS_IMPORT bool GetWinLevelRevision( uint16 *pUnk = NULL, uint16 *pUnk2 = NULL );
-	DLL_CLASS_IMPORT bool GetIAFamilyModelStepping( uint32 *pUnk = NULL, uint32 *pUnk2 = NULL, uint32 *pUnk3 = NULL );
+		uint8 m_HyperThreadingIdx;
+
+		uint16 m_Group;
+		uint8 m_GroupIdx;
+
+		enum EfficiencyType : uint8
+		{
+			ET_ECORE = 0,
+			ET_PCORE = 1
+		};
+
+		EfficiencyType m_EfficiencyType;
+
+		uint64 m_EfficiencyClass;
+	};
+
+	ProcessorInfo *m_pProcessorInfo;
+
+	CPUInformation()
+	{
+		memset( (void *)this, 0, sizeof( *this ) );
+	}
+
+	enum
+	{
+		CPUDESC_NONE = 0,
+		CPUDESC_INCLUDE_PROCESSOR_BRAND	= 1 << 0,
+		CPUDESC_INCLUDE_CORE_INFO		= 1 << 1,
+		CPUDESC_EXCLUDE_FEATURE_SUPPORT	= 1 << 2,
+
+		CPUDESC_ALL						= CPUDESC_INCLUDE_PROCESSOR_BRAND | CPUDESC_INCLUDE_CORE_INFO | CPUDESC_EXCLUDE_FEATURE_SUPPORT
+	};
+
+	// flags are CPUDESC_* flags
+	PLATFORM_CLASS const char *GetDescription( CBufferString *buf, uint32 flags = CPUDESC_NONE ) const;
+
+	PLATFORM_CLASS static bool GetIAFamilyModelStepping( uint32 *family_id, uint32 *model_id = nullptr, uint32 *stepping_id = nullptr );
+
+	PLATFORM_CLASS static bool GetAMDFamily( uint32 *family_id );
+	PLATFORM_CLASS static bool GetWinLevelRevision( uint16 *family_id, uint16 *model_id = nullptr );
 };
-COMPILE_TIME_ASSERT(sizeof(CPUInformation) == 80);
 
-#ifdef __clang__
+#ifdef COMPILER_CLANG
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunknown-pragmas"
 #pragma clang diagnostic ignored "-Wreturn-type-c-linkage"
 #endif
 
-PLATFORM_INTERFACE const CPUInformation& GetCPUInformation();
+PLATFORM_INTERFACE const CPUInformation &GetCPUInformation();
 
-#ifdef __clang__
+#ifdef COMPILER_CLANG
 #pragma clang diagnostic pop
 #endif
 
-PLATFORM_INTERFACE void GetCurrentDate( int *pDay, int *pMonth, int *pYear );
-PLATFORM_INTERFACE void GetCurrentDayOfTheWeek( int *pDay );  // 0 = Sunday
-PLATFORM_INTERFACE void GetCurrentDayOfTheYear( int *pDay );  // 0 = Jan 1
+PLATFORM_INTERFACE uint64 Plat_CPUTickFrequency();
 
-// ---------------------------------------------------------------------------------- //
-// Performance Monitoring Events - L2 stats etc...
-// ---------------------------------------------------------------------------------- //
-PLATFORM_INTERFACE void InitPME();
-PLATFORM_INTERFACE void ShutdownPME();
+PLATFORM_INTERFACE double Plat_GetCPUUsage();
 
-
-//-----------------------------------------------------------------------------
-// Security related functions
-//-----------------------------------------------------------------------------
-// Ensure that the hardware key's drivers have been installed.
-PLATFORM_INTERFACE bool Plat_VerifyHardwareKeyDriver();
-
-// Ok, so this isn't a very secure way to verify the hardware key for now.  It
-// is primarially depending on the fact that all the binaries have been wrapped
-// with the secure wrapper provided by the hardware keys vendor.
-PLATFORM_INTERFACE bool Plat_VerifyHardwareKey();
-
-// The same as above, but notifies user with a message box when the key isn't in
-// and gives him an opportunity to correct the situation.
-PLATFORM_INTERFACE bool Plat_VerifyHardwareKeyPrompt();
-
-// Can be called in real time, doesn't perform the verify every frame.  Mainly just
-// here to allow the game to drop out quickly when the key is removed, rather than
-// allowing the wrapper to pop up it's own blocking dialog, which the engine doesn't
-// like much.
-PLATFORM_INTERFACE bool Plat_FastVerifyHardwareKey();
-
-//-----------------------------------------------------------------------------
-// The following are low-level OS-independent wrappers around actual OS file calls.
-//-----------------------------------------------------------------------------
-PLATFORM_INTERFACE void Plat_getwd( char *pWorkingDirectory, size_t nBufLen );
-
-//-----------------------------------------------------------------------------
-// Just logs file and line to simple.log
-//-----------------------------------------------------------------------------
-PLATFORM_INTERFACE void* Plat_SimpleLog( const tchar* file, int line );
-
-PLATFORM_INTERFACE const char *Plat_GetGameDirectory( int unknown=0 );
+PLATFORM_INTERFACE void Plat_GetCurrentDate( int *pDay, int *pMonth, int *pYear );
 
 #endif // #if !defined( __SPU__ )
 
@@ -2021,7 +2017,7 @@ PLATFORM_INTERFACE const char *Plat_GetGameDirectory( int unknown=0 );
 //-----------------------------------------------------------------------------
 // Returns true if running on a 64 bit (windows) OS
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE bool Is64BitOS();
+PLATFORM_INTERFACE bool Plat_Is64BitOS();
 
 
 //-----------------------------------------------------------------------------
@@ -2164,37 +2160,37 @@ inline T&& Forward( typename C11RemoveReference<T>::Type&& obj )
 template <class T>
 inline T* Construct( T* pMemory )
 {
-	return ::new( pMemory ) T;
+	return reinterpret_cast<T*>(::new( pMemory ) T);
 }
 
 template <class T, typename ARG1>
 inline T* Construct( T* pMemory, ARG1 a1 )
 {
-	return ::new( pMemory ) T( a1 );
+	return reinterpret_cast<T*>(::new( pMemory ) T( a1 ));
 }
 
 template <class T, typename ARG1, typename ARG2>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2 )
 {
-	return ::new( pMemory ) T( a1, a2 );
+	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2 ));
 }
 
 template <class T, typename ARG1, typename ARG2, typename ARG3>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2, ARG3 a3 )
 {
-	return ::new( pMemory ) T( a1, a2, a3 );
+	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2, a3 ));
 }
 
 template <class T, typename ARG1, typename ARG2, typename ARG3, typename ARG4>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2, ARG3 a3, ARG4 a4 )
 {
-	return ::new( pMemory ) T( a1, a2, a3, a4 );
+	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2, a3, a4 ));
 }
 
 template <class T, typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2, ARG3 a3, ARG4 a4, ARG5 a5 )
 {
-	return ::new( pMemory ) T( a1, a2, a3, a4, a5 );
+	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2, a3, a4, a5 ));
 }
 
 template <class T, class P>
@@ -2218,7 +2214,7 @@ inline void ConstructThreeArg( T* pMemory, P1 const& arg1, P2 const& arg2, P3 co
 template <class T>
 inline T* CopyConstruct( T* pMemory, T const& src )
 {
-	return ::new( pMemory ) T(src);
+	return reinterpret_cast<T*>(::new( pMemory ) T(src));
 }
 
 template <class T>
@@ -2229,7 +2225,7 @@ inline T* MoveConstruct( T* pMemory, T&& src )
 
 // [will] - Fixing a clang compile: unable to create a pseudo-destructor (aka a destructor that does nothing) for float __attribute__((__vector_size__(16)))
 // Fixed by specializing the Destroy function to not call destructor for that type.
-#if defined( __clang__ ) || defined (LINUX)
+#if defined( COMPILER_CLANG ) || defined (LINUX)
 
 template <class T>
 inline void Destruct( T* pMemory );
@@ -2244,24 +2240,84 @@ inline void Destruct( T* pMemory )
 {
 	pMemory->~T();
 
-// #ifdef _DEBUG
-// 	memset( (void*)pMemory, 0xDD, sizeof(T) );
-// #endif
+#ifdef _DEBUG
+	memset( reinterpret_cast<void*>( pMemory ), 0xDD, sizeof(T) );
+#endif
 }
 
-// [will] - Fixing a clang compile: unable to create a pseudo-destructor (aka a destructor that does nothing) for float __attribute__((__vector_size__(16)))
-// Fixed by specializing the Destroy function to not call destructor for that type.
-#if defined( __clang__ ) || defined (LINUX)
-
-template <>
-inline void Destruct( float __attribute__((__vector_size__(16)))* pMemory )
+// The above will error when binding to a type of: foo(*)[] -- there is no provision in c++ for knowing how many objects
+// to destruct without preserving the count and calling the necessary destructors.
+template <class T, size_t N>
+inline void Destruct( T (*pMemory)[N] )
 {
-// #ifdef _DEBUG
-// 	memset( pMemory, 0xDD, sizeof( float __attribute__((__vector_size__(16))) ) );
-// #endif
+	for ( size_t i = 0; i < N; i++ )
+	{
+		(pMemory[i])->~T();
+	}
+
+#ifdef _DEBUG
+	memset( reinterpret_cast<void*>( pMemory ), 0xDD, sizeof(*pMemory) );
+#endif
 }
 
-#endif // __clang__
+#include "tier0/memdbgon.h"
+
+template <class T>
+inline void Delete( T* pMemory )
+{
+	pMemory->~T();
+	free( reinterpret_cast<void *>(pMemory) );
+
+#ifdef _DEBUG
+	memset( reinterpret_cast<void*>( pMemory ), 0xDD, sizeof(T) );
+#endif
+}
+
+template <class T, size_t N>
+inline void Delete( T (*pMemory)[N] )
+{
+	for ( size_t i = 0; i < N; i++ )
+	{
+		(pMemory[i])->~T();
+		free( reinterpret_cast<void*>( pMemory[i] ) );
+	}
+
+#ifdef _DEBUG
+	memset( reinterpret_cast<void*>( pMemory ), 0xDD, sizeof(*pMemory) );
+#endif
+}
+
+
+#include "tier0/memdbgoff.h"
+
+//--------------------------------------------------------------------------------------------------
+// RunCodeAtScopeExit
+//
+// Example:
+//	int *x = new int;
+//	RunCodeAtScopeExit( delete x )
+//--------------------------------------------------------------------------------------------------
+template <typename LambdaType>
+class CScopeGuardLambdaImpl
+{
+public:
+	explicit CScopeGuardLambdaImpl( LambdaType&& lambda ) : m_lambda( Move( lambda ) ) { }
+	~CScopeGuardLambdaImpl() { m_lambda(); }
+private:
+	LambdaType m_lambda;
+};
+
+//--------------------------------------------------------------------------------------------------
+template <typename LambdaType>
+CScopeGuardLambdaImpl< LambdaType > MakeScopeGuardLambda( LambdaType&& lambda )
+{
+	return CScopeGuardLambdaImpl< LambdaType >( Move( lambda ) );
+}
+
+//--------------------------------------------------------------------------------------------------
+#define RunLambdaAtScopeExit2( VarName, ... )		const auto VarName( MakeScopeGuardLambda( __VA_ARGS__ ) ); (void)VarName
+#define RunLambdaAtScopeExit( ... )					RunLambdaAtScopeExit2( UNIQUE_ID, __VA_ARGS__ )
+#define RunCodeAtScopeExit( ... )					RunLambdaAtScopeExit( [&]() { __VA_ARGS__ ; } )
 
 //
 // GET_OUTER()
@@ -2291,7 +2347,7 @@ inline void Destruct( float __attribute__((__vector_size__(16)))* pMemory )
 
 /*	TEMPLATE_FUNCTION_TABLE()
 
-    (Note added to platform.h so platforms that correctly support templated
+	(Note added to platform.h so platforms that correctly support templated
 	 functions can handle portions as templated functions rather than wrapped
 	 functions)
 
@@ -2376,7 +2432,7 @@ struct __MetaLooper_##NAME<0>											\
 class NAME																\
 {																		\
 private:																\
-    static const __MetaLooper_##NAME<COUNT> m;							\
+	static const __MetaLooper_##NAME<COUNT> m;							\
 public:																	\
 	enum { count = COUNT };												\
 	static const __Type_##NAME* functions;								\
@@ -2429,53 +2485,137 @@ private:
 //-----------------------------------------------------------------------------
 // What OS version are we?
 //-----------------------------------------------------------------------------
-enum PlatOSVersion_t
+enum EOSType
 {
-	PLAT_OS_VERSION_UNKNOWN = -1,
+	k_eIOSUnknown = -600,
 
-	// X360-specific versions
-	PLAT_OS_VERSION_XBOX360 = 0,
+	k_eAndroidUnknown = -500,
 
-	// PC-specific OS versions (single byte)
-	PLAT_OS_VERSION_WIN2K = 50,
-	PLAT_OS_VERSION_XP = 51,
-	PLAT_OS_VERSION_WIN2003 = 52,
-	PLAT_OS_VERSION_VISTA = 60,
-	PLAT_OS_VERSION_WIN7 = 61,
-	PLAT_OS_VERSION_WIN8 = 62,
-	PLAT_OS_VERSION_WIN81 = 63,
-	PLAT_OS_VERSION_WIN10 = 100,
+	k_eAndroid50,
+	k_eAndroid51,
+	k_eAndroid60,
+	k_eAndroid70,
+	k_eAndroid711,
+	k_eAndroid8,
+	k_eAndroid8MR1,
+	k_eAndroid9,
+	k_eAndroid10,
+
+	k_eAndroidMax,
+
+	k_eOSUMQ = -400,
+
+	k_eOSPS3 = -300,
+
+	k_eLinuxUnknown = -203,
+
+	k_eLinux22,
+	k_eLinux24,
+	k_eLinux26,
+	k_eLinux32,
+	k_eLinux35,
+	k_eLinux36,
+	k_eLinux310,
+	k_eLinux40,
+	k_eLinux45,
+	k_eLinux418,
+	k_eLinux50,
+
+	k_eLinuxMax,
+
+	k_eMacOSUnknown = -102,
+
+	k_eMacOS104,
+	k_eMacOS105,
+	k_eMacOS1058,
+	k_eMacOS106 = -95,
+	k_eMacOS1063,
+	k_eMacOS1064_slgu,
+	k_eMacOS1067,
+	k_eMacOS107 = -90,
+	k_eMacOS108,
+	k_eMacOS109,
+	k_eMacOS1010,
+	k_eMacOS1011,
+	k_eMacOS1012,
+	k_eMacOS1013,
+	k_eMacOS1014,
+	k_eMacOS1015,
+	k_eMacOS1016,
+	k_eMacOS11,
+	k_eMacOS111,
+	k_eMacOS1017,
+	k_eMacOS12,
+	k_eMacOS1018,
+	k_eMacOS13,
+	k_eMacOS14,
+	k_eMacOS15,
+
+	k_eMacOSMax,
+
+	k_eWinUnknown = 0,
+
+	k_eWin311,
+	k_eWin95,
+	k_eWin98,
+	k_eWinME,
+	k_eWinNT,
+	k_eWin2000,
+	k_eWinXP,
+	k_eWin2003,
+	k_eWinVista,
+	k_eWin2008,
+	k_eWindows7,
+	k_eWin2008R2,
+	k_eWin2012,
+	k_eWindows8,
+	k_eWindows81,
+	k_eWin2012R2,
+	k_eWindows10,
+	k_eWin2016,
+	k_eWin2019,
+	k_eWin2022,
+	k_eWindows11,
+
+	k_eWinMAX,
+
+	k_eOSUnknown = -1
 };
 
-PLATFORM_INTERFACE PlatOSVersion_t Plat_GetOSVersion();
+PLATFORM_INTERFACE EOSType Plat_GetOSType();
+PLATFORM_INTERFACE bool Plat_GetOSDescriptionString(char *buf, size_t size);
+PLATFORM_INTERFACE const char *GetNameFromOSType( EOSType type );
 
 
-//  Watchdog timer support. Call BeginWatchdogTimer( nn ) to kick the timer off.  if you don't call
-// EndWatchdogTimer within nn seconds, the program will kick off an exception.  This is for making
+//  Watchdog timer support. Call Plat_BeginWatchdogTimer( nn, issuer ) to kick the timer off.  if you don't call
+// Plat_EndWatchdogTimer within nn seconds, the program will kick off an exception.  This is for making
 // sure that hung dedicated servers abort (and restart) instead of staying hung. Calling
-// EndWatchdogTimer more than once or when there is no active watchdog is fine. Only does anything
+// Plat_EndWatchdogTimer more than once or when there is no active watchdog is fine. Only does anything
 // under linux right now. It should be possible to implement this functionality in windows via a
 // thread, if desired.
 
-#if defined( POSIX ) && !defined( _PS3 )
+PLATFORM_INTERFACE void Plat_BeginWatchdogTimer( int nSecs, const char *szIssuer );
+PLATFORM_INTERFACE void Plat_EndWatchdogTimer( const char *szIssuer );
+PLATFORM_INTERFACE void Plat_SetWatchdogHandlerFunction( void (*handler)() );
 
-PLATFORM_INTERFACE void BeginWatchdogTimer( int nSecs );
-PLATFORM_INTERFACE void EndWatchdogTimer( void );
-PLATFORM_INTERFACE void ResetBaseTime( void );							  // reset plat_floattime to 0 for a subprocess
-#else
-FORCEINLINE void BeginWatchdogTimer( int nSecs )
+
+// Use ValidateAlignment to sanity-check alignment usage when allocating arrays of an aligned type
+#define ALIGN_ASSERT( pred ) { COMPILE_TIME_ASSERT( pred ); }
+template< class T, int ALIGN >
+inline void ValidateAlignmentExplicit(void)
 {
+	// Alignment must be a power of two
+	ALIGN_ASSERT((ALIGN & (ALIGN - 1)) == 0);
+	// Alignment must not imply gaps in the array (which the CUtlMemory pattern does not allow for)
+	ALIGN_ASSERT(ALIGN <= sizeof(T));
+	// Alignment must be a multiple of the size of the object type, or elements will *NOT* be aligned!
+	ALIGN_ASSERT((sizeof(T) % ALIGN) == 0);
+	// Alignment should be a multiple of the base alignment of T
+	// ALIGN_ASSERT((ALIGN % VALIGNOF(T)) == 0);
+	// Alignment must not be bigger than the maximum declared alignment used by DECLARE_ALIGNED_BYTE_ARRAY
+	// (if you hit this, just add more powers of 2 below and increase this limit)
+	ALIGN_ASSERT( ALIGN <= 128 );
 }
-
-FORCEINLINE void EndWatchdogTimer( void )
-{
-}
-FORCEINLINE void ResetBaseTime( void )						  // reset plat_floattime to 0 for a subprocess
-{
-}
-
-#endif
-
 
 #ifdef COMPILER_MSVC
 /*
@@ -2549,75 +2689,7 @@ FORCEINLINE uint64 RotateBitsRight64( uint64 nValue, int nRotateBits )
 	return ( nValue >> nRotateBits ) | ( nValue << ( ( - nRotateBits ) & 63 ) );
 }
 #endif
-PLATFORM_INTERFACE const char * GetPlatformSpecificFileName(const char * FileName);
 
-#include "tier0/valve_on.h"
-
-// Use AlignedByteArray_t if you need an appropriately aligned array of T with no constructor (e.g CUtlMemoryFixed):
-//  - usage:		AlignedByteArray_t< NUM, T >
-//  - same as:		byte[ NUM*sizeof(T) ]
-//  - BUT:			avoids calling T's constructor
-//  - AND:			has same alignment as T
-// [ Thanks to CygnusX1: http://stackoverflow.com/questions/5134217/aligning-data-on-the-stack-c ]
-
-#if defined( GNUC )
-// gnuc has the align decoration at the end
-#define ALIGN4
-#define ALIGN8 
-#define ALIGN16
-#define ALIGN32
-#define ALIGN128
-#define ALIGN_N( _align_ )
-
-#undef ALIGN16_POST
-#define ALIGN4_POST DECL_ALIGN(4)
-#define ALIGN8_POST DECL_ALIGN(8)
-#define ALIGN16_POST DECL_ALIGN(16)
-#define ALIGN32_POST DECL_ALIGN(32)
-#define ALIGN128_POST DECL_ALIGN(128)
-#define ALIGN_N_POST( _align_ ) DECL_ALIGN( _align_ )
-#else
-// MSVC has the align at the start of the struct
-// PS3 SNC supports both
-#define ALIGN4 DECL_ALIGN(4)
-#define ALIGN8 DECL_ALIGN(8)
-#define ALIGN16 DECL_ALIGN(16)
-#define ALIGN32 DECL_ALIGN(32)
-#define ALIGN128 DECL_ALIGN(128)
-#define ALIGN_N( _align_ ) DECL_ALIGN( _align_ )
-
-#define ALIGN4_POST
-#define ALIGN8_POST
-#define ALIGN16_POST
-#define ALIGN32_POST
-#define ALIGN128_POST
-#define ALIGN_N_POST( _align_ )
-#endif
-
-// !!! NOTE: if you get a compile error here, you are using VALIGNOF on an abstract type :NOTE !!!
-#define VALIGNOF_PORTABLE( type ) ( sizeof( AlignOf_t<type> ) - sizeof( type ) )
-
-#if defined( COMPILER_CLANG ) || defined( COMPILER_GCC ) || defined( COMPILER_MSVC )
-#define VALIGNOF( type ) __alignof( type )
-#define VALIGNOF_TEMPLATE_SAFE( type ) VALIGNOF_PORTABLE( type )
-#else
-#error "PORT: Code only tested with MSVC! Must validate with new compiler, and use built-in keyword if available."
-#endif
-
-// Use ValidateAlignment to sanity-check alignment usage when allocating arrays of an aligned type
-#define ALIGN_ASSERT( pred ) { COMPILE_TIME_ASSERT( pred ); }
-template< class T, int ALIGN >
-inline void ValidateAlignmentExplicit(void)
-{
-	// Alignment must be a power of two
-	ALIGN_ASSERT((ALIGN & (ALIGN - 1)) == 0);
-	// Alignment must not imply gaps in the array (which the CUtlMemory pattern does not allow for)
-	ALIGN_ASSERT(ALIGN <= sizeof(T));
-	// Alignment must be a multiple of the size of the object type, or elements will *NOT* be aligned!
-	ALIGN_ASSERT((sizeof(T) % ALIGN) == 0);
-	// Alignment should be a multiple of the base alignment of T
-//	ALIGN_ASSERT((ALIGN % VALIGNOF(T)) == 0);
-}
 template< class T > inline void ValidateAlignment(void) { ValidateAlignmentExplicit<T, VALIGNOF(T)>(); }
 
 // Portable alternative to __alignof
@@ -2647,10 +2719,14 @@ DECLARE_ALIGNED_BYTE_ARRAY(32);
 DECLARE_ALIGNED_BYTE_ARRAY(64);
 DECLARE_ALIGNED_BYTE_ARRAY(128);
 
-//-----------------------------------------------------------------------------
+#include "tier0/valve_on.h"
 
-PLATFORM_INTERFACE char const * Plat_GetEnv(char const *pEnvVarName);
-
-PLATFORM_INTERFACE bool Plat_GetExecutablePath(char* pBuff, size_t nBuff);
+#if defined(TIER0_DLL_EXPORT)
+extern int V_tier0_stricmp(const char *s1, const char *s2 );
+#undef stricmp
+#undef strcmpi
+#define stricmp(s1,s2) V_tier0_stricmp( s1, s2 )
+#define strcmpi(s1,s2) V_tier0_stricmp( s1, s2 )
+#endif
 
 #endif /* PLATFORM_H */

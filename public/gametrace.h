@@ -98,6 +98,8 @@ public:
 	float m_softContactFrequency;
 	float m_softContactDampingRatio;
 	float m_wheelDrag;
+	float m_heatConductivity;
+	float m_flashpoint;
 };
 
 class CPhysSurfacePropertiesSoundNames

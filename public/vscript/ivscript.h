@@ -175,12 +175,12 @@ template <typename T> struct ScriptDeducer { /*enum { FIELD_TYPE = FIELD_TYPEUNK
 #define DECLARE_DEDUCE_FIELDTYPE( fieldType, type ) template<> struct ScriptDeducer<type> { enum { FIELD_TYPE = fieldType }; };
 
 DECLARE_DEDUCE_FIELDTYPE( FIELD_VOID, void );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_FLOAT, float );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_FLOAT32, float32 );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_CSTRING, const char * );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_CSTRING, char * );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_VECTOR, Vector );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_VECTOR, const Vector & );
-DECLARE_DEDUCE_FIELDTYPE( FIELD_INTEGER, int );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_INT32, int32 );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_BOOLEAN, bool );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_CHARACTER, char );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_HSCRIPT, HSCRIPT );
@@ -207,23 +207,6 @@ DECLARE_NAMED_FIELDTYPE( bool,	"boolean" );
 DECLARE_NAMED_FIELDTYPE( char,	"character" );
 DECLARE_NAMED_FIELDTYPE( HSCRIPT,	"hscript" );
 DECLARE_NAMED_FIELDTYPE( ScriptVariant_t,	"variant" );
-
-inline const char * ScriptFieldTypeName( int16 eType)
-{
-	switch( eType )
-	{
-	case FIELD_VOID:	return "void";
-	case FIELD_FLOAT:	return "float";
-	case FIELD_CSTRING:	return "cstring";
-	case FIELD_VECTOR:	return "vector";
-	case FIELD_INTEGER:	return "integer";
-	case FIELD_BOOLEAN:	return "boolean";
-	case FIELD_CHARACTER:	return "character";
-	case FIELD_HSCRIPT:	return "hscript";
-	case FIELD_VARIANT:	return "variant";
-	default:	return "unknown_script_type";
-	}
-}
 
 //---------------------------------------------------------
 

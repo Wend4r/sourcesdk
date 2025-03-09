@@ -404,11 +404,7 @@ inline void *AllocUnattributed( size_t nSize )
 
 inline void *ReallocUnattributed( void *pMem, size_t nSize )
 {
-#if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 	return g_pMemAlloc->Realloc(pMem, nSize);
-#else
-	return g_pMemAlloc->Realloc(pMem, nSize, ::g_pszModule, 0);
-#endif
 }
 
 #undef inline
@@ -446,11 +442,7 @@ ALLOC_CALL void *malloc( size_t nSize )
 
 FREE_CALL void free( void *pMem )
 {
-#if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 	g_pMemAlloc->Free(pMem);
-#else
-	g_pMemAlloc->Free(pMem, ::g_pszModule, 0 );
-#endif
 }
 
 ALLOC_CALL void *realloc( void *pMem, size_t nSize )
@@ -520,11 +512,7 @@ void *_recalloc_base( void *pMem, size_t nCount, size_t nSize )
 
 void _free_base( void *pMem )
 {
-#if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 	g_pMemAlloc->Free(pMem);
-#else
-	g_pMemAlloc->Free(pMem, ::g_pszModule, 0 );
-#endif
 }
 
 void *__cdecl _expand_base( void *pMem, size_t nNewSize, int nBlockUse )
@@ -763,20 +751,12 @@ void *__cdecl operator new[] ( size_t nSize, int nBlockUse, const char *pFileNam
 
 void __cdecl operator delete( void *pMem ) throw()
 {
-#if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 	g_pMemAlloc->Free(pMem);
-#else
-	g_pMemAlloc->Free(pMem, ::g_pszModule, 0 );
-#endif
 }
 
 void __cdecl operator delete[] ( void *pMem ) throw()
 {
-#if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 	g_pMemAlloc->Free(pMem);
-#else
-	g_pMemAlloc->Free(pMem, ::g_pszModule, 0 );
-#endif
 }
 #endif
 
@@ -887,11 +867,7 @@ void *__cdecl _expand_dbg( void *pMem, size_t nNewSize, int nBlockUse,
 void __cdecl _free_dbg( void *pMem, int nBlockUse )
 {
 	AttribIfCrt();
-#if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 	g_pMemAlloc->Free(pMem);
-#else
-	g_pMemAlloc->Free(pMem, ::g_pszModule, 0 );
-#endif
 }
 
 size_t __cdecl _msize_dbg( void *pMem, int nBlockUse )

@@ -618,7 +618,6 @@ private:
 	void Free( bool bClearingContext = false );
 	void ResolveUnspecified();
 	void PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype );
-	void OnClearContext();
 	void CopyFrom( const KeyValues3* pSrc );
 
 	int GetClusterElement() const { return m_nClusterElement; }
@@ -700,7 +699,7 @@ public:
 	static const size_t DATA_ALIGNMENT = KV3Helpers::PackAlignOf<Element_t>();
 
 	CKeyValues3Array( int cluster_elem = -1, int alloc_size = DATA_SIZE );
-	~CKeyValues3Array() { PurgeBuffers(); }
+	~CKeyValues3Array() { Free(); }
 
 	int GetClusterElement() const { return m_nClusterElement; }
 	void SetClusterElement( int element ) { m_nClusterElement = element; }
@@ -722,8 +721,8 @@ public:
 	void CopyFrom( KeyValues3 *parent, const CKeyValues3Array* pSrc );
 	void RemoveMultiple( KeyValues3 *parent, int from, int num );
 
-	void OnClearContext() { PurgeContent( nullptr, true ); }
-	void PurgeContent( KeyValues3 *parent = nullptr, bool clearing_context = false );
+	void Free( bool clearing_context = false ) { PurgeBuffers(); }
+	void PurgeContent( KeyValues3 *parent, bool clearing_context = false );
 	void PurgeBuffers();
 
 	static constexpr size_t TotalSizeOf( int initial_size ) { return ALIGN_VALUE( TotalSizeWithoutStaticData() + TotalSizeOfData( MAX( initial_size, 0 ) ), 8 ); }
@@ -772,7 +771,7 @@ public:
 	static const size_t DATA_ALIGNMENT = KV3Helpers::PackAlignOf<Hash_t, Member_t, Name_t, Flags_t>();
 
 	CKeyValues3Table( int cluster_elem = -1, int alloc_size = DATA_SIZE );
-	~CKeyValues3Table() { PurgeBuffers(); }
+	~CKeyValues3Table() { Free(); }
 
 	int GetClusterElement() const { return m_nClusterElement; }
 	void SetClusterElement( int element ) { m_nClusterElement = element; }
@@ -799,8 +798,8 @@ public:
 	void RemoveMember( KeyValues3 *parent, KV3MemberId_t id );
 	void RemoveAll( KeyValues3 *parent, int new_size = 0 );
 
-	void OnClearContext() { PurgeContent( nullptr, true ); }
-	void PurgeContent( KeyValues3 *parent = nullptr, bool bClearingContext = false );
+	void Free( bool clearing_context = false ) { PurgeBuffers(); }
+	void PurgeContent( KeyValues3 *parent, bool bClearingContext = false );
 	void PurgeBuffers();
 
 	static constexpr size_t TotalSizeOf( int initial_size ) { return ALIGN_VALUE( TotalSizeWithoutStaticData() + TotalSizeOfData( MAX( initial_size, 0 ) ), 8 ); }
@@ -1362,11 +1361,7 @@ inline void CKeyValues3ClusterImpl<SIZE, T>::Free( int element, bool clearing_co
 	Assert( element >= 0 && element < NumAllocated() );
 
 	Node *node = &m_Values[element];
-
-	if(clearing_context)
-		node->m_Value.OnClearContext();
-	else
-		Destruct( &node->m_Value );
+	node->m_Value.Free( clearing_context );
 
 	m_nElementCount--;
 
@@ -1393,7 +1388,7 @@ inline void CKeyValues3ClusterImpl<SIZE, T>::InitNodes()
 template<size_t SIZE, typename T>
 inline void CKeyValues3ClusterImpl<SIZE, T>::PurgeNodes( bool clearing_context )
 {
-	CVarBitVec free_nodes( NumAllocated() * BITS_PER_INT );
+	CVarBitVec free_nodes( NumAllocated() );
 
 	for(auto iter = GetNextFree(); iter; iter = iter->m_pNextFree)
 	{
@@ -1429,7 +1424,7 @@ inline int CKeyValues3ClusterImpl<SIZE, T>::GetNodeIndex( NodeType *element ) co
 template<size_t SIZE, typename T>
 inline void CKeyValues3ClusterImpl<SIZE, T>::Purge()
 {
-	PurgeNodes( false );
+	PurgeNodes( true );
 	PurgeMetaData();
 }
 
@@ -1620,8 +1615,10 @@ inline void CKeyValues3Context::ClearClusterNodeChain( ClusterNodeChain<CLUSTER>
 template<typename CLUSTER>
 inline void CKeyValues3Context::MoveToPartial( ClusterNodeChain<CLUSTER> &full_cluster, ClusterNodeChain<CLUSTER> &partial_cluster )
 {
-	for(auto node = full_cluster.m_pTail; node; node = node->GetPrev())
+	CLUSTER *prev;
+	for(auto node = full_cluster.m_pTail; node; node = prev)
 	{
+		prev = node->GetPrev();
 		partial_cluster.AddToChain( node );
 	}
 

@@ -29,7 +29,7 @@ struct SchemaTypeMap {};
 	static inline bool Match( CSchemaType *ptr ) { return ptr->m_eTypeCategory == type_category && ptr->m_eAtomicCategory == atomic_category; } \
 };
 
-enum SchemaClassFlags1_t
+enum SchemaClassFlags1_t : uint32
 {
 	SCHEMA_CF1_HAS_VIRTUAL_MEMBERS = (1 << 0),
 	SCHEMA_CF1_IS_ABSTRACT = (1 << 1),
@@ -63,9 +63,9 @@ enum SchemaClassFlags1_t
 #endif // defined(CS2) || defined(DOTA2) || defined(DEADLOCK)
 };
 
-enum SchemaClassFlags2_t {};
+enum SchemaClassFlags2_t : uint32 {};
 
-enum SchemaEnumFlags_t
+enum SchemaEnumFlags_t : uint8
 {
 	SCHEMA_EF_IS_REGISTERED = (1 << 0),
 	SCHEMA_EF_MODULE_LOCAL_TYPE_SCOPE = (1 << 1),
@@ -178,7 +178,7 @@ template <class K, class V>
 class CSchemaPtrMap
 {
 public:
-	CUtlOrderedMap<K, V> m_Map;
+	CUtlOrderedMap<K, V, unsigned short> m_Map;
 	CThreadFastMutex m_Mutex;
 };
 
@@ -381,8 +381,8 @@ struct SchemaClassInfoData_t
 	CSchemaSystemTypeScope* m_pTypeScope;
 	CSchemaType_DeclaredClass* m_pDeclaredClass;
 	
-	uint m_nFlags1;
-	uint m_nFlags2;
+	uint32 m_nFlags1;
+	uint32 m_nFlags2;
 	
 	SchemaClassManipulatorFn_t m_pfnManipulator;
 
@@ -419,7 +419,8 @@ struct SchemaEnumInfoData_t
 	uint8 m_nSize;
 	uint8 m_nAlignment;
 	
-	uint16 m_nFlags;
+	uint8 m_nFlags;
+
 	uint16 m_nEnumeratorCount;
 	uint16 m_nStaticMetadataCount;
 	

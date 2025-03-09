@@ -19,6 +19,7 @@
 #include <string.h>
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
+#include "tier0/utlstring.h"
 #include "tier1/threadtools.h"
 #include "tier1/utlmemory.h"
 #include "tier1/utlblockmemory.h"
@@ -1499,14 +1500,20 @@ public:
 	{
 		this->PurgeAndDeleteElements();
 	}
-
 };
 
 // easy string list class with dynamically allocated strings. For use with V_SplitString, etc.
 // Frees the dynamic strings in destructor.
-class CUtlStringList : public CUtlVectorAutoPurge< char *>
+class CUtlStringList : public CUtlVectorAutoPurge< char * >
 {
 public:
+	CUtlStringList() {}
+
+	CUtlStringList( char const *pString, const char **pSeparators, int nSeparators = -1 )
+	{
+		SplitString( pString, pSeparators, nSeparators );
+	}
+
 	~CUtlStringList()
 	{
 		PurgeAndDeleteElements();
@@ -1524,27 +1531,7 @@ public:
 		return strcmp( *sz1, *sz2 );
 	}
 
-	CUtlStringList(){}
-
-	CUtlStringList( char const *pString, char const *pSeparator )
-	{
-		SplitString( pString, pSeparator );
-	}
-
-	CUtlStringList( char const *pString, const char **pSeparators, int nSeparators )
-	{
-		SplitString2( pString, pSeparators, nSeparators );
-	}
-
-	void SplitString( char const *pString, char const *pSeparator )
-	{
-		V_SplitString( pString, pSeparator, *this );
-	}
-
-	void SplitString2( char const *pString, const char **pSeparators, int nSeparators )
-	{
-		V_SplitString2( pString, pSeparators, nSeparators, *this );
-	}
+	PLATFORM_CLASS void SplitString( char const *pString, char const * const *pSeparator, int nSeparators = -1 );
 
 private:
 	CUtlStringList( const CUtlStringList &other ); // copying directly will cause double-release of the same strings; maybe we need to do a deep copy, but unless and until such need arises, this will guard against double-release

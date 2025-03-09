@@ -527,7 +527,7 @@ public:
 	const char *GetHelpText() const { return GetRawData()->GetHelpText(); }
 	bool HasHelpText() const { return GetRawData()->HasHelpText(); }
 
-	bool IsFlagSet( uint64 flag ) const { return GetRawData()->GetFlags(); }
+	bool IsFlagSet( uint64 flag ) const { return GetRawData()->IsFlagSet( flag ); }
 	void AddFlags( uint64 flags ) { GetRawData()->AddFlags( flags ); }
 	void RemoveFlags( uint64 flags ) { GetRawData()->RemoveFlags( flags ); }
 	uint64 GetFlags() const { return GetRawData()->GetFlags(); }
@@ -1176,9 +1176,9 @@ public:
 	const T &Get( CSplitScreenSlot slot = -1 ) const { return *reinterpret_cast<T *>(m_ConVarData->ValueOrDefault( slot )); }
 	void Set( const T &value, CSplitScreenSlot slot = -1 );
 
-	const T &GetDefault() const { *reinterpret_cast<T *>(m_ConVarData->DefaultValue()); }
-	const T &GetMin() const { *reinterpret_cast<T *>(m_ConVarData->MinValue()); }
-	const T &GetMax() const { *reinterpret_cast<T *>(m_ConVarData->MaxValue()); }
+	const T &GetDefault() const { return *reinterpret_cast<T *>(m_ConVarData->DefaultValue()); }
+	const T &GetMin() const { return *reinterpret_cast<T *>(m_ConVarData->MinValue()); }
+	const T &GetMax() const { return *reinterpret_cast<T *>(m_ConVarData->MaxValue()); }
 
 protected:
 	CConVarRef() : BaseClass() {}
