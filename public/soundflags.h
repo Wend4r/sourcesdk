@@ -1,506 +1,158 @@
 //========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose:
 //
+// $NoKeywords: $
 //=============================================================================//
 
-#ifndef GAMETRACE_H
-#define GAMETRACE_H
-#ifdef _WIN32
+#ifndef SOUNDFLAGS_H
+#define SOUNDFLAGS_H
+
+#if defined( _WIN32 )
 #pragma once
 #endif
 
 
-#include "cmodel.h"
-#include "color.h"
-#include "entity2/entityinstance.h"
-#include "mathlib/transform.h"
-#include "tier0/utlstring.h"
-#include "tier1/generichash.h"
-#include "tier1/utlvector.h"
-#include "ispatialpartition.h"
-
-class IPhysicsBody;
-class IPhysicsShape;
-
-typedef IPhysicsBody* HPhysicsBody;
-typedef IPhysicsShape* HPhysicsShape;
-
-enum CollisionFunctionMask_t
+//-----------------------------------------------------------------------------
+// channels
+//-----------------------------------------------------------------------------
+enum
 {
-	FCOLLISION_FUNC_ENABLE_SOLID_CONTACT 	= (1<<0),
-	FCOLLISION_FUNC_ENABLE_TRACE_QUERY 		= (1<<1),
-	FCOLLISION_FUNC_ENABLE_TOUCH_EVENT 		= (1<<2),
-	FCOLLISION_FUNC_ENABLE_SELF_COLLISIONS 	= (1<<3),
-	FCOLLISION_FUNC_IGNORE_FOR_HITBOX_TEST 	= (1<<4),
-	FCOLLISION_FUNC_ENABLE_TOUCH_PERSISTS 	= (1<<5),
+	CHAN_REPLACE	= -1,
+	CHAN_AUTO		= 0,
+	CHAN_WEAPON		= 1,
+	CHAN_VOICE		= 2,
+	CHAN_ITEM		= 3,
+	CHAN_BODY		= 4,
+	CHAN_STREAM		= 5,		// allocate stream channel from the static or dynamic area
+	CHAN_STATIC		= 6,		// allocate channel from the static area 
+	CHAN_VOICE_BASE	= 7,		// allocate channel for network voice data
 };
 
-// these are on by default
-#define FCOLLISION_FUNC_DEFAULT (FCOLLISION_FUNC_ENABLE_SOLID_CONTACT | FCOLLISION_FUNC_ENABLE_TRACE_QUERY | FCOLLISION_FUNC_ENABLE_TOUCH_EVENT)
-
-enum RnQueryObjectSet
+enum
 {
-	RNQUERY_OBJECTS_STATIC 				= (1<<0),
-	RNQUERY_OBJECTS_DYNAMIC 			= (1<<1),
-	RNQUERY_OBJECTS_NON_COLLIDEABLE 	= (1<<2),
-	RNQUERY_OBJECTS_KEYFRAMED_ONLY 		= (1<<3) | (1<<8),
-	RNQUERY_OBJECTS_DYNAMIC_ONLY		= (1<<4) | (1<<8),
-	
-	RNQUERY_OBJECTS_ALL_GAME_ENTITIES 	= RNQUERY_OBJECTS_DYNAMIC | RNQUERY_OBJECTS_NON_COLLIDEABLE,
-	RNQUERY_OBJECTS_ALL 				= RNQUERY_OBJECTS_STATIC | RNQUERY_OBJECTS_ALL_GAME_ENTITIES,
+	CHAN_USER_BASE	= (CHAN_VOICE_BASE+128)		// Anything >= this number is allocated to game code.
 };
 
-enum HitGroup_t
+//-----------------------------------------------------------------------------
+// common volume values
+//-----------------------------------------------------------------------------
+#define VOL_NORM		1.0f
+
+
+//-----------------------------------------------------------------------------
+// common attenuation values
+//-----------------------------------------------------------------------------
+#define ATTN_NONE		0.0f
+#define ATTN_NORM		0.8f
+#define ATTN_IDLE		2.0f
+#define ATTN_STATIC		1.25f 
+#define ATTN_RICOCHET	1.5f
+
+// HL2 world is 8x bigger now! We want to hear gunfire from farther.
+// Don't change this without consulting Kelly or Wedge (sjb).
+#define ATTN_GUNFIRE	0.27f
+
+enum soundlevel_t
 {
-	HITGROUP_INVALID = -1,
-	HITGROUP_GENERIC = 0,
-	HITGROUP_HEAD,
-	HITGROUP_CHEST,
-	HITGROUP_STOMACH,
-	HITGROUP_LEFTARM,
-	HITGROUP_RIGHTARM,
-	HITGROUP_LEFTLEG,
-	HITGROUP_RIGHTLEG,
-	HITGROUP_NECK,
-	HITGROUP_UNUSED,
-	HITGROUP_GEAR,
-	HITGROUP_SPECIAL,
-	HITGROUP_COUNT,
+	SNDLVL_NONE			= 0,
+
+	SNDLVL_20dB			= 20,			// rustling leaves
+	SNDLVL_25dB			= 25,			// whispering
+	SNDLVL_30dB			= 30,			// library
+	SNDLVL_35dB			= 35,
+	SNDLVL_40dB			= 40,
+	SNDLVL_45dB			= 45,			// refrigerator
+
+	SNDLVL_50dB			= 50,	// 3.9	// average home
+	SNDLVL_55dB			= 55,	// 3.0
+
+	SNDLVL_IDLE			= 60,	// 2.0	
+	SNDLVL_60dB			= 60,	// 2.0	// normal conversation, clothes dryer
+
+	SNDLVL_65dB			= 65,	// 1.5	// washing machine, dishwasher
+	SNDLVL_STATIC		= 66,	// 1.25
+
+	SNDLVL_70dB			= 70,	// 1.0	// car, vacuum cleaner, mixer, electric sewing machine
+
+	SNDLVL_NORM			= 75,
+	SNDLVL_75dB			= 75,	// 0.8	// busy traffic
+
+	SNDLVL_80dB			= 80,	// 0.7	// mini-bike, alarm clock, noisy restaurant, office tabulator, outboard motor, passing snowmobile
+	SNDLVL_TALKING		= 80,	// 0.7
+	SNDLVL_85dB			= 85,	// 0.6	// average factory, electric shaver
+	SNDLVL_90dB			= 90,	// 0.5	// screaming child, passing motorcycle, convertible ride on frw
+	SNDLVL_95dB			= 95,
+	SNDLVL_100dB		= 100,	// 0.4	// subway train, diesel truck, woodworking shop, pneumatic drill, boiler shop, jackhammer
+	SNDLVL_105dB		= 105,			// helicopter, power mower
+	SNDLVL_110dB		= 110,			// snowmobile drvrs seat, inboard motorboat, sandblasting
+	SNDLVL_120dB		= 120,			// auto horn, propeller aircraft
+	SNDLVL_130dB		= 130,			// air raid siren
+
+	SNDLVL_GUNFIRE		= 140,	// 0.27	// THRESHOLD OF PAIN, gunshot, jet engine
+	SNDLVL_140dB		= 140,	// 0.2
+
+	SNDLVL_150dB		= 150,	// 0.2
+
+	SNDLVL_180dB		= 180,			// rocket launching
+
+	// NOTE: Valid soundlevel_t values are 0-255.
+	//       256-511 are reserved for sounds using goldsrc compatibility attenuation.
 };
 
-enum HitboxShapeType_t
+#define MAX_SNDLVL_BITS		9	// Used to encode 0-255 for regular soundlevel_t's and 256-511 for goldsrc-compatible ones.
+#define MIN_SNDLVL_VALUE	0
+#define MAX_SNDLVL_VALUE	((1<<MAX_SNDLVL_BITS)-1)
+
+
+#define ATTN_TO_SNDLVL( a ) (soundlevel_t)(int)((a) ? (50 + 20 / ((float)a)) : 0 )
+#define SNDLVL_TO_ATTN( a ) ( (a > 50) ? (20.0f / (float)(a - 50)) : ( (a == 0) ? (0.0f) : (4.0f) ) )
+
+// This is a limit due to network encoding.
+// It encodes attenuation * 64 in 8 bits, so the maximum is (255 / 64)
+#define MAX_ATTENUATION		3.98f
+
+//-----------------------------------------------------------------------------
+// Flags to be or-ed together for the iFlags field
+//-----------------------------------------------------------------------------
+enum SoundFlags_t : uint16
 {
-	HITBOX_SHAPE_HULL = 0,
-	HITBOX_SHAPE_SPHERE,
-	HITBOX_SHAPE_CAPSULE,
+	SOUND_FLAGS_NONE			= 0,			// to keep the compiler happy
+
+	SOUND_FLAG_GUNFIRE			= (1<<0),
+	SOUND_FLAG_COMBINE_ONLY		= (1<<1),
+	SOUND_FLAG_REACT_TO_SOURCE	= (1<<2),
+	SOUND_FLAG_EXPLOSION		= (1<<3),
+	SOUND_FLAG_EXCLUDE_COMBINE	= (1<<4),
+	SOUND_FLAG_DANGER_APPROACH	= (1<<5),
+	SOUND_FLAG_ALLIES_ONLY		= (1<<6),
+	SOUND_FLAG_PANIC_NPCS		= (1<<7),
+	SOUND_FLAG_SQUAD_ONLY		= (1<<8)
 };
 
-class CPhysSurfacePropertiesPhysics
-{
-public:
-	CPhysSurfacePropertiesPhysics()
-	{
-		m_friction = 0.0f;
-		m_elasticity = 0.0f;
-		m_density = 0.0f;
-		m_thickness = 0.1f;
-		m_softContactFrequency = 0.0f;
-		m_softContactDampingRatio = 0.0f;
-		m_wheelDrag = 0.0f;
-	}
-	
-public:
-	float m_friction;
-	float m_elasticity;
-	float m_density;
-	float m_thickness;
-	float m_softContactFrequency;
-	float m_softContactDampingRatio;
-	float m_wheelDrag;
-	float m_heatConductivity;
-	float m_flashpoint;
-};
+#define MAX_SOUND_INDEX_BITS	13
+#define	MAX_SOUNDS				(1<<MAX_SOUND_INDEX_BITS)
 
-class CPhysSurfacePropertiesSoundNames
-{
-public:
-	CPhysSurfacePropertiesSoundNames()
-	{
-		m_meleeImpact = "";
-		m_pushOff = "";
-		m_skidStop = "";
-	}
-	
-public:
-	CUtlString m_impactSoft;
-	CUtlString m_impactHard;
-	CUtlString m_scrapeSmooth;
-	CUtlString m_scrapeRough;
-	CUtlString m_bulletImpact;
-	CUtlString m_rolling;
-	CUtlString m_break;
-	CUtlString m_strain;
-	CUtlString m_meleeImpact;
-	CUtlString m_pushOff;
-	CUtlString m_skidStop;
-};
+#if !defined( IN_XBOX_CODELINE )
+// +/-4096 msec
+#define MAX_SOUND_DELAY_MSEC_ENCODE_BITS	(13)
+#else
+// +/-65536 msec, 64 seconds
+#define MAX_SOUND_DELAY_MSEC_ENCODE_BITS	(17)
+#endif
 
-class CPhysSurfacePropertiesAudio
-{
-public:
-	CPhysSurfacePropertiesAudio()
-	{
-		m_reflectivity = 0.0f;
-		m_hardnessFactor = 0.0f;
-		m_roughnessFactor = 0.0f;
-		m_roughThreshold = 0.0f;
-		m_hardThreshold = 0.0f;
-		m_hardVelocityThreshold = 0.0f;
-		m_flStaticImpactVolume = 0.0f;
-		m_flOcclusionFactor = 0.0f;
-	}
-	
-public:
-	float m_reflectivity;
-	float m_hardnessFactor;
-	float m_roughnessFactor;
-	float m_roughThreshold;
-	float m_hardThreshold;
-	float m_hardVelocityThreshold;
-	float m_flStaticImpactVolume;
-	float m_flOcclusionFactor;
-};
+// Subtract one to leave room for the sign bit
+#define MAX_SOUND_DELAY_MSEC				(1<<(MAX_SOUND_DELAY_MSEC_ENCODE_BITS-1))    // 4096 msec or about 4 seconds
 
-class CPhysSurfaceProperties
-{
-public:
-	CPhysSurfaceProperties()
-	{
-		m_bHidden = false;
-	}
-	
-public:
-	CUtlString m_name;
-	uint32 m_nameHash;
-	uint32 m_baseNameHash;
-	int32 m_nListIndex;
-	int32 m_nBaseListIndex;
-	bool m_bHidden;
-	CUtlString m_description;
-	CPhysSurfacePropertiesPhysics m_physics;
-	CPhysSurfacePropertiesSoundNames m_audioSounds;
-	CPhysSurfacePropertiesAudio m_audioParams;
-};
+//-----------------------------------------------------------------------------
+// common pitch values
+//-----------------------------------------------------------------------------
+#define	PITCH_NORM		100			// non-pitch shifted
+#define PITCH_LOW		95			// other values are possible - 0-255, where 255 is very high
+#define PITCH_HIGH		120
 
-class CHitBox
-{
-public:
-	CHitBox()
-	{
-		m_vMinBounds.Init();
-		m_vMaxBounds.Init();
-		m_nGroupId = HITGROUP_GENERIC;
-		m_nShapeType = HITBOX_SHAPE_HULL;
-		m_bTranslationOnly = false;
-		m_CRC = 0;
-		m_cRenderColor.SetColor( 255, 255, 255, 255 );
-		m_nHitBoxIndex = 0;
-		m_bForcedTransform = false;
-		m_forcedTransform.SetToIdentity();
-	}
-	
-public:
-	CUtlString m_name;
-	CUtlString m_sSurfaceProperty;
-	CUtlString m_sBoneName;
-	Vector m_vMinBounds;
-	Vector m_vMaxBounds;
-	float m_flShapeRadius;
-	CUtlStringToken m_nBoneNameHash;
-	int32 m_nGroupId;
-	uint8 m_nShapeType;
-	bool m_bTranslationOnly;
-	uint32 m_CRC;
-	Color m_cRenderColor;
-	uint16 m_nHitBoxIndex;
-	bool m_bForcedTransform;
-	CTransform m_forcedTransform;
-};
+#define DEFAULT_SOUND_PACKET_VOLUME 1.0f
+#define DEFAULT_SOUND_PACKET_PITCH	100
+#define DEFAULT_SOUND_PACKET_DELAY	0.0f
 
-class CDefaultHitbox : public CHitBox
-{
-public:
-	CDefaultHitbox()
-	{
-		V_strncpy( m_tempName, "invalid_hitbox", sizeof( m_tempName ) );
-		V_strncpy( m_tempBoneName, "invalid_bone", sizeof( m_tempBoneName ) );
-		V_strncpy( m_tempSurfaceProp, "default", sizeof( m_tempSurfaceProp ) );
-		
-		m_name = m_tempName;
-		m_sSurfaceProperty = m_tempSurfaceProp;
-
-		m_sBoneName = m_tempBoneName;
-		m_nBoneNameHash = MakeStringToken( m_tempBoneName );
-
-		m_cRenderColor.SetColor( 0, 0, 0, 0 );
-	}
-	
-public:
-	char m_tempName[16];
-	char m_tempBoneName[16];
-	char m_tempSurfaceProp[16];
-};
-
-struct RnQueryShapeAttr_t
-{
-public:
-	RnQueryShapeAttr_t()
-	{
-		m_nInteractsWith = 0;
-		m_nInteractsExclude = 0;
-		m_nInteractsAs = 0;
-		
-		m_nEntityIdsToIgnore[0] = static_cast<uint32>(-1);
-		m_nEntityIdsToIgnore[1] = static_cast<uint32>(-1);
-		m_nOwnerIdsToIgnore[0] = static_cast<uint32>(-1);
-		m_nOwnerIdsToIgnore[1] = static_cast<uint32>(-1);
-		
-		m_nHierarchyIds[0] = 0;
-		m_nHierarchyIds[1] = 0;
-		
-		m_nObjectSetMask = RNQUERY_OBJECTS_ALL;
-		m_nCollisionGroup = COLLISION_GROUP_ALWAYS;
-		
-		m_bHitSolid = true;
-		m_bHitSolidRequiresGenerateContacts = false;
-		m_bHitTrigger = false;
-		m_bShouldIgnoreDisabledPairs = true;
-		m_bIgnoreIfBothInteractWithHitboxes = false;
-		m_bForceHitEverything = false;
-		m_bUnknown = true;
-	}
-	
-	bool HasInteractsAsLayer( int nLayerIndex ) const		{ return ( m_nInteractsAs & ( 1ull << nLayerIndex ) ) != 0; }
-	bool HasInteractsWithLayer( int nLayerIndex ) const		{ return ( m_nInteractsWith & ( 1ull << nLayerIndex ) ) != 0; }
-	bool HasInteractsExcludeLayer( int nLayerIndex ) const	{ return ( m_nInteractsExclude & ( 1ull << nLayerIndex ) ) != 0; }
-	void EnableInteractsAsLayer( int nLayer )				{ m_nInteractsAs |= ( 1ull << nLayer ); }
-	void EnableInteractsWithLayer( int nLayer )				{ m_nInteractsWith |= ( 1ull << nLayer ); }
-	void EnableInteractsExcludeLayer( int nLayer )			{ m_nInteractsExclude |= ( 1ull << nLayer ); }
-	void DisableInteractsAsLayer( int nLayer )				{ m_nInteractsAs &= ~( 1ull << nLayer ); }
-	void DisableInteractsWithLayer( int nLayer )			{ m_nInteractsWith &= ~( 1ull << nLayer ); }
-	void DisableInteractsExcludeLayer( int nLayer )			{ m_nInteractsExclude &= ~( 1ull << nLayer ); }
-	
-public:
-	// Which interaction layers do I interact or collide with? (e.g. I collide with LAYER_INDEX_CONTENTS_PASS_BULLETS because I am not a bullet)
-	// NOTE: This is analogous to the "solid mask" or "trace mask" in source 1 (bit mask of CONTENTS_* or 1<<LAYER_INDEX_*)
-	uint64 m_nInteractsWith;
-	
-	// Which interaction layers do I _not_ interact or collide with?  If my exclusion layers match m_nInteractsAs on the other object then no interaction happens.
-	uint64 m_nInteractsExclude;
-	
-	// Which interaction layers do I represent? (e.g. I am a LAYER_INDEX_CONTENTS_PLAYER_CLIP volume)
-	// NOTE: This is analogous to "contents" in source 1  (bit mask of CONTENTS_* or 1<<LAYER_INDEX_*)
-	uint64 m_nInteractsAs;
-	
-	uint32 m_nEntityIdsToIgnore[2]; // this is the ID of the game entity which should be ignored
-	uint32 m_nOwnerIdsToIgnore[2];	// this is the ID of the owner of the game entity which should be ignored
-	uint16 m_nHierarchyIds[2];		// this is an ID for the hierarchy of game entities (used to disable collision among objects in a hierarchy)
-	uint16 m_nObjectSetMask; 		// set of RnQueryObjectSet bits
-	uint8 m_nCollisionGroup; 		// one of the registered collision groups
-
-	bool m_bHitSolid : 1; 							// if true, then query will hit solid
-	bool m_bHitSolidRequiresGenerateContacts : 1; 	// if true, the FCOLLISION_FUNC_ENABLE_SOLID_CONTACT flag will be checked to hit solid
-	bool m_bHitTrigger : 1; 						// if true, then query will hit tirgger
-	bool m_bShouldIgnoreDisabledPairs : 1; 			// if true, then ignores if the query and shape entity IDs are in collision pairs
-	bool m_bIgnoreIfBothInteractWithHitboxes : 1;	// if true, then ignores if both query and shape interact with LAYER_INDEX_CONTENTS_HITBOX
-	bool m_bForceHitEverything : 1;					// if true, will hit any objects without any conditions
-	bool m_bUnknown : 1;							// haven't found where this is used yet
-};
-
-struct RnQueryAttr_t : public RnQueryShapeAttr_t
-{
-};
-
-class CTraceFilter : public RnQueryAttr_t
-{
-public:
-	CTraceFilter( uint64 nInteractsWith = 0, int nCollisionGroup = COLLISION_GROUP_DEFAULT, bool bIterateEntities = true ) 
-	{
-		m_nInteractsWith = nInteractsWith;
-		m_nCollisionGroup = nCollisionGroup;
-		m_bIterateEntities = bIterateEntities;
-	}
-
-	CTraceFilter( 	CEntityInstance* pPassEntity, 
-					CEntityInstance* pPassEntityOwner, 
-					uint16 nHierarchyId,
-					uint64 nInteractsWith = 0, 
-					int nCollisionGroup = COLLISION_GROUP_DEFAULT, 
-					bool bIterateEntities = true ) 
-	{
-		SetPassEntity1( pPassEntity );
-		
-		SetPassEntityOwner1( pPassEntityOwner );
-
-		m_nHierarchyIds[0] = nHierarchyId;
-		
-		m_nInteractsWith = nInteractsWith;
-		m_nCollisionGroup = nCollisionGroup;
-		m_bIterateEntities = bIterateEntities;
-	}
-	
-	CTraceFilter( 	CEntityInstance* pPassEntity1, 
-					CEntityInstance* pPassEntity2, 
-					CEntityInstance* pPassEntityOwner1, 
-					CEntityInstance* pPassEntityOwner2, 
-					uint16 nHierarchyId1,
-					uint16 nHierarchyId2,
-					uint64 nInteractsWith = 0, 
-					int nCollisionGroup = COLLISION_GROUP_DEFAULT, 
-					bool bIterateEntities = true ) 
-	{
-		SetPassEntity1( pPassEntity1 );
-		SetPassEntity2( pPassEntity2 );
-		
-		SetPassEntityOwner1( pPassEntityOwner1 );
-		SetPassEntityOwner2( pPassEntityOwner2 );
-		
-		m_nHierarchyIds[0] = nHierarchyId1;
-		m_nHierarchyIds[1] = nHierarchyId2;
-		
-		m_nInteractsWith = nInteractsWith;
-		m_nCollisionGroup = nCollisionGroup;
-		m_bIterateEntities = bIterateEntities;
-	}
-	
-	void SetPassEntity1( CEntityInstance* pEntity ) { m_nEntityIdsToIgnore[0] = pEntity ? pEntity->GetRefEHandle().ToInt() : -1; }
-	void SetPassEntity2( CEntityInstance* pEntity ) { m_nEntityIdsToIgnore[1] = pEntity ? pEntity->GetRefEHandle().ToInt() : -1; }
-	
-	void SetPassEntityOwner1( CEntityInstance* pOwner ) { m_nOwnerIdsToIgnore[0] = pOwner ? pOwner->GetRefEHandle().ToInt() : -1; }
-	void SetPassEntityOwner2( CEntityInstance* pOwner ) { m_nOwnerIdsToIgnore[1] = pOwner ? pOwner->GetRefEHandle().ToInt() : -1; }
-	
-	virtual ~CTraceFilter() {}
-	virtual bool ShouldHitEntity( CEntityInstance* pEntity ) { return true; }
-	
-public:
-	bool m_bIterateEntities; // if true then calls ShouldHitEntity for each hit entity
-};
-
-struct RnCollisionAttr_t
-{
-public:
-	RnCollisionAttr_t()
-	{
-		m_nInteractsAs = 0;
-		m_nInteractsWith = 0;
-		m_nInteractsExclude = 0;
-		m_nEntityId = 0;
-		m_nOwnerId = static_cast<uint32>(-1);
-		m_nHierarchyId = 0;
-		m_nCollisionGroup = COLLISION_GROUP_ALWAYS;
-		m_nCollisionFunctionMask = FCOLLISION_FUNC_DEFAULT;
-	}
-	
-	bool IsSolidContactEnabled() const						{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_SOLID_CONTACT ) != 0; }
-	bool IsTraceAndQueryEnabled() const						{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_TRACE_QUERY ) != 0; }
-	bool IsTouchEventEnabled() const						{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_TOUCH_EVENT ) != 0; }
-	bool IsSelfCollisionsEnabled() const					{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_SELF_COLLISIONS ) != 0; }
-	bool ShouldIgnoreForHitboxTest() const					{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_IGNORE_FOR_HITBOX_TEST ) != 0; }
-	bool IsTouchPersistsEnabled() const						{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_TOUCH_PERSISTS ) != 0; }
-
-	bool HasInteractsAsLayer( int nLayerIndex ) const		{ return ( m_nInteractsAs & ( 1ull << nLayerIndex ) ) != 0; }
-	bool HasInteractsWithLayer( int nLayerIndex ) const		{ return ( m_nInteractsWith & ( 1ull << nLayerIndex ) ) != 0; }
-	bool HasInteractsExcludeLayer( int nLayerIndex ) const	{ return ( m_nInteractsExclude & ( 1ull << nLayerIndex ) ) != 0; }
-	void EnableInteractsAsLayer( int nLayer )				{ m_nInteractsAs |= ( 1ull << nLayer ); }
-	void EnableInteractsWithLayer( int nLayer )				{ m_nInteractsWith |= ( 1ull << nLayer ); }
-	void EnableInteractsExcludeLayer( int nLayer )			{ m_nInteractsExclude |= ( 1ull << nLayer ); }
-	void DisableInteractsAsLayer( int nLayer )				{ m_nInteractsAs &= ~( 1ull << nLayer ); }
-	void DisableInteractsWithLayer( int nLayer )			{ m_nInteractsWith &= ~( 1ull << nLayer ); }
-	void DisableInteractsExcludeLayer( int nLayer )			{ m_nInteractsExclude &= ~( 1ull << nLayer ); }
-	
-public:
-	// Which interaction layers do I represent? (e.g. I am a LAYER_INDEX_CONTENTS_PLAYER_CLIP volume)
-	// NOTE: This is analogous to "contents" in source 1  (bit mask of CONTENTS_* or 1<<LAYER_INDEX_*)
-	uint64 m_nInteractsAs;
-	
-	// Which interaction layers do I interact or collide with? (e.g. I collide with LAYER_INDEX_CONTENTS_PASS_BULLETS because I am not a bullet)
-	// NOTE: This is analogous to the "solid mask" or "trace mask" in source 1 (bit mask of CONTENTS_* or 1<<LAYER_INDEX_*)
-	uint64 m_nInteractsWith;
-	
-	// Which interaction layers do I _not_ interact or collide with?  If my exclusion layers match m_nInteractsAs on the other object then no interaction happens.
-	uint64 m_nInteractsExclude;
-	
-	uint32 m_nEntityId; 			// this is the ID of the game entity
-	uint32 m_nOwnerId;  			// this is the ID of the owner of the game entity
-	uint16 m_nHierarchyId; 			// this is an ID for the hierarchy of game entities (used to disable collision among objects in a hierarchy)
-	uint8 m_nCollisionGroup;		// one of the registered collision groups
-	uint8 m_nCollisionFunctionMask;	// set of CollisionFunctionMask_t bits
-};
-
-class CGameTrace
-{
-public:
-	CGameTrace()
-	{
-		Init();
-	}
-
-	void Init()
-	{
-		m_pSurfaceProperties = NULL;
-		m_pEnt = NULL;
-		m_pHitbox = NULL;
-		m_hBody = NULL;
-		m_hShape = NULL;
-		m_nContents = 0;
-		m_BodyTransform.SetToIdentity();
-		m_vHitNormal.Init();
-		m_vHitPoint.Init();
-		m_flHitOffset = 0.0f;
-		m_flFraction = 1.0f;
-		m_nTriangle = -1;
-		m_nHitboxBoneIndex = -1;
-		m_eRayType = RAY_TYPE_LINE;
-		m_bStartInSolid = false;
-		m_bExactHitPoint = false;
-	}
-	
-	// Returns true if there was any kind of impact at all
-	bool DidHit() const 
-	{ 
-		return m_flFraction < 1 || m_bStartInSolid; 
-	}
-	
-public:
-	const CPhysSurfaceProperties *m_pSurfaceProperties;
-	CEntityInstance *m_pEnt;
-	const CHitBox *m_pHitbox;
-	
-	HPhysicsBody m_hBody;
-	HPhysicsShape m_hShape;
-	
-	uint64 m_nContents;					// contents on other side of surface hit
-	
-	CTransform m_BodyTransform;
-	RnCollisionAttr_t m_ShapeAttributes;
-	
-	Vector m_vStartPos; 				// start position
-	Vector m_vEndPos; 					// final position
-	Vector m_vHitNormal; 				// surface normal at impact
-	Vector m_vHitPoint;					// exact hit point if m_bExactHitPoint is true, otherwise equal to m_vEndPos
-	
-	float m_flHitOffset;				// surface normal hit offset
-	float m_flFraction;					// time completed, 1.0 = didn't hit anything
-	
-	int32 m_nTriangle;					// the index of the triangle that was hit
-	int16 m_nHitboxBoneIndex; 			// the index of the hitbox bone that was hit
-	
-	RayType_t m_eRayType;
-	
-	bool m_bStartInSolid;				// if true, the initial point was in a solid area
-	bool m_bExactHitPoint;				// if true, then m_vHitPoint is the exact hit point of the query and the shape
-	
-private:
-	// No copy constructors allowed
-	CGameTrace(const CGameTrace& vOther);
-};
-
-
-typedef CGameTrace trace_t;
-
-//=============================================================================
-
-class ITraceListData
-{
-public:
-	virtual ~ITraceListData() {}
-
-	virtual void Reset() = 0;
-	virtual bool IsEmpty() = 0;
-	// CanTraceRay will return true if the current volume encloses the ray
-	// NOTE: The leaflist trace will NOT check this.  Traces are intersected
-	// against the culled volume exclusively.
-	virtual bool CanTraceRay( const Ray_t &ray ) = 0;
-};
-#endif // GAMETRACE_H
+#endif // SOUNDFLAGS_H
