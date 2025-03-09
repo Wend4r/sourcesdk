@@ -65,6 +65,10 @@ public:
 	// Indicates how long to delay when encoutering a 'wait' command
 	DLL_CLASS_IMPORT void SetWaitDelayTime( int nTickDelay );
 
+	// Splits cfg-like commands into compartmentalizes.
+	// nLength can be -1
+	DLL_CLASS_IMPORT void SplitCommands( const char *pText, int nLength, CUtlVector< CUtlString > &outString );
+
 	// Returns a handle to the next command to process
 	// (useful when inserting commands into the buffer during processing
 	// of commands to force immediate execution of those commands,
