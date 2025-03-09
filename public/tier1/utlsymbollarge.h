@@ -31,7 +31,7 @@
 
 typedef unsigned int UtlSymLargeId_t;
 
-#define UTL_INVAL_SYMBOL_LARGE  ((UtlSymLargeId_t)~0)
+#define UTL_INVAL_SYMBOL_LARGE ((UtlSymLargeId_t)~0)
 
 #define FOR_EACH_SYMBOL_LARGE( table, iter ) \
 	for ( UtlSymLargeId_t iter = 0; iter < (table).GetNumStrings(); iter++ )
@@ -42,57 +42,35 @@ class CUtlSymbolLarge
 {
 public:
 	// constructor, destructor
-	CUtlSymbolLarge() 
-	{
-		m_pString = NULL;
-	}
-
-	CUtlSymbolLarge( const char* pString )
-	{
-		m_pString = pString;
-	}
+	CUtlSymbolLarge( UtlSymLargeId_t id = UTL_INVAL_SYMBOL_LARGE ) : u( id ) {}
+	CUtlSymbolLarge( const char* pString ) : u( pString ) {};
 
 	// operator==
-	bool operator==( CUtlSymbolLarge const& src ) const 
-	{ 
-		return m_pString == src.m_pString; 
-	}
+	bool operator==( CUtlSymbolLarge const& src ) const { return u.m_Id == src.u.m_Id; }
+	bool operator==( const char* pString ) const = delete; // disallow since we don't know if the table this is from was case sensitive or not... maybe we don't care
 
 	// operator!=
-	bool operator!=( CUtlSymbolLarge const& src ) const 
-	{ 
-		return m_pString != src.m_pString; 
-	}
+	bool operator!=( CUtlSymbolLarge const& src ) const { return u.m_Id != src.u.m_Id; }
 	
 	// operator<
-	bool operator<( CUtlSymbolLarge const& src ) const
-	{
-		return ( intp )m_pString < ( intp )src.m_pString;
-	}
+	bool operator<( CUtlSymbolLarge const& src ) const { return u.m_Id < src.u.m_Id; }
 
 	template< bool CASEINSENSITIVE = true >
-	static uint32 Hash( const char *pString, int nLength = -1 )
-	{
-		return MakeStringToken2< CASEINSENSITIVE >( pString, nLength );
-	}
+	static uint32 Hash( const char *pString, int nLength = -1 ) { return MakeStringToken2< CASEINSENSITIVE >( pString, nLength ); }
 
-	inline const char* String() const 
-	{ 
-		if ( !m_pString )
-			return "";
-		return m_pString; 
-	}
-
-	inline bool IsValid() const
-	{
-		return m_pString != NULL;
-	}
+	bool IsValid() const { return u.m_Id != UTL_INVAL_SYMBOL_LARGE; }
+	UtlSymLargeId_t GetId() { return u.m_Id; };
+	const char* String() const { return IsValid() ? u.m_pAsString : ""; }
 
 private:
-	// Disallowed
-	bool operator==( const char* pString ) const; // disallow since we don't know if the table this is from was case sensitive or not... maybe we don't care
+	union Data_t
+	{
+		Data_t( UtlSymLargeId_t id ) : m_Id( id ) {}
+		Data_t( const char *pString ) : m_pAsString( pString ) {}
 
-	const char* m_pString;
+		UtlSymLargeId_t m_Id;
+		const char *m_pAsString;
+	} u;
 };
 
 typedef uint32 LargeSymbolTableHashDecoration_t; 
