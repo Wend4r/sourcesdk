@@ -900,10 +900,12 @@ void KeyValues3::SetToEmptyTable()
 
 bool KeyValues3::RemoveMember( KV3MemberId_t id )
 {
-	if ( GetType() != KV3_TYPE_TABLE || id < 0 || id >= GetTable()->GetMemberCount() )
+	CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
 		return false;
 
-	GetTable()->RemoveMember( this, id );
+	pTable->RemoveMember( this, id );
 
 	return true;
 }
@@ -915,7 +917,7 @@ bool KeyValues3::RemoveMember( const KeyValues3* kv )
 	if ( !pTable )
 		return false;
 
-	KV3MemberId_t id = GetTable()->FindMember( kv );
+	KV3MemberId_t id = pTable->FindMember( kv );
 
 	if ( id == KV3_INVALID_MEMBER )
 		return false;
@@ -940,6 +942,26 @@ bool KeyValues3::RemoveMember( const CKV3MemberName &name )
 	pTable->RemoveMember( this, id );
 
 	return true;
+}
+
+bool KeyValues3::HasInvalidMemberNames() const
+{
+	const CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable )
+		return false;
+
+	return pTable->HasInvalidMemberNames();
+}
+
+void KeyValues3::SetHasInvalidMemberNames( bool bValue )
+{
+	CKeyValues3Table *pTable = GetTable();
+
+	if ( !pTable )
+		return;
+
+	pTable->SetHasInvalidMemberNames( bValue );
 }
 
 const char* KeyValues3::GetTypeAsString() const
@@ -1559,7 +1581,7 @@ CKeyValues3Table::CKeyValues3Table( int cluster_elem, int alloc_size ) :
 	m_nCount( 0 ),
 	m_nInitialSize( MIN( alloc_size, 255 ) ),
 	m_bIsDynamicallySized( false ),
-	m_unk001( false ),
+	m_bHasInvalidMemberNames( false ),
 	m_unk002( false ),
 	m_pDynamicBuffer( nullptr )
 {
