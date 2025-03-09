@@ -29,9 +29,9 @@
 //     to the string data, the hash precedes it in memory and is used to speed up searching, etc.
 //-----------------------------------------------------------------------------
 
-typedef unsigned int UtlSymLargeId_t;
+typedef intp UtlSymLargeId_t;
 
-#define UTL_INVAL_SYMBOL_LARGE ((UtlSymLargeId_t)~0)
+#define UTL_INVAL_SYMBOL_LARGE ((UtlSymLargeId_t)0)
 
 #define FOR_EACH_SYMBOL_LARGE( table, iter ) \
 	for ( UtlSymLargeId_t iter = 0; iter < (table).GetNumStrings(); iter++ )

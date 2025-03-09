@@ -333,7 +333,7 @@ void KeyValues3::ResolveUnspecified()
 	}
 }
 
-void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype )
+void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype, int initial_size, Data_t data, int bytes_available, bool should_free )
 {
 	if ( GetTypeEx() == type )
 	{
@@ -360,7 +360,7 @@ void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype )
 	{
 		Free();
 		m_TypeEx = type;
-		Alloc();
+		Alloc( initial_size, data, bytes_available, should_free );
 	}
 
 	m_SubType = subtype;
@@ -529,7 +529,7 @@ int KeyValues3::GetArrayElementCount() const
 	if ( !pArray )
 		return 0;
 
-	return GetTypeEx() == KV3_TYPEEX_ARRAY ? pArray->Count() : m_nNumArrayElements;
+	return IsArray() ? pArray->Count() : m_nNumArrayElements;
 }
 
 KeyValues3** KeyValues3::GetArrayBase()
@@ -554,8 +554,8 @@ KeyValues3* KeyValues3::GetArrayElement( int elem )
 
 KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 {
-	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
-		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
+	if ( !IsArray() )
+		SetToEmptyArray();
 
 	CKeyValues3Array *pArray = GetArray();
 
@@ -566,8 +566,8 @@ KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 
 KeyValues3* KeyValues3::ArrayAddElementToTail()
 {
-	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
-		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
+	if ( !IsArray() )
+		SetToEmptyArray();
 
 	CKeyValues3Array *pArray = GetArray();
 
@@ -598,8 +598,8 @@ void KeyValues3::ArraySwapItems( int idx1, int idx2 )
 
 void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
-	if ( GetTypeEx() != KV3_TYPEEX_ARRAY )
-		PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
+	if ( !IsArray() )
+		SetToEmptyArray();
 
 	CKeyValues3Array *pArray = GetArray();
 
@@ -791,22 +791,6 @@ int KeyValues3::GetMemberCount() const
 	return pTable ? pTable->GetMemberCount() : 0;
 }
 
-CKeyValues3Array *KeyValues3::GetArray()
-{
-	if(GetType() != KV3_TYPE_ARRAY)
-		return nullptr;
-
-	return m_Data.m_pArray;
-}
-
-CKeyValues3Table *KeyValues3::GetTable()
-{
-	if(GetType() != KV3_TYPE_TABLE)
-		return nullptr;
-
-	return m_Data.m_pTable;
-}
-
 KeyValues3* KeyValues3::GetMember( KV3MemberId_t id )
 {
 	CKeyValues3Table *pTable = GetTable();
@@ -865,7 +849,7 @@ KeyValues3* KeyValues3::Internal_FindMember( const CKV3MemberName &name, KV3Memb
 KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pCreated )
 {
 	if ( GetType() != KV3_TYPE_TABLE )
-		PrepareForType( KV3_TYPEEX_TABLE, KV3_SUBTYPE_TABLE );
+		SetToEmptyTable();
 
 	CKeyValues3Table *pTable = GetTable();
 
@@ -1304,7 +1288,7 @@ void KeyValues3::CopyFrom( const KeyValues3* pSrc )
 			{
 				case KV3_TYPEEX_ARRAY:
 				{
-					PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY );
+					SetToEmptyArray();
 					m_Data.m_pArray->CopyFrom( this, pSrc->m_Data.m_pArray );
 					break;
 				}
@@ -1343,6 +1327,38 @@ void KeyValues3::CopyFrom( const KeyValues3* pSrc )
 
 	m_SubType = eSrcSubType;
 	m_nFlags = pSrc->m_nFlags;
+}
+
+void KeyValues3::OverlayKeysFrom( KeyValues3 *parent, bool depth )
+{
+	CKeyValues3Table *pTable = GetTable();
+
+	if( !pTable )
+		SetToNull();
+
+	CKeyValues3Table *pParentTable = parent->GetTable();
+
+	if ( !pParentTable )
+		return;
+
+	auto parent_hashes = pParentTable->HashesBase();
+	auto parent_members = pParentTable->MembersBase();
+	auto parent_names = pParentTable->NamesBase();
+
+	FOR_EACH_KV3_TABLE( *pParentTable, id )
+	{
+		KeyValues3 *kv = FindOrCreateMember( CKV3MemberName( parent_hashes[id], parent_names[id] ) );
+		KeyValues3 *parent_kv = parent_members[id];
+
+		if ( depth && kv->IsTable() && parent_kv->IsTable() )
+		{
+			OverlayKeysFrom( parent_kv, true );
+		}
+		else
+		{
+			CopyFrom( parent_kv );
+		}
+	}
 }
 
 KeyValues3& KeyValues3::operator=( const KeyValues3& src )
@@ -1419,20 +1435,14 @@ CKeyValues3Array::CKeyValues3Array( int cluster_elem, int alloc_size ) :
 
 CKeyValues3ArrayCluster* CKeyValues3Array::GetCluster() const
 {
-	if ( m_nClusterElement == -1 )
-		return nullptr;
-
-	return GET_OUTER( CKeyValues3ArrayCluster, m_Values[ m_nClusterElement ] );
+	return m_nClusterElement == -1 ? nullptr : GET_OUTER( CKeyValues3ArrayCluster, m_Values[ m_nClusterElement ] );
 }
 
 CKeyValues3Context* CKeyValues3Array::GetContext() const
 { 
 	CKeyValues3ArrayCluster* cluster = GetCluster();
 
-	if ( cluster )
-		return cluster->GetContext();
-	else
-		return nullptr;
+	return cluster ? cluster->GetContext() : nullptr;
 }
 
 KeyValues3* CKeyValues3Array::Element( int i )
