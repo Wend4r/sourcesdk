@@ -599,10 +599,7 @@ void ConVarRefAbstract::SetValueInternal( CSplitScreenSlot slot, CVValue_t *valu
 
 	CVValue_t prev;
 	TypeTraits()->Construct( &prev );
-
 	TypeTraits()->Copy( &prev, *curr_value );
-	TypeTraits()->Destruct( curr_value );
-
 	TypeTraits()->Copy( curr_value, *value );
 	m_ConVarData->Clamp( slot );
 
