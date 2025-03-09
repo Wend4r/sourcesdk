@@ -208,10 +208,7 @@ KeyValues3 *KeyValues3::AllocMember( KV3TypeEx_t type, KV3SubType_t subtype )
 {
 	auto context = GetContext();
 
-	if(context)
-		return context->AllocKV( type, subtype );
-	else
-		return new KeyValues3( type, subtype );
+	return context ? context->AllocKV( type, subtype ) : new KeyValues3( type, subtype );
 }
 
 void KeyValues3::FreeMember( KeyValues3 *member )
@@ -371,20 +368,14 @@ void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype )
 
 CKeyValues3Cluster* KeyValues3::GetCluster() const
 {
-	if ( m_bContextIndependent )
-		return nullptr;
-
-	return GET_OUTER( CKeyValues3Cluster, m_Values[ m_nClusterElement ] );
+	return m_bContextIndependent ? nullptr : GET_OUTER( CKeyValues3Cluster, m_Values[ m_nClusterElement ] );
 }
 
 CKeyValues3Context* KeyValues3::GetContext() const
 { 
 	CKeyValues3Cluster* cluster = GetCluster();
 
-	if ( cluster )
-		return cluster->GetContext();
-	else
-		return nullptr;
+	return cluster ? cluster->GetContext() : nullptr;
 }
 
 KV3MetaData_t* KeyValues3::GetMetaData( CKeyValues3Context** ppCtx ) const
@@ -787,6 +778,12 @@ bool KeyValues3::ReadArrayFloat32( int dest_size, float32* data ) const
 	return ( src_size == dest_size );
 }
 
+void KeyValues3::SetToEmptyTable()
+{
+	PrepareForType( KV3_TYPEEX_TABLE, KV3_SUBTYPE_TABLE );
+	GetTable()->RemoveAll( this );
+}
+
 int KeyValues3::GetMemberCount() const
 {
 	const CKeyValues3Table *pTable = GetTable();
@@ -840,12 +837,12 @@ CKV3MemberName KeyValues3::GetKV3MemberName( KV3MemberId_t id ) const
 	return CKV3MemberName( pTable->GetMemberHash( id ), pTable->GetMemberName( id ) );
 }
 
-CUtlStringToken KeyValues3::GetMemberHash( KV3MemberId_t id ) const
+KeyValues3LowercaseHash_t KeyValues3::GetMemberHash( KV3MemberId_t id ) const
 {
 	const CKeyValues3Table *pTable = GetTable();
 
 	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
-		return CUtlStringToken();
+		return KeyValues3LowercaseHash_t();
 	
 	return pTable->GetMemberHash( id );
 }
@@ -892,10 +889,18 @@ KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pC
 	return pTable->GetMember( id );
 }
 
-void KeyValues3::SetToEmptyTable()
+KeyValues3LowercaseHash_t KeyValues3::RenameMember( const CKV3MemberName &name, const CKV3MemberName &newName )
 {
-	PrepareForType( KV3_TYPEEX_TABLE, KV3_SUBTYPE_TABLE );
-	GetTable()->RemoveAll( this );
+	CKeyValues3Table *pTable = GetTable();
+
+	KV3MemberId_t id = pTable->FindMember( name );
+
+	if ( id == KV3_INVALID_MEMBER )
+		return KeyValues3LowercaseHash_t();
+
+	pTable->RenameMember( this, id, newName );
+
+	return pTable->GetMemberHash( id );
 }
 
 bool KeyValues3::RemoveMember( KV3MemberId_t id )
@@ -1772,10 +1777,7 @@ KV3MemberId_t CKeyValues3Table::CreateMember( KeyValues3 *parent, const CKV3Memb
 	{
 		auto context = parent->GetContext();
 
-		if(context)
-			names_base[curr] = context->AllocString( name.GetString() );
-		else
-			names_base[curr] = strdup( name.GetString() );
+		names_base[curr] = context ? context->AllocString( name.GetString() ) : strdup( name.GetString() );
 	}
 
 	flags_base[curr] = flags;
@@ -1812,18 +1814,47 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 	for(int i = 0; i < new_size; i++)
 	{
 		flags_base[i] = src_flags_base[i] & ~MEMBER_FLAG_EXTERNAL_NAME;
-
-		if(context)
-			names_base[i] = context->AllocString( src_names_base[i] );
-		else
-			names_base[i] = strdup( src_names_base[i] );
-
+		names_base[i] = context ? context->AllocString( src_names_base[i] ) : strdup( src_names_base[i] );
 		members_base[i] = parent->AllocMember();
 		members_base[i]->CopyFrom( src_members_base[i] );
 	}
 
 	if ( new_size >= 128 )
 		EnableFastSearch();
+}
+
+void CKeyValues3Table::RenameMember( KeyValues3 *parent, KV3MemberId_t id, const CKV3MemberName &newName )
+{
+	Hash_t* hashes_base = HashesBase();
+	Name_t* names_base = NamesBase();
+	Flags_t* flags_base = FlagsBase();
+
+	auto &name = names_base[id];
+	auto &flags = flags_base[id];
+
+	hashes_base[id] = newName;
+
+	auto context = parent->GetContext();
+
+	if ( context )
+	{
+		name = context->AllocString( newName.GetString() );
+	}
+	else
+	{
+		if ( flags & MEMBER_FLAG_EXTERNAL_NAME )
+			flags &= ~MEMBER_FLAG_EXTERNAL_NAME;
+		else if ( name )
+			free( (void *)name );
+
+		name = strdup( newName.GetString() );
+	}
+
+	if ( m_pFastSearch )
+	{
+		m_pFastSearch->m_ignore = true;
+		m_pFastSearch->m_ignores_counter = 1;
+	}
 }
 
 void CKeyValues3Table::RemoveMember( KeyValues3 *parent, KV3MemberId_t id )

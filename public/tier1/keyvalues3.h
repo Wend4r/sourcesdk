@@ -481,7 +481,7 @@ public:
 	KeyValues3* GetMember( KV3MemberId_t id );
 	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
 	const char* GetMemberName( KV3MemberId_t id ) const;
-	CUtlStringToken GetMemberHash( KV3MemberId_t id ) const;
+	KeyValues3LowercaseHash_t GetMemberHash( KV3MemberId_t id ) const;
 	CKV3MemberName GetKV3MemberName( KV3MemberId_t id ) const;
 
 protected:
@@ -491,7 +491,7 @@ public:
 	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = nullptr ) { KV3MemberId_t next = KV3_INVALID_MEMBER; return Internal_FindMember( name, next, defaultValue ); }
 	const KeyValues3 *FindMember( const CKV3MemberName &name, KeyValues3 *defaultValue = nullptr ) const { return const_cast<KeyValues3 *>(this)->FindMember( name, defaultValue ); };
 	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = nullptr );
-
+	KeyValues3LowercaseHash_t RenameMember( const CKV3MemberName &name, const CKV3MemberName &newName );
 	bool RemoveMember( KV3MemberId_t id );
 	bool RemoveMember( const KeyValues3* kv );
 	bool RemoveMember( const CKV3MemberName &name );
@@ -779,6 +779,9 @@ public:
 	int GetClusterElement() const { return m_nClusterElement; }
 	void SetClusterElement( int element ) { m_nClusterElement = element; }
 
+	bool HasInvalidMemberNames() const { return m_bHasInvalidMemberNames; }
+	void SetHasInvalidMemberNames( bool bValue = true ) { m_bHasInvalidMemberNames = bValue; }
+
 	CKeyValues3TableCluster* GetCluster() const;
 	CKeyValues3Context* GetContext() const;
 
@@ -797,10 +800,9 @@ public:
 	KV3MemberId_t FindMember( const KeyValues3* kv ) const;
 	KV3MemberId_t CreateMember( KeyValues3 *parent, const CKV3MemberName &name, bool name_external = false );
 
-	bool HasInvalidMemberNames() const { return m_bHasInvalidMemberNames; }
-	void SetHasInvalidMemberNames( bool bValue = true ) { m_bHasInvalidMemberNames = bValue; }
-
 	void CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src );
+
+	void RenameMember( KeyValues3 *parent, KV3MemberId_t id, const CKV3MemberName &newName );
 	void RemoveMember( KeyValues3 *parent, KV3MemberId_t id );
 	void RemoveAll( KeyValues3 *parent, int new_size = 0 );
 
