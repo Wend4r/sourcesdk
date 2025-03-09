@@ -69,7 +69,7 @@ public:
 	// Indicates how long to delay when encoutering a 'wait' command
 	void SetWaitDelayTime( int nTickDelay );
 
-	// Splits cfg-like commands into compartmentalizes.
+	// Compartmentalizes cfg-like commands.
 	// nLength can be -1
 	DLL_CLASS_IMPORT void SplitCommands( const char *pText, int nLength, CUtlVector< CUtlString > &outString );
 

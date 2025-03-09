@@ -434,6 +434,9 @@ public:
 	KV3TypeEx_t GetTypeEx() const	{ return ( KV3TypeEx_t )m_TypeEx; }
 	KV3SubType_t GetSubType() const	{ return ( KV3SubType_t )m_SubType; }
 
+	bool HasInvalidMemberNames() const;
+	void SetHasInvalidMemberNames( bool bValue = true );
+
 	const char* GetTypeAsString() const;
 	const char* GetSubTypeAsString() const;
 
@@ -851,6 +854,9 @@ public:
 	KV3MemberId_t FindMember( const KeyValues3* kv ) const;
 	KV3MemberId_t CreateMember( KeyValues3 *parent, const CKV3MemberName &name, bool name_external = false );
 
+	bool HasInvalidMemberNames() const { return m_bHasInvalidMemberNames; }
+	void SetHasInvalidMemberNames( bool bValue = true ) { m_bHasInvalidMemberNames = bValue; }
+
 	void CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src );
 	void RemoveMember( KeyValues3 *parent, KV3MemberId_t id );
 	void RemoveAll( KeyValues3 *parent, int new_size = 0 );
@@ -916,7 +922,7 @@ private:
 	uint8 m_nInitialSize;
 	bool m_bIsDynamicallySized;
 
-	bool m_unk001;
+	bool m_bHasInvalidMemberNames;
 	bool m_unk002;
 
 	union
