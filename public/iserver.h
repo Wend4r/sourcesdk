@@ -160,6 +160,8 @@ class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionl
 public:
 	virtual ~CNetworkGameServerBase() = 0;
 	
+	server_state_t	GetServerState() { return m_State; }
+
 	virtual void	SetMaxClients( int nMaxClients ) = 0;
 
 public: // IConnectionlessPacketHandler
@@ -216,7 +218,7 @@ public:
 	char pad16[16]; // 16
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr; // 32
 	char pad40[8]; // 40
-	int	m_State; // 48
+	server_state_t m_State; // 48
 	int m_nRefCount; // 52
 	int m_Socket; // 56
 	int m_nTickCount; // 60

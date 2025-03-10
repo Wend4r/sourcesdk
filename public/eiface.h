@@ -30,6 +30,7 @@
 #include "playeruserid.h"
 #include <iloopmode.h>
 
+#include "netmessages.h"
 #include "network_connection.pb.h"
 
 //-----------------------------------------------------------------------------
@@ -583,7 +584,7 @@ public:
 	virtual void			ClientSetupVisibility( CPlayerSlot slot, vis_info_t *visinfo ) = 0;
 
 	// A block of CUserCmds has arrived from the user, decode them and buffer for execution during player simulation
-	virtual int			ProcessUsercmds( CPlayerSlot slot, bf_read *buf, int numcmds, bool ignore, bool paused, float margin ) = 0;
+	virtual void			ProcessUsercmds( CPlayerSlot slot, const CCLCMsg_Move_t &msg, bool paused ) = 0;
 
 	virtual bool			IsPlayerSlotOccupied( CPlayerSlot slot ) = 0;
 

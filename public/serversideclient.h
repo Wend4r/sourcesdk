@@ -198,7 +198,7 @@ public:
 	virtual void             SetName( const char *name ) = 0;
 	virtual void             SetUserCVar( const char *cvar, const char *value ) = 0;
 
-	int                      GetSignonState() const { return m_nSignonState; }
+	SignonState_t            GetSignonState() const { return m_nSignonState; }
 
 	virtual void             FreeBaselines() = 0;
 
@@ -245,7 +245,7 @@ public:
 	INetChannel* m_NetChannel; // 104
 	uint8 m_nUnkVariable; // 112
 	bool m_bMarkedToKick; // 113
-	int32 m_nSignonState; // 116
+	SignonState_t m_nSignonState; // 116
 	bool m_bSplitScreenUser; // 120
 	bool m_bSplitAllowFastDisconnect; // 121
 	int m_nSplitScreenPlayerSlot; // 124

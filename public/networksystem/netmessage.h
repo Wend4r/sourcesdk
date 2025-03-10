@@ -5,10 +5,8 @@
 #pragma once
 #endif
 
-#include "networksystem/inetworkserializer.h"
-
-template<typename PROTO_TYPE>
-class CNetMessagePB;
+class INetworkMessageInternal;
+template<typename PROTO_TYPE> class CNetMessagePB;
 
 class CNetMessage
 {
