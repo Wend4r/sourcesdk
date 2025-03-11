@@ -13,6 +13,7 @@
 #pragma once
 #endif
 
+#include "tier0/platform.h"
 #include "tier0/threadtools.h"
 #include "tier1/generichash.h"
 #include "tier1/utlvector.h"
@@ -30,13 +31,14 @@
 //-----------------------------------------------------------------------------
 
 typedef intp UtlSymLargeId_t;
+typedef uint UtlSymLargeElm_t;
 
 #define UTL_INVAL_SYMBOL_LARGE ((UtlSymLargeId_t)0)
 
 #define FOR_EACH_SYMBOL_LARGE( table, iter ) \
-	for ( UtlSymLargeId_t iter = 0; iter < (table).GetNumStrings(); iter++ )
+	for ( UtlSymLargeElm_t iter = 0; iter < (table).GetNumStrings(); iter++ )
 #define FOR_EACH_SYMBOL_LARGE_BACK( table, iter ) \
-	for ( UtlSymLargeId_t iter = (table).GetNumStrings()-1; iter >= 0; iter-- )
+	for ( UtlSymLargeElm_t iter = (table).GetNumStrings()-1; iter >= 0; iter-- )
 
 class CUtlSymbolLarge
 {
@@ -127,8 +129,8 @@ public:
 	CUtlSymbolLarge Find( const char* pString ) const;
 	CUtlSymbolLarge Find( const char* pString, int nLength ) const;
 
-	const char*		String( UtlSymLargeId_t id ) const;
-	unsigned int	Hash( UtlSymLargeId_t id ) const;
+	const char*		String( UtlSymLargeElm_t elem ) const;
+	unsigned int	Hash( UtlSymLargeElm_t elem ) const;
 
 	int				GetNumStrings() const { return m_MemBlocks.Count(); };
 
@@ -163,7 +165,7 @@ private:
 			return CUtlSymbolLarge::Hash< CASEINSENSITIVE >( k.m_pString, k.m_nLength );
 		}
 
-		unsigned int operator()( UtlSymLargeId_t k ) const
+		unsigned int operator()( UtlSymLargeElm_t k ) const
 		{
 			const CUtlSymbolTableLargeBase* pTable = (const CUtlSymbolTableLargeBase*)((uintp)this + m_ownerOffset);
 
@@ -182,7 +184,7 @@ private:
 			m_ownerOffset = -owneroffset;
 		}
 		
-		bool operator()( UtlSymLargeId_t a, UtlSymLargeId_t b ) const 
+		bool operator()( UtlSymLargeElm_t a, UtlSymLargeElm_t b ) const 
 		{ 
 			const CUtlSymbolTableLargeBase* pTable = (const CUtlSymbolTableLargeBase*)((uintp)this + m_ownerOffset);
 
@@ -192,7 +194,7 @@ private:
 				return V_strcmp( pTable->String( a ), pTable->String( b ) ) == 0; 
 		}
 
-		bool operator()( UtlSymTableLargeAltKey a, UtlSymLargeId_t b ) const 
+		bool operator()( UtlSymTableLargeAltKey a, UtlSymLargeElm_t b ) const 
 		{ 
 			const char* pString = a.m_pTable->String( b );
 			int nLength = strlen( pString );
@@ -206,14 +208,14 @@ private:
 				return V_strncmp( a.m_pString, pString, a.m_nLength ) == 0; 
 		}
 
-		bool operator()( UtlSymLargeId_t a, UtlSymTableLargeAltKey b ) const 
+		bool operator()( UtlSymLargeElm_t a, UtlSymTableLargeAltKey b ) const 
 		{ 
 			return operator()( b, a );
 		}
 	};
 
-	typedef CUtlHashtable<UtlSymLargeId_t, empty_t, UtlSymTableLargeHashFunctor, UtlSymTableLargeEqualFunctor, UtlSymTableLargeAltKey, CUtlMemory_RawAllocator<CUtlHashtableEntry<UtlSymLargeId_t, empty_t>>> Hashtable_t;
-	typedef CUtlVector< MemBlockHandle_t, CUtlMemory_RawAllocator<MemBlockHandle_t> > MemBlocksVec_t;
+	typedef CUtlHashtable< UtlSymLargeElm_t, empty_t, UtlSymTableLargeHashFunctor, UtlSymTableLargeEqualFunctor, UtlSymTableLargeAltKey, CUtlMemory_RawAllocator< CUtlHashtableEntry< UtlSymLargeElm_t, empty_t > > > Hashtable_t;
+	typedef CUtlVector< MemBlockHandle_t, CUtlMemory_RawAllocator< MemBlockHandle_t > > MemBlocksVec_t;
 
 	Hashtable_t					m_HashTable;
 	MemBlocksVec_t				m_MemBlocks;
@@ -277,13 +279,13 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUT
 }
 
 template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
-inline const char* CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::String( UtlSymLargeId_t id ) const
+inline const char* CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::String( UtlSymLargeElm_t elem ) const
 {
 	return ( const char* )m_MemBlockAllocator.GetBlock( m_MemBlocks[ id ] );
 }
 
 template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
-inline unsigned int CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::Hash( UtlSymLargeId_t id ) const
+inline unsigned int CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::Hash( UtlSymLargeElm_t elem ) const
 {
 	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( m_MemBlocks[ id ] - sizeof( LargeSymbolTableHashDecoration_t ) );
 
