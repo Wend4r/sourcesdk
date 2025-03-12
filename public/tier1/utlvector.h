@@ -28,15 +28,17 @@
 #include <algorithm>
 #include <initializer_list>
 
+#define UTL_INVAL_VECTOR_ELEM ((I)~0)
+
 #define FOR_EACH_VEC( vecName, iteratorName ) \
 	for ( int iteratorName = 0; (vecName).IsUtlVector && iteratorName < (vecName).Count(); iteratorName++ )
 #define FOR_EACH_VEC_BACK( vecName, iteratorName ) \
-	for ( int iteratorName = (vecName).Count()-1; (vecName).IsUtlVector && iteratorName >= 0; iteratorName-- )
+	for ( int iteratorName = (vecName).Count()-1; (vecName).IsUtlVector && iteratorName-- > 0; )
 
 #define FOR_EACH_TYPED_VEC( vecName, iterType, iteratorName ) \
 	for ( iterType iteratorName = 0; (vecName).IsUtlVector && iteratorName < (vecName).Count(); iteratorName++ )
 #define FOR_EACH_TYPED_VEC_BACK( vecName, iterType, iteratorName ) \
-	for ( iterType iteratorName = (vecName).Count()-1; (vecName).IsUtlVector && iteratorName >= 0; iteratorName-- )
+	for ( iterType iteratorName = (vecName).Count()-1; (vecName).IsUtlVector && iteratorName-- > 0; )
 
 // UtlVector derives from this so we can do the type check above
 struct base_vector_t
@@ -417,12 +419,12 @@ public:
 
 	static I InvalidIndex()
 	{
-		return -1;
+		return UTL_INVAL_VECTOR_ELEM;
 	}
 
 	inline bool IsValidIndex( I i ) const
 	{
-		return (i >= 0) && (i < Count());
+		return (i != UTL_INVAL_VECTOR_ELEM) && (i < Count());
 	}
 
 	T& operator[]( I i )
@@ -490,7 +492,7 @@ public:
 	{
 		if ( Count() )
 		{
-			for (I i = m_pData->m_Size; --i >= 0; )
+			for (I i = m_pData->m_Size; i-- > 0; )
 			{
 				// Global scope to resolve conflict with Scaleform 4.0
 				::Destruct(&m_pData->m_Elements[i]);
@@ -524,8 +526,8 @@ public:
 		::Destruct( &Element(elem) );
 		if (Count() > 0)
 		{
-			if ( elem != m_pData->m_Size -1 )
-				memcpy( &Element(elem), &Element(m_pData->m_Size-1), sizeof(T) );
+			if ( elem != m_pData->m_Size - 1 )
+				memcpy( &Element(elem), &Element(m_pData->m_Size - 1), sizeof(T) );
 			--m_pData->m_Size;
 		}
 		if ( !m_pData->m_Size )
@@ -540,6 +542,7 @@ public:
 		// Global scope to resolve conflict with Scaleform 4.0
 		::Destruct( &Element(elem) );
 		ShiftElementsLeft(elem);
+
 		--m_pData->m_Size;
 		if ( !m_pData->m_Size )
 		{
@@ -551,22 +554,24 @@ public:
 	I Find( const T& src ) const
 	{
 		I nCount = Count();
+
 		for ( I i = 0; i < nCount; ++i )
-		{
 			if (Element(i) == src)
 				return i;
-		}
-		return -1;
+
+		return UTL_INVAL_VECTOR_ELEM;
 	}
 
 	bool FindAndRemove( const T& src )
 	{
 		I elem = Find( src );
-		if ( elem != -1 )
+
+		if ( elem != UTL_INVAL_VECTOR_ELEM )
 		{
 			Remove( elem );
 			return true;
 		}
+
 		return false;
 	}
 
@@ -574,7 +579,7 @@ public:
 	bool FindAndFastRemove( const T& src )
 	{
 		I elem = Find( src );
-		if ( elem != -1 )
+		if ( elem != UTL_INVAL_VECTOR_ELEM )
 		{
 			FastRemove( elem );
 			return true;
@@ -841,7 +846,7 @@ inline bool CUtlVectorBase<T, I, A>::IsValidIndex( I i ) const
 template< typename T, typename I, class A >
 inline I CUtlVectorBase<T, I, A>::InvalidIndex()
 {
-	return -1;
+	return UTL_INVAL_VECTOR_ELEM;
 }
 
 
@@ -927,7 +932,7 @@ void CUtlVectorBase<T, I, A>::Sort( I (__cdecl *pfnCompare)(const T *, const T *
 		// you'll probably want to patch in a quicksort algorithm here
 		// I just threw in this bubble sort to have something just in case...
 
-		for ( I i = m_Size - 1; i >= 0; --i )
+		for ( I i = m_Size - 1; i-- > 0; )
 		{
 			for ( I j = 1; j <= i; ++j )
 			{
@@ -1302,11 +1307,10 @@ template< typename T, typename I, class A >
 I CUtlVectorBase<T, I, A>::Find( const T& src ) const
 {
 	for ( I i = 0; i < Count(); ++i )
-	{
 		if (Element(i) == src)
 			return i;
-	}
-	return -1;
+
+	return UTL_INVAL_VECTOR_ELEM;
 }
 
 template< typename T, typename I, class A >
@@ -1321,7 +1325,7 @@ void CUtlVectorBase<T, I, A>::FillWithValue( const T& src )
 template< typename T, typename I, class A >
 bool CUtlVectorBase<T, I, A>::HasElement( const T& src ) const
 {
-	return ( Find(src) >= 0 );
+	return ( Find(src) != UTL_INVAL_VECTOR_ELEM );
 }
 
 
@@ -1337,8 +1341,8 @@ void CUtlVectorBase<T, I, A>::FastRemove( I elem )
 	::Destruct( &Element(elem) );
 	if (m_Size > 0)
 	{
-		if ( elem != m_Size -1 )
-			memcpy( (void*)&Element(elem), (const void*)&Element(m_Size-1), sizeof(T) );
+		if ( elem != m_Size - 1 )
+			memcpy( (void*)&Element(elem), (const void*)&Element(m_Size - 1), sizeof(T) );
 		--m_Size;
 	}
 }
@@ -1356,7 +1360,7 @@ template< typename T, typename I, class A >
 bool CUtlVectorBase<T, I, A>::FindAndRemove( const T& src )
 {
 	I elem = Find( src );
-	if ( elem != -1 )
+	if ( elem != UTL_INVAL_VECTOR_ELEM )
 	{
 		Remove( elem );
 		return true;
@@ -1368,7 +1372,7 @@ template< typename T, typename I, class A >
 bool CUtlVectorBase<T, I, A>::FindAndFastRemove( const T& src )
 {
 	I elem = Find( src );
-	if ( elem != -1 )
+	if ( elem != UTL_INVAL_VECTOR_ELEM )
 	{
 		FastRemove( elem );
 		return true;
@@ -1379,11 +1383,11 @@ bool CUtlVectorBase<T, I, A>::FindAndFastRemove( const T& src )
 template< typename T, typename I, class A >
 void CUtlVectorBase<T, I, A>::RemoveMultiple( I elem, I num )
 {
-	Assert( elem >= 0 );
+	Assert( elem != UTL_INVAL_VECTOR_ELEM );
 	Assert( elem + num <= Count() );
 
 	// Global scope to resolve conflict with Scaleform 4.0
-	for (I i = elem + num; --i >= elem; )
+	for ( I i = elem + num; i-- > elem; )
 		::Destruct(&Element(i));
 
 	ShiftElementsLeft(elem, num);
@@ -1396,7 +1400,7 @@ void CUtlVectorBase<T, I, A>::RemoveMultipleFromHead( I num )
 	Assert( num <= Count() );
 
 	// Global scope to resolve conflict with Scaleform 4.0
-	for (I i = num; --i >= 0; )
+	for ( I i = num; i-- > 0; )
 		::Destruct(&Element(i));
 
 	ShiftElementsLeft(0, num);
@@ -1418,7 +1422,7 @@ void CUtlVectorBase<T, I, A>::RemoveMultipleFromTail( I num )
 template< typename T, typename I, class A >
 void CUtlVectorBase<T, I, A>::RemoveAll()
 {
-	for (I i = m_Size; --i >= 0; )
+	for (I i = m_Size; i-- > 0; )
 	{
 		// Global scope to resolve conflict with Scaleform 4.0
 		::Destruct(&Element(i));
