@@ -300,6 +300,9 @@ public:
 	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( DATA_SIZE, bAllowHeapAllocation ) {}
 	CBufferStringN( const char *pString, int nLen = -1, bool bAllowHeapAllocation = true ) : CBufferStringN( bAllowHeapAllocation ) { Insert( 0, pString, nLen ); }
 
+	// Should be preferred over CBufferString::Purge as it preserves stack space correctly
+	void PurgeN() { Purge( DATA_SIZE ); }
+
 private:
 	char m_FixedData[DATA_SIZE];
 };
