@@ -30,15 +30,13 @@
 
 #define UTL_INVAL_VECTOR_ELEM ((I)~0)
 
-#define FOR_EACH_VEC( vecName, iteratorName ) \
-	for ( int iteratorName = 0; (vecName).IsUtlVector && iteratorName < (vecName).Count(); iteratorName++ )
-#define FOR_EACH_VEC_BACK( vecName, iteratorName ) \
-	for ( int iteratorName = (vecName).Count()-1; (vecName).IsUtlVector && iteratorName-- > 0; )
-
 #define FOR_EACH_TYPED_VEC( vecName, iterType, iteratorName ) \
-	for ( iterType iteratorName = 0; (vecName).IsUtlVector && iteratorName < (vecName).Count(); iteratorName++ )
+	if ( (vecName).IsUtlVector ) for ( iterType iteratorName = 0; iteratorName < (vecName).Count(); iteratorName++ )
 #define FOR_EACH_TYPED_VEC_BACK( vecName, iterType, iteratorName ) \
-	for ( iterType iteratorName = (vecName).Count()-1; (vecName).IsUtlVector && iteratorName-- > 0; )
+	if ( (vecName).IsUtlVector ) for ( iterType iteratorName = (vecName).Count()-1; iteratorName >= 0; iteratorName-- )
+
+#define FOR_EACH_VEC( vecName, iteratorName ) FOR_EACH_TYPED_VEC( vecName, typename C11RemoveReference< decltype(vecName) >::Type::IndexType_t, iteratorName )
+#define FOR_EACH_VEC_BACK( vecName, iteratorName ) FOR_EACH_TYPED_VEC_BACK( vecName, typename C11RemoveReference< decltype(vecName) >::Type::IndexType_t, iteratorName )
 
 // UtlVector derives from this so we can do the type check above
 struct base_vector_t
@@ -58,13 +56,13 @@ public:
 template< typename T, typename I = int, class A = CUtlMemory<T, I> >
 class CUtlVectorBase : public base_vector_t
 {
-	typedef A CAllocator;
-public:
-	typedef T ElemType_t;
-	typedef T* iterator;
-	typedef const T* const_iterator;
+	using CAllocator = A;
 
-	typedef I IndexType_t;
+public:
+	using ElemType_t = T;
+	using iterator = T*;
+	using const_iterator = const T*;
+	using IndexType_t = I;
 
 	// Set the growth policy and initial capacity. Count will always be zero. This is different from std::vector
 	// where the constructor sets count as well as capacity.
@@ -253,6 +251,11 @@ class CUtlVector : public CUtlVectorBase< T, I, A >
 
 public:
 	using BaseClass::BaseClass;
+
+	using ElemType_t = T;
+	using iterator = T*;
+	using const_iterator = const T*;
+	using IndexType_t = I;
 
 	CUtlVector( const std::initializer_list< T > elements );
 };
