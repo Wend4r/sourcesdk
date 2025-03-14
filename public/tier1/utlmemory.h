@@ -174,8 +174,8 @@ protected:
 
 	enum
 	{
-		EXTERNAL_BUFFER_MARKER = -1,
-		EXTERNAL_CONST_BUFFER_MARKER = -2,
+		EXTERNAL_CONST_BUFFER_MARKER = (1 << 30),
+		EXTERNAL_BUFFER_MARKER = (1 << 31),
 	};
 
 	T* m_pMemory;
@@ -687,7 +687,7 @@ inline const T& CUtlMemory<T,I>::Element( I i ) const
 template< class T, class I >
 bool CUtlMemory<T,I>::IsExternallyAllocated() const
 {
-	return (m_nGrowSize < 0);
+	return (m_nGrowSize & (EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER)) != 0;
 }
 
 
