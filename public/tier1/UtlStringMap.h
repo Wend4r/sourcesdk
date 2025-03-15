@@ -14,7 +14,7 @@
 #include "utlsymbol.h"
 
 #define FOR_EACH_STRING_MAP( mapName, iter ) \
-	for ( auto iter = (mapName).First(); iter < (mapName).GetNumStrings() && iter != (mapName).InvalidIndex(); iter = (mapName).Next( iter ) )
+	for ( auto iter = (mapName).Head(); iter < (mapName).GetNumStrings() && iter != (mapName).InvalidIndex(); iter = (mapName).Next( iter ) )
 
 template <class T>
 class CUtlStringMap
@@ -120,19 +120,6 @@ public:
 		m_SymbolTable.Remove( symbol );
 
 		return true;
-	}
-
-	/// iterate, not in any particular order.
-	CUtlSymbol First() const 
-	{
-		if ( Count() > 0 )
-		{
-			return 0;
-		}
-		else
-		{
-			return InvalidIndex();
-		}
 	}
 
 	static CUtlSymbol InvalidIndex()
