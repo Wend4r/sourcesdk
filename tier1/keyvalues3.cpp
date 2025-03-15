@@ -1376,6 +1376,8 @@ void CKeyValues3Iterator::Init( KeyValues3 *kv )
 		auto entry = m_Stack.AddToTailGetPtr();
 		entry->m_nIndex = -1;
 		entry->m_pKV = kv;
+
+		Advance();
 	}
 }
 
