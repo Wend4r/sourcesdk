@@ -111,8 +111,10 @@ PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyVal
 PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, CUtlString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3ToFile( const KV3ID_t& encoding, const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, const char* filename, const char* path, uint flags = KV3_SAVE_TEXT_NONE );
 
-typedef int32 KV3MemberId_t;
+using KV3MemberId_t = int32;
 #define KV3_INVALID_MEMBER ((KV3MemberId_t)-1)
+
+#define KV3_INVALID_CLUSTER_ELEMENT (~0)
 
 #define FOR_EACH_KV3_ARRAY( arrayName, iter ) \
 	for ( int iter = 0; iter < (arrayName).Count(); iter++ )
@@ -697,8 +699,9 @@ private:
 	void CopyFrom( const KeyValues3* pSrc );
 	void OverlayKeysFrom( KeyValues3 *parent, bool depth = false );
 
+	bool HasCluster() const { return m_nClusterElement != KV3_INVALID_CLUSTER_ELEMENT; }
 	int GetClusterElement() const { return m_nClusterElement; }
-	void SetClusterElement( int element ) { m_bContextIndependent = (element == -1); m_nClusterElement = element; }
+	void SetClusterElement( int element ) { m_bContextIndependent = ( element == KV3_INVALID_CLUSTER_ELEMENT ); m_nClusterElement = element; }
 	CKeyValues3Cluster* GetCluster() const;
 
 	template < typename T > T FromString( T defaultValue ) const;
@@ -775,9 +778,10 @@ public:
 	static const size_t DATA_SIZE = KV3_ARRAY_MAX_FIXED_MEMBERS;
 	static const size_t DATA_ALIGNMENT = KV3Helpers::PackAlignOf<Element_t>();
 
-	CKeyValues3Array( int cluster_elem = -1, int alloc_size = DATA_SIZE );
+	CKeyValues3Array( int cluster_elem = KV3_INVALID_CLUSTER_ELEMENT, int alloc_size = DATA_SIZE );
 	~CKeyValues3Array() { Free(); }
 
+	bool HasCluster() const { return m_nClusterElement != KV3_INVALID_CLUSTER_ELEMENT; }
 	int GetClusterElement() const { return m_nClusterElement; }
 	void SetClusterElement( int element ) { m_nClusterElement = element; }
 
@@ -847,9 +851,10 @@ public:
 	static const size_t DATA_SIZE = KV3_TABLE_MAX_FIXED_MEMBERS;
 	static const size_t DATA_ALIGNMENT = KV3Helpers::PackAlignOf<Hash_t, Member_t, Name_t, Flags_t>();
 
-	CKeyValues3Table( int cluster_elem = -1, int alloc_size = DATA_SIZE );
+	CKeyValues3Table( int cluster_elem = KV3_INVALID_CLUSTER_ELEMENT, int alloc_size = DATA_SIZE );
 	~CKeyValues3Table() { Free(); }
 
+	bool HasCluster() const { return m_nClusterElement != KV3_INVALID_CLUSTER_ELEMENT; }
 	int GetClusterElement() const { return m_nClusterElement; }
 	void SetClusterElement( int element ) { m_nClusterElement = element; }
 
@@ -1315,7 +1320,7 @@ inline T *KeyValues3::AllocateOnHeap( int initial_size )
 		initial_size = T::DATA_SIZE;
 
 	auto element = (T *)g_pMemAlloc->RegionAlloc( MEMALLOC_REGION_ALLOC_4, T::TotalSizeOf( initial_size ) );
-	Construct( element, -1, initial_size );
+	Construct( element, KV3_INVALID_CLUSTER_ELEMENT, initial_size );
 
 	return element;
 }
@@ -1633,7 +1638,7 @@ inline NODE *CKeyValues3ContextBase::NodeList<NODE>::Alloc( int initial_size )
 	auto entry = Tail();
 	m_nUsedBytes = byte_size_needed;
 
-	Construct( &entry->m_Value, -1, initial_size );
+	Construct( &entry->m_Value, KV3_INVALID_CLUSTER_ELEMENT, initial_size );
 	entry->m_pNext = Tail();
 
 	return &entry->m_Value;
