@@ -39,13 +39,13 @@ public:
 	}
 
 	// Get data by the string's symbol table ID - only used to retrieve a pre-existing symbol, not create a new one!
-	T& operator[]( CUtlSymbol n )
+	T& operator[]( UtlSymId_t n )
 	{
 		Assert( n <= m_Vector.Count() );
 		return m_Vector[n];
 	}
 
-	const T& operator[]( CUtlSymbol n ) const
+	const T& operator[]( UtlSymId_t n ) const
 	{
 		Assert( n <= m_Vector.Count() );
 		return m_Vector[n];
