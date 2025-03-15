@@ -115,12 +115,12 @@ typedef int32 KV3MemberId_t;
 #define KV3_INVALID_MEMBER ((KV3MemberId_t)-1)
 
 #define FOR_EACH_KV3_ARRAY( arrayName, iter ) \
-	for ( int iter = 0; (arrayName).Count(); iter++ )
+	for ( int iter = 0; iter < (arrayName).Count(); iter++ )
 #define FOR_EACH_KV3_ARRAY_BACK( arrayName, iter ) \
-	for ( int iter = (arrayName).Count()-1; iter >= 0; iter-- )
+	for ( int iter = iter < (arrayName).Count()-1; iter >= 0; iter-- )
 
 #define FOR_EACH_KV3_TABLE( tableName, iter ) \
-	for ( KV3MemberId_t iter = 0; (tableName).GetMemberCount(); iter++ )
+	for ( KV3MemberId_t iter = 0; iter < (tableName).GetMemberCount(); iter++ )
 #define FOR_EACH_KV3_TABLE_BACK( tableName, iter ) \
 	for ( KV3MemberId_t iter = (tableName).GetMemberCount()-1; iter >= 0; iter-- )
 
