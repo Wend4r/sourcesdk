@@ -42,7 +42,7 @@ public:
 	static constexpr uint32 sm_nRotation = 24;
 
 	template< bool CASEINSENSITIVE = true >
-	FORCEINLINE static uint32 Hash( const char *pString, int n, uint32 nSeed = STRINGTOKEN_MURMURHASH_SEED )
+	FORCEINLINE static constexpr uint32 Hash( const char *pString, int n, uint32 nSeed = STRINGTOKEN_MURMURHASH_SEED )
 	{
 		// They're not really 'magic', they just happen to work well.
 
@@ -93,9 +93,8 @@ public:
 	}
 
 	CUtlStringToken( uint32 nHashCode = 0 ) : m_nHashCode( nHashCode ) {}
-	template < uintp N > constexpr CUtlStringToken( const char (&str)[N] ) : m_nHashCode( Make( str, N - 1 ) ) {}
+	template < uintp N > FORCEINLINE constexpr CUtlStringToken( const char (&str)[N] ) : m_nHashCode( Hash( str, N - 1 ) ) {}
 	CUtlStringToken( const char *pString, int nLen ) : m_nHashCode( Hash( pString, nLen ) ) {}
-	CUtlStringToken( const char *pString ) : CUtlStringToken( pString, strlen(pString) ) {}
 	CUtlStringToken( const CUtlString &str ) : CUtlStringToken( str.Get(), str.Length() ) {}
 	CUtlStringToken( const CBufferString &buffer ) : CUtlStringToken( buffer.Get(), buffer.Length() ) {}
 
