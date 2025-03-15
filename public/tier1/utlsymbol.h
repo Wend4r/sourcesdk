@@ -55,7 +55,7 @@ public:
 	// operator==
 	bool operator==( CUtlSymbol const& src ) const { return m_Id == src.m_Id; }
 
-	static uint32 Hash( bool bInsensitive, const char *pString, int nLength )
+	static uint32 MakeHash( bool bInsensitive, const char *pString, int nLength )
 	{
 		return bInsensitive ? MakeStringToken2< true >( pString, nLength ) 
 		                    : MakeStringToken2< false >( pString, nLength );
@@ -110,7 +110,7 @@ public:
 	// Look up the string associated with a particular symbol
 	DLL_CLASS_IMPORT const char* String( CUtlSymbol id ) const;
 
-	uint32 Hash( const char *pString, int nLength ) const { return CUtlSymbol::Hash( IsInsensitive(), pString, nLength ); }
+	uint32 Hash( const char *pString, int nLength ) const { return CUtlSymbol::MakeHash( IsInsensitive(), pString, nLength ); }
 	uint32 Hash( const char *pString ) const { return Hash( pString, strlen( pString ) ); }
 	uint32 Hash( CUtlSymbol id ) const { return Hash( (const char *)m_MemBlockAllocator.GetBlock( m_MemBlocks[ id ] ) ); }
 
