@@ -368,7 +368,7 @@ void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype, int ini
 
 CKeyValues3Cluster* KeyValues3::GetCluster() const
 {
-	if ( !m_bContextIndependent )
+	if ( m_bContextIndependent )
 		return nullptr;
 
 	return GET_OUTER( CKeyValues3Cluster, m_Values[ m_nClusterElement ] );
