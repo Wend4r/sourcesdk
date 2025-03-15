@@ -71,7 +71,7 @@ public:
 	bool IsValid() const { return GetId() != Invalid(); }
 
 	// Gets at the symbol
-	operator UtlSymId_t () const  { return GetId(); }
+	operator UtlSymId_t () const  { return m_Id; }
 
 private:
 	UtlSymId_t   m_Id;
