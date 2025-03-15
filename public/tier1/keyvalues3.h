@@ -371,7 +371,10 @@ struct KV3BinaryBlob_t
 	bool m_bFreeMemory;
 };
 
-class CKV3MemberName
+using KeyValues3LowercaseHash_t = CUtlStringToken;
+using CKV3MemberHash = KeyValues3LowercaseHash_t;
+
+class CKV3MemberName : public CKV3MemberHash
 {
 public:
 	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CUtlStringToken( szInit ), m_pszString( (const char *)szInit ) {}
@@ -392,7 +395,6 @@ private:
 	const char* m_pszString;
 };
 
-using KeyValues3LowercaseHash_t = CUtlStringToken;
 using CKeyValues3StringAndHash = CKV3MemberName;
 
 // Pulse thing
@@ -551,7 +553,7 @@ public:
 	KeyValues3* GetMember( KV3MemberId_t id );
 	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
 	const char* GetMemberName( KV3MemberId_t id ) const;
-	KeyValues3LowercaseHash_t GetMemberHash( KV3MemberId_t id ) const;
+	CKV3MemberHash GetMemberHash( KV3MemberId_t id ) const;
 	CKV3MemberName GetKV3MemberName( KV3MemberId_t id ) const;
 
 protected:

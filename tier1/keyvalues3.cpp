@@ -821,12 +821,12 @@ CKV3MemberName KeyValues3::GetKV3MemberName( KV3MemberId_t id ) const
 	return CKV3MemberName( pTable->GetMemberHash( id ), pTable->GetMemberName( id ) );
 }
 
-KeyValues3LowercaseHash_t KeyValues3::GetMemberHash( KV3MemberId_t id ) const
+CKV3MemberHash KeyValues3::GetMemberHash( KV3MemberId_t id ) const
 {
 	const CKeyValues3Table *pTable = GetTable();
 
 	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
-		return KeyValues3LowercaseHash_t();
+		return CKV3MemberHash();
 	
 	return pTable->GetMemberHash( id );
 }
