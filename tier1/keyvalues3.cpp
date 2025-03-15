@@ -536,10 +536,10 @@ KeyValues3** KeyValues3::GetArrayBase()
 {
 	CKeyValues3Array *pArray = GetArray();
 
-	if ( !pArray )
-		return nullptr;
+	if ( pArray )
+		return pArray->Base();
 
-	return pArray->Base();
+	return nullptr;
 }
 
 KeyValues3* KeyValues3::GetArrayElement( int elem )
@@ -554,24 +554,18 @@ KeyValues3* KeyValues3::GetArrayElement( int elem )
 
 KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 {
-	CKeyValues3Array *pArray = GetArray();
-
-	if ( !pArray )
+	if ( !IsArray() )
 		SetToEmptyArray();
 
-	Assert( pArray );
-
-	return *pArray->InsertMultipleBefore( this, elem, 1 );
+	return *GetArray()->InsertMultipleBefore( this, elem, 1 );
 }
 
 KeyValues3* KeyValues3::ArrayAddElementToTail()
 {
-	CKeyValues3Array *pArray = GetArray();
-
-	if ( !pArray )
+	if ( !IsArray() )
 		SetToEmptyArray();
 
-	Assert( pArray );
+	CKeyValues3Array *pArray = GetArray();
 
 	return *pArray->InsertMultipleBefore( this, pArray->Count(), 1 );
 }
@@ -598,12 +592,10 @@ void KeyValues3::ArraySwapItems( int idx1, int idx2 )
 
 void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
-	CKeyValues3Array *pArray = GetArray();
-
-	if ( !pArray )
+	if ( !IsArray() )
 		SetToEmptyArray();
 
-	pArray->SetCount( this, count, type, subtype );
+	GetArray()->SetCount( this, count, type, subtype );
 }
 
 void KeyValues3::ArrayRemoveElements( int elem, int num )
@@ -787,7 +779,10 @@ int KeyValues3::GetMemberCount() const
 {
 	const CKeyValues3Table *pTable = GetTable();
 
-	return pTable ? pTable->GetMemberCount() : 0;
+	if ( pTable )
+		return pTable->GetMemberCount();
+
+	return KV3_INVALID_MEMBER;
 }
 
 KeyValues3* KeyValues3::GetMember( KV3MemberId_t id )
@@ -847,12 +842,10 @@ KeyValues3* KeyValues3::Internal_FindMember( const CKV3MemberName &name, KV3Memb
 
 KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pCreated )
 {
-	if ( GetType() != KV3_TYPE_TABLE )
+	if ( !IsTable() )
 		SetToEmptyTable();
 
 	CKeyValues3Table *pTable = GetTable();
-
-	Assert( pTable );
 
 	KV3MemberId_t id = pTable->FindMember( name );
 
@@ -1330,9 +1323,7 @@ void KeyValues3::CopyFrom( const KeyValues3* pSrc )
 
 void KeyValues3::OverlayKeysFrom( KeyValues3 *parent, bool depth )
 {
-	CKeyValues3Table *pTable = GetTable();
-
-	if ( !pTable )
+	if ( !IsTable() )
 		SetToNull();
 
 	CKeyValues3Table *pParentTable = parent->GetTable();
@@ -1435,16 +1426,19 @@ CKeyValues3Array::CKeyValues3Array( int cluster_elem, int alloc_size ) :
 CKeyValues3ArrayCluster* CKeyValues3Array::GetCluster() const
 {
 	if ( !HasCluster() )
-		return nullptr;
+		return GET_OUTER( CKeyValues3ArrayCluster, m_Values[ m_nClusterElement ] );
 
-	return GET_OUTER( CKeyValues3ArrayCluster, m_Values[ m_nClusterElement ] );
+	return nullptr;
 }
 
 CKeyValues3Context* CKeyValues3Array::GetContext() const
 { 
 	CKeyValues3ArrayCluster* cluster = GetCluster();
 
-	return cluster ? cluster->GetContext() : nullptr;
+	if ( cluster )
+		return cluster->GetContext();
+
+	return nullptr;
 }
 
 KeyValues3* CKeyValues3Array::Element( int i )
