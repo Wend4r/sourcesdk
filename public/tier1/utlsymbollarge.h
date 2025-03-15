@@ -75,23 +75,30 @@ private:
 	} u;
 };
 
-typedef uint32 LargeSymbolTableHashDecoration_t; 
+typedef uint32 LargeSymbolTableHashDecoration_t;
 
 // The structure consists of the hash immediately followed by the string data
-struct alignas(8) CUtlSymbolTableLargeBaseTreeEntry_t
+struct ALIGN8_POST CUtlSymbolTableLargeBaseTreeEntry_t
 {
 	LargeSymbolTableHashDecoration_t	m_Hash;
 	// Variable length string data
-	char								m_String[1];
+	char m_szString[1];
 
 	bool IsEmpty() const
 	{
-		return ( ( m_Hash == 0 ) && ( 0 == m_String[0] ) );
+		return ( !m_Hash && !m_szString[0] );
 	}
 
-	char const *String() const
+	const char *String() const
 	{
-		return (const char *)&m_String[ 0 ];
+		return (const char *)m_szString;
+	}
+
+	void Replace( LargeSymbolTableHashDecoration_t nNewHash, const char *pNewString, int nLength )
+	{
+		m_Hash = nNewHash;
+		Q_memcpy( (char *)m_szString, pNewString, nLength );
+		m_szString[nLength] = '\0';
 	}
 
 	CUtlSymbolLarge ToSymbol() const
@@ -265,15 +272,11 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUT
 
 	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( block );
 
-	entry->m_Hash = hash;
-	char *pText = (char *)&entry->m_String[ 0 ];
-	memcpy( pText, pString, nLength );
-	pText[ nLength ] = '\0';
+	entry->Replace( hash, pString, nLength );
 
 	UtlSymLargeElm_t elem = m_MemBlocks.AddToTail( block + sizeof( LargeSymbolTableHashDecoration_t ) );
 
-	empty_t empty;
-	m_HashTable.Insert( elem, empty, hash );
+	m_HashTable.Insert( elem, empty_t(), hash );
 
 	return entry->ToSymbol();
 }
