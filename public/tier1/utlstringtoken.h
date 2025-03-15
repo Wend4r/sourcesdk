@@ -22,8 +22,8 @@
 #define STRINGTOKEN_MURMURHASH_SEED 0x31415926
 
 // Macros are intended to be used between CUtlStringToken (always lowercase)
-#define MAKE_STRINGTOKEN(pstr) CUtlStringToken::Hash( (pstr), strlen(pstr), STRINGTOKEN_MURMURHASH_SEED )
-#define MAKE_STRINGTOKEN_UTL(containerName) CUtlStringToken::Hash( (containerName).Get(), (containerName).Length(), STRINGTOKEN_MURMURHASH_SEED )
+#define MAKE_STRINGTOKEN_HASH(pstr) CUtlStringToken::Hash( (pstr), strlen(pstr), STRINGTOKEN_MURMURHASH_SEED )
+#define MAKE_STRINGTOKEN_HASH_UTL(containerName) CUtlStringToken::Hash( (containerName).Get(), (containerName).Length(), STRINGTOKEN_MURMURHASH_SEED )
 
 class IFormatOutputStream;
 class CFormatStringElement;
@@ -95,29 +95,25 @@ public:
 	CUtlStringToken( uint32 nHashCode = 0 ) : m_nHashCode( nHashCode ) {}
 	template < uintp N > FORCEINLINE constexpr CUtlStringToken( const char (&str)[N] ) : m_nHashCode( Hash( str, N - 1 ) ) {}
 	CUtlStringToken( const char *pString, int nLen ) : m_nHashCode( Hash( pString, nLen ) ) {}
-	CUtlStringToken( const CUtlString &str ) : CUtlStringToken( str.Get(), str.Length() ) {}
 	CUtlStringToken( const CBufferString &buffer ) : CUtlStringToken( buffer.Get(), buffer.Length() ) {}
 
 	// operator==
 	bool operator==( const uint32 nHash ) const { return m_nHashCode == nHash; }
 	bool operator==( const CUtlStringToken &other ) const { return operator==( other.GetHashCode() ); }
-	bool operator==( const char *pString ) const { return operator==( MAKE_STRINGTOKEN( pString ) ); }
-	bool operator==( const CUtlString &str ) const { return operator==( MAKE_STRINGTOKEN_UTL( str ) ); }
-	bool operator==( const CBufferString &buffer ) const { return operator==( MAKE_STRINGTOKEN_UTL( buffer ) ); }
+	bool operator==( const char *pString ) const { return operator==( MAKE_STRINGTOKEN_HASH( pString ) ); }
+	bool operator==( const CBufferString &buffer ) const { return operator==( MAKE_STRINGTOKEN_HASH_UTL( buffer ) ); }
 
 	// operator!=
 	bool operator!=( const uint32 nHash ) const { return !operator==( nHash ); }
 	bool operator!=( const CUtlStringToken &other ) const { return !operator==( other ); }
 	bool operator!=( const char *pString ) const { return !operator==( pString ); }
-	bool operator!=( const CUtlString &str ) const { return !operator==( str ); }
 	bool operator!=( const CBufferString &buffer ) const { return !operator==( buffer ); }
 
 	// opertator<
 	bool operator<( const uint32 nHash ) const { return ( m_nHashCode < nHash ); }
 	bool operator<( CUtlStringToken const &other ) const { return operator<( other.GetHashCode() ); }
-	bool operator<( const char *pString ) const { return operator<( MAKE_STRINGTOKEN( pString ) ); }
-	bool operator<( const CUtlString &str ) const { return !operator<( MAKE_STRINGTOKEN_UTL( str ) ); }
-	bool operator<( const CBufferString &buffer ) const { return !operator<( MAKE_STRINGTOKEN_UTL( buffer ) ); }
+	bool operator<( const char *pString ) const { return operator<( MAKE_STRINGTOKEN_HASH( pString ) ); }
+	bool operator<( const CBufferString &buffer ) const { return !operator<( MAKE_STRINGTOKEN_HASH_UTL( buffer ) ); }
 
 	/// access to the hash code for people who need to store thse as 32-bits, regardless of the
 	operator uint32() const { return m_nHashCode; }

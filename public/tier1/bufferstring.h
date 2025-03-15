@@ -9,9 +9,9 @@
 #include <stddef.h>
 #undef __need_size_t
 
-#include "tier0/platform.h"
 #include "strtools.h"
-#include "utlstring.h"
+#include "tier0/platform.h"
+#include "tier1/utlcommon.h"
 
 class CFormatStringElement;
 class IFormatOutputStream;

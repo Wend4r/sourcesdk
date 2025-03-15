@@ -274,7 +274,7 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUT
 
 	entry->Replace( hash, pString, nLength );
 
-	UtlSymLargeId_t id = m_MemBlocks.AddToTail( block + sizeof( LargeSymbolTableHashDecoration_t ) );
+	UtlSymLargeElm_t elem = m_MemBlocks.AddToTail( block + sizeof( LargeSymbolTableHashDecoration_t ) );
 
 	m_HashTable.Insert( elem, empty_t(), hash );
 
