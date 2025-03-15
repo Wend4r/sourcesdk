@@ -37,9 +37,9 @@ typedef unsigned int UtlSymElm_t;
 #define UTL_INVAL_SYMBOL  ((UtlSymId_t)~0)
 
 #define FOR_EACH_SYMBOL( tableName, iter ) \
-	for ( CUtlSymbol iter = 0; iter < (tableName).GetNumStrings(); iter++ )
+	for ( UtlSymElm_t iter = 0; iter < (tableName).GetNumStrings(); iter++ )
 #define FOR_EACH_SYMBOL_BACK( tableName, iter ) \
-	for ( CUtlSymbol iter = (tableName).GetNumStrings()-1; iter >= 0; iter-- )
+	for ( UtlSymElm_t iter = (tableName).GetNumStrings()-1; iter >= 0; iter-- )
 
 class CUtlSymbol
 {
@@ -51,14 +51,6 @@ public:
 	
 	// operator=
 	CUtlSymbol& operator=( CUtlSymbol const& src ) { m_Id = src.m_Id; return *this; }
-
-	// operator++
-	CUtlSymbol& operator++() { ++m_Id; return *this; }
-	CUtlSymbol operator++(int) { CUtlSymbol oldId = *this; ++m_Id; return oldId; }
-
-	// operator--
-	CUtlSymbol& operator--() { --m_Id; return *this; }
-	CUtlSymbol operator--(int) { CUtlSymbol oldId = *this; --m_Id; return oldId; }
 
 	// operator==
 	bool operator==( CUtlSymbol const& src ) const { return m_Id == src.m_Id; }
