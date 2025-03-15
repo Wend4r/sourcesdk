@@ -68,7 +68,7 @@ public:
 	bool IsValid() const { return GetId() != Invalid(); }
 
 	// Gets at the symbol
-	operator UtlSymId_t () const  { return GetId(); }
+	operator UtlSymId_t () const  { return m_Id; }
 
 protected:
 	CUtlSymbol( const char* pStr );
