@@ -314,7 +314,10 @@ struct KV3BinaryBlob_t
 	bool m_bFreeMemory;
 };
 
-class CKV3MemberName : public CUtlStringToken
+using KeyValues3LowercaseHash_t = CUtlStringToken;
+using CKV3MemberHash = KeyValues3LowercaseHash_t;
+
+class CKV3MemberName : public CKV3MemberHash
 {
 public:
 	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CUtlStringToken( szInit ), m_pszString( (const char *)szInit ) {}
@@ -334,7 +337,6 @@ private:
 	const char* m_pszString;
 };
 
-using KeyValues3LowercaseHash_t = CUtlStringToken;
 using CKeyValues3StringAndHash = CKV3MemberName;
 
 // Pulse thing
@@ -493,7 +495,7 @@ public:
 	KeyValues3* GetMember( KV3MemberId_t id );
 	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
 	const char* GetMemberName( KV3MemberId_t id ) const;
-	KeyValues3LowercaseHash_t GetMemberHash( KV3MemberId_t id ) const;
+	CKV3MemberHash GetMemberHash( KV3MemberId_t id ) const;
 	CKV3MemberName GetKV3MemberName( KV3MemberId_t id ) const;
 
 protected:
@@ -503,7 +505,7 @@ public:
 	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = nullptr ) { KV3MemberId_t next = KV3_INVALID_MEMBER; return Internal_FindMember( name, next, defaultValue ); }
 	const KeyValues3 *FindMember( const CKV3MemberName &name, KeyValues3 *defaultValue = nullptr ) const { return const_cast<KeyValues3 *>(this)->FindMember( name, defaultValue ); };
 	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = nullptr );
-	KeyValues3LowercaseHash_t RenameMember( const CKV3MemberName &name, const CKV3MemberName &newName );
+	CKV3MemberHash RenameMember( const CKV3MemberName &name, const CKV3MemberName &newName );
 	bool RemoveMember( KV3MemberId_t id );
 	bool RemoveMember( const KeyValues3* kv );
 	bool RemoveMember( const CKV3MemberName &name );

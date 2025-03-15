@@ -821,12 +821,12 @@ CKV3MemberName KeyValues3::GetKV3MemberName( KV3MemberId_t id ) const
 	return CKV3MemberName( pTable->GetMemberHash( id ), pTable->GetMemberName( id ) );
 }
 
-KeyValues3LowercaseHash_t KeyValues3::GetMemberHash( KV3MemberId_t id ) const
+CKV3MemberHash KeyValues3::GetMemberHash( KV3MemberId_t id ) const
 {
 	const CKeyValues3Table *pTable = GetTable();
 
 	if ( !pTable || id < 0 || id >= pTable->GetMemberCount() )
-		return KeyValues3LowercaseHash_t();
+		return CKV3MemberHash();
 	
 	return pTable->GetMemberHash( id );
 }
@@ -873,14 +873,14 @@ KeyValues3* KeyValues3::FindOrCreateMember( const CKV3MemberName &name, bool *pC
 	return pTable->GetMember( id );
 }
 
-KeyValues3LowercaseHash_t KeyValues3::RenameMember( const CKV3MemberName &name, const CKV3MemberName &newName )
+CKV3MemberHash KeyValues3::RenameMember( const CKV3MemberName &name, const CKV3MemberName &newName )
 {
 	CKeyValues3Table *pTable = GetTable();
 
 	KV3MemberId_t id = pTable->FindMember( name );
 
 	if ( id == KV3_INVALID_MEMBER )
-		return KeyValues3LowercaseHash_t();
+		return CKV3MemberHash();
 
 	pTable->RenameMember( this, id, newName );
 
