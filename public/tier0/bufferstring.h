@@ -5,6 +5,10 @@
 #pragma once
 #endif
 
+#define __need_size_t
+#include <stddef.h>
+#undef __need_size_t
+
 #include "tier0/platform.h"
 #include "strtools.h"
 #include "utlstring.h"
@@ -291,11 +295,11 @@ private:
 	};
 };
 
-template< uintp SIZE = 128 > // Most commonly used.
+template< size_t SIZE >
 class CBufferStringN : public CBufferString
 {
 public:
-	static const uintp DATA_SIZE = ALIGN_VALUE( SIZE - sizeof( char[8] ), 8 );
+	static const size_t DATA_SIZE = ALIGN_VALUE( SIZE - sizeof( char[8] ), 8 );
 
 	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( DATA_SIZE, bAllowHeapAllocation ) {}
 	CBufferStringN( const char *pString, int nLen = -1, bool bAllowHeapAllocation = true ) : CBufferStringN( bAllowHeapAllocation ) { Insert( 0, pString, nLen ); }
@@ -308,7 +312,7 @@ private:
 };
 
 // AMNOTE: CBufferStringN name is preferred to be used, altho CBufferStringGrowable is left as a small bcompat
-template< uintp SIZE >
+template< size_t SIZE >
 using CBufferStringGrowable = CBufferStringN<SIZE>;
 
 #endif /* BUFFERSTRING_H */
