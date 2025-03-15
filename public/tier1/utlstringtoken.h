@@ -100,7 +100,6 @@ public:
 	CUtlStringToken( const CBufferString &buffer ) : CUtlStringToken( buffer.Get(), buffer.Length() ) {}
 
 	// operator==
-	// aka CUtlStringTokenHashMethod.
 	bool operator==( const uint32 nHash ) const { return m_nHashCode == nHash; }
 	bool operator==( const CUtlStringToken &other ) const { return operator==( other.GetHashCode() ); }
 	bool operator==( const char *pString ) const { return operator==( MAKE_STRINGTOKEN( pString ) ); }
@@ -130,16 +129,6 @@ public:
 
 private:
 	uint32 m_nHashCode;
-};
-
-// To compare into CUtlHash< Data, C, K >
-class CUtlStringTokenHashMethod
-{
-public:
-	CUtlStringTokenHashMethod( int ) {}
-
-	bool operator()( const CUtlStringToken &nLHS, const CUtlStringToken &nRHS ) const { return nLHS == nRHS; }
-	static bool Compare( const CUtlStringToken &nLHS, const CUtlStringToken &nRHS ) { return nLHS == nRHS; }
 };
 
 FORCEINLINE bool TrackStringToken( uint32 nHash, const char *pString )
