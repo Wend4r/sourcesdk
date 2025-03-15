@@ -53,7 +53,8 @@ public:
 
 	unsigned int Count() const
 	{
-		// Assert( m_Vector.Count() == m_SymbolTable.GetNumStrings() );
+		Assert( m_Vector.Count() == m_SymbolTable.GetNumStrings() );
+
 		return m_Vector.Count();
 	}
 
