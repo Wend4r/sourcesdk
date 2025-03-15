@@ -295,6 +295,24 @@ enum KeyValues3Flag_t : uint8
 	KEYVALUES3_FLAG_LAST_VALUE = (1 << 2)
 };
 
+union KeyValues3Array_t
+{
+	float32* m_f32;
+	Vector *m_vec;
+	Vector2D *m_vec2;
+	Vector4D *m_vec4;
+	Quaternion *m_quat;
+	QAngle *m_ang;
+	matrix3x4_t *m_mat;
+	float64* m_f64;
+	int16* m_i16;
+	int32* m_i32;
+	uint8 m_u8Short[8];
+	int16 m_i16Short[4];
+
+	CKeyValues3Array* m_pRoot;
+};
+
 namespace KV3Helpers
 {
 	template <typename T, typename... Ts>
@@ -460,6 +478,11 @@ public:
 	bool IsNull() const { return GetType() == KV3_TYPE_NULL; }
 	void SetToNull() { PrepareForType( KV3_TYPEEX_NULL, KV3_SUBTYPE_NULL ); }
 
+	bool IsArray() const { return GetType() == KV3_TYPE_ARRAY; }
+	bool IsKV3Array() const { return GetTypeEx() == KV3_TYPEEX_ARRAY; }
+	bool IsTable() const { return GetType() == KV3_TYPE_TABLE; }
+	bool IsString() const { return GetType() == KV3_TYPE_STRING; }
+
 	bool GetBool( bool defaultValue = false ) const			{ return GetValue<bool>( defaultValue ); }
 	char8 GetChar( char8 defaultValue = 0 ) const			{ return GetValue<char8>( defaultValue ); }
 	uchar32 GetUChar32( uchar32 defaultValue = 0 ) const	{ return GetValue<uint32>( defaultValue ); }
@@ -523,14 +546,15 @@ public:
 	void SetQAngle( const QAngle &ang )				{ SetVecBasedObj<QAngle>( ang, 3, KV3_SUBTYPE_QANGLE ); }
 	void SetMatrix3x4( const matrix3x4_t &matrix )	{ SetVecBasedObj<matrix3x4_t>( matrix, 3*4, KV3_SUBTYPE_MATRIX3X4 ); }
 
-	bool IsArray() const { return GetType() == KV3_TYPE_ARRAY; }
-	CKeyValues3Array *GetArray() { return IsArray() ? m_Data.m_pArray : nullptr; }
-	const CKeyValues3Array *GetArray() const { return const_cast<KeyValues3 *>(this)->GetArray(); };
+	KeyValues3Array_t *GetArray() { return IsArray() ? &m_Data.m_Array : nullptr; }
+	const KeyValues3Array_t *GetArray() const { return const_cast<KeyValues3 *>(this)->GetArray(); };
+	CKeyValues3Array *GetKV3Array() { return IsKV3Array() ? m_Data.m_Array.m_pRoot : nullptr; }
+	const CKeyValues3Array *GetKV3Array() const { return const_cast<KeyValues3 *>(this)->GetKV3Array(); };
 
 	int GetArrayElementCount() const;
 	void SetArrayElementCount( int count, KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
 
-	void SetToEmptyArray() { PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY ); }
+	void SetToEmptyKV3Array() { PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY ); }
 	KeyValues3** GetArrayBase();
 
 	KeyValues3* GetArrayElement( int elem );
@@ -545,7 +569,6 @@ public:
 	void ArrayRemoveElements( int elem, int num );
 	void ArrayRemoveElement( int elem ) { ArrayRemoveElements( elem, 1 ); }
 
-	bool IsTable() const { return GetType() == KV3_TYPE_TABLE; }
 	CKeyValues3Table *GetTable() { return IsTable() ? m_Data.m_pTable : nullptr; }
 	const CKeyValues3Table *GetTable() const { return const_cast<KeyValues3 *>(this)->GetTable(); }
 
@@ -596,7 +619,7 @@ public:
 	matrix3x4_t GetMemberMatrix3x4( const CKV3MemberName &name, const matrix3x4_t &defaultValue = matrix3x4_t( Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ) ) ) const { auto kv = FindMember( name ); return kv ? kv->GetMatrix3x4( defaultValue ) : defaultValue; }
 
 	void SetMemberToNull( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToNull(); }
-	void SetMemberToEmptyArray( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyArray(); }
+	void SetMemberToEmptyArray( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyKV3Array(); }
 	void SetMemberToEmptyTable( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyTable(); }
 	void SetMemberToBinaryBlob( const CKV3MemberName &name, const byte *blob, int size ) { FindOrCreateMember( name )->SetToBinaryBlob( blob, size ); }
 	void SetMemberToBinaryBlobExternal( const CKV3MemberName &name, const byte *blob, int size, bool free_mem ) { FindOrCreateMember( name )->SetToBinaryBlobExternal( blob, size, free_mem ); }
@@ -648,24 +671,8 @@ private:
 
 		KV3BinaryBlob_t* m_pBinaryBlob;
 
-		CKeyValues3Array* m_pArray;
+		KeyValues3Array_t m_Array;
 		CKeyValues3Table* m_pTable;
-
-		union Array_t
-		{
-			float32* m_f32;
-			Vector *m_vec;
-			Vector2D *m_vec2;
-			Vector4D *m_vec4;
-			Quaternion *m_quat;
-			QAngle *m_ang;
-			matrix3x4_t *m_mat;
-			float64* m_f64;
-			int16* m_i16;
-			int32* m_i32;
-			uint8 m_u8Short[8];
-			int16 m_i16Short[4];
-		} m_Array;
 
 		uint64 m_nMemory;
 		void* m_pMemory;
@@ -1198,8 +1205,8 @@ public:
 	template <typename CLUSTER>
 	void PurgeClusterNodeChain( ClusterNodeChain<CLUSTER> &cluster_node );
 
-	bool IsArrayRawAllocated( CKeyValues3Array *element ) { return m_RawArrayEntries.IsWithinRange( element ); }
-	bool IsTableRawAllocated( CKeyValues3Table *element ) { return m_RawTableEntries.IsWithinRange( element ); }
+	bool IsArrayAllocated( CKeyValues3Array *element ) { return m_RawArrayEntries.IsWithinRange( element ); }
+	bool IsTableAllocated( CKeyValues3Table *element ) { return m_RawTableEntries.IsWithinRange( element ); }
 
 private:
 	template <typename CLUSTER>
@@ -1303,10 +1310,12 @@ void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int siz
 	m_TypeEx = KV3_TYPEEX_ARRAY;
 	Alloc( size );
 
-	m_Data.m_pArray->SetCount( this, size, type, subtype );
+	CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
 
-	CKeyValues3Array::Element_t* arr = m_Data.m_pArray->Base();
-	for ( int i = 0; i < m_Data.m_pArray->Count(); ++i )
+	pNewArray->SetCount( this, size, type, subtype );
+
+	CKeyValues3Array::Element_t* arr = pNewArray->Base();
+	for ( int i = 0; i < pNewArray->Count(); ++i )
 		arr[ i ]->SetDirect( data[ i ] );
 
 	if ( bFree )
@@ -1388,10 +1397,12 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 	{
 		PrepareForType( KV3_TYPEEX_ARRAY, subtype );
 
-		m_Data.m_pArray->SetCount( this, size, type_elem, subtype_elem );
+		CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
 
-		CKeyValues3Array::Element_t* arr = m_Data.m_pArray->Base();
-		for ( int i = 0; i < m_Data.m_pArray->Count(); ++i )
+		pNewArray->SetCount( this, size, type_elem, subtype_elem );
+
+		CKeyValues3Array::Element_t* arr = pNewArray->Base();
+		for ( int i = 0; i < pNewArray->Count(); ++i )
 			arr[ i ]->SetValue<T>( data[ i ], type_elem, subtype_elem );
 
 		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
