@@ -132,7 +132,7 @@ class CTier0AppSystem : public CBaseAppSystem< IInterface >
 };
 
 using FactoryFn = void* (*)(char const*, int*);
-
+class KeyValues;
 abstract_class CAppSystemDict
 {
 public:
@@ -146,16 +146,16 @@ public:
 	struct ModuleInfo_t
 	{
 		const char* m_pModuleName;
-		void* m_hModule;
+		PlatModule_t m_hModule;
 		int m_nRefCount;
 	};
 
 	struct AppSystem_t
 	{
 		const char* m_pModuleName;
-		void* m_pInterfaceName;
-		void* m_pSystem;
-		void* m_hModule;
+		const char* m_pInterfaceName;
+		IAppSystem* m_pSystem;
+		PlatModule_t m_hModule;
 		int m_nPhase;
 		bool m_bInvisible;
 	};
@@ -166,9 +166,9 @@ public:
 	CUtlStringList m_ModuleSearchPath;
 	CUtlStringMap<UtlSymId_t> m_SystemDict; // 104
 	int m_nExpectedShutdownLoggingStateIndex; // 256
-	void* m_pDefaultLoggingListener; // 264
-	void* m_pGameInfo; // 272
-	void* m_pApplicationInfo; // 280
+	ILoggingListener* m_pDefaultLoggingListener; // 264
+	KeyValues* m_pGameInfo; // 272
+	KeyValues* m_pApplicationInfo; // 280
 	void* m_hInstance; // 288
 	void* m_pUnknown; // 296
 	bool m_bIsConsoleApp; // 304
@@ -183,7 +183,7 @@ public:
 	CUtlString m_ExecutablePath; // 344
 	CUtlString m_ModSubDir; // 352
 	CUtlString m_ContentPath; // 360
-	void* m_pApplication; // 368
+	IApplication* m_pApplication; // 368
 	bool m_bInitialized; // 376
 	bool m_bSuppressCOMInitialization;
 	int m_nAppSystemPhase;
