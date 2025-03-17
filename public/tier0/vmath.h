@@ -1,5 +1,5 @@
-#ifndef MATH_H
-#define MATH_H
+#ifndef VMATH_H
+#define VMATH_H
 
 #pragma once
 
@@ -144,4 +144,4 @@ PLATFORM_INTERFACE int V_isfinited( double x );           // Returns non-zero if
 PLATFORM_INTERFACE int V_isinfd( double x );              // Returns non-zero if x is infinite.
 PLATFORM_INTERFACE int V_isnand( double x );              // Returns non-zero if x is NaN.
 
-#endif // MATH_H
+#endif // VMATH_H
