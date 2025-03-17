@@ -29,7 +29,7 @@ public:
 	virtual	const char	*CheckParm( CUtlStringToken param, const char **ppszValue = 0 ) const = 0;
 	// A bool return of whether param exists, useful for just checking if param that is just a flag is set
 	virtual bool		HasParm( CUtlStringToken param ) const = 0;
-	
+
 	// Gets at particular parameters
 	virtual int			ParmCount() const = 0;
 	virtual int			FindParm( CUtlStringToken param ) const = 0;	// Returns 0 if not found.
@@ -43,8 +43,8 @@ public:
 
 	virtual const char **GetParms() const = 0;
 	virtual const char *GetCmdLine( void ) const = 0;
-	virtual void		AppendParm( CUtlStringToken param, const char *pszValues ) = 0;
-	
+	virtual void		AppendParm( const char *pNewParam, const char *pszValues ) = 0;
+
 	// Returns true if there's atleast one parm available
 	virtual bool		HasParms( void ) const = 0;
 
