@@ -314,7 +314,7 @@ struct KV3MetaData_t
 		m_Comments.Purge();
 	}
 
-	typedef CUtlMap<int, CBufferStringGrowable<8>, int, CDefLess<int>> CommentsMap_t;
+	typedef CUtlMap<int, CBufferString, int, CDefLess<int>> CommentsMap_t;
 
 	int 			m_nLine;
 	int 			m_nColumn;

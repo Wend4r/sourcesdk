@@ -659,7 +659,7 @@ template <typename T> static void CvarTypeTrait_ClampFn( CVValue_t *obj, const C
 
 template<> bool CvarTypeTrait_StringToValueFn<CUtlString>( const char *string, CVValue_t *obj ) { obj->m_StringValue = string; return true; }
 
-template<> void CvarTypeTrait_ValueToStringFn<bool>( const CVValue_t *obj, CBufferString &buf ) { buf.Insert( 0, obj->m_bValue ? "true" : "false" ); }
+template<> void CvarTypeTrait_ValueToStringFn<bool>( const CVValue_t *obj, CBufferString &buf ) { buf = obj->m_bValue ? "true" : "false"; }
 template<> void CvarTypeTrait_ValueToStringFn<int16>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%d", obj->m_i16Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<uint16>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%u", obj->m_u16Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<int32>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%d", obj->m_i32Value ); }
@@ -668,7 +668,7 @@ template<> void CvarTypeTrait_ValueToStringFn<int64>( const CVValue_t *obj, CBuf
 template<> void CvarTypeTrait_ValueToStringFn<uint64>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%llu", obj->m_u64Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<float32>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%f", obj->m_fl32Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<float64>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%lf", obj->m_fl64Value ); }
-template<> void CvarTypeTrait_ValueToStringFn<CUtlString>( const CVValue_t *obj, CBufferString &buf ) { buf.Insert( 0, obj->m_StringValue.Get() ); }
+template<> void CvarTypeTrait_ValueToStringFn<CUtlString>( const CVValue_t *obj, CBufferString &buf ) { buf.Set( obj->m_StringValue ); }
 template<> void CvarTypeTrait_ValueToStringFn<Vector2D>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%f %f", obj->m_vec2Value[0], obj->m_vec2Value[1] ); }
 template<> void CvarTypeTrait_ValueToStringFn<Vector>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%f %f %f", obj->m_vec3Value[0], obj->m_vec3Value[1], obj->m_vec3Value[2] ); }
 template<> void CvarTypeTrait_ValueToStringFn<Vector4D>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%f %f %f %f", obj->m_vec4Value[0], obj->m_vec4Value[1], obj->m_vec4Value[2], obj->m_vec4Value[3] ); }

@@ -321,9 +321,9 @@ public:
 			case FIELD_UINT32:		buf.Format("%u", m_uint32); return true;
 			case FIELD_INT64:		buf.Format("%lld", m_int64); return true;
 			case FIELD_UINT64:		buf.Format("%llu", m_uint64); return true;
-			case FIELD_BOOLEAN:		buf.Insert(0, m_bool ? "true" : "false"); return true;
-			case FIELD_STRING:		buf.Insert(0, m_stringt.ToCStr()); return true;
-			case FIELD_CSTRING:		buf.Insert(0, m_pszString ? m_pszString : "(null)"); return true;
+			case FIELD_BOOLEAN:		buf = m_bool ? "true" : "false"; return true;
+			case FIELD_STRING:		buf = m_stringt.ToCStr(); return true;
+			case FIELD_CSTRING:		buf = m_pszString ? m_pszString : "(null)"; return true;
 			case FIELD_CHARACTER:	buf.Format("%c", m_char); return true;
 			case FIELD_VECTOR2D:	buf.Format("%g %g", m_pVector2D->x, m_pVector2D->y); return true;
 			case FIELD_COLOR32:		buf.Format("%d %d %d %d", m_pColor->r(), m_pColor->g(), m_pColor->b(), m_pColor->a()); return true;

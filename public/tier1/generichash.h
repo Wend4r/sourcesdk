@@ -14,6 +14,8 @@
 
 #include "platform.h"
 
+#define TOLOWERU( c ) ( ( uint32 ) ( ( ( c >= 'A' ) && ( c <= 'Z' ) ) ? ( c | ( 1 << 5 ) ) : c ) )
+
 //-----------------------------------------------------------------------------
 
 unsigned FASTCALL HashString( const char *pszKey );

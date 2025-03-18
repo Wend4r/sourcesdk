@@ -34,7 +34,6 @@ class CFormatStringElement;
 PLATFORM_INTERFACE bool g_bUpdateStringTokenDatabase;
 PLATFORM_INTERFACE void RegisterStringToken( uint32 nHashCode, const char *pStart, const char *pEnd = NULL, bool bExtraAddToDatabase = true );
 
-#define TOLOWERU( c ) ( ( uint32 ) ( ( ( c >= 'A' ) && ( c <= 'Z' ) ) ? ( c | ( 1 << 5 ) ) : c ) )
 class CUtlStringToken
 {
 public:
@@ -123,7 +122,7 @@ public:
 	operator uint32() const { return m_nHashCode; }
 	uint32 GetHashCode() const { return m_nHashCode; }
 
-	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement pElement ) const;
+	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement element ) const;
 	DLL_CLASS_IMPORT static bool TrackTokenCreation( const char *s1, const char *s2 );
 
 private:
@@ -165,20 +164,20 @@ FORCEINLINE uint32 HashStringWithBuffer( const char *pString, int nLen = -1 )
 	CBufferStringN< SIZE > buffer( pString, nLen );
 
 	if constexpr ( CASEINSENSITIVE )
-		buffer.ToLowerFast();
+		buffer.ToLower();
 
-	return CUtlStringToken::Hash< CASEINSENSITIVE >( buffer.Get(), buffer.Length() );
+	return CUtlStringToken::Hash< false >( buffer.Get(), buffer.Length() );
 }
 
 template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
 FORCEINLINE CUtlStringToken MakeStringToken2( const char *pString, int nLen = -1 )
 {
-	CUtlStringToken nHashToken = HashStringWithBuffer< CASEINSENSITIVE >( pString, nLen );
+	uint32 nHash = HashStringWithBuffer< CASEINSENSITIVE >( pString, nLen );
 
 	if constexpr ( TRACKCREATION )
-		TrackStringToken( nHashToken, pString );
+		TrackStringToken( nHash, pString );
 
-	return nHashToken;
+	return CUtlStringToken( nHash );
 }
 
 #endif // UTLSTRINGTOKEN_H

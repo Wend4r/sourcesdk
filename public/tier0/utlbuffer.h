@@ -309,7 +309,7 @@ public:
 	// If successful, the get index is advanced and the function returns true,
 	// otherwise the index is not advanced and the function returns false.
 	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, char* pString, int nMaxLen );
-	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, CBufferString * );
+	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, CBufferString &buffer );
 
 	// Advance the get index until after the particular string is found
 	// Do not eat whitespace before starting. Return false if it failed
@@ -319,7 +319,7 @@ public:
 	// Parses the next token, given a set of character breaks to stop at
 	// Returns the length of the token parsed in bytes (-1 if none parsed)
 	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, char *pTokenBuf, int nMaxLen, bool bParseComments = true );
-	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, CBufferString *, bool bParseComments = true );
+	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, CBufferString &token, bool bParseComments = true );
 
 	// Write stuff in
 	// Binary mode: it'll just write the bits directly in, and strings will be

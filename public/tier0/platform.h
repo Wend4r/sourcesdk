@@ -1340,7 +1340,7 @@ typedef int socklen_t;
 //-----------------------------------------------------------------------------
 
 // need macro for constant expression
-#define ALIGN_VALUE( val, alignment ) ( ( val + alignment - 1 ) & ~( alignment - 1 ) ) 
+#define ALIGN_VALUE( val, alignment ) ( ( val + alignment - 1 ) & ~( alignment - 1 ) )
 
 #if ( defined(__SANITIZE_ADDRESS__) && __SANITIZE_ADDRESS__ )
 	#define NO_ASAN __attribute__((no_sanitize("address")))

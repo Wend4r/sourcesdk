@@ -14,6 +14,7 @@
 #include "platform.h"
 #include "tier0/memalloc.h"
 #include "tier0/strtools.h"
+#include "tier1/utlcommon.h"
 #include "limits.h"
 
 #ifndef SIZE_MAX
@@ -83,9 +84,7 @@ public:
 	DLL_CLASS_IMPORT CUtlString AbsPath(const char *pStartingDir = NULL) const;
 
 	// Calls CBufferString::EnsureOwnedAllocation
-	// If the second parameter is true it will set UNK4 from EAllocationOption_t
-	// Always uses ALLOW_HEAP_ALLOCATION
-	DLL_CLASS_IMPORT void Acquire(CBufferString *pBufferString, bool bUNK4);
+	DLL_CLASS_IMPORT void Acquire(CBufferString &buffer, bool bHasStackAllocation = false);
 
 	DLL_CLASS_IMPORT void Append(const char *pchAddition);
 	DLL_CLASS_IMPORT void Append(const char *pAddition, int nChars);
@@ -192,7 +191,7 @@ public:
 
 	// param1's least significant 4 bits (param1 & 0xf) are used in a switch in V_UnicodeCaseConvert
 	// return value is also dependant on V_UnicodeCaseConvert
-	DLL_CLASS_IMPORT int UnicodeCaseConvert(int param1, EStringConvertErrorPolicy eErrorPolicy);
+	DLL_CLASS_IMPORT int UnicodeCaseConvert(int nFlags, EStringConvertErrorPolicy eErrorPolicy);
 
 	// Gets the filename (everything except the path.. c:\a\b\c\somefile.txt -> somefile.txt).
 	DLL_CLASS_IMPORT CUtlString UnqualifiedFilenameAlloc() const;
@@ -314,46 +313,6 @@ inline int __cdecl CUtlString::SortCaseSensitive( const CUtlString *pString1, co
 {
 	return V_strcmp( pString1->String(), pString2->String() );
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Implementation of low-level string functionality for character types.
-//-----------------------------------------------------------------------------
-
-template < typename T >
-class StringFuncs
-{
-public:
-	static T		*Duplicate( const T *pValue );
-	static void		 Copy( T *out_pOut, const T *pIn, int iLength );
-	static int		 Compare( const T *pLhs, const T *pRhs );
-	static int		 Length( const T *pValue );
-	static const T  *FindChar( const T *pStr, const T cSearch );
-	static const T	*EmptyString();
-};
-
-template < >
-class StringFuncs<char>
-{
-public:
-	static char		  *Duplicate( const char *pValue ) { return strdup( pValue ); }
-	static void		   Copy( char *out_pOut, const char *pIn, int iLength ) { strncpy( out_pOut, pIn, iLength ); }
-	static int		   Compare( const char *pLhs, const char *pRhs ) { return strcmp( pLhs, pRhs ); }
-	static int		   Length( const char *pValue ) { return (int)strlen( pValue ); }
-	static const char *FindChar( const char *pStr, const char cSearch ) { return strchr( pStr, cSearch ); }
-	static const char *EmptyString() { return ""; }
-};
-
-template < >
-class StringFuncs<wchar_t>
-{
-public:
-	static wchar_t		 *Duplicate( const wchar_t *pValue ) { return wcsdup( pValue ); }
-	static void			  Copy( wchar_t *out_pOut, const wchar_t  *pIn, int iLength ) { wcsncpy( out_pOut, pIn, iLength ); }
-	static int			  Compare( const wchar_t *pLhs, const wchar_t *pRhs ) { return wcscmp( pLhs, pRhs ); }
-	static int			  Length( const wchar_t *pValue ) { return (int) wcslen( pValue ); }
-	static const wchar_t *FindChar( const wchar_t *pStr, const wchar_t cSearch ) { return wcschr( pStr, cSearch ); }
-	static const wchar_t *EmptyString() { return L""; }
-};
 
 //-----------------------------------------------------------------------------
 // Dirt-basic auto-release string class. Not intended for manipulation,

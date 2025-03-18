@@ -528,7 +528,7 @@ void ConVarData::MinValueToString( CBufferString &buf ) const
 	if(HasMinValue())
 		TypeTraits()->ValueToString( m_minValue, buf );
 	else
-		buf.Insert( 0, "" );
+		buf.Clear();
 }
 
 void ConVarData::MaxValueToString( CBufferString &buf ) const
@@ -536,7 +536,7 @@ void ConVarData::MaxValueToString( CBufferString &buf ) const
 	if(HasMaxValue())
 		TypeTraits()->ValueToString( m_maxValue, buf );
 	else
-		buf.Insert( 0, "" );
+		buf.Clear();
 }
 
 ConVarRef::ConVarRef( const char *name, bool allow_developer )

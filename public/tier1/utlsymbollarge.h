@@ -16,7 +16,9 @@
 #include "tier0/basetypes.h"
 #include "tier0/threadtools.h"
 #include "tier0/memblockallocator.h"
+#include "tier0/utlstringtoken.h"
 #include "tier1/generichash.h"
+#include "tier1/utlcommon.h"
 #include "tier1/utlvector.h"
 #include "tier1/utlhashtable.h"
 
@@ -57,12 +59,14 @@ public:
 	// operator<
 	bool operator<( CUtlSymbolLarge const& src ) const { return u.m_Id < src.u.m_Id; }
 
-	template< bool CASEINSENSITIVE = true >
-	static uint32 Hash( const char *pString, int nLength = -1 ) { return MakeStringToken2< CASEINSENSITIVE >( pString, nLength ); }
+	template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
+	static uint32 Hash( const char *pString, int nLength = -1 ) { return MakeStringToken2< CASEINSENSITIVE, TRACKCREATION >( pString, nLength ); }
 
 	bool IsValid() const { return u.m_Id != UTL_INVAL_SYMBOL_LARGE; }
 	UtlSymLargeId_t GetId() { return u.m_Id; };
-	const char* String() const { return IsValid() ? u.m_pAsString : ""; }
+	const char* String() const { return IsValid() ? u.m_pAsString : StringFuncs<char>::EmptyString(); }
+	UtlSymLargeId_t Get() const { return u.m_Id; }
+	operator UtlSymLargeId_t () const { return Get(); }
 
 private:
 	union Data_t

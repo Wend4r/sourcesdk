@@ -124,7 +124,7 @@ public:
 
 	virtual int ComputeOrderForPriority(int nPriority) = 0;
 
-	virtual CLoggingSystem::LoggingChannel_t *GetLoggingChannel() = 0;
+	virtual LoggingChannel_t *GetLoggingChannel() = 0;
 
 	virtual ~INetworkMessages() = 0;
 };

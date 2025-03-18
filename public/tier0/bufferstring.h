@@ -9,9 +9,15 @@
 #include <stddef.h>
 #undef __need_size_t
 
-#include "tier0/platform.h"
+#include "basetypes.h"
+#include "dbg.h"
+#include "platform.h"
 #include "strtools.h"
 #include "utlstring.h"
+#include "vmath.h"
+
+// Assertion macro for catching stack buffer overflows in debug mode.
+#define Assert_BSO( exp ) { if ( IsStackAllocated() && !CanHeapAllocate() ) Assert( exp ); }
 
 class CFormatStringElement;
 class IFormatOutputStream;
@@ -27,292 +33,510 @@ class IFormatOutputStream;
  
 	* Basic buffer allocation:
 	```
-		CBufferStringN<256> buff;
-		buff.Insert(0, "Hello World!");
-		printf("Result: %s\n", buff.Get());
+		CBufferStringN buff = "Hello World!";
+		buff.ToUpper();
+		printf("Result: %s\n", buff.String());
 	```
-	additionaly the heap allocation of the buffer could be disabled. If the heap allocation is disabled and
-	if the buffer capacity is not enough to perform the growing operation, the app would exit with an Assert;
+	additionaly the heap allocation of the bufferstring could be disabled. If the heap allocation is disabled and
+	if the bufferstring capacity is not enough to perform the growing operation, the app would exit with an Assert;
 
-	* Most, if not all the functions would ensure the buffer capacity and enlarge it when needed.
+	* Most, if not all the functions would ensure the bufferstring capacity and enlarge it when needed.
 	In case of stack allocated buffers, if the requested size exceeds stack size, it would switch to heap allocation instead.
 */
 
 class CBufferString
 {
 public:
-	enum EAllocationOption_t
+	enum EType_t
 	{
-		UNK1 = -1,
-		UNK2 = 0,
-		UNK3 = (1 << 1),
-		UNK4 = (1 << 8),
-		UNK5 = (1 << 9)
+		BS_TYPE_HEAP = 0,
+		BS_TYPE_STACK = 1,
 	};
 
-	enum EAllocationFlags_t
+	// Allocation option flags used internally for utlfriends (CUtlBuffer/CUtlString).
+	enum EAllocationOption_t : int
 	{
-		LENGTH_MASK = (1 << 30) - 1,
-		FLAGS_MASK = ~LENGTH_MASK,
+		BS_AO_NONE = 0,
+		BS_AO_FREE = 1 << 1,
 
-		// Flags in m_nLength
-		// Means it tried to grow larger than static size and heap allocation was disabled
-		OVERFLOWED_MARKER = (1 << 30),
-		// Means it owns the heap buffer and it needs to be cleaned up
-		FREE_HEAP_MARKER = (1 << 31),
+		BS_AO_EXPAND_SMALL_BUFFER = 1 << 8,
+		BS_AO_EXPAND_BUFFER_ANYWAY = 1 << 9,
 
-		// Flags in m_nAllocatedSize
-		// Means it uses stack allocated buffer
-		STACK_ALLOCATED_MARKER = (1 << 30),
-		// Allows the buffer to grow beyond the static size on the heap
-		ALLOW_HEAP_ALLOCATION = (1 << 31)
+		BS_AO_HAS_HEAP_ALLOCATION = 1 << 31,
+
+		BS_AO_HEAP_ALLOCATION = BS_AO_EXPAND_SMALL_BUFFER | BS_AO_HAS_HEAP_ALLOCATION,
+		BS_AO_FREE_HEAP_ALLOCATION = BS_AO_FREE | BS_AO_HAS_HEAP_ALLOCATION,
 	};
 
 public:
-	CBufferString( bool bAllowHeapAllocation = true ) :
-		m_nLength( 0 ),
-		m_nAllocatedSize( (bAllowHeapAllocation * ALLOW_HEAP_ALLOCATION) | STACK_ALLOCATED_MARKER | sizeof( m_szString ) ),
-		m_pString( nullptr )
-	{ }
+	// Default constructor - creates an empty buffer.
+	CBufferString( EType_t eType = BS_TYPE_STACK, bool bAllowHeapAllocation = true ) : 
+	    m_nLength( 0 ), 
+	    m_bOverflowed( false ), 
+	    m_bFreeHeap( false ), 
 
-	CBufferString( const char *pString, bool bAllowHeapAllocation = true ) :
-		CBufferString( bAllowHeapAllocation )
-	{
-		Insert( 0, pString );
-	}
-
-protected:
-	CBufferString( size_t nAllocatedSize, bool bAllowHeapAllocation = true ) :
-		m_nLength( 0 ),
-		m_nAllocatedSize( (bAllowHeapAllocation * ALLOW_HEAP_ALLOCATION) | STACK_ALLOCATED_MARKER | (nAllocatedSize + sizeof( m_szString )) ),
-		m_pString( nullptr )
+	    m_nAllocatedSize( eType * DATA_SIZE ), 
+	    m_bStackAllocated( eType ), 
+	    m_bAllowHeapAllocation( bAllowHeapAllocation )
 	{
 	}
 
-public:
-	CBufferString( const CBufferString &other ) : CBufferString() { *this = other; }
-	CBufferString &operator=( const CBufferString &src )
+	// Constructs buffer initialized with a C-string (optional length and heap allowance; will be allocated on the heap).
+	CBufferString( const char *pString, int nLen = -1, bool bAllowHeapAllocation = true ) : 
+	    CBufferString( BS_TYPE_HEAP, bAllowHeapAllocation )
 	{
-		Clear();
-		Insert( 0, src.Get() );
+		Insert( 0, pString, nLen );
+	}
+
+	CBufferString( const CBufferString &copyFrom )
+	:  m_nLengthStaff( copyFrom.m_nLengthStaff ), 
+	   m_nAllocatedStaff( copyFrom.m_nAllocatedStaff ), 
+	   m_Buffer( copyFrom.m_Buffer )
+	{
+		Assert( IsStackAllocated() );
+	}
+
+	CBufferString &operator=( const CBufferString &copyFrom )
+	{
+		Assert( IsStackAllocated() );
+
+		m_nLengthStaff = copyFrom.m_nLengthStaff;
+		m_nAllocatedStaff = copyFrom.m_nAllocatedStaff;
+		m_Buffer = copyFrom.m_Buffer;
+
 		return *this;
 	}
 
-	~CBufferString() { Purge(); }
-
-	void SetHeapAllocationState( bool state )
+	CBufferString( CBufferString &&moveFrom ) noexcept
+	:  m_nLengthStaff( Move( moveFrom.m_nLengthStaff ) ), 
+	   m_nAllocatedStaff( Move( moveFrom.m_nAllocatedStaff ) ), 
+	   m_Buffer( Move( moveFrom.m_Buffer ) )
 	{
-		if(state)
-			m_nAllocatedSize |= ALLOW_HEAP_ALLOCATION;
-		else
-			m_nAllocatedSize &= ~ALLOW_HEAP_ALLOCATION;
+		Assert( IsStackAllocated() );
 	}
 
-	int AllocatedNum() const { return m_nAllocatedSize & LENGTH_MASK; }
-	int Length() const { return m_nLength & LENGTH_MASK; }
-
-	bool CanHeapAllocate() const { return (m_nAllocatedSize & ALLOW_HEAP_ALLOCATION) != 0; }
-	bool IsStackAllocated() const { return (m_nAllocatedSize & STACK_ALLOCATED_MARKER) != 0; }
-	bool ShouldFreeMemory() const { return (m_nLength & FREE_HEAP_MARKER) != 0; }
-	bool IsOverflowed() const { return (m_nLength & OVERFLOWED_MARKER) != 0; }
-
-	bool IsInputStringUnsafe( const char *pData ) const
+	CBufferString &operator=( CBufferString &&moveFrom ) noexcept
 	{
-		return ((void *)pData >= this && (void *)pData < &this[1]) ||
-				(!IsAllocationEmpty() && pData >= Base() && pData < (Base() + AllocatedNum()));
-	}
+		MoveFrom( moveFrom );
 
-	bool IsAllocationEmpty() const { return AllocatedNum() == 0; }
+		return *this;
+	}
 
 protected:
-	char *Base() { return IsStackAllocated() ? m_szString : m_pString; }
+	// Growable constructor for internal use by derived classes with pre-allocated buffer.
+	CBufferString( size_t nAllocatedSize, bool bAllowHeapAllocation = true ) : 
+	    m_nLength( 0 ), 
+	    m_bOverflowed( false ), 
+	    m_bFreeHeap( false ), 
+
+	    m_nAllocatedSize( nAllocatedSize ), 
+	    m_bStackAllocated( true ), 
+	    m_bAllowHeapAllocation( bAllowHeapAllocation )
+	{
+		Assert( nAllocatedSize >= DATA_SIZE );
+	}
+
+public:
+
+	~CBufferString() { Purge(); } // Destructor - purges any allocated memory.
+
+	int Length() const { return m_nLength; } // Returns the current string length.
+	bool IsOverflowed() const { return m_bOverflowed != 0; } // Returns whether buffer overflow occurred.
+	bool ShouldFreeMemory() const { return m_bFreeHeap != 0; } // Returns whether memory must be freed.
+
+	int AllocatedSize() const { return m_nAllocatedSize; } // Returns size of currently allocated memory in bytes.
+	bool IsStackAllocated() const { return m_bStackAllocated != 0; } // Returns whether the string uses stack memory.
+	bool CanHeapAllocate() const { return m_bAllowHeapAllocation != 0; } // Returns whether heap allocation is allowed.
+
+	bool IsEmpty() const { return Length() == 0; } // Returns whether the string is empty.
+	bool IsAllocationEmpty() const { return AllocatedSize() == 0; } // Returns whether buffer allocation is empty.
+
+protected:
+	int IsSmall() const { return Length() < DEFAULT_CAPACITY_SIZE; } // Returns true if length is less than default capacity (used internally).
+	int ChunkCount() const { return Length() / CHUNK_SIZE; } // Returns number of chunks (used internally).
+
+public:
+	int BytesLeft( int nLength ) const { return AllocatedSize() - nLength; } // Returns number of bytes available from a given length.
+	int BytesLeft() const { return BytesLeft( m_nLength ); } // Returns number of bytes available from current length.
+	bool IsFull() const { return BytesLeft() == 0; } // Returns true if no space is left in the bufferstring.
+
+	EType_t GetType() { return static_cast<EType_t>(m_bStackAllocated); };
+
+	// Checks whether a pointer lies within the current buffer range.
+	bool IsInputStringUnsafe( const void *pData ) const
+	{
+		const uintp nBaseDiff = (uintp)Base();
+		const uintp nDataDiff = (uintp)pData;
+
+		return ( nDataDiff >= (uintp)this && nDataDiff < (uintp)&m_Buffer.m_pString ) ||
+		       ( !IsAllocationEmpty() && nDataDiff >= nBaseDiff && nDataDiff < nBaseDiff + AllocatedSize() );
+	}
+
+protected:
+	/// Gets internal base buffer pointer (stack or heap).
+	char *Base() { return IsStackAllocated() ? m_Buffer.m_szString : m_Buffer.m_pString; }
 	const char *Base() const { return const_cast<CBufferString *>( this )->Base(); }
 
 public:
-	const char *Get() const { return IsStackAllocated() ? m_szString : (IsAllocationEmpty() ? StringFuncs<char>::EmptyString() : m_pString); }
+	// Returns as C-string.
+	const char *String() const { return IsStackAllocated() ? m_Buffer.m_szString : ( IsAllocationEmpty() ? StringFuncs<char>::EmptyString() : m_Buffer.m_pString ); }
+	const char *Get() const { return String(); }
+	operator const char *() const { return Get(); }
 
+	// Clears the string contents (does not free heap).
 	void Clear()
 	{
-		if(!IsAllocationEmpty())
+		if ( !IsAllocationEmpty() )
 			Base()[0] = '\0';
 
-		m_nLength &= ~LENGTH_MASK;
+		m_nLength = 0;
 	}
 
-public:
-	DLL_CLASS_IMPORT const char *AppendConcat(int, const char * const *, const int *, bool bIgnoreAlignment = false);
-	DLL_CLASS_IMPORT const char *AppendConcat(const char *, const char *, ...) FMTFUNCTION(3, 4);
-	DLL_CLASS_IMPORT const char *AppendConcatV(const char *, const char *, va_list, bool bIgnoreAlignment = false);
-	DLL_CLASS_IMPORT const char *Concat(const char *, const char *, ...) FMTFUNCTION(3, 4);
-
-	DLL_CLASS_IMPORT int AppendFormat(const char *pFormat, ...) FMTFUNCTION(2, 3);
-	DLL_CLASS_IMPORT int AppendFormatV(const char *pFormat, va_list pData);
-
-	DLL_CLASS_IMPORT const char *AppendRepeat(char cChar, int nChars, bool bIgnoreAlignment = false);
-
-	// Given a path and a filename, composes "path\filename", inserting the (OS correct) separator if necessary
-	DLL_CLASS_IMPORT const char *ComposeFileName(const char *pPath, const char *pFile, char cSeparator);
-
-	DLL_CLASS_IMPORT const char *ConvertIn(unsigned int const *pData, int nSize, bool bIgnoreAlignment = false);
-	DLL_CLASS_IMPORT const char *ConvertIn(wchar_t const *pData, int nSize, bool bIgnoreAlignment = false);
-
-	// Make path end with extension if it doesn't already have an extension
-	DLL_CLASS_IMPORT const char *DefaultExtension(const char *extension);
-
-	// Does string end with 'pSuffix'? (case sensitive/insensitive variants)
-	DLL_CLASS_IMPORT bool EndsWith(const char *pSuffix) const;
-	DLL_CLASS_IMPORT bool EndsWith_FastCaseInsensitive(const char *pSuffix) const;
-
-	// Ensures the nCapacity condition is met and grows the local buffer if needed.
-	// Returns pResultingBuffer pointer to the newly allocated data, as well as resulting capacity that was allocated in bytes.
-	DLL_CLASS_IMPORT int EnsureCapacity(int nCapacity, char **pResultingBuffer, bool bIgnoreAlignment = false, bool bForceGrow = false);
-	DLL_CLASS_IMPORT int EnsureAddedCapacity(int nCapacity, char **pResultingBuffer, bool bIgnoreAlignment = false, bool bForceGrow = false);
-
-	DLL_CLASS_IMPORT char *EnsureLength(int nCapacity, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr);
-	DLL_CLASS_IMPORT char *EnsureOwnedAllocation(CBufferString::EAllocationOption_t eAlloc);
-
-	DLL_CLASS_IMPORT const char *EnsureTrailingSlash(char cSeparator, bool bDontAppendIfEmpty = true);
-
-	DLL_CLASS_IMPORT const char *ExtendPath(const char *pPath, char cSeparator);
-
-	DLL_CLASS_IMPORT const char *ExtractFileBase(const char *pPath);
-
-	// Copy out the file extension into dest
-	DLL_CLASS_IMPORT const char *ExtractFileExtension(const char *pPath);
-
-	// Copy out the path except for the stuff after the final pathseparator
-	DLL_CLASS_IMPORT const char *ExtractFilePath(const char *pPath, bool);
-
-
-	DLL_CLASS_IMPORT const char *ExtractFirstDir(const char *pPath);
-
-	// Force slashes of either type to be = separator character
-	DLL_CLASS_IMPORT const char *FixSlashes(char cSeparator = CORRECT_PATH_SEPARATOR);
-
-	// Fixes up a file name, removing dot slashes, fixing slashes, converting to lowercase, etc.
-	DLL_CLASS_IMPORT const char *FixupPathName(char cSeparator);
-
-	DLL_CLASS_IMPORT int Format(const char *pFormat, ...) FMTFUNCTION(2, 3);
-	DLL_CLASS_IMPORT void FormatTo(IFormatOutputStream* pOutputStream, CFormatStringElement pElement) const;
-
 protected:
-	// Returns aligned size based on capacity requested
-	DLL_CLASS_IMPORT static int GetAllocChars(int nSize, int nCapacity);
+	// Enables/disables heap allocation dynamically.
+	void SetHeapAllocation( bool bNewState = true ) { m_bAllowHeapAllocation = bNewState; }
 
 public:
+	/// Compare string contents with a given C-string (optionally using length).
+	bool Compare( const char *pString, int nLen ) const { return ( nLen < 0 ? V_strcmp( String(), pString ) : V_strncmp( String(), pString, nLen ) ) == 0; }
+	template< class UTLT > bool Compare( const UTLT &utl ) const { return Compare( utl.String(), utl.Length() ); }
+
+	/// operator=
+	CBufferString &operator=( const char *pString ) { Set( pString, -1 ); return *this; }
+	CBufferString &operator=( const CUtlString &str ) { Set( str ); return *this; }
+
+	/// operator==
+	/// Tests for equality, both are case sensitive.
+	bool operator==( const char *pString ) const { return Compare( pString, -1 ); }
+	bool operator==( const CUtlString &str ) const { return Compare( str ); }
+	bool operator==( const CBufferString &buf ) const { return Compare( buf ); }
+
+	/// operator!=
+	bool operator!=( const char *pString ) const { return !operator==( pString ); }
+	bool operator!=( const CUtlString &str ) const { return !operator==( str ); }
+	bool operator!=( const CBufferString &buf ) const { return !operator==( buf ); }
+
+	/// operator[]
+	char &operator[]( int elem ) { Assert( 0 <= elem && elem < Length() && elem < AllocatedSize() ); return Base()[elem]; }
+	char operator[]( int elem ) const { return const_cast<CBufferString *>(this)->operator[]( elem ); }
+
+	/// operator+=
+	CBufferString &operator+=( char value )
+	{
+		const int nLength = Length();
+		constexpr int nCharsNeeded = 1;
+
+		Assert_BSO( BytesLeft() >= nCharsNeeded );
+
+		char *pBufferString = GetInsertPtr( nLength, nCharsNeeded );
+
+		pBufferString[0] = value;
+		pBufferString[1] = '\0';
+
+		return *this;
+	}
+	CBufferString &operator+=( int value )
+	{
+		const int nLength = Length();
+		const int nCharsNeeded = value ? static_cast<int>( V_log10f( V_fabsf( value ) ) ) + ( value < 0 ) + 1 : 1;
+
+		Assert_BSO( BytesLeft( nLength ) >= nCharsNeeded );
+		V_snprintf( GetInsertPtr( nLength, nCharsNeeded ), nCharsNeeded + 1, "%d", value );
+
+		return *this;
+	}
+	CBufferString &operator+=( double value )
+	{
+		const int nLength = Length();
+		const int nCharsNeeded = V_snprintf( NULL, 0, "%lg", value );
+
+		Assert_BSO( BytesLeft( nLength ) >= nCharsNeeded );
+		V_snprintf( GetInsertPtr( nLength, nCharsNeeded ), nCharsNeeded + 1, "%lg", value );
+
+		return *this;
+	}
+	CBufferString &operator+=( const char *pString ) { Append( pString, -1 ); return *this; }
+	template< class UTLT > CBufferString &operator+=( const UTLT &utl ) { Append( utl.String(), utl.Length() ); return *this; }
+
 	// Inserts the nCount bytes of data from pBuf buffer at nIndex position.
 	// If nCount is -1, it would count the bytes of the input buffer manualy.
-	// Returns the resulting char buffer (Same as to what CBufferString->Get() returns).
-	DLL_CLASS_IMPORT const char *Insert(int nIndex, const char *pBuf, int nCount = -1, bool bIgnoreAlignment = false);
+	// Returns the resulting char buffer (Same as to what CBufferString::String() returns).
+	DLL_CLASS_IMPORT const char *Insert( int nIndex, const char *pString, int nCount = -1, bool bIgnoreAlignment = false );
 
-	DLL_CLASS_IMPORT char *GetInsertPtr(int nIndex, int nChars, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr);
-	DLL_CLASS_IMPORT char *GetReplacePtr(int nIndex, int nOldChars, int nNewChars, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr);
+	/// Prepares the bufferstring for writing new characters.
+	DLL_CLASS_IMPORT char *GetInsertPtr( int nIndex, int nCharsNedded, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr );
+	DLL_CLASS_IMPORT char *GetReplacePtr( int nIndex, int nOldChars, int nCharsNedded, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr );
 
-	DLL_CLASS_IMPORT int GrowByChunks(int, int);
+	// Allocates additional space.
+	DLL_CLASS_IMPORT int GrowByChunks( int nChunkSize, int nGrowSize = -1 );
+
+	/// Sets contents of buffer from another string.
+	const char *Set( const char *pString, int nLen, bool bIgnoreAlignment = false ) { Assert_BSO( nLen < 0 || nLen <= BytesLeft() ); Clear(); return Insert( 0, pString, nLen, bIgnoreAlignment ); }
+	template< class UTLT > const char *Set( const UTLT &utl, bool bIgnoreAlignment = false ) { return Set( utl.String(), utl.Length(), bIgnoreAlignment ); }
+
+	/// Appends string to current end of buffer.
+	const char *Append( const char *pString, int nLen, bool bIgnoreAlignment = false ) { Assert_BSO( nLen < 0 || nLen <= BytesLeft() ); return Insert( Length(), pString, nLen, bIgnoreAlignment ); }
+	template< class UTLT > const char *Append( const UTLT &utl, bool bIgnoreAlignment = false ) { return Append( utl.String(), utl.Length(), bIgnoreAlignment ); }
+
+	/// Appends multiple strings into one (e.g., {"Hello", " ", "World"} -> "Hello World"_bs)
+	DLL_CLASS_IMPORT const char *AppendConcat( int nCount, const char * const *pStrings, const int *pLengths = nullptr, bool bIgnoreAlignment = false );
+	template< size_t N > const char *AppendConcatN( const char *(&strs)[N], const int (&nLengths)[N] ) { return AppendConcat( N, strs, nLengths ); }
+	template< size_t N > const char *AppendConcatN( const char *(&strs)[N] ) { return AppendConcat( N, strs ); }
+
+	/// Appends formatted C-string using printf-style formatting.
+	DLL_CLASS_IMPORT int AppendFormat( const char *pFormat, ... ) FMTFUNCTION(2, 3);
+	DLL_CLASS_IMPORT int AppendFormatV( const char *pFormat, va_list paramList );
+
+	// Append repeated character N times.
+	DLL_CLASS_IMPORT const char *AppendRepeat( char cChar, int nTimes, bool bIgnoreAlignment = false );
+
+	// Given a path and a filename, composes "path\filename", inserting the (OS correct) separator if necessary
+	DLL_CLASS_IMPORT const char *ComposeFileName( const char *pPath, const char *pFile, char cSeparator );
+
+	// Converts wide characters or UTF-32 characters to buffer.
+	DLL_CLASS_IMPORT const char *ConvertIn( unsigned int const *pData, int nSize, bool bIgnoreAlignment = false );
+	DLL_CLASS_IMPORT const char *ConvertIn( wchar_t const *pData, int nSize, bool bIgnoreAlignment = false );
+
+	// Makes path end with extension if it doesn't already have an extension
+	DLL_CLASS_IMPORT const char *DefaultExtension( const char *pExtension );
+
+	/// Check if string ends with a given suffix (case-sensitive and fast-insensitive versions)
+	DLL_CLASS_IMPORT bool EndsWith( const char *pSuffix ) const;
+	DLL_CLASS_IMPORT bool EndsWith_FastCaseInsensitive( const char *pSuffix ) const;
+
+	/// Ensures capacity for N bytes (returns pointer and actual capacity)
+	/// Ensures the nCapacity condition is met and grows the local buffer if needed.
+	/// Returns pResultingBuffer pointer to the newly allocated data, as well as resulting capacity that was allocated in bytes.
+	DLL_CLASS_IMPORT int EnsureCapacity( int nCapacity, char **pResultingBuffer, bool bIgnoreAlignment = false, bool bForceGrow = false );
+	DLL_CLASS_IMPORT int EnsureAddedCapacity( int nCapacity, char **pResultingBuffer, bool bIgnoreAlignment = false, bool bForceGrow = false );
+	DLL_CLASS_IMPORT char *EnsureLength( int nCapacity, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr );
+
+	// Ensures buffer is using owned heap allocation.
+	DLL_CLASS_IMPORT char *EnsureOwnedAllocation( CBufferString::EAllocationOption_t eAlloc );
+
+	// Ensures trailing slash character at end of string.
+	DLL_CLASS_IMPORT const char *EnsureTrailingSlash( char cSeparator, bool bDontAppendIfEmpty = true );
+
+	// Expands current path with additional directory (with separator).
+	DLL_CLASS_IMPORT const char *ExtendPath( const char *pPath, char cSeparator );
+
+	// Extract filename without extension.
+	DLL_CLASS_IMPORT const char *ExtractFileBase( const char *pPath );
+
+	// Copies out the file extension into dest
+	DLL_CLASS_IMPORT const char *ExtractFileExtension( const char *pPath );
+
+	// Copies out the path except for the stuff after the final pathseparator
+	DLL_CLASS_IMPORT const char *ExtractFilePath( const char *pPath, bool bIgnoreEmptyPath = false );
+	DLL_CLASS_IMPORT const char *ExtractFirstDir( const char *pPath );
+	DLL_CLASS_IMPORT const char *FixSlashes( char cSeparator = CORRECT_PATH_SEPARATOR ); // Force slashes of either type to be = separator character.
+
+	// Fix up a filename, removing dot slashes, fixing slashes, converting to lowercase, etc.
+	DLL_CLASS_IMPORT const char *FixupPathName( char cSeparator );
+
+	/// Classic C-like formatting into the bufferstring.
+	DLL_CLASS_IMPORT int Format( const char *pFormat, ... ) FMTFUNCTION(2, 3);
+	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement element ) const;
+
+	// Returns aligned size based on capacity requested.
+	DLL_CLASS_IMPORT static int GetAllocChars( int nSize, int nCapacity );
 
 	// If pPath is a relative path, this function makes it into an absolute path
 	// using the current working directory as the base, or pStartingDir if it's non-NULL.
 	// Returns NULL if it runs out of room in the string, or if pPath tries to ".." past the root directory.
-	DLL_CLASS_IMPORT const char *MakeAbsolutePath(const char *pPath, const char *pStartingDir);
+	DLL_CLASS_IMPORT const char *MakeAbsolutePath( const char *pPath, const char *pStartingDir );
 
-	// Same as MakeAbsolutePath, but also does separator fixup
-	DLL_CLASS_IMPORT const char *MakeFixedAbsolutePath(const char *pPath, const char *pStartingDir, char cSeparator = CORRECT_PATH_SEPARATOR);
+	// Make fixed absolute path and normalize separators.
+	// Same as FixupPathName, but also does separator fixup.
+	DLL_CLASS_IMPORT const char *MakeFixedAbsolutePath( const char *pPath, const char *pStartingDir, char cSeparator = CORRECT_PATH_SEPARATOR );
 	
 	// Creates a relative path given two full paths
 	// The first is the full path of the file to make a relative path for.
 	// The second is the full path of the directory to make the first file relative to
 	// Returns NULL if they can't be made relative (on separate drives, for example)
-	DLL_CLASS_IMPORT const char *MakeRelativePath(const char *pFullPath, const char *pDirectory);
+	DLL_CLASS_IMPORT const char *MakeRelativePath( const char *pFullPath, const char *pDirectory );
 
-	// Copies data from pOther and then purges it
-	DLL_CLASS_IMPORT void MoveFrom(CBufferString &pOther);
+	// Transfers data from buffer and then purges it.
+	DLL_CLASS_IMPORT void MoveFrom( CBufferString &moveFrom );
 
-	DLL_CLASS_IMPORT void Purge(int nAllocatedBytesToPreserve = 0);
+	// Purge (heap) memory, optionally preserving some capacity.
+	DLL_CLASS_IMPORT void Purge( int nAllocatedBytesToPreserve = 0 );
 
-	DLL_CLASS_IMPORT char *Relinquish(CBufferString::EAllocationOption_t eAlloc);
+	// Relinquishes internal pointer and transfer ownership (for utlfriends).
+	DLL_CLASS_IMPORT char *Relinquish( CBufferString::EAllocationOption_t eAlloc );
 
-	DLL_CLASS_IMPORT const char *RemoveAt(int nIndex, int nChars);
-	DLL_CLASS_IMPORT const char *RemoveAtUTF8(int nByteIndex, int nCharacters);
+	/// Removes characters at specific index.
+	DLL_CLASS_IMPORT const char *RemoveAt( int nIndex, int nChars );
+	DLL_CLASS_IMPORT const char *RemoveAtUTF8( int nByteIndex, int nCharacters );
 
-	DLL_CLASS_IMPORT const char *RemoveDotSlashes(char cSeparator);
+	// Removes dot slashes (also handling 'ugc:' & 'vpk:') in path.
+	DLL_CLASS_IMPORT const char *RemoveDotSlashes( char cSeparator );
+
+	// Removes whitespaces (including '\t', '\n', '\v', '\f' & '\r') from string.
 	DLL_CLASS_IMPORT int RemoveWhitespace();
 
+	/// Removes full file path portion from path
 	DLL_CLASS_IMPORT const char *RemoveFilePath();
-	DLL_CLASS_IMPORT const char *RemoveFirstDir(CBufferString *pRemovedDir);
+	DLL_CLASS_IMPORT const char *RemoveFirstDir( CBufferString *pRemovedDir = nullptr );
 	DLL_CLASS_IMPORT const char *RemoveToFileBase();
 
-	DLL_CLASS_IMPORT bool RemovePartialUTF8Tail(bool);
-	DLL_CLASS_IMPORT const char *RemoveTailUTF8(int nIndex);
+	/// Fixes broken UTF8 encoding at the end of string
+	DLL_CLASS_IMPORT bool RemovePartialUTF8Tail( bool bDefault = false );
+	DLL_CLASS_IMPORT const char *RemoveTailUTF8( int nIndex );
 
-	DLL_CLASS_IMPORT int Replace(char cFrom, char cTo);
-	DLL_CLASS_IMPORT int Replace(const char *pMatch, const char *pReplace, bool bDontUseStrStr = false);
+	/// Replaces characters or substrings.
+	DLL_CLASS_IMPORT int Replace( char cFrom, char cTo );
+	DLL_CLASS_IMPORT int Replace( const char *pMatch, const char *pToString, bool bDontUseStrStr = false );
 
-	DLL_CLASS_IMPORT const char *ReplaceAt(int nIndex, int nOldChars, const char *pData, int nDataLen = -1, bool bIgnoreAlignment = false);
-	DLL_CLASS_IMPORT const char *ReplaceAt(int nIndex, const char *pData, int nDataLen = -1, bool bIgnoreAlignment = false);
+	/// Replace contents at given index with new string.
+	DLL_CLASS_IMPORT const char *ReplaceAt( int nStartIndex, int nOldChars, const char *pToString, int nLen = -1, bool bIgnoreAlignment = false );
+	DLL_CLASS_IMPORT const char *ReplaceAt( int nStartIndex, const char *pToString, int nLen = -1, bool bIgnoreAlignment = false );
 
-	DLL_CLASS_IMPORT const char *ReverseChars(int nIndex, int nChars);
+	DLL_CLASS_IMPORT const char *ReverseChars( int nStartIndex, int nChars );
 
-	// Strips any current extension from path and ensures that extension is the new extension
-	DLL_CLASS_IMPORT const char *SetExtension(const char *extension);
+	// Strips any current extension from path and ensures that extension is the new extension.
+	DLL_CLASS_IMPORT const char *SetExtension( const char *pString );
 
-	DLL_CLASS_IMPORT char *SetLength(int nLen, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr);
-	DLL_CLASS_IMPORT void SetPtr(char *pBuf, int nBufferChars, int, bool, bool);
+	// Adjusts string length manually.
+	DLL_CLASS_IMPORT char *SetLength( int nLength, bool bIgnoreAlignment = false, int *pNewCapacity = nullptr );
 
-	// Frees the buffer (if it was heap allocated) and writes "~DSTRCT" to the local buffer.
+	// Sets internal pointer manually (used in special cases).
+	DLL_CLASS_IMPORT void SetPtr( char *pBuf, int nBufferChars, int nOldLength = 0, bool bFreeHeap = false, bool bHeapAllocation = false );
+
+	// Marks buffer as unusable and destroy contents.
+	// Frees the bufferstring (if it was heap allocated) and writes "~DSTRCT" to the local buffer.
 	DLL_CLASS_IMPORT void SetUnusable();
 
-	DLL_CLASS_IMPORT const char *ShortenPath(bool);
+	// Shorten path by removing last component.
+	DLL_CLASS_IMPORT const char *ShortenPath( bool bRecusriveEnsure = false );
 
-	DLL_CLASS_IMPORT bool StartsWith(const char *pMatch) const;
-	DLL_CLASS_IMPORT bool StartsWith_FastCaseInsensitive(const char *pMatch) const;
+	/// Check whether string starts with specified prefix.
+	DLL_CLASS_IMPORT bool StartsWith( const char *pPrefix ) const;
+	DLL_CLASS_IMPORT bool StartsWith_FastCaseInsensitive( const char *pPrefix ) const;
 
-	DLL_CLASS_IMPORT const char *StrAppendFormat(const char *pFormat, ...) FMTFUNCTION(2, 3);
-	DLL_CLASS_IMPORT const char *StrFormat(const char *pFormat, ...) FMTFUNCTION(2, 3);
+	/// Same thing as Format/FormatV, but returns C-string.
+	DLL_CLASS_IMPORT const char *StrFormat( const char *pFormat, ... ) FMTFUNCTION(2, 3);
+	DLL_CLASS_IMPORT const char *StrAppendFormat( const char *pFormat, ... ) FMTFUNCTION(2, 3);
 
+	// Strips extension from filename.
 	DLL_CLASS_IMPORT const char *StripExtension();
+
+	// Remove trailing path separator.
 	DLL_CLASS_IMPORT const char *StripTrailingSlash();
 
-	DLL_CLASS_IMPORT void ToLowerFast(int nStart = 0);
-	DLL_CLASS_IMPORT void ToUpperFast(int nStart = 0);
+	/// Convert string to lowercase/uppercase (fast variants).
+	DLL_CLASS_IMPORT void ToLowerFast( int nStart = 0 );
+	DLL_CLASS_IMPORT void ToUpperFast( int nStart = 0 );
+	void ToLower( int nStart = 0 ) { ToLowerFast( nStart ); }
+	void ToUpper( int nStart = 0 ) { ToUpperFast( nStart ); }
 
-	DLL_CLASS_IMPORT const char *Trim(const char *pTrimChars = "\t\r\n ");
-	DLL_CLASS_IMPORT const char *TrimHead(const char *pTrimChars = "\t\r\n ");
-	DLL_CLASS_IMPORT const char *TrimTail(const char *pTrimChars = "\t\r\n ");
+	/// Trims specified characters from both sides / head / tail.
+	DLL_CLASS_IMPORT const char *Trim( const char *pTrimChars = "\t\r\n " );
+	DLL_CLASS_IMPORT const char *TrimHead( const char *pTrimChars = "\t\r\n " );
+	DLL_CLASS_IMPORT const char *TrimTail( const char *pTrimChars = "\t\r\n " );
 
-	DLL_CLASS_IMPORT const char *TruncateAt(int nIndex, bool bIgnoreAlignment = false);
-	DLL_CLASS_IMPORT const char *TruncateAt(const char *pStr, bool bIgnoreAlignment = false);
+	/// Truncates string at given index or substring.
+	DLL_CLASS_IMPORT const char *TruncateAt( int nIndex, bool bIgnoreAlignment = false );
+	DLL_CLASS_IMPORT const char *TruncateAt( const char *pStr, bool bIgnoreAlignment = false );
 
-	DLL_CLASS_IMPORT int UnicodeCaseConvert(int, EStringConvertErrorPolicy eErrorPolicy);
+	// Performs unicode case conversion with error policy.
+	DLL_CLASS_IMPORT int UnicodeCaseConvert( int nFlags, EStringConvertErrorPolicy eErrorPolicy );
 
 private:
-	int m_nLength;
-	int m_nAllocatedSize;
+	union
+	{
+		struct
+		{
+			uint32 m_nLength : 30; // String length (30 bits).
+			uint32 m_bOverflowed : 1; // Buffer overflow flag (+1 bit).
+			uint32 m_bFreeHeap : 1; // Whether heap memory should be freed (+1 bit).
+		};
+
+		uint32 m_nLengthStaff; // To copy/move one.
+	};
 
 	union
 	{
-		char *m_pString;
-		char m_szString[8];
+		struct
+		{
+			uint32 m_nAllocatedSize : 30; // Allocated buffer size: how many bytes are available in the allocated data (stack/heap; 30 bits).
+			uint32 m_bStackAllocated : 1; // Means it uses stack allocated buffer (+1 bit).
+			uint32 m_bAllowHeapAllocation : 1; // Allows the bufferstring to grow beyond the static size on the heap (+1 bit).
+		};
+
+		uint32 m_nAllocatedStaff; // To copy/move one.
 	};
+
+protected:
+	union Data_t
+	{
+		Data_t( char *pString ) : m_pString( pString ) {}
+		Data_t() : m_szString{} {}
+
+		char *m_pString; // Heap allocation buffer.
+		char m_szString[8]; // Stack allocation buffer + parental class.
+	} m_Buffer;
+
+	// Constants for buffer size and alignment.
+	static constexpr size_t DATA_SIZE = sizeof( Data_t );
+	static constexpr size_t CHUNK_SIZE = sizeof( Data_t );
+	static constexpr size_t DEFAULT_CAPACITY_SIZE = 256;
 };
 
+//TODO: class CBufferStringFormatOutputStream : public CBufferString, public IFormatOutputStream
+
+// CBufferStringN - templated version of CBufferString with custom stack size 
+// Allows predefining larger buffers without heap allocation by default.
 template< size_t SIZE >
 class CBufferStringN : public CBufferString
 {
 public:
-	static const size_t DATA_SIZE = ALIGN_VALUE( SIZE - sizeof( char[8] ), 8 );
+	using BaseClass = CBufferString;
 
-	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( DATA_SIZE, bAllowHeapAllocation ) {}
-	CBufferStringN( const char *pString, int nLen = -1, bool bAllowHeapAllocation = true ) : CBufferStringN( bAllowHeapAllocation ) { Insert( 0, pString, nLen ); }
+	static constexpr size_t MIN_DATA_SIZE = BaseClass::DATA_SIZE;
+	static_assert( SIZE >= MIN_DATA_SIZE, "Incorrect SIZE, should be >= 8" );
+	static constexpr size_t DATA_SIZE = ALIGN_VALUE( SIZE - MIN_DATA_SIZE, BaseClass::CHUNK_SIZE );
 
-	// Should be preferred over CBufferString::Purge as it preserves stack space correctly
-	void PurgeN() { Purge( DATA_SIZE ); }
+	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( SIZE, bAllowHeapAllocation ) {}
+	CBufferStringN( const char *pString, int nLen, bool bAllowHeapAllocation = true ) : CBufferStringN( bAllowHeapAllocation ) { Set( pString, nLen ); }
+	CBufferStringN( const char (&str)[SIZE], bool bAllowHeapAllocation = true ) : CBufferStringN( str, SIZE - 1, bAllowHeapAllocation ) {}
+
+	CBufferStringN( const CBufferStringN< SIZE > &copyFrom ) : CBufferString( copyFrom ), m_FixedBuffer( copyFrom.m_FixedBuffer ) {}
+	CBufferStringN( CBufferStringN< SIZE > &&moveFrom ) noexcept : CBufferString( Move( moveFrom ) ), m_FixedBuffer( Move( moveFrom.m_FixedBuffer ) ) {}
+
+	CBufferStringN< SIZE > &operator=( const CBufferStringN< SIZE > &copyFrom )
+	{
+		BaseClass::operator=( copyFrom );
+		m_FixedBuffer = copyFrom.m_FixedBuffer;
+
+		return *this;
+	}
+
+	template< size_t N > CBufferStringN< SIZE > &operator=( CBufferStringN< N > &&moveFrom ) noexcept
+	{
+		BaseClass::operator=( Move( moveFrom ) );
+
+		return *this;
+	}
+
+	// ~CBufferString() { BaseClass::Purge( DATA_SIZE ); } // virtual destructor?
 
 private:
-	char m_FixedData[DATA_SIZE];
+	union Data_t
+	{
+		char m_szString[DATA_SIZE];
+	} m_FixedBuffer;
 };
 
 // AMNOTE: CBufferStringN name is preferred to be used, altho CBufferStringGrowable is left as a small bcompat
 template< size_t SIZE >
-using CBufferStringGrowable = CBufferStringN<SIZE>;
+using CBufferStringGrowable = CBufferStringN< SIZE >;
+
+// Literal operator for convenient inline CBufferString creation.
+// To optimize on the stack, use CBufferStringN instead.
+inline CBufferString operator""_bs( const char *pString, size_t nLen )
+{
+	return CBufferString( pString, nLen );
+}
 
 #endif /* BUFFERSTRING_H */
