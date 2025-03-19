@@ -40,7 +40,7 @@ enum InitReturnVal_t
 	INIT_FAILED = 0,
 	INIT_OK,
 
-	INIT_LAST_VAL,
+	INIT_LAST_VAL
 };
 
 enum AppSystemTier_t
@@ -49,13 +49,23 @@ enum AppSystemTier_t
 	APP_SYSTEM_TIER1,
 	APP_SYSTEM_TIER2,
 	APP_SYSTEM_TIER3,
+	APP_SYSTEM_TIER4,
+	APP_SYSTEM_TIER5,
 
-	APP_SYSTEM_TIER_OTHER,
+	APP_SYSTEM_TIER_OTHER
 };
 
-enum BuildType_t
+enum AppSystemBuildType_t
 {
-	kBuildTypeRelease = 2
+	APP_SYSTEM_BUILD_UNKNOWN = -1,
+	APP_SYSTEM_BUILD_DEBUG = 0,
+	APP_SYSTEM_BUILD_RELEASE,
+	APP_SYSTEM_BUILD_RETAIL,
+	APP_SYSTEM_BUILD_PROFILE,
+	APP_SYSTEM_BUILD_MIXED,
+	APP_SYSTEM_BUILD_MIXED_DEBUG,
+
+	APP_SYSTEM_BUILD_COUNT
 };
 
 
@@ -88,7 +98,7 @@ public:
 	// Returns whether or not the app system is a singleton
 	virtual bool IsSingleton() = 0;
 	
-	virtual BuildType_t	GetBuildType() = 0;
+	virtual AppSystemBuildType_t GetBuildType() = 0;
 };
 
 
