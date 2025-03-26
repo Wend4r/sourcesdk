@@ -5,7 +5,7 @@ if(POLICY CMP0092)
 endif()
 
 project(sourcesdk
-	VERSION 2.0.0
+	VERSION 2
 	DESCRIPTION "Source SDK"
 	HOMEPAGE_URL "https://github.com/Wend4r/sourcesdk"
 	LANGUAGES C CXX
