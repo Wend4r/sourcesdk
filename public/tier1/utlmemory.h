@@ -172,15 +172,21 @@ protected:
 #endif
 	}
 
-	enum
-	{
-		EXTERNAL_CONST_BUFFER_MARKER = (1 << 30),
-		EXTERNAL_BUFFER_MARKER = (1 << 31),
-	};
-
 	T* m_pMemory;
-	I m_nAllocationCount;
-	I m_nGrowSize;
+
+	uint32 m_nAllocationCount;
+
+	union
+	{
+		struct
+		{
+			uint32 m_nGrowSize : 30;
+			uint32 m_bHasConstMemory : 1;
+			uint32 m_bExternal : 1;
+		};
+
+		uint32 m_nGrowSizeStaff;
+	};
 };
 
 
@@ -211,7 +217,7 @@ public:
 
 	void EnsureCapacity( I num )
 	{
-		if ( CUtlMemory<T>::m_nAllocationCount >= num )
+		if ( BaseClass::m_nAllocationCount >= num )
 			return;
 
 		// if ( this->IsExternallyAllocated() )
@@ -435,7 +441,7 @@ private:
 
 template< class T, class I >
 CUtlMemory<T,I>::CUtlMemory( I nGrowSize, I nInitAllocationCount ) : m_pMemory(0), 
-	m_nAllocationCount( nInitAllocationCount ), m_nGrowSize( nGrowSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER) )
+	m_nAllocationCount( nInitAllocationCount ), m_nGrowSize( nGrowSize ), m_bHasConstMemory( false ), m_bExternal( false )
 {
 	ValidateGrowSize();
 	Assert( nGrowSize >= 0 );
@@ -449,18 +455,14 @@ CUtlMemory<T,I>::CUtlMemory( I nGrowSize, I nInitAllocationCount ) : m_pMemory(0
 
 template< class T, class I >
 CUtlMemory<T,I>::CUtlMemory( T* pMemory, I numElements ) : m_pMemory(pMemory),
-	m_nAllocationCount( numElements )
+	m_nAllocationCount( numElements ), m_nGrowSize( 0 ), m_bHasConstMemory( false ), m_bExternal( true )
 {
-	// Special marker indicating externally supplied modifyable memory
-	m_nGrowSize = EXTERNAL_BUFFER_MARKER;
 }
 
 template< class T, class I >
 CUtlMemory<T,I>::CUtlMemory( const T* pMemory, I numElements ) : m_pMemory( (T*)pMemory ),
-	m_nAllocationCount( numElements )
+	m_nAllocationCount( numElements ), m_nGrowSize( 0 ), m_bHasConstMemory( true ), m_bExternal( false )
 {
-	// Special marker indicating externally supplied modifyable memory
-	m_nGrowSize = EXTERNAL_CONST_BUFFER_MARKER;
 }
 
 template< class T, class I >
@@ -535,10 +537,15 @@ void CUtlMemory<T,I>::Init( I nGrowSize /*= 0*/, I nInitSize /*= 0*/ )
 {
 	Purge();
 
-	m_nGrowSize = nGrowSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+	m_nGrowSize = nGrowSize;
+	m_bHasConstMemory = false;
+	m_bExternal = false;
+
 	m_nAllocationCount = nInitSize;
+
 	ValidateGrowSize();
 	Assert( nGrowSize >= 0 );
+
 	if (m_nAllocationCount)
 	{
 		UTLMEMORY_TRACK_ALLOC();
@@ -553,9 +560,9 @@ void CUtlMemory<T,I>::Init( I nGrowSize /*= 0*/, I nInitSize /*= 0*/ )
 template< class T, class I >
 void CUtlMemory<T,I>::Swap( CUtlMemory<T,I> &mem )
 {
-	V_swap( m_nGrowSize, mem.m_nGrowSize );
 	V_swap( m_pMemory, mem.m_pMemory );
 	V_swap( m_nAllocationCount, mem.m_nAllocationCount );
+	V_swap( m_nGrowSizeStaff, mem.m_nGrowSizeStaff );
 }
 
 
@@ -568,7 +575,10 @@ void CUtlMemory<T,I>::ConvertToGrowableMemory( I nGrowSize )
 	if ( !IsExternallyAllocated() )
 		return;
 
-	m_nGrowSize = nGrowSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+	m_nGrowSize = nGrowSize;
+	m_bHasConstMemory = false;
+	m_bExternal = false;
+
 	if (m_nAllocationCount)
 	{
 		UTLMEMORY_TRACK_ALLOC();
@@ -599,7 +609,9 @@ void CUtlMemory<T,I>::SetExternalBuffer( T* pMemory, I numElements )
 	m_nAllocationCount = numElements;
 
 	// Indicate that we don't own the memory
-	m_nGrowSize = EXTERNAL_BUFFER_MARKER;
+	m_nGrowSize = 0;
+	m_bHasConstMemory = false;
+	m_bExternal = true;
 }
 
 template< class T, class I >
@@ -612,7 +624,9 @@ void CUtlMemory<T,I>::SetExternalBuffer( const T* pMemory, I numElements )
 	m_nAllocationCount = numElements;
 
 	// Indicate that we don't own the memory
-	m_nGrowSize = EXTERNAL_CONST_BUFFER_MARKER;
+	m_nGrowSize = 0;
+	m_bHasConstMemory = true;
+	m_bExternal = false;
 }
 
 template< class T, class I >
@@ -625,7 +639,8 @@ void CUtlMemory<T,I>::AssumeMemory( T* pMemory, I numElements )
 	m_pMemory = pMemory;
 	m_nAllocationCount = numElements;
 
-	m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+	m_bHasConstMemory = false;
+	m_bExternal = false;
 }
 
 template< class T, class I >
@@ -687,7 +702,7 @@ inline const T& CUtlMemory<T,I>::Element( I i ) const
 template< class T, class I >
 bool CUtlMemory<T,I>::IsExternallyAllocated() const
 {
-	return (m_nGrowSize & (EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER)) != 0;
+	return ( m_bHasConstMemory | m_bExternal ) != 0;
 }
 
 
@@ -697,7 +712,7 @@ bool CUtlMemory<T,I>::IsExternallyAllocated() const
 template< class T, class I >
 bool CUtlMemory<T,I>::IsReadOnly() const
 {
-	return (m_nGrowSize == EXTERNAL_CONST_BUFFER_MARKER);
+	return ( m_bHasConstMemory ) != 0;
 }
 
 
@@ -706,7 +721,7 @@ void CUtlMemory<T,I>::SetGrowSize( I nSize )
 {
 	Assert( !IsExternallyAllocated() );
 	Assert( nSize >= 0 );
-	m_nGrowSize |= nSize & ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+	m_nGrowSize = nSize;
 	ValidateGrowSize();
 }
 
@@ -771,11 +786,11 @@ void CUtlMemory<T,I>::Grow( I num )
 
 	// Make sure we have at least numallocated + num allocations.
 	// Use the grow rules specified for this memory (in m_nGrowSize)
-	I nAllocationRequested = m_nAllocationCount + num;
+	int nAllocationRequested = m_nAllocationCount + num;
 
 	UTLMEMORY_TRACK_FREE();
 
-	I nNewAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )m_nAllocationCount, ( int )( m_nGrowSize & ~( EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER ) ), ( int )nAllocationRequested, ( int )sizeof(T) );
+	int nNewAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )m_nAllocationCount, ( int )( m_nGrowSize ), ( int )nAllocationRequested, ( int )sizeof(T) );
 
 	// if m_nAllocationRequested wraps index type I, recalculate
 	if ( nNewAllocationCount < nAllocationRequested )
@@ -786,7 +801,7 @@ void CUtlMemory<T,I>::Grow( I num )
 		}
 		else
 		{
-			if ( nAllocationRequested != nAllocationRequested )
+			if ( ( I )nAllocationRequested != nAllocationRequested )
 			{
 				// we've been asked to grow memory to a size s.t. the index type can't address the requested amount of memory
 				Assert( 0 );
@@ -804,7 +819,10 @@ void CUtlMemory<T,I>::Grow( I num )
 	Assert( m_pMemory );
 
 	if ( IsExternallyAllocated() )
-		m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+	{
+		m_bHasConstMemory = false;
+		m_bExternal = false;
+	}
 
 	m_nAllocationCount = nNewAllocationCount;
 
@@ -835,7 +853,10 @@ inline void CUtlMemory<T,I>::EnsureCapacity( I num )
 	Assert( m_pMemory );
 
 	if ( IsExternallyAllocated() )
-		m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+	{
+		m_bHasConstMemory = false;
+		m_bExternal = false;
+	}
 
 	m_nAllocationCount = num;
 
@@ -908,7 +929,10 @@ void CUtlMemory<T,I>::Purge( I numElements )
 	Assert( m_pMemory );
 
 	if ( IsExternallyAllocated() )
-		m_nGrowSize &= ~(EXTERNAL_CONST_BUFFER_MARKER | EXTERNAL_BUFFER_MARKER);
+	{
+		m_bHasConstMemory = false;
+		m_bExternal = false;
+	}
 
 	m_nAllocationCount = numElements;
 
@@ -923,6 +947,8 @@ template< class T, typename I = int, I nAlignment = 0 >
 class CUtlMemoryAligned	: public CUtlMemory<T, I>
 {
 public:
+	using BaseClass = CUtlMemory<T, I>;
+
 	// constructor, destructor
 	CUtlMemoryAligned( I nGrowSize = 0, I nInitSize = 0 );
 	CUtlMemoryAligned( T* pMemory, I numElements );
@@ -967,19 +993,19 @@ void *CUtlMemoryAligned<T, I, nAlignment>::Align( const void *pAddr )
 template< class T, typename I, I nAlignment >
 CUtlMemoryAligned<T, I, nAlignment>::CUtlMemoryAligned( I nGrowSize, I nInitAllocationCount )
 {
-	CUtlMemory<T>::m_pMemory = 0; 
-	CUtlMemory<T>::m_nAllocationCount = nInitAllocationCount;
-	CUtlMemory<T>::m_nGrowSize = nGrowSize;
+	BaseClass::m_pMemory = 0; 
+	BaseClass::m_nAllocationCount = nInitAllocationCount;
+	BaseClass::m_nGrowSize = nGrowSize;
 	this->ValidateGrowSize();
 
 	// Alignment must be a power of two
 	COMPILE_TIME_ASSERT( (nAlignment & (nAlignment-1)) == 0 );
-	Assert( (nGrowSize >= 0) && (nGrowSize != CUtlMemory<T>::EXTERNAL_BUFFER_MARKER) );
-	if ( CUtlMemory<T>::m_nAllocationCount )
+	Assert( (nGrowSize >= 0) && (nGrowSize != BaseClass::EXTERNAL_BUFFER_MARKER) );
+	if ( BaseClass::m_nAllocationCount )
 	{
 		UTLMEMORY_TRACK_ALLOC();
 		MEM_ALLOC_CREDIT_CLASS();
-		CUtlMemory<T>::m_pMemory = (T*)_aligned_malloc( nInitAllocationCount * sizeof(T), nAlignment );
+		BaseClass::m_pMemory = (T*)_aligned_malloc( nInitAllocationCount * sizeof(T), nAlignment );
 	}
 }
 
@@ -987,20 +1013,20 @@ template< class T, typename I, I nAlignment >
 CUtlMemoryAligned<T, I, nAlignment>::CUtlMemoryAligned( T* pMemory, I numElements )
 {
 	// Special marker indicating externally supplied memory
-	CUtlMemory<T>::m_nGrowSize = CUtlMemory<T>::EXTERNAL_BUFFER_MARKER;
+	BaseClass::m_nGrowSize = BaseClass::EXTERNAL_BUFFER_MARKER;
 
-	CUtlMemory<T>::m_pMemory = (T*)Align( pMemory );
-	CUtlMemory<T>::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)CUtlMemory<T>::m_pMemory ) / sizeof(T);
+	BaseClass::m_pMemory = (T*)Align( pMemory );
+	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
 }
 
 template< class T, typename I, I nAlignment >
 CUtlMemoryAligned<T, I, nAlignment>::CUtlMemoryAligned( const T* pMemory, I numElements )
 {
 	// Special marker indicating externally supplied memory
-	CUtlMemory<T>::m_nGrowSize = CUtlMemory<T>::EXTERNAL_CONST_BUFFER_MARKER;
+	BaseClass::m_nGrowSize = BaseClass::EXTERNAL_CONST_BUFFER_MARKER;
 
-	CUtlMemory<T>::m_pMemory = (T*)Align( pMemory );
-	CUtlMemory<T>::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)CUtlMemory<T>::m_pMemory ) / sizeof(T);
+	BaseClass::m_pMemory = (T*)Align( pMemory );
+	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
 }
 
 template< class T, typename I, I nAlignment >
@@ -1019,11 +1045,11 @@ void CUtlMemoryAligned<T, I, nAlignment>::SetExternalBuffer( T* pMemory, I numEl
 	// Blow away any existing allocated memory
 	Purge();
 
-	CUtlMemory<T>::m_pMemory = (T*)Align( pMemory );
-	CUtlMemory<T>::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)CUtlMemory<T>::m_pMemory ) / sizeof(T);
+	BaseClass::m_pMemory = (T*)Align( pMemory );
+	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
 
 	// Indicate that we don't own the memory
-	CUtlMemory<T>::m_nGrowSize = CUtlMemory<T>::EXTERNAL_BUFFER_MARKER;
+	BaseClass::m_nGrowSize = BaseClass::EXTERNAL_BUFFER_MARKER;
 }
 
 template< class T, typename I, I nAlignment >
@@ -1032,11 +1058,11 @@ void CUtlMemoryAligned<T, I, nAlignment>::SetExternalBuffer( const T* pMemory, I
 	// Blow away any existing allocated memory
 	Purge();
 
-	CUtlMemory<T>::m_pMemory = (T*)Align( pMemory );
-	CUtlMemory<T>::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)CUtlMemory<T>::m_pMemory ) / sizeof(T);
+	BaseClass::m_pMemory = (T*)Align( pMemory );
+	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
 
 	// Indicate that we don't own the memory
-	CUtlMemory<T>::m_nGrowSize = CUtlMemory<T>::EXTERNAL_CONST_BUFFER_MARKER;
+	BaseClass::m_nGrowSize = BaseClass::EXTERNAL_CONST_BUFFER_MARKER;
 }
 
 
@@ -1059,23 +1085,23 @@ void CUtlMemoryAligned<T, I, nAlignment>::Grow( I num )
 
 	// Make sure we have at least numallocated + num allocations.
 	// Use the grow rules specified for this memory (in m_nGrowSize)
-	I nAllocationRequested = CUtlMemory<T>::m_nAllocationCount + num;
+	I nAllocationRequested = BaseClass::m_nAllocationCount + num;
 
-	CUtlMemory<T>::m_nAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )CUtlMemory<T>::m_nAllocationCount, ( int )CUtlMemory<T>::m_nGrowSize, ( int )nAllocationRequested, ( int )sizeof(T) );
+	BaseClass::m_nAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )BaseClass::m_nAllocationCount, ( int )BaseClass::m_nGrowSize, ( int )nAllocationRequested, ( int )sizeof(T) );
 
 	UTLMEMORY_TRACK_ALLOC();
 
-	if ( CUtlMemory<T>::m_pMemory )
+	if ( BaseClass::m_pMemory )
 	{
 		MEM_ALLOC_CREDIT_CLASS();
-		CUtlMemory<T>::m_pMemory = (T*)MemAlloc_ReallocAligned( CUtlMemory<T>::m_pMemory, CUtlMemory<T>::m_nAllocationCount * sizeof(T), nAlignment );
-		Assert( CUtlMemory<T>::m_pMemory );
+		BaseClass::m_pMemory = (T*)MemAlloc_ReallocAligned( BaseClass::m_pMemory, BaseClass::m_nAllocationCount * sizeof(T), nAlignment );
+		Assert( BaseClass::m_pMemory );
 	}
 	else
 	{
 		MEM_ALLOC_CREDIT_CLASS();
-		CUtlMemory<T>::m_pMemory = (T*)MemAlloc_AllocAligned( CUtlMemory<T>::m_nAllocationCount * sizeof(T), nAlignment );
-		Assert( CUtlMemory<T>::m_pMemory );
+		BaseClass::m_pMemory = (T*)MemAlloc_AllocAligned( BaseClass::m_nAllocationCount * sizeof(T), nAlignment );
+		Assert( BaseClass::m_pMemory );
 	}
 }
 
@@ -1086,7 +1112,7 @@ void CUtlMemoryAligned<T, I, nAlignment>::Grow( I num )
 template< class T, typename I, I nAlignment >
 inline void CUtlMemoryAligned<T, I, nAlignment>::EnsureCapacity( I num )
 {
-	if ( CUtlMemory<T>::m_nAllocationCount >= num )
+	if ( BaseClass::m_nAllocationCount >= num )
 		return;
 
 	if ( this->IsExternallyAllocated() )
@@ -1098,19 +1124,19 @@ inline void CUtlMemoryAligned<T, I, nAlignment>::EnsureCapacity( I num )
 
 	UTLMEMORY_TRACK_FREE();
 
-	CUtlMemory<T>::m_nAllocationCount = num;
+	BaseClass::m_nAllocationCount = num;
 
 	UTLMEMORY_TRACK_ALLOC();
 
-	if ( CUtlMemory<T>::m_pMemory )
+	if ( BaseClass::m_pMemory )
 	{
 		MEM_ALLOC_CREDIT_CLASS();
-		CUtlMemory<T>::m_pMemory = (T*)MemAlloc_ReallocAligned( CUtlMemory<T>::m_pMemory, CUtlMemory<T>::m_nAllocationCount * sizeof(T), nAlignment );
+		BaseClass::m_pMemory = (T*)MemAlloc_ReallocAligned( BaseClass::m_pMemory, BaseClass::m_nAllocationCount * sizeof(T), nAlignment );
 	}
 	else
 	{
 		MEM_ALLOC_CREDIT_CLASS();
-		CUtlMemory<T>::m_pMemory = (T*)MemAlloc_AllocAligned( CUtlMemory<T>::m_nAllocationCount * sizeof(T), nAlignment );
+		BaseClass::m_pMemory = (T*)MemAlloc_AllocAligned( BaseClass::m_nAllocationCount * sizeof(T), nAlignment );
 	}
 }
 
@@ -1123,13 +1149,13 @@ void CUtlMemoryAligned<T, I, nAlignment>::Purge()
 {
 	if ( !this->IsExternallyAllocated() )
 	{
-		if ( CUtlMemory<T>::m_pMemory )
+		if ( BaseClass::m_pMemory )
 		{
 			UTLMEMORY_TRACK_FREE();
-			MemAlloc_FreeAligned( CUtlMemory<T>::m_pMemory );
-			CUtlMemory<T>::m_pMemory = 0;
+			MemAlloc_FreeAligned( BaseClass::m_pMemory );
+			BaseClass::m_pMemory = NULL;
 		}
-		CUtlMemory<T>::m_nAllocationCount = 0;
+		BaseClass::m_nAllocationCount = 0;
 	}
 }
 
@@ -1212,15 +1238,21 @@ public:
 private:
 	void SetRawAllocatorType( RawAllocatorType_t eAllocatorType );
 
-	enum
-	{
-		PLATFORM_ALLOC_MARKER = (1 << 30),
-		UNUSED_MARKER = (1 << 31),
-	};
-
 	T* m_pMemory;
-	I m_nAllocationCount;
-	I m_nGrowSize;
+
+	uint32 m_nAllocationCount;
+
+	union
+	{
+		struct
+		{
+			uint32 m_nGrowSize : 30;
+			uint32 m_bPlatformAllocated : 1;
+			uint32 m_bUnused : 1;
+		};
+
+		uint32 m_nGrowSizeStaff;
+	};
 };
 
 
@@ -1230,7 +1262,7 @@ private:
 
 template< class T, typename I >
 CUtlMemory_RawAllocator<T, I>::CUtlMemory_RawAllocator( I nGrowSize, I nInitAllocationCount, RawAllocatorType_t eAllocatorType ) : m_pMemory( 0 ), 
-	m_nAllocationCount( 0 ), m_nGrowSize( nGrowSize & ~(PLATFORM_ALLOC_MARKER | UNUSED_MARKER) )
+	m_nAllocationCount( 0 ), m_nGrowSize( nGrowSize ), m_bPlatformAllocated( false ), m_bUnused( false )
 {
 	SetRawAllocatorType( eAllocatorType );
 	EnsureCapacity( nInitAllocationCount );
@@ -1273,9 +1305,9 @@ void CUtlMemory_RawAllocator<T, I>::CopyFrom( const CUtlMemory_RawAllocator<T, I
 template< class T, typename I >
 void CUtlMemory_RawAllocator<T, I>::Swap( CUtlMemory_RawAllocator<T, I> &mem )
 {
-	V_swap( m_nGrowSize, mem.m_nGrowSize );
 	V_swap( m_pMemory, mem.m_pMemory );
 	V_swap( m_nAllocationCount, mem.m_nAllocationCount );
+	V_swap( m_nGrowSizeStaff, mem.m_nGrowSizeStaff );
 }
 
 template< class T, typename I >
@@ -1309,7 +1341,7 @@ inline T* CUtlMemory_RawAllocator<T, I>::Detach()
 template< class T, typename I >
 void CUtlMemory_RawAllocator<T, I>::SetGrowSize( I nSize )
 {
-	m_nGrowSize |= nSize & ~(PLATFORM_ALLOC_MARKER | UNUSED_MARKER);
+	m_nGrowSize = nSize;
 }
 
 //-----------------------------------------------------------------------------
@@ -1429,7 +1461,7 @@ void CUtlMemory_RawAllocator<T, I>::Purge( I numElements )
 template< class T, typename I >
 RawAllocatorType_t CUtlMemory_RawAllocator<T, I>::GetRawAllocatorType() const
 {
-	return ( RawAllocatorType_t )( ( m_nGrowSize & PLATFORM_ALLOC_MARKER ) != 0 );
+	return ( RawAllocatorType_t )( ( m_bPlatformAllocated ) != 0 );
 }
 
 template< class T, typename I >
@@ -1437,7 +1469,7 @@ void CUtlMemory_RawAllocator<T, I>::SetRawAllocatorType( RawAllocatorType_t eAll
 {
 	if ( eAllocatorType == RawAllocator_Platform )
 	{
-		m_nGrowSize |= PLATFORM_ALLOC_MARKER;
+		m_bPlatformAllocated = true;
 	}
 	else
 	{
@@ -1446,8 +1478,8 @@ void CUtlMemory_RawAllocator<T, I>::SetRawAllocatorType( RawAllocatorType_t eAll
 			Plat_FatalErrorFunc( "%s: Unsupported raw allocator type %u\n", __FUNCTION__, eAllocatorType );
 			DebuggerBreak();
 		}
-		
-		m_nGrowSize &= ~PLATFORM_ALLOC_MARKER;
+
+		m_bPlatformAllocated = false;
 	}
 }
 
