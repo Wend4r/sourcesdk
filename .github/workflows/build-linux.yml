@@ -32,6 +32,7 @@ on:
       - 'entity2/**'
       - 'game/server/**'
       - 'game/shared/**'
+      - 'gcsdk/**'
       - 'interfaces/**'
       - 'lib/linuxsteamrt64/**'
       - 'mathlib/**'
@@ -60,7 +61,7 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.compiler.name }}
+    name: ${{ matrix.compiler.display_name }}
     runs-on: ubuntu-latest
     container: registry.gitlab.steamos.cloud/steamrt/sniper/sdk
 
@@ -69,14 +70,20 @@ jobs:
         compiler:
           [
             {
-              name: Clang,
-              cc: clang,
-              cxx: clang++,
+              name: GCC,
+              display_name: GCC 14,
+
+              packages: gcc-14 g++-14 gcc-14-monolithic,
+              cc: gcc-14,
+              cxx: g++-14,
             },
             {
-              name: GCC,
-              cc: gcc-12,
-              cxx: g++-12,
+              name: Clang,
+              display_name: Clang 20,
+
+              packages: clang-20 gcc-14-monolithic,
+              cc: clang-20,
+              cxx: clang++-20,
             }
         ]
       fail-fast: false
@@ -88,15 +95,16 @@ jobs:
         fetch-depth: 0
         fetch-tags: true
 
-    - name: Install dependencies
+    - name: Configure package repositories
       run: |
-        sudo apt-get update
-        sudo apt-get install -y ninja-build ${{ matrix.compiler.cc }}
+        echo "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-20 main" | sudo tee /etc/apt/sources.list.d/llvm.list
+        echo "deb-src http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-20 main" | sudo tee -a /etc/apt/sources.list.d/llvm.list
+        wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 
-    - name: Set up environment variables
+    - name: Install packages
       run: |
-        echo "ABSOLUTE_PATH=$(pwd)" >> $GITHUB_ENV
-        echo "REPOSITORY_NAME=$(basename ${GITHUB_REPOSITORY})" >> $GITHUB_ENV
+        sudo apt update
+        sudo apt install -y cmake ninja-build ${{ matrix.compiler.cc }}
 
     - name: Configure Git to treat current directory as safe
       run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -111,6 +119,20 @@ jobs:
           LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
         fi
+
+    - name: Set up base environment variables
+      run: |
+        echo "ABSOLUTE_PATH=$(pwd)" >> $GITHUB_ENV
+        echo "REPOSITORY_NAME=$(basename ${GITHUB_REPOSITORY})" >> $GITHUB_ENV
+
+    - name: Set environment variables for Clang
+      if: matrix.compiler.name == 'Clang'
+      run: |
+        echo "CC=${{ matrix.compiler.cc }}" >> $GITHUB_ENV
+        echo "CXX=${{ matrix.compiler.cxx }}" >> $GITHUB_ENV
+        echo "CPLUS_INCLUDE_PATH=/usr/lib/gcc-14/include/c++/14:/usr/lib/gcc-14/include/c++/14/x86_64-linux-gnu:/usr/lib/gcc-14/include/c++/14/backward" >> $GITHUB_ENV
+        echo "LIBRARY_PATH=/usr/lib/gcc-14/lib/gcc/x86_64-linux-gnu/14" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=/usr/lib/gcc-14/lib/gcc/x86_64-linux-gnu/14" >> $GITHUB_ENV
 
     - name: Debug - Configure CMake
       run: >
