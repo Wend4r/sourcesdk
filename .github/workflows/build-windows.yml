@@ -54,15 +54,22 @@ env:
   CMAKE_RELEASE_BUILD_PRESET_PUBLIC_NAME: VisualStudio-Release
   CMAKE_RELEASE_OUTPUT_PATTERN: build\Windows\VisualStudio\Release\*
 
-  COMPILER_CC: cl
-  COMPILER_CXX: cl
-  COMPILER_NAME: MSVC
-
 jobs:
   build:
+    name: ${{ matrix.compiler.display_name }}
     runs-on: windows-latest
 
     strategy:
+      matrix:
+        compiler:
+          [
+            {
+              name: MSVC,
+              display_name: MSVC,
+              cc: cl,
+              cxx: cl,
+            }
+        ]
       fail-fast: false
 
     steps:
@@ -106,7 +113,7 @@ jobs:
     - name: Debug - Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.COMPILER_NAME }}-${{ env.CMAKE_DEBUG_BUILD_PRESET_PUBLIC_NAME }}
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ matrix.compiler.name }}-${{ env.CMAKE_DEBUG_BUILD_PRESET_PUBLIC_NAME }}
         path: ${{ env.CMAKE_DEBUG_OUTPUT_PATTERN }}
 
     - name: Release - Build
@@ -115,5 +122,5 @@ jobs:
     - name: Release - Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ env.COMPILER_NAME }}-${{ env.CMAKE_RELEASE_BUILD_PRESET_PUBLIC_NAME }}
+        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ matrix.compiler.name }}-${{ env.CMAKE_RELEASE_BUILD_PRESET_PUBLIC_NAME }}
         path: ${{ env.CMAKE_RELEASE_OUTPUT_PATTERN }}
