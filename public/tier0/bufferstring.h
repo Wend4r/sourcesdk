@@ -16,8 +16,12 @@
 #include "utlstring.h"
 #include "vmath.h"
 
+#if defined(DEBUG) && defined(BUFFERSTRING_OVERFLOW_CATCH)
 // Assertion macro for catching stack buffer overflows in debug mode.
 #define Assert_BSO( exp ) { if ( IsStackAllocated() && !CanHeapAllocate() ) Assert( exp ); }
+#else // !defined(DEBUG) || !defined(BUFFERSTRING_OVERFLOW_CATCH)
+#define Assert_BSO( exp )
+#endif // defined(DEBUG) && defined(BUFFERSTRING_OVERFLOW_CATCH)
 
 class CFormatStringElement;
 class IFormatOutputStream;
@@ -35,7 +39,7 @@ class IFormatOutputStream;
 	```
 		CBufferStringN buff = "Hello World!";
 		buff.ToUpper();
-		printf("Result: %s\n", buff.String());
+		Msg("Result: %s\n", buff.String());
 	```
 	additionaly the heap allocation of the bufferstring could be disabled. If the heap allocation is disabled and
 	if the bufferstring capacity is not enough to perform the growing operation, the app would exit with an Assert;
@@ -88,17 +92,34 @@ public:
 		Insert( 0, pString, nLen );
 	}
 
-	CBufferString( const CBufferString &copyFrom )
-	:  m_nLengthStaff( copyFrom.m_nLengthStaff ), 
-	   m_nAllocatedStaff( copyFrom.m_nAllocatedStaff ), 
-	   m_Buffer( copyFrom.m_Buffer )
+	/// Concat-based constructors.
+	template< size_t N > FORCEINLINE CBufferString( const char *pPrefix, const char *(&strs)[N], const int (&nLengths)[N], bool bAllowHeapAllocation = true ) : 
+	    CBufferString( pPrefix, bAllowHeapAllocation )
 	{
-		Assert( IsStackAllocated() );
+		AppendConcatN( strs, nLengths );
+	}
+	template< size_t N > FORCEINLINE CBufferString( const char *pPrefix, const char *(&strs)[N], bool bAllowHeapAllocation = true ) : 
+	    CBufferString( pPrefix, bAllowHeapAllocation )
+	{
+		AppendConcatN( strs );
+	}
+	template< size_t N > FORCEINLINE CBufferString( const char *(&strs)[N], bool bAllowHeapAllocation = true ) : 
+	    CBufferString( BS_TYPE_HEAP, bAllowHeapAllocation )
+	{
+		AppendConcatN( strs );
+	}
+
+	CBufferString( const CBufferString &copyFrom )
+	 :  m_nLengthStaff( copyFrom.m_nLengthStaff ), 
+	    m_nAllocatedStaff( copyFrom.m_nAllocatedStaff ), 
+	    m_Buffer( copyFrom.m_Buffer )
+	{
+		Assert_BSO( false );
 	}
 
 	CBufferString &operator=( const CBufferString &copyFrom )
 	{
-		Assert( IsStackAllocated() );
+		Assert_BSO( false );
 
 		m_nLengthStaff = copyFrom.m_nLengthStaff;
 		m_nAllocatedStaff = copyFrom.m_nAllocatedStaff;
@@ -112,7 +133,7 @@ public:
 	   m_nAllocatedStaff( Move( moveFrom.m_nAllocatedStaff ) ), 
 	   m_Buffer( Move( moveFrom.m_Buffer ) )
 	{
-		Assert( IsStackAllocated() );
+		Assert_BSO( false );
 	}
 
 	CBufferString &operator=( CBufferString &&moveFrom ) noexcept
@@ -280,8 +301,8 @@ public:
 
 	/// Appends multiple strings into one (e.g., {"Hello", " ", "World"} -> "Hello World"_bs)
 	DLL_CLASS_IMPORT const char *AppendConcat( int nCount, const char * const *pStrings, const int *pLengths = nullptr, bool bIgnoreAlignment = false );
-	template< size_t N > const char *AppendConcatN( const char *(&strs)[N], const int (&nLengths)[N] ) { return AppendConcat( N, strs, nLengths ); }
-	template< size_t N > const char *AppendConcatN( const char *(&strs)[N] ) { return AppendConcat( N, strs ); }
+	template< size_t N > FORCEINLINE const char *AppendConcatN( const char *(&strs)[N], const int (&nLengths)[N] ) { return AppendConcat( N, strs, nLengths ); }
+	template< size_t N > FORCEINLINE const char *AppendConcatN( const char *(&strs)[N] ) { return AppendConcat( N, strs ); }
 
 	/// Appends formatted C-string using printf-style formatting.
 	DLL_CLASS_IMPORT int AppendFormat( const char *pFormat, ... ) FMTFUNCTION(2, 3);
@@ -492,6 +513,7 @@ class CBufferStringN : public CBufferString
 {
 public:
 	using BaseClass = CBufferString;
+	using BaseClass::BaseClass;
 
 	static constexpr size_t MIN_DATA_SIZE = BaseClass::DATA_SIZE;
 	static_assert( SIZE >= MIN_DATA_SIZE, "Incorrect SIZE, should be >= 8" );
@@ -503,6 +525,23 @@ public:
 
 	CBufferStringN( const CBufferStringN< SIZE > &copyFrom ) : CBufferString( copyFrom ), m_FixedBuffer( copyFrom.m_FixedBuffer ) {}
 	CBufferStringN( CBufferStringN< SIZE > &&moveFrom ) noexcept : CBufferString( Move( moveFrom ) ), m_FixedBuffer( Move( moveFrom.m_FixedBuffer ) ) {}
+
+	/// Concat-based constructors (2).
+	template< size_t N > FORCEINLINE CBufferStringN( const char *pPrefix, const char *(&strs)[N], const int (&nLengths)[N], bool bAllowHeapAllocation = true ) : 
+	    CBufferStringN( pPrefix, -1, bAllowHeapAllocation )
+	{
+		AppendConcatN( strs, nLengths );
+	}
+	template< size_t N > FORCEINLINE CBufferStringN( const char *pPrefix, const char *(&strs)[N], bool bAllowHeapAllocation = true ) : 
+	    CBufferStringN( pPrefix, -1, bAllowHeapAllocation )
+	{
+		AppendConcatN( strs );
+	}
+	template< size_t N > FORCEINLINE CBufferStringN( const char *(&strs)[N], bool bAllowHeapAllocation = true ) : 
+	    CBufferStringN( bAllowHeapAllocation )
+	{
+		AppendConcatN( strs );
+	}
 
 	CBufferStringN< SIZE > &operator=( const CBufferStringN< SIZE > &copyFrom )
 	{
