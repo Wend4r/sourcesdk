@@ -25,6 +25,13 @@ enum SchemaTypeScope_t : uint8
 	SCHEMA_DEFAULT_TYPE_SCOPE,
 };
 
+enum SchemaHierarchyIteration_t
+{
+	SCHEMA_ITER_NONE = 0,
+	SCHEMA_ITER_SINGLE_PARENT,
+	SCHEMA_ITER_MULTI_PARENT
+};
+
 typedef void (*CompleteModuleRegistrationCallbackFn_t)(void*);
 
 abstract_class ISchemaSystemTypeScope
@@ -143,7 +150,7 @@ public:
 	virtual void ValidateClasses( CSchemaClassInfo** ppClassInfos ) = 0;
 	
 	virtual bool ConvertOldIntrospectedResourceDataToKV3( void*, void*, void*, CKeyValues3Context*, const char* ) = 0;
-	virtual void FindClassesByMeta( const char* pszMetaName, int, CUtlVector<const CSchemaClassInfo*> *classes ) = 0;
+	virtual void FindClassesByMeta( const char* pszMetaName, SchemaHierarchyIteration_t iter_type, CUtlVector<const CSchemaClassInfo*> *classes ) = 0;
 	
 	virtual void InstallCompleteModuleRegistrationCallback( CompleteModuleRegistrationCallbackFn_t pfnCallback, void* pArgument ) = 0;
 	virtual void RemoveCompleteModuleRegistrationCallback( CompleteModuleRegistrationCallbackFn_t pfnCallback, void* pArgument ) = 0;
