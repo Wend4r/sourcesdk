@@ -521,7 +521,7 @@ public:
 
 	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( SIZE, bAllowHeapAllocation ) {}
 	CBufferStringN( const char *pString, int nLen, bool bAllowHeapAllocation = true ) : CBufferStringN( bAllowHeapAllocation ) { Set( pString, nLen ); }
-	CBufferStringN( const char (&str)[SIZE], bool bAllowHeapAllocation = true ) : CBufferStringN( str, SIZE - 1, bAllowHeapAllocation ) {}
+	template< size_t N > CBufferStringN( const char (&str)[N], bool bAllowHeapAllocation = true ) : CBufferStringN( str, N - 1, bAllowHeapAllocation ) {}
 
 	CBufferStringN( const CBufferStringN< SIZE > &copyFrom ) : CBufferString( copyFrom ), m_FixedBuffer( copyFrom.m_FixedBuffer ) {}
 	CBufferStringN( CBufferStringN< SIZE > &&moveFrom ) noexcept : CBufferString( Move( moveFrom ) ), m_FixedBuffer( Move( moveFrom.m_FixedBuffer ) ) {}
