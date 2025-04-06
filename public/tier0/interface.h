@@ -29,11 +29,14 @@ typedef void* (*CreateInterfaceFn)(const char *pName, int *pReturnCode);
 // The factory for that module should be passed on to dependent components for
 // proper versioning.
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE HMODULE			Plat_LoadModule( const char *pModuleName );
+PLATFORM_INTERFACE HMODULE			Plat_LoadModule( const char *pModuleName, int *pLastError );
+PLATFORM_INTERFACE HMODULE			Plat_LoadModuleRaw( const char *pModuleName, int *pLastError, int nFlags );
 PLATFORM_INTERFACE void				Plat_UnloadModule( HMODULE module );
 
 // Determines if current process is running with any debug modules
 PLATFORM_INTERFACE bool				Plat_RunningWithDebugModules();
+
+PLATFORM_INTERFACE void*			Plat_GetModuleProcAddress( HMODULE hModule, const char* pName );
 
 PLATFORM_INTERFACE HMODULE Plat_FindModuleByAddress( void *pAddress );
 PLATFORM_INTERFACE CreateInterfaceFn Plat_GetModuleInterfaceFactory( HMODULE module, int *pReturnCode = NULL );
