@@ -168,8 +168,12 @@ struct SchemaMetaInfoHandle_t
 {
 	SchemaMetaInfoHandle_t() : m_pObj( NULL ) {}
 	SchemaMetaInfoHandle_t( T *obj ) : m_pObj( obj ) {}
+
 	T* Get() const { return m_pObj; }
 	bool operator<( const SchemaMetaInfoHandle_t& rhs ) const { return m_pObj < rhs.m_pObj; }
+	T& operator*() const { return *m_pObj; }
+	T* operator->() const { return m_pObj; }
+	explicit operator bool() const { return static_cast<bool>(m_pObj); }
 
 	T* m_pObj;
 };
