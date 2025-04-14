@@ -71,7 +71,7 @@ public:
 	CUtlSymbol AddString( const char *pString, bool* created = NULL )
 	{
 		CUtlSymbol symbol = m_SymbolTable.AddString( pString, created );
-		int index = ( int )symbol;
+		UtlSymId_t index = symbol.GetId();
 		if( m_Vector.Count() <= index )
 		{
 			m_Vector.EnsureCount( index + 1 );
@@ -86,22 +86,23 @@ public:
 	CUtlSymbol Insert( const char *pString, const T &item )
 	{
 		CUtlSymbol symbol = m_SymbolTable.AddString( pString ); // implicit coercion
-		if ( m_Vector.Count() > symbol ) 
+		UtlSymId_t index = symbol.GetId();
+		if ( m_Vector.Count() > index ) 
 		{
 			// this string is already in the dictionary.
 
 		}
-		else if ( m_Vector.Count() == symbol )
+		else if ( m_Vector.Count() == index )
 		{
 			// this is the expected case when we've added one more to the tail.
 			m_Vector.AddToTail( item );
 		}
-		else // ( m_Vector.Count() < symbol )
+		else // ( m_Vector.Count() < index )
 		{
 			// this is a strange shouldn't-happen case.
 			AssertMsg( false, "CUtlStringMap insert unexpected entries." );
-			m_Vector.EnsureCount( symbol + 1 );
-			m_Vector[symbol] = item;
+			m_Vector.EnsureCount( index + 1 );
+			m_Vector[index] = item;
 		}
 		return symbol;
 	}
@@ -109,15 +110,16 @@ public:
 	bool FindAndRemove( const char *pString )
 	{
 		CUtlSymbol symbol = m_SymbolTable.Find( pString );
-
 		if ( !symbol.IsValid() )
 		{
 			return false;
 		}
 
-		Destruct( &m_Vector[ symbol ] );
-		m_Vector[ symbol ] = {};
-		m_SymbolTable.Remove( symbol );
+		UtlSymId_t index = symbol.GetId();
+
+		Destruct( &m_Vector[ index ] );
+		m_Vector[ index ] = T();
+		m_SymbolTable.Remove( index );
 
 		return true;
 	}
@@ -135,7 +137,7 @@ public:
 
 	inline CUtlSymbol Next( const CUtlSymbol &i ) const
 	{
-		CUtlSymbol n = i+1;
+		CUtlSymbol n(i+1);
 		return n < m_SymbolTable.GetNumStrings() ? n : InvalidIndex();
 	}
 
