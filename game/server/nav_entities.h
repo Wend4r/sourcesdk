@@ -12,6 +12,10 @@
 #ifndef NAV_ENTITIES_H
 #define NAV_ENTITIES_H
 
+#if defined(POSIX)
+#pragma GCC visibility push(hidden)
+#endif
+
 //-----------------------------------------------------------------------------------------------------
 /**
   * An entity that modifies pathfinding cost to all areas it overlaps, to allow map designers
