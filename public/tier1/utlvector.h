@@ -91,6 +91,7 @@ public:
 	const T& operator[]( I i ) const;
 	T& Element( I i );
 	const T& Element( I i ) const;
+	T&& MoveElement( I i );
 	T& Head();
 	const T& Head() const;
 	T& Tail();
@@ -775,7 +776,7 @@ inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::operator=( CUtlVectorBa
 
 	for ( I i = 0; i < nCount; i++ )
 	{
-		MoveConstruct( &(*this)[ i ], Move(moveFrom[i]) );
+		MoveConstruct( &(*this)[ i ], Move( moveFrom[i].MoveElement(i) ) );
 	}
 	return *this;
 }
@@ -810,6 +811,13 @@ inline const T& CUtlVectorBase<T, I, A>::Element( I i ) const
 {
 	Assert( i < m_Size );
 	return m_Memory[ i ];
+}
+
+template< typename T, typename I, class A >
+inline T&& CUtlVectorBase<T, I, A>::MoveElement( I i )
+{
+	Assert( i < m_Size );
+	return Move( m_Memory[ i ] );
 }
 
 template< typename T, typename I, class A >
@@ -1335,7 +1343,7 @@ I CUtlVectorBase<T, I, A>::AddVectorToTail( CUtlVectorBase< T, I, A > &&moveSrc 
 	m_Size += nSrcCount;
 	for ( I i=0; i < nSrcCount; i++ )
 	{
-		MoveConstruct( &Element(base+i), Move(moveSrc[i]) );
+		MoveConstruct( &Element(base+i), Move( moveSrc.MoveElement(i) ) );
 	}
 	return base;
 }
