@@ -124,11 +124,15 @@ public:
 	I InsertBefore( I elem );
 	I InsertAfter( I elem );
 
-	// Adds an element, uses copy constructor
-	I AddToHead( const T& src );
-	I AddToTail( const T& src );
-	I InsertBefore( I elem, const T& src );
-	I InsertAfter( I elem, const T& src );
+	// Adds an element, uses copy & move constructor
+	I AddToHead( const T& copySrc );
+	I AddToHead( T&& moveSrc );
+	I AddToTail( const T& copySrc );
+	I AddToTail( T&& moveSrc );
+	I InsertBefore( I elem, const T& copySrc );
+	I InsertBefore( I elem, T&& moveSrc );
+	I InsertAfter( I elem, const T& copySrc );
+	I InsertAfter( I elem, T&& moveSrc );
 
 	// Adds multiple elements, uses default constructor
 	I AddMultipleToHead( I num );
@@ -154,13 +158,16 @@ public:
 	void Swap( CUtlVectorBase< T, I, A > &vec );
 	
 	// Add the specified array to the tail.
-	I AddVectorToTail( CUtlVectorBase<T, I, A> const &src );
+	I AddVectorToTail( CUtlVectorBase<T, I, A> const &copySrc );
+	I AddVectorToTail( CUtlVectorBase<T, I, A> &&moveSrc );
 
 	// Finds an element (element needs operator== defined)
-	I Find( const T& src ) const;
-	void FillWithValue( const T& src );
+	I Find( const T& copySrc ) const;
+	I Find( T&& moveSrc ) const;
+	void FillWithValue( const T& copySrc );
+	void FillWithValue( T&& moveSrc );
 
-	bool HasElement( const T& src ) const;
+	bool HasElement( const T& copySrc ) const;
 
 	// Makes sure we have enough memory allocated to store a requested # of elements
 	// Use NumAllocated() to retrieve the current capacity.
@@ -173,8 +180,15 @@ public:
 	// Element removal
 	void FastRemove( I elem );	// doesn't preserve order
 	void Remove( I elem );		// preserves order, shifts elements
-	bool FindAndRemove( const T& src );	// removes first occurrence of src, preserves order, shifts elements
-	bool FindAndFastRemove( const T& src );	// removes first occurrence of src, doesn't preserve order
+
+	// removes first occurrence of copySrc, preserves order, shifts elements
+	bool FindAndRemove( const T& copySrc );
+	bool FindAndRemove( T&& moveSrc );
+
+	// removes first occurrence of copySrc, doesn't preserve order
+	bool FindAndFastRemove( const T& copySrc );
+	bool FindAndFastRemove( T&& moveSrc );
+
 	void RemoveMultiple( I elem, I num );	// preserves order, shifts elements
 	void RemoveMultipleFromHead(I num); // removes num elements from tail
 	void RemoveMultipleFromTail(I num); // removes num elements from tail
@@ -477,11 +491,11 @@ public:
 		}
 	}
 
-	I AddToTail( const T& src )
+	I AddToTail( const T& copySrc )
 	{
 		I iNew = Count();
 		EnsureCapacity( Count() + 1 );
-		m_pData->m_Elements[iNew] = src;
+		m_pData->m_Elements[iNew] = copySrc;
 		m_pData->m_Size++;
 		return iNew;
 	}
@@ -554,20 +568,20 @@ public:
 		}
 	}
 
-	I Find( const T& src ) const
+	I Find( const T& copySrc ) const
 	{
 		I nCount = Count();
 
 		for ( I i = 0; i < nCount; ++i )
-			if (Element(i) == src)
+			if (Element(i) == copySrc)
 				return i;
 
 		return UTL_INVAL_VECTOR_ELEM;
 	}
 
-	bool FindAndRemove( const T& src )
+	bool FindAndRemove( const T& copySrc )
 	{
-		I elem = Find( src );
+		I elem = Find( copySrc );
 
 		if ( elem != UTL_INVAL_VECTOR_ELEM )
 		{
@@ -579,9 +593,9 @@ public:
 	}
 
 
-	bool FindAndFastRemove( const T& src )
+	bool FindAndFastRemove( const T& copySrc )
 	{
-		I elem = Find( src );
+		I elem = Find( copySrc );
 		if ( elem != UTL_INVAL_VECTOR_ELEM )
 		{
 			FastRemove( elem );
@@ -1116,41 +1130,80 @@ I CUtlVectorBase<T, I, A>::InsertBefore( I elem )
 // Adds an element, uses copy constructor
 //-----------------------------------------------------------------------------
 template< typename T, typename I, class A >
-inline I CUtlVectorBase<T, I, A>::AddToHead( const T& src )
+inline I CUtlVectorBase<T, I, A>::AddToHead( const T& copySrc )
 {
 	// Can't insert something that's in the list... reallocation may hose us
-	Assert( (Base() == NULL) || (&src < Base()) || (&src >= (Base() + Count()) ) ); 
-	return InsertBefore( 0, src );
+	Assert( (Base() == NULL) || (&copySrc < Base()) || (&copySrc >= (Base() + Count()) ) );
+	return InsertBefore( 0, copySrc );
 }
 
 template< typename T, typename I, class A >
-inline I CUtlVectorBase<T, I, A>::AddToTail( const T& src )
+inline I CUtlVectorBase<T, I, A>::AddToHead( T&& moveSrc )
 {
 	// Can't insert something that's in the list... reallocation may hose us
-	Assert( (Base() == NULL) || (&src < Base()) || (&src >= (Base() + Count()) ) ); 
-	return InsertBefore( m_Size, src );
+	Assert( Base() == NULL );
+	return InsertBefore( 0, Move(moveSrc) );
 }
 
 template< typename T, typename I, class A >
-inline I CUtlVectorBase<T, I, A>::InsertAfter( I elem, const T& src )
+inline I CUtlVectorBase<T, I, A>::AddToTail( const T& copySrc )
 {
 	// Can't insert something that's in the list... reallocation may hose us
-	Assert( (Base() == NULL) || (&src < Base()) || (&src >= (Base() + Count()) ) ); 
-	return InsertBefore( elem + 1, src );
+	Assert( (Base() == NULL) || (&copySrc < Base()) || (&copySrc >= (Base() + Count()) ) );
+	return InsertBefore( m_Size, copySrc );
 }
 
 template< typename T, typename I, class A >
-I CUtlVectorBase<T, I, A>::InsertBefore( I elem, const T& src )
+inline I CUtlVectorBase<T, I, A>::AddToTail( T&& moveSrc )
 {
 	// Can't insert something that's in the list... reallocation may hose us
-	Assert( (Base() == NULL) || (&src < Base()) || (&src >= (Base() + Count()) ) ); 
+	Assert( Base() == NULL );
+	return InsertBefore( m_Size, Move(moveSrc) );
+}
+
+template< typename T, typename I, class A >
+inline I CUtlVectorBase<T, I, A>::InsertAfter( I elem, const T& copySrc )
+{
+	// Can't insert something that's in the list... reallocation may hose us
+	Assert( (Base() == NULL) || (&copySrc < Base()) || (&copySrc >= (Base() + Count()) ) );
+	return InsertBefore( elem + 1, copySrc );
+}
+
+
+template< typename T, typename I, class A >
+inline I CUtlVectorBase<T, I, A>::InsertAfter( I elem, T&& moveSrc )
+{
+	// Can't insert something that's in the list... reallocation may hose us
+	Assert( Base() == NULL );
+	return InsertBefore( elem + 1, Move(moveSrc) );
+}
+
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::InsertBefore( I elem, const T& copySrc )
+{
+	// Can't insert something that's in the list... reallocation may hose us
+	Assert( (Base() == NULL) || (&copySrc < Base()) || (&copySrc >= (Base() + Count()) ) ); 
 
 	// Can insert at the end
 	Assert( (elem == Count()) || IsValidIndex(elem) );
 
 	GrowVector();
 	ShiftElementsRight(elem);
-	CopyConstruct( &Element(elem), src );
+	CopyConstruct( &Element(elem), copySrc );
+	return elem;
+}
+
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::InsertBefore( I elem, T&& moveSrc )
+{
+	Assert( Base() == NULL );
+
+	// Can insert at the end
+	Assert( (elem == Count()) || IsValidIndex(elem) );
+
+	GrowVector();
+	ShiftElementsRight(elem);
+	MoveConstruct( &Element(elem), Move(moveSrc) );
 	return elem;
 }
 
@@ -1231,21 +1284,39 @@ void CUtlVectorBase<T, I, A>::Swap( CUtlVectorBase< T, I, A > &vec )
 }
 
 template< typename T, typename I, class A >
-I CUtlVectorBase<T, I, A>::AddVectorToTail( CUtlVectorBase< T, I, A > const &src )
+I CUtlVectorBase<T, I, A>::AddVectorToTail( CUtlVectorBase< T, I, A > const &copySrc )
 {
-	Assert( &src != this );
+	Assert( &copySrc != this );
 
 	I base = Count();
 	
 	// Make space.
-	I nSrcCount = src.Count();
+	I nSrcCount = copySrc.Count();
 	EnsureCapacity( base + nSrcCount );
 
 	// Copy the elements.	
 	m_Size += nSrcCount;
 	for ( I i=0; i < nSrcCount; i++ )
 	{
-		CopyConstruct( &Element(base+i), src[i] );
+		CopyConstruct( &Element(base+i), copySrc[i] );
+	}
+	return base;
+}
+
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::AddVectorToTail( CUtlVectorBase< T, I, A > &&moveSrc )
+{
+	I base = Count();
+	
+	// Make space.
+	I nSrcCount = moveSrc.Count();
+	EnsureCapacity( base + nSrcCount );
+
+	// Copy the elements.	
+	m_Size += nSrcCount;
+	for ( I i=0; i < nSrcCount; i++ )
+	{
+		MoveConstruct( &Element(base+i), Move(moveSrc[i]) );
 	}
 	return base;
 }
@@ -1307,18 +1378,40 @@ inline I CUtlVectorBase<T, I, A>::InsertMultipleBefore( I elem, I num, const T *
 // Finds an element (element needs operator== defined)
 //-----------------------------------------------------------------------------
 template< typename T, typename I, class A >
-I CUtlVectorBase<T, I, A>::Find( const T& src ) const
+I CUtlVectorBase<T, I, A>::Find( const T& copySrc ) const
 {
 	for ( I i = 0; i < Count(); ++i )
-		if (Element(i) == src)
+		if (Element(i) == copySrc)
+			return i;
+
+	return UTL_INVAL_VECTOR_ELEM;
+}
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::Find( T&& moveSrc ) const
+{
+	const T comp( Move(moveSrc) );
+
+	for ( I i = 0; i < Count(); ++i )
+		if (Element(i) == comp)
 			return i;
 
 	return UTL_INVAL_VECTOR_ELEM;
 }
 
 template< typename T, typename I, class A >
-void CUtlVectorBase<T, I, A>::FillWithValue( const T& src )
+void CUtlVectorBase<T, I, A>::FillWithValue( const T& copySrc )
 {
+	for ( I i = 0; i < Count(); i++ )
+	{
+		Element(i) = copySrc;
+	}
+}
+
+template< typename T, typename I, class A >
+void CUtlVectorBase<T, I, A>::FillWithValue( T&& moveSrc )
+{
+	const T src( Move(moveSrc) );
+
 	for ( I i = 0; i < Count(); i++ )
 	{
 		Element(i) = src;
@@ -1326,9 +1419,9 @@ void CUtlVectorBase<T, I, A>::FillWithValue( const T& src )
 }
 
 template< typename T, typename I, class A >
-bool CUtlVectorBase<T, I, A>::HasElement( const T& src ) const
+bool CUtlVectorBase<T, I, A>::HasElement( const T& copySrc ) const
 {
-	return ( Find(src) != UTL_INVAL_VECTOR_ELEM );
+	return ( Find(copySrc) != UTL_INVAL_VECTOR_ELEM );
 }
 
 
@@ -1360,9 +1453,9 @@ void CUtlVectorBase<T, I, A>::Remove( I elem )
 }
 
 template< typename T, typename I, class A >
-bool CUtlVectorBase<T, I, A>::FindAndRemove( const T& src )
+bool CUtlVectorBase<T, I, A>::FindAndRemove( const T& copySrc )
 {
-	I elem = Find( src );
+	I elem = Find( copySrc );
 	if ( elem != UTL_INVAL_VECTOR_ELEM )
 	{
 		Remove( elem );
@@ -1372,9 +1465,33 @@ bool CUtlVectorBase<T, I, A>::FindAndRemove( const T& src )
 }
 
 template< typename T, typename I, class A >
-bool CUtlVectorBase<T, I, A>::FindAndFastRemove( const T& src )
+bool CUtlVectorBase<T, I, A>::FindAndRemove( T&& moveSrc )
 {
-	I elem = Find( src );
+	I elem = Find( moveSrc );
+	if ( elem != UTL_INVAL_VECTOR_ELEM )
+	{
+		Remove( elem );
+		return true;
+	}
+	return false;
+}
+
+template< typename T, typename I, class A >
+bool CUtlVectorBase<T, I, A>::FindAndFastRemove( const T& copySrc )
+{
+	I elem = Find( copySrc );
+	if ( elem != UTL_INVAL_VECTOR_ELEM )
+	{
+		FastRemove( elem );
+		return true;
+	}
+	return false;
+}
+
+template< typename T, typename I, class A >
+bool CUtlVectorBase<T, I, A>::FindAndFastRemove( T&& moveSrc )
+{
+	I elem = Find( moveSrc );
 	if ( elem != UTL_INVAL_VECTOR_ELEM )
 	{
 		FastRemove( elem );
