@@ -39,7 +39,7 @@ typedef ELOCalcMode::CalcMode ELOCalcMode_t;
 
 #define VENGINE_GAMETYPES_VERSION "VENGINE_GAMETYPES_VERSION002"
 
-abstract_class IGameTypes
+abstract_class IGameTypes : public IAppSystem
 {
 public:
 	class WeaponProgression

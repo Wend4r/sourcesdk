@@ -104,7 +104,7 @@ jobs:
     - name: Install packages
       run: |
         sudo apt update
-        sudo apt install -y cmake ninja-build ${{ matrix.compiler.cc }}
+        sudo apt install -y cmake ninja-build ${{ matrix.compiler.packages }}
 
     - name: Configure Git to treat current directory as safe
       run: git config --global --add safe.directory "$GITHUB_WORKSPACE"

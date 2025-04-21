@@ -104,8 +104,8 @@ jobs:
     - name: Configure CMake
       run: >
         cmake --preset ${{ env.CMAKE_CONFIGURE_PRESET_NAME }}
-        -DCMAKE_C_COMPILER=${{ env.COMPILER_CC }}
-        -DCMAKE_CXX_COMPILER=${{ env.COMPILER_CXX }}
+        -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }}
 
     - name: Debug - Build
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_BUILD_PRESET_NAME }} --parallel
