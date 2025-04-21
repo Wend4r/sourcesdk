@@ -224,7 +224,7 @@ void KeyValues3::FreeMember( KeyValues3 *member )
 	}
 	else
 	{
-		Delete( member );
+		Destruct( member );
 	}
 }
 
