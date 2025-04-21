@@ -1170,7 +1170,6 @@ inline I CUtlVectorBase<T, I, A>::AddToHead( const T& copySrc )
 template< typename T, typename I, class A >
 inline I CUtlVectorBase<T, I, A>::AddToHead( T&& moveSrc )
 {
-	Assert( Base() != NULL );
 	return InsertBefore( 0, Move(moveSrc) );
 }
 
@@ -1185,7 +1184,6 @@ inline I CUtlVectorBase<T, I, A>::AddToTail( const T& copySrc )
 template< typename T, typename I, class A >
 inline I CUtlVectorBase<T, I, A>::AddToTail( T&& moveSrc )
 {
-	Assert( Base() != NULL );
 	return InsertBefore( m_Size, Move(moveSrc) );
 }
 
@@ -1201,7 +1199,6 @@ inline I CUtlVectorBase<T, I, A>::InsertAfter( I elem, const T& copySrc )
 template< typename T, typename I, class A >
 inline I CUtlVectorBase<T, I, A>::InsertAfter( I elem, T&& moveSrc )
 {
-	Assert( Base() != NULL );
 	return InsertBefore( elem + 1, Move(moveSrc) );
 }
 
@@ -1223,8 +1220,6 @@ I CUtlVectorBase<T, I, A>::InsertBefore( I elem, const T& copySrc )
 template< typename T, typename I, class A >
 I CUtlVectorBase<T, I, A>::InsertBefore( I elem, T&& moveSrc )
 {
-	Assert( Base() != NULL );
-
 	// Can insert at the end
 	Assert( (elem == Count()) || IsValidIndex(elem) );
 
