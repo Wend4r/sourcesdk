@@ -162,7 +162,7 @@ public:
 	I AddVectorToTail( CUtlVectorBase<T, I, A> &&moveSrc );
 
 	// Finds an element (element needs operator== defined)
-	I Find( const T& copySrc ) const;
+	I Find( const T& compSrc ) const;
 	I Find( T&& moveSrc ) const;
 	void FillWithValue( const T& copySrc );
 	void FillWithValue( T&& moveSrc );
@@ -181,12 +181,12 @@ public:
 	void FastRemove( I elem );	// doesn't preserve order
 	void Remove( I elem );		// preserves order, shifts elements
 
-	// removes first occurrence of copySrc, preserves order, shifts elements
-	bool FindAndRemove( const T& copySrc );
+	// removes first occurrence of src, preserves order, shifts elements
+	bool FindAndRemove( const T& compSrc );
 	bool FindAndRemove( T&& moveSrc );
 
-	// removes first occurrence of copySrc, doesn't preserve order
-	bool FindAndFastRemove( const T& copySrc );
+	// removes first occurrence of src, doesn't preserve order
+	bool FindAndFastRemove( const T& compSrc );
 	bool FindAndFastRemove( T&& moveSrc );
 
 	void RemoveMultiple( I elem, I num );	// preserves order, shifts elements
@@ -1156,7 +1156,6 @@ inline I CUtlVectorBase<T, I, A>::AddToTail( const T& copySrc )
 template< typename T, typename I, class A >
 inline I CUtlVectorBase<T, I, A>::AddToTail( T&& moveSrc )
 {
-	// Can't insert something that's in the list... reallocation may hose us
 	Assert( Base() == NULL );
 	return InsertBefore( m_Size, Move(moveSrc) );
 }
@@ -1173,7 +1172,6 @@ inline I CUtlVectorBase<T, I, A>::InsertAfter( I elem, const T& copySrc )
 template< typename T, typename I, class A >
 inline I CUtlVectorBase<T, I, A>::InsertAfter( I elem, T&& moveSrc )
 {
-	// Can't insert something that's in the list... reallocation may hose us
 	Assert( Base() == NULL );
 	return InsertBefore( elem + 1, Move(moveSrc) );
 }
@@ -1378,10 +1376,10 @@ inline I CUtlVectorBase<T, I, A>::InsertMultipleBefore( I elem, I num, const T *
 // Finds an element (element needs operator== defined)
 //-----------------------------------------------------------------------------
 template< typename T, typename I, class A >
-I CUtlVectorBase<T, I, A>::Find( const T& copySrc ) const
+I CUtlVectorBase<T, I, A>::Find( const T& compSrc ) const
 {
 	for ( I i = 0; i < Count(); ++i )
-		if (Element(i) == copySrc)
+		if (Element(i) == compSrc)
 			return i;
 
 	return UTL_INVAL_VECTOR_ELEM;
@@ -1453,9 +1451,9 @@ void CUtlVectorBase<T, I, A>::Remove( I elem )
 }
 
 template< typename T, typename I, class A >
-bool CUtlVectorBase<T, I, A>::FindAndRemove( const T& copySrc )
+bool CUtlVectorBase<T, I, A>::FindAndRemove( const T& compSrc )
 {
-	I elem = Find( copySrc );
+	I elem = Find( compSrc );
 	if ( elem != UTL_INVAL_VECTOR_ELEM )
 	{
 		Remove( elem );
@@ -1477,9 +1475,9 @@ bool CUtlVectorBase<T, I, A>::FindAndRemove( T&& moveSrc )
 }
 
 template< typename T, typename I, class A >
-bool CUtlVectorBase<T, I, A>::FindAndFastRemove( const T& copySrc )
+bool CUtlVectorBase<T, I, A>::FindAndFastRemove( const T& compSrc )
 {
-	I elem = Find( copySrc );
+	I elem = Find( compSrc );
 	if ( elem != UTL_INVAL_VECTOR_ELEM )
 	{
 		FastRemove( elem );
