@@ -77,12 +77,14 @@ public:
 	CUtlVectorBase( I growSize, I initialCapacity, RawAllocatorType_t allocatorType );
 	CUtlVectorBase( T* pMemory, I initialCapacity, I initialCount, RawAllocatorType_t allocatorType );
 
-	CUtlVectorBase( CUtlVectorBase const& vec );
+	CUtlVectorBase( const CUtlVectorBase &copyFrom );
+	CUtlVectorBase( CUtlVectorBase &&moveFrom );
 
 	~CUtlVectorBase();
 	
-	// Copy the array.
-	CUtlVectorBase<T, I, A>& operator=( const CUtlVectorBase<T, I, A> &other );
+	// Copy & move the array.
+	CUtlVectorBase<T, I, A>& operator=( const CUtlVectorBase<T, I, A> &copyFrom );
+	CUtlVectorBase<T, I, A>& operator=( CUtlVectorBase<T, I, A> &&moveFrom );
 
 	// element access
 	T& operator[]( I i );
@@ -727,8 +729,15 @@ inline CUtlVectorBase<T, I, A>::CUtlVectorBase( T* pMemory, I allocationCount, I
 }
 
 template< typename T, typename I, class A >
-inline CUtlVectorBase<T, I, A>::CUtlVectorBase( CUtlVectorBase const& vec )	: 
-	m_Size(vec.m_Size), m_Memory(vec.m_Memory)
+inline CUtlVectorBase<T, I, A>::CUtlVectorBase( const CUtlVectorBase &copyFrom ) : 
+	m_Size(copyFrom.m_Size), m_Memory(copyFrom.m_Memory)
+{
+	ResetDbgInfo();
+}
+
+template< typename T, typename I, class A >
+inline CUtlVectorBase<T, I, A>::CUtlVectorBase( CUtlVectorBase &&moveFrom )	: 
+	m_Size( Move(moveFrom.m_Size) ), m_Memory( Move(moveFrom.m_Memory))
 {
 	ResetDbgInfo();
 }
@@ -747,13 +756,26 @@ inline CUtlVectorBase<T, I, A>::~CUtlVectorBase()
 #endif
 
 template< typename T, typename I, class A >
-inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::operator=( const CUtlVectorBase<T, I, A> &other )
+inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::operator=( const CUtlVectorBase<T, I, A> &copyFrom )
 {
-	I nCount = other.Count();
+	I nCount = copyFrom.Count();
 	SetSize( nCount );
 	for ( I i = 0; i < nCount; i++ )
 	{
-		(*this)[ i ] = other[ i ];
+		(*this)[ i ] = copyFrom[ i ];
+	}
+	return *this;
+}
+
+template< typename T, typename I, class A >
+inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::operator=( CUtlVectorBase<T, I, A> &&moveFrom )
+{
+	I nCount = moveFrom.Count();
+	SetSize( nCount );
+
+	for ( I i = 0; i < nCount; i++ )
+	{
+		MoveConstruct( &(*this)[ i ], Move(moveFrom[i]) );
 	}
 	return *this;
 }
@@ -1140,7 +1162,6 @@ inline I CUtlVectorBase<T, I, A>::AddToHead( const T& copySrc )
 template< typename T, typename I, class A >
 inline I CUtlVectorBase<T, I, A>::AddToHead( T&& moveSrc )
 {
-	// Can't insert something that's in the list... reallocation may hose us
 	Assert( Base() == NULL );
 	return InsertBefore( 0, Move(moveSrc) );
 }
@@ -1310,7 +1331,7 @@ I CUtlVectorBase<T, I, A>::AddVectorToTail( CUtlVectorBase< T, I, A > &&moveSrc 
 	I nSrcCount = moveSrc.Count();
 	EnsureCapacity( base + nSrcCount );
 
-	// Copy the elements.	
+	// Move the elements.
 	m_Size += nSrcCount;
 	for ( I i=0; i < nSrcCount; i++ )
 	{
