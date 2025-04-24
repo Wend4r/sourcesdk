@@ -69,13 +69,13 @@ public:
 	CUtlMemory( const T* pMemory, I numElements );
 	~CUtlMemory();
 
-	CUtlMemory( const CUtlMemory&moveFrom );
-	CUtlMemory& operator=( CUtlMemory& moveFrom );
+	CUtlMemory( const CUtlMemory &copyFrom );
+	CUtlMemory( CUtlMemory &&moveFrom );
+	CUtlMemory &operator=( const CUtlMemory &copyFrom );
+	CUtlMemory &operator=( CUtlMemory &&moveFrom );
 
-	CUtlMemory( CUtlMemory&& moveFrom );
-	CUtlMemory& operator=( CUtlMemory&& moveFrom );
-
-	void CopyFrom( const CUtlMemory& from );
+	CUtlMemory<T,I> &CopyFrom( const CUtlMemory &copyFrom );
+	CUtlMemory<T,I> &MoveFrom( CUtlMemory &&moveFrom );
 
 	// Set the size by which the memory grows
 	void Init( I nGrowSize = 0, I nInitSize = 0 );
@@ -477,58 +477,61 @@ CUtlMemory<T,I>::~CUtlMemory()
 }
 
 template< class T, class I >
-CUtlMemory<T,I>::CUtlMemory( const CUtlMemory& moveFrom ) : m_pMemory( 0 ), m_nAllocationCount( 0 )
+CUtlMemory<T,I>::CUtlMemory( const CUtlMemory &copyFrom ) : m_pMemory( 0 ), m_nAllocationCount( 0 )
 {
-	CopyFrom( moveFrom );
+	CopyFrom( copyFrom );
+}
+
+
+template< class T, class I >
+CUtlMemory<T,I>::CUtlMemory( CUtlMemory &&moveFrom )
+{
+	MoveFrom( Move( moveFrom ) );
 }
 
 template< class T, class I >
-CUtlMemory<T,I>& CUtlMemory<T,I>::operator=( CUtlMemory& moveFrom )
+CUtlMemory<T,I>& CUtlMemory<T,I>::operator=( const CUtlMemory &copyFrom )
 {
-	CopyFrom( moveFrom );
-	return *this;
-}
-
-template< class T, class I >
-void CUtlMemory<T,I>::CopyFrom( const CUtlMemory& from )
-{
-	Init( from.m_nGrowSize, from.m_nAllocationCount );
-
-	if( m_pMemory )
-	{
-		memcpy( (void*)m_pMemory, (const void*)from.m_pMemory, from.m_nAllocationCount * sizeof(T) );
-	}
-}
-
-template< class T, class I >
-CUtlMemory<T,I>::CUtlMemory( CUtlMemory&& moveFrom )
-: m_pMemory(moveFrom.m_pMemory)
-, m_nAllocationCount(moveFrom.m_nAllocationCount)
-, m_nGrowSize(moveFrom.m_nGrowSize)
-{
-	moveFrom.m_pMemory = nullptr;
-	moveFrom.m_nAllocationCount = 0;
-	moveFrom.m_nGrowSize = 0;
+	return CopyFrom( copyFrom );
 }
 
 template< class T, class I >
 CUtlMemory<T,I>& CUtlMemory<T,I>::operator=( CUtlMemory&& moveFrom )
 {
+	return MoveFrom( Move( moveFrom ) );
+}
+
+template< class T, class I >
+CUtlMemory<T,I> &CUtlMemory<T,I>::CopyFrom( const CUtlMemory &copyFrom )
+{
+	Init( copyFrom.m_nGrowSize, copyFrom.m_nAllocationCount );
+
+	if( m_pMemory )
+	{
+		memcpy( (void*)m_pMemory, (const void*)copyFrom.m_pMemory, copyFrom.m_nAllocationCount * sizeof(T) );
+	}
+
+	return *this;
+}
+
+template< class T, class I >
+CUtlMemory<T,I> &CUtlMemory<T,I>::MoveFrom( CUtlMemory &&moveFrom )
+{
 	// Copy member variables to locals before purge to handle self-assignment
-	T* pMemory = moveFrom.m_pMemory;
-	I nAllocationCount = moveFrom.m_nAllocationCount;
-	I nGrowSize = moveFrom.m_nGrowSize;
+	T*&&pMemory = Move( moveFrom.m_pMemory );
+	I &&nAllocationCount = Move( moveFrom.m_nAllocationCount );
+	I &&nGrowSizeStaff = Move( moveFrom.m_nGrowSizeStaff );
 
 	moveFrom.m_pMemory = nullptr;
 	moveFrom.m_nAllocationCount = 0;
-	moveFrom.m_nGrowSize = 0;
+	moveFrom.m_nGrowSizeStaff = 0;
 
-	// If this is a self-assignment, Purge() is a no-op here
-	Purge();
+	// // If this is a self-assignment, Purge() is a no-op here
+	// Purge();
 
 	m_pMemory = pMemory;
 	m_nAllocationCount = nAllocationCount;
-	m_nGrowSize = nGrowSize;
+	m_nGrowSizeStaff = nGrowSizeStaff;
 	return *this;
 }
 
@@ -626,6 +629,7 @@ void CUtlMemory<T,I>::SetExternalBuffer( const T* pMemory, I numElements )
 	// Indicate that we don't own the memory
 	m_nGrowSize = 0;
 	m_bHasConstMemory = true;
+
 	m_bExternal = false;
 }
 

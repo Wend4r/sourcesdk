@@ -14,6 +14,7 @@
 #endif
 
 #include "tier0/dbg.h"
+#include "tier0/platform.h"
 #include "utlrbtree.h"
 
 //-----------------------------------------------------------------------------
@@ -52,18 +53,25 @@ public:
 
 	struct Node_t
 	{
-		Node_t()
-		{
-		}
-
-		Node_t( const Node_t &from )
-		  : key( from.key ),
-			elem( from.elem )
-		{
-		}
-
 		KeyType_t	key;
 		ElemType_t	elem;
+
+		Node_t() : key(), elem() {}
+
+		// Declare a default constructor into your elem type.
+		Node_t( const KeyType_t &inKey ) : key( inKey ), elem() {}
+		Node_t( KeyType_t &&inKey ) : key( Move(inKey) ), elem() {}
+
+		Node_t( const KeyType_t &inKey, const ElemType_t &inElem ) : key( inKey ), elem( inElem ) {}
+		Node_t( const KeyType_t &inKey, ElemType_t &&moveElem ) : key( inKey ), elem( Move(moveElem) ) {}
+		Node_t( KeyType_t &&moveKey, const ElemType_t &inElem ) : key( Move(moveKey) ), elem( inElem ) {}
+		Node_t( KeyType_t &&moveKey, ElemType_t &&moveElem ) : key( Move(moveKey) ), elem( Move(moveElem) ) {}
+
+		Node_t( const Node_t &copyFrom ) : Node_t( copyFrom.key, copyFrom.elem ) {}
+		Node_t( Node_t &&moveFrom ) : Node_t( Move(moveFrom.key), Move(moveFrom.elem) ) {}
+
+		Node_t &operator=( const Node_t &copyFrom ) { key = copyFrom.key; elem = copyFrom.elem; return *this; }
+		Node_t &operator=( Node_t &&moveFrom ) { key = moveFrom.key; elem = moveFrom.elem; return *this; }
 	};
 
 	class CKeyLess
@@ -100,13 +108,23 @@ public:
 	{
 	}
 
-	CUtlMap( const CUtlMap<K, T, I, LessFunc_t> &init )
-	 : m_Tree( init.m_Tree )
+	CUtlMap( const CUtlMap<K, T, I, LessFunc_t> &copyFrom )
+	 : m_Tree( copyFrom.m_Tree )
 	{
 	}
 
-	CUtlMap( const CTree &initTree )
-	 : m_Tree( initTree )
+	CUtlMap( CUtlMap<K, T, I, LessFunc_t> &&moveFrom )
+	 : m_Tree( Move(moveFrom.m_Tree) )
+	{
+	}
+
+	CUtlMap( const CTree &copyFrom )
+	 : m_Tree( copyFrom )
+	{
+	}
+
+	CUtlMap( CTree &&moveFrom )
+	 : m_Tree( Move(moveFrom) )
 	{
 	}
 	
@@ -143,66 +161,25 @@ public:
 	}
 	
 	// Insert method (inserts in order)
-	IndexType_t  Insert( const KeyType_t &key, const ElemType_t &insert )
-	{
-		Node_t node;
-		node.key = key;
-		node.elem = insert;
-		return m_Tree.Insert( node );
-	}
-	
-	IndexType_t  Insert( const KeyType_t &key )
-	{
-		Node_t node;
-		node.key = key;
-		return m_Tree.Insert( node );
-	}
+	IndexType_t Insert( const KeyType_t &key, const ElemType_t &insert ) { return m_Tree.Insert( Node_t( key, insert ) ); }
+	IndexType_t Insert( const KeyType_t &key, ElemType_t &&insert ) { return m_Tree.Insert( Node_t( key, Move(insert) ) ); }
+	IndexType_t Insert( KeyType_t &&key, const ElemType_t &insert ) { return m_Tree.Insert( Node_t( Move(key), insert ) ); }
+	IndexType_t Insert( KeyType_t &&key, ElemType_t &&insert ) { return m_Tree.Insert( Node_t( Move(key), Move(insert) ) ); }
+	IndexType_t Insert( const KeyType_t &key ) { return m_Tree.Insert( Node_t( key ) ); }
 
 	// API to macth src2 for Panormama
 	// Note in src2 straight Insert() calls will assert on duplicates
 	// Chosing not to take that change until discussed further 
 
-	IndexType_t  InsertWithDupes( const KeyType_t &key, const ElemType_t &insert )
-	{
-		Node_t node;
-		node.key = key;
-		node.elem = insert;
-		return m_Tree.Insert( node );
-	}
+	IndexType_t InsertWithDupes( const KeyType_t &key, const ElemType_t &insert ) { return m_Tree.Insert( Node_t( key, insert ) ); }
+	IndexType_t InsertWithDupes( const KeyType_t &key ) { return m_Tree.Insert( Node_t( key ) ); }
 
-	IndexType_t  InsertWithDupes( const KeyType_t &key )
-	{
-		Node_t node;
-		node.key = key;
-		return m_Tree.Insert( node );
-	}
+	bool HasElement( const KeyType_t &key ) const { return m_Tree.HasElement( Node_t( key ) ); }
 
+	IndexType_t Find( const KeyType_t &key ) const { return m_Tree.Find( Node_t(key) ); }
 
-	bool HasElement( const KeyType_t &key ) const
-	{
-		Node_t dummyNode;
-		dummyNode.key = key;
-		return m_Tree.HasElement( dummyNode );
-	}
-
-
-	// Find method
-	IndexType_t  Find( const KeyType_t &key ) const
-	{
-		Node_t dummyNode;
-		dummyNode.key = key;
-		return m_Tree.Find( dummyNode );
-	}
-
-	// FindFirst method
 	// This finds the first inorder occurrence of key
-	IndexType_t  FindFirst( const KeyType_t &key ) const
-	{
-		Node_t dummyNode;
-		dummyNode.key = key;
-		return m_Tree.FindFirst( dummyNode );
-	}
-
+	IndexType_t  FindFirst( const KeyType_t &key ) const { return m_Tree.FindFirst( Node_t( key ) );}
 
 	const ElemType_t &FindElement( const KeyType_t &key, const ElemType_t &defaultValue ) const
 	{

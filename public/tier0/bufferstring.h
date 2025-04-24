@@ -94,12 +94,12 @@ public:
 
 	/// Concat-based constructors.
 	template< size_t N > FORCEINLINE CBufferString( const char *pPrefix, const char *(&strs)[N], const int (&nLengths)[N], bool bAllowHeapAllocation = true ) : 
-	    CBufferString( pPrefix, bAllowHeapAllocation )
+	    CBufferString( pPrefix, -1, bAllowHeapAllocation )
 	{
 		AppendConcatN( strs, nLengths );
 	}
 	template< size_t N > FORCEINLINE CBufferString( const char *pPrefix, const char *(&strs)[N], bool bAllowHeapAllocation = true ) : 
-	    CBufferString( pPrefix, bAllowHeapAllocation )
+	    CBufferString( pPrefix, -1, bAllowHeapAllocation )
 	{
 		AppendConcatN( strs );
 	}
