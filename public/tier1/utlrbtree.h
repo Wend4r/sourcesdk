@@ -208,20 +208,23 @@ public:
 	// LessFunc_t is required, but may be set after the constructor using SetLessFunc() below
 	explicit CUtlRBTree( int growSize = 0, int initSize = 0, const LessFunc_t &lessfunc = 0 );
 	explicit CUtlRBTree( const LessFunc_t &lessfunc );
-	CUtlRBTree( CUtlRBTree<T, I, L, M> const &tree );
+	CUtlRBTree( const CUtlRBTree<T, I, L, M> &copyFrom );
+	CUtlRBTree( CUtlRBTree<T, I, L, M> &&moveFrom );
 	~CUtlRBTree( );
 
-	CUtlRBTree<T, I, L, M>& operator=( const CUtlRBTree<T, I, L, M> &other );
+	CUtlRBTree<T, I, L, M>& operator=( const CUtlRBTree<T, I, L, M> &copyFrom );
+	CUtlRBTree<T, I, L, M>& operator=( CUtlRBTree<T, I, L, M> &&moveFrom );
 
 	void EnsureCapacity( int num );
 
 	void CopyFrom( const CUtlRBTree<T, I, L, M> &other );
+	void MoveFrom( CUtlRBTree<T, I, L, M> &&other );
 
 	// gets particular elements
-	T&			Element( I i );
-	T const		&Element( I i ) const;
-	T&			operator[]( I i );
-	T const		&operator[]( I i ) const;
+	T&		Element( I i );
+	T const	&Element( I i ) const;
+	T&		operator[]( I i );
+	T const	&operator[]( I i ) const;
 
 	// Gets the root
 	I  Root() const;
@@ -241,74 +244,76 @@ public:
 	I  RightChild( I i ) const;
 
 	// Tests if a node is a left or right child
-	bool  IsLeftChild( I i ) const;
-	bool  IsRightChild( I i ) const;
+	bool IsLeftChild( I i ) const;
+	bool IsRightChild( I i ) const;
 
 	// Tests if root or leaf
-	bool  IsRoot( I i ) const;
-	bool  IsLeaf( I i ) const;
+	bool IsRoot( I i ) const;
+	bool IsLeaf( I i ) const;
 
 	// Checks if a node is valid and in the tree
-	bool  IsValidIndex( I i ) const;
+	bool IsValidIndex( I i ) const;
 
 	// Checks if the tree as a whole is valid
-	bool  IsValid() const;
+	bool IsValid() const;
 
 	// Invalid index
 	static I InvalidIndex();
 
 	// returns the tree depth (not a very fast operation)
-	int   Depth( I node ) const;
-	int   Depth() const;
+	int Depth( I node ) const;
+	int Depth() const;
 
 	// Sets the less func
 	void SetLessFunc( const LessFunc_t &func );
 
 	// Allocation method
-	I  NewNode( bool bConstructElement );
+	I NewNode( bool bConstructElement );
 
 	// Insert method (inserts in order)
 	// NOTE: the returned 'index' will be valid as long as the element remains in the tree
 	//       (other elements being added/removed will not affect it)
-	I  Insert( T const &insert );
+	I Insert( const T &insert );
+	I Insert( T &&moveInsert );
 	void Insert( const T *pArray, int nItems );
-	I  InsertIfNotFound( T const &insert );
+	I InsertIfNotFound( const T &insert );
+	I InsertIfNotFound( T &&moveInsert );
 
 	// Find method
-	I  Find( T const &search ) const;
+	I Find( T const &search ) const;
 
 	// FindFirst method ( finds first inorder if there are duplicates )
-	I  FindFirst( T const &search ) const;
+	I FindFirst( T const &search ) const;
 
 	// First element >= key
-	I  FindClosest( T const &search, CompareOperands_t eFindCriteria ) const;
+	I FindClosest( T const &search, CompareOperands_t eFindCriteria ) const;
 
 	// Remove methods
-	void     RemoveAt( I i );
-	bool     Remove( T const &remove );
-	void     RemoveAll( );
-	void	 Purge();
+	void RemoveAt( I i );
+	bool Remove( T const &remove );
+	void RemoveAll( );
+	void Purge();
 
 	// Allocation, deletion
-	void  FreeNode( I i );
+	void FreeNode( I i );
 
 	// Iteration
-	I  FirstInorder() const;
-	I  NextInorder( I i ) const;
-	I  PrevInorder( I i ) const;
-	I  LastInorder() const;
+	I FirstInorder() const;
+	I NextInorder( I i ) const;
+	I PrevInorder( I i ) const;
+	I LastInorder() const;
 
-	I  FirstPreorder() const;
-	I  NextPreorder( I i ) const;
-	I  PrevPreorder( I i ) const;
-	I  LastPreorder( ) const;
+	I FirstPreorder() const;
+	I NextPreorder( I i ) const;
+	I PrevPreorder( I i ) const;
+	I LastPreorder( ) const;
 
-	I  FirstPostorder() const;
-	I  NextPostorder( I i ) const;
+	I FirstPostorder() const;
+	I NextPostorder( I i ) const;
 
 	// If you change the search key, this can be used to reinsert the 
 	// element into the tree.
-	void	Reinsert( I elem );
+	void Reinsert( I elem );
 
 	// swap in place
 	void Swap( CUtlRBTree< T, I, L > &that );
@@ -324,14 +329,14 @@ protected:
 	typedef UtlRBTreeLinks_t< I > Links_t;
 
 	// Sets the children
-	void  SetParent( I i, I parent );
-	void  SetLeftChild( I i, I child  );
-	void  SetRightChild( I i, I child  );
-	void  LinkToParent( I i, I parent, bool isLeft );
+	void SetParent( I i, I parent );
+	void SetLeftChild( I i, I child  );
+	void SetRightChild( I i, I child  );
+	void LinkToParent( I i, I parent, bool isLeft );
 
 	// Gets at the links
 	Links_t const	&Links( I i ) const;
-	Links_t			&Links( I i );      
+	Links_t			&Links( I i );
 
 	// Checks if a link is red or black
 	bool IsRed( I i ) const;
@@ -461,11 +466,19 @@ m_LastAlloc( m_Elements.InvalidIterator() )
 }
 
 template < class T, class I, typename L, class M >
-inline CUtlRBTree<T, I, L, M>::CUtlRBTree( CUtlRBTree<T, I, L, M> const &tree )
- :  m_LessFunc( tree.m_LessFunc ), 
-    m_LastAlloc( tree.m_Elements.InvalidIterator() )
+inline CUtlRBTree<T, I, L, M>::CUtlRBTree( const CUtlRBTree<T, I, L, M> &copyFrom )
+ :  m_LessFunc( copyFrom.m_LessFunc ), 
+    m_LastAlloc( copyFrom.m_Elements.InvalidIterator() )
 {
-	CopyFrom( tree );
+	CopyFrom( copyFrom );
+}
+
+template < class T, class I, typename L, class M >
+inline CUtlRBTree<T, I, L, M>::CUtlRBTree( CUtlRBTree<T, I, L, M> &&moveFrom )
+ :  m_LessFunc( moveFrom.m_LessFunc ), 
+    m_LastAlloc( moveFrom.m_Elements.InvalidIterator() )
+{
+	MoveFrom( Move( moveFrom ) );
 }
 
 template < class T, class I, typename L, class M > 
@@ -475,9 +488,16 @@ inline CUtlRBTree<T, I, L, M>::~CUtlRBTree()
 }
 
 template < class T, class I, typename L, class M >
-CUtlRBTree<T, I, L, M>& CUtlRBTree<T, I, L, M>::operator=( CUtlRBTree<T, I, L, M> const &other )
+CUtlRBTree<T, I, L, M>& CUtlRBTree<T, I, L, M>::operator=( const CUtlRBTree<T, I, L, M> &copyFrom )
 {
-	CopyFrom( other );
+	CopyFrom( copyFrom );
+	return *this;
+}
+
+template < class T, class I, typename L, class M >
+CUtlRBTree<T, I, L, M>& CUtlRBTree<T, I, L, M>::operator=( CUtlRBTree<T, I, L, M> &&moveFrom )
+{
+	MoveFrom( moveFrom );
 	return *this;
 }
 
@@ -490,8 +510,6 @@ inline void CUtlRBTree<T, I, L, M>::EnsureCapacity( int num )
 template < class T, class I, typename L, class M >
 inline void CUtlRBTree<T, I, L, M>::CopyFrom( const CUtlRBTree<T, I, L, M> &other )
 {
-	// Purge();
-
 	{
 		const uintp nOtherSize = other.m_Elements.Count();
 
@@ -513,6 +531,34 @@ inline void CUtlRBTree<T, I, L, M>::CopyFrom( const CUtlRBTree<T, I, L, M> &othe
 	m_NumElements = other.m_NumElements;
 	m_FirstFree = other.m_FirstFree;
 	m_LastAlloc = other.m_LastAlloc;
+	ResetDbgInfo();
+}
+
+template < class T, class I, typename L, class M >
+inline void CUtlRBTree<T, I, L, M>::MoveFrom( CUtlRBTree<T, I, L, M> &&other )
+{
+	{
+		auto &&otherElems = Move( other.m_Elements );
+
+		const uintp nOtherSize = otherElems.Count();
+
+		m_Elements.EnsureCapacity( nOtherSize );
+
+		auto *pBase = m_Elements.Base();
+
+		auto *pOtherBase = otherElems.Base();
+
+		for ( uintp n = 0; n < nOtherSize; n++ )
+		{
+			MoveConstruct( &pBase[n], Move( pOtherBase[n] ) );
+		}
+	}
+
+	m_LessFunc = Move( other.m_LessFunc );
+	m_Root = Move( other.m_Root );
+	m_NumElements = Move( other.m_NumElements );
+	m_FirstFree = Move( other.m_FirstFree );
+	m_LastAlloc = Move( other.m_LastAlloc );
 	ResetDbgInfo();
 }
 
@@ -1592,7 +1638,7 @@ void CUtlRBTree<T, I, L, M>::FindInsertionPosition( T const &insert, I &parent, 
 }
 
 template < class T, class I, typename L, class M > 
-I CUtlRBTree<T, I, L, M>::Insert( T const &insert )
+I CUtlRBTree<T, I, L, M>::Insert( const T &insert )
 {
 	// use copy constructor to copy it in
 	I parent = InvalidIndex();
@@ -1600,6 +1646,18 @@ I CUtlRBTree<T, I, L, M>::Insert( T const &insert )
 	FindInsertionPosition( insert, parent, leftchild );
 	I newNode = InsertAt( parent, leftchild, false );
 	CopyConstruct( &Element( newNode ), insert );
+	return newNode;
+}
+
+template < class T, class I, typename L, class M > 
+I CUtlRBTree<T, I, L, M>::Insert( T &&moveInsert )
+{
+	// use copy constructor to copy it in
+	I parent = InvalidIndex();
+	bool leftchild = false;
+	FindInsertionPosition( moveInsert, parent, leftchild );
+	I newNode = InsertAt( parent, leftchild, false );
+	MoveConstruct( &Element( newNode ), Move( moveInsert ) );
 	return newNode;
 }
 
@@ -1612,7 +1670,6 @@ void CUtlRBTree<T, I, L, M>::Insert( const T *pArray, int nItems )
 		Insert( *pArray++ );
 	}
 }
-
 
 template < class T, class I, typename L, class M > 
 I CUtlRBTree<T, I, L, M>::InsertIfNotFound( T const &insert )
@@ -1642,6 +1699,40 @@ I CUtlRBTree<T, I, L, M>::InsertIfNotFound( T const &insert )
 
 	I newNode = InsertAt( parent, leftchild, false );
 	CopyConstruct( &Element( newNode ), insert );
+	return newNode;
+}
+
+template < class T, class I, typename L, class M > 
+I CUtlRBTree<T, I, L, M>::InsertIfNotFound( T &&moveInsert )
+{
+	// use copy constructor to copy it in
+	I parent;
+	bool leftchild;
+
+	I current = m_Root;
+	parent = InvalidIndex();
+	leftchild = false;
+	while (current != InvalidIndex()) 
+	{
+		parent = current;
+		// Move unreferences:
+		if (m_LessFunc( moveInsert, Element(current) ))
+		{
+			leftchild = true; current = LeftChild(current);
+		}
+		else if (m_LessFunc( Element(current), moveInsert ))
+		{
+			leftchild = false; current = RightChild(current);
+		}
+		else
+		{
+			// Match found, no insertion
+			return InvalidIndex();
+		}
+	}
+
+	I newNode = InsertAt( parent, leftchild, false );
+	MoveConstruct( &Element( newNode ), Move( moveInsert ) );
 	return newNode;
 }
 
