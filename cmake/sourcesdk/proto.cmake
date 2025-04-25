@@ -6,6 +6,13 @@ if(NOT SOURCESDK_DIR)
 	message(FATAL_ERROR "SOURCESDK_DIR is empty")
 endif()
 
+set(SOURCESDK_PROTO_FILENAMES)
+set(SOURCESDK_CUSTOM_PROTO_FILENAMES)
+
+set(SOURCESDK_CUSTOM_PROTOS "" CACHE STRING "Optional list of custom .proto files to generate; if set, overrides the default proto sources")
+set(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIRS "" CACHE STRING "If set, overrides SOURCESDK_PROTO_OUTPUT_DIR as the output directory for generated .proto files")
+set(SOURCESDK_CUSTOM_SKIP_PROTOS "" CACHE STRING "Optional list of .proto filenames to skip during generation; matched against basename (e.g. voice.proto)")
+
 set(SOURCESDK_PROTO_OUTPUT_DIR "${SOURCESDK_COMMON_DIR}")
 set(SOURCESDK_PROTOC_EXE "protoc${CMAKE_EXECUTABLE_SUFFIX}")
 
@@ -17,12 +24,22 @@ set(SOURCESDK_SKIP_PROTOS
 foreach(PROTO_DIR ${SOURCESDK_PROTO_DIRS})
 	if(EXISTS ${PROTO_DIR})
 		file(GLOB PROTO_FILENAMES "${PROTO_DIR}/*.proto")
-
 		list(APPEND SOURCESDK_PROTO_FILENAMES ${PROTO_FILENAMES})
 	else()
 		message(WARNING "Proto directory \"${PROTO_DIR}\" is not exists")
 	endif()
 endforeach()
+
+if(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIRS)
+	foreach(PROTO_DIR ${SOURCESDK_CUSTOM_PROTO_OUTPUT_DIRS})
+		if(EXISTS ${PROTO_DIR})
+			file(GLOB CUSTOM_PROTO_FILENAMES "${PROTO_DIR}/*.proto")
+			list(APPEND SOURCESDK_CUSTOM_PROTO_FILENAMES ${CUSTOM_PROTO_FILENAMES})
+		else()
+			message(WARNING "Custom proto directory \"${PROTO_DIR}\" is not exists")
+		endif()
+	endforeach()
+endif()
 
 if(NOT SOURCESDK_COMPILE_PROTOBUF)
 	set(SOURCESDK_PROTOS
@@ -48,6 +65,14 @@ else()
 		endif()
 	endforeach()
 endif()
+
+foreach(PROTO_FILENAME ${SOURCESDK_CUSTOM_PROTO_FILENAMES})
+	get_filename_component(PROTO "${PROTO_FILENAME}" NAME_WLE)
+
+	if(NOT PROTO IN_LIST SOURCESDK_CUSTOM_SKIP_PROTOS)
+		list(APPEND SOURCESDK_PROTOS "${PROTO}")
+	endif()
+endforeach()
 
 set(SOURCESDK_PROTOC_EXECUTABLE "${DEVTOOLS_BIN_DIR}/${SOURCESDK_PLATFORM_DIR}/${SOURCESDK_PROTOC_EXE}")
 
