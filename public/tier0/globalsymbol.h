@@ -22,6 +22,6 @@ using CGlobalSymbolCaseSensitive = CGlobalSymbol;
 PLATFORM_INTERFACE CGlobalSymbol FindGlobalSymbolByHash( uint32 hash );
 PLATFORM_INTERFACE CGlobalSymbol FindGlobalSymbol( const char *str );
 PLATFORM_INTERFACE CGlobalSymbol MakeGlobalSymbol( const char *str );
-PLATFORM_INTERFACE CGlobalSymbol MakeGlobalSymbolCaseSensitive( const char *str );
+PLATFORM_INTERFACE CGlobalSymbolCaseSensitive MakeGlobalSymbolCaseSensitive( const char *str );
 
 #endif // GLOBALSYMBOL_H
