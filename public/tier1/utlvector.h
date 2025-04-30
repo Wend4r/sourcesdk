@@ -25,7 +25,6 @@
 #include "tier1/utlblockmemory.h"
 #include "tier0/strtools.h"
 
-#include <algorithm>
 #include <initializer_list>
 
 #define UTL_INVAL_VECTOR_ELEM ((I)~0)
@@ -97,8 +96,7 @@ public:
 	T& Tail();
 	const T& Tail() const;
 
-	// STL compatible member functions. These allow easier use of std::sort
-	// and they are forward compatible with the C++ 11 range-based for loops.
+	// They are forward compatible with the C++ 11 range-based for loops.
 	iterator begin()						{ return Base(); }
 	const_iterator begin() const			{ return Base(); }
 	iterator end()							{ return Base() + Count(); }
@@ -1049,18 +1047,76 @@ void CUtlVectorBase<T, I, A>::InPlaceQuickSort( I (__cdecl *pfnCompare)(const T 
 	InPlaceQuickSort_r( pfnCompare, 0, Count() - 1 );
 }
 
+// Default Sort using operator<
 template< typename T, typename I, class A >
 void CUtlVectorBase<T, I, A>::Sort( void )
 {
-	//STACK STATS TODO: Do we care about allocation tracking precision enough to match element origins across a sort?
-	std::sort( Base(), Base() + Count() );
+	SortPredicate( [](const T& a, const T& b) { return a < b; } );
 }
 
+// Sort with custom predicate
 template< typename T, typename I, class A >
 template <class F>
-void CUtlVectorBase<T, I, A>::SortPredicate( F &&predicate )
+void CUtlVectorBase<T, I, A>::SortPredicate( F&& predicate )
 {
-	std::sort( Base(), Base() + Count(), predicate );
+	I n = Count();
+	if (n < 2)
+		return;
+
+	struct StackEntry
+	{
+		I lo, hi;
+	} stack[32]; // Sufficient stack depth for typical use (log2(2^32) = 32).
+
+	int stackPos = 0;
+
+	stack[stackPos++] = StackEntry{ 0, n - 1 };
+
+	while (stackPos > 0)
+	{
+		StackEntry entry = stack[--stackPos];
+		I lo = entry.lo;
+		I hi = entry.hi;
+
+		while (lo < hi)
+		{
+			I i = lo, j = hi;
+			T pivot = Base()[(lo + hi) / 2];
+
+			while (i <= j)
+			{
+				while (predicate(Base()[i], pivot)) ++i;
+				while (predicate(pivot, Base()[j])) --j;
+
+				if (i <= j)
+				{
+					if (i != j)
+					{
+						T temp = Base()[i];
+						Base()[i] = Base()[j];
+						Base()[j] = temp;
+					}
+					++i;
+					--j;
+				}
+			}
+
+			// Tail-call elimination: always recurse into the smaller partition first 
+			// and loop on the larger to keep stack size small.
+			if (j - lo < hi - i)
+			{
+				if (i < hi)
+					stack[stackPos++] = StackEntry{ i, hi };
+				hi = j;
+			}
+			else
+			{
+				if (lo < j)
+					stack[stackPos++] = StackEntry{ lo, j };
+				lo = i;
+			}
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
