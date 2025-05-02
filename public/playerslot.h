@@ -10,7 +10,7 @@
 class CPlayerSlot
 {
 public:
-	CPlayerSlot( int slot ) : m_Data( slot )
+	CPlayerSlot( int slot = -1 ) : m_Data( slot )
 	{
 	}
 
