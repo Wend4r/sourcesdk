@@ -206,7 +206,7 @@ public:
 	/// WARNING: Be *very careful* when using the value provided in callbacks structs.
 	/// Callbacks are queued, and the value that you will receive in your
 	/// callback is the userdata that was effective at the time the callback
-	/// was queued.  There are subtle race conditions that can hapen if you
+	/// was queued.  There are subtle race conditions that can happen if you
 	/// don't understand this!
 	///
 	/// If any incoming messages for this connection are queued, the userdata
@@ -397,10 +397,9 @@ public:
 	/// lanes may be sent out of order.  Each lane has its own message number
 	/// sequence.  The first message sent on each lane will be assigned the number 1.
 	///
-	/// Each lane has a "priority".  Lower priority lanes will only be processed
-	/// when all higher-priority lanes are empty.  The magnitudes of the priority
-	/// values are not relevant, only their sort order.  Higher numeric values
-	/// take priority over lower numeric values.
+	/// Each lane has a "priority".  Lanes with higher numeric values will only be processed
+	/// when all lanes with lower number values are empty.  The magnitudes of the priority
+	/// values are not relevant, only their sort order.
 	/// 
 	/// Each lane also is assigned a weight, which controls the approximate proportion
 	/// of the bandwidth that will be consumed by the lane, relative to other lanes
@@ -829,7 +828,7 @@ public:
 	/// different types of traffic.  Because these allocations come from a global
 	/// namespace, there is a relatively strict limit on the maximum number of
 	/// ports you may request.  (At the time of this writing, the limit is 4.)
-	/// The Port assignments are *not* guaranteed to have any particular order
+	/// The port assignments are *not* guaranteed to have any particular order
 	/// or relationship!  Do *not* assume they are contiguous, even though that
 	/// may often occur in practice.
 	///
@@ -920,32 +919,25 @@ protected:
 #define STEAMNETWORKINGSOCKETS_INTERFACE_VERSION "SteamNetworkingSockets012"
 
 // Global accessors
+
 // Using standalone lib
 #ifdef STEAMNETWORKINGSOCKETS_STANDALONELIB
 
-	// Standalone lib.
 	static_assert( STEAMNETWORKINGSOCKETS_INTERFACE_VERSION[24] == '2', "Version mismatch" );
 	STEAMNETWORKINGSOCKETS_INTERFACE ISteamNetworkingSockets *SteamNetworkingSockets_LibV12();
 	inline ISteamNetworkingSockets *SteamNetworkingSockets_Lib() { return SteamNetworkingSockets_LibV12(); }
 
-	// If running in context of steam, we also define a gameserver instance.
-	#ifdef STEAMNETWORKINGSOCKETS_STEAM
-		STEAMNETWORKINGSOCKETS_INTERFACE ISteamNetworkingSockets *SteamGameServerNetworkingSockets_LibV12();
-		inline ISteamNetworkingSockets *SteamGameServerNetworkingSockets_Lib() { return SteamGameServerNetworkingSockets_LibV12(); }
-	#endif
+	STEAMNETWORKINGSOCKETS_INTERFACE ISteamNetworkingSockets *SteamGameServerNetworkingSockets_LibV12();
+	inline ISteamNetworkingSockets *SteamGameServerNetworkingSockets_Lib() { return SteamGameServerNetworkingSockets_LibV12(); }
 
 	#ifndef STEAMNETWORKINGSOCKETS_STEAMAPI
 		inline ISteamNetworkingSockets *SteamNetworkingSockets() { return SteamNetworkingSockets_LibV12(); }
-		#ifdef STEAMNETWORKINGSOCKETS_STEAM
-			inline ISteamNetworkingSockets *SteamGameServerNetworkingSockets() { return SteamGameServerNetworkingSockets_LibV12(); }
-		#endif
+		inline ISteamNetworkingSockets *SteamGameServerNetworkingSockets() { return SteamGameServerNetworkingSockets_LibV12(); }
 	#endif
 #endif
 
 // Using Steamworks SDK
 #ifdef STEAMNETWORKINGSOCKETS_STEAMAPI
-
-	// Steamworks SDK
 	STEAM_DEFINE_USER_INTERFACE_ACCESSOR( ISteamNetworkingSockets *, SteamNetworkingSockets_SteamAPI, STEAMNETWORKINGSOCKETS_INTERFACE_VERSION );
 	STEAM_DEFINE_GAMESERVER_INTERFACE_ACCESSOR( ISteamNetworkingSockets *, SteamGameServerNetworkingSockets_SteamAPI, STEAMNETWORKINGSOCKETS_INTERFACE_VERSION );
 
