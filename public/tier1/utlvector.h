@@ -76,14 +76,17 @@ public:
 	CUtlVectorBase( I growSize, I initialCapacity, RawAllocatorType_t allocatorType );
 	CUtlVectorBase( T* pMemory, I initialCapacity, I initialCount, RawAllocatorType_t allocatorType );
 
-	CUtlVectorBase( const CUtlVectorBase &copyFrom );
-	CUtlVectorBase( CUtlVectorBase &&moveFrom );
+	CUtlVectorBase( const CUtlVectorBase<T, I, A> &copyFrom );
+	CUtlVectorBase( CUtlVectorBase<T, I, A> &&moveFrom );
 
 	~CUtlVectorBase();
 	
 	// Copy & move the array.
 	CUtlVectorBase<T, I, A>& operator=( const CUtlVectorBase<T, I, A> &copyFrom );
 	CUtlVectorBase<T, I, A>& operator=( CUtlVectorBase<T, I, A> &&moveFrom );
+
+	CUtlVectorBase<T, I, A> &CopyFrom( const CUtlVectorBase<T, I, A> &copyFrom );
+	CUtlVectorBase<T, I, A> &MoveFrom( CUtlVectorBase<T, I, A> &&moveFrom );
 
 	// element access
 	T& operator[]( I i );
@@ -728,17 +731,19 @@ inline CUtlVectorBase<T, I, A>::CUtlVectorBase( T* pMemory, I allocationCount, I
 }
 
 template< typename T, typename I, class A >
-inline CUtlVectorBase<T, I, A>::CUtlVectorBase( const CUtlVectorBase &copyFrom ) : 
+inline CUtlVectorBase<T, I, A>::CUtlVectorBase( const CUtlVectorBase<T, I, A> &copyFrom ) : 
 	m_Size(copyFrom.m_Size), m_Memory(copyFrom.m_Memory)
 {
 	ResetDbgInfo();
+	CopyFrom( copyFrom );
 }
 
 template< typename T, typename I, class A >
-inline CUtlVectorBase<T, I, A>::CUtlVectorBase( CUtlVectorBase &&moveFrom )	: 
-	m_Size( Move(moveFrom.m_Size) ), m_Memory( Move(moveFrom.m_Memory))
+inline CUtlVectorBase<T, I, A>::CUtlVectorBase( CUtlVectorBase<T, I, A> &&moveFrom ) : 
+	m_Size(0)
 {
 	ResetDbgInfo();
+	MoveFrom( Move( moveFrom ) );
 }
 
 #if defined(COMPILER_MSVC)
@@ -757,25 +762,42 @@ inline CUtlVectorBase<T, I, A>::~CUtlVectorBase()
 template< typename T, typename I, class A >
 inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::operator=( const CUtlVectorBase<T, I, A> &copyFrom )
 {
-	I nCount = copyFrom.Count();
-	SetSize( nCount );
-	for ( I i = 0; i < nCount; i++ )
-	{
-		(*this)[ i ] = copyFrom[ i ];
-	}
-	return *this;
+	return CopyFrom( copyFrom );
 }
 
 template< typename T, typename I, class A >
 inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::operator=( CUtlVectorBase<T, I, A> &&moveFrom )
 {
-	I nCount = moveFrom.Count();
+	return MoveFrom( Move( moveFrom ) );
+}
+
+template< typename T, typename I, class A >
+inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::CopyFrom( const CUtlVectorBase<T, I, A> &copyFrom )
+{
+	I nCount = copyFrom.Count();
+
 	SetSize( nCount );
 
 	for ( I i = 0; i < nCount; i++ )
 	{
-		MoveConstruct( &(*this)[ i ], Move( moveFrom[i].MoveElement(i) ) );
+		CopyConstruct( &Element( i ), copyFrom[ i ] );
 	}
+
+	return *this;
+}
+
+template< typename T, typename I, class A >
+inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::MoveFrom( CUtlVectorBase<T, I, A> &&moveFrom )
+{
+	I nCount = moveFrom.Count();
+
+	SetSize( nCount );
+
+	for ( I i = 0; i < nCount; i++ )
+	{
+		MoveConstruct( &Element( i ), Move( moveFrom.MoveElement(i) ) );
+	}
+
 	return *this;
 }
 
@@ -1347,7 +1369,7 @@ void CUtlVectorBase<T, I, A>::CopyArray( const T *pArray, I size )
 	SetSize( size );
 	for( I i=0; i < size; i++ )
 	{
-		(*this)[i] = pArray[i];
+		Element(i) = pArray[i];
 	}
 }
 
