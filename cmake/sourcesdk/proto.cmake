@@ -9,9 +9,9 @@ endif()
 set(SOURCESDK_PROTO_FILENAMES)
 set(SOURCESDK_CUSTOM_PROTO_FILENAMES)
 
-set(SOURCESDK_CUSTOM_PROTOS "" CACHE STRING "Optional list of custom .proto files to generate; if set, overrides the default proto sources")
-set(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "" CACHE STRING "If set, the output directory for generated custom proto files")
-set(SOURCESDK_CUSTOM_SKIP_PROTOS "" CACHE STRING "Optional list of .proto filenames to skip during generation; matched against basename (e.g. project_voice.proto)")
+option(SOURCESDK_CUSTOM_PROTOS "Optional list of custom .proto files to generate; if set, overrides the default proto sources" "")
+option(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "If set, the output directory for generated custom proto files" "")
+option(SOURCESDK_CUSTOM_SKIP_PROTOS "Optional list of .proto filenames to skip during generation; matched against basename (e.g. project_voice.proto)" "")
 
 set(SOURCESDK_PROTO_OUTPUT_DIR "${SOURCESDK_COMMON_DIR}")
 set(SOURCESDK_PROTOC_EXE "protoc${CMAKE_EXECUTABLE_SUFFIX}")
