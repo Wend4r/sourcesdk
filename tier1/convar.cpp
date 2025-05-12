@@ -626,7 +626,7 @@ void ConVarRefAbstract::QueueSetValueInternal( CSplitScreenSlot slot, CVValue_t 
 	TypeTraits()->Clamp( value, m_ConVarData->MinValue(), m_ConVarData->MaxValue() );
 
 	if(!m_ConVarData->IsEqual( slot, value ))
-		g_pCVar->QueueThreadSetValue( this, slot, value );
+		g_pCVar->QueueThreadSetValue( this, slot, nullptr, value );
 }
 
 void ConVarRefAbstract::SetValueInternal( CSplitScreenSlot slot, CVValue_t *value )
