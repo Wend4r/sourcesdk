@@ -83,7 +83,7 @@ public:
 	CNetworkGameServerBase  *GetServer() const { return m_Server; }
 
 	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, bool bFakePlayer, bool bSplitClient, int iClientPlatform ) = 0;
-	virtual void             Inactivate() = 0;
+	virtual void             Inactivate( const char *pszAddons ) = 0;
 	virtual void             Reactivate( CPlayerSlot nSlot ) = 0;
 	virtual void             SetServer( CNetworkGameServer *pNetServer ) = 0;
 	virtual void             Reconnect() = 0;
@@ -101,7 +101,7 @@ public:
 	virtual void             Clear() = 0;
 
 	virtual bool             ExecuteStringCommand( const CNETMsg_StringCmd_t& msg ) = 0; // "false" trigger an anti spam counter to kick a client.
-	virtual void             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
+	virtual void             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) = 0;
 
 #ifdef LINUX
 private:
