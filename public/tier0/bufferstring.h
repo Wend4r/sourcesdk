@@ -109,27 +109,23 @@ public:
 		AppendConcatN( strs );
 	}
 
-	CBufferString( const CBufferString &copyFrom )
-	 :  m_nLengthStaff( copyFrom.m_nLengthStaff ), 
-	    m_nAllocatedStaff( copyFrom.m_nAllocatedStaff ), 
-	    m_Buffer( copyFrom.m_Buffer )
+	CBufferString( const CBufferString &copyFrom ) : 
+	    CBufferString( copyFrom.GetType(), copyFrom.CanHeapAllocate() )
 	{
 		Assert_BSO( false );
+		Set( copyFrom.String(), copyFrom.Length() );
 	}
 
 	CBufferString &operator=( const CBufferString &copyFrom )
 	{
 		Assert_BSO( false );
-
-		m_nLengthStaff = copyFrom.m_nLengthStaff;
-		m_nAllocatedStaff = copyFrom.m_nAllocatedStaff;
-		m_Buffer = copyFrom.m_Buffer;
+		Set( copyFrom.String(), copyFrom.Length() );
 
 		return *this;
 	}
 
-	CBufferString( CBufferString &&moveFrom ) noexcept
-	:  m_nLengthStaff( Move( moveFrom.m_nLengthStaff ) ), 
+	CBufferString( CBufferString &&moveFrom ) noexcept : 
+	   m_nLengthStaff( Move( moveFrom.m_nLengthStaff ) ), 
 	   m_nAllocatedStaff( Move( moveFrom.m_nAllocatedStaff ) ), 
 	   m_Buffer( Move( moveFrom.m_Buffer ) )
 	{
@@ -181,7 +177,7 @@ public:
 	int BytesLeft() const { return BytesLeft( m_nLength ); } // Returns number of bytes available from current length.
 	bool IsFull() const { return BytesLeft() == 0; } // Returns true if no space is left in the bufferstring.
 
-	EType_t GetType() { return static_cast<EType_t>(m_bStackAllocated); };
+	EType_t GetType() const { return static_cast<EType_t>(m_bStackAllocated); };
 
 	// Checks whether a pointer lies within the current buffer range.
 	bool IsInputStringUnsafe( const void *pData ) const
