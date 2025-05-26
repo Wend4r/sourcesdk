@@ -1,5 +1,5 @@
-#include "tier1/utlstring.h"
-#include "tier1/KeyValues.h"
+#include "tier0/utlstring.h"
+#include "tier0/keyvalues.h"
 #include "appframework/IAppSystem.h"
 #include "tier2/tier2.h"
 
