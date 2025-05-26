@@ -1,6 +1,6 @@
 #include "tier0/utlstring.h"
 #include "tier0/keyvalues.h"
-#include "appframework/IAppSystem.h"
+#include "appframework/iappsystem.h"
 #include "tier2/tier2.h"
 
 struct ResourceManifestDesc_t;
