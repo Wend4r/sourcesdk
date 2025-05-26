@@ -22,6 +22,9 @@ class Color
 {
 public:
 	// constructors
+	Color(const Color& copyFrom) = default;
+	Color(Color&& moveFrom) = default;
+
 	Color()
 	{
 		*((int *)this) = 0;
