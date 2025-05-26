@@ -129,12 +129,16 @@ unsigned FASTCALL HashStringConventional( const char *pszKey )
 //-----------------------------------------------------------------------------
 unsigned FASTCALL HashInt( const int n )
 {
+	unsigned		un = (unsigned)n;
 	unsigned		even, odd;
-	odd   = g_nRandomValues[(((unsigned)n >> 8) & 0xff)];
-	even  = g_nRandomValues[odd ^ ((unsigned)n >> 24)];
-	odd   = g_nRandomValues[even ^ ((unsigned)n >> 16) & 0xff];
-	even  = g_nRandomValues[odd ^ ((unsigned)n >> 8) & 0xff];
-	odd   = g_nRandomValues[even  ^ ((unsigned)n & 0xff)];
+
+	even  = g_nRandomValues[un & 0xff];
+	odd   = g_nRandomValues[((un >> 8) & 0xff)];
+
+	even  = g_nRandomValues[odd ^ (un >> 24)];
+	odd   = g_nRandomValues[even ^ ((un >> 16) & 0xff)];
+	even  = g_nRandomValues[odd ^ ((un >> 8) &  0xff)];
+	odd   = g_nRandomValues[even  ^ (un & 0xff)];
 
 	return (even << 8) | odd;
 }

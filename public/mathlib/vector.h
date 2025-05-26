@@ -1802,7 +1802,7 @@ class RadianEuler;
 class DegreeEuler;
 class QAngle;
 
-class Quaternion				// same data-layout as engine's vec4_t,
+class ALIGN16 Quaternion				// same data-layout as engine's vec4_t,
 {								//		which is a vec_t[4]
 public:
 	inline Quaternion(void)	{ 
@@ -1856,7 +1856,7 @@ public:
 	inline Quaternion operator-( void ) const { return Quaternion( -x, -y, -z, -w ); }
 
 	vec_t x, y, z, w;
-};
+} ALIGN16_POST;
 
 // Random Quaternion that is UNIFORMLY distributed over the S^3
 // should be good for random generation of orientation for unit tests and for game
