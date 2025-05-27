@@ -208,7 +208,7 @@ KeyValues3 *KeyValues3::AllocMember( KV3TypeEx_t type, KV3SubType_t subtype )
 {
 	auto context = GetContext();
 
-	return context ? context->AllocKV( type, subtype ) : new KeyValues3( type, subtype );
+	return context ? context->AllocKV( type, subtype ) : Construct( ::Alloc<KeyValues3>(), type, subtype );
 }
 
 void KeyValues3::FreeMember( KeyValues3 *member )
@@ -1660,7 +1660,7 @@ void CKeyValues3Table::EnableFastSearch()
 	if ( m_pFastSearch )
 		m_pFastSearch->m_member_ids.RemoveAll();
 	else
-		m_pFastSearch = new kv3tablefastsearch_t;
+		Construct( m_pFastSearch = ::Alloc<kv3tablefastsearch_t>() );
 
 	const Hash_t* pHashes = HashesBase();
 

@@ -2263,27 +2263,54 @@ inline void Destruct( T (*pMemory)[N] )
 #include "tier0/memdbgon.h"
 
 template <class T>
+inline T *Alloc()
+{
+	return reinterpret_cast<T *>( malloc( sizeof(T) ) );
+}
+
+template <class T, size_t N>
+inline T **Alloc()
+{
+	T **pMemories = reinterpret_cast<T **>( malloc( sizeof(T *) * N ) );
+
+	for ( size_t n = 0; n < N; n++ )
+	{
+		pMemories[n] = reinterpret_cast<T *>( malloc( sizeof(T) ) );
+
+	#ifdef _DEBUG
+		memset( reinterpret_cast<void *>( pMemories[n] ), 0xDD, sizeof(*pMemories[n]) );
+	#endif
+	}
+
+	return pMemories;
+}
+
+template <class T>
 inline void Delete( T* pMemory )
 {
 	pMemory->~T();
 	free( reinterpret_cast<void *>(pMemory) );
 
 #ifdef _DEBUG
-	memset( reinterpret_cast<void*>( pMemory ), 0xDD, sizeof(T) );
+	memset( reinterpret_cast<void *>( pMemory ), 0xDD, sizeof(T) );
 #endif
 }
 
 template <class T, size_t N>
 inline void Delete( T (*pMemory)[N] )
 {
-	for ( size_t i = 0; i < N; i++ )
+	for ( size_t n = 0; n < N; n++ )
 	{
-		(pMemory[i])->~T();
-		free( reinterpret_cast<void*>( pMemory[i] ) );
+		(pMemory[n])->~T();
+		free( reinterpret_cast<void *>( pMemory[n] ) );
+
+#ifdef _DEBUG
+		memset( reinterpret_cast<void *>( pMemory[n] ), 0xDD, sizeof(*pMemory[n]) );
+#endif
 	}
 
 #ifdef _DEBUG
-	memset( reinterpret_cast<void*>( pMemory ), 0xDD, sizeof(*pMemory) );
+	memset( reinterpret_cast<void *>( pMemory ), 0xDD, sizeof(*pMemory) );
 #endif
 }
 
