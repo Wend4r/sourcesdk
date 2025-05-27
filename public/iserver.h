@@ -24,6 +24,7 @@
 #include <qlimits.h>
 #include <resourcefile/resourcetype.h>
 #include <tier0/checksum_crc.h>
+#include <steam/steamnetworkingtypes.h>
 
 enum server_state_t : int
 {
@@ -203,7 +204,7 @@ public:
 
 	virtual void	StartHLTVMaster() = 0;
 
-	virtual CServerSideClientBase *ConnectClient( const char *pszName, ns_address *pAddr, uint32 hSocket, const C2S_CONNECT_Message &msg, 
+	virtual CServerSideClientBase *ConnectClient( const char *pszName, ns_address *pAddr, HSteamNetConnection hPeer, const C2S_CONNECT_Message &msg, 
 	                                              const char *pszDecryptedPassword, const byte *pAuthTicket, int nAuthTicketLength, bool bIsLowViolence ) = 0;
 	virtual CServerSideClientBase *CreateNewClient( CPlayerSlot slot ) = 0;
 	
