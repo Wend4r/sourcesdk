@@ -130,7 +130,7 @@ jobs:
       run: |
         echo "CC=${{ matrix.compiler.cc }}" >> $GITHUB_ENV
         echo "CXX=${{ matrix.compiler.cxx }}" >> $GITHUB_ENV
-        echo "CPLUS_INCLUDE_PATH=/usr/lib/gcc-14/include/c++/14:/usr/lib/gcc-14/include/c++/14/x86_64-linux-gnu:/usr/lib/gcc-14/include/c++/14/backward" >> $GITHUB_ENV
+        echo "CPLUS_INCLUDE_PATH=/usr/lib/gcc-14/x86_64-linux-gnu/include/c++/14:/usr/lib/gcc-14/x86_64-linux-gnu/include/c++/14/x86_64-linux-gnu:/usr/lib/gcc-14/x86_64-linux-gnu/include/c++/14/backward" >> $GITHUB_ENV
         echo "LIBRARY_PATH=/usr/lib/gcc-14/lib/gcc/x86_64-linux-gnu/14" >> $GITHUB_ENV
         echo "LD_LIBRARY_PATH=/usr/lib/gcc-14/lib/gcc/x86_64-linux-gnu/14" >> $GITHUB_ENV
 
