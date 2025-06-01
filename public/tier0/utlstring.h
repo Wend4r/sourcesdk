@@ -408,4 +408,11 @@ template < typename T > struct UTLConstStringCaselessStringEqualFunctor { bool o
 inline bool UtlStringLessFunc( const CUtlString &lhs, const CUtlString &rhs ) { return V_strcmp( lhs.Get(), rhs.Get() ) < 0; } 
 inline bool UtlStringCaseInsensitiveLessFunc( const CUtlString &lhs, const CUtlString &rhs ) { return V_stricmp( lhs.Get(), rhs.Get() ) < 0; } 
 
+// Literal operator for convenient inline CUtlString creation.
+inline CUtlString operator""_utls( const char *pString, size_t nLen )
+{
+	return CUtlString( pString, nLen );
+}
+
+
 #endif // UTLSTRING_H
