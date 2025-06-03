@@ -67,6 +67,9 @@ public:
 	virtual ConVarRef		FindConVar( const char *name, bool allow_defensive = false ) = 0;
 	virtual ConVarRef		FindFirstConVar() = 0;
 	virtual ConVarRef		FindNextConVar( ConVarRef prev ) = 0;
+#if defined(DEADLOCK)
+	virtual void unk000(int64 a1, uint16 a2, uint32 a3, int64 a4, int64 a5, int64 a6) = 0;
+#endif
 	virtual void			CallChangeCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t* pNewValue, const CVValue_t* pOldValue ) = 0;
 
 	// allow_defensive - Allows finding commands with FCVAR_DEFENSIVE flag
@@ -106,6 +109,10 @@ public:
 	// Removes FCVAR_DEVELOPMENTONLY | FCVAR_DEFENSIVE from all cvars and concommands
 	// that have FCVAR_DEFENSIVE set
 	virtual void				StripDevelopmentFlags() = 0;
+#if defined(DEADLOCK)
+	virtual int64 unk002(int64 a1) = 0;
+	virtual void unk003(int64 a1, int64 a2, uint64 a3, uint64 a4, char a5) = 0;
+#endif
 
 	// Register, unregister vars
 	virtual void				RegisterConVar( const ConVarCreation_t& setup, uint64 nAdditionalFlags, ConVarRef* pCvarRef, ConVarData** pCvarData ) = 0;
@@ -113,7 +120,7 @@ public:
 	// so all ConVarRefs would still be valid as well as searching for it.
 	// Expects ref to have registered index to be set (is set on convar creation)
 	virtual void				UnregisterConVarCallbacks( ConVarRef cvar ) = 0;
-#ifdef DOTA2
+#if defined(DOTA2) || defined(DEADLOCK)
 	// Prevents default value initialisation on convars if state equals true and queues them instead,
 	// unlocks and initialises queued convars to default values if state is false
 	virtual void				LockConVarValueInitialisation( bool state ) = 0;
