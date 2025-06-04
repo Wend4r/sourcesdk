@@ -18,6 +18,8 @@
 #include "tier1/utldelegate.h"
 #include <eiface.h>
 
+#define MAX_NETCHANNELL_CATEGORY_ID 32
+
 class	IDemoRecorderBase;
 class	IInstantReplayIntercept;
 class	CNetMessage;
@@ -31,9 +33,42 @@ class	INetMessageDispatcher;
 class	InstantReplayMessage_t;
 struct	CUtlSlot;
 
+FORWARD_DECLARE_HANDLE(NetMessageHandle_t);
+
+enum SignonGroup_t : int8
+{
+	SG_INVALID = -1,
+	SG_GENERIC = 0,	// must be first and is default group
+	SG_LOCALPLAYER,
+	SG_OTHERPLAYER,
+	SG_ENTITIES,
+	SG_SOUNDS,			// game sounds
+	SG_EVENTS,			// event messages
+	SG_VOICE,
+	SG_STRINGTABLE,	// a stringtable update
+	SG_MOVE,			// client move cmds
+	SG_STRINGCMD,		// string command
+	SG_SIGNON,			// various signondata
+	SG_SYSTEM,
+	SG_USERMSG = 13,
+	SG_CLIENTMSG,
+	SG_SPAWNGROUPS,
+	SG_ENGINE,
+	SG_HLTVREPLAY,
+	SG_TOTAL,			// must be last and is not a real group
+};
+
+enum NetChannelBufType_t : int8
+{
+	BUF_DEFAULT = -1,
+	BUF_UNRELIABLE = 0,
+	BUF_RELIABLE,
+	BUF_VOICE,
+};
+
 #ifndef NET_PACKET_ST_DEFINED
 #define NET_PACKET_ST_DEFINED
-struct NetPacket_t
+struct netpacket_s
 {
 	netadr_t		from;		// sender IP
 	int				source;		// received source
@@ -43,17 +78,12 @@ struct NetPacket_t
 	int				size;		// size in bytes
 	int				wiresize;   // size in bytes before decompression
 	bool			stream;		// was send as stream
-	struct NetPacket_t *pNext;	// for internal use, should be NULL in public
+	struct netpacket_s *pNext;	// for internal use, should be NULL in public
 };
 #endif // NET_PACKET_ST_DEFINED
 
-enum NetChannelBufType_t : int8
-{
-	BUF_DEFAULT = -1,
-	BUF_UNRELIABLE = 0,
-	BUF_RELIABLE,
-	BUF_VOICE,
-};
+using netpacket_t = netpacket_s;
+using NetPacket_t = netpacket_t;
 
 abstract_class INetworkChannelNotify
 {
@@ -147,8 +177,9 @@ public:
 	virtual int		GetCurrentNetMessageBits( void ) const = 0;
 	virtual int		GetCurrentNetMessageInSequenceNr( void ) const = 0;
 
-	virtual void	unk211() = 0;
-	virtual void	unk212() = 0;
+	virtual void	unk101( void ) = 0;
+	virtual void	unk102( void ) = 0;
+	virtual void	unk103( void ) = 0;
 };
 
 

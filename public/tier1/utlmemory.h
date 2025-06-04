@@ -106,11 +106,8 @@ public:
 	bool IsIdxValid( I i ) const;
 
 	// Specify the invalid ('null') index that we'll only return on failure
-#if __cplusplus >= 201703L
 	static inline const I INVALID_INDEX = ( I )-1; // For use with COMPILE_TIME_ASSERT
-#else
-	static const I INVALID_INDEX = ( I )-1; // For use with COMPILE_TIME_ASSERT
-#endif
+
 	static I InvalidIndex() { return INVALID_INDEX; }
 
 	// Gets the base address (can change when adding elements!)

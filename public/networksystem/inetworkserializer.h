@@ -29,9 +29,10 @@ enum NetworkSerializationMode_t
 	NET_SERIALIZATION_MODE_CLIENT = 0x1,
 };
 
-typedef uint16 NetworkMessageId;
-typedef uint8 NetworkGroupId;
-typedef uint NetworkCategoryId;
+typedef int16 NetworkMessageId;
+typedef int8 NetworkGroupId;
+typedef int NetworkCategoryId;
+typedef int16 NetworkContextDataId;
 
 struct NetMessageInfo_t
 {
@@ -59,9 +60,9 @@ public:
 	virtual const char *GetUnscopedName() = 0;
 	virtual NetMessageInfo_t *GetNetMessageInfo() = 0;
 
-	virtual void SetMessageId( unsigned short nMessageId ) = 0;
+	virtual void SetMessageId( NetworkMessageId nMessageId ) = 0;
 
-	virtual void AddCategoryMask( int nMask, bool ) = 0;
+	virtual void AddCategoryMask( uint32 nMask, bool bOverrideField = false ) = 0;
 
 	virtual void SwitchMode( NetworkValidationMode_t nMode ) = 0;
 
@@ -72,5 +73,7 @@ public:
 	// Calls to INetworkMessages::UnserializeMessageInternal
 	virtual bool Unserialize( bf_read &pBuf, CNetMessage *pData ) = 0;
 };
+
+using INetworkSerializerPB = INetworkMessageInternal;
 
 #endif /* NETWORKSERIALIZER_H */

@@ -22,7 +22,9 @@ struct ChangeAccessorFieldPathIndex_t
 {
 	ChangeAccessorFieldPathIndex_t() { m_Value = -1; }
 	ChangeAccessorFieldPathIndex_t( int32 value ) { m_Value = value; }
-	
+
+	ChangeAccessorFieldPathIndex_t& operator=( int32 value ) { m_Value = value; return *this; }
+
 	int32 m_Value;
 };
 

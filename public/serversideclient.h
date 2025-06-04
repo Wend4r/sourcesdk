@@ -6,7 +6,6 @@
 #endif
 
 #include <inetchannel.h>
-#include <netmessages.h>
 #include <playerslot.h>
 #include <playeruserid.h>
 // #include <protocol.h> // @Wend4r: use <netmessages.pb.h> instead.
@@ -27,6 +26,25 @@ class CHLTVServer;
 class INetMessage;
 class CNetworkGameServerBase;
 class CNetworkGameServer;
+
+class CNETMsg_StringCmd_t;
+class CNETMsg_Tick_t;
+class CNETMsg_SpawnGroup_LoadCompleted_t;
+class CCLCMsg_ClientInfo_t;
+class CCLCMsg_BaselineAck_t;
+class CCLCMsg_LoadingProgress_t;
+class CCLCMsg_SplitPlayerConnect_t;
+class CCLCMsg_SplitPlayerDisconnect_t;
+class CCLCMsg_CmdKeyValues_t;
+class CCLCMsg_Move_t;
+class CCLCMsg_VoiceData_t;
+class CCLCMsg_FileCRCCheck_t;
+class CCLCMsg_RespondCvarValue_t;
+class NetMessagePacketStart_t;
+class NetMessagePacketEnd_t;
+class NetMessageConnectionClosed_t;
+class NetMessageConnectionCrashed_t;
+class NetMessageSplitscreenUserChanged_t;
 
 struct HltvReplayStats_t {
 	enum FailEnum_t {

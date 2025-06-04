@@ -2263,19 +2263,19 @@ inline void Destruct( T (*pMemory)[N] )
 #include "tier0/memdbgon.h"
 
 template <class T>
-inline T *Alloc()
+inline T *Alloc( size_t nSize = 1 )
 {
-	return reinterpret_cast<T *>( malloc( sizeof(T) ) );
+	return reinterpret_cast<T *>( malloc( nSize * sizeof(T) ) );
 }
 
 template <class T, size_t N>
-inline T **Alloc()
+inline T **Alloc( size_t nSize = 1 )
 {
 	T **pMemories = reinterpret_cast<T **>( malloc( sizeof(T *) * N ) );
 
 	for ( size_t n = 0; n < N; n++ )
 	{
-		pMemories[n] = reinterpret_cast<T *>( malloc( sizeof(T) ) );
+		pMemories[n] = reinterpret_cast<T *>( malloc( nSize * sizeof(T) ) );
 
 	#ifdef _DEBUG
 		memset( reinterpret_cast<void *>( pMemories[n] ), 0xDD, sizeof(*pMemories[n]) );

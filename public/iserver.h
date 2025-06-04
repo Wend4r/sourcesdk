@@ -49,6 +49,7 @@ class INetworkGameClient;
 class KeyValues3;
 class CPureServerWhitelist;
 class CServerSideClientBase;
+class CSVCMsg_ServerInfo_t;
 class CCLCMsg_SplitPlayerConnect_t;
 class C2S_CONNECT_Message;
 class CNetworkStringTableContainer;
@@ -57,9 +58,7 @@ class CNetworkServerSpawnGroupCreatePrerequisites;
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
 
-class CSVCMsg_ServerInfo_t : public CNetMessagePB<CSVCMsg_ServerInfo>
-{
-};
+using CUtlClientVector = CUtlVector< CServerSideClientBase *, CPlayerSlot >;
 
 struct SplitDisconnect_t {
 	CServerSideClientBase* m_pUser;
@@ -214,6 +213,26 @@ public:
 	virtual bool	CheckPassword( const ns_address &addr, const char *password ) = 0;
 
 	virtual void	CalculateCPUUsage() = 0;
+
+	const CUtlClientVector &GetClients() const { return m_Clients; }
+	CServerSideClientBase *GetClientBySlot_unsafe( CPlayerSlot slot ) const { return GetClients()[slot]; }
+	CServerSideClientBase *GetClientBySlot( CPlayerSlot slot ) const
+	{
+		if ( !slot.IsValid() )
+		{
+			return nullptr;
+		}
+
+		const auto &vecClients = GetClients();
+
+		if ( !( 0 <= slot && slot < vecClients.Count() ) )
+		{
+			return nullptr;
+		}
+
+		return vecClients[slot];
+	}
+
 public:
 	// @boeing666: offsets only for linux
 	char pad16[16]; // 16
@@ -243,7 +262,7 @@ public:
 	bf_write m_Signon; // 576
 	CUtlMemory<byte> m_SignonBuffer; // 616
 	bool m_bIsBackgroundMap; // 632
-	CUtlVector<CServerSideClientBase*> m_Clients; // 640
+	CUtlClientVector m_Clients; // 640
 	char pad664[20]; // 664
 	CUtlMemory<byte> m_unk688; // 688
 	char pad704[16]; // 704
@@ -311,7 +330,8 @@ abstract_class INetworkServerService : public IEngineService
 {
 public:
 	virtual ~INetworkServerService() {}
-	virtual CNetworkGameServerBase	*GetIGameServer( void ) = 0;
+	virtual CNetworkGameServer	*GetNetworkServer( void ) = 0;
+	CNetworkGameServerBase *GetIGameServer( void ) { return static_cast<CNetworkGameServerBase *>( GetNetworkServer() ); }
 	virtual bool	IsActiveInGame( void ) const = 0;
 	virtual bool	IsMultiplayer( void ) const = 0;
 	virtual void	StartupServer( const GameSessionConfiguration_t &config, ISource2WorldSession *pWorldSession, const char * ) = 0;

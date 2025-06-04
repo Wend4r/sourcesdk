@@ -34,25 +34,6 @@ struct NetChanStat_t
 class INetChannelInfo
 {
 public:
-
-	enum {
-		GENERIC = 0,	// must be first and is default group
-		LOCALPLAYER,	// bytes for local player entity update
-		OTHERPLAYERS,	// bytes for other players update
-		ENTITIES,		// all other entity bytes
-		SOUNDS,			// game sounds
-		EVENTS,			// event messages
-		TEMPENTS,		// temp entities
-		USERMESSAGES,	// user messages
-		ENTMESSAGES,	// entity messages
-		VOICE,			// voice data
-		STRINGTABLE,	// a stringtable update
-		MOVE,			// client move cmds
-		STRINGCMD,		// string command
-		SIGNON,			// various signondata
-		TOTAL,			// must be last and is not a real group
-	};
-	
 	virtual const char  *GetName( void ) const = 0;	// get channel name
 	virtual const char  *GetAddress( void ) const = 0; // get channel IP address as string
 	virtual float		GetTime( void ) const = 0;	// current net time
@@ -70,9 +51,8 @@ public:
 	
 	virtual float		GetAvgLoss( int flow ) const = 0;	 // avg packet loss[0..1]
 	virtual float		GetAvgChoke(int flow) const = 0;
+	virtual float		GetAvgUnk( int flow ) const = 0;
 	virtual float		GetAvgData( int flow ) const = 0;	 // data flow in bytes/sec
-	
-	virtual float		unk001( int flow ) const = 0;
 	
 	virtual float		GetAvgPackets( int flow ) const = 0; // avg packets/sec
 	virtual int			GetTotalData( int flow ) const = 0;	 // total flow in/out in bytes
@@ -84,7 +64,7 @@ public:
 	virtual float		GetTimeoutSeconds( void ) const = 0;
 	virtual float		GetTimeUntilTimeout( void ) const = 0;
 	
-	virtual void		unk101() = 0;
+	virtual void		unk024( void ) const = 0;
 	
 	virtual void		ResetLatencyStats( int channel ) = 0;
 	virtual SNetChannelLatencyStats *GetLatencyStats( int channel ) const = 0;
@@ -94,9 +74,10 @@ public:
 	virtual void		SetNumPredictionErrors( int num ) = 0;
 	virtual void		SetShowNetMessages( bool show ) = 0;
 
-	virtual void		unk201() = 0;
-	virtual void		unk202() = 0;
-	virtual void		unk203() = 0;
+	virtual void*		unk031( int unk1, int unk2, int* unk3 ) = 0;
+
+	virtual void*		unk032( int unk1, int* unk2, int unk3 ) = 0;
+	virtual void*		unk033( int unk1, void* unk2 ) = 0;
 };
 
 #endif // INETCHANNELINFO_H
