@@ -1517,7 +1517,6 @@ private:
 	void _funcname( const CCommandContext &context, const CCommand &args )
 
 #define CON_COMMAND_MEMBER_F( _thisclass, name, _funcname, description, flags ) \
-	void _funcname( const CCommandContext &context, const CCommand &args );						\
 	friend class CCommandMemberInitializer_##_funcname;			\
 	class CCommandMemberInitializer_##_funcname					\
 	{															\
@@ -1531,5 +1530,6 @@ private:
 	};															\
 																\
 	CCommandMemberInitializer_##_funcname m_##_funcname##_register;		\
+	void _funcname( const CCommandContext &context, const CCommand &args )
 
 #endif // CONVAR_H
