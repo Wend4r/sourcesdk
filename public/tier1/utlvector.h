@@ -72,10 +72,6 @@ public:
 	// The container will not be growable.
 	CUtlVectorBase( T* pMemory, I initialCapacity, I initialCount = 0 );
 
-	// Pass a type to raw allocator.
-	CUtlVectorBase( I growSize, I initialCapacity, RawAllocatorType_t allocatorType );
-	CUtlVectorBase( T* pMemory, I initialCapacity, I initialCount, RawAllocatorType_t allocatorType );
-
 	CUtlVectorBase( const CUtlVectorBase<T, I, A> &copyFrom );
 	CUtlVectorBase( CUtlVectorBase<T, I, A> &&moveFrom );
 
@@ -108,6 +104,35 @@ public:
 	// Gets the base address (can change when adding elements!)
 	T* Base()								{ return m_Memory.Base(); }
 	const T* Base() const					{ return m_Memory.Base(); }
+
+	// Attaches the buffer to external memory....
+	void SetExternalBuffer( T *pMemory, int allocationCount, int numElements = 0 )
+	{
+		m_Memory.SetExternalBuffer( pMemory, allocationCount );
+		m_Size = numElements;
+	}
+	void SetExternalBuffer( const T *pMemory, int allocationCount, int numElements = 0 )
+	{
+		m_Memory.SetExternalBuffer( pMemory, allocationCount );
+		m_Size = numElements;
+	}
+
+	void AssumeMemory( T *pMemory, int allocationCount, int numElements = 0 )
+	{
+		m_Memory.AssumeMemory( pMemory, allocationCount );
+		m_Size = numElements;
+	}
+
+	T *Detach()
+	{
+		m_Size = 0;
+		return m_Memory.Detach();
+	}
+	void *DetachMemory()
+	{
+		m_Size = 0;
+		return m_Memory.DetachMemory();
+	}
 
 	// Returns the number of elements in the vector
 	I Count() const;
@@ -284,8 +309,8 @@ class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlMemory_RawAlloc
 	typedef CUtlVectorBase< T, I, CUtlMemory_RawAllocator<T, I> > BaseClass;
 
 public:
-	explicit CUtlVector_RawAllocator( I growSize = 0, I initSize = 0, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( growSize, initSize, allocatorType ) {}
-	CUtlVector_RawAllocator( T* pMemory, I allocationCount, I numElements, RawAllocatorType_t allocatorType = RawAllocator_Standard ) : BaseClass( pMemory, allocationCount, numElements, allocatorType ) {}
+	explicit CUtlVector_RawAllocator( I growSize = 0, I initSize = 0 ) : BaseClass( growSize, initSize ) {}
+	CUtlVector_RawAllocator( T* pMemory, I allocationCount, I numElements ) : BaseClass( pMemory, allocationCount, numElements ) {}
 };
 
 // this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
@@ -712,20 +737,6 @@ inline CUtlVectorBase<T, I, A>::CUtlVectorBase( I growSize, I initSize )	:
 template< typename T, typename I, class A >
 inline CUtlVectorBase<T, I, A>::CUtlVectorBase( T* pMemory, I allocationCount, I numElements )	: 
 	m_Size(numElements), m_Memory(pMemory, allocationCount)
-{
-	ResetDbgInfo();
-}
-
-template< typename T, typename I, class A >
-inline CUtlVectorBase<T, I, A>::CUtlVectorBase( I growSize, I initSize, RawAllocatorType_t allocatorType )	: 
-	m_Size(0), m_Memory(growSize, initSize, allocatorType)
-{
-	ResetDbgInfo();
-}
-
-template< typename T, typename I, class A >
-inline CUtlVectorBase<T, I, A>::CUtlVectorBase( T* pMemory, I allocationCount, I numElements, RawAllocatorType_t allocatorType )	: 
-	m_Size(numElements), m_Memory(pMemory, allocationCount, allocatorType)
 {
 	ResetDbgInfo();
 }
