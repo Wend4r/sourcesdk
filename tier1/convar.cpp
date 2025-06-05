@@ -599,8 +599,11 @@ void ConVarRefAbstract::CallChangeCallbacks( CSplitScreenSlot slot, CVValue_t *n
 	if(slot.Get() == -1)
 		slot = CSplitScreenSlot( 0 );
 
-	g_pCVar->CallChangeCallback( *this, slot, new_value, prev_value );
-	g_pCVar->CallGlobalChangeCallbacks( this, slot, new_str, prev_str );
+	if( g_pCVar )
+	{
+		g_pCVar->CallChangeCallback( *this, slot, new_value, prev_value );
+		g_pCVar->CallGlobalChangeCallbacks( this, slot, new_str, prev_str );
+	}
 }
 
 void ConVarRefAbstract::SetOrQueueValueInternal( CSplitScreenSlot slot, CVValue_t *value )

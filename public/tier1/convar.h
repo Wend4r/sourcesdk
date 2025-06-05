@@ -1187,7 +1187,7 @@ protected:
 	{
 		Assert( name );
 
-		Init( ConVarRef(), TranslateConVarType<T>() );
+		Init( ConVarRef( name ), TranslateConVarType<T>() );
 
 		ConVarCreation_t info;
 		info.m_pszName = name;
@@ -1212,7 +1212,7 @@ public:
 	{
 		Assert( name );
 
-		BaseClass::Init( ConVarRef(), TranslateConVarType<T>() );
+		BaseClass::Init( ConVarRef( name ), TranslateConVarType<T>() );
 
 		ConVarValueInfo_t value_info( TranslateConVarType<T>() );
 		value_info.SetDefaultValue( default_value );
@@ -1226,7 +1226,7 @@ public:
 	{
 		Assert( name );
 
-		BaseClass::Init( ConVarRef(), TranslateConVarType<T>() );
+		BaseClass::Init( ConVarRef( name ), TranslateConVarType<T>() );
 
 		ConVarValueInfo_t value_info( TranslateConVarType<T>() );
 		value_info.SetDefaultValue( default_value );
