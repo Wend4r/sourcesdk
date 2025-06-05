@@ -35,7 +35,6 @@
 static FnConVarRegisterCallback s_ConVarRegCB = nullptr;
 static FnConCommandRegisterCallback s_ConCommandRegCB = nullptr;
 static uint64 s_nCVarFlag = 0;
-static bool s_bRegistered = false;
 
 class ConCommandRegList
 {
@@ -191,11 +190,6 @@ public:
 
 	static bool RegisterAll()
 	{
-		if ( g_pCVar )
-		{
-			return false;
-		}
-
 		for ( auto list = s_pRoot; list; list = list->m_pPrev )
 		{
 			for(size_t i = 0; i < list->m_nSize; i++)
@@ -209,11 +203,6 @@ public:
 
 	static bool UnregisterAll()
 	{
-		if ( g_pCVar )
-		{
-			return false;
-		}
-
 		for ( auto list = s_pRoot; list; list = list->m_pPrev )
 		{
 			for ( size_t i = 0; i < list->m_nSize; i++ )
@@ -297,12 +286,11 @@ uint64 SanitiseConVarFlags( uint64 flags )
 //-----------------------------------------------------------------------------
 void ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb )
 {
-	if ( !g_pCVar || s_bRegistered )
+	if ( !g_pCVar )
 	{
 		return;
 	}
 
-	s_bRegistered = true;
 	s_nCVarFlag = nCVarFlag;
 	s_ConVarRegCB = cvar_reg_cb;
 	s_ConCommandRegCB = cmd_reg_cb;
@@ -313,13 +301,11 @@ void ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, Fn
 
 void ConVar_Unregister( )
 {
-	if ( !g_pCVar || !s_bRegistered )
+	if ( !g_pCVar )
 		return;
 
 	ConCommandRegList::UnregisterAll();
 	ConVarRegList::UnregisterAll();
-
-	s_bRegistered = false;
 }
 
 

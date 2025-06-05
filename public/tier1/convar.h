@@ -1167,7 +1167,7 @@ public:
 		if(ref.GetType() == TranslateConVarType<T>())
 			CopyRef( ref );
 		else
-			Init( ConVarRef(), TranslateConVarType<T>() );
+			Init( ConVarRef( ref.GetName() ), TranslateConVarType<T>() );
 	}
 
 	// Constructs typed cvar ref if the type matches, otherwise this would be initialised to invalid convar data!
