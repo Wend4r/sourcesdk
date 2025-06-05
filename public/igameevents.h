@@ -23,10 +23,10 @@
 #include "tier1/keyvalues3.h"
 #include "entity2/entityinstance.h"
 #include "vscript/ivscript.h"
+#include "networksystem/netmessage.h"
 
-class CMsgSource1LegacyGameEvent;
-template<typename PROTO_TYPE>
-class CNetMessagePB;
+#include <gameevents.pb.h>
+
 class CPlayerSlot;
 class CBasePlayer;
 class CEntityIndex;
@@ -35,6 +35,9 @@ class CBaseEntity;
 class CEntityInstance;
 class CBasePlayerController;
 class CBasePlayerPawn;
+
+class CMsgSource1LegacyGameEvent_t : public CNetMessagePB< GE_Source1LegacyGameEvent, CMsgSource1LegacyGameEvent, SG_EVENTS > {};
+
 //-----------------------------------------------------------------------------
 // Purpose: Engine interface into global game event management
 //-----------------------------------------------------------------------------
@@ -192,8 +195,8 @@ public:
 	virtual void FreeEvent( IGameEvent *event ) = 0;
 
 	// write/read event to/from bitbuffer
-	virtual bool SerializeEvent( IGameEvent *event, CNetMessagePB<CMsgSource1LegacyGameEvent> *ev ) = 0;
-	virtual IGameEvent *UnserializeEvent( const CNetMessagePB<CMsgSource1LegacyGameEvent> &ev ) = 0; // create new KeyValues, must be deleted
+	virtual bool SerializeEvent( IGameEvent *event, CMsgSource1LegacyGameEvent_t *ev ) = 0;
+	virtual IGameEvent *UnserializeEvent( const CMsgSource1LegacyGameEvent_t &ev ) = 0; // create new KeyValues, must be deleted
 	
 	virtual int LookupEventId( const char *name ) = 0;
 	

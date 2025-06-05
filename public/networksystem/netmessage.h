@@ -38,7 +38,7 @@ constexpr const char *g_kNetGroupNames[ SG_TOTAL ] =
 class CNetMessage
 {
 public:
-	CNetMessage() : m_dbRecivedTime(-1.0), m_nSignatrue(0llu), m_nSendCount(-1), m_flMargin(-1.0f) {}
+	CNetMessage( NetChannelBufType_t bufType = BUF_RELIABLE ) : m_dbRecivedTime( -1.0 ), m_nSignatrue( 0llu ), m_bufType( bufType ), m_nSendCount( -1 ), m_flMargin( -1.0f ) {}
 	CNetMessage( const CNetMessage &copyFrom ) = default;
 	CNetMessage( CNetMessage &&moveFrom ) = default;
 	CNetMessage &operator=( const CNetMessage &copyFrom ) = default;
@@ -168,7 +168,7 @@ public:
 	} sm_binding;
 
 public:
-	CNetMessagePB() : CNetMessage(), PBType_t() {}
+	CNetMessagePB() : CNetMessage( kBufType ), PBType_t() {}
 	CNetMessagePB( const MyType_t &copyFrom ) = default;
 	CNetMessagePB( MyType_t &&moveFrom ) = default;
 	MyType_t &operator=( const MyType_t &copyFrom ) = default;

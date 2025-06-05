@@ -18,7 +18,6 @@
 #include <inetmsghandler.h>
 #include <netadr.h>
 #include <networkstringtabledefs.h>
-#include <networksystem/netmessage.h>
 #include <ns_address.h>
 #include <playeruserid.h>
 #include <qlimits.h>

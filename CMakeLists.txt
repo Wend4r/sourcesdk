@@ -63,6 +63,7 @@ set(SOURCESDK_NEEDED_PROTOS
 	network_connection
 	networkbasetypes
 	networksystem_protomessages
+	gameevents
 	usermessages
 )
 
