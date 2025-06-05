@@ -1,3 +1,7 @@
+#ifndef CSTRIKE15_USERCMD_H
+#define CSTRIKE15_USERCMD_H
+
+#pragma once
 
 #include <basetypes.h>
 
@@ -81,3 +85,5 @@ public:
 };
 
 using CUserCmd = CCSGOUserCmd;
+
+#endif // CSTRIKE15_USERCMD_H
