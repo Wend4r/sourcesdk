@@ -569,18 +569,20 @@ void ConVarData::MaxValueToString( CBufferString &buf ) const
 }
 
 ConVarRef::ConVarRef( const char *name, bool allow_developer )
+ :  m_ConVarAccessIndex( kInvalidAccessIndex ), m_ConVarRegisteredIndex( 0 )
 {
-	*this = g_pCVar->FindConVar( name, allow_developer );
+	if ( g_pCVar )
+		*this = g_pCVar->FindConVar( name, allow_developer );
 }
 
 void ConVarRefAbstract::Init( ConVarRef ref, EConVarType type )
 {
 	m_ConVarData = nullptr;
 
-	if(g_pCVar)
+	if ( g_pCVar )
 		m_ConVarData = g_pCVar->GetConVarData( ref );
 	
-	if(!m_ConVarData)
+	if( !m_ConVarData )
 		InvalidateConVarData( type );
 }
 
