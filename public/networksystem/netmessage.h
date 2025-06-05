@@ -55,12 +55,12 @@ public:
 	// Helper function to cast up the abstract message to a concrete T message type.
 	// Doesn't do any validity checks itself!
 	template< typename T > T *As() { return static_cast< T * >( this ); }
-	template< typename T > const T *As() const { sizeof(CNetMessage); return static_cast< const T * >( this ); }
+	template< typename T > const T *As() const { return static_cast< const T * >( this ); }
 
 	double GetRecivedTime() const { return m_dbRecivedTime; }
 	uint64 GetSignature() const { return m_nSignatrue; }
 	NetChannelBufType_t GetBufType() const { return m_bufType; }
-	int GetSendCount() const { sizeof(CNetMessage); return m_nSendCount; }
+	int GetSendCount() const { return m_nSendCount; }
 	float GetMargin() const { return m_flMargin; }
 
 private:
