@@ -24,6 +24,17 @@ public:
 	static int InvalidIndex() { return INVALID_PLAYER_SLOT; }
 	bool IsValid() const { return m_Data != InvalidIndex(); }
 
+	CPlayerSlot& operator++() {
+		++m_Data;
+		return *this;
+	}
+
+	CPlayerSlot operator++(int) {
+		CPlayerSlot temp = *this;
+		++(*this);
+		return temp;
+	}
+
 private:
 	int m_Data;
 };
