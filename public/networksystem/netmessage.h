@@ -7,8 +7,8 @@
 
 #include "platform.h"
 #include "iserver.h"
-#include "inetworkmessages.h"
 #include "serversideclient.h"
+#include "networksystem/inetworkmessages.h"
 #include "networksystem/inetworkserializer.h"
 
 #include <typeinfo>

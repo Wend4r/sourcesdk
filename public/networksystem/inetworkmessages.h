@@ -8,7 +8,6 @@
 #include <eiface.h>
 
 #include "inetworkserializer.h"
-#include "netmessage.h"
 #include <tier1/bitbuf.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlsymbol.h>
