@@ -1078,17 +1078,17 @@ inline unsigned short float16::ConvertFloatTo16bitsNonDefault( float input )
 	*/
 	output.bits.sign = inFloat.bits.sign;
 
-	if ( (inFloat.bits.biased_exponent==0) ) 
+	if ( !inFloat.bits.biased_exponent ) 
 	{ 
 		// zero and denorm both map to zero
 		output.bits.mantissa = 0;
 		output.bits.biased_exponent = 0;
 	}
-	else if ( inFloat.bits.biased_exponent==0xff )
+	else if ( inFloat.bits.biased_exponent == 0xff )
 	{
 		if ( !BRANCHLESS )
 		{
-			if ( (inFloat.bits.mantissa==0) ) 
+			if ( !inFloat.bits.mantissa ) 
 			{ 
 				/*
 				// infinity
@@ -1100,7 +1100,7 @@ inline unsigned short float16::ConvertFloatTo16bitsNonDefault( float input )
 				output.bits.mantissa = 0x3ff;
 				output.bits.biased_exponent = 0x1e;
 			}
-			else if ( (inFloat.bits.mantissa!=0) ) 
+			else if ( inFloat.bits.mantissa ) 
 			{ 
 				/*
 				// NaN
@@ -1192,7 +1192,7 @@ inline float float16::Convert16bitFloatTo32bits( unsigned short input )
 	{
 		return 0.0;
 	}
-	if( inFloat.bits.biased_exponent == 0 && inFloat.bits.mantissa != 0 )
+	if( !inFloat.bits.biased_exponent && inFloat.bits.mantissa )
 	{
 		// denorm
 		const float half_denorm = (1.0f/16384.0f); // 2^-14
