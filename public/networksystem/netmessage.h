@@ -94,7 +94,7 @@ public:
 	static constexpr NetChannelBufType_t kBufType = BUF_TYPE;
 	static constexpr bool kIsForServer = IS_FOR_SERVER;
 
-	static class CProtobufBinding : public IProtobufBinding
+	inline static class CProtobufBinding : public IProtobufBinding
 	{
 		virtual const char *GetName() const
 		{
