@@ -15,7 +15,7 @@
 
 #define DEFAULT_NETMESSAGE_COLOR Color(255, 255, 255, 255)
 
-constexpr const char *g_kNetGroupNames[ SG_TOTAL ] = 
+inline constexpr const char *k_pszNetGroupNames[ SG_TOTAL ] = 
 {
 	"Generic",
 	"Local Player",
@@ -124,10 +124,10 @@ public:
 
 		virtual const char *GetGroup() const
 		{
-			if constexpr ( !( 0 <= kSignonGroup && kSignonGroup < ARRAYSIZE(g_kNetGroupNames) ) )
+			if constexpr ( !( 0 <= kSignonGroup && kSignonGroup < ARRAYSIZE(k_pszNetGroupNames) ) )
 				return "Unknown";
 
-			return g_kNetGroupNames[ kSignonGroup ];
+			return k_pszNetGroupNames[ kSignonGroup ];
 		}
 
 		virtual Color GetGroupColor() const
