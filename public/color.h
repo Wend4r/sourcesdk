@@ -25,9 +25,9 @@ public:
 	Color(const Color& copyFrom) = default;
 	Color(Color&& moveFrom) = default;
 
-	Color()
+	Color(int color = 0)
 	{
-		*((int *)this) = 0;
+		*((int *)this) = color;
 	}
 	Color(int _r,int _g,int _b)
 	{
