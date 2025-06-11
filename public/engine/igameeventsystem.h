@@ -36,7 +36,7 @@ public:
 	// Providing nSize has no effect and is unused.
 	virtual void PostEventAbstract( CSplitScreenSlot nSlot, bool bLocalOnly, IRecipientFilter *pFilter,
 		INetworkMessageInternal *pEvent, const CNetMessage *pData, unsigned long nSize ) = 0;
-	virtual void PostEventAbstract( CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64 *clients,
+	virtual void PostEventAbstract2( CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64 *clients,
 		INetworkMessageInternal *pEvent, const CNetMessage *pData, unsigned long nSize, NetChannelBufType_t bufType ) = 0;
 
 	// Posts the event to all clients, even tho the function name tells otherwise
