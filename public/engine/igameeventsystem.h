@@ -34,10 +34,10 @@ public:
 	// clients pointer is a masked uint64 value where (client index - 1) is mapped to each bit.
 	// Providing nClientCount as -1 and clients pointer as NULL would post event to all available clients.
 	// Providing nSize has no effect and is unused.
-	virtual void PostEventAbstract( CSplitScreenSlot nSlot, bool bLocalOnly, IRecipientFilter *pFilter,
-		INetworkMessageInternal *pEvent, const CNetMessage *pData, unsigned long nSize ) = 0;
 	virtual void PostEventAbstract( CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64 *clients,
 		INetworkMessageInternal *pEvent, const CNetMessage *pData, unsigned long nSize, NetChannelBufType_t bufType ) = 0;
+	virtual void PostEventAbstract( CSplitScreenSlot nSlot, bool bLocalOnly, IRecipientFilter *pFilter,
+		INetworkMessageInternal *pEvent, const CNetMessage *pData, unsigned long nSize ) = 0;
 
 	// Posts the event to all clients, even tho the function name tells otherwise
 	// Providing nSize has no effect and is unused.
