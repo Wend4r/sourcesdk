@@ -131,6 +131,7 @@ public:
 	bool                     IsSpawned() const { return m_nSignonState >= SIGNONSTATE_NEW; }
 	bool                     IsActive() const { return m_nSignonState == SIGNONSTATE_FULL; }
 	virtual bool             IsFakeClient() const { return m_bFakePlayer; }
+	bool                     IsHLTV() const { return m_bIsHLTV; }
 	virtual bool             IsHumanPlayer() const { return false; }
 
 	// Is an actual human player or splitscreen player (not a bot and not a HLTV slot)
