@@ -27,6 +27,7 @@ class INetMessage;
 class CNetworkGameServerBase;
 class CNetworkGameServer;
 
+class CMsg_CVars;
 class CNETMsg_StringCmd_t;
 class CNETMsg_Tick_t;
 class CNETMsg_SpawnGroup_LoadCompleted_t;
@@ -105,7 +106,7 @@ public:
 	virtual void             Reactivate( CPlayerSlot nSlot ) = 0;
 	virtual void             SetServer( CNetworkGameServer *pNetServer ) = 0;
 	virtual void             Reconnect() = 0;
-	virtual void             Disconnect( ENetworkDisconnectionReason reason ) = 0;
+	virtual void             Disconnect( ENetworkDisconnectionReason reason, const char *pszInternalReason ) = 0;
 	virtual bool             CheckConnect() = 0;
 
 private:
@@ -120,11 +121,7 @@ public:
 
 	virtual bool             ExecuteStringCommand( const CNETMsg_StringCmd_t& msg ) = 0; // "false" trigger an anti spam counter to kick a client.
 	virtual void             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) = 0;
-
-#ifdef LINUX
-private:
-	virtual void             unk_17() = 0;
-#endif
+	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0; // "Client %d(%s) tried to send a RebroadcastSourceId msg.\n"
 
 public:
 	virtual void             ClientPrintf( PRINTF_FORMAT_STRING const char*, ...) = 0;
@@ -134,11 +131,11 @@ public:
 	bool                     IsSpawned() const { return m_nSignonState >= SIGNONSTATE_NEW; }
 	bool                     IsActive() const { return m_nSignonState == SIGNONSTATE_FULL; }
 	virtual bool             IsFakeClient() const { return m_bFakePlayer; }
-	virtual bool             IsHLTV() = 0;
+	virtual bool             IsHumanPlayer() const { return false; }
 
 	// Is an actual human player or splitscreen player (not a bot and not a HLTV slot)
-	virtual bool             IsHumanPlayer() const { return false; }
 	virtual bool             IsHearingClient( CPlayerSlot nSlot ) const { return false; }
+	virtual bool             IsProximityHearingClient() const = 0;
 	virtual bool             IsLowViolenceClient() const { return m_bLowViolence; }
 
 	virtual bool             IsSplitScreenUser() const { return m_bSplitScreenUser; }
@@ -148,8 +145,10 @@ public: // Message Handlers
 	virtual bool             ProcessTick( const CNETMsg_Tick_t& msg ) = 0;
 	virtual bool             ProcessStringCmd( const CNETMsg_StringCmd_t& msg ) = 0;
 
+public:
+	virtual bool             ApplyConVars( const CMsg_CVars &list ) = 0;
+
 private:
-	virtual bool             unk_27() = 0;
 	virtual bool             unk_28() = 0;
 
 public:
@@ -250,9 +249,6 @@ public:
 
 	virtual bool             ProcessSignonStateMsg( int state ) = 0;
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
-
-public: // INetworkMessageProcessingPreFilter
-	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0; // "Client %d(%s) tried to send a RebroadcastSourceId msg.\n"
 
 public:
 	CUtlString m_UserIDString; // 72
