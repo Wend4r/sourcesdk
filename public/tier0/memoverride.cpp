@@ -706,21 +706,23 @@ extern "C"
 #ifndef NO_MEMOVERRIDE_NEW_DELETE
 
 // ==== operator new (may return nullptr) ====
-void* operator new(std::size_t size) {
-	return AllocUnattributed(size);
-}
-
-void* operator new[](std::size_t size) {
-	return AllocUnattributed(size);
-}
-
-// ==== operator new (nothrow overloads are noexcept) ====
-void* operator new(std::size_t size, const std::nothrow_t&) noexcept
+void* operator new(size_t size)
 {
 	return AllocUnattributed(size);
 }
 
-void* operator new[](std::size_t size, const std::nothrow_t&) noexcept
+void* operator new[](size_t size)
+{
+	return AllocUnattributed(size);
+}
+
+// ==== operator new (nothrow overloads are noexcept) ====
+void* operator new(size_t size, const std::nothrow_t&) noexcept
+{
+	return AllocUnattributed(size);
+}
+
+void* operator new[](size_t size, const std::nothrow_t&) noexcept
 {
 	return AllocUnattributed(size);
 }
@@ -737,23 +739,23 @@ void operator delete[](void* ptr) noexcept
 }
 
 // ==== sized delete (must be noexcept) ====
-void operator delete(void* ptr, std::size_t) noexcept
+void operator delete(void* ptr, size_t) noexcept
 {
 	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
-void operator delete[](void* ptr, std::size_t) noexcept
+void operator delete[](void* ptr, size_t) noexcept
 {
 	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
 // ==== aligned new/delete (aligned new can throw, so not noexcept) ====
-void* operator new(std::size_t size, std::align_val_t)
+void* operator new(size_t size, std::align_val_t)
 {
 	return AllocUnattributed(size);
 }
 
-void* operator new[](std::size_t size, std::align_val_t)
+void* operator new[](size_t size, std::align_val_t)
 {
 	return AllocUnattributed(size);
 }
@@ -769,12 +771,12 @@ void operator delete[](void* ptr, std::align_val_t) noexcept
 	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
-void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept
+void operator delete(void* ptr, size_t, std::align_val_t) noexcept
 {
 	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
-void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept
+void operator delete[](void* ptr, size_t, std::align_val_t) noexcept
 {
 	if (ptr) g_pMemAlloc->Free(ptr);
 }
