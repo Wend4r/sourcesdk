@@ -431,7 +431,7 @@ inline void *ReallocUnattributed( void *pMem, size_t nSize )
 #define FREE_CALL
 #endif
 
-#ifndef _WIN32
+#if 0
 extern "C"
 {
 	
@@ -458,7 +458,7 @@ ALLOC_CALL void *calloc( size_t nCount, size_t nElementSize )
 }
 
 } // end extern "C"
-#endif // !defined( _WIN32 )
+#endif
 
 //-----------------------------------------------------------------------------
 // Non-standard MSVC functions that we're going to override to call our allocator

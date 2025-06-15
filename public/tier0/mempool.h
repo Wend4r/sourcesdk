@@ -251,7 +251,7 @@ public:
 			LOCAL_THREAD_LOCK();
 			if ( !m_pBase )
 			{
-				byte *pMemory = m_pBase = (byte *)malloc( ITEM_COUNT * ITEM_SIZE );
+				byte *pMemory = m_pBase = (byte *)MemAlloc_Alloc( ITEM_COUNT * ITEM_SIZE );
 				m_pLimit = m_pBase + ( ITEM_COUNT * ITEM_SIZE );
 
 				for ( int i = 0; i < ITEM_COUNT; i++ )
@@ -266,7 +266,7 @@ public:
 		if ( p )
 			return p;
 #endif
-		return malloc( ITEM_SIZE );
+		return MemAlloc_Alloc( ITEM_SIZE );
 	}
 
 	void Free( void *p )
@@ -276,7 +276,7 @@ public:
 			m_freeList.Push( (TSLNodeBase_t *)p );
 		else
 #endif
-			free( p );
+			g_pMemAlloc->Free( p );
 	}
 
 	void Clear()
@@ -284,7 +284,7 @@ public:
 #ifndef USE_MEM_DEBUG
 		if ( m_pBase )
 		{
-			free( m_pBase );
+			g_pMemAlloc->Free( m_pBase );
 		}
 		m_pBase = m_pLimit = 0;
 		Construct( &m_freeList );

@@ -395,17 +395,17 @@ class CUtlVectorUltraConservativeAllocator
 public:
 	static void *Alloc( size_t nSize )
 	{
-		return malloc( nSize );
+		return MemAlloc_Alloc( nSize );
 	}
 
 	static void *Realloc( void *pMem, size_t nSize )
 	{
-		return realloc( pMem, nSize );
+		return g_pMemAlloc->Realloc( pMem, nSize );
 	}
 
 	static void Free( void *pMem )
 	{
-		free( pMem );
+		g_pMemAlloc->Free( pMem );
 	}
 
 	static size_t GetSize( void *pMem )

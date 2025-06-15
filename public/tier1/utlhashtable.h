@@ -374,7 +374,7 @@ void CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DoReal
 
 			if ( nBytes >= 0x4000 )
 			{
-				pOldBase = (entry_t *)malloc( nBytes );
+				pOldBase = (entry_t *)MemAlloc_Alloc( nBytes );
 				oldTable.AssumeMemory( pOldBase, nOldSize, RawAllocator_Standard );
 			}
 			else

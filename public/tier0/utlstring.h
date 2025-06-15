@@ -370,7 +370,7 @@ void CUtlConstStringBase<T>::Set( const T *pValue )
 {
 	if ( pValue != m_pString )
 	{
-		free( ( void* ) m_pString );
+		g_pMemAlloc->Free( ( void* ) m_pString );
 		m_pString = pValue && pValue[0] ? StringFuncs<T>::Duplicate( pValue ) : NULL;
 	}
 }

@@ -566,7 +566,7 @@ inline void CVarBitVecBase<BITCOUNTTYPE>::Attach( uint32 *pBits, int numBits )
 	{
 		m_iBitStringStorage = *pBits;
 		m_pInt = &m_iBitStringStorage;
-		free( pBits );
+		g_pMemAlloc->Free( pBits );
 	}
 }
 
@@ -587,9 +587,9 @@ inline bool CVarBitVecBase<BITCOUNTTYPE>::Detach( uint32 **ppBits, int *pNumBits
 	}
 	else
 	{
-		*ppBits = (uint32 *)malloc( sizeof(uint32) );
+		*ppBits = (uint32 *)MemAlloc_Alloc( sizeof(uint32) );
 		**ppBits = m_iBitStringStorage;
-		free( m_pInt );
+		g_pMemAlloc->Free( m_pInt );
 	}
 
 	memset( this, 0, sizeof( *this ) );
