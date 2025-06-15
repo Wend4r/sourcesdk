@@ -704,60 +704,81 @@ extern "C"
 // ensures they are here even when linking against debug or release static libs
 //-----------------------------------------------------------------------------
 #ifndef NO_MEMOVERRIDE_NEW_DELETE
-#if !defined( _OSX )
 
-void *__cdecl operator new( size_t nSize )
-{
-	return AllocUnattributed( nSize );
+// ==== operator new (may return nullptr) ====
+void* operator new(std::size_t size) {
+	return AllocUnattributed(size);
 }
 
-void *__cdecl operator new( size_t nSize, int nBlockUse, const char *pFileName, int nLine )
-{
-	return MemAlloc_Alloc(nSize, pFileName, nLine );
+void* operator new[](std::size_t size) {
+	return AllocUnattributed(size);
 }
 
-void *__cdecl operator new[] ( size_t nSize )
+// ==== operator new (nothrow overloads are noexcept) ====
+void* operator new(std::size_t size, const std::nothrow_t&) noexcept
 {
-	return AllocUnattributed( nSize );
+	return AllocUnattributed(size);
 }
 
-void *__cdecl operator new[] ( size_t nSize, int nBlockUse, const char *pFileName, int nLine )
+void* operator new[](std::size_t size, const std::nothrow_t&) noexcept
 {
-	return MemAlloc_Alloc(nSize, pFileName, nLine);
+	return AllocUnattributed(size);
 }
 
-#else
-
-void *__cdecl operator new( size_t nSize ) throw (std::bad_alloc)
+// ==== operator delete (must be noexcept) ====
+void operator delete(void* ptr) noexcept
 {
-	return AllocUnattributed( nSize );
+	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
-void *__cdecl operator new( size_t nSize, int nBlockUse, const char *pFileName, int nLine )
+void operator delete[](void* ptr) noexcept
 {
-	return MemAlloc_Alloc(nSize, pFileName, nLine );
+	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
-void *__cdecl operator new[] ( size_t nSize ) throw (std::bad_alloc)
+// ==== sized delete (must be noexcept) ====
+void operator delete(void* ptr, std::size_t) noexcept
 {
-	return AllocUnattributed( nSize );
+	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
-void *__cdecl operator new[] ( size_t nSize, int nBlockUse, const char *pFileName, int nLine )
+void operator delete[](void* ptr, std::size_t) noexcept
 {
-	return MemAlloc_Alloc(nSize, pFileName, nLine);
-}
-#endif // !_OSX
-
-void __cdecl operator delete( void *pMem ) throw()
-{
-	g_pMemAlloc->Free(pMem);
+	if (ptr) g_pMemAlloc->Free(ptr);
 }
 
-void __cdecl operator delete[] ( void *pMem ) throw()
+// ==== aligned new/delete (aligned new can throw, so not noexcept) ====
+void* operator new(std::size_t size, std::align_val_t)
 {
-	g_pMemAlloc->Free(pMem);
+	return AllocUnattributed(size);
 }
+
+void* operator new[](std::size_t size, std::align_val_t)
+{
+	return AllocUnattributed(size);
+}
+
+// ==== aligned delete (must be noexcept) ====
+void operator delete(void* ptr, std::align_val_t) noexcept
+{
+	if (ptr) g_pMemAlloc->Free(ptr);
+}
+
+void operator delete[](void* ptr, std::align_val_t) noexcept
+{
+	if (ptr) g_pMemAlloc->Free(ptr);
+}
+
+void operator delete(void* ptr, std::size_t, std::align_val_t) noexcept
+{
+	if (ptr) g_pMemAlloc->Free(ptr);
+}
+
+void operator delete[](void* ptr, std::size_t, std::align_val_t) noexcept
+{
+	if (ptr) g_pMemAlloc->Free(ptr);
+}
+
 #endif
 
 
