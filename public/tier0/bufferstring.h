@@ -547,6 +547,13 @@ public:
 		return *this;
 	}
 
+	template< size_t N > CBufferStringN< SIZE > &operator=( const char (&str)[N] )
+	{
+		Set( str, N - 1 );
+
+		return *this;
+	}
+
 	template< size_t N > CBufferStringN< SIZE > &operator=( CBufferStringN< N > &&moveFrom ) noexcept
 	{
 		BaseClass::operator=( Move( moveFrom ) );
