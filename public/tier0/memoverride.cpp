@@ -392,13 +392,19 @@ extern "C" void __cxa_pure_virtual() { VPurecallHandler(); }
 #define inline
 #endif
 
-const char *g_pszModule = MKSTRING( MEMOVERRIDE_MODULE );
+const char* GetModuleName()
+{
+	static char szModule[MAX_PATH]{};
+	if (szModule[0] == '\0') Plat_GetModuleFilename(szModule, sizeof(szModule));
+	return szModule;
+}
+
 inline void *AllocUnattributed( size_t nSize )
 {
 #if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 	return MemAlloc_Alloc(nSize);
 #else
-	return MemAlloc_Alloc(nSize, ::g_pszModule, 0);
+	return MemAlloc_Alloc(nSize, ::GetModuleName(), 0);
 #endif
 }
 
@@ -1499,7 +1505,7 @@ LPVOID WINAPI XMemAlloc( SIZE_T dwSize, DWORD dwAllocAttributes )
 #if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 			ptr = MemAlloc_Alloc( dwSize );
 #else
-			ptr = MemAlloc_Alloc(dwSize, ::g_pszModule, 0);
+			ptr = MemAlloc_Alloc(dwSize, ::GetModuleName(), 0);
 #endif
 			break;
 		case XALLOC_ALIGNMENT_8:
@@ -1550,7 +1556,7 @@ VOID WINAPI XMemFree( PVOID pAddress, DWORD dwAllocAttributes )
 #if !defined(USE_LIGHT_MEM_DEBUG) && !defined(USE_MEM_DEBUG)
 			return g_pMemAlloc->Free( pAddress );
 #else
-			return g_pMemAlloc->Free( pAddress, ::g_pszModule, 0 );
+			return g_pMemAlloc->Free( pAddress, ::GetModuleName(), 0 );
 #endif
 		default:
 			return MemAlloc_FreeAligned( pAddress );

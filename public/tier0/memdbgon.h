@@ -107,9 +107,9 @@ inline void *MemAlloc_InlineCallocMemset( void *pMem, size_t nCount, size_t nEle
 #define free(p)				g_pMemAlloc->Free( p )
 #define _aligned_free( p )	MemAlloc_FreeAligned( p )
 #else
-extern const char *g_pszModule; 
-#define free(p)				g_pMemAlloc->Free( p, ::g_pszModule, 0 )
-#define _aligned_free( p )	MemAlloc_FreeAligned( p, ::g_pszModule, 0 )
+extern const char* GetModuleName();
+#define free(p)				g_pMemAlloc->Free( p, ::GetModuleName(), 0 )
+#define _aligned_free( p )	MemAlloc_FreeAligned( p, ::GetModuleName(), 0 )
 #endif
 #define _msize(p)			g_pMemAlloc->GetSize( p )
 #define _expand(p, s)		_expand_NoLongerSupported(p, s)
@@ -199,9 +199,10 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString, const char *pFileName,
 #define realloc(p, s)			g_pMemAlloc->Realloc( p, s )
 #define _aligned_malloc( s, a )	MemAlloc_AllocAligned( s, a )
 #else
-#define malloc(s)				MemAlloc_Alloc( s, ::g_pszModule, 0  )
-#define realloc(p, s)			g_pMemAlloc->Realloc( p, s, ::g_pszModule, 0 )
-#define _aligned_malloc( s, a )	MemAlloc_AllocAlignedFileLine( s, a, ::g_pszModule, 0 )
+extern const char* GetModuleName();
+#define malloc(s)				MemAlloc_Alloc( s, ::GetModuleName(), 0  )
+#define realloc(p, s)			g_pMemAlloc->Realloc( p, s, ::GetModuleName(), 0 )
+#define _aligned_malloc( s, a )	MemAlloc_AllocAlignedFileLine( s, a, ::GetModuleName(), 0 )
 #endif
 
 #ifndef _malloc_dbg

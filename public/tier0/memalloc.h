@@ -341,8 +341,8 @@ inline void *MemAlloc_AllocAlignedFileLine( size_t size, size_t align, const cha
 #ifdef USE_MEM_DEBUG
 #define MemAlloc_AllocAligned( s, a )	MemAlloc_AllocAlignedFileLine( s, a, __FILE__, __LINE__ )
 #elif defined(USE_LIGHT_MEM_DEBUG)
-extern const char *g_pszModule; 
-#define MemAlloc_AllocAligned( s, a )	MemAlloc_AllocAlignedFileLine( s, a, g_pszModule, 0 )
+extern const char* GetModuleName();
+#define MemAlloc_AllocAligned( s, a )	MemAlloc_AllocAlignedFileLine( s, a, GetModuleName(), 0 )
 #else
 #define MemAlloc_AllocAligned( s, a )	MemAlloc_AllocAlignedUnattributed( s, a )
 #endif
