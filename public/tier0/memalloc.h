@@ -143,8 +143,8 @@ public:
 	virtual void *ReallocAligned( void *pMem, size_t nSize, size_t align ) = 0;
 	virtual void FreeAligned( void *pMem ) = 0;
 
-	inline void *IndirectAlloc( size_t nSize ) { return Alloc( nSize ); }
-	inline void *IndirectAllocAligned( size_t nSize, size_t align ) { return AllocAligned( nSize, align ); }
+	FORCEINLINE void *IndirectAlloc( size_t nSize ) { return Alloc( nSize ); }
+	FORCEINLINE void *IndirectAllocAligned( size_t nSize, size_t align ) { return AllocAligned( nSize, align ); }
 
 	// AMNOTE: It's unclear if the functions below are actually a debug variants, as in binaries they are
 	// absolutely the same to the above functions, but with a different name as they aren't merged together
@@ -285,32 +285,32 @@ MEM_INTERFACE IMemAlloc* g_pMemAlloc;
 #ifndef MEMALLOC_REGION
 #define MEMALLOC_REGION 0
 #endif
-inline void *MemAlloc_Alloc( size_t nSize )
+FORCEINLINE void *MemAlloc_Alloc( size_t nSize )
 { 
 	return g_pMemAlloc->RegionAlloc( MEMALLOC_REGION, nSize );
 }
 
-inline void *MemAlloc_Alloc( size_t nSize, const char *pFileName, int nLine )
+FORCEINLINE void *MemAlloc_Alloc( size_t nSize, const char *pFileName, int nLine )
 { 
 	return g_pMemAlloc->RegionAlloc( MEMALLOC_REGION, nSize, pFileName, nLine );
 }
 #else
 #undef MEMALLOC_REGION
-inline void *MemAlloc_Alloc( size_t nSize )
+FORCEINLINE void *MemAlloc_Alloc( size_t nSize )
 { 
 	return g_pMemAlloc->IndirectAlloc( nSize );
 }
 
-inline void *MemAlloc_Alloc( size_t nSize, const char *pFileName, int nLine )
+FORCEINLINE void *MemAlloc_Alloc( size_t nSize, const char *pFileName, int nLine )
 { 
 	return g_pMemAlloc->IndirectAlloc( nSize /*, pFileName, nLine*/ );
 }
 #endif
-inline void MemAlloc_Free( void *ptr )
+FORCEINLINE void MemAlloc_Free( void *ptr )
 {
 	g_pMemAlloc->Free( ptr );
 }
-inline void MemAlloc_Free( void *ptr, const char *pFileName, int nLine )
+FORCEINLINE void MemAlloc_Free( void *ptr, const char *pFileName, int nLine )
 {
 	g_pMemAlloc->Free( ptr /*, pFileName, nLine*/ );
 }
