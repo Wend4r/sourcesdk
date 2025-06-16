@@ -48,10 +48,10 @@ public:
 
 	CUtlCharConversion( char nEscapeChar, const char *pDelimiter, int nCount, const ConversionArray_t *pArray );
 
-	CUtlCharConversion( CUtlCharConversion &&rhs );
+	CUtlCharConversion( CUtlCharConversion &&rhs ) noexcept;
 	CUtlCharConversion( const CUtlCharConversion &rhs );
 
-	CUtlCharConversion &operator=( CUtlCharConversion &&rhs );
+	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept;
 	CUtlCharConversion &operator=( const CUtlCharConversion &rhs );
 
 	char GetEscapeChar() const;
@@ -892,7 +892,7 @@ inline void CUtlBuffer::GetType( T &dest )
 inline char CUtlBuffer::GetChar( )
 {
 	// LEGACY WARNING: this behaves differently than GetUnsignedChar()
-	char c;
+	char c{};
 	GetTypeBin( c ); // always reads as binary
 	return c;
 }
@@ -900,7 +900,7 @@ inline char CUtlBuffer::GetChar( )
 inline unsigned char CUtlBuffer::GetUnsignedChar( )
 {
 	// LEGACY WARNING: this behaves differently than GetChar()
-	unsigned char c;
+	unsigned char c{};
 	if (!IsText())
 	{
 		GetTypeBin( c );
@@ -914,28 +914,28 @@ inline unsigned char CUtlBuffer::GetUnsignedChar( )
 
 inline short CUtlBuffer::GetShort( )
 {
-	short s;
+	short s{};
 	GetType( s );
 	return s;
 }
 
 inline unsigned short CUtlBuffer::GetUnsignedShort( )
 {
-	unsigned short s;
+	unsigned short s{};
 	GetType( s );
 	return s;
 }
 
 inline int CUtlBuffer::GetInt( )
 {
-	int i;
+	int i{};
 	GetType( i );
 	return i;
 }
 
 inline int64 CUtlBuffer::GetInt64( )
 {
-	int64 i;
+	int64 i{};
 	GetType( i );
 	return i;
 }
@@ -956,14 +956,14 @@ inline unsigned int CUtlBuffer::GetIntHex( )
 
 inline unsigned int CUtlBuffer::GetUnsignedInt( )
 {
-	unsigned int i;
+	unsigned int i{};
 	GetType( i );
 	return i;
 }
 
 inline uint64 CUtlBuffer::GetUnsignedInt64()
 {
-	uint64 i;
+	uint64 i{};
 	GetType( i );
 	return i;
 }
@@ -971,14 +971,14 @@ inline uint64 CUtlBuffer::GetUnsignedInt64()
 
 inline float CUtlBuffer::GetFloat( )
 {
-	float f;
+	float f{};
 	GetType( f );
 	return f;
 }
 
 inline double CUtlBuffer::GetDouble( )
 {
-	double d;
+	double d{};
 	GetType( d );
 	return d;
 }
