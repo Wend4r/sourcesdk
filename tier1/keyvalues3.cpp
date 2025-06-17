@@ -1853,6 +1853,8 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 
 	if ( new_size >= 128 )
 		EnableFastSearch();
+
+	m_nCount = new_size;
 }
 
 void CKeyValues3Table::RenameMember( KeyValues3 *parent, KV3MemberId_t id, const CKV3MemberName &newName )
