@@ -659,7 +659,13 @@ template <typename T> static void CvarTypeTrait_ClampFn( CVValue_t *obj, const C
 
 template<> bool CvarTypeTrait_StringToValueFn<CUtlString>( const char *string, CVValue_t *obj ) { obj->m_StringValue = string; return true; }
 
-template<> void CvarTypeTrait_ValueToStringFn<bool>( const CVValue_t *obj, CBufferString &buf ) { buf = obj->m_bValue ? "true" : "false"; }
+template<> void CvarTypeTrait_ValueToStringFn<bool>( const CVValue_t *obj, CBufferString &buf )
+{
+	if ( obj->m_bValue )
+		buf = "true";
+	else
+		buf = "false";
+}
 template<> void CvarTypeTrait_ValueToStringFn<int16>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%d", obj->m_i16Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<uint16>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%u", obj->m_u16Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<int32>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%d", obj->m_i32Value ); }

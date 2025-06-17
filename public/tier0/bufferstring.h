@@ -89,7 +89,15 @@ public:
 	CBufferString( const char *pString, int nLen = -1, bool bAllowHeapAllocation = true ) : 
 	    CBufferString( BS_TYPE_HEAP, bAllowHeapAllocation )
 	{
-		Insert( 0, pString, nLen );
+		Set( pString, nLen );
+	}
+	CBufferString( const CUtlString &str, bool bAllowHeapAllocation = true ) : CBufferString( str, str.Length(), bAllowHeapAllocation ) {}
+	CBufferString( const CBufferString &copyFrom, bool bAllowHeapAllocation = true ) : CBufferString( copyFrom, copyFrom.Length(), bAllowHeapAllocation ) {}
+	CBufferString( CBufferString &&moveFrom ) noexcept : 
+	    m_nLengthStaff( Move( moveFrom.m_nLengthStaff ) ), 
+	    m_nAllocatedStaff( Move( moveFrom.m_nAllocatedStaff ) ), 
+	    m_Buffer( Move( moveFrom.m_Buffer ) )
+	{
 	}
 
 	/// Concat-based constructors.
@@ -109,36 +117,6 @@ public:
 		AppendConcatN( strs );
 	}
 
-	CBufferString( const CBufferString &copyFrom ) : 
-	    CBufferString( copyFrom.GetType(), copyFrom.CanHeapAllocate() )
-	{
-		Assert_BSO( false );
-		Set( copyFrom.String(), copyFrom.Length() );
-	}
-
-	CBufferString &operator=( const CBufferString &copyFrom )
-	{
-		Assert_BSO( false );
-		Set( copyFrom.String(), copyFrom.Length() );
-
-		return *this;
-	}
-
-	CBufferString( CBufferString &&moveFrom ) noexcept : 
-	   m_nLengthStaff( Move( moveFrom.m_nLengthStaff ) ), 
-	   m_nAllocatedStaff( Move( moveFrom.m_nAllocatedStaff ) ), 
-	   m_Buffer( Move( moveFrom.m_Buffer ) )
-	{
-		Assert_BSO( false );
-	}
-
-	CBufferString &operator=( CBufferString &&moveFrom ) noexcept
-	{
-		MoveFrom( moveFrom );
-
-		return *this;
-	}
-
 protected:
 	// Growable constructor for internal use by derived classes with pre-allocated buffer.
 	CBufferString( size_t nAllocatedSize, bool bAllowHeapAllocation = true ) : 
@@ -154,7 +132,6 @@ protected:
 	}
 
 public:
-
 	~CBufferString() { Purge(); } // Destructor - purges any allocated memory.
 
 	int Length() const { return m_nLength; } // Returns the current string length.
@@ -209,35 +186,34 @@ public:
 		m_nLength = 0;
 	}
 
-protected:
-	// Enables/disables heap allocation dynamically.
-	void SetHeapAllocation( bool bNewState = true ) { m_bAllowHeapAllocation = bNewState; }
+	// Sets contents of buffer from another string.
+	const char *Set( const char *pString, int nLen = -1, bool bIgnoreAlignment = false )
+	{
+		Assert_BSO( nLen < 0 || nLen <= BytesLeft() );
 
-public:
-	/// Compare string contents with a given C-string (optionally using length).
-	bool Compare( const char *pString, int nLen ) const { return ( nLen < 0 ? V_strcmp( String(), pString ) : V_strncmp( String(), pString, nLen ) ) == 0; }
-	template< class UTLT > bool Compare( const UTLT &utl ) const { return Compare( utl.String(), utl.Length() ); }
+		Clear();
+
+		return Insert( 0, pString, nLen, bIgnoreAlignment );
+	}
 
 	/// operator=
-	CBufferString &operator=( const char *pString ) { Set( pString, -1 ); return *this; }
-	CBufferString &operator=( const CUtlString &str ) { Set( str ); return *this; }
+	template< size_t N > CBufferString &operator=( const char (&str)[N] ) { Set( str, N - 1 ); return *this; }
+	CBufferString &operator=( const CUtlString &str ) { Set( str.String(), str.Length() ); return *this; }
+	CBufferString &operator=( const CBufferString &buf ) { Set( buf.String(), buf.Length() ); return *this; }
+	CBufferString &operator=( CBufferString &&moveFrom ) noexcept { MoveFrom( moveFrom ); return *this; }
 
-	/// operator==
-	/// Tests for equality, both are case sensitive.
-	bool operator==( const char *pString ) const { return Compare( pString, -1 ); }
-	bool operator==( const CUtlString &str ) const { return Compare( str ); }
-	bool operator==( const CBufferString &buf ) const { return Compare( buf ); }
+	// Appends string to current end of buffer.
+	const char *Append( const char *pString, int nLen = -1, bool bIgnoreAlignment = false )
+	{
+		Assert_BSO( nLen < 0 || nLen <= BytesLeft() );
 
-	/// operator!=
-	bool operator!=( const char *pString ) const { return !operator==( pString ); }
-	bool operator!=( const CUtlString &str ) const { return !operator==( str ); }
-	bool operator!=( const CBufferString &buf ) const { return !operator==( buf ); }
-
-	/// operator[]
-	char &operator[]( int elem ) { Assert( 0 <= elem && elem < Length() && elem < AllocatedSize() ); return Base()[elem]; }
-	char operator[]( int elem ) const { return const_cast<CBufferString *>(this)->operator[]( elem ); }
+		return Insert( Length(), pString, nLen, bIgnoreAlignment );
+	}
 
 	/// operator+=
+	template< size_t N > CBufferString &operator+=( const char (&str)[N] ) { Append( str, N - 1 ); return *this; }
+	CBufferString &operator+=( const CUtlString &str ) { Append( str.String(), str.Length() ); return *this; }
+	CBufferString &operator+=( const CBufferString &buf ) { Append( buf.String(), buf.Length() ); return *this; }
 	CBufferString &operator+=( char value )
 	{
 		const int nLength = Length();
@@ -272,8 +248,31 @@ public:
 
 		return *this;
 	}
-	CBufferString &operator+=( const char *pString ) { Append( pString, -1 ); return *this; }
-	template< class UTLT > CBufferString &operator+=( const UTLT &utl ) { Append( utl.String(), utl.Length() ); return *this; }
+
+protected:
+	// Enables/disables heap allocation dynamically.
+	void SetHeapAllocation( bool bNewState = true ) { m_bAllowHeapAllocation = bNewState; }
+
+public:
+	/// Compare string contents with a given C-string (optionally using length).
+	bool Compare( const char *pString, int nLen ) const { return ( nLen < 0 ? V_strcmp( String(), pString ) : V_strncmp( String(), pString, nLen ) ) == 0; }
+	bool Compare( const CUtlString &str ) const { return Compare( str.String(), str.Length() ); }
+	bool Compare( const CBufferString &buf ) const { return Compare( buf.String(), buf.Length() ); }
+
+	/// operator==
+	/// Tests for equality, both are case sensitive.
+	bool operator==( const char *pString ) const { return Compare( pString, -1 ); }
+	bool operator==( const CUtlString &str ) const { return Compare( str ); }
+	bool operator==( const CBufferString &buf ) const { return Compare( buf ); }
+
+	/// operator!=
+	bool operator!=( const char *pString ) const { return !operator==( pString ); }
+	bool operator!=( const CUtlString &str ) const { return !operator==( str ); }
+	bool operator!=( const CBufferString &buf ) const { return !operator==( buf ); }
+
+	/// operator[]
+	char &operator[]( int elem ) { Assert( 0 <= elem && elem < Length() && elem < AllocatedSize() ); return Base()[elem]; }
+	char operator[]( int elem ) const { return const_cast<CBufferString *>(this)->operator[]( elem ); }
 
 	// Inserts the nCount bytes of data from pBuf buffer at nIndex position.
 	// If nCount is -1, it would count the bytes of the input buffer manualy.
@@ -286,14 +285,6 @@ public:
 
 	// Allocates additional space.
 	DLL_CLASS_IMPORT int GrowByChunks( int nChunkSize, int nGrowSize = -1 );
-
-	/// Sets contents of buffer from another string.
-	const char *Set( const char *pString, int nLen, bool bIgnoreAlignment = false ) { Assert_BSO( nLen < 0 || nLen <= BytesLeft() ); Clear(); return Insert( 0, pString, nLen, bIgnoreAlignment ); }
-	template< class UTLT > const char *Set( const UTLT &utl, bool bIgnoreAlignment = false ) { return Set( utl.String(), utl.Length(), bIgnoreAlignment ); }
-
-	/// Appends string to current end of buffer.
-	const char *Append( const char *pString, int nLen, bool bIgnoreAlignment = false ) { Assert_BSO( nLen < 0 || nLen <= BytesLeft() ); return Insert( Length(), pString, nLen, bIgnoreAlignment ); }
-	template< class UTLT > const char *Append( const UTLT &utl, bool bIgnoreAlignment = false ) { return Append( utl.String(), utl.Length(), bIgnoreAlignment ); }
 
 	/// Appends multiple strings into one (e.g., {"Hello", " ", "World"} -> "Hello World"_bs)
 	DLL_CLASS_IMPORT const char *AppendConcat( int nCount, const char * const *pStrings, const int *pLengths = nullptr, bool bIgnoreAlignment = false );
@@ -543,13 +534,6 @@ public:
 	{
 		BaseClass::operator=( copyFrom );
 		m_FixedBuffer = copyFrom.m_FixedBuffer;
-
-		return *this;
-	}
-
-	template< size_t N > CBufferStringN< SIZE > &operator=( const char (&str)[N] )
-	{
-		Set( str, N - 1 );
 
 		return *this;
 	}
