@@ -1660,7 +1660,7 @@ void CKeyValues3Table::EnableFastSearch()
 	if ( m_pFastSearch )
 		m_pFastSearch->m_member_ids.RemoveAll();
 	else
-		Construct( m_pFastSearch = ::Alloc<kv3tablefastsearch_t>() );
+		m_pFastSearch = new kv3tablefastsearch_t;
 
 	const Hash_t* pHashes = HashesBase();
 
@@ -1959,9 +1959,7 @@ void CKeyValues3Table::RemoveAll( KeyValues3 *parent, int new_size )
 void CKeyValues3Table::PurgeFastSearch()
 {
 	if ( m_pFastSearch )
-	{
-		Delete( m_pFastSearch );
-	}
+		delete m_pFastSearch;
 
 	m_pFastSearch = nullptr;
 }
