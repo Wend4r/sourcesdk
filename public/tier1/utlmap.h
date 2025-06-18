@@ -71,7 +71,7 @@ public:
 		Node_t( Node_t &&moveFrom ) : Node_t( Move(moveFrom.key), Move(moveFrom.elem) ) {}
 
 		Node_t &operator=( const Node_t &copyFrom ) { key = copyFrom.key; elem = copyFrom.elem; return *this; }
-		Node_t &operator=( Node_t &&moveFrom ) { key = moveFrom.key; elem = moveFrom.elem; return *this; }
+		Node_t &operator=( Node_t &&moveFrom ) { key = Move(moveFrom.key); elem = Move(moveFrom.elem); return *this; }
 	};
 
 	class CKeyLess
@@ -248,6 +248,18 @@ public:
 		}
 		
 		return Insert( key, insert );
+	}
+
+	IndexType_t InsertOrReplace( const KeyType_t &key, ElemType_t &&moveInsert )
+	{
+		IndexType_t i = Find( key );
+		if ( i != InvalidIndex() )
+		{
+			Element( i ) = Move( moveInsert );
+			return i;
+		}
+		
+		return Insert( key, Move( moveInsert ) );
 	}
 
 	void Swap( CUtlMap< K, T, I > &that )
