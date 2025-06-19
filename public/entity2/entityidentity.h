@@ -12,8 +12,10 @@
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier1/utlsymbollarge.h"
+#include "tier1/smartptr.h"
 #include "entity2/entitycomponent.h"
 #include "entityhandle.h"
+#include "utldelegateimpl.h"
 
 class CEntityClass;
 class CEntityInstance;
@@ -27,6 +29,26 @@ struct ChangeAccessorFieldPathIndex_t
 
 	int32 m_Value;
 };
+
+
+class CEntityOwnerPtr : public CSmartPtr<CEntityInstance, CNullRefCountAccessor>
+{
+
+};
+
+class CNetworkVarChainer : public CEntityOwnerPtr
+{
+public:
+	struct ChainUpdatePropagationLL_t
+	{
+		ChainUpdatePropagationLL_t* pNext;
+		CUtlDelegate<void(const CNetworkVarChainer&)> updateDelegate;
+	};
+
+	uint8_t unk[24];
+	ChangeAccessorFieldPathIndex_t m_PathIndex;
+};
+static_assert(offsetof(CNetworkVarChainer, m_PathIndex) == 32);
 
 typedef uint32 SpawnGroupHandle_t;
 typedef CUtlStringToken WorldGroupId_t;

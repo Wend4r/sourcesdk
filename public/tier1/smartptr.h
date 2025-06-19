@@ -11,7 +11,6 @@
 #pragma once
 #endif
 
-
 class CRefCountAccessor
 {
 public:
@@ -42,6 +41,22 @@ public:
 	static void Release( T *pObj )
 	{
 		pObj->ReleaseReference();
+	}
+};
+
+class CNullRefCountAccessor 
+{
+public:
+	template< class T >
+	static void AddRef( T *pObj ) 
+	{
+
+	}
+
+	template< class T >
+	static void Release( T *pObj )
+	{
+
 	}
 };
 
