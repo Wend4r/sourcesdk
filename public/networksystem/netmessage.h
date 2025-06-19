@@ -114,7 +114,10 @@ public:
 			CBufferStringN<256> sBuffer;
 
 			sBuffer.Format( "%s\n{\n", GetName() );
-			sBuffer += pMsgPB->PBType_t::DebugString().c_str();
+
+			auto sPBDebug = pMsgPB->PBType_t::DebugString();
+
+			sBuffer.Append(sPBDebug.c_str(), sPBDebug.length());
 			sBuffer += "}\n";
 
 			sResult = sBuffer;
