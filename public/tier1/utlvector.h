@@ -1716,10 +1716,14 @@ CUtlVector< T, I, A >::CUtlVector( const std::initializer_list< T > elements )
 
 // A vector class for storing pointers, so that the elements pointed to by the pointers are deleted
 // on exit.
-template< class T, typename I = int >
-class CUtlVectorAutoPurge : public CUtlVector< T, I, CUtlMemory< T, I > >
+template< class T, typename I = int, class A = CUtlMemory< T, I > >
+class CUtlVectorAutoPurge : public CUtlVector< T, I, A >
 {
+	typedef CUtlVector< T, I, A > BaseClass;
+
 public:
+	using BaseClass::BaseClass;
+
 	~CUtlVectorAutoPurge( void )
 	{
 		this->PurgeAndDeleteElements();
