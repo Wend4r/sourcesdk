@@ -25,8 +25,6 @@
 #include "vscript/ivscript.h"
 #include "networksystem/netmessage.h"
 
-#include <gameevents.pb.h>
-
 class CPlayerSlot;
 class CBasePlayer;
 class CEntityIndex;
@@ -36,7 +34,7 @@ class CEntityInstance;
 class CBasePlayerController;
 class CBasePlayerPawn;
 
-class CMsgSource1LegacyGameEvent_t : public CNetMessagePB< GE_Source1LegacyGameEvent, CMsgSource1LegacyGameEvent, SG_EVENTS > {};
+class CMsgSource1LegacyGameEvent_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: Engine interface into global game event management
