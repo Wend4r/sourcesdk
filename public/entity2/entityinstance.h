@@ -98,6 +98,13 @@ public:
 		return m_pEntity->GetEntityIndex();
 	}
 
+	// Refers to an instance's field.
+	template< typename T >
+	inline T &Field( uint nOffset )
+	{
+		return *reinterpret_cast<T *>( reinterpret_cast<uintp>( this ) + nOffset );
+	}
+
 public:
 	CUtlSymbolLarge m_iszPrivateVScripts; // 0x8
 	CEntityIdentity* m_pEntity; // 0x10
