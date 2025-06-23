@@ -11,6 +11,8 @@
 #pragma once
 #endif
 
+#include "tier0/platform.h"
+
 class CRefCountAccessor
 {
 public:
@@ -142,12 +144,16 @@ class CSmartPtr
 {
 public:
 					CSmartPtr();
+					CSmartPtr( const T &copyFrom );
+					CSmartPtr( T &&moveFrom );
 					CSmartPtr( T *pObj );
 					CSmartPtr( const CSmartPtr<T,RefCountAccessor> &other );
 					~CSmartPtr();
 
 	T*				operator=( T *pObj );
 	void			operator=( const CSmartPtr<T,RefCountAccessor> &other );
+	T&				operator*();
+	const T&		operator*() const;
 	const T*		operator->() const;
 	T*				operator->();
 	bool			operator!() const;
@@ -165,6 +171,20 @@ template< class T, class RefCountAccessor >
 inline CSmartPtr<T,RefCountAccessor>::CSmartPtr()
 {
 	m_pObj = NULL;
+}
+
+template< class T, class RefCountAccessor >
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const T &copyFrom )
+{
+	m_pObj = Alloc< T >();
+	CopyConstruct( m_pObj, copyFrom );
+}
+
+template< class T, class RefCountAccessor >
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T &&moveFrom )
+{
+	m_pObj = Alloc< T >();
+	MoveConstruct( m_pObj, Move( moveFrom ) );
 }
 
 template< class T, class RefCountAccessor >
@@ -218,6 +238,18 @@ template< class T, class RefCountAccessor >
 inline void CSmartPtr<T,RefCountAccessor>::operator=( const CSmartPtr<T,RefCountAccessor> &other )
 {
 	*this = other.m_pObj;
+}
+
+template< class T, class RefCountAccessor >
+inline T& CSmartPtr<T,RefCountAccessor>::operator*()
+{
+	return *m_pObj;
+}
+
+template< class T, class RefCountAccessor >
+inline const T& CSmartPtr<T,RefCountAccessor>::operator*() const
+{
+	return *m_pObj;
 }
 
 template< class T, class RefCountAccessor >
