@@ -554,6 +554,14 @@ private:
 	} m_FixedBuffer;
 };
 
+using CTinyBufferString    = CBufferStringN<16>;
+using CSmallBufferString   = CBufferStringN<32>;
+using CMediumBufferString  = CBufferStringN<64>;
+using CLargeBufferString   = CBufferStringN<128>;
+using CXLargeBufferString  = CBufferStringN<256>;
+using CHugeBufferString    = CBufferStringN<512>;
+using CMassiveBufferString = CBufferStringN<1024>;
+
 // AMNOTE: CBufferStringN name is preferred to be used, altho CBufferStringGrowable is left as a small bcompat
 template< size_t SIZE >
 using CBufferStringGrowable = CBufferStringN< SIZE >;
