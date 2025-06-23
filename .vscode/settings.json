@@ -1,3 +1,8 @@
 {
+	"[cpp]": {
+		"editor.defaultFormatter": "ms-vscode.cpptools"
+	},
+	"C_Cpp.clang_format_fallbackStyle": "LLVM",
 	"cmake.useVsDeveloperEnvironment": "always",
+	"editor.formatOnSave": true
 }

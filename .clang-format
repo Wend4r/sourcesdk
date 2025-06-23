@@ -1,0 +1,51 @@
+# Valve's Source SDK style with Allman braces
+BasedOnStyle: LLVM
+
+# Use real tabs (4 spaces) for all indents
+IndentWidth:                            4
+TabWidth:                               4
+UseTab:                                 ForIndentation
+
+# Wrapped lines get one extra tab
+ContinuationIndentWidth:                4
+
+# Spaces inside ( )
+SpacesInParentheses:                    true
+# Keep no space before function parens, but yes for control stmts
+SpaceBeforeParens:                      Custom
+SpaceBeforeParensOptions:
+  ControlStatements:                    true
+  FunctionDeclaration:                  false
+  FunctionDefinition:                   false
+  FunctionCall:                         false
+
+# Spaces inside < >
+SpacesInAngles:                         true
+
+# Allman-style braces: open on its own line
+BreakBeforeBraces:                      Allman
+
+# ctor-init lists: break before “:”, and indent the colon by one space
+BreakConstructorInitializers:           BeforeColon
+ConstructorInitializerIndentWidth:      1
+
+# allow short functions on a single line
+# so this will be left as-is:
+#   IndexType_t Find( const KeyType_t &key ) const { return …; }
+AllowShortFunctionsOnASingleLine:       All
+
+# keep other constructs multiline
+AllowShortBlocksOnASingleLine:          false
+AllowShortIfStatementsOnASingleLine:    false
+
+# No auto-alignment of declarations or assignments
+AlignConsecutiveDeclarations:           false
+AlignConsecutiveAssignments:            false
+
+# Pointer star/amp on left: T* p;
+DerivePointerAlignment:                 false
+PointerAlignment:                       Right
+
+# Leave your #includes and long templates untouched
+SortIncludes:                           false
+ColumnLimit:                            0
