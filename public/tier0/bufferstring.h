@@ -16,6 +16,8 @@
 #include "utlstring.h"
 #include "vmath.h"
 
+#include <initializer_list>
+
 #if defined(DEBUG) && defined(BUFFERSTRING_OVERFLOW_CATCH)
 // Assertion macro for catching stack buffer overflows in debug mode.
 #define Assert_BSO( exp ) { if ( IsStackAllocated() && !CanHeapAllocate() ) Assert( exp ); }
@@ -115,6 +117,11 @@ public:
 	    CBufferString( BS_TYPE_HEAP, bAllowHeapAllocation )
 	{
 		AppendConcatN( strs );
+	}
+	CBufferString( std::initializer_list< const char * > strs, bool bAllowHeapAllocation = true ) : 
+	    CBufferString( bAllowHeapAllocation )
+	{
+		AppendConcat( strs.size(), strs.begin() );
 	}
 
 protected:
@@ -528,6 +535,11 @@ public:
 	    CBufferStringN( bAllowHeapAllocation )
 	{
 		AppendConcatN( strs );
+	}
+	CBufferStringN( std::initializer_list< const char * > strs, bool bAllowHeapAllocation = true ) : 
+	    CBufferStringN( bAllowHeapAllocation )
+	{
+		AppendConcat( strs.size(), strs.begin() );
 	}
 
 	CBufferStringN< SIZE > &operator=( const CBufferStringN< SIZE > &copyFrom )
