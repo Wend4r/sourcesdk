@@ -93,7 +93,7 @@ public:
 	const char *GetName() const { return m_pName; }
 	CBaseGameSystemFactory *GetNext() const { return m_pNext; }
 
-	static void LoopByFactories( void ( *pfnFunc )( CBaseGameSystemFactory *pName ) )
+	static void LoopByFactories( void ( *pfnFunc )( CBaseGameSystemFactory *pFactory ) )
 	{
 		CBaseGameSystemFactory* pFactoryList = *sm_pFirst;
 		while (pFactoryList)
