@@ -90,18 +90,16 @@ public:
 		}
 	}
 
-	const char *GetName() const
-	{
-		return m_pName;
-	}
+	const char *GetName() const { return m_pName; }
+	CBaseGameSystemFactory *GetNext() const { return m_pNext; }
 
-	static void PrintFactories(void (*pfnFunc)(const char *pName))
+	static void LoopByFactories( void ( *pfnFunc )( CBaseGameSystemFactory *pName ) )
 	{
 		CBaseGameSystemFactory* pFactoryList = *sm_pFirst;
 		while (pFactoryList)
 		{
-			pfnFunc(pFactoryList->m_pName);
-			pFactoryList = pFactoryList->m_pNext;
+			pfnFunc( pFactoryList );
+			pFactoryList = pFactoryList->GetNext();
 		}
 	}
 
