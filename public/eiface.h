@@ -449,7 +449,7 @@ public:
 	virtual void			GetDefaultScaleForCharacter( const char *pCharacterName, bool bCheckLoadoutScale ) = 0;
 	virtual void			GetDefaultControlPointAutoUpdates( const char *pParticleSystemName, CUtlVector<EconControlPointInfo_t> &autoUpdates ) = 0;
 
-	virtual void			unk_201();
+	virtual void			unk_201() = 0;
 
 	virtual void			GetCharacterNameForModel( const char *pModelName, bool bCheckItemModifiers, CUtlString &characterName ) = 0;
 	virtual void			GetModelNameForCharacter( const char *pCharacterNamel, int nIndex, CBufferString &modelName ) = 0;
@@ -552,7 +552,7 @@ public:
 
 	// Called when the client attempts to connect (doesn't get called for bots)
 	// returning false would reject the connection with the pRejectReason message
-	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason );
+	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason ) = 0;
 
 	// Client is connected and should be put in the game
 	// type values could be:
