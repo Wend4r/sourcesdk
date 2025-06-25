@@ -31,7 +31,136 @@ KeyValues3::KeyValues3( int cluster_elem, KV3TypeEx_t type, KV3SubType_t subtype
 KeyValues3::~KeyValues3() 
 { 
 	Free(); 
-};
+}
+
+void KeyValues3::CopyFrom( const KeyValues3& other )
+{
+	if ( this == &other )
+		return;
+
+	SetToNull();
+
+	CKeyValues3Context* context;
+	KV3MetaData_t* pDestMetaData = GetMetaData( &context );
+
+	if ( pDestMetaData )
+	{
+		KV3MetaData_t* pSrcMetaData = other.GetMetaData();
+
+		if ( pSrcMetaData )
+			context->CopyMetaData( pDestMetaData, pSrcMetaData );
+		else
+			pDestMetaData->Clear();
+	}
+
+	KV3SubType_t eSrcSubType = other.GetSubType();
+
+	switch ( other.GetType() )
+	{
+		case KV3_TYPE_BOOL:
+			SetBool( other.m_Data.m_Bool );
+			break;
+		case KV3_TYPE_INT:
+			SetValue<int64>( other.m_Data.m_Int, KV3_TYPEEX_INT, eSrcSubType );
+			break;
+		case KV3_TYPE_UINT:
+			SetValue<uint64>( other.m_Data.m_UInt, KV3_TYPEEX_UINT, eSrcSubType );
+			break;
+		case KV3_TYPE_DOUBLE:
+			SetValue<float64>( other.m_Data.m_Double, KV3_TYPEEX_DOUBLE, eSrcSubType );
+			break;
+		case KV3_TYPE_STRING:
+			SetString( other.GetString(), eSrcSubType );
+			break;
+		case KV3_TYPE_BINARY_BLOB:
+			SetToBinaryBlob( other.GetBinaryBlob(), other.GetBinaryBlobSize() );
+			break;
+		case KV3_TYPE_ARRAY:
+		{
+			switch ( other.GetTypeEx() )
+			{
+				case KV3_TYPEEX_ARRAY:
+				{
+					SetToEmptyKV3Array();
+					m_Data.m_Array.m_pRoot->CopyFrom( this, other.m_Data.m_Array.m_pRoot );
+					break;
+				}
+				case KV3_TYPEEX_ARRAY_FLOAT32:
+					AllocArray<float32>( other.m_nNumArrayElements, other.m_Data.m_Array.m_f32, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT32, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32 );
+					break;
+				case KV3_TYPEEX_ARRAY_FLOAT64:
+					AllocArray<float64>( other.m_nNumArrayElements, other.m_Data.m_Array.m_f64, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT64, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT64 );
+					break;
+				case KV3_TYPEEX_ARRAY_INT16:
+					AllocArray<int16>( other.m_nNumArrayElements, other.m_Data.m_Array.m_i16, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
+					break;
+				case KV3_TYPEEX_ARRAY_INT32:
+					AllocArray<int32>( other.m_nNumArrayElements, other.m_Data.m_Array.m_i32, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_INT32, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT32 );
+					break;
+				case KV3_TYPEEX_ARRAY_UINT8_SHORT:
+					AllocArray<uint8>( other.m_nNumArrayElements, other.m_Data.m_Array.m_u8Short, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_UINT8_SHORT, KV3_TYPEEX_INVALID, eSrcSubType, KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT8 );
+					break;
+				case KV3_TYPEEX_ARRAY_INT16_SHORT:
+					AllocArray<int16>( other.m_nNumArrayElements, other.m_Data.m_Array.m_i16Short, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
+					break;
+				default:
+					break;
+			}
+			break;
+		}
+		case KV3_TYPE_TABLE:
+		{
+			SetToEmptyTable();
+			GetTable()->CopyFrom( this, other.GetTable() );
+			break;
+		}
+		default:
+			break;
+	}
+
+	m_SubType = eSrcSubType;
+	m_nFlags = other.m_nFlags;
+}
+
+void KeyValues3::OverlayKeysFrom( const KeyValues3 &other, bool depth )
+{
+	if ( !IsTable() )
+		SetToNull();
+
+	const CKeyValues3Table *pOtherTable = other.GetTable();
+
+	if ( !pOtherTable )
+		return;
+
+	const auto pHashes = pOtherTable->HashesBase();
+	const auto pMembers = pOtherTable->MembersBase();
+	const auto pNames = pOtherTable->NamesBase();
+
+	FOR_EACH_KV3_TABLE( *pOtherTable, id )
+	{
+		KeyValues3 *kv = FindOrCreateMember( CKV3MemberName( pHashes[id], pNames[id] ) );
+		KeyValues3 *other_kv = pMembers[id];
+
+		if ( depth && kv->IsTable() && other_kv->IsTable() )
+		{
+			OverlayKeysFrom( *other_kv, true );
+		}
+		else
+		{
+			kv->CopyFrom( *other_kv );
+		}
+	}
+}
+
+KeyValues3& KeyValues3::operator=( const KeyValues3& copyFrom )
+{
+	if ( this == &copyFrom )
+		return *this;
+
+	CopyFrom( copyFrom );
+
+	return *this;
+}
 
 void KeyValues3::Alloc( int initial_size, Data_t data, int preallocated_size, bool should_free )
 {
@@ -1247,135 +1376,6 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 	}
 }
 
-void KeyValues3::CopyFrom( const KeyValues3* pSrc )
-{
-	if ( this == pSrc )
-		return;
-
-	SetToNull();
-
-	CKeyValues3Context* context;
-	KV3MetaData_t* pDestMetaData = GetMetaData( &context );
-
-	if ( pDestMetaData )
-	{
-		KV3MetaData_t* pSrcMetaData = pSrc->GetMetaData();
-
-		if ( pSrcMetaData )
-			context->CopyMetaData( pDestMetaData, pSrcMetaData );
-		else
-			pDestMetaData->Clear();
-	}
-
-	KV3SubType_t eSrcSubType = pSrc->GetSubType();
-
-	switch ( pSrc->GetType() )
-	{
-		case KV3_TYPE_BOOL:
-			SetBool( pSrc->m_Data.m_Bool );
-			break;
-		case KV3_TYPE_INT:
-			SetValue<int64>( pSrc->m_Data.m_Int, KV3_TYPEEX_INT, eSrcSubType );
-			break;
-		case KV3_TYPE_UINT:
-			SetValue<uint64>( pSrc->m_Data.m_UInt, KV3_TYPEEX_UINT, eSrcSubType );
-			break;
-		case KV3_TYPE_DOUBLE:
-			SetValue<float64>( pSrc->m_Data.m_Double, KV3_TYPEEX_DOUBLE, eSrcSubType );
-			break;
-		case KV3_TYPE_STRING:
-			SetString( pSrc->GetString(), eSrcSubType );
-			break;
-		case KV3_TYPE_BINARY_BLOB:
-			SetToBinaryBlob( pSrc->GetBinaryBlob(), pSrc->GetBinaryBlobSize() );
-			break;
-		case KV3_TYPE_ARRAY:
-		{
-			switch ( pSrc->GetTypeEx() )
-			{
-				case KV3_TYPEEX_ARRAY:
-				{
-					SetToEmptyKV3Array();
-					m_Data.m_Array.m_pRoot->CopyFrom( this, pSrc->m_Data.m_Array.m_pRoot );
-					break;
-				}
-				case KV3_TYPEEX_ARRAY_FLOAT32:
-					AllocArray<float32>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_f32, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT32, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32 );
-					break;
-				case KV3_TYPEEX_ARRAY_FLOAT64:
-					AllocArray<float64>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_f64, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT64, eSrcSubType, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT64 );
-					break;
-				case KV3_TYPEEX_ARRAY_INT16:
-					AllocArray<int16>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_i16, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
-					break;
-				case KV3_TYPEEX_ARRAY_INT32:
-					AllocArray<int32>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_i32, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_INT32, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT32 );
-					break;
-				case KV3_TYPEEX_ARRAY_UINT8_SHORT:
-					AllocArray<uint8>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_u8Short, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_UINT8_SHORT, KV3_TYPEEX_INVALID, eSrcSubType, KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT8 );
-					break;
-				case KV3_TYPEEX_ARRAY_INT16_SHORT:
-					AllocArray<int16>( pSrc->m_nNumArrayElements, pSrc->m_Data.m_Array.m_i16Short, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
-					break;
-				default:
-					break;
-			}
-			break;
-		}
-		case KV3_TYPE_TABLE:
-		{
-			SetToEmptyTable();
-			GetTable()->CopyFrom( this, pSrc->GetTable() );
-			break;
-		}
-		default:
-			break;
-	}
-
-	m_SubType = eSrcSubType;
-	m_nFlags = pSrc->m_nFlags;
-}
-
-void KeyValues3::OverlayKeysFrom( KeyValues3 *parent, bool depth )
-{
-	if ( !IsTable() )
-		SetToNull();
-
-	CKeyValues3Table *pParentTable = parent->GetTable();
-
-	if ( !pParentTable )
-		return;
-
-	auto parent_hashes = pParentTable->HashesBase();
-	auto parent_members = pParentTable->MembersBase();
-	auto parent_names = pParentTable->NamesBase();
-
-	FOR_EACH_KV3_TABLE( *pParentTable, id )
-	{
-		KeyValues3 *kv = FindOrCreateMember( CKV3MemberName( parent_hashes[id], parent_names[id] ) );
-		KeyValues3 *parent_kv = parent_members[id];
-
-		if ( depth && kv->IsTable() && parent_kv->IsTable() )
-		{
-			OverlayKeysFrom( parent_kv, true );
-		}
-		else
-		{
-			CopyFrom( parent_kv );
-		}
-	}
-}
-
-KeyValues3& KeyValues3::operator=( const KeyValues3& src )
-{
-	if ( this == &src )
-		return *this;
-
-	CopyFrom( &src );
-
-	return *this;
-}
-
 void CKeyValues3Iterator::Init( KeyValues3 *kv )
 {
 	m_Stack.Purge();
@@ -1848,7 +1848,7 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 			names_base[i] = strdup( src_names_base[i] );
 
 		members_base[i] = parent->AllocMember();
-		members_base[i]->CopyFrom( src_members_base[i] );
+		members_base[i]->CopyFrom( *src_members_base[i] );
 	}
 
 	if ( new_size >= 128 )

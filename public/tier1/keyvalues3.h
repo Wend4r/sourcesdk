@@ -388,7 +388,13 @@ class KeyValues3
 public:
 	KeyValues3( KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
 	KeyValues3( int cluster_elem, KV3TypeEx_t type, KV3SubType_t subtype );
+	KeyValues3( const KeyValues3& other ) : KeyValues3() { CopyFrom( other ); }
 	~KeyValues3();
+
+	KeyValues3& operator=( const KeyValues3& copyFrom );
+
+	void CopyFrom( const KeyValues3& other );
+	void OverlayKeysFrom( const KeyValues3 &other, bool depth = false );
 
 	CKeyValues3Context* GetContext() const;
 	KV3MetaData_t* GetMetaData( CKeyValues3Context** ppCtx = nullptr ) const;
@@ -565,7 +571,7 @@ public:
 	void SetMemberToEmptyTable( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyTable(); }
 	void SetMemberToBinaryBlob( const CKV3MemberName &name, const byte *blob, int size ) { FindOrCreateMember( name )->SetToBinaryBlob( blob, size ); }
 	void SetMemberToBinaryBlobExternal( const CKV3MemberName &name, const byte *blob, int size, bool free_mem ) { FindOrCreateMember( name )->SetToBinaryBlobExternal( blob, size, free_mem ); }
-	void SetMemberToCopyOfValue( const CKV3MemberName &name, KeyValues3 *other ) { FindOrCreateMember( name )->CopyFrom( other ); }
+	void SetMemberToCopyOfValue( const CKV3MemberName &name, KeyValues3 *other ) { FindOrCreateMember( name )->CopyFrom( *other ); }
 
 	void SetMemberBool( const CKV3MemberName &name, bool value ) { FindOrCreateMember( name )->SetBool( value ); }
 	void SetMemberChar( const CKV3MemberName &name, char8 value ) { FindOrCreateMember( name )->SetChar( value ); }
@@ -592,9 +598,6 @@ public:
 	void SetMemberQuaternion( const CKV3MemberName &name, const Quaternion &quat ) { FindOrCreateMember( name )->SetQuaternion( quat ); }
 	void SetMemberQAngle( const CKV3MemberName &name, const QAngle &ang ) { FindOrCreateMember( name )->SetQAngle( ang ); }
 	void SetMemberMatrix3x4( const CKV3MemberName &name, const matrix3x4_t &matrix ) { FindOrCreateMember( name )->SetMatrix3x4( matrix ); }
-
-	KeyValues3& operator=( const KeyValues3& src );
-	KeyValues3( const KeyValues3 &other ) : KeyValues3() { CopyFrom( &other ); }
 
 private:
 	union Data_t
@@ -644,9 +647,6 @@ private:
 	void Free( bool bClearingContext = false );
 	void ResolveUnspecified();
 	void PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype, int initial_size = 0, Data_t data = {}, int bytes_available = 0, bool should_free = false );
-
-	void CopyFrom( const KeyValues3* pSrc );
-	void OverlayKeysFrom( KeyValues3 *parent, bool depth = false );
 
 	bool HasCluster() const { return m_nClusterElement != KV3_INVALID_CLUSTER_ELEMENT; }
 	int GetClusterElement() const { return m_nClusterElement; }
