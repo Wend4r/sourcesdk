@@ -73,6 +73,7 @@ public:
 
 		Assert(g_pCVar);
 		g_pCVar->UnregisterConCommandCallbacks( *pConCmd );
+		pConCmd->InvalidateRef();
 	}
 
 	static void RegisterAll()
@@ -186,6 +187,7 @@ public:
 
 		Assert( g_pCVar );
 		g_pCVar->UnregisterConVarCallbacks( *pConVar );
+		pConVar->InvalidateRef();
 	}
 
 	static bool RegisterAll()
