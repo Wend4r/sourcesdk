@@ -17,6 +17,8 @@
 #include "entityhandle.h"
 #include "utldelegateimpl.h"
 
+#define INVALID_SPAWNGROUP_HANDLE ((SpawnGroupHandle_t)-1)
+
 class CEntityClass;
 class CEntityInstance;
 
