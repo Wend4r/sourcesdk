@@ -78,6 +78,13 @@ private:
 	int _index;
 };
 
+enum EntityNetworkingMode_t : uint32
+{
+	ENTITY_NETWORKING_MODE_DEFAULT = 0,
+	ENTITY_NETWORKING_MODE_NETWORKED,
+	ENTITY_NETWORKING_MODE_NOT_NETWORKED,
+};
+
 enum EntityFlags_t : uint32
 {
 	EF_IS_INVALID_EHANDLE = 0x1,
