@@ -2289,11 +2289,10 @@ template <class T>
 inline void Delete( T* pMemory )
 {
 	pMemory->~T();
-	free( reinterpret_cast<void *>(pMemory) );
-
 #ifdef _DEBUG
 	memset( reinterpret_cast<void *>( pMemory ), 0xDD, sizeof(T) );
 #endif
+	free( reinterpret_cast<void *>(pMemory) );
 }
 
 template <class T, size_t N>
@@ -2302,11 +2301,10 @@ inline void Delete( T (*pMemory)[N] )
 	for ( size_t n = 0; n < N; n++ )
 	{
 		(pMemory[n])->~T();
-		free( reinterpret_cast<void *>( pMemory[n] ) );
-
 #ifdef _DEBUG
 		memset( reinterpret_cast<void *>( pMemory[n] ), 0xDD, sizeof(*pMemory[n]) );
 #endif
+		free( reinterpret_cast<void *>( pMemory[n] ) );
 	}
 
 #ifdef _DEBUG
