@@ -52,13 +52,12 @@ public:
 	template< class T >
 	static void AddRef( T *pObj ) 
 	{
-
 	}
 
 	template< class T >
 	static void Release( T *pObj )
 	{
-
+		delete pObj;
 	}
 };
 
@@ -147,19 +146,26 @@ public:
 					CSmartPtr( const T &copyFrom );
 					CSmartPtr( T &&moveFrom );
 					CSmartPtr( T *pObj );
-					CSmartPtr( const CSmartPtr<T,RefCountAccessor> &other );
+					CSmartPtr( const CSmartPtr<T,RefCountAccessor> &copyFrom );
+					CSmartPtr( CSmartPtr<T,RefCountAccessor> &&moveFrom );
 					~CSmartPtr();
 
+	CSmartPtr<T,RefCountAccessor> &CopyFrom( const CSmartPtr<T,RefCountAccessor> &copyFrom );
+	CSmartPtr<T,RefCountAccessor> &MoveFrom( CSmartPtr<T,RefCountAccessor> &&moveFrom );
+
+	CSmartPtr<T,RefCountAccessor> &operator=( const CSmartPtr<T,RefCountAccessor> &copyFrom );
+	CSmartPtr<T,RefCountAccessor> &operator=( CSmartPtr<T,RefCountAccessor> &&moveFrom );
 	T*				operator=( T *pObj );
-	void			operator=( const CSmartPtr<T,RefCountAccessor> &other );
 	T&				operator*();
 	const T&		operator*() const;
 	const T*		operator->() const;
 	T*				operator->();
 	bool			operator!() const;
 	bool			operator==( const T *pOther ) const;
+
 	bool			IsValid() const; // Tells if the pointer is valid.
 	T*				GetObject() const; // Get temporary object pointer, don't store it for later reuse!
+	T*				SetObject( T* pObj );
 	void			MarkDeleted();
 
 private:
@@ -168,9 +174,8 @@ private:
 
 
 template< class T, class RefCountAccessor >
-inline CSmartPtr<T,RefCountAccessor>::CSmartPtr()
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr() : m_pObj( NULL )
 {
-	m_pObj = NULL;
 }
 
 template< class T, class RefCountAccessor >
@@ -187,18 +192,23 @@ inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T &&moveFrom )
 	MoveConstruct( m_pObj, Move( moveFrom ) );
 }
 
+
 template< class T, class RefCountAccessor >
 inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T *pObj )
 {
-	m_pObj = NULL;
-	*this = pObj;
+	SetObject( pObj );
 }
 
 template< class T, class RefCountAccessor >
-inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const CSmartPtr<T,RefCountAccessor> &other )
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const CSmartPtr<T,RefCountAccessor> &copyFrom )
 {
-	m_pObj = NULL;
-	*this = other;
+	CopyFrom( copyFrom );
+}
+
+template< class T, class RefCountAccessor >
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( CSmartPtr<T,RefCountAccessor> &&moveFrom )
+{
+	MoveFrom( Move( moveFrom ) );
 }
 
 template< class T, class RefCountAccessor >
@@ -211,33 +221,27 @@ inline CSmartPtr<T,RefCountAccessor>::~CSmartPtr()
 }
 
 template< class T, class RefCountAccessor >
-inline T* CSmartPtr<T,RefCountAccessor>::operator=( T *pObj )
-{
-	if ( pObj == m_pObj )
-		return pObj;
-
-	if ( pObj )
-	{
-		RefCountAccessor::AddRef( pObj );
-	}
-	if ( m_pObj )
-	{
-		RefCountAccessor::Release( m_pObj );
-	}
-	m_pObj = pObj;
-	return pObj;
-}
-
-template< class T, class RefCountAccessor >
 inline void	CSmartPtr<T,RefCountAccessor>::MarkDeleted()
 {
 	m_pObj = NULL;
 }
 
 template< class T, class RefCountAccessor >
-inline void CSmartPtr<T,RefCountAccessor>::operator=( const CSmartPtr<T,RefCountAccessor> &other )
+inline CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::operator=( const CSmartPtr<T,RefCountAccessor> &copyFrom )
 {
-	*this = other.m_pObj;
+	return CopyFrom( copyFrom );
+}
+
+template< class T, class RefCountAccessor >
+inline CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::operator=( CSmartPtr<T,RefCountAccessor> &&moveFrom )
+{
+	return MoveFrom( Move( moveFrom ) );
+}
+
+template< class T, class RefCountAccessor >
+inline T* CSmartPtr<T,RefCountAccessor>::operator=( T *pObj )
+{
+	return SetObject( pObj );
 }
 
 template< class T, class RefCountAccessor >
@@ -277,6 +281,21 @@ inline bool CSmartPtr<T,RefCountAccessor>::operator==( const T *pOther ) const
 }
 
 template< class T, class RefCountAccessor >
+CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::CopyFrom( const CSmartPtr<T,RefCountAccessor> &copyFrom )
+{
+	m_pObj = copyFrom.m_pObj;
+	return *this;
+}
+
+template< class T, class RefCountAccessor >
+CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::MoveFrom( CSmartPtr<T,RefCountAccessor> &&moveFrom )
+{
+	m_pObj = Move( moveFrom.m_pObj );
+	moveFrom.MarkDeleted();
+	return *this;
+}
+
+template< class T, class RefCountAccessor >
 inline bool CSmartPtr<T,RefCountAccessor>::IsValid() const
 {
 	return m_pObj != NULL;
@@ -286,6 +305,24 @@ template< class T, class RefCountAccessor >
 inline T* CSmartPtr<T,RefCountAccessor>::GetObject() const
 {
 	return m_pObj;
+}
+
+template< class T, class RefCountAccessor >
+inline T* CSmartPtr<T,RefCountAccessor>::SetObject( T *pObj )
+{
+	if ( pObj == m_pObj )
+		return pObj;
+
+	if ( pObj )
+	{
+		RefCountAccessor::AddRef( pObj );
+	}
+	if ( m_pObj )
+	{
+		RefCountAccessor::Release( m_pObj );
+	}
+	m_pObj = pObj;
+	return pObj;
 }
 
 
