@@ -41,6 +41,7 @@ if(NOT EXISTS "${PROTOBUF_DIR}")
 endif()
 
 set(SOURCESDK_GAME_TARGET "cs2" CACHE STRING "Game name. See CMakeGameManifests.json")
+option(SOURCESDK_AM_DEFINES "Compile with AlliedModders definition set" OFF)
 option(SOURCESDK_COMPILE_PROTOBUF "Compile Protocol Buffers" ON)
 option(SOURCESDK_CONFIGURE_EXPORT_MAP "Configure export symbols/map (Unix only)" ON)
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
@@ -134,7 +135,7 @@ elseif(MACOS)
 	set_target_properties(${PROJECT_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
 endif()
 
-target_compile_options(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_OPTIONS} ${SOURCESDK_COMPILER_OPTIONS})
+target_compile_options(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_OPTIONS} ${SOURCESDK_COMPILER_OPTIONS} -v)
 target_link_options(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_OPTIONS} ${SOURCESDK_LINK_OPTIONS})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${PLATFORM_COMPILE_DEFINITIONS} ${SOURCESDK_COMPILE_DEFINITIONS})

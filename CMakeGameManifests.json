@@ -5,7 +5,7 @@
 
 		"game_dir": null,
 
-		"defines":
+		"am_defines":
 		{
 			"SE_EPISODEONE": 1,
 			"SE_DARKMESSIAH": 2,
@@ -56,10 +56,14 @@
 	{
 		"name": "Artifact",
 
+		"am_defines":
+		{
+			"SOURCE_ENGINE": 101
+		},
+
 		"defines":
 		{
-			"DCG": 101,
-			"SOURCE_ENGINE": 101
+			"DCG": 101
 		}
 	},
 	"artifact":
@@ -87,10 +91,14 @@
 		"name": "Counter-Strike 2",
 		"inherits": ["sdk_base", "core", "csgo"],
 
+		"am_defines":
+		{
+			"SOURCE_ENGINE": 25
+		},
+
 		"defines":
 		{
-			"CS2": 25,
-			"SOURCE_ENGINE": 25
+			"CS2": 25
 		}
 	},
 
@@ -113,10 +121,14 @@
 
 		"protobufs_dir": "deadlock",
 
+		"am_defines":
+		{
+			"SOURCE_ENGINE": 26
+		},
+
 		"defines":
 		{
-			"DEADLOCK": 26,
-			"SOURCE_ENGINE": 26
+			"DEADLOCK": 26
 		}
 	},
 
@@ -124,6 +136,11 @@
 	{
 		"name": "Dota Base",
 		"game_dir": "dota",
+
+		"am_defines":
+		{
+			"SOURCE_ENGINE": 24
+		},
 
 		"defines":
 		{
