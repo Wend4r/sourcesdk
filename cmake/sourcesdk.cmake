@@ -30,11 +30,6 @@ elseif(LINUX)
 
 		POSIX
 		_LINUX LINUX
-
-		_stricmp=strcasecmp stricmp=strcasecmp strcmpi=strcasecmp
-		_strnicmp=strncasecmp strnicmp=strncasecmp
-		_snprintf=snprintf _vsnprintf=vsnprintf
-		_alloca=alloca 
 	)
 elseif(APPLE)
 	set(SOURCESDK_COMPILE_DEFINITIONS
