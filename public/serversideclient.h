@@ -120,7 +120,7 @@ public:
 	virtual void             Clear() = 0;
 
 	virtual bool             ExecuteStringCommand( const CNETMsg_StringCmd_t& msg ) = 0; // "false" trigger an anti spam counter to kick a client.
-	virtual void             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) = 0;
+	virtual bool             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) = 0;
 	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0; // "Client %d(%s) tried to send a RebroadcastSourceId msg.\n"
 
 public:
