@@ -308,7 +308,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(CBufferString &buf)
+	bool AssignTo(CBufferString &buf) const
 	{
 		buf.Purge(0);
 
@@ -365,7 +365,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(float *pDest)
+	bool AssignTo(float *pDest) const
 	{
 		switch(m_type)
 		{
@@ -401,7 +401,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(int *pDest)
+	bool AssignTo(int *pDest) const
 	{
 		switch(m_type)
 		{
@@ -437,7 +437,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(bool *pDest)
+	bool AssignTo(bool *pDest) const
 	{
 		switch(m_type)
 		{
@@ -475,7 +475,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(string_t *pDest)
+	bool AssignTo(string_t *pDest) const
 	{
 		if(m_type == FIELD_STRING)
 		{
@@ -499,7 +499,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(Vector *pDest)
+	bool AssignTo(Vector *pDest) const
 	{
 		switch(m_type)
 		{
@@ -531,7 +531,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(Vector2D *pDest)
+	bool AssignTo(Vector2D *pDest) const
 	{
 		switch(m_type)
 		{
@@ -563,7 +563,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(Vector4D *pDest)
+	bool AssignTo(Vector4D *pDest) const
 	{
 		switch(m_type)
 		{
@@ -595,7 +595,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(Quaternion *pDest)
+	bool AssignTo(Quaternion *pDest) const
 	{
 		switch(m_type)
 		{
@@ -627,7 +627,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(QAngle *pDest)
+	bool AssignTo(QAngle *pDest) const
 	{
 		switch(m_type)
 		{
@@ -659,7 +659,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(Color *pDest)
+	bool AssignTo(Color *pDest) const
 	{
 		switch(m_type)
 		{
@@ -690,7 +690,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(ResourceHandle_t *pDest)
+	bool AssignTo(ResourceHandle_t *pDest) const
 	{
 		if(m_type == FIELD_RESOURCE)
 		{
@@ -722,7 +722,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(CUtlStringToken *pDest)
+	bool AssignTo(CUtlStringToken *pDest) const
 	{
 		if(m_type == FIELD_UTLSTRINGTOKEN)
 		{
@@ -738,7 +738,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(CEntityHandle *pDest)
+	bool AssignTo(CEntityHandle *pDest) const
 	{
 		switch(m_type)
 		{
@@ -767,7 +767,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(CEntityInstance *pDest)
+	bool AssignTo(CEntityInstance *pDest) const
 	{
 		if(m_type == FIELD_EHANDLE)
 		{
@@ -786,7 +786,7 @@ public:
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
 	template <typename T>
-	bool AssignTo(CVariantBase<T> *pDest)
+	bool AssignTo(CVariantBase<T> *pDest) const
 	{
 		switch(m_type)
 		{
@@ -808,7 +808,7 @@ public:
 	}
 
 	template <typename T>
-	bool AssignTo(T *pDest)
+	bool AssignTo(T *pDest) const
 	{
 		fieldtype_t destType = VariantDeduceType(T);
 		if(destType == FIELD_VOID)
@@ -848,7 +848,7 @@ public:
 	}
 
 	// Allocates own buffers and copies the internal value when needed, if silent = false, emits a global warning
-	void ConvertToCopiedData(bool silent = true)
+	void ConvertToCopiedData(bool silent = true) const
 	{
 		switch(m_type)
 		{
@@ -870,7 +870,7 @@ public:
 	}
 
 	template <typename T>
-	T Get()
+	T Get() const
 	{
 		T value = {};
 		AssignTo(&value);
@@ -952,7 +952,7 @@ public:
 		return successful;
 	}
 
-	const char *ToString()
+	const char *ToString() const
 	{
 		static CBufferStringN<200> szBuf;
 		AssignTo(szBuf);
