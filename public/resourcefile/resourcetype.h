@@ -9,6 +9,10 @@
 #include <tier0/threadtools.h>
 #include <tier1/utlsymbollarge.h>
 
+#include <initializer_list>
+
+typedef uint64 ResourceType_t;
+
 enum ResourceStatus_t
 {
 	RESOURCE_STATUS_UNKNOWN = 0,
@@ -49,9 +53,67 @@ enum ResourceBindingFlags_t
 	RESOURCE_BINDING_FIRST_UNUSED_FLAG = 0x200
 };
 
+enum ResourceSystemUpdateMode_t : int
+{
+};
+
+enum ResourceSystemGetNamedResourcesFlags_t : int
+{
+};
+
+struct ResourceId_t
+{
+	uint64 m_Data;
+
+	operator uint64() const { return Get(); }
+	uint64 Get() const { return m_Data; }
+};
+
 struct ResourceNameInfo_t
 {
 	CUtlSymbolLarge m_ResourceNameSymbol;
+};
+
+class CResourcePointerBase
+{
+public:
+	int32 GetOffset() const { return m_nOffset; }
+
+private:
+	int32 m_nOffset;
+};
+
+template < typename T >
+class CResourcePointer : public CResourcePointerBase
+{
+};
+
+class CResourceString : public CResourcePointer< char >
+{
+};
+
+class CStrongHandleVoid;
+
+struct ResourceManifestEntry_t
+{
+	const char *m_pResourceName;
+	bool m_bResourceNameIsManifestName;
+	CStrongHandleVoid *m_pHandle;
+	ResourceManifestEntry_t *m_pNextInstanceOfThisEntry;
+	int m_nHandleReferences;
+};
+
+typedef std::initializer_list< std::initializer_list< ResourceManifestEntry_t > > ManifestEntryGroupList_t;
+
+class ResourceManifestDesc_t
+{
+	CUtlString m_sManifestName;
+	CUtlString m_sManifestGroup;
+	ManifestEntryGroupList_t *m_pEntryGroups;
+	CUtlString m_sFileName;
+	int m_nLine;
+	bool m_bRegistered;
+	bool m_bDisallowRegistration;
 };
 
 typedef const ResourceNameInfo_t *ResourceNameHandle_t;
@@ -71,7 +133,7 @@ struct ResourceBindingBase_t
 	ExtRefIndex_t m_nExtRefHandle;
 };
 
-typedef const ResourceBindingBase_t* ResourceHandle_t;
-typedef void* HGameResourceManifest;
+typedef const ResourceBindingBase_t *ResourceHandle_t;
+typedef void *HGameResourceManifest;
 
 #endif // RESOURCETYPE_H
