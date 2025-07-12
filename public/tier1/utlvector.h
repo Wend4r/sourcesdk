@@ -1704,10 +1704,9 @@ void CUtlVectorBase<T, I, A>::Validate( CValidator &validator, char *pchName )
 #endif // DBGFLAG_VALIDATE
 
 template < class T, typename I, class A >
-CUtlVector< T, I, A >::CUtlVector( const std::initializer_list< T > elements )
+CUtlVector< T, I, A >::CUtlVector( const std::initializer_list< T > elements )	: 
+	BaseClass( 0, elements.size() )
 {
-	this->EnsureCapacity( elements.size() );
-
 	for ( const auto& elem : elements )
 	{
 		this->AddToTail( elem );
