@@ -225,7 +225,7 @@ public:
 		return pPrtobufInfo->m_pBinding;
 	}
 
-	bool Send( CPlayerSlot slot ) const { return Send( { slot } ) != 0; }
+	bool Send( CPlayerSlot slot ) const { return Send( CUtlVector< CPlayerSlot >{ slot } ) != 0; }
 	int Send( const CUtlVector< CPlayerSlot > &vecSlots ) const
 	{
 		if ( !g_pNetworkServerService->IsServerRunning() )
@@ -258,7 +258,7 @@ public:
 				continue;
 			}
 
-			if ( pNetChan->SendNetMessage( static_cast< const CNetMessage * >( this ), BUF_TYPE ) )
+			if ( pNetChan->SendNetMessage( static_cast< const CNetMessage * >( this ), kBufType ) )
 			{
 				nSended++;
 			}
