@@ -172,41 +172,37 @@ private:
 	T				*m_pObj;
 };
 
-
 template< class T, class RefCountAccessor >
 inline CSmartPtr<T,RefCountAccessor>::CSmartPtr() : m_pObj( NULL )
 {
 }
 
 template< class T, class RefCountAccessor >
-inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const T &copyFrom )
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const T &copyFrom ) : m_pObj( new T() )
 {
-	m_pObj = new T();
 	CopyConstruct( m_pObj, copyFrom );
 }
 
 template< class T, class RefCountAccessor >
-inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T &&moveFrom )
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T &&moveFrom ) : m_pObj( new T() )
 {
-	m_pObj = new T();
 	MoveConstruct( m_pObj, Move( moveFrom ) );
 }
 
-
 template< class T, class RefCountAccessor >
-inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T *pObj )
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T *pObj ) : m_pObj( NULL )
 {
 	SetObject( pObj );
 }
 
 template< class T, class RefCountAccessor >
-inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const CSmartPtr<T,RefCountAccessor> &copyFrom )
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const CSmartPtr<T,RefCountAccessor> &copyFrom ) : m_pObj( NULL )
 {
 	CopyFrom( copyFrom );
 }
 
 template< class T, class RefCountAccessor >
-inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( CSmartPtr<T,RefCountAccessor> &&moveFrom )
+inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( CSmartPtr<T,RefCountAccessor> &&moveFrom ) : m_pObj( NULL )
 {
 	MoveFrom( Move( moveFrom ) );
 }
