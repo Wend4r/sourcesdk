@@ -181,12 +181,14 @@ template< class T, class RefCountAccessor >
 inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( const T &copyFrom ) : m_pObj( new T() )
 {
 	CopyConstruct( m_pObj, copyFrom );
+	RefCountAccessor::AddRef( m_pObj );
 }
 
 template< class T, class RefCountAccessor >
 inline CSmartPtr<T,RefCountAccessor>::CSmartPtr( T &&moveFrom ) : m_pObj( new T() )
 {
 	MoveConstruct( m_pObj, Move( moveFrom ) );
+	RefCountAccessor::AddRef( m_pObj );
 }
 
 template< class T, class RefCountAccessor >
