@@ -60,18 +60,18 @@ public:
 
 		// Declare a default constructor into your elem type.
 		Node_t( const KeyType_t &inKey ) : key( inKey ), elem() {}
-		Node_t( KeyType_t &&inKey ) : key( Move(inKey) ), elem() {}
+		Node_t( KeyType_t &&inKey ) : key( Move( inKey ) ), elem() {}
 
 		Node_t( const KeyType_t &inKey, const ElemType_t &inElem ) : key( inKey ), elem( inElem ) {}
-		Node_t( const KeyType_t &inKey, ElemType_t &&moveElem ) : key( inKey ), elem( Move(moveElem) ) {}
-		Node_t( KeyType_t &&moveKey, const ElemType_t &inElem ) : key( Move(moveKey) ), elem( inElem ) {}
-		Node_t( KeyType_t &&moveKey, ElemType_t &&moveElem ) : key( Move(moveKey) ), elem( Move(moveElem) ) {}
+		Node_t( const KeyType_t &inKey, ElemType_t &&moveElem ) : key( inKey ), elem( Move( moveElem ) ) {}
+		Node_t( KeyType_t &&moveKey, const ElemType_t &inElem ) : key( Move( moveKey ) ), elem( inElem ) {}
+		Node_t( KeyType_t &&moveKey, ElemType_t &&moveElem ) : key( Move( moveKey ) ), elem( Move( moveElem ) ) {}
 
 		Node_t( const Node_t &copyFrom ) : Node_t( copyFrom.key, copyFrom.elem ) {}
-		Node_t( Node_t &&moveFrom ) : Node_t( Move(moveFrom.key), Move(moveFrom.elem) ) {}
+		Node_t( Node_t &&moveFrom ) : Node_t( Move(moveFrom.key), Move( moveFrom.elem ) ) {}
 
 		Node_t &operator=( const Node_t &copyFrom ) { key = copyFrom.key; elem = copyFrom.elem; return *this; }
-		Node_t &operator=( Node_t &&moveFrom ) { key = Move(moveFrom.key); elem = Move(moveFrom.elem); return *this; }
+		Node_t &operator=( Node_t &&moveFrom ) { key = Move( moveFrom.key ); elem = Move( moveFrom.elem ); return *this; }
 	};
 
 	class CKeyLess
@@ -109,26 +109,31 @@ public:
 	}
 
 	CUtlMap( const CUtlMap<K, T, I, LessFunc_t> &copyFrom )
-	 : m_Tree( copyFrom.m_Tree )
 	{
+		CopyFrom( copyFrom );
 	}
 
 	CUtlMap( CUtlMap<K, T, I, LessFunc_t> &&moveFrom )
-	 : m_Tree( Move(moveFrom.m_Tree) )
 	{
+		MoveFrom( Move( moveFrom ) );
 	}
 
 	CUtlMap( const CTree &copyFrom )
-	 : m_Tree( copyFrom )
 	{
+		CopyFrom( copyFrom );
 	}
 
 	CUtlMap( CTree &&moveFrom )
-	 : m_Tree( Move(moveFrom) )
+	 : m_Tree( Move( moveFrom ) )
 	{
 	}
-	
+
 	void EnsureCapacity( int num )							{ m_Tree.EnsureCapacity( num ); }
+
+	CUtlMap<K, T, I, LessFunc_t> &operator=( const CUtlMap<K, T, I, LessFunc_t> &other )	{ return CopyFrom( other ); }
+	CUtlMap<K, T, I, LessFunc_t> &operator=( CUtlMap<K, T, I, LessFunc_t> &&other )			{ return MoveFrom( Move( other ) ); }
+	CUtlMap<K, T, I, LessFunc_t> &CopyFrom( const CUtlMap<K, T, I, LessFunc_t> &other )		{ m_Tree.CopyFrom( other.m_Tree ); return *this; }
+	CUtlMap<K, T, I, LessFunc_t> &MoveFrom( CUtlMap<K, T, I, LessFunc_t> &&other )			{ m_Tree.MoveFrom( Move( other.m_Tree ) ); return *this; }
 
 	// gets particular elements
 	ElemType_t &		Element( IndexType_t i )			{ return m_Tree.Element( i ).elem; }
@@ -162,7 +167,7 @@ public:
 	
 	// Insert method (inserts in order)
 	IndexType_t Insert( const KeyType_t &key, const ElemType_t &insert ) { return m_Tree.Insert( Node_t( key, insert ) ); }
-	IndexType_t Insert( const KeyType_t &key, ElemType_t &&insert ) { return m_Tree.Insert( Node_t( key, Move(insert) ) ); }
+	IndexType_t Insert( const KeyType_t &key, ElemType_t &&insert ) { return m_Tree.Insert( Node_t( key, Move( insert ) ) ); }
 	IndexType_t Insert( KeyType_t &&key, const ElemType_t &insert ) { return m_Tree.Insert( Node_t( Move(key), insert ) ); }
 	IndexType_t Insert( KeyType_t &&key, ElemType_t &&insert ) { return m_Tree.Insert( Node_t( Move(key), Move(insert) ) ); }
 	IndexType_t Insert( const KeyType_t &key ) { return m_Tree.Insert( Node_t( key ) ); }

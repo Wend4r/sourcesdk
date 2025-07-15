@@ -214,11 +214,10 @@ public:
 
 	CUtlRBTree<T, I, L, M>& operator=( const CUtlRBTree<T, I, L, M> &copyFrom );
 	CUtlRBTree<T, I, L, M>& operator=( CUtlRBTree<T, I, L, M> &&moveFrom );
+	CUtlRBTree<T, I, L, M> &CopyFrom( const CUtlRBTree<T, I, L, M> &other );
+	CUtlRBTree<T, I, L, M> &MoveFrom( CUtlRBTree<T, I, L, M> &&other );
 
 	void EnsureCapacity( int num );
-
-	void CopyFrom( const CUtlRBTree<T, I, L, M> &other );
-	void MoveFrom( CUtlRBTree<T, I, L, M> &&other );
 
 	// gets particular elements
 	T&		Element( I i );
@@ -502,13 +501,7 @@ CUtlRBTree<T, I, L, M>& CUtlRBTree<T, I, L, M>::operator=( CUtlRBTree<T, I, L, M
 }
 
 template < class T, class I, typename L, class M >
-inline void CUtlRBTree<T, I, L, M>::EnsureCapacity( int num )        
-{ 
-	m_Elements.EnsureCapacity( num );
-}
-
-template < class T, class I, typename L, class M >
-inline void CUtlRBTree<T, I, L, M>::CopyFrom( const CUtlRBTree<T, I, L, M> &other )
+inline CUtlRBTree<T, I, L, M> &CUtlRBTree<T, I, L, M>::CopyFrom( const CUtlRBTree<T, I, L, M> &other )
 {
 	{
 		const uintp nOtherSize = other.m_Elements.Count();
@@ -532,10 +525,12 @@ inline void CUtlRBTree<T, I, L, M>::CopyFrom( const CUtlRBTree<T, I, L, M> &othe
 	m_FirstFree = other.m_FirstFree;
 	m_LastAlloc = other.m_LastAlloc;
 	ResetDbgInfo();
+
+	return *this;
 }
 
 template < class T, class I, typename L, class M >
-inline void CUtlRBTree<T, I, L, M>::MoveFrom( CUtlRBTree<T, I, L, M> &&other )
+inline CUtlRBTree<T, I, L, M> &CUtlRBTree<T, I, L, M>::MoveFrom( CUtlRBTree<T, I, L, M> &&other )
 {
 	{
 		auto &&otherElems = Move( other.m_Elements );
@@ -560,6 +555,14 @@ inline void CUtlRBTree<T, I, L, M>::MoveFrom( CUtlRBTree<T, I, L, M> &&other )
 	m_FirstFree = Move( other.m_FirstFree );
 	m_LastAlloc = Move( other.m_LastAlloc );
 	ResetDbgInfo();
+
+	return *this;
+}
+
+template < class T, class I, typename L, class M >
+inline void CUtlRBTree<T, I, L, M>::EnsureCapacity( int num )
+{ 
+	m_Elements.EnsureCapacity( num );
 }
 
 //-----------------------------------------------------------------------------
