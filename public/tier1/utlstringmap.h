@@ -138,7 +138,7 @@ public:
 	inline CUtlSymbol Next( const CUtlSymbol &i ) const
 	{
 		CUtlSymbol n(i+1);
-		return n < m_SymbolTable.GetNumStrings() ? n : InvalidIndex();
+		return n.GetId() < m_SymbolTable.GetNumStrings() ? n : InvalidIndex();
 	}
 
 
