@@ -53,10 +53,16 @@ public:
 	CUtlSymbol( CUtlSymbol const& sym ) : m_Id(sym.m_Id) {}
 	
 	// operator=
+	CUtlSymbol& operator=( UtlSymId_t id ) { m_Id = id; return *this; }
 	CUtlSymbol& operator=( CUtlSymbol const& src ) { m_Id = src.m_Id; return *this; }
 
 	// operator==
+	bool operator==( UtlSymId_t id ) const { return m_Id == id; }
 	bool operator==( CUtlSymbol const& src ) const { return m_Id == src.m_Id; }
+
+	// operator<
+	bool operator<( UtlSymId_t id ) const { return m_Id < id; }
+	bool operator<( CUtlSymbol const& src ) const { return m_Id < src.m_Id; }
 
 	static uint32 MakeHash( bool bInsensitive, const char *pString, int nLength )
 	{
