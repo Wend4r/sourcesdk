@@ -105,7 +105,7 @@ struct ResourceManifestEntry_t
 
 typedef std::initializer_list< std::initializer_list< ResourceManifestEntry_t > > ManifestEntryGroupList_t;
 
-class ResourceManifestDesc_t
+struct ResourceManifestDesc_t
 {
 	CUtlString m_sManifestName;
 	CUtlString m_sManifestGroup;
