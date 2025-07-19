@@ -119,8 +119,8 @@ public:
 	bool operator<( const CBufferString &buffer ) const { return !operator<( MAKE_STRINGTOKEN_UTL( buffer ) ); }
 
 	/// access to the hash code for people who need to store thse as 32-bits, regardless of the
-	operator uint32() const { return m_nHashCode; }
-	uint32 GetHashCode() const { return m_nHashCode; }
+	constexpr operator uint32() const { return m_nHashCode; }
+	constexpr uint32 GetHashCode() const { return m_nHashCode; }
 
 	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement element ) const;
 	DLL_CLASS_IMPORT static bool TrackTokenCreation( const char *s1, const char *s2 );
