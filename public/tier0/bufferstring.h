@@ -88,11 +88,12 @@ public:
 	}
 
 	// Constructs buffer initialized with a C-string (optional length and heap allowance; will be allocated on the heap).
-	CBufferString( const char *pString, int nLen = -1, bool bAllowHeapAllocation = true ) : 
+	CBufferString( const char *pString, int nLen, bool bAllowHeapAllocation = true ) : 
 	    CBufferString( BS_TYPE_HEAP, bAllowHeapAllocation )
 	{
 		Set( pString, nLen );
 	}
+	template< size_t N > CBufferString( const char (&str)[N], bool bAllowHeapAllocation = true ) : CBufferString( str, N - 1, bAllowHeapAllocation ) {}
 	CBufferString( const CUtlString &str, bool bAllowHeapAllocation = true ) : CBufferString( str, str.Length(), bAllowHeapAllocation ) {}
 	CBufferString( const CBufferString &copyFrom, bool bAllowHeapAllocation = true ) : CBufferString( copyFrom, copyFrom.Length(), bAllowHeapAllocation ) {}
 	CBufferString( CBufferString &&moveFrom ) noexcept : 
