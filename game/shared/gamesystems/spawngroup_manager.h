@@ -346,6 +346,28 @@ class CLoadingSpawnGroup : public ILoadingSpawnGroup
 
 class CSpawnGroupMgrGameSystem : public IGameSpawnGroupMgr, public IGameSystem
 {
-};
+public:
+	struct UnloadRequestQueueItem_t
+	{
+		SpawnGroupHandle_t m_hSpawnGroup;
+		bool m_bSaveEntities;
+	};
+
+	// ConCommand m_OnSpawnGroupActivate; "spawn_group_activate"
+	// ConCommand m_OnSpawnGroupLoad; "spawn_group_load"
+	// ConCommand m_OnSpawnGroupUnload; "spawn_group_unload"
+	char commandsPad[208]; // 16
+	CUtlVector<SpawnGroupHandle_t> m_SpawnEntitiesCallQueue; // 224
+	bool m_bQueueSpawnEntitiesCalls; // 248
+	CUtlMap<SpawnGroupHandle_t,CMapSpawnGroup *> m_SpawnGroups; // 256
+	// some mutex
+#ifdef _WIN32
+	char pad[64];
+#else
+	char pad[408];
+#endif
+	CUtlVector<UnloadRequestQueueItem_t> m_QueuedUnloadRequests; // W 352 | L 696
+	void *m_pUnk376;  // 376
+}; // sizeof W 384 | L 728
 
 #endif // SPAWNGROUP_MANAGER_H
