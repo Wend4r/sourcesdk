@@ -11,6 +11,7 @@ set(PLATFORM_COMPILE_OPTIONS
 
 	/wd4005 /wd4819 /wd4828 /wd5033
 	/permissive- /utf-8 /MP
+	/arch:SSE4.2
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
