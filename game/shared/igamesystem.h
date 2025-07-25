@@ -414,6 +414,10 @@ public:
 
 private:
 	const char* m_pName;
+
+	struct YouForgot
+	{
+	} m_YouForgot;
 };
 
 class CAutoGameSystem : public CBaseGameSystem

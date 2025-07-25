@@ -344,7 +344,7 @@ class CLoadingSpawnGroup : public ILoadingSpawnGroup
 {
 };
 
-class CSpawnGroupMgrGameSystem : public IGameSpawnGroupMgr, public IGameSystem
+class CSpawnGroupMgrGameSystem : public IGameSpawnGroupMgr, public CBaseGameSystem
 {
 public:
 	struct UnloadRequestQueueItem_t
@@ -353,21 +353,21 @@ public:
 		bool m_bSaveEntities;
 	};
 
-	// ConCommand m_OnSpawnGroupActivate; "spawn_group_activate"
-	// ConCommand m_OnSpawnGroupLoad; "spawn_group_load"
-	// ConCommand m_OnSpawnGroupUnload; "spawn_group_unload"
-	char commandsPad[208]; // 16
+public:
+	CConCommandMemberAccessor<CSpawnGroupMgrGameSystem> m_OnSpawnGroupActivate; // "spawn_group_activate"
+	CConCommandMemberAccessor<CSpawnGroupMgrGameSystem> m_OnSpawnGroupLoad; // "spawn_group_load"
+	CConCommandMemberAccessor<CSpawnGroupMgrGameSystem> m_OnSpawnGroupUnload; // "spawn_group_unload"
 	CUtlVector<SpawnGroupHandle_t> m_SpawnEntitiesCallQueue; // 224
 	bool m_bQueueSpawnEntitiesCalls; // 248
-	CUtlMap<SpawnGroupHandle_t,CMapSpawnGroup *> m_SpawnGroups; // 256
-	// some mutex
-#ifdef _WIN32
-	char pad[64];
-#else
-	char pad[408];
-#endif
+	CUtlMap<SpawnGroupHandle_t, CMapSpawnGroup *> m_SpawnGroups; // 256
+	CThreadRWLock_FastRead m_hHandleMutex; // 288
 	CUtlVector<UnloadRequestQueueItem_t> m_QueuedUnloadRequests; // W 352 | L 696
-	void *m_pUnk376;  // 376
-}; // sizeof W 384 | L 728
+	void *m_pUnk376;
+};
+#ifdef _WIN32
+COMPILE_TIME_ASSERT(sizeof(CSpawnGroupMgrGameSystem) == 384);
+#elif defined(POSIX)
+COMPILE_TIME_ASSERT(sizeof(CSpawnGroupMgrGameSystem) == 728);
+#endif
 
 #endif // SPAWNGROUP_MANAGER_H

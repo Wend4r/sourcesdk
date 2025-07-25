@@ -1001,22 +1001,7 @@ typedef void * HINSTANCE;
 //-----------------------------------------------------------------------------
 // Macro to assist in asserting constant invariants during compilation
 
-// This implementation of compile time assert has zero cost (so it can safely be
-// included in release builds) and can be used at file scope or function scope.
-#ifdef __GNUC__
-       #define COMPILE_TIME_ASSERT( pred ) typedef int UNIQUE_ID[ (pred) ? 1 : -1 ]
-#else
-       #if _MSC_VER >= 1600
-       // If available use static_assert instead of weird language tricks. This
-       // leads to much more readable messages when compile time assert constraints
-       // are violated.
-       #define COMPILE_TIME_ASSERT( pred ) static_assert( pred, "Compile time assert constraint is not true: " #pred )
-       #else
-       // Due to gcc bugs this can in rare cases (some template functions) cause redeclaration
-       // errors when used multiple times in one scope. Fix by adding extra scoping.
-       #define COMPILE_TIME_ASSERT( pred ) typedef char compile_time_assert_type[(pred) ? 1 : -1];
-       #endif
-#endif
+#define COMPILE_TIME_ASSERT( pred )	static_assert( pred, "Compile time assert constraint is not true: " #pred )
 // ASSERT_INVARIANT used to be needed in order to allow COMPILE_TIME_ASSERTs at global
 // scope. However the new COMPILE_TIME_ASSERT macro supports that by default.
 #define ASSERT_INVARIANT( pred )	COMPILE_TIME_ASSERT( pred )
