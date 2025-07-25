@@ -9,11 +9,7 @@
 #pragma once
 
 #include "platform.h"
-
-#if defined( _WIN32 ) && !defined( _X360 )
-#define WIN32_LEAN_AND_MEAN
-#include "windows.h"
-#endif
+#include "winlite.h"
 
 #if !defined COMPILER_MSVC && !defined HMODULE
 #define HMODULE void *

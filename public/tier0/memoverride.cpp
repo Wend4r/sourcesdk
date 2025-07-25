@@ -351,9 +351,9 @@ inline void __cdecl VPurecallHandler()
 	Plat_FatalErrorFunc("VPurecallHandler()\n");
 }
 
+#include "winlite.h"
+
 #if defined( _WIN32 ) && !defined( _X360 )
-#define WIN_32_LEAN_AND_MEAN
-#include <windows.h>
 // set Windows pure virtual handler
 _purecall_handler OldPurecallHandler = _set_purecall_handler( VPurecallHandler );
 #elif defined( POSIX ) && !defined( _PS3 )
