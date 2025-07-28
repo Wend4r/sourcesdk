@@ -1276,8 +1276,8 @@ void CUtlMemory_RawAllocator<T, I>::CopyFrom( const CUtlMemory_RawAllocator<T, I
 {
 	m_nAllocationCount = 0;
 
-	SetRawAllocatorType( from.GetRawAllocatorType() );
 	EnsureCapacity( m_nAllocationCount );
+	memcpy( m_pMemory, from.m_pMemory, m_nAllocationCount * sizeof(T) );
 }
 
 //-----------------------------------------------------------------------------
