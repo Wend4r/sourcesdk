@@ -403,7 +403,7 @@ bool CCommand::Tokenize( CUtlString pCommand, characterset_t *pBreakSet )
 	memmove( m_ArgSBuffer.Base(), pCommand, nLen + 1 );
 
 	// Parse the current command into the current command buffer
-	CUtlBuffer bufParse( m_ArgSBuffer.Base(), nLen, CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY);
+	CUtlBuffer bufParse( m_ArgSBuffer.Base(), nLen, static_cast<CUtlBuffer::BufferFlags_t>(CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY));
 	int nArgvBufferSize = 0;
 	while ( bufParse.IsValid() )
 	{
