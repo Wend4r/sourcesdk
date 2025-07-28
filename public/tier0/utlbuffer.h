@@ -157,6 +157,7 @@ public:
 	// flags
 	enum BufferFlags_t
 	{
+		NONE = 0x0,
 		TEXT_BUFFER = 0x1,			// Describes how get + put work (as strings, or binary)
 		EXTERNAL_GROWABLE = 0x2,	// This is used w/ external buffers and causes the utlbuf to switch to reallocatable memory if an overflow happens when Putting.
 		CONTAINS_CRLF = 0x4,		// For text buffers only, does this contain \n or \n\r?
@@ -168,10 +169,8 @@ public:
 	typedef bool (CUtlBuffer::*UtlBufferOverflowFunc_t)( int nSize );
 
 	// Constructors for growable + external buffers for serialization/unserialization
-	DLL_CLASS_IMPORT CUtlBuffer( int growSize = 0, int initSize = 0, int nFlags = 0 );
-	DLL_CLASS_IMPORT CUtlBuffer( const void* pBuffer, int size, int nFlags = 0 );
-	// This one isn't actually defined so that we catch contructors that are trying to pass a bool in as the third param.
-	DLL_CLASS_IMPORT CUtlBuffer( const void *pBuffer, int size, bool crap ) = delete;
+	DLL_CLASS_IMPORT CUtlBuffer( int growSize = 0, int initSize = 0, BufferFlags_t nFlags = NONE );
+	DLL_CLASS_IMPORT CUtlBuffer( const void* pBuffer, int size, BufferFlags_t nFlags = NONE );
 
 	// UtlBuffer objects should not be copyable; we do a slow copy if you use this but it asserts.
 	// (REI: I'd like to delete these but we have some python bindings that currently rely on being able to copy these objects)
