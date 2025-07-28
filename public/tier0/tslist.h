@@ -573,12 +573,12 @@ public:
 		COMPILE_TIME_ASSERT( sizeof(Node_t) >= sizeof(TSLNodeBase_t) );
 		if ( ((size_t)&m_Head) % TSLIST_HEAD_ALIGNMENT != 0 )
 		{
-			Plat_FatalErrorFunc( "CTSQueue: Misaligned queue\n" );
+			Plat_FatalError( "CTSQueue: Misaligned queue\n" );
 			DebuggerBreak();
 		}
 		if ( ((size_t)&m_Tail) % TSLIST_HEAD_ALIGNMENT != 0 )
 		{
-			Plat_FatalErrorFunc( "CTSQueue: Misaligned queue\n" );
+			Plat_FatalError( "CTSQueue: Misaligned queue\n" );
 			DebuggerBreak();
 		}
 		m_Count = 0;
@@ -702,7 +702,7 @@ public:
 #ifdef _DEBUG
 		if ( (size_t)pNode % TSLIST_NODE_ALIGNMENT != 0 )
 		{
-			Plat_FatalErrorFunc( "CTSQueue: Misaligned node\n" );
+			Plat_FatalError( "CTSQueue: Misaligned node\n" );
 			DebuggerBreak();
 		}
 #endif

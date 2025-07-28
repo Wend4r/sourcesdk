@@ -110,7 +110,7 @@ void CUtlLeanVectorBase<T, I>::EnsureCapacity( int num, bool force )
 	if ( num > nMaxAllocated )
 	{
 		Msg( "%s allocation count overflow( %llu > %llu )\n", __FUNCTION__, ( uint64 )num, ( uint64 )nMaxAllocated );
-		Plat_FatalErrorFunc( "%s allocation count overflow", __FUNCTION__ );
+		Plat_FatalError( "%s allocation count overflow", __FUNCTION__ );
 		DebuggerBreak();
 	}
 	
@@ -275,7 +275,7 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I>::EnsureCapacity( int num, bool for
 		if ( num > nMaxAllocated )
 		{
 			Msg( "%s allocation count overflow( %llu > %llu )\n", __FUNCTION__, ( uint64 )num, ( uint64 )nMaxAllocated );
-			Plat_FatalErrorFunc( "%s allocation count overflow", __FUNCTION__ );
+			Plat_FatalError( "%s allocation count overflow", __FUNCTION__ );
 			DebuggerBreak();
 		}
 		
@@ -562,7 +562,7 @@ int CUtlLeanVectorImpl<B, T, I>::AddMultipleToTail( int nSize )
 		if ( ( nMaxSize - nOldSize ) < nSize )
 		{
 			Msg( "%s allocation count overflow( add %llu + current %llu > max %llu )\n", __FUNCTION__, ( uint64 )nSize, ( uint64 )nOldSize, ( uint64 )nMaxSize );
-			Plat_FatalErrorFunc( "%s allocation count overflow", __FUNCTION__ );
+			Plat_FatalError( "%s allocation count overflow", __FUNCTION__ );
 			DebuggerBreak();
 		}
 
@@ -590,13 +590,13 @@ T* CUtlLeanVectorImpl<B, T, I>::InsertBeforeGetPtr( int nBeforeIndex, int nSize 
 
 	if ( nBeforeIndex < 0 || nBeforeIndex > nOldSize )
 	{
-		Plat_FatalErrorFunc( "%s: invalid nBeforeIndex %d\n", __FUNCTION__, nBeforeIndex );
+		Plat_FatalError( "%s: invalid nBeforeIndex %d\n", __FUNCTION__, nBeforeIndex );
 		DebuggerBreak();
 	}
 
 	if ( nSize <= 0 )
 	{
-		Plat_FatalErrorFunc( "%s: invalid nSize %d\n", __FUNCTION__, nSize );
+		Plat_FatalError( "%s: invalid nSize %d\n", __FUNCTION__, nSize );
 		DebuggerBreak();
 	}
 
@@ -605,7 +605,7 @@ T* CUtlLeanVectorImpl<B, T, I>::InsertBeforeGetPtr( int nBeforeIndex, int nSize 
 	if ( ( nMaxSize - nOldSize ) < nSize )
 	{
 		Msg( "%s allocation count overflow( add %llu + current %llu > max %llu )\n", __FUNCTION__, ( uint64 )nSize, ( uint64 )nOldSize, ( uint64 )nMaxSize );
-		Plat_FatalErrorFunc( "%s allocation count overflow", __FUNCTION__ );
+		Plat_FatalError( "%s allocation count overflow", __FUNCTION__ );
 		DebuggerBreak();
 	}
 

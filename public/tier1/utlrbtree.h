@@ -835,7 +835,7 @@ I  CUtlRBTree<T, L, I, M>::NewNode( bool bConstructElement )
 			Assert( m_Elements.IsValidIterator( it ) );
 			if ( !m_Elements.IsValidIterator( it ) )
 			{
-				Plat_FatalErrorFunc( "CUtlRBTree overflow with %u elements!\n", Count() );
+				Plat_FatalError( "CUtlRBTree overflow with %u elements!\n", Count() );
 				DebuggerBreak();
 			}
 		}

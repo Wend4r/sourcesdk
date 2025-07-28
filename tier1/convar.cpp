@@ -51,7 +51,7 @@ public:
 		*cmd.m_Command = g_pCVar->RegisterConCommand( cmd.m_Info, s_nCVarFlag );
 		if ( !cmd.m_Command->IsValidRef() )
 		{
-			Plat_FatalErrorFunc( "RegisterConCommand: Unknown error registering con command \"%s\"!\n", cmd.m_Info.m_pszName );
+			Plat_FatalError( "RegisterConCommand: Unknown error registering con command \"%s\"!\n", cmd.m_Info.m_pszName );
 			DebuggerBreakIfDebugging();
 		}
 		else if ( s_ConCommandRegCB )
@@ -65,7 +65,7 @@ public:
 
 		if ( !pConCmd->IsValidRef() )
 		{
-			Plat_FatalErrorFunc( "UnregisterConCommand: Invalid con command \"%s\"!\n", cmd.m_Info.m_pszName );
+			Plat_FatalError( "UnregisterConCommand: Invalid con command \"%s\"!\n", cmd.m_Info.m_pszName );
 			DebuggerBreakIfDebugging();
 
 			return;
@@ -165,7 +165,7 @@ public:
 		Assert( cvar.m_pConVar );
 		if ( !cvar.m_pConVar->IsValidRef() )
 		{
-			Plat_FatalErrorFunc( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
+			Plat_FatalError( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
 			DebuggerBreakIfDebugging();
 		}
 		// Don't let references pass as a newly registered cvar
@@ -180,7 +180,7 @@ public:
 
 		if ( !pConVar->IsValidRef() )
 		{
-			Plat_FatalErrorFunc( "UnregisterConVar: Invalid convar \"%s\"!\n", cvar.m_Info.m_pszName );
+			Plat_FatalError( "UnregisterConVar: Invalid convar \"%s\"!\n", cvar.m_Info.m_pszName );
 			DebuggerBreakIfDebugging();
 			return;
 		}

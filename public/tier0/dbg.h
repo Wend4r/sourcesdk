@@ -345,9 +345,6 @@ DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_CONSOLE );
 // Channel for all DevMsg and DevWarning commands with level >= 2.
 DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_VERBOSE );
 
-// Legacy logging functions
-#define Plat_FatalError( ... ) do { Log_Error( LOG_GENERAL, ##__VA_ARGS__ ); Plat_ExitProcess( EXIT_FAILURE ); } while( 0 )
-
 // These functions do not return.
 void Error( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
 inline void Error( const tchar* pMsg, ... )
@@ -357,7 +354,7 @@ inline void Error( const tchar* pMsg, ... )
 	va_start(params, pMsg);
 	V_vsnprintf(szBuffer, sizeof(szBuffer), pMsg, params);
 	va_end(params);
-	Plat_FatalErrorFunc( "%s", szBuffer );
+	Plat_FatalError( "%s", szBuffer );
 }
 
 #if defined( DBGFLAG_STRINGS_STRIP )

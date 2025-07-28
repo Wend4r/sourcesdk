@@ -217,7 +217,7 @@ void KeyValues3::AllocArrayInPlace( int initial_size, Data_t data, int prealloca
 
 	if ( bytes_needed > preallocated_size )
 	{
-		Plat_FatalErrorFunc( "KeyValues3: pre-allocated array memory is too small for %u elements (%u bytes available, %u bytes needed)\n", initial_size, preallocated_size, bytes_needed );
+		Plat_FatalError( "KeyValues3: pre-allocated array memory is too small for %u elements (%u bytes available, %u bytes needed)\n", initial_size, preallocated_size, bytes_needed );
 		DebuggerBreak();
 	}
 
@@ -233,7 +233,7 @@ void KeyValues3::AllocTableInPlace( int initial_size, Data_t data, int prealloca
 
 	if ( bytes_needed > preallocated_size )
 	{
-		Plat_FatalErrorFunc( "KeyValues3: pre-allocated table memory is too small for %u members (%u bytes available, %u bytes needed)\n", initial_size, preallocated_size, bytes_needed );
+		Plat_FatalError( "KeyValues3: pre-allocated table memory is too small for %u members (%u bytes available, %u bytes needed)\n", initial_size, preallocated_size, bytes_needed );
 		DebuggerBreak();
 	}
 
@@ -1470,7 +1470,7 @@ void CKeyValues3Array::EnsureElementCapacity( int count, bool force, bool dont_m
 
 	if ( count > ALLOC_KV3ARRAY_MAX )
 	{
-		Plat_FatalErrorFunc( "%s: element count overflow (%u)\n", __FUNCTION__, count );
+		Plat_FatalError( "%s: element count overflow (%u)\n", __FUNCTION__, count );
 		DebuggerBreak();
 	}
 
@@ -1522,13 +1522,13 @@ CKeyValues3Array::Element_t* CKeyValues3Array::InsertMultipleBefore( KeyValues3 
 {
 	if ( from < 0 || from > m_nCount )
 	{
-		Plat_FatalErrorFunc( "%s: invalid insert point %u (current count %u)\n", __FUNCTION__, from, m_nCount );
+		Plat_FatalError( "%s: invalid insert point %u (current count %u)\n", __FUNCTION__, from, m_nCount );
 		DebuggerBreak();
 	}
 
 	if ( num > ALLOC_KV3ARRAY_MAX - m_nCount )
 	{
-		Plat_FatalErrorFunc( "%s: max element overflow, cur count %u + %u\n", __FUNCTION__, m_nCount, num );
+		Plat_FatalError( "%s: max element overflow, cur count %u + %u\n", __FUNCTION__, m_nCount, num );
 		DebuggerBreak();
 	}
 
@@ -1680,7 +1680,7 @@ void CKeyValues3Table::EnsureMemberCapacity( int count, bool force, bool dont_mo
 
 	if ( count > ALLOC_KV3TABLE_MAX )
 	{
-		Plat_FatalErrorFunc( "%s member count overflow (%u)\n", __FUNCTION__, count );
+		Plat_FatalError( "%s member count overflow (%u)\n", __FUNCTION__, count );
 		DebuggerBreak();
 	}
 
@@ -2095,7 +2095,7 @@ KeyValues3* CKeyValues3Context::Root()
 {
 	if ( !m_bRootAvailabe )
 	{
-		Plat_FatalErrorFunc( "FATAL: %s called on a pool context (no root available)\n", __FUNCTION__ );
+		Plat_FatalError( "FATAL: %s called on a pool context (no root available)\n", __FUNCTION__ );
 		DebuggerBreak();
 	}
 

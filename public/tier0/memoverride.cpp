@@ -348,7 +348,7 @@ void *operator new[] ( unsigned int nSize, int nBlockUse_UNUSED, const char *pFi
 inline void __cdecl VPurecallHandler()
 {
 	DebuggerBreakIfDebugging();	// give the debugger a chance to catch first
-	Plat_FatalErrorFunc("VPurecallHandler()\n");
+	Plat_FatalError("VPurecallHandler()\n");
 }
 
 #include "winlite.h"

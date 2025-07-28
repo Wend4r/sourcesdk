@@ -783,7 +783,7 @@ void CUtlMemory<T,I>::Grow( I num )
 	}
 
 	if ( ( ( int64 )m_nAllocationCount + num ) > INT_MAX )
-		UtlMemory_FailedAllocation( m_nAllocationCount, num );
+		UtlVectorMemory_FailedAllocation( m_nAllocationCount, num );
 
 	// Make sure we have at least numallocated + num allocations.
 	// Use the grow rules specified for this memory (in m_nGrowSize)
@@ -791,7 +791,7 @@ void CUtlMemory<T,I>::Grow( I num )
 
 	UTLMEMORY_TRACK_FREE();
 
-	int nNewAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )m_nAllocationCount, ( int )( m_nGrowSize ), ( int )nAllocationRequested, ( int )sizeof(T) );
+	int nNewAllocationCount = ( I )UtlVectorMemory_CalcNewAllocationCount( ( int )m_nAllocationCount, ( int )( m_nGrowSize ), ( int )nAllocationRequested, ( int )sizeof(T) );
 
 	// if m_nAllocationRequested wraps index type I, recalculate
 	if ( nNewAllocationCount < nAllocationRequested )
@@ -816,7 +816,7 @@ void CUtlMemory<T,I>::Grow( I num )
 	}
 
 	MEM_ALLOC_CREDIT_CLASS();
-	m_pMemory = (T*)UtlMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( nNewAllocationCount * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ));
+	m_pMemory = (T*)UtlVectorMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( nNewAllocationCount * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ));
 	Assert( m_pMemory );
 
 	if ( IsExternallyAllocated() )
@@ -850,7 +850,7 @@ inline void CUtlMemory<T,I>::EnsureCapacity( I num )
 	UTLMEMORY_TRACK_FREE();
 
 	MEM_ALLOC_CREDIT_CLASS();
-	m_pMemory = (T*)UtlMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( num * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ) );
+	m_pMemory = (T*)UtlVectorMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( num * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ) );
 	Assert( m_pMemory );
 
 	if ( IsExternallyAllocated() )
@@ -926,7 +926,7 @@ void CUtlMemory<T,I>::Purge( I numElements )
 
 	// Allocation count > 0, shrink it down.
 	MEM_ALLOC_CREDIT_CLASS();
-	m_pMemory = (T*)UtlMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( numElements * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ) );
+	m_pMemory = (T*)UtlVectorMemory_Alloc( m_pMemory, !IsExternallyAllocated(), ( int )( numElements * sizeof(T) ), ( int )( m_nAllocationCount * sizeof(T) ) );
 	Assert( m_pMemory );
 
 	if ( IsExternallyAllocated() )
@@ -1088,7 +1088,7 @@ void CUtlMemoryAligned<T, I, nAlignment>::Grow( I num )
 	// Use the grow rules specified for this memory (in m_nGrowSize)
 	I nAllocationRequested = BaseClass::m_nAllocationCount + num;
 
-	BaseClass::m_nAllocationCount = ( I )UtlMemory_CalcNewAllocationCount( ( int )BaseClass::m_nAllocationCount, ( int )BaseClass::m_nGrowSize, ( int )nAllocationRequested, ( int )sizeof(T) );
+	BaseClass::m_nAllocationCount = ( I )UtlVectorMemory_CalcNewAllocationCount( ( int )BaseClass::m_nAllocationCount, ( int )BaseClass::m_nGrowSize, ( int )nAllocationRequested, ( int )sizeof(T) );
 
 	UTLMEMORY_TRACK_ALLOC();
 
