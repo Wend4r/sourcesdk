@@ -14,6 +14,7 @@
 #include <engine/IEngineService.h>
 #include <engine/precache.h>
 #include <framesnapshot.h>
+#include <icvar.h>
 #include <iloopmode.h>
 #include <inetmsghandler.h>
 #include <netadr.h>
@@ -154,7 +155,7 @@ public:
 	
 };
 
-class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler
+class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
 {
 public:
 	virtual ~CNetworkGameServerBase() = 0;
