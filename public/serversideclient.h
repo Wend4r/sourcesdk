@@ -101,7 +101,7 @@ public:
 	const netadr_t          *GetRemoteAddress() const { return m_nAddr.Get<netadr_t>(); }
 	CNetworkGameServerBase  *GetServer() const { return m_Server; }
 
-	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, bool bFakePlayer, bool bSplitClient, int iClientPlatform ) = 0;
+	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, bool bFakePlayer, uint32 uChallengeNumber ) = 0;
 	virtual void             Inactivate( const char *pszAddons ) = 0;
 	virtual void             Reactivate( CPlayerSlot nSlot ) = 0;
 	virtual void             SetServer( CNetworkGameServer *pNetServer ) = 0;
@@ -140,7 +140,6 @@ public:
 	virtual bool             IsLowViolenceClient() const { return m_bLowViolence; }
 
 	virtual bool             IsSplitScreenUser() const { return m_bSplitScreenUser; }
-	int                      GetClientPlatform() const { return m_ClientPlatform; } // CrossPlayPlatform_t
 
 public: // Message Handlers
 	virtual bool             ProcessTick( const CNETMsg_Tick_t& msg ) = 0;
@@ -270,7 +269,11 @@ public:
 	int m_UnkVariable172;
 	bool m_bFakePlayer;
 	bool m_bSendingSnapshot;
+
+private:
 	[[maybe_unused]] char pad6[0x5];
+
+public:
 	CPlayerUserId m_UserID = -1;
 	bool m_bReceivedPacket;	// true, if client received a packet after the last send packet
 	CSteamID m_SteamID;
@@ -280,17 +283,21 @@ public:
 	ns_address m_nAddr;
 	ns_address m_nAddr2;
 	KeyValues* m_ConVars;
-	bool m_bConVarsChanged;
-	bool m_bConVarsInited;
-	bool m_bIsHLTV;
-	bool m_bIsReplay;
+	bool m_bUnk0;
 
 private:
-	[[maybe_unused]] char pad29[0xA];
+	[[maybe_unused]] char pad273[0x28];
+
+public:
+	bool m_bConVarsChanged;
+	bool m_bIsHLTV;
+
+private:
+	[[maybe_unused]] char pad29[0xB];
 
 public:
 	uint32 m_nSendtableCRC;
-	int m_ClientPlatform;
+	uint32 m_uChallengeNumber;
 	int m_nSignonTick;
 	int m_nDeltaTick;
 	int m_UnkVariable3;
@@ -343,10 +350,15 @@ public:
 	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
 
 private:
-	[[maybe_unused]] char pad2912[104];
+	[[maybe_unused]] char pad2912[0x38];
+#ifdef __linux__
+	[[maybe_unused]] char pad3000[0x8];
+#endif
+public:
+	CCommand* m_pCommand;
 };
 #ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 3008);
+COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 3016);
 #endif
 
 class CServerSideClient : public CServerSideClientBase
@@ -381,7 +393,7 @@ public:
 	HltvReplayStats_t m_HltvReplayStats;
 };
 #ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CServerSideClient) == 4048);
+COMPILE_TIME_ASSERT(sizeof(CServerSideClient) == 4064);
 #endif
 
 // not full class reversed
@@ -411,7 +423,7 @@ private:
 	[[maybe_used]] char pad3976[52];
 };
 #ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CHLTVClient) == 3120);
+COMPILE_TIME_ASSERT(sizeof(CHLTVClient) == 3128);
 #endif
 
 #endif // SERVERSIDECLIENT_H
