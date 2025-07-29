@@ -309,8 +309,7 @@ class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlMemory_RawAlloc
 	typedef CUtlVectorBase< T, I, CUtlMemory_RawAllocator<T, I> > BaseClass;
 
 public:
-	explicit CUtlVector_RawAllocator( I growSize = 0, I initSize = 0 ) : BaseClass( growSize, initSize ) {}
-	CUtlVector_RawAllocator( T* pMemory, I allocationCount, I numElements ) : BaseClass( pMemory, allocationCount, numElements ) {}
+	using BaseClass::BaseClass;
 };
 
 // this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
