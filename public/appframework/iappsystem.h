@@ -148,10 +148,12 @@ abstract_class CAppSystemDict
 public:
 	virtual ~CAppSystemDict() = 0;
 	virtual void Init() = 0;
+	virtual void* unk001();
 	virtual CUtlString GetConsoleLogFilename() = 0;
 	virtual void ChangeLogFileSuffix(const char* suffix) = 0;
 	virtual void CreateApplication() = 0;
 	virtual void OnAppSystemLoaded() = 0;
+
 
 	struct ModuleInfo_t
 	{
@@ -171,9 +173,8 @@ public:
 	};
 
 	CUtlVector<ModuleInfo_t> m_Modules;
-	CUtlVector<AppSystem_t> m_Systems;
-	CUtlVector<FactoryFn> m_NonAppSystemFactories;
-	CUtlStringList m_ModuleSearchPath;
+	CUtlMemory<AppSystem_t> m_Systems;
+	CUtlMemory<FactoryFn> m_NonAppSystemFactories;
 	CUtlStringMap<UtlSymId_t> m_SystemDict; // 104
 	int m_nExpectedShutdownLoggingStateIndex; // 256
 	ILoggingListener* m_pDefaultLoggingListener; // 264
