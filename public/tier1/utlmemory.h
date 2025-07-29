@@ -63,6 +63,9 @@ class CUtlMemory
 	template< class A, class C> friend class CUtlMemory_RawAllocator;
 
 public:
+	using iterator = T*;
+	using const_iterator = const T*;
+
 	// constructor, destructor
 	CUtlMemory( I nGrowSize = 0, I nInitSize = 0 );
 	CUtlMemory( T* pMemory, I numElements );
@@ -109,6 +112,11 @@ public:
 	static inline const I INVALID_INDEX = ( I )-1; // For use with COMPILE_TIME_ASSERT
 
 	static I InvalidIndex() { return INVALID_INDEX; }
+
+	iterator begin()						{ return Base(); }
+	const_iterator begin() const			{ return Base(); }
+	iterator end()							{ return Base() + Count(); }
+	const_iterator end() const				{ return Base() + Count(); }
 
 	// Gets the base address (can change when adding elements!)
 	T* Base();
