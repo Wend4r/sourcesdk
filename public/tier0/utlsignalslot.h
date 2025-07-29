@@ -21,13 +21,6 @@ struct CUtlSignaller_Base
 struct CUtlSlot
 {
 	CUtlVectorMT< CUtlVector<CUtlSignaller_Base*>, CCopyableLock<CThreadFastMutex> > m_ConnectedSignallers;
-
-	void* m_pData;
-
-#ifdef __linux__
-	uint32 m_nData2;
-	int16 m_nData2_2;
-#endif
 };
 
 #endif // UTLSLOT_H

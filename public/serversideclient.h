@@ -15,8 +15,8 @@
 #include <tier0/annotations.h>
 #include <tier0/circularbuffer.h>
 #include <tier0/utlstring.h>
+#include <tier0/utlsignalslot.h>
 #include <tier1/ns_address.h>
-#include <tier1/utlslot.h>
 #include <networksystem/inetworksystem.h>
 
 #include <netmessages.pb.h>
@@ -252,56 +252,56 @@ public:
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
 
 public:
-	CUtlString m_UserIDString; // 72
-	CUtlString m_Name; // 80
-	CPlayerSlot m_nClientSlot; // 88
-	CEntityIndex m_nEntityIndex; // 92
-	CNetworkGameServerBase* m_Server; // 96
-	INetChannel* m_NetChannel; // 104
-	uint8 m_nUnkVariable; // 112
-	bool m_bMarkedToKick; // 113
-	SignonState_t m_nSignonState; // 116
-	bool m_bSplitScreenUser; // 120
-	bool m_bSplitAllowFastDisconnect; // 121
-	int m_nSplitScreenPlayerSlot; // 124
-	CServerSideClientBase* m_SplitScreenUsers[4]; // 128
-	CServerSideClientBase* m_pAttachedTo; // 160
-	bool m_bSplitPlayerDisconnecting; // 168
-	int m_UnkVariable172; // 172
-	bool m_bFakePlayer; // 176
-	bool m_bSendingSnapshot; // 177
+	CUtlString m_UserIDString;
+	CUtlString m_Name;
+	CPlayerSlot m_nClientSlot;
+	CEntityIndex m_nEntityIndex;
+	CNetworkGameServerBase* m_Server;
+	INetChannel* m_NetChannel;
+	uint8 m_nUnkVariable;
+	bool m_bMarkedToKick;
+	SignonState_t m_nSignonState;
+	bool m_bSplitScreenUser;
+	bool m_bSplitAllowFastDisconnect;
+	int m_nSplitScreenPlayerSlot;
+	CServerSideClientBase* m_SplitScreenUsers[4];
+	CServerSideClientBase* m_pAttachedTo;
+	bool m_bSplitPlayerDisconnecting;
+	int m_UnkVariable172;
+	bool m_bFakePlayer;
+	bool m_bSendingSnapshot;
 	[[maybe_unused]] char pad6[0x5];
-	CPlayerUserId m_UserID = -1; // 184
+	CPlayerUserId m_UserID = -1;
 	bool m_bReceivedPacket;	// true, if client received a packet after the last send packet
-	CSteamID m_SteamID; // 187
-	CSteamID m_UnkSteamID; // 195
-	CSteamID m_UnkSteamID2; // 203 from auth ticket
-	CSteamID m_nFriendsID; // 211
-	ns_address m_nAddr; // 220
-	ns_address m_nAddr2; // 252
-	KeyValues* m_ConVars; // 288
-	bool m_bConVarsChanged; // 296
-	bool m_bConVarsInited; // 297
-	bool m_bIsHLTV; // 298
-	bool m_bIsReplay; // 299
+	CSteamID m_SteamID;
+	CSteamID m_UnkSteamID;
+	CSteamID m_AuthTicketSteamID; // Auth ticket
+	CSteamID m_nFriendsID;
+	ns_address m_nAddr;
+	ns_address m_nAddr2;
+	KeyValues* m_ConVars;
+	bool m_bConVarsChanged;
+	bool m_bConVarsInited;
+	bool m_bIsHLTV;
+	bool m_bIsReplay;
 
 private:
 	[[maybe_unused]] char pad29[0xA];
 
 public:
-	uint32 m_nSendtableCRC; // 312
-	int m_ClientPlatform; // 316
-	int m_nSignonTick; // 320
-	int m_nDeltaTick; // 324
-	int m_UnkVariable3; // 328
-	int m_nStringTableAckTick; // 332
-	int m_UnkVariable4; // 336
+	uint32 m_nSendtableCRC;
+	int m_ClientPlatform;
+	int m_nSignonTick;
+	int m_nDeltaTick;
+	int m_UnkVariable3;
+	int m_nStringTableAckTick;
+	int m_UnkVariable4;
 	CFrameSnapshot* m_pLastSnapshot;	// last send snapshot
-	CUtlVector<void*> m_vecLoadedSpawnGroups; // 352
-	CMsgPlayerInfo m_playerInfo; // 376
-	CFrameSnapshot* m_pBaseline; // 432
-	int m_nBaselineUpdateTick; // 440
-	CBitVec<MAX_EDICTS>	m_BaselinesSent; // 444
+	CUtlVector<void*> m_vecLoadedSpawnGroups;
+	CMsgPlayerInfo m_playerInfo;
+	CFrameSnapshot* m_pBaseline;
+	int m_nBaselineUpdateTick;
+	CBitVec<MAX_EDICTS>	m_BaselinesSent;
 	int	m_nBaselineUsed;		// 0/1 toggling flag, singaling client what baseline to use
 	int	m_nLoadingProgress;	// 0..100 progress, only valid during loading
 
@@ -315,11 +315,11 @@ public:
 	//    a client to get back on its feet.
 	int m_nForceWaitForTick = -1;
 
-	CCircularBuffer m_UnkBuffer = {1024}; // 2504 (24 bytes)
+	CCircularBuffer m_UnkBuffer = {1024};
 	bool m_bLowViolence = false;		// true if client is in low-violence mode (L4D server needs to know)
-	bool m_bSomethingWithAddressType = true; // 2529
-	bool m_bFullyAuthenticated = false; // 2530
-	bool m_bUnk1 = false; // 2531
+	bool m_bSomethingWithAddressType = true;
+	bool m_bFullyAuthenticated = false;
+	bool m_bUnk1 = false;
 	int m_nUnk;
 
 	// The datagram is written to after every frame, but only cleared
@@ -333,20 +333,20 @@ public:
 	float m_fSnapshotInterval = 0.0f;
 
 private:
-	// CSVCMsg_PacketEntities_t m_packetmsg;  // 2552
-	[[maybe_unused]] char pad2552[0x138]; // 2552
+	// CSVCMsg_PacketEntities_t m_packetmsg; 
+	[[maybe_unused]] char pad2544[0x138];
 
 public:
-	CNetworkStatTrace m_Trace; // 2864
-	int m_spamCommandsCount = 0; // 2904 if the value is greater than 16, the player will be kicked with reason 39
-	int m_unknown = 0; // 2908
-	double m_lastExecutedCommand = 0.0; // 2912 if command executed more than once per second, ++m_spamCommandCount
+	CNetworkStatTrace m_Trace;
+	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with reason 39
+	int m_unknown = 0;
+	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
 
 private:
-	[[maybe_unused]] char pad2920[0x28]; // 2920
+	[[maybe_unused]] char pad2912[104];
 };
 #ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 2960);
+COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 3008);
 #endif
 
 class CServerSideClient : public CServerSideClientBase
@@ -355,37 +355,33 @@ public:
 	virtual ~CServerSideClient() = 0;
 
 public:
-	CPlayerBitVec m_VoiceStreams; // 2952
-	CPlayerBitVec m_VoiceProximity; // 2960
-	CCheckTransmitInfo m_PackInfo; // 2968
-	CClientFrameManager m_FrameManager; // 3568
+	CPlayerBitVec m_VoiceStreams;
+	CPlayerBitVec m_VoiceProximity;
+	CCheckTransmitInfo m_PackInfo;
+	CClientFrameManager m_FrameManager;
 
 private:
-	[[maybe_used]] char pad3856[8]; // 3856
+	[[maybe_used]] char pad3904[8];
 
 public:
-	float m_flLastClientCommandQuotaStart = 0.0f; // 3864
-	float m_flTimeClientBecameFullyConnected = -1.0f; // 3868
-	bool m_bVoiceLoopback = false; // 3872
-	bool m_bUnk10 = false; // 3873
-	int m_nHltvReplayDelay = 0; // 3876
-	CHLTVServer* m_pHltvReplayServer; // 3880
-	int m_nHltvReplayStopAt; // 3888
-	int m_nHltvReplayStartAt; // 3892
-	int m_nHltvReplaySlowdownBeginAt; // 3896
-	int m_nHltvReplaySlowdownEndAt; // 3900
-	float m_flHltvReplaySlowdownRate; // 3904
-	int m_nHltvLastSendTick; // 3908
-	float m_flHltvLastReplayRequestTime; // 3912
-	CUtlVector<INetMessage*> m_HltvQueuedMessages; // 3920
-	HltvReplayStats_t m_HltvReplayStats; // 3944
-	void* m_pLastJob; // 4000
-
-private:
-	[[maybe_used]] char pad3984[8]; // 4008
+	float m_flLastClientCommandQuotaStart = 0.0f;
+	float m_flTimeClientBecameFullyConnected = -1.0f;
+	bool m_bVoiceLoopback = false;
+	bool m_bUnk10 = false;
+	int m_nHltvReplayDelay = 0;
+	CHLTVServer* m_pHltvReplayServer;
+	int m_nHltvReplayStopAt;
+	int m_nHltvReplayStartAt;
+	int m_nHltvReplaySlowdownBeginAt;
+	int m_nHltvReplaySlowdownEndAt;
+	float m_flHltvReplaySlowdownRate;
+	int m_nHltvLastSendTick;
+	float m_flHltvLastReplayRequestTime;
+	CUtlVector<INetMessage*> m_HltvQueuedMessages;
+	HltvReplayStats_t m_HltvReplayStats;
 };
 #ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CServerSideClient) == 4016);
+COMPILE_TIME_ASSERT(sizeof(CServerSideClient) == 4048);
 #endif
 
 // not full class reversed
@@ -395,27 +391,27 @@ public:
 	virtual ~CHLTVClient() = 0;
 
 public:
-	CNetworkGameServerBase* m_pHLTV; // 2960
-	CUtlString m_szPassword; // 2968
-	CUtlString m_szChatGroup; // 2976 // "all" or "group%d"
-	double m_fLastSendTime = 0.0; // 2984
-	double m_flLastChatTime = 0.0; // 2992
-	int m_nLastSendTick = 0; // 2996
-	int m_unknown2 = 0; // 3000
-	int m_nFullFrameTime = 0; // 3008
-	int m_unknown3 = 0;  // 3012
+	CNetworkGameServerBase* m_pHLTV;
+	CUtlString m_szPassword;
+	CUtlString m_szChatGroup; // "all" or "group%d"
+	double m_fLastSendTime = 0.0;
+	double m_flLastChatTime = 0.0;
+	int m_nLastSendTick = 0;
+	int m_unknown2 = 0;
+	int m_nFullFrameTime = 0;
+	int m_unknown3 = 0; 
 
 public:
-	bool m_bNoChat = false; // 3016
-	bool m_bUnkBool = false; // 3017
-	bool m_bUnkBool2 = false; // 3018
-	bool m_bUnkBool3 = false; // 3019
+	bool m_bNoChat = false;
+	bool m_bUnkBool = false;
+	bool m_bUnkBool2 = false;
+	bool m_bUnkBool3 = false;
 
 private:
-	[[maybe_used]] char pad3976[0x24]; // 3020
+	[[maybe_used]] char pad3976[52];
 };
 #ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CHLTVClient) == 3056);
+COMPILE_TIME_ASSERT(sizeof(CHLTVClient) == 3120);
 #endif
 
 #endif // SERVERSIDECLIENT_H
