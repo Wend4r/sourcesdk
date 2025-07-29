@@ -246,91 +246,90 @@ public:
 	}
 
 public:
-	// @boeing666: offsets only for linux
-	char pad16[16]; // 16
-	IGameSpawnGroupMgr* m_pSpawnGroupMgr; // 32
-	char pad40[8]; // 40
-	server_state_t m_State; // 48
-	int m_nRefCount; // 52
-	int m_Socket; // 56
-	int m_nTickCount; // 60
-	void (*UnkFunc)(); // 64
-	void (*UnkFunc2)(); // 72
-	CGlobalVars m_globals; // 80
-	GameSessionConfiguration_t m_GameConfig; // 200
-	CUtlString m_szMapname; // 320
-	CUtlString m_szAddons; // 328
-	CUtlString m_szSkyname; // 336
-	CUtlString m_szUnk344; // 344
-	KeyValues* m_KV352; // 352
-	CNetworkStringTableContainer* m_StringTables; // 360
-	CNetworkStringTableContainer* m_StringTables2; // 368
-	INetworkStringTable* m_pInstanceBaselineTable; // 376
-	INetworkStringTable* m_pLightStyleTable; // 384
-	INetworkStringTable* m_pUserInfoTable; // 392
-	INetworkStringTable* m_pServerStartupTable; // 400
-	CFrameSnapshotManager m_snapshotManager; // 408
-	char pad544[30]; // 544
-	bf_write m_Signon; // 576
-	CUtlMemory<byte> m_SignonBuffer; // 616
-	bool m_bIsBackgroundMap; // 632
-	CUtlClientVector m_Clients; // 640
-	char pad664[20]; // 664
-	CUtlMemory<byte> m_unk688; // 688
-	char pad704[16]; // 704
-	SpawnGroupHandle_t m_hActiveSpawnGroup; // 720
-	int m_nMaxClients; // 724
-	int m_nSpawnCount; // 728
-	int serverclasses; // 732
-	int serverclassbits; // 736
-	uint64 m_nCreateTime; // 744
-	bool m_bPendingChangeLevel; // 752
-	bool m_bUnk753; // 753
-	bool m_bPreserveSteamID; // 754
-	bool m_bHibernating; // 755
-	CUtlVector<netadr_t*> m_unk760; // 760
-	CUtlLinkedList<CNetworkServerSpawnGroupCreatePrerequisites *> m_unk784; // 784
-	CUtlMap<uint32,void*> m_unk816; // 816 something with spawngroups
-	CUtlMap<uint32,void*> m_unk848; // 848 something with spawngroups
-	CUtlVector<char> m_GameData; // 880
-	CUtlString m_GameType; // 904
-	char pad912[8]; // 912
-	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect; // 920
-	CServerSideClientBase* m_pHostClient; // 944
+	char pad16[16];
+	IGameSpawnGroupMgr* m_pSpawnGroupMgr;
+	char pad40[8];
+	server_state_t m_State;
+	int m_nRefCount;
+	int m_Socket;
+	int m_nTickCount;
+	void (*UnkFunc)();
+	void (*UnkFunc2)();
+	CGlobalVars m_globals;
+	GameSessionConfiguration_t m_GameConfig;
+	CUtlString m_szMapname;
+	CUtlString m_szAddons;
+	CUtlString m_szSkyname;
+	CUtlString m_szUnk344;
+	KeyValues* m_KV352;
+	CNetworkStringTableContainer* m_StringTables;
+	CNetworkStringTableContainer* m_StringTables2;
+	INetworkStringTable* m_pInstanceBaselineTable;
+	INetworkStringTable* m_pLightStyleTable;
+	INetworkStringTable* m_pUserInfoTable;
+	INetworkStringTable* m_pServerStartupTable;
+	CFrameSnapshotManager m_snapshotManager;
+	char pad544[24];
+	bf_write m_Signon;
+	CUtlMemory<byte> m_SignonBuffer;
+	bool m_bIsBackgroundMap;
+	CUtlClientVector m_Clients;
+	char pad664[20];
+	CUtlMemory<byte> m_unk688;
+	char pad704[16];
+	SpawnGroupHandle_t m_hActiveSpawnGroup;
+	int m_nMaxClients;
+	int m_nSpawnCount;
+	int serverclasses;
+	int serverclassbits;
+	uint64 m_nCreateTime;
+	bool m_bPendingChangeLevel;
+	bool m_bUnk753;
+	bool m_bPreserveSteamID;
+	bool m_bHibernating;
+	CUtlVector<netadr_t*> m_unk760;
+	CUtlLinkedList<CNetworkServerSpawnGroupCreatePrerequisites *> m_unk784;
+	CUtlMap<uint32,void*> m_unk816; // something with spawngroups
+	CUtlMap<uint32,void*> m_unk848; // something with spawngroups
+	CUtlVector<char> m_GameData;
+	CUtlString m_GameType;
+	char pad912[8];
+	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect;
+	CServerSideClientBase* m_pHostClient;
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr2;
-	void* m_unk960; // 960
-	HGameResourceManifest m_pGameSessionManifest; // 968
-	char pad976[8]; // 976
-	uint64 m_nReservationCookie; // 984
-	float m_flTimeLastClientLeft; // 992
-	char pad996[12]; // 996
-	float m_flReservationExpiryTime; // 1008
-	char pad1012[140]; // 1012
-	int m_nFinalSimulationTickThisFrame; // 1152
-	int m_GameDataVersion; // 1156
-	int m_numGameSlots; // 1160
-	float m_fLastCPUCheckTime; // 1164
-	float m_fCPUPercent; // 1168
-	float m_flTimescale; // 1172
-	bool m_bUnk1176; // 1176
-	bool m_bUnk1177; // 1177
-	uint64 m_nMatchId; // 1184
-	void* m_pUnk1192; // 1192
+	void* m_unk960;
+	HGameResourceManifest m_pGameSessionManifest;
+	char pad976[8];
+	uint64 m_nReservationCookie;
+	float m_flTimeLastClientLeft;
+	char pad996[12];
+	float m_flReservationExpiryTime;
+	char pad1012[140];
+	int m_nFinalSimulationTickThisFrame;
+	int m_GameDataVersion;
+	int m_numGameSlots;
+	float m_fLastCPUCheckTime;
+	float m_fCPUPercent;
+	float m_flTimescale;
+	bool m_bUnk1176;
+	bool m_bUnk1177;
+	uint64 m_nMatchId;
+	void* m_pUnk1192;
 };
 
 class CNetworkGameServer : public CNetworkGameServerBase {
 public:
-	CUtlString m_szStartspot; // 1200
-	bf_write m_FullSendTables; // 1208
-	CUtlMemory<byte> m_FullSendTablesBuffer; // 1248
-	CPrecacheItem generic_precache[MAX_GENERIC]; // 1264
-	char pad9456[8]; // 9456
-	CPrecacheItem decal_precache[MAX_BASE_DECALS]; // 9464
-	char pad17656[8]; // 17656
-	INetworkStringTable* m_pGenericPrecacheTable; // 17664
-	INetworkStringTable* m_pDecalPrecacheTable; // 17672
-	CPureServerWhitelist* m_pPureServerWhitelist; // 17680
-	bool allowsignonwrites; // 17688
+	CUtlString m_szStartspot;
+	bf_write m_FullSendTables;
+	CUtlMemory<byte> m_FullSendTablesBuffer;
+	CPrecacheItem generic_precache[MAX_GENERIC];
+	char pad9456[8];
+	CPrecacheItem decal_precache[MAX_BASE_DECALS];
+	char pad17656[8];
+	INetworkStringTable* m_pGenericPrecacheTable;
+	INetworkStringTable* m_pDecalPrecacheTable;
+	CPureServerWhitelist* m_pPureServerWhitelist;
+	bool allowsignonwrites;
 }; // sizeof 17696
 
 class CHLTVServer : public CNetworkGameServerBase {
