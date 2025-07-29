@@ -69,6 +69,7 @@ private:
 	NetChannelBufType_t m_bufType;
 	int m_nSendCount;
 	float m_flMargin;
+	void* m_unk;
 };
 
 // AMNOTE: This is a stub class over real CNetMessagePB!
