@@ -699,9 +699,6 @@ inline	bool CUtlRBTree<T, L, I, M>::IsValidIndex( I i ) const
 	if ( !m_Elements.IsIdxValid( i ) )
 		return false;
 
-	if ( m_Elements.IsIdxAfter( i, m_LastAlloc ) )
-		return false; // don't read values that have been allocated, but not constructed
-
 	return LeftChild(i) != i; 
 }
 
