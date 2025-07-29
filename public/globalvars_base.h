@@ -49,9 +49,6 @@ public:
 
 	FnGlobalVarsWarningFunc m_pfnWarningFunc;
 
-	// Time spent on last server or client frame (has nothing to do with think intervals)
-	float frametime;
-
 	// Current time
 	//
 	// On the client, this (along with tickcount) takes a different meaning based on what
@@ -86,10 +83,8 @@ public:
 	// Non-zero when during movement processing, it's the part after the decimal point of the "when" field in player's subtick moves.
 	float m_flSubtickFraction;
 
-#ifdef CITADEL
 	// Simulation tick interval
 	float interval_per_tick;
-#endif
 };
 
 #endif // GLOBALVARS_BASE_H
