@@ -17,7 +17,6 @@ class CSchemaClassInfo;
 class CSchemaEnumInfo;
 class CBufferString;
 struct SchemaAtomicTypeInfo_t;
-struct datamap_t;
 
 template <typename T>
 struct SchemaTypeMap {};
@@ -182,7 +181,7 @@ template <class K, class V>
 class CSchemaPtrMap
 {
 public:
-	CUtlMap<K, V> m_Map;
+	CUtlOrderedMap<K, V, CDefLess<K>, unsigned short> m_Map;
 	CThreadFastMutex m_Mutex;
 };
 
@@ -377,9 +376,8 @@ struct SchemaClassInfoData_t
 	uint16 m_nSingleInheritanceDepth;
 	
 	SchemaClassFieldData_t* m_pFields;
-	SchemaStaticFieldData_t* m_pStaticFields;
 	SchemaBaseClassInfoData_t* m_pBaseClasses;
-	datamap_t* m_pDataDescMap;
+	SchemaStaticFieldData_t* m_pStaticFields;
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
 	
 	CSchemaSystemTypeScope* m_pTypeScope;
