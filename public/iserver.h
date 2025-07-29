@@ -54,6 +54,9 @@ class CCLCMsg_SplitPlayerConnect_t;
 class C2S_CONNECT_Message;
 class CNetworkStringTableContainer;
 class CNetworkServerSpawnGroupCreatePrerequisites;
+class CNetMessage;
+class INetworkMessageInternal;
+class IRecipientFilter;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -127,7 +130,7 @@ public:
 	virtual void	SynchronouslySpawnGroup( SpawnGroupHandle_t ) = 0;
 
 	virtual void	SetServerState( server_state_t eNewState ) = 0;
-	virtual void	SpawnServer( const char * ) = 0;
+	virtual bool	SpawnServer( const char * ) = 0;
 
 	virtual int 	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t, const char * ) = 0;
@@ -140,19 +143,24 @@ public:
 
 	virtual void	PreserveSteamID( void ) = 0;
 
-	virtual void	unk001() = 0;
+	virtual const CSVCMsg_GameSessionConfiguration &GetGameConfig() = 0;
 
 	virtual void	ReserveServerForQueuedGame( const char *pszReason ) = 0;
 
-	virtual void	unk101() = 0;
-	virtual void	unk102() = 0;
-	virtual void	unk103() = 0;
+	virtual void	unk045() = 0;
+	virtual void	unk046() = 0;
+	virtual bool	unk047() = 0;
 
 	virtual void	BroadcastPrintf( const char *pszFmt, ... ) FMTFUNCTION( 2, 3 ) = 0;
 
-	virtual void	unk201() = 0;
-	virtual void	unk202() = 0;
-	
+	virtual void	TogglePlayerUnk( CPlayerSlot slot, bool bOldValue ) = 0;
+
+	virtual void	NotifySceneViewDebugOverlays( void *pSceneView, bool bUnk ) {};
+
+	virtual void	BroadcastMessage( INetworkMessageInternal *pSerializer, const CNetMessage *pNetMessage, const IRecipientFilter *pFilter ) = 0;
+	virtual bool	IsRecordingDemo() = 0;
+
+	virtual bool	GetPlayerUnk( CPlayerSlot slot ) = 0;
 };
 
 class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
@@ -164,18 +172,22 @@ public:
 
 	virtual void	SetMaxClients( int nMaxClients ) = 0;
 
+private:
+	virtual bool	unk301( const ns_address *addr, bf_read *bf ) = 0;
+
 public: // IConnectionlessPacketHandler
 	virtual bool	ProcessConnectionlessPacket( netpacket_t *packet ) = 0; // process a connectionless packet
 
-private:
-	virtual bool	unk301( const ns_address *addr, bf_read *bf ) = 0;
+public: // IConVarListener
+	virtual void	OnConVarCreated( ConVarRefAbstract *pNewCvar ) = 0;
+	virtual void	OnConCommandCreated( ConCommand *pNewCommand ) {};
 
 public:
 	virtual CPlayerUserId GetPlayerUserId( CPlayerSlot slot ) = 0;
 	virtual const char *GetPlayerNetworkIDString( CPlayerSlot slot ) = 0;
 	
 	// Returns udp port of this server instance
-	virtual int		GetUDPPort() = 0;
+	virtual uint16 GetUDPPort() = 0;
 	// Returns hostname of this server instance
 	virtual const char *GetName() = 0;
 
