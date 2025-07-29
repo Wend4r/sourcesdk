@@ -436,6 +436,26 @@ public:
 	}
 };
 
+class CMemAllocAllocator
+{
+public:
+	static void* Alloc( size_t nSize )
+	{
+		return g_pMemAlloc->IndirectAlloc( nSize );
+	}
+
+	static void* Realloc( void *base, size_t nSize )
+	{
+		return g_pMemAlloc->Realloc( base, nSize );
+	}
+
+	static void Free( void* pMem )
+	{
+		if ( pMem )
+			g_pMemAlloc->Free( pMem );
+	}
+};
+
 #define MEM_ALLOC_CREDIT()	MEM_ALLOC_CREDIT_(__FILE__)
 
 //-----------------------------------------------------------------------------

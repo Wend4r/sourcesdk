@@ -419,7 +419,7 @@ public:
 	Iterator_t First() const							{ I limit = NumAllocated(); return Iterator_t( limit ? 0 : InvalidIndex(), limit ); }
 	Iterator_t Next( const Iterator_t &it ) const		{ return Iterator_t( ( it.index + 1 < it.limit ) ? it.index + 1 : InvalidIndex(), it.limit ); }
 	I GetIndex( const Iterator_t &it ) const			{ return it.index; }
-	bool IsIdxAfter( I i, const Iterator_t &it ) const { return i > it.index; }
+	bool IsIdxAfter( I i, const Iterator_t &it ) const	 { return i > it.index; }
 	bool IsValidIterator( const Iterator_t &it ) const	{ return IsIdxValid( it.index ) && ( it.index < it.limit ); }
 	Iterator_t InvalidIterator() const					{ return Iterator_t( InvalidIndex(), 0 ); }
 

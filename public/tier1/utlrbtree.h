@@ -10,6 +10,7 @@
 #define UTLRBTREE_H
 
 #include "tier1/utlmemory.h"
+#include "tier1/utlleanvector.h"
 #include "tier1/utlfixedmemory.h"
 #include "tier1/utlblockmemory.h"
 
@@ -188,7 +189,7 @@ struct UtlRBTreeNode_t : public UtlRBTreeLinks_t< I >
 	T  m_Data;
 };
 
-template < class T, typename L, class I = unsigned short, class M = CUtlMemory< UtlRBTreeNode_t< T, I >, I > >
+template < class T, typename L, class I = unsigned short, class M = CUtlLeanVector< UtlRBTreeNode_t< T, I >, I > >
 class CUtlRBTree
 {
 public:
