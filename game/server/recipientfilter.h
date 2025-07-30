@@ -46,6 +46,12 @@ public:
 	bool IsInitMessage( void ) const override { return m_bInitMessage; }
 	uint64 GetRecipients( void ) const override { return *reinterpret_cast<const uint64*>(m_Recipients.Base()); }
 
+	void SetRecipients( uint64 nRecipients )
+	{
+		m_Recipients.Set(0UL, static_cast<uint32>(nRecipients & 0xFFFFFFFF));
+		m_Recipients.Set(1UL, static_cast<uint32>(nRecipients >> 32));
+	}
+
 	void AddRecipient( CPlayerSlot slot )
 	{
 		if(slot >= 0 && slot < ABSOLUTE_PLAYER_LIMIT)
