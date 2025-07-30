@@ -25,55 +25,40 @@ class CTeam;
 class CRecipientFilter : public IRecipientFilter
 {
 public:
-	CRecipientFilter()
-	{
-		m_nBufType = BUF_RELIABLE;
-		m_bInitMessage = false;
-	}
+	CRecipientFilter( NetChannelBufType_t nBufType = BUF_RELIABLE, bool bInitMessage = false ) :
+		m_nBufType(nBufType), m_bInitMessage(bInitMessage) {}
 
-	CRecipientFilter(IRecipientFilter *source, int iExcept = -1)
+	CRecipientFilter( IRecipientFilter *source, CPlayerSlot exceptSlot = INVALID_PLAYER_SLOT )
 	{
+		*reinterpret_cast<uint64*>(m_Recipients.Base()) = source->GetRecipients();
 		m_nBufType = source->GetNetworkBufType();
 		m_bInitMessage = source->IsInitMessage();
-		m_Recipients.RemoveAll();
 
-		for (int i = 0; i < source->GetRecipientCount(); i++)
+		if (exceptSlot != INVALID_PLAYER_SLOT)
 		{
-			if (source->GetRecipientIndex(i).Get() != iExcept)
-				m_Recipients.AddToTail(source->GetRecipientIndex(i));
+			m_Recipients.Clear(exceptSlot);
 		}
 	}
 
 	~CRecipientFilter() override {}
 
-	NetChannelBufType_t GetNetworkBufType(void) const override { return m_nBufType; }
-	bool IsInitMessage(void) const override { return m_bInitMessage; }
-	int GetRecipientCount(void) const override { return m_Recipients.Count(); }
+	NetChannelBufType_t GetNetworkBufType( void ) const override { return m_nBufType; }
+	bool IsInitMessage( void ) const override { return m_bInitMessage; }
+	uint64 GetRecipients( void ) const override { return *reinterpret_cast<const uint64*>(m_Recipients.Base()); }
 
-	CPlayerSlot GetRecipientIndex(int slot) const override
+	void AddRecipient( CPlayerSlot slot )
 	{
-		if (slot < 0 || slot >= GetRecipientCount())
-			return CPlayerSlot(-1);
-
-		return m_Recipients[slot];
-	}
-
-	void AddRecipient(CPlayerSlot slot)
-	{
-		// Don't add if it already exists
-		if (m_Recipients.Find(slot) != m_Recipients.InvalidIndex())
-			return;
-
-		m_Recipients.AddToTail(slot);
+		if(slot >= 0 && slot < ABSOLUTE_PLAYER_LIMIT)
+		{
+			m_Recipients.Set(slot);
+		}
 	}
 
 	void RemoveRecipient( CPlayerSlot slot )
 	{
-		auto iFound = m_Recipients.Find(slot);
-
-		if (iFound != m_Recipients.InvalidIndex())
+		if(slot >= 0 && slot < ABSOLUTE_PLAYER_LIMIT)
 		{
-			m_Recipients.Remove(iFound);
+			m_Recipients.Clear(slot);
 		}
 	}
 
@@ -132,10 +117,10 @@ public:
 
 	void			RemoveDuplicateRecipients();
 
-private:
+protected:
+	CPlayerBitVec m_Recipients;
 	NetChannelBufType_t m_nBufType;
 	bool m_bInitMessage;
-	CUtlVectorFixed<CPlayerSlot, ABSOLUTE_PLAYER_LIMIT> m_Recipients;
 };
 
 //-----------------------------------------------------------------------------
@@ -144,20 +129,14 @@ private:
 class CSingleRecipientFilter : public CRecipientFilter
 {
 public:
-	CSingleRecipientFilter(CPlayerSlot nRecipientSlot, NetChannelBufType_t nBufType = BUF_RELIABLE, bool bInitMessage = false) :
-		m_nRecipientSlot(nRecipientSlot), m_nBufType(nBufType), m_bInitMessage(bInitMessage) {}
-
-	~CSingleRecipientFilter() override {}
-
-	NetChannelBufType_t GetNetworkBufType(void) const override { return m_nBufType; }
-	bool IsInitMessage(void) const override { return m_bInitMessage; }
-	int GetRecipientCount(void) const override { return 1; }
-	CPlayerSlot GetRecipientIndex(int slot) const override { return m_nRecipientSlot; }
-
-private:
-	CPlayerSlot m_nRecipientSlot;
-	NetChannelBufType_t m_nBufType;
-	bool m_bInitMessage;
+	CSingleRecipientFilter( CPlayerSlot nRecipientSlot, NetChannelBufType_t nBufType = BUF_RELIABLE, bool bInitMessage = false ) :
+		CRecipientFilter(nBufType, bInitMessage)
+	{
+		if(nRecipientSlot >= 0 && nRecipientSlot < ABSOLUTE_PLAYER_LIMIT)
+		{
+			m_Recipients.Set(nRecipientSlot);
+		}
+	}
 };
 
 class CSingleUserAndReplayRecipientFilter : public CRecipientFilter
