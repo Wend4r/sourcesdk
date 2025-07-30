@@ -338,6 +338,9 @@ template< class B, class T, typename I >
 class CUtlLeanVectorImpl : public B
 {
 public:
+	using iterator = T*;
+	using const_iterator = const T*;
+
 	// constructor, destructor
 	CUtlLeanVectorImpl() {};
 	CUtlLeanVectorImpl( int growSize, int initSize )
@@ -413,6 +416,11 @@ public:
 	bool FindAndRemove( const T& src );	// removes first occurrence of src, preserves order, shifts elements
 	bool FindAndFastRemove( const T& src );	// removes first occurrence of src, doesn't preserve order
 	void RemoveMultiple( int elem, int num ); // preserves order, shifts elements
+
+	iterator begin()						{ return this->Base(); }
+	const_iterator begin() const			{ return this->Base(); }
+	iterator end()							{ return this->Base() + Count(); }
+	const_iterator end() const				{ return this->Base() + Count(); }
 
 protected:
 	// Can't copy this unless we explicitly do it!

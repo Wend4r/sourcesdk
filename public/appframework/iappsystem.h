@@ -172,9 +172,10 @@ public:
 		bool m_bInvisible;
 	};
 
-	CUtlVector<ModuleInfo_t> m_Modules;
-	CUtlMemory<AppSystem_t> m_Systems;
-	CUtlMemory<FactoryFn> m_NonAppSystemFactories;
+	CUtlLeanVector<ModuleInfo_t> m_Modules;
+	CUtlLeanVector<AppSystem_t> m_Systems;
+	CUtlLeanVector<FactoryFn> m_NonAppSystemFactories;
+	const char* m_ModuleSearchPath;
 	CUtlStringMap<UtlSymId_t> m_SystemDict; // 104
 	int m_nExpectedShutdownLoggingStateIndex; // 256
 	ILoggingListener* m_pDefaultLoggingListener; // 264
