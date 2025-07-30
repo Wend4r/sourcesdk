@@ -38,7 +38,7 @@ inline constexpr const char *k_pszNetGroupNames[ SG_TOTAL ] =
 class CNetMessage
 {
 public:
-	CNetMessage( NetChannelBufType_t bufType = BUF_RELIABLE ) : m_dbRecivedTime( -1.0 ), m_nSignatrue( 0llu ), m_bufType( bufType ), m_nSendCount( -1 ), m_flMargin( -1.0f ) {}
+	CNetMessage( NetChannelBufType_t bufType = BUF_DEFAULT ) : m_dbRecivedTime( -1.0 ), m_nSignatrue( 0 ), m_bufType( bufType ), m_nUnk( -1 ), m_nSendCount( -1 ), m_flMargin( -1.0f ), m_nUnk2( -1 ), m_nUnk3( -1 ) {}
 	CNetMessage( const CNetMessage &copyFrom ) = default;
 	CNetMessage( CNetMessage &&moveFrom ) = default;
 	CNetMessage &operator=( const CNetMessage &copyFrom ) = default;
@@ -58,18 +58,20 @@ public:
 	template< typename T > const T *As() const { return static_cast< const T * >( this ); }
 
 	double GetRecivedTime() const { return m_dbRecivedTime; }
-	uint64 GetSignature() const { return m_nSignatrue; }
+	uint32 GetSignature() const { return m_nSignatrue; }
 	NetChannelBufType_t GetBufType() const { return m_bufType; }
 	int GetSendCount() const { return m_nSendCount; }
 	float GetMargin() const { return m_flMargin; }
 
 private:
 	double m_dbRecivedTime;
-	uint64 m_nSignatrue;
+	uint32 m_nSignatrue;
 	NetChannelBufType_t m_bufType;
+	int32 m_nUnk;
 	int m_nSendCount;
 	float m_flMargin;
-	void* m_unk;
+	int32 m_nUnk2;
+	int32 m_nUnk3;
 };
 
 // AMNOTE: This is a stub class over real CNetMessagePB!
