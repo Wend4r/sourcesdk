@@ -36,6 +36,9 @@ class INetChannelInfo
 public:
 	virtual const char  *GetName( void ) const = 0;	// get channel name
 	virtual const char  *GetAddress( void ) const = 0; // get channel IP address as string
+
+	virtual void*		unk03() = 0;
+
 	virtual float		GetTime( void ) const = 0;	// current net time
 	virtual float		GetTimeConnected( void ) const = 0;	// get connection time in seconds
 	virtual int			GetBufferSize( void ) const = 0;	// netchannel packet history size
