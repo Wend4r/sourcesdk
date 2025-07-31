@@ -2,7 +2,7 @@
 //
 // Purpose: 
 // The CUtlAllocation class:
-// A single allocation in the style of CUtlMemory/CUtlString/CUtlBuffer
+// A single allocation in the style of CUtlString/CUtlBuffer
 //			as compact as possible, no virtuals or extraneous data
 //			to be used primarily to replace CUtlBuffer
 //=============================================================================
@@ -12,8 +12,6 @@
 #ifdef _WIN32
 #pragma once
 #endif
-
-#include "tier1/utlmemory.h"
 
 class CUtlAllocation
 {

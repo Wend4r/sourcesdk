@@ -17,6 +17,7 @@
 #include "utlmemory.h"
 #include "utlfixedmemory.h"
 #include "utlblockmemory.h"
+#include "utlleanvector.h"
 #include "tier0/dbg.h"
 
 // define to enable asserts griping about things you shouldn't be doing with multilists
@@ -60,7 +61,7 @@ private:
 // in memory, but always operate on 32's or 64's in local scope.
 // The ideal parameter order would be TSMI (you are more likely to override M than I)
 // but since M depends on I we can't have the defaults in that order, alas.
-template <class T, class S = unsigned short, bool ML = false, class I = S, class M = CUtlMemory< UtlLinkedListElem_t<T, S>, I > > 
+template <class T, class S = unsigned short, bool ML = false, class I = S, class M = CUtlLeanVector< UtlLinkedListElem_t<T, S>, I > > 
 class CUtlLinkedList
 {
 public:
@@ -555,7 +556,7 @@ inline bool CUtlLinkedList<T,S,ML,I,M>::IndexInRange( I index ) // Static method
 {
 	// Since S is not necessarily the type returned by M, we need to check that M returns indices
 	// which are representable by S. A common case is 'S === unsigned short', 'I == int', in which
-	// case CUtlMemory will have 'InvalidIndex == (int)-1' (which casts to 65535 in S), and will
+	// case CUtlLeanVector will have 'InvalidIndex == (int)-1' (which casts to 65535 in S), and will
 	// happily return elements at index 65535 and above.
 
 	// Do some static checks here:

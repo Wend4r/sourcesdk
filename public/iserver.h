@@ -271,11 +271,11 @@ public:
 	CFrameSnapshotManager m_snapshotManager;
 	char pad544[24];
 	bf_write m_Signon;
-	CUtlMemory<byte> m_SignonBuffer;
+	CUtlLeanVector<byte> m_SignonBuffer;
 	bool m_bIsBackgroundMap;
 	CUtlClientVector m_Clients;
 	char pad664[20];
-	CUtlMemory<byte> m_unk688;
+	CUtlLeanVector<byte> m_unk688;
 	char pad704[16];
 	SpawnGroupHandle_t m_hActiveSpawnGroup;
 	int m_nMaxClients;
@@ -321,7 +321,7 @@ class CNetworkGameServer : public CNetworkGameServerBase {
 public:
 	CUtlString m_szStartspot;
 	bf_write m_FullSendTables;
-	CUtlMemory<byte> m_FullSendTablesBuffer;
+	CUtlLeanVector<byte> m_FullSendTablesBuffer;
 	CPrecacheItem generic_precache[MAX_GENERIC];
 	char pad9456[8];
 	CPrecacheItem decal_precache[MAX_BASE_DECALS];

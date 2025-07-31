@@ -166,8 +166,9 @@ class Color;
 class QAngle;
 class CUtlString;
 
-template< class T, class I> class CUtlMemory;
-template< class T, typename I, class A> class CUtlVector;
+template< class T, typename I, size_t N > class CUtlVectorMemory_Growable;
+template< class T, typename I, class A > class CUtlVector;
+template < class T, typename I , class A > class CUtlLeanVector;
 
 abstract_class IParsingErrorListener
 {
@@ -845,10 +846,10 @@ PLATFORM_INTERFACE bool _V_StrSubst( const char *pIn, const char *pMatch, const 
 // Split the specified string on the specified separator.
 // Returns a list of strings separated by pSeparator.
 // You are responsible for freeing the contents of outStrings (call outStrings.PurgeAndDeleteElements).
-PLATFORM_OVERLOAD void V_SplitString( const char *pString, const char *pSeparator, CUtlVector<CUtlString, int, CUtlMemory<CUtlString, int>> &outStrings, bool include_empty = false );
+PLATFORM_OVERLOAD void V_SplitString( const char *pString, const char *pSeparator, CUtlVector< CUtlString, int, CUtlVectorMemory_Growable< CUtlString, int, 0 > > &outStrings, bool include_empty = false );
 
 // Just like V_SplitString, but it can use multiple possible separators.
-PLATFORM_OVERLOAD void V_SplitStringInPlace( char *pString, const char *pSeparator, CUtlVector<const char *, int, CUtlMemory<const char *, int>> &outStrings );
+PLATFORM_OVERLOAD void V_SplitStringInPlace( char *pString, const char *pSeparator, CUtlLeanVector< const char *, int, CMemAllocAllocator > &outStrings );
 
 // This function takes a slice out of pStr and stores it in pOut.
 // It follows the Python slice convention:

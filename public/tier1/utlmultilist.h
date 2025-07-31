@@ -45,7 +45,7 @@ protected:
 		I m_Count;
 	};
 
-	typedef CUtlMemory<ListElem_t> M; // Keep naming similar to CUtlLinkedList
+	typedef CUtlLeanVector<ListElem_t> M; // Keep naming similar to CUtlLinkedList
 public:
 	typedef I ListHandle_t;
 

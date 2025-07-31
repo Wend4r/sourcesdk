@@ -454,6 +454,11 @@ public:
 		if ( pMem )
 			g_pMemAlloc->Free( pMem );
 	}
+
+	static size_t GetSize( void *pMem )
+	{
+		return mallocsize( pMem );
+	}
 };
 
 #define MEM_ALLOC_CREDIT()	MEM_ALLOC_CREDIT_(__FILE__)

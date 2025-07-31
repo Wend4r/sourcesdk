@@ -9,10 +9,10 @@
 #ifndef UTLRBTREE_H
 #define UTLRBTREE_H
 
-#include "tier1/utlmemory.h"
-#include "tier1/utlleanvector.h"
-#include "tier1/utlfixedmemory.h"
-#include "tier1/utlblockmemory.h"
+#include "utlmemory.h"
+#include "utlleanvector.h"
+#include "utlfixedmemory.h"
+#include "utlblockmemory.h"
 
 
 // This is a useful macro to iterate from start to end in order in a map
@@ -234,7 +234,7 @@ public:
 
 	// Max "size" of the vector
 	// it's not generally safe to iterate from index 0 to MaxElement()-1 (you could do this as a potential
-	// iteration optimization, IF CUtlMemory is the allocator, and IF IsValidIndex() is tested for each element...
+	// iteration optimization, IF CUtlLeanVector is the allocator, and IF IsValidIndex() is tested for each element...
 	//  but this should be implemented inside the CUtlRBTree iteration API, if anywhere)
 	I  MaxElement() const;
 

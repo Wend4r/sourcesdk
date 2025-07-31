@@ -19,8 +19,8 @@
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
 #include "tier0/threadtools.h"
-#include "tier1/utlmemory.h"
-#include "tier1/utlblockmemory.h"
+#include "utlleanvector.h"
+#include "utlblockmemory.h"
 #include "mathlib/ssemath.h"
 
 

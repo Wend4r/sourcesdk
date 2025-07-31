@@ -13,7 +13,7 @@
 
 #include "memalloc.h"
 #include "strtools.h"
-#include "tier1/utlmemory.h"
+#include "tier1/utlleanvector.h"
 
 #include "limits.h"
 
@@ -52,8 +52,8 @@ public:
 	const void	*Get( ) const;
 	void		*Get( );
 
-	unsigned char& operator[]( int i );
-	const unsigned char& operator[]( int i ) const;
+	uchar& operator[]( int i );
+	const uchar& operator[]( int i ) const;
 
 	int			Length() const;
 	DLL_CLASS_IMPORT void		SetLength( int nLength );	// Undefined memory will result
@@ -68,7 +68,7 @@ public:
 	DLL_CLASS_IMPORT bool operator==( const CUtlBinaryBlock &src ) const;
 
 private:
-	CUtlMemory<unsigned char> m_Memory;
+	CUtlLeanVector< uchar > m_Memory;
 	int m_nActualLength;
 };
 
@@ -77,20 +77,19 @@ private:
 // class inlines
 //-----------------------------------------------------------------------------
 
-inline CUtlBinaryBlock::CUtlBinaryBlock( int growSize, int initSize ) 
+inline CUtlBinaryBlock::CUtlBinaryBlock( int growSize, int initSize ) : m_Memory( growSize, initSize )
 {
 	MEM_ALLOC_CREDIT();
-	m_Memory.Init( growSize, initSize );
 
 	m_nActualLength = 0;
 }
 
-inline CUtlBinaryBlock::CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength ) : m_Memory( (unsigned char*)pMemory, nSizeInBytes )
+inline CUtlBinaryBlock::CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength ) : m_Memory( (uchar*)pMemory, nSizeInBytes )
 {
 	m_nActualLength = nInitialLength;
 }
 
-inline CUtlBinaryBlock::CUtlBinaryBlock( const void* pMemory, int nSizeInBytes ) : m_Memory( (const unsigned char*)pMemory, nSizeInBytes )
+inline CUtlBinaryBlock::CUtlBinaryBlock( const void* pMemory, int nSizeInBytes ) : m_Memory( (uchar*)pMemory, nSizeInBytes )
 {
 	m_nActualLength = nSizeInBytes;
 }
@@ -128,12 +127,12 @@ inline int CUtlBinaryBlock::Length() const
 	return m_nActualLength;
 }
 
-inline unsigned char& CUtlBinaryBlock::operator[]( int i )
+inline uchar& CUtlBinaryBlock::operator[]( int i )
 {
 	return m_Memory[i];
 }
 
-inline const unsigned char& CUtlBinaryBlock::operator[]( int i ) const
+inline const uchar& CUtlBinaryBlock::operator[]( int i ) const
 {
 	return m_Memory[i];
 }

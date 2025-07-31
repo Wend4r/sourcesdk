@@ -37,6 +37,32 @@ typedef char char8;
 typedef unsigned char uint8;
 typedef unsigned char BYTE;
 typedef unsigned char byte;
+// uchar
+// uchar is equivalent to unsigned char, typically used for clarity
+// when you mean an unsigned character or a raw byte.
+typedef unsigned char uchar;
+
+// ushort
+// ushort is equivalent to unsigned short. Use this when you want a clear,
+// concise alias for unsigned short integers (typically 16 bits).
+typedef unsigned short ushort;
+
+// uint
+// uint is equivalent to unsigned int. Use this when you want a short and clear
+// type name for unsigned integer values (typically 32 bits).
+typedef unsigned int uint;
+
+// ulong
+// ulong is equivalent to unsigned long. Use this when you need an unsigned long
+// integer type (typically 32 or 64 bits depending on platform).
+typedef unsigned long ulong;
+
+// uint8
+// uint8 is equivalent to byte (but is preferred over byte for clarity).  Use this
+// whenever you mean a byte (for example, one byte of a network packet).
+typedef unsigned char uint8;
+typedef unsigned char BYTE;
+typedef unsigned char byte;
 
 // wchar
 // wchar is a single character of text (currently 16 bits, as all of our text is

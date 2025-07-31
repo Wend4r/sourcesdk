@@ -21,7 +21,7 @@
 #include "tier0/dbg.h"
 #include "tier0/utlstring.h"
 #include "tier1/threadtools.h"
-#include "tier1/utlmemory.h"
+#include "tier1/utlvectormemory.h"
 #include "tier1/utlblockmemory.h"
 #include "tier0/strtools.h"
 
@@ -52,7 +52,7 @@ public:
 // removed. Clients should therefore refer to the elements of the vector
 // by index (they should *never* maintain pointers to elements in the vector).
 //-----------------------------------------------------------------------------
-template< typename T, typename I = int, class A = CUtlMemory<T, I> >
+template< typename T, typename I = int, class A = CUtlVectorMemory<T, I> >
 class CUtlVectorBase : public base_vector_t
 {
 	using CAllocator = A;
@@ -287,7 +287,7 @@ private:
 	void InPlaceQuickSort_r( I (__cdecl *pfnCompare)(const T *, const T *), I nLeft, I nRight );
 };
 
-template < class T, typename I = int, class A = CUtlMemory< T, I > >
+template < class T, typename I = int, class A = CUtlVectorMemory_Growable< T, I, 0 > >
 class CUtlVector : public CUtlVectorBase< T, I, A >
 {
 	typedef CUtlVectorBase< T, I, A > BaseClass;
@@ -304,9 +304,9 @@ public:
 };
 
 template< class T, typename I = int >
-class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlMemory_RawAllocator<T, I> >
+class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlVectorMemory_RawAllocator<T, I> >
 {
-	typedef CUtlVectorBase< T, I, CUtlMemory_RawAllocator<T, I> > BaseClass;
+	typedef CUtlVectorBase< T, I, CUtlVectorMemory_RawAllocator<T, I> > BaseClass;
 
 public:
 	using BaseClass::BaseClass;
@@ -345,9 +345,9 @@ public:
 // A array class with a fixed allocation scheme
 //-----------------------------------------------------------------------------
 template< class T, int MAX_SIZE >
-class CUtlVectorFixed : public CUtlVectorBase< T, int, CUtlMemoryFixed<T, MAX_SIZE > >
+class CUtlVectorFixed : public CUtlVectorBase< T, int, CUtlVectorMemory_Fixed<T, MAX_SIZE > >
 {
-	typedef CUtlVectorBase< T, int, CUtlMemoryFixed<T, MAX_SIZE > > BaseClass;
+	typedef CUtlVectorBase< T, int, CUtlVectorMemory_Fixed<T, MAX_SIZE > > BaseClass;
 
 public:
 	// constructor, destructor
@@ -361,9 +361,9 @@ public:
 // A array class with a fixed allocation scheme backed by a dynamic one
 //-----------------------------------------------------------------------------
 template< class T, int MAX_SIZE >
-class CUtlVectorFixedGrowable : public CUtlVectorBase< T, int, CUtlMemoryFixedGrowable<T, MAX_SIZE, int > >
+class CUtlVectorFixedGrowable : public CUtlVectorBase< T, int, CUtlVectorMemory_FixedGrowable<T, MAX_SIZE, int > >
 {
-	typedef CUtlVectorBase< T, int, CUtlMemoryFixedGrowable< T, MAX_SIZE > > BaseClass;
+	typedef CUtlVectorBase< T, int, CUtlVectorMemory_FixedGrowable< T, MAX_SIZE > > BaseClass;
 
 public:
 	// constructor, destructor
@@ -391,9 +391,9 @@ public:
 // A array class with a conservative allocation scheme
 //-----------------------------------------------------------------------------
 template< class T, typename I = int >
-class CUtlVectorConservative : public CUtlVectorBase< T, I, CUtlMemoryConservative<T, I> >
+class CUtlVectorConservative : public CUtlVectorBase< T, I, CUtlVectorMemory_Conservative<T, I> >
 {
-	typedef CUtlVectorBase< T, I, CUtlMemoryConservative<T> > BaseClass;
+	typedef CUtlVectorBase< T, I, CUtlVectorMemory_Conservative<T> > BaseClass;
 
 public:
 	// constructor, destructor
@@ -414,30 +414,7 @@ public:
 #pragma warning(disable : 4815 ) // warning C4815: 'staticData' : zero-sized array in stack object will have no elements
 #endif
 
-class CUtlVectorUltraConservativeAllocator
-{
-public:
-	static void *Alloc( size_t nSize )
-	{
-		return MemAlloc_Alloc( nSize );
-	}
-
-	static void *Realloc( void *pMem, size_t nSize )
-	{
-		return g_pMemAlloc->Realloc( pMem, nSize );
-	}
-
-	static void Free( void *pMem )
-	{
-		g_pMemAlloc->Free( pMem );
-	}
-
-	static size_t GetSize( void *pMem )
-	{
-		return mallocsize( pMem );
-	}
-
-};
+using CUtlVectorUltraConservativeAllocator = CMemAllocAllocator;
 
 template <typename T, typename I = int, typename A = CUtlVectorUltraConservativeAllocator >
 class CUtlVectorUltraConservative : private A
@@ -682,9 +659,9 @@ COMPILE_TIME_ASSERT( sizeof(CUtlVectorUltraConservative<size_t>) == sizeof(void*
 // Only use this when nesting a CUtlVector() inside of another one of our container classes (i.e a CUtlMap)
 //-----------------------------------------------------------------------------
 template< class T, typename I = int >
-class CCopyableUtlVector : public CUtlVectorBase< T, I, CUtlMemory<T, I> >
+class CCopyableUtlVector : public CUtlVectorBase< T, I, CUtlVectorMemory<T, I> >
 {
-	typedef CUtlVectorBase< T, I, CUtlMemory<T> > BaseClass;
+	typedef CUtlVectorBase< T, I, CUtlVectorMemory<T> > BaseClass;
 public:
 	explicit CCopyableUtlVector( I growSize = 0, I initSize = 0 ) : BaseClass( growSize, initSize ) {}
 	CCopyableUtlVector( T* pMemory, I numElements ) : BaseClass( pMemory, numElements ) {}
@@ -713,7 +690,7 @@ public:
 //-----------------------------------------------------------------------------
 // The CNetworkUtlVectorBase class:
 //-----------------------------------------------------------------------------
-template< class T, typename I = int, typename A = CUtlMemory< T, I > >
+template< class T, typename I = int, typename A = CUtlVectorMemory< T, I > >
 class CNetworkUtlVectorBase : public CUtlVectorBase< T, I, A >
 {
 	typedef CUtlVectorBase< T, I, A > BaseClass;
@@ -1725,7 +1702,7 @@ CUtlVector< T, I, A >::CUtlVector( const std::initializer_list< T > elements )	:
 
 // A vector class for storing pointers, so that the elements pointed to by the pointers are deleted
 // on exit.
-template< class T, typename I = int, class A = CUtlMemory< T, I > >
+template< class T, typename I = int, class A = CUtlVectorMemory< T, I > >
 class CUtlVectorAutoPurge : public CUtlVector< T, I, A >
 {
 	typedef CUtlVector< T, I, A > BaseClass;

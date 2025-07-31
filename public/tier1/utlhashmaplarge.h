@@ -238,7 +238,7 @@ private:
 		ElemType_t m_elem;
 		int m_iNextNode;
 	};
-	CUtlMemory<Node_t> m_memNodes;
+	CUtlLeanVector<Node_t> m_memNodes;
 	IndexType_t m_iNodeFreeListHead;
 
 	IndexType_t m_cElements;

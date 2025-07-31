@@ -14,7 +14,7 @@ struct DefaultIncrementalVectorAccessor_t
 };
 
 
-template <class T, typename I = int, class Accessor = DefaultIncrementalVectorAccessor_t< T, I >, class Allocator = CUtlMemory< T*, I > >
+template <class T, typename I = int, class Accessor = DefaultIncrementalVectorAccessor_t< T, I >, class Allocator = CUtlVectorMemory< T*, I > >
 class CUtlIncrementalVector
 {
 public:

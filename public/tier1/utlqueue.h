@@ -11,14 +11,14 @@
 #pragma once
 #endif
 
-#include "utlmemory.h"
+#include "utlleanvector.h"
 
 //#define TEST_UTLQUEUE
 
 enum QueueIter_t { QUEUE_ITERATOR_INVALID = 0xffffffff };
 
 // T is the type stored in the queue
-template< class T, class M = CUtlMemory< T > > 
+template< class T, class M = CUtlLeanVector< T > > 
 class CUtlQueue
 {
 public:
@@ -85,9 +85,9 @@ protected:
 // A queue class with a fixed allocation scheme
 //-----------------------------------------------------------------------------
 template< class T, size_t MAX_SIZE >
-class CUtlQueueFixed : public CUtlQueue< T, CUtlMemoryFixed<T, MAX_SIZE > >
+class CUtlQueueFixed : public CUtlQueue< T, CUtlVectorMemory_Fixed<T, MAX_SIZE > >
 {
-	typedef CUtlQueue< T, CUtlMemoryFixed<T, MAX_SIZE > > BaseClass;
+	typedef CUtlQueue< T, CUtlVectorMemory_Fixed<T, MAX_SIZE > > BaseClass;
 public:
 
 	// constructor, destructor

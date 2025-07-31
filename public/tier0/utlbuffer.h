@@ -18,7 +18,7 @@
 
 #include "platform.h"
 #include "tier0/byteswap.h"
-#include "tier1/utlmemory.h"
+#include "tier1/utlleanvector.h"
 #include <stdarg.h>
 
 
@@ -178,7 +178,7 @@ public:
 	CUtlBuffer& operator= ( const CUtlBuffer& ) = delete;
 
 #if VALVE_CPP11
-	// UtlBuffer is non-copyable (same as CUtlMemory), but it is moveable.  We would like to declare these with '= default'
+	// UtlBuffer is non-copyable (same as CUtlLeanVector), but it is moveable.  We would like to declare these with '= default'
 	// but unfortunately VS2013 isn't fully C++11 compliant, so we have to manually declare these in the boilerplate way.
 	CUtlBuffer( CUtlBuffer&& moveFrom ) = default;
 	CUtlBuffer& operator= ( CUtlBuffer&& moveFrom ) = default;
@@ -197,9 +197,9 @@ public:
 	void *			AccessForDirectRead( int nBytes );
 
 	// Attaches the buffer to external memory....
-	DLL_CLASS_IMPORT void			SetExternalBuffer( void* pMemory, int nSize, int nInitialPut, int nFlags = 0 );
+	DLL_CLASS_IMPORT void			SetExternalBuffer( void* pMemory, int nSize, int nInitialPut, BufferFlags_t nFlags = NONE );
 	DLL_CLASS_IMPORT bool			IsExternallyAllocated() const;
-	DLL_CLASS_IMPORT void			AssumeMemory( void *pMemory, int nSize, int nInitialPut, int nFlags = 0 );
+	DLL_CLASS_IMPORT void			AssumeMemory( void *pMemory, int nSize, int nInitialPut, BufferFlags_t nFlags = NONE );
 	void			*Detach();
 	DLL_CLASS_IMPORT void*			DetachMemory();
 
@@ -232,7 +232,7 @@ public:
 	void			Spew( );
 
 	DLL_CLASS_IMPORT void Swap( CUtlBuffer &other );
-	DLL_CLASS_IMPORT void Swap( CUtlMemory<unsigned char> &other );
+	DLL_CLASS_IMPORT void Swap( CUtlLeanVector< uchar > &other );
 
 	DLL_CLASS_IMPORT bool WriteToFile( const char *, bool );
 	DLL_CLASS_IMPORT bool WriteToFileIfDifferent( const char * );
@@ -477,7 +477,7 @@ protected:
 
 	// be sure to also update the copy constructor
 	// and SwapCopy() when adding members.
-	CUtlMemory<unsigned char> m_Memory;
+	CUtlLeanVector< uchar > m_Memory;
 	int m_Get;
 	int m_Put;
 

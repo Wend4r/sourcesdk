@@ -33,7 +33,7 @@ public:
 // T is the type stored in the queue, it must include the priority
 // The head of the list contains the element with GREATEST priority
 // configure the LessFunc_t to get the desired queue order
-template< class T, typename I = int, class LessFunc = CDefUtlPriorityQueueLessFunc< T >, class A = CUtlMemory<T>, class SetIndexFunc = CDefUtlPriorityQueueSetIndexFunc< T > > 
+template< class T, typename I = int, class LessFunc = CDefUtlPriorityQueueLessFunc< T >, class A = CUtlLeanVector<T>, class SetIndexFunc = CDefUtlPriorityQueueSetIndexFunc< T > > 
 class CUtlPriorityQueue
 {
 public:
