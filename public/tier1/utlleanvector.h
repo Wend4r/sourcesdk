@@ -400,6 +400,9 @@ public:
 	using ElemType_t = T;
 	using IndexLocalType_t = I;
 
+	using iterator = T*;
+	using const_iterator = const T*;
+
 	// constructor, destructor
 	CUtlLeanVectorImpl() {};
 	CUtlLeanVectorImpl( int nGrowSize, int nInitSize = 0 ) : BaseClass( nGrowSize, nInitSize ) {}
@@ -427,6 +430,11 @@ public:
 
 	T& operator[]( const Iterator_t it )				{ return Element( it.index ); }
 	const T& operator[]( const Iterator_t it ) const	{ return Element( it.index ); }
+
+	iterator begin()						{ return this->Base(); }
+	const_iterator begin() const			{ return this->Base(); }
+	iterator end()							{ return this->Base() + Count(); }
+	const_iterator end() const				{ return this->Base() + Count(); }
 
 	// element access
 	T& operator[]( int i );
