@@ -33,8 +33,8 @@ public:
 	using MemoryAllocator_t = A;
 
 	static constexpr size_t MAX_ALLOCATED_BITS = sizeof( IndexLocalType_t ) * 8 - 1;
-	static constexpr I MIN_ALLOCATED = ( MAX_ALLOCATED_BITS + sizeof( ElemType_t ) ) / sizeof( ElemType_t );
-	static constexpr I MAX_ALLOCATED = ~( 1 << MAX_ALLOCATED_BITS );
+	static constexpr size_t MIN_ALLOCATED = ( MAX_ALLOCATED_BITS + sizeof( ElemType_t ) ) / sizeof( ElemType_t );
+	static constexpr size_t MAX_ALLOCATED = ~( 1 << MAX_ALLOCATED_BITS );
 	static constexpr I EXTERNAL_CONST_BUFFER_MARKER = -1;
 
 	// constructor, destructor
@@ -52,7 +52,7 @@ public:
 	~CUtlLeanVectorBase()					{ Purge(); }
 
 	// Gets the base address (can change when adding elements!)
-	T* Base()								{ Assert( !IsExternallyAllocated() ); return m_nAllocated ? m_pElements : nullptr; }
+	T* Base()								{ return m_nAllocated ? m_pElements : nullptr; }
 	const T* Base() const					{ return m_nAllocated ? m_pElements : nullptr; }
 
 	// Is the memory externally allocated?
@@ -137,7 +137,7 @@ void CUtlLeanVectorBase<T, I, A>::EnsureCapacity( int num, bool force )
 			if ( nNewAllocated < MAX_ALLOCATED / 2 )
 				nNewAllocated = MAX( nNewAllocated * 2, MIN_ALLOCATED );
 			else
-				nNewAllocated = MAX_ALLOCATED;
+				nNewAllocated = ( I )MAX_ALLOCATED;
 		}
 	}
 
@@ -221,13 +221,13 @@ inline void CUtlLeanVectorBase<T, I, A>::Purge()
 {
 	RemoveAll();
 	
-	if ( m_nAllocated > 0 )
+	if ( m_nAllocated > 0 && !IsExternallyAllocated() )
 	{
 		MemoryAllocator_t::Free( (void*)m_pElements );
-		m_pElements = NULL;
 	}
-	
+
 	m_nAllocated = 0;
+	m_pElements = NULL;
 }
 
 template< class T, size_t N, typename I >
@@ -635,7 +635,7 @@ int CUtlLeanVectorImpl<B, T, I>::AddMultipleToTail( int nSize )
 
 	if ( nSize > 0 )
 	{
-		if ( ( BaseClass::MAX_ALLOCATED - nOldSize ) < nSize )
+		if ( ( ( int )BaseClass::MAX_ALLOCATED - nOldSize ) < nSize )
 		{
 			Msg( "%s allocation count overflow( add %llu + current %llu > max %llu )\n", __FUNCTION__, ( uint64 )nSize, ( uint64 )nOldSize, ( uint64 )BaseClass::MAX_ALLOCATED );
 			Plat_FatalError( "%s allocation count overflow", __FUNCTION__ );
