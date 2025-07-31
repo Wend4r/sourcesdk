@@ -108,19 +108,18 @@ public:
 	virtual void	Shutdown( ENetworkDisconnectionReason reason ) = 0;
 	
 	virtual HSteamNetConnection GetSteamNetConnection( void ) const = 0;
-	
+
 	virtual bool	SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 	virtual bool	SendData( bf_write &msg, NetChannelBufType_t bufferType ) = 0;
 	virtual int		Transmit( const char *pDebugName, bf_write *data ) = 0;
 	virtual void	SetBitsToSend( void ) = 0;
 	virtual int		SendMessages( const char *pDebugName, bf_write *data ) = 0;
-	virtual void	ClearBitsToSend( void ) = 0;
 
 	virtual const netadr_t &GetRemoteAddress( void ) const = 0;
 
 	virtual void	UpdateMessageStats( int msggroup, int bits, bool ) = 0;
 	
-	virtual void	unk011() = 0;
+	virtual void	unk012() = 0;
 	
 	virtual bool	CanPacket( void ) const = 0;
 	virtual bool	IsOverflowed( void ) const = 0;
@@ -139,8 +138,8 @@ public:
 	virtual bool	IsTimedOut( void ) const = 0;
 	virtual void	UpdateLastReceivedTime( void ) = 0;
 
-	virtual void	unk111() = 0;
-	virtual void	unk112() = 0;
+	virtual void	unk111( float ) = 0;
+	virtual void	unk112( void *pStat ) = 0;
 	
 	virtual bool	IsRemoteDisconnected( ENetworkDisconnectionReason &reason ) const = 0;
 
@@ -157,29 +156,31 @@ public:
 	virtual void	SetDemoRecorder( IDemoRecorderBase *pDemoRecorder ) = 0;
 	virtual void	SetInstantReplayIntercept( IInstantReplayIntercept *pInstantReplayIntercept ) = 0;
 	virtual bool	IsNull( void ) const = 0;
-	virtual bool	ProcessDemoPacket( NetPacket_t *packet ) = 0;
+	virtual bool	ParseMessagesDemo( NetPacket_t *packet ) = 0;
+	virtual bool	ProcessMessages() = 0;
 	
 	virtual void	InstallMessageFilter( INetworkMessageProcessingPreFilter *pFilter ) = 0;
 	virtual void	UninstallMessageFilter( INetworkMessageProcessingPreFilter *pFilter ) = 0;
-	
-	virtual void	PostReceivedNetMessage( INetworkMessageInternal *pNetMessage, const CNetMessage *pData, const NetChannelBufType_t *pBufType, int nBits, int nInSequenceNr ) = 0;
-	virtual void	InsertReplayMessage( InstantReplayMessage_t &msg ) = 0;
-	virtual bool	HasQueuedNetMessages( int nMessageId ) const = 0;
+
+	virtual void	SetActiveNetMessage( CNetMessage *pData ) = 0;
+	virtual void	SetActiveNetMessagePB( void *pData ) = 0;
+	virtual void	IsActiveNetMessage( int16 id ) = 0;
 
 	virtual void	SetPendingDisconnect( ENetworkDisconnectionReason reason ) = 0;
 	virtual ENetworkDisconnectionReason GetPendingDisconnect( void ) const = 0;
 
 	virtual void	SuppressTransmit( bool suppress ) = 0;
 	virtual bool	IsSuppressingTransmit( void ) const = 0;
-	
-	virtual EResult	SendRawMessage( const void *pData, uint32 cbData, int nSendFlags ) = 0;
-	
-	virtual int		GetCurrentNetMessageBits( void ) const = 0;
-	virtual int		GetCurrentNetMessageInSequenceNr( void ) const = 0;
 
-	virtual void	unk101( void ) = 0;
-	virtual void	unk102( void ) = 0;
-	virtual void	unk103( void ) = 0;
+	virtual void	PostReceivedNetMessage( const CNetMessage *pData, int nBits, int nInSequenceNr ) = 0;
+	virtual void	InsertReplayMessage( InstantReplayMessage_t &msg ) = 0;
+	virtual bool	HasQueuedNetMessages( int nMessageId ) const = 0;
+
+	virtual void	SetUnkWhenEmpty( int ) = 0;
+
+	virtual void	*unk101( void ) = 0;
+	virtual void	unk102( void *pStat ) = 0;
+	virtual void	unk103( void * ) = 0;
 };
 
 

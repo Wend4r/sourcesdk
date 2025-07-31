@@ -16,7 +16,6 @@
 #pragma once
 #endif
 
-
 #define FLOW_OUTGOING	0		
 #define FLOW_INCOMING	1
 #define MAX_FLOWS		2		// in & out
@@ -37,7 +36,7 @@ public:
 	virtual const char  *GetName( void ) const = 0;	// get channel name
 	virtual const char  *GetAddress( void ) const = 0; // get channel IP address as string
 
-	virtual void*		unk03() = 0;
+	virtual void*		unk002() = 0;
 
 	virtual float		GetTime( void ) const = 0;	// current net time
 	virtual float		GetTimeConnected( void ) const = 0;	// get connection time in seconds
@@ -49,38 +48,38 @@ public:
 	virtual bool		IsTimingOut( void ) const = 0;	// true if timing out
 	virtual bool		IsPlayback( void ) const = 0;
 
-	virtual float		GetAvgLatency( void ) const = 0;	// average packet latency in seconds
-	virtual float		GetEngineLatency( void ) const = 0;	// current latency (RTT), more accurate but jittering
+	virtual double		GetAvgLatency( void ) const = 0;	// average packet latency in seconds
+	virtual double		GetEngineLatency( void ) const = 0;	// current latency (RTT), more accurate but jittering
 	
 	virtual float		GetAvgLoss( int flow ) const = 0;	 // avg packet loss[0..1]
-	virtual float		GetAvgChoke(int flow) const = 0;
-	virtual float		GetAvgUnk( int flow ) const = 0;
+	virtual float		GetAvgChoke( int flow ) const = 0;
+	virtual float		GetUnkAvg015( int flow ) const = 0;
 	virtual float		GetAvgData( int flow ) const = 0;	 // data flow in bytes/sec
 	
-	virtual float		GetAvgPackets( int flow ) const = 0; // avg packets/sec
-	virtual int			GetTotalData( int flow ) const = 0;	 // total flow in/out in bytes
+	virtual float		GetAvgPackets( int flow ) const = 0; // avg packet bytes/sec
+	virtual uint64		GetTotalData( int flow ) const = 0;	 // total flow in/out in bytes
 	virtual int			GetTotalPackets( int flow ) const = 0;
 	virtual int			GetSequenceNr( int flow ) const = 0;	// last send seq number
 	virtual float		GetTimeSinceLastReceived( void ) const = 0;	// get time since last recieved packet in seconds
-	virtual void		GetRemoteFramerate( float *pflFrameTime, float *pflFrameTimeStdDeviation, float *pflFrameStartTimeStdDeviation ) const = 0;
+	virtual void		GetRemoteFramerate( float *pflFrameTime = nullptr, float *pflFrameTimeStdDeviation = nullptr, float *pflFrameStartTimeStdDeviation = nullptr ) const = 0;
 
 	virtual float		GetTimeoutSeconds( void ) const = 0;
 	virtual float		GetTimeUntilTimeout( void ) const = 0;
 	
-	virtual void		unk024( void ) const = 0;
+	virtual float		GetUnkTime025( void ) const = 0;
 	
-	virtual void		ResetLatencyStats( int channel ) = 0;
-	virtual SNetChannelLatencyStats *GetLatencyStats( int channel ) const = 0;
-	virtual void		SetLatencyStats( int channel, const SNetChannelLatencyStats &stats ) = 0;
+	virtual void		ResetLatencyStats( int flow ) = 0;
+	virtual SNetChannelLatencyStats *GetLatencyStats( int flow ) const = 0;
+	virtual void		SetLatencyStats( int flow, const SNetChannelLatencyStats &stats ) = 0;
 	
 	virtual void		SetInterpolationAmount( float flInterpolationAmount, float flUpdateRate ) = 0;
 	virtual void		SetNumPredictionErrors( int num ) = 0;
 	virtual void		SetShowNetMessages( bool show ) = 0;
 
-	virtual void*		unk031( int unk1, int unk2, int* unk3 ) = 0;
+	virtual bool		unk032( int unk1, int unk2, int* unk3 = nullptr ) = 0;
 
-	virtual void*		unk032( int unk1, int* unk2, int unk3 ) = 0;
-	virtual void*		unk033( int unk1, void* unk2 ) = 0;
+	virtual int			unk033( int unk1, int* unk2, int unk3 ) = 0;
+	virtual int			unk034( int unk1, void* unk2 ) = 0;
 };
 
 #endif // INETCHANNELINFO_H
