@@ -21,6 +21,8 @@
 
 #include "mathlib/mathlib.h"
 
+#include <string.h>
+
 #define FOR_EACH_LEANVEC( vecName, iteratorName ) \
 	for ( auto iteratorName = vecName.First(); vecName.IsValidIterator( iteratorName ); iteratorName = vecName.Next( iteratorName ) )
 
@@ -40,10 +42,10 @@ public:
 	// constructor, destructor
 	CUtlLeanVectorBase() : m_nCount( 0 ), m_nAllocated( 0 ), m_bExternal( false ), m_pElements( nullptr ) {}
 	CUtlLeanVectorBase( int nGrowSize, int nInitSize = 0 ) : 
-		m_nCount( 0 ), m_nAllocated( nInitSize ), m_bExternal( false ), m_pElements( nullptr )
+		m_nCount( nGrowSize ), m_nAllocated( 0 ), m_bExternal( false ), m_pElements( nullptr )
 	{
-		Assert( nGrowSize >= nInitSize );
-		Grow( nGrowSize );
+		Assert( nGrowSize <= nInitSize );
+		EnsureCapacity( nInitSize );
 	}
 	CUtlLeanVectorBase( T* pMemory, I nElements ) : 
 		m_nCount( 0 ), m_nAllocated( nElements ), m_bExternal( true ), m_pElements( pMemory )
@@ -62,7 +64,6 @@ public:
 	bool IsReadOnly() const					{ return m_nAllocated == EXTERNAL_CONST_BUFFER_MARKER; }
 
 	// Makes sure we have enough memory allocated to store a requested # of elements
-	void Grow( int num = 1 )				{ EnsureCapacity( m_nCount + num ); m_nCount += num; }
 	void EnsureCapacity( int num, bool force = false );
 
 	// Attaches the buffer to external memory.
@@ -460,6 +461,7 @@ public:
 	T* AddToTailGetPtr();
 
 	// Adds an element, uses copy constructor
+	int AddToTail();
 	int AddToTail( const T& src );
 
 	// Adds multiple elements, uses default constructor
@@ -474,12 +476,23 @@ public:
 	// Finds an element (element needs operator== defined)
 	int Find( const T& src ) const;
 
+	int  Grow( int num = 1 )							{ EnsureCount( this->m_nCount + num ); return this->m_nCount; }
+	void EnsureCount( int num, bool force = false )		{ this->EnsureCapacity( num ); this->m_nCount = num; }
+
 	// Element removal
 	void FastRemove( int elem ); // doesn't preserve order
 	void Remove( int elem ); // preserves order, shifts elements
 	bool FindAndRemove( const T& src );	// removes first occurrence of src, preserves order, shifts elements
 	bool FindAndFastRemove( const T& src );	// removes first occurrence of src, doesn't preserve order
-	void RemoveMultiple( int elem, int num ); // preserves order, shifts elements
+
+	void RemoveMultiple( int elem, int num );	// preserves order, shifts elements
+	void RemoveMultipleFromHead( int num ); // removes num elements from tail
+	void RemoveMultipleFromTail( int num ); // removes num elements from tail
+	void RemoveAll();				// doesn't deallocate memory
+
+	// Shifts elements.
+	void ShiftElementsRight( int elem, int num = 1 );
+	void ShiftElementsLeft( int elem, int num = 1 );
 
 protected:
 	// Can't copy this unless we explicitly do it!
@@ -624,6 +637,14 @@ T* CUtlLeanVectorImpl<B, T, I>::AddToTailGetPtr()
 //-----------------------------------------------------------------------------
 // Adds an element, uses copy constructor
 //-----------------------------------------------------------------------------
+template< class B, class T, typename I >
+int CUtlLeanVectorImpl<B, T, I>::AddToTail()
+{
+	int elem = Grow() - 1;
+	Construct( &Element( elem ) );
+	return elem;
+}
+
 template< class B, class T, typename I >
 int CUtlLeanVectorImpl<B, T, I>::AddToTail( const T& src )
 {
@@ -806,8 +827,78 @@ void CUtlLeanVectorImpl<B, T, I>::RemoveMultiple( int elem, int num )
 	this->m_nCount -= num;
 }
 
+
+template< class B, class T, typename I >
+void CUtlLeanVectorImpl<B, T, I>::RemoveMultipleFromHead( int num )
+{
+	Assert( num <= Count() );
+
+	// Global scope to resolve conflict with Scaleform 4.0
+	for ( int i = num; i-- > 0; )
+		::Destruct(&Element(i));
+
+	ShiftElementsLeft(0, num);
+	this->m_nCount -= num;
+}
+
+template< class B, class T, typename I >
+void CUtlLeanVectorImpl<B, T, I>::RemoveMultipleFromTail( int num )
+{
+	Assert( num <= Count() );
+
+	// Global scope to resolve conflict with Scaleform 4.0
+	for ( I i = this->m_nCount-num; i < this->m_nCount; i++ )
+		::Destruct(&Element(i));
+
+	this->m_nCount -= num;
+}
+
+template< class B, class T, typename I >
+void CUtlLeanVectorImpl<B, T, I>::RemoveAll()
+{
+	for ( int i = this->m_nCount; i-- > 0; )
+	{
+		// Global scope to resolve conflict with Scaleform 4.0
+		::Destruct(&Element(i));
+	}
+
+	this->m_nCount = 0;
+}
+
+
 //-----------------------------------------------------------------------------
 // Shifts elements
+//-----------------------------------------------------------------------------
+template< class B, class T, typename I >
+void CUtlLeanVectorImpl<B, T, I>::ShiftElementsRight( int elem, int num )
+{
+	Assert( IsValidIndex(elem) || ( this->m_nCount == 0 ) || ( num == 0 ));
+
+	I numToMove = this->m_nCount - elem - num;
+
+	if ( ( numToMove > 0 ) && ( num > 0 ) )
+		memmove( &Element(elem+num), &Element(elem), numToMove * sizeof(T) );
+}
+
+template< class B, class T, typename I >
+void CUtlLeanVectorImpl<B, T, I>::ShiftElementsLeft( int elem, int num )
+{
+	Assert( IsValidIndex(elem) || ( this->m_nCount == 0 ) || ( num == 0 ));
+
+	I numToMove = this->m_nCount - elem - num;
+
+	if ( ( numToMove > 0 ) && ( num > 0 ) )
+	{
+		memmove( &Element( elem ), &Element( elem + num ), numToMove * sizeof(T) );
+
+#ifdef _DEBUG
+		memset( &Element( this->m_nCount - num ), 0xDD, num * sizeof(T) );
+#endif
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Shifts elements (protected)
 //-----------------------------------------------------------------------------
 template< class B, class T, typename I >
 void CUtlLeanVectorImpl<B, T, I>::ShiftElements( T* pDest, const T* pSrc, const T* pSrcEnd )
