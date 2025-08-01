@@ -21,6 +21,11 @@
 #include "platform.h"
 #include "basetypes.h"
 
+enum RawAllocatorType_t : uint8_t {
+	RawAllocator_Standard = 0,
+	RawAllocator_Platform = 1,
+};
+
 #include "memdbgon.h"
 
 class CRawAllocator

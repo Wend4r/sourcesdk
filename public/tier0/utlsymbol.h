@@ -146,25 +146,20 @@ public:
 
 	struct UtlSymTableHashFunctor
 	{
-		ptrdiff_t m_ownerOffset;
-
-		UtlSymTableHashFunctor()
-		{
-			const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetHashRef()) - 1024;
-			const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
-			m_ownerOffset = -owneroffset;
-		}
-
 		unsigned int operator()( UtlSymTableAltKey k ) const
 		{
-			const CUtlSymbolTable* pTable = (const CUtlSymbolTable*)((uintp)this + m_ownerOffset);
+			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetHashRef()) - 1024;
+			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
+			const CUtlSymbolTable* pTable = (const CUtlSymbolTable*)((uintp)this - owneroffset);
 
 			return pTable->Hash( k.m_pString );
 		}
 
 		unsigned int operator()( UtlSymElm_t k ) const
 		{
-			const CUtlSymbolTable* pTable = (const CUtlSymbolTable*)((uintp)this + m_ownerOffset);
+			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetHashRef()) - 1024;
+			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
+			const CUtlSymbolTable* pTable = (const CUtlSymbolTable*)((uintp)this - owneroffset);
 
 			return pTable->Hash( k );
 		}
@@ -207,18 +202,11 @@ public:
 
 	struct UtlSymTableEqualFunctor
 	{
-		ptrdiff_t m_ownerOffset;
-
-		UtlSymTableEqualFunctor()
-		{
-			const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetEqualRef()) - 1024;
-			const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
-			m_ownerOffset = -owneroffset;
-		}
-
 		bool operator()( UtlSymElm_t a, UtlSymElm_t b ) const
 		{
-			const CUtlSymbolTable* pTable = (const CUtlSymbolTable*)((uintp)this + m_ownerOffset);
+			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetEqualRef()) - 1024;
+			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
+			const CUtlSymbolTable* pTable = (const CUtlSymbolTable*)((uintp)this - owneroffset);
 
 			if ( pTable->IsInsensitive() )
 				return V_stricmp( pTable->String( a ), pTable->String( b ) ) == 0;
@@ -266,11 +254,11 @@ public:
 
 protected:
 	// By "UtlSymId_t" elements.
-	Hashtable_t					m_HashTable;
+	Hashtable_t						m_HashTable;
 
 	// By "const char *" elements.
-	MemBlocksVec_t				m_MemBlocks;
-	CUtlMemoryBlockAllocator	m_MemBlockAllocator;
+	MemBlocksVec_t					m_MemBlocks;
+	CUtlMemoryBlockAllocator<char>	m_MemBlockAllocator;
 
 	bool m_bInsensitive;
 };
