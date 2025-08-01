@@ -21,7 +21,8 @@
 #include "platform.h"
 #include "basetypes.h"
 
-enum RawAllocatorType_t : uint8_t {
+enum RawAllocatorType_t : uint8
+{
 	RawAllocator_Standard = 0,
 	RawAllocator_Platform = 1,
 };
