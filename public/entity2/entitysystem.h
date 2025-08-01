@@ -112,7 +112,7 @@ enum EntityDormancyType_t
 
 struct EventQueuePrioritizedEvent_t
 {
-	int m_unk001;
+	char unk001[40];
 	GameTime_t m_flFireTime;
 	EntityIOTargetType_t m_eTargetType;
 	CUtlSymbolLarge m_iTarget;
@@ -384,7 +384,6 @@ public:
 	}
 
 public:
-	int m_iMaxNetworkedEntIndex;
 	int m_iNetworkedEntCount;
 	int m_iNonNetworkedSavedEntCount;
 	CUtlDict<SpawnGroupEntityFilterInfo_t> m_spawnGroupEntityFilters;

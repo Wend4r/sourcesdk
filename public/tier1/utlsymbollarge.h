@@ -128,7 +128,8 @@ public:
 			m_Mutex( "CUtlSymbolTableLargeBase" ), 
 			m_MemBlockAllocator( ( nInitSize > 0 ) ? 8 : 0, PAGE_SIZE ), 
 			m_nElementLimit( INT_MAX - 1 ), 
-			m_bThrowError( true )  { }
+			m_bThrowError( true ), 
+			m_nUsedBytes(0)  { }
 
 	~CUtlSymbolTableLargeBase() { }
 
@@ -162,15 +163,6 @@ private:
 
 	struct UtlSymTableLargeHashFunctor
 	{
-		ptrdiff_t m_ownerOffset;
-
-		UtlSymTableLargeHashFunctor()
-		{
-			const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetHashRef()) - 1024;
-			const ptrdiff_t owneroffset = offsetof(CUtlSymbolTableLargeBase, m_HashTable) + tableoffset;
-			m_ownerOffset = -owneroffset;
-		}
-
 		uint32 operator()( UtlSymTableLargeAltKey k ) const
 		{
 			return CUtlSymbolLarge::Hash< CASEINSENSITIVE >( k.m_pString, k.m_nLength );
@@ -178,7 +170,9 @@ private:
 
 		uint32 operator()( UtlSymLargeElm_t k ) const
 		{
-			const CUtlSymbolTableLargeBase* pTable = (const CUtlSymbolTableLargeBase*)((uintp)this + m_ownerOffset);
+			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetHashRef()) - 1024;
+			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTableLargeBase, m_HashTable) + tableoffset;
+			const CUtlSymbolTableLargeBase* pTable = (const CUtlSymbolTableLargeBase*)((uintp)this - owneroffset);
 
 			return pTable->Hash( k );
 		}
@@ -186,18 +180,11 @@ private:
 
 	struct UtlSymTableLargeEqualFunctor
 	{
-		ptrdiff_t m_ownerOffset;
-
-		UtlSymTableLargeEqualFunctor()
-		{
-			const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetEqualRef()) - 1024;
-			const ptrdiff_t owneroffset = offsetof(CUtlSymbolTableLargeBase, m_HashTable) + tableoffset;
-			m_ownerOffset = -owneroffset;
-		}
-		
 		bool operator()( UtlSymLargeElm_t a, UtlSymLargeElm_t b ) const 
 		{ 
-			const CUtlSymbolTableLargeBase* pTable = (const CUtlSymbolTableLargeBase*)((uintp)this + m_ownerOffset);
+			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetEqualRef()) - 1024;
+			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTableLargeBase, m_HashTable) + tableoffset;
+			const CUtlSymbolTableLargeBase* pTable = (const CUtlSymbolTableLargeBase*)((uintp)this - owneroffset);
 
 			if ( CASEINSENSITIVE ) 
 				return V_stricmp( pTable->String( a ), pTable->String( b ) ) == 0; 
@@ -226,14 +213,15 @@ private:
 	};
 
 	typedef CUtlHashtable< UtlSymLargeElm_t, empty_t, UtlSymTableLargeHashFunctor, UtlSymTableLargeEqualFunctor, UtlSymTableLargeAltKey > Hashtable_t;
-	typedef CUtlVector_RawAllocator< MemBlockHandle_t, UtlSymLargeElm_t > MemBlocksVec_t;
+	typedef CUtlLeanVector<MemBlockHandle_t> MemBlocksVec_t;
 
-	Hashtable_t					m_HashTable;
-	MemBlocksVec_t				m_MemBlocks;
-	MUTEX_TYPE					m_Mutex;
-	CUtlMemoryBlockAllocator	m_MemBlockAllocator;
-	int							m_nElementLimit;
-	bool						m_bThrowError;
+	Hashtable_t						m_HashTable;
+	MemBlocksVec_t					m_MemBlocks;
+	MUTEX_TYPE						m_Mutex;
+	CUtlMemoryBlockAllocator<char>	m_MemBlockAllocator;
+	int								m_nElementLimit;
+	bool							m_bThrowError;
+	int								m_nUsedBytes;
 };
 
 template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
@@ -277,6 +265,8 @@ inline CUtlSymbolLarge CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUT
 	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( block );
 
 	entry->Replace( hash, pString, nLength );
+
+	m_nUsedBytes += nLength + 1;
 
 	UtlSymLargeElm_t elem = m_MemBlocks.AddToTail( block + sizeof( LargeSymbolTableHashDecoration_t ) );
 
