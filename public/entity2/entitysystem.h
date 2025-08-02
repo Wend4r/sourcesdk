@@ -126,17 +126,14 @@ struct EventQueuePrioritizedEvent_t
 
 	EventQueuePrioritizedEvent_t *m_pNext;
 	EventQueuePrioritizedEvent_t *m_pPrev;
+
+	char m_unk80[32];
 };
 
 class CEventQueue
 {
 public:
 	CThreadMutex m_Mutex;
-
-private:
-	char m_unk56[32];
-
-public:
 	EventQueuePrioritizedEvent_t m_Events;
 	int m_iListCount;
 };
