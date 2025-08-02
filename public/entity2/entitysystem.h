@@ -112,7 +112,7 @@ enum EntityDormancyType_t
 
 struct EventQueuePrioritizedEvent_t
 {
-	char unk001[40];
+	WorldGroupId_t m_WorldGroupId;
 	GameTime_t m_flFireTime;
 	EntityIOTargetType_t m_eTargetType;
 	CUtlSymbolLarge m_iTarget;
@@ -132,6 +132,7 @@ class CEventQueue
 {
 public:
 	CThreadMutex m_Mutex;
+	char pad56[32];
 	EventQueuePrioritizedEvent_t m_Events;
 	int m_iListCount;
 };
