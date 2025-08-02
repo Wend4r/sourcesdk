@@ -124,10 +124,12 @@ struct EventQueuePrioritizedEvent_t
 
 	variant_t m_VariantValue; // variable-type parameter
 
+	void *m_unk101;
+	KeyValues3 m_KV3;
+	bool m_unk201;
+
 	EventQueuePrioritizedEvent_t *m_pNext;
 	EventQueuePrioritizedEvent_t *m_pPrev;
-
-	char m_unk80[32];
 };
 
 class CEventQueue
