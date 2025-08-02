@@ -132,7 +132,11 @@ class CEventQueue
 {
 public:
 	CThreadMutex m_Mutex;
-	char pad56[32];
+
+private:
+	char m_unk56[32];
+
+public:
 	EventQueuePrioritizedEvent_t m_Events;
 	int m_iListCount;
 };
