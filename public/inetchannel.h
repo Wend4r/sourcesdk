@@ -31,7 +31,7 @@ class	INetworkMessageProcessingPreFilter;
 class	INetworkMessageInternal;
 class	INetMessageDispatcher;
 class	InstantReplayMessage_t;
-struct	CUtlSlot;
+class	CUtlSlot;
 
 FORWARD_DECLARE_HANDLE(NetMessageHandle_t);
 
