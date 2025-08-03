@@ -124,7 +124,7 @@ struct EventQueuePrioritizedEvent_t
 
 	variant_t m_VariantValue; // variable-type parameter
 
-	void *m_unk101;
+	void* m_pPulseHelper;
 	KeyValues3 m_KV3;
 	bool m_unk201;
 
