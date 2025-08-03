@@ -30,7 +30,7 @@ public:
 
 	CRecipientFilter( IRecipientFilter *source, CPlayerSlot exceptSlot = INVALID_PLAYER_SLOT )
 	{
-		*reinterpret_cast<uint64*>(m_Recipients.Base()) = source->GetRecipients();
+		m_Recipients = source->GetRecipients();
 		m_nBufType = source->GetNetworkBufType();
 		m_bInitMessage = source->IsInitMessage();
 
@@ -44,7 +44,7 @@ public:
 
 	NetChannelBufType_t GetNetworkBufType( void ) const override { return m_nBufType; }
 	bool IsInitMessage( void ) const override { return m_bInitMessage; }
-	uint64 GetRecipients( void ) const override { return *reinterpret_cast<const uint64*>(m_Recipients.Base()); }
+	const CPlayerBitVec &GetRecipients( void ) const override { return m_Recipients; }
 
 	void SetRecipients( uint64 nRecipients )
 	{

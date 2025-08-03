@@ -24,18 +24,8 @@ public:
 
 	virtual bool	IsInitMessage() const = 0;
 	virtual NetChannelBufType_t	GetNetworkBufType() const = 0;
-	virtual uint64 GetRecipients() const = 0;
-
-	int	GetRecipientCount() const {
-		uint64 x = GetRecipients();
-#if defined(__GNUC__) || defined(__clang__)
-		return __builtin_popcountll(x);
-#elif defined(_MSC_VER)
-		return static_cast<int>(__popcnt64(x));
-#else
-#error "Unsupported compiler: popcount not available"
-#endif
-	}
+	virtual const CPlayerBitVec &GetRecipients() const = 0;
+	int	GetRecipientCount() const { return GetRecipients().PopulationCount(); }
 };
 
 #endif // IRECIPIENTFILTER_H

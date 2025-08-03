@@ -11,16 +11,29 @@
 #include "utldelegateimpl.h"
 #include "utlvector.h"
 
-struct CUtlSlot;
+class CUtlSlot;
 
-struct CUtlSignaller_Base
+class CUtlSignaller_Base
 {
-	CUtlDelegate< void ( CUtlSlot* ) > m_SlotDeletionDelegate;
+public:
+	using Delegate_t = CUtlDelegate< void( CUtlSlot * ) >;
+
+	CUtlSignaller_Base( const Delegate_t &other ) : m_SlotDeletionDelegate( other ) {}
+	CUtlSignaller_Base( Delegate_t &&other ) : m_SlotDeletionDelegate( Move( other ) ) {}
+
+private:
+	Delegate_t m_SlotDeletionDelegate;
 };
 
-struct CUtlSlot
+class CUtlSlot
 {
-	CUtlVectorMT< CUtlVector<CUtlSignaller_Base*>, CCopyableLock<CThreadFastMutex> > m_ConnectedSignallers;
+public:
+	using MTElement_t = CUtlVector< CUtlSignaller_Base * >;
+
+	CUtlSlot() : m_ConnectedSignallers( 0, 1 ) {}
+
+private:
+	CUtlVectorMT< MTElement_t, CCopyableLock< CThreadFastMutex > > m_ConnectedSignallers;
 };
 
 #endif // UTLSLOT_H
