@@ -12,6 +12,7 @@
 #endif
 
 #include "irecipientfilter.h"
+#include "iserver.h"
 #include "const.h"
 #include "bitvec.h"
 
@@ -94,15 +95,39 @@ public:
 
 public:
 
-	void			CopyFrom( const CRecipientFilter& src );
+	void CopyFrom( const CRecipientFilter& src )
+	{
+		m_Recipients = src.m_Recipients;
+		m_bInitMessage = src.m_bInitMessage;
+	}
 
-	void			Reset( void );
+	void Reset( void )
+	{
+		m_Recipients.ClearAll();
+		m_bInitMessage = false;
+	}
 
-	void			MakeInitMessage( void );
+	void			MakeInitMessage( void ) { m_bInitMessage = true; }
+	void			MakeReliable( void ) {}
+	void			AddAllPlayers( void )
+	{
+		m_Recipients.ClearAll();
 
-	void			MakeReliable( void );
-	
-	void			AddAllPlayers( void );
+		Assert( g_pNetworkServerService );
+
+		CNetworkGameServer *server = g_pNetworkServerService->GetNetworkServer();
+
+		AssertMsg( server, "Server interface unavailable, too early" );
+
+		for( const auto &pClient : server->GetClients() )
+		{
+			if ( pClient->IsActive() )
+			{
+				AddRecipient( pClient->GetPlayerSlot() );
+			}
+		}
+	}
+
 	void			AddRecipientsByPVS( const Vector& origin );
 	void			RemoveRecipientsByPVS( const Vector& origin );
 	void			AddRecipientsByPAS( const Vector& origin );
