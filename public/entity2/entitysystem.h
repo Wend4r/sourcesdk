@@ -126,7 +126,7 @@ struct EventQueuePrioritizedEvent_t
 
 	void* m_pPulseHelper;
 	KeyValues3 m_KV3;
-	bool m_unk201;
+	KeyValues3::Data_t m_KV3Data;
 
 	EventQueuePrioritizedEvent_t *m_pNext;
 	EventQueuePrioritizedEvent_t *m_pPrev;
