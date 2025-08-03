@@ -18,7 +18,7 @@
 #include <string.h>
 #include "tier0/platform.h"
 #include "tier0/rawallocator.h"
-#include "tier0/utlmemory.h"
+#include "tier0/utlvectormemory.h"
 
 #include "tier0/memalloc.h"
 #include "mathlib/mathlib.h"
@@ -1094,35 +1094,56 @@ void CUtlVectorMemory_Aligned<T, I, nAlignment>::Grow( I num )
 {
 	Assert( num > 0 );
 
-	if ( this->IsExternallyAllocated() )
+	if ( BaseClass::IsReadOnly() )
 	{
 		// Can't grow a buffer whose memory was externally allocated 
 		Assert(0);
 		return;
 	}
 
+	if ( ( ( int64 )BaseClass::m_nAllocationCount + num ) > INT_MAX )
+		UtlVectorMemory_FailedAllocation( BaseClass::m_nAllocationCount, num );
+
+	int nAllocationRequested = BaseClass::BaseClass::m_nAllocationCount + num;
+
 	UTLVECTORMEMORY_TRACK_FREE();
 
-	// Make sure we have at least numallocated + num allocations.
-	// Use the grow rules specified for this memory (in m_nGrowSize)
-	I nAllocationRequested = BaseClass::m_nAllocationCount + num;
+	int nNewAllocationCount = ( I )UtlVectorMemory_CalcNewAllocationCount( ( int )BaseClass::m_nAllocationCount, ( int )( BaseClass::m_nGrowSize ), ( int )nAllocationRequested, ( int )sizeof(T) );
 
-	BaseClass::m_nAllocationCount = ( I )UtlVectorMemory_CalcNewAllocationCount( ( int )BaseClass::m_nAllocationCount, ( int )BaseClass::m_nGrowSize, ( int )nAllocationRequested, ( int )sizeof(T) );
+	if ( nNewAllocationCount < nAllocationRequested )
+	{
+		if ( nNewAllocationCount == 0 && ( int )( I )( nNewAllocationCount - 1 ) >= nAllocationRequested )
+		{
+			--nNewAllocationCount; // deal w/ the common case of m_nAllocationCount == MAX_USHORT + 1
+		}
+		else
+		{
+			if ( ( I )nAllocationRequested != nAllocationRequested )
+			{
+				// we've been asked to grow memory to a size s.t. the index type can't address the requested amount of memory
+				Assert( 0 );
+				return;
+			}
+			while ( nNewAllocationCount < nAllocationRequested )
+			{
+				nNewAllocationCount = ( nNewAllocationCount + nAllocationRequested ) / 2;
+			}
+		}
+	}
+
+	MEM_ALLOC_CREDIT_CLASS();
+	BaseClass::m_pMemory = (T*)UtlVectorMemory_AllocAligned( BaseClass::m_pMemory, !BaseClass::IsExternallyAllocated(), ( int )( nNewAllocationCount * sizeof(T) ), ( int )( BaseClass::m_nAllocationCount * sizeof(T) ));
+	Assert( BaseClass::m_pMemory );
+
+	if ( BaseClass::IsExternallyAllocated() )
+	{
+		BaseClass::m_bHasConstMemory = false;
+		BaseClass::m_bExternal = false;
+	}
+
+	BaseClass::m_nAllocationCount = nNewAllocationCount;
 
 	UTLVECTORMEMORY_TRACK_ALLOC();
-
-	if ( BaseClass::m_pMemory )
-	{
-		MEM_ALLOC_CREDIT_CLASS();
-		BaseClass::m_pMemory = (T*)MemAlloc_ReallocAligned( BaseClass::m_pMemory, BaseClass::m_nAllocationCount * sizeof(T), nAlignment );
-		Assert( BaseClass::m_pMemory );
-	}
-	else
-	{
-		MEM_ALLOC_CREDIT_CLASS();
-		BaseClass::m_pMemory = (T*)MemAlloc_AllocAligned( BaseClass::m_nAllocationCount * sizeof(T), nAlignment );
-		Assert( BaseClass::m_pMemory );
-	}
 }
 
 

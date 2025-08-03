@@ -9,7 +9,6 @@
 #ifndef UTLRBTREE_H
 #define UTLRBTREE_H
 
-#include "utlmemory.h"
 #include "utlleanvector.h"
 #include "utlfixedmemory.h"
 #include "utlblockmemory.h"
