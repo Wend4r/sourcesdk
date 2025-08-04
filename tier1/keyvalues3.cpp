@@ -1782,6 +1782,7 @@ KV3MemberId_t CKeyValues3Table::CreateMember( KeyValues3 *parent, const CKV3Memb
 
 	int new_size = m_nCount + 1;
 	EnsureMemberCapacity( new_size );
+	m_nCount = new_size;
 
 	Hash_t *hashes_base = HashesBase();
 	Member_t *members_base = MembersBase();
@@ -1794,6 +1795,15 @@ KV3MemberId_t CKeyValues3Table::CreateMember( KeyValues3 *parent, const CKV3Memb
 	auto &curr_name = names_base[curr];
 	auto &flags = flags_base[curr];
 
+	auto context = parent->GetContext();
+
+	flags = 0;
+
+	if ( context )
+	{
+		flags |= MEMBER_FLAG_CONTEXT_ALLOCATED;
+	}
+
 	if ( name_external )
 	{
 		curr_name = name.GetString();
@@ -1801,8 +1811,6 @@ KV3MemberId_t CKeyValues3Table::CreateMember( KeyValues3 *parent, const CKV3Memb
 	}
 	else
 	{
-		auto context = parent->GetContext();
-
 		if ( context )
 			curr_name = context->AllocString( name.GetString() );
 		else
@@ -1811,8 +1819,6 @@ KV3MemberId_t CKeyValues3Table::CreateMember( KeyValues3 *parent, const CKV3Memb
 
 	if ( m_pFastSearch && !m_pFastSearch->m_ignore )
 		m_pFastSearch->m_member_ids.Insert( name.GetHashCode(), curr );
-
-	m_nCount = new_size;
 
 	return curr;
 }
@@ -1823,27 +1829,26 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 
 	RemoveAll( parent, new_size );
 	EnsureMemberCapacity( new_size, true, true );
+	m_nCount = new_size;
 
-	auto context = parent->GetContext();
-
-	Hash_t *hashes_base = HashesBase();
 	Member_t *members_base = MembersBase();
 	Name_t *names_base = NamesBase();
 	Flags_t *flags_base = FlagsBase();
 
-	const Hash_t *src_hashes_base = src->HashesBase();
 	const Member_t *src_members_base = src->MembersBase();
 	const Name_t *src_names_base = src->NamesBase();
 	const Flags_t *src_flags_base = src->FlagsBase();
 
-	memmove( hashes_base, src_hashes_base, sizeof(Hash_t) * new_size );
+	memmove( HashesBase(), src->HashesBase(), sizeof(Hash_t) * new_size );
 
 	for ( int i = 0; i < new_size; i++ )
 	{
-		flags_base[i] = src_flags_base[i] & ~MEMBER_FLAG_EXTERNAL_NAME;
+		auto src_flags = src_flags_base[i];
 
-		if ( context )
-			names_base[i] = context->AllocString( src_names_base[i] );
+		flags_base[i] = src_flags & ~MEMBER_FLAG_EXTERNAL_NAME;
+
+		if ( src_flags & MEMBER_FLAG_CONTEXT_ALLOCATED )
+			names_base[i] = parent->GetContext()->AllocString( src_names_base[i] );
 		else
 			names_base[i] = strdup( src_names_base[i] );
 
@@ -1853,8 +1858,6 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 
 	if ( new_size >= 128 )
 		EnableFastSearch();
-
-	m_nCount = new_size;
 }
 
 void CKeyValues3Table::RenameMember( KeyValues3 *parent, KV3MemberId_t id, const CKV3MemberName &newName )
@@ -1868,11 +1871,9 @@ void CKeyValues3Table::RenameMember( KeyValues3 *parent, KV3MemberId_t id, const
 
 	hashes_base[id] = newName;
 
-	auto context = parent->GetContext();
-
-	if ( context )
+	if ( flags & MEMBER_FLAG_CONTEXT_ALLOCATED )
 	{
-		name = context->AllocString( newName.GetString() );
+		name = parent->GetContext()->AllocString( newName.GetString() );
 	}
 	else
 	{
@@ -1902,9 +1903,14 @@ void CKeyValues3Table::RemoveMember( KeyValues3 *parent, KV3MemberId_t id )
 
 	parent->FreeMember( members_base[id] );
 
-	if ( ( flags_base[id] & MEMBER_FLAG_EXTERNAL_NAME ) == 0 && !parent->GetContext() && names_base[id] )
+	auto flags = flags_base[id];
+
+	if ( !( flags & ( MEMBER_FLAG_EXTERNAL_NAME | MEMBER_FLAG_CONTEXT_ALLOCATED ) ) )
 	{
-		free( (void *)names_base[id] );
+		auto name = names_base[id];
+
+		if ( name )
+			free( (void *)name );
 	}
 
 	if ( id < m_nCount )
@@ -1935,9 +1941,14 @@ void CKeyValues3Table::RemoveAll( KeyValues3 *parent, int new_size )
 	{
 		parent->FreeMember( members_base[i] );
 
-		if ( ( flags_base[i] & MEMBER_FLAG_EXTERNAL_NAME ) == 0 && !parent->GetContext() && names_base[i] )
+		auto flags = flags_base[i];
+
+		if ( !( flags & ( MEMBER_FLAG_EXTERNAL_NAME | MEMBER_FLAG_CONTEXT_ALLOCATED ) ) )
 		{
-			free( (void *)names_base[i] );
+			auto name = names_base[i];
+
+			if ( name )
+				free( (void *)name );
 		}
 	}
 
@@ -1981,9 +1992,14 @@ void CKeyValues3Table::PurgeContent( KeyValues3 *parent, bool bClearingContext )
 			parent->FreeMember( members_base[i] );
 		}
 
-		if ( ( flags_base[i] & MEMBER_FLAG_EXTERNAL_NAME ) == 0 && parent && !parent->GetContext() && names_base[i] )
+		auto flags = flags_base[i];
+
+		if ( !( flags & ( MEMBER_FLAG_EXTERNAL_NAME | MEMBER_FLAG_CONTEXT_ALLOCATED ) ) )
 		{
-			free( (void *)names_base[i] );
+			auto name = names_base[i];
+
+			if ( name )
+				free( (void *)name );
 		}
 	}
 

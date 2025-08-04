@@ -789,7 +789,10 @@ class CKeyValues3Table
 public:
 	enum
 	{
-		MEMBER_FLAG_EXTERNAL_NAME = (1 << 0)
+		MEMBER_FLAG_EXTERNAL_NAME = 1 << 0,
+		MEMBER_FLAG_CONTEXT_ALLOCATED = 1 << 1,
+
+		MEMBER_FLAG_STAFF = MEMBER_FLAG_EXTERNAL_NAME | MEMBER_FLAG_CONTEXT_ALLOCATED
 	};
 
 	typedef KeyValues3LowercaseHash_t	Hash_t;
