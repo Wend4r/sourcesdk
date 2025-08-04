@@ -112,7 +112,7 @@ enum EntityDormancyType_t
 
 struct EventQueuePrioritizedEvent_t
 {
-	char unk001[40];
+	WorldGroupId_t m_WorldGroupId;
 	GameTime_t m_flFireTime;
 	EntityIOTargetType_t m_eTargetType;
 	CUtlSymbolLarge m_iTarget;
@@ -123,6 +123,10 @@ struct EventQueuePrioritizedEvent_t
 	CEntityHandle m_pEntTarget; // a pointer to the entity to target; overrides m_iTarget
 
 	variant_t m_VariantValue; // variable-type parameter
+
+	void* m_pPulseHelper;
+	KeyValues3 m_KV3;
+	KeyValues3::Data_t m_KV3Data;
 
 	EventQueuePrioritizedEvent_t *m_pNext;
 	EventQueuePrioritizedEvent_t *m_pPrev;
