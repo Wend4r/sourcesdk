@@ -28,12 +28,13 @@ private:
 class CUtlSlot
 {
 public:
-	using MTElement_t = CUtlVector< CUtlSignaller_Base * >;
+	using MTElement_t = CUtlSignaller_Base *;
 
 	CUtlSlot() : m_ConnectedSignallers( 0, 1 ) {}
 
 private:
-	CUtlVectorMT< MTElement_t, CCopyableLock< CThreadFastMutex > > m_ConnectedSignallers;
+	CCopyableLock< CThreadFastMutex > m_Mutex;
+	CUtlVector< MTElement_t > m_ConnectedSignallers;
 };
 
 #endif // UTLSLOT_H
