@@ -12,6 +12,7 @@
 #endif
 
 #include "irecipientfilter.h"
+#include "serversideclient.h"
 #include "iserver.h"
 #include "const.h"
 #include "bitvec.h"
