@@ -340,9 +340,9 @@ using CKV3MemberHash = KeyValues3LowercaseHash_t;
 class CKV3MemberName : public CKV3MemberHash
 {
 public:
-	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CUtlStringToken( szInit ), m_pszString( (const char *)szInit ) {}
-	CKV3MemberName( const char* pszString, int nLen ) : CUtlStringToken( MakeStringToken2( pszString, nLen ) ), m_pszString( pszString ) {}
-	CKV3MemberName( uint32 nHash = 0, const char* pszString = StringFuncs<char>::EmptyString() ) : CUtlStringToken( nHash ), m_pszString( pszString ) {}
+	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CKV3MemberHash( szInit ), m_iSymLarge( 0 ), m_pszString( (const char *)szInit ) {}
+	CKV3MemberName( const char *pszString, int nLen ) : CKV3MemberHash( MakeStringToken2( pszString, nLen ) ), m_iSymLarge( UTL_INVAL_SYMBOL_LARGE ), m_pszString( pszString ) {}
+	CKV3MemberName( uint32 nHash = 0, UtlSymLargeId_t index = UTL_INVAL_SYMBOL_LARGE, const char* pszString = StringFuncs<char>::EmptyString() ) : CKV3MemberHash( nHash ), m_iSymLarge( index ), m_pszString( pszString ) {}
 
 	static CKV3MemberName Make( const char *pszInit, int nLen = -1 )
 	{
@@ -351,10 +351,13 @@ public:
 		return CKV3MemberName( pszInit, nLen );
 	}
 
-	const char* GetString() const { return m_pszString; }
+	UtlSymLargeId_t GetSymLargeId() const { return m_iSymLarge; }
+	const char *GetString() const { return m_pszString; }
+	bool IsEmpty() const { return !m_pszString || !m_pszString[0]; }
 
 private:
-	const char* m_pszString;
+	UtlSymLargeId_t m_iSymLarge;
+	const char *m_pszString;
 };
 
 using CKeyValues3StringAndHash = CKV3MemberName;
@@ -365,7 +368,7 @@ class CKV3MemberNameWithStorage : public CKV3MemberName
 public:
 	template< uintp N > constexpr CKV3MemberNameWithStorage( const char (&szInit)[N] ) : CKV3MemberName( szInit ), m_Storage( (const char*)szInit, N - 1 ) {}
 	CKV3MemberNameWithStorage( const char* pszString, int nLen ): CKV3MemberName( pszString, nLen ), m_Storage( pszString, nLen ) {}
-	CKV3MemberNameWithStorage( uint32 nHash = 0, const char* pszString = StringFuncs<char>::EmptyString(), int nLen = -1  ) : CKV3MemberName( nHash, pszString ), m_Storage( pszString, nLen ) {}
+	CKV3MemberNameWithStorage( uint32 nHash = 0, UtlSymLargeId_t index = 0, const char* pszString = StringFuncs<char>::EmptyString(), int nLen = -1  ) : CKV3MemberName( nHash, index, pszString ), m_Storage( pszString, nLen ) {}
 
 	const CBufferString &GetStorage() const { return m_Storage; }
 
@@ -525,8 +528,8 @@ public:
 
 	KeyValues3* GetMember( KV3MemberId_t id );
 	const KeyValues3* GetMember( KV3MemberId_t id ) const { return const_cast<KeyValues3*>(this)->GetMember( id ); }
-	const char* GetMemberName( KV3MemberId_t id ) const;
 	CKV3MemberHash GetMemberHash( KV3MemberId_t id ) const;
+	const char* GetMemberName( KV3MemberId_t id ) const;
 	CKV3MemberName GetKV3MemberName( KV3MemberId_t id ) const;
 
 protected:
@@ -787,21 +790,33 @@ COMPILE_TIME_ASSERT(sizeof(CKeyValues3Array) == 64);
 class CKeyValues3Table
 {
 public:
-	enum
-	{
-		MEMBER_FLAG_EXTERNAL_NAME = 1 << 0,
-		MEMBER_FLAG_CONTEXT_ALLOCATED = 1 << 1,
-
-		MEMBER_FLAG_STAFF = MEMBER_FLAG_EXTERNAL_NAME | MEMBER_FLAG_CONTEXT_ALLOCATED
-	};
 
 	typedef KeyValues3LowercaseHash_t	Hash_t;
 	typedef KeyValues3*					Member_t;
-	typedef const char*					Name_t;
-	typedef uint8						Flags_t;
 
-	static const size_t DATA_SIZE = KV3_TABLE_MAX_FIXED_MEMBERS;
-	static const size_t DATA_ALIGNMENT = KV3Helpers::PackAlignOf<Hash_t, Member_t, Name_t, Flags_t>();
+	union Name_t
+	{
+		const char *m_pString;
+		UtlSymLargeId_t m_iSymLarge;
+
+		Name_t( const char* pString = nullptr ) : m_pString( pString ) {}
+		Name_t( UtlSymLargeId_t iSymLarge ) : m_iSymLarge( iSymLarge ) {}
+
+		bool IsValid() const { return m_pString != nullptr; }
+	};
+
+	enum
+	{
+		MEMBER_FLAG_EXTERNAL_NAME = 1 << 0,
+		MEMBER_FLAG_LARGE_SYMBOL = 1 << 1,
+
+		MEMBER_FLAGS_NONE = 0,
+		MEMBER_FLAGS_ALL = MEMBER_FLAG_EXTERNAL_NAME | MEMBER_FLAG_LARGE_SYMBOL
+	};
+	typedef uint8 Flags_t;
+
+	static constexpr size_t DATA_SIZE = KV3_TABLE_MAX_FIXED_MEMBERS;
+	static constexpr size_t DATA_ALIGNMENT = KV3Helpers::PackAlignOf<Hash_t, Member_t, Name_t, Flags_t>();
 
 	CKeyValues3Table( int cluster_elem = KV3_INVALID_CLUSTER_ELEMENT, int alloc_size = DATA_SIZE );
 	~CKeyValues3Table() { Free(); }
@@ -831,12 +846,16 @@ public:
 
 	int GetMemberCount() const { return m_nCount; }
 	Member_t GetMember( KV3MemberId_t id );
+	const Hash_t GetMemberHash( KV3MemberId_t id ) const;
 	const Member_t GetMember( KV3MemberId_t id ) const { return const_cast<CKeyValues3Table*>(this)->GetMember( id ); }
 	const Name_t GetMemberName( KV3MemberId_t id ) const;
-	const Hash_t GetMemberHash( KV3MemberId_t id ) const;
+	const char *GetMemberName( const KeyValues3 *parent, KV3MemberId_t id ) const;
+	const Flags_t GetMemberFlags( KV3MemberId_t id ) const;
+	CKV3MemberName GetKV3MemberName( const KeyValues3 *parent, KV3MemberId_t id ) const;
 
 	void PurgeFastSearch();
 	void EnableFastSearch();
+	void StoreKeyName( KeyValues3 *parent, Name_t &out_buffer, Flags_t &out_flags, const char *input_string, UtlSymLargeId_t sym_id = 0, bool name_external = false );
 	void EnsureMemberCapacity( int num, bool force = false, bool dont_move = false );
 
 	KV3MemberId_t Internal_FindMember( const CKV3MemberName &name, KV3MemberId_t &next );
@@ -844,7 +863,7 @@ public:
 	KV3MemberId_t FindMember( const KeyValues3* kv ) const;
 	KV3MemberId_t CreateMember( KeyValues3 *parent, const CKV3MemberName &name, bool name_external = false );
 
-	void CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src );
+	void CopyFrom( KeyValues3 *parent, const CKeyValues3Table *src );
 
 	void RenameMember( KeyValues3 *parent, KV3MemberId_t id, const CKV3MemberName &newName );
 	void RemoveMember( KeyValues3 *parent, KV3MemberId_t id );
@@ -1020,6 +1039,19 @@ public:
 	CKeyValues3ContextBase( CKeyValues3Context* context );
 	~CKeyValues3ContextBase() { Purge(); }
 
+	const char* LookupString( UtlSymLargeId_t symid ) { return m_Symbols.String( symid ); }
+	const char *AllocString( const char *pString, UtlSymLargeId_t *pSymLargeId = nullptr )
+	{
+		UtlSymLargeId_t id;
+
+		if ( pSymLargeId )
+		{
+			id = m_Symbols.Add( pString );
+		}
+
+		return LookupString( id );
+	}
+
 	void Clear();
 	void Purge();
 
@@ -1140,8 +1172,6 @@ public:
 
 	IParsingErrorListener* GetParsingErrorListener() const { return m_pParsingErrorListener; }
 	void SetParsingErrorListener( IParsingErrorListener* listener ) { m_pParsingErrorListener = listener; }
-
-	const char* AllocString( const char* pString );
 
 	void EnableMetaData( bool bEnable );
 	void CopyMetaData( KV3MetaData_t* pDest, const KV3MetaData_t* pSrc );

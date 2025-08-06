@@ -436,17 +436,25 @@ public:
 	}
 };
 
+#include "memdbgon.h"
+
 class CMemAllocAllocator
 {
 public:
-	static void* Alloc( size_t nSize )
+	template< typename T, typename I = int >
+	static T *Alloc( I nCount, I &nAdjustedCount )
 	{
-		return g_pMemAlloc->IndirectAlloc( nSize );
+		T *pNew = reinterpret_cast< T * >( g_pMemAlloc->IndirectAlloc( nCount * sizeof( T ) ) );
+		nAdjustedCount = GetAdjustedCount< T, I >( pNew, nCount );
+		return pNew;
 	}
 
-	static void* Realloc( void *base, size_t nSize )
+	template< typename T, typename I = int >
+	static T *Realloc( T *pMem, I nCount, I &nAdjustedCount )
 	{
-		return g_pMemAlloc->Realloc( base, nSize );
+		T *pReallocated = reinterpret_cast< T * >( g_pMemAlloc->Realloc( pMem, nCount * sizeof( T ) ) );
+		nAdjustedCount = GetAdjustedCount< T, I >( pReallocated, nCount );
+		return pReallocated;
 	}
 
 	static void Free( void* pMem )
@@ -457,9 +465,20 @@ public:
 
 	static size_t GetSize( void *pMem )
 	{
-		return mallocsize( pMem );
+		return _msize( pMem );
+	}
+
+	template< typename T, typename I = int >
+	static I GetAdjustedCount( void *pMem, I nCount )
+	{
+		size_t nSize = nCount * sizeof( T );
+		size_t nMemSize = GetSize( pMem );
+
+		return ( I )( ( ( nMemSize > nSize ) ? nMemSize : nSize ) / sizeof( T ) );
 	}
 };
+
+#include "memdbgoff.h"
 
 #define MEM_ALLOC_CREDIT()	MEM_ALLOC_CREDIT_(__FILE__)
 

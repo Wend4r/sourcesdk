@@ -98,7 +98,7 @@ CUtlSymbolLarge CEntitySystem::FindPooledString(const char* pString)
 	if (!pString || !*pString)
 		return CUtlSymbolLarge();
 
-	return m_Symbols.Find(pString);
+	return m_Symbols.FindString(pString);
 }
 
 void CGameEntitySystem::AddListenerEntity(IEntityListener* pListener)

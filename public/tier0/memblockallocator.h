@@ -18,6 +18,7 @@
 #pragma once
 #endif
 
+#include "tier0/memalloc.h"
 #include "tier0/rawallocator.h"
 #include "tier1/utlleanvector.h"
 
@@ -32,6 +33,7 @@ typedef unsigned int MemBlockHandle_t;
 #define MEMBLOCK_DEFAULT_PAGESIZE (0x800)
 #define MEMBLOCK_PAGESIZE_SECTION1 (0x10000)
 #define MEMBLOCK_PAGESIZE_SECTION2 (0x80000)
+#define MEMBLOCK_MAX_TOTAL_PAGESIZE (0x200000)
 
 #define MEMBLOCK_PAGEINDEX_BIT (11)
 #define MEMBLOCK_PAGEINDEX_MASK ((1 << MEMBLOCK_PAGEINDEX_BIT) - 1)
@@ -43,45 +45,52 @@ template <class T, class A = CMemAllocAllocator>
 class CUtlMemoryBlockAllocator
 {
 public:
-	CUtlMemoryBlockAllocator( unsigned int nPageSize = MEMBLOCK_DEFAULT_PAGESIZE, unsigned int nPageMask = MEMBLOCK_PAGEOFFSET_MASK, RawAllocatorType_t nAllocatorType = RawAllocatorType_t::RawAllocator_Standard ) :
+	using MemoryAllocator_t = A;
+
+	CUtlMemoryBlockAllocator( int nInitPages = 0, unsigned int nPageSize = MEMBLOCK_DEFAULT_PAGESIZE, unsigned int nPageMask = MEMBLOCK_PAGEOFFSET_MASK, uint32 nMaxPageSize = MEMBLOCK_MAX_TOTAL_PAGESIZE, bool bStaticPageSize = false ) :
 		m_nPageOffsetBits( MEMBLOCK_PAGEOFFSET_BIT ),
 		m_nPageOffsetMask( MEMBLOCK_PAGEOFFSET_MASK ),
-		m_MemPages( 0, 0 ),
-		m_nPageSize( ALIGN_VALUE(nPageSize, sizeof(T)) ),
-		m_nAllocatorType(nAllocatorType)
-	{}
+		m_MemPages( 0, nInitPages ),
+		m_nPageSize( nPageSize ),
+		m_bStaticPageSize( bStaticPageSize ),
+		m_unk002( false )
+	{
+		SetPageSize( nPageSize, nMaxPageSize, bStaticPageSize );
+	}
 
 	~CUtlMemoryBlockAllocator( void )
 	{
 		Purge();
 	}
 
-	uint32 MaxPageSize() const { return (1 << (32 - m_nPageOffsetBits)); }
+	uint32 MaxPageSize() const { return m_bStaticPageSize ? m_nPageSize : (m_nPageOffsetMask + 1); }
+	uint32 MaxPossiblePageSize() const { return (1 << (32 - m_nPageOffsetBits)); }
 
 	// Clears all memory buffers preserving only nSize bytes, which would be treated like a fresh memory
 	void RemoveAll( size_t nSize = 0 );
 	void Purge( void );
 
 	MemBlockHandle_t Alloc( unsigned int nSize );
-	int AddPage( unsigned int nSize );
 
 	size_t MemUsage( void ) const;
 
-	void SetPageSize( unsigned int nPageSize );
+	void SetPageSize( uint32 nPageSize = MEMBLOCK_DEFAULT_PAGESIZE, uint32 nMaxPageSize = MEMBLOCK_MAX_TOTAL_PAGESIZE, bool unk01 = false );
 
 	void* GetBlock( MemBlockHandle_t handle ) const;
 
 private:
+	int AddPage( unsigned int nCount );
+
 	MemBlockHandle_t CreateHandle( int page_idx ) const
 	{
 		Assert( page_idx >= 0 && page_idx < m_MemPages.Count() );
 		return m_MemPages[page_idx].m_nUsedSize | (page_idx << m_nPageOffsetBits);
 	}
 
-	int GetPageIdxFromHandle( MemBlockHandle_t handle ) const { return handle >> m_nPageOffsetBits; }
-	int GetPageOffsetFromHandle( MemBlockHandle_t handle ) const { return handle & m_nPageOffsetMask; }
+	uint32 GetPageIdxFromHandle( MemBlockHandle_t handle ) const { return handle >> m_nPageOffsetBits; }
+	uint32 GetPageOffsetFromHandle( MemBlockHandle_t handle ) const { return handle & m_nPageOffsetMask; }
 
-	int CalcPageSize( int page_idx, int requested_size ) const;
+	uint32 CalcPageSize( int page_idx, int requested_size ) const;
 	int FindPageWithSpace( unsigned int nSize ) const;
 
 	struct MemPage_t
@@ -99,7 +108,8 @@ private:
 	unsigned int			m_nPageOffsetMask;
 	MemPagesVec_t			m_MemPages;
 	unsigned int			m_nPageSize;
-	RawAllocatorType_t		m_nAllocatorType;
+	bool					m_bStaticPageSize;
+	bool					m_unk002;
 };
 
 template <class T, class A>
@@ -162,22 +172,31 @@ inline MemBlockHandle_t CUtlMemoryBlockAllocator<T, A>::Alloc( unsigned int nSiz
 }
 
 template<class T, class A>
-inline int CUtlMemoryBlockAllocator<T, A>::AddPage(unsigned int nSize) {
-	if(m_MemPages.Count() >= MaxPageSize()) {
-		Plat_FatalError("%s: no space for allocation of %u\n", __FUNCTION__, m_MemPages.Count());
+inline int CUtlMemoryBlockAllocator<T, A>::AddPage( unsigned int nCount )
+{
+	if(nCount >= MaxPossiblePageSize())
+	{
+		Plat_FatalError( "%s: no space for allocation of %u\n", __FUNCTION__, nCount );
 		DebuggerBreak();
-		return -1;
 	}
 
-	int page_idx = m_MemPages.AddToTail({});
-	int page_size = CalcPageSize( page_idx, nSize );
-
-	size_t adjusted_size = 0;
+	int page_idx = m_MemPages.AddToTail();
 	auto &page = m_MemPages[page_idx];
 
-	page.m_pMemory = (byte *)CRawAllocator::Alloc( page_size, &adjusted_size );
-	page.m_nTotalSize = adjusted_size;
+	uint32 alloced_page_size = 0;
+	page.m_pMemory = MemoryAllocator_t::template Alloc< byte >( CalcPageSize( page_idx, nCount ), alloced_page_size );
 	page.m_nUsedSize = 0;
+
+	if(m_bStaticPageSize)
+	{
+		page.m_nTotalSize = m_nPageSize;
+	}
+	else
+	{
+		uint32 nMaxPageSize = MaxPageSize();
+
+		page.m_nTotalSize = MIN( alloced_page_size, nMaxPageSize );
+	}
 
 	return page_idx;
 }
@@ -196,18 +215,36 @@ inline size_t CUtlMemoryBlockAllocator<T, A>::MemUsage( void ) const
 }
 
 template <class T, class A>
-inline void CUtlMemoryBlockAllocator<T, A>::SetPageSize( unsigned int nPageSize )
+inline void CUtlMemoryBlockAllocator<T, A>::SetPageSize( uint32 nPageSize, uint32 nMaxPageSize, bool bStaticPageSize )
 {
-	if(nPageSize > MEMBLOCK_DEFAULT_PAGESIZE)
-		m_nPageSize = MIN( nPageSize, MaxPageSize() );
-	else
-		m_nPageSize = MEMBLOCK_DEFAULT_PAGESIZE;
+	RemoveAll();
+
+	m_nPageSize = nPageSize;
+	m_bStaticPageSize = bStaticPageSize;
+
+	m_nPageOffsetBits = 1;
+	m_nPageOffsetMask = SmallestPowerOfTwoGreaterOrEqual( nMaxPageSize ) - 1;
+
+	if(m_nPageOffsetMask >= 2)
+	{
+		uint32 largest_bit = 1;
+		uint32 temp_val = (1 << largest_bit);
+
+		while(temp_val <= m_nPageOffsetMask)
+		{
+			temp_val = (1 << ++largest_bit);
+		}
+
+		m_nPageOffsetBits = largest_bit;
+	}
+
+	m_MemPages.EnsureCapacity( MaxPossiblePageSize() );
 }
 
 template <class T, class A>
-inline int CUtlMemoryBlockAllocator<T, A>::CalcPageSize( int page_idx, int requested_size ) const
+inline uint32 CUtlMemoryBlockAllocator<T, A>::CalcPageSize( int page_idx, int requested_size ) const
 {
-	int page_size = MEMBLOCK_DEFAULT_PAGESIZE;
+	uint32 page_size = MEMBLOCK_DEFAULT_PAGESIZE;
 	if(page_idx >= 8)
 	{
 		if(page_idx >= 16)
