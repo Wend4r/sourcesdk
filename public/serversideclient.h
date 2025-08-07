@@ -101,7 +101,8 @@ public:
 	const netadr_t          *GetRemoteAddress() const { return m_nAddr.Get<netadr_t>(); }
 	CNetworkGameServerBase  *GetServer() const { return m_Server; }
 
-	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, bool bFakePlayer, uint32 uChallengeNumber ) = 0;
+	// bool bFakePlayer = !nConnectionTypeFlags || (nConnectionTypeFlags & 8) != 0;
+	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, uint8 nConnectionTypeFlags, uint32 uChallengeNumber ) = 0;
 	virtual void             Inactivate( const char *pszAddons ) = 0;
 	virtual void             Reactivate( CPlayerSlot nSlot ) = 0;
 	virtual void             SetServer( CNetworkGameServer *pNetServer ) = 0;
@@ -257,7 +258,7 @@ public:
 	CEntityIndex m_nEntityIndex;
 	CNetworkGameServerBase* m_Server;
 	INetChannel* m_NetChannel;
-	uint8 m_nUnkVariable;
+	uint8 m_nConnectionTypeFlags;
 	bool m_bMarkedToKick;
 	SignonState_t m_nSignonState;
 	bool m_bSplitScreenUser;
