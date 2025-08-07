@@ -313,12 +313,18 @@ inline UtlSymLargeId_t CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUT
 template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
 inline const char* CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::String( UtlSymLargeId_t elem ) const
 {
+	if ( elem >= m_MemBlocks.Count() )
+		return nullptr;
+
 	return ( const char* )m_MemBlockAllocator.GetBlock( m_MemBlocks[ elem ] );
 }
 
 template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
 inline uint32 CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >::Hash( UtlSymLargeId_t elem ) const
 {
+	if ( elem >= m_MemBlocks.Count() )
+		return 0;
+
 	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( m_MemBlocks[ elem ] - sizeof( LargeSymbolTableHashDecoration_t ) );
 
 	return entry->HashValue();

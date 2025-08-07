@@ -1863,7 +1863,7 @@ void CKeyValues3Table::StoreKeyName( KeyValues3 *parent, Name_t &out_buffer, Fla
 	{
 		auto context = parent->GetContext();
 
-		if(context)
+		if ( context )
 		{
 			const char *existing_str = context->LookupString( symid );
 
@@ -1876,7 +1876,7 @@ void CKeyValues3Table::StoreKeyName( KeyValues3 *parent, Name_t &out_buffer, Fla
 			{
 				const char *alloced_string = context->AllocString( input_string, &symid );
 
-				if(symid >= 0)
+				if ( symid >= 0 )
 				{
 					out_buffer.m_iSymLarge = symid;
 					flags |= MEMBER_FLAG_LARGE_SYMBOL;

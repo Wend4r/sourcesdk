@@ -1042,11 +1042,11 @@ public:
 	const char* LookupString( UtlSymLargeId_t symid ) { return m_Symbols.String( symid ); }
 	const char *AllocString( const char *pString, UtlSymLargeId_t *pSymLargeId = nullptr )
 	{
-		UtlSymLargeId_t id;
+		UtlSymLargeId_t id = m_Symbols.Add( pString );
 
 		if ( pSymLargeId )
 		{
-			id = m_Symbols.Add( pString );
+			*pSymLargeId = id;
 		}
 
 		return LookupString( id );
