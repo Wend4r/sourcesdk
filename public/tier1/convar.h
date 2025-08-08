@@ -306,10 +306,15 @@ private:
 		COMMAND_MAX_LENGTH = 512,
 	};
 
-    int m_nArgv0Size;
-    CUtlVectorFixedGrowable<char, COMMAND_MAX_LENGTH> m_ArgSBuffer;
-    CUtlVectorFixedGrowable<char, COMMAND_MAX_LENGTH> m_ArgvBuffer;
-    CUtlVectorFixedGrowable<char*, COMMAND_MAX_ARGC> m_Args;
+	int m_nArgv0Size;
+	CUtlVectorFixedGrowable<char, COMMAND_MAX_LENGTH> m_ArgSBuffer;
+	CUtlVectorFixedGrowable<char, COMMAND_MAX_LENGTH> m_ArgvBuffer;
+	CUtlVectorFixedGrowable<char*, COMMAND_MAX_ARGC> m_Args;
+
+	// Temporary fix
+	uint8 m_Unk001 = 0;
+	uint64 m_Unk002 = 0x7FF8000000000000;
+	uint64 m_Unk003 = 0;
 };
 
 inline int CCommand::MaxCommandLength()
