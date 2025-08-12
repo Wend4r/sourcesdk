@@ -64,6 +64,41 @@ public:
 	int GetSendCount() const { return m_nSendCount; }
 	float GetMargin() const { return m_flMargin; }
 
+	bool Send( CPlayerSlot slot ) const { return Send( CUtlVector< CPlayerSlot >{ slot } ) != 0; }
+	int Send( const CUtlVector< CPlayerSlot > &vecSlots ) const
+	{
+		if ( !g_pNetworkServerService->IsServerRunning() )
+		{
+			return 0;
+		}
+
+		CNetworkGameServer *pNetServer = g_pNetworkServerService->GetNetworkServer();
+
+		if ( !pNetServer )
+		{
+			return 0;
+		}
+
+		int nSent = 0;
+
+		for ( auto slot : vecSlots )
+		{
+			CServerSideClientBase *pClient = pNetServer->GetClientBySlot( slot );
+
+			if ( !pClient )
+			{
+				continue;
+			}
+
+			if ( pClient->SendNetMessage( this, GetBufType() ) )
+			{
+				nSent++;
+			}
+		}
+
+		return nSent;
+	}
+
 private:
 	double m_dbRecivedTime;
 	uint32 m_nSignatrue;
@@ -226,48 +261,6 @@ public:
 			return nullptr;
 
 		return pPrtobufInfo->m_pBinding;
-	}
-
-	bool Send( CPlayerSlot slot ) const { return Send( CUtlVector< CPlayerSlot >{ slot } ) != 0; }
-	int Send( const CUtlVector< CPlayerSlot > &vecSlots ) const
-	{
-		if ( !g_pNetworkServerService->IsServerRunning() )
-		{
-			return 0;
-		}
-
-		CNetworkGameServer *pNetServer = g_pNetworkServerService->GetNetworkServer();
-
-		if ( !pNetServer )
-		{
-			return 0;
-		}
-
-		int nSended = 0;
-
-		for ( auto slot : vecSlots )
-		{
-			CServerSideClientBase *pClient = pNetServer->GetClientBySlot( slot );
-
-			if ( !pClient )
-			{
-				continue;
-			}
-
-			INetChannel *pNetChan = pClient->GetNetChannel();
-
-			if ( !pNetChan )
-			{
-				continue;
-			}
-
-			if ( pNetChan->SendNetMessage( static_cast< const CNetMessage * >( this ), kBufType ) )
-			{
-				nSended++;
-			}
-		}
-
-		return nSended;
 	}
 };
 
