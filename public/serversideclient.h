@@ -374,7 +374,7 @@ public:
 	CClientFrameManager m_FrameManager;
 
 private:
-	[[maybe_used]] char pad3904[8];
+	[[maybe_unused]] char pad3904[8];
 
 public:
 	float m_flLastClientCommandQuotaStart = 0.0f;
@@ -421,7 +421,7 @@ public:
 	bool m_bUnkBool3 = false;
 
 private:
-	[[maybe_used]] char pad3976[52];
+	[[maybe_unused]] char pad3976[52];
 };
 #ifdef __linux__
 COMPILE_TIME_ASSERT(sizeof(CHLTVClient) == 3128);
