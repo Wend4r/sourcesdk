@@ -342,7 +342,7 @@ public:
 	// spew color.  Passing in UNSPECIFIED_LOGGING_COLOR for 'color' allows
 	// the logging listeners to provide a default.
 	//-----------------------------------------------------------------------------
-	LoggingResponse_t LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t *codeInfo, const LoggingMetaData_t *metaData, Color color, const tchar *pMessage );
+	LoggingResponse_t LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t *codeInfo, const LoggingMetaData_t *metaData, Color color, const tchar *pMessage );
 
 	// Internal data to represent a logging tag
 	struct LoggingTag_t

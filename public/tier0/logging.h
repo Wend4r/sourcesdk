@@ -242,7 +242,7 @@ enum LoggingChannelFlags_t
 //-----------------------------------------------------------------------------
 typedef void ( *RegisterTagsFunc )( LoggingChannelID_t channelID );
 
-struct LeafCodeInfo_t
+struct LoggingRareOptions_t
 {
 	const char *m_File;
 	int m_Line;
@@ -420,19 +420,19 @@ PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t chann
 PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
 PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingMetaData_t *metaData, const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
 PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingMetaData_t *metaData, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 5, 6 );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 5, 6 );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, const LoggingMetaData_t *metaData, const char *pMessageFormat, ... ) FMTFUNCTION( 5, 6 );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, const LoggingMetaData_t *metaData, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 6, 7 );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, const char *pMessageFormat, ... ) FMTFUNCTION( 4, 5 );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 5, 6 );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, const LoggingMetaData_t *metaData, const char *pMessageFormat, ... ) FMTFUNCTION( 5, 6 );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_Log( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, const LoggingMetaData_t *metaData, Color spewColor, const char *pMessageFormat, ... ) FMTFUNCTION( 6, 7 );
 
 PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const char *pMessage );
 PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const char *pMessage );
 PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingMetaData_t *metaData, const char *pMessage );
 PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, Color spewColor, const LoggingMetaData_t *metaData, const char *pMessage );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, const char *pMessage );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, Color spewColor, const char *pMessage );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, const LoggingMetaData_t *metaData, const char *pMessage );
-PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t &codeInfo, Color spewColor, const LoggingMetaData_t *metaData, const char *pMessage );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, const char *pMessage );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, Color spewColor, const char *pMessage );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, const LoggingMetaData_t *metaData, const char *pMessage );
+PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &codeInfo, Color spewColor, const LoggingMetaData_t *metaData, const char *pMessage );
 
 PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat, ... ) FMTFUNCTION( 1, 2 );
 
