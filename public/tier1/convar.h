@@ -609,6 +609,7 @@ struct ConVarValueInfo_t
 		m_defaultValue {},
 		m_minValue {},
 		m_maxValue {},
+		m_unkValue {},
 		m_fnProviderCallBack( nullptr ),
 		m_fnCallBack( nullptr ),
 		m_eVarType( type )
@@ -659,6 +660,7 @@ private:
 	uint8 m_defaultValue[sizeof( CVValue_t )];
 	uint8 m_minValue[sizeof( CVValue_t )];
 	uint8 m_maxValue[sizeof( CVValue_t )];
+	uint8 m_unkValue[sizeof( CVValue_t )];
 
 public:
 	FnGenericChangeCallbackProvider_t m_fnProviderCallBack;
