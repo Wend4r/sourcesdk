@@ -74,6 +74,7 @@ public:
 	virtual void			CallChangeCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t* pNewValue, const CVValue_t* pOldValue, void *__unk01 = nullptr ) = 0;
 	// Would call cb for every change callback defined for this cvar
 	virtual void			IterateConVarCallbacks( ConVarRef cvar, FnCvarCallbacksReader_t cb ) = 0;
+	virtual bool			FindAndCallChangeCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t* pNewValue, const CVValue_t* pOldValue, void *__unk01 = nullptr ) = 0;
 
 	// allow_defensive - Allows finding commands with FCVAR_DEFENSIVE flag
 	virtual ConCommandRef	FindConCommand( const char *name, bool allow_defensive = false ) = 0;
