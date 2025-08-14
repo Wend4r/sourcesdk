@@ -39,4 +39,12 @@ public:
 	EntityIOOutputDesc_t* m_pDesc;
 };
 
+struct InputData_t
+{
+	CBaseEntity* pActivator;
+	CBaseEntity* pCaller;
+	variant_t value;
+	int nOutputID;
+};
+
 #endif // ENTITYIO_H
