@@ -166,6 +166,7 @@ public:
 	virtual void		ShowFrameTimeReport( void *, bool ) = 0;
 
 	virtual void		DumpNetStats( void *pNetStatData, const std::function< void ( const char * )> &func ) = 0; 
+	virtual void		unk101() = 0;
 
 	// Tell engine to change level ( "changelevel s1\n" or "changelevel2 s1 s2\n" )
 	virtual void		ChangeLevel( const char *s1, const char *s2 ) = 0;
@@ -181,19 +182,6 @@ public:
 
 	// Is server only accepting local connections?
 	virtual bool		IsServerLocalOnly( void ) = 0;
-
-	// Add to the server/client lookup/precache table, the specified string is given a unique index
-	// NOTE: The indices for PrecacheModel are 1 based
-	//  a 0 returned from those methods indicates the model or sound was not correctly precached
-	// However, generic and decal are 0 based
-	// If preload is specified, the file is loaded into the server/client's cache memory before level startup, otherwise
-	//  it'll only load when actually used (which can cause a disk i/o hitch if it occurs during play of a level).
-	virtual int			PrecacheDecal( const char *name, bool preload = false ) = 0;
-	virtual bool		IsDecalPrecached( const char *s ) const = 0;
-	virtual int			GetPrecachedDecalIndex ( const char *s ) const = 0;
-
-	virtual void		UnknownFunc3() = 0;
-	virtual void		UnknownFunc4() = 0;
 
 	virtual int			PrecacheGeneric( const char *s, bool preload = false ) = 0;
 	virtual bool		IsGenericPrecached( char const *s ) const = 0;
@@ -304,29 +292,20 @@ public:
 
 	// Kicks the slot with the specified NetworkDisconnectionReason
 	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason, const char *szInternalReason = nullptr ) = 0;
+	virtual int64 DisconnectAllClients( ENetworkDisconnectionReason reason ) = 0;
 
-#if 0 // Don't really match the binary
-	virtual void GetAllSpawnGroupsWithPVS( CUtlVector<SpawnGroupHandle_t> *spawnGroups, CUtlVector<IPVS *> *pOut ) = 0;
+	virtual void unk200() = 0;
 
-	virtual void P2PGroupChanged() = 0;
-#endif
-
-	virtual void unk101() = 0;
-	virtual void unk102() = 0;
-	
 	// Use these to setup who can hear whose voice.
 	// Pass in client indices (which are their ent indices - 1).
 	virtual bool GetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender) = 0;
 	virtual bool SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen) = 0;
 	virtual bool SetClientProximity(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bUseProximity) = 0;
-	virtual void unk106() = 0;
-	virtual void unk107() = 0;
 
 	virtual void KickClient( CPlayerSlot nSlot, const char *szInternalReason, ENetworkDisconnectionReason reason ) = 0;
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;
 
-	virtual void unk200() = 0;
 	virtual void unk201() = 0;
 	virtual void unk202() = 0;
 	virtual void unk203() = 0;
@@ -334,8 +313,11 @@ public:
 	virtual void unk205() = 0;
 	virtual void unk206() = 0;
 	virtual void unk207() = 0;
+	virtual void unk208() = 0;
+	virtual void unk209() = 0;
 
 	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
+	virtual void UpdateClientRate( CPlayerSlot nSlot ) = 0;
 
 	virtual void unk300() = 0;
 	virtual void unk301() = 0;
@@ -347,6 +329,8 @@ public:
 	virtual void unk307() = 0;
 	virtual void unk308() = 0;
 	virtual void unk309() = 0;
+	virtual void unk310() = 0;
+	virtual void unk311() = 0;
 };
 
 abstract_class IServerGCLobby
