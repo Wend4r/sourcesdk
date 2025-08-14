@@ -599,6 +599,14 @@ using FnTypedChangeCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSl
 using FnGenericChangeCallback_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue);
 using FnGenericChangeCallbackProvider_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericChangeCallback_t cb);
 
+template <typename T>
+using FnTypedFilterCallback_t = bool (*)(CConVar<T> *cvar, CSplitScreenSlot nSlot, const T *pNewValue, const T *pOldValue);
+template <typename T>
+using FnTypedFilterCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, void *__unk01, FnTypedFilterCallback_t<T> cb);
+
+using FnGenericFilterCallback_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue);
+using FnGenericFilterCallbackProvider_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericFilterCallback_t cb);
+
 struct ConVarValueInfo_t
 {
 	ConVarValueInfo_t( EConVarType type = EConVarType_Invalid ) :
@@ -609,9 +617,10 @@ struct ConVarValueInfo_t
 		m_defaultValue {},
 		m_minValue {},
 		m_maxValue {},
-		m_unkValue {},
 		m_fnProviderCallBack( nullptr ),
 		m_fnCallBack( nullptr ),
+		m_fnProviderFilterCallBack( nullptr ),
+		m_fnFilterCallBack( nullptr ),
 		m_eVarType( type )
 	{}
 
@@ -649,6 +658,19 @@ struct ConVarValueInfo_t
 		}
 	}
 
+	template <typename T>
+	void SetFilterCallback( FnTypedFilterCallback_t<T> cb )
+	{
+		if(cb)
+		{
+			m_fnProviderFilterCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericFilterCallback_t cb ) -> bool {
+				return reinterpret_cast<FnTypedFilterCallback_t<T>>(cb)(reinterpret_cast<CConVar<T> *>(ref), nSlot, reinterpret_cast<const T *>(pNewValue), reinterpret_cast<const T *>(pOldValue));
+			};
+
+			m_fnFilterCallBack = reinterpret_cast<FnGenericFilterCallback_t>(cb);
+		}
+	}
+
 	int32 m_Version;
 
 	bool m_bHasDefault;
@@ -660,11 +682,13 @@ private:
 	uint8 m_defaultValue[sizeof( CVValue_t )];
 	uint8 m_minValue[sizeof( CVValue_t )];
 	uint8 m_maxValue[sizeof( CVValue_t )];
-	uint8 m_unkValue[sizeof( CVValue_t )];
 
 public:
 	FnGenericChangeCallbackProvider_t m_fnProviderCallBack;
 	FnGenericChangeCallback_t m_fnCallBack;
+
+	FnGenericFilterCallbackProvider_t m_fnProviderFilterCallBack;
+	FnGenericFilterCallback_t m_fnFilterCallBack;
 
 	EConVarType m_eVarType;
 };
@@ -850,6 +874,7 @@ public:
 		m_iTimesChanged = 0;
 		m_nFlags = FCVAR_REFERENCE;
 		m_iCallbackIndex = 0;
+		m_iFilterCBIndex = 0;
 		m_GameInfoFlags = 0;
 	}
 
@@ -958,6 +983,8 @@ private:
 
 	// Index into a linked list of cvar callbacks
 	unsigned int m_iCallbackIndex;
+	// Index into a linked list of cvar filter callbacks
+	unsigned int m_iFilterCBIndex;
 
 	int m_GameInfoFlags;
 	int m_UserInfoByteIndex;
@@ -1261,12 +1288,12 @@ public:
 		BaseClass::Register( name, flags, help_string, value_info );
 	}
 
-	CConVar( const char *name, uint64 flags, const char *help_string, const T &default_value, bool min, const T &minValue, bool max, const T &maxValue, FnChangeCallback_t cb = nullptr )
+	CConVar( const char *name, uint64 flags, const char *help_string, const T &default_value, bool min, const T &minValue, bool max, const T &maxValue, FnTypedChangeCallback_t<T> cb = nullptr, FnTypedFilterCallback_t<T> filter_cb = nullptr )
 		: BaseClass()
 	{
 		Assert( name );
 
-		BaseClass::Init( ConVarRef( name ), TranslateConVarType<T>() );
+		BaseClass::Init( ConVarRef(), TranslateConVarType<T>() );
 
 		ConVarValueInfo_t value_info( TranslateConVarType<T>() );
 		value_info.SetDefaultValue( default_value );
@@ -1277,7 +1304,8 @@ public:
 		if(max)
 			value_info.SetMaxValue( maxValue );
 
-		value_info.m_fnCallBack = reinterpret_cast<FnGenericChangeCallback_t>(cb);
+		value_info.SetCallback( cb );
+		value_info.SetFilterCallback( filter_cb );
 
 		BaseClass::Register( name, flags, help_string, value_info );
 	}
