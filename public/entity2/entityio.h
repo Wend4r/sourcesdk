@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include "datamap.h"
 #include "string_t.h"
+#include "variant.h"
+#include "schemasystem/schematypes.h"
 #include "entityhandle.h"
 #include "entitysystem.h"
 
@@ -34,15 +37,32 @@ struct EntityIOOutputDesc_t
 class CEntityIOOutput
 {
 public:
-	void* vtable;
-	EntityIOConnection_t* m_pConnections;
-	EntityIOOutputDesc_t* m_pDesc;
+	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
+	virtual fieldtype_t ValueFieldType() const { return m_Value.FieldType(); }
+
+public:
+	const EntityIOConnection_t *GetConnections() const { return m_pConnections; }
+	const EntityIOOutputDesc_t *GetDescription() const { return m_pDesc; }
+
+private:
+	EntityIOConnection_t *m_pConnections;
+	EntityIOOutputDesc_t *m_pDesc;
+
+protected:
+	CVariant m_Value;
+};
+
+template < typename T >
+class CEntityOutputTemplate : public CEntityIOOutput
+{
+public:
+	T Get() const { return this->m_Value.template Get< T >(); }
 };
 
 struct InputData_t
 {
-	CBaseEntity* pActivator;
-	CBaseEntity* pCaller;
+	CBaseEntity *pActivator;
+	CBaseEntity *pCaller;
 	variant_t value;
 	int nOutputID;
 };

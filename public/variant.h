@@ -197,7 +197,8 @@ public:
 	CVariantBase( const char *val, bool bCopy = true ) :		m_type( FIELD_CSTRING ), m_flags( 0 )		{ CopyData(val, bCopy); }
 
 	// Checks if the stored value is of type FIELD_VOID
-	bool IsNull() const						{ return (m_type == FIELD_VOID ); }
+	fieldtype_t FieldType() const				{ return m_type; }
+	bool IsNull() const						{ return ( FieldType() == FIELD_VOID ); }
 
 	// Copies the src data into an internal value, setting bForceCopy would allocate its own memory to store the contents
 	void CopyData(const char *src, bool bForceCopy)
