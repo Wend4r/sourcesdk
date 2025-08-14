@@ -1,6 +1,7 @@
 #ifndef SCHEMATYPES_H
 #define SCHEMATYPES_H
 
+#include "datamap.h"
 #ifdef _WIN32
 #pragma once
 #endif
@@ -364,20 +365,19 @@ struct SchemaClassInfoData_t
 	const char* m_pszProjectName;
 	
 	int m_nSize;
-	
+
 	uint16 m_nFieldCount;
-	uint16 m_nStaticFieldCount;
 	uint16 m_nStaticMetadataCount;
-	
+
 	uint8 m_nAlignment;
 	uint8 m_nBaseClassCount;
-	
+
 	uint16 m_nMultipleInheritanceDepth;
 	uint16 m_nSingleInheritanceDepth;
-	
+
 	SchemaClassFieldData_t* m_pFields;
 	SchemaBaseClassInfoData_t* m_pBaseClasses;
-	SchemaStaticFieldData_t* m_pStaticFields;
+	datamap_t* m_pDataMap;
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
 	
 	CSchemaSystemTypeScope* m_pTypeScope;
