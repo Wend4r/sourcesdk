@@ -34,7 +34,7 @@
 
 typedef uint UtlSymLargeId_t;
 
-#define UTL_INVAL_SYMBOL_LARGE ((UtlSymLargeId_t)0)
+#define UTL_INVAL_SYMBOL_LARGE ((UtlSymLargeId_t)-1)
 
 #define FOR_EACH_SYMBOL_LARGE( table, iter ) \
 	for ( UtlSymLargeId_t iter = 0; iter < (table).GetNumStrings(); iter++ )
@@ -141,7 +141,7 @@ public:
 	UtlSymLargeId_t Add( const char* pString ) { return Add( pString, V_strlen( pString ) ); }
 
 	CUtlSymbolLarge AddString( const char* pString, int nLength ) { return String( Add( pString, nLength ) ); }
-	CUtlSymbolLarge AddString( const char* pString ) { return String( Add( pString, V_strlen( pString ) ) ); }
+	CUtlSymbolLarge AddString( const char* pString ) { return String( Add( pString ) ); }
 
 	const char*		String( UtlSymLargeId_t id ) const;
 	uint32			Hash( UtlSymLargeId_t id ) const;
