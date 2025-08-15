@@ -352,8 +352,6 @@ public:
 abstract_class ISource2Server : public IAppSystem
 {
 public:
-	virtual bool			unk_001() const = 0;
-
 	virtual void			SetGlobals( CGlobalVars *pGlobals ) = 0;
 
 	// Let the game .dll allocate it's own network/shared string tables
