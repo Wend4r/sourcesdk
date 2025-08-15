@@ -352,6 +352,8 @@ public:
 abstract_class ISource2Server : public IAppSystem
 {
 public:
+	virtual bool			unk_001() const = 0;
+
 	virtual void			SetGlobals( CGlobalVars *pGlobals ) = 0;
 
 	// Let the game .dll allocate it's own network/shared string tables
@@ -407,8 +409,6 @@ public:
 	virtual void			RegisterNavListener( INavListener *pNavListener ) = 0;
 	virtual void			UnregisterNavListener( INavListener *pNavListener ) = 0;
 	virtual void			*GetSpawnDebugInterface( void ) = 0;
-
-	virtual void			unk_101() = 0;
 
 	virtual IToolGameSimulationAPI *GetToolGameSimulationAPI( void ) = 0;
 	virtual void			GetAnimationActivityList( CUtlVector<CUtlString> &activityList ) = 0;
