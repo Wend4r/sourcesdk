@@ -408,6 +408,7 @@ public:
 	virtual void unk_302( const void *const msg ) override {}
 	virtual void unk_303( const void *const msg ) override {}
 	virtual void unk_304( const void *const msg ) override {}
+	virtual void unk_305( const void *const msg ) override {}
 
 	GS_EVENT( GameFrameBoundary ) {}
 	GS_EVENT( OutOfGameFrameBoundary ) {}
