@@ -74,6 +74,7 @@ struct EconItemInfo_t;
 struct EconControlPointInfo_t;
 class CEntityHandle;
 struct RenderDeviceInfo_t;
+struct ns_address;
 
 enum RenderMultisampleType_t : uint8
 {
@@ -298,10 +299,13 @@ public:
 
 	// Use these to setup who can hear whose voice.
 	// Pass in client indices (which are their ent indices - 1).
-	virtual bool GetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender) = 0;
-	virtual bool SetClientListening(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen) = 0;
-	virtual bool SetClientProximity(CPlayerSlot iReceiver, CPlayerSlot iSender, bool bUseProximity) = 0;
+	virtual bool GetClientListening( CPlayerSlot iReceiver, CPlayerSlot iSender ) = 0;
+	virtual bool SetClientListening( CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen ) = 0;
+	virtual bool SetClientProximity( CPlayerSlot iReceiver, CPlayerSlot iSender, bool bUseProximity ) = 0;
 
+	virtual void unk057( CPlayerSlot nSlot, const ns_address *addr, bf_read *bf ) = 0;
+
+	virtual void ToggleClientUnk( CPlayerSlot nSlot, bool bOldValue ) = 0;
 	virtual void KickClient( CPlayerSlot nSlot, const char *szInternalReason, ENetworkDisconnectionReason reason ) = 0;
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;
