@@ -306,6 +306,7 @@ public:
 	virtual void unk_302( const void *const msg ) = 0;
 	virtual void unk_303( const void *const msg ) = 0;
 	virtual void unk_304( const void *const msg ) = 0;
+	virtual void unk_305( const void *const msg ) = 0;
 
 	GS_EVENT_IMPL( GameFrameBoundary )
 	GS_EVENT_IMPL( OutOfGameFrameBoundary )
