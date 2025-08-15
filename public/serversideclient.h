@@ -195,7 +195,12 @@ public:
 	virtual void             ExecuteDelayedCall( void * ) = 0;
 
 	virtual bool             UpdateAcknowledgedFramecount( int tick ) = 0;
-	void                     ForceFullUpdate() { UpdateAcknowledgedFramecount(-1); }
+	void                     ForceFullUpdate()
+	{
+		// For some reason, it doesn't work.
+		// UpdateAcknowledgedFramecount(-1);
+		m_nDeltaTick = -1;
+	}
 
 	virtual bool             ShouldSendMessages() = 0;
 	virtual void             UpdateSendState() = 0;
