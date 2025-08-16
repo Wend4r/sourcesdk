@@ -56,6 +56,7 @@ class CNetworkStringTableContainer;
 class CNetworkServerSpawnGroupCreatePrerequisites;
 class CNetMessage;
 class INetworkMessageInternal;
+class CCompressedResourceManifest;
 class IRecipientFilter;
 
 typedef int ChallengeType_t;
@@ -147,9 +148,9 @@ public:
 
 	virtual void	ReserveServerForQueuedGame( const char *pszReason ) = 0;
 
-	virtual void	unk045() = 0;
-	virtual void	unk046() = 0;
-	virtual bool	unk047() = 0;
+	virtual bool	IsReserved() = 0; // return m_nReservationCookie != 0
+	virtual bool	IsMultiplayer() = 0; // return m_bIsMultiplayer
+	virtual bool	IsPlayingSoloAgainstBots() = 0;
 
 	virtual void	BroadcastPrintf( const char *pszFmt, ... ) FMTFUNCTION( 2, 3 ) = 0;
 
@@ -274,9 +275,12 @@ public:
 	CUtlLeanVector<byte> m_SignonBuffer;
 	bool m_bIsBackgroundMap;
 	CUtlClientVector m_Clients;
-	char pad664[20];
-	CUtlLeanVector<byte> m_unk688;
-	char pad704[16];
+	CCompressedResourceManifest* m_pResourceManifest;
+#ifdef _WIN32
+	char pad648[40];
+#else
+	char pad648[48];
+#endif
 	SpawnGroupHandle_t m_hActiveSpawnGroup;
 	int m_nMaxClients;
 	int m_nSpawnCount;
@@ -287,34 +291,27 @@ public:
 	bool m_bUnk753;
 	bool m_bPreserveSteamID;
 	bool m_bHibernating;
-	CUtlVector<netadr_t*> m_unk760;
-	CUtlLinkedList<CNetworkServerSpawnGroupCreatePrerequisites *> m_unk784;
-	CUtlMap<uint32,void*> m_unk816; // something with spawngroups
-	CUtlMap<uint32,void*> m_unk848; // something with spawngroups
-	CUtlVector<char> m_GameData;
+	char pad732[116];
+	CUtlVector<byte> m_GameData;
 	CUtlString m_GameType;
-	char pad912[8];
+	char pad880[16];
 	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect;
-	CServerSideClientBase* m_pHostClient;
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr2;
-	void* m_unk960;
+	CServerSideClientBase* m_pHostClient;
 	HGameResourceManifest m_pGameSessionManifest;
 	char pad976[8];
-	uint64 m_nReservationCookie;
-	float m_flTimeLastClientLeft;
-	char pad996[12];
-	float m_flReservationExpiryTime;
-	char pad1012[140];
-	int m_nFinalSimulationTickThisFrame;
+	uint64* m_nReservationCookie;
+	float* m_flTimeLastClientLeft;
+	void* unk968;
+	float* m_flReservationExpiryTime;
+	char pad980[136];
 	int m_GameDataVersion;
 	int m_numGameSlots;
 	float m_fLastCPUCheckTime;
 	float m_fCPUPercent;
 	float m_flTimescale;
-	bool m_bUnk1176;
-	bool m_bUnk1177;
-	uint64 m_nMatchId;
-	void* m_pUnk1192;
+	bool unk1140;
+	bool m_bIsMultiplayer;
 };
 
 class CNetworkGameServer : public CNetworkGameServerBase {
