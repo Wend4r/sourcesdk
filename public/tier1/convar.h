@@ -1283,7 +1283,7 @@ public:
 
 		ConVarValueInfo_t value_info( TranslateConVarType<T>() );
 		value_info.SetDefaultValue( default_value );
-		value_info.m_fnCallBack = reinterpret_cast<FnGenericChangeCallback_t>(cb);
+		value_info.SetCallback( cb );
 
 		BaseClass::Register( name, flags, help_string, value_info );
 	}
