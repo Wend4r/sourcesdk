@@ -99,14 +99,14 @@
 			"name": "RelWithDebInfo",
 
 			"displayName": "Ninja - Release With Debug Info",
-			"description": "Release With Debug Info building with Ninja configuraton",
+			"description": "Release With Debug Info building with Ninja configuration",
 			"configurePreset": "RelWithDebInfo"
 		},
 		{
 			"name": "Release",
 
 			"displayName": "Ninja - Release",
-			"description": "Release building with Ninja configuraton",
+			"description": "Release building with Ninja configuration",
 			"configurePreset": "Release"
 		},
 
@@ -115,7 +115,7 @@
 			"inherits": "VisualStudioBase",
 
 			"displayName": "Visual Studio - Debug",
-			"description": "Debug building with Visual Studio configuraton",
+			"description": "Debug building with Visual Studio configuration",
 			"configuration": "Debug"
 		},
 		{
@@ -123,7 +123,7 @@
 			"inherits": "VisualStudioBase",
 
 			"displayName": "Visual Studio - Release",
-			"description": "Release building with Visual Studio configuraton",
+			"description": "Release building with Visual Studio configuration",
 			"configuration": "Release"
 		}
 	]
