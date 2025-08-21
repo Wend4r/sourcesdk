@@ -2,5 +2,7 @@
 /.vs
 
 # Build files. Must be published in Releases
+/.cache
 /build*
 /cmake-build*
+/compile_commands.json
