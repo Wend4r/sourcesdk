@@ -114,6 +114,11 @@ void CGameEntitySystem::RemoveListenerEntity(IEntityListener* pListener)
 	m_entityListeners.FindAndRemove(pListener);
 }
 
+CEntityInstance* CEntityHandle::Get() const
+{
+	return GameEntitySystem()->GetEntityInstance( *this );
+}
+
 EntityInstanceIter_t::EntityInstanceIter_t(IEntityFindFilter* pFilter, EntityIterType_t eIterType)
 {
 	m_pCurrentEnt = nullptr;
