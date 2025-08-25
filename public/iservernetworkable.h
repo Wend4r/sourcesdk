@@ -18,7 +18,7 @@
 #include "const.h"
 #include "bspfile.h"
 #include "playerslot.h"
-
+#include "utlleanvector.h"
 
 
 // Entities can span this many clusters before we revert to a slower area checking algorithm
@@ -45,17 +45,17 @@ COMPILE_TIME_ASSERT(sizeof(vis_info_t) == 520);
 class CCheckTransmitInfo
 {
 public:
-	CBitVec<MAX_EDICTS>* m_pTransmitEntity;		// 0
-	CBitVec<MAX_EDICTS>* m_pTransmitNonPlayers;	// 8
-	CBitVec<MAX_EDICTS>* m_pUnkBitVec2;		// 16
-	CBitVec<MAX_EDICTS>* m_pUnkBitVec3;		// 24
-	CBitVec<MAX_EDICTS>* m_pTransmitAlways; // 32
-	CUtlVector<CPlayerSlot> m_vecTargetSlots;	// 40
-	vis_info_t m_VisInfo;					// 64
-	CPlayerSlot m_nPlayerSlot; 				// 584
-	bool m_bFullUpdate = false;				// 588
+	CBitVec<MAX_EDICTS>* m_pTransmitEntity;
+	CBitVec<MAX_EDICTS>* m_pTransmitNonPlayers;
+	CBitVec<MAX_EDICTS>* m_pUnkBitVec2;
+	CBitVec<MAX_EDICTS>* m_pUnkBitVec3;
+	CBitVec<MAX_EDICTS>* m_pTransmitAlways;
+	CUtlLeanVector<CPlayerSlot> m_vecTargetSlots;
+	vis_info_t m_VisInfo;
+	CPlayerSlot m_nPlayerSlot;
+	bool m_bFullUpdate = false;
 };
-COMPILE_TIME_ASSERT(sizeof(CCheckTransmitInfo) == 592);
+COMPILE_TIME_ASSERT(sizeof(CCheckTransmitInfo) == 584);
 
 //-----------------------------------------------------------------------------
 // Stores information necessary to perform PVS testing.
