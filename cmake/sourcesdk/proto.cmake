@@ -9,11 +9,13 @@ endif()
 set(SOURCESDK_PROTO_FILENAMES)
 set(SOURCESDK_CUSTOM_PROTO_FILENAMES)
 
-option(SOURCESDK_CUSTOM_PROTOS "Optional list of custom .proto files to generate; if set, overrides the default proto sources" "")
-option(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "If set, the output directory for generated custom proto files" "")
-option(SOURCESDK_CUSTOM_SKIP_PROTOS "Optional list of .proto filenames to skip during generation; matched against basename (e.g. project_voice.proto)" "")
+option(SOURCESDK_CUSTOM_PROTOS "Optional list of custom .proto files to generate; if set, overrides the default proto sources" OFF)
+option(SOURCESDK_CUSTOM_PROTO_DIR "If set, the directory for custom proto files" OFF)
+option(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "If set, the output directory for generated custom proto files" OFF)
+option(SOURCESDK_CUSTOM_SKIP_PROTOS "Optional list of .proto filenames to skip during generation; matched against basename (e.g. project_voice.proto)" OFF)
 
-set(SOURCESDK_PROTO_OUTPUT_DIR "${SOURCESDK_COMMON_DIR}")
+set(SOURCESDK_PROTO_DIR "${SOURCESDK_COMMON_DIR}")
+set(SOURCESDK_PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/protos")
 set(SOURCESDK_PROTOC_EXE "protoc${CMAKE_EXECUTABLE_SUFFIX}")
 
 set(SOURCESDK_SKIP_PROTOS
@@ -30,12 +32,12 @@ foreach(PROTO_DIR ${SOURCESDK_PROTO_DIRS})
 	endif()
 endforeach()
 
-if(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR)
-	if(EXISTS ${SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR})
-		file(GLOB CUSTOM_PROTO_FILENAMES "${SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR}/*.proto")
+if(SOURCESDK_CUSTOM_PROTO_DIR)
+	if(EXISTS ${SOURCESDK_CUSTOM_PROTO_DIR})
+		file(GLOB CUSTOM_PROTO_FILENAMES "${SOURCESDK_CUSTOM_PROTO_DIR}/*.proto")
 		list(APPEND SOURCESDK_CUSTOM_PROTO_FILENAMES ${CUSTOM_PROTO_FILENAMES})
 	else()
-		message(WARNING "Custom proto's directory \"${SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR}\" is not exists")
+		message(WARNING "Custom proto's directory \"${SOURCESDK_CUSTOM_PROTO_DIR}\" is not exists")
 	endif()
 endif()
 
@@ -79,9 +81,7 @@ if(NOT SOURCESDK_CUSTOM_PROTOS)
 endif()
 
 set(SOURCESDK_PROTOC_EXECUTABLE "${DEVTOOLS_BIN_DIR}/${SOURCESDK_PLATFORM_DIR}/${SOURCESDK_PROTOC_EXE}")
-
 set(SOURCESDK_PROTOBUF_SOURCE_DIR "${PROTOBUF_DIR}/src")
-list(APPEND SOURCESDK_INCLUDE_DIRS ${SOURCESDK_PROTOBUF_SOURCE_DIR})
 
 set(SOURCESDK_PROTO_SOURCE_FILENAMES
 	${SOURCESDK_PROTO_SOURCE_FILENAMES}
@@ -112,13 +112,17 @@ if(SOURCESDK_COMPILE_PROTOBUF)
 		${SOURCESDK_CUSTOM_PROTO_SOURCES}
 	)
 
-	foreach(PROTO_FILE IN LISTS SOURCESDK_PROTOS)
-		list(APPEND SOURCESDK_PROTO_SOURCES "${SOURCESDK_PROTO_OUTPUT_DIR}/${PROTO_FILE}.pb.cc")
-	endforeach()
+	if(SOURCESDK_PROTOS)
+		foreach(PROTO_FILE IN LISTS SOURCESDK_PROTOS)
+			list(APPEND SOURCESDK_PROTO_SOURCES "${SOURCESDK_PROTO_OUTPUT_DIR}/${PROTO_FILE}.pb.cc")
+		endforeach()
+	endif()
 
-	foreach(PROTO_FILE IN LISTS SOURCESDK_CUSTOM_PROTOS)
-		list(APPEND SOURCESDK_CUSTOM_PROTO_SOURCES "${SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR}/${PROTO_FILE}.pb.cc")
-	endforeach()
+	if(SOURCESDK_CUSTOM_PROTOS)
+		foreach(PROTO_FILE IN LISTS SOURCESDK_CUSTOM_PROTOS)
+			list(APPEND SOURCESDK_CUSTOM_PROTO_SOURCES "${SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR}/${PROTO_FILE}.pb.cc")
+		endforeach()
+	endif()
 endif()
 
 set(SOURCESDK_LOGS_DIRECTORY "logs")

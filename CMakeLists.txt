@@ -101,6 +101,11 @@ include(cmake/sourcesdk/targets/engine.cmake)
 include(cmake/sourcesdk/targets/entity2.cmake)
 include(cmake/sourcesdk/targets/interfaces.cmake)
 include(cmake/sourcesdk/targets/mathlib.cmake)
+
+if(SOURCESDK_COMPILE_PROTOBUF)
+	include(cmake/sourcesdk/targets/protos.cmake)
+endif()
+
 include(cmake/sourcesdk/targets/public.cmake)
 include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
@@ -108,15 +113,7 @@ include(cmake/sourcesdk/targets/tier1.cmake)
 
 set(SOURCESDK_GAME_TARGET_PREV "${SOURCESDK_GAME_TARGET}" CACHE INTERNAL "Previous value of SOURCESDK_GAME_TARGET")
 
-if(SOURCESDK_COMPILE_PROTOBUF)
-	if(SOURCESDK_CUSTOM_PROTOS)
-		add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCES} ${SOURCESDK_CUSTOM_PROTO_SOURCES})
-	else()
-		add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES} ${SOURCESDK_PROTO_SOURCES})
-	endif()
-else()
-	add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES})
-endif()
+add_library(${PROJECT_NAME} STATIC ${SOURCESDK_SOURCE_FILES})
 add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -149,6 +146,7 @@ set(SOURCESDK_LINK_LIBRARIES
 	${SOURCESDK_ENTITY2_NAME}
 	${SOURCESDK_INTERFACES_NAME}
 	${SOURCESDK_MATHLIB_NAME}
+	${SOURCESDK_PROTOS_NAME}
 	${SOURCESDK_TIER1_NAME}
 )
 
