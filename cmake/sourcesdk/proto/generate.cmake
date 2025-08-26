@@ -36,10 +36,18 @@ function(sourcesdk_compile_protos PROTO_FILENAMES PROTO_ARGS PROTO_OUTPUT_DIR LO
 			get_filename_component(PROTO_DIR "${PROTO_FILENAME}" DIRECTORY)
 		endif()
 
-		get_filename_component(PROTO "${PROTO_FILENAME}" NAME_WLE)
-		set(PROTO_FILENAME_WITH_PATH "${PROTO_DIR}/${PROTO_FILENAME}")
+		get_filename_component(PROTO_DIRECTORY "${PROTO_FILENAME}" DIRECTORY)
+		get_filename_component(PROTO_WLE "${PROTO_FILENAME}" NAME_WLE)
 
-		if(EXISTS "${PROTO_DIR}/${PROTO}.pb.cc")
+		if(PROTO_DIRECTORY)
+			set(PROTO "${PROTO_DIRECTORY}/${PROTO_WLE}")
+		else()
+			set(PROTO "${PROTO_WLE}")
+		endif()
+		set(PROTO_FILENAME_WITH_PATH "${PROTO_DIR}/${PROTO}")
+		set(PROTO_SOURCE "${PROTO_FILENAME_WITH_PATH}.pb.cc")
+
+		if(EXISTS "${PROTO_SOURCE}")
 			message(STATUS "Compiled ${PROTO_OUT_PREFIX}${PROTO_FILENAME} exists")
 		else()
 			set(PROTO_OUTPUT_DATE_LOG_FILENAME "${LOGS_DIR}/${PROTO}.log")
