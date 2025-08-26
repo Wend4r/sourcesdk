@@ -68,6 +68,9 @@ enum AppSystemBuildType_t
 	APP_SYSTEM_BUILD_COUNT
 };
 
+class KeyValues;
+class CTier2Application;
+class IUGCAddonPathResolver;
 
 abstract_class IAppSystem
 {
@@ -132,6 +135,10 @@ public:
 	virtual bool IsSingleton() { return true; }
 };
 
+class IApplication : public IAppSystem
+{
+
+};
 
 //-----------------------------------------------------------------------------
 // Helper implementation of an IAppSystem for tier0
@@ -142,18 +149,17 @@ class CTier0AppSystem : public CBaseAppSystem< IInterface >
 };
 
 using FactoryFn = void* (*)(char const*, int*);
-class KeyValues;
+
 abstract_class CAppSystemDict
 {
 public:
 	virtual ~CAppSystemDict() = 0;
 	virtual void Init() = 0;
-	virtual void* unk001();
+	virtual int GetSomeFlags() = 0;
 	virtual CUtlString GetConsoleLogFilename() = 0;
 	virtual void ChangeLogFileSuffix(const char* suffix) = 0;
-	virtual void CreateApplication() = 0;
+	virtual CTier2Application* CreateApplication() = 0;
 	virtual void OnAppSystemLoaded() = 0;
-
 
 	struct ModuleInfo_t
 	{
@@ -175,34 +181,34 @@ public:
 	CUtlLeanVector<ModuleInfo_t> m_Modules;
 	CUtlLeanVector<AppSystem_t> m_Systems;
 	CUtlLeanVector<FactoryFn> m_NonAppSystemFactories;
-	const char* m_ModuleSearchPath;
-	CUtlStringMap<UtlSymId_t> m_SystemDict; // 104
-	int m_nExpectedShutdownLoggingStateIndex; // 256
-	ILoggingListener* m_pDefaultLoggingListener; // 264
-	KeyValues* m_pGameInfo; // 272
-	KeyValues* m_pApplicationInfo; // 280
-	void* m_hInstance; // 288
-	void* m_pUnknown; // 296
-	bool m_bIsConsoleApp; // 304
-	bool m_bInToolsMode; // 305
-	bool m_bIsInDeveloperMode; // 306
-	bool m_bIsGameApp; // 307
-	bool m_bIsDedicatedServer; // 308
-	CUtlString unk; // 312
-	CUtlString m_UILanguage; // 320
-	CUtlString m_AudioLanguage; // 328
-	CUtlString m_ModPath; // 336
-	CUtlString m_ExecutablePath; // 344
-	CUtlString m_ModSubDir; // 352
-	CUtlString m_ContentPath; // 360
-	IApplication* m_pApplication; // 368
-	bool m_bInitialized; // 376
+	CUtlStringList m_ModuleSearchPath;
+	CUtlStringMap<UtlSymId_t> m_SystemDict;
+	int m_nExpectedShutdownLoggingStateIndex;
+	ILoggingListener* m_pDefaultLoggingListener;
+	KeyValues* m_pGameInfo;
+	KeyValues* m_pApplicationInfo;
+	void* m_hInstance;
+	void* m_pUnknown;
+	bool m_bIsConsoleApp;
+	bool m_bInToolsMode;
+	bool m_bIsInDeveloperMode;
+	bool m_bIsGameApp;
+	bool m_bIsDedicatedServer;
+	CUtlString m_UILanguage;
+	CUtlString m_AudioLanguage;
+	CUtlString m_UnkPath328;
+	CUtlString m_ModPath;
+	CUtlString m_ExecutablePath;
+	CUtlString m_ModSubDir;
+	CUtlString m_ContentPath;
+	IApplication* m_pApplication;
+	bool m_bInitialized;
 	bool m_bSuppressCOMInitialization;
+	int m_nStartupManifestsDisabledCount;
 	int m_nAppSystemPhase;
-	int unk2;
-	bool m_bIsRetail; // 388
-	bool m_bIsLowViolence; // 389
-	bool m_bInvokedPreShutdown; // 390
+	bool m_bIsRetail;
+	bool m_bIsLowViolence;
+	bool m_bInvokedPreShutdown;
 	//.... more unknown fields
 };
 

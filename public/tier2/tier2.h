@@ -85,6 +85,12 @@ private:
 	int m_nAppSysTier2LibraryConnects;
 };
 
+class CTier2Application : public CTier1Application
+{
+private:
+	CAppSystemDict* m_pDict;
+	int m_nAppTier2LibraryConnects;
+};
 
 //-----------------------------------------------------------------------------
 // Distance fade information

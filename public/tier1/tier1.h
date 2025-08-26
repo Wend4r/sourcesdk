@@ -19,6 +19,11 @@
 // Forward declarations
 //-----------------------------------------------------------------------------
 
+enum LanguageType_t
+{
+	LanguageType_UI = 0x0,
+	LanguageType_Audio = 0x1,
+};
 
 //-----------------------------------------------------------------------------
 // Call this to connect to/disconnect from all tier 1 libraries.
@@ -26,7 +31,6 @@
 //-----------------------------------------------------------------------------
 void ConnectTier1Libraries( CreateInterfaceFn *pFactoryList, int nFactoryCount );
 void DisconnectTier1Libraries();
-
 
 //-----------------------------------------------------------------------------
 // Helper empty implementation of an IAppSystem for tier2 libraries
@@ -77,6 +81,68 @@ public:
 	virtual AppSystemTier_t GetTier()
 	{
 		return APP_SYSTEM_TIER1;
+	}
+};
+
+class CTier1Application : public CTier1AppSystem<IApplication>
+{
+public:
+	virtual ~CTier1Application() = 0;
+
+	virtual void AddSystem(IAppSystem*, const char *) = 0;
+	virtual void AddSystem(const char*, const char*) = 0;
+	virtual void AddSystem(void *, const char *) = 0;
+	virtual void RemoveSystem(void* pSystem) = 0;
+	virtual bool AddSystems(int, const AppSystemInfo_t *) = 0;
+	virtual void* FindSystem(const char *pSystemName) = 0;
+	virtual KeyValues* GetGameInfo() = 0;
+	virtual void unk1() = 0;
+	virtual const char* GetLanguage(LanguageType_t) = 0;
+	virtual const char* GetModPath(int) = 0;
+	virtual bool IsInToolsMode();
+	virtual bool IsConsoleApp();
+	virtual void unk2();
+	virtual bool IsInDeveloperMode();
+	virtual const char * GetExecutablePath();
+	virtual const char * GetModGameSubdir();
+	virtual KeyValues* GetApplicationInfo();
+	virtual void* GetAppInstance();
+	virtual const char * GetContentPath();
+	virtual const char * GetConsoleLogFilename();
+	virtual const char * ChangeLogFileSuffix(const char *suffix);
+	virtual void unk3();
+	virtual void AddSystemDontLoadStartupManifests(const char*,const char*);
+	virtual const char * GetGameMode();
+	virtual void MountAddon(char const*) = 0;
+	virtual void UnmountAddon(char const*) = 0;
+	virtual void GetMountedAddons(CUtlVector<CUtlString> & vec) = 0;
+	virtual void GetMountedAddons(char const**,int) = 0;
+	virtual void GetAddonsContentDirectory() = 0;
+	virtual void GetAddonsContentDirectory2() = 0;
+	virtual void IsFileInAddon(const char *) = 0;
+	virtual void GetAvailableAddons() = 0;
+	virtual bool GetAddonInfo() = 0;
+	virtual bool IsRunningOnCustomerMachine() = 0;
+	virtual bool IsLowViolence() = 0;
+	virtual bool SetLowViolence(bool) = 0;
+	virtual bool SetInitializationPhase(int) = 0;
+	virtual int GetInitializationPhase() = 0;
+	virtual const char* GetRestrictAddonsTo() = 0;
+	virtual void SetAllowAddonChanges(bool) = 0;
+	virtual void SetUGCAddonPathResolver(IUGCAddonPathResolver *) = 0;
+	virtual CUtlString GetAddonNameFromID(uint64 id) = 0;
+	virtual uint64 GetIDFromAddonName(const char *name) = 0;
+	virtual CUtlString GetFullAddonPathFromAddonName(const char *name) = 0;
+	virtual void GetAvailableAddonMaps() = 0;
+	virtual void LoadStartupManifestGroup() = 0;
+	virtual void unk4();
+	virtual void unk5();
+	virtual void unk6();
+	virtual CAppSystemDict* GetAppSystemDict();
+
+	template< class T >
+	T* FindSystem(const char *pSystemName) {
+		return static_cast<T*>(FindSystem(pSystemName));
 	}
 };
 
