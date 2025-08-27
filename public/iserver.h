@@ -25,6 +25,7 @@
 #include <resourcefile/resourcetype.h>
 #include <tier0/checksum_crc.h>
 #include <steam/steamnetworkingtypes.h>
+#include <networkbasetypes.pb.h>
 
 enum server_state_t : int
 {
@@ -154,14 +155,14 @@ public:
 
 	virtual void	BroadcastPrintf( const char *pszFmt, ... ) FMTFUNCTION( 2, 3 ) = 0;
 
-	virtual void	ToggleClientUnk( CPlayerSlot slot, bool bOldValue ) = 0;
+	virtual void	SetClientConnect( CPlayerSlot slot, bool b = true ) = 0;
 
 	virtual void	NotifySceneViewDebugOverlays( void *pSceneView, bool bUnk ) {};
 
 	virtual void	BroadcastMessage( INetworkMessageInternal *pSerializer, const CNetMessage *pNetMessage, const IRecipientFilter *pFilter ) = 0;
 	virtual bool	IsRecordingDemo() = 0;
 
-	virtual bool	GetClientUnk( CPlayerSlot slot ) = 0;
+	virtual uint8	GetClientConnectionType( CPlayerSlot slot ) = 0;
 };
 
 class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
@@ -172,9 +173,7 @@ public:
 	server_state_t	GetServerState() { return m_State; }
 
 	virtual void	SetMaxClients( int nMaxClients ) = 0;
-
-private:
-	virtual bool	unk301( CPlayerSlot slot, const ns_address *addr, bf_read *bf ) = 0;
+	virtual void	CreateClient( CPlayerSlot &nSlot, CSteamID nSteamID, const char *pszName ) = 0;
 
 public: // IConnectionlessPacketHandler
 	virtual bool	ProcessConnectionlessPacket( netpacket_t *packet ) = 0; // process a connectionless packet
@@ -254,8 +253,8 @@ public:
 	int m_nRefCount;
 	int m_Socket;
 	int m_nTickCount;
+	int m_nMinClientLimit;
 	void (*UnkFunc)();
-	void (*UnkFunc2)();
 	CGlobalVars m_globals;
 	GameSessionConfiguration_t m_GameConfig;
 	CUtlString m_szMapname;

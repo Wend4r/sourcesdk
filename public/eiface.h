@@ -98,6 +98,7 @@ class CCompressedResourceManifest;
 class ILoadingSpawnGroup;
 class IToolGameSimulationAPI;
 class CCLCMsg_Move_t;
+class CCLCMsg_SplitPlayerConnect_t;
 
 namespace google
 {
@@ -295,7 +296,7 @@ public:
 	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason, const char *szInternalReason = nullptr ) = 0;
 	virtual int64 DisconnectAllClients( ENetworkDisconnectionReason reason ) = 0;
 
-	virtual void unk200() = 0;
+	virtual void ProcessSplitPlayerConnect( const CCLCMsg_SplitPlayerConnect_t &msg ) = 0; // By host client.
 
 	// Use these to setup who can hear whose voice.
 	// Pass in client indices (which are their ent indices - 1).
@@ -303,9 +304,8 @@ public:
 	virtual bool SetClientListening( CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen ) = 0;
 	virtual bool SetClientProximity( CPlayerSlot iReceiver, CPlayerSlot iSender, bool bUseProximity ) = 0;
 
-	virtual void unk057( CPlayerSlot nSlot, const ns_address *addr, bf_read *bf ) = 0;
-
-	virtual void ToggleClientUnk( CPlayerSlot nSlot, bool bOldValue ) = 0;
+	virtual bool CreateClient( CPlayerSlot &nSlot, CSteamID nSteamID, const char *pszName ) = 0;
+	virtual void SetClientConnect( CPlayerSlot nSlot, bool b = true ) = 0;
 	virtual void KickClient( CPlayerSlot nSlot, const char *szInternalReason, ENetworkDisconnectionReason reason ) = 0;
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;

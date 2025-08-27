@@ -109,11 +109,7 @@ public:
 	virtual void             Reconnect() = 0;
 	virtual void             Disconnect( ENetworkDisconnectionReason reason, const char *pszInternalReason ) = 0;
 	virtual bool             CheckConnect() = 0;
-
-private:
-	virtual void             unk_10() = 0;
-
-public:
+	virtual void             Create( CPlayerSlot &nSlot, CSteamID nSteamID, const char *pszName ) = 0;
 	virtual void             SetRate( int nRate ) = 0;
 	virtual void             SetUpdateRate( float fUpdateRate ) = 0;
 	virtual int              GetRate() = 0;
@@ -272,7 +268,7 @@ public:
 	CServerSideClientBase* m_SplitScreenUsers[4];
 	CServerSideClientBase* m_pAttachedTo;
 	bool m_bSplitPlayerDisconnecting;
-	int m_UnkVariable172;
+	int m_nDisconnectionTypeFlags;
 	bool m_bFakePlayer;
 	bool m_bSendingSnapshot;
 
@@ -283,7 +279,7 @@ public:
 	CPlayerUserId m_UserID = -1;
 	bool m_bReceivedPacket;	// true, if client received a packet after the last send packet
 	CSteamID m_SteamID;
-	CSteamID m_UnkSteamID;
+	CSteamID m_DisconnectedSteamID;
 	CSteamID m_AuthTicketSteamID; // Auth ticket
 	CSteamID m_nFriendsID;
 	ns_address m_nAddr;
