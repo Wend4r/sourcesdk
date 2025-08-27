@@ -63,10 +63,9 @@ private:
 		void Reset() { m_FileHandle = 0; }
 	};
 
-	FileInfo_t m_OpenFiles[MAX_SIMULTANEOUS_LOGGING_FILE_COUNT];
+	CUtlLeanVector<FileInfo_t> m_FileInfoList;
 
-	// Table which maps logging channel IDs to open files
-	int m_FileIndices[MAX_LOGGING_CHANNEL_COUNT];
+	bool m_bLogTimestamps;
 };
 
 #endif // TIER2_LOGGING_H

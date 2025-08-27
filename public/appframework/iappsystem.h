@@ -69,6 +69,7 @@ enum AppSystemBuildType_t
 };
 
 class KeyValues;
+class OpusRepacketizer;
 class CTier2Application;
 class IUGCAddonPathResolver;
 
@@ -188,7 +189,7 @@ public:
 	KeyValues* m_pGameInfo;
 	KeyValues* m_pApplicationInfo;
 	void* m_hInstance;
-	void* m_pUnknown;
+	OpusRepacketizer* m_pOpus;
 	bool m_bIsConsoleApp;
 	bool m_bInToolsMode;
 	bool m_bIsInDeveloperMode;
@@ -209,7 +210,6 @@ public:
 	bool m_bIsRetail;
 	bool m_bIsLowViolence;
 	bool m_bInvokedPreShutdown;
-	//.... more unknown fields
 };
 
 #endif // IAPPSYSTEM_H
