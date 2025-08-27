@@ -19,7 +19,7 @@ endif()
 # Function to append proto directories
 function(append_proto_dirs OUT_ARGS PROTO_DIRS)
 	foreach(PROTO_DIR IN LISTS PROTO_DIRS)
-		list(APPEND ${OUT_ARGS} "--proto_path=${PROTO_DIR}")
+		list(APPEND ${OUT_ARGS} "-I${PROTO_DIR}")
 	endforeach()
 	set(${OUT_ARGS} ${${OUT_ARGS}} PARENT_SCOPE)
 endfunction()
@@ -48,10 +48,10 @@ function(sourcesdk_compile_protos PROTO_FILENAMES PROTO_ARGS PROTO_DIR PROTO_OUT
 		else()
 			set(PROTO "${PROTO_WLE}")
 		endif()
-		set(PROTO_FILENAME_WITH_PATH "${PROTO_OUTPUT_DIR}/${PROTO}")
-		set(PROTO_SOURCE "${PROTO_FILENAME_WITH_PATH}.pb.cc")
+		set(PROTO_OUT_FILENAME_WITH_PATH "${PROTO_OUTPUT_DIR}/${PROTO}")
+		set(PROTO_OUT_SOURCE "${PROTO_OUT_FILENAME_WITH_PATH}.pb.cc")
 
-		if(EXISTS "${PROTO_SOURCE}")
+		if(EXISTS "${PROTO_OUT_SOURCE}")
 			message(STATUS "Compiled ${PROTO_OUT_PREFIX}${PROTO_FILENAME} exists")
 		else()
 			set(PROTO_OUTPUT_DATE_LOG_FILENAME "${LOGS_DIR}/${PROTO}.log")
@@ -69,12 +69,12 @@ function(sourcesdk_compile_protos PROTO_FILENAMES PROTO_ARGS PROTO_DIR PROTO_OUT
 endfunction()
 
 # Prepare proto args
-set(SOURCESDK_PROTO_ARGS "--proto_path=${SOURCESDK_PROTOBUF_SOURCE_DIR}")
+set(SOURCESDK_PROTO_ARGS "-I${SOURCESDK_PROTOBUF_SOURCE_DIR}")
 append_proto_dirs(SOURCESDK_PROTO_ARGS "${SOURCESDK_PROTO_DIRS}")
 
 set(SOURCESDK_CUSTOM_PROTO_ARGS
 	${SOURCESDK_PROTO_ARGS}
-	"--proto_path=${SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR}"
+	"-I${SOURCESDK_CUSTOM_PROTO_DIR}"
 )
 
 message(STATUS "To compile protos will be used ${SOURCESDK_PROTOC_EXECUTABLE}")
