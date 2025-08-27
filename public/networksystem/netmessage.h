@@ -99,6 +99,33 @@ public:
 		return nSent;
 	}
 
+	int SendToAllClients() const
+	{
+		if ( !g_pNetworkServerService->IsServerRunning() )
+		{
+			return 0;
+		}
+
+		CNetworkGameServer *pNetServer = g_pNetworkServerService->GetNetworkServer();
+
+		if ( !pNetServer )
+		{
+			return 0;
+		}
+
+		int nSent = 0;
+
+		for ( const auto &pClient : pNetServer->GetClients() )
+		{
+			if ( pClient->SendNetMessage( this, GetBufType() ) )
+			{
+				nSent++;
+			}
+		}
+
+		return nSent;
+	}
+
 private:
 	double m_dbRecivedTime;
 	uint32 m_nSignatrue;
