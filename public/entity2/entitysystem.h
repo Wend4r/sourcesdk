@@ -34,7 +34,6 @@ class INetworkFieldScratchData;
 class IFieldChangeLimitSpew;
 class IEntity2SaveRestore;
 class IEntity2Networkables;
-class IEntityResourceManifest;
 class IEntityPrecacheConfiguration;
 class IEntityResourceManifestBuilder;
 class ISpawnGroupEntityFilter;
@@ -42,6 +41,13 @@ class IHandleEntity;
 struct ComponentUnserializerFieldInfo_t;
 
 extern CGameEntitySystem* GameEntitySystem();
+
+class IEntityResourceManifest {
+public:
+	virtual void AddResource(const char*) = 0;
+	virtual void AddResource(const char*, void*) = 0;
+	virtual void AddResource(const char*, void*, void*, void*) = 0;
+};
 
 typedef void (*EntityResourceManifestCreationCallback_t)(IEntityResourceManifest *, void *);
 
@@ -155,7 +161,7 @@ struct EntityDormancyChange_t : EntityNotification_t
 
 struct EntitySpawnInfo_t : EntityNotification_t
 {
-	const CEntityKeyValues* m_pKeyValues;
+	CEntityKeyValues* m_pKeyValues;
 	uint64 m_Unk1;
 };
 
@@ -303,10 +309,9 @@ public:
 	CUtlSymbolLarge AllocPooledString(const char* pString);
 	CUtlSymbolLarge FindPooledString(const char* pString);
 
-private:
+public:
 	IEntityResourceManifest *m_pCurrentManifest;
 
-public:
 	CConcreteEntityList m_EntityList;
 	CUtlString m_sEntSystemName;
 

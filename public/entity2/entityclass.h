@@ -89,7 +89,7 @@ public:
 	}
 	
 public:
-	void* m_pScriptDesc; // 0x0
+	ScriptClassDesc_t* m_pScriptDesc; // 0x0
 	EntInput_t* m_pInputs; // 0x8
 	EntOutput_t* m_pOutputs; // 0x10
 	int m_nInputCount; // 0x18

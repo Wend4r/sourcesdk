@@ -14,6 +14,7 @@
 
 class CEntityIdentity;
 class CEntityComponentHelper;
+class ScriptClassDesc_t;
 struct ComponentUnserializerClassInfo_t;
 struct EntOutput_t;
 
@@ -67,7 +68,7 @@ struct EntComponentInfo_t
 	int m_nRuntimeIndex;
 	uint m_nFlags;
 	ComponentUnserializerClassInfo_t m_componentUnserializerClassInfo;
-	void* m_pScriptDesc;
+	ScriptClassDesc_t* m_pScriptDesc;
 	CEntityComponentHelper* m_pBaseClassComponentHelper;
 };
 
