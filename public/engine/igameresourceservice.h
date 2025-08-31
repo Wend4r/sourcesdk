@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include <iengineservice.h>
+#include <IEngineService.h>
 #include <entity2/entitysystem.h>
 
 class CGameResourceManifestLock;
