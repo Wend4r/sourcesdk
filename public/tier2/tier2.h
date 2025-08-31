@@ -54,42 +54,37 @@ class CTier2AppSystem : public CTier1AppSystem< IInterface, ConVarFlag >
 	typedef CTier1AppSystem< IInterface, ConVarFlag > BaseClass;
 
 public:
-	virtual bool Connect( CreateInterfaceFn factory ) 
-	{
-		if ( !BaseClass::Connect( factory ) )
-			return false;
-
-		ConnectTier2Libraries( &factory, 1 );
-		return true;
-	}
-
-	virtual InitReturnVal_t Init()
-	{
-		InitReturnVal_t nRetVal = BaseClass::Init();
-		if ( nRetVal != INIT_OK )
-			return nRetVal;
-
-		return INIT_OK;
-	}
-
 	virtual AppSystemTier_t GetTier()
 	{
 		return APP_SYSTEM_TIER2;
 	}
-
-	virtual void Shutdown()
-	{
-		BaseClass::Shutdown();
-	}
-
-	virtual void Disconnect() 
-	{
-		DisconnectTier2Libraries();
-		BaseClass::Disconnect();
-	}
 private:
 	CUtlVector<ResourceManifestDesc_t *> m_manualManifests;
 	int m_nAppSysTier2LibraryConnects;
+};
+
+template< class IInterface, int ConVarFlag = 0 >
+class CTier3AppSystem : public CTier2AppSystem< IInterface, ConVarFlag >
+{
+	typedef CTier2AppSystem< IInterface, ConVarFlag > BaseClass;
+
+public:
+	virtual AppSystemTier_t GetTier()
+	{
+		return APP_SYSTEM_TIER3;
+	}
+};
+
+template< class IInterface, int ConVarFlag = 0 >
+class CTier4AppSystem : public CTier3AppSystem< IInterface, ConVarFlag >
+{
+	typedef CTier3AppSystem< IInterface, ConVarFlag > BaseClass;
+
+public:
+	virtual AppSystemTier_t GetTier()
+	{
+		return APP_SYSTEM_TIER4;
+	}
 };
 
 class CTier2Application : public CTier1Application

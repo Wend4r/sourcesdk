@@ -147,6 +147,11 @@ class IApplication : public IAppSystem
 template< class IInterface > 
 class CTier0AppSystem : public CBaseAppSystem< IInterface >
 {
+public:
+	virtual AppSystemTier_t GetTier()
+	{
+		return APP_SYSTEM_TIER0;
+	}
 };
 
 using FactoryFn = void* (*)(char const*, int*);

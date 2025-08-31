@@ -89,11 +89,11 @@ class CTier1Application : public CTier1AppSystem<IApplication>
 public:
 	virtual ~CTier1Application() = 0;
 
-	virtual void AddSystem(IAppSystem*, const char *) = 0;
-	virtual void AddSystem(const char*, const char*) = 0;
-	virtual void AddSystem(void *, const char *) = 0;
-	virtual void RemoveSystem(void* pSystem) = 0;
-	virtual bool AddSystems(int, const AppSystemInfo_t *) = 0;
+	virtual void AddSystem(IAppSystem* pAppSystem, const char * interfaceName, bool errorOut) = 0;
+	virtual void AddSystem(const char* unk, const char* interfaceName, bool errorOut) = 0;
+	virtual void AddSystem(IAppSystem* pAppSystem, const char* interfaceName) = 0;
+	virtual void RemoveSystem(IAppSystem* pSystem) = 0;
+	virtual bool AddSystems(int count, const AppSystemInfo_t **) = 0;
 	virtual void* FindSystem(const char *pSystemName) = 0;
 	virtual KeyValues* GetGameInfo() = 0;
 	virtual void unk1() = 0;
