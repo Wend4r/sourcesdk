@@ -257,12 +257,13 @@ enum ScriptFuncBindingFlags_t
 
 typedef bool (*ScriptBindingFunc_t)( void *pFunction, void *pContext, ScriptVariant_t *pArguments, int nArguments, ScriptVariant_t *pReturn );
 
-struct ScriptFunctionBinding_t
-{
-	ScriptFuncDescriptor_t	m_desc;
-	ScriptBindingFunc_t		m_pfnBinding;
-	void *					m_pFunction;
-	unsigned				m_flags;
+struct ScriptFunctionBinding_t {
+	ScriptFuncDescriptor_t m_desc;
+	void* base;
+	ScriptBindingFunc_t m_pfnBinding;
+	void* m_pFunction;
+	uint32_t m_flags;
+	char pad_4c[0x4];
 };
 
 //---------------------------------------------------------
@@ -442,8 +443,12 @@ class CSquirrelMetamethodDelegateImpl;
 class IScriptVM
 {
 public:
+	virtual ~IScriptVM() = 0;
+
 	virtual bool Init() = 0;
 	virtual void Shutdown() = 0;
+
+	virtual void unk3() = 0;
 
 	virtual ScriptLanguage_t GetLanguage() = 0;
 	virtual const char *GetLanguageName() = 0;
@@ -466,7 +471,8 @@ public:
 	// Simple script usage
 	//--------------------------------------------------------
 	virtual ScriptStatus_t Run( const char *pszScript, bool bWait = true ) = 0;
-	inline ScriptStatus_t Run( const unsigned char *pszScript, bool bWait = true ) { return Run( (char *)pszScript, bWait ); }
+	virtual ScriptStatus_t Run( HSCRIPT hScript, HSCRIPT hScope = NULL, bool bWait = true ) = 0;
+	virtual ScriptStatus_t Run( HSCRIPT hScript, bool bWait ) = 0;
 
 	//--------------------------------------------------------
 	// Compilation
@@ -475,11 +481,7 @@ public:
 	inline HSCRIPT CompileScript( const unsigned char *pszScript, const char *pszId = NULL ) { return CompileScript( (char *)pszScript, pszId ); }
 	virtual void ReleaseScript( HSCRIPT ) = 0;
 
-	//--------------------------------------------------------
-	// Execution of compiled
-	//--------------------------------------------------------
-	virtual ScriptStatus_t Run( HSCRIPT hScript, HSCRIPT hScope = NULL, bool bWait = true ) = 0;
-	virtual ScriptStatus_t Run( HSCRIPT hScript, bool bWait ) = 0;
+	virtual int unk17() = 0;
 
 	//--------------------------------------------------------
 	// Scope
@@ -539,7 +541,7 @@ public:
 	bool SetValue( const char *pszKey, const ScriptVariant_t &value )																{ return SetValue(NULL, pszKey, value ); }
 
 	virtual bool SetEnumValue(HSCRIPT hScope, const char *pszEnumName, const char *pszValueName, int value, const char *pszDescription) = 0;
-	virtual bool CreateKeyValuesFromTable(HSCRIPT hScope, const char* unk1, void* fUnk, void* unk2) = 0;
+	//virtual bool CreateKeyValuesFromTable(HSCRIPT hScope, const char* unk1, void* fUnk, void* unk2) = 0;
 
 	virtual void CreateTable( ScriptVariant_t &Table ) = 0;
 	virtual bool IsTable( HSCRIPT hScope ) = 0;
