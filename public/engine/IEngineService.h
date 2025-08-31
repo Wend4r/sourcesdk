@@ -14,6 +14,8 @@
 #include <inputsystem/InputEnums.h>
 #include <iloopmode.h>
 
+#include "tier2/tier2.h"
+
 struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;
 class IAddonListChangeNotify;
@@ -41,6 +43,15 @@ public:
 	virtual void		RegisterEventMap( CEventDispatcher<CEventIDManager_Default> *pEventDispatcher, EventMapRegistrationType_t nRegistrationType ) = 0;
 	virtual uint16		GetServiceIndex( void ) = 0;
 	virtual void		SetServiceIndex( uint16 index ) = 0;
+};
+
+template< class IInterface >
+class CBaseEngineService : public CTier4AppSystem<IInterface> {
+
+public:
+	const char *m_pszName;
+	bool m_bActive;
+	uint16 m_nServiceIndex;
 };
 
 abstract_class IEngineServiceMgr : public IAppSystem, public ILoopModePrerequisiteRegistry
