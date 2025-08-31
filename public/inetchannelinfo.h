@@ -20,6 +20,7 @@
 #define FLOW_INCOMING	1
 #define MAX_FLOWS		2		// in & out
 
+struct netadr_t;
 struct SNetChannelLatencyStats;
 
 struct NetChanStat_t
@@ -36,7 +37,7 @@ public:
 	virtual const char  *GetName( void ) const = 0;	// get channel name
 	virtual const char  *GetAddress( void ) const = 0; // get channel IP address as string
 
-	virtual void*		unk002() = 0;
+	virtual const netadr_t &GetRemoteAddress( void ) const = 0;
 
 	virtual float		GetTime( void ) const = 0;	// current net time
 	virtual float		GetTimeConnected( void ) const = 0;	// get connection time in seconds
