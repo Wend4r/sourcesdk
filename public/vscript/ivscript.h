@@ -256,14 +256,14 @@ enum ScriptFuncBindingFlags_t
 };
 
 typedef bool (*ScriptBindingFunc_t)( void *pFunction, void *pContext, ScriptVariant_t *pArguments, int nArguments, ScriptVariant_t *pReturn );
+typedef void* ScriptFunctionBindingStorageType_t;
 
 struct ScriptFunctionBinding_t {
 	ScriptFuncDescriptor_t m_desc;
-	void* base;
+	ScriptClassDesc_t* m_pClassDesc;
 	ScriptBindingFunc_t m_pfnBinding;
-	void* m_pFunction;
-	uint32_t m_flags;
-	char pad_4c[0x4];
+	ScriptFunctionBindingStorageType_t* m_pFunction;
+	ScriptFuncBindingFlags_t m_flags;
 };
 
 //---------------------------------------------------------
