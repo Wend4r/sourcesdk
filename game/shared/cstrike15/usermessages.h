@@ -30,7 +30,6 @@ class CCSUsrMsg_KillCam_t                         : public CUserMessagePB< CS_UM
 class CCSUsrMsg_MatchEndConditions_t              : public CUserMessagePB< CS_UM_MatchEndConditions, CCSUsrMsg_MatchEndConditions > {};
 class CCSUsrMsg_DisconnectToLobby_t               : public CUserMessagePB< CS_UM_DisconnectToLobby, CCSUsrMsg_DisconnectToLobby > {};
 class CCSUsrMsg_PlayerStatsUpdate_t               : public CUserMessagePB< CS_UM_PlayerStatsUpdate, CCSUsrMsg_PlayerStatsUpdate > {};
-class CCSUsrMsg_WarmupHasEnded_t                  : public CUserMessagePB< CS_UM_WarmupHasEnded, CCSUsrMsg_WarmupHasEnded > {};
 class CCSUsrMsg_CallVoteFailed_t                  : public CUserMessagePB< CS_UM_CallVoteFailed, CCSUsrMsg_CallVoteFailed > {};
 class CCSUsrMsg_VoteStart_t                       : public CUserMessagePB< CS_UM_VoteStart, CCSUsrMsg_VoteStart > {};
 class CCSUsrMsg_VotePass_t                        : public CUserMessagePB< CS_UM_VotePass, CCSUsrMsg_VotePass > {};
@@ -39,7 +38,6 @@ class CCSUsrMsg_VoteSetup_t                       : public CUserMessagePB< CS_UM
 class CCSUsrMsg_ServerRankRevealAll_t             : public CUserMessagePB< CS_UM_ServerRankRevealAll, CCSUsrMsg_ServerRankRevealAll > {};
 class CCSUsrMsg_SendLastKillerDamageToClient_t    : public CUserMessagePB< CS_UM_SendLastKillerDamageToClient, CCSUsrMsg_SendLastKillerDamageToClient > {};
 class CCSUsrMsg_ServerRankUpdate_t                : public CUserMessagePB< CS_UM_ServerRankUpdate, CCSUsrMsg_ServerRankUpdate > {};
-class CCSUsrMsg_GlowPropTurnOff_t                 : public CUserMessagePB< CS_UM_GlowPropTurnOff, CCSUsrMsg_GlowPropTurnOff > {};
 class CCSUsrMsg_SendPlayerItemDrops_t             : public CUserMessagePB< CS_UM_SendPlayerItemDrops, CCSUsrMsg_SendPlayerItemDrops > {};
 class CCSUsrMsg_RoundBackupFilenames_t            : public CUserMessagePB< CS_UM_RoundBackupFilenames, CCSUsrMsg_RoundBackupFilenames > {};
 class CCSUsrMsg_SendPlayerItemFound_t             : public CUserMessagePB< CS_UM_SendPlayerItemFound, CCSUsrMsg_SendPlayerItemFound > {};
