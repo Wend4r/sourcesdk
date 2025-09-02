@@ -161,13 +161,20 @@ public:
 
 	inline static class CProtobufBinding : public IProtobufBinding
 	{
+	public:
 		virtual const char *GetName() const
 		{
-			static char s_szResult[32] {'\0'};
+			static std::string s_szResult;
 
-			snprintf( s_szResult, sizeof( s_szResult ), "%s [%d]", typeid( PBType_t ).name(), kMsgId );
+			if ( s_szResult.empty() )
+			{
+				s_szResult += PBType_t().GetTypeName();
+				s_szResult += " [";
+				s_szResult += std::to_string( kMsgId );
+				s_szResult += "]";
+			}
 
-			return s_szResult;
+			return s_szResult.c_str();
 		}
 
 		virtual int GetSize() const { return sizeof( PBType_t ); }
