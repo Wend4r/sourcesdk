@@ -14,7 +14,7 @@
 
 class CEntityIdentity;
 class CEntityComponentHelper;
-class ScriptClassDesc_t;
+struct ScriptClassDesc_t;
 struct ComponentUnserializerClassInfo_t;
 struct EntOutput_t;
 
