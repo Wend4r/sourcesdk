@@ -9,6 +9,7 @@
 #ifndef UTLRBTREE_H
 #define UTLRBTREE_H
 
+#include "platform.h"
 #include "utlleanvector.h"
 #include "utlfixedmemory.h"
 #include "utlblockmemory.h"
@@ -1278,29 +1279,17 @@ void CUtlRBTree<T, L, I, M>::RemoveAll()
 	if ( m_LastAlloc == m_Elements.InvalidIterator() )
 	{
 		Assert( m_Root == InvalidIndex() );
-		Assert( m_FirstFree == InvalidIndex() );
 		Assert( m_NumElements == 0 );
+		Assert( m_FirstFree == InvalidIndex() );
 		return;
 	}
 
-	for ( typename M::Iterator_t it = m_Elements.First(); it != m_Elements.InvalidIterator(); it = m_Elements.Next( it ) )
-	{
-		I i = m_Elements.GetIndex( it );
-		if ( IsValidIndex( i ) ) // skip elements in the free list
-		{
-			Destruct( &Element( i ) );
-			SetRightChild( i, m_FirstFree );
-			SetLeftChild( i, i );
-			m_FirstFree = i;
-		}
-
-		if ( it == m_LastAlloc )
-			break; // don't destruct elements that haven't ever been constucted
-	}
+	m_Elements.RemoveAll();
 
 	// Clear everything else out
-	m_Root = InvalidIndex(); 
+	m_Root = InvalidIndex();
 	m_NumElements = 0;
+	m_FirstFree = InvalidIndex();
 
 	Assert( IsValid() );
 }
