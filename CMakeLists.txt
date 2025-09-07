@@ -52,6 +52,7 @@ option(SOURCESDK_LINK_STRIP_SYMBOLS "Strip debug symbols from built targets" OFF
 option(SOURCESDK_LINK_USE_MOLD "Link with the mold linker (if exists)" OFF)
 option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time library by MSVC" ON)
+option(SOURCESDK_USE_ABI0 "Enable use of the older C++ ABI, which was the default in GCC versions before GCC 5" ON)
 
 set(SOURCESDK_COMMON_DIR "${SOURCESDK_DIR}/common")
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
