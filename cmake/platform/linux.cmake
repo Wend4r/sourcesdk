@@ -20,9 +20,24 @@ set(PLATFORM_COMPILE_OPTIONS
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(PLATFORM_COMPILE_OPTIONS
 		${PLATFORM_COMPILE_OPTIONS}
-
-		-g3 -ggdb
+		-g3 -gdwarf-4 -fno-omit-frame-pointer -fno-inline
 	)
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+		set(PLATFORM_COMPILE_OPTIONS
+			${PLATFORM_COMPILE_OPTIONS}
+			-fstandalone-debug -glldb
+		)
+	elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		set(PLATFORM_COMPILE_OPTIONS
+			${PLATFORM_COMPILE_OPTIONS}
+			-ggdb3
+			-fno-eliminate-unused-debug-types
+			-femit-class-debug-always
+			-fvar-tracking
+			-fvar-tracking-assignments
+			-grecord-gcc-switches
+		)
+	endif()
 endif()
 
 set(PLATFORM_LINK_OPTIONS
