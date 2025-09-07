@@ -122,7 +122,7 @@ public:
 	CBufferString( std::initializer_list< const char * > strs, bool bAllowHeapAllocation = true ) : 
 	    CBufferString( bAllowHeapAllocation )
 	{
-		AppendConcat( strs.size(), strs.begin() );
+		AppendConcat( static_cast<int>(strs.size()), strs.begin() );
 	}
 
 protected:
@@ -132,7 +132,7 @@ protected:
 	    m_bOverflowed( false ), 
 	    m_bFreeHeap( false ), 
 
-	    m_nAllocatedSize( nAllocatedSize ), 
+	    m_nAllocatedSize( static_cast<uint32>(nAllocatedSize) ),
 	    m_bStackAllocated( true ), 
 	    m_bAllowHeapAllocation( bAllowHeapAllocation )
 	{
@@ -583,7 +583,7 @@ using CBufferStringGrowable = CBufferStringN< SIZE >;
 // To optimize on the stack, use CBufferStringN instead.
 inline CBufferString operator""_bs( const char *pString, size_t nLen )
 {
-	return CBufferString( pString, nLen );
+	return CBufferString( pString, static_cast<int>(nLen) );
 }
 
 #endif /* BUFFERSTRING_H */

@@ -37,7 +37,7 @@ public:
 	static constexpr size_t MAX_ALLOCATED_BITS = sizeof( IndexLocalType_t ) * 8 - 1;
 	static constexpr size_t MIN_ALLOCATED = ( MAX_ALLOCATED_BITS + sizeof( ElemType_t ) ) / sizeof( ElemType_t );
 	static constexpr size_t MAX_ALLOCATED = ( I )~( 1 << MAX_ALLOCATED_BITS );
-	static constexpr I EXTERNAL_CONST_BUFFER_MARKER = -1;
+	static constexpr I EXTERNAL_CONST_BUFFER_MARKER = static_cast<I>(-1);
 
 	// constructor, destructor
 	CUtlLeanVectorBase() : m_nCount( 0 ), m_nAllocated( 0 ), m_bExternal( false ), m_pElements( nullptr ) {}

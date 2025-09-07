@@ -1692,7 +1692,7 @@ void CUtlVectorBase<T, I, A>::Validate( CValidator &validator, char *pchName )
 
 template < class T, typename I, class A >
 CUtlVector< T, I, A >::CUtlVector( const std::initializer_list< T > elements )	: 
-	BaseClass( 0, elements.size() )
+	BaseClass( 0, static_cast<I>(elements.size()) )
 {
 	for ( const auto& elem : elements )
 	{

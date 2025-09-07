@@ -116,7 +116,7 @@ public:
 	DLL_CLASS_IMPORT const char* String( CUtlSymbol id ) const;
 
 	uint32 Hash( const char *pString, int nLength ) const { return CUtlSymbol::MakeHash( IsInsensitive(), pString, nLength ); }
-	uint32 Hash( const char *pString ) const { return Hash( pString, strlen( pString ) ); }
+	uint32 Hash( const char *pString ) const { return Hash( pString, static_cast<int>(strlen( pString )) ); }
 	uint32 Hash( CUtlSymbol id ) const { return Hash( (const char *)m_MemBlockAllocator.GetBlock( m_MemBlocks[ id ] ) ); }
 
 	// Remove once symbol element.

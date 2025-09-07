@@ -411,7 +411,7 @@ inline bool UtlStringCaseInsensitiveLessFunc( const CUtlString &lhs, const CUtlS
 // Literal operator for convenient inline CUtlString creation.
 inline CUtlString operator""_utls( const char *pString, size_t nLen )
 {
-	return CUtlString( pString, nLen );
+	return CUtlString( pString, static_cast<int>(nLen) );
 }
 
 

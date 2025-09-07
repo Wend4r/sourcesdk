@@ -155,7 +155,7 @@ FORCEINLINE uint32 MakeStringToken( const char *pString, int nLen )
 template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
 FORCEINLINE uint32 MakeStringToken( const char *pString )
 {
-	return MakeStringToken< CASEINSENSITIVE, TRACKCREATION >( pString, strlen(pString) );
+	return MakeStringToken< CASEINSENSITIVE, TRACKCREATION >( pString, static_cast<int>(strlen(pString)) );
 }
 
 template< bool CASEINSENSITIVE = true, uintp SIZE = 128 >
