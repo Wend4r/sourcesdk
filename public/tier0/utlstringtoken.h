@@ -22,7 +22,7 @@
 #define STRINGTOKEN_MURMURHASH_SEED 0x31415926
 
 // Macros are intended to be used between CUtlStringToken (always lowercase)
-#define MAKE_STRINGTOKEN(pstr) CUtlStringToken::Hash( (pstr), strlen(pstr), STRINGTOKEN_MURMURHASH_SEED )
+#define MAKE_STRINGTOKEN(pstr) CUtlStringToken::Hash( (pstr), static_cast<int>(strlen(pstr)), STRINGTOKEN_MURMURHASH_SEED )
 #define MAKE_STRINGTOKEN_UTL(containerName) CUtlStringToken::Hash( (containerName).Get(), (containerName).Length(), STRINGTOKEN_MURMURHASH_SEED )
 
 class IFormatOutputStream;
