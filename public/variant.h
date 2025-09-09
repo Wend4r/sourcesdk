@@ -195,6 +195,7 @@ public:
 	CVariantBase( const Color &val, bool bCopy = true ) :		m_type( FIELD_COLOR32 ), m_flags( 0 )		{ CopyData(val, bCopy); }
 	CVariantBase( const Color *val, bool bCopy = true ) :		m_type( FIELD_COLOR32 ), m_flags( 0 )		{ CopyData(*val, bCopy); }
 	CVariantBase( const char *val, bool bCopy = true ) :		m_type( FIELD_CSTRING ), m_flags( 0 )		{ CopyData(val, bCopy); }
+	CVariantBase( const CVariantBase<A> &src )																{ *this = src; }
 
 	// Checks if the stored value is of type FIELD_VOID
 	fieldtype_t FieldType() const				{ return m_type; }
@@ -289,6 +290,7 @@ public:
 	void operator=( CEntityHandle eh) 		{ m_type = FIELD_EHANDLE; m_hEntity = eh; }
 	void operator=( CUtlStringToken tok ) 	{ m_type = FIELD_UTLSTRINGTOKEN; m_utlStringToken = tok; }
 	void operator=( ResourceHandle_t r ) 	{ m_type = FIELD_RESOURCE; m_hResource = r; }
+	void operator=( const CVariantBase<A> &src ) { src.AssignTo<A>(this);  }
 
 	~CVariantBase()
 	{
