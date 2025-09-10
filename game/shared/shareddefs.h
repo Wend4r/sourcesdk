@@ -388,19 +388,6 @@ enum
 	ENTITY_DISSOLVE_BITS = 3
 };
 
-// ---------------------------
-//  Hit Group standards
-// ---------------------------
-#define	HITGROUP_GENERIC	0
-#define	HITGROUP_HEAD		1
-#define	HITGROUP_CHEST		2
-#define	HITGROUP_STOMACH	3
-#define HITGROUP_LEFTARM	4	
-#define HITGROUP_RIGHTARM	5
-#define HITGROUP_LEFTLEG	6
-#define HITGROUP_RIGHTLEG	7
-#define HITGROUP_GEAR		10			// alerts NPC, but doesn't do damage or bleed (1/100th damage)
-
 //
 // Enumerations for setting player animation.
 //
