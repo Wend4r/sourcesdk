@@ -14,7 +14,7 @@
 #include <inputsystem/InputEnums.h>
 #include <iloopmode.h>
 
-#include "tier2/tier2.h"
+#include "tier4/tier4.h"
 
 struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;

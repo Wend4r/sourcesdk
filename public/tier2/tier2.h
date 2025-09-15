@@ -63,49 +63,6 @@ private:
 	int m_nAppSysTier2LibraryConnects;
 };
 
-template< class IInterface, int ConVarFlag = 0 >
-class CTier3AppSystem : public CTier2AppSystem< IInterface, ConVarFlag >
-{
-	typedef CTier2AppSystem< IInterface, ConVarFlag > BaseClass;
-
-public:
-	virtual AppSystemTier_t GetTier()
-	{
-		return APP_SYSTEM_TIER3;
-	}
-};
-
-template< class IInterface, int ConVarFlag = 0 >
-class CTier4AppSystem : public CTier3AppSystem< IInterface, ConVarFlag >
-{
-	typedef CTier3AppSystem< IInterface, ConVarFlag > BaseClass;
-
-public:
-	virtual AppSystemTier_t GetTier()
-	{
-		return APP_SYSTEM_TIER4;
-	}
-};
-
-class CTier2Application : public CTier1Application
-{
-private:
-	CAppSystemDict* m_pDict;
-	int m_nAppTier2LibraryConnects;
-};
-
-class CTier1AppSystemDict : public CAppSystemDict
-{
-public:
-	bool m_bNoExeCheck;
-	int m_nUnk;
-	CBufferString unk;
-	CBufferString unk1;
-	char m_unnk[192];
-	CBufferString unk2;
-	char m_unnk1[218];
-};
-
 class CTier2AppSystemDict : public CTier1AppSystemDict
 {
 public:
