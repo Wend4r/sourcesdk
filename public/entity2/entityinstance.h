@@ -19,10 +19,10 @@ struct ChangeAccessorFieldPathIndexInfo_t;
 struct datamap_t;
 
 
-struct NetworkStateChangedData
+struct NetworkStateChanged_t
 {
-	inline NetworkStateChangedData() : m_Unk00(1), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
-	inline explicit NetworkStateChangedData( bool bFullChanged ) : m_Unk00(static_cast<uint32>(!bFullChanged)), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
+	NetworkStateChanged_t() : m_Unk00(1), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
+	explicit NetworkStateChanged_t( bool bFullChanged ) : m_Unk00(static_cast<uint32>(!bFullChanged)), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
 
 	// nLocalOffset is the flattened field offset
 	//		calculated taking into account embedded structures
@@ -32,8 +32,8 @@ struct NetworkStateChangedData
 	// nPathIndex is the value to specify 
 	//		if the path to the field goes through one or more pointers, otherwise pass -1
 	// 		this value is usually a member of the CNetworkVarChainer and belongs to the last object in the chain
-	inline NetworkStateChangedData( uint32 nLocalOffset, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets{ nLocalOffset }, m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(0) { }
-	inline NetworkStateChangedData( const std::initializer_list< uint32 > nLocalOffsets, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets(nLocalOffsets), m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(1) { }
+	NetworkStateChanged_t( uint32 nLocalOffset, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets{ nLocalOffset }, m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(0) { }
+	NetworkStateChanged_t( CUtlVector<uint32> vecLocalOffsets, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets(Move(vecLocalOffsets)), m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(1) { }
 
 	uint32 m_Unk00; // Perhaps it is an enum, default 1, when 0 adds FL_FULL_EDICT_CHANGED
 	CUtlVector<uint32> m_LocalOffsets;
@@ -45,7 +45,7 @@ struct NetworkStateChangedData
 	ChangeAccessorFieldPathIndex_t m_nPathIndex; // default -1 (can also be -2)
 	int16 m_Unk60; // default 0, if m_LocalOffsets has multiple values, it is set to 1
 };
-COMPILE_TIME_ASSERT(sizeof(NetworkStateChangedData) == 64);
+COMPILE_TIME_ASSERT(sizeof(NetworkStateChanged_t) == 64);
 
 // Not entirely sure
 struct NetworkStateChanged3Data
@@ -95,7 +95,7 @@ public:
 	virtual CEntityIndex RequiredEdictIndex() = 0;
 
 	// marks a field for transmission over the network
-	virtual void NetworkStateChanged( const NetworkStateChangedData& data ) = 0; // Function replaces old version NetworkStateChanged( uint nOffset, int, ChangeAccessorFieldPathIndex_t PathIndex )
+	virtual void NetworkStateChanged( const NetworkStateChanged_t& data ) = 0; // Function replaces old version NetworkStateChanged( uint nOffset, int, ChangeAccessorFieldPathIndex_t PathIndex )
 	virtual void NetworkStateChangedBranch( const void* data ) = 0; // Game never call this function during testing
 	virtual void NetworkStateChanged_3( const NetworkStateChanged3Data& data ) = 0;
 	virtual void NetworkStateUnkSetBool( bool bUnk ) = 0; // Affects behavior of NetworkStateChanged
