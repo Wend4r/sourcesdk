@@ -10,6 +10,7 @@ set(PLATFORM_COMPILE_OPTIONS
 	${PLATFORM_COMPILE_OPTIONS}
 
 	/wd4005 /wd4819 /wd4828 /wd5033
+	/wd4245 /wd4018
 	/permissive- /utf-8 /MP
 	/arch:SSE4.2
 )

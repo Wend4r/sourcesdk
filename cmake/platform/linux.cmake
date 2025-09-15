@@ -11,6 +11,7 @@ set(PLATFORM_COMPILE_OPTIONS
 	-Wno-unused -Wno-register
 	-Wno-narrowing
 	-Wno-shadow
+	-Wno-sign-conversion
 
 	-mtune=generic -mmmx -msse -msse2 -msse3 -msse4 -msse4.1 -msse4.2
 	-fvisibility=default -fPIC
