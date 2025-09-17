@@ -156,19 +156,20 @@ abstract_class IVEngineServer2 : public ISource2Engine
 public:
 	virtual EUniverse	GetSteamUniverse() const = 0;
 
-	virtual void		unk001() = 0;
-	virtual void		unk002() = 0;
-	virtual void		unk003() = 0;
-	virtual void		unk004() = 0;
-	virtual void		unk005() = 0;
-	virtual void		unk006() = 0;
+	virtual void		unk_19() = 0;
+	virtual void		unk_20() = 0;
+	virtual void		unk_21() = 0;
+	virtual void		unk_22() = 0;
+	virtual void		unk_23() = 0;
+	virtual void		unk_24() = 0;
 
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
 	virtual void		ShowFrameTimeReport( void *, bool ) = 0;
 
 	virtual void		DumpNetStats( void *pNetStatData, const std::function< void ( const char * )> &func ) = 0; 
-	virtual void		unk101() = 0;
+	virtual void		unk_29() = 0;
+	virtual void		unk_30() = 0;
 
 	// Tell engine to change level ( "changelevel s1\n" or "changelevel2 s1 s2\n" )
 	virtual void		ChangeLevel( const char *s1, const char *s2 ) = 0;
@@ -310,31 +311,30 @@ public:
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;
 
-	virtual void unk201() = 0;
-	virtual void unk202() = 0;
-	virtual void unk203() = 0;
-	virtual void unk204() = 0;
-	virtual void unk205() = 0;
-	virtual void unk206() = 0;
-	virtual void unk207() = 0;
-	virtual void unk208() = 0;
-	virtual void unk209() = 0;
+	virtual void unk_98() = 0;
+	virtual void unk_99() = 0;
+	virtual void unk_100() = 0;
+	virtual void unk_101() = 0;
+	virtual void unk_102() = 0;
+	virtual void unk_103() = 0;
+	virtual void unk_104() = 0;
 
 	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
 	virtual void UpdateClientRate( CPlayerSlot nSlot ) = 0;
+	virtual void UpdateClientRate2( CPlayerSlot nSlot ) = 0;
 
-	virtual void unk300() = 0;
-	virtual void unk301() = 0;
-	virtual void unk302() = 0;
-	virtual void unk303() = 0;
-	virtual void unk304() = 0;
-	virtual void unk305() = 0;
-	virtual void unk306() = 0;
-	virtual void unk307() = 0;
-	virtual void unk308() = 0;
-	virtual void unk309() = 0;
-	virtual void unk310() = 0;
-	virtual void unk311() = 0;
+	virtual void unk_108() = 0;
+	virtual void unk_109() = 0;
+	virtual void unk_110() = 0;
+	virtual void unk_111() = 0;
+	virtual void unk_112() = 0;
+	virtual void unk_113() = 0;
+	virtual void unk_114() = 0;
+	virtual void unk_115() = 0;
+	virtual void unk_116() = 0;
+	virtual void unk_117() = 0;
+	virtual void unk_118() = 0;
+	virtual void unk_119() = 0;
 };
 
 abstract_class IServerGCLobby
