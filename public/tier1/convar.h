@@ -1051,16 +1051,18 @@ public:
 	}
 
 protected:
+	struct Handle
+	{
+		// Index into internal linked list of concommands
+		uint16 m_iAccessIndex;
+		// ConVar registered positional index
+		int m_iRegisteredIndex;
+	};
+
 	union
 	{
 		uint64 m_Handle;
-		struct Handle
-		{
-			// Index into internal linked list of concommands
-			uint16 m_iAccessIndex;
-			// ConVar registered positional index
-			int m_iRegisteredIndex;
-		} m_ConVar;
+		Handle m_ConVar;
 	};
 };
 
