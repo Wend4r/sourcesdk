@@ -571,7 +571,7 @@ void ConVarData::MaxValueToString( CBufferString &buf ) const
 }
 
 ConVarRef::ConVarRef( const char *name, bool allow_developer )
- :  m_ConVarAccessIndex( kInvalidAccessIndex ), m_ConVarRegisteredIndex( 0 )
+ :  m_ConVar{ kInvalidAccessIndex, 0 }
 {
 	if ( g_pCVar )
 		*this = g_pCVar->FindConVar( name, allow_developer );

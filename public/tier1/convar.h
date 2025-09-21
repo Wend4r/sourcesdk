@@ -1033,17 +1033,17 @@ private:
 	static const uint16 kInvalidAccessIndex = 0xFFFF;
 
 public:
-	ConVarRef() : m_ConVarAccessIndex( kInvalidAccessIndex ), m_ConVarRegisteredIndex( 0 ) {}
-	ConVarRef( uint16 convar_idx ) : m_ConVarAccessIndex( convar_idx ), m_ConVarRegisteredIndex( 0 ) {}
-	ConVarRef( uint16 convar_idx, int registered_idx ) : m_ConVarAccessIndex( convar_idx ), m_ConVarRegisteredIndex( registered_idx ) {}
+	ConVarRef() : m_ConVar{ kInvalidAccessIndex, 0 } {}
+	ConVarRef( uint16 convar_idx ) : m_ConVar{ convar_idx, 0 } {}
+	ConVarRef( uint16 convar_idx, int registered_idx ) : m_ConVar{ convar_idx, registered_idx } {}
 	ConVarRef( uint64 handle ) : m_Handle( handle ) {}
 
 	ConVarRef( const char *name, bool allow_defensive = false );
 
-	void InvalidateRef() { m_ConVarAccessIndex = kInvalidAccessIndex; m_ConVarRegisteredIndex = 0; }
-	bool IsValidRef() const { return m_ConVarAccessIndex != kInvalidAccessIndex; }
-	uint16 GetAccessIndex() const { return m_ConVarAccessIndex; }
-	int GetRegisteredIndex() const { return m_ConVarRegisteredIndex; }
+	void InvalidateRef() { m_ConVar.m_iAccessIndex = kInvalidAccessIndex; m_ConVar.m_iRegisteredIndex = 0; }
+	bool IsValidRef() const { return m_ConVar.m_iAccessIndex != kInvalidAccessIndex; }
+	uint16 GetAccessIndex() const { return m_ConVar.m_iAccessIndex; }
+	int GetRegisteredIndex() const { return m_ConVar.m_iRegisteredIndex; }
 
 	operator uint64() const
 	{
@@ -1054,13 +1054,13 @@ protected:
 	union
 	{
 		uint64 m_Handle;
-		struct
+		struct Handle
 		{
 			// Index into internal linked list of concommands
-			uint16 m_ConVarAccessIndex;
+			uint16 m_iAccessIndex;
 			// ConVar registered positional index
-			int m_ConVarRegisteredIndex;
-		};
+			int m_iRegisteredIndex;
+		} m_ConVar;
 	};
 };
 
@@ -1180,8 +1180,7 @@ protected:
 
 	void CopyRef( const ConVarRefAbstract &ref )
 	{
-		m_ConVarAccessIndex = ref.m_ConVarAccessIndex;
-		m_ConVarRegisteredIndex = ref.m_ConVarRegisteredIndex;
+		m_ConVar = ref.m_ConVar;
 		m_ConVarData = ref.m_ConVarData;
 	}
 
