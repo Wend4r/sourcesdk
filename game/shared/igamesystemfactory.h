@@ -61,6 +61,8 @@ protected:
 		*sm_pFirst = this;
 	}
 
+	virtual ~CBaseGameSystemFactory() = default;
+
 private:
 	CBaseGameSystemFactory* m_pNext;
 	const char* m_pName;
