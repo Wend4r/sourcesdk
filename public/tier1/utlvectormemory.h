@@ -383,7 +383,7 @@ public:
 
 	I NumAllocated() const
 	{
-		return AllocSize() / sizeof( T );
+		return static_cast<I>(AllocSize() / sizeof( T ));
 	}
 	I Count() const
 	{

@@ -1622,7 +1622,7 @@ inline void CKeyValues3ContextBase::NodeList<NODE>::EnsureByteSize( int bytes_ne
 template<typename NODE>
 inline NODE *CKeyValues3ContextBase::NodeList<NODE>::Alloc( int initial_size )
 {
-	int byte_size_needed = m_nUsedBytes + NODE::TotalSizeOf( initial_size ) + 8;
+	int byte_size_needed = m_nUsedBytes + static_cast<int>(NODE::TotalSizeOf( initial_size )) + 8;
 	EnsureByteSize( byte_size_needed );
 	
 	auto entry = Tail();
@@ -1735,7 +1735,7 @@ auto CKeyValues3Context::Alloc( ClusterNodeChain<CLUSTER> &partial_clusters,
 template<typename CLUSTER, typename NODE, typename ...Args, typename>
 inline NODE *CKeyValues3Context::RawAlloc( NodeList<NODE> &raw_array, ClusterNodeChain<CLUSTER> &partial_clusters, ClusterNodeChain<CLUSTER> &full_clusters, int initial_size, Args && ...args )
 {
-	int needed_byte_size = MAX( NODE::TotalSizeOf( initial_size ), 32 );
+	int needed_byte_size = MAX( static_cast<int>(NODE::TotalSizeOf( initial_size )), 32 );
 
 	if(raw_array.IsFull() || needed_byte_size > raw_array.FreeBytes())
 	{
@@ -1761,7 +1761,7 @@ void CKeyValues3Context::Free( NODE *element, ClusterNodeChain<CLUSTER> &partial
 
 	if(cluster->NumCount() > 0)
 	{
-		if(cluster->NumCount() == cluster->NumAllocated() - 1)
+		if(cluster->NumCount() == num_allocated - 1)
 		{
 			full_clusters.RemoveFromChain( cluster );
 			partial_clusters.AddToChain( cluster );

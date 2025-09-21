@@ -228,7 +228,7 @@ public:
 
 			auto sPBDebug = pMsgPB->PBType_t::DebugString();
 
-			sBuffer.Append(sPBDebug.c_str(), sPBDebug.length());
+			sBuffer.Append(sPBDebug.c_str(), static_cast<int>(sPBDebug.length()));
 			sBuffer += "}\n";
 
 			sResult = sBuffer;

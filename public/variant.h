@@ -210,7 +210,7 @@ public:
 
 		if(src && bForceCopy)
 		{
-			int len = strlen(src) + 1;
+			int len = static_cast<int>(strlen(src)) + 1;
 			m_pszString = (char *)Allocator::Allocate(len);
 			memcpy((void *)m_pszString, src, len);
 
