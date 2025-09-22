@@ -44,7 +44,7 @@ class CCLCMsg_FileCRCCheck_t :               public CNetMessagePB< clc_FileCRCCh
 class CCLCMsg_LoadingProgress_t :            public CNetMessagePB< clc_LoadingProgress, CCLCMsg_LoadingProgress, SG_SIGNON > {};
 class CCLCMsg_SplitPlayerConnect_t :         public CNetMessagePB< clc_SplitPlayerConnect, CCLCMsg_SplitPlayerConnect, SG_SIGNON > {};
 class CCLCMsg_SplitPlayerDisconnect_t :      public CNetMessagePB< clc_SplitPlayerDisconnect, CCLCMsg_SplitPlayerDisconnect, SG_SIGNON > {};
-class CCLCMsg_ServerStatus_t :               public CNetMessagePB< clc_ServerStatus, CCLCMsg_SplitPlayerDisconnect > {};
+class CCLCMsg_ServerStatus_t :               public CNetMessagePB< clc_ServerStatus, CCLCMsg_ServerStatus > {};
 class CCLCMsg_RequestPause_t :               public CNetMessagePB< clc_RequestPause, CCLCMsg_RequestPause > {};
 class CCLCMsg_CmdKeyValues_t :               public CNetMessagePB< clc_CmdKeyValues, CCLCMsg_CmdKeyValues, SG_STRINGCMD > {};
 class CCLCMsg_RconServerDetails_t :          public CNetMessagePB< clc_RconServerDetails, CCLCMsg_RconServerDetails > {};
