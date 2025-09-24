@@ -29,12 +29,12 @@ class CVariantDefaultAllocator
 public:
 	static void Free(void *pMemory)
 	{
-		free(pMemory);
+		operator delete [](pMemory);
 	}
 
 	static void *Allocate(int nSize)
 	{
-		return malloc(nSize);
+		return new char[nSize];
 	}
 };
 
@@ -195,7 +195,7 @@ public:
 	CVariantBase( const Color &val, bool bCopy = true ) :		m_type( FIELD_COLOR32 ), m_flags( 0 )		{ CopyData(val, bCopy); }
 	CVariantBase( const Color *val, bool bCopy = true ) :		m_type( FIELD_COLOR32 ), m_flags( 0 )		{ CopyData(*val, bCopy); }
 	CVariantBase( const char *val, bool bCopy = true ) :		m_type( FIELD_CSTRING ), m_flags( 0 )		{ CopyData(val, bCopy); }
-	CVariantBase( const CVariantBase<A> &src )																{ *this = src; }
+	CVariantBase( const CVariantBase<A> &val ) :				m_type( FIELD_VOID ), m_flags( 0 )			{ *this = val; }
 
 	// Checks if the stored value is of type FIELD_VOID
 	fieldtype_t FieldType() const				{ return m_type; }
