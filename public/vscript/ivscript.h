@@ -541,18 +541,21 @@ public:
 	bool SetValue( const char *pszKey, const ScriptVariant_t &value )																{ return SetValue(NULL, pszKey, value ); }
 
 	virtual bool SetEnumValue(HSCRIPT hScope, const char *pszEnumName, const char *pszValueName, int value, const char *pszDescription) = 0;
-	//virtual bool CreateKeyValuesFromTable(HSCRIPT hScope, const char* unk1, void* fUnk, void* unk2) = 0;
 
 	virtual void CreateTable( ScriptVariant_t &Table ) = 0;
 	virtual bool IsTable( HSCRIPT hScope ) = 0;
 	virtual int	GetNumTableEntries( HSCRIPT hScope ) = 0;
 	virtual int GetNumElements( HSCRIPT hScope ) = 0;
 	virtual int GetKeyValue( HSCRIPT hScope, int nIterator, ScriptVariant_t *pKey, ScriptVariant_t *pValue ) = 0;
+	virtual bool CreateKeyValuesFromTable(HSCRIPT hScope, const char* unk1, void* fUnk, void* unk2) = 0;
 
 	virtual bool GetValue( HSCRIPT hScope, const char *pszKey, ScriptVariant_t *pValue ) = 0;
 	virtual bool GetValue( HSCRIPT hScope, int nIndex, ScriptVariant_t *pValue ) = 0;
+
 	bool GetValue( const char *pszKey, ScriptVariant_t *pValue )																	{ return GetValue(NULL, pszKey, pValue ); }
+
 	virtual bool GetScalarValue( HSCRIPT hScope, ScriptVariant_t *pValue ) = 0;
+	virtual ScriptVariant_t& CopyValue( ScriptVariant_t &value ) = 0;
 	virtual void ReleaseValue( ScriptVariant_t &value ) = 0;
 
 	virtual bool ClearValue( HSCRIPT hScope, const char *pszKey ) = 0;
@@ -583,14 +586,11 @@ public:
 
 	virtual HSCRIPT CopyHandle( HSCRIPT hScope ) = 0;
 
-	virtual int GetIdentity( HSCRIPT hScope ) = 0;
+	virtual HSCRIPT LoadAndCompileScriptFile( char const* file, char const* unk ) = 0;
 
-	class ISquirrelMetamethodDelegate;
+	virtual int GetId( HSCRIPT hScope ) = 0;
 
-	virtual void *MakeSquirrelMetamethod_Get( HSCRIPT&, const char*, ISquirrelMetamethodDelegate *, bool ) = 0;
-	virtual void DestroySquirrelMetamethod_Get( CSquirrelMetamethodDelegateImpl * ) = 0;
-
-	virtual int GetKeyValue2( HSCRIPT hScope, int iterator, ScriptVariant_t *pKey, ScriptVariant_t *pValue ) = 0;
+	virtual bool AreHandlesEqual( HSCRIPT handle1, HSCRIPT handle2 ) = 0;
 
 	//----------------------------------------------------------------------------
 	// Call API
