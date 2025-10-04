@@ -29,12 +29,12 @@ class CVariantDefaultAllocator
 public:
 	static void Free(void *pMemory)
 	{
-		operator delete [](pMemory);
+		MemAlloc_Free(pMemory);
 	}
 
 	static void *Allocate(int nSize)
 	{
-		return new char[nSize];
+		return MemAlloc_Alloc(nSize);
 	}
 };
 
