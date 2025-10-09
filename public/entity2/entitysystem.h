@@ -59,6 +59,8 @@ public:
 	float GetTime() const { return m_Value; }
 	void SetTime( float value ) { m_Value = value; }
 
+	operator float() const { return m_Value; }
+
 private:
 	float m_Value;
 };
