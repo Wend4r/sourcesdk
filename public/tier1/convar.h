@@ -1280,7 +1280,7 @@ public:
 	{
 		Assert( name );
 
-		BaseClass::Init( ConVarRef( name ), TranslateConVarType<T>() );
+		BaseClass::Init( ConVarRef(), TranslateConVarType<T>() );
 
 		ConVarValueInfo_t value_info( TranslateConVarType<T>() );
 		value_info.SetDefaultValue( default_value );
