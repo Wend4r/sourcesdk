@@ -35,6 +35,7 @@
 static FnConVarRegisterCallback s_ConVarRegCB = nullptr;
 static FnConCommandRegisterCallback s_ConCommandRegCB = nullptr;
 static uint64 s_nCVarFlag = 0;
+static bool s_bRegistered = false;
 
 class ConCommandRegList
 {
@@ -61,7 +62,8 @@ public:
 	static void UnregisterConCommand( const Entry_t &cmd )
 	{
 		auto *pConCmd = cmd.m_Command;
-		Assert(pConCmd);
+
+		Assert( pConCmd );
 
 		if ( !pConCmd->IsValidRef() )
 		{
@@ -71,13 +73,20 @@ public:
 			return;
 		}
 
-		Assert(g_pCVar);
+		Assert( g_pCVar );
 		g_pCVar->UnregisterConCommandCallbacks( *pConCmd );
 		pConCmd->InvalidateRef();
 	}
 
 	static void RegisterAll()
 	{
+		if ( s_bConCommandsRegistered )
+		{
+			return;
+		}
+
+		s_bConCommandsRegistered = true;
+
 		for ( auto list = s_pRoot; list; list = list->m_pPrev )
 		{
 			for ( size_t i = 0; i < list->m_nSize; i++ )
@@ -100,6 +109,13 @@ public:
 
 	static void AddToList( const Entry_t &cmd )
 	{
+		if ( s_bConCommandsRegistered )
+		{
+			RegisterConCommand( cmd );
+
+			return;
+		}
+
 		auto list = s_pRoot;
 
 		if ( !list || list->m_nSize >= ARRAYSIZE( m_Entries ) )
@@ -121,9 +137,11 @@ private:
 	ConCommandRegList *m_pPrev;
 
 public:
+	static bool s_bConCommandsRegistered;
 	static ConCommandRegList *s_pRoot;
 };
 
+bool ConCommandRegList::s_bConCommandsRegistered = false;
 ConCommandRegList *ConCommandRegList::s_pRoot = nullptr;
 
 void SetupConCommand( ConCommand *cmd, const ConCommandCreation_t& info )
@@ -192,6 +210,13 @@ public:
 
 	static bool RegisterAll()
 	{
+		if ( s_bConVarsRegistered )
+		{
+			return false;
+		}
+
+		s_bConVarsRegistered = true;
+
 		for ( auto list = s_pRoot; list; list = list->m_pPrev )
 		{
 			for(size_t i = 0; i < list->m_nSize; i++)
@@ -218,6 +243,13 @@ public:
 
 	static void AddToList( const Entry_t &cvar )
 	{
+		if ( s_bConVarsRegistered )
+		{
+			RegisterConVar( cvar );
+
+			return;
+		}
+
 		auto list = s_pRoot;
 
 		if ( !list || list->m_nSize >= ARRAYSIZE( m_Entries ) )
@@ -238,9 +270,11 @@ private:
 	ConVarRegList *m_pPrev;
 
 public:
+	static bool s_bConVarsRegistered;
 	static ConVarRegList *s_pRoot;
 };
 
+bool ConVarRegList::s_bConVarsRegistered = false;
 ConVarRegList *ConVarRegList::s_pRoot = nullptr;
 
 void SetupConVar( ConVarRefAbstract *cvar, ConVarData **cvar_data, ConVarCreation_t &info )
@@ -286,28 +320,38 @@ uint64 SanitiseConVarFlags( uint64 flags )
 //-----------------------------------------------------------------------------
 // Called by the framework to register ConCommandBases with the ICVar
 //-----------------------------------------------------------------------------
-void ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb )
+bool ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb )
 {
-	if ( !g_pCVar )
+	if ( !g_pCVar || s_bRegistered )
 	{
-		return;
+		return false;
 	}
 
+	s_bRegistered = true;
 	s_nCVarFlag = nCVarFlag;
 	s_ConVarRegCB = cvar_reg_cb;
 	s_ConCommandRegCB = cmd_reg_cb;
 
 	ConCommandRegList::RegisterAll();
 	ConVarRegList::RegisterAll();
+
+	return true;
 }
 
-void ConVar_Unregister( )
+uint64 ConVar_GetDefaultFlags()
+{
+	return s_nCVarFlag;
+}
+
+bool ConVar_Unregister( )
 {
 	if ( !g_pCVar )
-		return;
+		return false;
 
 	ConCommandRegList::UnregisterAll();
 	ConVarRegList::UnregisterAll();
+
+	return true;
 }
 
 

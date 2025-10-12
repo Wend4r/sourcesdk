@@ -1453,8 +1453,9 @@ inline void ConVarRefAbstract::ConvertToPrimitiveFrom( CSplitScreenSlot slot, co
 typedef void (*FnConVarRegisterCallback)(ConVarRefAbstract *ref);
 typedef void (*FnConCommandRegisterCallback)(ConCommandRef *ref);
 
-void ConVar_Register( uint64 nCVarFlag = 0, FnConVarRegisterCallback cvar_reg_cb = nullptr, FnConCommandRegisterCallback cmd_reg_cb = nullptr );
-void ConVar_Unregister( );
+bool ConVar_Register( uint64 nCVarFlag = 0, FnConVarRegisterCallback cvar_reg_cb = nullptr, FnConCommandRegisterCallback cmd_reg_cb = nullptr );
+uint64 ConVar_GetDefaultFlags();
+bool ConVar_Unregister( );
 
 
 //-----------------------------------------------------------------------------
