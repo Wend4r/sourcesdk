@@ -252,6 +252,9 @@ struct LoggingRareOptions_t
 	const char *m_File;
 	int m_Line;
 	const char *m_Function;
+	void *m_Unknown = nullptr;
+	void *m_Unknown2 = nullptr;
+	void* m_va_list_override = nullptr;
 };
 
 struct LoggingMetaData_t
