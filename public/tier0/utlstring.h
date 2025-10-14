@@ -46,12 +46,14 @@ public:
 	CUtlString(const char *pString);
 	CUtlString(const char *pString, int length);
 	CUtlString(const CUtlString &string);
+	CUtlString(CUtlString &&string) noexcept;
 	DLL_CLASS_IMPORT CUtlString(const CBufferString &string);
 
 	~CUtlString();
 
 	DLL_CLASS_IMPORT CUtlString &operator=(const CBufferString &src);
 	CUtlString &operator=(const CUtlString &src);
+	CUtlString &operator=(CUtlString &&src) noexcept;
 	CUtlString &operator=(const char *src);
 
 	// Test for equality, both are case sensitive
@@ -264,9 +266,23 @@ inline CUtlString::CUtlString( const CUtlString &string )
 	Set( string.Get() );
 }
 
+inline CUtlString::CUtlString(CUtlString &&string) noexcept
+	: m_pString( string.m_pString )
+{
+	string.m_pString = NULL;
+}
+
 inline CUtlString &CUtlString::operator=( const CUtlString &src )
 {
 	SetDirect( src.Get(), src.Length() );
+	return *this;
+}
+
+inline CUtlString &CUtlString::operator=( CUtlString &&src ) noexcept
+{
+	Clear();
+	m_pString = src.m_pString;
+	src.m_pString = NULL;
 	return *this;
 }
 
