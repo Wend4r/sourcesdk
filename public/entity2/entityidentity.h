@@ -107,7 +107,7 @@ enum EntityFlags_t : uint32
 	EF_SUSPEND_OUTSIDE_PVS = 0x8000,
 };
 
-// Size: 0x78
+// Size: 0x70
 class CEntityIdentity
 {
 public:
@@ -156,12 +156,11 @@ public:
 	ChangeAccessorFieldPathIndex_t m_PathIndex; // 0x40
 private:
 	void* m_pAttributes; // 0x48 - CUtlObjectAttributeTable<CEntityIdentity, CUtlStringToken>
-	void* m_pRenderAttrs; // 0x50 - CRenderAttributesDoubleBuffered
 public:
-	CEntityIdentity* m_pPrev; // 0x58	
-	CEntityIdentity* m_pNext; // 0x60	
-	CEntityIdentity* m_pPrevByClass; // 0x68	
-	CEntityIdentity* m_pNextByClass; // 0x70	
+	CEntityIdentity* m_pPrev; // 0x50
+	CEntityIdentity* m_pNext; // 0x58
+	CEntityIdentity* m_pPrevByClass; // 0x60
+	CEntityIdentity* m_pNextByClass; // 0x68
 };
 
 #endif // ENTITYIDENTITY_H
