@@ -101,8 +101,7 @@ public:
 	const netadr_t          *GetRemoteAddress() const { return m_nAddr.Get<netadr_t>(); }
 	CNetworkGameServerBase  *GetServer() const { return m_Server; }
 
-	// bool bFakePlayer = !nConnectionTypeFlags || (nConnectionTypeFlags & 8) != 0;
-	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, uint8 nConnectionTypeFlags, uint32 uChallengeNumber ) = 0;
+	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, uint8 nConnectionTypeFlags, uint32 uChallengeNumber ) = 0; // bool bFakePlayer = !nConnectionTypeFlags || (nConnectionTypeFlags & 8) != 0;
 	virtual void             Inactivate( const char *pszAddons ) = 0;
 	virtual void             Reactivate( CPlayerSlot nSlot ) = 0;
 	virtual void             SetServer( CNetworkGameServer *pNetServer ) = 0;
@@ -118,7 +117,9 @@ public:
 
 	virtual bool             ExecuteStringCommand( const CNETMsg_StringCmd_t& msg ) = 0; // "false" trigger an anti spam counter to kick a client.
 	virtual bool             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) = 0;
-	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0; // "Client %d(%s) tried to send a RebroadcastSourceId msg.\n"
+
+	// "Client %d(%s) tried to send a RebroadcastSourceId msg.\n"
+	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0; // On Windows, this function is in a separate virtual table
 
 public:
 	virtual void             ClientPrintf( PRINTF_FORMAT_STRING const char*, ...) = 0;
@@ -258,7 +259,9 @@ public:
 	CEntityIndex m_nEntityIndex;
 	CNetworkGameServerBase* m_Server;
 	INetChannel* m_NetChannel;
-	uint16 m_nConnectionTypeFlags;
+	// CServerSideClientBase::Connect( name='%s', userid=%d, fake=%d, connectiontypeflags=%d, chan->addr=%s )
+	uint8 m_nConnectionTypeFlags;
+	uint8 m_nAsyncDisconnectFlags; // check in Disconnect function, 1 add to queue, 2 disconnect now
 	bool m_bMarkedToKick;
 	SignonState_t m_nSignonState;
 	bool m_bSplitScreenUser;
@@ -272,7 +275,7 @@ public:
 	bool m_bSendingSnapshot;
 
 private:
-	[[maybe_unused]] char pad6[0x5];
+	[[maybe_unused]] char pad162[0x6];
 
 public:
 	CPlayerUserId m_UserID = -1;
@@ -287,14 +290,14 @@ public:
 	bool m_bUnk0;
 
 private:
-	[[maybe_unused]] char pad273[0x28];
+	[[maybe_unused]] char pad281[0x28];
 
 public:
 	bool m_bConVarsChanged;
 	bool m_bIsHLTV;
 
 private:
-	[[maybe_unused]] char pad29[0xB];
+	[[maybe_unused]] char pad323[0xD];
 
 public:
 	uint32 m_nSendtableCRC;
@@ -341,20 +344,26 @@ public:
 	float m_fSnapshotInterval = 0.0f;
 
 private:
-	// CSVCMsg_PacketEntities_t m_packetmsg; 
-	[[maybe_unused]] char pad2544[0x138];
+	[[maybe_unused]] char pad2572[0x8];
+	[[maybe_unused]] char m_packetmsg[0x15C]; // CSVCMsg_PacketEntities_t
+#ifdef __linux__
+	[[maybe_unused]] char pad2928[0x8];
+#endif
 
 public:
 	CNetworkStatTrace m_Trace;
+
+private:
+	[[maybe_unused]] char pad2976[0x8];
+
+public:
+	// SV: Player %s kicked for too many failed console commands
 	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with reason 39
 	int m_unknown = 0;
 	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
 
 private:
-	[[maybe_unused]] char pad2912[0x38];
-#ifdef __linux__
 	[[maybe_unused]] char pad3000[0x8];
-#endif
 public:
 	CCommand* m_pCommand;
 };
@@ -362,6 +371,7 @@ public:
 COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 3016);
 #endif
 
+// not verified
 class CServerSideClient : public CServerSideClientBase
 {
 public:
@@ -394,6 +404,7 @@ public:
 	HltvReplayStats_t m_HltvReplayStats;
 };
 
+// not verified
 // not full class reversed
 class CHLTVClient : public CServerSideClientBase
 {
@@ -420,8 +431,5 @@ public:
 private:
 	[[maybe_unused]] char pad3976[52];
 };
-#ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CHLTVClient) == 3128);
-#endif
 
 #endif // SERVERSIDECLIENT_H
