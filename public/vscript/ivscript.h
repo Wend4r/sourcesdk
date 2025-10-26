@@ -145,6 +145,8 @@ public:
 	virtual void		HandleErrorMsg( const char *, void * ) = 0;
 };
 
+#define VSCRIPT_INTERFACE_VERSION		"VScriptManager010"
+
 class IScriptManager : public IAppSystem
 {
 public:
@@ -207,6 +209,21 @@ DECLARE_NAMED_FIELDTYPE( bool,	"boolean" );
 DECLARE_NAMED_FIELDTYPE( char,	"character" );
 DECLARE_NAMED_FIELDTYPE( HSCRIPT,	"hscript" );
 DECLARE_NAMED_FIELDTYPE( ScriptVariant_t,	"variant" );
+
+inline const char* GetScriptTypeName(ScriptDataType_t type) {
+	switch(type) {
+	case FIELD_VOID:        return "void";
+	case FIELD_FLOAT32:     return "float";
+	case FIELD_CSTRING:     return "cstring";
+	case FIELD_VECTOR:      return "vector";
+	case FIELD_INT32:       return "integer";
+	case FIELD_BOOLEAN:     return "boolean";
+	case FIELD_CHARACTER:   return "character";
+	case FIELD_HSCRIPT:     return "hscript";
+	case FIELD_VARIANT:     return "variant";
+	default:                return "unknown";
+	}
+}
 
 //---------------------------------------------------------
 
