@@ -54,4 +54,12 @@ public:
 	KeyValues *m_pKeyValues;	// actual KeyValue entity
 };
 
+class CScriptPrecacheContext
+{
+public:
+	CEntityPrecacheContext m_scratch;
+	const CEntityPrecacheContext *m_pContext;
+	HSCRIPT m_hPrecacheContext;
+};
+
 #endif // VSCRIPT_SERVER_H
