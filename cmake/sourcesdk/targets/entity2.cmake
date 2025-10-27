@@ -43,6 +43,7 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 
 set(SOURCESDK_ENTITY2_SOURCE_FILES
 	${SOURCESDK_ENTITY2_DIR}/entityidentity.cpp
+	${SOURCESDK_ENTITY2_DIR}/entityinstance.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitysystem.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitykeyvalues.cpp
 )

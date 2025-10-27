@@ -719,6 +719,7 @@ public:
 
 };
 
+extern IScriptVM *g_pScriptVM;
 
 //-----------------------------------------------------------------------------
 // Script scope helper class
@@ -729,7 +730,6 @@ class CDefScriptScopeBase
 public:
 	static IScriptVM *GetVM()
 	{
-		extern IScriptVM *g_pScriptVM;
 		return g_pScriptVM;
 	}
 };

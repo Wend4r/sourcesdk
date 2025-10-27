@@ -17,7 +17,9 @@ class IRestore;
 struct CEntityPrecacheContext;
 struct ChangeAccessorFieldPathIndexInfo_t;
 struct datamap_t;
+class IScriptVM;
 
+extern IScriptVM* ScriptVM();
 
 struct NetworkStateChanged_t
 {
@@ -58,7 +60,7 @@ struct NetworkStateChanged3Data
 class CEntityInstance
 {
 public:
-	virtual void* GetScriptDesc() = 0;
+	virtual ScriptClassDesc_t* GetScriptDesc() = 0;
 	
 	virtual ~CEntityInstance() = 0;
 	
@@ -126,6 +128,11 @@ public:
 		return m_pEntity->GetRefEHandle();
 	}
 	
+	inline const char *GetName() const
+	{
+		return m_pEntity->GetName();
+	}
+
 	inline const char *GetClassname() const
 	{
 		return m_pEntity->GetClassname();
@@ -135,6 +142,8 @@ public:
 	{
 		return m_pEntity->GetEntityIndex();
 	}
+
+	HSCRIPT GetScriptInstance();
 
 	// Refers to an instance's field.
 	template< typename T >
@@ -150,7 +159,7 @@ private:
 	void* m_hPrivateScope; // 0x18 - CEntityPrivateScriptScope
 public:
 	CEntityKeyValues* m_pKeyValues; // 0x20
-	char m_pad40[0x8]; // 0x28
+	HSCRIPT m_hScriptInstance; // 0x28
 	CScriptComponent* m_CScriptComponent; // 0x30
 };
 

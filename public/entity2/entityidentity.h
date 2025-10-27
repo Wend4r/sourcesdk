@@ -119,6 +119,11 @@ public:
 		return handle;
 	}
 	
+	inline const char *GetName() const
+	{
+		return m_name.String();
+	}
+
 	inline const char *GetClassname() const
 	{
 		return m_designerName.String();
