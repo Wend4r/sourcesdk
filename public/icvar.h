@@ -278,10 +278,8 @@ public:
 
 	CUtlVector<QueuedConVarSet_t> m_SetValueQueue;
 
-#ifdef DOTA2
 	CUtlVector<ConVarRef> m_SetToDefaultValueQueue;
 	bool m_LockDefaultValueInit;
-#endif
 
 	int m_UserInfoCvarsTotalByteSize;
 
