@@ -297,7 +297,7 @@ public:
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr2;
 	CServerSideClientBase* m_pHostClient;
 	HGameResourceManifest m_pGameSessionManifest;
-	char pad976[8];
+	SpawnGroupHandle_t m_nextSpawnGroupHandle;
 	uint64* m_nReservationCookie;
 	float* m_flTimeLastClientLeft;
 	void* unk968;
