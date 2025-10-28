@@ -82,8 +82,8 @@ public:
 	vec_t x, y, z;
 
 	// Construction/destruction:
-	Vector(void); 
-	Vector(vec_t X, vec_t Y, vec_t Z);
+	Vector() = default;
+	Vector(vec_t X, vec_t Y, vec_t Z) : x(X), y(Y), z(Z) {}
 
 	// Initialization
 	void Init(vec_t ix=0.0f, vec_t iy=0.0f, vec_t iz=0.0f);
@@ -201,7 +201,7 @@ public:
 	vec_t	Dot(const Vector& vOther) const;			
 
 	// assignment
-	Vector& operator=(const Vector &vOther);
+	Vector& operator=(const Vector &vOther) = default;
 
 	// returns 0, 1, 2 corresponding to the component with the largest absolute value
 	inline int LargestComponent() const;
@@ -244,7 +244,7 @@ public:
 
 private:
 	// No copy constructors allowed if we're in optimal mode
-	Vector(const Vector& vOther);
+	Vector(const Vector& vOther) = default;
 #endif
 };
 
@@ -635,45 +635,6 @@ Vector RandomVectorOnUnitSphere( IUniformRandomStream *pRnd );
 //
 //-----------------------------------------------------------------------------
 
-
-//-----------------------------------------------------------------------------
-// constructors
-//-----------------------------------------------------------------------------
-inline Vector::Vector(void)									
-{ 
-#ifdef _DEBUG
-#ifdef VECTOR_PARANOIA
-	// Initialize to NAN to catch errors
-	x = y = z = VEC_T_NAN;
-#endif
-#endif
-}
-
-inline Vector::Vector(vec_t X, vec_t Y, vec_t Z)						
-{ 
-	x = X; y = Y; z = Z;
-	CHECK_VALID(*this);
-}
-
-//inline Vector::Vector(const float *pFloat)					
-//{
-//	Assert( pFloat );
-//	x = pFloat[0]; y = pFloat[1]; z = pFloat[2];	
-//	CHECK_VALID(*this);
-//} 
-
-#if 0
-//-----------------------------------------------------------------------------
-// copy constructor
-//-----------------------------------------------------------------------------
-
-inline Vector::Vector(const Vector &vOther)					
-{ 
-	CHECK_VALID(vOther);
-	x = vOther.x; y = vOther.y; z = vOther.z;
-}
-#endif
-
 //-----------------------------------------------------------------------------
 // initialization
 //-----------------------------------------------------------------------------
@@ -704,18 +665,6 @@ inline void VectorClear( Vector& a )
 {
 	a.x = a.y = a.z = 0.0f;
 }
-
-//-----------------------------------------------------------------------------
-// assignment
-//-----------------------------------------------------------------------------
-
-inline Vector& Vector::operator=(const Vector &vOther)	
-{
-	CHECK_VALID(vOther);
-	x=vOther.x; y=vOther.y; z=vOther.z; 
-	return *this; 
-}
-
 
 //-----------------------------------------------------------------------------
 // Array access
@@ -1805,15 +1754,7 @@ class QAngle;
 class ALIGN16 Quaternion				// same data-layout as engine's vec4_t,
 {								//		which is a vec_t[4]
 public:
-	inline Quaternion(void)	{ 
-	
-	// Initialize to NAN to catch errors
-#ifdef _DEBUG
-#ifdef VECTOR_PARANOIA
-		x = y = z = w = VEC_T_NAN;
-#endif
-#endif
-	}
+	inline Quaternion()	= default;
 	inline Quaternion(vec_t ix, vec_t iy, vec_t iz, vec_t iw) : x(ix), y(iy), z(iz), w(iw) { }
 	inline explicit Quaternion( RadianEuler const &angle );
 	inline explicit Quaternion( DegreeEuler const &angle );
@@ -2330,8 +2271,8 @@ public:
 	vec_t x, y, z;
 
 	// Construction/destruction
-	QAngle(void);
-	QAngle(vec_t X, vec_t Y, vec_t Z);
+	QAngle() = default;
+	QAngle(vec_t X, vec_t Y, vec_t Z) : x(X), y(Y), z(Z) {}
 #ifndef _PS3
 //	QAngle(RadianEuler const &angles);	// evil auto type promotion!!!
 #endif
@@ -2374,7 +2315,7 @@ public:
 	//void	Negate(); 
 
 	// No assignment operators either...
-	QAngle& operator=( const QAngle& src );
+	QAngle& operator=( const QAngle& src ) = default;
 
 	void Normalize();
 	void NormalizePositive();
@@ -2387,7 +2328,7 @@ public:
     QAngle(const QAngle& vOther) = default;
 
 	// arithmetic operations
-	QAngle	operator-(void) const;
+	QAngle	operator-() const;
 	
 	QAngle	operator+(const QAngle& v) const;
 	QAngle	operator-(const QAngle& v) const;
@@ -2397,7 +2338,7 @@ public:
 
 private:
 	// No copy constructors allowed if we're in optimal mode
-	QAngle(const QAngle& vOther);
+	QAngle(const QAngle& vOther) = default;
 
 #endif
 };
@@ -2412,10 +2353,10 @@ class QAngleByValue : public QAngle
 {
 public:
 	// Construction/destruction:
-	QAngleByValue(void) : QAngle() {} 
+	QAngleByValue() : QAngle() {}
 	QAngleByValue(vec_t X, vec_t Y, vec_t Z) : QAngle( X, Y, Z ) {}
 #ifdef VECTOR_NO_SLOW_OPERATIONS
-	QAngleByValue(const QAngleByValue& vOther) { *this = vOther; }
+	QAngleByValue(const QAngleByValue& vOther) = default;
 #endif
 };
 
@@ -2437,27 +2378,6 @@ inline void VectorMA( const QAngle &start, float scale, const QAngle &direction,
 	dest.y = start.y + scale * direction.y;
 	dest.z = start.z + scale * direction.z;
 }
-
-
-//-----------------------------------------------------------------------------
-// constructors
-//-----------------------------------------------------------------------------
-inline QAngle::QAngle(void)									
-{ 
-#ifdef _DEBUG
-#ifdef VECTOR_PARANOIA
-	// Initialize to NAN to catch errors
-	x = y = z = VEC_T_NAN;
-#endif
-#endif
-}
-
-inline QAngle::QAngle(vec_t X, vec_t Y, vec_t Z)						
-{ 
-	x = X; y = Y; z = Z;
-	CHECK_VALID(*this);
-}
-
 
 //-----------------------------------------------------------------------------
 // initialization
@@ -2533,18 +2453,6 @@ inline QAngle DegreeEuler::ToQAngle() const
 {
 	return QAngle( y, z, x );
 }
-
-
-//-----------------------------------------------------------------------------
-// assignment
-//-----------------------------------------------------------------------------
-inline QAngle& QAngle::operator=(const QAngle &vOther)	
-{
-	CHECK_VALID(vOther);
-	x=vOther.x; y=vOther.y; z=vOther.z; 
-	return *this; 
-}
-
 
 //-----------------------------------------------------------------------------
 // Array access

@@ -43,16 +43,15 @@ extern void SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosin
 // 2D Vector2D
 //=========================================================
 
-class Vector2D					
+class Vector2D
 {
 public:
 	// Members
 	vec_t x, y;
 
 	// Construction/destruction
-	Vector2D();
-	Vector2D(vec_t X, vec_t Y);
-	explicit Vector2D(const float *pFloat);
+	Vector2D() = default;
+	Vector2D(vec_t X, vec_t Y) : x(X), y(Y) {}
 
 	// Initialization
 	void Init(vec_t ix=0.0f, vec_t iy=0.0f);
@@ -124,11 +123,11 @@ public:
 	vec_t	Dot(const Vector2D& vOther) const;			
 
 	// assignment
-	Vector2D& operator=(const Vector2D &vOther);
+	Vector2D& operator=(const Vector2D &vOther) = default;
 
 #ifndef VECTOR_NO_SLOW_OPERATIONS
 	// copy constructors
-	Vector2D(const Vector2D &vOther);
+	Vector2D(const Vector2D &vOther) = default;
 
 	// arithmetic operations
 	Vector2D	operator-(void) const;
@@ -204,43 +203,6 @@ void Vector2DLerp(const Vector2D& src1, const Vector2D& src2, vec_t t, Vector2D&
 //
 //-----------------------------------------------------------------------------
 
-
-//-----------------------------------------------------------------------------
-// constructors
-//-----------------------------------------------------------------------------
-
-inline Vector2D::Vector2D()									
-{ 
-#ifdef _DEBUG
-	// Initialize to NAN to catch errors
-	x = y = VEC_T_NAN;
-#endif
-}
-
-inline Vector2D::Vector2D(vec_t X, vec_t Y)						
-{ 
-	x = X; y = Y;
-	Assert( IsValid() );
-}
-
-inline Vector2D::Vector2D(const float *pFloat)					
-{
-	Assert( pFloat );
-	x = pFloat[0]; y = pFloat[1];	
-	Assert( IsValid() );
-}
-
-
-//-----------------------------------------------------------------------------
-// copy constructor
-//-----------------------------------------------------------------------------
-
-inline Vector2D::Vector2D(const Vector2D &vOther)					
-{ 
-	Assert( vOther.IsValid() );
-	x = vOther.x; y = vOther.y;
-}
-
 //-----------------------------------------------------------------------------
 // initialization
 //-----------------------------------------------------------------------------
@@ -262,17 +224,6 @@ inline void Vector2D::Random( float minVal, float maxVal )
 inline void Vector2DClear( Vector2D& a )
 {
 	a.x = a.y = 0.0f;
-}
-
-//-----------------------------------------------------------------------------
-// assignment
-//-----------------------------------------------------------------------------
-
-inline Vector2D& Vector2D::operator=(const Vector2D &vOther)	
-{
-	Assert( vOther.IsValid() );
-	x=vOther.x; y=vOther.y;
-	return *this; 
 }
 
 //-----------------------------------------------------------------------------

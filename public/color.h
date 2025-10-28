@@ -21,121 +21,87 @@
 class Color
 {
 public:
-	// constructors
-	Color(const Color& copyFrom) = default;
-	Color(Color&& moveFrom) = default;
+    union
+    {
+        struct { unsigned char m_r, m_g, m_b, m_a; };
+        int m_rawColor;
+    };
 
-	Color(int color = 0)
-	{
-		*((int *)this) = color;
-	}
-	Color(int _r,int _g,int _b)
-	{
-		SetColor(_r, _g, _b, 0);
-	}
-	Color(int _r,int _g,int _b,int _a)
-	{
-		SetColor(_r, _g, _b, _a);
-	}
-	explicit Color(const colorVec4& vector)
-	{
-		SetColor(static_cast<int>(vector.r), static_cast<int>(vector.g), static_cast<int>(vector.b), static_cast<int>(vector.a));
-	}
-	
-	// set the color
-	// r - red component (0-255)
-	// g - green component (0-255)
-	// b - blue component (0-255)
-	// a - alpha component, controls transparency (0 - transparent, 255 - opaque);
-	void SetColor(int _r, int _g, int _b, int _a = 0)
-	{
-		_color[0] = static_cast<unsigned char>(_r);
-		_color[1] = static_cast<unsigned char>(_g);
-		_color[2] = static_cast<unsigned char>(_b);
-		_color[3] = static_cast<unsigned char>(_a);
-	}
+    // default constructor
+    Color() : m_rawColor(0) {}
 
-	void GetColor(int &_r, int &_g, int &_b, int &_a) const
-	{
-		_r = _color[0];
-		_g = _color[1];
-		_b = _color[2];
-		_a = _color[3];
-	}
+    // initialize from components
+    Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0)
+        : m_r(r), m_g(g), m_b(b), m_a(a) {}
 
-	void SetRawColor( int color )
-	{
-		*((int *)this) = color;
-	}
+    // set the color
+    void SetColor(int r, int g, int b, int a = 0)
+    {
+        m_r = static_cast<unsigned char>(r);
+        m_g = static_cast<unsigned char>(g);
+        m_b = static_cast<unsigned char>(b);
+        m_a = static_cast<unsigned char>(a);
+    }
 
-	int GetRawColor() const
-	{
-		return *((int *)this);
-	}
+    void GetColor(int &r, int &g, int &b, int &a) const
+    {
+        r = m_r;
+        g = m_g;
+        b = m_b;
+        a = m_a;
+    }
 
-	inline int r() const	{ return _color[0]; }
-	inline int g() const	{ return _color[1]; }
-	inline int b() const	{ return _color[2]; }
-	inline int a() const	{ return _color[3]; }
-	
-	unsigned char &operator[](int index)
-	{
-		return _color[index];
-	}
+    void SetRawColor(int color) { m_rawColor = color; }
+    int GetRawColor() const { return m_rawColor; }
 
-	const unsigned char &operator[](int index) const
-	{
-		return _color[index];
-	}
+    unsigned char &operator[](int index) { return (&m_r)[index]; }
+    const unsigned char &operator[](int index) const { return (&m_r)[index]; }
 
-	bool operator == (const Color &rhs) const
-	{
-		return ( *((int *)this) == *((int *)&rhs) );
-	}
+    bool operator==(const Color &rhs) const { return m_rawColor == rhs.m_rawColor; }
+    bool operator!=(const Color &rhs) const { return m_rawColor != rhs.m_rawColor; }
 
-	bool operator != (const Color &rhs) const
-	{
-		return !(operator==(rhs));
-	}
+    // inline component access
+    int r() const { return m_r; }
+    int g() const { return m_g; }
+    int b() const { return m_b; }
+    int a() const { return m_a; }
 
-	Color &operator=( const Color &rhs )
-	{
-		SetRawColor( rhs.GetRawColor() );
-		return *this;
-	}
+    // conversions
+    color32 ToColor32() const
+    {
+        color32 c;
+        c.r = m_r;
+        c.g = m_g;
+        c.b = m_b;
+        c.a = m_a;
+        return c;
+    }
 
-	Color &operator=( const color32 &rhs )
-	{
-		_color[0] = rhs.r;
-		_color[1] = rhs.g;
-		_color[2] = rhs.b;
-		_color[3] = rhs.a;
-		return *this;
-	}
+    colorVec4 ToVector4D() const
+    {
+        colorVec4 v;
+        v.r = static_cast<float>(m_r);
+        v.g = static_cast<float>(m_g);
+        v.b = static_cast<float>(m_b);
+        v.a = static_cast<float>(m_a);
+        return v;
+    }
 
-	color32 ToColor32() const
-	{
-		color32 newColor;
-		newColor.r = _color[0];
-		newColor.g = _color[1];
-		newColor.b = _color[2];
-		newColor.a = _color[3];
-		return newColor;
-	}
+    void FromVector4D(const colorVec4& v)
+    {
+        m_r = static_cast<unsigned char>(v.r);
+        m_g = static_cast<unsigned char>(v.g);
+        m_b = static_cast<unsigned char>(v.b);
+        m_a = static_cast<unsigned char>(v.a);
+    }
 
-	colorVec4 ToVector4D() const
-	{
-		colorVec4 newColor;
-		newColor.r = static_cast<float>(_color[0]);
-		newColor.g = static_cast<float>(_color[1]);
-		newColor.b = static_cast<float>(_color[2]);
-		newColor.a = static_cast<float>(_color[3]);
-		return newColor;
-	}
-
-private:
-	unsigned char _color[4];
+    void FromColor32(const color32& c)
+    {
+        m_r = c.r;
+        m_g = c.g;
+        m_b = c.b;
+        m_a = c.a;
+    }
 };
-
 
 #endif // COLOR_H

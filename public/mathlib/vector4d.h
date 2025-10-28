@@ -38,9 +38,8 @@ public:
 	vec_t x, y, z, w;
 
 	// Construction/destruction
-	Vector4D();
-	Vector4D(vec_t X, vec_t Y, vec_t Z, vec_t W);
-	explicit Vector4D(const float *pFloat);
+	Vector4D() = default;
+	Vector4D(vec_t X, vec_t Y, vec_t Z, vec_t W) : x(X), y(Y), z(Z), w(W) {}
 
 	// Initialization
 	void Init(vec_t ix=0.0f, vec_t iy=0.0f, vec_t iz=0.0f, vec_t iw=0.0f);
@@ -119,7 +118,7 @@ public:
 	void	MulAdd(Vector4D const& a, Vector4D const& b, float scalar);	
 
 	// Dot product.
-	vec_t	Dot(Vector4D const& vOther) const;			
+	vec_t	Dot(Vector4D const& vOther) const;
 
 	// No copy constructors allowed if we're in optimal mode
 #ifdef VECTOR_NO_SLOW_OPERATIONS
@@ -127,10 +126,10 @@ private:
 #else
 public:
 #endif
-	Vector4D(Vector4D const& vOther);
+	Vector4D(Vector4D const& vOther) = default;
 
 	// No assignment operators either...
-	Vector4D& operator=( Vector4D const& src );
+	Vector4D& operator=( Vector4D const& src ) = default;
 };
 
 const Vector4D vec4_origin( 0.0f, 0.0f, 0.0f, 0.0f );
@@ -206,42 +205,6 @@ void Vector4DLerp(Vector4D const& src1, Vector4D const& src2, vec_t t, Vector4D&
 
 
 //-----------------------------------------------------------------------------
-// constructors
-//-----------------------------------------------------------------------------
-
-inline Vector4D::Vector4D()									
-{ 
-#ifdef _DEBUG
-	// Initialize to NAN to catch errors
-	x = y = z = w = VEC_T_NAN;
-#endif
-}
-
-inline Vector4D::Vector4D(vec_t X, vec_t Y, vec_t Z, vec_t W )
-{ 
-	x = X; y = Y; z = Z; w = W;
-	Assert( IsValid() );
-}
-
-inline Vector4D::Vector4D(const float *pFloat)					
-{
-	Assert( pFloat );
-	x = pFloat[0]; y = pFloat[1]; z = pFloat[2]; w = pFloat[3];	
-	Assert( IsValid() );
-}
-
-
-//-----------------------------------------------------------------------------
-// copy constructor
-//-----------------------------------------------------------------------------
-
-inline Vector4D::Vector4D(const Vector4D &vOther)					
-{ 
-	Assert( vOther.IsValid() );
-	x = vOther.x; y = vOther.y; z = vOther.z; w = vOther.w;
-}
-
-//-----------------------------------------------------------------------------
 // initialization
 //-----------------------------------------------------------------------------
 inline void Vector4D::Init( vec_t ix, vec_t iy, vec_t iz, vec_t iw )
@@ -269,17 +232,6 @@ inline void Vector4D::Random( vec_t minVal, vec_t maxVal )
 inline void Vector4DClear( Vector4D& a )
 {
 	a.x = a.y = a.z = a.w = 0.0f;
-}
-
-//-----------------------------------------------------------------------------
-// assignment
-//-----------------------------------------------------------------------------
-
-inline Vector4D& Vector4D::operator=(const Vector4D &vOther)	
-{
-	Assert( vOther.IsValid() );
-	x=vOther.x; y=vOther.y; z=vOther.z; w=vOther.w;
-	return *this; 
 }
 
 //-----------------------------------------------------------------------------

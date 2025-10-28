@@ -1389,15 +1389,19 @@ inline T ConVarRefAbstract::ConvertFromPrimitiveTo( CSplitScreenSlot slot ) cons
 
 		switch(GetType())
 		{
-			case EConVarType_Bool:		return value->m_bValue;
-			case EConVarType_Int16:		return value->m_i16Value;
-			case EConVarType_UInt16:	return value->m_u16Value;
-			case EConVarType_Int32:		return value->m_i32Value;
-			case EConVarType_UInt32:	return value->m_u32Value;
-			case EConVarType_Int64:		return value->m_i64Value;
-			case EConVarType_UInt64:	return value->m_u64Value;
-			case EConVarType_Float32:	return value->m_fl32Value;
-			case EConVarType_Float64:	return value->m_fl64Value;
+			case EConVarType_Bool:      if constexpr(std::is_convertible_v<bool, T>) return value->m_bValue;
+			case EConVarType_Int16:     if constexpr(std::is_convertible_v<int16, T>) return value->m_i16Value;
+			case EConVarType_UInt16:    if constexpr(std::is_convertible_v<uint16, T>) return value->m_u16Value;
+			case EConVarType_Int32:     if constexpr(std::is_convertible_v<int32, T>) return value->m_i32Value;
+			case EConVarType_UInt32:    if constexpr(std::is_convertible_v<uint32, T>) return value->m_u32Value;
+			case EConVarType_Int64:     if constexpr(std::is_convertible_v<int64, T>) return value->m_i64Value;
+			case EConVarType_UInt64:    if constexpr(std::is_convertible_v<uint64, T>) return value->m_u64Value;
+			case EConVarType_Float32:   if constexpr(std::is_convertible_v<float32, T>) return value->m_fl32Value;
+			case EConVarType_Float64:   if constexpr(std::is_convertible_v<float64, T>) return value->m_fl64Value;
+			case EConVarType_Vector2:	if constexpr(std::is_convertible_v<Vector2D, T>) return value->m_vec2Value;
+			case EConVarType_Vector3:	if constexpr(std::is_convertible_v<Vector, T>) return value->m_vec3Value;
+			case EConVarType_Vector4:	if constexpr(std::is_convertible_v<Vector4D, T>) return value->m_vec4Value;
+			case EConVarType_Qangle:	if constexpr(std::is_convertible_v<QAngle, T>) return value->m_angValue;
 			default:					{ AssertMsg1(0, "Invalid ConVarRefAbstract primitive type (%d)", GetType()); return {}; }
 		}
 	}
@@ -1455,15 +1459,19 @@ inline void ConVarRefAbstract::ConvertToPrimitiveFrom( CSplitScreenSlot slot, co
 	{
 		switch(GetType())
 		{
-			case EConVarType_Bool:		return CConVarRef<bool>( *this ).Set( value, slot );
-			case EConVarType_Int16:		return CConVarRef<int16>( *this ).Set( value, slot );
-			case EConVarType_UInt16:	return CConVarRef<uint16>( *this ).Set( value, slot );
-			case EConVarType_Int32:		return CConVarRef<int32>( *this ).Set( value, slot );
-			case EConVarType_UInt32:	return CConVarRef<uint32>( *this ).Set( value, slot );
-			case EConVarType_Int64:		return CConVarRef<int64>( *this ).Set( value, slot );
-			case EConVarType_UInt64:	return CConVarRef<uint64>( *this ).Set( value, slot );
-			case EConVarType_Float32:	return CConVarRef<float32>( *this ).Set( value, slot );
-			case EConVarType_Float64:	return CConVarRef<float64>( *this ).Set( value, slot );
+			case EConVarType_Bool:		if constexpr(std::is_convertible_v<bool, T>) return CConVarRef<bool>( *this ).Set( value, slot );
+			case EConVarType_Int16:		if constexpr(std::is_convertible_v<int16, T>) return CConVarRef<int16>( *this ).Set( value, slot );
+			case EConVarType_UInt16:	if constexpr(std::is_convertible_v<uint16, T>) return CConVarRef<uint16>( *this ).Set( value, slot );
+			case EConVarType_Int32:		if constexpr(std::is_convertible_v<int32, T>) return CConVarRef<int32>( *this ).Set( value, slot );
+			case EConVarType_UInt32:	if constexpr(std::is_convertible_v<uint32, T>) return CConVarRef<uint32>( *this ).Set( value, slot );
+			case EConVarType_Int64:		if constexpr(std::is_convertible_v<int64, T>) return CConVarRef<int64>( *this ).Set( value, slot );
+			case EConVarType_UInt64:	if constexpr(std::is_convertible_v<uint64, T>) return CConVarRef<uint64>( *this ).Set( value, slot );
+			case EConVarType_Float32:	if constexpr(std::is_convertible_v<float32, T>) return CConVarRef<float32>( *this ).Set( value, slot );
+			case EConVarType_Float64:	if constexpr(std::is_convertible_v<float64, T>) return CConVarRef<float64>( *this ).Set( value, slot );
+			case EConVarType_Vector2:	if constexpr(std::is_convertible_v<Vector2D, T>) return CConVarRef<Vector2D>( *this ).Set( value, slot );
+			case EConVarType_Vector3:	if constexpr(std::is_convertible_v<Vector, T>) return CConVarRef<Vector>( *this ).Set( value, slot );
+			case EConVarType_Vector4:	if constexpr(std::is_convertible_v<Vector4D, T>) return CConVarRef<Vector4D>( *this ).Set( value, slot );
+			case EConVarType_Qangle:	if constexpr(std::is_convertible_v<QAngle, T>) return CConVarRef<QAngle>( *this ).Set( value, slot );
 			default:					{ AssertMsg1(0, "Invalid ConVarRefAbstract primitive type (%d)", GetType()); break; }
 		}
 	}

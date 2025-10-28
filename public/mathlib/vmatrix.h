@@ -960,7 +960,7 @@ inline Vector4D GetMatrixColumnAsVector4D( const VMatrix &mMatrix, int nCol )
 inline Vector4D MatrixGetRowAsVector4D( const VMatrix &src, int nRow )
 {
 	Assert( (nRow >= 0) && (nRow <= 3) );
-	return Vector4D( src[nRow] );
+	return Vector4D( src[nRow][0], src[nRow][1], src[nRow][2], src[nRow][3] );
 }
 
 //-----------------------------------------------------------------------------
