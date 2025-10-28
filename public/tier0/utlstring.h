@@ -16,6 +16,7 @@
 #include "tier0/strtools.h"
 #include "tier1/utlcommon.h"
 #include "limits.h"
+#include <string_view>
 
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t) -1)
@@ -47,6 +48,7 @@ public:
 	CUtlString(const char *pString, int length);
 	CUtlString(const CUtlString &string);
 	CUtlString(CUtlString &&string) noexcept;
+	explicit CUtlString(std::string_view view);
 	DLL_CLASS_IMPORT CUtlString(const CBufferString &string);
 
 	~CUtlString();
@@ -55,13 +57,16 @@ public:
 	CUtlString &operator=(const CUtlString &src);
 	CUtlString &operator=(CUtlString &&src) noexcept;
 	CUtlString &operator=(const char *src);
+	CUtlString &operator=(std::string_view view);
 
 	// Test for equality, both are case sensitive
 	DLL_CLASS_IMPORT bool operator==(const CUtlString &src) const;
 	DLL_CLASS_IMPORT bool operator==(const CBufferString &src) const;
+	bool operator==(std::string_view view) const { return m_pString == view; }
 
 	bool operator!=(const CUtlString &src) const { return !operator==(src); }
 	bool operator!=(const CBufferString &src) const { return !operator==(src); }
+	bool operator!=(std::string_view view) const { return !operator==(view); }
 
 	DLL_CLASS_IMPORT char operator[](int i) const;
 
@@ -79,6 +84,7 @@ public:
 	const char *Get() const;
 	operator const char *() const { return Get(); }
 	const char *String() const { return Get(); }
+	operator std::string_view() const { return Get(); }
 
 	DLL_CLASS_IMPORT void		Set(const char *pValue);
 
@@ -161,7 +167,7 @@ public:
 	// Does nothing if pValue == String()
 	DLL_CLASS_IMPORT void		SetDirect(const char *pValue, int nChars);
 	// Sets the length (used to serialize into the buffer )
-	// Note: If nLen != 0, then this adds an extra byte for a null-terminator.	
+	// Note: If nLen != 0, then this adds an extra byte for a null-terminator.
 	DLL_CLASS_IMPORT void		SetLength(int nLen);
 
 	// Get a copy of part of the string.
