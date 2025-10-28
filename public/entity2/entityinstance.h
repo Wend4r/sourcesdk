@@ -56,6 +56,10 @@ struct NetworkStateChanged3Data
 	CUtlVector<uint32> m_Unk24;
 };
 
+struct CEntityPrivateScriptScope
+{
+	HSCRIPT m_hScope;
+};
 
 class CEntityInstance
 {
@@ -155,9 +159,7 @@ public:
 public:
 	CUtlSymbolLarge m_iszPrivateVScripts; // 0x8
 	CEntityIdentity* m_pEntity; // 0x10
-private:
-	void* m_hPrivateScope; // 0x18 - CEntityPrivateScriptScope
-public:
+	CEntityPrivateScriptScope m_hPrivateScope; // 0x18 -
 	CEntityKeyValues* m_pKeyValues; // 0x20
 	HSCRIPT m_hScriptInstance; // 0x28
 	CScriptComponent* m_CScriptComponent; // 0x30
