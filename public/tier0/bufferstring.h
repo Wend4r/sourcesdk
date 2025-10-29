@@ -95,7 +95,6 @@ public:
 	}
 	template< size_t N > CBufferString( const char (&str)[N], bool bAllowHeapAllocation = true ) : CBufferString( str, N - 1, bAllowHeapAllocation ) {}
 	CBufferString( const CUtlString &str, bool bAllowHeapAllocation = true ) : CBufferString( str, str.Length(), bAllowHeapAllocation ) {}
-	explicit CBufferString( std::string_view view, bool bAllowHeapAllocation = true ) : CBufferString( view.data(), static_cast<int>(view.size()), bAllowHeapAllocation ) {}
 	CBufferString( const CBufferString &copyFrom, bool bAllowHeapAllocation = true ) : CBufferString( copyFrom, copyFrom.Length(), bAllowHeapAllocation ) {}
 	CBufferString( CBufferString &&moveFrom ) noexcept : 
 	    m_nLengthStaff( Move( moveFrom.m_nLengthStaff ) ), 
@@ -185,7 +184,6 @@ public:
 	const char *String() const { return IsStackAllocated() ? m_Buffer.m_szString : ( IsAllocationEmpty() ? StringFuncs<char>::EmptyString() : m_Buffer.m_pString ); }
 	const char *Get() const { return String(); }
 	operator const char *() const { return Get(); }
-	operator std::string_view() const { return { Get(), static_cast<size_t>(Length()) }; }
 
 	// Clears the string contents (does not free heap).
 	void Clear()
@@ -210,7 +208,6 @@ public:
 	template< size_t N > CBufferString &operator=( const char (&str)[N] ) { Set( str, N - 1 ); return *this; }
 	CBufferString &operator=( const CUtlString &str ) { Set( str.String(), str.Length() ); return *this; }
 	CBufferString &operator=( const CBufferString &buf ) { Set( buf.String(), buf.Length() ); return *this; }
-	CBufferString &operator=( std::string_view view ) { Set( view.data(), static_cast<int>(view.length()) ); return *this; }
 	CBufferString &operator=( CBufferString &&moveFrom ) noexcept { MoveFrom( moveFrom ); return *this; }
 
 	// Appends string to current end of buffer.
@@ -225,7 +222,6 @@ public:
 	template< size_t N > CBufferString &operator+=( const char (&str)[N] ) { Append( str, N - 1 ); return *this; }
 	CBufferString &operator+=( const CUtlString &str ) { Append( str.String(), str.Length() ); return *this; }
 	CBufferString &operator+=( const CBufferString &buf ) { Append( buf.String(), buf.Length() ); return *this; }
-	CBufferString &operator+=( std::string_view view ) { Append( view.data(), static_cast<int>(view.length()) ); return *this; }
 	CBufferString &operator+=( char value )
 	{
 		const int nLength = Length();
@@ -270,20 +266,17 @@ public:
 	bool Compare( const char *pString, int nLen ) const { return ( nLen < 0 ? V_strcmp( String(), pString ) : V_strncmp( String(), pString, nLen ) ) == 0; }
 	bool Compare( const CUtlString &str ) const { return Compare( str.String(), str.Length() ); }
 	bool Compare( const CBufferString &buf ) const { return Compare( buf.String(), buf.Length() ); }
-	bool Compare( std::string_view view ) const { return Compare( view.data(), static_cast<int>(view.length()) ); }
 
 	/// operator==
 	/// Tests for equality, both are case sensitive.
 	bool operator==( const char *pString ) const { return Compare( pString, -1 ); }
 	bool operator==( const CUtlString &str ) const { return Compare( str ); }
 	bool operator==( const CBufferString &buf ) const { return Compare( buf ); }
-	bool operator==( std::string_view view ) const { return Compare( view ); }
 
 	/// operator!=
 	bool operator!=( const char *pString ) const { return !operator==( pString ); }
 	bool operator!=( const CUtlString &str ) const { return !operator==( str ); }
 	bool operator!=( const CBufferString &buf ) const { return !operator==( buf ); }
-	bool operator!=( std::string_view view ) const { return !operator==( view ); }
 
 	/// operator[]
 	char &operator[]( int elem ) { Assert( 0 <= elem && elem < Length() && elem < AllocatedSize() ); return Base()[elem]; }
@@ -524,7 +517,6 @@ public:
 	CBufferStringN( bool bAllowHeapAllocation = true ) : CBufferString( SIZE, bAllowHeapAllocation ) {}
 	CBufferStringN( const char *pString, int nLen, bool bAllowHeapAllocation = true ) : CBufferStringN( bAllowHeapAllocation ) { Set( pString, nLen ); }
 	template< size_t N > CBufferStringN( const char (&str)[N], bool bAllowHeapAllocation = true ) : CBufferStringN( str, N - 1, bAllowHeapAllocation ) {}
-	explicit CBufferStringN( std::string_view view, bool bAllowHeapAllocation = true ) : CBufferStringN( view.data(), static_cast<int>(view.length()), bAllowHeapAllocation ) {}
 
 	CBufferStringN( const CBufferStringN< SIZE > &copyFrom ) : CBufferString( copyFrom ), m_FixedBuffer( copyFrom.m_FixedBuffer ) {}
 	CBufferStringN( CBufferStringN< SIZE > &&moveFrom ) noexcept : CBufferString( Move( moveFrom ) ), m_FixedBuffer( Move( moveFrom.m_FixedBuffer ) ) {}
