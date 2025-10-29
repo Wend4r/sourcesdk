@@ -24,6 +24,7 @@
 // Macros are intended to be used between CUtlStringToken (always lowercase)
 #define MAKE_STRINGTOKEN(pstr) CUtlStringToken::Hash( (pstr), static_cast<int>(strlen(pstr)), STRINGTOKEN_MURMURHASH_SEED )
 #define MAKE_STRINGTOKEN_UTL(containerName) CUtlStringToken::Hash( (containerName).Get(), (containerName).Length(), STRINGTOKEN_MURMURHASH_SEED )
+#define MAKE_STRINGTOKEN_STL(containerName) CUtlStringToken::Hash( (containerName).data(), static_cast<int>((containerName).length()), STRINGTOKEN_MURMURHASH_SEED )
 
 class IFormatOutputStream;
 class CFormatStringElement;
@@ -96,6 +97,7 @@ public:
 	CUtlStringToken( const char *pString, int nLen ) : m_nHashCode( Hash( pString, nLen ) ) {}
 	CUtlStringToken( const CUtlString &str ) : CUtlStringToken( str.Get(), str.Length() ) {}
 	CUtlStringToken( const CBufferString &buffer ) : CUtlStringToken( buffer.Get(), buffer.Length() ) {}
+	explicit CUtlStringToken( std::string_view view ) : CUtlStringToken( view.data(), static_cast<int>(view.length()) ) {}
 
 	// operator==
 	bool operator==( const uint32 nHash ) const { return m_nHashCode == nHash; }
@@ -103,6 +105,7 @@ public:
 	bool operator==( const char *pString ) const { return operator==( MAKE_STRINGTOKEN( pString ) ); }
 	bool operator==( const CUtlString &str ) const { return operator==( MAKE_STRINGTOKEN_UTL( str ) ); }
 	bool operator==( const CBufferString &buffer ) const { return operator==( MAKE_STRINGTOKEN_UTL( buffer ) ); }
+	bool operator==( std::string_view view ) const { return operator==( MAKE_STRINGTOKEN_STL( view ) ); }
 
 	// operator!=
 	bool operator!=( const uint32 nHash ) const { return !operator==( nHash ); }
@@ -110,6 +113,7 @@ public:
 	bool operator!=( const char *pString ) const { return !operator==( pString ); }
 	bool operator!=( const CUtlString &str ) const { return !operator==( str ); }
 	bool operator!=( const CBufferString &buffer ) const { return !operator==( buffer ); }
+	bool operator!=( std::string_view view ) const { return !operator==( view ); }
 
 	// opertator<
 	bool operator<( const uint32 nHash ) const { return ( m_nHashCode < nHash ); }
@@ -117,6 +121,7 @@ public:
 	bool operator<( const char *pString ) const { return operator<( MAKE_STRINGTOKEN( pString ) ); }
 	bool operator<( const CUtlString &str ) const { return !operator<( MAKE_STRINGTOKEN_UTL( str ) ); }
 	bool operator<( const CBufferString &buffer ) const { return !operator<( MAKE_STRINGTOKEN_UTL( buffer ) ); }
+	bool operator<( std::string_view view ) const { return !operator<( MAKE_STRINGTOKEN_STL( view ) ); }
 
 	/// access to the hash code for people who need to store thse as 32-bits, regardless of the
 	constexpr operator uint32() const { return m_nHashCode; }
