@@ -245,8 +245,7 @@ public:
 	}
 
 public:
-	char pad16[16];
-	IGameSpawnGroupMgr* m_pSpawnGroupMgr;
+	CUtlVector<CUtlString> m_vecUnk;
 	char pad40[8];
 	server_state_t m_State;
 	int m_nRefCount;
@@ -295,9 +294,9 @@ public:
 	char pad880[16];
 	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect;
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr2;
-	CServerSideClientBase* m_pHostClient;
+	ISource2WorldSession* m_pWorldSession;
 	HGameResourceManifest m_pGameSessionManifest;
-	SpawnGroupHandle_t m_nextSpawnGroupHandle;
+	SpawnGroupHandle_t m_hNextSpawnGroup;
 	uint64* m_nReservationCookie;
 	float* m_flTimeLastClientLeft;
 	void* unk968;
