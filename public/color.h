@@ -28,12 +28,12 @@ public:
 	};
 
 	// default constructor
-	Color() : m_rawColor(0) {}
-
+	Color(const Color &) = default;
+	Color(Color &&) = default;
+	Color &operator=(const Color &) = default;
+	Color &operator=(Color &&) = default;
 	Color(int color = 0)
-	{
-		m_rawColor = color;
-	}
+		: m_rawColor(color) {}
 
 	// initialize from components
 	Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0)
