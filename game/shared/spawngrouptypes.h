@@ -66,7 +66,6 @@ public:
 		SetIdentityMatrix(m_vecWorldOffset);
 	}
 
-	matrix3x4a_t m_vecWorldOffset;
 	CUtlString m_sWorldName;
 	CUtlString m_sWorldMountName;
 	CUtlString m_sEntityLumpName;
@@ -74,6 +73,7 @@ public:
 	CUtlString m_sDescriptiveName;
 	CUtlString m_sParentNameFixup;
 	CUtlString m_sLocalNameFixup;
+	matrix3x4a_t m_vecWorldOffset;
 	IComputeWorldOriginCallback *m_pWorldOffsetCallback;
 	CUtlString m_sWorldGroupname;
 	SpawnGroupHandle_t m_hOwner;
