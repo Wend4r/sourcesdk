@@ -298,6 +298,12 @@ inline CUtlString &CUtlString::operator=( const char *src )
 	return *this;
 }
 
+inline CUtlString &CUtlString::operator=( std::string_view view )
+{
+	SetDirect( view.data(), static_cast<int>(view.length()) );
+	return *this;
+}
+
 inline CUtlString::~CUtlString()
 {
 	Purge();
