@@ -361,7 +361,7 @@ public:
 	DLL_CLASS_IMPORT void SetFloat( const char *keyName, float value );
 	DLL_CLASS_IMPORT void SetPtr( const char *keyName, void *value );
 	DLL_CLASS_IMPORT void SetColor( const char *keyName, Color value);
-	DLL_CLASS_IMPORT void SetBool( const char *keyName, bool value ) { SetInt( keyName, value ? 1 : 0 ); }
+	void SetBool( const char *keyName, bool value ) { SetInt( keyName, value ? 1 : 0 ); }
 
 	// Memory allocation (optimized)
 	DLL_CLASS_IMPORT void *operator new( size_t iAllocSize );
