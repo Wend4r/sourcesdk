@@ -351,6 +351,13 @@ public:
 		return CKV3MemberName( pszInit, nLen );
 	}
 
+	static CKV3MemberName Make( std::string_view view )
+	{
+		AssertMsg(view.data()[view.size()] == '\0', "string_view must reference a null-terminated string");
+
+		return CKV3MemberName( view.data(), static_cast<int>(view.length()) );
+	}
+
 	UtlSymLargeId_t GetSymLargeId() const { return m_iSymLarge; }
 	const char *GetString() const { return m_pszString; }
 	bool IsEmpty() const { return !m_pszString || !m_pszString[0]; }
