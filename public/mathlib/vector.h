@@ -1751,7 +1751,7 @@ class RadianEuler;
 class DegreeEuler;
 class QAngle;
 
-class ALIGN16 Quaternion				// same data-layout as engine's vec4_t,
+class Quaternion				// same data-layout as engine's vec4_t,
 {								//		which is a vec_t[4]
 public:
 	inline Quaternion()	= default;
