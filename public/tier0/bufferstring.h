@@ -88,12 +88,11 @@ public:
 	}
 
 	// Constructs buffer initialized with a C-string (optional length and heap allowance; will be allocated on the heap).
-	explicit CBufferString( const char *pString, int nLen, bool bAllowHeapAllocation = true ) : 
+	CBufferString( const char *pString, int nLen = -1, bool bAllowHeapAllocation = true ) : 
 	    CBufferString( BS_TYPE_HEAP, bAllowHeapAllocation )
 	{
 		Set( pString, nLen );
 	}
-	CBufferString( const char *pString, bool bAllowHeapAllocation = true ) : CBufferString( pString, V_strlen( pString ), bAllowHeapAllocation ) {}
 	template< size_t N > CBufferString( const char (&str)[N], bool bAllowHeapAllocation = true ) : CBufferString( str, N - 1, bAllowHeapAllocation ) {}
 	CBufferString( const CUtlString &str, bool bAllowHeapAllocation = true ) : CBufferString( str, str.Length(), bAllowHeapAllocation ) {}
 	explicit CBufferString( std::string_view view, bool bAllowHeapAllocation = true ) : CBufferString( view.data(), static_cast<int>(view.size()), bAllowHeapAllocation ) {}
