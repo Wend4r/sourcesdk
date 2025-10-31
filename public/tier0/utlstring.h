@@ -278,6 +278,12 @@ inline CUtlString::CUtlString(CUtlString &&string) noexcept
 	string.m_pString = NULL;
 }
 
+inline CUtlString::CUtlString(std::string_view view)
+	: m_pString( NULL )
+{
+	SetDirect( view.data(), static_cast<int>(view.length()) );
+}
+
 inline CUtlString &CUtlString::operator=( const CUtlString &src )
 {
 	SetDirect( src.Get(), src.Length() );
