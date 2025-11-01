@@ -329,23 +329,17 @@ public:
 
 	typedef _CUtlLinkedList_constiterator_t<CUtlLinkedList<T, S, ML, I, M> > const_iterator;
 	typedef _CUtlLinkedList_iterator_t<CUtlLinkedList<T, S, ML, I, M> > iterator;
-	const_iterator begin() const
-	{
-		return const_iterator( *this, Head() );
-	}
-	iterator begin()
-	{
-		return iterator( *this, Head() );
-	}
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-	const_iterator end() const
-	{
-		return const_iterator( *this, InvalidIndex() );
-	}
-	iterator end()
-	{
-		return iterator( *this, InvalidIndex() );
-	}
+	const_iterator begin() const { return const_iterator( *this, Head() ); }
+	iterator begin() { return iterator( *this, Head() ); }
+	const_iterator end() const { return const_iterator( *this, InvalidIndex() ); }
+	iterator end() { return iterator( *this, InvalidIndex() ); }
+	reverse_iterator rbegin() { return reverse_iterator(end()); }
+	const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
+	reverse_iterator rend() { return reverse_iterator(begin()); }
+	const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
 
 	// Are nodes in the list or valid?
 	bool  IsValidIndex( I i ) const;

@@ -26,6 +26,7 @@
 #include "tier0/strtools.h"
 
 #include <initializer_list>
+#include <iterator>
 
 #define UTL_INVAL_VECTOR_ELEM ((I)~0)
 
@@ -61,6 +62,8 @@ public:
 	using ElemType_t = T;
 	using iterator = T*;
 	using const_iterator = const T*;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 	using IndexType_t = I;
 
 	// Set the growth policy and initial capacity. Count will always be zero. This is different from std::vector
@@ -100,6 +103,10 @@ public:
 	const_iterator begin() const			{ return Base(); }
 	iterator end()							{ return Base() + Count(); }
 	const_iterator end() const				{ return Base() + Count(); }
+	reverse_iterator rbegin()				{ return reverse_iterator(end()); }
+	const_reverse_iterator rbegin() const	{ return const_reverse_iterator(end()); }
+	reverse_iterator rend()					{ return reverse_iterator(begin()); }
+	const_reverse_iterator rend() const		{ return const_reverse_iterator(begin()); }
 
 	// Gets the base address (can change when adding elements!)
 	T* Base()								{ return m_Memory.Base(); }

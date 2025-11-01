@@ -22,6 +22,7 @@
 #include "mathlib/mathlib.h"
 
 #include <string.h>
+#include <iterator>
 
 #define FOR_EACH_LEANVEC( vecName, iteratorName ) \
 	for ( auto iteratorName = vecName.First(); vecName.IsValidIterator( iteratorName ); iteratorName = vecName.Next( iteratorName ) )
@@ -395,6 +396,8 @@ public:
 
 	using iterator = T*;
 	using const_iterator = const T*;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 	// constructor, destructor
 	CUtlLeanVectorImpl() {};
@@ -428,6 +431,10 @@ public:
 	const_iterator begin() const			{ return this->Base(); }
 	iterator end()							{ return this->Base() + Count(); }
 	const_iterator end() const				{ return this->Base() + Count(); }
+	reverse_iterator rbegin()				{ return reverse_iterator(end()); }
+	const_reverse_iterator rbegin() const	{ return const_reverse_iterator(end()); }
+	reverse_iterator rend()					{ return reverse_iterator(begin()); }
+	const_reverse_iterator rend() const		{ return const_reverse_iterator(begin()); }
 
 	// element access
 	T& operator[]( int i );

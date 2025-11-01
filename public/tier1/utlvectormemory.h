@@ -34,6 +34,8 @@
 #pragma warning (disable:4514)
 #endif
 
+#include <iterator>
+
 //-----------------------------------------------------------------------------
 
 
@@ -65,6 +67,8 @@ class CUtlVectorMemory
 public:
 	using iterator = T*;
 	using const_iterator = const T*;
+	using reverse_iterator = std::reverse_iterator<iterator>;
+	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 	// constructor, destructor
 	CUtlVectorMemory( I nGrowSize = 0, I nInitSize = 0 );
@@ -117,6 +121,10 @@ public:
 	const_iterator begin() const			{ return Base(); }
 	iterator end()							{ return Base() + Count(); }
 	const_iterator end() const				{ return Base() + Count(); }
+	reverse_iterator rbegin()				{ return reverse_iterator(end()); }
+	const_reverse_iterator rbegin() const	{ return const_reverse_iterator(end()); }
+	reverse_iterator rend()					{ return reverse_iterator(begin()); }
+	const_reverse_iterator rend() const		{ return const_reverse_iterator(begin()); }
 
 	// Gets the base address (can change when adding elements!)
 	T* Base();
