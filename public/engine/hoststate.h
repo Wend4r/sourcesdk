@@ -50,6 +50,7 @@ class ISwitchLoopModeStatusNotify
 
 class IHostStateMgr : public IAppSystem
 {
+public:
 	virtual void RequestHS_Quit(void) = 0;
 	virtual void RequestHS_Idle(KeyValues *) = 0;
 	virtual void RequestHS_Connect(const char *, KeyValues *) = 0;
