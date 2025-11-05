@@ -27,8 +27,8 @@ class CTeam;
 class CRecipientFilter : public IRecipientFilter
 {
 public:
-	CRecipientFilter( NetChannelBufType_t nBufType = BUF_RELIABLE, bool bInitMessage = false ) :
-		m_nPredictedByPlayerSlot(), m_nBufType(nBufType), m_bInitMessage(bInitMessage) {}
+	CRecipientFilter( NetChannelBufType_t nBufType = BUF_RELIABLE, bool bInitMessage = false, bool bDoNotSupressPrediction = false ) :
+		m_nPredictedByPlayerSlot(), m_nBufType(nBufType), m_bInitMessage(bInitMessage), m_bDoNotSupressPrediction(bDoNotSupressPrediction) {}
 
 	CRecipientFilter( IRecipientFilter *source, CPlayerSlot exceptSlot = INVALID_PLAYER_SLOT ) :
 		m_nPredictedByPlayerSlot()
@@ -156,6 +156,7 @@ protected:
 	CPlayerSlot m_nPredictedByPlayerSlot;
 	NetChannelBufType_t m_nBufType;
 	bool m_bInitMessage;
+	bool m_bDoNotSupressPrediction;
 };
 
 //-----------------------------------------------------------------------------

@@ -22,8 +22,8 @@ class IRecipientFilter
 public:
 	virtual			~IRecipientFilter() {}
 
-	virtual bool	IsInitMessage() const = 0;
 	virtual NetChannelBufType_t	GetNetworkBufType() const = 0;
+	virtual bool	IsInitMessage() const = 0;
 	virtual const CPlayerBitVec &GetRecipients() const = 0;
 	virtual CPlayerSlot GetPredictedByPlayerSlot() const = 0;
 
