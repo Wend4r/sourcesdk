@@ -47,6 +47,7 @@ public:
 	NetChannelBufType_t GetNetworkBufType( void ) const override { return m_nBufType; }
 	bool IsInitMessage( void ) const override { return m_bInitMessage; }
 	const CPlayerBitVec &GetRecipients( void ) const override { return m_Recipients; }
+	int UnkFunc() const override { return -1; }
 
 	void SetRecipients( uint64 nRecipients )
 	{
