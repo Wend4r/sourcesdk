@@ -28,9 +28,10 @@ class CRecipientFilter : public IRecipientFilter
 {
 public:
 	CRecipientFilter( NetChannelBufType_t nBufType = BUF_RELIABLE, bool bInitMessage = false ) :
-		m_nBufType(nBufType), m_bInitMessage(bInitMessage) {}
+		m_nPredictedByPlayerSlot(), m_nBufType(nBufType), m_bInitMessage(bInitMessage) {}
 
-	CRecipientFilter( IRecipientFilter *source, CPlayerSlot exceptSlot = INVALID_PLAYER_SLOT )
+	CRecipientFilter( IRecipientFilter *source, CPlayerSlot exceptSlot = INVALID_PLAYER_SLOT ) :
+		m_nPredictedByPlayerSlot()
 	{
 		m_Recipients = source->GetRecipients();
 		m_nBufType = source->GetNetworkBufType();
@@ -47,7 +48,7 @@ public:
 	NetChannelBufType_t GetNetworkBufType( void ) const override { return m_nBufType; }
 	bool IsInitMessage( void ) const override { return m_bInitMessage; }
 	const CPlayerBitVec &GetRecipients( void ) const override { return m_Recipients; }
-	int UnkFunc() const override { return -1; }
+	CPlayerSlot GetPredictedByPlayerSlot() const override { return m_nPredictedByPlayerSlot; }
 
 	void SetRecipients( uint64 nRecipients )
 	{
@@ -152,6 +153,7 @@ public:
 
 protected:
 	CPlayerBitVec m_Recipients;
+	CPlayerSlot m_nPredictedByPlayerSlot;
 	NetChannelBufType_t m_nBufType;
 	bool m_bInitMessage;
 };
