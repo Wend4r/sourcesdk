@@ -25,7 +25,7 @@ public:
 	virtual bool	IsInitMessage() const = 0;
 	virtual NetChannelBufType_t	GetNetworkBufType() const = 0;
 	virtual const CPlayerBitVec &GetRecipients() const = 0;
-	virtual int UnkFunc() const = 0; // override to return -1, to ignore CSVCMsg_NextMsgPredicted_t
+	virtual CPlayerSlot GetPredictedByPlayerSlot() const = 0;
 
 	int	GetRecipientCount() const { return GetRecipients().PopulationCount(); }
 };
