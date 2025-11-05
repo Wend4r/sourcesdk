@@ -772,8 +772,70 @@ public:
 
 	// this set of functions is hidden, will be moved out of class
 	explicit CSteamID( const char *pchSteamID, EUniverse eDefaultUniverse = k_EUniverseInvalid );
-	const char * Render() const;				// renders this steam ID to string
-	static const char * Render( uint64 ulSteamID );	// static method to render a uint64 representation of a steam ID to a string
+
+	// renders this steam ID to string
+	const char *Render() const
+	{
+		const int k_cBufLen = 37;
+		const int k_cBufs = 4;
+		char* pchBuf;
+
+		static char rgchBuf[k_cBufs][k_cBufLen];
+		static int nBuf = 0;
+
+		pchBuf = rgchBuf[nBuf++];
+		nBuf %= k_cBufs;
+
+		switch (m_steamid.m_comp.m_EAccountType)
+		{
+		case k_EAccountTypeAnonGameServer:
+			sprintf(pchBuf, "[A:%u:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID, m_steamid.m_comp.m_unAccountInstance);
+			break;
+		case k_EAccountTypeGameServer:
+			sprintf(pchBuf, "[G:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+			break;
+		case k_EAccountTypeMultiseat:
+			sprintf(pchBuf, "[M:%u:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID, m_steamid.m_comp.m_unAccountInstance);
+			break;
+		case k_EAccountTypePending:
+			sprintf(pchBuf, "[P:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+			break;
+		case k_EAccountTypeContentServer:
+			sprintf(pchBuf, "[C:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+			break;
+		case k_EAccountTypeClan:
+			sprintf(pchBuf, "[g:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+			break;
+		case k_EAccountTypeChat:
+			switch (m_steamid.m_comp.m_unAccountInstance & ~k_EChatAccountInstanceMask)
+			{
+			case k_EChatInstanceFlagClan:
+				sprintf(pchBuf, "[c:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+				break;
+			case k_EChatInstanceFlagLobby:
+				sprintf(pchBuf, "[L:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+				break;
+			default:
+				sprintf(pchBuf, "[T:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+				break;
+			}
+			break;
+		case k_EAccountTypeInvalid:
+			sprintf(pchBuf, "[I:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+			break;
+		case k_EAccountTypeIndividual:
+			sprintf(pchBuf, "[U:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+			break;
+		default:
+			sprintf(pchBuf, "[i:%u:%u]", m_steamid.m_comp.m_EUniverse, m_steamid.m_comp.m_unAccountID);
+			break;
+		}
+
+		return pchBuf;
+	}
+
+	// static method to render a uint64 representation of a steam ID to a string
+	static const char * Render( uint64 ulSteamID ) { return CSteamID( ulSteamID ).Render(); }
 
 	void SetFromString( const char *pchSteamID, EUniverse eDefaultUniverse );
     // SetFromString allows many partially-correct strings, constraining how
