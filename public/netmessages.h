@@ -40,7 +40,6 @@ class CCLCMsg_Move_t :                       public CNetMessagePB< clc_Move, CCL
 class CCLCMsg_VoiceData_t :                  public CNetMessagePB< clc_VoiceData, CCLCMsg_VoiceData, SG_VOICE > {};
 class CCLCMsg_BaselineAck_t :                public CNetMessagePB< clc_BaselineAck, CCLCMsg_BaselineAck, SG_ENGINE > {};
 class CCLCMsg_RespondCvarValue_t :           public CNetMessagePB< clc_RespondCvarValue, CCLCMsg_RespondCvarValue > {};
-class CCLCMsg_FileCRCCheck_t :               public CNetMessagePB< clc_FileCRCCheck, CCLCMsg_FileCRCCheck, SG_SIGNON > {};
 class CCLCMsg_LoadingProgress_t :            public CNetMessagePB< clc_LoadingProgress, CCLCMsg_LoadingProgress, SG_SIGNON > {};
 class CCLCMsg_SplitPlayerConnect_t :         public CNetMessagePB< clc_SplitPlayerConnect, CCLCMsg_SplitPlayerConnect, SG_SIGNON > {};
 class CCLCMsg_SplitPlayerDisconnect_t :      public CNetMessagePB< clc_SplitPlayerDisconnect, CCLCMsg_SplitPlayerDisconnect, SG_SIGNON > {};
