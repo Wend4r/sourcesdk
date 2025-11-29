@@ -25,6 +25,7 @@ public:
 	{
 		struct { unsigned char m_r, m_g, m_b, m_a; };
 		int m_rawColor;
+		unsigned char m_array[4];
 	};
 
 	// default constructor
@@ -59,8 +60,8 @@ public:
 	void SetRawColor(int color) { m_rawColor = color; }
 	int GetRawColor() const { return m_rawColor; }
 
-	unsigned char &operator[](int index) { return (&m_r)[index]; }
-	const unsigned char &operator[](int index) const { return (&m_r)[index]; }
+	unsigned char &operator[](int index) { return m_array[index]; }
+	const unsigned char &operator[](int index) const { return m_array[index]; }
 
 	bool operator==(const Color &rhs) const { return m_rawColor == rhs.m_rawColor; }
 	bool operator!=(const Color &rhs) const { return m_rawColor != rhs.m_rawColor; }
