@@ -305,7 +305,7 @@ public:
 	virtual bool SetClientListening( CPlayerSlot iReceiver, CPlayerSlot iSender, bool bListen ) = 0;
 	virtual bool SetClientProximity( CPlayerSlot iReceiver, CPlayerSlot iSender, bool bUseProximity ) = 0;
 
-	virtual bool CreateClient( CPlayerSlot &nSlot, CSteamID nSteamID, const char *pszName ) = 0;
+	virtual CPlayerSlot CreateClient( CPlayerSlot nRequestSlot, CSteamID nSteamID, const char *pszName ) = 0;
 	virtual void SetClientConnect( CPlayerSlot nSlot, bool b = true ) = 0;
 	virtual void KickClient( CPlayerSlot nSlot, const char *szInternalReason, ENetworkDisconnectionReason reason ) = 0;
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
