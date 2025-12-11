@@ -331,7 +331,7 @@ enum
 
 // Rendering constants
 // if this is changed, update common/MaterialSystem/Sprite.cpp
-enum RenderMode_t
+enum RenderMode_t : unsigned char
 {	
 	kRenderNormal = 0,		// src
 	kRenderTransColor,		// c*a+dest*(1-a)
@@ -349,7 +349,7 @@ enum RenderMode_t
 	kRenderModeCount,		// must be last
 };
 
-enum RenderFx_t
+enum RenderFx_t : unsigned char
 {	
 	kRenderFxNone = 0, 
 	kRenderFxPulseSlow, 
