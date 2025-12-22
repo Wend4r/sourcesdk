@@ -1260,7 +1260,7 @@ T KeyValues3::GetVecBasedObj( int size, const T &defaultValue ) const
 template < typename T >
 void KeyValues3::SetVecBasedObj( const T &obj, int size, KV3SubType_t subtype )
 {
-	AllocArray<float32>( size, obj.Base(), KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_FLOAT32, subtype, KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32 );
+	NormalizeArray< float32 >( KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32, size, obj.Base(), false );
 }
 
 template < typename T >
@@ -1293,8 +1293,7 @@ void KeyValues3::SetValue( T value, KV3TypeEx_t type, KV3SubType_t subtype )
 template < typename T >
 void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree )
 {
-	m_TypeEx = KV3_TYPEEX_ARRAY;
-	Alloc( size );
+	PrepareForType( KV3_TYPEEX_ARRAY, subtype );
 
 	CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
 
@@ -1302,7 +1301,7 @@ void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int siz
 
 	CKeyValues3Array::Element_t* arr = pNewArray->Base();
 	for ( int i = 0; i < pNewArray->Count(); ++i )
-		arr[ i ]->SetDirect( data[ i ] );
+		arr[ i ]->SetValue<T>( data[ i ], type, subtype );
 
 	if ( bFree )
 		free( (void*)data );
@@ -1356,7 +1355,7 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 				free( (void*)data );
 		}
 	}
-	else if ( type_ptr != KV3_TYPEEX_INVALID && size <= 31 )
+	else if ( type_ptr != KV3_TYPEEX_INVALID && size < 32 )
 	{
 		PrepareForType( type_ptr, subtype );
 
@@ -1375,24 +1374,13 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 		else
 		{
 			m_bFreeArrayMemory = true;	
-			m_Data.m_pMemory = malloc( size * sizeof( T ) );
+			m_Data.m_pMemory = ::Alloc< T >( size * sizeof( T ) );
 			memcpy( m_Data.m_pMemory, data, size * sizeof( T ) );
 		}
 	}
 	else
 	{
-		PrepareForType( KV3_TYPEEX_ARRAY, subtype );
-
-		CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
-
-		pNewArray->SetCount( this, size, type_elem, subtype_elem );
-
-		CKeyValues3Array::Element_t* arr = pNewArray->Base();
-		for ( int i = 0; i < pNewArray->Count(); ++i )
-			arr[ i ]->SetValue<T>( data[ i ], type_elem, subtype_elem );
-
-		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
-			free( (void*)data );
+		NormalizeArray< T >( type_elem, subtype_elem, size, data, alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE );
 	}
 }
 
