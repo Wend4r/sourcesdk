@@ -73,14 +73,14 @@ public:
 	CUtlString m_sDescriptiveName;
 	CUtlString m_sParentNameFixup;
 	CUtlString m_sLocalNameFixup;
+	CUtlString m_sWorldGroupname;
 	matrix3x4a_t m_vecWorldOffset;
 	IComputeWorldOriginCallback *m_pWorldOffsetCallback;
-	CUtlString m_sWorldGroupname;
+	CUtlString m_sSaveFileName;
 	SpawnGroupHandle_t m_hOwner;
 	int m_iPriorityLoader;
 	ResourceManifestLoadPriority_t m_manifestLoadPriority;
 	float m_flTimeoutInterval;
-	CUtlString m_sSaveFileName;
 
 	bool m_bCreateClientEntitiesOnLaterConnectingClients;
 	bool m_bDontSpawnEntities;
