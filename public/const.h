@@ -187,7 +187,7 @@ enum MoveType_t : unsigned char
 };
 
 // edict->movecollide values
-enum MoveCollide_t
+enum MoveCollide_t : unsigned char
 {
 	MOVECOLLIDE_DEFAULT = 0,
 
@@ -251,7 +251,7 @@ inline bool IsSolid( SolidType_t solidType, int nSolidFlags )
 }
 
 // m_lifeState values
-enum LifeState_t
+enum LifeState_t : unsigned char
 {
 	LIFE_ALIVE			= 0x0,	// alive
 	LIFE_DYING			= 0x1,	// playing death animation or still falling off of a ledge waiting to hit ground
