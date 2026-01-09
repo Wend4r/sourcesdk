@@ -178,6 +178,24 @@ public:
 	static void RegisterConVar( const Entry_t &cvar )
 	{
 		Assert( g_pCVar );
+
+#ifdef _DEBUG
+		ConVarRef pConVar = g_pCVar->FindConVar( cvar.m_Info.m_pszName );
+		if ( pConVar.IsValidRef() )
+		{
+			ConVarData* pConVarData = g_pCVar->GetConVarData( pConVar );
+			if (pConVarData->GetType() != cvar.m_Info.m_valueInfo.m_eVarType)
+			{
+				const char* cvarType = cvar.m_pConVar->GetConVarData()->GetDataTypeName();
+				const char* validType = pConVarData->GetDataTypeName();
+				Plat_FatalError( "RegisterConVar: Convar \"%s\" already exists with different type! (expected: %s, given: %s)\n",
+					cvar.m_Info.m_pszName, validType, cvarType );
+				DebuggerBreakIfDebugging();
+				return;
+			}
+		}
+#endif
+
 		g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
 
 		Assert( cvar.m_pConVar );
