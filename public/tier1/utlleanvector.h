@@ -534,17 +534,7 @@ inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::MoveFrom( CUtlL
 	if ( this == &other )
 		return *this;
 
-	I &nCount = other.m_nCount;
-	I &nAllocatedStaff = other.m_nAllocatedStaff;
-	auto &pElements = other.m_pElements;
-
-	this->m_nCount = nCount;
-	this->m_nAllocatedStaff = nAllocatedStaff;
-	this->m_pElements = pElements;
-
-	nCount = 0;
-	nAllocatedStaff = 0;
-	pElements = nullptr;
+	this->Swap( other );
 
 	return *this;
 }
