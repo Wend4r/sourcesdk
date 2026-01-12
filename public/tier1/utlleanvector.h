@@ -511,7 +511,11 @@ protected:
 template< class B, class T, typename I >
 inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::CopyFrom( const CUtlLeanVectorImpl<B, T, I> &other )
 {
+	if ( this == &other )
+		return *this;
+
 	int nCount = other.Count();
+
 	SetSize( nCount );
 
 	T* pDest = this->Base();
@@ -527,6 +531,9 @@ inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::CopyFrom( const
 template< class B, class T, typename I >
 inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::MoveFrom( CUtlLeanVectorImpl<B, T, I> &&other )
 {
+	if ( this == &other )
+		return *this;
+
 	I &nCount = other.m_nCount;
 	I &nAllocatedStaff = other.m_nAllocatedStaff;
 	auto &pElements = other.m_pElements;
