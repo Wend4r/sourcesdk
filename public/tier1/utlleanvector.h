@@ -401,12 +401,18 @@ public:
 
 	// constructor, destructor
 	CUtlLeanVectorImpl() {};
-	CUtlLeanVectorImpl( int nGrowSize, int nInitSize = 0 ) : BaseClass( nGrowSize, nInitSize ) {}
+	CUtlLeanVectorImpl( int nGrowSize, int nInitSize ) : BaseClass( nGrowSize, nInitSize ) {}
 	CUtlLeanVectorImpl( T* pMemory, int nElements ) : BaseClass( pMemory, nElements ) {}
 	~CUtlLeanVectorImpl() {};
 
-	// Copy the array.
-	CUtlLeanVectorImpl<B, T, I>& operator=( const CUtlLeanVectorImpl<B, T, I> &other );
+	// Copy/move the array.
+	CUtlLeanVectorImpl( const CUtlLeanVectorImpl &copyFrom ) { CopyFrom( copyFrom ); }
+	CUtlLeanVectorImpl( CUtlLeanVectorImpl &&moveFrom ) { MoveFrom( Move( moveFrom ) ); }
+	CUtlLeanVectorImpl<B, T, I>& operator=( const CUtlLeanVectorImpl<B, T, I> &copyFrom ) { return CopyFrom( copyFrom ); };
+	CUtlLeanVectorImpl<B, T, I>& operator=( CUtlLeanVectorImpl<B, T, I> &&moveFrom ) { return MoveFrom( Move( moveFrom ) ); };
+
+	CUtlLeanVectorImpl<B, T, I>& CopyFrom( const CUtlLeanVectorImpl<B, T, I> &other );
+	CUtlLeanVectorImpl<B, T, I>& MoveFrom( CUtlLeanVectorImpl<B, T, I> &&other );
 
 	class Iterator_t
 	{
@@ -494,9 +500,6 @@ public:
 	void ShiftElementsLeft( int elem, int num = 1 );
 
 protected:
-	// Can't copy this unless we explicitly do it!
-	CUtlLeanVectorImpl( CUtlLeanVectorImpl const& vec ) { Assert(0); }
-
 	// Shifts elements....
 	void ShiftElements( T* pDest, const T* pSrc, const T* pSrcEnd );
 
@@ -506,7 +509,7 @@ protected:
 };
 
 template< class B, class T, typename I >
-inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::operator=( const CUtlLeanVectorImpl<B, T, I> &other )
+inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::CopyFrom( const CUtlLeanVectorImpl<B, T, I> &other )
 {
 	int nCount = other.Count();
 	SetSize( nCount );
@@ -517,6 +520,24 @@ inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::operator=( cons
 
 	while ( pSrc != pEnd )
 		*(pDest++) = *(pSrc++);
+
+	return *this;
+}
+
+template< class B, class T, typename I >
+inline CUtlLeanVectorImpl<B, T, I>& CUtlLeanVectorImpl<B, T, I>::MoveFrom( CUtlLeanVectorImpl<B, T, I> &&other )
+{
+	I &nCount = other.m_nCount;
+	I &nAllocatedStaff = other.m_nAllocatedStaff;
+	auto &pElements = other.m_pElements;
+
+	this->m_nCount = nCount;
+	this->m_nAllocatedStaff = nAllocatedStaff;
+	this->m_pElements = pElements;
+
+	nCount = 0;
+	nAllocatedStaff = 0;
+	pElements = nullptr;
 
 	return *this;
 }
