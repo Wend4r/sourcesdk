@@ -10,6 +10,7 @@ set(SOURCESDK_PROTO_FILENAMES)
 set(SOURCESDK_CUSTOM_PROTO_FILENAMES)
 
 option(SOURCESDK_CUSTOM_PROTOS "Optional list of custom .proto files to generate; if set, overrides the default proto sources" OFF)
+option(SOURCESDK_CUSTOM_PROTO_ARGS "Optional list of custom arguments to generate protos")
 option(SOURCESDK_CUSTOM_PROTO_DIR "If set, the directory for custom proto files" OFF)
 option(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "If set, the output directory for generated custom proto files" OFF)
 option(SOURCESDK_CUSTOM_SKIP_PROTOS "Optional list of .proto filenames to skip during generation; matched against basename (e.g. project_voice.proto)" OFF)
