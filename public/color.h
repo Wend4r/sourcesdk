@@ -21,12 +21,14 @@
 class Color
 {
 public:
+#pragma pack(push, 1)
 	union
 	{
 		struct { unsigned char m_r, m_g, m_b, m_a; };
 		int m_rawColor;
 		unsigned char m_array[4];
 	};
+#pragma pack(pop)
 
 	// default constructor
 	Color(const Color &) = default;
