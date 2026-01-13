@@ -400,7 +400,7 @@ public:
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 	// constructor, destructor
-	CUtlLeanVectorImpl() {};
+	CUtlLeanVectorImpl() : BaseClass() {}
 	CUtlLeanVectorImpl( int nGrowSize, int nInitSize ) : BaseClass( nGrowSize, nInitSize ) {}
 	CUtlLeanVectorImpl( T* pMemory, int nElements ) : BaseClass( pMemory, nElements ) {}
 	~CUtlLeanVectorImpl() {};
