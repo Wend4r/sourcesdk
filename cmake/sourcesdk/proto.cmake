@@ -9,11 +9,13 @@ endif()
 set(SOURCESDK_PROTO_FILENAMES)
 set(SOURCESDK_CUSTOM_PROTO_FILENAMES)
 
-option(SOURCESDK_CUSTOM_PROTOS "Optional list of custom .proto files to generate; if set, overrides the default proto sources" OFF)
-option(SOURCESDK_CUSTOM_PROTO_ARGS "Optional list of custom arguments to generate protos")
-option(SOURCESDK_CUSTOM_PROTO_DIR "If set, the directory for custom proto files" OFF)
-option(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "If set, the output directory for generated custom proto files" OFF)
-option(SOURCESDK_CUSTOM_SKIP_PROTOS "Optional list of .proto filenames to skip during generation; matched against basename (e.g. project_voice.proto)" OFF)
+set(SOURCESDK_PROTOS "" CACHE STRING "Optional list of game protos to generate")
+
+set(SOURCESDK_CUSTOM_PROTOS "" CACHE STRING "Optional list of custom protos to generate; when set, overrides the default proto sources")
+set(SOURCESDK_CUSTOM_PROTO_ARGS "" CACHE STRING "Optional list of extra arguments passed to protoc for custom proto generation")
+set(SOURCESDK_CUSTOM_PROTO_DIR "" CACHE STRING "If set, directory that contains custom protos")
+set(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "" CACHE STRING "If set, output directory for generated custom proto sources")
+set(SOURCESDK_CUSTOM_SKIP_PROTOS "" CACHE STRING "Optional list of proto basenames to skip during generation (e.g. project_voice.proto)")
 
 set(SOURCESDK_PROTO_DIR "${SOURCESDK_COMMON_DIR}")
 set(SOURCESDK_PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/protos")
