@@ -1807,7 +1807,7 @@ PLATFORM_INTERFACE bool				Plat_ShouldCollectMiniDumpsForFatalErrors();
 PLATFORM_INTERFACE void				Plat_NonFatalErrorFunc( const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
 
 #ifdef DEADLOCK
-#define Plat_FatalError Plat_FatalError
+#define Plat_FatalError
 #else
 PLATFORM_INTERFACE void				Plat_FatalError( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
 #endif
