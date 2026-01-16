@@ -98,7 +98,9 @@ public:
 	virtual void			RegisterCreationListeners( IConVarListener *callbacks ) = 0;
 	virtual void			RemoveCreationListeners( IConVarListener *callbacks ) = 0;
 
+#ifndef DEADLOCK
 	virtual void			unk001() = 0;
+#endif
 
 	// Reverts cvars to default values which match pszPrefix string,
 	// ignores FCVAR_COMMANDLINE_ENFORCED
