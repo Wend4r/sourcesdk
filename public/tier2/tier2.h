@@ -58,14 +58,13 @@ public:
 	{
 		return APP_SYSTEM_TIER2;
 	}
-private:
 	CUtlVector<ResourceManifestDesc_t *> m_manualManifests;
 	int m_nAppSysTier2LibraryConnects;
 };
 
 class CTier2Application : public CTier1Application
 {
-private:
+public:
 	CAppSystemDict* m_pDict;
 	int m_nAppTier2LibraryConnects;
 };
