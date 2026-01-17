@@ -309,6 +309,10 @@ public:
 	GS_EVENT_IMPL( ServerPostEntityThink )					// 31
 
 	virtual void unk_401( const void *const msg ) = 0;		// 32
+#ifdef DEADLOCK
+	// TODO: I am not sure where exactly new function were added but above ServerGamePostSimulate
+	virtual void unk_402( const void *const msg ) = 0;		// ?
+#endif
 
 	GS_EVENT_IMPL( ServerPreClientUpdate )					// 33
 	GS_EVENT_IMPL( ServerAdvanceTick )						// 34
