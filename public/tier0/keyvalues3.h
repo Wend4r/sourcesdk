@@ -13,7 +13,7 @@ class CUtlString;
 class CUtlBuffer;
 class CBufferString;
 class KeyValues3;
-class CKeyValues3Context;
+class CKV3Arena;
 struct KV1ToKV3Translation_t;
 struct KV3ToKV1Translation_t;
 
@@ -24,7 +24,7 @@ struct KV3ToKV1Translation_t;
 
 	There are 2 ways to create KeyValues3:
 
-	1. Via CKeyValues3Context:
+	1. Via CKV3Arena:
 	- KV's, arrays and tables are stored in fixed memory blocks (clusters) and therefore memory is allocated only when clusters are created.
 	- Supports metadata and some other things.
 
@@ -71,10 +71,10 @@ PLATFORM_OVERLOAD void DebugPrintKV3( const KeyValues3* kv );
 
 // When using some LoadKV3/SaveKV3 functions, KV3ID_t structures must be filled in, which specify the format or encoding of the data.
 
-PLATFORM_OVERLOAD bool LoadKV3( CKeyValues3Context* context, CUtlString* error, CUtlBuffer* input, const KV3ID_t& format, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
+PLATFORM_OVERLOAD bool LoadKV3( CKV3Arena* context, CUtlString* error, CUtlBuffer* input, const KV3ID_t& format, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3( KeyValues3* kv, CUtlString* error, CUtlBuffer* input, const KV3ID_t& format, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3( KeyValues3* kv, CUtlString* error, const char* input, const KV3ID_t& format, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
-PLATFORM_OVERLOAD bool LoadKV3FromFile( CKeyValues3Context* context, CUtlString* error, const char* filename, const char* path, const KV3ID_t& format, uint flags = KV3_LOAD_TEXT_NONE );
+PLATFORM_OVERLOAD bool LoadKV3FromFile( CKV3Arena* context, CUtlString* error, const char* filename, const char* path, const KV3ID_t& format, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3FromFile( KeyValues3* kv, CUtlString* error, const char* filename, const char* path, const KV3ID_t& format, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3FromJSON( KeyValues3* kv, CUtlString* error, const char* input, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3FromJSONFile( KeyValues3* kv, CUtlString* error, const char* path, const char* filename, uint flags = KV3_LOAD_TEXT_NONE );
