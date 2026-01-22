@@ -40,7 +40,7 @@ class CFrameSnapshotManager : public CRefCountServiceMT
 public:
 	virtual ~CFrameSnapshotManager() = default;
 
-	CThreadMutex m_FrameSnapshotsWriteMutex;
+	CAtomicMutex m_FrameSnapshotsWriteMutex;
 	CUtlVector<CFrameSnapshot*> m_FrameSnapshots;
 	CVariableBitStringBase m_unkBitString;
 }; // sizeof unknown

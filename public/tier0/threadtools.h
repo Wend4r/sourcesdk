@@ -68,7 +68,7 @@ typedef void *HANDLE;
 
 const unsigned TT_INFINITE = 0xffffffff;
 
-typedef unsigned long ThreadId_t;
+typedef unsigned long long ThreadId_t;
 
 //-----------------------------------------------------------------------------
 //
@@ -787,12 +787,8 @@ typedef CAutoLockT<CAtomicMutex> CAutoLock;
 //---------------------------------------------------------
 
 template <int size>	struct CAutoLockTypeDeducer {};
-template <> struct CAutoLockTypeDeducer<sizeof(CThreadMutex)> {	typedef CThreadMutex Type_t; };
+template <> struct CAutoLockTypeDeducer<sizeof(CAtomicMutex)> {	typedef CAtomicMutex Type_t; };
 template <> struct CAutoLockTypeDeducer<sizeof(CThreadNullMutex)> {	typedef CThreadNullMutex Type_t; };
-#if !defined(THREAD_PROFILER)
-template <> struct CAutoLockTypeDeducer<sizeof(CThreadFastMutex)> {	typedef CThreadFastMutex Type_t; };
-template <> struct CAutoLockTypeDeducer<sizeof(CAlignedThreadFastMutex)> {	typedef CAlignedThreadFastMutex Type_t; };
-#endif
 
 #define AUTO_LOCK_( type, mutex ) \
 	CAutoLockT< type > UNIQUE_ID( static_cast<const type &>( mutex ), __FILE__, __LINE__ )
@@ -1529,26 +1525,26 @@ inline CThreadRWLock::CThreadRWLock()
 {
 }
 
-inline void CThreadRWLock::LockForRead()
+inline void CThreadRWLock::LockForRead( const char *pFileName, int nLine )
 {
-	m_mutex.Lock( __FILE__, __LINE__ );
+	m_mutex.Lock( pFileName, nLine );
 	if ( m_nWriters)
 	{
 		WaitForRead();
 	}
 	m_nActiveReaders++;
-	m_mutex.Unlock( __FILE__, __LINE__ );
+	m_mutex.Unlock( pFileName, nLine );
 }
 
-inline void CThreadRWLock::UnlockRead()
+inline void CThreadRWLock::UnlockRead( const char *pFileName, int nLine )
 {
-	m_mutex.Lock( __FILE__, __LINE__ );
+	m_mutex.Lock( pFileName, nLine );
 	m_nActiveReaders--;
 	if ( m_nActiveReaders == 0 && m_nWriters != 0 )
 	{
 		m_CanWrite.Set();
 	}
-	m_mutex.Unlock( __FILE__, __LINE__ );
+	m_mutex.Unlock( pFileName, nLine );
 }
 
 // read data from a memory address
