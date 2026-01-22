@@ -70,6 +70,7 @@ set(SOURCESDK_NEEDED_PROTOS
 	networksystem_protomessages
 	gameevents
 	usermessages
+	source2_steam_stats
 )
 
 include(cmake/platform/shared.cmake)
