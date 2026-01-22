@@ -98,7 +98,11 @@ public:
 	int m_nInputCount;
 	int m_nOutputCount;
 
+#ifdef _WIN32
 	char pad[80];
+#else
+	char pad[48];
+#endif
 
 	CEntityClassInfo* m_pClassInfo;
 	CEntityClassInfo* m_pBaseClassInfo;
