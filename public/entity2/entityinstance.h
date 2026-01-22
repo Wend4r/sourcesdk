@@ -50,7 +50,7 @@ struct NetworkStateChanged_t
 COMPILE_TIME_ASSERT(sizeof(NetworkStateChanged_t) == 64);
 
 // Not entirely sure
-struct NetworkStateChanged3Data
+struct NetworkStateChanged3_t
 {
 	CUtlVector<uint32> m_Unk0;
 	CUtlVector<uint32> m_Unk24;
@@ -64,6 +64,9 @@ struct CEntityPrivateScriptScope
 class CEntityInstance
 {
 public:
+	virtual void unk001() = 0;
+	virtual void unk002() = 0;
+
 	virtual ScriptClassDesc_t* GetScriptDesc() = 0;
 	
 	virtual ~CEntityInstance() = 0;
@@ -74,7 +77,7 @@ public:
 	virtual void AddedToEntityDatabase() = 0;
 	virtual void Spawn( const CEntityKeyValues* pKeyValues ) = 0;
 
-	virtual void unk001() = 0;
+	virtual void unk101() = 0;
 
 	virtual void PostDataUpdate( /*DataUpdateType_t*/int updateType ) = 0;
 	virtual void OnDataUnchangedInPVS() = 0;
@@ -95,34 +98,37 @@ public:
 	virtual void OnSave() = 0;
 	virtual void OnRestore() = 0;
 	
-	virtual void unk101() = 0;
+	virtual void unk201() = 0;
 
 	virtual int ObjectCaps() = 0;
 	virtual CEntityIndex RequiredEdictIndex() = 0;
 
 	// marks a field for transmission over the network
 	virtual void NetworkStateChanged( const NetworkStateChanged_t& data ) = 0; // Function replaces old version NetworkStateChanged( uint nOffset, int, ChangeAccessorFieldPathIndex_t PathIndex )
+
 	virtual void NetworkStateChangedBranch( const void* data ) = 0; // Game never call this function during testing
-	virtual void NetworkStateChanged_3( const NetworkStateChanged3Data& data ) = 0;
-	virtual void NetworkStateUnkSetBool( bool bUnk ) = 0; // Affects behavior of NetworkStateChanged
+	virtual void NetworkStateChanged_3( const NetworkStateChanged3_t& data ) = 0;
+
+	// Toggles network update state, if set to false would skip network updates
+	virtual void NetworkUpdateState( bool bUnk ) = 0; // Affects behavior of NetworkStateChanged
 	virtual void NetworkStateChangedLog( const char* pszFieldName, const char* pszInfo ) = 0;
 	virtual bool FullEdictChanged() = 0;
 
-	virtual void unk201() = 0;
-	virtual void unk202() = 0;
+	virtual void unk401() = 0;
+	virtual void unk402() = 0;
 
 	virtual ChangeAccessorFieldPathIndex_t AddChangeAccessorPath( const CFieldPath& path ) = 0;
 	virtual void AssignChangeAccessorPathIds() = 0;
 	virtual ChangeAccessorFieldPathIndexInfo_t* GetChangeAccessorPathInfo_1() = 0;
 	virtual ChangeAccessorFieldPathIndexInfo_t* GetChangeAccessorPathInfo_2() = 0;
 	
-	virtual void unk301() = 0;
-	virtual void unk302() = 0;
+	virtual void unk501() = 0;
+	virtual void unk502() = 0;
 
 	virtual void ReloadPrivateScripts() = 0;
 	virtual datamap_t* GetDataDescMap() = 0;
 
-	virtual void unk401() = 0;
+	virtual void unk601() = 0;
 
 	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
 
