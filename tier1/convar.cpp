@@ -179,7 +179,6 @@ public:
 	{
 		Assert( g_pCVar );
 
-#ifdef _DEBUG
 		ConVarRefAbstract hConVar = g_pCVar->FindConVar( cvar.m_Info.m_pszName );
 		if ( hConVar.IsValidRef() )
 		{
@@ -194,7 +193,6 @@ public:
 				return;
 			}
 		}
-#endif
 		else
 		{
 			g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
