@@ -96,9 +96,7 @@ public:
 	// returns current client limit
 	virtual int		GetMaxClients( void ) const = 0;
 
-#ifdef DEADLOCK
 	virtual float   GetUnk() const = 0;
-#endif
 
 	virtual void	ServerAdvanceTick( const EventServerAdvanceTick_t & ) = 0;
 	virtual void	ServerPollNetworking( const EventServerPollNetworking_t & ) = 0;
@@ -167,6 +165,10 @@ public:
 	virtual bool	IsRecordingDemo() = 0;
 
 	virtual uint8	GetClientConnectionType( CPlayerSlot slot ) = 0;
+	virtual bool	GetUnk2() = 0;
+	virtual float	GetUnk3() = 0;
+	virtual uint64	GetUnk4() = 0;
+	virtual void 	DirectUpdate() = 0;
 };
 
 class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
