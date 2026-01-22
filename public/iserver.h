@@ -271,7 +271,7 @@ public:
 	INetworkStringTable* m_pLightStyleTable;
 	INetworkStringTable* m_pUserInfoTable;
 	INetworkStringTable* m_pServerStartupTable;
-	CFrameSnapshotManager m_snapshotManager;
+	char pad416[120];
 	bf_write m_Signon;
 	CUtlLeanVector<byte> m_SignonBuffer;
 	CUtlClientVector m_Clients;
