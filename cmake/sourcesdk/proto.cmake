@@ -9,14 +9,6 @@ endif()
 set(SOURCESDK_PROTO_FILENAMES)
 set(SOURCESDK_CUSTOM_PROTO_FILENAMES)
 
-set(SOURCESDK_PROTOS "" CACHE STRING "Optional list of game protos to generate")
-
-set(SOURCESDK_CUSTOM_PROTOS "" CACHE STRING "Optional list of custom protos to generate; when set, overrides the default proto sources")
-set(SOURCESDK_CUSTOM_PROTO_ARGS "" CACHE STRING "Optional list of extra arguments passed to protoc for custom proto generation")
-set(SOURCESDK_CUSTOM_PROTO_DIR "" CACHE STRING "If set, directory that contains custom protos")
-set(SOURCESDK_CUSTOM_PROTO_OUTPUT_DIR "" CACHE STRING "If set, output directory for generated custom proto sources")
-set(SOURCESDK_CUSTOM_SKIP_PROTOS "" CACHE STRING "Optional list of proto basenames to skip during generation (e.g. project_voice.proto)")
-
 set(SOURCESDK_PROTO_DIR "${SOURCESDK_COMMON_DIR}")
 set(SOURCESDK_PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/protos")
 set(SOURCESDK_PROTOC_EXE "protoc${CMAKE_EXECUTABLE_SUFFIX}")
