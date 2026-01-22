@@ -204,10 +204,6 @@ public:
 				Plat_FatalError( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
 				DebuggerBreakIfDebugging();
 			}
-			else
-			{
-				*cvar.m_pConVarData = hConVar.GetConVarData(); // temp solution
-			}
 		}
 
 		// Don't let references pass as a newly registered cvar
