@@ -993,13 +993,12 @@ private:
 	unsigned int m_iCallbackIndex;
 	// Index into a linked list of cvar filter callbacks
 	unsigned int m_iFilterCBIndex;
-	// Index into a linked list of cvar completion callbacks
-	unsigned int m_iCompletionCBIndex;
 
 	int m_GameInfoFlags;
 	int m_UserInfoByteIndex;
 
-	int unk; // always -1
+	void * unk0x48;
+	void * unk0x50;
 
 	// At convar registration this is trimmed to better match convar type being used
 	// or if it was initialized as EConVarType_Invalid it would be of this size

@@ -193,20 +193,25 @@ public:
 				return;
 			}
 		}
-		else
-		{
-			g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
-			hConVar = *cvar.m_pConVar;
-		}
+
+		g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
 
 		Assert( cvar.m_pConVar );
-		if ( !hConVar.IsValidRef() )
+		if ( !cvar.m_pConVar->IsValidRef() )
 		{
-			Plat_FatalError( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
-			DebuggerBreakIfDebugging();
+			if ( !hConVar.IsValidRef() )
+			{
+				Plat_FatalError( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
+				DebuggerBreakIfDebugging();
+			}
+			else
+			{
+				*cvar.m_pConVarData = hConVar.GetConVarData(); // temp solution
+			}
 		}
+
 		// Don't let references pass as a newly registered cvar
-		else if ( s_ConVarRegCB && (cvar.m_Info.m_nFlags & FCVAR_REFERENCE) == 0 )
+		if ( s_ConVarRegCB && (cvar.m_Info.m_nFlags & FCVAR_REFERENCE) == 0 )
 			s_ConVarRegCB( cvar.m_pConVar );
 	}
 
