@@ -167,6 +167,8 @@ public:
 	// AMNOTE: Mostly used for allocating CVValue_t and ConVarData/ConCommandData objects
 	void *AllocateMemory( int size )
 	{
+		CAutoLock lock( m_Mutex );
+
 		int aligned_size = ALIGN_VALUE( size, 8 );
 		
 		if(aligned_size + m_CurrentMemoryBufferSize > kMemoryBufferChunkMaxSize)
@@ -186,6 +188,8 @@ public:
 	// AMNOTE: Mostly used for allocating cvar/concommand names
 	const char *AllocateString( const char *string )
 	{
+		CAutoLock lock( m_Mutex );
+
 		if(!string || !string[0])
 			return "";
 
@@ -272,7 +276,7 @@ public:
 
 	int m_SplitScreenSlots;
 
-	CThreadMutex m_Mutex;
+	CAtomicMutex m_Mutex;
 	characterset_t m_CharacterSet;
 	KeyValues *m_GameInfoKV;
 
