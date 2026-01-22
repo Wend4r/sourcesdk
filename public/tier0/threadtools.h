@@ -68,7 +68,11 @@ typedef void *HANDLE;
 
 const unsigned TT_INFINITE = 0xffffffff;
 
-typedef unsigned long long ThreadId_t;
+#ifdef _WIN32
+	typedef uint32 ThreadId_t;
+#else
+	typedef uint64 ThreadId_t;
+#endif
 
 //-----------------------------------------------------------------------------
 //
@@ -1111,7 +1115,7 @@ private:
 		ThreadId_t	m_writerId;
 #ifdef PLATFORM_WINDOWS
 		int32		m_nReaders;
-#elif PLATFORM_POSIX
+#else
 		int64		m_nReaders;
 #endif
 	};
