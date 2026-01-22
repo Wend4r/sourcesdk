@@ -87,6 +87,8 @@ public:
 
 	// Simulation tick interval
 	float interval_per_tick;
+
+	float unk;
 };
 
 #endif // GLOBALVARS_BASE_H

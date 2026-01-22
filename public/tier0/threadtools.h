@@ -640,7 +640,7 @@ private:
 //
 //-----------------------------------------------------------------------------
 
-class PLATFORM_CLASS CThreadMutex
+class CThreadMutex
 {
 public:
 	CThreadMutex( const char* pDebugName = NULL );
@@ -982,8 +982,8 @@ template<typename T> T strip_cv_quals_for_mutex(const volatile T&);
 
 #define LOCAL_THREAD_LOCK_( tag ) \
 	; \
-	static CThreadFastMutex autoMutex_##tag; \
-	AUTO_LOCK( autoMutex_##tag )
+	static CThreadFastMutex autoMutex_## tag; \
+	AUTO_LOCK( autoMutex_## tag )
 
 #define LOCAL_THREAD_LOCK() \
 	LOCAL_THREAD_LOCK_(_)

@@ -180,10 +180,10 @@ public:
 		Assert( g_pCVar );
 
 #ifdef _DEBUG
-		ConVarRef pConVar = g_pCVar->FindConVar( cvar.m_Info.m_pszName );
-		if ( pConVar.IsValidRef() )
+		ConVarRefAbstract hConVar = g_pCVar->FindConVar( cvar.m_Info.m_pszName );
+		if ( hConVar.IsValidRef() )
 		{
-			ConVarData* pConVarData = g_pCVar->GetConVarData( pConVar );
+			ConVarData* pConVarData = g_pCVar->GetConVarData( static_cast<ConVarRef>(hConVar) );
 			if (pConVarData->GetType() != cvar.m_Info.m_valueInfo.m_eVarType)
 			{
 				const char* cvarType = cvar.m_pConVar->GetConVarData()->GetDataTypeName();
@@ -195,11 +195,14 @@ public:
 			}
 		}
 #endif
-
-		g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
+		else
+		{
+			g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
+			hConVar = *cvar.m_pConVar;
+		}
 
 		Assert( cvar.m_pConVar );
-		if ( !cvar.m_pConVar->IsValidRef() )
+		if ( !hConVar.IsValidRef() )
 		{
 			Plat_FatalError( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
 			DebuggerBreakIfDebugging();

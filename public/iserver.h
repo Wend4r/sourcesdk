@@ -265,7 +265,6 @@ public:
 	CUtlString m_szAddons;
 	CUtlString m_szSkyname;
 	CUtlString m_szUnk344;
-	KeyValues* m_KV352;
 	CNetworkStringTableContainer* m_StringTables;
 	CNetworkStringTableContainer* m_StringTables2;
 	INetworkStringTable* m_pInstanceBaselineTable;
@@ -273,17 +272,11 @@ public:
 	INetworkStringTable* m_pUserInfoTable;
 	INetworkStringTable* m_pServerStartupTable;
 	CFrameSnapshotManager m_snapshotManager;
-	char pad544[24];
 	bf_write m_Signon;
 	CUtlLeanVector<byte> m_SignonBuffer;
-	bool m_bIsBackgroundMap;
 	CUtlClientVector m_Clients;
 	CCompressedResourceManifest* m_pResourceManifest;
-#ifdef _WIN32
-	char pad648[40];
-#else
 	char pad648[48];
-#endif
 	SpawnGroupHandle_t m_hActiveSpawnGroup;
 	int m_nMaxClients;
 	int m_nSpawnCount;

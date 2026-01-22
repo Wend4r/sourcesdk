@@ -33,7 +33,8 @@ public:
 	CUtlSlot() : m_ConnectedSignallers( 0, 1 ) {}
 
 private:
-	CCopyableLock< CThreadFastMutex > m_Mutex;
+	//CCopyableLock< CThreadFastMutex > m_Mutex;
+	char m_Mutex[16]; // temp solution
 	CUtlVector< MTElement_t > m_ConnectedSignallers;
 };
 

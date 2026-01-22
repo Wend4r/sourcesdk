@@ -355,11 +355,11 @@ public:
 	CUtlHashtable<fieldtype_t, KeyUnserializerDelegate, MurmurHash2HashFunctor> m_DataDescKeyUnserializers;
 	CUtlScratchMemoryPool m_ComponentUnserializerInfoAllocator;
 	CKV3Arena m_EntityKeyValuesAllocator;
-	CUtlSymbolTableLargeMT_CI m_Symbols;
+	CUtlSymbolTableLarge m_Symbols;
 	SpawnGroupHandle_t m_hActiveSpawnGroup;
 	matrix3x4a_t m_vSpawnOriginOffset;
 	IEntityDataInstantiator* m_Accessors[ MAX_ACCESSORS ];
-	CUtlHashtable<CUtlString, void*> m_EntityMaterialAttributes;
+	//CUtlHashtable<CUtlString, void*> m_EntityMaterialAttributes;
 };
 
 class CGameEntitySystem : public CEntitySystem
