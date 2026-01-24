@@ -6,17 +6,9 @@
 #endif
 
 #include "platform.h"
+#include "tier1/utlsymbollarge.h"
 
-class CGlobalSymbol
-{
-public:
-	operator uint64() { return Get(); }
-	uint64 Get() { return m_handle; }
-
-private:
-	uint64 m_handle;
-};
-
+using CGlobalSymbol = CUtlSymbolLarge;
 using CGlobalSymbolCaseSensitive = CGlobalSymbol;
 
 PLATFORM_INTERFACE CGlobalSymbol FindGlobalSymbolByHash( uint32 hash );
