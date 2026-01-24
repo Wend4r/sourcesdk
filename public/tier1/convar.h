@@ -1018,7 +1018,7 @@ private:
 
 	// At convar registration this is trimmed to better match convar type being used
 	// or if it was initialized as EConVarType_Invalid it would be of this size
-	CVValue_t m_Values[MAX_SPLITSCREEN_CLIENTS];
+	alignas( CVValue_t ) uint8 m_Values[sizeof( CVValue_t ) * MAX_SPLITSCREEN_CLIENTS];
 };
 
 static ConVarData *GetInvalidConVarData( EConVarType type )
