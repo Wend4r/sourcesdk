@@ -34,7 +34,7 @@
 
 typedef uint UtlSymLargeId_t;
 
-#define UTL_INVAL_SYMBOL_LARGE ((UtlSymLargeId_t)-1)
+#define UTL_INVAL_SYMBOL_LARGE static_cast< UtlSymLargeId_t >( ~0u )
 
 #define FOR_EACH_SYMBOL_LARGE( table, iter ) \
 	for ( UtlSymLargeId_t iter = 0; iter < (table).GetNumStrings(); iter++ )

@@ -340,7 +340,7 @@ using CKV3MemberHash = KeyValues3LowercaseHash_t;
 class CKV3MemberName : public CKV3MemberHash
 {
 public:
-	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CKV3MemberHash( szInit ), m_iSymLarge( 0 ), m_pszString( (const char *)szInit ) {}
+	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CKV3MemberHash( szInit ), m_iSymLarge( UTL_INVAL_SYMBOL_LARGE ), m_pszString( (const char *)szInit ) {}
 	CKV3MemberName( const char *pszString, int nLen ) : CKV3MemberHash( MakeStringToken2( pszString, nLen ) ), m_iSymLarge( UTL_INVAL_SYMBOL_LARGE ), m_pszString( pszString ) {}
 	CKV3MemberName( uint32 nHash = 0, UtlSymLargeId_t index = UTL_INVAL_SYMBOL_LARGE, const char* pszString = StringFuncs<char>::EmptyString() ) : CKV3MemberHash( nHash ), m_iSymLarge( index ), m_pszString( pszString ) {}
 
