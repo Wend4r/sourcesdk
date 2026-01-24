@@ -186,7 +186,7 @@ public: // IConnectionlessPacketHandler
 
 public: // IConVarListener
 	virtual void	OnConVarCreated( ConVarRefAbstract *pNewCvar ) = 0;
-	virtual void	OnConCommandCreated( ConCommand *pNewCommand ) {};
+	virtual void	OnConCommandCreated( ConCommand *pNewCommand ) = 0;
 
 public:
 	virtual CPlayerUserId GetPlayerUserId( CPlayerSlot slot ) = 0;

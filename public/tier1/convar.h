@@ -515,13 +515,12 @@ public:
 class ConCommandRef
 {
 private:
-	static const uint16 kInvalidAccessIndex = 0xFFFF;
+	static const uint16 kInvalidAccessIndex = 0xFFFFu;
 
 public:
-
 	ConCommandRef() : m_CommandAccessIndex( kInvalidAccessIndex ), m_CommandRegisteredIndex( 0 ) {}
 	ConCommandRef( uint16 command_idx ) : m_CommandAccessIndex( command_idx ), m_CommandRegisteredIndex( 0 ) {}
-	ConCommandRef( uint16 access_idx, int reg_idx ) : m_CommandAccessIndex( access_idx ), m_CommandRegisteredIndex( reg_idx ) {}
+	ConCommandRef( uint16 access_idx, uint16 reg_idx ) : m_CommandAccessIndex( access_idx ), m_CommandRegisteredIndex( reg_idx ) {}
 
 	ConCommandRef( const char *name, bool allow_defensive = false );
 
@@ -553,13 +552,13 @@ public:
 	void InvalidateRef() { m_CommandAccessIndex = kInvalidAccessIndex; m_CommandRegisteredIndex = 0; }
 	bool IsValidRef() const { return m_CommandAccessIndex != kInvalidAccessIndex; }
 	uint16 GetAccessIndex() const { return m_CommandAccessIndex; }
-	int GetRegisteredIndex() const { return m_CommandRegisteredIndex; }
+	uint16 GetRegisteredIndex() const { return m_CommandRegisteredIndex; }
 
 private:
 	// Index into internal linked list of concommands
 	uint16 m_CommandAccessIndex;
 	// Commands registered positional index
-	int m_CommandRegisteredIndex;
+	uint16 m_CommandRegisteredIndex;
 };
 
 //-----------------------------------------------------------------------------
@@ -1057,20 +1056,18 @@ static ConVarData *GetInvalidConVarData( EConVarType type )
 class ConVarRef
 {
 private:
-	static const uint16 kInvalidAccessIndex = 0xFFFF;
+	static const uint16 kInvalidAccessIndex = 0xFFFFu;
+	static const uint16 kInvalidCommandIndex = 0xFFFFu;
 
 public:
-	ConVarRef() : m_ConVar{ kInvalidAccessIndex, 0 } {}
-	ConVarRef( uint16 convar_idx ) : m_ConVar{ convar_idx, 0 } {}
-	ConVarRef( uint16 convar_idx, int registered_idx ) : m_ConVar{ convar_idx, registered_idx } {}
+	ConVarRef( uint16 convar_idx = kInvalidAccessIndex, uint16 concom_idx = kInvalidCommandIndex, uint32 registered_idx = 0u ) : m_ConVar{ convar_idx, concom_idx, registered_idx } {}
 	ConVarRef( uint64 handle ) : m_Handle( handle ) {}
-
 	ConVarRef( const char *name, bool allow_defensive = false );
 
 	void InvalidateRef() { m_ConVar.m_iAccessIndex = kInvalidAccessIndex; m_ConVar.m_iRegisteredIndex = 0; }
 	bool IsValidRef() const { return m_ConVar.m_iAccessIndex != kInvalidAccessIndex; }
 	uint16 GetAccessIndex() const { return m_ConVar.m_iAccessIndex; }
-	int GetRegisteredIndex() const { return m_ConVar.m_iRegisteredIndex; }
+	uint32 GetRegisteredIndex() const { return m_ConVar.m_iRegisteredIndex; }
 
 	operator uint64() const
 	{
@@ -1078,18 +1075,22 @@ public:
 	}
 
 protected:
-	struct Handle
+	struct Handle_t
 	{
-		// Index into internal linked list of concommands
+		// Index into internal linked list of convars
 		uint16 m_iAccessIndex;
+
+		// Index into internal linked list of concommands
+		uint16 m_iCommandIndex;
+
 		// ConVar registered positional index
-		int m_iRegisteredIndex;
+		uint32 m_iRegisteredIndex;
 	};
 
 	union
 	{
 		uint64 m_Handle;
-		Handle m_ConVar;
+		Handle_t m_ConVar;
 	};
 };
 
