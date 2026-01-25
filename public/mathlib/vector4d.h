@@ -132,8 +132,8 @@ public:
 	Vector4D& operator=( Vector4D const& src ) = default;
 };
 
-const Vector4D vec4_origin( 0.0f, 0.0f, 0.0f, 0.0f );
-const Vector4D vec4_invalid( FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX );
+inline const Vector4D vec4_origin( 0.0f, 0.0f, 0.0f, 0.0f );
+inline const Vector4D vec4_invalid( FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX );
 
 //-----------------------------------------------------------------------------
 // SSE optimized routines
