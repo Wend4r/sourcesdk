@@ -183,6 +183,8 @@ public:
 
 		unsigned short m_iPool;		// Index into m_StringPools.
 		unsigned short m_iOffset;	// Index into the string pool.
+		unsigned short m_iPool{};		// Index into m_StringPools.
+		unsigned short m_iOffset{};	// Index into the string pool.
 	};
 
 	class CStringPoolSearcher : public CStringPoolIndex
@@ -198,6 +200,8 @@ public:
 		
 		const char* m_pString;
 		unsigned short m_nStringHash;
+		const char* m_pString{};
+		unsigned short m_nStringHash{};
 	};
 
 	struct UtlSymTableEqualFunctor

@@ -445,7 +445,7 @@ class old_bf_write_static : public bf_write
 public:
 	inline old_bf_write_static() : bf_write(m_StaticData, SIZE) {}
 
-	char	m_StaticData[SIZE];
+	char	m_StaticData[SIZE]{};
 };
 
 
@@ -1065,8 +1065,8 @@ FORCEINLINE void CBitWrite::WriteFloat( float flValue )
 
 class CBitRead : public CBitBuffer
 {
-	uint32 m_nInBufWord;
-	int m_nBitsAvail;
+	uint32 m_nInBufWord{};
+	int m_nBitsAvail{};
 	uint32 const *m_pDataIn;
 	uint32 const *m_pBufferEnd;
 	uint32 const *m_pData;

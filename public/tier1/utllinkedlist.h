@@ -1244,7 +1244,7 @@ private:
 		Node_t( const T &_elem ) : elem( _elem ) {}
 
 		T elem;
-		Node_t *pPrev, *pNext;
+		Node_t *pPrev{}, *pNext{};
 	};
 
 	Node_t *AllocNode( const T *pCopyFrom )

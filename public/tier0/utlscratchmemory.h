@@ -74,7 +74,7 @@ public:
 	CUtlScratchMemoryPoolFixedGrowable( bool bSearchAllBlocks = true ) : CUtlScratchMemoryPool( SIZE, SIZE, &m_initialAllocationMemory, bSearchAllBlocks ) {}
 
 private:
-	unsigned char m_initialAllocationMemory[SIZE];
+	unsigned char m_initialAllocationMemory[SIZE]{};
 };
 
 

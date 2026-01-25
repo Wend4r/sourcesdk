@@ -231,6 +231,7 @@ struct ScriptFuncDescriptor_t
 {
 	ScriptFuncDescriptor_t()
 	{
+		m_pszScriptName = NULL;
 		m_pszFunction = NULL;
 		m_ReturnType = FIELD_TYPEUNKNOWN;
 		m_iVariantCount = 0;

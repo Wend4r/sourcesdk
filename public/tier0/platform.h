@@ -2718,7 +2718,7 @@ template < size_t NUM, class T > struct AlignedByteArray_t : public AlignedByteA
 		T &operator[]( int i )				{ return Base()[i]; } \
 		const T &operator[]( int i ) const	{ return Base()[i]; } \
 	private: \
-		byte m_Data[ NUM*sizeof( T ) ]; \
+		byte m_Data[ NUM*sizeof( T ) ]{}; \
 	} ALIGN_N_POST( ALIGN );
 
 DECLARE_ALIGNED_BYTE_ARRAY(1);

@@ -201,7 +201,7 @@ float FASTCALL _SSE_VectorNormalize (Vector& vec)
 	// NOTE: This is necessary to prevent an memory overwrite...
 	// sice vec only has 3 floats, we can't "movaps" directly into it.
 #ifdef _WIN32
-	__declspec(align(16)) float result[4];
+	__declspec(align(16)) float result[4]{};
 #elif defined _LINUX || defined __APPLE__
 	__attribute__((aligned(16))) float result[4];
 #endif

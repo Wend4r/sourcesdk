@@ -120,6 +120,8 @@ public:
 		m_softContactFrequency = 0.0f;
 		m_softContactDampingRatio = 0.0f;
 		m_wheelDrag = 0.0f;
+		m_heatConductivity = 0.0f;
+		m_flashpoint = 0.0f;
 	}
 	
 public:
@@ -212,6 +214,7 @@ public:
 	{
 		m_vMinBounds.Init();
 		m_vMaxBounds.Init();
+		m_flShapeRadius = 0.0f;
 		m_nGroupId = HITGROUP_GENERIC;
 		m_nShapeType = HITBOX_SHAPE_HULL;
 		m_bTranslationOnly = false;

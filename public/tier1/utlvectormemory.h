@@ -328,7 +328,7 @@ public:
 	Iterator_t InvalidIterator() const					{ return Iterator_t( InvalidIndex() ); }
 
 private:
-	char m_Memory[ SIZE*sizeof(T) + nAlignment ];
+	char m_Memory[ SIZE*sizeof(T) + nAlignment ]{};
 };
 
 #ifdef _LINUX

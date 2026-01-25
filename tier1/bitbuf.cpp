@@ -136,6 +136,7 @@ bf_write::bf_write()
 	m_bOverflow = false;
 	m_bAssertOnOverflow = true;
 	m_pDebugName = NULL;
+	m_bBytesAreMultiples = false;
 }
 
 bf_write::bf_write( const char *pDebugName, void *pData, int nBytes, int nBits )

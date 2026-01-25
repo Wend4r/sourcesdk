@@ -572,7 +572,7 @@ private:
 	union Data_t
 	{
 		char m_szString[DATA_SIZE];
-	} m_FixedBuffer;
+	} m_FixedBuffer{};
 };
 
 using CTinyBufferString    = CBufferStringN<16>;

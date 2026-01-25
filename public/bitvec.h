@@ -424,7 +424,7 @@ private:
 		NUM_INTS = (NUM_BITS + (BITS_PER_INT-1)) / BITS_PER_INT
 	};
 
-	uint32 m_Ints[(NUM_BITS + (BITS_PER_INT-1)) / BITS_PER_INT];
+	uint32 m_Ints[(NUM_BITS + (BITS_PER_INT-1)) / BITS_PER_INT]{};
 };
 
 //-----------------------------------------------------------------------------

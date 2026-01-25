@@ -79,7 +79,7 @@ class CUtlKeyValuePair<K, empty_t>
 {
 public:
 	typedef const K ValueReturn_t;
-	K m_key;
+	K m_key{};
 
 	CUtlKeyValuePair() {}
 

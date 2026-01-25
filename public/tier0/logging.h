@@ -121,7 +121,7 @@ const int MAX_LOGGING_LISTENER_COUNT = 16;
 // An invalid color set on a channel to imply that it should use
 // a device-dependent default color where applicable.
 //-----------------------------------------------------------------------------
-const Color UNSPECIFIED_LOGGING_COLOR( 0, 0, 0, 0 );
+inline const Color UNSPECIFIED_LOGGING_COLOR( 0, 0, 0, 0 );
 
 //-----------------------------------------------------------------------------
 // An ID returned by the logging system to refer to a logging channel.
@@ -248,9 +248,9 @@ typedef void ( *RegisterTagsFunc )( LoggingChannelID_t channelID );
 
 struct LoggingRareOptions_t
 {
-	const char *m_File;
-	int m_Line;
-	const char *m_Function;
+	const char *m_File = nullptr;
+	int m_Line = 0;
+	const char *m_Function = nullptr;
 	void *m_Unknown = nullptr;
 	void *m_Unknown2 = nullptr;
 	void* m_va_list_override = nullptr;
