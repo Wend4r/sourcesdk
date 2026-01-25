@@ -1153,7 +1153,7 @@ public:
 	// Attempts to get value as a type T, does type conversion if possible,
 	// if no such action is available for CvarType/T combo, global default value for type T would be returned
 	template <typename T>
-	const T GetAs( CSplitScreenSlot slot = -1 ) const;
+	T GetAs( CSplitScreenSlot slot = -1 ) const;
 
 	// Attempts to get value as a bool, does type conversion if possible,
 	// if no such action is available for CvarType/bool combo, global default value for bool would be returned
@@ -1357,7 +1357,7 @@ public:
 };
 
 template<typename T>
-inline const T ConVarRefAbstract::GetAs( CSplitScreenSlot slot ) const
+inline T ConVarRefAbstract::GetAs( CSplitScreenSlot slot ) const
 {
 	CVValue_t *value = m_ConVarData->ValueOrDefault( slot );
 
@@ -1384,7 +1384,7 @@ inline const T ConVarRefAbstract::GetAs( CSplitScreenSlot slot ) const
 }
 
 template<>
-inline const CUtlString ConVarRefAbstract::GetAs( CSplitScreenSlot slot ) const
+inline CUtlString ConVarRefAbstract::GetAs( CSplitScreenSlot slot ) const
 {
 	CBufferString buf;
 	GetValueAsString( buf, slot );
