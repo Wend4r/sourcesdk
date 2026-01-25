@@ -346,7 +346,7 @@ DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_CONSOLE );
 DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_VERBOSE );
 
 // These functions do not return.
-void Error( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
+[[noreturn]] void Error( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
 inline void Error( const tchar* pMsg, ... )
 {
 	static char szBuffer[MAX_LOGGING_MESSAGE_LENGTH];
