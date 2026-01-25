@@ -2143,37 +2143,37 @@ inline T&& Forward( typename C11RemoveReference<T>::Type&& obj )
 template <class T>
 inline T* Construct( T* pMemory )
 {
-	return reinterpret_cast<T*>(::new( pMemory ) T);
+	return ::new( pMemory ) T;
 }
 
 template <class T, typename ARG1>
 inline T* Construct( T* pMemory, ARG1 a1 )
 {
-	return reinterpret_cast<T*>(::new( pMemory ) T( a1 ));
+	return ::new( pMemory ) T( a1 );
 }
 
 template <class T, typename ARG1, typename ARG2>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2 )
 {
-	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2 ));
+	return ::new( pMemory ) T( a1, a2 );
 }
 
 template <class T, typename ARG1, typename ARG2, typename ARG3>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2, ARG3 a3 )
 {
-	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2, a3 ));
+	return ::new( pMemory ) T( a1, a2, a3 );
 }
 
 template <class T, typename ARG1, typename ARG2, typename ARG3, typename ARG4>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2, ARG3 a3, ARG4 a4 )
 {
-	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2, a3, a4 ));
+	return ::new( pMemory ) T( a1, a2, a3, a4 );
 }
 
 template <class T, typename ARG1, typename ARG2, typename ARG3, typename ARG4, typename ARG5>
 inline T* Construct( T* pMemory, ARG1 a1, ARG2 a2, ARG3 a3, ARG4 a4, ARG5 a5 )
 {
-	return reinterpret_cast<T*>(::new( pMemory ) T( a1, a2, a3, a4, a5 ));
+	return ::new( pMemory ) T( a1, a2, a3, a4, a5 );
 }
 
 template <class T, class P>
@@ -2197,7 +2197,7 @@ inline void ConstructThreeArg( T* pMemory, P1 const& arg1, P2 const& arg2, P3 co
 template <class T>
 inline T* CopyConstruct( T* pMemory, T const& src )
 {
-	return reinterpret_cast<T*>(::new( pMemory ) T(src));
+	return ::new( pMemory ) T(src);
 }
 
 template <class T>
