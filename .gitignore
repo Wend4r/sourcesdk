@@ -1,5 +1,11 @@
-# Workspaces
-/.vs
+# IDEs
+.idea
+.vs
+.vscode
+.PVS-Studio
+
+# CMake
+CMakeUserPresets.json
 
 # Build files. Must be published in Releases
 /.cache
