@@ -1806,7 +1806,7 @@ PLATFORM_INTERFACE bool				Plat_ShouldCollectMiniDumpsForFatalErrors();
 
 PLATFORM_INTERFACE void				Plat_NonFatalErrorFunc( const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
 
-PLATFORM_INTERFACE void				Plat_FatalError( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
+[[noreturn]] PLATFORM_INTERFACE void				Plat_FatalError( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
 
 //called to exit the process due to a fatal error. This allows for the application to handle providing a hook as well which can be called
 //before exiting
