@@ -181,8 +181,6 @@ public:
 			return m_iPool == other.m_iPool && m_iOffset == other.m_iOffset;
 		}
 
-		unsigned short m_iPool;		// Index into m_StringPools.
-		unsigned short m_iOffset;	// Index into the string pool.
 		unsigned short m_iPool{};		// Index into m_StringPools.
 		unsigned short m_iOffset{};	// Index into the string pool.
 	};
@@ -197,9 +195,7 @@ public:
 		inline CStringPoolSearcher( const char* pszSearchString, unsigned short SearchStringHash )
 			: 	CStringPoolIndex(0xFFFF, 0xFFFF), m_pString(pszSearchString), m_nStringHash(SearchStringHash)
 		{}
-		
-		const char* m_pString;
-		unsigned short m_nStringHash;
+
 		const char* m_pString{};
 		unsigned short m_nStringHash{};
 	};
