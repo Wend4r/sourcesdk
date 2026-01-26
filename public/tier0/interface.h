@@ -25,8 +25,8 @@ typedef void* (*CreateInterfaceFn)(const char *pName, int *pReturnCode);
 // The factory for that module should be passed on to dependent components for
 // proper versioning.
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE HMODULE			Plat_LoadModule( const char *pModuleName, int *pLastError = NULL, bool bHideLoadingError );
-PLATFORM_INTERFACE int				Plat_LoadModuleRaw( const char *pModuleName, HMODULE *pInstance, int nFlags, bool bHideLoadingError ); // Returns a last error number.
+PLATFORM_INTERFACE HMODULE			Plat_LoadModule( const char *pModuleName, int *pLastError = NULL, bool bHideLoadingError = true );
+PLATFORM_INTERFACE int				Plat_LoadModuleRaw( const char *pModuleName, HMODULE *pInstance, int nFlags, bool bHideLoadingError = true ); // Returns a last error number.
 PLATFORM_INTERFACE void				Plat_UnloadModule( HMODULE module );
 
 // Determines if current process is running with any debug modules
