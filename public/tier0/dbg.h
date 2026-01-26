@@ -23,6 +23,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 //-----------------------------------------------------------------------------
 // dll export stuff
@@ -355,6 +356,7 @@ inline void Error( const tchar* pMsg, ... )
 	V_vsnprintf(szBuffer, sizeof(szBuffer), pMsg, params);
 	va_end(params);
 	Plat_FatalError( "%s", szBuffer );
+	abort();
 }
 
 #if defined( DBGFLAG_STRINGS_STRIP )
