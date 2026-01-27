@@ -12,8 +12,8 @@
 
 #include <assert.h>
 #include <string.h>
-#include "utlleanmemory.h"
 
+#include "tier1/utlleanvector.h"
 
 //-----------------------------------------------------------------------------
 // The CUtlStack class:
