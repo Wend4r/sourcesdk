@@ -209,13 +209,13 @@ enum MoveCollide_t : unsigned char
 // Solid type basically describes how the bounding volume of the object is represented
 // NOTE: SOLID_BBOX MUST BE 2, and SOLID_VPHYSICS MUST BE 6
 // NOTE: These numerical values are used in the FGD by the prop code (see prop_dynamic)
-enum SolidType_t
+enum SolidType_t : unsigned char
 {
 	SOLID_NONE			= 0,	// no solid model
 	SOLID_BSP			= 1,	// a BSP tree
 	SOLID_BBOX			= 2,	// an AABB
 	SOLID_OBB			= 3,	// an OBB (not implemented yet)
-	// SOLID_SPHERE		= 4,
+	SOLID_SPHERE		= 4,
 	SOLID_POINT			= 5,
 	SOLID_VPHYSICS		= 6,	// solid vphysics object, get vcollide from the model and collide with that
 	SOLID_CAPSULE		= 7,
