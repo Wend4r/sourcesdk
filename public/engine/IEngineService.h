@@ -72,8 +72,10 @@ public:
 	virtual int			GetEngineDeviceWidth( void ) const = 0;
 	virtual int			GetEngineDeviceHeight( void ) const = 0;
 	virtual int			GetEngineSwapChainSize( void ) const = 0;
+	virtual bool		unk101( void ) const = 0;
 	virtual bool		IsLoopSwitchQueued( void ) const = 0;
 	virtual bool		IsLoopSwitchRequested( void ) const = 0;
+	virtual bool		unk201( void ) const = 0;
 	virtual CEventDispatcher<CEventIDManager_Default> *GetEventDispatcher( void ) = 0;
 	virtual void		*GetDebugVisualizerMgr( void ) = 0;
 	virtual int			GetActiveLoopClientServerMode( void ) const = 0;
@@ -88,9 +90,9 @@ public:
 	virtual const char	*GetAddon( int ) const = 0;
 	virtual bool		IsAddonMounted( const char * ) const = 0;
 	virtual const char	*GetAddonsString( void ) const = 0;
-	virtual void		unk101( void ) = 0;
-	virtual void		unk102( void ) = 0;
-	virtual void		unk103( void ) = 0;
+	virtual void		unk301( void ) = 0;
+	virtual void		unk302( void ) = 0;
+	virtual void		unk303( void ) = 0;
 	virtual void		InstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		UninstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		InstallAddonListChangeNotify( IAddonListChangeNotify * ) = 0;
@@ -99,7 +101,7 @@ public:
 	virtual void		AddLogCaptureString( const char * ) = 0;
 	virtual void		AddLogCaptureStringV( const char *pFormat, va_list args ) = 0;
 	virtual void		AddLogCaptureStringF( const char *pFormat, ... ) = 0;
-	virtual void		unk201( void ) = 0;
+	virtual void		unk401( void ) = 0;
 	virtual void		ExitMainLoop( void ) = 0;
 	virtual void		RegisterPrerequisite( IPrerequisite * ) = 0;
 	
@@ -109,7 +111,7 @@ public:
 	// Same methods as IVEngineServer2 
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
-	virtual void		unk301() = 0;
+	virtual void		unk501() = 0;
 #ifdef _LINUX
 	virtual void		UnregisterPrerequisite( IPrerequisite * ) = 0;
 #endif
