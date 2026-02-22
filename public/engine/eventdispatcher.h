@@ -9,7 +9,7 @@
 #include <tier1/utlmap.h>
 #include <tier1/utlvector.h>
 
-class ISchemaBinding;
+struct SchemaClassInfoData_t;
 
 struct CEventDispatcher_Base
 {
@@ -52,7 +52,7 @@ struct CEventIDManager_Default : CEventIDManager_SchemaBinding
 template <typename T>
 struct CEventDispatcher_Identified : CEventDispatcher_Base
 {
-	CUtlMap<const ISchemaBinding*, CUtlVector<EventListenerInfo_t>, unsigned int> m_EventListenerMap;
+	CUtlMap<const SchemaClassInfoData_t*, CUtlVector<EventListenerInfo_t>, unsigned int> m_EventListenerMap;
 };
 
 template <typename T>
