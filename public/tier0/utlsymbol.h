@@ -146,7 +146,7 @@ public:
 
 	struct UtlSymTableHashFunctor
 	{
-		unsigned int operator()( UtlSymTableAltKey k ) const
+		unsigned int operator()( const UtlSymTableAltKey& k ) const
 		{
 			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetHashRef()) - 1024;
 			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
@@ -155,7 +155,7 @@ public:
 			return pTable->Hash( k.m_pString );
 		}
 
-		unsigned int operator()( UtlSymElm_t k ) const
+		unsigned int operator()( const UtlSymElm_t& k ) const
 		{
 			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetHashRef()) - 1024;
 			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
@@ -202,7 +202,7 @@ public:
 
 	struct UtlSymTableEqualFunctor
 	{
-		bool operator()( UtlSymElm_t a, UtlSymElm_t b ) const
+		bool operator()( const UtlSymElm_t& a, const UtlSymElm_t& b ) const
 		{
 			static const ptrdiff_t tableoffset = (uintp)(&((Hashtable_t*)1024)->GetEqualRef()) - 1024;
 			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTable, m_HashTable) + tableoffset;
@@ -214,7 +214,7 @@ public:
 				return V_strcmp( pTable->String( a ), pTable->String( b ) ) == 0; 
 		}
 
-		bool operator()( UtlSymTableAltKey a, UtlSymElm_t b ) const
+		bool operator()( const UtlSymTableAltKey& a, const UtlSymElm_t& b ) const
 		{
 			const char* pString = a.m_pTable->String( b );
 			int nLength = ( int )strlen( pString );
@@ -228,7 +228,7 @@ public:
 				return V_strncmp( a.m_pString, pString, a.m_nLength ) == 0;
 		}
 
-		bool operator()( UtlSymElm_t a, UtlSymTableAltKey b ) const
+		bool operator()( const UtlSymElm_t& a, const UtlSymTableAltKey& b ) const
 		{
 			return operator()( b, a );
 		}

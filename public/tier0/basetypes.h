@@ -483,7 +483,7 @@ struct color24
 typedef struct color32_s
 {
 	bool operator!=( const struct color32_s &other ) const;
-	byte r, g, b, a; 
+	byte r, g, b, a;
 
 	// assign and copy by using the whole register rather
 	// than byte-by-byte copy. (No, the compiler is not
@@ -556,7 +556,7 @@ struct Rect3D_t
 		depth = nDepth;
 	}
 
-	FORCEINLINE Rect3D_t( void )
+	FORCEINLINE Rect3D_t( void ) : Rect3D_t(0, 0, 0, 0, 0, 0)
 	{
 	}
 

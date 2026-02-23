@@ -403,7 +403,7 @@ protected:
 
 	FORCEINLINE void Init( void )
 	{
-		memset( m_nDataType, 0xff, sizeof( m_nDataType ) );
+		memset( m_nDataType, ATTRDATATYPE_NONE, sizeof( m_nDataType ) );
 		memset( m_pSeparateDataMemory, 0, sizeof( m_pSeparateDataMemory ) );
 		
 #ifdef _DEBUG

@@ -372,19 +372,19 @@ public:
 	{
 		switch(m_type)
 		{
-			case FIELD_VOID:		*pDest = 0.0; return false;
-			case FIELD_INT32:		*pDest = m_int32; return true;
-			case FIELD_INT64:		*pDest = m_int64; return true;
-			case FIELD_UINT32:		*pDest = m_uint32; return true;
-			case FIELD_UINT64:		*pDest = m_uint64; return true;
-			case FIELD_FLOAT32:		*pDest = m_float32; return true;
-			case FIELD_FLOAT64:		*pDest = m_float64; return true;
-			case FIELD_BOOLEAN:		*pDest = m_bool; return true;
+			case FIELD_VOID:		*pDest = 0.0f; return false;
+			case FIELD_INT32:		*pDest = static_cast<float>(m_int32); return true;
+			case FIELD_INT64:		*pDest = static_cast<float>(m_int64); return true;
+			case FIELD_UINT32:		*pDest = static_cast<float>(m_uint32); return true;
+			case FIELD_UINT64:		*pDest = static_cast<float>(m_uint64); return true;
+			case FIELD_FLOAT32:		*pDest = static_cast<float>(m_float32); return true;
+			case FIELD_FLOAT64:		*pDest = static_cast<float>(m_float64); return true;
+			case FIELD_BOOLEAN:		*pDest = static_cast<float>(m_bool); return true;
 			case FIELD_CSTRING:
 			{
 				if(m_pszString && m_pszString[0])
 				{
-					*pDest = V_atof(m_pszString);
+					*pDest = static_cast<float>(V_atof(m_pszString));
 					return true;
 				}
 			}
@@ -392,7 +392,7 @@ public:
 			{
 				if(m_stringt.ToCStr()[0])
 				{
-					*pDest = V_atof(m_stringt.ToCStr());
+					*pDest = static_cast<float>(V_atof(m_stringt.ToCStr()));
 					return true;
 				}
 			}

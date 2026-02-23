@@ -86,12 +86,12 @@ public:
 	{
 		const CPUInformation& pi = GetCPUInformation();
 
-		if ( IsX360() )
+		if constexpr ( IsX360() )
 		{
 			// cycle counter runs as doc'd at 1/64 Xbox 3.2GHz clock speed, thus 50 Mhz
 			g_ClockSpeed = Plat_CPUTickFrequency() / 64L;
 		}
-		else if ( IsPS3() )
+		else if constexpr ( IsPS3() )
 		{
 			g_ClockSpeed = sys_time_get_timebase_frequency(); // CPU clock rate is totally unrelated to time base register frequency on PS3
 		}

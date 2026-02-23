@@ -420,8 +420,8 @@ public:
 class ALIGN16 VectorAligned : public Vector
 {
 public:
-	inline VectorAligned(void) {};
-	inline VectorAligned(vec_t X, vec_t Y, vec_t Z) 
+	inline VectorAligned() : Vector(), w() {}
+	inline VectorAligned(vec_t X, vec_t Y, vec_t Z, vec_t W = 0) : w(W)
 	{
 		Init(X,Y,Z);
 	}
@@ -438,6 +438,7 @@ public:
 	explicit VectorAligned(const Vector &vOther) 
 	{
 		Init(vOther.x, vOther.y, vOther.z);
+		w = 0;
 	}
 	
 	VectorAligned& operator=(const Vector &vOther)	

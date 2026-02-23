@@ -712,6 +712,7 @@ enum EHardwareBreakpointType
 
 enum EHardwareBreakpointSize
 {
+	BREAKPOINT_SIZE_0 = 0,
 	BREAKPOINT_SIZE_1 = 1,
 	BREAKPOINT_SIZE_2 = 2,
 	BREAKPOINT_SIZE_4 = 4,
@@ -726,7 +727,7 @@ class CHardwareBreakPointScopeGuard
 public:
 	CHardwareBreakPointScopeGuard( const void *pvLocation, size_t nLocationSize, EHardwareBreakpointType eType = BREAKPOINT_WRITE )
 	{
-		EHardwareBreakpointSize eSize = BREAKPOINT_SIZE_4;
+		EHardwareBreakpointSize eSize;
 		switch ( nLocationSize )
 		{
 		case 1:
@@ -742,6 +743,7 @@ public:
 			eSize = BREAKPOINT_SIZE_8;
 			break;
 		default:
+			eSize = BREAKPOINT_SIZE_0;
 			Warning( _T( "SetHardwareBreakpoint can only work with 1, 2, 4 or 8 byte data fields." ) );
 			break;
 		}

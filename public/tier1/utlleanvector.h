@@ -420,18 +420,18 @@ public:
 		Iterator_t( I i ) : index( i ) {}
 		I index;
 
-		bool operator==( const Iterator_t it ) const	{ return index == it.index; }
-		bool operator!=( const Iterator_t it ) const	{ return index != it.index; }
+		bool operator==( const Iterator_t& it ) const	{ return index == it.index; }
+		bool operator!=( const Iterator_t& it ) const	{ return index != it.index; }
 	};
 	Iterator_t First() const							{ return Iterator_t( IsIdxValid( 0 ) ? 0 : InvalidIndex() ); }
-	Iterator_t Next( const Iterator_t it ) const		{ return Iterator_t( IsIdxValid( it.index + 1 ) ? it.index + 1 : InvalidIndex() ); }
-	I GetIndex( const Iterator_t it ) const				{ return it.index; }
-	bool IsIdxAfter( I i, const Iterator_t it ) const	{ return i > it.index; }
-	bool IsValidIterator( const Iterator_t it ) const	{ return IsIdxValid( it.index ); }
+	Iterator_t Next( const Iterator_t& it ) const		{ return Iterator_t( IsIdxValid( it.index + 1 ) ? it.index + 1 : InvalidIndex() ); }
+	I GetIndex( const Iterator_t& it ) const			{ return it.index; }
+	bool IsIdxAfter( I i, const Iterator_t& it ) const	{ return i > it.index; }
+	bool IsValidIterator( const Iterator_t& it ) const	{ return IsIdxValid( it.index ); }
 	Iterator_t InvalidIterator() const					{ return Iterator_t( InvalidIndex() ); }
 
-	T& operator[]( const Iterator_t it )				{ return Element( it.index ); }
-	const T& operator[]( const Iterator_t it ) const	{ return Element( it.index ); }
+	T& operator[]( const Iterator_t& it )				{ return Element( it.index ); }
+	const T& operator[]( const Iterator_t& it ) const	{ return Element( it.index ); }
 
 	iterator begin()						{ return this->Base(); }
 	const_iterator begin() const			{ return this->Base(); }

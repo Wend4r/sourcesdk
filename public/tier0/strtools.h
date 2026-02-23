@@ -1070,6 +1070,12 @@ public:
 		Clear();
 	}
 
+	CStrAutoEncode& operator =(CStrAutoEncode& other)
+	{
+		Copy( other );
+		return *this;
+	}
+
 	PLATFORM_CLASS void Clear();
 	PLATFORM_CLASS CStrAutoEncode &Copy( const CStrAutoEncode &other );
 

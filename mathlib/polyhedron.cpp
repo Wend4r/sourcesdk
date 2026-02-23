@@ -177,6 +177,7 @@ Vector CPolyhedron::Center( void ) const
 	return ((vAABBMin + vAABBMax) * 0.5f);
 }
 
+extern "C" {
 enum PolyhedronPointPlanarity
 {
 	POINT_DEAD,
@@ -244,8 +245,7 @@ struct GeneratePolyhedronFromPlanes_UnorderedPointLL //an unordered collection o
 	GeneratePolyhedronFromPlanes_UnorderedPointLL *pNext;
 	GeneratePolyhedronFromPlanes_UnorderedPointLL *pPrev;
 };
-
-
+}
 
 
 CPolyhedron *ClipPolyhedron( const CPolyhedron *pExistingPolyhedron, const float *pOutwardFacingPlanes, int iPlaneCount, float fOnPlaneEpsilon, bool bUseTemporaryMemory )
