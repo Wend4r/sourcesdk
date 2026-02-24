@@ -518,9 +518,9 @@ private:
 	static const uint16 kInvalidAccessIndex = 0xFFFFu;
 
 public:
-	ConCommandRef() : m_CommandAccessIndex( kInvalidAccessIndex ), m_CommandRegisteredIndex( 0 ) {}
-	ConCommandRef( uint16 command_idx ) : m_CommandAccessIndex( command_idx ), m_CommandRegisteredIndex( 0 ) {}
-	ConCommandRef( uint16 access_idx, uint16 reg_idx ) : m_CommandAccessIndex( access_idx ), m_CommandRegisteredIndex( reg_idx ) {}
+	ConCommandRef() : m_CommandAccessIndex( kInvalidAccessIndex ), m_CommandRegisteredIndex( 0u ) {}
+	ConCommandRef( uint16 command_idx ) : m_CommandAccessIndex( command_idx ), m_CommandRegisteredIndex( 0u ) {}
+	ConCommandRef( uint16 access_idx, uint32 reg_idx ) : m_CommandAccessIndex( access_idx ), m_CommandRegisteredIndex( reg_idx ) {}
 
 	ConCommandRef( const char *name, bool allow_defensive = false );
 
@@ -549,16 +549,16 @@ public:
 		return GetRawData()->GetAutoCompleteSuggestions( command, completions );
 	}
 
-	void InvalidateRef() { m_CommandAccessIndex = kInvalidAccessIndex; m_CommandRegisteredIndex = 0; }
+	void InvalidateRef() { m_CommandAccessIndex = kInvalidAccessIndex; m_CommandRegisteredIndex = 0u; }
 	bool IsValidRef() const { return m_CommandAccessIndex != kInvalidAccessIndex; }
 	uint16 GetAccessIndex() const { return m_CommandAccessIndex; }
-	uint16 GetRegisteredIndex() const { return m_CommandRegisteredIndex; }
+	uint32 GetRegisteredIndex() const { return m_CommandRegisteredIndex; }
 
 private:
 	// Index into internal linked list of concommands
 	uint16 m_CommandAccessIndex;
 	// Commands registered positional index
-	uint16 m_CommandRegisteredIndex;
+	uint32 m_CommandRegisteredIndex;
 };
 
 //-----------------------------------------------------------------------------
