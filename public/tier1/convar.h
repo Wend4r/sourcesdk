@@ -428,19 +428,16 @@ struct CompletionCallbackInfo_t
 {
 	CompletionCallbackInfo_t() :
 		m_fnCompletionCallback( nullptr ),
-		m_bIsFunction( false ),
 		m_bIsInterface( false )
 	{}
 
 	CompletionCallbackInfo_t( FnCommandCompletionCallback cb ) :
 		m_fnCompletionCallback( cb ),
-		m_bIsFunction( cb ? true : false ),
 		m_bIsInterface( false )
 	{}
 
 	CompletionCallbackInfo_t( ICommandCompletionCallback *cb ) :
 		m_pCommandCompletionCallback( cb ),
-		m_bIsFunction( false ),
 		m_bIsInterface( cb ? true : false )
 	{}
 
@@ -464,7 +461,6 @@ struct CompletionCallbackInfo_t
 		ICommandCompletionCallback *m_pCommandCompletionCallback;
 	};
 
-	bool m_bIsFunction;
 	bool m_bIsInterface;
 };
 
