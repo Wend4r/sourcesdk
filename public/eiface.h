@@ -25,6 +25,7 @@
 #include "tier1/utlmap.h"
 #include "tier0/utlstring.h"
 #include "tier0/bufferstring.h"
+#include "entity2/entityidentity.h"
 #include <steam/steamclientpublic.h>
 #include "playerslot.h"
 #include "playeruserid.h"
@@ -367,9 +368,9 @@ public:
 
 	virtual void			PreWorldUpdate( bool simulating ) = 0;
 
-	virtual CUtlMap<int, Entity2Networkable_t>	*GetEntity2Networkables( void ) const = 0;
+	virtual CUtlMap<int,Entity2Networkable_t> &GetEntity2Networkables( void ) const = 0;
 
-	virtual void			*GetEntityInfo() = 0;
+	virtual bool			GetEntity2Networkable( CEntityIndex nEntryIndex, Entity2Networkable_t *info ) = 0;
 
 	// Called to apply lobby settings to a dedicated server
 	virtual void			ApplyGameSettings( KeyValues *pKV ) = 0;
