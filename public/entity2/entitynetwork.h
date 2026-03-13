@@ -27,7 +27,7 @@ struct Entity2Networkable_t
 	CEntityInstance *m_pEntityInstance;
 	CEntityInstance *m_pParentEntity;
 	const char *m_pszDesignerName;
-	void *m_pEntityClassSomething; // *( *( pEntityInstance->m_pEntity->m_pClass ) + 88 ) + 8 )
+	const char* m_pszCPPClassname;
 	CNetworkTransmitComponent *m_pTransmitComponent;
 	CChangeInfoAccessor *m_pChangeAccessor;
 	uint32 *m_pnChangeFlags;

@@ -11,17 +11,20 @@
 #include "entityhandle.h"
 #include "networksystem/iflattenedserializers.h"
 
-#define FENTCLASS_NON_NETWORKABLE		(1 << 0) // If the EntityClass is non-networkable
-#define FENTCLASS_ALIAS					(1 << 1) // If the EntityClass is an alias
-#define FENTCLASS_NO_SPAWNGROUP			(1 << 2) // Don't use spawngroups when creating entity
-#define FENTCLASS_FORCE_EHANDLE			(1 << 3) // Forces m_requiredEHandle on created entities
-#define FENTCLASS_UNK004				(1 << 4)
-#define FENTCLASS_SUSPEND_OUTSIDE_PVS	(1 << 5) // Suspend entities outside of PVS
-#define FENTCLASS_ANONYMOUS				(1 << 6) // If the EntityClass is anonymous
-#define FENTCLASS_UNK007				(1 << 7)
-#define FENTCLASS_UNK008				(1 << 8)
-#define FENTCLASS_UNK009				(1 << 9)
-#define FENTCLASS_FORCE_WORLDGROUPID	(1 << 10) // Forces worldgroupid to be 1 on created entities
+enum EntityClassFlags_t
+{
+	ECF_NOT_NETWORKED						= (1 << 0), // If the EntityClass is non-networkable
+	ECF_ALIAS								= (1 << 1), // If the EntityClass is an alias
+	ECF_SPAWN_GROUP_HANDLE_INVALID			= (1 << 2), // Don't use spawngroups when creating entity
+	ECF_HAS_REQUIRED_ENTITY_HANDLE			= (1 << 3), // Forces m_requiredEHandle on created entities
+	ECF_ALWAYS_SPAWN_ON_CLIENT				= (1 << 4),
+	ECF_BECOME_SUSPENDED_INSTEAD_OF_DORMANT = (1 << 5), // Suspend entities outside of PVS
+	ECF_ANONYMOUS_ENTITY					= (1 << 6), // If the EntityClass is anonymous
+	ECF_PRECACHE_NETWORKED_ENTITY_ON_CLIENT	= (1 << 7),
+	ECF_UNK001								= (1 << 8),
+	ECF_UNK002								= (1 << 9),
+	ECF_FORCE_WORLDGROUPID					= (1 << 10) // Forces worldgroupid to be 1 on created entities
+};
 
 class CSchemaClassInfo;
 class CEntityClass;
@@ -99,10 +102,17 @@ public:
 	int m_nOutputCount;
 
 #ifdef _WIN32
-	char pad[80];
-#else
 	char pad[48];
+#else
+	char pad[16];
 #endif
+
+	void *m_pfnPulseBindingTraits;
+
+	CEntitySharedPulseSignature *m_pSharedPulseSignature;
+	CEntitySharedPulseSignature *m_unk201;
+
+	EntClassComponentOverride_t* m_pComponentOverrides;
 
 	CEntityClassInfo* m_pClassInfo;
 	CEntityClassInfo* m_pBaseClassInfo;
