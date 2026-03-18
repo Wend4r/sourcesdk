@@ -169,6 +169,7 @@ public:
 	virtual float	GetUnk3() = 0;
 	virtual uint64	GetUnk4() = 0;
 	virtual void 	DirectUpdate() = 0;
+	virtual uint64	GetUnkStaticFlags() = 0;
 };
 
 class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
