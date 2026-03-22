@@ -129,6 +129,7 @@ enum ScriptLanguage_t
 {
 	SL_NONE,
 	SL_LUA,
+	SL_NOP,
 
 	SL_DEFAULT = SL_LUA
 };
@@ -461,7 +462,7 @@ class CSquirrelMetamethodDelegateImpl;
 class IScriptVM
 {
 public:
-	virtual ~IScriptVM() = 0;
+	virtual ~IScriptVM() = default;
 
 	virtual bool Init() = 0;
 	virtual void Shutdown() = 0;
