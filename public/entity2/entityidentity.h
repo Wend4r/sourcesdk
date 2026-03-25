@@ -143,12 +143,12 @@ public:
 	bool ClassMatches( const char* pszClassOrWildcard ) const;
 
 public:
-	CEntityInstance* m_pInstance; // 0x0
-	CEntityClass* m_pClass; // 0x8
-	CEntityHandle m_EHandle; // 0x10
-	int32 m_nameStringableIndex; // 0x14	
-	CUtlSymbolLarge m_name; // 0x18
-	CUtlSymbolLarge m_designerName; // 0x20
+	CEntityInstance* m_pInstance;
+	CEntityClass* m_pClass;
+	CEntityHandle m_EHandle;
+	int32 m_nameStringTableIndex;
+	CUtlSymbolLarge m_name;
+	CUtlSymbolLarge m_designerName;
 private:
 	uint64 m_hPublicScope; // 0x28 - CEntityPublicScriptScope
 public:
