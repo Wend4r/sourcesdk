@@ -363,7 +363,10 @@ struct SchemaClassInfoData_t
 	
 	const char* m_pszName;
 	const char* m_pszProjectName;
-	
+#ifdef CS2_BETA
+	const char* m_pszCPPName;
+#endif
+
 	int m_nSize;
 
 	uint16 m_nFieldCount;
