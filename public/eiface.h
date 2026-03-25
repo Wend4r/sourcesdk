@@ -28,7 +28,7 @@
 #include "playerslot.h"
 #include "playeruserid.h"
 #include <iloopmode.h>
-
+#include "networkbasetypes.pb.h"
 #include "network_connection.pb.h"
 
 //-----------------------------------------------------------------------------
@@ -98,6 +98,8 @@ class ILoadingSpawnGroup;
 class IToolGameSimulationAPI;
 class CCLCMsg_Move_t;
 class CCLCMsg_SplitPlayerConnect_t;
+class CNetMessage;
+class INetworkMessageInternal;
 struct Entity2Networkable_t;
 
 namespace google
@@ -310,34 +312,37 @@ public:
 
 	virtual CPlayerSlot CreateClient( CPlayerSlot nRequestSlot, CSteamID nSteamID, const char *pszName ) = 0;
 	virtual void SetClientConnect( CPlayerSlot nSlot, bool b = true ) = 0;
+	virtual SignonState_t GetClientSignonState( CPlayerSlot nSlot ) = 0;
 	virtual void KickClient( CPlayerSlot nSlot, const char *szInternalReason, ENetworkDisconnectionReason reason ) = 0;
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;
 
-	virtual void unk_98() = 0;
-	virtual void unk_99() = 0;
-	virtual void unk_100() = 0;
-	virtual void unk_101() = 0;
-	virtual void unk_102() = 0;
-	virtual void unk_103() = 0;
-	virtual void unk_104() = 0;
+	virtual int64 StartHltvReplay( CPlayerSlot nSlot, void *pRequest ) = 0;
+	virtual int64 ForceStopHltvReplay( CPlayerSlot nSlot ) = 0;
+	virtual int64 StopAllHltvReplays() = 0;
+	virtual uint32 GetHltvLastSendTick( CPlayerSlot nSlot ) = 0;
+	virtual bool IsHltvReplayBufferAvailable() = 0;
+	virtual bool CanStartHltvReplay( CPlayerSlot nSlot, uint32 nDelay ) = 0;
+	virtual int64 ResetHltvReplayRequestTime( CPlayerSlot nSlot ) = 0;
 
 	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
 	virtual void UpdateClientRate( CPlayerSlot nSlot ) = 0;
 	virtual void UpdateClientRate2( CPlayerSlot nSlot ) = 0;
 
-	virtual void unk_108() = 0;
-	virtual void unk_109() = 0;
-	virtual void unk_110() = 0;
-	virtual void unk_111() = 0;
-	virtual void unk_112() = 0;
-	virtual void unk_113() = 0;
-	virtual void unk_114() = 0;
-	virtual void unk_115() = 0;
-	virtual void unk_116() = 0;
-	virtual void unk_117() = 0;
-	virtual void unk_118() = 0;
-	virtual void unk_119() = 0;
+	virtual uint64 RemoveHltvReplayRequest( float flDelay, void *pUnk, int nRequestId ) = 0;
+	virtual void *AddHltvReplayRequest( uint32, int, uint32, int, int ) = 0;
+	virtual bool IsHltvReplayEnabled() = 0;
+	virtual uint64 QueueHltvReplayEvent( int, uint8, uint8 ) = 0;
+	virtual bool IsHltvReplayActive() = 0;
+	virtual void RecordNetworkSpike() = 0;
+	virtual void RecordDemo( const char *pszFilename ) = 0;
+	virtual void StopRecordingDemo( void *pUnk ) = 0;
+
+	virtual bool BroadcastEvent( INetworkMessageInternal *pSerializer, const CNetMessage *pMessage ) = 0;
+	virtual const char *GetHltvReplayStats() = 0;
+	virtual const char *GetName() = 0;
+
+	virtual CCommand *GetClientCommand( CPlayerSlot nSlot ) = 0;
 };
 
 abstract_class IServerGCLobby
