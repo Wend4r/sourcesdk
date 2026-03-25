@@ -282,6 +282,10 @@ template< class T, class RefCountAccessor >
 CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::CopyFrom( const CSmartPtr<T,RefCountAccessor> &copyFrom )
 {
 	m_pObj = copyFrom.m_pObj;
+	if ( m_pObj )
+	{
+		RefCountAccessor::AddRef( m_pObj );
+	}
 	return *this;
 }
 
