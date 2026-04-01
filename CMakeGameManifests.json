@@ -101,6 +101,16 @@
 			"CS2": 25
 		}
 	},
+	"cs2-beta":
+	{
+		"name": "Counter-Strike 2 - Beta",
+		"inherits": ["cs2"],
+
+		"defines":
+		{
+			"CS2_BETA": 25
+		}
+	},
 
 	"citadel":
 	{
