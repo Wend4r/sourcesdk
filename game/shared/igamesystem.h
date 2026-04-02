@@ -228,6 +228,10 @@ GS_EVENT_MSG( RestoreGame )
 	const CUtlVector<CEntityHandle> *m_pEntityList;
 };
 
+#ifdef CS2_BETA
+GS_EVENT_MSG( ServerPrePackEntities );
+#endif
+
 #define GS_EVENT_IMPL( name ) virtual void name(const Event##name##_t& msg) = 0;
 #define GS_EVENT( name ) virtual void name(const Event##name##_t& msg) override
 #define GS_EVENT_MEMBER( gamesystem, name ) void gamesystem::name(const Event##name##_t& msg)
@@ -310,10 +314,6 @@ public:
 	GS_EVENT_IMPL( ServerPostEntityThink )					// 32
 
 	virtual void unk_401( const void *const msg ) = 0;		// 33
-#ifdef DEADLOCK
-	// TODO: I am not sure where exactly new function were added but above ServerGamePostSimulate
-	virtual void unk_402( const void *const msg ) = 0;		// ?
-#endif
 
 	GS_EVENT_IMPL( ServerPreClientUpdate )					// 34
 	GS_EVENT_IMPL( ServerAdvanceTick )						// 35
@@ -345,10 +345,14 @@ public:
 	virtual void unk_605( const void *const msg ) = 0;		// 55
 	virtual void unk_606( const void *const msg ) = 0;		// 56
 
-	virtual const char* GetName() const = 0;				// 57
-	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;	// 58
-	virtual void SetName(const char* pName) = 0;			// 59
-	virtual bool DoesGameSystemReallocate() = 0;			// 60
+#ifdef CS2_BETA
+	GS_EVENT_IMPL( ServerPrePackEntities )					// 57
+#endif
+
+	virtual const char* GetName() const = 0;				// 58
+	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;	// 59
+	virtual void SetName(const char* pName) = 0;			// 60
+	virtual bool DoesGameSystemReallocate() = 0;			// 61
 	virtual ~IGameSystem() {}
 	virtual void YouForgot_DECLARE_GAME_SYSTEM_InYourClassDefinition() = 0;
 };
@@ -453,6 +457,10 @@ public:
 	virtual void unk_604( const void *const msg ) override {}
 	virtual void unk_605( const void *const msg ) override {}
 	virtual void unk_606( const void *const msg ) override {}
+
+#ifdef CS2_BETA
+	GS_EVENT( ServerPrePackEntities ) {}
+#endif
 
 	virtual const char* GetName() const override { return m_pName; }
 	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}
