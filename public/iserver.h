@@ -165,6 +165,9 @@ public:
 	virtual bool	IsRecordingDemo() = 0;
 
 	virtual uint8	GetClientConnectionType( CPlayerSlot slot ) = 0;
+#ifdef CS2_BETA
+	virtual SignonState_t	GetClientSignonState( CPlayerSlot slot ) = 0;
+#endif
 	virtual bool	GetUnk2() = 0;
 	virtual float	GetUnk3() = 0;
 	virtual uint64	GetUnk4() = 0;
