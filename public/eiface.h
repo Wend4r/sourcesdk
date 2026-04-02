@@ -171,6 +171,9 @@ public:
 	virtual void		DumpNetStats( void *pNetStatData, const std::function< void ( const char * )> &func ) = 0; 
 	virtual void		unk_29() = 0;
 	virtual void		unk_30() = 0;
+#ifdef CS2_BETA
+	virtual uint32		GetLongFrameCount() = 0;
+#endif
 
 	// Tell engine to change level ( "changelevel s1\n" or "changelevel2 s1 s2\n" )
 	virtual void		ChangeLevel( const char *s1, const char *s2 ) = 0;
