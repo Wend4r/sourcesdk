@@ -166,10 +166,11 @@ public:
 
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
-	virtual void		ShowFrameTimeReport( void *, bool ) = 0;
 
+	virtual void		unk027() = 0;
+
+	virtual void		ShowFrameTimeReport( void *, bool ) = 0;
 	virtual void		DumpNetStats( void *pNetStatData, const std::function< void ( const char * )> &func ) = 0; 
-	virtual void		unk_29() = 0;
 	virtual void		unk_30() = 0;
 #ifdef CS2_BETA
 	virtual uint32		GetLongFrameCount() = 0;
