@@ -484,14 +484,18 @@ public:
 	// TERROR: Perform any PVS cleanup before a full update
 	virtual void			PrepareForFullUpdate( CEntityIndex nPlayerEntityIndex ) = 0;
 	
-	// Frees the entity attached to this edict
-	virtual void			FreeContainingEntity( CEntityIndex nEntityIndex ) = 0;
-	
-	virtual bool			GetWorldspaceCenter( CEntityIndex nEntityIndex, Vector *pCenter ) const = 0;
-	
 	virtual bool			ShouldClientReceiveStringTableUserData( const INetworkStringTable *pTable, int stringNumber, const CCheckTransmitInfo *pInfo ) = 0;
-	
+
 	virtual void			ResetChangeAccessorsSerialNumbersToZero() = 0;
+
+	virtual bool			GetWorldspaceCenter( CEntityIndex nEntityIndex, Vector *pCenter ) const = 0;
+
+#ifdef CS2_BETA
+	virtual void			PackEntities( const CUtlVector<CEntityInstance *> &vecEntities ) = 0;
+#endif
+
+	virtual void			Unk01() = 0;
+	virtual void			Unk02() = 0;
 };
 
 #define INTERFACEVERSION_SERVERCONFIG			"Source2ServerConfig001"
