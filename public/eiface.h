@@ -100,6 +100,7 @@ class ILoadingSpawnGroup;
 class IToolGameSimulationAPI;
 class CCLCMsg_Move_t;
 class CCLCMsg_SplitPlayerConnect_t;
+struct Entity2Networkable_t;
 
 namespace google
 {
@@ -372,7 +373,7 @@ public:
 
 	virtual void			PreWorldUpdate( bool simulating ) = 0;
 
-	virtual CUtlMap<int,Entity2Networkable_t> &GetEntity2Networkables( void ) const = 0;
+	virtual CUtlMap< int, Entity2Networkable_t > &GetEntity2Networkables( void ) const = 0;
 
 	virtual bool			GetEntity2Networkable( CEntityIndex nEntryIndex, Entity2Networkable_t *info ) = 0;
 
@@ -491,7 +492,8 @@ public:
 	virtual bool			GetWorldspaceCenter( CEntityIndex nEntityIndex, Vector *pCenter ) const = 0;
 
 #ifdef CS2_BETA
-	virtual void			PackEntities( const CUtlVector<CEntityInstance *> &vecEntities ) = 0;
+	// See entity2/entitynetwork.h
+	virtual void			PrePackEntities( const CUtlVector< Entity2Networkable_t * > &vecEntities ) = 0;
 #endif
 
 	virtual void			Unk01() = 0;

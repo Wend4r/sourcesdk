@@ -163,12 +163,14 @@ public:
 	}
 
 public:
-	CUtlSymbolLarge m_iszPrivateVScripts; // 0x8
-	CEntityIdentity* m_pEntity; // 0x10
-	CEntityPrivateScriptScope m_hPrivateScope; // 0x18 -
-	CEntityKeyValues* m_pKeyValues; // 0x20
-	HSCRIPT m_hScriptInstance; // 0x28
-	CScriptComponent* m_CScriptComponent; // 0x30
+	CUtlSymbolLarge m_iszPrivateVScripts;
+	CEntityIdentity* m_pEntity;
+	CEntityPrivateScriptScope m_hPrivateScope; 
+	CEntityKeyValues* m_pKeyValues;
+#ifndef CS2_BETA
+	HSCRIPT m_hScriptInstance;
+#endif
+	CScriptComponent* m_CScriptComponent;
 };
 
 // -------------------------------------------------------------------------------------------------- //

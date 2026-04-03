@@ -1,6 +1,7 @@
 #include "entityinstance.h"
 #include "vscript/ivscript.h"
 
+#ifndef CS2_BETA
 HSCRIPT CEntityInstance::GetScriptInstance()
 {
 	if ( !m_hScriptInstance )
@@ -12,3 +13,9 @@ HSCRIPT CEntityInstance::GetScriptInstance()
 	}
 	return m_hScriptInstance;
 }
+#else
+HSCRIPT CEntityInstance::GetScriptInstance()
+{
+	return HSCRIPT{};
+}
+#endif
