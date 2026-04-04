@@ -18,6 +18,7 @@ struct CEntityPrecacheContext;
 struct ChangeAccessorFieldPathIndexInfo_t;
 struct datamap_t;
 class IScriptVM;
+class CNetworkSerializerClassInfo;
 
 extern IScriptVM* ScriptVM();
 
@@ -65,8 +66,9 @@ class CEntityInstance
 {
 public:
 #ifdef CS2_BETA
-	virtual void *GetSomeStaticCodeGenData() = 0;
+	virtual const CNetworkSerializerClassInfo* GetSerializerClassInfo() = 0;
 #endif
+
 	virtual void unk001() = 0;
 	virtual void unk002() = 0;
 

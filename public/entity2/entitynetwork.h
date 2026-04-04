@@ -49,10 +49,6 @@ public:
 	virtual void Unk01() = 0;
 	virtual void Unk02() = 0;
 	virtual ServerClass **GetClassList() = 0;
-
-	virtual void OnEntityCreated( CEntityInstance *pEntity ) = 0; // Entity2Networkable_t creation into UtlRBTreeNode_t.
-	virtual void OnEntityDeleted( CEntityInstance *pEntity ) = 0;
-	virtual void OnEntityParentChanged( CEntityInstance *pEntity, CEntityInstance *pNewParent ) = 0;
 };
 
 class CEntity2NetworkClasses : public IEntity2Networkables, public IEntityListener
