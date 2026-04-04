@@ -35,6 +35,63 @@ struct EntInput_t;
 struct EntOutput_t;
 struct datamap_t;
 
+struct CNetworkSerializerFieldInfo
+{
+	uint32   m_nHash;          // 0x00  field name hash
+	CUtlString m_pszFieldName;   // 0x08
+	CUtlString m_pszTypeName;    // 0x10  cleaned type (spaces removed from pointers)
+	CUtlString m_pszRawType;     // 0x18  raw type string as declared
+	CUtlString m_pszEncodedType; // 0x20
+	uint32   m_nClassHash;     // 0x28
+	CUtlString m_pszClassName;   // 0x30
+	int32    m_nFieldSize;     // 0x38
+	int32    m_nFieldOffset;   // 0x3C
+private:
+	char pad_040[0xD0]; // 0x40
+public:
+	CUtlString m_pszCodeGenType; // 0x110 class name for codegen (set by InitCodeGenTypes)
+private:
+	char pad_118[0x40]; // 0x118
+}; // Size: 0x158
+static_assert(sizeof(CNetworkSerializerFieldInfo) == 0x158);
+
+struct CNetworkSerializerClassInfo
+{
+	uint32                                   m_nHash;        // 0x00
+	CUtlString                               m_pszClassName; // 0x08
+	CUtlVector<CNetworkSerializerFieldInfo*> m_Fields;       // 0x10
+private:
+	char _pad_028[0x178]; // 0x28
+public:
+	struct CNetworkSerializerCodeGenDatabase* m_pDatabase;  // 0x1A0
+	int32                                     m_nClassSize; // 0x1A8
+private:
+	char pad_1AC[0x1C]; // 0x1AC
+}; // Size: 0x1C8
+static_assert(sizeof(CNetworkSerializerClassInfo) == 0x1C8);
+
+struct CNetworkSerializerCodeGenDatabase
+{
+	struct EnumInfo_t
+	{
+		int32 m_nValue;
+		int8  m_nFlags;
+	};
+
+	CUtlString                                                m_ModuleName; // 0x00
+	CUtlMap<const char*, CNetworkSerializerClassInfo*, int32> m_ClassInfos; // 0x08
+	CUtlMap<const char*, EnumInfo_t, int32>                   m_EnumInfos;  // 0x30
+private:
+	CUtlMap<const char*, void*, int32> _unk_map_058; // 0x58
+public:
+	bool m_bDebugSpew; // 0x80
+private:
+	char pad_81[0x27]; // 0x81
+public:
+	int32 m_nDuplicateCount; // 0xA8
+}; // Size: 0xB0
+static_assert(sizeof(CNetworkSerializerCodeGenDatabase) == 0xB0);
+
 struct EntClassComponentOverride_t
 {
 	const char* pszBaseComponent;
@@ -94,23 +151,27 @@ public:
 public:
 	ScriptClassDesc_t* m_pScriptDesc;
 
-	void* unk;
+	CNetworkSerializerFieldInfo* m_pNetworkSerializerInfo;
 
 	EntInput_t* m_pInputs;
 	EntOutput_t* m_pOutputs;
 	int m_nInputCount;
 	int m_nOutputCount;
 
-#ifdef _WIN32
-	char pad[48];
+#ifdef CS2_BETA
+	void* m_pUnk40;
 #else
-	char pad[16];
+	#ifdef _WIN32
+		char pad[48];
+	#else
+		char pad[16];
+	#endif
 #endif
 
-	void *m_pfnPulseBindingTraits;
+	void* m_pfnPulseBindingTraits;
 
-	CEntitySharedPulseSignature *m_pSharedPulseSignature;
-	CEntitySharedPulseSignature *m_unk201;
+	CEntitySharedPulseSignature* m_pSharedPulseSignature;
+	CEntitySharedPulseSignature* m_unk201;
 
 	EntClassComponentOverride_t* m_pComponentOverrides;
 
