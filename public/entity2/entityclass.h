@@ -7,6 +7,7 @@
 
 #include "tier1/utlsymbollarge.h"
 #include "tier1/utlvector.h"
+#include "tier1/utldict.h"
 #include "entity2/entitycomponent.h"
 #include "entityhandle.h"
 #include "networksystem/iflattenedserializers.h"
@@ -85,11 +86,11 @@ struct CNetworkSerializerCodeGenDatabase
 	};
 
 	CUtlString m_ModuleName;
-	CUtlMap<const char*, CNetworkSerializerClassInfo*, int32> m_ClassInfos;
-	CUtlMap<const char*, EnumInfo_t, int32> m_EnumInfos;
+	CUtlDict<CNetworkSerializerClassInfo*> m_ClassInfos;
+	CUtlDict<EnumInfo_t> m_EnumInfos;
 
 private:
-	CUtlMap<const char*, void*, int32> _unk_map_058;
+	CUtlDict<void*> _unk_map_058;
 
 public:
 	bool m_bDebugSpew;
