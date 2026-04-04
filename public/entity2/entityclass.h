@@ -37,37 +37,43 @@ struct datamap_t;
 
 struct CNetworkSerializerFieldInfo
 {
-	uint32   m_nHash;          // 0x00  field name hash
-	CUtlString m_pszFieldName;   // 0x08
-	CUtlString m_pszTypeName;    // 0x10  cleaned type (spaces removed from pointers)
-	CUtlString m_pszRawType;     // 0x18  raw type string as declared
-	CUtlString m_pszEncodedType; // 0x20
-	uint32   m_nClassHash;     // 0x28
-	CUtlString m_pszClassName;   // 0x30
-	int32    m_nFieldSize;     // 0x38
-	int32    m_nFieldOffset;   // 0x3C
+	uint32 m_nHash;
+	CUtlString m_pszFieldName;
+	CUtlString m_pszTypeName;
+	CUtlString m_pszRawType;
+	CUtlString m_pszEncodedType;
+	uint32 m_nClassHash;
+	CUtlString m_pszClassName;
+	int32 m_nFieldSize;
+	int32 m_nFieldOffset;
+
 private:
-	char pad_040[0xD0]; // 0x40
+	char pad_040[0xD0];
+
 public:
-	CUtlString m_pszCodeGenType; // 0x110 class name for codegen (set by InitCodeGenTypes)
+	CUtlString m_pszCodeGenType;
+
 private:
-	char pad_118[0x40]; // 0x118
-}; // Size: 0x158
+	char pad_118[0x40];
+};
 static_assert(sizeof(CNetworkSerializerFieldInfo) == 0x158);
 
 struct CNetworkSerializerClassInfo
 {
-	uint32                                   m_nHash;        // 0x00
-	CUtlString                               m_pszClassName; // 0x08
-	CUtlVector<CNetworkSerializerFieldInfo*> m_Fields;       // 0x10
+	uint32 m_nHash;
+	CUtlString m_pszClassName;
+	CUtlVector<CNetworkSerializerFieldInfo*> m_Fields;
+
 private:
-	char _pad_028[0x178]; // 0x28
+	char _pad_028[0x178];
+
 public:
-	struct CNetworkSerializerCodeGenDatabase* m_pDatabase;  // 0x1A0
-	int32                                     m_nClassSize; // 0x1A8
+	struct CNetworkSerializerCodeGenDatabase* m_pDatabase;
+	int32 m_nClassSize;
+
 private:
-	char pad_1AC[0x1C]; // 0x1AC
-}; // Size: 0x1C8
+	char pad_1AC[0x1C];
+};
 static_assert(sizeof(CNetworkSerializerClassInfo) == 0x1C8);
 
 struct CNetworkSerializerCodeGenDatabase
@@ -75,21 +81,25 @@ struct CNetworkSerializerCodeGenDatabase
 	struct EnumInfo_t
 	{
 		int32 m_nValue;
-		int8  m_nFlags;
+		int8 m_nFlags;
 	};
 
-	CUtlString                                                m_ModuleName; // 0x00
-	CUtlMap<const char*, CNetworkSerializerClassInfo*, int32> m_ClassInfos; // 0x08
-	CUtlMap<const char*, EnumInfo_t, int32>                   m_EnumInfos;  // 0x30
+	CUtlString m_ModuleName;
+	CUtlMap<const char*, CNetworkSerializerClassInfo*, int32> m_ClassInfos;
+	CUtlMap<const char*, EnumInfo_t, int32> m_EnumInfos;
+
 private:
-	CUtlMap<const char*, void*, int32> _unk_map_058; // 0x58
+	CUtlMap<const char*, void*, int32> _unk_map_058;
+
 public:
-	bool m_bDebugSpew; // 0x80
+	bool m_bDebugSpew;
+
 private:
-	char pad_81[0x27]; // 0x81
+	char pad_81[0x27];
+
 public:
-	int32 m_nDuplicateCount; // 0xA8
-}; // Size: 0xB0
+	int32 m_nDuplicateCount;
+};
 static_assert(sizeof(CNetworkSerializerCodeGenDatabase) == 0xB0);
 
 struct EntClassComponentOverride_t
