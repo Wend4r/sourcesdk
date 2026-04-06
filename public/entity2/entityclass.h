@@ -27,6 +27,7 @@ enum EntityClassFlags_t
 	ECF_FORCE_WORLDGROUPID					= (1 << 10) // Forces worldgroupid to be 1 on created entities
 };
 
+class CNetworkSerializerFieldInfo;
 class CSchemaClassInfo;
 class CEntityClass;
 class CEntityIdentity;
@@ -35,73 +36,6 @@ class ServerClass;
 struct EntInput_t;
 struct EntOutput_t;
 struct datamap_t;
-
-struct CNetworkSerializerFieldInfo
-{
-	uint32 m_nHash;
-	CUtlString m_pszFieldName;
-	CUtlString m_pszTypeName;
-	CUtlString m_pszRawType;
-	CUtlString m_pszEncodedType;
-	uint32 m_nClassHash;
-	CUtlString m_pszClassName;
-	int32 m_nFieldSize;
-	int32 m_nFieldOffset;
-
-private:
-	char pad_040[0xD0];
-
-public:
-	CUtlString m_pszCodeGenType;
-
-private:
-	char pad_118[0x40];
-};
-static_assert(sizeof(CNetworkSerializerFieldInfo) == 0x158);
-
-struct CNetworkSerializerClassInfo
-{
-	uint32 m_nHash;
-	CUtlString m_pszClassName;
-	CUtlVector<CNetworkSerializerFieldInfo*> m_Fields;
-
-private:
-	char _pad_028[0x178];
-
-public:
-	struct CNetworkSerializerCodeGenDatabase* m_pDatabase;
-	int32 m_nClassSize;
-
-private:
-	char pad_1AC[0x1C];
-};
-static_assert(sizeof(CNetworkSerializerClassInfo) == 0x1C8);
-
-struct CNetworkSerializerCodeGenDatabase
-{
-	struct EnumInfo_t
-	{
-		int32 m_nValue;
-		int8 m_nFlags;
-	};
-
-	CUtlString m_ModuleName;
-	CUtlDict<CNetworkSerializerClassInfo*> m_ClassInfos;
-	CUtlDict<EnumInfo_t> m_EnumInfos;
-
-private:
-	CUtlDict<void*> _unk_map_058;
-
-public:
-	bool m_bDebugSpew;
-
-private:
-	char pad_81[0x27];
-
-public:
-	int32 m_nDuplicateCount;
-};
-static_assert(sizeof(CNetworkSerializerCodeGenDatabase) == 0xB0);
 
 struct EntClassComponentOverride_t
 {
