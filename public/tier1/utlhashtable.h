@@ -74,7 +74,7 @@ public:
 	};
 
 	storage_t flags_and_hash;
-	AlignedByteArray_t<8, KVPair> data;
+	AlignedByteArray_t<1, KVPair> data;
 
 	bool IsValid() const { return flags_and_hash >= 0; }
 	void MarkInvalid() { int32 flag = FLAG_FREE; flags_and_hash = (storage_t)flag; }
