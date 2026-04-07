@@ -10,6 +10,8 @@
 #define UTLCOMMON_H
 #pragma once
 
+#include "tier0/strtools.h"
+
 #include <type_traits>
 
 //-----------------------------------------------------------------------------

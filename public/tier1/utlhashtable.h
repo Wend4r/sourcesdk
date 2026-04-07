@@ -43,6 +43,7 @@
 
 #include "utlcommon.h"
 #include "utlleanvector.h"
+#include "utlvectormemory.h"
 #include "mathlib/mathlib.h"
 #include "utllinkedlist.h"
 
