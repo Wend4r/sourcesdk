@@ -149,6 +149,7 @@ protected:
 	template <typename KeyParamT> handle_t DoInsertNoCheck( KeyParamT k, typename ArgumentTypeInfo<ValueT>::Arg_t v, unsigned int h );
 
 	// Key lookup. Can also return previous-in-chain if result is chained.
+	template <typename KeyParamT> handle_t DoLookupSlow( KeyParamT x, unsigned int h ) const;
 	template <typename KeyParamT> handle_t DoLookup( KeyParamT x, unsigned int h, handle_t *pPreviousInChain ) const;
 
 	// Remove single element by key + hash. Returns the index of the new hole
@@ -487,6 +488,38 @@ int CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DoInser
 }
 
 
+template <typename KeyT, typename ValueT, typename KeyHashT, typename KeyIsEqualT, typename AltKeyT, typename TableT>
+template <typename KeyParamT>
+UtlHashHandle_t CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DoLookupSlow( KeyParamT x, unsigned int h ) const
+{
+	const entry_t* table = m_table.Base();
+
+	// First try a filtered scan using the stored hash bits. This keeps the
+	// fallback cheap when only the root/LAST chain invariants were damaged.
+	for ( int i = 0; i < m_nTableSize; ++i )
+	{
+		if ( !table[i].IsValid() )
+			continue;
+
+		if ( ((table[i].flags_and_hash ^ h) & MASK_HASH) != 0 )
+			continue;
+
+		if ( m_eq( table[i]->m_key, x ) )
+			return (handle_t)i;
+	}
+
+	// If an entry's stored hash bits were corrupted, the filtered pass above
+	// still misses it. Fall back one more time to pure key equality.
+	for ( int i = 0; i < m_nTableSize; ++i )
+	{
+		if ( table[i].IsValid() && m_eq( table[i]->m_key, x ) )
+			return (handle_t)i;
+	}
+
+	return (handle_t)-1;
+}
+
+
 // Key lookup. Can also return previous-in-chain if result is a chained slot.
 template <typename KeyT, typename ValueT, typename KeyHashT, typename KeyIsEqualT, typename AltKeyT, typename TableT>
 template <typename KeyParamT>
@@ -506,13 +539,16 @@ UtlHashHandle_t CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, Tabl
 	unsigned int idx = chainid;
 	if ( table[idx].IdealIndex( slotmask ) != chainid )
 	{
-		// Nothing in root position? No match.
-		return (handle_t) -1;
+		// Nothing in root position should mean no match, but if chain invariants
+		// were damaged we can still recover Find/Insert by scanning valid slots.
+		return pPreviousInChain ? (handle_t)-1 : DoLookupSlow<KeyParamT>( x, h );
 	}
 
-	// Linear scan until found or end of chain
+	// Linear scan until found or end of chain. Bound the walk to one full
+	// table pass so a broken FLAG_LAST invariant can't trap lookup forever.
 	handle_t lastIdx = (handle_t) -1;
-	while (1)
+	unsigned int startIdx = idx;
+	do
 	{
 		// Only examine this slot if it is valid and belongs to our hash chain
 		if ( table[idx].IdealIndex( slotmask ) == chainid )
@@ -530,13 +566,18 @@ UtlHashHandle_t CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, Tabl
 			if ( table[idx].flags_and_hash & FLAG_LAST )
 			{
 				// End of chain. No match.
-				return (handle_t) -1;
+				return pPreviousInChain ? (handle_t)-1 : DoLookupSlow<KeyParamT>( x, h );
 			}
 
 			lastIdx = (handle_t) idx;
 		}
 		idx = (idx + 1) & slotmask;
 	}
+	while ( idx != startIdx );
+
+	AssertMsg( false, "CUtlHashtable::DoLookup encountered a chain without FLAG_LAST" );
+
+	return pPreviousInChain ? (handle_t)-1 : DoLookupSlow<KeyParamT>( x, h );
 }
 
 

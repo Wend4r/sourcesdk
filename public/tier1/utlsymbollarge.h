@@ -84,6 +84,13 @@ struct ALIGN8_POST CUtlSymbolTableLargeBaseTreeEntry_t
 	// Variable length string data
 	char m_szString[1];
 
+	static const CUtlSymbolTableLargeBaseTreeEntry_t *FromString( const char *pString )
+	{
+		Assert( pString );
+
+		return reinterpret_cast<const CUtlSymbolTableLargeBaseTreeEntry_t *>( pString - offsetof( CUtlSymbolTableLargeBaseTreeEntry_t, m_szString ) );
+	}
+
 	bool IsEmpty() const
 	{
 		return ( !m_Hash && !m_szString[0] );
@@ -188,10 +195,16 @@ private:
 			static const ptrdiff_t owneroffset = offsetof(CUtlSymbolTableLargeBase, m_HashTable) + tableoffset;
 			const CUtlSymbolTableLargeBase* pTable = (const CUtlSymbolTableLargeBase*)((uintp)this - owneroffset);
 
-			if ( CASEINSENSITIVE ) 
-				return V_stricmp( pTable->String( a ), pTable->String( b ) ) == 0; 
+			const char* pA = pTable->String( a );
+			const char* pB = pTable->String( b );
+
+			if ( !pA || !pB )
+				return false;
+
+			if ( CASEINSENSITIVE )
+				return V_stricmp( pA, pB ) == 0;
 			else
-				return V_strcmp( pTable->String( a ), pTable->String( b ) ) == 0; 
+				return V_strcmp( pA, pB ) == 0;
 		}
 
 		bool operator()( UtlSymTableLargeAltKey a, UtlSymLargeId_t b ) const 
@@ -244,7 +257,7 @@ inline UtlSymLargeId_t CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUT
 	if ( h == m_HashTable.InvalidHandle() )
 		return UTL_INVAL_SYMBOL_LARGE;
 
-	return m_HashTable[ h ];
+	return m_HashTable.Key( h );
 }
 
 template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
