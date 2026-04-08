@@ -43,14 +43,10 @@ public:
 	virtual void AppendToAndCreateGameResourceManifest(HGameResourceManifest *pResourceManifest, SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t *pEntities, const matrix3x4a_t * vWorldOffset) = 0;
 };
 
-class CGameResourceService : public CBaseEngineService<IGameResourceService> 
+class CGameResourceService : public CBaseEngineService<IGameResourceService>
 {
 public:
 	virtual ~CGameResourceService() = 0;
-
-#ifdef WIN32
-	char pad56[8];
-#endif
 
 	CUtlVector<CGameResourceManifest *> m_Manifests;
 	CGameEntitySystem* m_pEntitySystem;
