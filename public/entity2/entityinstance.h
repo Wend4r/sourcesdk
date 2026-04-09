@@ -20,42 +20,11 @@ struct datamap_t;
 class IScriptVM;
 class CNetworkSerializerClassInfo;
 
+// See entitynetwork.h
+struct NetworkStateChanged_t;
+struct NetworkStateChanged3_t;
+
 extern IScriptVM* ScriptVM();
-
-struct NetworkStateChanged_t
-{
-	NetworkStateChanged_t() : m_Unk00(1), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
-	explicit NetworkStateChanged_t( bool bFullChanged ) : m_Unk00(static_cast<uint32>(!bFullChanged)), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
-
-	// nLocalOffset is the flattened field offset
-	//		calculated taking into account embedded structures
-	//		if PathIndex is specified, then the offset must start from the last object in the chain
-	// nArrayIndex is the index of the array element 
-	//		if the field is a CNetworkUtlVectorBase, otherwise pass -1
-	// nPathIndex is the value to specify 
-	//		if the path to the field goes through one or more pointers, otherwise pass -1
-	// 		this value is usually a member of the CNetworkVarChainer and belongs to the last object in the chain
-	NetworkStateChanged_t( uint32 nLocalOffset, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets{ nLocalOffset }, m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(0) { }
-	NetworkStateChanged_t( CUtlVector<uint32> vecLocalOffsets, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets(Move(vecLocalOffsets)), m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(1) { }
-
-	uint32 m_Unk00; // Perhaps it is an enum, default 1, when 0 adds FL_FULL_EDICT_CHANGED
-	CUtlVector<uint32> m_LocalOffsets;
-	// Probably only works in the debug build, as it has always been empty
-	CUtlString m_ClassName;
-	CUtlString m_FieldName;
-	int32 m_Unk48; // default -1
-	int32 m_nArrayIndex; // default -1
-	ChangeAccessorFieldPathIndex_t m_nPathIndex; // default -1 (can also be -2)
-	int16 m_Unk60; // default 0, if m_LocalOffsets has multiple values, it is set to 1
-};
-COMPILE_TIME_ASSERT(sizeof(NetworkStateChanged_t) == 64);
-
-// Not entirely sure
-struct NetworkStateChanged3_t
-{
-	CUtlVector<uint32> m_Unk0;
-	CUtlVector<uint32> m_Unk24;
-};
 
 struct CEntityPrivateScriptScope
 {
