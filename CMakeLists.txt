@@ -61,6 +61,7 @@ set(SOURCESDK_INTERFACES_DIR "${SOURCESDK_DIR}/interfaces")
 set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
 set(SOURCESDK_PUBLIC_DIR "${SOURCESDK_DIR}/public")
 set(SOURCESDK_SYMBOLS_DIR "${SOURCESDK_DIR}/sym")
+set(SOURCESDK_NETWORKSYSTEM_DIR "${SOURCESDK_DIR}/networksystem")
 set(SOURCESDK_TIER1_DIR "${SOURCESDK_DIR}/tier1")
 
 set(SOURCESDK_NEEDED_PROTOS
@@ -104,6 +105,7 @@ include(cmake/sourcesdk/targets/engine.cmake)
 include(cmake/sourcesdk/targets/entity2.cmake)
 include(cmake/sourcesdk/targets/interfaces.cmake)
 include(cmake/sourcesdk/targets/mathlib.cmake)
+include(cmake/sourcesdk/targets/networksystem.cmake)
 
 if(SOURCESDK_COMPILE_PROTOBUF)
 	include(cmake/sourcesdk/targets/protos.cmake)
@@ -150,6 +152,7 @@ set(SOURCESDK_LINK_LIBRARIES
 	${SOURCESDK_ENTITY2_NAME}
 	${SOURCESDK_INTERFACES_NAME}
 	${SOURCESDK_MATHLIB_NAME}
+	${SOURCESDK_NETWORKSYSTEM_NAME}
 	${SOURCESDK_PROTOS_NAME}
 	${SOURCESDK_TIER1_NAME}
 )
