@@ -49,6 +49,7 @@ struct EngineLoopState_t;
 class ISpawnGroupPrerequisiteRegistry;
 class IEntityPrecacheConfiguration;
 struct EntitySpawnInfo_t;
+struct Entity2Networkable_t;
 class CBaseGameSystemFactory;
 
 typedef int GameSystemEventId_t;
@@ -89,6 +90,17 @@ GS_EVENT_MSG( GameDeactivate )
 
 GS_EVENT_MSG( ClientFullySignedOn );
 GS_EVENT_MSG( Disconnect );
+GS_EVENT_MSG( SaveGameStart )
+{
+	bool m_bQueueAgeSaveList;
+	const char *m_pszSaveName;
+	const char *m_pszMapName;
+	const char *m_pszContextName;
+	const char *m_pszOldLevel;
+	const char *m_pszLandmarkName;
+	const char *m_pszComment;
+	uint16 m_nFlags;
+};
 
 GS_EVENT_MSG( BuildGameSessionManifest )
 {
@@ -126,7 +138,7 @@ GS_EVENT_MSG( PostSpawnGroupLoad )
 	CUtlString m_SpawnGroupName;
 	CUtlString m_EntityLumpName;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
-	CUtlVector<CEntityHandle> m_EntityList;
+	CUtlVector< CEntityHandle > m_EntityList;
 };
 
 GS_EVENT_MSG( PreSpawnGroupUnload )
@@ -134,7 +146,7 @@ GS_EVENT_MSG( PreSpawnGroupUnload )
 	CUtlString m_SpawnGroupName;
 	CUtlString m_EntityLumpName;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
-	CUtlVector<CEntityHandle> m_EntityList;
+	CUtlVector< CEntityHandle > m_EntityList;
 };
 
 GS_EVENT_MSG( PostSpawnGroupUnload )
@@ -165,7 +177,36 @@ GS_EVENT_MSG( ClientPreEntityThink )
 	bool m_bLastTick;
 };
 
-GS_EVENT_MSG( ClientPollNetworking );
+GS_EVENT_MSG( ClientProcessGameInput )
+{
+	EngineLoopState_t m_LoopState;
+	float m_flRealTime;
+	float m_flFrameTime;
+};
+
+GS_EVENT_MSG( ClientProcessInput )
+{
+	EngineLoopState_t m_LoopState;
+	float m_flRealTime;
+	float m_flTickInterval;
+	double m_flTickStartTime;
+};
+
+GS_EVENT_MSG( ClientPollInput )
+{
+	EngineLoopState_t m_LoopState;
+	float m_flRealTime;
+};
+
+GS_EVENT_MSG( ClientPollNetworking )
+{
+	int m_nTickCount;
+};
+
+GS_EVENT_MSG( ClientProcessNetworking )
+{
+	int m_nTickCount;
+};
 
 GS_EVENT_MSG( ClientUpdate )
 {
@@ -202,11 +243,21 @@ GS_EVENT_MSG_CHILD( ClientGamePostSimulate, Simulate ) { };
 
 GS_EVENT_MSG( ServerPostAdvanceTick );
 GS_EVENT_MSG( ClientPostAdvanceTick );
-GS_EVENT_MSG( ServerBeginAsyncPostTickWork );
+GS_EVENT_MSG( ServerBeginAsyncPostTickWork )
+{
+	bool m_bIsOncePerFrameAsyncWorkPhase;
+};
+GS_EVENT_MSG( ServerGameBeginAsyncPostTickWork );
 
 GS_EVENT_MSG( ServerEndAsyncPostTickWork );
 
-GS_EVENT_MSG( ClientFrameSimulate );
+GS_EVENT_MSG( ClientFrameSimulate )
+{
+	EngineLoopState_t m_LoopState;
+	float m_flRealTime;
+	float m_flFrameTime;
+	bool m_bScheduleSendTickPacket;
+};
 GS_EVENT_MSG( ClientPauseSimulate );
 GS_EVENT_MSG( ClientAdvanceNonRenderedFrame );
 
@@ -220,16 +271,52 @@ GS_EVENT_MSG_CHILD( OutOfGameFrameBoundary, FrameBoundary ) { };
 
 GS_EVENT_MSG( SaveGame )
 {
-	const CUtlVector<CEntityHandle> *m_pEntityList;
+	const CUtlVector< CEntityHandle > *m_pEntityList;
 };
 
 GS_EVENT_MSG( RestoreGame )
 {
-	const CUtlVector<CEntityHandle> *m_pEntityList;
+	const CUtlVector< CEntityHandle > *m_pEntityList;
+};
+
+GS_EVENT_MSG( AppShutdown )
+{
+	int m_nDummy0;
+};
+
+GS_EVENT_MSG( PreDataUpdate )
+{
+	int m_nCount;
+};
+
+GS_EVENT_MSG( PostDataUpdate )
+{
+	int m_nCount;
+};
+
+GS_EVENT_MSG( SetTime )
+{
+	EngineLoopState_t m_LoopState;
+	int m_nClientOutputFrames;
+	double m_flRealTime;
+	double m_flRenderTime;
+	double m_flRenderFrameTime;
+	double m_flRenderFrameTimeUnbounded;
+	double m_flRenderFrameTimeUnscaled;
+	double m_flTickRemainder;
+};
+
+GS_EVENT_MSG( SplitScreenStateChanged );
+GS_EVENT_MSG( ProfileStorageAvailable )
+{
+	CSplitScreenSlot m_nSplitScreenSlot;
 };
 
 #ifdef CS2_BETA
-GS_EVENT_MSG( ServerPrePackEntities );
+GS_EVENT_MSG( ServerPrePackEntities )
+{
+	const CUtlVector< Entity2Networkable_t * > *m_pEntities;
+};
 #endif
 
 #define GS_EVENT_IMPL( name ) virtual void name(const Event##name##_t& msg) = 0;
@@ -273,8 +360,7 @@ public:
 
 	GS_EVENT_IMPL( ClientFullySignedOn )					// 9
 	GS_EVENT_IMPL( Disconnect )								// 10
-
-	virtual void unk_001( const void *const msg ) = 0;		// 11
+	GS_EVENT_IMPL( SaveGameStart )							// 11
 
 	GS_EVENT_IMPL( GameDeactivate )							// 12
 
@@ -292,18 +378,18 @@ public:
 
 	GS_EVENT_IMPL( ClientPreEntityThink )					// 22
 
-	virtual void unk_101( const void *const msg ) = 0;		// 23
-	virtual void unk_102( const void *const msg ) = 0;		// 24
-	virtual void unk_103( const void *const msg ) = 0;		// 25
+	GS_EVENT_IMPL( ClientProcessGameInput )				// 23
+	GS_EVENT_IMPL( ClientProcessInput )					// 24
+	GS_EVENT_IMPL( ClientPollInput )						// 25
 
 	GS_EVENT_IMPL( ClientPollNetworking )					// 26
 
-	virtual void unk_201( const void *const msg ) = 0;		// 27
+	GS_EVENT_IMPL( ClientProcessNetworking )				// 27
 
 	// Gets called each frame
 	GS_EVENT_IMPL( ClientUpdate )							// 28
 
-	virtual void unk_301( const void *const msg ) = 0;		// 29
+	GS_EVENT_IMPL( FrameBoundary )							// 29
 
 	// Called after rendering
 	GS_EVENT_IMPL( ClientPostRender )						// 30
@@ -313,7 +399,7 @@ public:
 	// called after entities think
 	GS_EVENT_IMPL( ServerPostEntityThink )					// 32
 
-	virtual void unk_401( const void *const msg ) = 0;		// 33
+	GS_EVENT_IMPL( ServerProcessNetworking )				// 33
 
 	GS_EVENT_IMPL( ServerPreClientUpdate )					// 34
 	GS_EVENT_IMPL( ServerAdvanceTick )						// 35
@@ -324,7 +410,7 @@ public:
 	GS_EVENT_IMPL( ClientPostAdvanceTick )					// 40
 	GS_EVENT_IMPL( ServerBeginAsyncPostTickWork )			// 41
 
-	virtual void unk_501( const void *const msg ) = 0;		// 42
+	GS_EVENT_IMPL( ServerGameBeginAsyncPostTickWork )		// 42
 
 	GS_EVENT_IMPL( ServerEndAsyncPostTickWork )				// 43
 
@@ -338,12 +424,12 @@ public:
 	GS_EVENT_IMPL( SaveGame )								// 49
 	GS_EVENT_IMPL( RestoreGame )							// 50
 
-	virtual void unk_601( const void *const msg ) = 0;		// 51
-	virtual void unk_602( const void *const msg ) = 0;		// 52
-	virtual void unk_603( const void *const msg ) = 0;		// 53
-	virtual void unk_604( const void *const msg ) = 0;		// 54
-	virtual void unk_605( const void *const msg ) = 0;		// 55
-	virtual void unk_606( const void *const msg ) = 0;		// 56
+	GS_EVENT_IMPL( AppShutdown )							// 51
+	GS_EVENT_IMPL( PreDataUpdate )							// 52
+	GS_EVENT_IMPL( PostDataUpdate )							// 53
+	GS_EVENT_IMPL( SetTime )								// 54
+	GS_EVENT_IMPL( SplitScreenStateChanged )				// 55
+	GS_EVENT_IMPL( ProfileStorageAvailable )				// 56
 
 #ifdef CS2_BETA
 	GS_EVENT_IMPL( ServerPrePackEntities )					// 57
@@ -385,8 +471,7 @@ public:
 
 	GS_EVENT( ClientFullySignedOn ) {}
 	GS_EVENT( Disconnect ) {}
-
-	virtual void unk_001( const void *const msg ) override {}
+	GS_EVENT( SaveGameStart ) {}
 
 	GS_EVENT( GameDeactivate ) {}
 
@@ -405,18 +490,18 @@ public:
 
 	GS_EVENT( ClientPreEntityThink ) {}
 
-	virtual void unk_101( const void *const msg ) override {}
-	virtual void unk_102( const void *const msg ) override {}
-	virtual void unk_103( const void *const msg ) override {}
+	GS_EVENT( ClientProcessGameInput ) {}
+	GS_EVENT( ClientProcessInput ) {}
+	GS_EVENT( ClientPollInput ) {}
 
 	GS_EVENT( ClientPollNetworking ) {}
 
-	virtual void unk_201( const void *const msg ) override {}
+	GS_EVENT( ClientProcessNetworking ) {}
 
 	// Gets called each frame
 	GS_EVENT( ClientUpdate ) {}
 
-	virtual void unk_301( const void *const msg ) override {}
+	GS_EVENT( FrameBoundary ) {}
 
 	// Called after rendering
 	GS_EVENT( ClientPostRender ) {}
@@ -426,7 +511,7 @@ public:
 	// called after entities think
 	GS_EVENT( ServerPostEntityThink ) {}
 
-	virtual void unk_401( const void *const msg ) override {}
+	GS_EVENT( ServerProcessNetworking ) {}
 
 	GS_EVENT( ServerPreClientUpdate ) {}
 	GS_EVENT( ServerAdvanceTick ) {}
@@ -437,7 +522,7 @@ public:
 	GS_EVENT( ClientPostAdvanceTick ) {}
 	GS_EVENT( ServerBeginAsyncPostTickWork ) {}
 
-	virtual void unk_501( const void *const msg ) override {}
+	GS_EVENT( ServerGameBeginAsyncPostTickWork ) {}
 
 	GS_EVENT( ServerEndAsyncPostTickWork ) {}
 
@@ -451,12 +536,12 @@ public:
 	GS_EVENT( SaveGame ) {}
 	GS_EVENT( RestoreGame ) {}
 
-	virtual void unk_601( const void *const msg ) override {}
-	virtual void unk_602( const void *const msg ) override {}
-	virtual void unk_603( const void *const msg ) override {}
-	virtual void unk_604( const void *const msg ) override {}
-	virtual void unk_605( const void *const msg ) override {}
-	virtual void unk_606( const void *const msg ) override {}
+	GS_EVENT( AppShutdown ) {}
+	GS_EVENT( PreDataUpdate ) {}
+	GS_EVENT( PostDataUpdate ) {}
+	GS_EVENT( SetTime ) {}
+	GS_EVENT( SplitScreenStateChanged ) {}
+	GS_EVENT( ProfileStorageAvailable ) {}
 
 #ifdef CS2_BETA
 	GS_EVENT( ServerPrePackEntities ) {}
