@@ -496,8 +496,8 @@ public:
 	virtual void			PrePackEntities( const CUtlVector< Entity2Networkable_t * > &vecEntities ) = 0;
 #endif
 
-	virtual void			Unk01() = 0;
-	virtual void			Unk02() = 0;
+	virtual void			AddEntityToSteadyState( const Entity2Networkable_t *pNetworkable ) = 0; // Adds a steady-state eligible entity to the transmit bitset
+	virtual void			RemoveEntityFromSteadyState( const Entity2Networkable_t *pNetworkable ) = 0; // Removes an entity from the transmit bitset
 };
 
 #define INTERFACEVERSION_SERVERCONFIG			"Source2ServerConfig001"
