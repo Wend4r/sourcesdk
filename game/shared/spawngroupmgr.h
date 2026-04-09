@@ -50,12 +50,11 @@ class CSpawnGroupMgrGameSystem : public IGameSpawnGroupMgr, public CBaseGameSyst
 	DECLARE_GAME_SYSTEM();
 
 public:
-	virtual bool DoesGameSystemReallocate() = 0;
-	virtual void *GetGameSystemGlobalPtrs() = 0;
+	virtual void SetGameSystemGlobalPtrs(void *pValue) override = 0;
+	virtual bool DoesGameSystemReallocate() override = 0;
 	virtual void QueueSpawnEntityCalls() = 0;
 	virtual void FlushQueuedSpawnEntityCalls() = 0;
 	virtual void FrameBoundary() = 0;
-	virtual void PreSpawnGroupLoad(const EventPreSpawnGroupLoad_t &msg) = 0;
 
 	struct UnloadRequestQueueItem_t
 	{

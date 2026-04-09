@@ -165,14 +165,20 @@ GS_EVENT_MSG( ActiveSpawnGroupChanged )
 
 GS_EVENT_MSG( ClientPostDataUpdate );
 
-GS_EVENT_MSG( ClientPreRender )
+GS_EVENT_MSG( ClientPreOutput )
 {
-	float m_flFrameTime;
+	EngineLoopState_t m_LoopState;
+	float m_flRenderTime;
+	float m_flRenderFrameTime;
+	float m_flRenderFrameTimeUnbounded;
+	float m_flRealTime;
+	bool m_bRenderOnly;
 };
-GS_EVENT_MSG( ClientPostRender );
+GS_EVENT_MSG( ClientOutput );
 
-GS_EVENT_MSG( ClientPreEntityThink )
+GS_EVENT_MSG( ClientPreSimulate )
 {
+	EngineLoopState_t m_LoopState;
 	bool m_bFirstTick;
 	bool m_bLastTick;
 };
@@ -208,9 +214,9 @@ GS_EVENT_MSG( ClientProcessNetworking )
 	int m_nTickCount;
 };
 
-GS_EVENT_MSG( ClientUpdate )
+GS_EVENT_MSG( ClientSimulate )
 {
-	float m_flFrameTime;
+	EngineLoopState_t m_LoopState;
 	bool m_bFirstTick;
 	bool m_bLastTick;
 };
@@ -240,8 +246,8 @@ GS_EVENT_MSG( Simulate )
 	bool m_bLastTick;
 };
 
-GS_EVENT_MSG_CHILD( ServerGamePostSimulate, Simulate ) { };
-GS_EVENT_MSG_CHILD( ClientGamePostSimulate, Simulate ) { };
+GS_EVENT_MSG_CHILD( ServerPostSimulate, Simulate ) { };
+GS_EVENT_MSG_CHILD( ClientPostSimulate, Simulate ) { };
 
 GS_EVENT_MSG( ServerPostAdvanceTick );
 GS_EVENT_MSG( ClientPostAdvanceTick );
@@ -376,9 +382,9 @@ public:
 	GS_EVENT_IMPL( ClientPostDataUpdate )					// 20
 
 	// Called before rendering
-	GS_EVENT_IMPL( ClientPreRender )						// 21
+	GS_EVENT_IMPL( ClientPreOutput )						// 21
 
-	GS_EVENT_IMPL( ClientPreEntityThink )					// 22
+	GS_EVENT_IMPL( ClientPreSimulate )						// 22
 
 	GS_EVENT_IMPL( ClientProcessGameInput )					// 23
 	GS_EVENT_IMPL( ClientProcessInput )						// 24
@@ -389,12 +395,12 @@ public:
 	GS_EVENT_IMPL( ClientProcessNetworking )				// 27
 
 	// Gets called each frame
-	GS_EVENT_IMPL( ClientUpdate )							// 28
+	GS_EVENT_IMPL( ClientSimulate )							// 28
 
 	GS_EVENT_IMPL( FrameBoundary )							// 29
 
 	// Called after rendering
-	GS_EVENT_IMPL( ClientPostRender )						// 30
+	GS_EVENT_IMPL( ClientOutput )							// 30
 
 	// Called each frame before entities think
 	GS_EVENT_IMPL( ServerPreEntityThink )					// 31
@@ -406,8 +412,8 @@ public:
 	GS_EVENT_IMPL( ServerPreClientUpdate )					// 34
 	GS_EVENT_IMPL( ServerAdvanceTick )						// 35
 	GS_EVENT_IMPL( ClientAdvanceTick )						// 36
-	GS_EVENT_IMPL( ServerGamePostSimulate )					// 37
-	GS_EVENT_IMPL( ClientGamePostSimulate )					// 38
+	GS_EVENT_IMPL( ServerPostSimulate )						// 37
+	GS_EVENT_IMPL( ClientPostSimulate )						// 38
 	GS_EVENT_IMPL( ServerPostAdvanceTick )					// 39
 	GS_EVENT_IMPL( ClientPostAdvanceTick )					// 40
 	GS_EVENT_IMPL( ServerBeginAsyncPostTickWork )			// 41
@@ -488,9 +494,9 @@ public:
 	GS_EVENT( ClientPostDataUpdate ) {}
 
 	// Called before rendering
-	GS_EVENT( ClientPreRender ) {}
+	GS_EVENT( ClientPreOutput ) {}
 
-	GS_EVENT( ClientPreEntityThink ) {}
+	GS_EVENT( ClientPreSimulate ) {}
 
 	GS_EVENT( ClientProcessGameInput ) {}
 	GS_EVENT( ClientProcessInput ) {}
@@ -501,12 +507,12 @@ public:
 	GS_EVENT( ClientProcessNetworking ) {}
 
 	// Gets called each frame
-	GS_EVENT( ClientUpdate ) {}
+	GS_EVENT( ClientSimulate ) {}
 
 	GS_EVENT( FrameBoundary ) {}
 
 	// Called after rendering
-	GS_EVENT( ClientPostRender ) {}
+	GS_EVENT( ClientOutput ) {}
 
 	// Called each frame before entities think
 	GS_EVENT( ServerPreEntityThink ) {}
@@ -518,8 +524,8 @@ public:
 	GS_EVENT( ServerPreClientUpdate ) {}
 	GS_EVENT( ServerAdvanceTick ) {}
 	GS_EVENT( ClientAdvanceTick ) {}
-	GS_EVENT( ServerGamePostSimulate ) {}
-	GS_EVENT( ClientGamePostSimulate ) {}
+	GS_EVENT( ServerPostSimulate ) {}
+	GS_EVENT( ClientPostSimulate ) {}
 	GS_EVENT( ServerPostAdvanceTick ) {}
 	GS_EVENT( ClientPostAdvanceTick ) {}
 	GS_EVENT( ServerBeginAsyncPostTickWork ) {}
