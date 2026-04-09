@@ -45,12 +45,11 @@ COMPILE_TIME_ASSERT(sizeof(vis_info_t) == 520);
 class CCheckTransmitInfo
 {
 public:
-	CBitVec<MAX_EDICTS>* m_pTransmitEntity;
-	CBitVec<MAX_EDICTS>* m_pTransmitNonPlayers;
-	CBitVec<MAX_EDICTS>* m_pUnkBitVec2;
-	CBitVec<MAX_EDICTS>* m_pUnkBitVec3;
-	CBitVec<MAX_EDICTS>* m_pTransmitAlways;
-	CUtlLeanVector<CPlayerSlot> m_vecTargetSlots;
+	CBitVec<MAX_EDICTS>* m_pTransmitEntity; // entities visible/sent to client
+	CBitVec<MAX_EDICTS>* m_pTransmitNonPlayers; // non-player entities needing deletion deltas
+	CBitVec<MAX_EDICTS>* m_pTransmitOutOfPVS; // entities that left PVS but still need delta update
+	CBitVec<MAX_EDICTS>* m_pTransmitHLTV; // HLTV-only extra transmit bitvec (NULL for regular clients)
+	CUtlVector<CPlayerSlot> m_vecTargetSlots;
 	vis_info_t m_VisInfo;
 	CPlayerSlot m_nPlayerSlot;
 	bool m_bFullUpdate = false;
