@@ -4,6 +4,7 @@
 #pragma once
 
 #include "spawngrouptypes.h"
+#include <tier0/utlstring.h>
 
 abstract_class IGameSpawnGroupMgr
 {
@@ -21,20 +22,17 @@ public:
 	virtual int GetChildSpawnGroupCount(SpawnGroupHandle_t handle) = 0;
 	virtual SaveRestoreDataHandle_t SaveGame_Start(const char *pSaveName, const char *pOldLevel, const char *pszLandmarkName) = 0;
 	virtual bool SaveGame_Finalize(SaveRestoreDataHandle_t hSaveRestore) = 0;
-	virtual bool FrameUpdatePostEntityThink(const EventServerPostEntityThink_t &msg) = 0;
-	virtual const char *SaveGame_GetLastSaveFile(SaveRestoreDataHandle_t hSaveRestore) = 0;
+	virtual bool SaveGame_AppendSpawnGroups(SaveRestoreDataHandle_t hSaveRestore) = 0;
+	virtual const char *SaveGame_GetLastSaveFile() = 0;
 	virtual bool IsGameReadyToSave() = 0;
-	virtual unsigned long UnkGetGlobal1() = 0;
-	virtual void * const UnkGetGameEntitySystemSync1() = 0;
-	virtual void UnkRelease1() = 0;
-	virtual void UnkRelease2() = 0;
+	virtual void DumpSpawnGroups() = 0;
+	virtual unsigned int GetSaveRestoreLogChannel() = 0;
+	virtual CUtlString GetSaveRestoreContextString() const = 0;
+	virtual void DispatchActiveSpawnGroupChanged(SpawnGroupHandle_t hSpawnGroup) = 0;
+	virtual void DispatchClientPostDataUpdate(int nCount) = 0;
+	virtual CUtlString GetName() const = 0;
+	virtual void OnSpawnGroupManagerReady() = 0;
 
-	// AMNOTE: Game System related methods
-	virtual void UnkSpawnGroupManagerGameSystemMember1() = 0;
-	virtual void GameInit(const EventGameInit_t &msg) = 0;
-	virtual void GameShutdown(const EventGameInit_t &msg) = 0;
-	virtual void FrameBoundary(const EventGameInit_t &msg) = 0;
-	virtual void PreSpawnGroupLoad(const EventPreSpawnGroupLoad_t &msg) = 0;
 	virtual ~IGameSpawnGroupMgr() {}
 };
 
@@ -50,7 +48,15 @@ class CLoadingSpawnGroup : public ILoadingSpawnGroup
 class CSpawnGroupMgrGameSystem : public IGameSpawnGroupMgr, public CBaseGameSystem
 {
 	DECLARE_GAME_SYSTEM();
+
 public:
+	virtual bool DoesGameSystemReallocate() = 0;
+	virtual void *GetGameSystemGlobalPtrs() = 0;
+	virtual void QueueSpawnEntityCalls() = 0;
+	virtual void FlushQueuedSpawnEntityCalls() = 0;
+	virtual void FrameBoundary() = 0;
+	virtual void PreSpawnGroupLoad(const EventPreSpawnGroupLoad_t &msg) = 0;
+
 	struct UnloadRequestQueueItem_t
 	{
 		SpawnGroupHandle_t m_hSpawnGroup;
@@ -66,7 +72,7 @@ public:
 	CUtlOrderedMap<SpawnGroupHandle_t, CMapSpawnGroup *, CDefLess<SpawnGroupHandle_t>, unsigned short> m_SpawnGroups; // 256
 	CThreadRWLock_FastRead m_hHandleMutex; // 288
 	CUtlVector<UnloadRequestQueueItem_t> m_QueuedUnloadRequests; // W 352 | L 696
-	void *m_pUnk376;
+	CUtlString m_sName;
 };
 #ifdef _WIN32
 COMPILE_TIME_ASSERT(sizeof(CSpawnGroupMgrGameSystem) == 384);
