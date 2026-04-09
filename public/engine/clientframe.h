@@ -41,16 +41,17 @@ public:
 	CBitVec<MAX_EDICTS>	*transmit_always; // if bit is set, don't do PVS checks before sending (HLTV only)
 };  // sizeof 8232
 
-// TODO substitute CClientFrameManager with an intelligent structure (Tree, hash, cache, etc)
 class CClientFrameManager
 {
 public:
 	virtual ~CClientFrameManager(void) = default;
 
 public:
-	[[maybe_unused]] char pad120[120];
-	CUtlMemoryPool< CClientFrame >	m_ClientFramePool;
-	CClientFrame	*m_Frames = NULL;		// updates can be delta'ed from here
-}; // sizeof 288
+	/*CUtlLeanVector<CClientFrame*> m_FrameList;
+	CUtlMemoryPoolMT<CClientFrame> m_ClientFramePool;
+	int m_nOldestTick; // +160
+	int m_nNewestTick; // +164*/
+	char pad[168];
+}; // sizeof 168
 
 #endif // CLIENTFRAME_H

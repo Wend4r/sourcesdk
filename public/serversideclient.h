@@ -8,7 +8,7 @@
 #include <inetchannel.h>
 #include <playerslot.h>
 #include <playeruserid.h>
-// #include <protocol.h> // @Wend4r: use <netmessages.pb.h> instead.
+
 #include <entity2/entityidentity.h>
 #include <steam/steamclientpublic.h>
 #include <engine/clientframe.h>
@@ -19,8 +19,8 @@
 #include <tier1/ns_address.h>
 #include <networksystem/inetworksystem.h>
 
-#include <netmessages.pb.h>
-#include <network_connection.pb.h>
+#include <netmessages.h>
+#include <utldict.h>
 
 class CHLTVServer;
 class INetMessage;
@@ -146,8 +146,8 @@ public: // Message Handlers
 public:
 	virtual bool             ApplyConVars( const CMsg_CVars &list ) = 0;
 
-private:
-	virtual bool             unk_28() = 0;
+	// iterates KV pairs from client, calls KeyValues::SetString on userinfo
+	virtual bool             ProcessSetConVar( const CMsg_CVars &list ) = 0;
 
 public:
 	virtual bool             ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) = 0;
@@ -158,9 +158,8 @@ public:
 	virtual bool             ProcessSplitPlayerDisconnect( const CCLCMsg_SplitPlayerDisconnect_t &msg ) = 0;
 	virtual bool             ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) = 0;
 
-private:
-	virtual bool             unk_36() = 0;
-	virtual bool             unk_37() = 0;
+	virtual bool             SendRconServerDetails() = 0;
+	virtual bool             OnSignonStateChanged() { return true; }
 
 public:
 	virtual bool             ProcessMove( const CCLCMsg_Move_t &msg ) = 0;
@@ -175,17 +174,15 @@ public:
 public:
 	virtual bool             ProcessChangeSplitscreenUser( const NetMessageSplitscreenUserChanged_t &msg ) = 0;
 
-private:
-	virtual bool             unk_47() = 0;
-	virtual bool             unk_48() = 0;
-	virtual bool             unk_49() = 0;
+	virtual bool             UnusedVirtual45() { return false; }
+	virtual bool             UnusedVirtual46() { return false; }
+	virtual bool             OnDisconnectForwarding() { return true; }
 
 public:
 	virtual void             ConnectionStart( INetChannel *pNetChannel ) = 0;
 
-private: // SpawnGroup something.
-	virtual void             unk_51() = 0;
-	virtual void             unk_52() = 0;
+	virtual void             BuildServerInfoMessage() = 0;
+	virtual void             PerformPrespawn() = 0;
 
 public:
 	virtual void             ExecuteDelayedCall( void * ) = 0;
@@ -206,8 +203,7 @@ public:
 	virtual void             UpdateUserSettings() = 0;
 	virtual void             ResetUserSettings() = 0;
 
-private:
-	virtual void             unk_60() = 0;
+	virtual void             SendSnapshot() = 0;
 
 public:
 	virtual void             SendSignonData() = 0;
@@ -230,18 +226,16 @@ public:
 
 	virtual void             ShouldReceiveStringTableUserData() = 0;
 
-private:
-	virtual void             unk_70( CPlayerSlot nSlot ) = 0;
-	virtual void             unk_71() = 0;
-	virtual void             unk_72() = 0;
+	virtual void             FillServerInfo( void *pInfo ) = 0;
+	virtual bool             StartHltvReplay() { return false; }
+	virtual void             StopHltvReplay() {}
 
 public:
 	virtual int              GetHltvLastSendTick() = 0;
 
-private:
-	virtual void             unk_74() = 0;
-	virtual void             unk_75() = 0;
-	virtual void             unk_76() = 0;
+	virtual bool             CanStartHltvReplay() { return false; }
+	virtual void             ResetHltvReplayRequestTime() {}
+	virtual const char      *GetHltvReplayStats() { return ""; }
 
 public:
 	virtual void             Await() = 0;
@@ -272,41 +266,32 @@ public:
 	bool m_bSplitPlayerDisconnecting;
 	int m_nDisconnectionTypeFlags;
 	bool m_bFakePlayer;
-	bool m_bSendingSnapshot;
+	bool m_bInitialSpawnSent;	// init TRUE; controls whether initial spawn data was sent
+	int m_nDisconnectSequence;	// set from server counter in Disconnect(), zeroed in Clear()
 
-private:
-	[[maybe_unused]] char pad162[0x6];
-
-public:
 	CPlayerUserId m_UserID = -1;
 	bool m_bReceivedPacket;	// true, if client received a packet after the last send packet
 	CSteamID m_SteamID;
 	CSteamID m_DisconnectedSteamID;
-	CSteamID m_AuthTicketSteamID; // Auth ticket
+	CSteamID m_AuthTicketSteamID;
 	CSteamID m_nFriendsID;
 	ns_address m_nAddr;
 	ns_address m_nAddr2;
 	KeyValues* m_ConVars;
-	bool m_bUnk0;
+	CUtlDict<empty_t, int, k_eDictCompareTypeCaseInsensitiveFast> m_UnrecognizedConVarDict;
 
-private:
-	[[maybe_unused]] char pad281[0x28];
-
-public:
 	bool m_bConVarsChanged;
+	bool m_bConVarsInitialized;
 	bool m_bIsHLTV;
-
-private:
-	[[maybe_unused]] char pad323[0xD];
-
-public:
+	bool m_bClientInfoReceived;
+	uint64 m_nPendingSpawnGroupMask; // bitmask of pending spawn group operations, cleared in Clear()
 	uint32 m_nSendtableCRC;
 	uint32 m_uChallengeNumber;
 	int m_nSignonTick;
 	int m_nDeltaTick;
-	int m_UnkVariable3;
+	int m_nHltvReplayDeltaTick;		// init -1; delta tick used during HLTV replay mode
 	int m_nStringTableAckTick;
-	int m_UnkVariable4;
+	int m_nBaselineSequence;		// baseline sequence number for baseline ack processing
 	CFrameSnapshot* m_pLastSnapshot;	// last send snapshot
 	CUtlVector<void*> m_vecLoadedSpawnGroups;
 	CMsgPlayerInfo m_playerInfo;
@@ -326,52 +311,49 @@ public:
 	//    a client to get back on its feet.
 	int m_nForceWaitForTick = -1;
 
-	CCircularBuffer m_UnkBuffer = {1024};
+	CCircularBuffer m_TickHistory = {1024};	// stores recent tick data for delta computation and ack tracking
 	bool m_bLowViolence = false;		// true if client is in low-violence mode (L4D server needs to know)
-	bool m_bSomethingWithAddressType = true;
+	bool m_bUsesSteamRelay = true;		// init TRUE; whether Steam Datagram Relay is used for this client
 	bool m_bFullyAuthenticated = false;
 	bool m_bUnk1 = false;
-	int m_nUnk;
-
-	// The datagram is written to after every frame, but only cleared
-	// when it is sent out to the client.  overflow is tolerated.
 
 	// Time when we should send next world state update ( datagram )
 	float m_fNextMessageTime = 0.0f;
-	float m_fAuthenticatedTime = -1.0f;
 
 	// Default time to wait for next message
 	float m_fSnapshotInterval = 0.0f;
 
-private:
-	[[maybe_unused]] char pad2572[0x8];
-	[[maybe_unused]] char m_packetmsg[0x15C]; // CSVCMsg_PacketEntities_t
-#ifdef __linux__
-	[[maybe_unused]] char pad2928[0x8];
-#endif
+	float m_fAuthenticatedTime = -1.0f;
+	float m_fUnkTime = 0.0f;
 
-public:
+	// CSVCMsg_PacketEntities_t (CNetMessagePB<55,...>), sizeof 216 bytes
+	CSVCMsg_PacketEntities_t m_PacketEntities;
+
+	// CDelayedCallBase<CDelayedCallBase<CServerSideClientBase>>* pointers.
+	CTSQueue<void*> m_DelayedCallQueue;
+
+	// Queued message buffers
+	CUtlVector<void*> m_PendingReliableMessages;
+	CUtlVector<void*> m_PendingUnreliableMessages;
+
+	// Command rate limiter
+	int m_nMaxTicksWindow = 30;
+	int m_nMaxCommandsPerWindow = 30;
+	uint64 m_nMaxBytesPerWindow = 10240;
+	int m_nLastResetTick = 0;
+	int m_nCommandCount = 0;
+	uint64 m_nByteCount = 0;
+
 	CNetworkStatTrace m_Trace;
 
-private:
-	[[maybe_unused]] char pad2976[0x8];
-
-public:
 	// SV: Player %s kicked for too many failed console commands
 	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with reason 39
-	int m_unknown = 0;
+	int m_nLastSpamCheckTick = 0;	// last tick at which the spam counter was evaluated/reset
 	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
-
-private:
-	[[maybe_unused]] char pad3000[0x8];
-public:
+	bool m_bPendingSignonStateMsg = false; // set when signon -> CONNECTED, consumed in ProcessSignonStateMsg
 	CCommand* m_pCommand;
-};
-#ifdef __linux__
-COMPILE_TIME_ASSERT(sizeof(CServerSideClientBase) == 3016);
-#endif
+}; // sizeof 3024 (Windows), 3016 (Linux)
 
-// not verified
 class CServerSideClient : public CServerSideClientBase
 {
 public:
@@ -382,15 +364,14 @@ public:
 	CPlayerBitVec m_VoiceProximity;
 	CCheckTransmitInfo m_PackInfo;
 	CClientFrameManager m_FrameManager;
-
-private:
-	[[maybe_unused]] char pad3904[8];
-
-public:
+	void* m_pUnk3800;
+	CClientFrame* m_pCurrentFrame;
 	float m_flLastClientCommandQuotaStart = 0.0f;
 	float m_flTimeClientBecameFullyConnected = -1.0f;
 	bool m_bVoiceLoopback = false;
+	bool m_bHltvReplayFromStash = false;
 	bool m_bUnk10 = false;
+	char _padEF3;
 	int m_nHltvReplayDelay = 0;
 	CHLTVServer* m_pHltvReplayServer;
 	int m_nHltvReplayStopAt;
@@ -399,13 +380,12 @@ public:
 	int m_nHltvReplaySlowdownEndAt;
 	float m_flHltvReplaySlowdownRate;
 	int m_nHltvLastSendTick;
-	float m_flHltvLastReplayRequestTime;
+	double m_flHltvLastReplayRequestTime;
 	CUtlVector<INetMessage*> m_HltvQueuedMessages;
 	HltvReplayStats_t m_HltvReplayStats;
-};
+	void* m_pSendJob;
+}; // sizeof 3968
 
-// not verified
-// not full class reversed
 class CHLTVClient : public CServerSideClientBase
 {
 public:
@@ -414,22 +394,19 @@ public:
 public:
 	CNetworkGameServerBase* m_pHLTV;
 	CUtlString m_szPassword;
-	CUtlString m_szChatGroup; // "all" or "group%d"
+	CUtlString m_szChatGroup;
 	double m_fLastSendTime = 0.0;
 	double m_flLastChatTime = 0.0;
+	int m_nUnknown1 = 0;
+	int m_nSpawnGroupsSent = 0;
+	int m_bNeedsFullFrame = 0;
+	int m_nFullFrameTick = 0;
 	int m_nLastSendTick = 0;
-	int m_unknown2 = 0;
-	int m_nFullFrameTime = 0;
-	int m_unknown3 = 0; 
-
-public:
 	bool m_bNoChat = false;
 	bool m_bUnkBool = false;
 	bool m_bUnkBool2 = false;
-	bool m_bUnkBool3 = false;
-
-private:
-	[[maybe_unused]] char pad3976[52];
-};
+	void* m_pJob;
+	CUtlVector<INetMessage*> m_QueuedMessages;
+}; // sizeof 3120
 
 #endif // SERVERSIDECLIENT_H

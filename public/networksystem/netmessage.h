@@ -7,7 +7,6 @@
 
 #include "platform.h"
 #include "iserver.h"
-#include "serversideclient.h"
 #include "networksystem/inetworkmessages.h"
 #include "networksystem/inetworkserializer.h"
 
@@ -64,106 +63,10 @@ public:
 	int GetSendCount() const { return m_nSendCount; }
 	float GetMargin() const { return m_flMargin; }
 
-	bool Send( CPlayerSlot slot ) const { return Send( CUtlVector< CPlayerSlot >{ slot } ) != 0; }
-
-	int Send( const CPlayerBitVec &playerBits ) const
-	{
-		if ( !g_pNetworkServerService->IsServerRunning() )
-		{
-			return 0;
-		}
-
-		CNetworkGameServer *pNetServer = g_pNetworkServerService->GetNetworkServer();
-
-		if ( !pNetServer )
-		{
-			return 0;
-		}
-
-		int nSent = 0;
-
-		int index = playerBits.FindNextSetBit( 0 );
-
-		while ( index > -1 )
-		{
-			CServerSideClientBase *pClient = pNetServer->GetClientBySlot( index );
-
-			index = playerBits.FindNextSetBit( index + 1 );
-
-			if ( !pClient )
-			{
-				continue;
-			}
-
-			if ( pClient->SendNetMessage( this, GetBufType() ) )
-			{
-				nSent++;
-			}
-		}
-
-		return nSent;
-	}
-
-	int Send( const CUtlVector< CPlayerSlot > &vecSlots ) const
-	{
-		if ( !g_pNetworkServerService->IsServerRunning() )
-		{
-			return 0;
-		}
-
-		CNetworkGameServer *pNetServer = g_pNetworkServerService->GetNetworkServer();
-
-		if ( !pNetServer )
-		{
-			return 0;
-		}
-
-		int nSent = 0;
-
-		for ( auto slot : vecSlots )
-		{
-			CServerSideClientBase *pClient = pNetServer->GetClientBySlot( slot );
-
-			if ( !pClient )
-			{
-				continue;
-			}
-
-			if ( pClient->SendNetMessage( this, GetBufType() ) )
-			{
-				nSent++;
-			}
-		}
-
-		return nSent;
-	}
-
-	int SendToAllClients() const
-	{
-		if ( !g_pNetworkServerService->IsServerRunning() )
-		{
-			return 0;
-		}
-
-		CNetworkGameServer *pNetServer = g_pNetworkServerService->GetNetworkServer();
-
-		if ( !pNetServer )
-		{
-			return 0;
-		}
-
-		int nSent = 0;
-
-		for ( const auto &pClient : pNetServer->GetClients() )
-		{
-			if ( pClient->SendNetMessage( this, GetBufType() ) )
-			{
-				nSent++;
-			}
-		}
-
-		return nSent;
-	}
+	bool Send( CPlayerSlot slot ) const;
+	int Send( const CPlayerBitVec &playerBits ) const;
+	int Send( const CUtlVector< CPlayerSlot > &vecSlots ) const;
+	int SendToAllClients() const;
 
 private:
 	double m_dbRecivedTime;
