@@ -213,13 +213,17 @@ void CUtlLeanVectorBase<T, I, A>::RemoveAll()
 template< class T, typename I, class A >
 inline void CUtlLeanVectorBase<T, I, A>::Purge()
 {
-	RemoveAll();
-	
-	if ( m_nAllocated > 0 && !IsExternallyAllocated() )
+	if ( !IsExternallyAllocated() )
 	{
-		MemoryAllocator_t::Free( (void*)m_pElements );
+		RemoveAll();
+
+		if ( m_nAllocated > 0 )
+		{
+			MemoryAllocator_t::Free( (void*)m_pElements );
+		}
 	}
 
+	m_nCount = 0;
 	m_nAllocated = 0;
 	m_pElements = NULL;
 }
