@@ -277,7 +277,7 @@ class CCommand
 public:
 	CCommand();
 	CCommand( int nArgC, const char **ppArgV );
-	bool Tokenize( CUtlString pCommand, characterset_t *pBreakSet = nullptr );
+	bool Tokenize( const char *pCommand, const characterset_t *pBreakSet = nullptr );
 	void Reset();
 
 	int ArgC() const;
@@ -311,10 +311,10 @@ private:
 	CUtlVectorFixedGrowable<char, COMMAND_MAX_LENGTH> m_ArgvBuffer;
 	CUtlVectorFixedGrowable<char*, COMMAND_MAX_ARGC> m_Args;
 
-	// Temporary fix
-	uint8 m_Unk001 = 0;
-	uint64 m_Unk002 = 0x7FF8000000000000;
-	uint64 m_Unk003 = 0;
+	// Set from CCommandBuffer::AddText/DequeueNextCommand, reset in Tokenize
+	bool m_bFromUntrustedSource = false; // command from untrusted source (client)
+	double m_flExecTime = NAN; // NaN = execute immediately
+	uint64 m_nRequiredFlags = 0; // required ConVar flags (see CCommandBuffer::SetRequiredFlags)
 };
 
 inline int CCommand::MaxCommandLength()

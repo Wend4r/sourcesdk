@@ -438,14 +438,14 @@ characterset_t* CCommand::DefaultBreakSet()
 	return g_pCVar->GetCharacterSet();
 }
 
-bool CCommand::Tokenize( CUtlString pCommand, characterset_t *pBreakSet )
+bool CCommand::Tokenize( const char *pCommand, const characterset_t *pBreakSet )
 {
 	if(m_ArgSBuffer.Count() == 0)
 		EnsureBuffers();
 
 	Reset();
 
-	if ( pCommand.IsEmpty() )
+	if ( !pCommand || !*pCommand )
 		return false;
 
 	// Use default break set
@@ -457,7 +457,7 @@ bool CCommand::Tokenize( CUtlString pCommand, characterset_t *pBreakSet )
 	// Copy the current command into a temp buffer
 	// NOTE: This is here to avoid the pointers returned by DequeueNextCommand
 	// to become invalid by calling AddText. Is there a way we can avoid the memcpy?
-	int nLen = pCommand.Length();
+	int nLen = V_strlen( pCommand );
 	if ( nLen >= m_ArgSBuffer.Count() - 1 )
 	{
 		Warning( "CCommand::Tokenize: Encountered command which overflows the tokenizer buffer.. Skipping!\n" );
@@ -467,14 +467,14 @@ bool CCommand::Tokenize( CUtlString pCommand, characterset_t *pBreakSet )
 	memmove( m_ArgSBuffer.Base(), pCommand, nLen + 1 );
 
 	// Parse the current command into the current command buffer
-	CUtlBuffer bufParse( m_ArgSBuffer.Base(), nLen, static_cast<CUtlBuffer::BufferFlags_t>(CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY));
+	CUtlBuffer bufParse( m_ArgSBuffer.Base(), nLen, static_cast<CUtlBuffer::BufferFlags_t>(CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY) );
 	int nArgvBufferSize = 0;
 	while ( bufParse.IsValid() )
 	{
 		char *pArgvBuf = &m_ArgvBuffer[nArgvBufferSize];
 		int nMaxLen = m_ArgvBuffer.Count() - nArgvBufferSize;
 		int nStartGet = bufParse.TellGet();
-		int	nSize = bufParse.ParseToken( pBreakSet, pArgvBuf, nMaxLen );
+		int	nSize = bufParse.ParseToken( pBreakSet, pArgvBuf, nMaxLen, true );
 		if ( nSize < 0 )
 			break;
 
@@ -509,7 +509,7 @@ bool CCommand::Tokenize( CUtlString pCommand, characterset_t *pBreakSet )
 
 		m_Args.AddToTail( pArgvBuf );
 		nArgvBufferSize += nSize + 1;
-		
+
 		if(nArgvBufferSize >= m_ArgvBuffer.Count())
 			break;
 	}
