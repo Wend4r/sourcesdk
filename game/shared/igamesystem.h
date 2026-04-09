@@ -227,6 +227,8 @@ GS_EVENT_MSG( ServerPostEntityThink )
 	bool m_bLastTick;
 };
 
+GS_EVENT_MSG( ServerProcessNetworking );
+
 GS_EVENT_MSG( ServerPreClientUpdate );
 GS_EVENT_MSG( ServerAdvanceTick );
 GS_EVENT_MSG( ClientAdvanceTick );
@@ -378,8 +380,8 @@ public:
 
 	GS_EVENT_IMPL( ClientPreEntityThink )					// 22
 
-	GS_EVENT_IMPL( ClientProcessGameInput )				// 23
-	GS_EVENT_IMPL( ClientProcessInput )					// 24
+	GS_EVENT_IMPL( ClientProcessGameInput )					// 23
+	GS_EVENT_IMPL( ClientProcessInput )						// 24
 	GS_EVENT_IMPL( ClientPollInput )						// 25
 
 	GS_EVENT_IMPL( ClientPollNetworking )					// 26
