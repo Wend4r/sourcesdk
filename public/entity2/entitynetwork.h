@@ -44,11 +44,25 @@ struct NetworkStateChanged_t
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkStateChanged_t ) == 64 );
 
-// Not entirely sure
-struct NetworkStateChanged3_t
+struct NetworkStateChangedRemove_t
 {
-	CUtlVector<uint32> m_Unk0;
-	CUtlVector<uint32> m_Unk24;
+	NetworkStateChangedRemove_t() : m_nArrayFieldLocalOffset( 0 ) { }
+
+	// Removes all pending changes associated with the specified field-path indices.
+	explicit NetworkStateChangedRemove_t( CUtlVector< ChangeAccessorFieldPathIndex_t > pathIndices )
+		: m_PathIndices( Move( pathIndices ) ), m_nArrayFieldLocalOffset( 0 ) { }
+
+	// Removes the specified array element changes for a single flattened field offset.
+	NetworkStateChangedRemove_t( uint32 nArrayFieldLocalOffset, CUtlVector< uint32 > arrayIndices )
+		: m_ArrayIndices( Move( arrayIndices ) ), m_nArrayFieldLocalOffset( nArrayFieldLocalOffset ) { }
+
+	// Removes a single flattened field offset.
+	NetworkStateChangedRemove_t( uint32 nArrayFieldLocalOffset )
+		: m_nArrayFieldLocalOffset( nArrayFieldLocalOffset ) { }
+
+	CUtlVector< ChangeAccessorFieldPathIndex_t > m_PathIndices;
+	CUtlVector< uint32 > m_ArrayIndices;
+	uint32 m_nArrayFieldLocalOffset;
 };
 
 struct NetworkStateChangedLookupKey_t

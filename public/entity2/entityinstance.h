@@ -19,15 +19,17 @@ struct ChangeAccessorFieldPathIndexInfo_t;
 struct datamap_t;
 class IScriptVM;
 class CNetworkSerializerClassInfo;
+struct NetworkSharedChangeInfoOverflow_t;
 
 // See entitynetwork.h
 struct NetworkStateChanged_t;
-struct NetworkStateChanged3_t;
+struct NetworkStateChangedRemove_t;
 
 extern IScriptVM* ScriptVM();
 
-struct CEntityPrivateScriptScope
+class CEntityPrivateScriptScope
 {
+public:
 	HSCRIPT m_hScope;
 };
 
@@ -38,8 +40,8 @@ public:
 	virtual const CNetworkSerializerClassInfo* GetSerializerClassInfo() = 0;
 #endif
 
-	virtual void unk001() = 0;
-	virtual void unk002() = 0;
+	virtual void unk001() = 0; // CDebugHistory override serializes iVersion/Categories/m_DebugLines
+	virtual void unk002() = 0; // CDebugHistory override deserializes iVersion/Categories/m_DebugLines
 
 	virtual ScriptClassDesc_t* GetScriptDesc() = 0;
 	
@@ -51,7 +53,7 @@ public:
 	virtual void AddedToEntityDatabase() = 0;
 	virtual void Spawn( const CEntityKeyValues* pKeyValues ) = 0;
 
-	virtual void unk101() = 0;
+	virtual void unk101() = 0; // No child overrides found
 
 	virtual void PostDataUpdate( /*DataUpdateType_t*/int updateType ) = 0;
 	virtual void OnDataUnchangedInPVS() = 0;
@@ -72,37 +74,37 @@ public:
 	virtual void OnSave() = 0;
 	virtual void OnRestore() = 0;
 	
-	virtual void unk201() = 0;
+	virtual void unk201() = 0; // No child overrides found
 
 	virtual int ObjectCaps() = 0;
 	virtual CEntityIndex RequiredEdictIndex() = 0;
 
+	// Include "entity2/entitynetwork.h" to call methods.
 	// marks a field for transmission over the network
 	virtual void NetworkStateChanged( const NetworkStateChanged_t& data ) = 0; // Function replaces old version NetworkStateChanged( uint nOffset, int, ChangeAccessorFieldPathIndex_t PathIndex )
+	virtual void NetworkStateChangedBranch( const CFieldPath& path ) = 0;
+	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t& data ) = 0;
 
-	virtual void NetworkStateChangedBranch( const void* data ) = 0; // Game never call this function during testing
-	virtual void NetworkStateChanged_3( const NetworkStateChanged3_t& data ) = 0;
-
-	// Toggles network update state, if set to false would skip network updates
-	virtual void NetworkUpdateState( bool bUnk ) = 0; // Affects behavior of NetworkStateChanged
+	// Toggles the early-out in CNetworkTransmitComponent::StateChanged; true disables network updates.
+	virtual void NetworkUpdateState( bool bNetworkUpdatesDisabled ) = 0;
 	virtual void NetworkStateChangedLog( const char* pszFieldName, const char* pszInfo ) = 0;
 	virtual bool FullEdictChanged() = 0;
 
-	virtual void unk401() = 0;
-	virtual void unk402() = 0;
+	virtual void InvalidatePolymorphicMetadataHelper() = 0;
+	virtual void unk402() = 0; // nullsub
 
 	virtual ChangeAccessorFieldPathIndex_t AddChangeAccessorPath( const CFieldPath& path ) = 0;
 	virtual void AssignChangeAccessorPathIds() = 0;
-	virtual ChangeAccessorFieldPathIndexInfo_t* GetChangeAccessorPathInfo_1() = 0;
-	virtual ChangeAccessorFieldPathIndexInfo_t* GetChangeAccessorPathInfo_2() = 0;
+	virtual NetworkSharedChangeInfoOverflow_t* GetChangeAccessorPathInfo_1() = 0;
+	virtual NetworkSharedChangeInfoOverflow_t* GetChangeAccessorPathInfo_2() = 0;
 	
-	virtual void unk501() = 0;
-	virtual void unk502() = 0;
+	virtual void unk501() = 0; // No child overrides found
+	virtual bool unk502() = 0; // No child overrides found; base returns false
 
 	virtual void ReloadPrivateScripts() = 0;
 	virtual datamap_t* GetDataDescMap() = 0;
 
-	virtual void unk601() = 0;
+	virtual int unk601() = 0; // Default returns 0; CTestPulseIO overrides
 
 	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
 
