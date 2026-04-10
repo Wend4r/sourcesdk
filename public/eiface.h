@@ -576,6 +576,9 @@ public:
 	// The client has typed a command at the console
 	virtual void			ClientCommand( CPlayerSlot slot, const CCommand &args ) = 0;
 
+	// Stores the entity baseline / string table data buffer pointer on the player controller.
+	virtual void			ClientStringTableData( CPlayerSlot slot, void *pData ) = 0;
+
 	// A player changed one/several replicated cvars (name etc)
 	virtual void			ClientSettingsChanged( CPlayerSlot slot ) = 0;
 
@@ -608,14 +611,12 @@ public:
 
 	// The client has submitted a keyvalues command
 	virtual void			ClientCommandKeyValues( CPlayerSlot slot, KeyValues *pKeyValues ) = 0;
-	
-	virtual void			unk001() = 0;
+
+	virtual bool			IsGamePausable() = 0;
 
 	virtual bool			ClientCanPause( CPlayerSlot slot ) = 0;
 
-	virtual void			HLTVClientFullyConnect( int index, const CSteamID &steamID ) = 0;
-
-	virtual bool			CanHLTVClientConnect( int index, const CSteamID &steamID, int *pRejectReason ) = 0;
+	virtual bool			HLTVClientFullyConnect( int index, const CSteamID &steamID ) = 0;
 
 	virtual void			StartHLTVServer( CEntityIndex index ) = 0;
 
@@ -623,18 +624,26 @@ public:
 
 	virtual IHLTVDirector	*GetHLTVDirector( void ) = 0;
 
-	virtual void			unk101( CPlayerSlot slot ) = 0;
-	virtual void			unk102( CPlayerSlot slot ) = 0;
+	// return m_nTickBase
+	virtual uint32			GetClientTickCount( CPlayerSlot slot ) = 0;
+
+	virtual void			GetClientVisibilityInfo( CPlayerSlot slot, vis_info_t *pOutVisInfo ) = 0;
 
 	// Handles incoming usermessages from the client
 	virtual void			ClientSvcUserMessage( CPlayerSlot slot, int um_type, uint32 size, const void *buf ) = 0;
 
-	// Something pawn related
-	virtual void			unk201() = 0;
-	virtual void			unk202() = 0;
+	// reads pawn->m_hViewEntity
+	virtual int				GetClientViewEntity( CPlayerSlot slot, CEntityHandle *outViewEntity ) = 0;
 
-	virtual void			unk203() = 0;
-	virtual void			unk204() = 0;
+	virtual bool			ProcessClientVoiceData( CPlayerSlot slot, void *pVoiceInfo ) = 0;
+
+	virtual bool			ValidateClientString( const char *pszCurrent, const char *pszExpected ) = 0;
+
+	virtual bool			CanProcessNetMessage( void *pNetMessage, void *pClient ) = 0;
+
+	// Called from engine's "exec" command handler. Returns false if commands are disallowed
+	// (triggers "Config %s contains invalid commands" warning). Workshop command sanitization.
+	virtual bool			ValidateScriptCommands( const char *pszCommandText, CBufferString *pFilteredOutput ) = 0;
 };
 
 typedef IVEngineServer2 IVEngineServer;
