@@ -154,7 +154,7 @@ struct Entity2Networkable_t
 	SpawnGroupHandle_t m_SpawnGroupHandle;
 	CEntityHandle m_hEntity;
 };
-static_assert( sizeof( Entity2Networkable_t ) == 96 );
+COMPILE_TIME_ASSERT( sizeof( Entity2Networkable_t ) == 96 );
 
 class CNetworkTransmitComponent
 {
