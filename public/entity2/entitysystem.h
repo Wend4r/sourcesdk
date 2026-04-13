@@ -23,6 +23,8 @@
 #include "entitydatainstantiator.h"
 #include "resourcefile/resourcetype.h"
 
+#include "ientitylistener.h"
+
 class CKV3Arena;
 class CEntityClass;
 class CEntityComponentHelper;
@@ -192,15 +194,6 @@ struct CEntityPrecacheContext
 struct SecondaryPrecacheMemberCallback_t
 {
 	void (CEntityInstance::*pfnPrecache)(ResourceHandle_t hResource, const CEntityPrecacheContext* pContext);
-};
-
-class IEntityListener
-{
-public:
-	virtual void OnEntityCreated(CEntityInstance* pEntity) {};
-	virtual void OnEntitySpawned(CEntityInstance* pEntity) {};
-	virtual void OnEntityDeleted(CEntityInstance* pEntity) {};
-	virtual void OnEntityParentChanged(CEntityInstance* pEntity, CEntityInstance* pNewParent) {};
 };
 
 struct CEntityResourceManifestLock
