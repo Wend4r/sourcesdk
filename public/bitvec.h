@@ -309,17 +309,19 @@ public:
 // class CVarBitVecBase
 //
 // Defines the operations necessary for a variable sized bit array
-template <typename BITCOUNTTYPE>
+template <typename BITCOUNTTYPE, int INLINE_BITS = 32>
 class CVarBitVecBase
 {
 public:
+	static constexpr int kInlineInts = ( INLINE_BITS + 31 ) / 32 > 0 ? ( INLINE_BITS + 31 ) / 32 : 1;
+
 	bool	IsFixedSize() const			{ return false; }
 	int		GetNumBits(void) const		{ return m_numBits; }
 	void	Resize( int numBits, bool bClearAll = false );		// resizes bit array
-	
+
 	int 	GetNumDWords() const		{ return m_numInts; }
-	uint32 *Base()						{ return m_pInt;	}
-	const uint32 *Base() const			{ return m_pInt;	}
+	uint32 *Base()						{ return ( m_numInts > kInlineInts ) ? m_Storage.m_pInt : m_Storage.m_iBitStringStorage; }
+	const uint32 *Base() const			{ return ( m_numInts > kInlineInts ) ? m_Storage.m_pInt : m_Storage.m_iBitStringStorage; }
 
 	void Attach( uint32 *pBits, int numBits );
 	bool Detach( uint32 **ppBits, int *pNumBits );
@@ -329,20 +331,24 @@ public:
 protected:
 	CVarBitVecBase();
 	explicit CVarBitVecBase(int numBits);
-	CVarBitVecBase( const CVarBitVecBase<BITCOUNTTYPE> &from );
-	CVarBitVecBase &operator=( const CVarBitVecBase<BITCOUNTTYPE> &from );
+	CVarBitVecBase( const CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS> &from );
+	CVarBitVecBase &operator=( const CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS> &from );
 	~CVarBitVecBase(void);
-	
-	void 		ValidateOperand( const CVarBitVecBase<BITCOUNTTYPE> &operand ) const	{ Assert(GetNumBits() == operand.GetNumBits()); }
+
+	void 		ValidateOperand( const CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS> &operand ) const	{ Assert(GetNumBits() == operand.GetNumBits()); }
 
 	unsigned	GetEndMask() const		{ return ::GetEndMask( GetNumBits() ); }
 
 private:
 
 	BITCOUNTTYPE	m_numBits;					// Number of bits in the bitstring
-	BITCOUNTTYPE	m_numInts;					// Number of ints to needed to store bitstring
-	uint32			m_iBitStringStorage;		// If the bit string fits in one int, it goes here
-	uint32 *		m_pInt;					// Array of ints containing the bitstring
+	BITCOUNTTYPE	m_numInts;					// Number of ints needed to store bitstring
+
+	union Storage_t
+	{
+		uint32  m_iBitStringStorage[kInlineInts];
+		uint32 *m_pInt;
+	} m_Storage;
 
 	void	AllocInts( int numInts );	// Free the allocated bits
 	void	ReallocInts( int numInts );
@@ -433,38 +439,32 @@ private:
 //
 
 // inheritance instead of typedef to allow forward declarations
-template< class CountType = unsigned short >
-class CVarBitVecT : public CBitVecT< CVarBitVecBase< CountType > >
+template< class CountType = unsigned short, int INLINE_BITS = 32 >
+class CVarBitVecT : public CBitVecT< CVarBitVecBase< CountType, INLINE_BITS > >
 {
 public:
 	CVarBitVecT()
 	{
 	}
-	
+
 	explicit CVarBitVecT(int numBits)
-	 : CBitVecT<CVarBitVecBase< CountType > >(numBits)
+	 : CBitVecT<CVarBitVecBase< CountType, INLINE_BITS > >(numBits)
 	{
 	}
 };
 
-class CVarBitVec : public CVarBitVecT<unsigned short> 
+class CVarBitVec : public CVarBitVecT<unsigned short, 32>
 {
 public:
-	CVarBitVec() : CVarBitVecT<unsigned short>() {}
-	explicit CVarBitVec( int nBitCount ) : CVarBitVecT<unsigned short>(nBitCount) {}
+	CVarBitVec() : CVarBitVecT<unsigned short, 32>() {}
+	explicit CVarBitVec( int nBitCount ) : CVarBitVecT<unsigned short, 32>(nBitCount) {}
 };
 
-class CLargeVarBitVec : public CBitVecT< CVarBitVecBase<int> >
+class CLargeVarBitVec : public CVarBitVecT<int, 64>
 {
 public:
-	CLargeVarBitVec()
-	{
-	}
-
-	explicit CLargeVarBitVec(int numBits)
-		: CBitVecT< CVarBitVecBase<int> >(numBits)
-	{
-	}
+	CLargeVarBitVec() {}
+	explicit CLargeVarBitVec(int numBits) : CVarBitVecT<int, 64>(numBits) {}
 };
 
 //-----------------------------------------------------------------------------
@@ -490,38 +490,38 @@ typedef CBitVec<32> CDWordBitVec;
 
 //-----------------------------------------------------------------------------
 
-template <typename BITCOUNTTYPE>
-inline CVarBitVecBase<BITCOUNTTYPE>::CVarBitVecBase()
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::CVarBitVecBase()
 {
 	Plat_FastMemset( (void *)this, 0, sizeof( *this ) );
 }
 
 //-----------------------------------------------------------------------------
 
-template <typename BITCOUNTTYPE>
-inline CVarBitVecBase<BITCOUNTTYPE>::CVarBitVecBase(int numBits)
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::CVarBitVecBase(int numBits)
 {
 	Assert( numBits );
 	m_numBits	= numBits;
 
 	// Figure out how many ints are needed
 	m_numInts = CalcNumIntsForBits( numBits );
-	m_pInt = NULL;
+	Plat_FastMemset( &m_Storage, 0, sizeof( m_Storage ) );
 	AllocInts( m_numInts );
 }
 
 //-----------------------------------------------------------------------------
 
-template <typename BITCOUNTTYPE>
-inline CVarBitVecBase<BITCOUNTTYPE>::CVarBitVecBase( const CVarBitVecBase<BITCOUNTTYPE> &from )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::CVarBitVecBase( const CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS> &from )
 {
 	if ( from.m_numInts )
 	{
 		m_numBits = from.m_numBits;
 		m_numInts = from.m_numInts;
-		m_pInt = NULL;
+		Plat_FastMemset( &m_Storage, 0, sizeof( m_Storage ) );
 		AllocInts( m_numInts );
-		memcpy( m_pInt, from.m_pInt, m_numInts * sizeof(int) );
+		memcpy( Base(), from.Base(), m_numInts * sizeof(uint32) );
 	}
 	else
 		memset( this, 0, sizeof( *this ) );
@@ -529,12 +529,12 @@ inline CVarBitVecBase<BITCOUNTTYPE>::CVarBitVecBase( const CVarBitVecBase<BITCOU
 
 //-----------------------------------------------------------------------------
 
-template <typename BITCOUNTTYPE>
-inline CVarBitVecBase<BITCOUNTTYPE> &CVarBitVecBase<BITCOUNTTYPE>::operator=( const CVarBitVecBase<BITCOUNTTYPE> &from )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS> &CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::operator=( const CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS> &from )
 {
 	Resize( from.GetNumBits() );
-	if ( m_pInt )
-		memcpy( m_pInt, from.m_pInt, m_numInts * sizeof(int) );
+	if ( m_numInts > 0 )
+		memcpy( Base(), from.Base(), m_numInts * sizeof(uint32) );
 	return (*this);
 }
 
@@ -544,36 +544,35 @@ inline CVarBitVecBase<BITCOUNTTYPE> &CVarBitVecBase<BITCOUNTTYPE>::operator=( co
 // Output :
 //-----------------------------------------------------------------------------
 
-template <typename BITCOUNTTYPE>
-inline CVarBitVecBase<BITCOUNTTYPE>::~CVarBitVecBase(void)
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::~CVarBitVecBase(void)
 {
 	FreeInts();
 }
 
 //-----------------------------------------------------------------------------
 
-template <typename BITCOUNTTYPE>
-inline void CVarBitVecBase<BITCOUNTTYPE>::Attach( uint32 *pBits, int numBits )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline void CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::Attach( uint32 *pBits, int numBits )
 {
 	FreeInts();
 	m_numBits = numBits;
 	m_numInts = CalcNumIntsForBits( numBits );
-	if ( m_numInts > 1 )
+	if ( m_numInts > kInlineInts )
 	{
-		m_pInt = pBits;
+		m_Storage.m_pInt = pBits;
 	}
 	else
 	{
-		m_iBitStringStorage = *pBits;
-		m_pInt = &m_iBitStringStorage;
+		memcpy( m_Storage.m_iBitStringStorage, pBits, m_numInts * sizeof(uint32) );
 		g_pMemAlloc->Free( pBits );
 	}
 }
 
 //-----------------------------------------------------------------------------
 
-template <typename BITCOUNTTYPE>
-inline bool CVarBitVecBase<BITCOUNTTYPE>::Detach( uint32 **ppBits, int *pNumBits )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline bool CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::Detach( uint32 **ppBits, int *pNumBits )
 {
 	if ( !m_numBits )
 	{
@@ -581,15 +580,14 @@ inline bool CVarBitVecBase<BITCOUNTTYPE>::Detach( uint32 **ppBits, int *pNumBits
 	}
 
 	*pNumBits = m_numBits;
-	if ( m_numInts > 1 )
+	if ( m_numInts > kInlineInts )
 	{
-		*ppBits = m_pInt;
+		*ppBits = m_Storage.m_pInt;
 	}
 	else
 	{
-		*ppBits = (uint32 *)MemAlloc_Alloc( sizeof(uint32) );
-		**ppBits = m_iBitStringStorage;
-		g_pMemAlloc->Free( m_pInt );
+		*ppBits = (uint32 *)MemAlloc_Alloc( m_numInts * sizeof(uint32) );
+		memcpy( *ppBits, m_Storage.m_iBitStringStorage, m_numInts * sizeof(uint32) );
 	}
 
 	memset( this, 0, sizeof( *this ) );
@@ -1150,8 +1148,8 @@ inline int BitVec_CountNewBits( const uint32 *pOld, const uint32 *pNew, int nDWo
 }
 
 
-template <typename BITCOUNTTYPE>
-inline int CVarBitVecBase<BITCOUNTTYPE>::FindNextSetBit( int startBit ) const
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline int CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::FindNextSetBit( int startBit ) const
 {
 	if ( startBit < GetNumBits() )
 	{
@@ -1482,23 +1480,27 @@ inline void CBitVecT< CFixedBitVecBase<32> >::Set( int bitNum, bool bNewVal )
 
 //-----------------------------------------------------------------------------
 // Purpose: Resizes the bit string to a new number of bits
-// Input  : resizeNumBits - 
+// Input  : resizeNumBits -
 //-----------------------------------------------------------------------------
-template <typename BITCOUNTTYPE>
-inline void CVarBitVecBase<BITCOUNTTYPE>::Resize( int resizeNumBits, bool bClearAll )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline void CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::Resize( int resizeNumBits, bool bClearAll )
 {
 	Assert( resizeNumBits >= 0 && ((BITCOUNTTYPE)resizeNumBits == resizeNumBits) );
 
 	int newIntCount = CalcNumIntsForBits( resizeNumBits );
 	if ( newIntCount != GetNumDWords() )
 	{
-		if ( Base() )
+		if ( m_numInts > 0 )
 		{
+			const int oldIntCount = m_numInts;
 			ReallocInts( newIntCount );
 			if ( !bClearAll && resizeNumBits >= GetNumBits() )
 			{
-				Base()[GetNumDWords() - 1] &= GetEndMask();
-				Plat_FastMemset( Base() + GetNumDWords(), 0, (newIntCount - GetNumDWords()) * sizeof(int) );
+				Base()[oldIntCount - 1] &= GetEndMask();
+				if ( newIntCount > oldIntCount )
+				{
+					Plat_FastMemset( Base() + oldIntCount, 0, (newIntCount - oldIntCount) * sizeof(uint32) );
+				}
 			}
 		}
 		else
@@ -1510,15 +1512,15 @@ inline void CVarBitVecBase<BITCOUNTTYPE>::Resize( int resizeNumBits, bool bClear
 		}
 
 		m_numInts = newIntCount;
-	} 
-	else if ( !bClearAll && resizeNumBits >= GetNumBits() && Base() )
+	}
+	else if ( !bClearAll && resizeNumBits >= GetNumBits() && m_numInts > 0 )
 	{
 		Base()[GetNumDWords() - 1] &= GetEndMask();
 	}
 
-	if ( bClearAll && Base() )
+	if ( bClearAll && m_numInts > 0 )
 	{
-		Plat_FastMemset( Base(), 0, newIntCount * sizeof(int) );
+		Plat_FastMemset( Base(), 0, newIntCount * sizeof(uint32) );
 	}
 
 	// store the new size and end mask
@@ -1527,74 +1529,83 @@ inline void CVarBitVecBase<BITCOUNTTYPE>::Resize( int resizeNumBits, bool bClear
 
 //-----------------------------------------------------------------------------
 // Purpose: Allocate the storage for the ints
-// Input  : numInts - 
+// Input  : numInts -
 //-----------------------------------------------------------------------------
-template <typename BITCOUNTTYPE>
-inline void CVarBitVecBase<BITCOUNTTYPE>::AllocInts( int numInts )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline void CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::AllocInts( int numInts )
 {
-	Assert( !m_pInt );
-
 	if ( numInts == 0 )
 		return;
 
-	if ( numInts == 1 )
+	if ( numInts <= kInlineInts )
 	{
-		m_pInt = &m_iBitStringStorage;
+		// no allocation needed.
 		return;
 	}
 
-	m_pInt = (uint32 *)malloc( numInts * sizeof(int) );
+	m_Storage.m_pInt = (uint32 *)malloc( numInts * sizeof(uint32) );
 }
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Reallocate the storage for the ints
-// Input  : numInts - 
+// Input  : numInts -
 //-----------------------------------------------------------------------------
-template <typename BITCOUNTTYPE>
-inline void CVarBitVecBase<BITCOUNTTYPE>::ReallocInts( int numInts )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline void CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::ReallocInts( int numInts )
 {
-	Assert( Base() );
-	if ( numInts == 0)
+	if ( numInts == 0 )
 	{
 		FreeInts();
 		return;
 	}
 
-	if ( m_pInt == &m_iBitStringStorage )
-	{
-		if ( numInts != 1 )
-		{
-			m_pInt = ((uint32 *)malloc( numInts * sizeof(int) ));
-			*m_pInt = m_iBitStringStorage;
-		}
+	const int oldNumInts = m_numInts;
+	const bool wasInline = ( oldNumInts <= kInlineInts );
+	const bool willBeInline = ( numInts <= kInlineInts );
 
+	if ( wasInline && willBeInline )
+	{
+		// Still fits inline - nothing to do; caller will update m_numInts.
 		return;
 	}
 
-	if ( numInts == 1 )
+	if ( wasInline && !willBeInline )
 	{
-		m_iBitStringStorage = *m_pInt;
-		free( m_pInt );
-		m_pInt = &m_iBitStringStorage;
+		uint32 inlineCopy[kInlineInts];
+		memcpy( inlineCopy, m_Storage.m_iBitStringStorage, oldNumInts * sizeof(uint32) );
+		uint32 *pNew = (uint32 *)malloc( numInts * sizeof(uint32) );
+		memcpy( pNew, inlineCopy, oldNumInts * sizeof(uint32) );
+		m_Storage.m_pInt = pNew;
 		return;
 	}
 
-	m_pInt = (uint32 *)realloc( m_pInt,  numInts * sizeof(int) );
+	if ( !wasInline && willBeInline )
+	{
+		uint32 *pOld = m_Storage.m_pInt;
+		uint32 inlineCopy[kInlineInts];
+		memcpy( inlineCopy, pOld, numInts * sizeof(uint32) );
+		free( pOld );
+		memset( m_Storage.m_iBitStringStorage, 0, sizeof(m_Storage.m_iBitStringStorage) );
+		memcpy( m_Storage.m_iBitStringStorage, inlineCopy, numInts * sizeof(uint32) );
+		return;
+	}
+
+	m_Storage.m_pInt = (uint32 *)realloc( m_Storage.m_pInt, numInts * sizeof(uint32) );
 }
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Free storage allocated with AllocInts
 //-----------------------------------------------------------------------------
-template <typename BITCOUNTTYPE>
-inline void CVarBitVecBase<BITCOUNTTYPE>::FreeInts( void )
+template <typename BITCOUNTTYPE, int INLINE_BITS>
+inline void CVarBitVecBase<BITCOUNTTYPE, INLINE_BITS>::FreeInts( void )
 {
-	if ( m_numInts > 1 )
+	if ( m_numInts > kInlineInts )
 	{
-		free( m_pInt );
+		free( m_Storage.m_pInt );
 	}
-	m_pInt = NULL;
+	memset( &m_Storage, 0, sizeof( m_Storage ) );
 }
 
 #include "tier0/memdbgoff.h"
