@@ -33,9 +33,24 @@ class CEntityClass;
 class CEntityIdentity;
 class CEntitySharedPulseSignature;
 class ServerClass;
-struct EntInput_t;
 struct EntOutput_t;
 struct datamap_t;
+
+struct CEntityIOInputFunction
+{
+	typedef void (*InputAdapterFunc_t)(const CUtlAbstractDelegate *, CEntityInstance *, CEntityInstance *, CEntityInstance *, int, void *, const CVariant *);
+
+	const char *m_pName;
+	uint32 m_nFlags;
+	void *m_pContext;
+	CUtlAbstractDelegate m_delegate;
+	InputAdapterFunc_t m_adapterFunc;
+};
+
+struct EntInput_t
+{
+	CEntityIOInputFunction m_inputFunction;
+};
 
 struct EntClassComponentOverride_t
 {
@@ -59,6 +74,7 @@ public:
 // Size: 0x160
 class CEntityClass
 {
+public:
 	struct ComponentOffsets_t
 	{
 		uint16 m_nOffset;
@@ -69,20 +85,27 @@ class CEntityClass
 		size_t m_nOffset;
 		CEntityComponentHelper* m_pComponentHelper;
 	};
-	
+
 	struct ClassInputInfo_t
 	{
 		CUtlSymbolLarge m_sName;
 		EntInput_t* m_pInput;
 	};
-	
+
 	struct ClassOutputInfo_t
 	{
 		CUtlSymbolLarge m_sName;
 		EntOutput_t* m_pOutput;
 	};
-	
-public:
+
+	enum AcceptInputRetval_t : int32
+	{
+		ACCEPT_INPUT_UNKNOWN = 0x0,
+		ACCEPT_INPUT_KNOWN_BUT_UNHANDLED = 0x1,
+		ACCEPT_INPUT_KNOWN_AND_HANDLED = 0x2,
+	};
+
+
 	inline CSchemaClassInfo *GetSchemaBinding() const
 	{
 		return m_pClassInfo->m_pSchemaBinding;
@@ -104,12 +127,12 @@ public:
 	int m_nOutputCount;
 
 #ifdef CS2_BETA
-	void* m_pUnk40;
+	CEntitySharedPulseSignature* m_pUnk40;
 #else
 	#ifdef _WIN32
 		char pad[48];
 	#else
-		char pad[16];
+	char pad[16];
 	#endif
 #endif
 
