@@ -33,7 +33,6 @@ struct ChangeAccessorFieldPathIndex_t
 	int32 m_Value;
 };
 
-
 class CEntityOwnerPtr : public CSmartPtr< CEntityInstance, CNullRefCountAccessor >
 {
 
@@ -48,10 +47,13 @@ public:
 		CUtlDelegate< void( const CNetworkVarChainer & ) > updateDelegate;
 	};
 
-	uint8_t unk[24];
+	CUtlVector<ChainUpdatePropagationLL_t> m_PropagationChain;
 	ChangeAccessorFieldPathIndex_t m_PathIndex;
+
+	// When false, all NetworkStateChanged calls are no-ops.
+	bool m_bNetworkingEnabled;
 };
-static_assert(offsetof(CNetworkVarChainer, m_PathIndex) == 32);
+static_assert(sizeof(CNetworkVarChainer) == 40);
 
 typedef uint32 SpawnGroupHandle_t;
 typedef CUtlStringToken WorldGroupId_t;
