@@ -19,8 +19,8 @@ class CEntityInstancePolymorphicMetadataHelper;
 
 struct NetworkStateChanged_t
 {
-	NetworkStateChanged_t() : m_Unk00(1), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
-	explicit NetworkStateChanged_t( bool bFullChanged ) : m_Unk00(static_cast<uint32>(!bFullChanged)), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_Unk60(0) { }
+	NetworkStateChanged_t() : m_nChangeType(1), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_bChainedPath(0) { }
+	explicit NetworkStateChanged_t( bool bFullChanged ) : m_nChangeType(static_cast<uint32>(!bFullChanged)), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_bChainedPath(0) { }
 
 	// nLocalOffset is the flattened field offset
 	//		calculated taking into account embedded structures
@@ -30,18 +30,28 @@ struct NetworkStateChanged_t
 	// nPathIndex is the value to specify 
 	//		if the path to the field goes through one or more pointers, otherwise pass -1
 	// 		this value is usually a member of the CNetworkVarChainer and belongs to the last object in the chain
-	NetworkStateChanged_t( uint32 nLocalOffset, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets{ nLocalOffset }, m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(0) { }
-	NetworkStateChanged_t( CUtlVector<uint32> vecLocalOffsets, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() ) : m_Unk00(1), m_LocalOffsets(Move(vecLocalOffsets)), m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_Unk60(1) { }
+	NetworkStateChanged_t( uint32 nLocalOffset, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() )
+		: m_nChangeType(1), m_LocalOffsets{ nLocalOffset }, m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_bChainedPath(0) { }
+	NetworkStateChanged_t( CUtlVector<uint32> vecLocalOffsets, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() )
+		: m_nChangeType(1), m_LocalOffsets(Move(vecLocalOffsets)), m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_bChainedPath(1) { }
 
-	uint32 m_Unk00; // Perhaps it is an enum, default 1, when 0 adds FL_FULL_EDICT_CHANGED
-	CUtlVector<uint32> m_LocalOffsets;
-	// Probably only works in the debug build, as it has always been empty
+	uint32 m_nChangeType; // 1 = field change (default), 0 = full entity dirty (FL_FULL_EDICT_CHANGED)
+	CUtlVector<uint32> m_LocalOffsets; // Local byte offsets of changed field(s) within the entity/embedded struct.
+
+	// Debug-only strings (always empty in release builds).
 	CUtlString m_ClassName;
 	CUtlString m_FieldName;
-	int32 m_Unk48; // default -1
-	int32 m_nArrayIndex; // default -1
-	ChangeAccessorFieldPathIndex_t m_nPathIndex; // default -1 (can also be -2)
-	int16 m_Unk60; // default 0, if m_LocalOffsets has multiple values, it is set to 1
+
+	int32 m_Unk48;
+	int32 m_nArrayIndex; // Index into array element if the field is a CNetworkUtlVectorBase, otherwise -1.
+
+	// Path index through pointer chain (from CNetworkVarChainer::m_PathIndex), -1 if direct.
+	// CNetworkVarChainer::NetworkStateChanged overwrites this with its own m_PathIndex.
+	ChangeAccessorFieldPathIndex_t m_nPathIndex;
+
+	// 0 = single offset, 1 = m_LocalOffsets has multiple values (chained/nested path).
+	// Checked as bool: if true AND m_nPathIndex < 0, the notification is suppressed.
+	int16 m_bChainedPath;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkStateChanged_t ) == 64 );
 
