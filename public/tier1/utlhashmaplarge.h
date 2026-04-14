@@ -17,6 +17,7 @@
 #include "tier0/murmurhash3.h"
 #include "bitvec.h"
 #include "utlmap.h"
+#include "utlleanvector.h"
 
 // fast mod for power of 2 numbers
 namespace basetypes
@@ -119,7 +120,6 @@ public:
 	CUtlHashMapLarge()
 	{
 		m_cElements = 0;
-		m_nMaxElement = 0;
 		m_nMinRehashedBucket = InvalidIndex();
 		m_nMaxRehashedBucket = InvalidIndex();
 		m_iNodeFreeListHead = InvalidIndex();
@@ -128,7 +128,6 @@ public:
 	CUtlHashMapLarge( int cElementsExpected )
 	{
 		m_cElements = 0;
-		m_nMaxElement = 0;
 		m_nMinRehashedBucket = InvalidIndex();
 		m_nMaxRehashedBucket = InvalidIndex();
 		m_iNodeFreeListHead = InvalidIndex();
@@ -152,10 +151,10 @@ public:
 	IndexType_t Count() const								{ return m_cElements; }
 
 	// Max "size" of the vector
-	IndexType_t  MaxElement() const							{ return m_nMaxElement; }
+	IndexType_t  MaxElement() const							{ return m_memNodes.Count(); }
 
 	// Checks if a node is valid and in the map
-	bool  IsValidIndex( IndexType_t i ) const				{ return i >= 0 && i < m_nMaxElement && !IsFreeNodeID( m_memNodes[i].m_iNextNode ); }
+	bool  IsValidIndex( IndexType_t i ) const				{ return i >= 0 && i < m_memNodes.Count() && !IsFreeNodeID( m_memNodes[i].m_iNextNode ); }
 
 	// Invalid index
 	static IndexType_t InvalidIndex()						{ return -1; }
@@ -201,7 +200,6 @@ public:
 		m_memNodes.Swap( rhs.m_memNodes );
 		V_swap( m_iNodeFreeListHead, rhs.m_iNodeFreeListHead );
 		V_swap( m_cElements, rhs.m_cElements );
-		V_swap( m_nMaxElement, rhs.m_nMaxElement );
 		V_swap( m_nMinRehashedBucket, rhs.m_nMinRehashedBucket );
 		V_swap( m_nMaxRehashedBucket, rhs.m_nMaxRehashedBucket );
 		V_swap( m_EqualityFunc, rhs.m_EqualityFunc );
@@ -228,7 +226,7 @@ private:
 	{
 		IndexType_t m_iNode;
 	};
-	CUtlVector<HashBucket_t> m_vecHashBuckets;
+	CUtlLeanVector<HashBucket_t> m_vecHashBuckets;
 
 	CLargeVarBitVec m_bitsMigratedBuckets;
 
@@ -242,7 +240,6 @@ private:
 	IndexType_t m_iNodeFreeListHead;
 
 	IndexType_t m_cElements;
-	IndexType_t m_nMaxElement;
 	IndexType_t m_nMinRehashedBucket, m_nMaxRehashedBucket;
 	EqualityFunc_t m_EqualityFunc;
 	HashFunc_t m_HashFunc;
@@ -258,8 +255,6 @@ inline int CUtlHashMapLarge<K,T,L,H>::InsertInternal( const KeyType_t &key, cons
 	// make sure we have room in the hash table
 	if ( m_cElements >= m_vecHashBuckets.Count() )
 		EnsureCapacity( MAX( 16, m_vecHashBuckets.Count() * 2 ) );
-	if ( m_cElements >= m_memNodes.Count() )
-		m_memNodes.Grow( m_memNodes.Count() * 2 );
 
 	// rehash incrementally
 	IncrementalRehash();
@@ -329,8 +324,10 @@ inline void CUtlHashMapLarge<K,T,L,H>::EnsureCapacity( int amount )
 	// ::OutputDebugStr( CFmtStr( "grown m_vecHashBuckets from %d to %d\n", m_vecHashBuckets.Count(), cBucketsNeeded ).Access() );
 
 	// grow the hash buckets
-	int grow = cBucketsNeeded - m_vecHashBuckets.Count();
-	int iFirst = m_vecHashBuckets.AddMultipleToTail( grow );
+	int oldCount = m_vecHashBuckets.Count();
+	int grow = cBucketsNeeded - oldCount;
+	m_vecHashBuckets.EnsureCount( cBucketsNeeded );
+	int iFirst = oldCount;
 	// clear all the new data to invalid bits
 	memset( &m_vecHashBuckets[iFirst], 0xFFFFFFFF, grow*sizeof(m_vecHashBuckets[iFirst]) );
 	Assert( basetypes::IsPowerOf2( m_vecHashBuckets.Count() ) );
@@ -356,14 +353,16 @@ inline void CUtlHashMapLarge<K,T,L,H>::EnsureCapacity( int amount )
 //-----------------------------------------------------------------------------
 // Purpose: gets a new node, from the free list if possible
 //-----------------------------------------------------------------------------
-template <typename K, typename T, typename L, typename H> 
+template <typename K, typename T, typename L, typename H>
 inline int CUtlHashMapLarge<K,T,L,H>::AllocNode()
 {
-	// if we're out of free elements, get the max
-	if ( m_cElements == m_nMaxElement )
+	// if we're out of free elements, grow the vector by one uninitialized
+	if ( m_iNodeFreeListHead == InvalidIndex() )
 	{
+		const int iNewNode = m_memNodes.Count();
+		m_memNodes.Grow();
 		m_cElements++;
-		return m_nMaxElement++;
+		return iNewNode;
 	}
 
 	// pull from the free list
@@ -462,7 +461,7 @@ inline int CUtlHashMapLarge<K,T,L,H>::FindInBucket( int iBucket, const KeyType_t
 	if ( m_vecHashBuckets[iBucket].m_iNode != InvalidIndex() )
 	{
 		IndexType_t iNode = m_vecHashBuckets[iBucket].m_iNode;
-		Assert( iNode < m_nMaxElement );
+		Assert( iNode < m_memNodes.Count() );
 		while ( iNode != InvalidIndex() )
 		{
 			// equality check
@@ -607,7 +606,7 @@ inline void CUtlHashMapLarge<K,T,L,H>::RemoveAll()
 	}
 
 	m_cElements = 0;
-	m_nMaxElement = 0;
+	m_memNodes.RemoveAll();
 	m_iNodeFreeListHead = InvalidIndex();
 	m_nMinRehashedBucket = m_vecHashBuckets.Count();
 	m_nMaxRehashedBucket = InvalidIndex();
@@ -619,7 +618,7 @@ inline void CUtlHashMapLarge<K,T,L,H>::RemoveAll()
 //-----------------------------------------------------------------------------
 // Purpose: removes all items from the hash map and releases memory
 //-----------------------------------------------------------------------------
-template <typename K, typename T, typename L, typename H> 
+template <typename K, typename T, typename L, typename H>
 inline void CUtlHashMapLarge<K,T,L,H>::Purge()
 {
 	FOR_EACH_MAP_FAST( *this, i )
@@ -629,7 +628,6 @@ inline void CUtlHashMapLarge<K,T,L,H>::Purge()
 	}
 
 	m_cElements = 0;
-	m_nMaxElement = 0;
 	m_iNodeFreeListHead = InvalidIndex();
 	m_nMinRehashedBucket = InvalidIndex();
 	m_nMaxRehashedBucket = InvalidIndex();
