@@ -467,7 +467,7 @@ public:
 	virtual bool Init() = 0;
 	virtual void Shutdown() = 0;
 
-	virtual void unk3() = 0;
+	virtual void DisableExecution() = 0;
 
 	virtual ScriptLanguage_t GetLanguage() = 0;
 	virtual const char *GetLanguageName() = 0;
@@ -480,7 +480,7 @@ public:
 	
 	virtual void EnableLocalDiskAccess() = 0;
 	
-	virtual void ForwardConsoleCommand(const CCommandContext &, const CCommand &) = 0;
+	virtual bool ForwardConsoleCommand(const CCommandContext &, const CCommand &) = 0;
 
 	//--------------------------------------------------------
  
@@ -500,13 +500,13 @@ public:
 	inline HSCRIPT CompileScript( const unsigned char *pszScript, const char *pszId = NULL ) { return CompileScript( (char *)pszScript, pszId ); }
 	virtual void ReleaseScript( HSCRIPT ) = 0;
 
-	virtual int unk17() = 0;
+	virtual HSCRIPT GetCurrentScope() = 0;
 
 	//--------------------------------------------------------
 	// Scope
 	//--------------------------------------------------------
 	virtual HSCRIPT CreateScope( const char *pszScope, HSCRIPT hParent = NULL ) = 0;
-	virtual void ReferenceScope( HSCRIPT hScript ) = 0;
+	virtual HSCRIPT ReferenceScope( HSCRIPT hScript ) = 0;
 	virtual void ReleaseScope( HSCRIPT hScript ) = 0;
 
 	//--------------------------------------------------------
@@ -574,7 +574,7 @@ public:
 	bool GetValue( const char *pszKey, ScriptVariant_t *pValue )																	{ return GetValue(NULL, pszKey, pValue ); }
 
 	virtual bool GetScalarValue( HSCRIPT hScope, ScriptVariant_t *pValue ) = 0;
-	virtual ScriptVariant_t& CopyValue( ScriptVariant_t &value ) = 0;
+	virtual ScriptVariant_t CopyValue( ScriptVariant_t &value ) = 0;
 	virtual void ReleaseValue( ScriptVariant_t &value ) = 0;
 
 	virtual bool ClearValue( HSCRIPT hScope, const char *pszKey ) = 0;
@@ -605,9 +605,9 @@ public:
 
 	virtual HSCRIPT CopyHandle( HSCRIPT hScope ) = 0;
 
-	virtual HSCRIPT LoadAndCompileScriptFile( char const* file, char const* unk ) = 0;
+	virtual HSCRIPT LoadAndCompileScriptFile( const char *pszFile, const char *pszPathId ) = 0;
 
-	virtual int GetId( HSCRIPT hScope ) = 0;
+	virtual void GetSourceId( HSCRIPT hScope, char *pBuf, unsigned int nBufSize ) = 0;
 
 	virtual bool AreHandlesEqual( HSCRIPT handle1, HSCRIPT handle2 ) = 0;
 
