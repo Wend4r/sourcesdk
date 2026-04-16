@@ -196,7 +196,7 @@ public:
 	CUtlSymbolLarge m_name;
 	CUtlSymbolLarge m_designerName;
 
-private:
+public:
 	uint64 m_hPublicScope; // CEntityPublicScriptScope
 
 public:
