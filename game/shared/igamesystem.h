@@ -320,12 +320,10 @@ GS_EVENT_MSG( ProfileStorageAvailable )
 	CSplitScreenSlot m_nSplitScreenSlot;
 };
 
-#ifdef CS2_BETA
 GS_EVENT_MSG( ServerPrePackEntities )
 {
 	const CUtlVector< Entity2Networkable_t * > *m_pEntities;
 };
-#endif
 
 #define GS_EVENT_IMPL( name ) virtual void name(const Event##name##_t& msg) = 0;
 #define GS_EVENT( name ) virtual void name(const Event##name##_t& msg) override
@@ -439,9 +437,7 @@ public:
 	GS_EVENT_IMPL( SplitScreenStateChanged )				// 55
 	GS_EVENT_IMPL( ProfileStorageAvailable )				// 56
 
-#ifdef CS2_BETA
 	GS_EVENT_IMPL( ServerPrePackEntities )					// 57
-#endif
 
 	virtual const char* GetName() const = 0;				// 58
 	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;	// 59
@@ -551,9 +547,7 @@ public:
 	GS_EVENT( SplitScreenStateChanged ) {}
 	GS_EVENT( ProfileStorageAvailable ) {}
 
-#ifdef CS2_BETA
 	GS_EVENT( ServerPrePackEntities ) {}
-#endif
 
 	virtual const char* GetName() const override { return m_pName; }
 	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}

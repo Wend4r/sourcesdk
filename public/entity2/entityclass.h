@@ -126,15 +126,7 @@ public:
 	int m_nInputCount;
 	int m_nOutputCount;
 
-#ifdef CS2_BETA
 	CEntitySharedPulseSignature* m_pUnk40;
-#else
-	#ifdef _WIN32
-		char pad[48];
-	#else
-	char pad[16];
-	#endif
-#endif
 
 	void* m_pfnPulseBindingTraits;
 

@@ -36,9 +36,7 @@ public:
 class CEntityInstance
 {
 public:
-#ifdef CS2_BETA
 	virtual const CNetworkSerializerClassInfo* GetSerializerClassInfo() = 0;
-#endif
 
 	virtual void unk001() = 0; // CDebugHistory override serializes iVersion/Categories/m_DebugLines
 	virtual void unk002() = 0; // CDebugHistory override deserializes iVersion/Categories/m_DebugLines
@@ -143,9 +141,6 @@ public:
 	CEntityIdentity* m_pEntity;
 	CEntityPrivateScriptScope m_hPrivateScope; 
 	CEntityKeyValues* m_pKeyValues;
-#ifndef CS2_BETA
-	HSCRIPT m_hScriptInstance;
-#endif
 	CScriptComponent* m_CScriptComponent;
 };
 

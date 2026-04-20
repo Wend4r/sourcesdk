@@ -147,9 +147,6 @@ class CEventQueue
 public:
 	CAtomicMutex m_Mutex;
 	EventQueuePrioritizedEvent_t m_Events;
-#ifndef CS2_BETA
-	int m_iListCount;
-#endif
 };
 
 // Entity notifications //
