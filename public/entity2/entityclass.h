@@ -27,7 +27,7 @@ enum EntityClassFlags_t
 	ECF_FORCE_WORLDGROUPID					= (1 << 10) // Forces worldgroupid to be 1 on created entities
 };
 
-class CNetworkSerializerFieldInfo;
+class CNetworkSerializerClassInfo;
 class CSchemaClassInfo;
 class CEntityClass;
 class CEntityIdentity;
@@ -119,7 +119,7 @@ public:
 public:
 	ScriptClassDesc_t* m_pScriptDesc;
 
-	CNetworkSerializerFieldInfo* m_pNetworkSerializerInfo;
+	CNetworkSerializerClassInfo* m_pNetworkSerializerInfo;
 
 	EntInput_t* m_pInputs;
 	EntOutput_t* m_pOutputs;
