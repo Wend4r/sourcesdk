@@ -7,7 +7,9 @@
 
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
+#include <tier0/bufferstring.h>
 #include <tier1/utlsymbollarge.h>
+#include <tier1/generichash.h>
 
 #include <initializer_list>
 
@@ -88,8 +90,66 @@ class CResourcePointer : public CResourcePointerBase
 {
 };
 
-class CResourceString : public CResourcePointer< char >
+class CResourceStringOffset : public CResourcePointer< char >
 {
+};
+
+class CResourceString : public CBufferStringN< 200 >
+{
+public:
+	using BaseClass = CBufferStringN< 200 >;
+
+	CResourceString() : BaseClass( true ) {}
+	CResourceString( const char *pszPath, bool bAllowHeapAllocation = true ) :
+	    BaseClass( pszPath, -1, bAllowHeapAllocation ) {}
+	template< size_t N > CResourceString( const char ( &str )[N], bool bAllowHeapAllocation = true ) :
+	    BaseClass( str, N - 1, bAllowHeapAllocation ) {}
+
+	ResourceId_t   GetResourceId() const   { return m_nResourceId; }
+	ResourceType_t GetResourceType() const { return m_nResourceType; }
+
+	void SetResourceId( ResourceId_t id )    { m_nResourceId = id; }
+	void SetResourceType( ResourceType_t t ) { m_nResourceType = t; }
+
+	void Populate( const char *pszPath )
+	{
+		Set( pszPath );
+		NormalizePathInline();
+		m_nResourceId.m_Data = MurmurHash64( String(), Length(), 0xEDABCDEFu );
+		m_nResourceType = ComputeTypeFromExtension( String() );
+	}
+
+private:
+	uint64 ComputeTypeFromExtension( const char *pszPath )
+	{
+		const char *pExt = nullptr;
+		for ( const char *p = pszPath; *p; ++p )
+			if ( *p == '.' ) pExt = p + 1;
+		if ( !pExt ) return 0;
+		uint64 t = 0;
+		for ( int i = 0; i < 8 && pExt[i]; ++i )
+		{
+			char c = pExt[i];
+			if ( c >= 'A' && c <= 'Z' ) c += 32;
+			if ( c == '_' ) break;
+			t |= (uint64)(uint8)c << ( i * 8 );
+		}
+		return t;
+	}
+
+	void NormalizePathInline()
+	{
+		char *pBuf = Base();
+		for ( int i = 0, n = Length(); i < n; ++i )
+		{
+			char c = pBuf[i];
+			if ( c == '\\' ) pBuf[i] = '/';
+			else if ( c >= 'A' && c <= 'Z' ) pBuf[i] = c + 32;
+		}
+	}
+
+	ResourceId_t   m_nResourceId;
+	ResourceType_t m_nResourceType;
 };
 
 class CStrongHandleVoid;
@@ -125,6 +185,7 @@ struct ResourceBindingBase_t
 {
 	void* m_pData;
 	ResourceNameHandle_t m_Name;
+	ResourceId_t m_nResourceId;
 	uint16 m_nFlags;
 	uint16 m_nReloadCounter;
 	ResourceTypeIndex_t m_nTypeIndex;
@@ -133,7 +194,7 @@ struct ResourceBindingBase_t
 	ExtRefIndex_t m_nExtRefHandle;
 };
 
-typedef const ResourceBindingBase_t *ResourceHandle_t;
+typedef const ResourceBindingBase_t* ResourceHandle_t;
 typedef void *HGameResourceManifest;
 
 #endif // RESOURCETYPE_H
