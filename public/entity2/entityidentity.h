@@ -14,9 +14,11 @@
 #include "tier1/utlobjectattributetable.h"
 #include "tier1/utlsymbollarge.h"
 #include "tier1/smartptr.h"
-#include "entity2/entitycomponent.h"
 #include "entityhandle.h"
 #include "utldelegateimpl.h"
+
+#include "entitycomponent.h"
+#include "entityindex.h"
 
 #define INVALID_SPAWNGROUP_HANDLE ((SpawnGroupHandle_t)-1)
 
@@ -47,41 +49,16 @@ public:
 		CUtlDelegate< void( const CNetworkVarChainer & ) > updateDelegate;
 	};
 
-	CUtlVector<ChainUpdatePropagationLL_t> m_PropagationChain;
+	CUtlVector< ChainUpdatePropagationLL_t > m_PropagationChain;
 	ChangeAccessorFieldPathIndex_t m_PathIndex;
 
 	// When false, all NetworkStateChanged calls are no-ops.
 	bool m_bNetworkingEnabled;
 };
-static_assert(sizeof(CNetworkVarChainer) == 40);
+COMPILE_TIME_ASSERT( sizeof( CNetworkVarChainer ) == 40 );
 
 typedef uint32 SpawnGroupHandle_t;
 typedef CUtlStringToken WorldGroupId_t;
-
-class CEntityIndex
-{
-public:
-	CEntityIndex( int index )
-	{
-		_index = index;
-	}
-
-	int Get() const
-	{
-		return _index;
-	}
-
-	operator int() const
-	{
-		return _index;
-	}
-
-	bool operator==( const CEntityIndex &other ) const { return other._index == _index; }
-	bool operator!=( const CEntityIndex &other ) const { return other._index != _index; }
-	
-private:
-	int _index;
-};
 
 enum EntityNetworkingMode_t : uint32
 {
