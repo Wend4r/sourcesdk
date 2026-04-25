@@ -117,9 +117,9 @@ class DLL_CLASS_IMPORT CMiniDumpComment {
 public:
 	CMiniDumpComment(int iSize, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Unk0);
 	~CMiniDumpComment();
-	const char* GetStartPointer();
-	const char* GetEndPointer();
-	const char* GetCurrentPointer();
+	const char* GetStartPointer() const;
+	const char* GetEndPointer() const;
+	const char* GetCurrentPointer() const;
 	void EnsureOSDescription();
 	int GetAvailableBufferSize();
 	void Reset();
