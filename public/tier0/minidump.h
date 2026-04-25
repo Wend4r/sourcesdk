@@ -102,4 +102,38 @@ PLATFORM_INTERFACE void MinidumpSetUnhandledExceptionFunction( FnMiniDump pfn );
 // being silently swallowed. We should always call this at startup.
 PLATFORM_INTERFACE void EnableCrashingOnCrashes();
 
+struct MiniDumpHandlerData_t {
+	int32_t nFlags;
+	int32_t nExitCode;
+	PEXCEPTION_POINTERS * pExceptionInfo;
+	// ... more
+};
+
+using FnMiniDumpHandler = void (*)(MiniDumpHandlerData_t*);
+
+PLATFORM_INTERFACE void SetDefaultMiniDumpHandler( FnMiniDumpHandler hfn, bool bHandled );
+
+class DLL_CLASS_IMPORT CMiniDumpComment {
+public:
+	CMiniDumpComment(int iSize, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Unk0);
+	~CMiniDumpComment();
+	const char* GetStartPointer();
+	const char* GetEndPointer();
+	const char* GetCurrentPointer();
+	void EnsureOSDescription();
+	int GetAvailableBufferSize();
+	void Reset();
+	void AppendOSComment();
+	void AppendComment(const char* pszComment);
+	void PrependComment(const char* pszComment);
+	void AppendFormattedComment(const char* pszComment, ...) FMTFUNCTION(2, 3);
+	bool EnsureEndsWithNumCharacters(char, int, bool);
+	bool RemoveTrailingCharacters(char);
+	void OnExceptionCaught();
+
+private:
+	[[maybe_unused]] char pad0[0x28];
+};
+static_assert(sizeof(CMiniDumpComment) == 0x28, "CMiniDumpComment - incorrect size on this compiler");
+
 #endif // MINIDUMP_H
