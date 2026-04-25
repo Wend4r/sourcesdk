@@ -105,7 +105,7 @@ PLATFORM_INTERFACE void EnableCrashingOnCrashes();
 struct MiniDumpHandlerData_t {
 	int32_t nFlags;
 	int32_t nExitCode;
-	PEXCEPTION_POINTERS * pExceptionInfo;
+	_EXCEPTION_POINTERS * pExceptionInfo;
 	// ... more
 };
 
