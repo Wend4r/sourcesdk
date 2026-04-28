@@ -85,7 +85,12 @@
 // Constants, Types, Forward Declares
 //////////////////////////////////////////////////////////////////////////
 
+class CUtlString;
+template< class T, typename I, size_t N > class CUtlVectorMemory_Growable;
+template< class T, typename I, class A > class CUtlVector;
+
 class CLoggingSystem;
+class CMiniDumpComment;
 
 //-----------------------------------------------------------------------------
 // Maximum length of a sprintf'ed logging message.
@@ -627,10 +632,8 @@ PLATFORM_INTERFACE LoggingTagHandle_t LoggingSystem_NextTag( LoggingTagHandle_t 
 PLATFORM_INTERFACE LoggingTagHandle_t LoggingSystem_InvalidTag();
 PLATFORM_INTERFACE const char *LoggingSystem_TagName( LoggingTagHandle_t tag );
 
-class CMiniDumpComment;
-
-PLATFORM_OVERLOAD void LoggingSystem_GetLogCapture( CUtlVector<CUtlString, int, CUtlVectorMemory_Growable<CUtlString, int, 0>>* pMiniDumpComment, bool bReversed );
-PLATFORM_OVERLOAD void LoggingSystem_GetLogCapture( CMiniDumpComment* pMiniDumpComment, bool bReversed );
-PLATFORM_OVERLOAD bool LoggingSystem_GetLogCaptureForMiniDump( CMiniDumpComment* pMiniDumpComment, bool bReversed, char const* pMessage );
+PLATFORM_OVERLOAD void LoggingSystem_GetLogCapture( CUtlVector< CUtlString, int, CUtlVectorMemory_Growable< CUtlString, int, 0 > >* pMiniDumpComment, bool bReversed );
+PLATFORM_OVERLOAD void LoggingSystem_GetLogCapture( CMiniDumpComment *pMiniDumpComment, bool bReversed );
+PLATFORM_OVERLOAD bool LoggingSystem_GetLogCaptureForMiniDump( CMiniDumpComment *pMiniDumpComment, bool bReversed, char const* pMessage );
 
 #endif // LOGGING_H

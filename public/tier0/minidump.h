@@ -102,7 +102,8 @@ PLATFORM_INTERFACE void MinidumpSetUnhandledExceptionFunction( FnMiniDump pfn );
 // being silently swallowed. We should always call this at startup.
 PLATFORM_INTERFACE void EnableCrashingOnCrashes();
 
-struct MiniDumpHandlerData_t {
+struct MiniDumpHandlerData_t
+{
 	int32_t nFlags;
 	int32_t nExitCode;
 	_EXCEPTION_POINTERS * pExceptionInfo;
@@ -113,22 +114,23 @@ using FnMiniDumpHandler = void (*)(MiniDumpHandlerData_t*);
 
 PLATFORM_INTERFACE void SetDefaultMiniDumpHandler( FnMiniDumpHandler hfn, bool bHandled );
 
-class DLL_CLASS_IMPORT CMiniDumpComment {
+class DLL_CLASS_IMPORT CMiniDumpComment
+{
 public:
-	CMiniDumpComment(int iSize, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Unk0);
+	CMiniDumpComment( int iSize, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Unk0 );
 	~CMiniDumpComment();
-	const char* GetStartPointer() const;
-	const char* GetEndPointer() const;
-	const char* GetCurrentPointer() const;
+	const char *GetStartPointer() const;
+	const char *GetEndPointer() const;
+	const char *GetCurrentPointer() const;
 	void EnsureOSDescription();
 	int GetAvailableBufferSize();
 	void Reset();
 	void AppendOSComment();
-	void AppendComment(const char* pszComment);
-	void PrependComment(const char* pszComment);
-	void AppendFormattedComment(const char* pszComment, ...) FMTFUNCTION(2, 3);
-	bool EnsureEndsWithNumCharacters(char, int, bool);
-	bool RemoveTrailingCharacters(char);
+	void AppendComment( const char *pszComment );
+	void PrependComment( const char *pszComment );
+	void AppendFormattedComment( const char *pszComment, ... ) FMTFUNCTION( 2, 3 );
+	bool EnsureEndsWithNumCharacters( char, int, bool );
+	bool RemoveTrailingCharacters( char );
 	void OnExceptionCaught();
 
 private:
