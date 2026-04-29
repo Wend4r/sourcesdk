@@ -20,6 +20,7 @@ class IRenderDeviceSetup
 {
 public:
 	virtual ~IRenderDeviceSetup() = 0;
+	virtual bool CreateRenderDevice(IRenderDeviceSetup* ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -97,13 +98,21 @@ public:
 class CMaterialSystem2AppSystemDict : public CTier2AppSystemDict, public IRenderDeviceSetup
 {
 public:
-	void (*m_pSomeFunc)(void*);
-	char m_unnk1168[24];
-	CUtlString m_gameName;
-	char m_unnk1208[32];
+	void* m_unk1168;
+	void* m_hSwapChain;
+	int m_nThreadCount;
+	CreateInterfaceFn m_RenderFactory;
+	CUtlString m_WindowTitle;
+	CUtlString m_WindowIcon;
+	CUtlString m_DefaultRenderSystemOption;
+	bool m_unk1224;
+	CUtlString m_WindowInitialImage;
 	bool m_bUnk1240;
-	bool m_bUnk1241;
-	bool m_bUnk1242;
+	bool m_bInitWithoutMaterialSystem;
+	bool m_bEnableExtendedMaterialInfo;
+	bool m_bDefaultToRendersystemEmpty;
+	bool m_bDiscardMouseFocusClick;
+	bool m_bRenderSystemOptionOnCommandLine;
 };
 
 //-----------------------------------------------------------------------------
