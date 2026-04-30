@@ -142,8 +142,7 @@ public:
 	// Uses FENTCLASS_* flags
 	uint m_flags;
 
-	// Special class group?
-	int m_Unk1;
+	int m_SpawnOrder;
 	
 	uint m_nAllHelpersFlags;
 
