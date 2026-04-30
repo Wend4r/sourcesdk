@@ -14,24 +14,27 @@
 
 #define DEFAULT_NETMESSAGE_COLOR Color(255, 255, 255, 255)
 
-inline constexpr const char *k_pszNetGroupNames[ SG_TOTAL ] = 
+inline constexpr const char *k_pszNetGroupNames[ SG_TOTAL ] =
 {
-	"Generic",
-	"Local Player",
-	"Other PLayer",
-	"Entities",
-	"Sounds",
-	"Events",
-	"Voice",
-	"String Table",
-	"Move",
-	"String Command",
-	"Signon",
-	"System",
-	"User Messages",
-	"Spawn Groups",
-	"Game Engine",
-	"Hltv Replay"
+	"Generic",          // SG_GENERIC = 0
+	"Local Player",     // SG_LOCALPLAYER = 1
+	"Other Players",    // SG_OTHERPLAYER = 2
+	"Entities",         // SG_ENTITIES = 3
+	"Sounds",           // SG_SOUNDS = 4
+	"Events",           // SG_EVENTS = 5
+	"Voice",            // SG_VOICE = 6
+	"String Table",     // SG_STRINGTABLE = 7
+	"Move",             // SG_MOVE = 8
+	"String Command",   // SG_STRINGCMD = 9
+	"Signon",           // SG_SIGNON = 10
+	"System",           // SG_SYSTEM = 11
+	"Unknown",          // gap (12)
+	"User Messages",    // SG_USERMSG = 13
+	"Client Messages",  // SG_CLIENTMSG = 14
+	"Spawn Groups",     // SG_SPAWNGROUPS = 15
+	"Game Engine",      // SG_ENGINE = 16
+	"Hltv Replay",      // SG_HLTVREPLAY = 17
+	"Decals"            // SG_DECALS = 18
 };
 
 class CNetMessage
