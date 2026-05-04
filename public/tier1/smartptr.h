@@ -13,6 +13,8 @@
 
 #include "tier0/platform.h"
 
+#include <type_traits>
+
 class CRefCountAccessor
 {
 public:
@@ -281,6 +283,8 @@ inline bool CSmartPtr<T,RefCountAccessor>::operator==( const T *pOther ) const
 template< class T, class RefCountAccessor >
 CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::CopyFrom( const CSmartPtr<T,RefCountAccessor> &copyFrom )
 {
+	static_assert( !std::is_same_v<RefCountAccessor, CNullRefCountAccessor>, "CSmartPtr with CNullRefCountAccessor is move-only" );
+
 	SetObject( copyFrom.m_pObj );
 	return *this;
 }
