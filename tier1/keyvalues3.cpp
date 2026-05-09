@@ -1669,7 +1669,7 @@ const char *CKeyValues3Table::GetMemberName( const KeyValues3 *parent, KV3Member
 	return GetMemberName( id ).m_pString;
 }
 
-const CKeyValues3Table::Flags_t CKeyValues3Table::GetMemberFlags( KV3MemberId_t id ) const
+CKeyValues3Table::Flags_t CKeyValues3Table::GetMemberFlags( KV3MemberId_t id ) const
 {
 	Assert( 0 <= id && id < m_nCount );
 

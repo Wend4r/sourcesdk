@@ -1073,7 +1073,7 @@ public:
 	//	void Purge( void );
 
 	// Invalid handle.
-	static const UtlHashFastHandle_t InvalidHandle( void )	{ return (unsigned int)~0; }
+	static UtlHashFastHandle_t InvalidHandle( void )	{ return (unsigned int)~0; }
 
 	// Initialize.
 	bool Init( int nBucketCount );
