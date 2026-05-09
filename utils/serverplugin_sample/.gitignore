@@ -1,8 +1,5 @@
-# Visual Studio
-.vs/**
-
-# Build folders
-Debug/**
-Release/**
-
-*.vcxproj.user
+# Build files. Must be published in Releases
+/.cache
+/build*
+/cmake-build*
+/compile_commands.json
