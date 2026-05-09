@@ -4,6 +4,15 @@
 .vscode
 .PVS-Studio
 
+# AI agents
+.aider/
+.claude/
+.codex/
+.continue/
+.cursor/
+.gemini/
+.windsurf/
+
 # CMake
 CMakeUserPresets.json
 
