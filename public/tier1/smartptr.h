@@ -13,6 +13,8 @@
 
 #include "tier0/platform.h"
 
+#include <type_traits>
+
 class CRefCountAccessor
 {
 public:
@@ -281,17 +283,23 @@ inline bool CSmartPtr<T,RefCountAccessor>::operator==( const T *pOther ) const
 template< class T, class RefCountAccessor >
 CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::CopyFrom( const CSmartPtr<T,RefCountAccessor> &copyFrom )
 {
-	m_pObj = copyFrom.m_pObj;
-	if ( m_pObj )
-	{
-		RefCountAccessor::AddRef( m_pObj );
-	}
+	static_assert( !std::is_same_v<RefCountAccessor, CNullRefCountAccessor>, "CSmartPtr with CNullRefCountAccessor is move-only" );
+
+	SetObject( copyFrom.m_pObj );
 	return *this;
 }
 
 template< class T, class RefCountAccessor >
 CSmartPtr<T,RefCountAccessor> &CSmartPtr<T,RefCountAccessor>::MoveFrom( CSmartPtr<T,RefCountAccessor> &&moveFrom )
 {
+	if ( this == &moveFrom )
+		return *this;
+
+	if ( m_pObj )
+	{
+		RefCountAccessor::Release( m_pObj );
+	}
+
 	m_pObj = Move( moveFrom.m_pObj );
 	moveFrom.MarkDeleted();
 	return *this;

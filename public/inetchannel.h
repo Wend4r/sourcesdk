@@ -55,6 +55,7 @@ enum SignonGroup_t : int8
 	SG_SPAWNGROUPS,
 	SG_ENGINE,
 	SG_HLTVREPLAY,
+	SG_DECALS,
 	SG_TOTAL,			// must be last and is not a real group
 };
 
