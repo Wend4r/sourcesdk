@@ -103,6 +103,7 @@ public:
 	virtual datamap_t* GetDataDescMap() = 0;
 
 	virtual int unk601() = 0; // Default returns 0; CTestPulseIO overrides
+	virtual void unk602() = 0;
 
 	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
 
