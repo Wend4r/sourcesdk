@@ -18,7 +18,6 @@
 #include "tier0/utlstring.h"
 #include "tier1/generichash.h"
 #include "tier1/utlvector.h"
-#include "ispatialpartition.h"
 
 class IPhysicsBody;
 class IPhysicsShape;

@@ -14,9 +14,7 @@
 #include "mathlib/vector.h"
 #include "cmodel.h"
 #include "const.h"
-#include "iserverentity.h"
 #include "globalvars_base.h"
-#include "engine/ICollideable.h"
 #include "iservernetworkable.h"
 #include "bitvec.h"
 #include "tier1/convar.h"
@@ -67,7 +65,6 @@ inline CGlobalVars::CGlobalVars() :
 
 class CPlayerState;
 class IServerNetworkable;
-class IServerEntity;
 
 
 #define FL_EDICT_CHANGED	(1<<0)	// Game DLL sets this when the entity state changes
