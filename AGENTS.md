@@ -101,7 +101,7 @@ int Length() const { return m_nLength; }
 
 ## C++ Practices
 
-- Prefer existing project types and APIs such as `CBufferString`, `CUtlString`, `CUtlBuffer`, `CUtlVector`, `CUtlLenaVector`, `Q_*`, or `V_` string helpers, `Assert`, `Move`, and platform abstraction headers when nearby code uses them.
+- Prefer existing project types and APIs such as `CBufferString`, `CUtlString`, `CUtlBuffer`, `CUtlVector`, `CUtlLeanVector`, `Q_*`, or `V_` string helpers, `Assert`, `Move`, and platform abstraction headers when nearby code uses them.
 - Be careful with ownership and allocation. Many modules have custom allocation, fixed-buffer, stack-buffer, or platform-specific lifetime expectations.
 - Preserve binary layout, virtual table layout, exported symbols, calling conventions, and public header contracts.
 - Avoid exceptions unless the surrounding subsystem already uses them.
