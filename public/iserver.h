@@ -62,6 +62,7 @@ class CCompressedResourceManifest;
 class IRecipientFilter;
 class CBaselineEntityData;
 class CNetworkServerSpawnGroup;
+class CSteamID;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -99,14 +100,15 @@ public:
 	// returns current client limit
 	virtual int		GetMaxClients( void ) const = 0;
 
-	virtual float   GetUnk() const = 0;
-
 	virtual void	ServerAdvanceTick( const EventServerAdvanceTick_t & ) = 0;
 	virtual void	ServerPollNetworking( const EventServerPollNetworking_t & ) = 0;
 	virtual void	ServerProcessNetworking( const EventServerProcessNetworking_t & ) = 0;
 
 	virtual void	ServerSimulate( const EventServerSimulate_t & ) = 0;
 	virtual void	ServerPostSimulate( const EventServerPostSimulate_t & ) = 0;
+
+	// Flushes queued broadcast messages within the current per-tick budget.
+	virtual void	DispatchQueuedBroadcastMessages( void ) = 0;
 
 	virtual SpawnGroupHandle_t LoadSpawnGroup( const SpawnGroupDesc_t & ) = 0;
 	virtual void	AsyncUnloadSpawnGroup( unsigned int, /*ESpawnGroupUnloadOption*/ int ) = 0;
@@ -146,11 +148,11 @@ public:
 	virtual void	FinishChangeLevel( CServerChangelevelState * ) = 0;
 	virtual bool	IsChangelevelPending( void ) const = 0;
 
-	virtual void	GetAllLoadingSpawnGroups( CUtlVector<SpawnGroupHandle_t> *pOut ) = 0;
+	virtual void	GetAllLoadingSpawnGroups( CUtlVector< SpawnGroupHandle_t > &pOut ) = 0;
 
 	virtual void	PreserveSteamID( void ) = 0;
 
-	virtual const CSVCMsg_GameSessionConfiguration &GetGameConfig() = 0;
+	virtual CSVCMsg_GameSessionConfiguration &GetGameConfig() = 0;
 
 	virtual void	ReserveServerForQueuedGame( const char *pszReason ) = 0;
 
@@ -161,20 +163,22 @@ public:
 	virtual void	BroadcastPrintf( const char *pszFmt, ... ) FMTFUNCTION( 2, 3 ) = 0;
 
 	virtual void	SetClientConnect( CPlayerSlot slot, bool b = true ) = 0;
+	virtual SignonState_t	GetClientSignonState( CPlayerSlot slot ) = 0;
 
-	virtual void	NotifySceneViewDebugOverlays( void *pSceneView, bool bUnk ) {};
+	virtual void	NotifySceneViewDebugOverlays( void *pSceneView, bool bUnk ) = 0;
 
 	virtual void	BroadcastMessage( INetworkMessageInternal *pSerializer, const CNetMessage *pNetMessage, const IRecipientFilter *pFilter ) = 0;
 	virtual bool	IsRecordingDemo() = 0;
 
 	virtual uint8	GetClientConnectionType( CPlayerSlot slot ) = 0;
-	virtual SignonState_t	GetClientSignonState( CPlayerSlot slot ) = 0;
 
-	virtual bool	GetUnk2() = 0;
-	virtual float	GetUnk3() = 0;
-	virtual uint64	GetUnk4() = 0;
+	virtual bool	HasReplayDirector() = 0;
+	virtual float	GetAverageFrameTime() = 0;
+
+	virtual void	PreWorldUpdate() = 0;
 	virtual void 	DirectUpdate() = 0;
-	virtual uint64	GetUnkStaticFlags() = 0;
+
+	virtual CSteamID	GetGameServerSteamID() = 0;
 };
 
 class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
