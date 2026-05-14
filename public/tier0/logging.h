@@ -245,6 +245,13 @@ enum LoggingChannelFlags_t
 	LCF_DO_NOT_ECHO = 0x00000002,
 };
 
+enum ModificationFlags_t : int
+{
+	MODIFIED_FLAGS = 1,
+	MODIFIED_VERBOSITY = 2,
+	MODIFIED_SPEWCOLOR = 4,
+};
+
 //-----------------------------------------------------------------------------
 // A callback function used to register tags on a logging channel 
 // during initialization.
@@ -263,13 +270,11 @@ struct LoggingRareOptions_t
 
 struct LoggingMetaData_t
 {
-	int m_Unknown;
-	int m_Unknown2;
-	int m_Unknown3;
-	int m_Unknown4;
-	int m_Unknown5;
-	int m_Unknown6;
-	int m_Unknown7;
+	LoggingMetaData_t *m_pNext;
+	uint64 m_TypeID;
+	uint8 *m_pData;
+	size_t m_nDataSize;
+	uint8 m_nVerbosity;
 };
 
 //-----------------------------------------------------------------------------
@@ -308,6 +313,7 @@ class ILoggingListener
 {
 public:
 	virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage ) = 0;
+	virtual void OnFlush() { };
 	virtual void OnChannelRegistered( LoggingChannelID_t channelID ) { };
 	virtual void OnChannelVerbosityChanged( LoggingChannelID_t channelID ) { };
 	virtual void OnChannelFlagsChanged( LoggingChannelID_t channelID ) { };

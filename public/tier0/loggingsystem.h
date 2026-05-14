@@ -210,6 +210,8 @@ public:
 class CLoggingSystem
 {
 public:
+	struct LoggingChannel_t;
+
 	CLoggingSystem();
 	~CLoggingSystem();
 
@@ -342,7 +344,7 @@ public:
 	// spew color.  Passing in UNSPECIFIED_LOGGING_COLOR for 'color' allows
 	// the logging listeners to provide a default.
 	//-----------------------------------------------------------------------------
-	LoggingResponse_t LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t *codeInfo, const LoggingMetaData_t *metaData, Color color, const tchar *pMessage );
+	LoggingResponse_t LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LeafCodeInfo_t *codeInfo, const LoggingMetaData_t *metaData, Color color, const tchar *pMessage );
 
 	// Internal data to represent a logging tag
 	struct LoggingTag_t
@@ -368,16 +370,23 @@ public:
 			return false;
 		}
 		bool IsEnabled( LoggingVerbosity_t verbosity ) const { return verbosity <= m_Verbosity; }
-		void SetVerbosity( LoggingVerbosity_t verbosity ) { m_Verbosity = verbosity; }
+		// It is recommended to use LoggingSystem_SetChannelVerbosity instead, as SetVerbosity bypasses ILoggingListener::OnChannelVerbosityChanged callbacks.
+		void SetVerbosity( LoggingVerbosity_t verbosity ) 
+		{
+			m_Verbosity = verbosity;
+			m_nModifiedFields = static_cast<ModificationFlags_t>(m_nModifiedFields | MODIFIED_VERBOSITY);
+		}
 
 		LoggingChannelID_t m_ID;
-		int m_Unknown;	// Appears to be the same as m_Flags?
-		LoggingChannelFlags_t m_Flags; // an OR'd combination of LoggingChannelFlags_t
-		int m_Unknown2;	// Appears to be the same as m_Verbosity?
-		LoggingVerbosity_t m_Verbosity;	// The maximum verbosity level allowed to activate this channel.
+		LoggingChannelFlags_t m_DefaultFlags;
+		LoggingChannelFlags_t m_Flags;
+		LoggingVerbosity_t m_DefaultVerbosity;
+		LoggingVerbosity_t m_Verbosity;
+		int m_nIndent;
 		Color m_SpewColor;
 		char m_Name[MAX_LOGGING_IDENTIFIER_LENGTH];
 		LoggingTag_t *m_pFirstTag;
+		ModificationFlags_t m_nModifiedFields;
 	};
 
 private:
@@ -433,7 +442,7 @@ private:
 	// Protects all data in this class except the registered channels 
 	// (which are supposed to be registered using the macros at static/global init time).
 	// It is assumed that this mutex is reentrant safe on all platforms.
-	CThreadSpinMutex *m_pStateMutex;
+	CAtomicMutex *m_pStateMutex;
 
 	// The index of the current "global" state of the logging system.  By default, all threads use this state
 	// for logging unless a given thread has pushed the logging state with bThreadLocal == true.
