@@ -12,6 +12,17 @@ set(SOURCESDK_TEST_COMMON_HEADERS
 	common/source2_main.h
 )
 
+set(SOURCESDK_TEST_LINK_OPTIONS
+	${PLATFORM_LINK_OPTIONS}
+	${SOURCESDK_LINK_OPTIONS}
+)
+
+if(MACOS AND SOURCESDK_CONFIGURE_EXPORT_MAP)
+	list(REMOVE_ITEM SOURCESDK_TEST_LINK_OPTIONS
+		-Wl,-exported_symbols_list,${SOURCESDK_SYMBOLS_DIR}/exported_symbols.lds
+	)
+endif()
+
 function(sourcesdk_setup_test_target target_name)
 	if(NOT TARGET ${SOURCESDK_TIER0_NAME})
 		message(FATAL_ERROR "${target_name} requires ${SOURCESDK_TIER0_NAME}")
@@ -19,7 +30,7 @@ function(sourcesdk_setup_test_target target_name)
 
 	target_compile_features(${target_name} PRIVATE cxx_std_23)
 	target_compile_options(${target_name} PRIVATE ${PLATFORM_COMPILE_OPTIONS} ${SOURCESDK_COMPILER_OPTIONS})
-	target_link_options(${target_name} PRIVATE ${PLATFORM_LINK_OPTIONS} ${SOURCESDK_LINK_OPTIONS})
+	target_link_options(${target_name} PRIVATE ${SOURCESDK_TEST_LINK_OPTIONS})
 
 	target_include_directories(${target_name} PRIVATE
 		${SOURCESDK_INCLUDE_DIRS}
