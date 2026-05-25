@@ -50,6 +50,12 @@ function(sourcesdk_setup_test_target target_name)
 		target_compile_definitions(${target_name} PRIVATE
 			PLATFORM_WINDOWS=1
 		)
+	elseif(MACOS)
+		set_target_properties(${target_name} PROPERTIES OSX_ARCHITECTURES "x86_64")
+
+		target_compile_definitions(${target_name} PRIVATE
+			PLATFORM_OSX=1
+		)
 	else()
 		target_compile_definitions(${target_name} PRIVATE
 			PLATFORM_LINUX=1
