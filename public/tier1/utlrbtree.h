@@ -475,8 +475,11 @@ inline CUtlRBTree<T, L, I, M>::CUtlRBTree( const CUtlRBTree<T, L, I, M> &copyFro
 
 template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M>::CUtlRBTree( CUtlRBTree<T, L, I, M> &&moveFrom )
- :  m_LessFunc( moveFrom.m_LessFunc ), 
-    m_LastAlloc( moveFrom.m_Elements.InvalidIterator() )
+ :  m_LessFunc( moveFrom.m_LessFunc ),
+	m_Root( InvalidIndex() ),
+	m_NumElements( 0 ),
+	m_FirstFree( InvalidIndex() ),
+	m_LastAlloc( m_Elements.InvalidIterator() )
 {
 	MoveFrom( Move( moveFrom ) );
 }
@@ -529,14 +532,9 @@ inline CUtlRBTree<T, L, I, M> &CUtlRBTree<T, L, I, M>::MoveFrom( CUtlRBTree<T, L
 		return *this;
 	}
 
-	m_Elements.MoveFrom( Move( other.m_Elements ) );
-
-	m_LessFunc = Move( other.m_LessFunc );
-	m_Root = Move( other.m_Root );
-	m_NumElements = Move( other.m_NumElements );
-	m_FirstFree = Move( other.m_FirstFree );
-	m_LastAlloc = Move( other.m_LastAlloc );
+	Swap( other );
 	ResetDbgInfo();
+	other.ResetDbgInfo();
 
 	return *this;
 }

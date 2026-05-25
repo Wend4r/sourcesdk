@@ -30,9 +30,15 @@ class CUtlStack
 public:
 	// constructor, destructor
 	CUtlStack( int growSize = 0, int initSize = 0 );
+	CUtlStack( const CUtlStack<T, M> &copyFrom );
+	CUtlStack( CUtlStack<T, M> &&moveFrom );
 	~CUtlStack();
 
-	void CopyFrom( const CUtlStack<T, M> &from );
+	CUtlStack<T, M> &operator=( const CUtlStack<T, M> &copyFrom ) { return CopyFrom( copyFrom ); }
+	CUtlStack<T, M> &operator=( CUtlStack<T, M> &&moveFrom ) { return MoveFrom( Move( moveFrom ) ); }
+	CUtlStack<T, M> &CopyFrom( const CUtlStack<T, M> &from );
+	CUtlStack<T, M> &MoveFrom( CUtlStack<T, M> &&from );
+	void Swap( CUtlStack<T, M> &that );
 
 	// element access
 	T& operator[]( int i );
@@ -111,6 +117,20 @@ CUtlStack<T,M>::CUtlStack( int growSize, int initSize )	:
 }
 
 template< class T, class M >
+CUtlStack<T,M>::CUtlStack( const CUtlStack<T, M> &copyFrom ) :
+	m_Size( 0 )
+{
+	CopyFrom( copyFrom );
+}
+
+template< class T, class M >
+CUtlStack<T,M>::CUtlStack( CUtlStack<T, M> &&moveFrom ) :
+	m_Size( 0 )
+{
+	MoveFrom( Move( moveFrom ) );
+}
+
+template< class T, class M >
 CUtlStack<T,M>::~CUtlStack()
 {
 	Purge();
@@ -122,14 +142,39 @@ CUtlStack<T,M>::~CUtlStack()
 //-----------------------------------------------------------------------------
 
 template< class T, class M >
-void CUtlStack<T,M>::CopyFrom( const CUtlStack<T, M> &from )
+CUtlStack<T, M> &CUtlStack<T,M>::CopyFrom( const CUtlStack<T, M> &from )
 {
+	if ( this == &from )
+		return *this;
+
 	Purge();
 	EnsureCapacity( from.Count() );
 	for ( int i = 0; i < from.Count(); i++ )
 	{
 		Push( from[i] );
 	}
+
+	return *this;
+}
+
+template< class T, class M >
+CUtlStack<T, M> &CUtlStack<T,M>::MoveFrom( CUtlStack<T, M> &&from )
+{
+	if ( this == &from )
+		return *this;
+
+	Swap( from );
+
+	return *this;
+}
+
+template< class T, class M >
+void CUtlStack<T,M>::Swap( CUtlStack<T, M> &that )
+{
+	m_Memory.Swap( that.m_Memory );
+	V_swap( m_Size, that.m_Size );
+	ResetDbgInfo();
+	that.ResetDbgInfo();
 }
 
 //-----------------------------------------------------------------------------
