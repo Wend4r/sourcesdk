@@ -119,7 +119,7 @@ public:
 		m_nByteCount += sizeof( T ) * nCount;
 		return NULL; // we didn't allocate anything yet!
 	}
-	template< typename T, typename A >
+	template< typename T, typename I, typename A >
 	T* operator()( T*& pDummy, const CUtlVector< T, I, A > &arr )
 	{
 		( *this )( pDummy, arr.Count( ) );

@@ -1,6 +1,6 @@
 //===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
-// Purpose: 
+// Purpose:
 //
 // $NoKeywords: $
 //===========================================================================//
@@ -17,9 +17,9 @@ template < typename T >
 class CDefUtlPriorityQueueLessFunc
 {
 public:
-	bool operator()( const T &lhs, const T &rhs, bool (*lessFuncPtr)( T const&, T const& ) )	
-	{ 
-		return lessFuncPtr( lhs, rhs );	
+	bool operator()( const T &lhs, const T &rhs, bool (*lessFuncPtr)( T const&, T const& ) )
+	{
+		return lessFuncPtr( lhs, rhs );
 	}
 };
 
@@ -33,7 +33,7 @@ public:
 // T is the type stored in the queue, it must include the priority
 // The head of the list contains the element with GREATEST priority
 // configure the LessFunc_t to get the desired queue order
-template< class T, typename I = int, class LessFunc = CDefUtlPriorityQueueLessFunc< T >, class A = CUtlLeanVector<T>, class SetIndexFunc = CDefUtlPriorityQueueSetIndexFunc< T > > 
+template< class T, typename I = int, class LessFunc = CDefUtlPriorityQueueLessFunc< T >, class A = CUtlLeanVector<T>, class SetIndexFunc = CDefUtlPriorityQueueSetIndexFunc< T > >
 class CUtlPriorityQueue
 {
 public:
@@ -59,8 +59,8 @@ public:
 	void		RemoveAt( I index );
 
 	// Update the position of the specified element in the tree for it current value O(lgn)
-	void		RevaluateElement( const I index ); 
-	
+	void		RevaluateElement( const I index );
+
 	// O(lgn) to rebalance heap
 	void		Insert( T const &element );
 	// Sets the less func
@@ -68,7 +68,7 @@ public:
 
 	// Returns the count of elements in the queue
 	inline I	Count() const { return m_heap.Count(); }
-	
+
 	// doesn't deallocate memory
 	void		RemoveAll() { m_heap.RemoveAll(); }
 
@@ -90,20 +90,20 @@ protected:
 	LessFunc_t m_LessFunc;
 };
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::CUtlPriorityQueue( I growSize, I initSize, LessFunc_t lessfunc ) :
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::CUtlPriorityQueue( I growSize, I initSize, LessFunc_t lessfunc ) :
 	m_heap(growSize, initSize), m_LessFunc(lessfunc)
 {
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::CUtlPriorityQueue( T *pMemory, I allocationCount, LessFunc_t lessfunc )	: 
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::CUtlPriorityQueue( T *pMemory, I allocationCount, LessFunc_t lessfunc )	:
 	m_heap(pMemory, allocationCount), m_LessFunc(lessfunc)
 {
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::RemoveAtHead()
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline void CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::RemoveAtHead()
 {
 	m_heap.FastRemove( 0 );
 
@@ -111,16 +111,16 @@ inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Remove
 	{
 		SetIndexFunc::SetIndex( m_heap[ 0 ], 0 );
 	}
-	
+
 	PercolateDown( 0 );
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::RemoveAt( I index )
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline void CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::RemoveAt( I index )
 {
 	Assert(m_heap.IsValidIndex(index));
-	m_heap.FastRemove( index );		
-	
+	m_heap.FastRemove( index );
+
 	if ( index < Count() )
 	{
 		SetIndexFunc::SetIndex( m_heap[ index ], index );
@@ -129,12 +129,12 @@ inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Remove
 	RevaluateElement( index );
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::RevaluateElement( const I nStartingIndex )
-{	
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline void CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::RevaluateElement( const I nStartingIndex )
+{
 	I index = PercolateDown( nStartingIndex );
 
-	// If index is still the same as the starting index, then the specified element was larger than 
+	// If index is still the same as the starting index, then the specified element was larger than
 	// its children, so it could be larger than its parent, so treat this like an insertion and swap
 	// the node with its parent until it is no longer larger than its parent.
 	if ( index == nStartingIndex )
@@ -143,8 +143,8 @@ inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Revalu
 	}
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline bool CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::IsHeapified()
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline bool CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::IsHeapified()
 {
 	LessFunc lessFunc;
 	for ( I child = Count(); child-- > 1; ) // no need to check the element [0] , it's the parent of all and has no parent itself
@@ -158,11 +158,11 @@ inline bool CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::IsHeap
 	return true; // the priority queue is heapified correctly, needs no reordering
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline I CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::PercolateDown( I index )
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline I CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::PercolateDown( I index )
 {
 	I count = Count();
-	
+
 	LessFunc lessFunc;
 	I half = count/2;
 	I larger = index;
@@ -186,7 +186,7 @@ inline I CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Percolate
 			if ( lessFunc( m_heap[larger], m_heap[child], m_LessFunc ) )
 				larger = child;
 		}
-		
+
 		if ( larger == index )
 			break;
 
@@ -198,8 +198,8 @@ inline I CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Percolate
 	return index;
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline I CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::PercolateUp( I index )
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline I CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::PercolateUp( I index )
 {
 	if ( index >= Count() )
 		return index;
@@ -219,18 +219,18 @@ inline I CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Percolate
 	return index;
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Insert( T const &element )
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline void CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::Insert( T const &element )
 {
 	I index = m_heap.AddToTail();
-	m_heap[index] = element;	
+	m_heap[index] = element;
 	SetIndexFunc::SetIndex( m_heap[ index ], index );
 
 	PercolateUp( index );
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Swap( I index1, I index2 )
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline void CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::Swap( I index1, I index2 )
 {
 	T tmp = m_heap[index1];
 	m_heap[index1] = m_heap[index2];
@@ -240,8 +240,8 @@ inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::Swap( 
 	SetIndexFunc::SetIndex( m_heap[ index2 ], index2 );
 }
 
-template< class T, class LessFunc, typename I, class A, class SetIndexFunc >
-inline void CUtlPriorityQueue<T, typename I, LessFunc, A, SetIndexFunc >::SetLessFunc( LessFunc_t lessfunc )
+template< class T, typename I, class LessFunc, class A, class SetIndexFunc >
+inline void CUtlPriorityQueue<T, I, LessFunc, A, SetIndexFunc >::SetLessFunc( LessFunc_t lessfunc )
 {
 	m_LessFunc = lessfunc;
 }

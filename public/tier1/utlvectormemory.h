@@ -501,14 +501,20 @@ CUtlVectorMemory< T, I >::~CUtlVectorMemory()
 }
 
 template< class T, class I >
-CUtlVectorMemory< T, I >::CUtlVectorMemory( const CUtlVectorMemory< T, I > &copyFrom ) : m_pMemory( 0 ), m_nAllocationCount( 0 )
+CUtlVectorMemory< T, I >::CUtlVectorMemory( const CUtlVectorMemory< T, I > &copyFrom ) :
+	m_pMemory( nullptr ),
+	m_nAllocationCount( 0 ),
+	m_nGrowSizeStaff( 0 )
 {
 	CopyFrom( copyFrom );
 }
 
 
 template< class T, class I >
-CUtlVectorMemory< T, I >::CUtlVectorMemory( CUtlVectorMemory< T, I > &&moveFrom )
+CUtlVectorMemory< T, I >::CUtlVectorMemory( CUtlVectorMemory< T, I > &&moveFrom ) :
+	m_pMemory( nullptr ),
+	m_nAllocationCount( 0 ),
+	m_nGrowSizeStaff( 0 )
 {
 	MoveFrom( Move( moveFrom ) );
 }
@@ -528,6 +534,11 @@ CUtlVectorMemory< T, I >& CUtlVectorMemory< T, I >::operator=( CUtlVectorMemory<
 template< class T, class I >
 CUtlVectorMemory< T, I > &CUtlVectorMemory< T, I >::CopyFrom( const CUtlVectorMemory< T, I > &copyFrom )
 {
+	if ( this == &copyFrom )
+	{
+		return *this;
+	}
+
 	Init( copyFrom.m_nGrowSize, copyFrom.m_nAllocationCount );
 
 	if( m_pMemory )
@@ -541,21 +552,21 @@ CUtlVectorMemory< T, I > &CUtlVectorMemory< T, I >::CopyFrom( const CUtlVectorMe
 template< class T, class I >
 CUtlVectorMemory< T, I > &CUtlVectorMemory< T, I >::MoveFrom( CUtlVectorMemory< T, I > &&moveFrom )
 {
-	// Copy member variables to locals before purge to handle self-assignment
-	T*&&pMemory = Move( moveFrom.m_pMemory );
-	I &&nAllocationCount = Move( moveFrom.m_nAllocationCount );
-	I &&nGrowSizeStaff = Move( moveFrom.m_nGrowSizeStaff );
+	if ( this == &moveFrom )
+	{
+		return *this;
+	}
+
+	Purge();
+
+	m_pMemory = moveFrom.m_pMemory;
+	m_nAllocationCount = moveFrom.m_nAllocationCount;
+	m_nGrowSizeStaff = moveFrom.m_nGrowSizeStaff;
 
 	moveFrom.m_pMemory = nullptr;
 	moveFrom.m_nAllocationCount = 0;
 	moveFrom.m_nGrowSizeStaff = 0;
 
-	// // If this is a self-assignment, Purge() is a no-op here
-	// Purge();
-
-	m_pMemory = Move(pMemory);
-	m_nAllocationCount = Move(nAllocationCount);
-	m_nGrowSizeStaff = Move(nGrowSizeStaff);
 	return *this;
 }
 

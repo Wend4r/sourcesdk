@@ -115,7 +115,7 @@ protected:
 // constructor, destructor
 //-----------------------------------------------------------------------------
 template <class T, class I, int COMPARE_TYPE>
-CUtlDict<T, I, COMPARE_TYPE>::CUtlDict( int growSize, int initSize ) : m_Elements( growSize, initSize )
+CUtlDict<T, I, COMPARE_TYPE>::CUtlDict( int growSize, int initSize ) : m_Elements( growSize, initSize, typename CDictCompareTypeDeducer<COMPARE_TYPE>::Type_t{} )
 {
 }
 
