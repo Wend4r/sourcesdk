@@ -550,6 +550,8 @@ public:
 	uint16 GetAccessIndex() const { return m_CommandAccessIndex; }
 	uint32 GetRegisteredIndex() const { return m_CommandRegisteredIndex; }
 
+	explicit operator bool() const { return m_CommandAccessIndex != kInvalidAccessIndex; }
+
 private:
 	// Index into internal linked list of concommands
 	uint16 m_CommandAccessIndex;
@@ -1064,11 +1066,8 @@ public:
 	bool IsValidRef() const { return m_ConVar.m_iAccessIndex != kInvalidAccessIndex; }
 	uint16 GetAccessIndex() const { return m_ConVar.m_iAccessIndex; }
 	uint32 GetRegisteredIndex() const { return m_ConVar.m_iRegisteredIndex; }
-
-	operator uint64() const
-	{
-		return m_Handle;
-	}
+	explicit operator bool() const { return m_ConVar.m_iAccessIndex != kInvalidAccessIndex; }
+	operator uint64() const { return m_Handle; }
 
 protected:
 	struct Handle_t
