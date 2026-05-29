@@ -11,7 +11,8 @@
 			"description": "Build using Ninja generator",
 			"cacheVariables":
 			{
-				"CMAKE_CONFIGURATION_TYPES": "Debug;RelWithDebInfo;Release"
+				"CMAKE_CONFIGURATION_TYPES": "Debug;RelWithDebInfo;Release",
+				"SOURCESDK_ENABLE_TESTS": true
 			},
 
 			"hidden": true
@@ -32,7 +33,8 @@
 			"description": "Build using Visual Studio generator",
 			"cacheVariables":
 			{
-				"CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+				"CMAKE_CONFIGURATION_TYPES": "Debug;Release",
+				"SOURCESDK_ENABLE_TESTS": true
 			}
 		},
 
@@ -109,7 +111,6 @@
 			"description": "Release building with Ninja configuration",
 			"configurePreset": "Release"
 		},
-
 		{
 			"name": "VisualStudio\\Debug",
 			"inherits": "VisualStudioBase",
@@ -125,6 +126,52 @@
 			"displayName": "Visual Studio - Release",
 			"description": "Release building with Visual Studio configuration",
 			"configuration": "Release"
+		}
+	],
+
+	"testPresets":
+	[
+		{
+			"name": "Debug",
+			"configurePreset": "Debug",
+			"output":
+			{
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "RelWithDebInfo",
+			"configurePreset": "RelWithDebInfo",
+			"output":
+			{
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "Release",
+			"configurePreset": "Release",
+			"output":
+			{
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "VisualStudio\\Debug",
+			"configurePreset": "VisualStudio",
+			"configuration": "Debug",
+			"output":
+			{
+				"outputOnFailure": true
+			}
+		},
+		{
+			"name": "VisualStudio\\Release",
+			"configurePreset": "VisualStudio",
+			"configuration": "Release",
+			"output":
+			{
+				"outputOnFailure": true
+			}
 		}
 	]
 }

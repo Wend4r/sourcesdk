@@ -9,7 +9,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
-#if defined(__x86_64__) || defined(_WIN64)
+#if defined(__x86_64__) || defined(__aarch64__) || defined(_WIN64)
 #define PLATFORM_64BITS 1
 #endif
 
@@ -157,6 +157,9 @@
 
 #if defined( OSX )
 	#include <malloc/malloc.h>
+	#if defined( __aarch64__ )
+		#include <mach/mach_time.h>
+	#endif
 #else
 	#include <malloc.h>
 #endif
@@ -1852,6 +1855,8 @@ inline uint64 Plat_Rdtsc()
 	uint32 lo, hi;
 	__asm__ __volatile__ ( "rdtsc" : "=a" (lo), "=d" (hi));
 	return ( ( ( uint64 )hi ) << 32 ) | lo;
+#elif defined( OSX ) && defined( __aarch64__ )
+	return ( uint64 )mach_absolute_time();
 #else
 #error
 #endif

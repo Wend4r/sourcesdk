@@ -316,7 +316,7 @@ public:
 	void Reinsert( I elem );
 
 	// swap in place
-	void Swap( CUtlRBTree< T, I, L > &that );
+	void Swap( CUtlRBTree< T, L, I, M > &that );
 
 protected:
 	enum NodeColor_t
@@ -475,8 +475,11 @@ inline CUtlRBTree<T, L, I, M>::CUtlRBTree( const CUtlRBTree<T, L, I, M> &copyFro
 
 template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M>::CUtlRBTree( CUtlRBTree<T, L, I, M> &&moveFrom )
- :  m_LessFunc( moveFrom.m_LessFunc ), 
-    m_LastAlloc( moveFrom.m_Elements.InvalidIterator() )
+ :  m_LessFunc( moveFrom.m_LessFunc ),
+	m_Root( InvalidIndex() ),
+	m_NumElements( 0 ),
+	m_FirstFree( InvalidIndex() ),
+	m_LastAlloc( m_Elements.InvalidIterator() )
 {
 	MoveFrom( Move( moveFrom ) );
 }
@@ -497,28 +500,19 @@ CUtlRBTree<T, L, I, M>& CUtlRBTree<T, L, I, M>::operator=( const CUtlRBTree<T, L
 template < class T, typename L, class I, class M >
 CUtlRBTree<T, L, I, M>& CUtlRBTree<T, L, I, M>::operator=( CUtlRBTree<T, L, I, M> &&moveFrom )
 {
-	MoveFrom( moveFrom );
+	MoveFrom( Move( moveFrom ) );
 	return *this;
 }
 
 template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M> &CUtlRBTree<T, L, I, M>::CopyFrom( const CUtlRBTree<T, L, I, M> &other )
 {
+	if ( this == &other )
 	{
-		const uintp nOtherSize = other.m_Elements.Count();
-
-		m_Elements.EnsureCapacity( nOtherSize );
-
-		auto *pBase = m_Elements.Base();
-
-		const auto *pOtherBase = other.m_Elements.Base();
-
-		for ( uintp n = 0; n < nOtherSize; n++ )
-		{
-			Construct( &pBase[n] );
-			pBase[n] = pOtherBase[n];
-		}
+		return *this;
 	}
+
+	m_Elements.CopyFrom( other.m_Elements );
 
 	m_LessFunc = other.m_LessFunc;
 	m_Root = other.m_Root;
@@ -533,29 +527,14 @@ inline CUtlRBTree<T, L, I, M> &CUtlRBTree<T, L, I, M>::CopyFrom( const CUtlRBTre
 template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M> &CUtlRBTree<T, L, I, M>::MoveFrom( CUtlRBTree<T, L, I, M> &&other )
 {
+	if ( this == &other )
 	{
-		auto &&otherElems = Move( other.m_Elements );
-
-		const uintp nOtherSize = otherElems.Count();
-
-		m_Elements.EnsureCapacity( nOtherSize );
-
-		auto *pBase = m_Elements.Base();
-
-		auto *pOtherBase = otherElems.Base();
-
-		for ( uintp n = 0; n < nOtherSize; n++ )
-		{
-			MoveConstruct( &pBase[n], Move( pOtherBase[n] ) );
-		}
+		return *this;
 	}
 
-	m_LessFunc = Move( other.m_LessFunc );
-	m_Root = Move( other.m_Root );
-	m_NumElements = Move( other.m_NumElements );
-	m_FirstFree = Move( other.m_FirstFree );
-	m_LastAlloc = Move( other.m_LastAlloc );
+	Swap( other );
 	ResetDbgInfo();
+	other.ResetDbgInfo();
 
 	return *this;
 }
@@ -1828,7 +1807,7 @@ I CUtlRBTree<T, L, I, M>::FindClosest( T const &search, CompareOperands_t eFindC
 // swap in place
 //-----------------------------------------------------------------------------
 template < class T, typename L, class I, class M >
-void CUtlRBTree<T, L, I, M>::Swap( CUtlRBTree< T, I, L > &that )
+void CUtlRBTree<T, L, I, M>::Swap( CUtlRBTree< T, L, I, M > &that )
 {
 	m_Elements.Swap( that.m_Elements );
 	V_swap( m_LessFunc, that.m_LessFunc );

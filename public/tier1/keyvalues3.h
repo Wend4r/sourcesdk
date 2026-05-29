@@ -1408,7 +1408,7 @@ inline T *CKeyValues3ClusterImpl<SIZE, T>::Alloc( Args&&... args )
 
 	SetNextFree( node->m_pNextFree );
 
-	Construct( &node->m_Value, std::forward<Args>( args )... );
+	Construct( &node->m_Value, Forward< Args >( args )... );
 	node->m_Value.SetClusterElement( GetNodeIndex( &node->m_Value ) );
 
 	m_nElementCount++;
@@ -1706,7 +1706,7 @@ auto CKV3Arena::Alloc( ClusterNodeChain<CLUSTER> &partial_clusters,
 
 	if(cluster)
 	{
-		elem = cluster->Alloc( std::forward<Args>( args )... );
+		elem = cluster->Alloc( Forward< Args >( args )... );
 
 		if(cluster->IsFull())
 		{
@@ -1721,7 +1721,7 @@ auto CKV3Arena::Alloc( ClusterNodeChain<CLUSTER> &partial_clusters,
 		Construct( cluster, this, true, initial_size );
 		partial_clusters.AddToChain( cluster );
 
-		elem = cluster->Alloc( std::forward<Args>( args )... );
+		elem = cluster->Alloc( Forward< Args >( args )... );
 	}
 
 	return elem;

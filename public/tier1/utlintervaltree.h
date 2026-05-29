@@ -151,8 +151,8 @@ private:
 template< class DataType, class T >
 inline int CompareIntervals( const void *p1, const void *p2 )
 {
-	const CUtlIntervalTree<DataType,T>::Interval_t *pInterval1 = ( const CUtlIntervalTree<DataType,T>::Interval_t *)p1;
-	const CUtlIntervalTree<DataType,T>::Interval_t *pInterval2 = ( const CUtlIntervalTree<DataType,T>::Interval_t *)p2;
+	const typename CUtlIntervalTree<DataType, T>::Interval_t *pInterval1 = ( const typename CUtlIntervalTree<DataType, T>::Interval_t * )p1;
+	const typename CUtlIntervalTree<DataType, T>::Interval_t *pInterval2 = ( const typename CUtlIntervalTree<DataType, T>::Interval_t * )p2;
 
 	T lowVal1 = pInterval1->GetLowVal();
 	T lowVal2 = pInterval2->GetLowVal();

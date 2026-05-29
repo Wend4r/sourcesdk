@@ -1,0 +1,64 @@
+<!-- kv3 encoding:text:version{e21c7f3c-8a33-41c5-9977-a76d3a32aa0d} format:generic:version{7412167c-06e9-4698-aff2-e63eb59037e7} -->
+{
+	boolValue = false
+	intValue = 128
+	doubleValue = 64.000000
+	stringValue = "hello world"
+	stringThatIsAResourceReference = resource:"particles/items3_fx/star_emblem.vpcf"
+	resourceNameValue = resource_name:"materials/dev/measuregeneric01b.vmat"
+	panoramaValue = panorama:"file://{resources}/layout/custom_game/example.xml"
+	soundEventValue = soundevent:"sounds/ui/menu_accept.vsnd"
+	subclassValue = subclass:
+	{
+		name = "derived"
+	}
+	entityNameValue = entity_name:"target_entity"
+	localizeValue = localize:"#SFUI_MainMenu"
+	nullPrefixValue = null
+	binaryBlobValue = #[DE AD BE EF]
+	arrayPrefixValue = [ 3, 4 ]
+	tablePrefixValue = { key = "value" }
+	bool8Value = false
+	char8Value = 65
+	uchar32Value = 66
+	int8Value = -8
+	uint8Value = 8
+	int16Value = -16
+	uint16Value = 16
+	int32Value = -32
+	uint32Value = 32
+	int64Value = -64
+	uint64Value = 64
+	float32Value = 32.5
+	float64Value = 64.5
+	stringPrefixValue = "prefixed string"
+	color32Value = [ 1, 2, 3, 4 ]
+	vectorValue = [ 1.0, 2.0, 3.0 ]
+	vector2dValue = [ 4.0, 5.0 ]
+	vector4dValue = [ 6.0, 7.0, 8.0, 9.0 ]
+	rotationVectorValue = [ 10.0, 11.0, 12.0 ]
+	quaternionValue = [ 13.0, 14.0, 15.0, 16.0 ]
+	qangleValue = [ 17.0, 18.0, 19.0 ]
+	matrix3x4Value = [ 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 2.0, 0.0, 0.0, 1.0, 3.0 ]
+	transformValue = [ 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 ]
+	stringTokenValue = 12345
+	ehandleValue = 54321
+	multiLineStringValue = """
+First line of a multi-line string literal.
+Second line of a multi-line string literal.
+"""
+	arrayValue =
+	[
+		1,
+		2,
+	]
+	objectValue =
+	{
+		n = 5
+		s = "foo"
+	}
+	// single line comment
+	/* multi
+	line
+	comment */
+}

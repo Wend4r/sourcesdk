@@ -18,6 +18,7 @@ on:
       - 'public/**'
       - 'thirdparty/**'
       - 'tier1/**'
+      - 'tests/**'
       - 'CMakeGameManifests.json'
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
@@ -39,6 +40,7 @@ on:
       - 'public/**'
       - 'thirdparty/**'
       - 'tier1/**'
+      - 'tests/**'
       - 'CMakeGameManifests.json'
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
@@ -47,6 +49,7 @@ on:
 env:
   CMAKE_DEBUG_PRESET_NAME: Debug
   CMAKE_DEBUG_CONFIG_NAME: Debug
+  CMAKE_DEBUG_TEST_PRESET_NAME: Debug
   CMAKE_DEBUG_OUTPUT_PATTERN: build/Linux/Debug/*.a
 
   CMAKE_RELEASE_WITH_DEBUG_INFO_PRESET_NAME: RelWithDebInfo
@@ -79,11 +82,11 @@ jobs:
             },
             {
               name: Clang,
-              display_name: Clang 20,
+              display_name: Clang 22,
 
-              packages: clang-20 gcc-14-monolithic,
-              cc: clang-20,
-              cxx: clang++-20,
+              packages: clang-22 gcc-14-monolithic,
+              cc: clang-22,
+              cxx: clang++-22,
             }
         ]
       fail-fast: false
@@ -96,9 +99,10 @@ jobs:
         fetch-tags: true
 
     - name: Configure package repositories
+      if: matrix.compiler.name == 'Clang'
       run: |
-        echo "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-20 main" | sudo tee /etc/apt/sources.list.d/llvm.list
-        echo "deb-src http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-20 main" | sudo tee -a /etc/apt/sources.list.d/llvm.list
+        echo "deb http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-22 main" | sudo tee /etc/apt/sources.list.d/llvm.list
+        echo "deb-src http://apt.llvm.org/bullseye/ llvm-toolchain-bullseye-22 main" | sudo tee -a /etc/apt/sources.list.d/llvm.list
         wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
 
     - name: Install packages
@@ -143,6 +147,9 @@ jobs:
 
     - name: Debug - Build
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
+
+    - name: Debug - Test
+      run: ctest --preset ${{ env.CMAKE_DEBUG_TEST_PRESET_NAME }} --output-on-failure
 
     - name: Debug - Upload build artifact
       uses: actions/upload-artifact@v4
