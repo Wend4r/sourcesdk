@@ -18,6 +18,7 @@ on:
       - 'public/**'
       - 'thirdparty/**'
       - 'tier1/**'
+      - 'tests/**'
       - 'CMakeGameManifests.json'
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
@@ -39,6 +40,7 @@ on:
       - 'public/**'
       - 'thirdparty/**'
       - 'tier1/**'
+      - 'tests/**'
       - 'CMakeGameManifests.json'
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
@@ -47,6 +49,7 @@ on:
 env:
   CMAKE_DEBUG_PRESET_NAME: Debug
   CMAKE_DEBUG_CONFIG_NAME: Debug
+  CMAKE_DEBUG_TEST_PRESET_NAME: Debug
   CMAKE_DEBUG_OUTPUT_PATTERN: build/Linux/Debug/*.a
 
   CMAKE_RELEASE_WITH_DEBUG_INFO_PRESET_NAME: RelWithDebInfo
@@ -143,6 +146,9 @@ jobs:
 
     - name: Debug - Build
       run: cmake --build --preset ${{ env.CMAKE_DEBUG_PRESET_NAME }} --parallel --config ${{ env.CMAKE_DEBUG_CONFIG_NAME }}
+
+    - name: Debug - Test
+      run: ctest --preset ${{ env.CMAKE_DEBUG_TEST_PRESET_NAME }} --output-on-failure
 
     - name: Debug - Upload build artifact
       uses: actions/upload-artifact@v4
