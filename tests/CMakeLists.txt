@@ -163,4 +163,8 @@ add_executable(keyvalues3_tests
 	keyvalues3.cpp
 )
 
+target_compile_definitions(keyvalues3_tests PRIVATE
+	SOURCESDK_KEYVALUES3_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/keyvalues3"
+)
+
 sourcesdk_setup_test_target(keyvalues3_tests)

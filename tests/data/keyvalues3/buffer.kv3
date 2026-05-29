@@ -1,0 +1,22 @@
+<!-- kv3 encoding:text:version{ e21c7f3c-8a33-41c5-9977-a76d3a32aa0d } format:generic:version{ 7412167c-06e9-4698-aff2-e63eb59037e7 } -->
+{
+	answer = 44
+	name = "buffer"
+	null_member = null
+	bool_member = true
+	int_member = -42
+	uint_member = 18446744073709551615
+	double_member = 12.5
+	string_short_member = "short"
+	string_member = "this string is longer than seven bytes"
+	binary_blob_member = #[00 7F A5 FF]
+	array_member = [ null, false, -1, 2, 3.5, "array", { nested = true } ]
+	array_float_member = [ 1.25, 2.5, 3.75 ]
+	array_int_member = [ 100000, 200000, 300000 ]
+	table_member =
+	{
+		child_int = 7
+		child_object = { name = "nested" }
+		child_array = [ 8, 9 ]
+	}
+}
