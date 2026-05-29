@@ -16,6 +16,8 @@
 #include "utlstring.h"
 #include "vmath.h"
 
+#include "mathlib/mathlib.h"
+
 #include <initializer_list>
 
 #if defined(DEBUG) && defined(BUFFERSTRING_OVERFLOW_CATCH)
@@ -97,11 +99,12 @@ public:
 	CBufferString( const CUtlString &str, bool bAllowHeapAllocation = true ) : CBufferString( str, str.Length(), bAllowHeapAllocation ) {}
 	explicit CBufferString( std::string_view view, bool bAllowHeapAllocation = true ) : CBufferString( view.data(), static_cast<int>(view.size()), bAllowHeapAllocation ) {}
 	CBufferString( const CBufferString &copyFrom, bool bAllowHeapAllocation = true ) : CBufferString( copyFrom, copyFrom.Length(), bAllowHeapAllocation ) {}
-	CBufferString( CBufferString &&moveFrom ) noexcept : 
-	    m_nLengthStaff( Move( moveFrom.m_nLengthStaff ) ), 
-	    m_nAllocatedStaff( Move( moveFrom.m_nAllocatedStaff ) ), 
-	    m_Buffer( Move( moveFrom.m_Buffer ) )
+	CBufferString( CBufferString &&moveFrom ) noexcept :
+	    CBufferString()
 	{
+		V_swap( m_nLengthStaff, moveFrom.m_nLengthStaff );
+		V_swap( m_nAllocatedStaff, moveFrom.m_nAllocatedStaff );
+		V_swap( m_Buffer, moveFrom.m_Buffer );
 	}
 
 	/// Concat-based constructors.
