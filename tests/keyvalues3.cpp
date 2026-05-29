@@ -41,6 +41,16 @@ static void TestDoubleClose( double flValue, double flExpected )
 	TEST_TRUE( std::fabs( flValue - flExpected ) < 0.001 );
 }
 
+template < int N >
+static void ValidateStringSubTypeMember( KeyValues3 &kv, const char ( &pName )[ N ], KV3SubType_t eSubType, const char *pValue )
+{
+	KeyValues3 *pMember = kv.FindMember( pName );
+	TEST_NOT_NULL( pMember );
+	TEST_TRUE( pMember->IsString() );
+	TEST_EQ( pMember->GetSubType(), eSubType );
+	TEST_EQ( V_strcmp( pMember->GetString(), pValue ), 0 );
+}
+
 static void ValidateKV3TypeExMembers( KeyValues3 &kv, bool bExpectBinaryBlob )
 {
 	KeyValues3 *pNull = FindRequiredMember( kv, "null_member" );
@@ -266,6 +276,99 @@ REGISTER_NAMED_TEST( "KeyValues3.LoadText.TypeExMembers", KeyValues3_LoadText_Ty
 	TEST_TRUE( LoadKV3( &kv, &sError, sText.Get(), g_KV3Format_Generic, "typeex.kv3" ) );
 	TEST_TRUE( kv.IsTable() );
 	ValidateKV3TypeExMembers( kv, true );
+}
+
+REGISTER_NAMED_TEST( "KeyValues3.LoadText.Example", KeyValues3_LoadText_Example )
+{
+	KeyValues3 kv;
+	CUtlString sError;
+	const CUtlString sText = ReadKeyValues3TestFile( SOURCESDK_KEYVALUES3_DATA_DIR "/example.kv3" );
+
+	if ( !LoadKV3( &kv, &sError, sText.Get(), g_KV3Format_Generic, "example.kv3" ) )
+	{
+		TEST_EQ( sError.Get(), "" );
+	}
+	TEST_TRUE( kv.IsTable() );
+	TEST_FALSE( kv.GetMemberBool( "boolValue", true ) );
+	TEST_EQ( kv.GetMemberInt( "intValue" ), 128 );
+	TestDoubleClose( kv.GetMemberDouble( "doubleValue" ), 64.0 );
+	TEST_EQ( V_strcmp( kv.GetMemberString( "stringValue" ), "hello world" ), 0 );
+
+	KeyValues3 *pResource = FindRequiredMember( kv, "stringThatIsAResourceReference" );
+
+	TEST_EQ( pResource->GetTypeEx(), KV3_TYPEEX_STRING );
+	TEST_EQ( pResource->GetSubType(), KV3_SUBTYPE_RESOURCE );
+	TEST_EQ( V_strcmp( pResource->GetString(), "particles/items3_fx/star_emblem.vpcf" ), 0 );
+	ValidateStringSubTypeMember( kv, "resourceNameValue", KV3_SUBTYPE_RESOURCE_NAME, "materials/dev/measuregeneric01b.vmat" );
+	ValidateStringSubTypeMember( kv, "panoramaValue", KV3_SUBTYPE_PANORAMA, "file://{resources}/layout/custom_game/example.xml" );
+	ValidateStringSubTypeMember( kv, "soundEventValue", KV3_SUBTYPE_SOUNDEVENT, "sounds/ui/menu_accept.vsnd" );
+	ValidateStringSubTypeMember( kv, "entityNameValue", KV3_SUBTYPE_ENTITY_NAME, "target_entity" );
+	ValidateStringSubTypeMember( kv, "localizeValue", KV3_SUBTYPE_LOCALIZE, "#SFUI_MainMenu" );
+
+	KeyValues3 *pSubclass = FindRequiredMember( kv, "subclassValue" );
+
+	TEST_TRUE( pSubclass->IsTable() );
+	TEST_EQ( pSubclass->GetSubType(), KV3_SUBTYPE_SUBCLASS );
+	TEST_EQ( V_strcmp( pSubclass->GetMemberString( "name" ), "derived" ), 0 );
+
+	KeyValues3 *pNullPrefix = FindRequiredMember( kv, "nullPrefixValue" );
+
+	TEST_TRUE( pNullPrefix->IsNull() );
+
+	KeyValues3 *pBinaryBlob = FindRequiredMember( kv, "binaryBlobValue" );
+
+	TEST_EQ( pBinaryBlob->GetTypeEx(), KV3_TYPEEX_BINARY_BLOB );
+	TEST_EQ( pBinaryBlob->GetBinaryBlobSize(), 4 );
+	TEST_EQ( pBinaryBlob->GetBinaryBlob()[0], 0xDE );
+	TEST_EQ( pBinaryBlob->GetBinaryBlob()[1], 0xAD );
+	TEST_EQ( pBinaryBlob->GetBinaryBlob()[2], 0xBE );
+	TEST_EQ( pBinaryBlob->GetBinaryBlob()[3], 0xEF );
+
+	KeyValues3 *pArrayPrefix = FindRequiredMember( kv, "arrayPrefixValue" );
+
+	TEST_TRUE( pArrayPrefix->IsArray() );
+	TEST_EQ( pArrayPrefix->GetArrayElementCount(), 2 );
+	TEST_EQ( pArrayPrefix->GetArrayElement( 0 )->GetInt(), 3 );
+	TEST_EQ( pArrayPrefix->GetArrayElement( 1 )->GetInt(), 4 );
+
+	KeyValues3 *pTablePrefix = FindRequiredMember( kv, "tablePrefixValue" );
+
+	TEST_TRUE( pTablePrefix->IsTable() );
+	TEST_EQ( V_strcmp( pTablePrefix->GetMemberString( "key" ), "value" ), 0 );
+
+	TEST_FALSE( kv.GetMemberBool( "bool8Value", true ) );
+	TEST_EQ( kv.GetMemberInt( "char8Value" ), 65 );
+	TEST_EQ( kv.GetMemberUInt( "uchar32Value" ), 66 );
+	TEST_EQ( kv.GetMemberInt( "int8Value" ), -8 );
+	TEST_EQ( kv.GetMemberUInt( "uint8Value" ), 8 );
+	TEST_EQ( kv.GetMemberInt( "int16Value" ), -16 );
+	TEST_EQ( kv.GetMemberUInt( "uint16Value" ), 16 );
+	TEST_EQ( kv.GetMemberInt( "int32Value" ), -32 );
+	TEST_EQ( kv.GetMemberUInt( "uint32Value" ), 32 );
+	TEST_EQ( kv.GetMemberInt64( "int64Value" ), -64 );
+	TEST_EQ( kv.GetMemberUInt64( "uint64Value" ), 64ull );
+	TestDoubleClose( kv.GetMemberDouble( "float32Value" ), 32.5 );
+	TestDoubleClose( kv.GetMemberDouble( "float64Value" ), 64.5 );
+	TEST_EQ( V_strcmp( kv.GetMemberString( "stringPrefixValue" ), "prefixed string" ), 0 );
+
+	KeyValues3 *pMultiLine = FindRequiredMember( kv, "multiLineStringValue" );
+
+	TEST_TRUE( pMultiLine->IsString() );
+	TEST_NOT_NULL( V_strstr( pMultiLine->GetString(), "First line of a multi-line string literal." ) );
+	TEST_NOT_NULL( V_strstr( pMultiLine->GetString(), "Second line of a multi-line string literal." ) );
+
+	KeyValues3 *pArray = FindRequiredMember( kv, "arrayValue" );
+
+	TEST_TRUE( pArray->IsArray() );
+	TEST_EQ( pArray->GetArrayElementCount(), 2 );
+	TEST_EQ( pArray->GetArrayElement( 0 )->GetInt(), 1 );
+	TEST_EQ( pArray->GetArrayElement( 1 )->GetInt(), 2 );
+
+	KeyValues3 *pObject = FindRequiredMember( kv, "objectValue" );
+
+	TEST_TRUE( pObject->IsTable() );
+	TEST_EQ( pObject->GetMemberInt( "n" ), 5 );
+	TEST_EQ( V_strcmp( pObject->GetMemberString( "s" ), "foo" ), 0 );
 }
 
 REGISTER_NAMED_TEST( "KeyValues3.LoadBinary.ArrayMembers", KeyValues3_LoadBinary_ArrayMembers )
