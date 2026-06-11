@@ -850,44 +850,79 @@ struct CSoundParameters;
 struct EmitSound_t
 {
 	EmitSound_t() :
-		m_nChannel( 0 ),
 		m_pSoundName( 0 ),
+		m_veSoundOrigin( 0.0f, 0.0f, 0.0f ),
 		m_flVolume( VOL_NORM ),
-		m_SoundLevel( SNDLVL_NONE ),
-		m_nFlags( 0 ),
-		m_nPitch( PITCH_NORM ),
-		m_pOrigin( 0 ),
 		m_flSoundTime( 0.0f ),
-		m_pflSoundDuration( 0 ),
-		m_bEmitCloseCaption( true ),
-		m_bWarnOnMissingCloseCaption( false ),
-		m_bWarnOnDirectWaveReference( false ),
-		m_nSpeakerEntity( -1 ),
-		m_UtlVecSoundOrigin(),
-		m_hSoundScriptHash( SOUNDEMITTER_INVALID_HASH ),
-		m_nSoundEntryVersion( 1 )
+		m_nUnk( 0 ),
+		m_nForceGuid( 0 ),
+		m_nSourceSoundscape( 0 ),
+		m_nPitch( PITCH_NORM ),
+		m_nFlags( 0 )
 	{
 	}
 
-	EmitSound_t( const CSoundParameters &src );
+	EmitSound_t( const char *pSoundName, const Vector &vecSoundOrigin = Vector( 0.0f, 0.0f, 0.0f ), float flVolume = VOL_NORM, float flSoundTime = 0.0f, int16 nPitch = PITCH_NORM, uint8 nFlags = 0 ) :
+		m_pSoundName( pSoundName ),
+		m_veSoundOrigin( vecSoundOrigin ),
+		m_flVolume( flVolume ),
+		m_flSoundTime( flSoundTime ),
+		m_nUnk( 0 ),
+		m_nForceGuid( 0 ),
+		m_nSourceSoundscape( 0 ),
+		m_nPitch( nPitch ),
+		m_nFlags( nFlags )
+	{
+	}
 
-	int							m_nChannel;
-	char const					*m_pSoundName;
-	float						m_flVolume;
-	soundlevel_t				m_SoundLevel;
-	int							m_nFlags;
-	int							m_nPitch;
-	const Vector				*m_pOrigin;
-	float						m_flSoundTime; ///< NOT DURATION, but rather, some absolute time in the future until which this sound should be delayed
-	float						*m_pflSoundDuration;
-	bool						m_bEmitCloseCaption;
-	bool						m_bWarnOnMissingCloseCaption;
-	bool						m_bWarnOnDirectWaveReference;
-	int							m_nSpeakerEntity;
-	mutable CUtlVector< Vector >	m_UtlVecSoundOrigin;  ///< Actual sound origin(s) (can be multiple if sound routed through speaker entity(ies) )
-	mutable HSOUNDSCRIPTHASH	m_hSoundScriptHash;
-	int							m_nSoundEntryVersion;
+	const char *m_pSoundName;
+	Vector m_veSoundOrigin;
+	float m_flVolume;
+	float m_flSoundTime;
+
+private:
+	uint32 m_nUnk;
+
+public:
+	uint32 m_nForceGuid;
+	uint32 m_nSourceSoundscape;
+	int16 m_nPitch;
+	uint8 m_nFlags;
+
+	const char *GetSoundName() const { return m_pSoundName; }
+	void SetSoundName( const char *pSoundName ) { m_pSoundName = pSoundName; }
+
+	const Vector &GetSoundOrigin() const { return m_veSoundOrigin; }
+	Vector &GetSoundOrigin() { return m_veSoundOrigin; }
+	void SetSoundOrigin( const Vector &vecSoundOrigin ) { m_veSoundOrigin = vecSoundOrigin; }
+
+	float GetVolume() const { return m_flVolume; }
+	void SetVolume( float flVolume ) { m_flVolume = flVolume; }
+
+	float GetSoundTime() const { return m_flSoundTime; }
+	void SetSoundTime( float flSoundTime ) { m_flSoundTime = flSoundTime; }
+
+	bool HasForceGuid() const { return m_nForceGuid != 0; }
+	uint32 GetForceGuid() const { return m_nForceGuid; }
+	void SetForceGuid( uint32 nForceGuid ) { m_nForceGuid = nForceGuid; }
+	void ClearForceGuid() { m_nForceGuid = 0; }
+
+	bool HasSourceSoundscape() const { return m_nSourceSoundscape != 0; }
+	uint32 GetSourceSoundscape() const { return m_nSourceSoundscape; }
+	void SetSourceSoundscape( uint32 nSourceSoundscape ) { m_nSourceSoundscape = nSourceSoundscape; }
+	void ClearSourceSoundscape() { m_nSourceSoundscape = 0; }
+
+	int16 GetPitch() const { return m_nPitch; }
+	void SetPitch( int16 nPitch ) { m_nPitch = nPitch; }
+
+	uint8 GetFlags() const { return m_nFlags; }
+	void SetFlags( uint8 nFlags ) { m_nFlags = nFlags; }
+	void AddFlags( uint8 nFlags ) { m_nFlags |= nFlags; }
+	void RemoveFlags( uint8 nFlags ) { m_nFlags &= ( uint8 )~nFlags; }
+	bool HasFlags( uint8 nFlags ) const { return ( m_nFlags & nFlags ) == nFlags; }
 };
+COMPILE_TIME_ASSERT( sizeof( EmitSound_t ) == 48 );
+
 
 #define MAX_ACTORS_IN_SCENE 16
 
