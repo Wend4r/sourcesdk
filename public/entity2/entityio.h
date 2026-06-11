@@ -38,7 +38,6 @@ class CEntityIOOutput
 {
 public:
 	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
-	virtual fieldtype_t ValueFieldType() const { return m_Value.FieldType(); }
 
 public:
 	const EntityIOConnection_t *GetConnections() const { return m_pConnections; }
@@ -47,17 +46,22 @@ public:
 private:
 	EntityIOConnection_t *m_pConnections;
 	EntityIOOutputDesc_t *m_pDesc;
-
-protected:
-	CVariant m_Value;
 };
+
+COMPILE_TIME_ASSERT( sizeof( CEntityIOOutput ) == 0x18 );
 
 template < typename T >
 class CEntityOutputTemplate : public CEntityIOOutput
 {
 public:
-	T Get() const { return this->m_Value.template Get< T >(); }
+	virtual fieldtype_t ValueFieldType() const { return VariantDeduceType( T ); }
+	T Get() const { return m_Value; }
+
+protected:
+	T m_Value;
 };
+
+COMPILE_TIME_ASSERT( sizeof( CEntityOutputTemplate< int32 > ) == 0x20 );
 
 struct InputData_t
 {
