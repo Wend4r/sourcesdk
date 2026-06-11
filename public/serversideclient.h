@@ -1,4 +1,4 @@
-#ifndef SERVERSIDECLIENT_H
+﻿#ifndef SERVERSIDECLIENT_H
 #define SERVERSIDECLIENT_H
 
 #if COMPILER_MSVC
@@ -89,6 +89,13 @@ COMPILE_TIME_ASSERT(sizeof(CNetworkStatTrace) == 40);
 class CServerSideClientBase : public CUtlSlot, public INetworkChannelNotify, public INetworkMessageProcessingPreFilter
 {
 public:
+	enum ESlotState
+	{
+		SLOT_NONE = 0, // Slot is not held for reconnect: either an active connected client or a free slot
+		SLOT_HELD_FOR_RECONNECT = 1, // Disconnected client slot held for reconnect. This is transient and engine-managed
+		SLOT_RESERVED = 2, // Reserved placeholder that has not connected yet. This state is sticky
+	};
+
 	virtual ~CServerSideClientBase() = 0;
 
 public:
@@ -97,9 +104,10 @@ public:
 	CEntityIndex             GetEntityIndex() const { return m_nEntityIndex; }
 	CSteamID                 GetClientSteamID() const { return m_SteamID; }
 	const char              *GetClientName() const { return m_Name; }
-	INetChannel             *GetNetChannel() const { return m_NetChannel; }
-	const netadr_t          *GetRemoteAddress() const { return m_nAddr.Get<netadr_t>(); }
-	CNetworkGameServerBase  *GetServer() const { return m_Server; }
+	INetChannel             *GetNetChannel() const { return m_pNetChannel; }
+	ESlotState               GetSlotState() const { return m_eSlotState; }
+	const netadr_t          *GetRemoteAddress() const { return m_Addr.Get<netadr_t>(); }
+	CNetworkGameServerBase  *GetServer() const { return m_pGameServer; }
 
 	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, uint8 nConnectionTypeFlags, uint32 uChallengeNumber ) = 0; // bool bFakePlayer = !nConnectionTypeFlags || (nConnectionTypeFlags & 8) != 0;
 	virtual void             Inactivate( const char *pszAddons ) = 0;
@@ -251,8 +259,8 @@ public:
 	CUtlString m_Name;
 	CPlayerSlot m_nClientSlot;
 	CEntityIndex m_nEntityIndex;
-	CNetworkGameServerBase* m_Server;
-	INetChannel* m_NetChannel;
+	CNetworkGameServerBase *m_pGameServer;
+	INetChannel *m_pNetChannel;
 	// CServerSideClientBase::Connect( name='%s', userid=%d, fake=%d, connectiontypeflags=%d, chan->addr=%s )
 	uint8 m_nConnectionTypeFlags;
 	uint8 m_nAsyncDisconnectFlags; // check in Disconnect function, 1 add to queue, 2 disconnect now
@@ -261,10 +269,11 @@ public:
 	bool m_bSplitScreenUser;
 	bool m_bSplitAllowFastDisconnect;
 	int m_nSplitScreenPlayerSlot;
-	CServerSideClientBase* m_SplitScreenUsers[4];
-	CServerSideClientBase* m_pAttachedTo;
+	CServerSideClientBase *m_SplitScreenUsers[4];
+	CServerSideClientBase *m_pAttachedTo;
 	bool m_bSplitPlayerDisconnecting;
-	int m_nDisconnectionTypeFlags;
+
+	ESlotState m_eSlotState;
 	bool m_bFakePlayer;
 	bool m_bInitialSpawnSent;	// init TRUE; controls whether initial spawn data was sent
 	int m_nDisconnectSequence;	// set from server counter in Disconnect(), zeroed in Clear()
@@ -275,10 +284,10 @@ public:
 	CSteamID m_DisconnectedSteamID;
 	CSteamID m_AuthTicketSteamID;
 	CSteamID m_nFriendsID;
-	ns_address m_nAddr;
-	ns_address m_nAddr2;
-	KeyValues* m_ConVars;
-	CUtlDict<empty_t, int, k_eDictCompareTypeCaseInsensitiveFast> m_UnrecognizedConVarDict;
+	ns_address m_Addr;
+	ns_address m_DisconnectedAddr;
+	KeyValues *m_pConVars;
+	CUtlDict< empty_t, int, k_eDictCompareTypeCaseInsensitiveFast > m_UnrecognizedConVarDict;
 
 	bool m_bConVarsChanged;
 	bool m_bConVarsInitialized;
@@ -292,12 +301,12 @@ public:
 	int m_nHltvReplayDeltaTick;		// init -1; delta tick used during HLTV replay mode
 	int m_nStringTableAckTick;
 	int m_nBaselineSequence;		// baseline sequence number for baseline ack processing
-	CFrameSnapshot* m_pLastSnapshot;	// last send snapshot
-	CUtlVector<void*> m_vecLoadedSpawnGroups;
+	CFrameSnapshot *m_pLastSnapshot;	// last send snapshot
+	CUtlVector< SpawnGroupHandle_t > m_vecLoadedSpawnGroups;
 	CMsgPlayerInfo m_playerInfo;
-	CFrameSnapshot* m_pBaseline;
+	CFrameSnapshot *m_pBaseline;
 	int m_nBaselineUpdateTick;
-	CBitVec<MAX_EDICTS>	m_BaselinesSent;
+	CBitVec< MAX_EDICTS > m_BaselinesSent;
 	int	m_nBaselineUsed;		// 0/1 toggling flag, singaling client what baseline to use
 	int	m_nLoadingProgress;	// 0..100 progress, only valid during loading
 
@@ -330,11 +339,11 @@ public:
 	CSVCMsg_PacketEntities_t m_PacketEntities;
 
 	// CDelayedCallBase<CDelayedCallBase<CServerSideClientBase>>* pointers.
-	CTSQueue<void*> m_DelayedCallQueue;
+	CTSQueue< void * > m_DelayedCallQueue;
 
 	// Queued message buffers
-	CUtlVector<void*> m_PendingReliableMessages;
-	CUtlVector<void*> m_PendingUnreliableMessages;
+	CUtlVector< void * > m_PendingReliableMessages;
+	CUtlVector< void * > m_PendingUnreliableMessages;
 
 	// Command rate limiter
 	int m_nMaxTicksWindow = 30;
@@ -351,8 +360,8 @@ public:
 	int m_nLastSpamCheckTick = 0;	// last tick at which the spam counter was evaluated/reset
 	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
 	bool m_bPendingSignonStateMsg = false; // set when signon -> CONNECTED, consumed in ProcessSignonStateMsg
-	CCommand* m_pCommand;
-}; // sizeof 3024 (Windows), 3016 (Linux)
+	CCommand *m_pLastCommand;
+};
 
 class CServerSideClient : public CServerSideClientBase
 {
