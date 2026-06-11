@@ -54,8 +54,9 @@ template < typename T >
 class CEntityOutputTemplate : public CEntityIOOutput
 {
 public:
-	virtual fieldtype_t ValueFieldType() const { return VariantDeduceType( T ); }
-	T Get() const { return m_Value; }
+	virtual fieldtype_t ValueFieldType() const { return VariantDeduceType( T ); 
+	T &Get() { return m_Value; }
+	const T &Get() const { return m_Value; }
 
 protected:
 	T m_Value;
