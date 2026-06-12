@@ -6,9 +6,13 @@
 #include "datamap.h"
 #include "string_t.h"
 #include "variant.h"
+#include "tier0/bufferstring.h"
 #include "schemasystem/schematypes.h"
 #include "entityhandle.h"
 #include "entitysystem.h"
+
+class CKV3TransferLoadContext;
+class CKV3TransferSaveContext;
 
 struct EntityIOConnectionDesc_t
 {
@@ -21,11 +25,22 @@ struct EntityIOConnectionDesc_t
 	float m_flDelay;
 };
 
+COMPILE_TIME_ASSERT( sizeof( EntityIOConnectionDesc_t ) == 40 );
+
 struct EntityIOConnection_t : EntityIOConnectionDesc_t
 {
+	CBufferString m_paramMap;
+	bool m_bForwardAllArgs;
+
+private:
+	byte m_unk[7];
+
+public:
 	bool m_bMarkedForRemoval;
-	EntityIOConnection_t* m_pNext;
+	EntityIOConnection_t *m_pNext;
 };
+
+COMPILE_TIME_ASSERT( sizeof( EntityIOConnection_t ) == 80 );
 
 struct EntityIOOutputDesc_t
 {
@@ -37,8 +52,9 @@ struct EntityIOOutputDesc_t
 class CEntityIOOutput
 {
 public:
-	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
-	virtual fieldtype_t ValueFieldType() const { return m_Value.FieldType(); }
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
+	virtual void Save( CKV3TransferSaveContext *pContext ) = 0;
+	virtual void Load( CKV3TransferLoadContext *pContext ) = 0;
 
 public:
 	const EntityIOConnection_t *GetConnections() const { return m_pConnections; }
@@ -47,17 +63,23 @@ public:
 private:
 	EntityIOConnection_t *m_pConnections;
 	EntityIOOutputDesc_t *m_pDesc;
-
-protected:
-	CVariant m_Value;
 };
+
+COMPILE_TIME_ASSERT( sizeof( CEntityIOOutput ) == 24 );
 
 template < typename T >
 class CEntityOutputTemplate : public CEntityIOOutput
 {
 public:
-	T Get() const { return this->m_Value.template Get< T >(); }
+	fieldtype_t ValueFieldType() const { return VariantDeduceType( T ); }
+	T &Get() { return m_Value; }
+	const T &Get() const { return m_Value; }
+
+protected:
+	T m_Value;
 };
+
+COMPILE_TIME_ASSERT( sizeof( CEntityOutputTemplate< int32 > ) == 32 );
 
 struct InputData_t
 {
