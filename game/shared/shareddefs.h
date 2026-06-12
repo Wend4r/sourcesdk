@@ -841,7 +841,6 @@ struct ModelScale
 };
 
 #include "soundflags.h"
-#include "SoundEmitterSystem/isoundemittersystembase.h"
 
 struct CSoundParameters;
 //-----------------------------------------------------------------------------
