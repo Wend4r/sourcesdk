@@ -189,7 +189,7 @@ public:
 	server_state_t	GetServerState() { return m_State; }
 
 	virtual void	SetMaxClients( int nMaxClients ) = 0;
-	virtual void	CreateClient( CPlayerSlot &nSlot, CSteamID nSteamID, const char *pszName, CServerSideClientBase* pSplitOwner = nullptr) = 0;
+	virtual CPlayerSlot	CreateClient( CPlayerSlot nSlot, CSteamID nSteamID, const char *pszName) = 0;
 
 public: // IConnectionlessPacketHandler
 	virtual bool	ProcessConnectionlessPacket( netpacket_t *packet ) = 0; // process a connectionless packet
