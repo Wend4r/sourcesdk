@@ -25,6 +25,15 @@ enum LanguageType_t
 	LanguageType_Audio = 0x1,
 };
 
+enum AppSystemErrorPolicy_t
+{
+	ADD_SYSTEM_ERROR = 0,
+	ADD_SYSTEM_WARNING = 1,
+	ADD_SYSTEM_SILENT = 2,
+};
+
+struct ResourceManifestDesc_t;
+
 //-----------------------------------------------------------------------------
 // Call this to connect to/disconnect from all tier 1 libraries.
 // It's up to the caller to check the globals it cares about to see if ones are missing
@@ -96,68 +105,64 @@ public:
 	char m_unnk1[218];
 };
 
-class CTier1Application : public CTier1AppSystem<IApplication>
+class CTier1Application : public CTier1AppSystem< IApplication >
 {
 public:
 	virtual ~CTier1Application() = 0;
 
-	virtual void AddSystem(IAppSystem* pAppSystem, const char * interfaceName, bool errorOut) = 0;
-	virtual void AddSystem(const char* unk, const char* interfaceName, bool errorOut) = 0;
-	virtual void AddSystem(IAppSystem* pAppSystem, const char* interfaceName) = 0;
-	virtual void RemoveSystem(IAppSystem* pSystem) = 0;
-	virtual bool AddSystems(int count, const AppSystemInfo_t **) = 0;
-	virtual void* FindSystem(const char *pSystemName) = 0;
-	virtual KeyValues* GetGameInfo() = 0;
-	virtual void unk1() = 0;
-	virtual const char* GetLanguage(LanguageType_t) = 0;
-	virtual const char* GetModPath(int) = 0;
+	virtual void AddSystem( IAppSystem *pAppSystem, const char *pInterfaceName, AppSystemErrorPolicy_t eErrorPolicy ) = 0;
+	virtual void AddSystem( const char *pModuleName, const char *pInterfaceName, AppSystemErrorPolicy_t eErrorPolicy ) = 0;
+	virtual void AddSystem( IAppSystem *pAppSystem, const char *pInterfaceName ) = 0;
+	virtual void RemoveSystem( IAppSystem *pSystem ) = 0;
+	virtual bool AddSystems( int nCount, const AppSystemInfo_t **pSystemInfo ) = 0;
+	virtual void *FindSystem( const char *pSystemName ) = 0;
+	virtual KeyValues *GetGameInfo() = 0;
+	virtual AppSystemBuildType_t GetAppSystemBuildType() = 0;
+	virtual const char *GetLanguage( LanguageType_t nType ) = 0;
+	virtual const char *GetModPath( int nPathType ) = 0;
 	virtual bool IsInToolsMode();
 	virtual bool IsConsoleApp();
-	virtual void unk2();
+	virtual OpusRepacketizer *GetOpusRepacketizer();
 	virtual bool IsInDeveloperMode();
-	virtual const char * GetExecutablePath();
-	virtual const char * GetModGameSubdir();
-	virtual KeyValues* GetApplicationInfo();
-	virtual void* GetAppInstance();
-	virtual const char * GetContentPath();
-	virtual const char * GetConsoleLogFilename();
-	virtual const char * ChangeLogFileSuffix(const char *suffix);
-	virtual void unk3();
-	virtual void AddSystemDontLoadStartupManifests(const char*,const char*);
-	virtual const char * GetGameMode();
-	virtual void MountAddon(char const*) = 0;
-	virtual void UnmountAddon(char const*) = 0;
-	virtual void GetMountedAddons(CUtlVector<CUtlString> & vec) = 0;
-	virtual void GetMountedAddons(char const**,int) = 0;
-	virtual void GetAddonsContentDirectory() = 0;
-	virtual void GetAddonsContentDirectory2() = 0;
-	virtual void IsFileInAddon(const char *) = 0;
-	virtual void GetAvailableAddons() = 0;
-	virtual bool GetAddonInfo() = 0;
+	virtual const char *GetExecutablePath();
+	virtual const char *GetModGameSubdir();
+	virtual KeyValues *GetApplicationInfo();
+	virtual void *GetAppInstance();
+	virtual const char *GetContentPath();
+	virtual int GetAppSystemFlags();
+	virtual CUtlString GetConsoleLogFilename();
+	virtual void ChangeLogFileSuffix( const char *pSuffix );
+	virtual void AddSystemDontLoadStartupManifests( const char *pModuleName, const char *pInterfaceName );
+	virtual const char *GetGameMode();
+	virtual bool MountAddon( const char *pAddonName ) = 0;
+	virtual bool UnmountAddon( const char *pAddonName ) = 0;
+	virtual void GetMountedAddons( CUtlVector< CUtlString > &vecAddons ) = 0;
+	virtual int GetMountedAddons( const char **ppAddons, int nMaxAddons ) = 0;
+	virtual bool GetAddonsDirectory( CUtlString &sDirectory ) = 0;
+	virtual bool GetAddonsContentDirectory( CUtlString &sDirectory ) = 0;
+	virtual bool IsFileInAddon( const char *pFilename ) = 0;
+	virtual void GetAvailableAddons( CUtlVector< CUtlString > &vecAddons, int nFlags ) = 0;
+	virtual bool GetAddonInfo( KeyValues *pAddonInfo, const char *pAddonName ) = 0;
 	virtual bool IsRunningOnCustomerMachine() = 0;
 	virtual bool IsLowViolence() = 0;
-	virtual bool SetLowViolence(bool) = 0;
-	virtual bool SetInitializationPhase(int) = 0;
+	virtual bool SetLowViolence( bool bLowViolence ) = 0;
+	virtual bool SetInitializationPhase( int nInitializationPhase ) = 0;
 	virtual int GetInitializationPhase() = 0;
-	virtual const char* GetRestrictAddonsTo() = 0;
-	virtual void SetAllowAddonChanges(bool) = 0;
-	virtual void SetUGCAddonPathResolver(IUGCAddonPathResolver *) = 0;
-	virtual CUtlString GetAddonNameFromID(uint64 id) = 0;
-	virtual uint64 GetIDFromAddonName(const char *name) = 0;
-	virtual CUtlString GetFullAddonPathFromAddonName(const char *name) = 0;
-	virtual void GetAvailableAddonMaps() = 0;
-	virtual void LoadStartupManifestGroup() = 0;
-	virtual void unk4();
-	virtual void unk5();
-	virtual void unk6();
-	virtual CAppSystemDict* GetAppSystemDict();
+	virtual const char *GetRestrictAddonsTo() = 0;
+	virtual void SetAllowAddonChanges( bool bAllowAddonChanges ) = 0;
+	virtual void SetUGCAddonPathResolver( IUGCAddonPathResolver *pResolver ) = 0;
+	virtual CUtlString GetAddonNameFromID( uint64 nAddonID ) = 0;
+	virtual uint64 GetIDFromAddonName( const char *pAddonName ) = 0;
+	virtual CUtlString GetFullAddonPathFromAddonName( const char *pAddonName ) = 0;
+	virtual void GetAvailableAddonMaps( CUtlVector< CUtlString > &vecMaps, const char *pAddonName, bool bIncludeFallbackMaps ) = 0;
+	virtual void LoadStartupManifestGroup( const char *pManifestGroup ) = 0;
+	virtual CUtlString GetAddonSourceFolder( const char *pAddonName );
+	virtual void OnStartupManifestGroupLoaded();
+	virtual void AddStartupManifest( ResourceManifestDesc_t &resourceManifestDesc );
+	virtual CAppSystemDict *GetAppSystemDict();
 
-	template< class T >
-	T* FindSystem(const char *pSystemName) {
-		return static_cast<T*>(FindSystem(pSystemName));
-	}
+	template < class T > T* FindSystem( const char *pSystemName ) { return static_cast< T* >( FindSystem( pSystemName ) ); }
 };
-
 
 #endif // TIER1_H
 
