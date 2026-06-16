@@ -295,6 +295,17 @@ struct FlattenedSerializerPolymorphicField_t
 	byte m_pad48[8];
 };
 
+struct FlattenedSerializerFieldPathCache_t
+{
+	CUtlVector< int > m_FieldPaths; // Cached encoded field paths for serializer traversal.
+	const int16 *m_pPath; // Root path used while building or resolving the cache.
+	int16 m_nPathCount;
+	bool m_bReadOnlyPath;
+	byte m_pad0023[5];
+};
+
+COMPILE_TIME_ASSERT( sizeof( FlattenedSerializerFieldPathCache_t ) == 40 );
+
 // Size and field offsets are from CFlattenedSerializer allocation/field access.
 class CFlattenedSerializer
 {
@@ -312,7 +323,10 @@ public:
 	byte m_pad010C[92];
 	int m_nPolymorphicFieldCount; // Table count scanned by HasField
 	FlattenedSerializerPolymorphicField_t *m_pPolymorphicFields;
-	byte m_pad0178[148];
+	byte m_pad0178[32];
+	FlattenedSerializerFieldPathCache_t m_FieldPathCache; // Primary cache for serializer field-path traversal.
+	FlattenedSerializerFieldPathCache_t m_SecondaryFieldPathCache; // Secondary cache used by the alternate traversal path.
+	byte m_pad01E8[36];
 	int m_nScratchPathIndex; // Cleared before scratch path traversal.
 	byte m_pad0210;
 	byte m_nFlags; // Built, valid, and polymorphic state bits.
@@ -383,6 +397,7 @@ public:
 	virtual void DumpSerializerToConsole( const FlattenedSerializerDesc_t &pSerializer, int nBucket, CUtlVector< CUtlString > *pOutLines, CEntityInstance *pEntity ) = 0; // Converts field paths to console strings.
 	virtual bool IsSerializerPolymorphic( const FlattenedSerializerDesc_t &pSerializer ) = 0; // Tests CFlattenedSerializer::m_nFlags bit (1 << 7)
 	virtual bool HasPolymorphicField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans the polymorphic field table.
+	virtual bool GetFieldPathCaches( const FlattenedSerializerDesc_t &pSerializer, FlattenedSerializerFieldPathCache_t **ppSecondaryFieldPathCache, FlattenedSerializerFieldPathCache_t **ppFieldPathCache ) = 0; // Exposes the serializer field-path caches for callers that need to reuse traversal state.
 };
 
 class CFlattenedSerializers : public IFlattenedSerializers
