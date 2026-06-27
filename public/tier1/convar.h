@@ -22,7 +22,7 @@
 #include "utlcommon.h"
 #include "mathlib/vector4d.h"
 #include "bufferstring.h"
-#include "Color.h"
+#include "color.h"
 #include "mathlib/vectorws.h"
 #include "playerslot.h"
 #include "splitscreenslot.h"
