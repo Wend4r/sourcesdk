@@ -745,19 +745,46 @@ struct VProfBudgetGroupCallSite
 	int m_nGroupId;
 };
 
+//-----------------------------------------------------------------------------
+// Source2 tier0 passes a call-site source location (file/line/function) into the
+// VProf scope entry points. The real exported ABI of
+// VProfScopeHelper<>::EnterScopeInternal[BudgetFlags] takes a trailing
+// 'const CUtlSourceLocation &' (mangled "RK18CUtlSourceLocation"), so the type
+// MUST be named exactly CUtlSourceLocation and keep this layout (24 bytes:
+// const char* @0, int @8, const char* @16) to match tier0.
+//-----------------------------------------------------------------------------
+class CUtlSourceLocation
+{
+public:
+	CUtlSourceLocation( const char *pFileName, int nLine, const char *pFunctionName ) :
+		m_pFileName( pFileName ), m_nLine( nLine ), m_pFunctionName( pFunctionName ) { }
+
+	const char *m_pFileName;
+	int m_nLine;
+	const char *m_pFunctionName;
+};
+
 template <int DETAIL_LEVEL, bool ASSERT_ACCOUNTED>
 class VProfScopeHelper
 {
 public:
+	// Single-arg form is not used by the VPROF_* macros; capture location here.
 	VProfScopeHelper( const char *pszName )
 	{
-		m_pExitScope = EnterScopeInternal( pszName );
+		CUtlSourceLocation sourceLocation( __builtin_FILE(), __builtin_LINE(), __builtin_FUNCTION() );
+		m_pExitScope = EnterScopeInternal( pszName, sourceLocation );
 	}
 
-	VProfScopeHelper( const char *pszName, const char *pszGroupName, int nFlags )
+	// The trailing pFile/nLine/pFunc params default to __builtin_* so they capture
+	// the *call site* (where the VPROF_* macro expands), then get packed into a
+	// CUtlSourceLocation expected by the real Source2 tier0 ABI. Kept distinct in
+	// arity from the single-arg ctor above to avoid overload ambiguity on (name,group,flags).
+	VProfScopeHelper( const char *pszName, const char *pszGroupName, int nFlags,
+		const char *pFile = __builtin_FILE(), int nLine = __builtin_LINE(), const char *pFunc = __builtin_FUNCTION() )
 	{
 		VProfBudgetGroupCallSite budget_group( pszGroupName, nFlags );
-		m_pExitScope = EnterScopeInternalBudgetFlags( pszName, budget_group );
+		CUtlSourceLocation sourceLocation( pFile, nLine, pFunc );
+		m_pExitScope = EnterScopeInternalBudgetFlags( pszName, budget_group, sourceLocation );
 	}
 
 	VProfScopeHelper( VProfScopeHelper &other )
@@ -782,8 +809,11 @@ public:
 	DLL_CLASS_IMPORT VProfScopeHelper &operator=( const VProfScopeHelper &other );
 	DLL_CLASS_IMPORT VProfScopeHelper &operator=( VProfScopeHelper &&other );
 
-	static DLL_CLASS_IMPORT VProfExitScopeCB EnterScopeInternal( const char *pszName );
-	static DLL_CLASS_IMPORT VProfExitScopeCB EnterScopeInternalBudgetFlags( const char *pszName, VProfBudgetGroupCallSite &budgetGroup );
+	// Signatures match the exported Source2 tier0 symbols:
+	//   ..._EnterScopeInternalEPKcRK18CUtlSourceLocation
+	//   ..._EnterScopeInternalBudgetFlagsEPKcR24VProfBudgetGroupCallSiteRK18CUtlSourceLocation
+	static DLL_CLASS_IMPORT VProfExitScopeCB EnterScopeInternal( const char *pszName, const CUtlSourceLocation &sourceLocation );
+	static DLL_CLASS_IMPORT VProfExitScopeCB EnterScopeInternalBudgetFlags( const char *pszName, VProfBudgetGroupCallSite &budgetGroup, const CUtlSourceLocation &sourceLocation );
 
 private:
 	VProfExitScopeCB m_pExitScope = nullptr;
