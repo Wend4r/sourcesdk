@@ -84,7 +84,7 @@ public:
 
 	static void Init()
 	{
-		const CPUInformation& pi = GetCPUInformation();
+		[[maybe_unused]] const CPUInformation& pi = GetCPUInformation();
 
 		if constexpr ( IsX360() )
 		{
