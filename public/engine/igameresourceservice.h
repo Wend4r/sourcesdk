@@ -20,10 +20,10 @@ class IGameResourceService : public IEngineService
 {
 public:
 	virtual ~IGameResourceService() = 0;
-	virtual void LoadGameResourceManifest(const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t);
-	virtual void LoadGameResourceManifestGroup(const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t);
-	virtual void LoadGameResourceManifest(int, const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t);
-	virtual void LoadGameResourceManifest(EntityResourceManifestCreationCallback_t, void*, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t);
+	virtual void LoadGameResourceManifest(const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
+	virtual void LoadGameResourceManifestGroup(const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
+	virtual void LoadGameResourceManifest(int, const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
+	virtual void LoadGameResourceManifest(EntityResourceManifestCreationCallback_t, void*, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
 	virtual void unk1() = 0;
 	virtual void SetManifestCompletionCallback(HGameResourceManifest*, void*) = 0;
 	virtual bool IsManifestLoaded(HGameResourceManifest*) = 0;
