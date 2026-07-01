@@ -15,32 +15,34 @@
 
 class CGameResourceManifestLock;
 class CGameResourceManifest;
+class CCompressedResourceManifest;
+class IGameResourceManifestLoadCompletionCallback;
 
-class IGameResourceService : public IEngineService  
+class IGameResourceService : public IEngineService
 {
 public:
 	virtual ~IGameResourceService() = 0;
-	virtual void LoadGameResourceManifest(const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
-	virtual void LoadGameResourceManifestGroup(const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
-	virtual void LoadGameResourceManifest(int, const char *, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
-	virtual void LoadGameResourceManifest(EntityResourceManifestCreationCallback_t, void*, ResourceManifestLoadBehavior_t, const char *, ResourceManifestLoadPriority_t) = 0;
-	virtual void unk1() = 0;
-	virtual void SetManifestCompletionCallback(HGameResourceManifest*, void*) = 0;
-	virtual bool IsManifestLoaded(HGameResourceManifest*) = 0;
-	virtual void BlockUntilManifestLoaded(HGameResourceManifest*) = 0;
-	virtual void DestroyResourceManifest(HGameResourceManifest*) = 0;
-	virtual const char* GetResourceManifestDebugName() = 0;
-	virtual bool DoesManifestHaveFutureDependentResources(HGameResourceManifest*) = 0;
-	virtual void SetEntitySystem(CGameEntitySystem*) = 0;
-	virtual void PrecacheEntitiesAndConfirmResourcesAreLoaded(SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t * pEntities, const matrix3x4a_t * vWorldOffset) = 0;
-	virtual void DescribeContents() = 0;
-	virtual void unk2() = 0;
-	virtual void AllocGameResourceManifest(ResourceManifestLoadBehavior_t eBehavior, const char * pszAllocatorName, ResourceManifestLoadPriority_t ePriority) = 0;
-	virtual void unk3() = 0;
-	virtual void AppendToGameResourceManifest(HGameResourceManifest*, unsigned int, int, EntitySpawnInfo_t const*, matrix3x4a_t const&) = 0;
-	virtual void BuildCompressedManifest(HGameResourceManifest*, CCompressedResourceManifest*, bool) = 0;
-	virtual void LockGameResourceManifest(bool, CGameResourceManifestLock&) = 0;
-	virtual void AppendToAndCreateGameResourceManifest(HGameResourceManifest *pResourceManifest, SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t *pEntities, const matrix3x4a_t * vWorldOffset) = 0;
+	virtual HGameResourceManifest LoadGameResourceManifest( const char *pszResourceName, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
+	virtual HGameResourceManifest LoadGameResourceManifestGroup( const char *pszResourceGroupName, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
+	virtual HGameResourceManifest LoadGameResourceManifest( int nResourceCount, const char *const *ppszResourceNames, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
+	virtual HGameResourceManifest LoadGameResourceManifest( EntityResourceManifestCreationCallback_t pfnCreationCallback, void *pContext, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
+	virtual void SetManifestCompletionCallback( HGameResourceManifest hManifest, IGameResourceManifestLoadCompletionCallback *pCallback, int nResourceCount, const char *const *ppszResourceNames, bool bUnk ) = 0;
+	virtual bool IsManifestLoaded( HGameResourceManifest hManifest ) = 0;
+	virtual void BlockUntilManifestLoaded( HGameResourceManifest hManifest ) = 0;
+	virtual void DestroyResourceManifest( HGameResourceManifest hManifest ) = 0;
+	virtual const char *GetResourceManifestDebugName( HGameResourceManifest hManifest ) = 0;
+	virtual bool DoesManifestHaveFutureDependentResources( HGameResourceManifest hManifest ) = 0;
+	virtual void SetEntitySystem( CGameEntitySystem *pEntitySystem ) = 0;
+	virtual void PrecacheEntitiesAndConfirmResourcesAreLoaded( SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t *pEntities, const matrix3x4a_t *pWorldOffset ) = 0;
+	virtual void DescribeContents( uint32 nLoggingChannel, HGameResourceManifest hManifest ) = 0;
+	virtual void GetManifestResourceNames( HGameResourceManifest hManifest, CUtlVector< CUtlString > &vecResourceNames ) = 0;
+	virtual HGameResourceManifest AllocGameResourceManifest( ResourceManifestLoadBehavior_t eBehavior, const char *pszAllocatorName, ResourceManifestLoadPriority_t ePriority ) = 0;
+	virtual bool Unk_FinalizeGameResourceManifest( HGameResourceManifest hManifest ) = 0;
+	virtual HGameResourceManifest LoadGameResourceManifest( const CCompressedResourceManifest *pCompressedManifest, bool bUnk, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
+	virtual void AppendToGameResourceManifest( HGameResourceManifest hManifest, const CCompressedResourceManifest *pCompressedManifest, bool bUnk1, ResourceManifestLoadBehavior_t eBehavior, bool bUnk2 ) = 0;
+	virtual void BuildCompressedManifest( HGameResourceManifest hManifest, CCompressedResourceManifest *pCompressedManifest, bool bOnlyUnloadedResources ) = 0;
+	virtual void LockGameResourceManifest( bool bLock, CGameResourceManifestLock &manifestLock ) = 0;
+	virtual bool AppendToAndCreateGameResourceManifest( HGameResourceManifest hManifest, SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t *pEntities, const matrix3x4a_t *pWorldOffset ) = 0;
 };
 
 class CGameResourceService : public CBaseEngineService<IGameResourceService>
