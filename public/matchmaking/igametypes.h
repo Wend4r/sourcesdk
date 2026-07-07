@@ -37,7 +37,7 @@ enum CalcMode
 }
 typedef ELOCalcMode::CalcMode ELOCalcMode_t;
 
-#define VENGINE_GAMETYPES_VERSION "VENGINE_GAMETYPES_VERSION002"
+#define VENGINE_GAMETYPES_VERSION "GameTypes001"
 
 abstract_class IGameTypes : public IAppSystem
 {
@@ -72,12 +72,15 @@ public:
 	virtual int GetCurrentGameMode() const = 0;
 	
 	virtual const char *GetCurrentMapName() = 0;
+	virtual const char *GetCurrentGameModeName() = 0;
+	virtual const char *GetCurrentMapGroupName() = 0;
 	
 	virtual const char *GetCurrentGameTypeNameID() = 0;
 	virtual const char *GetCurrentGameModeNameID() = 0;
 	
 	virtual bool ApplyConvarsForCurrentMode( bool isMultiplayer ) = 0;
 	virtual void DisplayConvarsForCurrentMode() = 0;
+	virtual const char *GetCurrentGameModeScriptName() = 0;
 	
 	virtual const CUtlVector< WeaponProgression > *GetWeaponProgressionForCurrentModeCT() = 0;
 	virtual const CUtlVector< WeaponProgression > *GetWeaponProgressionForCurrentModeT() = 0;
@@ -92,7 +95,7 @@ public:
 	virtual bool GetGameModeAndTypeNameIdsFromStrings( const char *szGameType, const char *szGameMode, const char * &szOutGameTypeNameId, const char * &szOutGameModeNameId ) = 0;
 	
 	// mapGroup here is also the Workshop Collection ID (as a string)
-	virtual void CreateOrUpdateWorkshopMapGroup( const char *mapGroup, const CUtlStringList &mapList) = 0;
+	virtual bool CreateOrUpdateWorkshopMapGroup( const char *mapGroup, const CUtlStringList &mapList ) = 0;
 	virtual bool IsWorkshopMapGroup( const char *mapGroup ) = 0;
 	
 	virtual const char *GetRandomMapGroup( const char *gameType, const char *gameMode ) = 0;
@@ -100,8 +103,9 @@ public:
 	virtual const char *GetFirstMap( const char *mapGroup ) = 0;
 	virtual const char *GetRandomMap( const char *mapGroup ) = 0;
 	virtual const char *GetNextMap( const char *mapGroup, const char *mapName ) = 0;
+	virtual const char *GetMapGroupMapName( const char *mapGroup, const char *mapName ) = 0;
 	
-	virtual int GetMaxPlayersForTypeAndMode( int iType, int iMode ) = 0;
+	virtual int GetMaxPlayersForTypeAndMode( int iType, int iMode, int iSkirmishId ) = 0;
 	
 	virtual bool IsValidMapGroupName( const char *mapGroup ) = 0;
 	virtual bool IsValidMapInMapGroup( const char *mapGroup, const char *mapName ) = 0;
@@ -136,11 +140,16 @@ public:
 	
 	virtual bool SetCustomBotDifficulty( int botDiff ) = 0;
 	virtual int GetCustomBotDifficulty() = 0;
+	virtual void ApplyConvarsForCurrentBotDifficulty() = 0;
 	
 	virtual int GetCurrentServerNumSlots() = 0;
-	virtual int GetCurrentServerSettingInt(const char *settingName, int defaultValue) = 0;
+	virtual int GetCurrentServerSettingInt( const char *settingName, int defaultValue ) = 0;
 	
-	virtual bool GetGameTypeFromMode( const char* modeName, const char **pTypeName ) = 0;
+	virtual bool GetGameTypeFromMode( const char *modeName, const char **pTypeName ) = 0;
+	virtual bool AddMapInfo( KeyValues *pMapInfo ) = 0;
+	virtual const char *GetMapNameID( const char *mapName, bool &bFound, bool bUnknown ) = 0;
+	virtual const char *GetMapGroupNameID( const char *mapGroup, bool &bFound, bool bUnknown ) = 0;
+	virtual const char *GetGameModeNameID( const char *gameMode, bool &bFound ) = 0;
 };
 
 #endif // IGAMETYPES_H
