@@ -51,7 +51,8 @@ public:
 	CUtlMemoryPoolMT<CClientFrame> m_ClientFramePool;
 	int m_nOldestTick; // +160
 	int m_nNewestTick; // +164*/
-	char pad[168];
+	char pad[160];
 }; // sizeof 168
+COMPILE_TIME_ASSERT( sizeof( CClientFrameManager ) == 168 );
 
 #endif // CLIENTFRAME_H
