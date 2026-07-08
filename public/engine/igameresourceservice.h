@@ -32,7 +32,7 @@ public:
 	virtual void DestroyResourceManifest( HGameResourceManifest hManifest ) = 0;
 	virtual const char *GetResourceManifestDebugName( HGameResourceManifest hManifest ) = 0;
 	virtual bool DoesManifestHaveFutureDependentResources( HGameResourceManifest hManifest ) = 0;
-	virtual void SetEntitySystem( CGameEntitySystem *pEntitySystem ) = 0;
+	virtual void SetEntityResourceManifestHandler( IEntityResourceManifestBuilder *pManifest ) = 0;
 	virtual void PrecacheEntitiesAndConfirmResourcesAreLoaded( SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t *pEntities, const matrix3x4a_t *pWorldOffset ) = 0;
 	virtual void DescribeContents( uint32 nLoggingChannel, HGameResourceManifest hManifest ) = 0;
 	virtual void GetManifestResourceNames( HGameResourceManifest hManifest, CUtlVector< CUtlString > &vecResourceNames ) = 0;
