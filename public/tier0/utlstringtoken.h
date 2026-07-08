@@ -32,7 +32,6 @@ class CFormatStringElement;
 
 // See VStringTokenSystem001
 // Interact with stringtokendatabase.txt
-PLATFORM_INTERFACE bool g_bUpdateStringTokenDatabase;
 PLATFORM_INTERFACE void RegisterStringToken( uint32 nHashCode, const char *pStart, const char *pEnd = NULL, bool bExtraAddToDatabase = true );
 
 class CUtlStringToken
@@ -136,13 +135,7 @@ private:
 
 FORCEINLINE bool TrackStringToken( uint32 nHash, const char *pString )
 {
-	if ( g_bUpdateStringTokenDatabase )
-	{
-		RegisterStringToken( nHash, pString );
-
-		return true;
-	}
-
+	RegisterStringToken( nHash, pString );
 	return false;
 }
 
