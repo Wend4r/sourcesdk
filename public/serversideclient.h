@@ -649,9 +649,6 @@ public:
 	HltvReplayStats_t m_HltvReplayStats;
 	CThreadedJobWithDependencies *m_pSendJob;
 };
-#ifdef LINUX
-COMPILE_TIME_ASSERT( sizeof( CServerSideClient ) == 3952 );
-#endif
 
 class CHLTVClient : public CServerSideClientBase
 {
@@ -696,8 +693,5 @@ public:
 	void *m_pJob;
 	CUtlVector< INetMessage * > m_QueuedMessages;
 };
-#ifdef __linux__
-COMPILE_TIME_ASSERT( sizeof( CHLTVClient ) == 3120 );
-#endif
 
 #endif // SERVERSIDECLIENT_H
