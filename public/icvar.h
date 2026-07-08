@@ -93,14 +93,9 @@ public:
 	virtual void			ResetConVarsToDefaultValuesByFlag( uint64 nFlag ) = 0;
 
 	virtual void			SetMaxSplitScreenSlots( int nSlots ) = 0;
-	virtual int				GetMaxSplitScreenSlots() const = 0;
 
 	virtual void			RegisterCreationListeners( IConVarListener *callbacks ) = 0;
 	virtual void			RemoveCreationListeners( IConVarListener *callbacks ) = 0;
-
-#ifndef DEADLOCK
-	virtual void			unk001() = 0;
-#endif
 
 	// Reverts cvars to default values which match pszPrefix string,
 	// ignores FCVAR_COMMANDLINE_ENFORCED
