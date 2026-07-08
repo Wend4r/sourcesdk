@@ -8,8 +8,6 @@
 #include "tier0/bufferstring.h"
 #include "tier1/utlvector.h"
 
-#include "tier0/memdbgon.h"
-
 // <Sergiy> placing it here a few days before Cert to minimize disruption to the rest of codebase
 class CSplitString : public CUtlVector<char *>
 {
@@ -100,8 +98,5 @@ private:
 		Purge();
 	}
 };
-
-
-#include "tier0/memdbgoff.h"
 
 #endif //#ifndef SPLITSTRING_H
