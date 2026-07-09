@@ -158,22 +158,22 @@ abstract_class IVEngineServer2 : public ISource2Engine
 public:
 	virtual EUniverse	GetSteamUniverse() const = 0;
 
-	virtual void		unk_19() = 0;
-	virtual void		unk_20() = 0;
-	virtual void		unk_21() = 0;
-	virtual void		unk_22() = 0;
-	virtual void		unk_23() = 0;
-	virtual void		unk_24() = 0;
+	virtual SpawnGroupHandle_t	GetSpawnGroupHandle( const char *pszName ) = 0;
+	virtual const char			*GetSpawnGroupName( SpawnGroupHandle_t nHandle ) = 0;
+	virtual SpawnGroupHandle_t	unk_21( bool ) = 0;
+	virtual SpawnGroupHandle_t	unk_22( bool ) = 0; // Returns the active/last spawn-group handle, or the invalid sentinel
+	virtual bool				IsSpawnGroupHandleValid( SpawnGroupHandle_t nHandle ) = 0;
+	virtual float				&GetFrameTime() = 0;
 
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
 
-	virtual void		unk027() = 0;
+	virtual void		unk027( const char *amnesty, int, float frametime ) = 0; // frame-time amnesty dict insert
 
-	virtual void		ShowFrameTimeReport( void *, bool ) = 0;
-	virtual void		DumpNetStats( void *pNetStatData, const std::function< void ( const char * )> &func ) = 0; 
+	virtual void		ShowFrameTimeReport( void *, bool, uint32 ) = 0;
+	virtual void		DumpNetStats( void *pNetStatData, const std::function< void ( const char * )> &func ) = 0;
 	virtual void		unk_30() = 0;
-	
+
 	virtual uint32		GetLongFrameCount() = 0;
 
 	// Tell engine to change level ( "changelevel s1\n" or "changelevel2 s1 s2\n" )
@@ -212,10 +212,6 @@ public:
 	// Issue the specified command to the specified client (mimics that client typing the command at the console).
 	virtual void		ClientCommand( CPlayerSlot nSlot, const char *szFmt, ... ) FMTFUNCTION( 3, 4 ) = 0;
 
-	// Set the lightstyle to the specified value and network the change to any connected clients.  Note that val must not
-	//  change place in memory (use MAKE_STRING) for anything that's not compiled into your mod.
-	virtual void		LightStyle( int style, const char *val ) = 0;
-
 	// Print szMsg to the client console.
 	virtual void		ClientPrintf( CPlayerSlot nSlot, const char *szMsg ) = 0;
 
@@ -238,7 +234,6 @@ public:
 
 	virtual bool IsSplitScreenPlayer( CPlayerSlot nSlot ) = 0;
 	virtual edict_t *GetSplitScreenPlayerAttachToEdict( CPlayerSlot nSlot ) = 0;
-	virtual int	GetNumSplitScreenUsersAttachedToEdict( CPlayerSlot nSlot ) = 0;
 	virtual edict_t *GetSplitScreenPlayerForEdict( CPlayerSlot nSlot, int nSplitScreenSlot ) = 0;
 
 	// Ret types might be all wrong for these. Haven't researched yet.
@@ -249,6 +244,8 @@ public:
 	virtual void	MakeSpawnGroupActive( SpawnGroupHandle_t spawnGroup ) = 0;
 	virtual void	SynchronouslySpawnGroup( SpawnGroupHandle_t spawnGroup ) = 0;
 	virtual void	SynchronizeAndBlockUntilLoaded( SpawnGroupHandle_t spawnGroup ) = 0;
+
+	virtual void	unk_066( SpawnGroupHandle_t spawnGroup ) = 0;
 
 	virtual void SetTimescale( float flTimescale ) = 0;
 
@@ -325,9 +322,10 @@ public:
 	virtual bool CanStartHltvReplay( CPlayerSlot nSlot, uint32 nDelay ) = 0;
 	virtual int64 ResetHltvReplayRequestTime( CPlayerSlot nSlot ) = 0;
 
+	virtual bool	IsAnyHltvReplayActive() = 0;
+
 	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
 	virtual void UpdateClientRate( CPlayerSlot nSlot ) = 0;
-	virtual void UpdateClientRate2( CPlayerSlot nSlot ) = 0;
 
 	virtual uint64 RemoveHltvReplayRequest( float flDelay, void *pUnk, int nRequestId ) = 0;
 	virtual void *AddHltvReplayRequest( uint32, int, uint32, int, int ) = 0;
@@ -343,6 +341,8 @@ public:
 	virtual const char *GetName() = 0;
 
 	virtual CCommand *GetClientCommand( CPlayerSlot nSlot ) = 0;
+
+	virtual void	*unk_121() = 0;
 };
 
 abstract_class IServerGCLobby
