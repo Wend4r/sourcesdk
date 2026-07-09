@@ -414,35 +414,36 @@ public:
 	GS_EVENT_IMPL( ClientPostSimulate )						// 38
 	GS_EVENT_IMPL( ServerPostAdvanceTick )					// 39
 	GS_EVENT_IMPL( ClientPostAdvanceTick )					// 40
-	GS_EVENT_IMPL( ServerBeginAsyncPostTickWork )			// 41
 
-	GS_EVENT_IMPL( ServerGameBeginAsyncPostTickWork )		// 42
+	virtual void unk_101( const void *const msg ) = 0;		// 41
 
-	GS_EVENT_IMPL( ServerEndAsyncPostTickWork )				// 43
+	GS_EVENT_IMPL( ServerBeginAsyncPostTickWork )			// 42
+	GS_EVENT_IMPL( ServerGameBeginAsyncPostTickWork )		// 43
+	GS_EVENT_IMPL( ServerEndAsyncPostTickWork )				// 44
 
-	GS_EVENT_IMPL( ClientFrameSimulate )					// 44
-	GS_EVENT_IMPL( ClientPauseSimulate )					// 45
-	GS_EVENT_IMPL( ClientAdvanceNonRenderedFrame )			// 46
+	GS_EVENT_IMPL( ClientFrameSimulate )					// 45
+	GS_EVENT_IMPL( ClientPauseSimulate )					// 46
+	GS_EVENT_IMPL( ClientAdvanceNonRenderedFrame )			// 47
 
-	GS_EVENT_IMPL( GameFrameBoundary )						// 47
-	GS_EVENT_IMPL( OutOfGameFrameBoundary )					// 48
+	GS_EVENT_IMPL( GameFrameBoundary )						// 48
+	GS_EVENT_IMPL( OutOfGameFrameBoundary )					// 49
 
-	GS_EVENT_IMPL( SaveGame )								// 49
-	GS_EVENT_IMPL( RestoreGame )							// 50
+	GS_EVENT_IMPL( SaveGame )								// 50
+	GS_EVENT_IMPL( RestoreGame )							// 51
 
-	GS_EVENT_IMPL( AppShutdown )							// 51
-	GS_EVENT_IMPL( PreDataUpdate )							// 52
-	GS_EVENT_IMPL( PostDataUpdate )							// 53
-	GS_EVENT_IMPL( SetTime )								// 54
-	GS_EVENT_IMPL( SplitScreenStateChanged )				// 55
-	GS_EVENT_IMPL( ProfileStorageAvailable )				// 56
+	GS_EVENT_IMPL( AppShutdown )							// 52
+	GS_EVENT_IMPL( PreDataUpdate )							// 53
+	GS_EVENT_IMPL( PostDataUpdate )							// 54
+	GS_EVENT_IMPL( SetTime )								// 55
+	GS_EVENT_IMPL( SplitScreenStateChanged )				// 56
+	GS_EVENT_IMPL( ProfileStorageAvailable )				// 57
 
-	GS_EVENT_IMPL( ServerPrePackEntities )					// 57
+	GS_EVENT_IMPL( ServerPrePackEntities )					// 58
 
-	virtual const char* GetName() const = 0;				// 58
-	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;	// 59
-	virtual void SetName(const char* pName) = 0;			// 60
-	virtual bool DoesGameSystemReallocate() = 0;			// 61
+	virtual const char* GetName() const = 0;				// 59
+	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;	// 60
+	virtual void SetName(const char* pName) = 0;			// 61
+	virtual bool DoesGameSystemReallocate() = 0;			// 62
 	virtual ~IGameSystem() {}
 	virtual void YouForgot_DECLARE_GAME_SYSTEM_InYourClassDefinition() = 0;
 };
@@ -524,10 +525,11 @@ public:
 	GS_EVENT( ClientPostSimulate ) {}
 	GS_EVENT( ServerPostAdvanceTick ) {}
 	GS_EVENT( ClientPostAdvanceTick ) {}
+
+	virtual void unk_101( const void *const msg ) override {}
+
 	GS_EVENT( ServerBeginAsyncPostTickWork ) {}
-
 	GS_EVENT( ServerGameBeginAsyncPostTickWork ) {}
-
 	GS_EVENT( ServerEndAsyncPostTickWork ) {}
 
 	GS_EVENT( ClientFrameSimulate ) {}
