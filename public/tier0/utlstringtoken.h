@@ -139,7 +139,7 @@ FORCEINLINE bool TrackStringToken( uint32 nHash, const char *pString )
 	return false;
 }
 
-template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
+template< bool CASEINSENSITIVE = true, bool TRACKCREATION = false >
 FORCEINLINE uint32 MakeStringToken( const char *pString, int nLen )
 {
 	uint32 nHash = CASEINSENSITIVE ? MurmurHash2LowerCase( pString, nLen, STRINGTOKEN_MURMURHASH_SEED ) : MurmurHash2( pString, nLen, STRINGTOKEN_MURMURHASH_SEED );
@@ -150,7 +150,7 @@ FORCEINLINE uint32 MakeStringToken( const char *pString, int nLen )
 	return nHash;
 }
 
-template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
+template< bool CASEINSENSITIVE = true, bool TRACKCREATION = false >
 FORCEINLINE uint32 MakeStringToken( const char *pString )
 {
 	return MakeStringToken< CASEINSENSITIVE, TRACKCREATION >( pString, static_cast<int>(strlen(pString)) );
@@ -167,7 +167,7 @@ FORCEINLINE uint32 HashStringWithBuffer( const char *pString, int nLen = -1 )
 	return CUtlStringToken::Hash< false >( buffer.Get(), buffer.Length() );
 }
 
-template< bool CASEINSENSITIVE = true, bool TRACKCREATION = true >
+template< bool CASEINSENSITIVE = true, bool TRACKCREATION = false >
 FORCEINLINE CUtlStringToken MakeStringToken2( const char *pString, int nLen = -1 )
 {
 	uint32 nHash = HashStringWithBuffer< CASEINSENSITIVE >( pString, nLen );
