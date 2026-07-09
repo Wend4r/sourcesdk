@@ -15,8 +15,6 @@
 #include <usermessages.pb.h>
 
 class CUserMessageAchievementEvent_t         : public CNetMessagePB< UM_AchievementEvent, CUserMessageAchievementEvent, SG_USERMSG, BUF_RELIABLE, true > {};
-class CUserMessageCloseCaption_t             : public CNetMessagePB< UM_CloseCaption, CUserMessageCloseCaption, SG_USERMSG, BUF_RELIABLE, true > {};
-class CUserMessageCloseCaptionDirect_t       : public CNetMessagePB< UM_CloseCaptionDirect, CUserMessageCloseCaptionDirect, SG_USERMSG, BUF_RELIABLE, true > {};
 class CUserMessageCurrentTimescale_t         : public CNetMessagePB< UM_CurrentTimescale, CUserMessageCurrentTimescale, SG_USERMSG, BUF_RELIABLE, true > {};
 class CUserMessageDesiredTimescale_t         : public CNetMessagePB< UM_DesiredTimescale, CUserMessageDesiredTimescale, SG_USERMSG, BUF_RELIABLE, true > {};
 class CUserMessageFade_t                     : public CNetMessagePB< UM_Fade, CUserMessageFade, SG_USERMSG, BUF_RELIABLE, true > {};
