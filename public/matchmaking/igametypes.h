@@ -118,7 +118,10 @@ public:
 	virtual const CUtlStringList *GetTModelsForMap( const char *mapName ) = 0;
 	virtual const CUtlStringList *GetCTModelsForMap( const char *mapName ) = 0;
 	virtual const CUtlStringList *GetHostageModelsForMap( const char *mapName ) = 0;
-	
+
+	virtual bool GetAddonForMap( const char *mapName, CUtlString &out ) = 0;
+	virtual bool GetAddonForMapGroup( const char *mapGroup, CUtlString &out ) = 0;
+
 	virtual int GetDefaultGameTypeForMap( const char *mapName ) = 0;
 	virtual int GetDefaultGameModeForMap( const char *mapName ) = 0;
 	
