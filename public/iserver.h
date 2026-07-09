@@ -289,7 +289,6 @@ public:
 	INetworkStringTable* m_pInstanceBaselineTable;
 	INetworkStringTable* m_pLightStyleTable;
 	INetworkStringTable* m_pUserInfoTable;
-	INetworkStringTable* m_pServerStartupTable;
 
 	CFrameSnapshotManager* m_pFrameSnapshotManager;
 	CUtlLeanVector<byte> m_BaselineBuffer;
@@ -340,7 +339,7 @@ public:
 	uint64* m_pnReservationCookie;
 	float* m_pflTimeLastClientLeft;
 	float* m_pflReservationExpiryTime;
-	void* m_pUnk960;
+	void* m_pUnk952;
 
 	// handle = slot | (serial << 8). Init all 0xFFFF.
 	uint16 m_nClientSlotSerial[ABSOLUTE_PLAYER_LIMIT];
@@ -364,9 +363,9 @@ public:
 	uint64 m_nComputeTimeCount;
 
 	uint64 m_nReservationCookie;
+	uint64 m_nUnk1744;
 	uint64 m_nUnk1752;
-	uint64 m_nUnk1760;
-	int m_nUnk1768;
+	int m_nUnk1760;
 	void* m_pReplayDirector;
 };
 
@@ -379,7 +378,7 @@ public:
 	CPrecacheItem m_Precache[MAX_GENERIC];
 	INetworkStringTable* m_pGenericPrecacheTable;
 	bool m_bAllowSignonWrites;
-}; // sizeof 10064
+}; // sizeof 10056 (0x2748)
 
 
 class CHLTVServer : public CNetworkGameServerBase
