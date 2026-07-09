@@ -585,7 +585,7 @@ void ConCommand::Destroy()
 int ConVarData::GetMaxSplitScreenSlots() const
 {
 	if((m_nFlags & FCVAR_PER_USER) != 0)
-		return static_cast<CCvar *>( g_pCVar )->m_SplitScreenSlots;
+		return static_cast<CCvar *>( g_pCVar )->GetMaxSplitScreenSlots();
 
 	return 1;
 }
