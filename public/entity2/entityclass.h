@@ -71,7 +71,7 @@ public:
 	datamap_t* m_pPredDescMap;
 };
 
-// Size: 0x160
+// Size: 0x168
 class CEntityClass
 {
 public:
@@ -132,6 +132,8 @@ public:
 
 	CEntitySharedPulseSignature* m_pSharedPulseSignature;
 	CEntitySharedPulseSignature* m_unk201;
+
+	void* m_pfnPulseBindingUnk48;
 
 	EntClassComponentOverride_t* m_pComponentOverrides;
 
