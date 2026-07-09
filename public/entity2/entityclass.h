@@ -36,6 +36,8 @@ class ServerClass;
 struct EntOutput_t;
 struct datamap_t;
 
+typedef void (*BASEPTR)(CEntityInstance *ent);
+
 struct CEntityIOInputFunction
 {
 	typedef void (*InputAdapterFunc_t)(const CUtlAbstractDelegate *, CEntityInstance *, CEntityInstance *, CEntityInstance *, int, void *, const CVariant *);
@@ -117,6 +119,9 @@ public:
 	}
 	
 public:
+	using FuncToNameCb = const char *(*)(BASEPTR think_fn);
+	using NameToFuncCb = BASEPTR (*)(const char *fn_name);
+
 	ScriptClassDesc_t* m_pScriptDesc;
 
 	CNetworkSerializerClassInfo* m_pNetworkSerializerInfo;
@@ -126,12 +131,14 @@ public:
 	int m_nInputCount;
 	int m_nOutputCount;
 
-	CEntitySharedPulseSignature* m_pUnk40;
+	CEntitySharedPulseSignature* m_pSharedPulseSignature;
 
 	void* m_pfnPulseBindingTraits;
 
-	CEntitySharedPulseSignature* m_pSharedPulseSignature;
-	CEntitySharedPulseSignature* m_unk201;
+	// Allows to get any think functions in use or to get its string name for this class
+	// does searches to the parent classes as well
+	NameToFuncCb m_NameToThinkFunc;
+	FuncToNameCb m_ThinkFuncToName;
 
 	void* m_pfnPulseBindingUnk48;
 
