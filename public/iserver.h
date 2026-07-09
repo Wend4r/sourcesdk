@@ -179,6 +179,8 @@ public:
 	virtual void 	DirectUpdate() = 0;
 
 	virtual CSteamID	GetGameServerSteamID() = 0;
+
+	virtual bool BroadcastVoiceData( int nEntityIndex, void *pVoiceData, uint64 xuidFrom ) = 0;
 };
 
 class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
