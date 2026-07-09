@@ -41,7 +41,8 @@ class IGameSpawnGroupMgr;
 struct EventServerAdvanceTick_t;
 struct EventServerPollNetworking_t;
 struct EventServerProcessNetworking_t;
-struct EventServerSimulate_t;
+struct EventServerBeginSimulate_t;
+struct EventServerEndSimulate_t;
 struct EventServerPostSimulate_t;
 struct SpawnGroupDesc_t;
 class IPrerequisite;
@@ -104,11 +105,9 @@ public:
 	virtual void	ServerPollNetworking( const EventServerPollNetworking_t & ) = 0;
 	virtual void	ServerProcessNetworking( const EventServerProcessNetworking_t & ) = 0;
 
-	virtual void	ServerSimulate( const EventServerSimulate_t & ) = 0;
+	virtual void	ServerBeginSimulate( const EventServerBeginSimulate_t & ) = 0;
+	virtual void	ServerEndSimulate( const EventServerEndSimulate_t & ) = 0;
 	virtual void	ServerPostSimulate( const EventServerPostSimulate_t & ) = 0;
-
-	// Flushes queued broadcast messages within the current per-tick budget.
-	virtual void	DispatchQueuedBroadcastMessages( void ) = 0;
 
 	virtual SpawnGroupHandle_t LoadSpawnGroup( const SpawnGroupDesc_t & ) = 0;
 	virtual void	AsyncUnloadSpawnGroup( unsigned int, /*ESpawnGroupUnloadOption*/ int ) = 0;
