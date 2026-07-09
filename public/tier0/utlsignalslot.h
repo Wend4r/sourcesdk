@@ -7,6 +7,7 @@
 #endif
 
 #include "basetypes.h"
+#include "tier0/threadtools.h"
 #include "tier0/utlstring.h"
 #include "utldelegateimpl.h"
 #include "utlvector.h"
@@ -30,12 +31,13 @@ class CUtlSlot
 public:
 	using MTElement_t = CUtlSignaller_Base *;
 
-	CUtlSlot() : m_ConnectedSignallers( 0, 1 ) {}
+	CUtlSlot() {}
 
 private:
-	//CCopyableLock< CThreadFastMutex > m_Mutex;
-	char m_Mutex[16]; // temp solution
+	CThreadFastMutex m_Mutex;
 	CUtlVector< MTElement_t > m_ConnectedSignallers;
 };
+
+static_assert( sizeof( CUtlSlot ) == 40, "CUtlSlot sizeof mismatch" );
 
 #endif // UTLSLOT_H
