@@ -262,8 +262,13 @@ public:
 	}
 
 public:
-	CUtlVector<CUtlString> m_ResourceGroups;
-	char _pad48[8];
+	struct ResourceGroupVector_t
+	{
+		CUtlVector<CUtlString> m_Vec;
+		bool m_bAutoPurge;
+	};
+
+	ResourceGroupVector_t m_ResourceGroups;
 
 	server_state_t m_State;
 	int m_nRefCount;
@@ -317,10 +322,9 @@ public:
 
 	CUtlVector<byte> m_GameData;
 
-	CUtlVector<CNetworkServerSpawnGroupCreatePrerequisites*> m_SpawnGroupPrerequisites;
-	bool m_bSpawnGroupLocked;
-	//CUtlOrderedMap<uint, CNetworkServerSpawnGroup*, CDefLess<uint>, uint16> m_SpawnGroups;
-	char pad761[24];
+	CUtlLinkedList< CNetworkServerSpawnGroupCreatePrerequisites*> m_SpawnGroupPrerequisites;
+	CUtlMap< SpawnGroupHandle_t, CNetworkServerSpawnGroup*  > m_SpawnGroups;
+
 	CUtlVector<uint64> m_QueuedSpawnGroupUnloads; // SpawnGroupUnloadEntry_t (handle + flags)
 	int m_bQueueSpawnGroupUnloads;
 
