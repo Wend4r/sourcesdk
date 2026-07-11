@@ -56,9 +56,7 @@ public:
 	uint16 m_nServiceIndex;
 	char pad34;
 	bool m_bIsServerInstance;
-#ifdef _WIN32
-	char pad36[3];
-#endif
+	uint32 m_nUnknownFlags : 8;
 };
 
 abstract_class IEngineServiceMgr : public IAppSystem, public ILoopModePrerequisiteRegistry
