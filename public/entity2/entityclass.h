@@ -40,7 +40,7 @@ typedef void (*BASEPTR)(CEntityInstance *ent);
 
 struct CEntityIOInputFunction
 {
-	typedef void (*InputAdapterFunc_t)(const CUtlAbstractDelegate *, CEntityInstance *, CEntityInstance *, CEntityInstance *, int, void *, const CVariant *);
+	typedef void (*InputAdapterFunc_t)(const CUtlAbstractDelegate *, CEntityInstance *, CEntityInstance *, CEntityInstance *, void *, const CVariant *);
 
 	const char *m_pName;
 	uint32 m_nFlags;
