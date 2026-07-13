@@ -73,6 +73,7 @@ set(SOURCESDK_NEEDED_PROTOS
 	gameevents
 	usermessages
 	source2_steam_stats
+	valveextensions
 )
 
 include(cmake/platform/shared.cmake)
