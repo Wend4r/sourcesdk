@@ -34,7 +34,7 @@ if(SOURCESDK_CONFIGURE_EXPORT_MAP)
 	set(PLATFORM_LINK_OPTIONS
 		${PLATFORM_LINK_OPTIONS}
 
-		-Wl,-exported_symbols_list,${SOURCESDK_SYMBOLS_DIR}/exported_symbols.lds
+		$<$<OR:$<STREQUAL:$<TARGET_PROPERTY:TYPE>,SHARED_LIBRARY>,$<STREQUAL:$<TARGET_PROPERTY:TYPE>,MODULE_LIBRARY>>:-Wl,-exported_symbols_list,${SOURCESDK_SYMBOLS_DIR}/exported_symbols.lds>
 	)
 endif()
 
