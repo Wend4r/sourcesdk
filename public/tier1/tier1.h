@@ -108,7 +108,7 @@ public:
 class CTier1Application : public CTier1AppSystem< IApplication >
 {
 public:
-	virtual ~CTier1Application() = 0;
+	virtual ~CTier1Application() = default;
 
 	virtual void AddSystem( IAppSystem *pAppSystem, const char *pInterfaceName, AppSystemErrorPolicy_t eErrorPolicy ) = 0;
 	virtual void AddSystem( const char *pModuleName, const char *pInterfaceName, AppSystemErrorPolicy_t eErrorPolicy ) = 0;
@@ -120,20 +120,20 @@ public:
 	virtual AppSystemBuildType_t GetAppSystemBuildType() = 0;
 	virtual const char *GetLanguage( LanguageType_t nType ) = 0;
 	virtual const char *GetModPath( int nPathType ) = 0;
-	virtual bool IsInToolsMode();
-	virtual bool IsConsoleApp();
-	virtual OpusRepacketizer *GetOpusRepacketizer();
-	virtual bool IsInDeveloperMode();
-	virtual const char *GetExecutablePath();
-	virtual const char *GetModGameSubdir();
-	virtual KeyValues *GetApplicationInfo();
-	virtual void *GetAppInstance();
-	virtual const char *GetContentPath();
-	virtual int GetAppSystemFlags();
-	virtual CUtlString GetConsoleLogFilename();
-	virtual void ChangeLogFileSuffix( const char *pSuffix );
-	virtual void AddSystemDontLoadStartupManifests( const char *pModuleName, const char *pInterfaceName );
-	virtual const char *GetGameMode();
+	virtual bool IsInToolsMode() = 0;
+	virtual bool IsConsoleApp() = 0;
+	virtual OpusRepacketizer *GetOpusRepacketizer() = 0;
+	virtual bool IsInDeveloperMode() = 0;
+	virtual const char *GetExecutablePath() = 0;
+	virtual const char *GetModGameSubdir() = 0;
+	virtual KeyValues *GetApplicationInfo() = 0;
+	virtual void *GetAppInstance() = 0;
+	virtual const char *GetContentPath() = 0;
+	virtual int GetAppSystemFlags() = 0;
+	virtual CUtlString GetConsoleLogFilename() = 0;
+	virtual void ChangeLogFileSuffix( const char *pSuffix ) = 0;
+	virtual void AddSystemDontLoadStartupManifests( const char *pModuleName, const char *pInterfaceName ) = 0;
+	virtual const char *GetGameMode() = 0;
 	virtual bool MountAddon( const char *pAddonName ) = 0;
 	virtual bool UnmountAddon( const char *pAddonName ) = 0;
 	virtual void GetMountedAddons( CUtlVector< CUtlString > &vecAddons ) = 0;
@@ -156,10 +156,10 @@ public:
 	virtual CUtlString GetFullAddonPathFromAddonName( const char *pAddonName ) = 0;
 	virtual void GetAvailableAddonMaps( CUtlVector< CUtlString > &vecMaps, const char *pAddonName, bool bIncludeFallbackMaps ) = 0;
 	virtual void LoadStartupManifestGroup( const char *pManifestGroup ) = 0;
-	virtual CUtlString GetAddonSourceFolder( const char *pAddonName );
-	virtual void OnStartupManifestGroupLoaded();
-	virtual void AddStartupManifest( ResourceManifestDesc_t &resourceManifestDesc );
-	virtual CAppSystemDict *GetAppSystemDict();
+	virtual CUtlString GetAddonSourceFolder( const char *pAddonName ) = 0;
+	virtual void OnStartupManifestGroupLoaded() = 0;
+	virtual void AddStartupManifest( ResourceManifestDesc_t &resourceManifestDesc ) = 0;
+	virtual CAppSystemDict *GetAppSystemDict() = 0;
 
 	template < class T > T* FindSystem( const char *pSystemName ) { return static_cast< T* >( FindSystem( pSystemName ) ); }
 };
