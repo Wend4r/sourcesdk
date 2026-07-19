@@ -1,15 +1,44 @@
 #ifndef WORLD_SCHEMA_H
 #define WORLD_SCHEMA_H
 
-#ifdef COMPILER_MSVC
-#pragma once
+#ifdef _WIN32
+	#pragma once
 #endif
+
+#include <resourcefile/resourcehandle.h>
 
 #include <tier0/platform.h>
 #include <tier0/utlstring.h>
 #include <tier1/utlvector.h>
 #include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
+
+struct World_t;
+class CWorldNode;
+class CVoxelVisibility;
+
+class InfoForResourceTypeWorld_t
+{
+public:
+	using RuntimeClass_t = World_t;
+};
+
+class InfoForResourceTypeCWorldNode
+{
+public:
+	using RuntimeClass_t = CWorldNode;
+};
+
+class InfoForResourceTypeCVoxelVisibility
+{
+public:
+	using RuntimeClass_t = CVoxelVisibility;
+};
+
+using HWorldStrong = CStrongHandle<InfoForResourceTypeWorld_t>;
+using HWorldNodeStrong = CStrongHandle<InfoForResourceTypeCWorldNode>;
+using HWorldVisStrong = CStrongHandle<InfoForResourceTypeCVoxelVisibility>;
+using HResourceManifest = void*;
 
 //--------------------------------------------------------------------------------------
 // Enum related
