@@ -1,5 +1,5 @@
-#ifndef CENTITYLUMP_H
-#define CENTITYLUMP_H
+#ifndef ENTITYLUMP_H
+#define ENTITYLUMP_H
 
 #ifdef _WIN32
 	#pragma once
@@ -22,16 +22,16 @@ public:
 	using RuntimeClass_t = CEntityLump;
 };
 
-using HEntityLump = CWeakHandle<InfoForResourceTypeCEntityLump>;
-using HEntityLumpStrong = CStrongHandleCopyable<InfoForResourceTypeCEntityLump>;
+using HEntityLump = CWeakHandle< InfoForResourceTypeCEntityLump >;
+using HEntityLumpStrong = CStrongHandleCopyable< InfoForResourceTypeCEntityLump >;
 
 class CEntityLump
 {
 public:
-	CEntityLump( const PermEntityLumpData_t* pData );
+	CEntityLump( const PermEntityLumpData_t *pData );
 	~CEntityLump();
 
-	const char* GetName() const { return m_name.Get(); }
+	const char *GetName() const { return m_name.Get(); }
 
 	int GetNumChildLumps() const { return m_childLumps.Count(); }
 	HEntityLump GetChildLump( int nChild ) const
@@ -40,17 +40,17 @@ public:
 	}
 
 	int GetNumEntities() const { return m_entityKeyValues.Count(); }
-	const CEntityKeyValues* GetEntityKeyValues( int nEntity ) const { return m_entityKeyValues[nEntity]; }
-	const CUtlVector<const CEntityKeyValues*>* GetEntityKeyValues() const
+	const CEntityKeyValues *GetEntityKeyValues( int nEntity ) const { return m_entityKeyValues[nEntity]; }
+	const CUtlVector< const CEntityKeyValues * > *GetEntityKeyValues() const
 	{
-		return reinterpret_cast<const CUtlVector<const CEntityKeyValues*>*>( &m_entityKeyValues );
+		return reinterpret_cast< const CUtlVector< const CEntityKeyValues * > * >( &m_entityKeyValues );
 	}
 
 public:
 	CUtlString m_name;
-	CUtlVector<HEntityLumpStrong> m_childLumps;
+	CUtlVector< HEntityLumpStrong > m_childLumps;
 	CKV3Arena m_keyValueArena;
-	CUtlVector<CEntityKeyValues*> m_entityKeyValues;
+	CUtlVector< CEntityKeyValues * > m_entityKeyValues;
 };
 
-#endif // CENTITYLUMP_H
+#endif // ENTITYLUMP_H
