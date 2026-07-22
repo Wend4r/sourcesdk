@@ -93,7 +93,7 @@ public:
 	virtual void			ResetConVarsToDefaultValuesByFlag( uint64 nFlag ) = 0;
 
 	virtual void			SetMaxSplitScreenSlots( int nSlots ) = 0;
-	int						GetMaxSplitScreenSlots() const { return m_MaxSplitScreenSlots; }
+	int						GetMaxSplitScreenSlots() const { return 0; }
 
 	virtual void			RegisterCreationListeners( IConVarListener *callbacks ) = 0;
 	virtual void			RemoveCreationListeners( IConVarListener *callbacks ) = 0;
@@ -146,9 +146,6 @@ public:
 
 	// Queues up value (creates a copy of it) to be set when convar is ready to be edited
 	virtual void				QueueThreadSetValue( ConVarRefAbstract* ref, CSplitScreenSlot nSlot, void* __unk01, CVValue_t* value ) = 0;
-
-private:
-	int m_MaxSplitScreenSlots;
 };
 
 #include "memdbgon.h"

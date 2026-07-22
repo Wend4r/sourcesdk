@@ -363,7 +363,6 @@ struct SchemaClassInfoData_t
 	
 	const char* m_pszName;
 	const char* m_pszProjectName;
-	const char* m_pszCPPName;
 
 	int m_nSize;
 

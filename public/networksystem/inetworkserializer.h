@@ -107,7 +107,6 @@ struct ReplayCompatField_t
 class CNetworkSerializerFieldInfo
 {
 public:
-	CUtlStringToken m_FieldNameHash;
 	CUtlString m_pszFieldName;
 	CUtlString m_pszTypeName;
 	CUtlString m_pszRawType;
@@ -212,7 +211,6 @@ public:
 		CUtlVector<CUtlString> m_IncludeList;
 	};
 
-	CUtlStringToken m_nHash;
 	CUtlString m_pszClassName;
 	CUtlVector<CNetworkSerializerFieldInfo *> m_Fields;
 	ExcludeIncludeFilter_t m_NetworkFilterByUserGroup;
