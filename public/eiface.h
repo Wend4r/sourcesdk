@@ -101,6 +101,7 @@ class CCLCMsg_SplitPlayerConnect_t;
 class CNetMessage;
 class INetworkMessageInternal;
 struct Entity2Networkable_t;
+class CMovieRecorder;
 class IDemoFile;
 
 namespace google
@@ -379,7 +380,7 @@ public:
 	virtual bool IsConnected() = 0;
 	virtual void *GetNetChannel(int nSplitScreenSlot) = 0;
 	virtual bool IsPlayingDemo() = 0;
-	virtual int GetDemoPlaybackTick() = 0;
+	virtual const char * GetDemoFilePath() = 0;
 	virtual bool IsRecordingDemo() = 0;
 	virtual bool IsPlayingTimeDemo() = 0;
 	virtual void *unk046() = 0;
@@ -387,7 +388,7 @@ public:
 	virtual void *unk048() = 0;
 	virtual void *unk049() = 0;
 	virtual void *unk050() = 0;
-	virtual void ClientCommand(int iCommandSrc, const char *pszCommand, bool bUnrestricted, void *pUnk0 = nullptr, void *pUnk1 = nullptr) = 0;
+	virtual void ClientCommand(int iUnk0MaybeSplitScreenSlotSetTo0, const char * pszCommands, bool bUnrestricted) = 0;
 	virtual void *unk052() = 0;
 	virtual void *unk053() = 0;
 	virtual void *unk054() = 0;
@@ -395,7 +396,7 @@ public:
 	virtual bool IsValidSplitScreenSlot(int nSplitScreenSlot) = 0;
 	virtual int &FirstValidSplitScreenSlot(int &nSplitScreenSlot) = 0;
 	virtual int &NextValidSplitScreenSlot(int &nSplitScreenSlot, int nPreviousSlot) = 0;
-	virtual void *unk059() = 0;
+	virtual void GetScreenSize(int& width, int& height) = 0;
 	virtual void *unk060() = 0;
 	virtual void *unk061() = 0;
 	virtual void *unk062() = 0;
@@ -404,8 +405,8 @@ public:
 	virtual const char *GetLevelNameShort() = 0;
 	virtual void *unk066() = 0;
 	virtual void *GetBroadcastRecorder() = 0;
-	virtual void *unk068() = 0;
-	virtual void *unk069() = 0;
+	virtual CMovieRecorder* GetMovieRecorder() = 0;
+	virtual IDemoFile* GetDemoFile() = 0;
 	virtual void *unk070() = 0;
 	virtual void *unk071() = 0;
 	virtual void *unk072() = 0;
