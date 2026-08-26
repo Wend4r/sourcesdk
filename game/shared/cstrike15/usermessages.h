@@ -58,6 +58,7 @@ class CCSUsrMsg_CurrentRoundOdds_t                : public CUserMessagePB< CS_UM
 class CCSUsrMsg_DeepStats_t                       : public CUserMessagePB< CS_UM_DeepStats, CCSUsrMsg_DeepStats > {};
 class CCSUsrMsg_ShootInfo_t                       : public CUserMessagePB< CS_UM_ShootInfo, CCSUsrMsg_ShootInfo > {};
 class CCSUsrMsg_CounterStrafe_t                   : public CUserMessagePB< CS_UM_CounterStrafe, CCSUsrMsg_CounterStrafe > {};
+class CCSUsrMsg_CustomHudClicked_t                : public CUserMessagePB< CS_UM_CustomHudClicked, CCSUsrMsg_CustomHudClicked > {};
 
 
 #endif // CSTRIKE15_USERMESSAGES_H
