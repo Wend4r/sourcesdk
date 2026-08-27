@@ -359,7 +359,6 @@ protected:
 	I m_Root;
 	I m_NumElements;
 	I m_FirstFree;
-	typename M::Iterator_t m_LastAlloc; // the last index allocated
 
 	// Node_t* m_pElements;
 
@@ -393,13 +392,6 @@ public:
 		if ( !BaseClass::Elements().IsIdxValid( i ) )
 			return false;
 
-#ifdef _DEBUG // it's safe to skip this here, since the only way to get indices after m_LastAlloc is to use MaxElement()
-		if ( BaseClass::Elements().IsIdxAfter( i, this->m_LastAlloc ) )
-		{
-			Assert( 0 );
-			return false; // don't read values that have been allocated, but not constructed
-		}
-#endif
 
 		return LeftChild(i) != i; 
 	}
@@ -436,8 +428,7 @@ inline CUtlRBTree<T, L, I, M>::CUtlRBTree( int growSize, int initSize, LessFunc_
 m_Elements( growSize, initSize ),
 m_Root( InvalidIndex() ),
 m_NumElements( 0 ),
-m_FirstFree( InvalidIndex() ),
-m_LastAlloc( m_Elements.InvalidIterator() )
+m_FirstFree( InvalidIndex() )
 {
 	ResetDbgInfo();
 }
@@ -447,15 +438,14 @@ inline CUtlRBTree<T, L, I, M>::CUtlRBTree( LessFunc_t lessfunc ) :
 m_Elements( ),
 m_Root( InvalidIndex() ),
 m_NumElements( 0 ),
-m_FirstFree( InvalidIndex() ),
-m_LastAlloc( m_Elements.InvalidIterator() )
+m_FirstFree( InvalidIndex() )
 {
 	ResetDbgInfo();
 }
 
 template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M>::CUtlRBTree( const CUtlRBTree<T, L, I, M> &copyFrom )
- :  m_LastAlloc( copyFrom.m_Elements.InvalidIterator() )
+
 {
 	CopyFrom( copyFrom );
 }
@@ -464,8 +454,7 @@ template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M>::CUtlRBTree( CUtlRBTree<T, L, I, M> &&moveFrom )
  :  m_Root( InvalidIndex() ),
 	m_NumElements( 0 ),
-	m_FirstFree( InvalidIndex() ),
-	m_LastAlloc( m_Elements.InvalidIterator() )
+	m_FirstFree( InvalidIndex() )
 {
 	MoveFrom( Move( moveFrom ) );
 }
@@ -503,7 +492,6 @@ inline CUtlRBTree<T, L, I, M> &CUtlRBTree<T, L, I, M>::CopyFrom( const CUtlRBTre
 	m_Root = other.m_Root;
 	m_NumElements = other.m_NumElements;
 	m_FirstFree = other.m_FirstFree;
-	m_LastAlloc = other.m_LastAlloc;
 	ResetDbgInfo();
 
 	return *this;
@@ -785,25 +773,16 @@ I  CUtlRBTree<T, L, I, M>::NewNode( bool bConstructElement )
 	// Nothing in the free list; add.
 	if ( m_FirstFree == InvalidIndex() )
 	{
-		Assert( m_Elements.IsValidIterator( m_LastAlloc ) || m_NumElements == 0 );
-		typename M::Iterator_t it = m_Elements.IsValidIterator( m_LastAlloc ) ? m_Elements.Next( m_LastAlloc ) : m_Elements.First();
-		if ( !m_Elements.IsValidIterator( it ) )
+		elem = ( I )m_Elements.Count();
+
+		MEM_ALLOC_CREDIT_CLASS();
+		m_Elements.Grow();
+
+		if ( !m_Elements.IsIdxValid( elem ) )
 		{
-			MEM_ALLOC_CREDIT_CLASS();
-			m_Elements.Grow();
-
-			it = m_Elements.IsValidIterator( m_LastAlloc ) ? m_Elements.Next( m_LastAlloc ) : m_Elements.First();
-
-			Assert( m_Elements.IsValidIterator( it ) );
-			if ( !m_Elements.IsValidIterator( it ) )
-			{
-				Plat_FatalError( "CUtlRBTree overflow with %u elements!\n", Count() );
-				DebuggerBreak();
-			}
+			Plat_FatalError( "CUtlRBTree overflow with %u elements!\n", Count() );
+			DebuggerBreak();
 		}
-		m_LastAlloc = it;
-		elem = m_Elements.GetIndex( m_LastAlloc );
-		Assert( m_Elements.IsValidIterator( m_LastAlloc ) );
 	}
 	else
 	{
@@ -1240,7 +1219,7 @@ void CUtlRBTree<T, L, I, M>::RemoveAll()
 	// valid elements for the multilist case (since we don't have all elements
 	// connected to each other in a list).
 
-	if ( m_LastAlloc == m_Elements.InvalidIterator() )
+	if ( m_Elements.Count() == 0 )
 	{
 		Assert( m_Root == InvalidIndex() );
 		Assert( m_NumElements == 0 );
@@ -1268,7 +1247,6 @@ void CUtlRBTree<T, L, I, M>::Purge()
 	RemoveAll();
 	m_FirstFree = InvalidIndex();
 	m_Elements.Purge();
-	m_LastAlloc = m_Elements.InvalidIterator();
 }
 
 
@@ -1474,9 +1452,6 @@ bool CUtlRBTree<T, L, I, M>::IsValid() const
 	if ( !Count() )
 		return true;
 
-	if ( m_LastAlloc == m_Elements.InvalidIterator() )
-		return false;
-
 	if ( !m_Elements.IsIdxValid( Root() ) )
 		return false;
 
@@ -1535,9 +1510,6 @@ bool CUtlRBTree<T, L, I, M>::IsValid() const
 					return false;
 			}
 		}
-
-		if ( it == m_LastAlloc )
-			break;
 	}
 	if ( numFree2 != numFree )
 		return false;
@@ -1781,9 +1753,7 @@ void CUtlRBTree<T, L, I, M>::Swap( CUtlRBTree< T, L, I, M > &that )
 	V_swap( m_NumElements, that.m_NumElements );
 	V_swap( m_FirstFree, that.m_FirstFree );
 	// V_swap( m_pElements, that.m_pElements );
-	V_swap( m_LastAlloc, that.m_LastAlloc );
 	Assert( IsValid() );
-	Assert( m_Elements.IsValidIterator( m_LastAlloc ) || ( m_NumElements == 0 && m_FirstFree == InvalidIndex() ) );
 }
 
 
