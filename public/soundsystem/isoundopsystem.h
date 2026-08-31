@@ -21,6 +21,8 @@ class KeyValues;
 class KeyValues3;
 struct ResourceBindingBase_t;
 
+typedef uint32 HSOSLIBSTACKHASH;
+
 enum SOFieldDataType_t : int8
 {
 	SOFTYPE_INVALID = -1,
@@ -67,13 +69,42 @@ struct CSosFieldData
 	};
 };
 
+struct SoundEventGuid_t {
+    SoundEventGuid_t()
+		: m_Data(0)
+    {
+    }
+	SoundEventGuid_t(const int32 id)
+		: m_Data(id)
+    {
+    }
+
+	int32 m_Data;
+};
+
+struct SndOpEventGuid_t {
+    SndOpEventGuid_t() :
+        m_hStackHash(-1)
+    {
+    }
+
+
+	SoundEventGuid_t m_nGuid;
+	HSOSLIBSTACKHASH m_hStackHash;
+};
+
 #pragma pack( push, 1 )
 struct StartSoundEventInfo_t
 {
-	uint32	m_nGuid;
-	uint32	m_nUpdateStackHash;
-	uint32	m_nFlags;
-	uint64	m_nRecipients;
+    StartSoundEventInfo_t() :
+        m_nFlags(0),
+		m_nRecipients(0ull)
+    {
+    }
+
+	SndOpEventGuid_t m_nSndOpEventGuid;
+	uint32 m_nFlags;
+	uint64 m_nRecipients;
 };
 #pragma pack( pop )
 
