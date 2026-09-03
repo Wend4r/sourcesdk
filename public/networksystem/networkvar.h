@@ -21,7 +21,7 @@ template < class T, typename I, typename A >
 class CNetworkUtlVectorBase< T, true, I, A > : public CUtlVectorBase< T, I, A >
 {
 public:
-	CEntityInstance *GetOwnerEntity() const { return m_pOwnerEntity; }
+	CEntityInstance *GetOwnerEntity() const { return m_pOwnerEntity.GetObject(); }
 	const CFieldPath &GetPathToVector() const { return m_PathToVector; }
 
 public:
@@ -38,7 +38,7 @@ template < typename T, typename I = int >
 class CUtlVectorEmbeddedNetworkVar : public CNetworkUtlVectorBase< T, false, I >
 {
 public:
-	CEntityInstance *GetOwnerEntity() const { return m_pOwnerEntity; }
+	CEntityInstance *GetOwnerEntity() const { return m_pOwnerEntity.GetObject(); }
 	const CFieldPath &GetPathToVector() const { return m_PathToVector; }
 
 public:
