@@ -1,4 +1,4 @@
-# CLAUDE.md
+# Source SDK Agent Instructions
 
 Valve/Source SDK C++ with AlliedModders-specific modernizations. Keep edits local, conservative, and consistent with the surrounding file. Never reformat unrelated code.
 
@@ -49,6 +49,14 @@ while ( true )
 ```cpp
 template < size_t SIZE >
 CBufferStringN< SIZE >
+```
+
+- Spaces inside square brackets around an array's element count. Empty brackets stay tight:
+
+```cpp
+int m_nChild[ 2 ];
+char m_pGameInfoPath[ MAX_PATH ];
+int nValues[] = { 1, 2, 3 };
 ```
 
 - Same visual spacing for explicit casts in edited code:
@@ -137,6 +145,7 @@ Keep comments on reconstructed code down to what the reader cannot get from tool
 
 - Do not annotate members with their offsets. clangd in VS Code and CLion already show the offset on hover, so a `// 0x38` comment adds nothing and goes stale as soon as the layout shifts.
 - Do not name the library or module a reconstruction came from. That belongs in the reply or the commit message, not in the header.
+- Do not point at other headers by filename. Describe what a declaration is and how it behaves; where it lives is the include graph's job, and the reference rots when files move.
 - Do not add `AMNOTE:` markers. That marker is for repositories under the AlliedModders LLC organization; this fork does not introduce new ones.
 
 ## CMake Conventions

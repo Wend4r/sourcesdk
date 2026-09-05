@@ -40,6 +40,14 @@ template < size_t SIZE >
 CBufferStringN< SIZE >
 ```
 
+- Put spaces inside square brackets around an array's element count. Keep empty brackets tight:
+
+```cpp
+int m_nChild[ 2 ];
+char m_pGameInfoPath[ MAX_PATH ];
+int nValues[] = { 1, 2, 3 };
+```
+
 - For explicit casts in edited code, prefer the same visual spacing when practical:
 
 ```cpp
@@ -124,6 +132,7 @@ int Length() const { return m_nLength; }
 - Mark unknown virtual methods with the form `Unk_IntendedMethodName( void *p )` when there is a plausible intended method name but the signature is not known. Keep the placeholder in the exact vtable slot, use the project pointer style, and prefer a single opaque `void *p` parameter until the real signature is verified.
 - If neither the intended method name nor the signature is known, use a slot-preserving unknown name that includes the vtable index or offset, then rename only after IDA/binary evidence supports the real meaning.
 - When a method signature is partially known, do not "improve" it with guessed argument types. Keep opaque pointer/integer placeholders and document the evidence needed to replace them.
+- Do not point at other headers by filename in comments. Describe the declaration and its behavior; let the include graph express where it lives.
 
 ## CMake Conventions
 

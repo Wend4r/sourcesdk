@@ -22,6 +22,9 @@ SpaceBeforeParensOptions:
 # Spaces inside < >
 SpacesInAngles:                         true
 
+# Spaces inside [ ]; empty brackets and argument-less lambdas are left alone
+SpacesInSquareBrackets:                 true
+
 # Allman-style braces: open on its own line
 BreakBeforeBraces:                      Allman
 
