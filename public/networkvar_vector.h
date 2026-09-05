@@ -39,12 +39,12 @@
 //
 #define CNetworkVectorForDerived( name ) \
 	virtual void NetworkStateChanged_##name() {} \
-	virtual void NetworkStateChanged_##name( void *pVar ) {} \
+	virtual void NetworkStateChanged_##name( const NetworkStateChanged_t &data ) {} \
 	CNetworkVectorInternal( Vector, name, NetworkStateChanged_##name, CNetworkVectorBase )
 		
 #define CNetworkVectorXYZForDerived( name ) \
 	virtual void NetworkStateChanged_##name() {} \
-	virtual void NetworkStateChanged_##name( void *pVar ) {} \
+	virtual void NetworkStateChanged_##name( const NetworkStateChanged_t &data ) {} \
 	CNetworkVectorInternal( Vector, name, NetworkStateChanged_##name, CNetworkVectorXYZBase )
 
 
