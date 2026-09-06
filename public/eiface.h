@@ -67,6 +67,10 @@ struct SpawnGroupDesc_t;
 class IClassnameForMapClassCallback;
 struct Entity2Networkable_t;
 class CCreateGameServerLoadInfo;
+enum SaveFileLevelsType_t : int;
+struct SaveGameParams_t;
+enum SaveGameResult_t : int;
+class KeyValues3;
 class INavListener;
 class CNavData;
 struct EconItemInfo_t;
@@ -543,7 +547,7 @@ public:
 abstract_class ISource2Server : public IAppSystem
 {
 public:
-	virtual bool			unk_001() const = 0;
+	virtual bool			IsValveDS() const = 0;
 
 	virtual void			SetGlobals( CGlobalVars *pGlobals ) = 0;
 
@@ -569,7 +573,7 @@ public:
 	// Used by commentary system to hide multiplayer commentary servers from the master.
 	virtual bool			ShouldHideFromMasterServer( bool bServerHasPassword ) = 0;
 
-	virtual void			GetMatchmakingTags( char *buf, size_t bufSize ) = 0;
+	virtual void			GetMatchmakingTags( CBufferString &buf ) = 0;
 
 	virtual void			ServerHibernationUpdate( bool bHibernating ) = 0;
 
@@ -615,28 +619,76 @@ public:
 	virtual void			PreFatalShutdown( void ) const = 0;
 	virtual void			UpdateWhenNotInGame( float flFrameTime ) = 0;
 
-	virtual void			GetEconItemNamesForModel( const char *pModelName, bool bExcludeItemSets, bool bExcludeIndividualItems, CUtlVector<CUtlString> &econItemNames ) = 0;
-	virtual void			GetEconItemNamesForCharacter( const char *pCharacterName, bool bExcludeItemSets, bool bExcludeIndividualItems, CUtlVector<CUtlString> &econItemNames ) = 0;
-	virtual void			GetEconItemsInfoForModel( const char *pModelName, const char *pEconItemName, bool bExcludeItemSets, bool bExcludeIndividualItems, bool bExcludeStockItemSet, CUtlVector<EconItemInfo_t> &econInfo ) = 0;
-	virtual void			GetEconItemsInfoForCharacter( const char *pCharacterName, const char *pEconItemName, bool bExcludeItemSets, bool bExcludeIndividualItems, bool bExcludeStockItemSet, CUtlVector<EconItemInfo_t> &econInfo ) = 0;
-
-	virtual void			GetDefaultScaleForModel( const char *pModelName, bool bCheckLoadoutScale ) = 0;
-	virtual void			GetDefaultScaleForCharacter( const char *pCharacterName, bool bCheckLoadoutScale ) = 0;
-	virtual void			GetDefaultControlPointAutoUpdates( const char *pParticleSystemName, CUtlVector<EconControlPointInfo_t> &autoUpdates ) = 0;
-
-	virtual void			unk_201() = 0;
-
-	virtual void			GetCharacterNameForModel( const char *pModelName, bool bCheckItemModifiers, CUtlString &characterName ) = 0;
-	virtual void			GetModelNameForCharacter( const char *pCharacterNamel, int nIndex, CBufferString &modelName ) = 0;
-	virtual void			GetCharacterList( CUtlVector<CUtlString> &characterNames ) = 0;
-	virtual void			GetDefaultChoreoDirForModel( const char *pModelName, CBufferString &defaultVCDDir ) = 0;
-
 	virtual void			*GetEconItemSystem( void ) = 0;
 
 	virtual void			ServerConVarChanged( const char *pVarName, const char *pValue ) = 0;
 
 	// Returns a list of values and names corresponding to HitGroup_t enum
 	virtual void			GetHitGroupEnumInfo( CUtlVector<int> &values, CUtlVector<CUtlString> &names ) = 0;
+
+	virtual void			WriteStartupTelemetry( KeyValues3 *pKV ) = 0;
+
+	virtual bool			SaveGame_CalcFileName( const char *pName, CUtlString &output ) const = 0;
+	virtual bool			GetLevelNameFromSaveFile( const char *pSaveGame, CUtlString &levelName ) = 0;
+	virtual void			GetLevelsFromSaveFile( const char *pSaveGame, CUtlVector<CCreateGameServerLoadInfo> &list, bool bWipeDirectoryAndExtract, SaveFileLevelsType_t saveFileLevelsType, void *pUnk ) = 0;
+	virtual void			ClearSaveDirectory( void ) = 0;
+	virtual void			PreSaveGameLoaded( const char *pSaveName ) = 0;
+	virtual void			AppendSaveGameResources( CCompressedResourceManifest *pCompressedManifestOut, ILoadingSpawnGroup *pLoadingSpawnGroup, void *pUnk1, void *pUnk2 ) const = 0;
+	virtual void			AppendTransitionResources( CCompressedResourceManifest *pCompressedManifestOut, ILoadingSpawnGroup *pLoadingSpawnGroup, void *pUnk1, void *pUnk2 ) const = 0;
+	virtual SaveGameResult_t SaveGame( const SaveGameParams_t &params ) = 0;
+	virtual bool			IsAsyncSaveInProgress( void ) = 0;
+	virtual bool			ProcessPendingSaveRequest( void ) = 0;
+	virtual bool			HasPendingSaveRequest( void ) = 0;
+
+	virtual const char		*GetEntityUniqueHammerID( CEntityIndex nEntityIndex ) = 0;
+
+	virtual void			*unk_062( const char *pName, const char *pUnk ) = 0;
+	virtual void			*unk_063( const char *pName, const char *pUnk ) = 0;
+	virtual void			*unk_064( const char *pName ) = 0;
+	virtual void			*unk_065( const char *pName ) = 0;
+	virtual void			*unk_066( const char *pName ) = 0;
+	virtual void			*unk_067( const char *pName ) = 0;
+
+	virtual void			UpdateGCInformation( bool bUnk, void *pUnk, const CSteamID *pServerSteamID ) = 0;
+
+	virtual void			*unk_069( const char *pName ) = 0;
+	virtual void			unk_070( void *pUnk1, void *pUnk2 ) = 0;
+
+	virtual void			ReportGCQueuedMatchStart( int32 iReservationStage, uint32 *puiConfirmedAccounts, int numConfirmedAccounts ) = 0;
+
+	virtual void			unk_072( void ) = 0;
+	virtual void			*GetDebugOverlayGameSystem( void ) = 0;
+
+	virtual const char		*GetNativeClassForScriptClass( const char *pScriptClassName ) = 0;
+	virtual void			*GetScriptClassForDesignerName( const char *pDesignerName ) = 0;
+	virtual bool			IsScriptClassDerivedFrom( const char *pDesignerName, const char *pBaseName ) = 0;
+
+	virtual bool			ShouldHoldGameServerReservation( float flTimeElapsedWithoutClients ) = 0;
+
+	virtual void			unk_078( void ) = 0;
+	virtual void			SendServerFrameTime( float flFrameTime ) = 0;
+	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nUnk ) = 0;
+	virtual void			OnClientHltvReplayStop( CPlayerSlot slot ) = 0;
+	virtual void			DumpEntity( CEntityIndex nEntityIndex, void *pUnk ) = 0;
+	virtual void			*CreateUserCommandsMessage( void ) = 0;
+	virtual bool			unk_084( CPlayerSlot slot, const void *pUnk1, int nUnk2 ) = 0;
+	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nUnk, const char *pCommand ) = 0;
+	virtual void			SetPlayerTeammatePreferredColor( uint32 uiAccountID, int nColor ) = 0;
+	virtual void			UpdateCompTeammateColors( void ) = 0;
+
+	virtual ENetworkDisconnectionReason GetGameRulesConnectRejectReason( const CSteamID &steamID ) = 0;
+	virtual const char		*ClientConnectionValidatePreNetChan( const CSteamID &steamID, const void *pUnk ) = 0;
+
+	virtual bool			LogForHTTPListeners( const char *szLogLine ) = 0;
+
+	virtual void			unk_091( void ) = 0;
+	virtual void			unk_092( void ) = 0;
+	virtual void			unk_093( void ) = 0;
+	virtual void			unk_094( void ) = 0;
+	virtual void			unk_095( void *pUnk1, int nUnk2, int nUnk3 ) = 0;
+	virtual bool			GetAddonForMap( const char *pMapName, CUtlString &output ) = 0;
+	virtual uint64			GetMatchID( void ) = 0;
+	virtual void			unk_098( const char *pLogLine ) = 0;
 };
 
 //-----------------------------------------------------------------------------
