@@ -21,3 +21,4 @@ CMakeUserPresets.json
 /build*
 /cmake-build*
 /compile_commands.json
+/.clangd

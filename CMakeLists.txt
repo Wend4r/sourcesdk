@@ -46,6 +46,7 @@ option(SOURCESDK_COMPILE_PROTOBUF "Compile Protocol Buffers" ON)
 option(SOURCESDK_CONFIGURE_EXPORT_MAP "Configure export symbols/map (Unix only)" ON)
 option(SOURCESDK_CREATE_INTEFACE_OVERRIDE "Enable it if you are using your own CreateInteface" OFF)
 option(SOURCESDK_ENABLE_TESTS "Build Source SDK tests" OFF)
+option(SOURCESDK_GENERATE_CLANGD "Generate .clangd with the SDK target flags for its headers" OFF)
 option(SOURCESDK_LINK_TIER0 "Link with tier0" ON)
 option(SOURCESDK_LINK_STEAMWORKS "Link with Steam API" ON)
 option(SOURCESDK_LINK_STRIP_CPP_EXPORTS "Strip C++/STL export funcitons from linked libraries (e.g. tier0 and steam_api)" OFF)
@@ -172,6 +173,8 @@ target_link_libraries(${PROJECT_NAME} PUBLIC ${PLATFORM_LINK_LIBRARIES} ${SOURCE
 if(SOURCESDK_COMPILE_PROTOBUF)
 	target_link_libraries(${PROJECT_NAME} PUBLIC ${PROTOBUF_LIBPPROTOBUF_NAME})
 endif()
+
+include(cmake/sourcesdk/clangd.cmake)
 
 if(SOURCESDK_ENABLE_TESTS)
 	enable_testing()

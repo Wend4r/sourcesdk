@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "tier0/platform.h"
+
 class CFieldPath
 {
 public:
