@@ -7,7 +7,9 @@
 #include "appframework/gameappsystem.h"
 #include "eiface.h"
 #include "tier0/threadtools.h"
+#include "tier1/utldelegate.h"
 #include "tier1/utlmap.h"
+#include "tier1/utlvector.h"
 
 class CBasePlayerController;
 
@@ -18,13 +20,11 @@ public:
 
 	typedef void ( *SvcUserMessageHandlerFn_t )( CSource2GameClients *pThis, uint32 nSize, const void *pBuffer, SvcUserMessageHandlerInfo_t *pInfo, CBasePlayerController *pPlayer );
 
+
 	struct SvcUserMessageHandlerInfo_t
 	{
 		SvcUserMessageHandlerFn_t m_pfnHandler;
-#ifndef _WIN32
-		ptrdiff_t m_nThisAdjust;
-#endif
-		uint8 m_Context[24];
+		CUtlVector< CUtlAbstractDelegate > m_Delegates;
 	};
 
 	CUtlMap< int, SvcUserMessageHandlerInfo_t > m_UserMessageHandlers;
