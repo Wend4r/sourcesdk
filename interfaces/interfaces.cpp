@@ -88,6 +88,7 @@ IPrediction2 *g_pClientSidePrediction;
 ISource2Server *g_pSource2Server;
 ISource2ServerConfig *g_pSource2ServerConfig;
 ISource2Host *g_pSource2Host;
+ISource2ModTools *g_pSource2ModTools;
 ISource2GameClients *g_pSource2GameClients;
 ISource2GameEntities *g_pSource2GameEntities;
 IEngineServiceMgr *g_pEngineServiceMgr;
@@ -106,6 +107,7 @@ IGameUIService *g_pGameUIService;
 ISoundService *g_pSoundService;
 IBenchmarkService *g_pBenchmarkService;
 IKeyValueCache *g_pKeyValueCache;
+IClientServerSharedHandleSystem *g_pClientServerSharedHandleSystem;
 IGameResourceService *g_pGameResourceServiceClient;
 IGameResourceService *g_pGameResourceServiceServer;
 IVEngineClient2 *g_pEngineClient;
@@ -122,6 +124,8 @@ IClientToolsInfo *g_pClientToolsInfo;
 IVRAD3 *g_pVRAD3;
 INavSystem *g_pNavSystem;
 INavGameTest *g_pNavGameTest;
+ILocalServerClientAccess *g_pLocalServerClientAccess;
+IClientLocalServerAccess *g_pClientLocalServerAccess;
 
 struct InterfaceGlobals_t
 {
@@ -138,7 +142,6 @@ struct ConnectionRegistration_t
 static const InterfaceGlobals_t g_pInterfaceGlobals[] =
 {
 	{ APPLICATION_INTERFACE_VERSION, &g_pApplication },
-	{ CVAR_INTERFACE_VERSION, &cvar },
 	{ CVAR_INTERFACE_VERSION, &g_pCVar },
 	{ STRINGTOKENSYSTEM_INTERFACE_VERSION, &g_pStringTokenSystem },
 	{ TESTSCRIPTMANAGER_INTERFACE_VERSION, &g_pTestScriptMgr },
@@ -215,6 +218,7 @@ static const InterfaceGlobals_t g_pInterfaceGlobals[] =
 	{ SOURCE2CLIENTPREDICTION_INTERFACE_VERSION, &g_pClientSidePrediction },
 	{ SOURCE2SERVER_INTERFACE_VERSION, &g_pSource2Server },
 	{ SOURCE2HOST_INTERFACE_VERSION, &g_pSource2Host },
+	{ SOURCE2MODTOOLS_INTERFACE_VERSION, &g_pSource2ModTools },
 	{ SOURCE2GAMECLIENTS_INTERFACE_VERSION, &g_pSource2GameClients },
 	{ SOURCE2GAMEENTITIES_INTERFACE_VERSION, &g_pSource2GameEntities },
 	{ ENGINESERVICEMGR_INTERFACE_VERSION, &g_pEngineServiceMgr },
@@ -233,6 +237,7 @@ static const InterfaceGlobals_t g_pInterfaceGlobals[] =
 	{ SOUNDSERVICE_INTERFACE_VERSION, &g_pSoundService },
 	{ BENCHMARKSERVICE_INTERFACE_VERSION, &g_pBenchmarkService },
 	{ KEYVALUECACHE_INTERFACE_VERSION, &g_pKeyValueCache },
+	{ CLIENTSERVERSHAREDHANDLESYSTEM_INTERFACE_VERSION, &g_pClientServerSharedHandleSystem },
 	{ GAMERESOURCESERVICECLIENT_INTERFACE_VERSION, &g_pGameResourceServiceClient },
 	{ GAMERESOURCESERVICESERVER_INTERFACE_VERSION, &g_pGameResourceServiceServer },
 	{ SOURCE2ENGINETOCLIENT_INTERFACE_VERSION, &g_pEngineClient },
@@ -240,7 +245,6 @@ static const InterfaceGlobals_t g_pInterfaceGlobals[] =
 	{ SOURCE2ENGINETOSERVERSTRINGTABLE_INTERFACE_VERSION, &g_pNetworkStringTableServer },
 	{ SOURCE2ENGINETOCLIENTSTRINGTABLE_INTERFACE_VERSION, &g_pNetworkStringTableClient },
 	{ VPHYSICS2_INTERFACE_VERSION, &g_pVPhysics2 },
-	{ VPHYSICS2HANDLE_INTERFACE_VERSION, &g_pVPhys2HandleInterface },
 	{ MODELDOCUTILS_INTERFACE_VERSION, &g_pModelDocUtils },
 	{ ANIMGRAPHEDITORUTILS_INTERFACE_VERSION, &g_pAnimGraphEditorUtils },
 	{ EXPORTSYSTEM_INTERFACE_VERSION, &g_pExportSystem },
@@ -249,6 +253,8 @@ static const InterfaceGlobals_t g_pInterfaceGlobals[] =
 	{ VRAD3_INTERFACE_VERSION, &g_pVRAD3 },
 	{ NAVSYSTEM_INTERFACE_VERSION, &g_pNavSystem },
 	{ NAVGAMETEST_INTERFACE_VERSION, &g_pNavGameTest },
+	{ LOCALSERVERCLIENTACCESS_INTERFACE_VERSION, &g_pLocalServerClientAccess },
+	{ CLIENTLOCALSERVERACCESS_INTERFACE_VERSION, &g_pClientLocalServerAccess },
 };
 
 static const int NUM_INTERFACES = sizeof(g_pInterfaceGlobals) / sizeof(InterfaceGlobals_t);
@@ -339,7 +345,7 @@ void ReconnectInterface(CreateInterfaceFn factory, char const *pInterfaceName, v
 	{
 		ConnectionRegistration_t &reg = s_pConnectionRegistration[s_nRegistrationCount++];
 		reg.m_ppGlobalStorage = ppGlobal;
-		reg.m_nConnectionPhase = s_nConnectionCount;
+		reg.m_nConnectionPhase = s_nConnectionCount - 1;
 	}
 }
 

@@ -155,6 +155,8 @@ class IServerToolsInfo;
 class IClientToolsInfo;
 class INavSystem;
 class INavGameTest;
+class ILocalServerClientAccess;
+class IClientLocalServerAccess;
 class IAsyncFileSystem;
 class IFileSystem;
 class IRenderHardwareConfig;
@@ -222,6 +224,7 @@ class IPrediction2;
 class ISource2Server;
 class ISource2ServerConfig;
 class ISource2Host;
+class ISource2ModTools;
 class ISource2GameClients;
 class ISource2GameEntities;
 class IEngineServiceMgr;
@@ -240,6 +243,7 @@ class IGameUIService;
 class ISoundService;
 class IBenchmarkService;
 class IKeyValueCache;
+class IClientServerSharedHandleSystem;
 class IGameResourceService;
 class IVEngineClient2;
 class IVEngineServer2;
@@ -495,6 +499,9 @@ DECLARE_TIER3_INTERFACE( ISource2ServerConfig, g_pSource2ServerConfig );
 #define SOURCE2HOST_INTERFACE_VERSION		"Source2Host001"
 DECLARE_TIER3_INTERFACE( ISource2Host, g_pSource2Host );
 
+#define SOURCE2MODTOOLS_INTERFACE_VERSION		"Source2ModTools001"
+DECLARE_TIER3_INTERFACE( ISource2ModTools, g_pSource2ModTools );
+
 #define SOURCE2GAMECLIENTS_INTERFACE_VERSION		"Source2GameClients001"
 DECLARE_TIER3_INTERFACE( ISource2GameClients, g_pSource2GameClients );
 
@@ -549,6 +556,9 @@ DECLARE_TIER3_INTERFACE( IBenchmarkService, g_pBenchmarkService );
 #define KEYVALUECACHE_INTERFACE_VERSION		"KeyValueCache001"
 DECLARE_TIER3_INTERFACE( IKeyValueCache, g_pKeyValueCache );
 
+#define CLIENTSERVERSHAREDHANDLESYSTEM_INTERFACE_VERSION		"ClientServerSharedHandleSystem001"
+DECLARE_TIER3_INTERFACE( IClientServerSharedHandleSystem, g_pClientServerSharedHandleSystem );
+
 #define GAMERESOURCESERVICECLIENT_INTERFACE_VERSION		"GameResourceServiceClientV001"
 DECLARE_TIER3_INTERFACE( IGameResourceService, g_pGameResourceServiceClient );
 
@@ -596,6 +606,12 @@ DECLARE_TIER3_INTERFACE( INavSystem, g_pNavSystem );
 
 #define NAVGAMETEST_INTERFACE_VERSION				"NavGameTest001"
 DECLARE_TIER3_INTERFACE( INavGameTest, g_pNavGameTest );
+
+#define LOCALSERVERCLIENTACCESS_INTERFACE_VERSION			"LocalServerClientAccess001"
+DECLARE_TIER3_INTERFACE( ILocalServerClientAccess, g_pLocalServerClientAccess );
+
+#define CLIENTLOCALSERVERACCESS_INTERFACE_VERSION			"ClientLocalServerAccess001"
+DECLARE_TIER3_INTERFACE( IClientLocalServerAccess, g_pClientLocalServerAccess );
 
 //-----------------------------------------------------------------------------
 // Fills out global DLL exported interface pointers
