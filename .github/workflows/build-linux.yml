@@ -98,6 +98,24 @@ jobs:
         fetch-depth: 0
         fetch-tags: true
 
+    # Bullseye is EOL: its Release files are expired, which makes "apt update" fail
+    - name: Ignore expired APT release files
+      run: |
+        {
+          echo 'Acquire::Check-Valid-Until "false";'
+          echo 'Acquire::AllowReleaseInfoChange::Suite "true";'
+          echo 'Acquire::AllowReleaseInfoChange::Version "true";'
+        } | sudo tee /etc/apt/apt.conf.d/99-ci-ignore-expired-release
+
+    # Bullseye security suites are dropped from deb.debian.org (packages 404 on install)
+    # and are not on archive.debian.org yet, so disable them
+    - name: Disable dropped Bullseye security suites
+      run: |
+        for list in /etc/apt/sources.list /etc/apt/sources.list.d/*.list; do
+          [ -f "$list" ] || continue
+          sudo sed -i -E 's@^[[:space:]]*deb(-src)?[[:space:]].*deb\.debian\.org/debian-security.*@# & (disabled: bullseye EOL)@' "$list"
+        done
+
     - name: Configure package repositories
       if: matrix.compiler.name == 'Clang'
       run: |
