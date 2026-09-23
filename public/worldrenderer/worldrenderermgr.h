@@ -78,7 +78,16 @@ struct CWorldRendererBakedLightingInfo
 	uint8 m_sceneSystemState[0x78];
 	CStrongHandleVoid *m_hLightmapResource;
 	CUtlHashtable< uint32, void * > m_lightmapTable;
-	uint64 m_reservedA0;
+};
+
+struct CWorldUnk010
+{
+	CUtlVector< void * > m_Unk00;
+	CUtlVector< void * > m_Unk18;
+	uint64 m_nUnk30;
+	uint16 m_nUnk38;
+	CWorldRendererBakedLightingInfo m_bakedLightingInfo;
+	CUtlVector< void * > m_UnkE0;
 };
 
 class CWorld : public IWorld
@@ -89,20 +98,18 @@ public:
 	const CUtlVector< HEntityLump > &GetEntityLumps() const { return m_entityLumps; }
 
 public:
-	HWorldNodeStrong *m_pWorldNodeArray;
-	CNodeSceneObjectData *m_pWorldNodeSceneObjectData;
-	EWorldNodeStatusFlags_t *m_pWorldNodeStatus;
+	CStrongHandleBase m_hUnk008;
+	CWorldUnk010 m_Unk010;
+	int32 m_nUnk108;
 	HWorldStrong m_hWorld;
 	World_t *m_pWorldData;
-	CUtlVector< int32 > m_nodeLoadList;
 	matrix3x4a_t m_mWorldTransform;
 	CWorldRendererBakedLightingInfo m_worldBakedLightingInfo;
+	bool m_bUnk1F0;
 	CUtlMap< WorldTraversalId_t, WorldTraversal_t * > m_traversalMap;
 	ISceneWorld *m_pSceneWorld;
 	ResourceManifestLoadPriority_t m_priority;
 
-	Vector m_vVisibleBoundsMin;
-	Vector m_vVisibleBoundsMax;
 	Vector m_vWorldBoundsMin;
 	Vector m_vWorldBoundsMax;
 
@@ -121,10 +128,8 @@ public:
 	CWorldSceneObjectRefHash m_sceneObjectRefs;
 	CUtlVector< HResourceManifest > m_pendingManifests;
 	CUtlVector< HEntityLump > m_entityLumps;
-	CUtlHashtable< uint32, HEntityLump > m_uniqueIdToEntityLump;
-	uint32 m_nTraversalCount;
-	CInterlockedInt m_nAsyncRequestCount;
-	CUtlVector< CUtlString > m_layerNames;
+	int32 m_nUnk2B0;
+	int32 m_nUnk2B4;
 };
 
 struct WorldWindParams_t

@@ -21,6 +21,7 @@
 #include "entityhandle.h"
 #include "concreteentitylist.h"
 #include "entitydatainstantiator.h"
+#include "entitypulse.h"
 #include "resourcefile/resourcetype.h"
 
 #include "ientitylistener.h"
@@ -134,7 +135,7 @@ struct EventQueuePrioritizedEvent_t
 
 	variant_t m_VariantValue; // variable-type parameter
 
-	void* m_pPulseHelper;
+	PulseArgBlock_t m_Args;
 	KeyValues3 m_KV3;
 	KeyValues3::Data_t m_KV3Data;
 

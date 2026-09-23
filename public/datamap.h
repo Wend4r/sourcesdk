@@ -331,12 +331,7 @@ struct typedescription_t
 	unsigned short		fieldSize;
 	int					flags;
 	// the name of the variable in the map/fgd data, or the name of the action
-	const char			*externalName;	
-	// pointer to the function set for save/restoring of custom data types
-	ISaveRestoreOps		*pSaveRestoreOps; 
-	// for associating function with string names
-	inputfunc_t			inputFunc; 
-
+	const char			*externalName;
 	// For embedding additional datatables inside this one
 	union
 	{
@@ -346,20 +341,7 @@ struct typedescription_t
 
 	// Stores the actual member variable size in bytes
 	int					fieldSizeInBytes;
-  
-	// Tolerance for field errors for float fields
-	float				fieldTolerance;
-
-	// For raw fields (including children of embedded stuff) this is the flattened offset
-	int					flatOffset[ TD_OFFSET_COUNT ];
-	unsigned short		flatGroup;
-
-	IPredictionCopyOps*	pPredictionCopyOps;
-	datamap_t*			m_pPredictionCopyDataMap;
 };
-
-// See predictioncopy.h for implementation and notes
-struct optimized_datamap_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: stores the list of objects in the hierarchy
@@ -371,13 +353,6 @@ struct datamap_t
 	int					dataNumFields;
 	char const			*dataClassName;
 	datamap_t			*baseMap;
-
-	optimized_datamap_t	*m_pOptimizedDataMap;
-	int					m_nPackedSize;
-	
-#if defined( _DEBUG )
-	bool				bValidityChecked;
-#endif // _DEBUG
 };
 
 
