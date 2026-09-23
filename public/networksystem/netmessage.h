@@ -216,6 +216,10 @@ public:
 	{
 		auto *pClone = Alloc< MyType_t >();
 
+		if ( !pClone )
+			return nullptr;
+
+		Construct( pClone );
 		*pClone = *this;
 
 		return static_cast< CNetMessage * >( pClone );
