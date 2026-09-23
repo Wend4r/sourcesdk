@@ -170,9 +170,7 @@ public:
 	ComponentUnserializerClassInfo_t m_componentUnserializerClassInfo;
 	
 	FlattenedSerializerDesc_t m_flattenedSerializer;
-
-	void* m_pUnk240;
-	void* m_pUnk248;
+	CUtlVector<ClassInputInfo_t> m_classInputInfos;
 
 	CEntityHandle m_requiredEHandle;
 
