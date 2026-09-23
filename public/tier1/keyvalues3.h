@@ -382,6 +382,7 @@ public:
 private:
 	CBufferStringN< 32 > m_Storage;
 };
+COMPILE_TIME_ASSERT( sizeof( CKV3MemberNameWithStorage ) == 56 );
 
 // Pulse thing
 using CKV3MemberNameSet = KeyValues3; // Allocates with KV_TYPE_ARRAY.

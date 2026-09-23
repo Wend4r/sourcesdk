@@ -22,11 +22,11 @@ class KeyValues3;
 enum PulseApiFeature_t : uint32
 {
 	AF_NONE								= 0,
-	AF_ENTITIES							= 1,
-	AF_PANORAMA							= 2,
-	AF_PARTICLES						= 8,
-	AF_FAKE_ENTITIES					= 0x10,
-	AF_SELECTORS_WITHOUT_REQUIREMENTS	= 0x20,
+	AF_ENTITIES							= 1 << 0,
+	AF_PANORAMA							= 1 << 1,
+	AF_PARTICLES						= 1 << 3,
+	AF_FAKE_ENTITIES					= 1 << 4,
+	AF_SELECTORS_WITHOUT_REQUIREMENTS	= 1 << 5,
 };
 
 struct PulseBindingMetadata_t
