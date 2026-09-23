@@ -144,6 +144,7 @@ public:
 	virtual void GetAvailableAddons( CUtlVector< CUtlString > &vecAddons, int nFlags ) = 0;
 	virtual bool GetAddonInfo( KeyValues *pAddonInfo, const char *pAddonName ) = 0;
 	virtual bool IsRunningOnCustomerMachine() = 0;
+	virtual bool IsPerforceWorkspace() = 0;
 	virtual bool IsLowViolence() = 0;
 	virtual bool SetLowViolence( bool bLowViolence ) = 0;
 	virtual bool SetInitializationPhase( int nInitializationPhase ) = 0;
