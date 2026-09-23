@@ -99,6 +99,8 @@ public:
 	virtual void unk501() = 0; // No child overrides found
 	virtual bool unk502() = 0; // No child overrides found; base returns false
 
+	virtual void Pulse_OnDynamicAttributeChanged() = 0;
+
 	virtual void ReloadPrivateScripts() = 0;
 	virtual datamap_t* GetDataDescMap() = 0;
 
