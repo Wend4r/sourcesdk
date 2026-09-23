@@ -53,6 +53,8 @@ public:
 
 	virtual INetworkSerializerPB *GetSerializerPB() const = 0;
 	virtual CNetMessage *Clone() const = 0;
+	virtual NetworkMessageId GetMessageId() const = 0;
+	virtual const char *GetName() const = 0;
 
 	// Helper function to cast up the abstract message to a concrete T message type.
 	// Doesn't do any validity checks itself!
@@ -219,8 +221,8 @@ public:
 		return static_cast< CNetMessage * >( pClone );
 	}
 
-public:
-	const char *GetName() const { return PBType_t::GetTypeName().c_str(); }
+	virtual NetworkMessageId GetMessageId() const { return kMsgId; }
+	virtual const char *GetName() const { return sm_binding.GetName(); }
 
 	struct NetMessageInfo_t *GetProtoInfo() const
 	{
@@ -247,4 +249,3 @@ template< NetworkMessageId ID, typename PROTO_TYPE, NetChannelBufType_t BUF_TYPE
 class CUserMessagePB : public CNetMessagePB< ID, PROTO_TYPE, SG_USERMSG, BUF_TYPE > {};
 
 #endif // NETMESSAGE_H
-

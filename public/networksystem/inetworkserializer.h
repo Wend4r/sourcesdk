@@ -40,7 +40,7 @@ enum NetworkSerializationMode_t
 	NET_SERIALIZATION_MODE_CLIENT = 0x1,
 };
 
-typedef int16 NetworkMessageId;
+typedef int NetworkMessageId;
 typedef int8 NetworkGroupId;
 typedef int NetworkCategoryId;
 typedef int16 NetworkContextDataId;
@@ -294,7 +294,6 @@ struct NetMessageInfo_t
 	uint8 m_nFlags;
 
 	int m_unk001;
-	int m_unk002;
 	bool m_bOkayToRedispatch;
 };
 
