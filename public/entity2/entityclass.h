@@ -171,14 +171,15 @@ public:
 	
 	FlattenedSerializerDesc_t m_flattenedSerializer;
 
-	CUtlVector<ClassInputInfo_t> m_classInputInfos;
-	CUtlVector<ClassOutputInfo_t> m_classOutputInfos;
-	
+	void* m_pUnk240;
+	void* m_pUnk248;
+
 	CEntityHandle m_requiredEHandle;
 
 	CEntityClass* m_pNext;
 	CEntityIdentity* m_pFirstEntity;
 	ServerClass* m_pServerClass;
+	int m_nClassIndex;
 };
 
 #endif // ENTITYCLASS_H

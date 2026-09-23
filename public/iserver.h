@@ -138,6 +138,7 @@ public:
 	virtual void	SynchronouslySpawnGroup( SpawnGroupHandle_t ) = 0;
 
 	virtual void	SetServerState( server_state_t eNewState ) = 0;
+	virtual server_state_t GetServerState( void ) = 0; // return m_State
 	virtual bool	SpawnServer( const char * ) = 0;
 
 	virtual int 	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
@@ -186,8 +187,6 @@ class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionl
 {
 public:
 	virtual ~CNetworkGameServerBase() = 0;
-	
-	server_state_t	GetServerState() { return m_State; }
 
 	virtual void	SetMaxClients( int nMaxClients ) = 0;
 	virtual CPlayerSlot	CreateClient( CPlayerSlot nSlot, CSteamID nSteamID, const char *pszName) = 0;
@@ -315,10 +314,10 @@ public:
 	int m_nServerClassBits;
 	uint64 m_nCreateTime;
 
-	bool m_bHibernating;
 	bool m_bPendingChangeLevel;
-	bool m_bHibernationRequested;
+	bool m_bHibernationRequested; // unverified: set by FinishChangeLevel, checked by ActivateServer
 	bool m_bPreserveSteamID;
+	bool m_bHibernating;
 
 	CUtlVector<byte> m_GameData;
 
