@@ -104,15 +104,15 @@ PLATFORM_INTERFACE void EnableCrashingOnCrashes();
 
 struct MiniDumpHandlerData_t
 {
-	int32_t nFlags;
-	int32_t nExitCode;
+	uint32_t uStructuredExceptionCode;
+	int32_t nUnk004; // 1 indicates a forced minidump; other values are not yet verified.
 	_EXCEPTION_POINTERS * pExceptionInfo;
 	// ... more
 };
 
-using FnMiniDumpHandler = void (*)(MiniDumpHandlerData_t*);
+using FnMiniDumpHandler = int (*)(MiniDumpHandlerData_t *);
 
-PLATFORM_INTERFACE void SetDefaultMiniDumpHandler( FnMiniDumpHandler hfn, bool bHandled );
+PLATFORM_INTERFACE FnMiniDumpHandler SetDefaultMiniDumpHandler( FnMiniDumpHandler hfn, bool bHandled );
 
 class DLL_CLASS_IMPORT CMiniDumpComment
 {
