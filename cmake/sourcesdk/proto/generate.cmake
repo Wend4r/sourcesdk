@@ -57,7 +57,22 @@ function(sourcesdk_compile_protos PROTO_FILENAMES PROTO_ARGS PROTO_DIR PROTO_OUT
 
 		set(PROTO_OUT_FILENAME "${PROTO_WLE}.pb.cc")
 		set(PROTO_OUT_SOURCE "${PROTO_OUT_DIR}/${PROTO_OUT_FILENAME}")
-		if(EXISTS "${PROTO_OUT_SOURCE}")
+
+		# The source proto is the first match in the include directories, as protoc resolves it
+		set(PROTO_SOURCE "")
+		foreach(PROTO_ARG IN LISTS PROTO_ARGS)
+			string(REGEX REPLACE "^-I" "" PROTO_INCLUDE_DIR "${PROTO_ARG}")
+			if(NOT PROTO_SOURCE AND EXISTS "${PROTO_INCLUDE_DIR}/${PROTO_FILENAME}")
+				set(PROTO_SOURCE "${PROTO_INCLUDE_DIR}/${PROTO_FILENAME}")
+			endif()
+		endforeach()
+
+		# Reconfigure, and so recompile below, when the proto changes
+		if(PROTO_SOURCE)
+			set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${PROTO_SOURCE}")
+		endif()
+
+		if(EXISTS "${PROTO_OUT_SOURCE}" AND NOT (PROTO_SOURCE AND "${PROTO_SOURCE}" IS_NEWER_THAN "${PROTO_OUT_SOURCE}"))
 			message(STATUS "Compiled ${PROTO_OUT_PREFIX}${PROTO_FILENAME} exists")
 		else()
 			if(NOT EXISTS PROTO_OUT_DIR)
