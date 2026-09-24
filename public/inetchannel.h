@@ -115,6 +115,7 @@ public:
 	virtual int		Transmit( const char *pDebugName, bf_write *data ) = 0;
 	virtual void	SetBitsToSend( void ) = 0;
 	virtual int		SendMessages( const char *pDebugName, bf_write *data ) = 0;
+	virtual void	ClearBitsToSend( void ) = 0;
 
 	virtual const netadr_t &GetRemoteAddress( void ) const = 0;
 
@@ -165,7 +166,8 @@ public:
 
 	virtual void	SetActiveNetMessage( CNetMessage *pData ) = 0;
 	virtual void	SetActiveNetMessagePB( void *pData ) = 0;
-	virtual void	IsActiveNetMessage( int16 id ) = 0;
+	virtual void	InsertReplayMessage( InstantReplayMessage_t &msg ) = 0;
+	virtual bool	HasQueuedNetMessages( int nMessageId ) const = 0;
 
 	virtual void	SetPendingDisconnect( ENetworkDisconnectionReason reason ) = 0;
 	virtual ENetworkDisconnectionReason GetPendingDisconnect( void ) const = 0;
@@ -174,8 +176,6 @@ public:
 	virtual bool	IsSuppressingTransmit( void ) const = 0;
 
 	virtual void	PostReceivedNetMessage( const CNetMessage *pData, int nBits, int nInSequenceNr ) = 0;
-	virtual void	InsertReplayMessage( InstantReplayMessage_t &msg ) = 0;
-	virtual bool	HasQueuedNetMessages( int nMessageId ) const = 0;
 
 	virtual void	SetUnkWhenEmpty( int ) = 0;
 

@@ -79,7 +79,7 @@ public:
 	virtual bool		unk032( int unk1, int unk2, int* unk3 = nullptr ) = 0;
 
 	virtual int			unk033( int unk1, int* unk2, int unk3 ) = 0;
-	virtual int			unk034( int unk1, void* unk2 ) = 0;
+	virtual int			unk034( int unk1, void* unk2, bool bUnk3 ) = 0;
 };
 
 #endif // INETCHANNELINFO_H

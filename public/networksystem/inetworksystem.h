@@ -55,7 +55,7 @@ public:
 	virtual void PollSocket( int socket, IConnectionlessPacketHandler *pHandler ) = 0;
 	virtual void ProcessSocketMessages( int socket ) = 0;
 
-	virtual INetChannel* CreateNetChannel( int socket, const ns_address* adr, HSteamNetConnection conn, const char* name, int32, int32 ) = 0;
+	virtual INetChannel* CreateNetChannel( int socket, const ns_address* adr, HSteamNetConnection conn, const char* name, int32, int32, bool bPlayback ) = 0;
 	virtual void         RemoveNetChannel( INetChannel * netchan, bool bDeleteNetChan ) = 0;
 	virtual void         RemoveNetChannelByAddress( int socket, const CPeerToPeerAddress & ) = 0;
 
