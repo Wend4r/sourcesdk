@@ -11,103 +11,80 @@
 
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlobjectattributetable.h"
 #include "tier1/utlsymbollarge.h"
+#include "tier1/utlvector.h"
 #include "tier1/smartptr.h"
+#include "../networkvar.h"
 #include "entityhandle.h"
 #include "utldelegateimpl.h"
 
+#include "entityattributetable.h"
 #include "entitycomponent.h"
 #include "entityindex.h"
+#include "entitytypes.h"
+#include "entitynetwork.h"
 
-#define INVALID_SPAWNGROUP_HANDLE ((SpawnGroupHandle_t)-1)
+#include "spawngrouptypes.h"
 
 class CEntityClass;
 class CEntityInstance;
 
-struct ChangeAccessorFieldPathIndex_t
-{
-	ChangeAccessorFieldPathIndex_t() { m_Value = -1; }
-	ChangeAccessorFieldPathIndex_t( int32 value ) { m_Value = value; }
-
-	ChangeAccessorFieldPathIndex_t& operator=( int32 value ) { m_Value = value; return *this; }
-
-	int32 m_Value;
-};
-
-class CEntityOwnerPtr : public CSmartPtr< CEntityInstance, CNullRefCountAccessor >
-{
-
-};
-
-class CNetworkVarChainer : public CEntityOwnerPtr
-{
-public:
-	struct ChainUpdatePropagationLL_t
-	{
-		ChainUpdatePropagationLL_t* pNext;
-		CUtlDelegate< void( const CNetworkVarChainer & ) > updateDelegate;
-	};
-
-	CUtlVector< ChainUpdatePropagationLL_t > m_PropagationChain;
-	ChangeAccessorFieldPathIndex_t m_PathIndex;
-
-	// When false, all NetworkStateChanged calls are no-ops.
-	bool m_bNetworkingEnabled;
-};
-COMPILE_TIME_ASSERT( sizeof( CNetworkVarChainer ) == 40 );
-
-typedef uint32 SpawnGroupHandle_t;
-typedef CUtlStringToken WorldGroupId_t;
-
-enum EntityNetworkingMode_t : uint32
-{
-	ENTITY_NETWORKING_MODE_DEFAULT = 0,
-	ENTITY_NETWORKING_MODE_NETWORKED,
-	ENTITY_NETWORKING_MODE_NOT_NETWORKED,
-};
-
-enum EntityFlags_t : uint32
-{
-	EF_IS_INVALID_EHANDLE = 0x1,
-	EF_SPAWN_IN_PROGRESS = 0x2,
-	EF_IN_STAGING_LIST = 0x4,
-	EF_IN_POST_DATA_UPDATE = 0x8,
-	EF_DELETE_IN_PROGRESS = 0x10,
-	EF_IN_STASIS = 0x20,
-	EF_IS_ISOLATED_ALLOCATION_NETWORKABLE = 0x40,
-	EF_IS_DORMANT = 0x80,
-	EF_IS_PRE_SPAWN = 0x100,
-	EF_MARKED_FOR_DELETE = 0x200,
-	EF_IS_CONSTRUCTION_IN_PROGRESS = 0x400,
-	EF_IS_ISOLATED_ALLOCATION = 0x800,
-	EF_HAS_BEEN_UNSERIALIZED = 0x1000,
-	EF_IS_SUSPENDED = 0x2000,
-	EF_IS_ANONYMOUS_ALLOCATION = 0x4000,
-	EF_SUSPEND_OUTSIDE_PVS = 0x8000,
-};
-
-#include "tier0/memdbgon.h"
-
 class CEntityIdentity
 {
+	friend class CConcreteEntityList;
+
 public:
-	using AttributeKey_t = ObjectAttributeKey_t;
-	using AttributeName_t = CUtlString;
-	using AttributeValue_t = ObjectAttributeValue_t;
-	using AttributeTable_t = CUtlObjectAttributeTable< AttributeName_t >;
+	DECLARE_CLASS_NOBASE( CEntityIdentity );
+
+	using AttributeTable_t = CEntityAttributeTable;
+	using AttributeKey_t = AttributeTable_t::Key_t;
+	using AttributeName_t = AttributeTable_t::AttributeName_t;
+	using AttributeValue_t = AttributeTable_t::Attribute_t;
+
+	// An empty name makes the zero key
+	static AttributeKey_t MakeAttributeKey( const char *pszName ) { return AttributeTable_t::MakeKey( ( pszName && *pszName ) ? pszName : nullptr ); }
 
 	CEntityHandle GetRefEHandle() const
 	{
 		CEntityHandle handle = m_EHandle;
+
 		handle.m_Parts.m_Serial -= ( m_flags & EF_IS_INVALID_EHANDLE );
 
 		return handle;
 	}
 	const char *GetName() const { return m_name.String(); }
 	const char *GetClassname() const { return m_designerName.String(); }
+
+	// The entity name, or the class name when it has none
+	const char *GetDebugName() const;
 	CEntityIndex GetEntityIndex() const { return m_EHandle.GetEntryIndex(); }
 	SpawnGroupHandle_t GetSpawnGroup() const { return m_hSpawnGroup; }
+
+	// An isolated allocation checks its networkable flag, any other entity its handle range
+	bool IsNetworked() const;
+
+	// Forwards data with the identity path index to the entity, if any
+	void NetworkStateChanged( const NetworkStateChanged_t &data );
+
+	// Resets the identity for slot reuse; the handle, links and attributes are kept
+	void Clear()
+	{
+		m_flags = EF_NONE;
+		m_fDataObjectTypes = 0;
+		m_pInstance = nullptr;
+		m_pClass = nullptr;
+		m_name = CUtlSymbolLarge();
+		m_designerName = CUtlSymbolLarge();
+		m_nameStringTableIndex = -1;
+		m_hSpawnGroup = SpawnGroupHandle_t();
+		m_worldGroupId = WorldGroupId_t();
+	}
+
+	void ReleaseAttributes()
+	{
+		Release( m_pAttributes );
+		m_pAttributes = nullptr;
+	}
 
 	bool HasAttributes() const { return m_pAttributes && !m_pAttributes->IsEmpty(); }
 	const AttributeTable_t *GetAttributes() const { return m_pAttributes; }
@@ -115,7 +92,7 @@ public:
 	AttributeTable_t *EnsureAttributes()
 	{
 		if ( !m_pAttributes )
-			m_pAttributes = new AttributeTable_t;
+			m_pAttributes = Create< AttributeTable_t >();
 
 		return m_pAttributes;
 	}
@@ -169,7 +146,7 @@ public:
 	CEntityInstance *m_pInstance;
 	CEntityClass *m_pClass;
 	CEntityHandle m_EHandle;
-	int32 m_nameStringTableIndex;
+	CNetworkVar( int32, m_nameStringTableIndex );
 	CUtlSymbolLarge m_name;
 	CUtlSymbolLarge m_designerName;
 
@@ -186,13 +163,11 @@ public:
 	WorldGroupId_t m_worldGroupId;
 	uint32 m_fDataObjectTypes;
 	ChangeAccessorFieldPathIndex_t m_PathIndex;
-	CUtlObjectAttributeTable< AttributeName_t > *m_pAttributes;
+	CEntityAttributeTable *m_pAttributes;
 	CEntityIdentity *m_pPrev;
 	CEntityIdentity *m_pNext;
 	CEntityIdentity *m_pPrevByClass;
 	CEntityIdentity *m_pNextByClass;
 };
-
-#include "tier0/memdbgoff.h"
 
 #endif // ENTITYIDENTITY_H

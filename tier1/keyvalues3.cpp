@@ -2046,7 +2046,7 @@ void CKeyValues3Table::PurgeFastSearch()
 {
 	if ( m_pFastSearch )
 	{
-		Delete( m_pFastSearch );
+		Release( m_pFastSearch );
 	}
 
 	m_pFastSearch = nullptr;

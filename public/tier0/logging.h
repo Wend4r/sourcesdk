@@ -40,6 +40,7 @@
 
 	To use the system, simply call one of the predefined macros:
 
+		Log_Detailed( ChannelID, [Color], Message, ... )
 		Log_Msg( ChannelID, [Color], Message, ... )
 		Log_Warning( ChannelID, [Color], Message, ... )
 		Log_Error( ChannelID, [Color], Message, ... )
@@ -533,6 +534,7 @@ class CLoggingSystem;
 // We rely on the variadic macro (__VA_ARGS__) operator to paste in the 
 // extra parameters and resolve to the appropriate overload.
 //-----------------------------------------------------------------------------
+#define Log_Detailed( Channel, /* [Color], Message, */ ... ) InternalMsg( Channel, LS_DETAILED, /* [Color], Message, */ ##__VA_ARGS__ )
 #define Log_Msg( Channel, /* [Color], Message, */ ... ) InternalMsg( Channel, LS_MESSAGE, /* [Color], Message, */ ##__VA_ARGS__ )
 #define Log_Warning( Channel, /* [Color], Message, */ ... ) InternalMsg( Channel, LS_WARNING, /* [Color], Message, */ ##__VA_ARGS__ )
 #define Log_Error( Channel, /* [Color], Message, */ ... ) InternalMsg( Channel, LS_ERROR, /* [Color], Message, */ ##__VA_ARGS__ )

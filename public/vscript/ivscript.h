@@ -96,6 +96,7 @@
 #define IVSCRIPT_H
 
 #include "platform.h"
+#include "tier0/logging.h"
 #include "datamap.h"
 #include "appframework/iappsystem.h"
 #include "tier1/functors.h"
@@ -188,6 +189,7 @@ DECLARE_DEDUCE_FIELDTYPE( FIELD_BOOLEAN, bool );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_CHARACTER, char );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_HSCRIPT, HSCRIPT );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_VARIANT, ScriptVariant_t );
+DECLARE_DEDUCE_FIELDTYPE( FIELD_EHANDLE, CEntityHandle );
 
 #define ScriptDeduceType( T ) ScriptDeducer<T>::FIELD_TYPE
 
@@ -210,6 +212,7 @@ DECLARE_NAMED_FIELDTYPE( bool,	"boolean" );
 DECLARE_NAMED_FIELDTYPE( char,	"character" );
 DECLARE_NAMED_FIELDTYPE( HSCRIPT,	"hscript" );
 DECLARE_NAMED_FIELDTYPE( ScriptVariant_t,	"variant" );
+DECLARE_NAMED_FIELDTYPE( CEntityHandle,	"ehandle" );
 
 inline const char* GetScriptTypeName(ScriptDataType_t type) {
 	switch(type) {
@@ -222,6 +225,7 @@ inline const char* GetScriptTypeName(ScriptDataType_t type) {
 	case FIELD_CHARACTER:   return "character";
 	case FIELD_HSCRIPT:     return "hscript";
 	case FIELD_VARIANT:     return "variant";
+	case FIELD_EHANDLE:     return "ehandle";
 	default:                return "unknown";
 	}
 }
@@ -269,19 +273,23 @@ struct ScriptFuncDescriptor_t
 
 //---------------------------------------------------------
 
+struct ScriptClassDesc_t;
+
 enum ScriptFuncBindingFlags_t
 {
-	SF_MEMBER_FUNC	= 0x01,
+	SF_MEMBER_NONE = 0,
+	SF_MEMBER_FUNC = 1 << 0,
 };
 
 typedef bool (*ScriptBindingFunc_t)( void *pFunction, void *pContext, ScriptVariant_t *pArguments, int nArguments, ScriptVariant_t *pReturn );
 typedef void* ScriptFunctionBindingStorageType_t;
 
-struct ScriptFunctionBinding_t {
+struct ScriptFunctionBinding_t
+{
 	ScriptFuncDescriptor_t m_desc;
-	ScriptClassDesc_t* m_pClassDesc;
+	ScriptClassDesc_t *m_pClassDesc;
 	ScriptBindingFunc_t m_pfnBinding;
-	ScriptFunctionBindingStorageType_t* m_pFunction;
+	ScriptFunctionBindingStorageType_t m_pFunction;
 	ScriptFuncBindingFlags_t m_flags;
 };
 
@@ -490,8 +498,6 @@ public:
 	// Simple script usage
 	//--------------------------------------------------------
 	virtual ScriptStatus_t Run( const char *pszScript, bool bWait = true ) = 0;
-	virtual ScriptStatus_t Run( HSCRIPT hScript, HSCRIPT hScope = NULL, bool bWait = true ) = 0;
-	virtual ScriptStatus_t Run( HSCRIPT hScript, bool bWait ) = 0;
 
 	//--------------------------------------------------------
 	// Compilation
@@ -499,6 +505,9 @@ public:
  	virtual HSCRIPT CompileScript( const char *pszScript, const char *pszId = NULL ) = 0;
 	inline HSCRIPT CompileScript( const unsigned char *pszScript, const char *pszId = NULL ) { return CompileScript( (char *)pszScript, pszId ); }
 	virtual void ReleaseScript( HSCRIPT ) = 0;
+
+	virtual ScriptStatus_t Run( HSCRIPT hScript, HSCRIPT hScope = NULL, bool bWait = true ) = 0;
+	virtual ScriptStatus_t Run( HSCRIPT hScript, bool bWait ) = 0;
 
 	virtual HSCRIPT GetCurrentScope() = 0;
 
@@ -605,7 +614,8 @@ public:
 
 	virtual HSCRIPT CopyHandle( HSCRIPT hScope ) = 0;
 
-	virtual HSCRIPT LoadAndCompileScriptFile( const char *pszFile, const char *pszPathId ) = 0;
+	// Returns 0 on success
+	virtual int LoadAndCompileScriptFile( const char *pszFile, const char *pszPathId, HSCRIPT *pScript ) = 0;
 
 	virtual void GetSourceId( HSCRIPT hScope, char *pBuf, unsigned int nBufSize ) = 0;
 
@@ -722,6 +732,8 @@ public:
 };
 
 extern IScriptVM *g_pScriptVM;
+
+DECLARE_LOGGING_CHANNEL( LOG_VSCRIPT );
 
 //-----------------------------------------------------------------------------
 // Script scope helper class

@@ -4,7 +4,18 @@
 #pragma once
 
 #include "spawngrouptypes.h"
-#include <tier0/utlstring.h>
+#include "iloadingspawngroup.h"
+#include "ispawngroup.h"
+#include "mapspawngroup.h"
+#include "igamesystem.h"
+#include "entity2/entitysystem.h"
+#include "resourcefile/igameresourcemanifestloadcompletion.h"
+#include "tier0/threadtools.h"
+#include "tier0/utlstring.h"
+#include "tier1/convar.h"
+#include "tier1/utlmap.h"
+#include "tier1/utlvector.h"
+#include "worldrenderer/icomputeworldorigin.h"
 
 abstract_class IGameSpawnGroupMgr
 {

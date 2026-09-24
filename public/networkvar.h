@@ -23,7 +23,7 @@
 // entity that owns it.
 //
 //		NetworkStateChanged_t data( MyOffsetOf( ThisClass, m_bEnabled ) ); // m_LocalOffsets = { flattened offset }, m_nArrayIndex = -1, m_nPathIndex = -1
-//		pThis->NetworkStateChanged( Move( data ) ); // CEntityInstance
+//		pThis->NetworkStateChanged( data ); // CEntityInstance
 //		pThis->m_bEnabled = val; // the store happens AFTER the notify
 //
 // CEntityInstance::NetworkStateChanged then forwards to CNetworkTransmitComponent::StateChanged on the transmit component embedded in the entity.

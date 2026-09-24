@@ -2273,8 +2273,15 @@ inline T **Alloc( size_t nSize = 1 )
 	return pMemories;
 }
 
+// Up to 5 constructor arguments; release with Release
+template < class T, typename ...ARGS >
+inline T *Create( ARGS... args )
+{
+	return Construct( Alloc< T >(), args... );
+}
+
 template <class T>
-inline void Delete( T* pMemory )
+inline void Release( T* pMemory )
 {
 	pMemory->~T();
 #ifdef _DEBUG
@@ -2284,7 +2291,7 @@ inline void Delete( T* pMemory )
 }
 
 template <class T, size_t N>
-inline void Delete( T (*pMemory)[N] )
+inline void Release( T (*pMemory)[N] )
 {
 	for ( size_t n = 0; n < N; n++ )
 	{

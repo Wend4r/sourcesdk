@@ -56,6 +56,7 @@ option(SOURCESDK_LINK_ENABLE_RPATH "Embed $ORIGIN into ELF RPATH/RUNPATH so bina
 option(SOURCESDK_LINK_USE_MOLD "Link with the mold linker (if exists)" OFF)
 option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time library by MSVC" ON)
+option(SOURCESDK_STATIC_LINKED "The SDK objects are linked statically into the game instead of into a shared library" OFF)
 option(SOURCESDK_USE_ABI0 "Enable use of the older C++ ABI, which was the default in GCC versions before GCC 5" ON)
 
 set(SOURCESDK_COMMON_DIR "${SOURCESDK_DIR}/common")

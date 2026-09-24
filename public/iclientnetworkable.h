@@ -29,18 +29,6 @@ enum ShouldTransmitState_t
 							// the server wants to transmit its state.
 };
 
-// NOTE: All of these are commented out; NotifyShouldTransmit actually
-// has all these in them. Left it as an enum in case we want to go back though
-enum DataUpdateType_t
-{
-	DATA_UPDATE_CREATED = 0,	// indicates it was created +and+ entered the pvs
-//	DATA_UPDATE_ENTERED_PVS,
-	DATA_UPDATE_DATATABLE_CHANGED,
-//	DATA_UPDATE_LEFT_PVS,
-//	DATA_UPDATE_DESTROYED,		// FIXME: Could enable this, but it's a little worrying
-								// since it changes a bunch of existing code
-};
-
 abstract_class IClientNetworkable
 {
 public:

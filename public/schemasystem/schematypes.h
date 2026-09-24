@@ -389,6 +389,16 @@ struct SchemaClassInfoData_t
 	
 	SchemaClassManipulatorFn_t m_pfnManipulator;
 
+	// Fatal for a class that does not allow it
+	void DestructInPlace( void *pObject ) const
+	{
+		if ( ( m_nFlags1 & ( SCHEMA_CF1_IS_ABSTRACT | SCHEMA_CF1_CONSTRUCT_ALLOWED | SCHEMA_CF1_CONSTRUCT_DISALLOWED ) ) != SCHEMA_CF1_CONSTRUCT_ALLOWED )
+			Plat_FatalError( "%s: %s\n", m_pszName, "Class does not allow destruction from its schema binding" );
+
+		if ( !m_pfnManipulator || !m_pfnManipulator( SCHEMA_CLASS_MANIPULATOR_ACTION_DESCTRUCT_IN_PLACE, pObject ) )
+			Plat_FatalError( "%s: %s\n", m_pszName, "Cannot destruct abstract class" );
+	}
+
 	CSchemaClassInfo* GetParent()
 	{
 		if (!m_pBaseClasses)

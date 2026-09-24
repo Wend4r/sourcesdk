@@ -133,6 +133,15 @@ private:
 	uint32 m_nHashCode;
 };
 
+class CUtlStringTokenNoRegistration : public CUtlStringToken
+{
+public:
+	using CUtlStringToken::CUtlStringToken;
+
+	CUtlStringTokenNoRegistration() = default;
+	CUtlStringTokenNoRegistration( const CUtlStringToken &token ) : CUtlStringToken( token ) {}
+};
+
 FORCEINLINE bool TrackStringToken( uint32 nHash, const char *pString )
 {
 	RegisterStringToken( nHash, pString );

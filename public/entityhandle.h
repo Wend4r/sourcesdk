@@ -18,6 +18,7 @@ class CEntityHandle
 {
 public:
 	friend class CEntityIdentity;
+	friend class CConcreteEntityList;
 
 	CEntityHandle();
 	CEntityHandle(const CEntityHandle& other);
@@ -26,6 +27,8 @@ public:
 
 	void Init(int iEntry, int iSerialNumber);
 	void Term();
+	void SetEntryIndex(int iEntry);
+	void IncrementSerialNumber();
 
 	bool IsValid() const;
 
@@ -97,6 +100,16 @@ inline void CEntityHandle::Init(int iEntry, int iSerialNumber)
 inline void CEntityHandle::Term()
 {
 	m_Index = INVALID_EHANDLE_INDEX;
+}
+
+inline void CEntityHandle::SetEntryIndex(int iEntry)
+{
+	m_Parts.m_EntityIndex = iEntry;
+}
+
+inline void CEntityHandle::IncrementSerialNumber()
+{
+	++m_Parts.m_Serial;
 }
 
 inline bool CEntityHandle::IsValid() const

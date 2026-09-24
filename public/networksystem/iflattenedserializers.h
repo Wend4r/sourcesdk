@@ -15,9 +15,11 @@
 
 DECLARE_POINTER_HANDLE( FlattenedSerializerHandle_t );
 
+class bf_read;
 class CCheckTransmitInfo;
 class CEntityClass;
 class CEntityInstance;
+class CEntityInstancePolymorphicMetadataHelper;
 class CNetworkSerializerClassInfo;
 class CMemoryStack;
 class CFlattenedSerializer;
@@ -357,45 +359,54 @@ public:
 	virtual CUtlString GetDebugFieldPathName( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket, bool bUseFieldPath, bool bServer ) = 0; // Formats sentinel and field-path names for debug output.
 	virtual const char *FieldPathToName( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket, CUtlString *pOut ) = 0; // Converts a CFieldPath to a display name and falls back to "unknown"/"???"
 	virtual const char *FieldPathIndexToName( const FlattenedSerializerDesc_t &pSerializer, int nFieldPath, CEntityInstance *pEntity, int nBucket, CUtlString *pOut ) = 0; // Converts a packed field-path index to a name.
-	virtual bool GatherSendProxyResults( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nBucket, int nBaseline, FlattenedSerializerChangeArray_t *pOutChangeInfo ) = 0; // "GatherSendProxyResults"
+	virtual bool ReadFields( const FlattenedSerializerDesc_t &pSerializer, bf_read *pBuf, SerializedEntityData_t *pOut, int nEntityIndex, bool bUnk1, bool bUnk2 ) = 0; // "ReadFields"
 	virtual bool Encode( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, FlattenedSerializerEncodeResult_t *pOut ) = 0; // Used by PackEntity for the non-delta encode path.
-	virtual bool EncodeDelta( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, FlattenedSerializerEncodeResult_t *pOut, int nFlags ) = 0; // Runs the encode path with mode bit 8.
-	virtual bool DecodeEntity( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, SerializedEntityData_t *pFrom ) = 0; // Runs the decode path with mode bit 16.
-	virtual bool BuildChangeList( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nBucket, const NetworkEntityData_t *pFrom, const NetworkEntityData_t *pTo, FlattenedSerializerChangeArray_t *pOut, bool *pOutOverflow, int nFlags ) = 0; // Walks field changes with mode bit 32.
-	virtual bool DecodeEntityAgainstBaseline( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, SerializedEntityData_t *pFrom, int nFlags ) = 0; // Runs baseline decode with mode bit 2.
-	virtual bool DecodeEntityUpdate( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, SerializedEntityData_t *pFrom ) = 0; // Runs update decode with mode bit 64.
-	virtual void BuildPolymorphicChangeList( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nBucket, FlattenedSerializerChangeArray_t *pOut ) = 0; // "Polymorphic"
+	virtual bool GatherSendProxyResults( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nUnk, FlattenedSerializerChangeArray_t *pOutChangeInfo ) = 0; // "GatherSendProxyResults"
+	virtual bool DecodeEntity( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, SerializedEntityData_t *pFrom, int nFlags ) = 0; // "CFlattenedSerializer::Decode"
+	virtual void CalcDelta( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, const SerializedEntityData_t *pTo, int *pUnk, int nEntityIndex, int nUnk, int *pOutChanges ) = 0; // "CDeltaCalculator::FieldCalcDelta"
+
+	// Argument types below are not verified
+	virtual void BuildDeltaProperties( const FlattenedSerializerDesc_t &pSerializer, void *p1, int nEntityIndex, int nUnk, const SerializedEntityData_t *pData, const CUtlVector< int > *pFieldPaths, void *pOutFieldData, void *p2, bool *pbOut1, bool *pbOut2 ) = 0; // "CFlattenedSerializer::BuildDeltaProperties", clears both flags first
+	virtual void WriteFieldList( const FlattenedSerializerDesc_t &pSerializer, void *p1, void *p2, int nEntityIndex, int nUnk1, void *pFieldBitRanges, int nUnk2 ) = 0; // "CFlattenedSerializer::WriteFieldList"
+	virtual void MergeDeltas( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pOld, void *p2, void *p3, int nEntityIndex, bool bUnk, int *pOut ) = 0; // "CFlattenedSerializer::MergeDeltas"
 	virtual bool BuildMergedSerializedEntity( const FlattenedSerializerDesc_t &pSerializer, byte *pDeltaData, SerializedEntityData_t *pBase, CUtlVector< int > *pFieldPaths, bool bCull, int nEntityIndex ) = 0; // "BuildMergedSerializedEntity"
 	virtual int CullUnchangedFieldPaths( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, CUtlVector< int > *pFieldPaths, SerializedEntityData_t *pSerialized, CUtlVector< int > *pOutFieldPaths ) = 0; // Filters unchanged paths and logs "culled".
-	virtual uint32 AddStringTableFieldPath( const FlattenedSerializerDesc_t &pSerializer, const char *pszName, uint32 *pInOutIndex, uint32 nBucket, uint32 nFlags ) = 0; // Adds a serializer path entry to the string-table path map.
-	virtual void WriteFieldList( const FlattenedSerializerDesc_t &pSerializer, uint32 nBucket, FlattenedSerializerFieldPathMap_t *pFieldPathMap ) = 0; // Writes serializer fields into a field-path map.
+	virtual uint32 RemoveArrayElementsOutsideOfArrayMetadataBounds( const FlattenedSerializerDesc_t &pSerializer, SerializedEntityData_t *pData, uint32 *pInOutCount, int nEntityIndex, int nFlags ) = 0; // Returns *pInOutCount unchanged without the serializer or the data
+	virtual void SpewSerializer( const FlattenedSerializerDesc_t &pSerializer, int nBucket, IFlattenedSerializerSpewFunc *pSpew ) = 0;
 	virtual bool MakeSerializersMatchByMeta( const char *pszSerializerName, FlattenedSerializerFieldPathMap_t *pFieldPathMap, const FlattenedSerializerDesc_t &pSerializer, int nBucket, int nFlags, bool bCreateMissing ) = 0; // Rebuilds serializer field paths from metadata when layouts differ.
 	virtual bool CreateReplayCompatSerializerFromMeta( const char *pszSerializerName, FlattenedSerializerDesc_t *pOut, int nBucket, bool bCreateFake, FlattenedSerializerUserData_t *pContext ) = 0; // Creates replay-compatible metadata serializers and optional "%s!fake" entries.
 	virtual void BuildFlattenedFieldPathMap( const FlattenedSerializerDesc_t &pSerializer, const NetworkEntityData_t *pEntityData, int nBucket, FlattenedSerializerFieldPathMap_t *pOut, FlattenedSerializerFieldPathMap_t *pScratch ) = 0; // Builds offset-to-field-path mappings for flattened network data.
 	virtual void ResolvePathToOffset( const FlattenedSerializerDesc_t &pSerializer, const char *pszSerializerName, const CFieldPath &pPath, int nBucket, FlattenedSerializerFieldPathMap_t *pMap, CUtlVector< int > *pOutOffsets, CUtlVector< int > *pOutFieldPaths ) = 0; // Resolves field paths to offsets and logs "Couldn't resolve offset"
-	virtual const FlattenedSerializerFieldData_t *GetFieldSerializerData( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket ) = 0; // Returns the per-field data pointer stored at serializer + 0xF0
-	virtual bool HasFieldInternal( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans flattened fields directly by name
 	virtual CFieldPath OffsetToFieldPath( const FlattenedSerializerDesc_t &pSerializer, int nOffset, int nBucket, bool *pOutExact ) = 0; // Converts a networked offset to a field path.
-	virtual bool BuildChangeArray( const FlattenedSerializerDesc_t &pSerializer, const NetworkEntityData_t *pEntityData, int nBucket, CUtlVector< int > *pOutFieldPaths, FlattenedSerializerChangeArray_t *pOut ) = 0; // Converts changed field paths into serialized change records.
+
+	// The metadata helper and the int are not read
+	virtual bool GetFieldPathChildIndices( const FlattenedSerializerDesc_t &pSerializer, CEntityInstancePolymorphicMetadataHelper *, int, const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) = 0;
+
 	virtual bool CollectChanges( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, CEntityInstance *pEntity, int nBucket, int nBaseline, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut, int nFlags ) = 0; // Collects StateChangedBranch output for the requested root path.
-	virtual void CacheFieldPath( const FlattenedSerializerDesc_t &pSerializer, CUtlVector< int > *pFieldPaths, CEntityInstance *pEntity, int nBucket, int nFlags ) = 0; // Caches field-path lookups used by change collection.
+	virtual const FlattenedSerializerFieldData_t *GetFieldSerializerData( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket ) = 0;
 	virtual bool HasField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans field and subfield names.
+	virtual bool HasFieldInternal( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans flattened fields directly by name
+	virtual void ValidateSerializedEntity( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pData, int nEntityIndex, int nFlags ) = 0; // "CFlattenedSerializer::ValidateSerializedEntity"
+
+	// nEntityIndex is -1 when not tied to an entity
+	virtual void DumpSerializedEntityToConsole( const FlattenedSerializerDesc_t &pSerializer, const char *pszLabel, const SerializedEntityData_t *pData, int nEntityIndex, int nFlags ) = 0;
+	virtual void DumpSerializedEntityToLines( const FlattenedSerializerDesc_t &pSerializer, const char *pszLabel, const SerializedEntityData_t *pData, int nEntityIndex, int nFlags, CUtlVector< CUtlString > *pOutLines ) = 0; // "CFlattenedSerializer::DumpSerializedEntityToConsole"
 	virtual void AddSerializerListener( FlattenedSerializerListener_t *pListener ) = 0; // Appends a listener to m_SpewListeners .
 	virtual void RemoveSerializerListener( FlattenedSerializerListener_t *pListener ) = 0; // Removes a listener from m_SpewListeners .
 	virtual bool BuildFlattenedSerializersMessage( CUtlVector< FlattenedSerializerDesc_t > *pSerializers, SerializedEntityData_t *pOut ) = 0; // CSVCMsg_FlattenedSerializer_t
-	virtual void SpewCounts( const FlattenedSerializerDesc_t &pSerializer, bool bVerbose ) = 0; // Reports field allocation counts and "fields allocated in mempool"
+	virtual void SpewCounts( const FlattenedSerializerDesc_t &pSerializer, bool bVerbose ) = 0;
 	virtual void RegisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Appends a unique save/restore ops record
 	virtual void UnregisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Removes a save/restore ops record
 	virtual INetworkFieldScratchData *CreateNetworkFieldScratchData( INetworkFieldScratchAllocator *pAllocator, FlattenedSerializerUserData_t *pContext ) = 0; // Allocates a 232-byte scratch-data object and seeds it with allocator/context pointers.
 	virtual void BuildFieldNamePool( bool bForce ) = 0; // Creates m_pFieldNamePool
 	virtual void DestroyFieldNamePool() = 0; // Frees m_pFieldNamePool
 	virtual void SetFieldExcluded( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, bool bExcluded ) = 0; // "Setting FS %s field %s"
-	virtual void SpewSerializer( const FlattenedSerializerDesc_t &pSerializer, int nBucket, IFlattenedSerializerSpewFunc *pSpew ) = 0; // Dispatches serializer spew wrappers.
-	virtual bool FindSerializerPartial( FlattenedSerializerLookupResult_t *pOut, const char *pszPartialName, INetworkFieldScratchData *pScratch, IFlattenedSerializerSpewFunc *pSpew, char *pError ) = 0; // Performs VConsole partial lookup and logging.
-	virtual bool FindSerializer( FlattenedSerializerLookupResult_t *pOut, const char *pszName, INetworkFieldScratchData *pScratch, IFlattenedSerializerSpewFunc *pSpew, char *pError ) = 0; // Performs exact serializer lookup.
-	virtual void ResetFieldPathPool() = 0; // Clears the field-path memory pool.
-	virtual void DumpSerializerToConsole( const FlattenedSerializerDesc_t &pSerializer, int nBucket, CUtlVector< CUtlString > *pOutLines, CEntityInstance *pEntity ) = 0; // Converts field paths to console strings.
+
+	virtual void BuildPolymorphicMetadata( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nFlags, void *pOutMetadata ) = 0; // "Polymorphic"
+
+	virtual void Unk_DumpSerializerToLines( const FlattenedSerializerDesc_t &pSerializer, void *p1, void *, CUtlVector< CUtlString > *pOutLines ) = 0; // The third argument is not read
 	virtual bool IsSerializerPolymorphic( const FlattenedSerializerDesc_t &pSerializer ) = 0; // Tests CFlattenedSerializer::m_nFlags bit (1 << 7)
+	virtual void ResetFieldPathPool() = 0;
 	virtual bool HasPolymorphicField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans the polymorphic field table.
 	virtual bool GetFieldPathCaches( const FlattenedSerializerDesc_t &pSerializer, FlattenedSerializerFieldPathCache_t **ppSecondaryFieldPathCache, FlattenedSerializerFieldPathCache_t **ppFieldPathCache ) = 0; // Exposes the serializer field-path caches for callers that need to reuse traversal state.
 };

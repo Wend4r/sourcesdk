@@ -13,8 +13,6 @@
 #pragma once
 #endif
 
-DECLARE_LOGGING_CHANNEL( LOG_VScript );
-
 extern IScriptVM * g_pScriptVM;
 
 HSCRIPT VScriptCompileScript( const char *pszScriptName, bool bWarnMissing = false );

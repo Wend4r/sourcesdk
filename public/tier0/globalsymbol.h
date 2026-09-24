@@ -11,9 +11,15 @@
 using CGlobalSymbol = CUtlSymbolLarge;
 using CGlobalSymbolCaseSensitive = CGlobalSymbol;
 
-PLATFORM_INTERFACE CGlobalSymbol FindGlobalSymbolByHash( uint32 hash );
-PLATFORM_INTERFACE CGlobalSymbol FindGlobalSymbol( const char *str );
-PLATFORM_INTERFACE CGlobalSymbol MakeGlobalSymbol( const char *str );
-PLATFORM_INTERFACE CGlobalSymbolCaseSensitive MakeGlobalSymbolCaseSensitive( const char *str );
+// tier0 exports these with a leading underscore
+PLATFORM_INTERFACE const char *_FindGlobalSymbolByHash( uint32 hash );
+PLATFORM_INTERFACE const char *_FindGlobalSymbol( const char *str );
+PLATFORM_INTERFACE const char *_MakeGlobalSymbol( const char *str );
+PLATFORM_INTERFACE const char *_MakeGlobalSymbolCaseSensitive( const char *str );
+
+inline CGlobalSymbol FindGlobalSymbolByHash( uint32 hash ) { return _FindGlobalSymbolByHash( hash ); }
+inline CGlobalSymbol FindGlobalSymbol( const char *str ) { return _FindGlobalSymbol( str ); }
+inline CGlobalSymbol MakeGlobalSymbol( const char *str ) { return _MakeGlobalSymbol( str ); }
+inline CGlobalSymbolCaseSensitive MakeGlobalSymbolCaseSensitive( const char *str ) { return _MakeGlobalSymbolCaseSensitive( str ); }
 
 #endif // GLOBALSYMBOL_H

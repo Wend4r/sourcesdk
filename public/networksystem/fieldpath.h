@@ -25,7 +25,6 @@ public:
 
 	int16 m_nCount;
 	bool m_bReadOnly;
-	byte m_pad;
 };
 
 COMPILE_TIME_ASSERT( sizeof( CFieldPath ) == 32 );

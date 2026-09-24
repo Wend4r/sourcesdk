@@ -174,7 +174,7 @@ inline void *ScriptConvertFuncPtrToVoid( FUNCPTR_TYPE pFunc )
 		GnuMFP *p = (GnuMFP*)&pFunc;
 		if ( p->vtable_index_2 & 1 )
 		{
-			char **delta = (char**)p->delta;
+			char **delta = (char**)(intp)p->delta;
 			char *pCur = *delta + (p->vtable_index_2+1)/2;
 			return (void*)( pCur + 4 );
 		}
@@ -182,6 +182,29 @@ inline void *ScriptConvertFuncPtrToVoid( FUNCPTR_TYPE pFunc )
 		{
 			return p->funcadr;
 		}
+	}
+	else if ( ( sizeof( FUNCPTR_TYPE ) == sizeof( void * ) * 2 ) )
+	{
+		// Itanium C++ ABI: an odd ptr marks a virtual function
+		struct ItaniumMFP
+		{
+			uintp ptr;
+			intp adj;
+		};
+
+		union FuncPtrConvertItanium
+		{
+			ItaniumMFP mfp;
+			FUNCPTR_TYPE pFunc;
+		};
+
+		FuncPtrConvertItanium convert;
+		convert.pFunc = pFunc;
+		if ( !( convert.mfp.ptr & 1 ) && convert.mfp.adj == 0 )
+		{
+			return reinterpret_cast< void * >( convert.mfp.ptr );
+		}
+		AssertMsg( 0, "Function pointer must be non-virtual and from the primary base" );
 	}
 #else
 #error "Need to implement code to crack non-offset member function pointer case"
@@ -280,6 +303,25 @@ inline FUNCPTR_TYPE ScriptConvertFuncPtrFromVoid( void *p )
 		return convert.pFunc;
 	}
 #elif defined( POSIX )
+	if ( ( sizeof( FUNCPTR_TYPE ) == sizeof( void * ) * 2 ) )
+	{
+		struct ItaniumMFP
+		{
+			uintp ptr;
+			intp adj;
+		};
+
+		union FuncPtrConvertItanium
+		{
+			ItaniumMFP mfp;
+			FUNCPTR_TYPE pFunc;
+		};
+
+		FuncPtrConvertItanium convert;
+		convert.mfp.ptr = reinterpret_cast< uintp >( p );
+		convert.mfp.adj = 0;
+		return convert.pFunc;
+	}
 	AssertMsg( 0, "Note: This path has not been implemented yet." );
 #else
 #error "Need to implement code to crack non-offset member function pointer case"

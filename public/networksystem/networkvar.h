@@ -52,10 +52,14 @@ public:
 	CEntityOwnerPtr m_pOwnerEntity;
 	CFieldPath m_PathToVector;
 	CUtlVector< ChangeAccessorFieldPathIndex_t > m_ElementPathIndices;
-	byte m_bNetworkingEnabled;
+	bool m_bNetworkingEnabled;
+
+private:
 	byte m_pad;
-	byte m_bResolved;
-	byte m_bHasFieldPath;
+
+public:
+	bool m_bResolved;
+	bool m_bHasFieldPath;
 };
 
 // Same, for a vector of embedded (schema struct) elements, e.g.
@@ -75,8 +79,8 @@ public:
 	CUtlDelegate< void () > *m_pArraySizeChangedDelegate;
 	CFieldPath m_PathToVector;
 	CUtlVector< ChangeAccessorFieldPathIndex_t > m_ElementPathIndices;
-	byte m_nNetworkingFlags;
-	byte m_nResolveFlags;
+	uint8 m_nNetworkingFlags;
+	uint8 m_nResolveFlags;
 };
 
 #endif // NETWORKSYSTEM_NETWORKVAR_H

@@ -5,11 +5,15 @@
 #pragma once
 #endif
 
+#include "tier1/utlleanvector.h"
 #include "tier1/utlmap.h"
 #include "tier1/utlvector.h"
 #include "tier0/threadtools.h"
 #include "entityidentity.h"
+#include "entitytypes.h"
 #include "ientitylistener.h"
+
+#include "spawngrouptypes.h"
 
 class ServerClass;
 class ClientClass;
@@ -17,10 +21,36 @@ class CNetworkTransmitComponent;
 class CChangeInfoAccessor;
 class CEntityInstancePolymorphicMetadataHelper;
 
+struct ChangeAccessorFieldPathIndex_t
+{
+	ChangeAccessorFieldPathIndex_t() { m_Value = -1; }
+	ChangeAccessorFieldPathIndex_t( int32 value ) { m_Value = value; }
+
+	ChangeAccessorFieldPathIndex_t &operator=( int32 value ) { m_Value = value; return *this; }
+
+	int32 m_Value;
+};
+
+class CNetworkVarChainer : public CEntityOwnerPtr
+{
+public:
+	struct ChainUpdatePropagationLL_t
+	{
+		ChainUpdatePropagationLL_t *pNext;
+		CUtlDelegate< void( const CNetworkVarChainer & ) > updateDelegate;
+	};
+
+	CUtlVector< ChainUpdatePropagationLL_t > m_PropagationChain;
+	ChangeAccessorFieldPathIndex_t m_PathIndex;
+
+	// When false, NetworkStateChanged calls are no-ops
+	bool m_bNetworkingEnabled;
+};
+
 struct NetworkStateChanged_t
 {
-	NetworkStateChanged_t() : m_nChangeType(1), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_bChainedPath(0) { }
-	explicit NetworkStateChanged_t( bool bFullChanged ) : m_nChangeType(static_cast<uint32>(!bFullChanged)), m_Unk48(-1), m_nArrayIndex(-1), m_nPathIndex(ChangeAccessorFieldPathIndex_t()), m_bChainedPath(0) { }
+	NetworkStateChanged_t() : m_eChangeType( NETWORK_STATE_CHANGE_FIELDS ), m_Unk48( -1 ), m_nArrayIndex( -1 ), m_nPathIndex( ChangeAccessorFieldPathIndex_t() ), m_bChainedPath( 0 ) { }
+	explicit NetworkStateChanged_t( bool bFullChanged ) : m_eChangeType( bFullChanged ? NETWORK_STATE_CHANGE_FULL : NETWORK_STATE_CHANGE_FIELDS ), m_Unk48( -1 ), m_nArrayIndex( -1 ), m_nPathIndex( ChangeAccessorFieldPathIndex_t() ), m_bChainedPath( 0 ) {}
 
 	// nLocalOffset is the flattened field offset
 	//		calculated taking into account embedded structures
@@ -31,26 +61,30 @@ struct NetworkStateChanged_t
 	//		if the path to the field goes through one or more pointers, otherwise pass -1
 	// 		this value is usually a member of the CNetworkVarChainer and belongs to the last object in the chain
 	NetworkStateChanged_t( uint32 nLocalOffset, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() )
-		: m_nChangeType(1), m_LocalOffsets{ nLocalOffset }, m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_bChainedPath(0) { }
-	NetworkStateChanged_t( CUtlVector<uint32> vecLocalOffsets, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() )
-		: m_nChangeType(1), m_LocalOffsets(Move(vecLocalOffsets)), m_Unk48(-1), m_nArrayIndex(nArrayIndex), m_nPathIndex(nPathIndex), m_bChainedPath(1) { }
+		: m_eChangeType( NETWORK_STATE_CHANGE_FIELDS ), m_LocalOffsets{ nLocalOffset }, m_Unk48( -1 ), m_nArrayIndex( nArrayIndex ), m_nPathIndex(nPathIndex), m_bChainedPath(0) { }
+	NetworkStateChanged_t( CUtlVector< uint32 > vecLocalOffsets, int32 nArrayIndex = -1, ChangeAccessorFieldPathIndex_t nPathIndex = ChangeAccessorFieldPathIndex_t() )
+		: m_eChangeType(NETWORK_STATE_CHANGE_FIELDS), m_LocalOffsets( Move( vecLocalOffsets ) ), m_Unk48( -1 ), m_nArrayIndex( nArrayIndex ), m_nPathIndex( nPathIndex ), m_bChainedPath( 1 ) { }
 
-	uint32 m_nChangeType; // 1 = field change (default), 0 = full entity dirty (FL_FULL_EDICT_CHANGED)
-	CUtlVector<uint32> m_LocalOffsets; // Local byte offsets of changed field(s) within the entity/embedded struct.
+	// NETWORK_STATE_CHANGE_FULL marks the whole entity changed instead of the offsets
+	NetworkStateChangeType_t m_eChangeType;
+
+	// Local byte offsets of the changed fields
+	CUtlVector< uint32 > m_LocalOffsets;
 
 	// Debug-only strings (always empty in release builds).
 	CUtlString m_ClassName;
 	CUtlString m_FieldName;
 
+	// Not read by StateChanged
 	int32 m_Unk48;
-	int32 m_nArrayIndex; // Index into array element if the field is a CNetworkUtlVectorBase, otherwise -1.
 
-	// Path index through pointer chain (from CNetworkVarChainer::m_PathIndex), -1 if direct.
-	// CNetworkVarChainer::NetworkStateChanged overwrites this with its own m_PathIndex.
+	// Array element index for a CNetworkUtlVectorBase field, otherwise -1
+	int32 m_nArrayIndex;
+
+	// Path index through the pointer chain, -1 if direct; -2 drops the change
 	ChangeAccessorFieldPathIndex_t m_nPathIndex;
 
-	// 0 = single offset, 1 = m_LocalOffsets has multiple values (chained/nested path).
-	// Checked as bool: if true AND m_nPathIndex < 0, the notification is suppressed.
+	// Set by the multi-offset constructor; not read by StateChanged
 	int16 m_bChainedPath;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkStateChanged_t ) == 64 );
@@ -96,7 +130,6 @@ struct NetworkSharedChangeRecord_t
 	uint32 m_nLocalOffset;
 	ChangeAccessorFieldPathIndex_t m_PathIndex;
 	uint16 m_nArrayIndexCountAndFlags;
-	uint16 m_nPad;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeRecord_t ) == 12 );
 
@@ -131,15 +164,18 @@ struct NetworkSharedChangeInfoEntry_t
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfoEntry_t ) == 784 );
 
+// Created on the first state change through a pointer chain
 struct NetworkSharedChangeInfoOverflow_t
 {
-	uint8 m_pad000[0x18];
+	// Packed field paths indexed by ChangeAccessorFieldPathIndex_t
+	CUtlLeanVectorFixedGrowable< int32, 4 > m_ChangeAccessorPaths;
 	void *m_pRootPathOffsetLookup;
 	CUtlVectorFixedGrowableCompat< void *, 4 > m_PathOffsetLookups;
 	uint8 m_pad058[0x08];
 	NetworkStateChangedLookupCache_t m_CachedIgnoredLookups;
+	uint8 m_pad0E8[0x08];
 	NetworkStateChangedLookupCache_t m_CachedTrackedLookups;
-	uint8 m_pad170[0x10];
+	uint8 m_pad178[0x08];
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfoOverflow_t ) == 384 );
 
@@ -167,44 +203,81 @@ struct Entity2Networkable_t
 };
 COMPILE_TIME_ASSERT( sizeof( Entity2Networkable_t ) == 96 );
 
-class CNetworkTransmitComponent
+// Base of CNetworkTransmitComponent
+abstract_class IEventRegisterCallback
 {
 public:
-	virtual ~CNetworkTransmitComponent() = default;
+	virtual void FireEvent() = 0;
+};
+
+// The network state of an entity
+class CNetworkTransmitComponent : public IEventRegisterCallback
+{
+public:
+	// Turns a pending state change into a full change
+	void FireEvent() override = 0;
+
+	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
+	// Save and load the only schema fields
+	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
+	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+
+	virtual const char *GetClassName() const = 0;
+
+	// Frees the change info overflow, the router and the polymorphic metadata helper
+	virtual ~CNetworkTransmitComponent() = 0;
 
 public:
-	NetworkSharedChangeInfoOverflow_t *m_pSharedChangeInfoOverflow; // Allocated by StateChanged / StateChangedBranch, owns path lookup caches
-	void *m_pNetworkStateChangedRouter; // SetNetworkStateChangedRouter, wrappers check byte +0x18 on this object
-	uint32 m_nNetworkStateChangedRouterData;
-	uint32 m_nUnk024;
+	// Allocated on first use; owns the path lookup caches
+	NetworkSharedChangeInfoOverflow_t *m_pSharedChangeInfoOverflow;
+
+	// While it holds changes, state changes are only marked pending
+	void *m_pNetworkStateChangedRouter;
+
+	uint32 m_nNetworkStateChangedRouterData; // 0 at construction
+	uint32 m_nUnk024; // 0 at construction
+	uint64 m_nUnk020; // 0 at construction
+
+	// Not set by the constructor
 	uint8 m_pad028[0x100];
-	uint8 m_pad120[0x08];
 
 	CThreadRWLock_FastRead m_StateChangeLock;
 
-#if defined( POSIX )
-	uint8 m_pad2C0[24];
-#else
-	uint8 m_pad2C0[368];
-#endif
+	// Where the lock is smaller
+	uint8 m_padAfterLock[24];
 
-	uint32 m_nStateChangeFlags; // PackEntity helper
-	uint8 m_nUnk2DC;
+	// 0 at construction
+	NetworkStateChangeFlags_t m_eStateChangeFlags;
+
+	// The only schema field
+	uint8 m_nTransmitStateOwnedCounter;
+
+	// A state change arrived while the router held pending changes
 	bool m_bPendingStateChange;
+
 	uint8 m_pad2DE[2];
+
 	bool m_bNetworkUpdatesDisabled;
-	uint8 m_pad2E1[3];
-	int32 m_nUnk2E4;
-	Entity2Networkable_t *m_pNetworkable; // StateChanged walks this back to CEntityInstance / CEntityIdentity
-	int32 m_nUnk2F0;
+
+	// Most offsets one shared change info record holds
+	int32 m_nMaxChangedOffsets;
+
+	Entity2Networkable_t *m_pNetworkable;
+
+	int32 m_nUnk2F0; // -1 at construction
 	uint16 m_nSharedChangeInfoIndex;
 	uint16 m_nSharedChangeInfoSerial; // Serial paired with m_nSharedChangeInfoIndex
-	uint8 m_pad2F8[0x28];
-	void *m_pUnk320;
-	bool m_bUnk328;
-	uint8 m_pad329[7];
+	uint32 m_nUnk2F8; // 0 at construction
+
+	// Never locked by the server
+	CAtomicMutex m_UnkMutex300;
+	CAtomicMutex m_UnkMutex310;
+
+	// Built on demand and rebuilt while marked dirty
+	CEntityInstancePolymorphicMetadataHelper *m_pPolymorphicMetadataHelper;
+	bool m_bPolymorphicMetadataDirty; // True at construction
 };
-COMPILE_TIME_ASSERT( sizeof( CNetworkTransmitComponent ) == 816 );
 
 class IEntity2Networkables
 {
@@ -215,14 +288,14 @@ public:
 	virtual CUtlMap< int, Entity2Networkable_t > &GetEntity2Networkables( void ) const = 0;
 	virtual void Unk01() = 0;
 	virtual void Unk02() = 0;
-	virtual ServerClass **GetClassList() = 0;
+	virtual CUtlVector< ServerClass * > *GetClassList() = 0;
 };
 
 class CEntity2NetworkClasses : public IEntity2Networkables, public IEntityListener
 {
 public:
-	ServerClass *m_pClassList;
-	void *m_pPad[2];
+	// One ServerClass per networkable entity class, sorted by name
+	CUtlVector< ServerClass * > m_ClassList;
 	CUtlMap< int, Entity2Networkable_t > m_NetworkedEntities2;
 };
 COMPILE_TIME_ASSERT( sizeof( CEntity2NetworkClasses ) == 72 );

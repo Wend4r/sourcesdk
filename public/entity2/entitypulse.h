@@ -10,6 +10,7 @@
 #include "tier1/utlvector.h"
 #include "tier1/utlsymbollarge.h"
 #include "tier1/utlhashtable.h"
+#include "tier0/murmurhash3.h"
 
 class CBasePulseGraphInstance;
 class CEntityClass;
@@ -18,6 +19,8 @@ class CPulseAPIExtensionRegistrationContext;
 class CPulseExecCursor;
 class CPulseRuntimeMethodArg;
 class KeyValues3;
+class CPulseArgumentPack;
+class CPulseInputParamMap;
 
 enum PulseApiFeature_t : uint32
 {
@@ -77,8 +80,36 @@ enum PulseValueType_t : int32
 class CPulseValueFullType
 {
 public:
+	CPulseValueFullType() : m_nType( PVAL_VOID ), m_pElementType( nullptr ) {}
+	CPulseValueFullType( PulseValueType_t nType, const char *pszSubType = nullptr );
+	CPulseValueFullType( const CPulseValueFullType &other ) : CPulseValueFullType() { Assign( other ); }
+	~CPulseValueFullType() { ReleaseElementType(); }
+
+	CPulseValueFullType &operator=( const CPulseValueFullType &other ) { Assign( other ); return *this; }
+
+	// Compares the types along the element type chain
+	bool operator==( const CPulseValueFullType &other ) const;
+	bool operator!=( const CPulseValueFullType &other ) const { return !( *this == other ); }
+
+	bool IsValid() const { return m_nType != PVAL_VOID; }
+	bool IsType( PulseValueType_t nType ) const { return m_nType == nType; }
+
+	size_t GetSize( size_t *pAlignment = nullptr ) const;
+
+	void ConstructValue( void *pValue ) const;
+	void DestructValue( void *pValue ) const;
+	void CopyValue( const void *pSrc, void *pDest ) const;
+
+private:
+	void Assign( const CPulseValueFullType &other );
+	void ReleaseElementType();
+
+public:
 	PulseValueType_t m_nType;
-	void* m_pUnk0008;
+
+	// Element type of an array type, otherwise null
+	CPulseValueFullType *m_pElementType;
+
 	CUtlSymbolLarge m_subType;
 };
 
@@ -98,6 +129,7 @@ public:
 	void* m_pUnk0068;
 };
 
+// A view of a static argument array, returned by value
 struct PulseMethodArgList_t
 {
 	int32 m_nCount;
@@ -113,14 +145,13 @@ struct PulseHostTable_t
 
 struct PulseArgBlock_t
 {
-	int32 m_nCount;
-	void* m_pValues[16];
+	CUtlVectorFixed< void *, 16 > m_Values;
 	void* m_pImpl;
 };
 
 struct PulseBindingDesc_t
 {
-	typedef void ( *GetArgListFunc_t )( PulseMethodArgList_t *pOut );
+	typedef PulseMethodArgList_t ( *GetArgListFunc_t )();
 	typedef uint32 ( *InvokeFunc_t )( CBasePulseGraphInstance *pGraphInstance, CPulseExecCursor *pCursor, void *pTarget, const PulseHostTable_t *pHosts, PulseArgBlock_t *pInParams, uint64 nMovableArgsMask, PulseArgBlock_t *pOutParams );
 
 	const char* m_pName;
@@ -171,29 +202,33 @@ struct PulseSignatureOutput_t
 	int32 m_nOffset;
 };
 
+class CDynamicIOInstance;
+
 class CBaseDynamicIOSignature
 {
 public:
 	virtual ~CBaseDynamicIOSignature() = 0;
+
+	int32 FindOutputIndex( const char *pszName ) const;
 
 public:
 	uint64 m_unk0008;
 	CUtlVector< uint16 > m_inputNames;
 	CUtlVector< uint16 > m_outputNames;
 	CUtlVector< PulseSignatureOutput_t > m_outputs;
-	CUtlHashtable< uint16, int32 > m_outputNameToIndex;
-	CUtlHashtable< uint16, int32 > m_inputNameToIndex;
-	void *m_pInstanceListHead;
+	CUtlHashtable< uint16, int32, MurmurHash3IntFunctor > m_outputNameToIndex;
+	CUtlHashtable< uint16, int32, MurmurHash3IntFunctor > m_inputNameToIndex;
+	CDynamicIOInstance *m_pInstanceListHead;
 };
 
 class CEntityClassPulseSignature : public CBaseDynamicIOSignature
 {
 public:
-	virtual bool AcceptInput( CEntityInstance *pEntity, CUtlSymbolLarge *pInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant *pValue, void *pUnk, KeyValues3 *pParams ) = 0;
+	virtual bool AcceptInput( CEntityInstance *pEntity, CUtlSymbolLarge *pInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant *pValue, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap ) = 0;
 
 public:
-	CEntityClass* m_pOwnerClass;
-	CEntityClassPulseSignature* m_pBaseSignature;
+	CEntityClass *m_pOwnerClass;
+	CEntityClassPulseSignature *m_pBaseSignature;
 	CUtlVector< CUtlSymbolLarge > m_bindingNames;
 	CUtlVector< const PulseBindingDesc_t * > m_bindings;
 	CUtlVector< PulseSignatureOutput_t > m_registeredOutputs;

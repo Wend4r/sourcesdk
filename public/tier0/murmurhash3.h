@@ -67,6 +67,12 @@ inline uint32 MurmurHash3Item( const int32 &item )
 }
 
 
+struct MurmurHash3IntFunctor
+{
+	typedef uint32 TargetType;
+	TargetType operator()( uint32 n ) const { return MurmurHash3Int( n ); }
+};
+
 template<typename T>
 struct MurmurHash3Functor
 {

@@ -343,6 +343,21 @@ public:
 	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CKV3MemberHash( szInit ), m_iSymLarge( UTL_INVAL_SYMBOL_LARGE ), m_pszString( (const char *)szInit ) {}
 	CKV3MemberName( const char *pszString, int nLen ) : CKV3MemberHash( MakeStringToken2( pszString, nLen ) ), m_iSymLarge( UTL_INVAL_SYMBOL_LARGE ), m_pszString( pszString ) {}
 	CKV3MemberName( uint32 nHash = 0, UtlSymLargeId_t index = UTL_INVAL_SYMBOL_LARGE, const char* pszString = StringFuncs<char>::EmptyString() ) : CKV3MemberHash( nHash ), m_iSymLarge( index ), m_pszString( pszString ) {}
+	CKV3MemberName( const CKV3MemberName &other ) = default;
+
+	CKV3MemberName &operator=( const CKV3MemberName &other )
+	{
+		CKV3MemberHash::operator=( other );
+		m_iSymLarge = other.m_iSymLarge;
+		m_pszString = other.m_pszString;
+
+		return *this;
+	}
+
+	using CKV3MemberHash::operator==;
+	using CKV3MemberHash::operator!=;
+	bool operator==( const CKV3MemberName &other ) const { return GetHashCode() == other.GetHashCode(); }
+	bool operator!=( const CKV3MemberName &other ) const { return !operator==( other ); }
 
 	static CKV3MemberName Make( const char *pszInit, int nLen = -1 )
 	{
@@ -377,7 +392,20 @@ public:
 	CKV3MemberNameWithStorage( const char* pszString, int nLen ): CKV3MemberName( pszString, nLen ), m_Storage( pszString, nLen ) {}
 	CKV3MemberNameWithStorage( uint32 nHash = 0, UtlSymLargeId_t index = 0, const char* pszString = StringFuncs<char>::EmptyString(), int nLen = -1  ) : CKV3MemberName( nHash, index, pszString ), m_Storage( pszString, nLen ) {}
 
+	// Assigning a name keeps the storage
+	using CKV3MemberName::operator=;
+
 	const CBufferString &GetStorage() const { return m_Storage; }
+
+	// An empty name has the hash 0
+	void Set( const char *pszString )
+	{
+		m_Storage.Set( pszString ? pszString : "" );
+
+		const uint32 nHash = ( pszString && *pszString ) ? MakeStringToken( pszString ) : 0;
+
+		*this = CKV3MemberName( nHash, GetSymLargeId(), m_Storage.Get() );
+	}
 
 private:
 	CBufferStringN< 32 > m_Storage;

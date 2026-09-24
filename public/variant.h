@@ -399,6 +399,30 @@ public:
 		Free();
 	}
 
+	// Copies src the way the game's entity I/O does
+	void CopyFrom( const CVariantBase< A > &src )
+	{
+		switch ( src.m_type )
+		{
+			case FIELD_VECTOR:
+			case FIELD_POSITION_VECTOR:	CopyData( *src.m_pVector, true ); break;
+			case FIELD_QUATERNION:		CopyData( *src.m_pQuaternion, true ); break;
+			case FIELD_VECTOR2D:		CopyData( *src.m_pVector2D, true ); break;
+			case FIELD_VECTOR4D:		CopyData( *src.m_pVector4D, true ); break;
+			case FIELD_QANGLE:			CopyData( *src.m_pQAngle, true ); break;
+			case FIELD_CSTRING:			CopyData( src.m_pszString, true ); break;
+			default:
+			{
+				Free();
+
+				m_type = src.m_type;
+				m_pData = src.m_pData;
+
+				break;
+			}
+		}
+	}
+
 	// Frees the internal buffer and resets the value to be FIELD_VOID
 	void Free()
 	{
@@ -952,17 +976,19 @@ public:
 		return false;
 	}
 
-	// Allocates own buffers and copies the internal value when needed, if silent = false, emits a global warning
-	void ConvertToCopiedData(bool silent = true) const
+	void ConvertToCopiedData(bool silent = true)
 	{
+		if(m_flags & CV_FREE)
+			return;
+
 		switch(m_type)
 		{
 			case FIELD_VECTOR:		CopyData(*m_pVector, true); break;
+			case FIELD_POSITION_VECTOR:	CopyData(*m_pVector, true); m_type = FIELD_POSITION_VECTOR; break;
 			case FIELD_VECTOR2D:	CopyData(*m_pVector2D, true); break;
 			case FIELD_VECTOR4D:	CopyData(*m_pVector4D, true); break;
 			case FIELD_QUATERNION:	CopyData(*m_pQuaternion, true); break;
 			case FIELD_QANGLE:		CopyData(*m_pQAngle, true); break;
-			case FIELD_COLOR32:		CopyData(*m_pColor, true); break;
 			case FIELD_CSTRING:		CopyData(m_pszString, true); break;
 			default:
 			{

@@ -9,6 +9,7 @@
 #include "tier1/utlvector.h"
 #include "tier1/utldict.h"
 #include "entity2/entitycomponent.h"
+#include "entity2/entityinstance.h"
 #include "entityhandle.h"
 #include "networksystem/iflattenedserializers.h"
 
@@ -34,26 +35,12 @@ class CEntityIdentity;
 class CEntityClassPulseSignature;
 class CPulseAPIExtensionRegistrationContext;
 class ServerClass;
+class CEntityIOOutput;
 struct EntOutput_t;
+struct EntInput_t;
 struct datamap_t;
 
 typedef void (*BASEPTR)(CEntityInstance *ent);
-
-struct CEntityIOInputFunction
-{
-	typedef void (*InputAdapterFunc_t)(const CUtlAbstractDelegate *, CEntityInstance *, CEntityInstance *, CEntityInstance *, void *, const CVariant *);
-
-	const char *m_pName;
-	uint32 m_nFlags;
-	void *m_pContext;
-	CUtlAbstractDelegate m_delegate;
-	InputAdapterFunc_t m_adapterFunc;
-};
-
-struct EntInput_t
-{
-	CEntityIOInputFunction m_inputFunction;
-};
 
 struct EntClassComponentOverride_t
 {
@@ -107,24 +94,59 @@ public:
 		EntOutput_t* m_pOutput;
 	};
 
-	enum AcceptInputRetval_t : int32
-	{
-		ACCEPT_INPUT_UNKNOWN = 0x0,
-		ACCEPT_INPUT_KNOWN_BUT_UNHANDLED = 0x1,
-		ACCEPT_INPUT_KNOWN_AND_HANDLED = 0x2,
-	};
-
-
-	inline CSchemaClassInfo *GetSchemaBinding() const
+	CSchemaClassInfo *GetSchemaBinding() const
 	{
 		return m_pClassInfo->m_pSchemaBinding;
 	}
 
-	inline datamap_t *GetDataDescMap() const
+	datamap_t *GetDataDescMap() const
 	{
 		return m_pClassInfo->m_pDataDescMap;
 	}
-	
+
+	void DestructInstance( CEntityInstance *pInstance )
+	{
+		if ( pInstance )
+			GetSchemaBinding()->DestructInPlace( pInstance );
+	}
+
+	void FreeInstance( CEntityInstance *pInstance )
+	{
+		if ( pInstance )
+			MemAlloc_Free( pInstance );
+	}
+
+	// Searches the base classes too
+	CEntityIOOutput *FindOutput( const char *pszName, CEntityInstance *pEntity );
+
+	// Offers the input to the pulse signatures of the class chain; true when handled
+	bool AcceptInput( CEntityInstance *pEntity, const CUtlSymbolLarge &sInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const variant_t &value, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap );
+
+	void LinkToClassList( CEntityIdentity *pIdentity )
+	{
+		pIdentity->m_pPrevByClass = nullptr;
+		pIdentity->m_pNextByClass = m_pFirstEntity;
+
+		if ( m_pFirstEntity )
+			m_pFirstEntity->m_pPrevByClass = pIdentity;
+
+		m_pFirstEntity = pIdentity;
+	}
+
+	void UnlinkFromClassList( CEntityIdentity *pIdentity )
+	{
+		if ( pIdentity->m_pPrevByClass )
+			pIdentity->m_pPrevByClass->m_pNextByClass = pIdentity->m_pNextByClass;
+		else if ( m_pFirstEntity == pIdentity )
+			m_pFirstEntity = pIdentity->m_pNextByClass;
+
+		if ( pIdentity->m_pNextByClass )
+			pIdentity->m_pNextByClass->m_pPrevByClass = pIdentity->m_pPrevByClass;
+
+		pIdentity->m_pPrevByClass = nullptr;
+		pIdentity->m_pNextByClass = nullptr;
+	}
+
 public:
 	using FuncToNameCb = const char *(*)(BASEPTR think_fn);
 	using NameToFuncCb = BASEPTR (*)(const char *fn_name);
@@ -162,7 +184,7 @@ public:
 
 	int m_SpawnOrder;
 	
-	uint m_nAllHelpersFlags;
+	EntityComponentHelperFlags_t m_nAllHelpersFlags;
 
 	CUtlVector<ComponentOffsets_t> m_ComponentOffsets;
 	CUtlVector<ComponentHelper_t> m_AllHelpers;

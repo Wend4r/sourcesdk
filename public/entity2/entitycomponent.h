@@ -9,9 +9,12 @@
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier1/utlsymbollarge.h"
+#include "tier1/smartptr.h"
 #include "datamap.h"
 #include "schemasystem/schematypes.h"
+#include "entitytypes.h"
 
+class CEntityInstance;
 class CEntityIdentity;
 class CEntityComponentHelper;
 struct ScriptClassDesc_t;
@@ -81,24 +84,27 @@ public:
 	virtual void Free( CEntityIdentity* pEntity, void* pComponent ) = 0;
 
 public:
-	uint m_flags;
+	EntityComponentHelperFlags_t m_flags;
 	EntComponentInfo_t* m_pInfo;
 	int m_nPriority;
 	CEntityComponentHelper* m_pNext;
 };
 
+class CKV3TransferLoadContext;
+class CKV3TransferSaveContext;
+
 class CEntityComponent
 {
-private:
-	uint8 unknown[0x8]; // 0x0
-};
-
-class CScriptComponent : public CEntityComponent
-{
-private:
-	uint8 unknown[0x28]; // 0x8
 public:
-	CUtlSymbolLarge m_scriptClassName; // 0x30
+	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
+	virtual datamap_t *GetDataDescMap() = 0;
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > GetSchemaBinding() = 0;
+	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
+	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+
+	virtual CEntityComponentHelper *GetComponentHelper() = 0;
+	virtual const char *GetComponentName() = 0;
 };
 
 #endif // ENTITYCOMPONENT_H
