@@ -18,16 +18,7 @@
 #include "gcsdk/gcclient.h"
 #include "gcsdk/gcclient_sharedobjectcache.h"
 
-class IMobileEventListener
-{
-public:
-	virtual ~IMobileEventListener();
-
-	IMobileEventListener *m_pNext;
-	bool m_bRegistered;
-};
-
-class CGCClientSystem : public CAutoGameSystem, public IMobileEventListener
+class CGCClientSystem : public CAutoGameSystem
 {
 public:
 	CGCClientSystem();
