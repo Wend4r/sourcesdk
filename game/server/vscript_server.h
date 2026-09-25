@@ -10,6 +10,9 @@
 #include "vscript/ivscript.h"
 #include "tier0/keyvalues.h"
 #include "vscript_shared.h"
+#include "entity2/scriptkeyvalues.h"
+#include "entity2/scriptprecachecontext.h"
+#include "igamesystem.h"
 
 #if defined( _WIN32 )
 #pragma once
@@ -32,34 +35,31 @@ extern CBaseEntityScriptInstanceHelper g_BaseEntityScriptInstanceHelper;
 // Only allow scripts to create entities during map initialization
 bool IsEntityCreationAllowedInScripts( void );
 
-// ----------------------------------------------------------------------------
-// KeyValues access
-// ----------------------------------------------------------------------------
-class CScriptKeyValues
+abstract_class IVScriptGameSystem
 {
 public:
-	CScriptKeyValues( KeyValues *pKeyValues );
-	~CScriptKeyValues( );
+	virtual void VScriptInit( bool bUnk ) = 0;
+	virtual void VScriptTerm() = 0;
 
-	HSCRIPT ScriptFindKey( const char *pszName );
-	HSCRIPT ScriptGetFirstSubKey( void );
-	HSCRIPT ScriptGetNextKey( void );
-	int ScriptGetKeyValueInt( const char *pszName );
-	float ScriptGetKeyValueFloat( const char *pszName );
-	const char *ScriptGetKeyValueString( const char *pszName );
-	bool ScriptIsKeyValueEmpty( const char *pszName );
-	bool ScriptGetKeyValueBool( const char *pszName );
-	void ScriptReleaseKeyValues( );
+	virtual bool IsVScriptInitialized() = 0;
+	virtual bool IsEntityCreationAllowedInScripts() = 0;
+	virtual IScriptVM *GetVM() = 0;
 
-	KeyValues *m_pKeyValues;	// actual KeyValue entity
+	virtual HSCRIPT CompileScript( const char *pszScriptName, bool bWarnMissing = false ) = 0;
+
+	virtual bool RunScript( const char *pszScriptName, HSCRIPT hScope, bool bWarnMissing = false ) = 0;
+	virtual bool RunScript( const char *pszScriptName, bool bWarnMissing ) = 0;
+	virtual bool RunScript( const char *pszScript ) = 0;
+
+	virtual HSCRIPT FetchCachedScriptScope( const char *pszScriptName ) = 0;
+	virtual void ClearCachedScripts() = 0;
+	
+	virtual void ReloadCachedScripts() = 0;
 };
 
-class CScriptPrecacheContext
+// Base of the per-game VScript game systems (CCSGOVScriptGameSystem, CDOTAVScriptGameSystem, CCitadelVScriptGameSystem).
+class CVScriptGameSystem : public CBaseGameSystem, public IVScriptGameSystem
 {
-public:
-	CEntityPrecacheContext m_scratch;
-	const CEntityPrecacheContext *m_pContext;
-	HSCRIPT m_hPrecacheContext;
 };
 
 #endif // VSCRIPT_SERVER_H
