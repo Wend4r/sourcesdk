@@ -12,6 +12,12 @@
 #include <tier0/utlstring.h>
 #include <tier1/utlvector.h>
 
+#define FOR_EACH_ENTLUMP( lump, iter ) \
+	for ( int iter = 0; iter < ( lump )->GetNumEntities(); iter++ )
+
+#define FOR_EACH_ENTLUMP_BACK( lump, iter ) \
+	for ( int iter = ( lump )->GetNumEntities() - 1; iter >= 0; iter-- )
+
 struct PermEntityLumpData_t;
 
 class CEntityLump;
@@ -40,11 +46,12 @@ public:
 	}
 
 	int GetNumEntities() const { return m_entityKeyValues.Count(); }
-	const CEntityKeyValues *GetEntityKeyValues( int nEntity ) const { return m_entityKeyValues[nEntity]; }
-	const CUtlVector< const CEntityKeyValues * > *GetEntityKeyValues() const
-	{
-		return reinterpret_cast< const CUtlVector< const CEntityKeyValues * > * >( &m_entityKeyValues );
-	}
+
+	CEntityKeyValues *GetEntityKeyValues( int nEntity ) { return m_entityKeyValues[ nEntity ]; }
+	const CEntityKeyValues *GetEntityKeyValues( int nEntity ) const { return m_entityKeyValues[ nEntity ]; }
+
+	CUtlVector< CEntityKeyValues * > &GetEntityKeyValues() { return m_entityKeyValues; }
+	const CUtlVector< const CEntityKeyValues * > &GetEntityKeyValues() const { return reinterpret_cast< const CUtlVector< const CEntityKeyValues * > & >( m_entityKeyValues ); }
 
 public:
 	CUtlString m_name;
