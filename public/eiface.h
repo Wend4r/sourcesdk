@@ -103,6 +103,13 @@ class CCLCMsg_Move_t;
 class CCLCMsg_SplitPlayerConnect_t;
 class CNetMessage;
 class INetworkMessageInternal;
+class INetChannel;
+class INetworkGameServer;
+class CUtlBuffer;
+class CEntityClass;
+class CSVCMsg_UserCommands_t;
+class ISceneViewDebugOverlays;
+struct FlattenedSerializerSpewField_t;
 struct Entity2Networkable_t;
 
 namespace google
@@ -112,6 +119,8 @@ namespace google
 		class Message;
 	}
 }
+
+
 
 //-----------------------------------------------------------------------------
 // defines
@@ -129,6 +138,13 @@ struct bbox_t
 {
 	Vector mins;
 	Vector maxs;
+};
+
+enum ClientNetMessageHandlersAction_t
+{
+	CLIENT_NET_MESSAGE_HANDLERS_INIT_AND_REGISTER = 0, // Also creates the shared message bindings on first use
+	CLIENT_NET_MESSAGE_HANDLERS_UNREGISTER = 1,
+	CLIENT_NET_MESSAGE_HANDLERS_REGISTER = 2,
 };
 
 //-----------------------------------------------------------------------------
@@ -400,8 +416,11 @@ public:
 	virtual bool			GetNavMeshData( CNavData *pNavMeshData ) = 0;
 	virtual void			SetNavMeshData( const CNavData *navMeshData ) = 0;
 	virtual void			RegisterNavListener( INavListener *pNavListener ) = 0;
+
 	virtual void			UnregisterNavListener( INavListener *pNavListener ) = 0;
-	virtual void			*GetSpawnDebugInterface( void ) = 0;
+	// Enumerated by the engine while gathering state for a bug report; returns false past the last attachment.
+	// sName and sDescription end up in 32 and 64 character fields of the report.
+	virtual bool			GetBugReportAttachment( int nIndex, CUtlBuffer &buf, CUtlString &sName, CUtlString &sDescription ) = 0;
 
 	virtual IToolGameSimulationAPI *GetToolGameSimulationAPI( void ) = 0;
 	virtual void			GetAnimationActivityList( CUtlVector<CUtlString> &activityList ) = 0;
@@ -428,65 +447,98 @@ public:
 
 	virtual bool			SaveGame_CalcFileName( const char *pName, CUtlString &output ) const = 0;
 	virtual bool			GetLevelNameFromSaveFile( const char *pSaveGame, CUtlString &levelName ) = 0;
-	virtual void			GetLevelsFromSaveFile( const char *pSaveGame, CUtlVector<CCreateGameServerLoadInfo> &list, bool bWipeDirectoryAndExtract, SaveFileLevelsType_t saveFileLevelsType, void *pUnk ) = 0;
+	virtual void			GetLevelsFromSaveFile( const char *pSaveGame, CUtlVector<CCreateGameServerLoadInfo> &list, bool bWipeDirectoryAndExtract, SaveFileLevelsType_t saveFileLevelsType, CUtlString *pOutHeaderString ) = 0;
 	virtual void			ClearSaveDirectory( void ) = 0;
 	virtual void			PreSaveGameLoaded( const char *pSaveName ) = 0;
-	virtual void			AppendSaveGameResources( CCompressedResourceManifest *pCompressedManifestOut, ILoadingSpawnGroup *pLoadingSpawnGroup, void *pUnk1, void *pUnk2 ) const = 0;
-	virtual void			AppendTransitionResources( CCompressedResourceManifest *pCompressedManifestOut, ILoadingSpawnGroup *pLoadingSpawnGroup, void *pUnk1, void *pUnk2 ) const = 0;
+	// pLoadDesc points to a 48-byte descriptor that is copied by value into the manifest load request.
+	virtual void			AppendSaveGameResources( CCompressedResourceManifest *pCompressedManifestOut, ILoadingSpawnGroup *pLoadingSpawnGroup, SpawnGroupHandle_t hSpawnGroup, const void *pLoadDesc ) const = 0;
+	virtual void			AppendTransitionResources( CCompressedResourceManifest *pCompressedManifestOut, ILoadingSpawnGroup *pLoadingSpawnGroup, SpawnGroupHandle_t hSpawnGroup, const void *pLoadDesc ) const = 0;
 	virtual SaveGameResult_t SaveGame( const SaveGameParams_t &params ) = 0;
 	virtual bool			IsAsyncSaveInProgress( void ) = 0;
 	virtual bool			ProcessPendingSaveRequest( void ) = 0;
 	virtual bool			HasPendingSaveRequest( void ) = 0;
+	virtual void			FinishAsyncSave( void ) = 0;
 
 	virtual const char		*GetEntityUniqueHammerID( CEntityIndex nEntityIndex ) = 0;
 
-	virtual void			*unk_062( const char *pName, const char *pUnk ) = 0;
-	virtual void			*unk_063( const char *pName, const char *pUnk ) = 0;
-	virtual void			*unk_064( const char *pName ) = 0;
-	virtual void			*unk_065( const char *pName ) = 0;
-	virtual void			*unk_066( const char *pName ) = 0;
-	virtual void			*unk_067( const char *pName ) = 0;
+	// Entity subclass (vdata) queries. A scope is one subclass vdata file; the plain variants match it
+	// by its file path, the "ByDataType" ones by its generic_data_type. A NULL or empty scope matches any scope.
+	// Returns the VData class name (e.g. "CCSWeaponBaseVData") bound to a designer or subclass name, or NULL
+	// when the name has no VData class or it belongs to another scope.
+	virtual const char		*GetVDataClassName( const char *pName, const char *pScopeFile ) = 0;
+	virtual const char		*GetVDataClassNameByDataType( const char *pName, const char *pGenericDataType ) = 0;
+	virtual const CUtlVector< CUtlString > &GetSubclassNamesInScope( const char *pScopeFile ) = 0;
+	virtual const CUtlVector< CUtlString > &GetSubclassNamesInScopeByDataType( const char *pGenericDataType ) = 0;
+	virtual void			GetAllSubclassNames( CUtlVector< CUtlString > &names ) = 0;
+	// Returns the designer name of the entity class the subclass is built on.
+	virtual const char		*GetSubclassDesignerName( const char *pSubclassName ) = 0;
 
-	virtual void			UpdateGCInformation( bool bUnk, void *pUnk, const CSteamID *pServerSteamID ) = 0;
+	virtual void			UpdateGCInformation( bool bUnk1, bool bUnk2, const CSteamID *pServerSteamID ) = 0;
 
-	virtual void			*unk_069( const char *pName ) = 0;
-	virtual void			unk_070( void *pUnk1, void *pUnk2 ) = 0;
+	// Sorted designer names of every entity class derived from the C++ class pClassName (e.g. "CCSWeaponBase"),
+	// or the subclass names of a scope when pClassName is that scope's handler type.
+	virtual const CUtlVector< CUtlString > &GetDesignerNamesForClass( const char *pClassName ) = 0;
+	// Forwards to the subclass system's auto-completion callback, which is empty in release builds.
+	virtual void			GetSubclassAutoCompleteList( const void *pUnk, CUtlVector< const char * > &completions ) = 0;
 
 	virtual void			ReportGCQueuedMatchStart( int32 iReservationStage, uint32 *puiConfirmedAccounts, int numConfirmedAccounts ) = 0;
 
-	virtual void			unk_072( void ) = 0;
-	virtual void			*GetDebugOverlayGameSystem( void ) = 0;
+	// Called every host frame; pFrameTimes[ 0 ] is the host frame duration, pFrameTimes[ 1 ] the target frame time.
+	virtual void			OnHostFrameTiming( const double *pFrameTimes ) = 0;
+	// Returns the "Server Tick" scene view debug overlays that CDebugOverlayGameSystem creates through the scene system.
+	virtual ISceneViewDebugOverlays *GetDebugOverlayGameSystem( void ) = 0;
 
 	virtual const char		*GetNativeClassForScriptClass( const char *pScriptClassName ) = 0;
-	virtual void			*GetScriptClassForDesignerName( const char *pDesignerName ) = 0;
+	virtual CEntityClass	*GetScriptClassForDesignerName( const char *pDesignerName ) = 0;
 	virtual bool			IsScriptClassDerivedFrom( const char *pDesignerName, const char *pBaseName ) = 0;
 
 	virtual bool			ShouldHoldGameServerReservation( float flTimeElapsedWithoutClients ) = 0;
 
-	virtual void			unk_078( void ) = 0;
+	// Called when the broadcast relay answers an HLTV broadcast request with HTTP 200.
+	virtual void			OnBroadcastRelayRequestSucceeded( void *pUnk ) = 0;
 	virtual void			SendServerFrameTime( float flFrameTime ) = 0;
 	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nUnk ) = 0;
 	virtual void			OnClientHltvReplayStop( CPlayerSlot slot ) = 0;
-	virtual void			DumpEntity( CEntityIndex nEntityIndex, void *pUnk ) = 0;
-	virtual void			*CreateUserCommandsMessage( void ) = 0;
-	virtual bool			unk_084( CPlayerSlot slot, const void *pUnk1, int nUnk2 ) = 0;
+
+	// Called by the VConsole2 flattened serializer view for each network field of an entity. Rewrites the value text of entity and resource handles and appends notes, such as pose parameter names.
+	virtual bool			FormatSerializerFieldValue( CEntityIndex nEntityIndex, FlattenedSerializerSpewField_t &field ) = 0;
+
+	// Snapshots the pending user commands of every player slot; CreateUserCommandsMessage() then
+	// serializes that snapshot into a message (NULL when nothing is pending).
+	virtual void			CaptureUserCommands( void ) = 0;
+	virtual CSVCMsg_UserCommands_t *CreateUserCommandsMessage( void ) = 0;
+
+	// Called for FCVAR_GAMEDLL commands sent by a client. Returns false when the command is not a registered player controller command. 
+	// Otherwise queues it to the controller as a predicted string command event.
+	virtual bool			ProcessClientStringCommand( CPlayerSlot slot, const CCommand &args, uint32 nPredictionSync ) = 0;
 	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nUnk, const char *pCommand ) = 0;
 	virtual void			SetPlayerTeammatePreferredColor( uint32 uiAccountID, int nColor ) = 0;
 	virtual void			UpdateCompTeammateColors( void ) = 0;
 
 	virtual ENetworkDisconnectionReason GetGameRulesConnectRejectReason( const CSteamID &steamID ) = 0;
-	virtual const char		*ClientConnectionValidatePreNetChan( const CSteamID &steamID, const void *pUnk ) = 0;
+
+	// Returns the name to use for the connecting account: a generated name cached per account, or pszPlayerName
+	virtual const char		*ClientConnectionValidatePreNetChan( const CSteamID &steamID, const char *pszPlayerName ) = 0;
 
 	virtual bool			LogForHTTPListeners( const char *szLogLine ) = 0;
 
-	virtual void			unk_091( void ) = 0;
-	virtual void			unk_092( void ) = 0;
+	// Only reached through the engine tool service. 
+	// Empty in release builds
 	virtual void			unk_093( void ) = 0;
 	virtual void			unk_094( void ) = 0;
-	virtual void			unk_095( void *pUnk1, int nUnk2, int nUnk3 ) = 0;
+	virtual void			unk_095( void ) = 0;
+	virtual void			unk_096( void ) = 0;
+
+	virtual void			RegisterClientNetMessageHandlers( INetChannel *pNetChannel, CPlayerSlot slot, ClientNetMessageHandlersAction_t eAction ) = 0;
 	virtual bool			GetAddonForMap( const char *pMapName, CUtlString &output ) = 0;
 	virtual uint64			GetMatchID( void ) = 0;
-	virtual void			unk_098( const char *pLogLine ) = 0;
+	virtual void			OnSteamAuthWarning( const char *pszMessage ) = 0;// Receives Steam auth session diagnostics, such as a SteamID mismatch against the auth ticket
+	virtual void			OnNetworkGameServerActivated( INetworkGameServer *pNetworkGameServer ) = 0;
+	virtual uint32			GetSteamGroupAccountID( void ) = 0; // Account ID of the sv_steamgroup group, 0 when none is set
+
+#ifdef _LINUX
+	virtual void			unk_103( void ) = 0;
+#endif
 };
 
 //-----------------------------------------------------------------------------

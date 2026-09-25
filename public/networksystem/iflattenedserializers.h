@@ -9,6 +9,7 @@
 #include "tier1/convar.h"
 #include "tier1/utlsymbollarge.h"
 #include "tier1/utlvector.h"
+#include "tier1/utlleanvector.h"
 #include "entity2/entityindex.h"
 
 #include "fieldpath.h"
@@ -16,6 +17,7 @@
 DECLARE_POINTER_HANDLE( FlattenedSerializerHandle_t );
 
 class bf_read;
+class bf_write;
 class CCheckTransmitInfo;
 class CEntityClass;
 class CEntityInstance;
@@ -348,6 +350,34 @@ struct CFlattenedSerializerBucket_t
 };
 COMPILE_TIME_ASSERT( sizeof( CFlattenedSerializerBucket_t ) == 192 );
 
+// One written field as reported to serializer spew listeners (the VConsole2 flattened serializer view).
+// Filled per field by CFlattenedSerializer::WriteFieldList.
+// The comments give the key each member is exported under to VConsole2.
+struct FlattenedSerializerSpewField_t
+{
+	CEntityIndex m_nEntityIndex;
+	byte m_pad0004[4];
+	CFieldPath m_Path; // "path"
+	CUtlString m_sShortName; // "shortname"; field name, with "[n]" appended for array elements
+	CUtlString m_sFullPath; // "fullpath"
+	CUtlString m_sUserGroup; // "usergroup"
+	CUtlString m_sBits; // "bits"; bit count as text
+	CUtlString m_sValue; // "value"
+	CUtlString m_sSerializer; // "serializer"
+	CUtlString m_sEncoder; // "encoder"
+	CUtlString m_sSendNode; // "sendnode"
+	CUtlString m_sType; // "type"; " *" is appended for polymorphic pointers
+	CUtlString m_sNotes; // "notes"
+	int m_nRecipient; // "recip"; listeners filter on it, -1 means any
+	CEntityIndex m_nObjectID; // "objectid"; listeners filter on it
+	byte m_pad0080[4];
+	int m_nArrayElement; // Set only for array element fields
+	int m_nStartBit;
+	int m_nEndBit;
+	bool m_bIsNullPtr; // "is_nullptr"
+};
+COMPILE_TIME_ASSERT( sizeof( FlattenedSerializerSpewField_t ) == 152 );
+
 struct FlattenedSerializerListener_t;
 struct FlattenedSerializerFieldData_t;
 struct FlattenedSerializerFieldNamePool_t;
@@ -365,9 +395,12 @@ public:
 	virtual bool DecodeEntity( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, SerializedEntityData_t *pFrom, int nFlags ) = 0; // "CFlattenedSerializer::Decode"
 	virtual void CalcDelta( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, const SerializedEntityData_t *pTo, int *pUnk, int nEntityIndex, int nUnk, int *pOutChanges ) = 0; // "CDeltaCalculator::FieldCalcDelta"
 
-	// Argument types below are not verified
+	// Argument types of BuildDeltaProperties and MergeDeltas are not verified
 	virtual void BuildDeltaProperties( const FlattenedSerializerDesc_t &pSerializer, void *p1, int nEntityIndex, int nUnk, const SerializedEntityData_t *pData, const CUtlVector< int > *pFieldPaths, void *pOutFieldData, void *p2, bool *pbOut1, bool *pbOut2 ) = 0; // "CFlattenedSerializer::BuildDeltaProperties", clears both flags first
-	virtual void WriteFieldList( const FlattenedSerializerDesc_t &pSerializer, void *p1, void *p2, int nEntityIndex, int nUnk1, void *pFieldBitRanges, int nUnk2 ) = 0; // "CFlattenedSerializer::WriteFieldList"
+
+	// Copies the fields of pData into pBuf, only those whose encoded field path is in pFieldPaths when it is not NULL (the engine passes the CalcDelta changes).
+	// Each written field is reported to the spew listeners a FlattenedSerializerSpewField_t, filtered by nEntityIndex and nRecipient. Always returns true.
+	virtual bool WriteFieldList( const FlattenedSerializerDesc_t &pSerializer, bf_write *pBuf, const SerializedEntityData_t *pData, int nEntityIndex, int nUnk, const CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, int nRecipient ) = 0; // "CFlattenedSerializer::WriteFieldList"
 	virtual void MergeDeltas( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pOld, void *p2, void *p3, int nEntityIndex, bool bUnk, int *pOut ) = 0; // "CFlattenedSerializer::MergeDeltas"
 	virtual bool BuildMergedSerializedEntity( const FlattenedSerializerDesc_t &pSerializer, byte *pDeltaData, SerializedEntityData_t *pBase, CUtlVector< int > *pFieldPaths, bool bCull, int nEntityIndex ) = 0; // "BuildMergedSerializedEntity"
 	virtual int CullUnchangedFieldPaths( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, CUtlVector< int > *pFieldPaths, SerializedEntityData_t *pSerialized, CUtlVector< int > *pOutFieldPaths ) = 0; // Filters unchanged paths and logs "culled".
