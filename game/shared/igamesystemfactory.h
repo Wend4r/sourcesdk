@@ -179,13 +179,30 @@ private:
 	U** m_ppGlobalPointer;
 };
 
-template <class T, class U = T>
-class CGameSystemReallocatingFactory : public CBaseGameSystemFactory
+class CBaseReallocatingGameSystemFactory : public CBaseGameSystemFactory
 {
-public:
-	CGameSystemReallocatingFactory(const char* pName, U** ppGlobalPointer = nullptr) : CBaseGameSystemFactory(pName)
+protected:
+	CBaseReallocatingGameSystemFactory(const char* pName, void** ppGlobalPointer) : CBaseGameSystemFactory(pName)
 	{
 		m_ppGlobalPointer = ppGlobalPointer;
+	}
+
+public:
+	IGameSystem* GetCurrentGameSystem() const
+	{
+		return m_ppGlobalPointer ? static_cast<IGameSystem*>(*m_ppGlobalPointer) : nullptr;
+	}
+
+protected:
+	void** m_ppGlobalPointer;
+};
+
+template <class T, class U = T>
+class CGameSystemReallocatingFactory : public CBaseReallocatingGameSystemFactory
+{
+public:
+	CGameSystemReallocatingFactory(const char* pName, U** ppGlobalPointer = nullptr) : CBaseReallocatingGameSystemFactory(pName, reinterpret_cast<void**>(ppGlobalPointer))
+	{
 	}
 
 	bool Init() override { return true; }
@@ -212,15 +229,12 @@ public:
 	{
 		if (m_ppGlobalPointer)
 		{
-			*m_ppGlobalPointer = reinterpret_cast<T*>(pValue);
+			*reinterpret_cast<U**>(m_ppGlobalPointer) = reinterpret_cast<T*>(pValue);
 		}
 	}
 
 	bool IsReallocating() override { return true; }
 	IGameSystem* GetStaticGameSystem() override { return nullptr; }
-
-private:
-	U** m_ppGlobalPointer;
 };
 
 struct AddedGameSystem_t
