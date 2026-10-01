@@ -8,6 +8,7 @@
 
 #include "tier0/logging.h"
 #include "tier0/threadtools.h"
+#include "tier0/strtools.h"
 #include "tier0/utlstring.h"
 #include "tier1/generichash.h"
 #include "tier1/utlmap.h"
@@ -410,6 +411,21 @@ struct SchemaClassInfoData_t
 
 class CSchemaClassInfo : public SchemaClassInfoData_t
 {
+public:
+	SchemaCollectionManipulatorFn_t GetCollectionManipulator( const char *pszField )
+	{
+		for ( CSchemaClassInfo *pClass = this; pClass; pClass = pClass->GetParent() )
+		{
+			for ( int i = 0; i < pClass->m_nFieldCount; ++i )
+			{
+				const auto &field = pClass->m_pFields[ i ];
+				if ( !V_strcmp( field.m_pszName, pszField ) )
+					return static_cast< CSchemaType_Atomic_CollectionOfT * >( field.m_pType )->m_pfnManipulator;
+			}
+		}
+
+		return nullptr;
+	}
 };
 
 struct SchemaEnumeratorInfoData_t
