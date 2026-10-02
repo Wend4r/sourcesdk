@@ -864,6 +864,14 @@ private:
 		{ \
 			NetworkStateChanged( pNetworkVar, pNetworkVar ); \
 		} \
+		template < class Vector > \
+		static inline void NetworkStateChanged( void *pNetworkVar, int32 nArrayIndex ) \
+		{ \
+			START_CHECK_USENETWORKVARS \
+			ThisClass *pThis = ( (ThisClass*)(((char*)pNetworkVar) - MyOffsetOf(ThisClass,networkVarName)) ); \
+			pThis->stateChangedFn( static_cast< Vector * >( pNetworkVar )->GetStateChanged( ( uint32 )MyOffsetOf(ThisClass,networkVarName), nArrayIndex ) ); \
+			END_CHECK_USENETWORKVARS \
+		} \
 	}; \
 	typedef baseClassName< networkVarType, NetworkVar_##networkVarName > NetworkVarType_##networkVarName; \
 	baseClassName< networkVarType, NetworkVar_##networkVarName > networkVarName;
@@ -875,12 +883,16 @@ private:
 //		CNetworkUtlVector( int, m_nBodyGroupChoices ) = CNetworkUtlVectorBase< int, NetworkVar_m_nBodyGroupChoices, -1, int >
 //		CNetworkUtlVarEmbedded( EntityRenderAttribute_t, m_vecRenderAttributes ) = CUtlVectorEmbeddedNetworkVar< EntityRenderAttribute_t, NetworkVar_m_vecRenderAttributes, -1, int >
 //
-// Note the generated changer reports only the flattened field offset. The engine additionally fills 
-// NetworkStateChanged_t::m_nArrayIndex for element-level changes - drive that case by hand until the 
-// element accessors are reconstructed.
+// The generated changer reports the flattened field offset. A vector change is built by GetStateChanged()
+// of the vector type the vector itself names: the offset with NetworkStateChanged_t::m_nArrayIndex for
+// CNetworkUtlVectorBase, the element field path for CNetworkUtlVectorBaseChained and CUtlVectorEmbeddedNetworkVar.
 #define CNetworkUtlVector( type, name ) \
 	NETWORK_VAR_START( type, name ) \
 	NETWORK_VAR_END( type, name, CNetworkUtlVectorBase, NetworkStateChanged )
+
+#define CNetworkUtlVectorChained( type, name ) \
+	NETWORK_VAR_START( type, name ) \
+	NETWORK_VAR_END( type, name, CNetworkUtlVectorBaseChained, NetworkStateChanged )
 
 #define CNetworkUtlVarEmbedded( type, name ) \
 	NETWORK_VAR_START( type, name ) \
