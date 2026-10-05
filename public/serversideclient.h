@@ -31,6 +31,7 @@ class CHLTVServer;
 class INetMessage;
 class CNetworkGameServerBase;
 class CNetworkGameServer;
+class CNetworkServerSpawnGroup;
 
 class CMsg_CVars;
 class CNETMsg_StringCmd_t;
@@ -127,7 +128,14 @@ public:
 
 	struct BuildServerInfoMessageAsync_t
 	{
-		char m_Data[128];
+		bool m_bAsync; // Built by the delayed call, otherwise synchronously
+		int m_nTick;
+		int m_nPlayers;
+		int m_nHumans;
+		int m_nBots;
+		int m_nSpawnCount;
+		CUtlVector< CNetworkServerSpawnGroup * > m_vecInitialSpawnGroups;
+		CNETMsg_SetConVar_t m_SetConVar;
 	};
 
 	struct SendNetMessageCall_t
@@ -293,10 +301,10 @@ public:
 	virtual void             PerformPrespawn() = 0;
 
 public:
-	virtual void             ExecuteDelayedCall( empty_t & ) = 0;
+	void                     ExecuteDelayedCall( empty_t & ) {}
+	virtual void             ExecuteDelayedCall( BuildServerInfoMessageAsync_t &call ) = 0;
 	void                     ExecuteDelayedCall( OnSpawnGroupActivateCall_t &call );
 	void                     ExecuteDelayedCall( OnSpawnGroupDeactivateCall_t &call );
-	void                     ExecuteDelayedCall( BuildServerInfoMessageAsync_t &call );
 	void                     ExecuteDelayedCall( SendNetMessageCall_t &call );
 	void                     ExecuteDelayedCall( OnSpawnGroupLoadCall_t &call );
 	void                     ExecuteDelayedCall( SendSpawnGroupManifestUpdateCall_t &call );
