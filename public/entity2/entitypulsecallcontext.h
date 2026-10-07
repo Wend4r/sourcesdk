@@ -2,7 +2,7 @@
 #define ENTITYPULSECALLCONTEXT_H
 
 #include "entitypulse.h"
-#include "tier1/keyvalues3.h"
+#include "kv3lib/keyvalues3.h"
 #include "tier1/utlleanvector.h"
 #include "tier1/utlvector.h"
 

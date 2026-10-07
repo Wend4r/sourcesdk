@@ -5,49 +5,16 @@
 #pragma once
 #endif
 
-#include "platform.h"
+#include "tier0/platform.h"
+#include "kv3lib/kv3formats.h"
 
-#define KV3_FLAG_OBJECT_REFERANCES (1 << 0) 
-
-class CUtlString;
-class CUtlBuffer;
-class CBufferString;
 class KeyValues3;
 class CKV3Arena;
+class CBufferString;
+class CUtlBuffer;
+class CUtlString;
 struct KV1ToKV3Translation_t;
 struct KV3ToKV1Translation_t;
-
-/* 
-	KeyValues3 is a data storage format. See https://developer.valvesoftware.com/wiki/KeyValues3
-	Supports various specific data types targeted at the Source2.
-	Each specific type corresponds to one of the basic types.
-
-	There are 2 ways to create KeyValues3:
-
-	1. Via CKV3Arena:
-	- KV's, arrays and tables are stored in fixed memory blocks (clusters) and therefore memory is allocated only when clusters are created.
-	- Supports metadata and some other things.
-
-	2. Directly through the constructor.
-*/
-
-struct KV3ID_t
-{
-	const char* m_name;
-	uint64		m_data1;
-	uint64		m_data2;
-};
-
-// encodings
-const KV3ID_t g_KV3Encoding_Text 		= { "text", 0x41C58A33E21C7F3Cull, 0xDAA323A6DA77799ull };
-const KV3ID_t g_KV3Encoding_Binary 		= { "binary", 0x40C1F7D81B860500ull, 0x14E76782A47582ADull };
-const KV3ID_t g_KV3Encoding_BinaryLZ4 	= { "binary_lz4", 0x4F5C63A16847348Aull, 0x19B1D96F805397A1ull };
-const KV3ID_t g_KV3Encoding_BinaryZSTD 	= { "binary_zstd", 0x4305FEF06F620A00ull, 0x29DBB14623045FA3ull };
-const KV3ID_t g_KV3Encoding_BinaryBC 	= { "binary_bc", 0x4F6C95BC95791A46ull, 0xD2DFB7A1BC050BA7ull };
-const KV3ID_t g_KV3Encoding_BinaryAuto 	= { "binary_auto", 0x45836B856EB109E6ull, 0x8C06046E3A7012A3ull };
-
-// formats
-const KV3ID_t g_KV3Format_Generic = { "generic", 0x469806E97412167Cull, 0xE73790B53EE6F2AFull };
 
 enum KV1TextEscapeBehavior_t
 {

@@ -62,6 +62,7 @@ option(SOURCESDK_USE_ABI0 "Enable use of the older C++ ABI, which was the defaul
 set(SOURCESDK_COMMON_DIR "${SOURCESDK_DIR}/common")
 set(SOURCESDK_ENTITY2_DIR "${SOURCESDK_DIR}/entity2")
 set(SOURCESDK_INTERFACES_DIR "${SOURCESDK_DIR}/interfaces")
+set(SOURCESDK_KV3LIB_DIR "${SOURCESDK_DIR}/kv3lib")
 set(SOURCESDK_MATHLIB_DIR "${SOURCESDK_DIR}/mathlib")
 set(SOURCESDK_PUBLIC_DIR "${SOURCESDK_DIR}/public")
 set(SOURCESDK_SYMBOLS_DIR "${SOURCESDK_DIR}/sym")
@@ -120,6 +121,7 @@ include(cmake/sourcesdk/targets/public.cmake)
 include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
+include(cmake/sourcesdk/targets/kv3lib.cmake)
 
 set(SOURCESDK_GAME_TARGET_PREV "${SOURCESDK_GAME_TARGET}" CACHE INTERNAL "Previous value of SOURCESDK_GAME_TARGET")
 
@@ -156,6 +158,7 @@ set(SOURCESDK_LINK_LIBRARIES
 	${SOURCESDK_COMMON_NAME}
 	${SOURCESDK_ENTITY2_NAME}
 	${SOURCESDK_INTERFACES_NAME}
+	${SOURCESDK_KV3LIB_NAME}
 	${SOURCESDK_MATHLIB_NAME}
 	${SOURCESDK_NETWORKSYSTEM_NAME}
 	${SOURCESDK_PROTOS_NAME}

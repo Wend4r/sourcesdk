@@ -1,4 +1,12 @@
-#include "tier1/keyvalues3.h"
+#include "kv3lib/keyvalues3.h"
+
+#include "keyvalues3_helpers.h"
+#include "keyvalues3_metadata.h"
+#include "keyvalues3_binaryblob.h"
+#include "keyvalues3_array.h"
+#include "keyvalues3_table.h"
+#include "keyvalues3_cluster.h"
+#include "keyvalues3_arena.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -8,6 +16,103 @@
 #undef offsetof
 #define offsetof(s,m)	(size_t)&(((s *)0)->m)
 #endif
+
+template < typename T >
+void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree )
+{
+	PrepareForType( KV3_TYPEEX_ARRAY, subtype );
+
+	CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
+
+	pNewArray->SetCount( this, size, type, subtype );
+
+	CKeyValues3Array::Element_t* arr = pNewArray->Base();
+	for ( int i = 0; i < pNewArray->Count(); ++i )
+		arr[ i ]->SetValue<T>( data[ i ], type, subtype );
+
+	if ( bFree )
+		free( (void*)data );
+}
+
+// The vector setters in the public header instantiate this from outside kv3lib.
+template void KeyValues3::NormalizeArray< float32 >( KV3TypeEx_t type, KV3SubType_t subtype, int size, const float32* data, bool bFree );
+
+template<typename T>
+inline T *KeyValues3::AllocateOnHeap( int initial_size )
+{
+	if(initial_size <= 0)
+		initial_size = T::DATA_SIZE;
+
+	auto element = (T *)g_pMemAlloc->RegionAlloc( MEMALLOC_REGION_ALLOC_4, T::TotalSizeOf( initial_size ) );
+	Construct( element, KV3_INVALID_CLUSTER_ELEMENT, initial_size );
+
+	return element;
+}
+
+template<typename T>
+inline void KeyValues3::FreeOnHeap( T *element )
+{
+	Destruct( element );
+
+	g_pMemAlloc->RegionFree( MEMALLOC_REGION_FREE_4, element );
+}
+
+template < typename T >
+void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_type, KV3TypeEx_t type_short, KV3TypeEx_t type_ptr, KV3SubType_t subtype, KV3TypeEx_t type_elem, KV3SubType_t subtype_elem )
+{
+	int nMaxSizeShort = sizeof( uint64 ) / sizeof( T );
+
+	if ( type_short != KV3_TYPEEX_INVALID && size <= nMaxSizeShort )
+	{
+		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN && type_ptr != KV3_TYPEEX_INVALID )
+		{
+			PrepareForType( type_ptr, subtype );
+
+			m_bFreeArrayMemory = false;
+			m_nNumArrayElements = size;
+			m_Data.m_pMemory = (void*)data;
+		}
+		else
+		{
+			PrepareForType( type_short, subtype );
+
+			m_bFreeArrayMemory = false;
+			m_nNumArrayElements = size;
+			m_Data.m_pMemory = NULL;
+			memcpy( &m_Data.m_pMemory, data, size * sizeof( T ) );
+
+			if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
+				free( (void*)data );
+		}
+	}
+	else if ( type_ptr != KV3_TYPEEX_INVALID && size < 32 )
+	{
+		PrepareForType( type_ptr, subtype );
+
+		m_nNumArrayElements = size;
+
+		if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN )
+		{
+			m_bFreeArrayMemory = false;
+			m_Data.m_pMemory = (void*)data;
+		}
+		else if ( alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE )
+		{
+			m_bFreeArrayMemory = true;
+			m_Data.m_pMemory = (void*)data;
+		}
+		else
+		{
+			m_bFreeArrayMemory = true;	
+			m_Data.m_pMemory = ::Alloc< T >( size * sizeof( T ) );
+			memcpy( m_Data.m_pMemory, data, size * sizeof( T ) );
+		}
+	}
+	else
+	{
+		NormalizeArray< T >( type_elem, subtype_elem, size, data, alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE );
+	}
+}
 
 KeyValues3::KeyValues3( KV3TypeEx_t type, KV3SubType_t subtype ) : 
 	KeyValues3( KV3_INVALID_CLUSTER_ELEMENT, type, subtype )
@@ -245,7 +350,7 @@ CKeyValues3Array *KeyValues3::AllocArray( int initial_size )
 
 	if ( context )
 	{
-		auto arr = context->AllocArray( initial_size );
+		auto arr = context->Impl().AllocArray( initial_size );
 
 		if ( arr )
 			return arr;
@@ -260,7 +365,7 @@ CKeyValues3Table* KeyValues3::AllocTable( int initial_size )
 
 	if ( context )
 	{
-		auto table = context->AllocTable( initial_size );
+		auto table = context->Impl().AllocTable( initial_size );
 
 		if ( table )
 			return table;
@@ -283,7 +388,7 @@ void KeyValues3::FreeArray( CKeyValues3Array *element, bool clearing_context )
 	else
 	{
 		auto context = GetContext();
-		bool raw_allocated = context && context->IsArrayAllocated( element );
+		bool raw_allocated = context && context->Impl().IsArrayAllocated( element );
 
 		if ( !raw_allocated && element->GetClusterElement() < 0 )
 		{
@@ -292,7 +397,7 @@ void KeyValues3::FreeArray( CKeyValues3Array *element, bool clearing_context )
 		else if ( !clearing_context )
 		{
 			if ( !raw_allocated )
-				context->FreeArray( element );
+				context->Impl().FreeArray( element );
 			else
 				Destruct( element );
 		}
@@ -313,7 +418,7 @@ void KeyValues3::FreeTable( CKeyValues3Table *element, bool clearing_context )
 	else
 	{
 		auto context = GetContext();
-		bool raw_allocated = context && context->IsTableAllocated( element );
+		bool raw_allocated = context && context->Impl().IsTableAllocated( element );
 
 		if ( !raw_allocated && element->GetClusterElement() < 0 )
 		{
@@ -324,7 +429,7 @@ void KeyValues3::FreeTable( CKeyValues3Table *element, bool clearing_context )
 			if ( raw_allocated )
 				Destruct( element );
 			else
-				context->FreeTable( element );
+				context->Impl().FreeTable( element );
 		}
 	}
 }
@@ -2122,7 +2227,7 @@ void CKV3ArenaBase::Purge()
 	m_bFormatConverted = false;
 }
 
-CKV3Arena::CKV3Arena( bool bNoRoot ) : BaseClass( this ), pad{}
+CKV3ArenaImpl::CKV3ArenaImpl( CKV3Arena *context, bool bNoRoot ) : BaseClass( context )
 {
 	if ( bNoRoot )
 	{
@@ -2138,7 +2243,7 @@ CKV3Arena::CKV3Arena( bool bNoRoot ) : BaseClass( this ), pad{}
 	m_bFormatConverted = false;
 }
 
-void CKV3Arena::Clear()
+void CKV3ArenaImpl::Clear()
 {
 	BaseClass::Clear();
 
@@ -2160,7 +2265,7 @@ void CKV3Arena::Clear()
 		m_KV3BaseCluster.Alloc();
 }
 
-void CKV3Arena::Purge()
+void CKV3ArenaImpl::Purge()
 {
 	BaseClass::Purge();
 
@@ -2180,7 +2285,7 @@ void CKV3Arena::Purge()
 		m_KV3BaseCluster.Alloc();
 }
 
-KeyValues3* CKV3Arena::Root()
+KeyValues3* CKV3ArenaImpl::Root()
 {
 	if ( !m_bRootAvailabe )
 	{
@@ -2191,7 +2296,7 @@ KeyValues3* CKV3Arena::Root()
 	return &m_KV3BaseCluster.Head()->m_Value;
 }
 
-void CKV3Arena::EnableMetaData( bool bEnable )
+void CKV3ArenaImpl::EnableMetaData( bool bEnable )
 {
 	if ( bEnable != m_bMetaDataEnabled )
 	{
@@ -2201,7 +2306,7 @@ void CKV3Arena::EnableMetaData( bool bEnable )
 	}
 }
 
-void CKV3Arena::CopyMetaData( KV3MetaData_t* pDest, const KV3MetaData_t* pSrc )
+void CKV3ArenaImpl::CopyMetaData( KV3MetaData_t* pDest, const KV3MetaData_t* pSrc )
 {
 	pDest->m_nLine = pSrc->m_nLine;
 	pDest->m_nColumn = pSrc->m_nColumn;
@@ -2217,12 +2322,12 @@ void CKV3Arena::CopyMetaData( KV3MetaData_t* pDest, const KV3MetaData_t* pSrc )
 	}
 }
 
-KeyValues3* CKV3Arena::AllocKV( KV3TypeEx_t type, KV3SubType_t subtype )
+KeyValues3* CKV3ArenaImpl::AllocKV( KV3TypeEx_t type, KV3SubType_t subtype )
 {
 	return Alloc( m_KV3PartialClusters, m_KV3FullClusters, CKeyValues3Cluster::CLUSTER_SIZE, type, subtype );
 }
 
-void CKV3Arena::FreeKV( KeyValues3* kv )
+void CKV3ArenaImpl::FreeKV( KeyValues3* kv )
 {
 	CKV3Arena* context;
 	KV3MetaData_t* metadata = kv->GetMetaData( &context );
@@ -2231,6 +2336,91 @@ void CKV3Arena::FreeKV( KeyValues3* kv )
 		metadata->Clear();
 
 	Free<CKeyValues3Cluster, KeyValues3>( kv, m_KV3PartialClusters, m_KV3FullClusters );
+}
+
+CKV3Arena::CKV3Arena( bool bNoRoot ) : m_Storage{}
+{
+	Construct( &Impl(), this, bNoRoot );
+}
+
+CKV3Arena::~CKV3Arena()
+{
+	Destruct( &Impl() );
+}
+
+KeyValues3* CKV3Arena::AllocKV( KV3TypeEx_t type, KV3SubType_t subtype )
+{
+	return Impl().AllocKV( type, subtype );
+}
+
+void CKV3Arena::FreeKV( KeyValues3* kv )
+{
+	Impl().FreeKV( kv );
+}
+
+KeyValues3* CKV3Arena::Root()
+{
+	return Impl().Root();
+}
+
+bool CKV3Arena::IsMetaDataEnabled() const
+{
+	return Impl().IsMetaDataEnabled();
+}
+
+bool CKV3Arena::IsFormatConverted() const
+{
+	return Impl().IsFormatConverted();
+}
+
+bool CKV3Arena::IsRootAvailabe() const
+{
+	return Impl().IsRootAvailabe();
+}
+
+CUtlBuffer& CKV3Arena::GetBinaryData()
+{
+	return Impl().GetBinaryData();
+}
+
+IParsingErrorListener* CKV3Arena::GetParsingErrorListener() const
+{
+	return Impl().GetParsingErrorListener();
+}
+
+void CKV3Arena::SetParsingErrorListener( IParsingErrorListener* listener )
+{
+	Impl().SetParsingErrorListener( listener );
+}
+
+void CKV3Arena::EnableMetaData( bool bEnable )
+{
+	Impl().EnableMetaData( bEnable );
+}
+
+void CKV3Arena::CopyMetaData( KV3MetaData_t* pDest, const KV3MetaData_t* pSrc )
+{
+	Impl().CopyMetaData( pDest, pSrc );
+}
+
+const char* CKV3Arena::LookupString( UtlSymLargeId_t symid )
+{
+	return Impl().LookupString( symid );
+}
+
+const char *CKV3Arena::AllocString( const char *pString, UtlSymLargeId_t *pSymLargeId )
+{
+	return Impl().AllocString( pString, pSymLargeId );
+}
+
+void CKV3Arena::Clear()
+{
+	Impl().Clear();
+}
+
+void CKV3Arena::Purge()
+{
+	Impl().Purge();
 }
 
 #include "tier0/memdbgoff.h"

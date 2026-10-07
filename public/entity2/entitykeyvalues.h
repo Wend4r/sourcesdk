@@ -5,7 +5,7 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier1/keyvalues3.h"
+#include "kv3lib/keyvalues3.h"
 #include "tier1/utlleanvector.h"
 #include "entity2/entitysystem.h"
 

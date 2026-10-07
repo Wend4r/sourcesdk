@@ -20,7 +20,7 @@
 #include "tier0/utlstring.h"
 #include "tier1/bitbuf.h"
 #include "tier1/generichash.h"
-#include "tier1/keyvalues3.h"
+#include "kv3lib/keyvalues3.h"
 #include "entity2/entityinstance.h"
 #include "vscript/ivscript.h"
 #include "networksystem/netmessage.h"

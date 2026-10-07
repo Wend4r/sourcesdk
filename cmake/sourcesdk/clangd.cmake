@@ -103,6 +103,7 @@ if(SOURCESDK_GENERATE_CLANGD)
 			entity2/.*
 			game/.*
 			interfaces/.*
+			kv3lib/.*
 			mathlib/.*
 			networksystem/.*
 			public/.*

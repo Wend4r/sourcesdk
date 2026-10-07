@@ -38,11 +38,13 @@ function(sourcesdk_setup_test_target target_name)
 		${CMAKE_SOURCE_DIR}/public
 		${CMAKE_SOURCE_DIR}/public/tier0
 		${CMAKE_SOURCE_DIR}/public/tier1
+		${CMAKE_SOURCE_DIR}/public/kv3lib
 		${CMAKE_SOURCE_DIR}/public/mathlib
 		${CMAKE_CURRENT_SOURCE_DIR}
 	)
 
 	target_link_libraries(${target_name} PRIVATE
+		${SOURCESDK_KV3LIB_NAME}
 		${SOURCESDK_TIER1_NAME}
 	)
 

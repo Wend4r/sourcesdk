@@ -1,11 +1,11 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier0/keyvalues3.h>
+#include <kv3lib/kv3formats.h>
 #include <tier0/strtools.h>
 #include <tier0/utlbuffer.h>
 #include <tier0/utlstring.h>
-#include <tier1/keyvalues3.h>
+#include <kv3lib/keyvalues3.h>
 
 #include <cmath>
 #include <fstream>
@@ -226,6 +226,63 @@ REGISTER_NAMED_TEST( "KeyValues3.Table", KeyValues3_Table )
 
 	TEST_TRUE( kv.RemoveMember( "answer" ) );
 	TEST_EQ( kv.GetMemberInt( "answer", -1 ), -1 );
+}
+
+REGISTER_NAMED_TEST( "KeyValues3.Arena", KeyValues3_Arena )
+{
+	// Arena-owned values should allocate members, arrays and tables from the arena clusters.
+	// Keep the member count low: after the binary save/load test, tier0's string token registration
+	// crashes on the 7th arena symbol regardless of how the arena is laid out.
+	CKV3Arena arena;
+
+	TEST_TRUE( arena.IsRootAvailabe() );
+
+	KeyValues3 *pRoot = arena.Root();
+
+	TEST_NOT_NULL( pRoot );
+	TEST_TRUE( pRoot->GetContext() == &arena );
+
+	pRoot->SetToEmptyTable();
+	pRoot->SetMemberInt( "answer", 42 );
+	pRoot->SetMemberVector( "vector", Vector( 1.0f, 2.0f, 3.0f ) );
+	pRoot->SetMemberString( "name", "arena" );
+
+	TEST_EQ( pRoot->GetMemberCount(), 3 );
+	TEST_EQ( pRoot->GetMemberInt( "answer" ), 42 );
+	TEST_EQ( V_strcmp( pRoot->GetMemberString( "name" ), "arena" ), 0 );
+	TestFloatClose( pRoot->GetMemberVector( "vector" ).z, 3.0f );
+
+	KeyValues3 *pAnswer = pRoot->FindMember( "answer" );
+
+	TEST_NOT_NULL( pAnswer );
+	TEST_TRUE( pAnswer->GetContext() == &arena );
+
+	KeyValues3 *pLoose = arena.AllocKV( KV3_TYPEEX_INT, KV3_SUBTYPE_INT32 );
+
+	TEST_NOT_NULL( pLoose );
+	TEST_TRUE( pLoose->GetContext() == &arena );
+	arena.FreeKV( pLoose );
+
+	arena.Clear();
+	TEST_TRUE( arena.Root()->IsNull() );
+}
+
+REGISTER_NAMED_TEST( "KeyValues3.LoadText.Arena", KeyValues3_LoadText_Arena )
+{
+	// tier0 fills the arena through its own layout, so the root must be readable from kv3lib afterwards.
+	CKV3Arena arena;
+	CUtlString sError;
+	const CUtlString sText = ReadKeyValues3TestFile( SOURCESDK_KEYVALUES3_DATA_DIR "/value.kv3" );
+	CUtlBuffer buffer( sText.Get(), sText.Length(), ( CUtlBuffer::BufferFlags_t )( CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY ) );
+
+	TEST_TRUE( LoadKV3( &arena, &sError, &buffer, g_KV3Format_Generic, "value.kv3" ) );
+
+	KeyValues3 *pRoot = arena.Root();
+
+	TEST_TRUE( pRoot->IsTable() );
+	TEST_EQ( pRoot->GetMemberInt( "answer" ), 42 );
+	TEST_EQ( V_strcmp( pRoot->GetMemberString( "name" ), "kv3" ), 0 );
+	ValidateKV3TypeExMembers( *pRoot, true );
 }
 
 REGISTER_NAMED_TEST( "KeyValues3.LoadText.KV1", KeyValues3_LoadText_KV1 )
