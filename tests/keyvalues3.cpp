@@ -228,6 +228,59 @@ REGISTER_NAMED_TEST( "KeyValues3.Table", KeyValues3_Table )
 	TEST_EQ( kv.GetMemberInt( "answer", -1 ), -1 );
 }
 
+REGISTER_NAMED_TEST( "KeyValues3.Convenience", KeyValues3_Convenience )
+{
+	// Value, member, array and blob helpers should forward to the typed accessors.
+	KeyValues3 kv;
+
+	kv.SetToEmptyTable();
+	kv.SetMemberUint64( "big", 0x100000000ull );
+	kv.SetMemberResourceString( "model", "models/a.vmdl" );
+	kv.SetMemberVector( "origin", Vector( 1.0f, 2.0f, 3.0f ) );
+
+	TEST_EQ( kv.GetMemberUint64( "big" ), 0x100000000ull );
+	TEST_EQ( kv.FindMember( "model" )->GetSubType(), KV3_SUBTYPE_RESOURCE );
+	TEST_EQ( kv.FindMember( "big" )->GetValueAsNumeric< int64 >(), 0x100000000ll );
+
+	Vector vecOrigin;
+	TEST_TRUE( kv.GetMemberVector( "origin", &vecOrigin ) );
+	TestFloatClose( vecOrigin.y, 2.0f );
+
+	Vector2D vecMissing( 5.0f, 5.0f );
+	TEST_FALSE( kv.GetMemberVector2D( "missing", &vecMissing ) );
+	TestFloatClose( vecMissing.x, 5.0f );
+
+	char szBig[ 32 ];
+	kv.GetMemberAsString( "big", szBig, sizeof( szBig ) );
+	TEST_EQ( V_strcmp( szBig, "4294967296" ), 0 );
+
+	CUtlString sMissing;
+	kv.GetMemberAsString( "missing", &sMissing, "fallback" );
+	TEST_EQ( V_strcmp( sMissing.Get(), "fallback" ), 0 );
+
+	KeyValues3 array;
+	array.ArrayAddToTail()->SetInt( 1 );
+	array.ArrayInsertMultipleBefore( 0, 2 );
+	TEST_EQ( array.GetArrayLength(), 3 );
+	TEST_EQ( array.GetArrayElement( 2 )->GetValueInt(), 1 );
+
+	array.EnsureIsAnyArray( 3 );
+	TEST_EQ( array.GetArrayElement( 2 )->GetValueInt(), 1 );
+
+	array.ArrayRemoveMultiple( 0, 2 );
+	TEST_EQ( array.GetArrayLength(), 1 );
+
+	KeyValues3 blob;
+	blob.SetToZeroedBinaryBlob( 4 );
+	TEST_EQ( blob.GetBinaryBlobSize(), 4 );
+	TEST_EQ( blob.GetBinaryBlobByte( 3 ), 0 );
+
+	KeyValues3 copy;
+	copy.CopyFrom( &kv );
+	TEST_EQ( copy.GetMemberUint64( "big" ), 0x100000000ull );
+	TEST_FALSE( copy.HasMetadata() );
+}
+
 REGISTER_NAMED_TEST( "KeyValues3.Arena", KeyValues3_Arena )
 {
 	// Arena-owned values should allocate members, arrays and tables from the arena clusters.

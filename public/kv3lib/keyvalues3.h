@@ -333,16 +333,23 @@ public:
 	KeyValues3& operator=( const KeyValues3& copyFrom );
 
 	void CopyFrom( const KeyValues3& other );
+	void CopyFrom( const KeyValues3 *pOther ) { CopyFrom( *pOther ); }
 	void OverlayKeysFrom( const KeyValues3 &other, bool depth = false );
 
 	CKV3Arena* GetContext() const;
+	CKV3Arena *GetParentContext() const { return GetContext(); }
 	KV3MetaData_t* GetMetaData( CKV3Arena** ppCtx = nullptr ) const;
+
+	// Metadata exists only for values allocated in an arena with metadata enabled
+	bool HasMetadata() const { return GetMetaData() != nullptr; }
+	int Metadata_GetLineNumber() const;
+	int Metadata_GetColumnNumber() const;
 
 	bool HasFlag( KeyValues3Flag_t flag ) const { return (m_nFlags & flag) != 0; }
 	bool HasAnyFlags() const { return m_nFlags != 0; }
 	KeyValues3Flag_t GetAllFlags() const { return (KeyValues3Flag_t)m_nFlags; }
 	void SetAllFlags( KeyValues3Flag_t flags ) { m_nFlags |= flags; }
-	void SetFlag( KeyValues3Flag_t flag, bool state )
+	void SetFlag( KeyValues3Flag_t flag, bool state = true )
 	{
 		if(state)
 			m_nFlags |= flag;
@@ -415,6 +422,9 @@ public:
 	int GetBinaryBlobSize() const;
 	void SetToBinaryBlob( const byte* blob, int size );
 	void SetToBinaryBlobExternal( const byte* blob, int size, bool free_mem );
+	void SetToZeroedBinaryBlob( int size );
+	const byte *GetBinaryBlobBase() const { return GetBinaryBlob(); }
+	byte GetBinaryBlobByte( int index ) const { Assert( index >= 0 && index < GetBinaryBlobSize() ); return GetBinaryBlob()[ index ]; }
 
 	Color GetColor( const Color &defaultValue = Color( 0, 0, 0, 255 ) ) const;
 	void SetColor( const Color &color );
@@ -433,6 +443,30 @@ public:
 	void SetQAngle( const QAngle &ang )				{ SetVecBasedObj<QAngle>( ang, 3, KV3_SUBTYPE_QANGLE ); }
 	void SetMatrix3x4( const matrix3x4_t &matrix )	{ SetVecBasedObj<matrix3x4_t>( matrix, 3*4, KV3_SUBTYPE_MATRIX3X4 ); }
 
+	// Reads a numeric array or a space separated string, zero-fills the tail and returns false if the element count differs
+	bool GetValueFloatArray( int count, float32 *pOutValues ) const { return ReadArrayFloat32( count, pOutValues ); }
+	void SetValueFloatArray( int count, const float32 *pValues ) { NormalizeArray< float32 >( KV3_TYPEEX_DOUBLE, KV3_SUBTYPE_FLOAT32, count, pValues, false ); }
+
+	template < typename T > T GetValueAsNumeric() const { return GetValue< T >( T() ); }
+	void GetValueAsString( char *pOutData, int nBufSize ) const { CBufferStringN< 128 > buff; V_strncpy( pOutData, ToString( buff ), nBufSize ); }
+	void GetValueAsString( CUtlString *pOutString ) const { CBufferStringN< 128 > buff; pOutString->Set( ToString( buff ) ); }
+
+	bool GetValueBool() const { return GetBool(); }
+	int32 GetValueInt() const { return GetInt(); }
+	int64 GetValueInt64() const { return GetInt64(); }
+	uint64 GetValueUint64() const { return GetUInt64(); }
+	float32 GetValueFloat() const { return GetFloat(); }
+	float64 GetValueDouble() const { return GetDouble(); }
+	const char *GetValueString( const char *defaultValue = "" ) const { return GetString( defaultValue ); }
+	bool GetValueVector( Vector *pOutValue ) const { return ReadArrayFloat32( 3, pOutValue->Base() ); }
+	bool GetValueVector2D( Vector2D *pOutValue ) const { return ReadArrayFloat32( 2, pOutValue->Base() ); }
+	bool GetValueVector4D( Vector4D *pOutValue ) const { return ReadArrayFloat32( 4, pOutValue->Base() ); }
+	bool GetValueQAngle( QAngle *pOutValue ) const { return ReadArrayFloat32( 3, pOutValue->Base() ); }
+	bool GetValueQuaternion( Quaternion *pOutValue ) const { return ReadArrayFloat32( 4, pOutValue->Base() ); }
+	bool GetValueMatrix( matrix3x4_t *pOutValue ) const { return ReadArrayFloat32( 3*4, pOutValue->Base() ); }
+
+	void SetValueResourceString( const char *pString ) { SetString( pString, KV3_SUBTYPE_RESOURCE ); }
+
 	KeyValues3Array_t *GetArray() { return IsArray() ? &m_Data.m_Array : nullptr; }
 	const KeyValues3Array_t *GetArray() const { return const_cast<KeyValues3 *>(this)->GetArray(); };
 	CKeyValues3Array *GetKV3Array() { return IsKV3Array() ? m_Data.m_Array.m_pRoot : nullptr; }
@@ -441,7 +475,13 @@ public:
 	int GetArrayElementCount() const;
 	void SetArrayElementCount( int count, KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
 
+	int GetArrayLength() const { return GetArrayElementCount(); }
+
+	// Keeps the elements when this is already an array of the requested length
+	void EnsureIsAnyArray( int count ) { if ( !IsArray() || GetArrayElementCount() != count ) SetArrayElementCount( count ); }
+
 	void SetToEmptyKV3Array() { PrepareForType( KV3_TYPEEX_ARRAY, KV3_SUBTYPE_ARRAY ); }
+	void SetToEmptyArray() { SetToEmptyKV3Array(); }
 	KeyValues3** GetArrayBase();
 
 	KeyValues3* GetArrayElement( int elem );
@@ -450,11 +490,14 @@ public:
 	KeyValues3* ArrayInsertElementBefore( int elem );
 	KeyValues3* ArrayInsertElementAfter( int elem ) { return ArrayInsertElementBefore( elem + 1 ); }
 	KeyValues3* ArrayAddElementToTail();
+	KeyValues3 *ArrayAddToTail() { return ArrayAddElementToTail(); }
+	void ArrayInsertMultipleBefore( int elem, int num );
 
 	void ArraySwapItems( int idx1, int idx2 );
 
 	void ArrayRemoveElements( int elem, int num );
 	void ArrayRemoveElement( int elem ) { ArrayRemoveElements( elem, 1 ); }
+	void ArrayRemoveMultiple( int elem, int num ) { ArrayRemoveElements( elem, num ); }
 
 	CKeyValues3Table *GetTable() { return IsTable() ? m_Data.m_pTable : nullptr; }
 	const CKeyValues3Table *GetTable() const { return const_cast<KeyValues3 *>(this)->GetTable(); }
@@ -505,6 +548,19 @@ public:
 	QAngle GetMemberQAngle( const CKV3MemberName &name, const QAngle &defaultValue = QAngle( 0.0f, 0.0f, 0.0f ) ) const { auto kv = FindMember( name ); return kv ? kv->GetQAngle( defaultValue ) : defaultValue; }
 	matrix3x4_t GetMemberMatrix3x4( const CKV3MemberName &name, const matrix3x4_t &defaultValue = matrix3x4_t( Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ), Vector( 0.0f, 0.0f, 0.0f ) ) ) const { auto kv = FindMember( name ); return kv ? kv->GetMatrix3x4( defaultValue ) : defaultValue; }
 
+	uint64 GetMemberUint64( const CKV3MemberName &name, uint64 defaultValue = 0 ) const { return GetMemberUInt64( name, defaultValue ); }
+	void GetMemberAsString( const CKV3MemberName &name, char *pOutData, int nBufSize, const char *defaultValue = "" ) const { auto kv = FindMember( name ); if ( kv ) kv->GetValueAsString( pOutData, nBufSize ); else V_strncpy( pOutData, defaultValue, nBufSize ); }
+	void GetMemberAsString( const CKV3MemberName &name, CUtlString *pOutString, const char *defaultValue = "" ) const { auto kv = FindMember( name ); if ( kv ) kv->GetValueAsString( pOutString ); else pOutString->Set( defaultValue ); }
+
+	// Out-parameter overloads return false when the member is missing or has a different element count
+	bool GetMemberFloatArray( const CKV3MemberName &name, int count, float32 *pOutValues ) const { auto kv = FindMember( name ); return kv ? kv->GetValueFloatArray( count, pOutValues ) : false; }
+	bool GetMemberVector( const CKV3MemberName &name, Vector *pOutValue ) const { return GetMemberFloatArray( name, 3, pOutValue->Base() ); }
+	bool GetMemberVector2D( const CKV3MemberName &name, Vector2D *pOutValue ) const { return GetMemberFloatArray( name, 2, pOutValue->Base() ); }
+	bool GetMemberVector4D( const CKV3MemberName &name, Vector4D *pOutValue ) const { return GetMemberFloatArray( name, 4, pOutValue->Base() ); }
+	bool GetMemberQAngle( const CKV3MemberName &name, QAngle *pOutValue ) const { return GetMemberFloatArray( name, 3, pOutValue->Base() ); }
+	bool GetMemberQuaternion( const CKV3MemberName &name, Quaternion *pOutValue ) const { return GetMemberFloatArray( name, 4, pOutValue->Base() ); }
+	bool GetMemberMatrix( const CKV3MemberName &name, matrix3x4_t *pOutValue ) const { return GetMemberFloatArray( name, 3*4, pOutValue->Base() ); }
+
 	void SetMemberToNull( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToNull(); }
 	void SetMemberToEmptyArray( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyKV3Array(); }
 	void SetMemberToEmptyTable( const CKV3MemberName &name ) { FindOrCreateMember( name )->SetToEmptyTable(); }
@@ -537,6 +593,11 @@ public:
 	void SetMemberQuaternion( const CKV3MemberName &name, const Quaternion &quat ) { FindOrCreateMember( name )->SetQuaternion( quat ); }
 	void SetMemberQAngle( const CKV3MemberName &name, const QAngle &ang ) { FindOrCreateMember( name )->SetQAngle( ang ); }
 	void SetMemberMatrix3x4( const CKV3MemberName &name, const matrix3x4_t &matrix ) { FindOrCreateMember( name )->SetMatrix3x4( matrix ); }
+
+	void SetMemberUint64( const CKV3MemberName &name, uint64 value ) { SetMemberUInt64( name, value ); }
+	void SetMemberResourceString( const CKV3MemberName &name, const char *pString ) { SetMemberString( name, pString, KV3_SUBTYPE_RESOURCE ); }
+	void SetMemberFloatArray( const CKV3MemberName &name, int count, const float32 *pValues ) { FindOrCreateMember( name )->SetValueFloatArray( count, pValues ); }
+	void SetMemberMatrix( const CKV3MemberName &name, const matrix3x4_t &matrix ) { SetMemberMatrix3x4( name, matrix ); }
 
 	union Data_t
 	{
@@ -672,6 +733,9 @@ public:
 	// gets the pre-allocated kv if we indicated its existence when creating the context
 	KeyValues3* Root();
 	const KeyValues3* Root() const { return const_cast<CKV3Arena*>(this)->Root(); }
+
+	KeyValues3 *operator->() { return Root(); }
+	const KeyValues3 *operator->() const { return Root(); }
 
 	bool IsMetaDataEnabled() const;
 	// returns true if the desired format was converted to another after loading via LoadKV3*

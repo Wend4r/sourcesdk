@@ -634,6 +634,20 @@ KV3MetaData_t* KeyValues3::GetMetaData( CKV3Arena** ppCtx ) const
 	}
 }
 
+int KeyValues3::Metadata_GetLineNumber() const
+{
+	KV3MetaData_t *pMetaData = GetMetaData();
+
+	return pMetaData ? pMetaData->m_nLine : 0;
+}
+
+int KeyValues3::Metadata_GetColumnNumber() const
+{
+	KV3MetaData_t *pMetaData = GetMetaData();
+
+	return pMetaData ? pMetaData->m_nColumn : 0;
+}
+
 const char* KeyValues3::GetString( const char* defaultValue ) const
 {
 	switch ( GetTypeEx() )
@@ -709,6 +723,22 @@ void KeyValues3::SetToBinaryBlob( const byte* blob, int size )
 		m_Data.m_pBinaryBlob = (KV3BinaryBlob_t*)malloc( sizeof( size_t ) + size );
 		m_Data.m_pBinaryBlob->m_nSize = size;
 		memcpy( m_Data.m_pBinaryBlob->m_ubData, blob, size );
+	}
+	else
+	{
+		m_Data.m_pBinaryBlob = nullptr;
+	}
+}
+
+void KeyValues3::SetToZeroedBinaryBlob( int size )
+{
+	PrepareForType( KV3_TYPEEX_BINARY_BLOB, KV3_SUBTYPE_BINARY_BLOB );
+
+	if ( size > 0 )
+	{
+		m_Data.m_pBinaryBlob = (KV3BinaryBlob_t*)malloc( sizeof( size_t ) + size );
+		m_Data.m_pBinaryBlob->m_nSize = size;
+		memset( m_Data.m_pBinaryBlob->m_ubData, 0, size );
 	}
 	else
 	{
@@ -809,6 +839,14 @@ KeyValues3* KeyValues3::ArrayAddElementToTail()
 	CKeyValues3Array *pArray = GetKV3Array();
 
 	return *pArray->InsertMultipleBefore( this, pArray->Count(), 1 );
+}
+
+void KeyValues3::ArrayInsertMultipleBefore( int elem, int num )
+{
+	if ( !IsKV3Array() )
+		SetToEmptyKV3Array();
+
+	GetKV3Array()->InsertMultipleBefore( this, elem, num );
 }
 
 void KeyValues3::ArraySwapItems( int idx1, int idx2 )
@@ -1642,7 +1680,7 @@ CKeyValues3Array::Element_t* CKeyValues3Array::InsertMultipleBefore( KeyValues3 
 
 	if ( from < m_nCount )
 	{
-		memmove( (void *)base[from + num], (void *)base[from], sizeof(Element_t) * (m_nCount - from) );
+		memmove( &base[from + num], &base[from], sizeof(Element_t) * (m_nCount - from) );
 	}
 
 	for ( int i = 0; i < num; ++i )
