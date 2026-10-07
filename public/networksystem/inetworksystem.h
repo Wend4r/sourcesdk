@@ -73,8 +73,8 @@ public:
 	virtual netadr_t& GetPublicAdr() = 0;
 	virtual netadr_t& GetLocalAdr() = 0;
 
-	virtual uint16 GetUDPPort( int nClientIdx ) = 0;
-	virtual uint16 GetUDPPort( int nClientIdx ) const = 0;
+	virtual uint16 GetUDPPort( int sock ) = 0;
+	virtual uint16 GetUDPPortWithFallback( int sock ) = 0;
 
 	virtual void ConnectClient( CServerSideClientBase *pClient ) = 0;
 	virtual void DisconnectClient( CServerSideClientBase *pClient ) = 0;
