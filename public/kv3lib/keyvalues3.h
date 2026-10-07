@@ -22,6 +22,7 @@
 #include "bitvec.h"
 #include "entityhandle.h"
 
+#include <cstddef>
 #include <type_traits>
 
 #include "tier0/memdbgon.h"
@@ -332,6 +333,26 @@ public:
 
 	KeyValues3& operator=( const KeyValues3& copyFrom );
 
+	// Assigning a value replaces the current type, e.g. kv[ "name" ][ "value" ] = "text";
+	KeyValues3 &operator=( std::nullptr_t ) { SetToNull(); return *this; }
+	KeyValues3 &operator=( bool value ) { SetBool( value ); return *this; }
+	KeyValues3 &operator=( int32 value ) { SetInt( value ); return *this; }
+	KeyValues3 &operator=( uint32 value ) { SetUInt( value ); return *this; }
+	KeyValues3 &operator=( int64 value ) { SetInt64( value ); return *this; }
+	KeyValues3 &operator=( uint64 value ) { SetUInt64( value ); return *this; }
+	KeyValues3 &operator=( float32 value ) { SetFloat( value ); return *this; }
+	KeyValues3 &operator=( float64 value ) { SetDouble( value ); return *this; }
+	KeyValues3 &operator=( const char *pString ) { SetString( pString ); return *this; }
+	KeyValues3 &operator=( CUtlStringToken token ) { SetStringToken( token ); return *this; }
+	KeyValues3 &operator=( CEntityHandle ehandle ) { SetEHandle( ehandle ); return *this; }
+	KeyValues3 &operator=( const Color &color ) { SetColor( color ); return *this; }
+	KeyValues3 &operator=( const Vector &vec ) { SetVector( vec ); return *this; }
+	KeyValues3 &operator=( const Vector2D &vec2d ) { SetVector2D( vec2d ); return *this; }
+	KeyValues3 &operator=( const Vector4D &vec4d ) { SetVector4D( vec4d ); return *this; }
+	KeyValues3 &operator=( const Quaternion &quat ) { SetQuaternion( quat ); return *this; }
+	KeyValues3 &operator=( const QAngle &ang ) { SetQAngle( ang ); return *this; }
+	KeyValues3 &operator=( const matrix3x4_t &matrix ) { SetMatrix3x4( matrix ); return *this; }
+
 	void CopyFrom( const KeyValues3& other );
 	void CopyFrom( const KeyValues3 *pOther ) { CopyFrom( *pOther ); }
 	void OverlayKeysFrom( const KeyValues3 &other, bool depth = false );
@@ -518,6 +539,15 @@ public:
 	KeyValues3* FindMember( const CKV3MemberName &name, KeyValues3* defaultValue = nullptr ) { KV3MemberId_t next = KV3_INVALID_MEMBER; return Internal_FindMember( name, next, defaultValue ); }
 	const KeyValues3 *FindMember( const CKV3MemberName &name, KeyValues3 *defaultValue = nullptr ) const { return const_cast<KeyValues3 *>(this)->FindMember( name, defaultValue ); };
 	KeyValues3* FindOrCreateMember( const CKV3MemberName &name, bool *pCreated = nullptr );
+
+	// Non-const access creates the member, or grows the array up to the index.
+	// Const access never modifies and returns a shared null value when the member or element is missing.
+	KeyValues3 &operator[]( const CKV3MemberName &name ) { return *FindOrCreateMember( name ); }
+	const KeyValues3 &operator[]( const CKV3MemberName &name ) const { const KeyValues3 *kv = FindMember( name ); return kv ? *kv : GetNullValue(); }
+	KeyValues3 &operator[]( int elem );
+	const KeyValues3 &operator[]( int elem ) const { const KeyValues3 *kv = GetArrayElement( elem ); return kv ? *kv : GetNullValue(); }
+
+	static const KeyValues3 &GetNullValue();
 	CKV3MemberHash RenameMember( const CKV3MemberName &name, const CKV3MemberName &newName );
 	bool RemoveMember( KV3MemberId_t id );
 	bool RemoveMember( const KeyValues3* kv );

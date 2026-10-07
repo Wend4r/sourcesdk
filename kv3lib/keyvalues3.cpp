@@ -823,6 +823,27 @@ KeyValues3* KeyValues3::GetArrayElement( int elem )
 	return pArray->Element( elem );
 }
 
+KeyValues3 &KeyValues3::operator[]( int elem )
+{
+	Assert( elem >= 0 );
+
+	// Packed arrays have no per-element values to reference
+	if ( IsArray() && !IsKV3Array() )
+		NormalizeArray();
+
+	if ( elem >= GetArrayElementCount() || !IsArray() )
+		SetArrayElementCount( elem + 1 );
+
+	return *GetArrayElement( elem );
+}
+
+const KeyValues3 &KeyValues3::GetNullValue()
+{
+	static const KeyValues3 s_Null;
+
+	return s_Null;
+}
+
 KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 {
 	if ( !IsKV3Array() )

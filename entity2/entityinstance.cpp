@@ -511,7 +511,7 @@ void CEntityInstance::ConnectOutputToScript( const char *pszOutputName, const ch
 
 	// TODO(@Wend4r): Implement kv3lib stuff.
 	if ( *pszValueOverride )
-		pConnection->m_paramMap.m_KV3.FindOrCreateMember( "--old-connection-literal--" )->FindOrCreateMember( "value" )->SetString( pszValueOverride );
+		pConnection->m_paramMap.m_KV3[ "--old-connection-literal--" ][ "value" ] = pszValueOverride;
 
 	outputs[ 0 ]->AddConnection( pConnection );
 }
