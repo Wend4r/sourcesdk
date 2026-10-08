@@ -26,7 +26,7 @@ class CTransformUnaligned;
 //-----------------------------------------------------------------------------
 // Represents a position + orientation using quaternions
 //-----------------------------------------------------------------------------
-class ALIGN16 CTransform
+schema class ALIGN16 CTransform
 {
 public:
 	CTransform() {}

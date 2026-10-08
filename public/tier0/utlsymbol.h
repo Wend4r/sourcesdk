@@ -44,9 +44,11 @@ typedef unsigned int UtlSymElm_t;
 #define FOR_EACH_SYMBOL_BACK( tableName, iter ) \
 	for ( UtlSymElm_t iter = (tableName).GetNumStrings()-1; iter >= 0; iter-- )
 
-class CUtlSymbol
+schema class CUtlSymbol
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	// constructor, destructor
 	CUtlSymbol() : m_Id(UTL_INVAL_SYMBOL) {}
 	CUtlSymbol( UtlSymId_t id ) : m_Id(id) {}

@@ -82,7 +82,7 @@ enum RnQueryObjectSet
 	RNQUERY_OBJECTS_ALL               = RNQUERY_OBJECTS_STATIC | RNQUERY_OBJECTS_ALL_GAME_ENTITIES,
 };
 
-enum HitGroup_t
+schema enum HitGroup_t
 {
 	HITGROUP_INVALID = -1,
 	HITGROUP_GENERIC = 0,

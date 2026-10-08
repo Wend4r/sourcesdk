@@ -34,9 +34,11 @@ class CFormatStringElement;
 // Interact with stringtokendatabase.txt
 PLATFORM_INTERFACE void RegisterStringToken( uint32 nHashCode, const char *pStart, const char *pEnd = NULL, bool bExtraAddToDatabase = true );
 
-class CUtlStringToken
+schema class CUtlStringToken
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	static constexpr uint32 sm_nMagic    = 0x5bd1e995;
 	static constexpr uint32 sm_nRotation = 24;
 

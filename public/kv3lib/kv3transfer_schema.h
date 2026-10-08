@@ -344,6 +344,9 @@ void KV3Transfer_LoadSchemaClassOwningPointer( CKV3TransferLoadContext *pContext
 // Getter of the keys a default constructed instance saves to
 DECLARE_SCHEMA_META_TAG( MGetKV3ClassDefaults, META_TAG_ON_CLASS, META_VALUE( CKV3TransferSchemaClass::GetDefaultKeysFn_t ) );
 
+// The class provides KV3TransferPolymorphicClassname; stored only as a SCHEMA_CF1_INFO_TAG_* bit, e.g. on CScriptComponent
+DECLARE_SCHEMA_META_TAG( MHasKV3TransferPolymorphicClassname, META_TAG_ON_CLASS, META_TAG_ONLY() );
+
 // Name of the function returning the field IKV3TransferSaveRestoreOps, e.g. "GetEngineTimeSaveRestoreOps";
 // the function itself is not reachable from it
 DECLARE_SCHEMA_META_TAG( MKV3TransferSaveOpsForField, META_TAG_ON_FIELD, META_VALUE( const char * ) );

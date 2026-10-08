@@ -20,7 +20,7 @@
 //-----------------------------------------------------------------------------
 // Base class, containing simple memory management
 //-----------------------------------------------------------------------------
-class CUtlBinaryBlock
+schema class CUtlBinaryBlock
 {
 public:
 	CUtlBinaryBlock( int growSize = 0, int initSize = 0 );

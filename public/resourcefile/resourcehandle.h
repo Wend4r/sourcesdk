@@ -27,7 +27,7 @@
 //
 //-----------------------------------------------------------------------------
 
-template <typename T>
+schema template <typename T>
 struct ResourceBinding_t : ResourceBindingBase_t
 {
 	using RuntimeClass_t = typename T::RuntimeClass_t;

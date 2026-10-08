@@ -43,7 +43,7 @@ extern void SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosin
 // 2D Vector2D
 //=========================================================
 
-class Vector2D
+schema class Vector2D
 {
 public:
 	// Members

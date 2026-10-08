@@ -26,7 +26,7 @@ class CUtlBuffer;
 //-----------------------------------------------------------------------------
 // Defines a globally unique ID
 //-----------------------------------------------------------------------------
-struct UniqueId_t
+schema struct UniqueId_t
 {
 	unsigned char m_Value[16];
 };

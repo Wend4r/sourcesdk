@@ -56,9 +56,11 @@ enum AcceptInputResult_t
 	ACCEPT_INPUT_HANDLED,
 };
 
-class CEntityInstance
+schema class CEntityInstance
 {
 public:
+	TYPEMETA( MConstructibleClassBase );
+
 	virtual const CNetworkSerializerClassInfo *GetSerializerClassInfo() = 0;
 
 	// Custom KV3 save/restore for members the datamap cannot describe; the base versions transfer nothing
@@ -222,8 +224,8 @@ protected:
 public:
 	CUtlSymbolLarge m_iszPrivateVScripts;
 	CEntityIdentity *m_pEntity;
-	CEntityPrivateScriptScope m_hPrivateScope;
-	CEntityKeyValues *m_pKeyValues;
+	noschema CEntityPrivateScriptScope m_hPrivateScope;
+	noschema CEntityKeyValues *m_pKeyValues;
 	CScriptComponent *m_CScriptComponent;
 };
 

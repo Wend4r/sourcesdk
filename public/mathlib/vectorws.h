@@ -9,7 +9,7 @@
 
 // AMNOTE: Mostly a stub over a real VectorWS,
 // most likely meaning of it is world space vector
-class VectorWS : public Vector
+schema class VectorWS : public Vector
 {
 	using Vector::Vector;
 };

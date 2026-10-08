@@ -5,7 +5,9 @@
 #pragma once
 #endif
 
-struct CSplitScreenSlot
+#include "tier0/basetypes.h"
+
+schema struct CSplitScreenSlot
 {
 	CSplitScreenSlot()
 	 :  m_Data(0)

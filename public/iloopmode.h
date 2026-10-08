@@ -66,11 +66,13 @@ enum HostStateLoopModeType_t
 };
 
 
-struct EngineLoopState_t
+schema struct EngineLoopState_t
 {
-	PlatWindow_t m_hWnd;
-	SwapChainHandle_t m_hSwapChain;
-	InputContextHandle_t m_hInputContext;
+	DECLARE_SCHEMA_DATA_CLASS( EngineLoopState_t );
+
+	noschema PlatWindow_t m_hWnd;
+	noschema SwapChainHandle_t m_hSwapChain;
+	noschema InputContextHandle_t m_hInputContext;
 	int m_nPlatWindowWidth;
 	int m_nPlatWindowHeight;
 	int m_nRenderWidth;

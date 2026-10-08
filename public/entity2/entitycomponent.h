@@ -61,20 +61,22 @@ struct ComponentUnserializerClassInfo_t
 	uint16 m_nClassInfoPtrCount;
 };
 
-struct EntComponentInfo_t
+schema struct EntComponentInfo_t
 {
+	DECLARE_SCHEMA_DATA_CLASS( EntComponentInfo_t );
+
 	const char* m_pName;
 	const char* m_pCPPClassname;
 	const char* m_pNetworkDataReferencedDescription;
 	const char* m_pNetworkDataReferencedPtrPropDescription;
 	int m_nRuntimeIndex;
 	uint m_nFlags;
-	ComponentUnserializerClassInfo_t m_componentUnserializerClassInfo;
-	ScriptClassDesc_t* m_pScriptDesc;
+	noschema ComponentUnserializerClassInfo_t m_componentUnserializerClassInfo;
+	noschema ScriptClassDesc_t* m_pScriptDesc;
 	CEntityComponentHelper* m_pBaseClassComponentHelper;
 };
 
-class CEntityComponentHelper
+schema class CEntityComponentHelper
 {
 public:
 	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
@@ -94,7 +96,7 @@ public:
 class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 
-class CEntityComponent
+schema class CEntityComponent
 {
 public:
 	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff

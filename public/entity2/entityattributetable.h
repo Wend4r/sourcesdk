@@ -11,9 +11,11 @@
 #include "tier1/utlobjectattributetable.h"
 
 // Attributes of an entity, keyed by the lowercase hash of the name.
-class CEntityAttributeTable
+schema class CEntityAttributeTable
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( CEntityAttributeTable );
+
 	using Key_t = CUtlStringTokenNoRegistration;
 	using Attribute_t = ObjectAttributeValue_t;
 	using AttributeName_t = CUtlString;

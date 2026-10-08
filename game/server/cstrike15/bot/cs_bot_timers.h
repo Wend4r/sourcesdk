@@ -36,9 +36,11 @@ struct NetworkStateChanged_t;
 // The virtuals have bodies because the bot embeds the timers by value; the game's own
 // vtable is the one in place on every timer it constructs.
 //-----------------------------------------------------------------------------
-class CountdownTimer
+schema class CountdownTimer
 {
 public:
+	TYPEMETA( MGetKV3ClassDefaults; MNetworkNoBase; MHasKV3TransferPolymorphicClassname );
+
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() { return {}; }
 	// Save and load m_duration, m_timestamp, m_timescale and m_nWorldGroupId.
 	CLASS_USES_KV3TRANSFER_VIRTUAL( CountdownTimer );
@@ -67,9 +69,11 @@ public:
 	WorldGroupId_t m_nWorldGroupId;
 };
 
-class IntervalTimer
+schema class IntervalTimer
 {
 public:
+	TYPEMETA( MGetKV3ClassDefaults; MNetworkNoBase; MHasKV3TransferPolymorphicClassname );
+
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() { return {}; }
 
 	// Empty: IntervalTimer is never a networked member. The order within the three follows

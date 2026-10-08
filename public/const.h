@@ -12,6 +12,8 @@
 #pragma once
 #endif
 
+#include "tier0/basetypes.h"
+
 // the command line param that tells the engine to use steam
 #define STEAM_PARM					"-steam"
 // the command line param to tell dedicated server to restart 
@@ -165,7 +167,7 @@
 #endif
 
 // edict->movetype values
-enum MoveType_t : unsigned char
+schema enum MoveType_t : unsigned char
 {
 	MOVETYPE_NONE		= 0,	// never moves
 	MOVETYPE_OBSOLETE,			// Previously isometric movetype
@@ -187,7 +189,7 @@ enum MoveType_t : unsigned char
 };
 
 // edict->movecollide values
-enum MoveCollide_t : unsigned char
+schema enum MoveCollide_t : unsigned char
 {
 	MOVECOLLIDE_DEFAULT = 0,
 
@@ -209,7 +211,7 @@ enum MoveCollide_t : unsigned char
 // Solid type basically describes how the bounding volume of the object is represented
 // NOTE: SOLID_BBOX MUST BE 2, and SOLID_VPHYSICS MUST BE 6
 // NOTE: These numerical values are used in the FGD by the prop code (see prop_dynamic)
-enum SolidType_t : unsigned char
+schema enum SolidType_t : unsigned char
 {
 	SOLID_NONE			= 0,	// no solid model
 	SOLID_BSP			= 1,	// a BSP tree
@@ -252,13 +254,15 @@ inline bool IsSolid( SolidType_t solidType, int nSolidFlags )
 }
 
 // m_lifeState values
-enum LifeState_t : unsigned char
+schema enum LifeState_t
 {
 	LIFE_ALIVE			= 0x0,	// alive
 	LIFE_DYING			= 0x1,	// playing death animation or still falling off of a ledge waiting to hit ground
 	LIFE_DEAD			= 0x2,	// dead. lying still.
 	LIFE_RESPAWNABLE	= 0x3,
-	LIFE_RESPAWNING		= 0x4
+	LIFE_RESPAWNING		= 0x4,
+
+	NUM_LIFESTATES
 };
 
 // GAMMACASE: Potentially obsolete
@@ -332,7 +336,7 @@ enum
 
 // Rendering constants
 // if this is changed, update common/MaterialSystem/Sprite.cpp
-enum RenderMode_t : unsigned char
+schema enum RenderMode_t : unsigned char
 {	
 	kRenderNormal = 0,		// src
 	kRenderTransAlpha,		// src*srca+dest*(1-srca)
@@ -341,7 +345,7 @@ enum RenderMode_t : unsigned char
 	kRenderModeCount,		// must be last
 };
 
-enum RenderFx_t : unsigned char
+schema enum RenderFx_t : unsigned char
 {	
 	kRenderFxNone = 0, 
 	kRenderFxPulseSlow, 

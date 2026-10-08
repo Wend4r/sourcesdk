@@ -52,9 +52,11 @@ class IFormatOutputStream;
 	In case of stack allocated buffers, if the requested size exceeds stack size, it would switch to heap allocation instead.
 */
 
-class CBufferString
+schema class CBufferString
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	enum EType_t
 	{
 		BS_TYPE_HEAP = 0,

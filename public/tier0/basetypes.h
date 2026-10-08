@@ -20,8 +20,11 @@
 
 //////////////////////////////////////////////////////////////////////////
 
+#ifndef schema
+#define schema namespace ValveSchemaMarker {}
+#endif
 #ifndef valve_schema
-#define valve_schema namespace ValveSchemaMarker {} // 'schema' marco will conflict with google/protobuf/message.h
+#define valve_schema schema
 #endif
 #define noschema
 #define schema_pragma( ... )
@@ -32,9 +35,15 @@
 
 #ifdef COMPILING_SCHEMA
 #define UNSCHEMATIZED_METHOD( x )
+#define INTERNAL_SCHEMA_CLASS_MARKER_DATA `__schema_class_marker_data__`
 #else
 #define UNSCHEMATIZED_METHOD( x ) x
+#define INTERNAL_SCHEMA_CLASS_MARKER_DATA
 #endif
+
+// Data classes (no vtable)
+#define DECLARE_SCHEMA_DATA_CLASS( _className ) \
+	INTERNAL_SCHEMA_CLASS_MARKER_DATA
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -369,7 +378,7 @@ typedef wchar_t ucs2; // under windows & PS3 wchar_t is ucs2
 typedef unsigned short ucs2;
 #endif
 
-enum ThreeState_t
+schema enum ThreeState_t
 {
 	TRS_FALSE,
 	TRS_TRUE,
@@ -649,6 +658,40 @@ protected:
 
 #define DECLARE_DERIVED_POINTER_HANDLE( _name, _basehandle ) struct _name##__ : public _basehandle##__ {}; typedef struct _name##__ *_name
 #define DECLARE_ALIASED_POINTER_HANDLE( _name, _alias ) typedef struct _alias##__ *name
+
+namespace basetypes
+{
+	template <class T>
+	inline bool IsPowerOf2( T n )
+	{
+		return n > 0 && ( n & ( n - 1 ) ) == 0;
+	}
+
+	template <class T1, class T2>
+	inline T2 ModPowerOf2( T1 a, T2 b )
+	{
+		return T2( a ) & ( b - 1 );
+	}
+
+	template <class T>
+	inline T RoundDownToMultipleOf( T n, T m )
+	{
+		return n - ( IsPowerOf2( m ) ? ModPowerOf2( n, m ) : ( n%m ) );
+	}
+
+	template <class T>
+	inline T RoundUpToMultipleOf( T n, T m )
+	{
+		if ( !n )
+		{
+			return m;
+		}
+		else
+		{
+			return RoundDownToMultipleOf( n + m - 1, m );
+		}
+	}
+}
 
 // @TODO: Find a better home for this
 #if !defined(_STATIC_LINKED) && !defined(PUBLISH_DLL_SUBSYSTEM)

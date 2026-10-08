@@ -12,6 +12,9 @@
 
 DECLARE_SCHEMA_META_TAG( MClassHasCustomAlignedNewDelete, META_TAG_ON_CLASS, META_TAG_ONLY() );
 
+// Stored only as SCHEMA_CF1_INFO_TAG_* bits of the class record, e.g. on CEntityInstance
+DECLARE_SCHEMA_META_TAG( MConstructibleClassBase, META_TAG_ON_CLASS, META_TAG_ONLY() );
+
 // Field name used when comparing a class registered by two modules
 DECLARE_SCHEMA_META_TAG( MFieldVerificationName, META_TAG_ON_FIELD, META_VALUE( const char * ) );
 

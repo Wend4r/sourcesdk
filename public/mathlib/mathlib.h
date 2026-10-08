@@ -111,7 +111,7 @@ void GenerateOrthoFrustum( const Vector &origin, const Vector &forward, const Ve
 class CTransform;
 class matrix3x4a_t;
 
-struct matrix3x4_t
+schema struct matrix3x4_t
 {
 	matrix3x4_t() {}
 	matrix3x4_t(
@@ -275,7 +275,7 @@ struct matrix3x4_t
 	float m_flMatVal[3][4];
 };
 
-class ALIGN16 matrix3x4a_t : public matrix3x4_t
+schema class ALIGN16 matrix3x4a_t : public matrix3x4_t
 {
 public:
 	/*

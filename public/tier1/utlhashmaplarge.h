@@ -20,22 +20,6 @@
 #include "utlmap.h"
 #include "utlleanvector.h"
 
-// fast mod for power of 2 numbers
-namespace basetypes
-{
-template <class T>
-inline bool IsPowerOf2(T n)
-{
-	return n > 0 && (n & (n-1)) == 0;
-}
-
-template <class T1, class T2>
-inline T2 ModPowerOf2(T1 a, T2 b)
-{
-	return T2(a) & (b-1);
-}
-}
-
 // default comparison operator
 template <typename T>
 class CDefEquals

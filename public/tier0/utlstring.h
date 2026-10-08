@@ -29,9 +29,11 @@ class CBufferString;
 // Simple string class. 
 // NOTE: This is *not* optimal! Use in tools, but not runtime code
 //-----------------------------------------------------------------------------
-class CUtlString
+schema class CUtlString
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	typedef enum
 	{
 		PATTERN_NONE		= 0x00000000,

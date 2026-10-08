@@ -299,7 +299,7 @@ class IInputService;
 class IMapListService;
 class IGameUIService;
 class ISoundService;
-class IBenchmarkService;
+class IBenchmarkService;	
 class IKeyValueCache;
 class IClientServerSharedHandleSystem;
 class IGameResourceService;

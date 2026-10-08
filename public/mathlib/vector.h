@@ -75,7 +75,7 @@ class VectorByValue;
 //=========================================================
 // 3D Vector
 //=========================================================
-class Vector					
+schema class Vector					
 {
 public:
 	// Members
@@ -417,7 +417,7 @@ public:
 // Here's where we add all those lovely SSE optimized routines
 //-----------------------------------------------------------------------------
 
-class ALIGN16 VectorAligned : public Vector
+schema class ALIGN16 VectorAligned : public Vector
 {
 public:
 	inline VectorAligned() : Vector(), w() {}
@@ -1752,7 +1752,7 @@ class RadianEuler;
 class DegreeEuler;
 class QAngle;
 
-class Quaternion				// same data-layout as engine's vec4_t,
+schema class Quaternion				// same data-layout as engine's vec4_t,
 {								//		which is a vec_t[4]
 public:
 	inline Quaternion()	= default;
@@ -2036,7 +2036,7 @@ typedef QuaternionAligned	BoneQuaternionAligned;
 class QAngle;
 #define VEC_DEG2RAD( a ) (a) * (3.14159265358979323846f / 180.0f)
 #define VEC_RAD2DEG( a ) (a) * (180.0f / 3.14159265358979323846f)
-class RadianEuler
+schema class RadianEuler
 {
 public:
 	inline RadianEuler(void)							{ }
@@ -2153,7 +2153,7 @@ inline vec_t RadianEuler::operator[](int i) const
 //-----------------------------------------------------------------------------
 // Degree Euler angle aligned to axis (NOT ROLL/PITCH/YAW)
 //-----------------------------------------------------------------------------
-class DegreeEuler
+schema class DegreeEuler
 {
 public:
 	///\name Initialization 
@@ -2265,7 +2265,7 @@ inline vec_t DegreeEuler::operator[](int i) const
 //-----------------------------------------------------------------------------
 class QAngleByValue;
 
-class QAngle					
+schema class QAngle					
 {
 public:
 	// Members

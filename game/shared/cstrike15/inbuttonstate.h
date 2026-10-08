@@ -8,10 +8,10 @@
 
 // The input bits and their per-command state, apart from the user command itself so that
 // entity code can use them without the protobuf message.
-enum InputBitMask_t : int64
+schema enum InputBitMask_t : int64
 {
-	IN_NONE = 0,
-	IN_ALL = ~0,
+	IN_NONE = 0, META( MEnumeratorIsNotAFlag )
+	IN_ALL = ~0, META( MEnumeratorIsNotAFlag )
 
 	IN_ATTACK = 1 << 0,
 	IN_JUMP = 1 << 1,
@@ -28,14 +28,14 @@ enum InputBitMask_t : int64
 	IN_SPEED = 1 << 16,
 	IN_JOYAUTOSPRINT = 1 << 17,
 
-	IN_FIRST_MOD_SPECIFIC_BIT = 1ll << 32,
+	IN_FIRST_MOD_SPECIFIC_BIT = 1ll << 32, META( MEnumeratorIsNotAFlag )
 	IN_USEORRELOAD = 1ll << 32,
 	IN_SCORE = 1ll << 33,
 	IN_ZOOM = 1ll << 34,
 	IN_LOOK_AT_WEAPON = 1ll << 35,
 };
 
-enum EInButtonState : uint64
+schema enum EInButtonState
 {
 	IN_BUTTON_UP = 0,
 	IN_BUTTON_DOWN = 1,
@@ -48,14 +48,14 @@ enum EInButtonState : uint64
 	IN_BUTTON_STATE_COUNT = 8,
 };
 
-class CInButtonState
+schema class CInButtonState
 {
 public:
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() { return {}; };
 
 	EInButtonState GetButtonState( uint64 button )
 	{
-		return static_cast< EInButtonState >( ( !!( m_nValue & button ) + !!( m_nValueChanged & button ) * 2 + !!( m_nValueScroll & button ) * 4 ) );
+		return static_cast< EInButtonState >( ( !!( m_pButtonStates[ 0 ] & button ) + !!( m_pButtonStates[ 1 ] & button ) * 2 + !!( m_pButtonStates[ 2 ] & button ) * 4 ) );
 	};
 
 	bool IsButtonNewlyPressed( uint64 button )
@@ -64,9 +64,8 @@ public:
 	}
 
 public:
-	uint64 m_nValue = 0;
-	uint64 m_nValueChanged = 0;
-	uint64 m_nValueScroll = 0;
+	// Pressed, changed and scroll bits
+	uint64 m_pButtonStates[ 3 ] = {};
 };
 
 #endif // CSTRIKE15_INBUTTONSTATE_H

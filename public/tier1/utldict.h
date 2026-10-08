@@ -45,10 +45,12 @@ template <> struct CDictCompareTypeDeducer<k_eDictCompareTypeFilenames> { typede
 //-----------------------------------------------------------------------------
 // A dictionary mapping from symbol to structure
 //-----------------------------------------------------------------------------
-template <class T, class I = int, int COMPARE_TYPE = k_eDictCompareTypeCaseInsensitiveFast> 
+schema template <class T, class I = int, int COMPARE_TYPE = k_eDictCompareTypeCaseInsensitiveFast> 
 class CUtlDict
 {
 public:
+	TYPEMETA( MAtomicTransfersAsMap );
+
 	// constructor, destructor
 	// Left at growSize = 0, the memory will first allocate 1 element and double in size
 	// at each increment.

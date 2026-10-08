@@ -35,9 +35,9 @@ typedef uint32 Place;
 // NAV_ATTR_FIRST_GAME_INDEX up to NAV_ATTR_LAST_INDEX are defined by the game; those two are
 // bit indices, not masks.
 //-----------------------------------------------------------------------------
-enum NavAttributeEnum : uint64
+schema enum NavAttributeEnum : uint64
 {
-	NAV_MESH_NONE = 0x0,
+	NAV_MESH_NONE = 0x0, META( MEnumeratorIsNotAFlag )
 	NAV_MESH_JUMP = 0x2,
 	NAV_MESH_NO_JUMP = 0x8,
 	NAV_MESH_STOP = 0x10,
@@ -56,16 +56,16 @@ enum NavAttributeEnum : uint64
 	NAV_MESH_NON_ZUP_TRANSITION = 0x20000,
 	NAV_MESH_CRAWL_HEIGHT = 0x40000,
 
-	NAV_ATTR_FIRST_GAME_INDEX = 0x13,
-	NAV_ATTR_LAST_INDEX = 0x3f,
+	NAV_ATTR_FIRST_GAME_INDEX = 0x13, META( MEnumeratorIsNotAFlag )
+	NAV_ATTR_LAST_INDEX = 0x3f, META( MEnumeratorIsNotAFlag )
 };
 
 //-----------------------------------------------------------------------------
 // Runtime state bits of an area, kept apart from its attributes.
 //-----------------------------------------------------------------------------
-enum NavAttributeDynamicType : uint32
+schema enum NavAttributeDynamicType : uint32
 {
-	NAV_AREA_NONE = 0x0,
+	NAV_AREA_NONE = 0x0, META( MEnumeratorIsNotAFlag )
 	NAV_AREA_UNDER_WATER = 0x1,
 	NAV_AREA_UNDER_WATER_DEEP = 0x2,
 	NAV_AREA_EXTERNALLY_CREATED = 0x4,
@@ -90,7 +90,7 @@ enum NavAttributeDynamicType : uint32
 };
 
 // The sides of a quad area; the sides of a polygon area are its edges instead.
-enum NavDirType
+schema enum NavDirType
 {
 	NORTH = 0,
 	EAST = 1,
@@ -127,21 +127,28 @@ enum NavSearchResult_t
 //-----------------------------------------------------------------------------
 // Selects the navigation hull (agent size) a mesh was built for; -1 matches every hull.
 //-----------------------------------------------------------------------------
-struct NavHull_t
+schema struct NavHull_t
 {
+	TYPEMETA( MGetKV3ClassDefaults );
+	DECLARE_SCHEMA_DATA_CLASS( NavHull_t );
+
 	int m_nHullIdx;
 };
 
-class CNavFlags
+schema class CNavFlags
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( CNavFlags );
+
 	uint64 m_Flags;
 };
 
 // A set of NavAttributeEnum bits.
-class CNavAttribute : public CNavFlags
+schema class CNavAttribute : public CNavFlags
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( CNavAttribute );
+
 	bool HasAny( uint64 nMask ) const { return ( m_Flags & nMask ) != 0; }
 };
 

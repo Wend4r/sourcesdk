@@ -65,9 +65,11 @@ public:
 	T m_Object;
 };
 
-class CEntityKeyValues
+schema class CEntityKeyValues
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( CEntityKeyValues );
+
 	CEntityKeyValues( CKV3Arena* allocator = NULL, EntityKVAllocatorType_t allocator_type = EKV_ALLOCATOR_NORMAL );
 	~CEntityKeyValues();
 
@@ -186,15 +188,15 @@ private:
 		EntityComplexKeyListElem_t* m_pNext;
 	};
 
-	CKV3Arena* m_pAllocator;
-	EntityComplexKeyListElem_t* m_pComplexKeys;
-	KeyValues3* m_pValues;
-	KeyValues3* m_pAttributes;
-	int16 m_nRefCount;
-	int16 m_nQueuedForSpawnCount;
-	bool m_bAllowLogging;
-	EntityKVAllocatorType_t m_eAllocatorType;
-	CUtlLeanVector<EntityIOConnectionDescFat_t, int> m_connectionDescs;
+	noschema CKV3Arena* m_pAllocator;
+	noschema EntityComplexKeyListElem_t* m_pComplexKeys;
+	noschema KeyValues3* m_pValues;
+	noschema KeyValues3* m_pAttributes;
+	noschema int16 m_nRefCount;
+	noschema int16 m_nQueuedForSpawnCount;
+	noschema bool m_bAllowLogging;
+	noschema EntityKVAllocatorType_t m_eAllocatorType;
+	noschema CUtlLeanVector<EntityIOConnectionDescFat_t, int> m_connectionDescs;
 };
 COMPILE_TIME_ASSERT( sizeof(CEntityKeyValues) == 56 );
 

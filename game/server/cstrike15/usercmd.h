@@ -16,12 +16,12 @@ class CCSGOUserCmd : public CUserCmdBaseHost< CSGOUserCmdPB >
 public:
 	void ButtonsToMessage() override
 	{
-		if ( m_ButtonStates.m_nValue || m_ButtonStates.m_nValueChanged || m_ButtonStates.m_nValueScroll )
+		if ( m_ButtonStates.m_pButtonStates[ 0 ] || m_ButtonStates.m_pButtonStates[ 1 ] || m_ButtonStates.m_pButtonStates[ 2 ] )
 		{
 			CInButtonStatePB *pButtons = MutableBase()->mutable_buttons_pb();
-			pButtons->set_buttonstate1( m_ButtonStates.m_nValue );
-			pButtons->set_buttonstate2( m_ButtonStates.m_nValueChanged );
-			pButtons->set_buttonstate3( m_ButtonStates.m_nValueScroll );
+			pButtons->set_buttonstate1( m_ButtonStates.m_pButtonStates[ 0 ] );
+			pButtons->set_buttonstate2( m_ButtonStates.m_pButtonStates[ 1 ] );
+			pButtons->set_buttonstate3( m_ButtonStates.m_pButtonStates[ 2 ] );
 		}
 		else
 		{
@@ -32,9 +32,9 @@ public:
 	void ButtonsFromMessage() override
 	{
 		const CInButtonStatePB &buttons = GetBase().buttons_pb();
-		m_ButtonStates.m_nValue = buttons.buttonstate1();
-		m_ButtonStates.m_nValueChanged = buttons.buttonstate2();
-		m_ButtonStates.m_nValueScroll = buttons.buttonstate3();
+		m_ButtonStates.m_pButtonStates[ 0 ] = buttons.buttonstate1();
+		m_ButtonStates.m_pButtonStates[ 1 ] = buttons.buttonstate2();
+		m_ButtonStates.m_pButtonStates[ 2 ] = buttons.buttonstate3();
 		m_nFlags = 0;
 	}
 

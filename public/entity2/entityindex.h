@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include "tier0/basetypes.h"
+
 #define INVALID_ENTITY_INDEX -1
 
-class CEntityIndex
+schema class CEntityIndex
 {
 public:
 	CEntityIndex( int index = INVALID_ENTITY_INDEX ) : m_Data( index ) {}

@@ -286,9 +286,11 @@ private:
 using CKeyValues3StringAndHash = CKV3MemberName;
 
 // Pulse thing
-class CKV3MemberNameWithStorage : public CKV3MemberName
+schema class CKV3MemberNameWithStorage : public CKV3MemberName
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	template< uintp N > constexpr CKV3MemberNameWithStorage( const char (&szInit)[N] ) : CKV3MemberName( szInit ), m_Storage( (const char*)szInit, N - 1 ) {}
 	CKV3MemberNameWithStorage( const char* pszString, int nLen ): CKV3MemberName( pszString, nLen ), m_Storage( pszString, nLen ) {}
 	CKV3MemberNameWithStorage( uint32 nHash = 0, UtlSymLargeId_t index = 0, const char* pszString = StringFuncs<char>::EmptyString(), int nLen = -1  ) : CKV3MemberName( nHash, index, pszString ), m_Storage( pszString, nLen ) {}
@@ -323,7 +325,7 @@ using CKeyValues3Cluster = CKeyValues3ClusterImpl<KV3_CLUSTER_MAX_ELEMENTS, KeyV
 using CKeyValues3TableCluster = CKeyValues3ClusterImpl<KV3_TABLE_INIT_SIZE, CKeyValues3Table>;
 using CKeyValues3ArrayCluster = CKeyValues3ClusterImpl<KV3_ARRAY_INIT_SIZE, CKeyValues3Array>;
 
-class KeyValues3
+schema class KeyValues3
 {
 public:
 	KeyValues3( KV3TypeEx_t type = KV3_TYPEEX_NULL, KV3SubType_t subtype = KV3_SUBTYPE_UNSPECIFIED );
@@ -750,7 +752,7 @@ private:
 	CUtlVectorFixedGrowable<StackEntry_t, 4> m_Stack;
 };
 
-class CKV3Arena
+schema class CKV3Arena
 {
 public:
 	CKV3Arena( bool bNoRoot = false );

@@ -41,9 +41,11 @@ typedef uint UtlSymLargeId_t;
 #define FOR_EACH_SYMBOL_LARGE_BACK( table, iter ) \
 	for ( UtlSymLargeId_t iter = (table).GetNumStrings()-1; iter >= 0; iter-- )
 
-class CUtlSymbolLarge
+schema class CUtlSymbolLarge
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	// constructor, destructor
 	CUtlSymbolLarge( const char* pString = nullptr ) : u( pString ) {};
 

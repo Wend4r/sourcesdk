@@ -453,14 +453,14 @@ public:
 	}
 };
 
-class CVarBitVec : public CVarBitVecT<unsigned short, 32>
+schema class CVarBitVec : public CVarBitVecT<unsigned short, 32>
 {
 public:
 	CVarBitVec() : CVarBitVecT<unsigned short, 32>() {}
 	explicit CVarBitVec( int nBitCount ) : CVarBitVecT<unsigned short, 32>(nBitCount) {}
 };
 
-class CLargeVarBitVec : public CVarBitVecT<int, 64>
+schema class CLargeVarBitVec : public CVarBitVecT<int, 64>
 {
 public:
 	CLargeVarBitVec() {}
@@ -507,7 +507,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-template < int NUM_BITS >
+schema template < int NUM_BITS >
 class CBitVec : public CBitVecT< CFixedBitVecBase<NUM_BITS> >
 {
 public:

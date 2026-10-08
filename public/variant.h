@@ -21,7 +21,7 @@
 
 FORWARD_DECLARE_HANDLE( HSCRIPT );
 
-typedef enum _fieldtypes : uint8
+schema enum fieldtype_t : uint8
 {
 	FIELD_VOID = 0,			// No type or value
 	FIELD_FLOAT32,			// Any floating point value
@@ -122,13 +122,15 @@ typedef enum _fieldtypes : uint8
 	FIELD_NETWORK_ORIGIN_CELL_QUANTIZED_VECTORWS,
 
 	FIELD_TYPECOUNT
-} fieldtype_t;
+};
 
 // ========
 
-class CVariantDefaultAllocator
+schema class CVariantDefaultAllocator
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( CVariantDefaultAllocator );
+
 	static void Free(void *pMemory)
 	{
 		MemAlloc_Free(pMemory);
@@ -266,7 +268,7 @@ enum CVFlags_t
 	CV_FREE = 0x01,
 };
 
-template <typename A>
+schema template <typename A>
 class CVariantBase
 {
 public:

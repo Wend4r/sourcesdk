@@ -21,8 +21,10 @@ struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;
 class IAddonListChangeNotify;
 
-struct EventClientOutput_t
+schema struct EventClientOutput_t
 {
+	DECLARE_SCHEMA_DATA_CLASS( EventClientOutput_t );
+
 	EngineLoopState_t m_LoopState;
 	float m_flRenderTime;
 	float m_flRealTime;

@@ -24,27 +24,25 @@ class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 class CEntityIOOutput;
 
-enum EntityIOTargetType_t
+schema enum EntityIOTargetType_t
 {
 	ENTITY_IO_TARGET_INVALID = -1,
-	ENTITY_IO_TARGET_CLASSNAME = 0,
-	ENTITY_IO_TARGET_CLASSNAME_DERIVES_FROM = 1,
 	ENTITY_IO_TARGET_ENTITYNAME = 2,
-	ENTITY_IO_TARGET_CONTAINS_COMPONENT = 3,
-	ENTITY_IO_TARGET_SPECIAL_ACTIVATOR = 4,
-	ENTITY_IO_TARGET_SPECIAL_CALLER = 5,
 	ENTITY_IO_TARGET_EHANDLE = 6,
 	ENTITY_IO_TARGET_ENTITYNAME_OR_CLASSNAME = 7,
 };
 
-struct EntityIOQueuePrioritizedEvent_t
+schema struct EntityIOQueuePrioritizedEvent_t
 {
+	TYPEMETA( MGetKV3ClassDefaults );
+	DECLARE_SCHEMA_DATA_CLASS( EntityIOQueuePrioritizedEvent_t );
+
 	EntityIOQueuePrioritizedEvent_t() = default;
 	EntityIOQueuePrioritizedEvent_t( WorldGroupId_t worldGroupId, GameTime_t flFireTime, CEntityInstance *pActivator, CEntityInstance *pCaller );
 
 	void Init( const CVariant &value, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap );
 
-	WorldGroupId_t m_WorldGroupId;
+	noschema WorldGroupId_t m_WorldGroupId;
 	GameTime_t m_flFireTime;
 	EntityIOTargetType_t m_targetType;
 	CUtlSymbolLarge m_pTarget;
@@ -53,13 +51,13 @@ struct EntityIOQueuePrioritizedEvent_t
 	CEntityHandle m_hCaller;
 	CEntityHandle m_hEntTarget; // a pointer to the entity to target; overrides m_pTarget
 
-	CVariant m_variantValue; // variable-type parameter
+	CVariant m_variantValue; META( MKV3TransferSaveOpsForField = "GetVariantSaveDataOps" ); // variable-type parameter
 
 	CPulseArgumentPack m_PulseArguments;
 	CPulseInputParamMap m_paramMap;
 
-	EntityIOQueuePrioritizedEvent_t *m_pNext;
-	EntityIOQueuePrioritizedEvent_t *m_pPrev;
+	noschema EntityIOQueuePrioritizedEvent_t *m_pNext;
+	noschema EntityIOQueuePrioritizedEvent_t *m_pPrev;
 };
 
 class CEventQueue
@@ -145,7 +143,7 @@ public:
 	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) = 0;
 };
 
-class CEntityIOOutput
+schema class CEntityIOOutput
 {
 public:
 	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
@@ -203,8 +201,8 @@ public:
 	void FireOutputInternal( CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap, const CVariant *pValue, float flDelay );
 
 private:
-	EntityIOConnection_t *m_pConnections;
-	EntityIOOutputDesc_t *m_pDesc;
+	noschema EntityIOConnection_t *m_pConnections;
+	noschema EntityIOOutputDesc_t *m_pDesc;
 };
 
 COMPILE_TIME_ASSERT( sizeof( CEntityIOOutput ) == 24 );

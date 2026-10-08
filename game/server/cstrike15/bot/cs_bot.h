@@ -103,7 +103,7 @@ struct CCSBotSharpTurnJump : public CCSBotPathManeuver
 	Vector m_vecLandPos;
 };
 
-abstract_class CCSBot : public CBot
+schema abstract_class CCSBot : public CBot
 {
 public:
 	~CCSBot() override = 0;
@@ -238,7 +238,7 @@ public:
 
 public:
 	// A copy of the profile the bot was made with; difficulty changes edit this one.
-	BotProfile *m_pLocalProfile;
+	noschema BotProfile *m_pLocalProfile;
 	Vector m_eyePosition;
 	char m_name[ 64 ];
 
@@ -247,13 +247,13 @@ public:
 	// Listens to no-one; re-rolled when m_rogueTimer elapses.
 	bool m_isRogue;
 	CountdownTimer m_rogueTimer;
-	MoraleType m_morale;
+	noschema MoraleType m_morale;
 	bool m_diedLastRound;
 	// How long into the round the bot feels safe.
 	float m_safeTime;
 	bool m_wasSafe;
 	// Which way to move while blinded.
-	NavRelativeDirType m_blindMoveDir;
+	noschema NavRelativeDirType m_blindMoveDir;
 	// Keeps firing while blinded.
 	bool m_blindFire;
 	// While running the bot cannot attack.
@@ -270,41 +270,41 @@ public:
 	CountdownTimer m_sneakTimer;
 	CountdownTimer m_panicTimer;
 
-	IdleState m_idleState;
-	HuntState m_huntState;
-	AttackState m_attackState;
-	InvestigateNoiseState m_investigateNoiseState;
-	BuyState m_buyState;
-	MoveToState m_moveToState;
-	HumanPathFollowState m_humanPathFollowState;
-	FetchBombState m_fetchBombState;
-	PlantBombState m_plantBombState;
-	DefuseBombState m_defuseBombState;
-	PickupHostageState m_pickupHostageState;
-	HideState m_hideState;
-	EscapeFromBombState m_escapeFromBombState;
-	FollowState m_followState;
-	UseEntityState m_useEntityState;
-	OpenDoorState m_openDoorState;
-	EscapeFromFlamesState m_escapeFromFlamesState;
-	MoveToPlayAreaState m_moveToPlayAreaState;
+	noschema IdleState m_idleState;
+	noschema HuntState m_huntState;
+	noschema AttackState m_attackState;
+	noschema InvestigateNoiseState m_investigateNoiseState;
+	noschema BuyState m_buyState;
+	noschema MoveToState m_moveToState;
+	noschema HumanPathFollowState m_humanPathFollowState;
+	noschema FetchBombState m_fetchBombState;
+	noschema PlantBombState m_plantBombState;
+	noschema DefuseBombState m_defuseBombState;
+	noschema PickupHostageState m_pickupHostageState;
+	noschema HideState m_hideState;
+	noschema EscapeFromBombState m_escapeFromBombState;
+	noschema FollowState m_followState;
+	noschema UseEntityState m_useEntityState;
+	noschema OpenDoorState m_openDoorState;
+	noschema EscapeFromFlamesState m_escapeFromFlamesState;
+	noschema MoveToPlayAreaState m_moveToPlayAreaState;
 
 	// One of the states above, or null.
-	BotState *m_state;
+	noschema BotState *m_state;
 	float m_stateTimestamp;
 	// The attack state is running on top of m_state.
 	bool m_isAttacking;
 	// The open door state is running on top of m_state.
 	bool m_isOpeningDoor;
 
-	TaskType m_task;
+	noschema TaskType m_task;
 	CHandle< CBaseEntity > m_taskEntity;
 
 	// A behavior tree loaded at spawn replaces the state machine and gets the noises; null
 	// runs the regular AI.
-	CBtTree *m_pBehaviorTree;
+	noschema CBtTree *m_pBehaviorTree;
 	// The skill level 0 to 7 the behavior tree is given; 8 derives it from the profile.
-	int m_nSkillLevelOverride;
+	noschema int m_nSkillLevelOverride;
 
 	Vector m_goalPosition;
 	CHandle< CBaseEntity > m_goalEntity;
@@ -321,8 +321,8 @@ public:
 	// Storage of a CPathOptimizerNavmesh and a CNavPath, which are declared abstract and so
 	// cannot be members by value; reach them through GetPathOptimizer() and GetPath(). The path
 	// points at the optimizer.
-	alignas( 8 ) uint8 m_pathOptimizer[ sizeof( CPathOptimizerNavmesh ) ];
-	alignas( 8 ) uint8 m_path[ sizeof( CNavPath ) ];
+	noschema alignas( 8 ) uint8 m_pathOptimizer[ sizeof( CPathOptimizerNavmesh ) ];
+	noschema alignas( 8 ) uint8 m_path[ sizeof( CNavPath ) ];
 
 	CPathOptimizerNavmesh *GetPathOptimizer() { return reinterpret_cast< CPathOptimizerNavmesh * >( m_pathOptimizer ); }
 	CNavPath *GetPath() { return reinterpret_cast< CNavPath * >( m_path ); }
@@ -341,15 +341,15 @@ public:
 	CountdownTimer m_politeTimer;
 	bool m_isWaitingBehindFriend;
 
-	CCSBotLadderManeuver m_ladderManeuver;
+	noschema CCSBotLadderManeuver m_ladderManeuver;
 	// The ladder of the current segment.
-	const CNavLadder *m_pathLadder;
+	noschema const CNavLadder *m_pathLadder;
 	// Never addressed and not in the datamap; a real member, since m_pathLadderEnd would
 	// otherwise sit right after the pointer.
-	uint8 m_Unk4F80[ 4 ];
+	noschema uint8 m_Unk4F80[ 4 ];
 	// The z of the top when ascending, of the bottom when descending.
 	float m_pathLadderEnd;
-	CCSBotSharpTurnJump m_sharpTurnJump;
+	noschema CCSBotSharpTurnJump m_sharpTurnJump;
 
 	// While running the bot cannot walk.
 	CountdownTimer m_mustRunTimer;
@@ -361,7 +361,7 @@ public:
 	float m_playerTravelDistance[ MAX_TRACKED_PLAYERS ];
 	uint8 m_travelDistancePhase;
 
-	CSGameState m_gameState;
+	noschema CSGameState m_gameState;
 
 	uint8 m_hostageEscortCount;
 	float m_hostageEscortCountTimestamp;
@@ -378,8 +378,8 @@ public:
 	float m_noiseTimestamp;
 	// The entity that made it.
 	CBaseEntity *m_noiseSource;
-	CNavArea *m_noiseArea;
-	PriorityType m_noisePriority;
+	noschema CNavArea *m_noiseArea;
+	noschema PriorityType m_noisePriority;
 	// Throttles bending the line of sight to the noise.
 	CountdownTimer m_noiseBendTimer;
 	Vector m_bentNoisePosition;
@@ -395,9 +395,9 @@ public:
 	// Looking around and look-at spots resume at this time.
 	float m_inhibitLookAroundTimestamp;
 
-	LookAtSpotState m_lookAtSpotState;
+	noschema LookAtSpotState m_lookAtSpotState;
 	Vector m_lookAtSpot;
-	PriorityType m_lookAtSpotPriority;
+	noschema PriorityType m_lookAtSpotPriority;
 	// -1 for forever.
 	float m_lookAtSpotDuration;
 	// When the bot began looking at the spot.
@@ -411,7 +411,7 @@ public:
 	const char *m_lookAtDesc;
 	float m_peripheralTimestamp;
 
-	ApproachPoint m_approachPoint[ MAX_APPROACH_POINTS ];
+	noschema ApproachPoint m_approachPoint[ MAX_APPROACH_POINTS ];
 	uint8 m_approachPointCount;
 	// Where the approach points were computed from.
 	Vector m_approachPointViewPosition;
@@ -419,18 +419,18 @@ public:
 	// How long the view has not moved.
 	IntervalTimer m_viewSteadyTimer;
 
-	GrenadeTossState m_grenadeTossState;
+	noschema GrenadeTossState m_grenadeTossState;
 	// Throwing a grenade times out with it.
 	CountdownTimer m_tossGrenadeTimer;
 	// Where the enemy is expected to be met first.
-	const CNavArea *m_initialEncounterArea;
+	noschema const CNavArea *m_initialEncounterArea;
 	// While running the bot is avoiding a grenade.
 	CountdownTimer m_isAvoidingGrenade;
 
 	// The spots met while moving through the current area of the path.
-	SpotEncounter *m_spotEncounter;
+	noschema SpotEncounter *m_spotEncounter;
 	float m_spotCheckTimestamp;
-	HidingSpotCheckInfo m_checkedHidingSpot[ MAX_CHECKED_SPOTS ];
+	noschema HidingSpotCheckInfo m_checkedHidingSpot[ MAX_CHECKED_SPOTS ];
 	int m_checkedHidingSpotCount;
 
 	// The desired view angles and how fast the eyes turn towards them.
@@ -452,7 +452,7 @@ public:
 	float m_aimFocusInterval;
 	GameTime_t m_aimFocusNextUpdate;
 
-	DispositionType m_disposition;
+	noschema DispositionType m_disposition;
 	CountdownTimer m_ignoreEnemiesTimer;
 	CHandle< CCSPlayerPawn > m_enemy;
 	// The result of the last visibility test on m_enemy.
@@ -471,8 +471,8 @@ public:
 	// The most enemies seen recently.
 	int m_nearbyEnemyCount;
 	// Where most enemies were seen.
-	BotPlace_t m_enemyPlace;
-	WatchInfo m_watchInfo[ MAX_TRACKED_PLAYERS ];
+	noschema BotPlace_t m_enemyPlace;
+	noschema WatchInfo m_watchInfo[ MAX_TRACKED_PLAYERS ];
 	// The bomb carrier while visible.
 	CHandle< CCSPlayerPawn > m_bomber;
 
@@ -505,7 +505,7 @@ public:
 
 	// A round-robin queue of the most dangerous threat per frame, read back a reaction time
 	// later at m_enemyQueueAttendIndex.
-	ReactionState m_enemyQueue[ MAX_ENEMY_QUEUE ];
+	noschema ReactionState m_enemyQueue[ MAX_ENEMY_QUEUE ];
 	uint8 m_enemyQueueIndex;
 	uint8 m_enemyQueueCount;
 	uint8 m_enemyQueueAttendIndex;
@@ -514,7 +514,7 @@ public:
 	GameTime_t m_stuckTimestamp;
 	// Where the bot became stuck.
 	Vector m_stuckSpot;
-	NavRelativeDirType m_wiggleDirection;
+	noschema NavRelativeDirType m_wiggleDirection;
 	CountdownTimer m_wiggleTimer;
 	// When to jump next while stuck.
 	CountdownTimer m_stuckJumpTimer;
@@ -526,7 +526,7 @@ public:
 	Vector m_lastOrigin;
 
 	// The last radio command received, 0 for none.
-	int m_lastRadioCommand;
+	noschema int m_lastRadioCommand;
 	float m_lastRadioRecievedTimestamp;
 	float m_lastRadioSentTimestamp;
 	// Who sent it.
@@ -535,7 +535,7 @@ public:
 	Vector m_radioPosition;
 	float m_voiceEndTimestamp;
 
-	BotChatterInterface *m_pChatter;
+	noschema BotChatterInterface *m_pChatter;
 	int m_lastValidReactionQueueFrame;
 };
 

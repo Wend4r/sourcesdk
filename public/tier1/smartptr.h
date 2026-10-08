@@ -140,7 +140,7 @@ public:
 // at it anymore. Things contained in smart pointers must implement AddRef and Release
 // functions. If those functions are private, then the class must make
 // CRefCountAccessor a friend.
-template<class T, class RefCountAccessor=CRefCountAccessor>
+schema template<class T, class RefCountAccessor=CRefCountAccessor>
 class CSmartPtr
 {
 public:

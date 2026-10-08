@@ -38,9 +38,12 @@ public:
 
 using HPulseGraphDefWeak = CWeakHandle< InfoForResourceTypeCPulseGraphDef >;
 
-class PulseGraphInstanceID_t
+schema class PulseGraphInstanceID_t
 {
 public:
+	TYPEMETA( MIsBoxedIntegerType );
+	DECLARE_SCHEMA_DATA_CLASS( PulseGraphInstanceID_t );
+
 	uint32 m_Value;
 };
 COMPILE_TIME_ASSERT( sizeof( PulseGraphInstanceID_t ) == 4 );

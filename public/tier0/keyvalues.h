@@ -189,7 +189,7 @@ private:
 //	are \n, \t, \\, \n and \". The number character '#' is used for macro purposes 
 //	(eg #include), don't use it as first character in key names.
 //-----------------------------------------------------------------------------
-class KeyValues : public CKeyValues_Data
+schema class KeyValues : public CKeyValues_Data
 {
 	friend class CKeyValuesTokenReader;
 

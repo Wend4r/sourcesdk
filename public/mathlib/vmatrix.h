@@ -39,7 +39,7 @@
 struct cplane_t;
 
 
-class VMatrix
+schema class VMatrix
 {
 public:
 

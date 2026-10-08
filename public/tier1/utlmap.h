@@ -338,10 +338,12 @@ inline void CUtlOrderedMapBase< K, T, L, I >::PurgeAndDeleteElements()
 	Purge();
 }
 
-template < typename K, typename T, typename L = CDefLess< K >, typename I = int >
+schema template < typename K, typename T, typename L = CDefLess< K >, typename I = int >
 class CUtlOrderedMap : public CUtlOrderedMapBase< K, T, L, I >
 {
 public:
+	TYPEMETA( MAtomicTransfersAsMap );
+
 	using BaseClass = CUtlOrderedMapBase< K, T, L, I >;
 
 	CUtlOrderedMap( int growSize, int initSize, const L &moveLess = L() )

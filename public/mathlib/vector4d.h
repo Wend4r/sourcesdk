@@ -31,7 +31,7 @@ class Vector2D;
 // 4D Vector4D
 //=========================================================
 
-class Vector4D					
+schema class Vector4D					
 {
 public:
 	// Members

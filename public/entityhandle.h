@@ -14,7 +14,7 @@
 
 class CEntityInstance;
 
-class CEntityHandle
+schema class CEntityHandle
 {
 public:
 	friend class CEntityIdentity;

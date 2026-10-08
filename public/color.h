@@ -12,13 +12,14 @@
 #pragma once
 #endif
 
+#include "platform.h"
 #include "tier0/basetypes.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Basic handler for an rgb set of colors
 //			This class is fully inline
 //-----------------------------------------------------------------------------
-class alignas(4) Color
+schema class ALIGN4 Color
 {
 public:
 #pragma pack(push, 1)

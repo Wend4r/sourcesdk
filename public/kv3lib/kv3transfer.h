@@ -191,11 +191,11 @@ public:
 			return;
 		}
 
-		const KV3TransferClassBehavior_t nClassBehavior = static_cast< KV3TransferClassBehavior_t >( T::KV3TRANSFER_BEHAVIOR );
+		constexpr KV3TransferClassBehavior_t nClassBehavior = static_cast< KV3TransferClassBehavior_t >( T::KV3TRANSFER_BEHAVIOR );
 
 		CBufferStringN< KV3TRANSFER_CLASSNAME_MAX_LENGTH > sPolymorphicClassName;
 
-		if constexpr ( T::KV3TRANSFER_BEHAVIOR == KV3TRANSFER_CLASS_AS_POLYMORPHIC_TABLE )
+		if constexpr ( nClassBehavior == KV3TRANSFER_CLASS_AS_POLYMORPHIC_TABLE )
 		{
 			T::KV3TransferPolymorphicClassname( pClassInstance, sPolymorphicClassName );
 		}
@@ -389,7 +389,7 @@ public:
 			return;
 		}
 
-		if constexpr ( T::KV3TRANSFER_BEHAVIOR == KV3TRANSFER_CLASS_AS_POLYMORPHIC_TABLE )
+		if constexpr ( static_cast< KV3TransferClassBehavior_t >( T::KV3TRANSFER_BEHAVIOR ) == KV3TRANSFER_CLASS_AS_POLYMORPHIC_TABLE )
 		{
 			const char *pszClassName = pLoadFromValue->GetMemberString( KV3TRANSFER_CLASSNAME_MEMBER );
 
@@ -410,7 +410,7 @@ public:
 		}
 		else
 		{
-			static_assert( T::KV3TRANSFER_BEHAVIOR != KV3TRANSFER_CLASS_UNIMPLEMENTED, "The class does not support KV3 transfer" );
+			static_assert( static_cast< KV3TransferClassBehavior_t >( T::KV3TRANSFER_BEHAVIOR ) != KV3TRANSFER_CLASS_UNIMPLEMENTED, "The class does not support KV3 transfer" );
 
 			value = T::KV3TransferAllocateClassInstance( nullptr, nullptr );
 

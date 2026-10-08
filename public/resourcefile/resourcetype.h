@@ -67,12 +67,15 @@ enum ResourceSystemGetNamedResourcesFlags_t : int
 {
 };
 
-struct ResourceId_t
+schema struct ResourceId_t
 {
-	uint64 m_Data;
+	TYPEMETA( MIsBoxedIntegerType );
+	DECLARE_SCHEMA_DATA_CLASS( ResourceId_t );
+
+	uint64 m_Value;
 
 	operator uint64() const { return Get(); }
-	uint64 Get() const { return m_Data; }
+	uint64 Get() const { return m_Value; }
 };
 
 struct ResourceNameInfo_t
@@ -89,7 +92,7 @@ private:
 	int32 m_nOffset;
 };
 
-template < typename T >
+schema template < typename T >
 class CResourcePointer : public CResourcePointerBase
 {
 };
@@ -98,7 +101,7 @@ class CResourceStringOffset : public CResourcePointer< char >
 {
 };
 
-class CResourceString : public CBufferStringN< 200 >
+schema class CResourceString : public CBufferStringN< 200 >
 {
 public:
 	using BaseClass = CBufferStringN< 200 >;
@@ -119,7 +122,7 @@ public:
 	{
 		Set( pszPath );
 		NormalizePathInline();
-		m_nResourceId.m_Data = MurmurHash64( String(), Length(), 0xEDABCDEFu );
+		m_nResourceId.m_Value = MurmurHash64( String(), Length(), 0xEDABCDEFu );
 		m_nResourceType = ComputeTypeFromExtension( String() );
 	}
 

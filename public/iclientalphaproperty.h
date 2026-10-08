@@ -32,9 +32,10 @@ enum ClientAlphaDistanceFadeMode_t
 // Instead, these are managed completely by the client DLL.
 // Use the IClientTranslucency manager to allocate + free IClientTranslucency objects
 //-----------------------------------------------------------------------------
-abstract_class IClientAlphaProperty
+schema abstract_class IClientAlphaProperty
 {
 public:
+	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
 	// Gets at the containing class...
 	virtual IClientUnknown*	GetIClientUnknown() = 0;
 

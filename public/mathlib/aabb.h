@@ -8,9 +8,11 @@
 
 
 /// Axis-aligned 3d bounding box.
-valve_schema struct AABB_t
+schema struct AABB_t
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( AABB_t );
+
 	Vector				m_vMinBounds; 
 	Vector				m_vMaxBounds;
 

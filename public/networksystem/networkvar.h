@@ -69,7 +69,7 @@ struct NetworkUtlVectorDerived_t< void, Vector >
 // What a change hands the owner is built by GetStateChanged() of the most derived vector: a variant
 // passes itself as Derived and hides GetStateChanged() with its own form, and every notification
 // made by this class - the writes, the structural changes, CElementModify - picks that form up.
-template < class T, class Changer, int GROW_SIZE = -1, typename I = int, class Derived = void >
+schema template < class T, class Changer, int GROW_SIZE = -1, typename I = int, class Derived = void >
 class CNetworkUtlVectorBase : protected CUtlVectorBase< T, I, CNetworkUtlVector_MemoryType< T, GROW_SIZE > >
 {
 	typedef CUtlVectorBase< T, I, CNetworkUtlVector_MemoryType< T, GROW_SIZE > > BaseClass;
@@ -589,7 +589,7 @@ public:
 // Without a resolved path or child indices an element change falls back to marking the owner fully
 // changed; without an owner entity it is dropped. Resolving m_PathToVector and assigning the element
 // path indices go through the network serializer and the element chainers, and are left to the engine.
-template < class T, class Changer, int GROW_SIZE = -1, typename I = int >
+schema template < class T, class Changer, int GROW_SIZE = -1, typename I = int >
 class CUtlVectorEmbeddedNetworkVar : public CNetworkUtlVectorBase< T, Changer, GROW_SIZE, I, CUtlVectorEmbeddedNetworkVar< T, Changer, GROW_SIZE, I > >
 {
 public:
@@ -681,6 +681,9 @@ struct SchemaNetworkVarName_t
 DECLARE_SCHEMA_META_TAG( MNetworkVarNames, META_TAG_ON_CLASS, META_VALUE( SchemaNetworkVarName_t ) );
 DECLARE_SCHEMA_META_TAG( MNetworkOverride, META_TAG_ON_CLASS, META_VALUE( SchemaNetworkVarName_t ) );
 DECLARE_SCHEMA_META_TAG( MNetworkVarTypeOverride, META_TAG_ON_CLASS, META_VALUE( SchemaNetworkVarName_t ) );
+
+// Stored only as a SCHEMA_CF1_INFO_TAG_* bit, e.g. on CountdownTimer
+DECLARE_SCHEMA_META_TAG( MNetworkNoBase, META_TAG_ON_CLASS, META_TAG_ONLY() );
 
 DECLARE_SCHEMA_META_TAG( MNetworkExcludeByName, META_TAG_ON_CLASS, META_VALUE( const char * ) );
 DECLARE_SCHEMA_META_TAG( MNetworkExcludeByUserGroup, META_TAG_ON_CLASS, META_VALUE( const char * ) );

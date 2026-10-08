@@ -12,6 +12,8 @@
 #pragma once
 #endif
 
+#include "tier0/basetypes.h"
+
 
 //-----------------------------------------------------------------------------
 // channels
@@ -53,7 +55,7 @@ enum
 // Don't change this without consulting Kelly or Wedge (sjb).
 #define ATTN_GUNFIRE	0.27f
 
-enum soundlevel_t
+schema enum soundlevel_t
 {
 	SNDLVL_NONE			= 0,
 

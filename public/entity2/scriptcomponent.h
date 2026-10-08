@@ -18,9 +18,11 @@ struct CEntityPrecacheContext;
 
 // Script side of an entity whose class is implemented in script. The game allocates it with new when the public
 // script scope of the entity is created and frees it when that scope is released; the component helper does neither.
-class CScriptComponent : public CEntityComponent
+schema class CScriptComponent : public CEntityComponent
 {
 public:
+	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
+
 	enum ScopeFlags_t
 	{
 		// The scope handle is the script instance owned by the script system; releasing the component does not release it.
@@ -87,22 +89,22 @@ protected:
 public:
 	// The members before m_pOwner belong to the game's second base CScriptScopeT< CDefScriptAccessorBase, true >,
 	// which directly follows the vtable pointer. Its layout differs from the SDK script scope template.
-	HSCRIPT m_hScope;
+	noschema HSCRIPT m_hScope;
 
 	// The game's vectors here are a pointer to their block, null when empty rather than the static empty block
 	// CUtlVectorUltraConservative expects, so they are kept as the block pointers.
-	FuncHandles_t *m_pFuncHandles;
+	noschema FuncHandles_t *m_pFuncHandles;
 
 	// Initialization with a script instance sets it to 3, SCOPE_EXTERNAL and an unidentified bit.
-	int m_nScopeFlags;
+	noschema int m_nScopeFlags;
 
-	CEntityOwnerPtr m_pOwner;
+	noschema CEntityOwnerPtr m_pOwner;
 
 	// Outputs declared by the script class, one per output descriptor the script system registered for it:
 	// an int count followed by the aligned outputs, null when empty. See GetScriptOutputs.
-	void *m_pScriptOutputs;
+	noschema void *m_pScriptOutputs;
 
-	CUtlSymbolLarge m_scriptClassName;
+	CUtlSymbolLarge m_scriptClassName; META( MNotSaved );
 };
 
 #endif // SCRIPTCOMPONENT_H

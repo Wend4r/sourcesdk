@@ -294,7 +294,7 @@ private:
 	void InPlaceQuickSort_r( I (__cdecl *pfnCompare)(const T *, const T *), I nLeft, I nRight );
 };
 
-template < class T, typename I = int, class A = CUtlVectorMemory_Growable< T, I, 0 > >
+schema template < class T, typename I = int, class A = CUtlVectorMemory_Growable< T, I, 0 > >
 class CUtlVector : public CUtlVectorBase< T, I, A >
 {
 	typedef CUtlVectorBase< T, I, A > BaseClass;
@@ -351,7 +351,7 @@ public:
 // The CUtlVectorFixed class:
 // A array class with a fixed allocation scheme
 //-----------------------------------------------------------------------------
-template< class T, int MAX_SIZE >
+schema template< class T, int MAX_SIZE >
 class CUtlVectorFixed : public CUtlVectorBase< T, int, CUtlVectorMemory_Fixed<T, MAX_SIZE > >
 {
 	typedef CUtlVectorBase< T, int, CUtlVectorMemory_Fixed<T, MAX_SIZE > > BaseClass;
@@ -367,7 +367,7 @@ public:
 // The CUtlVectorFixedGrowable class:
 // A array class with a fixed allocation scheme backed by a dynamic one
 //-----------------------------------------------------------------------------
-template< class T, int MAX_SIZE >
+schema template< class T, int MAX_SIZE >
 class CUtlVectorFixedGrowable : public CUtlVectorBase< T, int, CUtlVectorMemory_FixedGrowable<T, MAX_SIZE, int > >
 {
 	typedef CUtlVectorBase< T, int, CUtlVectorMemory_FixedGrowable< T, MAX_SIZE > > BaseClass;

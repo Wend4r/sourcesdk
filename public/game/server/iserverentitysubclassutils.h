@@ -15,11 +15,11 @@
 #include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
 
-enum EntitySubclassScope_t : int
+schema enum EntitySubclassScope_t : int
 {
 	SUBCLASS_SCOPE_NONE = -1,
-	SUBCLASS_SCOPE_PRECIPITATION = 0,
-	SUBCLASS_SCOPE_PLAYER_WEAPONS = 1,
+	SUBCLASS_SCOPE_PRECIPITATION = 0, META( MPropertyFriendlyName = "Precipitation"; MEntitySubclassScopeFile = "scripts/precipitation.vdata" )
+	SUBCLASS_SCOPE_PLAYER_WEAPONS = 1, META( MPropertyFriendlyName = "PlayerWeapon"; MEntitySubclassScopeFile = "scripts/weapons.vdata" )
 
 	SUBCLASS_SCOPE_COUNT
 };

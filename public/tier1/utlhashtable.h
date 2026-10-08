@@ -104,10 +104,12 @@ public:
 	}
 };
 
-template <typename KeyT, typename ValueT = empty_t, typename KeyHashT = DefaultHashFunctor<KeyT>, typename KeyIsEqualT = DefaultEqualFunctor<KeyT>, typename AlternateKeyT = typename ArgumentTypeInfo<KeyT>::Alt_t, typename TableT = CUtlLeanVector<CUtlHashtableEntry<KeyT, ValueT>>>
+schema template <typename KeyT, typename ValueT = empty_t, typename KeyHashT = DefaultHashFunctor<KeyT>, typename KeyIsEqualT = DefaultEqualFunctor<KeyT>, typename AlternateKeyT = typename ArgumentTypeInfo<KeyT>::Alt_t, typename TableT = CUtlLeanVector<CUtlHashtableEntry<KeyT, ValueT>>>
 class CUtlHashtable
 {
 public:
+	TYPEMETA( MAtomicTransfersAsMap );
+
 	typedef UtlHashHandle_t handle_t;
 
 protected:
