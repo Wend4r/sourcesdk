@@ -81,109 +81,109 @@ struct P4Client_t
 //-----------------------------------------------------------------------------
 #define P4_MAX_INPUT_BUFFER_SIZE	16384		// descriptions should be limited to this size!
 
-abstract_class IP4  : public IAppSystem
+abstract_class IP4 : public IAppSystem
 {
 public:
-	// name of the current clientspec
+	virtual bool IsConnectedToServer() = 0;
+
+	virtual int GetImplementationType() = 0;
+
+	virtual bool SetImplementationType( int nType ) = 0;
+
 	virtual P4Client_t &GetActiveClient() = 0;
-
-	// changes the current client
-	virtual void SetActiveClient(const char *clientname) = 0;
-
-	// Refreshes the current client from p4 settings
+	virtual void SetActiveClient( const char *pClientName ) = 0;
 	virtual void RefreshActiveClient() = 0;
+	virtual void unk017() = 0;
 
-	// translate filespecs into the desired syntax
-	virtual void GetDepotFilePath(char *depotFilePath, const char *filespec, int size) = 0;
-	virtual void GetClientFilePath(char *clientFilePath, const char *filespec, int size) = 0;
-	virtual void GetLocalFilePath(char *localFilePath, const char *filespec, int size) = 0;
+	virtual CUtlVector< P4File_t > &GetFileList( const char *pPath, bool bUnknown ) = 0;
+	virtual void unk019() = 0;
+	virtual void unk020() = 0;
+	virtual void unk021() = 0;
 
-	// retreives the list of files in a path
-	virtual CUtlVector<P4File_t> &GetFileList( const char *path ) = 0;
+	// Return persistent containers by reference
+	virtual void *unk022() = 0;
+	virtual void *unk023() = 0;
+	virtual void *unk024() = 0;
 
-	// returns the list of files opened for edit/integrate/delete 
-	virtual void GetOpenedFileList( CUtlVector<P4File_t> &fileList, bool bDefaultChangeOnly ) = 0;
-	virtual void GetOpenedFileList( const char *pRootDirectory, CUtlVector<P4File_t> &fileList ) = 0;
-	virtual void GetOpenedFileListInPath( const char *pPathID, CUtlVector<P4File_t> &fileList ) = 0;
+	virtual void unk025( bool bUnknown ) = 0;
 
-	// retrieves revision history for a file or directory
-	virtual CUtlVector<P4Revision_t> &GetRevisionList( const char *path, bool bIsDir ) = 0;
+	// Callers pass ( path, 0 or 1, -1 )
+	virtual bool OpenFileForAdd( const char *pFullPath, int nUnknown1, int nUnknown2 ) = 0;
+	virtual bool OpenFileForEdit( const char *pFullPath, int nUnknown1, int nUnknown2 ) = 0;
 
-	// returns a list of clientspecs
-	virtual CUtlVector<P4Client_t> &GetClientList() = 0;
+	virtual int unk028( const char *pFullPath, int nUnknown1, int nUnknown2 ) = 0;
 
-	// changes the clientspec to remove the specified path (cloaking)
-	virtual void RemovePathFromActiveClientspec( const char *path ) = 0;
+	// Only called for files that are in perforce
+	virtual bool unk029( const char *pFullPath ) = 0;
 
-	// file manipulation
-	virtual bool OpenFileForAdd( const char *pFullPath ) = 0;
-	virtual bool OpenFileForEdit( const char *pFullPath ) = 0;
-	virtual bool OpenFileForDelete( const char *pFullPath ) = 0;
-	virtual bool SyncFile( const char *pFullPath, int nRevision = -1 ) = 0;	// default revision is to sync to the head revision
+	// The local backend copies pSrcPath to pDstPath
+	virtual bool unk030( const char *pSrcPath, const char *pDstPath, int nUnknown1, int nUnknown2 ) = 0;
+	virtual bool unk031() = 0;
 
-	// submit/revert
-	virtual bool SubmitFile( const char *pFullPath, const char *pDescription ) = 0;
-	virtual bool RevertFile( const char *pFullPath ) = 0;
+	// Callers pass -1 to sync to the head revision
+	virtual bool SyncFile( const char *pFullPath, int nRevision = -1 ) = 0;
+	virtual bool unk033() = 0;
+	virtual bool unk034() = 0;
 
-	// file checkin/checkout for multiple files
-	virtual bool OpenFilesForAdd( int nCount, const char **ppFullPathList ) = 0;
-	virtual bool OpenFilesForEdit( int nCount, const char **ppFullPathList ) = 0;
-	virtual bool OpenFilesForDelete( int nCount, const char **ppFullPathList ) = 0;
-
-	// submit/revert for multiple files
-	virtual bool SubmitFiles( int nCount, const char **ppFullPathList, const char *pDescription ) = 0;
-	virtual bool RevertFiles( int nCount, const char **ppFullPathList ) = 0;
-
-	// Is this file in perforce?
-	virtual bool IsFileInPerforce( const char *pFullPath ) = 0;
-
-	// Get the perforce file state
-	virtual P4FileState_t GetFileState( const char *pFullPath ) = 0;
-
-	// depot root
-	virtual const char *GetDepotRoot() = 0;
-	virtual int GetDepotRootLength() = 0;
-
-	// local root
-	virtual const char *GetLocalRoot() = 0;
-	virtual int GetLocalRootLength() = 0;
-
-	// Gets a string for a symbol
-	virtual const char *String( CUtlSymbol s ) const = 0;
-
-	// Returns which clientspec a file lies under. This will
-	// search for p4config files in root directories of the file
-	// It returns false if it didn't find a p4config file.
-	virtual bool GetClientSpecForFile( const char *pFullPath, char *pClientSpec, int nMaxLen ) = 0;
-	virtual bool GetClientSpecForDirectory( const char *pFullPathDir, char *pClientSpec, int nMaxLen ) = 0;
-
-	// Returns which clientspec a filesystem path ID lies under. This will
-	// search for p4config files in all root directories of the all paths in
-	// the search path. NOTE: All directories in a path need to use the same clientspec
-	// or this function will return false.
-	// It returns false if it didn't find a p4config file.
-	virtual bool GetClientSpecForPath( const char *pPathId, char *pClientSpec, int nMaxLen ) = 0;
-
-	// Opens a file in p4 win
-	virtual void OpenFileInP4Win( const char *pFullPath ) = 0;
-
-	// have we connected? if not, nothing works
-	virtual bool IsConnectedToServer( bool bRetry = true ) = 0;
-
-	// Returns file information for a single file
-	virtual bool GetFileInfo( const char *pFullPath, P4File_t *pFileInfo ) = 0;
-
-	// retrieves the list of files in a path, using a known client spec
-	virtual CUtlVector<P4File_t> &GetFileListUsingClientSpec( const char *pPath, const char *pClientSpec ) = 0;
-
-	// retrieves the last error from the last op (which is likely to span multiple lines)
-	// this is only valid after OpenFile[s]For{Add,Edit,Delete} or {Submit,Revert}File[s]
-	virtual const char *GetLastError() = 0;
-
-	// sets the name of the changelist to open files under, NULL for "Default" changelist
+	// Sets the changelist description files get opened under
 	virtual void SetOpenFileChangeList( const char *pChangeListName ) = 0;
 
-	virtual void GetFileListInChangelist( unsigned int changeListNumber, CUtlVector<P4File_t> &fileList ) = 0;
+	virtual bool Unk_OpenFilesForAdd( void *p ) = 0;
+	virtual bool OpenFilesForEdit( int nCount, const char **ppFullPathList ) = 0;
+	virtual bool Unk_OpenFilesForDelete( void *p ) = 0;
+	virtual bool unk039() = 0;
+	virtual bool unk040() = 0;
+	virtual bool unk041() = 0;
+	virtual bool unk042( const char *pFullPath ) = 0;
+
+	virtual bool IsFileInPerforce( const char *pFullPath ) = 0;
+	virtual bool unk044() = 0;
+	virtual bool unk045() = 0;
+	virtual void *unk046() = 0;
+	virtual void *unk047() = 0;
+
+	// Takes an 8-byte symbol by value
+	virtual const char *Unk_String( void *p ) = 0;
+	virtual const char *String( CUtlSymbol s ) const = 0;
+
+	virtual bool GetClientSpecForFile( const char *pFullPath, char *pClientSpec, int nMaxLen ) = 0;
+	virtual bool GetClientSpecForDirectory( const char *pFullPathDir, char *pClientSpec, int nMaxLen ) = 0;
+	virtual bool GetClientSpecForPath( const char *pPathId, char *pClientSpec, int nMaxLen ) = 0;
+
+	virtual bool unk053() = 0;
+	virtual bool unk054() = 0;
+	virtual bool unk055() = 0;
+	virtual bool unk056() = 0;
+	virtual void *unk057() = 0;
+	virtual void unk058() = 0;
+	virtual void *unk059() = 0;
+	virtual bool unk060() = 0;
+
+	virtual bool unk061( const char *pFullPath, int nUnknown1, int nUnknown2, int nUnknown3 ) = 0;
+	virtual bool unk062() = 0;
+
+	virtual bool unk063( const char *pSrcPath, const char *pDstPath ) = 0;
+	virtual bool unk064( const char *pSrcPath, const char *pDstPath ) = 0;
+
+	virtual void unk065() = 0;
+	virtual void unk066( bool bUnknown ) = 0;
+	virtual void *unk067() = 0;
+	virtual void *unk068() = 0;
+	virtual void *unk069() = 0;
+	virtual bool unk070() = 0;
+	virtual bool unk071() = 0;
+	virtual void unk072() = 0;
+	virtual bool unk073() = 0;
+
+	// Returns a 24-byte vector by value through pResult
+	virtual void unk074( void *pResult ) = 0;
+	virtual bool unk075() = 0;
+	virtual void *unk076() = 0;
+
+	// Takes a 16-byte object by value
+	virtual bool unk077( void *p ) = 0;
+
+	virtual ~IP4() {}
 };
 
 DECLARE_TIER2_INTERFACE( IP4, p4 );
