@@ -109,6 +109,7 @@ class CUtlBuffer;
 class CEntityClass;
 class CSVCMsg_UserCommands_t;
 class ISceneViewDebugOverlays;
+class CCLCMsg_Diagnostic_t;
 struct FlattenedSerializerSpewField_t;
 struct Entity2Networkable_t;
 
@@ -147,6 +148,11 @@ enum ClientNetMessageHandlersAction_t
 	CLIENT_NET_MESSAGE_HANDLERS_REGISTER = 2,
 };
 
+struct ClientUserInfoConVarData_t
+{
+	uint8 *m_pData;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Interface the engine exposes to the game DLL
 //-----------------------------------------------------------------------------
@@ -155,21 +161,23 @@ abstract_class IVEngineServer2 : public ISource2Engine
 public:
 	virtual EUniverse	GetSteamUniverse() const = 0;
 
-	virtual SpawnGroupHandle_t	GetSpawnGroupHandle( const char *pszName ) = 0;
-	virtual const char			*GetSpawnGroupName( SpawnGroupHandle_t nHandle ) = 0;
-	virtual SpawnGroupHandle_t	unk_21( bool ) = 0;
-	virtual SpawnGroupHandle_t	unk_22( bool ) = 0; // Returns the active/last spawn-group handle, or the invalid sentinel
-	virtual bool				IsSpawnGroupHandleValid( SpawnGroupHandle_t nHandle ) = 0;
-	virtual float				&GetFrameTime() = 0;
+	virtual WorldGroupId_t	GetWorldGroupId( const char *pszWorldGroupName ) = 0;
+	virtual const char		*GetWorldGroupName( WorldGroupId_t hWorldGroupId ) = 0;
+	// First world group id of the list selected by bUnk
+	virtual WorldGroupId_t	unk021( bool bUnk ) = 0;
+	// Last registered world group id of the list selected by bUnk
+	virtual WorldGroupId_t	unk022( bool bUnk ) = 0;
+	virtual bool			IsWorldGroupIdValid( WorldGroupId_t hWorldGroupId ) = 0;
+	virtual float			&GetFrameTime() = 0;
 
-	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
-	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
+	virtual void		SetFrameTimeAmnesty( const char *pszReason, int nFrames, float flDuration ) = 0;
+	virtual const char	*GetFrameTimeAmnesty( bool bCheckCvar ) = 0;
 
-	virtual void		unk027( const char *amnesty, int, float frametime ) = 0; // frame-time amnesty dict insert
+	virtual void		unk027( const char *pszName, int nAmnesty, int nFrames, float flDuration ) = 0;
 
-	virtual void		ShowFrameTimeReport( void *, bool, uint32 ) = 0;
-	virtual void		DumpNetStats( void *pNetStatData, const std::function< void ( const char * )> &func ) = 0;
-	virtual void		unk_30() = 0;
+	virtual void		ShowFrameTimeReport( void *pReport, bool bDetailed, int nLogChannel ) = 0;
+	virtual void		DumpNetStats( void *pNetStatData, void ( *pfnOutput )( const char * ) ) = 0;
+	virtual bool		unk030() = 0;
 
 	virtual uint32		GetLongFrameCount() = 0;
 
@@ -198,8 +206,8 @@ public:
 	// Get stats info interface for a client netchannel
 	virtual INetChannelInfo* GetPlayerNetInfo( CPlayerSlot nSlot ) = 0;
 
-	virtual bool		IsUserIDInUse( int userID ) = 0;	// TERROR: used for transitioning
-	virtual int			GetLoadingProgressForUserID( int userID ) = 0;	// TERROR: used for transitioning
+	virtual CBitVec< MAX_EDICTS > *GetEntityTransmitBitsForClient( CPlayerSlot nSlot ) = 0;
+	virtual int			GetClientDeltaTick( CPlayerSlot nSlot ) = 0;
 
 	// Given the current PVS(or PAS) and origin, determine which players should hear/receive the message
 	virtual void		Message_DetermineMulticastRecipients( bool usepas, const Vector& origin, CPlayerBitVec& playerbits ) = 0;
@@ -213,11 +221,11 @@ public:
 	virtual void		ClientPrintf( CPlayerSlot nSlot, const char *szMsg ) = 0;
 
 	virtual bool		IsLowViolence() = 0;
-	virtual bool		SetHLTVChatBan( int tvslot, bool bBanned ) = 0;
+	virtual void		SetHLTVChatBan( const CSteamID &steamID, bool bBanned ) = 0;
 	virtual bool		IsAnyClientLowViolence() = 0;
 
 	// Get the current game directory (hl2, tf2, hl1, cstrike, etc.)
-	virtual void        GetGameDir( CBufferString &gameDir ) = 0;
+	virtual const char	*GetGameDir( CBufferString &gameDir ) = 0;
 
 	// Create a bot with the given name.  Player index is -1 if fake client can't be created
 	virtual CPlayerSlot	CreateFakeClient( const char *netname ) = 0;
@@ -230,19 +238,17 @@ public:
 	virtual bool		IsLogEnabled() = 0;
 
 	virtual bool IsSplitScreenPlayer( CPlayerSlot nSlot ) = 0;
-	virtual edict_t *GetSplitScreenPlayerAttachToEdict( CPlayerSlot nSlot ) = 0;
-	virtual edict_t *GetSplitScreenPlayerForEdict( CPlayerSlot nSlot, int nSplitScreenSlot ) = 0;
+	virtual CPlayerSlot GetSplitScreenPlayerAttachToEdict( CPlayerSlot nSlot ) = 0;
+	virtual CPlayerSlot GetSplitScreenPlayerForEdict( CPlayerSlot nSlot, int nSplitScreenSlot ) = 0;
 
-	// Ret types might be all wrong for these. Haven't researched yet.
-	virtual void	UnloadSpawnGroup( SpawnGroupHandle_t spawnGroup, /*ESpawnGroupUnloadOption*/ int) = 0;
+	virtual void	UnloadSpawnGroup( SpawnGroupHandle_t spawnGroup, /*ESpawnGroupUnloadOption*/ int nOption ) = 0;
+	virtual SpawnGroupHandle_t	LoadSpawnGroup( const SpawnGroupDesc_t &desc ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t spawnGroup, const char *pszDescription ) = 0;
 	virtual bool	IsSpawnGroupLoaded( SpawnGroupHandle_t spawnGroup ) const = 0;
 	virtual bool	IsSpawnGroupLoading( SpawnGroupHandle_t spawnGroup ) const = 0;
 	virtual void	MakeSpawnGroupActive( SpawnGroupHandle_t spawnGroup ) = 0;
 	virtual void	SynchronouslySpawnGroup( SpawnGroupHandle_t spawnGroup ) = 0;
 	virtual void	SynchronizeAndBlockUntilLoaded( SpawnGroupHandle_t spawnGroup ) = 0;
-
-	virtual void	unk_066( SpawnGroupHandle_t spawnGroup ) = 0;
 
 	virtual void SetTimescale( float flTimescale ) = 0;
 
@@ -282,7 +288,7 @@ public:
 	// Returns the XUID of the specified player. It'll be NULL if the player hasn't connected yet.
 	virtual uint64 GetClientXUID( CPlayerSlot nSlot ) = 0;
 
-	virtual void				*GetPVSForSpawnGroup( SpawnGroupHandle_t spawnGroup ) = 0;
+	virtual IPVS				*GetPVSForSpawnGroup( SpawnGroupHandle_t spawnGroup ) = 0;
 	virtual SpawnGroupHandle_t	FindSpawnGroupByName( const char *szName ) = 0;
 
 	// Returns the SteamID of the game server
@@ -294,9 +300,9 @@ public:
 
 	// Kicks the slot with the specified NetworkDisconnectionReason
 	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason, const char *szInternalReason = nullptr ) = 0;
-	virtual int64 DisconnectAllClients( ENetworkDisconnectionReason reason ) = 0;
+	virtual void DisconnectAllClients( ENetworkDisconnectionReason reason ) = 0;
 
-	virtual void ProcessSplitPlayerConnect( const CCLCMsg_SplitPlayerConnect_t &msg ) = 0; // By host client.
+	virtual void unk089( void *p1, void *p2 ) = 0;
 
 	// Use these to setup who can hear whose voice.
 	// Pass in client indices (which are their ent indices - 1).
@@ -311,35 +317,38 @@ public:
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;
 
-	virtual int64 StartHltvReplay( CPlayerSlot nSlot, void *pRequest ) = 0;
-	virtual int64 ForceStopHltvReplay( CPlayerSlot nSlot ) = 0;
-	virtual int64 StopAllHltvReplays() = 0;
-	virtual uint32 GetHltvLastSendTick( CPlayerSlot nSlot ) = 0;
+	virtual bool StartHltvReplay( CPlayerSlot nSlot, const void *pRequest ) = 0;
+	virtual void ForceStopHltvReplay( CPlayerSlot nSlot ) = 0;
+	virtual void StopAllHltvReplays() = 0;
+	virtual int GetHltvLastSendTick( CPlayerSlot nSlot ) = 0;
 	virtual bool IsHltvReplayBufferAvailable() = 0;
 	virtual bool CanStartHltvReplay( CPlayerSlot nSlot, uint32 nDelay ) = 0;
-	virtual int64 ResetHltvReplayRequestTime( CPlayerSlot nSlot ) = 0;
+	virtual void ResetHltvReplayRequestTime( CPlayerSlot nSlot ) = 0;
 
 	virtual bool	IsAnyHltvReplayActive() = 0;
 
 	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
-	virtual void UpdateClientRate( CPlayerSlot nSlot ) = 0;
+	// Passes flRate to the client's net channel
+	virtual void UpdateClientRate( CPlayerSlot nSlot, float flRate ) = 0;
 
-	virtual uint64 RemoveHltvReplayRequest( float flDelay, void *pUnk, int nRequestId ) = 0;
+	virtual bool unk109( uint32 nId, float flSeconds ) = 0;
 	virtual void *AddHltvReplayRequest( uint32, int, uint32, int, int ) = 0;
 	virtual bool IsHltvReplayEnabled() = 0;
-	virtual uint64 QueueHltvReplayEvent( int, uint8, uint8 ) = 0;
-	virtual bool IsHltvReplayActive() = 0;
-	virtual void RecordNetworkSpike() = 0;
+	virtual void QueueHltvReplayEvent( int nUnk, uint8 nUnk2, uint8 nUnk3, uint32 nUnk4, void *pUnk ) = 0;
+	virtual bool IsRecordingDemo() = 0;
+	virtual void StartAutoRecording() = 0;
 	virtual void RecordDemo( const char *pszFilename ) = 0;
 	virtual void StopRecordingDemo( void *pUnk ) = 0;
 
-	virtual bool BroadcastEvent( INetworkMessageInternal *pSerializer, const CNetMessage *pMessage ) = 0;
-	virtual const char *GetHltvReplayStats() = 0;
-	virtual const char *GetName() = 0;
+	// Writes the message into the demo being recorded
+	virtual void BroadcastEvent( INetworkMessageInternal *pSerializer, const CNetMessage *pMessage ) = 0;
+	// Empty string when no demo is being recorded
+	virtual const char *GetRecordingDemoFilename() = 0;
+	virtual const char *GetMapName() = 0;
 
-	virtual CCommand *GetClientCommand( CPlayerSlot nSlot ) = 0;
+	virtual ClientUserInfoConVarData_t GetClientUserInfoConVarData( CPlayerSlot nSlot ) = 0;
 
-	virtual void	*unk_121() = 0;
+	virtual bool	unk121() = 0;
 };
 
 abstract_class IServerGCLobby
@@ -535,10 +544,6 @@ public:
 	virtual void			OnSteamAuthWarning( const char *pszMessage ) = 0;// Receives Steam auth session diagnostics, such as a SteamID mismatch against the auth ticket
 	virtual void			OnNetworkGameServerActivated( INetworkGameServer *pNetworkGameServer ) = 0;
 	virtual uint32			GetSteamGroupAccountID( void ) = 0; // Account ID of the sv_steamgroup group, 0 when none is set
-
-#ifdef _LINUX
-	virtual void			unk_103( void ) = 0;
-#endif
 };
 
 //-----------------------------------------------------------------------------
@@ -576,9 +581,6 @@ public:
 
 	// See entity2/entitynetwork.h
 	virtual void			PrePackEntities( const CUtlVector< Entity2Networkable_t * > &vecEntities ) = 0;
-
-	virtual void			AddEntityToSteadyState( const Entity2Networkable_t *pNetworkable ) = 0; // Adds a steady-state eligible entity to the transmit bitset
-	virtual void			RemoveEntityFromSteadyState( const Entity2Networkable_t *pNetworkable ) = 0; // Removes an entity from the transmit bitset
 };
 
 #define INTERFACEVERSION_SERVERCONFIG			"Source2ServerConfig001"
@@ -592,10 +594,6 @@ public:
 
 	virtual int			GetNetworkVersion( void ) = 0;
 
-	// Get the simulation interval (must be compiled with identical values into both client and game .dll for MOD!!!)
-	// Right now this is only requested at server startup time so it can't be changed on the fly, etc.
-	virtual float			GetTickInterval( void ) const = 0;
-
 	// Get server maxplayers and lower bound for same
 	virtual void			GetPlayerLimits( int& minplayers, int& maxplayers, int &defaultMaxPlayers, bool &bIsMultiplayer ) const = 0;
 
@@ -605,11 +603,9 @@ public:
 	// Return # of human slots, -1 if can't determine or don't care (engine will assume it's == maxplayers )
 	virtual int				GetMaxHumanPlayers() = 0;
 
-	virtual bool			ShouldNotifyLocalClientConnectionStateChanges() = 0;
-
 	virtual bool			AllowPlayerToTakeOverBots() = 0;
 
-	virtual void			OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
+	virtual void			Unk_OnClientFullyConnect( void *p ) = 0;
 
 	virtual void		GetHostStateLoopModeInfo( HostStateLoopModeType_t type, CUtlString &loopModeName, KeyValues **ppLoopModeOptions ) = 0;
 
@@ -618,6 +614,21 @@ public:
 	virtual void		GetConVarPrefixesToResetToDefaults( CUtlString &sSemicolonDelimitedPrefixList ) const = 0;
 
 	virtual bool		AllowSaveRestore() = 0;
+
+	virtual bool		ShouldWriteSerializedEntities() = 0;
+
+	virtual bool		IsCommandQueueEnabled() = 0;
+
+	// Returns the cq_dilation_percentage convar.
+	virtual float		GetCommandQueueDilationPercentage() = 0;
+
+	virtual bool		ShouldDedicatedMapCommandChangeLevel() = 0;
+
+	virtual bool		ShouldAllocateNewClientSlots() = 0;
+
+	virtual bool		UseSixtyFourTickInterval() = 0;
+
+	virtual bool		RegisterGameEvents( CreateInterfaceFn factory ) = 0;
 };
 
 #define INTERFACEVERSION_SERVERGAMECLIENTS		"Source2GameClients001"
@@ -687,17 +698,17 @@ public:
 	// TERROR: A player sent a voice packet
 	virtual void			ClientVoice( CPlayerSlot slot ) = 0;
 
-	// A user has had their network id setup and validated
-	virtual void			NetworkIDValidated( const char *pszUserName, const char *pszNetworkID ) = 0;
-
 	// The client has submitted a keyvalues command
 	virtual void			ClientCommandKeyValues( CPlayerSlot slot, KeyValues *pKeyValues ) = 0;
 
+	virtual void			ClientDiagnostic( CPlayerSlot slot, const CCLCMsg_Diagnostic_t &msg, INetworkGameServer *pNetworkGameServer ) = 0;
+
 	virtual bool			IsGamePausable() = 0;
 
-	virtual bool			ClientCanPause( CPlayerSlot slot ) = 0;
+	// Called when an HLTV client reaches SIGNONSTATE_FULL.
+	virtual void			HLTVClientFullyConnect( CPlayerSlot slot, const CSteamID &steamID ) = 0;
 
-	virtual bool			HLTVClientFullyConnect( int index, const CSteamID &steamID ) = 0;
+	virtual bool			CanHLTVClientConnect( CPlayerSlot slot, const CSteamID &steamID, ENetworkDisconnectionReason *pReason ) = 0;
 
 	virtual void			StartHLTVServer( CEntityIndex index ) = 0;
 
@@ -722,9 +733,13 @@ public:
 
 	virtual bool			CanProcessNetMessage( void *pNetMessage, void *pClient ) = 0;
 
+	virtual int				unk043( const void *pNetMessageInfo, const void *pNetMessage ) = 0;
+
 	// Called from engine's "exec" command handler. Returns false if commands are disallowed
 	// (triggers "Config %s contains invalid commands" warning). Workshop command sanitization.
 	virtual bool			ValidateScriptCommands( const char *pszCommandText, CBufferString *pFilteredOutput ) = 0;
+
+	virtual bool			ShouldDisconnectClientOnSteamAuthFailure( CPlayerSlot slot, ENetworkDisconnectionReason reason ) = 0;
 };
 
 typedef IVEngineServer2 IVEngineServer;
