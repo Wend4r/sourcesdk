@@ -30,7 +30,7 @@ public:
 	// What is the game timescale multiplied with the host_timescale?
 	virtual float		GetTimescale( void ) const = 0;
 
-	virtual void		*FindOrCreateWorldSession( const char *pszWorldName, CResourceManifestPrerequisite * ) = 0;
+	virtual void		*FindOrCreateWorldSession( const char *pszWorldSessionName, const char *pszWorldName, CResourceManifestPrerequisite *pPrerequisite ) = 0;
 
 	// Creates the world pszWorldName in the world session pszWorldSessionName (see FindOrCreateWorldSession) and returns its entity lump pszLumpName, or NULL when the world or the lump is not available.
 	// bLoadLump requests loading of the lump first.
