@@ -1,9 +1,9 @@
-name: Build on Windows
+name: Build / Windows
 
 on:
   push:
     branches: [ "main" ]
-    paths:
+    paths: &paths
       - '.github/workflows/build-windows.yml'
       - 'cmake/**'
       - 'common/**'
@@ -11,124 +11,70 @@ on:
       - 'entity2/**'
       - 'game/server/**'
       - 'game/shared/**'
-      - 'gcsdk/**'
       - 'interfaces/**'
       - 'kv3lib/**'
       - 'lib/win64/**'
       - 'mathlib/**'
+      - 'networksystem/**'
       - 'public/**'
+      - 'sym/**'
+      - 'tests/**'
       - 'thirdparty/**'
       - 'tier1/**'
-      - 'tests/**'
       - 'CMakeGameManifests.json'
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
-      - 'trigger-build.txt'
   pull_request:
     branches: [ "main" ]
-    paths:
-      - '.github/workflows/build-windows.yml'
-      - 'cmake/**'
-      - 'common/**'
-      - 'devtools/bin/win64/**'
-      - 'entity2/**'
-      - 'game/server/**'
-      - 'game/shared/**'
-      - 'interfaces/**'
-      - 'kv3lib/**'
-      - 'lib/win64/**'
-      - 'mathlib/**'
-      - 'public/**'
-      - 'thirdparty/**'
-      - 'tier1/**'
-      - 'tests/**'
-      - 'CMakeGameManifests.json'
-      - 'CMakeLists.txt'
-      - 'CMakePresets.json'
-      - 'trigger-build.txt'
+    paths: *paths
+  workflow_dispatch:
 
-env:
-  CMAKE_CONFIGURE_PRESET_NAME: VisualStudio
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
-  CMAKE_DEBUG_BUILD_PRESET_NAME: VisualStudio\Debug
-  CMAKE_DEBUG_TEST_PRESET_NAME: VisualStudio\Debug
-  CMAKE_DEBUG_BUILD_PRESET_PUBLIC_NAME: VisualStudio-Debug
-  CMAKE_DEBUG_OUTPUT_PATTERN: build\Windows\VisualStudio\Debug\*
+permissions:
+  contents: read
 
-  CMAKE_RELEASE_BUILD_PRESET_NAME: VisualStudio\Release
-  CMAKE_RELEASE_BUILD_PRESET_PUBLIC_NAME: VisualStudio-Release
-  CMAKE_RELEASE_OUTPUT_PATTERN: build\Windows\VisualStudio\Release\*
+defaults:
+  run:
+    shell: bash
 
 jobs:
   build:
-    name: ${{ matrix.compiler.display_name }}
+    name: MSVC - ${{ matrix.config }}
     runs-on: windows-2022
 
     strategy:
       matrix:
-        compiler:
-          [
-            {
-              name: MSVC,
-              display_name: MSVC,
-              cc: cl,
-              cxx: cl,
-            }
-        ]
+        config: [ Debug ]
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
-        submodules: recursive
         fetch-depth: 0
         fetch-tags: true
 
+    - name: Fetch submodules
+      run: git submodule update --init --depth 1 thirdparty/protobuf thirdparty/game_protobufs
+
     - name: Set up environment variables
       run: |
-        echo "REPOSITORY_NAME=$(basename ${env:GITHUB_REPOSITORY})" | Out-File -FilePath $env:GITHUB_ENV -Append
-        echo "ABSOLUTE_PATH=${env:GITHUB_WORKSPACE}" | Out-File -FilePath $env:GITHUB_ENV -Append
-      shell: pwsh
-
-    - name: Configure Git to treat current directory as safe
-      run: git config --global --add safe.directory $env:GITHUB_WORKSPACE
-      shell: pwsh
-
-    - name: Get latest tag
-      id: get-latest-tag
-      run: |
-        if ((git tag) -eq $null) {
-          echo "No tags found"
-          echo "LATEST_TAG=none" | Out-File -FilePath $env:GITHUB_ENV -Append
-        } else {
-          $LATEST_TAG = git describe --tags (git rev-list --tags --max-count=1)
-          echo "LATEST_TAG=$LATEST_TAG" | Out-File -FilePath $env:GITHUB_ENV -Append
-        }
-      shell: pwsh
+        echo "LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo none)" >> "$GITHUB_ENV"
 
     - name: Configure CMake
-      run: >
-        cmake --preset ${{ env.CMAKE_CONFIGURE_PRESET_NAME }}
-        -DCMAKE_C_COMPILER=${{ matrix.compiler.cc }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.compiler.cxx }}
+      run: cmake --preset VisualStudio
 
-    - name: Debug - Build
-      run: cmake --build --preset ${{ env.CMAKE_DEBUG_BUILD_PRESET_NAME }} --parallel
+    - name: Build
+      run: cmake --build --preset 'VisualStudio\${{ matrix.config }}' --parallel
 
-    - name: Debug - Test
-      run: ctest --preset ${{ env.CMAKE_DEBUG_TEST_PRESET_NAME }} --output-on-failure
+    - name: Test
+      if: matrix.config == 'Debug'
+      run: ctest --preset 'VisualStudio\${{ matrix.config }}'
 
-    - name: Debug - Upload build artifact
-      uses: actions/upload-artifact@v4
+    - name: Upload build artifact
+      uses: actions/upload-artifact@v7
       with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ matrix.compiler.name }}-${{ env.CMAKE_DEBUG_BUILD_PRESET_PUBLIC_NAME }}
-        path: ${{ env.CMAKE_DEBUG_OUTPUT_PATTERN }}
-
-    - name: Release - Build
-      run: cmake --build --preset ${{ env.CMAKE_RELEASE_BUILD_PRESET_NAME }} --parallel
-
-    - name: Release - Upload build artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.REPOSITORY_NAME }}-${{ env.LATEST_TAG }}-${{ runner.os }}-${{ matrix.compiler.name }}-${{ env.CMAKE_RELEASE_BUILD_PRESET_PUBLIC_NAME }}
-        path: ${{ env.CMAKE_RELEASE_OUTPUT_PATTERN }}
+        name: ${{ github.event.repository.name }}-${{ env.LATEST_TAG }}-${{ runner.os }}-MSVC-VisualStudio-${{ matrix.config }}
+        path: build/Windows/VisualStudio/${{ matrix.config }}/*
