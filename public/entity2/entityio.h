@@ -8,6 +8,7 @@
 #include "variant.h"
 #include "tier0/bufferstring.h"
 #include "tier1/keyvalues3.h"
+#include "kv3lib/kv3transfer_constants.h"
 #include "schemasystem/schematypes.h"
 #include "entitypulsecallcontext.h"
 #include "entityhandle.h"
@@ -149,8 +150,7 @@ class CEntityIOOutput
 public:
 	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CEntityIOOutput );
 
 public:
 	~CEntityIOOutput()

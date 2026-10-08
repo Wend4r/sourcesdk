@@ -33,7 +33,13 @@ BEGIN_SCRIPTDESC_ROOT_NAMED( CEntityInstance, "CEntityInstance", "CEntityInstanc
 	DEFINE_SCRIPTFUNC_NAMED( ScriptGetOrCreatePrivateScriptScope, "GetOrCreatePrivateScriptScope", "Retrieve, creating if necessary, the private per-instance script-side data associated with an entity" )
 END_SCRIPTDESC()
 
-// Follows the game's CEntityInstance; steps without an SDK interface are marked with "Game:"
+void CEntityInstance::KV3TransferSave( CKV3TransferSaveContext *pContext ) const
+{
+}
+
+void CEntityInstance::KV3TransferLoad( CKV3TransferLoadContext *pContext )
+{
+}
 
 void CEntityInstance::ReleasePublicScriptScope()
 {

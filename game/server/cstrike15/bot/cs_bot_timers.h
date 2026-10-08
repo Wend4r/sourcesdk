@@ -12,6 +12,8 @@
 #endif
 
 #include "tier0/platform.h"
+#include "kv3lib/kv3transfer.h"
+#include "entity2/entityidentity.h"
 #include "entitytypes.h"
 #include "spawngrouptypes.h"
 #include "schemasystem/schematypes.h"
@@ -39,8 +41,7 @@ class CountdownTimer
 public:
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() { return {}; }
 	// Save and load m_duration, m_timestamp, m_timescale and m_nWorldGroupId.
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const {}
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) {}
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CountdownTimer );
 	virtual const char *GetClassName() const { return "CountdownTimer"; }
 
 	// Empty unless the timer is a networked member.
@@ -78,8 +79,7 @@ public:
 	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) const {}
 
 	// Save and load m_timestamp and m_nWorldGroupId.
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const {}
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) {}
+	CLASS_USES_KV3TRANSFER_VIRTUAL( IntervalTimer );
 	virtual const char *GetClassName() const { return "IntervalTimer"; }
 
 	bool HasStarted() const { return m_timestamp.GetTime() > 0.0f; }
@@ -92,5 +92,87 @@ public:
 	GameTime_t m_timestamp;
 	WorldGroupId_t m_nWorldGroupId;
 };
+
+//-----------------------------------------------------------------------------
+// The transfer of the schema fields. The defaults are what loading the fields of a default constructed timer
+// gives: its timestamp and world group id save as null without the game's transfer interfaces.
+//-----------------------------------------------------------------------------
+
+// Loads a field and reports a change through the timer's NetworkStateChanged before storing it.
+template < typename TTimer, typename T, typename TLoad >
+inline void BotTimer_LoadField( TTimer *pTimer, CKV3TransferLoadContext *pContext, const CKV3MemberName &name, T &value, const T &defaultValue, TLoad &&fnLoad )
+{
+	T newValue = value;
+
+	pContext->LoadSchemaField( name, newValue, defaultValue, [ &fnLoad, &newValue ]( const KeyValues3 *pMember ) { fnLoad( pMember, newValue ); } );
+
+	if ( newValue == value )
+		return;
+
+	const uint32 nOffset = static_cast< uint32 >( reinterpret_cast< const byte * >( &value ) - reinterpret_cast< const byte * >( pTimer ) );
+
+	pTimer->NetworkStateChanged( NetworkStateChanged_t( nOffset ) );
+	value = newValue;
+}
+
+template < typename TTimer, typename T >
+inline void BotTimer_LoadField( TTimer *pTimer, CKV3TransferLoadContext *pContext, const CKV3MemberName &name, T &value, const T &defaultValue )
+{
+	BotTimer_LoadField( pTimer, pContext, name, value, defaultValue, [ pContext ]( const KeyValues3 *pMember, T &newValue ) { pContext->LoadValueDirect( newValue, pMember ); } );
+}
+
+template < typename TTimer >
+inline void BotTimer_LoadWorldGroupId( TTimer *pTimer, CKV3TransferLoadContext *pContext, WorldGroupId_t &value )
+{
+	BotTimer_LoadField( pTimer, pContext, "m_nWorldGroupId", value, WorldGroupId_t( ~0u ), [ pContext ]( const KeyValues3 *pMember, WorldGroupId_t &newValue ) { KV3Transfer_LoadWorldGroupId( pContext, pMember, newValue ); } );
+}
+
+inline void BotTimer_SaveWorldGroupId( CKV3TransferSaveContext *pContext, const WorldGroupId_t &value )
+{
+	if ( pContext->ShouldSaveField( value == WorldGroupId_t( ~0u ) ) )
+		KV3Transfer_SaveWorldGroupId( pContext, pContext->CreateTargetMember( "m_nWorldGroupId" ), value );
+}
+
+inline void CountdownTimer::KV3TransferSave( CKV3TransferSaveContext *pContext ) const { KV3TransferSave_CountdownTimer( pContext ); }
+inline void CountdownTimer::KV3TransferLoad( CKV3TransferLoadContext *pContext ) { KV3TransferLoad_CountdownTimer( pContext ); }
+
+inline void CountdownTimer::KV3TransferSave_CountdownTimer( CKV3TransferSaveContext *pContext ) const
+{
+	if ( pContext->ShouldSaveField( false ) )
+		pContext->SaveValueToMember( "m_duration", m_duration );
+
+	if ( pContext->ShouldSaveField( m_timestamp.GetTime() == 0.0f ) )
+		pContext->SaveValueToMember( "m_timestamp", m_timestamp );
+
+	if ( pContext->ShouldSaveField( false ) )
+		pContext->SaveValueToMember( "m_timescale", m_timescale );
+
+	BotTimer_SaveWorldGroupId( pContext, m_nWorldGroupId );
+}
+
+inline void CountdownTimer::KV3TransferLoad_CountdownTimer( CKV3TransferLoadContext *pContext )
+{
+	BotTimer_LoadField( this, pContext, "m_duration", m_duration, 0.0f );
+	BotTimer_LoadField( this, pContext, "m_timestamp", m_timestamp, GameTime_t( 0.0f ) );
+	BotTimer_LoadField( this, pContext, "m_timescale", m_timescale, 1.0f );
+	BotTimer_LoadWorldGroupId( this, pContext, m_nWorldGroupId );
+}
+
+inline void IntervalTimer::KV3TransferSave( CKV3TransferSaveContext *pContext ) const { KV3TransferSave_IntervalTimer( pContext ); }
+inline void IntervalTimer::KV3TransferLoad( CKV3TransferLoadContext *pContext ) { KV3TransferLoad_IntervalTimer( pContext ); }
+
+inline void IntervalTimer::KV3TransferSave_IntervalTimer( CKV3TransferSaveContext *pContext ) const
+{
+	if ( pContext->ShouldSaveField( m_timestamp.GetTime() == 0.0f ) )
+		pContext->SaveValueToMember( "m_timestamp", m_timestamp );
+
+	BotTimer_SaveWorldGroupId( pContext, m_nWorldGroupId );
+}
+
+inline void IntervalTimer::KV3TransferLoad_IntervalTimer( CKV3TransferLoadContext *pContext )
+{
+	BotTimer_LoadField( this, pContext, "m_timestamp", m_timestamp, GameTime_t( 0.0f ) );
+	BotTimer_LoadWorldGroupId( this, pContext, m_nWorldGroupId );
+}
 
 #endif // CS_BOT_TIMERS_H

@@ -9,6 +9,7 @@
 #include "tier1/utlmap.h"
 #include "tier1/utlvector.h"
 #include "tier0/threadtools.h"
+#include "kv3lib/kv3transfer_constants.h"
 #include "entityidentity.h"
 #include "entitytypes.h"
 #include "ientitylistener.h"
@@ -220,8 +221,7 @@ public:
 	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
 	// Save and load the only schema fields
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CNetworkTransmitComponent );
 
 	virtual const char *GetClassName() const = 0;
 

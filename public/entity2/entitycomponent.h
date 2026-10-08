@@ -11,6 +11,7 @@
 #include "tier1/utlsymbollarge.h"
 #include "tier1/smartptr.h"
 #include "datamap.h"
+#include "kv3lib/kv3transfer_constants.h"
 #include "schemasystem/schematypes.h"
 #include "entitytypes.h"
 
@@ -100,8 +101,7 @@ public:
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
 	virtual datamap_t *GetDataDescMap() = 0;
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > GetSchemaBinding() = 0;
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CEntityComponent );
 
 	virtual CEntityComponentHelper *GetComponentHelper() = 0;
 	virtual const char *GetComponentName() = 0;

@@ -9,6 +9,7 @@
 #include "entity2/entityidentity.h"
 #include "entitytypes.h"
 #include "entity2/entityprivatescriptscope.h"
+#include "kv3lib/kv3transfer_constants.h"
 #include "schemasystem/schematypes.h"
 #include "variant.h"
 #include "vscript_shared.h"
@@ -60,10 +61,8 @@ class CEntityInstance
 public:
 	virtual const CNetworkSerializerClassInfo *GetSerializerClassInfo() = 0;
 
-	// Custom KV3 save/restore for members the datamap cannot describe
-	// TODO(@Wend4r): Implement kv3lib stuff
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const {}
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) {}
+	// Custom KV3 save/restore for members the datamap cannot describe; the base versions transfer nothing
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CEntityInstance );
 
 	DECLARE_ENT_SCRIPTDESC();
 

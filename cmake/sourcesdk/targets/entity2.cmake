@@ -44,12 +44,14 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 set(SOURCESDK_ENTITY2_SOURCE_FILES
 	${SOURCESDK_ENTITY2_DIR}/concreteentitylist.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityclass.cpp
+	${SOURCESDK_ENTITY2_DIR}/entitycomponent.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityhandle.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityidentity.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityinstance.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityio.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitysystem.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitykeyvalues.cpp
+	${SOURCESDK_ENTITY2_DIR}/entitynetwork.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitypulse.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitypulsecallcontext.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityprivatescriptscope.cpp
