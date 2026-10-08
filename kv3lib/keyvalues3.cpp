@@ -2442,12 +2442,12 @@ CUtlBuffer& CKV3Arena::GetBinaryData()
 	return Impl().GetBinaryData();
 }
 
-IParsingErrorListener* CKV3Arena::GetParsingErrorListener() const
+IErrorListener* CKV3Arena::GetParsingErrorListener() const
 {
 	return Impl().GetParsingErrorListener();
 }
 
-void CKV3Arena::SetParsingErrorListener( IParsingErrorListener* listener )
+void CKV3Arena::SetParsingErrorListener( IErrorListener* listener )
 {
 	Impl().SetParsingErrorListener( listener );
 }

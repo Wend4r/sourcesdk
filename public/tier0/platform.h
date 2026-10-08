@@ -1005,6 +1005,7 @@ typedef void * HINSTANCE;
 // Macro to assist in asserting constant invariants during compilation
 
 #define COMPILE_TIME_ASSERT( pred )	static_assert( pred, "Compile time assert constraint is not true: " #pred )
+#define COMPILE_TIME_ASSERT_MSG( pred, msg )	static_assert( pred, msg )
 // ASSERT_INVARIANT used to be needed in order to allow COMPILE_TIME_ASSERTs at global
 // scope. However the new COMPILE_TIME_ASSERT macro supports that by default.
 #define ASSERT_INVARIANT( pred )	COMPILE_TIME_ASSERT( pred )

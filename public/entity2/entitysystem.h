@@ -186,7 +186,7 @@ private:
 		unsigned int operator()( uint32 n ) const { return MurmurHash2( &n, sizeof( uint32 ), 0x3501A674 ); } 
 	};
 
-	typedef CUtlDelegate<bool( IParsingErrorListener *, CEntityInstance *, void *, const ComponentUnserializerFieldInfo_t *, const KeyValues3 * )> KeyUnserializerDelegate;
+	typedef CUtlDelegate<bool( IErrorListener *, CEntityInstance *, void *, const ComponentUnserializerFieldInfo_t *, const KeyValues3 * )> KeyUnserializerDelegate;
 
 public:
 	virtual						~CEntitySystem() = 0;

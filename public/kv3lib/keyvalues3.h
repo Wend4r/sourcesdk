@@ -775,8 +775,8 @@ public:
 	// filled in after loading via LoadKV3* in binary encoding
 	CUtlBuffer& GetBinaryData();
 
-	IParsingErrorListener* GetParsingErrorListener() const;
-	void SetParsingErrorListener( IParsingErrorListener* listener );
+	IErrorListener* GetParsingErrorListener() const;
+	void SetParsingErrorListener( IErrorListener* listener );
 
 	void EnableMetaData( bool bEnable );
 	void CopyMetaData( KV3MetaData_t* pDest, const KV3MetaData_t* pSrc );

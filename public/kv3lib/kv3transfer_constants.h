@@ -86,7 +86,7 @@ struct KV3Transfer_EnumHelpers_StringPairList_t
 
 #define END_KV3TRANSFER_ENUM_HELPERS() \
 			}; \
-			static_assert( ARRAYSIZE( s_Elements ) == ENUM_COUNT ); \
+			COMPILE_TIME_ASSERT( ARRAYSIZE( s_Elements ) == ENUM_COUNT ); \
 			return { s_Elements, ARRAYSIZE( s_Elements ) }; \
 		} \
 	};

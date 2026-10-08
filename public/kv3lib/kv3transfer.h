@@ -10,6 +10,7 @@
 #include "entitytypes.h"
 #include "spawngrouptypes.h"
 #include "tier0/bufferstring.h"
+#include "tier0/errorlistener.h"
 #include "tier0/utlscratchmemory.h"
 #include "tier0/utlstring.h"
 #include "tier1/utlleanvector.h"
@@ -21,52 +22,24 @@ class ISave;
 class IRestore;
 
 //-----------------------------------------------------------------------------
-// A message a transfer context reports. NoteFailure reports one with severity
-// KV3TRANSFER_MESSAGE_SEVERITY_ERROR, which fails the transfer.
+// Errors and the interfaces registered for a transfer. NoteFailure reports a message with
+// ERROR_LISTENER_SEVERITY_ERROR, which fails the transfer.
 //-----------------------------------------------------------------------------
-enum KV3TransferMessageSeverity_t
-{
-	KV3TRANSFER_MESSAGE_SEVERITY_ERROR = 2,
-};
-
-struct KV3TransferMessage_t
-{
-	CBufferString m_sMessage;
-	int m_nSeverity;
-
-	// Prefixes the message; CKV3TransferContextBase::GetSourceName supplies it when empty.
-	CUtlString m_sLocation;
-	int m_nLine;
-	int m_nColumn;
-
-	// An owned object deleted through its second virtual; null in every message the contexts build.
-	void *m_pUnk028;
-};
-static_assert( sizeof( KV3TransferMessage_t ) == 0x30 );
-
-//-----------------------------------------------------------------------------
-// Errors and the interfaces registered for a transfer. There is no virtual destructor.
-//-----------------------------------------------------------------------------
-class CKV3TransferContextBase
+class CKV3TransferContextBase : public IErrorListener
 {
 public:
 	CKV3TransferContextBase( const char *pszSourceName = "" );
 
 	// Appends "[<location>: ]<message>" as a new line of the error message; an error fails the transfer.
-	virtual void ReportMessage( const KV3TransferMessage_t &message );
+	void ReportMessage( const ErrorListenerMessage_t &message ) override;
 
-	// Appends "<location>[(<line>[,<column>])]|<context path>", dropping the "|" without a context path,
-	// then pszSuffix when anything was appended. Returns whether anything was appended.
-	virtual bool FormatMessageLocation( const KV3TransferMessage_t &message, CBufferString &sOut, const char *pszSuffix );
+	bool FormatMessageLocation( const ErrorListenerMessage_t &message, CBufferString &sOut, const char *pszSuffix ) override;
+	const char *GetSourceName( int *pLineAndColumn ) override { return m_pszSourceName; }
 
-	// pLineAndColumn holds the line and the column of the message and may be updated.
-	virtual const char *GetSourceName( int *pLineAndColumn ) { return m_pszSourceName; }
-
-	// Appends the path to the value being transferred. Returns false when there is none.
-	virtual bool AppendContextPath( CBufferString &sOut ) { return false; }
-
-	virtual int Unk_04() { return -1; }
-	virtual void Unk_05() {}
+	// No context path; CKV3TransferLoadContext keeps its own, which PushContext and PopContext do not touch.
+	bool AppendContextPath( CBufferString &sOut ) override { return false; }
+	int PushContext( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 ) override { return -1; }
+	void PopContext( int nContextLength ) override {}
 
 	void NoteFailure( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 );
 
@@ -120,7 +93,6 @@ protected:
 	CUtlVectorFixedGrowable< uint32, 16 > m_InterfaceNames;
 	CUtlVectorFixedGrowable< void *, 16 > m_Interfaces;
 };
-static_assert( sizeof( CKV3TransferContextBase ) == 0x118 );
 
 //-----------------------------------------------------------------------------
 // Value helpers. CKV3TransferValHelper< T > saves and loads a T; a class saves itself through
@@ -186,9 +158,9 @@ public:
 	int TargetDepth() const { return m_TargetStack.Count(); }
 	ISave *GetSave() const { return m_pSave; }
 
-	// Accumulates the 16-byte aligned size of the arrays saved, so that a load can reserve its block allocator.
-	uint64 GetBlockAllocationSize() const { return m_nBlockAllocationSize; }
-	void AddBlockAllocationSize( uint64 nSize ) { m_nBlockAllocationSize += nSize; }
+	// Accumulates the 16-byte aligned size of the arrays saved, so that a load can reserve its memory pool.
+	uint64 GetRequiredMemoryPoolCapacity() const { return m_nRequiredMemoryPoolCapacity; }
+	void AddRequiredMemoryPoolCapacity( uint64 nSize ) { m_nRequiredMemoryPoolCapacity += nSize; }
 
 	// True without an ISave. Otherwise false when the ISave virtual at slot 10, unidentified, returns true,
 	// unless nFlags is 2.
@@ -248,7 +220,7 @@ public:
 	void PopTarget();
 
 private:
-	uint64 m_nBlockAllocationSize;
+	uint64 m_nRequiredMemoryPoolCapacity;
 
 	// Always the top of m_TargetStack, or null.
 	KeyValues3 *m_pTargetObject;
@@ -258,7 +230,6 @@ private:
 	ISave *m_pSave;
 	bool m_bSaveDefaultValues;
 };
-static_assert( sizeof( CKV3TransferSaveContext ) == 0x150 );
 
 //-----------------------------------------------------------------------------
 // Fills objects from a KeyValues3 tree.
@@ -298,10 +269,10 @@ public:
 	IRestore *GetRestore() const { return m_pRestore; }
 
 	// Owned by the caller. Null unless the caller sets one.
-	CUtlScratchMemoryPool *GetBlockAllocator() const { return m_pBlockAllocator; }
-	void SetBlockAllocator( CUtlScratchMemoryPool *pBlockAllocator ) { m_pBlockAllocator = pBlockAllocator; }
+	CUtlScratchMemoryPool *GetMemoryPool() const { return m_pMemoryPool; }
+	void SetMemoryPool( CUtlScratchMemoryPool *pMemoryPool ) { m_pMemoryPool = pMemoryPool; }
 
-	void *AllocBlock( int nCount, int nElementSize ) { return m_pBlockAllocator->AllocAligned( nCount * nElementSize, 16 ); }
+	void *InternalAllocatePooledMemory( uint nElementSize, uint nCount ) { return m_pMemoryPool->AllocAligned( nElementSize * nCount, 16 ); }
 
 	const KeyValues3 *SourceObject() const { return m_pSourceObject; }
 	int SourceDepth() const { return m_SourceStack.Count(); }
@@ -467,8 +438,9 @@ public:
 	}
 
 private:
-	bool m_bUnk118;
-	CUtlScratchMemoryPool *m_pBlockAllocator;
+	// True from every constructor; no transfer in the game modules reads it.
+	bool m_bAllowBinaryBlockTransfer;
+	CUtlScratchMemoryPool *m_pMemoryPool;
 
 	// Always the top of m_SourceStack, or null.
 	const KeyValues3 *m_pSourceObject;
@@ -478,8 +450,7 @@ private:
 
 	CUtlLeanVector< ContextPathEntry_t > m_ContextPath;
 };
-static_assert( sizeof( CKV3TransferLoadContext ) == 0x158 );
-static_assert( sizeof( CKV3TransferLoadContext::ContextPathEntry_t ) == sizeof( uint64 ) );
+COMPILE_TIME_ASSERT( sizeof( CKV3TransferLoadContext::ContextPathEntry_t ) == sizeof( uint64 ) );
 
 //-----------------------------------------------------------------------------
 // T: a class or an enum.
@@ -487,7 +458,7 @@ static_assert( sizeof( CKV3TransferLoadContext::ContextPathEntry_t ) == sizeof( 
 template < typename T >
 struct CKV3TransferValHelper
 {
-	static_assert( std::is_class_v< T > || std::is_enum_v< T >, "No KV3 transfer for this type" );
+	COMPILE_TIME_ASSERT_MSG( std::is_class_v< T > || std::is_enum_v< T >, "No KV3 transfer for this type" );
 
 	static void SaveValue( CKV3TransferSaveContext *pContext, KeyValues3 *pSaveToValue, const T &value )
 	{
@@ -525,7 +496,7 @@ struct CKV3TransferValHelper
 
 	static void LoadDefault( CKV3TransferLoadContext *pContext, const char *pszDefault, T &value )
 	{
-		static_assert( std::is_enum_v< T >, "No default value for a class" );
+		COMPILE_TIME_ASSERT_MSG( std::is_enum_v< T >, "No default value for a class" );
 
 		if ( !KV3Transfer_EnumeratorValueFromName( pszDefault, &value ) )
 			value = static_cast< T >( V_atoi64( pszDefault ) );
@@ -628,6 +599,21 @@ class IKV3TransferInterface_WorldGroupId_Load
 {
 public:
 	virtual void Load( CKV3TransferLoadContext *pContext, const KeyValues3 *pLoadFromValue, WorldGroupId_t *pWorldGroupId ) = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Transfers a field whose schema metadata MKV3TransferSaveOpsForField names a function returning the ops.
+// An empty field is not saved. The member value is the target of the save and the source of the load;
+// a load empties the field first. pOwner is the object holding the field.
+//-----------------------------------------------------------------------------
+class IKV3TransferSaveRestoreOps
+{
+public:
+	virtual void KV3TransferSave( const void *pField, const void *pOwner, CKV3TransferSaveContext *pContext ) = 0;
+	virtual void KV3TransferLoad( void *pField, void *pOwner, CKV3TransferLoadContext *pContext ) = 0;
+	virtual bool IsEmpty( const void *pField ) = 0;
+	virtual void MakeEmpty( void *pField ) = 0;
+	virtual ~IKV3TransferSaveRestoreOps() {}
 };
 
 // Saved as a double through the interface; a zero time saves null without one.

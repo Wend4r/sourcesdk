@@ -10,9 +10,9 @@ CKV3TransferContextBase::CKV3TransferContextBase( const char *pszSourceName ) :
 {
 }
 
-void CKV3TransferContextBase::ReportMessage( const KV3TransferMessage_t &message )
+void CKV3TransferContextBase::ReportMessage( const ErrorListenerMessage_t &message )
 {
-	if ( message.m_nSeverity == KV3TRANSFER_MESSAGE_SEVERITY_ERROR )
+	if ( message.m_nSeverity == ERROR_LISTENER_SEVERITY_ERROR )
 		m_Result = KV3TRANSFER_FAIL;
 
 	if ( !m_sErrorMessage.IsEmpty() )
@@ -24,7 +24,7 @@ void CKV3TransferContextBase::ReportMessage( const KV3TransferMessage_t &message
 	m_sErrorMessage.TrimTail( "\t\r\n " );
 }
 
-bool CKV3TransferContextBase::FormatMessageLocation( const KV3TransferMessage_t &message, CBufferString &sOut, const char *pszSuffix )
+bool CKV3TransferContextBase::FormatMessageLocation( const ErrorListenerMessage_t &message, CBufferString &sOut, const char *pszSuffix )
 {
 	int nLineAndColumn[ 2 ] = { message.m_nLine, message.m_nColumn };
 
@@ -66,9 +66,9 @@ bool CKV3TransferContextBase::FormatMessageLocation( const KV3TransferMessage_t 
 
 void CKV3TransferContextBase::NoteFailure( const char *pszFormat, ... )
 {
-	KV3TransferMessage_t message {};
+	ErrorListenerMessage_t message;
 
-	message.m_nSeverity = KV3TRANSFER_MESSAGE_SEVERITY_ERROR;
+	message.m_nSeverity = ERROR_LISTENER_SEVERITY_ERROR;
 
 	va_list params;
 
@@ -113,7 +113,7 @@ void CKV3TransferContextBase::AddInterface( const CKV3MemberName &name, void *pI
 }
 
 CKV3TransferSaveContext::CKV3TransferSaveContext( bool bOptionalInterfaces ) :
-	m_nBlockAllocationSize( 0 ),
+	m_nRequiredMemoryPoolCapacity( 0 ),
 	m_pTargetObject( nullptr ),
 	m_bOptionalInterfaces( bOptionalInterfaces ),
 	m_pSave( nullptr ),
@@ -122,7 +122,7 @@ CKV3TransferSaveContext::CKV3TransferSaveContext( bool bOptionalInterfaces ) :
 }
 
 CKV3TransferSaveContext::CKV3TransferSaveContext( ISave *pSave ) :
-	m_nBlockAllocationSize( 0 ),
+	m_nRequiredMemoryPoolCapacity( 0 ),
 	m_pTargetObject( nullptr ),
 	m_bOptionalInterfaces( false ),
 	m_pSave( pSave ),
@@ -204,8 +204,8 @@ void CKV3TransferSaveContext::PopTarget()
 }
 
 CKV3TransferLoadContext::CKV3TransferLoadContext() :
-	m_bUnk118( true ),
-	m_pBlockAllocator( nullptr ),
+	m_bAllowBinaryBlockTransfer( true ),
+	m_pMemoryPool( nullptr ),
 	m_pSourceObject( nullptr ),
 	m_pRestore( nullptr )
 {
@@ -213,16 +213,16 @@ CKV3TransferLoadContext::CKV3TransferLoadContext() :
 
 CKV3TransferLoadContext::CKV3TransferLoadContext( const char *pszSourceName ) :
 	CKV3TransferContextBase( pszSourceName ),
-	m_bUnk118( true ),
-	m_pBlockAllocator( nullptr ),
+	m_bAllowBinaryBlockTransfer( true ),
+	m_pMemoryPool( nullptr ),
 	m_pSourceObject( nullptr ),
 	m_pRestore( nullptr )
 {
 }
 
 CKV3TransferLoadContext::CKV3TransferLoadContext( IRestore *pRestore ) :
-	m_bUnk118( true ),
-	m_pBlockAllocator( nullptr ),
+	m_bAllowBinaryBlockTransfer( true ),
+	m_pMemoryPool( nullptr ),
 	m_pSourceObject( nullptr ),
 	m_pRestore( pRestore )
 {

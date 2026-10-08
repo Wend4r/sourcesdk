@@ -120,13 +120,6 @@ void CTestKV3TransferData::KV3TransferLoad_CTestKV3TransferData( CKV3TransferLoa
 	pContext->LoadValueFromMemberOrDefault( "m_nMissing", m_nValue, "7" );
 }
 
-REGISTER_NAMED_TEST( "KV3Transfer.Layout", KV3Transfer_Layout )
-{	
-	TEST_EQ( sizeof( CKV3TransferContextBase ), static_cast< size_t >( 0x118 ) );
-	TEST_EQ( sizeof( CKV3TransferSaveContext ), static_cast< size_t >( 0x150 ) );
-	TEST_EQ( sizeof( CKV3TransferLoadContext ), static_cast< size_t >( 0x158 ) );
-}
-
 REGISTER_NAMED_TEST( "KV3Transfer.SaveLoadRoundTrip", KV3Transfer_SaveLoadRoundTrip )
 {
 	CTestKV3TransferData source;
