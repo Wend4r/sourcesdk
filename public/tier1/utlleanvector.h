@@ -245,7 +245,7 @@ public:
 	static constexpr I EXTERNAL_CONST_BUFFER_MARKER = -1;
 
 	// constructor, destructor
-	CUtlLeanVectorFixedGrowableBase() : m_nCount(0), m_nAllocated(N) {}
+	CUtlLeanVectorFixedGrowableBase() : m_nCount(0), m_nAllocated(N), m_bExternal(false) {}
 	~CUtlLeanVectorFixedGrowableBase() { Purge(); }
 
 	// Gets the base address (can change when adding elements!)

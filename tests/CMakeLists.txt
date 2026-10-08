@@ -171,6 +171,12 @@ target_compile_definitions(keyvalues3_tests PRIVATE
 
 sourcesdk_setup_test_target(keyvalues3_tests)
 
+sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3text.cpp)
+
+target_compile_definitions(kv3text_tests PRIVATE
+	SOURCESDK_KEYVALUES3_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/keyvalues3"
+)
+
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer.cpp)
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer_schema.cpp)
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp schemametatag.cpp)

@@ -42,6 +42,7 @@ endif()
 
 set(SOURCESDK_GAME_TARGET "cs2" CACHE STRING "Game name. See CMakeGameManifests.json")
 set(SOURCESDK_MODULE_PROJECT_NAME "${CMAKE_PROJECT_NAME}" CACHE STRING "Project name reported by BinaryProperties_GetValue")
+set(SOURCESDK_SCHEMACOMPILER_EXECUTABLE "" CACHE FILEPATH "Prebuilt schemacompiler; empty builds it from utils/schemacompiler")
 option(SOURCESDK_AM_DEFINES "Compile with AlliedModders definition set" OFF)
 option(SOURCESDK_COMPILE_PROTOBUF "Compile Protocol Buffers" ON)
 option(SOURCESDK_USE_MINIMAL_PROTOS "Use the SDK-required proto list when SOURCESDK_PROTOS is unset" ON)
@@ -59,6 +60,8 @@ option(SOURCESDK_MALLOC_OVERRIDE "Valve memory system" OFF)
 option(SOURCESDK_MSVC_RUNTIME_LIBRARY "MultiThreaded assembly of run-time library by MSVC" ON)
 option(SOURCESDK_RESOURCE_EXPORTS_OVERRIDE "Enable it if you are using your own GetResourceManifestCount and GetResourceManifests" OFF)
 option(SOURCESDK_SCHEMA_EXPORTS_OVERRIDE "Enable it if you are using your own InstallSchemaBindings" OFF)
+option(SOURCESDK_SCHEMACOMPILER "Enable sourcesdk_target_schema; builds schemacompiler unless SOURCESDK_SCHEMACOMPILER_EXECUTABLE is set (needs Clang/LLVM 17+)" OFF)
+option(SOURCESDK_COMPILE_SCHEMA "Generate and compile the schema records of the marked SDK headers in the sourcesdk_schema check target" OFF)
 option(SOURCESDK_STATIC_LINKED "The SDK objects are linked statically into the game instead of into a shared library" OFF)
 option(SOURCESDK_USE_ABI0 "Enable use of the older C++ ABI, which was the default in GCC versions before GCC 5" ON)
 
@@ -82,6 +85,14 @@ set(SOURCESDK_NEEDED_PROTOS
 	source2_steam_stats
 	valveextensions
 )
+
+# The marked bot headers include cs_usercmd.pb.h
+if(SOURCESDK_COMPILE_SCHEMA)
+	list(APPEND SOURCESDK_NEEDED_PROTOS
+		usercmd
+		cs_usercmd
+	)
+endif()
 
 include(cmake/platform/shared.cmake)
 
@@ -125,6 +136,8 @@ include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
 include(cmake/sourcesdk/targets/kv3lib.cmake)
+
+include(cmake/sourcesdk/schema.cmake)
 
 set(SOURCESDK_GAME_TARGET_PREV "${SOURCESDK_GAME_TARGET}" CACHE INTERNAL "Previous value of SOURCESDK_GAME_TARGET")
 
@@ -183,6 +196,10 @@ if(SOURCESDK_COMPILE_PROTOBUF)
 endif()
 
 include(cmake/sourcesdk/clangd.cmake)
+
+if(SOURCESDK_COMPILE_SCHEMA)
+	include(cmake/sourcesdk/targets/schema.cmake)
+endif()
 
 if(SOURCESDK_ENABLE_TESTS)
 	enable_testing()
