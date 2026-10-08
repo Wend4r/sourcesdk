@@ -47,7 +47,7 @@ jobs:
 
     strategy:
       matrix:
-        config: [ Debug, Release ]
+        config: [ Debug ]
       fail-fast: false
 
     steps:

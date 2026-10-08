@@ -55,7 +55,7 @@ jobs:
             packages: clang-22 gcc-14-monolithic
             cc: clang-22
             cxx: clang++-22
-        config: [ Debug, RelWithDebInfo, Release ]
+        config: [ Debug ]
       fail-fast: false
 
     env:

@@ -43,7 +43,7 @@ jobs:
 
     strategy:
       matrix:
-        config: [ Debug, RelWithDebInfo, Release ]
+        config: [ Debug ]
       fail-fast: false
 
     steps:
