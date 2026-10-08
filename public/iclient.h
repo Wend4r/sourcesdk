@@ -12,6 +12,7 @@
 #endif
 
 #include <engine/IEngineService.h>
+#include <engine/inetworkclientservice.h>
 #include <playerslot.h>
 #include <ns_address.h>
 
@@ -214,19 +215,6 @@ public:
 	int32 m_nClientTick;
 	int32 m_nServerTick;
 
-};
-
-//-----------------------------------------------------------------------------
-// Purpose: "NetworkClientService_001" - engine service that owns the client.
-// Backed by CNetworkClientService : CBaseEngineService<INetworkClientService>.
-//-----------------------------------------------------------------------------
-abstract_class INetworkClientService : public IEngineService
-{
-public:
-	virtual ~INetworkClientService() = 0;
-
-	// Returns m_pNetworkGameClient
-	virtual CNetworkGameClient *GetNetworkGameClient() = 0;
 };
 
 #endif // ICLIENT_H

@@ -44,6 +44,7 @@ public:
 	virtual void		RegisterEventMap( CEventDispatcher<CEventIDManager_Default> *pEventDispatcher, EventMapRegistrationType_t nRegistrationType ) = 0;
 	virtual uint16		GetServiceIndex( void ) = 0;
 	virtual void		SetServiceIndex( uint16 index ) = 0;
+	virtual				~IEngineService() {}
 };
 
 template< class IInterface >
@@ -59,7 +60,16 @@ public:
 	uint32 m_nUnknownFlags : 8;
 };
 
-abstract_class IEngineServiceMgr : public IAppSystem, public ILoopModePrerequisiteRegistry
+struct ActiveLoopInfo_t
+{
+	CUtlString m_LoopName;
+	CUtlString m_AddonName;
+	uint32 m_nUnk010;
+	KeyValues *m_pLoopOptions;
+	bool m_bValid;
+};
+
+abstract_class IEngineServiceMgr : public IAppSystem
 {
 public:
 	virtual void		RegisterEngineService( const char *psServiceName, IEngineService *pService ) = 0;
@@ -76,15 +86,15 @@ public:
 	virtual int			GetEngineDeviceWidth( void ) const = 0;
 	virtual int			GetEngineDeviceHeight( void ) const = 0;
 	virtual void		GetEngineSwapChainSize( int *pWidth, int *pHeight ) const = 0;
-	virtual bool		unk101( void ) const = 0;
+	virtual bool		unk025( void ) const = 0;
 	virtual bool		IsLoopSwitchQueued( void ) const = 0;
 	virtual bool		IsLoopSwitchRequested( void ) const = 0;
-	virtual bool		unk201( void ) const = 0;
 	virtual CEventDispatcher<CEventIDManager_Default> *GetEventDispatcher( void ) = 0;
 	virtual void		*GetDebugVisualizerMgr( void ) = 0;
 	virtual int			GetActiveLoopClientServerMode( void ) const = 0;
 	virtual void		PrintStatus( void ) = 0;
-	virtual ActiveLoop_t	GetActiveLoop( void ) = 0;
+	// Writes m_bValid = false when no loop is active.
+	virtual void		GetActiveLoop( ActiveLoopInfo_t &info ) = 0;
 	virtual bool		IsLoadingLevel( void ) const = 0;
 	virtual bool		IsInGameLoop( void ) const = 0;
 	virtual void		OnFrameRenderingFinished( bool, const EventClientOutput_t & ) = 0;
@@ -94,9 +104,11 @@ public:
 	virtual const char	*GetAddon( int ) const = 0;
 	virtual bool		IsAddonMounted( const char * ) const = 0;
 	virtual const char	*GetAddonsString( void ) const = 0;
-	virtual void		unk301( void ) = 0;
-	virtual void		unk302( void ) = 0;
-	virtual void		unk303( void ) = 0;
+	virtual void		unk042( const char *pszAddon ) = 0;
+	// Whether the name is in the list filled by unk042.
+	virtual bool		unk043( const char *pszAddon ) const = 0;
+	// Runs unk043 over every mounted addon.
+	virtual bool		unk044( void ) const = 0;
 	virtual void		InstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		UninstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		InstallAddonListChangeNotify( IAddonListChangeNotify * ) = 0;
@@ -105,20 +117,17 @@ public:
 	virtual void		AddLogCaptureString( const char * ) = 0;
 	virtual void		AddLogCaptureStringV( const char *pFormat, va_list args ) = 0;
 	virtual void		AddLogCaptureStringF( const char *pFormat, ... ) = 0;
-	virtual void		unk401( void ) = 0;
+	virtual int			unk053( void ) const = 0;
 	virtual void		ExitMainLoop( void ) = 0;
 	virtual void		RegisterPrerequisite( IPrerequisite * ) = 0;
-	
-	// Same methods as ILocalize
+
+	// Forwards to the localize system.
 	virtual LocalizeStringIndex_t LookupLocalizationToken(const char *tokenName) = 0;
 
-	// Same methods as IVEngineServer2 
+	// Same methods as IVEngineServer2
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
-	virtual void		unk501() = 0;
-#ifdef _LINUX
-	virtual void		UnregisterPrerequisite( IPrerequisite * ) = 0;
-#endif
+	virtual void		unk059( void ) = 0;
 };
 
 #endif // IENGINESERVICE_H
