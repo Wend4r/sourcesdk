@@ -153,8 +153,8 @@ public:
 class IScriptManager : public IAppSystem
 {
 public:
-	virtual IScriptVM *CreateVM( ScriptLanguage_t language = SL_DEFAULT ) = 0;
-	virtual void DestroyVM( IScriptVM * ) = 0;
+	virtual IScriptVM *CreateVM( ScriptLanguage_t language = SL_DEFAULT, bool bEnableDebugLibrary = false ) = 0;
+	virtual void DestroyVM( IScriptVM *pVM ) = 0;
 	virtual IScriptDebugger *GetDebugger() = 0;
 };
 
