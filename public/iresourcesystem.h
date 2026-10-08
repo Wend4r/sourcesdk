@@ -96,4 +96,17 @@ public:
 
 DECLARE_TIER2_INTERFACE( IResourceSystem, g_pResourceSystem );
 
+// Slots 2 and 3 are verified on Linux; the leading two are unknown and may be a virtual destructor,
+// which takes one slot on Windows
+abstract_class IResourceManifestRegistry
+{
+public:
+	virtual void unk_00() = 0;
+	virtual void unk_01() = 0;
+	virtual void RegisterManifest( ResourceManifestDesc_t *pDesc ) = 0;
+	virtual void UnregisterManifest( ResourceManifestDesc_t *pDesc ) = 0;
+};
+
+DECLARE_TIER2_INTERFACE( IResourceManifestRegistry, g_pResourceManifestRegistry );
+
 #endif // RESOURCESYSTEM_H

@@ -115,6 +115,65 @@ enum
 DLL_EXPORT void* CreateInterface(const char *pName, int *pReturnCode);
 
 //-----------------------------------------------------------------------------
+// Binary properties, every module reports its own build configuration and name
+//-----------------------------------------------------------------------------
+enum BinaryProperties_Lookups_t
+{
+	BPL_BUILDCONFIGURATION = 0, // BPV_STRING, "Release"
+	BPL_ISDEBUG,
+	BPL_ISRELEASE,
+	BPL_PROJECTNAME, // BPV_STRING, e.g. "tier0"
+	BPL_DEV_BUILD,
+	BPL_RETAIL_BUILD,
+	BPL_BINARY_TYPE, // BinaryProperties_Binary_Types_t
+};
+
+enum BinaryProperties_ValueType_t
+{
+	BPV_STRING = 0,
+	BPV_INT64,
+	BPV_DOUBLE,
+};
+
+enum BinaryProperties_Binary_Types_t
+{
+	BP_BT_EXE = 1,
+	BP_BT_DLL,
+	BP_BT_LIB,
+};
+
+struct BinaryProperties_Value_t
+{
+	union
+	{
+		const char *pString;
+		int64 nInt64;
+		double flDouble;
+	} val;
+
+	BinaryProperties_ValueType_t valueType;
+};
+
+//-----------------------------------------------------------------------------
+// Additional module exports
+//-----------------------------------------------------------------------------
+class ISchemaSystem;
+struct ResourceManifestDesc_t;
+
+DLL_EXPORT bool InstallSchemaBindings( const char *pSchemaSystemInterfaceVersion, ISchemaSystem *pSchemaSystem );
+DLL_EXPORT int GetResourceManifestCount();
+DLL_EXPORT int GetResourceManifests( int nFirstIndex, ResourceManifestDesc_t **ppDesc, size_t nDescCount );
+DLL_EXPORT int BinaryProperties_GetValue( BinaryProperties_Lookups_t propertyLookup, BinaryProperties_Value_t *pOutput );
+
+typedef bool (*FN_InstallSchemaBindings_t)( const char *pSchemaSystemInterfaceVersion, ISchemaSystem *pSchemaSystem );
+typedef int (*FN_GetResourceManifestCount_t)();
+typedef int (*FN_GetResourceManifests_t)( int nFirstIndex, ResourceManifestDesc_t **ppDesc, size_t nDescCount );
+typedef int (*FN_BinaryProperties_GetValue_t)( BinaryProperties_Lookups_t propertyLookup, BinaryProperties_Value_t *pOutput );
+
+// File name of the module that the SDK is linked into, e.g. "libserver.so"
+const char *GetNameOfModule();
+
+//-----------------------------------------------------------------------------
 // Macros to declare interfaces appropriate for various tiers
 //-----------------------------------------------------------------------------
 #if 1 || defined( TIER1_LIBRARY ) || defined( TIER2_LIBRARY ) || defined( TIER3_LIBRARY ) || defined( TIER4_LIBRARY ) || defined( APPLICATION )
