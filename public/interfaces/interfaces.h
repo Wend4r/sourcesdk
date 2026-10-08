@@ -147,7 +147,6 @@ class IProcessUtils;
 class ILocalize;
 class IMediaFoundation;
 class IVPhysics2;
-class VPhys2HandleInterface;
 class IModelDocUtils;
 class IAnimGraphEditorUtils;
 class IExportSystem;
@@ -157,7 +156,7 @@ class INavSystem;
 class INavGameTest;
 class ILocalServerClientAccess;
 class IClientLocalServerAccess;
-class IAsyncFileSystem;
+class IAsyncFileSystem2;
 class IFileSystem;
 class IRenderHardwareConfig;
 class IInputSystem;
@@ -174,7 +173,7 @@ class IMatchFramework;
 class ISource2V8System;
 class ISoundSystem;
 class IAvi;
-class IWebm;
+class IWebmSystem;
 class IBik;
 class IVRAD3;
 class IMeshSystem;
@@ -220,7 +219,7 @@ class ISerializedEntities;
 class IDemoUpconverter;
 class ISource2Client;
 class IClientUI;
-class IPrediction2;
+class IPrediction;
 class ISource2Server;
 class ISource2ServerConfig;
 class ISource2Host;
@@ -249,6 +248,32 @@ class IVEngineClient2;
 class IVEngineServer2;
 class INetworkStringTableContainer;
 class IGameTypes;
+class IEngineService;
+class ISplitScreenService;
+class IEngineGameUI;
+class ILegacyGameUI;
+class IGameUIFuncs;
+class INetSupport;
+class IGameEventSystem;
+class IGameEventManager2;
+class ISource2ClientConfig;
+class IGameConfiguration;
+class IGameClientExports;
+class IHLTVDirector;
+class IServerEntitySubclassUtils;
+class IWorkshopAnnotationMgr;
+class ISceneFileCache;
+class IResponseRulesFileCache;
+class IPredictionDiffMgr;
+class IDebugDrawQueueMgr;
+class IGameModelInfo;
+class ISaveRestoreDataMgr;
+class IHostUtils;
+class IDotaMapUtils;
+class ISinglePlayerSharedMemory;
+class IEconVData;
+class IIMEManager;
+class ISmartPropsSystem;
 
 class IPanoramaUIEngine;
 class IPanoramaUIClient;
@@ -281,7 +306,7 @@ DECLARE_TIER1_INTERFACE( IProcessUtils, g_pProcessUtils );
 DECLARE_TIER2_INTERFACE( IFileSystem, g_pFullFileSystem );
 
 #define ASYNCFILESYSTEM_INTERFACE_VERSION		"VAsyncFileSystem2_001"
-DECLARE_TIER2_INTERFACE( IAsyncFileSystem, g_pAsyncFileSystem );
+DECLARE_TIER2_INTERFACE( IAsyncFileSystem2, g_pAsyncFileSystem );
 
 #define RESOURCESYSTEM_INTERFACE_VERSION		"ResourceSystem013"
 DECLARE_TIER2_INTERFACE( IResourceSystem, g_pResourceSystem );
@@ -335,7 +360,7 @@ DECLARE_TIER2_INTERFACE( IP4, g_pP4 );
 DECLARE_TIER2_INTERFACE( ILocalize, g_pLocalize );
 
 #define MEDIA_FOUNDATION_INTERFACE_VERSION			"VMediaFoundation001"
-DECLARE_TIER2_INTERFACE( IMediaFoundation, g_pMediaFoundation );
+DECLARE_TIER3_INTERFACE( IMediaFoundation, g_pMediaFoundation );
 
 #define GAMETYPES_INTERFACE_VERSION			"GameTypes001"
 DECLARE_TIER2_INTERFACE(IGameTypes, g_pGameTypes);
@@ -344,7 +369,7 @@ DECLARE_TIER2_INTERFACE(IGameTypes, g_pGameTypes);
 DECLARE_TIER3_INTERFACE( IAvi, g_pAVI );
 
 #define WEBM_INTERFACE_VERSION					"VWebm001"
-DECLARE_TIER3_INTERFACE( IWebm, g_pWebm );
+DECLARE_TIER3_INTERFACE( IWebmSystem, g_pWebm );
 
 #define BIK_INTERFACE_VERSION					"VBik001"
 DECLARE_TIER3_INTERFACE( IBik, g_pBIK );
@@ -488,7 +513,7 @@ DECLARE_TIER3_INTERFACE( ISource2Client, g_pSource2Client );
 DECLARE_TIER3_INTERFACE( IClientUI, g_pIClientUI );
 
 #define SOURCE2CLIENTPREDICTION_INTERFACE_VERSION		"Source2ClientPrediction001"
-DECLARE_TIER3_INTERFACE( IPrediction2, g_pClientSidePrediction );
+DECLARE_TIER3_INTERFACE( IPrediction, g_pClientSidePrediction );
 
 #define SOURCE2SERVER_INTERFACE_VERSION		"Source2Server001"
 DECLARE_TIER3_INTERFACE( ISource2Server, g_pSource2Server );
@@ -580,9 +605,6 @@ DECLARE_TIER3_INTERFACE( INetworkStringTableContainer, g_pNetworkStringTableClie
 #define VPHYSICS2_INTERFACE_VERSION				"VPhysics2_Interface_001"
 DECLARE_TIER3_INTERFACE( IVPhysics2, g_pVPhysics2 );
 
-#define VPHYSICS2HANDLE_INTERFACE_VERSION				"VPhysics2_Handle_Interface_001"
-DECLARE_TIER3_INTERFACE( VPhys2HandleInterface, g_pVPhys2HandleInterface );
-
 #define MODELDOCUTILS_INTERFACE_VERSION				"ModelDocUtils001"
 DECLARE_TIER3_INTERFACE( IModelDocUtils, g_pModelDocUtils );
 
@@ -612,6 +634,102 @@ DECLARE_TIER3_INTERFACE( ILocalServerClientAccess, g_pLocalServerClientAccess );
 
 #define CLIENTLOCALSERVERACCESS_INTERFACE_VERSION			"ClientLocalServerAccess001"
 DECLARE_TIER3_INTERFACE( IClientLocalServerAccess, g_pClientLocalServerAccess );
+
+#define BUGSERVICE_INTERFACE_VERSION		"BugService001"
+DECLARE_TIER3_INTERFACE( IEngineService, g_pBugService );
+
+#define BUGBUGSERVICE_INTERFACE_VERSION		"BugBugService001"
+DECLARE_TIER3_INTERFACE( IEngineService, g_pBugBugService );
+
+#define SCREENSHOTSERVICE_INTERFACE_VERSION		"ScreenshotService001"
+DECLARE_TIER3_INTERFACE( IEngineService, g_pScreenshotService );
+
+#define SPLITSCREENSERVICE_INTERFACE_VERSION		"SplitScreenService_001"
+DECLARE_TIER3_INTERFACE( ISplitScreenService, g_pSplitScreenService );
+
+#define CLIENTSERVERENGINELOOPSERVICE_INTERFACE_VERSION		"ClientServerEngineLoopService_001"
+DECLARE_TIER3_INTERFACE( IEngineService, g_pClientServerEngineLoopService );
+
+#define SIMPLEENGINELOOPSERVICE_INTERFACE_VERSION		"SimpleEngineLoopService_001"
+DECLARE_TIER3_INTERFACE( IEngineService, g_pSimpleEngineLoopService );
+
+#define ENGINEGAMEUI_INTERFACE_VERSION		"EngineGameUI001"
+DECLARE_TIER3_INTERFACE( IEngineGameUI, g_pEngineGameUI );
+
+#define LEGACYGAMEUI_INTERFACE_VERSION		"LegacyGameUI001"
+DECLARE_TIER3_INTERFACE( ILegacyGameUI, g_pLegacyGameUI );
+
+#define GAMEUIFUNCS_INTERFACE_VERSION		"VENGINE_GAMEUIFUNCS_VERSION005"
+DECLARE_TIER3_INTERFACE( IGameUIFuncs, g_pGameUIFuncs );
+
+#define NETSUPPORT_INTERFACE_VERSION		"INETSUPPORT_001"
+DECLARE_TIER3_INTERFACE( INetSupport, g_pNetSupport );
+
+#define GAMEEVENTSYSTEMCLIENT_INTERFACE_VERSION		"GameEventSystemClientV001"
+DECLARE_TIER3_INTERFACE( IGameEventSystem, g_pGameEventSystemClient );
+
+#define GAMEEVENTSYSTEMSERVER_INTERFACE_VERSION		"GameEventSystemServerV001"
+DECLARE_TIER3_INTERFACE( IGameEventSystem, g_pGameEventSystemServer );
+
+#define GAMEEVENTSMANAGER_INTERFACE_VERSION		"GAMEEVENTSMANAGER002"
+DECLARE_TIER3_INTERFACE( IGameEventManager2, g_pGameEventManager2 );
+
+#define SOURCE2CLIENTCONFIG_INTERFACE_VERSION		"Source2ClientConfig001"
+DECLARE_TIER3_INTERFACE( ISource2ClientConfig, g_pSource2ClientConfig );
+
+#define GAMECONFIGCLIENT_INTERFACE_VERSION		"GameConfigClientV001"
+DECLARE_TIER3_INTERFACE( IGameConfiguration, g_pGameConfigClient );
+
+#define GAMECONFIGSERVER_INTERFACE_VERSION		"GameConfigServerV001"
+DECLARE_TIER3_INTERFACE( IGameConfiguration, g_pGameConfigServer );
+
+#define GAMECLIENTEXPORTS_INTERFACE_VERSION		"GameClientExports001"
+DECLARE_TIER3_INTERFACE( IGameClientExports, g_pGameClientExports );
+
+#define SOURCE2GAMEDIRECTOR_INTERFACE_VERSION		"Source2GameDirector001"
+DECLARE_TIER3_INTERFACE( IHLTVDirector, g_pSource2GameDirector );
+
+#define ENTITYSUBCLASSUTILS_INTERFACE_VERSION		"EntitySubclassUtilsV001"
+DECLARE_TIER3_INTERFACE( IServerEntitySubclassUtils, g_pEntitySubclassUtils );
+
+#define WORKSHOPANNOTATIONMGR_INTERFACE_VERSION		"WorkshopAnnotationMgr001"
+DECLARE_TIER3_INTERFACE( IWorkshopAnnotationMgr, g_pWorkshopAnnotationMgr );
+
+#define SCENEFILECACHE_INTERFACE_VERSION		"SceneFileCache002"
+DECLARE_TIER3_INTERFACE( ISceneFileCache, g_pSceneFileCache );
+
+#define RESPONSERULESCACHE_INTERFACE_VERSION		"ResponseRulesCache001"
+DECLARE_TIER3_INTERFACE( IResponseRulesFileCache, g_pResponseRulesFileCache );
+
+#define PREDICTIONDIFFMANAGER_INTERFACE_VERSION		"PredictionDiffManager001"
+DECLARE_TIER3_INTERFACE( IPredictionDiffMgr, g_pPredictionDiffMgr );
+
+#define DEBUGDRAWQUEUEMANAGER_INTERFACE_VERSION		"DebugDrawQueueManager001"
+DECLARE_TIER3_INTERFACE( IDebugDrawQueueMgr, g_pDebugDrawQueueMgr );
+
+#define GAMEMODELINFO_INTERFACE_VERSION		"GameModelInfo001"
+DECLARE_TIER3_INTERFACE( IGameModelInfo, g_pGameModelInfo );
+
+#define SAVERESTOREDATA_INTERFACE_VERSION		"SaveRestoreDataVersion001"
+DECLARE_TIER3_INTERFACE( ISaveRestoreDataMgr, g_pSaveRestoreDataMgr );
+
+#define HOSTUTILS_INTERFACE_VERSION		"HostUtils001"
+DECLARE_TIER3_INTERFACE( IHostUtils, g_pHostUtils );
+
+#define DOTAMAPUTILS_INTERFACE_VERSION		"DotaMapUtils001"
+DECLARE_TIER3_INTERFACE( IDotaMapUtils, g_pDotaMapUtils );
+
+#define SINGLEPLAYERSHAREDMEMORY_INTERFACE_VERSION		"SinglePlayerSharedMemory001"
+DECLARE_TIER3_INTERFACE( ISinglePlayerSharedMemory, g_pSinglePlayerSharedMemory );
+
+#define ECONVDATA_INTERFACE_VERSION		"EconVData001"
+DECLARE_TIER3_INTERFACE( IEconVData, g_pEconVData );
+
+#define IMEMANAGER_INTERFACE_VERSION		"IMEManager001"
+DECLARE_TIER3_INTERFACE( IIMEManager, g_pIMEManager );
+
+#define SMARTPROPSSYSTEM_INTERFACE_VERSION		"SmartPropsSystem_001"
+DECLARE_TIER3_INTERFACE( ISmartPropsSystem, g_pSmartPropsSystem );
 
 //-----------------------------------------------------------------------------
 // Fills out global DLL exported interface pointers
