@@ -13,6 +13,7 @@
 
 #include "tier0/platform.h"
 
+// Matchmaking extension name, not exported through CreateInterface
 #define WORKSHOPANNOTATIONMGR_INTERFACE_VERSION "WorkshopAnnotationMgr001"
 
 abstract_class IWorkshopAnnotationMgr

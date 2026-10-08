@@ -151,6 +151,9 @@ public:
 	virtual void FireGameEvent( IGameEvent *event ) = 0;
 };
 
+// Matchmaking extension name, not exported through CreateInterface
+#define INTERFACEVERSION_GAMEEVENTSMANAGER2 "GAMEEVENTSMANAGER002"
+
 abstract_class IGameEventManager2 : public IBaseInterface
 {
 public:

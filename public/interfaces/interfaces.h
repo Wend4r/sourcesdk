@@ -314,13 +314,11 @@ class ILegacyGameUI;
 class IGameUIFuncs;
 class INetSupport;
 class IGameEventSystem;
-class IGameEventManager2;
 class ISource2ClientConfig;
 class IGameConfiguration;
 class IGameClientExports;
 class IHLTVDirector;
 class IServerEntitySubclassUtils;
-class IWorkshopAnnotationMgr;
 class ISceneFileCache;
 class IResponseRulesFileCache;
 class IPredictionDiffMgr;
@@ -345,6 +343,7 @@ namespace panorama
 //-----------------------------------------------------------------------------
 // Fills out global DLL exported interface pointers
 //-----------------------------------------------------------------------------
+// Not exported through CreateInterface
 #define APPLICATION_INTERFACE_VERSION			"VApplication001"
 DECLARE_TIER1_INTERFACE( IApplication, g_pApplication );
 
@@ -370,9 +369,11 @@ DECLARE_TIER2_INTERFACE( IAsyncFileSystem2, g_pAsyncFileSystem );
 #define RESOURCESYSTEM_INTERFACE_VERSION		"ResourceSystem013"
 DECLARE_TIER2_INTERFACE( IResourceSystem, g_pResourceSystem );
 
+// Not exported through CreateInterface
 #define RESOURCEMANIFESTREGISTRY_INTERFACE_VERSION	"ResourceManifestRegistry001"
 DECLARE_TIER2_INTERFACE( IResourceManifestRegistry, g_pResourceManifestRegistry );
 
+// Not exported through CreateInterface
 #define RESOURCEHANDLEUTILS_INTERFACE_VERSION		"ResourceHandleUtils001"
 DECLARE_TIER2_INTERFACE( IResourceHandleUtils, g_pResourceHandleUtils );
 
@@ -436,15 +437,19 @@ DECLARE_TIER3_INTERFACE( IBik, g_pBIK );
 #define MESHSYSTEM_INTERFACE_VERSION			"MeshSystem001"
 DECLARE_TIER3_INTERFACE( IMeshSystem, g_pMeshSystem );
 
+// Not exported through CreateInterface
 #define MESHUTILS_INTERFACE_VERSION			"MeshUtils001"
 DECLARE_TIER3_INTERFACE( IMeshUtils, g_pMeshUtils );
 
+// Not exported through CreateInterface
 #define RENDER_DEVICE_INTERFACE_VERSION			"RenderDevice003"
 DECLARE_TIER3_INTERFACE( IRenderDevice, g_pRenderDevice );
 
+// Not exported through CreateInterface
 #define RENDER_DEVICE_SETUP_INTERFACE_VERSION			"VRenderDeviceSetupV001"
 DECLARE_TIER3_INTERFACE( IRenderDeviceSetup, g_pRenderDeviceSetup );
 
+// Not exported through CreateInterface
 #define RENDER_HARDWARECONFIG_INTERFACE_VERSION		"RenderHardwareConfig002"
 DECLARE_TIER3_INTERFACE( IRenderHardwareConfig, g_pRenderHardwareConfig );
 
@@ -730,15 +735,14 @@ DECLARE_TIER3_INTERFACE( IGameEventSystem, g_pGameEventSystemClient );
 #define GAMEEVENTSYSTEMSERVER_INTERFACE_VERSION		"GameEventSystemServerV001"
 DECLARE_TIER3_INTERFACE( IGameEventSystem, g_pGameEventSystemServer );
 
-#define GAMEEVENTSMANAGER_INTERFACE_VERSION		"GAMEEVENTSMANAGER002"
-DECLARE_TIER3_INTERFACE( IGameEventManager2, g_pGameEventManager2 );
-
 #define SOURCE2CLIENTCONFIG_INTERFACE_VERSION		"Source2ClientConfig001"
 DECLARE_TIER3_INTERFACE( ISource2ClientConfig, g_pSource2ClientConfig );
 
+// Not exported through CreateInterface
 #define GAMECONFIGCLIENT_INTERFACE_VERSION		"GameConfigClientV001"
 DECLARE_TIER3_INTERFACE( IGameConfiguration, g_pGameConfigClient );
 
+// Not exported through CreateInterface
 #define GAMECONFIGSERVER_INTERFACE_VERSION		"GameConfigServerV001"
 DECLARE_TIER3_INTERFACE( IGameConfiguration, g_pGameConfigServer );
 
@@ -750,9 +754,6 @@ DECLARE_TIER3_INTERFACE( IHLTVDirector, g_pSource2GameDirector );
 
 #define ENTITYSUBCLASSUTILS_INTERFACE_VERSION		"EntitySubclassUtilsV001"
 DECLARE_TIER3_INTERFACE( IServerEntitySubclassUtils, g_pEntitySubclassUtils );
-
-#define WORKSHOPANNOTATIONMGR_INTERFACE_VERSION		"WorkshopAnnotationMgr001"
-DECLARE_TIER3_INTERFACE( IWorkshopAnnotationMgr, g_pWorkshopAnnotationMgr );
 
 #define SCENEFILECACHE_INTERFACE_VERSION		"SceneFileCache002"
 DECLARE_TIER3_INTERFACE( ISceneFileCache, g_pSceneFileCache );
