@@ -42,6 +42,7 @@ struct CHostStateRequest
 	CUtlString m_Addons;
 	KeyValues *m_pKV;
 };
+COMPILE_TIME_ASSERT( sizeof( CHostStateRequest ) == 0x68 );
 
 class ISwitchLoopModeStatusNotify
 {
@@ -63,6 +64,10 @@ public:
 	virtual void RequestHS_SourceTVRelay(const char *, KeyValues *) = 0;
 	virtual void RequestHS_ReloadLastSaveGame(void) = 0;
 	virtual void RequestHS_RestartSpawnGroups(void) = 0;
+
+	// Empty in the engine implementation.
+	virtual void unk023(void) = 0;
+	virtual void unk024(void) = 0;
 };
 
 class CHostStateMgr : public CTier2AppSystem<IHostStateMgr>, public ISwitchLoopModeStatusNotify

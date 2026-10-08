@@ -13,6 +13,7 @@
 
 #include "appframework/iappsystem.h"
 #include "utlstring.h"
+#include "tier1/utldelegate.h"
 
 typedef int TABLEID;
 
@@ -40,6 +41,8 @@ struct StringUserData_t
 	void* m_pRawData;
 };
 
+typedef CUtlDelegate< void ( INetworkStringTable *, int, const char *, const SetStringUserDataRequest_t * ) > StringChangedCallback_t;
+
 //-----------------------------------------------------------------------------
 // Purpose: Game .dll shared string table interfaces
 //-----------------------------------------------------------------------------
@@ -65,11 +68,11 @@ public:
 	virtual bool			SetStringUserData(int stringNumber, const SetStringUserDataRequest_t *userdata, bool bForceOverride) = 0;
 	virtual const StringUserData_t* GetStringUserData(int stringNumber) const = 0;
 	virtual int				FindStringIndex( char const *string ) = 0; // returns INVALID_STRING_INDEX if not found
-	virtual void			unk001() = 0;
+	virtual void			SetStringChangedCallback( const StringChangedCallback_t &callback, bool bCallForExistingStrings ) = 0;
 	virtual void			SetAllowClientSideAddString( bool state ) = 0;
-	virtual void			unk003() = 0;
-	virtual void			unk004( const char *string ) const = 0; // all stringtables in engine/server set this to "[server]".
-	virtual void			unk005() = 0; // likely SetStringChangedCallback
+	virtual void			unk014( bool ) = 0;
+	virtual void			unk015( const char *string ) = 0;
+	virtual void			unk016( void *pDelegate ) = 0;
 };
 
 enum ENetworkStringtableFlags
@@ -92,6 +95,7 @@ public:
 	virtual INetworkStringTable	*FindTable( const char *tableName ) const = 0;
 	virtual INetworkStringTable	*GetTable( TABLEID stringTable ) const = 0;
 	virtual int					GetNumTables( void ) const = 0;
+	virtual const char			*unk017( void ) const = 0;
 };
 
 #endif // NETWORKSTRINGTABLEDEFS_H
