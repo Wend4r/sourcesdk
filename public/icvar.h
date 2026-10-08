@@ -102,7 +102,7 @@ public:
 	// ignores FCVAR_COMMANDLINE_ENFORCED
 	virtual void				ResetConVarsToDefaultValuesByName( const char *pszPrefix ) = 0;
 
-	virtual ConVarSnapshot_t	*TakeConVarSnapshot( void ) = 0;
+	virtual ConVarSnapshot_t	*TakeConVarSnapshot( uint64 nFlags ) = 0;
 	virtual void				ResetConVarsToSnapshot( ConVarSnapshot_t *pSnapshot ) = 0;
 	virtual void				DestroyConVarSnapshot( ConVarSnapshot_t *pSnapshot ) = 0;
 
@@ -115,9 +115,8 @@ public:
 	
 	// Returns total bytesize needed to store all the FCVAR_USERINFO cvar values
 	virtual int					GetTotalUserInfoCvarsByteSize() = 0;
-	// Copies default values of all cvars which have FCVAR_USERINFO flag to the buffer in a byte range from->to
 	// if copy_or_cleanup is true, if false would cleanup the buffer
-	virtual void				CopyUserInfoCvarDefaults( uint8* buffer, int from, int to, bool copy_or_cleanup ) = 0;
+	virtual void				CopyUserInfoCvarDefaults( uint8* buffer, uint64 from, uint64 to, bool copy_or_cleanup ) = 0;
 
 	// Calls completion callbacks on cvars and concommands if they exist, successful would be true if so
 	// Cvars & Concommands needs to have FCVAR_VCONSOLE_FUZZY_MATCHING for successful to be true if callbacks are available

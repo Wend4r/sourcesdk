@@ -13,8 +13,8 @@
 
 
 #include "appframework/iappsystem.h"
-#include "tier1/utlstring.h"
-#include "tier1/utlbuffer.h"
+#include "tier0/utlstring.h"
+#include "tier0/utlbuffer.h"
 
 
 //-----------------------------------------------------------------------------
@@ -115,13 +115,27 @@ public:
 	// If pWorkingDir is left at NULL, it'll use this process' working directory.
 	virtual IProcess* StartProcess( const char *pCommandLine, int fFlags, const char *pWorkingDir=NULL )= 0;
 	virtual IProcess* StartProcess( int argc, const char **argv, int fFlags, const char *pWorkingDir=NULL ) = 0;
-	
+
+	virtual IProcess* unk014( const char *pCommandLine, int fFlags, const char *pWorkingDir, void *p ) = 0;
+
+	virtual IProcess* StartProcess( const char *pCommandLine, int fFlags, void *pOptions ) = 0;
+
 	// Run a process and get its output.
 	// If pStdout is set, then stdout AND stderr are put into pStdout.
 	// If not, then the text output is ignored.
 	//
 	// Returns -1 if it was unable to run the process. Otherwise, returns the exit code from the process.
 	virtual int SimpleRunProcess( const char *pCommandLine, const char *pWorkingDir=NULL, CUtlString *pStdout=NULL ) = 0;
+
+	virtual const char *unk016() = 0;
+	virtual void unk017( const char *pszValue ) = 0;
+	virtual const char *unk018() = 0;
+	virtual void unk019( const char *pszValue ) = 0;
+	virtual int unk020() = 0;
+	virtual void unk021( int nValue ) = 0;
+	virtual int unk022() = 0;
+	virtual int unk023() = 0;
+	virtual void unk024( int nValue ) = 0;
 };
 
 DECLARE_TIER1_INTERFACE( IProcessUtils, g_pProcessUtils );

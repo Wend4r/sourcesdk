@@ -19,19 +19,6 @@
 // Forward declarations
 //-----------------------------------------------------------------------------
 
-enum LanguageType_t
-{
-	LanguageType_UI = 0x0,
-	LanguageType_Audio = 0x1,
-};
-
-enum AppSystemErrorPolicy_t
-{
-	ADD_SYSTEM_ERROR = 0,
-	ADD_SYSTEM_WARNING = 1,
-	ADD_SYSTEM_SILENT = 2,
-};
-
 struct ResourceManifestDesc_t;
 
 //-----------------------------------------------------------------------------
@@ -109,60 +96,6 @@ class CTier1Application : public CTier1AppSystem< IApplication >
 {
 public:
 	virtual ~CTier1Application() = default;
-
-	virtual void AddSystem( IAppSystem *pAppSystem, const char *pInterfaceName, AppSystemErrorPolicy_t eErrorPolicy ) = 0;
-	virtual void AddSystem( const char *pModuleName, const char *pInterfaceName, AppSystemErrorPolicy_t eErrorPolicy ) = 0;
-	virtual void AddSystem( IAppSystem *pAppSystem, const char *pInterfaceName ) = 0;
-	virtual void RemoveSystem( IAppSystem *pSystem ) = 0;
-	virtual bool AddSystems( int nCount, const AppSystemInfo_t **pSystemInfo ) = 0;
-	virtual void *FindSystem( const char *pSystemName ) = 0;
-	virtual KeyValues *GetGameInfo() = 0;
-	virtual AppSystemBuildType_t GetAppSystemBuildType() = 0;
-	virtual const char *GetLanguage( LanguageType_t nType ) = 0;
-	virtual const char *GetModPath( int nPathType ) = 0;
-	virtual bool IsInToolsMode() = 0;
-	virtual bool IsConsoleApp() = 0;
-	virtual OpusRepacketizer *GetOpusRepacketizer() = 0;
-	virtual bool IsInDeveloperMode() = 0;
-	virtual const char *GetExecutablePath() = 0;
-	virtual const char *GetModGameSubdir() = 0;
-	virtual KeyValues *GetApplicationInfo() = 0;
-	virtual void *GetAppInstance() = 0;
-	virtual const char *GetContentPath() = 0;
-	virtual int GetAppSystemFlags() = 0;
-	virtual CUtlString GetConsoleLogFilename() = 0;
-	virtual void ChangeLogFileSuffix( const char *pSuffix ) = 0;
-	virtual void AddSystemDontLoadStartupManifests( const char *pModuleName, const char *pInterfaceName ) = 0;
-	virtual const char *GetGameMode() = 0;
-	virtual bool MountAddon( const char *pAddonName ) = 0;
-	virtual bool UnmountAddon( const char *pAddonName ) = 0;
-	virtual void GetMountedAddons( CUtlVector< CUtlString > &vecAddons ) = 0;
-	virtual int GetMountedAddons( const char **ppAddons, int nMaxAddons ) = 0;
-	virtual bool GetAddonsDirectory( CUtlString &sDirectory ) = 0;
-	virtual bool GetAddonsContentDirectory( CUtlString &sDirectory ) = 0;
-	virtual bool IsFileInAddon( const char *pFilename ) = 0;
-	virtual void GetAvailableAddons( CUtlVector< CUtlString > &vecAddons, int nFlags ) = 0;
-	virtual bool GetAddonInfo( KeyValues *pAddonInfo, const char *pAddonName ) = 0;
-	virtual bool IsRunningOnCustomerMachine() = 0;
-	virtual bool IsPerforceWorkspace() = 0;
-	virtual bool IsLowViolence() = 0;
-	virtual bool SetLowViolence( bool bLowViolence ) = 0;
-	virtual bool SetInitializationPhase( int nInitializationPhase ) = 0;
-	virtual int GetInitializationPhase() = 0;
-	virtual const char *GetRestrictAddonsTo() = 0;
-	virtual void SetAllowAddonChanges( bool bAllowAddonChanges ) = 0;
-	virtual void SetUGCAddonPathResolver( IUGCAddonPathResolver *pResolver ) = 0;
-	virtual CUtlString GetAddonNameFromID( uint64 nAddonID ) = 0;
-	virtual uint64 GetIDFromAddonName( const char *pAddonName ) = 0;
-	virtual CUtlString GetFullAddonPathFromAddonName( const char *pAddonName ) = 0;
-	virtual void GetAvailableAddonMaps( CUtlVector< CUtlString > &vecMaps, const char *pAddonName, bool bIncludeFallbackMaps ) = 0;
-	virtual void LoadStartupManifestGroup( const char *pManifestGroup ) = 0;
-	virtual CUtlString GetAddonSourceFolder( const char *pAddonName ) = 0;
-	virtual void OnStartupManifestGroupLoaded() = 0;
-	virtual void AddStartupManifest( ResourceManifestDesc_t &resourceManifestDesc ) = 0;
-	virtual CAppSystemDict *GetAppSystemDict() = 0;
-
-	template < class T > T* FindSystem( const char *pSystemName ) { return static_cast< T* >( FindSystem( pSystemName ) ); }
 };
 
 #endif // TIER1_H
