@@ -119,8 +119,8 @@ public:
 	virtual void SetString( const GameEventKeySymbol_t &keySymbol, const char *value ) = 0;
 	virtual void SetPtr( const GameEventKeySymbol_t &keySymbol, void *value ) = 0;
 	
-	virtual void SetEntity(const GameEventKeySymbol_t &keySymbol, CEntityInstance *value) = 0;
-	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityIndex value ) = 0;
+	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityHandle value ) = 0;
+	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityInstance *value ) = 0;
 
 	// Also sets the _pawn key (Expects pawn entity to be passed)
 	virtual void SetPlayer( const GameEventKeySymbol_t &keySymbol, CEntityInstance *pawn ) = 0;
