@@ -34,6 +34,10 @@ struct FlattenedSerializerUserData_t;
 
 struct FlattenedSerializerDesc_t
 {
+	FlattenedSerializerDesc_t() : m_name(), m_pSerializer( nullptr ) {}
+	FlattenedSerializerDesc_t( const FlattenedSerializerDesc_t &other ) : m_name( other.m_name ), m_pSerializer( other.m_pSerializer ) {}
+	FlattenedSerializerDesc_t &operator=( const FlattenedSerializerDesc_t &other ) = default;
+
 	CUtlSymbolLarge m_name;
 
 	union
@@ -162,15 +166,15 @@ struct SerializedEntityData_t
 	SerializedEntityBitOffsetList_t *m_pFieldBitOffsets; // Bit offsets for each serialized field.
 	SerializedEntityMetadata_t *m_pMetadata; // Optional ref-counted metadata dumped before field values.
 	byte *m_pData; // Serialized bitstream payload.
-	uint m_nDataBytes;
-	uint m_nAllocatedDataBytes;
-	int m_nFlags;
-	int m_nBaseline;
+	FlattenedSerializerDesc_t m_Serializer; // Serializer the fields were written with.
 	int m_nFieldCount; // Number of fields in m_pFieldPaths and m_pFieldBitOffsets.
 	int m_nBitCount; // Total number of valid bits in m_pData.
+	uint m_nAllocatedDataBytes;
+	bool m_bReuseDataBuffer;
+	byte m_pad003D[3];
 };
 
-COMPILE_TIME_ASSERT( sizeof( SerializedEntityData_t ) == 56 );
+COMPILE_TIME_ASSERT( sizeof( SerializedEntityData_t ) == 64 );
 
 struct NetworkEntityData_t
 {
@@ -390,20 +394,19 @@ public:
 	virtual const char *FieldPathToName( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket, CUtlString *pOut ) = 0; // Converts a CFieldPath to a display name and falls back to "unknown"/"???"
 	virtual const char *FieldPathIndexToName( const FlattenedSerializerDesc_t &pSerializer, int nFieldPath, CEntityInstance *pEntity, int nBucket, CUtlString *pOut ) = 0; // Converts a packed field-path index to a name.
 	virtual bool ReadFields( const FlattenedSerializerDesc_t &pSerializer, bf_read *pBuf, SerializedEntityData_t *pOut, int nEntityIndex, bool bUnk1, bool bUnk2 ) = 0; // "ReadFields"
-	virtual bool Encode( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, FlattenedSerializerEncodeResult_t *pOut ) = 0; // Used by PackEntity for the non-delta encode path.
+	virtual bool Encode( const FlattenedSerializerDesc_t &pSerializer, SerializedEntityData_t *pOut, CEntityInstance *pEntity, int nEntityIndex, int nUnk, int *pUnk ) = 0;
 	virtual bool GatherSendProxyResults( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nUnk, FlattenedSerializerChangeArray_t *pOutChangeInfo ) = 0; // "GatherSendProxyResults"
-	virtual bool DecodeEntity( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nSerialNumber, int nBucket, int nBaseline, SerializedEntityData_t *pFrom, int nFlags ) = 0; // "CFlattenedSerializer::Decode"
+	virtual bool DecodeEntity( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, void *pUnk1, int nEntityIndex, int nUnk, void *pUnk2, int nFlags ) = 0; // "CFlattenedSerializer::Decode"
 	virtual void CalcDelta( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, const SerializedEntityData_t *pTo, int *pUnk, int nEntityIndex, int nUnk, int *pOutChanges ) = 0; // "CDeltaCalculator::FieldCalcDelta"
 
-	// Argument types of BuildDeltaProperties and MergeDeltas are not verified
-	virtual void BuildDeltaProperties( const FlattenedSerializerDesc_t &pSerializer, void *p1, int nEntityIndex, int nUnk, const SerializedEntityData_t *pData, const CUtlVector< int > *pFieldPaths, void *pOutFieldData, void *p2, bool *pbOut1, bool *pbOut2 ) = 0; // "CFlattenedSerializer::BuildDeltaProperties", clears both flags first
+	virtual SerializedEntityData_t *BuildDeltaProperties( const FlattenedSerializerDesc_t &pSerializer, void *p1, int nEntityIndex, int nUnk, const SerializedEntityData_t *pData, CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, CUtlLeanVectorFixedGrowable< int, 4 > *pOutFieldPaths, void *p2, bool *pbOut1, bool *pbOut2 ) = 0;
 
 	// Copies the fields of pData into pBuf, only those whose encoded field path is in pFieldPaths when it is not NULL (the engine passes the CalcDelta changes).
 	// Each written field is reported to the spew listeners a FlattenedSerializerSpewField_t, filtered by nEntityIndex and nRecipient. Always returns true.
 	virtual bool WriteFieldList( const FlattenedSerializerDesc_t &pSerializer, bf_write *pBuf, const SerializedEntityData_t *pData, int nEntityIndex, int nUnk, const CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, int nRecipient ) = 0; // "CFlattenedSerializer::WriteFieldList"
 	virtual void MergeDeltas( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pOld, void *p2, void *p3, int nEntityIndex, bool bUnk, int *pOut ) = 0; // "CFlattenedSerializer::MergeDeltas"
 	virtual bool BuildMergedSerializedEntity( const FlattenedSerializerDesc_t &pSerializer, byte *pDeltaData, SerializedEntityData_t *pBase, CUtlVector< int > *pFieldPaths, bool bCull, int nEntityIndex ) = 0; // "BuildMergedSerializedEntity"
-	virtual int CullUnchangedFieldPaths( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, CUtlVector< int > *pFieldPaths, SerializedEntityData_t *pSerialized, CUtlVector< int > *pOutFieldPaths ) = 0; // Filters unchanged paths and logs "culled".
+	virtual int CullUnchangedFieldPaths( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nUnk, CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, const void *pCullRules, CUtlLeanVectorFixedGrowable< int, 4 > *pOutFieldPaths ) = 0;
 	virtual uint32 RemoveArrayElementsOutsideOfArrayMetadataBounds( const FlattenedSerializerDesc_t &pSerializer, SerializedEntityData_t *pData, uint32 *pInOutCount, int nEntityIndex, int nFlags ) = 0; // Returns *pInOutCount unchanged without the serializer or the data
 	virtual void SpewSerializer( const FlattenedSerializerDesc_t &pSerializer, int nBucket, IFlattenedSerializerSpewFunc *pSpew ) = 0;
 	virtual bool MakeSerializersMatchByMeta( const char *pszSerializerName, FlattenedSerializerFieldPathMap_t *pFieldPathMap, const FlattenedSerializerDesc_t &pSerializer, int nBucket, int nFlags, bool bCreateMissing ) = 0; // Rebuilds serializer field paths from metadata when layouts differ.
@@ -415,7 +418,7 @@ public:
 	// The metadata helper and the int are not read
 	virtual bool GetFieldPathChildIndices( const FlattenedSerializerDesc_t &pSerializer, CEntityInstancePolymorphicMetadataHelper *, int, const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) = 0;
 
-	virtual bool CollectChanges( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, CEntityInstance *pEntity, int nBucket, int nBaseline, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut, int nFlags ) = 0; // Collects StateChangedBranch output for the requested root path.
+	virtual bool CollectChanges( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, void *pUnk, int nEntityIndex, int nUnk, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut ) = 0;
 	virtual const FlattenedSerializerFieldData_t *GetFieldSerializerData( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket ) = 0;
 	virtual bool HasField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans field and subfield names.
 	virtual bool HasFieldInternal( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans flattened fields directly by name
@@ -427,7 +430,7 @@ public:
 	virtual void AddSerializerListener( FlattenedSerializerListener_t *pListener ) = 0; // Appends a listener to m_SpewListeners .
 	virtual void RemoveSerializerListener( FlattenedSerializerListener_t *pListener ) = 0; // Removes a listener from m_SpewListeners .
 	virtual bool BuildFlattenedSerializersMessage( CUtlVector< FlattenedSerializerDesc_t > *pSerializers, SerializedEntityData_t *pOut ) = 0; // CSVCMsg_FlattenedSerializer_t
-	virtual void SpewCounts( const FlattenedSerializerDesc_t &pSerializer, bool bVerbose ) = 0;
+	virtual void SpewCounts( int nBucket, bool bVerbose ) = 0;
 	virtual void RegisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Appends a unique save/restore ops record
 	virtual void UnregisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Removes a save/restore ops record
 	virtual INetworkFieldScratchData *CreateNetworkFieldScratchData( INetworkFieldScratchAllocator *pAllocator, FlattenedSerializerUserData_t *pContext ) = 0; // Allocates a 232-byte scratch-data object and seeds it with allocator/context pointers.

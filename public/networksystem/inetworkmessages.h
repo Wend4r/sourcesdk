@@ -97,10 +97,11 @@ public:
 	virtual void AssociateNetMessageGroupIdWithChannelCategory( NetworkCategoryId nCategoryId, const char *szGroup ) = 0;
 
 	virtual void SetNetworkSerializationContextData( const char *szContext, NetworkSerializationMode_t eSerializationMode, NetworkContextData_t *pData ) = 0;
+
+	virtual NetworkContextDataId FindNetworkSerializationContextDataId( const char *szContext ) = 0;
 	virtual struct NetworkContextData_t *GetNetworkSerializationContextData( NetworkContextDataId nContextId, NetworkSerializationMode_t eSerializationMode = NET_SERIALIZATION_MODE_DEFAULT ) = 0;
 
-	virtual void unk101() = 0;
-	virtual void unk102() = 0;
+	virtual void SetNetworkChangeTagCallback( const CUtlAbstractDelegate &callback ) = 0;
 
 	// Doesn't support duplicated callbacks per field
 	virtual void RegisterNetworkFieldChangeCallbackInternal( const char *szFieldName, uint64, NetworkFieldChangedDelegateType_t fieldType, CUtlAbstractDelegate pCallback, NetworkFieldChangeCallbackPerformType_t cbPerformType, int unkflag ) = 0;
@@ -118,11 +119,15 @@ public:
 	virtual void SetIsForServer( bool bIsForServer ) = 0;
 	virtual bool GetIsForServer() = 0;
 
-	virtual void RegisterSchemaTypeOverride( uint32 nIdx, const char *szFieldName ) = 0;
+	// Example: "CEntityHandle" -> "ehandle".
+	virtual void RegisterSchemaTypeOverride( const char *szTypeName, const char *szNetworkTypeName ) = 0;
 
 	virtual int ComputeOrderForPriority( int nPriority ) = 0;
 
 	virtual LoggingChannelID_t GetLoggingChannel() = 0;
+
+	virtual void SetCoordEncodingParams( const void *pParams ) = 0;
+	virtual const void *GetCoordEncodingParams() = 0;
 
 	virtual ~INetworkMessages() = 0;
 };
