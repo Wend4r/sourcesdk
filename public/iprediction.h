@@ -1,68 +1,59 @@
-//========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
+//===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
-// Purpose: 
+// Purpose: Engine interface into the client side prediction system
 //
-// $Workfile:     $
-// $Date:         $
-//
-//-----------------------------------------------------------------------------
-// $Log: $
-//
-// $NoKeywords: $
-//=============================================================================//
-#if !defined( IPREDICTION_H )
+//===========================================================================//
+
+#ifndef IPREDICTION_H
 #define IPREDICTION_H
+
 #ifdef _WIN32
 #pragma once
 #endif
 
-
-#include "interface.h"
-#include "mathlib/vector.h" // Solely to get at define for QAngle
-
-
-class IMoveHelper;
+#include "appframework/iappsystem.h"
+#include "game/client/prediction.h"
+#include "mathlib/vector.h"
+#include "playerslot.h"
+#include "splitscreenslot.h"
 
 //-----------------------------------------------------------------------------
-// Purpose: Engine interface into client side prediction system
 //-----------------------------------------------------------------------------
-abstract_class IPrediction
+abstract_class IPrediction : public IAppSystem
 {
 public:
-	virtual			~IPrediction( void ) {};
+	// Runs a full prediction pass
+	virtual void Update( PredictionReason_t nReason ) = 0;
 
-	virtual void	Init( void ) = 0;
-	virtual void	Shutdown( void ) = 0;
+	virtual void NetUpdatePreStart() = 0;
+	virtual void NetUpdateStart() = 0;
+	virtual void PostEntityPacketReceived() = 0;
+	virtual void PostNetworkDataReceived() = 0;
+	// Resets the prediction state after a full update
+	virtual void OnReceivedUncompressedPacket() = 0;
 
-	// Run prediction
-	virtual void	Update
-					( 
-						int startframe,				// World update ( un-modded ) most recently received
-						bool validframe,			// Is frame data valid
-						int incoming_acknowledged,	// Last command acknowledged to have been run by server (un-modded)
-						int outgoing_command		// Last command (most recent) sent to server (un-modded)
-					) = 0;
+	virtual void unk017( int nSimulationTick, float flUnk, int *pUnk ) = 0;
+	virtual float unk018() = 0;
+	virtual void unk019( int nUnk, float flUnk1, float flUnk2 ) = 0;
+	virtual int unk020() = 0;
 
-	// We are about to get a network update from the server.  We know the update #, so we can pull any
-	//  data purely predicted on the client side and transfer it to the new from data state.
-	virtual void	PreEntityPacketReceived( int commands_acknowledged, int current_world_update_packet ) = 0;
-	virtual void	PostEntityPacketReceived( void ) = 0;
-	virtual void	PostNetworkDataReceived( int commands_acknowledged ) = 0;
+	virtual void unk021( CPlayerSlot nSlot, Vector &vecOrigin ) = 0;
+	virtual void unk022( CPlayerSlot nSlot, QAngle &angRotation ) = 0;
 
-	virtual void	OnReceivedUncompressedPacket( void ) = 0;
+	virtual void GetViewAngles( CPlayerSlot nSlot, QAngle &ang ) = 0;
+	virtual void SetViewAngles( CPlayerSlot nSlot, const QAngle &ang ) = 0;
+	virtual void SetLocalViewAngles( CSplitScreenSlot nSlot, const QAngle &ang ) = 0;
 
-	// The engine needs to be able to access a few predicted values
-	virtual void	GetViewOrigin( Vector& org ) = 0;
-	virtual void	SetViewOrigin( Vector& org ) = 0;
-	virtual void	GetViewAngles( QAngle& ang ) = 0;
-	virtual void	SetViewAngles( QAngle& ang ) = 0;
-	virtual void	GetLocalViewAngles( QAngle& ang ) = 0;
-	virtual void	SetLocalViewAngles( QAngle& ang ) = 0;
+	// Convar-backed gate for the engine's prediction reason spew
+	virtual bool unk026() = 0;
+	// True when a prediction slot with this id is tracked
+	virtual bool unk027( int nSlot ) = 0;
+	// True while TrueView is active
+	virtual bool unk028() = 0;
+	// True when the last TrueView offset could not be determined
+	virtual bool unk029() = 0;
+	virtual int unk030() = 0;
+	virtual void unk031() = 0;
 };
 
-extern IPrediction *g_pClientSidePrediction;
-
-#define VCLIENT_PREDICTION_INTERFACE_VERSION	"VClientPrediction001"
-
 #endif // IPREDICTION_H
-
