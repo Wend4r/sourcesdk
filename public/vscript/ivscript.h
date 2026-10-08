@@ -100,6 +100,7 @@
 #include "datamap.h"
 #include "appframework/iappsystem.h"
 #include "tier1/functors.h"
+#include "schemasystem/schemametatag.h"
 #include "tier0/memdbgon.h"
 
 #if defined( _WIN32 )
@@ -1293,6 +1294,8 @@ public:
 #define DEFINE_SCRIPT_PROXY_14V( FuncName ) DEFINE_SCRIPT_PROXY_GUTS_NO_RETVAL( FuncName, 14 )
 
 //-----------------------------------------------------------------------------
+
+DECLARE_SCHEMA_META_TAG( MScriptDescription, META_TAG_ON_FIELD, META_VALUE( const char * ) );
 
 #include "tier0/memdbgoff.h"
 

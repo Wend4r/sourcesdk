@@ -331,13 +331,18 @@ struct SchemaMetadataEntryData_t
 struct SchemaClassFieldData_t
 {
 	const char* m_pszName;
-	
+
+	// Before registration: 0xF top nibble with an index into the registered schema types, or null until SCHEMA_CLASS_MANIPULATOR_ACTION_REGISTER fills it in
 	CSchemaType* m_pType;
-	
+
 	int m_nSingleInheritanceOffset;
-	
+
 	int m_nStaticMetadataCount;
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
+};
+
+class CSchemaClassField : public SchemaClassFieldData_t
+{
 };
 
 struct SchemaStaticFieldData_t
@@ -350,6 +355,10 @@ struct SchemaStaticFieldData_t
 	
 	int m_nStaticMetadataCount;
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
+};
+
+class CSchemaStaticField : public SchemaStaticFieldData_t
+{
 };
 
 struct SchemaBaseClassInfoData_t
@@ -419,8 +428,13 @@ public:
 			for ( int i = 0; i < pClass->m_nFieldCount; ++i )
 			{
 				const auto &field = pClass->m_pFields[ i ];
-				if ( !V_strcmp( field.m_pszName, pszField ) )
-					return static_cast< CSchemaType_Atomic_CollectionOfT * >( field.m_pType )->m_pfnManipulator;
+				if ( V_strcmp( field.m_pszName, pszField ) )
+					continue;
+
+				if ( !field.m_pType->IsA< CSchemaType_Atomic_CollectionOfT >() )
+					return nullptr;
+
+				return static_cast< CSchemaType_Atomic_CollectionOfT * >( field.m_pType )->m_pfnManipulator;
 			}
 		}
 
@@ -437,6 +451,11 @@ struct SchemaEnumeratorInfoData_t
 	int m_nStaticMetadataCount;
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
 };
+
+class CSchemaEnumeratorInfo : public SchemaEnumeratorInfoData_t
+{
+};
+
 
 struct SchemaEnumInfoData_t
 {

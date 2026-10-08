@@ -99,6 +99,7 @@ struct KV3Transfer_EnumHelpers_StringPairList_t
 // The second argument of KV3TransferAllocateClassInstance is unidentified; the game passes null for it.
 //-----------------------------------------------------------------------------
 #define CLASS_USES_KV3TRANSFER_DATA( classname ) \
+	META_USE_CODEGEN_TAG( MEmitKV3Transfer ); \
 	enum { KV3TRANSFER_BEHAVIOR = KV3TRANSFER_CLASS_AS_SIMPLE_TABLE }; \
 	enum { KV3TRANSFER_IS_VIRTUAL = 0 }; \
 	static classname *KV3TransferAllocateClassInstance( const char *pDerivedClassName, void *pUnk ); \
@@ -109,6 +110,7 @@ struct KV3Transfer_EnumHelpers_StringPairList_t
 
 // The polymorphic variant: KV3TransferSave and KV3TransferLoad take their vtable slots where the macro is used.
 #define CLASS_USES_KV3TRANSFER_VIRTUAL( classname ) \
+	META_USE_CODEGEN_TAG( MEmitKV3Transfer ); \
 	enum { KV3TRANSFER_BEHAVIOR = KV3TRANSFER_CLASS_AS_POLYMORPHIC_TABLE }; \
 	enum { KV3TRANSFER_IS_VIRTUAL = 1 }; \
 	static void KV3TransferPolymorphicClassname( const classname *pObject, CBufferString &sOutClassName ); \

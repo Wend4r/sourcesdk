@@ -8,9 +8,11 @@
 //--------------------------------------------------------------------------------------------------
 // Transfers a class through a description of its fields instead of generated KV3TransferSave_<classname>
 // and KV3TransferLoad_<classname> bodies. The description does not depend on the schema system: whoever
-// owns the schema bindings fills it from the class, field and enum infos.
+// owns the schema bindings fills it from the class, field and enum infos. The KV3 transfer schema tags
+// are at the end
 //--------------------------------------------------------------------------------------------------
 #include "kv3lib/kv3transfer.h"
+#include "schemasystem/schemametatag.h"
 #include "tier0/threadtools.h"
 
 #include <type_traits>
@@ -333,5 +335,169 @@ void KV3Transfer_LoadSchemaClassOwningPointer( CKV3TransferLoadContext *pContext
 	void classname::KV3TransferLoad( CKV3TransferLoadContext *pContext ) { KV3TransferLoad_##classname( pContext ); } \
 	void classname::KV3TransferSave_##classname( CKV3TransferSaveContext *pContext ) const { KV3Transfer_SaveSchemaClassFields( pContext, ( pSchemaClass ), this ); } \
 	void classname::KV3TransferLoad_##classname( CKV3TransferLoadContext *pContext ) { KV3Transfer_LoadSchemaClassFields( pContext, ( pSchemaClass ), this ); }
+
+
+//--------------------------------------------------------------------------------------------------
+// Runtime metadata
+//--------------------------------------------------------------------------------------------------
+
+// Getter of the keys a default constructed instance saves to
+DECLARE_SCHEMA_META_TAG( MGetKV3ClassDefaults, META_TAG_ON_CLASS, META_VALUE( CKV3TransferSchemaClass::GetDefaultKeysFn_t ) );
+
+// Name of the function returning the field IKV3TransferSaveRestoreOps, e.g. "GetEngineTimeSaveRestoreOps";
+// the function itself is not reachable from it
+DECLARE_SCHEMA_META_TAG( MKV3TransferSaveOpsForField, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+
+// Atomic transfers as a string, or as a key/value table
+DECLARE_SCHEMA_META_TAG( MAtomicTransfersAsPlainString, META_TAG_ON_ATOMIC, META_TAG_ONLY() );
+DECLARE_SCHEMA_META_TAG( MAtomicTransfersAsMap, META_TAG_ON_ATOMIC, META_TAG_ONLY() );
+
+// Default of a missing member, parsed by CKV3TransferValHelper< T >::LoadDefault
+DECLARE_SCHEMA_META_TAG( MDefaultString, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+
+
+//--------------------------------------------------------------------------------------------------
+// Schema compiler only
+//--------------------------------------------------------------------------------------------------
+DECLARE_SCHEMA_META_TAG( MEmitKV3TransferIgnoreMultipleInheritance, META_TAG_ON_CLASS, META_TAG_ONLY() );
+DECLARE_SCHEMA_META_TAG( MEmitKV3DontClearMissingFields, META_TAG_ON_CLASS, META_TAG_ONLY() );
+
+//--------------------------------------------------------------------------------------------------
+// Custom Save/Load functions
+// Eg.
+//	META( MEmitKV3TransferCustomSaveFn="SaveFn"; MEmitKV3TransferCustomLoadFn="LoadFn" );
+// Where your class has methods:
+//	void SaveFn( CKV3TransferSaveContext *pContext, const CKV3MemberName &name, const T &value )
+//	void LoadFn( CKV3TransferLoadContext *pContext, const CKV3MemberName &name, T &value )
+//--------------------------------------------------------------------------------------------------
+DECLARE_SCHEMA_META_TAG( MEmitKV3TransferCustomSaveFn, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MEmitKV3TransferCustomLoadFn, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+
+// Alternate name to use for the KV3 member instead of the C++ field name
+DECLARE_SCHEMA_META_TAG( MKV3TransferName, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+
+// Signature is: void Transfer[Pre|Post]SaveFn( CKV3TransferSaveContext *pContext )
+// Signature is: void Transfer[Pre|Post]LoadFn( CKV3TransferLoadContext *pContext )
+// TYPEMETA( MEmitKV3TransferPreLoadFn = "MyFunc" );
+DECLARE_SCHEMA_META_TAG( MEmitKV3TransferPreLoadFn, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MEmitKV3TransferPostLoadFn, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MEmitKV3TransferPreSaveFn, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MEmitKV3TransferPostSaveFn, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+
+//--------------------------------------------------------------------------------------------------
+// Bodies of CLASS_USES_KV3TRANSFER_DATA and CLASS_USES_KV3TRANSFER_VIRTUAL: base class first, then fields
+//--------------------------------------------------------------------------------------------------
+DECLARE_SCHEMA_CODEGEN_TAG( MEmitKV3Transfer, META_TAG_ON_FIELD,
+(
+	// Multiple inheritance is not supported (could implement pointer tracking but it's a pain)
+	if ( class_has_multiple_bases() && !class_has_meta( MEmitKV3TransferIgnoreMultipleInheritance ) )
+	{
+		emit( "" )
+		emit( "#error Cannot emit KV3Transfer function for class '$class_name$' because it uses multiple inheritance. Mark the class with MEmitKV3TransferIgnoreMultipleInheritance to treat it as single-inheritance" )
+		for_each_base
+		{
+			emit( "// Multiply inherited base class: $loop_value$" )
+		}
+		emit( "" )
+	}
+
+	// Emit Save Function
+	emit( "void $class_name$::KV3TransferSave( CKV3TransferSaveContext *pContext ) const" )
+	emit( "{" )
+	emit( "	KV3TransferSave_$class_name$( pContext );" )
+	emit( "}" )
+	emit( "" )
+	emit( "void $class_name$::KV3TransferSave_$class_name$( CKV3TransferSaveContext *pContext ) const" )
+	emit( "{" )
+	if ( class_has_meta( MEmitKV3TransferPreSaveFn ) )
+	{
+		emit( "	$@remove_quotes(class_tag_value.MEmitKV3TransferPreSaveFn)$( pContext ); // MEmitKV3TransferPreSaveFn" )
+	}
+
+	if ( class_has_bases() )
+	{
+		emit( "// !!! NOTE: if you're getting a compiler error here you probably forgot your CLASS_USES_KV3TRANSFER macro in your base class!" )
+		emit( "	KV3TransferSave_$baseclass_name$( pContext ); // chain to base" )
+		emit( "" )
+	}
+
+	for_all_fields
+	{
+		if ( item_has_meta( MEmitKV3TransferCustomSaveFn ) )
+		{
+			emit( "	$@remove_quotes(tag_value.MEmitKV3TransferCustomSaveFn)$( pContext, CKV3MemberName( $item_quoted_name$, StringTokenFromHashCode($@as_string_token_hash(item_name)$) ), $item_name$ ); // MEmitKV3TransferCustomSave" )
+		}
+		else if ( item_has_meta( MKV3TransferName ) )
+		{
+			emit( "	pContext->SaveValueToMember( CKV3MemberName( $tag_value.MKV3TransferName$, StringTokenFromHashCode( $@as_string_token_hash( @remove_quotes( tag_value.MKV3TransferName ) )$ ) ), $item_name$ ); // MKV3TransferName" )
+		}
+		else
+		{
+			emit( "	pContext->SaveValueToMember( CKV3MemberName( $item_quoted_name$, StringTokenFromHashCode($@as_string_token_hash(item_name)$) ), $item_name$ );" )
+		}
+	}
+
+	if ( class_has_meta( MEmitKV3TransferPostSaveFn ) )
+	{
+		emit( "	$@remove_quotes(class_tag_value.MEmitKV3TransferPostSaveFn)$( pContext ); // MEmitKV3TransferPostSaveFn" )
+	}
+	emit( "}" )
+	emit( "" )
+
+	// Emit Load Function
+	emit( "void $class_name$::KV3TransferLoad( CKV3TransferLoadContext *pContext )" )
+	emit( "{" )
+	emit( "	KV3TransferLoad_$class_name$( pContext );" )
+	emit( "}" )
+	emit( "" )
+	emit( "void $class_name$::KV3TransferLoad_$class_name$( CKV3TransferLoadContext *pContext )" )
+	emit( "{" )
+	if ( class_has_meta( MEmitKV3TransferPreLoadFn ) )
+	{
+		emit( "	$@remove_quotes(class_tag_value.MEmitKV3TransferPreLoadFn)$( pContext ); // MEmitKV3TransferPreLoadFn" )
+	}
+
+	if ( class_has_bases() )
+	{
+		emit( "// !!! NOTE: if you're getting a compiler error here you probably forgot your CLASS_USES_KV3TRANSFER macro in your base class!" )
+		emit( "	KV3TransferLoad_$baseclass_name$( pContext ); // chain to base" )
+		emit( "" )
+	}
+
+	for_all_fields
+	{
+		if ( item_has_meta( MEmitKV3TransferCustomLoadFn ) )
+		{
+			emit( "	$@remove_quotes(tag_value.MEmitKV3TransferCustomLoadFn)$( pContext, CKV3MemberName( $item_quoted_name$, StringTokenFromHashCode($@as_string_token_hash(item_name)$) ), $item_name$ ); // MEmitKV3TransferCustomLoad" )
+		}
+		else if ( item_has_meta( MKV3TransferName ) )
+		{
+			emit( "	pContext->LoadValueFromMember( CKV3MemberName( $tag_value.MKV3TransferName$, StringTokenFromHashCode( $@as_string_token_hash( @remove_quotes( tag_value.MKV3TransferName ) )$ ) ), $item_name$ ); // MKV3TransferName" )
+		}
+		else if ( class_has_meta( MEmitKV3DontClearMissingFields ) )
+		{
+			emit( "	pContext->LoadValueFromMemberIfPresent( CKV3MemberName( $item_quoted_name$, StringTokenFromHashCode($@as_string_token_hash(item_name)$) ), $item_name$ ); // MEmitKV3DontClearMissingFields" )
+		}
+		else if ( item_has_meta( MDefaultString ) )
+		{
+			emit( "	pContext->LoadValueFromMemberOrDefault( CKV3MemberName( $item_quoted_name$, StringTokenFromHashCode($@as_string_token_hash(item_name)$) ), $item_name$, $tag_value.MDefaultString$ );" )
+		}
+		else
+		{
+			emit( "	pContext->LoadValueFromMember( CKV3MemberName( $item_quoted_name$, StringTokenFromHashCode($@as_string_token_hash(item_name)$) ), $item_name$ );" )
+		}
+	}
+
+	if ( class_has_meta( MEmitKV3TransferPostLoadFn ) )
+	{
+		emit( "	$@remove_quotes(class_tag_value.MEmitKV3TransferPostLoadFn)$( pContext ); // MEmitKV3TransferPostLoadFn" )
+	}
+
+	emit( "}" )
+	emit( "" )
+
+	// Ensure that we didn't make a nonvirtual KV3Transfer on a virtual class
+	emit( "COMPILE_TIME_ASSERT( SCHEMA_TYPE_TRAITS_is_polymorphic( $class_name$ ) == $class_name$::KV3TRANSFER_IS_VIRTUAL );" )
+) );
 
 #endif // KV3TRANSFER_SCHEMA_H

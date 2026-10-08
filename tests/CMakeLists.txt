@@ -173,3 +173,4 @@ sourcesdk_setup_test_target(keyvalues3_tests)
 
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer.cpp)
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer_schema.cpp)
+sourcesdk_add_cpp_test("" keyvalues3_main.cpp schemametatag.cpp)

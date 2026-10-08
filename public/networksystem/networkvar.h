@@ -10,6 +10,7 @@
 #include "entity2/entitynetwork.h"
 
 #include "fieldpath.h"
+#include "schemasystem/schemametatag.h"
 
 enum NetworkResolveFlags_t : uint8
 {
@@ -670,5 +671,43 @@ public:
 
 	uint8 m_nResolveFlags;
 };
+
+struct SchemaNetworkVarName_t
+{
+	const char *m_pszName;
+	const char *m_pszType;
+};
+
+DECLARE_SCHEMA_META_TAG( MNetworkVarNames, META_TAG_ON_CLASS, META_VALUE( SchemaNetworkVarName_t ) );
+DECLARE_SCHEMA_META_TAG( MNetworkOverride, META_TAG_ON_CLASS, META_VALUE( SchemaNetworkVarName_t ) );
+DECLARE_SCHEMA_META_TAG( MNetworkVarTypeOverride, META_TAG_ON_CLASS, META_VALUE( SchemaNetworkVarName_t ) );
+
+DECLARE_SCHEMA_META_TAG( MNetworkExcludeByName, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkExcludeByUserGroup, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkIncludeByName, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkIncludeByUserGroup, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkUserGroupProxy, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkReplayCompatField, META_TAG_ON_CLASS, META_VALUE( const char * ) );
+
+DECLARE_SCHEMA_META_TAG( MNetworkAlias, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkChangeCallback, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkEncoder, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkSerializer, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkTypeAlias, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+DECLARE_SCHEMA_META_TAG( MNetworkUserGroup, META_TAG_ON_FIELD, META_VALUE( const char * ) );
+
+DECLARE_SCHEMA_META_TAG( MNetworkBitCount, META_TAG_ON_FIELD, META_VALUE( int ) );
+DECLARE_SCHEMA_META_TAG( MNetworkEncodeFlags, META_TAG_ON_FIELD, META_VALUE( int ) );
+DECLARE_SCHEMA_META_TAG( MNetworkPriority, META_TAG_ON_FIELD, META_VALUE( int ) );
+DECLARE_SCHEMA_META_TAG( MNetworkVarEmbeddedFieldOffsetDelta, META_TAG_ON_FIELD, META_VALUE( int ) );
+
+DECLARE_SCHEMA_META_TAG( MNetworkMinValue, META_TAG_ON_FIELD, META_VALUE( float ) );
+DECLARE_SCHEMA_META_TAG( MNetworkMaxValue, META_TAG_ON_FIELD, META_VALUE( float ) );
+
+// The chain entity field of a network var chainer, e.g. __m_pChainEntity
+DECLARE_SCHEMA_META_TAG( MNetworkVarChainer, META_TAG_ON_FIELD, META_TAG_ONLY() );
+
+// The field path index of a change accessor, e.g. m_PathIndex
+DECLARE_SCHEMA_META_TAG( MNetworkChangeAccessorFieldPathIndex, META_TAG_ON_FIELD, META_TAG_ONLY() );
 
 #endif // NETWORKSYSTEM_NETWORKVAR_H

@@ -27,6 +27,7 @@
 #define schema_pragma( ... )
 #define META( ... )
 #define TYPEMETA( ... )
+#define META_USE_CODEGEN_TAG( ... )
 
 
 #ifdef COMPILING_SCHEMA

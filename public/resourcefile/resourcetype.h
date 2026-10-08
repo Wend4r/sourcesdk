@@ -10,10 +10,14 @@
 #include <tier0/bufferstring.h>
 #include <tier1/utlsymbollarge.h>
 #include <tier1/generichash.h>
+#include <schemasystem/schemametatag.h>
 
 #include <initializer_list>
 
 typedef uint64 ResourceType_t;
+
+// Resource type of the info class, the packed file extension, e.g. 'vmap'
+DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );
 
 enum ResourceStatus_t
 {
