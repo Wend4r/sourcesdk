@@ -1,6 +1,7 @@
 [submodule "Protocol Buffers"]
 	path = thirdparty/protobuf
-	url = https://github.com/protocolbuffers/protobuf.git
+	url = https://github.com/Wend4r/protobuf.git
+	branch = 3.21.8-src
 [submodule "Game Protobufs"]
 	path = thirdparty/game_protobufs
 	url = https://github.com/SteamDatabase/Protobufs.git

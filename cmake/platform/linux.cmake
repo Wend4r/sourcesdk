@@ -6,7 +6,7 @@ set(PLATFORM_COMPILE_OPTIONS
 	-Wno-attributes -Wno-ignored-attributes
 	-Wno-conversion -Wno-overloaded-virtual
 	-Wno-delete-non-virtual-dtor -Wno-non-virtual-dtor
-	-Wno-invalid-offsetof -Wno-invalid-noreturn
+	-Wno-invalid-offsetof
 	-Wno-sign-compare
 	-Wno-unused -Wno-register
 
@@ -15,6 +15,15 @@ set(PLATFORM_COMPILE_OPTIONS
 
 	-fno-strict-aliasing -fno-threadsafe-statics
 )
+
+# GCC has no switch for it
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+	set(PLATFORM_COMPILE_OPTIONS
+		${PLATFORM_COMPILE_OPTIONS}
+
+		-Wno-invalid-noreturn
+	)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set(PLATFORM_COMPILE_OPTIONS
