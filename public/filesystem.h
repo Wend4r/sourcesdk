@@ -34,6 +34,7 @@
 class CUtlBuffer;
 class KeyValues;
 class IFileList;
+class IMemoryMappedFile;
 
 struct SearchPathStateHandle_t;
 typedef void * FileHandle_t;
@@ -447,14 +448,9 @@ public:
 
 
 //-----------------------------------------------------------------------------
-// Base file system interface
+// Main file system interface
 //-----------------------------------------------------------------------------
-
-// This is the minimal interface that can be implemented to provide access to
-// a named set of files.
-#define BASEFILESYSTEM_INTERFACE_VERSION		"VBaseFileSystem011"
-
-abstract_class IBaseFileSystem : public IAppSystem
+abstract_class IFileSystem : public IAppSystem
 {
 public:
 	virtual int				Read( void* pOutput, int size, FileHandle_t file ) = 0;
@@ -465,10 +461,10 @@ public:
 	virtual void			Close( FileHandle_t file ) = 0;
 
 
-	virtual void			Seek( FileHandle_t file, int pos, FileSystemSeek_t seekType ) = 0;
-	virtual unsigned int	Tell( FileHandle_t file ) = 0;
-	virtual unsigned int	Size( FileHandle_t file ) = 0;
-	virtual unsigned int	Size( const char *pFileName, const char *pPathID = 0 ) = 0;
+	virtual void			Seek( FileHandle_t file, int64 pos, FileSystemSeek_t seekType ) = 0;
+	virtual int64			Tell( FileHandle_t file ) = 0;
+	virtual int64			Size( FileHandle_t file ) = 0;
+	virtual int64			Size( const char *pFileName, const char *pPathID = 0 ) = 0;
 
 	virtual void			Flush( FileHandle_t file ) = 0;
 	virtual bool			Precache( const char *pFileName, const char *pPathID = 0 ) = 0;
@@ -477,7 +473,7 @@ public:
 	virtual bool			IsFileWritable( char const *pFileName, const char *pPathID = 0 ) = 0;
 	virtual bool			SetFileWritable( char const *pFileName, bool writable, const char *pPathID = 0 ) = 0;
 
-	virtual long			GetFileTime( const char *pFileName, const char *pPathID = 0 ) = 0;
+	virtual int64			GetFileTime( const char *pFileName, const char *pPathID = 0 ) = 0;
 
 	//--------------------------------------------------------
 	// Reads/writes files to utlbuffers. Use this for optimal read performance when doing open/read/close
@@ -486,16 +482,9 @@ public:
 	virtual bool			WriteFile( const char *pFileName, const char *pPath, CUtlBuffer &buf ) = 0;
 	virtual bool			UnzipFile( const char *pFileName, const char *pPath, const char *pDestination ) = 0;
 	virtual bool			CopyAFile(const char *pFileName, const char *pPathID, const char *pDestination, bool bDontOverwrite = false) = 0;
-};
 
-//-----------------------------------------------------------------------------
-// Main file system interface
-//-----------------------------------------------------------------------------
-abstract_class IFileSystem : public IBaseFileSystem
-{
-public:
-	virtual void			unk001( FileHandle_t, bool ) = 0;
-	virtual void			unk001( const char *pFileName, void *pPathID, bool ) = 0;
+	virtual IMemoryMappedFile	*MemoryMapFile( FileHandle_t file, uint32 nFlags ) = 0;
+	virtual IMemoryMappedFile	*MemoryMapFile( const char *pFileName, const char *pPathID, uint32 nFlags ) = 0;
 
 	//--------------------------------------------------------
 	// Search path manipulation
@@ -508,7 +497,7 @@ public:
 	//  override is cleared and the current .bsp is searched for an embedded PAK file
 	//  and this file becomes the highest priority search path ( i.e., it's looked at first
 	//   even before the mod's file system path ).
-	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL, SearchPathPriority_t priority = SEARCH_PATH_PRIORITY_DEFAULT, int unknown = 0 ) = 0;
+	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL, SearchPathPriority_t priority = SEARCH_PATH_PRIORITY_DEFAULT, int nGroup = 0 ) = 0;
 	virtual bool			RemoveSearchPath( const char *pPath, const char *pathID = 0 ) = 0;
 	
 	virtual SearchPathStateHandle_t		*SaveSearchPathState( const char *pszName ) const = 0;
@@ -527,8 +516,8 @@ public:
 	// remember it in case you add search paths with this path ID.
 	virtual void			MarkPathIDByRequestOnly( const char *pPathID, bool bRequestOnly ) = 0;
 	
-	virtual bool			IsFileInReadOnlySearchPath( const char *pPathID, const char *pFileName ) = 0;
-	virtual void			SetSearchPathReadOnly( const char *pPathID, const char *, bool bReadOnly ) = 0;
+	virtual bool			IsFileInReadOnlySearchPath( const char *pFileName, const char *pPathID ) = 0;
+	virtual void			SetSearchPathReadOnly( const char *pPath, const char *pPathID, bool bReadOnly ) = 0;
 
 	// converts a partial path into a full path
 	virtual const char		*RelativePathToFullPath( const char *pFileName, const char *pPathID, CBufferString &pLocalPath, PathTypeFilter_t pathFilter = FILTER_NONE, PathTypeQuery_t *pPathType = NULL ) = 0;
@@ -538,29 +527,28 @@ public:
 	// Returns the search path, each path is separated by ;s. Returns the length of the string returned
 	virtual bool			GetSearchPath( const char *pathID, GetSearchPathTypes_t pathType, CBufferString &pPath, int nSearchPathsToGet ) = 0;
 	
-	// interface for custom pack files > 4Gb
-	virtual bool			AddPackFile( const char *fullpath, const char *pathID ) = 0;
+	virtual void			Unk_GetSearchPathGroup( void *p ) = 0;
 
-	virtual void unk002( int, CBufferString & ) = 0;
+	virtual void			GetPathIDsForSearchPathGroup( int nGroup, CBufferString &pathIDs ) = 0;
 
 	//--------------------------------------------------------
 	// File manipulation operations
 	//--------------------------------------------------------
 
 	// Deletes a file (on the WritePath)
-	virtual void			RemoveFile( char const* pRelativePath, const char *pathID = 0 ) = 0;
+	virtual bool			RemoveFile( char const* pRelativePath, const char *pathID = 0 ) = 0;
 
 	// Renames a file (on the WritePath)
 	virtual bool			RenameFile( char const *pOldPath, char const *pNewPath, const char *pathID = 0 ) = 0;
 
 	// create a local directory structure
-	virtual void			CreateDirHierarchy( const char *path, const char *pathID = 0 ) = 0;
-	virtual void			CreateDirHierarchyForFile( const char *pFileName, const char *pathID ) = 0;
+	virtual bool			CreateDirHierarchy( const char *path, const char *pathID = 0 ) = 0;
+	virtual bool			CreateDirHierarchyForFile( const char *pFileName, const char *pathID ) = 0;
 
 	// File I/O and info
 	virtual bool			IsDirectory( const char *pFileName, const char *pathID = 0 ) = 0;
 
-	virtual void			FileTimeToString( char* pStrip, int maxCharsIncludingTerminator, long fileTime ) = 0;
+	virtual void			FileTimeToString( int64 fileTime, CBufferString &buf ) = 0;
 
 	//--------------------------------------------------------
 	// Open file operations
@@ -580,7 +568,7 @@ public:
 	//--------------------------------------------------------
 
 	// load/unload modules
-	virtual CSysModule 		*LoadModule( const char *pFileName, const char *pPathID = 0, bool bValidatedDllOnly = true ) = 0;
+	virtual CSysModule 		*LoadModule( const char *pFileName, const char *pPathID = 0 ) = 0;
 	virtual void			UnloadModule( CSysModule *pModule ) = 0;
 
 	//--------------------------------------------------------
@@ -589,9 +577,9 @@ public:
 
 	// FindFirst/FindNext. Also see FindFirstEx.
 	virtual const char		*FindFirst( const char *pWildCard, FileFindHandle_t *pHandle ) = 0;
-	virtual const char		*FindNext( FileFindHandle_t handle ) = 0;
-	virtual bool			FindIsDirectory( FileFindHandle_t handle ) = 0;
-	virtual void			FindClose( FileFindHandle_t handle ) = 0;
+	virtual const char		*FindNext( const FileFindHandle_t &handle ) = 0;
+	virtual bool			FindIsDirectory( const FileFindHandle_t &handle ) = 0;
+	virtual void			FindClose( FileFindHandle_t &handle ) = 0;
 
 	// Same as FindFirst, but you can filter by path ID, which can make it faster.
 	virtual const char		*FindFirstEx( 
@@ -612,10 +600,9 @@ public:
 
 	// Returns true on success ( based on current list of search paths, otherwise false if 
 	//  it can't be resolved )
-	virtual bool			FullPathToRelativePath( const char *pFullpath, char *pRelative, int maxlen ) = 0;
+	virtual bool			FullPathToRelativePath( const char *pFullpath, const char *pPathID, CBufferString &relative ) = 0;
 
-	// Gets the current working directory
-	virtual bool			GetCurrentDirectory( char* pDirectory, int maxlen ) = 0;
+	virtual bool			GetCurrentDirectory( CBufferString &directory ) = 0;
 
 	//--------------------------------------------------------
 	// Filename dictionary operations
@@ -639,20 +626,13 @@ public:
 	// Start of new functions after Lost Coast release (7/05)
 	//--------------------------------------------------------
 
-	virtual FileHandle_t	OpenEx( const char *pFileName, const char *pOptions, unsigned flags = 0, const char *pathID = 0, char **ppszResolvedFilename = NULL ) = 0;
+	virtual FileHandle_t	OpenEx( const char *pFileName, const char *pOptions, unsigned flags = 0, const char *pathID = 0 ) = 0;
 
 	// Extended version of read provides more context to allow for more optimal reading
 	virtual int				ReadEx( void* pOutput, int sizeDest, int size, FileHandle_t file ) = 0;
 	virtual int				ReadFileEx( const char *pFileName, const char *pPath, void **ppBuf, bool bNullTerminate = false, bool bOptimalAlloc = false, int nMaxBytes = 0, int nStartingByte = 0, FSAllocFunc_t pfnAlloc = NULL ) = 0;
 
 	virtual FileNameHandle_t	FindFileName( char const *pFileName ) = 0;
-
-#if defined( TRACK_BLOCKING_IO )
-	virtual void			EnableBlockingFileAccessTracking( bool state ) = 0;
-	virtual bool			IsBlockingFileAccessEnabled() const = 0;
-
-	virtual IBlockingFileItemList *RetrieveBlockingFileAccessInfo() = 0;
-#endif
 
 	// Fixme, we could do these via a string embedded into the compiled data, etc...
 	enum KeyValuesPreloadType_t
@@ -668,7 +648,7 @@ public:
 	virtual KeyValues	*LoadKeyValues( KeyValuesPreloadType_t type, char const *filename, char const *pPathID = 0 ) = 0;
 	virtual bool		LoadKeyValues( KeyValues& head, KeyValuesPreloadType_t type, char const *filename, char const *pPathID = 0 ) = 0;
 
-	virtual bool			GetFileTypeForFullPath( char const *pFullPath, wchar_t *buf, size_t bufSizeInBytes ) = 0;
+	virtual bool			GetFileTypeForFullPath( char const *pFullPath, CBufferString &buf ) = 0;
 
 	//--------------------------------------------------------
 	//--------------------------------------------------------
@@ -686,12 +666,12 @@ public:
 	//
 	//--------------------------------------------------------
 	virtual int			GetPathIndex( const FileNameHandle_t &handle ) = 0;
-	virtual long		GetPathTime( const char *pPath, const char *pPathID ) = 0;
+	virtual int64		GetPathTime( const char *pPath, const char *pPathID ) = 0;
 
 	virtual void		GetSearchPathID( CBufferString &inout ) = 0;
 
 	// File path is "ugc:<UGCHandle_t value>"
-	virtual void AddUGCVPKFile( const char *pszName, const char *pPathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
+	virtual bool AddUGCVPKFile( const char *pszName, const char *pPathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
 	virtual void RemoveUGCVPKFile( const char *pszName ) = 0;
 	virtual bool IsUGCVPKFileLoaded( const char *pszName ) = 0;
 
@@ -699,7 +679,8 @@ public:
 	virtual bool GetAutoVPKFileLoading( void ) = 0;
 	virtual bool ValidateLoadedVPKs( void ) = 0;
 
-	virtual void LoadUGC( UGCHandle_t ugcId, const char *pFilename, const char *pPathID ) = 0;
+	// Adds the "ugc:<ugcId>" search path under pPathID.
+	virtual bool LoadUGC( UGCHandle_t ugcId, const char *pPathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
 	virtual void UnloadUGC( UGCHandle_t ugcId, const char *pPathID ) = 0;
 	virtual bool IsUGCLoaded( UGCHandle_t ugcId ) const = 0;
 
@@ -723,7 +704,19 @@ public:
 
 	virtual void			GetSearchPathsForPathID( const char*, GetSearchPathTypes_t, CUtlVector<CUtlString> & ) = 0;
 
-	virtual void			MarkContentCorrupt( bool bMissingFilesOnly, const char* pFile ) = 0;
+	virtual bool			MarkContentCorrupt( bool bMissingFilesOnly, const char *pFile, const char *pszReason ) = 0;
+	virtual void			EnableContentCorruptionReporting( bool bEnable ) = 0;
+
+	virtual void			SuppressSearchPathAsyncBarrier( bool bSuppress ) = 0;
+
+	virtual int				WriteOpenedFilesLog( const char *pszHeader, const char *pFileName, const char *pPathID, bool bClearLog ) = 0;
+
+	virtual void			SetVPKSignatureKey( const uint8 *pPublicKey, int nKeySize, void *pSignatureCallback ) = 0;
+
+	// Flags a mounted VPK as an untrusted addon.
+	virtual void			MarkVPKAsUntrustedAddon( const char *pszVPKPath ) = 0;
+
+	virtual bool			IsFileFromUntrustedAddon( const char *pFileName ) = 0;
 };
 
 //-----------------------------------------------------------------------------
