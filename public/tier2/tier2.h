@@ -19,8 +19,7 @@ struct ResourceManifestDesc_t;
 class IRenderDeviceSetup
 {
 public:
-	virtual ~IRenderDeviceSetup() = 0;
-	virtual bool CreateRenderDevice(IRenderDeviceSetup* ) = 0;
+	virtual bool CreateRenderDevice() = 0;
 };
 
 //-----------------------------------------------------------------------------
