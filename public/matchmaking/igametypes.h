@@ -11,6 +11,13 @@
 #pragma once
 #endif
 
+#include "appframework/iappsystem.h"
+#include "tier0/utlstring.h"
+#include "tier0/utlstringlist.h"
+#include "tier1/utlvector.h"
+
+class KeyValues;
+
 namespace ELOGameType
 {
 enum GameType
@@ -66,7 +73,7 @@ public:
 	
 	virtual void SetAndParseExtendedServerInfo( KeyValues *pExtendedServerInfo ) = 0;
 	
-	virtual bool CheckShouldSetDefaultGameModeAndType( const char *mapName ) = 0;
+	virtual void CheckShouldSetDefaultGameModeAndType( const char *mapName ) = 0;
 	
 	virtual int GetCurrentGameType() const = 0;
 	virtual int GetCurrentGameMode() const = 0;
