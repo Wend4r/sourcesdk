@@ -4,3 +4,7 @@
 [submodule "Game Protobufs"]
 	path = thirdparty/game_protobufs
 	url = https://github.com/SteamDatabase/Protobufs.git
+[submodule "Source 2 Resource - Skills"]
+	path = external/skills
+	url = https://github.com/Wend4r/s2r-skills.git
+	branch = main
