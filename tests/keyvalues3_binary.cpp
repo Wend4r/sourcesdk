@@ -11,6 +11,9 @@
 // Kept out of keyvalues3_tests: after these binary loads, a later tier0 LoadKV3 in the same process
 // crashes inside tier0 (see the arena symbol note in KeyValues3.Arena).
 
+// The macOS tier0 is taken from Dota 2, whose binary KV3 loader does not produce typed
+// unsigned arrays, so these expectations only hold for the CS2 tier0.
+#ifndef PLATFORM_OSX
 static void ValidateBinaryTypedMembers( KeyValues3 &kv, KV3TypeEx_t eStringType )
 {
 	CBufferStringN< 128 > sBuffer;
@@ -135,6 +138,7 @@ REGISTER_NAMED_TEST( "KeyValues3.LoadBinary.TypedArraysAndSymbols", KeyValues3_L
 	TEST_NOT_NULL( pLoadedU64->GetArrayElement( 2 ) );
 	TEST_EQ( pLoadedU64->GetArrayElement( 2 )->GetUInt64(), 7ull );
 }
+#endif // !PLATFORM_OSX
 
 // Binary KV3 of { a = [ -3, -2, -1, 1000, 2000, 30000 ], b = [ 10, -20, 300 ] } with int16 typed arrays,
 // which tier0's binary writer only produces from int16 typed arrays.
