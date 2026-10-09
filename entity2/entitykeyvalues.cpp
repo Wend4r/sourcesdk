@@ -18,8 +18,8 @@ CEntityKeyValues::CEntityKeyValues( CKV3Arena* allocator, EntityKVAllocatorType_
 		if ( GameEntitySystem() && m_pAllocator == GameEntitySystem()->GetEntityKeyValuesAllocator() )
 			GameEntitySystem()->AddEntityKeyValuesAllocatorRef();
 
-		m_pValues = m_pAllocator->AllocKV();
-		m_pAttributes = m_pAllocator->AllocKV();
+		m_pValues = m_pAllocator->AllocKV( KV3_TYPEEX_TABLE );
+		m_pAttributes = m_pAllocator->AllocKV( KV3_TYPEEX_TABLE );
 	}
 	else
 	{
@@ -27,6 +27,7 @@ CEntityKeyValues::CEntityKeyValues( CKV3Arena* allocator, EntityKVAllocatorType_
 			m_eAllocatorType = EKV_ALLOCATOR_NORMAL;
 
 		m_pAllocator = NULL;
+		m_pValues = m_pAttributes = NULL;
 	}
 }
 
@@ -67,8 +68,8 @@ void CEntityKeyValues::ValidateAllocator()
 			m_pAllocator = new CKV3Arena( true );
 		}
 
-		m_pValues = m_pAllocator->AllocKV();
-		m_pAttributes = m_pAllocator->AllocKV();
+		m_pValues = m_pAllocator->AllocKV( KV3_TYPEEX_TABLE );
+		m_pAttributes = m_pAllocator->AllocKV( KV3_TYPEEX_TABLE );
 	}
 }
 
@@ -272,8 +273,8 @@ void CEntityKeyValues::RemoveAllKeys()
 		else
 		{
 			m_pAllocator->Clear();
-			m_pValues = m_pAllocator->AllocKV();
-			m_pAttributes = m_pAllocator->AllocKV();
+			m_pValues = m_pAllocator->AllocKV( KV3_TYPEEX_TABLE );
+			m_pAttributes = m_pAllocator->AllocKV( KV3_TYPEEX_TABLE );
 		}
 	}
 }
