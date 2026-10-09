@@ -93,7 +93,7 @@ PLATFORM_INTERFACE bool ReleaseThreadHandle( ThreadHandle_t );
 PLATFORM_OVERLOAD void ThreadAtomicNotifyOne( const uint32 *addr );
 PLATFORM_OVERLOAD void ThreadAtomicNotifyN( const uint32 *addr, uint32 n );
 PLATFORM_OVERLOAD void ThreadAtomicNotifyAll( const uint32 *addr );
-PLATFORM_OVERLOAD void ThreadAtomicWait( volatile uint32 *addr, uint32 ms );
+PLATFORM_OVERLOAD void ThreadAtomicWait( volatile uint32 *addr, uint32 value );
 
 PLATFORM_INTERFACE void ThreadSleep(unsigned duration = 0);
 PLATFORM_INTERFACE void ThreadNanoSleep(unsigned ns);
