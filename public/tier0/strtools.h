@@ -302,8 +302,8 @@ PLATFORM_INTERFACE const char *	_V_strnistr_fast( const char *str, const char *s
 PLATFORM_OVERLOAD const wchar_t *V_wcsistr( const wchar_t *str, const wchar_t *search );
 
 PLATFORM_OVERLOAD int			V_strnlen( const char *str, int n );
+PLATFORM_OVERLOAD int			V_strnlen( const uchar16 *str, int n );
 PLATFORM_OVERLOAD int			V_strnlen( const uchar32 *str, int n );
-PLATFORM_OVERLOAD int			V_strnlen( const wchar_t *str, int n );
 
 PLATFORM_INTERFACE int			_V_strcspn( const char *s1, const char *s2 );
 
