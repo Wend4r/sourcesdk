@@ -719,7 +719,7 @@ inline CUtlVectorBase<T, I, A>::CUtlVectorBase( T* pMemory, I allocationCount, I
 
 template< typename T, typename I, class A >
 inline CUtlVectorBase<T, I, A>::CUtlVectorBase( const CUtlVectorBase<T, I, A> &copyFrom ) : 
-	m_Size(copyFrom.m_Size), m_Memory(copyFrom.m_Memory)
+	m_Size(0)
 {
 	ResetDbgInfo();
 	CopyFrom( copyFrom );
@@ -761,13 +761,18 @@ inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::operator=( CUtlVectorBa
 template< typename T, typename I, class A >
 inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::CopyFrom( const CUtlVectorBase<T, I, A> &copyFrom )
 {
+	if ( this == &copyFrom )
+	{
+		return *this;
+	}
+
 	I nCount = copyFrom.Count();
 
 	SetSize( nCount );
 
 	for ( I i = 0; i < nCount; i++ )
 	{
-		CopyConstruct( &Element( i ), copyFrom[ i ] );
+		Element( i ) = copyFrom[ i ];
 	}
 
 	return *this;
