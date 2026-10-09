@@ -318,14 +318,14 @@ template <size_t cchDest> char *V_strcat_safe( INOUT_Z_ARRAY char (&pDest)[cchDe
 	return _V_strncat( pDest, pSrc, (int)cchDest, nMaxCharsToCopy );
 }
 
-PLATFORM_INTERFACE wchar_t *	V_wcsncat_cch( INOUT_Z_CAP( cchDest ) wchar_t *pDest, const wchar_t *pSrc, int cchDest, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
+PLATFORM_INTERFACE wchar_t *	_V_wcsncat_cch( INOUT_Z_CAP( cchDest ) wchar_t *pDest, const wchar_t *pSrc, int cchDest, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
 inline void V_wcscat( INOUT_Z_CAP(cchDest) wchar_t *dest, const wchar_t *src, int cchDest )
 {
-	V_wcsncat_cch( dest, src, cchDest, COPY_ALL_CHARACTERS );
+	_V_wcsncat_cch( dest, src, cchDest, COPY_ALL_CHARACTERS );
 }
 template <size_t cchDest> wchar_t *V_wcscat_safe( INOUT_Z_ARRAY wchar_t( &pDest )[cchDest], const wchar_t *pSrc, int nMaxCharsToCopy=COPY_ALL_CHARACTERS )
 {
-	return V_wcsncat_cch( pDest, pSrc, cchDest, nMaxCharsToCopy );
+	return _V_wcsncat_cch( pDest, pSrc, cchDest, nMaxCharsToCopy );
 }
 
 // Returns the number of characters printed (not including the NULL), or maxLenInChars if truncation occurs.
