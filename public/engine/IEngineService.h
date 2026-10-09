@@ -124,7 +124,7 @@ public:
 	virtual void		RegisterPrerequisite( IPrerequisite * ) = 0;
 
 	// Forwards to the localize system.
-	virtual LocalizeStringIndex_t LookupLocalizationToken(const char *tokenName) = 0;
+	virtual const char *LookupLocalizationToken( const char *pszTokenName ) = 0;
 
 	// Same methods as IVEngineServer2
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
