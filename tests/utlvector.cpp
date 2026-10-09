@@ -254,3 +254,16 @@ REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDel
 	TEST_EQ( VectorDeleteTracked_t::s_nDeleted, 2 );
 	TEST_EQ( vec.Count(), 0 );
 }
+
+REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElementsNonPointer", CUtlVector_PurgeAndDeleteElementsNonPointer )
+{
+	// Purge-and-delete should only purge elements that are not pointers.
+	CUtlVector< int > vec;
+
+	vec.AddToTail( 1 );
+	vec.AddToTail( 2 );
+
+	vec.PurgeAndDeleteElements();
+
+	TEST_EQ( vec.Count(), 0 );
+}

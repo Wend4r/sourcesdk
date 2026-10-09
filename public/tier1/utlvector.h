@@ -27,6 +27,7 @@
 
 #include <initializer_list>
 #include <iterator>
+#include <type_traits>
 
 #define UTL_INVAL_VECTOR_ELEM ((I)~0)
 
@@ -539,9 +540,12 @@ public:
 	{
 		if ( m_pData != StaticData() )
 		{
-			for( I i=0; i < m_pData->m_Size; i++ )
+			if constexpr ( std::is_pointer_v< T > )
 			{
-				delete Element(i);
+				for( I i=0; i < m_pData->m_Size; i++ )
+				{
+					delete Element(i);
+				}
 			}
 			RemoveAll();
 		}
@@ -1651,9 +1655,12 @@ inline void CUtlVectorBase<T, I, A>::Purge()
 template< typename T, typename I, class A >
 inline void CUtlVectorBase<T, I, A>::PurgeAndDeleteElements()
 {
-	for( I i=0; i < m_Size; i++ )
+	if constexpr ( std::is_pointer_v< T > )
 	{
-		delete Element(i);
+		for( I i=0; i < m_Size; i++ )
+		{
+			delete Element(i);
+		}
 	}
 	Purge();
 }
