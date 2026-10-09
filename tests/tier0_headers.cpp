@@ -5,6 +5,7 @@
 #include <tier0/globalsymbol.h>
 #include <tier0/murmurhash3.h>
 #include <tier0/utlstring.h>
+#include <tier1/random.h>
 #include <tier1/utlhashmaplarge.h>
 
 #include <type_traits>
@@ -85,4 +86,24 @@ REGISTER_NAMED_TEST( "Smoke.Tier0Headers.GlobalSymbol", Smoke_Tier0Headers_Globa
 	CUtlSymbolLarge symbolLarge = symbolCaseSensitive;
 
 	TEST_EQ( V_strcmp( symbolLarge.String(), "Smoke_GlobalSymbol" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "Smoke.Tier0Headers.UniformRandomStream", Smoke_Tier0Headers_UniformRandomStream )
+{
+	// Only the instantiations tier0 exports may be used.
+	CUniformRandomStream stream( 1234 );
+	CUniformRandomStreamImpl< CAtomicMutex > streamAtomic( 1234 );
+
+	for ( int i = 0; i < 16; i++ )
+	{
+		const int nValue = stream.RandomInt( 0, 9 );
+		const float flValue = streamAtomic.RandomFloat( 1.0f, 2.0f );
+
+		TEST_TRUE( nValue >= 0 && nValue <= 9 );
+		TEST_TRUE( flValue >= 1.0f && flValue <= 2.0f );
+	}
+
+	CUniformRandomStream streamA( 42 ), streamB( 42 );
+
+	TEST_EQ( streamA.RandomInt( 0, 1000000 ), streamB.RandomInt( 0, 1000000 ) );
 }

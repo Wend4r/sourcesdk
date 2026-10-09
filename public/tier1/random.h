@@ -36,7 +36,8 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// The uniform generator tier0 actually exports, templated on the locking policy.
+// The uniform generator tier0 actually exports, templated on the locking policy:
+// only the CThreadNullMutex, CAtomicMutex and CThreadNullVerificationMutex instantiations exist.
 //-----------------------------------------------------------------------------
 template < class TMutex >
 class DLL_CLASS_IMPORT CUniformRandomStreamImpl
@@ -68,11 +69,6 @@ private:
 // The standard generator of uniformly distributed random numbers
 //-----------------------------------------------------------------------------
 using CUniformRandomStream = CUniformRandomStreamImpl< CThreadNullMutex >;
-
-//-----------------------------------------------------------------------------
-// A generator of gaussian distributed random numbers
-//-----------------------------------------------------------------------------
-using CGaussianRandomStream = CUniformRandomStreamImpl< CThreadFastMutex >;
 
 //-----------------------------------------------------------------------------
 // A couple of convenience functions to access the library's global uniform stream
