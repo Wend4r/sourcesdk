@@ -275,10 +275,10 @@ public:
 	// Read from a utlbuffer...
 	DLL_CLASS_IMPORT bool LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
 
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
 
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromFile( bool, IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromFile( bool, IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
 
 	// Find a keyValue, create it if it is not found.
 	// Set bCreate to true to create the key if it doesn't already exist (which ensures a valid pointer will be returned)
@@ -369,7 +369,7 @@ public:
 	DLL_CLASS_IMPORT void operator delete( void *pMem );
 	DLL_CLASS_IMPORT void operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine );
 
-	DLL_CLASS_IMPORT KeyValues& operator=( KeyValues& src );
+	DLL_CLASS_IMPORT KeyValues &operator=( const KeyValues &src );
 
 	DLL_CLASS_IMPORT bool IsEqual( KeyValues *pRHS );
 
@@ -385,6 +385,8 @@ public:
 	// Same as the other binary functions, but filter out and remove empty keys (like when seralizing to a file )
 	DLL_CLASS_IMPORT bool WriteAsBinaryFiltered( CUtlBuffer &buffer );
 	DLL_CLASS_IMPORT bool ReadAsBinaryFiltered( CUtlBuffer &buffer, int nStackDepth = 0 );
+
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *ReadTemporaryAsBinary( bool, CUtlBuffer &buffer );
 
 	// Allocate & create a new copy of the keys
 	DLL_CLASS_IMPORT KeyValues *MakeCopy( void ) const;
