@@ -462,10 +462,12 @@ protected:
 	// Checks if a peek get is ok
 	DLL_CLASS_IMPORT bool CheckPeekGet( int nOffset, int nSize );
 
+public:
 	// Call this to peek arbitrarily long into memory. It doesn't fail unless
 	// it can't read *anything* new
 	DLL_CLASS_IMPORT bool CheckArbitraryPeekGet( int nOffset, int &nIncrement );
 
+protected:
 	template <typename T> void GetType( T& dest );
 	template <typename T> void GetTypeBin( T& dest );
 	template <typename T> bool GetTypeText( T &value, int nRadix = 10 );
