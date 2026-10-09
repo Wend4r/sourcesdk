@@ -336,6 +336,7 @@ template < class BASE1, class BASE2, class BASE3, class REFCOUNT_SERVICE = CRefC
 class NO_VTABLE CRefCounted3 : public BASE1, public BASE2, public BASE3,
 							   public REFCOUNT_SERVICE
 {
+public:
 	virtual ~CRefCounted3()	{}
 	int AddRef() 			{ return REFCOUNT_SERVICE::DoAddRef(); }
 	int Release()
