@@ -4,40 +4,37 @@
 #include <tier1/jobthread.h>
 #include <threadedjob.h>
 
-namespace
+struct JobItem_t
 {
-	struct JobItem_t
-	{
-		int m_nValue;
-	};
+	int m_nValue;
+};
 
-	class CTestJob : public CThreadedJobWithDependencies
-	{
-	public:
-		size_t GetUpstreamJobsOffset() const { return GetOffset( &m_UpstreamJobs ); }
-		size_t GetPendingUpstreamJobsOffset() const { return GetOffset( &m_nPendingUpstreamJobs ); }
-		size_t GetDownstreamJobsOffset() const { return GetOffset( &m_DownstreamJobs ); }
+class CTestJob : public CThreadedJobWithDependencies
+{
+public:
+	size_t GetUpstreamJobsOffset() const { return GetOffset( &m_UpstreamJobs ); }
+	size_t GetPendingUpstreamJobsOffset() const { return GetOffset( &m_nPendingUpstreamJobs ); }
+	size_t GetDownstreamJobsOffset() const { return GetOffset( &m_DownstreamJobs ); }
 
-	private:
-		size_t GetOffset( const void *pMember ) const { return ( const char * )pMember - ( const char * )this; }
-	};
+private:
+	size_t GetOffset( const void *pMember ) const { return ( const char * )pMember - ( const char * )this; }
+};
 
-	// Instantiates the templates without running them, as they need a started thread pool.
-	// ParallelForEach, ParallelProcess and CCallQueue are left out: their pointer atomics and
-	// lock-free queue use interlocked helpers that tier0 doesn't export.
-	[[maybe_unused]] void InstantiateJobTemplates( JobItem_t *pItems, unsigned nItems, CUtlVector< CThreadedJobWithDependencies * > &jobs )
-	{
-		CSmartPtr< CThreadedJob, CRefCountAccessor > pLambdaJob = g_pThreadPool->QueueJobWithFlags( "Lambda", JP_HIGH, 0, [ pItems ]() { pItems[ 0 ].m_nValue = 0; } );
-		CSmartPtr< CThreadedJob, CRefCountAccessor > pFunctionJob = g_pThreadPool->QueueJobWithFlags( "Function", JP_HIGH, 0, std::function< void() >( [] {} ) );
+// Instantiates the templates without running them, as they need a started thread pool.
+// ParallelForEach, ParallelProcess and CCallQueue are left out: their pointer atomics and
+// lock-free queue use interlocked helpers that tier0 doesn't export.
+[[maybe_unused]] static void InstantiateJobTemplates( JobItem_t *pItems, unsigned nItems, CUtlVector< CThreadedJobWithDependencies * > &jobs )
+{
+	CSmartPtr< CThreadedJob, CRefCountAccessor > pLambdaJob = g_pThreadPool->QueueJobWithFlags( "Lambda", JP_HIGH, 0, [ pItems ]() { pItems[ 0 ].m_nValue = 0; } );
+	CSmartPtr< CThreadedJob, CRefCountAccessor > pFunctionJob = g_pThreadPool->QueueJobWithFlags( "Function", JP_HIGH, 0, std::function< void() >( [] {} ) );
 
-		ParallelFor( 0, nItems, "ParallelFor", [ pItems ]( int i ) { pItems[ i ].m_nValue++; }, 0, INT_MAX, JP_NORMAL );
+	ParallelFor( 0, nItems, "ParallelFor", [ pItems ]( int i ) { pItems[ i ].m_nValue++; }, 0, INT_MAX, JP_NORMAL );
 
-		Start( jobs );
-		RunSync( jobs );
+	Start( jobs );
+	RunSync( jobs );
 
-		pLambdaJob->Execute();
-		pFunctionJob->TryExecute();
-	}
+	pLambdaJob->Execute();
+	pFunctionJob->TryExecute();
 }
 
 #ifdef PLATFORM_64BITS
