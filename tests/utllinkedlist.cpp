@@ -43,3 +43,48 @@ REGISTER_NAMED_TEST( "CUtlLinkedList.AddRemoveIterate", CUtlLinkedList_AddRemove
 	TEST_EQ( list.Head(), list.InvalidIndex() );
 	TEST_EQ( list.Tail(), list.InvalidIndex() );
 }
+
+REGISTER_NAMED_TEST( "CUtlLinkedList.RangeFor", CUtlLinkedList_RangeFor )
+{
+	// Range-for should walk the list in link order and the iterators should step both ways.
+	CUtlLinkedList< int, int, false, int, CTestLinkedListMemory > list;
+
+	list.AddToTail( 2 );
+	list.AddToHead( 1 );
+	list.AddToTail( 3 );
+
+	int nExpected = 1;
+
+	for ( int &nValue : list )
+	{
+		TEST_EQ( nValue, nExpected );
+		nValue *= 10;
+		++nExpected;
+	}
+
+	TEST_EQ( nExpected, 4 );
+
+	const auto &constList = list;
+	int nSum = 0;
+
+	for ( const int &nValue : constList )
+	{
+		nSum += nValue;
+	}
+
+	TEST_EQ( nSum, 60 );
+
+	auto it = list.end();
+
+	--it;
+	TEST_EQ( *it, 30 );
+	--it;
+	TEST_EQ( *it, 20 );
+	++it;
+	TEST_EQ( *it, 30 );
+
+	decltype( list )::const_iterator itConst = list.begin();
+	TEST_EQ( *itConst, 10 );
+	TEST_TRUE( itConst == list.begin() );
+	TEST_TRUE( itConst != list.end() );
+}

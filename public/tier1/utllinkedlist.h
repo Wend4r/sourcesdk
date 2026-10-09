@@ -18,6 +18,7 @@
 #include "utlfixedmemory.h"
 #include "utlleanvector.h"
 #include "utlblockmemory.h"
+#include "utliterator.h"
 #include "tier0/dbg.h"
 
 #include <type_traits>
@@ -142,6 +143,16 @@ public:
 	I  Tail() const;
 	I  Previous( I i ) const;
 	I  Next( I i ) const;
+
+	// STL / C++11-style iterators
+	typedef CUtlBidirectionalIteratorImplT< CUtlLinkedList< T, S, ML, I, M >, false > iterator;
+	typedef CUtlBidirectionalIteratorImplT< CUtlLinkedList< T, S, ML, I, M >, true > const_iterator;
+	const_iterator begin() const { return const_iterator( this, Head() ); }
+	const_iterator end() const { return const_iterator( this, InvalidIndex() ); }
+	iterator begin() { return iterator( this, Head() ); }
+	iterator end() { return iterator( this, InvalidIndex() ); }
+	I IteratorNext( I i ) const { return Next( i ); }
+	I IteratorPrev( I i ) const { return i == InvalidIndex() ? Tail() : Previous( i ); }
 
 	// Are nodes in the list or valid?
 	bool  IsValidIndex( I i ) const;
