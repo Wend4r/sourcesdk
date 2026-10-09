@@ -20,6 +20,10 @@
 template < typename T >
 void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree )
 {
+	// Normalizing our own typed array: keep its memory alive until the values are copied out.
+	if ( data == m_Data.m_pMemory )
+		m_bFreeArrayMemory = false;
+
 	PrepareForType( KV3_TYPEEX_ARRAY, subtype );
 
 	CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
@@ -822,6 +826,8 @@ int KeyValues3::GetArrayElementCount() const
 
 KeyValues3** KeyValues3::GetArrayBase()
 {
+	NormalizeArray();
+
 	CKeyValues3Array *pArray = GetKV3Array();
 
 	if ( !pArray )
@@ -832,6 +838,8 @@ KeyValues3** KeyValues3::GetArrayBase()
 
 KeyValues3* KeyValues3::GetArrayElement( int elem )
 {
+	NormalizeArray();
+
 	CKeyValues3Array *pArray = GetKV3Array();
 
 	if ( !pArray || elem < 0 || elem >= pArray->Count() )
@@ -863,6 +871,8 @@ const KeyValues3 &KeyValues3::GetNullValue()
 
 KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 {
+	NormalizeArray();
+
 	if ( !IsKV3Array() )
 		SetToEmptyKV3Array();
 
@@ -871,6 +881,8 @@ KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 
 KeyValues3* KeyValues3::ArrayAddElementToTail()
 {
+	NormalizeArray();
+
 	if ( !IsArray() )
 		SetToEmptyKV3Array();
 
@@ -881,6 +893,8 @@ KeyValues3* KeyValues3::ArrayAddElementToTail()
 
 void KeyValues3::ArrayInsertMultipleBefore( int elem, int num )
 {
+	NormalizeArray();
+
 	if ( !IsKV3Array() )
 		SetToEmptyKV3Array();
 
@@ -909,6 +923,8 @@ void KeyValues3::ArraySwapItems( int idx1, int idx2 )
 
 void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
+	NormalizeArray();
+
 	if ( !IsKV3Array() )
 		SetToEmptyKV3Array();
 
