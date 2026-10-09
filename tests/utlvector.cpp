@@ -415,6 +415,17 @@ REGISTER_NAMED_TEST( "CUtlVector.SortOverloads", CUtlVector_SortOverloads )
 	TEST_EQ( blockVec[ 2 ], 3 );
 }
 
+template < typename TVector >
+constexpr bool g_bVectorIterable = requires( TVector &vec, const TVector &constVec ) { vec.begin(); vec.end(); constVec.begin(); constVec.end(); };
+
+REGISTER_NAMED_TEST( "CUtlVector.ContiguousIterators", CUtlVector_ContiguousIterators )
+{
+	// Pointer iterators are only offered when the elements live in one block.
+	TEST_TRUE( g_bVectorIterable< CUtlVector< int > > );
+	TEST_TRUE( ( g_bVectorIterable< CUtlVectorFixedGrowable< int, 4 > > ) );
+	TEST_FALSE( g_bVectorIterable< CUtlBlockVector< int > > );
+}
+
 static bool __cdecl IntLessAscending( const int &left, const int &right )
 {
 	return left < right;
