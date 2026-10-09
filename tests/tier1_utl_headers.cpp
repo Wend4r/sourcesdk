@@ -24,6 +24,7 @@
 #include <tier1/utlincrementalvector.h>
 #include <tier1/utlintrusivelist.h>
 #include <tier1/utlintervaltree.h>
+#include <tier1/utliterator.h>
 #include <tier1/utlleanvector.h>
 #include <tier1/utllinkedlist.h>
 #include <tier1/utlmap.h>
