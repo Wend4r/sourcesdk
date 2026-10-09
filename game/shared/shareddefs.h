@@ -13,6 +13,7 @@
 
 #include "basetypes.h"
 #include "bittools.h"
+#include "const.h"
 
 #define TICK_INTERVAL			(gpGlobals->interval_per_tick)
 
@@ -133,12 +134,15 @@ inline float FractionUnDucked( int msecs )
 #define	MAX_AMMO_TYPES	32		// ???
 #define MAX_AMMO_SLOTS  32		// not really slots
 
-#define HUD_PRINTNOTIFY		1
-#define HUD_PRINTCONSOLE	2
-#define HUD_PRINTTALK		3
-#define HUD_PRINTCENTER		4
-#define HUD_PRINTTALK2		5	// adds 4(EOT) to beginning of msg
-#define HUD_PRINTALERT		6
+enum TextMsgDestinations
+{
+	HUD_PRINTNOTIFY		= 1,
+	HUD_PRINTCONSOLE	= 2,
+	HUD_PRINTTALK		= 3,
+	HUD_PRINTCENTER		= 4,
+	HUD_PRINTTALK2		= 5,	// adds 4(EOT) to beginning of msg
+	HUD_PRINTALERT		= 6,
+};
 
 
 // Vote creation or processing failure codes
@@ -271,28 +275,31 @@ schema enum AmmoPosition_t
 //  and have a good answer for a bunch of perf question related to player simulation, thinking logic, tracelines, networking overhead, etc.
 // But if you are brave or are doing something interesting, go for it...   ywb 9/22/03
 
-//You might be wondering why these aren't multiple of 2. Well the reason is that if servers decide to have HLTV or Replay enabled we need the extra slot.
-//This is ok since MAX_PLAYERS is used for code specific things like arrays and loops, but it doesn't really means that this is the max number of players allowed
-//Since this is decided by the gamerules (and it can be whatever number as long as its less than MAX_PLAYERS).
-#if defined( CSTRIKE_DLL )
-	#define MAX_PLAYERS				64  // Absolute max players supported
-#else
-	#define MAX_PLAYERS				33  // Absolute max players supported
-#endif
+#define MAX_PLAYERS				ABSOLUTE_PLAYER_LIMIT
 
 #define MAX_PLACE_NAME_LENGTH		18
 
 //===================================================================================================================
 // Team Defines
-#define TEAM_ANY				-1	// for some team query methods
-#define	TEAM_INVALID			-1
-#define TEAM_UNASSIGNED			0	// not assigned to a team
-#define TEAM_SPECTATOR			1	// spectator team
-// Start your team numbers after this
-#define LAST_SHARED_TEAM		TEAM_SPECTATOR
+enum SharedTeams_t
+{
+	TEAM_ANY			= -1,	// for some team query methods
+	TEAM_INVALID		= -1,
+	TEAM_UNASSIGNED		= 0,	// not assigned to a team
+	TEAM_SPECTATOR		= 1,	// spectator team
 
-// The first team that's game specific (i.e. not unassigned / spectator)
-#define FIRST_GAME_TEAM			(LAST_SHARED_TEAM+1)
+	// Start your team numbers after this
+	LAST_SHARED_TEAM	= TEAM_SPECTATOR,
+
+	// CS Specific teams
+	CS_TEAM_NONE		= TEAM_UNASSIGNED,
+	CS_TEAM_SPECTATOR	= TEAM_SPECTATOR,
+	CS_TEAM_T			= 2,
+	CS_TEAM_CT			= 3,
+
+	// The first team that's game specific (i.e. not unassigned / spectator)
+	FIRST_GAME_TEAM		= LAST_SHARED_TEAM + 1,
+};
 
 #define MAX_TEAMS				32	// Max number of teams in a game
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
@@ -322,14 +329,18 @@ schema enum AmmoPosition_t
 // -----------------------------------------
 //	Flags - NOTE: KEEP g_ItemFlags IN WEAPON_PARSE.CPP UPDATED WITH THESE
 // -----------------------------------------
-#define ITEM_FLAG_SELECTONEMPTY		(1<<0)
-#define ITEM_FLAG_NOAUTORELOAD		(1<<1)
-#define ITEM_FLAG_NOAUTOSWITCHEMPTY	(1<<2)
-#define ITEM_FLAG_LIMITINWORLD		(1<<3)
-#define ITEM_FLAG_EXHAUSTIBLE		(1<<4)	// A player can totally exhaust their ammo supply and lose this weapon
-#define ITEM_FLAG_DOHITLOCATIONDMG	(1<<5)	// This weapon take hit location into account when applying damage
-#define ITEM_FLAG_NOAMMOPICKUPS		(1<<6)	// Don't draw ammo pickup sprites/sounds when ammo is received
-#define ITEM_FLAG_NOITEMPICKUP		(1<<7)	// Don't draw weapon pickup when this weapon is picked up by the player
+enum ItemFlagTypes_t : uint8
+{
+	ITEM_FLAG_NONE						= 0,
+	ITEM_FLAG_CAN_SELECT_WITHOUT_AMMO	= 1 << 0,
+	ITEM_FLAG_NOAUTORELOAD				= 1 << 1,
+	ITEM_FLAG_NOAUTOSWITCHEMPTY			= 1 << 2,
+	ITEM_FLAG_LIMITINWORLD				= 1 << 3,
+	ITEM_FLAG_EXHAUSTIBLE				= 1 << 4,	// A player can totally exhaust their ammo supply and lose this weapon
+	ITEM_FLAG_DOHITLOCATIONDMG			= 1 << 5,	// This weapon take hit location into account when applying damage
+	ITEM_FLAG_NOAMMOPICKUPS				= 1 << 6,	// Don't draw ammo pickup sprites/sounds when ammo is received
+	ITEM_FLAG_NOITEMPICKUP				= 1 << 7,	// Don't draw weapon pickup when this weapon is picked up by the player
+};
 // NOTE: KEEP g_ItemFlags IN WEAPON_PARSE.CPP UPDATED WITH THESE
 
 
@@ -380,15 +391,13 @@ enum
 #define TRACER_DONT_USE_ATTACHMENT	-1
 
 // Entity Dissolve types
-enum
+enum EntityDissolveType_t
 {
+	ENTITY_DISSOLVE_INVALID = -1,
 	ENTITY_DISSOLVE_NORMAL = 0,
 	ENTITY_DISSOLVE_ELECTRICAL,
 	ENTITY_DISSOLVE_ELECTRICAL_LIGHT,
 	ENTITY_DISSOLVE_CORE,
-
-	// NOTE: Be sure to up the bits if you make more dissolve types
-	ENTITY_DISSOLVE_BITS = 3
 };
 
 //
@@ -442,51 +451,36 @@ enum PLAYER_ANIM
 
 // For a means of resolving these consts into debug string text, see function
 // CTakeDamageInfo::DebugGetDamageTypeString(unsigned int DamageType, char *outbuf, unsigned int outbuflength )
-#define DMG_GENERIC			0			// generic damage was done
-#define DMG_CRUSH			(1 << 0)	// crushed by falling or moving object. 
-										// NOTE: It's assumed crush damage is occurring as a result of physics collision, so no extra physics force is generated by crush damage.
-										// DON'T use DMG_CRUSH when damaging entities unless it's the result of a physics collision. You probably want DMG_CLUB instead.
-#define DMG_BULLET			(1 << 1)	// shot
-#define DMG_SLASH			(1 << 2)	// cut, clawed, stabbed
-#define DMG_BURN			(1 << 3)	// heat burned
-#define DMG_VEHICLE			(1 << 4)	// hit by a vehicle
-#define DMG_FALL			(1 << 5)	// fell too far
-#define DMG_BLAST			(1 << 6)	// explosive blast damage
-#define DMG_CLUB			(1 << 7)	// crowbar, punch, headbutt
-#define DMG_SHOCK			(1 << 8)	// electric shock
-#define DMG_SONIC			(1 << 9)	// sound pulse shockwave
-#define DMG_ENERGYBEAM		(1 << 10)	// laser or other high energy beam 
-#define DMG_PREVENT_PHYSICS_FORCE		(1 << 11)	// Prevent a physics force 
-#define DMG_NEVERGIB		(1 << 12)	// with this bit OR'd in, no damage type will be able to gib victims upon death
-#define DMG_ALWAYSGIB		(1 << 13)	// with this bit OR'd in, any damage type can be made to gib victims upon death.
-#define DMG_DROWN			(1 << 14)	// Drowning
+enum DamageTypes_t
+{
+	DMG_GENERIC			= 0,		// generic damage was done
+	DMG_CRUSH			= 1 << 0,	// crushed by falling or moving object.
+									// NOTE: It's assumed crush damage is occurring as a result of physics collision, so no extra physics force is generated by crush damage.
+									// DON'T use DMG_CRUSH when damaging entities unless it's the result of a physics collision. You probably want DMG_CLUB instead.
+	DMG_BULLET			= 1 << 1,	// shot
+	DMG_SLASH			= 1 << 2,	// cut, clawed, stabbed
+	DMG_BURN			= 1 << 3,	// heat burned
+	DMG_VEHICLE			= 1 << 4,	// hit by a vehicle
+	DMG_FALL			= 1 << 5,	// fell too far
+	DMG_BLAST			= 1 << 6,	// explosive blast damage
+	DMG_CLUB			= 1 << 7,	// crowbar, punch, headbutt
+	DMG_SHOCK			= 1 << 8,	// electric shock
+	DMG_SONIC			= 1 << 9,	// sound pulse shockwave
+	DMG_ENERGYBEAM		= 1 << 10,	// laser or other high energy beam
+	DMG_BUCKSHOT		= 1 << 11,	// not quite a bullet. Little, rounder, different.
+	DMG_BLAST_SURFACE	= 1 << 12,	// A blast on the surface of water that cannot harm things underwater
+	DMG_DISSOLVE		= 1 << 13,	// Dissolving!
+	DMG_DROWN			= 1 << 14,	// Drowning
+	DMG_POISON			= 1 << 15,	// blood poisoning - heals over time like drowning damage
+	DMG_RADIATION		= 1 << 16,	// radiation exposure
+	DMG_DROWNRECOVER	= 1 << 17,	// drowning recovery
+	DMG_ACID			= 1 << 18,	// toxic chemicals or acid burns
 
+	// TODO: keep this up to date so all the mod-specific flags don't overlap anything.
+	DMG_LASTGENERICFLAG	= DMG_ACID,
 
-#define DMG_PARALYZE		(1 << 15)	// slows affected creature down
-#define DMG_NERVEGAS		(1 << 16)	// nerve toxins, very bad
-#define DMG_POISON			(1 << 17)	// blood poisoning - heals over time like drowning damage
-#define DMG_RADIATION		(1 << 18)	// radiation exposure
-#define DMG_DROWNRECOVER	(1 << 19)	// drowning recovery
-#define DMG_ACID			(1 << 20)	// toxic chemicals or acid burns
-#define DMG_SLOWBURN		(1 << 21)	// in an oven
-
-#define DMG_REMOVENORAGDOLL	(1<<22)		// with this bit OR'd in, no ragdoll will be created, and the target will be quietly removed.
-										// use this to kill an entity that you've already got a server-side ragdoll for
-
-#define DMG_PHYSGUN			(1<<23)		// Hit by manipulator. Usually doesn't do any damage.
-#define DMG_PLASMA			(1<<24)		// Shot by Cremator
-#define DMG_AIRBOAT			(1<<25)		// Hit by the airboat's gun
-
-#define DMG_DISSOLVE		(1<<26)		// Dissolving!
-#define DMG_BLAST_SURFACE	(1<<27)		// A blast on the surface of water that cannot harm things underwater
-#define DMG_DIRECT			(1<<28)
-#define DMG_BUCKSHOT		(1<<29)		// not quite a bullet. Little, rounder, different.
-
-// NOTE: DO NOT ADD ANY MORE CUSTOM DMG_ TYPES. MODS USE THE DMG_LASTGENERICFLAG BELOW, AND
-//		 IF YOU ADD NEW DMG_ TYPES, THEIR TYPES WILL BE HOSED. WE NEED A BETTER SOLUTION.
-
-// TODO: keep this up to date so all the mod-specific flags don't overlap anything.
-#define DMG_LASTGENERICFLAG	DMG_BUCKSHOT
+	DMG_HEADSHOT		= 1 << 19,
+};
 
 
 
