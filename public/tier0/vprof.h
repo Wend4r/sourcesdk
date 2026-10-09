@@ -265,8 +265,8 @@ private:
 	uint8 m_pad000C[4092];
 };
 
-class VProfReportSettings_t;
-class CVProfSummingContext;
+struct VProfReportSettings_t;
+struct CVProfSummingContext;
 struct VProfDataReportItem_t;
 struct CVProfLayoutVerifier;
 
@@ -277,6 +277,8 @@ COMPILE_TIME_ASSERT( sizeof( VProfBudgetGroupEntry ) == 4104 );
 // Enters a scope of the Unaccounted budget group, on the profiled thread only
 PLATFORM_INTERFACE void VProf_EnterScopeAdHoc( const char *pszName, CUtlSourceLocation location );
 PLATFORM_INTERFACE void VProf_ExitScope();
+
+typedef void (*VProfExitScopeCB)();
 
 //-----------------------------------------------------------------------------
 //
@@ -498,11 +500,17 @@ public:
 
 	void CalcBudgetGroupTimes_Recursive( CVProfNode *, unsigned int *, int, float );
 
-	void EnterScope( const char *pszName, bool bAssertAccounted, VProfBudgetGroupCallSite &pBudgetGroupName, const CUtlSourceLocation &location );
-	void EnterScopeChecked( const char *pszName, bool bAssertAccounted, VProfBudgetGroupCallSite &pBudgetGroupName, const CUtlSourceLocation &location );
-	void EnterScopeNode( CVProfNode *node );
-	void ExitScope();
-	void ExitScopeChecked();
+	void EnterScopeTargetThread( const char *pszName, bool bAssertAccounted, VProfBudgetGroupCallSite &pBudgetGroupName, const CUtlSourceLocation &location );
+	void EnterScopeTargetThreadChecked( const char *pszName, bool bAssertAccounted, VProfBudgetGroupCallSite &pBudgetGroupName, const CUtlSourceLocation &location );
+	void EnterScopeNodeTargetThread( CVProfNode *node );
+	void ExitScopeTargetThread();
+	void ExitScopeTargetThreadChecked();
+
+	static VProfExitScopeCB EnterScopeBackgroundThread( const char *pszName, VProfBudgetGroupCallSite &budgetGroup, const CUtlSourceLocation &location );
+	static void ExitScopeBackgroundThread();
+	CVProfNode *GetBackgroundRoot();
+	void MergeBackgroundTrees();
+	void SetProfileAllThreads( bool bProfileAllThreads );
 
 	void MarkFrame();
 	void ResetPeaks();
@@ -569,10 +577,6 @@ public:
 
 	CVProfNode *GetCurrentNode();
 
-#ifdef DBGFLAG_VALIDATE
-	void Validate( CValidator &validator, tchar *pchName );		// Validate our internal structures
-#endif // DBGFLAG_VALIDATE
-
 protected:
 	void FreeNodes_R( CVProfNode *pNode );
 
@@ -598,44 +602,68 @@ public:
 	int m_nGroupIDStack[MAX_GROUP_STACK_DEPTH];
 	int m_nGroupIDStackDepth;
 	int m_nEnabled;
-	bool m_bAtRoot;
+	CVProfNode m_Root;
 
 private:
-	uint8 m_pad1011[7];
+	// Points at m_Root after construction
+	uint8 m_pad10D0[8];
 
 public:
 	CVProfNode *m_pCurNode;
-	CVProfNode m_Root;
-	int m_nFrames;
-	int m_nProfileDetailLevel;
+	bool m_bAtRoot;
 
 private:
-	uint8 m_pad10D8[32];
+	uint8 m_pad10E1[7];
 
 public:
+	int m_nFrames;
+	int m_nPausedEnabledDepth;
+
+	// Wall clock seconds
+	double m_flStartTime;
+	double m_flStopTime;
+	double m_flPauseStartTime;
+	double m_flTotalPauseTime;
+
 	uint64 m_nCounters[MAXCOUNTERS];
 	char m_eCounterGroups[MAXCOUNTERS]; // (These are CounterGroup_t's).
 	const char *m_pszCounterNames[MAXCOUNTERS];
 	int m_nCounterCount;
 
 private:
-	uint8 m_pad21FC[4];
+	uint8 m_pad2214[4];
 
 public:
 	uint8 m_CounterMutex[16];
 
 private:
-	uint8 m_pad2210[6152];
-	uint8 m_pad3A18[6152];
-	uint8 m_pad5220[6152];
+	// Three arrays of 256 zeroed 24-byte elements, each followed by an int
+	uint8 m_pad2228[6152];
+	uint8 m_pad3A30[6152];
+	uint8 m_pad5238[6148];
 
 public:
+	int m_nNextTimespanId;
 	uint64 m_nTargetThreadID;
+	bool m_bProfileAllThreads;
+
+private:
+	uint8 m_pad6A49[7];
+
+public:
+	CVProfNode *m_pBackgroundRoot;
+
+private:
+	// Background thread roots
+	uint8 m_pad6A58[24];
+
+public:
+	uint8 m_BackgroundRootMutex[16];
 	void ( *m_pOutputStream )( const char *, ... );
 };
 
 COMPILE_TIME_ASSERT( sizeof( CVProfNode ) == 0xC0 );
-COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27208 );
+COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 0x6A88 );
 
 //-------------------------------------
 
@@ -685,8 +713,6 @@ private:
 #define VPROF_TEST_SPIKE( msec ) CVProfSpikeDetector UNIQUE_ID( msec )
 
 //-----------------------------------------------------------------------------
-
-typedef void (*VProfExitScopeCB)();
 
 template < int DETAIL_LEVEL, bool ASSERT_ACCOUNTED >
 class VProfScopeHelper
