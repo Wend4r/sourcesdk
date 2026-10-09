@@ -118,7 +118,7 @@ const KeyValues3* CEntityKeyValues::GetKeyValue( const EntityKeyId_t &id, bool* 
 	return kv;
 }
 
-KeyValues3* CEntityKeyValues::SetKeyValue( const EntityKeyId_t &id, const char* pAttributeName )
+KeyValues3* CEntityKeyValues::SetKeyValue( const EntityKeyId_t &id, bool bAsAttribute )
 {
 	if ( m_nQueuedForSpawnCount > 0 )
 		return NULL;
@@ -130,37 +130,16 @@ KeyValues3* CEntityKeyValues::SetKeyValue( const EntityKeyId_t &id, const char* 
 
 	if ( kv )
 	{
-		if ( !bIsAttribute && pAttributeName )
+		if ( bIsAttribute != bAsAttribute )
 		{
-			kv = NULL;
-			Warning( "Attempted to set non-attribute value %s as if it was an attribute!\n", pAttributeName );
+			Warning( "Inconsistent treatment of '%s' (existing key is %s)!\n", id.GetString(), bIsAttribute ? "an attr" : "NOT an attr" );
+			return NULL;
 		}
-		else if ( bIsAttribute && !pAttributeName )
-		{
-			pAttributeName = "<none>";
 
-			for ( int i = 0; i < m_pAttributes->GetMemberCount(); ++i )
-			{
-				if ( m_pAttributes->GetMember( i ) != kv )
-					continue;
-
-				pAttributeName = m_pAttributes->GetMemberName( i );
-				break;
-			}
-
-			kv = NULL;
-			Warning( "Attempted to set attribute %s as if it was a non-attribute key!\n", pAttributeName );
-		}
-	}
-	else
-	{
-		if ( pAttributeName )
-			kv = m_pAttributes->FindOrCreateMember( id );
-		else
-			kv = m_pValues->FindOrCreateMember( id );
+		return kv;
 	}
 
-	return kv;
+	return ( bAsAttribute ? m_pAttributes : m_pValues )->FindOrCreateMember( id );
 }
 
 void CEntityKeyValues::AddConnectionDesc( 
@@ -211,19 +190,12 @@ void CEntityKeyValues::CopyFrom( const CEntityKeyValues* pSrc, bool bRemoveAllKe
 
 	FOR_EACH_ENTITYKEY( pSrc, iter )
 	{
-		const char* pAttributeName = NULL;
+		const bool bIsAttribute = pSrc->IsAttribute( iter );
 
-		if ( pSrc->IsAttribute( iter ) )
-		{
-			pAttributeName = pSrc->GetAttributeName( iter );
-		}
-		else
-		{
-			if ( bSkipEHandles && pSrc->GetKeyValue( iter )->GetSubType() == KV3_SUBTYPE_EHANDLE )
-				continue;
-		}
+		if ( !bIsAttribute && bSkipEHandles && pSrc->GetKeyValue( iter )->GetSubType() == KV3_SUBTYPE_EHANDLE )
+			continue;
 
-		KeyValues3* kv = SetKeyValue( pSrc->GetEntityKeyId( iter ), pAttributeName );
+		KeyValues3* kv = SetKeyValue( pSrc->GetEntityKeyId( iter ), bIsAttribute );
 
 		if ( kv )
 			*kv = *pSrc->GetKeyValue( iter );
