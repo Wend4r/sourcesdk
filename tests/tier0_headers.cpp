@@ -2,6 +2,9 @@
 #include "common/macros.h"
 
 #include <tier0/checksum_md5.h>
+#include <tier0/murmurhash3.h>
+#include <tier0/utlstring.h>
+#include <tier1/utlhashmaplarge.h>
 
 REGISTER_NAMED_TEST( "Smoke.Tier0Headers.ChecksumMD5", Smoke_Tier0Headers_ChecksumMD5 )
 {
@@ -19,4 +22,33 @@ REGISTER_NAMED_TEST( "Smoke.Tier0Headers.ChecksumMD5", Smoke_Tier0Headers_Checks
 	TEST_FALSE( md5Result.IsZero() );
 	TEST_TRUE( md5Result == md5Expected );
 	TEST_FALSE( md5Result != md5Expected );
+}
+
+REGISTER_NAMED_TEST( "Smoke.Tier0Headers.MurmurHash3", Smoke_Tier0Headers_MurmurHash3 )
+{
+	// Reference MurmurHash3 x86_32 test vectors.
+	TEST_EQ( MurmurHash3_32( "", 0, 0 ), 0u );
+	TEST_EQ( MurmurHash3_32( "Hello, world!", 13, 1234 ), 0xfaf6cdb3u );
+	TEST_EQ( MurmurHash3_32( "The quick brown fox jumps over the lazy dog", 43, 0 ), 0x2e4ff723u );
+
+	TEST_EQ( MurmurHash3String( "source2" ), 0x61dc9e83u );
+	TEST_EQ( MurmurHash3StringCaseless( "Source2" ), MurmurHash3StringCaseless( "SOURCE2" ) );
+	TEST_EQ( MurmurHash3StringCaseless( "abcde" ), MurmurHash3String( "ABCDE" ) );
+}
+
+REGISTER_NAMED_TEST( "Smoke.Tier0Headers.UtlHashMapLargeDefaultHasher", Smoke_Tier0Headers_UtlHashMapLargeDefaultHasher )
+{
+	// The default hasher must link without a tier0 export.
+	CUtlHashMapLarge< CUtlString, int > map;
+
+	map.Insert( CUtlString( "alpha" ), 1 );
+	map.Insert( CUtlString( "beta" ), 2 );
+
+	TEST_EQ( map.Count(), 2 );
+
+	int iBeta = map.Find( CUtlString( "beta" ) );
+
+	TEST_NE( iBeta, map.InvalidIndex() );
+	TEST_EQ( map[ iBeta ], 2 );
+	TEST_EQ( map.Find( CUtlString( "gamma" ) ), map.InvalidIndex() );
 }
