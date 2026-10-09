@@ -239,6 +239,64 @@ REGISTER_NAMED_TEST( "CUtlVector.SortAndAddVector", CUtlVector_SortAndAddVector 
 	TEST_EQ( vec[4], 5 );
 }
 
+static bool __cdecl IntLessDescending( const int &left, const int &right )
+{
+	return left > right;
+}
+
+static bool __cdecl IntLessModulo( const int &left, const int &right, void *pCtx )
+{
+	const int nModulo = *static_cast< const int * >( pCtx );
+
+	return ( left % nModulo ) < ( right % nModulo );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.SortOverloads", CUtlVector_SortOverloads )
+{
+	// Every sort overload should order elements, including non-contiguous block storage.
+	CUtlVector< int > vec;
+
+	for ( int i = 0; i < 64; ++i )
+	{
+		vec.AddToTail( ( i * 37 ) % 64 );
+	}
+
+	vec.Sort();
+
+	for ( int i = 0; i < 64; ++i )
+	{
+		TEST_EQ( vec[ i ], i );
+	}
+
+	vec.Sort( &IntLessDescending );
+	TEST_EQ( vec[ 0 ], 63 );
+	TEST_EQ( vec[ 63 ], 0 );
+
+	int nModulo = 10;
+
+	vec.Sort( &IntLessModulo, &nModulo );
+
+	for ( int i = 1; i < 64; ++i )
+	{
+		TEST_TRUE( ( vec[ i - 1 ] % 10 ) <= ( vec[ i ] % 10 ) );
+	}
+
+	vec.SortPredicate( []( const int &left, const int &right ) { return left < right; } );
+	TEST_EQ( vec[ 0 ], 0 );
+	TEST_EQ( vec[ 63 ], 63 );
+
+	CUtlBlockVector< int > blockVec;
+
+	blockVec.AddToTail( 3 );
+	blockVec.AddToTail( 1 );
+	blockVec.AddToTail( 2 );
+	blockVec.Sort( &CompareIntsAscending );
+
+	TEST_EQ( blockVec[ 0 ], 1 );
+	TEST_EQ( blockVec[ 1 ], 2 );
+	TEST_EQ( blockVec[ 2 ], 3 );
+}
+
 REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDeleteElements )
 {
 	// Purge-and-delete should destroy heap-owned elements and empty the vector.
