@@ -239,7 +239,7 @@ template <> struct DefaultHashFunctor<signed long long> : Mix64HashFunctor { };
 template <> struct DefaultHashFunctor<unsigned long long> : Mix64HashFunctor { };
 template <> struct DefaultHashFunctor<void*> : PointerHashFunctor { };
 template <> struct DefaultHashFunctor<const void*> : PointerHashFunctor { };
-template <> struct DefaultHashFunctor<CUtlStringToken> : Mix32HashFunctor { };
+template <> struct DefaultHashFunctor<CUtlStringToken> { unsigned int operator()( const CUtlStringToken &k ) const; }; // Defined in tier0/utlstringtoken.h
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
 template <> struct DefaultHashFunctor<wchar_t> : Mix32HashFunctor { };
 #endif
