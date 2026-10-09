@@ -115,6 +115,7 @@ endfunction()
 
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
+	mempool.cpp
 	refcount.cpp
 	tslist.cpp
 	utlarray.cpp
