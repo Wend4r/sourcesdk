@@ -570,7 +570,7 @@ inline CUtlBuffer &operator<<( CUtlBuffer &b, const Vector2D &v )
 class CUtlInplaceBuffer : public CUtlBuffer
 {
 public:
-	CUtlInplaceBuffer( int growSize = 0, int initSize = 0, int nFlags = 0 );
+	DLL_CLASS_IMPORT CUtlInplaceBuffer( BufferFlags_t nFlags = NONE );
 
 	//
 	// Routines returning buffer-inplace-pointers
