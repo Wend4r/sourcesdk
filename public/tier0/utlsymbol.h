@@ -132,7 +132,7 @@ public:
 	// Returns elements in the table
 	DLL_CLASS_IMPORT int GetElements( int nFirstElement, int nCount, CUtlSymbol *pElements ) const;
 
-	DLL_CLASS_IMPORT size_t GetMemoryUsage() const;
+	DLL_CLASS_IMPORT size_t AllocSize() const;
 
 	DLL_CLASS_IMPORT void SetPageSize( unsigned int nSize );
 
