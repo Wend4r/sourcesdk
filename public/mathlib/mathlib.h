@@ -10,6 +10,7 @@
 #include <math.h>
 #include "tier0/basetypes.h"
 #include "mathlib/vector.h"
+#include "mathlib/vectorws.h"
 #include "mathlib/vector2d.h"
 #include "tier0/dbg.h"
 #include "mathlib/math_pfns.h"
@@ -167,6 +168,9 @@ schema struct matrix3x4_t
 	inline void ConcatRotations( const matrix3x4_t &other );
 	inline void ConcatTransforms( const matrix3x4_t &other );
 
+	inline void ScaleBy( const float flValue );
+	inline void ScaleByZero();
+
 	inline void Multiply( const matrix3x4_t &other );
 	inline void Transpose();
 
@@ -177,6 +181,9 @@ schema struct matrix3x4_t
 
 	inline float RowDotProduct( int row, const Vector &in ) const;
 	inline float ColumnDotProduct( MatrixAxisType_t column, const Vector &in ) const;
+
+	inline Vector GetTranslation() const;
+	inline void SetTranslation( const Vector &in );
 
 	inline Vector GetColumn( MatrixAxisType_t column ) const;
 	inline void SetColumn( const Vector &in, MatrixAxisType_t column );
@@ -266,6 +273,9 @@ schema struct matrix3x4_t
 	inline void InverseTR( matrix3x4_t &out ) const;
 	inline matrix3x4_t InverseTR() const;
 
+	inline matrix3x4_t &operator*=( const matrix3x4_t &other );
+	inline matrix3x4_t &operator*=( float flValue );
+	inline matrix3x4_t operator*( float flValue ) const;
 
 	float *operator[]( int i )				{ Assert(( i >= 0 ) && ( i < 3 )); return m_flMatVal[i]; }
 	const float *operator[]( int i ) const	{ Assert(( i >= 0 ) && ( i < 3 )); return m_flMatVal[i]; }
@@ -357,8 +367,10 @@ extern bool s_bMathlibInitialized;
 
 extern const matrix3x4a_t g_MatrixIdentity;
 extern  const Vector vec3_origin;
+extern const VectorWS vec3ws_origin;
 extern  const QAngle vec3_angle;
 extern	const Quaternion quat_identity;
+extern const QuaternionWS quatws_identity;
 extern const Vector vec3_invalid;
 extern	const int nanmask;
 
@@ -683,6 +695,19 @@ bool MatricesAreEqual( const matrix3x4_t &src1, const matrix3x4_t &src2, float f
 
 void MatrixGetColumn( const matrix3x4_t &in, int column, Vector &out );
 void MatrixSetColumn( const Vector &in, int column, matrix3x4_t &out );
+
+inline void MatrixGetTranslation( const matrix3x4_t &in, Vector &out )
+{
+	MatrixGetColumn( in, 3, out );
+}
+
+inline void MatrixSetTranslation( const Vector &in, matrix3x4_t &out )
+{
+	MatrixSetColumn( in, 3, out );
+}
+
+void MatrixScaleBy( const float flScale, matrix3x4_t &out );
+void MatrixScaleByZero( matrix3x4_t &out );
 
 //void DecomposeRotation( const matrix3x4_t &mat, float *out );
 void ConcatRotations (const matrix3x4_t &in1, const matrix3x4_t &in2, matrix3x4_t &out);
@@ -2291,7 +2316,7 @@ float CubicBasis3( float t );
 inline float QuinticInterpolatingPolynomial(float t)
 {
 	// 6t^5-15t^4+10t^3
-	return t * t * t *( t * ( t* 6.0 - 15.0 ) + 10.0 );
+	return t * t * t *( t * ( t* 6.0f - 15.0f ) + 10.0f );
 }
 
 // given a table of sorted tabulated positions, return the two indices and blendfactor to linear
@@ -3009,6 +3034,47 @@ inline void matrix3x4_t::SetColumn( const Vector &vColumn, MatrixAxisType_t nCol
 	m_flMatVal[ 0 ][ nColumn ] = vColumn.x;
 	m_flMatVal[ 1 ][ nColumn ] = vColumn.y;
 	m_flMatVal[ 2 ][ nColumn ] = vColumn.z;
+}
+
+inline void matrix3x4_t::ScaleBy( const float flValue )
+{
+	MatrixScaleBy( flValue, *this );
+}
+
+inline void matrix3x4_t::ScaleByZero()
+{
+	MatrixScaleByZero( *this );
+}
+
+inline Vector matrix3x4_t::GetTranslation() const
+{
+	Vector out;
+	MatrixGetTranslation( *this, out );
+	return out;
+}
+
+inline void matrix3x4_t::SetTranslation( const Vector &in )
+{
+	MatrixSetTranslation( in, *this );
+}
+
+inline matrix3x4_t &matrix3x4_t::operator*=( const matrix3x4_t &other )
+{
+	MatrixMultiply( *this, other, *this );
+	return *this;
+}
+
+inline matrix3x4_t &matrix3x4_t::operator*=( float flValue )
+{
+	ScaleBy( flValue );
+	return *this;
+}
+
+inline matrix3x4_t matrix3x4_t::operator*( float flValue ) const
+{
+	matrix3x4_t temp( *this );
+	temp.ScaleBy( flValue );
+	return temp;
 }
 
 inline void matrix3x4_t::InverseTR( matrix3x4_t &out ) const

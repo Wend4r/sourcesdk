@@ -64,6 +64,10 @@ private:
 			Assert( i < ( 1 << HandleBits ) );
 			Assert( s < ( 1 << ( 31 - HandleBits ) ) );
 		}
+		explicit HandleType_t( UtlHandle_t h ) : nIndex( h & ( ( 1 << HandleBits ) - 1 ) ), nSerial( h >> HandleBits )
+		{
+		}
+		UtlHandle_t AsHandle() const { return nIndex | ( nSerial << HandleBits ); }
 		unsigned int nIndex  : HandleBits;
 		unsigned int nSerial : 32 - HandleBits;
 	};
@@ -241,20 +245,19 @@ int CUtlHandleTable<T, HandleBits>::GetIndexFromHandle( UtlHandle_t h ) const
 template< class T, int HandleBits >
 unsigned int CUtlHandleTable<T, HandleBits>::GetSerialNumber( UtlHandle_t handle )
 {
-	return ( ( HandleType_t* )&handle )->nSerial;
+	return HandleType_t( handle ).nSerial;
 }
 
 template< class T, int HandleBits >
 unsigned int CUtlHandleTable<T, HandleBits>::GetListIndex( UtlHandle_t handle )
 {
-	return ( ( HandleType_t* )&handle )->nIndex;
+	return HandleType_t( handle ).nIndex;
 }
 
 template< class T, int HandleBits >
 UtlHandle_t CUtlHandleTable<T, HandleBits>::CreateHandle( unsigned int nSerial, unsigned int nIndex )
 {
-	HandleType_t h( nIndex, nSerial );
-	return *( UtlHandle_t* )&h;
+	return HandleType_t( nIndex, nSerial ).AsHandle();
 }
 
 
