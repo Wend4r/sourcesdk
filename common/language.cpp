@@ -42,6 +42,17 @@ static Language_t s_LanguageNames[] =
 	{	"Finnish",				"finnish",		"#GameUI_Language_Finnish",				k_Lang_Finnish } ,
 	{	"Norwegian",			"norwegian",	"#GameUI_Language_Norwegian",				k_Lang_Norwegian } ,
 	{	"Swedish",				"swedish",		"#GameUI_Language_Swedish",				k_Lang_Swedish } ,
+	{	"Hungarian",			"hungarian",	"#GameUI_Language_Hungarian",			k_Lang_Hungarian } ,
+	{	"Czech",				"czech",		"#GameUI_Language_Czech",				k_Lang_Czech } ,
+	{	"Romanian",				"romanian",		"#GameUI_Language_Romanian",			k_Lang_Romanian } ,
+	{	"Turkish",				"turkish",		"#GameUI_Language_Turkish",				k_Lang_Turkish } ,
+	{	"Brazilian",			"brazilian",	"#GameUI_Language_Brazilian",			k_Lang_Brazilian } ,
+	{	"Bulgarian",			"bulgarian",	"#GameUI_Language_Bulgarian",			k_Lang_Bulgarian } ,
+	{	"Greek",				"greek",		"#GameUI_Language_Greek",				k_Lang_Greek } ,
+	{	"Ukrainian",			"ukrainian",	"#GameUI_Language_Ukrainian",			k_Lang_Ukrainian } ,
+	{	"Latam_Spanish",		"latam",		"#GameUI_Language_Latam_Spanish",		k_Lang_Latam_Spanish } ,
+	{	"Vietnamese",			"vietnamese",	"#GameUI_Language_Vietnamese",			k_Lang_Vietnamese } ,
+	{	"Indonesian",			"indonesian",	"#GameUI_Language_Indonesian",			k_Lang_Indonesian } ,
 };
 
 
