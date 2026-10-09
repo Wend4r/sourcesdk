@@ -682,11 +682,11 @@ void VectorAngles( const float *forward, float *angles )
 R_ConcatRotations
 ================
 */
-void ConcatRotations (const float in1[3][3], const float in2[3][3], float out[3][3])
+void ConcatRotations( const matrix3x4_t &in1, const matrix3x4_t &in2, matrix3x4_t &out )
 {
 	Assert( s_bMathlibInitialized );
-	Assert( in1 != out );
-	Assert( in2 != out );
+	Assert( &in1 != &out );
+	Assert( &in2 != &out );
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
 				in1[0][2] * in2[2][0];
 	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +

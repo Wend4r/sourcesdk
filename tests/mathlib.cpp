@@ -59,3 +59,21 @@ REGISTER_NAMED_TEST( "mathlib.SSERSqrtFast", mathlib_SSERSqrtFast )
 	TEST_TRUE( fabsf( _SSE_RSqrtFast( 4.0f ) - 0.5f ) < 0.001f );
 	TEST_TRUE( fabsf( _SSE_RSqrtFast( 0.25f ) - 2.0f ) < 0.005f );
 }
+
+REGISTER_NAMED_TEST( "mathlib.ConcatRotations", mathlib_ConcatRotations )
+{
+	// Rotating 90 degrees about Z twice should give a 180 degree rotation about Z.
+	MathLib_Init();
+
+	matrix3x4_t rot90;
+	matrix3x4_t rot180;
+	AngleMatrix( QAngle( 0.0f, 90.0f, 0.0f ), rot90 );
+	SetIdentityMatrix( rot180 );
+	ConcatRotations( rot90, rot90, rot180 );
+
+	TEST_TRUE( fabsf( rot180[ 0 ][ 0 ] + 1.0f ) < 1.0e-5f );
+	TEST_TRUE( fabsf( rot180[ 1 ][ 1 ] + 1.0f ) < 1.0e-5f );
+	TEST_TRUE( fabsf( rot180[ 2 ][ 2 ] - 1.0f ) < 1.0e-5f );
+	TEST_TRUE( fabsf( rot180[ 0 ][ 1 ] ) < 1.0e-5f );
+	TEST_TRUE( fabsf( rot180[ 1 ][ 0 ] ) < 1.0e-5f );
+}
