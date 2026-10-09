@@ -114,7 +114,7 @@
 // Most came from server.h
 
 // CBaseEntity::m_fFlags
-enum Flags_t : uint32
+schema enum Flags_t : uint32
 {
 	// PLAYER SPECIFIC FLAGS
 	FL_ONGROUND					= 1u << 0,	// At rest / on the ground
@@ -243,7 +243,7 @@ schema enum LifeState_t : unsigned char
 };
 
 // entity effects
-enum EntityEffects_t : uint16
+schema enum EntityEffects_t : uint16
 {
 	// EF_EMPTY				= 1 << 0,
 	// EF_EMPTY				= 1 << 1,
@@ -256,7 +256,7 @@ enum EntityEffects_t : uint16
 	// EF_EMPTY				= 1 << 8,
 	EF_PARENT_ANIMATES		= 1 << 9,	// always assume that the parent entity is animating
 	EF_NODRAW_BUT_TRANSMIT	= 1 << 10,
-	EF_MAX_BITS = 10
+	EF_MAX_BITS = 10, META( MEnumeratorIsNotAFlag )
 };
 
 #define EF_PARITY_BITS	3

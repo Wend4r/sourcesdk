@@ -329,7 +329,7 @@ enum SharedTeams_t
 // -----------------------------------------
 //	Flags - NOTE: KEEP g_ItemFlags IN WEAPON_PARSE.CPP UPDATED WITH THESE
 // -----------------------------------------
-enum ItemFlagTypes_t : uint8
+schema enum ItemFlagTypes_t : uint8
 {
 	ITEM_FLAG_NONE						= 0,
 	ITEM_FLAG_CAN_SELECT_WITHOUT_AMMO	= 1 << 0,
@@ -391,7 +391,7 @@ enum
 #define TRACER_DONT_USE_ATTACHMENT	-1
 
 // Entity Dissolve types
-enum EntityDissolveType_t
+schema enum EntityDissolveType_t
 {
 	ENTITY_DISSOLVE_INVALID = -1,
 	ENTITY_DISSOLVE_NORMAL = 0,
@@ -451,7 +451,7 @@ enum PLAYER_ANIM
 
 // For a means of resolving these consts into debug string text, see function
 // CTakeDamageInfo::DebugGetDamageTypeString(unsigned int DamageType, char *outbuf, unsigned int outbuflength )
-enum DamageTypes_t
+schema enum DamageTypes_t
 {
 	DMG_GENERIC			= 0,		// generic damage was done
 	DMG_CRUSH			= 1 << 0,	// crushed by falling or moving object.
@@ -477,7 +477,7 @@ enum DamageTypes_t
 	DMG_ACID			= 1 << 18,	// toxic chemicals or acid burns
 
 	// TODO: keep this up to date so all the mod-specific flags don't overlap anything.
-	DMG_LASTGENERICFLAG	= DMG_ACID,
+	DMG_LASTGENERICFLAG	= DMG_ACID, META( MPropertySuppressEnumerator; MEnumeratorIsNotAFlag )
 
 	DMG_HEADSHOT		= 1 << 19,
 };
