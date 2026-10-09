@@ -426,8 +426,9 @@ public:
 	virtual void	unk046( void ) = 0;
 	virtual void	unk047( void ) = 0;
 	virtual bool	ThreadInPrimaryOrSecondaryMainThread( void ) = 0;
-	virtual void	unk049( void ) = 0;
-	virtual void	unk050( uint8 nUnk ) = 0;
+	virtual void	EnterSyncInterval( void ) = 0;
+	// AMNOTE: The bool picks which of two parallel work modes clients enter
+	virtual void	ExitSyncInterval( bool ) = 0;
 };
 
 typedef CNetworkGameServerBase IServer;
