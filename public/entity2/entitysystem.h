@@ -218,6 +218,9 @@ public:
 	inline CEntityInstance *GetEntityInstance( CEntityIndex entnum ) { return GetEntityInstance( GetEntityIdentity( entnum ) ); }
 	inline CEntityInstance *GetEntityInstance( const CEntityHandle &hEnt ) { return GetEntityInstance( GetEntityIdentity( hEnt ) ); }
 
+	// The controller of player slot N is the entity at index N + 1, only slots below CGlobalVars::maxClients have one
+	inline CEntityInstance *GetPlayerController( CPlayerSlot slot ) { return slot.IsValid() ? GetEntityInstance( slot.GetEntityIndex() ) : nullptr; }
+
 	inline void AddEntityKeyValuesAllocatorRef() { ++m_nEntityKeyValuesAllocatorRefCount; }
 	inline void ReleaseEntityKeyValuesAllocatorRef()
 	{
