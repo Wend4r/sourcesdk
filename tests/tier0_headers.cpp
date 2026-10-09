@@ -2,9 +2,12 @@
 #include "common/macros.h"
 
 #include <tier0/checksum_md5.h>
+#include <tier0/globalsymbol.h>
 #include <tier0/murmurhash3.h>
 #include <tier0/utlstring.h>
 #include <tier1/utlhashmaplarge.h>
+
+#include <type_traits>
 
 REGISTER_NAMED_TEST( "Smoke.Tier0Headers.ChecksumMD5", Smoke_Tier0Headers_ChecksumMD5 )
 {
@@ -51,4 +54,35 @@ REGISTER_NAMED_TEST( "Smoke.Tier0Headers.UtlHashMapLargeDefaultHasher", Smoke_Ti
 	TEST_NE( iBeta, map.InvalidIndex() );
 	TEST_EQ( map[ iBeta ], 2 );
 	TEST_EQ( map.Find( CUtlString( "gamma" ) ), map.InvalidIndex() );
+}
+
+REGISTER_NAMED_TEST( "Smoke.Tier0Headers.GlobalSymbol", Smoke_Tier0Headers_GlobalSymbol )
+{
+	// The engine passes and returns these by address, which requires a user-provided copy constructor.
+	TEST_FALSE( std::is_trivially_copyable_v< CGlobalSymbol > );
+	TEST_FALSE( std::is_trivially_copyable_v< CGlobalSymbolCaseSensitive > );
+
+	CGlobalSymbol symbolEmpty;
+
+	TEST_FALSE( symbolEmpty.IsValid() );
+	TEST_EQ( V_strcmp( symbolEmpty.String(), "" ), 0 );
+
+	CGlobalSymbol symbol = MakeGlobalSymbol( "Smoke_GlobalSymbol" );
+	CGlobalSymbol symbolCopy( symbol );
+
+	TEST_TRUE( symbol.IsValid() );
+	TEST_TRUE( symbol == symbolCopy );
+	TEST_TRUE( symbol == MakeGlobalSymbol( "SMOKE_GLOBALSYMBOL" ) );
+	TEST_TRUE( symbol == FindGlobalSymbol( "smoke_globalsymbol" ) );
+	TEST_EQ( V_stricmp( symbol.String(), "Smoke_GlobalSymbol" ), 0 );
+
+	CGlobalSymbolCaseSensitive symbolCaseSensitive = MakeGlobalSymbolCaseSensitive( "Smoke_GlobalSymbol" );
+
+	TEST_TRUE( symbolCaseSensitive.IsValid() );
+	TEST_TRUE( symbolCaseSensitive == MakeGlobalSymbolCaseSensitive( "Smoke_GlobalSymbol" ) );
+	TEST_TRUE( symbolCaseSensitive != MakeGlobalSymbolCaseSensitive( "SMOKE_GLOBALSYMBOL" ) );
+
+	CUtlSymbolLarge symbolLarge = symbolCaseSensitive;
+
+	TEST_EQ( V_strcmp( symbolLarge.String(), "Smoke_GlobalSymbol" ), 0 );
 }
