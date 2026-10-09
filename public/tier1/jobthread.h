@@ -1265,7 +1265,7 @@ inline ThreadHandle_t ThreadExecuteSoloImpl( CFunctor *pFunctor, const char *psz
 	hThread = CreateSimpleThread( FunctorExecuteThread, pFunctor );
 	if ( pszName )
 	{
-		ThreadSetDebugName( hThread, pszName );
+		ThreadSetDebugNameS2( hThread, pszName );
 	}
 	return hThread;
 }
