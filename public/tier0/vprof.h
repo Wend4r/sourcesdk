@@ -74,13 +74,8 @@
 
 #define VPROF_ONLY( expression )	expression
 
-#define VPROF_ENTER_SCOPE( name ) \
-	do \
-	{ \
-		static VProfBudgetGroupCallSite vprofBudgetGroup( VPROF_BUDGETGROUP_OTHER_UNACCOUNTED, 0 ); \
-		g_VProfCurrentProfile.EnterScope( name, false, vprofBudgetGroup, { __FILE__, __LINE__, __func__ } ); \
-	} while ( 0 )
-#define VPROF_EXIT_SCOPE()					g_VProfCurrentProfile.ExitScope()
+#define VPROF_ENTER_SCOPE( name )			VProf_EnterScopeAdHoc( name, { __FILE__, __LINE__, __func__ } )
+#define VPROF_EXIT_SCOPE()					VProf_ExitScope()
 
 #define VPROF_BUDGET_GROUP_ID_UNACCOUNTED 0
 
@@ -278,6 +273,10 @@ struct CVProfLayoutVerifier;
 COMPILE_TIME_ASSERT( sizeof( CUtlSourceLocation ) == 24 );
 COMPILE_TIME_ASSERT( sizeof( VProfBudgetGroupCallSite ) == 16 );
 COMPILE_TIME_ASSERT( sizeof( VProfBudgetGroupEntry ) == 4104 );
+
+// Enters a scope of the Unaccounted budget group, on the profiled thread only
+PLATFORM_INTERFACE void VProf_EnterScopeAdHoc( const char *pszName, CUtlSourceLocation location );
+PLATFORM_INTERFACE void VProf_ExitScope();
 
 //-----------------------------------------------------------------------------
 //
