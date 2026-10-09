@@ -171,7 +171,7 @@ DECLARE_POINTER_HANDLE( HSCRIPT );
 
 #include "variant.h"
 
-typedef uint8 ScriptDataType_t;
+typedef fieldtype_t ScriptDataType_t;
 typedef CVariant ScriptVariant_t;
 
 #define SCRIPT_VARIANT_NULL ScriptVariant_t()
@@ -192,7 +192,7 @@ DECLARE_DEDUCE_FIELDTYPE( FIELD_HSCRIPT, HSCRIPT );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_VARIANT, ScriptVariant_t );
 DECLARE_DEDUCE_FIELDTYPE( FIELD_EHANDLE, CEntityHandle );
 
-#define ScriptDeduceType( T ) ScriptDeducer<T>::FIELD_TYPE
+#define ScriptDeduceType( T ) ( ScriptDataType_t )ScriptDeducer<T>::FIELD_TYPE
 
 template <typename T>
 inline const char * ScriptFieldTypeName() 
