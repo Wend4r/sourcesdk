@@ -254,7 +254,7 @@ inline bool IsSolid( SolidType_t solidType, int nSolidFlags )
 }
 
 // m_lifeState values
-schema enum LifeState_t
+schema enum LifeState_t : unsigned char
 {
 	LIFE_ALIVE			= 0x0,	// alive
 	LIFE_DYING			= 0x1,	// playing death animation or still falling off of a ledge waiting to hit ground
