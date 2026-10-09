@@ -38,6 +38,8 @@ class ConCommand;
 class CCommandContext;
 class ConVarRefAbstract;
 
+typedef uint8 *ConVarUserInfoSet_t;
+
 //-----------------------------------------------------------------------------
 // Purpose: Internal structure of ConVar objects
 //-----------------------------------------------------------------------------
@@ -600,18 +602,18 @@ class CConVar;
 template <typename T>
 using FnTypedChangeCallback_t = void (*)(CConVar<T> *cvar, CSplitScreenSlot nSlot, const T *pNewValue, const T *pOldValue);
 template <typename T>
-using FnTypedChangeCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, void *__unk01, FnTypedChangeCallback_t<T> cb);
+using FnTypedChangeCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnTypedChangeCallback_t<T> cb);
 
 using FnGenericChangeCallback_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue);
-using FnGenericChangeCallbackProvider_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericChangeCallback_t cb);
+using FnGenericChangeCallbackProvider_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericChangeCallback_t cb);
 
 template <typename T>
 using FnTypedFilterCallback_t = bool (*)(CConVar<T> *cvar, CSplitScreenSlot nSlot, const T *pNewValue, const T *pOldValue);
 template <typename T>
-using FnTypedFilterCallbackProvider_t = bool(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, void *__unk01, FnTypedFilterCallback_t<T> cb);
+using FnTypedFilterCallbackProvider_t = bool(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnTypedFilterCallback_t<T> cb);
 
 using FnGenericFilterCallback_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue);
-using FnGenericFilterCallbackProvider_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericFilterCallback_t cb);
+using FnGenericFilterCallbackProvider_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericFilterCallback_t cb);
 
 using FnCustomData_t = void *(*)();
 
@@ -660,7 +662,7 @@ struct ConVarValueInfo_t
 	{
 		if(cb)
 		{
-			m_fnProviderCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericChangeCallback_t _cb ) {
+			m_fnProviderCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericChangeCallback_t _cb ) {
 				reinterpret_cast<FnTypedChangeCallback_t<T>>(_cb)(reinterpret_cast<CConVar<T> *>(ref), nSlot, reinterpret_cast<const T *>(pNewValue), reinterpret_cast<const T *>(pOldValue));
 			};
 
@@ -673,7 +675,7 @@ struct ConVarValueInfo_t
 	{
 		if(cb)
 		{
-			m_fnProviderFilterCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericFilterCallback_t _cb ) -> bool {
+			m_fnProviderFilterCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericFilterCallback_t _cb ) -> bool {
 				return reinterpret_cast<FnTypedFilterCallback_t<T>>(_cb)(reinterpret_cast<CConVar<T> *>(ref), nSlot, reinterpret_cast<const T *>(pNewValue), reinterpret_cast<const T *>(pOldValue));
 			};
 
