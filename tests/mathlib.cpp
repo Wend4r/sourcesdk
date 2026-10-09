@@ -48,6 +48,9 @@ REGISTER_NAMED_TEST( "mathlib.SphericalHarmonic", mathlib_SphericalHarmonic )
 	TEST_TRUE( fabsf( SphericalHarmonic( 0, 0, Vector( 0.0f, 0.0f, 1.0f ) ) - flY00 ) < 1.0e-5f );
 }
 
+// mathlib/sse.cpp has no Win64 code path for _SSE_RSqrtFast (it returns 0 there); nothing in the
+// SDK calls it.
+#ifndef _WIN64
 // Declared by the private mathlib/sse.h.
 float _SSE_RSqrtFast( float x );
 
@@ -59,6 +62,7 @@ REGISTER_NAMED_TEST( "mathlib.SSERSqrtFast", mathlib_SSERSqrtFast )
 	TEST_TRUE( fabsf( _SSE_RSqrtFast( 4.0f ) - 0.5f ) < 0.001f );
 	TEST_TRUE( fabsf( _SSE_RSqrtFast( 0.25f ) - 2.0f ) < 0.005f );
 }
+#endif // !_WIN64
 
 REGISTER_NAMED_TEST( "mathlib.ConcatRotations", mathlib_ConcatRotations )
 {
