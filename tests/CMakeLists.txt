@@ -121,6 +121,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utldict.cpp
 	utlfixedmemory.cpp
 	utlflags.cpp
+	utlhandletable.cpp
 	utlhash.cpp
 	utlhashtable.cpp
 	utlleanvector.cpp

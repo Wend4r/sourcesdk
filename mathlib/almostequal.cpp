@@ -11,38 +11,38 @@
 
 #include "mathlib/mathlib.h"
 
-static inline bool AE_IsInfinite( float a )
+static inline bool AE_IsInfinite( const float a )
 {
 	const int kInfAsInt = 0x7F800000;
 
 	// An infinity has an exponent of 255 (shift left 23 positions) and
 	// a zero mantissa. There are two infinities - positive and negative.
-	if ( ( *( int * )&a & 0x7FFFFFFF ) == kInfAsInt )
+	if ( ( FloatBits( a ) & 0x7FFFFFFF ) == kInfAsInt )
 		return true;
 	return false;
 }
 
-static inline bool AE_IsNan( float a )
+static inline bool AE_IsNan( const float a )
 {
 	// a NAN has an exponent of 255 (shifted left 23 positions) and
 	// a non-zero mantissa.
-	int exp = *( int * )&a & 0x7F800000;
-	int mantissa = *( int * )&a & 0x007FFFFF;
+	int exp = FloatBits( a ) & 0x7F800000;
+	int mantissa = FloatBits( a ) & 0x007FFFFF;
 	if ( exp == 0x7F800000 && mantissa != 0 )
 		return true;
 	return false;
 }
 
-static inline int AE_Sign( float a )
+static inline int AE_Sign( const float a )
 {
 	// The sign bit of a number is the high bit.
-	return ( *( int * )&a ) & 0x80000000;
+	return FloatBits( a ) & 0x80000000;
 }
 
 // This is the 'final' version of the AlmostEqualUlps function.
 // The optional checks are included for completeness, but in many
 // cases they are not necessary, or even not desirable.
-bool AlmostEqual( float a, float b, int maxUlps )
+bool AlmostEqual( const float a, const float b, int maxUlps )
 {
 	// There are several optional checks that you can do, depending
 	// on what behavior you want from your floating point comparisons.
@@ -77,12 +77,12 @@ bool AlmostEqual( float a, float b, int maxUlps )
 	if ( AE_Sign( a ) != AE_Sign( b ) )
 		return a == b;
 
-	int aInt = *( int * )&a;
+	int aInt = FloatBits( a );
 	// Make aInt lexicographically ordered as a twos-complement int
 	if ( aInt < 0 )
 		aInt = 0x80000000 - aInt;
 	// Make bInt lexicographically ordered as a twos-complement int
-	int bInt = *( int * )&b;
+	int bInt = FloatBits( b );
 	if ( bInt < 0 )
 		bInt = 0x80000000 - bInt;
 
