@@ -64,6 +64,7 @@ class IRecipientFilter;
 class CBaselineEntityData;
 class CNetworkServerSpawnGroup;
 class CSteamID;
+class IEntityReport;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -418,8 +419,9 @@ public:
 	virtual void	*GetServerSerializersMsg( void ) = 0;
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr( void ) = 0;
 	virtual bool	IsSaveRestoreAllowed( CUtlString *pError ) = 0;
-	virtual bool	unk044( void ) = 0;
-	virtual void	*unk045( int nSlot ) = 0;
+	virtual bool	IsEntityReportActive( void ) = 0;
+	// Returns nullptr unless the entity report is active and targets this slot or every slot
+	virtual IEntityReport *GetEntityReport( int nSlot ) = 0;
 	// Empty in this build
 	virtual void	unk046( void ) = 0;
 	virtual void	unk047( void ) = 0;
