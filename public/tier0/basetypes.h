@@ -411,17 +411,17 @@ inline T AlignValue( T val, uintp alignment )
 
 #ifdef __cplusplus
 
-inline unsigned long& FloatBits( vec_t& f )
+inline uint32& FloatBits( vec_t& f )
 {
-	return *reinterpret_cast<unsigned long*>(&f);
+	return *reinterpret_cast<uint32*>(&f);
 }
 
-inline unsigned long const& FloatBits( vec_t const& f )
+inline uint32 const& FloatBits( vec_t const& f )
 {
-	return *reinterpret_cast<unsigned long const*>(&f);
+	return *reinterpret_cast<uint32 const*>(&f);
 }
 
-inline vec_t BitsToFloat( unsigned long i )
+inline vec_t BitsToFloat( uint32 i )
 {
 	return *reinterpret_cast<vec_t*>(&i);
 }
