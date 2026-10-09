@@ -59,11 +59,9 @@ void ConCommandRegList::UnregisterConCommand( const Entry_t &cmd )
 
 	Assert( pConCmd );
 
+	// Could already be unregistered or failed to register
 	if ( !pConCmd->IsValidRef() )
 	{
-		Plat_FatalError( "UnregisterConCommand: Invalid con command \"%s\"!\n", cmd.m_Info.m_pszName );
-		DebuggerBreakIfDebugging();
-
 		return;
 	}
 
@@ -92,13 +90,27 @@ void ConCommandRegList::RegisterAll()
 
 void ConCommandRegList::UnregisterAll()
 {
-	for ( auto list = s_pRoot; list; list = list->m_pPrev )
+	if ( !s_bConCommandsRegistered )
+	{
+		return;
+	}
+
+	s_bConCommandsRegistered = false;
+
+	ConCommandRegList *pPrev = nullptr;
+
+	for ( auto list = s_pRoot; list; list = pPrev )
 	{
 		for ( size_t i = 0; i < list->m_nSize; i++ )
 		{
 			UnregisterConCommand( list->m_Entries[i] );
 		}
+
+		pPrev = list->m_pPrev;
+		delete list;
 	}
+
+	s_pRoot = nullptr;
 }
 
 void ConCommandRegList::AddToList( const Entry_t &cmd )
@@ -189,10 +201,9 @@ void ConVarRegList::UnregisterConVar( const Entry_t &cvar )
 	auto *pConVar = cvar.m_pConVar;
 	Assert( pConVar );
 
+	// Could already be unregistered or failed to register
 	if ( !pConVar->IsValidRef() )
 	{
-		Plat_FatalError( "UnregisterConVar: Invalid convar \"%s\"!\n", cvar.m_Info.m_pszName );
-		DebuggerBreakIfDebugging();
 		return;
 	}
 
@@ -223,13 +234,27 @@ bool ConVarRegList::RegisterAll()
 
 bool ConVarRegList::UnregisterAll()
 {
-	for ( auto list = s_pRoot; list; list = list->m_pPrev )
+	if ( !s_bConVarsRegistered )
+	{
+		return false;
+	}
+
+	s_bConVarsRegistered = false;
+
+	ConVarRegList *pPrev = nullptr;
+
+	for ( auto list = s_pRoot; list; list = pPrev )
 	{
 		for ( size_t i = 0; i < list->m_nSize; i++ )
 		{
 			UnregisterConVar( list->m_Entries[i] );
 		}
+
+		pPrev = list->m_pPrev;
+		delete list;
 	}
+
+	s_pRoot = nullptr;
 
 	return true;
 }
@@ -325,8 +350,13 @@ uint64 ConVar_GetDefaultFlags()
 
 bool ConVar_Unregister( )
 {
-	if ( !g_pCVar )
+	if ( !g_pCVar || !s_bRegistered )
 		return false;
+
+	s_bRegistered = false;
+	s_nCVarFlag = FCVAR_NONE;
+	s_ConVarRegCB = nullptr;
+	s_ConCommandRegCB = nullptr;
 
 	ConCommandRegList::UnregisterAll();
 	ConVarRegList::UnregisterAll();
