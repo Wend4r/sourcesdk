@@ -310,10 +310,11 @@ public:
 	CUtlVector( const std::initializer_list< T > elements );
 };
 
-template< class T, typename I = int >
-class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlVectorMemory_RawAllocator<T, I> >
+template< class T, typename I = int, class A = CMemAllocAllocator >
+class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlVectorMemory_RawAllocator<T, I, A> >
 {
-	typedef CUtlVectorBase< T, I, CUtlVectorMemory_RawAllocator<T, I> > BaseClass;
+	typedef CUtlVectorBase< T, I, CUtlVectorMemory_RawAllocator<T, I, A> > BaseClass;
+	typedef A CAllocator;
 
 public:
 	using BaseClass::BaseClass;
