@@ -71,6 +71,9 @@ enum SchemaEnumFlags_t : uint8
 	SCHEMA_EF_IS_REGISTERED = (1 << 0),
 	SCHEMA_EF_MODULE_LOCAL_TYPE_SCOPE = (1 << 1),
 	SCHEMA_EF_GLOBAL_TYPE_SCOPE = (1 << 2),
+	SCHEMA_EF_UNK003 = 1 << 3,
+	SCHEMA_EF_UNK004 = 1 << 4,
+	SCHEMA_EF_UNK005 = 1 << 5,
 };
 
 enum SchemaTypeCategory_t : uint8
