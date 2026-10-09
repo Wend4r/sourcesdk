@@ -9,3 +9,15 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}
 	${SOURCESDK_PUBLIC_GAME_SERVER_INCLUDE_DIR}
 )
+
+# Headers with schema types, the input of the sourcesdk_schema check target
+list(APPEND SOURCESDK_SCHEMA_SOURCE_FILES
+	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}/cstrike15/bot/bot.h
+	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}/cstrike15/bot/cs_bot.h
+	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}/cstrike15/bot/cs_bot_timers.h
+	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}/navlib/cs_nav_pathcost.h
+	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}/navlib/nav_area.h
+	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}/navlib/nav_mesh.h
+	${SOURCESDK_GAME_SERVER_INCLUDE_DIR}/navlib/nav_pathcost.h
+	${SOURCESDK_PUBLIC_GAME_SERVER_INCLUDE_DIR}/iserverentitysubclassutils.h
+)

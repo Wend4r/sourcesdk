@@ -86,14 +86,6 @@ set(SOURCESDK_NEEDED_PROTOS
 	valveextensions
 )
 
-# The marked bot headers include cs_usercmd.pb.h
-if(SOURCESDK_COMPILE_SCHEMA)
-	list(APPEND SOURCESDK_NEEDED_PROTOS
-		usercmd
-		cs_usercmd
-	)
-endif()
-
 include(cmake/platform/shared.cmake)
 
 if(WINDOWS)
@@ -115,6 +107,7 @@ endif()
 include(cmake/sourcesdk.cmake)
 include(cmake/sourcesdk/manifests.cmake)
 include(cmake/sourcesdk/manifests/proto.cmake)
+
 include(cmake/sourcesdk/proto.cmake)
 include(cmake/sourcesdk/proto/clean_prev.cmake)
 include(cmake/sourcesdk/proto/generate.cmake)
@@ -136,6 +129,11 @@ include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
 include(cmake/sourcesdk/targets/kv3lib.cmake)
+
+# The protos the marked SDK headers include, after the targets list them
+if(SOURCESDK_COMPILE_SCHEMA)
+	include(cmake/sourcesdk/schema/protos.cmake)
+endif()
 
 include(cmake/sourcesdk/schema.cmake)
 
