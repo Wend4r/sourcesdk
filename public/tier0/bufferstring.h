@@ -347,10 +347,10 @@ public:
 	DLL_CLASS_IMPORT const char *EnsureTrailingSlash( char cSeparator, bool bDontAppendIfEmpty = true );
 
 	// Expands current path with additional directory (with separator).
-	DLL_CLASS_IMPORT const char *ExtendPath( const char *pPath, char cSeparator );
+	DLL_CLASS_IMPORT const char *ExtendPath( const char *pPath, char cSeparator, bool bIgnoreAlignment = false );
 
 	// Extract filename without extension.
-	DLL_CLASS_IMPORT const char *ExtractFileBase( const char *pPath );
+	DLL_CLASS_IMPORT const char *ExtractFileBase( const char *pPath, bool bStripAllExtensions = false );
 
 	// Copies out the file extension into dest
 	DLL_CLASS_IMPORT const char *ExtractFileExtension( const char *pPath );
@@ -383,7 +383,7 @@ public:
 	// The first is the full path of the file to make a relative path for.
 	// The second is the full path of the directory to make the first file relative to
 	// Returns NULL if they can't be made relative (on separate drives, for example)
-	DLL_CLASS_IMPORT const char *MakeRelativePath( const char *pFullPath, const char *pDirectory );
+	DLL_CLASS_IMPORT const char *MakeRelativePath( const char *pFullPath, const char *pDirectory, bool bIgnoreAlignment = false );
 
 	// Transfers data from buffer and then purges it.
 	DLL_CLASS_IMPORT void MoveFrom( CBufferString &moveFrom );
