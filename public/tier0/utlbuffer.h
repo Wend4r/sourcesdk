@@ -54,13 +54,13 @@ public:
 	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept;
 	CUtlCharConversion &operator=( const CUtlCharConversion &rhs );
 
-	char GetEscapeChar() const;
-	const char *GetDelimiter() const;
-	int GetDelimiterLength() const;
+	char GetEscapeChar() const { return m_nEscapeChar; }
+	const char *GetDelimiter() const { return m_pDelimiter; }
+	int GetDelimiterLength() const { return m_nDelimiterLength; }
 
-	const char *GetConversionString( char c ) const;
-	int GetConversionLength( char c ) const;
-	int MaxConversionLength() const;
+	const char *GetConversionString( char c ) const { return m_pReplacements[ ( unsigned char )c ].m_pReplacementString; }
+	int GetConversionLength( char c ) const { return m_pReplacements[ ( unsigned char )c ].m_nLength; }
+	int MaxConversionLength() const { return m_nMaxConversionLength; }
 
 	// Finds a conversion for the passed-in string, returns length
 	virtual char FindConversion( const char *pString, int *pLength );
