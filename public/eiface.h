@@ -571,7 +571,7 @@ public:
 								const Entity2Networkable_t **pNetworkables, const uint16 *pEntityIndicies, int nEntityIndices, bool bEnablePVSBits ) = 0;
 	
 	// TERROR: Perform any PVS cleanup before a full update
-	virtual void			PrepareForFullUpdate( CEntityIndex nPlayerEntityIndex ) = 0;
+	virtual void			PrepareForFullUpdate( CPlayerSlot nSlot ) = 0;
 	
 	virtual bool			ShouldClientReceiveStringTableUserData( const INetworkStringTable *pTable, int stringNumber, const CCheckTransmitInfo *pInfo ) = 0;
 
