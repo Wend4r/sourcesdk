@@ -56,7 +56,7 @@ public:
 	
 	virtual float		GetAvgLoss( int flow ) const = 0;	 // avg packet loss[0..1]
 	virtual float		GetAvgChoke( int flow ) const = 0;
-	virtual float		GetUnkAvg015( int flow ) const = 0;
+	virtual float		GetMaxLatency( int flow ) const = 0;	// highest packet latency over the last second, -1 if none
 	virtual float		GetAvgData( int flow ) const = 0;	 // data flow in bytes/sec
 	
 	virtual float		GetAvgPackets( int flow ) const = 0; // avg packet bytes/sec
@@ -69,7 +69,7 @@ public:
 	virtual float		GetTimeoutSeconds( void ) const = 0;
 	virtual float		GetTimeUntilTimeout( void ) const = 0;
 	
-	virtual float		GetUnkTime025( void ) const = 0;
+	virtual float		GetLateLatencyThreshold( void ) const = 0;	// packets above it are marked late
 	
 	virtual void		ResetLatencyStats( int flow ) = 0;
 	virtual SNetChannelLatencyStats *GetLatencyStats( int flow ) const = 0;
@@ -79,10 +79,10 @@ public:
 	virtual void		SetNumPredictionErrors( int num ) = 0;
 	virtual void		SetShowNetMessages( bool show ) = 0;
 
-	virtual int			unk032( int flow, int nSeqNr, float *pflLatency = nullptr ) const = 0;
+	virtual int			GetPacketStatus( int flow, int nSeqNr, float *pflLatency = nullptr ) const = 0;	// 0 received, 1 dropped, 2 out of order, 3 unknown
 
-	virtual int			unk033( int flow, int16 *pOut, int nMaxEntries ) const = 0;
-	virtual void		unk034( int flow, CMsgSource2NetworkFlowQuality *pMsg, bool ) = 0;
+	virtual int			GetPacketLatencyHistory( int flow, int16 *pOut, int nMaxEntries ) const = 0;	// newest first; -1 dropped, -2 out of order, -3 missing
+	virtual void		GetFlowQuality( int flow, CMsgSource2NetworkFlowQuality *pMsg, bool ) = 0;
 };
 
 #endif // INETCHANNELINFO_H
