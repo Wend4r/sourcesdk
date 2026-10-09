@@ -176,7 +176,7 @@ public:
 	virtual void	SuppressTransmit( bool suppress ) = 0;
 	virtual bool	IsSuppressingTransmit( void ) const = 0;
 
-	virtual void	PostReceivedNetMessage( const CNetMessage *pData, int nBits, int nInSequenceNr ) = 0;
+	virtual void	SendMessageRaw( const void *pData, uint32 cbData, int nSendFlags ) = 0;
 
 	virtual void	SetPendingTick( int nTick ) = 0;
 
