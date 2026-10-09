@@ -120,9 +120,14 @@ public:
 	const T& Tail() const;
 
 	// They are forward compatible with the C++ 11 range-based for loops.
+	// Only available when the elements are contiguous in memory.
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	iterator begin()						{ return Base(); }
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	const_iterator begin() const			{ return Base(); }
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	iterator end()							{ return Base() + Count(); }
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	const_iterator end() const				{ return Base() + Count(); }
 	reverse_iterator rbegin()				{ return reverse_iterator(end()); }
 	const_reverse_iterator rbegin() const	{ return const_reverse_iterator(end()); }
