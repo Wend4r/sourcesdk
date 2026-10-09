@@ -254,3 +254,55 @@ REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDel
 	TEST_EQ( VectorDeleteTracked_t::s_nDeleted, 2 );
 	TEST_EQ( vec.Count(), 0 );
 }
+
+struct VectorCountingAllocator_t
+{
+	static int s_nReallocs;
+	static int s_nFrees;
+
+	template < typename T, typename I = int >
+	static T *Realloc( T *pMem, I nCount, I &nAdjustedCount )
+	{
+		++s_nReallocs;
+		return CMemAllocAllocator::Realloc< T, I >( pMem, nCount, nAdjustedCount );
+	}
+
+	static void Free( void *pMem )
+	{
+		++s_nFrees;
+		CMemAllocAllocator::Free( pMem );
+	}
+};
+
+int VectorCountingAllocator_t::s_nReallocs = 0;
+int VectorCountingAllocator_t::s_nFrees = 0;
+
+REGISTER_NAMED_TEST( "CUtlVector.RawAllocator", CUtlVector_RawAllocatorStorage )
+{
+	// Raw allocator vectors should route storage through the selected allocator.
+	CUtlVector_RawAllocator< int > vecDefault;
+
+	vecDefault.AddToTail( 1 );
+	vecDefault.AddToTail( 2 );
+
+	TEST_EQ( vecDefault.Count(), 2 );
+	TEST_EQ( vecDefault[ 1 ], 2 );
+
+	VectorCountingAllocator_t::s_nReallocs = 0;
+	VectorCountingAllocator_t::s_nFrees = 0;
+
+	{
+		CUtlVector_RawAllocator< int, int, VectorCountingAllocator_t > vec;
+
+		for ( int i = 0; i < 16; ++i )
+		{
+			vec.AddToTail( i );
+		}
+
+		TEST_EQ( vec.Count(), 16 );
+		TEST_EQ( vec[ 15 ], 15 );
+		TEST_TRUE( VectorCountingAllocator_t::s_nReallocs > 0 );
+	}
+
+	TEST_EQ( VectorCountingAllocator_t::s_nFrees, 1 );
+}
