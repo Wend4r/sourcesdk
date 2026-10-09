@@ -364,7 +364,7 @@ private:
 
 // The handle is a CUtlSymbol for the dirname and the same for the filename, the accessor
 //  copies them into a static char buffer for return.
-typedef void* FileNameHandle_t;
+typedef uint32 FileNameHandle_t;
 
 // Symbol table for more efficiently storing filenames by breaking paths and filenames apart.
 // Refactored from BaseFileSystem.h
@@ -378,47 +378,20 @@ class CUtlFilenameSymbolTable
 		FileNameHandleInternal_t()
 		{
 			COMPILE_TIME_ASSERT( sizeof( *this ) == sizeof( FileNameHandle_t ) );
-			COMPILE_TIME_ASSERT( sizeof( value ) == 4 );
-			value = 0;
-
-#ifdef PLATFORM_64BITS
-			pad = 0;
-#endif
+			path = 0;
+			file = 0;
 		}
 
-		// We pack the path and file values into a single 32 bit value.  We were running
-		// out of space with the two 16 bit values (more than 64k files) so instead of increasing
-		// the total size we split the underlying pool into two (paths and files) and 
-		// use a smaller path string pool and a larger file string pool.
-		unsigned int value;
-
-#ifdef PLATFORM_64BITS
-		// some padding to make sure we are the same size as FileNameHandle_t on 64 bit.
-		unsigned int pad;
-#endif
-
-		static const unsigned int cNumBitsInPath = 12;
-		static const unsigned int cNumBitsInFile = 32 - cNumBitsInPath;
-
-		static const unsigned int cMaxPathValue = 1 << cNumBitsInPath;
-		static const unsigned int cMaxFileValue = 1 << cNumBitsInFile;
-
-		static const unsigned int cPathBitMask = cMaxPathValue - 1;
-		static const unsigned int cFileBitMask = cMaxFileValue - 1;
-
 		// Part before the final '/' character
-		unsigned int	GetPath() const { return ((value >> cNumBitsInFile) & cPathBitMask); }
-		void			SetPath( unsigned int path ) { Assert( path < cMaxPathValue ); value = ((value & cFileBitMask) | ((path & cPathBitMask) << cNumBitsInFile)); }
-
+		unsigned short path;
 		// Part after the final '/', including extension
-		unsigned int	GetFile() const { return (value & cFileBitMask); }
-		void			SetFile( unsigned int file ) { Assert( file < cMaxFileValue ); value = ((value & (cPathBitMask << cNumBitsInFile)) | (file & cFileBitMask)); }
+		unsigned short file;
 	};
 
 public:
 	DLL_CLASS_IMPORT FileNameHandle_t	FindOrAddFileName( const char *pFileName );
-	DLL_CLASS_IMPORT FileNameHandle_t	FindFileName( const char *pFileName );
-	int				PathIndex( const FileNameHandle_t &handle ) { return (( const FileNameHandleInternal_t * )&handle)->GetPath(); }
+	DLL_CLASS_IMPORT FileNameHandle_t	FindFileName( const char *pFileName ) const;
+	int				PathIndex( const FileNameHandle_t &handle ) { return (( const FileNameHandleInternal_t * )&handle)->path; }
 	DLL_CLASS_IMPORT bool				String( const FileNameHandle_t& handle, char *buf, int buflen );
 	DLL_CLASS_IMPORT bool				String( const FileNameHandle_t& handle, CBufferString * );
 	DLL_CLASS_IMPORT void				RemoveAll();
