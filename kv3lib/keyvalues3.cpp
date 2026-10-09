@@ -1731,9 +1731,14 @@ void CKeyValues3Array::RemoveMultiple( KeyValues3 *parent, int from, int num )
 {
 	Element_t *base = Base();
 
-	for ( int i = 0; i <= num; ++i )
+	for ( int i = 0; i < num; ++i )
 	{
 		parent->FreeMember( base[from + i] );
+	}
+
+	if ( from + num < m_nCount )
+	{
+		memmove( &base[ from ], &base[ from + num ], sizeof( Element_t ) * ( m_nCount - from - num ) );
 	}
 
 	m_nCount -= num;
