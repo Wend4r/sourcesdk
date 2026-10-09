@@ -387,12 +387,15 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::RemoveAll()
 template< class T, size_t N, typename I, class A >
 inline void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::Purge()
 {
-	RemoveAll();
-	
-	if ( ( size_t )m_nAllocated > N )
-		CMemAllocAllocator::Free( (void*)m_pElements );
-	
-	m_nAllocated = N;
+	if ( !IsExternallyAllocated() )
+	{
+		RemoveAll();
+
+		if ( ( size_t )m_nAllocated > N )
+			CMemAllocAllocator::Free( (void*)m_pElements );
+
+		m_nAllocated = N;
+	}
 }
 
 template< class B, class T, typename I >
