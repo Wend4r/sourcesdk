@@ -151,6 +151,7 @@ set(SOURCESDK_SMOKE_TEST_SOURCES
 	tier0_utl_headers.cpp
 	tier1_utl_headers.cpp
 	keyvalues3_headers.cpp
+	jobthread.cpp
 )
 
 foreach(test_source IN LISTS SOURCESDK_SMOKE_TEST_SOURCES)
