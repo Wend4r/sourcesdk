@@ -157,6 +157,17 @@ foreach(test_source IN LISTS SOURCESDK_SMOKE_TEST_SOURCES)
 	sourcesdk_add_cpp_test(smoke smoke_main.cpp ${test_source})
 endforeach()
 
+set(SOURCESDK_MATHLIB_TEST_SOURCES
+	vec3d.cpp
+)
+
+foreach(test_source IN LISTS SOURCESDK_MATHLIB_TEST_SOURCES)
+	sourcesdk_add_cpp_test("" containers_main.cpp ${test_source})
+
+	get_filename_component(test_name_we "${test_source}" NAME_WE)
+	target_link_libraries(${test_name_we}_tests PRIVATE ${SOURCESDK_MATHLIB_NAME})
+endforeach()
+
 add_executable(keyvalues3_tests
 	${SOURCESDK_TEST_COMMON_SOURCES}
 	${SOURCESDK_TEST_COMMON_HEADERS}
