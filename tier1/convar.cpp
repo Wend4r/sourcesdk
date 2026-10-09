@@ -380,18 +380,25 @@ CCommand::CCommand( int nArgC, const char **ppArgV ) : CCommand()
 
 	char *pBuf = m_ArgvBuffer.Base();
 	char *pSBuf = m_ArgSBuffer.Base();
+	const char *pBufEnd = pBuf + m_ArgvBuffer.Count();
+	const char *pSBufEnd = pSBuf + m_ArgSBuffer.Count();
 	for ( int i = 0; i < nArgC; ++i )
 	{
-		m_Args.AddToTail( pBuf );
 		int nLen = V_strlen( ppArgV[i] );
-		memcpy( pBuf, ppArgV[i], nLen+1 );
-		if ( i == 0 )
+		bool bContainsSpace = strchr( ppArgV[i], ' ' ) != NULL;
+
+		// Each argument is followed by a separator or the terminator in the ArgS buffer
+		if ( nLen + 1 > pBufEnd - pBuf || nLen + ( bContainsSpace ? 2 : 0 ) + 1 > pSBufEnd - pSBuf )
 		{
-			m_nArgv0Size = nLen;
+			Warning( "CCommand::CCommand: Encountered command which overflows the tokenizer buffer.. Skipping!\n" );
+			Reset();
+			return;
 		}
+
+		m_Args.AddToTail( pBuf );
+		memcpy( pBuf, ppArgV[i], nLen+1 );
 		pBuf += nLen+1;
 
-		bool bContainsSpace = strchr( ppArgV[i], ' ' ) != NULL;
 		if ( bContainsSpace )
 		{
 			*pSBuf++ = '\"';
@@ -407,7 +414,14 @@ CCommand::CCommand( int nArgC, const char **ppArgV ) : CCommand()
 		{
 			*pSBuf++ = ' ';
 		}
+
+		if ( i == 0 && nArgC > 1 )
+		{
+			m_nArgv0Size = pSBuf - m_ArgSBuffer.Base();
+		}
 	}
+
+	*pSBuf = '\0';
 }
 
 void CCommand::EnsureBuffers()
