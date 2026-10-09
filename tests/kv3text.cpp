@@ -192,6 +192,8 @@ REGISTER_NAMED_TEST( "KV3Codec.Text.Errors", KV3Codec_Text_Errors )
 }
 
 // The text written by kv3lib reads back through the tier0 LoadKV3 and the other way round
+// Not on macOS: CS2 has no macOS build, lib/osx64 holds the Dota 2 tier0, whose text KV3 crashes on the CS2 layout
+#if !defined( PLATFORM_OSX )
 REGISTER_NAMED_TEST( "KV3Codec.Text.Tier0", KV3Codec_Text_Tier0 )
 {
 	for ( const char *pszFile : { "/value.kv3", "/example.kv3" } )
@@ -226,3 +228,4 @@ REGISTER_NAMED_TEST( "KV3Codec.Text.Tier0", KV3Codec_Text_Tier0 )
 		TEST_EQ( SaveText( *reloaded.Root() ), SaveText( *ours.Root() ) );
 	}
 }
+#endif // !PLATFORM_OSX
