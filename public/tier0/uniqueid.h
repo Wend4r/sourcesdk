@@ -42,6 +42,7 @@ PLATFORM_INTERFACE bool IsUniqueIdEqual( const UniqueId_t &id1, const UniqueId_t
 PLATFORM_INTERFACE void UniqueIdToString( const UniqueId_t &id, char *pBuf, int nMaxLen );
 PLATFORM_INTERFACE bool UniqueIdFromString( UniqueId_t *pDest, const char *pBuf, int nMaxLen = 0 );
 PLATFORM_INTERFACE void CopyUniqueId( const UniqueId_t &src, UniqueId_t *pDest );
+PLATFORM_INTERFACE uint64 GenerateHashFromUniqueId( const UniqueId_t &id );
 PLATFORM_INTERFACE bool Serialize( CUtlBuffer &buf, const UniqueId_t &src );
 PLATFORM_INTERFACE bool Unserialize( CUtlBuffer &buf, UniqueId_t &dest );
 

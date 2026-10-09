@@ -40,6 +40,7 @@ PLATFORM_INTERFACE PlatWindow_t Plat_CreateWindow( void *hInstance, const char *
 // Window title
 //-----------------------------------------------------------------------------
 PLATFORM_INTERFACE void Plat_SetWindowTitle( PlatWindow_t hWindow, const char *pTitle );
+PLATFORM_INTERFACE void Plat_SetWindowTitleW( PlatWindow_t hWindow, const wchar_t *pTitle );
 
 
 //-----------------------------------------------------------------------------
