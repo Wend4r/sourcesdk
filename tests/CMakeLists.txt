@@ -158,6 +158,7 @@ foreach(test_source IN LISTS SOURCESDK_SMOKE_TEST_SOURCES)
 endforeach()
 
 set(SOURCESDK_MATHLIB_TEST_SOURCES
+	mathlib.cpp
 	vec3d.cpp
 )
 
