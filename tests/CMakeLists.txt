@@ -118,6 +118,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	minidump.cpp
 	stringpool.cpp
 	utlarray.cpp
+	utlbinaryblock.cpp
 	utlblockmemory.cpp
 	utlbuffer.cpp
 	utldict.cpp
