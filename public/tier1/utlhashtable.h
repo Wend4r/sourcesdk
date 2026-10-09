@@ -806,7 +806,7 @@ void CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DbgChe
 		}
 		else
 		{
-			Assert( m_table[i].flags_and_hash == FLAG_FREE );
+			Assert( m_table[i].flags_and_hash == ( typename entry_t::storage_t )FLAG_FREE );
 		}
 	}
 	Assert( count == Count() && count >= roots && roots == ends );
