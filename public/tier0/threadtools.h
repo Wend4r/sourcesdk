@@ -1034,6 +1034,24 @@ public:
 	}
 };
 
+class PLATFORM_CLASS CThreadMultiWaitEvent
+{
+public:
+	CThreadMultiWaitEvent( bool bManualReset = false );
+	~CThreadMultiWaitEvent();
+
+	void Set();
+	void Reset();
+
+private:
+#ifdef PLATFORM_WINDOWS
+	HANDLE m_hEvent;
+#else
+	int m_nEventFd;
+#endif
+	int m_nType; // 2 for auto-reset, 4 for manual-reset
+};
+
 
 //-----------------------------------------------------------------------------
 //
