@@ -29,7 +29,7 @@
 
 #ifndef _WIN32
 // gcc has no qsort_s, so i need to use a static var to hold the sort context. this makes cutlsortvector _not_ thread sfae under linux
-extern void *g_pUtlSortVectorQSortContext;
+inline void *g_pUtlSortVectorQSortContext = nullptr;
 #endif
 
 template <class T>
