@@ -925,6 +925,7 @@ class PLATFORM_CLASS CThreadSemaphore : public CThreadSyncObject
 {
 public:
 	CThreadSemaphore( int32 initialValue = 0, int32 maxValue = 1, const char *pszName = nullptr, bool bCreate = false );
+	~CThreadSemaphore();
 
 	//-----------------------------------------------------
 	// Increases the count of the semaphore object by a specified
@@ -936,7 +937,7 @@ public:
 	//-----------------------------------------------------
 	// Wait implementation for a signal from the object
 	//-----------------------------------------------------
-	virtual bool WaitImpl( uint32 dwTimeout ) { return false; }
+	bool WaitImpl( uint32 dwTimeout ) override;
 #endif
 
 private:
