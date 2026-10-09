@@ -10,6 +10,7 @@
 #include <math.h>
 #include "tier0/basetypes.h"
 #include "mathlib/vector.h"
+#include "mathlib/vectorws.h"
 #include "mathlib/vector2d.h"
 #include "tier0/dbg.h"
 #include "mathlib/math_pfns.h"
@@ -357,8 +358,10 @@ extern bool s_bMathlibInitialized;
 
 extern const matrix3x4a_t g_MatrixIdentity;
 extern  const Vector vec3_origin;
+extern const VectorWS vec3ws_origin;
 extern  const QAngle vec3_angle;
 extern	const Quaternion quat_identity;
+extern const QuaternionWS quatws_identity;
 extern const Vector vec3_invalid;
 extern	const int nanmask;
 
