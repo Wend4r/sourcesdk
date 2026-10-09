@@ -326,9 +326,9 @@ public:
 		Purge();
 	}
 
-	Node_t *Push( Node_t *pNode )
+	void Push( Node_t *pNode )
 	{
-		return (Node_t *)CTSListBase::Push( pNode );
+		CTSListBase::Push( pNode );
 	}
 
 	Node_t *Pop()
@@ -408,9 +408,9 @@ public:
 		}
 	}
 
-	Node_t *Push( Node_t *pNode )
+	void Push( Node_t *pNode )
 	{
-		return (Node_t *)CTSListBase::Push( pNode );
+		CTSListBase::Push( pNode );
 	}
 
 	Node_t *Pop()
