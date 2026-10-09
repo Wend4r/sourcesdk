@@ -136,7 +136,7 @@ public:
 	// Same methods as IVEngineServer2
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
-	virtual void		unk059( void ) = 0;
+	virtual void		SetFramePerformanceTag( const char *pszTag, int nValue, int, float flDuration ) = 0;
 };
 
 #endif // IENGINESERVICE_H
