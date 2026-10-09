@@ -121,7 +121,7 @@ protected:
 	DLL_CLASS_IMPORT HKeySymbol Internal_GetNameSymbol() const;
 	DLL_CLASS_IMPORT HKeySymbol Internal_GetNameSymbolCaseSensitive() const;
 
-	DLL_CLASS_IMPORT void Internal_SetName( char const *szName );
+	DLL_CLASS_IMPORT bool Internal_SetName( char const *szName );
 	DLL_CLASS_IMPORT void Internal_SetNameFrom( CKeyValues_Data const &pOther );
 
 	DLL_CLASS_IMPORT Color Internal_GetColor( Color defaultClr ) const;
