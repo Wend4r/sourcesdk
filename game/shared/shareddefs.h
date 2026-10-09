@@ -14,7 +14,8 @@
 #include "basetypes.h"
 #include "bittools.h"
 
-#define TICK_INTERVAL			(gpGlobals->interval_per_tick)
+// CS2 runs at a fixed 64 tick rate; CGlobalVarsBase no longer stores the tick interval
+#define TICK_INTERVAL			( 1.0f / 64.0f )
 
 
 #define TIME_TO_TICKS( dt )		( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
