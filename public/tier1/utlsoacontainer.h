@@ -863,25 +863,6 @@ FORCEINLINE void CSOAContainer::MoveDataFrom( CSOAContainer other )
 
 
 
-class CFltX4AttributeIterator : public CStridedConstPtr<fltx4>
-{
-	FORCEINLINE CFltX4AttributeIterator( CSOAContainer const *pContainer, int nAttribute, int nRowNumber = 0 )
-		: CStridedConstPtr<fltx4>( pContainer->ConstRowPtr( nAttribute, nRowNumber), 
-								   pContainer->ItemByteStride( nAttribute ) )
-	{
-	}
-};
-
-class CFltX4AttributeWriteIterator : public CStridedPtr<fltx4>
-{
-	FORCEINLINE CFltX4AttributeWriteIterator( CSOAContainer const *pContainer, int nAttribute, int nRowNumber = 0 )
-		: CStridedPtr<fltx4>( pContainer->RowPtr<uint8>( nAttribute, nRowNumber), 
-							  pContainer->ItemByteStride( nAttribute ) )
-	{
-	}
-	
-};
-
 FORCEINLINE FourVectors CompressSIMD( FourVectors const &a, FourVectors const &b )
 {
 	FourVectors ret;
