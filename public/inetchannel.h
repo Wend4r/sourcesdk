@@ -32,6 +32,7 @@ class	INetworkMessageInternal;
 class	INetMessageDispatcher;
 class	InstantReplayMessage_t;
 class	CUtlSlot;
+class	CNETMsg_Tick_t;
 
 FORWARD_DECLARE_HANDLE(NetMessageHandle_t);
 
@@ -89,7 +90,7 @@ using NetPacket_t = netpacket_t;
 abstract_class INetworkChannelNotify
 {
 public:
-	virtual void OnShutdownChannel( INetChannel *pChannel ) = 0;
+	virtual void OnShutdownChannel( INetChannel *pChannel, bool ) = 0;
 };
 
 abstract_class INetworkMessageProcessingPreFilter
@@ -141,7 +142,7 @@ public:
 	virtual void	UpdateLastReceivedTime( void ) = 0;
 
 	virtual void	unk111( float ) = 0;
-	virtual void	unk112( void *pStat ) = 0;
+	virtual void	SetRemoteFramerate( const CNETMsg_Tick_t *pMsg ) = 0;
 	
 	virtual bool	IsRemoteDisconnected( ENetworkDisconnectionReason &reason ) const = 0;
 
