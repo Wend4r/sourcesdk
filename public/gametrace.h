@@ -129,9 +129,11 @@ public:
 	float m_softContactDampingRatio;
 };
 
-class CPhysSurfacePropertiesVehicle
+schema class CPhysSurfacePropertiesVehicle
 {
 public:
+	TYPEMETA( MGetKV3ClassDefaults );
+
 	CPhysSurfacePropertiesVehicle()
 	{
 		m_wheelDrag = 0.0f;
@@ -139,8 +141,8 @@ public:
 	}
 
 public:
-	float m_wheelDrag;
-	float m_wheelFrictionScale;
+	float m_wheelDrag; META( MKV3TransferName = "wheeldrag" );
+	float m_wheelFrictionScale; META( MKV3TransferName = "wheelfrictionscale" );
 };
 
 class CPhysSurfacePropertiesSoundNames
