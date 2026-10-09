@@ -852,12 +852,12 @@ public:
 	bool IsValid() const { return m_hSyncObject != NULL; }
 	operator HANDLE() { return GetHandle(); }
 	const HANDLE GetHandle() const { return m_hSyncObject; }
+#endif // defined(PLATFORM_WINDOWS)
 
 	//-----------------------------------------------------
 	// Wait for a signal from the object
 	//-----------------------------------------------------
 	bool Wait( uint32 dwTimeout = TT_INFINITE );
-#endif // defined(PLATFORM_WINDOWS)
 
 #ifdef PLATFORM_POSIX
 	bool Wait_NoDiagnostics( uint32 dwTimeout );
@@ -1014,8 +1014,6 @@ public:
 	// Check if the event is signaled
 	//-----------------------------------------------------
 	bool Check();
-
-	bool Wait( uint32 dwTimeout = TT_INFINITE );
 
 	// See CThreadSyncObject for definitions of these functions.
 	static uint32 WaitForMultiple( int nObjects, CThreadEvent **ppObjects, bool bWaitAll, uint32 dwTimeout = TT_INFINITE );
