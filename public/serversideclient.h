@@ -528,7 +528,7 @@ public:
 	{
 	public:
 		virtual ~CSendJob_HltvReplay() override = 0;
-		virtual void Execute() override = 0;
+		virtual void DoExecute() override = 0;
 		virtual void BeforeJobRuns() override = 0;
 	};
 
@@ -536,7 +536,7 @@ public:
 	{
 	public:
 		virtual ~CSendJob_HltvSource() override = 0;
-		virtual void Execute() override = 0;
+		virtual void DoExecute() override = 0;
 		virtual void BeforeJobRuns() override = 0;
 	};
 
@@ -544,7 +544,7 @@ public:
 	{
 	public:
 		virtual ~CSendJob_Empty() override = 0;
-		virtual void Execute() override = 0;
+		virtual void DoExecute() override = 0;
 		virtual void BeforeJobRuns() override = 0;
 	};
 
@@ -552,7 +552,7 @@ public:
 	{
 	public:
 		virtual ~CSendJob_Regular() override = 0;
-		virtual void Execute() override = 0;
+		virtual void DoExecute() override = 0;
 		virtual bool IsJobType( uint32 nJobType ) override = 0;
 		virtual void BeforeJobRuns() override = 0;
 
