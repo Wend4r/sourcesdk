@@ -38,7 +38,13 @@ class ConCommand;
 class CCommandContext;
 class ConVarRefAbstract;
 
-typedef uint8 *ConVarUserInfoSet_t;
+class ConVarUserInfoSet_t
+{
+public:
+	uint8 *m_pData;
+};
+
+COMPILE_TIME_ASSERT( sizeof( ConVarUserInfoSet_t ) == sizeof( uint8 * ) );
 
 //-----------------------------------------------------------------------------
 // Purpose: Internal structure of ConVar objects
