@@ -165,7 +165,12 @@ private:
 public:
 
 	CTSListBase();
+#ifdef PLATFORM_OSX
+	// The macOS tier0 does not export the destructor; it only detaches the list
+	~CTSListBase() { Detach(); }
+#else
 	~CTSListBase();
+#endif
 
 	void Push( TSLNodeBase_t *pNode ) { InternalPush( pNode ); }
 	TSLNodeBase_t *Pop() { return InternalPop(); }
