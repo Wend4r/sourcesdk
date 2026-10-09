@@ -216,7 +216,7 @@ void KeyValues3::CopyFrom( const KeyValues3& other )
 		case KV3_TYPE_TABLE:
 		{
 			SetToEmptyTable();
-			GetTable()->CopyFrom( this, other.GetTable() );
+			GetTable()->CopyFrom( this, &other, other.GetTable() );
 			break;
 		}
 		default:
@@ -2065,7 +2065,7 @@ void CKeyValues3Table::StoreKeyName( KeyValues3 *parent, Name_t &out_buffer, Fla
 	out_flags = flags;
 }
 
-void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src )
+void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const KeyValues3 *src_parent, const CKeyValues3Table* src )
 {
 	int new_size = src->GetMemberCount();
 
@@ -2074,6 +2074,7 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 	m_nCount = new_size;
 
 	auto context = parent->GetContext();
+	auto src_context = src_parent->GetContext();
 
 	Member_t *members_base = MembersBase();
 	Name_t *names_base = NamesBase();
@@ -2089,8 +2090,12 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 	{
 		auto src_flags = src_flags_base[i];
 
-		if ( context && src_flags & MEMBER_FLAG_LARGE_SYMBOL )
-			names_base[i] = context->LookupString( src_names_base[i].m_iSymLarge );
+		if ( src_flags & MEMBER_FLAG_LARGE_SYMBOL )
+		{
+			// Symbol ids are only valid in the arena that made them.
+			UtlSymLargeId_t symid = src_names_base[ i ].m_iSymLarge;
+			StoreKeyName( parent, names_base[ i ], flags_base[ i ], src_context->LookupString( symid ), context == src_context ? symid : UTL_INVAL_SYMBOL_LARGE );
+		}
 		else
 			StoreKeyName( parent, names_base[i], flags_base[i], src_names_base[i].m_pString );
 
