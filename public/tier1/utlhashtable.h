@@ -100,7 +100,7 @@ public:
 	// More efficient than memcpy for the small types that are stored in a hashtable
 	void MoveDataFrom( CUtlHashtableEntry &src )
 	{
-		for ( int i = 0; i < data.Count(); ++i ) { data[i] = src.data[i]; }
+		for ( int i = 0; i < ( int )data.Count(); ++i ) { data[i] = src.data[i]; }
 	}
 };
 
