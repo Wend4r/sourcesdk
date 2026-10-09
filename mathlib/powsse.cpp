@@ -48,12 +48,12 @@ fltx4 Pow_FixedPoint_Exponent_SIMD( const fltx4 & x, int exponent)
 static float shift23 = ( 1 << 23 );
 static float OOshift23 = 1.0 / ( 1 << 23 );
 
-float FastLog2( float i )
+float FastLog2( const float i )
 {
 	float LogBodge = 0.346607f;
 	float x;
 	float y;
-	x = *( int * )&i;
+	x = ( int )FloatBits( i );
 	x *= OOshift23; // 1/pow(2,23);
 	x = x - 127;
 
@@ -71,7 +71,7 @@ float FastPow2( float i )
 
 	x = i + 127 - y;
 	x *= shift23; // pow(2,23);
-	*( int * )&x = ( int )x;
+	x = BitsToFloat( ( int )x );
 	return x;
 }
 

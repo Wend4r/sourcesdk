@@ -122,3 +122,21 @@ REGISTER_NAMED_TEST( "mathlib.MatrixScaleAndTranslation", mathlib_MatrixScaleAnd
 	TEST_EQ( mat[ 2 ][ 2 ], 0.0f );
 	TEST_EQ( mat[ 2 ][ 3 ], 6.0f );
 }
+
+REGISTER_NAMED_TEST( "mathlib.FloatBits", mathlib_FloatBits )
+{
+	// Bit casts should be exactly 32 bits wide in both directions.
+	const float flOne = 1.0f;
+	float flValue = -2.0f;
+
+	TEST_EQ( FloatBits( flOne ), 0x3F800000u );
+	TEST_EQ( BitsToFloat( 0x3F800000u ), 1.0f );
+	TEST_EQ( FloatBits( flValue ), 0xC0000000u );
+	FloatBits( flValue ) = 0x40400000u;
+	TEST_EQ( flValue, 3.0f );
+	TEST_TRUE( IsFinite( flOne ) );
+	TEST_FALSE( IsFinite( BitsToFloat( 0x7F800000u ) ) );
+
+	TEST_TRUE( Vector( 0.0f, 0.0f, 0.0f ).IsZeroFast() );
+	TEST_FALSE( Vector( 0.0f, -0.0f, 0.0f ).IsZeroFast() );
+}
