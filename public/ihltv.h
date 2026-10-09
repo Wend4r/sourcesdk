@@ -15,9 +15,12 @@
 
 #include "interface.h"
 
-class IServer;
+class CNetworkGameServerBase;
+class CPlayerSlot;
 class IHLTVDirector;
 class IGameEvent;
+class CUtlBuffer;
+class CSteamID;
 struct netadr_t;
 class CGameInfo;
 
@@ -33,24 +36,33 @@ class IHLTVServer : public IBaseInterface
 public:
 	virtual	~IHLTVServer() {}
 
-	virtual	IServer	*GetBaseServer( void ) = 0; // get HLTV base server interface
+	virtual	CNetworkGameServerBase *GetBaseServer( void ) = 0; // get HLTV base server interface
 	virtual	IHLTVDirector *GetDirector( void ) = 0;	// get director interface
-	virtual	int		GetHLTVSlot( void ) = 0; // return entity index-1 of HLTV in game
+	virtual	CPlayerSlot GetHLTVSlot( void ) = 0; // return the player slot of HLTV in game
 	virtual float	GetOnlineTime( void ) = 0; // seconds since broadcast started
 	virtual void	GetLocalStats( int &proxies, int &slots, int &specs ) = 0; 
+	// AMNOTE: Sums the hltv_proxies, hltv_slots and hltv_clients of the connected relay proxies
+	virtual void	GetRelayStats( int &proxies, int &slots, int &specs ) = 0;
 	virtual void	GetGlobalStats( int &proxies, int &slots, int &specs ) = 0; 
 
+	// AMNOTE: Returns this server's own public address with its SourceTV port, on master and relay alike
+	virtual const netadr_t *unk101( void ) = 0;
 	virtual const netadr_t *GetRelayAddress( void ) = 0; // returns relay address
 
 	virtual bool	IsMasterProxy( void ) = 0; // true, if this is the HLTV master proxy
+	virtual bool	IsTVRelay( void ) = 0;
 	virtual bool	IsDemoPlayback( void ) = 0; // true if this is a HLTV demo
+	virtual bool	IsActive( void ) = 0;
 
 	virtual void	BroadcastEvent(IGameEvent *event) = 0; // send a director command to all specs
 
 	virtual bool IsRecording(void) = 0;
-	virtual char *GetRecordingDemoFilename(void) = 0;
+	virtual const char *GetRecordingDemoFilename(void) = 0;
+	// AMNOTE: Returns the tick of the first broadcast frame, -1 until one arrives
+	virtual int unk201( void ) = 0;
 	virtual int StartAutoRecording(void) = 0;
 	virtual void StopRecording(CGameInfo const *info) = 0;
+	virtual void AddSaveGame( CSteamID steamID, uint64, int, const CUtlBuffer &buf ) = 0;
 };
 
 #endif
