@@ -282,10 +282,10 @@ DECLARE_NAMED_VARIANT_FIELDTYPE(CUtlStringToken, "utlstringtoken");
 
 #undef DECLARE_NAMED_VARIANT_FIELDTYPE
 
-enum CVFlags_t
+enum SVFlags_t
 {
 	// Indicates that variant has the memory allocated in place of a primitive types and it would be freed when needed
-	CV_FREE = 0x01,
+	SV_FREE = 0x01,
 };
 
 schema template <typename A>
@@ -346,7 +346,7 @@ public:
 			m_pszString = (char *)Allocator::Allocate(len);
 			memcpy((void *)m_pszString, src, len);
 
-			m_flags |= CV_FREE;
+			m_flags |= SV_FREE;
 		}
 		else
 		{
@@ -367,7 +367,7 @@ public:
 			m_pData = Allocator::Allocate(sizeof(T));
 			*(T *)m_pData = src;
 
-			m_flags |= CV_FREE;
+			m_flags |= SV_FREE;
 		}
 		else
 		{
@@ -466,10 +466,10 @@ public:
 	// Frees the internal buffer and resets the value to be FIELD_VOID
 	void Free()
 	{
-		if(m_flags & CV_FREE)
+		if(m_flags & SV_FREE)
 		{
 			Allocator::Free(m_pData);
-			m_flags &= ~CV_FREE;
+			m_flags &= ~SV_FREE;
 		}
 
 		m_pData = NULL;
@@ -1076,7 +1076,7 @@ public:
 
 	void ConvertToCopiedData(bool silent = true)
 	{
-		if(m_flags & CV_FREE)
+		if(m_flags & SV_FREE)
 			return;
 
 		switch(m_type)
@@ -1239,7 +1239,7 @@ public:
 
 	fieldtype_t m_type;
 
-	// CVFlags_t flags
+	// SVFlags_t flags
 	uint16 m_flags;
 };
 
