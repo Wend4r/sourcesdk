@@ -330,7 +330,7 @@ void KeyValues3::AllocArrayInPlace( int initial_size, Data_t data, int prealloca
 
 void KeyValues3::AllocTableInPlace( int initial_size, Data_t data, int preallocated_size, bool should_free )
 {
-	int bytes_needed = MAX( CKeyValues3Array::TotalSizeOf( 0 ), CKeyValues3Array::TotalSizeOf( initial_size ) );
+	int bytes_needed = MAX( CKeyValues3Table::TotalSizeOf( 0 ), CKeyValues3Table::TotalSizeOf( initial_size ) );
 
 	if ( bytes_needed > preallocated_size )
 	{
