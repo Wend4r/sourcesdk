@@ -14,6 +14,7 @@
 #include "appframework/iappsystem.h"
 #include "utlstring.h"
 #include "tier1/utldelegate.h"
+#include "tier1/utlvector.h"
 
 typedef int TABLEID;
 
@@ -42,6 +43,8 @@ struct StringUserData_t
 };
 
 typedef CUtlDelegate< void ( INetworkStringTable *, int, const char *, const SetStringUserDataRequest_t * ) > StringChangedCallback_t;
+// Returns false to fall back to a hex dump of the user data
+typedef CUtlDelegate< bool ( const char *pString, const SetStringUserDataRequest_t *pUserData, CUtlVector< CUtlString > *pOutLines ) > UserDataFormatterDelegate_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: Game .dll shared string table interfaces
@@ -58,13 +61,13 @@ public:
 	virtual int				GetNumStrings( void ) const = 0;
 
 	// Networking
-	virtual int				SetTick( int tick, void *unknown ) = 0;
+	virtual void			SetStringChangeTick( int tick, void *unknown ) = 0;
 	virtual int				GetTick( void ) = 0;
 	virtual bool			ChangedBetweenTicks(int tickA, int tickB ) const = 0;
 
 	virtual int				AddString( bool bIsServer, const char *value, const SetStringUserDataRequest_t* userdata = 0 ) = 0;
 
-	virtual const char		*GetString( int stringNumber ) const = 0;
+	virtual const char		*GetString( int stringNumber, bool bFailSilent = false ) const = 0;
 	virtual bool			SetStringUserData(int stringNumber, const SetStringUserDataRequest_t *userdata, bool bForceOverride) = 0;
 	virtual const StringUserData_t* GetStringUserData(int stringNumber) const = 0;
 	virtual int				FindStringIndex( char const *string ) = 0; // returns INVALID_STRING_INDEX if not found
@@ -72,7 +75,7 @@ public:
 	virtual void			SetAllowClientSideAddString( bool state ) = 0;
 	virtual void			unk014( bool ) = 0;
 	virtual void			unk015( const char *string ) = 0;
-	virtual void			unk016( void *pDelegate ) = 0;
+	virtual void			unk016( const UserDataFormatterDelegate_t &formatter ) = 0;
 };
 
 enum ENetworkStringtableFlags
