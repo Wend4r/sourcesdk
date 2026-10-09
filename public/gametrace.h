@@ -137,7 +137,7 @@ public:
 	CPhysSurfacePropertiesVehicle()
 	{
 		m_wheelDrag = 0.0f;
-		m_wheelFrictionScale = 0.0f;
+		m_wheelFrictionScale = 1.0f;
 	}
 
 public:
