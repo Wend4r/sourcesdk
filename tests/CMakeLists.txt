@@ -145,6 +145,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlstringmap.cpp
 	utlstringtoken.cpp
 	utlsymbol.cpp
+	utlsymbollarge.cpp
 	utlvector.cpp
 )
 
