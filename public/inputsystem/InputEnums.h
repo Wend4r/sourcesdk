@@ -105,9 +105,13 @@ struct InputEvent_t
 	PlatWindow_t m_hWnd;
 	int m_nType;				// Type of the event (see InputEventType_t)
 	int m_nTick;				// Tick on which the event occurred
+	double m_unk101;			// Plat_FloatTime() of the poll that generated the event
+	uint64 m_unk102;			// SDL event timestamp in nanoseconds, 0 for events that don't come from SDL
 	uint64 m_nData;				// Generic 64-bit data, what it contains depends on the event
 	int m_nData2;				// Generic 32-bit data, what it contains depends on the event
 	int m_nData3;				// Generic 32-bit data, what it contains depends on the event
+	float m_unk201;				// IE_CursorPositionChanged and IE_MultiTouchData store the position relative to m_hWnd here as two floats
+	float m_unk202;
 };
 
 #endif // INPUTENUMS_H
