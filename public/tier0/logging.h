@@ -648,8 +648,21 @@ PLATFORM_INTERFACE LoggingTagHandle_t LoggingSystem_NextTag( LoggingTagHandle_t 
 PLATFORM_INTERFACE LoggingTagHandle_t LoggingSystem_InvalidTag();
 PLATFORM_INTERFACE const char *LoggingSystem_TagName( LoggingTagHandle_t tag );
 
-PLATFORM_OVERLOAD void LoggingSystem_GetLogCapture( CUtlVector< CUtlString, int, CUtlVectorMemory_Growable< CUtlString, int, 0 > >* pMiniDumpComment, bool bReversed );
+//-----------------------------------------------------------------------------
+// Log capture: keeps the latest logged lines for crash reports.
+//-----------------------------------------------------------------------------
+PLATFORM_OVERLOAD void LoggingSystem_GetLogCapture( CUtlVector< CUtlString, int, CUtlVectorMemory_Growable< CUtlString, int, 0 > > *pLines, bool bReversed );
 PLATFORM_OVERLOAD void LoggingSystem_GetLogCapture( CMiniDumpComment *pMiniDumpComment, bool bReversed );
 PLATFORM_OVERLOAD bool LoggingSystem_GetLogCaptureForMiniDump( CMiniDumpComment *pMiniDumpComment, bool bReversed, char const* pMessage );
+
+PLATFORM_INTERFACE void LoggingSystem_AddLogCapture( const char *pFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void LoggingSystem_AddLogCaptureString( const char *pString );
+PLATFORM_INTERFACE void LoggingSystem_AddLogCaptureV( const char *pFormat, va_list args );
+PLATFORM_INTERFACE void LoggingSystem_ClearLogCapture();
+// Calls are counted, so capture stays enabled until it is disabled as often as enabled. Returns whether it is enabled.
+PLATFORM_INTERFACE bool LoggingSystem_EnableLogCapture( bool bEnable );
+PLATFORM_INTERFACE void LoggingSystem_EnableLogCaptureInMiniDumpComment( bool bEnable );
+PLATFORM_INTERFACE int LoggingSystem_GetMaxLogCaptureLines();
+PLATFORM_INTERFACE void LoggingSystem_SetMaxLogCaptureLines( int nLines );
 
 #endif // LOGGING_H
