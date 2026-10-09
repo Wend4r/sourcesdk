@@ -1469,7 +1469,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%d", m_Data.m_Array.m_i16Short[i] );
+							buff.AppendFormat( "%d", m_Data.m_Array.m_i16[ i ] );
 							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
 						return buff.Get();
