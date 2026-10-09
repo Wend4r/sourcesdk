@@ -224,7 +224,7 @@ public:
 	I  Root() const;
 
 	// Num elements
-	unsigned int Count() const;
+	I Count() const;
 
 	// Max "size" of the vector
 	// it's not generally safe to iterate from index 0 to MaxElement()-1 (you could do this as a potential
@@ -569,9 +569,9 @@ inline	I  CUtlRBTree<T, L, I, M>::Root() const
 //-----------------------------------------------------------------------------
 
 template < class T, typename L, class I, class M >
-inline	unsigned int CUtlRBTree<T, L, I, M>::Count() const          
-{ 
-	return (unsigned int)m_NumElements; 
+inline	I CUtlRBTree<T, L, I, M>::Count() const
+{
+	return m_NumElements;
 }
 
 //-----------------------------------------------------------------------------
@@ -780,7 +780,7 @@ I  CUtlRBTree<T, L, I, M>::NewNode( bool bConstructElement )
 
 		if ( !m_Elements.IsIdxValid( elem ) )
 		{
-			Plat_FatalError( "CUtlRBTree overflow with %u elements!\n", Count() );
+			Plat_FatalError( "CUtlRBTree overflow with %u elements!\n", ( unsigned int )Count() );
 			DebuggerBreak();
 		}
 	}
