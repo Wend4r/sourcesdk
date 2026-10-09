@@ -21,7 +21,6 @@ public:
 	friend class CConcreteEntityList;
 
 	CEntityHandle();
-	CEntityHandle(const CEntityHandle& other);
 	CEntityHandle(uint32 value);
 	CEntityHandle(int iEntry, int iSerialNumber);
 
@@ -51,7 +50,6 @@ public:
 	bool operator <(const CEntityInstance* pEnt) const;
 
 	// Assign a value to the handle.
-	const CEntityHandle& operator=(const CEntityHandle& other);
 	const CEntityHandle& operator=(const CEntityInstance* pEntity);
 	const CEntityHandle& Set(const CEntityInstance* pEntity);
 
@@ -74,11 +72,6 @@ protected:
 inline CEntityHandle::CEntityHandle()
 {
 	m_Index = INVALID_EHANDLE_INDEX;
-}
-
-inline CEntityHandle::CEntityHandle(const CEntityHandle& other)
-{
-	m_Index = other.m_Index;
 }
 
 inline CEntityHandle::CEntityHandle(uint32 value)
@@ -168,12 +161,6 @@ inline bool CEntityHandle::operator !=(const CEntityInstance* pEnt) const
 inline bool CEntityHandle::operator <(const CEntityHandle& other) const
 {
 	return m_Index < other.m_Index;
-}
-
-inline const CEntityHandle &CEntityHandle::operator=( const CEntityHandle& other )
-{
-    m_Index = other.m_Index;
-    return *this;
 }
 
 inline const CEntityHandle &CEntityHandle::operator=( const CEntityInstance *pEntity )
