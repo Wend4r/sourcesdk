@@ -445,7 +445,9 @@ m_FirstFree( InvalidIndex() )
 
 template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M>::CUtlRBTree( const CUtlRBTree<T, L, I, M> &copyFrom )
-
+ :  m_Root( InvalidIndex() ),
+	m_NumElements( 0 ),
+	m_FirstFree( InvalidIndex() )
 {
 	CopyFrom( copyFrom );
 }
@@ -487,7 +489,20 @@ inline CUtlRBTree<T, L, I, M> &CUtlRBTree<T, L, I, M>::CopyFrom( const CUtlRBTre
 		return *this;
 	}
 
-	m_Elements.CopyFrom( other.m_Elements );
+	RemoveAll();
+
+	// Nodes on the free list hold destructed elements, so copy only the live ones
+	m_Elements.SetCount( other.m_Elements.Count() );
+
+	for ( I i = 0; i < ( I )other.m_Elements.Count(); ++i )
+	{
+		Links( i ) = other.m_Elements[ i ];
+
+		if ( other.IsValidIndex( i ) )
+			Element( i ) = other.Element( i );
+		else
+			Destruct( &m_Elements[ i ].m_Data );
+	}
 
 	m_Root = other.m_Root;
 	m_NumElements = other.m_NumElements;
@@ -1225,6 +1240,13 @@ void CUtlRBTree<T, L, I, M>::RemoveAll()
 		Assert( m_NumElements == 0 );
 		Assert( m_FirstFree == InvalidIndex() );
 		return;
+	}
+
+	// m_Elements destructs every node, including those on the free list
+	for ( I i = 0; i < ( I )m_Elements.Count(); ++i )
+	{
+		if ( !IsValidIndex( i ) )
+			Construct( &m_Elements[ i ].m_Data );
 	}
 
 	m_Elements.RemoveAll();
