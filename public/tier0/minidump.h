@@ -11,6 +11,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/memalloc.h"
 
 // calls the passed in function pointer and catches any exceptions/crashes thrown by it, and writes a minidump
 // use from wmain() to protect the whole program
@@ -71,13 +72,22 @@ public:
 	void AppendComment( const char *pszComment );
 	void PrependComment( const char *pszComment );
 	void AppendFormattedComment( const char *pszComment, ... ) FMTFUNCTION( 2, 3 );
-	bool EnsureEndsWithNumCharacters( char, int, bool );
-	bool RemoveTrailingCharacters( char );
+
+	// Appends ch until the comment ends with nCount of them, returns whether it appended any
+	bool EnsureEndsWithNumCharacters( char ch, int nCount, bool bAppendToEmpty );
+	// Returns whether it removed any
+	bool RemoveTrailingCharacters( char ch );
+
 	void OnExceptionCaught();
 
 private:
-	[[maybe_unused]] char pad0[0x28];
+	int m_nBufferSize;
+	MemAllocAttribute_t m_nAllocAttribute;
+	char *m_pBuffer;
+	char *m_pOSDescription;
+	EOSType m_eOSType;
 };
-static_assert(sizeof(CMiniDumpComment) == 0x28, "CMiniDumpComment - incorrect size on this compiler");
+
+COMPILE_TIME_ASSERT( sizeof( CMiniDumpComment ) == 0x20 );
 
 #endif // MINIDUMP_H
