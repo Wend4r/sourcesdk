@@ -152,7 +152,7 @@ CUtlNTree<T,I>::CUtlNTree( int growSize, int initSize ) :
 
 template <class T, class I>
 CUtlNTree<T,I>::CUtlNTree( void* pMemory, int memsize ) : 
-	m_Memory(pMemory, memsize/sizeof(T))
+	m_Memory( ( Node_t * )pMemory, memsize / sizeof( Node_t ) )
 {
 	ConstructList();
 	ResetDbgInfo();
@@ -617,8 +617,7 @@ void CUtlNTree<T,I>::Remove( I elem )
 template <class T, class I>
 void CUtlNTree<T,I>::RemoveSubTree( I elem )
 {
-	UnlinkSubTree( elem );
-	Free( elem );
+	FreeSubTree( elem );
 }
   
 
