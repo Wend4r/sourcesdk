@@ -66,6 +66,18 @@ REGISTER_NAMED_TEST( "CUtlBuffer.TextMode", CUtlBuffer_TextMode )
 	TEST_TRUE( buffer.TellPut() > 0 );
 }
 
+REGISTER_NAMED_TEST( "CUtlBuffer.CombinedFlags", CUtlBuffer_CombinedFlags )
+{
+	// Buffer flags should combine without an explicit cast.
+	static_assert( ( CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY ) == 0x9 );
+
+	const char szText[] = "text";
+	CUtlBuffer buffer( szText, sizeof( szText ), CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY );
+
+	TEST_TRUE( buffer.IsText() );
+	TEST_TRUE( buffer.IsReadOnly() );
+}
+
 REGISTER_NAMED_TEST( "CUtlBuffer.CapacitySwapCopyAndPurge", CUtlBuffer_CapacitySwapCopyAndPurge )
 {
 	// Capacity changes, copy-style swaps and purge should leave both buffers usable.
