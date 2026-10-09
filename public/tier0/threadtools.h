@@ -1100,6 +1100,13 @@ private:
 	std::shared_mutex m_mutex;
 };
 
+enum RWLockTranstionResult_t
+{
+	// Another writer had the lock in between
+	RWLTR_STATE_INVALIDATED = 0,
+	RWLTR_STATE_REMAINED_VALID = 1,
+};
+
 class PLATFORM_CLASS CThreadRWLock_FastRead
 {
 public:
@@ -1123,13 +1130,15 @@ public:
 	CThreadRWLock_FastRead();
 
 	void UnlockWrite(const char* pFileName = nullptr, int nLine = -1);
-	void UnlockRead_LockForWrite(const char* pFileName, int nLine = -1, WriteLockTransition_t transition = TRANSITION_TO_READ);
-	void UnlockWrite_LockForRead(const char* pFileName = nullptr, int nLine = -1);
+	RWLockTranstionResult_t UnlockRead_LockForWrite(const char* pFileName, int nLine = -1, WriteLockTransition_t transition = TRANSITION_TO_READ);
+	RWLockTranstionResult_t UnlockWrite_LockForRead(const char* pFileName = nullptr, int nLine = -1);
 	bool TryUnlockRead_LockForWrite(const char* pFileName, int nLine, bool bForce, WriteLockTransition_t transition = TRANSITION_TO_WRITE);
 	bool TryUnlockWrite_LockForRead(const char* pFileName = nullptr, int nLine = -1);
 	void HaveWriteLock_BlockReadsNow(bool bBlock);
 	void HaveWriteLock_UnblockReads();
-	void EncounteredComplexReadLockOperation(uint mode, bool bSomething, const char* pFileName, int nLine = -1);
+
+protected:
+	bool EncounteredComplexReadLockOperation(uint mode, bool bSomething, const char* pFileName, int nLine = -1);
 	void UnlockReadAccounting(const char* pFileName, int nLine, uint mode);
 
 private:
