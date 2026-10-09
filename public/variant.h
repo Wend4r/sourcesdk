@@ -9,6 +9,7 @@
 #include "vector.h"
 #include "vector2d.h"
 #include "vector4d.h"
+#include "vectorws.h"
 #include "color.h"
 #include "entity2/entityidentity.h"
 #include "entityhandle.h"
@@ -16,6 +17,7 @@
 #include "tier0/bufferstring.h"
 #include "tier0/utlscratchmemory.h"
 #include "resourcefile/resourcetype.h"
+#include "mathlib/mathlib.h"
 
 #include "tier0/memdbgon.h"
 
@@ -195,6 +197,7 @@ inline const char *VariantFieldTypeName(fieldtype_t eType)
 		case FIELD_V8_OBJECT:				return "js_object";
 		case FIELD_V8_ARRAY:				return "js_array";
 		case FIELD_V8_CALLBACK_INFO:		return "js_raw_args";
+		case FIELD_UINT8:					return "uint8";
 		default:							return "unknown_variant_type";
 	}
 }
@@ -208,15 +211,16 @@ DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_CSTRING, char *);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR, Vector);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR, Vector *);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR, const Vector &);
+DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_POSITION_VECTOR, VectorWS);
+DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_POSITION_VECTOR, VectorWS *);
+DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_POSITION_VECTOR, const VectorWS &);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR2D, Vector2D);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR2D, Vector2D *);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR2D, const Vector2D &);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR4D, Vector4D);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR4D, Vector4D *);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_VECTOR4D, const Vector4D &);
-DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_COLOR32, Color);
-DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_COLOR32, Color *);
-DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_COLOR32, const Color &);
+DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_COLOR32, color32);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_QANGLE, QAngle);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_QANGLE, QAngle *);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_QANGLE, const QAngle &);
@@ -226,6 +230,9 @@ DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_QUATERNION, const Quaternion &);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_STRING, string_t);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_BOOLEAN, bool);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_CHARACTER, char);
+DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_UINT8, uint8);
+DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_INT16, int16);
+DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_UINT16, uint16);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_INT64, int64);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_UINT64, uint64);
 DECLARE_DEDUCE_VARIANT_FIELDTYPE(FIELD_FLOAT32, float32);
@@ -253,12 +260,25 @@ DECLARE_NAMED_VARIANT_FIELDTYPE(const char *, "cstring");
 DECLARE_NAMED_VARIANT_FIELDTYPE(char *, "cstring");
 DECLARE_NAMED_VARIANT_FIELDTYPE(bool, "boolean");
 DECLARE_NAMED_VARIANT_FIELDTYPE(char, "character");
+DECLARE_NAMED_VARIANT_FIELDTYPE(uint8, "uint8");
+DECLARE_NAMED_VARIANT_FIELDTYPE(int16, "int16");
+DECLARE_NAMED_VARIANT_FIELDTYPE(uint16, "uint16");
 DECLARE_NAMED_VARIANT_FIELDTYPE(int32, "int32");
 DECLARE_NAMED_VARIANT_FIELDTYPE(uint32, "uint32");
 DECLARE_NAMED_VARIANT_FIELDTYPE(int64, "int64");
 DECLARE_NAMED_VARIANT_FIELDTYPE(uint64, "uint64");
 DECLARE_NAMED_VARIANT_FIELDTYPE(float32, "float32");
 DECLARE_NAMED_VARIANT_FIELDTYPE(float64, "float64");
+DECLARE_NAMED_VARIANT_FIELDTYPE(Vector2D, "vector2d");
+DECLARE_NAMED_VARIANT_FIELDTYPE(Vector, "vector");
+DECLARE_NAMED_VARIANT_FIELDTYPE(Vector4D, "vector4d");
+DECLARE_NAMED_VARIANT_FIELDTYPE(VectorWS, "vectorws");
+DECLARE_NAMED_VARIANT_FIELDTYPE(QAngle, "qangle");
+DECLARE_NAMED_VARIANT_FIELDTYPE(Quaternion, "quaternion");
+DECLARE_NAMED_VARIANT_FIELDTYPE(color32, "color");
+DECLARE_NAMED_VARIANT_FIELDTYPE(HSCRIPT, "hscript");
+DECLARE_NAMED_VARIANT_FIELDTYPE(CEntityHandle, "ehandle");
+DECLARE_NAMED_VARIANT_FIELDTYPE(CUtlStringToken, "utlstringtoken");
 
 #undef DECLARE_NAMED_VARIANT_FIELDTYPE
 
@@ -275,6 +295,9 @@ public:
 	typedef A Allocator;
 
 	CVariantBase() :						m_type( FIELD_VOID ), m_flags( 0 )			{ m_pData = NULL; }
+	CVariantBase( uint8 val ) :				m_type( FIELD_UINT8 ), m_flags( 0 )			{ m_uint8 = val; }
+	CVariantBase( int16 val ) :				m_type( FIELD_INT16 ), m_flags( 0 )			{ m_int16 = val; }
+	CVariantBase( uint16 val ) :			m_type( FIELD_UINT16 ), m_flags( 0 )		{ m_uint16 = val; }
 	CVariantBase( int32 val ) :				m_type( FIELD_INT32 ), m_flags( 0 )			{ m_int32 = val;}
 	CVariantBase( uint32 val) :				m_type( FIELD_UINT32 ), m_flags( 0 )		{ m_uint32 = val; }
 	CVariantBase( float32 val ) :			m_type( FIELD_FLOAT32 ), m_flags( 0 )		{ m_float32 = val; }
@@ -288,6 +311,8 @@ public:
 	CVariantBase( string_t val ) :			m_type( FIELD_STRING ), m_flags( 0 )		{ m_stringt = val; }
 	CVariantBase( int64 val ) :				m_type( FIELD_INT64 ), m_flags( 0 )			{ m_int64 = val; }
 	CVariantBase( uint64 val ) :			m_type( FIELD_UINT64), m_flags( 0 )			{ m_uint64 = val; }
+	CVariantBase( color32 val ) :			m_type( FIELD_COLOR32 ), m_flags( 0 )		{ m_color32 = val; }
+	CVariantBase( Color val ) :				m_type( FIELD_COLOR32 ), m_flags( 0 )		{ m_color32 = val.ToColor32(); }
 
 	CVariantBase( const Vector &val, bool bCopy = true) :		m_type( FIELD_VECTOR ), m_flags( 0 )		{ CopyData(val, bCopy); }
 	CVariantBase( const Vector *val, bool bCopy = true) :		m_type( FIELD_VECTOR ), m_flags( 0 )		{ CopyData(*val, bCopy); }
@@ -297,10 +322,10 @@ public:
 	CVariantBase( const Vector2D *val, bool bCopy = true ) :	m_type( FIELD_VECTOR2D ), m_flags( 0 )		{ CopyData(*val, bCopy); }
 	CVariantBase( const Vector4D &val, bool bCopy = true ) :	m_type( FIELD_VECTOR4D ), m_flags( 0 )		{ CopyData(val, bCopy); }
 	CVariantBase( const Vector4D *val, bool bCopy = true ) :	m_type( FIELD_VECTOR4D ), m_flags( 0 )		{ CopyData(*val, bCopy); }
+	CVariantBase( const VectorWS &val, bool bCopy = true ) :	m_type( FIELD_POSITION_VECTOR ), m_flags( 0 ){ CopyData(val, bCopy); }
+	CVariantBase( const VectorWS *val, bool bCopy = true ) :	m_type( FIELD_POSITION_VECTOR ), m_flags( 0 ){ CopyData(*val, bCopy); }
 	CVariantBase( const Quaternion &val, bool bCopy = true ) :	m_type( FIELD_QUATERNION ), m_flags( 0 )	{ CopyData(val, bCopy); }
 	CVariantBase( const Quaternion *val, bool bCopy = true ) :	m_type( FIELD_QUATERNION ), m_flags( 0 )	{ CopyData(*val, bCopy); }
-	CVariantBase( const Color &val, bool bCopy = true ) :		m_type( FIELD_COLOR32 ), m_flags( 0 )		{ CopyData(val, bCopy); }
-	CVariantBase( const Color *val, bool bCopy = true ) :		m_type( FIELD_COLOR32 ), m_flags( 0 )		{ CopyData(*val, bCopy); }
 	CVariantBase( const char *val, bool bCopy = true ) :		m_type( FIELD_CSTRING ), m_flags( 0 )		{ CopyData(val, bCopy); }
 	CVariantBase( const CVariantBase<A> &val ) :				m_type( FIELD_VOID ), m_flags( 0 )			{ *this = val; }
 
@@ -340,7 +365,7 @@ public:
 		if(bForceCopy)
 		{
 			m_pData = Allocator::Allocate(sizeof(T));
-			*this = src;
+			*(T *)m_pData = src;
 
 			m_flags |= CV_FREE;
 		}
@@ -350,6 +375,9 @@ public:
 		}
 	}
 
+	operator uint8() const					{ Assert( m_type == FIELD_UINT8 );			return m_uint8; }
+	operator int16() const					{ Assert( m_type == FIELD_INT16 );			return m_int16; }
+	operator uint16() const					{ Assert( m_type == FIELD_UINT16 );			return m_uint16; }
 	operator int32() const					{ Assert( m_type == FIELD_INT32 );			return m_int32; }
 	operator uint32() const					{ Assert( m_type == FIELD_UINT32 );			return m_uint32; }
 	operator int64() const					{ Assert( m_type == FIELD_INT64);			return m_int64; }
@@ -359,11 +387,13 @@ public:
 	operator const string_t() const			{ Assert( m_type == FIELD_STRING );			return m_stringt; }
 	operator const char *() const			{ Assert( m_type == FIELD_CSTRING );		return ( m_pszString ) ? m_pszString : ""; }
 	operator const Vector &() const			{ Assert( m_type == FIELD_VECTOR );			static Vector vecNull(0, 0, 0); return (m_pVector) ? *m_pVector : vecNull; }
+	operator const VectorWS &() const		{ Assert( m_type == FIELD_POSITION_VECTOR );static VectorWS vecNull(0, 0, 0); return (m_pVectorWS) ? *m_pVectorWS : vecNull; }
 	operator const Vector2D &() const		{ Assert( m_type == FIELD_VECTOR2D );		static Vector2D vecNull(0, 0); return (m_pVector2D) ? *m_pVector2D : vecNull; }
 	operator const Vector4D &() const		{ Assert( m_type == FIELD_VECTOR4D );		static Vector4D vecNull(0, 0, 0, 0); return (m_pVector4D) ? *m_pVector4D : vecNull; }
 	operator const QAngle &() const			{ Assert( m_type == FIELD_QANGLE);			static QAngle angNull(0, 0, 0); return (m_pQAngle) ? *m_pQAngle : angNull; }
 	operator const Quaternion &() const		{ Assert( m_type == FIELD_QUATERNION);		static Quaternion quatNull(0, 0, 0, 0); return (m_pQuaternion) ? *m_pQuaternion : quatNull; }
-	operator const Color &() const			{ Assert( m_type == FIELD_COLOR32);			static Color colorNull(0, 0, 0); return (m_pColor) ? *m_pColor : colorNull; }
+	operator Color() const					{ Assert( m_type == FIELD_COLOR32 );		return Color( m_color32 ); }
+	operator color32() const				{ Assert( m_type == FIELD_COLOR32 );		return m_color32; }
 	operator char() const					{ Assert( m_type == FIELD_CHARACTER );		return m_char; }
 	operator bool() const					{ Assert( m_type == FIELD_BOOLEAN );		return m_bool; }
 	operator HSCRIPT() const				{ Assert( m_type == FIELD_HSCRIPT );		return m_hScript; }
@@ -371,32 +401,37 @@ public:
 	operator CUtlStringToken() const		{ Assert( m_type == FIELD_UTLSTRINGTOKEN);	return m_utlStringToken; }
 	operator ResourceHandle_t() const		{ Assert( m_type == FIELD_RESOURCE);		return m_hResource; }
 
-	void operator=( int32 i ) 				{ m_type = FIELD_INT32; m_int32 = i; }
-	void operator=( uint32 u )				{ m_type = FIELD_UINT32; m_uint32 = u; }
-	void operator=( int64 i ) 				{ m_type = FIELD_INT64; m_int64 = i; }
-	void operator=( uint64 u )				{ m_type = FIELD_UINT64; m_uint64 = u; }
-	void operator=( float32 f ) 			{ m_type = FIELD_FLOAT32; m_float32 = f; }
-	void operator=( float64 d )				{ m_type = FIELD_FLOAT64; m_float64 = d; }
-	void operator=( const Vector &vec )		{ m_type = FIELD_VECTOR; *(Vector *)m_pVector = vec; }
-	void operator=( const Vector *vec )		{ m_type = FIELD_VECTOR; m_pVector = vec; }
-	void operator=( const Vector2D &vec )	{ m_type = FIELD_VECTOR2D; *(Vector2D *)m_pVector2D = vec; }
-	void operator=( const Vector2D *vec )	{ m_type = FIELD_VECTOR2D; m_pVector2D = vec; }
-	void operator=( const Vector4D &vec )	{ m_type = FIELD_VECTOR4D; *(Vector4D *)m_pVector4D = vec; }
-	void operator=( const Vector4D *vec )	{ m_type = FIELD_VECTOR4D; m_pVector4D = vec; }
-	void operator=( const QAngle &ang )		{ m_type = FIELD_QANGLE; *(QAngle *)m_pQAngle = ang; }
-	void operator=( const QAngle *ang )		{ m_type = FIELD_QANGLE; m_pQAngle = ang; }
-	void operator=( const Quaternion &quat ){ m_type = FIELD_QUATERNION; *(Quaternion *)m_pQuaternion = quat; }
-	void operator=( const Quaternion *quat ){ m_type = FIELD_QUATERNION; m_pQuaternion = quat; }
-	void operator=( const Color &color )	{ m_type = FIELD_COLOR32; *(Color *)m_pColor = color; }
-	void operator=( const Color *color )	{ m_type = FIELD_COLOR32; m_pColor = color; }
-	void operator=( string_t psz )			{ m_type = FIELD_STRING; m_stringt = psz; }
-	void operator=( const char *psz )		{ m_type = FIELD_CSTRING; m_pszString = psz; }
-	void operator=( char c )				{ m_type = FIELD_CHARACTER; m_char = c; }
-	void operator=( bool b ) 				{ m_type = FIELD_BOOLEAN; m_bool = b; }
-	void operator=( HSCRIPT h ) 			{ m_type = FIELD_HSCRIPT; m_hScript = h; }
-	void operator=( CEntityHandle eh) 		{ m_type = FIELD_EHANDLE; m_hEntity = eh; }
-	void operator=( CUtlStringToken tok ) 	{ m_type = FIELD_UTLSTRINGTOKEN; m_utlStringToken = tok; }
-	void operator=( ResourceHandle_t r ) 	{ m_type = FIELD_RESOURCE; m_hResource = r; }
+	void operator=( uint8 i ) 				{ Free(); m_type = FIELD_UINT8; m_uint8 = i; }
+	void operator=( int16 i ) 				{ Free(); m_type = FIELD_INT16; m_int16 = i; }
+	void operator=( uint16 i ) 				{ Free(); m_type = FIELD_UINT16; m_uint16 = i; }
+	void operator=( int32 i ) 				{ Free(); m_type = FIELD_INT32; m_int32 = i; }
+	void operator=( uint32 u )				{ Free(); m_type = FIELD_UINT32; m_uint32 = u; }
+	void operator=( int64 i ) 				{ Free(); m_type = FIELD_INT64; m_int64 = i; }
+	void operator=( uint64 u )				{ Free(); m_type = FIELD_UINT64; m_uint64 = u; }
+	void operator=( float32 f ) 			{ Free(); m_type = FIELD_FLOAT32; m_float32 = f; }
+	void operator=( float64 d )				{ Free(); m_type = FIELD_FLOAT64; m_float64 = d; }
+	void operator=( const Vector &vec )		{ CopyData( vec, true ); }
+	void operator=( const Vector *vec )		{ Free(); m_type = FIELD_VECTOR; m_pVector = vec; }
+	void operator=( const Vector2D &vec )	{ CopyData( vec, true ); }
+	void operator=( const Vector2D *vec )	{ Free(); m_type = FIELD_VECTOR2D; m_pVector2D = vec; }
+	void operator=( const Vector4D &vec )	{ CopyData( vec, true ); }
+	void operator=( const Vector4D *vec )	{ Free(); m_type = FIELD_VECTOR4D; m_pVector4D = vec; }
+	void operator=( const VectorWS &vec )	{ CopyData( vec, true ); }
+	void operator=( const VectorWS *vec )	{ Free(); m_type = FIELD_POSITION_VECTOR; m_pVectorWS = vec; }
+	void operator=( const QAngle &ang )		{ CopyData( ang, true ); }
+	void operator=( const QAngle *ang )		{ Free(); m_type = FIELD_QANGLE; m_pQAngle = ang; }
+	void operator=( const Quaternion &quat ){ CopyData( quat, true ); }
+	void operator=( const Quaternion *quat ){ Free(); m_type = FIELD_QUATERNION; m_pQuaternion = quat; }
+	void operator=( Color color )			{ Free(); m_type = FIELD_COLOR32; m_color32 = color.ToColor32(); }
+	void operator=( color32 color )			{ Free(); m_type = FIELD_COLOR32; m_color32 = color; }
+	void operator=( string_t psz )			{ Free(); m_type = FIELD_STRING; m_stringt = psz; }
+	void operator=( const char *psz )		{ Free(); m_type = FIELD_CSTRING; m_pszString = psz; }
+	void operator=( char c )				{ Free(); m_type = FIELD_CHARACTER; m_char = c; }
+	void operator=( bool b ) 				{ Free(); m_type = FIELD_BOOLEAN; m_bool = b; }
+	void operator=( HSCRIPT h ) 			{ Free(); m_type = FIELD_HSCRIPT; m_hScript = h; }
+	void operator=( CEntityHandle eh) 		{ Free(); m_type = FIELD_EHANDLE; m_hEntity = eh; }
+	void operator=( CUtlStringToken tok ) 	{ Free(); m_type = FIELD_UTLSTRINGTOKEN; m_utlStringToken = tok; }
+	void operator=( ResourceHandle_t r ) 	{ Free(); m_type = FIELD_RESOURCE; m_hResource = r; }
 	void operator=( const CVariantBase<A> &src ) { src.AssignTo<A>(this);  }
 
 	~CVariantBase()
@@ -409,8 +444,8 @@ public:
 	{
 		switch ( src.m_type )
 		{
-			case FIELD_VECTOR:
-			case FIELD_POSITION_VECTOR:	CopyData( *src.m_pVector, true ); break;
+			case FIELD_VECTOR:			CopyData( *src.m_pVector, true ); break;
+			case FIELD_POSITION_VECTOR:	CopyData( *src.m_pVectorWS, true ); break;
 			case FIELD_QUATERNION:		CopyData( *src.m_pQuaternion, true ); break;
 			case FIELD_VECTOR2D:		CopyData( *src.m_pVector2D, true ); break;
 			case FIELD_VECTOR4D:		CopyData( *src.m_pVector4D, true ); break;
@@ -452,7 +487,10 @@ public:
 			case FIELD_FLOAT32:		buf.Format("%g", m_float32); return true;
 			case FIELD_FLOAT64:		buf.Format("%g", m_float64); return true;
 			case FIELD_INT32:		buf.Format("%d", m_int32); return true;
+			case FIELD_EHANDLE:		buf.Format("%u", m_hEntity.ToInt()); return true;
+			case FIELD_UTLSTRINGTOKEN:buf.Format("%u", m_utlStringToken.GetHashCode()); return true;
 			case FIELD_UINT32:		buf.Format("%u", m_uint32); return true;
+			case FIELD_UINT8:		buf.Format("%u", m_uint8); return true;
 			case FIELD_INT64:		buf.Format("%lld", m_int64); return true;
 			case FIELD_UINT64:		buf.Format("%llu", m_uint64); return true;
 			case FIELD_BOOLEAN:
@@ -476,8 +514,9 @@ public:
 			}
 			case FIELD_CHARACTER:	buf.Format("%c", m_char); return true;
 			case FIELD_VECTOR2D:	buf.Format("%g %g", m_pVector2D->x, m_pVector2D->y); return true;
-			case FIELD_COLOR32:		buf.Format("%d %d %d %d", m_pColor->r(), m_pColor->g(), m_pColor->b(), m_pColor->a()); return true;
+			case FIELD_COLOR32:		buf.Format("%d %d %d %d", m_color32.r, m_color32.g, m_color32.b, m_color32.a); return true;
 
+			case FIELD_POSITION_VECTOR:
 			case FIELD_VECTOR:
 			case FIELD_QANGLE:
 			{
@@ -504,6 +543,7 @@ public:
 		switch(m_type)
 		{
 			case FIELD_VOID:		*pDest = 0.0f; return false;
+			case FIELD_UINT8:		*pDest = static_cast<float>(m_uint8); return true;
 			case FIELD_INT32:		*pDest = static_cast<float>(m_int32); return true;
 			case FIELD_INT64:		*pDest = static_cast<float>(m_int64); return true;
 			case FIELD_UINT32:		*pDest = static_cast<float>(m_uint32); return true;
@@ -540,6 +580,7 @@ public:
 		switch(m_type)
 		{
 			case FIELD_VOID:		*pDest = 0; return false;
+			case FIELD_UINT8:		*pDest = m_uint8; return true;
 			case FIELD_INT32:		*pDest = m_int32; return true;
 			case FIELD_INT64:		*pDest = m_int64; return true;
 			case FIELD_UINT32:		*pDest = m_uint32; return true;
@@ -637,8 +678,9 @@ public:
 	{
 		switch(m_type)
 		{
-			case FIELD_VOID:		return false;
-			case FIELD_VECTOR:		*pDest = *this; return true;
+			case FIELD_VOID:			*pDest = vec3_origin; return false;
+			case FIELD_VECTOR:			*pDest = *m_pVector; return true;
+			case FIELD_POSITION_VECTOR:	*pDest = *m_pVectorWS; return true;
 			case FIELD_CSTRING:	
 			{
 				if(m_pszString && m_pszString[0] != '\0')
@@ -665,11 +707,44 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
+	bool AssignTo(VectorWS *pDest) const
+	{
+		switch(m_type)
+		{
+			case FIELD_VOID:			*pDest = VectorWS(vec3_origin.x, vec3_origin.y, vec3_origin.z); return false;
+			case FIELD_POSITION_VECTOR:	*pDest = *m_pVectorWS; return true;
+			case FIELD_VECTOR:			*pDest = VectorWS(m_pVector->x, m_pVector->y, m_pVector->z); return true;
+			case FIELD_CSTRING:
+			{
+				if(m_pszString && m_pszString[0] != '\0')
+				{
+					bool successful = false;
+					V_StringToVectorWS(m_pszString, *pDest, &successful);
+					return successful;
+				}
+			}
+			case FIELD_STRING:
+			{
+				if(m_stringt.ToCStr()[0])
+				{
+					bool successful = false;
+					V_StringToVectorWS(m_stringt.ToCStr(), *pDest, &successful);
+					return successful;
+				}
+			}
+
+			default: Warning("No conversion from %s to VectorWS right now\n", VariantFieldTypeName(m_type));
+		}
+
+		return false;
+	}
+
+	// Copies the contents of the value into a pDest, also converts the content when possible
 	bool AssignTo(Vector2D *pDest) const
 	{
 		switch(m_type)
 		{
-			case FIELD_VOID:		return false;
+			case FIELD_VOID:		*pDest = vec2_origin; return false;
 			case FIELD_VECTOR2D:	*pDest = *this; return true;
 			case FIELD_CSTRING:
 			{
@@ -701,7 +776,7 @@ public:
 	{
 		switch(m_type)
 		{
-			case FIELD_VOID:		return false;
+			case FIELD_VOID:		*pDest = vec4_origin; return false;
 			case FIELD_VECTOR4D:	*pDest = *this; return true;
 			case FIELD_CSTRING:
 			{
@@ -733,7 +808,7 @@ public:
 	{
 		switch(m_type)
 		{
-			case FIELD_VOID:		return false;
+			case FIELD_VOID:		*pDest = quat_identity; return false;
 			case FIELD_QUATERNION:	*pDest = *this; return true;
 			case FIELD_CSTRING:
 			{
@@ -753,6 +828,11 @@ public:
 					return successful;
 				}
 			}
+			case FIELD_QANGLE:
+			{
+				AngleQuaternion(*m_pQAngle, *pDest);
+				return true;
+			}
 
 			default: Warning("No conversion from %s to Quaternion right now\n", VariantFieldTypeName(m_type));
 		}
@@ -765,7 +845,7 @@ public:
 	{
 		switch(m_type)
 		{
-			case FIELD_VOID:		return false;
+			case FIELD_VOID:		*pDest = vec3_angle; return false;
 			case FIELD_QANGLE:		*pDest = *this; return true;
 			case FIELD_CSTRING:
 			{
@@ -785,6 +865,11 @@ public:
 					return successful;
 				}
 			}
+			case FIELD_QUATERNION:
+			{
+				QuaternionAngles(*m_pQuaternion, *pDest);
+				return true;
+			}
 
 			default: Warning("No conversion from %s to QAngle right now\n", VariantFieldTypeName(m_type));
 		}
@@ -797,7 +882,7 @@ public:
 	{
 		switch(m_type)
 		{
-			case FIELD_COLOR32:		*pDest = *this; return true;
+			case FIELD_COLOR32:		*pDest = Color(m_color32); return true;
 			case FIELD_CSTRING:
 			{
 				if(m_pszString && m_pszString[0] != '\0')
@@ -840,7 +925,7 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(HSCRIPT *pDest)
+	bool AssignTo(HSCRIPT *pDest) const
 	{
 		if(m_type == FIELD_HSCRIPT)
 		{
@@ -858,15 +943,24 @@ public:
 	// Copies the contents of the value into a pDest, also converts the content when possible
 	bool AssignTo(CUtlStringToken *pDest) const
 	{
-		if(m_type == FIELD_UTLSTRINGTOKEN)
+		switch(m_type)
 		{
-			*pDest = *this;
-			return true;
+			case FIELD_UTLSTRINGTOKEN:	*pDest = m_utlStringToken; return true;
+			case FIELD_CSTRING:
+			{
+				if(m_pszString)
+				{
+					*pDest = CUtlStringToken(m_pszString, V_strlen(m_pszString));
+					return true;
+				}
+
+				break;
+			}
+			case FIELD_STRING:			*pDest = CUtlStringToken(m_stringt.ToCStr(), V_strlen(m_stringt.ToCStr())); return true;
+			default:					break;
 		}
-		else
-		{
-			Warning("No conversion from %s to CUtlStringToken right now\n", VariantFieldTypeName(m_type));
-		}
+
+		Warning("No conversion from %s to CUtlStringToken right now\n", VariantFieldTypeName(m_type));
 
 		return false;
 	}
@@ -901,18 +995,16 @@ public:
 	}
 
 	// Copies the contents of the value into a pDest, also converts the content when possible
-	bool AssignTo(CEntityInstance *pDest) const
+	bool AssignTo(CEntityInstance **pDest) const
 	{
 		if(m_type == FIELD_EHANDLE)
 		{
-			// TODO: Perform actual CEntityInstance lookup via CEntityHandle
-			Assert(false);
-
+			*pDest = m_hEntity.Get();
 			return true;
 		}
 		else
 		{
-			Warning("No conversion from %s to CEntityInstance right now\n", VariantFieldTypeName(m_type));
+			Warning("No conversion from %s to CEntityInstance * right now\n", VariantFieldTypeName(m_type));
 		}
 
 		return false;
@@ -928,8 +1020,8 @@ public:
 			case FIELD_VECTOR2D:	pDest->CopyData(*m_pVector2D, true); return true;
 			case FIELD_VECTOR4D:	pDest->CopyData(*m_pVector4D, true); return true;
 			case FIELD_QUATERNION:	pDest->CopyData(*m_pQuaternion, true); return true;
+			case FIELD_POSITION_VECTOR:	pDest->CopyData(*m_pVectorWS, true); return true;
 			case FIELD_QANGLE:		pDest->CopyData(*m_pQAngle, true); return true;
-			case FIELD_COLOR32:		pDest->CopyData(*m_pColor, true); return true;
 			case FIELD_CSTRING:		pDest->CopyData(m_pszString, true); return true;
 			default:
 			{
@@ -989,7 +1081,7 @@ public:
 		switch(m_type)
 		{
 			case FIELD_VECTOR:		CopyData(*m_pVector, true); break;
-			case FIELD_POSITION_VECTOR:	CopyData(*m_pVector, true); m_type = FIELD_POSITION_VECTOR; break;
+			case FIELD_POSITION_VECTOR:	CopyData(*m_pVectorWS, true); break;
 			case FIELD_VECTOR2D:	CopyData(*m_pVector2D, true); break;
 			case FIELD_VECTOR4D:	CopyData(*m_pVector4D, true); break;
 			case FIELD_QUATERNION:	CopyData(*m_pQuaternion, true); break;
@@ -1022,6 +1114,9 @@ public:
 			case FIELD_VOID:			Free(); m_type = FIELD_VOID; m_pData = NULL; return;
 			case FIELD_FLOAT32:			CopyData(*(float32 *)pData, false); return;
 			case FIELD_FLOAT64:			CopyData(*(float64 *)pData, false); return;
+			case FIELD_UINT8:			CopyData(*(uint8 *)pData, false); return;
+			case FIELD_INT16:			CopyData(*(int16 *)pData, false); return;
+			case FIELD_UINT16:			CopyData(*(uint16 *)pData, false); return;
 			case FIELD_INT32:			CopyData(*(int32 *)pData, false); return;
 			case FIELD_UINT32:			CopyData(*(uint32 *)pData, false); return;
 			case FIELD_INT64:			CopyData(*(int64 *)pData, false); return;
@@ -1033,7 +1128,8 @@ public:
 			case FIELD_VECTOR:			CopyData((Vector *)pData, false); return;
 			case FIELD_VECTOR2D:		CopyData((Vector2D *)pData, false); return;
 			case FIELD_VECTOR4D:		CopyData((Vector4D *)pData, false); return;
-			case FIELD_COLOR32:			CopyData((Color *)pData, false); return;
+			case FIELD_POSITION_VECTOR:	CopyData((VectorWS *)pData, false); return;
+			case FIELD_COLOR32:			CopyData(*(color32 *)pData, false); return;
 			case FIELD_QANGLE:			CopyData((QAngle *)pData, false); return;
 			case FIELD_QUATERNION:		CopyData((Quaternion *)pData, false); return;
 			case FIELD_HSCRIPT:			CopyData(*(HSCRIPT *)pData, false); return;
@@ -1059,6 +1155,9 @@ public:
 			case FIELD_VOID:			successful = true; Free(); m_type = FIELD_VOID; m_pData = NULL; break;
 			case FIELD_FLOAT32:			if((successful = AssignTo((float32 *)&pData))) { Set(newType, &pData); } break;
 			case FIELD_FLOAT64:			if((successful = AssignTo((float64 *)&pData))) { Set(newType, &pData); } break;
+			case FIELD_UINT8:			if((successful = AssignTo((uint8 *)&pData))) { Set(newType, &pData); } break;
+			case FIELD_INT16:			if((successful = AssignTo((int16 *)&pData))) { Set(newType, &pData); } break;
+			case FIELD_UINT16:			if((successful = AssignTo((uint16 *)&pData))) { Set(newType, &pData); } break;
 			case FIELD_INT32:			if((successful = AssignTo((int32 *)&pData))) { Set(newType, &pData); } break;
 			case FIELD_UINT32:			if((successful = AssignTo((uint32 *)&pData))) { Set(newType, &pData); } break;
 			case FIELD_INT64:			if((successful = AssignTo((int64 *)&pData))) { Set(newType, &pData); } break;
@@ -1074,7 +1173,7 @@ public:
 			case FIELD_VECTOR:			{ Vector vec; if((successful = AssignTo(&vec))) { CopyData(vec, true); } break; }
 			case FIELD_VECTOR2D:		{ Vector2D vec; if((successful = AssignTo(&vec))) { CopyData(vec, true); } break; }
 			case FIELD_VECTOR4D:		{ Vector4D vec; if((successful = AssignTo(&vec))) { CopyData(vec, true); } break; }
-			case FIELD_COLOR32:			{ Color clr; if((successful = AssignTo(&clr))) { CopyData(clr, true); } break; }
+			case FIELD_COLOR32:			{ Color clr; if((successful = AssignTo(&clr))) { *this = clr; } break; }
 			case FIELD_QANGLE:			{ QAngle ang; if((successful = AssignTo(&ang))) { CopyData(ang, true); } break; }
 			case FIELD_QUATERNION:		{ Quaternion quat; if((successful = AssignTo(&quat))) { CopyData(quat, true); } break; }
 			default:					return false;
@@ -1090,14 +1189,25 @@ public:
 
 	const char *ToString() const
 	{
-		static CBufferStringN<200> szBuf;
-		AssignTo(szBuf);
-		return szBuf.Get();
+		switch(m_type)
+		{
+			case FIELD_CSTRING:	return m_pszString;
+			case FIELD_STRING:	return m_stringt.ToCStr();
+			default:
+			{
+				static CBufferStringN<512> szBuf;
+				AssignTo(szBuf);
+				return szBuf.Get();
+			}
+		}
 	}
 
 public:
 	union
 	{
+		uint8 m_uint8;
+		int16 m_int16;
+		uint16 m_uint16;
 		int32 m_int32;
 		uint32 m_uint32;
 		int64 m_int64;
@@ -1109,8 +1219,9 @@ public:
 		const QAngle *m_pQAngle;
 		const Vector2D *m_pVector2D;
 		const Vector4D *m_pVector4D;
+		const VectorWS *m_pVectorWS;
 		const Quaternion *m_pQuaternion;
-		const Color *m_pColor;
+		color32 m_color32;
 		void *m_pData;
 		char m_char;
 		bool m_bool;
@@ -1135,6 +1246,41 @@ typedef CVariantBase<CVariantDefaultAllocator> CVariant;
 typedef CVariantBase<CEntityVariantAllocator> CEntityVariant;
 
 typedef CVariant variant_t;
+
+template < class A1, class A2 >
+inline bool operator==( const CVariantBase< A1 > &v1, const CVariantBase< A2 > &v2 )
+{
+	if ( v1.m_type != v2.m_type )
+		return false;
+
+	switch ( v1.m_type )
+	{
+		case FIELD_UINT8:			return v1.m_uint8 == v2.m_uint8;
+		case FIELD_INT16:			return v1.m_int16 == v2.m_int16;
+		case FIELD_UINT16:			return v1.m_uint16 == v2.m_uint16;
+		case FIELD_INT32:			return v1.m_int32 == v2.m_int32;
+		case FIELD_UINT32:			return v1.m_uint32 == v2.m_uint32;
+		case FIELD_INT64:			return v1.m_int64 == v2.m_int64;
+		case FIELD_UINT64:			return v1.m_uint64 == v2.m_uint64;
+		case FIELD_FLOAT32:			return v1.m_float32 == v2.m_float32;
+		case FIELD_FLOAT64:			return v1.m_float64 == v2.m_float64;
+		case FIELD_CHARACTER:		return v1.m_char == v2.m_char;
+		case FIELD_BOOLEAN:			return v1.m_bool == v2.m_bool;
+		case FIELD_HSCRIPT:			return v1.m_hScript == v2.m_hScript;
+		case FIELD_EHANDLE:			return v1.m_hEntity == v2.m_hEntity;
+		case FIELD_COLOR32:			return !( v1.m_color32 != v2.m_color32 );
+		case FIELD_UTLSTRINGTOKEN:	return v1.m_utlStringToken == v2.m_utlStringToken;
+		default:					break;
+	}
+
+	return false;
+}
+
+template < class A1, class A2 >
+inline bool operator!=( const CVariantBase< A1 > &v1, const CVariantBase< A2 > &v2 )
+{
+	return !( v1 == v2 );
+}
 
 #include "tier0/memdbgoff.h"
 
