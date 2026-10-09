@@ -16,12 +16,15 @@
 #pragma once
 #endif
 
+#include "tier0/platform.h"
+
 #define FLOW_OUTGOING	0		
 #define FLOW_INCOMING	1
 #define MAX_FLOWS		2		// in & out
 
 struct netadr_t;
 struct SNetChannelLatencyStats;
+class CMsgSource2NetworkFlowQuality;
 
 struct NetChanStat_t
 {
@@ -61,7 +64,7 @@ public:
 	virtual int			GetTotalPackets( int flow ) const = 0;
 	virtual int			GetSequenceNr( int flow ) const = 0;	// last send seq number
 	virtual float		GetTimeSinceLastReceived( void ) const = 0;	// get time since last recieved packet in seconds
-	virtual void		GetRemoteFramerate( float *pflFrameTime = nullptr, float *pflFrameTimeStdDeviation = nullptr, float *pflFrameStartTimeStdDeviation = nullptr ) const = 0;
+	virtual void		GetRemoteFramerate( float *pflFrameTime = nullptr, float *pflFrameTimeStdDeviation = nullptr, float *pflUnfilteredFrameTime = nullptr ) const = 0;
 
 	virtual float		GetTimeoutSeconds( void ) const = 0;
 	virtual float		GetTimeUntilTimeout( void ) const = 0;
@@ -76,10 +79,10 @@ public:
 	virtual void		SetNumPredictionErrors( int num ) = 0;
 	virtual void		SetShowNetMessages( bool show ) = 0;
 
-	virtual bool		unk032( int unk1, int unk2, int* unk3 = nullptr ) = 0;
+	virtual int			unk032( int flow, int nSeqNr, float *pflLatency = nullptr ) const = 0;
 
-	virtual int			unk033( int unk1, int* unk2, int unk3 ) = 0;
-	virtual int			unk034( int unk1, void* unk2, bool bUnk3 ) = 0;
+	virtual int			unk033( int flow, int16 *pOut, int nMaxEntries ) const = 0;
+	virtual void		unk034( int flow, CMsgSource2NetworkFlowQuality *pMsg, bool ) = 0;
 };
 
 #endif // INETCHANNELINFO_H
