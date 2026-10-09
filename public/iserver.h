@@ -176,8 +176,8 @@ public:
 	virtual bool	HasReplayDirector() = 0;
 	virtual float	GetAverageFrameTime() = 0;
 
-	virtual void	PreWorldUpdate() = 0;
-	virtual void 	DirectUpdate() = 0;
+	virtual void	PrepareSendClientUpdatesMainThread() = 0;
+	virtual void 	PrepareSendClientUpdatesAsync() = 0;
 
 	virtual CSteamID	GetGameServerSteamID() = 0;
 
