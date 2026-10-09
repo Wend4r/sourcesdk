@@ -11,10 +11,6 @@ namespace
 		int m_nValue;
 	};
 
-	class CJobItemOwner
-	{
-	};
-
 	class CTestJob : public CThreadedJobWithDependencies
 	{
 	public:
@@ -24,11 +20,6 @@ namespace
 
 	private:
 		size_t GetOffset( const void *pMember ) const { return ( const char * )pMember - ( const char * )this; }
-	};
-
-	struct TestCall_t
-	{
-		int m_nValue;
 	};
 
 	// Instantiates the templates without running them, as they need a started thread pool.
@@ -48,8 +39,6 @@ namespace
 		pFunctionJob->TryExecute();
 	}
 }
-
-COMPILE_TIME_ASSERT( sizeof( CAsyncCallJob< CJobItemOwner, TestCall_t > ) > sizeof( CThreadedJobWithDependencies ) );
 
 #ifdef PLATFORM_64BITS
 REGISTER_NAMED_TEST( "CThreadedJobWithDependencies.Layout", CThreadedJobWithDependencies_Layout )

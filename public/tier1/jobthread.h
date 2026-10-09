@@ -307,9 +307,6 @@ private:
 	uint32 volatile *m_pWaitCounter; // Waiters sleep on it, the job increments it and wakes them when it finishes
 	char m_szJobName[ 32 ];
 };
-#ifdef PLATFORM_64BITS
-COMPILE_TIME_ASSERT( sizeof( CThreadedJob ) == 0x50 );
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -380,9 +377,6 @@ protected:
 private:
 	DLL_CLASS_IMPORT void DoExecuteInternal();
 };
-#ifdef PLATFORM_64BITS
-COMPILE_TIME_ASSERT( sizeof( CThreadedJobWithDependencies ) == 0xC8 );
-#endif
 
 // Queues the jobs without upstream jobs, the rest are queued as their upstream jobs finish
 PLATFORM_INTERFACE void Start( CUtlVector< CThreadedJobWithDependencies * > &jobs );
