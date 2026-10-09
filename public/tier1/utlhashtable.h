@@ -917,9 +917,9 @@ public:
 		m_table.Swap(other.m_table);
 		// XXX swapping CUtlLinkedList by block memory swap, ugh
 		char buf[ sizeof(m_data) ];
-		memcpy( buf, &m_data, sizeof(m_data) );
-		memcpy( &m_data, &other.m_data, sizeof(m_data) );
-		memcpy( &other.m_data, buf, sizeof(m_data) );
+		memcpy( buf, ( void * )&m_data, sizeof(m_data) );
+		memcpy( ( void * )&m_data, ( void * )&other.m_data, sizeof(m_data) );
+		memcpy( ( void * )&other.m_data, buf, sizeof(m_data) );
 	}
 
 
