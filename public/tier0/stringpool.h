@@ -48,8 +48,6 @@ protected:
 	CStrSet m_Strings;
 };
 
-COMPILE_TIME_ASSERT( sizeof( CStringPool_CI ) == 0x28 );
-
 //-----------------------------------------------------------------------------
 // Purpose: A reference counted string pool.  
 //

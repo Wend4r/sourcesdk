@@ -88,6 +88,6 @@ private:
 	EOSType m_eOSType;
 };
 
-COMPILE_TIME_ASSERT( sizeof( CMiniDumpComment ) == 0x20 );
+COMPILE_TIME_ASSERT( sizeof( CMiniDumpComment ) == 32 );
 
 #endif // MINIDUMP_H

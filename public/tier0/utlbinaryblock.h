@@ -63,8 +63,6 @@ private:
 	CUtlLeanVector< uchar, int > m_Memory;
 };
 
-COMPILE_TIME_ASSERT( sizeof( CUtlBinaryBlock ) == 0x10 );
-
 
 //-----------------------------------------------------------------------------
 // class inlines

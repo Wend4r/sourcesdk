@@ -662,8 +662,8 @@ public:
 	void ( *m_pOutputStream )( const char *, ... );
 };
 
-COMPILE_TIME_ASSERT( sizeof( CVProfNode ) == 0xC0 );
-COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 0x6A88 );
+COMPILE_TIME_ASSERT( sizeof( CVProfNode ) == 192 );
+COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27272 );
 
 //-------------------------------------
 

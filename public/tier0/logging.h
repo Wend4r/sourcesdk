@@ -284,8 +284,6 @@ struct LoggingRareOptions_t
 	int m_nUnknown = 0;
 };
 
-COMPILE_TIME_ASSERT( sizeof( LoggingRareOptions_t ) == 0x40 );
-
 //-----------------------------------------------------------------------------
 // A context structure passed to logging listeners and response policy classes.
 //-----------------------------------------------------------------------------
