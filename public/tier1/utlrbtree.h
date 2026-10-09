@@ -13,6 +13,7 @@
 #include "utlleanvector.h"
 #include "utlfixedmemory.h"
 #include "utlblockmemory.h"
+#include "utliterator.h"
 
 
 // This is a useful macro to iterate from start to end in order in a map
@@ -331,6 +332,16 @@ public:
 
 	I FirstPostorder() const;
 	I NextPostorder( I i ) const;
+
+	// STL / C++11-style iterators, in order
+	typedef CUtlBidirectionalIteratorImplT< CUtlRBTree< T, L, I, M >, false > iterator;
+	typedef CUtlBidirectionalIteratorImplT< CUtlRBTree< T, L, I, M >, true > const_iterator;
+	const_iterator begin() const { return const_iterator( this, FirstInorder() ); }
+	const_iterator end() const { return const_iterator( this, InvalidIndex() ); }
+	iterator begin() { return iterator( this, FirstInorder() ); }
+	iterator end() { return iterator( this, InvalidIndex() ); }
+	I IteratorNext( I i ) const { return NextInorder( i ); }
+	I IteratorPrev( I i ) const { return i == InvalidIndex() ? LastInorder() : PrevInorder( i ); }
 
 	// If you change the search key, this can be used to reinsert the 
 	// element into the tree.

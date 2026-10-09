@@ -140,3 +140,49 @@ REGISTER_NAMED_TEST( "CUtlRBTree.PurgeAndDeleteElements", CUtlRBTree_PurgeAndDel
 	TEST_EQ( Tracked_t::s_nDeleted, 3 );
 	TEST_TRUE( tree.IsEmpty() );
 }
+
+REGISTER_NAMED_TEST( "CUtlRBTree.RangeFor", CUtlRBTree_RangeFor )
+{
+	// Range-for should walk the tree in order and the iterators should step both ways.
+	CUtlRBTree< int, CDefLess< int >, int > tree;
+
+	TEST_TRUE( tree.begin() == tree.end() );
+
+	tree.Insert( 3 );
+	tree.Insert( 1 );
+	tree.Insert( 2 );
+
+	int nExpected = 1;
+
+	for ( const int &nValue : tree )
+	{
+		TEST_EQ( nValue, nExpected );
+		++nExpected;
+	}
+
+	TEST_EQ( nExpected, 4 );
+
+	const auto &constTree = tree;
+	int nSum = 0;
+
+	for ( const int &nValue : constTree )
+	{
+		nSum += nValue;
+	}
+
+	TEST_EQ( nSum, 6 );
+
+	auto it = tree.end();
+
+	--it;
+	TEST_EQ( *it, 3 );
+	--it;
+	TEST_EQ( *it, 2 );
+	++it;
+	TEST_EQ( *it, 3 );
+
+	decltype( tree )::const_iterator itConst = tree.begin();
+	TEST_EQ( *itConst, 1 );
+	TEST_TRUE( itConst == tree.begin() );
+	TEST_TRUE( itConst != tree.end() );
+}
