@@ -605,7 +605,7 @@ using FnGenericChangeCallbackProvider_t = void(*)(ConVarRefAbstract *ref, CSplit
 template <typename T>
 using FnTypedFilterCallback_t = bool (*)(CConVar<T> *cvar, CSplitScreenSlot nSlot, const T *pNewValue, const T *pOldValue);
 template <typename T>
-using FnTypedFilterCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, void *__unk01, FnTypedFilterCallback_t<T> cb);
+using FnTypedFilterCallbackProvider_t = bool(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, void *__unk01, FnTypedFilterCallback_t<T> cb);
 
 using FnGenericFilterCallback_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue);
 using FnGenericFilterCallbackProvider_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericFilterCallback_t cb);
