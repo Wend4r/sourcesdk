@@ -182,7 +182,7 @@ public:
 
 	virtual void	*unk101( void ) = 0;
 	virtual void	unk102( void *pStat ) = 0;
-	virtual void	unk103( void * ) = 0;
+	virtual void	unk103( CConVar< int > *pQueuedMessageLimit ) = 0;
 };
 
 
