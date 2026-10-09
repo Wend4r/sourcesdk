@@ -21,6 +21,7 @@
 // Handle to a process. This is only for b/w compatibility.
 //-----------------------------------------------------------------------------
 class IProcess;
+class CBufferString;
 
 
 //-----------------------------------------------------------------------------
@@ -31,6 +32,8 @@ class IProcess;
 abstract_class IPipeRead
 {
 public:
+	virtual bool IsValid() const = 0;
+
 	// NONBLOCKING FUNCTIONS
 
 	// Returns how much you can Read() without blocking.
@@ -46,6 +49,7 @@ public:
 
 	// Read one line of output (also returns when the process quits).
 	// sStr will not include the \n (or \r\n) at the end of the line.
+	virtual void ReadLine( CBufferString &sStr ) = 0;
 	virtual void ReadLine( CUtlString &sStr ) = 0;
 
 	// This will block the calling thread until it gets the number of bytes specified
@@ -57,9 +61,27 @@ public:
 };
 
 
+enum ProcessPriority_t
+{
+	PROCESS_PRIORITY_IDLE,
+	PROCESS_PRIORITY_LOW,
+	PROCESS_PRIORITY_NORMAL,
+	PROCESS_PRIORITY_HIGH,
+	PROCESS_PRIORITY_REALTIME
+};
+
 abstract_class IProcess
 {
 public:
+	virtual ~IProcess() {}
+
+	virtual const char *GetCommandLine() = 0;
+	virtual int GetFlags() = 0;
+	virtual void *GetProcessHandle() = 0;
+	virtual uint32 GetProcessId() = 0;
+
+	virtual void SetPriority( ProcessPriority_t ePriority ) = 0;
+
 	// Note: If the process is still running, this will auto kill it unless you started the process with
 	// STARTPROCESS_NOAUTOKILL.
 	virtual void Release() = 0;
@@ -77,6 +99,7 @@ public:
 	// Write to the process' stdin.
 	// This blocks until the process has read it.
 	virtual int WriteStdin( char *pBuf, int nBufLen ) = 0;
+	virtual void CloseStdin() = 0;
 
 	// Get stuff to read the outputs.
 	virtual IPipeRead* GetStdout() = 0;
@@ -85,6 +108,8 @@ public:
 	// Returns the exit code for the process. Doesn't work unless the process is complete.
 	// Returns -1 on error or if the process isn't complete.
 	virtual int GetExitCode() = 0;
+
+	virtual bool DidCrash() = 0;
 };
 
 
