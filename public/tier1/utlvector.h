@@ -25,8 +25,10 @@
 #include "tier1/utlblockmemory.h"
 #include "tier0/strtools.h"
 
+#include <algorithm>
 #include <initializer_list>
 #include <iterator>
+#include <type_traits>
 
 #define UTL_INVAL_VECTOR_ELEM ((I)~0)
 
@@ -44,6 +46,14 @@ struct base_vector_t
 public:
 	enum { IsUtlVector = true }; // Used to match this at compiletime 		
 };
+
+// Whether an allocator keeps its elements in one block reachable through Base().
+// CUtlBlockMemory is indexed sequentially but stored in separate blocks.
+template< class A >
+struct CUtlVectorMemoryIsContiguous : std::true_type {};
+
+template< class T, class I >
+struct CUtlVectorMemoryIsContiguous< CUtlBlockMemory< T, I > > : std::false_type {};
 
 //-----------------------------------------------------------------------------
 // The CUtlVectorBase class:
@@ -244,7 +254,12 @@ public:
 
 	I NumAllocated() const;	// Only use this if you really know what you're doing!
 
+	// WARNING: The compare func for this Sort expects < 0, 0 for equal, or > 0. If you pass only true/false back, you won't get correct sorting.
 	void Sort( I (__cdecl *pfnCompare)(const T *, const T *) );
+
+	// These sorts expect true/false
+	void Sort( bool (__cdecl *pfnLessFunc)(const T &src1, const T &src2) );
+	void Sort( bool (__cdecl *pfnLessFunc)(const T &src1, const T &src2, void *pCtx), void *pLessContext );
 
 	// Call this to quickly sort non-contiguously allocated vectors
 	void InPlaceQuickSort( I (__cdecl *pfnCompare)(const T *, const T *) );
@@ -263,6 +278,7 @@ public:
 	void Sort( void );
 
 	/// sort using std:: with a predicate. e.g. [] -> bool ( T &a, T &b ) { return a < b; }
+	/// Elements are sorted with std::sort, or an O(n^2) insertion sort when the allocator is not contiguous.
 	template <class F> void SortPredicate( F &&predicate );
 
 protected:
@@ -967,33 +983,29 @@ I CUtlVectorBase<T, I, A>::SortedInsert( const T& src, bool (__cdecl *pfnLessFun
 template< typename T, typename I, class A >
 void CUtlVectorBase<T, I, A>::Sort( I (__cdecl *pfnCompare)(const T *, const T *) )
 {
-	typedef I (__cdecl *QSortCompareFunc_t)(const void *, const void *);
-	if ( Count() <= 1 )
-		return;
-
-	if ( Base() )
+	SortPredicate( [ pfnCompare ]( const T &a, const T &b )
 	{
-		qsort( Base(), Count(), sizeof(T), (QSortCompareFunc_t)(pfnCompare) );
-	}
-	else
-	{
-		Assert( 0 );
-		// this path is untested
-		// if you want to sort vectors that use a non-sequential memory allocator,
-		// you'll probably want to patch in a quicksort algorithm here
-		// I just threw in this bubble sort to have something just in case...
+		// Comparing an element with itself is skipped, some compare funcs don't cope with it
+		return &a != &b && pfnCompare( &a, &b ) < 0;
+	} );
+}
 
-		for ( I i = m_Size - 1; i-- > 0; )
-		{
-			for ( I j = 1; j <= i; ++j )
-			{
-				if ( pfnCompare( &Element( j - 1 ), &Element( j ) ) < 0 )
-				{
-					V_swap( Element( j - 1 ), Element( j ) );
-				}
-			}
-		}
-	}
+template< typename T, typename I, class A >
+void CUtlVectorBase<T, I, A>::Sort( bool (__cdecl *pfnLessFunc)(const T &src1, const T &src2) )
+{
+	SortPredicate( [ pfnLessFunc ]( const T &a, const T &b )
+	{
+		return &a != &b && pfnLessFunc( a, b );
+	} );
+}
+
+template< typename T, typename I, class A >
+void CUtlVectorBase<T, I, A>::Sort( bool (__cdecl *pfnLessFunc)(const T &src1, const T &src2, void *pCtx), void *pLessContext )
+{
+	SortPredicate( [ pfnLessFunc, pLessContext ]( const T &a, const T &b )
+	{
+		return &a != &b && pfnLessFunc( a, b, pLessContext );
+	} );
 }
 
 
@@ -1065,61 +1077,17 @@ template< typename T, typename I, class A >
 template <class F>
 void CUtlVectorBase<T, I, A>::SortPredicate( F&& predicate )
 {
-	I n = Count();
-	if (n < 2)
-		return;
-
-	struct StackEntry
+	if constexpr ( CUtlVectorMemoryIsContiguous< A >::value )
 	{
-		I lo, hi;
-	} stack[32]; // Sufficient stack depth for typical use (log2(2^32) = 32).
-
-	int stackPos = 0;
-
-	stack[stackPos++] = StackEntry{ 0, n - 1 };
-
-	while (stackPos > 0)
+		std::sort( begin(), end(), predicate );
+	}
+	else
 	{
-		StackEntry entry = stack[--stackPos];
-		I lo = entry.lo;
-		I hi = entry.hi;
-
-		while (lo < hi)
+		for ( I i = 1; i < m_Size; i++ )
 		{
-			I i = lo, j = hi;
-			T pivot = Base()[(lo + hi) / 2];
-
-			while (i <= j)
+			for ( I j = i; j > 0 && predicate( Element( j ), Element( j - 1 ) ); j-- )
 			{
-				while (predicate(Base()[i], pivot)) ++i;
-				while (predicate(pivot, Base()[j])) --j;
-
-				if (i <= j)
-				{
-					if (i != j)
-					{
-						T temp = Base()[i];
-						Base()[i] = Base()[j];
-						Base()[j] = temp;
-					}
-					++i;
-					--j;
-				}
-			}
-
-			// Tail-call elimination: always recurse into the smaller partition first 
-			// and loop on the larger to keep stack size small.
-			if (j - lo < hi - i)
-			{
-				if (i < hi)
-					stack[stackPos++] = StackEntry{ i, hi };
-				hi = j;
-			}
-			else
-			{
-				if (lo < j)
-					stack[stackPos++] = StackEntry{ lo, j };
-				lo = i;
+				std::swap( Element( j ), Element( j - 1 ) );
 			}
 		}
 	}
