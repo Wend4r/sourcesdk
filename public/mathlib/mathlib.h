@@ -168,6 +168,9 @@ schema struct matrix3x4_t
 	inline void ConcatRotations( const matrix3x4_t &other );
 	inline void ConcatTransforms( const matrix3x4_t &other );
 
+	inline void ScaleBy( const float flValue );
+	inline void ScaleByZero();
+
 	inline void Multiply( const matrix3x4_t &other );
 	inline void Transpose();
 
@@ -178,6 +181,9 @@ schema struct matrix3x4_t
 
 	inline float RowDotProduct( int row, const Vector &in ) const;
 	inline float ColumnDotProduct( MatrixAxisType_t column, const Vector &in ) const;
+
+	inline Vector GetTranslation() const;
+	inline void SetTranslation( const Vector &in );
 
 	inline Vector GetColumn( MatrixAxisType_t column ) const;
 	inline void SetColumn( const Vector &in, MatrixAxisType_t column );
@@ -267,6 +273,9 @@ schema struct matrix3x4_t
 	inline void InverseTR( matrix3x4_t &out ) const;
 	inline matrix3x4_t InverseTR() const;
 
+	inline matrix3x4_t &operator*=( const matrix3x4_t &other );
+	inline matrix3x4_t &operator*=( float flValue );
+	inline matrix3x4_t operator*( float flValue ) const;
 
 	float *operator[]( int i )				{ Assert(( i >= 0 ) && ( i < 3 )); return m_flMatVal[i]; }
 	const float *operator[]( int i ) const	{ Assert(( i >= 0 ) && ( i < 3 )); return m_flMatVal[i]; }
@@ -686,6 +695,19 @@ bool MatricesAreEqual( const matrix3x4_t &src1, const matrix3x4_t &src2, float f
 
 void MatrixGetColumn( const matrix3x4_t &in, int column, Vector &out );
 void MatrixSetColumn( const Vector &in, int column, matrix3x4_t &out );
+
+inline void MatrixGetTranslation( const matrix3x4_t &in, Vector &out )
+{
+	MatrixGetColumn( in, 3, out );
+}
+
+inline void MatrixSetTranslation( const Vector &in, matrix3x4_t &out )
+{
+	MatrixSetColumn( in, 3, out );
+}
+
+void MatrixScaleBy( const float flScale, matrix3x4_t &out );
+void MatrixScaleByZero( matrix3x4_t &out );
 
 //void DecomposeRotation( const matrix3x4_t &mat, float *out );
 void ConcatRotations (const matrix3x4_t &in1, const matrix3x4_t &in2, matrix3x4_t &out);
@@ -3012,6 +3034,47 @@ inline void matrix3x4_t::SetColumn( const Vector &vColumn, MatrixAxisType_t nCol
 	m_flMatVal[ 0 ][ nColumn ] = vColumn.x;
 	m_flMatVal[ 1 ][ nColumn ] = vColumn.y;
 	m_flMatVal[ 2 ][ nColumn ] = vColumn.z;
+}
+
+inline void matrix3x4_t::ScaleBy( const float flValue )
+{
+	MatrixScaleBy( flValue, *this );
+}
+
+inline void matrix3x4_t::ScaleByZero()
+{
+	MatrixScaleByZero( *this );
+}
+
+inline Vector matrix3x4_t::GetTranslation() const
+{
+	Vector out;
+	MatrixGetTranslation( *this, out );
+	return out;
+}
+
+inline void matrix3x4_t::SetTranslation( const Vector &in )
+{
+	MatrixSetTranslation( in, *this );
+}
+
+inline matrix3x4_t &matrix3x4_t::operator*=( const matrix3x4_t &other )
+{
+	MatrixMultiply( *this, other, *this );
+	return *this;
+}
+
+inline matrix3x4_t &matrix3x4_t::operator*=( float flValue )
+{
+	ScaleBy( flValue );
+	return *this;
+}
+
+inline matrix3x4_t matrix3x4_t::operator*( float flValue ) const
+{
+	matrix3x4_t temp( *this );
+	temp.ScaleBy( flValue );
+	return temp;
 }
 
 inline void matrix3x4_t::InverseTR( matrix3x4_t &out ) const

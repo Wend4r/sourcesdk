@@ -77,3 +77,48 @@ REGISTER_NAMED_TEST( "mathlib.ConcatRotations", mathlib_ConcatRotations )
 	TEST_TRUE( fabsf( rot180[ 0 ][ 1 ] ) < 1.0e-5f );
 	TEST_TRUE( fabsf( rot180[ 1 ][ 0 ] ) < 1.0e-5f );
 }
+
+REGISTER_NAMED_TEST( "mathlib.MatrixScaleAndTranslation", mathlib_MatrixScaleAndTranslation )
+{
+	// Scaling touches only the 3x3 part; translation lives in the fourth column.
+	MathLib_Init();
+
+	matrix3x4_t mat;
+	SetIdentityMatrix( mat );
+	mat.SetTranslation( Vector( 1.0f, 2.0f, 3.0f ) );
+	TEST_TRUE( mat.GetTranslation() == Vector( 1.0f, 2.0f, 3.0f ) );
+
+	Vector vTranslation;
+	MatrixGetTranslation( mat, vTranslation );
+	TEST_TRUE( vTranslation == Vector( 1.0f, 2.0f, 3.0f ) );
+	MatrixSetTranslation( Vector( 4.0f, 5.0f, 6.0f ), mat );
+	TEST_TRUE( mat.GetTranslation() == Vector( 4.0f, 5.0f, 6.0f ) );
+
+	matrix3x4_t scaled = mat * 2.0f;
+	TEST_EQ( scaled[ 0 ][ 0 ], 2.0f );
+	TEST_EQ( scaled[ 1 ][ 1 ], 2.0f );
+	TEST_EQ( scaled[ 2 ][ 2 ], 2.0f );
+	TEST_EQ( scaled[ 0 ][ 3 ], 4.0f );
+	TEST_EQ( mat[ 0 ][ 0 ], 1.0f );
+
+	mat *= 3.0f;
+	TEST_EQ( mat[ 1 ][ 1 ], 3.0f );
+	TEST_EQ( mat[ 1 ][ 3 ], 5.0f );
+
+	mat.ScaleBy( 0.5f );
+	TEST_EQ( mat[ 2 ][ 2 ], 1.5f );
+
+	matrix3x4_t translate;
+	SetIdentityMatrix( translate );
+	translate.SetTranslation( Vector( 1.0f, 0.0f, 0.0f ) );
+	matrix3x4_t combined;
+	SetIdentityMatrix( combined );
+	combined *= translate;
+	combined *= translate;
+	TEST_TRUE( combined.GetTranslation() == Vector( 2.0f, 0.0f, 0.0f ) );
+
+	mat.ScaleByZero();
+	TEST_EQ( mat[ 0 ][ 0 ], 0.0f );
+	TEST_EQ( mat[ 2 ][ 2 ], 0.0f );
+	TEST_EQ( mat[ 2 ][ 3 ], 6.0f );
+}
