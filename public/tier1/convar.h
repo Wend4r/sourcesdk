@@ -1576,6 +1576,70 @@ private:
 	FnMemberCommandCompletionCallback_t m_CompletionFunc;
 };
 
+// AMNOTE: Shouldn't be used directly to create new concommands
+class ConCommandRegList
+{
+public:
+	friend bool ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb );
+	friend bool ConVar_Unregister();
+	friend void SetupConCommand( ConCommand *cmd, const ConCommandCreation_t &info );
+
+	struct Entry_t
+	{
+		ConCommandCreation_t m_Info;
+		ConCommandRef *m_Command = nullptr;
+	};
+
+private:
+	static void RegisterConCommand( const Entry_t &cmd );
+	static void UnregisterConCommand( const Entry_t &cmd );
+	static void RegisterAll();
+	static void UnregisterAll();
+	static void AddToList( const Entry_t &cmd );
+
+public:
+	uint32 m_nSize;
+	Entry_t m_Entries[ 100 ];
+	ConCommandRegList *m_pPrev;
+
+private:
+	static bool s_bConCommandsRegistered;
+	static ConCommandRegList *s_pRoot;
+};
+
+// AMNOTE: Shouldn't be used directly to create new convars
+class ConVarRegList
+{
+public:
+	friend bool ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb );
+	friend bool ConVar_Unregister();
+	friend void SetupConVar( ConVarRefAbstract *cvar, ConVarData **cvar_data, ConVarCreation_t &info );
+
+	struct Entry_t
+	{
+		ConVarCreation_t m_Info;
+
+		ConVarRefAbstract *m_pConVar = nullptr;
+		ConVarData **m_pConVarData = nullptr;
+	};
+
+private:
+	static void RegisterConVar( const Entry_t &cvar );
+	static void UnregisterConVar( const Entry_t &cvar );
+	static bool RegisterAll();
+	static bool UnregisterAll();
+	static void AddToList( const Entry_t &cvar );
+
+public:
+	uint32 m_nSize;
+	Entry_t m_Entries[ 100 ];
+	ConVarRegList *m_pPrev;
+
+private:
+	static bool s_bConVarsRegistered;
+	static ConVarRegList *s_pRoot;
+};
+
 #ifdef _MSC_VER
 #pragma warning ( default : 4355 )
 #endif

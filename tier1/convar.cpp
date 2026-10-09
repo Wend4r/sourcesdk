@@ -37,112 +37,93 @@ static FnConCommandRegisterCallback s_ConCommandRegCB = nullptr;
 static uint64 s_nCVarFlag = 0;
 static bool s_bRegistered = false;
 
-class ConCommandRegList
-{
-public:
-	struct Entry_t
-	{
-		ConCommandCreation_t m_Info;
-		ConCommandRef *m_Command = nullptr;
-	};
-
-	static void RegisterConCommand( const Entry_t &cmd )
-	{
-		Assert( g_pCVar );
-		*cmd.m_Command = g_pCVar->RegisterConCommand( cmd.m_Info, s_nCVarFlag );
-		if ( !cmd.m_Command->IsValidRef() )
-		{
-			Plat_FatalError( "RegisterConCommand: Unknown error registering con command \"%s\"!\n", cmd.m_Info.m_pszName );
-			DebuggerBreakIfDebugging();
-		}
-		else if ( s_ConCommandRegCB )
-			s_ConCommandRegCB( cmd.m_Command );
-	}
-
-	static void UnregisterConCommand( const Entry_t &cmd )
-	{
-		auto *pConCmd = cmd.m_Command;
-
-		Assert( pConCmd );
-
-		if ( !pConCmd->IsValidRef() )
-		{
-			Plat_FatalError( "UnregisterConCommand: Invalid con command \"%s\"!\n", cmd.m_Info.m_pszName );
-			DebuggerBreakIfDebugging();
-
-			return;
-		}
-
-		Assert( g_pCVar );
-		g_pCVar->UnregisterConCommandCallbacks( *pConCmd );
-		pConCmd->InvalidateRef();
-	}
-
-	static void RegisterAll()
-	{
-		if ( s_bConCommandsRegistered )
-		{
-			return;
-		}
-
-		s_bConCommandsRegistered = true;
-
-		for ( auto list = s_pRoot; list; list = list->m_pPrev )
-		{
-			for ( size_t i = 0; i < list->m_nSize; i++ )
-			{
-				RegisterConCommand( list->m_Entries[i] );
-			}
-		}
-	}
-
-	static void UnregisterAll()
-	{
-		for ( auto list = s_pRoot; list; list = list->m_pPrev )
-		{
-			for ( size_t i = 0; i < list->m_nSize; i++ )
-			{
-				UnregisterConCommand( list->m_Entries[i] );
-			}
-		}
-	}
-
-	static void AddToList( const Entry_t &cmd )
-	{
-		if ( s_bConCommandsRegistered )
-		{
-			RegisterConCommand( cmd );
-
-			return;
-		}
-
-		auto list = s_pRoot;
-
-		if ( !list || list->m_nSize >= ARRAYSIZE( m_Entries ) )
-		{
-			list = new ConCommandRegList;
-			list->m_nSize = 0;
-			list->m_pPrev = s_pRoot;
-
-			s_pRoot = list;
-		}
-
-		list->m_Entries[list->m_nSize] = cmd;
-		list->m_nSize++;
-	}
-
-private:
-	uint32 m_nSize;
-	Entry_t m_Entries[100];
-	ConCommandRegList *m_pPrev;
-
-public:
-	static bool s_bConCommandsRegistered;
-	static ConCommandRegList *s_pRoot;
-};
-
 bool ConCommandRegList::s_bConCommandsRegistered = false;
 ConCommandRegList *ConCommandRegList::s_pRoot = nullptr;
+
+void ConCommandRegList::RegisterConCommand( const Entry_t &cmd )
+{
+	Assert( g_pCVar );
+	*cmd.m_Command = g_pCVar->RegisterConCommand( cmd.m_Info, s_nCVarFlag );
+	if ( !cmd.m_Command->IsValidRef() )
+	{
+		Plat_FatalError( "RegisterConCommand: Unknown error registering con command \"%s\"!\n", cmd.m_Info.m_pszName );
+		DebuggerBreakIfDebugging();
+	}
+	else if ( s_ConCommandRegCB )
+		s_ConCommandRegCB( cmd.m_Command );
+}
+
+void ConCommandRegList::UnregisterConCommand( const Entry_t &cmd )
+{
+	auto *pConCmd = cmd.m_Command;
+
+	Assert( pConCmd );
+
+	if ( !pConCmd->IsValidRef() )
+	{
+		Plat_FatalError( "UnregisterConCommand: Invalid con command \"%s\"!\n", cmd.m_Info.m_pszName );
+		DebuggerBreakIfDebugging();
+
+		return;
+	}
+
+	Assert( g_pCVar );
+	g_pCVar->UnregisterConCommandCallbacks( *pConCmd );
+	pConCmd->InvalidateRef();
+}
+
+void ConCommandRegList::RegisterAll()
+{
+	if ( s_bConCommandsRegistered )
+	{
+		return;
+	}
+
+	s_bConCommandsRegistered = true;
+
+	for ( auto list = s_pRoot; list; list = list->m_pPrev )
+	{
+		for ( size_t i = 0; i < list->m_nSize; i++ )
+		{
+			RegisterConCommand( list->m_Entries[i] );
+		}
+	}
+}
+
+void ConCommandRegList::UnregisterAll()
+{
+	for ( auto list = s_pRoot; list; list = list->m_pPrev )
+	{
+		for ( size_t i = 0; i < list->m_nSize; i++ )
+		{
+			UnregisterConCommand( list->m_Entries[i] );
+		}
+	}
+}
+
+void ConCommandRegList::AddToList( const Entry_t &cmd )
+{
+	if ( s_bConCommandsRegistered )
+	{
+		RegisterConCommand( cmd );
+
+		return;
+	}
+
+	auto list = s_pRoot;
+
+	if ( !list || list->m_nSize >= ARRAYSIZE( m_Entries ) )
+	{
+		list = new ConCommandRegList;
+		list->m_nSize = 0;
+		list->m_pPrev = s_pRoot;
+
+		s_pRoot = list;
+	}
+
+	list->m_Entries[list->m_nSize] = cmd;
+	list->m_nSize++;
+}
 
 void SetupConCommand( ConCommand *cmd, const ConCommandCreation_t& info )
 {
@@ -164,138 +145,117 @@ void DetroyConCommand( ConCommand *cmd )
 	}
 }
 
-class ConVarRegList
+bool ConVarRegList::s_bConVarsRegistered = false;
+ConVarRegList *ConVarRegList::s_pRoot = nullptr;
+
+void ConVarRegList::RegisterConVar( const Entry_t &cvar )
 {
-public:
-	struct Entry_t
+	Assert( g_pCVar );
+
+	ConVarRefAbstract hConVar = g_pCVar->FindConVar( cvar.m_Info.m_pszName );
+	if ( hConVar.IsValidRef() )
 	{
-		ConVarCreation_t m_Info;
-
-		ConVarRefAbstract *m_pConVar = nullptr;
-		ConVarData **m_pConVarData = nullptr;
-	};
-
-	static void RegisterConVar( const Entry_t &cvar )
-	{
-		Assert( g_pCVar );
-
-		ConVarRefAbstract hConVar = g_pCVar->FindConVar( cvar.m_Info.m_pszName );
-		if ( hConVar.IsValidRef() )
+		ConVarData* pConVarData = g_pCVar->GetConVarData( static_cast<ConVarRef>(hConVar) );
+		if (pConVarData->GetType() != cvar.m_Info.m_valueInfo.m_eVarType)
 		{
-			ConVarData* pConVarData = g_pCVar->GetConVarData( static_cast<ConVarRef>(hConVar) );
-			if (pConVarData->GetType() != cvar.m_Info.m_valueInfo.m_eVarType)
-			{
-				const char* cvarType = cvar.m_pConVar->GetConVarData()->GetDataTypeName();
-				const char* validType = pConVarData->GetDataTypeName();
-				Plat_FatalError( "RegisterConVar: Convar \"%s\" already exists with different type! (expected: %s, given: %s)\n",
-					cvar.m_Info.m_pszName, validType, cvarType );
-				DebuggerBreakIfDebugging();
-				return;
-			}
-		}
-
-		g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
-
-		Assert( cvar.m_pConVar );
-		if ( !cvar.m_pConVar->IsValidRef() )
-		{
-			if ( !hConVar.IsValidRef() )
-			{
-				Plat_FatalError( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
-				DebuggerBreakIfDebugging();
-			}
-		}
-
-		// Don't let references pass as a newly registered cvar
-		if ( s_ConVarRegCB && (cvar.m_Info.m_nFlags & FCVAR_REFERENCE) == 0 )
-			s_ConVarRegCB( cvar.m_pConVar );
-	}
-
-	static void UnregisterConVar( const Entry_t &cvar )
-	{
-		auto *pConVar = cvar.m_pConVar;
-		Assert( pConVar );
-
-		if ( !pConVar->IsValidRef() )
-		{
-			Plat_FatalError( "UnregisterConVar: Invalid convar \"%s\"!\n", cvar.m_Info.m_pszName );
+			const char* cvarType = cvar.m_pConVar->GetConVarData()->GetDataTypeName();
+			const char* validType = pConVarData->GetDataTypeName();
+			Plat_FatalError( "RegisterConVar: Convar \"%s\" already exists with different type! (expected: %s, given: %s)\n",
+				cvar.m_Info.m_pszName, validType, cvarType );
 			DebuggerBreakIfDebugging();
 			return;
 		}
-
-		Assert( g_pCVar );
-		g_pCVar->UnregisterConVarCallbacks( *pConVar );
-		pConVar->InvalidateRef();
 	}
 
-	static bool RegisterAll()
+	g_pCVar->RegisterConVar( cvar.m_Info, s_nCVarFlag, cvar.m_pConVar, cvar.m_pConVarData );
+
+	Assert( cvar.m_pConVar );
+	if ( !cvar.m_pConVar->IsValidRef() )
 	{
-		if ( s_bConVarsRegistered )
+		if ( !hConVar.IsValidRef() )
 		{
-			return false;
+			Plat_FatalError( "RegisterConVar: Unknown error registering convar \"%s\"!\n", cvar.m_Info.m_pszName );
+			DebuggerBreakIfDebugging();
 		}
-
-		s_bConVarsRegistered = true;
-
-		for ( auto list = s_pRoot; list; list = list->m_pPrev )
-		{
-			for(size_t i = 0; i < list->m_nSize; i++)
-			{
-				RegisterConVar( list->m_Entries[i] );
-			}
-		}
-
-		return true;
 	}
 
-	static bool UnregisterAll()
+	// Don't let references pass as a newly registered cvar
+	if ( s_ConVarRegCB && (cvar.m_Info.m_nFlags & FCVAR_REFERENCE) == 0 )
+		s_ConVarRegCB( cvar.m_pConVar );
+}
+
+void ConVarRegList::UnregisterConVar( const Entry_t &cvar )
+{
+	auto *pConVar = cvar.m_pConVar;
+	Assert( pConVar );
+
+	if ( !pConVar->IsValidRef() )
 	{
-		for ( auto list = s_pRoot; list; list = list->m_pPrev )
-		{
-			for ( size_t i = 0; i < list->m_nSize; i++ )
-			{
-				UnregisterConVar( list->m_Entries[i] );
-			}
-		}
-
-		return true;
+		Plat_FatalError( "UnregisterConVar: Invalid convar \"%s\"!\n", cvar.m_Info.m_pszName );
+		DebuggerBreakIfDebugging();
+		return;
 	}
 
-	static void AddToList( const Entry_t &cvar )
+	Assert( g_pCVar );
+	g_pCVar->UnregisterConVarCallbacks( *pConVar );
+	pConVar->InvalidateRef();
+}
+
+bool ConVarRegList::RegisterAll()
+{
+	if ( s_bConVarsRegistered )
 	{
-		if ( s_bConVarsRegistered )
-		{
-			RegisterConVar( cvar );
-
-			return;
-		}
-
-		auto list = s_pRoot;
-
-		if ( !list || list->m_nSize >= ARRAYSIZE( m_Entries ) )
-		{
-			list = new ConVarRegList;
-			list->m_nSize = 0;
-			list->m_pPrev = s_pRoot;
-
-			s_pRoot = list;
-		}
-
-		list->m_Entries[list->m_nSize++] = cvar;
+		return false;
 	}
 
-private:
-	uint32 m_nSize;
-	Entry_t m_Entries[100];
-	ConVarRegList *m_pPrev;
+	s_bConVarsRegistered = true;
 
-public:
-	static bool s_bConVarsRegistered;
-	static ConVarRegList *s_pRoot;
-};
+	for ( auto list = s_pRoot; list; list = list->m_pPrev )
+	{
+		for(size_t i = 0; i < list->m_nSize; i++)
+		{
+			RegisterConVar( list->m_Entries[i] );
+		}
+	}
 
-bool ConVarRegList::s_bConVarsRegistered = false;
-ConVarRegList *ConVarRegList::s_pRoot = nullptr;
+	return true;
+}
+
+bool ConVarRegList::UnregisterAll()
+{
+	for ( auto list = s_pRoot; list; list = list->m_pPrev )
+	{
+		for ( size_t i = 0; i < list->m_nSize; i++ )
+		{
+			UnregisterConVar( list->m_Entries[i] );
+		}
+	}
+
+	return true;
+}
+
+void ConVarRegList::AddToList( const Entry_t &cvar )
+{
+	if ( s_bConVarsRegistered )
+	{
+		RegisterConVar( cvar );
+
+		return;
+	}
+
+	auto list = s_pRoot;
+
+	if ( !list || list->m_nSize >= ARRAYSIZE( m_Entries ) )
+	{
+		list = new ConVarRegList;
+		list->m_nSize = 0;
+		list->m_pPrev = s_pRoot;
+
+		s_pRoot = list;
+	}
+
+	list->m_Entries[list->m_nSize++] = cvar;
+}
 
 void SetupConVar( ConVarRefAbstract *cvar, ConVarData **cvar_data, ConVarCreation_t &info )
 {
