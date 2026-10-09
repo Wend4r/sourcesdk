@@ -350,7 +350,7 @@ public:
 
 
 // Used by vprof record/playback.
-private:
+protected:
 	CVProfNode( const char *, VProfBudgetGroupCallSite &, double, const CUtlSourceLocation & );
 
 	void SetUniqueNodeID( int id );
@@ -676,8 +676,8 @@ public:
 		m_pExitScope = nullptr;
 	}
 
-	DLL_CLASS_IMPORT VProfScopeHelper &operator=( const VProfScopeHelper &other );
-	DLL_CLASS_IMPORT VProfScopeHelper &operator=( VProfScopeHelper &&other );
+	VProfScopeHelper &operator=( const VProfScopeHelper &other ) = delete;
+	VProfScopeHelper &operator=( VProfScopeHelper &&other ) = delete;
 
 	static DLL_CLASS_IMPORT VProfExitScopeCB EnterScopeInternal( const char *pszName, const CUtlSourceLocation &location );
 	static DLL_CLASS_IMPORT VProfExitScopeCB EnterScopeInternalBudgetFlags( const char *pszName, VProfBudgetGroupCallSite &budgetGroup, const CUtlSourceLocation &location );

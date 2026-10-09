@@ -84,7 +84,7 @@ public:
 	DLL_CLASS_IMPORT CCountedStringPool_CI();
 	DLL_CLASS_IMPORT virtual ~CCountedStringPool_CI();
 
-	DLL_CLASS_IMPORT void			FreeAll();
+	DLL_CLASS_IMPORT void			Purge();
 
 	DLL_CLASS_IMPORT const char		*FindString( const char* pIntrinsic ) const;
 	DLL_CLASS_IMPORT const char		*ReferenceString( const char* pIntrinsic );

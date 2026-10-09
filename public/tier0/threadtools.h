@@ -93,7 +93,7 @@ PLATFORM_INTERFACE bool ReleaseThreadHandle( ThreadHandle_t );
 PLATFORM_OVERLOAD void ThreadAtomicNotifyOne( const uint32 *addr );
 PLATFORM_OVERLOAD void ThreadAtomicNotifyN( const uint32 *addr, uint32 n );
 PLATFORM_OVERLOAD void ThreadAtomicNotifyAll( const uint32 *addr );
-PLATFORM_OVERLOAD void ThreadAtomicWait( volatile uint32 *addr, uint32 ms );
+PLATFORM_OVERLOAD void ThreadAtomicWait( volatile uint32 *addr, uint32 value );
 
 PLATFORM_INTERFACE void ThreadSleep(unsigned duration = 0);
 PLATFORM_INTERFACE void ThreadNanoSleep(unsigned ns);
@@ -135,8 +135,8 @@ inline void ThreadPause()
 
 PLATFORM_INTERFACE bool ThreadJoin( ThreadHandle_t, unsigned timeout = TT_INFINITE );
 
-PLATFORM_INTERFACE void ThreadSetDebugName( ThreadHandle_t hThread, const char *pszName );
-inline		 void ThreadSetDebugName( const char *pszName ) { ThreadSetDebugName( NULL, pszName ); }
+PLATFORM_INTERFACE void ThreadSetDebugNameS2( ThreadHandle_t hThread, const char *pszName );
+inline		 void ThreadSetDebugName( const char *pszName ) { ThreadSetDebugNameS2( NULL, pszName ); }
 
 PLATFORM_INTERFACE void ThreadSetAffinity( ThreadHandle_t hThread, int nAffinityMask );
 
@@ -852,12 +852,12 @@ public:
 	bool IsValid() const { return m_hSyncObject != NULL; }
 	operator HANDLE() { return GetHandle(); }
 	const HANDLE GetHandle() const { return m_hSyncObject; }
+#endif // defined(PLATFORM_WINDOWS)
 
 	//-----------------------------------------------------
 	// Wait for a signal from the object
 	//-----------------------------------------------------
 	bool Wait( uint32 dwTimeout = TT_INFINITE );
-#endif // defined(PLATFORM_WINDOWS)
 
 #ifdef PLATFORM_POSIX
 	bool Wait_NoDiagnostics( uint32 dwTimeout );
@@ -1015,8 +1015,6 @@ public:
 	//-----------------------------------------------------
 	bool Check();
 
-	bool Wait( uint32 dwTimeout = TT_INFINITE );
-
 	// See CThreadSyncObject for definitions of these functions.
 	static uint32 WaitForMultiple( int nObjects, CThreadEvent **ppObjects, bool bWaitAll, uint32 dwTimeout = TT_INFINITE );
 	static uint32 WaitForMultiple( int nObjects, CThreadEvent *ppObjects, bool bWaitAll, uint32 dwTimeout = TT_INFINITE );
@@ -1034,6 +1032,24 @@ public:
 	 :	CThreadEvent( true )
 	{
 	}
+};
+
+class PLATFORM_CLASS CThreadMultiWaitEvent
+{
+public:
+	CThreadMultiWaitEvent( bool bManualReset = false );
+	~CThreadMultiWaitEvent();
+
+	void Set();
+	void Reset();
+
+private:
+#ifdef PLATFORM_WINDOWS
+	HANDLE m_hEvent;
+#else
+	int m_nEventFd;
+#endif
+	int m_nType; // 2 for auto-reset, 4 for manual-reset
 };
 
 
