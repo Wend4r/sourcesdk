@@ -239,6 +239,10 @@ public:
 		CUtlVector<CUtlString> m_IncludeList;
 	};
 
+	// nAction 0 allocates and constructs a new object, 1 destructs and frees pObject,
+	// 2 returns the CNetworkSerializerClassInfo of pObject's most derived class
+	typedef void *( *ManipulatorFn_t )( int nAction, void *pObject );
+
 	CUtlStringToken m_nHash;
 	CUtlString m_pszClassName;
 	CUtlVector<CNetworkSerializerFieldInfo *> m_Fields;
@@ -252,11 +256,8 @@ public:
 	CNetworkSerializerClassInfo *m_ParentClassInfoBuffer;
 	CUtlVector<int> m_ParentClassOffset;
 
-	struct
-	{
-		void *m_unk001;
-		CUtlLinkedList<void *, int> m_unk002;
-	} m_unk001;
+	// Maps member names like __m_pChainEntity and m_PathIndex to their offsets in the class
+	CUtlDict< uint16 > m_unk101;
 
 	CUtlVector<NetworkOverride_t *> m_NetworkOverrides;
 	// Includes this class and parent overreides
@@ -270,18 +271,19 @@ public:
 
 	int32_t m_nClassSize;
 	int m_NetworkOutOfPVSUpdates;
-	int m_unk101;
+	// Allocation mode, only 1 and 2 allow allocating and freeing through m_pfnManipulator
+	int m_unk201;
 
-	SchemaClassManipulatorFn_t m_pfnManipulator;
+	ManipulatorFn_t m_pfnManipulator;
 
 	bool m_Initialized;
 	bool m_NetworkVarsAtomic;
-	bool m_unk201;
-	bool m_unk202;
+	bool m_unk301;
+	bool m_NetworkNoBase;
 	bool m_NetworkStructNotInNetworkUtlVectorEmbedded;
 	bool m_NetworkVarEmbeddedNotFlattened;
-
-	CThreadSpinRWLock m_Mutex;
+	// Only the constructor writes it
+	bool m_unk401;
 };
 
 class CNetworkSerializerCodeGenDatabase
