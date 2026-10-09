@@ -474,7 +474,7 @@ inline void CUtlTSHash<T,BUCKET_COUNT,KEYTYPE,HashFuncs>::FindAndRemove( KEYTYPE
 		Destruct( &pElement->m_Data );
 
 #ifdef _DEBUG
-		memset( pElement, 0xDD, sizeof(HashFixedData_t) );
+		memset( ( void * )pElement, 0xDD, sizeof(HashFixedData_t) );
 #endif
 
 		m_EntryMemory.Free( pElement );
