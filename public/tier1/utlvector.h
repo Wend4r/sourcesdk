@@ -210,6 +210,11 @@ public:
 	// Finds an element (element needs operator== defined)
 	I Find( const T& compSrc ) const;
 	I Find( T&& moveSrc ) const;
+
+	// Finds the first element for which func( element ) returns true
+	template< typename TMatchFunc >
+	I FindMatch( TMatchFunc&& func ) const;
+
 	void FillWithValue( const T& copySrc );
 	void FillWithValue( T&& moveSrc );
 
@@ -271,8 +276,19 @@ public:
 #endif // DBGFLAG_VALIDATE
 
 
+	// Binary searches, the vector must be sorted with the same less func
+	// SortedFind returns InvalidIndex() if there is no match.
+	// SortedFindLessOrEqual returns the highest index of an element not greater than the search, searching [start, stop] (stop is inclusive).
+	I SortedFind( const T& search, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2, void *pCtx ), void *pLessContext ) const;
+	I SortedFind( const T& search, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2 ) ) const;
+	I SortedFindLessOrEqual( const T& search, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2, void *pCtx ), void *pLessContext, I start, I stop ) const;
 	I SortedFindLessOrEqual( const T& search, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2, void *pCtx ), void *pLessContext ) const;
+	I SortedFindLessOrEqual( const T& search, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2 ), I start, I stop ) const;
+	I SortedFindLessOrEqual( const T& search, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2 ) ) const;
+
+	// Inserts after the last element not greater than src, keeping a sorted vector sorted
 	I SortedInsert( const T& src, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2, void *pCtx ), void *pLessContext );
+	I SortedInsert( const T& src, bool( __cdecl *pfnLessFunc )( const T& src1, const T& src2 ) );
 
 	/// sort using std:: and expecting a "<" function to be defined for the type
 	void Sort( void );
@@ -939,29 +955,147 @@ void CUtlVectorBase<T, I, A>::GrowVector( I num )
 // You must sort the list before using or your results will be wrong
 //-----------------------------------------------------------------------------
 template< typename T, typename I, class A >
-I CUtlVectorBase<T, I, A>::SortedFindLessOrEqual( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2, void *pCtx ), void *pLessContext ) const
+I CUtlVectorBase<T, I, A>::SortedFind( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2, void *pCtx ), void *pLessContext ) const
 {
-	I start = 0, end = Count() - 1;
-	while (start <= end)
+	I start = 0, stop = Count() - 1;
+	while ( start <= stop )
 	{
-		I mid = (start + end) >> 1;
-		if ( pfnLessFunc( Element(mid), search, pLessContext ) )
+		I mid = ( start + stop ) >> 1;
+		if ( pfnLessFunc( Element( mid ), search, pLessContext ) )
 		{
 			start = mid + 1;
 		}
-		else if ( pfnLessFunc( search, Element(mid), pLessContext ) )
+		else if ( pfnLessFunc( search, Element( mid ), pLessContext ) )
 		{
-			end = mid - 1;
+			stop = mid - 1;
 		}
 		else
 		{
 			return mid;
 		}
 	}
-	return end;
+	return InvalidIndex();
+}
+
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::SortedFind( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2 ) ) const
+{
+	I start = 0, stop = Count() - 1;
+	while ( start <= stop )
+	{
+		I mid = ( start + stop ) >> 1;
+		if ( pfnLessFunc( Element( mid ), search ) )
+		{
+			start = mid + 1;
+		}
+		else if ( pfnLessFunc( search, Element( mid ) ) )
+		{
+			stop = mid - 1;
+		}
+		else
+		{
+			return mid;
+		}
+	}
+	return InvalidIndex();
 }
 
 
+//-----------------------------------------------------------------------------
+// Implementation of upper_bound(). Finds the element with the highest index
+// that is less than or equal to what you are looking for.
+// You must sort the list before using or your results will be wrong
+//-----------------------------------------------------------------------------
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::SortedFindLessOrEqual( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2, void *pCtx ), void *pLessContext, I start, I stop ) const
+{
+	while ( start <= stop )
+	{
+		I mid = ( start + stop ) >> 1;
+		if ( pfnLessFunc( Element( mid ), search, pLessContext ) )
+		{
+			start = mid + 1;
+		}
+		else if ( pfnLessFunc( search, Element( mid ), pLessContext ) )
+		{
+			stop = mid - 1;
+		}
+		else
+		{
+			// found a match - but we want the last one - keep looking
+			if ( stop == mid )
+				return mid;
+
+			if ( mid == start )
+			{
+				// This means we have just start and stop elements left to check
+				if ( stop > mid && pfnLessFunc( search, Element( mid + 1 ), pLessContext ) )
+					return mid;
+				else
+					return mid + 1;
+			}
+			else
+			{
+				start = mid;
+			}
+		}
+	}
+	return stop;
+}
+
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::SortedFindLessOrEqual( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2, void *pCtx ), void *pLessContext ) const
+{
+	return SortedFindLessOrEqual( search, pfnLessFunc, pLessContext, 0, Count() - 1 );
+}
+
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::SortedFindLessOrEqual( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2 ), I start, I stop ) const
+{
+	while ( start <= stop )
+	{
+		I mid = ( start + stop ) >> 1;
+		if ( pfnLessFunc( Element( mid ), search ) )
+		{
+			start = mid + 1;
+		}
+		else if ( pfnLessFunc( search, Element( mid ) ) )
+		{
+			stop = mid - 1;
+		}
+		else
+		{
+			// found a match - but we want the last one - keep looking
+			if ( stop == mid )
+				return mid;
+
+			if ( mid == start )
+			{
+				// This means we have just start and stop elements left to check
+				if ( stop > mid && pfnLessFunc( search, Element( mid + 1 ) ) )
+					return mid;
+				else
+					return mid + 1;
+			}
+			else
+			{
+				start = mid;
+			}
+		}
+	}
+	return stop;
+}
+
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::SortedFindLessOrEqual( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2 ) ) const
+{
+	return SortedFindLessOrEqual( search, pfnLessFunc, 0, Count() - 1 );
+}
+
+
+//-----------------------------------------------------------------------------
+// Inserts into a sorted vector
+//-----------------------------------------------------------------------------
 template< typename T, typename I, class A >
 I CUtlVectorBase<T, I, A>::SortedInsert( const T& src, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2, void *pCtx ), void *pLessContext )
 {
@@ -973,8 +1107,15 @@ I CUtlVectorBase<T, I, A>::SortedInsert( const T& src, bool (__cdecl *pfnLessFun
 	return pos;
 }
 
-
-
+template< typename T, typename I, class A >
+I CUtlVectorBase<T, I, A>::SortedInsert( const T& src, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2 ) )
+{
+	I pos = SortedFindLessOrEqual( src, pfnLessFunc ) + 1;
+	GrowVector();
+	ShiftElementsRight( pos );
+	CopyConstruct<T>( &Element( pos ), src );
+	return pos;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1448,6 +1589,19 @@ I CUtlVectorBase<T, I, A>::Find( T&& moveSrc ) const
 			return i;
 
 	return UTL_INVAL_VECTOR_ELEM;
+}
+
+template< typename T, typename I, class A >
+template< typename TMatchFunc >
+I CUtlVectorBase<T, I, A>::FindMatch( TMatchFunc&& func ) const
+{
+	for ( I i = 0; i < Count(); ++i )
+	{
+		if ( func( Element( i ) ) )
+			return i;
+	}
+
+	return InvalidIndex();
 }
 
 template< typename T, typename I, class A >
