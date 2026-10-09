@@ -350,7 +350,7 @@ public:
 
 
 // Used by vprof record/playback.
-private:
+protected:
 	CVProfNode( const char *, VProfBudgetGroupCallSite &, double, const CUtlSourceLocation & );
 
 	void SetUniqueNodeID( int id );
