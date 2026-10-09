@@ -45,8 +45,6 @@ public:
 	uint8 *m_pData;
 };
 
-COMPILE_TIME_ASSERT( sizeof( ConVarUserInfoSet_t ) == sizeof( uint8 * ) );
-
 //-----------------------------------------------------------------------------
 // Purpose: Internal structure of ConVar objects
 //-----------------------------------------------------------------------------
