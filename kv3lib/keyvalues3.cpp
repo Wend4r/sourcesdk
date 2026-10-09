@@ -983,7 +983,7 @@ bool KeyValues3::ReadArrayInt32( int dest_size, int32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( int32 )m_Data.m_Array.m_u8Short[ i ];
+					data[ i ] = ( int32 )m_Data.m_Array.m_i16[ i ];
 				break;
 			}
 			case KV3_TYPEEX_ARRAY_INT32:
@@ -1006,7 +1006,7 @@ bool KeyValues3::ReadArrayInt32( int dest_size, int32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( int32 )m_Data.m_Array.m_u8Short[ i ];
+					data[ i ] = ( int32 )m_Data.m_Array.m_i16Short[ i ];
 				break;
 			}
 			default: 
