@@ -182,8 +182,8 @@ public:
 	virtual const char		*GetWorldGroupName( WorldGroupId_t hWorldGroupId ) = 0;
 	// First world group id of the list selected by bUnk
 	virtual WorldGroupId_t	unk021( bool bUnk ) = 0;
-	// Last registered world group id of the list selected by bUnk
-	virtual WorldGroupId_t	unk022( bool bUnk ) = 0;
+	// Last registered world group id of the list selected by bClientSide
+	virtual WorldGroupId_t	MaxWorldGroupId( bool bClientSide ) = 0;
 	virtual bool			IsWorldGroupIdValid( WorldGroupId_t hWorldGroupId ) = 0;
 	virtual float			&GetFrameTime() = 0;
 
