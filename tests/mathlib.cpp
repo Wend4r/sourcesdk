@@ -140,3 +140,13 @@ REGISTER_NAMED_TEST( "mathlib.FloatBits", mathlib_FloatBits )
 	TEST_TRUE( Vector( 0.0f, 0.0f, 0.0f ).IsZeroFast() );
 	TEST_FALSE( Vector( 0.0f, -0.0f, 0.0f ).IsZeroFast() );
 }
+
+REGISTER_NAMED_TEST( "mathlib.FloatHelpers", mathlib_FloatHelpers )
+{
+	// Single-precision helpers should keep their exact endpoint values.
+	TEST_EQ( QuinticInterpolatingPolynomial( 0.0f ), 0.0f );
+	TEST_EQ( QuinticInterpolatingPolynomial( 1.0f ), 1.0f );
+	TEST_EQ( QuinticInterpolatingPolynomial( 0.5f ), 0.5f );
+	TEST_EQ( InvRSquared( Vector( 0.5f, 0.0f, 0.0f ) ), 1.0f );
+	TEST_EQ( InvRSquared( Vector( 2.0f, 0.0f, 0.0f ) ), 0.25f );
+}
