@@ -41,6 +41,10 @@ public:
 	Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0)
 		: m_r(r), m_g(g), m_b(b), m_a(a) {}
 
+	// initialize from color32
+	Color(color32 clr)
+		: m_r(clr.r), m_g(clr.g), m_b(clr.b), m_a(clr.a) {}
+
 	// set the color
 	void SetColor(int r, int g, int b, int a = 0)
 	{

@@ -88,3 +88,29 @@ REGISTER_NAMED_TEST( "CUtlLinkedList.RangeFor", CUtlLinkedList_RangeFor )
 	TEST_TRUE( itConst == list.begin() );
 	TEST_TRUE( itConst != list.end() );
 }
+
+REGISTER_NAMED_TEST( "CUtlPtrLinkedList.InsertAfter", CUtlPtrLinkedList_InsertAfter )
+{
+	// Pointer linked lists should insert after a node, including after the tail.
+	CUtlPtrLinkedList< int > list;
+
+	auto iHead = list.AddToTail( 1 );
+	auto iTail = list.AddToTail( 3 );
+
+	list.InsertAfter( iHead, 2 );
+	list.InsertAfter( iTail, 4 );
+
+	TEST_EQ( list.Count(), 4 );
+
+	int nExpected = 1;
+
+	for ( auto i = list.Head(); i != list.InvalidIndex(); i = list.Next( i ) )
+	{
+		TEST_EQ( list[ i ], nExpected );
+		++nExpected;
+	}
+	TEST_EQ( nExpected, 5 );
+
+	list.RemoveAll();
+	TEST_EQ( list.Count(), 0 );
+}

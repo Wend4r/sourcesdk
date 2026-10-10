@@ -186,3 +186,61 @@ REGISTER_NAMED_TEST( "CUtlRBTree.RangeFor", CUtlRBTree_RangeFor )
 	TEST_TRUE( itConst == tree.begin() );
 	TEST_TRUE( itConst != tree.end() );
 }
+
+struct RBTreeTracked_t
+{
+	static inline int s_nAlive = 0;
+
+	RBTreeTracked_t( int nValue = 0 ) : m_nValue( nValue ) { ++s_nAlive; }
+	RBTreeTracked_t( const RBTreeTracked_t &other ) : m_nValue( other.m_nValue ) { ++s_nAlive; }
+	~RBTreeTracked_t() { --s_nAlive; }
+
+	RBTreeTracked_t &operator=( const RBTreeTracked_t &other ) { m_nValue = other.m_nValue; return *this; }
+	bool operator<( const RBTreeTracked_t &other ) const { return m_nValue < other.m_nValue; }
+
+	int m_nValue;
+};
+
+REGISTER_NAMED_TEST( "CUtlRBTree.FreeListLifetimes", CUtlRBTree_FreeListLifetimes )
+{
+	// Freed nodes must not be destructed again or copied from.
+	RBTreeTracked_t::s_nAlive = 0;
+
+	{
+		CUtlRBTree< RBTreeTracked_t, CDefLess< RBTreeTracked_t >, int > tree;
+
+		for ( int i = 0; i < 8; ++i )
+		{
+			tree.Insert( RBTreeTracked_t( i ) );
+		}
+
+		tree.Remove( RBTreeTracked_t( 2 ) );
+		tree.Remove( RBTreeTracked_t( 5 ) );
+
+		TEST_EQ( tree.Count(), 6u );
+		TEST_EQ( RBTreeTracked_t::s_nAlive, 6 );
+
+		CUtlRBTree< RBTreeTracked_t, CDefLess< RBTreeTracked_t >, int > copy( tree );
+
+		TEST_EQ( copy.Count(), 6u );
+		TEST_TRUE( copy.IsValid() );
+		TEST_EQ( RBTreeTracked_t::s_nAlive, 12 );
+		TEST_EQ( copy.Find( RBTreeTracked_t( 2 ) ), copy.InvalidIndex() );
+		TEST_NE( copy.Find( RBTreeTracked_t( 7 ) ), copy.InvalidIndex() );
+
+		copy.Insert( RBTreeTracked_t( 9 ) );
+		TEST_EQ( RBTreeTracked_t::s_nAlive, 13 );
+
+		copy = tree;
+		TEST_EQ( copy.Count(), 6u );
+		TEST_EQ( RBTreeTracked_t::s_nAlive, 12 );
+
+		tree.RemoveAll();
+		TEST_EQ( RBTreeTracked_t::s_nAlive, 6 );
+
+		tree.Insert( RBTreeTracked_t( 1 ) );
+		TEST_EQ( RBTreeTracked_t::s_nAlive, 7 );
+	}
+
+	TEST_EQ( RBTreeTracked_t::s_nAlive, 0 );
+}
