@@ -174,10 +174,10 @@ typedef std::initializer_list< std::initializer_list< ResourceManifestEntry_t > 
 
 struct ResourceManifestDesc_t
 {
-	CUtlString m_sManifestName;
-	CUtlString m_sManifestGroup;
+	const char *m_pszManifestName;
+	const char *m_pszManifestGroup;
 	ManifestEntryGroupList_t *m_pEntryGroups;
-	CUtlString m_sFileName;
+	const char *m_pszFileName;
 	int m_nLine;
 	bool m_bRegistered;
 	bool m_bDisallowRegistration;
