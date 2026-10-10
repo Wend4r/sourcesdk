@@ -75,7 +75,7 @@ public:
 	virtual HTemporaryKeyValueAllocationScope SetTemporaryKeyValueAllocationScope( HTemporaryKeyValueAllocationScope hScope ) = 0;
 
 	virtual void unk101( bool ) = 0;
-	virtual void unk102() = 0;
+	virtual void unk102( bool ) = 0;
 	virtual void unk103() = 0;
 };
 
