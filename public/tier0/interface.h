@@ -34,7 +34,6 @@ PLATFORM_INTERFACE bool				Plat_RunningWithDebugModules();
 
 PLATFORM_INTERFACE void*			Plat_GetModuleProcAddress( HMODULE hModule, const char* pName );
 
-PLATFORM_INTERFACE HMODULE Plat_FindModuleByAddress( void *pAddress );
 PLATFORM_INTERFACE CreateInterfaceFn Plat_GetModuleInterfaceFactory( HMODULE module, int *pReturnCode = NULL );
 
 // This is a helper function to load a module, get its factory, and get a specific interface.

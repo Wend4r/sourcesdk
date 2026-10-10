@@ -115,7 +115,10 @@ endfunction()
 
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
+	minidump.cpp
+	stringpool.cpp
 	utlarray.cpp
+	utlbinaryblock.cpp
 	utlblockmemory.cpp
 	utlbuffer.cpp
 	utldict.cpp
@@ -148,6 +151,7 @@ foreach(test_source IN LISTS SOURCESDK_CONTAINER_TEST_SOURCES)
 endforeach()
 
 set(SOURCESDK_SMOKE_TEST_SOURCES
+	tier0_headers.cpp
 	tier0_utl_headers.cpp
 	tier1_utl_headers.cpp
 	keyvalues3_headers.cpp

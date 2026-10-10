@@ -148,6 +148,23 @@ enum ClientNetMessageHandlersAction_t
 	CLIENT_NET_MESSAGE_HANDLERS_REGISTER = 2,
 };
 
+// Times are in seconds, relative to the current time
+struct HltvReplayParams_t
+{
+	int m_nPrimaryTargetEntIndex = -1;
+	float m_flDelay = 0.0f;
+	float m_flStopAt = 0.0f;
+	float m_flPlaybackSpeed = 1.0f;
+	float m_flSlowdownBeginAt = 0.0f;
+	float m_flSlowdownEndAt = 0.0f;
+	float m_flSlowdownRate = 1.0f;
+	bool m_bAbortCurrentReplay = false;
+	int m_nReason = 0;
+	// AMNOTE: Flags: 1 = replay the stash m_nStashId, 2 = replay all of the stash instead of its last m_flDelay seconds
+	uint32 m_unk101 = 0;
+	uint32 m_nStashId = 0;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Interface the engine exposes to the game DLL
 //-----------------------------------------------------------------------------
@@ -160,8 +177,8 @@ public:
 	virtual const char		*GetWorldGroupName( WorldGroupId_t hWorldGroupId ) = 0;
 	// First world group id of the list selected by bUnk
 	virtual WorldGroupId_t	unk021( bool bUnk ) = 0;
-	// Last registered world group id of the list selected by bUnk
-	virtual WorldGroupId_t	unk022( bool bUnk ) = 0;
+	// Last registered world group id of the list selected by bClientSide
+	virtual WorldGroupId_t	MaxWorldGroupId( bool bClientSide ) = 0;
 	virtual bool			IsWorldGroupIdValid( WorldGroupId_t hWorldGroupId ) = 0;
 	virtual float			&GetFrameTime() = 0;
 
@@ -312,7 +329,7 @@ public:
 	virtual void BanClient( CPlayerSlot nSlot, float flDuration, bool bKick ) = 0;
 	virtual void BanClient( CSteamID steamId, float flDuration, bool bKick ) = 0;
 
-	virtual bool StartHltvReplay( CPlayerSlot nSlot, const void *pRequest ) = 0;
+	virtual bool StartHltvReplay( CPlayerSlot nSlot, const HltvReplayParams_t &params ) = 0;
 	virtual void ForceStopHltvReplay( CPlayerSlot nSlot ) = 0;
 	virtual void StopAllHltvReplays() = 0;
 	virtual int GetHltvLastSendTick( CPlayerSlot nSlot ) = 0;
@@ -566,7 +583,7 @@ public:
 								const Entity2Networkable_t **pNetworkables, const uint16 *pEntityIndicies, int nEntityIndices, bool bEnablePVSBits ) = 0;
 	
 	// TERROR: Perform any PVS cleanup before a full update
-	virtual void			PrepareForFullUpdate( CEntityIndex nPlayerEntityIndex ) = 0;
+	virtual void			PrepareForFullUpdate( CPlayerSlot nSlot ) = 0;
 	
 	virtual bool			ShouldClientReceiveStringTableUserData( const INetworkStringTable *pTable, int stringNumber, const CCheckTransmitInfo *pInfo ) = 0;
 
