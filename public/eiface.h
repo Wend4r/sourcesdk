@@ -148,11 +148,6 @@ enum ClientNetMessageHandlersAction_t
 	CLIENT_NET_MESSAGE_HANDLERS_REGISTER = 2,
 };
 
-struct ClientUserInfoConVarData_t
-{
-	uint8 *m_pData;
-};
-
 // Times are in seconds, relative to the current time
 struct HltvReplayParams_t
 {
@@ -363,7 +358,7 @@ public:
 	virtual const char *GetRecordingDemoFilename() = 0;
 	virtual const char *GetMapName() = 0;
 
-	virtual ClientUserInfoConVarData_t GetClientUserInfoConVarData( CPlayerSlot nSlot ) = 0;
+	virtual ConVarUserInfoSet_t GetClientUserInfoConVarData( CPlayerSlot nSlot ) = 0;
 
 	virtual bool	unk121() = 0;
 };
