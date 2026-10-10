@@ -19,6 +19,7 @@
 #include "utlcommon.h"
 #include "utlmap.h"
 #include "utlleanvector.h"
+#include "tier0/utlstring.h"
 
 // default comparison operator
 template <typename T>
@@ -321,7 +322,7 @@ inline I CUtlHashMapImpl<K,T,L,H,I,BV>::InsertInternal( const KeyType_t &key, co
 	// migrate data forward, if necessary
 	int cBucketsToModAgainst = m_vecHashBuckets.Count() >> 1;
 	int iBucket = basetypes::ModPowerOf2(hash, cBucketsToModAgainst);
-	while ( iBucket >= m_nMinRehashedBucket
+	while ( cBucketsToModAgainst >= 1 && iBucket >= m_nMinRehashedBucket
 		&& !m_bitsMigratedBuckets.Get( iBucket ) )
 	{
 		RehashNodesInBucket( iBucket );
@@ -490,7 +491,7 @@ inline I CUtlHashMapImpl<K,T,L,H,I,BV>::Find( const KeyType_t &key ) const
 
 	// not found? we may have to look in older buckets
 	cBucketsToModAgainst >>= 1;
-	while ( cBucketsToModAgainst >= m_nMinRehashedBucket )
+	while ( cBucketsToModAgainst >= MAX( m_nMinRehashedBucket, 1 ) )
 	{
 		iBucket = basetypes::ModPowerOf2( hash, cBucketsToModAgainst );
 
@@ -597,7 +598,7 @@ inline void CUtlHashMapImpl<K,T,L,H,I,BV>::RemoveAt( IndexType_t i )
 
 	// wasn't found; look in older buckets
 	cBucketsToModAgainst >>= 1;
-	while ( cBucketsToModAgainst >= m_nMinRehashedBucket )
+	while ( cBucketsToModAgainst >= MAX( m_nMinRehashedBucket, 1 ) )
 	{
 		iBucket = basetypes::ModPowerOf2( hash, cBucketsToModAgainst );
 
