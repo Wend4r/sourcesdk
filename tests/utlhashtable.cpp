@@ -66,3 +66,42 @@ REGISTER_NAMED_TEST( "CUtlHashtable.GetSwapCompactPurge", CUtlHashtable_GetSwapC
 	table.Purge();
 	TEST_EQ( table.Count(), 0 );
 }
+
+enum HashtableTestEnum_t
+{
+	HASHTABLE_TEST_ALPHA = 1,
+	HASHTABLE_TEST_BETA = 2,
+};
+
+enum class HashtableTestEnumClass_t : uint64
+{
+	Alpha = 1ull << 40,
+	Beta = 2ull << 40,
+};
+
+REGISTER_NAMED_TEST( "CUtlHashtable.EnumAndPairKeys", CUtlHashtable_EnumAndPairKeys )
+{
+	// Enums and std::pair keys should get default hash functors.
+	TEST_EQ( DefaultHashFunctor< HashtableTestEnum_t >()( HASHTABLE_TEST_BETA ), DefaultHashFunctor< int >()( 2 ) );
+	TEST_EQ( DefaultHashFunctor< const HashtableTestEnum_t >()( HASHTABLE_TEST_BETA ), DefaultHashFunctor< int >()( 2 ) );
+	TEST_TRUE( DefaultHashFunctor< HashtableTestEnumClass_t >()( HashtableTestEnumClass_t::Alpha ) != DefaultHashFunctor< HashtableTestEnumClass_t >()( HashtableTestEnumClass_t::Beta ) );
+	using PairHash_t = DefaultHashFunctor< std::pair< int, int > >;
+
+	TEST_TRUE( PairHash_t()( std::make_pair( 1, 2 ) ) != PairHash_t()( std::make_pair( 2, 1 ) ) );
+
+	CUtlHashtable< HashtableTestEnum_t, int > enumTable;
+
+	enumTable.Insert( HASHTABLE_TEST_ALPHA, 10 );
+	enumTable.Insert( HASHTABLE_TEST_BETA, 20 );
+
+	TEST_EQ( enumTable.Element( enumTable.Find( HASHTABLE_TEST_BETA ) ), 20 );
+
+	CUtlHashtable< std::pair< int, int >, int > pairTable;
+
+	pairTable.Insert( std::make_pair( 1, 2 ), 12 );
+	pairTable.Insert( std::make_pair( 2, 1 ), 21 );
+
+	TEST_EQ( pairTable.Count(), 2 );
+	TEST_EQ( pairTable.Element( pairTable.Find( std::make_pair( 2, 1 ) ) ), 21 );
+	TEST_FALSE( pairTable.HasElement( std::make_pair( 3, 3 ) ) );
+}

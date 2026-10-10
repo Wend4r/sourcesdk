@@ -239,6 +239,106 @@ REGISTER_NAMED_TEST( "CUtlVector.SortAndAddVector", CUtlVector_SortAndAddVector 
 	TEST_EQ( vec[4], 5 );
 }
 
+static bool __cdecl IntLessDescending( const int &left, const int &right )
+{
+	return left > right;
+}
+
+static bool __cdecl IntLessModulo( const int &left, const int &right, void *pCtx )
+{
+	const int nModulo = *static_cast< const int * >( pCtx );
+
+	return ( left % nModulo ) < ( right % nModulo );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.SortOverloads", CUtlVector_SortOverloads )
+{
+	// Every sort overload should order elements, including non-contiguous block storage.
+	CUtlVector< int > vec;
+
+	for ( int i = 0; i < 64; ++i )
+	{
+		vec.AddToTail( ( i * 37 ) % 64 );
+	}
+
+	vec.Sort();
+
+	for ( int i = 0; i < 64; ++i )
+	{
+		TEST_EQ( vec[ i ], i );
+	}
+
+	vec.Sort( &IntLessDescending );
+	TEST_EQ( vec[ 0 ], 63 );
+	TEST_EQ( vec[ 63 ], 0 );
+
+	int nModulo = 10;
+
+	vec.Sort( &IntLessModulo, &nModulo );
+
+	for ( int i = 1; i < 64; ++i )
+	{
+		TEST_TRUE( ( vec[ i - 1 ] % 10 ) <= ( vec[ i ] % 10 ) );
+	}
+
+	vec.SortPredicate( []( const int &left, const int &right ) { return left < right; } );
+	TEST_EQ( vec[ 0 ], 0 );
+	TEST_EQ( vec[ 63 ], 63 );
+
+	CUtlBlockVector< int > blockVec;
+
+	blockVec.AddToTail( 3 );
+	blockVec.AddToTail( 1 );
+	blockVec.AddToTail( 2 );
+	blockVec.Sort( &CompareIntsAscending );
+
+	TEST_EQ( blockVec[ 0 ], 1 );
+	TEST_EQ( blockVec[ 1 ], 2 );
+	TEST_EQ( blockVec[ 2 ], 3 );
+}
+
+static bool __cdecl IntLessAscending( const int &left, const int &right )
+{
+	return left < right;
+}
+
+static bool __cdecl IntLessAscendingCtx( const int &left, const int &right, void * )
+{
+	return left < right;
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.SortedHelpersAndFindMatch", CUtlVector_SortedHelpersAndFindMatch )
+{
+	// Sorted searches should find matches, the last equal element and keep inserts ordered.
+	CUtlVector< int > vec;
+
+	vec.SortedInsert( 30, &IntLessAscending );
+	vec.SortedInsert( 10, &IntLessAscending );
+	vec.SortedInsert( 20, &IntLessAscendingCtx, nullptr );
+	vec.SortedInsert( 20, &IntLessAscending );
+	vec.SortedInsert( 20, &IntLessAscending );
+
+	TEST_EQ( vec.Count(), 5 );
+	TEST_EQ( vec[ 0 ], 10 );
+	TEST_EQ( vec[ 1 ], 20 );
+	TEST_EQ( vec[ 3 ], 20 );
+	TEST_EQ( vec[ 4 ], 30 );
+
+	TEST_EQ( vec.SortedFind( 10, &IntLessAscending ), 0 );
+	TEST_EQ( vec.SortedFind( 30, &IntLessAscendingCtx, nullptr ), 4 );
+	TEST_EQ( vec.SortedFind( 25, &IntLessAscending ), vec.InvalidIndex() );
+
+	TEST_EQ( vec.SortedFindLessOrEqual( 20, &IntLessAscending ), 3 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 20, &IntLessAscendingCtx, nullptr ), 3 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 25, &IntLessAscending ), 3 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 5, &IntLessAscending ), -1 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 35, &IntLessAscending ), 4 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 20, &IntLessAscending, 0, 1 ), 1 );
+
+	TEST_EQ( vec.FindMatch( []( const int &nValue ) { return nValue > 15; } ), 1 );
+	TEST_EQ( vec.FindMatch( []( const int &nValue ) { return nValue > 30; } ), vec.InvalidIndex() );
+}
+
 REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDeleteElements )
 {
 	// Purge-and-delete should destroy heap-owned elements and empty the vector.
@@ -253,6 +353,58 @@ REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDel
 
 	TEST_EQ( VectorDeleteTracked_t::s_nDeleted, 2 );
 	TEST_EQ( vec.Count(), 0 );
+}
+
+struct VectorCountingAllocator_t
+{
+	static int s_nReallocs;
+	static int s_nFrees;
+
+	template < typename T, typename I = int >
+	static T *Realloc( T *pMem, I nCount, I &nAdjustedCount )
+	{
+		++s_nReallocs;
+		return CMemAllocAllocator::Realloc< T, I >( pMem, nCount, nAdjustedCount );
+	}
+
+	static void Free( void *pMem )
+	{
+		++s_nFrees;
+		CMemAllocAllocator::Free( pMem );
+	}
+};
+
+int VectorCountingAllocator_t::s_nReallocs = 0;
+int VectorCountingAllocator_t::s_nFrees = 0;
+
+REGISTER_NAMED_TEST( "CUtlVector.RawAllocator", CUtlVector_RawAllocatorStorage )
+{
+	// Raw allocator vectors should route storage through the selected allocator.
+	CUtlVector_RawAllocator< int > vecDefault;
+
+	vecDefault.AddToTail( 1 );
+	vecDefault.AddToTail( 2 );
+
+	TEST_EQ( vecDefault.Count(), 2 );
+	TEST_EQ( vecDefault[ 1 ], 2 );
+
+	VectorCountingAllocator_t::s_nReallocs = 0;
+	VectorCountingAllocator_t::s_nFrees = 0;
+
+	{
+		CUtlVector_RawAllocator< int, int, VectorCountingAllocator_t > vec;
+
+		for ( int i = 0; i < 16; ++i )
+		{
+			vec.AddToTail( i );
+		}
+
+		TEST_EQ( vec.Count(), 16 );
+		TEST_EQ( vec[ 15 ], 15 );
+		TEST_TRUE( VectorCountingAllocator_t::s_nReallocs > 0 );
+	}
+
+	TEST_EQ( VectorCountingAllocator_t::s_nFrees, 1 );
 }
 
 REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElementsNonPointer", CUtlVector_PurgeAndDeleteElementsNonPointer )

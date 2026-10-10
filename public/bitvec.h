@@ -521,6 +521,23 @@ public:
 	}
 };
 
+//-----------------------------------------------------------------------------
+
+// AMNOTE: Mostly a stub, real meaning for "Typed" version is unknown
+template < int NUM_BITS >
+class CTypedBitVec : public CBitVecT< CFixedBitVecBase< NUM_BITS > >
+{
+public:
+	CTypedBitVec()
+	{
+	}
+
+	explicit CTypedBitVec( int numBits )
+	 : CBitVecT< CFixedBitVecBase< NUM_BITS > >( numBits )
+	{
+	}
+};
+
 
 //-----------------------------------------------------------------------------
 

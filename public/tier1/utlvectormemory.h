@@ -62,7 +62,7 @@ class CUtlVectorMemory
 	template< class A, class B, class C> friend class CUtlVector;
 	template< class A, int C> friend class CUtlVectorFixedGrowableCompat;
 
-	template< class A, class C> friend class CUtlVectorMemory_RawAllocator;
+	template< class A, class C, class D > friend class CUtlVectorMemory_RawAllocator;
 
 public:
 	using iterator = T*;
@@ -1220,9 +1220,11 @@ void CUtlVectorMemory_Aligned<T, I, nAlignment>::Purge()
 }
 
 #pragma pack(push, 1)
-template< class T, typename I = int >
+template< class T, typename I = int, class A = CMemAllocAllocator >
 class CUtlVectorMemory_RawAllocator
 {
+	typedef A CAllocator;
+
 public:
 	// constructor, destructor
 	CUtlVectorMemory_RawAllocator( int nGrowSize = 0, int nInitSize = 0 );
@@ -1230,7 +1232,7 @@ public:
 	~CUtlVectorMemory_RawAllocator();
 
 	CUtlVectorMemory_RawAllocator( const CUtlVectorMemory_RawAllocator &init );
-	const CUtlVectorMemory_RawAllocator< T, I > &operator=( const CUtlVectorMemory_RawAllocator &from );
+	const CUtlVectorMemory_RawAllocator< T, I, A > &operator=( const CUtlVectorMemory_RawAllocator &from );
 
 	void CopyFrom( const CUtlVectorMemory_RawAllocator &from );
 
@@ -1255,7 +1257,7 @@ public:
 	void *DetachMemory();
 
 	// Fast swap
-	void Swap( CUtlVectorMemory_RawAllocator< T, I > &mem );
+	void Swap( CUtlVectorMemory_RawAllocator< T, I, A > &mem );
 
 	// Size
 	int NumAllocated() const							{ return m_nAllocationCount; }
@@ -1302,36 +1304,36 @@ private:
 // constructor, destructor
 //-----------------------------------------------------------------------------
 
-template< class T, typename I >
-CUtlVectorMemory_RawAllocator<T, I>::CUtlVectorMemory_RawAllocator( int nGrowSize, int nInitSize )
+template< class T, typename I, class A >
+CUtlVectorMemory_RawAllocator<T, I, A>::CUtlVectorMemory_RawAllocator( int nGrowSize, int nInitSize )
 	: m_nAllocationCount( 0 ), m_pMemory( nullptr )
 {
 	EnsureCapacity( nInitSize );
 }
 
-template< class T, typename I >
-CUtlVectorMemory_RawAllocator<T, I>::CUtlVectorMemory_RawAllocator( const CUtlVectorMemory_RawAllocator &init ) : m_pMemory( 0 ), 
+template< class T, typename I, class A >
+CUtlVectorMemory_RawAllocator<T, I, A>::CUtlVectorMemory_RawAllocator( const CUtlVectorMemory_RawAllocator &init ) : m_pMemory( 0 ), 
 	m_nAllocationCount( 0 )
 {
 	CopyFrom( init );
 }
 
-template< class T, typename I >
-const CUtlVectorMemory_RawAllocator<T, I> &CUtlVectorMemory_RawAllocator<T, I>::operator=( const CUtlVectorMemory_RawAllocator<T, I> &from )
+template< class T, typename I, class A >
+const CUtlVectorMemory_RawAllocator<T, I, A> &CUtlVectorMemory_RawAllocator<T, I, A>::operator=( const CUtlVectorMemory_RawAllocator<T, I, A> &from )
 {
 	CopyFrom( from );
 	return *this;
 }
 
-template< class T, typename I >
-CUtlVectorMemory_RawAllocator<T, I>::~CUtlVectorMemory_RawAllocator()
+template< class T, typename I, class A >
+CUtlVectorMemory_RawAllocator<T, I, A>::~CUtlVectorMemory_RawAllocator()
 {
 	Purge();
 }
 
 
-template< class T, typename I >
-void CUtlVectorMemory_RawAllocator<T, I>::CopyFrom( const CUtlVectorMemory_RawAllocator<T, I> &from )
+template< class T, typename I, class A >
+void CUtlVectorMemory_RawAllocator<T, I, A>::CopyFrom( const CUtlVectorMemory_RawAllocator<T, I, A> &from )
 {
 	m_nAllocationCount = 0;
 
@@ -1342,15 +1344,15 @@ void CUtlVectorMemory_RawAllocator<T, I>::CopyFrom( const CUtlVectorMemory_RawAl
 //-----------------------------------------------------------------------------
 // Fast swap
 //-----------------------------------------------------------------------------
-template< class T, typename I >
-void CUtlVectorMemory_RawAllocator<T, I>::Swap( CUtlVectorMemory_RawAllocator<T, I> &mem )
+template< class T, typename I, class A >
+void CUtlVectorMemory_RawAllocator<T, I, A>::Swap( CUtlVectorMemory_RawAllocator<T, I, A> &mem )
 {
 	V_swap( m_pMemory, mem.m_pMemory );
 	V_swap( m_nAllocationCount, mem.m_nAllocationCount );
 }
 
-template< class T, typename I >
-void CUtlVectorMemory_RawAllocator<T, I>::AssumeMemory( T* pMemory, I numElements )
+template< class T, typename I, class A >
+void CUtlVectorMemory_RawAllocator<T, I, A>::AssumeMemory( T* pMemory, I numElements )
 {
 	// Blow away any existing allocated memory
 	Purge();
@@ -1360,8 +1362,8 @@ void CUtlVectorMemory_RawAllocator<T, I>::AssumeMemory( T* pMemory, I numElement
 	m_nAllocationCount = numElements;
 }
 
-template< class T, typename I >
-void *CUtlVectorMemory_RawAllocator<T, I>::DetachMemory()
+template< class T, typename I, class A >
+void *CUtlVectorMemory_RawAllocator<T, I, A>::DetachMemory()
 {
 	void *pMemory = m_pMemory;
 	m_pMemory = 0;
@@ -1369,8 +1371,8 @@ void *CUtlVectorMemory_RawAllocator<T, I>::DetachMemory()
 	return pMemory;
 }
 
-template< class T, typename I >
-inline T* CUtlVectorMemory_RawAllocator<T, I>::Detach()
+template< class T, typename I, class A >
+inline T* CUtlVectorMemory_RawAllocator<T, I, A>::Detach()
 {
 	return (T*)DetachMemory();
 }
@@ -1378,8 +1380,8 @@ inline T* CUtlVectorMemory_RawAllocator<T, I>::Detach()
 //-----------------------------------------------------------------------------
 // Grows the memory
 //-----------------------------------------------------------------------------
-template< class T, typename I >
-void CUtlVectorMemory_RawAllocator<T, I>::Grow( I num )
+template< class T, typename I, class A >
+void CUtlVectorMemory_RawAllocator<T, I, A>::Grow( I num )
 {
 	Assert( num > 0 );
 	EnsureCapacity( m_nAllocationCount + num );
@@ -1388,18 +1390,16 @@ void CUtlVectorMemory_RawAllocator<T, I>::Grow( I num )
 //-----------------------------------------------------------------------------
 // Makes sure we've got at least this much memory
 //-----------------------------------------------------------------------------
-template< class T, typename I >
-inline void CUtlVectorMemory_RawAllocator<T, I>::EnsureCapacity( I num )
+template< class T, typename I, class A >
+inline void CUtlVectorMemory_RawAllocator<T, I, A>::EnsureCapacity( I num )
 {
 	if(m_nAllocationCount >= num)
 		return;
 
 	int new_alloc_size = CalcNewDoublingCount( m_nAllocationCount, num, 2, INT_MAX );
-	size_t adjusted_size = 0;
 
 	MEM_ALLOC_CREDIT_CLASS();
-	m_pMemory = (T *)CRawAllocator::Realloc( m_pMemory, new_alloc_size * sizeof( T ), &adjusted_size );
-	m_nAllocationCount = clamp( (int)(adjusted_size / sizeof( T )), new_alloc_size, INT_MAX );
+	m_pMemory = CAllocator::template Realloc< T, int >( m_pMemory, new_alloc_size, m_nAllocationCount );
 
 	UTLVECTORMEMORY_TRACK_ALLOC();
 }
@@ -1407,21 +1407,21 @@ inline void CUtlVectorMemory_RawAllocator<T, I>::EnsureCapacity( I num )
 //-----------------------------------------------------------------------------
 // Memory deallocation
 //-----------------------------------------------------------------------------
-template< class T, typename I >
-void CUtlVectorMemory_RawAllocator<T, I>::Purge()
+template< class T, typename I, class A >
+void CUtlVectorMemory_RawAllocator<T, I, A>::Purge()
 {
 	if (m_nAllocationCount > 0)
 	{
 		UTLVECTORMEMORY_TRACK_FREE();
-		CRawAllocator::Free( m_pMemory );
+		CAllocator::Free( m_pMemory );
 		m_pMemory = 0;
 	}
 	
 	m_nAllocationCount = 0;
 }
 
-template< class T, typename I >
-void CUtlVectorMemory_RawAllocator<T, I>::Purge( I numElements )
+template< class T, typename I, class A >
+void CUtlVectorMemory_RawAllocator<T, I, A>::Purge( I numElements )
 {
 	Assert( numElements >= 0 );
 
@@ -1454,11 +1454,9 @@ void CUtlVectorMemory_RawAllocator<T, I>::Purge( I numElements )
 	}
 
 	UTLVECTORMEMORY_TRACK_FREE();
-	size_t adjusted_size = 0;
 
 	MEM_ALLOC_CREDIT_CLASS();
-	m_pMemory = (T *)CRawAllocator::Realloc( m_pMemory, numElements * sizeof( T ), &adjusted_size );
-	m_nAllocationCount = clamp( (int)(adjusted_size / sizeof( T )), numElements, INT_MAX );
+	m_pMemory = CAllocator::template Realloc< T, int >( m_pMemory, numElements, m_nAllocationCount );
 
 	UTLVECTORMEMORY_TRACK_ALLOC();
 }

@@ -53,6 +53,7 @@ public:
 	
 	/// inserts (copy constructs) an element in sorted order into the list
 	int		Insert( const T& src );
+	int		InsertAfterEqual( const T& src );
 	
 	/// inserts (copy constructs) an element in sorted order into the list if it isn't already in the list
 	int		InsertIfNotFound( const T& src );
@@ -65,12 +66,18 @@ public:
 	int		FindLessOrEqual( const TKey& search ) const;
 	template< typename TKey >
 	int		FindLess( const TKey& search ) const;
+	// Returns Count() when no element is greater
+	template< typename TKey >
+	int		FindGreater( const TKey& search ) const;
 	template <typename K>
 	int     FindAs( const K& key ) const;
+
+	bool	HasElement( const T& search ) const;
 
 	/// Removes a particular element
 	void	Remove( const T& search );
 	void	Remove( int i );
+	bool	FindAndRemove( const T& search );
 	
 	/// Allows methods to set a context to be used with the less function..
 	void	SetLessContext( void *pCtx );
@@ -183,6 +190,18 @@ int CUtlSortVector<T, LessFunc, BaseVector>::Insert( const T& src )
 	this->GrowVector();
 	this->ShiftElementsRight(pos);
 	CopyConstruct<T>( &this->Element(pos), src );
+	return pos;
+}
+
+template <class T, class LessFunc, class BaseVector>
+int CUtlSortVector<T, LessFunc, BaseVector>::InsertAfterEqual( const T& src )
+{
+	AssertFatal( !m_bNeedsSort );
+
+	int pos = FindGreater( src );
+	this->GrowVector();
+	this->ShiftElementsRight( pos );
+	CopyConstruct<T>( &this->Element( pos ), src );
 	return pos;
 }
 
@@ -422,6 +441,37 @@ int CUtlSortVector<T, LessFunc, BaseVector>::FindLess( const TKey& src ) const
 	return end;
 }
 
+template <class T, class LessFunc, class BaseVector>
+template < typename TKey >
+int CUtlSortVector<T, LessFunc, BaseVector>::FindGreater( const TKey& src ) const
+{
+	AssertFatal( !m_bNeedsSort );
+
+	LessFunc less;
+	int start = 0, end = this->Count() - 1;
+	while ( start <= end )
+	{
+		int mid = ( start + end ) >> 1;
+		if ( less.Less( src, this->Element( mid ), m_pLessContext ) )
+		{
+			end = mid - 1;
+		}
+		else
+		{
+			start = mid + 1;
+		}
+	}
+	return end + 1;
+}
+
+template <class T, class LessFunc, class BaseVector>
+bool CUtlSortVector<T, LessFunc, BaseVector>::HasElement( const T& search ) const
+{
+	AssertFatal( !m_bNeedsSort );
+
+	return Find( search ) != -1;
+}
+
 
 //-----------------------------------------------------------------------------
 // Removes a particular element
@@ -442,6 +492,19 @@ template <class T, class LessFunc, class BaseVector>
 void CUtlSortVector<T, LessFunc, BaseVector>::Remove( int i )
 {
 	BaseVector::Remove( i );
+}
+
+template <class T, class LessFunc, class BaseVector>
+bool CUtlSortVector<T, LessFunc, BaseVector>::FindAndRemove( const T& search )
+{
+	AssertFatal( !m_bNeedsSort );
+
+	int pos = Find( search );
+	if ( pos == -1 )
+		return false;
+
+	BaseVector::Remove( pos );
+	return true;
 }
 
 #endif // UTLSORTVECTOR_H

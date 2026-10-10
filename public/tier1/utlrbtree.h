@@ -162,6 +162,22 @@ enum CompareOperands_t
 	k_ELessThanOrEqualTo = k_ELessThan | k_EEqual,
 };
 
+// For use with Find
+enum FindCondition_t
+{
+	EXACT_MATCH = 0,
+	MATCH_OR_LESS = 1,
+	MATCH_OR_GREATER = 2,
+};
+
+// For use with Insert
+enum ERBTreeInsertBehavior
+{
+	k_eInsertAssertAboutDupes = 0,
+	k_eInsertAllowDupes = 1,
+	k_eInsertUpdateDupes = 2,
+};
+
 //-----------------------------------------------------------------------------
 // A red-black binary search tree
 //-----------------------------------------------------------------------------
@@ -222,7 +238,8 @@ public:
 	I  Root() const;
 
 	// Num elements
-	unsigned int Count() const;
+	I Count() const;
+	bool IsEmpty() const;
 
 	// Max "size" of the vector
 	// it's not generally safe to iterate from index 0 to MaxElement()-1 (you could do this as a potential
@@ -262,14 +279,21 @@ public:
 	// Insert method (inserts in order)
 	// NOTE: the returned 'index' will be valid as long as the element remains in the tree
 	//       (other elements being added/removed will not affect it)
-	I Insert( const T &insert );
-	I Insert( T &&moveInsert );
-	void Insert( const T *pArray, int nItems );
+	// NOTE: duplicates are allowed by default, unlike src2 which asserts about them
+	I Insert( const T &insert, ERBTreeInsertBehavior eInsertBehavior = k_eInsertAllowDupes );
+	I Insert( T &&moveInsert, ERBTreeInsertBehavior eInsertBehavior = k_eInsertAllowDupes );
+	void Insert( const T *pArray, int nItems, ERBTreeInsertBehavior eInsertBehavior = k_eInsertAllowDupes );
 	I InsertIfNotFound( const T &insert );
 	I InsertIfNotFound( T &&moveInsert );
 
+	// pInserted reports whether a new element was inserted
+	I FindOrInsert( T const &insert, bool *pInserted = nullptr );
+
 	// Find method
 	I Find( T const &search ) const;
+
+	// Finds the key, or the nearest lesser/greater element per eFindCondition
+	I Find( T const &search, FindCondition_t eFindCondition ) const;
 
 	// FindFirst method ( finds first inorder if there are duplicates )
 	I FindFirst( T const &search ) const;
@@ -277,11 +301,17 @@ public:
 	// First element >= key
 	I FindClosest( T const &search, CompareOperands_t eFindCriteria ) const;
 
+	bool HasElement( T const &search ) const;
+
 	// Remove methods
 	void RemoveAt( I i );
 	bool Remove( T const &remove );
 	void RemoveAll( );
 	void Purge();
+
+	// Only valid when T is a pointer type
+	void RemoveAllAndDeleteElements();
+	void PurgeAndDeleteElements();
 
 	// Allocation, deletion
 	void FreeNode( I i );
@@ -346,6 +376,10 @@ protected:
 
 	// Inserts a node into the tree, doesn't copy the data in.
 	void FindInsertionPosition( T const &insert, I &parent, bool &leftchild );
+
+	// Same, but handles an equal key per eInsertBehavior.
+	// Returns the node to overwrite for k_eInsertUpdateDupes, InvalidIndex() otherwise.
+	I FindInsertionPosition( T const &insert, I &parent, bool &leftchild, ERBTreeInsertBehavior eInsertBehavior );
 
 	static bool Less( T const &lhs, T const &rhs ) { return LessFunc_t()( lhs, rhs ); }
 
@@ -537,9 +571,15 @@ inline	I  CUtlRBTree<T, L, I, M>::Root() const
 //-----------------------------------------------------------------------------
 
 template < class T, typename L, class I, class M >
-inline	unsigned int CUtlRBTree<T, L, I, M>::Count() const          
-{ 
-	return (unsigned int)m_NumElements; 
+inline	I CUtlRBTree<T, L, I, M>::Count() const
+{
+	return m_NumElements;
+}
+
+template < class T, typename L, class I, class M >
+inline	bool CUtlRBTree<T, L, I, M>::IsEmpty() const
+{
+	return Count() == 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -748,7 +788,7 @@ I  CUtlRBTree<T, L, I, M>::NewNode( bool bConstructElement )
 
 		if ( !m_Elements.IsIdxValid( elem ) )
 		{
-			Plat_FatalError( "CUtlRBTree overflow with %u elements!\n", Count() );
+			Plat_FatalError( "CUtlRBTree overflow with %u elements!\n", ( unsigned int )Count() );
 			DebuggerBreak();
 		}
 	}
@@ -1226,6 +1266,37 @@ void CUtlRBTree<T, L, I, M>::Purge()
 
 
 //-----------------------------------------------------------------------------
+// Removes all nodes and deletes the elements they point to
+//-----------------------------------------------------------------------------
+
+template < class T, typename L, class I, class M >
+void CUtlRBTree<T, L, I, M>::RemoveAllAndDeleteElements()
+{
+	for ( I i = FirstInorder(); i != InvalidIndex(); i = NextInorder( i ) )
+	{
+		delete Element( i );
+	}
+
+	RemoveAll();
+}
+
+//-----------------------------------------------------------------------------
+// Purges the tree and deletes the elements the nodes point to
+//-----------------------------------------------------------------------------
+
+template < class T, typename L, class I, class M >
+void CUtlRBTree<T, L, I, M>::PurgeAndDeleteElements()
+{
+	for ( I i = FirstInorder(); i != InvalidIndex(); i = NextInorder( i ) )
+	{
+		delete Element( i );
+	}
+
+	Purge();
+}
+
+
+//-----------------------------------------------------------------------------
 // iteration
 //-----------------------------------------------------------------------------
 
@@ -1524,25 +1595,72 @@ void CUtlRBTree<T, L, I, M>::FindInsertionPosition( T const &insert, I &parent, 
 	}
 }
 
+template < class T, typename L, class I, class M >
+I CUtlRBTree<T, L, I, M>::FindInsertionPosition( T const &insert, I &parent, bool &leftchild, ERBTreeInsertBehavior eInsertBehavior )
+{
+	I current = m_Root;
+	parent = InvalidIndex();
+	leftchild = false;
+	while ( current != InvalidIndex() )
+	{
+		parent = current;
+		if ( Less( insert, Element( current ) ) )
+		{
+			leftchild = true;
+			current = LeftChild( current );
+		}
+		else
+		{
+			// See if we've got a duplicate entry
+			if ( eInsertBehavior != k_eInsertAllowDupes && !Less( Element( current ), insert ) )
+			{
+				if ( eInsertBehavior == k_eInsertUpdateDupes )
+					return current;
+
+				AssertMsg( false, "Allowing insert of dupe without explicit dupe insertion. Fix code callpoint to allow dupes." );
+			}
+
+			leftchild = false;
+			current = RightChild( current );
+		}
+	}
+
+	return InvalidIndex();
+}
+
 template < class T, typename L, class I, class M > 
-I CUtlRBTree<T, L, I, M>::Insert( const T &insert )
+I CUtlRBTree<T, L, I, M>::Insert( const T &insert, ERBTreeInsertBehavior eInsertBehavior )
 {
 	// use copy constructor to copy it in
 	I parent = InvalidIndex();
 	bool leftchild = false;
-	FindInsertionPosition( insert, parent, leftchild );
+	I existing = FindInsertionPosition( insert, parent, leftchild, eInsertBehavior );
+	if ( existing != InvalidIndex() )
+	{
+		// Key already present, overwrite the existing element
+		Element( existing ) = insert;
+		return existing;
+	}
+
 	I newNode = InsertAt( parent, leftchild, false );
 	CopyConstruct( &Element( newNode ), insert );
 	return newNode;
 }
 
 template < class T, typename L, class I, class M > 
-I CUtlRBTree<T, L, I, M>::Insert( T &&moveInsert )
+I CUtlRBTree<T, L, I, M>::Insert( T &&moveInsert, ERBTreeInsertBehavior eInsertBehavior )
 {
-	// use copy constructor to copy it in
+	// use move constructor to move it in
 	I parent = InvalidIndex();
 	bool leftchild = false;
-	FindInsertionPosition( moveInsert, parent, leftchild );
+	I existing = FindInsertionPosition( moveInsert, parent, leftchild, eInsertBehavior );
+	if ( existing != InvalidIndex() )
+	{
+		// Key already present, overwrite the existing element
+		Element( existing ) = Move( moveInsert );
+		return existing;
+	}
+
 	I newNode = InsertAt( parent, leftchild, false );
 	MoveConstruct( &Element( newNode ), Move( moveInsert ) );
 	return newNode;
@@ -1550,11 +1668,11 @@ I CUtlRBTree<T, L, I, M>::Insert( T &&moveInsert )
 
 
 template < class T, typename L, class I, class M > 
-void CUtlRBTree<T, L, I, M>::Insert( const T *pArray, int nItems )
+void CUtlRBTree<T, L, I, M>::Insert( const T *pArray, int nItems, ERBTreeInsertBehavior eInsertBehavior )
 {
 	while ( nItems-- )
 	{
-		Insert( *pArray++ );
+		Insert( *pArray++, eInsertBehavior );
 	}
 }
 
@@ -1625,6 +1743,28 @@ I CUtlRBTree<T, L, I, M>::InsertIfNotFound( T &&moveInsert )
 
 
 //-----------------------------------------------------------------------------
+// finds an element, inserting it if it was not already present
+//-----------------------------------------------------------------------------
+template < class T, typename L, class I, class M >
+I CUtlRBTree<T, L, I, M>::FindOrInsert( T const &insert, bool *pInserted )
+{
+	I i = Find( insert );
+	if ( i != InvalidIndex() )
+	{
+		if ( pInserted )
+			*pInserted = false;
+
+		return i;
+	}
+
+	if ( pInserted )
+		*pInserted = true;
+
+	return Insert( insert );
+}
+
+
+//-----------------------------------------------------------------------------
 // finds a node in the tree
 //-----------------------------------------------------------------------------
 template < class T, typename L, class I, class M > 
@@ -1641,6 +1781,56 @@ I CUtlRBTree<T, L, I, M>::Find( T const &search ) const
 			break;
 	}
 	return current;
+}
+
+
+//-----------------------------------------------------------------------------
+// finds the node matching or nearest the key, per eFindCondition
+//-----------------------------------------------------------------------------
+template < class T, typename L, class I, class M >
+I CUtlRBTree<T, L, I, M>::Find( T const &search, FindCondition_t eFindCondition ) const
+{
+	I current = m_Root;
+	bool leftchild = false;
+	while ( current != InvalidIndex() )
+	{
+		I child;
+		if ( Less( search, Element( current ) ) )
+		{
+			leftchild = true;
+			child = LeftChild( current );
+		}
+		else if ( Less( Element( current ), search ) )
+		{
+			leftchild = false;
+			child = RightChild( current );
+		}
+		else
+		{
+			// exact match
+			return current;
+		}
+
+		if ( child == InvalidIndex() )
+			break;
+
+		current = child;
+	}
+
+	if ( current == InvalidIndex() )
+		return InvalidIndex();
+
+	// No exact match, current is the closest node and leftchild gives its side.
+	switch ( eFindCondition )
+	{
+	case MATCH_OR_LESS:
+		return leftchild ? PrevInorder( current ) : current;
+	case MATCH_OR_GREATER:
+		return leftchild ? current : NextInorder( current );
+	case EXACT_MATCH:
+	default:
+		return InvalidIndex();
+	}
 }
 
 
@@ -1714,6 +1904,16 @@ I CUtlRBTree<T, L, I, M>::FindClosest( T const &search, CompareOperands_t eFindC
 		}
 	}
 	return best;
+}
+
+
+//-----------------------------------------------------------------------------
+// returns whether the key is present in the tree
+//-----------------------------------------------------------------------------
+template < class T, typename L, class I, class M >
+bool CUtlRBTree<T, L, I, M>::HasElement( T const &search ) const
+{
+	return Find( search ) != InvalidIndex();
 }
 
 
