@@ -100,7 +100,7 @@ public:
 	// More efficient than memcpy for the small types that are stored in a hashtable
 	void MoveDataFrom( CUtlHashtableEntry &src )
 	{
-		for ( int i = 0; i < data.Count(); ++i ) { data[i] = src.data[i]; }
+		for ( int i = 0; i < ( int )data.Count(); ++i ) { data[i] = src.data[i]; }
 	}
 };
 
@@ -806,7 +806,7 @@ void CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, AltKeyT, TableT>::DbgChe
 		}
 		else
 		{
-			Assert( m_table[i].flags_and_hash == FLAG_FREE );
+			Assert( m_table[i].flags_and_hash == ( typename entry_t::storage_t )FLAG_FREE );
 		}
 	}
 	Assert( count == Count() && count >= roots && roots == ends );
@@ -917,9 +917,9 @@ public:
 		m_table.Swap(other.m_table);
 		// XXX swapping CUtlLinkedList by block memory swap, ugh
 		char buf[ sizeof(m_data) ];
-		memcpy( buf, &m_data, sizeof(m_data) );
-		memcpy( &m_data, &other.m_data, sizeof(m_data) );
-		memcpy( &other.m_data, buf, sizeof(m_data) );
+		memcpy( buf, ( void * )&m_data, sizeof(m_data) );
+		memcpy( ( void * )&m_data, ( void * )&other.m_data, sizeof(m_data) );
+		memcpy( ( void * )&other.m_data, buf, sizeof(m_data) );
 	}
 
 

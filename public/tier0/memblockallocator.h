@@ -244,7 +244,7 @@ inline unsigned int CUtlMemoryBlockAllocator<T, A>::CalcPageSize( int page_idx, 
 			page_size = MEMBLOCK_PAGESIZE_SECTION1;
 	}
 
-	page_size = MAX( page_size, m_nPageSize );
+	page_size = MAX( page_size, ( int )m_nPageSize );
 	return MAX( page_size, requested_size );
 }
 

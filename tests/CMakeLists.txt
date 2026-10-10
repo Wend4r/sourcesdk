@@ -115,8 +115,11 @@ endfunction()
 
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
+	mempool.cpp
 	minidump.cpp
+	refcount.cpp
 	stringpool.cpp
+	tslist.cpp
 	utlarray.cpp
 	utlbinaryblock.cpp
 	utlblockmemory.cpp
@@ -126,11 +129,13 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlflags.cpp
 	utlhash.cpp
 	utlhashtable.cpp
+	utlintrusivelist.cpp
 	utlleanvector.cpp
 	utllinkedlist.cpp
 	utlmap.cpp
 	utlmemory.cpp
 	utlmultilist.cpp
+	utlntree.cpp
 	utlpair.cpp
 	utlpriorityqueue.cpp
 	utlqueue.cpp
@@ -143,6 +148,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlstringmap.cpp
 	utlstringtoken.cpp
 	utlsymbol.cpp
+	utlsymbollarge.cpp
 	utlvector.cpp
 )
 
