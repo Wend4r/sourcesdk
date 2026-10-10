@@ -115,6 +115,7 @@ endfunction()
 
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
+	commandbuffer.cpp
 	mempool.cpp
 	minidump.cpp
 	refcount.cpp
