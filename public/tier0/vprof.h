@@ -668,7 +668,7 @@ COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27272 );
 //-------------------------------------
 
 PLATFORM_INTERFACE CVProfile g_VProfCurrentProfile;
-PLATFORM_INTERFACE LoggingChannelID_t LOG_VPROF;
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_VPROF );
 
 
 //-----------------------------------------------------------------------------

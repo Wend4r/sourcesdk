@@ -548,6 +548,7 @@ class CLoggingSystem;
 
 
 #define DECLARE_LOGGING_CHANNEL( Channel ) extern LoggingChannelID_t Channel
+#define DECLARE_LOGGING_CHANNEL_PLATFORM( Channel ) PLATFORM_INTERFACE LoggingChannelID_t Channel
 
 #define DEFINE_LOGGING_CHANNEL_NO_TAGS( Channel, ChannelName, /* [Flags], [Verbosity], [Color] */ ... ) \
 	LoggingChannelID_t Channel = LoggingSystem_RegisterLoggingChannel( ChannelName, NULL, ##__VA_ARGS__ )
