@@ -197,3 +197,5 @@ sourcesdk_add_cpp_test("" containers_main.cpp convar_lifecycle.cpp)
 target_link_libraries(convar_lifecycle_tests PRIVATE
 	${SOURCESDK_INTERFACES_NAME}
 )
+
+sourcesdk_add_cpp_test("" containers_main.cpp vscriptbinding.cpp)
