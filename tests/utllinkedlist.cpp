@@ -69,3 +69,42 @@ REGISTER_NAMED_TEST( "CUtlPtrLinkedList.InsertAfter", CUtlPtrLinkedList_InsertAf
 	list.RemoveAll();
 	TEST_EQ( list.Count(), 0 );
 }
+
+REGISTER_NAMED_TEST( "CUtlLinkedList.ElementCount", CUtlLinkedList_ElementCount )
+{
+	// Count() should be the number of linked elements, not the number of allocated nodes.
+	CUtlLinkedList< int, int, false, int, CTestLinkedListMemory > list;
+
+	TEST_EQ( list.Count(), 0 );
+
+	auto iFirst = list.AddToTail( 1 );
+	auto iRemoved = list.AddToTail( 2 );
+	list.AddToHead( 0 );
+	TEST_EQ( list.Count(), 3 );
+
+	list.Remove( iRemoved );
+	TEST_EQ( list.Count(), 2 );
+	TEST_FALSE( list.IsValidIndex( iRemoved ) );
+
+	// A freed node is reused and counted again once linked.
+	TEST_EQ( list.AddToTail( 3 ), iRemoved );
+	TEST_EQ( list.Count(), 3 );
+
+	// Allocated but not linked nodes aren't counted.
+	auto iUnlinked = list.Alloc();
+	TEST_EQ( list.Count(), 3 );
+	list.LinkAfter( iFirst, iUnlinked );
+	TEST_EQ( list.Count(), 4 );
+	list.Unlink( iUnlinked );
+	TEST_EQ( list.Count(), 3 );
+	list.Free( iUnlinked );
+	TEST_EQ( list.Count(), 3 );
+
+	list.RemoveAll();
+	TEST_EQ( list.Count(), 0 );
+
+	list.AddToTail( 4 );
+	TEST_EQ( list.Count(), 1 );
+	list.Purge();
+	TEST_EQ( list.Count(), 0 );
+}
