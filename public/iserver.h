@@ -117,7 +117,7 @@ public:
 	// returns the game time scale (multiplied in conjunction with host_timescale)
 	virtual float	GetTimescale( void ) const = 0; 
 
-	virtual bool	IsSaveRestoreAllowed( void ) const = 0;
+	virtual bool	IsSaveRestoreAllowed( CUtlString *pReason ) const = 0;
 
 	virtual void	SetMapName( const char *pszNewName ) = 0;
 	// current map name (BSP)
