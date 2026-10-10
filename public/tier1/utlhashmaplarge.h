@@ -60,6 +60,17 @@ public:
 	using CDefEquals<T>::CDefEquals;
 };
 
+// String keys are hashed by their contents, so compare them by their contents too
+template <>
+class CUtlHashMapLargeDefEquals<const char *>
+{
+public:
+	CUtlHashMapLargeDefEquals() {}
+	CUtlHashMapLargeDefEquals( int i ) {}
+	inline bool operator()( const char *lhs, const char *rhs ) const { return lhs == rhs || ( lhs && rhs && V_strcmp( lhs, rhs ) == 0 ); }
+	inline bool operator!() const { return false; }
+};
+
 
 // Hash specialization for CUtlStrings
 template<>
