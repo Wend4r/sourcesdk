@@ -135,6 +135,124 @@ REGISTER_NAMED_TEST( "CUtlVector.CopyMove", CUtlVector_CopyMove )
 	TEST_EQ( moved[1], 9 );
 }
 
+REGISTER_NAMED_TEST( "CUtlVector.MoveStealsBuffer", CUtlVector_MoveStealsBuffer )
+{
+	// Moving a heap allocated vector should take over its buffer and leave the source empty.
+	CUtlVector< int > vec;
+
+	vec.AddToTail( 1 );
+	vec.AddToTail( 2 );
+	vec.AddToTail( 3 );
+
+	const int *pBuffer = vec.Base();
+
+	CUtlVector< int > moved( Move( vec ) );
+
+	TEST_TRUE( moved.Base() == pBuffer );
+	TEST_EQ( moved.Count(), 3 );
+	TEST_EQ( moved[ 2 ], 3 );
+	TEST_EQ( vec.Count(), 0 );
+	TEST_TRUE( vec.Base() == nullptr );
+
+	CUtlVector< int > assigned;
+
+	assigned.AddToTail( 9 );
+	assigned = Move( moved );
+
+	TEST_TRUE( assigned.Base() == pBuffer );
+	TEST_EQ( assigned.Count(), 3 );
+	TEST_EQ( assigned[ 0 ], 1 );
+	TEST_EQ( moved.Count(), 0 );
+
+	CUtlVector< int > &self = assigned;
+
+	assigned = Move( self );
+
+	TEST_TRUE( assigned.Base() == pBuffer );
+	TEST_EQ( assigned.Count(), 3 );
+
+	vec.AddToTail( 4 );
+	TEST_EQ( vec.Count(), 1 );
+	TEST_EQ( vec[ 0 ], 4 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.MoveNonTrivial", CUtlVector_MoveNonTrivial )
+{
+	// Moving non-trivial elements should neither leak nor double destroy them.
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		CUtlVector< VectorTrackedValue_t > vec;
+
+		vec.AddToTail( VectorTrackedValue_t( 10 ) );
+		vec.AddToTail( VectorTrackedValue_t( 20 ) );
+
+		const VectorTrackedValue_t *pBuffer = vec.Base();
+
+		CUtlVector< VectorTrackedValue_t > moved( Move( vec ) );
+
+		TEST_TRUE( moved.Base() == pBuffer );
+		TEST_EQ( moved.Count(), 2 );
+		TEST_EQ( moved[ 1 ].m_nValue, 20 );
+		TEST_EQ( vec.Count(), 0 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+
+		CUtlVector< VectorTrackedValue_t > assigned;
+
+		assigned.AddToTail( VectorTrackedValue_t( 30 ) );
+		assigned = Move( moved );
+
+		TEST_EQ( assigned.Count(), 2 );
+		TEST_EQ( assigned[ 0 ].m_nValue, 10 );
+		TEST_EQ( moved.Count(), 0 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		// Conservative memory can't swap, so the elements are moved one by one.
+		CUtlVectorConservative< VectorTrackedValue_t > vec;
+
+		vec.AddToTail( VectorTrackedValue_t( 1 ) );
+		vec.AddToTail( VectorTrackedValue_t( 2 ) );
+
+		CUtlVectorConservative< VectorTrackedValue_t > moved;
+
+		moved.AddToTail( VectorTrackedValue_t( 3 ) );
+		moved = Move( vec );
+
+		TEST_EQ( moved.Count(), 2 );
+		TEST_EQ( moved[ 0 ].m_nValue, 1 );
+		TEST_EQ( moved[ 1 ].m_nValue, 2 );
+		TEST_EQ( vec.Count(), 0 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.MoveInlineStorage", CUtlVector_MoveInlineStorage )
+{
+	// Inline storage must not be handed over, so its elements are moved instead.
+	CUtlVectorFixedGrowable< int, 4 > vec;
+
+	vec.AddToTail( 5 );
+	vec.AddToTail( 6 );
+
+	CUtlVectorFixedGrowable< int, 4 > moved( Move( vec ) );
+
+	TEST_TRUE( moved.Base() != vec.Base() );
+	TEST_EQ( moved.Count(), 2 );
+	TEST_EQ( moved[ 0 ], 5 );
+	TEST_EQ( moved[ 1 ], 6 );
+	TEST_EQ( vec.Count(), 0 );
+
+	vec.AddToTail( 7 );
+	TEST_EQ( vec.Count(), 1 );
+	TEST_EQ( vec[ 0 ], 7 );
+}
+
 REGISTER_NAMED_TEST( "CUtlVector.NonTrivialLifetime", CUtlVector_NonTrivialLifetime )
 {
 	// Non-trivial element lifetimes should balance after vector destruction.
@@ -295,6 +413,17 @@ REGISTER_NAMED_TEST( "CUtlVector.SortOverloads", CUtlVector_SortOverloads )
 	TEST_EQ( blockVec[ 0 ], 1 );
 	TEST_EQ( blockVec[ 1 ], 2 );
 	TEST_EQ( blockVec[ 2 ], 3 );
+}
+
+template < typename TVector >
+constexpr bool g_bVectorIterable = requires( TVector &vec, const TVector &constVec ) { vec.begin(); vec.end(); constVec.begin(); constVec.end(); };
+
+REGISTER_NAMED_TEST( "CUtlVector.ContiguousIterators", CUtlVector_ContiguousIterators )
+{
+	// Pointer iterators are only offered when the elements live in one block.
+	TEST_TRUE( g_bVectorIterable< CUtlVector< int > > );
+	TEST_TRUE( ( g_bVectorIterable< CUtlVectorFixedGrowable< int, 4 > > ) );
+	TEST_FALSE( g_bVectorIterable< CUtlBlockVector< int > > );
 }
 
 static bool __cdecl IntLessAscending( const int &left, const int &right )

@@ -29,6 +29,7 @@
 #include <initializer_list>
 #include <iterator>
 #include <type_traits>
+#include <utility>
 
 #define UTL_INVAL_VECTOR_ELEM ((I)~0)
 
@@ -54,6 +55,13 @@ struct CUtlVectorMemoryIsContiguous : std::true_type {};
 
 template< class T, class I >
 struct CUtlVectorMemoryIsContiguous< CUtlBlockMemory< T, I > > : std::false_type {};
+
+// Whether an allocator can hand its buffer to another instance with Swap()
+template< class A, class = void >
+struct CUtlVectorMemoryCanSwap : std::false_type {};
+
+template< class A >
+struct CUtlVectorMemoryCanSwap< A, std::void_t< decltype( std::declval< A & >().Swap( std::declval< A & >() ) ), decltype( std::declval< const A & >().IsExternallyAllocated() ) > > : std::true_type {};
 
 //-----------------------------------------------------------------------------
 // The CUtlVectorBase class:
@@ -95,6 +103,9 @@ public:
 	CUtlVectorBase<T, I, A>& operator=( CUtlVectorBase<T, I, A> &&moveFrom );
 
 	CUtlVectorBase<T, I, A> &CopyFrom( const CUtlVectorBase<T, I, A> &copyFrom );
+
+	// Takes the elements of moveFrom, which is left empty. The buffer itself is taken over
+	// when both vectors are heap allocated, otherwise the elements are moved one by one.
 	CUtlVectorBase<T, I, A> &MoveFrom( CUtlVectorBase<T, I, A> &&moveFrom );
 
 	// element access
@@ -109,9 +120,14 @@ public:
 	const T& Tail() const;
 
 	// They are forward compatible with the C++ 11 range-based for loops.
+	// Only available when the elements are contiguous in memory.
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	iterator begin()						{ return Base(); }
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	const_iterator begin() const			{ return Base(); }
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	iterator end()							{ return Base() + Count(); }
+	template< class Alloc = A, std::enable_if_t< CUtlVectorMemoryIsContiguous< Alloc >::value, int > = 0 >
 	const_iterator end() const				{ return Base() + Count(); }
 	reverse_iterator rbegin()				{ return reverse_iterator(end()); }
 	const_reverse_iterator rbegin() const	{ return const_reverse_iterator(end()); }
@@ -813,13 +829,37 @@ inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::CopyFrom( const CUtlVec
 template< typename T, typename I, class A >
 inline CUtlVectorBase<T, I, A>& CUtlVectorBase<T, I, A>::MoveFrom( CUtlVectorBase<T, I, A> &&moveFrom )
 {
+	if ( this == &moveFrom )
+	{
+		return *this;
+	}
+
+	// Swapping would hand over a buffer that is not heap allocated, like external or inline storage
+	if constexpr ( CUtlVectorMemoryCanSwap< A >::value )
+	{
+		if ( !m_Memory.IsExternallyAllocated() && !moveFrom.m_Memory.IsExternallyAllocated() )
+		{
+			Purge();
+			Swap( moveFrom );
+
+			return *this;
+		}
+	}
+
+	RemoveAll();
+
 	I nCount = moveFrom.Count();
 
-	SetSize( nCount );
-
-	for ( I i = 0; i < nCount; i++ )
+	if ( nCount > 0 )
 	{
-		MoveConstruct( &Element( i ), Move( moveFrom.MoveElement(i) ) );
+		GrowVector( nCount );
+
+		for ( I i = 0; i < nCount; i++ )
+		{
+			MoveConstruct( &Element( i ), moveFrom.MoveElement( i ) );
+		}
+
+		moveFrom.RemoveAll();
 	}
 
 	return *this;
