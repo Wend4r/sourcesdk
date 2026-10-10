@@ -20,7 +20,6 @@
 #include "tier0/dbg.h"
 #include "tier0/threadtools.h"
 #include "utlleanvector.h"
-#include "utlblockmemory.h"
 #include "mathlib/ssemath.h"
 
 

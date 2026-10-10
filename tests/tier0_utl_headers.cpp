@@ -2,6 +2,7 @@
 #include "common/macros.h"
 
 #include <tier0/utlbuffer.h>
+#include <tier0/utlblockvector.h>
 #include <tier0/utlscratchmemory.h>
 #include <tier0/utlsignalslot.h>
 #include <tier0/utlstring.h>
