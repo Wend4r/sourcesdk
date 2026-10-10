@@ -42,6 +42,7 @@
 
 #include "platform.h"
 #include <stddef.h>
+#include <limits>
 #ifdef _LINUX
 #ifndef offsetof
 #ifdef GNUC
@@ -474,7 +475,9 @@ public:
 		size_t nSize = nCount * sizeof( T );
 		size_t nMemSize = GetSize( pMem );
 
-		return ( I )( ( ( nMemSize > nSize ) ? nMemSize : nSize ) / sizeof( T ) );
+		size_t nCountMax = ( size_t )( std::numeric_limits< I >::max )();
+		size_t nAdjustedCount = ( ( nMemSize > nSize ) ? nMemSize : nSize ) / sizeof( T );
+		return ( I )( ( nAdjustedCount < nCountMax ) ? nAdjustedCount : nCountMax );
 	}
 };
 
