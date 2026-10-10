@@ -454,7 +454,7 @@ abstract_class IFileSystem : public IAppSystem
 {
 public:
 	virtual int				Read( void* pOutput, int size, FileHandle_t file ) = 0;
-	virtual int				Write( void const* pInput, int size, FileHandle_t file ) = 0;
+	virtual int				Write( void const* pInput, uint64 size, FileHandle_t file ) = 0;
 
 	// if pathID is NULL, all paths will be searched for the file
 	virtual FileHandle_t	Open( const char *pFileName, const char *pOptions, const char *pathID = 0 ) = 0;
