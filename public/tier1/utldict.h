@@ -303,7 +303,10 @@ void CUtlDict<T, I, COMPARE_TYPE>::PurgeAndDeleteElements()
 	while ( index != m_Elements.InvalidIndex() )
 	{
 		free( (void *)m_Elements.Key( index ) );
-		delete m_Elements[index];
+		if constexpr ( std::is_pointer_v< T > )
+		{
+			delete m_Elements[index];
+		}
 		index = m_Elements.NextInorder( index );
 	}
 

@@ -1759,7 +1759,7 @@ inline int64 CastPtrToInt64( const void* p )
 PLATFORM_INTERFACE bool				Plat_IsInTestMode();
 
 // Same as time()
-PLATFORM_INTERFACE uint64		    Plat_GetTime();
+PLATFORM_INTERFACE time_t			Plat_GetTime();
 
 PLATFORM_INTERFACE double			Plat_FloatTime();		// Returns time in seconds since the module was loaded.
 PLATFORM_INTERFACE uint32			Plat_MSTime();			// Time in milliseconds.
@@ -1797,8 +1797,9 @@ PLATFORM_INTERFACE int				Plat_GetExecutablePathUTF8( CBufferString *buf );
 PLATFORM_INTERFACE const char *		Plat_GetGameDirectory( int unknown=0 );
 
 PLATFORM_INTERFACE int				Plat_chmod(const char *filename, int pmode);
-PLATFORM_INTERFACE size_t			Plat_FileSize(const char *pFileName);
-PLATFORM_INTERFACE bool				Plat_IsDirectory(const char *pFilepath);
+// bDontFollowLinks checks a symbolic link itself rather than its target. Returns -1 when the file doesn't exist.
+PLATFORM_INTERFACE int64			Plat_FileSize( const char *pFileName, bool bDontFollowLinks = false );
+PLATFORM_INTERFACE bool				Plat_IsDirectory( const char *pFilepath, bool bDontFollowLinks = false );
 PLATFORM_INTERFACE bool				Plat_FileIsReadOnly(const char *pFileName);
 PLATFORM_INTERFACE bool				Plat_FileExists( const char *pFileName, int flags );
 

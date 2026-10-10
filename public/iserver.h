@@ -64,6 +64,7 @@ class IRecipientFilter;
 class CBaselineEntityData;
 class CNetworkServerSpawnGroup;
 class CSteamID;
+class IEntityReport;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -116,7 +117,7 @@ public:
 	// returns the game time scale (multiplied in conjunction with host_timescale)
 	virtual float	GetTimescale( void ) const = 0; 
 
-	virtual bool	IsSaveRestoreAllowed( void ) const = 0;
+	virtual bool	IsSaveRestoreAllowed( CUtlString *pReason ) const = 0;
 
 	virtual void	SetMapName( const char *pszNewName ) = 0;
 	// current map name (BSP)
@@ -175,8 +176,8 @@ public:
 	virtual bool	HasReplayDirector() = 0;
 	virtual float	GetAverageFrameTime() = 0;
 
-	virtual void	PreWorldUpdate() = 0;
-	virtual void 	DirectUpdate() = 0;
+	virtual void	PrepareSendClientUpdatesMainThread() = 0;
+	virtual void 	PrepareSendClientUpdatesAsync() = 0;
 
 	virtual CSteamID	GetGameServerSteamID() = 0;
 
@@ -418,14 +419,16 @@ public:
 	virtual void	*GetServerSerializersMsg( void ) = 0;
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr( void ) = 0;
 	virtual bool	IsSaveRestoreAllowed( CUtlString *pError ) = 0;
-	virtual bool	unk044( void ) = 0;
-	virtual void	*unk045( int nSlot ) = 0;
+	virtual bool	IsEntityReportActive( void ) = 0;
+	// Returns nullptr unless the entity report is active and targets this slot or every slot
+	virtual IEntityReport *GetEntityReport( int nSlot ) = 0;
 	// Empty in this build
 	virtual void	unk046( void ) = 0;
 	virtual void	unk047( void ) = 0;
 	virtual bool	ThreadInPrimaryOrSecondaryMainThread( void ) = 0;
-	virtual void	unk049( void ) = 0;
-	virtual void	unk050( uint8 nUnk ) = 0;
+	virtual void	EnterSyncInterval( void ) = 0;
+	// AMNOTE: The bool picks which of two parallel work modes clients enter
+	virtual void	ExitSyncInterval( bool ) = 0;
 };
 
 typedef CNetworkGameServerBase IServer;

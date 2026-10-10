@@ -245,7 +245,7 @@ public:
 	static constexpr I EXTERNAL_CONST_BUFFER_MARKER = -1;
 
 	// constructor, destructor
-	CUtlLeanVectorFixedGrowableBase() : m_nCount(0), m_nAllocated(N), m_bExternal(false) {}
+	CUtlLeanVectorFixedGrowableBase() : m_nCount(0), m_nAllocated(FIXED_CAPACITY), m_bExternal(0) {}
 	~CUtlLeanVectorFixedGrowableBase() { Purge(); }
 
 	// Gets the base address (can change when adding elements!)
@@ -269,6 +269,29 @@ public:
 
 protected:
 
+	// Inline storage takes all of the union's space, so it can hold more than N elements
+	struct FixedLayout_t
+	{
+		I m_nCount;
+		I m_nAllocated;
+		alignas( T ) unsigned char m_Elements[ N * sizeof( T ) ];
+	};
+
+	struct HeapLayout_t
+	{
+		I m_nCount;
+		I m_nAllocated;
+		T *m_pElements;
+	};
+
+	union Layout_t
+	{
+		FixedLayout_t m_Fixed;
+		HeapLayout_t m_Heap;
+	};
+
+	static constexpr size_t FIXED_CAPACITY = ( sizeof( Layout_t ) - offsetof( FixedLayout_t, m_Elements ) ) / sizeof( T );
+
 	union
 	{
 		struct
@@ -282,7 +305,7 @@ protected:
 		{
 			I m_nFixedCount;
 			I m_nFixedAllocated;
-			T m_FixedAlloc[ N ];
+			T m_FixedAlloc[ FIXED_CAPACITY ];
 		};
 		
 		struct
@@ -302,7 +325,7 @@ inline T* CUtlLeanVectorFixedGrowableBase<T, N, I, A>::Base()
 {
 	if ( m_nAllocated )
 	{
-		if ( IsExternallyAllocated() || ( size_t )m_nAllocated > N )
+		if ( IsExternallyAllocated() || ( size_t )m_nAllocated > FIXED_CAPACITY )
 			return m_pElements;
 		else
 			return &m_FixedAlloc[ 0 ];
@@ -316,7 +339,7 @@ inline const T* CUtlLeanVectorFixedGrowableBase<T, N, I, A>::Base() const
 {
 	if ( m_nAllocated )
 	{
-		if ( IsExternallyAllocated() || ( size_t )m_nAllocated > N )
+		if ( IsExternallyAllocated() || ( size_t )m_nAllocated > FIXED_CAPACITY )
 			return m_pElements;
 		else
 			return &m_FixedAlloc[ 0 ];
@@ -336,7 +359,7 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::EnsureCapacity( int num, bool 
 
 	I nNewAllocated = m_nAllocated;
 
-	if ( ( size_t )num > N )
+	if ( ( size_t )num > FIXED_CAPACITY )
 	{
 		if ( num > MAX_ALLOCATED )
 		{
@@ -351,7 +374,7 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::EnsureCapacity( int num, bool 
 	
 	T *pNew = nullptr;
 
-	if ( !IsExternallyAllocated() && m_nAllocated > N )
+	if ( !IsExternallyAllocated() && m_nAllocated > FIXED_CAPACITY )
 	{
 		pNew = MemoryAllocator_t::Realloc( m_pElements, nNewAllocated, nNewAllocated );
 	}
@@ -387,12 +410,15 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::RemoveAll()
 template< class T, size_t N, typename I, class A >
 inline void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::Purge()
 {
-	RemoveAll();
-	
-	if ( ( size_t )m_nAllocated > N )
-		CMemAllocAllocator::Free( (void*)m_pElements );
-	
-	m_nAllocated = N;
+	if ( !IsExternallyAllocated() )
+	{
+		RemoveAll();
+
+		if ( ( size_t )m_nAllocated > FIXED_CAPACITY )
+			CMemAllocAllocator::Free( (void*)m_pElements );
+
+		m_nAllocated = FIXED_CAPACITY;
+	}
 }
 
 template< class B, class T, typename I >

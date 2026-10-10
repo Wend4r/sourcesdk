@@ -24,14 +24,6 @@ schema class CUtlBinaryBlock
 {
 public:
 	CUtlBinaryBlock( int growSize = 0, int initSize = 0 );
-	~CUtlBinaryBlock()
-	{
-#ifdef _DEBUG
-		m_nActualLength = 0x7BADF00D;
-#else
-		m_nActualLength = 0;
-#endif
-	}
 
 	// NOTE: nInitialLength indicates how much of the buffer starts full
 	CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength );
@@ -68,8 +60,7 @@ public:
 	DLL_CLASS_IMPORT bool operator==( const CUtlBinaryBlock &src ) const;
 
 private:
-	CUtlLeanVector< uchar > m_Memory;
-	int m_nActualLength;
+	CUtlLeanVector< uchar, int > m_Memory;
 };
 
 
@@ -80,18 +71,16 @@ private:
 inline CUtlBinaryBlock::CUtlBinaryBlock( int growSize, int initSize ) : m_Memory( growSize, initSize )
 {
 	MEM_ALLOC_CREDIT();
-
-	m_nActualLength = 0;
 }
 
 inline CUtlBinaryBlock::CUtlBinaryBlock( void* pMemory, int nSizeInBytes, int nInitialLength ) : m_Memory( (uchar*)pMemory, nSizeInBytes )
 {
-	m_nActualLength = nInitialLength;
+	m_Memory.SetCount( nInitialLength );
 }
 
 inline CUtlBinaryBlock::CUtlBinaryBlock( const void* pMemory, int nSizeInBytes ) : m_Memory( (uchar*)pMemory, nSizeInBytes )
 {
-	m_nActualLength = nSizeInBytes;
+	m_Memory.SetCount( nSizeInBytes );
 }
 
 inline CUtlBinaryBlock::CUtlBinaryBlock( const char* pString ) : CUtlBinaryBlock( (const void*)pString, static_cast<int>(V_strlen(pString)) )
@@ -106,9 +95,7 @@ inline CUtlBinaryBlock::CUtlBinaryBlock( const CUtlBinaryBlock& src )
 #if VALVE_CPP11
 inline CUtlBinaryBlock::CUtlBinaryBlock( CUtlBinaryBlock&& src )
 : m_Memory( Move(src.m_Memory) )
-, m_nActualLength( src.m_nActualLength )
 {
-	src.m_nActualLength = 0;
 }
 #endif
 
@@ -124,7 +111,7 @@ inline void *CUtlBinaryBlock::Get( )
 
 inline int CUtlBinaryBlock::Length() const
 {
-	return m_nActualLength;
+	return m_Memory.Count();
 }
 
 inline uchar& CUtlBinaryBlock::operator[]( int i )

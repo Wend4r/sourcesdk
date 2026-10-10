@@ -868,8 +868,8 @@ public:
 
 	IndexType_t InsertAfter( IndexType_t after )
 	{
-		Node_t *pBefore = ((Node_t *)after)->next;
-		return DoInsertBefore( pBefore, NULL );
+		Node_t *pBefore = ((Node_t *)after)->pNext;
+		return DoInsertBefore( ( IndexType_t )pBefore, NULL );
 	}
 
 	IndexType_t InsertBefore( IndexType_t before, T const& src  )
@@ -879,8 +879,8 @@ public:
 
 	IndexType_t InsertAfter( IndexType_t after, T const& src  )
 	{
-		Node_t *pBefore = ((Node_t *)after)->next;
-		return DoInsertBefore( pBefore, &src );
+		Node_t *pBefore = ((Node_t *)after)->pNext;
+		return DoInsertBefore( ( IndexType_t )pBefore, &src );
 	}
 
 	void Remove( IndexType_t elem )

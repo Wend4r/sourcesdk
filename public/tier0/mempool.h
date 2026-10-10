@@ -369,7 +369,7 @@ inline void CUtlMemoryPool<T>::Free(T *pMem)
 template< class T >
 inline void CUtlMemoryPool<T>::Clear()
 {
-	CUtlMemoryPoolBase::ClearDestruct( (void (*)( void* ))&Destruct<T> );
+	CUtlMemoryPoolBase::ClearDestruct( (void (*)( void* ))static_cast< void (*)( T * ) >( &Destruct<T> ) );
 }
 
 

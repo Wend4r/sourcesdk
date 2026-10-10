@@ -254,3 +254,58 @@ REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDel
 	TEST_EQ( VectorDeleteTracked_t::s_nDeleted, 2 );
 	TEST_EQ( vec.Count(), 0 );
 }
+
+REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElementsNonPointer", CUtlVector_PurgeAndDeleteElementsNonPointer )
+{
+	// Purge-and-delete should only purge elements that are not pointers.
+	CUtlVector< int > vec;
+
+	vec.AddToTail( 1 );
+	vec.AddToTail( 2 );
+
+	vec.PurgeAndDeleteElements();
+
+	TEST_EQ( vec.Count(), 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.CopyNonTrivial", CUtlVector_CopyNonTrivial )
+{
+	// Copies of non-trivial elements should own their own storage and balance lifetimes.
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		CUtlVector< VectorTrackedValue_t > vec;
+
+		vec.AddToTail( VectorTrackedValue_t( 10 ) );
+		vec.AddToTail( VectorTrackedValue_t( 20 ) );
+
+		CUtlVector< VectorTrackedValue_t > copy( vec );
+
+		TEST_EQ( copy.Count(), 2 );
+		TEST_EQ( copy[ 1 ].m_nValue, 20 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 4 );
+
+		copy = vec;
+		TEST_EQ( copy.Count(), 2 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 4 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	CUtlVector< CUtlString > vecStrings;
+
+	vecStrings.AddToTail( CUtlString( "alpha" ) );
+	vecStrings.AddToTail( CUtlString( "beta" ) );
+
+	{
+		CUtlVector< CUtlString > copy( vecStrings );
+
+		copy[ 0 ] = "gamma";
+
+		TEST_EQ( V_strcmp( copy[ 0 ].Get(), "gamma" ), 0 );
+		TEST_EQ( V_strcmp( copy[ 1 ].Get(), "beta" ), 0 );
+	}
+
+	TEST_EQ( V_strcmp( vecStrings[ 0 ].Get(), "alpha" ), 0 );
+	TEST_EQ( V_strcmp( vecStrings[ 1 ].Get(), "beta" ), 0 );
+}

@@ -54,17 +54,13 @@ class CKeyValuesGrowableStringTable;
 #define FOR_EACH_VALUE( kvRoot, kvValue ) \
 	for ( KeyValues * kvValue = kvRoot->GetFirstValue(); kvValue != NULL; kvValue = kvValue->GetNextValue() )
 
-DECLARE_POINTER_HANDLE( HTemporaryKeyValueAllocationScope );
-
 class CTemporaryKeyValues
 {
+public:
 	CTemporaryKeyValues() : m_pKeyValues(nullptr), m_hScope() {}
 	~CTemporaryKeyValues()
 	{
-		// GAMMACASE: TODO: Complete with actual KeyValuesSystem call once it's reversed too.
-#if 0
-		KeyValuesSystem()->ReleaseTemporaryAllocationScope( m_hScope );
-#endif
+		KeyValuesSystem()->FreeTemporaryKeyValueAllocationScope( m_hScope );
 	}
 
 private:
@@ -121,7 +117,7 @@ protected:
 	DLL_CLASS_IMPORT HKeySymbol Internal_GetNameSymbol() const;
 	DLL_CLASS_IMPORT HKeySymbol Internal_GetNameSymbolCaseSensitive() const;
 
-	DLL_CLASS_IMPORT void Internal_SetName( char const *szName );
+	DLL_CLASS_IMPORT bool Internal_SetName( char const *szName );
 	DLL_CLASS_IMPORT void Internal_SetNameFrom( CKeyValues_Data const &pOther );
 
 	DLL_CLASS_IMPORT Color Internal_GetColor( Color defaultClr ) const;
@@ -275,10 +271,10 @@ public:
 	// Read from a utlbuffer...
 	DLL_CLASS_IMPORT bool LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
 
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
 
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromFile( bool, IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromFile( bool, IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
 
 	// Find a keyValue, create it if it is not found.
 	// Set bCreate to true to create the key if it doesn't already exist (which ensures a valid pointer will be returned)
@@ -369,7 +365,7 @@ public:
 	DLL_CLASS_IMPORT void operator delete( void *pMem );
 	DLL_CLASS_IMPORT void operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine );
 
-	DLL_CLASS_IMPORT KeyValues& operator=( KeyValues& src );
+	DLL_CLASS_IMPORT KeyValues &operator=( const KeyValues &src );
 
 	DLL_CLASS_IMPORT bool IsEqual( KeyValues *pRHS );
 
@@ -385,6 +381,8 @@ public:
 	// Same as the other binary functions, but filter out and remove empty keys (like when seralizing to a file )
 	DLL_CLASS_IMPORT bool WriteAsBinaryFiltered( CUtlBuffer &buffer );
 	DLL_CLASS_IMPORT bool ReadAsBinaryFiltered( CUtlBuffer &buffer, int nStackDepth = 0 );
+
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *ReadTemporaryAsBinary( bool, CUtlBuffer &buffer );
 
 	// Allocate & create a new copy of the keys
 	DLL_CLASS_IMPORT KeyValues *MakeCopy( void ) const;
