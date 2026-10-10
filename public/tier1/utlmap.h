@@ -17,6 +17,8 @@
 #include "tier0/platform.h"
 #include "utlrbtree.h"
 
+#include <type_traits>
+
 //-----------------------------------------------------------------------------
 //
 // Purpose:	An associative container. Pretty much identical to std::map.
@@ -359,12 +361,15 @@ protected:
 template < typename K, typename T, typename L, typename I >
 inline void CUtlOrderedMapBase< K, T, L, I >::PurgeAndDeleteElements()
 {
-	for ( I i = 0; i < MaxElement(); ++i )
+	if constexpr ( std::is_pointer_v< T > )
 	{
-		if ( !IsValidIndex( i ) )
-			continue;
+		for ( I i = 0; i < MaxElement(); ++i )
+		{
+			if ( !IsValidIndex( i ) )
+				continue;
 
-		delete Element( i );
+			delete Element( i );
+		}
 	}
 
 	Purge();

@@ -195,3 +195,20 @@ REGISTER_NAMED_TEST( "CUtlMap.FindConditionAndFindOrInsert", CUtlMap_FindConditi
 	TEST_EQ( map.Element( map.Find( 20 ) ), 222 );
 	TEST_TRUE( map.HasElement( 40 ) );
 }
+
+REGISTER_NAMED_TEST( "CUtlMap.PurgeAndDeleteElements", CUtlMap_PurgeAndDeleteElements )
+{
+	// PurgeAndDeleteElements should delete pointer values and only purge non-pointer ones.
+	CUtlMap< int, int * > mapPointers;
+
+	mapPointers.Insert( 1, new int( 10 ) );
+	mapPointers.Insert( 2, new int( 20 ) );
+	mapPointers.PurgeAndDeleteElements();
+	TEST_EQ( mapPointers.Count(), 0u );
+
+	CUtlMap< int, int > mapValues;
+
+	mapValues.Insert( 1, 10 );
+	mapValues.PurgeAndDeleteElements();
+	TEST_EQ( mapValues.Count(), 0u );
+}

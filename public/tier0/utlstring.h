@@ -99,7 +99,7 @@ public:
 	DLL_CLASS_IMPORT void Append(const char *pchAddition);
 	DLL_CLASS_IMPORT void Append(const char *pAddition, int nChars);
 
-	DLL_CLASS_IMPORT void Convert(wchar_t *string);
+	DLL_CLASS_IMPORT void Convert( const wchar_t *string );
 
 	// Uses CBufferString::ExtractFilePath
 	// Returns the root path to the provided directory "a/b/c/" -> "a/b"

@@ -116,7 +116,13 @@ endfunction()
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
 	generichash.cpp
+	mempool.cpp
+	minidump.cpp
+	refcount.cpp
+	stringpool.cpp
+	tslist.cpp
 	utlarray.cpp
+	utlbinaryblock.cpp
 	utlblockmemory.cpp
 	utlbuffer.cpp
 	utldict.cpp
@@ -124,11 +130,13 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlflags.cpp
 	utlhash.cpp
 	utlhashtable.cpp
+	utlintrusivelist.cpp
 	utlleanvector.cpp
 	utllinkedlist.cpp
 	utlmap.cpp
 	utlmemory.cpp
 	utlmultilist.cpp
+	utlntree.cpp
 	utlpair.cpp
 	utlpriorityqueue.cpp
 	utlqueue.cpp
@@ -141,6 +149,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlstringmap.cpp
 	utlstringtoken.cpp
 	utlsymbol.cpp
+	utlsymbollarge.cpp
 	utlvector.cpp
 )
 
@@ -149,6 +158,7 @@ foreach(test_source IN LISTS SOURCESDK_CONTAINER_TEST_SOURCES)
 endforeach()
 
 set(SOURCESDK_SMOKE_TEST_SOURCES
+	tier0_headers.cpp
 	tier0_utl_headers.cpp
 	tier1_utl_headers.cpp
 	keyvalues3_headers.cpp
@@ -172,6 +182,19 @@ target_compile_definitions(keyvalues3_tests PRIVATE
 
 sourcesdk_setup_test_target(keyvalues3_tests)
 
+sourcesdk_add_cpp_test("" keyvalues3_main.cpp keyvalues3_binary.cpp)
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer.cpp)
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer_schema.cpp)
 sourcesdk_add_cpp_test("" keyvalues3_main.cpp schemametatag.cpp)
+
+sourcesdk_add_cpp_test("" containers_main.cpp convar.cpp)
+
+target_link_libraries(convar_tests PRIVATE
+	${SOURCESDK_INTERFACES_NAME}
+)
+
+sourcesdk_add_cpp_test("" containers_main.cpp convar_lifecycle.cpp)
+
+target_link_libraries(convar_lifecycle_tests PRIVATE
+	${SOURCESDK_INTERFACES_NAME}
+)

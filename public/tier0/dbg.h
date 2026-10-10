@@ -333,18 +333,20 @@ PLATFORM_INTERFACE bool SetupWin32ConsoleIO();
 // Channels which map the legacy logging system to the new system.
 
 // Channel for all default Msg/Warning/Error commands.
-PLATFORM_INTERFACE LoggingChannelID_t LOG_GENERAL;
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_GENERAL );
 
 // Channel for all asserts.
-DECLARE_LOGGING_CHANNEL( LOG_ASSERT );
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_ASSERT );
 // Channel for all ConMsg and ConColorMsg commands.
-DECLARE_LOGGING_CHANNEL( LOG_CONSOLE );
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_CONSOLE );
 // Channel for all DevMsg and DevWarning commands with level < 2.
-DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER );
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_DEVELOPER );
 // Channel for ConDMsg commands.
-DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_CONSOLE );
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_DEVELOPER_CONSOLE );
 // Channel for all DevMsg and DevWarning commands with level >= 2.
-DECLARE_LOGGING_CHANNEL( LOG_DEVELOPER_VERBOSE );
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_DEVELOPER_VERBOSE );
+
+DECLARE_LOGGING_CHANNEL_PLATFORM( LOG_SYMBOLS );
 
 // These functions do not return.
 [[noreturn]] void Error( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
@@ -471,10 +473,8 @@ inline DEST_POINTER_TYPE assert_cast(SOURCE_POINTER_TYPE* pSource)
 PLATFORM_INTERFACE void _AssertValidReadPtr( void* ptr, int count = 1 );
 PLATFORM_INTERFACE void _AssertValidWritePtr( void* ptr, int count = 1 );
 PLATFORM_INTERFACE void _AssertValidReadWritePtr( void* ptr, int count = 1 );
-PLATFORM_INTERFACE void _AssertValidStringPtr( const tchar* ptr, int maxchar = 0xFFFFFF );
 
 #ifdef DBGFLAG_ASSERT
-inline void AssertValidStringPtr( const tchar* ptr, int maxchar = 0xFFFFFF )		 { _AssertValidStringPtr( ptr, maxchar ); }
 template<class T> inline void AssertValidReadPtr( T* ptr, int count = 1 )		     { _AssertValidReadPtr( (void*)ptr, count ); }
 template<class T> inline void AssertValidWritePtr( T* ptr, int count = 1 )		     { _AssertValidWritePtr( (void*)ptr, count ); }
 template<class T> inline void AssertValidReadWritePtr( T* ptr, int count = 1 )	     { _AssertValidReadWritePtr( (void*)ptr, count ); }
@@ -482,7 +482,6 @@ template<class T> inline void AssertValidReadWritePtr( T* ptr, int count = 1 )	 
 
 #else
 
-inline void AssertValidStringPtr( const tchar* ptr, int maxchar = 0xFFFFFF ) 		 {	}
 template<class T> inline void AssertValidReadPtr( T* ptr, int count = 1 )		     {  }
 template<class T> inline void AssertValidWritePtr( T* ptr, int count = 1 )		     {  }
 template<class T> inline void AssertValidReadWritePtr( T* ptr, int count = 1 )	     {  }

@@ -53,6 +53,9 @@ enum InputStandardCursor_t
 ///-----------------------------------------------------------------------------
 ///-----------------------------------------------------------------------------
 typedef bool ( *InputSDLEventHookFn_t )( const void *pSDLEvent );
+#ifdef _WIN32
+typedef bool ( *InputWindowMessageHookFn_t )( void *hWnd, uint32 nMsg, uintp wParam, intp lParam );
+#endif
 
 
 ///-----------------------------------------------------------------------------
@@ -75,7 +78,8 @@ public:
 	/// Peek/Dispatch messages if this is disabled
 	virtual void EnableMessagePump( bool bEnable ) = 0;
 
-	virtual void PollInputState( bool bUnknown ) = 0;
+	/// Polls the current input state; bPumpEvents pumps and processes the pending SDL events first
+	virtual void PollInputState( bool bPumpEvents ) = 0;
 
 	/// Gets the time of the last polling in ms
 	virtual int GetPollTick() const = 0;
@@ -253,12 +257,13 @@ public:
 	virtual void ResetIME() = 0;
 	virtual void CreateIMEWindow() = 0;
 
-	virtual void PostButtonPressedEvent( PlatWindow_t hWnd, int nType, int nTick, ButtonCode_t code, int nData2, bool bDoubleClick, uint64 nUnk ) = 0;
-	virtual void PostButtonReleasedEvent( PlatWindow_t hWnd, int nType, int nTick, ButtonCode_t code, int nData2, uint64 nUnk ) = 0;
+	virtual void PostButtonPressedEvent( PlatWindow_t hWnd, int nType, int nTick, ButtonCode_t code, int nData2, bool bDoubleClick, uint64 nSDLTimestamp ) = 0;
+	virtual void PostButtonReleasedEvent( PlatWindow_t hWnd, int nType, int nTick, ButtonCode_t code, int nData2, uint64 nSDLTimestamp ) = 0;
 
 #ifdef _WIN32
-	virtual void unk100( void *p ) = 0;
-	virtual void unk101( void *p ) = 0;
+	/// Window message hooks, called before the input system handles a message; returning true consumes it
+	virtual void AddWindowMessageHook( InputWindowMessageHookFn_t pfnHook ) = 0;
+	virtual void RemoveWindowMessageHook( InputWindowMessageHookFn_t pfnHook ) = 0;
 #endif
 
 	virtual void AddSDLEventHook( InputSDLEventHookFn_t pfnHook ) = 0;
