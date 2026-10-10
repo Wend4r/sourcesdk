@@ -115,7 +115,10 @@ endfunction()
 
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
+	minidump.cpp
+	stringpool.cpp
 	utlarray.cpp
+	utlbinaryblock.cpp
 	utlblockmemory.cpp
 	utlbuffer.cpp
 	utldict.cpp
