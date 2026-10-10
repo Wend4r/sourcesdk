@@ -472,7 +472,7 @@ CEntityInstance* CEntityHandle::Get() const
 	return GameEntitySystem()->GetEntityInstance( *this );
 }
 
-CEntityHandle CEntityHandle::FromPackedInt( int packed_int_handle )
+CEntityHandle CEntityHandle::FromPackedInt( uint32 packed_int_handle )
 {
 	if(packed_int_handle == 0xFFFFFF)
 		return CEntityHandle();

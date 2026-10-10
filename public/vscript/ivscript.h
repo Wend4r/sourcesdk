@@ -320,15 +320,6 @@ struct ScriptClassDesc_t
 	IScriptInstanceHelper *				pHelper; // optional helper
 };
 
-//---------------------------------------------------------
-// A simple variant type. Intentionally not full featured (no implicit conversion, no memory management)
-//---------------------------------------------------------
-
-enum SVFlags_t
-{
-	SV_FREE = 0x01,
-};
-
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
