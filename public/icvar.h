@@ -48,7 +48,7 @@ typedef std::function<void( FnGenericChangeCallbackProvider_t, FnGenericChangeCa
 //-----------------------------------------------------------------------------
 // Called when a ConVar changes value
 //-----------------------------------------------------------------------------
-typedef void(*FnChangeCallbackGlobal_t)(ConVarRefAbstract* ref, CSplitScreenSlot nSlot, const char *pNewValue, const char *pOldValue, void *__unk01);
+typedef void(*FnChangeCallbackGlobal_t)(ConVarRefAbstract* ref, CSplitScreenSlot nSlot, const char *pNewValue, const char *pOldValue, ConVarUserInfoSet_t *pUserInfoData);
 
 //-----------------------------------------------------------------------------
 // ConVar & ConCommand creation listener callbacks
@@ -71,11 +71,11 @@ public:
 	virtual ConVarRef		FindFirstConVar() = 0;
 	virtual ConVarRef		FindNextConVar( ConVarRef prev ) = 0;
 
-	virtual void			CallChangeCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01 = nullptr ) = 0;
+	virtual void			CallChangeCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData = nullptr ) = 0;
 	// Would call cb for every change callback defined for this cvar
 	virtual void			IterateConVarCallbacks( ConVarRef cvar, FnCvarCallbacksReader_t cb ) = 0;
 	// If returns false value shouldn't be modified
-	virtual bool			CallFilterCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01 = nullptr ) = 0;
+	virtual bool			CallFilterCallback( ConVarRef cvar, const CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData = nullptr ) = 0;
 
 	// allow_defensive - Allows finding commands with FCVAR_DEFENSIVE flag
 	virtual ConCommandRef	FindConCommand( const char *name, bool allow_defensive = false ) = 0;
@@ -86,7 +86,7 @@ public:
 	// Install a global change callback (to be called when any convar changes) 
 	virtual void			InstallGlobalChangeCallback( FnChangeCallbackGlobal_t callback ) = 0;
 	virtual void			RemoveGlobalChangeCallback( FnChangeCallbackGlobal_t callback ) = 0;
-	virtual void			CallGlobalChangeCallbacks( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const char *newValue, const char *oldValue, void *__unk01 = nullptr ) = 0;
+	virtual void			CallGlobalChangeCallbacks( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const char *newValue, const char *oldValue, ConVarUserInfoSet_t *pUserInfoData = nullptr ) = 0;
 
 	// Reverts cvars to default values which contain a specific flag,
 	// cvars with a flag FCVAR_COMMANDLINE_ENFORCED would be skipped
@@ -116,7 +116,7 @@ public:
 	// Returns total bytesize needed to store all the FCVAR_USERINFO cvar values
 	virtual int					GetTotalUserInfoCvarsByteSize() = 0;
 	// if copy_or_cleanup is true, if false would cleanup the buffer
-	virtual void				CopyUserInfoCvarDefaults( uint8* buffer, uint64 from, uint64 to, bool copy_or_cleanup ) = 0;
+	virtual void				CopyUserInfoCvarDefaults( ConVarUserInfoSet_t buffer, uint64 from, uint64 to, bool copy_or_cleanup ) = 0;
 
 	// Calls completion callbacks on cvars and concommands if they exist, successful would be true if so
 	// Cvars & Concommands needs to have FCVAR_VCONSOLE_FUZZY_MATCHING for successful to be true if callbacks are available
@@ -144,7 +144,7 @@ public:
 	virtual ConCommandData*		GetConCommandData( ConCommandRef cmd ) = 0;
 
 	// Queues up value (creates a copy of it) to be set when convar is ready to be edited
-	virtual void				QueueThreadSetValue( ConVarRefAbstract* ref, CSplitScreenSlot nSlot, void* __unk01, CVValue_t* value ) = 0;
+	virtual void				QueueThreadSetValue( ConVarRefAbstract* ref, CSplitScreenSlot nSlot, ConVarUserInfoSet_t *pUserInfoData, CVValue_t* value ) = 0;
 
 private:
 	int m_MaxSplitScreenSlots;
@@ -248,7 +248,7 @@ public:
 	{
 		ConVarRefAbstract *m_ConVar;
 		CSplitScreenSlot m_Slot;
-		void *m_unk001;
+		ConVarUserInfoSet_t *m_UserInfoData;
 		CVValue_t *m_Value;
 	};
 

@@ -115,57 +115,44 @@
 // Most came from server.h
 
 // CBaseEntity::m_fFlags
-// PLAYER SPECIFIC FLAGS FIRST BECAUSE WE USE ONLY A FEW BITS OF NETWORK PRECISION
-#define	FL_ONGROUND					(1<<0)	// At rest / on the ground
-#define FL_DUCKING					(1<<1)	// Player flag -- Player is fully crouched
-#define	FL_WATERJUMP				(1<<2)	// player jumping out of water
-#define FL_NOCLIP					(1<<3)	// Forces MOVETYPE_NOCLIP on the entity
-#define FL_PAWN_FAKECLIENT			(1<<4)	// Fake client controlled pawn entity, mostly referenced in movement related code
-#define FL_FROZEN					(1<<5)	// Player is frozen for 3rd person camera
-#define FL_ATCONTROLS				(1<<6)	// Player can't move, but keeps key inputs for controlling another entity
-#define	FL_CLIENT					(1<<7)	// Is a player
-#define FL_CONTROLLER_FAKECLIENT	(1<<8)	// Fake client, simulated server side. Mainly set on controllers
-#define	FL_INWATER					(1<<9)	// In water. Potentially obsolete in s2
+schema enum Flags_t : uint32
+{
+	// PLAYER SPECIFIC FLAGS
+	FL_ONGROUND					= 1u << 0,	// At rest / on the ground
+	FL_DUCKING					= 1u << 1,	// Player flag -- Player is fully crouched
+	FL_WATERJUMP				= 1u << 2,	// player jumping out of water
+	// FL_EMPTY					= 1u << 3,
+	FL_BOT						= 1u << 4,	// Fake client controlled pawn entity, mostly referenced in movement related code
+	FL_FROZEN					= 1u << 5,	// Player is frozen for 3rd person camera
+	FL_ATCONTROLS				= 1u << 6,	// Player can't move, but keeps key inputs for controlling another entity
+	FL_CLIENT					= 1u << 7,	// Is a player
+	FL_FAKECLIENT				= 1u << 8,	// Fake client, simulated server side. Mainly set on controllers
+	// FL_EMPTY					= 1u << 9,
 
-// NOTE if you move things up, make sure to change this value
-#define PLAYER_FLAG_BITS		10
-
-// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
-#define	FL_FLY					(1<<10)	// Changes the SV_Movestep() behavior to not need to be on ground
-#define	FL_SWIM					(1<<11)	// Changes the SV_Movestep() behavior to not need to be on ground (but stay in water)
-#define	FL_CONVEYOR				(1<<12)	// Potentially obsolete in s2
-#define	FL_NPC					(1<<13) // Potentially obsolete in s2
-#define	FL_GODMODE				(1<<14)
-#define	FL_NOTARGET				(1<<15)
-#define	FL_AIMTARGET			(1<<16)	// set if the crosshair needs to aim onto the entity
-#define	FL_PARTIALGROUND		(1<<17)	// not all corners are valid. Potentially obsolete in s2
-#define FL_STATICPROP			(1<<18)	// Eetsa static prop!		
-
-#ifdef PORTAL2
-#define FL_AFFECTED_BY_PAINT	(1<<19)
-#else
-#define FL_GRAPHED				(1<<19) // worldgraph has this ent listed as something that blocks a connection
-#endif
-
-#define FL_GRENADE				(1<<20)
-#define FL_STEPMOVEMENT			(1<<21)	// Changes the SV_Movestep() behavior to not do any processing. Potentially obsolete in s2
-#define FL_DONTTOUCH			(1<<22)	// Doesn't generate touch functions, generates Untouch() for anything it was touching when this flag was set
-#define FL_BASEVELOCITY			(1<<23)	// Base velocity has been applied this frame (used to convert base velocity into momentum)
-#define FL_CONVEYOR_NEW			(1<<24)
-#define FL_OBJECT				(1<<25) // Terrible name. This is an object that NPCs should see. Missiles, for example.
-#define FL_KILLME				(1<<26)	// This entity is marked for death -- will be freed by game DLL. Potentially obsolete in s2
-#define FL_ONFIRE				(1<<27)	// You know...
-#define FL_DISSOLVING			(1<<28) // We're dissolving!
-#define FL_TRANSRAGDOLL			(1<<29) // In the process of turning into a client side ragdoll.
-#define FL_UNBLOCKABLE_BY_PLAYER (1<<30) // pusher that can't be blocked by the player
-
-
-// FIXME[HPE]: this won't actually work - we're out of bits. :(
-#ifdef PORTAL2
-#define FL_UNPAINTABLE			(1<<31) // Unpaintable entities!
-#else
-#define FL_FREEZING				(1<<31) // We're becoming frozen!
-#endif
+	// NON-PLAYER SPECIFIC (i.e., not used by GameMovement or the client .dll ) -- Can still be applied to players, though
+	FL_FLY						= 1u << 10,	// Changes the SV_Movestep() behavior to not need to be on ground
+	FL_SUPPRESS_SAVE			= 1u << 11,
+	FL_IN_VEHICLE				= 1u << 12,
+	FL_IN_VEHICLE_TRANSPORT		= 1u << 13,
+	FL_GODMODE					= 1u << 14,
+	FL_NOTARGET					= 1u << 15,
+	FL_AIMTARGET				= 1u << 16,	// set if the crosshair needs to aim onto the entity
+	// FL_EMPTY					= 1u << 17,
+	FL_STATICPROP				= 1u << 18,	// Eetsa static prop!
+	// FL_EMPTY					= 1u << 19,
+	FL_GRENADE					= 1u << 20,
+	// FL_EMPTY					= 1u << 21,
+	FL_DONTTOUCH				= 1u << 22,	// Doesn't generate touch functions, generates Untouch() for anything it was touching when this flag was set
+	FL_BASEVELOCITY				= 1u << 23,
+	FL_CONVEYOR					= 1u << 24,
+	FL_OBJECT					= 1u << 25,	// Terrible name. This is an object that NPCs should see. Missiles, for example.
+	// FL_EMPTY					= 1u << 26,
+	FL_ONFIRE					= 1u << 27,	// You know...
+	FL_DISSOLVING				= 1u << 28,	// We're dissolving!
+	FL_TRANSRAGDOLL				= 1u << 29,	// In the process of turning into a client side ragdoll.
+	FL_UNBLOCKABLE_BY_PLAYER	= 1u << 30,	// pusher that can't be blocked by the player
+	// FL_EMPTY					= 1u << 31,
+};
 
 // edict->movetype values
 schema enum MoveType_t : unsigned char
@@ -229,21 +216,11 @@ schema enum SolidType_t : unsigned char
 // GAMMACASE: Potentially obsolete
 enum SolidFlags_t
 {
-	FSOLID_CUSTOMRAYTEST		= 0x0001,	// Ignore solid type + always call into the entity for ray tests
-	FSOLID_CUSTOMBOXTEST		= 0x0002,	// Ignore solid type + always call into the entity for swept box tests
+	FSOLID_NOT_STANDABLE		= 0x0001,	// You can't stand on this
+	FSOLID_USE_TRIGGER_BOUNDS	= 0x0002,	// Uses a special trigger bounds separate from the normal OBB
 	FSOLID_NOT_SOLID			= 0x0004,	// Are we currently not solid?
-	FSOLID_TRIGGER				= 0x0008,	// This is something may be collideable but fires touch functions
-											// even when it's not collideable (when the FSOLID_NOT_SOLID flag is set)
-	FSOLID_NOT_STANDABLE		= 0x0010,	// You can't stand on this
-	FSOLID_VOLUME_CONTENTS		= 0x0020,	// Contains volumetric contents (like water)
-	FSOLID_FORCE_WORLD_ALIGNED	= 0x0040,	// Forces the collision rep to be world-aligned even if it's SOLID_BSP or SOLID_VPHYSICS
-	FSOLID_USE_TRIGGER_BOUNDS	= 0x0080,	// Uses a special trigger bounds separate from the normal OBB
-	FSOLID_ROOT_PARENT_ALIGNED	= 0x0100,	// Collisions are defined in root parent's local coordinate space
-	FSOLID_TRIGGER_TOUCH_DEBRIS	= 0x0200,	// This trigger will touch debris objects
-	FSOLID_TRIGGER_TOUCH_PLAYER	= 0x0400,	// This trigger will touch only players
-	FSOLID_NOT_MOVEABLE			= 0x0800,	// Assume this object will not move
 
-	FSOLID_MAX_BITS	= 12
+	FSOLID_MAX_BITS	= 3
 };
 
 //-----------------------------------------------------------------------------
@@ -266,25 +243,21 @@ schema enum LifeState_t : unsigned char
 	NUM_LIFESTATES
 };
 
-// GAMMACASE: Potentially obsolete
 // entity effects
-enum
+schema enum EntityEffects_t : uint16
 {
-	EF_BONEMERGE			= 0x001,	// Performs bone merge on client side
-	EF_BRIGHTLIGHT 			= 0x002,	// DLIGHT centered at entity origin
-	EF_DIMLIGHT 			= 0x004,	// player flashlight
-	EF_NOINTERP				= 0x008,	// don't interpolate the next frame
-	EF_NOSHADOW				= 0x010,	// Don't cast no shadow
-	EF_NODRAW				= 0x020,	// don't draw entity
-	EF_NORECEIVESHADOW		= 0x040,	// Don't receive no shadow
-	EF_BONEMERGE_FASTCULL	= 0x080,	// For use with EF_BONEMERGE. If this is set, then it places this ent's origin at its
-										// parent and uses the parent's bbox + the max extents of the aiment.
-										// Otherwise, it sets up the parent's bones every frame to figure out where to place
-										// the aiment, which is inefficient because it'll setup the parent's bones even if
-										// the parent is not in the PVS.
-	EF_ITEM_BLINK			= 0x100,	// blink an item so that the user notices it.
-	EF_PARENT_ANIMATES		= 0x200,	// always assume that the parent entity is animating
-	EF_MAX_BITS = 10
+	// EF_EMPTY				= 1 << 0,
+	// EF_EMPTY				= 1 << 1,
+	// EF_EMPTY				= 1 << 2,
+	DEPRICATED_EF_NOINTERP	= 1 << 3,	// don't interpolate the next frame
+	EF_NOSHADOW				= 1 << 4,	// Don't cast no shadow
+	EF_NODRAW				= 1 << 5,	// don't draw entity
+	EF_NORECEIVESHADOW		= 1 << 6,	// Don't receive no shadow
+	// EF_EMPTY				= 1 << 7,
+	// EF_EMPTY				= 1 << 8,
+	EF_PARENT_ANIMATES		= 1 << 9,	// always assume that the parent entity is animating
+	EF_NODRAW_BUT_TRANSMIT	= 1 << 10,
+	EF_MAX_BITS = 10, META( MEnumeratorIsNotAFlag )
 };
 
 #define EF_PARITY_BITS	3
@@ -406,7 +379,7 @@ enum StandardInteractionLayers_t
 	LAYER_INDEX_CONTENTS_NAV_IGNORE,
 	LAYER_INDEX_CONTENTS_NAV_LOCAL_IGNORE,
 	LAYER_INDEX_CONTENTS_POST_PROCESSING_VOLUME,
-	LAYER_INDEX_CONTENTS_UNUSED_LAYER3,
+	LAYER_INDEX_CONTENTS_VEHICLE_CLIP,
 	LAYER_INDEX_CONTENTS_CARRIED_OBJECT,
 	LAYER_INDEX_CONTENTS_PUSHAWAY,
 	LAYER_INDEX_CONTENTS_SERVER_ENTITY_ON_CLIENT,

@@ -262,9 +262,11 @@ inline void CKV3ArenaBase::NodeList<NODE>::Clear()
 {
 	if(m_nAllocatedBytes > 0)
 	{
-		for(auto iter = Head(); iter; iter = iter->m_pNext)
+		for ( auto iter = Head(); iter != Tail(); )
 		{
+			auto next = iter->m_pNext;
 			Destruct( &iter->m_Value );
+			iter = next;
 		}
 	}
 
@@ -362,7 +364,7 @@ inline NODE *CKV3ArenaImpl::RawAlloc( NodeList<NODE> &raw_array, ClusterNodeChai
 
 	if(raw_array.IsFull() || needed_byte_size > raw_array.FreeBytes())
 	{
-		if(initial_size <= NODE::DATA_SIZE)
+		if(initial_size <= ( int )NODE::DATA_SIZE)
 			return Alloc( partial_clusters, full_clusters, CLUSTER::CLUSTER_SIZE );
 		else
 			return nullptr;
