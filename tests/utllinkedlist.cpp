@@ -69,3 +69,38 @@ REGISTER_NAMED_TEST( "CUtlPtrLinkedList.InsertAfter", CUtlPtrLinkedList_InsertAf
 	list.RemoveAll();
 	TEST_EQ( list.Count(), 0 );
 }
+
+template class CUtlBlockLinkedList< int >;
+
+REGISTER_NAMED_TEST( "CUtlBlockLinkedList.AddRemoveIterate", CUtlBlockLinkedList_AddRemoveIterate )
+{
+	// Block linked lists keep their nodes in a block vector, so nodes never move.
+	CUtlBlockLinkedList< int > list;
+
+	auto iFirst = list.AddToTail( 1 );
+	int *pFirst = &list[ iFirst ];
+
+	for ( int i = 2; i <= 300; i++ )
+	{
+		list.AddToTail( i );
+	}
+
+	TEST_EQ( &list[ iFirst ], pFirst );
+
+	int nExpected = 1;
+
+	for ( auto i = list.Head(); i != list.InvalidIndex(); i = list.Next( i ) )
+	{
+		TEST_EQ( list[ i ], nExpected );
+		++nExpected;
+	}
+	TEST_EQ( nExpected, 301 );
+
+	list.Remove( iFirst );
+	TEST_EQ( list[ list.Head() ], 2 );
+	TEST_EQ( list.AddToHead( 0 ), iFirst );
+
+	list.RemoveAll();
+	TEST_EQ( list.Head(), list.InvalidIndex() );
+	list.Purge();
+}
