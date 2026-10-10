@@ -18,15 +18,23 @@ struct SerialResourceHandle_t
 
 COMPILE_TIME_ASSERT( sizeof( SerialResourceHandle_t ) == 0x8 );
 
+enum ResourceLeakTrackingGroup_t
+{
+	RLTG_GENERAL_REFERENCE = 0,
+	RLTG_MANIFEST_REFERENCE,
+	RLTG_STRONGHANDLE,
+	RLTG_SCHEMA_REFERENCE,
+};
+
 class IResourceHandleUtils
 {
 public:
 	virtual ResourceHandle_t FindOrRegisterResourceByName( CResourceString &pResourceName ) = 0;
 	virtual ResourceHandle_t FindResourceById( ResourceId_t nResourceId, ResourceType_t nType ) = 0;
 	virtual void DeleteResource( ResourceHandle_t hResource ) = 0;
-	virtual void unk003() = 0;
-	virtual void unk004() = 0;
-	virtual void unk005() = 0;
+	virtual void ResourceReferenceLeakTracking_AddRef( ResourceHandle_t hResource, ResourceLeakTrackingGroup_t eGroup, uintp nContext ) = 0;
+	virtual void ResourceReferenceLeakTracking_Release( ResourceHandle_t hResource, ResourceLeakTrackingGroup_t eGroup, uintp nContext ) = 0;
+	virtual void ResourceReferenceLeakTracking_ReportReferences( ResourceHandle_t hResource ) = 0;
 	virtual ResourceStatus_t GetResourceStatus( ResourceHandle_t hResource ) = 0;
 	virtual IResourceTypeManager *GetTypeManagerForBinding( ResourceHandle_t hResource ) = 0;
 	// Allocator and serial handle self-test.

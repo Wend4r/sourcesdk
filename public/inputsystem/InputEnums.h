@@ -73,6 +73,8 @@ enum InputEventType_t
 	IE_ButtonReleased,		// m_nData contains a ButtonCode_t
 	IE_ButtonDoubleClicked,	// m_nData contains a ButtonCode_t
 	IE_AnalogValueChanged,	// m_nData contains an AnalogCode_t, m_nData2 contains the value
+	IE_ButtonPressedRepeating,
+	IE_CursorPositionChanged,
 
 	IE_FirstSystemEvent = 100,
 	IE_Quit = IE_FirstSystemEvent,
@@ -80,12 +82,16 @@ enum InputEventType_t
 	IE_ControllerUnplugged,	// m_nData contains the controller ID
 	IE_Close,
 	IE_WindowSizeChanged,	// m_nData contains width, m_nData2 contains height, m_nData3 = 0 if not minimized, 1 if minimized
+	IE_ActivateApp,
+	IE_ActivateWindow,
+	IE_WindowMove,
+	IE_CopyData,
+	IE_ScreenOrientationChanged,
 
 	IE_FirstUIEvent = 200,
-	IE_LocateMouseClick = IE_FirstUIEvent,
-	IE_SetCursor,
-	IE_KeyTyped,
+	IE_KeyTyped = IE_FirstUIEvent,
 	IE_KeyCodeTyped,
+	IE_KeyCodeReleased,
 	IE_InputLanguageChanged,
 	IE_IMESetWindow,
 	IE_IMEStartComposition,
@@ -95,6 +101,7 @@ enum InputEventType_t
 	IE_IMEChangeCandidates,
 	IE_IMECloseCandidates,
 	IE_IMERecomputeModes,
+	IE_MultiTouchData,
 
 	IE_FirstVguiEvent = 1000,	// Assign ranges for other systems that post user events here
 	IE_FirstAppEvent = 2000,

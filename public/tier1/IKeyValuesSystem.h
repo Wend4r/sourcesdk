@@ -10,17 +10,17 @@
 #pragma once
 #endif
 
-#include "tier0/platform.h"
+#include "tier0/basetypes.h"
 
 class CUtlCharConversion;
-class CUtlScratchMemoryPool;
-class CTemporaryKeyValues;
 class KeyValues;
+
+DECLARE_POINTER_HANDLE( HTemporaryKeyValueAllocationScope );
 
 class HKeySymbol
 {
 public:
-	HKeySymbol() : nIndex(~0U) { }
+	HKeySymbol() : nIndex(0xFFFFFF) { }
 	HKeySymbol(uint32 idx) : nIndex(idx) { }
 
 	inline uint32 Get() { return nIndex; }
@@ -50,7 +50,7 @@ public:
 	virtual void AddKeyValuesToMemoryLeakList(void *pMem, HKeySymbol name) = 0;
 	virtual void RemoveKeyValuesFromMemoryLeakList(void *pMem) = 0;
 
-	virtual void unk001() = 0;
+	virtual void SetMemoryLeakListContextName( const void *pMem, const char *pszContextName ) = 0;
 
 	// set/get a value for keyvalues resolution symbol
 	// e.g.: SetKeyValuesExpressionSymbol( "LOWVIOLENCE", true ) - enables [$LOWVIOLENCE]
@@ -68,11 +68,15 @@ public:
 
 	virtual CUtlCharConversion *GetCharacterConversion( bool is_cstring ) = 0;
 
-	virtual CTemporaryKeyValues *AllocateTemporaryKeyValues() = 0;
-	virtual void ReleaseTemporaryKeyValues( CTemporaryKeyValues *temp_kv ) = 0;
+	virtual HTemporaryKeyValueAllocationScope AllocTemporaryKeyValueAllocationScope() = 0;
+	virtual void FreeTemporaryKeyValueAllocationScope( HTemporaryKeyValueAllocationScope hScope ) = 0;
 
-	// Returns previously used memory pool if any
-	virtual CUtlScratchMemoryPool *SetNewScratchMemoryPool( CUtlScratchMemoryPool *pool ) = 0;
+	// Returns the previous scope
+	virtual HTemporaryKeyValueAllocationScope SetTemporaryKeyValueAllocationScope( HTemporaryKeyValueAllocationScope hScope ) = 0;
+
+	virtual void unk101( bool ) = 0;
+	virtual void unk102( bool ) = 0;
+	virtual void unk103() = 0;
 };
 
 PLATFORM_INTERFACE IKeyValuesSystem *KeyValuesSystem();
