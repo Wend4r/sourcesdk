@@ -11,6 +11,8 @@
 #pragma once
 #endif
 
+#include "tier0/threadtools.h"
+
 enum GlobalVarsUsageWarning_t
 {
 	GV_RENDERTIME_CALLED_DURING_SIMULATION,
@@ -34,18 +36,22 @@ public:
 	// Absolute frame counter - continues to increase even if game is paused
 	int framecount;
 
-	// Non-paused frametime
+	// Clamped to [0.0001, 0.1]
 	float absoluteframetime;
-	float absoluteframestarttimestddev;
+	// Frametime before clamping, also sent as CNETMsg_Tick::host_unfiltered_frametime
+	float absoluteframetime_unbounded;
 
 	int maxClients;
 
-	// zer0k: Command queue related
-	int unknown1;
-	int unknown2;
-	int unknown3;
-	int unknown4;
-	int unknown5;
+	// Index of the tick being simulated within this frame
+	int m_nCurrentTickThisFrame;
+	// Number of ticks simulated this frame
+	int m_nTotalTicksThisFrame;
+
+	// Client only: real time per usercmd tick (tick interval / host_timescale)
+	float m_flUsercmdTickInterval;
+	// Client only: Plat_FloatTime() at which the current usercmd tick started
+	double m_flUsercmdTickStartTime;
 
 	FnGlobalVarsWarningFunc m_pfnWarningFunc;
 
@@ -69,9 +75,10 @@ public:
 	// Time spent on last server or client frame (has nothing to do with think intervals)
 	float frametime;
 
-	// zer0k: Command queue + interpolation related
-	float unknown6;
-	float unknown7;
+	// Client only, zero during simulation: fraction into the next simulation tick
+	float interpolation_amount;
+	// Client only, zero during simulation: fraction into the current usercmd tick, stamps subtick moves
+	float m_flUsercmdTickFraction;
 
 	bool m_bInSimulation;
 	bool m_bEnableAssertions;
@@ -79,16 +86,17 @@ public:
 	// Simulation ticks - does not increase when game is paused
 	int tickcount;
 
-	int unknown8;
-	int unknown9;
+	// Client only: ticks simulated since the client started ticking, reset per connection
+	int m_nClientTickCount;
+	// Client only: m_nClientTickCount in seconds
+	float m_flClientTime;
 
 	// Non-zero when during movement processing, it's the part after the decimal point of the "when" field in player's subtick moves.
 	float m_flSubtickFraction;
 
-	// Simulation tick interval
-	float interval_per_tick;
+	bool m_bIsOncePerFrameAsyncWorkPhase;
 
-	float unk;
+	ThreadId_t m_nThreadId;
 };
 
 #endif // GLOBALVARS_BASE_H

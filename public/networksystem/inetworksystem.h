@@ -20,7 +20,6 @@ class IConnectionlessPacketHandler;
 
 class NetScratchBuffer_t;
 class CPeerToPeerAddress;
-class CServerSideClientBase;
 
 enum ENSAddressType
 {
@@ -83,8 +82,8 @@ public:
 
 	virtual uint16 GetUDPPortWithFallback( int nSocket ) = 0;
 
-	virtual void ConnectClient( CServerSideClientBase *pClient ) = 0;
-	virtual void DisconnectClient( CServerSideClientBase *pClient ) = 0;
+	virtual void AddNetworkChannelNotifyCallback( INetworkChannelNotify *pNotify ) = 0;
+	virtual void RemoveNetworkChannelNotifyCallback( INetworkChannelNotify *pNotify ) = 0;
 
 	virtual void CloseAllSockets() = 0;
 
