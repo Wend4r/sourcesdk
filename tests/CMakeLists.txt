@@ -128,6 +128,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlfixedmemory.cpp
 	utlflags.cpp
 	utlhash.cpp
+	utlhashmaplarge.cpp
 	utlhashtable.cpp
 	utlintrusivelist.cpp
 	utlleanvector.cpp
