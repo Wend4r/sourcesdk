@@ -11,8 +11,6 @@
 
 #include "platform.h"
 #include "utlleanvector.h"
-#include "utlfixedmemory.h"
-#include "utlblockmemory.h"
 
 
 // This is a useful macro to iterate from start to end in order in a map
@@ -407,51 +405,6 @@ protected:
 	}
 };
 
-// this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
-template < class T, class I = int, typename L = bool (*)( const T &, const T & )  >
-class CUtlFixedRBTree : public CUtlRBTree< T, I, L, CUtlFixedMemory< UtlRBTreeNode_t< T, I > > >
-{
-public:
-
-	typedef L LessFunc_t;
-
-	CUtlFixedRBTree( int growSize = 0, int initSize = 0, const LessFunc_t &lessfunc = 0 )
-		: CUtlRBTree< T, I, L, CUtlFixedMemory< UtlRBTreeNode_t< T, I > > >( growSize, initSize, lessfunc ) {}
-	CUtlFixedRBTree( const LessFunc_t &lessfunc )
-		: CUtlRBTree< T, I, L, CUtlFixedMemory< UtlRBTreeNode_t< T, I > > >( lessfunc ) {}
-
-	typedef CUtlRBTree< T, I, L, CUtlFixedMemory< UtlRBTreeNode_t< T, I > > > BaseClass;
-	bool IsValidIndex( I i ) const
-	{
-		if ( !BaseClass::Elements().IsIdxValid( i ) )
-			return false;
-
-
-		return LeftChild(i) != i; 
-	}
-
-protected:
-	void ResetDbgInfo() {}
-
-private:
-	// this doesn't make sense for fixed rbtrees, since there's no useful max pointer, and the index space isn't contiguous anyways
-	I  MaxElement() const;
-};
-
-// this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
-template < class T, class I = unsigned short, typename L = bool (*)( const T &, const T & )  >
-class CUtlBlockRBTree : public CUtlRBTree< T, I, L, CUtlBlockMemory< UtlRBTreeNode_t< T, I >, I > >
-{
-public:
-	typedef L LessFunc_t;
-	CUtlBlockRBTree( int growSize = 0, int initSize = 0, const LessFunc_t &lessfunc = 0 )
-		: CUtlRBTree< T, I, L, CUtlBlockMemory< UtlRBTreeNode_t< T, I >, I > >( growSize, initSize, lessfunc ) {}
-	CUtlBlockRBTree( const LessFunc_t &lessfunc )
-		: CUtlRBTree< T, I, L, CUtlBlockMemory< UtlRBTreeNode_t< T, I >, I > >( lessfunc ) {}
-protected:
-	void ResetDbgInfo() {}
-};
-
 
 //-----------------------------------------------------------------------------
 // constructor, destructor
@@ -479,7 +432,9 @@ m_FirstFree( InvalidIndex() )
 
 template < class T, typename L, class I, class M >
 inline CUtlRBTree<T, L, I, M>::CUtlRBTree( const CUtlRBTree<T, L, I, M> &copyFrom )
-
+ :  m_Root( InvalidIndex() ),
+	m_NumElements( 0 ),
+	m_FirstFree( InvalidIndex() )
 {
 	CopyFrom( copyFrom );
 }
@@ -521,7 +476,20 @@ inline CUtlRBTree<T, L, I, M> &CUtlRBTree<T, L, I, M>::CopyFrom( const CUtlRBTre
 		return *this;
 	}
 
-	m_Elements.CopyFrom( other.m_Elements );
+	RemoveAll();
+
+	// Nodes on the free list hold destructed elements, so copy only the live ones
+	m_Elements.SetCount( other.m_Elements.Count() );
+
+	for ( I i = 0; i < ( I )other.m_Elements.Count(); ++i )
+	{
+		Links( i ) = other.m_Elements[ i ];
+
+		if ( other.IsValidIndex( i ) )
+			Element( i ) = other.Element( i );
+		else
+			Destruct( &m_Elements[ i ].m_Data );
+	}
 
 	m_Root = other.m_Root;
 	m_NumElements = other.m_NumElements;
@@ -1265,6 +1233,13 @@ void CUtlRBTree<T, L, I, M>::RemoveAll()
 		Assert( m_NumElements == 0 );
 		Assert( m_FirstFree == InvalidIndex() );
 		return;
+	}
+
+	// m_Elements destructs every node, including those on the free list
+	for ( I i = 0; i < ( I )m_Elements.Count(); ++i )
+	{
+		if ( !IsValidIndex( i ) )
+			Construct( &m_Elements[ i ].m_Data );
 	}
 
 	m_Elements.RemoveAll();

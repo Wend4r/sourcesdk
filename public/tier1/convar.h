@@ -26,6 +26,7 @@
 #include "mathlib/vectorws.h"
 #include "playerslot.h"
 #include "splitscreenslot.h"
+#include "schemasystem/schematypes.h"
 
 #include <cstdint>
 #include <cinttypes>
@@ -37,6 +38,12 @@ class CCommand;
 class ConCommand;
 class CCommandContext;
 class ConVarRefAbstract;
+
+class ConVarUserInfoSet_t
+{
+public:
+	uint8 *m_pData;
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: Internal structure of ConVar objects
@@ -214,8 +221,11 @@ struct CVarCreationBase_t
 											// Note: IVEngineClient::ClientCmd_Unrestricted can run any client command.
 
 #define FCVAR_EXECUTE_PER_TICK		(1ull<<29)
+#define FCVAR_SNAPSHOT_IGNORED		(1ull<<30) // TakeConVarSnapshot and ResetConVarsToSnapshot ignores cvars with this flag set
 
 #define FCVAR_DEFENSIVE				(1ull<<32)
+
+#define FCVAR_GAMEINFO_CANNOT_OVERRIDE	(1ull<<34) // Code defaults can't be overridden from gameinfo
 
 
 //-----------------------------------------------------------------------------
@@ -597,20 +607,20 @@ class CConVar;
 template <typename T>
 using FnTypedChangeCallback_t = void (*)(CConVar<T> *cvar, CSplitScreenSlot nSlot, const T *pNewValue, const T *pOldValue);
 template <typename T>
-using FnTypedChangeCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, void *__unk01, FnTypedChangeCallback_t<T> cb);
+using FnTypedChangeCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnTypedChangeCallback_t<T> cb);
 
 using FnGenericChangeCallback_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue);
-using FnGenericChangeCallbackProvider_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericChangeCallback_t cb);
+using FnGenericChangeCallbackProvider_t = void(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericChangeCallback_t cb);
 
 template <typename T>
 using FnTypedFilterCallback_t = bool (*)(CConVar<T> *cvar, CSplitScreenSlot nSlot, const T *pNewValue, const T *pOldValue);
 template <typename T>
-using FnTypedFilterCallbackProvider_t = void(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, void *__unk01, FnTypedFilterCallback_t<T> cb);
+using FnTypedFilterCallbackProvider_t = bool(*)(CConVar<T> *cvar, CSplitScreenSlot slot, const T *pNewValue, const T *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnTypedFilterCallback_t<T> cb);
 
 using FnGenericFilterCallback_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue);
-using FnGenericFilterCallbackProvider_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericFilterCallback_t cb);
+using FnGenericFilterCallbackProvider_t = bool(*)(ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericFilterCallback_t cb);
 
-using FnCustomData_t = void *(*)();
+using FnGetEnumInfoHandle_t = SchemaMetaInfoHandle_t< CSchemaEnumInfo > (*)();
 
 struct ConVarValueInfo_t
 {
@@ -626,7 +636,7 @@ struct ConVarValueInfo_t
 		m_fnCallBack( nullptr ),
 		m_fnProviderFilterCallBack( nullptr ),
 		m_fnFilterCallBack( nullptr ),
-		m_fnCustomData( nullptr ),
+		m_fnGetEnumInfoHandle( nullptr ),
 		m_eVarType( type ),
 		m_CompletionCallBack()
 	{}
@@ -657,7 +667,7 @@ struct ConVarValueInfo_t
 	{
 		if(cb)
 		{
-			m_fnProviderCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericChangeCallback_t _cb ) {
+			m_fnProviderCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericChangeCallback_t _cb ) {
 				reinterpret_cast<FnTypedChangeCallback_t<T>>(_cb)(reinterpret_cast<CConVar<T> *>(ref), nSlot, reinterpret_cast<const T *>(pNewValue), reinterpret_cast<const T *>(pOldValue));
 			};
 
@@ -670,7 +680,7 @@ struct ConVarValueInfo_t
 	{
 		if(cb)
 		{
-			m_fnProviderFilterCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, void *__unk01, FnGenericFilterCallback_t _cb ) -> bool {
+			m_fnProviderFilterCallBack = []( ConVarRefAbstract *ref, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue, ConVarUserInfoSet_t *pUserInfoData, FnGenericFilterCallback_t _cb ) -> bool {
 				return reinterpret_cast<FnTypedFilterCallback_t<T>>(_cb)(reinterpret_cast<CConVar<T> *>(ref), nSlot, reinterpret_cast<const T *>(pNewValue), reinterpret_cast<const T *>(pOldValue));
 			};
 
@@ -705,8 +715,7 @@ public:
 	// AMNOTE: Currently the only usage is lb_debug_tiles, lb_debug_silhouette and sc_visualize_sceneobjects
 	// which holds a reference to a enum schema binding, it's a string type under the hood and is converted from int
 	// to a enum value string via the change callbacks.
-	// So not sure if this is a concrete enum binding prop or any data prop.
-	FnCustomData_t m_fnCustomData;
+	FnGetEnumInfoHandle_t m_fnGetEnumInfoHandle;
 
 	EConVarType m_eVarType;
 
@@ -764,6 +773,7 @@ template<> void CvarTypeTrait_ValueToStringFn<Color>( const CVValue_t *obj, CBuf
 		buf.Format( "%d %d %d %d", obj->m_clrValue[0], obj->m_clrValue[1], obj->m_clrValue[2], obj->m_clrValue[3] );
 }
 
+template<> void CvarTypeTrait_ClampFn<bool>( CVValue_t *obj, const CVValue_t *min, const CVValue_t *max ) { }
 template<> void CvarTypeTrait_ClampFn<CUtlString>( CVValue_t *obj, const CVValue_t *min, const CVValue_t *max ) { }
 template<> void CvarTypeTrait_ClampFn<Color>( CVValue_t *obj, const CVValue_t *min, const CVValue_t *max )
 {
@@ -905,7 +915,7 @@ public:
 		m_iCompletionCBIndex = 0;
 		m_GameInfoFlags = 0;
 		m_UserInfoByteIndex = 0;
-		m_fnCustomData = nullptr;
+		m_fnGetEnumInfoHandle = nullptr;
 	}
 
 	const char *GetName( void ) const { return m_pszName; }
@@ -937,7 +947,8 @@ public:
 		return GetCvarTypeTraits( m_eVarType );
 	}
 
-	FnCustomData_t GetCustomDataFn() const { return m_fnCustomData; }
+	bool HasEnumInfo() const { return m_fnGetEnumInfoHandle != nullptr; }
+	SchemaMetaInfoHandle_t< CSchemaEnumInfo > GetEnumInfo() const { return HasEnumInfo() ? m_fnGetEnumInfoHandle() : SchemaMetaInfoHandle_t< CSchemaEnumInfo >{}; }
 
 	int GetDataByteSize() const { return TypeTraits()->m_ByteSize; }
 	bool IsPrimitiveType() const { return TypeTraits()->m_IsPrimitive; }
@@ -969,6 +980,7 @@ public:
 
 	// AMNOTE: Expects you to manually allocate its value and for it to be alive while it's used by the cvar
 	// Also you should be responsible for clearing memory on cleanup, by default game uses CCvar memory allocator for this
+	// These are ignored for string and bool types!
 	void SetMinValue( CVValue_t *value ) { m_minValue = value; }
 	void SetMaxValue( CVValue_t *value ) { m_maxValue = value; }
 
@@ -1024,7 +1036,7 @@ private:
 	int m_UserInfoByteIndex;
 
 	// Copied directly as is from ConVarValueInfo_t
-	FnCustomData_t m_fnCustomData;
+	FnGetEnumInfoHandle_t m_fnGetEnumInfoHandle;
 
 	// At convar registration this is trimmed to better match convar type being used
 	// or if it was initialized as EConVarType_Invalid it would be of this size
@@ -1569,6 +1581,70 @@ private:
 	T* m_pOwner;
 	FnMemberCommandCallback_t m_Func;
 	FnMemberCommandCompletionCallback_t m_CompletionFunc;
+};
+
+// AMNOTE: Shouldn't be used directly to create new concommands
+class ConCommandRegList
+{
+public:
+	friend bool ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb );
+	friend bool ConVar_Unregister();
+	friend void SetupConCommand( ConCommand *cmd, const ConCommandCreation_t &info );
+
+	struct Entry_t
+	{
+		ConCommandCreation_t m_Info;
+		ConCommandRef *m_Command = nullptr;
+	};
+
+private:
+	static void RegisterConCommand( const Entry_t &cmd );
+	static void UnregisterConCommand( const Entry_t &cmd );
+	static void RegisterAll();
+	static void UnregisterAll();
+	static void AddToList( const Entry_t &cmd );
+
+public:
+	uint32 m_nSize;
+	Entry_t m_Entries[ 100 ];
+	ConCommandRegList *m_pPrev;
+
+private:
+	static bool s_bConCommandsRegistered;
+	static ConCommandRegList *s_pRoot;
+};
+
+// AMNOTE: Shouldn't be used directly to create new convars
+class ConVarRegList
+{
+public:
+	friend bool ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb );
+	friend bool ConVar_Unregister();
+	friend void SetupConVar( ConVarRefAbstract *cvar, ConVarData **cvar_data, ConVarCreation_t &info );
+
+	struct Entry_t
+	{
+		ConVarCreation_t m_Info;
+
+		ConVarRefAbstract *m_pConVar = nullptr;
+		ConVarData **m_pConVarData = nullptr;
+	};
+
+private:
+	static void RegisterConVar( const Entry_t &cvar );
+	static void UnregisterConVar( const Entry_t &cvar );
+	static bool RegisterAll();
+	static bool UnregisterAll();
+	static void AddToList( const Entry_t &cvar );
+
+public:
+	uint32 m_nSize;
+	Entry_t m_Entries[ 100 ];
+	ConVarRegList *m_pPrev;
+
+private:
+	static bool s_bConVarsRegistered;
+	static ConVarRegList *s_pRoot;
 };
 
 #ifdef _MSC_VER

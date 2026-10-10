@@ -11,10 +11,6 @@
 #include <stdlib.h>
 #endif
 
-#ifndef _WIN32
-void *g_pUtlSortVectorQSortContext = nullptr;
-#endif
-
 int Source2Main( int argc, char **argv )
 {
 	( void )argc;

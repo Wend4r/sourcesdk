@@ -14,6 +14,7 @@
 #include "tier1/utlhash.h"
 #include "tier1/generichash.h"
 #include "mathlib/mathlib.h"
+#include <type_traits>
 
 //-----------------------------------------------------------------------------
 //
@@ -260,7 +261,10 @@ void CUtlHashDict<T, bCaseInsensitive, bDupeStrings>::PurgeAndDeleteElements()
 		{
 			free( (void *)m_Elements[index].pszSymbol );
 		}
-		delete m_Elements[index].value;
+		if constexpr ( std::is_pointer_v< T > )
+		{
+			delete m_Elements[index].value;
+		}
 		index = m_Elements.GetNextHandle( index );
 	}
 

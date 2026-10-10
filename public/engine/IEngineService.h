@@ -32,12 +32,19 @@ schema struct EventClientOutput_t
 	bool m_bRenderOnly;
 };
 
+enum EngineServiceActivateType_t
+{
+	ENGINE_SERVICE_ACTIVATE_NEVER = 0,
+	ENGINE_SERVICE_ACTIVATE_ALWAYS,
+	ENGINE_SERVICE_ACTIVATE_IF_ADDED_BY_LOOP_MODE,
+};
+
 abstract_class IEngineService : public IAppSystem
 {
 public:
 	virtual void		*GetServiceDependencies( void ) = 0;
 	virtual const char	*GetName( void ) const = 0;
-	virtual bool		ShouldActivate( const char * ) = 0;
+	virtual EngineServiceActivateType_t ShouldActivate( const char * ) = 0;
 	virtual void		OnLoopActivate( const EngineLoopState_t &loopState, CEventDispatcher<CEventIDManager_Default> *pEventDispatcher) = 0;
 	virtual void		OnLoopDeactivate( const EngineLoopState_t &loopState, CEventDispatcher<CEventIDManager_Default> *pEventDispatcher) = 0;
 	virtual bool		IsActive( void ) const = 0;
@@ -129,7 +136,7 @@ public:
 	// Same methods as IVEngineServer2
 	virtual void		SetFrameTimeAmnesty( const char *amnesty, int, float frametime ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
-	virtual void		unk059( void ) = 0;
+	virtual void		SetFramePerformanceTag( const char *pszTag, int nValue, int, float flDuration ) = 0;
 };
 
 #endif // IENGINESERVICE_H
