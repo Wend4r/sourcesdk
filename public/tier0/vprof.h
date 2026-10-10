@@ -12,6 +12,7 @@
 #include "tier0/fasttimer.h"
 #include "tier0/l2cache.h"
 #include "tier0/threadtools.h"
+#include "tier1/utlvector.h"
 
 // VProf is enabled by default in all configurations -except- X360 Retail.
 #if !( defined( _X360 ) && defined( _CERT ) )
@@ -593,29 +594,15 @@ protected:
 
 public:
 	bool m_bVTuneGroupEnabled;
-
-private:
-	uint8 m_pad0001[3];
-
-public:
 	int m_nVTuneGroupID;
 	int m_nGroupIDStack[MAX_GROUP_STACK_DEPTH];
 	int m_nGroupIDStackDepth;
 	int m_nEnabled;
 	CVProfNode m_Root;
-
-private:
-	// Points at m_Root after construction
-	uint8 m_pad10D0[8];
-
-public:
+	CVProfNode *m_pTargetThreadRoot; // Points at m_Root after construction
 	CVProfNode *m_pCurNode;
 	bool m_bAtRoot;
-
-private:
-	uint8 m_pad10E1[7];
-
-public:
+	int m_nUnk10E4;
 	int m_nFrames;
 	int m_nPausedEnabledDepth;
 
@@ -629,41 +616,30 @@ public:
 	char m_eCounterGroups[MAXCOUNTERS]; // (These are CounterGroup_t's).
 	const char *m_pszCounterNames[MAXCOUNTERS];
 	int m_nCounterCount;
+	CThreadFastMutex m_CounterMutex;
 
-private:
-	uint8 m_pad2214[4];
+	CUtlVector< int > m_CountersHistory[MAXCOUNTERS];
+	int m_nCountersHistoryCount;
+	CUtlVector< char > m_CounterGroupsHistory[MAXCOUNTERS];
+	int m_nCounterGroupsHistoryCount;
+	CUtlVector< tchar * > m_CounterNamesHistory[MAXCOUNTERS];
+	int m_nCounterNamesHistoryCount;
 
-public:
-	uint8 m_CounterMutex[16];
-
-private:
-	// Three arrays of 256 zeroed 24-byte elements, each followed by an int
-	uint8 m_pad2228[6152];
-	uint8 m_pad3A30[6152];
-	uint8 m_pad5238[6148];
-
-public:
 	int m_nNextTimespanId;
-	uint64 m_nTargetThreadID;
+	ThreadId_t m_nTargetThreadID;
 	bool m_bProfileAllThreads;
-
-private:
-	uint8 m_pad6A49[7];
-
-public:
 	CVProfNode *m_pBackgroundRoot;
-
-private:
-	// Background thread roots
-	uint8 m_pad6A58[24];
-
-public:
-	uint8 m_BackgroundRootMutex[16];
+	CUtlVector< CVProfNode * > m_BackgroundRoots;
+	CThreadFastMutex m_BackgroundRootMutex;
 	void ( *m_pOutputStream )( const char *, ... );
 };
 
 COMPILE_TIME_ASSERT( sizeof( CVProfNode ) == 192 );
+#ifdef _WIN32
+COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27256 );
+#else
 COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27272 );
+#endif
 
 //-------------------------------------
 
