@@ -22,7 +22,6 @@
 #include "tier0/utlstring.h"
 #include "tier1/threadtools.h"
 #include "tier1/utlvectormemory.h"
-#include "tier1/utlblockmemory.h"
 #include "tier0/strtools.h"
 
 #include <initializer_list>
@@ -318,16 +317,6 @@ class CUtlVector_RawAllocator : public CUtlVectorBase< T, I, CUtlVectorMemory_Ra
 
 public:
 	using BaseClass::BaseClass;
-};
-
-// this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
-template < class T, class I = int >
-class CUtlBlockVector : public CUtlVectorBase< T, I, CUtlBlockMemory< T, I > >
-{
-	typedef CUtlVectorBase< T, I, CUtlBlockMemory< T, I > > BaseClass;
-
-public:
-	explicit CUtlBlockVector( I growSize = 0, I initSize = 0 ) : BaseClass( growSize, initSize ) {}
 };
 
 //-----------------------------------------------------------------------------
