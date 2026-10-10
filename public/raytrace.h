@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <tier0/utlbuffer.h>
 #include <tier1/utlvector.h>
+#include <tier0/utlblockvector.h>
 #include <mathlib/mathlib.h>
 #include <bspfile.h>
 
