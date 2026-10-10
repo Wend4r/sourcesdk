@@ -272,7 +272,7 @@ public:
 	int32_t m_nClassSize;
 	int m_NetworkOutOfPVSUpdates;
 	// Allocation mode, only 1 and 2 allow allocating and freeing through m_pfnManipulator
-	int m_unk201;
+	int m_nAllocationMode;
 
 	ManipulatorFn_t m_pfnManipulator;
 

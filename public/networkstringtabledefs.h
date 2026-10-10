@@ -73,9 +73,9 @@ public:
 	virtual int				FindStringIndex( char const *string ) = 0; // returns INVALID_STRING_INDEX if not found
 	virtual void			SetStringChangedCallback( const StringChangedCallback_t &callback, bool bCallForExistingStrings ) = 0;
 	virtual void			SetAllowClientSideAddString( bool state ) = 0;
-	virtual void			unk014( bool ) = 0;
-	virtual void			unk015( const char *string ) = 0;
-	virtual void			unk016( const UserDataFormatterDelegate_t &formatter ) = 0;
+	virtual void			SetSpew( bool bSpew ) = 0;
+	virtual void			SetContainerName( const char *pszName ) = 0;
+	virtual void			SetUserDataFormatter( const UserDataFormatterDelegate_t &formatter ) = 0;
 };
 
 enum ENetworkStringtableFlags
@@ -98,7 +98,7 @@ public:
 	virtual INetworkStringTable	*FindTable( const char *tableName ) const = 0;
 	virtual INetworkStringTable	*GetTable( TABLEID stringTable ) const = 0;
 	virtual int					GetNumTables( void ) const = 0;
-	virtual const char			*unk017( void ) const = 0;
+	virtual const char			*GetContainerName( void ) const = 0;
 };
 
 #endif // NETWORKSTRINGTABLEDEFS_H
