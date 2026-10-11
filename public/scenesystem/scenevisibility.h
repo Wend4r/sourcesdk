@@ -6,12 +6,11 @@
 #endif
 
 #include "tier0/platform.h"
+#include "mathlib/aabb.h"
+#include "mathlib/obb.h"
 #include "mathlib/vectorws.h"
 #include "bitvec.h"
 
-struct AABB_t;
-struct AABBWS_t;
-struct OBB_t;
 class CFrustum;
 class CVoxelVisibility;
 struct vis_info_t;
