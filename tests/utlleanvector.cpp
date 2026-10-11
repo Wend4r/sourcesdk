@@ -165,3 +165,36 @@ REGISTER_NAMED_TEST( "CUtlLeanVectorFixedGrowable.GrowAndPurge", CUtlLeanVectorF
 	TEST_EQ( vec.Count(), 0 );
 	TEST_EQ( vec.NumAllocated(), 2 );
 }
+
+REGISTER_NAMED_TEST( "CUtlLeanVector.UnsignedIndex", CUtlLeanVector_UnsignedIndex )
+{
+	// An unsigned index type should insert like a signed one, the capacity is capped at its signed maximum.
+	CUtlLeanVector< int, uint32 > vec;
+
+	vec.AddToTail( 2 );
+	*vec.InsertBeforeGetPtr( 0, 1 ) = 1;
+	*vec.InsertBeforeGetPtr( 2, 1 ) = 3;
+	TEST_EQ( vec.Count(), 3 );
+	TEST_EQ( vec[ 0 ], 1 );
+	TEST_EQ( vec[ 1 ], 2 );
+	TEST_EQ( vec[ 2 ], 3 );
+}
+
+REGISTER_NAMED_TEST( "CUtlLeanVector.NarrowIndexCapacity", CUtlLeanVector_NarrowIndexCapacity )
+{
+	// The allocation the memory allocator rounds up must not overflow the capacity bits of a narrow index.
+	CUtlLeanVector< uint8, uint8 > vec;
+
+	for ( int i = 0; i < 127; i++ )
+	{
+		vec.AddToTail( ( uint8 )i );
+	}
+
+	TEST_EQ( vec.Count(), 127 );
+	TEST_EQ( vec.NumAllocated(), 127 );
+
+	for ( int i = 0; i < 127; i++ )
+	{
+		TEST_EQ( vec[ i ], ( uint8 )i );
+	}
+}

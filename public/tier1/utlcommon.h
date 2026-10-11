@@ -13,6 +13,7 @@
 #include "tier0/strtools.h"
 
 #include <type_traits>
+#include <utility>
 
 //-----------------------------------------------------------------------------
 // Henry Goffin (henryg) was here. Questions? Bugs? Go slap him around a bit.
@@ -110,7 +111,7 @@ template <typename T> struct DefaultEqualFunctor;
 //  http://en.wikipedia.org/wiki/Avalanche_effect
 //  http://home.comcast.net/~bretm/hash/5.html
 // 
-template <typename T> struct DefaultHashFunctor;
+template <typename T, typename = void> struct DefaultHashFunctor;
 
 // Argument type information. Struct currently contains one or two typedefs:
 //   typename Arg_t = primary argument type. Usually const T&, sometimes T.
@@ -243,6 +244,17 @@ template <> struct DefaultHashFunctor<CUtlStringToken> { unsigned int operator()
 #if !defined(_MSC_VER) || defined(_NATIVE_WCHAR_T_DEFINED)
 template <> struct DefaultHashFunctor<wchar_t> : Mix32HashFunctor { };
 #endif
+
+// Enums are hashed by their underlying value
+template < typename T > struct DefaultHashFunctor< T, std::enable_if_t< std::is_enum_v< T > && std::is_same_v< T, std::remove_cv_t< T > > > >
+{
+	unsigned int operator()( T e ) const { return DefaultHashFunctor< std::underlying_type_t< T > >()( static_cast< std::underlying_type_t< T > >( e ) ); }
+};
+
+template < typename A, typename B > struct DefaultHashFunctor< std::pair< A, B > >
+{
+	unsigned int operator()( const std::pair< A, B > &p ) const { return Mix64HashFunctor()( ( static_cast< uint64 >( DefaultHashFunctor< A >()( p.first ) ) << 32 ) | DefaultHashFunctor< B >()( p.second ) ); }
+};
 
 // String specializations. If you want to operate on raw values, use
 // PointerLessFunctor and friends from the "building-block" section above

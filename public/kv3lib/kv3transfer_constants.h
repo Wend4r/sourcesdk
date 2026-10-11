@@ -120,4 +120,16 @@ struct KV3Transfer_EnumHelpers_StringPairList_t
 	void KV3TransferSave_##classname( CKV3TransferSaveContext *pContext ) const; \
 	void KV3TransferLoad_##classname( CKV3TransferLoadContext *pContext )
 
+// The polymorphic variant for a class whose base already uses CLASS_USES_KV3TRANSFER_VIRTUAL, marking the overrides.
+#define CLASS_USES_KV3TRANSFER_VIRTUAL_OVERRIDE( classname ) \
+	META_USE_CODEGEN_TAG( MEmitKV3Transfer ); \
+	enum { KV3TRANSFER_BEHAVIOR = KV3TRANSFER_CLASS_AS_POLYMORPHIC_TABLE }; \
+	enum { KV3TRANSFER_IS_VIRTUAL = 1 }; \
+	static void KV3TransferPolymorphicClassname( const classname *pObject, CBufferString &sOutClassName ); \
+	static classname *KV3TransferAllocateClassInstance( const char *pDerivedClassName, void *pUnk ); \
+	void KV3TransferSave( CKV3TransferSaveContext *pContext ) const override; \
+	void KV3TransferLoad( CKV3TransferLoadContext *pContext ) override; \
+	void KV3TransferSave_##classname( CKV3TransferSaveContext *pContext ) const; \
+	void KV3TransferLoad_##classname( CKV3TransferLoadContext *pContext )
+
 #endif // KV3TRANSFER_CONSTANTS_H

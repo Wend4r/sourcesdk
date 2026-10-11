@@ -46,7 +46,7 @@ public:
 	// Not overridden here: Schema_DynamicBinding, GetDataDescMap, GetSchemaBinding and GetComponentHelper.
 	// The game returns module-owned statics from them: the schema binding of "CScriptComponent", an empty datamap
 	// named "CEntityComponent" and the lazily registered component helper named "ScriptComponent".
-	CLASS_USES_KV3TRANSFER_VIRTUAL( CScriptComponent );
+	CLASS_USES_KV3TRANSFER_VIRTUAL_OVERRIDE( CScriptComponent );
 	const char *GetComponentName() override { return "CScriptComponent"; }
 
 	// The script class instance; "Dispatch*" functions of the script system receive it.

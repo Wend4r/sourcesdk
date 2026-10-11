@@ -39,7 +39,8 @@ permissions:
 jobs:
   build:
     name: Clang - ${{ matrix.config }}
-    runs-on: macos-latest
+    # The SDK only builds for x86_64, so its tests run natively on an Intel runner instead of under Rosetta
+    runs-on: macos-15-intel
 
     strategy:
       matrix:

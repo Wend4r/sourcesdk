@@ -27,14 +27,14 @@ enum ResourceStatus_t
 	RESOURCE_STATUS_RESIDENT,
 };
 
-enum ResourceManifestLoadBehavior_t
+enum ResourceManifestLoadBehavior_t : int8
 {
 	RESOURCE_MANIFEST_LOAD_DEFAULT = -1,
 	RESOURCE_MANIFEST_LOAD_STREAMING_DATA = 0,
 	RESOURCE_MANIFEST_INITIALLY_USE_FALLBACKS,
 };
 
-enum ResourceManifestLoadPriority_t
+enum ResourceManifestLoadPriority_t : int8
 {
 	RESOURCE_MANIFEST_LOAD_PRIORITY_DEFAULT = -1,
 	RESOURCE_MANIFEST_LOAD_PRIORITY_LOW = 0,
@@ -71,6 +71,9 @@ schema struct ResourceId_t
 {
 	TYPEMETA( MIsBoxedIntegerType );
 	DECLARE_SCHEMA_DATA_CLASS( ResourceId_t );
+
+	ResourceId_t() : m_Value( 0 ) {}
+	ResourceId_t( uint64 nValue ) : m_Value( nValue ) {}
 
 	uint64 m_Value;
 
@@ -174,10 +177,10 @@ typedef std::initializer_list< std::initializer_list< ResourceManifestEntry_t > 
 
 struct ResourceManifestDesc_t
 {
-	CUtlString m_sManifestName;
-	CUtlString m_sManifestGroup;
+	const char *m_pszManifestName;
+	const char *m_pszManifestGroup;
 	ManifestEntryGroupList_t *m_pEntryGroups;
-	CUtlString m_sFileName;
+	const char *m_pszFileName;
 	int m_nLine;
 	bool m_bRegistered;
 	bool m_bDisallowRegistration;
@@ -185,6 +188,7 @@ struct ResourceManifestDesc_t
 
 typedef const ResourceNameInfo_t *ResourceNameHandle_t;
 typedef uint16 LoadingResourceIndex_t;
+typedef uint16 StreamingResourceDataIndex_t;
 typedef char ResourceTypeIndex_t;
 typedef uint32 ExtRefIndex_t;
 
@@ -194,8 +198,9 @@ struct ResourceBindingBase_t
 	ResourceNameHandle_t m_Name;
 	ResourceId_t m_nResourceId;
 	uint16 m_nFlags;
-	uint16 m_nReloadCounter;
-	ResourceTypeIndex_t m_nTypeIndex;
+	StreamingResourceDataIndex_t m_nStreamingResource;
+	ResourceTypeIndex_t m_nResourceType;
+	uint8 m_nReloadCounter;
 	LoadingResourceIndex_t m_nLoadingResource;
 	CInterlockedInt m_nRefCount;
 	ExtRefIndex_t m_nExtRefHandle;

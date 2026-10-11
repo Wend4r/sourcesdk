@@ -45,8 +45,10 @@ void Sys_Error (char *error, ...);
 #endif
 
 const Vector vec3_origin(0,0,0);
+const VectorWS vec3ws_origin( 0, 0, 0 );
 const QAngle vec3_angle(0,0,0);
 const Quaternion quat_identity(0,0,0,1);
+const QuaternionWS quatws_identity( 0, 0, 0, 1 );
 const Vector vec3_invalid( FLT_MAX, FLT_MAX, FLT_MAX );
 const int nanmask = 255<<23;
 
@@ -497,6 +499,32 @@ void MatrixSetColumn( const Vector &in, int column, matrix3x4_t& out )
 	out[2][column] = in.z;
 }
 
+void MatrixScaleBy( const float flScale, matrix3x4_t &out )
+{
+	out[ 0 ][ 0 ] *= flScale;
+	out[ 1 ][ 0 ] *= flScale;
+	out[ 2 ][ 0 ] *= flScale;
+	out[ 0 ][ 1 ] *= flScale;
+	out[ 1 ][ 1 ] *= flScale;
+	out[ 2 ][ 1 ] *= flScale;
+	out[ 0 ][ 2 ] *= flScale;
+	out[ 1 ][ 2 ] *= flScale;
+	out[ 2 ][ 2 ] *= flScale;
+}
+
+void MatrixScaleByZero( matrix3x4_t &out )
+{
+	out[ 0 ][ 0 ] = 0.0f;
+	out[ 1 ][ 0 ] = 0.0f;
+	out[ 2 ][ 0 ] = 0.0f;
+	out[ 0 ][ 1 ] = 0.0f;
+	out[ 1 ][ 1 ] = 0.0f;
+	out[ 2 ][ 1 ] = 0.0f;
+	out[ 0 ][ 2 ] = 0.0f;
+	out[ 1 ][ 2 ] = 0.0f;
+	out[ 2 ][ 2 ] = 0.0f;
+}
+
 #if !defined(__SPU__)
 int VectorCompare (const float *v1, const float *v2)
 {
@@ -680,11 +708,11 @@ void VectorAngles( const float *forward, float *angles )
 R_ConcatRotations
 ================
 */
-void ConcatRotations (const float in1[3][3], const float in2[3][3], float out[3][3])
+void ConcatRotations( const matrix3x4_t &in1, const matrix3x4_t &in2, matrix3x4_t &out )
 {
 	Assert( s_bMathlibInitialized );
-	Assert( in1 != out );
-	Assert( in2 != out );
+	Assert( &in1 != &out );
+	Assert( &in2 != &out );
 	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] +
 				in1[0][2] * in2[2][0];
 	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] +

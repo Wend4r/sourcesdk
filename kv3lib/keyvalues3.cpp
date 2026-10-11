@@ -334,7 +334,7 @@ void KeyValues3::AllocArrayInPlace( int initial_size, Data_t data, int prealloca
 		DebuggerBreak();
 	}
 
-	Construct( m_Data.m_Array.m_pRoot, KV3_INVALID_CLUSTER_ELEMENT, initial_size );
+	Construct( data.m_Array.m_pRoot, KV3_INVALID_CLUSTER_ELEMENT, initial_size );
 
 	m_Data.m_Array.m_pRoot = data.m_Array.m_pRoot;
 	m_bFreeArrayMemory = should_free;
@@ -2417,6 +2417,7 @@ void CKV3ArenaImpl::Purge()
 	PurgeClusterNodeChain( m_KV3PartialClusters );
 	PurgeClusterNodeChain( m_KV3FullClusters );
 	m_KV3PartialClusters.AddToChain( &m_KV3BaseCluster );
+	m_KV3BaseCluster.EnableMetaData( m_bMetaDataEnabled );
 
 	PurgeClusterNodeChain( m_PartialArrayClusters );
 	PurgeClusterNodeChain( m_FullArrayClusters );
@@ -2445,7 +2446,11 @@ void CKV3ArenaImpl::EnableMetaData( bool bEnable )
 {
 	if ( bEnable != m_bMetaDataEnabled )
 	{
-		m_KV3BaseCluster.EnableMetaData( bEnable );
+		for ( auto cluster = m_KV3PartialClusters.m_pTail; cluster; cluster = cluster->GetPrev() )
+			cluster->EnableMetaData( bEnable );
+
+		for ( auto cluster = m_KV3FullClusters.m_pTail; cluster; cluster = cluster->GetPrev() )
+			cluster->EnableMetaData( bEnable );
 
 		m_bMetaDataEnabled = bEnable;
 	}
