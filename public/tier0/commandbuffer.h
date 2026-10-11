@@ -115,27 +115,27 @@ private:
 		Command_t		*m_pNext;					// Also links the free list
 	};
 
-	char			m_ArgSBuffer[ ARGS_BUFFER_LENGTH ];	// 0x0000
-	Command_t		*m_pFirstCommand;			// 0x8000
-	Command_t		*m_pLastCommand;			// 0x8008
-	Command_t		*m_pFreeCommands;			// 0x8010
-	int				m_nCommandCount;			// 0x8018
-	int				m_nAllocatedCommandCount;	// 0x801C
-	CUtlScratchMemoryPool	m_CommandPool;		// 0x8020
-	int				m_nCommandsPerAlloc;		// 0x8030
-	uint64			m_nRequiredFlags;			// 0x8038
-	CommandHandle_t	m_hNextCommand;				// 0x8040
-	int				m_nLastUsedArgSSize;		// 0x8048
-	int				m_nArgSBufferSize;			// 0x804C
-	int				m_nCurrentTick;				// 0x8050
-	int				m_nLastTickToProcess;		// 0x8054
-	int			    m_nWaitDelayTicks;			// 0x8058
-	int			    m_nMaxArgSBufferLength;	    // 0x805C
-	bool			m_bIsProcessingCommands;	// 0x8060
-	bool			m_bWaitEnabled;				// 0x8061
-	bool			m_bIsLocked;				// 0x8062
-	CCommand		m_CurrentCommand;			// 0x8068
-	uint64			m_nCurrentCommandRequiredFlags;	// 0x86D0
+	char			m_ArgSBuffer[ ARGS_BUFFER_LENGTH ];
+	Command_t		*m_pFirstCommand;
+	Command_t		*m_pLastCommand;
+	Command_t		*m_pFreeCommands;
+	int				m_nCommandCount;
+	int				m_nAllocatedCommandCount;
+	CUtlScratchMemoryPool	m_CommandPool;
+	int				m_nCommandsPerAlloc;
+	uint64			m_nRequiredFlags;
+	CommandHandle_t	m_hNextCommand;
+	int				m_nLastUsedArgSSize;
+	int				m_nArgSBufferSize;
+	int				m_nCurrentTick;
+	int				m_nLastTickToProcess;
+	int				m_nWaitDelayTicks;
+	int				m_nMaxArgSBufferLength;
+	bool			m_bIsProcessingCommands;
+	bool			m_bWaitEnabled;
+	bool			m_bIsLocked;
+	CCommand		m_CurrentCommand;
+	uint64			m_nCurrentCommandRequiredFlags;
 };
 
 #endif // COMMANDBUFFER_H
