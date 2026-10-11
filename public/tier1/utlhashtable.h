@@ -339,8 +339,15 @@ void CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, TableT, bTriviallyReloca
 	Assert( !m_bSizeLocked ); 
 
 	CUtlVectorMemory_Conservative<entry_t> oldTable;
+	// An external buffer is detached too, but it stays with its owner
+	bool bOwnsOldBase = !m_table.IsExternallyAllocated();
 	entry_t * RESTRICT pOldBase = m_table.Detach();
 	int nOldSize = m_nTableSize;
+
+	// Owns the detached allocation so that it is freed once the entries are moved out
+	TableT oldOwnedTable;
+	if ( pOldBase && bOwnsOldBase )
+		oldOwnedTable.AssumeMemory( pOldBase, nOldSize );
 
 	if (!pOldBase)
 	{

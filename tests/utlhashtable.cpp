@@ -396,3 +396,144 @@ REGISTER_NAMED_TEST( "CUtlHashtable.SetExternalBuffer", CUtlHashtable_SetExterna
 	growable.Purge();
 	TEST_EQ( growable.Count(), 0 );
 }
+
+// Allocator that tracks the blocks it handed out, and refuses to free any other block
+static void *s_pCountedAllocations[ 64 ];
+static int s_nCountedAllocations = 0;
+static int s_nForeignFrees = 0;
+
+static void TrackAllocation( void *pMemory )
+{
+	if ( pMemory && s_nCountedAllocations < ARRAYSIZE( s_pCountedAllocations ) )
+		s_pCountedAllocations[ s_nCountedAllocations++ ] = pMemory;
+}
+
+static bool UntrackAllocation( void *pMemory )
+{
+	for ( int i = 0; i < s_nCountedAllocations; i++ )
+	{
+		if ( s_pCountedAllocations[ i ] == pMemory )
+		{
+			s_pCountedAllocations[ i ] = s_pCountedAllocations[ --s_nCountedAllocations ];
+			return true;
+		}
+	}
+
+	return false;
+}
+
+class CCountingAllocator
+{
+public:
+	template < typename T, typename I = int >
+	static T *Alloc( I nCount, I &nAdjustedCount )
+	{
+		T *pNew = CMemAllocAllocator::Alloc< T, I >( nCount, nAdjustedCount );
+		TrackAllocation( pNew );
+		return pNew;
+	}
+
+	template < typename T, typename I = int >
+	static T *Realloc( T *pMemory, I nCount, I &nAdjustedCount )
+	{
+		if ( pMemory && !UntrackAllocation( pMemory ) )
+		{
+			s_nForeignFrees++;
+			return Alloc< T, I >( nCount, nAdjustedCount );
+		}
+
+		T *pNew = CMemAllocAllocator::Realloc< T, I >( pMemory, nCount, nAdjustedCount );
+		TrackAllocation( pNew );
+		return pNew;
+	}
+
+	static void Free( void *pMemory )
+	{
+		if ( !pMemory )
+			return;
+
+		if ( !UntrackAllocation( pMemory ) )
+		{
+			s_nForeignFrees++;
+			return;
+		}
+
+		CMemAllocAllocator::Free( pMemory );
+	}
+};
+
+typedef CUtlHashtableEntry< int, int > IntEntry_t;
+typedef CUtlHashtable< int, int, DefaultHashFunctor< int >, DefaultEqualFunctor< int >, CUtlLeanVector< IntEntry_t, int, CCountingAllocator > > CountedHashtable_t;
+
+static void FillCountedHashtable( CountedHashtable_t &table, int nCount )
+{
+	for ( int i = 0; i < nCount; i++ )
+		table.Insert( i, i * 5 );
+
+	TEST_EQ( table.Count(), nCount );
+
+	for ( int i = 0; i < nCount; i++ )
+		TEST_EQ( table.Get( i, -1 ), i * 5 );
+}
+
+REGISTER_NAMED_TEST( "CUtlHashtable.ResizeFreesOwnedTable", CUtlHashtable_ResizeFreesOwnedTable )
+{
+	// After growing several times only the current table allocation may remain.
+	s_nCountedAllocations = 0;
+	s_nForeignFrees = 0;
+
+	{
+		CountedHashtable_t table;
+
+		FillCountedHashtable( table, 1000 );
+		TEST_EQ( s_nCountedAllocations, 1 );
+
+		table.Compact( true );
+		TEST_EQ( s_nCountedAllocations, 1 );
+
+		table.Purge();
+		TEST_EQ( s_nCountedAllocations, 0 );
+
+		FillCountedHashtable( table, 100 );
+		TEST_EQ( s_nCountedAllocations, 1 );
+	}
+
+	TEST_EQ( s_nCountedAllocations, 0 );
+	TEST_EQ( s_nForeignFrees, 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlHashtable.ResizeKeepsExternalBuffer", CUtlHashtable_ResizeKeepsExternalBuffer )
+{
+	// Growing out of an external buffer must leave it to its owner,
+	// while a buffer handed over with bAssumeOwnership is freed like any other table.
+	s_nCountedAllocations = 0;
+	s_nForeignFrees = 0;
+
+	{
+		static IntEntry_t entries[ 8 ];
+		CountedHashtable_t table;
+
+		table.SetExternalBuffer( entries, 8, false, true );
+		FillCountedHashtable( table, 100 );
+
+		TEST_EQ( s_nForeignFrees, 0 );
+		TEST_EQ( s_nCountedAllocations, 1 );
+	}
+
+	TEST_EQ( s_nCountedAllocations, 0 );
+
+	{
+		int nAllocated = 0;
+		IntEntry_t *pEntries = CCountingAllocator::Alloc< IntEntry_t >( 8, nAllocated );
+		CountedHashtable_t table;
+
+		table.SetExternalBuffer( pEntries, 8, true, true );
+		TEST_EQ( s_nCountedAllocations, 1 );
+
+		FillCountedHashtable( table, 100 );
+		TEST_EQ( s_nCountedAllocations, 1 );
+	}
+
+	TEST_EQ( s_nCountedAllocations, 0 );
+	TEST_EQ( s_nForeignFrees, 0 );
+}
