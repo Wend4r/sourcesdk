@@ -295,9 +295,14 @@ inline UtlSymLargeId_t CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUT
 
 	MemBlockHandle_t block = m_MemBlockAllocator.Alloc( nLength + sizeof( LargeSymbolTableHashDecoration_t ) + 1 );
 
-	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( block );
+	// Blocks are packed back to back, so the hash in front of the string is not aligned
+	byte *pEntry = (byte *)m_MemBlockAllocator.GetBlock( block );
 
-	entry->Replace( hash, pString, nLength );
+	LargeSymbolTableHashDecoration_t nHash = hash;
+	V_memcpy( pEntry, &nHash, sizeof( LargeSymbolTableHashDecoration_t ) );
+	char *pText = (char *)( pEntry + sizeof( LargeSymbolTableHashDecoration_t ) );
+	V_memcpy( pText, pString, nLength );
+	pText[ nLength ] = '\0';
 
 	m_nUsedBytes += nLength + 1;
 
@@ -344,9 +349,10 @@ inline uint32 CUtlSymbolTableLargeBase< CASEINSENSITIVE, PAGE_SIZE, MUTEX_TYPE >
 	if ( elem >= ( UtlSymLargeId_t )m_MemBlocks.Count() )
 		return 0;
 
-	CUtlSymbolTableLargeBaseTreeEntry_t *entry = (CUtlSymbolTableLargeBaseTreeEntry_t *)m_MemBlockAllocator.GetBlock( m_MemBlocks[ elem ] - sizeof( LargeSymbolTableHashDecoration_t ) );
+	LargeSymbolTableHashDecoration_t nHash;
+	V_memcpy( &nHash, m_MemBlockAllocator.GetBlock( m_MemBlocks[ elem ] - sizeof( LargeSymbolTableHashDecoration_t ) ), sizeof( LargeSymbolTableHashDecoration_t ) );
 
-	return entry->HashValue();
+	return nHash;
 }
 
 template < bool CASEINSENSITIVE, size_t PAGE_SIZE, class MUTEX_TYPE >
