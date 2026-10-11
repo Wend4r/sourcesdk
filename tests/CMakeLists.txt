@@ -152,6 +152,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlsymbol.cpp
 	utlsymbollarge.cpp
 	utlvector.cpp
+	vswap.cpp
 )
 
 foreach(test_source IN LISTS SOURCESDK_CONTAINER_TEST_SOURCES)
