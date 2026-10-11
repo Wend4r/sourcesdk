@@ -5,6 +5,7 @@
 #include <tier1/utlallocation.h>
 #include <tier1/utlarray.h>
 #include <tier1/utlbidirectionalset.h>
+#include <tier1/utlblockmemory.h>
 #include <tier1/utlbufferstrider.h>
 #include <tier1/utlbufferutil.h>
 #include <tier1/utlcommon.h>

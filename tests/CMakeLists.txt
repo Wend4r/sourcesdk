@@ -124,6 +124,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	tslist.cpp
 	utlarray.cpp
 	utlbinaryblock.cpp
+	utlblockmemory.cpp
 	utlblockvector.cpp
 	utlbuffer.cpp
 	utldict.cpp

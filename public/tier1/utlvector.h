@@ -48,8 +48,15 @@ public:
 };
 
 // Whether an allocator keeps its elements in one block reachable through Base().
+// CUtlBlockMemory is indexed sequentially but stored in separate blocks.
 template< class A >
 struct CUtlVectorMemoryIsContiguous : std::true_type {};
+
+template< class T, class I >
+class CUtlBlockMemory;
+
+template< class T, class I >
+struct CUtlVectorMemoryIsContiguous< CUtlBlockMemory< T, I > > : std::false_type {};
 
 // Whether an allocator can hand its buffer to another instance with Swap()
 template< class A, class = void >
