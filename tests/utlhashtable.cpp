@@ -304,3 +304,46 @@ REGISTER_NAMED_TEST( "CUtlHashtable.AlternateKeys", CUtlHashtable_AlternateKeys 
 	TEST_FALSE( table.Remove( pszAlpha ) );
 	TEST_EQ( table.Count(), 1 );
 }
+
+// Exposes the slot count, which is not part of the public interface
+template < typename KeyT, typename ValueT >
+class CSlotCountHashtable : public CUtlHashtable< KeyT, ValueT >
+{
+public:
+	using CUtlHashtable< KeyT, ValueT >::CUtlHashtable;
+
+	int SlotCount() const { return this->m_nTableSize; }
+};
+
+REGISTER_NAMED_TEST( "CUtlHashtable.GrowAtLoadFactor", CUtlHashtable_GrowAtLoadFactor )
+{
+	// The table grows only once an insert would take it past a load of 3/4.
+	CSlotCountHashtable< int, int > table( 8 );
+
+	TEST_EQ( table.SlotCount(), 0 );
+
+	for ( int i = 0; i < 6; i++ )
+		table.Insert( i, i );
+
+	TEST_EQ( table.SlotCount(), 8 );
+
+	table.Insert( 6, 6 );
+	TEST_EQ( table.SlotCount(), 16 );
+
+	for ( int i = 7; i < 12; i++ )
+		table.Insert( i, i );
+
+	TEST_EQ( table.SlotCount(), 16 );
+
+	table.Insert( 12, 12 );
+	TEST_EQ( table.SlotCount(), 32 );
+
+	for ( int i = 13; i < 1000; i++ )
+		table.Insert( i, i );
+
+	TEST_EQ( table.Count(), 1000 );
+	TEST_EQ( table.SlotCount(), 2048 );
+
+	for ( int i = 0; i < 1000; i++ )
+		TEST_EQ( table.Get( i, -1 ), i );
+}

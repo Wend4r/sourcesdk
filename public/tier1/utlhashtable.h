@@ -506,7 +506,7 @@ int CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, TableT, bTriviallyRelocat
 	if ( allowGrow && !m_bSizeLocked )
 	{
 		// Keep the load factor between .25 and .75
-		int newSize = m_nUsed + 4;
+		int newSize = m_nUsed + 1;
 		if ( newSize*4 > m_nTableSize*3 )
 		{
 			DoRealloc( newSize * 4 / 3 );
