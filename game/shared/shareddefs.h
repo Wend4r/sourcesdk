@@ -868,6 +868,19 @@ struct ModelScale
 #include "soundflags.h"
 
 struct CSoundParameters;
+
+// Bits of EmitSound_t::m_nFlags
+enum EmitSoundFlags_t : uint8
+{
+	EMITSOUND_FLAG_UNK001 = ( 1 << 0 ), // Set by default
+	EMITSOUND_FLAG_UNK002 = ( 1 << 1 ),
+	EMITSOUND_FLAG_UNK003 = ( 1 << 2 ),
+	EMITSOUND_FLAG_FIND_SOURCE_SOUNDSCAPE = ( 1 << 3 ),
+	EMITSOUND_FLAG_USE_ORIGIN = ( 1 << 4 ),
+
+	EMITSOUND_FLAGS_DEFAULT = EMITSOUND_FLAG_UNK001,
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Aggregates and sets default parameters for EmitSound function calls
 //-----------------------------------------------------------------------------
@@ -878,20 +891,20 @@ struct EmitSound_t
 		m_veSoundOrigin( 0.0f, 0.0f, 0.0f ),
 		m_flVolume( VOL_NORM ),
 		m_flSoundTime( 0.0f ),
-		m_nUnk( 0 ),
+		m_nUnk( ( uint32 )-1 ),
 		m_nForceGuid( 0 ),
 		m_nSourceSoundscape( 0 ),
 		m_nPitch( PITCH_NORM ),
-		m_nFlags( 0 )
+		m_nFlags( EMITSOUND_FLAGS_DEFAULT )
 	{
 	}
 
-	EmitSound_t( const char *pSoundName, const Vector &vecSoundOrigin = Vector( 0.0f, 0.0f, 0.0f ), float flVolume = VOL_NORM, float flSoundTime = 0.0f, int16 nPitch = PITCH_NORM, uint8 nFlags = 0 ) :
+	EmitSound_t( const char *pSoundName, const Vector &vecSoundOrigin = Vector( 0.0f, 0.0f, 0.0f ), float flVolume = VOL_NORM, float flSoundTime = 0.0f, int16 nPitch = PITCH_NORM, uint8 nFlags = EMITSOUND_FLAGS_DEFAULT ) :
 		m_pSoundName( pSoundName ),
 		m_veSoundOrigin( vecSoundOrigin ),
 		m_flVolume( flVolume ),
 		m_flSoundTime( flSoundTime ),
-		m_nUnk( 0 ),
+		m_nUnk( ( uint32 )-1 ),
 		m_nForceGuid( 0 ),
 		m_nSourceSoundscape( 0 ),
 		m_nPitch( nPitch ),
@@ -911,7 +924,7 @@ public:
 	uint32 m_nForceGuid;
 	uint32 m_nSourceSoundscape;
 	int16 m_nPitch;
-	uint8 m_nFlags;
+	uint8 m_nFlags; // EmitSoundFlags_t
 
 	const char *GetSoundName() const { return m_pSoundName; }
 	void SetSoundName( const char *pSoundName ) { m_pSoundName = pSoundName; }
