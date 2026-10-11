@@ -8,7 +8,6 @@
 #define MATH_LIB_H
 
 #include <math.h>
-#include <utility>
 #include "tier0/basetypes.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector2d.h"
@@ -1146,9 +1145,9 @@ template<> FORCEINLINE QAngleByValue Lerp<QAngleByValue>( float flPercent, const
 template <class T> 
 FORCEINLINE void V_swap( T& x, T& y )
 {
-	T temp( std::move( x ) );
-	x = std::move( y );
-	y = std::move( temp );
+	T temp( Move( x ) );
+	x = Move( y );
+	y = Move( temp );
 }
 
 template <class T> FORCEINLINE T AVG(T a, T b)
