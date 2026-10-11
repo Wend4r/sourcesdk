@@ -454,7 +454,7 @@ abstract_class IFileSystem : public IAppSystem
 {
 public:
 	virtual int				Read( void* pOutput, int size, FileHandle_t file ) = 0;
-	virtual int				Write( void const* pInput, int size, FileHandle_t file ) = 0;
+	virtual int				Write( void const* pInput, uint64 size, FileHandle_t file ) = 0;
 
 	// if pathID is NULL, all paths will be searched for the file
 	virtual FileHandle_t	Open( const char *pFileName, const char *pOptions, const char *pathID = 0 ) = 0;
@@ -527,9 +527,11 @@ public:
 	// Returns the search path, each path is separated by ;s. Returns the length of the string returned
 	virtual bool			GetSearchPath( const char *pathID, GetSearchPathTypes_t pathType, CBufferString &pPath, int nSearchPathsToGet ) = 0;
 	
-	virtual void			Unk_GetSearchPathGroup( void *p ) = 0;
+	// Returns the search path group of the search path that holds pPath under pPathID, 0 if there is none or pPath is a "ugc:" path
+	virtual int				GetSearchPathGroup( const char *pPath, const char *pPathID ) = 0;
 
-	virtual void			GetPathIDsForSearchPathGroup( int nGroup, CBufferString &pathIDs ) = 0;
+	// Writes the path IDs of the search paths in nGroup, returns the length of pathIDs plus one
+	virtual int				GetPathIDsForSearchPathGroup( int nGroup, CBufferString &pathIDs ) = 0;
 
 	//--------------------------------------------------------
 	// File manipulation operations
