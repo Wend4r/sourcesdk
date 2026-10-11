@@ -134,7 +134,7 @@ public:
 	inline static size_t ElementSize() { return sizeof( ListElem_t ); }
 
 	// list statistics
-	int	Count() const { return m_Memory.Count(); }
+	int	Count() const { return m_ElementCount; }
 	I	MaxElementIndex() const { return m_Memory.NumAllocated(); }
 	I	NumAllocated( void ) const { return m_Memory.NumAllocated(); }
 
@@ -172,13 +172,13 @@ protected:
 	ListElem_t const& InternalElement( I i ) const { return m_Memory[i]; }
 
 	// copy constructors not allowed
-	CUtlLinkedList( CUtlLinkedList<T, S, ML, I, M> const& list ) : m_LastAlloc( m_Memory.InvalidIterator() ) { Assert(0); }
+	CUtlLinkedList( CUtlLinkedList<T, S, ML, I, M> const& list ) { Assert(0); }
 
 	M	m_Memory;
 	I	m_Head;
 	I	m_Tail;
 	I	m_FirstFree;
-	typename M::Iterator_t	m_LastAlloc; // the last index allocated
+	I	m_ElementCount;
 
 	FORCEINLINE M const &Memory( void ) const
 	{
@@ -194,22 +194,6 @@ class CUtlFixedLinkedList : public CUtlLinkedList< T, intp, true, intp, CUtlLean
 public:
 	CUtlFixedLinkedList( int growSize = 0, int initSize = 0 )
 		: CUtlLinkedList< T, intp, true, intp, CUtlLeanVectorFixedGrowable< UtlLinkedListElem_t< T, intp > > >( growSize, initSize ) {}
-
-	bool IsValidIndex( intp i ) const
-	{
-		if ( !this->Memory().IsIdxValid( i ) )
-			return false;
-
-#ifdef _DEBUG // it's safe to skip this here, since the only way to get indices after m_LastAlloc is to use MaxElementIndex
-		if ( this->Memory().IsIdxAfter( i, this->m_LastAlloc ) )
-		{
-			Assert( 0 );
-			return false; // don't read values that have been allocated, but not constructed
-		}
-#endif
-
-		return ( this->Memory()[ i ].m_Previous != i ) || ( this->Memory()[ i ].m_Next == i );
-	}
 
 private:
 	int	MaxElementIndex() const { Assert( 0 ); return this->InvalidIndex(); } // fixedmemory containers don't support iteration from 0..maxelements-1
@@ -231,7 +215,7 @@ public:
 
 template <class T, class S, bool ML, class I, class M>
 CUtlLinkedList<T,S,ML,I,M>::CUtlLinkedList( int growSize, int initSize ) :
-	m_Memory( growSize, initSize ), m_LastAlloc( m_Memory.InvalidIterator() )
+	m_Memory( growSize, initSize )
 {
 	// Prevent signed non-int datatypes
 	// COMPILE_TIME_ASSERT( sizeof(S) == 4 || ( ( (S)-1 ) > 0 ) );
@@ -250,6 +234,7 @@ void CUtlLinkedList<T,S,ML,I,M>::ConstructList()
 	m_Head = InvalidIndex(); 
 	m_Tail = InvalidIndex();
 	m_FirstFree = InvalidIndex();
+	m_ElementCount = 0;
 	m_Memory.RemoveAll();
 }
 
@@ -349,17 +334,14 @@ inline bool CUtlLinkedList<T,S,ML,I,M>::IsValidIndex( I i ) const
 	if ( !m_Memory.IsIdxValid( i ) )
 		return false;
 
-	if ( m_Memory.IsIdxAfter( i, m_LastAlloc ) )
-		return false; // don't read values that have been allocated, but not constructed
-
 	return ( m_Memory[ i ].m_Previous != i ) || ( m_Memory[ i ].m_Next == i );
 }
 
 template <class T, class S, bool ML, class I, class M>
 inline bool CUtlLinkedList<T,S,ML,I,M>::IsInList( I i ) const
 {
-	if ( !m_Memory.IsIdxValid( i ) || m_Memory.IsIdxAfter( i, m_LastAlloc ) )
-		return false; // don't read values that have been allocated, but not constructed
+	if ( !m_Memory.IsIdxValid( i ) )
+		return false;
 
 	return Previous( i ) != i;
 }
@@ -394,10 +376,6 @@ void  CUtlLinkedList<T,S,ML,I,M>::Purge()
 
 	m_Memory.Purge();
 	m_FirstFree = InvalidIndex();
-
-	//Routing "m_LastAlloc = m_Memory.InvalidIterator();" through a local const to sidestep an internal compiler error on 360 builds
-	const typename M::Iterator_t scInvalidIterator = m_Memory.InvalidIterator();
-	m_LastAlloc = scInvalidIterator;
 }
 
 
@@ -431,17 +409,15 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 	I elem;
 	if ( m_FirstFree == InvalidIndex() )
 	{
-		typename M::Iterator_t it = m_Memory.AddToTail();
-
 		// We can overflow before the utlmemory overflows, since S != I
-		if ( !IndexInRange( m_Memory.GetIndex( it ) ) )
+		// Checked before growing, so a rejected slot is never left uninitialized in memory
+		if ( !IndexInRange( m_Memory.Count() ) )
 		{
 			Plat_FatalError( "CUtlLinkedList overflow! (exhausted index range)\n" );
 			return InvalidIndex();
 		}
 
-		m_LastAlloc = it;
-		elem = m_Memory.GetIndex( m_LastAlloc );
+		elem = m_Memory.GetIndex( m_Memory.AddToTail() );
 	} 
 	else
 	{
@@ -458,6 +434,9 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 	{
 		InternalElement( elem ).m_Next = InvalidIndex();
 		InternalElement( elem ).m_Previous = InvalidIndex();
+
+		// Invalid links make the node count as linked, so Unlink() and Free() will decrement it
+		++m_ElementCount;
 	}
 
 	return elem;
@@ -634,11 +613,12 @@ void  CUtlLinkedList<T,S,ML,I,M>::RemoveAll()
 	// valid elements for the multilist case (since we don't have all elements
 	// connected to each other in a list).
 
-	if ( m_LastAlloc == m_Memory.InvalidIterator() )
+	if ( m_Memory.Count() == 0 )
 	{
 		Assert( m_Head == InvalidIndex() );
 		Assert( m_Tail == InvalidIndex() );
 		Assert( m_FirstFree == InvalidIndex() );
+		Assert( m_ElementCount == 0 );
 		return;
 	}
 
@@ -655,9 +635,6 @@ void  CUtlLinkedList<T,S,ML,I,M>::RemoveAll()
 				internalElem.m_Next = m_FirstFree;
 				m_FirstFree = i;
 			}
-
-			if ( it == m_LastAlloc )
-				break; // don't destruct elements that haven't ever been constructed
 		}
 	}
 	else
@@ -682,6 +659,7 @@ void  CUtlLinkedList<T,S,ML,I,M>::RemoveAll()
 	// Clear everything else out
 	m_Head = InvalidIndex(); 
 	m_Tail = InvalidIndex();
+	m_ElementCount = 0;
 }
 
 
@@ -727,6 +705,8 @@ void  CUtlLinkedList<T,S,ML,I,M>::LinkBefore( I before, I elem )
 		m_Head = elem;
 	else
 		InternalElement(newElem_mPrevious).m_Next = elem;
+
+	++m_ElementCount;
 }
 
 template <class T, class S, bool ML, class I, class M>
@@ -763,6 +743,8 @@ void  CUtlLinkedList<T,S,ML,I,M>::LinkAfter( I after, I elem )
 		m_Tail = elem;
 	else
 		InternalElement(newElem.m_Next).m_Previous = elem;
+
+	++m_ElementCount;
 }
 
 template <class T, class S, bool ML, class I, class M>
@@ -798,6 +780,8 @@ void  CUtlLinkedList<T,S,ML,I,M>::Unlink( I elem )
 		// This marks this node as not in the list, 
 		// but not in the free list either
 		pOldElem->m_Previous = pOldElem->m_Next = elem;
+
+		--m_ElementCount;
 	}
 }
 
