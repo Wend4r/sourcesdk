@@ -64,7 +64,7 @@ public:
 	}
 
 	uint32 MaxPageSize() const { return m_bStaticPageSize ? m_nPageSize : (m_nPageOffsetMask + 1); }
-	uint32 MaxPossiblePageSize() const { return (1 << (32 - m_nPageOffsetBits)); }
+	uint32 MaxPossiblePageSize() const { return (1u << (32 - m_nPageOffsetBits)); }
 
 	// Clears all memory buffers preserving only nSize elements, which would be treated like a fresh memory
 	void RemoveAll( size_t nSize = 0 );
@@ -280,13 +280,14 @@ inline void CUtlMemoryBlockAllocator<T, A>::SetPageSize( uint32 nPageSize, uint3
 		m_nPageOffsetBits = largest_bit;
 	}
 
-	int nMaxPages = ( int )MaxPossiblePageSize();
-	if ( m_MemPages.Count() > nMaxPages )
+	// Compared unsigned, a single offset bit allows 2^31 pages which doesn't fit in int
+	uint32 nMaxPages = MaxPossiblePageSize();
+	if ( ( uint32 )m_MemPages.Count() > nMaxPages )
 	{
-		for ( int i = nMaxPages; i < m_MemPages.Count(); i++ )
+		for ( int i = ( int )nMaxPages; i < m_MemPages.Count(); i++ )
 			MemoryAllocator_t::Free( m_MemPages[ i ].m_pMemory );
 
-		m_MemPages.RemoveMultipleFromTail( m_MemPages.Count() - nMaxPages );
+		m_MemPages.RemoveMultipleFromTail( m_MemPages.Count() - ( int )nMaxPages );
 	}
 }
 

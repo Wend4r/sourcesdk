@@ -80,3 +80,20 @@ REGISTER_NAMED_TEST( "CUtlMemoryBlockAllocator.AllocFromLastPageOnly", CUtlMemor
 	allocator.Alloc( 4 );
 	TEST_EQ( allocator.m_MemPages.Count(), 3 );
 }
+
+REGISTER_NAMED_TEST( "CUtlMemoryBlockAllocator.SmallMaxPageSize", CUtlMemoryBlockAllocator_SmallMaxPageSize )
+{
+	// A max page size of one or two elements leaves a single offset bit, so up to 2^31 pages are representable.
+	CUtlMemoryBlockAllocator< char > allocator;
+
+	allocator.Alloc( 16 );
+	TEST_EQ( allocator.m_MemPages.Count(), 1 );
+
+	allocator.SetPageSize( 1, 2 );
+	TEST_EQ( allocator.MaxPossiblePageSize(), 1u << 31 );
+	TEST_EQ( allocator.m_MemPages.Count(), 1 );
+
+	CUtlMemoryBlockAllocator< char > empty( 0, 1, 1 );
+	TEST_EQ( empty.MaxPossiblePageSize(), 1u << 31 );
+	TEST_EQ( empty.m_MemPages.Count(), 0 );
+}
