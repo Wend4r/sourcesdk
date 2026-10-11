@@ -868,20 +868,23 @@ struct ModelScale
 };
 
 #include "soundflags.h"
+#include "entity2/entityindex.h"
 
 struct CSoundParameters;
 
 // Bits of EmitSound_t::m_nFlags
 enum EmitSoundFlags_t : uint8
 {
-	EMITSOUND_FLAG_UNK001 = ( 1 << 0 ), // Set by default
-	EMITSOUND_FLAG_UNK002 = ( 1 << 1 ),
-	EMITSOUND_FLAG_UNK003 = ( 1 << 2 ),
+	EMITSOUND_FLAG_NONE = 0,
+	EMITSOUND_FLAG_EMIT_CLOSE_CAPTION = ( 1 << 0 ),
+	EMITSOUND_FLAG_WARN_ON_MISSING_CLOSE_CAPTION = ( 1 << 1 ),
+	EMITSOUND_FLAG_WARN_ON_DIRECT_WAVE_REFERENCE = ( 1 << 2 ), // Set by the entity's own EmitSound helpers
 	EMITSOUND_FLAG_FIND_SOURCE_SOUNDSCAPE = ( 1 << 3 ),
-	EMITSOUND_FLAG_USE_ORIGIN = ( 1 << 4 ),
+	EMITSOUND_FLAG_USE_ORIGIN = ( 1 << 4 ), // Emit at m_veSoundOrigin instead of the entity's origin
 
-	EMITSOUND_FLAGS_DEFAULT = EMITSOUND_FLAG_UNK001,
+	EMITSOUND_FLAGS_DEFAULT = EMITSOUND_FLAG_EMIT_CLOSE_CAPTION,
 };
+DEFINE_ENUM_BITWISE_OPERATORS( EmitSoundFlags_t );
 
 //-----------------------------------------------------------------------------
 // Purpose: Aggregates and sets default parameters for EmitSound function calls
@@ -893,7 +896,7 @@ struct EmitSound_t
 		m_veSoundOrigin( 0.0f, 0.0f, 0.0f ),
 		m_flVolume( VOL_NORM ),
 		m_flSoundTime( 0.0f ),
-		m_nUnk( ( uint32 )-1 ),
+		m_nSpeakerEntity( INVALID_ENTITY_INDEX ),
 		m_nForceGuid( 0 ),
 		m_nSourceSoundscape( 0 ),
 		m_nPitch( PITCH_NORM ),
@@ -901,12 +904,12 @@ struct EmitSound_t
 	{
 	}
 
-	EmitSound_t( const char *pSoundName, const Vector &vecSoundOrigin = Vector( 0.0f, 0.0f, 0.0f ), float flVolume = VOL_NORM, float flSoundTime = 0.0f, int16 nPitch = PITCH_NORM, uint8 nFlags = EMITSOUND_FLAGS_DEFAULT ) :
+	EmitSound_t( const char *pSoundName, const Vector &vecSoundOrigin = Vector( 0.0f, 0.0f, 0.0f ), float flVolume = VOL_NORM, float flSoundTime = 0.0f, int16 nPitch = PITCH_NORM, EmitSoundFlags_t nFlags = EMITSOUND_FLAGS_DEFAULT ) :
 		m_pSoundName( pSoundName ),
 		m_veSoundOrigin( vecSoundOrigin ),
 		m_flVolume( flVolume ),
 		m_flSoundTime( flSoundTime ),
-		m_nUnk( ( uint32 )-1 ),
+		m_nSpeakerEntity( INVALID_ENTITY_INDEX ),
 		m_nForceGuid( 0 ),
 		m_nSourceSoundscape( 0 ),
 		m_nPitch( nPitch ),
@@ -918,15 +921,11 @@ struct EmitSound_t
 	Vector m_veSoundOrigin;
 	float m_flVolume;
 	float m_flSoundTime;
-
-private:
-	uint32 m_nUnk;
-
-public:
+	CEntityIndex m_nSpeakerEntity;
 	uint32 m_nForceGuid;
 	uint32 m_nSourceSoundscape;
 	int16 m_nPitch;
-	uint8 m_nFlags; // EmitSoundFlags_t
+	EmitSoundFlags_t m_nFlags;
 
 	const char *GetSoundName() const { return m_pSoundName; }
 	void SetSoundName( const char *pSoundName ) { m_pSoundName = pSoundName; }
@@ -941,6 +940,9 @@ public:
 	float GetSoundTime() const { return m_flSoundTime; }
 	void SetSoundTime( float flSoundTime ) { m_flSoundTime = flSoundTime; }
 
+	CEntityIndex GetSpeakerEntity() const { return m_nSpeakerEntity; }
+	void SetSpeakerEntity( CEntityIndex nSpeakerEntity ) { m_nSpeakerEntity = nSpeakerEntity; }
+
 	bool HasForceGuid() const { return m_nForceGuid != 0; }
 	uint32 GetForceGuid() const { return m_nForceGuid; }
 	void SetForceGuid( uint32 nForceGuid ) { m_nForceGuid = nForceGuid; }
@@ -954,11 +956,11 @@ public:
 	int16 GetPitch() const { return m_nPitch; }
 	void SetPitch( int16 nPitch ) { m_nPitch = nPitch; }
 
-	uint8 GetFlags() const { return m_nFlags; }
-	void SetFlags( uint8 nFlags ) { m_nFlags = nFlags; }
-	void AddFlags( uint8 nFlags ) { m_nFlags |= nFlags; }
-	void RemoveFlags( uint8 nFlags ) { m_nFlags &= ( uint8 )~nFlags; }
-	bool HasFlags( uint8 nFlags ) const { return ( m_nFlags & nFlags ) == nFlags; }
+	EmitSoundFlags_t GetFlags() const { return m_nFlags; }
+	void SetFlags( EmitSoundFlags_t nFlags ) { m_nFlags = nFlags; }
+	void AddFlags( EmitSoundFlags_t nFlags ) { m_nFlags |= nFlags; }
+	void RemoveFlags( EmitSoundFlags_t nFlags ) { m_nFlags &= ~nFlags; }
+	bool HasFlags( EmitSoundFlags_t nFlags ) const { return ( m_nFlags & nFlags ) == nFlags; }
 };
 COMPILE_TIME_ASSERT( sizeof( EmitSound_t ) == 48 );
 
