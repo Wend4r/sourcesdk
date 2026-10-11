@@ -236,7 +236,7 @@ public:
 		}
 	};
 
-	typedef CUtlHashtable<UtlSymElm_t, empty_t, UtlSymTableHashFunctor, UtlSymTableEqualFunctor, UtlSymTableAltKey> Hashtable_t;
+	typedef CUtlHashtable<UtlSymElm_t, empty_t, UtlSymTableHashFunctor, UtlSymTableEqualFunctor> Hashtable_t;
 	typedef CUtlVector<MemBlockHandle_t, UtlSymElm_t> MemBlocksVec_t;
 
 	const Hashtable_t &GetHashtable() const
