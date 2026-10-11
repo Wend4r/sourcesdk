@@ -500,10 +500,7 @@ protected:
 	CByteswap	m_Byteswap;
 };
 
-constexpr CUtlBuffer::BufferFlags_t operator|( CUtlBuffer::BufferFlags_t a, CUtlBuffer::BufferFlags_t b )
-{
-	return static_cast< CUtlBuffer::BufferFlags_t >( static_cast< int >( a ) | static_cast< int >( b ) );
-}
+DEFINE_ENUM_BITWISE_OPERATORS( CUtlBuffer::BufferFlags_t );
 
 // Stream style output operators for CUtlBuffer
 inline CUtlBuffer &operator<<( CUtlBuffer &b, char v )
