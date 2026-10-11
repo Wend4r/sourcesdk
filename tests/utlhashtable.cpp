@@ -66,3 +66,66 @@ REGISTER_NAMED_TEST( "CUtlHashtable.GetSwapCompactPurge", CUtlHashtable_GetSwapC
 	table.Purge();
 	TEST_EQ( table.Count(), 0 );
 }
+
+// Value that records assignments made onto memory that holds no constructed instance
+static const uint64 s_nAliveMagic = 0x5EED0A11CE0FFEE5ull;
+static int s_nAssignsToUnconstructed = 0;
+
+class CAssignTrackedValue
+{
+public:
+	CAssignTrackedValue() : m_nMagic( s_nAliveMagic ), m_nValue( 0 ) {}
+	CAssignTrackedValue( int nValue ) : m_nMagic( s_nAliveMagic ), m_nValue( nValue ) {}
+	CAssignTrackedValue( const CAssignTrackedValue &other ) : m_nMagic( s_nAliveMagic ), m_nValue( other.m_nValue ) {}
+	~CAssignTrackedValue() { m_nMagic = 0; }
+
+	CAssignTrackedValue &operator=( const CAssignTrackedValue &other )
+	{
+		if ( m_nMagic != s_nAliveMagic )
+			s_nAssignsToUnconstructed++;
+
+		m_nMagic = s_nAliveMagic;
+		m_nValue = other.m_nValue;
+		return *this;
+	}
+
+	uint64 m_nMagic;
+	int m_nValue;
+};
+
+REGISTER_NAMED_TEST( "CUtlHashtable.RelocateIntoUnconstructedSlots", CUtlHashtable_RelocateIntoUnconstructedSlots )
+{
+	// Growing, bumping chained entries and refilling chain roots move entries into free slots,
+	// which hold no constructed instance and must not be assigned to.
+	s_nAssignsToUnconstructed = 0;
+
+	{
+		CUtlHashtable< int, CAssignTrackedValue > table;
+
+		for ( int i = 0; i < 1000; i++ )
+			table.Insert( i, CAssignTrackedValue( i * 3 ) );
+
+		for ( int i = 0; i < 1000; i += 3 )
+			TEST_TRUE( table.Remove( i ) );
+
+		for ( int i = 1000; i < 1500; i++ )
+			table.Insert( i, CAssignTrackedValue( i * 3 ) );
+
+		for ( int i = 0; i < 1500; i++ )
+		{
+			const UtlHashHandle_t h = table.Find( i );
+
+			if ( i < 1000 && i % 3 == 0 )
+			{
+				TEST_EQ( h, table.InvalidHandle() );
+				continue;
+			}
+
+			TEST_TRUE( table.IsValidHandle( h ) );
+			TEST_EQ( table.Element( h ).m_nMagic, s_nAliveMagic );
+			TEST_EQ( table.Element( h ).m_nValue, i * 3 );
+		}
+	}
+
+	TEST_EQ( s_nAssignsToUnconstructed, 0 );
+}

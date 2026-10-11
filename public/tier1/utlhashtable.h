@@ -97,10 +97,10 @@ public:
 	static FORCEINLINE uint32 IdealIndex( uint32_if16BitStorage h, uint32 m ) { h &= MASK_HASH; h *= MASK_HASH + 2; return h & m; }
 	static FORCEINLINE uint32 IdealIndex( uint32_if32BitStorage h, uint32 m ) { return h & m; }
 
-	// More efficient than memcpy for the small types that are stored in a hashtable
+	// Relocates the key-value pair by copying its bytes, the destination must be unconstructed
 	void MoveDataFrom( CUtlHashtableEntry &src )
 	{
-		for ( int i = 0; i < ( int )data.Count(); ++i ) { data[i] = src.data[i]; }
+		V_memcpy( ( void * )data.Base(), ( const void * )src.data.Base(), sizeof( KVPair ) );
 	}
 };
 
