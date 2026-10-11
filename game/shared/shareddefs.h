@@ -507,8 +507,10 @@ schema enum TakeDamageFlags_t : uint64
 
 	DMG_LASTDFLAG							= DFLAG_ALLOW_NON_AUTHORITATIVE, META( MPropertySuppressEnumerator; MEnumeratorIsNotAFlag )
 
+#if defined( CS2 )
 	DFLAG_IGNORE_ARMOR						= 1ull << 18,
 	DFLAG_SUPPRESS_UTILREMOVE				= 1ull << 19,
+#endif // CS2
 };
 
 
