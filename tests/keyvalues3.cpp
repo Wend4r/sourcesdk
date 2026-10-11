@@ -6,6 +6,7 @@
 #include <tier0/utlbuffer.h>
 #include <tier0/utlstring.h>
 #include <kv3lib/keyvalues3.h>
+#include "../kv3lib/keyvalues3_metadata.h"
 
 #include <cmath>
 #include <fstream>
@@ -589,4 +590,89 @@ REGISTER_NAMED_TEST( "KeyValues3.LoadText.NoHeader", KeyValues3_LoadText_NoHeade
 	TEST_EQ( root[ "answer" ].GetInt(), 45 );
 	TEST_EQ( V_strcmp( root[ "nested" ][ "value" ].GetString(), "no-header" ), 0 );
 	ValidateKV3TypeExMembers( root, true );
+}
+
+static bool HasMetaDataComment( KV3MetaData_t *pMeta, int nKey, const char *pComment )
+{
+	const int nIndex = pMeta->m_Comments.Find( nKey );
+
+	return pMeta->m_Comments.IsValidIndex( nIndex ) && V_strcmp( pMeta->m_Comments[ nIndex ].Get(), pComment ) == 0;
+}
+
+REGISTER_NAMED_TEST( "KeyValues3.MetaData", KeyValues3_MetaData )
+{
+	// Metadata must be constructed before use and destroyed when disabled, on every arena cluster.
+	CKV3Arena arena;
+
+	arena.EnableMetaData( true );
+
+	KeyValues3 *pRoot = arena.Root();
+
+	pRoot->SetToEmptyTable();
+
+	static constexpr int MEMBER_COUNT = 200;
+
+	char szName[ 32 ];
+
+	for ( int i = 0; i < MEMBER_COUNT; ++i )
+	{
+		V_snprintf( szName, sizeof( szName ), "m%d", i );
+
+		KeyValues3 *pMember = pRoot->FindOrCreateMember( CKV3MemberName::Make( szName ) );
+
+		pMember->SetInt( i );
+
+		KV3MetaData_t *pMeta = pMember->GetMetaData();
+
+		TEST_NOT_NULL( pMeta );
+		TEST_EQ( pMeta->m_Comments.Count(), 0 );
+
+		pMeta->m_nLine = i;
+		pMeta->m_Comments.Insert( 1, CBufferString( "a comment long enough to be allocated on the heap" ) );
+		pMeta->m_Comments.Insert( 2, CBufferString( szName ) );
+	}
+
+	for ( int i = 0; i < MEMBER_COUNT; ++i )
+	{
+		V_snprintf( szName, sizeof( szName ), "m%d", i );
+
+		KV3MetaData_t *pMeta = pRoot->FindMember( CKV3MemberName::Make( szName ) )->GetMetaData();
+
+		TEST_NOT_NULL( pMeta );
+		TEST_EQ( pMeta->m_nLine, i );
+		TEST_EQ( pMeta->m_Comments.Count(), 2 );
+		TEST_TRUE( HasMetaDataComment( pMeta, 1, "a comment long enough to be allocated on the heap" ) );
+		TEST_TRUE( HasMetaDataComment( pMeta, 2, szName ) );
+	}
+
+	// A freed member's metadata is cleared for the next one
+	for ( int i = 0; i < MEMBER_COUNT; i += 2 )
+	{
+		V_snprintf( szName, sizeof( szName ), "m%d", i );
+		TEST_TRUE( pRoot->RemoveMember( CKV3MemberName::Make( szName ) ) );
+	}
+
+	for ( int i = 0; i < MEMBER_COUNT; i += 2 )
+	{
+		V_snprintf( szName, sizeof( szName ), "n%d", i );
+
+		KV3MetaData_t *pMeta = pRoot->FindOrCreateMember( CKV3MemberName::Make( szName ) )->GetMetaData();
+
+		TEST_NOT_NULL( pMeta );
+		TEST_EQ( pMeta->m_nLine, 0 );
+		TEST_EQ( pMeta->m_Comments.Count(), 0 );
+	}
+
+	arena.EnableMetaData( false );
+
+	TEST_NULL( pRoot->GetMetaData() );
+	TEST_NULL( pRoot->FindMember( "m151" )->GetMetaData() );
+
+	arena.EnableMetaData( true );
+
+	KV3MetaData_t *pMeta = pRoot->FindMember( "m151" )->GetMetaData();
+
+	TEST_NOT_NULL( pMeta );
+	TEST_EQ( pMeta->m_nLine, 0 );
+	TEST_EQ( pMeta->m_Comments.Count(), 0 );
 }
