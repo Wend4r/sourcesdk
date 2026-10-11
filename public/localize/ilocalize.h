@@ -14,6 +14,7 @@
 
 #include "appframework/iappsystem.h"
 #include <tier0/keyvalues.h>
+#include "kv3lib/keyvalues3.h"
 #include "language.h"
 
 class CBufferString;
@@ -46,11 +47,7 @@ enum LocVariableType_t
 	LOC_VARIABLE_TYPE_COUNT
 };
 
-struct LocVariableName_t
-{
-	uint32 m_nHash;
-	const char *m_pszName;
-};
+typedef CKV3MemberName LocVariableName_t;
 
 struct LocVariableValue_t
 {
