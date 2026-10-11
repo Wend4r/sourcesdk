@@ -727,17 +727,17 @@ namespace basetypes
 
 // this allows enumerations to be used as flags, and still remain type-safe!
 #define DEFINE_ENUM_BITWISE_OPERATORS( Type ) \
-	inline Type  operator|  ( Type  a, Type b ) { return Type( int( a ) | int( b ) ); } \
-	inline Type  operator&  ( Type  a, Type b ) { return Type( int( a ) & int( b ) ); } \
-	inline Type  operator^  ( Type  a, Type b ) { return Type( int( a ) ^ int( b ) ); } \
-	inline Type  operator<< ( Type  a, int  b ) { return Type( int( a ) << b ); } \
-	inline Type  operator>> ( Type  a, int  b ) { return Type( int( a ) >> b ); } \
-	inline Type &operator|= ( Type &a, Type b ) { return a = a |  b; } \
-	inline Type &operator&= ( Type &a, Type b ) { return a = a &  b; } \
-	inline Type &operator^= ( Type &a, Type b ) { return a = a ^  b; } \
-	inline Type &operator<<=( Type &a, int  b ) { return a = a << b; } \
-	inline Type &operator>>=( Type &a, int  b ) { return a = a >> b; } \
-	inline Type  operator~( Type a ) { return Type( ~int( a ) ); }
+	constexpr Type  operator|  ( Type  a, Type b ) { return Type( int( a ) | int( b ) ); } \
+	constexpr Type  operator&  ( Type  a, Type b ) { return Type( int( a ) & int( b ) ); } \
+	constexpr Type  operator^  ( Type  a, Type b ) { return Type( int( a ) ^ int( b ) ); } \
+	constexpr Type  operator<< ( Type  a, int  b ) { return Type( int( a ) << b ); } \
+	constexpr Type  operator>> ( Type  a, int  b ) { return Type( int( a ) >> b ); } \
+	constexpr Type &operator|= ( Type &a, Type b ) { return a = a |  b; } \
+	constexpr Type &operator&= ( Type &a, Type b ) { return a = a &  b; } \
+	constexpr Type &operator^= ( Type &a, Type b ) { return a = a ^  b; } \
+	constexpr Type &operator<<=( Type &a, int  b ) { return a = a << b; } \
+	constexpr Type &operator>>=( Type &a, int  b ) { return a = a >> b; } \
+	constexpr Type  operator~( Type a ) { return Type( ~int( a ) ); }
 
 // defines increment/decrement operators for enums for easy iteration
 #define DEFINE_ENUM_INCREMENT_OPERATORS( Type ) \

@@ -500,6 +500,7 @@ protected:
 	CByteswap	m_Byteswap;
 };
 
+DEFINE_ENUM_BITWISE_OPERATORS( CUtlBuffer::BufferFlags_t );
 
 // Stream style output operators for CUtlBuffer
 inline CUtlBuffer &operator<<( CUtlBuffer &b, char v )
