@@ -98,6 +98,7 @@ public:
 	//-----------------------------------------------------
 	virtual bool Start( const ThreadPoolStartParams_t &startParams, const char *pszNameOverride = NULL ) = 0;
 	virtual bool Stop() = 0;
+	// Stops the threads and starts them again with new parameters under the current name
 	virtual void unk001( const ThreadPoolStartParams_t &startParams ) = 0;
 
 	//-----------------------------------------------------
@@ -107,6 +108,7 @@ public:
 	virtual int NumThreads() = 0;
 	virtual int NumIdleThreads() = 0;
 	virtual int GetCurrentThreadIndex() = 0;
+	// Returns 0 on the main thread, the thread index + 1 on a thread of this pool, otherwise the last argument
 	virtual int unk101( int, int ) = 0;
 
 	//-----------------------------------------------------

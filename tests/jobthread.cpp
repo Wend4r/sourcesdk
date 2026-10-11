@@ -117,3 +117,13 @@ REGISTER_NAMED_TEST( "CFunctor.RefCountingMember", CFunctor_RefCountingMember )
 	pGet->Release();
 	TEST_EQ( pTarget->Release(), 0 );
 }
+
+#ifdef PLATFORM_64BITS
+REGISTER_NAMED_TEST( "CCallQueue.Layout", CCallQueue_Layout )
+{
+	// tier0's ParallelCallQueued reads the flags after the queue.
+	TEST_EQ( sizeof( CCallQueue ), static_cast< size_t >( 80 ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().IsDisabled() ), bool > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().IsProcessing() ), bool > ) );
+}
+#endif

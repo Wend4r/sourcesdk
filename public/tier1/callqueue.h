@@ -79,13 +79,43 @@
 class CCallQueue
 {
 public:
-	CCallQueue() : m_bUnk0040( false ), m_bUnk0041( false ), m_bNoQueue( false ), m_bSkipCalls( false ), m_bRunningCalls( false )
+	CCallQueue() : m_nRefCount( 0 ), m_bNoQueue( false ), m_bAbortProcessing( false ), m_bProcessing( false )
 	{
 	}
 
 	~CCallQueue()
 	{
 		Flush();
+	}
+
+	void DisableQueue( bool bDisable )
+	{
+		if ( m_bNoQueue == bDisable )
+		{
+			return;
+		}
+
+		if ( !m_bNoQueue )
+		{
+			CallQueued();
+		}
+
+		m_bNoQueue = bDisable;
+	}
+
+	bool IsDisabled() const
+	{
+		return m_bNoQueue;
+	}
+
+	void AbortProcessing()
+	{
+		m_bAbortProcessing = true;
+	}
+
+	bool IsProcessing() const
+	{
+		return m_bProcessing;
 	}
 
 	int Count()
@@ -95,7 +125,7 @@ public:
 
 	void CallQueued()
 	{
-		m_bRunningCalls = true;
+		m_bProcessing = true;
 
 		if ( m_queue.Count() )
 		{
@@ -105,7 +135,7 @@ public:
 
 			while ( m_queue.PopItem( &pFunctor ) && pFunctor != NULL )
 			{
-				if ( !m_bSkipCalls )
+				if ( !m_bAbortProcessing )
 				{
 					( *pFunctor )();
 				}
@@ -114,8 +144,8 @@ public:
 			}
 		}
 
-		m_bSkipCalls = false;
-		m_bRunningCalls = false;
+		m_bAbortProcessing = false;
+		m_bProcessing = false;
 	}
 
 	DLL_CLASS_IMPORT void ParallelCallQueued( const char *pszName, IThreadPool *pPool = NULL );
@@ -129,15 +159,15 @@ public:
 		}
 		else
 		{
-			m_bRunningCalls = true;
+			m_bProcessing = true;
 
-			if ( !m_bSkipCalls )
+			if ( !m_bAbortProcessing )
 			{
 				functor();
 			}
 
-			m_bSkipCalls = false;
-			m_bRunningCalls = false;
+			m_bAbortProcessing = false;
+			m_bProcessing = false;
 		}
 	}
 
@@ -158,7 +188,7 @@ public:
 			delete pFunctor;
 		}
 
-		m_bSkipCalls = false;
+		m_bAbortProcessing = false;
 	}
 
 	FUNC_GENERATE_QUEUE_METHODS();
@@ -174,11 +204,10 @@ private:
 	}
 
 	CTSQueue< std::function< void() > * > m_queue;
-	bool m_bUnk0040;
-	bool m_bUnk0041;
+	int16 m_nRefCount;
 	bool m_bNoQueue;
-	bool m_bSkipCalls;
-	bool m_bRunningCalls;
+	bool m_bAbortProcessing;
+	bool m_bProcessing;
 };
 
 #endif // CALLQUEUE_H
