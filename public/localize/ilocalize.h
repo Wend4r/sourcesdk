@@ -187,9 +187,9 @@ public:
 	virtual const char *ConstructNumberString( CBufferString *pOut, LOC_NUMBER_FORMAT format, uint64 nValue, bool bAppend ) = 0;
 	virtual const char *ConstructNumberString( CBufferString *pOut, LOC_NUMBER_FORMAT format, double flValue, int nPrecision, bool bAppend ) = 0;
 
-	// AMNOTE: Turns a number written with the current language's signs and separators back into a plain one
+	// Turns a number written with the current language's signs and separators back into a plain one
 	virtual const char *ParseNumberString( const char *pszNumber, CBufferString *pOut ) = 0;
-	// AMNOTE: Also accepts NaN, +Inf and -Inf, returns false and sets flDefault when the string isn't a number
+	// Also accepts NaN, +Inf and -Inf, returns false and sets flDefault when the string isn't a number
 	virtual bool ParseNumber( const char *pszNumber, double *pflValue, double flDefault ) = 0;
 
 	// Construct formatted monetary strings.
@@ -202,7 +202,7 @@ public:
 	virtual const char *GetNameByIndex( LocalizeStringIndex_t index ) = 0;
 	virtual const char *GetValueByIndex( LocalizeStringIndex_t index ) = 0;
 
-	// AMNOTE: k_Lang_None (-1) for an invalid index
+	// k_Lang_None (-1) for an invalid index
 	virtual ELanguage GetLanguageByIndex( LocalizeStringIndex_t index ) = 0;
 
 	virtual const char *GetCurrentLanguage() = 0;
@@ -260,17 +260,20 @@ public:
 	virtual bool DoKoreanJongSungRuleInPlace( char *pUnicodeBuffer, int unicodeBufferSizeInBytes ) = 0;
 	virtual void GetStatsString( CBufferString *pStrBuf ) = 0;
 
-	// AMNOTE: The type letter of a localization variable used in format strings (s, k, t, m, d, u, f, g or *), "?" for an unknown type
+	// The type letter of a localization variable used in format strings (s, k, t, m, d, u, f, g or *), "?" for an unknown type
 	virtual const char *GetLocVariableTypeName( uint32 nType ) = 0;
-	// AMNOTE: Format a localization variable's value of the given type into pOut, the second one takes the whole variable
+	// Format a localization variable's value of the given type into pOut, the second one takes the whole variable
 	virtual bool FormatLocVariableValue( int nType, const void *pValue, int, CBufferString *pOut, bool bAppend ) = 0;
 	virtual bool FormatLocVariable( int nType, const void *pVariable, CBufferString *pOut, bool bAppend ) = 0;
-	// AMNOTE: unk404..unk408 manage a table of 72 byte entries keyed by an int handle: unk405 and unk406 set a pointer in an entry, unk407 removes one and unk408 returns an int stored in it
-	virtual void unk404() = 0;
-	virtual void unk405() = 0;
-	virtual void unk406() = 0;
-	virtual void unk407() = 0;
-	virtual void unk408() = 0;
+	// Custom handlers for the g type localization variables, keyed by the handler id the variable carries
+	// pfnFormat writes the value, pfnParseReference checks a variable reference, pfnParseModifiers parses a quoted argument, pUserData is passed back to them
+	virtual void InstallCustomLocVariableHandler( const uint32 *pHandlerId, void *pfnFormat, void *pfnParseReference, void *pfnParseModifiers, void *pUserData, int nUserValue ) = 0;
+	// Used when resolving plurals and gender variants of a variable handled by it
+	virtual void SetCustomLocVariablePluralHandler( const uint32 *pHandlerId, void *pfnPlural ) = 0;
+	virtual void SetCustomLocVariableGenderHandler( const uint32 *pHandlerId, void *pfnGender ) = 0;
+	virtual void RemoveCustomLocVariableHandler( const uint32 *pHandlerId ) = 0;
+	// Returns the nUserValue it was installed with, 0 when there is no such handler
+	virtual int GetCustomLocVariableHandlerValue( const uint32 *pHandlerId ) = 0;
 
 	virtual ILocalizeCompiledString *CompileString( const char *pString, int, IErrorListener *pErrorListener ) = 0;
 
