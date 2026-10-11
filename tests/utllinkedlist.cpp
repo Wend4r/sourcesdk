@@ -212,3 +212,57 @@ REGISTER_NAMED_TEST( "CUtlLinkedList.MultilistElementCount", CUtlLinkedList_Mult
 	list.RemoveAll();
 	TEST_EQ( list.Count(), 0 );
 }
+
+struct LinkedListLifetime_t
+{
+	static inline int s_nAlive = 0;
+	static inline int s_nConstructed = 0;
+
+	LinkedListLifetime_t() : m_nValue( 0 ) { ++s_nAlive; ++s_nConstructed; }
+	LinkedListLifetime_t( const LinkedListLifetime_t &other ) : m_nValue( other.m_nValue ) { ++s_nAlive; ++s_nConstructed; }
+	~LinkedListLifetime_t() { --s_nAlive; }
+
+	int m_nValue;
+};
+
+class CLifetimeLinkedListMemory : public CUtlLeanVector< UtlLinkedListElem_t< LinkedListLifetime_t, int >, int >
+{
+public:
+	using BaseClass = CUtlLeanVector< UtlLinkedListElem_t< LinkedListLifetime_t, int >, int >;
+	using BaseClass::BaseClass;
+
+	static inline const int INVALID_INDEX = -1;
+};
+
+template < class TList >
+static void CheckLinkedListPayloadLifetime( TList &list )
+{
+	LinkedListLifetime_t::s_nAlive = 0;
+	LinkedListLifetime_t::s_nConstructed = 0;
+
+	auto iFirst = list.Alloc( true );
+	list.Alloc( true );
+	TEST_EQ( LinkedListLifetime_t::s_nConstructed, 2 );
+	TEST_EQ( LinkedListLifetime_t::s_nAlive, 2 );
+
+	list.Free( iFirst );
+	TEST_EQ( LinkedListLifetime_t::s_nAlive, 1 );
+
+	// The freed node is reused without constructing its payload twice
+	list.Alloc( true );
+	TEST_EQ( LinkedListLifetime_t::s_nConstructed, 3 );
+	TEST_EQ( LinkedListLifetime_t::s_nAlive, 2 );
+
+	list.Purge();
+	TEST_EQ( LinkedListLifetime_t::s_nAlive, 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlLinkedList.PayloadLifetime", CUtlLinkedList_PayloadLifetime )
+{
+	// Payloads are constructed once per allocation and destructed once, whatever the node storage.
+	CUtlLinkedList< LinkedListLifetime_t, int, true, int, CLifetimeLinkedListMemory > list;
+	CheckLinkedListPayloadLifetime( list );
+
+	CUtlBlockLinkedList< LinkedListLifetime_t > blockList;
+	CheckLinkedListPayloadLifetime( blockList );
+}

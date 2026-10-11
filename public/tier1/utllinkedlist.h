@@ -44,9 +44,14 @@
 template <class T, class I> 
 struct UtlLinkedListElem_t
 {
+	// The list constructs and destructs m_Element itself, so the storage only manages the links
 	UtlLinkedListElem_t() {}
+	~UtlLinkedListElem_t() {}
 
-	T  m_Element;
+	union
+	{
+		T  m_Element;
+	};
 	I  m_Previous;
 	I  m_Next;
 
