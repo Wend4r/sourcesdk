@@ -129,6 +129,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlflags.cpp
 	utlhandletable.cpp
 	utlhash.cpp
+	utlhashmaplarge.cpp
 	utlhashtable.cpp
 	utlintrusivelist.cpp
 	utlleanvector.cpp

@@ -19,6 +19,7 @@
 #include "utlcommon.h"
 #include "utlmap.h"
 #include "utlleanvector.h"
+#include "tier0/utlstring.h"
 
 // default comparison operator
 template <typename T>
@@ -57,6 +58,17 @@ class CUtlHashMapLargeDefEquals : public CDefEquals<T>
 {
 public:
 	using CDefEquals<T>::CDefEquals;
+};
+
+// String keys are hashed by their contents, so compare them by their contents too
+template <>
+class CUtlHashMapLargeDefEquals<const char *>
+{
+public:
+	CUtlHashMapLargeDefEquals() {}
+	CUtlHashMapLargeDefEquals( int i ) {}
+	inline bool operator()( const char *lhs, const char *rhs ) const { return lhs == rhs || ( lhs && rhs && V_strcmp( lhs, rhs ) == 0 ); }
+	inline bool operator!() const { return false; }
 };
 
 
@@ -321,7 +333,7 @@ inline I CUtlHashMapImpl<K,T,L,H,I,BV>::InsertInternal( const KeyType_t &key, co
 	// migrate data forward, if necessary
 	int cBucketsToModAgainst = m_vecHashBuckets.Count() >> 1;
 	int iBucket = basetypes::ModPowerOf2(hash, cBucketsToModAgainst);
-	while ( iBucket >= m_nMinRehashedBucket
+	while ( cBucketsToModAgainst >= 1 && iBucket >= m_nMinRehashedBucket
 		&& !m_bitsMigratedBuckets.Get( iBucket ) )
 	{
 		RehashNodesInBucket( iBucket );
@@ -490,7 +502,7 @@ inline I CUtlHashMapImpl<K,T,L,H,I,BV>::Find( const KeyType_t &key ) const
 
 	// not found? we may have to look in older buckets
 	cBucketsToModAgainst >>= 1;
-	while ( cBucketsToModAgainst >= m_nMinRehashedBucket )
+	while ( cBucketsToModAgainst >= MAX( m_nMinRehashedBucket, 1 ) )
 	{
 		iBucket = basetypes::ModPowerOf2( hash, cBucketsToModAgainst );
 
@@ -597,7 +609,7 @@ inline void CUtlHashMapImpl<K,T,L,H,I,BV>::RemoveAt( IndexType_t i )
 
 	// wasn't found; look in older buckets
 	cBucketsToModAgainst >>= 1;
-	while ( cBucketsToModAgainst >= m_nMinRehashedBucket )
+	while ( cBucketsToModAgainst >= MAX( m_nMinRehashedBucket, 1 ) )
 	{
 		iBucket = basetypes::ModPowerOf2( hash, cBucketsToModAgainst );
 
