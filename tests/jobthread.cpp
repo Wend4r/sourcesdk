@@ -1,6 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
+#include <tier1/callqueue.h>
 #include <tier1/functors.h>
 #include <tier1/jobthread.h>
 #include <threadedjob.h>
@@ -81,6 +82,22 @@ public:
 private:
 	int m_nValue = 0;
 };
+
+static void ResetValue() {}
+static void SetValue( int *pValue, int nValue ) { *pValue = nValue; }
+
+REGISTER_NAMED_TEST( "CCallQueue.QueueMethods", CCallQueue_QueueMethods )
+{
+	// The generated QueueCall and QueueRefCall overloads resolve next to the functor QueueCall.
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueCall( &ResetValue ) ), void > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueCall( &SetValue, std::declval< int * >(), 1 ) ), void > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueCall( std::declval< CFunctorTarget * >(), &CFunctorTarget::Set, 1 ) ), void > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueCall( std::declval< CFunctorTarget * >(), &CFunctorTarget::Get ) ), void > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueRefCall( std::declval< CFunctorTarget * >(), &CFunctorTarget::Set, 1 ) ), void > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueRefCall( std::declval< CFunctorTarget * >(), &CFunctorTarget::Get ) ), void > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueCall( std::declval< std::function< void() > >() ) ), void > ) );
+	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().QueueFunctor( nullptr ) ), void > ) );
+}
 
 REGISTER_NAMED_TEST( "CFunctor.RefCountingMember", CFunctor_RefCountingMember )
 {
