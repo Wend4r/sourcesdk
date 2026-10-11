@@ -32,6 +32,7 @@ class	INetworkMessageInternal;
 class	INetMessageDispatcher;
 class	InstantReplayMessage_t;
 class	CUtlSlot;
+class	CNETMsg_Tick_t;
 
 FORWARD_DECLARE_HANDLE(NetMessageHandle_t);
 
@@ -89,7 +90,7 @@ using NetPacket_t = netpacket_t;
 abstract_class INetworkChannelNotify
 {
 public:
-	virtual void OnShutdownChannel( INetChannel *pChannel ) = 0;
+	virtual void OnShutdownChannel( INetChannel *pChannel, bool ) = 0;
 };
 
 abstract_class INetworkMessageProcessingPreFilter
@@ -140,8 +141,8 @@ public:
 	virtual bool	IsTimedOut( void ) const = 0;
 	virtual void	UpdateLastReceivedTime( void ) = 0;
 
-	virtual void	unk111( float ) = 0;
-	virtual void	unk112( void *pStat ) = 0;
+	virtual void	SetLateLatencyThreshold( float flThreshold ) = 0;
+	virtual void	SetRemoteFramerate( const CNETMsg_Tick_t *pMsg ) = 0;
 	
 	virtual bool	IsRemoteDisconnected( ENetworkDisconnectionReason &reason ) const = 0;
 
@@ -149,7 +150,7 @@ public:
 	virtual INetMessageDispatcher *GetNetMessageDispatcher( void ) const = 0;
 	
 	virtual void	StartRegisteringMessageHandlers( void ) = 0;
-	virtual void	FinishRegisteringMessageHandlers( void ) = 0;
+	virtual void	FinishRegisteringMessageHandlers( bool ) = 0;
 	
 	virtual void	RegisterNetMessageHandlerAbstract( CUtlSlot *nSlot, const CUtlAbstractDelegate &delegate, int nParamCount, INetworkMessageInternal *pNetMessage, int nPriority ) = 0;
 	virtual void	UnregisterNetMessageHandlerAbstract( CUtlSlot *nSlot, const CUtlAbstractDelegate &delegate, INetworkMessageInternal *pNetMessage ) = 0;
@@ -175,13 +176,13 @@ public:
 	virtual void	SuppressTransmit( bool suppress ) = 0;
 	virtual bool	IsSuppressingTransmit( void ) const = 0;
 
-	virtual void	PostReceivedNetMessage( const CNetMessage *pData, int nBits, int nInSequenceNr ) = 0;
+	virtual void	SendMessageRaw( const void *pData, uint32 cbData, int nSendFlags ) = 0;
 
-	virtual void	SetUnkWhenEmpty( int ) = 0;
+	virtual void	SetPendingTick( int nTick ) = 0;
 
-	virtual void	*unk101( void ) = 0;
-	virtual void	unk102( void *pStat ) = 0;
-	virtual void	unk103( void * ) = 0;
+	virtual void	*GetQueuedNetMessages( void ) = 0;
+	virtual void	FillTickFrameStats( CNETMsg_Tick_t *pMsg ) = 0;
+	virtual void	SetQueuedMessageLimitConVar( CConVar< int > *pQueuedMessageLimit ) = 0;
 };
 
 
