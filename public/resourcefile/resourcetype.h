@@ -27,14 +27,14 @@ enum ResourceStatus_t
 	RESOURCE_STATUS_RESIDENT,
 };
 
-enum ResourceManifestLoadBehavior_t
+enum ResourceManifestLoadBehavior_t : int8
 {
 	RESOURCE_MANIFEST_LOAD_DEFAULT = -1,
 	RESOURCE_MANIFEST_LOAD_STREAMING_DATA = 0,
 	RESOURCE_MANIFEST_INITIALLY_USE_FALLBACKS,
 };
 
-enum ResourceManifestLoadPriority_t
+enum ResourceManifestLoadPriority_t : int8
 {
 	RESOURCE_MANIFEST_LOAD_PRIORITY_DEFAULT = -1,
 	RESOURCE_MANIFEST_LOAD_PRIORITY_LOW = 0,
