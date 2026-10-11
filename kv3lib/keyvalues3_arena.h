@@ -349,6 +349,10 @@ auto CKV3ArenaImpl::Alloc( ClusterNodeChain<CLUSTER> &partial_clusters,
 		cluster = (CLUSTER *)g_pMemAlloc->RegionAlloc( MEMALLOC_REGION_ALLOC_4, CLUSTER::TotalSizeOf( initial_size ) );
 
 		Construct( cluster, m_pContext, true, initial_size );
+
+		if constexpr ( std::is_same_v< CLUSTER, CKeyValues3Cluster > )
+			cluster->EnableMetaData( m_bMetaDataEnabled );
+
 		partial_clusters.AddToChain( cluster );
 
 		elem = cluster->Alloc( Forward< Args >( args )... );

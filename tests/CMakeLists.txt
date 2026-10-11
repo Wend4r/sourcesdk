@@ -116,6 +116,7 @@ endfunction()
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
 	construct.cpp
+	generichash.cpp
 	mempool.cpp
 	minidump.cpp
 	refcount.cpp
@@ -128,7 +129,9 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utldict.cpp
 	utlfixedmemory.cpp
 	utlflags.cpp
+	utlhandletable.cpp
 	utlhash.cpp
+	utlhashmaplarge.cpp
 	utlhashtable.cpp
 	utlintrusivelist.cpp
 	utlleanvector.cpp
@@ -151,6 +154,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlsymbol.cpp
 	utlsymbollarge.cpp
 	utlvector.cpp
+	vswap.cpp
 )
 
 foreach(test_source IN LISTS SOURCESDK_CONTAINER_TEST_SOURCES)
@@ -162,10 +166,23 @@ set(SOURCESDK_SMOKE_TEST_SOURCES
 	tier0_utl_headers.cpp
 	tier1_utl_headers.cpp
 	keyvalues3_headers.cpp
+	jobthread.cpp
 )
 
 foreach(test_source IN LISTS SOURCESDK_SMOKE_TEST_SOURCES)
 	sourcesdk_add_cpp_test(smoke smoke_main.cpp ${test_source})
+endforeach()
+
+set(SOURCESDK_MATHLIB_TEST_SOURCES
+	mathlib.cpp
+	vec3d.cpp
+)
+
+foreach(test_source IN LISTS SOURCESDK_MATHLIB_TEST_SOURCES)
+	sourcesdk_add_cpp_test("" containers_main.cpp ${test_source})
+
+	get_filename_component(test_name_we "${test_source}" NAME_WE)
+	target_link_libraries(${test_name_we}_tests PRIVATE ${SOURCESDK_MATHLIB_NAME})
 endforeach()
 
 add_executable(keyvalues3_tests
@@ -198,3 +215,5 @@ sourcesdk_add_cpp_test("" containers_main.cpp convar_lifecycle.cpp)
 target_link_libraries(convar_lifecycle_tests PRIVATE
 	${SOURCESDK_INTERFACES_NAME}
 )
+
+sourcesdk_add_cpp_test("" containers_main.cpp vscriptbinding.cpp)

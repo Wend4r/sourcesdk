@@ -238,6 +238,11 @@ void CKeyValues3ClusterImpl<SIZE, T>::EnableMetaData( bool bEnable )
 		{
 			m_pMetaData = (kv3metadata_t *)g_pMemAlloc->RegionAlloc( MEMALLOC_REGION_ALLOC_4, (NumAllocated() * sizeof(KV3MetaData_t)) + 8 );
 			m_pMetaData->m_AllocatedElements = NumAllocated();
+
+			for(int i = 0; i < m_pMetaData->m_AllocatedElements; i++)
+			{
+				Construct( &m_pMetaData->m_elements[i] );
+			}
 		}
 	}
 	else
@@ -265,7 +270,7 @@ void CKeyValues3ClusterImpl<SIZE, T>::PurgeMetaData()
 	{
 		for(int i = 0; i < m_pMetaData->m_AllocatedElements; i++)
 		{
-			m_pMetaData->m_elements[i].Purge();
+			Destruct( &m_pMetaData->m_elements[i] );
 		}
 
 		g_pMemAlloc->RegionFree( MEMALLOC_REGION_FREE_4, m_pMetaData );

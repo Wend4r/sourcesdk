@@ -64,7 +64,7 @@ Read the relevant source-sdk references before editing or reviewing:
   protobuf files without a task-specific reason.
 - Write technical documentation and comments in clear English. Explain non-obvious behavior,
   ownership and compatibility constraints rather than restating code. Follow the reference's
-  restrictions on reconstructed-code comments; do not add new `AMNOTE:` markers in this fork.
+  restrictions on reconstructed-code comments.
 
 ## Verification
 
