@@ -12,6 +12,7 @@
 #endif
 
 #include "tier1/utlintrusivelist.h"
+#include "tier0/utlblockvector.h"
 #include "mathlib/mathlib.h"
 #include "tier1/utlvector.h"
 
@@ -212,20 +213,18 @@ public:
 	{
 		Assert( this->IsValidIndex(elem) );
 
-		if ( this->m_Size > 0 )
+		int last = this->Count() - 1;
+		if ( elem != last )
 		{
-			if ( elem != this->m_Size -1 )
-			{
-				this->Element( elem ).Set( this->Element( this->m_Size - 1 ).GetObject() );
-			}
-			Destruct( &Element( this->m_Size - 1 ) );
-			--this->m_Size;
+			this->Element( elem ).Set( this->Element( last ).GetObject() );
 		}
+
+		CUtlBlockVector< CUtlReference< T > >::RemoveMultipleFromTail( 1 );
 	}
 
 	bool FindAndFastRemove( const CUtlReference< T >& src )
 	{
-		int elem = Find( src );
+		int elem = this->Find( src );
 		if ( elem != -1 )
 		{
 			FastRemove( elem );

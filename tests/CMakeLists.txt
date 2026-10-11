@@ -117,6 +117,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
 	commandbuffer.cpp
 	generichash.cpp
+	memblockallocator.cpp
 	mempool.cpp
 	minidump.cpp
 	refcount.cpp
@@ -125,6 +126,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlarray.cpp
 	utlbinaryblock.cpp
 	utlblockmemory.cpp
+	utlblockvector.cpp
 	utlbuffer.cpp
 	utldict.cpp
 	utlfixedmemory.cpp
