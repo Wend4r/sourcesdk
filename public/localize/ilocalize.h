@@ -25,6 +25,8 @@ class ILocalizeCompiledString;
 class ILocalize_EconProvider;
 struct tm;
 
+enum ECurrency : int32;
+
 
 //-----------------------------------------------------------------------------
 // Interface used to query text size so we can choose the longest one
@@ -185,16 +187,23 @@ public:
 	virtual const char *ConstructNumberString( CBufferString *pOut, LOC_NUMBER_FORMAT format, uint64 nValue, bool bAppend ) = 0;
 	virtual const char *ConstructNumberString( CBufferString *pOut, LOC_NUMBER_FORMAT format, double flValue, int nPrecision, bool bAppend ) = 0;
 
-	virtual const char *unk101( const char *, CBufferString * ) = 0;
-	virtual bool unk102( const char *, double *, double ) = 0;
-	virtual const char *unk103( CBufferString *, uint32, int, int, bool ) = 0;
-	virtual const char *unk103( CBufferString *, uint64, int, int, bool ) = 0;
+	// AMNOTE: Turns a number written with the current language's signs and separators back into a plain one
+	virtual const char *ParseNumberString( const char *pszNumber, CBufferString *pOut ) = 0;
+	// AMNOTE: Also accepts NaN, +Inf and -Inf, returns false and sets flDefault when the string isn't a number
+	virtual bool ParseNumber( const char *pszNumber, double *pflValue, double flDefault ) = 0;
+
+	// Construct formatted monetary strings.
+	// The integer version's value is scaled by 100 so that fractions are represented exactly.
+	// Normally the precision of the value is set according to the currency's conventions but it can be forced with a non-negative nOverridePrecision.
+	virtual const char *ConstructMoneyString( CBufferString *pOut, uint32 nValue, ECurrency eCurrency, int nOverridePrecision, bool bAppend ) = 0;
+	virtual const char *ConstructMoneyString( CBufferString *pOut, uint64 nValue, ECurrency eCurrency, int nOverridePrecision, bool bAppend ) = 0;
 
 	// gets the values by the string index
 	virtual const char *GetNameByIndex( LocalizeStringIndex_t index ) = 0;
 	virtual const char *GetValueByIndex( LocalizeStringIndex_t index ) = 0;
 
-	virtual ELanguage unk201( LocalizeStringIndex_t index ) = 0;
+	// AMNOTE: k_Lang_None (-1) for an invalid index
+	virtual ELanguage GetLanguageByIndex( LocalizeStringIndex_t index ) = 0;
 
 	virtual const char *GetCurrentLanguage() = 0;
 	virtual ELanguage GetCurrentELanguage() = 0;
@@ -221,7 +230,8 @@ public:
 	// saves the entire contents of the token tree to the file
 	virtual bool SaveToFile( const char *szFileName ) = 0;
 
-	virtual bool unk301( const char *, const char * ) = 0;
+	// adds the file in every language, the %language% in its name is replaced by each language name
+	virtual bool AddAllLanguageFiles( const char *pszFileName, const char *pPathID ) = 0;
 
 	// iterates the filenames
 	virtual int GetLocalizationFileCount() = 0;
@@ -250,9 +260,12 @@ public:
 	virtual bool DoKoreanJongSungRuleInPlace( char *pUnicodeBuffer, int unicodeBufferSizeInBytes ) = 0;
 	virtual void GetStatsString( CBufferString *pStrBuf ) = 0;
 
-	virtual const char *unk401( uint32 ) = 0;
-	virtual void unk402() = 0;
-	virtual void unk403() = 0;
+	// AMNOTE: The type letter of a localization variable used in format strings (s, k, t, m, d, u, f, g or *), "?" for an unknown type
+	virtual const char *GetLocVariableTypeName( uint32 nType ) = 0;
+	// AMNOTE: Format a localization variable's value of the given type into pOut, the second one takes the whole variable
+	virtual bool FormatLocVariableValue( int nType, const void *pValue, int, CBufferString *pOut, bool bAppend ) = 0;
+	virtual bool FormatLocVariable( int nType, const void *pVariable, CBufferString *pOut, bool bAppend ) = 0;
+	// AMNOTE: unk404..unk408 manage a table of 72 byte entries keyed by an int handle: unk405 and unk406 set a pointer in an entry, unk407 removes one and unk408 returns an int stored in it
 	virtual void unk404() = 0;
 	virtual void unk405() = 0;
 	virtual void unk406() = 0;
@@ -266,8 +279,8 @@ public:
 	virtual const char *ConstructStringVArgs( CBufferString *pOut, const char *formatString, int numFormatParameters, va_list argList, bool bAppend ) = 0;
 	virtual const char *ConstructStringArgArray( CBufferString *pOut, const char *formatString, int numFormatParameters, const char * const *pArgList, bool bAppend ) = 0;
 
-	virtual ILocalize_EconProvider *unk501() = 0;
-	virtual void unk502() = 0;
+	virtual ILocalize_EconProvider *GetEconProvider() = 0;
+	virtual void RunInternalTest_LocVariableParse() = 0;
 
 	virtual void RunInternalTest_LocVariableResolve() = 0;
 };
