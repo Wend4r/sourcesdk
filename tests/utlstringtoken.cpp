@@ -2,6 +2,7 @@
 #include "common/macros.h"
 
 #include <tier0/utlstringtoken.h>
+#include <tier1/utlhashtable.h>
 
 REGISTER_NAMED_TEST( "CUtlStringToken.HashAndCompare", CUtlStringToken_HashAndCompare )
 {
@@ -18,4 +19,19 @@ REGISTER_NAMED_TEST( "CUtlStringToken.HashAndCompare", CUtlStringToken_HashAndCo
 	const uint32 nHash = MakeStringToken< true, false >( "Alpha" );
 
 	TEST_EQ( nHash, token.GetHashCode() );
+}
+
+REGISTER_NAMED_TEST( "CUtlStringToken.HashtableKey", CUtlStringToken_HashtableKey )
+{
+	// Hash tables keyed by string tokens should hash by the token's hash code.
+	CUtlStringToken token( "Alpha" );
+
+	TEST_EQ( DefaultHashFunctor< CUtlStringToken >()( token ), token.GetHashCode() );
+
+	CUtlHashtable< CUtlStringToken, int > table;
+
+	table.Insert( token, 10 );
+
+	TEST_TRUE( table.HasElement( CUtlStringToken( "ALPHA" ) ) );
+	TEST_FALSE( table.HasElement( CUtlStringToken( "Beta" ) ) );
 }

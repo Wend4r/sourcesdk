@@ -86,7 +86,7 @@ public:
 	KV3MemberId_t FindMember( const KeyValues3* kv ) const;
 	KV3MemberId_t CreateMember( KeyValues3 *parent, const CKV3MemberName &name, bool name_external = false );
 
-	void CopyFrom( KeyValues3 *parent, const CKeyValues3Table *src );
+	void CopyFrom( KeyValues3 *parent, const KeyValues3 *src_parent, const CKeyValues3Table *src );
 
 	void RenameMember( KeyValues3 *parent, KV3MemberId_t id, const CKV3MemberName &newName );
 	void RemoveMember( KeyValues3 *parent, KV3MemberId_t id );

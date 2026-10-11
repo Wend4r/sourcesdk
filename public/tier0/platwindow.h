@@ -33,13 +33,14 @@ enum WindowCreateFlags_t
 
 };
 
-PLATFORM_INTERFACE PlatWindow_t Plat_CreateWindow( void *hInstance, const char *pTitle, int nWidth, int nHeight, int nFlags );
+PLATFORM_INTERFACE PlatWindow_t Plat_CreateWindow( void *hInstance, const char *pTitle, int x, int y, int nWidth, int nHeight, int nFlags, float flRefreshRate );
 
 
 //-----------------------------------------------------------------------------
 // Window title
 //-----------------------------------------------------------------------------
 PLATFORM_INTERFACE void Plat_SetWindowTitle( PlatWindow_t hWindow, const char *pTitle );
+PLATFORM_INTERFACE void Plat_SetWindowTitleW( PlatWindow_t hWindow, const wchar_t *pTitle );
 
 
 //-----------------------------------------------------------------------------
@@ -51,7 +52,7 @@ PLATFORM_INTERFACE void Plat_SetWindowPos( PlatWindow_t hWindow, int x, int y );
 //-----------------------------------------------------------------------------
 // Gets the desktop resolution
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE void Plat_GetDesktopResolution( int *pWidth, int *pHeight );
+PLATFORM_INTERFACE bool Plat_GetDesktopResolution( int nDisplayIndex, int *pWidth, int *pHeight, uint32 *pRefreshRate );
 
 
 //-----------------------------------------------------------------------------

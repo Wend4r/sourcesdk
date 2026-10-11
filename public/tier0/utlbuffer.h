@@ -54,13 +54,13 @@ public:
 	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept;
 	CUtlCharConversion &operator=( const CUtlCharConversion &rhs );
 
-	char GetEscapeChar() const;
-	const char *GetDelimiter() const;
-	int GetDelimiterLength() const;
+	char GetEscapeChar() const { return m_nEscapeChar; }
+	const char *GetDelimiter() const { return m_pDelimiter; }
+	int GetDelimiterLength() const { return m_nDelimiterLength; }
 
-	const char *GetConversionString( char c ) const;
-	int GetConversionLength( char c ) const;
-	int MaxConversionLength() const;
+	const char *GetConversionString( char c ) const { return m_pReplacements[ ( unsigned char )c ].m_pReplacementString; }
+	int GetConversionLength( char c ) const { return m_pReplacements[ ( unsigned char )c ].m_nLength; }
+	int MaxConversionLength() const { return m_nMaxConversionLength; }
 
 	// Finds a conversion for the passed-in string, returns length
 	virtual char FindConversion( const char *pString, int *pLength );
@@ -462,10 +462,12 @@ protected:
 	// Checks if a peek get is ok
 	DLL_CLASS_IMPORT bool CheckPeekGet( int nOffset, int nSize );
 
+public:
 	// Call this to peek arbitrarily long into memory. It doesn't fail unless
 	// it can't read *anything* new
 	DLL_CLASS_IMPORT bool CheckArbitraryPeekGet( int nOffset, int &nIncrement );
 
+protected:
 	template <typename T> void GetType( T& dest );
 	template <typename T> void GetTypeBin( T& dest );
 	template <typename T> bool GetTypeText( T &value, int nRadix = 10 );
@@ -570,7 +572,7 @@ inline CUtlBuffer &operator<<( CUtlBuffer &b, const Vector2D &v )
 class CUtlInplaceBuffer : public CUtlBuffer
 {
 public:
-	CUtlInplaceBuffer( int growSize = 0, int initSize = 0, int nFlags = 0 );
+	DLL_CLASS_IMPORT CUtlInplaceBuffer( BufferFlags_t nFlags = NONE );
 
 	//
 	// Routines returning buffer-inplace-pointers

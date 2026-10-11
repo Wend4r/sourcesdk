@@ -29,7 +29,7 @@ public:
 	DLL_CLASS_IMPORT bool Init( const char *name, unsigned int maxSize = 0, unsigned int commitSize = 0, unsigned int initialCommit = 0, unsigned int alignment = 16 );
 	DLL_CLASS_IMPORT void Term();
 
-	DLL_CLASS_IMPORT int GetSize();
+	DLL_CLASS_IMPORT int GetSize() const;
 	int GetMaxSize();
 	int GetUsed();
 	
@@ -37,11 +37,11 @@ public:
 
 	MemoryStackMark_t GetCurrentAllocPoint();
 	DLL_CLASS_IMPORT void FreeToAllocPoint( MemoryStackMark_t mark, bool bDecommit = true );
-	DLL_CLASS_IMPORT void FreeAll( bool bDecommit = true );
+	DLL_CLASS_IMPORT void Purge( bool bDecommit = true );
 	
 	DLL_CLASS_IMPORT void Access( void **ppRegion, unsigned int *pBytes );
 
-	DLL_CLASS_IMPORT void PrintContents();
+	DLL_CLASS_IMPORT void PrintContents() const;
 
 	void *GetBase();
 	const void *GetBase() const {  return const_cast<CMemoryStack *>(this)->GetBase(); }
@@ -54,7 +54,6 @@ private:
 	byte *m_pNextAlloc;
 	byte *m_pCommitLimit;
 	byte *m_pAllocLimit;
-	byte *m_pHighestAllocLimit;
 	byte *m_pBase;
 
 	unsigned int m_maxSize;
@@ -154,7 +153,7 @@ class CUtlMemoryStack
 {
 public:
 	// constructor, destructor
-	CUtlMemoryStack( int nGrowSize = 0, int nInitSize = 0 )	{ m_MemoryStack.Init( MAX_SIZE * sizeof(T), COMMIT_SIZE * sizeof(T), INITIAL_COMMIT * sizeof(T), 4 ); COMPILE_TIME_ASSERT( sizeof(T) % 4 == 0 );	}
+	CUtlMemoryStack( int nGrowSize = 0, int nInitSize = 0 )	{ m_MemoryStack.Init( "CUtlMemoryStack", MAX_SIZE * sizeof(T), COMMIT_SIZE * sizeof(T), INITIAL_COMMIT * sizeof(T), 4 ); COMPILE_TIME_ASSERT( sizeof(T) % 4 == 0 );	}
 	CUtlMemoryStack( T* pMemory, int numElements )			{ Assert( 0 ); 										}
 
 	// Can we use this index?
@@ -201,10 +200,10 @@ public:
 	void Grow( int num = 1 )								{ Assert( num > 0 ); m_nAllocated += num; m_MemoryStack.Alloc( num * sizeof(T) ); }
 
 	// Makes sure we've got at least this much memory
-	void EnsureCapacity( int num )							{ Assert( num <= MAX_SIZE ); if ( m_nAllocated < num ) Grow( num - m_nAllocated ); }
+	void EnsureCapacity( int num )							{ Assert( ( size_t )num <= MAX_SIZE ); if ( m_nAllocated < num ) Grow( num - m_nAllocated ); }
 
 	// Memory deallocation
-	void Purge()											{ m_MemoryStack.FreeAll(); m_nAllocated = 0; }
+	void Purge()											{ m_MemoryStack.Purge(); m_nAllocated = 0; }
 
 	// is the memory externally allocated?
 	bool IsExternallyAllocated() const						{ return false; }
