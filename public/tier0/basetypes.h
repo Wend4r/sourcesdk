@@ -411,19 +411,31 @@ inline T AlignValue( T val, uintp alignment )
 
 #ifdef __cplusplus
 
-inline unsigned long& FloatBits( vec_t& f )
+inline uint32& FloatBits( vec_t& f )
 {
-	return *reinterpret_cast<unsigned long*>(&f);
+	return *reinterpret_cast<uint32*>(&f);
 }
 
-inline unsigned long const& FloatBits( vec_t const& f )
+inline uint32 FloatBits( vec_t const& f )
 {
-	return *reinterpret_cast<unsigned long const*>(&f);
+	union Convertor_t
+	{
+		vec_t f;
+		uint32 ul;
+	} tmp;
+	tmp.f = f;
+	return tmp.ul;
 }
 
-inline vec_t BitsToFloat( unsigned long i )
+inline vec_t BitsToFloat( uint32 i )
 {
-	return *reinterpret_cast<vec_t*>(&i);
+	union Convertor_t
+	{
+		vec_t f;
+		uint32 ul;
+	} tmp;
+	tmp.ul = i;
+	return tmp.f;
 }
 
 inline bool IsFinite( const vec_t &f )
