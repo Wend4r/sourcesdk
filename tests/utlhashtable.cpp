@@ -347,3 +347,52 @@ REGISTER_NAMED_TEST( "CUtlHashtable.GrowAtLoadFactor", CUtlHashtable_GrowAtLoadF
 	for ( int i = 0; i < 1000; i++ )
 		TEST_EQ( table.Get( i, -1 ), i );
 }
+
+REGISTER_NAMED_TEST( "CUtlHashtable.SetExternalBuffer", CUtlHashtable_SetExternalBuffer )
+{
+	// A fixed external buffer is used as the table storage, in place.
+	static CUtlHashtableEntry< int, int > entries[ 16 ];
+	CUtlHashtable< int, int > table( entries, 16 );
+
+	for ( int i = 0; i < 12; i++ )
+		table.Insert( i, i * 2 );
+
+	TEST_EQ( table.Count(), 12 );
+
+	for ( int i = 0; i < 12; i++ )
+	{
+		const UtlHashHandle_t h = table.Find( i );
+
+		TEST_TRUE( table.IsValidHandle( h ) );
+		TEST_EQ( table.Element( h ), i * 2 );
+		TEST_EQ( &table.Element( h ), &entries[ h ].Raw()->m_value );
+	}
+
+	TEST_TRUE( table.Remove( 4 ) );
+	TEST_FALSE( table.HasElement( 4 ) );
+	TEST_EQ( table.Count(), 11 );
+
+	// A growable raw byte buffer moves to owned memory once it is outgrown
+	alignas( CUtlHashtableEntry< int, int > ) static byte rawBuffer[ 8 * sizeof( CUtlHashtableEntry< int, int > ) + 3 ];
+	CUtlHashtable< int, int > growable;
+
+	growable.SetExternalBuffer( rawBuffer, sizeof( rawBuffer ), false, true );
+	growable.Insert( 1, 1 );
+	TEST_EQ( &growable.Element( growable.Find( 1 ) ), &( ( CUtlHashtableEntry< int, int > * )rawBuffer )[ growable.Find( 1 ) ].Raw()->m_value );
+
+	for ( int i = 2; i < 100; i++ )
+		growable.Insert( i, i );
+
+	TEST_EQ( growable.Count(), 99 );
+
+	for ( int i = 1; i < 100; i++ )
+		TEST_EQ( growable.Get( i, -1 ), i );
+
+#if _DEBUG
+	// Checks against a clone kept in an external buffer
+	growable.DbgCheckIntegrity();
+#endif
+
+	growable.Purge();
+	TEST_EQ( growable.Count(), 0 );
+}
