@@ -27,6 +27,79 @@ struct tm;
 
 enum ECurrency : int32;
 
+//-----------------------------------------------------------------------------
+// Localization variables, referenced from format strings as {type:name}
+//-----------------------------------------------------------------------------
+enum LocVariableType_t
+{
+	LOC_VARIABLE_NONE,		// -
+	LOC_VARIABLE_STRING,	// s
+	LOC_VARIABLE_TOKEN,		// k, a token looked up with FindSafe
+	LOC_VARIABLE_TIME,		// t
+	LOC_VARIABLE_MONEY,		// m
+	LOC_VARIABLE_INT,		// d
+	LOC_VARIABLE_UINT,		// u
+	LOC_VARIABLE_FLOAT,		// f
+	LOC_VARIABLE_CUSTOM,	// g, formatted by a custom handler
+	LOC_VARIABLE_ANY,		// *
+
+	LOC_VARIABLE_TYPE_COUNT
+};
+
+struct LocVariableName_t
+{
+	uint32 m_nHash;
+	const char *m_pszName;
+};
+
+struct LocVariableValue_t
+{
+	LocVariableType_t m_nType;
+	union
+	{
+		const char *m_pszString;
+		int64 m_nTime;
+		struct
+		{
+			uint32 m_nAmount;
+			ECurrency m_eCurrency;
+		} m_Money;
+		int64 m_nInt;
+		uint64 m_nUInt;
+		double m_flValue;
+	};
+};
+
+// A {type:name} reference parsed from a format string
+struct LocVariableReference_t
+{
+	const char *m_pszName;
+	uint32 m_nNameHash;
+	LocVariableType_t m_nType;
+	int m_nFlags; // From the custom handler's pfnParseFlags
+	uint32 m_nHandlerHash;
+	const char *m_pszHandlerName;
+};
+
+abstract_class ILocVariableSource
+{
+public:
+	virtual ~ILocVariableSource() {}
+
+	// Returns nullptr when the variable isn't set
+	virtual const LocVariableValue_t *GetVariable( const LocVariableName_t *pName ) = 0;
+};
+
+// The custom handler callbacks, pUserData is the one the handler was installed with
+typedef bool ( *LocVariableFormatFn_t )( CBufferString *pOut, const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, int nFlags, void *pUserData );
+typedef int ( *LocVariableParseFlagsFn_t )( const char *pszModifiers, void *pUserData );
+// Turns a quoted literal into a value
+typedef void ( *LocVariableParseLiteralFn_t )( const char *pszLiteral, LocVariableValue_t *pValue, void *pUserData );
+// Returns 0 with *pnQuantity or 1 with *pflQuantity set
+typedef int ( *LocVariablePluralFn_t )( const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, void *pUserData, int64 *pnQuantity, double *pflQuantity );
+// Writes the token whose gender the variable takes
+typedef bool ( *LocVariableCompatibleTokenFn_t )( const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, void *pUserData, CBufferString *pToken );
+
 
 //-----------------------------------------------------------------------------
 // Interface used to query text size so we can choose the longest one
@@ -261,19 +334,19 @@ public:
 	virtual void GetStatsString( CBufferString *pStrBuf ) = 0;
 
 	// The type letter of a localization variable used in format strings (s, k, t, m, d, u, f, g or *), "?" for an unknown type
-	virtual const char *GetLocVariableTypeName( uint32 nType ) = 0;
-	// Format a localization variable's value of the given type into pOut, the second one takes the whole variable
-	virtual bool FormatLocVariableValue( int nType, const void *pValue, int, CBufferString *pOut, bool bAppend ) = 0;
-	virtual bool FormatLocVariable( int nType, const void *pVariable, CBufferString *pOut, bool bAppend ) = 0;
-	// Custom handlers for the g type localization variables, keyed by the handler id the variable carries
-	// pfnFormat writes the value, pfnParseReference checks a variable reference, pfnParseModifiers parses a quoted argument, pUserData is passed back to them
-	virtual void InstallCustomLocVariableHandler( const uint32 *pHandlerId, void *pfnFormat, void *pfnParseReference, void *pfnParseModifiers, void *pUserData, int nUserValue ) = 0;
-	// Used when resolving plurals and gender variants of a variable handled by it
-	virtual void SetCustomLocVariablePluralHandler( const uint32 *pHandlerId, void *pfnPlural ) = 0;
-	virtual void SetCustomLocVariableGenderHandler( const uint32 *pHandlerId, void *pfnGender ) = 0;
-	virtual void RemoveCustomLocVariableHandler( const uint32 *pHandlerId ) = 0;
+	virtual const char *GetLocVariableTypeName( LocVariableType_t nType ) = 0;
+	// Format a value into pOut, nType is the type it should have or LOC_VARIABLE_ANY
+	virtual bool FormatLocVariableValue( LocVariableType_t nType, const LocVariableValue_t *pValue, int nFlags, CBufferString *pOut, bool bAppend ) = 0;
+	// Looks the referenced variable up in pSource, or takes its quoted literal, and formats it into pOut
+	virtual bool FormatLocVariable( ILocVariableSource *pSource, const LocVariableReference_t *pReference, CBufferString *pOut, bool bAppend ) = 0;
+	// Handlers for the LOC_VARIABLE_CUSTOM variables, keyed by the handler name of the reference
+	virtual void InstallCustomLocVariableHandler( const LocVariableName_t *pHandlerName, LocVariableFormatFn_t pfnFormat, LocVariableParseFlagsFn_t pfnParseFlags, LocVariableParseLiteralFn_t pfnParseLiteral, void *pUserData, int nUserValue ) = 0;
+	// Used when resolving plural and gender variants with a variable it handles
+	virtual void SetCustomLocVariablePluralHandler( const LocVariableName_t *pHandlerName, LocVariablePluralFn_t pfnPlural ) = 0;
+	virtual void SetCustomLocVariableCompatibleTokenHandler( const LocVariableName_t *pHandlerName, LocVariableCompatibleTokenFn_t pfnCompatibleToken ) = 0;
+	virtual void RemoveCustomLocVariableHandler( const LocVariableName_t *pHandlerName ) = 0;
 	// Returns the nUserValue it was installed with, 0 when there is no such handler
-	virtual int GetCustomLocVariableHandlerValue( const uint32 *pHandlerId ) = 0;
+	virtual int GetCustomLocVariableHandlerValue( const LocVariableName_t *pHandlerName ) = 0;
 
 	virtual ILocalizeCompiledString *CompileString( const char *pString, int, IErrorListener *pErrorListener ) = 0;
 
