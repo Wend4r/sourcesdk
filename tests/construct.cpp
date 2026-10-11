@@ -4,6 +4,7 @@
 #include <tier0/platform.h>
 
 #include <memory>
+#include <string.h>
 #include <utility>
 
 struct ConstructMoveOnly_t
@@ -59,4 +60,34 @@ REGISTER_NAMED_TEST( "Construct.MoreThanFiveArguments", Construct_MoreThanFiveAr
 	ConstructSixArgs_t *pObject = Construct( reinterpret_cast< ConstructSixArgs_t * >( storage ), 1, 2, 3, 4, 5, 6 );
 
 	TEST_EQ( pObject->m_nSum, 21 );
+}
+
+static int g_nDestructCount = 0;
+
+struct DestructCounted_t
+{
+	~DestructCounted_t() { ++g_nDestructCount; }
+
+	unsigned char m_Data[ 32 ];
+};
+
+REGISTER_NAMED_TEST( "Destruct.AllocatedSize", Destruct_AllocatedSize )
+{
+	// An object allocated with fewer bytes than its type must only be filled up to the allocation.
+	alignas( DestructCounted_t ) unsigned char storage[ sizeof( DestructCounted_t ) ];
+
+	memset( storage, 'A', sizeof( storage ) );
+
+	g_nDestructCount = 0;
+	Destruct( reinterpret_cast< DestructCounted_t * >( storage ), 8 );
+
+	TEST_EQ( g_nDestructCount, 1 );
+
+	for ( size_t i = 8; i < sizeof( storage ); ++i )
+		TEST_EQ( storage[ i ], 'A' );
+
+#ifdef _DEBUG
+	for ( size_t i = 0; i < 8; ++i )
+		TEST_EQ( storage[ i ], 0xDD );
+#endif
 }

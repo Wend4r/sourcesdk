@@ -56,7 +56,7 @@ inline T *KeyValues3::AllocateOnHeap( int initial_size )
 template<typename T>
 inline void KeyValues3::FreeOnHeap( T *element )
 {
-	Destruct( element );
+	Destruct( element, element->GetAllocatedSize() );
 
 	g_pMemAlloc->RegionFree( MEMALLOC_REGION_FREE_4, element );
 }
@@ -395,7 +395,7 @@ void KeyValues3::FreeArray( CKeyValues3Array *element, bool clearing_context )
 
 	if ( !m_bFreeArrayMemory )
 	{
-		Destruct( element );
+		Destruct( element, element->GetAllocatedSize() );
 	}
 	else
 	{
@@ -411,7 +411,7 @@ void KeyValues3::FreeArray( CKeyValues3Array *element, bool clearing_context )
 			if ( !raw_allocated )
 				context->Impl().FreeArray( element );
 			else
-				Destruct( element );
+				Destruct( element, element->GetAllocatedSize() );
 		}
 	}
 }
@@ -425,7 +425,7 @@ void KeyValues3::FreeTable( CKeyValues3Table *element, bool clearing_context )
 
 	if ( !m_bFreeArrayMemory )
 	{
-		Destruct( element );
+		Destruct( element, element->GetAllocatedSize() );
 	}
 	else
 	{
@@ -439,7 +439,7 @@ void KeyValues3::FreeTable( CKeyValues3Table *element, bool clearing_context )
 		else if ( !clearing_context )
 		{
 			if ( raw_allocated )
-				Destruct( element );
+				Destruct( element, element->GetAllocatedSize() );
 			else
 				context->Impl().FreeTable( element );
 		}

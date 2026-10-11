@@ -590,3 +590,43 @@ REGISTER_NAMED_TEST( "KeyValues3.LoadText.NoHeader", KeyValues3_LoadText_NoHeade
 	TEST_EQ( V_strcmp( root[ "nested" ][ "value" ].GetString(), "no-header" ), 0 );
 	ValidateKV3TypeExMembers( root, true );
 }
+
+REGISTER_NAMED_TEST( "KeyValues3.UndersizedNodes", KeyValues3_UndersizedNodes )
+{
+	// Tables and arrays can be allocated with fewer bytes than their type. Freeing them from an arena's
+	// raw node lists and from the heap must not write past the allocation in debug builds.
+	CKV3Arena source;
+
+	source.Root()->SetToEmptyTable();
+	source.Root()->SetMemberInt( "a", 1 );
+
+	CUtlString sError;
+	CUtlBuffer buffer( 0, 0, CUtlBuffer::NONE );
+
+	TEST_TRUE( SaveKV3( g_KV3Encoding_Binary, g_KV3Format_Generic, source.Root(), &sError, &buffer ) );
+
+	for ( int i = 0; i < 8; ++i )
+	{
+		CUtlBuffer in( buffer.Base(), buffer.TellPut(), CUtlBuffer::READ_ONLY );
+		CKV3Arena arena;
+
+		TEST_TRUE( LoadKV3( &arena, &sError, &in, g_KV3Format_Generic, "undersized.kv3" ) );
+		TEST_EQ( arena.Root()->GetMemberInt( "a" ), 1 );
+	}
+
+	for ( int i = 0; i < 8; ++i )
+	{
+		KeyValues3 kv;
+
+		kv.SetToEmptyTable();
+		kv.SetMemberVector( "vector", Vector( 1.0f, 2.0f, 3.0f ) );
+
+		CUtlBuffer text( 0, 0, CUtlBuffer::TEXT_BUFFER );
+
+		TEST_TRUE( SaveKV3( g_KV3Encoding_Text, g_KV3Format_Generic, &kv, &sError, &text ) );
+	}
+
+	// A damaged heap shows up in later allocations
+	for ( int i = 0; i < 1000; ++i )
+		free( malloc( 16 + i * 8 ) );
+}

@@ -50,6 +50,9 @@ public:
 	static constexpr size_t TotalSizeOfData( int size ) { return MAX( (KV3Helpers::PackSizeOf<DATA_ALIGNMENT, Element_t>( size )), sizeof( m_pDynamicElements ) ); }
 	static constexpr size_t TotalSizeWithoutStaticData() { return sizeof( CKeyValues3Array ) - sizeof( m_StaticElements ); }
 
+	// Arrays and tables can be allocated with fewer bytes than their type
+	size_t GetAllocatedSize() const { return TotalSizeOf( m_nInitialSize ); }
+
 private:
 	int GetAllocatedChunks() const { return m_nAllocatedChunks; }
 	bool IsBaseStatic() { return !m_bIsDynamicallySized; }
