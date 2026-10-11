@@ -50,7 +50,7 @@ struct pollfd;
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
-enum JobStatusEnum_t
+enum JobStatus_t
 {
 	JOB_OK,						// operation is successful
 	JOB_STATUS_PENDING,			// properly queued, waiting for service
@@ -59,7 +59,7 @@ enum JobStatusEnum_t
 	JOB_STATUS_UNSERVICED,		// not yet queued
 };
 
-typedef int JobStatus_t;
+typedef JobStatus_t JobStatusEnum_t;
 
 enum JobFlags_t
 {
