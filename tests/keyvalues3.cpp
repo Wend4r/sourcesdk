@@ -676,3 +676,59 @@ REGISTER_NAMED_TEST( "KeyValues3.MetaData", KeyValues3_MetaData )
 	TEST_EQ( pMeta->m_nLine, 0 );
 	TEST_EQ( pMeta->m_Comments.Count(), 0 );
 }
+
+REGISTER_NAMED_TEST( "KeyValues3.MetaData.AllClusters", KeyValues3_MetaData_AllClusters )
+{
+	// Members past the base cluster live in clusters allocated later, which must carry metadata too,
+	// whether metadata is enabled before or after they are allocated.
+	static constexpr int MEMBER_COUNT = 3 * KV3_CLUSTER_MAX_ELEMENTS;
+
+	char szName[ 32 ];
+
+	for ( int nEnableAfter = 0; nEnableAfter < 2; ++nEnableAfter )
+	{
+		CKV3Arena arena;
+
+		if ( !nEnableAfter )
+			arena.EnableMetaData( true );
+
+		KeyValues3 *pRoot = arena.Root();
+
+		pRoot->SetToEmptyTable();
+
+		for ( int i = 0; i < MEMBER_COUNT; ++i )
+		{
+			V_snprintf( szName, sizeof( szName ), "m%d", i );
+			pRoot->FindOrCreateMember( CKV3MemberName::Make( szName ) )->SetInt( i );
+		}
+
+		if ( nEnableAfter )
+			arena.EnableMetaData( true );
+
+		for ( int i = 0; i < MEMBER_COUNT; ++i )
+		{
+			V_snprintf( szName, sizeof( szName ), "m%d", i );
+
+			KV3MetaData_t *pMeta = pRoot->FindMember( CKV3MemberName::Make( szName ) )->GetMetaData();
+
+			TEST_NOT_NULL( pMeta );
+			TEST_EQ( pMeta->m_Comments.Count(), 0 );
+
+			pMeta->m_Comments.Insert( 1, CBufferString( szName ) );
+		}
+
+		arena.EnableMetaData( false );
+
+		V_snprintf( szName, sizeof( szName ), "m%d", MEMBER_COUNT - 1 );
+		TEST_NULL( pRoot->FindMember( CKV3MemberName::Make( szName ) )->GetMetaData() );
+	}
+
+	// Purging the arena keeps metadata enabled on the base cluster
+	CKV3Arena arena;
+
+	arena.EnableMetaData( true );
+	arena.Purge();
+
+	TEST_TRUE( arena.IsMetaDataEnabled() );
+	TEST_NOT_NULL( arena.Root()->GetMetaData() );
+}

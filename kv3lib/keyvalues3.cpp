@@ -2417,6 +2417,7 @@ void CKV3ArenaImpl::Purge()
 	PurgeClusterNodeChain( m_KV3PartialClusters );
 	PurgeClusterNodeChain( m_KV3FullClusters );
 	m_KV3PartialClusters.AddToChain( &m_KV3BaseCluster );
+	m_KV3BaseCluster.EnableMetaData( m_bMetaDataEnabled );
 
 	PurgeClusterNodeChain( m_PartialArrayClusters );
 	PurgeClusterNodeChain( m_FullArrayClusters );
@@ -2445,7 +2446,11 @@ void CKV3ArenaImpl::EnableMetaData( bool bEnable )
 {
 	if ( bEnable != m_bMetaDataEnabled )
 	{
-		m_KV3BaseCluster.EnableMetaData( bEnable );
+		for ( auto cluster = m_KV3PartialClusters.m_pTail; cluster; cluster = cluster->GetPrev() )
+			cluster->EnableMetaData( bEnable );
+
+		for ( auto cluster = m_KV3FullClusters.m_pTail; cluster; cluster = cluster->GetPrev() )
+			cluster->EnableMetaData( bEnable );
 
 		m_bMetaDataEnabled = bEnable;
 	}
