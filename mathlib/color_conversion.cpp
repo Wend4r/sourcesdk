@@ -614,7 +614,7 @@ void VectorToColorRGBExp32( const Vector& vin, ColorRGBExp32 &c )
 	float scalar;
 	{
 		unsigned int fbits = (127 - exponent) << 23;
-		scalar = *reinterpret_cast<float *>(&fbits);
+		scalar = BitsToFloat( fbits );
 	}
 
 	// we should never need to clamp:

@@ -44,6 +44,51 @@ REGISTER_NAMED_TEST( "CUtlLinkedList.AddRemoveIterate", CUtlLinkedList_AddRemove
 	TEST_EQ( list.Tail(), list.InvalidIndex() );
 }
 
+REGISTER_NAMED_TEST( "CUtlLinkedList.RangeFor", CUtlLinkedList_RangeFor )
+{
+	// Range-for should walk the list in link order and the iterators should step both ways.
+	CUtlLinkedList< int, int, false, int, CTestLinkedListMemory > list;
+
+	list.AddToTail( 2 );
+	list.AddToHead( 1 );
+	list.AddToTail( 3 );
+
+	int nExpected = 1;
+
+	for ( int &nValue : list )
+	{
+		TEST_EQ( nValue, nExpected );
+		nValue *= 10;
+		++nExpected;
+	}
+
+	TEST_EQ( nExpected, 4 );
+
+	const auto &constList = list;
+	int nSum = 0;
+
+	for ( const int &nValue : constList )
+	{
+		nSum += nValue;
+	}
+
+	TEST_EQ( nSum, 60 );
+
+	auto it = list.end();
+
+	--it;
+	TEST_EQ( *it, 30 );
+	--it;
+	TEST_EQ( *it, 20 );
+	++it;
+	TEST_EQ( *it, 30 );
+
+	decltype( list )::const_iterator itConst = list.begin();
+	TEST_EQ( *itConst, 10 );
+	TEST_TRUE( itConst == list.begin() );
+	TEST_TRUE( itConst != list.end() );
+}
+
 REGISTER_NAMED_TEST( "CUtlPtrLinkedList.InsertAfter", CUtlPtrLinkedList_InsertAfter )
 {
 	// Pointer linked lists should insert after a node, including after the tail.
@@ -66,6 +111,69 @@ REGISTER_NAMED_TEST( "CUtlPtrLinkedList.InsertAfter", CUtlPtrLinkedList_InsertAf
 	}
 	TEST_EQ( nExpected, 5 );
 
+	list.RemoveAll();
+	TEST_EQ( list.Count(), 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlLinkedList.ElementCount", CUtlLinkedList_ElementCount )
+{
+	// Count() should be the number of linked elements, not the number of allocated nodes.
+	CUtlLinkedList< int, int, false, int, CTestLinkedListMemory > list;
+
+	TEST_EQ( list.Count(), 0 );
+
+	auto iFirst = list.AddToTail( 1 );
+	auto iRemoved = list.AddToTail( 2 );
+	list.AddToHead( 0 );
+	TEST_EQ( list.Count(), 3 );
+
+	list.Remove( iRemoved );
+	TEST_EQ( list.Count(), 2 );
+	TEST_FALSE( list.IsValidIndex( iRemoved ) );
+
+	// A freed node is reused and counted again once linked.
+	TEST_EQ( list.AddToTail( 3 ), iRemoved );
+	TEST_EQ( list.Count(), 3 );
+
+	// Allocated but not linked nodes aren't counted.
+	auto iUnlinked = list.Alloc();
+	TEST_EQ( list.Count(), 3 );
+	list.LinkAfter( iFirst, iUnlinked );
+	TEST_EQ( list.Count(), 4 );
+	list.Unlink( iUnlinked );
+	TEST_EQ( list.Count(), 3 );
+	list.Free( iUnlinked );
+	TEST_EQ( list.Count(), 3 );
+
+	list.RemoveAll();
+	TEST_EQ( list.Count(), 0 );
+
+	list.AddToTail( 4 );
+	TEST_EQ( list.Count(), 1 );
+	list.Purge();
+	TEST_EQ( list.Count(), 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlLinkedList.MultilistElementCount", CUtlLinkedList_MultilistElementCount )
+{
+	// Multilist nodes count from allocation, since their invalid links already mark them as linked.
+	CUtlLinkedList< int, int, true, int, CTestLinkedListMemory > list;
+
+	auto iFirst = list.Alloc( true );
+	TEST_EQ( list.Count(), 1 );
+
+	auto iSecond = list.Alloc( true );
+	list.LinkBefore( iFirst, iSecond );
+	TEST_EQ( list.Count(), 2 );
+
+	list.Free( iSecond );
+	TEST_EQ( list.Count(), 1 );
+
+	list.Free( iFirst );
+	TEST_EQ( list.Count(), 0 );
+
+	list.Alloc( true );
+	list.Alloc( true );
 	list.RemoveAll();
 	TEST_EQ( list.Count(), 0 );
 }

@@ -10,6 +10,9 @@ class IResourceTypeManager;
 
 struct SerialResourceHandle_t
 {
+	SerialResourceHandle_t() : m_nData( 0 ) {}
+	SerialResourceHandle_t( uint64 nData ) : m_nData( nData ) {}
+
 	ResourceHandle_t GetPointer() const { return reinterpret_cast< ResourceHandle_t >( m_nData & 0xFFFFFFFFFFF8ull ); }
 	uint32 GetSerial() const { return static_cast< uint32 >( ( m_nData & 7 ) | ( ( m_nData >> 45 ) & 0x7FFF8 ) ); }
 

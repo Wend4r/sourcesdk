@@ -5,6 +5,7 @@
 #include "mathlib/vector4d.h"
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
+#include "mathlib/vectorws.h"
 
 
 /// Axis-aligned 3d bounding box.
@@ -186,6 +187,24 @@ public:
 	}
 };
 
+
+/// World-space axis-aligned 3d bounding box.
+schema struct AABBWS_t
+{
+public:
+	DECLARE_SCHEMA_DATA_CLASS( AABBWS_t );
+
+	VectorWS			m_vMinBounds;
+	VectorWS			m_vMaxBounds;
+
+	FORCEINLINE AABBWS_t() {}
+
+	FORCEINLINE AABBWS_t( const VectorWS &vMins, const VectorWS &vMaxs )
+	{
+		m_vMinBounds = vMins;
+		m_vMaxBounds = vMaxs;
+	}
+};
 
 inline const AABB_t Snap( const AABB_t& aabb, float flSnap )
 {
