@@ -122,3 +122,23 @@ REGISTER_NAMED_TEST( "ScriptFunctionBinding.ClassDescMember", ScriptFunctionBind
 	TEST_TRUE( binding.m_pfnBinding( binding.m_pFunction, &object, &arg, 1, &result ) );
 	TEST_EQ( static_cast< int >( result ), 12 );
 }
+
+static int ScriptBindingTest_Variant( ScriptVariant_t value, int nOther )
+{
+	return nOther;
+}
+
+REGISTER_NAMED_TEST( "ScriptFunctionBinding.ReinitVariantCount", ScriptFunctionBinding_ReinitVariantCount )
+{
+	// Describing the same binding again, as registering into a second VM does, should not grow the variant count.
+	ScriptBindingTestVM_t vm;
+
+	for ( int i = 0; i < 2; ++i )
+	{
+		ScriptRegisterFunctionNamed( ( &vm ), ScriptBindingTest_Variant, "Variant", "Takes a variant" );
+	}
+
+	TEST_EQ( vm.m_nRegistered, 2 );
+	TEST_EQ( vm.m_pBinding->m_desc.m_iParamCount, 2 );
+	TEST_EQ( vm.m_pBinding->m_desc.m_iVariantCount, 1 );
+}
