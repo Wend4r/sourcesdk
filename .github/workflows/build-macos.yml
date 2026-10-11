@@ -38,11 +38,20 @@ permissions:
 
 jobs:
   build:
-    name: Clang - ${{ matrix.config }}
-    runs-on: macos-latest
+    name: Clang - ${{ matrix.runner.arch }} runner - ${{ matrix.config }}
+    runs-on: ${{ matrix.runner.os }}
 
     strategy:
       matrix:
+        # The SDK only builds for x86_64; on the arm64 runner its tests run under Rosetta, which takes seconds per
+        # test executable, so they run natively on the Intel runner instead
+        runner:
+          - os: macos-latest
+            arch: arm64
+            test: false
+          - os: macos-15-intel
+            arch: x86_64
+            test: true
         config: [ Debug ]
       fail-fast: false
 
@@ -69,10 +78,12 @@ jobs:
       run: cmake --build --preset ${{ matrix.config }} --parallel
 
     - name: Test
-      if: matrix.config == 'Debug'
+      if: matrix.config == 'Debug' && matrix.runner.test
       run: ctest --preset ${{ matrix.config }}
 
+    # Both runners build the same x86_64 libraries, upload them once
     - name: Upload build artifact
+      if: matrix.runner.test
       uses: actions/upload-artifact@v7
       with:
         name: ${{ github.event.repository.name }}-${{ env.LATEST_TAG }}-${{ runner.os }}-Clang-${{ matrix.config }}
