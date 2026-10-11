@@ -334,7 +334,7 @@ void KeyValues3::AllocArrayInPlace( int initial_size, Data_t data, int prealloca
 		DebuggerBreak();
 	}
 
-	Construct( m_Data.m_Array.m_pRoot, KV3_INVALID_CLUSTER_ELEMENT, initial_size );
+	Construct( data.m_Array.m_pRoot, KV3_INVALID_CLUSTER_ELEMENT, initial_size );
 
 	m_Data.m_Array.m_pRoot = data.m_Array.m_pRoot;
 	m_bFreeArrayMemory = should_free;
