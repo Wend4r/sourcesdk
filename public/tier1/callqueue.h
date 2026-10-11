@@ -7,6 +7,7 @@
 #ifndef CALLQUEUE_H
 #define CALLQUEUE_H
 
+#include <functional>
 #include "tier0/tslist.h"
 #include "functors.h"
 #include "jobthread.h"
@@ -15,7 +16,6 @@
 #pragma once
 #endif
 
-//-----------------------------------------------------
 // Avert thy eyes! Imagine rather:
 //
 // void QueueCall( <function>, [args1, [arg2,]...]
@@ -76,17 +76,16 @@
 
 //-----------------------------------------------------
 
-template <typename QUEUE_TYPE = CTSQueue<CFunctor *> >
-class CCallQueueT
+class CCallQueue
 {
 public:
-	CCallQueueT()
-		: m_bNoQueue( false )
+	CCallQueue() : m_nRefCount( 0 ), m_bNoQueue( false ), m_bAbortProcessing( false ), m_bProcessing( false )
 	{
-#ifdef _DEBUG
-		m_nCurSerialNumber = 0;
-		m_nBreakSerialNumber = (unsigned)-1;
-#endif
+	}
+
+	~CCallQueue()
+	{
+		Flush();
 	}
 
 	void DisableQueue( bool bDisable )
@@ -95,8 +94,11 @@ public:
 		{
 			return;
 		}
+
 		if ( !m_bNoQueue )
+		{
 			CallQueued();
+		}
 
 		m_bNoQueue = bDisable;
 	}
@@ -106,6 +108,16 @@ public:
 		return m_bNoQueue;
 	}
 
+	void AbortProcessing()
+	{
+		m_bAbortProcessing = true;
+	}
+
+	bool IsProcessing() const
+	{
+		return m_bProcessing;
+	}
+
 	int Count()
 	{
 		return m_queue.Count();
@@ -113,50 +125,49 @@ public:
 
 	void CallQueued()
 	{
-		if ( !m_queue.Count() )
+		m_bProcessing = true;
+
+		if ( m_queue.Count() )
 		{
-			return;
-		}
+			m_queue.PushItem( NULL );
 
-		m_queue.PushItem( NULL );
+			std::function< void() > *pFunctor;
 
-		CFunctor *pFunctor = NULL;
-
-		while ( m_queue.PopItem( &pFunctor ) && pFunctor != NULL )
-		{
-#ifdef _DEBUG
-			if ( pFunctor->m_nUserID == m_nBreakSerialNumber)
+			while ( m_queue.PopItem( &pFunctor ) && pFunctor != NULL )
 			{
-				m_nBreakSerialNumber = (unsigned)-1;
+				if ( !m_bAbortProcessing )
+				{
+					( *pFunctor )();
+				}
+
+				delete pFunctor;
 			}
-#endif
-			(*pFunctor)();
-			pFunctor->Release();
 		}
 
+		m_bAbortProcessing = false;
+		m_bProcessing = false;
 	}
 
-	void ParallelCallQueued( IThreadPool *pPool = NULL )
-	{
-		if ( ! pPool ) 
-		{
-			pPool = g_pThreadPool;
-		}
-		int nNumThreads = 1;
+	DLL_CLASS_IMPORT void ParallelCallQueued( const char *pszName, IThreadPool *pPool = NULL );
 
-		if ( pPool )
+	template < typename FUNCTOR >
+	void QueueCall( FUNCTOR &&functor )
+	{
+		if ( !m_bNoQueue )
 		{
-			nNumThreads = MIN( pPool->NumThreads(), MAX( 1, Count() ) );
-		}
-		
-		if ( nNumThreads < 2 )
-		{
-			CallQueued();
+			m_queue.PushItem( new std::function< void() >( std::forward< FUNCTOR >( functor ) ) );
 		}
 		else
 		{
-			int *pDummy = NULL;
-			ParallelProcess( pPool, pDummy, nNumThreads, this, &CCallQueueT<>::ExecuteWrapper );
+			m_bProcessing = true;
+
+			if ( !m_bAbortProcessing )
+			{
+				functor();
+			}
+
+			m_bAbortProcessing = false;
+			m_bProcessing = false;
 		}
 	}
 
@@ -170,75 +181,33 @@ public:
 	{
 		m_queue.PushItem( NULL );
 
-		CFunctor *pFunctor;
+		std::function< void() > *pFunctor;
 
 		while ( m_queue.PopItem( &pFunctor ) && pFunctor != NULL )
 		{
-			pFunctor->Release();
+			delete pFunctor;
 		}
+
+		m_bAbortProcessing = false;
 	}
 
 	FUNC_GENERATE_QUEUE_METHODS();
 
 private:
-	void ExecuteWrapper( int &nDummy )						// to match paralell process function template
-	{
-		CallQueued();
-	}
-
+	// Takes over the reference held by the caller
 	void QueueFunctorInternal( CFunctor *pFunctor )
 	{
-		if ( !m_bNoQueue )
-		{
-#ifdef _DEBUG
-			pFunctor->m_nUserID = m_nCurSerialNumber++;
-#endif
-			m_queue.PushItem( pFunctor );
-		}
-		else
-		{
-			(*pFunctor)();
-			pFunctor->Release();
-		}
+		CSmartPtr< CFunctor, CRefCountAccessor > pHeldFunctor( pFunctor );
+
+		pFunctor->Release();
+		QueueCall( [pHeldFunctor]() mutable { ( *pHeldFunctor )(); } );
 	}
 
-	QUEUE_TYPE m_queue;
+	CTSQueue< std::function< void() > * > m_queue;
+	int16 m_nRefCount;
 	bool m_bNoQueue;
-	unsigned m_nCurSerialNumber;
-	unsigned m_nBreakSerialNumber;
-};
-
-class CCallQueue : public CCallQueueT<>
-{
-};
-
-//-----------------------------------------------------
-// Optional interface that can be bound to concrete CCallQueue
-//-----------------------------------------------------
-
-class ICallQueue
-{
-public:
-	void QueueFunctor( CFunctor *pFunctor )
-	{
-		// [mhansen] If we grab an extra reference here then this functor never gets released.
-		// That usually isn't too bad because the memory the functor is allocated in is cleared and
-		// reused every frame.  But, if the functor contains a CUtlDataEnvelope with more than
-		// 4 bytes of data it allocates its own memory and, in that case, we need the destructor to
-		// be called to free it.  So, we don't want to grab the "extra" reference here.
-		// The net result should be that after this call the pFunctor has a ref count of 1 (which
-		// is held by the functor it gets nested in, which is stuck in the call queue) and after it
-		// is executed the owning functor is destructed which causes it to release the reference
-		// and this functor is then freed.  This happens in imatersysteminternal.h:112 where the
-		// destructor is called explictly for the owning functor: pFunctor->~CFunctor();
-		//QueueFunctorInternal( RetAddRef( pFunctor ) );
-		QueueFunctorInternal( pFunctor );
-	}
-
-	FUNC_GENERATE_QUEUE_METHODS();
-
-private:
-	virtual void QueueFunctorInternal( CFunctor *pFunctor ) = 0;
+	bool m_bAbortProcessing;
+	bool m_bProcessing;
 };
 
 #endif // CALLQUEUE_H
