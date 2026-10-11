@@ -157,9 +157,9 @@ public:
 	inline bool IsZeroFast( ) const RESTRICT
 	{
 		COMPILE_TIME_ASSERT( sizeof(vec_t) == sizeof(int) );
-		return ( *reinterpret_cast<const int *>(&x) == 0 && 
-				 *reinterpret_cast<const int *>(&y) == 0 && 
-				 *reinterpret_cast<const int *>(&z) == 0 );
+		return ( FloatBits( x ) == 0 && 
+				 FloatBits( y ) == 0 && 
+				 FloatBits( z ) == 0 );
 	}
 
 	vec_t	NormalizeInPlace();								///< Normalize all components
@@ -2692,7 +2692,7 @@ inline QAngle Quaternion::ToQAngle() const
 
 FORCEINLINE vec_t InvRSquared( const float* v )
 {
-	return 1.0 / MAX( 1.0, v[0] * v[0] + v[1] * v[1] + v[2] * v[2] );
+	return 1.0f / MAX( 1.0f, v[0] * v[0] + v[1] * v[1] + v[2] * v[2] );
 }
 
 FORCEINLINE vec_t InvRSquared( const Vector &v )

@@ -66,6 +66,127 @@ REGISTER_NAMED_TEST( "CUtlRBTree.DuplicatesDepthAndTraversal", CUtlRBTree_Duplic
 	TEST_TRUE( tree.Find( 2 ) != tree.InvalidIndex() );
 }
 
+REGISTER_NAMED_TEST( "CUtlRBTree.InsertBehaviorAndFindCondition", CUtlRBTree_InsertBehaviorAndFindCondition )
+{
+	// Insert behaviors should control duplicates and Find conditions should pick neighbours.
+	CUtlRBTree< int, CDefLess< int >, int > tree;
+
+	TEST_TRUE( tree.IsEmpty() );
+
+	const int values[] = { 10, 20, 30 };
+
+	tree.Insert( values, 3 );
+	TEST_EQ( tree.Count(), 3 );
+	TEST_FALSE( tree.IsEmpty() );
+
+	const int iTwenty = tree.Find( 20 );
+	TEST_EQ( tree.Insert( 20, k_eInsertUpdateDupes ), iTwenty );
+	TEST_EQ( tree.Count(), 3 );
+
+	const int iDupe = tree.Insert( 20, k_eInsertAllowDupes );
+	TEST_TRUE( iDupe != iTwenty );
+	TEST_EQ( tree.Count(), 4 );
+	tree.RemoveAt( iDupe );
+
+	TEST_TRUE( tree.HasElement( 30 ) );
+	TEST_FALSE( tree.HasElement( 25 ) );
+
+	TEST_EQ( tree.Find( 20, EXACT_MATCH ), iTwenty );
+	TEST_EQ( tree.Find( 25, EXACT_MATCH ), tree.InvalidIndex() );
+	TEST_EQ( tree[ tree.Find( 25, MATCH_OR_LESS ) ], 20 );
+	TEST_EQ( tree[ tree.Find( 25, MATCH_OR_GREATER ) ], 30 );
+	TEST_EQ( tree[ tree.Find( 15, MATCH_OR_LESS ) ], 10 );
+	TEST_EQ( tree[ tree.Find( 15, MATCH_OR_GREATER ) ], 20 );
+	TEST_EQ( tree.Find( 5, MATCH_OR_LESS ), tree.InvalidIndex() );
+	TEST_EQ( tree[ tree.Find( 5, MATCH_OR_GREATER ) ], 10 );
+	TEST_EQ( tree[ tree.Find( 35, MATCH_OR_LESS ) ], 30 );
+	TEST_EQ( tree.Find( 35, MATCH_OR_GREATER ), tree.InvalidIndex() );
+
+	bool bInserted = true;
+
+	TEST_EQ( tree.FindOrInsert( 10, &bInserted ), tree.Find( 10 ) );
+	TEST_FALSE( bInserted );
+
+	const int iForty = tree.FindOrInsert( 40, &bInserted );
+	TEST_TRUE( bInserted );
+	TEST_EQ( tree[ iForty ], 40 );
+	TEST_EQ( tree.Count(), 4 );
+}
+
+struct RBTreeDeleteTracked_t
+{
+	static inline int s_nDeleted = 0;
+
+	~RBTreeDeleteTracked_t() { ++s_nDeleted; }
+};
+
+REGISTER_NAMED_TEST( "CUtlRBTree.PurgeAndDeleteElements", CUtlRBTree_PurgeAndDeleteElements )
+{
+	// Pointer trees should delete their elements when asked to.
+	using Tracked_t = RBTreeDeleteTracked_t;
+
+	CUtlRBTree< Tracked_t *, CDefLess< Tracked_t * >, int > tree;
+
+	tree.Insert( new Tracked_t() );
+	tree.Insert( new Tracked_t() );
+	tree.RemoveAllAndDeleteElements();
+
+	TEST_EQ( Tracked_t::s_nDeleted, 2 );
+	TEST_TRUE( tree.IsEmpty() );
+
+	tree.Insert( new Tracked_t() );
+	tree.PurgeAndDeleteElements();
+
+	TEST_EQ( Tracked_t::s_nDeleted, 3 );
+	TEST_TRUE( tree.IsEmpty() );
+}
+
+REGISTER_NAMED_TEST( "CUtlRBTree.RangeFor", CUtlRBTree_RangeFor )
+{
+	// Range-for should walk the tree in order and the iterators should step both ways.
+	CUtlRBTree< int, CDefLess< int >, int > tree;
+
+	TEST_TRUE( tree.begin() == tree.end() );
+
+	tree.Insert( 3 );
+	tree.Insert( 1 );
+	tree.Insert( 2 );
+
+	int nExpected = 1;
+
+	for ( const int &nValue : tree )
+	{
+		TEST_EQ( nValue, nExpected );
+		++nExpected;
+	}
+
+	TEST_EQ( nExpected, 4 );
+
+	const auto &constTree = tree;
+	int nSum = 0;
+
+	for ( const int &nValue : constTree )
+	{
+		nSum += nValue;
+	}
+
+	TEST_EQ( nSum, 6 );
+
+	auto it = tree.end();
+
+	--it;
+	TEST_EQ( *it, 3 );
+	--it;
+	TEST_EQ( *it, 2 );
+	++it;
+	TEST_EQ( *it, 3 );
+
+	decltype( tree )::const_iterator itConst = tree.begin();
+	TEST_EQ( *itConst, 1 );
+	TEST_TRUE( itConst == tree.begin() );
+	TEST_TRUE( itConst != tree.end() );
+}
+
 struct RBTreeTracked_t
 {
 	static inline int s_nAlive = 0;

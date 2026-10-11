@@ -137,7 +137,7 @@ void CUtlLeanVectorBase<T, I, A>::EnsureCapacity( int num, bool force )
 	}
 
 	m_pElements = pNew;
-	m_nAllocated = nNewAllocated;
+	m_nAllocated = MIN( nNewAllocated, ( I )MAX_ALLOCATED );
 }
 
 //-----------------------------------------------------------------------------
@@ -385,7 +385,7 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::EnsureCapacity( int num, bool 
 	}
 	
 	m_pElements = pNew;
-	m_nAllocated = nNewAllocated;
+	m_nAllocated = MIN( nNewAllocated, ( I )MAX_ALLOCATED );
 }
 
 //-----------------------------------------------------------------------------
@@ -757,7 +757,7 @@ T* CUtlLeanVectorImpl<B, T, I>::InsertBeforeGetPtr( int nBeforeIndex, int nSize 
 		DebuggerBreak();
 	}
 
-	int nMaxSize = (std::numeric_limits<I>::max)();
+	int nMaxSize = ( int )BaseClass::MAX_ALLOCATED;
 
 	if ( ( nMaxSize - nOldSize ) < nSize )
 	{
