@@ -133,8 +133,9 @@ public:
 	virtual void OnLoopDeactivate( const EngineLoopState_t &state, CEventDispatcher<CEventIDManager_Default> *pEventDispatcher ) = 0;
 	virtual void RegisterEventMap( CEventDispatcher<CEventIDManager_Default> *pEventDispatcher, EventMapRegistrationType_t nRegistrationType) = 0;
 	virtual InputHandlerResult_t HandleInputEvent( const InputEvent_t &event, CSplitScreenSlot nSplitScreenPlayerSlot ) = 0;
-	virtual ISceneView* AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime,
+	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime,
 		const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) = 0;
+	// AMNOTE: True only while loading a level, unless -favor_consistent_framerate is set; the engine then skips frames while presents are outstanding
 	virtual bool unk001( void ) = 0;
 };
 

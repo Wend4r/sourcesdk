@@ -383,8 +383,8 @@ inline FUNCPTR_TYPE ScriptConvertFuncPtrFromVoid( void *p )
 				return false; \
 			} \
 			*pReturn = ((FUNC_TYPE)pFunction)( SCRIPT_BINDING_ARGS_##N ); \
-			if ( pReturn->m_type == FIELD_VECTOR ) \
-				pReturn->m_pVector = new Vector(*pReturn->m_pVector); \
+			if ( pReturn->FieldType() == FIELD_VECTOR ) \
+				pReturn->ConvertToCopiedData(); \
  			return true; \
  		} \
 	}; \
@@ -423,8 +423,8 @@ inline FUNCPTR_TYPE ScriptConvertFuncPtrFromVoid( void *p )
 				return false; \
 			} \
 			*pReturn = (((OBJECT_TYPE_PTR)(pContext))->*ScriptConvertFuncPtrFromVoid<FUNC_TYPE>(pFunction))( SCRIPT_BINDING_ARGS_##N ); \
-			if ( pReturn->m_type == FIELD_VECTOR ) \
-				pReturn->m_pVector = new Vector(*pReturn->m_pVector); \
+			if ( pReturn->FieldType() == FIELD_VECTOR ) \
+				pReturn->ConvertToCopiedData(); \
  			return true; \
  		} \
 	}; \
