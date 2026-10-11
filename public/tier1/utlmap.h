@@ -339,8 +339,30 @@ public:
 		m_Tree.Reinsert( i );
 	}
 
-	IndexType_t InsertOrReplace( const KeyType_t &key, const ElemType_t &insert ) { return m_Tree.Insert( Node_t( key, insert ), k_eInsertUpdateDupes ); }
-	IndexType_t InsertOrReplace( const KeyType_t &key, ElemType_t &&moveInsert ) { return m_Tree.Insert( Node_t( key, Move( moveInsert ) ), k_eInsertUpdateDupes ); }
+	// Replaces only the element of an equivalent key, keeping the stored key
+	IndexType_t InsertOrReplace( const KeyType_t &key, const ElemType_t &insert )
+	{
+		IndexType_t i = Find( key );
+		if ( i != InvalidIndex() )
+		{
+			Element( i ) = insert;
+			return i;
+		}
+
+		return Insert( key, insert );
+	}
+
+	IndexType_t InsertOrReplace( const KeyType_t &key, ElemType_t &&moveInsert )
+	{
+		IndexType_t i = Find( key );
+		if ( i != InvalidIndex() )
+		{
+			Element( i ) = Move( moveInsert );
+			return i;
+		}
+
+		return Insert( key, Move( moveInsert ) );
+	}
 
 	void Swap( CUtlOrderedMapBase< K, T, L, I > &that )
 	{

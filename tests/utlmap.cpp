@@ -1,6 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
+#include <tier0/strtools.h>
 #include <tier1/utlmap.h>
 
 #include <type_traits>
@@ -38,6 +39,28 @@ REGISTER_NAMED_TEST( "CUtlMap.InsertOrReplace", CUtlMap_InsertOrReplace )
 
 	TEST_EQ( map.Count(), 1u );
 	TEST_EQ( map[map.Find( 5 )], 55 );
+}
+
+struct CaseInsensitiveLess_t
+{
+	bool operator()( const char *pLeft, const char *pRight ) const
+	{
+		return V_stricmp( pLeft, pRight ) < 0;
+	}
+};
+
+REGISTER_NAMED_TEST( "CUtlMap.InsertOrReplaceKeepsKey", CUtlMap_InsertOrReplaceKeepsKey )
+{
+	// Replacing through an equivalent key should keep the stored key and update only the element.
+	CUtlMap< const char *, int, int, CaseInsensitiveLess_t > map;
+
+	map.Insert( "Alpha", 1 );
+
+	int i = map.InsertOrReplace( "alpha", 2 );
+
+	TEST_EQ( map.Count(), 1u );
+	TEST_EQ( V_strcmp( map.Key( i ), "Alpha" ), 0 );
+	TEST_EQ( map[i], 2 );
 }
 
 REGISTER_NAMED_TEST( "CUtlMap.InorderIteration", CUtlMap_InorderIteration )
