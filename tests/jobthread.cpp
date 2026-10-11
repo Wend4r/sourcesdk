@@ -1,6 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
+#include <tier1/functors.h>
 #include <tier1/jobthread.h>
 #include <threadedjob.h>
 
@@ -69,4 +70,33 @@ REGISTER_NAMED_TEST( "CThreadedJob.Defaults", CThreadedJob_Defaults )
 
 	job.SetJobName( "Named" );
 	TEST_EQ( V_strcmp( job.GetJobName(), "Named" ), 0 );
+}
+
+class CFunctorTarget : public CRefCounted<>
+{
+public:
+	void Set( int nValue ) { m_nValue = nValue; }
+	int Get() const { return m_nValue; }
+
+private:
+	int m_nValue = 0;
+};
+
+REGISTER_NAMED_TEST( "CFunctor.RefCountingMember", CFunctor_RefCountingMember )
+{
+	// A ref counting functor holds a reference to its object until it is released.
+	CFunctorTarget *pTarget = new CFunctorTarget;
+	CFunctor *pSet = CreateRefCountingFunctor( pTarget, &CFunctorTarget::Set, 5 );
+	CFunctor *pGet = CreateRefCountingFunctor( pTarget, &CFunctorTarget::Get );
+
+	TEST_EQ( pTarget->AddRef(), 4 );
+	TEST_EQ( pTarget->Release(), 3 );
+
+	( *pSet )();
+	( *pGet )();
+	TEST_EQ( pTarget->Get(), 5 );
+
+	pSet->Release();
+	pGet->Release();
+	TEST_EQ( pTarget->Release(), 0 );
 }
