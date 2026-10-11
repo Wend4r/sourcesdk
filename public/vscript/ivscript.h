@@ -469,6 +469,8 @@ public:
 
 	// AMNOTE: Makes ExecuteFunction fail with SCRIPT_ERROR from then on, Run is unaffected
 	virtual void DisableExecuteFunction() = 0;
+	// Earlier name of DisableExecuteFunction
+	void DisableExecution() { DisableExecuteFunction(); }
 
 	virtual ScriptLanguage_t GetLanguage() = 0;
 	virtual const char *GetLanguageName() = 0;
@@ -504,6 +506,8 @@ public:
 
 	// AMNOTE: Returns the script or function that Run or ExecuteFunction is currently running, NULL outside of them
 	virtual HSCRIPT GetExecutingScript() = 0;
+	// Earlier name of GetExecutingScript, which returns a script or function rather than a scope
+	HSCRIPT GetCurrentScope() { return GetExecutingScript(); }
 
 	//--------------------------------------------------------
 	// Scope
