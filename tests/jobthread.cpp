@@ -127,3 +127,120 @@ REGISTER_NAMED_TEST( "CCallQueue.Layout", CCallQueue_Layout )
 	TEST_TRUE( ( std::is_same_v< decltype( std::declval< CCallQueue & >().IsProcessing() ), bool > ) );
 }
 #endif
+
+// Runs worker jobs in turn on the calling thread and keeps queued jobs without running them
+class CTestThreadPool : public IThreadPool
+{
+public:
+	virtual int AddRef() { return 1; }
+	virtual int Release() { return 1; }
+
+	virtual bool Start( const ThreadPoolStartParams_t &startParams, const char *pszNameOverride ) { return true; }
+	virtual bool Stop() { return true; }
+	virtual void unk001( const ThreadPoolStartParams_t &startParams ) {}
+	virtual int GetCoreTypeRequest() { return 0; }
+	virtual int NumThreads() { return m_nThreads; }
+	virtual int NumIdleThreads() { return m_nIdleThreads; }
+	virtual int GetCurrentThreadIndex() { return -1; }
+	virtual int unk101( int, int nDefault ) { return nDefault; }
+	virtual int SuspendExecution() { return 0; }
+	virtual int ResumeExecution() { return 0; }
+#ifdef _WIN32
+	virtual bool YieldWait( void *const *pHandles, const ThreadMultiWaitExtra_t *pExtra, int nObjects, bool bWaitAll, ThreadMultiWaitObjectSet_t **ppObjectSet ) { return true; }
+#else
+	virtual bool YieldWait( const pollfd *pFds, const ThreadMultiWaitExtra_t *pExtra, int nObjects, bool bWaitAll, ThreadMultiWaitObjectSet_t **ppObjectSet ) { return true; }
+#endif
+	virtual bool YieldWait( CThreadedJob **ppJobs, int nJobs, bool bWaitAll, bool bExecuteWaitedJobs ) { m_nWaitedJobs += nJobs; return true; }
+	virtual bool ExecuteOneJob() { return false; }
+	virtual void AddJob( CThreadedJob *pJob ) { m_nQueuedJobs++; }
+	virtual void AddPerFrameJob( CThreadedJob *pJob ) {}
+	virtual bool YieldWaitPerFrameJobs() { return true; }
+
+	virtual void ExecuteMultipleWorkerJob( IMultipleWorkerJob *pJob, int nMaxWorkers, const char *pszName, JobPriority_t priority )
+	{
+		for ( int i = 0; i < nMaxWorkers; i++ )
+			pJob->Execute( i );
+	}
+
+	virtual const char *GetName() { return "Test"; }
+	virtual void AddFunctionJob( const std::function< void() > &func, CThreadedJob **ppJob, const char *pszDescription, unsigned int nFlags, JobPriority_t priority ) {}
+
+	using IThreadPool::YieldWait;
+
+	int m_nThreads = 0;
+	int m_nIdleThreads = 0;
+	int m_nQueuedJobs = 0;
+	int m_nWaitedJobs = 0;
+};
+
+static void AddValue( int *pValue, int nValue ) { *pValue += nValue; }
+static void AddRange( int nFrom, int nTo, int *pSum ) { for ( int i = nFrom; i < nTo; i++ ) *pSum += i; }
+static void SumLoop( int *pValues, int nFirst, int nCount ) { for ( int i = nFirst; i < nFirst + nCount; i++ ) pValues[ i ] += i; }
+
+REGISTER_NAMED_TEST( "IThreadPool.AddCall", IThreadPool_AddCall )
+{
+	// Without an idle thread AddCall runs the call here and returns the finished job.
+	CTestThreadPool pool;
+	int nValue = 0;
+
+	CThreadedJob *pJob = pool.AddCall( &AddValue, &nValue, 3 );
+	TEST_EQ( nValue, 3 );
+	TEST_TRUE( pJob->Executed() );
+	TEST_EQ( pool.m_nQueuedJobs, 0 );
+	TEST_EQ( V_strcmp( pJob->Describe(), "Job" ), 0 );
+	pJob->Release();
+
+	// QueueCall always queues.
+	pJob = pool.QueueCall( &AddValue, &nValue, 4 );
+	TEST_EQ( nValue, 3 );
+	TEST_EQ( pool.m_nQueuedJobs, 1 );
+	TEST_EQ( pJob->GetStatus(), JOB_STATUS_UNSERVICED );
+	pJob->Release();
+
+	// A ref counting call holds the object until the job goes away.
+	CFunctorTarget *pTarget = new CFunctorTarget;
+	pJob = pool.AddRefCall( pTarget, &CFunctorTarget::Set, 7 );
+	TEST_EQ( pTarget->Get(), 7 );
+	TEST_EQ( pTarget->AddRef(), 3 );
+	pTarget->Release();
+	pJob->Release();
+	TEST_EQ( pTarget->Release(), 0 );
+}
+
+REGISTER_NAMED_TEST( "CJobSet.WaitForFinish", CJobSet_WaitForFinish )
+{
+	CTestThreadPool pool;
+	int nValue = 0;
+
+	CJobSet jobSet;
+	jobSet += pool.AddCall( &AddValue, &nValue, 1 );
+	jobSet += pool.AddCall( &AddValue, &nValue, 2 );
+	jobSet.WaitForFinish( &pool );
+	TEST_EQ( nValue, 3 );
+	TEST_EQ( pool.m_nWaitedJobs, 2 );
+}
+
+REGISTER_NAMED_TEST( "IterRangeParallel.Direct", IterRangeParallel_Direct )
+{
+	CTestThreadPool pool;
+	IThreadPool *pOldPool = g_pThreadPool;
+	g_pThreadPool = &pool;
+
+	int nSum = 0;
+	IterRangeParallel( &AddRange, 0, 10, &nSum );
+	TEST_EQ( nSum, 45 );
+
+	g_pThreadPool = pOldPool;
+}
+
+REGISTER_NAMED_TEST( "ParallelLoopProcess.Direct", ParallelLoopProcess_Direct )
+{
+	// Without pool threads the loop runs on the calling thread in chunks.
+	CTestThreadPool pool;
+	int values[ 10 ] = {};
+
+	ParallelLoopProcessChunks( &pool, values, 0, 10, 3, &SumLoop );
+
+	for ( int i = 0; i < 10; i++ )
+		TEST_EQ( values[ i ], i );
+}
