@@ -424,6 +424,9 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 	{
 		InternalElement( elem ).m_Next = InvalidIndex();
 		InternalElement( elem ).m_Previous = InvalidIndex();
+
+		// Invalid links make the node count as linked, so Unlink() and Free() will decrement it
+		++m_ElementCount;
 	}
 
 	return elem;

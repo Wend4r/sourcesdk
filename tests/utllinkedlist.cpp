@@ -108,3 +108,27 @@ REGISTER_NAMED_TEST( "CUtlLinkedList.ElementCount", CUtlLinkedList_ElementCount 
 	list.Purge();
 	TEST_EQ( list.Count(), 0 );
 }
+
+REGISTER_NAMED_TEST( "CUtlLinkedList.MultilistElementCount", CUtlLinkedList_MultilistElementCount )
+{
+	// Multilist nodes count from allocation, since their invalid links already mark them as linked.
+	CUtlLinkedList< int, int, true, int, CTestLinkedListMemory > list;
+
+	auto iFirst = list.Alloc( true );
+	TEST_EQ( list.Count(), 1 );
+
+	auto iSecond = list.Alloc( true );
+	list.LinkBefore( iFirst, iSecond );
+	TEST_EQ( list.Count(), 2 );
+
+	list.Free( iSecond );
+	TEST_EQ( list.Count(), 1 );
+
+	list.Free( iFirst );
+	TEST_EQ( list.Count(), 0 );
+
+	list.Alloc( true );
+	list.Alloc( true );
+	list.RemoveAll();
+	TEST_EQ( list.Count(), 0 );
+}
