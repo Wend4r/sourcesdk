@@ -88,14 +88,14 @@ public:
 };
 
 // The custom handler callbacks, pUserData is the one the handler was installed with
-typedef bool ( *LocVariableFormatFn_t )( CBufferString *pOut, const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, int nFlags, void *pUserData );
+typedef bool ( *LocVariableFormatFn_t )( CBufferString &out, const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, int nFlags, void *pUserData );
 typedef int ( *LocVariableParseFlagsFn_t )( const char *pszModifiers, void *pUserData );
 // Turns a quoted literal into a value
 typedef void ( *LocVariableParseLiteralFn_t )( const char *pszLiteral, LocVariableValue_t *pValue, void *pUserData );
 // Returns 0 with *pnQuantity or 1 with *pflQuantity set
 typedef int ( *LocVariablePluralFn_t )( const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, void *pUserData, int64 *pnQuantity, double *pflQuantity );
 // Writes the token whose gender the variable takes
-typedef bool ( *LocVariableCompatibleTokenFn_t )( const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, void *pUserData, CBufferString *pToken );
+typedef bool ( *LocVariableCompatibleTokenFn_t )( const LocVariableValue_t *pValue, ILocVariableSource *pSource, const LocVariableName_t *pName, void *pUserData, CBufferString &token );
 
 
 //-----------------------------------------------------------------------------
@@ -232,7 +232,7 @@ public:
 
 	virtual const char *FindSubLanguageUnsafe( const char *pToken ) = 0;
 	virtual const char *FindSubLanguageSafe( const char *pToken ) = 0;
-	virtual const char *GetLocalizedString( const char *szText, CBufferString *pOut ) = 0;
+	virtual const char *GetLocalizedString( const char *szText, CBufferString &out ) = 0;
 
 	// finds the index of a token by token name, LOCALIZE_INVALID_STRING_INDEX if not found
 	virtual LocalizeStringIndex_t FindIndex( const char *pToken ) = 0;
@@ -246,27 +246,27 @@ public:
 	virtual const char *GetValueByInstanceIndex( LocalizeInstanceIndex_t index ) = 0;
 
 	// builds a localized formatted string
-	virtual const char *ConstructString( CBufferString *pOut, const char *formatString, ILocVariableSource *localizationVariables, bool bAppend ) = 0;
-	virtual const char *ConstructMFString( CBufferString *pOut, const char *formatString, ILocVariableSource *localizationVariables, bool bAppend ) = 0;
+	virtual const char *ConstructString( CBufferString &out, const char *formatString, ILocVariableSource *localizationVariables, bool bAppend ) = 0;
+	virtual const char *ConstructMFString( CBufferString &out, const char *formatString, ILocVariableSource *localizationVariables, bool bAppend ) = 0;
 
-	virtual const char *ConstructDateString( CBufferString *pOut, LOC_DATE_FORMAT format, tm *pTime, bool bAppend ) = 0;
-	virtual const char *ConstructDateString( CBufferString *pOut, LOC_DATE_FORMAT format, uint64 nTime, bool bAppend ) = 0;
-	virtual const char *ConstructRelativeDateString( CBufferString *pOut, LOC_DATE_FORMAT fallbackFormat, uint64 nRelativeTime, bool bAppend ) = 0;
-	virtual const char *ConstructRelativeTimeString( CBufferString *pOut, LOC_DATE_FORMAT timeFormat, LOC_DATE_FORMAT fallbackFormat, uint64 nRelativeTime, bool bAppend ) = 0;
-	virtual const char *ConstructDurationString( CBufferString *pOut, LOC_DURATION_FORMAT format, int nSeconds, bool bAppend ) = 0;
-	virtual const char *ConstructNumberString( CBufferString *pOut, LOC_NUMBER_FORMAT format, uint64 nValue, bool bAppend ) = 0;
-	virtual const char *ConstructNumberString( CBufferString *pOut, LOC_NUMBER_FORMAT format, double flValue, int nPrecision, bool bAppend ) = 0;
+	virtual const char *ConstructDateString( CBufferString &out, LOC_DATE_FORMAT format, tm *pTime, bool bAppend ) = 0;
+	virtual const char *ConstructDateString( CBufferString &out, LOC_DATE_FORMAT format, uint64 nTime, bool bAppend ) = 0;
+	virtual const char *ConstructRelativeDateString( CBufferString &out, LOC_DATE_FORMAT fallbackFormat, uint64 nRelativeTime, bool bAppend ) = 0;
+	virtual const char *ConstructRelativeTimeString( CBufferString &out, LOC_DATE_FORMAT timeFormat, LOC_DATE_FORMAT fallbackFormat, uint64 nRelativeTime, bool bAppend ) = 0;
+	virtual const char *ConstructDurationString( CBufferString &out, LOC_DURATION_FORMAT format, int nSeconds, bool bAppend ) = 0;
+	virtual const char *ConstructNumberString( CBufferString &out, LOC_NUMBER_FORMAT format, uint64 nValue, bool bAppend ) = 0;
+	virtual const char *ConstructNumberString( CBufferString &out, LOC_NUMBER_FORMAT format, double flValue, int nPrecision, bool bAppend ) = 0;
 
 	// Turns a number written with the current language's signs and separators back into a plain one
-	virtual const char *ParseNumberString( const char *pszNumber, CBufferString *pOut ) = 0;
+	virtual const char *ParseNumberString( const char *pszNumber, CBufferString &out ) = 0;
 	// Also accepts NaN, +Inf and -Inf, returns false and sets flDefault when the string isn't a number
 	virtual bool ParseNumber( const char *pszNumber, double *pflValue, double flDefault ) = 0;
 
 	// Construct formatted monetary strings.
 	// The integer version's value is scaled by 100 so that fractions are represented exactly.
 	// Normally the precision of the value is set according to the currency's conventions but it can be forced with a non-negative nOverridePrecision.
-	virtual const char *ConstructMoneyString( CBufferString *pOut, uint32 nValue, ECurrency eCurrency, int nOverridePrecision, bool bAppend ) = 0;
-	virtual const char *ConstructMoneyString( CBufferString *pOut, uint64 nValue, ECurrency eCurrency, int nOverridePrecision, bool bAppend ) = 0;
+	virtual const char *ConstructMoneyString( CBufferString &out, uint32 nValue, ECurrency eCurrency, int nOverridePrecision, bool bAppend ) = 0;
+	virtual const char *ConstructMoneyString( CBufferString &out, uint64 nValue, ECurrency eCurrency, int nOverridePrecision, bool bAppend ) = 0;
 
 	// gets the values by the string index
 	virtual const char *GetNameByIndex( LocalizeStringIndex_t index ) = 0;
@@ -328,14 +328,14 @@ public:
 	virtual bool GetTrackingMode() const = 0;
 	virtual void SetTrackingMode( bool bEnable ) = 0;
 	virtual bool DoKoreanJongSungRuleInPlace( char *pUnicodeBuffer, int unicodeBufferSizeInBytes ) = 0;
-	virtual void GetStatsString( CBufferString *pStrBuf ) = 0;
+	virtual void GetStatsString( CBufferString &strBuf ) = 0;
 
 	// The type letter of a localization variable used in format strings (s, k, t, m, d, u, f, g or *), "?" for an unknown type
 	virtual const char *GetLocVariableTypeName( LocVariableType_t nType ) = 0;
-	// Format a value into pOut, nType is the type it should have or LOC_VARIABLE_ANY
-	virtual bool FormatLocVariableValue( LocVariableType_t nType, const LocVariableValue_t *pValue, int nFlags, CBufferString *pOut, bool bAppend ) = 0;
-	// Looks the referenced variable up in pSource, or takes its quoted literal, and formats it into pOut
-	virtual bool FormatLocVariable( ILocVariableSource *pSource, const LocVariableReference_t *pReference, CBufferString *pOut, bool bAppend ) = 0;
+	// Format a value into out, nType is the type it should have or LOC_VARIABLE_ANY
+	virtual bool FormatLocVariableValue( LocVariableType_t nType, const LocVariableValue_t *pValue, int nFlags, CBufferString &out, bool bAppend ) = 0;
+	// Looks the referenced variable up in pSource, or takes its quoted literal, and formats it into out
+	virtual bool FormatLocVariable( ILocVariableSource *pSource, const LocVariableReference_t *pReference, CBufferString &out, bool bAppend ) = 0;
 	// Handlers for the LOC_VARIABLE_CUSTOM variables, keyed by the handler name of the reference
 	virtual void InstallCustomLocVariableHandler( const LocVariableName_t &handlerName, LocVariableFormatFn_t pfnFormat, LocVariableParseFlagsFn_t pfnParseFlags, LocVariableParseLiteralFn_t pfnParseLiteral, void *pUserData, int nUserValue ) = 0;
 	// Used when resolving plural and gender variants with a variable it handles
@@ -348,9 +348,9 @@ public:
 	virtual ILocalizeCompiledString *CompileString( const char *pString, int, IErrorListener *pErrorListener ) = 0;
 
 	// uses the format strings first: %s1, %s2, ...
-	virtual const char *ConstructString( CBufferString *pOut, const char *formatString, int numFormatParameters, ... ) = 0;
-	virtual const char *ConstructStringVArgs( CBufferString *pOut, const char *formatString, int numFormatParameters, va_list argList, bool bAppend ) = 0;
-	virtual const char *ConstructStringArgArray( CBufferString *pOut, const char *formatString, int numFormatParameters, const char * const *pArgList, bool bAppend ) = 0;
+	virtual const char *ConstructString( CBufferString &out, const char *formatString, int numFormatParameters, ... ) = 0;
+	virtual const char *ConstructStringVArgs( CBufferString &out, const char *formatString, int numFormatParameters, va_list argList, bool bAppend ) = 0;
+	virtual const char *ConstructStringArgArray( CBufferString &out, const char *formatString, int numFormatParameters, const char * const *pArgList, bool bAppend ) = 0;
 
 	virtual ILocalize_EconProvider *GetEconProvider() = 0;
 	virtual void RunInternalTest_LocVariableParse() = 0;
