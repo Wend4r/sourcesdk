@@ -18,6 +18,7 @@
 #include "tier0/platform.h"
 #include "tier1/convar.h"
 #include "tier0/utlstring.h"
+#include "tier0/utlscratchmemory.h"
 #include "tier1/utlvector.h"
 
 #include <cmath>
@@ -52,7 +53,7 @@ public:
 
 	// Inserts text into the command buffer
 	// AMNOTE: The last three are stored in the CCommand of each command added
-	DLL_CLASS_IMPORT bool AddText( const char *pText, int nTickDelay = 0, int nMaxCommands = 0, bool unk3 = false, double flInputTime = NAN, uint64 unk5 = 0 );
+	DLL_CLASS_IMPORT bool AddText( const char *pText, int nTickDelay = 0, int nMaxCommands = 0, bool bSequenceMarker = false, double flInputTime = NAN, uint64 nInputTimestamp = 0 );
 
 	// Used to iterate over all commands appropriate for the current time
 	DLL_CLASS_IMPORT void BeginProcessingCommands( int nDeltaTicks );
@@ -100,11 +101,31 @@ private:
 		ARGS_BUFFER_LENGTH = 32768,
 	};
 
+	// A queued command, kept in a list sorted by tick
+	struct Command_t
+	{
+		int				m_nTick;
+		int				m_nFirstArgS;				// Offset of the text in m_ArgSBuffer
+		int				m_nBufferSize;				// Length of the text including the terminator
+		bool			m_bSequenceMarker;
+		double			m_flInputTime;
+		uint64			m_nInputTimestamp;
+		uint64			m_nRequiredFlags;			// m_nRequiredFlags when the command was added
+		Command_t		*m_pPrev;					// Points to itself while the command is unlinked
+		Command_t		*m_pNext;					// Also links the free list
+	};
+
 	char			m_ArgSBuffer[ ARGS_BUFFER_LENGTH ];	// 0x0000
-	uint8			m_unk001[ 56 ];			// 0x8000
+	Command_t		*m_pFirstCommand;			// 0x8000
+	Command_t		*m_pLastCommand;			// 0x8008
+	Command_t		*m_pFreeCommands;			// 0x8010
+	int				m_nCommandCount;			// 0x8018
+	int				m_nAllocatedCommandCount;	// 0x801C
+	CUtlScratchMemoryPool	m_CommandPool;		// 0x8020
+	int				m_nCommandsPerAlloc;		// 0x8030
 	uint64			m_nRequiredFlags;			// 0x8038
 	CommandHandle_t	m_hNextCommand;				// 0x8040
-	uint8			m_unk101[ 4 ];			// 0x8048
+	int				m_nLastUsedArgSSize;		// 0x8048
 	int				m_nArgSBufferSize;			// 0x804C
 	int				m_nCurrentTick;				// 0x8050
 	int				m_nLastTickToProcess;		// 0x8054

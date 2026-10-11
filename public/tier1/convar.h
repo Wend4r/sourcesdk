@@ -328,9 +328,9 @@ private:
 	CUtlVectorFixedGrowable<char*, COMMAND_MAX_ARGC> m_Args;
 
 	// Set from CCommandBuffer::AddText/DequeueNextCommand, reset in Tokenize
-	bool m_bFromUntrustedSource = false; // command from untrusted source (client)
-	double m_flExecTime = NAN; // NaN = execute immediately
-	uint64 m_nRequiredFlags = 0; // required ConVar flags (see CCommandBuffer::SetRequiredFlags)
+	bool m_bSequenceMarker = false; // the engine's own __beginseq/__endseq around commands of one input event
+	double m_flInputTime = NAN; // InputEvent_t::m_flPollTime of the input event the command came from, NaN for other commands
+	uint64 m_nInputTimestamp = 0; // InputEvent_t::m_nTimestamp of the input event the command came from, 0 for other commands
 };
 
 inline int CCommand::MaxCommandLength()
