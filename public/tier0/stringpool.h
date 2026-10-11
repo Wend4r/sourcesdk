@@ -27,16 +27,16 @@ enum StringPoolCase_t
 	StringPoolCaseSensitive
 };
 
-class CStringPool
+class CStringPool_CI
 {
 public:
-	DLL_CLASS_IMPORT CStringPool( StringPoolCase_t caseSensitivity = StringPoolCaseInsensitive );
-	DLL_CLASS_IMPORT ~CStringPool();
+	DLL_CLASS_IMPORT CStringPool_CI();
+	DLL_CLASS_IMPORT ~CStringPool_CI();
 
 	DLL_CLASS_IMPORT unsigned int Count() const;
 
 	DLL_CLASS_IMPORT const char * Allocate( const char *pszValue );
-	DLL_CLASS_IMPORT void FreeAll();
+	DLL_CLASS_IMPORT void Purge();
 
 	// searches for a string already in the pool
 	DLL_CLASS_IMPORT const char * Find( const char *pszValue );
@@ -54,7 +54,7 @@ protected:
 // Elements are stored more efficiently than in the conventional string pool, 
 // quicker to look up, and storage is tracked via reference counts.  
 //
-// At some point this should replace CStringPool
+// At some point this should replace CStringPool_CI
 //-----------------------------------------------------------------------------
 class CCountedStringPool_CI
 {

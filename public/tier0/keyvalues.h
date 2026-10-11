@@ -54,17 +54,13 @@ class CKeyValuesGrowableStringTable;
 #define FOR_EACH_VALUE( kvRoot, kvValue ) \
 	for ( KeyValues * kvValue = kvRoot->GetFirstValue(); kvValue != NULL; kvValue = kvValue->GetNextValue() )
 
-DECLARE_POINTER_HANDLE( HTemporaryKeyValueAllocationScope );
-
 class CTemporaryKeyValues
 {
+public:
 	CTemporaryKeyValues() : m_pKeyValues(nullptr), m_hScope() {}
 	~CTemporaryKeyValues()
 	{
-		// GAMMACASE: TODO: Complete with actual KeyValuesSystem call once it's reversed too.
-#if 0
-		KeyValuesSystem()->ReleaseTemporaryAllocationScope( m_hScope );
-#endif
+		KeyValuesSystem()->FreeTemporaryKeyValueAllocationScope( m_hScope );
 	}
 
 private:

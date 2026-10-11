@@ -135,6 +135,12 @@ private:
 	uint32 m_nHashCode;
 };
 
+// Hash tables keyed by a string token use its hash code directly.
+inline unsigned int DefaultHashFunctor< CUtlStringToken >::operator()( const CUtlStringToken &k ) const
+{
+	return k.GetHashCode();
+}
+
 class CUtlStringTokenNoRegistration : public CUtlStringToken
 {
 public:

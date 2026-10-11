@@ -915,7 +915,7 @@ inline bool CBitVecT<BASE_OPS>::IsAllSet(void) const
 
 	for (int i = this->GetNumDWords() - 1; i >= 0; --i) 
 	{
-		if ( this->Base()[i] != ~0 ) 
+		if ( this->Base()[i] != ~0u ) 
 		{
 			return false;
 		}

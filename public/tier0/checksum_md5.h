@@ -20,7 +20,7 @@ struct MD5Value_t
 {
 	unsigned char bits[MD5_DIGEST_LENGTH];
 
-	void Zero()
+	void Zero();
 	DLL_CLASS_IMPORT bool IsZero() const;
 
 	bool operator==( const MD5Value_t &src ) const;
@@ -55,7 +55,7 @@ inline bool MD5_Compare( const MD5Value_t &data, const MD5Value_t &compare )
 	return V_memcmp( data.bits, compare.bits, MD5_DIGEST_LENGTH ) == 0;
 }
 
-inline bool MD5Value_t::Zero( )
+inline void MD5Value_t::Zero()
 {
 	V_memset( bits, 0, sizeof( bits ) );
 }
