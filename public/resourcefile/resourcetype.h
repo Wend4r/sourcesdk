@@ -72,6 +72,9 @@ schema struct ResourceId_t
 	TYPEMETA( MIsBoxedIntegerType );
 	DECLARE_SCHEMA_DATA_CLASS( ResourceId_t );
 
+	ResourceId_t() : m_Value( 0 ) {}
+	ResourceId_t( uint64 nValue ) : m_Value( nValue ) {}
+
 	uint64 m_Value;
 
 	operator uint64() const { return Get(); }
