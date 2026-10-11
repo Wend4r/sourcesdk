@@ -40,7 +40,8 @@ struct EntOutput_t;
 struct EntInput_t;
 struct datamap_t;
 
-typedef void (*BASEPTR)(CEntityInstance *ent);
+typedef void (CEntityInstance::*BASEPTR)();
+typedef void (CEntityInstance::*ENTITYFUNCPTR)(CEntityInstance *pOther);
 
 struct EntClassComponentOverride_t
 {
@@ -152,6 +153,8 @@ public:
 	}
 
 public:
+	// Convert this class' think and touch functions to and from their names,
+	// searching the parent classes as well
 	using FuncToNameCb = const char *(*)(BASEPTR think_fn);
 	using NameToFuncCb = BASEPTR (*)(const char *fn_name);
 	using RegisterPulseBindingsCb = void (*)(CPulseAPIExtensionRegistrationContext *pContext);
