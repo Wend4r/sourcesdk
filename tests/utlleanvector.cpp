@@ -180,7 +180,9 @@ struct LeanVectorCounted_t
 REGISTER_NAMED_TEST( "CUtlLeanVector.ExternalPurge", CUtlLeanVector_ExternalPurge )
 {
 	// Purge on an external buffer destructs the elements and detaches the buffer without freeing it.
-	LeanVectorCounted_t buffer[ 4 ] = {};
+	// Raw storage, so only the elements the vector constructs are ever destructed
+	alignas( LeanVectorCounted_t ) unsigned char storage[ 4 * sizeof( LeanVectorCounted_t ) ];
+	LeanVectorCounted_t *buffer = reinterpret_cast< LeanVectorCounted_t * >( storage );
 
 	CUtlLeanVector< LeanVectorCounted_t > vec( buffer, 4 );
 

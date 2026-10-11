@@ -76,6 +76,8 @@ REGISTER_NAMED_TEST( "Destruct.AllocatedSize", Destruct_AllocatedSize )
 	// An object allocated with fewer bytes than its type must only be filled up to the allocation.
 	alignas( DestructCounted_t ) unsigned char storage[ sizeof( DestructCounted_t ) ];
 
+	// Destruct ends the lifetime of a live object, the byte pattern only marks the fill
+	Construct( reinterpret_cast< DestructCounted_t * >( storage ) );
 	memset( storage, 'A', sizeof( storage ) );
 
 	g_nDestructCount = 0;
