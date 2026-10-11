@@ -1005,17 +1005,18 @@ void CUtlVectorBase<T, I, A>::GrowVector( I num )
 template< typename T, typename I, class A >
 I CUtlVectorBase<T, I, A>::SortedFind( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2, void *pCtx ), void *pLessContext ) const
 {
-	I start = 0, stop = Count() - 1;
-	while ( start <= stop )
+	// Half-open range, so an unsigned I can't wrap below 0
+	I start = 0, stop = Count();
+	while ( start < stop )
 	{
-		I mid = ( start + stop ) >> 1;
+		I mid = start + ( ( stop - start ) >> 1 );
 		if ( pfnLessFunc( Element( mid ), search, pLessContext ) )
 		{
 			start = mid + 1;
 		}
 		else if ( pfnLessFunc( search, Element( mid ), pLessContext ) )
 		{
-			stop = mid - 1;
+			stop = mid;
 		}
 		else
 		{
@@ -1028,17 +1029,18 @@ I CUtlVectorBase<T, I, A>::SortedFind( const T& search, bool (__cdecl *pfnLessFu
 template< typename T, typename I, class A >
 I CUtlVectorBase<T, I, A>::SortedFind( const T& search, bool (__cdecl *pfnLessFunc)( const T& src1, const T& src2 ) ) const
 {
-	I start = 0, stop = Count() - 1;
-	while ( start <= stop )
+	// Half-open range, so an unsigned I can't wrap below 0
+	I start = 0, stop = Count();
+	while ( start < stop )
 	{
-		I mid = ( start + stop ) >> 1;
+		I mid = start + ( ( stop - start ) >> 1 );
 		if ( pfnLessFunc( Element( mid ), search ) )
 		{
 			start = mid + 1;
 		}
 		else if ( pfnLessFunc( search, Element( mid ) ) )
 		{
-			stop = mid - 1;
+			stop = mid;
 		}
 		else
 		{

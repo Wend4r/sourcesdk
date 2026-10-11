@@ -468,6 +468,27 @@ REGISTER_NAMED_TEST( "CUtlVector.SortedHelpersAndFindMatch", CUtlVector_SortedHe
 	TEST_EQ( vec.FindMatch( []( const int &nValue ) { return nValue > 30; } ), vec.InvalidIndex() );
 }
 
+static bool __cdecl UIntLessAscending( const unsigned int &left, const unsigned int &right )
+{
+	return left < right;
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.SortedFindUnsignedIndex", CUtlVector_SortedFindUnsignedIndex )
+{
+	// Sorted searches with an unsigned index should miss below the first element without wrapping.
+	CUtlVector< unsigned int, unsigned int > vec;
+
+	TEST_EQ( vec.SortedFind( 5u, &UIntLessAscending ), vec.InvalidIndex() );
+
+	vec.AddToTail( 3u );
+	vec.AddToTail( 7u );
+
+	TEST_EQ( vec.SortedFind( 1u, &UIntLessAscending ), vec.InvalidIndex() );
+	TEST_EQ( vec.SortedFind( 3u, &UIntLessAscending ), 0u );
+	TEST_EQ( vec.SortedFind( 7u, &UIntLessAscending ), 1u );
+	TEST_EQ( vec.SortedFind( 9u, &UIntLessAscending ), vec.InvalidIndex() );
+}
+
 REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDeleteElements )
 {
 	// Purge-and-delete should destroy heap-owned elements and empty the vector.
