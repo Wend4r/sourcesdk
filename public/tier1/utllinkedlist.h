@@ -144,7 +144,7 @@ public:
 	I  Previous( I i ) const;
 	I  Next( I i ) const;
 
-	// STL / C++11-style iterators
+	// STL / C++11-style iterators over the list from Head(); with nodes linked into several lists they reach only that one
 	typedef CUtlBidirectionalIteratorImplT< CUtlLinkedList< T, S, ML, I, M >, false > iterator;
 	typedef CUtlBidirectionalIteratorImplT< CUtlLinkedList< T, S, ML, I, M >, true > const_iterator;
 	const_iterator begin() const { return const_iterator( this, Head() ); }
