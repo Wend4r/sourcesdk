@@ -337,13 +337,13 @@ public:
 	// Looks the referenced variable up in pSource, or takes its quoted literal, and formats it into pOut
 	virtual bool FormatLocVariable( ILocVariableSource *pSource, const LocVariableReference_t *pReference, CBufferString *pOut, bool bAppend ) = 0;
 	// Handlers for the LOC_VARIABLE_CUSTOM variables, keyed by the handler name of the reference
-	virtual void InstallCustomLocVariableHandler( const LocVariableName_t *pHandlerName, LocVariableFormatFn_t pfnFormat, LocVariableParseFlagsFn_t pfnParseFlags, LocVariableParseLiteralFn_t pfnParseLiteral, void *pUserData, int nUserValue ) = 0;
+	virtual void InstallCustomLocVariableHandler( const LocVariableName_t &handlerName, LocVariableFormatFn_t pfnFormat, LocVariableParseFlagsFn_t pfnParseFlags, LocVariableParseLiteralFn_t pfnParseLiteral, void *pUserData, int nUserValue ) = 0;
 	// Used when resolving plural and gender variants with a variable it handles
-	virtual void SetCustomLocVariablePluralHandler( const LocVariableName_t *pHandlerName, LocVariablePluralFn_t pfnPlural ) = 0;
-	virtual void SetCustomLocVariableCompatibleTokenHandler( const LocVariableName_t *pHandlerName, LocVariableCompatibleTokenFn_t pfnCompatibleToken ) = 0;
-	virtual void RemoveCustomLocVariableHandler( const LocVariableName_t *pHandlerName ) = 0;
+	virtual void SetCustomLocVariablePluralHandler( const LocVariableName_t &handlerName, LocVariablePluralFn_t pfnPlural ) = 0;
+	virtual void SetCustomLocVariableCompatibleTokenHandler( const LocVariableName_t &handlerName, LocVariableCompatibleTokenFn_t pfnCompatibleToken ) = 0;
+	virtual void RemoveCustomLocVariableHandler( const LocVariableName_t &handlerName ) = 0;
 	// Returns the nUserValue it was installed with, 0 when there is no such handler
-	virtual int GetCustomLocVariableHandlerValue( const LocVariableName_t *pHandlerName ) = 0;
+	virtual int GetCustomLocVariableHandlerValue( const LocVariableName_t &handlerName ) = 0;
 
 	virtual ILocalizeCompiledString *CompileString( const char *pString, int, IErrorListener *pErrorListener ) = 0;
 
