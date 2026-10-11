@@ -398,16 +398,15 @@ I CUtlLinkedList<T,S,ML,I,M>::AllocInternal( bool multilist )
 	I elem;
 	if ( m_FirstFree == InvalidIndex() )
 	{
-		typename M::Iterator_t it = m_Memory.AddToTail();
-
 		// We can overflow before the utlmemory overflows, since S != I
-		if ( !IndexInRange( m_Memory.GetIndex( it ) ) )
+		// Checked before growing, so a rejected slot is never left uninitialized in memory
+		if ( !IndexInRange( m_Memory.Count() ) )
 		{
 			Plat_FatalError( "CUtlLinkedList overflow! (exhausted index range)\n" );
 			return InvalidIndex();
 		}
 
-		elem = m_Memory.GetIndex( it );
+		elem = m_Memory.GetIndex( m_Memory.AddToTail() );
 	} 
 	else
 	{
