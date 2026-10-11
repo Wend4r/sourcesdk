@@ -1,0 +1,55 @@
+name: Build protoc / macOS universal
+
+on:
+  push:
+    branches: [ "ci/protoc-osx64" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        repository: Wend4r/protobuf
+        ref: 3.21.8-src
+        path: protobuf
+
+    - name: Install packages
+      run: brew install ninja
+
+    - name: Configure
+      run: >
+        cmake -S protobuf -B build -G Ninja
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+        -Dprotobuf_BUILD_TESTS=OFF
+        -Dprotobuf_WITH_ZLIB=OFF
+        -Dprotobuf_BUILD_SHARED_LIBS=OFF
+        -Dprotobuf_BUILD_PROTOC_BINARIES=ON
+
+    - name: Build
+      run: cmake --build build --target protoc --parallel
+
+    - name: Check
+      run: |
+        file build/protoc
+        lipo -info build/protoc
+        otool -L build/protoc
+        build/protoc --version
+        arch -x86_64 build/protoc --version
+
+    - name: Publish
+      run: |
+        git init out
+        cd out
+        git checkout -b ci/protoc-osx64-out
+        cp ../build/protoc protoc
+        strip -S protoc || true
+        git add protoc
+        git -c user.name=ci -c user.email=ci@localhost commit -q -m "protoc $(../build/protoc --version) universal from Wend4r/protobuf@$(git -C ../protobuf rev-parse --short HEAD)"
+        git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" ci/protoc-osx64-out
