@@ -20,6 +20,10 @@
 template < typename T >
 void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int size, const T* data, bool bFree )
 {
+	// Normalizing our own typed array: keep its memory alive until the values are copied out.
+	if ( data == m_Data.m_pMemory )
+		m_bFreeArrayMemory = false;
+
 	PrepareForType( KV3_TYPEEX_ARRAY, subtype );
 
 	CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
@@ -208,6 +212,12 @@ void KeyValues3::CopyFrom( const KeyValues3& other )
 				case KV3_TYPEEX_ARRAY_INT16_SHORT:
 					AllocArray<int16>( other.m_nNumArrayElements, other.m_Data.m_Array.m_i16Short, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_ARRAY_INT16_SHORT, KV3_TYPEEX_ARRAY_INT16, eSrcSubType, KV3_TYPEEX_INT, KV3_SUBTYPE_INT16 );
 					break;
+				case KV3_TYPEEX_ARRAY_UINT32:
+					AllocArray< uint32 >( other.m_nNumArrayElements, other.m_Data.m_Array.m_u32, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_UINT32, eSrcSubType, KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT32 );
+					break;
+				case KV3_TYPEEX_ARRAY_UINT64:
+					AllocArray< uint64 >( other.m_nNumArrayElements, other.m_Data.m_Array.m_u64, KV3_ARRAY_ALLOC_NORMAL, KV3_TYPEEX_INVALID, KV3_TYPEEX_ARRAY_UINT64, eSrcSubType, KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT64 );
+					break;
 				default:
 					break;
 			}
@@ -216,7 +226,7 @@ void KeyValues3::CopyFrom( const KeyValues3& other )
 		case KV3_TYPE_TABLE:
 		{
 			SetToEmptyTable();
-			GetTable()->CopyFrom( this, other.GetTable() );
+			GetTable()->CopyFrom( this, &other, other.GetTable() );
 			break;
 		}
 		default:
@@ -301,6 +311,8 @@ void KeyValues3::Alloc( int initial_size, Data_t data, int preallocated_size, bo
 		case KV3_TYPEEX_ARRAY_INT32:
 		case KV3_TYPEEX_ARRAY_UINT8_SHORT:
 		case KV3_TYPEEX_ARRAY_INT16_SHORT:
+		case KV3_TYPEEX_ARRAY_UINT32:
+		case KV3_TYPEEX_ARRAY_UINT64:
 		{
 			m_bFreeArrayMemory = false;
 			m_nNumArrayElements = 0;
@@ -330,7 +342,7 @@ void KeyValues3::AllocArrayInPlace( int initial_size, Data_t data, int prealloca
 
 void KeyValues3::AllocTableInPlace( int initial_size, Data_t data, int preallocated_size, bool should_free )
 {
-	int bytes_needed = MAX( CKeyValues3Array::TotalSizeOf( 0 ), CKeyValues3Array::TotalSizeOf( initial_size ) );
+	int bytes_needed = MAX( CKeyValues3Table::TotalSizeOf( 0 ), CKeyValues3Table::TotalSizeOf( initial_size ) );
 
 	if ( bytes_needed > preallocated_size )
 	{
@@ -510,6 +522,8 @@ void KeyValues3::Free( bool bClearingContext )
 		case KV3_TYPEEX_ARRAY_INT32:
 		case KV3_TYPEEX_ARRAY_UINT8_SHORT:
 		case KV3_TYPEEX_ARRAY_INT16_SHORT:
+		case KV3_TYPEEX_ARRAY_UINT32:
+		case KV3_TYPEEX_ARRAY_UINT64:
 		{
 			if ( m_bFreeArrayMemory )
 				free( m_Data.m_pMemory );
@@ -578,6 +592,8 @@ void KeyValues3::PrepareForType( KV3TypeEx_t type, KV3SubType_t subtype, int ini
 			case KV3_TYPEEX_ARRAY_INT32:
 			case KV3_TYPEEX_ARRAY_UINT8_SHORT:
 			case KV3_TYPEEX_ARRAY_INT16_SHORT:
+			case KV3_TYPEEX_ARRAY_UINT32:
+			case KV3_TYPEEX_ARRAY_UINT64:
 			{
 				Free();
 				break;
@@ -657,6 +673,11 @@ const char* KeyValues3::GetString( const char* defaultValue ) const
 			return m_Data.m_pString;
 		case KV3_TYPEEX_STRING_SHORT:
 			return m_Data.m_szStringShort;
+		case KV3_TYPEEX_STRING_SYMBOL:
+		{
+			CKV3Arena *context = GetContext();
+			return context ? context->LookupString( m_Data.m_StringSymbol ) : defaultValue;
+		}
 		default:
 			return defaultValue;
 	}
@@ -805,6 +826,8 @@ int KeyValues3::GetArrayElementCount() const
 
 KeyValues3** KeyValues3::GetArrayBase()
 {
+	NormalizeArray();
+
 	CKeyValues3Array *pArray = GetKV3Array();
 
 	if ( !pArray )
@@ -815,6 +838,8 @@ KeyValues3** KeyValues3::GetArrayBase()
 
 KeyValues3* KeyValues3::GetArrayElement( int elem )
 {
+	NormalizeArray();
+
 	CKeyValues3Array *pArray = GetKV3Array();
 
 	if ( !pArray || elem < 0 || elem >= pArray->Count() )
@@ -846,6 +871,8 @@ const KeyValues3 &KeyValues3::GetNullValue()
 
 KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 {
+	NormalizeArray();
+
 	if ( !IsKV3Array() )
 		SetToEmptyKV3Array();
 
@@ -854,6 +881,8 @@ KeyValues3* KeyValues3::ArrayInsertElementBefore( int elem )
 
 KeyValues3* KeyValues3::ArrayAddElementToTail()
 {
+	NormalizeArray();
+
 	if ( !IsArray() )
 		SetToEmptyKV3Array();
 
@@ -864,6 +893,8 @@ KeyValues3* KeyValues3::ArrayAddElementToTail()
 
 void KeyValues3::ArrayInsertMultipleBefore( int elem, int num )
 {
+	NormalizeArray();
+
 	if ( !IsKV3Array() )
 		SetToEmptyKV3Array();
 
@@ -892,6 +923,8 @@ void KeyValues3::ArraySwapItems( int idx1, int idx2 )
 
 void KeyValues3::SetArrayElementCount( int count, KV3TypeEx_t type, KV3SubType_t subtype )
 {
+	NormalizeArray();
+
 	if ( !IsKV3Array() )
 		SetToEmptyKV3Array();
 
@@ -946,6 +979,16 @@ void KeyValues3::NormalizeArray()
 			NormalizeArray<int16>( KV3_TYPEEX_INT, KV3_SUBTYPE_INT16, m_nNumArrayElements, i16ArrayShort, false );
 			break;
 		}
+		case KV3_TYPEEX_ARRAY_UINT32:
+		{
+			NormalizeArray< uint32 >( KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT32, m_nNumArrayElements, m_Data.m_Array.m_u32, m_bFreeArrayMemory );
+			break;
+		}
+		case KV3_TYPEEX_ARRAY_UINT64:
+		{
+			NormalizeArray< uint64 >( KV3_TYPEEX_UINT, KV3_SUBTYPE_UINT64, m_nNumArrayElements, m_Data.m_Array.m_u64, m_bFreeArrayMemory );
+			break;
+		}
 		default: 
 			break;
 	}
@@ -983,7 +1026,7 @@ bool KeyValues3::ReadArrayInt32( int dest_size, int32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( int32 )m_Data.m_Array.m_u8Short[ i ];
+					data[ i ] = ( int32 )m_Data.m_Array.m_i16[ i ];
 				break;
 			}
 			case KV3_TYPEEX_ARRAY_INT32:
@@ -1006,7 +1049,23 @@ bool KeyValues3::ReadArrayInt32( int dest_size, int32* data ) const
 				src_size = m_nNumArrayElements;
 				int count = MIN( src_size, dest_size );
 				for ( int i = 0; i < count; ++i )
-					data[ i ] = ( int32 )m_Data.m_Array.m_u8Short[ i ];
+					data[ i ] = ( int32 )m_Data.m_Array.m_i16Short[ i ];
+				break;
+			}
+			case KV3_TYPEEX_ARRAY_UINT32:
+			{
+				src_size = m_nNumArrayElements;
+				int count = MIN( src_size, dest_size );
+				for ( int i = 0; i < count; ++i )
+					data[ i ] = ( int32 )m_Data.m_Array.m_u32[ i ];
+				break;
+			}
+			case KV3_TYPEEX_ARRAY_UINT64:
+			{
+				src_size = m_nNumArrayElements;
+				int count = MIN( src_size, dest_size );
+				for ( int i = 0; i < count; ++i )
+					data[ i ] = ( int32 )m_Data.m_Array.m_u64[ i ];
 				break;
 			}
 			default: 
@@ -1469,7 +1528,7 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 					{
 						for ( int i = 0; i < elements; ++i )
 						{
-							buff.AppendFormat( "%d", m_Data.m_Array.m_i16Short[i] );
+							buff.AppendFormat( "%d", m_Data.m_Array.m_i16[ i ] );
 							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
 						return buff.Get();
@@ -1497,6 +1556,24 @@ const char* KeyValues3::ToString( CBufferString& buff, uint flags ) const
 						for ( int i = 0; i < elements; ++i )
 						{
 							buff.AppendFormat( "%d", m_Data.m_Array.m_i16Short[i] );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
+						}
+						return buff.Get();
+					}
+					case KV3_TYPEEX_ARRAY_UINT32:
+					{
+						for ( int i = 0; i < elements; ++i )
+						{
+							buff.AppendFormat( "%u", m_Data.m_Array.m_u32[ i ] );
+							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
+						}
+						return buff.Get();
+					}
+					case KV3_TYPEEX_ARRAY_UINT64:
+					{
+						for ( int i = 0; i < elements; ++i )
+						{
+							buff.AppendFormat( "%llu", m_Data.m_Array.m_u64[ i ] );
 							if ( i != elements - 1 ) buff.Insert( buff.Length(), " " );
 						}
 						return buff.Get();
@@ -1731,9 +1808,14 @@ void CKeyValues3Array::RemoveMultiple( KeyValues3 *parent, int from, int num )
 {
 	Element_t *base = Base();
 
-	for ( int i = 0; i <= num; ++i )
+	for ( int i = 0; i < num; ++i )
 	{
 		parent->FreeMember( base[from + i] );
+	}
+
+	if ( from + num < m_nCount )
+	{
+		memmove( &base[ from ], &base[ from + num ], sizeof( Element_t ) * ( m_nCount - from - num ) );
 	}
 
 	m_nCount -= num;
@@ -1899,19 +1981,17 @@ void CKeyValues3Table::EnsureMemberCapacity( int count, bool force, bool dont_mo
 	const int new_count = force ? count : KV3Helpers::CalcNewBufferSize( m_nAllocatedChunks, count, ALLOC_KV3TABLE_MIN, ALLOC_KV3TABLE_MAX );
 	const int new_byte_size = TotalSizeOfData( new_count );
 
-	void *new_base = nullptr;
-
 	if ( m_bIsDynamicallySized )
 	{
-		new_base = realloc( m_pDynamicBuffer, new_byte_size );
+		m_pDynamicBuffer = realloc( m_pDynamicBuffer, new_byte_size );
 
-		memmove( (uint8 *)new_base + OffsetToFlagsBase( new_count ), FlagsBase(), m_nCount * sizeof( Flags_t ) );
-		memmove( (uint8 *)new_base + OffsetToNamesBase( new_count ), NamesBase(), m_nCount * sizeof( Name_t ) );
-		memmove( (uint8 *)new_base + OffsetToMembersBase( new_count ), MembersBase(), m_nCount * sizeof( Member_t ) );
+		memmove( (uint8 *)m_pDynamicBuffer + OffsetToFlagsBase( new_count ), FlagsBase(), m_nCount * sizeof( Flags_t ) );
+		memmove( (uint8 *)m_pDynamicBuffer + OffsetToNamesBase( new_count ), NamesBase(), m_nCount * sizeof( Name_t ) );
+		memmove( (uint8 *)m_pDynamicBuffer + OffsetToMembersBase( new_count ), MembersBase(), m_nCount * sizeof( Member_t ) );
 	}
 	else
 	{
-		new_base = malloc( new_byte_size );
+		void *new_base = malloc( new_byte_size );
 
 		if ( m_nCount > 0 && !dont_move )
 		{
@@ -1920,11 +2000,12 @@ void CKeyValues3Table::EnsureMemberCapacity( int count, bool force, bool dont_mo
 			memmove( (uint8 *)new_base + OffsetToNamesBase( new_count ), NamesBase(), m_nCount * sizeof( Name_t ) );
 			memmove( (uint8 *)new_base + OffsetToFlagsBase( new_count ), FlagsBase(), m_nCount * sizeof( Flags_t ) );
 		}
+
+		m_pDynamicBuffer = new_base;
+		m_bIsDynamicallySized = true;
 	}
 
-	m_pDynamicBuffer = new_base;
 	m_nAllocatedChunks = new_count;
-	m_bIsDynamicallySized = true;
 }
 
 KV3MemberId_t CKeyValues3Table::Internal_FindMember( const CKV3MemberName &name, KV3MemberId_t &next )
@@ -2060,7 +2141,7 @@ void CKeyValues3Table::StoreKeyName( KeyValues3 *parent, Name_t &out_buffer, Fla
 	out_flags = flags;
 }
 
-void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src )
+void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const KeyValues3 *src_parent, const CKeyValues3Table* src )
 {
 	int new_size = src->GetMemberCount();
 
@@ -2069,6 +2150,7 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 	m_nCount = new_size;
 
 	auto context = parent->GetContext();
+	auto src_context = src_parent->GetContext();
 
 	Member_t *members_base = MembersBase();
 	Name_t *names_base = NamesBase();
@@ -2084,8 +2166,12 @@ void CKeyValues3Table::CopyFrom( KeyValues3 *parent, const CKeyValues3Table* src
 	{
 		auto src_flags = src_flags_base[i];
 
-		if ( context && src_flags & MEMBER_FLAG_LARGE_SYMBOL )
-			names_base[i] = context->LookupString( src_names_base[i].m_iSymLarge );
+		if ( src_flags & MEMBER_FLAG_LARGE_SYMBOL )
+		{
+			// Symbol ids are only valid in the arena that made them.
+			UtlSymLargeId_t symid = src_names_base[ i ].m_iSymLarge;
+			StoreKeyName( parent, names_base[ i ], flags_base[ i ], src_context->LookupString( symid ), context == src_context ? symid : UTL_INVAL_SYMBOL_LARGE );
+		}
 		else
 			StoreKeyName( parent, names_base[i], flags_base[i], src_names_base[i].m_pString );
 

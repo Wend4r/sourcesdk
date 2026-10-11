@@ -109,3 +109,59 @@ REGISTER_NAMED_TEST( "CUtlLeanVector.CopyAndMove", CUtlLeanVector_CopyAndMove )
 	TEST_EQ( assigned.Count(), 2 );
 	TEST_EQ( assigned[1], 24 );
 }
+
+REGISTER_NAMED_TEST( "CUtlLeanVectorFixedGrowable.InlineCapacity", CUtlLeanVectorFixedGrowable_InlineCapacity )
+{
+	// Inline storage should use all of the union's space before spilling to the heap.
+	CUtlLeanVectorFixedGrowable< char, 1 > vec;
+
+	TEST_EQ( sizeof( vec ), sizeof( int ) * 2 + sizeof( char * ) );
+	TEST_EQ( vec.NumAllocated(), ( int )sizeof( char * ) );
+
+	const char *pInline = reinterpret_cast< const char * >( &vec ) + sizeof( int ) * 2;
+
+	for ( int i = 0; i < vec.NumAllocated(); ++i )
+	{
+		vec.AddToTail( ( char )( 'a' + i ) );
+	}
+
+	TEST_EQ( vec.Base(), pInline );
+	TEST_EQ( vec[ 0 ], 'a' );
+
+	int nInlineCount = vec.Count();
+
+	vec.AddToTail( 'z' );
+
+	TEST_NE( vec.Base(), pInline );
+	TEST_EQ( vec.Count(), nInlineCount + 1 );
+	TEST_EQ( vec[ 0 ], 'a' );
+	TEST_EQ( vec[ nInlineCount ], 'z' );
+
+	vec.Purge();
+	TEST_EQ( vec.Count(), 0 );
+	TEST_EQ( vec.NumAllocated(), ( int )sizeof( char * ) );
+}
+
+REGISTER_NAMED_TEST( "CUtlLeanVectorFixedGrowable.GrowAndPurge", CUtlLeanVectorFixedGrowable_GrowAndPurge )
+{
+	// Fixed growable vectors should keep their elements when they spill to the heap.
+	CUtlLeanVectorFixedGrowable< int, 1 > vec;
+
+	TEST_EQ( vec.NumAllocated(), 2 );
+
+	for ( int i = 0; i < 10; ++i )
+	{
+		vec.AddToTail( i );
+	}
+
+	TEST_EQ( vec.Count(), 10 );
+
+	for ( int i = 0; i < 10; ++i )
+	{
+		TEST_EQ( vec[ i ], i );
+	}
+
+	vec.Purge();
+	TEST_EQ( vec.Count(), 0 );
+	TEST_EQ( vec.NumAllocated(), 2 );
+}

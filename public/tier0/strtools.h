@@ -302,8 +302,8 @@ PLATFORM_INTERFACE const char *	_V_strnistr_fast( const char *str, const char *s
 PLATFORM_OVERLOAD const wchar_t *V_wcsistr( const wchar_t *str, const wchar_t *search );
 
 PLATFORM_OVERLOAD int			V_strnlen( const char *str, int n );
+PLATFORM_OVERLOAD int			V_strnlen( const uchar16 *str, int n );
 PLATFORM_OVERLOAD int			V_strnlen( const uchar32 *str, int n );
-PLATFORM_OVERLOAD int			V_strnlen( const wchar_t *str, int n );
 
 PLATFORM_INTERFACE int			_V_strcspn( const char *s1, const char *s2 );
 
@@ -318,14 +318,14 @@ template <size_t cchDest> char *V_strcat_safe( INOUT_Z_ARRAY char (&pDest)[cchDe
 	return _V_strncat( pDest, pSrc, (int)cchDest, nMaxCharsToCopy );
 }
 
-PLATFORM_INTERFACE wchar_t *	V_wcsncat_cch( INOUT_Z_CAP( cchDest ) wchar_t *pDest, const wchar_t *pSrc, int cchDest, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
+PLATFORM_INTERFACE wchar_t *	_V_wcsncat_cch( INOUT_Z_CAP( cchDest ) wchar_t *pDest, const wchar_t *pSrc, int cchDest, int nMaxCharsToCopy=COPY_ALL_CHARACTERS );
 inline void V_wcscat( INOUT_Z_CAP(cchDest) wchar_t *dest, const wchar_t *src, int cchDest )
 {
-	V_wcsncat_cch( dest, src, cchDest, COPY_ALL_CHARACTERS );
+	_V_wcsncat_cch( dest, src, cchDest, COPY_ALL_CHARACTERS );
 }
 template <size_t cchDest> wchar_t *V_wcscat_safe( INOUT_Z_ARRAY wchar_t( &pDest )[cchDest], const wchar_t *pSrc, int nMaxCharsToCopy=COPY_ALL_CHARACTERS )
 {
-	return V_wcsncat_cch( pDest, pSrc, cchDest, nMaxCharsToCopy );
+	return _V_wcsncat_cch( pDest, pSrc, cchDest, nMaxCharsToCopy );
 }
 
 // Returns the number of characters printed (not including the NULL), or maxLenInChars if truncation occurs.
@@ -337,13 +337,15 @@ PLATFORM_INTERFACE int V_snprintfNoSecurityDoNotUse( OUT_Z_CAP(maxLenInChars) ch
 PLATFORM_INTERFACE int V_snprintf( OUT_Z_CAP( destLen ) char *pDest, int destLen, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
 #endif // S2E_NO_DEPRECATED
 PLATFORM_INTERFACE int V_snprintfcat( OUT_Z_CAP(maxLenInChars) char *pDest, int maxLenInChars, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
-PLATFORM_INTERFACE int V_snprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
+// Warns when the string is truncated, unless bIgnoreWarn is set
+PLATFORM_INTERFACE int V_snprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 4, 5 );
 
 PLATFORM_INTERFACE int V_vsnprintf( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
 PLATFORM_INTERFACE int V_vsnprintfcat( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
 PLATFORM_INTERFACE int V_vsnprintfRet( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
-PLATFORM_INTERFACE int V_vsnprintfSize( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFrmat, va_list params );
-PLATFORM_INTERFACE int V_vsnprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
+// Returns the length of the whole formatted string without the terminator. pDest can be null with a length of 0.
+PLATFORM_INTERFACE int V_vsnprintfSize( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
+PLATFORM_INTERFACE int V_vsnprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
 
 template <size_t maxLenInCharacters> int V_vsprintf_safe( OUT_Z_ARRAY char (&pDest)[maxLenInCharacters], PRINTF_FORMAT_STRING const char *pFormat, va_list params ) { return V_vsnprintf( pDest, maxLenInCharacters, pFormat, params ); }
 

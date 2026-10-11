@@ -150,3 +150,20 @@ REGISTER_NAMED_TEST( "CUtlMap.CopyAndMove", CUtlMap_CopyAndMove )
 	TEST_EQ( moveAssigned.Element( moveAssigned.Find( 2 ) ), 20 );
 	TEST_EQ( moveAssigned.Element( moveAssigned.Find( 3 ) ), 30 );
 }
+
+REGISTER_NAMED_TEST( "CUtlMap.PurgeAndDeleteElements", CUtlMap_PurgeAndDeleteElements )
+{
+	// PurgeAndDeleteElements should delete pointer values and only purge non-pointer ones.
+	CUtlMap< int, int * > mapPointers;
+
+	mapPointers.Insert( 1, new int( 10 ) );
+	mapPointers.Insert( 2, new int( 20 ) );
+	mapPointers.PurgeAndDeleteElements();
+	TEST_EQ( mapPointers.Count(), 0u );
+
+	CUtlMap< int, int > mapValues;
+
+	mapValues.Insert( 1, 10 );
+	mapValues.PurgeAndDeleteElements();
+	TEST_EQ( mapValues.Count(), 0u );
+}
