@@ -11,6 +11,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/utlsymbollarge.h"
 #include "appframework/iappsystem.h"
 
 class QWidget;
@@ -27,7 +28,7 @@ public:
 	virtual void RefreshEditorsForDomain( void *pDomain ) = 0;
 	virtual void RebuildEditorsForDomain( void *pDomain ) = 0;
 
-	virtual void *unk015() = 0;
+	virtual CUtlSymbolTableLarge *unk015() = 0;
 
 	// Factories are keyed by the name their first virtual returns
 	virtual void RegisterAttributeEditorFactory( IPropertyAttributeEditorFactory *pFactory ) = 0;
