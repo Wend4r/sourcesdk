@@ -326,7 +326,7 @@ void KeyValues3::Alloc( int initial_size, Data_t data, int preallocated_size, bo
 
 void KeyValues3::AllocArrayInPlace( int initial_size, Data_t data, int preallocated_size, bool should_free )
 {
-	int bytes_needed = MAX( CKeyValues3Array::TotalSizeOf( 0 ), CKeyValues3Array::TotalSizeOf( initial_size ) );
+	int bytes_needed = static_cast< int >( MAX( CKeyValues3Array::TotalSizeOf( 0 ), CKeyValues3Array::TotalSizeOf( initial_size ) ) );
 
 	if ( bytes_needed > preallocated_size )
 	{
@@ -342,7 +342,7 @@ void KeyValues3::AllocArrayInPlace( int initial_size, Data_t data, int prealloca
 
 void KeyValues3::AllocTableInPlace( int initial_size, Data_t data, int preallocated_size, bool should_free )
 {
-	int bytes_needed = MAX( CKeyValues3Table::TotalSizeOf( 0 ), CKeyValues3Table::TotalSizeOf( initial_size ) );
+	int bytes_needed = static_cast< int >( MAX( CKeyValues3Table::TotalSizeOf( 0 ), CKeyValues3Table::TotalSizeOf( initial_size ) ) );
 
 	if ( bytes_needed > preallocated_size )
 	{
@@ -1713,7 +1713,7 @@ void CKeyValues3Array::EnsureElementCapacity( int count, bool force, bool dont_m
 	}
 
 	const int new_count = force ? count : KV3Helpers::CalcNewBufferSize( m_nAllocatedChunks, count, ALLOC_KV3ARRAY_MIN, ALLOC_KV3ARRAY_MAX );
-	const int new_byte_size = TotalSizeOfData( new_count );
+	const int new_byte_size = static_cast< int >( TotalSizeOfData( new_count ) );
 
 	Element_t *new_base = nullptr;
 
@@ -1979,7 +1979,7 @@ void CKeyValues3Table::EnsureMemberCapacity( int count, bool force, bool dont_mo
 	}
 
 	const int new_count = force ? count : KV3Helpers::CalcNewBufferSize( m_nAllocatedChunks, count, ALLOC_KV3TABLE_MIN, ALLOC_KV3TABLE_MAX );
-	const int new_byte_size = TotalSizeOfData( new_count );
+	const int new_byte_size = static_cast< int >( TotalSizeOfData( new_count ) );
 
 	if ( m_bIsDynamicallySized )
 	{
