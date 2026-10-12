@@ -1,6 +1,16 @@
 #include "const.h"
 #include "entity2/entitysystem.h"
 #include "entity2/entityclass.h"
+#include "engine/igameresourceservice.h"
+#include "interfaces/interfaces.h"
+
+CGameEntitySystem *GameEntitySystem()
+{
+	if ( !g_pGameResourceServiceServer )
+		return nullptr;
+
+	return static_cast< CGameResourceService * >( g_pGameResourceServiceServer )->m_pEntitySystem;
+}
 
 CEntityIdentity* CEntitySystem::GetEntityIdentity(CEntityIndex entnum)
 {
