@@ -3,30 +3,68 @@
 
 #include "entitysystem.h"
 #include "igameevents.h"
+#include "tier0/globalsymbol.h"
 
-template<typename T> struct CUtlAutoList { virtual ~CUtlAutoList() = default; };
+class CBaseEntity;
+class CCSPlayerController;
+class CCSPlayerPawn;
+class CCSWeaponBase;
+class CPlantedC4;
+class CTakeDamageInfo;
+class CTakeDamageResult;
 
-class CCSScript : public IEntityListener, public CUtlAutoList<CCSScript>
+template < typename T >
+struct CUtlAutoList
+{
+	virtual ~CUtlAutoList() = default;
+};
+
+// cs_script instance; the Instance.On* callbacks of the script are called through the On* methods
+class CCSBaseScript : public IEntityListener, public CUtlAutoList< CCSBaseScript >
 {
 public:
-	virtual const char* GetName() = 0;
-	virtual /*CGlobalSymbol*/uint64_t GetGlobalSymbol() = 0;
-	virtual void CreateEntityTemplate(/*v8::Local<v8::FunctionTemplate>*/void* tmpl) = 0;
-	virtual uint64_t unk() = 0;
-	virtual uint64_t OnPlayerReset(uint64_t) = 0;
-	virtual uint64_t OnBeforePlayerDamage(uint64_t, uint64_t) = 0;
-	virtual uint64_t OnPlayerDamage(uint64_t, uint64_t) = 0;
-	virtual uint64_t OnPlayerKill(uint64_t, uint64_t) = 0;
-	virtual uint64_t OnPlayerJump(uint64_t) = 0;
-	virtual uint64_t OnPlayerLand(uint64_t) = 0;
-	virtual uint64_t OnPlayerChat(uint64_t, uint64_t, int32_t) = 0;
-	virtual uint64_t OnPlayerPing(uint64_t) = 0;
-	virtual uint64_t OnGunFire(uint64_t) = 0;
-	virtual uint64_t OnGunReload(uint64_t) = 0;
-	virtual uint64_t OnBulletImpact(uint64_t, uint64_t) = 0;
-	virtual uint64_t OnGrenadeThrow(uint64_t, uint64_t) = 0;
-	virtual uint64_t OnGrenadeBounce(uint64_t) = 0;
-	virtual uint64_t OnKnifeAttack(uint64_t) = 0;
+	virtual ~CCSBaseScript() {}
+
+	virtual const char *GetName() = 0;
+	virtual CGlobalSymbol GetGlobalSymbol() = 0;
+	virtual void CreateEntityTemplate( /* v8::Local< v8::FunctionTemplate > */ void *pTemplate ) = 0;
+
+	// Drops the callbacks registered by the script
+	virtual void unk009() = 0;
+
+	virtual void OnBeginRoundRestart() = 0;
+	virtual void OnPlayerReset( CCSPlayerPawn *pPlayer ) = 0;
+	virtual void OnPlayerTeamChanged( CCSPlayerPawn *pPlayer, int nOldTeam ) = 0;
+	virtual void OnRoundStart() = 0;
+	virtual void OnRoundEnd( int nWinningTeam, int nReason ) = 0;
+	virtual void OnBombPlantStart( CCSPlayerPawn *pPlanter ) = 0;
+	virtual void OnBombPlantAbort( CCSPlayerPawn *pPlanter ) = 0;
+	virtual void OnBombPlant( CPlantedC4 *pPlantedC4, CCSPlayerPawn *pPlanter ) = 0;
+	virtual void OnBombDefuseStart( CPlantedC4 *pPlantedC4 ) = 0;
+	virtual void OnBombDefuseAbort( CPlantedC4 *pPlantedC4 ) = 0;
+	virtual void OnBombDefuse( CPlantedC4 *pPlantedC4, CCSPlayerPawn *pDefuser ) = 0;
+	virtual void OnBombExplode( CPlantedC4 *pPlantedC4 ) = 0;
+
+	// The script may change the damage, its types and flags, or abort it
+	virtual int OnModifyPlayerDamage( CCSPlayerPawn *pPlayer, CTakeDamageInfo &info ) = 0;
+	virtual void OnPlayerDamage( CCSPlayerPawn *pPlayer, const CTakeDamageResult &result ) = 0;
+	virtual void OnPlayerKill( CCSPlayerPawn *pPlayer, const CTakeDamageResult &result ) = 0;
+
+	virtual void OnPlayerJump( CCSPlayerPawn *pPlayer ) = 0;
+	virtual void OnPlayerLand( CCSPlayerPawn *pPlayer ) = 0;
+	virtual void OnPlayerChat( CCSPlayerController *pPlayer, const char *pszText, int nTeam ) = 0;
+	virtual void OnPlayerPing( CCSPlayerController *pPlayer, const Vector &vecPosition ) = 0;
+	virtual void OnGunFire( CCSWeaponBase *pWeapon ) = 0;
+	virtual void OnGunReload( CCSWeaponBase *pWeapon ) = 0;
+	virtual void OnBulletImpact( CCSWeaponBase *pWeapon, const Vector &vecPosition, CBaseEntity *pHitEntity ) = 0;
+	virtual void OnWeaponDrop( CCSWeaponBase *pWeapon, CCSPlayerPawn *pDropper ) = 0;
+	virtual void OnWeaponPickup( CCSWeaponBase *pWeapon ) = 0;
+	virtual void OnGrenadeThrow( CCSWeaponBase *pWeapon, CBaseEntity *pProjectile ) = 0;
+	virtual void OnGrenadeBounce( CBaseEntity *pProjectile, CBaseEntity *pHitEntity, Vector vecNormal, int nBounces ) = 0;
+	virtual void OnKnifeAttack( CCSWeaponBase *pWeapon, int nAttackType ) = 0;
+	virtual void OnCustomHudClicked( CCSPlayerController *pPlayer, CBaseEntity *pLayout, const void *pButtonId ) = 0;
+
+	virtual int OnBeforePlayerDamage( CCSPlayerPawn *pPlayer, CTakeDamageInfo &info ) = 0;
 
     /* 0x10 */ uint8_t    pad[16]; /* padding / unknown (0x10..0x1F) */
     /* 0x20 */ int32_t    indexOrId;      // written: *(_DWORD *)(a1 + 32) = v6;
@@ -70,7 +108,11 @@ public:
 
 };
 
-class CCSScript_EntityScript : public CCSScript, public IGameEventListener2
-{};
+class CCSScript_EntityScript : public CCSBaseScript, public IGameEventListener2
+{
+public:
+	// Calls the script's handler for the event, as FireGameEvent does
+	virtual void unk039( IGameEvent *pEvent ) = 0;
+};
 
 #endif // CCSCRIPT_H
