@@ -14,6 +14,10 @@
 #include "tier0/platwindow.h"
 #include "tier0/logging.h"
 #include "appframework/iappsystem.h"
+#include "tier0/convar.h"
+#include "tier2/tier2.h"
+
+class IMEManagerBase;
 
 abstract_class IIMEManager : public IAppSystem
 {
@@ -39,6 +43,21 @@ public:
 	virtual LoggingChannelID_t GetLoggingChannel() = 0;
 
 	virtual ~IIMEManager() {}
+};
+
+class CIMEManager : public CTier2AppSystem< IIMEManager >
+{
+public:
+	CConCommandMemberAccessor< CIMEManager > ime_info;
+
+	// Platform backend, created by InitForWindow
+	IMEManagerBase *m_pUnk058;
+
+	// Read by IsIMESupported
+	bool m_bUnk060;
+
+	// Read by IsIMEEnabled
+	bool m_bUnk061;
 };
 
 #endif // IIMEMANAGER_H
