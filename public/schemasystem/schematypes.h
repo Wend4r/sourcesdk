@@ -12,6 +12,7 @@
 #include "tier0/utlstring.h"
 #include "tier0/generichash.h"
 #include "tier0/utlmap.h"
+#include "schemasystem/baseschema.h"
 
 class ISchemaSystemTypeScope;
 class CSchemaSystemTypeScope;
@@ -97,25 +98,6 @@ enum SchemaAtomicCategory_t : uint8
 	SCHEMA_ATOMIC_TT,
 	SCHEMA_ATOMIC_I,
 	SCHEMA_ATOMIC_INVALID,
-};
-
-enum SchemaBuiltinType_t
-{
-	SCHEMA_BUILTIN_TYPE_INVALID = 0,
-	SCHEMA_BUILTIN_TYPE_VOID,
-	SCHEMA_BUILTIN_TYPE_CHAR,
-	SCHEMA_BUILTIN_TYPE_INT8,
-	SCHEMA_BUILTIN_TYPE_UINT8,
-	SCHEMA_BUILTIN_TYPE_INT16,
-	SCHEMA_BUILTIN_TYPE_UINT16,
-	SCHEMA_BUILTIN_TYPE_INT32,
-	SCHEMA_BUILTIN_TYPE_UINT32,
-	SCHEMA_BUILTIN_TYPE_INT64,
-	SCHEMA_BUILTIN_TYPE_UINT64,
-	SCHEMA_BUILTIN_TYPE_FLOAT32,
-	SCHEMA_BUILTIN_TYPE_FLOAT64,
-	SCHEMA_BUILTIN_TYPE_BOOL,
-	SCHEMA_BUILTIN_TYPE_COUNT,
 };
 
 // Works in combination with SchemaClassManipulatorFn_t
