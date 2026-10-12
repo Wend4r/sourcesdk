@@ -40,8 +40,25 @@ struct EntOutput_t;
 struct EntInput_t;
 struct datamap_t;
 
+typedef enum
+{
+	USE_OFF = 0,
+	USE_ON = 1,
+	USE_SET = 2,
+	USE_TOGGLE = 3
+} USE_TYPE;
+
+struct EntityUseInput_t
+{
+	CEntityInstance *m_pActivator;
+	CEntityInstance *m_pCaller;
+	USE_TYPE m_nType;
+	float m_flValue;
+};
+
 typedef void (CEntityInstance::*BASEPTR)();
 typedef void (CEntityInstance::*ENTITYFUNCPTR)(CEntityInstance *pOther);
+typedef void (CEntityInstance::*USEPTR)(const EntityUseInput_t *pInput);
 
 struct EntClassComponentOverride_t
 {
