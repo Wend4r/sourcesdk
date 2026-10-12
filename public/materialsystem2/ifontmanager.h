@@ -9,13 +9,45 @@
 #include <resourcesystem/resourcehandle.h>
 
 #include <tier0/platform.h>
+#include <tier0/threadtools.h>
+#include <tier0/utlstring.h>
 #include <tier0/utlstringtoken.h>
+#include <tier0/utlsymbol.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/utlvector.h>
 #include <tier0/wchartypes.h>
+#include <tier2/tier2.h>
 
 typedef uint32 HFont;
 
-struct FontAlias_t;
 class InfoForResourceTypeCTextureBase;
+
+struct FontRange_t
+{
+	int _min;
+	int _max;
+};
+
+//-----------------------------------------------------------------------------
+// A font of a font alias group
+//-----------------------------------------------------------------------------
+struct FontAlias_t
+{
+	CUtlSymbolLarge m_FontName;
+	CUtlSymbolLarge m_TrueFontName;
+	FontRange_t m_FontRange;
+	uint32 m_nUnk018;
+};
+
+//-----------------------------------------------------------------------------
+// A font alias group, found by its tag name or its token
+//-----------------------------------------------------------------------------
+struct FontAliasList_t
+{
+	CUtlString m_pTag;
+	CUtlStringToken m_nTagToken;
+	CUtlVector< FontAlias_t > m_FontAliases;
+};
 
 abstract_class IFontManager : public IAppSystem
 {
@@ -32,12 +64,11 @@ public:
 	virtual bool AddCustomFontFile( const char *pFontName, const char *pFontFileName, int nRangeMin, int nRangeMax, const char *pGroupName ) = 0;
 
 	// Font alias group by name token, the first group for 0
-	virtual void *FindFontAliasGroup( CUtlStringToken groupName ) = 0;
+	virtual FontAliasList_t *FindFontAliasGroup( CUtlStringToken groupName ) = 0;
 
 	virtual void RemoveFontAliasList( const char *pGroupName ) = 0;
 
-	// Font entries of a font alias group, 32 bytes each
-	virtual void *GetFontAliases( const char *pGroupName ) = 0;
+	virtual CUtlVector< FontAlias_t > *GetFontAliases( const char *pGroupName ) = 0;
 
 	virtual HFont CreateFontAlias( const char *pAliasName, const char *pFontName, bool bIsProportional ) = 0;
 
@@ -87,6 +118,34 @@ public:
 	virtual void DumpFontAliasGroup( const char *pGroupName ) = 0;
 
 	virtual ~IFontManager() {}
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of IFontManager. Containers whose element types are not
+// declared in the SDK are kept as padding of their size.
+//-----------------------------------------------------------------------------
+class CFontManager : public CTier2AppSystem< IFontManager >
+{
+public:
+	// CUtlVector of 48-byte font amalgams
+	uint8 m_unk028[ 0x18 ];
+
+	// CUtlMap of the platform fonts
+	uint8 m_unk040[ 0x38 ];
+
+	CUtlSymbolTable m_FontDataSymbols;
+
+	// CUtlMap of the font data files and CUtlVector of the custom fonts
+	uint8 m_unk0D8[ 0x40 ];
+
+	char m_szLanguage[ 64 ];
+
+	// Font texture cache, points back to the font manager
+	uint8 m_unk158[ 0x1078 ];
+
+	CUtlVector< FontAliasList_t * > m_pFontAliasLists;
+	CAtomicMutex m_FontTextureCacheMutex;
+	bool m_bUnk11F4;
 };
 
 #endif // IFONTMANAGER_H
