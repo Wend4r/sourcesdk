@@ -13,6 +13,7 @@
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
 #include "materialsystem2/imaterial2.h"
+#include "tier0/platwindow.h"
 
 struct BGR888_t;
 class IRenderContext;
@@ -53,7 +54,7 @@ enum
 abstract_class IAvi : public IAppSystem
 {
 public:
-	virtual void SetMainWindow( void *hWnd ) = 0;
+	virtual void SetMainWindow( PlatWindow_t hWnd ) = 0;
 
 	// Start/stop recording an AVI
 	virtual AVIHandle_t StartAVI( const AVIParams_t &params ) = 0;
