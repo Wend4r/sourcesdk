@@ -12,10 +12,17 @@
 #endif
 
 #include "appframework/iappsystem.h"
-#include "game/client/prediction.h"
 #include "mathlib/vector.h"
 #include "playerslot.h"
 #include "splitscreenslot.h"
+
+struct PostDataUpdateCall_t;
+
+// Reason passed to the engine-side client prediction entry point.
+enum PredictionReason_t : int
+{
+	PREDICTION_REASON_CLIENT_COMMAND_TICK = 0,
+};
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
