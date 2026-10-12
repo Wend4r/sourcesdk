@@ -72,3 +72,43 @@ REGISTER_NAMED_TEST( "CUtlTSHash.InsertFind", CUtlTSHash_InsertFind )
 	TEST_TRUE( hash.Find( 42 ) == hash.InvalidHandle() );
 	TEST_EQ( hash.Count(), 100 );
 }
+
+struct TSHashCustomKey_t
+{
+	int m_nValue;
+
+	bool operator==( const TSHashCustomKey_t &other ) const { return m_nValue == other.m_nValue; }
+};
+
+static int g_nTSHashCustomHashCalls = 0;
+
+template <>
+class CUtlTSHashGenericHash< TSHashCustomKey_t >
+{
+public:
+	static int Hash( const TSHashCustomKey_t &key, int nBucketMask )
+	{
+		++g_nTSHashCustomHashCalls;
+
+		return key.m_nValue & nBucketMask;
+	}
+
+	static bool Compare( const TSHashCustomKey_t &lhs, const TSHashCustomKey_t &rhs )
+	{
+		return lhs == rhs;
+	}
+};
+
+REGISTER_NAMED_TEST( "CUtlTSHash.SpecializedGenericHash", CUtlTSHash_SpecializedGenericHash )
+{
+	// A specialization of the generic hash policy is used by default and through its new name.
+	TEST_TRUE( ( std::is_same_v< CUtlTSHashGenericHashMethod< TSHashCustomKey_t >, CUtlTSHashGenericHash< TSHashCustomKey_t > > ) );
+
+	CUtlTSHash< int, 16, TSHashCustomKey_t > hash( 16 );
+
+	g_nTSHashCustomHashCalls = 0;
+	hash.Insert( TSHashCustomKey_t{ 5 }, 50 );
+
+	TEST_TRUE( g_nTSHashCustomHashCalls > 0 );
+	TEST_EQ( hash.Element( hash.Find( TSHashCustomKey_t{ 5 } ) ), 50 );
+}
