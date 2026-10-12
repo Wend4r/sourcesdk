@@ -117,6 +117,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
 	commandbuffer.cpp
 	construct.cpp
+	fasttimer.cpp
 	generichash.cpp
 	memblockallocator.cpp
 	mempool.cpp
