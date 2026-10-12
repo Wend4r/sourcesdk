@@ -11,11 +11,19 @@
 #endif
 
 #include <appframework/iappsystem.h>
+#include <tier3/tier3.h>
 
 abstract_class IMeshUtils : public IAppSystem
 {
 public:
 	virtual void Unk_CreateSkeletonSceneObject( void *p ) = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of IMeshUtils, without members of its own
+//-----------------------------------------------------------------------------
+class CMeshUtils : public CTier3AppSystem< IMeshUtils >
+{
 };
 
 #endif // IMESHUTILS_H

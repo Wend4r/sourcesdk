@@ -16,10 +16,13 @@
 #include <resourcesystem/resourcehandle.h>
 #include <resourcesystem/resourcehandletypes.h>
 #include <tier0/utlstringtoken.h>
+#include <tier3/tier3.h>
 
 class CSceneObject;
 class CRenderMesh;
 class CModelBuilder;
+class CMeshInstance;
+class IMeshRayTrace;
 class ISceneObjectDesc;
 class ISceneWorld;
 
@@ -30,9 +33,9 @@ public:
 
 	virtual CWeakHandle< InfoForResourceTypeCModel > FindOrCreateProceduralModel( const char *pResourceName, bool bIsAnonymous, CModelBuilder *pModelBuilder ) = 0;
 
-	virtual void *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter ) = 0;
+	virtual CMeshInstance *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter ) = 0;
 
-	virtual void DestroyMeshInstance( void *pMeshInstance ) = 0;
+	virtual void DestroyMeshInstance( CMeshInstance *pMeshInstance ) = 0;
 
 	virtual void Unk_CreateProjectedDecal( void *p ) = 0;
 
@@ -51,10 +54,10 @@ public:
 	virtual void unk026() = 0;
 	virtual void unk027() = 0;
 	virtual void unk028() = 0;
-	virtual void *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter, void *pRenderMesh, int nSceneObjectIndex, uint64 nOriginalSceneObjectFlags, CSceneObject *pSceneObject, uint64 nMeshGroupMask, uint8 nUnk, const int16 *pUnk ) = 0;
+	virtual CMeshInstance *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter, void *pRenderMesh, int nSceneObjectIndex, uint64 nOriginalSceneObjectFlags, CSceneObject *pSceneObject, uint64 nMeshGroupMask, uint8 nUnk, const int16 *pUnk ) = 0;
 
 	// NULL unless EnableTraceLines() was called
-	virtual void *FindOrCreateMeshRayTrace( const CRenderMesh *pMesh ) = 0;
+	virtual IMeshRayTrace *FindOrCreateMeshRayTrace( const CRenderMesh *pMesh ) = 0;
 	virtual void GetToolsGeometryInfo( const CRenderMesh *pRenderMesh, const void **ppOutTraceData ) = 0;
 	virtual void unk031() = 0;
 	virtual void Unk_CreateRenderMesh( void *p ) = 0;
@@ -70,6 +73,18 @@ public:
 	virtual int Unk_FindInputIndex( ResourceHandle_t hMaterial, const char *pszName ) = 0;
 	virtual int Unk_FindInputIndex( ResourceHandle_t hMaterial, CUtlStringToken token ) = 0;
 	virtual void unk042() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of IMeshSystem. Its members are kept as padding: the render
+// mesh manager (polymorphic, g_pRenderMeshManager points at it) at 0x28, the
+// model resource type manager (three vtables) from 0x38, two CUtlVectors and a
+// lock from 0xA8, and a std::function at 0xF0.
+//-----------------------------------------------------------------------------
+class CMeshSystem : public CTier3AppSystem< IMeshSystem >
+{
+public:
+	uint8 m_unk028[ 0x108 ];
 };
 
 #endif // IMESHSYSTEM_H
