@@ -19,4 +19,15 @@ enum RenderMultisampleType_t : uint8
 	RENDER_MULTISAMPLE_TYPE_COUNT
 };
 
+struct RenderViewport_t
+{
+	int m_nVersion;
+	int m_nTopLeftX;
+	int m_nTopLeftY;
+	int m_nWidth;
+	int m_nHeight;
+	float m_flMinZ;
+	float m_flMaxZ;
+};
+
 #endif // RENDERSYSTEM_RENDERSYSTEMTYPES_H
