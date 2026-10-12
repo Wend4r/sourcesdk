@@ -47,4 +47,6 @@ public:
 	virtual void		RequestScreenshot( IScreenshotCallback *pCallback, void *pContext ) = 0;
 };
 
+typedef int *SaveRestoreDataHandle_t;
+
 #endif // ISOURCE2ENGINE_H
