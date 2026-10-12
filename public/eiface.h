@@ -387,7 +387,8 @@ abstract_class ISource2Server : public IAppSystem
 public:
 	virtual bool			IsValveDS() const = 0;
 
-	virtual void			SetGlobals( CGlobalVars *pGlobals ) = 0;
+	// Returns the previous globals, or nullptr if they were the defaults
+	virtual CGlobalVars		*SetGlobals( CGlobalVars *pGlobals ) = 0;
 
 	// Let the game .dll allocate it's own network/shared string tables
 	virtual void			GameCreateNetworkStringTables( void ) = 0;
@@ -467,7 +468,8 @@ public:
 	// Returns a list of values and names corresponding to HitGroup_t enum
 	virtual void			GetHitGroupEnumInfo( CUtlVector<int> &values, CUtlVector<CUtlString> &names ) = 0;
 
-	virtual void			WriteStartupTelemetry( KeyValues3 *pKV ) = 0;
+	// Adds the game's fields to the server section of the status_json output
+	virtual void			WriteStatusJson( KeyValues3 *pServer ) = 0;
 
 	virtual bool			SaveGame_CalcFileName( const char *pName, CUtlString &output ) const = 0;
 	virtual bool			GetLevelNameFromSaveFile( const char *pSaveGame, CUtlString &levelName ) = 0;
@@ -497,7 +499,7 @@ public:
 	// Returns the designer name of the entity class the subclass is built on.
 	virtual const char		*GetSubclassDesignerName( const char *pSubclassName ) = 0;
 
-	virtual void			UpdateGCInformation( bool bUnk1, bool bUnk2, const CSteamID *pServerSteamID ) = 0;
+	virtual void			UpdateGCInformation( bool bUnk1, bool bUnk2 ) = 0;
 
 	// Sorted designer names of every entity class derived from the C++ class pClassName (e.g. "CCSWeaponBase"),
 	// or the subclass names of a scope when pClassName is that scope's handler type.
@@ -505,7 +507,7 @@ public:
 	// Forwards to the subclass system's auto-completion callback, which is empty in release builds.
 	virtual void			GetSubclassAutoCompleteList( const void *pUnk, CUtlVector< const char * > &completions ) = 0;
 
-	virtual void			ReportGCQueuedMatchStart( int32 iReservationStage, uint32 *puiConfirmedAccounts, int numConfirmedAccounts ) = 0;
+	virtual bool			ReportGCQueuedMatchStart( int32 iReservationStage, uint32 *puiConfirmedAccounts, int numConfirmedAccounts ) = 0;
 
 	// Called every host frame; pFrameTimes[ 0 ] is the host frame duration, pFrameTimes[ 1 ] the target frame time.
 	virtual void			OnHostFrameTiming( const double *pFrameTimes ) = 0;
@@ -559,6 +561,11 @@ public:
 	virtual void			OnSteamAuthWarning( const char *pszMessage ) = 0;// Receives Steam auth session diagnostics, such as a SteamID mismatch against the auth ticket
 	virtual void			OnNetworkGameServerActivated( INetworkGameServer *pNetworkGameServer ) = 0;
 	virtual uint32			GetSteamGroupAccountID( void ) = 0; // Account ID of the sv_steamgroup group, 0 when none is set
+
+#ifdef PLATFORM_LINUX
+	// AMNOTE: Does nothing in CS2
+	virtual void			unk_103( void ) = 0;
+#endif
 };
 
 //-----------------------------------------------------------------------------
