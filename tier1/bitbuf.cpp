@@ -92,36 +92,6 @@ void SetBitBufErrorHandler( BitBufErrorHandler fn )
 // #define BB_PROFILING
 
 
-// Precalculated bit masks for WriteUBitLong. Using these tables instead of 
-// doing the calculations gives a 33% speedup in WriteUBitLong.
-uint32 g_BitWriteMasks[32][33];
-
-// (1 << i) - 1
-uint32 g_ExtraMasks[32];
-
-class CBitWriteMasksInit
-{
-public:
-	CBitWriteMasksInit()
-	{
-		for( unsigned int startbit=0; startbit < 32; startbit++ )
-		{
-			for( unsigned int nBitsLeft=0; nBitsLeft < 33; nBitsLeft++ )
-			{
-				unsigned int endbit = startbit + nBitsLeft;
-				g_BitWriteMasks[startbit][nBitsLeft] = BitForBitnum(startbit) - 1;
-				if(endbit < 32)
-					g_BitWriteMasks[startbit][nBitsLeft] |= ~(BitForBitnum(endbit) - 1);
-			}
-		}
-
-		for ( unsigned int maskBit=0; maskBit < 32; maskBit++ )
-			g_ExtraMasks[maskBit] = BitForBitnum(maskBit) - 1;
-	}
-};
-CBitWriteMasksInit g_BitWriteMasksInit;
-
-
 // ---------------------------------------------------------------------------------------- //
 // bf_write
 // ---------------------------------------------------------------------------------------- //
@@ -134,7 +104,7 @@ bf_write::bf_write()
 	m_nDataBits = -1; // set to -1 so we generate overflow on any operation
 	m_iCurBit = 0;
 	m_bOverflow = false;
-	m_bAssertOnOverflow = true;
+	m_bAssertOnOverflow = false;
 	m_pDebugName = NULL;
 	m_bBytesAreMultiples = false;
 }
@@ -549,7 +519,7 @@ bool bf_write::WriteBits(const void *pInData, int nBits)
 			unsigned int iDWord = m_iCurBit >> 5;
 
 			uint32 outWord = LoadLittleDWord( (uint32*)m_pData, iDWord );
-			outWord &= g_BitWriteMasks[iBitsRight][32]; // clear rest of beginning DWORD 
+			outWord &= g_BitBuf_BitWriteMasks[iBitsRight][32]; // clear rest of beginning DWORD 
 
 			// copy in DWORD blocks
 			while(nBitsLeft >= iBitsChanging )
@@ -926,12 +896,14 @@ old_bf_read::old_bf_read()
 	m_iCurBit = 0;
 	m_bOverflow = false;
 	m_bAssertOnOverflow = true;
+	m_bCanReadDwords = false;
 	m_pDebugName = NULL;
 }
 
 old_bf_read::old_bf_read( const void *pData, int nBytes, int nBits )
 {
 	m_bAssertOnOverflow = true;
+	m_pDebugName = NULL;
 	StartReading( pData, nBytes, 0, nBits );
 }
 
@@ -962,6 +934,7 @@ void old_bf_read::StartReading( const void *pData, int nBytes, int iStartBit, in
 
 	m_iCurBit = iStartBit;
 	m_bOverflow = false;
+	m_bCanReadDwords = ( nBytes % 4 ) == 0;
 }
 
 void old_bf_read::Reset()
