@@ -24,4 +24,6 @@ enum MatrixAxisType_t
 	PROJECTIVE = 3,
 };
 
+typedef int SideType;
+
 #endif // TIER0_TIER0_UTILS_MATH_H
