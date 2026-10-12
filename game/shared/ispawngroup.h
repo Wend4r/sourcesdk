@@ -54,7 +54,8 @@ public:
 	virtual bool HasSetActivePostLoad() const = 0;
 	virtual bool HasUnk2() const = 0;
 	virtual bool HasUnk() const = 0;
-	virtual void UnkSetter(uint32 n) = 0;
+	// Sets what GetDestructionTick returns on client spawn groups; empty on server ones.
+	virtual void Unk_SetDestructionTick(uint32 nTick) = 0;
 	virtual bool HasLevelTransition() const = 0;
 	virtual WorldGroupId_t GetWorldGroupId() const = 0;
 
