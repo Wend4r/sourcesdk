@@ -27,13 +27,14 @@ public:
 	virtual void unk012( void *pTools ) = 0;
 	virtual void unk013() = 0;
 
-	// Queue tools for unloading; unk018 unloads the queued tools
-	virtual void unk014( uint8 nToolIndex ) = 0;
-	virtual bool unk015( uint8 nToolIndex ) = 0;
+	virtual void QueueToolUnload( uint8 nToolIndex ) = 0;
+
+	// False for a tool that is queued for unloading
+	virtual bool IsToolLoaded( uint8 nToolIndex ) = 0;
 	virtual void unk016( bool bUnknown ) = 0;
 
 	virtual void Tools_RunFrame() = 0;
-	virtual void unk018() = 0;
+	virtual void UnloadQueuedTools() = 0;
 
 	// Returns the first non-zero answer of the loaded tool systems
 	virtual void *unk019() = 0;
