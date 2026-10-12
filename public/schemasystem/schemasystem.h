@@ -13,17 +13,11 @@
 #include "tier0/utlvector.h"
 #include "appframework/iappsystem.h"
 #include "schemasystem/schematypes.h"
+#include "schemasystem/minschema.h"
 
 class CBufferString;
 class CKV3Arena;
 struct ResourceManifestDesc_t;
-
-enum SchemaTypeScope_t : uint8
-{
-	SCHEMA_GLOBAL_TYPE_SCOPE = 0,
-	SCHEMA_MODULE_LOCAL_TYPE_SCOPE,
-	SCHEMA_DEFAULT_TYPE_SCOPE,
-};
 
 enum SchemaHierarchyIteration_t
 {
