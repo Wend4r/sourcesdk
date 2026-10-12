@@ -9,15 +9,12 @@
 #include "imaterial2.h"
 
 #include <appframework/iappsystem.h>
-#include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
 #include <resourcefile/resourcetype.h>
-#include <resourcesystem/resourcehandle.h>
 
 #include <color.h>
 #include <tier0/bufferstring.h>
 #include <tier0/platform.h>
-#include <tier0/utlvector.h>
 #include <tier0/wchartypes.h>
 
 class IRenderContext;
@@ -121,34 +118,6 @@ public:
 	virtual CBufferString unk060( ResourceHandle_t hMaterial, int nMode ) = 0;
 
 	virtual ~IMaterialSystem2Utils() {}
-};
-
-//-----------------------------------------------------------------------------
-// Implementation of IMaterialSystem2Utils
-//-----------------------------------------------------------------------------
-class CMaterialSystem2Utils : public CTier2AppSystem< IMaterialSystem2Utils >
-{
-public:
-	// Returned by GetDefaultDebugFont()
-	HFont m_DebugFont;
-	HFont m_DebugFontOutline;
-
-	RenderInputLayout_t m_hInputLayout;
-
-	// "dev/vgui/materials/renderui.vmat" and "dev/materialsystem2utils/pixel.vtex"
-	HMaterialStrong m_hUIMaterial;
-	CStrongHandleBase m_hUIPixel;
-
-	// Renderables queued by the Queue* methods, and the CUtlMap from the queue token to their index
-	CUtlVector< CUtlVector< IQueuedRenderable * > > m_LayoutLists;
-	uint8 m_unk060[ 0x28 ];
-
-	// Renderables drawn by RenderFrame(), and the CUtlMap from the queue token to their index
-	CUtlVector< CUtlVector< IQueuedRenderable * > > m_viewLayoutLists;
-	uint8 m_unk0A0[ 0x28 ];
-
-	// Cleared when the UI material is unloaded
-	const IMaterialMode *m_pTexturedMaterialMode;
 };
 
 #endif // IMATERIALSYSTEM2UTILS_H
