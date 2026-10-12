@@ -294,8 +294,12 @@ public:
 
 	virtual bool GetEntity2Networkable( CEntityIndex nEntryIndex, Entity2Networkable_t *info ) = 0;
 	virtual CUtlMap< int, Entity2Networkable_t > &GetEntity2Networkables( void ) const = 0;
-	virtual void Unk01() = 0;
-	virtual void Unk02() = 0;
+	// Client only: creates the entity a network update describes and returns its networkable;
+	// the type of the description is not reconstructed. Empty on the server.
+	virtual bool CreateClientSideNetworkedEntity( const void *pUnk, Entity2Networkable_t *pNetworkable ) = 0;
+	// Client only: queues the networkable's entity for destruction, or for deferred deletion when
+	// bDeferred is set. Empty on the server.
+	virtual void Unk_DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
 	virtual CUtlVector< ServerClass * > *GetClassList() = 0;
 };
 
