@@ -107,7 +107,17 @@ public:
 
 DECLARE_TIER2_INTERFACE( IResourceManifestRegistry, g_pResourceManifestRegistry );
 
-class IResourceSystemUtils;
+// Passed to IResourceTypeManager; CResourceSystem implements it
+abstract_class IResourceSystemUtils
+{
+public:
+	virtual void unk000( void *p ) = 0;
+	virtual void unk001( void *p ) = 0;
+	virtual void unk002( void *p ) = 0;
+	virtual bool unk003() = 0;
+	virtual void unk004( void *p ) = 0;
+};
+
 class IRD_RegisterResourceDataUtils;
 class IResourceDeallocatorUtils;
 struct ResourceFileHeader_t;
