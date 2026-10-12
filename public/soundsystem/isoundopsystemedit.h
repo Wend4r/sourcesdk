@@ -123,4 +123,8 @@ public:
 	virtual void unk099() = 0;
 };
 
+class CSosEdit : public CTier2AppSystem< ISoundOpSystemEdit >
+{
+};
+
 #endif // ISOUNDOPSYSTEMEDIT_H
