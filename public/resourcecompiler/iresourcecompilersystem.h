@@ -12,7 +12,10 @@
 
 #include "tier0/platform.h"
 #include "tier0/bufferstring.h"
+#include "tier0/utlstring.h"
+#include "tier1/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier3/tier3dm.h"
 
 class IResourceCompileFileSystemInterface;
 
@@ -37,6 +40,29 @@ public:
 	virtual void UninstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
 
 	virtual void unk020( void *pKey, void *pResults ) = 0;
+};
+
+class CResourceCompilerSystem : public CTier3DmAppSystem< IResourceCompilerSystem >
+{
+public:
+	bool m_bUnk028;
+	int m_nUnk02C;
+	int m_nUnk030;
+	int m_nUnk034;
+	uint8 m_unk038[ 0x10 ];
+	CUtlString m_sUnk048;
+	CUtlString m_sUnk050;
+	void *m_pUnk058;
+	CUtlVector< CUtlString > m_vecUnk060;
+	CUtlVector< CUtlString > m_vecUnk078;
+	uint8 m_unk090[ 0x48 ];
+
+	// Vector of 48-byte compile messages that carry their severity (1 warning, 2 error)
+	uint8 m_unk0D8[ 0x18 ];
+
+	// Warning and error counts added to the compile summary
+	int m_nUnk0F0;
+	int m_nUnk0F4;
 };
 
 #endif // IRESOURCECOMPILERSYSTEM_H
