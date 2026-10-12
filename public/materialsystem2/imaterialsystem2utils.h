@@ -6,8 +6,10 @@
 #endif
 
 #include "ifontmanager.h"
+#include "imaterial2.h"
 
 #include <appframework/iappsystem.h>
+#include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
 #include <resourcefile/resourcetype.h>
 #include <resourcesystem/resourcehandle.h>
@@ -22,6 +24,7 @@ class IRenderContext;
 class IMaterialMode;
 class CRenderAttributes;
 class CTextLayoutInfo;
+class IQueuedRenderable;
 class InfoForResourceTypeCTextureBase;
 struct RsStencilStateOverride_t;
 struct RsDepthBiasStateOverride_t;
@@ -56,19 +59,19 @@ public:
 	virtual bool RenderText( IRenderContext *pRenderContext, const uchar16 *pText, const Vector2D &vecPos, Color color, HFont hFont, int nMode, int nScaleMode ) = 0;
 	virtual bool RenderText( IRenderContext *pRenderContext, const uchar32 *pText, const Vector2D &vecPos, Color color, HFont hFont, int nMode, int nScaleMode ) = 0;
 	// Returns the size of the rendered text
-	virtual Vector2D RenderText( IRenderContext *pRenderContext, const void *pTextDesc ) = 0;
+	virtual Vector2D RenderText( IRenderContext *pRenderContext, CTextLayoutInfo *pTextLayoutInfo ) = 0;
 	virtual bool RenderText( IRenderContext *pRenderContext, const void *pLayout, void *p, int nMode ) = 0;
 
 	virtual void Render2DLine( IRenderContext *pRenderContext, float x0, float y0, float x1, float y1, const Color &color, const CRenderAttributes *pAttributes, int nPositionType ) = 0;
 
-	virtual bool RenderQuad( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, Color color, void *p5, void *p6, void *p7, int n8 ) = 0;
-	virtual bool RenderQuad( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, const Vector2D &vecUV0, const Vector2D &vecUV1, Color color, void *p7, void *p8, void *p9, int n10 ) = 0;
+	virtual bool RenderQuad( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, int nPositionType ) = 0;
+	virtual bool RenderQuad( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, const Vector2D &vecUV0, const Vector2D &vecUV1, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, int nPositionType ) = 0;
 	virtual bool RenderQuad( IRenderContext *pRenderContext, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
 
-	virtual bool RenderOutlinedRect( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, float flThickness, Color color, void *p6, void *p7, void *p8, int n9 ) = 0;
+	virtual bool RenderOutlinedRect( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, float flThickness, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, int nPositionType ) = 0;
 	virtual void RenderMesh( void *p ) = 0;
-	virtual bool RenderQuads( IRenderContext *pRenderContext, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
-	virtual bool RenderConvexGeometry( IRenderContext *pRenderContext, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
+	virtual bool RenderQuads( IRenderContext *pRenderContext, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, int nCount, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, int nPositionType ) = 0;
+	virtual bool RenderConvexGeometry( IRenderContext *pRenderContext, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, int nCount, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, int nPositionType ) = 0;
 
 	virtual void QueueRenderText( uint32 nQueue, const char *pText, const Vector2D &vecPos, Color color, HFont hFont, int nMode, int n7, float flSortKey ) = 0;
 	virtual void QueueRenderText( uint32 nQueue, const uchar16 *pText, const Vector2D &vecPos, Color color, HFont hFont, int nMode, int n7, float flSortKey ) = 0;
@@ -118,6 +121,34 @@ public:
 	virtual CBufferString unk060( ResourceHandle_t hMaterial, int nMode ) = 0;
 
 	virtual ~IMaterialSystem2Utils() {}
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of IMaterialSystem2Utils
+//-----------------------------------------------------------------------------
+class CMaterialSystem2Utils : public CTier2AppSystem< IMaterialSystem2Utils >
+{
+public:
+	// Returned by GetDefaultDebugFont()
+	HFont m_DebugFont;
+	HFont m_DebugFontOutline;
+
+	RenderInputLayout_t m_hInputLayout;
+
+	// "dev/vgui/materials/renderui.vmat" and "dev/materialsystem2utils/pixel.vtex"
+	HMaterialStrong m_hUIMaterial;
+	CStrongHandleBase m_hUIPixel;
+
+	// Renderables queued by the Queue* methods, and the CUtlMap from the queue token to their index
+	CUtlVector< CUtlVector< IQueuedRenderable * > > m_LayoutLists;
+	uint8 m_unk060[ 0x28 ];
+
+	// Renderables drawn by RenderFrame(), and the CUtlMap from the queue token to their index
+	CUtlVector< CUtlVector< IQueuedRenderable * > > m_viewLayoutLists;
+	uint8 m_unk0A0[ 0x28 ];
+
+	// Cleared when the UI material is unloaded
+	const IMaterialMode *m_pTexturedMaterialMode;
 };
 
 #endif // IMATERIALSYSTEM2UTILS_H
