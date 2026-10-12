@@ -14,22 +14,25 @@
 #include <mathlib/mathlib.h>
 #include <mathlib/transform.h>
 #include <resourcesystem/resourcehandle.h>
+#include <resourcesystem/resourcehandletypes.h>
 #include <tier0/utlstringtoken.h>
 
 class CSceneObject;
+class CRenderMesh;
+class CModelBuilder;
 class ISceneObjectDesc;
 class ISceneWorld;
 
 abstract_class IMeshSystem : public IAppSystem
 {
 public:
-	virtual void Unk_CreateMeshletResources( void *p ) = 0;
+	virtual void PrepareRenderMesh( CRenderMesh *pMeshData ) = 0;
 
-	virtual void Unk_CreateModel( void *p ) = 0;
+	virtual CWeakHandle< InfoForResourceTypeCModel > FindOrCreateProceduralModel( const char *pResourceName, bool bIsAnonymous, CModelBuilder *pModelBuilder ) = 0;
 
-	virtual void *Unk_CreateMeshInstance( ISceneObjectDesc *pDesc, int nUnk ) = 0;
+	virtual void *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter ) = 0;
 
-	virtual void Unk_DestroyMeshInstance( void *pMeshInstance ) = 0;
+	virtual void DestroyMeshInstance( void *pMeshInstance ) = 0;
 
 	virtual void Unk_CreateProjectedDecal( void *p ) = 0;
 
@@ -42,18 +45,20 @@ public:
 
 	virtual void unk021() = 0;
 	virtual void unk022() = 0;
-	virtual void unk023() = 0;
-	virtual void unk024() = 0;
-	virtual void unk025() = 0;
+	virtual void RemoveUnusedMeshGroups( CSceneObject *pSceneObject, uint64 nMeshGroupMask ) = 0;
+	virtual void EnableTraceLines() = 0;
+	virtual void GetModelBounds( ResourceHandle_t hModel, Vector *pMins, Vector *pMaxs ) = 0;
 	virtual void unk026() = 0;
 	virtual void unk027() = 0;
 	virtual void unk028() = 0;
-	virtual void *Unk_CreateMeshInstance( ISceneObjectDesc *pDesc, int nUnk1, void *pRenderMesh, int nUnk2, void *pUnk1, void *pUnk2, void *pUnk3, bool bUnk, void *pUnk4 ) = 0;
-	virtual void unk029() = 0;
-	virtual void unk030() = 0;
+	virtual void *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter, void *pRenderMesh, int nSceneObjectIndex, uint64 nOriginalSceneObjectFlags, CSceneObject *pSceneObject, uint64 nMeshGroupMask, uint8 nUnk, const int16 *pUnk ) = 0;
+
+	// NULL unless EnableTraceLines() was called
+	virtual void *FindOrCreateMeshRayTrace( const CRenderMesh *pMesh ) = 0;
+	virtual void GetToolsGeometryInfo( const CRenderMesh *pRenderMesh, const void **ppOutTraceData ) = 0;
 	virtual void unk031() = 0;
-	virtual void unk032() = 0;
-	virtual void unk033() = 0;
+	virtual void Unk_CreateRenderMesh( void *p ) = 0;
+	virtual void InvalidateMeshRayTrace( CRenderMesh *pRenderMesh ) = 0;
 	virtual void Unk_LoadModelSyncNoExtrefs( void *p ) = 0;
 	virtual void unk035() = 0;
 	virtual void unk036() = 0;
