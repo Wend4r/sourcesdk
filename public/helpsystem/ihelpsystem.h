@@ -38,7 +38,8 @@ public:
 	virtual bool GetObjectHelp( QObject *pObject, CUtlString &sContextName, CUtlString &sHelpId ) = 0;
 	virtual void ClearObjectHelp( QObject *pObject ) = 0;
 
-	virtual bool GetHelpText( const char *pContextName, const char *pHelpId, int nUnknown, CUtlString &sText, bool bUnknown ) = 0;
+	// pUnknown is shown in brackets to the right of the entry name
+	virtual bool GetHelpText( const char *pContextName, const char *pHelpId, const char *pUnknown, CUtlString &sText, bool bUnknown ) = 0;
 
 	virtual void EditHelp( QWidget *pParent, const char *pContextName, const char *pHelpId ) = 0;
 
@@ -54,10 +55,11 @@ public:
 	// Writes the context back to its help file
 	virtual void SaveHelpContext( const char *pContextName ) = 0;
 
-	virtual bool unk026( const char *pContextName, const char *pHelpId, const char *pDefault, CUtlString &sResult ) = 0;
+	// Falls back to the default name, then to the help id, when there is no up-to-date edited name
+	virtual bool GetHelpEntryName( const char *pContextName, const char *pHelpId, CUtlString &sName ) = 0;
 
-	// Sets three text fields of the entry at once
-	virtual void unk027( const char *pContextName, const char *pHelpId, const char *pText1, const char *pText2, const char *pText3 ) = 0;
+	// Default texts the edited texts are compared against to detect stale help
+	virtual void SetHelpEntryDefaultText( const char *pContextName, const char *pHelpId, const char *pName, const char *pHelp, const char *pShortHelp ) = 0;
 
 	virtual bool HasHelpEntry( const char *pContextName, const char *pHelpId ) = 0;
 
