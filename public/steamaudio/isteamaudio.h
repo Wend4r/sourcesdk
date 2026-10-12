@@ -13,6 +13,7 @@
 
 #include "appframework/iappsystem.h"
 #include "tier0/utlstring.h"
+#include "tier2/tier2.h"
 
 abstract_class ISteamAudio : public IAppSystem
 {
@@ -81,6 +82,12 @@ public:
 	virtual void unk067() = 0;
 	virtual void unk068() = 0;
 	virtual void unk069() = 0;
+};
+
+class CSteamAudio : public CTier2AppSystem< ISteamAudio >
+{
+public:
+	uint8 m_pad028[ 0xA88 ];
 };
 
 #endif // ISTEAMAUDIO_H
