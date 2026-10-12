@@ -61,7 +61,10 @@ public:
 	bool m_bSetActivePostLoad;
 	bool m_bUnk; // AMNOTE: Spawn groups created by point_prefab clear it
 	bool m_bLevelTransition;
+	// The spawn group passes it to its entity spawner when it loads the entities; returned by
+	// ISpawnGroup::GetUnk2AndLastFlagBits.
 	bool m_bUnk2;
+	// Passed on in the world load request the spawn group makes.
 	bool m_bUnk3;
 };
 
