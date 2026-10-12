@@ -163,32 +163,46 @@ GS_EVENT_MSG( ActiveSpawnGroupChanged )
 
 GS_EVENT_MSG( ClientPostDataUpdate );
 
-GS_EVENT_MSG( ClientPreOutput )
+schema GS_EVENT_MSG( Simulate )
 {
 	EngineLoopState_t m_LoopState;
-	float m_flRenderTime;
-	float m_flRenderFrameTime;
-	float m_flRenderFrameTimeUnbounded;
+	// The default member initializers make GCC and Clang place the members of derived messages
+	// in the tail padding, as the game does
+	bool m_bFirstTick = false;
+	bool m_bLastTick = false;
+};
+
+schema GS_EVENT_MSG( ClientPreOutput )
+{
+	EngineLoopState_t m_LoopState;
+	double m_flRenderTime;
+	double m_flRenderFrameTime;
+	double m_flRenderFrameTimeUnbounded;
 	float m_flRealTime;
 	bool m_bRenderOnly;
 };
-GS_EVENT_MSG( ClientOutput );
 
-GS_EVENT_MSG( ClientPreSimulate )
+schema GS_EVENT_MSG_CHILD( ClientPreOutputParallelWithServer, ClientPreOutput ) { };
+
+schema GS_EVENT_MSG( ClientOutput )
 {
 	EngineLoopState_t m_LoopState;
-	bool m_bFirstTick;
-	bool m_bLastTick;
+	float m_flRenderTime;
+	float m_flRealTime;
+	float m_flRenderFrameTimeUnbounded;
+	bool m_bRenderOnly;
 };
 
-GS_EVENT_MSG( ClientProcessGameInput )
+schema GS_EVENT_MSG_CHILD( ClientPreSimulate, Simulate ) { };
+
+schema GS_EVENT_MSG( ClientProcessGameInput )
 {
 	EngineLoopState_t m_LoopState;
 	float m_flRealTime;
 	float m_flFrameTime;
 };
 
-GS_EVENT_MSG( ClientProcessInput )
+schema GS_EVENT_MSG( ClientProcessInput )
 {
 	EngineLoopState_t m_LoopState;
 	float m_flRealTime;
@@ -196,28 +210,55 @@ GS_EVENT_MSG( ClientProcessInput )
 	double m_flTickStartTime;
 };
 
-GS_EVENT_MSG( ClientPollInput )
+schema GS_EVENT_MSG( ClientPollInput )
 {
 	EngineLoopState_t m_LoopState;
 	float m_flRealTime;
 };
 
-GS_EVENT_MSG( ClientPollNetworking )
+GS_EVENT_MSG( ClientPreRender )
+{
+	float m_flFrameTime;
+};
+
+GS_EVENT_MSG( ClientPostRender ) {};
+
+GS_EVENT_MSG( ClientPreEntityThink )
+{
+	float m_flFrameTime;
+};
+
+GS_EVENT_MSG( ClientPreRenderAlt )
+{
+	float m_flFrameTime;
+};
+
+schema GS_EVENT_MSG( ClientPollNetworking )
 {
 	int m_nTickCount;
 };
 
-GS_EVENT_MSG( ClientProcessNetworking )
+schema GS_EVENT_MSG( ClientProcessNetworking )
 {
 	int m_nTickCount;
 };
 
-GS_EVENT_MSG( ClientSimulate )
+schema GS_EVENT_MSG_CHILD( ClientSimulate, Simulate ) { };
+
+GS_EVENT_MSG( ClientUpdate )
 {
-	EngineLoopState_t m_LoopState;
+	float m_flFrameTime;
 	bool m_bFirstTick;
 	bool m_bLastTick;
 };
+
+GS_EVENT_MSG( ClientPreUpdate )
+{
+	bool m_bFirstTick;
+	bool m_bLastTick;
+};
+
+GS_EVENT_MSG_CHILD( ClientPostUpdate, ClientUpdate ) {};
 
 GS_EVENT_MSG( ServerPreEntityThink )
 {
@@ -231,20 +272,13 @@ GS_EVENT_MSG( ServerPostEntityThink )
 	bool m_bLastTick;
 };
 
-GS_EVENT_MSG( ServerProcessNetworking );
+schema GS_EVENT_MSG_CHILD( ServerProcessNetworking, Simulate ) { };
+
+GS_EVENT_MSG( ServerPostPhysicsSimulate ) {};
 
 GS_EVENT_MSG( ServerPreClientUpdate );
 
-GS_EVENT_MSG( Simulate )
-{
-	EngineLoopState_t m_LoopState;
-	// The default member initializers make GCC and Clang place the members of derived messages
-	// in the tail padding, as the game does
-	bool m_bFirstTick = false;
-	bool m_bLastTick = false;
-};
-
-GS_EVENT_MSG_CHILD( AdvanceTick, Simulate )
+schema GS_EVENT_MSG_CHILD( AdvanceTick, Simulate )
 {
 	int m_nCurrentTick;
 	int m_nCurrentTickThisFrame;
@@ -252,17 +286,17 @@ GS_EVENT_MSG_CHILD( AdvanceTick, Simulate )
 	int m_nTotalTicks;
 };
 
-GS_EVENT_MSG_CHILD( ServerAdvanceTick, AdvanceTick ) { };
-GS_EVENT_MSG_CHILD( ClientAdvanceTick, AdvanceTick ) { };
+schema GS_EVENT_MSG_CHILD( ServerAdvanceTick, AdvanceTick ) { };
+schema GS_EVENT_MSG_CHILD( ClientAdvanceTick, AdvanceTick ) { };
 
-GS_EVENT_MSG_CHILD( ServerPostSimulate, Simulate )
+schema GS_EVENT_MSG_CHILD( ServerPostSimulate, Simulate )
 {
 	bool m_bLastTickBeforeClientUpdate;
 };
 
-GS_EVENT_MSG_CHILD( ClientPostSimulate, Simulate ) { };
+schema GS_EVENT_MSG_CHILD( ClientPostSimulate, Simulate ) { };
 
-GS_EVENT_MSG_CHILD( PostAdvanceTick, Simulate )
+schema GS_EVENT_MSG_CHILD( PostAdvanceTick, Simulate )
 {
 	int m_nCurrentTick;
 	int m_nCurrentTickThisFrame;
@@ -270,14 +304,14 @@ GS_EVENT_MSG_CHILD( PostAdvanceTick, Simulate )
 	int m_nTotalTicks;
 };
 
-GS_EVENT_MSG_CHILD( ServerPostAdvanceTick, PostAdvanceTick )
+schema GS_EVENT_MSG_CHILD( ServerPostAdvanceTick, PostAdvanceTick )
 {
 	bool m_bLastTickBeforeClientUpdate;
 };
 
-GS_EVENT_MSG_CHILD( ClientPostAdvanceTick, PostAdvanceTick ) { };
+schema GS_EVENT_MSG_CHILD( ClientPostAdvanceTick, PostAdvanceTick ) { };
 
-GS_EVENT_MSG( ServerBeginAsyncPostTickWork )
+schema GS_EVENT_MSG( ServerBeginAsyncPostTickWork )
 {
 	bool m_bIsOncePerFrameAsyncWorkPhase;
 };
@@ -286,17 +320,17 @@ GS_EVENT_MSG( ServerGameBeginAsyncPostTickWork );
 GS_EVENT_MSG( ServerPreEndAsyncPostTickWork );
 GS_EVENT_MSG( ServerPostEndAsyncPostTickWork );
 
-GS_EVENT_MSG( ClientFrameSimulate )
+schema GS_EVENT_MSG( ClientFrameSimulate )
 {
 	EngineLoopState_t m_LoopState;
 	float m_flRealTime;
 	float m_flFrameTime;
 	bool m_bScheduleSendTickPacket;
 };
-GS_EVENT_MSG_CHILD( ClientPauseSimulate, Simulate ) { };
-GS_EVENT_MSG( ClientAdvanceNonRenderedFrame );
+schema GS_EVENT_MSG_CHILD( ClientPauseSimulate, Simulate ) { };
+schema GS_EVENT_MSG( ClientAdvanceNonRenderedFrame ) { };
 
-GS_EVENT_MSG( FrameBoundary )
+schema GS_EVENT_MSG( FrameBoundary )
 {
 	float m_flFrameTime;
 };
@@ -317,6 +351,16 @@ GS_EVENT_MSG( RestoreGame )
 GS_EVENT_MSG( NewLevelPlayerConnect )
 {
 	const CUtlString m_PreviousLevel;
+};
+
+GS_EVENT_MSG( WorldGroupCreated )
+{
+	WorldGroupId_t m_WorldGroupId;
+};
+
+GS_EVENT_MSG( WorldGroupDestroyed )
+{
+	WorldGroupId_t m_WorldGroupId;
 };
 
 GS_EVENT_MSG( DemoSkip )
@@ -387,32 +431,33 @@ public:
 	GS_EVENT_IMPL( ClientPostDataUpdate )					// 20
 
 	// Called before rendering
-	GS_EVENT_IMPL( ClientPreOutput )						// 21
+	GS_EVENT_IMPL( ClientPreRender )						// 21
 
-	GS_EVENT_IMPL( ClientPreSimulate )						// 22
+	GS_EVENT_IMPL( ClientPreEntityThink )					// 22
 
-	GS_EVENT_IMPL( ClientProcessGameInput )					// 23
-	GS_EVENT_IMPL( ClientProcessInput )						// 24
-	GS_EVENT_IMPL( ClientPollInput )						// 25
+	// Called in the client output that runs in parallel with the server, without the engine event as the message
+	virtual void ClientPreOutputParallelWithServer( const void *const msg ) = 0;	// 23
+	virtual void ClientPostOutputParallelWithServer( const void *const msg ) = 0;	// 24
+	GS_EVENT_IMPL( ClientPreRenderAlt )						// 25
 
 	GS_EVENT_IMPL( ClientPollNetworking )					// 26
 
-	GS_EVENT_IMPL( ClientProcessNetworking )				// 27
+	// Called each frame before and after entities simulate
+	GS_EVENT_IMPL( ClientPreUpdate )						// 27
+	GS_EVENT_IMPL( ClientPostUpdate )						// 28
 
-	// Gets called each frame
-	GS_EVENT_IMPL( ClientSimulate )							// 28
-
-	GS_EVENT_IMPL( FrameBoundary )							// 29
+	// Dispatched with an empty message at the end of the client network update
+	virtual void unk_101( const void *const msg ) = 0;		// 29
 
 	// Called after rendering
-	GS_EVENT_IMPL( ClientOutput )							// 30
+	GS_EVENT_IMPL( ClientPostRender )						// 30
 
 	// Called each frame before entities think
 	GS_EVENT_IMPL( ServerPreEntityThink )					// 31
 	// called after entities think
 	GS_EVENT_IMPL( ServerPostEntityThink )					// 32
 
-	GS_EVENT_IMPL( ServerProcessNetworking )				// 33
+	GS_EVENT_IMPL( ServerPostPhysicsSimulate )				// 33
 
 	GS_EVENT_IMPL( ServerPreClientUpdate )					// 34
 	GS_EVENT_IMPL( ServerAdvanceTick )						// 35
@@ -440,13 +485,13 @@ public:
 	// AMNOTE: Called only when gpGlobals->maxplayer == 1 on player_connect_full
 	GS_EVENT_IMPL( NewLevelPlayerConnect )					// 52
 
-	// AMNOTE: CSpawnGroupMgrGameSystem related, msg is a single int
-	virtual void unk_201( const void *const msg ) = 0;		// 53
-	virtual void unk_202( const void *const msg ) = 0;		// 54
+	// AMNOTE: Called when a world group is first referenced and when its last reference is released
+	GS_EVENT_IMPL( WorldGroupCreated )						// 53
+	GS_EVENT_IMPL( WorldGroupDestroyed )					// 54
 
 	// AMNOTE: Nothing dispatches or overrides these in CS2
-	virtual void unk_203( const void *const msg ) = 0;		// 55
-	virtual void unk_204( const void *const msg ) = 0;		// 56
+	virtual void unk_201( const void *const msg ) = 0;		// 55
+	virtual void unk_202( const void *const msg ) = 0;		// 56
 
 	// Same as to demo_skip event
 	GS_EVENT_IMPL( DemoSkip )								// 57
@@ -505,32 +550,31 @@ public:
 	GS_EVENT( ClientPostDataUpdate ) {}
 
 	// Called before rendering
-	GS_EVENT( ClientPreOutput ) {}
+	GS_EVENT( ClientPreRender ) {}
 
-	GS_EVENT( ClientPreSimulate ) {}
+	GS_EVENT( ClientPreEntityThink ) {}
 
-	GS_EVENT( ClientProcessGameInput ) {}
-	GS_EVENT( ClientProcessInput ) {}
-	GS_EVENT( ClientPollInput ) {}
+	virtual void ClientPreOutputParallelWithServer( const void *const msg ) override {}
+	virtual void ClientPostOutputParallelWithServer( const void *const msg ) override {}
+	GS_EVENT( ClientPreRenderAlt ) {}
 
 	GS_EVENT( ClientPollNetworking ) {}
 
-	GS_EVENT( ClientProcessNetworking ) {}
+	// Called each frame before and after entities simulate
+	GS_EVENT( ClientPreUpdate ) {}
+	GS_EVENT( ClientPostUpdate ) {}
 
-	// Gets called each frame
-	GS_EVENT( ClientSimulate ) {}
-
-	GS_EVENT( FrameBoundary ) {}
+	virtual void unk_101( const void *const msg ) override {}
 
 	// Called after rendering
-	GS_EVENT( ClientOutput ) {}
+	GS_EVENT( ClientPostRender ) {}
 
 	// Called each frame before entities think
 	GS_EVENT( ServerPreEntityThink ) {}
 	// called after entities think
 	GS_EVENT( ServerPostEntityThink ) {}
 
-	GS_EVENT( ServerProcessNetworking ) {}
+	GS_EVENT( ServerPostPhysicsSimulate ) {}
 
 	GS_EVENT( ServerPreClientUpdate ) {}
 	GS_EVENT( ServerAdvanceTick ) {}
@@ -557,10 +601,11 @@ public:
 
 	GS_EVENT( NewLevelPlayerConnect ) {}
 
+	GS_EVENT( WorldGroupCreated ) {}
+	GS_EVENT( WorldGroupDestroyed ) {}
+
 	virtual void unk_201( const void *const msg ) override {}
 	virtual void unk_202( const void *const msg ) override {}
-	virtual void unk_203( const void *const msg ) override {}
-	virtual void unk_204( const void *const msg ) override {}
 
 	GS_EVENT( DemoSkip ) {}
 

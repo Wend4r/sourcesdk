@@ -39,8 +39,9 @@ public:
 	virtual void DumpSpawnGroups() = 0;
 	virtual LoggingChannelID_t GetSaveRestoreLogChannel() = 0;
 	virtual CUtlString GetSaveRestoreContextString() const = 0;
-	virtual void DispatchActiveSpawnGroupChanged(SpawnGroupHandle_t hSpawnGroup) = 0;
-	virtual void DispatchClientPostDataUpdate(int nCount) = 0;
+	// AMNOTE: Dispatch the IGameSystem WorldGroupCreated and WorldGroupDestroyed events
+	virtual void OnWorldGroupCreated(WorldGroupId_t hWorldGroup) = 0;
+	virtual void OnWorldGroupDestroyed(WorldGroupId_t hWorldGroup) = 0;
 	virtual CUtlString GetName() const = 0;
 };
 
