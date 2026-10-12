@@ -125,6 +125,7 @@ include(cmake/sourcesdk/targets/public.cmake)
 include(cmake/sourcesdk/targets/steamworks.cmake)
 include(cmake/sourcesdk/targets/tier0.cmake)
 include(cmake/sourcesdk/targets/tier1.cmake)
+include(cmake/sourcesdk/targets/tier0_perproject.cmake)
 include(cmake/sourcesdk/targets/kv3lib.cmake)
 
 set(SOURCESDK_GAME_TARGET_PREV "${SOURCESDK_GAME_TARGET}" CACHE INTERNAL "Previous value of SOURCESDK_GAME_TARGET")
@@ -167,6 +168,7 @@ set(SOURCESDK_LINK_LIBRARIES
 	${SOURCESDK_NETWORKSYSTEM_NAME}
 	${SOURCESDK_PROTOS_NAME}
 	${SOURCESDK_TIER1_NAME}
+	${SOURCESDK_TIER0_PERPROJECT_NAME}
 )
 
 if(SOURCESDK_LINK_TIER0)
