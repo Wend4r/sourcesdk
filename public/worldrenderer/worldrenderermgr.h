@@ -191,13 +191,13 @@ public:
 	CThreadRWLock_FastRead m_worldLock;
 	CUtlStringMap< int > m_worldVPKRefcounts;
 	CUtlVector< SingleWorldEntityLump_t > m_worldEntityLumps;
+	CUtlVector< IWorldVPKOverrideManager * > m_vpkOverrideManagers;
 	CUtlVector< IWorldLoadUnloadCallback * > m_worldLoadHandlers;
-	CUtlVector< IWorldLoadUnloadCallback * > m_worldCreateCallbacks;
 	CAtomicMutex m_worldRequestsMutex;
 	CUtlVector< void * > m_worldRequestQueue;
 	CUtlVector< WindEntry_t > m_windEntries;
 	Vector m_vDefaultWindOffset;
-	CUtlVector< IWorldVPKOverrideManager * > m_vpkOverrideManagers;
+	CUtlVector< IWorldLoadUnloadCallback * > m_worldCreateCallbacks;
 	CUtlOrderedMap< const ISceneWorld *, WorldWindParams_t > m_windEntryMap;
 	float m_flOverrideRenderFrameTime;
 	float m_flOverrideRenderTime;
