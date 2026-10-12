@@ -241,12 +241,14 @@ public:
 	virtual void OnServerActivate() = 0;
 	// Called on round_start before every area's OnRoundRestart; resets the obstruction manager.
 	virtual void OnRoundRestart() = 0;
-	// Forwards to AddNavArea with no movable mesh.
-	virtual void Unk_AddNavArea( CNavArea *pArea, bool bUnk ) = 0;
 	// Puts the area into the grid and the id hash; a movable mesh id other than -1 also
 	// registers it with that movable mesh and sets NAV_AREA_MOVABLE. bUnk passes docks
 	// (NAV_AREA_DOCK) on to the obstruction manager.
+	// The two overloads take their slots in this order on Linux and in the reverse order on
+	// Windows, as MSVC groups overloads.
 	virtual void AddNavArea( CNavArea *pArea, uint32 nMovableMeshId, bool bUnk ) = 0;
+	// Forwards to AddNavArea with no movable mesh.
+	virtual void AddNavArea( CNavArea *pArea, bool bUnk ) = 0;
 	// Takes the areas out of the grid, the id hash, the movable meshes and the geometry, and
 	// notifies the managers.
 	virtual void RemoveNavArea( int nCount, CNavArea **ppAreas ) = 0;
