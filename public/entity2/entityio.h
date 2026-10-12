@@ -140,7 +140,8 @@ class IEntityIONotify
 {
 public:
 	virtual void OnConnectionFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection, const CPulseArgumentPack *pArgs ) = 0;
-	virtual void Unk_01() = 0;
+	// Called by the event queue for the inputs it delivers to pTarget
+	virtual void OnEntityIOInput( CEntityInstance *pTarget, const char *pszInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const variant_t *pValue, const CPulseArgumentPack *pArgs ) = 0;
 	virtual void OnConnectionRemoved( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection ) = 0;
 	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) = 0;
 };
