@@ -25,6 +25,7 @@
 // Used by CColorizedLoggingListener
 #if defined( _WIN32 ) || (defined(POSIX) && !defined(_GAMECONSOLE))
 #include "tier0/win32consoleio.h"
+#include "tier0/assert_base.h"
 #endif
 
 /*
@@ -128,11 +129,6 @@ const int MAX_LOGGING_LISTENER_COUNT = 16;
 // a device-dependent default color where applicable.
 //-----------------------------------------------------------------------------
 inline const Color UNSPECIFIED_LOGGING_COLOR( 0, 0, 0, 0 );
-
-//-----------------------------------------------------------------------------
-// An ID returned by the logging system to refer to a logging channel.
-//-----------------------------------------------------------------------------
-typedef int LoggingChannelID_t;
 
 //-----------------------------------------------------------------------------
 // A sentinel value indicating an invalid logging channel ID.
