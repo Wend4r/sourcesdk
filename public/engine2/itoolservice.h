@@ -130,4 +130,10 @@ public:
 	virtual void unk090( uint16 nUnk ) = 0;
 };
 
+class CToolService : public CBaseEngineService< IToolService >
+{
+public:
+	virtual ~CToolService() = 0;
+};
+
 #endif // ITOOLSERVICE_H
