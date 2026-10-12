@@ -64,7 +64,8 @@ public:
 	virtual uint32 GetLongFrameCount() = 0;
 	virtual bool GetPlayerInfo( int nPlayerIndex, CMsgPlayerInfo *pInfo ) = 0;
 	virtual CPlayerUserId GetPlayerUserId( int nPlayerIndex ) = 0;
-	virtual CPlayerSlot GetSplitScreenPlayer( CSplitScreenSlot nSlot ) = 0;
+	// Player slot the network game client holds for nSlot ( -1 reads slot 0 )
+	virtual CPlayerSlot unk034( CSplitScreenSlot nSlot ) = 0;
 	virtual CSplitScreenSlot GetSplitScreenSlotForPlayer( CPlayerSlot nPlayerSlot ) = 0;
 	virtual float GetLastTimeStamp() = 0;
 	virtual int GetLastServerTick() = 0;
@@ -88,8 +89,8 @@ public:
 	virtual void SetRestrictServerCommands( bool bRestrict ) = 0;
 	virtual void SetRestrictClientCommands( bool bRestrict ) = 0;
 	virtual bool IsLowViolence() = 0;
-	// Player slot the split screen service holds for nSlot
-	virtual CPlayerSlot unk055( CSplitScreenSlot nSlot ) = 0;
+	// Forwards to ISplitScreenService::GetSplitScreenPlayer
+	virtual CPlayerSlot GetSplitScreenPlayer( CSplitScreenSlot nSlot ) = 0;
 	virtual bool IsSplitScreenActive() = 0;
 	virtual bool IsValidSplitScreenSlot( CSplitScreenSlot nSlot ) = 0;
 	virtual CSplitScreenSlot FirstValidSplitScreenSlot() = 0;
@@ -147,12 +148,12 @@ public:
 	// Thread-local flag; returns the previous value
 	virtual bool SetLocalPlayerIsResolvable( const char *pszContext, int nLine, bool bResolvable ) = 0;
 	virtual bool IsLocalPlayerResolvable() = 0;
-	virtual void RegisterDemoCustomDataCallback( const CUtlSymbolLarge &szCallbackSaveID, void *pfnCallback ) = 0;
-	virtual void RecordDemoCustomData( void *pfnCallback, const void *pData, size_t nDataLength ) = 0;
+	virtual void RegisterDemoCustomDataCallback( const CUtlSymbolLarge &szCallbackSaveID, void ( *pfnCallback )( uint8 *pData, size_t nSize ) ) = 0;
+	virtual void RecordDemoCustomData( void ( *pfnCallback )( uint8 *pData, size_t nSize ), const void *pData, size_t nDataLength ) = 0;
 	// No-op in this build; GetPitchScale always returns 1.0.
 	virtual void SetPitchScale( float flPitchScale ) = 0;
 	virtual float GetPitchScale() = 0;
-	virtual void Unk_SetMixGroupOfCurrentMixer( void *p ) = 0;
+	virtual void SetMixGroupOfCurrentMixer( const char *pszGroupName, const char *pszParam, float flValue ) = 0;
 	virtual int GetMixLayerIndex( const char *pszMixLayerName ) = 0;
 	virtual void SetMixLayerLevel( int nIndex, float flLevel ) = 0;
 	virtual bool IsVoiceRecording() = 0;
@@ -228,6 +229,9 @@ public:
 	virtual const char *GetDemoRecordingFileName() = 0;
 	// Returns the constant 0.1.
 	virtual double unk171() = 0;
+	// Frame present timing records of the client/server loop (40 bytes each, no type name in any
+	// binary): unk172 returns the record of the frame in flight, unk173 returns the newest completed
+	// one BY VALUE through a hidden return pointer, so it cannot be called through this declaration
 	virtual void *unk172() = 0;
 	virtual void *unk173() = 0;
 	virtual bool unk174( const void *pSyncMsg ) = 0;
