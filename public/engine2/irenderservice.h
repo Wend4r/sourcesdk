@@ -13,6 +13,7 @@
 #include <engine/IEngineService.h>
 #include <splitscreenslot.h>
 #include <spawngrouptypes.h>
+#include <rendersystem/rendersystemtypes.h>
 
 class IRenderHandler;
 class ISceneWorld;
@@ -31,7 +32,7 @@ public:
 
 	virtual bool unk027() = 0;
 
-	virtual void GetSplitScreenViewport( const void *pViewport, int nSlot, void *pOutViewport ) = 0;
+	virtual void GetSplitScreenViewport( const RenderViewport_t &viewport, CSplitScreenSlot nSlot, RenderViewport_t *pOutViewport ) = 0;
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) = 0;
