@@ -18,6 +18,7 @@
 struct ResourceManifestDesc_t;
 class KeyValues3;
 enum RenderMultisampleType_t : uint8;
+FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 
 class IRenderDeviceSetup
 {
@@ -101,7 +102,7 @@ public:
 class CMaterialSystem2AppSystemDict : public CTier2AppSystemDict, public IRenderDeviceSetup
 {
 public:
-	void* m_hSwapChain;
+	SwapChainHandle_t m_hSwapChain;
 	int m_nThreadCount;
 	CreateInterfaceFn m_RenderFactory;
 	CUtlString m_WindowTitle;
