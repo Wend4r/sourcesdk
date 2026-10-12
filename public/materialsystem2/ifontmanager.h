@@ -29,7 +29,7 @@ public:
 	virtual void SetLanguage( const char *pLanguage ) = 0;
 	virtual const char *GetLanguage() = 0;
 
-	virtual bool AddCustomFontFile( const char *pFontName, const char *pFontFileName, int nRangeMin, int nRangeMax, void *pUnk ) = 0;
+	virtual bool AddCustomFontFile( const char *pFontName, const char *pFontFileName, int nRangeMin, int nRangeMax, const char *pGroupName ) = 0;
 
 	// Font alias group by name token, the first group for 0
 	virtual void *FindFontAliasGroup( CUtlStringToken groupName ) = 0;
