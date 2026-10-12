@@ -199,8 +199,6 @@ public:
 	int m_nIgnored;
 	int m_nRedundant;
 	size_t m_nIgnoredBytes;
-	
-	CUtlVector<CompleteModuleRegistrationCallback_t> m_CompleteModuleRegistrationCallbacks;
 };
 
 #endif // SCHEMASYSTEM_H
