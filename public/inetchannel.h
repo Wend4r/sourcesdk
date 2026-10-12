@@ -16,6 +16,7 @@
 #include "steam/steamnetworkingtypes.h"
 #include "tier1/bitbuf.h"
 #include "tier1/utldelegate.h"
+#include "tier1/utlqueue.h"
 #include <eiface.h>
 
 #define MAX_NETCHANNELL_CATEGORY_ID 32
@@ -122,7 +123,8 @@ public:
 
 	virtual void	UpdateMessageStats( int msggroup, int bits, bool ) = 0;
 	
-	virtual void	unk012() = 0;
+	// AMNOTE: Moves the encoding stats collected since the last call into the current incoming frame
+	virtual void	StoreEncodingStatsInFrame() = 0;
 	
 	virtual bool	CanPacket( void ) const = 0;
 	virtual bool	IsOverflowed( void ) const = 0;
@@ -141,7 +143,8 @@ public:
 	virtual bool	IsTimedOut( void ) const = 0;
 	virtual void	UpdateLastReceivedTime( void ) = 0;
 
-	virtual void	SetLateLatencyThreshold( float flThreshold ) = 0;
+	// AMNOTE: Jitter in milliseconds above which incoming frames count as late (GetAvgChoke)
+	virtual void	SetLateFrameJitterThreshold( float flJitterMs ) = 0;
 	virtual void	SetRemoteFramerate( const CNETMsg_Tick_t *pMsg ) = 0;
 	
 	virtual bool	IsRemoteDisconnected( ENetworkDisconnectionReason &reason ) const = 0;
@@ -180,8 +183,11 @@ public:
 
 	virtual void	SetPendingTick( int nTick ) = 0;
 
-	virtual void	*GetQueuedNetMessages( void ) = 0;
-	virtual void	FillTickFrameStats( CNETMsg_Tick_t *pMsg ) = 0;
+	// AMNOTE: Returns the queue of received messages that ProcessMessages dispatches
+	virtual CUtlQueue< CNetMessage * > *GetReceivedMessageQueue( void ) = 0;
+	// AMNOTE: Writes the incoming flow's dropped and late frame percentages, which the peer reads in SetRemoteFramerate
+	virtual void	WriteFrameQualityToTick( CNETMsg_Tick_t *pMsg ) = 0;
+	// AMNOTE: Received messages beyond the convar's value are reported
 	virtual void	SetQueuedMessageLimitConVar( CConVar< int > *pQueuedMessageLimit ) = 0;
 };
 

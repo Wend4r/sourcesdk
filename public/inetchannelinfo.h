@@ -56,7 +56,8 @@ public:
 	
 	virtual float		GetAvgLoss( int flow ) const = 0;	 // avg packet loss[0..1]
 	virtual float		GetAvgChoke( int flow ) const = 0;
-	virtual float		GetMaxLatency( int flow ) const = 0;	// highest packet latency over the last second, -1 if none
+	// AMNOTE: Highest frame jitter in milliseconds over the recent frames, -1 when there are none
+	virtual float		GetPeakJitter( int flow ) const = 0;
 	virtual float		GetAvgData( int flow ) const = 0;	 // data flow in bytes/sec
 	
 	virtual float		GetAvgPackets( int flow ) const = 0; // avg packet bytes/sec
@@ -69,7 +70,7 @@ public:
 	virtual float		GetTimeoutSeconds( void ) const = 0;
 	virtual float		GetTimeUntilTimeout( void ) const = 0;
 	
-	virtual float		GetLateLatencyThreshold( void ) const = 0;	// packets above it are marked late
+	virtual float		GetLateFrameJitterThreshold( void ) const = 0;
 	
 	virtual void		ResetLatencyStats( int flow ) = 0;
 	virtual SNetChannelLatencyStats *GetLatencyStats( int flow ) const = 0;
@@ -79,9 +80,14 @@ public:
 	virtual void		SetNumPredictionErrors( int num ) = 0;
 	virtual void		SetShowNetMessages( bool show ) = 0;
 
-	virtual int			GetPacketStatus( int flow, int nSeqNr, float *pflLatency = nullptr ) const = 0;	// 0 received, 1 dropped, 2 out of order, 3 unknown
+	// AMNOTE: Returns 0 when the frame was delivered, 1 dropped, 2 out of order, 3 unknown (not in the last 128 frames),
+	// and its jitter in milliseconds, -1 when unknown
+	virtual int			GetFrameStatus( int flow, int nSeqNr, float *pflJitter = nullptr ) const = 0;
 
-	virtual int			GetPacketLatencyHistory( int flow, int16 *pOut, int nMaxEntries ) const = 0;	// newest first; -1 dropped, -2 out of order, -3 missing
+	// AMNOTE: Writes the jitter of up to nMaxEntries recent frames, newest first, in 0.1 ms units, or -1 dropped,
+	// -2 out of order, -3 unknown, and returns the count written
+	virtual int			GetFrameJitterHistory( int flow, int16 *pOut, int nMaxEntries ) const = 0;
+	// AMNOTE: Fills pMsg with the flow's quality stats
 	virtual void		GetFlowQuality( int flow, CMsgSource2NetworkFlowQuality *pMsg, bool ) = 0;
 };
 
