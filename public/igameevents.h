@@ -133,7 +133,8 @@ public:
 
 	virtual bool HasKey( const GameEventKeySymbol_t &keySymbol ) = 0;
 
-	virtual void CreateVMTable( ScriptVariant_t &Table ) = 0;
+	// Returns a script table with the event's keys
+	virtual CVariant CreateVMTable() = 0;
 
 	virtual KeyValues3* GetDataKeys() const = 0;
 };
