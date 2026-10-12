@@ -4,6 +4,10 @@ set(PLATFORM_COMPILE_DEFINITIONS
 	_WIN32 _WINDOWS
 	_ALLOW_KEYWORD_MACROS __STDC_LIMIT_MACROS
 	_CRT_SECURE_NO_WARNINGS=1 _CRT_SECURE_NO_DEPRECATE=1 _CRT_NONSTDC_NO_DEPRECATE=1
+
+	# Iterator debugging changes the layout of STL types, so Debug builds disable it to match
+	# the game, e.g. for `std::string` fields of protobuf messages shared with it
+	$<$<CONFIG:Debug>:_ITERATOR_DEBUG_LEVEL=0>
 )
 
 set(PLATFORM_COMPILE_OPTIONS
