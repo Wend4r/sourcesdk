@@ -6,19 +6,10 @@
 #endif
 
 #include "tier0/platform.h"
+#include "schemasystem/baseschema.h"
 
 class CBufferString;
 class ISchemaSystem;
-
-enum SchemaRegistrationPhase_t
-{
-	SCHEMA_REGISTRATION_PHASE_TYPE_TABLES = 0,
-	SCHEMA_REGISTRATION_PHASE_ATOMIC_TYPES_AND_ENUMS,
-	SCHEMA_REGISTRATION_PHASE_CLASSES,
-	SCHEMA_REGISTRATION_PHASE_VALIDATION,
-
-	SCHEMA_REGISTRATION_PHASE_COUNT
-};
 
 //-----------------------------------------------------------------------------
 // Per-module list of schema binding registrars, walked by InstallSchemaBindings()
