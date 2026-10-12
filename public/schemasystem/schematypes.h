@@ -15,6 +15,7 @@
 #include "schemasystem/baseschema.h"
 #include "schemalib/schemametadata_data.h"
 #include "schemalib/schemaenuminfo_data.h"
+#include "schemalib/schemaenuminfo.h"
 
 class ISchemaSystemTypeScope;
 class CSchemaSystemTypeScope;
@@ -424,14 +425,6 @@ public:
 	}
 };
 
-class CSchemaEnumeratorInfo : public SchemaEnumeratorInfoData_t
-{
-};
-
-
-class CSchemaEnumInfo : public SchemaEnumInfoData_t
-{
-};
 
 struct SchemaAtomicTypeInfo_t
 {
