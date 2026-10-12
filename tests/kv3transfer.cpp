@@ -195,6 +195,25 @@ REGISTER_NAMED_TEST( "KV3Transfer.LoadErrorHasContextPath", KV3Transfer_LoadErro
 	TEST_EQ( V_strcmp( namedContext.GetErrorMessage(), "file.kv3|m_pShape: Tried to load a polymorphic pointer with no '_class' key" ), 0 );
 }
 
+REGISTER_NAMED_TEST( "KV3Transfer.ErrorListenerKeepsNoContext", KV3Transfer_ErrorListenerKeepsNoContext )
+{
+	// The transfer contexts keep their own context path, so the listener one stays empty.
+	CKV3TransferLoadContext loadContext( "file.kv3" );
+	IErrorListener *pListener = &loadContext;
+
+	ErrorContextHandle_t handle = pListener->PushContext( "m_%s", "pShape" );
+
+	TEST_EQ( handle.m_nContextLength, -1 );
+
+	CBufferString sPath;
+
+	TEST_FALSE( pListener->AppendContextPath( sPath ) );
+	TEST_TRUE( sPath.IsEmpty() );
+
+	pListener->PopContext( handle.m_nContextLength );
+	TEST_EQ( loadContext.GetResult(), KV3TRANSFER_SUCCESS );
+}
+
 REGISTER_NAMED_TEST( "KV3Transfer.DoubleSaveFails", KV3Transfer_DoubleSaveFails )
 {
 	KeyValues3 root;

@@ -38,7 +38,7 @@ public:
 
 	// No context path; CKV3TransferLoadContext keeps its own, which PushContext and PopContext do not touch.
 	bool AppendContextPath( CBufferString &sOut ) override { return false; }
-	int PushContext( PRINTF_FORMAT_STRING const char *pszFormat, ... ) override FMTFUNCTION( 2, 3 ) { return -1; }
+	ErrorContextHandle_t PushContext( PRINTF_FORMAT_STRING const char *pszFormat, ... ) override FMTFUNCTION( 2, 3 ) { return { -1 }; }
 	void PopContext( int nContextLength ) override {}
 
 	void NoteFailure( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 );
