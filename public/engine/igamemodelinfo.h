@@ -13,14 +13,9 @@
 #include <appframework/iappsystem.h>
 #include <resourcesystem/resourcehandle.h>
 #include <mathlib/vector.h>
+#include "resourcesystem/resourcehandletypes.h"
 
 class CModel;
-
-class InfoForResourceTypeCModel
-{
-public:
-	using RuntimeClass_t = CModel;
-};
 
 using HModelWeak = CWeakHandle< InfoForResourceTypeCModel >;
 
