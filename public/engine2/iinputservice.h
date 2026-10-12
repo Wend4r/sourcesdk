@@ -17,6 +17,7 @@
 #include <tier0/utlstring.h>
 
 class IInputHandler;
+class CInputValueBase;
 class CUtlBuffer;
 
 abstract_class IInputService : public IEngineService
@@ -47,8 +48,8 @@ public:
 
 	virtual bool HasMouseFocus() = 0;
 
-	virtual void RegisterInputValue( void *pInputValue ) = 0;
-	virtual void UnregisterInputValue( void *pInputValue ) = 0;
+	virtual void RegisterInputValue( CInputValueBase *pInputValue ) = 0;
+	virtual void UnregisterInputValue( CInputValueBase *pInputValue ) = 0;
 	virtual void ForEachInputValue( void *pDelegate ) = 0;
 
 	virtual void EnableKeyBindingSystem( bool bEnable ) = 0;
