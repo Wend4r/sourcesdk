@@ -12,19 +12,22 @@
 
 #include <engine/IEngineService.h>
 
+class CAudioState;
+struct VoiceRecordingLevel_t;
+
 abstract_class ISoundService : public IEngineService
 {
 public:
-	virtual bool Unk_PlayVoiceData( void *p ) = 0;
+	virtual bool Unk_PlayNetworkedVoice( void *p ) = 0;
 
-	virtual bool Unk_GetVoiceLevel( void *p ) = 0;
+	virtual bool GetNetworkedVoiceLevel( uint64 nXUID, VoiceRecordingLevel_t *pLevel ) = 0;
 
 	virtual void AddVoiceListener( void *pListener ) = 0;
 	virtual void RemoveVoiceListener( void *pListener ) = 0;
 
 	virtual bool IsVoiceRecording() = 0;
 
-	virtual void unk028() = 0;
+	virtual void unk028( const CAudioState *pAudioState ) = 0;
 	virtual void unk029() = 0;
 
 	virtual void SetVoiceThreshold( float flThresholdDB ) = 0;
