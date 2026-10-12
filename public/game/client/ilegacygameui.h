@@ -35,12 +35,13 @@ public:
 	// Called with the map name when a non-dedicated server starts
 	virtual void SetProgressLevelName( const char *pszLevelName ) = 0;
 	virtual void OnConnectToServer2( const char *pszGame, int nIP, int nConnectionPort, int nQueryPort ) = 0;
-	virtual void *unk022() = 0;
+	virtual void SetProgressOnStart() = 0;
 	// Shows a popup for the Steam/VAC related reasons
 	virtual void OnDisconnectFromServer( ENetworkDisconnectionReason reason ) = 0;
 	virtual void NeedConnectionProblemWaitScreen( float flTimeRemaining ) = 0;
-	virtual void *unk025() = 0;
-	virtual void *unk026() = 0;
+	// Both are empty in this build
+	virtual void unk025() = 0;
+	virtual void unk026() = 0;
 	// True while the main menu or the pause menu is shown
 	virtual bool unk027() = 0;
 
