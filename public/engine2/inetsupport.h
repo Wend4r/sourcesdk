@@ -52,9 +52,9 @@ public:
 	// Get engine build number
 	virtual int GetEngineBuildNumber() = 0;
 
-	virtual void unk012( void *pInfo ) = 0;
+	virtual void GetBaseServerInfo( void *pBaseServerInfo ) = 0;
 
-	virtual void unk013( void *pInfo ) = 0;
+	virtual void GetExtendedServerInfo( void *pExtendedServerInfo ) = 0;
 
 	virtual void GetServerInfo( void *pServerInfo ) = 0;
 
