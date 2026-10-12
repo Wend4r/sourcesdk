@@ -221,7 +221,7 @@ public:
 	// Fires the "client_disconnect" game event
 	virtual void NotifyDisconnect( int nReason ) = 0;
 	// Releases *pCombinedModel and clears *pUnk
-	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk ) = 0;
+	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk, const void **ppUnk1, const void **ppUnk2 ) = 0;
 	// Save/restore block handling
 	virtual void unk133( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
 	virtual void unk134( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
