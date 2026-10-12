@@ -35,7 +35,7 @@ public:
 	virtual void NetUpdatePreStart() = 0;
 	virtual void NetUpdateStart() = 0;
 	virtual void PostEntityPacketReceived() = 0;
-	virtual void PostNetworkDataReceived() = 0;
+	virtual void PostNetworkDataReceived( const PostDataUpdateCall_t *pCalls, int nCount ) = 0;
 	// Resets the prediction state after a full update
 	virtual void OnReceivedUncompressedPacket() = 0;
 
@@ -44,10 +44,12 @@ public:
 	virtual void unk019( int nUnk, float flUnk1, float flUnk2 ) = 0;
 	virtual int unk020() = 0;
 
-	virtual void unk021( CPlayerSlot nSlot, Vector &vecOrigin ) = 0;
-	virtual void unk022( CPlayerSlot nSlot, QAngle &angRotation ) = 0;
+	// Local origin and rotation of the pawn of nSlot
+	virtual void GetViewOrigin( CPlayerSlot nSlot, Vector &vecOrigin ) = 0;
+	virtual void GetViewAngles( CPlayerSlot nSlot, QAngle &angRotation ) = 0;
 
-	virtual void GetViewAngles( CPlayerSlot nSlot, QAngle &ang ) = 0;
+	// v_angle of the pawn of nSlot
+	virtual void GetLocalViewAngles( CPlayerSlot nSlot, QAngle &ang ) = 0;
 	virtual void SetViewAngles( CPlayerSlot nSlot, const QAngle &ang ) = 0;
 	virtual void SetLocalViewAngles( CSplitScreenSlot nSlot, const QAngle &ang ) = 0;
 
