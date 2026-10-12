@@ -16,6 +16,7 @@
 #include "appframework/iappsystem.h"
 #include "resourcesystem/resourcehandle.h"
 #include "tier0/utlvector.h"
+#include "tier3/tier3.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -31,6 +32,7 @@ class IPulseGraphInstance_TestDomain;
 class IPulseGraphInstance_TurtleGraphics;
 
 struct PulseSymbol_t;
+struct PulseSystemEventBase_t;
 
 class InfoForResourceTypeCPulseGraphDef
 {
@@ -156,6 +158,29 @@ public:
 	// Forwards a breakpoint add or remove to every listener.
 	virtual void NotifyBreakpointChanged( ResourceHandle_t hGraph, const void *pBreakpointDesc ) = 0;
 	virtual bool unk075() = 0;
+};
+
+class CPulseSystem : public CTier3AppSystem< IPulseSystem >
+{
+public:
+	// Added by AddListener
+	CUtlVector< void * > m_Listeners;
+
+	uint8 m_pad040[ 0x98 ];
+
+	// Set by unk046
+	bool m_bUnk0D8;
+
+	// Appended by the Queue*Event methods
+	CUtlVector< PulseSystemEventBase_t * > m_PendingEvents;
+
+	uint8 m_pad0F8[ 0xB078 ];
+
+	// Returned by Unk_GetTypeQueriesForScopes and Unk_GetOpaqueHandleTable
+	void *m_pUnkB170;
+	void *m_pUnkB178;
+
+	uint8 m_padB180[ 0x78 ];
 };
 
 #include "schemacompiler/schemaoff.h"
