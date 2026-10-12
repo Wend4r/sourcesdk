@@ -12,12 +12,16 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlstring.h"
+#include "tier1/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier3/tier3.h"
 
 class QObject;
 class QWidget;
 class IHelpDisplayWidget;
 class IHelpChangeListener;
+class CQHelpEditorWidget;
+class CQHelpDisplayWidget;
 
 abstract_class IHelpSystem : public IAppSystem
 {
@@ -64,6 +68,17 @@ public:
 	virtual bool HasHelpEntry( const char *pContextName, const char *pHelpId ) = 0;
 
 	virtual ~IHelpSystem() {}
+};
+
+class CHelpSystem : public CTier3AppSystem< IHelpSystem >
+{
+public:
+	// Loaded help contexts, searched by name
+	CUtlVector< void * > m_vecUnk028;
+
+	CUtlVector< CQHelpEditorWidget * > m_vecUnk040;
+	CUtlVector< CQHelpDisplayWidget * > m_vecUnk058;
+	CUtlVector< IHelpChangeListener * > m_vecUnk070;
 };
 
 #endif // IHELPSYSTEM_H
