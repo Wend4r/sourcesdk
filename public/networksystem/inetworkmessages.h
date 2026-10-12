@@ -136,4 +136,30 @@ public:
 
 DECLARE_TIER2_INTERFACE(INetworkMessages, g_pNetworkMessages);
 
+// ------------------------------------------------------------------------ //
+// Datatable send proxies are used to tell the engine where the datatable's 
+// data is and to specify which clients should get the data. 
+//
+// pRecipients is the object that allows you to specify which clients will
+// receive the data.
+// ------------------------------------------------------------------------ //
+class CSendProxyRecipients
+{
+public:
+	void	SetAllRecipients();					// Note: recipients are all set by default when each proxy is called.
+	void	ClearAllRecipients();
+
+	void	SetRecipient( int iClient );		// Note: these are CLIENT indices, not entity indices (so the first player's index is 0).
+	void	ClearRecipient( int iClient );
+
+	// Clear all recipients and set only the specified one.
+	void	SetOnly( int iClient );
+	// Set all recipients, save for the specified on
+	void    ExcludeOnly( int iClient );
+
+public:
+	// Make sure we have enough room for the max possible player count
+	CPlayerBitVec	m_Bits;
+};
+
 #endif /* NETWORKMESSAGES_H */
