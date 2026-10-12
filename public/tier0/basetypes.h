@@ -754,4 +754,17 @@ namespace basetypes
 #include "tier0/valve_on.h"
 
 
+struct SoundEventGuid_t {
+    SoundEventGuid_t()
+		: m_Data(0)
+    {
+    }
+	SoundEventGuid_t(const int32 id)
+		: m_Data(id)
+    {
+    }
+
+	int32 m_Data;
+};
+
 #endif // BASETYPES_H
