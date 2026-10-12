@@ -14,6 +14,7 @@
 #include "tier0/utlvector.h"
 #include "tier0/utlstring.h"
 #include "appframework/iappsystem.h"
+#include "tier0/threadtools.h"
 
 
 //-----------------------------------------------------------------------------
@@ -187,5 +188,30 @@ public:
 };
 
 DECLARE_TIER2_INTERFACE( IP4, p4 );
+
+class CP4 : public CBaseAppSystem< IP4 >
+{
+public:
+	// Export of p4lib_perforce, called to create the Perforce implementation
+	IP4 *( *m_pfnGetCP4ImplInterface )();
+
+	// Implementation the calls are forwarded to: Perforce, CP4Dummy or CP4Mimic
+	IP4 *m_pUnk010;
+
+	bool m_bUnk018;
+	PlatModule_t m_hUnk020;
+	ThreadId_t m_nUnk028;
+};
+
+// Used when Perforce is not available
+class CP4Dummy : public CBaseAppSystem< IP4 >
+{
+};
+
+// Works on the local files, without Perforce
+class CP4Mimic : public CBaseAppSystem< IP4 >
+{
+};
+
 
 #endif // IP4_H
