@@ -15,6 +15,7 @@
 #include "appframework/iappsystem.h"
 
 class QWidget;
+class QPixmap;
 class KeyValues3;
 class IAssetPreviewBase;
 class IAssetPreviewEmbedded;
@@ -47,7 +48,8 @@ public:
 
 	virtual void RegisterToolSceneNodeControllerFactory( IToolSceneNodeControllerFactory *pFactory, const char *pName ) = 0;
 
-	virtual bool unk023( void *pUnk1, void *pUnk2 ) = 0;
+	// Queues the thumbnail for generation when it is not cached yet
+	virtual bool GetThumbnail( void *pAsset, QPixmap *pPixmap ) = 0;
 
 	// Thumbnail database lookup by asset path
 	virtual bool unk024( void *pUnk ) = 0;
