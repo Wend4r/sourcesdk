@@ -11,9 +11,20 @@
 #endif
 
 #include <appframework/iappsystem.h>
+#include <tier0/utlstringtoken.h>
 
 #include <memory>
 
+class ISceneView;
+class ISceneLayer;
+class IRenderContext;
+class IRenderingPipeline;
+class CViewId;
+class CFrustum;
+class Vector;
+struct RenderViewport_t;
+struct SceneLayerOutputs_t;
+struct pixelvis_queryparams_t;
 class ITonemapSystem;
 class IVolumetricFog;
 class CWindController;
@@ -22,14 +33,14 @@ class CCharacterDecalRenderer;
 abstract_class ISceneUtils : public IAppSystem
 {
 public:
-	virtual void Unk_Downsample2x( void *pUnk1, void *pTexture, void *pUnk2, bool bUnk ) = 0;
+	virtual void Add2xDownsampleLayerToView( ISceneView *pView, void *pTexture, void *pUnk, bool bUnk ) = 0;
 
-	virtual void Unk_Downsample4x( void *pUnk1, void *pTexture, void *pUnk2, bool bUnk ) = 0;
-	virtual void Unk_Downsample2x( void *pUnk1, uint64 nTextureIndex, void *pUnk2, bool bUnk ) = 0;
-	virtual void Unk_Downsample4x( void *pUnk1, uint64 nTextureIndex, void *pUnk2, bool bUnk ) = 0;
-	virtual void unk015() = 0;
-	virtual void Unk_AddTranslucentScreenSpacePass( void *p ) = 0;
-	virtual void unk017() = 0;
+	virtual void Add4xDownsampleLayerToView( ISceneView *pView, void *pTexture, void *pUnk, bool bUnk ) = 0;
+	virtual void Add2xDownsampleLayerToView( ISceneView *pView, uint64 nTextureIndex, void *pUnk, bool bUnk ) = 0;
+	virtual void Add4xDownsampleLayerToView( ISceneView *pView, uint64 nTextureIndex, void *pUnk, bool bUnk ) = 0;
+	virtual ISceneLayer *AddSimpleLayerToView( ISceneView *pView, const char *pszLayerName, const RenderViewport_t &viewport, const CUtlStringToken &token, uint64 nFlags, uint64 nUnk, const SceneLayerOutputs_t &outputs ) = 0;
+	virtual void Unk_AddTranslucentScreenspaceLayerToView( void *p ) = 0;
+	virtual void RenderScreenQuad( IRenderContext *pRenderContext, Vector *pUnk, const char *pszUnk ) = 0;
 	virtual void Unk_CreateTextureBarrierLayerRenderer( void *p ) = 0;
 
 	virtual std::shared_ptr< ITonemapSystem > CreateTonemapSystem() = 0;
@@ -43,19 +54,19 @@ public:
 	virtual CWindController *CreateWindController() = 0;
 
 	virtual void DestroyWindController( CWindController *pWindController ) = 0;
-	virtual void Unk_RegisterRenderingPipeline( void *p ) = 0;
-	virtual void Unk_UnregisterRenderingPipeline( void *p ) = 0;
-	virtual void unk026() = 0;
-	virtual void Unk_AliasRenderingPipeline( void *p ) = 0;
+	virtual void RegisterRenderingPipeline( IRenderingPipeline *pPipeline ) = 0;
+	virtual void UnregisterRenderingPipeline( IRenderingPipeline *pPipeline ) = 0;
+	virtual IRenderingPipeline *FindRenderingPipeline( CUtlStringToken token ) = 0;
+	virtual void AliasRenderingPipeline( const char *pszAlias, CUtlStringToken token ) = 0;
 	virtual void unk028() = 0;
 	virtual void unk029() = 0;
-	virtual void unk030() = 0;
-	virtual void unk031() = 0;
-	virtual void unk032() = 0;
-	virtual void Unk_PixelVisibility_FractionVisible( void *p ) = 0;
-	virtual void Unk_PixelVisibility_IssueQuery( void *p ) = 0;
-	virtual void unk035() = 0;
-	virtual void unk036() = 0;
+	virtual CViewId AppendViewProducerToViewId( CViewId viewId, int nViewProducer ) = 0;
+	virtual int AllocateViewProducerIndex() = 0;
+	virtual bool PixelVisibility_IsAvailable() const = 0;
+	virtual float PixelVisibility_FractionVisible( const pixelvis_queryparams_t &params, int *pQueryHandle, const CViewId &viewId ) = 0;
+	virtual void PixelVisibility_IssueQuery( const pixelvis_queryparams_t &params, int *pQueryHandle, IRenderContext *pRenderContext, const CFrustum &frustum, const CViewId &viewId ) = 0;
+	virtual void PixelVisibility_AppendViewProducerToViewIdsForPlayerQueries( int nUnk1, int nUnk2 ) = 0;
+	virtual void Unk_ComputeScreenSpaceVertices( void *p ) = 0;
 	virtual void Unk_CreateFullscreenQuadRenderer( void *p ) = 0;
 	virtual void Unk_CreateScalableAORenderer( void *p ) = 0;
 	virtual void Unk_CreateSignalSemaphoreRenderer( void *p ) = 0;
