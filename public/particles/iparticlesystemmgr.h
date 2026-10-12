@@ -26,9 +26,11 @@ using HParticleSystemDefinition = CWeakHandle< InfoForResourceTypeIParticleSyste
 abstract_class IParticleSystemMgr : public IAppSystem
 {
 public:
-	virtual void unk011() = 0;
-	virtual void unk012() = 0;
-	virtual void unk013() = 0;
+	virtual void unk011( float fl1, float fl2, float fl3, int n4 ) = 0;
+	virtual void unk012( int n1, int n2 ) = 0;
+
+	// Setter and getter of the same flag
+	virtual void unk013( bool bValue ) = 0;
 	virtual bool unk014() = 0;
 
 	virtual HParticleSystemDefinition FindParticleSystem( const char *pszName, bool bWarnIfNotPrecached ) = 0;
@@ -63,10 +65,11 @@ public:
 	virtual int Unk_RandomInt( void *pCollection, int nMin, int nMax ) = 0;
 
 	virtual float Unk_RandomFloat( void *pCollection, float flMin, float flMax ) = 0;
-	virtual const char * unk035() = 0;
-	virtual int unk036() = 0;
+	// "unknown" for an index above 48
+	virtual const char *unk035( uint32 nIndex ) = 0;
+	virtual int unk036( int nIndex ) = 0;
 	virtual void unk037() = 0;
-	virtual void unk038() = 0;
+	virtual void unk038( int nValue ) = 0;
 	virtual void unk039() = 0;
 	virtual void unk040() = 0;
 
