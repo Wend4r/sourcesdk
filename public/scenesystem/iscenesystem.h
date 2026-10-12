@@ -95,7 +95,7 @@ public:
 
 	virtual CSceneLightObject *CreateLight( const void *pLightDesc, ISceneWorld *pWorld ) = 0;
 
-	virtual CSceneObject *CreateSkyBox( void *pMaterial, ISceneWorld *pWorld ) = 0;
+	virtual CSceneObject *CreateSkyBox( HMaterialWeak hMaterial, ISceneWorld *pWorld ) = 0;
 	virtual void unk040() = 0;
 	virtual void unk041() = 0;
 	virtual void unk042() = 0;
@@ -236,7 +236,7 @@ public:
 	virtual void unk154() = 0;
 	virtual void unk155() = 0;
 	virtual void unk156() = 0;
-	virtual void Unk_CreateAOProxySceneObject( void *p ) = 0;
+	virtual CSceneObject *Unk_CreateAOProxySceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 
 	// Reads ao_proxy_capsule_list and ao_proxy_box_list.
 	virtual void Unk_LoadAOProxies( void *p ) = 0;
@@ -268,7 +268,7 @@ public:
 	virtual void unk183() = 0;
 	virtual void unk184() = 0;
 	virtual void unk185() = 0;
-	virtual void Unk_CreateDistanceFieldInstanceSceneObject( void *p ) = 0;
+	virtual CSceneObject *Unk_CreateDistanceFieldInstanceSceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 	virtual void unk187() = 0;
 	virtual void unk188() = 0;
 	virtual void unk189() = 0;
