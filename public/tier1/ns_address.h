@@ -190,6 +190,7 @@ enum NetworkSystemAddressType_t
 	NSAT_P2P,
 	NSAT_PROXIED_GAMESERVER,	// Client proxied through Steam Datagram Transport
 	NSAT_PROXIED_CLIENT,		// Client proxied through Steam Datagram Transport
+	NSAT_LOOPBACK,
 };
 
 // Used to represent a remote address which can be a network address or SteamID
