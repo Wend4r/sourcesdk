@@ -13,6 +13,7 @@
 #include <color.h>
 #include <tier0/platform.h>
 #include <tier0/wchartypes.h>
+#include <tier2/tier2.h>
 
 class IRenderContext;
 class CTextLayoutInfo;
@@ -40,6 +41,13 @@ public:
 	virtual Vector2D GetWSize( CTextLayoutInfo *pTextLayoutInfo ) = 0;
 
 	virtual ~ITextLayout() {}
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of ITextLayout, without members of its own
+//-----------------------------------------------------------------------------
+class CTextLayout : public CTier2AppSystem< ITextLayout >
+{
 };
 
 #endif // ITEXTLAYOUT_H
