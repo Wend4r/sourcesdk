@@ -22,10 +22,14 @@ enum KV1TextEscapeBehavior_t
 	KV1TEXT_ESC_BEHAVIOR_UNK2 = 1,
 };
 
+// Only LoadKV3FromOldSchemaText reads these, which LoadKV3 calls for old schema text.
 enum KV3LoadTextFlags_t
 {
 	KV3_LOAD_TEXT_NONE = 0,
-	KV3_LOAD_TEXT_HAS_OBJECT_REFERANCES = (1 << 0), // "_class" and "__oldschema_object_name" keys
+	KV3_LOAD_TEXT_OBJECT_REFERENCES_AS_STRINGS = 1 << 0, // keeps "&name" and NULL object references as strings instead of resolving them
+
+	// Previous name of KV3_LOAD_TEXT_OBJECT_REFERENCES_AS_STRINGS, kept for compatibility.
+	KV3_LOAD_TEXT_HAS_OBJECT_REFERANCES = KV3_LOAD_TEXT_OBJECT_REFERENCES_AS_STRINGS,
 };
 
 enum KV3SaveTextFlags_t
