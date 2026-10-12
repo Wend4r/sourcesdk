@@ -18,6 +18,14 @@
 class KeyValues3;
 class IRenderContext;
 class CUtlString;
+class IMaterialMode;
+class CRenderAttributes;
+struct MaterialRenderablePass_t;
+struct MaterialPassConstantBufferInfo_t;
+struct MaterialSystem2GlobalStats_t;
+struct RsStencilStateOverride_t;
+struct RsDepthBiasStateOverride_t;
+FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
 
 //-----------------------------------------------------------------------------
 // Source 2 material system, exposed as MATERIAL_SYSTEM2_INTERFACE_VERSION
@@ -31,17 +39,17 @@ public:
 	virtual const char *GetRenderModeName( const CUtlStringToken &renderMode ) = 0;
 
 	// Set two bits of an internal flag byte
-	virtual void unk012() = 0;
-	virtual void unk013() = 0;
+	virtual void EnableExtendedMaterialInfo() = 0;
+	virtual void EnableHeadlessMode() = 0;
 
 	virtual HMaterialWeak FindOrCreateMaterialFromResource( const char *pMaterialName ) = 0;
 
-	virtual bool Unk_RenderablePass( void *p1, void *p2, void *p3, void *p4, void *pPass, void *p6, void *p7, int n8, int n9 ) = 0;
-	virtual bool Unk_RenderablePass( void *p1, void *p2, void *p3, void *pPass, void *p5, void *p6, int n7, int n8 ) = 0;
+	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, const CRenderAttributes *pAttributes2, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
+	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 
-	virtual void *unk017( int nMode, void *pPass ) = 0;
-	virtual int unk018( int nMode, void *pPass, int n3, int n4 ) = 0;
-	virtual bool unk019( void *p, void *pPass ) = 0;
+	virtual void *GetShaderForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass ) = 0;
+	virtual int GetConstantBufferInfoForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass, MaterialPassConstantBufferInfo_t *pBufferInfo, int nBufferInfoMax ) = 0;
+	virtual bool Unk_GetRenderStatesForRenderablePass( void *p ) = 0;
 
 	virtual void FrameUpdate() = 0;
 
@@ -56,7 +64,8 @@ public:
 
 	virtual void QueueMaterialReload() = 0;
 
-	virtual HMaterialWeak unk027( ResourceHandle_t hSrcMaterial, int nMode, bool bUnk ) = 0;
+	// Names the copy "<source>_copy<n>"
+	virtual HMaterialWeak CreateProceduralMaterialCopy( ResourceHandle_t hSrcMaterial, int nMode, bool bUnk ) = 0;
 
 	// Creates a material from scratch out of a KeyValues3 description.
 	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, KeyValues3 *pData, int nFlags, bool bUnk ) = 0;
@@ -69,23 +78,23 @@ public:
 	// Value of setting.shaderquality
 	virtual int GetShaderQuality() = 0;
 
-	// Zeroes the 36-byte block at pOut and returns false
-	virtual bool unk032( void *pOut ) = 0;
+	// Zeroes the 36-byte block at pStats and returns false
+	virtual bool GetGlobalStats( MaterialSystem2GlobalStats_t *pStats, bool bClear ) = 0;
 
 	virtual int GetMaterialGeneration() = 0;
 	virtual void IncrementMaterialGeneration() = 0;
 
 	virtual void GetRenderModes( CUtlVector< CUtlStringToken > *pRenderModes, const CUtlVector< const char * > *pModeTypes ) = 0;
 
-	virtual bool unk036( ResourceHandle_t hMaterial, KeyValues3 *pKV ) = 0;
+	virtual bool GetKV3MaterialDescription( ResourceHandle_t hMaterial, KeyValues3 *pKV ) = 0;
 
 	virtual void unk037( ResourceHandle_t hMaterial, CUtlVector< ResourceHandle_t > *pResources ) = 0;
 
 	virtual void AddShaderReloadListener( void *pListener ) = 0;
 	virtual void RemoveShaderReloadListener( void *pListener ) = 0;
 
-	virtual bool SetRenderStateForMode( void *p1, void *p2, IRenderContext *pRenderContext ) = 0;
-	virtual bool SetRenderStateForMode( void *p1, void *p2, IRenderContext *pRenderContext, void *p4, void *p5, void *p6, int n7, int n8 ) = 0;
+	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext ) = 0;
+	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 
 	virtual void unk042( int nCount, IMaterial2 *const *ppMaterials, const uint16 *pValues ) = 0;
 
