@@ -901,11 +901,14 @@ protected:
 #elif defined(POSIX)
 	const char *m_pszName; // 8
 	int m_Semaphore; // 16
+	bool m_bSemOwner;
+	bool m_bSemAutoUndo;
 	pthread_mutex_t	m_Mutex; // 24
 	pthread_cond_t	m_Condition; // 64
 	bool m_bInitalized; // 112
 	bool m_bManualReset; // 113
-	int64 m_nUnk; // 120
+	int32 m_cSet;
+	int m_nBroadcastCount;
 #else
 #error "Implement me"
 #endif
