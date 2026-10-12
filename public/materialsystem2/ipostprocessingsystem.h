@@ -8,7 +8,9 @@
 #include <appframework/iappsystem.h>
 #include <resourcefile/resourcetype.h>
 
+#include <resourcesystem/resourcehandle.h>
 #include <tier0/platform.h>
+#include <tier2/tier2.h>
 
 class CPostProcessingState;
 struct PostProcessingResource_t;
@@ -34,6 +36,26 @@ public:
 	virtual bool ComputeOverrideColorCorrection( void *p, const void *pParams, void *pColorCorrection ) = 0;
 
 	virtual void unk021( void *p ) = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of IPostProcessingSystem
+//-----------------------------------------------------------------------------
+class CPostProcessingSystem : public CTier2AppSystem< IPostProcessingSystem >
+{
+public:
+	bool m_bColorCorrectionEditorOverrideEnabled;
+
+	// Holds a strong reference to the lookup texture
+	CStrongHandleBase m_hColorCorrectionEditorOverrideLookup;
+
+	const PostProcessingResource_t *m_pColorCorrectionEditorOverrideParams;
+
+	// CUtlVector of 24-byte lookups, each found by the handle that AddColorCorrectionLookup() returns
+	uint8 m_unk040[ 0x18 ];
+
+	// "Tonemapping_LocalOperator" of "Engine2/RenderingPipeline" in gameinfo
+	bool m_bTonemappingLocalOperator;
 };
 
 #endif // IPOSTPROCESSINGSYSTEM_H
