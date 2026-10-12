@@ -16,6 +16,7 @@ struct SpawnGroupDesc_t
 public:
 	SpawnGroupDesc_t()
 	 :  m_pWorldOffsetCallback(NULL),
+	    m_sWorldGroupname("default"),
 	    m_hOwner(0),
 	    m_iPriorityLoader(-2),
 	    m_manifestLoadPriority(RESOURCE_MANIFEST_LOAD_PRIORITY_DEFAULT),
@@ -29,7 +30,8 @@ public:
 	    m_bSetActivePostLoad(false),
 	    m_bUnk(true),
 	    m_bLevelTransition(false),
-	    m_bUnk2(false)
+	    m_bUnk2(false),
+	    m_bUnk3(false)
 	{
 		SetIdentityMatrix(m_vecWorldOffset);
 	}
@@ -41,9 +43,9 @@ public:
 	CUtlString m_sDescriptiveName;
 	CUtlString m_sParentNameFixup;
 	CUtlString m_sLocalNameFixup;
-	CUtlString m_sWorldGroupname;
-	matrix3x4a_t m_vecWorldOffset;
 	IComputeWorldOriginCallback *m_pWorldOffsetCallback;
+	matrix3x4a_t m_vecWorldOffset;
+	CUtlString m_sWorldGroupname;
 	CUtlString m_sSaveFileName;
 	SpawnGroupHandle_t m_hOwner;
 	int m_iPriorityLoader;
@@ -57,9 +59,10 @@ public:
 	bool m_bCreateNewSceneWorld;
 	bool m_bManualCompletion;
 	bool m_bSetActivePostLoad;
-	bool m_bUnk;
+	bool m_bUnk; // AMNOTE: Spawn groups created by point_prefab clear it
 	bool m_bLevelTransition;
 	bool m_bUnk2;
+	bool m_bUnk3;
 };
 
 struct SpawnGroupDescReceive_t

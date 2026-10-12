@@ -228,7 +228,7 @@ public:
 class CTestKV3TransferWorldGroupIdSave : public IKV3TransferInterface_WorldGroupId_Save
 {
 public:
-	void Save( CKV3TransferSaveContext *pContext, KeyValues3 *pSaveToValue, const WorldGroupId_t *pWorldGroupId ) override { pSaveToValue->SetUInt( pWorldGroupId->GetHashCode() ); }
+	void Save( CKV3TransferSaveContext *pContext, KeyValues3 *pSaveToValue, const WorldGroupId_t *pWorldGroupId ) override { pSaveToValue->SetUInt( pWorldGroupId->m_nId ); }
 };
 
 class CTestKV3TransferWorldGroupIdLoad : public IKV3TransferInterface_WorldGroupId_Load
@@ -284,7 +284,7 @@ REGISTER_NAMED_TEST( "KV3Transfer.CountdownTimer", KV3Transfer_CountdownTimer )
 	TEST_TRUE( dest.m_duration == 5.0f );
 	TEST_TRUE( dest.m_timestamp.GetTime() == 10.0f );
 	TEST_TRUE( dest.m_timescale == 2.0f );
-	TEST_EQ( dest.m_nWorldGroupId.GetHashCode(), 3u );
+	TEST_EQ( dest.m_nWorldGroupId.m_nId, 3u );
 
 	// Missing members get the values of a default constructed timer
 	KeyValues3 empty;
@@ -299,7 +299,7 @@ REGISTER_NAMED_TEST( "KV3Transfer.CountdownTimer", KV3Transfer_CountdownTimer )
 	TEST_TRUE( dest.m_duration == 0.0f );
 	TEST_TRUE( dest.m_timestamp.GetTime() == 0.0f );
 	TEST_TRUE( dest.m_timescale == 1.0f );
-	TEST_EQ( dest.m_nWorldGroupId.GetHashCode(), ~0u );
+	TEST_EQ( dest.m_nWorldGroupId.m_nId, ~0u );
 
 	// A running timer needs the game time interface
 	CKV3TransferSaveContext noInterfaceContext;
