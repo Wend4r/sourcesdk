@@ -64,6 +64,16 @@ struct ErrorListenerMessage_t
 };
 
 //-----------------------------------------------------------------------------
+// What IErrorListener::PushContext returns: the context path length to restore with PopContext.
+// It is a struct, which MSVC x64 returns from a member function through a hidden pointer, unlike an int.
+//-----------------------------------------------------------------------------
+// AMNOTE: Name is a guess
+struct ErrorContextHandle_t
+{
+	int m_nContextLength;
+};
+
+//-----------------------------------------------------------------------------
 // Receives the messages of a parse or a transfer. The string parsing functions report to one, as do
 // the KV3 transfer contexts, which are error listeners themselves. There is no virtual destructor.
 //-----------------------------------------------------------------------------
@@ -85,7 +95,7 @@ public:
 
 	// Appends a formatted entry to the context path and returns the length to restore with PopContext;
 	// -1 for a listener that keeps no context path.
-	virtual int PushContext( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 ) = 0;
+	virtual ErrorContextHandle_t PushContext( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 ) = 0;
 
 	// Truncates the context path to what PushContext returned; a negative length does nothing.
 	virtual void PopContext( int nContextLength ) = 0;

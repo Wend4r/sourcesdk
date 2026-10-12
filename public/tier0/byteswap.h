@@ -11,7 +11,6 @@
 #endif
 
 #include "tier0/dbg.h"
-#include "datamap.h"	// needed for typedescription_t.  note datamap.h is tier1 as well.
 
 class CByteswap
 {
@@ -20,32 +19,6 @@ public:
 	{
 		// Default behavior sets the target endian to match the machine native endian (no swap).
 		SetTargetBigEndian( IsMachineBigEndian() );
-	}
-
-	//-----------------------------------------------------------------------------
-	// Write a single field.
-	//-----------------------------------------------------------------------------
-	DLL_CLASS_IMPORT void SwapFieldToTargetEndian( void* pOutputBuffer, void *pData, typedescription_t *pField );
-
-	//-----------------------------------------------------------------------------
-	// Write a block of fields.  Works a bit like the saverestore code.  
-	//-----------------------------------------------------------------------------
-	DLL_CLASS_IMPORT void SwapFieldsToTargetEndian( void *pOutputBuffer, void *pBaseData, datamap_t *pDataMap );
-
-	// Swaps fields for the templated type to the output buffer.
-	template<typename T> inline void SwapFieldsToTargetEndian( T* pOutputBuffer, void *pBaseData, unsigned int objectCount = 1 )
-	{
-		for ( unsigned int i = 0; i < objectCount; ++i, ++pOutputBuffer )
-		{
-			SwapFieldsToTargetEndian( (void*)pOutputBuffer, pBaseData, &T::m_DataMap );
-			pBaseData = (byte*)pBaseData + sizeof(T);
-		}
-	}
-
-	// Swaps fields for the templated type in place.
-	template<typename T> inline void SwapFieldsToTargetEndian( T* pOutputBuffer, unsigned int objectCount = 1 )
-	{
-		SwapFieldsToTargetEndian<T>( pOutputBuffer, (void*)pOutputBuffer, objectCount );
 	}
 
 	//-----------------------------------------------------------------------------

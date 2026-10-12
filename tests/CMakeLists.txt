@@ -117,12 +117,14 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
 	commandbuffer.cpp
 	construct.cpp
+	fasttimer.cpp
 	generichash.cpp
 	memblockallocator.cpp
 	mempool.cpp
 	minidump.cpp
 	refcount.cpp
 	stringpool.cpp
+	strtools.cpp
 	tslist.cpp
 	utlarray.cpp
 	utlbinaryblock.cpp

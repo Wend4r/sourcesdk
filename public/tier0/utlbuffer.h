@@ -260,10 +260,6 @@ public:
 	DLL_CLASS_IMPORT void	GetLine( char* pLine, int nMaxChars = 0 );
 	DLL_CLASS_IMPORT void	GetLine( CBufferString *pLine );
 
-
-	// Used for getting objects that have a byteswap datadesc defined
-	template <typename T> void GetObjects( T *dest, int count = 1 );
-
 	// This will get at least 1 byte and up to nSize bytes. 
 	// It will return the number of bytes actually read.
 	DLL_CLASS_IMPORT int				GetUpTo( void *pMem, int nSize );
@@ -338,9 +334,6 @@ public:
 	void			PutPtr( void * ); // Writes the pointer, not the pointed to
 	void			PutString( const char* pString );
 	void			Put( const void* pMem, int size );
-
-	// Used for putting objects that have a byteswap datadesc defined
-	template <typename T> void PutObjects( T *src, int count = 1 );
 
 	// This version of PutString converts \ to \\ and " to \", etc.
 	// It also places " at the beginning and end of the string
@@ -471,11 +464,9 @@ protected:
 	template <typename T> void GetType( T& dest );
 	template <typename T> void GetTypeBin( T& dest );
 	template <typename T> bool GetTypeText( T &value, int nRadix = 10 );
-	template <typename T> void GetObject( T *src );
 
 	template <typename T> void PutType( T src );
 	template <typename T> void PutTypeBin( T src );
-	template <typename T> void PutObject( T *src );
 
 	// be sure to also update the copy constructor
 	// and SwapCopy() when adding members.
@@ -667,38 +658,6 @@ inline const void* CUtlBuffer::PeekGet( int offset ) const
 //-----------------------------------------------------------------------------
 // Unserialization
 //-----------------------------------------------------------------------------
-
-template <typename T> 
-inline void CUtlBuffer::GetObject( T *dest )
-{
-	if ( CheckGet( sizeof(T) ) )
-	{
-		if ( !m_Byteswap.IsSwappingBytes() || ( sizeof( T ) == 1 ) )
-		{
-			*dest = *(T *)PeekGet();
-		}
-		else
-		{
-			m_Byteswap.SwapFieldsToTargetEndian<T>( dest, (T*)PeekGet() );
-		}
-		m_Get += sizeof(T);	
-	}
-	else
-	{
-		Q_memset( &dest, 0, sizeof(T) );
-	}
-}
-
-
-template <typename T> 
-inline void CUtlBuffer::GetObjects( T *dest, int count )
-{
-	for ( int i = 0; i < count; ++i, ++dest )
-	{
-		GetObject<T>( dest );
-	}
-}
-
 
 template <typename T> 
 inline void CUtlBuffer::GetTypeBin( T &dest )
@@ -1045,35 +1004,6 @@ inline void* CUtlBuffer::PeekPut( int offset )
 //-----------------------------------------------------------------------------
 // Various put methods
 //-----------------------------------------------------------------------------
-
-template <typename T> 
-inline void CUtlBuffer::PutObject( T *src )
-{
-	if ( CheckPut( sizeof(T) ) )
-	{
-		if ( !m_Byteswap.IsSwappingBytes() || ( sizeof( T ) == 1 ) )
-		{
-			*(T *)PeekPut() = *src;
-		}
-		else
-		{
-			m_Byteswap.SwapFieldsToTargetEndian<T>( (T*)PeekPut(), src );
-		}
-		m_Put += sizeof(T);
-		AddNullTermination( );
-	}
-}
-
-
-template <typename T> 
-inline void CUtlBuffer::PutObjects( T *src, int count )
-{
-	for ( int i = 0; i < count; ++i, ++src )
-	{
-		PutObject<T>( src );
-	}
-}
-
 
 template <typename T> 
 inline void CUtlBuffer::PutTypeBin( T src )
