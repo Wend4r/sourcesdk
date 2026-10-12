@@ -13,7 +13,7 @@
 #include "tier0/platform.h"
 #include "tier0/netadr.h"
 #include "appframework/iappsystem.h"
-#include "inetchannel.h"
+#include "networksystem/inetchannel.h"
 #include "steam/steamnetworkingtypes.h"
 
 class IConnectionlessPacketHandler;

@@ -5,14 +5,14 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlscratchmemory.h"
 #include "tier0/utlstring.h"
-#include "tier1/generichash.h"
+#include "tier0/generichash.h"
 #include "kv3lib/keyvalues3.h"
 #include "tier1/utlvectormemory.h"
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
-#include "tier1/utldict.h"
-#include "tier1/utlmap.h"
-#include "tier1/utlhashtable.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/utldict.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlhashtable.h"
 #include "tier1/utldelegate.h"
 #include "networksystem/inetworkserializer.h"
 #include "vscript/ivscript.h"
@@ -29,6 +29,7 @@
 #include "resourcefile/resourcetype.h"
 
 #include "ientitylistener.h"
+#include "entity2/entityinterfaces.h"
 
 class CKV3Arena;
 class CEntityClass;
@@ -73,24 +74,10 @@ enum ClearEntityDatabaseMode_t
 
 // Entity notifications //
 
-struct EntityNotification_t
-{
-	CEntityIdentity* m_pEntity;
-};
-
 struct EntityDormancyChange_t : EntityNotification_t
 {
 	EntityDormancyType_t m_nPrevDormancyType;
 	EntityDormancyType_t m_nNewDormancyType;
-};
-
-struct EntitySpawnInfo_t : EntityNotification_t
-{
-	const CEntityKeyValues* m_pKeyValues;
-	int m_Unk1;
-	uint16 m_SpawnOrder;
-	uint8 m_Depth;
-	uint8 m_OriginalSpawnOrder;
 };
 
 struct EntityActivation_t : EntityNotification_t
@@ -104,22 +91,6 @@ struct EntityDeletion_t : EntityNotification_t
 struct PostDataUpdateInfo_t : EntityNotification_t
 {
 	DataUpdateType_t m_updateType;
-};
-
-struct SecondaryPrecacheMemberCallback_t
-{
-	void (CEntityInstance::*pfnPrecache)(ResourceHandle_t hResource, const CEntityPrecacheContext* pContext);
-};
-
-struct CEntityResourceManifestLock
-{
-	IEntityResourceManifestBuilder* m_pBuilder;
-	matrix3x4a_t m_vSpawnGroupOffset;
-	SpawnGroupHandle_t m_hSpawnGroup;
-	IEntityPrecacheConfiguration* m_pConfig;
-	IEntityResourceManifest* m_pManifest;
-	bool m_bIsLocked;
-	bool m_bPrecacheEnable;
 };
 
 // Manifest executor //

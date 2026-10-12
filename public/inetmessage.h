@@ -8,7 +8,7 @@
 #ifndef INETMESSAGE_H
 #define INETMESSAGE_H
 
-#include "tier1/bitbuf.h"
+#include "tier0/bitbuf.h"
 
 class INetMsgHandler;
 class INetMessage;

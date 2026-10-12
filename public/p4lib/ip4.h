@@ -11,7 +11,7 @@
 #endif
 
 #include "tier0/utlsymbol.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 #include "tier0/utlstring.h"
 #include "appframework/iappsystem.h"
 

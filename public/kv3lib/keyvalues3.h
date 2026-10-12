@@ -13,13 +13,13 @@
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlstring.h"
-#include "tier1/generichash.h"
-#include "tier1/utlhashtable.h"
-#include "tier1/utlmap.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/generichash.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlsymbollarge.h"
 #include "mathlib/vector4d.h"
 #include "color.h"
-#include "bitvec.h"
+#include "tier0/bitvec.h"
 #include "entityhandle.h"
 
 #include <cstddef>

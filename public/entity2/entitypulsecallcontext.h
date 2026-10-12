@@ -3,8 +3,8 @@
 
 #include "entitypulse.h"
 #include "kv3lib/keyvalues3.h"
-#include "tier1/utlleanvector.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlleanvector.h"
+#include "tier0/utlvector.h"
 
 class CPulseCallContextValue
 {

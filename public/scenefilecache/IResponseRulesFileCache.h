@@ -13,7 +13,7 @@
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
 #include "resourcefile/resourcetype.h"
-#include "tier1/random.h"
+#include "tier0/random.h"
 
 class IResponseSystem;
 class CUtlSymbolTable;

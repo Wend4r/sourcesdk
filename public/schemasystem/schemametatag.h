@@ -11,7 +11,9 @@
 #include "schemasystem/schematypes.h"
 #include "tier0/dbg.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
+#include "schemasystem/minschema.h"
+#include "schemalib/schemametadata.h"
 
 enum SchemaMetaTagLocation_t
 {
@@ -33,16 +35,6 @@ enum SchemaBaseClassTraversal_t
 	SCHEMA_BASE_TRAVERSAL_FULL_IN_MEMORY_ORDER,
 };
 
-typedef const CSchemaClassInfo *ClassIntrospectionHandle_t;
-typedef const CSchemaClassField *FieldIntrospectionHandle_t;
-
-
-//--------------------------------------------------------------------------------------------------
-// m_pData points at the tag value, null for a tag without one
-//--------------------------------------------------------------------------------------------------
-class CSchemaMetadataEntry : public SchemaMetadataEntryData_t
-{
-};
 
 //--------------------------------------------------------------------------------------------------
 // Metadata of one class, field, enum, enumerator or atomic; a tag may repeat, names are case sensitive

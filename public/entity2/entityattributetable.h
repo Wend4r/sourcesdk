@@ -7,7 +7,7 @@
 
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlmap.h"
+#include "tier0/utlmap.h"
 #include "tier1/utlobjectattributetable.h"
 
 // Attributes of an entity, keyed by the lowercase hash of the name.

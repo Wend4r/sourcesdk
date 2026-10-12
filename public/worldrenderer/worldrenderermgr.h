@@ -9,12 +9,12 @@
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
 #include <tier0/utlstring.h>
-#include <tier1/convar.h>
-#include <tier1/utlhash.h>
-#include <tier1/utlhashtable.h>
-#include <tier1/utlmap.h>
-#include <tier1/utlstringmap.h>
-#include <tier1/utlvector.h>
+#include <tier0/convar.h>
+#include <tier0/utlhash.h>
+#include <tier0/utlhashtable.h>
+#include <tier0/utlmap.h>
+#include <tier0/utlstringmap.h>
+#include <tier0/utlvector.h>
 #include <tier3/tier3.h>
 
 #include "entitylump.h"
@@ -26,7 +26,7 @@
 #include "worldschema.h"
 
 #include "resourcefile/introspectedtokv3typemanager.h"
-#include "resourcefile/resourcehandle.h"
+#include "resourcesystem/resourcehandle.h"
 #include "resourcefile/resourcetype.h"
 
 class CNodeSceneObjectData;

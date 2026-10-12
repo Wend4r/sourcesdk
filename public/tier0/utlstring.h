@@ -14,7 +14,7 @@
 #include "platform.h"
 #include "tier0/memalloc.h"
 #include "tier0/strtools.h"
-#include "tier1/utlcommon.h"
+#include "tier0/utlcommon.h"
 #include "limits.h"
 #include <string_view>
 

@@ -1,8 +1,8 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlleanvector.h>
-#include <tier1/utlpriorityqueue.h>
+#include <tier0/utlleanvector.h>
+#include <tier0/utlpriorityqueue.h>
 #include <tier1/utlvectormemory.h>
 
 static bool PriorityQueueLess( const int &lhs, const int &rhs )

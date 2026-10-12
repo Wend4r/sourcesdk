@@ -5,11 +5,11 @@
 #pragma once
 #endif
 
-#include "variant.h"
+#include "entity2/variant.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlvector.h"
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlhashtable.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlhashtable.h"
 #include "tier0/murmurhash3.h"
 
 class CBasePulseGraphInstance;

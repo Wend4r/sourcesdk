@@ -13,7 +13,7 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 #include "cstrike15/bot/cs_bot_timers.h"
 #include "nav_area.h"
 

@@ -496,12 +496,6 @@ inline float FloatMakeNegative( vec_t f )
 }
 
 
-// FIXME: why are these here?  Hardly anyone actually needs them.
-struct color24
-{
-	byte r, g, b;
-};
-
 typedef struct color32_s
 {
 	bool operator!=( const struct color32_s &other ) const;
@@ -752,6 +746,20 @@ namespace basetypes
 #define MAX_SPLITSCREEN_CLIENTS	( 1 << MAX_SPLITSCREEN_CLIENT_BITS ) // 2
 
 #include "tier0/valve_on.h"
+#include "color.h"
 
+
+struct SoundEventGuid_t {
+    SoundEventGuid_t()
+		: m_Data(0)
+    {
+    }
+	SoundEventGuid_t(const int32 id)
+		: m_Data(id)
+    {
+    }
+
+	int32 m_Data;
+};
 
 #endif // BASETYPES_H

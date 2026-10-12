@@ -11,11 +11,13 @@
 #endif
 
 #include <appframework/iappsystem.h>
-#include <engine/eventdispatcher.h>
-#include <inputsystem/InputEnums.h>
+#include <tier0/eventdispatcher.h>
+#include <inputsystem/inputenums.h>
 #include <keyvalues.h>
 #include <splitscreenslot.h>
 #include <netmessages.pb.h>
+#include "rendersystem/rendersystemtypes.h"
+#include "engine2/isource2serverconfig.h"
 
 class ISource2WorldSession;
 class ISceneView;
@@ -33,36 +35,10 @@ enum ClientServerMode_t : int32
 	CLIENTSERVERMODE_LISTENSERVER,
 };
 
-struct RenderViewport_t
-{
-	int m_nVersion;
-	int m_nTopLeftX;
-	int m_nTopLeftY;
-	int m_nWidth;
-	int m_nHeight;
-	float m_flMinZ;
-	float m_flMaxZ;
-};
-
-enum EventMapRegistrationType_t : int32
-{
-	EVENT_MAP_REGISTER = 0,
-	EVENT_MAP_UNREGISTER,
-};
-
 struct RHBackColorBuffer_t
 {
 	ISceneView *m_pView;
 	HSceneViewRenderTarget m_hBackColorBuffer;
-};
-
-enum HostStateLoopModeType_t
-{
-	HOST_STATE_LOOP_MODE_IDLE = 0,
-	HOST_STATE_LOOP_MODE_GAME,
-	HOST_STATE_LOOP_MODE_SOURCETV_RELAY,
-
-	HOST_STATE_LOOP_MODE_COUNT
 };
 
 

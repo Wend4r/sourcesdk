@@ -13,8 +13,8 @@
 #include "tier0/errorlistener.h"
 #include "tier0/utlscratchmemory.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlleanvector.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlleanvector.h"
+#include "tier0/utlvector.h"
 
 #include <type_traits>
 

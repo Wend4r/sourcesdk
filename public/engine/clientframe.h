@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include <bitvec.h>
+#include <tier0/bitvec.h>
 #include <const.h>
 #include <tier0/mempool.h>
 

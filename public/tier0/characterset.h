@@ -16,11 +16,7 @@
 #endif
 
 #include "platform.h"
-
-struct characterset_t
-{
-	char set[256];
-};
+#include "tier0/tier0_strtools.h"
 
 
 // This is essentially a strpbrk() using a precalculated lookup table

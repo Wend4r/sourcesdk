@@ -4,14 +4,14 @@
 #pragma once
 #endif
 
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlsymbollarge.h"
 #include "entity2/entitycomponent.h"
 #include "entity2/entityidentity.h"
 #include "entitytypes.h"
 #include "entity2/entityprivatescriptscope.h"
 #include "kv3lib/kv3transfer_constants.h"
 #include "schemasystem/schematypes.h"
-#include "variant.h"
+#include "entity2/variant.h"
 #include "vscript_shared.h"
 
 class CEntityClass;

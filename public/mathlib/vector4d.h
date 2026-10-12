@@ -22,7 +22,7 @@
 #include "tier0/dbg.h"
 #include "mathlib/math_pfns.h"
 #include "mathlib/vector.h"
-#include "tier1/random.h"
+#include "tier0/random.h"
 // forward declarations
 class Vector;
 class Vector2D;

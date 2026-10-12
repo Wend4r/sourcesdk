@@ -14,7 +14,7 @@
 
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/utllinkedlist.h"
 #include "cs_bot_timers.h"
 
 class CBaseEntity;

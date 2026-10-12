@@ -14,7 +14,7 @@
 
 #include "entity2/entityinstance.h"
 #include "basetypes.h"
-#include "bitvec.h"
+#include "tier0/bitvec.h"
 #include "const.h"
 #include "bspfile.h"
 #include "playerslot.h"

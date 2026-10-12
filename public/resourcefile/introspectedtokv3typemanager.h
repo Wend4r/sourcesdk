@@ -8,40 +8,13 @@
 #include "resourcetype.h"
 
 #include <tier0/platform.h>
+#include "resourcesystem/iresourcesystem.h"
 
 class IResourceSystemUtils;
 class IRD_RegisterResourceDataUtils;
 class IResourceDeallocatorUtils;
 class IAsyncProcessedDataResult;
 struct ResourceFileHeader_t;
-
-enum ResourceLoadType_t : int
-{
-	RESOURCE_LOAD_TYPE_DEFAULT = 0,
-};
-
-enum ResourceStreamingType_t : int
-{
-	RESOURCE_STREAMING_TYPE_NONE = 0,
-};
-
-class IResourceTypeManager
-{
-public:
-	virtual bool Init( IResourceSystemUtils *pUtils ) { return false; }
-	virtual void Shutdown() {}
-	virtual void *GetErrorResource() { return nullptr; }
-	virtual bool NeedsFrameUpdate() const { return false; }
-	virtual void FrameUpdate( int nFrame ) {}
-	virtual bool RequiresFinalizeResourceCall() const { return false; }
-	virtual void FinalizeResource( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
-	virtual ResourceStreamingType_t GetStreamingType() const { return RESOURCE_STREAMING_TYPE_NONE; }
-	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool ) { return 0; }
-	virtual void LoadStreamingData( ResourceHandle_t hResource, IResourceSystemUtils *pUtils ) {}
-	virtual void AllocateResource( ResourceHandle_t hResource, ResourceId_t nId, const ResourceFileHeader_t *pHeader, IRD_RegisterResourceDataUtils *pUtils ) {}
-	virtual void DeallocateResource( void *pData, IResourceDeallocatorUtils *pUtils ) {}
-	virtual void NotifyResourceWithWorkPendingLoadCancelled( ResourceHandle_t hResource, void *pData ) {}
-};
 
 class CBaseIntrospectedToKV3TypeManager : public IResourceTypeManager
 {

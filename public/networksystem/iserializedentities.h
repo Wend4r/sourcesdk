@@ -5,7 +5,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/utlleanvector.h"
 
 #include "iflattenedserializers.h"
 

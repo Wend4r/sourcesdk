@@ -10,7 +10,7 @@
 #endif
 
 #include <tier0/utlstring.h>
-#include <tier1/utlmap.h>
+#include <tier0/utlmap.h>
 
 #include <gcsdk_gcmessages.pb.h>
 

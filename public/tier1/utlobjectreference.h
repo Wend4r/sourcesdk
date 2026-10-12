@@ -11,10 +11,10 @@
 #pragma once
 #endif
 
-#include "tier1/utlintrusivelist.h"
+#include "tier0/utlintrusivelist.h"
 #include "tier0/utlblockvector.h"
 #include "mathlib/mathlib.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 
 // Purpose: class for keeping track of all the references that exist to an object.  When the object

@@ -13,7 +13,7 @@
 #endif
 
 
-#include "inputsystem/InputEnums.h"
+#include "inputsystem/inputenums.h"
 
 
 //-----------------------------------------------------------------------------

@@ -24,7 +24,7 @@ class IMatchSession;
 #include "xbox/xboxstubs.h"
 #endif
 
-#include "inetchannel.h"
+#include "networksystem/inetchannel.h"
 
 #include "imatchasync.h"
 #include "imatchtitle.h"

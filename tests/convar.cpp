@@ -2,7 +2,7 @@
 #include "common/macros.h"
 
 #include <tier0/strtools.h>
-#include <tier1/convar.h>
+#include <tier0/convar.h>
 
 REGISTER_NAMED_TEST( "CCommand.ArgListConstructor", CCommand_ArgListConstructor )
 {

@@ -16,7 +16,7 @@
 #include "interfaces/interfaces.h"
 #include "tier0/interface.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlstringmap.h"
+#include "tier0/utlstringmap.h"
 
 //-----------------------------------------------------------------------------
 // Specifies a module + interface name for initialization

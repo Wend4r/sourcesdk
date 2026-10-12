@@ -5,6 +5,7 @@
 
 #include "interfaces/interfaces.h"
 #include "resourcefile/resourcetype.h"
+#include "resourcesystem/resourcesystemtypes.h"
 
 class IResourceTypeManager;
 
@@ -20,14 +21,6 @@ struct SerialResourceHandle_t
 };
 
 COMPILE_TIME_ASSERT( sizeof( SerialResourceHandle_t ) == 0x8 );
-
-enum ResourceLeakTrackingGroup_t
-{
-	RLTG_GENERAL_REFERENCE = 0,
-	RLTG_MANIFEST_REFERENCE,
-	RLTG_STRONGHANDLE,
-	RLTG_SCHEMA_REFERENCE,
-};
 
 class IResourceHandleUtils
 {

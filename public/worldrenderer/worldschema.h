@@ -5,11 +5,11 @@
 	#pragma once
 #endif
 
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 
 #include <tier0/platform.h>
 #include <tier0/utlstring.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlvector.h>
 #include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
 

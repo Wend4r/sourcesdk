@@ -1,7 +1,7 @@
 #include "const.h"
 #include "entity2/entitysystem.h"
 #include "entity2/entityclass.h"
-#include "engine/igameresourceservice.h"
+#include "engine2/igameresourceservice.h"
 #include "interfaces/interfaces.h"
 
 CGameEntitySystem *GameEntitySystem()

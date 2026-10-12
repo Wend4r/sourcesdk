@@ -1560,4 +1560,20 @@ DLL_GLOBAL_IMPORT __thread int g_nThreadID;
 #pragma warning(pop)
 #endif
 
+enum CopiedLockState_t : int32
+{
+	CLS_NOCOPY = 0,
+	CLS_UNLOCKED = 1,
+	CLS_LOCKED_BY_COPYING_THREAD = 2,
+};
+
+template < class MUTEX, CopiedLockState_t L = CLS_UNLOCKED >
+class CCopyableLock : public MUTEX
+{
+	typedef MUTEX BaseClass;
+
+public:
+	// ...
+};
+
 #endif // THREADTOOLS_H

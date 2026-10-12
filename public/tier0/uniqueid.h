@@ -15,7 +15,7 @@
 #endif
 
 #include "platform.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations

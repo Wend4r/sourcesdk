@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlstack.h>
+#include <tier0/utlstack.h>
 #include <tier1/utlvectormemory.h>
 
 REGISTER_NAMED_TEST( "CUtlStack.PushPopCopyPurge", CUtlStack_PushPopCopyPurge )

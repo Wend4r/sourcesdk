@@ -5,13 +5,14 @@
 	#pragma once
 #endif
 
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 #include <resourcefile/resourcetype.h>
 
 #include <mathlib/vector4d.h>
 #include <tier0/platform.h>
-#include <tier1/utlsymbollarge.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/utlvector.h>
+#include "materialsystem2/material_resource_data.h"
 
 //-----------------------------------------------------------------------------
 // A single shader parameter of a material. Textures are stored as a resource
@@ -20,21 +21,6 @@
 enum MaterialParamFlags_t : uint32
 {
 	MATERIAL_PARAM_TEXTURE = 0x10000,
-};
-
-struct MaterialParam_t
-{
-	Vector4D m_vValue;
-	ResourceHandle_t m_hTexture;
-	uint32 m_nValueHash;
-	uint32 m_nFlags;
-	void *m_pBlob;
-	CUtlSymbolLarge m_symName;
-	CUtlSymbolLarge m_symString;
-	bool m_bShaderDefault;
-
-private:
-	uint8 m_nUnknown0039[7];
 };
 
 COMPILE_TIME_ASSERT( sizeof( MaterialParam_t ) == 64 );

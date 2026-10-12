@@ -13,7 +13,7 @@
 
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 class CNavArea;
 class CNavMesh;

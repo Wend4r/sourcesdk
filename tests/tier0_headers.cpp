@@ -5,7 +5,7 @@
 #include <tier0/globalsymbol.h>
 #include <tier0/murmurhash3.h>
 #include <tier0/utlstring.h>
-#include <tier1/random.h>
+#include <tier0/random.h>
 #include <tier1/utlhashmaplarge.h>
 
 #include <type_traits>

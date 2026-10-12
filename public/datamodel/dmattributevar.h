@@ -12,7 +12,7 @@
 
 
 #include "datamodel/dmattribute.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 #include "color.h"
 #include "mathlib/vector2d.h"
 #include "mathlib/vector.h"

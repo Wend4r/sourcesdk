@@ -13,7 +13,8 @@
 
 #include "appframework/iappsystem.h"
 #include "tier0/platform.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
+#include "tier0/basetypes.h"
 
 class CSoundEvent;
 class CSosOperatorStack;
@@ -68,19 +69,6 @@ struct CSosFieldData
 		float	m_flValue;
 		void	*m_pData;
 	};
-};
-
-struct SoundEventGuid_t {
-    SoundEventGuid_t()
-		: m_Data(0)
-    {
-    }
-	SoundEventGuid_t(const int32 id)
-		: m_Data(id)
-    {
-    }
-
-	int32 m_Data;
 };
 
 struct SndOpEventGuid_t {

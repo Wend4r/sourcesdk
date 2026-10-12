@@ -10,8 +10,12 @@
 #include "tier0/threadtools.h"
 #include "tier0/strtools.h"
 #include "tier0/utlstring.h"
-#include "tier1/generichash.h"
-#include "tier1/utlmap.h"
+#include "tier0/generichash.h"
+#include "tier0/utlmap.h"
+#include "schemasystem/baseschema.h"
+#include "schemalib/schemametadata_data.h"
+#include "schemalib/schemaenuminfo_data.h"
+#include "schemalib/schemaenuminfo.h"
 
 class ISchemaSystemTypeScope;
 class CSchemaSystemTypeScope;
@@ -97,25 +101,6 @@ enum SchemaAtomicCategory_t : uint8
 	SCHEMA_ATOMIC_TT,
 	SCHEMA_ATOMIC_I,
 	SCHEMA_ATOMIC_INVALID,
-};
-
-enum SchemaBuiltinType_t
-{
-	SCHEMA_BUILTIN_TYPE_INVALID = 0,
-	SCHEMA_BUILTIN_TYPE_VOID,
-	SCHEMA_BUILTIN_TYPE_CHAR,
-	SCHEMA_BUILTIN_TYPE_INT8,
-	SCHEMA_BUILTIN_TYPE_UINT8,
-	SCHEMA_BUILTIN_TYPE_INT16,
-	SCHEMA_BUILTIN_TYPE_UINT16,
-	SCHEMA_BUILTIN_TYPE_INT32,
-	SCHEMA_BUILTIN_TYPE_UINT32,
-	SCHEMA_BUILTIN_TYPE_INT64,
-	SCHEMA_BUILTIN_TYPE_UINT64,
-	SCHEMA_BUILTIN_TYPE_FLOAT32,
-	SCHEMA_BUILTIN_TYPE_FLOAT64,
-	SCHEMA_BUILTIN_TYPE_BOOL,
-	SCHEMA_BUILTIN_TYPE_COUNT,
 };
 
 // Works in combination with SchemaClassManipulatorFn_t
@@ -326,12 +311,6 @@ SCHEMATYPE_ENTRY( CSchemaType_DeclaredEnum, SCHEMA_TYPE_DECLARED_ENUM, SCHEMA_AT
 SCHEMATYPE_ENTRY( CSchemaType_FixedArray, SCHEMA_TYPE_FIXED_ARRAY, SCHEMA_ATOMIC_INVALID );
 SCHEMATYPE_ENTRY( CSchemaType_Bitfield, SCHEMA_TYPE_BITFIELD, SCHEMA_ATOMIC_INVALID );
 
-struct SchemaMetadataEntryData_t
-{
-	const char* m_pszName;
-	void* m_pData;
-};
-
 struct SchemaClassFieldData_t
 {
 	const char* m_pszName;
@@ -446,48 +425,6 @@ public:
 	}
 };
 
-struct SchemaEnumeratorInfoData_t
-{
-	const char* m_pszName;
-	
-	int64 m_nValue;
-	
-	uint16 m_nStaticMetadataCount;
-	SchemaMetadataEntryData_t* m_pStaticMetadata;
-};
-
-class CSchemaEnumeratorInfo : public SchemaEnumeratorInfoData_t
-{
-};
-
-
-struct SchemaEnumInfoData_t
-{
-	CSchemaEnumInfo* m_pSchemaBinding;
-	
-	const char* m_pszName;
-	const char* m_pszProjectName;
-	
-	uint8 m_nSize;
-	uint8 m_nAlignment;
-	
-	uint16 m_nFlags;
-
-	uint16 m_nEnumeratorCount;
-	uint16 m_nStaticMetadataCount;
-	
-	SchemaEnumeratorInfoData_t* m_pEnumerators;
-	SchemaMetadataEntryData_t* m_pStaticMetadata;
-	
-	CSchemaSystemTypeScope* m_pTypeScope;
-	
-	int64 m_nMinEnumeratorValue;
-	int64 m_nMaxEnumeratorValue;
-};
-
-class CSchemaEnumInfo : public SchemaEnumInfoData_t
-{
-};
 
 struct SchemaAtomicTypeInfo_t
 {

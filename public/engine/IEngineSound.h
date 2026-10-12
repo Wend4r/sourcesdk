@@ -15,7 +15,7 @@
 
 #include "basetypes.h"
 #include "interfaces/interfaces.h"
-#include "soundflags.h"
+#include "soundsystem/soundflags.h"
 #include "irecipientfilter.h"
 #include "utlvector.h"
 #include "engine/SndInfo.h"

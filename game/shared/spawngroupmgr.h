@@ -12,9 +12,9 @@
 #include "resourcefile/igameresourcemanifestloadcompletion.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlstring.h"
-#include "tier1/convar.h"
-#include "tier1/utlmap.h"
-#include "tier1/utlvector.h"
+#include "tier0/convar.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlvector.h"
 #include "worldrenderer/icomputeworldorigin.h"
 
 abstract_class IGameSpawnGroupMgr

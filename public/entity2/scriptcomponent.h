@@ -5,10 +5,10 @@
 #pragma once
 #endif
 
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
 #include "entity2/entitycomponent.h"
-#include "variant.h"
+#include "entity2/variant.h"
 
 FORWARD_DECLARE_HANDLE( HSCRIPT );
 

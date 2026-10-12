@@ -15,10 +15,10 @@
 
 #include "tier0/dbg.h"
 #include "tier0/murmurhash3.h"
-#include "bitvec.h"
-#include "utlcommon.h"
-#include "utlmap.h"
-#include "utlleanvector.h"
+#include "tier0/bitvec.h"
+#include "tier0/utlcommon.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlleanvector.h"
 #include "tier0/utlstring.h"
 
 // default comparison operator

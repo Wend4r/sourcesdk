@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlrbtree.h>
+#include <tier0/utlrbtree.h>
 
 REGISTER_NAMED_TEST( "CUtlRBTree.InsertFindIterateRemove", CUtlRBTree_InsertFindIterateRemove )
 {

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <tier0/platform.h>
-#include <tier1/utlcommon.h>
+#include <tier0/utlcommon.h>
 
 // Declares a CDelayedCall2 alias for the enclosing class, taking the dispatch
 // base (TBaseObject) and concrete object (TObject) from its BaseClass / ThisClass typedefs.

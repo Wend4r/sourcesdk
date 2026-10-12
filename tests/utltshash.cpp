@@ -1,8 +1,8 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/generichash.h>
-#include <tier1/utltshash.h>
+#include <tier0/generichash.h>
+#include <tier0/utltshash.h>
 
 #include <type_traits>
 

@@ -20,6 +20,7 @@ on:
       - 'sym/**'
       - 'tests/**'
       - 'thirdparty/**'
+      - 'tier0_perproject/**'
       - 'tier1/**'
       - 'CMakeGameManifests.json'
       - 'CMakeLists.txt'

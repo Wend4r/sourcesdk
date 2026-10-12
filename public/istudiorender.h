@@ -15,7 +15,7 @@
 #include "mathlib/vector.h"
 #include "mathlib/vector4d.h"
 #include "tier0/utlbuffer.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 #include "materialsystem/imaterial.h"
 #include "materialsystem/imaterialsystem.h"
 #include "appframework/iappsystem.h"

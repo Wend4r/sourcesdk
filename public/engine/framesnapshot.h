@@ -11,8 +11,8 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier1/refcount.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/refcount.h"
+#include "tier0/utllinkedlist.h"
 
 #include "const.h"
 

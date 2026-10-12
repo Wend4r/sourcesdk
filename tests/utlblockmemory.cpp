@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlblockmemory.h>
+#include <tier0/utlblockmemory.h>
 
 REGISTER_NAMED_TEST( "CUtlBlockMemory.GrowEnsurePurge", CUtlBlockMemory_GrowEnsurePurge )
 {

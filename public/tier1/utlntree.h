@@ -14,7 +14,7 @@
 #endif
 
 #include "basetypes.h"
-#include "utlleanvector.h"
+#include "tier0/utlleanvector.h"
 #include "tier0/dbg.h"
 
 

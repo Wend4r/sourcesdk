@@ -11,7 +11,7 @@
 #endif
 
 #include "sharedobjectcache.h"
-#include "tier1/utlhashtable.h"
+#include "tier0/utlhashtable.h"
 #include "gcdirtyfield.h"
 #include "gcsdk/gcsystemaccess.h"
 

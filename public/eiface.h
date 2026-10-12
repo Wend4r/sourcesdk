@@ -13,24 +13,25 @@
 #pragma once
 #endif
 
-#include "tier1/convar.h"
-#include "icvar.h"
+#include "tier0/convar.h"
+#include "tier0/icvar.h"
 #include "edict.h"
 #include "mathlib/vplane.h"
-#include "soundflags.h"
-#include "bitvec.h"
-#include "tier1/bitbuf.h"
-#include "tier1/utlmap.h"
+#include "soundsystem/soundflags.h"
+#include "tier0/bitvec.h"
+#include "tier0/bitbuf.h"
+#include "tier0/utlmap.h"
 #include "tier0/utlstring.h"
 #include "tier0/bufferstring.h"
 #include "entity2/entityidentity.h"
 #include <steam/steamclientpublic.h>
 #include "playerslot.h"
 #include "playeruserid.h"
-#include "isource2engine.h"
+#include "engine2/isource2engine.h"
 #include <iloopmode.h>
 #include "networkbasetypes.pb.h"
 #include "network_connection.pb.h"
+#include "rendersystem/rendersystemtypes.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -57,18 +58,6 @@ struct EconItemInfo_t;
 struct EconControlPointInfo_t;
 class CEntityHandle;
 struct ns_address;
-
-enum RenderMultisampleType_t : uint8
-{
-	RENDER_MULTISAMPLE_INVALID = 0xFF,
-	RENDER_MULTISAMPLE_NONE = 0,
-	RENDER_MULTISAMPLE_2X,
-	RENDER_MULTISAMPLE_4X,
-	RENDER_MULTISAMPLE_6X,
-	RENDER_MULTISAMPLE_8X,
-	RENDER_MULTISAMPLE_16X,
-	RENDER_MULTISAMPLE_TYPE_COUNT
-};
 
 struct vis_info_t;
 class IHLTVServer;

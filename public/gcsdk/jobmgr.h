@@ -13,10 +13,10 @@
 
 #include "tier0/fasttimer.h"
 #include "tier1/utlhashmaplarge.h"
-#include "tier1/utllinkedlist.h"
-#include "tier1/utlpair.h"
-#include "tier1/utlpriorityqueue.h"
-#include "tier1/utlvector.h"
+#include "tier0/utllinkedlist.h"
+#include "tier0/utlpair.h"
+#include "tier0/utlpriorityqueue.h"
+#include "tier0/utlvector.h"
 #include "job.h"
 #include "workthreadpool.h"
 class GCConVar;

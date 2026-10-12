@@ -37,8 +37,6 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 )
 
 set(SOURCESDK_TIER1_SOURCE_FILES
-	${SOURCESDK_TIER1_DIR}/bitbuf.cpp
-	${SOURCESDK_TIER1_DIR}/convar.cpp
 	${SOURCESDK_TIER1_DIR}/generichash.cpp
 	${SOURCESDK_TIER1_DIR}/newbitbuf.cpp
 	${SOURCESDK_TIER1_DIR}/processor_detect.cpp

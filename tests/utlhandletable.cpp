@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlhandletable.h>
+#include <tier0/utlhandletable.h>
 
 REGISTER_NAMED_TEST( "CUtlHandleTable.AddGetRemove", CUtlHandleTable_AddGetRemove )
 {

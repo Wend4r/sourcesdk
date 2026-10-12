@@ -3,9 +3,9 @@
 
 #include <tier0/interface.h>
 #include <tier0/strtools.h>
-#include <tier1/convar.h>
+#include <tier0/convar.h>
 #include <interfaces/interfaces.h>
-#include <icvar.h>
+#include <tier0/icvar.h>
 
 //-----------------------------------------------------------------------------
 // The cvar system of tier0, connected and initialized once

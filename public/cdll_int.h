@@ -12,7 +12,7 @@
 #endif
 
 #include "tier0/platform.h"
-#include "isource2engine.h"
+#include "engine2/isource2engine.h"
 #include <steam/steamuniverse.h>
 #include "playerslot.h"
 #include "playeruserid.h"

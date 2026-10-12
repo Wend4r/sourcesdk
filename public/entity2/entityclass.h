@@ -5,9 +5,9 @@
 #pragma once
 #endif
 
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
-#include "tier1/utldict.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/utldict.h"
 #include "entity2/entitycomponent.h"
 #include "entity2/entityinstance.h"
 #include "entityhandle.h"

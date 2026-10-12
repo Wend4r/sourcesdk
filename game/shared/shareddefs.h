@@ -859,7 +859,7 @@ struct ModelScale
 	float		m_flModelScaleStartTime;
 };
 
-#include "soundflags.h"
+#include "soundsystem/soundflags.h"
 #include "entity2/entityindex.h"
 #include "entity2/entityclass.h"
 

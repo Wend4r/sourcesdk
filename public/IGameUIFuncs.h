@@ -12,7 +12,7 @@
 #endif
 
 #include "appframework/iappsystem.h"
-#include "inputsystem/ButtonCode.h"
+#include "inputsystem/buttoncode.h"
 
 abstract_class IGameUIFuncs : public IAppSystem
 {

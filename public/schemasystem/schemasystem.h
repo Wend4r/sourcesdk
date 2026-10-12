@@ -7,23 +7,17 @@
 
 #include "tier0/threadtools.h"
 #include "tier0/utlstring.h"
-#include "tier1/convar.h"
-#include "tier1/utlstringmap.h"
-#include "tier1/utltshash.h"
-#include "tier1/utlvector.h"
+#include "tier0/convar.h"
+#include "tier0/utlstringmap.h"
+#include "tier0/utltshash.h"
+#include "tier0/utlvector.h"
 #include "appframework/iappsystem.h"
 #include "schemasystem/schematypes.h"
+#include "schemasystem/minschema.h"
 
 class CBufferString;
 class CKV3Arena;
 struct ResourceManifestDesc_t;
-
-enum SchemaTypeScope_t : uint8
-{
-	SCHEMA_GLOBAL_TYPE_SCOPE = 0,
-	SCHEMA_MODULE_LOCAL_TYPE_SCOPE,
-	SCHEMA_DEFAULT_TYPE_SCOPE,
-};
 
 enum SchemaHierarchyIteration_t
 {

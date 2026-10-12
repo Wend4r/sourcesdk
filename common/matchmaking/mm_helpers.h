@@ -12,7 +12,7 @@
 #endif
 
 #include "tier0/keyvalues.h"
-#include "tier1/fmtstr.h"
+#include "tier0/fmtstr.h"
 
 
 //

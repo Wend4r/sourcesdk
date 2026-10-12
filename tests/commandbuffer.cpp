@@ -4,7 +4,7 @@
 #include <tier0/platform.h>
 #include <tier0/interface.h>
 #include <tier0/commandbuffer.h>
-#include <icvar.h>
+#include <tier0/icvar.h>
 
 #include <cstring>
 

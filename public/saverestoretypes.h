@@ -15,7 +15,7 @@
 #pragma once
 #endif
 
-#include "tier1/utlhash.h"
+#include "tier0/utlhash.h"
 
 #include <string_t.h> // NULL_STRING define
 struct edict_t;

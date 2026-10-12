@@ -7,7 +7,7 @@
 
 #include "tier0/bufferstring.h"
 #include "tier0/utlstringlist.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 #include "tier0/memdbgon.h"
 

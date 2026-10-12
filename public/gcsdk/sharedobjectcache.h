@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include "tier1/utlcommon.h"
+#include "tier0/utlcommon.h"
 #include "tier1/utlhashmaplarge.h"
 
 #include "soid.h"

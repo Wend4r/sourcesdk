@@ -18,7 +18,7 @@
 
 #include "platform.h"
 #include "tier0/byteswap.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/utlleanvector.h"
 #include <stdarg.h>
 
 

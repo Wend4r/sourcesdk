@@ -107,6 +107,7 @@ if(SOURCESDK_GENERATE_CLANGD)
 			mathlib/.*
 			networksystem/.*
 			public/.*
+			tier0_perproject/.*
 			tier1/.*
 	)
 endif()

@@ -5,7 +5,7 @@
 #pragma once
 #endif
 
-#include "variant.h"
+#include "entity2/variant.h"
 #include "entity2/entityprecachecontext.h"
 
 // Script class "CScriptPrecacheContext": wraps the precache context of an entity for the "DispatchPrecache" function

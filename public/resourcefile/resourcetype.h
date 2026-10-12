@@ -8,24 +8,18 @@
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
 #include <tier0/bufferstring.h>
-#include <tier1/utlsymbollarge.h>
-#include <tier1/generichash.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/generichash.h>
 #include <schemasystem/schemametatag.h>
 
 #include <initializer_list>
+#include "resourcesystem/resourcesystemtypes.h"
+#include "resourcesystem/resourcemanifesthelpers.h"
 
 typedef uint64 ResourceType_t;
 
 // Resource type of the info class, the packed file extension, e.g. 'vmap'
 DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );
-
-enum ResourceStatus_t
-{
-	RESOURCE_STATUS_UNKNOWN = 0,
-	RESOURCE_STATUS_KNOWN_BUT_NOT_RESIDENT,
-	RESOURCE_STATUS_PARTIALLY_RESIDENT,
-	RESOURCE_STATUS_RESIDENT,
-};
 
 enum ResourceManifestLoadBehavior_t : int8
 {
@@ -163,28 +157,6 @@ private:
 };
 
 class CStrongHandleVoid;
-
-struct ResourceManifestEntry_t
-{
-	const char *m_pResourceName;
-	bool m_bResourceNameIsManifestName;
-	CStrongHandleVoid *m_pHandle;
-	ResourceManifestEntry_t *m_pNextInstanceOfThisEntry;
-	int m_nHandleReferences;
-};
-
-typedef std::initializer_list< std::initializer_list< ResourceManifestEntry_t > > ManifestEntryGroupList_t;
-
-struct ResourceManifestDesc_t
-{
-	const char *m_pszManifestName;
-	const char *m_pszManifestGroup;
-	ManifestEntryGroupList_t *m_pEntryGroups;
-	const char *m_pszFileName;
-	int m_nLine;
-	bool m_bRegistered;
-	bool m_bDisallowRegistration;
-};
 
 typedef const ResourceNameInfo_t *ResourceNameHandle_t;
 typedef uint16 LoadingResourceIndex_t;

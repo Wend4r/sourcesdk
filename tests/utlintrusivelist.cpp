@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlintrusivelist.h>
+#include <tier0/utlintrusivelist.h>
 
 struct IntrusiveListTestNode_t
 {
