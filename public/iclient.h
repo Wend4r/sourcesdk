@@ -75,7 +75,7 @@ class CSVCMsg_PacketReliable_t;
 class CSVCMsg_FullFrameSplit_t;
 class CSVCMsg_HLTVStatus_t;
 class CSVCMsg_ServerSteamID_t;
-class CSVCMsg_Broadcast_Command_t;
+class CSVCMsg_HltvReplay_t;
 class CSVCMsg_UserCommands_t;
 class NetMessageConnectionClosed_t;
 class NetMessageConnectionCrashed_t;
@@ -245,7 +245,7 @@ public: // Message Handlers
 	virtual bool ProcessChangeSplitscreenUser( const NetMessageSplitscreenUserChanged_t &msg ) = 0;
 	virtual bool ProcessPacketStart( const NetMessagePacketStart_t &msg ) = 0;
 	virtual bool ProcessPacketEnd( const NetMessagePacketEnd_t &msg ) = 0;
-	virtual bool ProcessBroadcast_Command( const CSVCMsg_Broadcast_Command_t &msg ) = 0;
+	virtual bool ProcessHltvReplay( const CSVCMsg_HltvReplay_t &msg ) = 0;
 	virtual bool ProcessUserCommands( const CSVCMsg_UserCommands_t &msg ) = 0;
 
 public:
