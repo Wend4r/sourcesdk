@@ -31,6 +31,7 @@ class ClientClass;
 class IEntityReport;
 class CEntityReadInfo;
 class bf_read;
+class C2S_CONNECT_Message;
 struct AudioState_t;
 struct EventClientSimulate_t;
 struct EventClientPollNetworking_t;
@@ -145,7 +146,7 @@ public:
 	virtual void unk043() = 0;
 	virtual void UpdateAudioState( AudioState_t *pAudioState, CSplitScreenSlot nSlot ) const = 0;
 	virtual float GetTime() const = 0;
-	virtual void PrepareSteamConnectResponse( uint64 nUnk, bool bUnk, const ns_address &addr, void *pMsg ) = 0;
+	virtual void PrepareSteamConnectResponse( uint64 nUnk, bool bUnk, const ns_address &addr, C2S_CONNECT_Message &msg ) = 0;
 	virtual bool IsLowViolence() const = 0;
 	virtual int GetHostVersion() const = 0;
 	virtual float GetLastTimeStamp() const = 0;
