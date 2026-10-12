@@ -14,6 +14,7 @@
 #include "appframework/iappsystem.h"
 #include "materialsystem2/imaterial2.h"
 #include "tier0/platwindow.h"
+#include "tier3/tier3.h"
 
 struct BGR888_t;
 class IRenderContext;
@@ -83,6 +84,17 @@ public:
 	virtual HMaterialWeak SetFrame( AVIMaterial_t hMaterial, float flFrame, IRenderContext *pRenderContext, void *pUnk ) = 0;
 
 	virtual bool IsFinished( AVIMaterial_t hMaterial ) = 0;
+};
+
+class CAvi : public CTier3AppSystem< IAvi >
+{
+public:
+	// OS handle of the window passed to SetMainWindow
+	void *m_hMainWindow;
+
+	// Recordings and materials, indexed by AVIHandle_t and AVIMaterial_t
+	uint8 m_Unk030[ 0x18 ];
+	uint8 m_Unk048[ 0x18 ];
 };
 
 #endif // IAVI_H
