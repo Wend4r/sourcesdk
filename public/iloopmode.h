@@ -34,12 +34,6 @@ enum ClientServerMode_t : int32
 	CLIENTSERVERMODE_LISTENSERVER,
 };
 
-enum EventMapRegistrationType_t : int32
-{
-	EVENT_MAP_REGISTER = 0,
-	EVENT_MAP_UNREGISTER,
-};
-
 struct RHBackColorBuffer_t
 {
 	ISceneView *m_pView;

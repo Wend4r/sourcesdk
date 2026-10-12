@@ -60,4 +60,10 @@ struct CEventDispatcher : CEventDispatcher_Identified<T>
 {
 };
 
+enum EventMapRegistrationType_t : int32
+{
+	EVENT_MAP_REGISTER = 0,
+	EVENT_MAP_UNREGISTER,
+};
+
 #endif // EVENTDISPATCHER_H
