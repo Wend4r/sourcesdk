@@ -319,10 +319,11 @@ struct NetMessageInfo_t
 	NetworkMessageId m_MessageId;
 	NetworkGroupId m_GroupId;
 
-	// AMNOTE: Bits 0..5 - IProtobufBinding::GetBufType() (signed)
-	// (1 << 6) - the message can't be networked, see FindOrCreateNetMessage's bCannotBeNetworked
-	// (1 << 7) - unknown
-	uint8 m_nFlags;
+	// AMNOTE: From IProtobufBinding::GetBufType()
+	NetChannelBufType_t m_nBufType : 6;
+	// AMNOTE: Set by FindOrCreateNetMessage's bCannotBeNetworked
+	bool m_bCannotBeNetworked : 1;
+	uint8 m_unk001 : 1;
 
 	// AMNOTE: AddCategoryMask ORs nMask into it too when bRequireHandler is true. ConfirmAllMessageHandlersInstalled
 	// reports channels in these categories that have no handler registered for the message
