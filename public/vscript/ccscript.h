@@ -91,8 +91,8 @@ public:
 class CCSScript_EntityScript : public CCSBaseScript, public IGameEventListener2
 {
 public:
-	// Calls the script's handler for the event, as FireGameEvent does
-	virtual void unk039( IGameEvent *pEvent ) = 0;
+	// Itanium also lists this override in the primary vtable, MSVC only in the listener's one
+	virtual void FireGameEvent( IGameEvent *pEvent ) override = 0;
 };
 
 #endif // CCSCRIPT_H
