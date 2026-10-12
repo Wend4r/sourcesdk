@@ -16,6 +16,7 @@
 #include "bitmap/imageformat_declarations.h"
 #include "mathlib/vector.h"
 #include "resourcesystem/resourcehandle.h"
+#include "rendersystem/renderdevicetypes.h"
 
 class IRenderContext;
 class CBufferString;
@@ -31,8 +32,10 @@ class IMaxSwapChainDimensionsChangedListener;
 class IRaytraceShaderBindingTable;
 class Vector2D;
 struct RenderDeviceInfo_t;
-struct BufferDesc_t;
 struct RenderInputLayoutField_t;
+struct RsRasterizerStateDesc_t;
+struct RsDepthStencilStateDesc_t;
+struct RsBlendStateDesc_t;
 struct DisplayListToSubmit_t;
 struct RenderTargetDesc_t;
 struct RenderDescriptorDesc_t;
@@ -46,6 +49,11 @@ enum RenderMultisampleType_t : uint8;
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 FORWARD_DECLARE_HANDLE( OsSpecificWindowHandle_t );
 FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
+FORWARD_DECLARE_HANDLE( RenderShaderHandle_t );
+FORWARD_DECLARE_HANDLE( RenderQueryHandle_t );
+FORWARD_DECLARE_HANDLE( RsRasterizerStateHandle_t );
+FORWARD_DECLARE_HANDLE( RsDepthStencilStateHandle_t );
+FORWARD_DECLARE_HANDLE( RsBlendStateHandle_t );
 FORWARD_DECLARE_HANDLE( RenderBufferHandle_t );
 FORWARD_DECLARE_HANDLE( VertexBufferHandle_t );
 FORWARD_DECLARE_HANDLE( IndexBufferHandle_t );
@@ -62,8 +70,7 @@ using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
 abstract_class IRenderDevice
 {
 public:
-	// Shader API of the device: 0 Direct3D 11, 1 Vulkan
-	virtual int GetDeviceAPI() = 0;
+	virtual RenderDeviceAPI_t GetDeviceAPI() = 0;
 
 	virtual SwapChainHandle_t CreateSwapChain( PlatWindow_t hPlatWnd, OsSpecificWindowHandle_t hOsWnd, const RenderDeviceInfo_t &info, const char *pDebugName ) = 0;
 	virtual void DestroySwapChain( SwapChainHandle_t hSwapChain ) = 0;
@@ -94,22 +101,22 @@ public:
 	virtual void SetHardwareGammaRamp( SwapChainHandle_t hSwapChain, float flGamma ) = 0;
 	virtual void Unk_CompileShader( void *p ) = 0;
 	virtual void Unk_CreateShader( void *p ) = 0;
-	virtual void DestroyShader( int nShaderType, void *hShader ) = 0;
+	virtual void DestroyShader( int nShaderType, RenderShaderHandle_t hShader ) = 0;
 
 	// Register counts and binary size of a compiled shader
 	virtual void Unk_GetShaderStatistics( void *p ) = 0;
 
-	virtual void *CreateInputLayout( const char *pName, int nFields, const void *pFields ) = 0;
-	virtual void AddRefInputLayout( void *hLayout ) = 0;
-	virtual void ReleaseInputLayout( void *hLayout ) = 0;
+	virtual RenderInputLayout_t CreateInputLayout( const char *pName, int nFields, const RenderInputLayoutField_t *pFields ) = 0;
+	virtual void AddRefInputLayout( RenderInputLayout_t hLayout ) = 0;
+	virtual void ReleaseInputLayout( RenderInputLayout_t hLayout ) = 0;
 	virtual void Unk_ConcatenateInputLayouts( void *p ) = 0;
-	virtual int GetInputLayoutFields( void *hLayout, const void **ppFields, int *pCount ) = 0;
+	virtual int GetInputLayoutFields( RenderInputLayout_t hLayout, const RenderInputLayoutField_t **ppFields, int *pCount ) = 0;
 	virtual CThreadFastMutex &GetInputLayoutMutex() = 0;
 
 	// Cached render states, created on first use
-	virtual void *FindOrCreateRasterizerState( const void *pDesc ) = 0;
-	virtual void *FindOrCreateDepthStencilState( const void *pDesc ) = 0;
-	virtual void *FindOrCreateBlendState( const void *pDesc ) = 0;
+	virtual RsRasterizerStateHandle_t FindOrCreateRasterizerState( const RsRasterizerStateDesc_t *pDesc ) = 0;
+	virtual RsDepthStencilStateHandle_t FindOrCreateDepthStencilState( const RsDepthStencilStateDesc_t *pDesc ) = 0;
+	virtual RsBlendStateHandle_t FindOrCreateBlendState( const RsBlendStateDesc_t *pDesc ) = 0;
 
 	// Overloads in declaration order; MSVC groups them in reverse
 	virtual VertexBufferHandle_t CreateVertexBuffer( int nType, const BufferDesc_t &desc, int nExtraUsageFlags ) = 0;
@@ -132,19 +139,19 @@ public:
 	virtual uint64 unk049( void *hBuffer ) = 0;
 	virtual uint64 unk050( void *hBuffer ) = 0;
 	virtual void Unk_FindOrCreateTexture( void *p ) = 0;
-	virtual HRenderTexture GetErrorTexture( int nDimension ) = 0;
+	virtual HRenderTexture GetErrorTexture( RenderTextureDimension_t nDimension ) = 0;
 	virtual HRenderTexture FindOrCreateFileTexture( const char *pFileName, int nLoadMode ) = 0;
 	virtual HRenderTexture FindFileTexture( ResourceId_t nId, int nLoadMode ) = 0;
 	virtual HRenderTexture FindOrCreateExternalTexture( const char *pResourceName, uint64 hSharedTexture ) = 0;
 	virtual bool UpdateExternalTexture( HRenderTexture hTexture, uint64 hSharedTexture ) = 0;
 	virtual SamplerStateHandle_t FindOrCreateSamplerState( const CSamplerStateDesc &samplerState, const char *pDebugName ) = 0;
 
-	virtual void *CreateQueryObject( int nType ) = 0;
+	virtual RenderQueryHandle_t CreateQueryObject( int nType ) = 0;
 
 	// Returns 0 once the result is available
-	virtual int GetQueryObjectData( void *hQuery, void *pData ) = 0;
+	virtual int GetQueryObjectData( RenderQueryHandle_t hQuery, uint64 *pData ) = 0;
 
-	virtual void DeleteQueryObject( void *hQuery ) = 0;
+	virtual void DeleteQueryObject( RenderQueryHandle_t hQuery ) = 0;
 
 	// Forwards to CreateRenderContext( nFlags, NULL, NULL )
 	virtual IRenderContext *unk061( uint32 nFlags ) = 0;
@@ -224,8 +231,8 @@ public:
 
 	virtual void *GetDeviceSpecificInfo( int nInfo ) = 0;
 	virtual bool CanRenderToSwapChain( SwapChainHandle_t hSwapChain ) = 0;
-	virtual void *GetDeviceSpecificTexture( HRenderTexture hTexture, int nDimension ) = 0;
-	virtual void *GetDeviceSpecificImageView( HRenderTexture hTexture, int nDimension, int nColorSpace ) = 0;
+	virtual void *GetDeviceSpecificTexture( HRenderTexture hTexture, RenderTextureDimension_t nDimension ) = 0;
+	virtual void *GetDeviceSpecificImageView( HRenderTexture hTexture, RenderTextureDimension_t nDimension, RenderColorSpace_t nColorSpace ) = 0;
 
 	// Overloads in declaration order; MSVC groups them in reverse
 	virtual void *GetDeviceSpecificBuffer( RenderBufferHandle_t hBuffer ) = 0;
@@ -261,8 +268,8 @@ public:
 	virtual void Unk_AsyncSetTextureData( void *p ) = 0;
 	virtual void *GetGraphicsAPISpecificTextureHandle( HRenderTexture hTexture ) = 0;
 	virtual void GetLargestMonitorDimensions( int *pWidth, int *pHeight ) = 0;
-	virtual void PushRenderDeviceFlags( int nFlags ) = 0;
-	virtual void PopRenderDeviceFlags( int nFlags ) = 0;
+	virtual void PushRenderDeviceFlags( uintp nFlags ) = 0;
+	virtual void PopRenderDeviceFlags( uintp nFlags ) = 0;
 
 	// Needs RENDERDEBUGFLAG_ENABLE_GPU_TIMING
 	virtual bool GetGPUFrameTimeMS( void *pUnk, float *pTimeMS, uint32 *pUnk2 ) = 0;
@@ -283,7 +290,7 @@ public:
 	virtual void unk180( void *p ) = 0;
 	virtual void unk181( void *p ) = 0;
 	virtual void unk182( void *p ) = 0;
-	virtual int IsReadyToCompact( RenderBLASHandle_t hBLAS ) = 0;
+	virtual IsReadyToCompactResult_t IsReadyToCompact( RenderBLASHandle_t hBLAS ) = 0;
 	virtual void DestroyBLAS( RenderBLASHandle_t hBLAS ) = 0;
 	virtual RenderTLASHandle_t CreateTLAS( const TLASCreateDesc_t &desc, TLASInstance_t *pInstances, int nInstanceCount ) = 0;
 	virtual void DestroyTLAS( RenderTLASHandle_t hTLAS ) = 0;
@@ -302,7 +309,7 @@ public:
 	virtual void Unk_StartRenderDocCapture( void *p ) = 0;
 	virtual void Unk_EndRenderDocCapture( void *p ) = 0;
 	virtual void unk201( void *p ) = 0;
-	virtual uint32 GetTextureViewIndex( HRenderTexture hTexture, int nColorSpace, int nDimension ) = 0;
+	virtual uint32 GetTextureViewIndex( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, RenderTextureDimension_t nDimension ) = 0;
 	virtual void unk203( void *p ) = 0;
 	virtual uint32 GetSamplerIndex( SamplerStateHandle_t hSamplerState ) = 0;
 	virtual RenderDescriptorSetHandle_t GetGlobalLateBoundBindlessDescriptorSet() = 0;
@@ -357,8 +364,8 @@ public:
 	virtual void QueueFencedRecycling( CPipelineFence *pFence ) = 0;
 	virtual void OnFlushSubmitted() = 0;
 	virtual void Unk_OnPresentCompleted( void *p ) = 0;
-	virtual void OnRenderDeviceFlagsEnabled( int nFlags ) = 0;
-	virtual void OnRenderDeviceFlagsDisabled( int nFlags ) = 0;
+	virtual void OnRenderDeviceFlagsEnabled( uintp nFlags ) = 0;
+	virtual void OnRenderDeviceFlagsDisabled( uintp nFlags ) = 0;
 	virtual bool InitDevice( int nAdapter, int nUnk1, uint32 nUnk2 ) = 0;
 	virtual void ShutdownDevice() = 0;
 	virtual bool IsDeactivated() = 0;
