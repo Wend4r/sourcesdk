@@ -12,7 +12,11 @@
 
 #include "tier0/platform.h"
 #include "tier0/bufferstring.h"
+#include "tier0/utlstring.h"
+#include "tier0/threadtools.h"
+#include "tier1/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier3/tier3.h"
 
 class QObject;
 class KeyValues3;
@@ -168,6 +172,66 @@ public:
 	virtual bool unk095( void *p ) = 0;
 	virtual const char *unk096() = 0;
 	virtual void unk097( bool bUnknown ) = 0;
+};
+
+// Also derives from IToolServices (exposed as "ToolServices_002"), a base without a vtable
+// whose data starts at m_pUnk028; its extent is unknown, so its members are listed here.
+class CToolFramework2 : public CTier3AppSystem< IToolFramework2 >
+{
+public:
+	// Tool descriptor list
+	void *m_pUnk028;
+
+	// Vector of 32-byte entries of the loaded tool systems
+	uint8 m_unk030[ 0x18 ];
+
+	uint8 m_unk048[ 0x18 ];
+	uint8 m_unk060[ 0x18 ];
+	void *m_pUnk078;
+
+	bool m_bUnk080;
+	bool m_bUnk081;
+	bool m_bUnk082;
+	bool m_bUnk083;
+	bool m_bUnk084;
+	bool m_bUnk085;
+	bool m_bUnk086;
+	bool m_bUnk087;
+	uint8 m_nUnk088;
+
+	// Tools queued for unloading
+	CUtlVector< uint8 > m_vecUnk090;
+
+	// CEnvironmentBlock returned by unk037
+	uint8 m_unk0A8[ 0x30 ];
+
+	void *m_pUnk0D8;
+	void *m_pUnk0E0;
+	uint8 m_unk0E8[ 0x18 ];
+	int m_nUnk100;
+	void *m_pUnk108;
+	uint8 m_unk110[ 0x10 ];
+	CBufferStringN< 200 > m_sUnk120;
+
+	// QPointer< QObject > of unk060
+	uint8 m_unk1F0[ 0x10 ];
+
+	bool m_bUnk200;
+
+	// Stall monitor thread
+	ThreadHandle_t *m_pUnk208;
+
+	int m_nUnk210;
+	uint8 m_unk214[ 4 ];
+	uint8 m_unk218[ 0x18 ];
+	uint8 m_unk230[ 0x18 ];
+	bool m_bUnk248;
+	void *m_pUnk250;
+	CBufferString m_sUnk258;
+	uint8 m_unk268[ 0x28 ];
+	CUtlString m_sUnk290;
+	int m_nUnk298;
+	bool m_bUnk29C;
 };
 
 #endif // ITOOLFRAMEWORK2_H
