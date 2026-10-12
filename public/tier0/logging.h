@@ -16,6 +16,7 @@
 
 #include "color.h"
 #include <stdio.h>
+#include "tier0/assert_base.h"
 
 // For XBX_** functions
 #if defined( _X360 )
@@ -25,7 +26,6 @@
 // Used by CColorizedLoggingListener
 #if defined( _WIN32 ) || (defined(POSIX) && !defined(_GAMECONSOLE))
 #include "tier0/win32consoleio.h"
-#include "tier0/assert_base.h"
 #endif
 
 /*

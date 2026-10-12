@@ -120,6 +120,7 @@
 #endif
 
 #include "wchartypes.h"
+#include "tier0/tier0_unicode.h"
 #include "tier0/valve_off.h"
 
 #ifdef _PS3
@@ -209,7 +210,6 @@ typedef char *  va_list;
 
 #elif POSIX
 #include <stdarg.h>
-#include "tier0/tier0_unicode.h"
 #endif
 
 //-----------------------------------------------------------------------------

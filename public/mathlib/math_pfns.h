@@ -8,6 +8,7 @@
 #define _MATH_PFNS_H_
 
 #include <limits>
+#include "tier0/tier0_utils_math.h"
 
 // YUP_ACTIVE is from Source2. It's (obviously) not supported on this branch, just including it here to help merge camera.cpp/.h and the CSM shadow code.
 //#define YUP_ACTIVE 1
@@ -58,7 +59,6 @@
 // If we are not PPC based or SPU based, then assumes it is SSE2. We should make this code cleaner.
 
 #include <xmmintrin.h>
-#include "tier0/tier0_utils_math.h"
 
 
 

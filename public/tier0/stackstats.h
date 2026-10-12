@@ -14,6 +14,7 @@
 
 #include "tier0/stacktools.h"
 #include "tier0/threadtools.h"
+#include "tier0/stackstats_base.h"
 
 #if defined ENABLE_RUNTIME_STACK_TRANSLATION
 #define ENABLE_STACK_STATS_GATHERING //uncomment to enable the gathering class
@@ -24,7 +25,6 @@
 #	include <map> //needed for CCallStackStatsGatherer
 #	include <vector>
 #include "tier0/valve_on.h"
-#include "tier0/stackstats_base.h"
 #define CDefaultStatsGathererAllocator std::allocator
 #else
 template<class _Ty> class CNullStatsGathererAllocator { CNullStatsGathererAllocator( void ) { } };
