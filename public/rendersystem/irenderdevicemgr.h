@@ -12,12 +12,12 @@
 
 #include "appframework/iappsystem.h"
 #include "tier0/utlvector.h"
+#include "rendersystem/renderdevicetypes.h"
 
 class KeyValues;
 class IRenderDeviceSetup;
 class IRenderDeviceEventListener;
 struct RenderAdapterInfo_t;
-struct RenderDisplayMode_t;
 struct RenderDeviceInfo_t;
 
 abstract_class IRenderDeviceMgr : public IAppSystem
@@ -68,7 +68,7 @@ public:
 
 	virtual uint32 GetPlatWindowFlags() = 0;
 
-	virtual bool GetVideoMemoryInfo( int nAdapter, uint64 *pUnk1, uint64 *pUnk2, uint64 *pUnk3 ) = 0;
+	virtual bool GetVideoMemoryInfo( int nAdapter, uint64 *pBudgetInBytesOut, uint64 *pUsageInBytesOut, uint64 *pRenderSystemUsageInBytesOut ) = 0;
 
 	virtual void AppendMinidumpInfo( void *pComment, uint32 nUnk ) = 0;
 
