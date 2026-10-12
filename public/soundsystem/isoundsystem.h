@@ -18,8 +18,12 @@
 // Forward declarations
 //-----------------------------------------------------------------------------
 class IAudioDevice;
+class IAudioDevice2;
+class IAudioOutputStream;
 class CAudioSource;
 class CAudioMixer;
+class CAudioState;
+class CUtlBuffer;
 
 
 //-----------------------------------------------------------------------------
@@ -50,23 +54,23 @@ enum FindAudioSourceFlags_t
 abstract_class ISoundSystem : public IAppSystem
 {
 public:
-	virtual void unk011() = 0;
-	virtual void unk012() = 0;
+	virtual IAudioDevice2 *CreateDefaultDevice() = 0;
+	virtual void DestroyDevice( IAudioDevice2 *pDevice ) = 0;
 	virtual void unk013() = 0;
-	virtual void unk014() = 0;
+	virtual IAudioDevice2 *CreateNullDevice() = 0;
 	virtual void unk015() = 0;
 	virtual void unk016() = 0;
 	virtual void unk017() = 0;
 	virtual void unk018() = 0;
-	virtual void unk019() = 0;
+	virtual void DestroyOutputStream( IAudioOutputStream *pOutputStream ) = 0;
 	virtual void Unk_SoundInit( void *p ) = 0;
 	virtual bool IsSoundEnabled() = 0;
-	virtual void Unk_Update( void *p ) = 0;
+	virtual void Update( const CAudioState *pAudioState, bool bAllowAsync ) = 0;
 	virtual void StopAllSounds() = 0;
 	virtual void unk024() = 0;
 	// Starts a voice from sound parameters and returns its guid
 	virtual void Unk_StartSound( void *p ) = 0;
-	virtual void unk026() = 0;
+	virtual void StopSound( uint32 nSoundGuid, bool bForceSync ) = 0;
 	virtual void unk027() = 0;
 	virtual void unk028() = 0;
 	virtual void unk029() = 0;
@@ -79,7 +83,7 @@ public:
 	virtual void unk037() = 0;
 	virtual void unk038() = 0;
 	virtual void unk039() = 0;
-	virtual void unk040() = 0;
+	virtual void SetMixGroupOfCurrentMixer( const char *pszGroupName, const char *pszParam, float flValue ) = 0;
 	// Returns -1 for an unknown mix layer
 	virtual int GetMixLayerIndex( const char *pLayerName ) = 0;
 	virtual void SetMixLayerLevel( int nLayer, float flLevel ) = 0;
@@ -137,7 +141,7 @@ public:
 	virtual void unk092() = 0;
 	virtual void unk093() = 0;
 	virtual void unk094() = 0;
-	virtual void unk095() = 0;
+	virtual bool DisableAudioMuting( float flDisableDurationSeconds ) = 0;
 	virtual void unk096() = 0;
 	virtual void unk097() = 0;
 	virtual void unk098() = 0;
@@ -155,7 +159,8 @@ public:
 	virtual void unk110() = 0;
 	virtual void unk111() = 0;
 	virtual void unk112() = 0;
-	virtual void Unk_PrintSoundState( void *p ) = 0;
+	// Writes the state of the active voices and sound events as text
+	virtual void OutputDebugInfo( CUtlBuffer &buf ) = 0;
 	virtual void unk114() = 0;
 	virtual void unk115( bool bUnk ) = 0;
 	virtual void unk116() = 0;
