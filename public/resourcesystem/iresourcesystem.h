@@ -83,8 +83,8 @@ public:
 	virtual CVDataTypeManager *GetVDataTypeManager() = 0;
 	virtual bool IsShuttingDown() = 0;
 	virtual bool GetDebugFlag( int nFlag ) = 0;
-	virtual void Unk_RegisterLoadListener( void *p ) = 0;
-	virtual void Unk_UnregisterLoadListener( void *p ) = 0;
+	virtual void RegisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
+	virtual void UnregisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
 	virtual void InstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void Lock() = 0;
