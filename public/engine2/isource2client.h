@@ -31,7 +31,14 @@ class Vector;
 struct FlattenedSerializerSpewField_t;
 struct vrect_t;
 
-abstract_class ISource2Client : public IAppSystem
+// Installed by the client as the change callback time limit spew of the entity system
+abstract_class IFieldChangeLimitSpew
+{
+public:
+	virtual void unk000() = 0;
+};
+
+abstract_class ISource2Client : public IAppSystem, public IFieldChangeLimitSpew
 {
 public:
 	// NULL restores the module's own globals. Returns the previous globals, or NULL when they were the module's own
