@@ -418,7 +418,8 @@ public:
 	// The metadata helper and the int are not read
 	virtual bool GetFieldPathChildIndices( const FlattenedSerializerDesc_t &pSerializer, CEntityInstancePolymorphicMetadataHelper *, int, const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) = 0;
 
-	virtual bool CollectChanges( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, void *pUnk, int nEntityIndex, int nUnk, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut ) = 0;
+	// AMNOTE: GatherSendProxyResults starting at path
+	virtual bool GatherSendProxyResultsForPath( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, void *pUnk, int nEntityIndex, int nUnk, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut ) = 0;
 	virtual const FlattenedSerializerFieldData_t *GetFieldSerializerData( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket ) = 0;
 	virtual bool HasField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans field and subfield names.
 	virtual bool HasFieldInternal( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans flattened fields directly by name
@@ -436,14 +437,16 @@ public:
 	virtual INetworkFieldScratchData *CreateNetworkFieldScratchData( INetworkFieldScratchAllocator *pAllocator, FlattenedSerializerUserData_t *pContext ) = 0; // Allocates a 232-byte scratch-data object and seeds it with allocator/context pointers.
 	virtual void BuildFieldNamePool( bool bForce ) = 0; // Creates m_pFieldNamePool
 	virtual void DestroyFieldNamePool() = 0; // Frees m_pFieldNamePool
-	virtual void SetFieldExcluded( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, bool bExcluded ) = 0; // "Setting FS %s field %s"
+	// AMNOTE: Disabled fields are skipped when gathering send proxy results, building deltas and gathering polymorphic metadata
+	virtual void SetFieldEnabled( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName, bool bEnabled ) = 0; // "Setting FS %s field %s to %s"
 
-	virtual void BuildPolymorphicMetadata( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nFlags, void *pOutMetadata ) = 0; // "Polymorphic"
+	virtual void GatherPolymorphicMetadata( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nFlags, void *pOutMetadata ) = 0; // "Polymorphic"
 
-	virtual void Unk_DumpSerializerToLines( const FlattenedSerializerDesc_t &pSerializer, void *p1, void *, CUtlVector< CUtlString > *pOutLines ) = 0; // The third argument is not read
-	virtual bool IsSerializerPolymorphic( const FlattenedSerializerDesc_t &pSerializer ) = 0; // Tests CFlattenedSerializer::m_nFlags bit (1 << 7)
+	// AMNOTE: Writes the variant class names of metadata gathered by GatherPolymorphicMetadata, the third argument is unused
+	virtual void GetPolymorphicMetadataDescription( const FlattenedSerializerDesc_t &pSerializer, const void *pMetadata, void *, CUtlVector< CUtlString > *pOutLines ) = 0;
+	virtual bool HasPolymorphicFields( const FlattenedSerializerDesc_t &pSerializer ) = 0; // Tests CFlattenedSerializer::m_nFlags bit (1 << 7)
 	virtual void ResetFieldPathPool() = 0;
-	virtual bool HasPolymorphicField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans the polymorphic field table.
+	virtual bool UserGroupHasFields( const FlattenedSerializerDesc_t &pSerializer, const char *pszUserGroup ) = 0;
 	virtual bool GetFieldPathCaches( const FlattenedSerializerDesc_t &pSerializer, FlattenedSerializerFieldPathCache_t **ppSecondaryFieldPathCache, FlattenedSerializerFieldPathCache_t **ppFieldPathCache ) = 0; // Exposes the serializer field-path caches for callers that need to reuse traversal state.
 };
 
