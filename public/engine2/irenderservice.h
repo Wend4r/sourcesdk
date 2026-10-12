@@ -36,7 +36,7 @@ public:
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) = 0;
 
-	virtual void *Unk_FindOrCreateWorldSession( void *p ) = 0;
+	virtual void *FindOrCreateWorldSession( const char *pszName, void *pUnk1, void *pUnk2 ) = 0;
 
 	virtual void LaunchAsyncBeginRenderingViewsJob( const EventClientPreOutput_t &event, bool bAddViews ) = 0;
 	virtual bool FinishAsyncBeginRenderingViewsJob( bool *pbAddedViews ) = 0;
