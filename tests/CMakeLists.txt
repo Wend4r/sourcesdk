@@ -23,14 +23,9 @@ if(MACOS AND SOURCESDK_CONFIGURE_EXPORT_MAP)
 	)
 endif()
 
-function(sourcesdk_setup_test_target target_name)
-	if(NOT TARGET ${SOURCESDK_TIER0_NAME})
-		message(FATAL_ERROR "${target_name} requires ${SOURCESDK_TIER0_NAME}")
-	endif()
-
+function(sourcesdk_setup_test_compile target_name)
 	target_compile_features(${target_name} PRIVATE cxx_std_23)
 	target_compile_options(${target_name} PRIVATE ${PLATFORM_COMPILE_OPTIONS} ${SOURCESDK_COMPILER_OPTIONS})
-	target_link_options(${target_name} PRIVATE ${SOURCESDK_TEST_LINK_OPTIONS})
 
 	target_include_directories(${target_name} PRIVATE
 		${SOURCESDK_INCLUDE_DIRS}
@@ -42,17 +37,6 @@ function(sourcesdk_setup_test_target target_name)
 		${CMAKE_SOURCE_DIR}/public/mathlib
 		${CMAKE_CURRENT_SOURCE_DIR}
 	)
-
-	target_link_libraries(${target_name} PRIVATE
-		${SOURCESDK_KV3LIB_NAME}
-		${SOURCESDK_TIER1_NAME}
-	)
-
-	if(EXISTS "${SOURCESDK_TIER0_LIB_FILENAME}")
-		target_link_libraries(${target_name} PRIVATE
-			${SOURCESDK_TIER0_NAME}
-		)
-	endif()
 
 	target_compile_definitions(${target_name} PRIVATE
 		${PLATFORM_COMPILE_DEFINITIONS}
@@ -72,6 +56,27 @@ function(sourcesdk_setup_test_target target_name)
 	else()
 		target_compile_definitions(${target_name} PRIVATE
 			PLATFORM_LINUX=1
+		)
+	endif()
+endfunction()
+
+function(sourcesdk_setup_test_target target_name)
+	if(NOT TARGET ${SOURCESDK_TIER0_NAME})
+		message(FATAL_ERROR "${target_name} requires ${SOURCESDK_TIER0_NAME}")
+	endif()
+
+	sourcesdk_setup_test_compile(${target_name})
+
+	target_link_options(${target_name} PRIVATE ${SOURCESDK_TEST_LINK_OPTIONS})
+
+	target_link_libraries(${target_name} PRIVATE
+		${SOURCESDK_KV3LIB_NAME}
+		${SOURCESDK_TIER1_NAME}
+	)
+
+	if(EXISTS "${SOURCESDK_TIER0_LIB_FILENAME}")
+		target_link_libraries(${target_name} PRIVATE
+			${SOURCESDK_TIER0_NAME}
 		)
 	endif()
 
@@ -175,6 +180,14 @@ set(SOURCESDK_SMOKE_TEST_SOURCES
 foreach(test_source IN LISTS SOURCESDK_SMOKE_TEST_SOURCES)
 	sourcesdk_add_cpp_test(smoke smoke_main.cpp ${test_source})
 endforeach()
+
+# Explicit instantiations of the templates plugins use, built as a library and never linked,
+# since some of their members call tier0 functions that tier0 does not export
+add_library(smoke_templates STATIC
+	templates.cpp
+)
+
+sourcesdk_setup_test_compile(smoke_templates)
 
 set(SOURCESDK_MATHLIB_TEST_SOURCES
 	mathlib.cpp
