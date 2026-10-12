@@ -136,9 +136,16 @@ bool CKV3TransferSaveContext::CanSaveField( int nFlags ) const
 		return true;
 
 	// The SDK's ISave declares a different interface, so the game's virtual is called by its slot.
+	// The game declares the destructor first: it takes one slot on MSVC and two on Itanium.
 	using Unk_10_t = bool ( * )( ISave * );
 
-	return !( *reinterpret_cast< Unk_10_t *const * >( m_pSave ) )[ 10 ]( m_pSave ) || nFlags == 2;
+#ifdef _WIN32
+	constexpr int nSlot = 9;
+#else
+	constexpr int nSlot = 10;
+#endif
+
+	return !( *reinterpret_cast< Unk_10_t *const * >( m_pSave ) )[ nSlot ]( m_pSave ) || nFlags == 2;
 }
 
 KeyValues3 *CKV3TransferSaveContext::CreateTargetMember( const CKV3MemberName &name )
@@ -267,9 +274,16 @@ bool CKV3TransferLoadContext::CanLoadField( int nFlags ) const
 		return true;
 
 	// The SDK's IRestore declares a different interface, so the game's virtual is called by its slot.
-	using Unk_06_t = bool ( * )( IRestore * );
+	// The game declares the destructor first: it takes one slot on MSVC and two on Itanium.
+	using GetGlobalMode_t = bool ( * )( IRestore * );
 
-	return !( *reinterpret_cast< Unk_06_t *const * >( m_pRestore ) )[ 6 ]( m_pRestore );
+#ifdef _WIN32
+	constexpr int nSlot = 5;
+#else
+	constexpr int nSlot = 6;
+#endif
+
+	return !( *reinterpret_cast< GetGlobalMode_t *const * >( m_pRestore ) )[ nSlot ]( m_pRestore );
 }
 
 const KeyValues3 *CKV3TransferLoadContext::FindClassMember( const CKV3MemberName &name )
