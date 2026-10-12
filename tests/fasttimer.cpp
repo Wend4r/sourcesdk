@@ -7,7 +7,7 @@
 REGISTER_NAMED_TEST( "CCycleCount.Conversions", CCycleCount_Conversions )
 {
 	// Conversions go through the tick frequency, so one second of ticks reads back exactly.
-	const uint64 nFrequency = Plat_CPUTickFrequency();
+	const uint64 nFrequency = GetCycleCountFrequency();
 
 	TEST_TRUE( nFrequency > 0 );
 

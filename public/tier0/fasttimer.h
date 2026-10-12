@@ -13,8 +13,24 @@
 
 #include <assert.h>
 #include "tier0/platform.h"
+#ifdef _PS3
+#include "sys/sys_time.h"
+#endif
 
-// Cycle counts convert to time through Plat_CPUTickFrequency; tier0 does not export the clock speed globals.
+// Frequency of the counter Plat_Rdtsc() samples, which cycle counts convert to time through
+inline uint64 GetCycleCountFrequency()
+{
+#if defined( _X360 )
+	// The time base runs at 1/64 of the CPU clock
+	return Plat_CPUTickFrequency() / 64;
+#elif defined( _PS3 )
+	// The time base frequency is unrelated to the CPU clock
+	return sys_time_get_timebase_frequency();
+#else
+	return Plat_CPUTickFrequency();
+#endif
+}
+
 class CCycleCount
 {
 	friend class CFastTimer;
@@ -238,7 +254,7 @@ inline void CCycleCount::Init()
 
 inline void CCycleCount::Init( float initTimeMsec )
 {
-	Init( (uint64)( (double)initTimeMsec * (double)Plat_CPUTickFrequency() / 1000.0 ) );
+	Init( (uint64)( (double)initTimeMsec * (double)GetCycleCountFrequency() / 1000.0 ) );
 }
 
 inline void CCycleCount::Init( uint64 cycles )
@@ -293,42 +309,42 @@ inline uint64 CCycleCount::GetLongCycles() const
 
 inline unsigned long CCycleCount::GetMicroseconds() const
 {
-	return (unsigned long)((m_Int64 * 1000000) / Plat_CPUTickFrequency());
+	return (unsigned long)((m_Int64 * 1000000) / GetCycleCountFrequency());
 }
 
 inline uint64 CCycleCount::GetUlMicroseconds() const
 {
-	return ((m_Int64 * 1000000) / Plat_CPUTickFrequency());
+	return ((m_Int64 * 1000000) / GetCycleCountFrequency());
 }
 
 
 inline double CCycleCount::GetMicrosecondsF() const
 {
-	return (double)m_Int64 * 1000000.0 / (double)Plat_CPUTickFrequency();
+	return (double)m_Int64 * 1000000.0 / (double)GetCycleCountFrequency();
 }
 
 
 inline void	CCycleCount::SetMicroseconds( unsigned long nMicroseconds )
 {
-	m_Int64 = ((uint64)nMicroseconds * Plat_CPUTickFrequency()) / 1000000;
+	m_Int64 = ((uint64)nMicroseconds * GetCycleCountFrequency()) / 1000000;
 }
 
 
 inline unsigned long CCycleCount::GetMilliseconds() const
 {
-	return (unsigned long)((m_Int64 * 1000) / Plat_CPUTickFrequency());
+	return (unsigned long)((m_Int64 * 1000) / GetCycleCountFrequency());
 }
 
 
 inline double CCycleCount::GetMillisecondsF() const
 {
-	return (double)m_Int64 * 1000.0 / (double)Plat_CPUTickFrequency();
+	return (double)m_Int64 * 1000.0 / (double)GetCycleCountFrequency();
 }
 
 
 inline double CCycleCount::GetSeconds() const
 {
-	return (double)m_Int64 / (double)Plat_CPUTickFrequency();
+	return (double)m_Int64 / (double)GetCycleCountFrequency();
 }
 
 
@@ -390,7 +406,7 @@ inline CCycleCount CFastTimer::GetDurationInProgress() const
 
 inline unsigned long CFastTimer::GetClockSpeed()
 {
-	return (unsigned long)Plat_CPUTickFrequency();
+	return (unsigned long)GetCycleCountFrequency();
 }
 
 
@@ -489,7 +505,7 @@ private:
 //-----------------------------------------------------------------------------
 inline void CLimitTimer::SetLimit( uint64 cMicroSecDuration )
 {
-	uint64 dlCycles = ( ( uint64 ) cMicroSecDuration * Plat_CPUTickFrequency() ) / ( uint64 ) 1000000L;
+	uint64 dlCycles = ( ( uint64 ) cMicroSecDuration * GetCycleCountFrequency() ) / ( uint64 ) 1000000L;
 	CCycleCount cycleCount;
 	cycleCount.Sample();
 	m_lCycleLimit = cycleCount.GetLongCycles() + dlCycles;
@@ -521,7 +537,7 @@ inline int CLimitTimer::CMicroSecOverage() const
 	if ( lcCycles < m_lCycleLimit )
 		return 0;
 
-	return( ( int ) ( ( lcCycles - m_lCycleLimit ) * ( uint64 ) 1000000L / Plat_CPUTickFrequency() ) );
+	return( ( int ) ( ( lcCycles - m_lCycleLimit ) * ( uint64 ) 1000000L / GetCycleCountFrequency() ) );
 }
 
 
@@ -538,7 +554,7 @@ inline uint64 CLimitTimer::CMicroSecLeft() const
 	if ( lcCycles >= m_lCycleLimit )
 		return 0;
 
-	return( ( uint64 ) ( ( m_lCycleLimit - lcCycles ) * ( uint64 ) 1000000L / Plat_CPUTickFrequency() ) );
+	return( ( uint64 ) ( ( m_lCycleLimit - lcCycles ) * ( uint64 ) 1000000L / GetCycleCountFrequency() ) );
 }
 
 
