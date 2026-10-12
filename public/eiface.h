@@ -102,6 +102,7 @@ class IToolGameSimulationAPI;
 class CCLCMsg_Move_t;
 class CCLCMsg_SplitPlayerConnect_t;
 class CNetMessage;
+class CGameInfo;
 class INetworkMessageInternal;
 class INetChannel;
 class INetworkGameServer;
@@ -173,23 +174,25 @@ abstract_class IVEngineServer2 : public ISource2Engine
 public:
 	virtual EUniverse	GetSteamUniverse() const = 0;
 
-	virtual WorldGroupId_t	GetWorldGroupId( const char *pszWorldGroupName ) = 0;
+	virtual WorldGroupId_t	FindWorldGroupByName( const char *pszName ) = 0;
 	virtual const char		*GetWorldGroupName( WorldGroupId_t hWorldGroupId ) = 0;
-	// First world group id of the list selected by bUnk
-	virtual WorldGroupId_t	unk021( bool bUnk ) = 0;
+	// First world group id of the list selected by bClientSide
+	virtual WorldGroupId_t	GetFirstWorldGroupId( bool bClientSide ) = 0;
 	// Last registered world group id of the list selected by bClientSide
 	virtual WorldGroupId_t	MaxWorldGroupId( bool bClientSide ) = 0;
-	virtual bool			IsWorldGroupIdValid( WorldGroupId_t hWorldGroupId ) = 0;
-	virtual float			&GetFrameTime() = 0;
+	virtual bool			IsWorldGroupValid( WorldGroupId_t hWorldGroupId ) = 0;
+
+	// Points to two floats for the last main loop iteration: the time it took before running its frame, and the frame's time
+	virtual float			*GetMainLoopTimes() = 0;
 
 	virtual void		SetFrameTimeAmnesty( const char *pszReason, int nFrames, float flDuration ) = 0;
 	virtual const char	*GetFrameTimeAmnesty( bool bCheckCvar ) = 0;
 
-	virtual void		unk027( const char *pszName, int nAmnesty, int nFrames, float flDuration ) = 0;
+	virtual void		SetFramePerformanceTag( const char *pszTag, int nValue, int nFrames, float flDuration ) = 0;
 
-	virtual void		ShowFrameTimeReport( void *pReport, bool bDetailed, int nLogChannel ) = 0;
+	virtual void		ShowFrameTimeReport( void *pReport, bool bDetailed, LoggingChannelID_t nLogChannel = -1 ) = 0;
 	virtual void		DumpNetStats( void *pNetStatData, void ( *pfnOutput )( const char * ) ) = 0;
-	virtual bool		unk030() = 0;
+	virtual bool		ShouldForceMaxFrametimeToTickInterval() = 0;
 
 	virtual uint32		GetLongFrameCount() = 0;
 
@@ -314,7 +317,7 @@ public:
 	virtual void DisconnectClient( CPlayerSlot nSlot, ENetworkDisconnectionReason reason, const char *szInternalReason = nullptr ) = 0;
 	virtual void DisconnectAllClients( ENetworkDisconnectionReason reason ) = 0;
 
-	virtual void unk089( void *p1, void *p2 ) = 0;
+	virtual void GetAllSpawnGroupsWithPVS( CUtlVector< SpawnGroupHandle_t > *pSpawnGroups, CUtlVector< IPVS * > *pOut ) = 0;
 
 	// Use these to setup who can hear whose voice.
 	// Pass in client indices (which are their ent indices - 1).
@@ -332,35 +335,35 @@ public:
 	virtual bool StartHltvReplay( CPlayerSlot nSlot, const HltvReplayParams_t &params ) = 0;
 	virtual void ForceStopHltvReplay( CPlayerSlot nSlot ) = 0;
 	virtual void StopAllHltvReplays() = 0;
-	virtual int GetHltvLastSendTick( CPlayerSlot nSlot ) = 0;
+	virtual int GetClientHltvReplayDelay( CPlayerSlot nSlot ) = 0;
 	virtual bool IsHltvReplayBufferAvailable() = 0;
-	virtual bool CanStartHltvReplay( CPlayerSlot nSlot, uint32 nDelay ) = 0;
+	virtual bool CanStartHltvReplay( CPlayerSlot nSlot, int nDelay ) = 0;
 	virtual void ResetHltvReplayRequestTime( CPlayerSlot nSlot ) = 0;
 
 	virtual bool	IsAnyHltvReplayActive() = 0;
 
 	virtual void SetClientUpdateRate( CPlayerSlot nSlot, float flUpdateRate ) = 0;
-	// Passes flRate to the client's net channel
-	virtual void UpdateClientRate( CPlayerSlot nSlot, float flRate ) = 0;
+	virtual void SetClientJitterBadThresholdUp( CPlayerSlot nSlot, float flThreshold ) = 0;
 
-	virtual bool unk109( uint32 nId, float flSeconds ) = 0;
-	virtual void *AddHltvReplayRequest( uint32, int, uint32, int, int ) = 0;
-	virtual bool IsHltvReplayEnabled() = 0;
-	virtual void QueueHltvReplayEvent( int nUnk, uint8 nUnk2, uint8 nUnk3, uint32 nUnk4, void *pUnk ) = 0;
-	virtual bool IsRecordingDemo() = 0;
+	virtual bool StashHltvReplay( uint32 nStashId, float flSeconds ) = 0;
+	virtual void AddHltvRelayProxyWhitelist( uint32 a, uint32 b, uint32 c, uint32 d, uint32 numbits ) = 0;
+	virtual bool WasShutDownRequested() const = 0;
+	// AMNOTE: Extends the queued matchmaking reservation timeout and sends the data in a connectionless packet to every reservation entry, or only to the entry matching the int when it is non-zero
+	virtual void unk101( int, uint8, uint8, uint32 nDataSize, const void *pData ) = 0;
+	virtual bool IsTvRecording() = 0;
 	virtual void StartAutoRecording() = 0;
 	virtual void RecordDemo( const char *pszFilename ) = 0;
-	virtual void StopRecordingDemo( void *pUnk ) = 0;
+	virtual void StopRecordingDemo( const CGameInfo *pGameInfo ) = 0;
 
 	// Writes the message into the demo being recorded
 	virtual void BroadcastEvent( INetworkMessageInternal *pSerializer, const CNetMessage *pMessage ) = 0;
 	// Empty string when no demo is being recorded
-	virtual const char *GetRecordingDemoFilename() = 0;
+	virtual const char *GetTvRecordingDemoFilename() = 0;
 	virtual const char *GetMapName() = 0;
 
-	virtual ConVarUserInfoSet_t GetClientUserInfoConVarData( CPlayerSlot nSlot ) = 0;
+	virtual ConVarUserInfoSet_t GetClientUserInfo( CPlayerSlot nSlot ) = 0;
 
-	virtual bool	unk121() = 0;
+	virtual bool IsRecordingDemo() = 0;
 };
 
 abstract_class IServerGCLobby
