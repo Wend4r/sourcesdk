@@ -145,10 +145,11 @@ public:
 	int m_nEdgeMaxLen;
 	float m_flEdgeMaxError;
 	int m_nVertsPerPoly;
+	// NavSmallAreaOnEdgeRemovalSize of the project defaults. Read from settings version 7 on;
+	// -1 by default.
+	float m_flSmallAreaOnEdgeRemovalSize;
 
 private:
-	// Read from settings version 7 on; -1 by default.
-	float m_flUnk2C;
 	// Two strings read from settings version 12 on.
 	CUtlString m_sUnk30;
 	CUtlString m_sUnk38;
