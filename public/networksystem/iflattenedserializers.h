@@ -459,8 +459,19 @@ public:
 	CUtlVector< FlattenedSerializerListener_t * > m_SpewListeners;
 	CUtlVector< FlattenedSerializerSaveRestoreOps_t > m_SaveRestoreOps; // Save/restore operation records registered by RegisterSaveRestoreOps
 	FlattenedSerializerFieldNamePool_t *m_pFieldNamePool; // Field-name pool created by BuildFieldNamePool
-	byte m_pad18F0[29];
+	CUtlString m_unk18F0; // Set from a command line parameter
+	int m_nUnk18F8;
+	int m_nUnk18FC;
+	int m_nSpewReadFieldListEntIndex; // "fs_spew_readfieldlist entindex <optional min change bytes>"
+	int m_nSpewReadFieldListMinChangeBytes;
+	bool m_bUnk1908;
+	bool m_bUnk1909;
+	bool m_bUnk190A;
+	bool m_bUnk190B;
+	bool m_bUnk190C;
 	bool m_bForceRebuildFieldNamePool;
+	bool m_bUnk190E;
+	bool m_bUnk190F;
 };
 
 #endif /* FLATTENEDSERIALIZERS_H */
