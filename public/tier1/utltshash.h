@@ -60,7 +60,7 @@ class CUtlTSHashGenericHash
 public:
 	static int Hash( const KEYTYPE &key, int nBucketMask )
 	{
-		int nHash = HashIntConventional( (intp)key );
+		int nHash = HashIntAlternate( (intp)key );
 		if ( nBucketMask <= USHRT_MAX )
 		{
 			nHash ^= ( nHash >> 16 );
@@ -77,6 +77,10 @@ public:
 		return lhs == rhs;
 	}
 };
+
+// Kept as the class so existing specializations still apply to the CUtlTSHash default
+template < class KEYTYPE = intp >
+using CUtlTSHashGenericHashMethod = CUtlTSHashGenericHash< KEYTYPE >;
 
 template < class KEYTYPE >
 class CUtlTSHashUseKeyHashMethod

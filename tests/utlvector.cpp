@@ -253,6 +253,58 @@ REGISTER_NAMED_TEST( "CUtlVector.MoveInlineStorage", CUtlVector_MoveInlineStorag
 	TEST_EQ( vec[ 0 ], 7 );
 }
 
+REGISTER_NAMED_TEST( "CUtlVectorFixedGrowable.InlineLifetime", CUtlVectorFixedGrowable_InlineLifetime )
+{
+	// The inline storage holds no elements of its own, so only the added ones are alive.
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		CUtlVectorFixedGrowable< VectorTrackedValue_t, 4 > vec;
+
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+		vec.AddToTail( VectorTrackedValue_t( 10 ) );
+		vec.AddToTail( VectorTrackedValue_t( 20 ) );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+
+		// Growing past the inline storage moves the elements to the heap.
+		for ( int i = 0; i < 6; ++i )
+		{
+			vec.AddToTail( VectorTrackedValue_t( i ) );
+		}
+
+		TEST_EQ( vec.Count(), 8 );
+		TEST_EQ( vec[ 0 ].m_nValue, 10 );
+		TEST_EQ( vec[ 7 ].m_nValue, 5 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 8 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVectorFixedGrowable.InlineStorageLayout", CUtlVectorFixedGrowable_InlineStorageLayout )
+{
+	// The raw inline storage keeps the size and alignment of an array of the elements.
+	struct alignas( 16 ) AlignedValue_t
+	{
+		char m_Data[ 24 ];
+	};
+
+	struct ReferenceLayout_t : CUtlVectorMemory< AlignedValue_t, int >
+	{
+		AlignedValue_t m_Fixed[ 3 ];
+	};
+
+	using FixedGrowable_t = CUtlVectorMemory_FixedGrowable< AlignedValue_t, 3, int >;
+
+	TEST_EQ( sizeof( FixedGrowable_t ), sizeof( ReferenceLayout_t ) );
+	TEST_EQ( alignof( FixedGrowable_t ), alignof( ReferenceLayout_t ) );
+
+	CUtlVectorFixedGrowable< AlignedValue_t, 3 > vec;
+
+	TEST_EQ( reinterpret_cast< uintp >( vec.Base() ) % 16, static_cast< uintp >( 0 ) );
+}
+
 REGISTER_NAMED_TEST( "CUtlVector.NonTrivialLifetime", CUtlVector_NonTrivialLifetime )
 {
 	// Non-trivial element lifetimes should balance after vector destruction.
