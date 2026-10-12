@@ -146,6 +146,17 @@ public:
 	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) = 0;
 };
 
+// The server's notifier, a static instance without members: it logs fired connections, inputs,
+// removed connections and outputs, and draws debug overlays for inputs.
+class CEntityIONotify : public IEntityIONotify
+{
+public:
+	void OnConnectionFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection, const CPulseArgumentPack *pArgs ) override;
+	void OnEntityIOInput( CEntityInstance *pTarget, const char *pszInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const variant_t *pValue, const CPulseArgumentPack *pArgs ) override;
+	void OnConnectionRemoved( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection ) override;
+	void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) override;
+};
+
 schema class CEntityIOOutput
 {
 public:
