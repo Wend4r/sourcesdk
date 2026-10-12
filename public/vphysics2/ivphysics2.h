@@ -15,8 +15,10 @@
 #include "appframework/iappsystem.h"
 #include "mathlib/vector.h"
 #include "tier0/utlvector.h"
+#include "tier2/tier2.h"
 
 class IVPhysics2World;
+class CVPhysics2SurfacePropertyManager;
 class IPhysicsShape;
 class IPhysicsSoftbody;
 class IIkSolver;
@@ -311,6 +313,30 @@ public:
 	virtual void unk144( void *p ) = 0;
 
 	virtual const char *GetMassDescription( float flMass ) = 0;
+};
+
+class CVPhysics2Interface : public CTier2AppSystem< IVPhysics2 >
+{
+public:
+	// The surface property manager embedded in this object; GetSurfacePropertyController returns its controller base
+	virtual CVPhysics2SurfacePropertyManager *unk146() = 0;
+
+	uint64 m_pad028[ 2 ];
+
+	// CVPhysics2ConComm, the VConsole physics debugger link
+	uint64 m_Unk038[ 5 ];
+
+	uint64 m_pad060;
+
+	// CPhysDataTypeManager for VPhysXAggregateData_t
+	uint64 m_Unk068[ 4 ];
+
+	// CVPhysics2SurfacePropertyManager, with its IPhysSurfacePropertyController base at 0xB8
+	uint64 m_Unk088[ 13 ];
+
+	CUtlVector< IVPhysics2World * > m_Worlds;
+
+	uint64 m_pad108[ 4 ];
 };
 
 #endif // IVPHYSICS2_H
