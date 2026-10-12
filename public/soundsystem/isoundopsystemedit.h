@@ -79,12 +79,12 @@ public:
 	// Calls ISoundOpSystem::SetSoundEventParam
 	virtual bool unk056( SoundEventGuid_t guid, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual void EditGetDomainAttrInfo( void *p1, void *p2, void *p3, void *p4 ) = 0;
-	virtual bool unk060( void *p, uint32 nUnk1, uint32 nUnk2 ) = 0;
-	virtual void EditGetDomainAttrInfo( void *p1, uint32 nUnk1, int nUnk2, void *p2, void *p3 ) = 0;
-	virtual bool unk060( void *p1, uint32 nUnk1, int nUnk2, void *p2 ) = 0;
+	virtual bool unk060( const char *pSoundEventName, uint32 nUnk1, uint32 nUnk2 ) = 0;
+	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk1, int nUnk2, void *p2, CUtlVector< const char * > *pList ) = 0;
+	virtual bool unk060( const char *pSoundEventName, uint32 nUnk1, int nUnk2, CUtlVector< const char * > *pList ) = 0;
 	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk, void *p1, void *p2 ) = 0;
-	virtual bool unk062( const char *pName1, const char *pName2, void *p ) = 0;
-	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3, void *p ) = 0;
+	virtual bool unk062( const char *pName1, const char *pName2, CUtlString &sValue ) = 0;
+	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3, CUtlString &sValue ) = 0;
 	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3 ) = 0;
 	virtual void unk065() = 0;
 	virtual void unk066() = 0;

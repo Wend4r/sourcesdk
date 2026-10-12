@@ -174,7 +174,8 @@ public:
 	virtual int unk49( uint32 nSoundEvent, uint32 nFieldToken, bool bUnk ) = 0;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void **ppData, int nIndex, bool bUnk ) = 0;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, CUtlString &sValue, int nIndex, bool bUnk ) = 0;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void *pData, int nIndex, bool bUnk ) = 0;
+	// Writes the value to pKV
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, KeyValues3 *pKV, int nIndex, bool bUnk ) = 0;
 	virtual void unk53() = 0;
 	virtual void unk54() = 0;
 	virtual void unk55() = 0;
@@ -246,16 +247,17 @@ public:
 	virtual double unk051( SoundEventGuid_t guid ) = 0;
 	virtual double unk052( SoundEventGuid_t guid ) = 0;
 	virtual void unk053() = 0;
-	virtual bool GetSoundEventParam( SoundEventGuid_t guid, uint32 nFieldToken, void *pData, void *pUnk ) = 0;
-	virtual bool GetSoundEventParam( SoundEventGuid_t guid, const char *pOperatorName, const char *pFieldName, void *pData, void *pUnk ) = 0;
+	virtual bool GetSoundEventParam( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int *pnCount ) = 0;
+	virtual bool GetSoundEventParam( SoundEventGuid_t guid, const char *pOperatorName, const char *pFieldName, CSosFieldData *pData, int *pnCount ) = 0;
 	virtual SOAtomicDataType_t unk056( SOFieldDataType_t nType ) = 0;
 	virtual int GetFieldDataTypeSize( SOFieldDataType_t nType ) = 0;
 	// Element count of the type
 	virtual int unk058( SOFieldDataType_t nType ) = 0;
 	// Allocates field data holding the value of pKV
 	virtual CSosFieldData *unk059( KeyValues3 *pKV ) = 0;
-	virtual bool unk060( uint32 nSoundEvent, const char *pFieldName, void *p ) = 0;
-	virtual bool unk060( const char *pSoundEventName, const char *pFieldName, void *p ) = 0;
+	// Sets the field of the sound event definition from its text form
+	virtual bool unk060( uint32 nSoundEvent, const char *pFieldName, const char *pValue ) = 0;
+	virtual bool unk060( const char *pSoundEventName, const char *pFieldName, const char *pValue ) = 0;
 	// Allocates field data of the type, pData may be null for a zero value
 	virtual CSosFieldData *unk062( SOFieldDataType_t nType, const void *pData ) = 0;
 	// Symbol table of the operator system
@@ -277,7 +279,7 @@ public:
 	virtual void *unk074( uint32 nUnk ) = 0;
 	virtual void unk075( int nUnk ) = 0;
 	virtual void unk076() = 0;
-	virtual bool unk077( KeyValues *pKV, void *p ) = 0;
+	virtual bool unk077( KeyValues *pKV, KeyValues3 *pKV3 ) = 0;
 	virtual bool unk078( const char *pName, KeyValues *pKV ) = 0;
 	// Writes the operator fields of the stack to pKV
 	virtual void unk079( HSOSLIBSTACKHASH hStack, KeyValues3 *pKV ) = 0;
