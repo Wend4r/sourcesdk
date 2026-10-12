@@ -70,9 +70,9 @@ public:
 	virtual int GetNumAutoWakeCursors( const PulseSymbol_t &clock ) = 0;
 
 	virtual void QueueYieldResumeEvent( CPulseExecCursor *pCursor, const void *pResumeData ) = 0;
-	virtual void QueueCursorResultEvent( int nUnk1, const void *pCursorHandle, int nUnk2, const CPulseArgumentPack &args ) = 0;
-	virtual void QueueObservableVariableSourceChangedEvent( const PulseSymbol_t &clock, CBasePulseGraphInstance *pInstance, int nVariable, const void *pUnk1, const void *pUnk2 ) = 0;
-	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &unk, CBasePulseGraphInstance *pInstance, int nVariable, const void *pUnk1, const void *pUnk2 ) = 0;
+	virtual void QueueCursorResultEvent( int nSubject, const void *phObserver, int nResult, const CPulseArgumentPack &outParams ) = 0;
+	virtual void QueueObservableVariableSourceChangedEvent( const PulseSymbol_t &clock, CBasePulseGraphInstance *pInstance, int nVariable, const void *pPrevValue, const void *pCurValue ) = 0;
+	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &blackboardResourceName, CBasePulseGraphInstance *pListenerInstance, int nVarDocNodeID, const void *pPrevValue, const void *pCurValue ) = 0;
 
 	virtual void *Unk_GetTypeQueriesForScopes() = 0;
 	virtual void *Unk_GetOpaqueHandleTable() = 0;
@@ -84,7 +84,8 @@ public:
 
 	virtual void RemoveBreakpoint( ResourceHandle_t hGraph, void *pBreakpoint ) = 0;
 	virtual void *AddBreakpoint( ResourceHandle_t hGraph, const void *pBreakpointDesc, bool *pbCreated ) = 0;
-	virtual void *FindBreakpoint( ResourceHandle_t hGraph, const void *pBreakpointDesc, bool bUnk ) = 0;
+	// Without bExactMatch an unset location on either side also matches.
+	virtual void *FindBreakpoint( ResourceHandle_t hGraph, const void *pBreakpointDesc, bool bExactMatch ) = 0;
 	virtual void GetBreakpoints( ResourceHandle_t hGraph, const int *pnKey, CUtlVector< void * > &breakpoints ) = 0;
 	virtual void GetAllBreakpoints( ResourceHandle_t hGraph, CUtlVector< void * > &breakpoints ) = 0;
 
@@ -147,7 +148,7 @@ public:
 	virtual CBasePulseGraphInstance *Unk_CreateGraphInstanceForDomain( const char *pszDomain ) = 0;
 
 	virtual void RemovePendingEventsForCursor( CPulseExecCursor *pCursor ) = 0;
-	virtual void RecordExecutionHistory( CPulseExecCursor *pCursor, uint16 nEventType, int nCellIndex, const PulseSymbol_t &unk ) = 0;
+	virtual void RecordExecutionHistory( CPulseExecCursor *pCursor, uint16 nEventType, int nEditorID, const PulseSymbol_t &seqPoint ) = 0;
 
 	virtual void LoadCursorSystemState( CPulseExecCursor *pCursor, CKV3TransferLoadContext *pContext ) = 0;
 	virtual void SaveCursorSystemState( CPulseExecCursor *pCursor, CKV3TransferSaveContext *pContext ) = 0;
