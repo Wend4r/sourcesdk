@@ -265,8 +265,8 @@ public:
 	virtual void Unk_31( KeyValues3 *pKV ) const = 0;
 	// Forwards to Unk_LoadNavGenHullParams.
 	virtual void Unk_32( const KeyValues3 *pKV ) = 0;
-	// Empty in the game's meshes; called by BuildFromNavGen.
-	virtual void Unk_33( void *p ) = 0;
+	// Empty in the game's meshes; called by BuildFromNavGen once the areas are added.
+	virtual void ReadNavGenMarkup( const CNavGenInput &input ) = 0;
 	// NavGenParams.HullParams: the Name, FlowMap_Enabled and FlowMap_NodeMaxRadius of every
 	// hull in m_NavGenParams.
 	virtual void Unk_LoadNavGenHullParams( const KeyValues3 *pKV ) = 0;
