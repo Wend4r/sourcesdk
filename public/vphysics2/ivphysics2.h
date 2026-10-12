@@ -298,7 +298,7 @@ public:
 	virtual void PrintInfo( const CCommand &args ) = 0;
 
 	// Debug draws every world (physics_debug_draw)
-	virtual void DebugDrawWorlds( int nUnknown ) = 0;
+	virtual void DebugDrawWorlds( void *pDebugOverlay ) = 0;
 
 	virtual void Unk_CreateDebugSceneObject( void *p ) = 0;
 	virtual void DestroyDebugSceneObject( void *pSceneObject ) = 0;
