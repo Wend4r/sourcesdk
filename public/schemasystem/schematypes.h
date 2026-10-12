@@ -14,6 +14,7 @@
 #include "tier0/utlmap.h"
 #include "schemasystem/baseschema.h"
 #include "schemalib/schemametadata_data.h"
+#include "schemalib/schemaenuminfo_data.h"
 
 class ISchemaSystemTypeScope;
 class CSchemaSystemTypeScope;
@@ -423,44 +424,10 @@ public:
 	}
 };
 
-struct SchemaEnumeratorInfoData_t
-{
-	const char* m_pszName;
-	
-	int64 m_nValue;
-	
-	uint16 m_nStaticMetadataCount;
-	SchemaMetadataEntryData_t* m_pStaticMetadata;
-};
-
 class CSchemaEnumeratorInfo : public SchemaEnumeratorInfoData_t
 {
 };
 
-
-struct SchemaEnumInfoData_t
-{
-	CSchemaEnumInfo* m_pSchemaBinding;
-	
-	const char* m_pszName;
-	const char* m_pszProjectName;
-	
-	uint8 m_nSize;
-	uint8 m_nAlignment;
-	
-	uint16 m_nFlags;
-
-	uint16 m_nEnumeratorCount;
-	uint16 m_nStaticMetadataCount;
-	
-	SchemaEnumeratorInfoData_t* m_pEnumerators;
-	SchemaMetadataEntryData_t* m_pStaticMetadata;
-	
-	CSchemaSystemTypeScope* m_pTypeScope;
-	
-	int64 m_nMinEnumeratorValue;
-	int64 m_nMaxEnumeratorValue;
-};
 
 class CSchemaEnumInfo : public SchemaEnumInfoData_t
 {
