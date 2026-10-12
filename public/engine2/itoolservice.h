@@ -14,8 +14,10 @@
 #include <splitscreenslot.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
+#include <resourcesystem/resourcehandle.h>
 
 class CNavData;
+class InfoForResourceTypeCModel;
 class INavListener;
 class IToolGameSimulationAPI;
 class CEntityClass;
@@ -42,11 +44,12 @@ public:
 
 	virtual void *GetToolClientSimulationAPI() = 0;
 
+	// Forward to the game client
+	virtual void UpdateProjectedTexture( const void *pInfo, void **ppTexture ) = 0;
+	virtual void DeleteProjectedTexture( void *pTexture ) = 0;
+	virtual void *Unk_UpdateDeferredLight( void *p ) = 0;
+	virtual void Unk_DeleteDeferredLight( void *p ) = 0;
 	// Forward to game client methods that are not identified yet
-	virtual void unk035() = 0;
-	virtual void unk036() = 0;
-	virtual void *unk037() = 0;
-	virtual void unk038() = 0;
 	virtual void unk039() = 0;
 	virtual void unk040() = 0;
 	virtual void unk041() = 0;
@@ -63,13 +66,14 @@ public:
 	virtual bool unk051() = 0;
 	virtual void unk052() = 0;
 	virtual void unk053() = 0;
-	virtual void unk054() = 0;
-	virtual bool unk055() = 0;
-	virtual void unk056() = 0;
+	virtual void Unk_UpdateGlobalLightFromLightInfos( void *p ) = 0;
+	virtual bool Unk_GetGlobalLightParameters( void *p ) = 0;
+	virtual void *GetEconItemSystem_Client() = 0;
 
-	virtual void *GetEconItemSystem() = 0;
+	// Forwards to the game server
+	virtual void *GetEconItemSystem_Server() = 0;
 
-	virtual void *unk058() = 0;
+	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk, const void **ppUnk1, const void **ppUnk2 ) = 0;
 
 	virtual void unk059() = 0;
 	virtual void unk060() = 0;
