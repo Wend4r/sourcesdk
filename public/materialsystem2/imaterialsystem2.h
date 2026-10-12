@@ -26,6 +26,7 @@ struct MaterialSystem2GlobalStats_t;
 struct RsStencilStateOverride_t;
 struct RsDepthBiasStateOverride_t;
 FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
+FORWARD_DECLARE_HANDLE( RenderShaderHandle_t );
 
 //-----------------------------------------------------------------------------
 // Source 2 material system, exposed as MATERIAL_SYSTEM2_INTERFACE_VERSION
@@ -47,7 +48,7 @@ public:
 	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, const CRenderAttributes *pAttributes2, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 
-	virtual void *GetShaderForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass ) = 0;
+	virtual RenderShaderHandle_t GetShaderForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass ) = 0;
 	virtual int GetConstantBufferInfoForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass, MaterialPassConstantBufferInfo_t *pBufferInfo, int nBufferInfoMax ) = 0;
 	virtual bool Unk_GetRenderStatesForRenderablePass( void *p ) = 0;
 
