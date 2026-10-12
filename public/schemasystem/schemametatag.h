@@ -12,6 +12,7 @@
 #include "tier0/dbg.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlvector.h"
+#include "schemasystem/minschema.h"
 
 enum SchemaMetaTagLocation_t
 {
@@ -32,9 +33,6 @@ enum SchemaBaseClassTraversal_t
 	SCHEMA_BASE_TRAVERSAL_PRIMARY_ONLY_IN_MEMORY_ORDER,
 	SCHEMA_BASE_TRAVERSAL_FULL_IN_MEMORY_ORDER,
 };
-
-typedef const CSchemaClassInfo *ClassIntrospectionHandle_t;
-typedef const CSchemaClassField *FieldIntrospectionHandle_t;
 
 
 //--------------------------------------------------------------------------------------------------
