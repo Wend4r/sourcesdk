@@ -265,7 +265,7 @@ inline void CKV3ArenaBase::NodeList<NODE>::Clear()
 		for ( auto iter = Head(); iter != Tail(); )
 		{
 			auto next = iter->m_pNext;
-			Destruct( &iter->m_Value );
+			Destruct( &iter->m_Value, iter->m_Value.GetAllocatedSize() );
 			iter = next;
 		}
 	}

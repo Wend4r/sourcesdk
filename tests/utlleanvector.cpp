@@ -3,6 +3,8 @@
 
 #include <tier1/utlleanvector.h>
 
+#include <string.h>
+
 REGISTER_NAMED_TEST( "CUtlLeanVector.InsertRemove", CUtlLeanVector_InsertRemove )
 {
 	// Lean vectors should append, remove and clear values without leaking indices.
@@ -164,6 +166,73 @@ REGISTER_NAMED_TEST( "CUtlLeanVectorFixedGrowable.GrowAndPurge", CUtlLeanVectorF
 	vec.Purge();
 	TEST_EQ( vec.Count(), 0 );
 	TEST_EQ( vec.NumAllocated(), 2 );
+}
+
+static int g_nLeanVectorDestructed = 0;
+
+struct LeanVectorCounted_t
+{
+	~LeanVectorCounted_t() { ++g_nLeanVectorDestructed; }
+
+	int m_nValue;
+};
+
+REGISTER_NAMED_TEST( "CUtlLeanVector.ExternalPurge", CUtlLeanVector_ExternalPurge )
+{
+	// Purge on an external buffer destructs the elements and detaches the buffer without freeing it.
+	// Raw storage, so only the elements the vector constructs are ever destructed
+	alignas( LeanVectorCounted_t ) unsigned char storage[ 4 * sizeof( LeanVectorCounted_t ) ];
+	LeanVectorCounted_t *buffer = reinterpret_cast< LeanVectorCounted_t * >( storage );
+
+	CUtlLeanVector< LeanVectorCounted_t > vec( buffer, 4 );
+
+	TEST_TRUE( vec.IsExternallyAllocated() );
+
+	vec.AddToTail( LeanVectorCounted_t{ 1 } );
+	vec.AddToTail( LeanVectorCounted_t{ 2 } );
+	vec.AddToTail( LeanVectorCounted_t{ 3 } );
+
+	TEST_EQ( vec.Count(), 3 );
+	TEST_TRUE( vec.Base() == buffer );
+
+	g_nLeanVectorDestructed = 0;
+	vec.Purge();
+
+	TEST_EQ( g_nLeanVectorDestructed, 3 );
+	TEST_EQ( vec.Count(), 0 );
+	TEST_EQ( vec.NumAllocated(), 0 );
+	TEST_FALSE( vec.IsExternallyAllocated() );
+	TEST_NULL( vec.Base() );
+
+	vec.AddToTail( LeanVectorCounted_t{ 5 } );
+
+	TEST_EQ( vec.Count(), 1 );
+	TEST_FALSE( vec.IsExternallyAllocated() );
+	TEST_TRUE( vec.Base() != buffer );
+	TEST_EQ( vec[ 0 ].m_nValue, 5 );
+}
+
+REGISTER_NAMED_TEST( "CUtlLeanVector.ExternalRemoveAllKeepsContents", CUtlLeanVector_ExternalRemoveAllKeepsContents )
+{
+	// Removing elements from an external buffer leaves its memory as it was for the owner.
+	char buffer[ 16 ];
+
+	memset( buffer, 'A', sizeof( buffer ) );
+
+	{
+		CUtlLeanVector< char > vec( buffer, sizeof( buffer ) );
+
+		for ( size_t i = 0; i < sizeof( buffer ); ++i )
+			vec.AddToTail( 'A' );
+
+		TEST_TRUE( vec.Base() == buffer );
+
+		vec.RemoveAll();
+		TEST_EQ( vec.Count(), 0 );
+	}
+
+	for ( char c : buffer )
+		TEST_EQ( c, 'A' );
 }
 
 REGISTER_NAMED_TEST( "CUtlLeanVector.SetExternalBuffer", CUtlLeanVector_SetExternalBuffer )

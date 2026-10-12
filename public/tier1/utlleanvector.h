@@ -202,9 +202,12 @@ void CUtlLeanVectorBase<T, I, A>::RemoveAll()
 {
 	if ( T* pElement = Base() )
 	{
+		// External memory belongs to its owner and may be read-only, so it gets no debug fill
+		const size_t nFillSize = IsExternallyAllocated() ? 0 : sizeof( T );
+
 		const T* pEnd = &pElement[ m_nCount ];
 		while ( pElement != pEnd )
-			Destruct( pElement++ );
+			Destruct( pElement++, nFillSize );
 	}
 
 	m_nCount = 0;
@@ -216,18 +219,16 @@ void CUtlLeanVectorBase<T, I, A>::RemoveAll()
 template< class T, typename I, class A >
 inline void CUtlLeanVectorBase<T, I, A>::Purge()
 {
-	if ( !IsExternallyAllocated() )
-	{
-		RemoveAll();
+	RemoveAll();
 
-		if ( m_nAllocated > 0 )
-		{
-			MemoryAllocator_t::Free( (void*)m_pElements );
-		}
+	if ( !IsExternallyAllocated() && m_nAllocated > 0 )
+	{
+		MemoryAllocator_t::Free( (void*)m_pElements );
 	}
 
 	m_nCount = 0;
 	m_nAllocated = 0;
+	m_bExternal = false;
 	m_pElements = NULL;
 }
 
@@ -396,9 +397,12 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::RemoveAll()
 {
 	if ( T* pElement = Base() )
 	{
+		// External memory belongs to its owner and may be read-only, so it gets no debug fill
+		const size_t nFillSize = IsExternallyAllocated() ? 0 : sizeof( T );
+
 		const T* pEnd = &pElement[ m_nCount ];
 		while ( pElement != pEnd )
-			Destruct( pElement++ );
+			Destruct( pElement++, nFillSize );
 	}
 
 	m_nCount = 0;
@@ -910,10 +914,13 @@ void CUtlLeanVectorImpl<B, T, I>::RemoveAll()
 {
 	if ( this->Base() )
 	{
+		// External memory belongs to its owner and may be read-only, so it gets no debug fill
+		const size_t nFillSize = this->IsExternallyAllocated() ? 0 : sizeof( T );
+
 		for ( int i = this->m_nCount; i-- > 0; )
 		{
 			// Global scope to resolve conflict with Scaleform 4.0
-			::Destruct(&Element(i));
+			::Destruct( &Element( i ), nFillSize );
 		}
 	}
 
