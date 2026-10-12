@@ -12,25 +12,6 @@
 // YUP_ACTIVE is from Source2. It's (obviously) not supported on this branch, just including it here to help merge camera.cpp/.h and the CSM shadow code.
 //#define YUP_ACTIVE 1
 
-enum MatrixAxisType_t
-{
-#ifdef YUP_ACTIVE
-	FORWARD_AXIS = 2,
-	LEFT_AXIS = 0,
-	UP_AXIS = 1,
-#else
-	FORWARD_AXIS = 0,
-	LEFT_AXIS = 1,
-	UP_AXIS = 2,
-#endif
-
-	X_AXIS = 0,
-	Y_AXIS = 1,
-	Z_AXIS = 2,
-	ORIGIN = 3,
-	PROJECTIVE = 3,
-};
-
 #if defined( _X360 )
 #include <xboxmath.h>
 #elif defined(_PS3)
@@ -77,6 +58,7 @@ enum MatrixAxisType_t
 // If we are not PPC based or SPU based, then assumes it is SSE2. We should make this code cleaner.
 
 #include <xmmintrin.h>
+#include "tier0/tier0_utils_math.h"
 
 
 
