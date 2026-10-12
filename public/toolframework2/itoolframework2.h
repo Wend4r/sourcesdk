@@ -17,6 +17,7 @@
 class QObject;
 class KeyValues3;
 class IToolFrameListener;
+class CEnvironmentBlock;
 
 abstract_class IToolFramework2 : public IAppSystem
 {
@@ -31,7 +32,7 @@ public:
 
 	// False for a tool that is queued for unloading
 	virtual bool IsToolLoaded( uint8 nToolIndex ) = 0;
-	virtual void unk016( bool bUnknown ) = 0;
+	virtual void unk016( uint8 nToolIndex ) = 0;
 
 	virtual void Tools_RunFrame() = 0;
 	virtual void UnloadQueuedTools() = 0;
@@ -68,7 +69,7 @@ public:
 	virtual void SetSplashScreenMessage( const char *pMessage ) = 0;
 
 	virtual void *unk036() = 0;
-	virtual void *unk037() = 0;
+	virtual CEnvironmentBlock *unk037() = 0;
 
 	// Adds a colored text label
 	virtual void unk038( const char *pText, int nUnknown ) = 0;
