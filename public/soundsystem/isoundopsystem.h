@@ -131,6 +131,7 @@ public:
 	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const = 0;
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const = 0;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) = 0;
+	// Stack flags of the update stack of the sound event, as returned by ISoundOpSystem::unk031
 	virtual void *unk19( uint32 nSoundEvent ) = 0;
 	virtual bool unk20( uint32 nSoundEvent ) = 0;
 	virtual uint32 GetSoundEventDefinitionBaseHash( uint32 nSoundEvent, int nBase ) = 0;
@@ -157,14 +158,19 @@ public:
 	virtual void AddNewSoundEvent( const char *pSoundEventName, const ResourceBindingBase_t *pBinding ) = 0;
 	// Sets the update stack of the sound event from the stack name
 	virtual bool unk41( const char *pSoundEventName, const char *pStackName ) = 0;
-	virtual void unk42() = 0;
-	virtual void unk43() = 0;
+	// Adds the field to the definition of the sound event
+	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) = 0;
+	// Sets a string in the KeyValues3 table of the sound event
+	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) = 0;
 	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) = 0;
 	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
-	virtual void SetSoundEventDefinitionField() = 0;
-	virtual void unk47() = 0;
-	virtual void unk48() = 0;
-	virtual void *unk49( uint32 nSoundEvent, uint32 nFieldToken, bool bUnk ) = 0;
+	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, uint32 nFieldToken, const CSosFieldData *pData, int nIndex ) = 0;
+	// Selects the element of an array field
+	virtual bool unk47( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) = 0;
+	// Element count of the field, pbArray tells whether it is an array field
+	virtual int unk48( uint32 nSoundEvent, uint32 nFieldToken, bool *pbArray, bool bUnk ) = 0;
+	// Element count of the field
+	virtual int unk49( uint32 nSoundEvent, uint32 nFieldToken, bool bUnk ) = 0;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void **ppData, int nIndex, bool bUnk ) = 0;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, CUtlString &sValue, int nIndex, bool bUnk ) = 0;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void *pData, int nIndex, bool bUnk ) = 0;
@@ -173,11 +179,14 @@ public:
 	virtual void unk55() = 0;
 	virtual void SoundEventKVToKV3( KeyValues *pKV, KeyValues3 *pKV3 ) = 0;
 	virtual void CompareSoundEvents( const char *pSoundEventA, const char *pSoundEventB ) = 0;
+	// Value of the _builtins._voicegraph field
 	virtual bool unk58( uint32 nSoundEvent, CUtlString &sValue ) = 0;
 	virtual void ListDeferredSoundEvents() = 0;
-	virtual void unk60() = 0;
-	virtual void unk61() = 0;
-	virtual void unk62() = 0;
+	virtual void ClearDeferredSoundEvents() = 0;
+	// Reads a string from the KeyValues3 table of the sound event
+	virtual bool unk61( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) = 0;
+	// Both outputs are optional
+	virtual bool unk62( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) = 0;
 };
 
 class ISoundOpSystem : public IAppSystem, public ISoundEventManager
