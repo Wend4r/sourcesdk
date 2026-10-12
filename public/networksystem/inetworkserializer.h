@@ -81,9 +81,9 @@ struct NetworkChangePointerCallback_t
 
 	const char *m_CallbackName;
 	const char *m_ClassName;
-	CCallbackOwner *m_unk001;
+	CCallbackOwner *m_CallbackOwner;
 	ChangeCb m_CallbackFn;
-	CallbackOwnerType m_unk101;
+	CallbackOwnerType m_CallbackOwnerType;
 };
 
 enum NetworkOverrideType_t
@@ -265,7 +265,7 @@ public:
 	CUtlVector<int> m_ParentClassOffset;
 
 	// Maps member names like __m_pChainEntity and m_PathIndex to their offsets in the class
-	CUtlDict< uint16 > m_unk101;
+	CUtlDict< uint16 > m_MemberOffsets;
 
 	CUtlVector<NetworkOverride_t *> m_NetworkOverrides;
 	// Includes this class and parent overreides
@@ -278,7 +278,7 @@ public:
 	CNetworkSerializerCodeGenDatabase *m_pDatabase;
 
 	int32_t m_nClassSize;
-	int m_NetworkOutOfPVSUpdates;
+	OOPVSUpdates_t m_NetworkOutOfPVSUpdates;
 	// Allocation mode, only 1 and 2 allow allocating and freeing through m_pfnManipulator
 	int m_nAllocationMode;
 
@@ -324,7 +324,9 @@ struct NetMessageInfo_t
 	// (1 << 7) - unknown
 	uint8 m_nFlags;
 
-	int m_unk001;
+	// AMNOTE: AddCategoryMask ORs nMask into it too when bRequireHandler is true. ConfirmAllMessageHandlersInstalled
+	// reports channels in these categories that have no handler registered for the message
+	int m_nRequiredHandlerCategories;
 	bool m_bOkayToRedispatch;
 };
 
@@ -338,7 +340,7 @@ public:
 
 	virtual void SetMessageId( NetworkMessageId nMessageId ) = 0;
 
-	virtual void AddCategoryMask( uint32 nMask, bool bOverrideField = false ) = 0;
+	virtual void AddCategoryMask( uint32 nMask, bool bRequireHandler = false ) = 0;
 
 	virtual void SwitchMode( NetworkValidationMode_t nMode ) = 0;
 
