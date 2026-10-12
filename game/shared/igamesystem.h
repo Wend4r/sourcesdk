@@ -12,6 +12,7 @@
 #endif
 
 #include "iloopmode.h"
+#include "network_connection.pb.h"
 
 #include <entity2/entityidentity.h>
 #include <tier0/utlstring.h>
@@ -89,18 +90,12 @@ GS_EVENT_MSG( GameDeactivate )
 };
 
 GS_EVENT_MSG( ClientFullySignedOn );
-GS_EVENT_MSG( Disconnect );
-GS_EVENT_MSG( SaveGameStart )
+GS_EVENT_MSG( ClientDisconnect )
 {
-	bool m_bQueueAgeSaveList;
-	const char *m_pszSaveName;
-	const char *m_pszMapName;
-	const char *m_pszContextName;
-	const char *m_pszOldLevel;
-	const char *m_pszLandmarkName;
-	const char *m_pszComment;
-	uint16 m_nFlags;
+	ENetworkDisconnectionReason m_ReasonCode;
 };
+
+GS_EVENT_MSG( ClientRestoreServerState );
 
 GS_EVENT_MSG( BuildGameSessionManifest )
 {
@@ -131,6 +126,7 @@ GS_EVENT_MSG( PreSpawnGroupLoad )
 {
 	CUtlString m_SpawnGroupName;
 	CUtlString m_EntityLumpName;
+	WorldGroupId_t m_WorldGroupId;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
 };
 
@@ -139,6 +135,7 @@ GS_EVENT_MSG( PostSpawnGroupLoad )
 	CUtlString m_SpawnGroupName;
 	CUtlString m_EntityLumpName;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
+	WorldGroupId_t m_WorldGroupId;
 	CUtlVector< CEntityHandle > m_EntityList;
 };
 
@@ -237,28 +234,57 @@ GS_EVENT_MSG( ServerPostEntityThink )
 GS_EVENT_MSG( ServerProcessNetworking );
 
 GS_EVENT_MSG( ServerPreClientUpdate );
-GS_EVENT_MSG( ServerAdvanceTick );
-GS_EVENT_MSG( ClientAdvanceTick );
 
 GS_EVENT_MSG( Simulate )
 {
 	EngineLoopState_t m_LoopState;
-	bool m_bFirstTick;
-	bool m_bLastTick;
+	// The default member initializers make GCC and Clang place the members of derived messages
+	// in the tail padding, as the game does
+	bool m_bFirstTick = false;
+	bool m_bLastTick = false;
 };
 
-GS_EVENT_MSG_CHILD( ServerPostSimulate, Simulate ) { };
+GS_EVENT_MSG_CHILD( AdvanceTick, Simulate )
+{
+	int m_nCurrentTick;
+	int m_nCurrentTickThisFrame;
+	int m_nTotalTicksThisFrame;
+	int m_nTotalTicks;
+};
+
+GS_EVENT_MSG_CHILD( ServerAdvanceTick, AdvanceTick ) { };
+GS_EVENT_MSG_CHILD( ClientAdvanceTick, AdvanceTick ) { };
+
+GS_EVENT_MSG_CHILD( ServerPostSimulate, Simulate )
+{
+	bool m_bLastTickBeforeClientUpdate;
+};
+
 GS_EVENT_MSG_CHILD( ClientPostSimulate, Simulate ) { };
 
-GS_EVENT_MSG( ServerPostAdvanceTick );
-GS_EVENT_MSG( ClientPostAdvanceTick );
+GS_EVENT_MSG_CHILD( PostAdvanceTick, Simulate )
+{
+	int m_nCurrentTick;
+	int m_nCurrentTickThisFrame;
+	int m_nTotalTicksThisFrame;
+	int m_nTotalTicks;
+};
+
+GS_EVENT_MSG_CHILD( ServerPostAdvanceTick, PostAdvanceTick )
+{
+	bool m_bLastTickBeforeClientUpdate;
+};
+
+GS_EVENT_MSG_CHILD( ClientPostAdvanceTick, PostAdvanceTick ) { };
+
 GS_EVENT_MSG( ServerBeginAsyncPostTickWork )
 {
 	bool m_bIsOncePerFrameAsyncWorkPhase;
 };
 GS_EVENT_MSG( ServerGameBeginAsyncPostTickWork );
 
-GS_EVENT_MSG( ServerEndAsyncPostTickWork );
+GS_EVENT_MSG( ServerPreEndAsyncPostTickWork );
+GS_EVENT_MSG( ServerPostEndAsyncPostTickWork );
 
 GS_EVENT_MSG( ClientFrameSimulate )
 {
@@ -267,7 +293,7 @@ GS_EVENT_MSG( ClientFrameSimulate )
 	float m_flFrameTime;
 	bool m_bScheduleSendTickPacket;
 };
-GS_EVENT_MSG( ClientPauseSimulate );
+GS_EVENT_MSG_CHILD( ClientPauseSimulate, Simulate ) { };
 GS_EVENT_MSG( ClientAdvanceNonRenderedFrame );
 
 GS_EVENT_MSG( FrameBoundary )
@@ -288,37 +314,16 @@ GS_EVENT_MSG( RestoreGame )
 	const CUtlVector< CEntityHandle > *m_pEntityList;
 };
 
-GS_EVENT_MSG( AppShutdown )
+GS_EVENT_MSG( NewLevelPlayerConnect )
 {
-	int m_nDummy0;
+	const CUtlString m_PreviousLevel;
 };
 
-GS_EVENT_MSG( PreDataUpdate )
+GS_EVENT_MSG( DemoSkip )
 {
-	int m_nCount;
-};
-
-GS_EVENT_MSG( PostDataUpdate )
-{
-	int m_nCount;
-};
-
-GS_EVENT_MSG( SetTime )
-{
-	EngineLoopState_t m_LoopState;
-	int m_nClientOutputFrames;
-	double m_flRealTime;
-	double m_flRenderTime;
-	double m_flRenderFrameTime;
-	double m_flRenderFrameTimeUnbounded;
-	double m_flRenderFrameTimeUnscaled;
-	double m_flTickRemainder;
-};
-
-GS_EVENT_MSG( SplitScreenStateChanged );
-GS_EVENT_MSG( ProfileStorageAvailable )
-{
-	CSplitScreenSlot m_nSplitScreenSlot;
+	int m_PlaybackTick;
+	int m_SkipToTick;
+	bool m_InstantReplay;
 };
 
 GS_EVENT_MSG( ServerPrePackEntities )
@@ -366,8 +371,9 @@ public:
 	GS_EVENT_IMPL( GameActivate )							// 8
 
 	GS_EVENT_IMPL( ClientFullySignedOn )					// 9
-	GS_EVENT_IMPL( Disconnect )								// 10
-	GS_EVENT_IMPL( SaveGameStart )							// 11
+	GS_EVENT_IMPL( ClientDisconnect )						// 10
+
+	GS_EVENT_IMPL( ClientRestoreServerState )				// 11
 
 	GS_EVENT_IMPL( GameDeactivate )							// 12
 
@@ -416,11 +422,10 @@ public:
 	GS_EVENT_IMPL( ServerPostAdvanceTick )					// 39
 	GS_EVENT_IMPL( ClientPostAdvanceTick )					// 40
 
-	virtual void unk_101( const void *const msg ) = 0;		// 41
-
-	GS_EVENT_IMPL( ServerBeginAsyncPostTickWork )			// 42
-	GS_EVENT_IMPL( ServerGameBeginAsyncPostTickWork )		// 43
-	GS_EVENT_IMPL( ServerEndAsyncPostTickWork )				// 44
+	GS_EVENT_IMPL( ServerBeginAsyncPostTickWork )			// 41
+	GS_EVENT_IMPL( ServerGameBeginAsyncPostTickWork )		// 42
+	GS_EVENT_IMPL( ServerPreEndAsyncPostTickWork )			// 43
+	GS_EVENT_IMPL( ServerPostEndAsyncPostTickWork )			// 44
 
 	GS_EVENT_IMPL( ClientFrameSimulate )					// 45
 	GS_EVENT_IMPL( ClientPauseSimulate )					// 46
@@ -432,12 +437,19 @@ public:
 	GS_EVENT_IMPL( SaveGame )								// 50
 	GS_EVENT_IMPL( RestoreGame )							// 51
 
-	GS_EVENT_IMPL( AppShutdown )							// 52
-	GS_EVENT_IMPL( PreDataUpdate )							// 53
-	GS_EVENT_IMPL( PostDataUpdate )							// 54
-	GS_EVENT_IMPL( SetTime )								// 55
-	GS_EVENT_IMPL( SplitScreenStateChanged )				// 56
-	GS_EVENT_IMPL( ProfileStorageAvailable )				// 57
+	// AMNOTE: Called only when gpGlobals->maxplayer == 1 on player_connect_full
+	GS_EVENT_IMPL( NewLevelPlayerConnect )					// 52
+
+	// AMNOTE: CSpawnGroupMgrGameSystem related, msg is a single int
+	virtual void unk_201( const void *const msg ) = 0;		// 53
+	virtual void unk_202( const void *const msg ) = 0;		// 54
+
+	// AMNOTE: Nothing dispatches or overrides these in CS2
+	virtual void unk_203( const void *const msg ) = 0;		// 55
+	virtual void unk_204( const void *const msg ) = 0;		// 56
+
+	// Same as to demo_skip event
+	GS_EVENT_IMPL( DemoSkip )								// 57
 
 	GS_EVENT_IMPL( ServerPrePackEntities )					// 58
 
@@ -476,8 +488,9 @@ public:
 	GS_EVENT( GameActivate ) {}
 
 	GS_EVENT( ClientFullySignedOn ) {}
-	GS_EVENT( Disconnect ) {}
-	GS_EVENT( SaveGameStart ) {}
+	GS_EVENT( ClientDisconnect ) {}
+
+	GS_EVENT( ClientRestoreServerState ) {}
 
 	GS_EVENT( GameDeactivate ) {}
 
@@ -527,11 +540,10 @@ public:
 	GS_EVENT( ServerPostAdvanceTick ) {}
 	GS_EVENT( ClientPostAdvanceTick ) {}
 
-	virtual void unk_101( const void *const msg ) override {}
-
 	GS_EVENT( ServerBeginAsyncPostTickWork ) {}
 	GS_EVENT( ServerGameBeginAsyncPostTickWork ) {}
-	GS_EVENT( ServerEndAsyncPostTickWork ) {}
+	GS_EVENT( ServerPreEndAsyncPostTickWork ) {}
+	GS_EVENT( ServerPostEndAsyncPostTickWork ) {}
 
 	GS_EVENT( ClientFrameSimulate ) {}
 	GS_EVENT( ClientPauseSimulate ) {}
@@ -543,12 +555,14 @@ public:
 	GS_EVENT( SaveGame ) {}
 	GS_EVENT( RestoreGame ) {}
 
-	GS_EVENT( AppShutdown ) {}
-	GS_EVENT( PreDataUpdate ) {}
-	GS_EVENT( PostDataUpdate ) {}
-	GS_EVENT( SetTime ) {}
-	GS_EVENT( SplitScreenStateChanged ) {}
-	GS_EVENT( ProfileStorageAvailable ) {}
+	GS_EVENT( NewLevelPlayerConnect ) {}
+
+	virtual void unk_201( const void *const msg ) override {}
+	virtual void unk_202( const void *const msg ) override {}
+	virtual void unk_203( const void *const msg ) override {}
+	virtual void unk_204( const void *const msg ) override {}
+
+	GS_EVENT( DemoSkip ) {}
 
 	GS_EVENT( ServerPrePackEntities ) {}
 
