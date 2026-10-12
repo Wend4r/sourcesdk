@@ -63,8 +63,10 @@ public:
 
 	virtual void AssociateNetMessageWithChannelCategoryAbstract( INetworkSerializerPB *pNetMessage, NetworkCategoryId nCategoryId, bool bCategoryMaskOverride = false ) = 0;
 
-	// Passing nMessasgeId as -1 would auto-assign the id even if bAutoAssignId is false based on the message name hash.
-	virtual INetworkSerializerPB *FindOrCreateNetMessage( NetworkMessageId nMessageId, const IProtobufBinding *pProtoBinding, uint nMessageSize, INetworkSerializerPB *pGloablNetMessageInternal = nullptr, bool bCreateIfNotFound = true, bool bAutoAssignId = false ) = 0;
+	// Passing nMessasgeId as -1 would auto-assign the id based on the message name hash.
+	// AMNOTE: bCannotBeNetworked marks the message as never sent over the network, Serialize rejects it,
+	// and its id is auto-assigned too
+	virtual INetworkSerializerPB *FindOrCreateNetMessage( NetworkMessageId nMessageId, const IProtobufBinding *pProtoBinding, uint nMessageSize, INetworkSerializerPB *pGloablNetMessageInternal = nullptr, bool bCreateIfNotFound = true, bool bCannotBeNetworked = false ) = 0;
 
 	virtual bool SerializeAbstract( bf_write &pBuf, const CNetMessage *pData ) = 0;
 
