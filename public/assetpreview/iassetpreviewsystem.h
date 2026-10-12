@@ -12,7 +12,9 @@
 
 #include "tier0/platform.h"
 #include "color.h"
+#include "tier1/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier3/tier3dm.h"
 
 class QWidget;
 class QPixmap;
@@ -102,6 +104,31 @@ public:
 	virtual bool GenerateThumbnails( void *pUnk1, int nUnk2, bool bUnk3 ) = 0;
 
 	virtual ~IAssetPreviewSystem() {}
+};
+
+class CAssetPreviewSystem : public CTier3DmAppSystem< IAssetPreviewSystem >
+{
+public:
+	CUtlVector< void * > m_vecUnk028;
+	CUtlVector< IAssetPreviewSettingsChangedListener * > m_vecUnk040;
+	uint8 m_unk058[ 0x28 ];
+
+	// Live preview state, including the "live_preview" setting and the "background_color" setting
+	uint8 m_unk080[ 0x70 ];
+
+	// Light rig controllers
+	void *m_pUnk0F0;
+	void *m_pUnk0F8;
+
+	bool m_bPreviewCameraLocked;
+	bool m_bPreviewMenuEnabled;
+	bool m_bPreviewAnimSliderEnabled;
+	bool m_bPreviewOverlayIconsEnabled;
+	bool m_bPreviewModelVertexFramingEnabled;
+
+	double m_flUnk108;
+	double m_flUnk110;
+	uint8 m_unk118[ 0x58 ];
 };
 
 #endif // IASSETPREVIEWSYSTEM_H
