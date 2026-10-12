@@ -1219,6 +1219,8 @@ protected:
 uint64 SanitiseConVarFlags( uint64 flags );
 void SetupConVar( ConVarRefAbstract *cvar, ConVarData **cvar_data, ConVarCreation_t &info );
 void DestroyConVar( ConVarRef *cvar );
+void SetupConCommand( ConCommand *cmd, const ConCommandCreation_t &info );
+void DetroyConCommand( ConCommand *cmd );
 
 template<typename T>
 class CConVarRef : public ConVarRefAbstract
