@@ -35,6 +35,8 @@ class CUtlSymbolLarge;
 class CGamestatsData;
 class CGameInfo;
 class CDemoSaveGame;
+class IAchievementMgr;
+class IVoiceTweak;
 struct SpawnGroupDesc_t;
 struct EngineLoopState_t;
 
@@ -44,6 +46,8 @@ struct EngineLoopState_t;
 abstract_class IVEngineClient2 : public ISource2Engine
 {
 public:
+	struct ServerTickTime_t;
+
 	virtual EUniverse GetSteamUniverse() const = 0;
 	virtual CPlayerSlot GetPlayerSlotByNetworkIDString( const char *pszNetworkID ) = 0;
 	virtual const char *GetPlayerNetworkIDString( CPlayerSlot nSlot ) = 0;
@@ -53,10 +57,10 @@ public:
 	virtual float &GetFrameTime() = 0;
 	virtual void SetFrameTimeAmnesty( const char *pszReason, int nFrames, float flDuration ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool bCheckCvar ) = 0;
-	virtual void unk027( const char *pszName, int nAmnesty, int nFrames, float flDuration ) = 0;
+	virtual void SetFramePerformanceTag( const char *pszTag, int nValue, int nFrames, float flDuration ) = 0;
 	virtual void PrintVProfLiteReport( void *pReport, bool bDetailed, int nLogChannel ) = 0;
 	virtual void DumpNetStats( void *pNetStatData, void ( *pfnOutput )( const char * ) ) = 0;
-	virtual bool unk030() = 0;
+	virtual bool ShouldForceMaxFrametimeToTickInterval() = 0;
 	virtual uint32 GetLongFrameCount() = 0;
 	virtual bool GetPlayerInfo( int nPlayerIndex, CMsgPlayerInfo *pInfo ) = 0;
 	virtual CPlayerUserId GetPlayerUserId( int nPlayerIndex ) = 0;
@@ -70,19 +74,20 @@ public:
 	virtual INetChannel *GetNetChannel( CSplitScreenSlot nSlot ) = 0;
 	virtual bool IsPlayingDemo() = 0;
 	virtual const char *GetDemoFilePath() = 0;
-	virtual const char *unk044() = 0;
+	// Host name from the server info of the demo being played back
+	virtual const char *GetDemoHostName() = 0;
 	virtual bool IsRecordingDemo() = 0;
 	virtual bool IsPlayingTimeDemo() = 0;
+	// True when the active loop was started with a "demofile" option
 	virtual bool unk047() = 0;
 	virtual bool IsPlayingBroadcast() = 0;
 	virtual void *GetBroadcastPlayer() = 0;
 	// Sends pszCmd to the server over the net channel of nSlot
 	virtual void ServerCmd( CSplitScreenSlot nSlot, const char *pszCmd ) = 0;
-	// Callers pass a fixed double and 0 for the last two arguments
-	virtual void ClientCommand( CSplitScreenSlot nSlot, const char *pszCmd, bool bUnrestricted, double flUnk, uint64 nUnk ) = 0;
+	virtual void ClientCommand( CSplitScreenSlot nSlot, const char *pszCmd, bool bUnrestricted, double flInputTime, uint64 nInputTimestamp ) = 0;
 	virtual void SetRestrictServerCommands( bool bRestrict ) = 0;
 	virtual void SetRestrictClientCommands( bool bRestrict ) = 0;
-	virtual bool unk054() = 0;
+	virtual bool IsLowViolence() = 0;
 	// Player slot the split screen service holds for nSlot
 	virtual CPlayerSlot unk055( CSplitScreenSlot nSlot ) = 0;
 	virtual bool IsSplitScreenActive() = 0;
@@ -91,15 +96,15 @@ public:
 	// Returns -1 when there is no further valid slot
 	virtual CSplitScreenSlot NextValidSplitScreenSlot( CSplitScreenSlot nPreviousSlot ) = 0;
 	// Always returns -1
-	virtual int unk060() = 0;
+	virtual int GetAvailableAsyncThread() = 0;
 	virtual void GetScreenSize( int &nWidth, int &nHeight ) = 0;
 	virtual bool IsLoadingLevel() = 0;
 	virtual void OnEngineLevelLoadingFinished() = 0;
 	virtual const char *GetLevelName() = 0;
 	virtual const char *GetLevelNameShort() = 0;
 	// Always returns NULL
-	virtual void *unk066() = 0;
-	virtual void *unk067() = 0;
+	virtual IVoiceTweak *GetVoiceTweakAPI() = 0;
+	virtual void CheckPoint( const char *pszName ) = 0;
 	virtual CMovieRecorder *GetMovieRecorder() = 0;
 	virtual IDemoPlayer *GetDemoPlayer() = 0;
 	virtual IDemoRecorder *GetDemoRecorder() = 0;
@@ -112,7 +117,8 @@ public:
 	virtual int GetDemoPlaybackTotalTicks() = 0;
 	virtual const char *GetDemoPlaybackFileName() = 0;
 	virtual void PlayDemo( const char *pszFilename ) = 0;
-	// Setter and getter of the same demo player flag
+	// Setter and getter of the same demo player flag; while it is set the demo console commands
+	// (demo_goto, demo_pause, demo_resume, ...) do nothing
 	virtual void unk080( bool bValue ) = 0;
 	virtual bool unk081() = 0;
 	virtual void PauseDemo() = 0;
@@ -130,12 +136,12 @@ public:
 	// steam.inf VersionDate and VersionTime
 	virtual const char *GetVersionDateString() = 0;
 	virtual const char *GetVersionTimeString() = 0;
-	virtual int unk093() = 0;
+	virtual int GetConnectedServerNetworkVersion() = 0;
 	virtual uint32 GetAppID() = 0;
 	// Loads the "user_keys" key bindings config of nSlot
 	virtual bool ReadKeyBindings( CSplitScreenSlot nSlot ) = 0;
-	virtual void unk096( void *p ) = 0;
-	virtual void *unk097() = 0;
+	virtual void SetAchievementMgr( IAchievementMgr *pAchievementMgr ) = 0;
+	virtual IAchievementMgr *GetAchievementMgr() = 0;
 	virtual CSplitScreenSlot GetActiveSplitScreenPlayerSlot() = 0;
 	virtual CSplitScreenSlot SetActiveSplitScreenPlayerSlot( CSplitScreenSlot nSlot ) = 0;
 	// Thread-local flag; returns the previous value
@@ -157,7 +163,8 @@ public:
 	virtual int GetBugSubmissionCount() = 0;
 	virtual void ClearBugSubmissionCount() = 0;
 	virtual float GetServerSimulationFrameTime() = 0;
-	virtual uint64 unk116( uint64 nFirstFrame, void *pOut ) = 0;
+	// Returns the newest frame number
+	virtual uint64 GetServerTickTimes( uint64 nFirstFrame, CUtlVector< ServerTickTime_t > &vecTickTimes ) = 0;
 	virtual bool IsInLevelLoadLoop() = 0;
 	virtual void SetConnectionPassword( const char *pszPassword ) = 0;
 	virtual void ServerCmdKeyValues( KeyValues *pKeyValues ) = 0;
