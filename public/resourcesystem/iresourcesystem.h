@@ -69,8 +69,8 @@ public:
 	virtual ResourceStatus_t GetResourceStatus( CResourceString &pResourceName ) = 0;
 	virtual ResourceStatus_t GetResourceStatus( ResourceId_t nResourceId ) = 0;
 	virtual ResourceStatus_t GetResourceStatus( ResourceHandle_t pResourceHdl ) = 0;
-	virtual void RegisterForcedSynchronizationCallback( void *pCallback, void *pParam ) = 0;
-	virtual void UnregisterForcedSynchronizationCallback( void *pCallback, void *pParam ) = 0;
+	virtual void RegisterForcedSynchronizationCallback( void ( *pfnCallback )( void *pParam ), void *pParam ) = 0;
+	virtual void UnregisterForcedSynchronizationCallback( void ( *pfnCallback )( void *pParam ), void *pParam ) = 0;
 	virtual void GetResourcesNamesInManifest( HGameResourceManifest pGameResourceManifest, CUtlVector< CUtlString > &pVector ) = 0;
 	virtual void GetAllResourcesInManifestTree( HGameResourceManifest pGameResourceManifest, CUtlVector< ResourceHandle_t > &pVector ) = 0;
 	virtual void AddResourceListeners( void *pListener ) = 0;
