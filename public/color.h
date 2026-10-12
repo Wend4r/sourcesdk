@@ -115,4 +115,10 @@ public:
 	}
 };
 
+// FIXME: why are these here?  Hardly anyone actually needs them.
+struct color24
+{
+	byte r, g, b;
+};
+
 #endif // COLOR_H
