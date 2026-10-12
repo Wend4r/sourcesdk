@@ -54,6 +54,7 @@ class IFnPhysicsWorld;
 struct RnSphere_t;
 struct RnCapsule_t;
 struct RnHull_t;
+struct RnPlane_t;
 struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
@@ -179,7 +180,7 @@ public:
 #endif
 
 	virtual RnHull_t *CreateRuntimeHull( int nPointCount, const Vector *pPoints ) = 0;
-	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const void *pPlanes, float flUnknown, const Vector &vUnknown ) = 0;
+	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const RnPlane_t *pPlanes, float flUnknown, const Vector &vUnknown ) = 0;
 
 	virtual RnHull_t *CreateRandomHull( int nPointCount, float flRadius, float flUnknown ) = 0;
 
