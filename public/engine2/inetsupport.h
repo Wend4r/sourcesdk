@@ -85,5 +85,9 @@ public:
 
 #define INETSUPPORT_VERSION_STRING "INETSUPPORT_001"
 
+class CNetSupportImpl : public CBaseAppSystem< INetSupport >
+{
+};
+
 
 #endif // INETSUPPORT_H
