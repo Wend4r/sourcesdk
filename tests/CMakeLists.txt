@@ -124,6 +124,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	minidump.cpp
 	refcount.cpp
 	stringpool.cpp
+	strtools.cpp
 	tslist.cpp
 	utlarray.cpp
 	utlbinaryblock.cpp
