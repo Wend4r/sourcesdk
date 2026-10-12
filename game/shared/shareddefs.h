@@ -591,14 +591,6 @@ enum
 	VGUI_SCREEN_MAX_BITS = 5
 };
 
-typedef enum
-{
-	USE_OFF = 0, 
-	USE_ON = 1, 
-	USE_SET = 2, 
-	USE_TOGGLE = 3
-} USE_TYPE;
-
 // basic team colors
 #define COLOR_RED		Color(255, 64, 64, 255)
 #define COLOR_BLUE		Color(153, 204, 255, 255)
@@ -869,6 +861,7 @@ struct ModelScale
 
 #include "soundflags.h"
 #include "entity2/entityindex.h"
+#include "entity2/entityclass.h"
 
 struct CSoundParameters;
 
