@@ -19,6 +19,9 @@
 
 #include "schemacompiler/schemaon.h"
 
+class CKV3TransferLoadContext;
+class CKV3TransferSaveContext;
+
 //-----------------------------------------------------------------------------
 // One step from an area to a neighbour: the neighbour, how it is reached (NavTraverseType),
 // through which edge, and the ladder for ladder steps.
@@ -46,8 +49,8 @@ schema abstract_class INavPathCost
 public:
 	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
-	virtual void Unk_1( void *p ) = 0;
-	virtual void Unk_2( void *p ) = 0;
+	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
+	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
 	virtual const char *Unk_GetClassName() const = 0;
 	virtual ~INavPathCost() {}
 	virtual void Unk_5( void *p ) = 0;
