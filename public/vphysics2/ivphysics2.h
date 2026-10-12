@@ -164,8 +164,8 @@ public:
 
 	// Convex hull geometry. A NULL pDestHull allocates a new hull
 	virtual RnHull_t *CreateBoxHull( const Vector &vCenter, const Vector &vHalfExtents, RnHull_t *pDestHull ) = 0;
-	virtual RnHull_t *CreateConeHull( const Vector &vStart, const Vector &vEnd, float flRadius, void *pUnknown ) = 0;
-	virtual RnHull_t *CreateCylinderHull( const Vector &vStart, const Vector &vEnd, float flRadius, void *pUnknown ) = 0;
+	virtual RnHull_t *CreateConeHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pDestHull ) = 0;
+	virtual RnHull_t *CreateCylinderHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pDestHull ) = 0;
 
 #ifdef _WIN32
 	virtual void Unk_CreateHullFromStream( void *p ) = 0;
