@@ -16,7 +16,9 @@
 abstract_class INavGameTest : public IAppSystem
 {
 public:
-	virtual void unk011( void *p ) = 0;
+	// Runs the simple ground, simple air to air and mesh space transition pathfinding tests in that
+	// order and stops at the first group that fails; true when all of them pass.
+	virtual bool Unk_RunPathfindTests() = 0;
 };
 
 #endif // INAVGAMETEST_H
