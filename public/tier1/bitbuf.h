@@ -612,6 +612,9 @@ private:
 
 	// For debugging..
 	bool			m_bAssertOnOverflow;
+
+	// AMNOTE: Set when nBytes is a multiple of 4, reads near the end of the buffer go byte by byte otherwise
+	bool			m_bCanReadDwords;
 };
 
 //-----------------------------------------------------------------------------
@@ -727,8 +730,29 @@ inline unsigned int old_bf_read::ReadUBitLong( int numbits )
 
 	Assert( numbits > 0 && numbits <= 32 );
 
-	// Read the current dword.
 	int idword1 = m_iCurBit >> 5;
+
+	if ( !m_bCanReadDwords && ( ( m_iCurBit + numbits - 1 ) >> 5 ) * 4 + 3 >= m_nDataBytes )
+	{
+		unsigned int ret = 0;
+		int nShift = 0;
+
+		for ( ; numbits >= 8; numbits -= 8, nShift += 8 )
+		{
+			unsigned int iByteBit = m_iCurBit & 7;
+			unsigned int nByte = ( m_pData[ m_iCurBit >> 3 ] >> iByteBit ) | ( uint8 )( m_pData[ ( m_iCurBit + 7 ) >> 3 ] << ( 8 - iByteBit ) );
+
+			ret |= nByte << nShift;
+			m_iCurBit += 8;
+		}
+
+		for ( int i = 0; i < numbits; i++ )
+			ret |= ReadOneBitNoCheck() << ( nShift + i );
+
+		return ret;
+	}
+
+	// Read the current dword.
 	unsigned int dword1 = LoadLittleDWord( (uint32*)m_pData, idword1 );
 
 	dword1 >>= (m_iCurBit & 31); // Get the bits we're interested in.

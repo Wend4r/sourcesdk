@@ -926,6 +926,7 @@ old_bf_read::old_bf_read()
 	m_iCurBit = 0;
 	m_bOverflow = false;
 	m_bAssertOnOverflow = true;
+	m_bCanReadDwords = false;
 	m_pDebugName = NULL;
 }
 
@@ -962,6 +963,7 @@ void old_bf_read::StartReading( const void *pData, int nBytes, int iStartBit, in
 
 	m_iCurBit = iStartBit;
 	m_bOverflow = false;
+	m_bCanReadDwords = ( nBytes % 4 ) == 0;
 }
 
 void old_bf_read::Reset()
