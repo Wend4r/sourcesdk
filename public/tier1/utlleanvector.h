@@ -154,7 +154,7 @@ void CUtlLeanVectorBase<T, I, A>::SetExternalBuffer( T* pMemory, I nElements )
 	m_pElements = pMemory;
 
 	// Indicate that we don't own the memory
-	m_nAllocated = 0;
+	m_nAllocated = nElements;
 	m_bExternal = true;
 }
 

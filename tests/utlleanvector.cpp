@@ -235,6 +235,35 @@ REGISTER_NAMED_TEST( "CUtlLeanVector.ExternalRemoveAllKeepsContents", CUtlLeanVe
 		TEST_EQ( c, 'A' );
 }
 
+REGISTER_NAMED_TEST( "CUtlLeanVector.SetExternalBuffer", CUtlLeanVector_SetExternalBuffer )
+{
+	// An external buffer is used in place until the vector outgrows it, and is never freed.
+	int buffer[ 4 ] = { 1, 2, 3, 4 };
+	CUtlLeanVector< int > vec;
+
+	vec.SetExternalBuffer( buffer, 4 );
+
+	TEST_TRUE( vec.IsExternallyAllocated() );
+	TEST_EQ( vec.Base(), &buffer[ 0 ] );
+	TEST_EQ( vec.Count(), 4 );
+	TEST_EQ( vec[ 2 ], 3 );
+
+	vec[ 0 ] = 10;
+	TEST_EQ( buffer[ 0 ], 10 );
+
+	vec.AddToTail( 5 );
+
+	TEST_FALSE( vec.IsExternallyAllocated() );
+	TEST_NE( vec.Base(), &buffer[ 0 ] );
+	TEST_EQ( vec.Count(), 5 );
+	TEST_EQ( vec[ 0 ], 10 );
+	TEST_EQ( vec[ 3 ], 4 );
+	TEST_EQ( vec[ 4 ], 5 );
+
+	vec.Purge();
+	TEST_EQ( vec.Count(), 0 );
+}
+
 REGISTER_NAMED_TEST( "CUtlLeanVector.UnsignedIndex", CUtlLeanVector_UnsignedIndex )
 {
 	// An unsigned index type should insert like a signed one, the capacity is capped at its signed maximum.

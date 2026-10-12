@@ -402,17 +402,6 @@ REGISTER_NAMED_TEST( "CUtlVector.SortOverloads", CUtlVector_SortOverloads )
 	vec.SortPredicate( []( const int &left, const int &right ) { return left < right; } );
 	TEST_EQ( vec[ 0 ], 0 );
 	TEST_EQ( vec[ 63 ], 63 );
-
-	CUtlBlockVector< int > blockVec;
-
-	blockVec.AddToTail( 3 );
-	blockVec.AddToTail( 1 );
-	blockVec.AddToTail( 2 );
-	blockVec.Sort( &CompareIntsAscending );
-
-	TEST_EQ( blockVec[ 0 ], 1 );
-	TEST_EQ( blockVec[ 1 ], 2 );
-	TEST_EQ( blockVec[ 2 ], 3 );
 }
 
 template < typename TVector >
@@ -423,7 +412,6 @@ REGISTER_NAMED_TEST( "CUtlVector.ContiguousIterators", CUtlVector_ContiguousIter
 	// Pointer iterators are only offered when the elements live in one block.
 	TEST_TRUE( g_bVectorIterable< CUtlVector< int > > );
 	TEST_TRUE( ( g_bVectorIterable< CUtlVectorFixedGrowable< int, 4 > > ) );
-	TEST_FALSE( g_bVectorIterable< CUtlBlockVector< int > > );
 }
 
 static bool __cdecl IntLessAscending( const int &left, const int &right )

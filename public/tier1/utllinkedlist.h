@@ -17,7 +17,7 @@
 #include "utlleanvector.h"
 #include "utlfixedmemory.h"
 #include "utlleanvector.h"
-#include "utlblockmemory.h"
+#include "tier0/utlblockvector.h"
 #include "utliterator.h"
 #include "tier0/dbg.h"
 
@@ -44,9 +44,14 @@
 template <class T, class I> 
 struct UtlLinkedListElem_t
 {
+	// The list constructs and destructs m_Element itself, so the storage only manages the links
 	UtlLinkedListElem_t() {}
+	~UtlLinkedListElem_t() {}
 
-	T  m_Element;
+	union
+	{
+		T  m_Element;
+	};
 	I  m_Previous;
 	I  m_Next;
 
@@ -201,11 +206,11 @@ private:
 
 // this is kind of ugly, but until C++ gets templatized typedefs in C++0x, it's our only choice
 template < class T, class I = unsigned short >
-class CUtlBlockLinkedList : public CUtlLinkedList< T, I, true, I, CUtlBlockMemory< UtlLinkedListElem_t< T, I >, I > >
+class CUtlBlockLinkedList : public CUtlLinkedList< T, I, true, I, CUtlBlockVector< UtlLinkedListElem_t< T, I >, I > >
 {
 public:
 	CUtlBlockLinkedList( int growSize = 0, int initSize = 0 )
-		: CUtlLinkedList< T, I, true, I, CUtlBlockMemory< UtlLinkedListElem_t< T, I >, I > >( growSize, initSize ) {}
+		: CUtlLinkedList< T, I, true, I, CUtlBlockVector< UtlLinkedListElem_t< T, I >, I > >( growSize, initSize ) {}
 };
 
 
