@@ -684,7 +684,7 @@ struct CKV3TransferValHelper< CEntityHandle >
 	}
 };
 
-// WorldGroupId_t is a CUtlStringToken, so it has functions instead of a value helper.
+// WorldGroupId_t is transferred through its own interfaces, so it has functions instead of a value helper.
 // The invalid id saves null and loads from null.
 inline void KV3Transfer_SaveWorldGroupId( CKV3TransferSaveContext *pContext, KeyValues3 *pSaveToValue, const WorldGroupId_t &value )
 {
