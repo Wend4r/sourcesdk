@@ -14,8 +14,8 @@
 #include "datamodel/dmelement.h"
 #include "datamodel/dmattribute.h"
 #include "datamodel/dmattributevar.h"
-#include "tier1/utlvector.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlsymbollarge.h"
 
 
 //-----------------------------------------------------------------------------

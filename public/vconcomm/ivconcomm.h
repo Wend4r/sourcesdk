@@ -13,7 +13,7 @@
 #include "tier0/platform.h"
 #include "tier0/platwindow.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/utlleanvector.h"
 #include "appframework/iappsystem.h"
 
 class KeyValues;

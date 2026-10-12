@@ -92,6 +92,6 @@ void Test()
 #endif // UTLDELEGATE_USAGE_DEMONSTRATION
 
 // Looking in this file may cause blindness.
-#include "tier1/utldelegateimpl.h"
+#include "tier0/utldelegateimpl.h"
 
 #endif // UTLDELEGATE_H

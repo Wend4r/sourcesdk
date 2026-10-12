@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/generichash.h>
+#include <tier0/generichash.h>
 
 #include <cstring>
 

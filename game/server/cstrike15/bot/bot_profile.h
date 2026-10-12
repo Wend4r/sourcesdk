@@ -13,8 +13,8 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier1/utlvector.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/utlvector.h"
+#include "tier0/utllinkedlist.h"
 
 enum BotDifficultyType
 {

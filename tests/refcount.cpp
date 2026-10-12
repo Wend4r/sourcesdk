@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/refcount.h>
+#include <tier0/refcount.h>
 
 class CRefCountTestBase1 {};
 class CRefCountTestBase2 {};

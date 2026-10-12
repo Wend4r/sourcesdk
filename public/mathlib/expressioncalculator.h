@@ -7,8 +7,8 @@
 #endif
 
 #include "tier0/utlstring.h"
-#include "tier1/utlstack.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlstack.h"
+#include "tier0/utlvector.h"
 
 
 //-----------------------------------------------------------------------------

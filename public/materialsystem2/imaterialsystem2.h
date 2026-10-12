@@ -8,12 +8,12 @@
 #include "imaterial2.h"
 
 #include <appframework/iappsystem.h>
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 #include <resourcefile/resourcetype.h>
 
 #include <tier0/platform.h>
 #include <tier0/utlstringtoken.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlvector.h>
 
 class KeyValues3;
 class IRenderContext;

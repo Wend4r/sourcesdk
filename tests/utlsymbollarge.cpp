@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlsymbollarge.h>
+#include <tier0/utlsymbollarge.h>
 
 REGISTER_NAMED_TEST( "CUtlSymbolTableLarge.AddFind", CUtlSymbolTableLarge_AddFind )
 {

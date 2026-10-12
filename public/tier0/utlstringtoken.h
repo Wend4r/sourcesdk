@@ -16,7 +16,7 @@
 #include <limits.h>
 #include <string.h>
 #include "bufferstring.h"
-#include "tier1/generichash.h"
+#include "tier0/generichash.h"
 
 #define DEBUG_STRINGTOKENS 0
 #define STRINGTOKEN_MURMURHASH_SEED 0x31415926

@@ -13,7 +13,7 @@
 #include <appframework/iappsystem.h>
 #include <mathlib/mathlib.h>
 #include <mathlib/transform.h>
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 #include <tier0/utlstringtoken.h>
 
 class CSceneObject;

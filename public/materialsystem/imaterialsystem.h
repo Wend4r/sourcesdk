@@ -19,7 +19,7 @@
 #define TEXGAMMA 2.2f
 
 #include "tier0/interface.h"
-#include "tier1/refcount.h"
+#include "tier0/refcount.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector4d.h"
 #include "mathlib/vmatrix.h"
@@ -1838,8 +1838,8 @@ private:
 //-----------------------------------------------------------------------------
 
 #ifdef MATERIAL_SYSTEM_DEBUG_CALL_QUEUE
-#include "tier1/callqueue.h"
-#include "tier1/fmtstr.h"
+#include "tier0/callqueue.h"
+#include "tier0/fmtstr.h"
 static void DoMatSysQueueMark( IMaterialSystem *pMaterialSystem, const char *psz )
 {
 	CMatRenderContextPtr pRenderContext( pMaterialSystem );

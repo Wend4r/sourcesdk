@@ -14,8 +14,8 @@
 
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
-#include "resourcefile/resourcehandle.h"
-#include "tier1/utlvector.h"
+#include "resourcesystem/resourcehandle.h"
+#include "tier0/utlvector.h"
 
 class CBasePulseGraphInstance;
 class CPulseArgumentPack;

@@ -18,7 +18,7 @@
 #include <string.h>
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
-#include "tier1/utlsoacontainer.h"
+#include "tier0/utlsoacontainer.h"
 #include "mathlib/ssemath.h"
 
 class CSIMDVectorMatrix

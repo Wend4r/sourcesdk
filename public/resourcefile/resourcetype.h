@@ -8,8 +8,8 @@
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
 #include <tier0/bufferstring.h>
-#include <tier1/utlsymbollarge.h>
-#include <tier1/generichash.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/generichash.h>
 #include <schemasystem/schemametatag.h>
 
 #include <initializer_list>

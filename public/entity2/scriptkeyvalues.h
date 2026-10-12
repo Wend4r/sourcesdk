@@ -5,7 +5,7 @@
 #pragma once
 #endif
 
-#include "variant.h"
+#include "entity2/variant.h"
 
 class CEntityKeyValues;
 class KeyValues3;

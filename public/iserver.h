@@ -14,7 +14,7 @@
 #include <engine/IEngineService.h>
 #include <engine/precache.h>
 #include <framesnapshot.h>
-#include <icvar.h>
+#include <tier0/icvar.h>
 #include <iloopmode.h>
 #include <inetmsghandler.h>
 #include <netadr.h>

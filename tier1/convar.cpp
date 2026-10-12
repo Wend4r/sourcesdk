@@ -14,10 +14,10 @@
 #include "tier0/characterset.h"
 #include "tier0/strtools.h"
 #include "tier0/utlbuffer.h"
-#include "tier1/convar.h"
-#include "tier1/utlvector.h"
+#include "tier0/convar.h"
+#include "tier0/utlvector.h"
 #include "tier1/tier1.h"
-#include "icvar.h"
+#include "tier0/icvar.h"
 #include "tier0/dbg.h"
 #include "color.h"
 #if defined( _X360 )

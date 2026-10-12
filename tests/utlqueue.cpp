@@ -2,7 +2,7 @@
 #include "common/macros.h"
 
 #include <tier1/utlvectormemory.h>
-#include <tier1/utlqueue.h>
+#include <tier0/utlqueue.h>
 #include <tier0/utlstring.h>
 
 #include <type_traits>

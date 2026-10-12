@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include "isource2clientconfig.h"
+#include "engine2/isource2clientconfig.h"
 #include "eiface.h"
 
 class KeyValues;

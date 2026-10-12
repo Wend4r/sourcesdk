@@ -10,8 +10,8 @@
 #include "tier0/threadtools.h"
 #include "tier0/strtools.h"
 #include "tier0/utlstring.h"
-#include "tier1/generichash.h"
-#include "tier1/utlmap.h"
+#include "tier0/generichash.h"
+#include "tier0/utlmap.h"
 
 class ISchemaSystemTypeScope;
 class CSchemaSystemTypeScope;

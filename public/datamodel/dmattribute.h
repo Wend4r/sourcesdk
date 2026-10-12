@@ -14,7 +14,7 @@
 #include "datamodel/idatamodel.h"
 #include "datamodel/dmattributetypes.h"
 #include "datamodel/dmvar.h"
-#include "tier1/utlhash.h"
+#include "tier0/utlhash.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations

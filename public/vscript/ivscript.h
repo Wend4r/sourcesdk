@@ -99,7 +99,7 @@
 #include "tier0/logging.h"
 #include "datamap.h"
 #include "appframework/iappsystem.h"
-#include "tier1/functors.h"
+#include "tier0/functors.h"
 #include "schemasystem/schemametatag.h"
 #include "tier0/memdbgon.h"
 
@@ -170,7 +170,7 @@ DECLARE_POINTER_HANDLE( HSCRIPT );
 // 
 //-----------------------------------------------------------------------------
 
-#include "variant.h"
+#include "entity2/variant.h"
 
 typedef fieldtype_t ScriptDataType_t;
 typedef CVariant ScriptVariant_t;

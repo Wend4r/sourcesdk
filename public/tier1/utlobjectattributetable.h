@@ -8,8 +8,8 @@
 #include "tier0/dbg.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlmap.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlsymbollarge.h"
 
 #define FOR_EACH_ATTRIBUTES( attributes, iteratorName ) \
 	for ( auto iteratorName = ( attributes ).First(); ( iteratorName ).IsValidIndex( iter ); ( iteratorName ) = ( attributes ).Next( iter ) )

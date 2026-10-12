@@ -19,10 +19,10 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlbuffer.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlhashtable.h"
-#include "tier1/utlrbtree.h"
-#include "tier1/utlvector.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/utlrbtree.h"
+#include "tier0/utlvector.h"
+#include "tier0/utllinkedlist.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations

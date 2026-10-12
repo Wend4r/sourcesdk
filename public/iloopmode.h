@@ -11,8 +11,8 @@
 #endif
 
 #include <appframework/iappsystem.h>
-#include <engine/eventdispatcher.h>
-#include <inputsystem/InputEnums.h>
+#include <tier0/eventdispatcher.h>
+#include <inputsystem/inputenums.h>
 #include <keyvalues.h>
 #include <splitscreenslot.h>
 #include <netmessages.pb.h>

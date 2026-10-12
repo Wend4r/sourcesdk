@@ -8,8 +8,8 @@
 #include <globalvars_base.h>
 
 #include <tier0/platform.h>
-#include <tier1/utlleanvector.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlleanvector.h>
+#include <tier0/utlvector.h>
 
 class CEntityInstance;
 // CPrediction lives in the client module, so this is the client command layout.

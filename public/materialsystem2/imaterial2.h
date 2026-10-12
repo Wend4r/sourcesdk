@@ -5,13 +5,13 @@
 	#pragma once
 #endif
 
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 #include <resourcefile/resourcetype.h>
 
 #include <mathlib/vector4d.h>
 #include <tier0/platform.h>
-#include <tier1/utlsymbollarge.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/utlvector.h>
 
 //-----------------------------------------------------------------------------
 // A single shader parameter of a material. Textures are stored as a resource

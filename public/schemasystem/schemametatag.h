@@ -11,7 +11,7 @@
 #include "schemasystem/schematypes.h"
 #include "tier0/dbg.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 enum SchemaMetaTagLocation_t
 {

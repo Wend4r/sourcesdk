@@ -11,7 +11,7 @@
 #endif
 
 #include <appframework/iappsystem.h>
-#include <inputsystem/InputEnums.h>
+#include <inputsystem/inputenums.h>
 #include <iloopmode.h>
 #include <localize/ilocalize.h>
 

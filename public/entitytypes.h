@@ -6,7 +6,7 @@
 #endif
 
 #include "tier0/basetypes.h"
-#include "tier1/smartptr.h"
+#include "tier0/smartptr.h"
 
 class CEntityInstance;
 

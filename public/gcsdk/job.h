@@ -13,9 +13,9 @@
 
 #include "tier0/memdbgon.h"
 #include "tier0/fasttimer.h"
-#include "tier1/functors.h"
-#include "tier1/utllinkedlist.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/functors.h"
+#include "tier0/utllinkedlist.h"
+#include "tier0/utlleanvector.h"
 #include "vstdlib/coroutine.h"
 #include "msgbase.h"
 #include "msgprotobuf.h"

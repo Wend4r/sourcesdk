@@ -15,7 +15,7 @@
 #include "mathlib/vector.h"
 #endif
 
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 #include "tier0/memdbgon.h"
 

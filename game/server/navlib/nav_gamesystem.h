@@ -12,7 +12,7 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier1/utlmap.h"
+#include "tier0/utlmap.h"
 #include "igamesystem.h"
 #include "spawngrouptypes.h"
 #include "nav_mesh.h"

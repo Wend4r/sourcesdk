@@ -11,9 +11,9 @@
 
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
-#include "tier1/smartptr.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/smartptr.h"
 #include "../networkvar.h"
 #include "entityhandle.h"
 #include "utldelegateimpl.h"

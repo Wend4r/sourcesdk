@@ -16,7 +16,7 @@
 #include "interface.h"
 #include "materialsystem/imaterialsystem.h"
 #include "const.h"
-#include "tier1/refcount.h"
+#include "tier0/refcount.h"
 
 
 //-----------------------------------------------------------------------------

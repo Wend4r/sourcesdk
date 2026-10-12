@@ -7,7 +7,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
-#include "tier1/lzss.h"
+#include "tier0/lzss.h"
 #include "tier0/utlbuffer.h"
 
 #define LZSS_LOOKSHIFT		4

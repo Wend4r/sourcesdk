@@ -8,7 +8,7 @@
 #include "rubikon/serialize.h"
 #include "mathlib/ssequaternion.h"
 #include "rubikon/param_types.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 template <typename TInt >
 inline void RemapNode( TInt &refNode, const CUtlVector< int > &remap )

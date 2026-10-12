@@ -12,7 +12,7 @@
 #endif
 
 #include <engine/IEngineService.h>
-#include <engine/inetworkclientservice.h>
+#include <engine2/inetworkclientservice.h>
 #include <playerslot.h>
 #include <ns_address.h>
 

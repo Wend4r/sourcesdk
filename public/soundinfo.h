@@ -13,7 +13,7 @@
 
 #include "bitbuf.h"
 #include "const.h"
-#include "soundflags.h"
+#include "soundsystem/soundflags.h"
 #include "coordsize.h"
 #include "mathlib/vector.h"
 

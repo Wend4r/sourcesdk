@@ -15,7 +15,7 @@
 #include "serversideclient.h"
 #include "iserver.h"
 #include "const.h"
-#include "bitvec.h"
+#include "tier0/bitvec.h"
 
 class CBasePlayer;
 class CTeam;

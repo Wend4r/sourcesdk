@@ -12,9 +12,9 @@
 
 #include "tier0/platform.h"
 #include "tier0/platwindow.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 #include "appframework/iappsystem.h"
-#include "inputsystem/InputEnums.h"
+#include "inputsystem/inputenums.h"
 
 namespace panorama
 {

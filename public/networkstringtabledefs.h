@@ -14,7 +14,7 @@
 #include "appframework/iappsystem.h"
 #include "utlstring.h"
 #include "tier1/utldelegate.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 typedef int TABLEID;
 

@@ -12,7 +12,7 @@
 
 #include <stdlib.h> // qsort
 #include "tier0/platform.h"
-#include "tier1/utlstack.h"
+#include "tier0/utlstack.h"
 
 //
 // An interval tree is a tree of "segments" or "intervals" of type T which can be searched for overlaps with another interval.

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "tier1/utlvector.h"
-#include "tier1/utldelegateimpl.h"
+#include "tier0/utlvector.h"
+#include "tier0/utldelegateimpl.h"
 #include "entity2/entityidentity.h"
 #include "entity2/entityinstance.h"
 #include "entity2/entitynetwork.h"

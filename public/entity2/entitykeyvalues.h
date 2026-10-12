@@ -6,7 +6,7 @@
 
 #include "tier0/platform.h"
 #include "kv3lib/keyvalues3.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/utlleanvector.h"
 #include "entity2/entitysystem.h"
 
 #include "tier0/memdbgon.h"

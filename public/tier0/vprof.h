@@ -12,7 +12,7 @@
 #include "tier0/fasttimer.h"
 #include "tier0/l2cache.h"
 #include "tier0/threadtools.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 // VProf is enabled by default in all configurations -except- X360 Retail.
 #if !( defined( _X360 ) && defined( _CERT ) )
@@ -762,7 +762,7 @@ private:
 
 #include "xbox/xbox_console.h"
 #include "tracerecording.h"
-#include  "tier1/fmtstr.h"
+#include  "tier0/fmtstr.h"
 #pragma comment( lib, "tracerecording.lib" )
 #pragma comment( lib, "xbdm.lib" )
 

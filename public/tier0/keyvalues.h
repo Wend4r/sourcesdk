@@ -20,7 +20,7 @@
 #endif
 #endif
 
-#include <tier1/IKeyValuesSystem.h>
+#include <tier0/ikeyvaluessystem.h>
 
 #include "platform.h"
 #include "utlvector.h"

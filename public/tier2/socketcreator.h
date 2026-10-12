@@ -12,8 +12,8 @@
 
 #include "tier0/netadr.h"
 #include "tier0/utlbuffer.h"
-#include "tier1/utlvector.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/utlvector.h"
+#include "tier0/utllinkedlist.h"
 #include "igameserverdata.h"
 
 typedef int SocketHandle_t;

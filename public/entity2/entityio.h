@@ -5,7 +5,7 @@
 
 #include "datamap.h"
 #include "string_t.h"
-#include "variant.h"
+#include "entity2/variant.h"
 #include "tier0/bufferstring.h"
 #include "tier1/keyvalues3.h"
 #include "kv3lib/kv3transfer_constants.h"
@@ -15,7 +15,7 @@
 #include "entitytypes.h"
 #include "spawngrouptypes.h"
 #include "tier0/threadtools.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlsymbollarge.h"
 
 #define ENTITY_INVLAID_OUTPUT_OFFSET ( ~0 )
 

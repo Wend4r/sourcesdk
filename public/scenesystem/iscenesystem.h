@@ -13,7 +13,7 @@
 #include <appframework/iappsystem.h>
 #include <materialsystem2/imaterial2.h>
 #include <mathlib/vector.h>
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 
 class CSceneObject;
 class CSceneLightObject;

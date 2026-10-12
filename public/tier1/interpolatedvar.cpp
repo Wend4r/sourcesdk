@@ -6,7 +6,7 @@
 
 #include "cbase.h"
 
-#include "tier1/interpolatedvar.h"
+#include "tier0/interpolatedvar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

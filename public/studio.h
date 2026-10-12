@@ -25,7 +25,7 @@
 #include "utlhash.h"
 #include "datamap.h"
 #include "generichash.h"
-#include "localflexcontroller.h"
+#include "modellib/localflexcontroller.h"
 #include "utlsymbol.h"
 
 

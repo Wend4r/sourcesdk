@@ -11,7 +11,7 @@
 #endif
 
 #include <appframework/iappsystem.h>
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 
 class IParticleSystemDefinition;
 

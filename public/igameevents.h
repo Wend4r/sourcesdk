@@ -18,8 +18,8 @@
 
 #include "interfaces/interfaces.h"
 #include "tier0/utlstring.h"
-#include "tier1/bitbuf.h"
-#include "tier1/generichash.h"
+#include "tier0/bitbuf.h"
+#include "tier0/generichash.h"
 #include "kv3lib/keyvalues3.h"
 #include "entity2/entityinstance.h"
 #include "vscript/ivscript.h"

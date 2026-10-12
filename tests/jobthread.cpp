@@ -1,9 +1,9 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/callqueue.h>
-#include <tier1/functors.h>
-#include <tier1/jobthread.h>
+#include <tier0/callqueue.h>
+#include <tier0/functors.h>
+#include <tier0/jobthread.h>
 #include <threadedjob.h>
 
 struct JobItem_t

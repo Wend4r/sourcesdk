@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/UtlSortVector.h>
+#include <tier0/utlsortvector.h>
 
 #include <type_traits>
 

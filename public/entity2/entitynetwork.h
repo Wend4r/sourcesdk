@@ -5,9 +5,9 @@
 #pragma once
 #endif
 
-#include "tier1/utlleanvector.h"
-#include "tier1/utlmap.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlleanvector.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlvector.h"
 #include "tier0/threadtools.h"
 #include "kv3lib/kv3transfer_constants.h"
 #include "entityidentity.h"

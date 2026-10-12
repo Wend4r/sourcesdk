@@ -23,14 +23,14 @@ class IMatRenderContext;
 #endif
 
 #include "dmxloader/dmxelement.h"
-#include "tier1/utlintrusivelist.h"
-#include "tier1/random.h"
+#include "tier0/utlintrusivelist.h"
+#include "tier0/random.h"
 #include "tier1/utlobjectreference.h"
-#include "tier1/utlstringmap.h"
-#include "tier1/utlmap.h"
+#include "tier0/utlstringmap.h"
+#include "tier0/utlmap.h"
 #include "trace.h"
-#include "tier1/utlsoacontainer.h"
-#include "raytrace.h"
+#include "tier0/utlsoacontainer.h"
+#include "raytrace/raytrace.h"
 #if defined( CLIENT_DLL )
 #include "c_pixel_visibility.h"
 #endif

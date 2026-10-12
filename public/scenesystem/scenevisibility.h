@@ -9,7 +9,7 @@
 #include "mathlib/aabb.h"
 #include "mathlib/obb.h"
 #include "mathlib/vectorws.h"
-#include "bitvec.h"
+#include "tier0/bitvec.h"
 
 class CFrustum;
 class CVoxelVisibility;

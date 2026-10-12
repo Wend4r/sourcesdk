@@ -21,7 +21,7 @@
 
 #include "appframework/appframework.h"
 #include "tier2/tier2dm.h"
-#include "tier1/convar.h"
+#include "tier0/convar.h"
 
 
 //-----------------------------------------------------------------------------

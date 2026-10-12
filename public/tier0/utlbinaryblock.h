@@ -13,7 +13,7 @@
 
 #include "memalloc.h"
 #include "strtools.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/utlleanvector.h"
 
 #include "limits.h"
 

@@ -16,7 +16,7 @@
 #include "dt_common.h"
 #include "tier0/dbg.h"
 #include "const.h"
-#include "bitvec.h"
+#include "tier0/bitvec.h"
 
 
 // ------------------------------------------------------------------------ //

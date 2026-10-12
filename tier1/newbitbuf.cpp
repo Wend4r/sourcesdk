@@ -11,8 +11,8 @@
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
 #include "tier0/strtools.h"
-#include "bitvec.h"
-#include "tier1/random.h"
+#include "tier0/bitvec.h"
+#include "tier0/random.h"
 
 // FIXME: Can't use this until we get multithreaded allocations in tier0 working for tools
 // This is used by VVIS and fails to link

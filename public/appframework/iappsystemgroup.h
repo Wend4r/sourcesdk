@@ -21,9 +21,9 @@
 
 
 #include "tier0/interface.h"
-#include "tier1/utlvector.h"
-#include "tier1/utldict.h"
-#include "tier1/utlstringmap.h"
+#include "tier0/utlvector.h"
+#include "tier0/utldict.h"
+#include "tier0/utlstringmap.h"
 #include "iappsystem.h"
 
 //-----------------------------------------------------------------------------

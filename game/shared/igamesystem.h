@@ -16,7 +16,7 @@
 
 #include <entity2/entityidentity.h>
 #include <tier0/utlstring.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlvector.h>
 
 /*
 * AMNOTE: To create your own gamesystem, you need to inherit from CBaseGameSystem or CAutoGameSystem,

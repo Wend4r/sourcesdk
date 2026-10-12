@@ -6,7 +6,7 @@
 #endif
 
 #include "platform.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlsymbollarge.h"
 
 // tier0 exports these with a leading underscore
 // Case-insensitive, hash is the CUtlStringToken hash of the string

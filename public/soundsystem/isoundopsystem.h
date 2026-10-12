@@ -13,7 +13,7 @@
 
 #include "appframework/iappsystem.h"
 #include "tier0/platform.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 class CSoundEvent;
 class CSosOperatorStack;

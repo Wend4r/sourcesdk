@@ -1,4 +1,4 @@
-#include "iresourcesystem.h"
+#include "resourcesystem/iresourcesystem.h"
 #include "resourcefile/manifestregistrar.h"
 #include "resourcefile/resourcetype.h"
 

@@ -6,7 +6,7 @@
 #endif
 
 #include <networkgameserverspawngroupautolock.h>
-#include <inetchannel.h>
+#include <networksystem/inetchannel.h>
 #include <playerslot.h>
 #include <playeruserid.h>
 #include <delayedcall.h>
@@ -20,7 +20,7 @@
 #include <tier0/circularbuffer.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlsignalslot.h>
-#include <tier1/bitbuf.h>
+#include <tier0/bitbuf.h>
 #include <tier1/ns_address.h>
 #include <networksystem/inetworksystem.h>
 

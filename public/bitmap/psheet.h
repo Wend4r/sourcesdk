@@ -13,7 +13,7 @@
 
 #include "tier1/utlobjectreference.h"
 #include "materialsystem/MaterialSystemUtil.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 class CUtlBuffer;
 

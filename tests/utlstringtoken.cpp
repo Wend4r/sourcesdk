@@ -2,7 +2,7 @@
 #include "common/macros.h"
 
 #include <tier0/utlstringtoken.h>
-#include <tier1/utlhashtable.h>
+#include <tier0/utlhashtable.h>
 
 REGISTER_NAMED_TEST( "CUtlStringToken.HashAndCompare", CUtlStringToken_HashAndCompare )
 {

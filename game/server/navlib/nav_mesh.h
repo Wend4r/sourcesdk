@@ -15,9 +15,9 @@
 #include "tier0/utlstring.h"
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
-#include "tier1/utlvector.h"
-#include "tier1/utlleanvector.h"
-#include "tier1/utlhashtable.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlleanvector.h"
+#include "tier0/utlhashtable.h"
 #include "nav_area.h"
 #include "nav_ladder.h"
 
