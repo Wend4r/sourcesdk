@@ -12,6 +12,7 @@
 #endif
 
 #include "appframework/iappsystem.h"
+#include "appframework/gameappsystem.h"
 
 #define GAMECLIENTEXPORTS_INTERFACE_VERSION "GameClientExports001"
 
@@ -30,6 +31,13 @@ public:
 	virtual bool unk016() = 0;
 	virtual void *unk017() = 0;
 	virtual bool unk018() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Client implementation of IGameClientExports
+//-----------------------------------------------------------------------------
+class CGameClientExports : public CGameAppSystem< IGameClientExports >
+{
 };
 
 #endif // IGAMECLIENTEXPORTS_H
