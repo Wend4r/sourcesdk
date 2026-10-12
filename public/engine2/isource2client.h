@@ -12,16 +12,24 @@
 #endif
 
 #include "appframework/iappsystem.h"
+#include "appframework/gameappsystem.h"
+#include "iloopmode.h"
 #include "entityhandle.h"
 #include "entity2/entityindex.h"
 #include "splitscreenslot.h"
 #include "inputsystem/buttoncode.h"
+#include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
+#include "tier0/utlvector.h"
+#include "tier0/tslist.h"
+
+#include <functional>
 
 class CBufferString;
 class CCommand;
 class CGlobalVarsBase;
 class CSVCMsg_UserCommands_t;
+class CThreadedJob;
 class CTransform;
 class CUtlBuffer;
 class IDemoMessageSink;
@@ -309,6 +317,56 @@ public:
 	virtual CEntityHandle unk207( int nUnk ) = 0;
 	virtual void unk208( const char *pszUnk, int *pOut ) = 0;
 	virtual void unk209( int nUnk, void *pUnk ) = 0;
+};
+
+// Notified by the entity save/restore system when it finishes streaming entities from a file
+abstract_class IStreamEntitiesFromFileCompletion
+{
+public:
+	virtual void OnStreamEntitiesFromFileCompleted( CUtlVector< CEntityHandle > &entities ) = 0;
+};
+
+class CSource2Client : public CGameAppSystem< ISource2Client >, public IStreamEntitiesFromFileCompletion
+{
+public:
+	uint8 m_unk038[ 0x10 ];
+	// Set by LaunchApplicationOnExit()
+	CUtlString m_unk048;
+	uint8 m_unk050[ 0x8 ];
+	GameSessionConfiguration_t m_unk058;
+	uint8 m_unk0F0[ 0x58 ];
+	// Game event names filled by the constructor
+	CUtlVector< const char * > m_unk148;
+	uint8 m_unk160[ 0x30 ];
+	CUtlVector< const char * > m_unk190;
+	uint8 m_unk1A8[ 0x30 ];
+	CUtlVector< const char * > m_unk1D8;
+	uint8 m_unk1F0[ 0x30 ];
+	CUtlVector< const char * > m_unk220;
+	uint8 m_unk238[ 0x30 ];
+	CUtlVector< const char * > m_unk268;
+	uint8 m_unk280[ 0x30 ];
+	CUtlVector< const char * > m_unk2B0;
+	uint8 m_unk2C8[ 0x30 ];
+	CUtlVector< const char * > m_unk2F8;
+	uint8 m_unk310[ 0x30 ];
+	CUtlVector< const char * > m_unk340;
+	uint8 m_unk358[ 0x30 ];
+	CUtlVector< const char * > m_unk388;
+	uint8 m_unk3A0[ 0x30 ];
+	uint8 m_unk3D0[ 0x18 ];
+	// CUtlVector of 0x20-byte entries filled by InitInstantReplayData() and purged by ClearInstantReplayData()
+	uint8 m_unk3E8[ 0x18 ];
+	CTSQueue< std::function< void() > * > m_unk400;
+	int m_unk440;
+	bool m_unk444;
+	uint8 m_unk445[ 0xB ];
+	void *m_unk450;
+	void *m_unk458;
+	// Waited for and released by FrameStageNotify()
+	CThreadedJob *m_unk460;
+	float m_unk468;
+	uint8 m_unk46C[ 0x1C ];
 };
 
 #endif // ISOURCE2CLIENT_H
