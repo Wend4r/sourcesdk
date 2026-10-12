@@ -654,7 +654,7 @@ public:
 	{
 		if(m_type == FIELD_STRING)
 		{
-			*pDest = *this;
+			*pDest = m_stringt;
 			return true;
 		}
 		else if(m_type == FIELD_CSTRING)

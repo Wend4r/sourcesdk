@@ -1055,17 +1055,17 @@ CUtlVectorMemory_Aligned<T, I, nAlignment>::CUtlVectorMemory_Aligned( T* pMemory
 	BaseClass::m_bExternal = true;
 
 	BaseClass::m_pMemory = (T*)Align( pMemory );
-	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
+	BaseClass::m_nAllocationCount = ( I )( ( ( uintp )( pMemory + numElements ) - ( uintp )BaseClass::m_pMemory ) / sizeof( T ) );
 }
 
 template< class T, typename I, I nAlignment >
 CUtlVectorMemory_Aligned<T, I, nAlignment>::CUtlVectorMemory_Aligned( const T* pMemory, I numElements )
 {
 	// Special marker indicating externally supplied memory
-	BaseClass::m_nGrowSize = BaseClass::EXTERNAL_CONST_BUFFER_MARKER;
+	BaseClass::m_bHasConstMemory = true;
 
 	BaseClass::m_pMemory = (T*)Align( pMemory );
-	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
+	BaseClass::m_nAllocationCount = ( I )( ( ( uintp )( pMemory + numElements ) - ( uintp )BaseClass::m_pMemory ) / sizeof( T ) );
 }
 
 template< class T, typename I, I nAlignment >
@@ -1085,7 +1085,7 @@ void CUtlVectorMemory_Aligned<T, I, nAlignment>::SetExternalBuffer( T* pMemory, 
 	Purge();
 
 	BaseClass::m_pMemory = (T*)Align( pMemory );
-	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
+	BaseClass::m_nAllocationCount = ( I )( ( ( uintp )( pMemory + numElements ) - ( uintp )BaseClass::m_pMemory ) / sizeof( T ) );
 
 	// Indicate that we don't own the memory
 	BaseClass::m_bExternal = true;
@@ -1098,10 +1098,10 @@ void CUtlVectorMemory_Aligned<T, I, nAlignment>::SetExternalBuffer( const T* pMe
 	Purge();
 
 	BaseClass::m_pMemory = (T*)Align( pMemory );
-	BaseClass::m_nAllocationCount = ( (I)(pMemory + numElements) - (I)BaseClass::m_pMemory ) / sizeof(T);
+	BaseClass::m_nAllocationCount = ( I )( ( ( uintp )( pMemory + numElements ) - ( uintp )BaseClass::m_pMemory ) / sizeof( T ) );
 
 	// Indicate that we don't own the memory
-	BaseClass::m_nGrowSize = BaseClass::EXTERNAL_CONST_BUFFER_MARKER;
+	BaseClass::m_bHasConstMemory = true;
 }
 
 
@@ -1123,7 +1123,7 @@ void CUtlVectorMemory_Aligned<T, I, nAlignment>::Grow( I num )
 	if ( ( ( int64 )BaseClass::m_nAllocationCount + num ) > INT_MAX )
 		UtlVectorMemory_FailedAllocation( BaseClass::m_nAllocationCount, num );
 
-	int nAllocationRequested = BaseClass::BaseClass::m_nAllocationCount + num;
+	int nAllocationRequested = BaseClass::m_nAllocationCount + num;
 
 	UTLVECTORMEMORY_TRACK_FREE();
 
@@ -1312,8 +1312,8 @@ CUtlVectorMemory_RawAllocator<T, I, A>::CUtlVectorMemory_RawAllocator( int nGrow
 }
 
 template< class T, typename I, class A >
-CUtlVectorMemory_RawAllocator<T, I, A>::CUtlVectorMemory_RawAllocator( const CUtlVectorMemory_RawAllocator &init ) : m_pMemory( 0 ), 
-	m_nAllocationCount( 0 )
+CUtlVectorMemory_RawAllocator<T, I, A>::CUtlVectorMemory_RawAllocator( const CUtlVectorMemory_RawAllocator &init ) : m_nAllocationCount( 0 ), 
+	m_pMemory( 0 )
 {
 	CopyFrom( init );
 }

@@ -449,7 +449,7 @@ inline void *CAlignedMemPool<ITEM_SIZE, ALIGNMENT, CHUNK_SIZE, CAllocator, GROWM
 		}
 
 		FreeBlock_t *pNew = (FreeBlock_t *)m_Allocator.Alloc( CHUNK_SIZE );
-		Assert( (unsigned)pNew % ALIGNMENT == 0 );
+		Assert( (uintp)pNew % ALIGNMENT == 0 );
 		m_Chunks.AddToTail( pNew );
 		m_nFree = CHUNK_SIZE / BLOCK_SIZE;
 		m_pFirstFree = pNew;

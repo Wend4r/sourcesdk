@@ -168,6 +168,35 @@ REGISTER_NAMED_TEST( "CUtlLeanVectorFixedGrowable.GrowAndPurge", CUtlLeanVectorF
 	TEST_EQ( vec.NumAllocated(), 2 );
 }
 
+REGISTER_NAMED_TEST( "CUtlLeanVectorFixedGrowable.Move", CUtlLeanVectorFixedGrowable_Move )
+{
+	// Moving should carry both inline and heap elements over to the destination.
+	CUtlLeanVectorFixedGrowable< int, 1 > inlineVec;
+	CUtlLeanVectorFixedGrowable< int, 1 > heapVec;
+
+	inlineVec.AddToTail( 1 );
+
+	for ( int i = 0; i < 10; ++i )
+	{
+		heapVec.AddToTail( i );
+	}
+
+	CUtlLeanVectorFixedGrowable< int, 1 > movedInline( Move( inlineVec ) );
+	TEST_EQ( movedInline.Count(), 1 );
+	TEST_EQ( movedInline[ 0 ], 1 );
+	TEST_EQ( inlineVec.Count(), 0 );
+
+	movedInline = Move( heapVec );
+	TEST_EQ( movedInline.Count(), 10 );
+	TEST_EQ( heapVec.Count(), 1 );
+	TEST_EQ( heapVec[ 0 ], 1 );
+
+	for ( int i = 0; i < 10; ++i )
+	{
+		TEST_EQ( movedInline[ i ], i );
+	}
+}
+
 static int g_nLeanVectorDestructed = 0;
 
 struct LeanVectorCounted_t

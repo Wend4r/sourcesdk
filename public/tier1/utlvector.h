@@ -530,18 +530,29 @@ public:
 		}
 		if ( m_pData == StaticData() )
 		{
-			m_pData = (Data_t *)A::Alloc( sizeof(Data_t) + ( num * sizeof(T) ) );
+			size_t nAllocated;
+			m_pData = ( Data_t * )A::template Alloc< uint8, size_t >( sizeof( Data_t ) + ( num * sizeof( T ) ), nAllocated );
 			m_pData->m_Size = 0;
 		}
 		else
 		{
-			I nNeeded = sizeof(Data_t) + ( num * sizeof(T) );
-			I nHave = A::GetSize( m_pData );
+			size_t nNeeded = sizeof( Data_t ) + ( num * sizeof( T ) );
+			size_t nHave = A::GetSize( m_pData );
 			if ( nNeeded > nHave )
 			{
-				m_pData = (Data_t *)A::Realloc( m_pData, nNeeded );
+				size_t nAllocated;
+				m_pData = ( Data_t * )A::template Realloc< uint8, size_t >( ( uint8 * )m_pData, nNeeded, nAllocated );
 			}
 		}
+	}
+
+	I AddToTail()
+	{
+		I iNew = Count();
+		EnsureCapacity( Count() + 1 );
+		::Construct( &m_pData->m_Elements[ iNew ] );
+		m_pData->m_Size++;
+		return iNew;
 	}
 
 	I AddToTail( const T& copySrc )

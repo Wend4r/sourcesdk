@@ -247,6 +247,10 @@ public:
 
 	// constructor, destructor
 	CUtlLeanVectorFixedGrowableBase() : m_nCount(0), m_nAllocated(FIXED_CAPACITY), m_bExternal(0) {}
+	CUtlLeanVectorFixedGrowableBase( int nGrowSize, int nInitSize = 0 ) : m_nCount( 0 ), m_nAllocated( FIXED_CAPACITY ), m_bExternal( 0 )
+	{
+		EnsureCapacity( nInitSize );
+	}
 	~CUtlLeanVectorFixedGrowableBase() { Purge(); }
 
 	// Gets the base address (can change when adding elements!)
@@ -261,6 +265,9 @@ public:
 
 	// Is the memory read only?
 	bool IsReadOnly() const					{ return m_nAllocated == EXTERNAL_CONST_BUFFER_MARKER; }
+
+	// Fast swap
+	void Swap( CUtlLeanVectorFixedGrowableBase< T, N, I, A > &mem );
 
 	// Element removal
 	void RemoveAll(); // doesn't deallocate memory
@@ -390,6 +397,20 @@ void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::EnsureCapacity( int num, bool 
 }
 
 //-----------------------------------------------------------------------------
+// Fast swap
+//-----------------------------------------------------------------------------
+template< class T, size_t N, typename I, class A >
+void CUtlLeanVectorFixedGrowableBase<T, N, I, A>::Swap( CUtlLeanVectorFixedGrowableBase< T, N, I, A > &mem )
+{
+	// Elements are relocated bitwise when the storage grows, and the inline storage is found from
+	// the object's own address, so exchanging the raw bytes swaps both inline and heap contents
+	alignas( CUtlLeanVectorFixedGrowableBase ) unsigned char temp[ sizeof( CUtlLeanVectorFixedGrowableBase ) ];
+	V_memcpy( temp, ( void * )this, sizeof( temp ) );
+	V_memcpy( ( void * )this, ( void * )&mem, sizeof( temp ) );
+	V_memcpy( ( void * )&mem, temp, sizeof( temp ) );
+}
+
+//-----------------------------------------------------------------------------
 // Element removal
 //-----------------------------------------------------------------------------
 template< class T, size_t N, typename I, class A >
@@ -500,6 +521,7 @@ public:
 	// Is element index valid?
 	bool IsValidIndex( int i ) const;
 	static int InvalidIndex();
+	static inline const I INVALID_INDEX = ( I )-1; // For use with COMPILE_TIME_ASSERT
 
 	// Adds an element, uses default constructor
 	T* AddToTailGetPtr();

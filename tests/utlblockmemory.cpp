@@ -30,3 +30,22 @@ REGISTER_NAMED_TEST( "CUtlBlockMemory.GrowEnsurePurge", CUtlBlockMemory_GrowEnsu
 	memory.Purge();
 	TEST_EQ( memory.NumAllocated(), 0 );
 }
+
+REGISTER_NAMED_TEST( "CUtlBlockMemory.Swap", CUtlBlockMemory_Swap )
+{
+	// Swapping should exchange the blocks together with their block size.
+	CUtlBlockMemory< int, int > memory( 4, 4 );
+	CUtlBlockMemory< int, int > other( 16, 16 );
+
+	memory[0] = 10;
+	other[0] = 20;
+
+	memory.Swap( other );
+
+	TEST_EQ( memory[0], 20 );
+	TEST_EQ( other[0], 10 );
+	TEST_TRUE( memory.NumAllocated() >= 16 );
+	TEST_TRUE( other.NumAllocated() >= 4 );
+	TEST_TRUE( memory.IsIdxValid( 15 ) );
+	TEST_FALSE( other.IsIdxValid( 15 ) );
+}

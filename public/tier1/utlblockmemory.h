@@ -139,8 +139,14 @@ void CUtlBlockMemory<T,I>::Swap( CUtlBlockMemory< T, I > &mem )
 {
 	V_swap( m_pMemory, mem.m_pMemory );
 	V_swap( m_nBlocks, mem.m_nBlocks );
-	V_swap( (int &)(m_nIndexMask), (int &)mem.m_nIndexMask );
-	V_swap( (int &)m_nIndexShift, (int &)mem.m_nIndexShift );
+
+	// Bit-fields can't be bound to references, so they are swapped through copies
+	const int nIndexMask = m_nIndexMask;
+	const int nIndexShift = m_nIndexShift;
+	m_nIndexMask = mem.m_nIndexMask;
+	m_nIndexShift = mem.m_nIndexShift;
+	mem.m_nIndexMask = nIndexMask;
+	mem.m_nIndexShift = nIndexShift;
 }
 
 
