@@ -102,6 +102,7 @@ class IToolGameSimulationAPI;
 class CCLCMsg_Move_t;
 class CCLCMsg_SplitPlayerConnect_t;
 class CNetMessage;
+struct NetMessageInfo_t;
 class INetworkMessageInternal;
 class INetChannel;
 class INetworkGameServer;
@@ -645,6 +646,23 @@ public:
 
 #define INTERFACEVERSION_SERVERGAMECLIENTS		"Source2GameClients001"
 
+struct ClientReplayEventParams_t
+{
+	int m_nEventType = 0; // ReplayEventType_t
+	float m_flSlowdownLength = 0.0f;
+	float m_flSlowdownRate = 1.0f;
+	int m_nPrimaryTargetEntIndex = -1;
+	float m_flEventTime = 0.0f;
+	bool m_bForceUseTheseSettings = false;
+};
+
+enum EncryptedMessageKeyType_t
+{
+	kEncryptedMessageKeyType_None = 0, // not encrypted
+	kEncryptedMessageKeyType_Private = 1, // tv_encryptdata_key
+	kEncryptedMessageKeyType_Public = 2, // tv_encryptdata_key_pub
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Player / Client related functions
 //-----------------------------------------------------------------------------
@@ -729,23 +747,26 @@ public:
 	virtual IHLTVDirector	*GetHLTVDirector( void ) = 0;
 
 	// return m_nTickBase
-	virtual uint32			GetClientTickCount( CPlayerSlot slot ) = 0;
+	virtual uint32			GetPlayerTickBase( CPlayerSlot slot ) = 0;
 
 	virtual void			GetClientVisibilityInfo( CPlayerSlot slot, vis_info_t *pOutVisInfo ) = 0;
 
 	// Handles incoming usermessages from the client
 	virtual void			ClientSvcUserMessage( CPlayerSlot slot, int um_type, uint32 size, const void *buf ) = 0;
 
-	// reads pawn->m_hViewEntity
-	virtual int				GetClientViewEntity( CPlayerSlot slot, CEntityHandle *outViewEntity ) = 0;
+	// Returns this player hltv delay in ticks
+	virtual int				GetPlayerHltvDelay( CPlayerSlot slot, CEntityIndex &nReplayEntityIndex ) = 0;
 
-	virtual bool			ProcessClientVoiceData( CPlayerSlot slot, void *pVoiceInfo ) = 0;
+	virtual bool			ClientReplayEvent( CPlayerSlot slot, const ClientReplayEventParams_t &params ) = 0;
 
-	virtual bool			ValidateClientString( const char *pszCurrent, const char *pszExpected ) = 0;
+	// True when the server password is empty or "none", or matches the client's password
+	virtual bool			CheckHltvPasswordMatch( const char *pszClientPassword, const char *pszServerPassword, const CSteamID &steamID, void * ) = 0;
 
-	virtual bool			CanProcessNetMessage( void *pNetMessage, void *pClient ) = 0;
+	// While a client watches an HLTV replay, it is only sent the messages this returns true for:
+	// chat, text, radio and raw audio messages, and user messages carrying radio, audio, rank, XP, quest progress or lobby disconnects
+	virtual bool			ShouldSendMessageDuringHltvReplay( const NetMessageInfo_t *pInfo, const CNetMessage *pData ) = 0;
 
-	virtual int				unk043( const void *pNetMessageInfo, const void *pNetMessage ) = 0;
+	virtual EncryptedMessageKeyType_t GetMessageEncryptionKey( const NetMessageInfo_t *pInfo, CNetMessage *pData ) = 0;
 
 	// Called from engine's "exec" command handler. Returns false if commands are disallowed
 	// (triggers "Config %s contains invalid commands" warning). Workshop command sanitization.
