@@ -15,6 +15,8 @@
 #include <tier0/wchartypes.h>
 
 class IRenderContext;
+class CTextLayoutInfo;
+struct RenderViewport_t;
 
 abstract_class ITextLayout : public IAppSystem
 {
@@ -24,18 +26,18 @@ public:
 	virtual Vector2D LayoutText( void *pLayout, const uchar32 *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
 
 	// Overwrites the color of every glyph in pLayout
-	virtual void unk014( void *pLayout, Color color ) = 0;
+	virtual void UpdateTextRenderGeometryColor( void *pLayout, Color color ) = 0;
 
-	virtual Vector2D unk015( void *pLayout, const void *pTextDesc, void *p, float flMaxWidth ) = 0;
+	virtual Vector2D SetupTextLayoutRenderGeometry( void *pLayout, CTextLayoutInfo *pTextLayoutInfo, const RenderViewport_t *pViewport, float flProportionalBaseHeight ) = 0;
 
 	// Renders pLayout through the material system utils
-	virtual bool unk016( IRenderContext *pRenderContext, const void *pLayout, void *p, int n ) = 0;
+	virtual bool RenderTextGeometry( IRenderContext *pRenderContext, const void *pLayout, const Vector2D &vecOffset, int n ) = 0;
 
-	virtual void unk017( void *p ) = 0;
-	virtual void unk018( void *p ) = 0;
+	virtual void GetBounds( IRenderContext *pRenderContext, CTextLayoutInfo *pTextLayoutInfo, Vector2D *pMins, Vector2D *pMaxs ) = 0;
+	virtual void GetWBounds( CTextLayoutInfo *pTextLayoutInfo, Vector2D *pMins, Vector2D *pMaxs ) = 0;
 
-	// Size of the text in pTextDesc
-	virtual Vector2D unk019( const void *pTextDesc ) = 0;
+	// Size of the text in pTextLayoutInfo
+	virtual Vector2D GetWSize( CTextLayoutInfo *pTextLayoutInfo ) = 0;
 
 	virtual ~ITextLayout() {}
 };
