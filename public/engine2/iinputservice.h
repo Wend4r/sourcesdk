@@ -51,10 +51,10 @@ public:
 	virtual void UnregisterInputValue( void *pInputValue ) = 0;
 	virtual void ForEachInputValue( void *pDelegate ) = 0;
 
-	virtual void unk040( bool bUnk ) = 0;
+	virtual void EnableKeyBindingSystem( bool bEnable ) = 0;
 	virtual void unk041( bool bUnk ) = 0;
 	// Counter incremented by each client input processing pass
-	virtual int unk042() = 0;
+	virtual int GetFrameCount() = 0;
 
 	// Counted lock of all command buffers
 	virtual void LockCommandBuffers( bool bLock ) = 0;
