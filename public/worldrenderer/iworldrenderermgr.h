@@ -102,4 +102,12 @@ public:
 	virtual IWorldVPKReference *unk060( const char *pVPKName ) = 0;
 };
 
+class IWorld;
+
+class IComputeWorldOriginCallback
+{
+public:
+	virtual matrix3x4_t ComputeWorldOrigin(const char *pWorldName, SpawnGroupHandle_t hSpawnGroup, IWorld *pWorld) = 0;
+};
+
 #endif // IWORLDRENDERERMGR_H
