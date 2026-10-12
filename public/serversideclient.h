@@ -129,7 +129,6 @@ public:
 		SpawnGroupHandle_t m_hSpawnGroup; // msg.spawngrouphandle
 		int m_nCreationSequence; // msg.creationsequence
 		bool m_b; // producer always sets true
-		char m_Pad000D[3];
 	};
 
 	// Async payload for CNETMsg_SpawnGroup_Unload_t
@@ -139,7 +138,6 @@ public:
 		SpawnGroupHandle_t m_hSpawnGroup; // msg.spawngrouphandle
 		uint32 m_nUnloadFlags; // producer always sets 0 (Unload flags/tickcount)
 		bool m_b; // producer always sets true
-		char m_Pad000D[3];
 	};
 
 	struct BuildServerInfoMessageAsync_t
@@ -158,14 +156,12 @@ public:
 	{
 		CNetMessage *m_pMessage;
 		NetChannelBufType_t m_BufferType;
-		char m_Pad0009[7];
 	};
 
 	struct OnSpawnGroupLoadCall_t
 	{
 		void *m_pUnk0000;
 		bool m_bAsync; // logged as "Sync"/"Async"
-		char m_Pad0009[7];
 	};
 
 	// Async payload for CNETMsg_SpawnGroup_ManifestUpdate_t
@@ -174,7 +170,6 @@ public:
 		CBufferString m_sManifest;
 		SpawnGroupHandle_t m_hSpawnGroup;	// msg.spawngrouphandle
 		bool m_bUnk0014;
-		char m_Pad0015[3];
 	};
 
 	// Copied out of CCLCMsg_BaselineAck at enqueue time (not a message pointer)
@@ -201,7 +196,6 @@ public:
 	struct DisconnectCall_t
 	{
 		ENetworkDisconnectionReason m_Reason;
-		char m_Pad0004[4];
 		CUtlString m_sInternalReason;
 	};
 
@@ -559,7 +553,6 @@ public:
 		int m_nReplayStopAt;
 		int m_nReplayDelay;
 		char m_Request[44];
-		char m_Pad0034[4];
 		double m_flRequestTime;
 	};
 
@@ -607,18 +600,10 @@ public:
 		CClientFrame *m_pDeltaFrame;
 		CClientFrame *m_pCurrentFrame;
 		int m_nCurrentFrameTick;
-
-	private:
-		char m_Pad008C[4];
-
-	public:
 		bf_write m_SnapshotBuffer;
 		void *m_pSnapshotBufferMemory;
 		int m_nMaxAckTick;
 		bool m_bSnapshotPrepared;
-
-	private:
-		char m_Pad00C5[3];
 	};
 
 public:
@@ -697,7 +682,6 @@ public:
 
 	// AMNOTE: The game sends the client another player's view with a delay (sv_maxreplay)
 	bool m_bIsInReplayMode = false;
-	char m_Pad0EE3;
 	int m_nHltvReplayDelay = 0;
 	CHLTVServer *m_pHltvReplayServer;
 
