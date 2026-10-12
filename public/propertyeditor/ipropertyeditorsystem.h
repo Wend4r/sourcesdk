@@ -23,9 +23,9 @@ public:
 	virtual IPropertyEditor *CreatePropertyEditor( QWidget *pParent, uint32 nUnknown ) = 0;
 	virtual void DestroyPropertyEditor( IPropertyEditor *pEditor ) = 0;
 
-	// Act on every editor whose owner object equals pOwner
-	virtual void unk013( void *pOwner ) = 0;
-	virtual void unk014( void *pOwner ) = 0;
+	// Act on every editor whose domain equals pDomain
+	virtual void RefreshEditorsForDomain( void *pDomain ) = 0;
+	virtual void RebuildEditorsForDomain( void *pDomain ) = 0;
 
 	virtual void *unk015() = 0;
 
@@ -39,7 +39,8 @@ public:
 
 	virtual bool unk021( const char *pKV3Text ) = 0;
 
-	virtual void unk022( void *pOwner ) = 0;
+	// Detaches the domain from every editor that shows it
+	virtual void ClearEditorsDomain( void *pDomain ) = 0;
 
 	virtual ~IPropertyEditorSystem() {}
 };
