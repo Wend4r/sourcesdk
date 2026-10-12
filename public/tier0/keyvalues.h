@@ -156,7 +156,7 @@ private:
 		KeyValues *m_pSub;
 	};
 
-	void *m_pUnk;
+	IKeyValuesSystem *m_pKeyValuesSystem;
 
 	uint32 m_iKeyNameCaseSensitive : 24;
 	uint32 m_iDataType : 3;
