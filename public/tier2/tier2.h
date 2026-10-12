@@ -16,6 +16,9 @@
 #include "tier2_logging.h"
 
 struct ResourceManifestDesc_t;
+class KeyValues3;
+enum RenderMultisampleType_t : uint8;
+
 class IRenderDeviceSetup
 {
 public:
@@ -72,8 +75,8 @@ public:
 class CTier2AppSystemDict : public CTier1AppSystemDict
 {
 public:
-	CUtlStringMap<int> m_unk808;
 	CUtlStringMap<int> m_addonRefcounts;
+	CUtlStringMap<KeyValues3 *> m_addonInfo;
 	CUtlVector<void*> m_StartupManifests;
 	int m_nStartupManifestSuppressionCount;
 	bool m_bStaleStartupResources;
@@ -92,12 +95,12 @@ public:
 	bool m_bLogToFile;
 	LoggingFileHandle_t m_bLogFileHandle;
 	CFileLoggingListener m_LogToFileListener;
+	void ( *m_pfnUnk1160 )();
 };
 
 class CMaterialSystem2AppSystemDict : public CTier2AppSystemDict, public IRenderDeviceSetup
 {
 public:
-	void* m_unk1168;
 	void* m_hSwapChain;
 	int m_nThreadCount;
 	CreateInterfaceFn m_RenderFactory;
@@ -106,7 +109,7 @@ public:
 	CUtlString m_DefaultRenderSystemOption;
 	bool m_unk1224;
 	CUtlString m_WindowInitialImage;
-	bool m_bUnk1240;
+	RenderMultisampleType_t m_MultisampleType;
 	bool m_bInitWithoutMaterialSystem;
 	bool m_bEnableExtendedMaterialInfo;
 	bool m_bDefaultToRendersystemEmpty;
