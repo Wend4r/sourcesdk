@@ -17,6 +17,7 @@
 #include <splitscreenslot.h>
 #include <netmessages.pb.h>
 #include "rendersystem/rendersystemtypes.h"
+#include "engine2/isource2serverconfig.h"
 
 class ISource2WorldSession;
 class ISceneView;
@@ -38,15 +39,6 @@ struct RHBackColorBuffer_t
 {
 	ISceneView *m_pView;
 	HSceneViewRenderTarget m_hBackColorBuffer;
-};
-
-enum HostStateLoopModeType_t
-{
-	HOST_STATE_LOOP_MODE_IDLE = 0,
-	HOST_STATE_LOOP_MODE_GAME,
-	HOST_STATE_LOOP_MODE_SOURCETV_RELAY,
-
-	HOST_STATE_LOOP_MODE_COUNT
 };
 
 
