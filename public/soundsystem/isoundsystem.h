@@ -19,10 +19,12 @@
 //-----------------------------------------------------------------------------
 class IAudioDevice;
 class IAudioDevice2;
+class IAudioInputStream;
 class IAudioOutputStream;
 class CAudioSource;
 class CAudioMixer;
 class CAudioState;
+class CVSndParameterTable;
 class CUtlBuffer;
 
 
@@ -58,9 +60,9 @@ public:
 	virtual void DestroyDevice( IAudioDevice2 *pDevice ) = 0;
 	virtual void unk013() = 0;
 	virtual IAudioDevice2 *CreateNullDevice() = 0;
-	virtual void unk015() = 0;
-	virtual void unk016() = 0;
-	virtual void unk017() = 0;
+	virtual IAudioInputStream *unk015( const void *pParams ) = 0;
+	virtual void unk016( IAudioInputStream *pInputStream ) = 0;
+	virtual IAudioOutputStream *unk017( int nSampleRate, int nChannels ) = 0;
 	virtual void unk018() = 0;
 	virtual void DestroyOutputStream( IAudioOutputStream *pOutputStream ) = 0;
 	virtual void Unk_SoundInit( void *p ) = 0;
@@ -130,7 +132,7 @@ public:
 	virtual void unk083() = 0;
 	virtual void unk084() = 0;
 	virtual void unk085() = 0;
-	virtual void unk086() = 0;
+	virtual CAudioState *unk086() = 0;
 	virtual bool IsSoundPlaying( SoundEventGuid_t guid ) = 0;
 	virtual void unk087() = 0;
 	virtual void unk088() = 0;
@@ -175,7 +177,7 @@ public:
 	virtual void unk125() = 0;
 	virtual void unk126() = 0;
 	virtual void unk127() = 0;
-	virtual void unk128() = 0;
+	virtual CVSndParameterTable *unk128() = 0;
 	virtual void unk129() = 0;
 	virtual void unk130( void *p ) = 0;
 	virtual void unk130( const void *p ) = 0;
