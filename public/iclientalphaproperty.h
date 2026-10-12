@@ -15,6 +15,7 @@
 #include "iclientunknown.h"
 #include "appframework/iappsystem.h"
 #include "const.h"
+#include "tier0/mempool.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -82,6 +83,19 @@ public:
 	// Class factory
 	virtual IClientAlphaProperty *CreateClientAlphaProperty( IClientUnknown *pUnk ) = 0;
 	virtual void DestroyClientAlphaProperty( IClientAlphaProperty *pAlphaProperty ) = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Client implementation of IClientAlphaPropertyMgr
+//-----------------------------------------------------------------------------
+class CClientAlphaPropertyMgr : public IClientAlphaPropertyMgr
+{
+public:
+	// Incremented by CreateClientAlphaProperty, decremented by DestroyClientAlphaProperty
+	int m_nUnk0008;
+
+	// Pool the CClientAlphaProperty objects are allocated from
+	CUtlMemoryPoolBase m_Unk0010;
 };
 
 #ifndef SWDS
