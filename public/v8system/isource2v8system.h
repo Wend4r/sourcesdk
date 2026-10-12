@@ -13,6 +13,13 @@
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
 
+namespace v8
+{
+	class PromiseRejectMessage;
+
+	typedef void ( *PromiseRejectCallback )( PromiseRejectMessage message );
+}
+
 abstract_class ISource2V8System : public IAppSystem
 {
 public:
@@ -29,7 +36,7 @@ public:
 	virtual void unk017( void *p ) = 0;
 	virtual void unk018( void *p ) = 0;
 
-	virtual void PushPromiseRejectCallback( void *pfnCallback ) = 0;
+	virtual void PushPromiseRejectCallback( v8::PromiseRejectCallback pfnCallback ) = 0;
 	virtual void PopPromiseRejectCallback() = 0;
 };
 
