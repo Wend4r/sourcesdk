@@ -22,6 +22,7 @@
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
 #include "tier0/tslist.h"
+#include "game_saverestore.h"
 
 #include <functional>
 
@@ -317,13 +318,6 @@ public:
 	virtual CEntityHandle unk207( int nUnk ) = 0;
 	virtual void unk208( const char *pszUnk, int *pOut ) = 0;
 	virtual void unk209( int nUnk, void *pUnk ) = 0;
-};
-
-// Notified by the entity save/restore system when it finishes streaming entities from a file
-abstract_class IStreamEntitiesFromFileCompletion
-{
-public:
-	virtual void OnStreamEntitiesFromFileCompleted( CUtlVector< CEntityHandle > &entities ) = 0;
 };
 
 class CSource2Client : public CGameAppSystem< ISource2Client >, public IStreamEntitiesFromFileCompletion
