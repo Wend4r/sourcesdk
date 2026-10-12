@@ -92,36 +92,6 @@ void SetBitBufErrorHandler( BitBufErrorHandler fn )
 // #define BB_PROFILING
 
 
-// Precalculated bit masks for WriteUBitLong. Using these tables instead of 
-// doing the calculations gives a 33% speedup in WriteUBitLong.
-uint32 g_BitWriteMasks[32][33];
-
-// (1 << i) - 1
-uint32 g_ExtraMasks[32];
-
-class CBitWriteMasksInit
-{
-public:
-	CBitWriteMasksInit()
-	{
-		for( unsigned int startbit=0; startbit < 32; startbit++ )
-		{
-			for( unsigned int nBitsLeft=0; nBitsLeft < 33; nBitsLeft++ )
-			{
-				unsigned int endbit = startbit + nBitsLeft;
-				g_BitWriteMasks[startbit][nBitsLeft] = BitForBitnum(startbit) - 1;
-				if(endbit < 32)
-					g_BitWriteMasks[startbit][nBitsLeft] |= ~(BitForBitnum(endbit) - 1);
-			}
-		}
-
-		for ( unsigned int maskBit=0; maskBit < 32; maskBit++ )
-			g_ExtraMasks[maskBit] = BitForBitnum(maskBit) - 1;
-	}
-};
-CBitWriteMasksInit g_BitWriteMasksInit;
-
-
 // ---------------------------------------------------------------------------------------- //
 // bf_write
 // ---------------------------------------------------------------------------------------- //
@@ -549,7 +519,7 @@ bool bf_write::WriteBits(const void *pInData, int nBits)
 			unsigned int iDWord = m_iCurBit >> 5;
 
 			uint32 outWord = LoadLittleDWord( (uint32*)m_pData, iDWord );
-			outWord &= g_BitWriteMasks[iBitsRight][32]; // clear rest of beginning DWORD 
+			outWord &= g_BitBuf_BitWriteMasks[iBitsRight][32]; // clear rest of beginning DWORD 
 
 			// copy in DWORD blocks
 			while(nBitsLeft >= iBitsChanging )

@@ -64,6 +64,12 @@ typedef void (*BitBufErrorHandler)( BitBufErrorType errorType, const char *pDebu
 // Use this to install the error handler. Call with NULL to uninstall your error handler.
 void SetBitBufErrorHandler( BitBufErrorHandler fn );
 
+// [startbit][nBitsLeft]: the bits below startbit and from startbit + nBitsLeft up are set.
+PLATFORM_INTERFACE uint32 g_BitBuf_BitWriteMasks[ 32 ][ 33 ];
+
+// (1 << i) - 1
+PLATFORM_INTERFACE uint32 g_BitBuf_ExtraMasks[ 33 ];
+
 
 //-----------------------------------------------------------------------------
 // Helpers.
@@ -386,8 +392,6 @@ inline void bf_write::WriteUBitLong( unsigned int curData, int numbits, bool bCh
 	Assert( numbits >= 0 && numbits <= 32 );
 #endif
 
-	extern uint32 g_BitWriteMasks[32][33];
-
 	// Bounds checking..
 	if ((m_iCurBit+numbits) > m_nDataBits)
 	{
@@ -408,7 +412,7 @@ inline void bf_write::WriteUBitLong( unsigned int curData, int numbits, bool bCh
 
 	uint32 dword = LoadLittleDWord( (uint32*)m_pData, iDWord );
 
-	dword &= g_BitWriteMasks[iCurBitMasked][nBitsLeft];
+	dword &= g_BitBuf_BitWriteMasks[iCurBitMasked][nBitsLeft];
 	dword |= curData << iCurBitMasked;
 
 	// write to stream (lsb to msb ) properly
@@ -424,7 +428,7 @@ inline void bf_write::WriteUBitLong( unsigned int curData, int numbits, bool bCh
 		// read from stream (lsb to msb) properly 
 		dword = LoadLittleDWord( (uint32*)m_pData, iDWord+1 );
 
-		dword &= g_BitWriteMasks[0][nBitsLeft];
+		dword &= g_BitBuf_BitWriteMasks[0][nBitsLeft];
 		dword |= curData;
 
 		// write to stream (lsb to msb) properly 
@@ -719,8 +723,6 @@ inline float old_bf_read::ReadBitFloat()
 
 inline unsigned int old_bf_read::ReadUBitLong( int numbits )
 {
-	extern uint32 g_ExtraMasks[32];
-
 	if ( (m_iCurBit+numbits) > m_nDataBits )
 	{
 		m_iCurBit = m_nDataBits;
@@ -764,14 +766,14 @@ inline unsigned int old_bf_read::ReadUBitLong( int numbits )
 	if ( (m_iCurBit-1) >> 5 == idword1 )
 	{
 		if (numbits != 32)
-            b &= g_ExtraMasks[numbits];
+            b &= g_BitBuf_ExtraMasks[numbits];
 	}
 	else
 	{
 		int nExtraBits = m_iCurBit & 31;
 		unsigned int dword2 = LoadLittleDWord( (uint32*)m_pData, idword1+1 );
 
-		dword2 &= g_ExtraMasks[nExtraBits];
+		dword2 &= g_BitBuf_ExtraMasks[nExtraBits];
 
 		// No need to mask since we hit the end of the dword.
 		// Shift the second dword's part into the high bits.
