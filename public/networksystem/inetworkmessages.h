@@ -13,6 +13,7 @@
 #include <tier0/utlsymbol.h>
 #include <tier1/utldelegate.h>
 #include <tier0/logging.h>
+#include <tier0/convar.h>
 #include "color.h"
 
 class CSchemaClassBindingBase;
@@ -132,6 +133,16 @@ public:
 	virtual const void *GetCoordEncodingParams() = 0;
 
 	virtual ~INetworkMessages() = 0;
+};
+
+class CNetworkMessages : public INetworkMessages
+{
+public:
+	CConCommandMemberAccessor< CNetworkMessages > m_NetValidateMessagesCommand; // "net_validatemessages"
+	CConCommandMemberAccessor< CNetworkMessages > m_NetListAllMessagesCommand; // "net_listallmessages"
+	CConCommandMemberAccessor< CNetworkMessages > m_NetMessageInfoCommand; // "net_messageinfo"
+	byte m_pad0C8[1616];
+	byte m_CoordEncodingParams[96]; // SetCoordEncodingParams copies it, GetCoordEncodingParams returns its address
 };
 
 DECLARE_TIER2_INTERFACE(INetworkMessages, g_pNetworkMessages);
