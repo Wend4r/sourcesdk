@@ -11,12 +11,16 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/utlsymbol.h"
 #include "tier0/utlsymbollarge.h"
+#include "tier1/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier3/tier3.h"
 
 class QWidget;
 class IPropertyEditor;
 class IPropertyAttributeEditorFactory;
+class CQPropertyEditor;
 
 abstract_class IPropertyEditorSystem : public IAppSystem
 {
@@ -44,6 +48,22 @@ public:
 	virtual void ClearEditorsDomain( void *pDomain ) = 0;
 
 	virtual ~IPropertyEditorSystem() {}
+};
+
+class CPropertyEditorSystem : public CTier3AppSystem< IPropertyEditorSystem >
+{
+public:
+	CUtlVector< CQPropertyEditor * > m_vecUnk028;
+
+	// Attribute editor factories, indexed by the symbol of their name
+	CUtlVector< IPropertyAttributeEditorFactory * > m_vecUnk040;
+	CUtlSymbolTable m_unk058;
+
+	// Objects of unk018, indexed by the symbol of their name
+	CUtlVector< void * > m_vecUnk0B8;
+	CUtlSymbolTable m_unk0D0;
+
+	CUtlSymbolTableLarge m_unk130;
 };
 
 #endif // IPROPERTYEDITORSYSTEM_H
