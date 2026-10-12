@@ -13,6 +13,7 @@
 #include <engine/IEngineService.h>
 
 class CAudioState;
+class IVoiceTarget;
 struct VoiceRecordingLevel_t;
 
 abstract_class ISoundService : public IEngineService
@@ -22,8 +23,8 @@ public:
 
 	virtual bool GetNetworkedVoiceLevel( uint64 nXUID, VoiceRecordingLevel_t *pLevel ) = 0;
 
-	virtual void AddVoiceListener( void *pListener ) = 0;
-	virtual void RemoveVoiceListener( void *pListener ) = 0;
+	virtual void AddVoiceListener( IVoiceTarget *pListener ) = 0;
+	virtual void RemoveVoiceListener( IVoiceTarget *pListener ) = 0;
 
 	virtual bool IsVoiceRecording() = 0;
 
