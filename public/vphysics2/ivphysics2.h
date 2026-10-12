@@ -27,6 +27,7 @@ class IPhysIntersectionDictionary;
 class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
+class ISceneViewDebugOverlays;
 
 class IFnPhysicsContact;
 class IFnPhysicsAnyJoint;
@@ -300,7 +301,7 @@ public:
 	virtual void PrintInfo( const CCommand &args ) = 0;
 
 	// Debug draws every world (physics_debug_draw)
-	virtual void DebugDrawWorlds( void *pDebugOverlay ) = 0;
+	virtual void DebugDrawWorlds( ISceneViewDebugOverlays *pDebugOverlays ) = 0;
 
 	virtual void Unk_CreateDebugSceneObject( void *p ) = 0;
 	virtual void DestroyDebugSceneObject( void *pSceneObject ) = 0;
