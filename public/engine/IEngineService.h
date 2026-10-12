@@ -56,7 +56,7 @@ struct ActiveLoopInfo_t
 {
 	CUtlString m_LoopName;
 	CUtlString m_AddonName;
-	uint32 m_nUnk010;
+	uint32 m_unRequestId;
 	KeyValues *m_pLoopOptions;
 	bool m_bValid;
 };
