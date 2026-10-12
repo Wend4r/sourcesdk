@@ -52,7 +52,9 @@ class NetMessagePacketEnd_t;
 class NetMessageConnectionClosed_t;
 class NetMessageConnectionCrashed_t;
 class NetMessageSplitscreenUserChanged_t;
+class ITvStreamSink;
 
+// AMNOTE: Counted per client and added to the server totals on disconnect
 struct HltvReplayStats_t
 {
 	enum FailEnum_t
@@ -96,16 +98,30 @@ public:
 };
 COMPILE_TIME_ASSERT( sizeof( CNetworkStatTrace ) == 40 );
 
+// AMNOTE: While the client's send job runs, the deferred methods (Disconnect, SendNetMessage, SendInitialSpawnGroups,
+// StopHltvReplay, ...) are queued in m_DelayedCallQueue
+enum ClientSendJobState_t : uint8
+{
+	CLIENT_SEND_JOB_IDLE = 0,
+	CLIENT_SEND_JOB_RUNNING,
+	// AMNOTE: The job is done, but its queued calls aren't flushed yet
+	CLIENT_SEND_JOB_FINISHED,
+};
+
+// AMNOTE: While it's not CLIENT_SLOT_RECYCLABLE, the slot shows as reserved and keeps its address on disconnect
+enum ClientSlotReservation_t : int
+{
+	CLIENT_SLOT_RECYCLABLE = 0,
+	// AMNOTE: INetworkGameServer::SetRecyclePlayerSlot switches between this and CLIENT_SLOT_RECYCLABLE,
+	// but leaves CLIENT_SLOT_CREATED as is
+	CLIENT_SLOT_NOT_RECYCLABLE,
+	// AMNOTE: Set by CServerSideClientBase::Create
+	CLIENT_SLOT_CREATED,
+};
+
 class CServerSideClientBase : public CUtlSlot, public INetworkChannelNotify, public INetworkMessageProcessingPreFilter
 {
 public:
-	enum ESlotState
-	{
-		SLOT_NONE = 0, // Slot is not held for reconnect: either an active connected client or a free slot
-		SLOT_HELD_FOR_RECONNECT = 1, // Disconnected client slot held for reconnect. This is transient and engine-managed
-		SLOT_RESERVED = 2, // Reserved placeholder that has not connected yet. This state is sticky
-	};
-
 	// Async payload for CNETMsg_SpawnGroup_SetCreationTick_t
 	struct OnSpawnGroupActivateCall_t
 	{
@@ -113,7 +129,6 @@ public:
 		SpawnGroupHandle_t m_hSpawnGroup; // msg.spawngrouphandle
 		int m_nCreationSequence; // msg.creationsequence
 		bool m_b; // producer always sets true
-		char m_Pad000D[3];
 	};
 
 	// Async payload for CNETMsg_SpawnGroup_Unload_t
@@ -123,7 +138,6 @@ public:
 		SpawnGroupHandle_t m_hSpawnGroup; // msg.spawngrouphandle
 		uint32 m_nUnloadFlags; // producer always sets 0 (Unload flags/tickcount)
 		bool m_b; // producer always sets true
-		char m_Pad000D[3];
 	};
 
 	struct BuildServerInfoMessageAsync_t
@@ -142,14 +156,12 @@ public:
 	{
 		CNetMessage *m_pMessage;
 		NetChannelBufType_t m_BufferType;
-		char m_Pad0009[7];
 	};
 
 	struct OnSpawnGroupLoadCall_t
 	{
 		void *m_pUnk0000;
 		bool m_bAsync; // logged as "Sync"/"Async"
-		char m_Pad0009[7];
 	};
 
 	// Async payload for CNETMsg_SpawnGroup_ManifestUpdate_t
@@ -158,7 +170,6 @@ public:
 		CBufferString m_sManifest;
 		SpawnGroupHandle_t m_hSpawnGroup;	// msg.spawngrouphandle
 		bool m_bUnk0014;
-		char m_Pad0015[3];
 	};
 
 	// Copied out of CCLCMsg_BaselineAck at enqueue time (not a message pointer)
@@ -185,7 +196,6 @@ public:
 	struct DisconnectCall_t
 	{
 		ENetworkDisconnectionReason m_Reason;
-		char m_Pad0004[4];
 		CUtlString m_sInternalReason;
 	};
 
@@ -213,7 +223,7 @@ public:
 	CSteamID                 GetClientSteamID() const { return m_SteamID; }
 	const char              *GetClientName() const { return m_Name; }
 	INetChannel             *GetNetChannel() const { return m_pNetChannel; }
-	ESlotState               GetSlotState() const { return m_eSlotState; }
+	ClientSlotReservation_t  GetSlotReservation() const { return m_nSlotReservation; }
 	const netadr_t          *GetRemoteAddress() const { return m_Addr.Get<netadr_t>(); }
 	CNetworkGameServerBase  *GetServer() const { return m_pGameServer; }
 
@@ -349,7 +359,9 @@ public:
 
 	virtual CServerSideClientBase *GetSplitScreenOwner() { return m_pAttachedTo; }
 
-	virtual int              GetNumPlayers() = 0;
+	// AMNOTE: Counts the players sharing this client's connection, itself included (non-null m_SplitScreenUsers).
+	// Split screen users forward to the client they're attached to
+	virtual int              GetSplitScreenPlayerCount() = 0;
 
 	virtual void             ShouldReceiveStringTableUserData() = 0;
 
@@ -367,14 +379,16 @@ public:
 public:
 	virtual void             Await() = 0;
 
-	virtual void             MarkToKick() = 0;
-	virtual void             UnmarkToKick() = 0;
+	// AMNOTE: Called once the delayed calls queued during the send job are flushed, and when the send job starts
+	virtual void             OnSendJobFinished() = 0;
+	virtual void             OnSendJobStarted() = 0;
 
 	virtual bool             ProcessSignonStateMsg( int state ) = 0;
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
 
 public:
-	CUtlString m_UserIDString;
+	// AMNOTE: "BOT", "STEAM_ID_PENDING", "STEAM_ID_LAN" or the SteamID as text
+	CUtlString m_NetworkIDString;
 	CUtlString m_Name;
 	CPlayerSlot m_nClientSlot;
 	CEntityIndex m_nEntityIndex;
@@ -382,42 +396,62 @@ public:
 	INetChannel *m_pNetChannel;
 	// CServerSideClientBase::Connect( name='%s', userid=%d, fake=%d, connectiontypeflags=%d, chan->addr=%s )
 	uint8 m_nConnectionTypeFlags;
-	uint8 m_nAsyncDisconnectFlags; // check in Disconnect function, 1 add to queue, 2 disconnect now
-	bool m_bMarkedToKick;
+	ClientSendJobState_t m_nSendJobState;
+
+	// AMNOTE: Set on construction, cleared by OnSendJobStarted and set again by OnSendJobFinished,
+	// so it's false while the client's send job runs
+	bool m_bSendJobIdle;
 	SignonState_t m_nSignonState;
 	bool m_bSplitScreenUser;
+	// AMNOTE: A split screen user goes through the full disconnection only when it's set, otherwise the server sends "ss_remove"
 	bool m_bSplitAllowFastDisconnect;
 	int m_nSplitScreenPlayerSlot;
 	CServerSideClientBase *m_SplitScreenUsers[4];
 	CServerSideClientBase *m_pAttachedTo;
 	bool m_bSplitPlayerDisconnecting;
 
-	ESlotState m_eSlotState;
+	ClientSlotReservation_t m_nSlotReservation;
 	bool m_bFakePlayer;
-	bool m_bInitialSpawnSent;	// init TRUE; controls whether initial spawn data was sent
-	int m_nDisconnectSequence;	// set from server counter in Disconnect(), zeroed in Clear()
+	// AMNOTE: Full updates are logged with their reason while it's set
+	bool m_bLogFullUpdate;
+	// AMNOTE: Snapshots sent without a delta frame
+	int m_nFullUpdateCount;
 
 	CPlayerUserId m_UserID = -1;
 	bool m_bReceivedPacket;	// true, if client received a packet after the last send packet
 	CSteamID m_SteamID;
+	// AMNOTE: Kept when the client is cleared, a reconnecting player gets the slot that has their SteamID back
 	CSteamID m_DisconnectedSteamID;
+	// AMNOTE: The SteamID of the auth session, ended on disconnect
 	CSteamID m_AuthTicketSteamID;
 	CSteamID m_nFriendsID;
 	ns_address m_Addr;
+	// AMNOTE: Kept on disconnect, a reconnecting player gets the slot that has their address back
 	ns_address m_DisconnectedAddr;
+
+	// AMNOTE: Set from a server-wide counter on disconnect, the disconnected slot with the lowest one is reused first
+	int m_nDisconnectSequence;
+
 	KeyValues *m_pConVars;
 	CUtlDict< empty_t, int, k_eDictCompareTypeCaseInsensitiveFast > m_UnrecognizedConVarDict;
 
 	bool m_bConVarsChanged;
 	bool m_bConVarsInitialized;
 	bool m_bIsHLTV;
-	bool m_bClientInfoReceived;
-	uint64 m_nPendingSpawnGroupMask; // bitmask of pending spawn group operations, cleared in Clear()
+
+	// AMNOTE: Set when the server removes the TV sink
+	bool m_bTvStreamSinkRemoved;
+
+	// AMNOTE: The HLTV client's downstream TV sink, SendNetMessage forwards to it
+	ITvStreamSink *m_pTvStreamSink;
 	uint32 m_nSendtableCRC;
 	uint32 m_uChallengeNumber;
 	int m_nSignonTick;
 	int m_nDeltaTick;
-	int m_nHltvReplayDeltaTick;		// init -1; delta tick used during HLTV replay mode
+
+	// AMNOTE: Tick of the last delta snapshot sent reliably while sv_disable_reliable_delta_retransmit is set,
+	// snapshots delta from it as if the client acknowledged it
+	int m_nLastReliableDeltaTick;
 	int m_nStringTableAckTick;
 	int m_nBaselineSequence;		// baseline sequence number for baseline ack processing
 	CFrameSnapshot *m_pLastSnapshot;	// last send snapshot
@@ -441,9 +475,13 @@ public:
 
 	CCircularBuffer m_TickHistory = {1024};	// stores recent tick data for delta computation and ack tracking
 	bool m_bLowViolence = false;		// true if client is in low-violence mode (L4D server needs to know)
-	bool m_bUsesSteamRelay = true;		// init TRUE; whether Steam Datagram Relay is used for this client
+
+	// AMNOTE: The client connected through a loopback address
+	bool m_bLoopback = false;
 	bool m_bFullyAuthenticated = false;
-	bool m_bUnk1 = false;
+	bool m_bClanOfficer = false;
+	bool m_bClanMember = false;
+	bool m_bInitialSpawnGroupsSent = false;
 
 	// Time when we should send next world state update ( datagram )
 	float m_fNextMessageTime = 0.0f;
@@ -451,8 +489,11 @@ public:
 	// Default time to wait for next message
 	float m_fSnapshotInterval = 0.0f;
 
-	float m_fAuthenticatedTime = -1.0f;
-	float m_fUnkTime = 0.0f;
+	// AMNOTE: Plat_FloatTime when Steam canceled the auth ticket, -1 when there's none pending
+	float m_flAuthTicketCanceledTime = -1.0f;
+
+	// AMNOTE: Plat_FloatTime of the last "userinfo ignored" warning, which is printed at most every 10 seconds
+	float m_flLastUserInfoIgnoredTime = 0.0f;
 
 	// CSVCMsg_PacketEntities_t (CNetMessagePB<55,...>), sizeof 216 bytes
 	CSVCMsg_PacketEntities_t m_PacketEntities;
@@ -460,9 +501,9 @@ public:
 	// CDelayedCallBase<CDelayedCallBase<CServerSideClientBase>>* pointers.
 	CTSQueue< void * > m_DelayedCallQueue;
 
-	// Queued message buffers
-	CUtlVector< void * > m_PendingReliableMessages;
-	CUtlVector< void * > m_PendingUnreliableMessages;
+	// AMNOTE: The send job runs the delayed calls of the first, which it swaps in from the second, where they're queued meanwhile
+	CUtlVector< CDelayedCallBase< CServerSideClientBase > * > m_SendJobDelayedCalls;
+	CUtlVector< CDelayedCallBase< CServerSideClientBase > * > m_PendingSendJobDelayedCalls;
 
 	// Command rate limiter
 	int m_nMaxTicksWindow = 30;
@@ -476,7 +517,6 @@ public:
 
 	// SV: Player %s kicked for too many failed console commands
 	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with reason 39
-	int m_nLastSpamCheckTick = 0;	// last tick at which the spam counter was evaluated/reset
 	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
 	bool m_bPendingSignonStateMsg = false; // set when signon -> CONNECTED, consumed in ProcessSignonStateMsg
 	CCommand *m_pLastCommand;
@@ -513,7 +553,6 @@ public:
 		int m_nReplayStopAt;
 		int m_nReplayDelay;
 		char m_Request[44];
-		char m_Pad0034[4];
 		double m_flRequestTime;
 	};
 
@@ -561,18 +600,10 @@ public:
 		CClientFrame *m_pDeltaFrame;
 		CClientFrame *m_pCurrentFrame;
 		int m_nCurrentFrameTick;
-
-	private:
-		char m_Pad008C[4];
-
-	public:
 		bf_write m_SnapshotBuffer;
 		void *m_pSnapshotBufferMemory;
 		int m_nMaxAckTick;
 		bool m_bSnapshotPrepared;
-
-	private:
-		char m_Pad00C5[3];
 	};
 
 public:
@@ -622,8 +653,8 @@ public:
 	virtual void ResetHltvReplayRequestTime() override = 0;
 	virtual const char *GetHltvReplayStats() override = 0;
 	virtual void Await() override = 0;
-	virtual void MarkToKick() override = 0;
-	virtual void UnmarkToKick() override = 0;
+	virtual void OnSendJobFinished() override = 0;
+	virtual void OnSendJobStarted() override = 0;
 	virtual bool ProcessSignonStateMsg( int state ) override = 0;
 	virtual void PerformDisconnection( ENetworkDisconnectionReason reason ) override = 0;
 
@@ -638,19 +669,30 @@ public:
 	CClientFrameManager m_FrameManager;
 	void *m_pUnk0EC8;
 	CClientFrame *m_pCurrentFrame;
-	float m_flLastClientCommandQuotaStart = 0.0f;
+
+	// AMNOTE: Move messages in the current packet, the client is disconnected when there's more than one
+	int m_nMoveMessagesInPacket = 0;
+
+	// AMNOTE: Server time of ActivatePlayer, -1 before it. Snapshots keep more frames for sv_extra_client_connect_time after it
 	float m_flTimeClientBecameFullyConnected = -1.0f;
 	bool m_bVoiceLoopback = false;
+
+	// AMNOTE: The HLTV replay plays a stash instead of the HLTV server's frames
 	bool m_bHltvReplayFromStash = false;
-	bool m_bUnk0EE2 = false;
-	char m_Pad0EE3;
+
+	// AMNOTE: The game sends the client another player's view with a delay (sv_maxreplay)
+	bool m_bIsInReplayMode = false;
 	int m_nHltvReplayDelay = 0;
 	CHLTVServer *m_pHltvReplayServer;
+
+	// AMNOTE: Ticks the HLTV replay stops, starts, and slows down between, sent in CSVCMsg_HltvReplay
 	int m_nHltvReplayStopAt;
 	int m_nHltvReplayStartAt;
 	int m_nHltvReplaySlowdownBeginAt;
 	int m_nHltvReplaySlowdownEndAt;
 	float m_flHltvReplaySlowdownRate;
+
+	// AMNOTE: Tick of the last HLTV replay frame sent
 	int m_nHltvLastSendTick;
 	double m_flHltvLastReplayRequestTime;
 	CUtlVector< INetMessage * > m_HltvQueuedMessages;
