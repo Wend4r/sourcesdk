@@ -13,19 +13,12 @@
 #include <schemasystem/schemametatag.h>
 
 #include <initializer_list>
+#include "resourcesystem/resourcesystemtypes.h"
 
 typedef uint64 ResourceType_t;
 
 // Resource type of the info class, the packed file extension, e.g. 'vmap'
 DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );
-
-enum ResourceStatus_t
-{
-	RESOURCE_STATUS_UNKNOWN = 0,
-	RESOURCE_STATUS_KNOWN_BUT_NOT_RESIDENT,
-	RESOURCE_STATUS_PARTIALLY_RESIDENT,
-	RESOURCE_STATUS_RESIDENT,
-};
 
 enum ResourceManifestLoadBehavior_t : int8
 {
