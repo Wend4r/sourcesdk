@@ -19,6 +19,8 @@
 #include "splitscreenslot.h"
 #include "tier0/platwindow.h"
 #include "spawngrouptypes.h"
+#include "tier0/utlsortvector.h"
+#include "tier4/tier4.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -249,6 +251,19 @@ public:
 	// Removes the stored mode from the boot config.
 	virtual void ResetGlobalThreadPoolMode() = 0;
 	virtual void PrintNetworkSummaryReport() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Purpose: Engine implementation of IVEngineClient2.
+//-----------------------------------------------------------------------------
+class CEngineClient : public CTier4AppSystem< IVEngineClient2 >
+{
+public:
+	// Set by SetRestrictClientCommands; ClientCommand applies it unless bUnrestricted is set
+	bool m_bRestrictClientCommands;
+
+	// Hashes of lower-case command names, added and removed by unk178
+	CUtlSortVector< uint32 > m_Unk0028;
 };
 
 typedef IVEngineClient2 IVEngineClient;
