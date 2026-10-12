@@ -574,7 +574,7 @@ public:
 
 	virtual bool			AllowPlayerToTakeOverBots() = 0;
 
-	virtual void			Unk_OnClientFullyConnect( void *p ) = 0;
+	virtual void			OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
 
 	virtual void		GetHostStateLoopModeInfo( HostStateLoopModeType_t type, CUtlString &loopModeName, KeyValues **ppLoopModeOptions ) = 0;
 
