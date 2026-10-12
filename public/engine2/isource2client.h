@@ -25,11 +25,17 @@ class CSVCMsg_UserCommands_t;
 class CTransform;
 class CUtlBuffer;
 class IDemoMessageSink;
+class ISceneView;
+class InfoForResourceTypeCModel;
 class KeyValues;
 class QAngle;
 class Vector;
 struct FlattenedSerializerSpewField_t;
+struct RenderViewport_t;
 struct vrect_t;
+
+template < class T > class CWeakHandle;
+template < class T > class CStrongHandleCopyable;
 
 // Installed by the client as the change callback time limit spew of the entity system
 abstract_class IFieldChangeLimitSpew
@@ -164,7 +170,8 @@ public:
 
 	virtual bool FormatSerializerFieldValue( CEntityIndex nEntityIndex, FlattenedSerializerSpewField_t &field ) = 0;
 
-	virtual void PerformClientSpecificSetupForPlayerViews( void *pUnk1, void *pUnk2, void *pUnk3, void *pUnk4 ) = 0;
+	// pView is the "Player %d" view the engine adds through ISceneSystem::AddView()
+	virtual void PerformClientSpecificSetupForPlayerViews( ISceneView *pView, RenderViewport_t *pViewport, void *pUnk1, void *pUnk2 ) = 0;
 	virtual void *GetPlayerViewSetup( CSplitScreenSlot nSlot ) = 0;
 	virtual void GetBugReportLaunchURLParameters( KeyValues *pKV ) = 0;
 	// Creates the projected texture when *ppTexture is NULL
@@ -205,8 +212,8 @@ public:
 	virtual bool GameCreateNetworkStringTables() = 0;
 	// Fires the "client_disconnect" game event
 	virtual void NotifyDisconnect( int nReason ) = 0;
-	// Releases the strong model handle in *pUnk2 and clears *pUnk3
-	virtual void GetModelCombineInfo( void *pUnk1, void *pUnk2, int *pUnk3 ) = 0;
+	// Releases *pCombinedModel and clears *pUnk
+	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk ) = 0;
 	// Save/restore block handling
 	virtual void unk133( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
 	virtual void unk134( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
