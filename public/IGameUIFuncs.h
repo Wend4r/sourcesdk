@@ -14,6 +14,7 @@
 #include "appframework/iappsystem.h"
 #include "inputsystem/buttoncode.h"
 #include "tier0/utlvector.h"
+#include "tier3/tier3.h"
 
 struct RenderDisplayMode_t;
 
@@ -30,5 +31,19 @@ public:
 };
 
 #define VENGINE_GAMEUIFUNCS_VERSION "VENGINE_GAMEUIFUNCS_VERSION005"
+
+//-----------------------------------------------------------------------------
+// Engine implementation of IGameUIFuncs
+//-----------------------------------------------------------------------------
+class CGameUIFuncs : public CTier3AppSystem< IGameUIFuncs >
+{
+public:
+	// Result of the last GetVideoModes call, reused while the adapter, output and
+	// windowed flag are unchanged
+	int m_nUnk0024;
+	int m_nUnk0028;
+	bool m_bUnk002C;
+	CUtlVector< RenderDisplayMode_t > m_Unk0030;
+};
 
 #endif // IGAMEUIFUNCS_H
