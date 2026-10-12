@@ -335,7 +335,7 @@ public:
 
 	void* m_pUnk880;
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr;
-	// Told when the max client count changes
+	// Told when the active spawn group changes
 	void* m_pNotificationSink;
 	// Set by SetGameSessionManifest
 	HGameResourceManifest m_hGameSessionManifest;
