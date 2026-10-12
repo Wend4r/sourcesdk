@@ -13,6 +13,7 @@
 #include "tier0/generichash.h"
 #include "tier0/utlmap.h"
 #include "schemasystem/baseschema.h"
+#include "schemalib/schemametadata_data.h"
 
 class ISchemaSystemTypeScope;
 class CSchemaSystemTypeScope;
@@ -307,12 +308,6 @@ SCHEMATYPE_ENTRY( CSchemaType_DeclaredClass, SCHEMA_TYPE_DECLARED_CLASS, SCHEMA_
 SCHEMATYPE_ENTRY( CSchemaType_DeclaredEnum, SCHEMA_TYPE_DECLARED_ENUM, SCHEMA_ATOMIC_INVALID );
 SCHEMATYPE_ENTRY( CSchemaType_FixedArray, SCHEMA_TYPE_FIXED_ARRAY, SCHEMA_ATOMIC_INVALID );
 SCHEMATYPE_ENTRY( CSchemaType_Bitfield, SCHEMA_TYPE_BITFIELD, SCHEMA_ATOMIC_INVALID );
-
-struct SchemaMetadataEntryData_t
-{
-	const char* m_pszName;
-	void* m_pData;
-};
 
 struct SchemaClassFieldData_t
 {
