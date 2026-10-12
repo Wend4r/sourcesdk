@@ -55,12 +55,12 @@ public:
 };
 
 template < class KEYTYPE = intp >
-class CUtlTSHashGenericHash
+class CUtlTSHashGenericHashMethod
 {
 public:
 	static int Hash( const KEYTYPE &key, int nBucketMask )
 	{
-		int nHash = HashIntConventional( (intp)key );
+		int nHash = HashIntAlternate( (intp)key );
 		if ( nBucketMask <= USHRT_MAX )
 		{
 			nHash ^= ( nHash >> 16 );
@@ -78,6 +78,10 @@ public:
 	}
 };
 
+// The previous name of CUtlTSHashGenericHashMethod.
+template < class KEYTYPE = intp >
+using CUtlTSHashGenericHash = CUtlTSHashGenericHashMethod< KEYTYPE >;
+
 template < class KEYTYPE >
 class CUtlTSHashUseKeyHashMethod
 {
@@ -94,7 +98,7 @@ public:
 	}
 };
 
-template< class T, int BUCKET_COUNT, class KEYTYPE = intp, class HashFuncs = CUtlTSHashGenericHash< KEYTYPE > > 
+template< class T, int BUCKET_COUNT, class KEYTYPE = intp, class HashFuncs = CUtlTSHashGenericHashMethod< KEYTYPE > > 
 class CUtlTSHash
 {
 public:
