@@ -225,19 +225,20 @@ public:
 };
 
 // Also derives from IToolServices (exposed as "ToolServices_002"), a base without a vtable
-// whose data starts at m_pUnk028; its extent is unknown, so its members are listed here.
+// whose data starts at m_pToolsConfig; its extent is unknown, so its members are listed here.
 class CToolFramework2 : public CTier3AppSystem< IToolFramework2 >
 {
 public:
-	// Tool descriptor list
-	void *m_pUnk028;
+	// Engine and external tools, loaded from bin/enginetools.txt
+	CToolsConfig *m_pToolsConfig;
 
-	// Vector of 32-byte entries of the loaded tool systems
+	// One 32-byte entry per engine tool: its settings (KeyValues3, returned by unk081), the
+	// IToolSystem2 returned by LoadTool and a flag set once loading was attempted
 	uint8 m_unk030[ 0x18 ];
 
-	uint8 m_unk048[ 0x18 ];
-	uint8 m_unk060[ 0x18 ];
-	CQToolFrameworkApplication *m_pUnk078;
+	CUtlVector< IToolFrameListener * > m_ToolFrameListeners;
+	CUtlVector< IToolFrameworkAudioSettingsListener * > m_AudioSettingsListeners;
+	CQToolFrameworkApplication *m_pApplication;
 
 	// Settings, saved under the matching snake_case keys
 	bool m_bMultisample;
@@ -250,40 +251,65 @@ public:
 	// Set by MarkSettingsDirty, cleared when the settings are saved
 	bool m_bSettingsDirty;
 
+	// Tool deferred by unk016, launched by Tools_RunFrame; 0xFF when none
 	bool m_bUnk087;
 	uint8 m_nUnk088;
 
 	// Tools queued for unloading
-	CUtlVector< uint8 > m_vecUnk090;
+	CUtlVector< uint8 > m_ToolsToUnload;
 
-	// CEnvironmentBlock returned by unk037
+	// CEnvironmentBlock returned by unk037, captured by Connect
 	uint8 m_unk0A8[ 0x30 ];
 
-	void *m_pUnk0D8;
-	void *m_pUnk0E0;
+	// Labels added by unk038 to the loading splash screen: the widget, its layout and the 24-byte
+	// entries (QLabel, the int argument, the text kept until the widget exists)
+	QWidget *m_pUnk0D8;
+	QVBoxLayout *m_pUnk0E0;
 	uint8 m_unk0E8[ 0x18 ];
-	int m_nUnk100;
-	// Created on the first unk039 call
-	CJoystickInput *m_pUnk108;
-	uint8 m_unk110[ 0x10 ];
-	CBufferStringN< 200 > m_sUnk120;
 
-	// QPointer< QObject > of unk060
+	int m_nUnk100;
+
+	// Created on the first unk039 call
+	CJoystickInput *m_pJoystickInput;
+
+	// Returned by unk059
+	CQInputBindManager *m_pInputBindManager;
+
+	// Warns about other tools instances
+	CSingleAppInstance *m_pSingleAppInstance;
+
+	// GAMEROOT path, the root of the settings files
+	CBufferStringN< 200 > m_sGameRoot;
+
+	// QPointer< QWidget > of unk060
 	uint8 m_unk1F0[ 0x10 ];
 
-	bool m_bUnk200;
+	// Stall monitor, started by unk011
+	bool m_bStallMonitorEnabled;
+	ThreadHandle_t *m_pStallMonitorThread;
 
-	// Stall monitor thread
-	ThreadHandle_t *m_pUnk208;
-
+	// Counter of unk078
 	int m_nUnk210;
 	uint8 m_unk214[ 4 ];
+
+	// "VToolMessage" notification channel
 	uint8 m_unk218[ 0x18 ];
-	uint8 m_unk230[ 0x18 ];
-	bool m_bUnk248;
-	CFGDFromAssetRegistry *m_pUnk250;
+
+	// Listeners of RegisterResponseListener
+	CUtlVector< void * > m_ResponseListeners;
+
+	// Set by BackupSettings: later saves are blocked
+	bool m_bBlockSettingsSave;
+
+	CFGDFromAssetRegistry *m_pFGDFromAssetRegistry;
 	CBufferString m_sUnk258;
-	uint8 m_unk268[ 0x28 ];
+
+	// 24-byte requests queued by unk080, guarded by the mutex
+	uint8 m_unk268[ 0x18 ];
+	CAtomicMutex m_ToolRequestsMutex;
+
+	// Command line options that suppress the deferred tool launch
+	bool m_bUnk28C;
 	CUtlString m_sUnk290;
 	int m_nUnk298;
 	bool m_bUnk29C;
