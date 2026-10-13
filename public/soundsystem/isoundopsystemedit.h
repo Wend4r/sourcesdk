@@ -125,7 +125,7 @@ public:
 	virtual bool unk052( const char *pSoundEventName, const char *pFieldName, const CUtlString &sValue, int16 nIndex ) = 0;
 	virtual void unk053( const char *pSoundEventName, const char *pFieldName ) = 0;
 	// Value of a public field of the stack and its element count
-	virtual int unk054( HSOSLIBSTACKHASH hStack, const char *pFieldName, void **ppData, int nIndex ) = 0;
+	virtual int unk054( HSOSLIBSTACKHASH hStack, const char *pFieldName, SosFieldValueMem_t **ppData, int nIndex ) = 0;
 	// Element removal, depending on the state of unk051
 	virtual void unk055( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	// Calls ISoundOpSystem::SetSoundEventParam
@@ -137,9 +137,11 @@ public:
 	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, int nField, void *pInfo, CUtlVector< CUtlString > *pList ) = 0;
 	virtual SOFieldDataType_t unk060( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, int nField, CUtlVector< CUtlString > *pList ) = 0;
 	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, void *pInfo, const CKV3MemberName *pFieldName ) = 0;
-	virtual bool unk062( const char *pName1, const char *pName2, CUtlString &sValue ) = 0;
-	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3, CUtlString &sValue ) = 0;
-	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3 ) = 0;
+	// Values of the "_stack_properties" table: a key of the stack, and a key of a field of the stack from its "_field_properties";
+	// the overload without sValue tells whether the key exists
+	virtual bool unk062( const char *pStackName, const char *pKey, CUtlString &sValue ) = 0;
+	virtual bool unk063( const char *pStackName, const char *pFieldName, const char *pKey, CUtlString &sValue ) = 0;
+	virtual bool unk063( const char *pStackName, const char *pFieldName, const char *pKey ) = 0;
 	// String the library stack was added with
 	virtual void unk065( const char *pStackName, CUtlString &sValue ) = 0;
 	// Lists of names, the char * elements are copies the caller deletes: library stacks, operator types
@@ -170,7 +172,7 @@ public:
 	// Element count of a public field of the stack
 	virtual int unk081( HSOSLIBSTACKHASH hStack, int nField ) = 0;
 	// Field data of the stack and its size
-	virtual void *unk082( HSOSLIBSTACKHASH hStack, int *pnSize ) = 0;
+	virtual SosFieldValueMem_t *unk082( HSOSLIBSTACKHASH hStack, int *pnSize ) = 0;
 	virtual bool unk083( HSOSLIBSTACKHASH hStack, HSOSOPFIELDHASH nFieldToken ) = 0;
 	virtual bool unk083( const char *pStackName, const char *pFieldName ) = 0;
 	// Fills a field entry of unk074, the lookup is empty and it returns false

@@ -39,6 +39,8 @@ typedef uint32 HSOSOPFIELDHASH;
 typedef int16 SOSRANDSEED;
 // Symbol of a string in the string table of the sound op system, the value of SOFTYPE_STRING_HANDLE fields
 typedef short SosStringHandle_t;
+// Memory of field values
+typedef uint8 SosFieldValueMem_t;
 
 enum SOFieldDataType_t : int8
 {
