@@ -36,18 +36,29 @@ enum P4FileState_t
 //-----------------------------------------------------------------------------
 struct P4File_t
 {
-	CUtlSymbol m_sName;			// file name
-	CUtlSymbol m_sPath;			// residing folder
-	CUtlSymbol m_sDepotFile;	// the name in the depot
-	CUtlSymbol m_sClientFile;	// the name on the client in Perforce syntax
-	CUtlSymbol m_sLocalFile;	// the name on the client in local syntax
-	int m_iHeadRevision;		// head revision number
-	int m_iHaveRevision;		// the revision the clientspec has synced locally
-	bool m_bOpenedByOther;		// opened by another user
-	bool m_bDir;				// directory
-	bool m_bDeleted;			// deleted
-	P4FileState_t m_eOpenState;	// current change state
-	int m_iChangelist;			// changelist current opened in
+	CUtlSymbolLarge m_sName;			// file name
+	CUtlSymbolLarge m_sPath;			// residing folder
+	CUtlSymbolLarge m_sDepotFile;		// the name in the depot
+	CUtlSymbolLarge m_sClientFile;		// the name on the client in Perforce syntax
+	CUtlSymbolLarge m_sLocalFile;		// the name on the client in local syntax
+	int m_iHeadRevision;				// head revision number
+	int m_iHaveRevision;				// the revision the clientspec has synced locally
+
+	// 7 by default
+	int m_nUnk030;
+
+	bool m_bOpenedByOther;				// opened by another user
+	bool m_bUnk035;
+	bool m_bDeleted;					// deleted at the head revision
+	bool m_bUnk037;
+	P4FileState_t m_eOpenState;			// current change state
+	int m_iChangelist;					// changelist current opened in
+
+	// Users that have the file opened, see m_bOpenedByOther
+	int m_nOtherUserCount;
+	CUtlSymbolLarge m_sOtherUsers[ 8 ];
+
+	uint64 m_nUnk088;
 };
 
 
