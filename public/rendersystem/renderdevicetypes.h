@@ -35,6 +35,24 @@ enum RenderTextureDimension_t : int8
 	RENDER_TEXTURE_DIMENSION_COUNT
 };
 
+const int RENDER_ADAPTER_NAME_LENGTH = 512;
+
+struct RenderAdapterInfo_t
+{
+	char m_pDriverName[ RENDER_ADAPTER_NAME_LENGTH ];
+	uint32 m_VendorID;
+	uint32 m_DeviceID;
+	uint32 m_SubSysID;
+	uint32 m_Revision;
+	uint8 m_unk210;
+	uint8 m_pad211[ 3 ];
+	int m_nDXSupportLevel;
+	int m_nMinDXSupportLevel;
+	int m_nMaxDXSupportLevel;
+	uint32 m_nDriverVersionHigh;
+	uint32 m_nDriverVersionLow;
+};
+
 enum RenderColorSpace_t : uint8
 {
 	RENDER_LINEAR = 0,
