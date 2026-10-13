@@ -29,7 +29,7 @@ enum NetworkValidationMode_t
 
 };
 
-enum NetworkSerializationMode_t
+enum NetworkSerializationMode_t : int
 {
 	NET_SERIALIZATION_MODE_0 = 0x0,
 	NET_SERIALIZATION_MODE_1 = 0x1,
