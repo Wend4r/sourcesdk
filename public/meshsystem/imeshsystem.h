@@ -17,6 +17,7 @@
 #include <resourcesystem/resourcehandletypes.h>
 #include <tier0/smartptr.h>
 #include <tier0/utlstringtoken.h>
+#include <tier0/utlvector.h>
 
 class CSceneObject;
 class CRenderMesh;
@@ -25,6 +26,22 @@ class CMeshInstance;
 class IMeshRayTrace;
 class ISceneObjectDesc;
 class ISceneWorld;
+class InfoForResourceTypeCTextureBase;
+
+//-----------------------------------------------------------------------------
+// A mesh of a model, by the index of the mesh in the model
+//-----------------------------------------------------------------------------
+template < class T >
+class CModelMeshHandleBase
+{
+public:
+	T m_hModel;
+	int m_iMesh;
+};
+
+class CModelMeshHandle : public CModelMeshHandleBase< CWeakHandle< InfoForResourceTypeCModel > >
+{
+};
 
 abstract_class IMeshSystem : public IAppSystem
 {
@@ -37,24 +54,30 @@ public:
 
 	virtual void DestroyMeshInstance( CMeshInstance *pMeshInstance ) = 0;
 
-	virtual void CreateProjectedDecal( void *p ) = 0;
+	virtual void *CreateProjectedDecal( const void *pDesc ) = 0;
 
-	virtual void DestroyProjectedDecal( void *p ) = 0;
+	virtual void DestroyProjectedDecal( void *pDecal ) = 0;
 	virtual CSceneObject *GetProjectedDecalSceneObject( void *pDecal ) = 0;
 
 	virtual CSceneObject *CreateSceneObject( ResourceHandle_t hModel, const matrix3x4_t &modelToWorld, const char *pszDescName, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 
 	virtual CSceneObject *CreateSceneObject( ResourceHandle_t hModel, const CTransform &modelToWorld, const char *pszDescName, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 
-	virtual void unk021() = 0;
-	virtual void unk022() = 0;
+
+	// Creates the scene objects of every mesh of the model, unanimated ones through "BaseSceneObjectDesc"
+	virtual bool CreateSceneObjects( ResourceHandle_t hModel, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld, CUtlVector< CSceneObject * > *pObjectsOut ) = 0;
+	virtual CSceneObject *CreateSceneObjectForSceneObjectData( CModelMeshHandle hMesh, int nSceneObjectIndex, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld, ISceneObjectDesc *pDesc ) = 0;
+
 	virtual void RemoveUnusedMeshGroups( CSceneObject *pSceneObject, uint64 nMeshGroupMask ) = 0;
 	virtual void EnableTraceLines() = 0;
 	virtual void GetModelBounds( ResourceHandle_t hModel, Vector *pMins, Vector *pMaxs ) = 0;
-	virtual void unk026() = 0;
-	virtual void unk027() = 0;
-	virtual void unk028() = 0;
-	virtual CMeshInstance *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter, void *pRenderMesh, int nSceneObjectIndex, uint64 nOriginalSceneObjectFlags, CSceneObject *pSceneObject, uint64 nMeshGroupMask, uint8 nLODGroupMask, const int16 *pLocalToMasterTable ) = 0;
+
+	// Adds the translucency bits of nTranslucencyType to nTypeFlags
+	virtual uint64 ComputeSceneObjectTranslucencyFlags( uint32 nTranslucencyType, uint64 nFlags, uint64 nTypeFlags ) = 0;
+	virtual void UpdateTranslucencyFlagsOnMaterialChange( CSceneObject *pSceneObject ) = 0;
+
+	virtual void unk028( CSceneObject *pSceneObject ) = 0;
+	virtual CMeshInstance *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter, CModelMeshHandle hRenderMesh, int nSceneObjectIndex, uint64 nOriginalSceneObjectFlags, CSceneObject *pSceneObject, uint64 nMeshGroupMask, uint8 nLODGroupMask, const int16 *pLocalToMasterTable ) = 0;
 
 	// NULL unless EnableTraceLines() was called
 	virtual IMeshRayTrace *FindOrCreateMeshRayTrace( const CRenderMesh *pMesh ) = 0;
@@ -72,7 +95,11 @@ public:
 
 	virtual int FindInputIndex( ResourceHandle_t hMaterial, const char *pszName ) = 0;
 	virtual int FindInputIndex( ResourceHandle_t hMaterial, CUtlStringToken token ) = 0;
-	virtual void unk042() = 0;
+
+	// Texture of the material when it has the attribute that enables it, read by FindInputIndex()
+	virtual CWeakHandle< InfoForResourceTypeCTextureBase > unk042( ResourceHandle_t hMaterial ) = 0;
+
+	virtual ~IMeshSystem() {}
 };
 
 #endif // IMESHSYSTEM_H
