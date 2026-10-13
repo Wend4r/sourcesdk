@@ -99,18 +99,27 @@ public:
 	virtual bool unk062( const char *pName1, const char *pName2, CUtlString &sValue ) = 0;
 	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3, CUtlString &sValue ) = 0;
 	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3 ) = 0;
-	virtual void unk065() = 0;
-	virtual void unk066() = 0;
-	virtual void unk067() = 0;
-	virtual void unk068() = 0;
-	virtual void unk069() = 0;
-	virtual void unk070() = 0;
-	virtual void unk071() = 0;
-	virtual void unk072() = 0;
-	virtual void unk073() = 0;
-	virtual void unk074() = 0;
-	virtual void unk075() = 0;
-	virtual void unk076() = 0;
+	// String the library stack was added with
+	virtual void unk065( const char *pStackName, CUtlString &sValue ) = 0;
+	// Lists of names, the char * elements are copies the caller deletes: library stacks, operator types
+	// (unk099) with "operator_override", the same with their indices, and the entries of another table
+	virtual void unk066( CUtlVector< char * > &list ) = 0;
+	virtual void unk067( CUtlVector< char * > &list ) = 0;
+	virtual void unk068( CUtlVector< int > &indices, CUtlVector< char * > &names ) = 0;
+	virtual void unk069( CUtlVector< char * > &list ) = 0;
+	// Names of the library stacks
+	virtual void unk070( CUtlVector< const char * > &list ) = 0;
+	// Library stacks whose "display_game" value is the game name
+	virtual void unk071( CUtlVector< CUtlString > &list ) = 0;
+	// Names of the operators of the stack
+	virtual void unk072( HSOSLIBSTACKHASH hStack, CUtlVector< CUtlString > &list ) = 0;
+	virtual CUtlString unk073( HSOSLIBSTACKHASH hStack, const char *pOperatorName ) = 0;
+	// Fields of the operator of the library stack or of the sound event, 0x28 bytes each:
+	// name, type, flags, value text and three ints of the field
+	virtual void unk074( HSOSLIBSTACKHASH hStack, const char *pOperatorName, void *pFields ) = 0;
+	virtual void unk074( SoundEventGuid_t guid, const char *pOperatorName, void *pFields ) = 0;
+	// Values of the fields of the operator for the stack at nIndex (from the end when negative) of the unk074 entry of ISoundOpSystem
+	virtual void unk076( uint32 nUnk, int nIndex, const char *pOperatorName, CUtlVector< CUtlString > *pList ) = 0;
 	// Public field names of the stack, unk078 filters them
 	virtual void unk077( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
 	virtual void unk078( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
