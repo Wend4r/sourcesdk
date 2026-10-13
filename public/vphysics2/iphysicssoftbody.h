@@ -194,8 +194,8 @@ public:
 
 	virtual void unk110( bool bUnknown ) = 0;
 	virtual bool unk111() const = 0;
-	virtual void unk112( bool bUnknown ) = 0;
-	virtual bool unk113() const = 0;
+	virtual void SetDormancyDisabled( bool bDisabled ) = 0;
+	virtual bool IsDormancyDisabled() const = 0;
 
 	virtual void unk114( void *pUnknown, bool bUnknown ) = 0;
 
