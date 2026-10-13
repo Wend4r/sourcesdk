@@ -50,6 +50,9 @@ public:
 
 	// constructor, destructor
 	CUtlSymbolLarge( const char* pString = nullptr ) : u( pString ) {};
+	CUtlSymbolLarge( const CUtlSymbolLarge &src ) : u( src.u ) {}
+
+	CUtlSymbolLarge &operator=( const CUtlSymbolLarge &src ) { u = src.u; return *this; }
 
 	// operator==
 	bool operator==( CUtlSymbolLarge const& src ) const { return u.m_addr == src.u.m_addr; }
