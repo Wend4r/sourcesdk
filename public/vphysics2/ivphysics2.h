@@ -375,19 +375,14 @@ public:
 	// Takes ( const RnSimplexCache_t &, const RnHull_t *, const RnHull_t * ) and returns the hull feature pair of the cached simplex as a 16-byte struct
 	virtual void unk053( void *p ) = 0;
 
-#ifdef _WIN32
-	virtual void unk054( void *p ) = 0;
-	virtual void unk055( void *p ) = 0;
-	virtual void unk056( void *p ) = 0;
-	virtual void unk057( void *p ) = 0;
-	virtual void unk058( void *p ) = 0;
-#else
-	virtual void unk058( void *p ) = 0;
-	virtual void unk057( void *p ) = 0;
-	virtual void unk056( void *p ) = 0;
-	virtual void unk055( void *p ) = 0;
-	virtual void unk054( void *p ) = 0;
-#endif
+	// Contact generation: the callees add contact points to pOut and the result tells whether there are any.
+	// The five form one overload set, which MSVC lists in reverse order. pOut and the other pointers are internal types of the physics module;
+	// each float is paired with the pointer that follows it into a { pointer, float } block for the callee
+	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, void *pUnknown4, int nUnknown ) = 0;
+	virtual bool unk054( void *pOut, const void *pUnknown1, const CTransform &transform1, const void *pUnknown2, int nUnknown1, const CTransform &transform2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
+	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, int nUnknown1, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
+	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, int nUnknown, float flUnknown2 ) = 0;
+	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, float flUnknown2 ) = 0;
 
 	// Convex hull geometry. A NULL pPreallocatedHull allocates a new hull
 	virtual RnHull_t *CreateBoxHull( const Vector &vExtent, const Vector &vCenter, RnHull_t *pPreallocatedHull ) = 0;
