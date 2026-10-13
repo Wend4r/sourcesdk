@@ -11,29 +11,43 @@
 #include <tier0/utlstringtoken.h>
 
 //-----------------------------------------------------------------------------
-// Implementation of IMaterial2. Members past the copy source are kept as
-// padding where their types are not declared in the SDK.
+// Implementation of IMaterial2. Members whose types are not declared in the
+// SDK are kept as padding of their size.
 //-----------------------------------------------------------------------------
 class CMaterial2 : public IMaterial2
 {
 public:
 	// Returned by GetCopySource()
-	HMaterialWeak m_hCopySource;
+	HMaterialStrong m_hCopySource;
 
 	// Depth of EnterOverrideScope() / LeaveOverrideScope()
 	int m_nUnk038;
 
 	// Taken from a global counter when the material is created
-	uint32 m_nUnk03C;
+	uint32 m_nUniqueId;
 
-	uint8 m_unk040[ 0x30 ];
+	// Returned by unk026()
+	CUtlLeanVector< CUtlString > m_unk040;
 
-	// Render attributes, returned by GetAttributes()
-	uint8 m_unk070[ 0x3A0 ];
+	// CUtlLeanVector of trivially destructible elements
+	void *m_unk050[ 2 ];
 
-	// Modes: count, allocation and six inline 160-byte modes
-	uint8 m_unk410[ 0x3C8 ];
+	// Returned by unk028()
+	CStrongHandleBase m_unk060;
 
+	// Frame count of the material system when GetMode() was last called
+	uint32 m_nLastFrameUsed;
+
+	// Returned by GetShaderStateOverriddenByMaterial()
+	uint32 m_nShaderStateOverrides;
+
+	// CRenderAttributes, returned by GetAttributes()
+	uint8 m_attributes[ 0x3A0 ];
+
+	// CUtlLeanVectorFixedGrowable< CMaterialMode, 6, int > of 160-byte modes
+	uint8 m_modeArray[ 0x3C8 ];
+
+private:
 	uint8 m_unk7D8[ 0x8 ];
 };
 
