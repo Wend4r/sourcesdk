@@ -17,6 +17,7 @@
 #include "mathlib/transform.h"
 #include "mathlib/vector.h"
 #include "physicslib/physaggregatedata.h"
+#include "physicslib/serialize.h"
 #include "resourcefile/introspectedtokv3typemanager.h"
 #include "resourcesystem/iresourcesystem.h"
 #include "tier0/refcount.h"
@@ -29,8 +30,6 @@
 #include "vconcomm/ivconcomm.h"
 #include "vphysics2/intersection_controller_interface.h"
 #include "vphysx/vphysx_interface.h"
-
-#include "schemacompiler/schemaon.h"
 
 class IVPhysics2World;
 class IPhysicsShape;
@@ -70,9 +69,6 @@ class IFnPhysicsBody;
 class IFnPhysicsSoftbody;
 class IFnPhysicsWorld;
 
-struct RnHull_t;
-struct RnMesh_t;
-struct RnCompound_t;
 struct PhysicsBodyDef_t;
 struct VPhysXAggregateData_t;
 struct VPhysXBodyPart_t;
@@ -88,24 +84,6 @@ struct CShapeCastResult;
 struct PhysicsTrace_t;
 struct PhysicsWorldUpdateConCommParams_t;
 struct Ray_t;
-
-schema struct RnSphere_t
-{
-	Vector m_vCenter;
-	float m_flRadius;
-};
-
-schema struct RnCapsule_t
-{
-	Vector m_vCenter[ 2 ];
-	float m_flRadius;
-};
-
-schema struct RnPlane_t
-{
-	Vector m_vNormal;
-	float m_flOffset;
-};
 
 enum RnState_t
 {
@@ -723,7 +701,5 @@ public:
 	// The internal softbody objects created by CreateListedSoftbody
 	CUtlLeanVector< void * > m_Softbodies;
 };
-
-#include "schemacompiler/schemaoff.h"
 
 #endif // IVPHYSICS2_H
