@@ -121,8 +121,8 @@ public:
 	// Size of pText in hFont, the default font for 0
 	virtual Vector2D GetRawSize( const char *pText, HFont hFont ) = 0;
 
-	// Releases every queued renderable
-	virtual void unk056() = 0;
+	// Ages the queued renderables and releases the ones RenderFrame() drew
+	virtual void AddToView() = 0;
 
 	virtual void GenerateMipMaps( IRenderContext *pRenderContext, void *pTexture ) = 0;
 
