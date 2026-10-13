@@ -73,15 +73,26 @@ schema abstract_class CNavPathCost : public INavPathCost
 {
 public:
 	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
-	virtual void unk009( void *p ) = 0;
-	virtual void unk010( void *p ) = 0;
-	virtual void unk011( void *p ) = 0;
-	virtual void unk012( void *p ) = 0;
+	// Returns false in every cost of the game.
+	virtual bool unk009( void *p ) = 0;
+	// CNavPathCost: false when the area has dynamic attribute bit 2, true for an area of kind 1
+	// with m_bCanFly or of kind 2 with m_bCanSwim (the low byte of its attributes), false for
+	// the rest. Called by unk014 with the area its second argument points at, and its first
+	// argument.
+	virtual bool unk010( const CNavArea *pArea, const void *pUnk ) const = 0;
+	// Returns true in every cost of the game.
+	virtual bool unk011( void *p ) = 0;
+	// Returns false in every cost of the game.
+	virtual bool unk012( void *p ) = 0;
 	// Costs the step from pFromArea along pAdj into *pResult: -1 unless IsToAreaTraversable,
 	// else CalcCostFloorAreas for floor steps and CalcCostLadder for ladder steps. pUnkPos and
 	// bUnk are handed on to CalcCostFloorAreas; pUnk is not used for the cost.
 	virtual void CalcCost( const CNavArea *pFromArea, const NavAreaAdj_t *pAdj, const void *pUnk, const Vector *pUnkPos, bool bUnk, PathCostResult_t *pResult ) const = 0;
-	virtual void unk014( void *p ) = 0;
+	// Costs a step from pFromPos into the area pUnk2 starts with, into *pResult: -1 unless
+	// unk010 allows the area, 0 when pFromPos is within 0.03125 of the area, else a cost
+	// computed from the bounds that follow the area pointer in pUnk2 and from pToPos when it is
+	// given. pUnk1 is only handed on to unk010.
+	virtual void unk014( const void *pUnk1, const void *pUnk2, const Vector *pFromPos, const Vector *pToPos, PathCostResult_t *pResult ) const = 0;
 	// The distance between the positions plus m_flTransitionPenalty.
 	virtual float TransitionCost( const void *pUnk1, const void *pUnk2, const Vector *pFrom, const Vector *pTo ) const = 0;
 	// Returns flDist unchanged; game costs add their penalties here, and treat a height change
