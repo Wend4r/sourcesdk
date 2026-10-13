@@ -56,7 +56,8 @@ public:
 	// False for a tool that is queued for unloading
 	virtual bool IsToolLoaded( uint8 nToolIndex ) = 0;
 
-	// Defers LaunchEngineTool to the next Tools_RunFrame
+	// Defers LaunchEngineTool to the next Tools_RunFrame; the engine passes the startup tool found
+	// by FindTool
 	virtual void unk016( uint8 nToolIndex ) = 0;
 
 	virtual void Tools_RunFrame() = 0;
@@ -109,8 +110,9 @@ public:
 	// Reloads tools/stylesheets/qtabbedstyle_colors.vsc and applies the style
 	virtual void ReloadTabbedStyle() = 0;
 
-	// Forwards both values to every loaded tool system
-	virtual void unk041( bool bUnknown1, bool bUnknown2 ) = 0;
+	// Forwards both values to every loaded tool system; the game loop mode passes true and whether it
+	// is being activated or deactivated
+	virtual void unk041( bool bUnknown, bool bLoopActive ) = 0;
 
 	virtual void MarkSettingsDirty() = 0;
 
@@ -189,10 +191,10 @@ public:
 	virtual void unk078( bool bPush ) = 0;
 
 	// Loads the tool and passes it the request; called by the "tool_request" console command and
-	// the "tool_request" VToolMessage
+	// the "tool_request" VToolMessage. Only for the main thread, see unk080
 	virtual void unk079( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
-	// Queues the request for unk079, dispatched by Tools_RunFrame
+	// Queues the request for unk079, dispatched by Tools_RunFrame; the game uses it off the main thread
 	virtual void unk080( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
 	virtual KeyValues3 *unk081( uint8 nToolIndex ) = 0;
