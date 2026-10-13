@@ -28,6 +28,7 @@
 #include <functional>
 
 class CBufferString;
+class CConcreteEntityList;
 class ClientClass;
 class CCommand;
 class CEntityInstance;
@@ -268,11 +269,12 @@ public:
 	// Returns "core.global_stack"
 	virtual const char *unk135() = 0;
 	virtual bool unk136() = 0;
-	// Writes NULL and returns 0
-	virtual int unk137( void **ppOut ) = 0;
+	// Total and custom game Steam UGC subscription counts for the crash dump comment; zeroes them and returns false
+	virtual bool unk137( uint32 *pnSubscriptionCounts ) = 0;
 	virtual void unk138( void *pUnk ) = 0;
 	virtual bool unk139( const char **ppszUnk, int nUnk, CUtlString *pOut ) = 0;
-	virtual void *unk140() = 0;
+	// Entity list of the client entity system, summarized in the crash dump comment
+	virtual CConcreteEntityList *unk140() = 0;
 	// Returns the CToolClientSimulationAPI singleton
 	virtual void *GetToolClientSimulationAPI() = 0;
 	virtual void unk142() = 0;
@@ -352,7 +354,8 @@ public:
 	virtual void unk201( void *pUnk1, void *pUnk2 ) = 0;
 	virtual bool unk202() = 0;
 	virtual void unk203() = 0;
-	virtual void *unk204() = 0;
+	// Asked before ISource2Server::GetMatchID() for the crash dump comment
+	virtual uint64 GetMatchID() = 0;
 	virtual bool unk205( CEntityIndex nEntityIndex ) = 0;
 	virtual CEntityHandle unk206( CEntityIndex nEntityIndex ) = 0;
 	virtual CEntityHandle unk207( int nUnk ) = 0;
