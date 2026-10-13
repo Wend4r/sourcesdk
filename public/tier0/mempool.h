@@ -60,6 +60,9 @@ public:
 
 	DLL_CLASS_IMPORT bool		IsAllocationWithinPool( void *pMem ) const;
 
+	// Calls pfnCallback( pAllocation, pContext ) for every allocated block, without locking the pool
+	DLL_CLASS_IMPORT void		IterateAllocationsUnsafe( void ( *pfnCallback )( void *pAllocation, void *pContext ), void *pContext );
+
 protected:
 	DLL_CLASS_IMPORT void		ClearDestruct( void (*)( void* ) );
 
