@@ -34,6 +34,34 @@ schema struct VPhysics2ShapeDef_t
 	CUtlVector< uint16 > m_CollisionAttributeIndices;
 };
 
+schema struct VPhysXBodyPart_t
+{
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	enum VPhysXFlagEnum_t
+	{
+		FLAG_STATIC = 1,
+		FLAG_KINEMATIC = 2,
+		FLAG_JOINT = 4,
+		FLAG_MASS = 8,
+		FLAG_ALWAYS_DYNAMIC_ON_CLIENT = 16,
+		FLAG_DISABLE_CCD = 32,
+	};
+
+	uint32 m_nFlags;
+	float32 m_flMass;
+	VPhysics2ShapeDef_t m_rnShape;
+	uint16 m_nCollisionAttributeIndex;
+	uint16 m_nReserved;
+	float m_flInertiaScale;
+	float m_flLinearDamping;
+	float m_flAngularDamping;
+	float m_flLinearDrag;
+	float m_flAngularDrag;
+	bool m_bOverrideMassCenter;
+	Vector m_vMassCenterOverride;
+};
+
 #include "schemacompiler/schemaoff.h"
 
 #endif // VPHYSX_COLLISIONMESH_RESOURCE_H
