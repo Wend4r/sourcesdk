@@ -108,20 +108,23 @@ public:
 	virtual void PlayerInfoChanged( int nPlayerIndex ) = 0;
 
 	virtual void CreateMove( int nSlot, bool bActive ) = 0;
-	// Forward to the input system
-	virtual void unk016() = 0;
-	virtual void unk017( void *pUnk ) = 0;
+	// Forward to the input system; the engine calls them for every split screen slot while it builds the move message
+	virtual void unk016( CSplitScreenSlot nSlot ) = 0;
+	virtual void unk017( CSplitScreenSlot nSlot ) = 0;
 
+	// Latest user command number the client generated
 	virtual int unk018( CSplitScreenSlot nSlot ) = 0;
 	virtual int unk019( CSplitScreenSlot nSlot ) = 0;
-	virtual int unk020( int nUnk ) = 0;
-	virtual void unk021() = 0;
+	virtual int unk020( CSplitScreenSlot nSlot ) = 0;
+	// Called with the command numbers of a packet entities message; empty
+	virtual void unk021( CSplitScreenSlot nSlot, int nLastCommandNumberExecuted, int nUnk ) = 0;
 	// Forwards to the input system with absolute queries allowed
 	virtual void ProcessInput( CSplitScreenSlot nSlot, float flFrameTime, bool bActive ) = 0;
-	virtual bool unk023( int nUnk1, void *pUnk, int nUnk2, int nUnk3 ) = 0;
-	virtual void unk024( CSplitScreenSlot nSlot, void *pUnk, int nCommandNumber ) = 0;
+	// Writes the user commands nFrom through nTo, each one delta encoded against the previous one
+	virtual bool WriteUsercmdDeltaToBuffer( CSplitScreenSlot nSlot, CUtlBuffer *pBuffer, int nFrom, int nTo ) = 0;
+	virtual void EncodeUserCmdToBuffer( CSplitScreenSlot nSlot, CUtlBuffer *pBuffer, int nCommandNumber ) = 0;
 	virtual void unk025() = 0;
-	virtual double unk026( void *pUnk, int nCommandNumber ) = 0;
+	virtual double unk026( CSplitScreenSlot nSlot, int nCommandNumber ) = 0;
 
 	// Forward to the game rules
 	virtual void unk027( bool bUnk ) = 0;
