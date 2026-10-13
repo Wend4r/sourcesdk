@@ -75,7 +75,8 @@ public:
 	virtual const void *GetVertexShaderInputSignature() = 0;
 	virtual bool IsBatchableInMode( const CUtlStringToken &mode, int nFlags ) = 0;
 	virtual void GetRepresentativeTextureSize( int *pWidth, int *pHeight, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
-	virtual void GetWorldMappingSize( int *pWidth, int *pHeight, int nUnk, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
+	// Reads "WorldMappingWidth" / "WorldMappingHeight", or "WorldMappingWidth2" / "WorldMappingHeight2" when nMapping is 1
+	virtual void GetWorldMappingSize( int *pWidth, int *pHeight, int nMapping, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
 	virtual void unk023() = 0;
 
 	// Only inside an EnterOverrideScope() / LeaveOverrideScope() pair
