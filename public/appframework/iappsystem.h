@@ -15,6 +15,7 @@
 
 #include "interfaces/interfaces.h"
 #include "tier0/interface.h"
+#include "tier0/bufferstring.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringmap.h"
 
@@ -295,6 +296,17 @@ public:
 	bool m_bIsRetail;
 	bool m_bIsLowViolence;
 	bool m_bInvokedPreShutdown;
+	int m_nUnk336;
+	int m_nUnk340;
+	CBufferString m_Unk344;
+	CBufferStringN< 200 > m_Unk360;
+	CBufferStringN< 128 > m_Unk568;
+	bool m_bUnk704;
+	uint64 m_unk712[4];
+	uint64 m_unk744[4];
+	void *m_pUnk776;
+	uint64 m_unk784[2];
+	bool m_bIsPerforceWorkspace;
 };
 
 #endif // IAPPSYSTEM_H
