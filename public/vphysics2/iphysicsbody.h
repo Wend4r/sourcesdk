@@ -20,6 +20,7 @@
 #include "mathlib/mathlib.h"
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
+#include "physicslib/param_types.h"
 #include "schemasystem/schematypes.h"
 
 class IVPhysics2World;
@@ -37,15 +38,6 @@ struct RnMesh_t;
 struct RnCompound_t;
 struct RnCollisionAttr_t;
 struct RnMassProperties_t;
-
-enum PhysicsBodyType_t
-{
-	BODY_STATIC = 0,
-	BODY_KEYFRAMED,
-	BODY_DYNAMIC,
-
-	BODY_TYPE_COUNT
-};
 
 // Body description built from a body part of physics aggregate data
 struct PhysicsBodyDef_t

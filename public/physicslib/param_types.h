@@ -17,6 +17,15 @@
 
 class CPhysSurfaceProperties;
 
+enum PhysicsBodyType_t
+{
+	BODY_STATIC = 0,
+	BODY_KEYFRAMED,
+	BODY_DYNAMIC,
+
+	BODY_TYPE_COUNT
+};
+
 enum PhysicsShapeType_t
 {
 	SHAPE_SPHERE = 0,
