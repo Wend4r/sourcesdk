@@ -9,6 +9,7 @@
 #include "imaterial2.h"
 
 #include <appframework/iappsystem.h>
+#include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
 #include <resourcefile/resourcetype.h>
 
@@ -48,9 +49,9 @@ public:
 	virtual void QueueSetTexturedMaterial( uint32 nQueue, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, bool bForce, float flTimeToLive ) = 0;
 	virtual void QueueSetMaterialMode( uint32 nQueue, const IMaterialMode *pMode, const CRenderAttributes *pAttributes, uint64 nKey, bool bForce, float flTimeToLive ) = 0;
 
-	virtual void unk021( void *p ) = 0;
+	virtual void RenderBox( IRenderContext *pRenderContext, const Vector &vecOrigin, const QAngle &angles, const Vector &vecMins, const Vector &vecMaxs, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, bool bInsideOut ) = 0;
 	virtual void unk022( void *p ) = 0;
-	virtual void unk023( void *p ) = 0;
+	virtual void DrawNDCSpaceUntexturedPolygon( IRenderContext *pRenderContext, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, int nVertexCount, Vector2D *pScreenSpaceCoordinates ) = 0;
 
 	virtual bool RenderText( IRenderContext *pRenderContext, const char *pText, const Vector2D &vecPos, Color color, HFont hFont, int nMode, int nScaleMode ) = 0;
 	virtual bool RenderText( IRenderContext *pRenderContext, const uchar16 *pText, const Vector2D &vecPos, Color color, HFont hFont, int nMode, int nScaleMode ) = 0;
