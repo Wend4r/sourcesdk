@@ -49,7 +49,7 @@ struct P4File_t
 	int m_nUnk030;
 
 	bool m_bOpenedByOther;				// opened by another user
-	bool m_bUnk035;
+	bool m_bDir;						// directory
 	bool m_bDeleted;					// deleted at the head revision
 	bool m_bUnk037;
 	P4FileState_t m_eOpenState;			// current change state
