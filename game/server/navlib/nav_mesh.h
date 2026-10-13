@@ -218,7 +218,7 @@ struct NavBatchUpdateAreaInGridOp_t
 {
 	CNavArea *m_pArea;
 	// Cell index (y * width + x) in the grid.
-	int m_nUnk08;
+	int m_nCellIndex;
 	// 0 when queued by the geometry change of the area.
 	bool m_bUnk0C;
 };
@@ -230,11 +230,11 @@ class CNavMovableMeshCatalog
 {
 private:
 	// The areas of each movable mesh whose m_nAttributeDynamicFlags lack 4.
-	CUtlHashtable< uint32, CUtlVector< CNavArea * > * > m_Unk00;
+	CUtlHashtable< uint32, CUtlVector< CNavArea * > * > m_AreasByMesh;
 	// The areas of each movable mesh whose m_nAttributeDynamicFlags have 4.
-	CUtlHashtable< uint32, CUtlHashtable< CNavArea * > * > m_Unk20;
+	CUtlHashtable< uint32, CUtlHashtable< CNavArea * > * > m_DynamicAreasByMesh;
 	// By area ID: the first and the second movable mesh the area was added for, -1 when unset.
-	CUtlHashtable< uint32, CUtlPair< uint32, uint32 > > m_Unk40;
+	CUtlHashtable< uint32, CUtlPair< uint32, uint32 > > m_MeshesByArea;
 };
 
 //-----------------------------------------------------------------------------
@@ -246,27 +246,29 @@ public:
 	struct MovableMeshContext_t
 	{
 		// The transform the areas were last moved with.
-		matrix3x4_t m_Unk00;
-		// The last transform received; while the mesh is in m_Unk180 only this one is updated.
-		matrix3x4_t m_Unk30;
+		matrix3x4_t m_AppliedTransform;
+		// The last transform received; while the mesh is in m_SuspendedMeshes only this one is
+		// updated.
+		matrix3x4_t m_PendingTransform;
 		// Bit 3: movable_mesh_gravity_follows_rotation.
 		uint32 m_nFlags;
 	};
 
-	// Filled by several threads: a slot is taken by incrementing m_nUnk80 and entries past the
-	// preallocated m_Unk00 go to m_Unk10 under the mutex. The counter is on its own cache line.
+	// Filled by several threads: a slot is taken by incrementing m_nCount and entries past the
+	// preallocated m_Elements go to m_Overflow under m_OverflowMutex. The counter is on its own
+	// cache line.
 	template < typename T >
 	struct AppendBuffer_t
 	{
-		CUtlLeanVector< T > m_Unk00;
-		CUtlLeanVector< T > m_Unk10;
-		CAtomicMutex m_Unk20;
+		CUtlLeanVector< T > m_Elements;
+		CUtlLeanVector< T > m_Overflow;
+		CAtomicMutex m_OverflowMutex;
 
 	private:
 		uint8 m_pad[ 128 - 32 - sizeof( CAtomicMutex ) ];
 
 	public:
-		int m_nUnk80;
+		int m_nCount;
 		// -1 once the buffer is flushed.
 		int m_nUnk84;
 
@@ -276,23 +278,24 @@ public:
 
 private:
 	// The mesh id of each movable mesh hash.
-	CUtlHashMap< uint32, CUtlIntString< int, 6 > > m_Unk00;
-	CUtlHashMap< uint32, MovableMeshContext_t > m_Unk50;
-	CNavMovableMeshCatalog m_Unk0A0;
-	// Incremented by every transform update and stored in m_Unk108 for each vertex it moves.
-	int m_nUnk100;
+	CUtlHashMap< uint32, CUtlIntString< int, 6 > > m_MeshIds;
+	CUtlHashMap< uint32, MovableMeshContext_t > m_MeshContexts;
+	CNavMovableMeshCatalog m_Catalog;
+	// Incremented by every transform update and stored in m_VertexUpdateSerials for each vertex
+	// it moves, so a vertex shared by several areas moves once.
+	int m_nUpdateSerial;
 	// One per geometry vertex.
-	CUtlVector< int > m_Unk108;
-	// One per hull (CNavArea::m_nHullIdx).
-	CUtlVector< AppendBuffer_t< NavBatchUpdateAreaInGridOp_t > > m_Unk120;
+	CUtlVector< int > m_VertexUpdateSerials;
+	// One per hull (CNavArea::m_nHullIdx): the grid cells to put moved areas in.
+	CUtlVector< AppendBuffer_t< NavBatchUpdateAreaInGridOp_t > > m_GridUpdateOps;
 	// One per geometry vertex: the position before the update.
-	CUtlVector< Vector > m_Unk138;
+	CUtlVector< Vector > m_VertexOldPositions;
 	// The areas of each update.
-	CUtlVector< CUtlVector< CNavArea * > > m_Unk150;
+	CUtlVector< CUtlVector< CNavArea * > > m_UpdateAreas;
 	// One per hull (CNavArea::m_nHullIdx): the areas whose geometry changed.
-	CUtlVector< AppendBuffer_t< CNavArea * > > m_Unk168;
+	CUtlVector< AppendBuffer_t< CNavArea * > > m_ChangedAreas;
 	// Movable mesh hashes whose areas are not moved by transform updates.
-	CUtlHashtable< uint32 > m_Unk180;
+	CUtlHashtable< uint32 > m_SuspendedMeshes;
 };
 
 //-----------------------------------------------------------------------------
