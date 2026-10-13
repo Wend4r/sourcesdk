@@ -185,7 +185,7 @@ public:
 	void *m_pUnk4D8;
 	int m_nFlags;
 	CThreadRWLock_FastRead m_Lock;
-	uint8 m_unkLock28[ 0x30 ];
+	uint8 m_unk528[ 0x30 ];
 	CUtlVector< CUtlString > m_Unk558;
 	CPoolAllocator *m_pUnk570;
 	CPoolAllocator *m_pUnk578;
