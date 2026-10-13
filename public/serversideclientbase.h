@@ -481,8 +481,8 @@ public:
 	// CSVCMsg_PacketEntities_t (CNetMessagePB<55,...>), sizeof 216 bytes
 	CSVCMsg_PacketEntities_t m_PacketEntities;
 
-	// CDelayedCallBase<CDelayedCallBase<CServerSideClientBase>>* pointers.
-	CTSQueue< void * > m_DelayedCallQueue;
+	// Pushed by the deferred methods while the send job runs (CDelayedCall2 instances)
+	CTSQueue< CDelayedCallBase< CServerSideClientBase > * > m_DelayedCallQueue;
 
 	// AMNOTE: The send job runs the delayed calls of the first, which it swaps in from the second, where they're queued meanwhile
 	CUtlVector< CDelayedCallBase< CServerSideClientBase > * > m_SendJobDelayedCalls;
