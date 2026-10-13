@@ -37,7 +37,7 @@ class ISceneLayer;
 class CBufferString;
 class IRayTraceSceneWorld;
 class ISceneViewDebugOverlays;
-class CSparseShadowTree;
+class ISparseShadowTree;
 class CViewId;
 class CFrustum;
 struct RenderViewport_t;
@@ -213,7 +213,7 @@ public:
 
 	virtual void LoadSparseShadowTreeManifest() = 0;
 	virtual void UnloadSparseShadowTreeManifest() = 0;
-	virtual CSparseShadowTree *GetSparseShadowTree( int nIndex, bool bOnlyIfEnabled ) = 0;
+	virtual ISparseShadowTree *GetSparseShadowTree( int nIndex, bool bOnlyIfEnabled ) = 0;
 	virtual void CreateSparseShadowTree( void *pUnk, int nIndex ) = 0;
 	virtual void DestroySparseShadowTree( int nIndex ) = 0;
 
