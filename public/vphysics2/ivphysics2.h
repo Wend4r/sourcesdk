@@ -13,6 +13,7 @@
 
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
+#include "mathlib/mathlib.h"
 #include "mathlib/vector.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlleanvector.h"
@@ -145,13 +146,9 @@ public:
 	virtual void unk047( void *p ) = 0;
 #endif
 
-#ifdef _WIN32
-	virtual void unk050( void *p ) = 0;
-	virtual void unk051( void *p ) = 0;
-#else
-	virtual void unk051( void *p ) = 0;
-	virtual void unk050( void *p ) = 0;
-#endif
+	// Clamped to zero below a small margin
+	virtual float GetDistanceBetweenHulls( const Vector *pVertices1, int nVertexCount1, const Vector *pVertices2, int nVertexCount2 ) = 0;
+	virtual float GetDistanceBetweenHulls( const matrix3x4_t &transform1, const Vector *pVertices1, int nVertexCount1, const matrix3x4_t &transform2, const Vector *pVertices2, int nVertexCount2 ) = 0;
 
 	virtual void unk052( void *p ) = 0;
 	virtual void unk053( void *p ) = 0;
