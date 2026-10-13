@@ -24,6 +24,7 @@ class CUtlBuffer;
 class CSteamID;
 struct netadr_t;
 class CGameInfo;
+enum NetChannelBufType_t : int8;
 
 //-----------------------------------------------------------------------------
 // Interface the HLTV module exposes to the engine
@@ -64,6 +65,22 @@ public:
 	virtual int StartAutoRecording(void) = 0;
 	virtual void StopRecording(CGameInfo const *info) = 0;
 	virtual void AddSaveGame( CSteamID steamID, uint64, int, const CUtlBuffer &buf ) = 0;
+};
+
+// Receives the frames and messages a SourceTV server streams to its clients (CHLTVServer implements it,
+// CServerSideClientBase::m_pTvStreamSink of a TV client points to one)
+class ITvStreamSink
+{
+public:
+	// Takes a broadcast frame; the first one sets the tick of the first broadcast frame and activates the server
+	virtual void unk000( void *pFrame ) = 0;
+	// Records the frame into the demo and builds the client frames from it
+	virtual void unk001( void *pFrame ) = 0;
+	virtual void *unk002() = 0;
+	// Compared with the server tick count by the TV client's ShouldSendMessages
+	virtual int unk003() = 0;
+	// The TV client's SendNetMessage forwards to it
+	virtual bool SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 };
 
 #endif
