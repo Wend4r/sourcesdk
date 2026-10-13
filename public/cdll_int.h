@@ -127,6 +127,7 @@ public:
 	virtual void PauseDemo() = 0;
 	virtual void ResumeDemo() = 0;
 	virtual void SkipToDemoTick( int nTick ) = 0;
+	// While set, the demo player pauses at the end of the demo instead of disconnecting
 	virtual void unk085( bool bValue ) = 0;
 	virtual bool unk086() = 0;
 	// Value of cl_language
@@ -202,7 +203,8 @@ public:
 	virtual bool IsInstantReplayPaused() = 0;
 	virtual float GetInstantReplayTimescale() = 0;
 	virtual bool IsClientLocalToActiveServer() = 0;
-	virtual uint64 unk148() = 0;
+	// SteamID of the server the auth session ticket was requested for
+	virtual uint64 GetGameServerSteamID() = 0;
 	virtual const char *GetDefaultRenderSystemOption() = 0;
 	virtual void SetDefaultRenderSystemOption( const char *pszOption ) = 0;
 	virtual bool IsRenderSystemOptionFromCommandLine() = 0;
