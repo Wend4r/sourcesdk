@@ -11,9 +11,22 @@
 #endif
 
 #include <appframework/iappsystem.h>
+#include <mathlib/vector.h>
 #include <resourcesystem/resourcehandle.h>
+#include <resourcesystem/iresourcesystem.h>
+#include <schemasystem/schematypes.h>
+#include <tier0/utlsoacontainer.h>
+#include <tier0/utlstring.h>
+#include <tier0/utlvector.h>
 
+class CSceneObject;
+class CSchemaClassInfo;
+class IParticleCollection;
+class IParticleSnapshot;
 class IParticleSystemDefinition;
+class IParticleSystemQuery;
+class ISceneWorld;
+class KeyValues3;
 
 class InfoForResourceTypeIParticleSystemDefinition
 {
@@ -23,11 +36,17 @@ public:
 
 using HParticleSystemDefinition = CWeakHandle< InfoForResourceTypeIParticleSystemDefinition >;
 
+class InfoForResourceTypeIParticleSnapshot
+{
+public:
+	using RuntimeClass_t = IParticleSnapshot;
+};
+
 abstract_class IParticleSystemMgr : public IAppSystem
 {
 public:
-	virtual void unk011( float fl1, float fl2, float fl3, int n4 ) = 0;
-	virtual void unk012( int n1, int n2 ) = 0;
+	virtual void SetFallbackParameters( float flBase, float flMultiplier, float flSimFallbackBaseMultiplier, float flSimThresholdMs ) = 0;
+	virtual void SetSystemLevel( int nCPULevel, int nGPULevel ) = 0;
 
 	// Setter and getter of the same flag
 	virtual void unk013( bool bValue ) = 0;
@@ -35,64 +54,65 @@ public:
 
 	virtual HParticleSystemDefinition FindParticleSystem( const char *pszName, bool bWarnIfNotPrecached ) = 0;
 
-	virtual void unk016() = 0;
+	// Schema class of CParticleSystemDefinition
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > unk016() = 0;
 
-	virtual void *CreateParticleCollection( const char *pszName, void *pUnk1, void *pUnk2, bool bUnk, int nUnk1, int nUnk2 ) = 0;
-
-	virtual void *CreateParticleCollection( ResourceHandle_t hDefinition, void *pUnk1, void *pUnk2, bool bUnk, int nUnk1, int nUnk2 ) = 0;
-	virtual void DestroyParticleCollection( void *pCollection ) = 0;
-	virtual bool unk020() = 0;
+	virtual IParticleCollection *CreateParticleCollection( const char *pszName, void *pOwner, IParticleSystemQuery *pQuery, bool bUnk, float flDelay, int nRandomSeed ) = 0;
+	virtual IParticleCollection *CreateParticleCollection( HParticleSystemDefinition hDefinition, void *pOwner, IParticleSystemQuery *pQuery, bool bUnk, float flDelay, int nRandomSeed ) = 0;
+	virtual void DestroyParticleCollection( IParticleCollection *pCollection ) = 0;
+	virtual bool unk020( void *p ) = 0;
 	virtual bool unk021() = 0;
 	virtual void unk022() = 0;
 
-	// Display names such as Position, Life Duration or Radius.
-	virtual const char *GetParticleAttributeName( int nAttribute ) = 0;
+	// Display names such as Position, Life Duration or Radius
+	virtual const char *unk023( int nAttribute ) = 0;
 
 	virtual int GetOperatorDefinitionCount( int nFunctionType ) = 0;
 	virtual void *GetOperatorDefinition( int nFunctionType, int nIndex ) = 0;
-	virtual void unk026() = 0;
-	virtual float unk027() = 0;
+	virtual void SetLastSimulationDuration( float flDuration ) = 0;
+	virtual float GetLastSimulationDuration() = 0;
 
-	virtual void DumpParticleSystems( void *p ) = 0;
+	virtual void DumpParticleSystems( const char *pszFilter, bool bUnk ) = 0;
 
-	virtual void CreateParticleSceneObject( const char *pszName, void *pUnk1, void *pUnk2, uint32 nUnk, float flUnk ) = 0;
+	virtual CSceneObject *CreateParticleSceneObject( const char *pszName, ISceneWorld *pWorld, IParticleSystemQuery *pQuery, float flDelay, int nRandomSeed ) = 0;
 
-	virtual void CreateParticleSceneObject( void *pDefinition, void *pUnk1, void *pUnk2, uint32 nUnk ) = 0;
-	virtual void CreateParticleSceneObject( void *pCollection, void *pUnk, bool bUnk ) = 0;
-	virtual void unk032() = 0;
+	virtual CSceneObject *CreateParticleSceneObject( HParticleSystemDefinition hDefinition, ISceneWorld *pWorld, IParticleSystemQuery *pQuery, float flDelay, int nRandomSeed ) = 0;
+	virtual CSceneObject *CreateParticleSceneObject( IParticleCollection *pCollection, ISceneWorld *pWorld, bool bUnk ) = 0;
+	virtual void unk032( Vector vecUnk, void *pUnk1, IParticleCollection *pCollection, void *pUnk2, bool bUnk1, void *pUnk3, void *pUnk4, int nUnk1, bool bUnk2, int nUnk2 ) = 0;
 
-	// Draws from the random sequence of a particle collection.
-	virtual int RandomInt( void *pCollection, int nMin, int nMax ) = 0;
+	// Draws from the random sequence of a particle collection
+	virtual int RandomInt( IParticleCollection *pCollection, int nMin, int nMax ) = 0;
+	virtual float RandomFloat( IParticleCollection *pCollection, float flMin, float flMax ) = 0;
 
-	virtual float RandomFloat( void *pCollection, float flMin, float flMax ) = 0;
-	// "unknown" for an index above 48
-	virtual const char *unk035( uint32 nIndex ) = 0;
-	virtual int unk036( int nIndex ) = 0;
-	virtual void unk037() = 0;
+	// Returns "unknown" for an attribute above 48
+	virtual const char *GetParticleAttributeName( int nAttribute ) = 0;
+	virtual EAttributeDataType GetParticleAttributeDataType( int nAttribute ) = 0;
+
+	virtual void unk037( HParticleSystemDefinition hDefinition ) = 0;
 	virtual void unk038( int nValue ) = 0;
-	virtual void unk039() = 0;
+	virtual bool unk039( const KeyValues3 *pKeyValues, void *pOut ) = 0;
 	virtual void unk040() = 0;
 
-	virtual void CreateProceduralSnapshot( void *p ) = 0;
+	virtual CWeakHandle< InfoForResourceTypeIParticleSnapshot > CreateProceduralSnapshot( CUtlString sName ) = 0;
 
-	virtual void unk042() = 0;
-	virtual void unk043() = 0;
-	virtual void unk044() = 0;
-	virtual void unk045() = 0;
-	virtual void unk046() = 0;
-	virtual void unk047() = 0;
-	virtual void unk048() = 0;
-	virtual void unk049() = 0;
-	virtual void unk050() = 0;
+	virtual bool unk042( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nCount, const void *pData ) = 0;
+	virtual bool unk043( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nX, int nY, int nZ, const void *pAttributeMaps ) = 0;
+	virtual CWeakHandle< InfoForResourceTypeIParticleSnapshot > unk044( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, const CUtlString &sName ) = 0;
+	virtual void unk045( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nX, int nY, int nZ, const int &nAttribute, Vector vecValue ) = 0;
+	virtual Vector unk046( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nAttribute, int nX, int nY, int nZ ) = 0;
+	virtual int unk047( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot ) = 0;
+	virtual bool unk048( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nAttribute, EAttributeDataType nDataType ) = 0;
+	virtual void unk049( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, const char *pszUnk, void *pUnk ) = 0;
+	virtual void unk050( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot ) = 0;
 	virtual int GetParticleSystemVersion() = 0;
 	virtual const char *GetParticleSystemVersionChangeDescription( int nVersion ) = 0;
-	virtual void unk053() = 0;
-	virtual bool unk054() = 0;
-	virtual void unk055() = 0;
-	virtual void unk056() = 0;
-	virtual void unk057() = 0;
+	virtual void unk053( ResourceHandle_t hResource ) = 0;
+	virtual bool unk054( int nFlags ) = 0;
+	virtual void unk055( void *p ) = 0;
+	virtual void unk056( CUtlString sName ) = 0;
+	virtual CUtlVector< CUtlString > *unk057() = 0;
 	virtual void unk058() = 0;
-	virtual void unk059() = 0;
+	virtual void unk059( void *p ) = 0;
 	virtual void SimulateGPUParticles( void *p ) = 0;
 };
 
