@@ -16,6 +16,10 @@
 #include "appframework/iappsystem.h"
 #include "const.h"
 #include "tier0/mempool.h"
+#include "schemasystem/schematypes.h"
+#include "kv3lib/kv3transfer_constants.h"
+
+class C_BaseEntity;
 
 #include "schemacompiler/schemaon.h"
 
@@ -39,8 +43,9 @@ schema abstract_class IClientAlphaProperty
 {
 public:
 	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
-	// Gets at the containing class...
-	virtual IClientUnknown*	GetIClientUnknown() = 0;
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
+	CLASS_USES_KV3TRANSFER_VIRTUAL( IClientAlphaProperty );
+	virtual const char *GetClassName() const = 0;
 
 	// Sets a constant alpha modulation value
 	virtual void SetAlphaModulation( uint8 a ) = 0;
@@ -66,9 +71,6 @@ public:
 	// The method IClientRenderable::OverrideShadowAlphaModulation will be called
 	// to allow the owner to optionally return a different alpha modulation for the shadow
 	virtual void EnableShadowAlphaModulationOverride( bool bEnable ) = 0;
-
-	// Sets the distance fade mode
-	virtual void SetDistanceFadeMode( ClientAlphaDistanceFadeMode_t nFadeMode ) = 0;
 };
 
 
@@ -81,7 +83,7 @@ abstract_class IClientAlphaPropertyMgr
 {
 public:
 	// Class factory
-	virtual IClientAlphaProperty *CreateClientAlphaProperty( IClientUnknown *pUnk ) = 0;
+	virtual IClientAlphaProperty *CreateClientAlphaProperty( C_BaseEntity *pEntity ) = 0;
 	virtual void DestroyClientAlphaProperty( IClientAlphaProperty *pAlphaProperty ) = 0;
 };
 
