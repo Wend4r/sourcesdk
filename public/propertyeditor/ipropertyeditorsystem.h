@@ -20,6 +20,7 @@
 class QWidget;
 class IPropertyEditor;
 class IPropertyAttributeEditorFactory;
+class IPropertyCustomCommandFactory;
 class CQPropertyEditor;
 
 abstract_class IPropertyEditorSystem : public IAppSystem
@@ -38,9 +39,10 @@ public:
 	virtual void RegisterAttributeEditorFactory( IPropertyAttributeEditorFactory *pFactory ) = 0;
 	virtual void UnregisterAttributeEditorFactory( IPropertyAttributeEditorFactory *pFactory ) = 0;
 
-	virtual void unk018( void *pObject ) = 0;
-	virtual void *unk019( const char *pName ) = 0;
-	virtual void unk020( void *pObject ) = 0;
+	// Custom command factories, keyed by the name their first virtual returns
+	virtual void RegisterCustomCommandFactory( IPropertyCustomCommandFactory *pFactory ) = 0;
+	virtual IPropertyCustomCommandFactory *FindCustomCommandFactory( const char *pName ) = 0;
+	virtual void UnregisterCustomCommandFactory( IPropertyCustomCommandFactory *pFactory ) = 0;
 
 	virtual bool unk021( const char *pKV3Text ) = 0;
 
@@ -59,8 +61,8 @@ public:
 	CUtlVector< IPropertyAttributeEditorFactory * > m_vecUnk040;
 	CUtlSymbolTable m_unk058;
 
-	// Objects of unk018, indexed by the symbol of their name
-	CUtlVector< void * > m_vecUnk0B8;
+	// Custom command factories, indexed by the symbol of their name
+	CUtlVector< IPropertyCustomCommandFactory * > m_vecUnk0B8;
 	CUtlSymbolTable m_unk0D0;
 
 	CUtlSymbolTableLarge m_unk130;
