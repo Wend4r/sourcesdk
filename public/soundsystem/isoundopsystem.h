@@ -307,8 +307,9 @@ public:
 	virtual const char *unk070( int8 nGroup ) = 0;
 	// Guids of the active sound events
 	virtual void unk071( CUtlVector< SoundEventGuid_t > &list ) = 0;
+	// Detailed tool debugging flag, unk073 only sets it while snd_sos_tools_detailed_debugging is on
 	virtual bool unk072() = 0;
-	virtual void unk073( bool bUnk ) = 0;
+	virtual void unk073( bool bEnable ) = 0;
 	// History entry kept for the sound event: its stack hash and the field data recorded while it played
 	virtual void *unk074( SoundEventGuid_t guid ) = 0;
 	// Sound event whose history is kept after it stops; the history of the previous one is removed unless it still plays
@@ -347,8 +348,8 @@ public:
 	virtual const char *unk095( void **ppList, int nIndex ) = 0;
 	// Names of the fields of the sound event that have the type
 	virtual void unk096( const char *pSoundEventName, CUtlVector< const char * > &list, SOFieldDataType_t nType ) = 0;
-	// Non-zero makes StartSoundEvent and StartStack fail
-	virtual void unk097( int nUnk ) = 0;
+	// Non-zero makes StartSoundEvent and StartStack fail, the engine sets it while a demo skips ahead
+	virtual void unk097( int nSuppress ) = 0;
 	// Locks and unlocks the operator system
 	virtual void unk098() = 0;
 	virtual void unk099() = 0;
