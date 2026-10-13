@@ -23,7 +23,7 @@ public:
 	HMaterialStrong m_hCopySource;
 
 	// Depth of EnterOverrideScope() / LeaveOverrideScope()
-	int m_nUnk038;
+	int m_nOverrideScopeDepth;
 
 	// Taken from a global counter when the material is created
 	uint32 m_nUniqueId;
