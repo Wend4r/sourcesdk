@@ -276,7 +276,8 @@ public:
 	virtual void SceneObject_UpdateFlagsBasedOnMaterial( CSceneObject *pObject ) = 0;
 	// Stores a 76 byte record in the extra data of the object (interned by hash).
 	virtual void unk128( CSceneObject *pObject, const void *pData ) = 0;
-	virtual void unk129() = 0;
+	// Expands the record stored by unk128 into pOut and returns pOut, or NULL when the object has none.
+	virtual void *unk129( CSceneObject *pObject, void *pOut, uint64 nUnk ) = 0;
 
 	// Holds a strong reference to the material; the s&box declaration adds a layer attribute token and value.
 	virtual void SceneObject_SetMaterialOverride( CSceneObject *pObj, HMaterialWeak hOverride ) = 0;
