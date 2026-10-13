@@ -94,7 +94,7 @@ public:
 	virtual void QueueRenderConvexGeometry( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
 	virtual void QueueRenderQuads( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
 
-	virtual void Unk_RenderFontTexture( void *p ) = 0;
+	virtual void RenderFontTexture( IRenderContext *pRenderContext, int nTextureId, int nXPos, int nYPos, const CRenderAttributes *pAttributes ) = 0;
 
 	virtual void CacheFontTextures( const CTextLayoutInfo *pTextLayoutInfo ) = 0;
 
