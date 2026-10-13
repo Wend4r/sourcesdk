@@ -16,12 +16,12 @@ struct PulseValueArray_t
 	void *m_pElements;
 };
 
-// Storage of PVAL_RESOURCE_NAME: the name and two more fields that are copied along with it.
+// Storage of PVAL_RESOURCE_NAME, laid out as CResourceName.
 struct PulseValueResourceName_t
 {
 	CBufferStringN< 200 > m_Name;
-	uint64 m_nUnk0208;
-	uint64 m_nUnk0216;
+	uint64 m_Id; // ResourceId_t
+	ResourceType_t m_Type;
 };
 
 // Storage of PVAL_SNDEVT_GUID, laid out as StartSoundEventInfo_t.
@@ -240,8 +240,8 @@ void CPulseValueFullType::ConstructValue( void *pValue ) const
 			PulseValueResourceName_t *pName = static_cast< PulseValueResourceName_t * >( pValue );
 
 			Construct( &pName->m_Name );
-			pName->m_nUnk0208 = 0;
-			pName->m_nUnk0216 = 0;
+			pName->m_Id = 0;
+			pName->m_Type = 0;
 
 			break;
 		}
@@ -382,8 +382,8 @@ void CPulseValueFullType::CopyValue( const void *pSrc, void *pDest ) const
 			PulseValueResourceName_t *pDestName = static_cast< PulseValueResourceName_t * >( pDest );
 
 			pDestName->m_Name.Set( pSrcName->m_Name.Get(), pSrcName->m_Name.Length() );
-			pDestName->m_nUnk0208 = pSrcName->m_nUnk0208;
-			pDestName->m_nUnk0216 = pSrcName->m_nUnk0216;
+			pDestName->m_Id = pSrcName->m_Id;
+			pDestName->m_Type = pSrcName->m_Type;
 
 			break;
 		}
