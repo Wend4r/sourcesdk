@@ -204,6 +204,7 @@ public:
 	virtual void unk111() = 0;
 	virtual void SetIgnoreAlphaFade( bool bIgnoreAlphaFade ) = 0;
 	virtual void unk113() = 0;
+
 	// Destroys every sparse shadow tree, then loads them again when nUnk is positive.
 	virtual void unk114( int nUnk ) = 0;
 
@@ -215,8 +216,12 @@ public:
 	virtual CSparseShadowTree *GetSparseShadowTree( int nIndex, bool bOnlyIfEnabled ) = 0;
 	virtual void CreateSparseShadowTree( void *pUnk, int nIndex ) = 0;
 	virtual void DestroySparseShadowTree( int nIndex ) = 0;
+
 	virtual void unk121() = 0;
-	virtual void unk122() = 0;
+
+	// Sets the per class settings byte that GetObjectSettings returns.
+	virtual void unk122( uint8 nClass, uint8 nSettings ) = 0;
+
 	virtual void SceneObject_ScheduleDirtyUpdate( CSceneObject *pObject ) = 0;
 	virtual void SceneObject_UnscheduleDirtyUpdate( CSceneObject *pObject ) = 0;
 	virtual void SceneObject_AttachExtraData( CSceneObject *pObject ) = 0;
