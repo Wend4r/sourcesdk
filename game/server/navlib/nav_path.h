@@ -163,8 +163,8 @@ public:
 
 private:
 	uint8 m_Unk09[ 7 ];
-	// A vector of unknown elements.
-	uint8 m_Unk10[ 0x18 ];
+	// Filled from the transitions FindNextOccludedNode collects.
+	CUtlVector< NavTransition_t > m_Unk10;
 };
 
 //-----------------------------------------------------------------------------
