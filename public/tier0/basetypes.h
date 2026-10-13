@@ -35,7 +35,12 @@
 
 #ifdef COMPILING_SCHEMA
 #define UNSCHEMATIZED_METHOD( x )
+#ifdef SCHEMA_COMPILER_CLANG
+// Clang-based schemacompiler: a member declaration it can find in the AST
+#define INTERNAL_SCHEMA_CLASS_MARKER_DATA using __schema_class_marker_data__ = void
+#else
 #define INTERNAL_SCHEMA_CLASS_MARKER_DATA `__schema_class_marker_data__`
+#endif // SCHEMA_COMPILER_CLANG
 #else
 #define UNSCHEMATIZED_METHOD( x ) x
 #define INTERNAL_SCHEMA_CLASS_MARKER_DATA

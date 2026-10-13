@@ -36,8 +36,14 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 	${SOURCESDK_PUBLIC_KV3LIB_INCLUDE_DIR}
 )
 
+# Headers with schema types, the input of the sourcesdk_schema check target
+list(APPEND SOURCESDK_SCHEMA_SOURCE_FILES
+	${SOURCESDK_PUBLIC_KV3LIB_INCLUDE_DIR}/keyvalues3.h
+)
+
 set(SOURCESDK_KV3LIB_SOURCE_FILES
 	${SOURCESDK_KV3LIB_DIR}/keyvalues3.cpp
+	${SOURCESDK_KV3LIB_DIR}/kv3text.cpp
 	${SOURCESDK_KV3LIB_DIR}/kv3transfer.cpp
 	${SOURCESDK_KV3LIB_DIR}/kv3transfer_schema.cpp
 )
