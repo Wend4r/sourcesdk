@@ -32,6 +32,7 @@ class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
+class CFrustum;
 class InfoForResourceTypeIMaterial2;
 
 template < class T >
@@ -341,7 +342,7 @@ public:
 	virtual void RunVConCommFrame() = 0;
 
 	// True while the VConsole link has any state flag set
-	virtual bool unk130() = 0;
+	virtual bool IsConCommActive() = 0;
 	virtual bool StreamToPhysicsDebugger( bool bStart ) = 0;
 	virtual bool IsStreamingToPhysicsDebugger() = 0;
 	// Both are stubs in release builds
@@ -365,8 +366,8 @@ public:
 	// Empty
 	virtual void unk143() = 0;
 
-	// Copies a 128-byte block into every world
-	virtual void unk144( void *p ) = 0;
+	// Copies the frustum into every world for the physics debugger
+	virtual void SetVisualDebugCameraHint( int nUnknown, const CFrustum &frustum ) = 0;
 
 	virtual const char *GetMassDescription( float flMass ) = 0;
 };
