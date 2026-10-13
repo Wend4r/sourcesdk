@@ -115,7 +115,7 @@ public:
 	bool m_bIsFallbackMaterial : 1;
 
 	// Set by OverrideTextureParam(), applied and cleared when the last override scope ends
-	bool m_bUnk00B_2 : 1;
+	bool m_bTextureParamsOverridden : 1;
 
 	bool m_bIsFinalized : 1;
 
