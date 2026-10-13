@@ -170,8 +170,10 @@ public:
 	virtual void unk066( bool bSignon, int nUnk1, int nUnk2, CSteamID steamID, bool bBot, bool bHltv ) = 0;
 	// Reads the "AnimAssetData" block of pUnk1
 	virtual void unk067( void *pUnk1, void *pUnk2 ) = 0;
-	virtual void unk068() = 0;
-	virtual void unk069( void *pUnk, int nUnk ) = 0;
+	// Frees the game events kept for scrubbing and clears the player connection events
+	virtual void ClearScrubbingData() = 0;
+	// Fires the game events kept for nTick
+	virtual void OnScrubDemo( int nUnk, int nTick ) = 0;
 	// Fires the "demo_skip" game event
 	virtual void OnDemoSkip( int nPlaybackTick, int nSkipToTick, bool bInstantReplay ) = 0;
 	// Asked by the demo player for each message removed while skipping
