@@ -31,6 +31,7 @@ class IIkSolver;
 class IPhysSurfacePropertyController;
 class IPhysIntersectionDictionary;
 class IPhysIntersectionController;
+class CIntersectionDictionary;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
@@ -460,15 +461,16 @@ public:
 	virtual CVPhysics2SurfacePropertyManager *unk146() = 0;
 
 	// CVPhysics2ConComm, the VConsole physics debugger link
-	uint64 m_Unk038[ 5 ];
+	uint64 m_ConComm[ 5 ];
 
-	uint64 m_pad060;
+	// Created by InitIntersectionDictionary
+	CIntersectionDictionary *m_pIntersectionDictionary;
 
 	// CPhysDataTypeManager for VPhysXAggregateData_t
-	uint64 m_Unk068[ 4 ];
+	uint64 m_typeManagerPhysData[ 4 ];
 
 	// CVPhysics2SurfacePropertyManager, with its IPhysSurfacePropertyController base at 0xB8
-	uint64 m_Unk088[ 13 ];
+	uint64 m_SurfacePropertyManager[ 13 ];
 
 	CUtlVector< IVPhysics2World * > m_Worlds;
 
