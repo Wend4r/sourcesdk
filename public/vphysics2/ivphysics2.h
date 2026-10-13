@@ -85,6 +85,7 @@ struct RnHullSimplificationParams_t;
 struct RnSimplexCache_t;
 struct CShapeCastResult;
 struct PhysicsTrace_t;
+struct PhysicsWorldUpdateConCommParams_t;
 struct Ray_t;
 
 schema struct RnSphere_t
@@ -392,7 +393,7 @@ public:
 	virtual IFnPhysicsWorld *ConstructFnPhysicsWorld( void *pMemory, int nMemorySize ) = 0;
 
 	// Physics debugger link over the VConsole connection
-	virtual bool unk127( const uint32 *pUnknown ) = 0;
+	virtual bool UpdateConCommParams( PhysicsWorldUpdateConCommParams_t &params ) = 0;
 	virtual void SetVConComm( IVConComm *pVConComm ) = 0;
 	virtual void RunVConCommFrame() = 0;
 
@@ -416,7 +417,7 @@ public:
 
 	virtual bool CreateDebugSceneObject( const DebugSceneObjectParams_t &params, SceneObjectBuffers_t *pOut ) = 0;
 	virtual void DestroyDebugSceneObject( CSceneAnimatableObject *pSceneObject ) = 0;
-	virtual void UpdateDebugSceneObject( void *p ) = 0;
+	virtual void UpdateDebugSceneObject( const DebugSceneObjectParams_t &params, void *pUnknown1, void *pUnknown2 ) = 0;
 
 	// Empty
 	virtual void unk143() = 0;
