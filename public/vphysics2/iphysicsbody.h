@@ -12,6 +12,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/utlleanvector.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
@@ -44,6 +45,31 @@ enum PhysicsBodyType_t
 	BODY_DYNAMIC,
 
 	BODY_TYPE_COUNT
+};
+
+// Body description built from a body part of physics aggregate data
+struct PhysicsBodyDef_t
+{
+	CUtlString m_DebugName;
+	float m_flMass;
+	Vector m_vLocalMassCenter;
+	matrix3x4_t m_LocalInertia;
+	Vector m_vPosition;
+	float m_qOrientation[ 4 ]; // x, y, z, w (not 16-byte aligned)
+	Vector m_vLinearVelocity;
+	float m_flLinearDamping;
+	float m_flLinearDrag;
+	Vector m_vAngularVelocity;
+	float m_flAngularDamping;
+	float m_flAngularDrag;
+	uint32 m_unk140;
+
+	// Shapes by kind: spheres, capsules, hulls, meshes and compounds; the element types (232, 248, 224, 224 and 224 bytes) are not recovered
+	CUtlLeanVector< void * > m_unk144;
+	CUtlLeanVector< void * > m_unk160;
+	CUtlLeanVector< void * > m_unk176;
+	CUtlLeanVector< void * > m_unk192;
+	CUtlLeanVector< void * > m_unk208;
 };
 
 // Methods with an unknown name that MSVC lays out as one overload group keep one shared unkNNN name
