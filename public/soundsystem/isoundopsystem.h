@@ -318,9 +318,6 @@ public:
 	virtual void unk099() = 0;
 	// Loads the stacks of the default manifest and reports their errors
 	virtual void unk100( KeyValues3 *pStacks, void *pUnk ) = 0;
-	virtual void LoadManifestStacksForParsing( const char *pManifestName, KeyValues3 *pStacks, void *pUnk ) = 0;
-	// LoadManifestStacksForParsing with the default manifest
-	virtual void unk102( KeyValues3 *pStacks, void *pUnk ) = 0;
 };
 
 class CSoundEventManager : public ISoundEventManager
@@ -401,6 +398,73 @@ public:
 class CSoundOpSystem : public CTier2AppSystem< ISoundOpSystem >
 {
 public:
+	virtual uint32 GetSoundEventHash( const char *pSoundEventName ) const override;
+	virtual bool IsValidSoundEventHash( uint32 nSoundEvent ) const override;
+	virtual const char *GetSoundEventName( uint32 nSoundEvent ) const override;
+	virtual bool HasSoundEvent( const char *pSoundEventName ) const override;
+	virtual CSoundEvent *GetSoundEvent( uint32 nSoundEvent, bool bWarn ) const override;
+	virtual CSoundEvent *GetSoundEvent( const char *pSoundEventName ) const override;
+	virtual const ResourceBindingBase_t *GetSoundEventResourceBinding( const char *pSoundEventName ) override;
+	virtual bool unk07( const char *pSoundEventName ) override;
+	virtual bool unk58( uint32 nSoundEvent, CUtlString &sValue ) override;
+	virtual void ListSoundEvents( CUtlVector< const char * > &list ) const override;
+	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const override;
+	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) override;
+	virtual void FindSoundEvents( const char *pSubString, CUtlVector< CUtlString > &list ) override;
+	virtual void unk12() override;
+	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) override;
+	virtual void RemoveSoundEvent( const char *pSoundEventName ) override;
+	virtual void RemoveAllSoundEvents() override;
+	virtual void *unk19( uint32 nSoundEvent ) override;
+	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const override;
+	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const override;
+	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) override;
+	virtual bool unk20( uint32 nSoundEvent ) override;
+	virtual uint32 GetSoundEventDefinitionBaseHash( uint32 nSoundEvent, int nBase ) override;
+	virtual uint32 GetSoundEventDefinitionBaseHash( const char *pSoundEventName, int nBase ) override;
+	virtual void GetSoundEventDefinitionBaseName( uint32 nSoundEvent, CUtlString &sName, int nBase ) override;
+	virtual void GetSoundEventDefinitionBaseField( uint32 nSoundEvent, CUtlString &sField, int nBase ) override;
+	virtual int GetSoundEventDefinitionBaseCount( uint32 nSoundEvent ) override;
+	virtual int GetSoundEventDefinitionBaseCount( const char *pSoundEventName ) override;
+	virtual bool SoundEventHasPreloadVsnd( const char *pSoundEventName ) override;
+	virtual uint8 *GetSoundEventUpdateGroups( uint32 nSoundEvent ) override;
+	virtual uint8 *GetSoundEventUpdateGroups( const char *pSoundEventName ) override;
+	virtual int unk48( uint32 nSoundEvent, uint32 nFieldToken, bool *pbArray, bool bUnk ) override;
+	virtual int unk49( uint32 nSoundEvent, uint32 nFieldToken, bool bUnk ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void **ppData, int nIndex, bool bUnk ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, CUtlString &sValue, int nIndex, bool bUnk ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, KeyValues3 *pKV, int nIndex, bool bUnk ) override;
+	virtual float GetSoundDuration( const char *pSoundEventName ) override;
+	virtual float GetSoundDuration( uint32 nSoundEvent ) override;
+	virtual const char *GetVSndNameForSoundEvent( const char *pSoundEventName, bool bFromSymbolTable ) override;
+	virtual void GetVSndNameListForSoundEvent( const char *pSoundEventName, CUtlVector< const char * > &list, bool bFromSymbolTable ) override;
+	virtual void PreloadSoundEvent( uint32 nSoundEvent, uint16 nUnk ) override;
+	virtual void PreloadSoundEvent( const char *pSoundEventName, uint16 nUnk ) override;
+	virtual bool AddSoundEvent( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding, bool bUpdate ) override;
+	virtual void AddSoundEvents( KeyValues3 *pKV, const ResourceBindingBase_t *pBinding ) override;
+	virtual void RemoveTimedOutDeferredSoundEvent() override;
+	virtual bool unk39( const char *pSoundEventName, const char *pSourceSoundEventName, const ResourceBindingBase_t *pBinding ) override;
+	virtual void AddNewSoundEvent( const char *pSoundEventName, const ResourceBindingBase_t *pBinding ) override;
+	virtual bool unk41( const char *pSoundEventName, const char *pStackName ) override;
+	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) override;
+	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) override;
+	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) override;
+	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) override;
+	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, uint32 nFieldToken, const CSosFieldData *pData, int nIndex ) override;
+	virtual bool unk47( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) override;
+	virtual void unk53() override;
+	virtual void unk54() override;
+	virtual void unk55() override;
+	virtual void SoundEventKVToKV3( KeyValues *pKV, KeyValues3 *pKV3 ) override;
+	virtual void CompareSoundEvents( const char *pSoundEventA, const char *pSoundEventB ) override;
+	virtual void ListDeferredSoundEvents() override;
+	virtual void ClearDeferredSoundEvents() override;
+	virtual bool unk61( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) override;
+	virtual bool unk62( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
+	// Uses the default manifest
+	virtual void LoadManifestStacksForParsing( KeyValues3 *pStacks, void *pUnk );
+	virtual void LoadManifestStacksForParsing( const char *pManifestName, KeyValues3 *pStacks, void *pUnk );
+
 	// Incremented by Init and decremented by Shutdown
 	int m_unk030;
 	CSoundEventManager m_unk038;
