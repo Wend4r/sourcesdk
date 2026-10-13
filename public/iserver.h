@@ -67,6 +67,7 @@ class CBaselineEntityData;
 class CNetworkServerSpawnGroup;
 class CSteamID;
 class IEntityReport;
+class ISceneViewDebugOverlays;
 class IHLTVDirector;
 class CHLTVServerAsync;
 
@@ -170,7 +171,8 @@ public:
 	virtual void	SetClientConnect( CPlayerSlot slot, bool b = true ) = 0;
 	virtual SignonState_t	GetClientSignonState( CPlayerSlot slot ) = 0;
 
-	virtual void	NotifySceneViewDebugOverlays( void *pSceneView, bool bUnk ) = 0;
+	// Adds (or removes) the engine's scene view debug overlays listener to the given overlays
+	virtual void	NotifySceneViewDebugOverlays( ISceneViewDebugOverlays *pDebugOverlays, bool bAddListener ) = 0;
 
 	virtual void	BroadcastMessage( INetworkMessageInternal *pSerializer, const CNetMessage *pNetMessage, const IRecipientFilter *pFilter ) = 0;
 	virtual bool	IsRecordingDemo() = 0;
