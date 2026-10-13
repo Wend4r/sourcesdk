@@ -22,6 +22,29 @@ class IAsyncResourceDataRequest;
 
 typedef void ( *FnResourceLoadCompleteCallback_t )( HGameResourceManifest hManifest, void *pUserData );
 
+enum ResourceManifestType_t : uint8
+{
+	RESOURCE_MANIFEST_TYPE_DEFAULT = 0,
+	RESOURCE_MANIFEST_TYPE_BLOCKING_LOAD,
+	RESOURCE_MANIFEST_TYPE_BLOCKING_RELOAD,
+};
+
+struct ResourceManifestCreationInfo_t
+{
+	int m_nCount;
+	const char **m_ppResourceFiles;
+
+	// Any type other than the default loads with the immediate priority
+	ResourceManifestType_t m_nType;
+	ResourceManifestLoadBehavior_t m_nLoadBehavior;
+
+	const char *m_pDebugName;
+	ResourceManifestLoadPriority_t m_nPriority;
+
+	FnResourceLoadCompleteCallback_t m_callback;
+	void *m_pContext;
+};
+
 class IResourceSystem : public IAppSystem
 {
 public:
@@ -37,7 +60,7 @@ public:
 	virtual HGameResourceManifest CreateResourceManifest( const char *pszResourceName, ResourceManifestLoadBehavior_t nManifestLoadBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t nLoadPriority ) = 0;
 	virtual HGameResourceManifest CreateResourceGroupManifest( const char *pszResourceGroupName, ResourceManifestLoadBehavior_t nManifestLoadBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t nLoadPriority ) = 0;
 	virtual HGameResourceManifest CreateResourceRnmdManifest( const char *pszResourceGroupName, ResourceManifestLoadBehavior_t nManifestLoadBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t nLoadPriority ) = 0;
-	virtual HGameResourceManifest CreateResourceManifestInternal( const void *pCreateInfo ) = 0;
+	virtual HGameResourceManifest CreateResourceManifestInternal( const ResourceManifestCreationInfo_t &info ) = 0;
 	virtual void SetManifestCompletionCallback( HGameResourceManifest pGameResourceManifest, FnResourceLoadCompleteCallback_t pfnCallback, void *pUserData ) = 0;
 	virtual bool IsManifestLoaded( HGameResourceManifest pGameResourceManifest ) = 0;
 	virtual void DestroyResourceManifest( HGameResourceManifest pGameResourceManifest ) = 0;
