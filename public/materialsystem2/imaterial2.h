@@ -77,7 +77,7 @@ public:
 	// Only inside an EnterOverrideScope() / LeaveOverrideScope() pair
 	virtual bool OverrideTextureParam( const char *pName, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture ) = 0;
 
-	virtual uint32 unk025() = 0;
+	virtual uint32 GetShaderStateOverriddenByMaterial() = 0;
 	virtual void *unk026() = 0;
 	virtual void *unk027( const CUtlStringToken &mode, int nShaderType ) = 0;
 	virtual void unk028() = 0;
