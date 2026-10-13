@@ -16,6 +16,7 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlvector.h"
 #include "tier1/utlhashtable.h"
+#include "tier0/utlmap.h"
 
 class CUtlCharConversion;
 class KeyValues;
@@ -136,7 +137,7 @@ class CKeyValuesSystem : public CKeyValuesSystemBase
 public:
 	CUtlMemoryPoolBase *m_pMemPool;
 	bool m_bIgnoreMemPool;
-	uint64 m_KvConditionalSymbolTable[5]; // Red-black tree of HKeySymbol to bool: stored less functor, lean vector of 24-byte nodes, root, count, first free
+	CUtlMap< HKeySymbol, bool, int > m_KvConditionalSymbolTable;
 	bool m_bUnk1896; // Only written, by the virtual after SetTemporaryKeyValueAllocationScope
 	bool m_bUnk1897;
 };
