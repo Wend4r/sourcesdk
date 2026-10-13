@@ -76,10 +76,11 @@ public:
 // Output registered by an entity class
 struct EntOutput_t
 {
-private:
-	uint8 m_pad0000[ 16 ];
+	// The output's name; FindOutput looks outputs up by it
+	const char *m_pName;
+	// 0 when the output is registered
+	uint32 m_nFlags;
 
-public:
 	// Object that holds the output, such as a component; null when the entity holds it
 	void *( *m_pfnGetOutputOwner )( CEntityInstance *pEntity );
 
