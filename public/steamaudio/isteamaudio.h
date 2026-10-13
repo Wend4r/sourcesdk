@@ -134,28 +134,28 @@ abstract_class ISteamAudio : public IAppSystem
 public:
 	virtual ~ISteamAudio() {}
 	// Creates the CUDA and OptiX devices
-	virtual bool unk012() = 0;
-	virtual ISteamAudioScene *unk013() = 0;
+	virtual bool CreateCUDADevices() = 0;
+	virtual ISteamAudioScene *CreateEmptyScene() = 0;
 	// Creates a CSteamAudioScene
 	virtual ISteamAudioScene *CreateScene( const void *pUnk1, bool bUnk, void *pUnk2 ) = 0;
-	virtual ISteamAudioScene *unk015() = 0;
-	virtual void unk016( void *pKey, ISteamAudioScene *pScene ) = 0;
-	virtual ISteamAudioScene *unk017( void *pKey ) = 0;
-	virtual void unk018( ISteamAudioScene *pScene ) = 0;
-	virtual void unk019( void *pKey ) = 0;
-	virtual void unk020( const Vector &vecListenerOrigin ) = 0;
-	virtual ISourceProcessor *unk021( const Vector &vecUnk ) = 0;
-	virtual void unk022( ISourceProcessor *pProcessor ) = 0;
-	virtual IPathingProcessor *unk023( const Vector &vecUnk ) = 0;
-	virtual void unk024( IPathingProcessor *pProcessor ) = 0;
-	virtual IDirectProcessor *unk025( const int32 *pNumChannels ) = 0;
-	virtual void unk026( IDirectProcessor *pProcessor ) = 0;
-	virtual IHybridReverbProcessor *unk027( int nUnk ) = 0;
+	virtual ISteamAudioScene *GetFirstScene() = 0;
+	virtual void AddScene( void *pKey, ISteamAudioScene *pScene ) = 0;
+	virtual ISteamAudioScene *RemoveScene( void *pKey ) = 0;
+	virtual void DestroyScene( ISteamAudioScene *pScene ) = 0;
+	virtual void RemoveAndDestroyScene( void *pKey ) = 0;
+	virtual void SetListenerOrigin( const Vector &vecListenerOrigin ) = 0;
+	virtual ISourceProcessor *CreateSourceProcessor( const Vector &vecUnk ) = 0;
+	virtual void DestroySourceProcessor( ISourceProcessor *pProcessor ) = 0;
+	virtual IPathingProcessor *CreatePathingProcessor( const Vector &vecUnk ) = 0;
+	virtual void DestroyPathingProcessor( IPathingProcessor *pProcessor ) = 0;
+	virtual IDirectProcessor *CreateDirectProcessor( const int32 *pNumChannels ) = 0;
+	virtual void DestroyDirectProcessor( IDirectProcessor *pProcessor ) = 0;
+	virtual IHybridReverbProcessor *CreateHybridReverbProcessor( int nUnk ) = 0;
 	// Returns -1 on failure
-	virtual int unk028() = 0;
-	virtual void unk029( int nSource ) = 0;
-	virtual ISteamAudioSource *unk030() = 0;
-	virtual void unk031( ISteamAudioSource *pSource ) = 0;
+	virtual int AddSource() = 0;
+	virtual void RemoveSource( int nSource ) = 0;
+	virtual ISteamAudioSource *CreateSource() = 0;
+	virtual void DestroySource( ISteamAudioSource *pSource ) = 0;
 	// pPath with its extension replaced by .sareverb
 	virtual CUtlString GetReverbDataFilename( const char *pPath ) = 0;
 	// pPath with its extension replaced by .sapaths
@@ -172,15 +172,15 @@ public:
 	virtual void GetPathingBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioPathSettings_t *pPathSettings, int32 *pRebakeOption ) = 0;
 	virtual void GetCustomDataBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioUnk041_t *pCustomDataSettings, int32 *pRebakeOption ) = 0;
 	// Number of simulation threads from the CPU information
-	virtual int unk042() = 0;
+	virtual int GetSimulationThreadCount() = 0;
 	virtual SteamAudioUnk043_t unk043( const Vector &vecUnk1, const Vector &vecUnk2, bool bUnk1, bool bUnk2, bool bUnk3, int nSource, SteamAudioPathVisualizationFn_t pfnVisualize, bool *pbUnk ) = 0;
 	virtual float unk044( const Vector &vecUnk1, const Vector &vecUnk2, float flUnk, int nUnk ) = 0;
 	virtual SteamAudioUnk045_t unk045( const Vector &vecUnk1, const Vector &vecUnk2, const void *pUnk ) = 0;
 	virtual void *unk046() = 0;
-	virtual IImpulseResponse *unk047() = 0;
+	virtual IImpulseResponse *CreateImpulseResponse() = 0;
 	virtual void unk048( const Vector &vecUnk ) = 0;
-	virtual ISteamAudioSimulationData *unk049() = 0;
-	virtual void unk050( ISteamAudioSimulationData *pData ) = 0;
+	virtual ISteamAudioSimulationData *CreateSimulationData() = 0;
+	virtual void DestroySimulationData( ISteamAudioSimulationData *pData ) = 0;
 	virtual bool unk051() = 0;
 	// pBakeData is a CUtlVector of probe batches; the baked data is saved as KV3 into pBuffer
 	virtual bool BakeReverb( const void *pBakeData, CUtlBuffer *pBuffer, SteamAudioProgressFn_t pfnProgress, void *pUserData ) = 0;
@@ -263,23 +263,23 @@ struct SteamAudioUnk548_t
 class CSteamAudio : public CTier2AppSystem< ISteamAudio >
 {
 public:
-	IPLAudioSettings m_Unk028;
-	IPLContext m_Unk030;
-	CUtlVector< IPLHRTF > m_Unk038;
+	IPLAudioSettings m_AudioSettings;
+	IPLContext m_Context;
+	CUtlVector< IPLHRTF > m_HRTFs;
 	int m_nUnk050;
-	IPLEmbreeDevice m_Unk058;
-	IPLOpenCLDevice m_Unk060;
-	IPLRadeonRaysDevice m_Unk068;
-	IPLCUDADevice m_Unk070;
-	IPLOptiXDevice m_Unk078;
+	IPLEmbreeDevice m_EmbreeDevice;
+	IPLOpenCLDevice m_OpenCLDevice;
+	IPLRadeonRaysDevice m_RadeonRaysDevice;
+	IPLCUDADevice m_CUDADevice;
+	IPLOptiXDevice m_OptiXDevice;
 
 	// Base simulation settings, also passed to the reverb and source objects
-	IPLSimulationSettings m_Unk080;
+	IPLSimulationSettings m_SimulationSettings;
 	ISteamAudioScene *m_pUnk0E8;
 	IPLSource m_Unk0F0;
 	IPLSimulationSettings m_Unk0F8;
-	IPLSimulator m_Unk160;
-	IPLProbeNeighborhood m_Unk168;
+	IPLSimulator m_Simulator;
+	IPLProbeNeighborhood m_ProbeNeighborhood;
 	ISteamAudioScene *m_pUnk170;
 	int m_nUnk178;
 	int m_nUnk17C;
@@ -292,8 +292,8 @@ public:
 	VMatrix m_Unk190;
 
 	// Source registry: next id, free ids, id to IPLSource hash map (container not identified)
-	int m_nUnk1D0;
-	CUtlLeanVector< int > m_Unk1D8;
+	int m_nNextSourceId;
+	CUtlLeanVector< int > m_FreeSourceIds;
 	uint64 m_Unk1E8[ 11 ];
 	CThreadFastMutex m_UnkMutex240;
 	CThreadFastMutex m_UnkMutex24C;
@@ -310,14 +310,14 @@ public:
 	int m_nUnk50C[ 11 ];
 	int m_nUnk538[ 3 ];
 
-	// Scenes registered by unk016
-	CUtlVectorFixedGrowable< SteamAudioUnk548_t, 4 > m_Unk548;
+	// Scenes registered by AddScene
+	CUtlVectorFixedGrowable< SteamAudioUnk548_t, 4 > m_Scenes;
 
-	// Listener and HRTF state written by unk020 (layout not resolved)
+	// Listener and HRTF state written by SetListenerOrigin (layout not resolved)
 	uint64 m_Unk5A0[ 132 ];
 
-	CSteamAudioReverbSimulator *m_pUnk9C0;
-	CSteamAudioPartitioner *m_pUnk9C8;
+	CSteamAudioReverbSimulator *m_pReverbSimulator;
+	CSteamAudioPartitioner *m_pPartitioner;
 	bool m_bUnk9D0;
 
 	// Hash map of unk057 transforms (container not identified)
