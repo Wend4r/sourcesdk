@@ -181,15 +181,17 @@ public:
 	virtual void unk048( const Vector &vecUnk ) = 0;
 	virtual ISteamAudioSimulationData *CreateSimulationData() = 0;
 	virtual void DestroySimulationData( ISteamAudioSimulationData *pData ) = 0;
-	virtual bool unk051() = 0;
+	// Value of snd_steamaudio_enable_editor_profiling
+	virtual bool IsEditorProfilingEnabled() = 0;
 	// pBakeData is a CUtlVector of probe batches; the baked data is saved as KV3 into pBuffer
 	virtual bool BakeReverb( const void *pBakeData, CUtlBuffer *pBuffer, SteamAudioProgressFn_t pfnProgress, void *pUserData ) = 0;
 	virtual bool BakePathing( const void *pBakeData, CUtlBuffer *pBuffer, SteamAudioProgressFn_t pfnProgress, void *pUserData ) = 0;
 	virtual bool BakeDimensions( const void *pBakeData, CUtlBuffer *pBuffer, SteamAudioProgressFn_t pfnProgress, void *pUserData ) = 0;
-	// Lock and unlock the mutex of unk057
-	virtual void unk055() = 0;
-	virtual void unk056() = 0;
-	virtual void unk057( int nUnk, const CTransform &transform ) = 0;
+	// Lock and unlock the mutex of the transform map that SetTransform fills
+	virtual void LockTransforms() = 0;
+	virtual void UnlockTransforms() = 0;
+	// Stores the transform as a matrix (position w is the scale) under the index
+	virtual void SetTransform( int nIndex, const CTransform &transform ) = 0;
 	// Average of the 11 values
 	virtual void unk058( const float *pflValues, float *pflAverage ) = 0;
 	virtual void unk059( const float *pflIn, float *pflOut ) = 0;
@@ -320,7 +322,7 @@ public:
 	CSteamAudioPartitioner *m_pPartitioner;
 	bool m_bUnk9D0;
 
-	// Hash map of unk057 transforms (container not identified)
+	// Hash map of SetTransform transforms (container not identified)
 	uint64 m_Unk9D8[ 10 ];
 	CThreadFastMutex m_UnkMutexA28;
 
