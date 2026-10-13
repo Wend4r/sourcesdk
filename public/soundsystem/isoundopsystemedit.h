@@ -55,11 +55,13 @@ public:
 	virtual void unk033( const char *pSoundEventName, CUtlVector< const char * > &list ) = 0;
 	virtual const char *unk034( const char *pSoundEventName, int nIndex ) = 0;
 	virtual void unk035() = 0;
-	virtual void unk036() = 0;
+	// Public field names of the update stack of the sound event, then the names of its own fields
+	virtual void unk036( const char *pSoundEventName, CUtlVector< CUtlString > *pList ) = 0;
 	virtual void unk037() = 0;
 	virtual void unk038() = 0;
 	virtual void unk039() = 0;
-	virtual void unk040() = 0;
+	// Field names of the definition of the sound event
+	virtual void unk040( const char *pSoundEventName, CUtlVector< CUtlString > *pList ) = 0;
 	virtual void unk041() = 0;
 	virtual void unk042() = 0;
 	virtual void unk043() = 0;
@@ -98,12 +100,15 @@ public:
 	virtual void unk074() = 0;
 	virtual void unk075() = 0;
 	virtual void unk076() = 0;
-	virtual void unk077() = 0;
-	virtual void unk078() = 0;
+	// Public field names of the stack, unk078 filters them
+	virtual void unk077( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
+	virtual void unk078( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
 	virtual void unk079() = 0;
 	virtual void unk080() = 0;
-	virtual void unk081() = 0;
-	virtual void unk082() = 0;
+	// Element count of a public field of the stack
+	virtual int unk081( HSOSLIBSTACKHASH hStack, int nField ) = 0;
+	// Field data of the stack and its size
+	virtual void *unk082( HSOSLIBSTACKHASH hStack, int *pnSize ) = 0;
 	virtual void unk083() = 0;
 	virtual void unk084() = 0;
 	virtual void unk085() = 0;
