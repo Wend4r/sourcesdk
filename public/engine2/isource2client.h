@@ -49,6 +49,7 @@ class KeyValues;
 class QAngle;
 class Vector;
 class Vector4D;
+struct AudioState_t;
 struct EconItemInfo_t;
 struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
@@ -131,8 +132,9 @@ public:
 	virtual int HudVidInit() = 0;
 	virtual void HudUpdate( bool bActive ) = 0;
 	virtual void HudReset() = 0;
-	virtual void unk040() = 0;
-	virtual void unk041() = 0;
+	// Called by the network client service after CenterStringOff()
+	virtual void OnLevelLoadingStarted() = 0;
+	virtual void CenterStringOff() = 0;
 	virtual void HudText( const char *pszMessage ) = 0;
 	virtual void OnSplitScreenStateChanged() = 0;
 	virtual bool unk044() = 0;
@@ -146,9 +148,9 @@ public:
 	virtual void unk049( int nUnk ) = 0;
 	virtual void unk050( uint16 nUnk ) = 0;
 	virtual void unk051( void *pUnk, int nUnk1, int nUnk2 ) = 0;
-	// Writes two vectors to pOut and passes them to unk098
-	virtual void unk052( void *pOut, int nUnk ) = 0;
-	virtual void unk053() = 0;
+	// Fills the listener origin and angles, then the two vectors that follow through unk098()
+	virtual void UpdateAudioState( AudioState_t *pAudioState, CSplitScreenSlot nSlot ) = 0;
+	virtual void OnScreenSizeChanged( int nOldWidth, int nOldHeight ) = 0;
 	virtual int IN_KeyEvent( CSplitScreenSlot nSlot, int nEventCode, ButtonCode_t nButtonCode, const char *pszCurrentBinding ) = 0;
 	virtual void View_Render( vrect_t *pRect ) = 0;
 	virtual void NotifyClientSignon( int nSignonState ) = 0;
@@ -208,7 +210,7 @@ public:
 	virtual bool unk096() = 0;
 	virtual CEntityHandle unk097() = 0;
 	// Zeroes both outputs
-	virtual void unk098( void *pUnk, void *pOut1, void *pOut2 ) = 0;
+	virtual void unk098( CSplitScreenSlot nSlot, Vector *pvecUnk1, Vector *pvecUnk2 ) = 0;
 
 	virtual bool FormatSerializerFieldValue( CEntityIndex nEntityIndex, FlattenedSerializerSpewField_t &field ) = 0;
 
