@@ -7,6 +7,9 @@
 
 #include <serversideclientbase.h>
 
+class CHLTVBuildFullFrameSplitJob;
+class CHLTVServer;
+
 class CHLTVClient : public CServerSideClientBase
 {
 public:
@@ -34,21 +37,24 @@ public:
 	virtual bool ProcessSignonStateMsg( int state ) override = 0;
 
 public:
-	CNetworkGameServerBase *m_pHLTV;
+	CHLTVServer *m_pHLTV;
 	CUtlString m_szPassword;
 	CUtlString m_szChatGroup;
 	double m_fLastSendTime = 0.0;
 	double m_flLastChatTime = 0.0;
 	int m_nLastSendTick = 0;
 	int m_nSpawnGroupsSent = 0;
-	int m_bNeedsFullFrame = 0;
+	// Tick from which the next embedded full frame is built, tv_instant_replay_full_frame_time seconds after the last one
+	int m_nNextFullFrameTick = 0;
 	int m_nFullFrameTick = 0;
 	// last_command_number of the latest move message
 	int m_nLastCommandNumber = 0;
 	bool m_bNoChat = false;
 	bool m_bUnk0C05 = false;
+	// Set by the server's client message pass when tv_instant_replay_full_frame is on and the next full frame is due,
+	// the full frame split job starts once the snapshot is sent
 	bool m_bUnk0C06 = false;
-	void *m_pJob;
+	CHLTVBuildFullFrameSplitJob *m_pJob;
 	CUtlVector< INetMessage * > m_QueuedMessages;
 };
 
