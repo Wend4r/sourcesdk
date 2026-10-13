@@ -1,3 +1,9 @@
+#ifndef HOSTSTATE_H
+#define HOSTSTATE_H
+#ifdef _WIN32
+#pragma once
+#endif
+
 #include "tier0/utlstring.h"
 #include "tier0/keyvalues.h"
 #include "appframework/iappsystem.h"
@@ -88,3 +94,5 @@ public:
 	int m_ID;                                         // 0x90
 	CUtlVector<CHostStateRequest *> m_QueuedRequests; // 0x98
 };
+
+#endif // HOSTSTATE_H
