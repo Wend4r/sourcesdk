@@ -11,16 +11,18 @@
 #endif
 
 #include <engine/IEngineService.h>
+#include "entity2/entityindex.h"
 
 class CAudioState;
 class IAudioInputStream;
 class IVoiceTarget;
+struct VoiceRecordingDescription_t;
 struct VoiceRecordingLevel_t;
 
 abstract_class ISoundService : public IEngineService
 {
 public:
-	virtual bool Unk_PlayNetworkedVoice( void *p ) = 0;
+	virtual bool PlayNetworkedVoice( uint64 nXUID, CEntityIndex nEntityIndex, const VoiceRecordingDescription_t &desc, const void *pData, int nSize, bool bUnk, VoiceRecordingLevel_t *pLevel ) = 0;
 
 	virtual bool GetNetworkedVoiceLevel( uint64 nXUID, VoiceRecordingLevel_t *pLevel ) = 0;
 
