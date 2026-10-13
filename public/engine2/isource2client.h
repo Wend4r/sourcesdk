@@ -46,6 +46,16 @@ struct vrect_t;
 template < class T > class CWeakHandle;
 template < class T > class CStrongHandleCopyable;
 
+// Identifies a sound area registered with the client
+class SoundAreaGuid_t
+{
+public:
+	SoundAreaGuid_t() : m_Data( 0 ) {}
+	SoundAreaGuid_t( int32 nGuid ) : m_Data( nGuid ) {}
+
+	int32 m_Data;
+};
+
 // Installed by the client as the change callback time limit spew of the entity system
 abstract_class IFieldChangeLimitSpew
 {
@@ -253,9 +263,11 @@ public:
 	virtual void unk155( CEntityIndex nEntityIndex, int *pUnk, int nUnk ) = 0;
 	virtual void unk156( CEntityIndex nEntityIndex, int *pUnk ) = 0;
 
-	virtual void *unk157( int nUnk1, int nUnk2, void *pUnk ) = 0;
-	virtual void unk158( int nUnk1, int nUnk2, int nUnk3, void *pUnk ) = 0;
-	virtual void unk159( int nUnk ) = 0;
+	// Back the "sound_area_register", "sound_area_contains_point" and "sound_area_unregister" sound operators
+	virtual SoundAreaGuid_t unk157( const Vector &vecPosition, float flRadius, const char *pszAreaType ) = 0;
+	// The "any" area type matches every sound area
+	virtual void unk158( const Vector &vecPosition, const char *pszAreaType, bool *pbPointInSoundArea, bool *pbSoundAreasExist ) = 0;
+	virtual void unk159( SoundAreaGuid_t guid ) = 0;
 
 	virtual CEntityHandle unk160( int nUnk ) = 0;
 	virtual void unk161() = 0;
