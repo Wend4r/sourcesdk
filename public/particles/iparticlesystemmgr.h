@@ -15,6 +15,7 @@
 #include <resourcesystem/resourcehandle.h>
 #include <resourcesystem/iresourcesystem.h>
 #include <schemasystem/schematypes.h>
+#include <tier0/utlleanvector.h>
 #include <tier0/utlsoacontainer.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
@@ -25,9 +26,12 @@ class CPoolAllocator;
 class CSceneObject;
 class CSchemaClassInfo;
 class IParticleCollection;
+class IParticleFunctionDefinition;
 class IParticleSnapshot;
 class IParticleSystemDefinition;
 class IParticleSystemQuery;
+class IRenderContext;
+class ISceneView;
 class ISceneWorld;
 class KeyValues3;
 
@@ -71,7 +75,7 @@ public:
 	virtual const char *unk023( int nAttribute ) = 0;
 
 	virtual int GetOperatorDefinitionCount( int nFunctionType ) = 0;
-	virtual void *GetOperatorDefinition( int nFunctionType, int nIndex ) = 0;
+	virtual IParticleFunctionDefinition *GetOperatorDefinition( int nFunctionType, int nIndex ) = 0;
 	virtual void SetLastSimulationDuration( float flDuration ) = 0;
 	virtual float GetLastSimulationDuration() = 0;
 
@@ -109,14 +113,15 @@ public:
 	virtual void unk050( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot ) = 0;
 	virtual int GetParticleSystemVersion() = 0;
 	virtual const char *GetParticleSystemVersionChangeDescription( int nVersion ) = 0;
-	virtual void unk053( ResourceHandle_t hResource ) = 0;
+	virtual void unk053( HParticleSystemDefinition hDefinition ) = 0;
 	virtual bool unk054( int nFlags ) = 0;
-	virtual void unk055( void *p ) = 0;
+	// Adds instances to the instanced mesh scene object matching the world, flags and the 32-byte key, creating it when missing; records are 100 bytes
+	virtual void unk055( ISceneWorld *pWorld, uint64 nFlags, uint64 nTypeFlagsMask, uint64 nTypeFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bUnk ) = 0;
 	virtual void unk056( CUtlString sName ) = 0;
 	virtual CUtlVector< CUtlString > *unk057() = 0;
 	virtual void unk058() = 0;
-	virtual void unk059( void *p ) = 0;
-	virtual void SimulateGPUParticles( void *p ) = 0;
+	virtual void unk059( ISceneView *pView ) = 0;
+	virtual void SimulateGPUParticles( CUtlLeanVector< IParticleCollection * > collections, IRenderContext *pRenderContext ) = 0;
 };
 
 //-----------------------------------------------------------------------------
