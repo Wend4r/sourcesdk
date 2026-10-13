@@ -132,7 +132,7 @@ public:
 		m_pSteamUser = nullptr;
 		m_bUnk20_0 = false;
 		m_bUnk20_1 = false;
-		m_bUnk20_2 = false;
+		m_bMuted = false;
 		m_bUnk20_3 = false;
 		m_bUnk20_4 = false;
 		m_bUnk20_5 = false;
@@ -157,7 +157,7 @@ public:
 	ISteamUser *m_pSteamUser;
 	bool m_bUnk20_0 : 1;
 	bool m_bUnk20_1 : 1;
-	bool m_bUnk20_2 : 1;
+	bool m_bMuted : 1;
 	bool m_bUnk20_3 : 1;
 	bool m_bUnk20_4 : 1;
 	bool m_bUnk20_5 : 1;
@@ -319,7 +319,7 @@ public:
 	virtual bool IsSoundPlaying( SoundEventGuid_t guid ) = 0;
 	virtual void unk087( bool bUnk ) = 0;
 	virtual bool unk088() = 0;
-	virtual bool unk089() = 0;
+	virtual bool IsMuted() = 0;
 	// Plays a wave file through the operating system
 	virtual void PlaySystemSound( const char *pWavFile ) = 0;
 	virtual void UnloadAddonSoundResources( bool bUnk1, bool bUnk2 ) = 0;
