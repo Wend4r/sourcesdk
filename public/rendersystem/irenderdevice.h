@@ -327,9 +327,9 @@ public:
 	virtual void unk203( void *p ) = 0;
 	virtual uint32 GetSamplerIndex( SamplerStateHandle_t hSamplerState ) = 0;
 	virtual RenderDescriptorSetHandle_t GetGlobalLateBoundBindlessDescriptorSet() = 0;
-	virtual PooledIndexBufferHandle_t AllocatePooledIndexBuffer( uint nIndexCount, const uint16 *pIndices, uint *pOutStartIndex ) = 0;
+	virtual PooledIndexBufferHandle_t AllocatePooledIndexBuffer( uint nIndexCount, uint nIndexSize, const void *pIndices, uint *pOutStartIndex ) = 0;
 	virtual void FreePooledIndexBuffer( PooledIndexBufferHandle_t hBuffer ) = 0;
-	virtual uint GetPooledIndexBufferOffset( PooledIndexBufferHandle_t hBuffer, uint32 *pUnk1, uint32 *pUnk2 ) = 0;
+	virtual uint GetPooledIndexBufferOffset( PooledIndexBufferHandle_t hBuffer, uint32 *pIndexSizeOut, uint32 *pIndexCountOut ) = 0;
 	virtual IndexBufferHandle_t GetPooledIndexBuffer() = 0;
 	virtual void *AllocatePooledVertexBuffer( uint nVertexCount, uint nVertexSize, const void *pVertices, uint32 nUnk, void *pUnk ) = 0;
 	virtual void FreePooledVertexBuffer( void *hBuffer ) = 0;
