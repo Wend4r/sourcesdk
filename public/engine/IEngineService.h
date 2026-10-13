@@ -38,7 +38,7 @@ schema struct EventClientOutput_t
 abstract_class IEngineService : public IAppSystem
 {
 public:
-	virtual void		*GetServiceDependencies( void ) = 0;
+	virtual const EngineServiceDependencies_t *GetServiceDependencies( void ) = 0;
 	virtual const char	*GetName( void ) const = 0;
 	virtual EngineServiceActivateType_t ShouldActivate( const char * ) = 0;
 	virtual void		OnLoopActivate( const EngineLoopState_t &loopState, CEventDispatcher<CEventIDManager_Default> *pEventDispatcher) = 0;

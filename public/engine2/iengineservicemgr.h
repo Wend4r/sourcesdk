@@ -14,6 +14,20 @@ enum EngineServiceActivateType_t
 	ENGINE_SERVICE_ACTIVATE_IF_ADDED_BY_LOOP_MODE,
 };
 
+enum EngineServiceDependencyFlags_t : uint32
+{
+	ESD_FORCE_INCLUSION = 0x1,
+	ESD_MUST_RUN_AFTER = 0x2,
+	ESD_MUST_RUN_BEFORE = 0x4,
+};
+
+// Arrays of these end with an entry whose m_pServiceName is NULL
+struct EngineServiceDependencies_t
+{
+	const char *m_pServiceName;
+	uint32 m_nFlags; // EngineServiceDependencyFlags_t
+};
+
 template< class IInterface >
 class CBaseEngineService : public CTier4AppSystem<IInterface> {
 
