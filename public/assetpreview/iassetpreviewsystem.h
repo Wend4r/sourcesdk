@@ -57,7 +57,7 @@ public:
 	virtual bool unk024( void *pUnk ) = 0;
 
 	virtual bool IsLivePreviewEnabled() = 0;
-	virtual void unk026( bool bUnknown ) = 0;
+	virtual void SetLivePreviewEnabled( bool bEnabled ) = 0;
 
 	virtual Color GetBackgroundColor() = 0;
 	virtual void SetBackgroundColor( Color color ) = 0;
@@ -65,6 +65,7 @@ public:
 	virtual void SaveSettings( KeyValues3 *pSettings ) = 0;
 	virtual void LoadSettings( KeyValues3 *pSettings ) = 0;
 
+	// Listeners called with the new value by SetLivePreviewEnabled
 	virtual void unk031( void *pListener ) = 0;
 	virtual void unk032( void *pListener ) = 0;
 
