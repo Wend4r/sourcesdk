@@ -18,7 +18,6 @@
 #include "appframework/iappsystem.h"
 #include "tier3/tier3.h"
 
-class QObject;
 class KeyValues3;
 class CUtlBuffer;
 class IToolFrameListener;
@@ -29,6 +28,14 @@ class IToolFrameworkTabletInfo;
 class CQToolFrameworkApplication;
 class CJoystickInput;
 class CFGDFromAssetRegistry;
+class CToolsConfig;
+class CQInputBindManager;
+class CSingleAppInstance;
+class QWidget;
+class QVBoxLayout;
+class IToolSystem2;
+class IAsset;
+class IAssetType;
 class IFGDFromAssetListener;
 class IToolFrameworkAudioSettingsListener;
 
@@ -40,19 +47,23 @@ public:
 
 	// Fills pTools with the engine tools this installation may run
 	virtual void unk012( CUtlVector< CEngineToolInfo * > *pTools ) = 0;
-	virtual void unk013( uint8 nToolIndex ) = 0;
+
+	// Loads the tool and activates it
+	virtual void LaunchEngineTool( uint8 nToolIndex ) = 0;
 
 	virtual void QueueToolUnload( uint8 nToolIndex ) = 0;
 
 	// False for a tool that is queued for unloading
 	virtual bool IsToolLoaded( uint8 nToolIndex ) = 0;
+
+	// Defers LaunchEngineTool to the next Tools_RunFrame
 	virtual void unk016( uint8 nToolIndex ) = 0;
 
 	virtual void Tools_RunFrame() = 0;
 	virtual void UnloadQueuedTools() = 0;
 
 	// Returns the first non-zero answer of the loaded tool systems
-	virtual void *unk019() = 0;
+	virtual int unk019() = 0;
 
 	virtual void AddToolFrameListener( IToolFrameListener *pListener ) = 0;
 	virtual void RemoveToolFrameListener( IToolFrameListener *pListener ) = 0;
@@ -61,17 +72,22 @@ public:
 	virtual uint8 *FindTool( uint8 *pResult, const char *pName ) = 0;
 	virtual const char *GetToolName( uint8 nToolIndex ) = 0;
 
-	virtual void *LoadTool( uint8 nToolIndex ) = 0;
+	// Loads the tool module and connects its "ToolSystem2_001" interface
+	virtual IToolSystem2 *LoadTool( uint8 nToolIndex ) = 0;
 
 	virtual CEngineToolInfo *GetEngineToolInfo( uint8 nToolIndex ) = 0;
 	virtual CExternalToolInfo *GetExternalToolInfo( uint8 nExternalToolIndex ) = 0;
 
 	// Open assets in a tool and warn about assets no tool handles
-	virtual void unk027( void *pAsset, uint8 nToolIndex ) = 0;
-	virtual void unk028( void *pAsset, uint8 nToolIndex ) = 0;
-	virtual void unk029( void *pAssets, uint8 nToolIndex ) = 0;
+	// Open assets in a tool and warn about assets no tool handles; 0xFF picks the tool by asset type.
+	// The asset entries are 24 bytes and start with the IAsset
+	virtual void unk027( IAsset *pAsset, uint8 nToolIndex ) = 0;
+	virtual void unk028( void *pAssetEntry, uint8 nToolIndex ) = 0;
+	virtual void unk029( const CUtlVector< IAsset * > *pAssets, uint8 nToolIndex ) = 0;
+
+	// Opens the assets the object's ninth method lists
 	virtual void unk030( void *pAssets ) = 0;
-	virtual void unk031( void *pAssets, uint8 nToolIndex ) = 0;
+	virtual void unk031( void *pAssetEntries, uint8 nToolIndex ) = 0;
 
 	virtual void ExecuteCommand( const char *pCommand ) = 0;
 
@@ -88,25 +104,29 @@ public:
 	virtual void unk038( const char *pText, int nUnknown ) = 0;
 	// Reads the joystick raw input into the state
 	virtual bool unk039( void *pState ) = 0;
-	virtual void *unk040() = 0;
+	// Reloads tools/stylesheets/qtabbedstyle_colors.vsc and applies the style
+	virtual void ReloadTabbedStyle() = 0;
 
 	// Forwards both values to every loaded tool system
-	virtual void unk041( uint8 nUnknown1, uint8 nUnknown2 ) = 0;
+	virtual void unk041( bool bUnknown1, bool bUnknown2 ) = 0;
 
 	virtual void MarkSettingsDirty() = 0;
 
 	virtual bool IsMSAASupported() = 0;
-	virtual bool unk044( uint8 nUnknown ) = 0;
+	// Whether the multisample mode is available, asked by the options dialog
+	virtual bool unk044( uint8 nMultisampleMode ) = 0;
 
 	virtual const char *GetDeveloperHelpURL() = 0;
 	virtual void ShowAboutDialog() = 0;
 
 	// Selects the file in Explorer
-	virtual void unk047( const char *pPath ) = 0;
+	virtual void OpenFolderInExplorer( const char *pFullPath ) = 0;
 
 	// Shell "open" of the path
 	virtual void unk048( const char *pPath ) = 0;
-	virtual void *unk049() = 0;
+
+	// Opens the file in the external tool registered for its extension, otherwise like unk048
+	virtual void unk049( const char *pPath, int nUnknown ) = 0;
 
 	// Shared tool settings, saved under "toolframework"
 	virtual void SetAllowFlyMode2( bool bAllow ) = 0;
@@ -116,16 +136,21 @@ public:
 
 	// True when not running on a customer machine
 	virtual bool unk054() = 0;
-	virtual void unk055( void *p ) = 0;
+
+	// pParentWindow is the native handle of the window the console is opened from
+	virtual void OpenVConsole( void *pParentWindow ) = 0;
 
 	virtual void LaunchBuildWatch() = 0;
 
 	// "Render All Windows" in the tools menu
 	virtual bool GetAlwaysRenderAllWindows() = 0;
 	virtual void SetAlwaysRenderAllWindows( bool bAlways ) = 0;
-	virtual void *unk059() = 0;
+	virtual CQInputBindManager *unk059() = 0;
 
-	virtual void unk060( QObject *pWindow ) = 0;
+	// Remembers the tool window and activates the engine window
+	virtual void unk060( QWidget *pWindow ) = 0;
+
+	// Activates and raises the remembered tool window
 	virtual void unk061() = 0;
 
 	// <settings dir>/<pName>/settings.txt; bUnknown adds a prefix to the file name
@@ -136,12 +161,14 @@ public:
 	// Copies the settings to the next free numbered backup
 	virtual void BackupSettings() = 0;
 
-	virtual uint8 *unk066( uint8 *pResult, void *pAsset ) = 0;
-	virtual uint8 *unk067( uint8 *pResult, void *pFile ) = 0;
-	virtual uint8 *unk068( uint8 *pResult, void *pAssetType ) = 0;
-	virtual void unk069( void *pAsset, void *pTools ) = 0;
+	// Engine tool by asset type, external tool by file extension; 0xFF when there is none
+	virtual uint8 *unk066( uint8 *pResult, IAsset *pAsset ) = 0;
+	virtual uint8 *unk067( uint8 *pResult, IAsset *pAsset ) = 0;
+	virtual uint8 *unk068( uint8 *pResult, IAssetType *pAssetType ) = 0;
 
-	virtual void *unk070( void *p1, void *p2 ) = 0;
+	// Every engine tool or external tool that handles the asset
+	virtual void unk069( IAsset *pAsset, CUtlVector< uint8 > *pTools ) = 0;
+	virtual void unk070( IAsset *pAsset, CUtlVector< uint8 > *pExternalTools ) = 0;
 
 	// Notify the audio settings listeners when the value changes
 	virtual void SetAutoMuteGameWhenToolsHaveFocus( bool bMute ) = 0;
@@ -156,7 +183,7 @@ public:
 	virtual void AddAudioSettingsListener( IToolFrameworkAudioSettingsListener *pListener ) = 0;
 	virtual void RemoveAudioSettingsListener( IToolFrameworkAudioSettingsListener *pListener ) = 0;
 
-	// Increments a counter for true, decrements it for false
+	// Increments a counter for true, decrements it for false; the tools are not muted while it is set
 	virtual void unk078( bool bPush ) = 0;
 
 	// Loads the tool and passes it the request
@@ -193,7 +220,8 @@ public:
 	virtual void *unk094() = 0;
 	virtual bool unk095( void *p ) = 0;
 	virtual const char *unk096() = 0;
-	virtual void unk097( bool bUnknown ) = 0;
+	// Increments for true, decrements for false the application counter that suppresses Qt shortcut events
+	virtual void unk097( bool bPush ) = 0;
 };
 
 // Also derives from IToolServices (exposed as "ToolServices_002"), a base without a vtable
