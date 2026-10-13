@@ -179,7 +179,7 @@ public:
 	virtual void SpewSerializers( const char *pszName ) = 0;
 	virtual void EntityClassCompletion( const char *pszPartial, CUtlVector< CUtlString > &commands ) = 0;
 	virtual bool IsSpawnGroupAsyncLoaded( SpawnGroupHandle_t hSpawnGroup ) = 0;
-	virtual void *GetWorldSession() = 0;
+	virtual ISource2WorldSession *GetWorldSession() = 0;
 	virtual const char *GetSpawnGroupName( SpawnGroupHandle_t hSpawnGroup ) = 0;
 	// Returns the state that FinishChangeLevel takes
 	virtual CClientChangelevelState *StartChangeLevel() = 0;
@@ -340,7 +340,7 @@ public:
 	uint64 m_unk358[ 10 ];
 	int m_nClientTick;
 	int m_nUnk3AC;
-	void *m_pWorldSession;
+	ISource2WorldSession *m_pWorldSession;
 	IGameSpawnGroupMgr *m_pSpawnGroupMgr;
 	bool m_bUnk3C0;
 	uint64 m_unk3C8[ 3 ];
