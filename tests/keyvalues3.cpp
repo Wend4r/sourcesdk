@@ -374,7 +374,7 @@ REGISTER_NAMED_TEST( "KeyValues3.LoadText.KV1", KeyValues3_LoadText_KV1 )
 	CUtlString sError;
 	const CUtlString sText = ReadKeyValues3TestFile( SOURCESDK_KEYVALUES3_DATA_DIR "/value.kv" );
 
-	TEST_TRUE( LoadKV3FromKV1Text( &kv, &sError, sText.Get(), KV1TEXT_ESC_BEHAVIOR_UNK1, "value.kv", false ) );
+	TEST_TRUE( LoadKV3FromKV1Text( &kv, &sError, sText.Get(), KV1_NO_ESCAPE_SEQUENCES, "value.kv", false ) );
 
 	const KeyValues3 &root = kv;
 

@@ -18,8 +18,8 @@ struct KV3ToKV1Translation_t;
 
 enum KV1TextEscapeBehavior_t
 {
-	KV1TEXT_ESC_BEHAVIOR_UNK1 = 0,
-	KV1TEXT_ESC_BEHAVIOR_UNK2 = 1,
+	KV1_NO_ESCAPE_SEQUENCES = 0,
+	KV1_HAS_ESCAPE_SEQUENCES = 1,
 };
 
 // Only LoadKV3FromOldSchemaText reads these, which LoadKV3 calls for old schema text.
