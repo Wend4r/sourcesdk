@@ -7,6 +7,8 @@
 #include "resourcefile/resourcetype.h"
 #include "tier1/utldelegate.h"
 
+#include <memory>
+
 class IResourceUpdater;
 class IResourceTypeManager;
 class IResourceDataProvider;
@@ -16,6 +18,7 @@ class CResourceSystemProfiler;
 class CResourceSystemLeakTracker;
 class IToolsResourceListener;
 class IFileSystem;
+class IAsyncResourceDataRequest;
 
 typedef void ( *FnResourceLoadCompleteCallback_t )( HGameResourceManifest hManifest, void *pUserData );
 
@@ -112,11 +115,13 @@ DECLARE_TIER2_INTERFACE( IResourceManifestRegistry, g_pResourceManifestRegistry 
 abstract_class IResourceSystemUtils
 {
 public:
-	virtual void unk000( void *p ) = 0;
-	virtual void unk001( void *p ) = 0;
-	virtual void unk002( void *p ) = 0;
+	virtual void MarkLoadingWorkPending( ResourceHandle_t hResource, bool bHasWork ) = 0;
+	virtual std::shared_ptr< IAsyncResourceDataRequest > CreateAsyncResourceDataRequest( ResourceHandle_t hResource, int64 nFileOffset, size_t nLoadSizeBytes, int nUnknown, const char *pFileNameOverride ) = 0;
+	virtual void SubmitAsyncResourceDataRequest( IAsyncResourceDataRequest *pRequestInterface ) = 0;
 	virtual bool IsBlockingOnManifestLoad() = 0;
-	virtual void unk004( void *p ) = 0;
+
+	// Rebuilds the external reference list of the resource from the references of the given types
+	virtual void unk004( ResourceHandle_t hResource, int nTypeCount, const ResourceType_t *pTypes ) = 0;
 };
 
 class IRD_RegisterResourceDataUtils;
