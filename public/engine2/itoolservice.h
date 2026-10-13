@@ -17,6 +17,7 @@
 #include <resourcesystem/resourcehandle.h>
 
 class CNavData;
+class CSceneObject;
 class InfoForResourceTypeCModel;
 class INavListener;
 class IToolGameSimulationAPI;
@@ -28,6 +29,8 @@ class IToolObject;
 class Vector;
 class Vector4D;
 struct EconItemInfo_t;
+struct LightDesc_t;
+struct matrix3x4_t;
 struct ParticleProjectedTextureInfo_t;
 
 FORWARD_DECLARE_HANDLE( HDeferredLight );
@@ -65,11 +68,10 @@ public:
 	virtual void DeleteProjectedTexture( HProjectedTexture hTexture ) = 0;
 	virtual void *UpdateDeferredLight( ISceneWorld *pSceneWorld, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, Vector &vecUnk1, float flUnk1, Vector4D &vecUnk2, float flUnk2, float flUnk3, float flUnk4, Vector vecUnk3, float flUnk5, float flUnk6, float flUnk7, float flUnk8, float flUnk9, HDeferredLight &hLight ) = 0;
 	virtual void DeleteDeferredLight( HDeferredLight hLight ) = 0;
-	// Forward to game client methods that are not identified yet
-	virtual void unk039() = 0;
-	virtual void unk040() = 0;
-	virtual void unk041() = 0;
-	virtual void unk042() = 0;
+	virtual CSceneObject *UpdateStandardLight( ISceneWorld *pSceneWorld, const LightDesc_t &desc, HDeferredLight &hLight ) = 0;
+	virtual void DeleteStandardLight( HDeferredLight hLight ) = 0;
+	virtual CSceneObject *UpdateBarnLight( ISceneWorld *pSceneWorld, const void *pBarnLightDesc, const matrix3x4_t &transform, HDeferredLight &hLight ) = 0;
+	virtual void DeleteBarnLight( HDeferredLight hLight ) = 0;
 	// Forward to the game client
 	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
@@ -100,11 +102,11 @@ public:
 	// Forward to the game client
 	virtual void *unk062() = 0;
 	virtual ToolServiceUnk063_t unk063() = 0;
-	// The game client reports a valid local player entity handle
-	virtual bool unk064() = 0;
+	// The game client reports a valid local player pawn handle
+	virtual bool HasLocalPlayerPawn() = 0;
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
-	virtual void *unk066( CSplitScreenSlot nSlot ) = 0;
+	virtual void *GetPlayerViewSetup( CSplitScreenSlot nSlot ) = 0;
 	// -1.0 without a connected client
 	virtual float unk067( CSplitScreenSlot nSlot ) = 0;
 
@@ -141,8 +143,8 @@ public:
 	virtual void unk087() = 0;
 	virtual void unk088() = 0;
 
-	// Forward to the game client; unk090 does nothing for 0
-	virtual void *unk089() = 0;
+	// Forward to the game client; the second one does nothing for 0
+	virtual uint16 AllocateMouth( int nUnk ) = 0;
 	virtual void unk090( uint16 nUnk ) = 0;
 };
 
