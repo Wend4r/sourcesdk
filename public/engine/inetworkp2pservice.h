@@ -13,6 +13,10 @@
 #include <IEngineService.h>
 #include <ns_address.h>
 #include <steam/steamclientpublic.h>
+#include <tier0/convar.h>
+#include <tier0/threadtools.h>
+#include <tier0/utlsignalslot.h>
+#include <tier0/utlvector.h>
 
 class INetworkMessageInternal;
 class CNetMessage;
@@ -44,6 +48,20 @@ public:
 
 	// Empty in this build
 	virtual void unk032() = 0;
+};
+
+class CNetworkP2PService : public CBaseEngineService< INetworkP2PService >, public CUtlSlot
+{
+public:
+	uint8 m_unk060[ 8 ];
+	CUtlVector< IPeerGroupHandler * > m_PeerGroupHandlers;
+	CUtlVector< void * > m_unk080; // 192-byte peer entries with one bit per peer group handler
+	CEventDispatcher< CEventIDManager_Default > m_AllPeersEventDispatcher;
+	bool m_bUnk0D8;
+	CAtomicMutex m_unk0E0; // Guards m_unk080
+	CAtomicMutex m_unk0F0;
+	double m_flUnk100;
+	CConCommandMemberAccessor< CNetworkP2PService > m_ListPeersCommand;
 };
 
 #endif // INETWORKP2PSERVICE_H
