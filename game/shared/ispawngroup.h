@@ -58,7 +58,7 @@ public:
 	// SpawnGroupDesc_t::m_bUnk of the descriptor the spawn group was created with.
 	virtual bool HasUnk() const = 0;
 	// Sets what GetDestructionTick returns on client spawn groups; empty on server ones.
-	virtual void Unk_SetDestructionTick(uint32 nTick) = 0;
+	virtual void SetDestructionTick(uint32 nTick) = 0;
 	virtual bool HasLevelTransition() const = 0;
 	virtual WorldGroupId_t GetWorldGroupId() const = 0;
 
