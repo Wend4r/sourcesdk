@@ -173,9 +173,9 @@ public:
 
 #ifdef _WIN32
 	virtual void CreateHullFromStream( void *p ) = 0;
-	virtual void CreateHull( void *p ) = 0;
+	virtual RnHull_t *CreateHull( int nPointCount, const Vector *pPoints, RnHull_t *pDestHull, const void *p ) = 0;
 #else
-	virtual void CreateHull( void *p ) = 0;
+	virtual RnHull_t *CreateHull( int nPointCount, const Vector *pPoints, RnHull_t *pDestHull, const void *p ) = 0;
 	virtual void CreateHullFromStream( void *p ) = 0;
 #endif
 
