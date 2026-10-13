@@ -30,6 +30,7 @@ class CBufferString;
 class CCommand;
 class CGlobalVarsBase;
 class CSVCMsg_UserCommands_t;
+class CSteamID;
 class CThreadedJob;
 class CTransform;
 class CUtlBuffer;
@@ -141,8 +142,9 @@ public:
 	// Fires the "demo_stop" game event
 	virtual void OnDemoPlaybackStop() = 0;
 	virtual void unk064( void *pUnk ) = 0;
-	virtual void SetupScrubbingData( bool bUnk, int nUnk1, int nUnk2, void *pUnk ) = 0;
-	virtual void unk066( bool bUnk1, int nUnk1, int nUnk2, void *pUnk, bool bUnk2, bool bUnk3 ) = 0;
+	virtual void SetupScrubbingData( bool bSignon, int nUnk, int nMessageId, void *pUnk ) = 0;
+	// Logged as the connection info of the scrubbing data
+	virtual void unk066( bool bSignon, int nUnk1, int nUnk2, CSteamID steamID, bool bBot, bool bHltv ) = 0;
 	// Reads the "AnimAssetData" block of pUnk1
 	virtual void unk067( void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk068() = 0;
