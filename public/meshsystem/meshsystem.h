@@ -6,9 +6,12 @@
 #endif
 
 #include "meshsystem/imeshsystem.h"
+#include "meshsystem/rendermesh_imp.h"
 #include <tier0/threadtools.h>
 #include <tier0/utlvector.h>
 #include <tier3/tier3.h>
+
+#include <functional>
 
 //-----------------------------------------------------------------------------
 // Implementation of IMeshSystem. Members whose types are not declared in the
@@ -17,8 +20,7 @@
 class CMeshSystem : public CTier3AppSystem< IMeshSystem >
 {
 public:
-	// CRenderMeshManager, polymorphic, g_pRenderMeshManager points at it
-	void *m_RenderableManager[ 2 ];
+	CRenderMeshManager m_RenderableManager;
 
 	// CModelTypeManager, the "vmdl" resource type manager (three vtables)
 	void *m_modelTypeManager[ 14 ];
@@ -35,12 +37,8 @@ public:
 	// "AnimatableSceneObjectDesc", looked up by the two-argument CreateMeshInstance()
 	ISceneObjectDesc *m_pAnimatableDesc;
 
-	// std::function set by unk035()
-#ifdef _WIN32
-	uint8 m_unk0F0[ 0x40 ];
-#else
-	uint8 m_unk0F0[ 0x20 ];
-#endif
+	// Set by unk035(), the model type manager calls it with the id of a legacy model it loads
+	std::function< void( ResourceId_t nResourceId ) > m_unk0F0;
 };
 
 #endif // MESHSYSTEM_H
