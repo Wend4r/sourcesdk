@@ -42,6 +42,18 @@ FORWARD_DECLARE_HANDLE( RsDepthStencilStateHandle_t );
 FORWARD_DECLARE_HANDLE( RsBlendStateHandle_t );
 
 //-----------------------------------------------------------------------------
+// Registered with IMaterialSystem2::AddShaderReloadListener()
+//-----------------------------------------------------------------------------
+abstract_class IShaderReloadListener
+{
+public:
+	// Called by the dynamic shader compile before every material is unloaded for a shader reload
+	virtual void unk000() = 0;
+
+	virtual void unk001() = 0;
+};
+
+//-----------------------------------------------------------------------------
 // Source 2 material system, exposed as MATERIAL_SYSTEM2_INTERFACE_VERSION
 // ( see g_pMaterialSystem2 ).
 //
@@ -104,8 +116,8 @@ public:
 
 	virtual void unk037( ResourceHandle_t hMaterial, CUtlVector< ResourceHandle_t > *pResources ) = 0;
 
-	virtual void AddShaderReloadListener( void *pListener ) = 0;
-	virtual void RemoveShaderReloadListener( void *pListener ) = 0;
+	virtual void AddShaderReloadListener( IShaderReloadListener *pListener ) = 0;
+	virtual void RemoveShaderReloadListener( IShaderReloadListener *pListener ) = 0;
 
 	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext ) = 0;
 	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
@@ -234,7 +246,7 @@ public:
 	CUtlHashtable< uint64, uint64 > m_unk258;
 
 	// AddShaderReloadListener() and RemoveShaderReloadListener()
-	CUtlVector< void * > m_ShaderReloadListeners;
+	CUtlVector< IShaderReloadListener * > m_ShaderReloadListeners;
 
 	// AddMaterialParamChangedListener() and RemoveMaterialParamChangedListener()
 	CUtlVector< void * > m_MaterialParamChangedListeners;
