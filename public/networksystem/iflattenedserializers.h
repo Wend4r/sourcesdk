@@ -426,7 +426,7 @@ public:
 	virtual bool GetFieldPathChildIndices( const FlattenedSerializerDesc_t &pSerializer, CEntityInstancePolymorphicMetadataHelper *, int, const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) = 0;
 
 	// AMNOTE: GatherSendProxyResults starting at path
-	virtual bool GatherSendProxyResultsForPath( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, void *pUnk, int nEntityIndex, int nUnk, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut ) = 0;
+	virtual bool GatherSendProxyResultsForPath( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, CEntityInstancePolymorphicMetadataHelper *pMetadataHelper, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut ) = 0;
 	virtual const FlattenedSerializerFieldData_t *GetFieldSerializerData( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket ) = 0;
 	virtual bool HasField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans field and subfield names.
 	virtual bool HasFieldInternal( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans flattened fields directly by name
@@ -447,7 +447,7 @@ public:
 	// AMNOTE: Disabled fields are skipped when gathering send proxy results, building deltas and gathering polymorphic metadata
 	virtual void SetFieldEnabled( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName, bool bEnabled ) = 0; // "Setting FS %s field %s to %s"
 
-	virtual void GatherPolymorphicMetadata( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nFlags, void *pOutMetadata ) = 0; // "Polymorphic"
+	virtual void GatherPolymorphicMetadata( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, void *pOutMetadata ) = 0; // "Polymorphic"
 
 	// AMNOTE: Writes the variant class names of metadata gathered by GatherPolymorphicMetadata, the third argument is unused
 	virtual void GetPolymorphicMetadataDescription( const FlattenedSerializerDesc_t &pSerializer, const void *pMetadata, void *, CUtlVector< CUtlString > *pOutLines ) = 0;
