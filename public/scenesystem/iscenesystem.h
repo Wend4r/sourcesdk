@@ -40,6 +40,8 @@ class ISceneViewDebugOverlays;
 class ISparseShadowTree;
 class CViewId;
 class CFrustum;
+struct AABB_t;
+struct OBB_t;
 struct RenderViewport_t;
 struct LightDesc_t;
 struct MeshBuilderBuffers_t;
@@ -98,11 +100,18 @@ public:
 	// Returns FLT_MAX extents when the object has no bounds yet.
 	virtual void GetSceneObjectBounds( CSceneObject *pObject, Vector *pMins, Vector *pMaxs ) = 0;
 
-	virtual void unk031() = 0;
+	// Returns the shadow LOD index for the view (convar override, then the view, then the object) and writes 1 << index to pLODMask.
+	virtual int unk031( CSceneObject *pObject, ISceneView *pView, uint8 *pLODMask ) = 0;
+
 	virtual void SetPVSFromClusterMembership( CSceneObject *pObject, const uint32 *pClusters, int nClusterCount ) = 0;
-	virtual void unk033() = 0;
-	virtual void unk034() = 0;
-	virtual void unk035() = 0;
+
+	// Recompute the PVS data of the object from bounds or an oriented box in its world, unless PVS_NO_RECOMPUTE is set on it.
+	// Overloads: MSVC places the oriented box one first.
+	virtual void unk033( CSceneObject *pObject, const AABB_t &bounds, bool bUnk ) = 0;
+	virtual void unk033( CSceneObject *pObject, const OBB_t &bounds, bool bUnk ) = 0;
+
+	// Makes the object visible from every cluster of its world.
+	virtual void unk035( CSceneObject *pObject ) = 0;
 
 	virtual CSceneDebugTextObject *CreateTextObject( Vector2D *pEndPos, ISceneWorld *pWorld, const CTextLayoutInfo *pTextInfo, bool bPositionIn3DWorldSpace, const Vector &vLocal3DPosition ) = 0;
 
@@ -112,7 +121,8 @@ public:
 
 	virtual CSceneObject *CreateSkyBox( HMaterialWeak hMaterial, ISceneWorld *pWorld ) = 0;
 	virtual CSceneLightProbeVolumeObject *CreateLightProbeVolume( ISceneWorld *pWorld ) = 0;
-	virtual void unk041() = 0;
+	// Tests the lights and barn lights that belong to one of the worlds of the view.
+	virtual bool unk041( ISceneView *pView ) = 0;
 	virtual void MarkLightProbeVolumeObjectUpdated( CSceneLightProbeVolumeObject *pLightProbe ) = 0;
 	virtual void MarkEnvironmentMapObjectUpdated( CEnvMapSceneObject *pEnvMap ) = 0;
 	virtual ISceneWorld *CreateWorld( const char *pszDebugName ) = 0;
