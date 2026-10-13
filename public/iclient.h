@@ -319,7 +319,7 @@ public:
 	void *m_unk168;
 	uint8 m_unk170[ 0x30 ];
 	uint8 m_unk1A0[ 0x20 ];
-	void *m_unk1C0;
+	CSVCMsg_FlattenedSerializer_t *m_unk1C0; // Copy of the last flattened serializer message
 	void *m_unk1C8;
 	CUtlBuffer m_unk1D0;
 	CUtlString m_unk220;
