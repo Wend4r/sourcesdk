@@ -107,7 +107,7 @@ public:
 	virtual void SetNetworkChangeTagCallback( const CUtlAbstractDelegate &callback ) = 0;
 
 	// Doesn't support duplicated callbacks per field
-	virtual void RegisterNetworkFieldChangeCallbackInternal( const char *szFieldName, uint64, NetworkFieldChangedDelegateType_t fieldType, CUtlAbstractDelegate pCallback, NetworkFieldChangeCallbackPerformType_t cbPerformType, int unkflag ) = 0;
+	virtual void RegisterNetworkFieldChangeCallbackInternal( const char *szFieldName, uint64, NetworkFieldChangedDelegateType_t fieldType, CUtlAbstractDelegate pCallback, NetworkFieldChangeCallbackPerformType_t cbPerformType, int nPriority ) = 0;
 
 	virtual void AllowAdditionalMessageRegistration(bool bAllow) = 0;
 	virtual bool IsAdditionalMessageRegistrationAllowed() = 0;
