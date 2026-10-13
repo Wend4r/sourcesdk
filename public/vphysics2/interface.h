@@ -456,4 +456,67 @@ public:
 	virtual void unk250( CBufferString &text, IPhysicsShape *pShape, void *pUnknown ) = 0;
 };
 
+// Function table over a world, placed into caller memory by IVPhysics2::ConstructFnPhysicsWorld
+abstract_class IFnPhysicsWorld
+{
+public:
+	virtual void SetWorld( IVPhysics2World *pWorld ) = 0;
+	virtual void unk001( CRnWorld *pRnWorld ) = 0;
+	virtual IVPhysics2World *GetWorld() = 0;
+
+	virtual void *unk003( int nIndex ) = 0;
+	virtual void *unk004( int nIndex ) = 0;
+	virtual void unk005( const void *pCallback ) = 0;
+	virtual void unk006( void *pUnknown, float flUnknown1, float flUnknown2, float flUnknown3 ) = 0;
+	virtual void unk007( const void *pUnknown1, void *pUnknown2 ) = 0;
+	virtual void *unk008( int nIndex, uint32 nList ) = 0;
+	virtual void *unk009( int nIndex ) = 0;
+	virtual int unk010() = 0;
+	virtual int unk011() = 0;
+	virtual bool unk012() = 0;
+	virtual bool unk013() = 0;
+	virtual bool unk014() = 0;
+	virtual bool unk015() = 0;
+	virtual int unk016() = 0;
+	virtual void unk017() = 0;
+
+	// Empty
+	virtual void unk018() = 0;
+	virtual void unk019() = 0;
+
+	// Broadphase proxies
+	virtual IPhysicsShape *unk020( uint32 nProxy ) = 0;
+	virtual AABB_t unk021( uint32 nProxy ) = 0;
+
+	virtual float unk022( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, void *pUnknown4 ) = 0;
+	virtual bool unk023( void *pObject ) = 0;
+	virtual void unk024() = 0;
+
+	// Returns a zeroed 40-byte struct by value; the struct is not recovered
+	virtual void unk025( void *p ) = 0;
+
+	virtual void unk026() = 0;
+	virtual bool unk027( uint32 nValue ) = 0;
+	virtual void unk028() = 0;
+	virtual void unk029( void *pObject, void *pUnknown ) = 0;
+	virtual CRnQueryCache *unk030( void *pUnknown ) = 0;
+
+	// Empty
+	virtual void unk031() = 0;
+
+	// Forwards to the same function of the world
+	virtual void unk032( bool bUnknown ) = 0;
+
+	// Returns 0
+	virtual int unk033() = 0;
+
+	virtual int unk034( void *pObject ) = 0;
+
+	// Returns 0
+	virtual int unk035() = 0;
+
+	virtual void unk036( void *pUnknown ) = 0;
+	virtual void Profile( PhysicsWorldTraceProfile_t &profile ) = 0;
+};
+
 #endif // VPHYSICS2_INTERFACE_H
