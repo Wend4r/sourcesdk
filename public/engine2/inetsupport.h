@@ -18,6 +18,7 @@
 #include "networksystem/inetchannel.h"
 #include "inetmsghandler.h"
 #include "matchmaking/imatchasync.h"
+#include "tier0/netadr.h"
 
 class ISteamNetworkingUtils;
 
@@ -48,17 +49,58 @@ public:
 		SP2PC_LOBBY
 	};
 
+	struct BaseServerInfo_t
+	{
+		uint64 m_serverSteamID;
+		uint64 m_nTVSecretCode;
+		int m_nRelaySlotsMax;
+		int m_nRelaysConnected;
+		int m_nRelayClientsConnected;
+		uint16 m_nPort;
+		uint16 m_nHLTVPort;
+		bool m_bActive : 1;
+		bool m_bIsTVRelay : 1;
+		bool m_bDedicated : 1;
+		bool m_bInMainMenuBkgnd : 1;
+	};
+
+	struct ExtendedServerInfo_t
+	{
+		netadr_t m_netAdr;
+		netadr_t m_netAdrOnline;
+		const char *m_szServerName;
+		const char *m_szMapName;
+		int m_numMaxHumanPlayers;
+		int m_numHumanPlayers;
+		bool m_bLobbyExclusive : 1;
+		bool m_bGroupExclusive : 1;
+		uint16 m_nUnk032;
+	};
+
+	struct ServerInfo_t : public BaseServerInfo_t, public ExtendedServerInfo_t
+	{
+	};
+
+	struct ClientInfo_t
+	{
+		INetChannel *m_pNetChannel;
+		int m_nSignonState;
+		int m_nSocket;
+		int m_numHumanPlayers;
+	};
+
 public:
 	// Get engine build number
 	virtual int GetEngineBuildNumber() = 0;
 
-	virtual void GetBaseServerInfo( void *pBaseServerInfo ) = 0;
+	virtual void GetBaseServerInfo( BaseServerInfo_t *pBaseServerInfo ) = 0;
 
-	virtual void GetExtendedServerInfo( void *pExtendedServerInfo ) = 0;
+	virtual void GetExtendedServerInfo( ExtendedServerInfo_t *pExtendedServerInfo ) = 0;
 
-	virtual void GetServerInfo( void *pServerInfo ) = 0;
+	// Fills the base part, then the extended part
+	virtual void GetServerInfo( ServerInfo_t *pServerInfo ) = 0;
 
-	virtual void GetClientInfo( void *pClientInfo ) = 0;
+	virtual void GetClientInfo( ClientInfo_t *pClientInfo ) = 0;
 
 	// Update a local server reservation
 	virtual void UpdateServerReservation( uint64 uiReservation ) = 0;
