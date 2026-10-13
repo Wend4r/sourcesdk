@@ -13,6 +13,10 @@
 
 #include "appframework/iappsystem.h"
 #include "mathlib/vector.h"
+#include "mathlib/vmatrix.h"
+#include "tier0/threadtools.h"
+#include "tier0/utlleanvector.h"
+#include "tier0/utlvector.h"
 #include "tier0/utlstring.h"
 #include "tier2/tier2.h"
 
@@ -201,10 +205,136 @@ public:
 	virtual bool unk069( int nUnk ) = 0;
 };
 
+//-----------------------------------------------------------------------------
+// Steam Audio (Phonon) types used by CSteamAudio
+//-----------------------------------------------------------------------------
+typedef struct _IPLContext_t *IPLContext;
+typedef struct _IPLHRTF_t *IPLHRTF;
+typedef struct _IPLEmbreeDevice_t *IPLEmbreeDevice;
+typedef struct _IPLOpenCLDevice_t *IPLOpenCLDevice;
+typedef struct _IPLRadeonRaysDevice_t *IPLRadeonRaysDevice;
+typedef struct _IPLCUDADevice_t *IPLCUDADevice;
+typedef struct _IPLOptiXDevice_t *IPLOptiXDevice;
+typedef struct _IPLTrueAudioNextDevice_t *IPLTrueAudioNextDevice;
+typedef struct _IPLSimulator_t *IPLSimulator;
+typedef struct _IPLSource_t *IPLSource;
+typedef struct _IPLProbeNeighborhood_t *IPLProbeNeighborhood;
+
+struct IPLAudioSettings
+{
+	int32 samplingRate;
+	int32 frameSize;
+};
+
+struct IPLSimulationSettings
+{
+	int32 flags;
+	int32 sceneType;
+	int32 reflectionType;
+	int32 maxNumOcclusionSamples;
+	int32 maxNumRays;
+	int32 numDiffuseSamples;
+	float32 maxDuration;
+	int32 maxOrder;
+	int32 maxNumSources;
+	int32 numThreads;
+	int32 rayBatchSize;
+	int32 numVisSamples;
+	int32 samplingRate;
+	int32 frameSize;
+	IPLOpenCLDevice openCLDevice;
+	IPLRadeonRaysDevice radeonRaysDevice;
+	IPLTrueAudioNextDevice tanDevice;
+	float32 m_flUnk50;
+	int32 m_nUnk54;
+	uint64 m_nUnk58;
+	uint64 m_nUnk60;
+};
+
+class CSteamAudioPartitioner;
+class CSteamAudioReverbSimulator;
+
+struct SteamAudioUnk548_t
+{
+	ISteamAudioScene *m_pScene;
+	void *m_pKey;
+};
+
 class CSteamAudio : public CTier2AppSystem< ISteamAudio >
 {
 public:
-	uint8 m_pad028[ 0xA88 ];
+	IPLAudioSettings m_Unk028;
+	IPLContext m_Unk030;
+	CUtlVector< IPLHRTF > m_Unk038;
+	int m_nUnk050;
+	IPLEmbreeDevice m_Unk058;
+	IPLOpenCLDevice m_Unk060;
+	IPLRadeonRaysDevice m_Unk068;
+	IPLCUDADevice m_Unk070;
+	IPLOptiXDevice m_Unk078;
+
+	// Base simulation settings, also passed to the reverb and source objects
+	IPLSimulationSettings m_Unk080;
+	ISteamAudioScene *m_pUnk0E8;
+	IPLSource m_Unk0F0;
+	IPLSimulationSettings m_Unk0F8;
+	IPLSimulator m_Unk160;
+	IPLProbeNeighborhood m_Unk168;
+	ISteamAudioScene *m_pUnk170;
+	int m_nUnk178;
+	int m_nUnk17C;
+	int m_nUnk180;
+
+	// Returned by unk046
+	bool m_bUnk184;
+	float m_flUnk188;
+	float m_flUnk18C;
+	VMatrix m_Unk190;
+
+	// Source registry: next id, free ids, id to IPLSource hash map (container not identified)
+	int m_nUnk1D0;
+	CUtlLeanVector< int > m_Unk1D8;
+	uint64 m_Unk1E8[ 11 ];
+	CThreadFastMutex m_UnkMutex240;
+	CThreadFastMutex m_UnkMutex24C;
+
+	// Pathing output of unk043 and the tables the constructor fills with constants (layout not resolved)
+	int m_nUnk258;
+	int m_nUnk25C;
+	uint64 m_Unk260[ 81 ];
+
+	// Index tables of unk059..unk065
+	int m_nUnk4E8[ 3 ];
+	int m_nUnk4F4[ 3 ];
+	int m_nUnk500[ 3 ];
+	int m_nUnk50C[ 11 ];
+	int m_nUnk538[ 3 ];
+
+	// Scenes registered by unk016
+	CUtlVectorFixedGrowable< SteamAudioUnk548_t, 4 > m_Unk548;
+
+	// Listener and HRTF state written by unk020 (layout not resolved)
+	uint64 m_Unk5A0[ 132 ];
+
+	CSteamAudioReverbSimulator *m_pUnk9C0;
+	CSteamAudioPartitioner *m_pUnk9C8;
+	bool m_bUnk9D0;
+
+	// Hash map of unk057 transforms (container not identified)
+	uint64 m_Unk9D8[ 10 ];
+	CThreadFastMutex m_UnkMutexA28;
+
+	// Set by unk068
+	int m_nUnkA34;
+	int m_nUnkA38;
+	float m_flUnkA3C;
+	void *m_pUnkA40;
+	int m_nUnkA48;
+	Vector m_vecUnkA4C;
+	Vector m_vecUnkA58;
+	uint8 m_UnkA64[ 0x28 ];
+	CUtlVector< void * > m_UnkA90;
+	int m_nUnkAA8;
 };
 
 #endif // ISTEAMAUDIO_H
