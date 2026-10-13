@@ -195,7 +195,7 @@ public:
 	virtual void CompactOnFail() = 0;
 
 	// Logs the out of memory message, breaks in the debugger and exits the process
-	virtual void ReportFailedAllocation( int nSize ) = 0;
+	virtual void ReportFailedAllocation( size_t nSize ) = 0;
 
 	// memset's at the pMem location with nSize bytes of specified type, where:
 	// MemoryDebugType_None - would do nothing;
@@ -245,11 +245,11 @@ public:
 	// Returns true if stackstats is enabled for this allocator
 	virtual bool IsStackStatsEnabled() = 0;
 
-	// AMNOTE: Stub, returns 0
-	virtual int unk101() = 0;
+	// Stub in the standard allocators, returns 0
+	virtual MemAllocAttribute_t GetAllocAttributes( void *pMem ) = 0;
 
-	// AMNOTE: Stub
-	virtual void unk102( void *pMem, MemAllocAttribute_t alloc_attribute, int unk ) = 0;
+	// Stub in the standard allocators
+	virtual void SetAllocAttributes( void *pMem, MemAllocAttribute_t alloc_attribute, int unk ) = 0;
 
 	// AMNOTE: Copies data to an unknown struct of byte size 56
 	// Returns true if data was written, false otherwise
