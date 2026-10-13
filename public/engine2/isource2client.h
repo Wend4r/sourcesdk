@@ -137,7 +137,7 @@ public:
 	// Called after the engine installed the callbacks of its own string tables, with the same flag
 	virtual void InstallStringTableCallback( bool bInvoke ) = 0;
 	// Queues a predicted string command event for the client. A non-zero result other than -1 is sent to the server as the prediction sync of the command
-	virtual int unk013( CPlayerSlot nSlot, const CCommand &args ) = 0;
+	virtual int PredictStringCommand( CPlayerSlot nSlot, const CCommand &args ) = 0;
 	virtual void PlayerInfoChanged( int nPlayerIndex ) = 0;
 
 	virtual void CreateMove( int nSlot, bool bActive ) = 0;
@@ -146,7 +146,7 @@ public:
 	virtual void unk017( CSplitScreenSlot nSlot ) = 0;
 
 	// Latest user command number the client generated
-	virtual int unk018( CSplitScreenSlot nSlot ) = 0;
+	virtual int GetLatestCommandNumber( CSplitScreenSlot nSlot ) = 0;
 	virtual int unk019( CSplitScreenSlot nSlot ) = 0;
 	virtual int unk020( CSplitScreenSlot nSlot ) = 0;
 	// Called with the command numbers of a packet entities message; empty
@@ -161,8 +161,8 @@ public:
 
 	// Forward to the game rules: the first one logs "paused on tick" and "unpaused on tick", the second one clears the pause ticks.
 	// The engine calls them for the demo player's pause state
-	virtual void unk027( bool bPaused ) = 0;
-	virtual void unk028() = 0;
+	virtual void SetPaused( bool bPaused ) = 0;
+	virtual void ClearPauseTicks() = 0;
 	// Forward to the network classes of the client entity system
 	virtual bool GetEntity2Networkable( CEntityIndex nEntityIndex, Entity2Networkable_t &networkable ) = 0;
 	// The engine creates each new entity of a packet through it; pUnk is the engine's creation record
@@ -194,7 +194,7 @@ public:
 	virtual void VoiceStatus( int nEntityIndex, int nSplitScreenSlot, bool bTalking ) = 0;
 
 	// Forward to the mouth (lip sync) system; the first one allocates a mouth and returns its id
-	virtual uint16 unk049( int nUnk ) = 0;
+	virtual uint16 AllocateMouth( int nUnk ) = 0;
 	virtual void unk050( uint16 nUnk ) = 0;
 	virtual void unk051( void *pUnk, int nUnk1, int nUnk2 ) = 0;
 	// Fills the listener origin and angles, then the two vectors that follow through unk098()
@@ -206,9 +206,9 @@ public:
 	virtual bool CanRecordDemo( CBufferString *pErrorMsg ) const = 0;
 	// Asked by the engine's in-memory demo buffer for an 8-byte key; on true the engine decrypts the demo file in 8-byte blocks with it.
 	// Returns false
-	virtual bool unk058( const char *pszDemoFileName, uint8 *pKey ) = 0;
+	virtual bool GetDemoEncryptionKey( const char *pszDemoFileName, uint8 *pKey ) = 0;
 	// Filters console commands; the engine passes 0 as the second argument
-	virtual bool unk059( const char *pszCommand, int nUnk ) = 0;
+	virtual bool FilterCommand( const char *pszCommand, int nUnk ) = 0;
 	virtual void OnDemoRecordStart( const char *pszDemoBaseName, IDemoMessageSink *pSink ) = 0;
 	virtual void OnDemoRecordStop( IDemoMessageSink *pSink ) = 0;
 
@@ -219,9 +219,9 @@ public:
 	virtual void unk064( void *pUnk ) = 0;
 	virtual void SetupScrubbingData( bool bSignon, int nUnk, int nMessageId, void *pUnk ) = 0;
 	// Logged as the connection info of the scrubbing data
-	virtual void unk066( bool bSignon, int nUnk1, int nUnk2, CSteamID steamID, bool bBot, bool bHltv ) = 0;
+	virtual void AddPlayerConnectionEvent( bool bSignon, int nUnk1, int nUnk2, CSteamID steamID, bool bBot, bool bHltv ) = 0;
 	// Reads the "AnimAssetData" block of pUnk1
-	virtual void unk067( void *pUnk1, void *pUnk2 ) = 0;
+	virtual void ReadAnimAssetData( void *pUnk1, void *pUnk2 ) = 0;
 	// Frees the game events kept for scrubbing and clears the player connection events
 	virtual void ClearScrubbingData() = 0;
 	// Fires the game events kept for nTick
@@ -243,9 +243,9 @@ public:
 	virtual void GetEyeAngles( CSplitScreenSlot nSlot, QAngle *pAngles ) = 0;
 	virtual void SnapEyeAngles( CSplitScreenSlot nSlot, const QAngle &angles ) = 0;
 	// True when the index has no entity or the entity is dormant
-	virtual bool unk081( CEntityIndex nEntityIndex ) = 0;
+	virtual bool IsEntityDormant( CEntityIndex nEntityIndex ) = 0;
 	// Handle of the first split screen slot's local player pawn
-	virtual CEntityHandle unk082() = 0;
+	virtual CEntityHandle GetLocalPlayerPawnHandle() = 0;
 	virtual bool unk083( int nUnk ) = 0;
 
 	// Per-entity queries
@@ -260,7 +260,7 @@ public:
 	// Falls back to GetEntity2AbsOrigin() when the attachment token is 0
 	virtual bool GetEntity2AttachmentAbsOrigin( CEntityIndex nEntityIndex, Vector *pOrigin, CUtlStringToken &attachment ) = 0;
 	// Builds the transform from GetEntity2AbsOrigin() and GetEntity2AbsAngles() when the attachment token is 0
-	virtual bool unk092( CEntityIndex nEntityIndex, CTransform *pTransform, CUtlStringToken &attachment ) = 0;
+	virtual bool GetEntity2AttachmentTransform( CEntityIndex nEntityIndex, CTransform *pTransform, CUtlStringToken &attachment ) = 0;
 	virtual bool unk093( CEntityIndex nEntityIndex ) = 0;
 	virtual void unk094( CEntityIndex nEntityIndex, Vector *pvecUnk1, Vector *pvecUnk2, Vector *pvecUnk3 ) = 0;
 	virtual bool unk095() = 0;
@@ -286,11 +286,11 @@ public:
 	// Deletes the scene object of hLight
 	virtual void DeleteStandardLight( HDeferredLight hLight ) = 0;
 	// Same as UpdateStandardLight() for a barn light, which also takes the transform of the scene object
-	virtual CSceneObject *unk109( ISceneWorld *pSceneWorld, const void *pBarnLightDesc, const matrix3x4_t &transform, HDeferredLight &hLight ) = 0;
+	virtual CSceneObject *UpdateBarnLight( ISceneWorld *pSceneWorld, const void *pBarnLightDesc, const matrix3x4_t &transform, HDeferredLight &hLight ) = 0;
 	// Deletes the scene object of hLight
-	virtual void unk110( HDeferredLight hLight ) = 0;
+	virtual void DeleteBarnLight( HDeferredLight hLight ) = 0;
 	// Traces a line through the game physics query with a filter built from attr; resets the trace without one
-	virtual bool unk111( const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr, CGameTrace *pTrace ) = 0;
+	virtual bool TraceLine( const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr, CGameTrace *pTrace ) = 0;
 	// Forward to the game physics query methods of the same names, the first one with a -1.0 default
 	virtual void TraceLineIntervals( void *pIntervals, const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr ) = 0;
 	virtual uint64 GetPointContents( const Vector &vecPosition, int nMask ) = 0;
@@ -329,12 +329,12 @@ public:
 	virtual const char *unk135() = 0;
 	virtual bool unk136() = 0;
 	// Total and custom game Steam UGC subscription counts for the crash dump comment; zeroes them and returns false
-	virtual bool unk137( uint32 *pnSubscriptionCounts ) = 0;
+	virtual bool GetUGCSubscriptionCounts( uint32 *pnSubscriptionCounts ) = 0;
 	// Asked for the addon id when "AddonConfig/AllowAddonDownload" is set; the engine handles the results 1 and 2
 	virtual int unk138( uint64 nAddonId ) = 0;
 	virtual bool unk139( const char **ppszUnk, int nUnk, CUtlString *pOut ) = 0;
 	// Entity list of the client entity system, summarized in the crash dump comment
-	virtual CConcreteEntityList *unk140() = 0;
+	virtual CConcreteEntityList *GetEntityList() = 0;
 	// Returns the CToolClientSimulationAPI singleton
 	virtual IToolClientSimulationAPI *GetToolClientSimulationAPI() = 0;
 	// The engine render view setup calls them before PerformClientSpecificSetupForPlayerViews(), the first one with the same attributes
@@ -352,20 +352,20 @@ public:
 	virtual void unk152() = 0;
 	virtual const char *unk153() = 0;
 	// Fires a panorama event with the state
-	virtual void unk154( const GameClientCommandQueueState_t &state ) = 0;
+	virtual void OnCommandQueueStateChanged( const GameClientCommandQueueState_t &state ) = 0;
 	virtual void unk155( CEntityIndex nEntityIndex, int *pUnk, int nUnk ) = 0;
 	virtual void unk156( CEntityIndex nEntityIndex, int *pUnk ) = 0;
 
 	// Back the "sound_area_register", "sound_area_contains_point" and "sound_area_unregister" sound operators
-	virtual SoundAreaGuid_t unk157( const Vector &vecPosition, float flRadius, const char *pszAreaType ) = 0;
+	virtual SoundAreaGuid_t RegisterSoundArea( const Vector &vecPosition, float flRadius, const char *pszAreaType ) = 0;
 	// The "any" area type matches every sound area
-	virtual void unk158( const Vector &vecPosition, const char *pszAreaType, bool *pbPointInSoundArea, bool *pbSoundAreasExist ) = 0;
-	virtual void unk159( SoundAreaGuid_t guid ) = 0;
+	virtual void IsPointInSoundArea( const Vector &vecPosition, const char *pszAreaType, bool *pbPointInSoundArea, bool *pbSoundAreasExist ) = 0;
+	virtual void UnregisterSoundArea( SoundAreaGuid_t guid ) = 0;
 
-	virtual CEntityHandle unk160( CPlayerSlot nSlot ) = 0;
+	virtual CEntityHandle GetPlayerControllerHandle( CPlayerSlot nSlot ) = 0;
 	virtual void unk161() = 0;
 	// The engine renames classes through it while it links classes for replay compatibility ("scripts/replay_compatability_settings.txt")
-	virtual ISerializerMatchToMetaReplayCompatHelper *unk162() = 0;
+	virtual ISerializerMatchToMetaReplayCompatHelper *GetReplayCompatHelper() = 0;
 	virtual bool unk163( void *pUnk ) = 0;
 	virtual void OnHltvReplay( const CSVCMsg_HltvReplay_t *pMsg ) = 0;
 	// Forward to the HLTV replay system, which OnHltvReplay() feeds
@@ -383,7 +383,7 @@ public:
 	// Designer name of the entity, falling back to its class name; "" for an invalid index
 	virtual const char *GetEntity2ClassName( CEntityIndex nEntityIndex ) = 0;
 	// True when the class name of the entity or of one of its base classes is pszClassName
-	virtual bool unk175( CEntityIndex nEntityIndex, const char *pszClassName ) = 0;
+	virtual bool IsEntity2OfClass( CEntityIndex nEntityIndex, const char *pszClassName ) = 0;
 
 	// Forward to the input system
 	virtual bool unk176() = 0;
@@ -406,7 +406,7 @@ public:
 	virtual void unk188( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
 
 	// Called with the new net channel of the connection
-	virtual void unk189( INetChannel *pNetChannel, int nUnk, bool bUnk ) = 0;
+	virtual void OnNetChannelCreated( INetChannel *pNetChannel, int nUnk, bool bUnk ) = 0;
 	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
@@ -422,7 +422,7 @@ public:
 	// Clears the result
 	virtual void unk201( void *pUnk, CBufferString &result ) = 0;
 	virtual bool unk202() = 0;
-	// The engine passes it with unk162() to the flattened serializers while it links classes
+	// The engine passes it with GetReplayCompatHelper() to the flattened serializers while it links classes
 	virtual void *unk203() = 0;
 	// Asked before ISource2Server::GetMatchID() for the crash dump comment
 	virtual uint64 GetMatchID() = 0;
@@ -460,11 +460,11 @@ public:
 		float m_flDestroyTime;
 	};
 
-	// Recorded for the demo scrubbing data by unk066()
+	// Recorded for the demo scrubbing data by AddPlayerConnectionEvent()
 	struct PlayerConnectionEvent_t
 	{
 		int m_nTick;
-		int m_nUnk004;
+		int m_nConnectionInfo;
 		bool m_bUnk008;
 		CSteamID m_SteamID;
 		bool m_bBot;
@@ -483,16 +483,16 @@ public:
 	// Zeroed by the constructor; no reader found
 	uint8 m_unk038[ 0x10 ];
 	// Set by LaunchApplicationOnExit()
-	CUtlString m_unk048;
+	CUtlString m_sApplicationOnExit;
 	// The factory passed to Connect(), read by Init()
-	CreateInterfaceFn m_unk050;
+	CreateInterfaceFn m_pFactory;
 	// Copied by ReceivedServerInfo()
-	GameSessionConfiguration_t m_unk058;
-	CUtlSortVector< PlayerConnectionEvent_t, PlayerConnectionTickOrderingFunc > m_unk0F0;
-	// Connection info number to the index of its event in m_unk0F0
-	CUtlOrderedMap< int, int > m_unk118;
-	// Universe of the last player SteamID recorded by unk066()
-	EUniverse m_unk140;
+	GameSessionConfiguration_t m_GameSessionConfiguration;
+	CUtlSortVector< PlayerConnectionEvent_t, PlayerConnectionTickOrderingFunc > m_PlayerConnectionEvents;
+	// Connection info number to the index of its event in m_PlayerConnectionEvents
+	CUtlOrderedMap< int, int > m_PlayerConnectionEventIndices;
+	// Universe of the last player SteamID recorded by AddPlayerConnectionEvent()
+	EUniverse m_eUniverse;
 	uint8 m_unk144[ 0x4 ];
 	// Nine game event groups filled by the constructor: event names, the ids of those events, and the copies kept for scrubbing,
 	// fired by OnScrubDemo()
@@ -524,9 +524,9 @@ public:
 	CUtlVector< int > m_unk3A0;
 	CUtlVector< SerializedEvent_t > m_unk3B8;
 	// Built by SetupScrubbingData() and purged by ClearScrubbingData()
-	CUtlVector< SerializedUserMessage_t > m_unk3D0;
+	CUtlVector< SerializedUserMessage_t > m_ScrubbingUserMessages;
 	// Filled by InitInstantReplayData() and purged by ClearInstantReplayData()
-	CUtlVector< SerializedUserMessage_t > m_unk3E8;
+	CUtlVector< SerializedUserMessage_t > m_InstantReplayUserMessages;
 	CTSQueue< std::function< void() > * > m_unk400;
 	// Zeroed by the constructor; no reader found
 	int m_unk440;
