@@ -18,6 +18,8 @@
 #include "tier2/tier2.h"
 
 class IMEManagerBase;
+class IIMEUIView;
+class IIMEUIObject;
 
 abstract_class IIMEManager : public IAppSystem
 {
@@ -33,12 +35,13 @@ public:
 	virtual bool HandleIMEEvent( PlatWindow_t hWindow, uint nMsg, uint64 wParam, int64 lParam ) = 0;
 	virtual bool HandleIMEEventPreProcess( PlatWindow_t hWindow, uint nMsg, uint64 wParam, int64 lParam ) = 0;
 
-	virtual void Unk_FinalizeCompositionForView( void *p ) = 0;
+	virtual void FinalizeCompositionForView( IIMEUIView *pUIView, IIMEUIObject *pObject ) = 0;
 
-	virtual void Unk_FinalizeCompositionOnFocusLost( void *p ) = 0;
+	// Acts only when bHasFocus is false
+	virtual void FinalizeCompositionOnFocusLost( IIMEUIView *pUIView, bool bHasFocus ) = 0;
 
-	virtual void SetActiveUIView( void *pUIView, bool bActive ) = 0;
-	virtual void *GetActiveUIView() = 0;
+	virtual void SetActiveUIView( IIMEUIView *pUIView, bool bActive ) = 0;
+	virtual IIMEUIView *GetActiveUIView() = 0;
 
 	virtual LoggingChannelID_t GetLoggingChannel() = 0;
 
