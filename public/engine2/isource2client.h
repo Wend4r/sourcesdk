@@ -271,8 +271,10 @@ public:
 	virtual float unk119() = 0;
 	virtual void unk120() = 0;
 	virtual void unk121() = 0;
-	virtual void unk122() = 0;
-	virtual bool unk123() = 0;
+	// Increments the Steam callback counter
+	virtual void NotifyPreSteamRunCallbacks() = 0;
+	// False
+	virtual bool VoiceReliable() = 0;
 	virtual void UpdateWhenNotInGame( float flFrameTime ) = 0;
 	virtual void UpdateGlobalLightFromLightInfos( IToolObject *pUnk, const CUtlVector< IToolObject * > &lightInfos, const Vector &vecUnk, int nUnk, float flUnk1, float flUnk2, float flUnk3 ) = 0;
 	virtual bool GetGlobalLightParameters( int *pnUnk, float *pflUnk1, float *pflUnk2 ) = 0;
