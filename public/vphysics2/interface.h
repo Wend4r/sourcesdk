@@ -459,6 +459,67 @@ public:
 };
 
 
+class IPhysReflContext
+{
+public:
+	virtual bool unk000() = 0;
+	virtual void *unk001() = 0;
+};
+
+// The debug draw options of a world, passed by value to the debug draw functions
+struct RnDebugDrawOptions_t
+{
+	uint64 m_nUnk000;
+	uint64 m_nUnk008;
+};
+
+class CVPhys2World : public IVPhysics2World, public IPhysReflContext
+{
+public:
+	// Itanium also lists these in the primary vtable
+	void *unk001() override;
+	bool unk000() override;
+
+public:
+	uint32 m_nCreateFlags;
+
+	// Taken from a counter that every new world increments
+	int m_nUnk014;
+
+	RnDebugDrawOptions_t m_DebugDrawOptions;
+	void *m_pUnk028;
+	CRnWorld *m_pRnWorld;
+
+	// Set when a command line parameter is present
+	bool m_bUnk038;
+
+	bool m_bUnk039;
+
+	// Two hash tables, one of them is filled from the body map of StepEndReadOnlyGetResults
+	ALIGN8 uint8 m_unk040[88] ALIGN8_POST;
+
+	CUtlVector< IPhysicsMotionController * > m_MotionControllers;
+
+	// Objects whose deletion is delayed; the count before each list is how many of its entries are ready
+	int m_nUnk0B0;
+	CUtlVector< void * > m_Unk0B8;
+	IPhysicsWorldEventListener *m_pEventListener;
+	int m_nUnk0D8;
+	CUtlVector< void * > m_Unk0E0;
+	int m_nUnk0F8;
+	CUtlVector< void * > m_Unk100;
+	int m_nUnk118;
+	CUtlVector< void * > m_Unk120;
+
+	void *m_pUnk138;
+
+	// The job that BeginAsyncPostTickJobs queues
+	void *m_pAsyncPostTickJob;
+
+	bool m_bUnk148;
+	int m_nUnk14C;
+	ThreadId_t m_nSimulationThreadId;
+};
 
 // Function table over a world, placed into caller memory by IVPhysics2::ConstructFnPhysicsWorld
 abstract_class IFnPhysicsWorld
