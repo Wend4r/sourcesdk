@@ -12,14 +12,49 @@
 #endif
 
 #include "appframework/iappsystem.h"
+#include "mathlib/vector2d.h"
 #include "soundsystem/isoundopsystem.h"
+#include "tier0/utlstring.h"
+#include "tier0/utlvector.h"
+
+#include "schemacompiler/schemaon.h"
 
 class CSosOperatorSystem;
 class CSoundMixGroupSystem;
 class CUtlString;
 class CUtlSymbolTable;
+class KeyValues;
 class KeyValues3;
 struct ResourceBindingBase_t;
+
+schema enum SosEditItemType_t
+{
+	SOS_EDIT_ITEM_TYPE_SOUNDEVENTS = 0,
+	SOS_EDIT_ITEM_TYPE_SOUNDEVENT,
+	SOS_EDIT_ITEM_TYPE_LIBRARYSTACKS,
+	SOS_EDIT_ITEM_TYPE_STACK,
+	SOS_EDIT_ITEM_TYPE_OPERATOR,
+	SOS_EDIT_ITEM_TYPE_FIELD,
+};
+
+schema struct SosEditItemInfo_t
+{
+	DECLARE_SCHEMA_DATA_CLASS( SosEditItemInfo_t );
+
+	SosEditItemType_t itemType;
+	CUtlString itemName;
+	CUtlString itemTypeName;
+	noschema KeyValues *pItemKV;
+	CUtlString itemKVString;
+	Vector2D itemPos;
+};
+
+schema struct SelectedEditItemInfo_t
+{
+	DECLARE_SCHEMA_DATA_CLASS( SelectedEditItemInfo_t );
+
+	CUtlVector< SosEditItemInfo_t > m_EditItems;
+};
 
 abstract_class ISoundOpSystemEdit : public IAppSystem
 {
@@ -163,5 +198,7 @@ public:
 class CSosEdit : public CTier2AppSystem< ISoundOpSystemEdit >
 {
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ISOUNDOPSYSTEMEDIT_H
