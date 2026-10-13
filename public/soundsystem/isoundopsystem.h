@@ -236,10 +236,12 @@ public:
 	// Stack flags, bit 0 is set when the stack starts a vsnd and bit 1 when it starts sound events
 	virtual void *unk031( HSOSLIBSTACKHASH hStack ) = 0;
 	virtual bool SetSoundEventParam( SoundEventGuid_t guid, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
-	virtual bool unk033( SoundEventGuid_t guid, const void *pFields, int nUnk ) = 0;
+	// pData holds nSize bytes of packed field data, queued for the sound event or the library stack
+	virtual bool SetSoundEventFields( SoundEventGuid_t guid, const void *pData, int nSize ) = 0;
 	virtual bool unk034( SoundEventGuid_t guid, const char *pFieldName, const CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool SetLibraryStackField( HSOSLIBSTACKHASH hStack, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
-	virtual bool unk037( HSOSLIBSTACKHASH hStack, const void *pFields, int nUnk ) = 0;
+	// Declared between the SetLibraryStackField overloads
+	virtual bool SetLibraryStackFields( HSOSLIBSTACKHASH hStack, const void *pData, int nSize ) = 0;
 	virtual bool SetLibraryStackField( const char *pStackName, const char *pOperatorName, const char *pFieldName, const CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool unk038( const char *pStackName, const char *pFieldName, const CSosFieldData *pData, int16 nIndex ) = 0;
 	// pStackField holds the stack hash followed by the field token
