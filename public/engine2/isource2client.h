@@ -51,6 +51,7 @@ class CUtlBuffer;
 class IDemoMessageSink;
 class InstantReplayMessage_t;
 class IEntityReport;
+class IGameEvent;
 class ILoadingSpawnGroup;
 class INetChannel;
 class INetworkFieldChangedEventQueue;
@@ -426,6 +427,21 @@ public:
 	virtual void unk209( int nUnk, void *pUnk ) = 0;
 };
 
+// A game event kept for demo scrubbing, sorted by tick
+struct SerializedEvent_t
+{
+	int m_nTick;
+	IGameEvent *m_pEvent;
+};
+
+// A user message serialized for demo scrubbing or for the instant replay
+struct SerializedUserMessage_t
+{
+	int m_nUnk000;
+	int m_nMessageId;
+	CUtlVector< uint8 > m_Data;
+};
+
 class CSource2Client : public CGameAppSystem< ISource2Client >, public IStreamEntitiesFromFileCompletion
 {
 public:
@@ -463,39 +479,39 @@ public:
 	// Universe of the last player SteamID recorded by unk066()
 	EUniverse m_unk140;
 	uint8 m_unk144[ 0x4 ];
-	// Nine game event groups filled by the constructor: event names, the ids of those events, and a CUtlVector of the 16-byte
-	// ( int tick, IGameEvent * ) copies kept for scrubbing, sorted by tick and fired by OnScrubDemo()
+	// Nine game event groups filled by the constructor: event names, the ids of those events, and the copies kept for scrubbing,
+	// fired by OnScrubDemo()
 	CUtlVector< const char * > m_unk148;
 	CUtlVector< int > m_unk160;
-	uint8 m_unk178[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk178;
 	CUtlVector< const char * > m_unk190;
 	CUtlVector< int > m_unk1A8;
-	uint8 m_unk1C0[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk1C0;
 	CUtlVector< const char * > m_unk1D8;
 	CUtlVector< int > m_unk1F0;
-	uint8 m_unk208[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk208;
 	CUtlVector< const char * > m_unk220;
 	CUtlVector< int > m_unk238;
-	uint8 m_unk250[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk250;
 	CUtlVector< const char * > m_unk268;
 	CUtlVector< int > m_unk280;
-	uint8 m_unk298[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk298;
 	CUtlVector< const char * > m_unk2B0;
 	CUtlVector< int > m_unk2C8;
-	uint8 m_unk2E0[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk2E0;
 	CUtlVector< const char * > m_unk2F8;
 	CUtlVector< int > m_unk310;
-	uint8 m_unk328[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk328;
 	CUtlVector< const char * > m_unk340;
 	CUtlVector< int > m_unk358;
-	uint8 m_unk370[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk370;
 	CUtlVector< const char * > m_unk388;
 	CUtlVector< int > m_unk3A0;
-	uint8 m_unk3B8[ 0x18 ];
-	// CUtlVector of the 0x20-byte message entries built by SetupScrubbingData() and purged by ClearScrubbingData()
-	uint8 m_unk3D0[ 0x18 ];
-	// CUtlVector of the same 0x20-byte entries, filled by InitInstantReplayData() and purged by ClearInstantReplayData()
-	uint8 m_unk3E8[ 0x18 ];
+	CUtlVector< SerializedEvent_t > m_unk3B8;
+	// Built by SetupScrubbingData() and purged by ClearScrubbingData()
+	CUtlVector< SerializedUserMessage_t > m_unk3D0;
+	// Filled by InitInstantReplayData() and purged by ClearInstantReplayData()
+	CUtlVector< SerializedUserMessage_t > m_unk3E8;
 	CTSQueue< std::function< void() > * > m_unk400;
 	// Zeroed by the constructor; no reader found
 	int m_unk440;
