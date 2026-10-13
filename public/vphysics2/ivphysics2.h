@@ -97,6 +97,46 @@ schema struct RnPlane_t
 	float m_flOffset;
 };
 
+enum RnState_t
+{
+	STATE_UNKNOWN = 0,
+	STATE_FAILED,
+	STATE_OVERLAPPED,
+	STATE_TOUCHING,
+	STATE_SEPARATED
+};
+
+// Start and end placement of a shape moving over a time step
+struct RnSweptTransform_t
+{
+	Vector m_vPosition1;
+	Vector m_vPosition2;
+	Quaternion m_qOrientation1;
+	Quaternion m_qOrientation2;
+};
+
+struct RnConvexCastResult_t
+{
+	RnState_t m_nState;
+	float m_flTime;
+};
+
+struct RnLinearCastResult_t
+{
+	RnState_t m_nState;
+	float m_flTime;
+	Vector m_vClosest1;
+	Vector m_vClosest2;
+	Vector m_vNormal;
+};
+
+struct RnDistanceQueryResult_t
+{
+	float m_flDistance;
+	Vector m_vPoint1;
+	Vector m_vPoint2;
+};
+
 // Holds a reference to aggregate data through IVPhysics2::AddDataReference and ReleaseDataReference
 class CPhysAggregateDataHandle
 {
