@@ -16,6 +16,9 @@
 #include "mathlib/mathlib.h"
 #include "mathlib/transform.h"
 #include "mathlib/vector.h"
+#include "physicslib/fnphysicsjoint.h"
+#include "physicslib/fnphysicsshape.h"
+#include "physicslib/param_types.h"
 #include "physicslib/physaggregatedata.h"
 #include "physicslib/serialize.h"
 #include "resourcefile/introspectedtokv3typemanager.h"
@@ -28,12 +31,18 @@
 #include "tier0/utlvector.h"
 #include "tier2/tier2.h"
 #include "vconcomm/ivconcomm.h"
+#include "vphysics2/handle_decl.h"
+#include "vphysics2/interface.h"
 #include "vphysics2/intersection_controller_interface.h"
+#include "vphysics2/iphysicsbody.h"
+#include "vphysics2/iphysicscontact.h"
+#include "vphysics2/iphysicsjoint.h"
+#include "vphysics2/iphysicsshape.h"
+#include "vphysics2/iphysicssoftbody.h"
+#include "vphysx/vphysx_collisionmesh_resource.h"
 #include "vphysx/vphysx_interface.h"
+#include "vphysx/vphysx_interface_params.h"
 
-class IVPhysics2World;
-class IPhysicsShape;
-class IPhysicsSoftbody;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
@@ -47,41 +56,10 @@ class CMesh;
 class CFeModel;
 class CGJKProxy;
 
-class IFnPhysicsContact;
-class IFnPhysicsAnyJoint;
-class IFnPhysicsWheelJoint;
-class IFnPhysicsWeldJoint;
-class IFnPhysicsPrismaticJoint;
-class IFnPhysicsRevoluteJoint;
-class IFnPhysicsConicalJoint;
-class IFnPhysicsSpringJoint;
-class IFnPhysicsSphericalJoint;
-class IFnPhysicsPulleyJoint;
-class IFnPhysicsGenericJoint;
-class IFnPhysicsSplineJoint;
-class IFnPhysicsAnyShape;
-class IFnPhysicsSphereShape;
-class IFnPhysicsCapsuleShape;
-class IFnPhysicsHullShape;
-class IFnPhysicsMeshShape;
-class IFnPhysicsCompoundShape;
-class IFnPhysicsBody;
-class IFnPhysicsSoftbody;
-class IFnPhysicsWorld;
-
-struct PhysicsBodyDef_t;
-struct VPhysXAggregateData_t;
-struct VPhysXBodyPart_t;
-struct VPhysics2ShapeDef_t;
 struct VPhysIntersectionNotification_t;
-struct RnMaterial_t;
-struct DebugSceneObjectParams_t;
 struct SceneObjectBuffers_t;
-struct EmbeddedPhysicsInfo_t;
 struct RnHullSimplificationParams_t;
 struct RnSimplexCache_t;
-struct CShapeCastResult;
-struct PhysicsTrace_t;
 struct PhysicsWorldUpdateConCommParams_t;
 struct Ray_t;
 
