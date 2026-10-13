@@ -28,6 +28,7 @@ class KeyValues3;
 struct ResourceBindingBase_t;
 
 typedef uint32 HSOSLIBSTACKHASH;
+typedef int16 SOSRANDSEED;
 
 enum SOFieldDataType_t : int8
 {
@@ -274,7 +275,7 @@ public:
 	virtual const char *unk065( uint16 nSymbol ) = 0;
 	virtual bool unk066( uint32 nUnk ) = 0;
 	// Next random seed for a started sound event
-	virtual uint16 unk067() = 0;
+	virtual SOSRANDSEED unk067() = 0;
 	// Name of the sound event
 	virtual const char *unk068( SoundEventGuid_t guid ) = 0;
 	virtual void unk069() = 0;
@@ -302,7 +303,7 @@ public:
 	virtual bool unk087( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool unk088( SoundEventGuid_t guid, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
 	// Random seed of the sound event
-	virtual uint16 unk089( SoundEventGuid_t guid ) = 0;
+	virtual SOSRANDSEED unk089( SoundEventGuid_t guid ) = 0;
 	// Voice layer the sound event was started on, -2 when it is not active
 	virtual int8 unk090( SoundEventGuid_t guid ) = 0;
 	virtual void unk091() = 0;
