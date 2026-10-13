@@ -15,6 +15,7 @@
 #include <resourcesystem/resourcehandle.h>
 #include <resourcesystem/iresourcesystem.h>
 #include <schemasystem/schematypes.h>
+#include <tier0/utlhashtable.h>
 #include <tier0/utlleanvector.h>
 #include <tier0/utlsoacontainer.h>
 #include <tier0/utlstring.h>
@@ -22,6 +23,7 @@
 #include <tier0/threadtools.h>
 #include <tier3/tier3.h>
 
+class CGpuImplicitRenderer;
 class CPoolAllocator;
 class CSceneObject;
 class CSchemaClassInfo;
@@ -31,6 +33,7 @@ class IParticleSnapshot;
 class IParticleSystemDefinition;
 class IParticleSystemQuery;
 class IRenderContext;
+class ISceneObjectDesc;
 class ISceneView;
 class ISceneWorld;
 class KeyValues3;
@@ -150,10 +153,9 @@ public:
 
 //-----------------------------------------------------------------------------
 // Implementation of IParticleSystemMgr. Engine containers whose element types
-// are not declared stay as padding: 17 identical 32-byte containers after the
-// flags, a fixed-growable vector with room for 16 elements, a hash table of
-// 88-byte entries after the lock, and a linked list with a hash table at the
-// end (both used by the GPU particle simulation).
+// are not known stay as padding: 17 hash tables with 24-byte entries after the
+// flags, a hash table of 88-byte entries keyed by instanced mesh parameters
+// after the lock, and the linked list of GPU readback batches.
 //-----------------------------------------------------------------------------
 class CParticleSystemMgr : public CTier3AppSystem< IParticleSystemMgr >, public ISceneObjectListener, public IToolsResourceListener
 {
@@ -161,17 +163,20 @@ public:
 	void unk000( CSceneObject *pSceneObject ) override;
 	void NotifyResourceStatusChange( const ResourceStatusChange_t *pChanges, int nNumChanges ) override;
 
-	CUtlVector< void * > m_ParticleOperators[ 9 ];
+	CUtlVector< IParticleFunctionDefinition * > m_ParticleOperators[ 9 ];
 	uint8 m_unk110[ 8 ];
 	uint8 m_unk118[ 4 ];
 	float m_flLastSimulationDuration;
+
+	// particle_profile / particle_profile_spike state
 	int m_nNumFramesMeasured;
-	float m_flUnk124;
-	float m_flUnk128;
-	float m_flUnk12C;
-	int m_nUnk130;
-	int m_nUnk134;
-	int m_nUnk138;
+	float m_flSimTimeTotal;
+	float m_flSimTimeMin;
+	float m_flSimTimeMax;
+	int m_nProfileFrameCount;
+	int m_nProfileSpikeThresholdMs;
+	int m_nProfileType;
+
 	float m_flFallbackBase;
 	float m_flFallbackMultiplier;
 	float m_flSimFallbackBaseMultiplier;
@@ -179,26 +184,49 @@ public:
 	int m_nCPULevel;
 	int m_nGPULevel;
 	uint8 m_unk154[ 4 ];
-	uint8 m_unk158[ 8 ];
+
+	// Incremented when the type manager releases a particle system definition
+	uint64 m_nUnk158;
+
 	bool m_bUnk160;
-	bool m_bUnk161[ 8 ];
+
+	// Game info settings read in Init
+	bool m_bPerObjectLightingSetup;
+	bool m_bSupportFadingOpaqueModels;
+	bool m_bEnableParticleShaderFeatureBranching;
+	bool m_bBindlessParticleShader;
+	bool m_bFloat16HDRBackBuffer;
+	bool m_bGameSupportsLegacyShaders;
+	bool m_bParticlesFoggedByDefault;
+	bool m_bDisableSorting;
+
 	int m_nUnk16C;
 	uint8 m_unk170[ 17 ][ 32 ];
-	uint8 m_unk390[ 0x138 ];
-	CStrongHandleBase m_hUnk4C8;
+	CUtlVectorFixedGrowable< CUtlString, 16 > m_Unk390;
+	uint8 m_unk428[ 0xA0 ];
+	CStrongHandle< InfoForResourceTypeIParticleSystemDefinition > m_hUnk4C8;
 	uint8 m_unk4D0[ 8 ];
-	void *m_pUnk4D8;
+	CGpuImplicitRenderer *m_pGpuImplicitRenderer;
+
+	// 1 = no_gpu_blobs, 2 = non_homogenous_forward_layer_only (Particles/features)
 	int m_nFlags;
+
 	CThreadRWLock_FastRead m_Lock;
-	uint8 m_unk528[ 0x30 ];
+	uint8 m_unk528[ 0x20 ];
+	ISceneObjectDesc *m_pInstancedMeshSceneObjectDesc;
+	HGameResourceManifest m_hGPUParticleRequiredResources;
 	CUtlVector< CUtlString > m_Unk558;
 	CPoolAllocator *m_pUnk570;
 	CPoolAllocator *m_pUnk578;
-	uint8 m_unk580[ 0x18 ];
-	uint8 m_unk598[ 0x10 ];
+
+	// Uploaded to the per-frame buffer, sized to the first pool
+	CUtlVector< uint8 > m_Unk580;
+
+	void *m_hReadbackBuffer;
+	void *m_hPerFrameBuffer;
 	CAtomicMutex m_Mutex;
 	uint64 m_unk5B8[ 3 ];
-	uint64 m_unk5D0[ 4 ];
+	CUtlHashtable< uint64 > m_Unk5D0;
 };
 
 #endif // IPARTICLESYSTEMMGR_H
