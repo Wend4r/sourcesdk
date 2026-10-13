@@ -70,6 +70,7 @@ class IEntityReport;
 class ISceneViewDebugOverlays;
 class IHLTVDirector;
 class CHLTVServerAsync;
+class CTvDirectDemoRecorder;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -386,7 +387,8 @@ public:
 	uint64 m_nComputeTimeCount;
 
 	uint64 m_nReservationCookie;
-	uint64 m_nUnk1744;
+	// Created with the "DemoAutoRecorder" fake client, records the demo straight from the game server
+	CTvDirectDemoRecorder *m_pTvDirectDemoRecorder;
 	// ICvar::GetTotalUserInfoCvarsByteSize(), refreshed by OnConVarCreated which then resizes every client's user info convar data
 	uint64 m_nTotalUserInfoCvarsByteSize;
 	int m_nUnk1760;
