@@ -49,10 +49,14 @@ struct CPathSegment
 	// The ladder of a ladder segment.
 	const CNavLadder *pLadder;
 
-private:
-	uint8 m_Unk18[ 0x10 ];
-
-public:
+	// Distance to the next segment's position; 0 for the last segment.
+	float length;
+	// Sum of the lengths of the previous segments.
+	float distanceFromStart;
+	// 0 for the only segment of a one-segment path.
+	float m_flUnk20;
+	// FLT_MAX when the lengths are computed.
+	float m_flUnk24;
 	// Bit 0: the step failed the cost check and must not be optimized away.
 	int m_nFlags;
 	// The start position for the first segment; the point the segment is entered at for the rest.
