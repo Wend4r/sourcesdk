@@ -15,38 +15,203 @@
 #include "tier0/utlstring.h"
 #include "tier0/threadtools.h"
 #include "tier1/utlvector.h"
+#include "tier1/keyvalues3.h"
+#include "mathlib/vector.h"
+#include "color.h"
 #include "appframework/iappsystem.h"
 #include "tier3/tier3.h"
 
-class KeyValues3;
+#include "schemacompiler/schemaon.h"
+
 class CUtlBuffer;
-class IToolFrameListener;
 class CEnvironmentBlock;
-class CEngineToolInfo;
-class CExternalToolInfo;
-class IToolFrameworkTabletInfo;
 class CQToolFrameworkApplication;
 class CJoystickInput;
 class CFGDFromAssetRegistry;
-class CToolsConfig;
 class CQInputBindManager;
 class CSingleAppInstance;
 class QWidget;
+class QLabel;
 class QVBoxLayout;
-class IToolSystem2;
 class IAsset;
 class IAssetType;
-class IFGDFromAssetListener;
-class IToolFrameworkAudioSettingsListener;
+
+//-----------------------------------------------------------------------------
+// Tool list, loaded from bin/enginetools.txt
+//-----------------------------------------------------------------------------
+schema class CBaseToolInfo
+{
+public:
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	CUtlString m_Name;
+	CUtlString m_OverrideToolShortcutName;
+	CUtlString m_FriendlyName;
+	CUtlString m_ToolIcon;
+};
+
+schema class CEngineToolInfo : public CBaseToolInfo
+{
+public:
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	CUtlString m_Library;
+	CUtlString m_InterfaceName;
+	bool m_bShowInRevisionSubMenu;
+	bool m_bShowInToolsMenu;
+	bool m_bIsSecondaryTool;
+	bool m_bDoNotWarnAboutLargeAssetBatches;
+	bool m_bIsWorkshopManagerTool;
+	bool m_bIsWorkshopItemTool;
+	bool m_bCanHighlightSubassets;
+	CUtlVector< CUtlString > m_AssetTypes;
+	CUtlVector< CUtlString > m_LimitToMods;
+	CUtlVector< CUtlString > m_ExcludeFromMods;
+
+	// Position in m_EngineTools, returned by IToolFramework2::FindTool
+	noschema uint8 m_nToolIndex;
+};
+
+schema class CExternalToolInfo : public CBaseToolInfo
+{
+public:
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	CUtlString m_Executable;
+	CUtlString m_Args;
+
+	// Used instead of m_Args when a line number is given
+	CUtlString m_ArgsWithLineColumn;
+
+	CUtlString m_WorkingDir;
+	CUtlString m_MatchSystemExecutable;
+	CUtlVector< CUtlString > m_SupportedExts;
+	CUtlVector< CUtlString > m_PriorityExts;
+	bool m_bDebugCommandline;
+};
+
+schema class CToolsConfig
+{
+public:
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	CUtlVector< CEngineToolInfo > m_EngineTools;
+	CUtlVector< CExternalToolInfo > m_ExternalTools;
+	CUtlVector< CUtlString > m_EngineModulesThatReferenceAssets;
+};
+
+//-----------------------------------------------------------------------------
+// What a tool is asked to open when it is activated
+//-----------------------------------------------------------------------------
+enum ToolActivationType_t
+{
+	// Only activate the tool
+	TOOL_ACTIVATION_DEFAULT = 0,
+
+	// Open m_Assets
+	TOOL_ACTIVATION_OPEN_ASSETS,
+
+	// Open m_Files
+	TOOL_ACTIVATION_OPEN_FILES,
+
+	// Open the single asset of m_Assets with m_pAssetContext
+	TOOL_ACTIVATION_OPEN_ASSET_WITH_CONTEXT,
+};
+
+struct ToolActivationRequest_t
+{
+	ToolActivationType_t m_nType;
+	CUtlVector< IAsset * > m_Assets;
+	void *m_pAssetContext;
+	CUtlVector< CUtlString > m_Files;
+};
+
+// An asset to open in a tool; a non-null m_pContext opens it with TOOL_ACTIVATION_OPEN_ASSET_WITH_CONTEXT
+struct ToolOpenAssetEntry_t
+{
+	IAsset *m_pAsset;
+	void *m_pContext;
+	uint64 m_nUnk010;
+};
+
+//-----------------------------------------------------------------------------
+// Interface of a tool module ("ToolSystem2_001")
+//-----------------------------------------------------------------------------
+abstract_class IToolSystem2 : public IAppSystem
+{
+public:
+	// Called once the tool module is connected; false makes the framework drop the tool
+	virtual bool InitToolSystem( CreateInterfaceFn factory, uint8 nToolIndex ) = 0;
+
+	virtual void ActivateTool( const ToolActivationRequest_t &request ) = 0;
+
+	virtual void RunFrame() = 0;
+
+	// Asked before the engine quits: 0 lets it quit, 1 cancels the quit, any other value asks again
+	// on the next frame
+	virtual int RequestQuit() = 0;
+
+	virtual void OnGameLoopActiveChanged( bool bUnknown, bool bActive ) = 0;
+
+	virtual void HandleToolRequest( KeyValues3 *pRequest ) = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Called around the tool systems' RunFrame by Tools_RunFrame
+//-----------------------------------------------------------------------------
+abstract_class IToolFrameListener
+{
+public:
+	virtual void RunFrame() = 0;
+	virtual void PreFrame() = 0;
+	virtual void PostFrame() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Pen tablet state, updated from the Qt tablet events
+//-----------------------------------------------------------------------------
+abstract_class IToolFrameworkTabletInfo
+{
+public:
+	// 1 while the pen is not down
+	virtual float GetPressure() = 0;
+
+	virtual bool IsPenDown() = 0;
+	virtual bool IsEraser() = 0;
+
+	// X and Y tilt, zero while the pen is not down
+	virtual Vector2D GetTilt() = 0;
+};
+
+abstract_class IToolFrameworkAudioSettingsListener
+{
+public:
+	virtual void OnToolsAudioSettingsChanged() = 0;
+};
+
+// Classes created from assets for the FGD; the registry keeps them in sync with their assets
+abstract_class IFGDFromAssetListener
+{
+public:
+	// Called with the classes whose assets changed
+	virtual void OnFGDFromAssetClassesChanged( void **ppClasses, int nCount ) = 0;
+};
+
+// Input of a multi-axis controller (raw HID input), in units of 1/256
+struct MultiAxisControllerInput_t
+{
+	Vector m_vecTranslation;
+	Vector m_vecRotation;
+};
 
 abstract_class IToolFramework2 : public IAppSystem
 {
 public:
 	// Starts the tools stall monitor thread
-	virtual void unk011() = 0;
+	virtual void StartStallMonitor() = 0;
 
 	// Fills pTools with the engine tools this installation may run
-	virtual void unk012( CUtlVector< CEngineToolInfo * > *pTools ) = 0;
+	virtual void GetAvailableEngineTools( CUtlVector< CEngineToolInfo * > *pTools ) = 0;
 
 	// Loads the tool and activates it
 	virtual void LaunchEngineTool( uint8 nToolIndex ) = 0;
@@ -56,15 +221,14 @@ public:
 	// False for a tool that is queued for unloading
 	virtual bool IsToolLoaded( uint8 nToolIndex ) = 0;
 
-	// Defers LaunchEngineTool to the next Tools_RunFrame; the engine passes the startup tool found
-	// by FindTool
-	virtual void unk016( uint8 nToolIndex ) = 0;
+	// Defers LaunchEngineTool to the next Tools_RunFrame; 0xFF opens the asset browser instead
+	virtual void QueueToolLaunch( uint8 nToolIndex ) = 0;
 
 	virtual void Tools_RunFrame() = 0;
 	virtual void UnloadQueuedTools() = 0;
 
-	// Returns the first non-zero answer of the loaded tool systems
-	virtual int unk019() = 0;
+	// IToolSystem2::RequestQuit of the loaded tools: the first non-zero answer, otherwise 0
+	virtual int RequestToolsQuit() = 0;
 
 	virtual void AddToolFrameListener( IToolFrameListener *pListener ) = 0;
 	virtual void RemoveToolFrameListener( IToolFrameListener *pListener ) = 0;
@@ -79,18 +243,17 @@ public:
 	virtual CEngineToolInfo *GetEngineToolInfo( uint8 nToolIndex ) = 0;
 	virtual CExternalToolInfo *GetExternalToolInfo( uint8 nExternalToolIndex ) = 0;
 
-	// Overloads that open assets in a tool and warn about assets no tool handles; 0xFF picks the tool
-	// by asset type. Declared in the Itanium order: MSVC places them in reverse, so the last one is
-	// the first slot there. The asset entries are 24 bytes and start with the IAsset; pAssetEntries
-	// is a CUtlVector of them
-	virtual void unk027( void *pAssetEntries, uint8 nToolIndex ) = 0;
+	// Open assets in a tool and warn about assets no tool handles; 0xFF picks the tool by asset type.
+	// Declared in the Itanium order: MSVC places the overloads in reverse, so the last one is the first
+	// slot there
+	virtual void OpenAssetsInTool( const CUtlVector< ToolOpenAssetEntry_t > *pEntries, uint8 nToolIndex ) = 0;
 
 	// Opens the assets the object's ninth method lists
-	virtual void unk027( void *pAssets ) = 0;
+	virtual void OpenAssetsInTool( void *pAssetSource ) = 0;
 
-	virtual void unk027( const CUtlVector< IAsset * > *pAssets, uint8 nToolIndex ) = 0;
-	virtual void unk027( const void *pAssetEntry, uint8 nToolIndex ) = 0;
-	virtual void unk027( IAsset *pAsset, uint8 nToolIndex ) = 0;
+	virtual void OpenAssetsInTool( const CUtlVector< IAsset * > *pAssets, uint8 nToolIndex ) = 0;
+	virtual void OpenAssetsInTool( const ToolOpenAssetEntry_t *pEntry, uint8 nToolIndex ) = 0;
+	virtual void OpenAssetsInTool( IAsset *pAsset, uint8 nToolIndex ) = 0;
 
 	virtual void ExecuteCommand( const char *pCommand ) = 0;
 
@@ -101,24 +264,26 @@ public:
 	virtual void SetSplashScreenMessage( const char *pMessage ) = 0;
 
 	virtual IToolFrameworkTabletInfo *GetTabletInfo() = 0;
-	virtual CEnvironmentBlock *unk037() = 0;
 
-	// Adds a colored text label
-	virtual void unk038( const char *pText, int nUnknown ) = 0;
-	// Reads the joystick raw input into the state
-	virtual bool unk039( void *pState ) = 0;
+	// Environment captured when the tools connected
+	virtual CEnvironmentBlock *GetEnvironmentBlock() = 0;
+
+	// Adds a bold label of that color to the loading splash screen
+	virtual void AddSplashScreenLabel( const char *pText, Color color ) = 0;
+
+	virtual bool GetMultiAxisControllerInput( MultiAxisControllerInput_t *pInput ) = 0;
+
 	// Reloads tools/stylesheets/qtabbedstyle_colors.vsc and applies the style
 	virtual void ReloadTabbedStyle() = 0;
 
-	// Forwards both values to every loaded tool system; the game loop mode passes true and whether it
-	// is being activated or deactivated
-	virtual void unk041( bool bUnknown, bool bLoopActive ) = 0;
+	// Forwards both values to IToolSystem2::OnGameLoopActiveChanged of every loaded tool; the game loop
+	// mode passes true and whether it is being activated
+	virtual void NotifyGameLoopActive( bool bUnknown, bool bActive ) = 0;
 
 	virtual void MarkSettingsDirty() = 0;
 
 	virtual bool IsMSAASupported() = 0;
-	// Whether the multisample mode is available, asked by the options dialog
-	virtual bool unk044( uint8 nMultisampleMode ) = 0;
+	virtual bool IsMultisampleModeSupported( uint8 nMultisampleMode ) = 0;
 
 	virtual const char *GetDeveloperHelpURL() = 0;
 	virtual void ShowAboutDialog() = 0;
@@ -127,10 +292,11 @@ public:
 	virtual void OpenFolderInExplorer( const char *pFullPath ) = 0;
 
 	// Shell "open" of the path
-	virtual void unk048( const char *pPath ) = 0;
+	virtual void OpenFile( const char *pPath ) = 0;
 
-	// Opens the file in the external tool registered for its extension, otherwise like unk048
-	virtual void unk049( const char *pPath, int nUnknown ) = 0;
+	// Opens the file in the external tool registered for its extension, at the line when nLine is not 0;
+	// without such a tool like OpenFile
+	virtual void OpenFileAtLine( const char *pPath, int nLine ) = 0;
 
 	// Shared tool settings, saved under "toolframework"
 	virtual void SetAllowFlyMode2( bool bAllow ) = 0;
@@ -138,8 +304,7 @@ public:
 	virtual void SetHideCursorDuringCameraManipulation( bool bHide ) = 0;
 	virtual bool GetHideCursorDuringCameraManipulation() = 0;
 
-	// True when not running on a customer machine
-	virtual bool unk054() = 0;
+	virtual bool IsNotRunningOnCustomerMachine() = 0;
 
 	// pParentWindow is the native handle of the window the console is opened from
 	virtual void OpenVConsole( void *pParentWindow ) = 0;
@@ -149,13 +314,14 @@ public:
 	// "Render All Windows" in the tools menu
 	virtual bool GetAlwaysRenderAllWindows() = 0;
 	virtual void SetAlwaysRenderAllWindows( bool bAlways ) = 0;
-	virtual CQInputBindManager *unk059() = 0;
+
+	virtual CQInputBindManager *GetInputBindManager() = 0;
 
 	// Remembers the tool window and activates the engine window
-	virtual void unk060( QWidget *pWindow ) = 0;
+	virtual void ActivateEngineWindow( QWidget *pToolWindow ) = 0;
 
-	// Activates and raises the remembered tool window
-	virtual void unk061() = 0;
+	// Activates and raises the remembered tool window, otherwise the asset browser
+	virtual void ReactivateToolWindow() = 0;
 
 	// <settings dir>/<pName>/settings.txt; bUnknown adds a prefix to the file name
 	virtual void LoadSettings( const char *pName, CUtlBuffer &buf, bool bUnknown ) = 0;
@@ -166,13 +332,13 @@ public:
 	virtual void BackupSettings() = 0;
 
 	// Engine tool by asset type, external tool by file extension; 0xFF when there is none
-	virtual uint8 *unk066( uint8 *pResult, IAsset *pAsset ) = 0;
-	virtual uint8 *unk067( uint8 *pResult, IAsset *pAsset ) = 0;
-	virtual uint8 *unk068( uint8 *pResult, IAssetType *pAssetType ) = 0;
+	virtual uint8 *FindEngineToolForAsset( uint8 *pResult, IAsset *pAsset ) = 0;
+	virtual uint8 *FindExternalToolForAsset( uint8 *pResult, IAsset *pAsset ) = 0;
+	virtual uint8 *FindEngineToolForAssetType( uint8 *pResult, IAssetType *pAssetType ) = 0;
 
 	// Every engine tool or external tool that handles the asset
-	virtual void unk069( IAsset *pAsset, CUtlVector< uint8 > *pTools ) = 0;
-	virtual void unk070( IAsset *pAsset, CUtlVector< uint8 > *pExternalTools ) = 0;
+	virtual void GetEngineToolsForAsset( IAsset *pAsset, CUtlVector< uint8 > *pTools ) = 0;
+	virtual void GetExternalToolsForAsset( IAsset *pAsset, CUtlVector< uint8 > *pExternalTools ) = 0;
 
 	// Notify the audio settings listeners when the value changes
 	virtual void SetAutoMuteGameWhenToolsHaveFocus( bool bMute ) = 0;
@@ -181,38 +347,39 @@ public:
 	virtual bool GetToolsAudioMuted() = 0;
 
 	// pbMuteGame from the auto mute setting and the engine focus, pbMuteTools from the tools mute
-	// setting while no unk078 request is active
-	virtual bool unk075( bool *pbMuteGame, bool *pbMuteTools ) = 0;
+	// setting while no PushToolsAudioUnmute is active; returns *pbMuteGame
+	virtual bool GetAudioMuteState( bool *pbMuteGame, bool *pbMuteTools ) = 0;
 
 	virtual void AddAudioSettingsListener( IToolFrameworkAudioSettingsListener *pListener ) = 0;
 	virtual void RemoveAudioSettingsListener( IToolFrameworkAudioSettingsListener *pListener ) = 0;
 
 	// Increments a counter for true, decrements it for false; the tools are not muted while it is set
-	virtual void unk078( bool bPush ) = 0;
+	virtual void PushToolsAudioUnmute( bool bPush ) = 0;
 
-	// Loads the tool and passes it the request; called by the "tool_request" console command and
-	// the "tool_request" VToolMessage. Only for the main thread, see unk080
-	virtual void unk079( const char *pToolName, KeyValues3 *pRequest ) = 0;
+	// Loads the tool and passes the request to IToolSystem2::HandleToolRequest; used by the
+	// "tool_request" console command and VToolMessage. Only for the main thread, see QueueToolRequest
+	virtual void SendToolRequest( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
-	// Queues the request for unk079, dispatched by Tools_RunFrame; the game uses it off the main thread
-	virtual void unk080( const char *pToolName, KeyValues3 *pRequest ) = 0;
+	// Queues the request for SendToolRequest, dispatched by Tools_RunFrame; the game uses it off the
+	// main thread
+	virtual void QueueToolRequest( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
-	virtual KeyValues3 *unk081( uint8 nToolIndex ) = 0;
-
-	// Saves the tool's settings
-	virtual void unk082( uint8 nToolIndex, KeyValues3 *pSettings ) = 0;
+	// Settings kept per engine tool; SetToolSettings copies and saves them
+	virtual KeyValues3 *GetToolSettings( uint8 nToolIndex ) = 0;
+	virtual void SetToolSettings( uint8 nToolIndex, KeyValues3 *pSettings ) = 0;
 
 	// Load and save the named settings file as KV3, see LoadSettings
-	virtual void unk083( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
-	virtual void unk084( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
+	virtual void LoadSettingsKV3( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
+	virtual void SaveSettingsKV3( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
 
-	virtual void ShowImportWizard( void *pUnk ) = 0;
+	// pFileList is a ';' separated list of the files to import
+	virtual void ShowImportWizard( const char *pFileList ) = 0;
 
 	virtual void RegisterResponseListener( void *pListener ) = 0;
 	virtual void UnregisterResponseListener( void *pListener ) = 0;
 
-	// Forwards the arguments to every response listener
-	virtual void unk088( uint32 nUnk1, uint8 nUnk2, void *pUnk3, void *pUnk4, void *pUnk5, void *pUnk6 ) = 0;
+	// Forwards the arguments to the first method of every response listener
+	virtual void NotifyResponseListeners( uint32 nUnk1, uint8 nUnk2, void *pUnk3, void *pUnk4, void *pUnk5, void *pUnk6 ) = 0;
 
 	virtual bool CanToolHighlightSubassets( uint8 nToolIndex ) = 0;
 
@@ -221,12 +388,21 @@ public:
 
 	virtual void AddFGDFromAssetListener( IFGDFromAssetListener *pListener ) = 0;
 	virtual void RemoveFGDFromAssetListener( IFGDFromAssetListener *pListener ) = 0;
-	virtual void *unk093() = 0;
-	virtual void *unk094() = 0;
-	virtual bool unk095( void *p ) = 0;
-	virtual const char *unk096() = 0;
+
+	// Collection that owns the classes of the FGD from asset registry
+	virtual void *GetFGDFromAssetClasses() = 0;
+
+	// FGD class of the asset ("fgd_from_asset", named "<path>:<nUnknown>"), created on first use
+	virtual void *FindOrCreateFGDFromAssetClass( const CBufferString &sAssetPath, int nUnknown ) = 0;
+
+	// Whether the class belongs to GetFGDFromAssetClasses
+	virtual bool IsFGDFromAssetClass( void *pClass ) = 0;
+
+	// "fgd_from_asset_name" of the class
+	virtual const char *GetFGDFromAssetClassAssetName( void *pClass ) = 0;
+
 	// Increments for true, decrements for false the application counter that suppresses Qt shortcut events
-	virtual void unk097( bool bPush ) = 0;
+	virtual void PushSuppressShortcuts( bool bPush ) = 0;
 };
 
 // Also derives from IToolServices (exposed as "ToolServices_002"), a base without a vtable
@@ -321,5 +497,7 @@ public:
 	int m_nGenerateThumbnailsMaxTime;
 	bool m_bGenerateThumbnailsClear;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ITOOLFRAMEWORK2_H
