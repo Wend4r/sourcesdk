@@ -15,6 +15,7 @@
 #include <mathlib/transform.h>
 #include <resourcesystem/resourcehandle.h>
 #include <resourcesystem/resourcehandletypes.h>
+#include <tier0/smartptr.h>
 #include <tier0/utlstringtoken.h>
 
 class CSceneObject;
@@ -59,7 +60,7 @@ public:
 	virtual IMeshRayTrace *FindOrCreateMeshRayTrace( const CRenderMesh *pMesh ) = 0;
 	virtual void GetToolsGeometryInfo( const CRenderMesh *pRenderMesh, const void **ppOutTraceData ) = 0;
 	virtual void unk031() = 0;
-	virtual void CreateRenderMesh( void *p ) = 0;
+	virtual CSmartPtr< CRenderMesh > CreateRenderMesh( const char *pName ) = 0;
 	virtual void InvalidateMeshRayTrace( CRenderMesh *pRenderMesh ) = 0;
 	virtual void LoadModelSyncNoExtrefs( void *p ) = 0;
 	virtual void unk035() = 0;
