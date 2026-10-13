@@ -201,7 +201,7 @@ public:
 	// Calls the deleting destructor of pTexture
 	virtual void DeleteProjectedTexture( void *pTexture ) = 0;
 	virtual void *UpdateDeferredLight( void *p ) = 0;
-	virtual void Unk_DeleteDeferredLight( void *p ) = 0;
+	virtual void DeleteDeferredLight( void *p ) = 0;
 	virtual void unk107( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 	// Forwards to the scene system
 	virtual void unk108() = 0;
@@ -225,8 +225,8 @@ public:
 	virtual void unk122() = 0;
 	virtual bool unk123() = 0;
 	virtual void UpdateWhenNotInGame( float flFrameTime ) = 0;
-	virtual void Unk_UpdateGlobalLightFromLightInfos( void *p ) = 0;
-	virtual bool Unk_GetGlobalLightParameters( void *p ) = 0;
+	virtual void UpdateGlobalLightFromLightInfos( void *p ) = 0;
+	virtual bool GetGlobalLightParameters( void *p ) = 0;
 	virtual void OnReceivedUpdatedServerPeerList( void *pPeerList, size_t nPeerCount ) = 0;
 	virtual void UpdateEventListeners() = 0;
 	virtual void *GetEconItemSystem() = 0;
