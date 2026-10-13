@@ -14,19 +14,23 @@
 #include "appframework/iappsystem.h"
 #include "tier0/utlstringtoken.h"
 
+struct RenderDeviceInfo_t;
+enum RenderMultisampleType_t : uint8;
+FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
+
 #define SOURCE2CLIENTCONFIG_INTERFACE_VERSION "Source2ClientConfig001"
 
 abstract_class ISource2ClientConfig : public IAppSystem
 {
 public:
 	virtual int GetMaxSplitscreenPlayers() = 0;
-	virtual void Unk_SetupRenderingPipeline( void *p ) = 0;
+	virtual void AllocateScratchRenderTargets( SwapChainHandle_t hSwapChain, const RenderDeviceInfo_t &deviceInfo, RenderMultisampleType_t nMultisampleType ) = 0;
 	virtual CUtlStringToken GetRenderingPipelineToken() = 0;
-	virtual bool unk014( int nMessageId ) = 0;
+	virtual bool InstantReplayShouldSkipMessage( int nMessageId ) const = 0;
 	// Asked for net message ids the engine has no handler for
-	virtual bool unk015( int nMessageId ) = 0;
+	virtual bool InstantReplayShouldIgnoreMessage( int nMessageId ) const = 0;
 	virtual bool IsCompatibleNetworkVersion( int nServerNetworkVersion ) = 0;
-	virtual const char *unk017( const char *pszWorldName, int nServerNetworkVersion ) = 0;
+	virtual const char *ChangeWorldMountNameByNetworkVersion( const char *pszWorldName, int nServerNetworkVersion ) const = 0;
 	virtual void *unk018() = 0;
 };
 
