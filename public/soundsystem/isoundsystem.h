@@ -11,26 +11,40 @@
 #endif
 
 #include "appframework/iappsystem.h"
+#include "mathlib/vector.h"
+#include "resourcesystem/resourcehandle.h"
 #include "soundsystem/isoundopsystem.h"
 #include "tier0/platwindow.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
+#include "tier0/utlvector.h"
+
+#include <functional>
+#include <memory>
 
 
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
+class IAudioCacheHandle;
+class IAudioDecoder;
 class IAudioDevice;
 class IAudioDevice2;
 class IAudioInputStream;
 class IAudioOutputStream;
+class IAudioStreamRecorder;
+class IAudioWAVRecorder;
 class CAudioSource;
 class CAudioMixer;
-class CAudioState;
+class CBufferString;
 class CSfxTable;
 class ISoundSystemServices;
 struct StartSoundParams_t;
 class CVSndParameterTable;
 class CUtlBuffer;
+struct VoiceContainerParamMem_t;
+struct VSound_t;
 
 
 //-----------------------------------------------------------------------------
@@ -77,6 +91,18 @@ enum sound_fade_type_t : uint8
 
 
 //-----------------------------------------------------------------------------
+// Sound resource handle
+//-----------------------------------------------------------------------------
+class InfoForResourceTypeVSound_t
+{
+public:
+	using RuntimeClass_t = VSound_t;
+};
+
+using HSound = CWeakHandle< InfoForResourceTypeVSound_t >;
+
+
+//-----------------------------------------------------------------------------
 // Flags for FindAudioSource
 //-----------------------------------------------------------------------------
 enum FindAudioSourceFlags_t
@@ -84,6 +110,64 @@ enum FindAudioSourceFlags_t
 	FINDAUDIOSOURCE_NODELAY = 0x1,
 	FINDAUDIOSOURCE_PREFETCH = 0x2,
 	FINDAUDIOSOURCE_PLAYONCE = 0x4,
+};
+
+
+//-----------------------------------------------------------------------------
+// Frame state the engine passes to ISoundSystem::Update: time, mute flags and
+// up to four listeners
+//-----------------------------------------------------------------------------
+class CAudioState
+{
+public:
+	CAudioState()
+	{
+		m_nUnk00 = 0;
+		m_flUnk08 = 0.0;
+		m_nUnk10 = 0;
+		m_nUnk18 = 0;
+		m_bUnk20_0 = false;
+		m_bUnk20_1 = false;
+		m_bUnk20_2 = false;
+		m_bUnk20_3 = false;
+		m_bUnk20_4 = false;
+		m_bUnk20_5 = false;
+
+		for ( int i = 0; i < 4; i++ )
+		{
+			m_Unk24[ i ].m_vecUnk00.Init();
+			m_Unk24[ i ].m_angUnk0C.Init();
+			m_Unk24[ i ].m_vecUnk18.Init();
+			m_Unk24[ i ].m_vecUnk24.Init();
+			m_Unk24[ i ].m_nUnk30 = -1;
+			m_Unk24[ i ].m_nUnk34 = -1;
+			m_Unk24[ i ].m_bUnk38_0 = false;
+			m_Unk24[ i ].m_bUnk38_1 = false;
+		}
+	}
+
+	uint64 m_nUnk00;
+	double m_flUnk08;
+	uint64 m_nUnk10;
+	uint64 m_nUnk18;
+	bool m_bUnk20_0 : 1;
+	bool m_bUnk20_1 : 1;
+	bool m_bUnk20_2 : 1;
+	bool m_bUnk20_3 : 1;
+	bool m_bUnk20_4 : 1;
+	bool m_bUnk20_5 : 1;
+
+	struct
+	{
+		Vector m_vecUnk00;
+		QAngle m_angUnk0C;
+		Vector m_vecUnk18;
+		Vector m_vecUnk24;
+		int m_nUnk30;
+		int m_nUnk34;
+		bool m_bUnk38_0 : 1;
+		bool m_bUnk38_1 : 1;
+	} m_Unk24[ 4 ];
 };
 
 
