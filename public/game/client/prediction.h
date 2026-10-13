@@ -98,7 +98,14 @@ public:
 	CGlobalVarsBase m_SavedVars;
 
 private:
-	uint8 m_nUnknown00C8[8];
+	uint8 m_nUnknown00C8[4];
+
+public:
+	// "enable" key of the prediction data received over VConComm
+	bool m_bEnable;
+
+private:
+	uint8 m_nUnknown00CD[3];
 
 public:
 	// TrueView prediction time offset in seconds, see IPrediction::unk018
@@ -112,8 +119,8 @@ private:
 	uint8 m_nUnknown00D6[2];
 
 public:
-	// Returned by IPrediction::unk030
-	int m_nUnk00D8;
+	// Version of the demo being played back when TrueView can use it, otherwise 0; returned by IPrediction::unk030
+	int m_nDemoVersion;
 
 	int m_nFinalPredictedTick;
 	float m_flFinalPredictedTickFraction;
@@ -122,8 +129,8 @@ private:
 	uint8 m_nUnknown00E4[8];
 
 public:
-	// Returned by IPrediction::unk020
-	int m_nUnk00EC;
+	// Prediction time offset rounded to ticks; returned by IPrediction::unk020
+	int m_nPredictionTimeOffsetTicks;
 
 	bool m_bPredictionStateChanged;
 
@@ -134,7 +141,14 @@ public:
 	int m_nPredictedTickBase;
 
 private:
-	uint8 m_nUnknown0110[112];
+	uint8 m_nUnknown0110[8];
+
+public:
+	// "highest_string" key of the prediction data received over VConComm
+	int m_nHighestString;
+
+private:
+	uint8 m_nUnknown011C[100];
 };
 
 #endif // PREDICTION_H

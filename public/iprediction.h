@@ -40,8 +40,10 @@ public:
 	virtual void OnReceivedUncompressedPacket() = 0;
 
 	virtual void unk017( int nClientTick, float flClientTickFraction, float *pflFinalPredictedTickFraction ) = 0;
+	// TrueView prediction time offset in seconds
 	virtual float unk018() = 0;
 	virtual void unk019( int nClientTick, float flClientTickFraction, float flFinalPredictedTickFraction ) = 0;
+	// TrueView prediction time offset rounded to ticks
 	virtual int unk020() = 0;
 
 	// Local origin and rotation of the pawn of nSlot
@@ -61,7 +63,9 @@ public:
 	virtual bool unk028() = 0;
 	// True when the last TrueView offset could not be determined
 	virtual bool unk029() = 0;
+	// Version of the demo being played back when TrueView can use it, otherwise 0
 	virtual int unk030() = 0;
+	// Shuts down every prediction slot
 	virtual void unk031() = 0;
 };
 
