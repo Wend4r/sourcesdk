@@ -104,10 +104,12 @@ public:
 
 private:
 	uint8 m_Unk480D[ 3 ];
-	// A vector with inline room for two four-byte elements.
-	uint8 m_Unk4810[ 0x20 ];
 
 public:
+	// IDs of the nav link areas (dynamic attribute 0x200) the path goes through, whose segments
+	// get type 7.
+	CUtlVectorFixedGrowable< uint32, 2 > m_Unk4810;
+
 	int m_PathResultStatus;
 	bool m_bUnk4834;
 };
