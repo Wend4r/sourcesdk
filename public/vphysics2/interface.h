@@ -88,7 +88,7 @@ struct VPhysics2WorldUnk156_t
 	uint8 m_Data[ 24 ];
 };
 
-// The 28-byte result of IVPhysics2World::unk173, unk174 and unk176 (fraction 1.0 and ids -1 when nothing is hit); only its size is known
+// The 28-byte result of IVPhysics2World::LinearCast, SweepBodySingle and SweepShapeSingle (fraction 1.0 and ids -1 when nothing is hit); only its size is known
 struct VPhysics2WorldUnk173_t
 {
 	uint32 m_Data[ 7 ];
@@ -117,7 +117,7 @@ public:
 
 	virtual void CleanupDeleteList() = 0;
 
-	virtual void unk006() = 0;
+	virtual void Clear() = 0;
 	virtual void AdvanceTime( float flTimeStep ) = 0;
 	virtual void Step( float flTimeStep ) = 0;
 
@@ -127,9 +127,9 @@ public:
 
 	virtual void BeginAsyncPostTickJobs( void *pUnused, bool bUnknown ) = 0;
 	virtual void EndAsyncPostTickJobs() = 0;
-	virtual void unk013( const void *pUnknown, bool bUnknown ) = 0;
+	virtual void PostRopeJob( const void *pJob, bool bUnknown ) = 0;
 	virtual void UpdateParticleRopes() = 0;
-	virtual bool unk015() = 0;
+	virtual bool IsInAsyncPostTickJobs() = 0;
 	virtual void Collide( float flTimeStep ) = 0;
 	virtual void unk017() = 0;
 
@@ -140,17 +140,17 @@ public:
 	virtual float unk021() = 0;
 	virtual void unk022( int nValue ) = 0;
 	virtual int unk023() = 0;
-	virtual void unk024( int nValue ) = 0;
-	virtual int unk025() = 0;
-	virtual void unk026( int nValue ) = 0;
-	virtual int unk027() = 0;
+	virtual void SetPositionIterations( int nIterations ) = 0;
+	virtual int GetPositionIterations() = 0;
+	virtual void SetVelocityIterations( int nIterations ) = 0;
+	virtual int GetVelocityIterations() = 0;
 
 	// Both set the same value, which is clamped to [0, 4]
-	virtual void unk028() = 0;
-	virtual void unk029( int nValue ) = 0;
-	virtual int unk030() = 0;
+	virtual void ResetTOIIterations() = 0;
+	virtual void SetTOIIterations( int nIterations ) = 0;
+	virtual int GetTOIIterations() = 0;
 
-	virtual void unk031( float flValue ) = 0;
+	virtual void ScaleImpulses( float flScale ) = 0;
 	virtual bool unk032() = 0;
 	virtual void unk033( bool bValue ) = 0;
 
@@ -162,7 +162,7 @@ public:
 	virtual void unk038( uint8 nValue ) = 0;
 
 	virtual float GetSimulationTime() = 0;
-	virtual float unk040() = 0;
+	virtual float GetStepStartTime() = 0;
 	virtual float unk041() = 0;
 	virtual int GetStepCount() = 0;
 
@@ -174,12 +174,12 @@ public:
 	virtual int unk048() = 0;
 
 	virtual void unk049( void *pCallback ) = 0;
-	virtual void unk050( bool bValue ) = 0;
-	virtual bool unk051() = 0;
-	virtual int unk052() = 0;
-	virtual void unk053() = 0;
-	virtual void unk054() = 0;
-	virtual bool unk055() = 0;
+	virtual void SetSleepingEnabled( bool bEnabled ) = 0;
+	virtual bool IsSleepingEnabled() = 0;
+	virtual int GetSleepingBodyCount() = 0;
+	virtual void BeginDeferredWake() = 0;
+	virtual void EndDeferredWake() = 0;
+	virtual bool IsWakeDeferred() = 0;
 
 	virtual int GetBodyCount() = 0;
 	virtual IPhysicsBody *GetBody( int nIndex ) = 0;
@@ -193,8 +193,8 @@ public:
 	virtual IPhysicsBody *AddBody( const Vector &vPosition, const Quaternion &qOrientation, float flUnknown ) = 0;
 	virtual void RemoveBody( IPhysicsBody *pBody ) = 0;
 
-	virtual int unk063() = 0;
-	virtual void unk064( CUtlVector< IPhysicsBody * > &bodies ) = 0;
+	virtual int GetAwakeBodyCount() = 0;
+	virtual void GetAwakeBodies( CUtlVector< IPhysicsBody * > &bodies ) = 0;
 
 	virtual IPhysicsSoftbody *AddSoftbody( const CFeModel *pFeModel ) = 0;
 	virtual void RemoveSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
@@ -269,8 +269,8 @@ public:
 	virtual void unk117( int nIndex, void *pOut ) = 0;
 	virtual int unk118() = 0;
 	virtual void unk119( int nIndex, void *pOut ) = 0;
-	virtual void unk120( IPhysicsBody *pBody1, IPhysicsBody *pBody2 ) = 0;
-	virtual bool unk121( IPhysicsBody *pBody1, IPhysicsBody *pBody2 ) = 0;
+	virtual void DestroyContacts( IPhysicsBody *pBody1, IPhysicsBody *pBody2 ) = 0;
+	virtual bool HasContact( IPhysicsBody *pBody1, IPhysicsBody *pBody2 ) = 0;
 	virtual void unk122( void *pUnknown, bool bUnknown ) = 0;
 	virtual void unk123() = 0;
 	virtual void unk124( void *pOut ) = 0;
@@ -296,10 +296,10 @@ public:
 	virtual void SetEventListener( IPhysicsWorldEventListener *pListener ) = 0;
 
 	// Callbacks the step runs; each entry is a callback with its context
-	virtual void unk139( const void *pCallback ) = 0;
-	virtual void unk140( const void *pCallback ) = 0;
-	virtual void unk141( const void *pCallback ) = 0;
-	virtual void unk142( const void *pCallback ) = 0;
+	virtual void AddPreStepCallback( const void *pCallback ) = 0;
+	virtual void RemovePreStepCallback( const void *pCallback ) = 0;
+	virtual void AddPostStepCallback( const void *pCallback ) = 0;
+	virtual void RemovePostStepCallback( const void *pCallback ) = 0;
 	virtual void unk143( const void *pCallbacks, void *pContext ) = 0;
 
 	// Collision filtering of entity pairs
@@ -334,8 +334,8 @@ public:
 	virtual void CastRaySingle( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 	virtual void CastRayMultiple( CTraceVector &results, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 
-	virtual void unk161( void *pOut, const Vector &vStart, const Vector &vEnd ) = 0;
-	virtual void unk162( void *pOut, const Vector &vStart, const Vector &vEnd ) = 0;
+	virtual void CastRaySingleUnfiltered( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta ) = 0;
+	virtual void CastRayMultipleUnfiltered( void *pResults, const Vector &vStart, const Vector &vDelta ) = 0;
 	virtual void ToolCastRayMultipleUnfiltered( CUtlVectorFixedGrowable< RnToolQueryHit_t, 8 > &hits, const Vector &vStart, const Vector &vEnd, float flUnknown ) = 0;
 	virtual void CastRayIntervals( CRayIntervalVector &intervals, const Vector &vStart, const Vector &vEnd, const RnQueryAttr_t &attr, bool bUnknown, float flUnknown ) = 0;
 	virtual void CastSphereAgainstBody( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, float flRadius, IPhysicsBody *pBody ) = 0;
@@ -344,7 +344,7 @@ public:
 	virtual void CastSphereSingle( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, float flRadius, const RnQueryAttr_t &attr ) = 0;
 	virtual void CastSphereMultiple( CTraceVector &results, const Vector &vStart, const Vector &vDelta, float flRadius, const RnQueryAttr_t &attr ) = 0;
 
-	virtual void unk168( PhysicsTrace_t *pTrace, const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, IPhysicsBody *pBody ) = 0;
+	virtual void CastBoxAgainstBody( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, const Vector &vExtents, IPhysicsBody *pBody ) = 0;
 
 	// Casts an axis-aligned box of the given half extents
 	virtual void CastBoxSingle( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, const Vector &vExtents, const RnQueryAttr_t &attr ) = 0;
@@ -354,14 +354,14 @@ public:
 	virtual bool CastShapeSingle( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 	virtual bool CastShapeMultiple( CTraceVector &results, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 
-	// unk176 and unk177 are overload sets that MSVC groups in reverse order; the declaration order is Linux's
-	virtual VPhysics2WorldUnk173_t unk173( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, const void *pUnknown4, bool bUnknown ) = 0;
-	virtual VPhysics2WorldUnk173_t unk174( const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void unk175( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual VPhysics2WorldUnk173_t unk176( const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void unk177( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual VPhysics2WorldUnk173_t unk176( const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void unk177( void *pOut, const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
+	// SweepShapeSingle and SweepShapeMultiple are overload sets that MSVC groups in reverse order; the declaration order is Linux's
+	virtual VPhysics2WorldUnk173_t LinearCast( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, const void *pUnknown4, bool bUnknown ) = 0;
+	virtual VPhysics2WorldUnk173_t SweepBodySingle( const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual void SweepBodyMultiple( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual VPhysics2WorldUnk173_t SweepShapeSingle( const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual void SweepShapeMultiple( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual VPhysics2WorldUnk173_t SweepShapeSingle( const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual void SweepShapeMultiple( void *pOut, const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
 
 	// Shape queries that collect the shapes overlapping a volume or a swept volume. The game queries spheres, boxes and shapes with these.
 	// MSVC groups these overloads in reverse order; the declaration order is Linux's
@@ -384,7 +384,7 @@ public:
 	virtual float ClosestPoint( const Vector &vPoint, float flMaxDistance, const std::function< bool( IPhysicsShape * ) > &filter, PhysicsClosestPoint_t *pClosest ) = 0;
 	virtual float ClosestPoint( const Vector &vPoint, float flMaxDistance, const std::function< bool( IPhysicsShape * ) > &filter, Vector *pClosest ) = 0;
 
-	virtual void unk193( void *pUnknown1, void *pUnknown2, void *pUnknown3, void *pUnknown4, bool bUnknown, float flUnknown ) = 0;
+	virtual void CollideShape( void *pUnknown1, void *pUnknown2, void *pUnknown3, void *pUnknown4, bool bUnknown, float flUnknown ) = 0;
 
 	virtual void unk194( void *pValue ) = 0;
 	virtual void *unk195() = 0;
@@ -392,13 +392,13 @@ public:
 
 	// The flags IVPhysics2::CreateWorld was called with
 	virtual uint32 GetCreateFlags() = 0;
-	virtual void unk198( void *pValue ) = 0;
-	virtual void *unk199() = 0;
+	virtual void SetWorldReferenceBody( IPhysicsBody *pBody ) = 0;
+	virtual IPhysicsBody *GetWorldReferenceBody() = 0;
 
 	// Save and restore of object references. MSVC groups these overloads in reverse order; the declaration order is Linux's
 	virtual bool unk200( const void *pObject ) = 0;
 	virtual bool unk200( const CUtlVector< void * > &objects ) = 0;
-	virtual bool unk202( const void *pObject ) = 0;
+	virtual bool RestoreObject( const void *pObject ) = 0;
 	virtual void unk203() = 0;
 
 	// Returns 0
@@ -414,7 +414,7 @@ public:
 	virtual int unk208() = 0;
 	virtual int unk209() = 0;
 
-	virtual void unk210( bool bValue ) = 0;
+	virtual void DisableDebugRecording( bool bDisable ) = 0;
 	virtual void unk211( void *p ) = 0;
 
 	// Each of these returns zeros
@@ -458,7 +458,7 @@ public:
 	// Debug draw filtering; both notify the event listener
 	virtual void SetDebugDrawFilter( const void *pParams ) = 0;
 	virtual void ClearDebugDrawFilter() = 0;
-	virtual bool unk235( void *pUnknown ) = 0;
+	virtual bool ShouldDrawCollisionAttributes( void *pUnknown ) = 0;
 	virtual bool ShouldDrawShape( IPhysicsShape *pShape ) = 0;
 	virtual bool ShouldDrawBody( IPhysicsBody *pBody, bool bUnknown ) = 0;
 	virtual bool ShouldDrawSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
@@ -483,7 +483,7 @@ public:
 	virtual int unk247() = 0;
 	virtual void *unk248() = 0;
 
-	virtual void unk249( void *pUnknown, IPhysicsShape *pShape1, IPhysicsShape *pShape2 ) = 0;
+	virtual void DescribeShapeCollision( CBufferString &text, IPhysicsShape *pShape1, IPhysicsShape *pShape2 ) = 0;
 	virtual void DescribeShape( CBufferString &text, IPhysicsShape *pShape, void *pUnknown ) = 0;
 };
 
@@ -522,7 +522,7 @@ public:
 	// Set when a command line parameter is present
 	bool m_bUnk038;
 
-	bool m_bUnk039;
+	bool m_bDebugRecordingDisabled;
 
 	// Two hash tables, one of them is filled from the body map of StepEndReadOnlyGetResults
 	ALIGN8 uint8 m_unk040[88] ALIGN8_POST;
@@ -540,7 +540,7 @@ public:
 	int m_nUnk118;
 	CUtlVector< void * > m_Unk120;
 
-	void *m_pUnk138;
+	IPhysicsBody *m_pWorldReferenceBody;
 
 	// The job that BeginAsyncPostTickJobs queues
 	void *m_pAsyncPostTickJob;
