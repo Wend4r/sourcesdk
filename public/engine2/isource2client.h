@@ -34,6 +34,7 @@ class CBufferString;
 class CConcreteEntityList;
 class ClientClass;
 class CCommand;
+class CEngineGotvSyncPacket;
 class CEntityInstance;
 class CGameTrace;
 class CGlobalVarsBase;
@@ -315,14 +316,15 @@ public:
 	virtual void *unk162() = 0;
 	virtual bool unk163( void *pUnk ) = 0;
 	virtual void OnHltvReplay( const CSVCMsg_HltvReplay_t *pMsg ) = 0;
-	virtual void unk165() = 0;
-	virtual void unk166() = 0;
+	// Forward to the HLTV replay system, which OnHltvReplay() feeds
+	virtual void OnHltvReplayTick() = 0;
+	virtual int GetHltvReplayDelay() = 0;
 	virtual void unk167( void *pMsg ) = 0;
 	virtual void unk168() = 0;
 	virtual void unk169( void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk170() = 0;
-	// Builds a game coordinator protobuf message
-	virtual void unk171( void *pUnk ) = 0;
+	// Sends the packet to the game coordinator as the data of a CMsgGCCStrike15_GotvSyncPacket
+	virtual void EngineGotvSyncPacket( const CEngineGotvSyncPacket *pPkt ) = 0;
 	// Fills matchmaking KeyValues ( "members/machine0/player0" )
 	virtual void unk172( KeyValues *pKV, void *pUnk ) = 0;
 	virtual CEntityHandle unk173( CEntityIndex nEntityIndex ) = 0;
