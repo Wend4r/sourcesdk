@@ -244,7 +244,7 @@ public:
 	virtual bool unk042( const char *pStackName, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual SOFieldDataType_t unk043( const char *pStackName, const char *pOperatorName, const char *pFieldName ) = 0;
 	// Field token from the operator and field names
-	virtual CUtlStringToken Unk_GetFieldToken( const char *pOperatorName, const char *pFieldName ) = 0;
+	virtual CUtlStringToken GetFieldToken( const char *pOperatorName, const char *pFieldName ) = 0;
 	// Field token of a public field, or of a builtin one when the name starts with an underscore
 	virtual CUtlStringToken unk045( const char *pFieldName ) = 0;
 	virtual HSOSLIBSTACKHASH GetStackHash( const char *pStackName ) = 0;
