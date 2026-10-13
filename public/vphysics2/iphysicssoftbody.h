@@ -237,6 +237,12 @@ public:
 	void *m_pUserData[ 2 ];
 };
 
+// The zeroed 40-byte struct IFnPhysicsSoftbody::unk006 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
+struct FnPhysicsSoftbodyUnk006_t
+{
+	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
+};
+
 // Function table operating on the softbody it is bound to
 abstract_class IFnPhysicsSoftbody
 {
@@ -252,8 +258,8 @@ public:
 	// Empty in release builds
 	virtual void unk005() = 0;
 
-	// Returns a zeroed struct by value; the type is not recovered
-	virtual void unk006( void *pResult ) const = 0;
+	// Returns zeros
+	virtual FnPhysicsSoftbodyUnk006_t unk006() const = 0;
 
 	virtual void unk007( uint nUnknown, bool bUnknown ) = 0;
 

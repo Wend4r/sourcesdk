@@ -19,6 +19,13 @@ class CBufferString;
 
 struct PhysicsContact_t;
 
+// The manifold array of a contact and its count, returned in two integer registers on Linux; the element type is not recovered
+struct FnPhysicsContactUnk012_t
+{
+	const void *m_pManifolds;
+	int64 m_nCount;
+};
+
 // Function table operating on the contact it is bound to
 abstract_class IFnPhysicsContact
 {
@@ -43,8 +50,7 @@ public:
 
 	virtual int GetManifoldCount() const = 0;
 
-	// Returns the manifold array and its count by value; the type is not recovered
-	virtual void unk012( void *pResult ) const = 0;
+	virtual FnPhysicsContactUnk012_t unk012() const = 0;
 
 	virtual int GetContactPointCount() const = 0;
 

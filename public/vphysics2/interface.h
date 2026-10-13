@@ -73,6 +73,33 @@ struct constraint_fixedparams_t;
 struct VPhysXAggregateData_t;
 template < class T > class CEmbeddedIntrospectedOrKV3BlockHelper;
 
+// The 2-byte class IVPhysics2World::unk152 returns. Linux returns it through a hidden pointer, so it is not trivially
+// copyable; only its size is known, the destructor only reproduces that
+struct VPhysics2WorldUnk152_t
+{
+	~VPhysics2WorldUnk152_t() {}
+
+	uint8 m_Data[ 2 ];
+};
+
+// The zeroed 24-byte struct IVPhysics2World::unk156 and unk157 return; only its size is known
+struct VPhysics2WorldUnk156_t
+{
+	uint8 m_Data[ 24 ];
+};
+
+// The 28-byte result of IVPhysics2World::unk173, unk174 and unk176 (fraction 1.0 and ids -1 when nothing is hit); only its size is known
+struct VPhysics2WorldUnk173_t
+{
+	uint32 m_Data[ 7 ];
+};
+
+// The zeroed 40-byte struct IVPhysics2World::unk212, unk213 and unk214 return; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
+struct VPhysics2WorldUnk212_t
+{
+	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
+};
+
 abstract_class IVPhysics2World
 {
 public:
@@ -286,8 +313,7 @@ public:
 	virtual bool ShouldHit( const IPhysicsShape *pShape, const RnQueryAttr_t &attr ) = 0;
 	virtual uint64 unk151( uint32 nValue ) = 0;
 
-	// Each of these returns a struct by value; the types are unknown
-	virtual void unk152( void *p ) = 0;
+	virtual VPhysics2WorldUnk152_t unk152() = 0;
 
 	// Empty
 	virtual void unk153() = 0;
@@ -298,9 +324,9 @@ public:
 	// The bounds of all coordinates the world accepts
 	virtual AABB_t GetWorldBounds() = 0;
 
-	// Both return a zeroed 24-byte struct by value
-	virtual void unk156( void *p ) = 0;
-	virtual void unk157( void *p ) = 0;
+	// Both return zeros
+	virtual VPhysics2WorldUnk156_t unk156() = 0;
+	virtual VPhysics2WorldUnk156_t unk157() = 0;
 
 	virtual void unk158( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, IPhysicsBody *pBody ) = 0;
 
@@ -328,14 +354,13 @@ public:
 	virtual bool CastShapeSingle( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 	virtual bool CastShapeMultiple( CTraceVector &results, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 
-	// The versions without an output pointer return a 28-byte struct by value, here through pResult; the struct is not recovered.
 	// unk176 and unk177 are overload sets that MSVC groups in reverse order; the declaration order is Linux's
-	virtual void unk173( void *pResult, const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, const void *pUnknown4, bool bUnknown ) = 0;
-	virtual void unk174( void *pResult, const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual VPhysics2WorldUnk173_t unk173( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, const void *pUnknown4, bool bUnknown ) = 0;
+	virtual VPhysics2WorldUnk173_t unk174( const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
 	virtual void unk175( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void unk176( void *pResult, const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual VPhysics2WorldUnk173_t unk176( const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
 	virtual void unk177( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void unk176( void *pResult, const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
+	virtual VPhysics2WorldUnk173_t unk176( const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
 	virtual void unk177( void *pOut, const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
 
 	// Shape queries that collect the shapes overlapping a volume or a swept volume. The game queries spheres, boxes and shapes with these.
@@ -392,10 +417,10 @@ public:
 	virtual void unk210( bool bValue ) = 0;
 	virtual void unk211( void *p ) = 0;
 
-	// Each of these returns a zeroed 40-byte struct by value
-	virtual void unk212( void *p ) = 0;
-	virtual void unk213( void *p ) = 0;
-	virtual void unk214( void *p ) = 0;
+	// Each of these returns zeros
+	virtual VPhysics2WorldUnk212_t unk212() = 0;
+	virtual VPhysics2WorldUnk212_t unk213() = 0;
+	virtual VPhysics2WorldUnk212_t unk214() = 0;
 
 	virtual IPhysReflContext *unk215() = 0;
 	virtual void unk216( bool bUnknown ) = 0;
@@ -525,6 +550,12 @@ public:
 	ThreadId_t m_nSimulationThreadId;
 };
 
+// The zeroed 40-byte struct IFnPhysicsWorld::unk025 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
+struct FnPhysicsWorldUnk025_t
+{
+	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
+};
+
 // Function table over a world, placed into caller memory by IVPhysics2::ConstructFnPhysicsWorld
 abstract_class IFnPhysicsWorld
 {
@@ -561,8 +592,8 @@ public:
 	virtual bool unk023( void *pObject ) = 0;
 	virtual void unk024() = 0;
 
-	// Returns a zeroed 40-byte struct by value; the struct is not recovered
-	virtual void unk025( void *p ) = 0;
+	// Returns zeros
+	virtual FnPhysicsWorldUnk025_t unk025() = 0;
 
 	virtual void unk026() = 0;
 	virtual bool unk027( uint32 nValue ) = 0;

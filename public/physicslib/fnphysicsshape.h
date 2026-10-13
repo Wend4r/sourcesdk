@@ -23,6 +23,18 @@ class CBufferString;
 class CRnShape;
 class IPhysicsShape;
 
+// The zeroed 40-byte struct IFnPhysicsShape::unk019 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
+struct FnPhysicsShapeUnk019_t
+{
+	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
+};
+
+// The 4-byte class IFnPhysicsShape::unk033 returns in an integer register on Linux; only its size is known
+struct FnPhysicsShapeUnk033_t
+{
+	uint8 m_Data[ 4 ];
+};
+
 abstract_class IFnPhysicsShape
 {
 public:
@@ -69,8 +81,8 @@ public:
 	// Empty
 	virtual void unk018() = 0;
 
-	// Returns a cleared struct by value that is not recovered
-	virtual void unk019( void *p ) = 0;
+	// Returns zeros
+	virtual FnPhysicsShapeUnk019_t unk019() = 0;
 
 	// Debug shape of the shape, created on demand
 	virtual void *CreateDebugShape( void *p ) = 0;
@@ -89,8 +101,8 @@ public:
 	virtual CRnShape *GetRnShape() const = 0;
 	virtual int unk032() const = 0;
 
-	// Returns a 4-byte struct by value, always zero
-	virtual void unk033( void *p ) = 0;
+	// Always zero
+	virtual FnPhysicsShapeUnk033_t unk033() = 0;
 
 	virtual const char *unk034( int nUnknown ) const = 0;
 };

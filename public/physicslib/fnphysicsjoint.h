@@ -285,6 +285,12 @@ public:
 	virtual float unk036() const = 0;
 };
 
+// The 32-byte result of IFnPhysicsSplineJoint::unk036 (16-byte vector at +16); only its size and alignment are known
+struct FnPhysicsSplineJointUnk036_t
+{
+	ALIGN16 uint8 m_Data[ 32 ] ALIGN16_POST;
+};
+
 abstract_class IFnPhysicsSplineJoint : public IFnPhysicsJoint
 {
 public:
@@ -316,8 +322,7 @@ public:
 	virtual float unk034() const = 0;
 	virtual void unk035() = 0;
 
-	// Returns a struct by value that is not recovered
-	virtual void unk036( void *p ) = 0;
+	virtual FnPhysicsSplineJointUnk036_t unk036( float flUnknown ) = 0;
 };
 
 abstract_class IFnPhysicsWheelJoint : public IFnPhysicsJoint

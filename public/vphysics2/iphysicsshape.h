@@ -26,6 +26,19 @@ struct Ray_t;
 struct RnCollisionAttr_t;
 struct RnMassProperties_t;
 
+// The 16-byte result of IPhysicsShape::unk026: the support point of the shape in the given direction and one more float,
+// four floats returned in two vector registers on Linux. Only its size is known
+struct PhysicsShapeUnk026_t
+{
+	float m_flData[ 4 ];
+};
+
+// The 20-byte sums IPhysicsShape::unk033 returns over the contacts of the shape (five 32-bit counters); only its size is known
+struct PhysicsShapeUnk033_t
+{
+	uint32 m_nData[ 5 ];
+};
+
 abstract_class IPhysicsShape
 {
 public:
@@ -84,23 +97,23 @@ public:
 	// Local bounds moved by the body transform
 	virtual AABB_t GetWorldBounds() const = 0;
 
-	// MSVC groups these overloads in reverse order; both return a struct by value that is not recovered
-	virtual void unk026( void *p ) = 0;
-	virtual void unk026( void *p, const CTransform &transform ) = 0;
+	// MSVC groups these overloads in reverse order; the second one places the shape at the transform
+	virtual PhysicsShapeUnk026_t unk026( const Vector &vDirection ) = 0;
+	virtual PhysicsShapeUnk026_t unk026( const CTransform &transform, const Vector &vDirection ) = 0;
 
 	// Support mapping of the shape for the GJK queries
 	virtual CGJKProxy GetGJKProxy() const = 0;
 	virtual float GetVolume() const = 0;
 
-	// Returns a struct by value that is not recovered
-	virtual void unk030( void *p ) = 0;
+	// A constant for a sphere, a stored vector for a hull or a mesh
+	virtual Vector unk030() = 0;
 
 	// MSVC groups the overloads of these two names in reverse order at the position of their first declaration
 	virtual IPhysicsShape *GetOtherShape( IPhysicsShape *const *ppShapePair ) const = 0;
 	virtual void GetContacts( void *pContacts ) const = 0;
 
-	// Sums over the contacts of the shape and returns a 20-byte struct by value that is not recovered
-	virtual void unk033( void *p ) = 0;
+	// Sums over the contacts of the shape
+	virtual PhysicsShapeUnk033_t unk033() = 0;
 
 	virtual IPhysicsShape *GetOtherShape( const void *pContact ) const = 0;
 	virtual void GetContacts( CUtlVector< const void * > *pContacts ) const = 0;

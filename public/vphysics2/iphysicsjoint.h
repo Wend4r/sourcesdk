@@ -40,6 +40,12 @@ struct PhysicsWheelJointDesc_t;
 // Called when the joint breaks, with the joint as the argument
 typedef CUtlDelegate< void ( IPhysicsJoint * ) > PhysicsJointBreakDelegate_t;
 
+// The zeroed 40-byte struct IPhysicsJoint::unk074 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
+struct PhysicsJointUnk074_t
+{
+	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
+};
+
 schema abstract_class IPhysicsJoint
 {
 public:
@@ -149,8 +155,8 @@ public:
 	// Empty
 	virtual void unk073() = 0;
 
-	// Returns a struct by value that is not recovered
-	virtual void unk074( void *p ) = 0;
+	// Returns zeros
+	virtual PhysicsJointUnk074_t unk074() = 0;
 
 	virtual ~IPhysicsJoint() {}
 };

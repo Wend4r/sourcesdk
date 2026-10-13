@@ -13,6 +13,7 @@
 
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
+#include "mathlib/fltx4.h"
 #include "mathlib/mathlib.h"
 #include "mathlib/transform.h"
 #include "mathlib/vector.h"
@@ -153,6 +154,13 @@ struct VPhysContactImpactStrength_t
 	float m_flNormalImpact;
 };
 
+// The orientation IIkSolver::unk010, unk011, unk016 and unk017 return: a 16-byte class with one vector member, returned in
+// one vector register on Linux and through a hidden pointer on Windows. Only its size and alignment are known
+struct IkSolverUnk010_t
+{
+	fltx4 m_vValue;
+};
+
 // Created by IVPhysics2::CreateIkSolver; every method forwards to the solver object the implementation owns.
 // The vectors and transforms are read from per-index arrays of that solver, the transform arguments are applied to them
 abstract_class IIkSolver
@@ -172,9 +180,9 @@ public:
 	virtual CTransform unk008( int nIndex ) const = 0;
 	virtual CTransform unk009( int nIndex, const CTransform &transform ) const = 0;
 
-	// Return the orientation of unk008 (unk011 combined with an argument) as a 16-byte class in one vector register on Linux
-	virtual void unk010( void *p ) = 0;
-	virtual void unk011( void *p ) = 0;
+	// Orientation of unk008; unk011 multiplies it with the given value
+	virtual IkSolverUnk010_t unk010( int nIndex ) const = 0;
+	virtual IkSolverUnk010_t unk011( int nIndex, const IkSolverUnk010_t &value ) const = 0;
 
 	// Position of unk008
 	virtual Vector unk012( int nIndex ) const = 0;
@@ -184,8 +192,8 @@ public:
 	virtual CTransform unk015( int nIndex, const CTransform &transform ) const = 0;
 
 	// Same as unk010 and unk011 for unk014
-	virtual void unk016( void *p ) = 0;
-	virtual void unk017( void *p ) = 0;
+	virtual IkSolverUnk010_t unk016( int nIndex ) const = 0;
+	virtual IkSolverUnk010_t unk017( int nIndex, const IkSolverUnk010_t &value ) const = 0;
 
 	// Position of unk014
 	virtual Vector unk018( int nIndex ) const = 0;
@@ -197,6 +205,18 @@ public:
 
 	// Runs the solver for a number of iterations over a list of targets
 	virtual void unk023( void *p ) = 0;
+};
+
+// The 20-byte class IPhysSerialStreamSnapshot::unk005 returns; only its size is known
+struct PhysSerialStreamSnapshotUnk005_t
+{
+	uint8 m_Data[ 20 ];
+};
+
+// The 8-byte class IPhysSerialStreamSnapshot::unk007 returns in a register on Linux; only its size is known
+struct PhysSerialStreamSnapshotUnk007_t
+{
+	uint8 m_Data[ 8 ];
 };
 
 // Reference counted through CSmartPtr; returned by IVPhysics2::CreateSerialStreamSnapshot
@@ -216,14 +236,14 @@ public:
 	// Empty in release builds
 	virtual void unk004() = 0;
 
-	// Returns a 20-byte class filled with zeros in release builds
-	virtual void unk005( void *p ) = 0;
+	// Filled with zeros in release builds
+	virtual PhysSerialStreamSnapshotUnk005_t unk005() = 0;
 
 	// Returns 0 in release builds
 	virtual void *unk006() = 0;
 
-	// Returns an 8-byte class filled with zeros in release builds
-	virtual void unk007( void *p ) = 0;
+	// Filled with zeros in release builds
+	virtual PhysSerialStreamSnapshotUnk007_t unk007() = 0;
 
 	// Copy the pointers of one of the recorded lists
 	virtual void unk008( int nType, CUtlVector< void * > *pOut ) const = 0;
@@ -256,6 +276,12 @@ private:
 // Reference counted through CSmartPtr; returned by IVPhysics2::CreateDataDescConvertor
 abstract_class IDataDescConvertor : public CRefCounted<>
 {
+};
+
+// The pair of hull features IVPhysics2::unk053 returns, 16 bytes in two integer registers on Linux; only its size is known
+struct VPhysics2Unk053_t
+{
+	ALIGN8 uint8 m_Data[ 16 ] ALIGN8_POST;
 };
 
 abstract_class IVPhysics2 : public IAppSystem
@@ -331,8 +357,8 @@ public:
 	// Distance between the two shapes minus their radii
 	virtual float unk052( IPhysicsShape *pShape1, const matrix3x4_t &transform1, IPhysicsShape *pShape2, const matrix3x4_t &transform2 ) = 0;
 
-	// Takes ( const RnSimplexCache_t &, const RnHull_t *, const RnHull_t * ) and returns the hull feature pair of the cached simplex as a 16-byte struct
-	virtual void unk053( void *p ) = 0;
+	// The hull feature pair of the cached simplex
+	virtual VPhysics2Unk053_t unk053( const RnSimplexCache_t &cache, const RnHull_t *pHull1, const RnHull_t *pHull2 ) = 0;
 
 	// Contact generation: the callees add contact points to pOut and the result tells whether there are any.
 	// The five form one overload set, which MSVC lists in reverse order. pOut and the other pointers are internal types of the physics module;

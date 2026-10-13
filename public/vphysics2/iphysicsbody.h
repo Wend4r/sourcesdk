@@ -21,6 +21,7 @@
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
 #include "physicslib/param_types.h"
+#include "vphysics2/iphysicsshape.h"
 #include "schemasystem/schematypes.h"
 
 class IVPhysics2World;
@@ -331,6 +332,24 @@ public:
 	CUtlVector< void * > m_unk020;
 };
 
+// The 52-byte result of IFnPhysicsBody::unk027 (thirteen floats built from the inertia of the body); only its size is known
+struct FnPhysicsBodyUnk027_t
+{
+	float m_flData[ 13 ];
+};
+
+// The 36-byte result of IFnPhysicsBody::unk029 (nine floats); only its size is known
+struct FnPhysicsBodyUnk029_t
+{
+	float m_flData[ 9 ];
+};
+
+// The zeroed 40-byte struct IFnPhysicsBody::unk046 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
+struct FnPhysicsBodyUnk046_t
+{
+	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
+};
+
 // Function table over a body, constructed in caller memory by IVPhysics2::ConstructFnPhysicsBody
 abstract_class IFnPhysicsBody
 {
@@ -380,14 +399,12 @@ public:
 	virtual float unk025() const = 0;
 	virtual float unk026() const = 0;
 
-	// Return a struct by value; the types are not recovered
-	virtual void unk027( void *pResult ) const = 0;
+	virtual FnPhysicsBodyUnk027_t unk027() const = 0;
 
 	// Diagonalizes the inertia tensor scaled by the inverse mass: the rotation to its principal axes and the principal values
 	virtual void unk028( Quaternion *pRotation, Vector *pPrincipalInertia ) const = 0;
 
-	// Returns a struct by value; the type is not recovered
-	virtual void unk029( void *pResult ) const = 0;
+	virtual FnPhysicsBodyUnk029_t unk029() const = 0;
 
 	virtual void unk030( bool bEnable ) = 0;
 	virtual void unk031( uint32 nUnknown ) = 0;
@@ -411,16 +428,16 @@ public:
 	virtual int unk041() const = 0;
 	virtual bool unk042() const = 0;
 
-	// Returns a struct by value; the type is not recovered
-	virtual void unk043( void *pResult ) const = 0;
+	// The sums of IPhysicsShape::unk033 over the shapes of the body
+	virtual PhysicsShapeUnk033_t unk043() const = 0;
 
 	virtual void OutputDebugInfo() const = 0;
 
 	// Empty in release builds
 	virtual void unk045() = 0;
 
-	// Returns a zeroed struct by value; the type is not recovered
-	virtual void unk046( void *pResult ) const = 0;
+	// Returns zeros
+	virtual FnPhysicsBodyUnk046_t unk046() const = 0;
 
 	virtual void unk047() = 0;
 };
