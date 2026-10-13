@@ -127,15 +127,14 @@ public:
 
 	CUtlString m_worldPath;
 
-	bool m_bVisibleBoundsValid : 1;
-	bool m_bVisibilityUpdated : 1;
 	bool m_bIsEmptyWorld : 1;
-	bool m_bBlockUntilLoaded : 1;
-	bool m_bPrecacheOnly : 1;
-	bool m_bLoadSun : 1;
-	bool m_bHasBakedLighting : 1;
-	bool m_bLoadRequestsInFlight : 1;
-	bool m_bDisableNodeStreaming : 1;
+	bool m_bUnk1 : 1;
+	bool m_bUnk2 : 1; // Constructor argument.
+	bool m_bBakedLightingIsInvalid : 1;
+	bool m_bBakedLightingIsPreview : 1;
+	bool m_bUnk5 : 1; // Set in Init from the scene world.
+	bool m_bUnk6 : 1; // Constructor argument.
+	bool m_bUnk7 : 1;
 
 	CWorldSceneObjectRefHash m_sceneObjectRefs;
 	CUtlVector< HResourceManifest > m_pendingManifests;
