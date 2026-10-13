@@ -31,7 +31,8 @@ public:
 	virtual bool InstantReplayShouldIgnoreMessage( int nMessageId ) const = 0;
 	virtual bool IsCompatibleNetworkVersion( int nServerNetworkVersion ) = 0;
 	virtual const char *ChangeWorldMountNameByNetworkVersion( const char *pszWorldName, int nServerNetworkVersion ) const = 0;
-	virtual void *unk018() = 0;
+	// Empty in both builds and never called by the engine
+	virtual void unk018() = 0;
 };
 
 #endif // ISOURCE2CLIENTCONFIG_H
