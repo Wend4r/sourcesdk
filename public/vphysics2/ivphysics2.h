@@ -68,6 +68,7 @@ struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
 struct VPhysXAggregateData_t;
+struct RnMaterial_t;
 struct DebugSceneObjectParams_t;
 struct SceneObjectBuffers_t;
 struct EmbeddedPhysicsInfo_t;
@@ -95,6 +96,13 @@ public:
 
 private:
 	CPhysAggregateData *m_pData;
+};
+
+struct RnMassProperties_t
+{
+	matrix3x4_t m_Inertia;
+	Vector m_vCenter;
+	float m_flMass;
 };
 
 abstract_class IVPhysics2 : public IAppSystem
@@ -275,15 +283,9 @@ public:
 
 	virtual void DestroyTaggedGeometry( uintp nTaggedGeometry ) = 0;
 
-#ifdef _WIN32
-	virtual void unk102( void *p ) = 0;
-	virtual void unk103( void *p ) = 0;
-	virtual void unk104( void *p ) = 0;
-#else
-	virtual void unk104( void *p ) = 0;
-	virtual void unk103( void *p ) = 0;
-	virtual void unk102( void *p ) = 0;
-#endif
+	virtual RnMassProperties_t ComputeMass( const RnSphere_t *pSphere, const RnMaterial_t &material ) = 0;
+	virtual RnMassProperties_t ComputeMass( const RnCapsule_t *pCapsule, const RnMaterial_t &material ) = 0;
+	virtual RnMassProperties_t ComputeMass( const RnHull_t *pHull, float flScale, const RnMaterial_t &material ) = 0;
 
 	virtual void LoadPhysicsDebugMaterials( void *p ) = 0;
 
