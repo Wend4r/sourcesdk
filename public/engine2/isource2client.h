@@ -21,8 +21,11 @@
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
+#include "tier0/utlsortvector.h"
+#include "tier0/utlmap.h"
 #include "tier0/tslist.h"
 #include "tier0/bitvec.h"
+#include "steam/steamclientpublic.h"
 #include "game_saverestore.h"
 
 #include <functional>
@@ -370,44 +373,89 @@ public:
 class CSource2Client : public CGameAppSystem< ISource2Client >, public IStreamEntitiesFromFileCompletion
 {
 public:
+	// Recorded for the demo scrubbing data by unk066()
+	struct PlayerConnectionEvent_t
+	{
+		int m_nTick;
+		int m_nUnk004;
+		bool m_bUnk008;
+		CSteamID m_SteamID;
+		bool m_bBot;
+		bool m_bHltv;
+	};
+
+	struct PlayerConnectionTickOrderingFunc
+	{
+		bool Less( const PlayerConnectionEvent_t &lhs, const PlayerConnectionEvent_t &rhs, void *pContext )
+		{
+			return lhs.m_nTick < rhs.m_nTick;
+		}
+	};
+
+public:
+	// Zeroed by the constructor; no reader found
 	uint8 m_unk038[ 0x10 ];
 	// Set by LaunchApplicationOnExit()
 	CUtlString m_unk048;
-	uint8 m_unk050[ 0x8 ];
+	// The factory passed to Connect(), read by Init()
+	CreateInterfaceFn m_unk050;
+	// Copied by ReceivedServerInfo()
 	GameSessionConfiguration_t m_unk058;
-	uint8 m_unk0F0[ 0x58 ];
-	// Game event names filled by the constructor
+	CUtlSortVector< PlayerConnectionEvent_t, PlayerConnectionTickOrderingFunc > m_unk0F0;
+	// Connection info number to the index of its event in m_unk0F0
+	CUtlOrderedMap< int, int > m_unk118;
+	// Universe of the last player SteamID recorded by unk066()
+	EUniverse m_unk140;
+	uint8 m_unk144[ 0x4 ];
+	// Nine game event groups filled by the constructor: event names, the ids of those events, and a CUtlVector of the 16-byte
+	// ( int tick, IGameEvent * ) copies kept for scrubbing, sorted by tick and fired by OnScrubDemo()
 	CUtlVector< const char * > m_unk148;
-	uint8 m_unk160[ 0x30 ];
+	CUtlVector< int > m_unk160;
+	uint8 m_unk178[ 0x18 ];
 	CUtlVector< const char * > m_unk190;
-	uint8 m_unk1A8[ 0x30 ];
+	CUtlVector< int > m_unk1A8;
+	uint8 m_unk1C0[ 0x18 ];
 	CUtlVector< const char * > m_unk1D8;
-	uint8 m_unk1F0[ 0x30 ];
+	CUtlVector< int > m_unk1F0;
+	uint8 m_unk208[ 0x18 ];
 	CUtlVector< const char * > m_unk220;
-	uint8 m_unk238[ 0x30 ];
+	CUtlVector< int > m_unk238;
+	uint8 m_unk250[ 0x18 ];
 	CUtlVector< const char * > m_unk268;
-	uint8 m_unk280[ 0x30 ];
+	CUtlVector< int > m_unk280;
+	uint8 m_unk298[ 0x18 ];
 	CUtlVector< const char * > m_unk2B0;
-	uint8 m_unk2C8[ 0x30 ];
+	CUtlVector< int > m_unk2C8;
+	uint8 m_unk2E0[ 0x18 ];
 	CUtlVector< const char * > m_unk2F8;
-	uint8 m_unk310[ 0x30 ];
+	CUtlVector< int > m_unk310;
+	uint8 m_unk328[ 0x18 ];
 	CUtlVector< const char * > m_unk340;
-	uint8 m_unk358[ 0x30 ];
+	CUtlVector< int > m_unk358;
+	uint8 m_unk370[ 0x18 ];
 	CUtlVector< const char * > m_unk388;
-	uint8 m_unk3A0[ 0x30 ];
+	CUtlVector< int > m_unk3A0;
+	uint8 m_unk3B8[ 0x18 ];
+	// CUtlVector of the 0x20-byte message entries built by SetupScrubbingData() and purged by ClearScrubbingData()
 	uint8 m_unk3D0[ 0x18 ];
-	// CUtlVector of 0x20-byte entries filled by InitInstantReplayData() and purged by ClearInstantReplayData()
+	// CUtlVector of the same 0x20-byte entries, filled by InitInstantReplayData() and purged by ClearInstantReplayData()
 	uint8 m_unk3E8[ 0x18 ];
 	CTSQueue< std::function< void() > * > m_unk400;
+	// Zeroed by the constructor; no reader found
 	int m_unk440;
 	bool m_unk444;
 	uint8 m_unk445[ 0xB ];
+	// 0x20-byte objects starting with a CUtlString that FrameStageNotify() formats as "FrameNetUpdate(%.3f %d)" and
+	// "FramePostDataUpdate(%.3f %d)"
 	void *m_unk450;
 	void *m_unk458;
 	// Waited for and released by FrameStageNotify()
 	CThreadedJob *m_unk460;
+	// -1.0 after the constructor and Connect()
 	float m_unk468;
-	uint8 m_unk46C[ 0x1C ];
+	uint8 m_unk46C[ 0x4 ];
+	// CUtlVector of 8-byte ( CEntityHandle, float time ) entries appended by unk031()
+	uint8 m_unk470[ 0x18 ];
 };
 
 #endif // ISOURCE2CLIENT_H
