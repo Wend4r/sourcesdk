@@ -28,7 +28,7 @@ abstract_class IHelpSystem : public IAppSystem
 public:
 	virtual void LoadHelpContext( const char *pContextName, int nUnknown ) = 0;
 
-	virtual void Unk_RegisterElementHelp( void *p ) = 0;
+	virtual void RegisterElementHelp( void *p ) = 0;
 
 	virtual IHelpDisplayWidget *CreateHelpDisplayWidget( QWidget *pParent ) = 0;
 
