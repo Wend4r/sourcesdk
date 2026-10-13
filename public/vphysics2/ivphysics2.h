@@ -44,6 +44,7 @@ class IPhysSerialStreamSnapshot;
 class IDataDescConvertor;
 class CPhysAggregateData;
 class CMesh;
+class CGJKProxy;
 
 class IFnPhysicsContact;
 class IFnPhysicsAnyJoint;
@@ -78,6 +79,8 @@ struct DebugSceneObjectParams_t;
 struct SceneObjectBuffers_t;
 struct EmbeddedPhysicsInfo_t;
 struct RnHullSimplificationParams_t;
+struct RnSimplexCache_t;
+struct Ray_t;
 
 schema struct RnSphere_t
 {
@@ -230,25 +233,15 @@ public:
 
 	virtual bool ShapesHaveSameCollisionFilter( IPhysicsShape *pShape1, IPhysicsShape *pShape2 ) = 0;
 
-#ifdef _WIN32
-	virtual void unk037( void *p ) = 0;
-	virtual void unk038( void *p ) = 0;
-#else
-	virtual void unk038( void *p ) = 0;
-	virtual void unk037( void *p ) = 0;
-#endif
+	// Casts two convex proxies, each moving by its own translation
+	virtual RnLinearCastResult_t LinearCast( const CTransform &transform1, const CGJKProxy &proxy1, const Vector &vTranslation1, const CTransform &transform2, const CGJKProxy &proxy2, const Vector &vTranslation2, float flUnknown, float flRadius ) = 0;
+	virtual RnLinearCastResult_t LinearCast( const CTransform &transform1, const CGJKProxy &proxy1, float flRadius1, const Vector &vTranslation1, const CTransform &transform2, const CGJKProxy &proxy2, float flRadius2, const Vector &vTranslation2 ) = 0;
 
-#ifdef _WIN32
-	virtual void unk039( void *p ) = 0;
-	virtual void unk040( void *p ) = 0;
-	virtual void unk041( void *p ) = 0;
-	virtual void unk042( void *p ) = 0;
-#else
-	virtual void unk042( void *p ) = 0;
-	virtual void unk041( void *p ) = 0;
-	virtual void unk040( void *p ) = 0;
-	virtual void unk039( void *p ) = 0;
-#endif
+	// Time of impact of two shapes moving between the placements of their swept transforms
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, IPhysicsShape *pShape1, const RnSweptTransform_t &sweep2, IPhysicsShape *pShape2 ) = 0;
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const RnHull_t *pHull1, const RnSweptTransform_t &sweep2, const RnHull_t *pHull2 ) = 0;
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const Ray_t &shape1, const RnSweptTransform_t &sweep2, const Ray_t &shape2 ) = 0;
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const CGJKProxy &proxy1, float flRadius1, const RnSweptTransform_t &sweep2, const CGJKProxy &proxy2, float flRadius2 ) = 0;
 
 	virtual void unk043( void *p ) = 0;
 	virtual void unk044( void *p ) = 0;
@@ -257,15 +250,9 @@ public:
 
 	virtual void TraceShape( void *p ) = 0;
 
-#ifdef _WIN32
-	virtual void unk047( void *p ) = 0;
-	virtual void unk048( void *p ) = 0;
-	virtual void unk049( void *p ) = 0;
-#else
-	virtual void unk049( void *p ) = 0;
-	virtual void unk048( void *p ) = 0;
-	virtual void unk047( void *p ) = 0;
-#endif
+	virtual RnDistanceQueryResult_t ClosestPoints( const CTransform &transform1, IPhysicsShape *pShape1, const CTransform &transform2, IPhysicsShape *pShape2 ) = 0;
+	virtual RnDistanceQueryResult_t ClosestPoints( const CTransform &transform1, const RnHull_t *pHull1, const CTransform &transform2, const RnHull_t *pHull2, RnSimplexCache_t *pCache ) = 0;
+	virtual RnDistanceQueryResult_t ClosestPoints( const matrix3x4_t &transform1, const CGJKProxy &proxy1, const matrix3x4_t &transform2, const CGJKProxy &proxy2, RnSimplexCache_t *pCache, int nMaxIterations ) = 0;
 
 	// Clamped to zero below a small margin
 	virtual float GetDistanceBetweenHulls( const Vector *pVertices1, int nVertexCount1, const Vector *pVertices2, int nVertexCount2 ) = 0;
