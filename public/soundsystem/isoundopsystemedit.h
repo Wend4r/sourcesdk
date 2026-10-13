@@ -103,14 +103,15 @@ public:
 	// Public field names of the stack, unk078 filters them
 	virtual void unk077( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
 	virtual void unk078( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
-	virtual void unk079() = 0;
-	virtual void unk080() = 0;
+	// Text of a public field of the stack, nField indexes the list of unk077
+	virtual void unk079( HSOSLIBSTACKHASH hStack, int nField, CUtlString &sValue, int nIndex ) = 0;
+	virtual void unk079( HSOSLIBSTACKHASH hStack, const char *pFieldName, CUtlString &sValue, int nIndex ) = 0;
 	// Element count of a public field of the stack
 	virtual int unk081( HSOSLIBSTACKHASH hStack, int nField ) = 0;
 	// Field data of the stack and its size
 	virtual void *unk082( HSOSLIBSTACKHASH hStack, int *pnSize ) = 0;
-	virtual void unk083() = 0;
-	virtual void unk084() = 0;
+	virtual bool unk083( HSOSLIBSTACKHASH hStack, uint32 nFieldToken ) = 0;
+	virtual bool unk083( const char *pStackName, const char *pFieldName ) = 0;
 	virtual void unk085() = 0;
 	virtual void unk086() = 0;
 	virtual void unk087() = 0;
