@@ -14,8 +14,10 @@
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
 #include "mathlib/mathlib.h"
+#include "mathlib/transform.h"
 #include "mathlib/vector.h"
 #include "physicslib/physaggregatedata.h"
+#include "tier0/refcount.h"
 #include "tier0/smartptr.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlleanvector.h"
@@ -30,7 +32,6 @@ class IVPhysics2World;
 class CVPhysics2SurfacePropertyManager;
 class IPhysicsShape;
 class IPhysicsSoftbody;
-class IIkSolver;
 class CIntersectionDictionary;
 class IVConComm;
 class CCommand;
@@ -41,8 +42,6 @@ class InfoForResourceTypeIMaterial2;
 template < class T >
 class CWeakHandle;
 class CSceneAnimatableObject;
-class IPhysSerialStreamSnapshot;
-class IDataDescConvertor;
 class CMesh;
 class CFeModel;
 class CGJKProxy;
@@ -193,6 +192,111 @@ struct VPhysContactImpactStrength_t
 {
 	float m_flTangentImpact;
 	float m_flNormalImpact;
+};
+
+// Created by IVPhysics2::CreateIkSolver; every method forwards to the solver object the implementation owns.
+// The vectors and transforms are read from per-index arrays of that solver, the transform arguments are applied to them
+abstract_class IIkSolver
+{
+public:
+	virtual ~IIkSolver() {}
+
+	virtual int unk001() const = 0;
+	virtual int unk002( int nIndex ) const = 0;
+	virtual float unk003( int nIndex ) const = 0;
+
+	virtual Vector unk004( int nIndex ) const = 0;
+	virtual Vector unk005( int nIndex ) const = 0;
+	virtual Vector unk006( int nIndex, const CTransform &transform ) const = 0;
+	virtual Vector unk007( int nIndex ) const = 0;
+
+	virtual CTransform unk008( int nIndex ) const = 0;
+	virtual CTransform unk009( int nIndex, const CTransform &transform ) const = 0;
+
+	// Return the orientation of unk008 (unk011 combined with an argument) as a 16-byte class in one vector register on Linux
+	virtual void unk010( void *p ) = 0;
+	virtual void unk011( void *p ) = 0;
+
+	// Position of unk008
+	virtual Vector unk012( int nIndex ) const = 0;
+	virtual Vector unk013( int nIndex, const CTransform &transform ) const = 0;
+
+	virtual CTransform unk014( int nIndex ) const = 0;
+	virtual CTransform unk015( int nIndex, const CTransform &transform ) const = 0;
+
+	// Same as unk010 and unk011 for unk014
+	virtual void unk016( void *p ) = 0;
+	virtual void unk017( void *p ) = 0;
+
+	// Position of unk014
+	virtual Vector unk018( int nIndex ) const = 0;
+	virtual Vector unk019( int nIndex, const CTransform &transform ) const = 0;
+
+	virtual float unk020( int nIndex ) const = 0;
+	virtual float unk021( int nIndex ) const = 0;
+	virtual float unk022( int nIndex ) const = 0;
+
+	// Runs the solver for a number of iterations over a list of targets
+	virtual void unk023( void *p ) = 0;
+};
+
+// Reference counted through CSmartPtr; returned by IVPhysics2::CreateSerialStreamSnapshot
+abstract_class IPhysSerialStreamSnapshot
+{
+public:
+	virtual ~IPhysSerialStreamSnapshot() {}
+
+	// Size of the data unk002 writes
+	virtual uint32 unk001() const = 0;
+
+	// Writes a 0x1D0-byte header followed by the snapshot data and advances *ppBuffer
+	virtual void unk002( uint8 **ppBuffer ) = 0;
+
+	virtual void unk003() = 0;
+
+	// Empty in release builds
+	virtual void unk004() = 0;
+
+	// Returns a 20-byte class filled with zeros in release builds
+	virtual void unk005( void *p ) = 0;
+
+	// Returns 0 in release builds
+	virtual void *unk006() = 0;
+
+	// Returns an 8-byte class filled with zeros in release builds
+	virtual void unk007( void *p ) = 0;
+
+	// Copy the pointers of one of the recorded lists
+	virtual void unk008( int nType, CUtlVector< void * > *pOut ) const = 0;
+	virtual void unk009( int nType, CUtlVector< void * > *pOut ) const = 0;
+	virtual void unk010( CUtlVector< void * > *pOut ) const = 0;
+
+	// Return 0
+	virtual void *unk011() = 0;
+	virtual void *unk012( void *p ) = 0;
+
+	virtual void unk013( void *p ) = 0;
+
+	// Returns 0 in release builds
+	virtual void *unk014() = 0;
+
+	int AddRef() { return ++m_nRefCount; }
+	int Release()
+	{
+		int nRefCount = --m_nRefCount;
+		if ( nRefCount == 0 )
+			delete this;
+
+		return nRefCount;
+	}
+
+private:
+	CInterlockedInt m_nRefCount;
+};
+
+// Reference counted through CSmartPtr; returned by IVPhysics2::CreateDataDescConvertor
+abstract_class IDataDescConvertor : public CRefCounted<>
+{
 };
 
 abstract_class IVPhysics2 : public IAppSystem
