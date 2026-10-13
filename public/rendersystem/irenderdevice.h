@@ -18,6 +18,7 @@
 #include "bitmap/imageformat_declarations.h"
 #include "mathlib/vector.h"
 #include "resourcesystem/resourcehandle.h"
+#include "rendersystem/rendersystemtypes.h"
 #include "rendersystem/renderdevicetypes.h"
 
 #include <memory>
@@ -60,27 +61,12 @@ struct ShaderBindingTableCreateDesc_t;
 struct TextureResidencyInfo_t;
 struct TextureResidencyStats_t;
 struct Sheet_t;
-enum RenderMultisampleType_t : uint8;
 
-FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 FORWARD_DECLARE_HANDLE( OsSpecificWindowHandle_t );
-FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
-FORWARD_DECLARE_HANDLE( RenderShaderHandle_t );
 FORWARD_DECLARE_HANDLE( RenderQueryHandle_t );
 FORWARD_DECLARE_HANDLE( RsRasterizerStateHandle_t );
 FORWARD_DECLARE_HANDLE( RsDepthStencilStateHandle_t );
 FORWARD_DECLARE_HANDLE( RsBlendStateHandle_t );
-FORWARD_DECLARE_HANDLE( RenderBufferHandle_t );
-FORWARD_DECLARE_HANDLE( VertexBufferHandle_t );
-FORWARD_DECLARE_HANDLE( IndexBufferHandle_t );
-FORWARD_DECLARE_HANDLE( ConstantBufferHandle_t );
-FORWARD_DECLARE_HANDLE( SamplerStateHandle_t );
-FORWARD_DECLARE_HANDLE( PooledIndexBufferHandle_t );
-FORWARD_DECLARE_HANDLE( RenderDescriptorSetHandle_t );
-FORWARD_DECLARE_HANDLE( RenderBLASHandle_t );
-FORWARD_DECLARE_HANDLE( RenderTLASHandle_t );
-FORWARD_DECLARE_HANDLE( RenderRayTracePipelineHandle_t );
-FORWARD_DECLARE_HANDLE( RenderSemaphoreHandle_t );
 
 using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
 
