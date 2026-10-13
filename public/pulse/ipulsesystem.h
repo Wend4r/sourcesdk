@@ -160,6 +160,9 @@ public:
 
 	// Forwards a breakpoint add or remove to every listener.
 	virtual void NotifyBreakpointChanged( ResourceHandle_t hGraph, const void *pBreakpointDesc ) = 0;
+
+	// True when any listener's fifth method returns true; the engine ticks the server in parallel
+	// with the client (sv_tick_parallel_with_client) only while this returns false
 	virtual bool unk075() = 0;
 };
 
