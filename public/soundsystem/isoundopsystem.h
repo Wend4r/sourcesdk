@@ -135,7 +135,8 @@ public:
 	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) = 0;
 	// Case-insensitive substring match over the sound event names
 	virtual void FindSoundEvents( const char *pSubString, CUtlVector< CUtlString > &list ) = 0;
-	virtual void unk12() = 0;
+	// Builds the edit tree of the sound events, the prefix is prepended to every name
+	virtual void unk12( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) = 0;
 	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) = 0;
 	virtual void RemoveSoundEvent( const char *pSoundEventName ) = 0;
 	virtual void RemoveAllSoundEvents() = 0;
@@ -186,6 +187,8 @@ public:
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, CUtlString &sValue, int nIndex, bool bUnk ) = 0;
 	// Writes the value to pKV
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, KeyValues3 *pKV, int nIndex, bool bUnk ) = 0;
+	// unk53 and unk54 set and clear the flag that makes AddSoundEvent keep the sound events it replaces,
+	// unk55 puts the kept sound events back
 	virtual void unk53() = 0;
 	virtual void unk54() = 0;
 	virtual void unk55() = 0;
@@ -341,7 +344,7 @@ public:
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const override;
 	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) override;
 	virtual void FindSoundEvents( const char *pSubString, CUtlVector< CUtlString > &list ) override;
-	virtual void unk12() override;
+	virtual void unk12( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) override;
 	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) override;
 	virtual void RemoveSoundEvent( const char *pSoundEventName ) override;
 	virtual void RemoveAllSoundEvents() override;
@@ -417,7 +420,7 @@ public:
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const override;
 	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) override;
 	virtual void FindSoundEvents( const char *pSubString, CUtlVector< CUtlString > &list ) override;
-	virtual void unk12() override;
+	virtual void unk12( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) override;
 	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) override;
 	virtual void RemoveSoundEvent( const char *pSoundEventName ) override;
 	virtual void RemoveAllSoundEvents() override;
