@@ -301,6 +301,7 @@ public:
 	// String of the field of the sound event or of the library stack
 	virtual const char *unk083( SoundEventGuid_t guid, uint32 nFieldToken ) = 0;
 	virtual const char *unk083( HSOSLIBSTACKHASH hStack, uint32 nFieldToken ) = 0;
+	// Name of the library stack
 	virtual const char *unk085( HSOSLIBSTACKHASH hStack ) = 0;
 	virtual void unk086() = 0;
 	virtual bool unk087( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
