@@ -181,7 +181,8 @@ public:
 	virtual bool IsSpawnGroupAsyncLoaded( SpawnGroupHandle_t hSpawnGroup ) = 0;
 	virtual void *GetWorldSession() = 0;
 	virtual const char *GetSpawnGroupName( SpawnGroupHandle_t hSpawnGroup ) = 0;
-	virtual void StartChangeLevel() = 0;
+	// Returns the state that FinishChangeLevel takes
+	virtual CClientChangelevelState *StartChangeLevel() = 0;
 	virtual void FinishChangeLevel( CClientChangelevelState *pState ) = 0;
 	virtual bool IsChangelevelPending() const = 0;
 	virtual void GetAllLoadingSpawnGroups( CUtlVector< SpawnGroupHandle_t > *pSpawnGroups ) = 0;
