@@ -16,6 +16,7 @@
 #include "tier0/utlvector.h"
 #include "tier0/basetypes.h"
 #include "tier2/tier2.h"
+#include "entity2/entityindex.h"
 
 class CSoundEvent;
 class CSosOperatorStack;
@@ -261,7 +262,8 @@ public:
 	virtual float unk050( SoundEventGuid_t guid ) = 0;
 	virtual double unk051( SoundEventGuid_t guid ) = 0;
 	virtual double unk052( SoundEventGuid_t guid ) = 0;
-	virtual void unk053() = 0;
+	// Public field names of the update stack of the sound event
+	virtual void unk053( const char *pSoundEventName, CUtlVector< const char * > &list ) = 0;
 	virtual bool GetSoundEventParam( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int *pnCount ) = 0;
 	virtual bool GetSoundEventParam( SoundEventGuid_t guid, const char *pOperatorName, const char *pFieldName, CSosFieldData *pData, int *pnCount ) = 0;
 	virtual SOAtomicDataType_t unk056( SOFieldDataType_t nType ) = 0;
@@ -284,7 +286,9 @@ public:
 	virtual SOSRANDSEED unk067() = 0;
 	// Name of the sound event
 	virtual const char *unk068( SoundEventGuid_t guid ) = 0;
-	virtual void unk069() = 0;
+	// Picks an index up to nMax: nMode 1 next, 2 previous, 3 random, 4 random without repeats (pState holds a bit per index),
+	// 5 random by pWeights; for 1 and 2 pState holds the last index
+	virtual int unk069( CSosOperatorStack *pStack, uint8 *pState, int nMode, int nMax, CUtlVector< float > *pWeights ) = 0;
 	// Name of the update group
 	virtual const char *unk070( int8 nGroup ) = 0;
 	// Guids of the active sound events
@@ -293,7 +297,8 @@ public:
 	virtual void unk073( bool bUnk ) = 0;
 	virtual void *unk074( uint32 nUnk ) = 0;
 	virtual void unk075( int nUnk ) = 0;
-	virtual void unk076() = 0;
+	// Symbol of the vsnd name in the vsnd resource type manager, used as the value of SOFTYPE_VSND fields
+	virtual uint32 unk076( const char *pVsndName ) = 0;
 	virtual bool unk077( KeyValues *pKV, KeyValues3 *pKV3 ) = 0;
 	virtual bool unk078( const char *pName, KeyValues *pKV ) = 0;
 	// Writes the operator fields of the stack to pKV
@@ -308,18 +313,21 @@ public:
 	virtual const char *unk083( HSOSLIBSTACKHASH hStack, uint32 nFieldToken ) = 0;
 	// Name of the library stack
 	virtual const char *unk085( HSOSLIBSTACKHASH hStack ) = 0;
-	virtual void unk086() = 0;
+	// Source entity the sound event was started with
+	virtual CEntityIndex unk086( SoundEventGuid_t guid ) = 0;
 	virtual bool unk087( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool unk088( SoundEventGuid_t guid, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
 	// Random seed of the sound event
 	virtual SOSRANDSEED unk089( SoundEventGuid_t guid ) = 0;
 	// Voice layer the sound event was started on, -2 when it is not active
 	virtual int8 unk090( SoundEventGuid_t guid ) = 0;
-	virtual void unk091() = 0;
-	virtual void unk092() = 0;
+	// Guid of the sound event that started this one, and of the first sound event of that chain; zero for none
+	virtual SoundEventGuid_t unk091( SoundEventGuid_t guid ) = 0;
+	virtual SoundEventGuid_t unk092( SoundEventGuid_t guid ) = 0;
 	virtual void unk093() = 0;
-	virtual void unk094() = 0;
-	virtual void unk095() = 0;
+	// Count and element of a string list, ppList points to the list header
+	virtual int unk094( void **ppList ) = 0;
+	virtual const char *unk095( void **ppList, int nIndex ) = 0;
 	// Names of the fields of the sound event that have the type
 	virtual void unk096( const char *pSoundEventName, CUtlVector< const char * > &list, SOFieldDataType_t nType ) = 0;
 	// Non-zero makes StartSoundEvent and StartStack fail
