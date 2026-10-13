@@ -9,6 +9,7 @@
 #include "imaterial2.h"
 
 #include <appframework/iappsystem.h>
+#include <bitmap/imageformat_declarations.h>
 #include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
 #include <resourcefile/resourcetype.h>
@@ -27,6 +28,12 @@ class InfoForResourceTypeCTextureBase;
 struct RsStencilStateOverride_t;
 struct RsDepthBiasStateOverride_t;
 FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
+
+enum EGPUTextureCompressOptions_t : uint32
+{
+	GPU_COMPRESS_PERCEPTUAL_ERROR_METRIC = 0x1,
+	GPU_COMPRESS_ENDPOINT_OPTIMIZATION = 0x2,
+};
 
 abstract_class IMaterialSystem2Utils : public IAppSystem
 {
@@ -113,8 +120,8 @@ public:
 	virtual void GenerateMipMaps( IRenderContext *pRenderContext, void *pTexture ) = 0;
 
 	// Creates "<name>_intermediate_<n>.vtex" textures
-	virtual bool Unk_AllocateCompressionTexturesGPU( void *p ) = 0;
-	virtual bool Unk_CompressTextureGPU( void *p ) = 0;
+	virtual bool AllocateCompressionTexturesGPU( ImageFormat nFormat, int nWidth, int nHeight, int nNumMipLevels, const char *pDebugName, CStrongHandle< InfoForResourceTypeCTextureBase > *pCompressedOutputTexture, CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCTextureBase > > &intermediateOutputTextures ) = 0;
+	virtual bool CompressTextureGPU( EGPUTextureCompressOptions_t nOptions, IRenderContext *pRenderContext, CWeakHandle< InfoForResourceTypeCTextureBase > hSrcTexture, CWeakHandle< InfoForResourceTypeCTextureBase > hDestTexture, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCTextureBase > > &intermediateOutputTextures, int nNumMipLevels ) = 0;
 
 	virtual CBufferString unk060( ResourceHandle_t hMaterial, int nMode ) = 0;
 
