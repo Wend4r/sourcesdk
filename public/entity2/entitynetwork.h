@@ -299,7 +299,7 @@ public:
 	virtual bool CreateClientSideNetworkedEntity( const void *pUnk, Entity2Networkable_t *pNetworkable ) = 0;
 	// Client only: queues the networkable's entity for destruction, or for deferred deletion when
 	// bDeferred is set. Empty on the server.
-	virtual void Unk_DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
+	virtual void DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
 	virtual CUtlVector< ServerClass * > *GetClassList() = 0;
 };
 
