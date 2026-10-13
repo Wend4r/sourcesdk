@@ -141,8 +141,8 @@ public:
 
 	virtual void SimulateWorlds( IVPhysics2World **ppWorlds, int nWorldCount, float flTimeStep, int nSubsteps, bool bAllowThreading, void *pContext ) = 0;
 
-	// Steps the softbodies of all given worlds in parallel jobs
-	virtual void SimulateSoftbodies( IVPhysics2World **ppWorlds, int nWorldCount, float flTimeStep, int nUnknown ) = 0;
+	// Steps the softbodies of all given worlds in parallel jobs, nSubsteps times flSubstepTime each
+	virtual void SimulateSoftbodies( IVPhysics2World **ppWorlds, int nWorldCount, float flSubstepTime, int nSubsteps ) = 0;
 
 	// Locks every world and resets a set of its per-step arrays
 	virtual void unk018() = 0;
