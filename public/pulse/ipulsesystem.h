@@ -316,29 +316,36 @@ class CPulseSystem : public CTier3AppSystem< IPulseSystem >
 public:
 	struct AutoWakeCursor_t
 	{
-		uint8 m_pad000[ 0x20 ];
+		PulseGraphInstanceID_t m_nGraphInstanceID;
+		PulseCursorID_t m_nCursorID;
+		int32 m_nUnk008;
+		float m_flWakeTime;
+		PulseSymbol_t m_Clock;
 	};
 
-	struct ALIGN16 ScheduledGraphHookCall_t
+	struct ScheduledGraphHookCall_t
 	{
-		uint8 m_pad000[ 0x140 ];
-	} ALIGN16_POST;
+		PulseGraphInstanceID_t m_nGraphInstanceID;
+		PulseGraphHookCall_t m_Call;
+		float m_flCallTime;
+		PulseSymbol_t m_Clock;
+	};
 
 	// Added by AddListener
 	CUtlVector< void * > m_Listeners;
 
 	CUtlSymbolTableLarge m_Unk040;
 
-	// CPulseTypeManager
-	uint64 m_Unk0A8[ 6 ];
+	// CPulseTypeManager, the resource type manager of the graph definitions
+	uint64 m_TypeManager[ 6 ];
 
 	// Set by unk046
 	bool m_bUnk0D8;
 
 	bool m_bMinimalDefinitionLoadingEnabled;
 
-	// Incremented by AllocateGraphInstanceID
-	uint32 m_nUnk0DC;
+	// Incremented by AllocateGraphInstanceID, which returns the new value
+	uint32 m_nLastGraphInstanceID;
 
 	// Appended by the Queue*Event methods
 	CUtlVector< PulseSystemEventBase_t * > m_PendingEvents;
@@ -349,30 +356,26 @@ public:
 	// Appended by ScheduleGraphHookCall
 	CUtlVectorFixedGrowable< ScheduledGraphHookCall_t, 128 > m_ScheduledGraphHookCalls;
 
-	// CUtlHashtable with 24-byte entries, walked by CallGraphHookOnAllInstances
-	uint64 m_UnkB130[ 4 ];
+	// Per-graph data ( instances, breakpoints, user data ) keyed by the 64-bit hash of the graph resource name
+	CUtlHashtable< uint64, void * > m_GraphData;
 
-	// CUtlHashtable with 24-byte entries, walked by ForEachGraphInstance and the execution history methods
-	uint64 m_UnkB150[ 4 ];
+	CUtlHashtable< uint32, CBasePulseGraphInstance *, MurmurHash3IntFunctor > m_GraphInstances;
 
-	// Returned by GetTypeQueriesForScopes
-	void *m_pUnkB170;
+	// Allocated by the constructor, returned by GetTypeQueriesForScopes
+	CPulseDomainScopeLoader **m_ppDomainScopeLoaders;
 
-	CUtlHandleTable< void, 10 > *m_pOpaqueHandleTable;
+	CUtlHandleTable< void, 10 > *m_pWeakHandleTable;
 
-	// CUtlMap< PulseSymbol_t, IPulseBlackboardView *, int > filled by RegisterBlackboard and read by FindBlackboard
-	uint64 m_Blackboards[ 5 ];
+	CUtlMap< PulseSymbol_t, IPulseBlackboardView *, int > m_Blackboards;
+	CUtlMap< PulseSymbol_t, CReadOnlyBlackboardView *, int > m_ReadOnlyBlackboardViews;
 
-	// CUtlMap of the read-only blackboard views refreshed by UpdateReadOnlyBlackboardViews
-	uint64 m_UnkB1A8[ 5 ];
+	// Set when Init installs m_TypeManager, cleared when Shutdown removes it
+	bool m_bTypeManagerInstalled;
 
-	bool m_bUnkB1D0;
+	CUtlVector< IPulseCursorListener * > m_CursorStateListeners;
 
-	// Added by AddCursorStateListener
-	CUtlVector< void * > m_CursorStateListeners;
-
-	// Guards the graph instances
-	CAtomicMutex m_UnkB1F0;
+	// Guards m_GraphInstances and the graph instance id counter
+	CAtomicMutex m_GraphInstancesMutex;
 };
 
 #include "schemacompiler/schemaoff.h"
