@@ -47,8 +47,8 @@ public:
 	// Forward to the game client
 	virtual void UpdateProjectedTexture( const void *pInfo, void **ppTexture ) = 0;
 	virtual void DeleteProjectedTexture( void *pTexture ) = 0;
-	virtual void *Unk_UpdateDeferredLight( void *p ) = 0;
-	virtual void Unk_DeleteDeferredLight( void *p ) = 0;
+	virtual void *UpdateDeferredLight( void *p ) = 0;
+	virtual void DeleteDeferredLight( void *p ) = 0;
 	// Forward to game client methods that are not identified yet
 	virtual void unk039() = 0;
 	virtual void unk040() = 0;
@@ -66,8 +66,8 @@ public:
 	virtual bool unk051() = 0;
 	virtual void unk052() = 0;
 	virtual void unk053() = 0;
-	virtual void Unk_UpdateGlobalLightFromLightInfos( void *p ) = 0;
-	virtual bool Unk_GetGlobalLightParameters( void *p ) = 0;
+	virtual void UpdateGlobalLightFromLightInfos( void *p ) = 0;
+	virtual bool GetGlobalLightParameters( void *p ) = 0;
 	virtual void *GetEconItemSystem_Client() = 0;
 
 	// Forwards to the game server
