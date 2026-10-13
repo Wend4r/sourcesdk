@@ -26,6 +26,7 @@ class KeyValues;
 class ILoopModePrerequisiteRegistry;
 class CTransform;
 class IEntityReport;
+class CCompressedResourceManifest;
 
 abstract_class INetworkClientService : public IEngineService
 {
@@ -72,7 +73,7 @@ public:
 	// Off the main thread the message is queued and sent later
 	virtual bool SendNetMessage( CSplitScreenSlot nSlot, const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 
-	virtual void Unk_OnGameSessionManifestReceived( void *p ) = 0;
+	virtual void ReceivedServerInfo( const CCompressedResourceManifest &manifest ) = 0;
 	virtual void *GetGameSessionInitPrerequisites() = 0;
 
 	virtual void StartChangeLevel() = 0;
