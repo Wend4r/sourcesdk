@@ -55,16 +55,18 @@ public:
 class CPropertyEditorSystem : public CTier3AppSystem< IPropertyEditorSystem >
 {
 public:
-	CUtlVector< CQPropertyEditor * > m_vecUnk028;
+	// Editors made by CreatePropertyEditor
+	CUtlVector< CQPropertyEditor * > m_PropertyEditors;
 
 	// Attribute editor factories, indexed by the symbol of their name
-	CUtlVector< IPropertyAttributeEditorFactory * > m_vecUnk040;
-	CUtlSymbolTable m_unk058;
+	CUtlVector< IPropertyAttributeEditorFactory * > m_AttributeEditorFactories;
+	CUtlSymbolTable m_AttributeEditorFactoryNames;
 
 	// Custom command factories, indexed by the symbol of their name
-	CUtlVector< IPropertyCustomCommandFactory * > m_vecUnk0B8;
-	CUtlSymbolTable m_unk0D0;
+	CUtlVector< IPropertyCustomCommandFactory * > m_CustomCommandFactories;
+	CUtlSymbolTable m_CustomCommandFactoryNames;
 
+	// Returned by unk015
 	CUtlSymbolTableLarge m_unk130;
 };
 
