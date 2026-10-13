@@ -530,23 +530,26 @@ public:
 	CUtlVector< IPhysicsMotionController * > m_MotionControllers;
 
 	// Objects whose deletion is delayed; the count before each list is how many of its entries are ready
-	int m_nUnk0B0;
-	CUtlVector< void * > m_Unk0B8;
+	int m_nAggregatesReadyToDelete;
+	CUtlVector< IPhysAggregateInstance * > m_AggregatesToDelete;
 	IPhysicsWorldEventListener *m_pEventListener;
-	int m_nUnk0D8;
-	CUtlVector< void * > m_Unk0E0;
-	int m_nUnk0F8;
-	CUtlVector< void * > m_Unk100;
-	int m_nUnk118;
-	CUtlVector< void * > m_Unk120;
+	int m_nJointsReadyToDelete;
+	CUtlVector< IPhysicsJoint * > m_JointsToDelete;
+	int m_nBodiesReadyToDelete;
+	CUtlVector< IPhysicsBody * > m_BodiesToDelete;
+	int m_nShapesReadyToDelete;
+	CUtlVector< IPhysicsShape * > m_ShapesToDelete;
 
 	IPhysicsBody *m_pWorldReferenceBody;
 
 	// The job that BeginAsyncPostTickJobs queues
 	void *m_pAsyncPostTickJob;
 
-	bool m_bUnk148;
-	int m_nUnk14C;
+	// Set when a motion controller asks for the asynchronous update
+	bool m_bMotionControllersNeedAsyncUpdate;
+
+	// The step count whose results were collected last
+	int m_nResultsStepCount;
 	ThreadId_t m_nSimulationThreadId;
 };
 
