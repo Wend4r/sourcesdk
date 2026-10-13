@@ -36,17 +36,25 @@ class CThreadedJob;
 class CTransform;
 class CUtlBuffer;
 class IDemoMessageSink;
+class InfoForResourceTypeCTextureBase;
+class IToolObject;
 class ISceneView;
+class ISceneWorld;
 class InfoForResourceTypeCModel;
 class KeyValues;
 class QAngle;
 class Vector;
+class Vector4D;
 struct FlattenedSerializerSpewField_t;
+struct ParticleProjectedTextureInfo_t;
 struct RenderViewport_t;
 struct vrect_t;
 
 template < class T > class CWeakHandle;
 template < class T > class CStrongHandleCopyable;
+
+FORWARD_DECLARE_HANDLE( HDeferredLight );
+FORWARD_DECLARE_HANDLE( HProjectedTexture );
 
 // Identifies a sound area registered with the client
 class SoundAreaGuid_t
@@ -196,12 +204,12 @@ public:
 	virtual void PerformClientSpecificSetupForPlayerViews( ISceneView *pView, RenderViewport_t *pViewport, void *pUnk1, void *pUnk2 ) = 0;
 	virtual void *GetPlayerViewSetup( CSplitScreenSlot nSlot ) = 0;
 	virtual void GetBugReportLaunchURLParameters( KeyValues *pKV ) = 0;
-	// Creates the projected texture when *ppTexture is NULL
-	virtual void UpdateProjectedTexture( const void *pInfo, void **ppTexture ) = 0;
-	// Calls the deleting destructor of pTexture
-	virtual void DeleteProjectedTexture( void *pTexture ) = 0;
-	virtual void *UpdateDeferredLight( void *p ) = 0;
-	virtual void DeleteDeferredLight( void *p ) = 0;
+	// Creates the projected texture when hTexture is NULL
+	virtual void UpdateProjectedTexture( const ParticleProjectedTextureInfo_t &info, HProjectedTexture &hTexture ) = 0;
+	// Calls the deleting destructor of hTexture
+	virtual void DeleteProjectedTexture( HProjectedTexture hTexture ) = 0;
+	virtual void *UpdateDeferredLight( ISceneWorld *pSceneWorld, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, Vector &vecUnk1, float flUnk1, Vector4D &vecUnk2, float flUnk2, float flUnk3, float flUnk4, Vector vecUnk3, float flUnk5, float flUnk6, float flUnk7, float flUnk8, float flUnk9, HDeferredLight &hLight ) = 0;
+	virtual void DeleteDeferredLight( HDeferredLight hLight ) = 0;
 	virtual void unk107( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 	// Forwards to the scene system
 	virtual void unk108() = 0;
@@ -225,8 +233,8 @@ public:
 	virtual void unk122() = 0;
 	virtual bool unk123() = 0;
 	virtual void UpdateWhenNotInGame( float flFrameTime ) = 0;
-	virtual void UpdateGlobalLightFromLightInfos( void *p ) = 0;
-	virtual bool GetGlobalLightParameters( void *p ) = 0;
+	virtual void UpdateGlobalLightFromLightInfos( IToolObject *pUnk, const CUtlVector< IToolObject * > &lightInfos, const Vector &vecUnk, int nUnk, float flUnk1, float flUnk2, float flUnk3 ) = 0;
+	virtual bool GetGlobalLightParameters( int *pnUnk, float *pflUnk1, float *pflUnk2 ) = 0;
 	virtual void OnReceivedUpdatedServerPeerList( void *pPeerList, size_t nPeerCount ) = 0;
 	virtual void UpdateEventListeners() = 0;
 	virtual void *GetEconItemSystem() = 0;
