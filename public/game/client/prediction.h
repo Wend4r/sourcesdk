@@ -8,8 +8,12 @@
 #include <globalvars_base.h>
 #include <iprediction.h>
 
+#include <entityhandle.h>
 #include <tier0/platform.h>
+#include <tier0/utldict.h>
+#include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
+#include <tier1/utlhashmaplarge.h>
 #include <tier4/tier4.h>
 #include <vconcomm/ivconcomm.h>
 
@@ -97,8 +101,17 @@ public:
 	CUtlVector< PredictionSplit_t > m_Splits;
 	CGlobalVarsBase m_SavedVars;
 
+public:
+	// Set while ReinitPredictables activates prediction on the client entities
+	bool m_bInReinitPredictables;
+	// Set while the predictables of a split screen slot are shut down
+	bool m_bInShutdownPredictables;
+	// Prediction state seen by the last CheckPredictConvar, see Source 1 CPrediction
+	bool m_bOldCLPredictValue;
+
 private:
-	uint8 m_nUnknown00C8[4];
+	// Read by the client check for whether prediction is enabled; never written outside the constructor
+	uint8 m_nUnknown00CB[1];
 
 public:
 	// "enable" key of the prediction data received over VConComm
@@ -126,6 +139,7 @@ public:
 	float m_flFinalPredictedTickFraction;
 
 private:
+	// Only cleared together with the final predicted tick, never read
 	uint8 m_nUnknown00E4[8];
 
 public:
@@ -134,21 +148,56 @@ public:
 
 	bool m_bPredictionStateChanged;
 
+	// Field lookup of the pawn's "m_vecOrigin" used by CheckError ( cl_showerror ), see Source 1 CPrediction
+	bool m_bPlayerOriginTypedescriptionSearched;
+
 private:
-	uint8 m_nUnknown00F1[27];
+	uint8 m_nUnknown00F2[6];
 
 public:
+	// Pawn the origin field was looked up on; a different pawn restarts the lookup
+	CEntityInstance *m_pPlayerOriginTypedescriptionEntity;
+	// Field description returned by the lookup (its int at +52 is a byte offset into the predicted frame)
+	const void *m_pPlayerOriginTypeDescription;
+	// Byte offset returned together with the field description
+	int m_nPlayerOriginTypeDescriptionOffset;
+
 	int m_nPredictedTickBase;
 
-private:
-	uint8 m_nUnknown0110[8];
+	// String table sent to the server as "global_strings" of the prediction report
+	struct GlobalStrings_t
+	{
+		CUtlVector< CUtlString > m_Strings;
+		// Index of each string in m_Strings
+		CUtlDict< int > m_StringIndices;
+	};
 
-public:
-	// "highest_string" key of the prediction data received over VConComm
+	GlobalStrings_t *m_pGlobalStrings;
+
+	// "highest_string" key of the prediction data received over VConComm,
+	// sent back as "global_start_index" of the prediction report
 	int m_nHighestString;
 
+	// Lookup key of m_ReportedEntities while the report is built
+	CEntityHandle m_hReportEntity;
+
+	// "report_counter" of the prediction report, incremented after the post network data update
+	int m_nReportCounter;
+	// "reset" of the prediction report, set when the server asks for strings past the table
+	bool m_bReportReset;
+
 private:
-	uint8 m_nUnknown011C[100];
+	uint8 m_nUnknown0125[3];
+
+public:
+	// Per entity report state keyed by entity handle, each value owns a hash table of 80-byte field records ("entities")
+	CUtlHashMap< int, void * > m_ReportedEntities;
+
+	// Set when predictables must be reinitialized, consumed by CheckReinitPredictables
+	bool m_bReinitPredictables;
+
+private:
+	uint8 m_nUnknown0179[7];
 };
 
 #endif // PREDICTION_H
