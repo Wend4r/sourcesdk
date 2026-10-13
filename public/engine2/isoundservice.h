@@ -16,8 +16,35 @@
 class CAudioState;
 class IAudioInputStream;
 class IVoiceTarget;
-struct VoiceRecordingDescription_t;
-struct VoiceRecordingLevel_t;
+
+//-----------------------------------------------------------------------------
+// One block of encoded voice data (the recording side fills it for every
+// group of up to four 10 ms Opus frames)
+//-----------------------------------------------------------------------------
+struct VoiceRecordingDescription_t
+{
+	int m_nUnk00;
+	int m_nSampleRate;
+	int m_nSequence;
+	int m_nOffset;
+	const char *m_pszUnk10;
+	int m_nFrameCount;
+	int m_nFrameEnds[ 4 ];
+	float m_flUnk2C;
+};
+
+//-----------------------------------------------------------------------------
+// Level of a voice stream (GetNetworkedVoiceLevel scales a 16-bit level to 0..1)
+//-----------------------------------------------------------------------------
+struct VoiceRecordingLevel_t
+{
+	float m_flLevel;
+	int m_nLevel;
+	int m_nMaxLevel;
+	bool m_bUnk0C;
+	bool m_bUnk0D;
+	float m_flUnk10;
+};
 
 abstract_class ISoundService : public IEngineService
 {
