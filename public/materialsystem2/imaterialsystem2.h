@@ -112,7 +112,8 @@ public:
 
 	virtual void unk042( int nCount, IMaterial2 *const *ppMaterials, const uint16 *pValues ) = 0;
 
-	virtual HMaterialWeak unk043( int nMaterialId ) = 0;
+	// Loaded material whose unique id (CMaterial2::m_nUniqueId) is nUniqueId
+	virtual HMaterialWeak unk043( uint32 nUniqueId ) = 0;
 
 	// "pc" or "vulkan" depending on the render device
 	virtual void unk044( CUtlString &sName ) = 0;
@@ -120,6 +121,7 @@ public:
 	// 2 when rendering through Vulkan, 0 otherwise
 	virtual int unk045() = 0;
 
+	// Sets CMaterialSystem2::m_bUnk2C0 and returns its previous value
 	virtual bool unk046( bool bValue ) = 0;
 
 	virtual void AddMaterialParamChangedListener( void *pListener ) = 0;
