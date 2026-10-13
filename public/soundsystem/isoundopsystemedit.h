@@ -21,12 +21,12 @@
 
 class CKV3MemberName;
 class CSosOperatorSystem;
-class CSoundMixGroupSystem;
 class CUtlString;
 class CUtlSymbolTable;
 class KeyValues;
 class KeyValues3;
 struct ResourceBindingBase_t;
+struct grouprule_t;
 
 schema enum SosEditItemType_t
 {
@@ -55,6 +55,56 @@ schema struct SelectedEditItemInfo_t
 	DECLARE_SCHEMA_DATA_CLASS( SelectedEditItemInfo_t );
 
 	CUtlVector< SosEditItemInfo_t > m_EditItems;
+};
+
+enum MXRMixGroupFields_t
+{
+	MXR_MIXGROUP_NONE = 0,
+	MXR_MIXGROUP_VOL,
+	MXR_MIXGROUP_LEVEL,
+	MXR_MIXGROUP_DSP,
+	MXR_MIXGROUP_SOLO,
+	MXR_MIXGROUP_MUTE,
+};
+
+// Sound mixers, mix layers and mix groups of the sound system (128 mix groups, 32 mix layers)
+abstract_class ISoundMixGroupSystem
+{
+public:
+	virtual const char *GetCurrentSoundMixer() = 0;
+	virtual void SetCurrentSoundMixer( const char *pszSoundMixer ) = 0;
+	virtual void SetMixGroupOfMixLayer( int nMixGroupIndex, int nMixLayerIndex, MXRMixGroupFields_t nMixGroupField, float flValue ) = 0;
+	// Adds and removes an entry of a tree keyed by nKey that holds flValue and the eight mix group ids of pMixGroupIds,
+	// the ducker update reads it
+	virtual void unk003( int nKey, float flValue, const int *pMixGroupIds ) = 0;
+	virtual void unk004( int nKey ) = 0;
+	// Runs at most at the update rate of its convar
+	virtual void UpdateAllDuckerVolumes( float flFrameTime ) = 0;
+	// Mix groups the current sound mixer sets
+	virtual void GetMixGroupNames( CUtlVector< CUtlString > &list ) = 0;
+	// Lowest duck volume of the mix groups, pMixGroupIds holds eight ids terminated by -1
+	virtual void GetDuckVolume( const int *pMixGroupIds, float *pflVolume ) = 0;
+	// Fills the eight mix group ids of the rules that match the sound name and the entity class name
+	virtual void GetMixGroupsFromSoundSource( int *pMixGroupIds, const char *pszSoundName, const char *pszClassName, bool bLocalPlayer ) = 0;
+	// Fills ten floats: the values of the mix group in the current sound mixer and its mix layers
+	virtual void GetValuesFromMixGroupIndex( float *pflValues, int nMixGroupIndex ) = 0;
+	virtual grouprule_t *GetMixGroupRule( int nMixGroupId ) = 0;
+	// -1 when no rule has the name; GetMixgroupFromName also warns
+	virtual int GetMixGroupIdFromName( const char *pszGroupName ) = 0;
+	virtual int GetMixLayerIndexFromName( const char *pszMixLayerName ) = 0;
+	virtual void SetMixLayerLevel( int nIndex, float flLevel ) = 0;
+	virtual int GetMixgroupFromName( const char *pszGroupName ) = 0;
+	virtual float GetMixLayerLevel( int nIndex ) = 0;
+	// Three floats and the 16-bit flag of the rule of the mix group
+	virtual void unk016( int nMixGroupId, void *pValues ) = 0;
+	// pflValues holds the volume, level, dsp, solo and mute of the mix group
+	virtual void SetMixGroupOfSoundMixer( const char *pszSoundMixer, int nMixGroupIndex, const float *pflValues ) = 0;
+	// Directory name of the rule of the mix group
+	virtual void GetMixGroupDirName( const char *pszGroupName, CUtlString &sDirName ) = 0;
+};
+
+class CSoundMixGroupSystem : public ISoundMixGroupSystem
+{
 };
 
 abstract_class ISoundOpSystemEdit : public IAppSystem
