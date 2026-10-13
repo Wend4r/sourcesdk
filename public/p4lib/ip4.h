@@ -12,6 +12,7 @@
 
 #include "tier0/utlsymbol.h"
 #include "tier0/utlsymbollarge.h"
+#include "tier0/bufferstring.h"
 #include "tier0/utlvector.h"
 #include "tier0/utlstring.h"
 #include "appframework/iappsystem.h"
@@ -106,7 +107,9 @@ public:
 	virtual P4Client_t &GetActiveClient() = 0;
 	virtual void SetActiveClient( const char *pClientName ) = 0;
 	virtual void RefreshActiveClient() = 0;
-	virtual void unk017() = 0;
+
+	// Translates the path; the result is shown with p4v history
+	virtual void unk017( CBufferString *pResult, const char *pFullPath ) = 0;
 
 	virtual CUtlVector< P4File_t > &GetFileList( const char *pPath, bool bUnknown ) = 0;
 
@@ -121,6 +124,8 @@ public:
 
 	// Return persistent containers by reference
 	virtual void *unk023() = 0;
+
+	// Container of 24-byte changelist entries: the number at +0, the description as a CUtlSymbol at +22
 	virtual void *unk024() = 0;
 
 	virtual void unk025( bool bUnknown ) = 0;
@@ -134,7 +139,7 @@ public:
 	// Only called for files that are in perforce
 	virtual bool OpenFileForDelete( const char *pFullPath ) = 0;
 
-	// The local backend copies pSrcPath to pDstPath
+	// Callers open a file for move with it; the local backend copies pSrcPath to pDstPath
 	virtual bool unk030( const char *pSrcPath, const char *pDstPath, int nUnknown1, int nUnknown2 ) = 0;
 	virtual bool unk031() = 0;
 
@@ -151,18 +156,23 @@ public:
 	// file checkin/checkout for multiple files
 	virtual bool OpenFilesForAdd( int nCount, const char **ppFullPathList ) = 0;
 	virtual bool OpenFilesForEdit( int nCount, const char **ppFullPathList ) = 0;
-	virtual bool OpenFilesForDelete( void *p ) = 0;
-	virtual bool unk039() = 0;
-	virtual bool unk040() = 0;
+	virtual bool OpenFilesForDelete( int nCount, const char **ppFullPathList ) = 0;
+
+	// submit/revert for multiple files
+	virtual bool SubmitFiles( int nCount, const char **ppFullPathList, const char *pDescription ) = 0;
+	virtual bool RevertFiles( int nCount, const char **ppFullPathList ) = 0;
+
 	virtual bool unk041() = 0;
+
+	// Used to revert the files that are unchanged
 	virtual bool unk042( const char *pFullPath ) = 0;
 
 	virtual bool IsFileInPerforce( const char *pFullPath ) = 0;
 	virtual bool unk044() = 0;
 	virtual bool unk045( const char *pDepotPath ) = 0;
 
-	// Zero lets the callers open the file for delete
-	virtual int unk046( const char *pFullPath ) = 0;
+	// Get the perforce file state
+	virtual P4FileState_t GetFileState( const char *pFullPath ) = 0;
 	virtual void *unk047() = 0;
 
 	// Gets a string for a symbol
@@ -172,10 +182,12 @@ public:
 	// trivially copyable; the reference keeps that calling convention with the SDK type
 	virtual const char *String( const CUtlSymbolLarge &s ) const = 0;
 
-	virtual bool GetClientSpecForFile( const char *pFullPath, char *pClientSpec, int nMaxLen ) = 0;
-	virtual bool GetClientSpecForDirectory( const char *pFullPathDir, char *pClientSpec, int nMaxLen ) = 0;
-	virtual bool GetClientSpecForPath( const char *pPathId, char *pClientSpec, int nMaxLen ) = 0;
+	// Return the clientspec and the server port to use for the file, directory or filesystem path ID
+	virtual bool GetClientSpecForFile( const char *pFullPath, CBufferString *pClientSpec, CBufferString *pPort ) = 0;
+	virtual bool GetClientSpecForDirectory( const char *pFullPathDir, CBufferString *pClientSpec, CBufferString *pPort ) = 0;
+	virtual bool GetClientSpecForPath( const char *pPathId, CBufferString *pClientSpec, CBufferString *pPort ) = 0;
 
+	// False shows the server as disconnected
 	virtual bool unk053() = 0;
 	virtual bool unk054() = 0;
 	virtual bool unk055() = 0;
@@ -185,10 +197,17 @@ public:
 	// Retrieves the last error from the last op (which is likely to span multiple lines)
 	virtual const char *GetLastError() = 0;
 	virtual void unk058() = 0;
-	virtual void *unk059() = 0;
-	virtual bool unk060() = 0;
 
-	virtual bool unk061( const char *pFullPath, int nUnknown1, int nUnknown2, int nUnknown3 ) = 0;
+	// Creates a changelist and returns its number, negative on failure
+	virtual int unk059( const char *pDescription ) = 0;
+
+	// Sets the description of the changelist
+	virtual bool unk060( int nChangelist, const char *pDescription ) = 0;
+
+	// Opens the file in the changelist; the local backend opens it for edit
+	virtual bool unk061( const char *pFullPath, int *pChangelist, int nUnknown1, int nUnknown2 ) = 0;
+
+	// True while working disconnected
 	virtual bool unk062() = 0;
 
 	virtual bool unk063( const char *pSrcPath, const char *pDstPath ) = 0;
@@ -197,7 +216,8 @@ public:
 	virtual void unk065() = 0;
 	virtual void unk066( bool bUnknown ) = 0;
 	virtual void *unk067() = 0;
-	virtual void *unk068() = 0;
+
+	virtual int GetCounterValue( const char *pCounterName ) = 0;
 	virtual void *unk069() = 0;
 	virtual bool unk070() = 0;
 	virtual bool unk071() = 0;
