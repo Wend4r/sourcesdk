@@ -22,6 +22,7 @@ class IVPhysics2World;
 class CRnSoftbody;
 class CFeModel;
 class CUtlBuffer;
+class CBufferString;
 
 struct RnCollisionAttr_t;
 struct SetNodePositionsParams_t;
@@ -234,6 +235,95 @@ class CPhysicsSoftbody : public IPhysicsSoftbody
 public:
 	CRnSoftbody *m_pSoftbody;
 	void *m_pUserData[ 2 ];
+};
+
+// Function table operating on the softbody it is bound to
+abstract_class IFnPhysicsSoftbody
+{
+public:
+	virtual void unk000( IPhysicsSoftbody *pSoftbody ) = 0;
+	virtual IPhysicsSoftbody *unk001() const = 0;
+	virtual void unk002( CRnSoftbody *pSoftbody ) = 0;
+	virtual CRnSoftbody *unk003() const = 0;
+
+	// Appends the non-default cloth settings
+	virtual void unk004( CBufferString *pDescription ) const = 0;
+
+	// Empty in release builds
+	virtual void unk005() = 0;
+
+	// Returns a zeroed struct by value; the type is not recovered
+	virtual void unk006( void *pResult ) const = 0;
+
+	virtual void unk007( uint nUnknown, bool bUnknown ) = 0;
+
+	// Copies the per node vectors into an aligned array
+	virtual void unk008( VectorAligned *pOut ) const = 0;
+
+	virtual void unk009( int nValue ) = 0;
+	virtual void unk010( int *pUnknown, const void *pUnknown2, const void *pUnknown3 ) = 0;
+	virtual void unk011( void *pUnknown, float flUnknown ) = 0;
+
+	// Empty in release builds
+	virtual void unk012() = 0;
+
+	virtual void unk013( int8 nValue ) = 0;
+	virtual int8 unk014() const = 0;
+	virtual void unk015( int8 nValue ) = 0;
+	virtual int8 unk016() const = 0;
+	virtual void unk017( uint8 nValue ) = 0;
+	virtual uint8 unk018() const = 0;
+
+	virtual void unk019( bool bEnable ) = 0;
+	virtual void unk020( uint8 nUnknown ) = 0;
+	virtual bool unk021() const = 0;
+	virtual void unk022( void *pUnknown ) = 0;
+
+	// Active state, false without a softbody
+	virtual bool unk023() const = 0;
+
+	virtual void unk024( int nValue ) = 0;
+
+	// Empty in release builds
+	virtual void unk025() = 0;
+	virtual int unk026() const = 0;
+
+	// Appends a one line description of the softbody and its state
+	virtual void unk027( CUtlString *pDescription ) const = 0;
+
+	// Index of the softbody in its world, -1 without a softbody
+	virtual int unk028() const = 0;
+
+	virtual uint unk029() const = 0;
+	virtual void unk030( bool bUnknown ) = 0;
+	virtual uint unk031() const = 0;
+	virtual int unk032() const = 0;
+	virtual int unk033() const = 0;
+	virtual void unk034( int nIndex, void *pUnknown ) = 0;
+	virtual void unk035( float flValue ) = 0;
+	virtual void unk036( bool bEnable ) = 0;
+
+	// Empty in release builds
+	virtual void unk037() = 0;
+	virtual void unk038() = 0;
+
+	virtual AABB_t unk039() const = 0;
+
+	// Softbodies linked to this one
+	virtual int unk040() const = 0;
+	virtual IPhysicsSoftbody *unk041( int nIndex ) const = 0;
+	virtual void unk042() = 0;
+
+	virtual int unk043() const = 0;
+	virtual void unk044( void *pUnknown ) = 0;
+	virtual void unk045() = 0;
+
+	// Moves the nodes and the transforms by an offset
+	virtual void unk046( fltx4 vDelta ) = 0;
+	virtual bool unk047( const VectorAligned *pUnknown, fltx4 vUnknown ) = 0;
+
+	// Empty in release builds
+	virtual void unk048() = 0;
 };
 
 #endif // IPHYSICSSOFTBODY_H
