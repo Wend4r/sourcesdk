@@ -37,11 +37,12 @@ class ClientClass;
 class CCommand;
 class CEngineGotvSyncPacket;
 class CEntityInstance;
-class CSceneObject;
 class CGameTrace;
 class CGlobalVarsBase;
+class CRenderAttributes;
 class CSVCMsg_HltvReplay_t;
 class CSVCMsg_UserCommands_t;
+class CSceneObject;
 class CSteamID;
 class CThreadedJob;
 class CTransform;
@@ -69,6 +70,7 @@ struct LightDesc_t;
 struct matrix3x4_t;
 class matrix3x4a_t;
 struct ParticleProjectedTextureInfo_t;
+struct PipelineRenderTargetInfo_t;
 struct RenderViewport_t;
 struct RnQueryAttr_t;
 struct vrect_t;
@@ -241,7 +243,7 @@ public:
 	virtual bool FormatSerializerFieldValue( CEntityIndex nEntityIndex, FlattenedSerializerSpewField_t &field ) = 0;
 
 	// pView is the "Player %d" view the engine adds through ISceneSystem::AddView()
-	virtual void PerformClientSpecificSetupForPlayerViews( ISceneView *pView, RenderViewport_t *pViewport, void *pUnk1, void *pUnk2 ) = 0;
+	virtual void PerformClientSpecificSetupForPlayerViews( ISceneView *pView, RenderViewport_t *pViewport, const PipelineRenderTargetInfo_t &info, CRenderAttributes *pAttributes ) = 0;
 	virtual void *GetPlayerViewSetup( CSplitScreenSlot nSlot ) = 0;
 	virtual void GetBugReportLaunchURLParameters( KeyValues *pKV ) = 0;
 	// Creates the projected texture when hTexture is NULL
@@ -305,8 +307,9 @@ public:
 	virtual CConcreteEntityList *unk140() = 0;
 	// Returns the CToolClientSimulationAPI singleton
 	virtual IToolClientSimulationAPI *GetToolClientSimulationAPI() = 0;
-	virtual void unk142() = 0;
-	virtual void unk143() = 0;
+	// The engine render view setup calls them before PerformClientSpecificSetupForPlayerViews(), the first one with the same attributes
+	virtual void unk142( CRenderAttributes *pAttributes ) = 0;
+	virtual void unk143( void *pUnk ) = 0;
 	virtual bool unk144() = 0;
 	virtual void *unk145() = 0;
 	virtual void *unk146() = 0;
