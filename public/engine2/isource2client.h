@@ -44,6 +44,7 @@ class CThreadedJob;
 class CTransform;
 class CUtlBuffer;
 class IDemoMessageSink;
+class InstantReplayMessage_t;
 class IEntityReport;
 class INetworkFieldChangedEventQueue;
 class InfoForResourceTypeCTextureBase;
@@ -126,7 +127,8 @@ public:
 	// Forward to the network classes of the client entity system
 	virtual bool GetEntity2Networkable( CEntityIndex nEntityIndex, Entity2Networkable_t &networkable ) = 0;
 	virtual void unk030( void *pUnk1, void *pUnk2 ) = 0;
-	virtual void unk031( void *pUnk, bool bUnk ) = 0;
+	// Queues the entity handle with a time when bUnk is set and the entity qualifies, otherwise forwards to the network classes
+	virtual void unk031( Entity2Networkable_t *pNetworkable, bool bUnk ) = 0;
 	virtual INetworkFieldChangedEventQueue *GetNetworkFieldChangeCallbackQueue() = 0;
 	// Called with 0 and then with 1 while the engine processes packet entities
 	virtual void NotifyShouldTransmit( IEntityReport *pReport, CBitVec< 16384 > *pTransmitBits, NotifyShouldTransmitType_t nType ) = 0;
@@ -185,7 +187,8 @@ public:
 	virtual void OnDemoSkip( int nPlaybackTick, int nSkipToTick, bool bInstantReplay ) = 0;
 	// Asked by the demo player for each message removed while skipping
 	virtual bool ShouldNopCmdDuringDemoSkip( int nCmd ) = 0;
-	virtual void InitInstantReplayData( void *pUnk, int nUnk ) = 0;
+	// Serializes the message into a new entry of the instant replay data
+	virtual void InitInstantReplayData( InstantReplayMessage_t *pMessage, int nUnk ) = 0;
 	virtual void ClearInstantReplayData() = 0;
 	virtual bool UpdateProgressBar( float flProgress, const char *pszDescription ) = 0;
 	virtual bool unk075() = 0;
