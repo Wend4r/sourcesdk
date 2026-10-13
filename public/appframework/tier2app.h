@@ -113,9 +113,11 @@ public:
 	CUtlString m_LogFilename;
 	CUtlString m_LogFileSuffix;
 	bool m_bLogToFile;
-	LoggingFileHandle_t m_bLogFileHandle;
+	// Passed to the log file listener when the log file is opened
+	int m_nLogFileFlags;
 	CFileLoggingListener m_LogToFileListener;
-	void ( *m_pfnUnk1160 )();
+	// Called once the search paths are set up, before the startup memory warnings are read
+	void ( *m_pfnAddSearchPaths )();
 };
 
 #endif // TIER2APP_H
