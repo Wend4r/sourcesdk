@@ -314,7 +314,8 @@ public:
 	virtual void unk093() = 0;
 	virtual void unk094() = 0;
 	virtual void unk095() = 0;
-	virtual void unk096() = 0;
+	// Names of the fields of the sound event that have the type
+	virtual void unk096( const char *pSoundEventName, CUtlVector< const char * > &list, SOFieldDataType_t nType ) = 0;
 	// Non-zero makes StartSoundEvent and StartStack fail
 	virtual void unk097( int nUnk ) = 0;
 	// Locks and unlocks the operator system
