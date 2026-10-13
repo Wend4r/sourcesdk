@@ -16,7 +16,6 @@
 #include "tier2_logging.h"
 
 struct ResourceManifestDesc_t;
-class KeyValues3;
 
 class IRenderDeviceSetup
 {
@@ -69,33 +68,6 @@ class CTier2Application : public CTier1Application
 public:
 	CAppSystemDict* m_pDict;
 	int m_nAppTier2LibraryConnects;
-};
-
-class CTier2AppSystemDict : public CTier1AppSystemDict
-{
-public:
-	CUtlStringMap<int> m_addonRefcounts;
-	CUtlStringMap<KeyValues3 *> m_addonInfo;
-	KeyValues *m_pKeyValues;
-	CUtlLeanVector< void * > m_StartupManifests;
-	int m_nStartupManifestSuppressionCount;
-	bool m_bStaleStartupResources;
-	bool m_bUseModPathBinDir;
-	bool m_bLibrariesConnected;
-	bool m_bEnsureToolStartupManifests;
-	bool m_bEnsureVRStartupManifests;
-	bool m_bEnsureGameStartupManifests;
-	bool m_bEnsureConsoleStartupManifests;
-	bool m_bAddonsOnRestricted;
-	CInterlockedInt m_nAllowAddonChanges;
-	CUtlString m_addonToRestrictTo;
-	IUGCAddonPathResolver *m_pUGCAddonPathResolver;
-	CUtlString m_LogFilename;
-	CUtlString m_LogFileSuffix;
-	bool m_bLogToFile;
-	LoggingFileHandle_t m_bLogFileHandle;
-	CFileLoggingListener m_LogToFileListener;
-	void ( *m_pfnUnk1160 )();
 };
 
 //-----------------------------------------------------------------------------
