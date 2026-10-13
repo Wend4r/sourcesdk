@@ -29,12 +29,14 @@ public:
 	virtual void *unk013( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 	virtual void *CalculateSpecialDependencyFingerprint( void *pResult, void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 
-	virtual const char *unk015( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData, CBufferString *pOut ) = 0;
+	// The compiler's string for the special dependency in pOut; without such a compiler pOut is the
+	// dependency itself
+	virtual const char *GetSpecialDependencyString( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData, CBufferString *pOut ) = 0;
 
 	virtual void *CalculateSpecialInputDependencyFingerprint( void *pResult, void *pUnk1, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, void *pUnk2 ) = 0;
 
-	// Same as unk015 for a special input dependency
-	virtual const char *unk017( void *pUnk, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, CBufferString *pOut ) = 0;
+	// Same as GetSpecialDependencyString for a special input dependency
+	virtual const char *GetSpecialInputDependencyString( void *pUnk, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, CBufferString *pOut ) = 0;
 
 	virtual void InstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
