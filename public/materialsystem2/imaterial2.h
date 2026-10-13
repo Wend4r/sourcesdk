@@ -11,11 +11,12 @@
 #include <mathlib/vector4d.h>
 #include <tier0/platform.h>
 #include <tier0/utlsymbollarge.h>
+#include <tier0/utlleanvector.h>
+#include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
 #include "materialsystem2/material_resource_data.h"
 
 class CBufferString;
-class CUtlString;
 class CRenderAttributes;
 class IMaterialMode;
 class InfoForResourceTypeCTextureBase;
@@ -40,8 +41,8 @@ COMPILE_TIME_ASSERT( sizeof( MaterialParam_t ) == 64 );
 // virtual destructor in slot 0 - GetName() owns it; the destructor is the
 // last slot.
 //
-// Only the field offsets marked below are verified, and the total size of the
-// class is NOT verified.
+// The data members belong to the implementation (CMaterial2), their offsets
+// are verified against it.
 //-----------------------------------------------------------------------------
 abstract_class IMaterial2
 {
@@ -55,7 +56,10 @@ public:
 	virtual uint64 GetSimilarityKey() = 0;
 	virtual bool IsLoaded() = 0;
 	virtual IMaterialMode *GetMode( const CUtlStringToken &mode ) = 0;
-	virtual void *unk006( const CUtlStringToken &mode ) = 0;
+
+	// Material of the mode, this material when it has no such mode
+	virtual IMaterial2 *unk006( const CUtlStringToken &mode ) = 0;
+
 	virtual const CRenderAttributes *GetAttributes() = 0;
 	virtual void unk008() = 0;
 	virtual bool GetBoolAttribute( bool *pValue, CUtlStringToken name ) = 0;
@@ -78,9 +82,9 @@ public:
 	virtual bool OverrideTextureParam( const char *pName, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture ) = 0;
 
 	virtual uint32 GetShaderStateOverriddenByMaterial() = 0;
-	virtual void *unk026() = 0;
+	virtual const CUtlLeanVector< CUtlString > *unk026() = 0;
 	virtual void *unk027( const CUtlStringToken &mode, int nShaderType ) = 0;
-	virtual void unk028() = 0;
+	virtual CWeakHandleBase unk028() = 0;
 
 	virtual void EnterOverrideScope() = 0;
 
@@ -93,15 +97,36 @@ public:
 	virtual ResourceHandle_t *GetTextureParam( ResourceHandle_t *pOut, const char *pName ) = 0;
 	virtual Vector4D *GetVecParam( Vector4D *pOut, const char *pName, const Vector4D *pFallback ) = 0;
 	virtual bool unk036() = 0;
-	virtual void unk037() = 0;
-	virtual bool unk038() = 0;
+
+	// Updates the constants of every mode from pAttributes
+	virtual void unk037( const void *p, const CRenderAttributes *pAttributes ) = 0;
+
+	// Value of the static combo pName of the first loaded mode
+	virtual bool unk038( const char *pName ) = 0;
 	virtual ~IMaterial2() {}
 
+public:
+	// Incremented when the outstanding I/O requests of the material are dropped
+	uint16 m_nReloadSerialNumber;
+	uint8 m_nOutstandingIORequestCount;
+
+	bool m_bIsLoaded : 1;
+	bool m_bIsFallbackMaterial : 1;
+
+	// Set by OverrideTextureParam(), applied and cleared when the last override scope ends
+	bool m_bUnk00B_2 : 1;
+
+	bool m_bIsFinalized : 1;
+
+	// Returned by unk036()
+	bool m_bUnk00B_4 : 1;
+
 private:
-	uint8 m_nUnknown0008[8];
+	uint8 m_unk00C[ 4 ];
 
 public:
-	const char *m_pPath;
+	// Returned by GetName()
+	CUtlString m_Name;
 	CUtlVector< MaterialParam_t > m_Params;
 };
 
