@@ -135,17 +135,17 @@ public:
 	virtual void GetSceneObjectBounds( CSceneObject *pObject, Vector *pMins, Vector *pMaxs ) = 0;
 
 	// Returns the shadow LOD index for the view (convar override, then the view, then the object) and writes 1 << index to pLODMask.
-	virtual int unk031( CSceneObject *pObject, ISceneView *pView, uint8 *pLODMask ) = 0;
+	virtual int GetShadowLODIndex( CSceneObject *pObject, ISceneView *pView, uint8 *pLODMask ) = 0;
 
 	virtual void SetPVSFromClusterMembership( CSceneObject *pObject, const uint32 *pClusters, int nClusterCount ) = 0;
 
 	// Recompute the PVS data of the object from bounds or an oriented box in its world, unless PVS_NO_RECOMPUTE is set on it.
 	// Overloads: MSVC places the oriented box one first.
-	virtual void unk033( CSceneObject *pObject, const AABB_t &bounds, bool bUnk ) = 0;
-	virtual void unk033( CSceneObject *pObject, const OBB_t &bounds, bool bUnk ) = 0;
+	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const AABB_t &bounds, bool bUnk ) = 0;
+	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const OBB_t &bounds, bool bUnk ) = 0;
 
 	// Makes the object visible from every cluster of its world.
-	virtual void unk035( CSceneObject *pObject ) = 0;
+	virtual void ForceVisibleEverywhere( CSceneObject *pObject ) = 0;
 
 	virtual CSceneDebugTextObject *CreateTextObject( Vector2D *pEndPos, ISceneWorld *pWorld, const CTextLayoutInfo *pTextInfo, bool bPositionIn3DWorldSpace, const Vector &vLocal3DPosition ) = 0;
 
@@ -177,9 +177,9 @@ public:
 	virtual void SetMinimumFrameBufferRenderTargetSize( int nWidth, int nHeight ) = 0;
 	// Texture sets, guarded by one global mutex.
 	virtual bool AddTextureToSet( HRenderTexture hTexture, int nSet ) = 0;
-	virtual void unk061( HRenderTexture hTexture, int nSet ) = 0;
-	virtual HRenderTexture unk062( int nIndex, int nSet ) = 0;
-	virtual int unk063( HRenderTexture hTexture, int nSet ) = 0;
+	virtual void RemoveTextureFromSet( HRenderTexture hTexture, int nSet ) = 0;
+	virtual HRenderTexture GetTextureInSet( int nIndex, int nSet ) = 0;
+	virtual int FindTextureInSet( HRenderTexture hTexture, int nSet ) = 0;
 	virtual int unk064( int nValue, int nSet ) = 0;
 	// The texture the textures of the set are copied into.
 	virtual HRenderTexture unk065( int nSet ) = 0;
@@ -215,7 +215,7 @@ public:
 	virtual uint32 GetFrameUpdateCounter() const = 0;
 	virtual void BindTransformTextureAndInstanceIDBuffer( IRenderContext *pRenderContext, int nVBSlot, int nTransformSlotIndex, bool bUnk ) = 0;
 	// Binds the transform buffer at offset 0.
-	virtual void unk088( IRenderContext *pRenderContext, int nVBSlot ) = 0;
+	virtual void BindTransformBuffer( IRenderContext *pRenderContext, int nVBSlot ) = 0;
 
 	virtual void AllocateFrameScopedTransforms( int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
 
@@ -253,10 +253,10 @@ public:
 	virtual void SetupPerObjectLighting( CRenderAttributes &renderAttributes, CSceneObject *pSceneObject, const ISceneLayer *pSceneLayerInterface, SetupPerObjectLighting_t flags ) = 0;
 
 	// Destroys every sparse shadow tree, then loads them again when nUnk is positive.
-	virtual void unk114( int nUnk ) = 0;
+	virtual void ReloadSparseShadowTrees( int nCount ) = 0;
 
 	// Destroys every sparse shadow tree.
-	virtual void unk115() = 0;
+	virtual void DestroyAllSparseShadowTrees() = 0;
 
 	virtual void LoadSparseShadowTreeManifest() = 0;
 	virtual void UnloadSparseShadowTreeManifest() = 0;
@@ -268,7 +268,7 @@ public:
 	virtual CSceneObject *unk121( ISceneView *pView, CSceneObject *pObject ) = 0;
 
 	// Sets the per class settings byte that GetObjectSettings returns.
-	virtual void unk122( uint8 nClass, uint8 nSettings ) = 0;
+	virtual void SetObjectClassSettings( uint8 nClass, uint8 nSettings ) = 0;
 
 	virtual void SceneObject_ScheduleDirtyUpdate( CSceneObject *pObject ) = 0;
 	virtual void SceneObject_UnscheduleDirtyUpdate( CSceneObject *pObject ) = 0;
@@ -368,10 +368,10 @@ public:
 	virtual int unk185( uint64 nKey, int nUnk, CUtlVector< int > &out ) = 0;
 	virtual CSceneObject *CreateDistanceFieldInstanceSceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 	// Returns the distance field scene.
-	virtual void *unk187() = 0;
+	virtual void *GetDistanceFieldScene() = 0;
 
 	// Resizes the hair simulation buffers.
-	virtual void unk188( int nCount ) = 0;
+	virtual void ResizeHairBuffers( int nCount ) = 0;
 	virtual void unk189( void *pUnk ) = 0;
 	virtual void *unk190( int nIndex ) = 0;
 	virtual void AcquireImGuiLock() = 0;
@@ -379,7 +379,7 @@ public:
 	virtual bool IsImGuiLocked() = 0;
 	virtual bool IsImGuiLockedByCurrentThread() = 0;
 	// The function runs in WaitForRenderingToComplete.
-	virtual void unk195( std::function< void() > &&fn ) = 0;
+	virtual void QueueRenderingCompleteJob( std::function< void() > &&fn ) = 0;
 	virtual int unk196() = 0;
 	virtual void unk197( ISceneView *pView ) = 0;
 };
