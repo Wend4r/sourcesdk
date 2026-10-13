@@ -6,30 +6,71 @@
 #endif
 
 #include "materialsystem2/ifontmanager.h"
+#include "materialsystem2/fontmanager/fontamalgam.h"
 #include <tier0/threadtools.h>
+#include <tier0/utlmap.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlsymbol.h>
 #include <tier0/utlsymbollarge.h>
 #include <tier0/utlvector.h>
 #include <tier2/tier2.h>
 
+struct SFontDescription;
+
 //-----------------------------------------------------------------------------
-// Implementation of IFontManager. Containers whose element types are not
-// declared in the SDK are kept as padding of their size.
+// Implementation of IFontManager. Members whose types are not declared in the
+// SDK are kept as padding of their size.
 //-----------------------------------------------------------------------------
 class CFontManager : public CTier2AppSystem< IFontManager >
 {
 public:
-	// CUtlVector of 48-byte font amalgams
-	uint8 m_FontAmalgams[ 0x18 ];
+	class CFontAttributes
+	{
+	public:
+		char m_szName[ 64 ];
+		int m_tall;
+		int m_weight;
+		int m_blur;
+		int m_scanlines;
+		int m_flags;
+		bool m_haveDescs;
+	};
 
-	// CUtlMap of the platform fonts
-	uint8 m_unk040[ 0x38 ];
+	class CFontInfo
+	{
+	public:
+		CFontBase *m_font;
+		CUtlVector< SFontDescription > m_descs;
+	};
+
+	class CFontDataFile
+	{
+	public:
+		void *m_pData;
+		int m_nDataBytes;
+	};
+
+	struct CustomFontInfo_t
+	{
+		UtlSymId_t nameSym;
+		UtlSymId_t fileSym;
+		int nMinChar;
+		int nMaxChar;
+	};
+
+	CUtlVector< CFontAmalgam > m_FontAmalgams;
+
+	// The fonts created by the platform, released by ClearAllFonts()
+	CUtlMap< CFontAttributes, CFontInfo, int > m_PlatformFonts;
+	CAtomicMutex m_PlatformFontsMutex;
 
 	CUtlSymbolTable m_FontDataSymbols;
 
-	// CUtlMap of the font data files and CUtlVector of the custom fonts
-	uint8 m_unk0D8[ 0x40 ];
+	// Keyed by the file name symbol in m_FontDataSymbols
+	CUtlMap< UtlSymId_t, CFontDataFile, int > m_FontDataFiles;
+
+	// Registered by AddCustomFontFile()
+	CUtlVector< CustomFontInfo_t > m_CustomFonts;
 
 	char m_szLanguage[ 64 ];
 
