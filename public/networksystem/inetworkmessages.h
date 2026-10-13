@@ -24,7 +24,6 @@
 
 class CSchemaClassBindingBase;
 class INetworkSerializerBindingBuildFilter;
-struct NetworkableDataType_t;
 struct NetworkFieldResult_t;
 struct NetworkSerializerInfo_t;
 struct NetworkUnserializerInfo_t;
@@ -63,6 +62,65 @@ typedef uint ( *NetworkFieldInfoCB )(NetworkFieldInfo_t const&);
 typedef bool ( *NetworkFieldMetaInfoCB )(FieldMetaInfo_t const&, CSchemaClassBindingBase const*, NetworkFieldInfo_t const&, void *);
 typedef bool ( *NetworkableDataCB )(NetworkableData_t const*, CUtlString &);
 typedef const char* ( *NetworkFieldSerializerNameCB )(void);
+
+enum NetworkableDataType_t
+{
+	NET_DATA_TYPE_INVALID = 0,
+	NET_DATA_TYPE_INT64,
+	NET_DATA_TYPE_UINT64,
+	NET_DATA_TYPE_FLOAT32,
+	NET_DATA_TYPE_FLOAT64,
+	NET_DATA_TYPE_STRING,
+	NET_DATA_TYPE_BINARY_BLOCK,
+	NET_DATA_TYPE_BOOL,
+	NET_DATA_TYPE_COUNT
+};
+
+// Registered by RegisterNetworkFieldSerializer, one per serializer name
+struct NetworkFieldSerializerGroup_t
+{
+	// Set per serialization mode; the last two default to the first two when the registration passes NULL
+	struct Callbacks_t
+	{
+		NetworkFieldSerializeCB m_pfnSerialize;
+		NetworkFieldUnserializeCB m_pfnUnserialize;
+		NetworkFieldSerializeCB m_pfnUnk010;
+		NetworkFieldUnserializeCB m_pfnUnk018;
+	};
+
+	// Must match for every serialization mode of the serializer
+	NetworkableDataType_t m_nDataType;
+	int16 m_nComponentCount;
+
+	// Bit per registered NetworkSerializationMode_t
+	uint16 m_nRegisteredModes;
+
+	NetworkableDataCB m_pfnNetworkableData;
+	NetworkFieldSerializerNameCB m_pfnSerializerName;
+	NetworkFieldInfoCB m_pfnFieldInfo[ NET_SERIALIZATION_MODE_COUNT ];
+	NetworkFieldMetaInfoCB m_pfnFieldMetaInfo[ NET_SERIALIZATION_MODE_COUNT ];
+	Callbacks_t m_Callbacks[ NET_SERIALIZATION_MODE_COUNT ];
+};
+
+// Registered by RegisterNetworkArrayFieldSerializer, one per serializer name
+struct NetworkArrayFieldSerializerGroup_t
+{
+	// Set per serialization mode; the last two default to the first two when the registration passes NULL
+	struct Callbacks_t
+	{
+		NetworkFieldSerializeBufferCB m_pfnSerialize;
+		NetworkFieldUnserializeBufferCB m_pfnUnserialize;
+		NetworkFieldSerializeBufferCB m_pfnUnk010;
+		NetworkFieldUnserializeBufferCB m_pfnUnk018;
+	};
+
+	// Bit per registered NetworkSerializationMode_t
+	uint32 m_nRegisteredModes;
+
+	NetworkFieldInfoCB m_pfnFieldInfo[ NET_SERIALIZATION_MODE_COUNT ];
+	NetworkFieldMetaInfoCB m_pfnFieldMetaInfo[ NET_SERIALIZATION_MODE_COUNT ];
+	Callbacks_t m_Callbacks[ NET_SERIALIZATION_MODE_COUNT ];
+};
 
 #define NETWORKMESSAGES_INTERFACE_VERSION "NetworkMessagesVersion001"
 
@@ -202,11 +260,11 @@ public:
 
 	CUtlDict< CUtlString, unsigned int > m_SchemaTypeOverrides; // RegisterSchemaTypeOverride
 
-	byte m_NetworkFieldSerializers[24]; // CUtlVector of 120-byte records, RegisterNetworkFieldSerializer
+	CUtlVector< NetworkFieldSerializerGroup_t > m_NetworkFieldSerializers; // Indexed by the name symbol in m_NetworkFieldSerializerNames
 	CUtlSymbolTable m_NetworkFieldSerializerNames;
 	CThreadSpinRWLock m_NetworkFieldSerializerNamesLock;
 
-	byte m_NetworkArrayFieldSerializers[24]; // CUtlVector of 104-byte records, RegisterNetworkArrayFieldSerializer
+	CUtlVector< NetworkArrayFieldSerializerGroup_t > m_NetworkArrayFieldSerializers; // Indexed by the name symbol in m_NetworkArrayFieldSerializerNames
 	CUtlSymbolTable m_NetworkArrayFieldSerializerNames;
 	CThreadSpinRWLock m_NetworkArrayFieldSerializerNamesLock;
 
