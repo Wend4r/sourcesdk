@@ -134,8 +134,6 @@ public:
 	virtual bool SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) override = 0;
 	virtual bool IsHearingClient( CPlayerSlot nSlot ) const override = 0;
 	virtual bool IsProximityHearingClient( CPlayerSlot nSlot ) const override = 0;
-	virtual bool ProcessSetConVar( const CNETMsg_SetConVar_t &msg ) override = 0;
-	virtual bool ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) override = 0;
 	virtual bool ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) override = 0;
 	virtual bool ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) override = 0;
 	virtual bool ProcessDiagnostic( const CCLCMsg_Diagnostic_t &msg ) override = 0;
