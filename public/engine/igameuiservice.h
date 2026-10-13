@@ -23,6 +23,15 @@ namespace panorama
 	class IUIWindow;
 };
 
+// Layer handler of the game UI service, called while its render handler adds the views
+abstract_class IGameUIRenderCallback
+{
+public:
+	// Called before the layer's view is added: 0 skips the handler this frame, 2 removes it from the layer
+	virtual int unk000() = 0;
+	virtual void unk001( void *pUnk1, void *pUnk2 ) = 0;
+};
+
 abstract_class IGameUIService : public IEngineService
 {
 public:
@@ -52,8 +61,8 @@ public:
 	virtual void *unk034() = 0;
 
 	// Per layer (0 to 3) handler lists, sorted by nPriority
-	virtual void AddLayerHandler( int nLayer, void *pHandler, int nPriority ) = 0;
-	virtual void RemoveLayerHandler( int nLayer, void *pHandler ) = 0;
+	virtual void AddLayerHandler( int nLayer, IGameUIRenderCallback *pHandler, int nPriority ) = 0;
+	virtual void RemoveLayerHandler( int nLayer, IGameUIRenderCallback *pHandler ) = 0;
 
 	virtual void Con_NPrintf( int nRow, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
 	virtual void Con_NPrintf( const con_nprint_t *pInfo, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
