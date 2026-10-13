@@ -93,7 +93,7 @@ public:
 	// Element removal, depending on the state of unk051
 	virtual void unk055( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	// Calls ISoundOpSystem::SetSoundEventParam
-	virtual bool unk056( SoundEventGuid_t guid, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
+	virtual bool unk056( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk1, int nUnk2, void *p2 ) = 0;
 	virtual bool unk060( const char *pSoundEventName, uint32 nUnk1, uint32 nUnk2 ) = 0;
 	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk1, int nUnk2, void *p2, CUtlVector< CUtlString > *pList ) = 0;
@@ -133,7 +133,7 @@ public:
 	virtual int unk081( HSOSLIBSTACKHASH hStack, int nField ) = 0;
 	// Field data of the stack and its size
 	virtual void *unk082( HSOSLIBSTACKHASH hStack, int *pnSize ) = 0;
-	virtual bool unk083( HSOSLIBSTACKHASH hStack, uint32 nFieldToken ) = 0;
+	virtual bool unk083( HSOSLIBSTACKHASH hStack, HSOSOPFIELDHASH nFieldToken ) = 0;
 	virtual bool unk083( const char *pStackName, const char *pFieldName ) = 0;
 	// Fills a field entry of unk074, the lookup is empty and it returns false
 	virtual bool unk085( HSOSLIBSTACKHASH hStack, uint32 nUnk, const void *pUnk, void *pField ) = 0;

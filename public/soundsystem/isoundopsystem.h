@@ -32,7 +32,10 @@ class KeyValues3;
 struct ResourceBindingBase_t;
 
 typedef uint32 HSOSLIBSTACKHASH;
+typedef uint32 HSOSOPFIELDHASH;
 typedef int16 SOSRANDSEED;
+// Symbol of a string in the string table of the sound op system, the value of SOFTYPE_STRING_HANDLE fields
+typedef short SosStringHandle_t;
 
 enum SOFieldDataType_t : int8
 {
@@ -238,18 +241,18 @@ public:
 	virtual CSosOperatorStack *GetStack( HSOSLIBSTACKHASH hStack ) = 0;
 	// Stack flags, bit 0 is set when the stack starts a vsnd and bit 1 when it starts sound events
 	virtual void *unk031( HSOSLIBSTACKHASH hStack ) = 0;
-	virtual bool SetSoundEventParam( SoundEventGuid_t guid, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
+	virtual bool SetSoundEventParam( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
 	// pData holds nSize bytes of packed field data, queued for the sound event or the library stack
 	virtual bool SetSoundEventFields( SoundEventGuid_t guid, const void *pData, int nSize ) = 0;
 	virtual bool unk034( SoundEventGuid_t guid, const char *pFieldName, const CSosFieldData *pData, int16 nIndex ) = 0;
-	virtual bool SetLibraryStackField( HSOSLIBSTACKHASH hStack, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
+	virtual bool SetLibraryStackField( HSOSLIBSTACKHASH hStack, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
 	// Declared between the SetLibraryStackField overloads
 	virtual bool SetLibraryStackFields( HSOSLIBSTACKHASH hStack, const void *pData, int nSize ) = 0;
 	virtual bool SetLibraryStackField( const char *pStackName, const char *pOperatorName, const char *pFieldName, const CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool unk038( const char *pStackName, const char *pFieldName, const CSosFieldData *pData, int16 nIndex ) = 0;
 	// pStackField holds the stack hash followed by the field token
 	virtual bool GetLibraryStackField( const uint32 *pStackField, CSosFieldData *pData, int16 nIndex ) = 0;
-	virtual bool GetLibraryStackField( HSOSLIBSTACKHASH hStack, uint32 nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
+	virtual bool GetLibraryStackField( HSOSLIBSTACKHASH hStack, HSOSOPFIELDHASH nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool GetLibraryStackField( const char *pStackName, const char *pOperatorName, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool unk042( const char *pStackName, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual SOFieldDataType_t unk043( const char *pStackName, const char *pOperatorName, const char *pFieldName ) = 0;
@@ -266,7 +269,7 @@ public:
 	virtual double unk052( SoundEventGuid_t guid ) = 0;
 	// Public field names of the update stack of the sound event
 	virtual void unk053( const char *pSoundEventName, CUtlVector< const char * > &list ) = 0;
-	virtual bool GetSoundEventParam( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int *pnCount ) = 0;
+	virtual bool GetSoundEventParam( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken, CSosFieldData *pData, int *pnCount ) = 0;
 	virtual bool GetSoundEventParam( SoundEventGuid_t guid, const char *pOperatorName, const char *pFieldName, CSosFieldData *pData, int *pnCount ) = 0;
 	virtual SOAtomicDataType_t unk056( SOFieldDataType_t nType ) = 0;
 	virtual int GetFieldDataTypeSize( SOFieldDataType_t nType ) = 0;
@@ -279,10 +282,11 @@ public:
 	virtual bool unk060( const char *pSoundEventName, const char *pFieldName, const char *pValue ) = 0;
 	// Allocates field data of the type, pData may be null for a zero value
 	virtual CSosFieldData *unk062( SOFieldDataType_t nType, const void *pData ) = 0;
-	// Symbol table of the operator system
-	virtual uint16 unk063( const char *pString ) = 0;
-	virtual uint16 unk064( const char *pString ) = 0;
-	virtual const char *unk065( uint16 nSymbol ) = 0;
+	// String table of the operator system
+	// unk063 adds the string, unk064 only looks it up
+	virtual SosStringHandle_t unk063( const char *pString ) = 0;
+	virtual SosStringHandle_t unk064( const char *pString ) = 0;
+	virtual const char *unk065( SosStringHandle_t hString ) = 0;
 	virtual bool unk066( uint32 nUnk ) = 0;
 	// Next random seed for a started sound event
 	virtual SOSRANDSEED unk067() = 0;
@@ -311,13 +315,13 @@ public:
 	virtual void unk081( ISoundEventListener *pListener ) = 0;
 	virtual void unk082( ISoundEventListener *pListener ) = 0;
 	// String of the field of the sound event or of the library stack
-	virtual const char *unk083( SoundEventGuid_t guid, uint32 nFieldToken ) = 0;
-	virtual const char *unk083( HSOSLIBSTACKHASH hStack, uint32 nFieldToken ) = 0;
+	virtual const char *unk083( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken ) = 0;
+	virtual const char *unk083( HSOSLIBSTACKHASH hStack, HSOSOPFIELDHASH nFieldToken ) = 0;
 	// Name of the library stack
 	virtual const char *unk085( HSOSLIBSTACKHASH hStack ) = 0;
 	// Source entity the sound event was started with
 	virtual CEntityIndex unk086( SoundEventGuid_t guid ) = 0;
-	virtual bool unk087( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
+	virtual bool unk087( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool unk088( SoundEventGuid_t guid, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
 	// Random seed of the sound event
 	virtual SOSRANDSEED unk089( SoundEventGuid_t guid ) = 0;
