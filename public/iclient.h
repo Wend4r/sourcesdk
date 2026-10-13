@@ -14,6 +14,7 @@
 #include <engine/IEngineService.h>
 #include <engine2/inetworkclientservice.h>
 #include <playerslot.h>
+#include <playeruserid.h>
 #include <ns_address.h>
 #include <spawngrouptypes.h>
 #include <resourcefile/resourcetype.h>
@@ -93,6 +94,7 @@ class NetMessageConnectionCrashed_t;
 class NetMessageSplitscreenUserChanged_t;
 class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
+class CMsgPlayerInfo;
 class CNetMessage;
 struct EventServerPostSimulate_t;
 struct EventServerBeginAsyncPostTickWork_t;
@@ -198,40 +200,46 @@ class CNetworkGameClientBase : public INetworkGameClient, public CUtlSlot, publi
 {
 public:
 	virtual void TransmitNetChannel() = 0;
-	virtual void *unk064() = 0;
-	virtual void *unk065() = 0;
+	// Tick packet receive margin in seconds, recomputed from the cl_tickpacket convars
+	virtual float unk064() = 0;
+	// Fraction of a tick that GetTime adds to the client tick
+	virtual float unk065() = 0;
+	// Returns the game client's 8-byte tick and fraction value by value (MSVC: hidden return pointer); its type is not recovered
 	virtual void *unk066() = 0;
-	virtual void *unk067() = 0;
-	virtual void *unk068() = 0;
-	virtual void *unk069() = 0;
-	virtual void *unk070() = 0;
-	virtual void *unk071() = 0;
+	virtual bool unk067() = 0;
+	virtual float unk068() = 0;
+	virtual float unk069() = 0;
+	// Byte flag of the split screen slot's entry
+	virtual bool unk070( CSplitScreenSlot nSlot ) = 0;
+	virtual bool unk071() = 0;
 
 	// Overrides the connectionless packet handler's virtual destructor: no slot of its own on Windows, two here on Linux
 	virtual ~CNetworkGameClientBase() {}
 
-	virtual void *unk072() = 0;
-	virtual void *unk073() = 0;
+	virtual void SetTickRemainder( float flTickRemainder ) = 0;
+	virtual void unk073( float flUnk ) = 0;
 	virtual void ApplyClockDrift( int nServerTick, int nClientTick ) = 0;
-	virtual void *unk075() = 0;
-	virtual void *unk076() = 0;
-	virtual void *unk077() = 0;
-	virtual void *unk078() = 0;
-	virtual void *unk079() = 0;
-	virtual void *unk080() = 0;
-	virtual void *unk081() = 0;
-	virtual void *unk082() = 0;
-	virtual void *unk083() = 0;
-	virtual void *unk084() = 0;
-	virtual void *unk085() = 0;
+	// Whether the game client reports a valid value
+	virtual bool unk075() = 0;
+	virtual void unk076() = 0;
+	virtual void unk077() = 0;
+	virtual void unk078() = 0;
+	virtual void unk079() = 0;
+	virtual float unk080() = 0;
+	// Logs "SentTickSync"
+	virtual void unk081() = 0;
+	virtual void unk082() = 0;
+	virtual void ClientPredictionPostNetupdate() = 0;
+	virtual void unk084() = 0;
+	virtual bool unk085() = 0;
 
 	// Overrides of the secondary bases: no slots of their own on Windows, one each here on Linux
 	virtual bool FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) override = 0;
 	virtual void OnShutdownChannel( INetChannel *pChannel, bool bUnk ) override = 0;
 	virtual bool OnGameEventReceived( const CNetMessage *pData ) override = 0;
 
-	virtual void *unk086() = 0;
-	virtual void *unk087() = 0;
+	virtual bool GetPlayerInfo( CPlayerSlot nSlot, CMsgPlayerInfo &info ) = 0;
+	virtual CPlayerUserId GetPlayerUserId( CPlayerSlot nSlot ) = 0;
 
 	// Registers the message handlers below on the channel
 	virtual void ConnectionStart( INetChannel *pNetChannel ) = 0;
@@ -281,7 +289,8 @@ public: // Message Handlers
 	virtual bool ProcessUserCommands( const CSVCMsg_UserCommands_t &msg ) = 0;
 
 public:
-	virtual void *unk131() = 0;
+	// Parses the entities of the message into a local entity read info
+	virtual bool unk131( const CSVCMsg_PacketEntities_t &msg ) = 0;
 	virtual void Clear( bool bUnk ) = 0;
 	virtual void FullConnect( const ns_address &addr ) = 0;
 	virtual void SetSignonState( SignonState_t state, int nSpawnCount, const CNETMsg_SignonState_t *pMsg ) = 0;
@@ -293,12 +302,13 @@ public:
 	virtual void HookClientStringTable( bool bUnk ) = 0;
 	// Value of the "name" convar
 	virtual const char *GetClientName( CSplitScreenSlot nSlot ) = 0;
-	virtual void *unk139() = 0;
+	virtual void ProcessReadPacketEntitiesWorkItems( CEntityReadInfo &readInfo ) = 0;
 	virtual void OnPreserveEntity( CEntityReadInfo &readInfo ) = 0;
 	virtual void CopyNewEntity( IEntityReport *pReport, CEntityReadInfo &readInfo, ClientClass *pClientClass, int nUnk, unsigned int nUnk2 ) = 0;
 	virtual void CopyExistingEntity( IEntityReport *pReport, CEntityReadInfo &readInfo ) = 0;
 	virtual void OnReceivedUncompressedPacket() = 0;
-	virtual void *unk144() = 0;
+	// Tail call to Clear
+	virtual void CL_ClearState( bool bUnk ) = 0;
 
 public:
 	uint8 m_unk050[ 0x40 ];
