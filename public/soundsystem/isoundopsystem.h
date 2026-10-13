@@ -452,6 +452,17 @@ public:
 class CSoundEventManager : public ISoundEventManager
 {
 public:
+	// Sound event whose base or stack was missing when it was added, AddSoundEvent retries it later
+	struct DeferredSoundEvent_t
+	{
+		char m_szName[ 128 ];
+		KeyValues3 *m_pKV;
+		const ResourceBindingBase_t *m_pBinding;
+		bool m_bDone;
+		// Time the sound event was deferred at, RemoveTimedOutDeferredSoundEvent drops it after a while
+		double m_flTime;
+	};
+
 	virtual uint32 GetSoundEventHash( const char *pSoundEventName ) const override;
 	virtual bool IsValidSoundEventHash( uint32 nSoundEvent ) const override;
 	virtual const char *GetSoundEventName( uint32 nSoundEvent ) const override;
@@ -517,18 +528,17 @@ public:
 	virtual bool GetSoundEventVSnds( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
 
 	// Sound events by hash
-	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_unk008;
-	// Sound events taken out of m_unk008 that are still referenced, deleted by DereferenceSoundEvent
-	CUtlVector< CSoundEvent * > m_unk028;
+	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_SoundEvents;
+	// Sound events taken out of m_SoundEvents that are still referenced, deleted by DereferenceSoundEvent
+	CUtlVector< CSoundEvent * > m_ReleasedSoundEvents;
 	// Set by BeginSoundEventOverrides and cleared by EndSoundEventOverrides
-	bool m_unk040;
-	// Sound events that AddSoundEvent replaced while m_unk040 was set, RestoreOverriddenSoundEvents puts them back into m_unk008
-	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_unk048;
-	// Deferred sound events, 0xa0 bytes each: the name (128 chars), its KeyValues3 and resource binding,
-	// a done flag and the time it was deferred
-	uint8 m_unk068[ 0x18 ];
+	bool m_bKeepOverriddenSoundEvents;
+	// Sound events that AddSoundEvent replaced while m_bKeepOverriddenSoundEvents was set, RestoreOverriddenSoundEvents puts them
+	// back into m_SoundEvents
+	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_OverriddenSoundEvents;
+	CUtlVector< DeferredSoundEvent_t > m_DeferredSoundEvents;
 	// Time of the last check for timed out deferred sound events
-	double m_unk080;
+	double m_flLastDeferredSoundEventCheck;
 };
 
 class CSoundOpSystem : public CTier2AppSystem< ISoundOpSystem >
@@ -602,10 +612,11 @@ public:
 	virtual void LoadManifestStacksForParsing( const char *pManifestName, KeyValues3 *pStacks, void *pUnk );
 
 	// Incremented by Init and decremented by Shutdown
-	int m_unk030;
-	CSoundEventManager m_unk038;
-	CVSoundStackScriptTypeManager *m_unk0c0;
-	CVSoundEventScriptTypeManager *m_unk0c8;
+	int m_nInitCount;
+	CSoundEventManager m_SoundEventManager;
+	// Resource type managers of the sound stack scripts and the sound event scripts
+	CVSoundStackScriptTypeManager *m_pStackScriptTypeManager;
+	CVSoundEventScriptTypeManager *m_pEventScriptTypeManager;
 };
 
 #endif // ISOUNDOPSYSTEM_H
