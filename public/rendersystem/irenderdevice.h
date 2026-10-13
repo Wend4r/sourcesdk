@@ -339,11 +339,11 @@ public:
 	virtual bool IsSuperSamplingAvailable( int nType ) = 0;
 
 	virtual void unk218( IUpscaler *pUpscaler ) = 0;
-	virtual void unk219( void *p ) = 0;
-	virtual void BeginRenderingToSwapChain( void *p ) = 0;
-	virtual void unk221( void *p ) = 0;
+	virtual void unk219( bool bUnk, bool bAsync ) = 0;
+	virtual void BeginRenderingToSwapChain( SwapChainHandle_t hSwapChain ) = 0;
+	virtual void unk221( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 
-	virtual void CreateDeviceMemoryPool( void *p ) = 0;
+	virtual void *CreateDeviceMemoryPool( uint64 nMinBlockSize ) = 0;
 	virtual void DestroyDeviceMemoryPool( void *hPool ) = 0;
 	virtual bool AllocateTextureInPool( void *hPool, HRenderTexture hTexture ) = 0;
 	virtual void FreeTextureFromPool( void *hPool, HRenderTexture hTexture ) = 0;
