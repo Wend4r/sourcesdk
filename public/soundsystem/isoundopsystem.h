@@ -185,19 +185,20 @@ public:
 	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) = 0;
 	// Sets a string in the KeyValues3 table of the sound event
 	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) = 0;
-	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) = 0;
+	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) = 0;
 	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
-	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, uint32 nFieldToken, const CSosFieldData *pData, int nIndex ) = 0;
+	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int nIndex ) = 0;
 	// Selects the element of an array field
-	virtual bool unk47( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) = 0;
+	virtual bool unk47( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) = 0;
 	// Element count of the field, pbArray tells whether it is an array field
-	virtual int unk48( uint32 nSoundEvent, uint32 nFieldToken, bool *pbArray, bool bUnk ) = 0;
+	virtual int unk48( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) = 0;
 	// Element count of the field
-	virtual int unk49( uint32 nSoundEvent, uint32 nFieldToken, bool bUnk ) = 0;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void **ppData, int nIndex, bool bUnk ) = 0;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, CUtlString &sValue, int nIndex, bool bUnk ) = 0;
+	virtual int unk49( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) = 0;
+	// Fields the sound event does not set are looked up in its bases and then in its update stack, unless bIgnoreBases is set
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, SosFieldValueMem_t **ppData, int nIndex, bool bIgnoreBases ) = 0;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, CUtlString &sValue, int nIndex, bool bIgnoreBases ) = 0;
 	// Writes the value to pKV
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, KeyValues3 *pKV, int nIndex, bool bUnk ) = 0;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, KeyValues3 *pKV, int nIndex, bool bIgnoreBases ) = 0;
 	// unk53 and unk54 set and clear the flag that makes AddSoundEvent keep the sound events it replaces,
 	// unk55 puts the kept sound events back
 	virtual void unk53() = 0;
@@ -402,15 +403,15 @@ public:
 	virtual bool unk41( const char *pSoundEventName, const char *pStackName ) override;
 	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) override;
 	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) override;
-	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) override;
+	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
 	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) override;
-	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, uint32 nFieldToken, const CSosFieldData *pData, int nIndex ) override;
-	virtual bool unk47( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) override;
-	virtual int unk48( uint32 nSoundEvent, uint32 nFieldToken, bool *pbArray, bool bUnk ) override;
-	virtual int unk49( uint32 nSoundEvent, uint32 nFieldToken, bool bUnk ) override;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void **ppData, int nIndex, bool bUnk ) override;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, CUtlString &sValue, int nIndex, bool bUnk ) override;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, KeyValues3 *pKV, int nIndex, bool bUnk ) override;
+	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int nIndex ) override;
+	virtual bool unk47( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
+	virtual int unk48( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) override;
+	virtual int unk49( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, SosFieldValueMem_t **ppData, int nIndex, bool bIgnoreBases ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, CUtlString &sValue, int nIndex, bool bIgnoreBases ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, KeyValues3 *pKV, int nIndex, bool bIgnoreBases ) override;
 	virtual void unk53() override;
 	virtual void unk54() override;
 	virtual void unk55() override;
@@ -471,11 +472,11 @@ public:
 	virtual bool SoundEventHasPreloadVsnd( const char *pSoundEventName ) override;
 	virtual uint8 *GetSoundEventUpdateGroups( uint32 nSoundEvent ) override;
 	virtual uint8 *GetSoundEventUpdateGroups( const char *pSoundEventName ) override;
-	virtual int unk48( uint32 nSoundEvent, uint32 nFieldToken, bool *pbArray, bool bUnk ) override;
-	virtual int unk49( uint32 nSoundEvent, uint32 nFieldToken, bool bUnk ) override;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, void **ppData, int nIndex, bool bUnk ) override;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, CUtlString &sValue, int nIndex, bool bUnk ) override;
-	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, uint32 nFieldToken, KeyValues3 *pKV, int nIndex, bool bUnk ) override;
+	virtual int unk48( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) override;
+	virtual int unk49( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, SosFieldValueMem_t **ppData, int nIndex, bool bIgnoreBases ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, CUtlString &sValue, int nIndex, bool bIgnoreBases ) override;
+	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, KeyValues3 *pKV, int nIndex, bool bIgnoreBases ) override;
 	virtual float GetSoundDuration( const char *pSoundEventName ) override;
 	virtual float GetSoundDuration( uint32 nSoundEvent ) override;
 	virtual const char *GetVSndNameForSoundEvent( const char *pSoundEventName, bool bFromSymbolTable ) override;
@@ -490,10 +491,10 @@ public:
 	virtual bool unk41( const char *pSoundEventName, const char *pStackName ) override;
 	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) override;
 	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) override;
-	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) override;
+	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
 	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) override;
-	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, uint32 nFieldToken, const CSosFieldData *pData, int nIndex ) override;
-	virtual bool unk47( CSoundEvent *pSoundEvent, uint32 nFieldToken, int nIndex ) override;
+	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int nIndex ) override;
+	virtual bool unk47( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
 	virtual void unk53() override;
 	virtual void unk54() override;
 	virtual void unk55() override;
