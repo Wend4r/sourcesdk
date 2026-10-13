@@ -28,6 +28,7 @@
 #include <networkbasetypes.pb.h>
 #include <utlhash.h>
 #include <utlhashmaplarge.h>
+#include <ihltv.h>
 
 enum server_state_t : int
 {
@@ -66,6 +67,8 @@ class CBaselineEntityData;
 class CNetworkServerSpawnGroup;
 class CSteamID;
 class IEntityReport;
+class IHLTVDirector;
+class CHLTVServerAsync;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -391,11 +394,91 @@ public:
 }; // sizeof 10056 (0x2748)
 
 
-class CHLTVServer : public CNetworkGameServerBase
+// Cached delta entity bit buffers of the HLTV server, one list per entity index
+class CDeltaEntityCache
 {
 public:
+	struct DeltaEntityEntry_s
+	{
+		DeltaEntityEntry_s *pNext;
+		int nDeltaTick;
+		int nBits;
+	};
 
-}; // sizeof 3120232
+	int m_nTick;
+	// Number of m_Cache entries in use, the destructor frees each of them
+	int m_nMaxEntities;
+	int m_nCacheSize;
+	DeltaEntityEntry_s *m_Cache[ MAX_EDICTS ];
+};
+
+class CHLTVServer : public CNetworkGameServerBase, public IHLTVServer, public ITvStreamSink
+{
+public:
+	// Only constructed and destroyed
+	CUtlString m_szUnk1824;
+
+	// Targets of the reservation pointers of the base class
+	uint64 m_nHLTVReservationCookie;
+	float m_flHLTVTimeLastClientLeft;
+	float m_flHLTVUnk968;
+	float m_flHLTVReservationExpiryTime;
+
+	// Owns the broadcast and the demo recorder ("HLTVServerAsync" thread pool)
+	CHLTVServerAsync *m_pAsync;
+	// Client of the game server that feeds this master proxy, nullptr on a relay (IsMasterProxy)
+	CServerSideClientBase *m_MasterClient;
+	// Game server of m_MasterClient
+	CNetworkGameServer *m_Server;
+
+	// CHLTVClientState, the connection of a relay to its upstream server
+#ifdef PLATFORM_WINDOWS
+	uint8 m_ClientState[ 2888824 ];
+#else
+	uint8 m_ClientState[ 2888848 ];
+#endif
+
+	IHLTVDirector *m_Director;
+	// Slot of the HLTV client on the game server (GetHLTVSlot)
+	CPlayerSlot m_nPlayerSlot;
+	CDeltaEntityCache m_DeltaCache;
+
+	// Read by CHLTVClient::SendSnapshot
+	bool m_bUnk3021832;
+	// Set by StartRelay, cleared when the signon completes
+	bool m_bSignonState;
+	// Checked by the retry command ("Can't retry, no previous SourceTV connection")
+	bool m_bUnk3021834;
+	// Zeroed with the flags above, no access found
+	uint8 m_unk3021835[ 3 ];
+
+	// GetOnlineTime() returns the time since it
+	float m_flStartTime;
+	float m_flFPS;
+	int m_nGameServerMaxClients;
+	// The status is sent again 8 seconds after it
+	float m_fNextSendUpdateTime;
+	netadr_t m_RootServer;
+	// GetGlobalStats()
+	int m_nGlobalSlots;
+	int m_nGlobalClients;
+	int m_nGlobalProxies;
+	// Zeroed by the constructor, no access found
+	uint8 m_unk3021880[ 12 ];
+
+	bf_write m_FullSendTables;
+	CUtlLeanVector< byte > m_FullSendTablesBuffer;
+	// Read by ServerPostSimulate
+	float m_flUnk3021952;
+	// Storage of m_BroadcastEventBuf, set up by StartMaster
+	byte m_BroadcastEventBufData[ 98304 ];
+	// Serializes the events of BroadcastHltvEvent
+	bf_write m_BroadcastEventBuf;
+	// SourceTV relay instance ("relay" / "non-relay")
+	bool m_bRelay;
+	// SourceTV[%d]
+	int m_nInstanceIndex;
+};
 
 abstract_class INetworkServerService : public IEngineService
 {
