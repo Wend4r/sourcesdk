@@ -55,9 +55,9 @@ public:
 	virtual uint64 GetSimilarityKey() = 0;
 	virtual bool IsLoaded() = 0;
 	virtual IMaterialMode *GetMode( const CUtlStringToken &mode ) = 0;
-	virtual void Unk_Slot6( void *p ) = 0;
+	virtual void *unk006( const CUtlStringToken &mode ) = 0;
 	virtual const CRenderAttributes *GetAttributes() = 0;
-	virtual void Unk_Slot8( void *p ) = 0;
+	virtual void unk008() = 0;
 	virtual bool GetBoolAttribute( bool *pValue, CUtlStringToken name ) = 0;
 	virtual bool GetIntAttribute( int *pValue, CUtlStringToken name ) = 0;
 	virtual bool GetFloatAttribute( float *pValue, CUtlStringToken name ) = 0;
@@ -72,15 +72,15 @@ public:
 	virtual bool IsBatchableInMode( const CUtlStringToken &mode, int nFlags ) = 0;
 	virtual void GetRepresentativeTextureSize( int *pWidth, int *pHeight, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
 	virtual void GetWorldMappingSize( int *pWidth, int *pHeight, int nUnk, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
-	virtual void Unk_Slot23( void *p ) = 0;
+	virtual void unk023() = 0;
 
 	// Only inside an EnterOverrideScope() / LeaveOverrideScope() pair
 	virtual bool OverrideTextureParam( const char *pName, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture ) = 0;
 
-	virtual void Unk_Slot25( void *p ) = 0;
-	virtual void Unk_Slot26( void *p ) = 0;
-	virtual void Unk_Slot27( void *p ) = 0;
-	virtual void Unk_Slot28( void *p ) = 0;
+	virtual uint32 unk025() = 0;
+	virtual void *unk026() = 0;
+	virtual void *unk027( const CUtlStringToken &mode, int nShaderType ) = 0;
+	virtual void unk028() = 0;
 
 	virtual void EnterOverrideScope() = 0;
 
@@ -92,9 +92,9 @@ public:
 	virtual const char *GetStringParam( const char *pName, const char *pFallback ) = 0;
 	virtual ResourceHandle_t *GetTextureParam( ResourceHandle_t *pOut, const char *pName ) = 0;
 	virtual Vector4D *GetVecParam( Vector4D *pOut, const char *pName, const Vector4D *pFallback ) = 0;
-	virtual void Unk_Slot36( void *p ) = 0;
-	virtual void Unk_Slot37( void *p ) = 0;
-	virtual void Unk_Slot38( void *p ) = 0;
+	virtual bool unk036() = 0;
+	virtual void unk037() = 0;
+	virtual bool unk038() = 0;
 	virtual ~IMaterial2() {}
 
 private:
