@@ -20,7 +20,6 @@ class CEntityClass;
 class CEntityInstance;
 class CPulseAPIExtensionRegistrationContext;
 class CPulseExecCursor;
-class CPulseRuntimeMethodArg;
 class KeyValues3;
 class CPulseArgumentPack;
 class CPulseInputParamMap;
@@ -116,15 +115,17 @@ public:
 	CUtlSymbolLarge m_subType;
 };
 
-class CPulseRuntimeMethodArg
+// Static argument or return value record of a binding; the graph definition stores CPulseRuntimeMethodArg instead
+struct PulseMethodArg_t
 {
-public:
 	// Static records carry no symbol: the symbol part is UTL_INVAL_SYMBOL_LARGE.
 	CKV3MemberName m_Name;
 	CPulseValueFullType m_Type;
-	uint64 m_nUnk0028;
-	// A CPulseCallContextValue of m_Type holding the default value.
-	uint8 m_defaultValue[32];
+
+	// A CPulseCallContextValue of m_Type holding the default value; that type is declared after this one, so the
+	// value is raw storage with its 16-byte alignment
+	ALIGN16 uint8 m_DefaultValue[ 32 ] ALIGN16_POST;
+
 	uint16 m_nMetadataCount;
 	PulseBindingMetadata_t* m_pMetadata;
 	void* m_pfnUnk0060;
@@ -134,9 +135,14 @@ public:
 // A view of a static argument array, returned by value
 struct PulseMethodArgList_t
 {
+	int Count() const { return m_nCount; }
+
+	const PulseMethodArg_t &operator[]( int i ) const { return m_pElements[ i ]; }
+	const PulseMethodArg_t &Element( int i ) const { return m_pElements[ i ]; }
+
 	int32 m_nCount;
 	int32 m_nAllocated;
-	const CPulseRuntimeMethodArg* m_pElements;
+	const PulseMethodArg_t* m_pElements;
 };
 
 struct PulseHostTable_t
