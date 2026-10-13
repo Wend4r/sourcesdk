@@ -43,7 +43,8 @@ public:
 	int m_nSpawnGroupsSent = 0;
 	int m_bNeedsFullFrame = 0;
 	int m_nFullFrameTick = 0;
-	int m_nUnk0C00 = 0;
+	// last_command_number of the latest move message
+	int m_nLastCommandNumber = 0;
 	bool m_bNoChat = false;
 	bool m_bUnk0C05 = false;
 	bool m_bUnk0C06 = false;
