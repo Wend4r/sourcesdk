@@ -360,7 +360,9 @@ public:
 	virtual void unk194( void *pValue ) = 0;
 	virtual void *unk195() = 0;
 	virtual int unk196( uint32 nValue ) = 0;
-	virtual int unk197() = 0;
+
+	// The flags IVPhysics2::CreateWorld was called with
+	virtual uint32 GetCreateFlags() = 0;
 	virtual void unk198( void *pValue ) = 0;
 	virtual void *unk199() = 0;
 
@@ -455,6 +457,8 @@ public:
 	virtual void unk249( void *pUnknown, IPhysicsShape *pShape1, IPhysicsShape *pShape2 ) = 0;
 	virtual void unk250( CBufferString &text, IPhysicsShape *pShape, void *pUnknown ) = 0;
 };
+
+
 
 // Function table over a world, placed into caller memory by IVPhysics2::ConstructFnPhysicsWorld
 abstract_class IFnPhysicsWorld
