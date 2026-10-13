@@ -39,6 +39,8 @@ class CGameInfo;
 class CDemoSaveGame;
 class IAchievementMgr;
 class IVoiceTweak;
+class IBroadcastPlayer;
+class CEngineGotvSyncPacket;
 struct SpawnGroupDesc_t;
 struct EngineLoopState_t;
 
@@ -49,6 +51,23 @@ abstract_class IVEngineClient2 : public ISource2Engine
 {
 public:
 	struct ServerTickTime_t;
+
+	// Present timing record of one client/server loop frame (no type name in any binary)
+	struct unk173_t
+	{
+		// Frame number of the presented frame
+		int m_nFrame;
+		// Tick and tick fraction that were rendered in this frame
+		int m_nRenderTick;
+		float m_flRenderTickFraction;
+		// Tick and tick fraction of the predicted local player in this frame
+		int m_nPlayerTick;
+		float m_flPlayerTickFraction;
+		// Per-frame input data the client attaches to the record of the frame in flight
+		void *m_pClientFrameData;
+		// Plat_FloatTime() when the present completed
+		double m_flPresentCompletedTime;
+	};
 
 	virtual EUniverse GetSteamUniverse() const = 0;
 	virtual CPlayerSlot GetPlayerSlotByNetworkIDString( const char *pszNetworkID ) = 0;
@@ -84,7 +103,7 @@ public:
 	// True when the active loop was started with a "demofile" option
 	virtual bool unk047() = 0;
 	virtual bool IsPlayingBroadcast() = 0;
-	virtual void *GetBroadcastPlayer() = 0;
+	virtual IBroadcastPlayer *GetBroadcastPlayer() = 0;
 	// Sends pszCmd to the server over the net channel of nSlot
 	virtual void ServerCmd( CSplitScreenSlot nSlot, const char *pszCmd ) = 0;
 	virtual void ClientCommand( CSplitScreenSlot nSlot, const char *pszCmd, bool bUnrestricted, double flInputTime, uint64 nInputTimestamp ) = 0;
@@ -129,7 +148,8 @@ public:
 	virtual void SkipToDemoTick( int nTick ) = 0;
 	// While set, the demo player pauses at the end of the demo instead of disconnecting
 	virtual void unk085( bool bValue ) = 0;
-	virtual bool unk086() = 0;
+	// Also true while an HLTV replay is shown
+	virtual bool IsHLTV() = 0;
 	// Value of cl_language
 	virtual void GetUILanguage( CBufferString &sLanguage ) = 0;
 	virtual float GetScreenAspectRatio( int nViewportWidth, int nViewportHeight ) = 0;
@@ -174,7 +194,7 @@ public:
 	virtual void ServerCmdKeyValues( KeyValues *pKeyValues ) = 0;
 	virtual void TickProgressBar() = 0;
 	virtual PlatWindow_t GetEngineWindow() = 0;
-	virtual void unk122( uint32 nIndex ) = 0;
+	virtual void ChangePVSSpawnGroupHandle( SpawnGroupHandle_t hSpawnGroup ) = 0;
 	virtual void SkipDemoToTime( float flTime ) = 0;
 	virtual void FlashWindow() = 0;
 	virtual void DesktopNotify( const char *pszTitle, const char *pszMessage ) = 0;
@@ -233,20 +253,23 @@ public:
 	virtual const char *GetDemoRecordingFileName() = 0;
 	// Returns the constant 0.1.
 	virtual double unk171() = 0;
-	// Frame present timing records of the client/server loop (40 bytes each, no type name in any
-	// binary): unk172 returns the record of the frame in flight, unk173 returns the newest completed
-	// one BY VALUE through a hidden return pointer, so it cannot be called through this declaration
-	virtual void *unk172() = 0;
-	virtual void *unk173() = 0;
-	virtual bool unk174( const void *pSyncMsg ) = 0;
-	// No-op in this build.
-	virtual void unk175() = 0;
-	// No-op in this build.
-	virtual void unk176( int nValue ) = 0;
-	// No-op in this build.
-	virtual void unk177() = 0;
+	// Present timing record of the frame in flight, NULL when there is none
+	virtual unk173_t *unk172() = 0;
+	// Newest completed present timing record
+	virtual unk173_t unk173() = 0;
+	// Applies a GOTV sync packet from the GC to the broadcast player
+	virtual bool unk174( const CEngineGotvSyncPacket *pSyncPacket ) = 0;
+	// No-op in this build; the client passes CUserMessageServerFrameTime::frame_time
+	virtual void unk175( float flServerFrameTime ) = 0;
+	// No-op in this build; the client passes the number of prediction errors of the tick
+	virtual void unk176( int nPredictionErrors ) = 0;
+	// No-op in this build; the client passes CUserMessageLagCompensationError::distance
+	virtual void unk177( float flLagCompensationError ) = 0;
+	// Adds or removes a command name (hashed lower-case) from the set of commands that the
+	// client handles before they are forwarded to the server
 	virtual void unk178( const char *pszCommand, bool bEnable ) = 0;
-	virtual void unk179() = 0;
+	// Clears the flag that allows connecting to secure servers
+	virtual void DisallowSecureServers() = 0;
 	virtual void SendVProfLiteReportToServer( void *pReport ) = 0;
 	virtual int GetGlobalThreadPoolMode() = 0;
 	virtual void SetGlobalThreadPoolMode( int nMode ) = 0;
