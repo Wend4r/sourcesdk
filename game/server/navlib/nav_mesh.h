@@ -257,9 +257,11 @@ public:
 	virtual void RemoveInvalidNavAreas() = 0;
 	// Sets the area's m_nMeshIndex.
 	virtual void SetAreaMeshIndex( CNavArea *pArea, int nMeshIndex ) = 0;
-	// The movable meshes' movable_mesh_gravity_follows_rotation settings.
+	// The movable meshes' movable_mesh_gravity_follows_rotation settings. Save reads them from
+	// 112-byte movable mesh records (the flag is the byte at 104), whose type is not
+	// reconstructed; Load appends one flag per movable mesh to pGravityFollowsRotation.
 	virtual void SaveMovableMeshSettings( KeyValues3 *pKV, const void *pUnk ) const = 0;
-	virtual void LoadMovableMeshSettings( const KeyValues3 *pKV, void *pUnk ) = 0;
+	virtual void LoadMovableMeshSettings( const KeyValues3 *pKV, CUtlVector< bool > *pGravityFollowsRotation ) = 0;
 	// Empty in the game's meshes.
 	virtual void unk029( void *p ) = 0;
 	// Empty in the game's meshes; given the nav file's KeyValues3 block for versions 31 to 35.
