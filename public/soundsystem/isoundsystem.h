@@ -27,6 +27,8 @@
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
+class CAudioDeviceList;
+class CAudioProcessor;
 class IAudioCacheHandle;
 class IAudioDecoder;
 class IAudioDevice;
@@ -174,6 +176,17 @@ public:
 
 
 //-----------------------------------------------------------------------------
+// Parameters of the capture stream created by ISoundSystem::unk015
+//-----------------------------------------------------------------------------
+struct SoundSystemUnk015_t
+{
+	int m_nSampleRate;
+	uint32 m_nDeviceID;
+	std::function< void( IAudioInputStream *pStream, int nUnk ) > m_callback;
+};
+
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #define SOUNDSYSTEM_INTERFACE_VERSION "SoundSystem001"
 
@@ -182,9 +195,10 @@ abstract_class ISoundSystem : public IAppSystem
 public:
 	virtual IAudioDevice2 *CreateDefaultDevice() = 0;
 	virtual void DestroyDevice( IAudioDevice2 *pDevice ) = 0;
-	virtual void *unk013( const char *pName, int nUnk1, float flUnk, int nUnk2, int nUnk3, bool bUnk ) = 0;
+	// Creates a CPresetDSPAudioProcessor through the sound system processor factory
+	virtual CAudioProcessor *unk013( const char *pName, int nUnk1, float flUnk, int nUnk2, int nUnk3, bool bUnk ) = 0;
 	virtual IAudioDevice2 *CreateNullDevice() = 0;
-	virtual IAudioInputStream *unk015( const void *pParams ) = 0;
+	virtual IAudioInputStream *unk015( SoundSystemUnk015_t &params ) = 0;
 	virtual void unk016( IAudioInputStream *pInputStream ) = 0;
 	virtual IAudioOutputStream *CreateDirectMixOutputStream( uint32 nSampleRate, uint32 nChannels, uint32 nBits ) = 0;
 	virtual IAudioOutputStream *unk018( SoundEventGuid_t guid, const char *pFieldName, uint32 nSampleRate, uint32 nChannels, uint32 nBits ) = 0;
@@ -244,7 +258,8 @@ public:
 	virtual void unk071( uint64 nXUID, float flUnk ) = 0;
 	virtual float unk072( uint64 nXUID ) = 0;
 	virtual void unk073() = 0;
-	virtual bool unk074( void *pUnk ) = 0;
+	// Copies the device list when its stamp differs from the one in pDeviceList
+	virtual bool unk074( CAudioDeviceList *pDeviceList ) = 0;
 	virtual void unk075() = 0;
 	virtual void unk076() = 0;
 	virtual void unk077() = 0;
