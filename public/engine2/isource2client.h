@@ -131,9 +131,10 @@ public:
 	virtual void unk028() = 0;
 	// Forward to the network classes of the client entity system
 	virtual bool GetEntity2Networkable( CEntityIndex nEntityIndex, Entity2Networkable_t &networkable ) = 0;
-	virtual void unk030( void *pUnk1, void *pUnk2 ) = 0;
-	// Queues the entity handle with a time when bUnk is set and the entity qualifies, otherwise forwards to the network classes
-	virtual void unk031( Entity2Networkable_t *pNetworkable, bool bUnk ) = 0;
+	// The engine creates each new entity of a packet through it; pUnk is the engine's creation record
+	virtual bool CreateClientSideNetworkedEntity( const void *pUnk, Entity2Networkable_t *pNetworkable ) = 0;
+	// Queues the entity handle with a time when bDeferred is set and the entity qualifies, otherwise forwards to the network classes
+	virtual void DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
 	virtual INetworkFieldChangedEventQueue *GetNetworkFieldChangeCallbackQueue() = 0;
 	// Called with 0 and then with 1 while the engine processes packet entities
 	virtual void NotifyShouldTransmit( IEntityReport *pReport, CBitVec< 16384 > *pTransmitBits, NotifyShouldTransmitType_t nType ) = 0;
@@ -463,7 +464,7 @@ public:
 	// -1.0 after the constructor and Connect()
 	float m_unk468;
 	uint8 m_unk46C[ 0x4 ];
-	// CUtlVector of 8-byte ( CEntityHandle, float time ) entries appended by unk031()
+	// CUtlVector of 8-byte ( CEntityHandle, float time ) entries appended by DestroyClientSideNetworkedEntity()
 	uint8 m_unk470[ 0x18 ];
 };
 
