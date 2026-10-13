@@ -94,6 +94,8 @@ class NetMessageSplitscreenUserChanged_t;
 class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
 class CNetMessage;
+struct EventServerPostSimulate_t;
+struct EventServerBeginAsyncPostTickWork_t;
 
 abstract_class IGameEventWatcher
 {
@@ -139,9 +141,11 @@ public:
 	virtual void OnClientFrameSimulate( const EventClientFrameSimulate_t &event ) = 0;
 	virtual void OnClientAdvanceTick( const EventClientAdvanceTick_t &event ) = 0;
 	virtual void OnClientPostAdvanceTick( const EventClientPostAdvanceTick_t &event ) = 0;
-	virtual void *unk028() = 0;
-	virtual void *unk029() = 0;
-	virtual void *unk030() = 0;
+	// Run the game client's frame stage notifications 10 and 11
+	virtual void OnServerPostSimulate( const EventServerPostSimulate_t &event ) = 0;
+	virtual void OnServerBeginAsyncPostTickWork( const EventServerBeginAsyncPostTickWork_t &event ) = 0;
+	// Value of a 2-entry float table per index, clamped to -9.9 from below
+	virtual float unk030( int nIndex, bool bUnk ) = 0;
 	virtual void RequestServerStatus( CSplitScreenSlot nSlot ) = 0;
 	virtual void ForceFullUpdate( const char *pszReason ) = 0;
 	virtual void PrintSpawnGroupStatus() const = 0;
