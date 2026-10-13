@@ -86,9 +86,9 @@ public:
 abstract_class ITextLayout : public IAppSystem
 {
 public:
-	virtual Vector2D LayoutText( CUtlVector< CUtlVector< CCharRenderGeometry > > *pGeometry, const char *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
-	virtual Vector2D LayoutText( CUtlVector< CUtlVector< CCharRenderGeometry > > *pGeometry, const uchar16 *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
-	virtual Vector2D LayoutText( CUtlVector< CUtlVector< CCharRenderGeometry > > *pGeometry, const uchar32 *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
+	virtual Vector2D SetupPrintTextRenderGeometry( CUtlVector< CUtlVector< CCharRenderGeometry > > *pGeometry, const char *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
+	virtual Vector2D SetupPrintTextRenderGeometry( CUtlVector< CUtlVector< CCharRenderGeometry > > *pGeometry, const uchar16 *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
+	virtual Vector2D SetupPrintTextRenderGeometry( CUtlVector< CUtlVector< CCharRenderGeometry > > *pGeometry, const uchar32 *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
 
 	// Overwrites the color of every glyph in pGeometry
 	virtual void UpdateTextRenderGeometryColor( CUtlVector< CUtlVector< CCharRenderGeometry > > *pGeometry, Color color ) = 0;
