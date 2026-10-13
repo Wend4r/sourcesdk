@@ -174,7 +174,7 @@ public:
 	int m_nMaterialGeneration;
 
 	// Shaders, keyed by their symbol in m_shaderNameDictionary
-	CUtlHashtable< CUtlSymbol, void *, Mix32HashFunctor > m_unk040;
+	CUtlHashtable< CUtlSymbol, void *, Mix32HashFunctor > m_Shaders;
 	CUtlSymbolTable m_shaderNameDictionary;
 
 	// CUtlHashtable from a CUtlString path to a 0xD0 byte entry, locked by m_unk0E0
@@ -185,7 +185,7 @@ public:
 	void *m_unk0F0[ 3 ];
 
 	// Substrings of the shader names that dynamic shader compile reloads
-	CUtlVector< CUtlString > m_unk108;
+	CUtlVector< CUtlString > m_DynamicShaderCompileFilters;
 	CAtomicMutex m_unk120;
 
 	// "MaterialSystem2/RenderModes" of gameinfo, "Default" when it has none
@@ -206,7 +206,7 @@ public:
 	CUtlVector< CMaterial2 * > m_materialConstantAndCommandBufferRecreationQueue;
 
 	// Set by EnableDynamicShaderCompile(), the shaders are reloaded when it is set
-	bool m_bUnk230_0 : 1;
+	bool m_bDynamicShaderCompile : 1;
 	bool m_bUnk230_1 : 1;
 
 	// "-shaderdebugging"
@@ -231,13 +231,13 @@ public:
 	bool m_bErrorMaterialIsFatalError : 1;
 
 	// Set when shaders were released, the next frame frees the unused ones
-	bool m_bUnk231_3 : 1;
+	bool m_bShadersReleased : 1;
 
 	// "-materialsystem2_strict"
 	bool m_bStrictMode : 1;
 
 	// Set by PreShutdown()
-	bool m_bUnk232;
+	bool m_bShuttingDown;
 
 	// "MaterialSystem2/ShaderIDColors" of gameinfo, alpha is 1
 	CUtlHashtable< CUtlStringToken, Vector4D > m_ShaderIDColors;
