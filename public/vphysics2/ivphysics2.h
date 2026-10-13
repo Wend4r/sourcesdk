@@ -539,9 +539,8 @@ public:
 };
 
 // The resource type manager of VPhysXAggregateData_t ('vphys').
-// The binaries have two more virtuals in CBaseIntrospectedToKV3TypeManager than the SDK declares, so the overrides
-// of this class (the KV3 load, the release of the aggregate data, the reallocation hook that forwards to
-// IVPhysics2::unk081) are not declared here
+// Its overrides (the typesafe allocation and release of the aggregate data, and the reallocation hook after them that
+// forwards to IVPhysics2::unk081) are not declared here
 class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< 0x7379687076ull, VPhysXAggregateData_t >
 {
 };
