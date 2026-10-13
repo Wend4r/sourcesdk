@@ -35,7 +35,8 @@ public:
 
 	virtual bool ComputeOverrideColorCorrection( void *p, const void *pParams, void *pColorCorrection ) = 0;
 
-	virtual void unk021( void *p ) = 0;
+	// Copies the pointer-sized value at +8 of the resource data of h (NULL for a NULL h) into a returned class
+	virtual CWeakHandleBase unk021( ResourceHandle_t h ) = 0;
 };
 
 //-----------------------------------------------------------------------------
