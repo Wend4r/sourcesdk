@@ -39,7 +39,7 @@ public:
 	virtual bool PreferLoopUnrolling() = 0;
 
 	virtual bool ReverseDepth() = 0;
-	virtual bool unk010() = 0;
+	virtual bool IsFastSubrectClearSupported() = 0;
 
 	virtual const RenderAdapterInfo_t &AdapterInfo() = 0;
 
@@ -66,13 +66,13 @@ public:
 	// Highest supported multisample type not above nDesired
 	virtual RenderMultisampleType_t GetBestSupportedMultisampleType( int nFormat, RenderMultisampleType_t nDesired ) = 0;
 
-	virtual bool unk025() = 0;
+	virtual bool SupportsDescriptorSets() = 0;
 
 	virtual int GetMaxPerStageSampledTextures() = 0;
 	virtual int GetMaxPushConstantsSize() = 0;
 	virtual int GetMinConstantBufferOffsetAlignment() = 0;
 
-	virtual bool unk029() = 0;
+	virtual bool SupportsBarriers() = 0;
 
 	// Separate async compute queue
 	virtual bool SupportsAsyncCompute() = 0;
