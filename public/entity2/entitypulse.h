@@ -115,6 +115,30 @@ public:
 	CUtlSymbolLarge m_subType;
 };
 
+class ALIGN16 CPulseCallContextValue
+{
+public:
+	CPulseCallContextValue() : m_pValue( nullptr ) {}
+	CPulseCallContextValue( const CPulseCallContextValue &other ) : CPulseCallContextValue() { *this = other; }
+	~CPulseCallContextValue() { SetType( CPulseValueFullType() ); }
+
+	CPulseCallContextValue &operator=( const CPulseCallContextValue &other );
+
+	bool IsStoredInline() const;
+	void *GetData() { return IsStoredInline() ? static_cast< void * >( &m_pValue ) : m_pValue; }
+	const void *GetData() const { return IsStoredInline() ? static_cast< const void * >( &m_pValue ) : m_pValue; }
+
+	// Replaces the value with a default one of the new type
+	void SetType( const CPulseValueFullType &type );
+
+	void VariantCompatibility_SetPulseVariantFromEntityVariant( const CVariant &value );
+	void VariantCompatibility_SetEntityVariantFromPulseVariant( CVariant &value ) const;
+
+public:
+	void *m_pValue;
+	CPulseValueFullType m_Type;
+} ALIGN16_POST;
+
 // Static argument or return value record of a binding; the graph definition stores CPulseRuntimeMethodArg instead
 struct PulseMethodArg_t
 {
@@ -122,9 +146,7 @@ struct PulseMethodArg_t
 	CKV3MemberName m_Name;
 	CPulseValueFullType m_Type;
 
-	// A CPulseCallContextValue of m_Type holding the default value; that type is declared after this one, so the
-	// value is raw storage with its 16-byte alignment
-	ALIGN16 uint8 m_DefaultValue[ 32 ] ALIGN16_POST;
+	CPulseCallContextValue m_DefaultValue;
 
 	uint16 m_nMetadataCount;
 	PulseBindingMetadata_t* m_pMetadata;
