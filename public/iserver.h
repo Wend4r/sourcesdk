@@ -402,7 +402,7 @@ public:
 	CPrecacheItem m_Precache[MAX_GENERIC];
 	INetworkStringTable* m_pGenericPrecacheTable;
 	bool m_bAllowSignonWrites;
-}; // sizeof 10056 (0x2748)
+}; // sizeof 10088 (0x2768)
 
 
 // Cached delta entity bit buffers of the HLTV server, one list per entity index
