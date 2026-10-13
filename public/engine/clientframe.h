@@ -57,6 +57,6 @@ public:
 	int m_nUnk0A4;
 	void *m_unk0A8;
 };
-COMPILE_TIME_ASSERT( sizeof( CClientFrameManager ) == 0xB0 );
+COMPILE_TIME_ASSERT( sizeof( CClientFrameManager ) == 176 );
 
 #endif // CLIENTFRAME_H
