@@ -40,31 +40,31 @@ public:
 	virtual void *CreateParticleCollection( const char *pszName, void *pUnk1, void *pUnk2, bool bUnk, int nUnk1, int nUnk2 ) = 0;
 
 	virtual void *CreateParticleCollection( ResourceHandle_t hDefinition, void *pUnk1, void *pUnk2, bool bUnk, int nUnk1, int nUnk2 ) = 0;
-	virtual void Unk_DestroyParticleCollection( void *pCollection ) = 0;
+	virtual void DestroyParticleCollection( void *pCollection ) = 0;
 	virtual bool unk020() = 0;
 	virtual bool unk021() = 0;
 	virtual void unk022() = 0;
 
 	// Display names such as Position, Life Duration or Radius.
-	virtual const char *Unk_GetParticleAttributeName( int nAttribute ) = 0;
+	virtual const char *GetParticleAttributeName( int nAttribute ) = 0;
 
-	virtual int Unk_GetOperatorDefinitionCount( int nFunctionType ) = 0;
-	virtual void *Unk_GetOperatorDefinition( int nFunctionType, int nIndex ) = 0;
+	virtual int GetOperatorDefinitionCount( int nFunctionType ) = 0;
+	virtual void *GetOperatorDefinition( int nFunctionType, int nIndex ) = 0;
 	virtual void unk026() = 0;
 	virtual float unk027() = 0;
 
-	virtual void Unk_DumpParticleSystems( void *p ) = 0;
+	virtual void DumpParticleSystems( void *p ) = 0;
 
-	virtual void Unk_CreateParticleSceneObject( const char *pszName, void *pUnk1, void *pUnk2, uint32 nUnk, float flUnk ) = 0;
+	virtual void CreateParticleSceneObject( const char *pszName, void *pUnk1, void *pUnk2, uint32 nUnk, float flUnk ) = 0;
 
-	virtual void Unk_CreateParticleSceneObject( void *pDefinition, void *pUnk1, void *pUnk2, uint32 nUnk ) = 0;
-	virtual void Unk_CreateParticleSceneObject( void *pCollection, void *pUnk, bool bUnk ) = 0;
+	virtual void CreateParticleSceneObject( void *pDefinition, void *pUnk1, void *pUnk2, uint32 nUnk ) = 0;
+	virtual void CreateParticleSceneObject( void *pCollection, void *pUnk, bool bUnk ) = 0;
 	virtual void unk032() = 0;
 
 	// Draws from the random sequence of a particle collection.
-	virtual int Unk_RandomInt( void *pCollection, int nMin, int nMax ) = 0;
+	virtual int RandomInt( void *pCollection, int nMin, int nMax ) = 0;
 
-	virtual float Unk_RandomFloat( void *pCollection, float flMin, float flMax ) = 0;
+	virtual float RandomFloat( void *pCollection, float flMin, float flMax ) = 0;
 	// "unknown" for an index above 48
 	virtual const char *unk035( uint32 nIndex ) = 0;
 	virtual int unk036( int nIndex ) = 0;
@@ -73,7 +73,7 @@ public:
 	virtual void unk039() = 0;
 	virtual void unk040() = 0;
 
-	virtual void Unk_CreateProceduralSnapshot( void *p ) = 0;
+	virtual void CreateProceduralSnapshot( void *p ) = 0;
 
 	virtual void unk042() = 0;
 	virtual void unk043() = 0;
@@ -84,8 +84,8 @@ public:
 	virtual void unk048() = 0;
 	virtual void unk049() = 0;
 	virtual void unk050() = 0;
-	virtual int Unk_GetParticleSystemVersion() = 0;
-	virtual const char *Unk_GetParticleSystemVersionChangeDescription( int nVersion ) = 0;
+	virtual int GetParticleSystemVersion() = 0;
+	virtual const char *GetParticleSystemVersionChangeDescription( int nVersion ) = 0;
 	virtual void unk053() = 0;
 	virtual bool unk054() = 0;
 	virtual void unk055() = 0;
@@ -93,7 +93,7 @@ public:
 	virtual void unk057() = 0;
 	virtual void unk058() = 0;
 	virtual void unk059() = 0;
-	virtual void Unk_SimulateGPUParticles( void *p ) = 0;
+	virtual void SimulateGPUParticles( void *p ) = 0;
 };
 
 #endif // IPARTICLESYSTEMMGR_H
