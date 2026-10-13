@@ -75,12 +75,13 @@ public:
 
 	virtual void Render2DLine( IRenderContext *pRenderContext, float x0, float y0, float x1, float y1, const Color &color, const CRenderAttributes *pAttributes, LayoutPositionType_e nPositionType ) = 0;
 
-	virtual bool RenderQuad( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
-	virtual bool RenderQuad( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, const Vector2D &vecUV0, const Vector2D &vecUV1, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
-	virtual bool RenderQuad( IRenderContext *pRenderContext, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
+	virtual bool RenderRect( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
+	virtual bool RenderRect( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, const Vector2D &vecUV0, const Vector2D &vecUV1, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
+	// Renders a quad of four vertices through RenderQuads()
+	virtual bool RenderRect( IRenderContext *pRenderContext, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
 
 	virtual bool RenderOutlinedRect( IRenderContext *pRenderContext, const Vector2D &vecPos, const Vector2D &vecSize, float flThickness, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
-	virtual void RenderMesh( void *p ) = 0;
+	virtual void RenderMeshWithMode( IRenderContext *pRenderContext, const MeshBuilderBuffers_t *pMesh, const IMaterialMode *pMode, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
 	virtual bool RenderQuads( IRenderContext *pRenderContext, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, int nCount, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
 	virtual bool RenderConvexGeometry( IRenderContext *pRenderContext, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, int nCount, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType ) = 0;
 
@@ -93,10 +94,10 @@ public:
 	virtual void QueueRender2DLine( uint32 nQueue, float x0, float y0, float x1, float y1, const Color &color, const CRenderAttributes *pAttributes, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
 	virtual void QueueRender2DLines( uint32 nQueue, const CUtlVector< Vector2D > *pLines, const Color &color, const CRenderAttributes *pAttributes, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
 
-	// Queued counterparts of the RenderQuad overloads
-	virtual void QueueRenderQuad( uint32 nQueue, const Vector2D &vecPos, const Vector2D &vecSize, Color color, void *p5, void *p6, void *p7, int n8 ) = 0;
-	virtual void QueueRenderQuad( uint32 nQueue, const Vector2D &vecPos, const Vector2D &vecSize, const Vector2D &vecUV0, const Vector2D &vecUV1, Color color, void *p7, void *p8, void *p9, int n10 ) = 0;
-	virtual void QueueRenderQuad( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, void *p5, void *p6, void *p7, int n8 ) = 0;
+	// Queued counterparts of the RenderRect overloads
+	virtual void QueueRenderRect( uint32 nQueue, const Vector2D &vecPos, const Vector2D &vecSize, const Color &color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
+	virtual void QueueRenderRect( uint32 nQueue, const Vector2D &vecPos, const Vector2D &vecSize, const Vector2D &vecUV0, const Vector2D &vecUV1, const Color &color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
+	virtual void QueueRenderRect( uint32 nQueue, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
 
 	// Takes ownership of the mesh buffers and the attributes
 	virtual void QueueAndOwnRenderMeshWithMode( uint32 nQueue, const MeshBuilderBuffers_t *pMesh, const IMaterialMode *pMode, CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
@@ -104,8 +105,8 @@ public:
 	// Copies the mesh buffers and the attributes, then queues the copy as QueueAndOwnRenderMeshWithMode does
 	virtual void QueueRenderMeshWithMode( uint32 nQueue, const MeshBuilderBuffers_t *pMesh, const IMaterialMode *pMode, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
 
-	virtual void QueueRenderConvexGeometry( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
-	virtual void QueueRenderQuads( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
+	virtual void QueueRenderConvexGeometry( uint32 nQueue, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, int nCount, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
+	virtual void QueueRenderQuads( uint32 nQueue, const Vector *pVertices, const Color *pColors, const Vector2D *pTexCoords, int nCount, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, LayoutPositionType_e nPositionType, float flTimeToLive ) = 0;
 
 	virtual void RenderFontTexture( IRenderContext *pRenderContext, int nTextureId, int nXPos, int nYPos, const CRenderAttributes *pAttributes ) = 0;
 
