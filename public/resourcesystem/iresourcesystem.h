@@ -115,7 +115,7 @@ public:
 	virtual void unk000( void *p ) = 0;
 	virtual void unk001( void *p ) = 0;
 	virtual void unk002( void *p ) = 0;
-	virtual bool unk003() = 0;
+	virtual bool IsBlockingOnManifestLoad() = 0;
 	virtual void unk004( void *p ) = 0;
 };
 
