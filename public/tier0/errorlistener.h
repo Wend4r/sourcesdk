@@ -52,8 +52,7 @@ struct ErrorListenerMessage_t
 
 	CBufferString m_sMessage;
 
-	// ErrorListenerSeverity_t.
-	int m_nSeverity;
+	ErrorListenerSeverity_t m_nSeverity;
 
 	// Prefixes the message; IErrorListener::GetSourceName supplies it when empty.
 	CUtlString m_sLocation;
