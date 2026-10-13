@@ -72,6 +72,7 @@ struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
 struct VPhysXAggregateData_t;
+struct VPhysIntersectionNotification_t;
 struct RnMaterial_t;
 struct DebugSceneObjectParams_t;
 struct SceneObjectBuffers_t;
@@ -119,6 +120,12 @@ enum PhysicsDebugMaterialId_t
 	PHYSICS_DEBUG_MATERIAL_TRANSLUCENT_NODEPTHTEST,
 
 	PHYSICS_DEBUG_MATERIAL_COUNT
+};
+
+struct VPhysContactImpactStrength_t
+{
+	float m_flTangentImpact;
+	float m_flNormalImpact;
 };
 
 abstract_class IVPhysics2 : public IAppSystem
@@ -291,7 +298,7 @@ public:
 	virtual IIkSolver *CreateIkSolver( void *p ) = 0;
 	virtual void DestroyIkSolver( IIkSolver *pSolver ) = 0;
 
-	virtual void unk098( void *p ) = 0;
+	virtual VPhysContactImpactStrength_t ComputeImpactStrength( const VPhysIntersectionNotification_t &notification ) = 0;
 
 	// Pop from and push to a lock-free free list
 	virtual void *unk099( uint32 nUnknown ) = 0;
