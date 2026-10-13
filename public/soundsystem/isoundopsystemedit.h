@@ -65,11 +65,11 @@ public:
 	// Stops every sound event
 	virtual void unk013() = 0;
 	virtual bool IsSoundEventPlaying( SoundEventGuid_t guid ) = 0;
-	// Forward to ISoundEventManager::AddSoundEvent, AddNewSoundEvent, ListSoundEventsForResource and ListSoundEvents
-	virtual bool unk015( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding, bool bUpdate ) = 0;
-	virtual void unk016( const char *pSoundEventName, const ResourceBindingBase_t *pBinding ) = 0;
-	virtual void unk017( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) = 0;
-	virtual void unk018( CUtlVector< const char * > &list ) = 0;
+	// Forward to ISoundEventManager, AddSoundEvent with bUpdate and without bNoDefer
+	virtual bool AddSoundEvent( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding ) = 0;
+	virtual void AddNewSoundEvent( const char *pSoundEventName, const ResourceBindingBase_t *pBinding ) = 0;
+	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) = 0;
+	virtual void ListSoundEvents( CUtlVector< const char * > &list ) = 0;
 	virtual void FixupResourceName( const char *pName, CUtlString &sName ) = 0;
 	// Sets the update stack of the sound event from the stack name
 	virtual void unk020( const char *pSoundEventName, const char *pStackName ) = 0;
