@@ -33,6 +33,13 @@ struct ParticleProjectedTextureInfo_t;
 FORWARD_DECLARE_HANDLE( HDeferredLight );
 FORWARD_DECLARE_HANDLE( HProjectedTexture );
 
+// The 8-byte class IToolService::unk063 returns (zero without a game client, otherwise the result of ISource2Client::unk146),
+// in an integer register on Linux; only its size is known
+struct ToolServiceUnk063_t
+{
+	uint8 m_Data[ 8 ];
+};
+
 abstract_class IToolService : public IEngineService
 {
 public:
@@ -92,8 +99,7 @@ public:
 
 	// Forward to the game client
 	virtual void *unk062() = 0;
-	// Returns an 8-byte value by value
-	virtual void unk063() = 0;
+	virtual ToolServiceUnk063_t unk063() = 0;
 	// The game client reports a valid local player entity handle
 	virtual bool unk064() = 0;
 
