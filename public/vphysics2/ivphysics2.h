@@ -426,6 +426,10 @@ public:
 	virtual void SetVisualDebugCameraHint( int nUnknown, const CFrustum &frustum ) = 0;
 
 	virtual const char *GetMassDescription( float flMass ) = 0;
+
+public:
+	// Freed by the destructor, not used otherwise
+	CUtlLeanVector< CPhysAggregateData * > m_AggDataRegistry;
 };
 
 inline void CPhysAggregateDataHandle::Set( CPhysAggregateData *pData )
@@ -454,8 +458,6 @@ class CVPhysics2Interface : public CTier2AppSystem< IVPhysics2 >
 public:
 	// The surface property manager embedded in this object; GetSurfacePropertyController returns its controller base
 	virtual CVPhysics2SurfacePropertyManager *unk146() = 0;
-
-	uint64 m_pad028[ 2 ];
 
 	// CVPhysics2ConComm, the VConsole physics debugger link
 	uint64 m_Unk038[ 5 ];
