@@ -477,7 +477,7 @@ public:
 	// Called when the broadcast relay answers an HLTV broadcast request with HTTP 200.
 	virtual void			OnBroadcastRelayRequestSucceeded( void *pUnk ) = 0;
 	virtual void			SendServerFrameTime( float flFrameTime ) = 0;
-	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nUnk ) = 0;
+	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nDelay ) = 0;
 	virtual void			OnClientHltvReplayStop( CPlayerSlot slot ) = 0;
 
 	// Called by the VConsole2 flattened serializer view for each network field of an entity. Rewrites the value text of entity and resource handles and appends notes, such as pose parameter names.
@@ -491,7 +491,8 @@ public:
 	// Called for FCVAR_GAMEDLL commands sent by a client. Returns false when the command is not a registered player controller command. 
 	// Otherwise queues it to the controller as a predicted string command event.
 	virtual bool			ProcessClientStringCommand( CPlayerSlot slot, const CCommand &args, uint32 nPredictionSync ) = 0;
-	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nUnk, const char *pCommand ) = 0;
+	// nQueuedMatchPlayers is the number of entries in the engine's queued match player reservation list
+	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nQueuedMatchPlayers, const char *pCommand ) = 0;
 	virtual void			SetPlayerTeammatePreferredColor( uint32 uiAccountID, int nColor ) = 0;
 	virtual void			UpdateCompTeammateColors( void ) = 0;
 
