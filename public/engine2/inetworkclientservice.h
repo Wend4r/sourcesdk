@@ -90,7 +90,7 @@ public:
 	virtual void RegisterNetMessage( INetworkMessageInternal *pNetMessage, bool bUnk ) = 0;
 
 	// Client and SourceTV status lines
-	virtual void PrintStatus( int nUnk1, int nUnk2 ) = 0;
+	virtual void PrintStatus( CommandTarget_t nTarget, int nUnk ) = 0;
 
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr() = 0;
 
