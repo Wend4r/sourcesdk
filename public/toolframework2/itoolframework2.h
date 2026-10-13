@@ -410,12 +410,40 @@ public:
 class CToolFramework2 : public CTier3AppSystem< IToolFramework2 >
 {
 public:
+	struct ToolEntry_t
+	{
+		// See GetToolSettings
+		KeyValues3 m_Settings;
+
+		// Returned by LoadTool
+		IToolSystem2 *m_pToolSystem;
+
+		// Set once loading was attempted
+		bool m_bLoadAttempted;
+	};
+
+	struct SplashScreenLabel_t
+	{
+		// Null until the splash screen exists
+		QLabel *m_pLabel;
+
+		Color m_Color;
+
+		// Kept until the splash screen exists
+		CUtlString m_sText;
+	};
+
+	struct QueuedToolRequest_t
+	{
+		CUtlString m_sToolName;
+		KeyValues3 m_Request;
+	};
+
 	// Engine and external tools, loaded from bin/enginetools.txt
 	CToolsConfig *m_pToolsConfig;
 
-	// One 32-byte entry per engine tool: its settings (KeyValues3, returned by unk081), the
-	// IToolSystem2 returned by LoadTool and a flag set once loading was attempted
-	uint8 m_unk030[ 0x18 ];
+	// One entry per engine tool
+	CUtlVector< ToolEntry_t > m_Tools;
 
 	CUtlVector< IToolFrameListener * > m_ToolFrameListeners;
 	CUtlVector< IToolFrameworkAudioSettingsListener * > m_AudioSettingsListeners;
@@ -432,28 +460,27 @@ public:
 	// Set by MarkSettingsDirty, cleared when the settings are saved
 	bool m_bSettingsDirty;
 
-	// Tool deferred by unk016, launched by Tools_RunFrame; 0xFF when none
-	bool m_bUnk087;
-	uint8 m_nUnk088;
+	// Tool deferred by QueueToolLaunch, launched by Tools_RunFrame
+	bool m_bLaunchQueuedTool;
+	uint8 m_nQueuedToolIndex;
 
 	// Tools queued for unloading
 	CUtlVector< uint8 > m_ToolsToUnload;
 
-	// CEnvironmentBlock returned by unk037, captured by Connect
+	// CEnvironmentBlock returned by GetEnvironmentBlock, captured by Connect
 	uint8 m_unk0A8[ 0x30 ];
 
-	// Labels added by unk038 to the loading splash screen: the widget, its layout and the 24-byte
-	// entries (QLabel, the int argument, the text kept until the widget exists)
-	QWidget *m_pUnk0D8;
-	QVBoxLayout *m_pUnk0E0;
-	uint8 m_unk0E8[ 0x18 ];
+	// Labels added by AddSplashScreenLabel to the loading splash screen
+	QWidget *m_pSplashScreen;
+	QVBoxLayout *m_pSplashScreenLayout;
+	CUtlVector< SplashScreenLabel_t > m_SplashScreenLabels;
 
-	int m_nUnk100;
+	// Plat_MSTime of the last blink of the labels, the top bit toggles their background
+	int m_nSplashScreenLabelsBlinkTime;
 
-	// Created on the first unk039 call
+	// Created on the first GetMultiAxisControllerInput call
 	CJoystickInput *m_pJoystickInput;
 
-	// Returned by unk059
 	CQInputBindManager *m_pInputBindManager;
 
 	// Warns about other tools instances
@@ -462,15 +489,16 @@ public:
 	// GAMEROOT path, the root of the settings files
 	CBufferStringN< 200 > m_sGameRoot;
 
-	// QPointer< QWidget > of unk060
-	uint8 m_unk1F0[ 0x10 ];
+	// Window of ActivateEngineWindow, a QPointer< QWidget >: its shared reference count and the widget
+	void *m_pToolWindowRefCount;
+	QWidget *m_pToolWindow;
 
-	// Stall monitor, started by unk011
+	// Stall monitor, started by StartStallMonitor
 	bool m_bStallMonitorEnabled;
 	ThreadHandle_t *m_pStallMonitorThread;
 
-	// Counter of unk078
-	int m_nUnk210;
+	// Counter of PushToolsAudioUnmute
+	int m_nToolsAudioUnmuteCount;
 	uint8 m_unk214[ 4 ];
 
 	// "VToolMessage" notification channel
@@ -485,8 +513,8 @@ public:
 	CFGDFromAssetRegistry *m_pFGDFromAssetRegistry;
 	CBufferString m_sUnk258;
 
-	// 24-byte requests queued by unk080, guarded by the mutex
-	uint8 m_unk268[ 0x18 ];
+	// Requests of QueueToolRequest, guarded by the mutex
+	CUtlVector< QueuedToolRequest_t > m_QueuedToolRequests;
 	CAtomicMutex m_ToolRequestsMutex;
 
 	// Command line options "-generatethumbnails", "-generatethumbnailssubstr",
