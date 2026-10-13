@@ -30,7 +30,7 @@ public:
 
 	virtual CUtlStringToken GetRenderingPipeline() = 0;
 
-	virtual bool unk027() = 0;
+	virtual RenderMultisampleType_t GetMultisampleType() = 0;
 
 	virtual void GetSplitScreenViewport( const RenderViewport_t &viewport, CSplitScreenSlot nSlot, RenderViewport_t *pOutViewport ) = 0;
 
