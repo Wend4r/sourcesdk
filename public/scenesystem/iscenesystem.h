@@ -68,6 +68,12 @@ public:
 
 using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
 
+enum SetupPerObjectLighting_t : uint32
+{
+	SETUP_PER_OBJECT_LIGHTING_DIFFUSE = 0x1,
+	SETUP_PER_OBJECT_LIGHTING_SPECULAR = 0x2,
+};
+
 abstract_class ISceneSystem : public IAppSystem
 {
 public:
@@ -215,7 +221,7 @@ public:
 	virtual void unk110() = 0;
 	virtual void unk111() = 0;
 	virtual void SetIgnoreAlphaFade( bool bIgnoreAlphaFade ) = 0;
-	virtual void unk113() = 0;
+	virtual void SetupPerObjectLighting( CRenderAttributes &renderAttributes, CSceneObject *pSceneObject, const ISceneLayer *pSceneLayerInterface, SetupPerObjectLighting_t flags ) = 0;
 
 	// Destroys every sparse shadow tree, then loads them again when nUnk is positive.
 	virtual void unk114( int nUnk ) = 0;
