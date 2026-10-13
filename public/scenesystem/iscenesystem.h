@@ -16,6 +16,7 @@
 #include <mathlib/fltx4.h>
 #include <resourcesystem/resourcehandle.h>
 #include <tier0/utlstringtoken.h>
+#include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
 #include <bitmap/imageformat_declarations.h>
 
@@ -75,6 +76,20 @@ enum SceneSystemBoxCullMode_t : uint32
 {
 	SCENESYSTEM_BOX_CULL_INSIDE = 0,
 	SCENESYSTEM_BOX_CULL_OUTSIDE = 1,
+};
+
+enum SceneSystemGPUProfilerMode_t : uint32
+{
+	SCENE_GPU_PROFILER_DISABLE = 0,
+	SCENE_GPU_PROFILER_TIMESTAMP_ONLY = 1,
+	SCENE_GPU_PROFILER_FULL = 2,
+};
+
+struct SceneSystemTimestampFrameData_t
+{
+	CUtlString m_sGroupName;
+	CUtlStringToken m_nGroupNameToken;
+	float m_flDurationInMilliseconds;
 };
 
 enum SetupPerObjectLighting_t : uint32
@@ -315,11 +330,15 @@ public:
 	virtual void unk165( ISceneObjectListener *pListener ) = 0;
 	virtual void unk166( ISceneObjectListener *pListener ) = 0;
 
-	virtual void unk167() = 0;
-	virtual int unk168() = 0;
-	virtual void unk169() = 0;
+	// The mode is kept per requester; GetGPUProfilerMode returns the union of all requested modes.
+	virtual void SetGPUProfilerMode( CUtlStringToken requester, SceneSystemGPUProfilerMode_t eGPUProfilerMode ) = 0;
+	virtual SceneSystemGPUProfilerMode_t GetGPUProfilerMode() = 0;
+
+	// Enables a per requester flag for half a second, or removes it.
+	virtual void unk169( CUtlStringToken requester, bool bEnable ) = 0;
 	virtual bool unk170() = 0;
-	virtual void unk171() = 0;
+
+	virtual void GetMostRecentTimestampFrameSummary( SwapChainHandle_t hSwapChain, CUtlVector< SceneSystemTimestampFrameData_t > &timestampFrameSummaryOut, int nUnk ) = 0;
 	// ORs the state flags of the overlay lists created by CreateSceneViewDebugOverlayList.
 	virtual int unk172( int *pOut ) = 0;
 	virtual IRayTraceSceneWorld *CreateRayTraceWorld( const char *pszDebugName, int nMaxRayTypes, bool bUnk ) = 0;
