@@ -4,6 +4,8 @@
 #include "entitysystem.h"
 #include "igameevents.h"
 #include "tier0/globalsymbol.h"
+#include "tier0/utlstring.h"
+#include "tier1/utlvector.h"
 
 class CBaseEntity;
 class CCSPlayerController;
@@ -32,7 +34,7 @@ public:
 	virtual CGlobalSymbol GetGlobalSymbol() = 0;
 	virtual void CreateEntityTemplate( /* v8::Local< v8::FunctionTemplate > */ void *pTemplate ) = 0;
 
-	// Drops the callbacks registered by the script
+	// Clears m_Callbacks; the entity script also stops listening for game events
 	virtual void unk009() = 0;
 
 	virtual void OnBeginRoundRestart() = 0;
@@ -78,12 +80,17 @@ public:
 	// Checked before any callback is called
 	bool m_bUnk030;
 
-	uint64 m_Unk038[ 3 ];
+	// Names added to m_Unk050 and m_Unk070
+	CUtlVector< CUtlString > m_Unk038;
 
-	// Hash tables with 0x18-byte entries; m_Unk090 holds v8 global handles
+	// CUtlHashtable< CGlobalSymbol, v8::Global * > tables (0x18-byte entries); the values are heap v8 global handles
 	uint64 m_Unk050[ 4 ];
 	uint64 m_Unk070[ 4 ];
-	uint64 m_Unk090[ 4 ];
+
+	// Callbacks of the script, by name ("Registering callback", "Invoking callback", "Remove callback")
+	uint64 m_Callbacks[ 4 ];
+
+	// Hash tables with 0x18-byte entries
 	uint64 m_Unk0B0[ 4 ];
 	uint64 m_Unk0D0[ 4 ];
 };
