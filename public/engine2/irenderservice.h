@@ -15,9 +15,19 @@
 #include <spawngrouptypes.h>
 #include <rendersystem/rendersystemtypes.h>
 
-class IRenderHandler;
 class ISceneWorld;
 struct EventClientPreOutput_t;
+
+// Installed with InstallRenderHandler
+abstract_class IRenderHandler
+{
+public:
+	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime, const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) = 0;
+	// Returns false in the game UI service
+	virtual bool unk001() = 0;
+	// Empty in the game UI service
+	virtual void unk002() = 0;
+};
 
 abstract_class IRenderService : public IEngineService
 {
