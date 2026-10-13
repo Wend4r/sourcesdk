@@ -15,6 +15,8 @@
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
 #include "resourcesystem/resourcehandle.h"
+#include "tier0/threadtools.h"
+#include "tier0/utlsymbollarge.h"
 #include "tier0/utlvector.h"
 #include "tier3/tier3.h"
 
@@ -163,24 +165,64 @@ public:
 class CPulseSystem : public CTier3AppSystem< IPulseSystem >
 {
 public:
+	struct AutoWakeCursor_t
+	{
+		uint8 m_pad000[ 0x20 ];
+	};
+
+	struct ALIGN16 ScheduledGraphHookCall_t
+	{
+		uint8 m_pad000[ 0x140 ];
+	} ALIGN16_POST;
+
 	// Added by AddListener
 	CUtlVector< void * > m_Listeners;
 
-	uint8 m_pad040[ 0x98 ];
+	CUtlSymbolTableLarge m_Unk040;
+
+	// CPulseTypeManager
+	uint64 m_Unk0A8[ 6 ];
 
 	// Set by unk046
 	bool m_bUnk0D8;
 
+	bool m_bMinimalDefinitionLoadingEnabled;
+
+	// Incremented by AllocateGraphInstanceID
+	uint32 m_nUnk0DC;
+
 	// Appended by the Queue*Event methods
 	CUtlVector< PulseSystemEventBase_t * > m_PendingEvents;
 
-	uint8 m_pad0F8[ 0xB078 ];
+	// AddCursorToAutoWakeList, GetCursorAutoWakeTime, RemoveCursorFromAutoWakeList and GetNumAutoWakeCursors
+	CUtlVectorFixedGrowable< AutoWakeCursor_t, 128 > m_AutoWakeCursors;
+
+	// Appended by ScheduleGraphHookCall
+	CUtlVectorFixedGrowable< ScheduledGraphHookCall_t, 128 > m_ScheduledGraphHookCalls;
+
+	// CUtlHashtable with 24-byte entries, walked by CallGraphHookOnAllInstances
+	uint64 m_UnkB130[ 4 ];
+
+	// CUtlHashtable with 24-byte entries, walked by ForEachGraphInstance and the execution history methods
+	uint64 m_UnkB150[ 4 ];
 
 	// Returned by GetTypeQueriesForScopes and GetOpaqueHandleTable
 	void *m_pUnkB170;
 	void *m_pUnkB178;
 
-	uint8 m_padB180[ 0x78 ];
+	// CUtlMap< PulseSymbol_t, IPulseBlackboardView *, int > filled by RegisterBlackboard and read by FindBlackboard
+	uint64 m_Blackboards[ 5 ];
+
+	// CUtlMap of the read-only blackboard views refreshed by UpdateReadOnlyBlackboardViews
+	uint64 m_UnkB1A8[ 5 ];
+
+	bool m_bUnkB1D0;
+
+	// Added by AddCursorStateListener
+	CUtlVector< void * > m_CursorStateListeners;
+
+	// Guards the graph instances
+	CAtomicMutex m_UnkB1F0;
 };
 
 #include "schemacompiler/schemaoff.h"
