@@ -22,6 +22,12 @@ class QObject;
 class KeyValues3;
 class IToolFrameListener;
 class CEnvironmentBlock;
+class CEngineToolInfo;
+class CExternalToolInfo;
+class IToolFrameworkTabletInfo;
+class CQToolFrameworkApplication;
+class CJoystickInput;
+class CFGDFromAssetRegistry;
 
 abstract_class IToolFramework2 : public IAppSystem
 {
@@ -29,8 +35,9 @@ public:
 	// Starts the tools stall monitor thread
 	virtual void unk011() = 0;
 
-	virtual void unk012( void *pTools ) = 0;
-	virtual void unk013() = 0;
+	// Fills pTools with the engine tools this installation may run
+	virtual void unk012( CUtlVector< CEngineToolInfo * > *pTools ) = 0;
+	virtual void unk013( uint8 nToolIndex ) = 0;
 
 	virtual void QueueToolUnload( uint8 nToolIndex ) = 0;
 
@@ -53,9 +60,8 @@ public:
 
 	virtual void *LoadTool( uint8 nToolIndex ) = 0;
 
-	// Return the tool's descriptor entries
-	virtual void *unk025( uint8 nToolIndex ) = 0;
-	virtual void *unk026( uint8 nToolIndex ) = 0;
+	virtual CEngineToolInfo *GetEngineToolInfo( uint8 nToolIndex ) = 0;
+	virtual CExternalToolInfo *GetExternalToolInfo( uint8 nExternalToolIndex ) = 0;
 
 	// Open assets in a tool and warn about assets no tool handles
 	virtual void unk027( void *pAsset, uint8 nToolIndex ) = 0;
@@ -72,12 +78,13 @@ public:
 
 	virtual void SetSplashScreenMessage( const char *pMessage ) = 0;
 
-	virtual void *unk036() = 0;
+	virtual IToolFrameworkTabletInfo *GetTabletInfo() = 0;
 	virtual CEnvironmentBlock *unk037() = 0;
 
 	// Adds a colored text label
 	virtual void unk038( const char *pText, int nUnknown ) = 0;
-	virtual void *unk039( void *p ) = 0;
+	// Reads the joystick raw input into the state
+	virtual bool unk039( void *pState ) = 0;
 	virtual void *unk040() = 0;
 
 	// Forwards both values to every loaded tool system
@@ -91,15 +98,18 @@ public:
 	virtual const char *GetDeveloperHelpURL() = 0;
 	virtual void ShowAboutDialog() = 0;
 
-	virtual void unk047( void *p ) = 0;
-	virtual void unk048( void *p ) = 0;
+	// Selects the file in Explorer
+	virtual void unk047( const char *pPath ) = 0;
+
+	// Shell "open" of the path
+	virtual void unk048( const char *pPath ) = 0;
 	virtual void *unk049() = 0;
 
-	// Shared settings flags
-	virtual void unk050( bool bValue ) = 0;
-	virtual bool unk051() = 0;
-	virtual void unk052( bool bValue ) = 0;
-	virtual bool unk053() = 0;
+	// Shared tool settings, saved under "toolframework"
+	virtual void SetAllowFlyMode2( bool bAllow ) = 0;
+	virtual bool GetAllowFlyMode2() = 0;
+	virtual void SetHideCursorDuringCameraManipulation( bool bHide ) = 0;
+	virtual bool GetHideCursorDuringCameraManipulation() = 0;
 
 	// True when not running on a customer machine
 	virtual bool unk054() = 0;
@@ -107,8 +117,9 @@ public:
 
 	virtual void LaunchBuildWatch() = 0;
 
-	virtual bool unk057() = 0;
-	virtual void unk058( bool bValue ) = 0;
+	// "Render All Windows" in the tools menu
+	virtual bool GetAlwaysRenderAllWindows() = 0;
+	virtual void SetAlwaysRenderAllWindows( bool bAlways ) = 0;
 	virtual void *unk059() = 0;
 
 	virtual void unk060( QObject *pWindow ) = 0;
@@ -129,11 +140,14 @@ public:
 
 	virtual void *unk070( void *p1, void *p2 ) = 0;
 
-	virtual void unk071( bool bValue ) = 0;
-	virtual bool unk072() = 0;
-	virtual void unk073( bool bValue ) = 0;
-	virtual bool unk074() = 0;
-	virtual bool unk075( bool *pUnk1, bool *pUnk2 ) = 0;
+	// Notify the listeners added with unk076 when the value changes
+	virtual void SetAutoMuteGameWhenToolsHaveFocus( bool bMute ) = 0;
+	virtual bool GetAutoMuteGameWhenToolsHaveFocus() = 0;
+	virtual void SetToolsAudioMuted( bool bMuted ) = 0;
+	virtual bool GetToolsAudioMuted() = 0;
+	// pbMuteGame from the auto mute setting and the engine focus, pbMuteTools from the tools mute
+	// setting while no unk078 request is active
+	virtual bool unk075( bool *pbMuteGame, bool *pbMuteTools ) = 0;
 	virtual void unk076( void *pListener ) = 0;
 	virtual void unk077( void *pListener ) = 0;
 
@@ -160,7 +174,7 @@ public:
 	// Forwards the arguments to every response listener
 	virtual void unk088( uint32 nUnk1, uint8 nUnk2, void *pUnk3, void *pUnk4, void *pUnk5, void *pUnk6 ) = 0;
 
-	virtual bool unk089() = 0;
+	virtual bool CanToolHighlightSubassets( uint8 nToolIndex ) = 0;
 
 	// Executes "quit"
 	virtual void Quit() = 0;
@@ -187,15 +201,19 @@ public:
 
 	uint8 m_unk048[ 0x18 ];
 	uint8 m_unk060[ 0x18 ];
-	void *m_pUnk078;
+	CQToolFrameworkApplication *m_pUnk078;
 
-	bool m_bUnk080;
-	bool m_bUnk081;
-	bool m_bUnk082;
-	bool m_bUnk083;
-	bool m_bUnk084;
-	bool m_bUnk085;
-	bool m_bUnk086;
+	// Settings, saved under the matching snake_case keys
+	bool m_bMultisample;
+	bool m_bAlwaysRenderAllWindows;
+	bool m_bAllowFlyMode2;
+	bool m_bHideCursorDuringCameraManipulation;
+	bool m_bToolsAudioMuted;
+	bool m_bAutoMuteGameWhenToolsHaveFocus;
+
+	// Set by MarkSettingsDirty, cleared when the settings are saved
+	bool m_bSettingsDirty;
+
 	bool m_bUnk087;
 	uint8 m_nUnk088;
 
@@ -209,7 +227,8 @@ public:
 	void *m_pUnk0E0;
 	uint8 m_unk0E8[ 0x18 ];
 	int m_nUnk100;
-	void *m_pUnk108;
+	// Created on the first unk039 call
+	CJoystickInput *m_pUnk108;
 	uint8 m_unk110[ 0x10 ];
 	CBufferStringN< 200 > m_sUnk120;
 
@@ -226,7 +245,7 @@ public:
 	uint8 m_unk218[ 0x18 ];
 	uint8 m_unk230[ 0x18 ];
 	bool m_bUnk248;
-	void *m_pUnk250;
+	CFGDFromAssetRegistry *m_pUnk250;
 	CBufferString m_sUnk258;
 	uint8 m_unk268[ 0x28 ];
 	CUtlString m_sUnk290;
