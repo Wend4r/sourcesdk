@@ -257,8 +257,9 @@ public:
 	virtual void unk110( HDeferredLight hLight ) = 0;
 	// Traces a line through the game physics query with a filter built from attr; resets the trace without one
 	virtual bool unk111( const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr, CGameTrace *pTrace ) = 0;
-	virtual void unk112( int nUnk1, int nUnk2, int nUnk3, void *pUnk ) = 0;
-	virtual void unk113( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// Forward to the game physics query methods of the same names, the first one with a -1.0 default
+	virtual void TraceLineIntervals( void *pIntervals, const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr ) = 0;
+	virtual uint64 GetPointContents( const Vector &vecPosition, int nMask ) = 0;
 	// Overloads: the first one looks the entity up and calls the second one. Linux keeps this order, MSVC reverses it
 	virtual void unk114( CEntityIndex nEntityIndex, void *pUnk ) = 0;
 	virtual void unk114( CEntityInstance *pEntity, uint64 *pUnk1, void *pUnk2 ) = 0;
