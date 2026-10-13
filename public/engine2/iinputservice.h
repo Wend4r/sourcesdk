@@ -34,12 +34,12 @@ public:
 	virtual void ReadKeyBindings( CSplitScreenSlot nSlot ) = 0;
 	virtual void WriteKeyBindings( CSplitScreenSlot nSlot ) = 0;
 
-	virtual void SetBinding( ButtonCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bUnk, int nChord ) = 0;
+	virtual void SetBinding( ButtonCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bIsDefaultBinding, int nChord ) = 0;
 	virtual const char *GetBinding( ButtonCode_t code, CSplitScreenSlot nSlot, int nChord ) = 0;
-	virtual void SetBinding( AnalogCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bUnk, int nChord ) = 0;
+	virtual void SetBinding( AnalogCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bIsDefaultBinding, int nChord ) = 0;
 	virtual const char *GetBinding( AnalogCode_t code, CSplitScreenSlot nSlot, int nChord ) = 0;
 
-	virtual const char *NameForBinding( const char *pszBinding, CSplitScreenSlot nSlot, int nUnk1, int nUnk2 ) = 0;
+	virtual const char *NameForBinding( const char *pszBinding, CSplitScreenSlot nSlot, int nStartCount, int nAllowJoystick ) = 0;
 
 	// Whether code is bound to toggleconsole (no modifiers held)
 	virtual bool IsToggleConsoleButton( ButtonCode_t code, int nModifiers ) = 0;
