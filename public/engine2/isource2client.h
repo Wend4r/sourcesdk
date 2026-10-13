@@ -39,6 +39,7 @@ class CEngineGotvSyncPacket;
 class CEntityInstance;
 class CGameTrace;
 class CGlobalVarsBase;
+class CPlayerSlot;
 class CRenderAttributes;
 class CSVCMsg_HltvReplay_t;
 class CSVCMsg_UserCommands_t;
@@ -51,12 +52,14 @@ class IDemoMessageSink;
 class InstantReplayMessage_t;
 class IEntityReport;
 class ILoadingSpawnGroup;
+class INetChannel;
 class INetworkFieldChangedEventQueue;
 class InfoForResourceTypeCTextureBase;
 class IToolClientSimulationAPI;
 class IToolObject;
 class ISceneView;
 class ISceneWorld;
+class ISerializerMatchToMetaReplayCompatHelper;
 class InfoForResourceTypeCModel;
 class KeyValues;
 class QAngle;
@@ -66,6 +69,7 @@ struct AudioState_t;
 struct EconItemInfo_t;
 struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
+struct GameClientCommandQueueState_t;
 struct LightDesc_t;
 struct matrix3x4_t;
 class matrix3x4a_t;
@@ -126,7 +130,7 @@ public:
 	// Called after the engine installed the callbacks of its own string tables, with the same flag
 	virtual void InstallStringTableCallback( bool bInvoke ) = 0;
 	// Queues a predicted string command event for the client. A non-zero result other than -1 is sent to the server as the prediction sync of the command
-	virtual int unk013( int nUnk, const CCommand &args ) = 0;
+	virtual int unk013( CPlayerSlot nSlot, const CCommand &args ) = 0;
 	virtual void PlayerInfoChanged( int nPlayerIndex ) = 0;
 
 	virtual void CreateMove( int nSlot, bool bActive ) = 0;
@@ -148,8 +152,9 @@ public:
 	virtual void unk025() = 0;
 	virtual double unk026( CSplitScreenSlot nSlot, int nCommandNumber ) = 0;
 
-	// Forward to the game rules
-	virtual void unk027( bool bUnk ) = 0;
+	// Forward to the game rules: the first one logs "paused on tick" and "unpaused on tick", the second one clears the pause ticks.
+	// The engine calls them for the demo player's pause state
+	virtual void unk027( bool bPaused ) = 0;
 	virtual void unk028() = 0;
 	// Forward to the network classes of the client entity system
 	virtual bool GetEntity2Networkable( CEntityIndex nEntityIndex, Entity2Networkable_t &networkable ) = 0;
@@ -181,8 +186,8 @@ public:
 
 	virtual void VoiceStatus( int nEntityIndex, int nSplitScreenSlot, bool bTalking ) = 0;
 
-	// Forward to the mouth (lip sync) system
-	virtual void unk049( int nUnk ) = 0;
+	// Forward to the mouth (lip sync) system; the first one allocates a mouth and returns its id
+	virtual uint16 unk049( int nUnk ) = 0;
 	virtual void unk050( uint16 nUnk ) = 0;
 	virtual void unk051( void *pUnk, int nUnk1, int nUnk2 ) = 0;
 	// Fills the listener origin and angles, then the two vectors that follow through unk098()
@@ -192,8 +197,11 @@ public:
 	virtual void View_Render( vrect_t *pRect ) = 0;
 	virtual void NotifyClientSignon( int nSignonState ) = 0;
 	virtual bool CanRecordDemo( CBufferString *pErrorMsg ) const = 0;
-	virtual bool unk058() = 0;
-	virtual bool unk059( const char *pszCommand ) = 0;
+	// Asked by the engine's in-memory demo buffer for an 8-byte key; on true the engine decrypts the demo file in 8-byte blocks with it.
+	// Returns false
+	virtual bool unk058( const char *pszDemoFileName, uint8 *pKey ) = 0;
+	// Filters console commands; the engine passes 0 as the second argument
+	virtual bool unk059( const char *pszCommand, int nUnk ) = 0;
 	virtual void OnDemoRecordStart( const char *pszDemoBaseName, IDemoMessageSink *pSink ) = 0;
 	virtual void OnDemoRecordStop( IDemoMessageSink *pSink ) = 0;
 
@@ -315,7 +323,8 @@ public:
 	virtual bool unk136() = 0;
 	// Total and custom game Steam UGC subscription counts for the crash dump comment; zeroes them and returns false
 	virtual bool unk137( uint32 *pnSubscriptionCounts ) = 0;
-	virtual void unk138( void *pUnk ) = 0;
+	// Asked for the addon id when "AddonConfig/AllowAddonDownload" is set; the engine handles the results 1 and 2
+	virtual int unk138( uint64 nAddonId ) = 0;
 	virtual bool unk139( const char **ppszUnk, int nUnk, CUtlString *pOut ) = 0;
 	// Entity list of the client entity system, summarized in the crash dump comment
 	virtual CConcreteEntityList *unk140() = 0;
@@ -335,7 +344,8 @@ public:
 	// Forwards to the game rules
 	virtual void unk152() = 0;
 	virtual const char *unk153() = 0;
-	virtual void unk154( void *pUnk ) = 0;
+	// Fires a panorama event with the state
+	virtual void unk154( const GameClientCommandQueueState_t &state ) = 0;
 	virtual void unk155( CEntityIndex nEntityIndex, int *pUnk, int nUnk ) = 0;
 	virtual void unk156( CEntityIndex nEntityIndex, int *pUnk ) = 0;
 
@@ -345,9 +355,10 @@ public:
 	virtual void unk158( const Vector &vecPosition, const char *pszAreaType, bool *pbPointInSoundArea, bool *pbSoundAreasExist ) = 0;
 	virtual void unk159( SoundAreaGuid_t guid ) = 0;
 
-	virtual CEntityHandle unk160( int nUnk ) = 0;
+	virtual CEntityHandle unk160( CPlayerSlot nSlot ) = 0;
 	virtual void unk161() = 0;
-	virtual void *unk162() = 0;
+	// The engine renames classes through it while it links classes for replay compatibility ("scripts/replay_compatability_settings.txt")
+	virtual ISerializerMatchToMetaReplayCompatHelper *unk162() = 0;
 	virtual bool unk163( void *pUnk ) = 0;
 	virtual void OnHltvReplay( const CSVCMsg_HltvReplay_t *pMsg ) = 0;
 	// Forward to the HLTV replay system, which OnHltvReplay() feeds
@@ -364,7 +375,8 @@ public:
 	virtual CEntityHandle unk173( CEntityIndex nEntityIndex ) = 0;
 	// Designer name of the entity, falling back to its class name; "" for an invalid index
 	virtual const char *GetEntity2ClassName( CEntityIndex nEntityIndex ) = 0;
-	virtual bool unk175( CEntityIndex nEntityIndex, void *pOut ) = 0;
+	// True when the class name of the entity or of one of its base classes is pszClassName
+	virtual bool unk175( CEntityIndex nEntityIndex, const char *pszClassName ) = 0;
 
 	// Forward to the input system
 	virtual bool unk176() = 0;
@@ -380,12 +392,14 @@ public:
 
 	// Forward to the input system
 	virtual bool unk184() = 0;
-	virtual void unk185( void *pUnk, int *pUnk2 ) = 0;
-	virtual void unk186() = 0;
-	virtual bool unk187( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	virtual void unk188( int nUnk, void *pUnk1, void *pUnk2 ) = 0;
+	virtual void unk185( CSplitScreenSlot nSlot, int *pnUnk ) = 0;
+	virtual void unk186( CSplitScreenSlot nSlot, int *pnUnk ) = 0;
+	// The engine asks the first one before it runs a key binding of an input button and calls the second one after it
+	virtual bool unk187( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
+	virtual void unk188( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
 
-	virtual void unk189( void *pUnk, int nUnk1, int nUnk2 ) = 0;
+	// Called with the new net channel of the connection
+	virtual void unk189( INetChannel *pNetChannel, int nUnk, bool bUnk ) = 0;
 	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
@@ -395,11 +409,14 @@ public:
 	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
 	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
 	virtual void unk198( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	virtual bool unk199( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// Clears the result
+	virtual bool unk199( void *pUnk1, void *pUnk2, CBufferString &result ) = 0;
 	virtual void unk200() = 0;
-	virtual void unk201( void *pUnk1, void *pUnk2 ) = 0;
+	// Clears the result
+	virtual void unk201( void *pUnk, CBufferString &result ) = 0;
 	virtual bool unk202() = 0;
-	virtual void unk203() = 0;
+	// The engine passes it with unk162() to the flattened serializers while it links classes
+	virtual void *unk203() = 0;
 	// Asked before ISource2Server::GetMatchID() for the crash dump comment
 	virtual uint64 GetMatchID() = 0;
 	virtual bool unk205( CEntityIndex nEntityIndex ) = 0;
