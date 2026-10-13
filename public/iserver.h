@@ -383,7 +383,8 @@ public:
 
 	uint64 m_nReservationCookie;
 	uint64 m_nUnk1744;
-	uint64 m_nUnk1752;
+	// ICvar::GetTotalUserInfoCvarsByteSize(), refreshed by OnConVarCreated which then resizes every client's user info convar data
+	uint64 m_nTotalUserInfoCvarsByteSize;
 	int m_nUnk1760;
 	void* m_pReplayDirector;
 };
