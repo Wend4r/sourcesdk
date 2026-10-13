@@ -445,8 +445,8 @@ public:
 	// Locks and unlocks the operator system
 	virtual void LockOperatorSystem() = 0;
 	virtual void UnlockOperatorSystem() = 0;
-	// Loads the stacks of the default manifest and reports their errors
-	virtual void LoadDefaultManifestStacks( KeyValues3 *pStacks, void *pUnk ) = 0;
+	// Loads the stacks of the default manifest with LoadManifestStacksForParsing and checks each of them, pUnk receives the errors
+	virtual void ParseManifestStacksForErrors( KeyValues3 *pStacks, void *pUnk ) = 0;
 };
 
 class CSoundEventManager : public ISoundEventManager
