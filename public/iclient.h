@@ -190,6 +190,13 @@ public:
 	virtual void BlockDisconnectionTracking( bool bBlock ) = 0;
 };
 
+// The 8-byte tick and fraction value CNetworkGameClientBase::unk066 returns, in an integer register on Linux and through a
+// hidden pointer on Windows; only its size is known
+struct NetworkGameClientBaseUnk066_t
+{
+	uint8 m_Data[ 8 ];
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Concrete client base. Adds the network message Process* handlers,
 // clock-drift / prediction internals and the sign-on state machine.
@@ -205,8 +212,8 @@ public:
 	virtual float unk064() = 0;
 	// Fraction of a tick that GetTime adds to the client tick
 	virtual float unk065() = 0;
-	// Returns the game client's 8-byte tick and fraction value by value (MSVC: hidden return pointer); its type is not recovered
-	virtual void *unk066() = 0;
+	// The game client's tick and fraction value
+	virtual NetworkGameClientBaseUnk066_t unk066() = 0;
 	virtual bool unk067() = 0;
 	virtual float unk068() = 0;
 	virtual float unk069() = 0;
