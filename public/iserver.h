@@ -334,6 +334,8 @@ public:
 
 	CUtlVector<uint64> m_QueuedSpawnGroupUnloads; // SpawnGroupUnloadEntry_t (handle + flags)
 	int m_bQueueSpawnGroupUnloads;
+	// Spawn group created for the resources of the just in time manifests, unloaded when their count drops to 0
+	SpawnGroupHandle_t m_hJustInTimeResourceSpawnGroup;
 
 	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect;
 	CUtlString m_GameType;
@@ -355,9 +357,10 @@ public:
 	// Initialized to -1, no access found
 	float* m_pflUnk968;
 	float* m_pflReservationExpiryTime;
-	// Reset by SetGameSpawnGroupMgr, read as an int when snapshots are built
-	int m_nUnk952;
-	uint8 m_unk952Pad[ 4 ];
+	// Incremented by OnSpawnGroupActivate ("CreationSequence=%d"), reset by SetGameSpawnGroupMgr
+	int m_nSpawnGroupCreationSequence;
+	// Last IResourceSystem::GetJustInTimeManifestCount() seen by the just in time spawn group update
+	int m_nJustInTimeManifestCount;
 
 	// handle = slot | (serial << 8). Init all 0xFFFF.
 	uint16 m_nClientSlotSerial[ABSOLUTE_PLAYER_LIMIT];
