@@ -19,6 +19,8 @@ class CWorldVisibility;
 class IWorldLoadUnloadCallback;
 class IWorldVPKOverrideManager;
 class IWorldVPKReference;
+class ISceneWorld;
+class CSceneObject;
 
 abstract_class IWorldRendererMgr : public IAppSystem
 {
@@ -38,10 +40,10 @@ public:
 	virtual void UpdateObjectsForRendering( WorldGroupId_t hWorldGroupId, int nSkipFlags, const Vector &vCameraPos, float flLODScale, float flFarPlane, float flElapsedTime = 0.0f, const Vector *pCameraPos2 = NULL ) = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) const = 0;
 	virtual bool GetBoundsForWorld( WorldGroupId_t hWorldGroupId, Vector &vecMins, Vector &vecMaxs ) const = 0;
-	virtual void UnkPutUtlContainer( WorldGroupId_t hWorldGroupId, void * ) = 0;
+	virtual void GetWorldNodeSceneObjects( WorldGroupId_t hWorldGroupId, CUtlVector< CSceneObject * > *pOutSceneObjects ) = 0;
 
-	virtual bool Unk_CollectWorldPairs( WorldGroupId_t hWorldGroupId, void *pOut ) = 0;
-	virtual bool Unk_CollectWorldPairs( IWorldReference *pWorldRef, void *pOut ) = 0;
+	virtual bool CollectWorldPairs( WorldGroupId_t hWorldGroupId, void *pOut ) = 0;
+	virtual bool CollectWorldPairs( IWorldReference *pWorldRef, void *pOut ) = 0;
 
 	virtual void FindEntitiesByTargetname( WorldGroupId_t hWorldGroupId, const char *pTargetname, const char *pSearchLump, CUtlVector< const CEntityKeyValues * > &res ) const = 0;
 
@@ -72,8 +74,8 @@ public:
 	virtual const char *UnkGetStringElm( int i ) const = 0;
 	virtual const char *UnkGetString2Elm( int i ) const = 0;
 
-	virtual void unk042( float flFrameTime, float flTime ) = 0;
-	virtual void unk043( float flFrameTime, float flTime ) = 0;
+	virtual void OnClientPreOutput( float flRenderFrameTime, float flRenderTime ) = 0;
+	virtual void SetOverrideRenderTime( float flRenderFrameTime, float flRenderTime ) = 0;
 
 	virtual void *unk044( void *p ) = 0;
 
@@ -83,12 +85,12 @@ public:
 
 	virtual void unk048( void *p ) = 0;
 
-	virtual void unk049( void *p ) = 0;
-	virtual void unk050( void *p ) = 0;
-	virtual void unk051( void *p ) = 0;
+	virtual void SetWindForWorld( const ISceneWorld *pSceneWorld, const Vector &vWindDir, float flWindSpeed, float flTime, bool bOverride ) = 0;
+	virtual void ForgetWindForWorld( const ISceneWorld *pSceneWorld ) = 0;
+	virtual void GetCurrentWindParams( const ISceneWorld *pSceneWorld, Vector &vStrengthFreq, Vector &vOffset, Vector &vWindDir ) = 0;
 
 	virtual void unk052( void *p ) = 0;
-	virtual void unk053( WorldGroupId_t hWorldGroupId, void *pOut ) = 0;
+	virtual void GetSceneWorldsForWorldGroup( WorldGroupId_t hWorldGroupId, CUtlVector< ISceneWorld * > &worldsOut ) = 0;
 	virtual void unk054() = 0;
 
 	virtual void unk055( void *p, bool bAdd ) = 0;
