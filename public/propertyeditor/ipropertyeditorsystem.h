@@ -33,7 +33,8 @@ public:
 	virtual void RefreshEditorsForDomain( void *pDomain ) = 0;
 	virtual void RebuildEditorsForDomain( void *pDomain ) = 0;
 
-	virtual CUtlSymbolTableLarge *unk015() = 0;
+	// Symbols of the expanded property groups, shared by every property editor
+	virtual CUtlSymbolTableLarge *GetExpansionStateSymbols() = 0;
 
 	// Factories are keyed by the name their first virtual returns
 	virtual void RegisterAttributeEditorFactory( IPropertyAttributeEditorFactory *pFactory ) = 0;
@@ -44,7 +45,8 @@ public:
 	virtual IPropertyCustomCommandFactory *FindCustomCommandFactory( const char *pName ) = 0;
 	virtual void UnregisterCustomCommandFactory( IPropertyCustomCommandFactory *pFactory ) = 0;
 
-	virtual bool unk021( const char *pKV3Text ) = 0;
+	// Whether the text parses as KV3 with a non-empty table at the root
+	virtual bool IsNonEmptyKV3Table( const char *pKV3Text ) = 0;
 
 	// Detaches the domain from every editor that shows it
 	virtual void ClearEditorsDomain( void *pDomain ) = 0;
@@ -66,8 +68,8 @@ public:
 	CUtlVector< IPropertyCustomCommandFactory * > m_CustomCommandFactories;
 	CUtlSymbolTable m_CustomCommandFactoryNames;
 
-	// Returned by unk015
-	CUtlSymbolTableLarge m_unk130;
+	// Returned by GetExpansionStateSymbols
+	CUtlSymbolTableLarge m_ExpansionStateSymbols;
 };
 
 #endif // IPROPERTYEDITORSYSTEM_H
