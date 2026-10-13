@@ -23,6 +23,7 @@ class CUtlString;
 class CUtlStringToken;
 class CVSoundStackScriptTypeManager;
 class CVSoundEventScriptTypeManager;
+class ISoundEventListener;
 class KeyValues;
 class KeyValues3;
 struct ResourceBindingBase_t;
@@ -294,8 +295,9 @@ public:
 	virtual void unk079( HSOSLIBSTACKHASH hStack, KeyValues3 *pKV ) = 0;
 	// Reads the operator fields of the stack from pKV
 	virtual void unk080( HSOSLIBSTACKHASH hStack, KeyValues3 *pKV ) = 0;
-	virtual void unk081() = 0;
-	virtual void unk082( void *p ) = 0;
+	// Adds and removes a listener of the sound events
+	virtual void unk081( ISoundEventListener *pListener ) = 0;
+	virtual void unk082( ISoundEventListener *pListener ) = 0;
 	virtual void unk083() = 0;
 	virtual void unk084() = 0;
 	virtual void unk085() = 0;
