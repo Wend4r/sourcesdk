@@ -18,7 +18,10 @@
 #include <tier0/utlsoacontainer.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
+#include <tier0/threadtools.h>
+#include <tier3/tier3.h>
 
+class CPoolAllocator;
 class CSceneObject;
 class CSchemaClassInfo;
 class IParticleCollection;
@@ -138,6 +141,59 @@ abstract_class ISceneObjectListener
 {
 public:
 	virtual void unk000( CSceneObject *pSceneObject ) = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of IParticleSystemMgr. Engine containers whose element types
+// are not declared stay as padding: 17 identical 32-byte containers after the
+// flags, a fixed-growable vector with room for 16 elements, a hash table of
+// 88-byte entries after the lock, and a linked list with a hash table at the
+// end (both used by the GPU particle simulation).
+//-----------------------------------------------------------------------------
+class CParticleSystemMgr : public CTier3AppSystem< IParticleSystemMgr >, public ISceneObjectListener, public IToolsResourceListener
+{
+public:
+	void unk000( CSceneObject *pSceneObject ) override;
+	void NotifyResourceStatusChange( const ResourceStatusChange_t *pChanges, int nNumChanges ) override;
+
+	CUtlVector< void * > m_ParticleOperators[ 9 ];
+	uint8 m_unk110[ 8 ];
+	uint8 m_unk118[ 4 ];
+	float m_flLastSimulationDuration;
+	int m_nNumFramesMeasured;
+	float m_flUnk124;
+	float m_flUnk128;
+	float m_flUnk12C;
+	int m_nUnk130;
+	int m_nUnk134;
+	int m_nUnk138;
+	float m_flFallbackBase;
+	float m_flFallbackMultiplier;
+	float m_flSimFallbackBaseMultiplier;
+	float m_flSimThresholdMs;
+	int m_nCPULevel;
+	int m_nGPULevel;
+	uint8 m_unk154[ 4 ];
+	uint8 m_unk158[ 8 ];
+	bool m_bUnk160;
+	bool m_bUnk161[ 8 ];
+	int m_nUnk16C;
+	uint8 m_unk170[ 17 ][ 32 ];
+	uint8 m_unk390[ 0x138 ];
+	CStrongHandleBase m_hUnk4C8;
+	uint8 m_unk4D0[ 8 ];
+	void *m_pUnk4D8;
+	int m_nFlags;
+	CThreadRWLock_FastRead m_Lock;
+	uint8 m_unkLock28[ 0x30 ];
+	CUtlVector< CUtlString > m_Unk558;
+	CPoolAllocator *m_pUnk570;
+	CPoolAllocator *m_pUnk578;
+	uint8 m_unk580[ 0x18 ];
+	uint8 m_unk598[ 0x10 ];
+	CAtomicMutex m_Mutex;
+	uint64 m_unk5B8[ 3 ];
+	uint64 m_unk5D0[ 4 ];
 };
 
 #endif // IPARTICLESYSTEMMGR_H
