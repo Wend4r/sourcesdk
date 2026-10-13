@@ -18,7 +18,6 @@ class KeyValues;
 class CMiniDumpComment;
 class IRenderDeviceSetup;
 class IRenderDeviceEventListener;
-struct RenderDeviceInfo_t;
 
 abstract_class IRenderDeviceMgr : public IAppSystem
 {

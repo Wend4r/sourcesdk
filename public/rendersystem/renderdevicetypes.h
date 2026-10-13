@@ -13,6 +13,7 @@
 
 #include "tier0/platform.h"
 #include "bitmap/imageformat_declarations.h"
+#include "rendersystem/rendersystemtypes.h"
 
 enum RenderDeviceAPI_t
 {
@@ -66,6 +67,16 @@ enum IsReadyToCompactResult_t
 	NOT_COMPACTIBLE
 };
 
+enum RenderDisplayModeFlags_t
+{
+	RENDER_DISPLAY_MODE_EXCLUSIVE_FULLSCREEN = 1,
+	RENDER_DISPLAY_MODE_COOPERATIVE_FULLSCREEN = 2,
+	RENDER_DISPLAY_MODE_BORDERLESS_WINDOW = 4,
+	RENDER_DISPLAY_MODE_BORDERED_WINDOW = 8,
+	RENDER_DISPLAY_MODE_ALL_USAGE = 15,
+	RENDER_DISPLAY_MODE_HIGH_DPI,
+};
+
 struct RenderDisplayMode_t
 {
 	int m_nVersion;
@@ -75,6 +86,24 @@ struct RenderDisplayMode_t
 	int m_nRefreshRateNumerator;
 	int m_nRefreshRateDenominator;
 	uint32 m_nFlags;
+};
+
+struct RenderDeviceInfo_t
+{
+	int m_nVersion;
+	RenderDisplayMode_t m_DisplayMode;
+	int m_nBackBufferCount;
+	RenderMultisampleType_t m_nMultisampleType;
+
+	// RenderDisplayModeFlags_t
+	uint8 m_nModeUsage;
+
+	uint8 m_unk026_0 : 1;
+	uint8 m_bWaitForVSync : 1;
+	uint8 m_unk026_2 : 3;
+	uint8 m_bIsMainWindow : 1;
+	uint8 m_unk026_6 : 2;
+	uint8 m_pad027[ 1 ];
 };
 
 struct BufferDesc_t
