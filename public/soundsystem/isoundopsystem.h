@@ -30,6 +30,9 @@ class ISoundEventListener;
 class KeyValues;
 class KeyValues3;
 struct ResourceBindingBase_t;
+// Defined in soundsystem/isoundsystem.h
+struct SoundGuid_t;
+enum sound_voice_layer_t : uint8;
 
 typedef uint32 HSOSLIBSTACKHASH;
 typedef uint32 HSOSOPFIELDHASH;
@@ -213,29 +216,30 @@ public:
 class ISoundOpSystem : public IAppSystem, public ISoundEventManager
 {
 public:
-	// nSource is -1 when the sound event has no source; nLayer is a voice layer (0 game, 1 UI, 2 tool)
-	virtual SndOpEventGuid_t StartSoundEvent( const char *pSoundEventName, uint32 nSource, int8 nLayer ) = 0;
+	// nSource is the entity the sound event is started for, invalid when it has none
+	virtual SndOpEventGuid_t StartSoundEvent( const char *pSoundEventName, CEntityIndex nSource, sound_voice_layer_t nLayer ) = 0;
 	virtual SndOpEventGuid_t StartSoundEvent( const char *pSoundEventName, void *pParams ) = 0;
 	virtual SndOpEventGuid_t StartSoundEvent( void *pParams ) = 0;
-	virtual SndOpEventGuid_t StartStack( const char *pStackName, int nSource, int8 nLayer ) = 0;
+	virtual SndOpEventGuid_t StartStack( const char *pStackName, CEntityIndex nSource, sound_voice_layer_t nLayer ) = 0;
 	// Queues the stop of the sound event
 	virtual void unk015( SoundEventGuid_t guid ) = 0;
 	virtual bool StopSoundEvent( SoundEventGuid_t guid ) = 0;
-	// nSource -1 stops every instance of the sound event
-	virtual void StopSoundEvent( uint32 nSoundEvent, int nSource ) = 0;
-	virtual bool StopSoundEvent( const char *pSoundEventName, int nSource ) = 0;
+	// An invalid nSource stops every instance of the sound event
+	virtual void StopSoundEvent( uint32 nSoundEvent, CEntityIndex nSource ) = 0;
+	virtual bool StopSoundEvent( const char *pSoundEventName, CEntityIndex nSource ) = 0;
 	virtual bool unk019( SoundEventGuid_t guid ) = 0;
-	// Stops the sound events started on nLayer, -1 stops every sound event
-	virtual void unk020( int8 nLayer ) = 0;
+	// Stops the sound events started on nLayer, VOICE_LAYER_ALL stops every sound event
+	virtual void unk020( sound_voice_layer_t nLayer ) = 0;
 	// bStopSounds also stops every sound of the sound system
 	virtual void StopAllSoundEvents( bool bStopSounds ) = 0;
 	virtual bool PauseSoundEvent( SoundEventGuid_t guid ) = 0;
-	virtual void PauseSoundEvents( uint32 nSoundEvent, int nSource ) = 0;
-	virtual bool PauseSoundEvents( const char *pSoundEventName, int nSource ) = 0;
-	virtual void unk025( int8 nLayer, int8 nUnk ) = 0;
+	virtual void PauseSoundEvents( uint32 nSoundEvent, CEntityIndex nSource ) = 0;
+	virtual bool PauseSoundEvents( const char *pSoundEventName, CEntityIndex nSource ) = 0;
+	// Pauses by voice layer, VOICE_LAYER_ALL with VOICE_LAYER_NONE pauses every sound event
+	virtual void unk025( sound_voice_layer_t nLayer, sound_voice_layer_t nLayer2 ) = 0;
 	virtual bool UnPauseSoundEvent( SoundEventGuid_t guid ) = 0;
-	virtual void UnPauseSoundEvents( uint32 nSoundEvent, int nSource ) = 0;
-	virtual bool UnPauseSoundEvents( const char *pSoundEventName, int nSource ) = 0;
+	virtual void UnPauseSoundEvents( uint32 nSoundEvent, CEntityIndex nSource ) = 0;
+	virtual bool UnPauseSoundEvents( const char *pSoundEventName, CEntityIndex nSource ) = 0;
 	// Unpauses every paused sound event
 	virtual void unk029() = 0;
 	virtual CSosOperatorStack *GetStack( HSOSLIBSTACKHASH hStack ) = 0;
@@ -287,7 +291,8 @@ public:
 	virtual SosStringHandle_t unk063( const char *pString ) = 0;
 	virtual SosStringHandle_t unk064( const char *pString ) = 0;
 	virtual const char *unk065( SosStringHandle_t hString ) = 0;
-	virtual bool unk066( uint32 nUnk ) = 0;
+	// Whether a library stack has the hash
+	virtual bool unk066( HSOSLIBSTACKHASH hStack ) = 0;
 	// Next random seed for a started sound event
 	virtual SOSRANDSEED unk067() = 0;
 	// Name of the sound event
@@ -325,12 +330,13 @@ public:
 	virtual bool unk088( SoundEventGuid_t guid, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
 	// Random seed of the sound event
 	virtual SOSRANDSEED unk089( SoundEventGuid_t guid ) = 0;
-	// Voice layer the sound event was started on, -2 when it is not active
-	virtual int8 unk090( SoundEventGuid_t guid ) = 0;
+	// Voice layer the sound event was started on, VOICE_LAYER_NONE when it is not active
+	virtual sound_voice_layer_t unk090( SoundEventGuid_t guid ) = 0;
 	// Guid of the sound event that started this one, and of the first sound event of that chain; zero for none
 	virtual SoundEventGuid_t unk091( SoundEventGuid_t guid ) = 0;
 	virtual SoundEventGuid_t unk092( SoundEventGuid_t guid ) = 0;
-	virtual void unk093() = 0;
+	// Guid of the sound system voice the sound event plays, zero for none
+	virtual SoundGuid_t unk093( SoundEventGuid_t guid ) = 0;
 	// Count and element of a string list, ppList points to the list header
 	virtual int unk094( void **ppList ) = 0;
 	virtual const char *unk095( void **ppList, int nIndex ) = 0;
