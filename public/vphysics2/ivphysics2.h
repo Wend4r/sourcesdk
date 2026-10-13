@@ -15,11 +15,14 @@
 #include "appframework/iappsystem.h"
 #include "mathlib/mathlib.h"
 #include "mathlib/vector.h"
+#include "physicslib/physaggregatedata.h"
 #include "tier0/smartptr.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlleanvector.h"
 #include "tier0/utlvector.h"
 #include "tier2/tier2.h"
+#include "vphysics2/intersection_controller_interface.h"
+#include "vphysx/vphysx_interface.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -28,9 +31,6 @@ class CVPhysics2SurfacePropertyManager;
 class IPhysicsShape;
 class IPhysicsSoftbody;
 class IIkSolver;
-class IPhysSurfacePropertyController;
-class IPhysIntersectionDictionary;
-class IPhysIntersectionController;
 class CIntersectionDictionary;
 class IVConComm;
 class CCommand;
@@ -43,7 +43,6 @@ class CWeakHandle;
 class CSceneAnimatableObject;
 class IPhysSerialStreamSnapshot;
 class IDataDescConvertor;
-class CPhysAggregateData;
 class CMesh;
 class CFeModel;
 class CGJKProxy;
