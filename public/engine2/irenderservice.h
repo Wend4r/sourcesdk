@@ -16,6 +16,7 @@
 #include <rendersystem/rendersystemtypes.h>
 
 class ISceneWorld;
+class ISource2WorldSession;
 struct EventClientPreOutput_t;
 
 // Installed with InstallRenderHandler
@@ -47,7 +48,8 @@ public:
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) = 0;
 
-	virtual void *FindOrCreateWorldSession( const char *pszName, void *pUnk1, void *pUnk2 ) = 0;
+	// Creates a rendering world session per name; the second string is stored in the new session and the last argument is unused
+	virtual ISource2WorldSession *FindOrCreateWorldSession( const char *pszName, const char *pszUnk, void *pUnused ) = 0;
 
 	virtual void LaunchAsyncBeginRenderingViewsJob( const EventClientPreOutput_t &event, bool bAddViews ) = 0;
 	virtual bool FinishAsyncBeginRenderingViewsJob( bool *pbAddedViews ) = 0;
