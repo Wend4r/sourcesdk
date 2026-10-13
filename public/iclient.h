@@ -209,9 +209,9 @@ class CNetworkGameClientBase : public INetworkGameClient, public CUtlSlot, publi
 public:
 	virtual void TransmitNetChannel() = 0;
 	// Tick packet receive margin in seconds, recomputed from the cl_tickpacket convars
-	virtual float unk064() = 0;
+	virtual float GetTickPacketReceiveMargin() = 0;
 	// Fraction of a tick that GetTime adds to the client tick
-	virtual float unk065() = 0;
+	virtual float GetTickFraction() = 0;
 	// The game client's tick and fraction value
 	virtual NetworkGameClientBaseUnk066_t unk066() = 0;
 	virtual bool unk067() = 0;
@@ -235,7 +235,7 @@ public:
 	virtual void unk079() = 0;
 	virtual float unk080() = 0;
 	// Logs "SentTickSync"
-	virtual void unk081() = 0;
+	virtual void SendTickSync() = 0;
 	virtual void unk082() = 0;
 	virtual void ClientPredictionPostNetupdate() = 0;
 	virtual void unk084() = 0;
@@ -298,7 +298,7 @@ public: // Message Handlers
 
 public:
 	// Parses the entities of the message into a local entity read info
-	virtual bool unk131( const CSVCMsg_PacketEntities_t &msg ) = 0;
+	virtual bool ParsePacketEntities( const CSVCMsg_PacketEntities_t &msg ) = 0;
 	virtual void Clear( bool bUnk ) = 0;
 	virtual void FullConnect( const ns_address &addr ) = 0;
 	virtual void SetSignonState( SignonState_t state, int nSpawnCount, const CNETMsg_SignonState_t *pMsg ) = 0;
@@ -326,7 +326,7 @@ public:
 	void *m_unk168;
 	uint8 m_unk170[ 0x30 ];
 	uint8 m_unk1A0[ 0x20 ];
-	CSVCMsg_FlattenedSerializer_t *m_unk1C0; // Copy of the last flattened serializer message
+	CSVCMsg_FlattenedSerializer_t *m_pLastFlattenedSerializer; // Copy of the last flattened serializer message
 	void *m_unk1C8;
 	CUtlBuffer m_unk1D0;
 	CUtlString m_unk220;
@@ -342,7 +342,7 @@ public:
 	bool m_bUnk2AC;
 	bool m_bUnk2AD;
 	bool m_bUnk2AE;
-	GameSessionConfiguration_t m_unk2B0;
+	GameSessionConfiguration_t m_GameSessionConfiguration;
 	CAtomicMutex m_unk348;
 	uint64 m_unk358[ 10 ];
 	int m_nClientTick;
@@ -388,7 +388,7 @@ public:
 	CClientFrameManager m_FrameManager;
 	uint64 m_unk2C1520[ 0x2008 / 8 ];
 	// Indexed by player slot (GetPlayerInfo, GetPlayerUserId)
-	CUtlVector< CMsgPlayerInfo > m_unk2C3528;
+	CUtlVector< CMsgPlayerInfo > m_PlayerInfos;
 	uint64 m_unk2C3540[ 5 ];
 	bool m_bUnk2C3568;
 	bool m_bUnk2C3569;
@@ -415,7 +415,7 @@ public:
 	float m_flUnk2CCFF0;
 	float m_flUnk2CCFF4;
 	void *m_unk2CCFF8;
-	CMsgSource2NetworkFlowQuality m_unk2CD000[ 2 ];
+	CMsgSource2NetworkFlowQuality m_NetworkFlowQuality[ 2 ];
 	void *m_unk2CD260[ 2 ];
 };
 
