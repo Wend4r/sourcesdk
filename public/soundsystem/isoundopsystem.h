@@ -155,7 +155,7 @@ public:
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const = 0;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) = 0;
 	// Stack flags of the update stack of the sound event, as returned by ISoundOpSystem::unk031
-	virtual void *unk19( uint32 nSoundEvent ) = 0;
+	virtual uint8 *unk19( uint32 nSoundEvent ) = 0;
 	virtual bool unk20( uint32 nSoundEvent ) = 0;
 	virtual uint32 GetSoundEventDefinitionBaseHash( uint32 nSoundEvent, int nBase ) = 0;
 	virtual uint32 GetSoundEventDefinitionBaseHash( const char *pSoundEventName, int nBase ) = 0;
@@ -249,7 +249,7 @@ public:
 	virtual void unk029() = 0;
 	virtual CSosOperatorStack *GetStack( HSOSLIBSTACKHASH hStack ) = 0;
 	// Stack flags, bit 0 is set when the stack starts a vsnd and bit 1 when it starts sound events
-	virtual void *unk031( HSOSLIBSTACKHASH hStack ) = 0;
+	virtual uint8 *unk031( HSOSLIBSTACKHASH hStack ) = 0;
 	virtual bool SetSoundEventParam( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
 	// pData holds nSize bytes of packed field data, queued for the sound event or the library stack
 	virtual bool SetSoundEventFields( SoundEventGuid_t guid, const void *pData, int nSize ) = 0;
@@ -381,7 +381,7 @@ public:
 	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const override;
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const override;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) override;
-	virtual void *unk19( uint32 nSoundEvent ) override;
+	virtual uint8 *unk19( uint32 nSoundEvent ) override;
 	virtual bool unk20( uint32 nSoundEvent ) override;
 	virtual uint32 GetSoundEventDefinitionBaseHash( uint32 nSoundEvent, int nBase ) override;
 	virtual uint32 GetSoundEventDefinitionBaseHash( const char *pSoundEventName, int nBase ) override;
@@ -461,7 +461,7 @@ public:
 	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) override;
 	virtual void RemoveSoundEvent( const char *pSoundEventName ) override;
 	virtual void RemoveAllSoundEvents() override;
-	virtual void *unk19( uint32 nSoundEvent ) override;
+	virtual uint8 *unk19( uint32 nSoundEvent ) override;
 	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const override;
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const override;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) override;
