@@ -5,6 +5,7 @@
 #include "igameevents.h"
 #include "tier0/globalsymbol.h"
 #include "tier0/utlstring.h"
+#include "tier1/utlhashtable.h"
 #include "tier1/utlvector.h"
 
 class CBaseEntity;
@@ -14,6 +15,12 @@ class CCSWeaponBase;
 class CPlantedC4;
 class CTakeDamageInfo;
 class CTakeDamageResult;
+
+// Hashes a CGlobalSymbol by the 32-bit hash stored in front of its string
+struct CGlobalSymbolHashFunctor
+{
+	unsigned int operator()( const CGlobalSymbol &sym ) const { return sym.IsValid() ? reinterpret_cast< const uint32 * >( sym.String() )[ -1 ] : 0; }
+};
 
 template < typename T >
 struct CUtlAutoList
@@ -80,19 +87,24 @@ public:
 	// Checked before any callback is called
 	bool m_bUnk030;
 
-	// Names added to m_Unk050 and m_Unk070
+	// Names added to m_ClassTemplates and m_EnumObjects
 	CUtlVector< CUtlString > m_Unk038;
 
-	// CUtlHashtable< CGlobalSymbol, v8::Global * > tables (0x18-byte entries); the values are heap v8 global handles
-	uint64 m_Unk050[ 4 ];
-	uint64 m_Unk070[ 4 ];
+	// The values of these tables are heap-allocated v8::Global handles
+
+	// Function templates by class name ("Entity", "BaseModelEntity", "CSWeaponBase", ...)
+	CUtlHashtable< CGlobalSymbol, void *, CGlobalSymbolHashFunctor > m_ClassTemplates;
+
+	// Objects holding the values of each registered enumeration, by its name
+	CUtlHashtable< CGlobalSymbol, void *, CGlobalSymbolHashFunctor > m_EnumObjects;
 
 	// Callbacks of the script, by name ("Registering callback", "Invoking callback", "Remove callback")
-	uint64 m_Callbacks[ 4 ];
+	CUtlHashtable< CGlobalSymbol, void *, CGlobalSymbolHashFunctor > m_Callbacks;
 
-	// Hash tables with 0x18-byte entries
-	uint64 m_Unk0B0[ 4 ];
-	uint64 m_Unk0D0[ 4 ];
+	CUtlHashtable< int, void * > m_Unk0B0;
+
+	// Keyed by the id of a "CSWeaponData" object
+	CUtlHashtable< int, void * > m_Unk0D0;
 };
 
 class CCSScript_EntityScript : public CCSBaseScript, public IGameEventListener2
