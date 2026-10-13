@@ -26,10 +26,10 @@ public:
 	virtual bool UpdateAcknowledgedFramecount( int tick ) override = 0;
 	virtual bool ShouldSendMessages() override = 0;
 	virtual void UpdateUserSettings() override = 0;
-	virtual void SendSnapshot() override = 0;
+	virtual CClientFrame *GetDeltaFrame( int nTick ) override = 0;
 	virtual void SendSignonData() override = 0;
 	virtual void SpawnPlayer() override = 0;
-	virtual void FillServerInfo( void *pInfo ) override = 0;
+	virtual void unk067( void *pInfo ) override = 0;
 	virtual void Await() override = 0;
 	virtual bool ProcessSignonStateMsg( int state ) override = 0;
 

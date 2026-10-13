@@ -59,6 +59,8 @@ class NetMessageConnectionClosed_t;
 class NetMessageConnectionCrashed_t;
 class NetMessageSplitscreenUserChanged_t;
 class ITvStreamSink;
+class INetworkStringTable;
+struct HltvReplayParams_t;
 
 struct Spike_t
 {
@@ -140,7 +142,7 @@ public:
 
 	struct OnSpawnGroupLoadCall_t
 	{
-		void *m_pUnk0000;
+		CNetworkServerSpawnGroup *m_pSpawnGroup;
 		bool m_bAsync; // logged as "Sync"/"Async"
 	};
 
@@ -214,7 +216,7 @@ public:
 	virtual void             Reconnect() = 0;
 	virtual void             Disconnect( ENetworkDisconnectionReason reason, const char *pszInternalReason ) = 0;
 	virtual bool             CheckConnect() = 0;
-	virtual void             Create( CPlayerSlot &nSlot, CSteamID nSteamID, const char *pszName ) = 0;
+	virtual CPlayerSlot      Create( CSteamID nSteamID, const char *pszName ) = 0;
 	virtual void             SetRate( int nRate ) = 0;
 	virtual void             SetUpdateRate( float fUpdateRate ) = 0;
 	virtual int              GetRate() = 0;
@@ -240,7 +242,7 @@ public:
 
 	// Is an actual human player or splitscreen player (not a bot and not a HLTV slot)
 	virtual bool             IsHearingClient( CPlayerSlot nSlot ) const { return false; }
-	virtual bool             IsProximityHearingClient() const = 0;
+	virtual bool             IsProximityHearingClient( CPlayerSlot nSlot ) const = 0;
 	virtual bool             IsLowViolenceClient() const { return m_bLowViolence; }
 
 	virtual bool             IsSplitScreenUser() const { return m_bSplitScreenUser; }
@@ -318,7 +320,7 @@ public:
 	virtual void             UpdateUserSettings() = 0;
 	virtual void             ResetUserSettings() = 0;
 
-	virtual void             SendSnapshot() = 0;
+	virtual CClientFrame    *GetDeltaFrame( int nTick ) = 0;
 
 public:
 	virtual void             SendSignonData() = 0;
@@ -341,16 +343,17 @@ public:
 	// Split screen users forward to the client they're attached to
 	virtual int              GetSplitScreenPlayerCount() = 0;
 
-	virtual void             ShouldReceiveStringTableUserData() = 0;
+	virtual bool             ShouldReceiveStringTableUserData( const INetworkStringTable *pTable, int nStringNumber ) = 0;
 
-	virtual void             FillServerInfo( void *pInfo ) = 0;
-	virtual bool             StartHltvReplay() { return false; }
-	virtual void             StopHltvReplay() {}
+	// Passes the client's slot to ISource2GameClients, which fills the structure from the player controller
+	virtual void             unk067( void *pInfo ) = 0;
+	virtual bool             StartHltvReplay( const HltvReplayParams_t &params ) { return false; }
+	virtual void             StopHltvReplay( bool bForce ) {}
 
 public:
 	virtual int              GetHltvLastSendTick() = 0;
 
-	virtual bool             CanStartHltvReplay() { return false; }
+	virtual bool             CanStartHltvReplay( int nDelay ) { return false; }
 	virtual void             ResetHltvReplayRequestTime() {}
 	virtual const char      *GetHltvReplayStats() { return ""; }
 
