@@ -460,8 +460,8 @@ public:
 	bool m_bUnk3021832;
 	// Set by StartRelay, cleared when the signon completes
 	bool m_bSignonState;
-	// Checked by the retry command ("Can't retry, no previous SourceTV connection")
-	bool m_bUnk3021834;
+	// Set by the start-up when either of two command line parameters is present; the retry command then reports "SourceTV in Primary-Only mode."
+	bool m_bPrimaryOnlyMode;
 	// Zeroed with the flags above, no access found
 	uint8 m_unk3021835[ 3 ];
 
