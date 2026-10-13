@@ -103,6 +103,12 @@ public:
 	virtual void unk000() = 0;
 };
 
+// The 8-byte class ISource2Client::unk146 returns (zero in the client), in an integer register on Linux; only its size is known
+struct Source2ClientUnk146_t
+{
+	uint8 m_Data[ 8 ];
+};
+
 abstract_class ISource2Client : public IAppSystem, public IFieldChangeLimitSpew
 {
 public:
@@ -336,7 +342,7 @@ public:
 	virtual void unk143( void *pUnk ) = 0;
 	virtual bool unk144() = 0;
 	virtual void *unk145() = 0;
-	virtual void *unk146() = 0;
+	virtual Source2ClientUnk146_t unk146() = 0;
 	virtual void unk147( int nUnk1, int nUnk2, int nUnk3, int nUnk4 ) = 0;
 	virtual void unk148() = 0;
 	virtual const char *unk149( CEntityIndex nEntityIndex ) = 0;
