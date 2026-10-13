@@ -169,19 +169,29 @@ struct NavPolyDef_t
 class CNavGeometryManager
 {
 private:
-	uint8 m_Unk00[ 0x20 ];
+	// Bit 0, read from the nav file: the vertices carry the records of m_Unk08.
+	uint32 m_nUnk00;
+	uint8 m_Unk04[ 4 ];
+	// A vector of 16-byte records, one per vertex while bit 0 of m_nUnk00 is set; adding a
+	// vertex stores its record, and records added to fill the gap get byte 12 set.
+	uint8 m_Unk08[ 0x18 ];
 
 public:
 	CUtlVector< Vector > m_Vertices;
 
 private:
-	uint8 m_Unk38[ 0x30 ];
+	// One per vertex; zeroed when a vertex index is reused.
+	CUtlVector< int > m_Unk38;
+	// Indices of removed vertices; adding a vertex takes the last one before growing
+	// m_Vertices.
+	CUtlVector< int > m_Unk50;
 
 public:
 	CUtlVector< NavPolyDef_t > m_Polys;
 
 private:
-	uint8 m_Unk80[ 0x18 ];
+	// Indices of removed polygons; adding a polygon takes the last one before growing m_Polys.
+	CUtlVector< int > m_Unk80;
 };
 
 //-----------------------------------------------------------------------------
