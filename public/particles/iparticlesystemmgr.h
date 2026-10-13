@@ -127,24 +127,6 @@ public:
 	virtual void SimulateGPUParticles( CUtlLeanVector< IParticleCollection * > collections, IRenderContext *pRenderContext ) = 0;
 };
 
-//-----------------------------------------------------------------------------
-// One entry of the batch passed to IToolsResourceListener
-//-----------------------------------------------------------------------------
-struct ResourceStatusChange_t
-{
-	ResourceId_t m_nResourceId;
-	ResourceHandle_t m_hResource;
-	ResourceType_t m_nResourceType;
-	ResourceLoadType_t m_nLoadType;
-};
-
-abstract_class IToolsResourceListener
-{
-public:
-	virtual bool unk000() = 0;
-	virtual void NotifyResourceStatusChange( const ResourceStatusChange_t *pChanges, int nNumChanges ) = 0;
-};
-
 abstract_class ISceneObjectListener
 {
 public:
