@@ -292,7 +292,7 @@ public:
 	virtual RnHull_t *CreateRuntimeHull( int nPointCount, const Vector *pPoints ) = 0;
 	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const RnPlane_t *pPlanes, float flUnknown, const Vector &vUnknown ) = 0;
 
-	virtual RnHull_t *CreateRandomHull( int nPointCount, float flRadius, float flUnknown ) = 0;
+	virtual RnHull_t *CreateRandomHull( int nPointCount, float flRadius, float flUnknown, RnHull_t *pPreallocatedHull ) = 0;
 
 	virtual void CloneHull( RnHull_t *pDestHull, const RnHull_t *pSourceHull ) = 0;
 	virtual void DestroyHull( RnHull_t *pHull ) = 0;
