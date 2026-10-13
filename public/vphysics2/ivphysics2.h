@@ -204,7 +204,7 @@ public:
 	virtual float unk022( int nIndex ) const = 0;
 
 	// Runs the solver for a number of iterations over a list of targets
-	virtual void unk023( void *p ) = 0;
+	virtual void Solve( void *p ) = 0;
 };
 
 // The 20-byte class IPhysSerialStreamSnapshot::unk005 returns; only its size is known
@@ -225,11 +225,11 @@ abstract_class IPhysSerialStreamSnapshot
 public:
 	virtual ~IPhysSerialStreamSnapshot() {}
 
-	// Size of the data unk002 writes
-	virtual uint32 unk001() const = 0;
+	// Size of the data Serialize writes
+	virtual uint32 GetSerializedSize() const = 0;
 
 	// Writes a 0x1D0-byte header followed by the snapshot data and advances *ppBuffer
-	virtual void unk002( uint8 **ppBuffer ) = 0;
+	virtual void Serialize( uint8 **ppBuffer ) = 0;
 
 	virtual void unk003() = 0;
 
@@ -339,11 +339,11 @@ public:
 	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const CGJKProxy &proxy1, float flRadius1, const RnSweptTransform_t &sweep2, const CGJKProxy &proxy2, float flRadius2 ) = 0;
 
 	// Cast vStart + vDelta against a scaled mesh or hull
-	virtual bool unk043( CShapeCastResult *pResult, const RnMesh_t *pMesh, const Vector &vScale, const Vector &vStart, const Vector &vDelta ) = 0;
-	virtual bool unk044( CShapeCastResult *pResult, const RnHull_t *pHull, float flScale, const Vector &vStart, const Vector &vDelta ) = 0;
+	virtual bool CastRayAgainstMesh( CShapeCastResult *pResult, const RnMesh_t *pMesh, const Vector &vScale, const Vector &vStart, const Vector &vDelta ) = 0;
+	virtual bool CastRayAgainstHull( CShapeCastResult *pResult, const RnHull_t *pHull, float flScale, const Vector &vStart, const Vector &vDelta ) = 0;
 
 	// Cast a shape moved by vDelta from vStart against another shape placed at shapeTransform
-	virtual bool unk045( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, const CTransform &shapeTransform ) = 0;
+	virtual bool CastShapeAgainstShape( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, const CTransform &shapeTransform ) = 0;
 	virtual bool TraceShape( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, const CTransform &shapeTransform ) = 0;
 
 	virtual RnDistanceQueryResult_t ClosestPoints( const CTransform &transform1, IPhysicsShape *pShape1, const CTransform &transform2, IPhysicsShape *pShape2 ) = 0;
@@ -355,7 +355,7 @@ public:
 	virtual float GetDistanceBetweenHulls( const matrix3x4_t &transform1, const Vector *pVertices1, int nVertexCount1, const matrix3x4_t &transform2, const Vector *pVertices2, int nVertexCount2 ) = 0;
 
 	// Distance between the two shapes minus their radii
-	virtual float unk052( IPhysicsShape *pShape1, const matrix3x4_t &transform1, IPhysicsShape *pShape2, const matrix3x4_t &transform2 ) = 0;
+	virtual float GetShapeDistance( IPhysicsShape *pShape1, const matrix3x4_t &transform1, IPhysicsShape *pShape2, const matrix3x4_t &transform2 ) = 0;
 
 	// The hull feature pair of the cached simplex
 	virtual VPhysics2Unk053_t unk053( const RnSimplexCache_t &cache, const RnHull_t *pHull1, const RnHull_t *pHull2 ) = 0;
@@ -363,11 +363,11 @@ public:
 	// Contact generation: the callees add contact points to pOut and the result tells whether there are any.
 	// The five form one overload set, which MSVC lists in reverse order. pOut and the other pointers are internal types of the physics module;
 	// each float is paired with the pointer that follows it into a { pointer, float } block for the callee
-	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, void *pUnknown4, int nUnknown ) = 0;
-	virtual bool unk054( void *pOut, const void *pUnknown1, const CTransform &transform1, const void *pUnknown2, int nUnknown1, const CTransform &transform2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
-	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, int nUnknown1, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
-	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, int nUnknown, float flUnknown2 ) = 0;
-	virtual bool unk054( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, float flUnknown2 ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, void *pUnknown4, int nUnknown ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const CTransform &transform1, const void *pUnknown2, int nUnknown1, const CTransform &transform2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, int nUnknown1, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, int nUnknown, float flUnknown2 ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, float flUnknown2 ) = 0;
 
 	// Convex hull geometry. A NULL pPreallocatedHull allocates a new hull
 	virtual RnHull_t *CreateBoxHull( const Vector &vExtent, const Vector &vCenter, RnHull_t *pPreallocatedHull ) = 0;
@@ -406,7 +406,7 @@ public:
 	virtual CPhysAggregateDataHandle CreateAggregateDataFromEmbeddedDiskData( const EmbeddedPhysicsInfo_t &embeddedPhysicsInfo ) = 0;
 
 	// Moves the cloth data of reallocated aggregate data; the data type manager forwards its reallocation here
-	virtual void unk081( const CPhysAggregateData *pOldData, CPhysAggregateData *pNewData ) = 0;
+	virtual void OnReallocateAggregateData( const CPhysAggregateData *pOldData, CPhysAggregateData *pNewData ) = 0;
 
 	// Reference counting of the aggregate data, used by CPhysAggregateDataHandle
 	virtual void AddDataReference( CPhysAggregateData *pData ) = 0;
@@ -442,8 +442,8 @@ public:
 	virtual VPhysContactImpactStrength_t ComputeImpactStrength( const VPhysIntersectionNotification_t &notification ) = 0;
 
 	// Pop from and push to a lock-free free list
-	virtual void *unk099( uint32 nUnknown ) = 0;
-	virtual void unk100( void *p ) = 0;
+	virtual void *AllocateContactBlock( uint32 nCount ) = 0;
+	virtual void FreeContactBlock( void *p ) = 0;
 
 	virtual void DestroyTaggedGeometry( uintp nTaggedGeometry ) = 0;
 
@@ -567,7 +567,7 @@ public:
 
 // The resource type manager of VPhysXAggregateData_t ('vphys').
 // Its overrides (the typesafe allocation and release of the aggregate data, and the reallocation hook after them that
-// forwards to IVPhysics2::unk081) are not declared here
+// forwards to IVPhysics2::OnReallocateAggregateData) are not declared here
 class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< 0x7379687076ull, VPhysXAggregateData_t >
 {
 };
