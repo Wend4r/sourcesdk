@@ -135,24 +135,24 @@ public:
 	virtual void SetFallbackParameters( float flBase, float flMultiplier, float flSimFallbackBaseMultiplier, float flSimThresholdMs ) = 0;
 	virtual void SetSystemLevel( int nCPULevel, int nGPULevel ) = 0;
 
-	// Setter and getter of the same flag
-	virtual void unk013( bool bValue ) = 0;
-	virtual bool unk014() = 0;
+	// The client passes the low violence state of its particle host
+	virtual void SetLowViolence( bool bLowViolence ) = 0;
+	virtual bool IsLowViolence() = 0;
 
 	virtual HParticleSystemDefinition FindParticleSystem( const char *pszName, bool bWarnIfNotPrecached ) = 0;
 
-	// Schema class of CParticleSystemDefinition
-	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > unk016() = 0;
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > GetParticleSystemDefinitionClass() = 0;
 
-	virtual IParticleCollection *CreateParticleCollection( const char *pszName, void *pOwner, IParticleSystemQuery *pQuery, bool bUnk, float flDelay, int nRandomSeed ) = 0;
-	virtual IParticleCollection *CreateParticleCollection( HParticleSystemDefinition hDefinition, void *pOwner, IParticleSystemQuery *pQuery, bool bUnk, float flDelay, int nRandomSeed ) = 0;
+	// bCheckSystemLevel compares the minimum CPU and GPU levels of the definition with the system level and uses its fallback when they are not met
+	virtual IParticleCollection *CreateParticleCollection( const char *pszName, void *pOwner, IParticleSystemQuery *pQuery, bool bCheckSystemLevel, float flDelay, int nRandomSeed ) = 0;
+	virtual IParticleCollection *CreateParticleCollection( HParticleSystemDefinition hDefinition, void *pOwner, IParticleSystemQuery *pQuery, bool bCheckSystemLevel, float flDelay, int nRandomSeed ) = 0;
 	virtual void DestroyParticleCollection( IParticleCollection *pCollection ) = 0;
 	virtual bool unk020( void *p ) = 0;
 	virtual bool unk021() = 0;
 	virtual void unk022() = 0;
 
 	// Display names such as Position, Life Duration or Radius
-	virtual const char *unk023( int nAttribute ) = 0;
+	virtual const char *GetParticleAttributeFriendlyName( int nAttribute ) = 0;
 
 	virtual int GetOperatorDefinitionCount( int nFunctionType ) = 0;
 	virtual IParticleFunctionDefinition *GetOperatorDefinition( int nFunctionType, int nIndex ) = 0;
@@ -175,10 +175,16 @@ public:
 	virtual const char *GetParticleAttributeName( int nAttribute ) = 0;
 	virtual EAttributeDataType GetParticleAttributeDataType( int nAttribute ) = 0;
 
-	virtual void unk037( HParticleSystemDefinition hDefinition ) = 0;
-	virtual void unk038( int nValue ) = 0;
+	// Restarts every collection of the definition
+	virtual void RestartParticleSystem( HParticleSystemDefinition hDefinition ) = 0;
+
+	// Collections whose renderers all have types in the mask are not rendered
+	virtual void SetDisabledRendererTypes( int nRendererTypes ) = 0;
+
 	virtual bool unk039( const KeyValues3 *pKeyValues, void *pOut ) = 0;
-	virtual void unk040() = 0;
+
+	// Releases the buffers of the GPU implicit renderer and the instanced mesh scene objects unused for 100 frames
+	virtual void PurgeRenderObjects() = 0;
 
 	virtual HParticleSnapshot CreateProceduralSnapshot( CUtlString sName ) = 0;
 
@@ -202,10 +208,13 @@ public:
 	virtual void ClearSnapshot( HParticleSnapshot hSnapshot ) = 0;
 	virtual int GetParticleSystemVersion() = 0;
 	virtual const char *GetParticleSystemVersionChangeDescription( int nVersion ) = 0;
-	virtual void unk053( HParticleSystemDefinition hDefinition ) = 0;
-	virtual bool unk054( int nFlags ) = 0;
+	// The editor sets the particle system under the cursor; renderers highlight its collections and their children
+	virtual void SetHoveredParticleSystem( HParticleSystemDefinition hDefinition ) = 0;
+
+	virtual bool HasFeatureFlags( int nFlags ) = 0;
+
 	// Adds instances to the instanced mesh scene object matching the world, flags and the 32-byte key, creating it when missing; records are 100 bytes
-	virtual void unk055( ISceneWorld *pWorld, uint64 nFlags, uint64 nTypeFlagsMask, uint64 nTypeFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bUnk ) = 0;
+	virtual void AddInstancedMeshes( ISceneWorld *pWorld, uint64 nFlags, uint64 nTypeFlagsMask, uint64 nTypeFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bUnk ) = 0;
 	virtual void unk056( CUtlString sName ) = 0;
 	virtual CUtlVector< CUtlString > *unk057() = 0;
 	virtual void unk058() = 0;
