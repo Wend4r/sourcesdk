@@ -80,7 +80,7 @@ public:
 	virtual bool ServerPing( const ns_address &netAdrPublic,
 		IMatchAsyncOperationCallback *pCallback, IMatchAsyncOperation **ppAsyncOperation ) = 0;
 
-	virtual bool Unk_SetNetworkConfig( void *p ) = 0;
+	virtual bool SetNetworkConfig( const void *pData, size_t nDataSize ) = 0;
 };
 
 #define INETSUPPORT_VERSION_STRING "INETSUPPORT_001"
