@@ -364,7 +364,11 @@ public:
 
 	// Return a struct by value; the types are not recovered
 	virtual void unk027( void *pResult ) const = 0;
-	virtual void unk028( void *pResult ) const = 0;
+
+	// Diagonalizes the inertia tensor scaled by the inverse mass: the rotation to its principal axes and the principal values
+	virtual void unk028( Quaternion *pRotation, Vector *pPrincipalInertia ) const = 0;
+
+	// Returns a struct by value; the type is not recovered
 	virtual void unk029( void *pResult ) const = 0;
 
 	virtual void unk030( bool bEnable ) = 0;
