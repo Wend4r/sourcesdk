@@ -422,8 +422,9 @@ public:
 private:
 	// An interface ticked by Update and told of movable mesh changes.
 	void *m_pUnk68;
-	// A copy of a frame counter, -1 while Update runs.
-	int16 m_nUnk70;
+	// -1 while Update runs, then the value of a serial shared by every mesh, which each Update
+	// advances (wrapping from 0x7FFF to 1).
+	int16 m_nLastUpdateSerial;
 
 public:
 	CUtlString m_NavFilename;
@@ -458,14 +459,14 @@ private:
 	// identifies it.
 	// Storage of destroyed areas: CreateArea reuses the last one for the next area it builds
 	// on a polygon, and the destructor frees what is left.
-	CUtlVector< CNavArea * > m_Unk3D0;
+	CUtlVector< CNavArea * > m_RecycledAreas;
 	// Areas queued for removal. Flushing marks them with dynamic attribute bit 3, removes them
-	// from the mesh, destroys them and moves their storage to m_Unk3D0.
-	CUtlVector< CNavArea * > m_Unk3E8;
-	// A vector only emptied and freed by the object's destructor.
+	// from the mesh, destroys them and moves their storage to m_RecycledAreas.
+	CUtlVector< CNavArea * > m_PendingAreaRemovals;
+	// A vector only emptied and freed by the object's destructor; nothing adds to it.
 	uint8 m_Unk400[ 0x18 ];
 	// The mesh the object belongs to; the active mesh is used while it is null.
-	CNavMesh *m_pUnk418;
+	CNavMesh *m_pRecyclerMesh;
 
 public:
 	// Loaded from scripts/nav_hulls.vdata; null when that file is missing.
