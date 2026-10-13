@@ -298,9 +298,10 @@ public:
 	// Adds and removes a listener of the sound events
 	virtual void unk081( ISoundEventListener *pListener ) = 0;
 	virtual void unk082( ISoundEventListener *pListener ) = 0;
-	virtual void unk083() = 0;
-	virtual void unk084() = 0;
-	virtual void unk085() = 0;
+	// String of the field of the sound event or of the library stack
+	virtual const char *unk083( SoundEventGuid_t guid, uint32 nFieldToken ) = 0;
+	virtual const char *unk083( HSOSLIBSTACKHASH hStack, uint32 nFieldToken ) = 0;
+	virtual const char *unk085( HSOSLIBSTACKHASH hStack ) = 0;
 	virtual void unk086() = 0;
 	virtual bool unk087( SoundEventGuid_t guid, uint32 nFieldToken, CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual bool unk088( SoundEventGuid_t guid, const char *pFieldName, CSosFieldData *pData, int16 nIndex ) = 0;
