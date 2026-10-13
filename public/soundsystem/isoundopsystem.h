@@ -212,7 +212,7 @@ public:
 	virtual CSoundEvent *GetSoundEvent( const char *pSoundEventName ) const = 0;
 	// Binding the sound event was added with
 	virtual const ResourceBindingBase_t *GetSoundEventResourceBinding( const char *pSoundEventName ) = 0;
-	// Looks up the resource of the sound event binding by name
+	// Looks up the resource of the sound event binding in the asset system; true when the asset exists and its slot 66 reports 0
 	virtual bool unk07( const char *pSoundEventName ) = 0;
 	virtual void ListSoundEvents( CUtlVector< const char * > &list ) const = 0;
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const = 0;
@@ -220,17 +220,19 @@ public:
 	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) = 0;
 	// Case-insensitive substring match over the sound event names
 	virtual void FindSoundEvents( const char *pSubString, CUtlVector< CUtlString > &list ) = 0;
-	// Builds the edit tree of the sound events, the prefix is prepended to every name
-	virtual void unk12( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) = 0;
+	// Writes the definitions (base, type, fields, groups, custom stack, preload vsnds) of the sound events into the KeyValues3
+	// table of pTree, keyed by the name with the prefix prepended
+	virtual void WriteSoundEventsKV3( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) = 0;
 	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) = 0;
 	virtual void RemoveSoundEvent( const char *pSoundEventName ) = 0;
 	virtual void RemoveAllSoundEvents() = 0;
 	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const = 0;
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const = 0;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) = 0;
-	// Stack flags of the update stack of the sound event, as returned by ISoundOpSystem::unk031
-	virtual uint8 *unk19( uint32 nSoundEvent ) = 0;
-	virtual bool unk20( uint32 nSoundEvent ) = 0;
+	// Stack flags of the update stack of the sound event, as returned by ISoundOpSystem::GetStackFlags
+	virtual uint8 *GetSoundEventUpdateStackFlags( uint32 nSoundEvent ) = 0;
+	// Written as "custom_stack" by WriteSoundEventsKV3
+	virtual bool SoundEventHasCustomStack( uint32 nSoundEvent ) = 0;
 	virtual uint32 GetSoundEventDefinitionBaseHash( uint32 nSoundEvent, int nBase ) = 0;
 	virtual uint32 GetSoundEventDefinitionBaseHash( const char *pSoundEventName, int nBase ) = 0;
 	virtual void GetSoundEventDefinitionBaseName( uint32 nSoundEvent, CUtlString &sName, int nBase ) = 0;
@@ -253,43 +255,44 @@ public:
 	virtual void AddSoundEvents( KeyValues3 *pKV, const ResourceBindingBase_t *pBinding ) = 0;
 	virtual void RemoveTimedOutDeferredSoundEvent() = 0;
 	// Adds pSoundEventName as a copy of pSourceSoundEventName
-	virtual bool unk39( const char *pSoundEventName, const char *pSourceSoundEventName, const ResourceBindingBase_t *pBinding ) = 0;
+	virtual bool CopySoundEvent( const char *pSoundEventName, const char *pSourceSoundEventName, const ResourceBindingBase_t *pBinding ) = 0;
 	virtual void AddNewSoundEvent( const char *pSoundEventName, const ResourceBindingBase_t *pBinding ) = 0;
 	// Sets the update stack of the sound event from the stack name
-	virtual bool unk41( const char *pSoundEventName, const char *pStackName ) = 0;
+	virtual bool SetSoundEventUpdateStack( const char *pSoundEventName, const char *pStackName ) = 0;
 	// Adds the field to the definition of the sound event
-	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) = 0;
+	virtual bool AddSoundEventDefinitionField( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) = 0;
 	// Sets a string in the KeyValues3 table of the sound event
-	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) = 0;
+	virtual bool SetSoundEventKeyValue( const char *pSoundEventName, const char *pKey, const char *pValue ) = 0;
 	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) = 0;
 	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int nIndex ) = 0;
 	// Selects the element of an array field
-	virtual bool unk47( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) = 0;
-	// Element count of the field, pbArray tells whether it is an array field
-	virtual int unk48( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) = 0;
-	// Element count of the field
-	virtual int unk49( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) = 0;
+	virtual bool SetSoundEventDefinitionFieldIndex( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) = 0;
+	// Element count of the field, or of the array the definition sets for an array field; pbArray tells whether it is an array field
+	virtual int GetSoundEventDefinitionFieldCount( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) = 0;
+	// Element count of the field value GetSoundEventDefinitionField finds
+	virtual int GetSoundEventDefinitionFieldElementCount( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) = 0;
 	// Fields the sound event does not set are looked up in its bases and then in its update stack, unless bIgnoreBases is set
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, SosFieldValueMem_t **ppData, int nIndex, bool bIgnoreBases ) = 0;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, CUtlString &sValue, int nIndex, bool bIgnoreBases ) = 0;
 	// Writes the value to pKV
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, KeyValues3 *pKV, int nIndex, bool bIgnoreBases ) = 0;
-	// unk53 and unk54 set and clear the flag that makes AddSoundEvent keep the sound events it replaces,
-	// unk55 puts the kept sound events back
-	virtual void unk53() = 0;
-	virtual void unk54() = 0;
-	virtual void unk55() = 0;
+	// BeginSoundEventOverrides and EndSoundEventOverrides set and clear the flag that makes AddSoundEvent keep the sound events it
+	// replaces, RestoreOverriddenSoundEvents puts the kept sound events back; the addon manager of the client calls them when an addon
+	// is activated and deactivated
+	virtual void BeginSoundEventOverrides() = 0;
+	virtual void EndSoundEventOverrides() = 0;
+	virtual void RestoreOverriddenSoundEvents() = 0;
 	virtual void SoundEventKVToKV3( KeyValues *pKV, KeyValues3 *pKV3 ) = 0;
 	virtual void CompareSoundEvents( const char *pSoundEventA, const char *pSoundEventB ) = 0;
 	// Value of the _builtins._voicegraph field
-	virtual bool unk58( uint32 nSoundEvent, CUtlString &sValue ) = 0;
+	virtual bool GetSoundEventVoiceGraph( uint32 nSoundEvent, CUtlString &sValue ) = 0;
 	virtual void ListDeferredSoundEvents() = 0;
 	virtual void ClearDeferredSoundEvents() = 0;
 	// Reads a string from the KeyValues3 table of the sound event
-	virtual bool unk61( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) = 0;
-	// Both outputs are optional
-	virtual bool unk62( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) = 0;
+	virtual bool GetSoundEventKeyValue( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) = 0;
+	// Names of the vsnds of the sound event and the longest duration; both outputs are optional
+	virtual bool GetSoundEventVSnds( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) = 0;
 };
 
 class ISoundOpSystem : public IAppSystem, public ISoundEventManager
@@ -449,15 +452,15 @@ public:
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const override;
 	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) override;
 	virtual void FindSoundEvents( const char *pSubString, CUtlVector< CUtlString > &list ) override;
-	virtual void unk12( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) override;
+	virtual void WriteSoundEventsKV3( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) override;
 	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) override;
 	virtual void RemoveSoundEvent( const char *pSoundEventName ) override;
 	virtual void RemoveAllSoundEvents() override;
 	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const override;
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const override;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) override;
-	virtual uint8 *unk19( uint32 nSoundEvent ) override;
-	virtual bool unk20( uint32 nSoundEvent ) override;
+	virtual uint8 *GetSoundEventUpdateStackFlags( uint32 nSoundEvent ) override;
+	virtual bool SoundEventHasCustomStack( uint32 nSoundEvent ) override;
 	virtual uint32 GetSoundEventDefinitionBaseHash( uint32 nSoundEvent, int nBase ) override;
 	virtual uint32 GetSoundEventDefinitionBaseHash( const char *pSoundEventName, int nBase ) override;
 	virtual void GetSoundEventDefinitionBaseName( uint32 nSoundEvent, CUtlString &sName, int nBase ) override;
@@ -476,38 +479,38 @@ public:
 	virtual bool AddSoundEvent( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding, bool bUpdate, bool bNoDefer, bool bUnused ) override;
 	virtual void AddSoundEvents( KeyValues3 *pKV, const ResourceBindingBase_t *pBinding ) override;
 	virtual void RemoveTimedOutDeferredSoundEvent() override;
-	virtual bool unk39( const char *pSoundEventName, const char *pSourceSoundEventName, const ResourceBindingBase_t *pBinding ) override;
+	virtual bool CopySoundEvent( const char *pSoundEventName, const char *pSourceSoundEventName, const ResourceBindingBase_t *pBinding ) override;
 	virtual void AddNewSoundEvent( const char *pSoundEventName, const ResourceBindingBase_t *pBinding ) override;
-	virtual bool unk41( const char *pSoundEventName, const char *pStackName ) override;
-	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) override;
-	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) override;
+	virtual bool SetSoundEventUpdateStack( const char *pSoundEventName, const char *pStackName ) override;
+	virtual bool AddSoundEventDefinitionField( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) override;
+	virtual bool SetSoundEventKeyValue( const char *pSoundEventName, const char *pKey, const char *pValue ) override;
 	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
 	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) override;
 	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int nIndex ) override;
-	virtual bool unk47( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
-	virtual int unk48( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) override;
-	virtual int unk49( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) override;
+	virtual bool SetSoundEventDefinitionFieldIndex( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
+	virtual int GetSoundEventDefinitionFieldCount( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) override;
+	virtual int GetSoundEventDefinitionFieldElementCount( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) override;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, SosFieldValueMem_t **ppData, int nIndex, bool bIgnoreBases ) override;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, CUtlString &sValue, int nIndex, bool bIgnoreBases ) override;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, KeyValues3 *pKV, int nIndex, bool bIgnoreBases ) override;
-	virtual void unk53() override;
-	virtual void unk54() override;
-	virtual void unk55() override;
+	virtual void BeginSoundEventOverrides() override;
+	virtual void EndSoundEventOverrides() override;
+	virtual void RestoreOverriddenSoundEvents() override;
 	virtual void SoundEventKVToKV3( KeyValues *pKV, KeyValues3 *pKV3 ) override;
 	virtual void CompareSoundEvents( const char *pSoundEventA, const char *pSoundEventB ) override;
-	virtual bool unk58( uint32 nSoundEvent, CUtlString &sValue ) override;
+	virtual bool GetSoundEventVoiceGraph( uint32 nSoundEvent, CUtlString &sValue ) override;
 	virtual void ListDeferredSoundEvents() override;
 	virtual void ClearDeferredSoundEvents() override;
-	virtual bool unk61( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) override;
-	virtual bool unk62( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
+	virtual bool GetSoundEventKeyValue( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) override;
+	virtual bool GetSoundEventVSnds( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
 
 	// Sound events by hash
 	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_unk008;
 	// Sound events taken out of m_unk008 that are still referenced, deleted by DereferenceSoundEvent
 	CUtlVector< CSoundEvent * > m_unk028;
-	// Set by unk53 and cleared by unk54
+	// Set by BeginSoundEventOverrides and cleared by EndSoundEventOverrides
 	bool m_unk040;
-	// Sound events that AddSoundEvent replaced while m_unk040 was set, unk55 puts them back into m_unk008
+	// Sound events that AddSoundEvent replaced while m_unk040 was set, RestoreOverriddenSoundEvents puts them back into m_unk008
 	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_unk048;
 	// Deferred sound events, 0xa0 bytes each: the name (128 chars), its KeyValues3 and resource binding,
 	// a done flag and the time it was deferred
@@ -527,20 +530,20 @@ public:
 	virtual CSoundEvent *GetSoundEvent( const char *pSoundEventName ) const override;
 	virtual const ResourceBindingBase_t *GetSoundEventResourceBinding( const char *pSoundEventName ) override;
 	virtual bool unk07( const char *pSoundEventName ) override;
-	virtual bool unk58( uint32 nSoundEvent, CUtlString &sValue ) override;
+	virtual bool GetSoundEventVoiceGraph( uint32 nSoundEvent, CUtlString &sValue ) override;
 	virtual void ListSoundEvents( CUtlVector< const char * > &list ) const override;
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const override;
 	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) override;
 	virtual void FindSoundEvents( const char *pSubString, CUtlVector< CUtlString > &list ) override;
-	virtual void unk12( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) override;
+	virtual void WriteSoundEventsKV3( const CUtlString &sPrefix, void *pTree, const CUtlVector< const char * > &soundEventNames ) override;
 	virtual void DereferenceSoundEvent( CSoundEvent *pSoundEvent ) override;
 	virtual void RemoveSoundEvent( const char *pSoundEventName ) override;
 	virtual void RemoveAllSoundEvents() override;
-	virtual uint8 *unk19( uint32 nSoundEvent ) override;
+	virtual uint8 *GetSoundEventUpdateStackFlags( uint32 nSoundEvent ) override;
 	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const override;
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const override;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) override;
-	virtual bool unk20( uint32 nSoundEvent ) override;
+	virtual bool SoundEventHasCustomStack( uint32 nSoundEvent ) override;
 	virtual uint32 GetSoundEventDefinitionBaseHash( uint32 nSoundEvent, int nBase ) override;
 	virtual uint32 GetSoundEventDefinitionBaseHash( const char *pSoundEventName, int nBase ) override;
 	virtual void GetSoundEventDefinitionBaseName( uint32 nSoundEvent, CUtlString &sName, int nBase ) override;
@@ -550,8 +553,8 @@ public:
 	virtual bool SoundEventHasPreloadVsnd( const char *pSoundEventName ) override;
 	virtual uint8 *GetSoundEventUpdateGroups( uint32 nSoundEvent ) override;
 	virtual uint8 *GetSoundEventUpdateGroups( const char *pSoundEventName ) override;
-	virtual int unk48( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) override;
-	virtual int unk49( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) override;
+	virtual int GetSoundEventDefinitionFieldCount( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool *pbArray, bool bIgnoreBases ) override;
+	virtual int GetSoundEventDefinitionFieldElementCount( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, bool bIgnoreBases ) override;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, SosFieldValueMem_t **ppData, int nIndex, bool bIgnoreBases ) override;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, CUtlString &sValue, int nIndex, bool bIgnoreBases ) override;
 	virtual bool GetSoundEventDefinitionField( uint32 nSoundEvent, HSOSOPFIELDHASH nFieldToken, KeyValues3 *pKV, int nIndex, bool bIgnoreBases ) override;
@@ -564,24 +567,24 @@ public:
 	virtual bool AddSoundEvent( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding, bool bUpdate, bool bNoDefer, bool bUnused ) override;
 	virtual void AddSoundEvents( KeyValues3 *pKV, const ResourceBindingBase_t *pBinding ) override;
 	virtual void RemoveTimedOutDeferredSoundEvent() override;
-	virtual bool unk39( const char *pSoundEventName, const char *pSourceSoundEventName, const ResourceBindingBase_t *pBinding ) override;
+	virtual bool CopySoundEvent( const char *pSoundEventName, const char *pSourceSoundEventName, const ResourceBindingBase_t *pBinding ) override;
 	virtual void AddNewSoundEvent( const char *pSoundEventName, const ResourceBindingBase_t *pBinding ) override;
-	virtual bool unk41( const char *pSoundEventName, const char *pStackName ) override;
-	virtual bool unk42( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) override;
-	virtual bool unk43( const char *pSoundEventName, const char *pKey, const char *pValue ) override;
+	virtual bool SetSoundEventUpdateStack( const char *pSoundEventName, const char *pStackName ) override;
+	virtual bool AddSoundEventDefinitionField( const char *pSoundEventName, const char *pFieldName, const CSosFieldData *pData ) override;
+	virtual bool SetSoundEventKeyValue( const char *pSoundEventName, const char *pKey, const char *pValue ) override;
 	virtual bool HasSoundEventField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
 	virtual bool HasSoundEventField( const char *pSoundEventName, const char *pFieldName, int nIndex ) override;
 	virtual bool SetSoundEventDefinitionField( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int nIndex ) override;
-	virtual bool unk47( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
-	virtual void unk53() override;
-	virtual void unk54() override;
-	virtual void unk55() override;
+	virtual bool SetSoundEventDefinitionFieldIndex( CSoundEvent *pSoundEvent, HSOSOPFIELDHASH nFieldToken, int nIndex ) override;
+	virtual void BeginSoundEventOverrides() override;
+	virtual void EndSoundEventOverrides() override;
+	virtual void RestoreOverriddenSoundEvents() override;
 	virtual void SoundEventKVToKV3( KeyValues *pKV, KeyValues3 *pKV3 ) override;
 	virtual void CompareSoundEvents( const char *pSoundEventA, const char *pSoundEventB ) override;
 	virtual void ListDeferredSoundEvents() override;
 	virtual void ClearDeferredSoundEvents() override;
-	virtual bool unk61( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) override;
-	virtual bool unk62( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
+	virtual bool GetSoundEventKeyValue( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) override;
+	virtual bool GetSoundEventVSnds( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
 	// Uses the default manifest
 	virtual void LoadManifestStacksForParsing( KeyValues3 *pStacks, void *pUnk );
 	virtual void LoadManifestStacksForParsing( const char *pManifestName, KeyValues3 *pStacks, void *pUnk );
