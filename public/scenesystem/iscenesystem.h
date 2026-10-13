@@ -271,7 +271,9 @@ public:
 	virtual void SceneObject_UpdateFlagsBasedOnMaterial( CSceneObject *pObject ) = 0;
 	virtual void unk128() = 0;
 	virtual void unk129() = 0;
-	virtual void unk130() = 0;
+
+	// Holds a strong reference to the material; the s&box declaration adds a layer attribute token and value.
+	virtual void SceneObject_SetMaterialOverride( CSceneObject *pObj, HMaterialWeak hOverride ) = 0;
 
 	// nPlayerIndex -1 applies to every player.
 	virtual void SceneObject_SetVisibilityToPlayerIndex( CSceneObject *pObject, int nPlayerIndex, bool bUnk, bool bVisible ) = 0;
