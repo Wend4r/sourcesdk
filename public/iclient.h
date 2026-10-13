@@ -93,11 +93,12 @@ class NetMessageConnectionCrashed_t;
 class NetMessageSplitscreenUserChanged_t;
 class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
+class CNetMessage;
 
 abstract_class IGameEventWatcher
 {
 public:
-	virtual void unk000() = 0;
+	virtual bool OnGameEventReceived( const CNetMessage *pData ) = 0;
 };
 
 //-----------------------------------------------------------------------------
