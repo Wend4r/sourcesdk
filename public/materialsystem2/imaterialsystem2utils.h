@@ -124,7 +124,8 @@ public:
 	// Ages the queued renderables and releases the ones RenderFrame() drew
 	virtual void AddToView() = 0;
 
-	virtual void GenerateMipMaps( IRenderContext *pRenderContext, void *pTexture ) = 0;
+	// Falls back to IRenderContext::GenerateMipMaps() when the compute shader resources are missing
+	virtual void GenerateMipMaps( IRenderContext *pRenderContext, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture ) = 0;
 
 	// Creates "<name>_intermediate_<n>.vtex" textures
 	virtual bool AllocateCompressionTexturesGPU( ImageFormat nFormat, int nWidth, int nHeight, int nNumMipLevels, const char *pDebugName, CStrongHandle< InfoForResourceTypeCTextureBase > *pCompressedOutputTexture, CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCTextureBase > > &intermediateOutputTextures ) = 0;
