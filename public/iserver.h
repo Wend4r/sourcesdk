@@ -342,7 +342,8 @@ public:
 	int m_nGameDataVersion;
 	CUtlVector<byte> m_GameData2;
 
-	void* m_pUnk880;
+	// Client whose command is being executed (Source 1 host_client), cleared by ServerEndSimulate; the kick command names it, or "Console" when it is unset
+	CServerSideClientBase *m_pHostClient;
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr;
 	// Told when the active spawn group changes
 	void* m_pNotificationSink;
