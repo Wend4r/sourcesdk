@@ -1,6 +1,6 @@
 //===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
-// Purpose: Rubikon physics worlds
+// Purpose: Rubikon physics worlds and physics data embedded in another resource
 //
 //===========================================================================//
 
@@ -20,7 +20,9 @@
 #include "mathlib/aabb.h"
 #include "vphysics2/handle_decl.h"
 #include "vphysx/vphysx_interface.h"
+#include "resourcefile/resourcetype.h"
 
+class IRD_RegisterResourceDataUtils;
 class IPhysicsBody;
 class IPhysicsShape;
 class IPhysicsJoint;
@@ -68,6 +70,8 @@ struct constraint_pulleyparams_t;
 struct constraint_lengthparams_t;
 struct constraint_slidingparams_t;
 struct constraint_fixedparams_t;
+struct VPhysXAggregateData_t;
+template < class T > class CEmbeddedIntrospectedOrKV3BlockHelper;
 
 abstract_class IVPhysics2World
 {
@@ -582,6 +586,14 @@ public:
 
 	virtual void unk036( void *pUnknown ) = 0;
 	virtual void Profile( PhysicsWorldTraceProfile_t &profile ) = 0;
+};
+
+struct EmbeddedPhysicsInfo_t
+{
+	ResourceHandle_t m_hRootResource;
+	IRD_RegisterResourceDataUtils *m_pResourceRegisterUtils;
+	const char *m_pModelName;
+	CEmbeddedIntrospectedOrKV3BlockHelper< VPhysXAggregateData_t > *m_pBlockHandler;
 };
 
 #endif // VPHYSICS2_INTERFACE_H
