@@ -73,7 +73,7 @@ public:
 	// Forwards to the game server
 	virtual void *GetEconItemSystem_Server() = 0;
 
-	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk, const void **ppUnk1, const void **ppUnk2 ) = 0;
+	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 
 	virtual void unk059() = 0;
 	virtual void unk060() = 0;
