@@ -15,6 +15,7 @@
 #include "appframework/iappsystem.h"
 #include "mathlib/mathlib.h"
 #include "mathlib/vector.h"
+#include "tier0/smartptr.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlleanvector.h"
 #include "tier0/utlvector.h"
@@ -31,6 +32,8 @@ class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
+class IPhysSerialStreamSnapshot;
+class IDataDescConvertor;
 class CPhysAggregateData;
 class CMesh;
 
@@ -312,9 +315,10 @@ public:
 	virtual bool unk130() = 0;
 	virtual bool StreamToPhysicsDebugger( bool bStart ) = 0;
 	virtual bool IsStreamingToPhysicsDebugger() = 0;
-	virtual void CreateSerialStreamSnapshot( void *p ) = 0;
+	// Both are stubs in release builds
+	virtual CSmartPtr< IPhysSerialStreamSnapshot > CreateSerialStreamSnapshot( void *p ) = 0;
 	virtual void *unk134() = 0;
-	virtual void CreateDataDescConvertor( void *p ) = 0;
+	virtual CSmartPtr< IDataDescConvertor > CreateDataDescConvertor( const void *pData ) = 0;
 
 	// Empty in release builds
 	virtual void unk136( int nUnknown ) = 0;
