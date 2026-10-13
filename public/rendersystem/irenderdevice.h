@@ -18,6 +18,7 @@
 #include "tier1/utldelegate.h"
 #include "bitmap/imageformat_declarations.h"
 #include "mathlib/vector.h"
+#include "mathlib/vector4d.h"
 #include "resourcesystem/resourcehandle.h"
 #include "rendersystem/rendersystemtypes.h"
 #include "rendersystem/renderdevicetypes.h"
@@ -197,7 +198,7 @@ public:
 	virtual const CTextureDesc *GetOnDiskTextureDesc( HRenderTexture hTexture ) = 0;
 	virtual const CTextureDesc *GetTextureDesc( HRenderTexture hTexture ) = 0;
 	virtual Vector GetTextureAverageColor( HRenderTexture hTexture ) = 0;
-	virtual void unk092( void *p ) = 0;
+	virtual Vector4D unk092( HRenderTexture hTexture ) = 0;
 	virtual bool GetCubemapRadianceSHConstants( HRenderTexture hTexture, int nArrayIndex, CUtlVector< float > &outConstants ) = 0;
 	virtual void unk094( HRenderTexture hTexture, int nArrayIndex, const CUtlVector< float > &constants ) = 0;
 	virtual size_t GetTextureStreamingDataOffset( HRenderTexture hTexture ) = 0;
@@ -247,7 +248,7 @@ public:
 
 	virtual void *GetDeviceSpecificDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
 	virtual void *GetDeviceSpecificRayTracePipeline( RenderRayTracePipelineHandle_t hRayTracePipeline ) = 0;
-	virtual void unk137( void *p ) = 0;
+	virtual void *unk137( IRenderContext *pRenderContext ) = 0;
 	virtual void RegisterMaxSwapChainDimensionsChangedListener( IMaxSwapChainDimensionsChangedListener *pCallback ) = 0;
 	virtual void UnregisterMaxSwapChainDimensionsChangedListener( IMaxSwapChainDimensionsChangedListener *pCallback ) = 0;
 	virtual void GetCurrentMaxSwapChainDimensions( int *pWidthOut, int *pHeightOut ) = 0;
@@ -263,13 +264,16 @@ public:
 	virtual void AllocateUpdateAfterBindDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
 	virtual void unk151( RenderDescriptorSetHandle_t hDescriptorSet, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
 	virtual void DestroyDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
-	virtual void unk153( void *p ) = 0;
+	virtual bool unk153( RenderDescriptorSetHandle_t hDescriptorSet, CUtlVector< RenderDescriptorDesc_t > &descriptorDescs ) = 0;
 	virtual bool AddDescriptorsToGlobalPerFrameDescriptorSet( int32 nNumDescriptors, const RenderDescriptorDesc_t *pDescriptorDescs ) = 0;
 	virtual void UpdateGlobalPerFrameDescriptorBindings( int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
-	virtual void unk156( void *p ) = 0;
-	virtual void unk157( void *p ) = 0;
-	virtual void unk158( void *p ) = 0;
-	virtual void unk159( void *p ) = 0;
+
+	// Multi-GPU state
+	virtual bool unk156() = 0;
+	virtual int unk157() = 0;
+	virtual uint32 unk158() = 0;
+	virtual float unk159() = 0;
+
 	virtual float GetLastPresentTime() = 0;
 	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
 	virtual void *GetGraphicsAPISpecificTextureHandle( HRenderTexture hTexture ) = 0;
@@ -284,7 +288,7 @@ public:
 	virtual bool IsUsing32BitDepthBuffer() = 0;
 	virtual void LowLatencySleep() = 0;
 	virtual void SetLatencyMarker( uint32 nMarker ) = 0;
-	virtual void unk171( void *p ) = 0;
+	virtual bool unk171( uint32 nWindowMessage ) = 0;
 	virtual bool IsFramePacingSupported() = 0;
 	virtual double ConvertTimestampToSeconds( uint64 nTimestamp ) = 0;
 	virtual void FreeTextureGPUResources( int32 nTextureCount, const HRenderTexture *pTextures ) = 0;
@@ -295,28 +299,28 @@ public:
 	virtual RenderDescriptorSetHandle_t GetRegisteredDescriptorSetLayout( CUtlStringToken descriptorSetName ) = 0;
 	virtual RenderBLASHandle_t CreateBLAS( const BLASCreateDesc_t &desc, uint32 *pSizeCounter ) = 0;
 	virtual bool IsCompactible( RenderBLASHandle_t hBLAS ) = 0;
-	virtual void unk182( void *p ) = 0;
+	virtual uint64 unk182( RenderBLASHandle_t hBLAS ) = 0;
 	virtual IsReadyToCompactResult_t IsReadyToCompact( RenderBLASHandle_t hBLAS ) = 0;
 	virtual void DestroyBLAS( RenderBLASHandle_t hBLAS ) = 0;
 	virtual RenderTLASHandle_t CreateTLAS( const TLASCreateDesc_t &desc, TLASInstance_t *pInstances, int nInstanceCount ) = 0;
 	virtual void DestroyTLAS( RenderTLASHandle_t hTLAS ) = 0;
-	virtual void unk187( void *p ) = 0;
+	virtual uint64 unk187( void *hAccelerationStructure ) = 0;
 	virtual RenderRayTracePipelineHandle_t CreateRayTracePipeline( const RayTracePipelineStateCreateDesc_t &desc ) = 0;
 	virtual void DestroyRayTracePipeline( RenderRayTracePipelineHandle_t hPipeline ) = 0;
 	virtual bool IsCreatingRayTracePipelines() = 0;
 	virtual IRaytraceShaderBindingTable *CreateRayTraceShaderBindingTable( const ShaderBindingTableCreateDesc_t &desc ) = 0;
 	virtual void DestroyRayTraceShaderBindingTable( IRaytraceShaderBindingTable *pSBT ) = 0;
 	virtual void CreateOpacityMicromap( void *p ) = 0;
-	virtual void unk194( void *p ) = 0;
-	virtual void unk195( void *p ) = 0;
+	virtual void unk194( void *hOpacityMicromap ) = 0;
+	virtual uint64 unk195( void *hOpacityMicromap ) = 0;
 	virtual bool IsRayTracingSupported() = 0;
 	virtual bool IsAsyncPresentEnabled() = 0;
 	virtual void EnableAsyncPresent( bool bEnable ) = 0;
 	virtual bool StartRenderDocCapture( PlatWindow_t hWnd ) = 0;
 	virtual bool EndRenderDocCapture( PlatWindow_t hWnd, void *pUnk1, void *pUnk2 ) = 0;
-	virtual void unk201( void *p ) = 0;
+	virtual void unk201( int nCount, const void *pTextureRequests ) = 0;
 	virtual uint32 GetTextureViewIndex( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, RenderTextureDimension_t nDimension ) = 0;
-	virtual void unk203( void *p ) = 0;
+	virtual HRenderTexture unk203( uint32 nTextureViewIndex ) = 0;
 	virtual uint32 GetSamplerIndex( SamplerStateHandle_t hSamplerState ) = 0;
 	virtual RenderDescriptorSetHandle_t GetGlobalLateBoundBindlessDescriptorSet() = 0;
 	virtual PooledIndexBufferHandle_t AllocatePooledIndexBuffer( uint nIndexCount, uint nIndexSize, const void *pIndices, uint *pOutStartIndex ) = 0;
@@ -328,7 +332,7 @@ public:
 	virtual uint32 unk212( void *hPooledVertexBuffer ) = 0;
 	virtual uint32 unk213( void *hPooledVertexBuffer, uint32 *pVertexSizeOut ) = 0;
 	virtual VertexBufferHandle_t GetPooledVertexBuffer() = 0;
-	virtual void unk215( void *p ) = 0;
+	virtual void unk215() = 0;
 	virtual IUpscaler *unk216( int nType ) = 0;
 
 	// XeSS / FidelityFX availability
@@ -340,20 +344,20 @@ public:
 	virtual void unk221( void *p ) = 0;
 
 	virtual void CreateDeviceMemoryPool( void *p ) = 0;
-	virtual void DestroyDeviceMemoryPool( void *p ) = 0;
-	virtual void AllocateTextureInPool( void *p ) = 0;
-	virtual void FreeTextureFromPool( void *p ) = 0;
-	virtual void AllocateBufferInPool( void *p ) = 0;
-	virtual void FreeBufferFromPool( void *p ) = 0;
-	virtual void GetDeviceMemoryTextureAllocationInfo( void *p ) = 0;
-	virtual void GetDeviceMemoryBufferAllocationInfo( void *p ) = 0;
-	virtual void unk230( void *p ) = 0;
-	virtual void CheckFormatSupport( void *p ) = 0;
-	virtual void unk232( void *p ) = 0;
+	virtual void DestroyDeviceMemoryPool( void *hPool ) = 0;
+	virtual bool AllocateTextureInPool( void *hPool, HRenderTexture hTexture ) = 0;
+	virtual void FreeTextureFromPool( void *hPool, HRenderTexture hTexture ) = 0;
+	virtual bool AllocateBufferInPool( void *hPool, RenderBufferHandle_t hBuffer ) = 0;
+	virtual void FreeBufferFromPool( void *hPool, RenderBufferHandle_t hBuffer ) = 0;
+	virtual bool GetDeviceMemoryTextureAllocationInfo( HRenderTexture hTexture, void *pInfoOut ) = 0;
+	virtual bool GetDeviceMemoryBufferAllocationInfo( RenderBufferHandle_t hBuffer, void *pInfoOut ) = 0;
+	virtual bool unk230( HRenderTexture hTexture, int nCount, const HRenderTexture *pTextures ) = 0;
+	virtual uint32 CheckFormatSupport( ImageFormat nFormat ) = 0;
+	virtual int unk232( SwapChainHandle_t hSwapChain ) = 0;
 
 	// Device generated commands
 	virtual void CreateIndirectCommandsLayout( void *p ) = 0;
-	virtual void DestroyIndirectCommandsLayout( void *p ) = 0;
+	virtual void DestroyIndirectCommandsLayout( void *hLayout ) = 0;
 	virtual void CreateIndirectCommandsPreprocessBuffer( void *p ) = 0;
 	virtual void CreateIndirectExecutionSet( void *p ) = 0;
 	virtual void UpdateIndirectExecutionSet( void *p ) = 0;
@@ -363,8 +367,8 @@ public:
 
 	virtual int unk240() = 0;
 	virtual int unk241() = 0;
-	virtual void unk242( void *p ) = 0;
-	virtual void unk243( void *p ) = 0;
+	virtual void *unk242() = 0;
+	virtual void unk243( void *pObject ) = 0;
 	virtual bool ReadCompiledTextureMips( HRenderTexture hTexture, int nUnk1, int nUnk2, int nUnk3, ImageFormat nFormat, std::shared_ptr< IReadTexturePixelsCallback > pCallback ) = 0;
 	virtual void OnPresentSubmitted() = 0;
 	virtual void QueueFencedRecycling( CPipelineFence *pFence ) = 0;
