@@ -106,7 +106,7 @@ public:
 	virtual void ForceFlushGPU( SwapChainHandle_t hSwapChain ) = 0;
 	virtual void SetHardwareGammaRamp( SwapChainHandle_t hSwapChain, float flGamma ) = 0;
 	virtual std::unique_ptr< IRenderShaderByteCode > CompileShader( const char *pProgram, uint32 nBufLen, const char *pShaderVersion ) = 0;
-	virtual RenderShaderHandle_t CreateShader( int nType, std::unique_ptr< IRenderShaderByteCode > pShader, const char *pDebugName, uint32 nUnk, void *pUnk ) = 0;
+	virtual RenderShaderHandle_t CreateShader( int nType, std::unique_ptr< IRenderShaderByteCode > pShader, const char *pDebugName, int nSpecializationConstantCount, const void *pSpecializationConstants ) = 0;
 	virtual void DestroyShader( int nShaderType, RenderShaderHandle_t hShader ) = 0;
 
 	// Register counts and binary size of a compiled shader
@@ -174,7 +174,7 @@ public:
 
 	// Overloads in declaration order; MSVC groups them in reverse
 	virtual bool ReadTexturePixels( HRenderTexture hTexture, Rect_t *pSrcRect, int nSrcSlice, int nSrcMip, Rect_t *pDstRect, void *pData, ImageFormat dstFormat, int nDstStride ) = 0;
-	virtual bool ReadTexturePixels( FloatBitMap_t *pBitmap, HRenderTexture hTexture, uint8 nUnk ) = 0;
+	virtual bool ReadTexturePixels( FloatBitMap_t *pBitmap, HRenderTexture hTexture, uint8 nGammaType ) = 0;
 
 	virtual bool ReadBuffer( RenderBufferHandle_t hBuffer, uint32 nOffsetInBytes, void *pBuf, uint32 nBytesToRead ) = 0;
 	virtual bool unk076( void *hRequest ) = 0;
@@ -317,7 +317,7 @@ public:
 	virtual bool IsAsyncPresentEnabled() = 0;
 	virtual void EnableAsyncPresent( bool bEnable ) = 0;
 	virtual bool StartRenderDocCapture( PlatWindow_t hWnd ) = 0;
-	virtual bool EndRenderDocCapture( PlatWindow_t hWnd, void *pUnk1, void *pUnk2 ) = 0;
+	virtual bool EndRenderDocCapture( PlatWindow_t hWnd, int ( *pfnCaptureCallback )( const char *pCaptureFilePath, void *pRenderDocAPI, void *pContext ), void *pContext ) = 0;
 	virtual void unk201( int nCount, const void *pTextureRequests ) = 0;
 	virtual uint32 GetTextureViewIndex( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, RenderTextureDimension_t nDimension ) = 0;
 	virtual HRenderTexture unk203( uint32 nTextureViewIndex ) = 0;
@@ -327,7 +327,7 @@ public:
 	virtual void FreePooledIndexBuffer( PooledIndexBufferHandle_t hBuffer ) = 0;
 	virtual uint GetPooledIndexBufferOffset( PooledIndexBufferHandle_t hBuffer, uint32 *pIndexSizeOut, uint32 *pIndexCountOut ) = 0;
 	virtual IndexBufferHandle_t GetPooledIndexBuffer() = 0;
-	virtual void *AllocatePooledVertexBuffer( uint nVertexCount, uint nVertexSize, const void *pVertices, uint32 nUnk, void *pUnk ) = 0;
+	virtual void *AllocatePooledVertexBuffer( uint nVertexCount, uint nVertexSize, const void *pVertices, uint32 nUnk, const char *pDebugName ) = 0;
 	virtual void FreePooledVertexBuffer( void *hBuffer ) = 0;
 	virtual uint32 unk212( void *hPooledVertexBuffer ) = 0;
 	virtual uint32 unk213( void *hPooledVertexBuffer, uint32 *pVertexSizeOut ) = 0;
@@ -369,7 +369,7 @@ public:
 	virtual int unk241() = 0;
 	virtual void *unk242() = 0;
 	virtual void unk243( void *pObject ) = 0;
-	virtual bool ReadCompiledTextureMips( HRenderTexture hTexture, int nUnk1, int nUnk2, int nUnk3, ImageFormat nFormat, std::shared_ptr< IReadTexturePixelsCallback > pCallback ) = 0;
+	virtual bool ReadCompiledTextureMips( HRenderTexture hTexture, int nSlice, int nFirstMip, int nMipCount, ImageFormat nFormat, std::shared_ptr< IReadTexturePixelsCallback > pCallback ) = 0;
 	virtual void OnPresentSubmitted() = 0;
 	virtual void QueueFencedRecycling( CPipelineFence *pFence ) = 0;
 	virtual void OnFlushSubmitted() = 0;
