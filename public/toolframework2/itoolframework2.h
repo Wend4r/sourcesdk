@@ -20,6 +20,7 @@
 
 class QObject;
 class KeyValues3;
+class CUtlBuffer;
 class IToolFrameListener;
 class CEnvironmentBlock;
 class CEngineToolInfo;
@@ -28,6 +29,8 @@ class IToolFrameworkTabletInfo;
 class CQToolFrameworkApplication;
 class CJoystickInput;
 class CFGDFromAssetRegistry;
+class IFGDFromAssetListener;
+class IToolFrameworkAudioSettingsListener;
 
 abstract_class IToolFramework2 : public IAppSystem
 {
@@ -125,10 +128,10 @@ public:
 	virtual void unk060( QObject *pWindow ) = 0;
 	virtual void unk061() = 0;
 
-	// Settings files; pUnk selects the file the path is built from
-	virtual void LoadSettings( void *pUnk, KeyValues3 *pSettings ) = 0;
-	virtual void SaveSettings( void *pUnk, KeyValues3 *pSettings ) = 0;
-	virtual void GetSettingsPath( void *pUnk, CBufferString *pPath ) = 0;
+	// <settings dir>/<pName>/settings.txt; bUnknown adds a prefix to the file name
+	virtual void LoadSettings( const char *pName, CUtlBuffer &buf, bool bUnknown ) = 0;
+	virtual void SaveSettings( const char *pName, CUtlBuffer &buf, bool bUnknown ) = 0;
+	virtual void GetSettingsPath( const char *pName, CBufferString *pPath, bool bUnknown ) = 0;
 
 	// Copies the settings to the next free numbered backup
 	virtual void BackupSettings() = 0;
@@ -140,31 +143,36 @@ public:
 
 	virtual void *unk070( void *p1, void *p2 ) = 0;
 
-	// Notify the listeners added with unk076 when the value changes
+	// Notify the audio settings listeners when the value changes
 	virtual void SetAutoMuteGameWhenToolsHaveFocus( bool bMute ) = 0;
 	virtual bool GetAutoMuteGameWhenToolsHaveFocus() = 0;
 	virtual void SetToolsAudioMuted( bool bMuted ) = 0;
 	virtual bool GetToolsAudioMuted() = 0;
+
 	// pbMuteGame from the auto mute setting and the engine focus, pbMuteTools from the tools mute
 	// setting while no unk078 request is active
 	virtual bool unk075( bool *pbMuteGame, bool *pbMuteTools ) = 0;
-	virtual void unk076( void *pListener ) = 0;
-	virtual void unk077( void *pListener ) = 0;
+
+	virtual void AddAudioSettingsListener( IToolFrameworkAudioSettingsListener *pListener ) = 0;
+	virtual void RemoveAudioSettingsListener( IToolFrameworkAudioSettingsListener *pListener ) = 0;
 
 	// Increments a counter for true, decrements it for false
 	virtual void unk078( bool bPush ) = 0;
 
-	virtual void unk079( const char *pToolName, void *pRequest ) = 0;
+	// Loads the tool and passes it the request
+	virtual void unk079( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
-	// Queues the pair under a lock
-	virtual void unk080( const char *pUnk1, void *pUnk2 ) = 0;
+	// Queues the request for Tools_RunFrame
+	virtual void unk080( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
-	virtual void *unk081( uint8 nToolIndex ) = 0;
+	virtual KeyValues3 *unk081( uint8 nToolIndex ) = 0;
 
 	// Saves the tool's settings
-	virtual void unk082( uint8 nToolIndex, void *pUnk ) = 0;
-	virtual void unk083( void *p1, void *p2, void *p3 ) = 0;
-	virtual void unk084( void *p1, void *p2, void *p3 ) = 0;
+	virtual void unk082( uint8 nToolIndex, KeyValues3 *pSettings ) = 0;
+
+	// Load and save the named settings file as KV3, see LoadSettings
+	virtual void unk083( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
+	virtual void unk084( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
 
 	virtual void ShowImportWizard( void *pUnk ) = 0;
 
@@ -179,8 +187,8 @@ public:
 	// Executes "quit"
 	virtual void Quit() = 0;
 
-	virtual void unk091() = 0;
-	virtual void unk092() = 0;
+	virtual void AddFGDFromAssetListener( IFGDFromAssetListener *pListener ) = 0;
+	virtual void RemoveFGDFromAssetListener( IFGDFromAssetListener *pListener ) = 0;
 	virtual void *unk093() = 0;
 	virtual void *unk094() = 0;
 	virtual bool unk095( void *p ) = 0;
