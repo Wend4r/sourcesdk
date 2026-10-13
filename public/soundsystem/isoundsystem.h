@@ -40,6 +40,7 @@ class CAudioMixer;
 class CBufferString;
 class CSfxTable;
 class ISoundSystemServices;
+class ISteamUser;
 struct StartSoundParams_t;
 class CVSndParameterTable;
 class CUtlBuffer;
@@ -122,10 +123,10 @@ class CAudioState
 public:
 	CAudioState()
 	{
-		m_nUnk00 = 0;
+		m_flUnk00 = 0.0;
 		m_flUnk08 = 0.0;
-		m_nUnk10 = 0;
-		m_nUnk18 = 0;
+		m_flUnk10 = 0.0;
+		m_pSteamUser = nullptr;
 		m_bUnk20_0 = false;
 		m_bUnk20_1 = false;
 		m_bUnk20_2 = false;
@@ -146,10 +147,11 @@ public:
 		}
 	}
 
-	uint64 m_nUnk00;
+	// Accumulated frame time, last frame time and the time the state was built
+	double m_flUnk00;
 	double m_flUnk08;
-	uint64 m_nUnk10;
-	uint64 m_nUnk18;
+	double m_flUnk10;
+	ISteamUser *m_pSteamUser;
 	bool m_bUnk20_0 : 1;
 	bool m_bUnk20_1 : 1;
 	bool m_bUnk20_2 : 1;
