@@ -44,6 +44,7 @@ class IPhysSerialStreamSnapshot;
 class IDataDescConvertor;
 class CPhysAggregateData;
 class CMesh;
+class CFeModel;
 class CGJKProxy;
 
 class IFnPhysicsContact;
@@ -73,6 +74,8 @@ struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
 struct VPhysXAggregateData_t;
+struct VPhysXBodyPart_t;
+struct VPhysics2ShapeDef_t;
 struct VPhysIntersectionNotification_t;
 struct RnMaterial_t;
 struct DebugSceneObjectParams_t;
@@ -317,7 +320,8 @@ public:
 	// Takes over the aggregate data loaded from a resource block
 	virtual CPhysAggregateDataHandle CreateAggregateDataFromEmbeddedDiskData( const EmbeddedPhysicsInfo_t &embeddedPhysicsInfo ) = 0;
 
-	virtual void unk081( void *p ) = 0;
+	// Moves the cloth data of reallocated aggregate data; the data type manager forwards its reallocation here
+	virtual void unk081( const CPhysAggregateData *pOldData, CPhysAggregateData *pNewData ) = 0;
 
 	// Reference counting of the aggregate data, used by CPhysAggregateDataHandle
 	virtual void AddDataReference( CPhysAggregateData *pData ) = 0;
@@ -329,17 +333,18 @@ public:
 
 	virtual void ConvertBody( PhysicsBodyDef_t &body, const VPhysXAggregateData_t *pAggregateData, int nPartIndex ) = 0;
 
-	virtual bool unk087( void *p ) = 0;
-	virtual void unk088( void *p ) = 0;
+	// Both are called for every body part of loaded aggregate data, unk088 only when unk087 returns true
+	virtual bool unk087( VPhysics2ShapeDef_t *pShape ) = 0;
+	virtual void unk088( VPhysXBodyPart_t *pPart ) = 0;
 
 	virtual CPhysAggregateDataHandle CreateAggregateDataFromDiskData( VPhysXAggregateData_t *pDiskDataRoot ) = 0;
 
 	// Standalone softbodies
-	virtual IPhysicsSoftbody *CreateSoftbody( void *p ) = 0;
+	virtual IPhysicsSoftbody *CreateSoftbody( const CFeModel *pFeModel ) = 0;
 	virtual void DestroySoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
 	// Softbodies kept in the interface's own softbody list
-	virtual IPhysicsSoftbody *CreateListedSoftbody( void *p ) = 0;
+	virtual IPhysicsSoftbody *CreateListedSoftbody( const CFeModel *pFeModel ) = 0;
 	virtual void DestroyListedSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
 	// Both include the softbodies of every world
