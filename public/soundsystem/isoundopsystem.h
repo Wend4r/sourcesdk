@@ -26,7 +26,6 @@ class CUtlString;
 class CUtlStringToken;
 class CVSoundStackScriptTypeManager;
 class CVSoundEventScriptTypeManager;
-class ISoundEventListener;
 class KeyValues;
 class KeyValues3;
 struct ResourceBindingBase_t;
@@ -126,6 +125,81 @@ struct SosStartSoundEventValue_t
 	int32	m_nType;
 };
 
+// Arguments of the StartSoundEvent overloads that take them as one struct
+struct SosStartSoundEventParams_t
+{
+	// Copied into the 64 characters of the queued start
+	const char *m_pszSourceClassName;
+	// Packed field data of m_nFieldDataSize bytes
+	const void *m_pFieldData;
+	uint32 m_nSoundEventHash;
+	CEntityIndex m_SourceEntity;
+	// Zero for a new guid
+	SoundEventGuid_t m_nGuid;
+	int m_nFieldDataSize;
+	// -1 for the next random seed of the operator system
+	SOSRANDSEED m_nSeed;
+	sound_voice_layer_t m_nLayer;
+	uint8 m_nUnk23;
+	// Only the server traces soundscapes
+	bool m_bTraceSoundscapes;
+};
+
+enum SosMessageQueueInfoType_t
+{
+	SOSMSGQ_START = 0,
+	SOSMSGQ_STOP,
+	SOSMSGQ_STOP_HASH,
+	SOSMSGQ_SOUND_FIELDS,
+	SOSMSGQ_LIBRARY_FIELDS,
+};
+
+// Message of the queues of the operator system
+class CSosEventInfo_t
+{
+public:
+	virtual ~CSosEventInfo_t() {}
+
+	SosMessageQueueInfoType_t m_msgType;
+};
+
+class CSosStopSoundEventInfo_t : public CSosEventInfo_t
+{
+public:
+	SoundEventGuid_t m_nGuid;
+};
+
+template < class T >
+class CSosMessageQueue
+{
+public:
+	struct Entry_t
+	{
+		T key;
+		CSosEventInfo_t *pMessage;
+	};
+
+	CUtlVector< Entry_t > m_messages;
+};
+
+// Receives the messages the operator system processes, see ISoundOpSystem::AddSoundEventListener
+abstract_class ISoundEventListener
+{
+public:
+	// Messages that start sound events
+	virtual void OnStartSoundEventMessages( const CSosMessageQueue< SoundEventGuid_t > &messages ) = 0;
+	// Sound events stopped by StopAllSoundEvents
+	virtual void OnSoundEventsStopped( const CUtlVector< SoundEventGuid_t > &guids ) = 0;
+	// Messages that set fields of sound events
+	virtual void OnSoundEventFieldsMessages( const CSosMessageQueue< SoundEventGuid_t > &messages ) = 0;
+	// Messages that set fields of library stacks
+	virtual void OnLibraryStackFieldsMessages( const CSosMessageQueue< HSOSLIBSTACKHASH > &messages ) = 0;
+	// Vector of 12-byte entries the sound system collects once per frame
+	virtual void unk04( const void *pList ) = 0;
+	// Called for every sound event the operator system starts
+	virtual void OnSoundEventStarted( SoundEventGuid_t guid, SoundEventGuid_t parentGuid, SoundEventGuid_t rootGuid ) = 0;
+};
+
 class ISoundEventManager
 {
 public:
@@ -223,8 +297,9 @@ class ISoundOpSystem : public IAppSystem, public ISoundEventManager
 public:
 	// nSource is the entity the sound event is started for, invalid when it has none
 	virtual SndOpEventGuid_t StartSoundEvent( const char *pSoundEventName, CEntityIndex nSource, sound_voice_layer_t nLayer ) = 0;
-	virtual SndOpEventGuid_t StartSoundEvent( const char *pSoundEventName, void *pParams ) = 0;
-	virtual SndOpEventGuid_t StartSoundEvent( void *pParams ) = 0;
+	// The overload with the name sets m_nSoundEventHash of pParams
+	virtual SndOpEventGuid_t StartSoundEvent( const char *pSoundEventName, SosStartSoundEventParams_t *pParams ) = 0;
+	virtual SndOpEventGuid_t StartSoundEvent( SosStartSoundEventParams_t *pParams ) = 0;
 	virtual SndOpEventGuid_t StartStack( const char *pStackName, CEntityIndex nSource, sound_voice_layer_t nLayer ) = 0;
 	// Queues the stop of the sound event
 	virtual void unk015( SoundEventGuid_t guid ) = 0;
