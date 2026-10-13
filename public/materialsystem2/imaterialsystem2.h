@@ -50,7 +50,7 @@ public:
 
 	virtual RenderShaderHandle_t GetShaderForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass ) = 0;
 	virtual int GetConstantBufferInfoForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass, MaterialPassConstantBufferInfo_t *pBufferInfo, int nBufferInfoMax ) = 0;
-	virtual bool Unk_GetRenderStatesForRenderablePass( void *p ) = 0;
+	virtual bool GetRenderStatesForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass, void *pRenderStates ) = 0;
 
 	virtual void FrameUpdate() = 0;
 
