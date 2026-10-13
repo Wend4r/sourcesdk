@@ -140,10 +140,10 @@ public:
 	virtual RenderBufferHandle_t CreateGPUBufferFormatted( int nType, const BufferDesc_t &desc, int nFlags, ImageFormat nFormat, const void *pInitialData ) = 0;
 	virtual uint64 GetGPUBufferDeviceAddress( RenderBufferHandle_t hGPUBuffer ) = 0;
 	virtual void DestroyGPUBuffer( RenderBufferHandle_t hGPUBuffer ) = 0;
-	virtual uint64 unk047( VertexBufferHandle_t hVertexBuffer ) = 0;
-	virtual uint64 unk048( IndexBufferHandle_t hIndexBuffer ) = 0;
-	virtual uint64 unk049( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
-	virtual uint64 unk050( PooledIndexBufferHandle_t hPooledIndexBuffer ) = 0;
+	virtual uint64 GetVertexBufferDeviceAddress( VertexBufferHandle_t hVertexBuffer ) = 0;
+	virtual uint64 GetIndexBufferDeviceAddress( IndexBufferHandle_t hIndexBuffer ) = 0;
+	virtual uint64 GetPooledVertexBufferDeviceAddress( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
+	virtual uint64 GetPooledIndexBufferDeviceAddress( PooledIndexBufferHandle_t hPooledIndexBuffer ) = 0;
 	virtual HRenderTexture FindOrCreateTexture( const char *pResourceName, bool bIsAnonymous, const CTextureCreationDesc *pDescriptor, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk ) = 0;
 	virtual HRenderTexture GetErrorTexture( RenderTextureDimension_t nDimension ) = 0;
 	virtual HRenderTexture FindOrCreateFileTexture( const char *pFileName, int nLoadMode ) = 0;
@@ -177,9 +177,9 @@ public:
 	virtual bool ReadTexturePixels( FloatBitMap_t *pBitmap, HRenderTexture hTexture, uint8 nGammaType ) = 0;
 
 	virtual bool ReadBuffer( RenderBufferHandle_t hBuffer, uint32 nOffsetInBytes, void *pBuf, uint32 nBytesToRead ) = 0;
-	virtual bool unk076( void *hRequest ) = 0;
-	virtual bool unk077( void *hRequest, void **ppData, int *pSize ) = 0;
-	virtual bool unk078( void *hRequest ) = 0;
+	virtual bool IsPolledBufferReadbackReady( void *hRequest ) = 0;
+	virtual bool GetPolledBufferReadbackData( void *hRequest, void **ppData, int *pSize ) = 0;
+	virtual bool ReleasePolledBufferReadback( void *hRequest ) = 0;
 	virtual const Sheet_t *GetTextureSheet( HRenderTexture hTexture ) = 0;
 
 	// RENDERDEBUGFLAG_* bits
@@ -198,9 +198,9 @@ public:
 	virtual const CTextureDesc *GetOnDiskTextureDesc( HRenderTexture hTexture ) = 0;
 	virtual const CTextureDesc *GetTextureDesc( HRenderTexture hTexture ) = 0;
 	virtual Vector GetTextureAverageColor( HRenderTexture hTexture ) = 0;
-	virtual Vector4D unk092( HRenderTexture hTexture ) = 0;
+	virtual Vector4D GetTextureAverageColorRGBA( HRenderTexture hTexture ) = 0;
 	virtual bool GetCubemapRadianceSHConstants( HRenderTexture hTexture, int nArrayIndex, CUtlVector< float > &outConstants ) = 0;
-	virtual void unk094( HRenderTexture hTexture, int nArrayIndex, const CUtlVector< float > &constants ) = 0;
+	virtual void SetCubemapRadianceSHConstants( HRenderTexture hTexture, int nArrayIndex, const CUtlVector< float > &constants ) = 0;
 	virtual size_t GetTextureStreamingDataOffset( HRenderTexture hTexture ) = 0;
 	virtual RenderMultisampleType_t GetTextureMultisampleType( HRenderTexture hTexture ) = 0;
 	virtual ImageFormat GetSwapChainDepthStencilFormat( SwapChainHandle_t hSwapChain ) = 0;
@@ -211,12 +211,12 @@ public:
 	virtual void UnpinTextureInGPUMemory( HRenderTexture hTexture ) = 0;
 	virtual bool IsTextureCubeMap( HRenderTexture hTexture ) = 0;
 	virtual bool IsTextureFullyResident( HRenderTexture hTexture ) = 0;
-	virtual bool unk105( HRenderTexture hTexture ) = 0;
+	virtual bool IsTextureStandIn( HRenderTexture hTexture ) = 0;
 	virtual int unk106() = 0;
 	virtual void AddTextureResidencyListener( ITextureResidencyListener *pListener ) = 0;
 	virtual void RemoveTextureResidencyListener( ITextureResidencyListener *pListener ) = 0;
-	virtual void unk109( IRenderAsyncShaderCompileListener *pListener ) = 0;
-	virtual void unk110( IRenderAsyncShaderCompileListener *pListener ) = 0;
+	virtual void AddAsyncShaderCompileListener( IRenderAsyncShaderCompileListener *pListener ) = 0;
+	virtual void RemoveAsyncShaderCompileListener( IRenderAsyncShaderCompileListener *pListener ) = 0;
 	virtual HRenderTexture GetSwapChainTexture( SwapChainHandle_t hSwapChain, int nBuffer ) = 0;
 	virtual void GetRenderTargetDescDimensions( const RenderTargetDesc_t &desc, int *pWidthOut, int *pHeightOut, RenderMultisampleType_t *pMultisampleTypeOut ) = 0;
 	virtual bool GetPipelineFrameStats( CRenderPipelineFrameStats &frameStats ) = 0;
@@ -248,7 +248,7 @@ public:
 
 	virtual void *GetDeviceSpecificDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
 	virtual void *GetDeviceSpecificRayTracePipeline( RenderRayTracePipelineHandle_t hRayTracePipeline ) = 0;
-	virtual void *unk137( IRenderContext *pRenderContext ) = 0;
+	virtual void *GetDeviceSpecificCommandBuffer( IRenderContext *pRenderContext ) = 0;
 	virtual void RegisterMaxSwapChainDimensionsChangedListener( IMaxSwapChainDimensionsChangedListener *pCallback ) = 0;
 	virtual void UnregisterMaxSwapChainDimensionsChangedListener( IMaxSwapChainDimensionsChangedListener *pCallback ) = 0;
 	virtual void GetCurrentMaxSwapChainDimensions( int *pWidthOut, int *pHeightOut ) = 0;
@@ -264,14 +264,14 @@ public:
 	virtual void AllocateUpdateAfterBindDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
 	virtual void unk151( RenderDescriptorSetHandle_t hDescriptorSet, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
 	virtual void DestroyDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
-	virtual bool unk153( RenderDescriptorSetHandle_t hDescriptorSet, CUtlVector< RenderDescriptorDesc_t > &descriptorDescs ) = 0;
+	virtual bool GetDescriptorSetDescs( RenderDescriptorSetHandle_t hDescriptorSet, CUtlVector< RenderDescriptorDesc_t > &descriptorDescs ) = 0;
 	virtual bool AddDescriptorsToGlobalPerFrameDescriptorSet( int32 nNumDescriptors, const RenderDescriptorDesc_t *pDescriptorDescs ) = 0;
 	virtual void UpdateGlobalPerFrameDescriptorBindings( int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
 
 	// Multi-GPU state
-	virtual bool unk156() = 0;
-	virtual int unk157() = 0;
-	virtual uint32 unk158() = 0;
+	virtual bool IsMultiGPUEnabled() = 0;
+	virtual int GetMultiGPUCount() = 0;
+	virtual uint32 GetMultiGPUDeviceMask() = 0;
 	virtual float unk159() = 0;
 
 	virtual float GetLastPresentTime() = 0;
@@ -284,11 +284,11 @@ public:
 	// Needs RENDERDEBUGFLAG_ENABLE_GPU_TIMESTAMPS
 	virtual bool GetGPUFrameTimeMS( SwapChainHandle_t hSwapChain, float *pGPUFrameTimeMSOut, uint32 *pFrameNumberOut ) = 0;
 
-	virtual int unk167() = 0;
+	virtual int GetPresentCount() = 0;
 	virtual bool IsUsing32BitDepthBuffer() = 0;
 	virtual void LowLatencySleep() = 0;
 	virtual void SetLatencyMarker( uint32 nMarker ) = 0;
-	virtual bool unk171( uint32 nWindowMessage ) = 0;
+	virtual bool IsLatencyStatsPingMessage( uint32 nWindowMessage ) = 0;
 	virtual bool IsFramePacingSupported() = 0;
 	virtual double ConvertTimestampToSeconds( uint64 nTimestamp ) = 0;
 	virtual void FreeTextureGPUResources( int32 nTextureCount, const HRenderTexture *pTextures ) = 0;
@@ -299,28 +299,28 @@ public:
 	virtual RenderDescriptorSetHandle_t GetRegisteredDescriptorSetLayout( CUtlStringToken descriptorSetName ) = 0;
 	virtual RenderBLASHandle_t CreateBLAS( const BLASCreateDesc_t &desc, uint32 *pSizeCounter ) = 0;
 	virtual bool IsCompactible( RenderBLASHandle_t hBLAS ) = 0;
-	virtual uint64 unk182( RenderBLASHandle_t hBLAS ) = 0;
+	virtual uint64 GetBLASUpdateScratchSize( RenderBLASHandle_t hBLAS ) = 0;
 	virtual IsReadyToCompactResult_t IsReadyToCompact( RenderBLASHandle_t hBLAS ) = 0;
 	virtual void DestroyBLAS( RenderBLASHandle_t hBLAS ) = 0;
 	virtual RenderTLASHandle_t CreateTLAS( const TLASCreateDesc_t &desc, TLASInstance_t *pInstances, int nInstanceCount ) = 0;
 	virtual void DestroyTLAS( RenderTLASHandle_t hTLAS ) = 0;
-	virtual uint64 unk187( RenderResourceHandle_t hAccelerationStructure ) = 0;
+	virtual uint64 GetAccelerationStructureUpdateScratchSize( RenderResourceHandle_t hAccelerationStructure ) = 0;
 	virtual RenderRayTracePipelineHandle_t CreateRayTracePipeline( const RayTracePipelineStateCreateDesc_t &desc ) = 0;
 	virtual void DestroyRayTracePipeline( RenderRayTracePipelineHandle_t hPipeline ) = 0;
 	virtual bool IsCreatingRayTracePipelines() = 0;
 	virtual IRaytraceShaderBindingTable *CreateRayTraceShaderBindingTable( const ShaderBindingTableCreateDesc_t &desc ) = 0;
 	virtual void DestroyRayTraceShaderBindingTable( IRaytraceShaderBindingTable *pSBT ) = 0;
 	virtual RenderResourceHandle_t CreateOpacityMicromap( const void *pDesc ) = 0;
-	virtual void unk194( RenderResourceHandle_t hOpacityMicromap ) = 0;
+	virtual void DestroyOpacityMicromap( RenderResourceHandle_t hOpacityMicromap ) = 0;
 	virtual uint64 unk195( RenderResourceHandle_t hOpacityMicromap ) = 0;
 	virtual bool IsRayTracingSupported() = 0;
 	virtual bool IsAsyncPresentEnabled() = 0;
 	virtual void EnableAsyncPresent( bool bEnable ) = 0;
 	virtual bool StartRenderDocCapture( PlatWindow_t hWnd ) = 0;
 	virtual bool EndRenderDocCapture( PlatWindow_t hWnd, int ( *pfnCaptureCallback )( const char *pCaptureFilePath, void *pRenderDocAPI, void *pContext ), void *pContext ) = 0;
-	virtual void unk201( int nCount, const void *pTextureRequests ) = 0;
+	virtual void RequestTextureMipLevels( int nCount, const void *pTextureRequests ) = 0;
 	virtual uint32 GetTextureViewIndex( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, RenderTextureDimension_t nDimension ) = 0;
-	virtual HRenderTexture unk203( uint32 nTextureViewIndex ) = 0;
+	virtual HRenderTexture GetTextureFromViewIndex( uint32 nTextureViewIndex ) = 0;
 	virtual uint32 GetSamplerIndex( SamplerStateHandle_t hSamplerState ) = 0;
 	virtual RenderDescriptorSetHandle_t GetGlobalLateBoundBindlessDescriptorSet() = 0;
 	virtual PooledIndexBufferHandle_t AllocatePooledIndexBuffer( uint nIndexCount, uint nIndexSize, const void *pIndices, uint *pOutStartIndex ) = 0;
@@ -329,16 +329,16 @@ public:
 	virtual IndexBufferHandle_t GetPooledIndexBuffer() = 0;
 	virtual RenderResourceHandle_t AllocatePooledVertexBuffer( uint nVertexCount, uint nVertexSize, const void *pVertices, uint32 nUnk, const char *pDebugName ) = 0;
 	virtual void FreePooledVertexBuffer( RenderResourceHandle_t hBuffer ) = 0;
-	virtual uint32 unk212( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
-	virtual uint32 unk213( RenderResourceHandle_t hPooledVertexBuffer, uint32 *pVertexSizeOut ) = 0;
+	virtual uint32 GetPooledVertexBufferBaseVertex( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
+	virtual uint32 GetPooledVertexBufferVertexCount( RenderResourceHandle_t hPooledVertexBuffer, uint32 *pVertexSizeOut ) = 0;
 	virtual VertexBufferHandle_t GetPooledVertexBuffer() = 0;
 	virtual void unk215() = 0;
-	virtual IUpscaler *unk216( int nType ) = 0;
+	virtual IUpscaler *CreateUpscaler( int nType ) = 0;
 
 	// XeSS / FidelityFX availability
 	virtual bool IsSuperSamplingAvailable( int nType ) = 0;
 
-	virtual void unk218( IUpscaler *pUpscaler ) = 0;
+	virtual void DestroyUpscaler( IUpscaler *pUpscaler ) = 0;
 	virtual void unk219( bool bUnk, bool bAsync ) = 0;
 	virtual void BeginRenderingToSwapChain( SwapChainHandle_t hSwapChain ) = 0;
 	virtual void unk221( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
@@ -361,7 +361,7 @@ public:
 	virtual RenderBufferHandle_t CreateIndirectCommandsPreprocessBuffer( void *hIndirectCommandsLayout, void *hIndirectExecutionSet, uint32 nMaxSequenceCount ) = 0;
 	virtual void *CreateIndirectExecutionSet( IRenderContext *pRenderContext, int nMaxPipelineCount ) = 0;
 	virtual bool UpdateIndirectExecutionSet( void *hIndirectExecutionSet, IRenderContext *pRenderContext, int nPipelineIndex ) = 0;
-	virtual void unk238( void *hIndirectExecutionSet ) = 0;
+	virtual void DestroyIndirectExecutionSet( void *hIndirectExecutionSet ) = 0;
 
 	virtual void unk239( const char *pName ) = 0;
 
