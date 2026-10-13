@@ -322,9 +322,9 @@ public:
 	CSteamAudioPartitioner *m_pPartitioner;
 	bool m_bUnk9D0;
 
-	// Hash map of SetTransform transforms (container not identified)
-	uint64 m_Unk9D8[ 10 ];
-	CThreadFastMutex m_UnkMutexA28;
+	// Hash map of SetTransform transforms (container not identified) and the mutex LockTransforms takes
+	uint64 m_TransformMap[ 10 ];
+	CThreadFastMutex m_TransformMapMutex;
 
 	// Set by unk068
 	int m_nUnkA34;
