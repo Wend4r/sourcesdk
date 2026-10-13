@@ -172,7 +172,11 @@ public:
 	CUtlVector< HullParams_t > m_HullParams;
 
 private:
-	uint8 m_Unk58[ 2 ];
+	// Cleared in the project defaults.
+	bool m_bUnk58;
+	// Read from the nav file after the hull parameters (settings version 12 on); compared with
+	// the project defaults.
+	bool m_bUnk59;
 };
 
 //-----------------------------------------------------------------------------
