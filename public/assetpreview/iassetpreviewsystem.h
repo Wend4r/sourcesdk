@@ -202,16 +202,28 @@ public:
 class CAssetPreviewSystem : public CTier3DmAppSystem< IAssetPreviewSystem >
 {
 public:
-	CUtlVector< void * > m_vecUnk028;
-	CUtlVector< IAssetPreviewSettingsChangedListener * > m_vecUnk040;
-	uint8 m_unk058[ 0x28 ];
+	// Tool scene widgets of the previews, run by RunFrame
+	CUtlVector< IToolFrameListener * > m_ToolFrameListeners;
 
-	// Live preview state, including the "live_preview" setting and the "background_color" setting
-	uint8 m_unk080[ 0x70 ];
+	CUtlVector< IAssetPreviewSettingsChangedListener * > m_SettingsChangedListeners;
+	CUtlDict< IToolSceneNodeControllerFactory * > m_ToolSceneNodeControllerFactories;
 
-	// Light rig controllers
-	void *m_pUnk0F0;
-	void *m_pUnk0F8;
+	// Embedded previews: 72-byte entries (thumbnail widget, tool scene widget of the live
+	// preview, asset, ...) and the objects deleted by Shutdown
+	uint8 m_unk080[ 0x18 ];
+	uint8 m_unk098[ 0x18 ];
+	uint8 m_unk0B0[ 0x10 ];
+
+	// CThreadEvent, whose size differs between the platforms
+	uint8 m_unk0C0[ 0x10 ];
+
+	// "live_preview" and "background_color" settings
+	bool m_bLivePreviewEnabled;
+	Color m_BackgroundColor;
+
+	CUtlVector< ILiveEmbeddedPreviewStateListener * > m_LiveEmbeddedPreviewStateListeners;
+
+	CLightingControlRig *m_pLightingControlRigs[ 2 ];
 
 	bool m_bPreviewCameraLocked;
 	bool m_bPreviewMenuEnabled;
@@ -219,8 +231,9 @@ public:
 	bool m_bPreviewOverlayIconsEnabled;
 	bool m_bPreviewModelVertexFramingEnabled;
 
-	double m_flUnk108;
-	double m_flUnk110;
+	// RunFrame copies the thumbnail cache statistics into m_unk118 at this interval
+	double m_flNextThumbnailStatsTime;
+	double m_flThumbnailStatsStartTime;
 	uint8 m_unk118[ 0x58 ];
 };
 
