@@ -213,10 +213,10 @@ public:
 	virtual void ResetNavMesh() = 0;
 	// Called when the mesh becomes the active one; raises the next area id above the mesh's own
 	// ids and activates the managers.
-	virtual void Unk_OnActivated() = 0;
+	virtual void OnActivated() = 0;
 	// Called on the active mesh when another one replaces it, and when it is destroyed while
 	// active.
-	virtual void Unk_OnDeactivated() = 0;
+	virtual void OnDeactivated() = 0;
 	virtual void Update() = 0;
 	// Parses a nav file already read into memory; returns 0 on success. pszMapName is the name
 	// the file was looked up by.
@@ -256,24 +256,24 @@ public:
 	// them.
 	virtual void RemoveInvalidNavAreas() = 0;
 	// Sets the area's m_nMeshIndex.
-	virtual void Unk_SetAreaMeshIndex( CNavArea *pArea, int nMeshIndex ) = 0;
+	virtual void SetAreaMeshIndex( CNavArea *pArea, int nMeshIndex ) = 0;
 	// The movable meshes' movable_mesh_gravity_follows_rotation settings.
-	virtual void Unk_SaveMovableMeshSettings( KeyValues3 *pKV, const void *pUnk ) const = 0;
-	virtual void Unk_LoadMovableMeshSettings( const KeyValues3 *pKV, void *pUnk ) = 0;
+	virtual void SaveMovableMeshSettings( KeyValues3 *pKV, const void *pUnk ) const = 0;
+	virtual void LoadMovableMeshSettings( const KeyValues3 *pKV, void *pUnk ) = 0;
 	// Empty in the game's meshes.
-	virtual void Unk_29( void *p ) = 0;
+	virtual void unk029( void *p ) = 0;
 	// Empty in the game's meshes; given the nav file's KeyValues3 block for versions 31 to 35.
-	virtual void Unk_30( const KeyValues3 *pKV ) = 0;
-	// Forwards to Unk_SaveNavGenHullParams.
-	virtual void Unk_31( KeyValues3 *pKV ) const = 0;
-	// Forwards to Unk_LoadNavGenHullParams.
-	virtual void Unk_32( const KeyValues3 *pKV ) = 0;
+	virtual void unk030( const KeyValues3 *pKV ) = 0;
+	// Forwards to SaveNavGenHullParams.
+	virtual void unk031( KeyValues3 *pKV ) const = 0;
+	// Forwards to LoadNavGenHullParams.
+	virtual void unk032( const KeyValues3 *pKV ) = 0;
 	// Empty in the game's meshes; called by BuildFromNavGen once the areas are added.
 	virtual void ReadNavGenMarkup( const CNavGenInput &input ) = 0;
 	// NavGenParams.HullParams: the Name, FlowMap_Enabled and FlowMap_NodeMaxRadius of every
 	// hull in m_NavGenParams.
-	virtual void Unk_LoadNavGenHullParams( const KeyValues3 *pKV ) = 0;
-	virtual void Unk_SaveNavGenHullParams( KeyValues3 *pKV ) const = 0;
+	virtual void LoadNavGenHullParams( const KeyValues3 *pKV ) = 0;
+	virtual void SaveNavGenHullParams( KeyValues3 *pKV ) const = 0;
 
 	int GetNavAreaCount() const { return m_NavAreas.Count(); }
 	CNavArea *GetNavArea( int i ) const { return m_NavAreas[ i ]; }
