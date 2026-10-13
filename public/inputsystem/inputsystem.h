@@ -58,7 +58,9 @@ public:
 		CursorEntry_t *pCursorEntry;
 	};
 
-	uint64 m_pad028;
+	// Window of the last posted IE_IMESetWindow event
+	PlatWindow_t m_hLastIMEHWnd;
+
 	CUtlVector< InputWindow_t > m_Windows;
 	bool m_bEnabled;
 	bool m_bPumpEnabled;
@@ -71,13 +73,13 @@ public:
 	bool m_bIsActivated;
 	bool m_bEnablePowerManagement;
 
-	// Set by a command line parameter, read by SetCursorClip
-	bool m_bUnk04F;
+	// Set by -disable_cursor_clip, keeps SetCursorClip from grabbing the window
+	bool m_bDisableCursorClip;
 
 	bool m_bButtonCodeIsScanCode;
 
-	// SetButtonCodeIsScanCode ignores changes while it is set
-	bool m_bUnk051;
+	// "InputSystem/LockButtonCodeIsScanCode"; SetButtonCodeIsScanCode ignores changes while it is set
+	bool m_bLockButtonCodeIsScanCode;
 
 	bool m_bIMEAllowed;
 	bool m_bCursorVisible;
@@ -94,41 +96,43 @@ public:
 	int m_nLastSampleTick;
 	int m_nPollCount;
 
-	// Returned by GetPollTime
+	// Plat_FloatTime() of the last SampleDevices, returned by GetPollTime and stamped on posted events
 	double m_flUnk2508;
 
 	uint32 m_uiMouseWheel;
 
-	// Set by joystick command line parameters
-	bool m_bUnk2514;
+	// From the joystick command line parameters or cl_joystick_enabled
+	bool m_bJoystickEnabled;
 
 	// Changed by EnableJoystickInput, one bit per joystick
 	uint16 m_nUnk2516;
 
 	int m_nJoystickCount;
 
-	// Set once the SDL game controller subsystem is initialized
-	bool m_bUnk251C;
+	// Set once the SDL game controller subsystem is initialized ("Couldn't initialize joysticks" otherwise)
+	bool m_bJoysticksInitialized;
 
 	JoystickInfo_t m_pJoystickInfo[ 4 ];
 
-	// IsMouseCaptured
-	PlatWindow_t m_hUnk2640;
+	// EnableMouseCapture, DisableMouseCapture and IsMouseCaptured
+	PlatWindow_t m_hMouseCaptureWindow;
 
 	PlatWindow_t m_hCursorClipWindow;
 
-	// GetStandardCursor
-	InputCursorHandle_t m_Unk2650[ 26 ];
+	// Created from the SDL system cursors, returned by GetStandardCursor
+	InputCursorHandle_t m_pSystemCursors[ 26 ];
 
-	// GetStandardCursorOverride and SetStandardCursorOverride
-	InputCursorHandle_t m_Unk2720[ 26 ];
+	// Copy of m_pSystemCursors, changed by SetStandardCursorOverride
+	InputCursorHandle_t m_pDefaultCursors[ 26 ];
 
 	CUtlStringMap< UserCursor_t > m_UserCursors;
 	float m_fLoadedCursorScale;
 
-	// EnableAutoCursorScale and CanSetCursorScale
-	bool m_bUnk286C;
-	bool m_bUnk286D;
+	// EnableAutoCursorScale and IsAutoCursorScaleEnabled
+	bool m_bAutoCursorScaleEnabled;
+
+	// Set by -cursor_scale_percent, which also sets m_fLoadedCursorScale; CanSetCursorScale returns false then
+	bool m_bCursorScalePercent;
 
 	InputCursorHandle_t m_hCursor;
 	CUtlString m_strPrevSDLAltF4Hint;
@@ -143,6 +147,7 @@ public:
 	// Incremented by QueueResetInputState, consumed by PollInputState
 	CInterlockedInt m_nUnk28A0;
 
+	// Set to 3 and the event name by the "OnEventThatMightCauseFrameRateHitch" handler and read while pumping window messages
 	int m_nUnk28A4;
 	CUtlString m_Unk28A8;
 
