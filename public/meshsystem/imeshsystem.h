@@ -27,6 +27,7 @@ class IMeshRayTrace;
 class ISceneObjectDesc;
 class ISceneWorld;
 class InfoForResourceTypeCTextureBase;
+class IMaterial2;
 
 //-----------------------------------------------------------------------------
 // A mesh of a model, by the index of the mesh in the model
@@ -90,11 +91,13 @@ public:
 	// Moves the std::function at pFunction into CMeshSystem::m_unk0F0
 	virtual void unk035( void *pFunction ) = 0;
 
-	// Does nothing unless hModel is loaded
-	virtual void unk036( ResourceHandle_t hModel ) = 0;
+	// Draw flags of a loaded material, computed from its attributes ("bShaderBlended", "NeedsDynamicShadows",
+	// "AlphaTestZPrepass", "ForceZPrepass", "BindlessResources", "DisableLODBlending", ...) and then passed through
+	// every callback added by unk037(); 0 when hMaterial is not loaded
+	virtual uint32 unk036( ResourceHandle_t hMaterial ) = 0;
 
-	// Adds pListener to CMeshSystem::m_unk0A8 when it is not there yet
-	virtual void unk037( void *pListener ) = 0;
+	// Adds pfnCallback to the callbacks of unk036() when it is not there yet and refreshes every loaded model
+	virtual void unk037( uint32 ( *pfnCallback )( IMaterial2 *pMaterial, uint32 nFlags ) ) = 0;
 
 	// Appends CMeshSystem::m_unk0D0 to pOut under its lock
 	virtual void unk038( CUtlVector< void * > *pOut ) = 0;
