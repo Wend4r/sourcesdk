@@ -308,11 +308,13 @@ public:
 	uint8 m_unk268[ 0x18 ];
 	CAtomicMutex m_ToolRequestsMutex;
 
-	// Command line options that suppress the deferred tool launch
-	bool m_bUnk28C;
-	CUtlString m_sUnk290;
-	int m_nUnk298;
-	bool m_bUnk29C;
+	// Command line options "-generatethumbnails", "-generatethumbnailssubstr",
+	// "-generatethumbnailsmaxtime" and "-generatethumbnailsclear": Tools_RunFrame passes them to
+	// IAssetPreviewSystem::GenerateThumbnails and quits, and no deferred tool is launched meanwhile
+	bool m_bGenerateThumbnails;
+	CUtlString m_sGenerateThumbnailsSubstr;
+	int m_nGenerateThumbnailsMaxTime;
+	bool m_bGenerateThumbnailsClear;
 };
 
 #endif // ITOOLFRAMEWORK2_H
