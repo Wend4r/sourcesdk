@@ -30,6 +30,7 @@
 class CBufferString;
 class ClientClass;
 class CCommand;
+class CEntityInstance;
 class CGlobalVarsBase;
 class CSVCMsg_HltvReplay_t;
 class CSVCMsg_UserCommands_t;
@@ -236,9 +237,9 @@ public:
 	virtual bool unk111( int nUnk1, int nUnk2, void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk112( int nUnk1, int nUnk2, int nUnk3, void *pUnk ) = 0;
 	virtual void unk113( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	virtual void unk114( void *pUnk1, char *pUnk2, void *pUnk3 ) = 0;
-	// Looks the entity up and calls unk114
-	virtual void unk115( CEntityIndex nEntityIndex, void *pUnk ) = 0;
+	// Overloads: the first one looks the entity up and calls the second one. Linux keeps this order, MSVC reverses it
+	virtual void unk114( CEntityIndex nEntityIndex, void *pUnk ) = 0;
+	virtual void unk114( CEntityInstance *pEntity, uint64 *pUnk1, void *pUnk2 ) = 0;
 	virtual void LaunchApplicationOnExit( const char *pszValue ) = 0;
 	// Returns its argument
 	virtual void *unk117( void *pUnk ) = 0;
