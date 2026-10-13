@@ -63,7 +63,7 @@ public:
 	MediaFoundationParams_t m_Params;
 
 	// Set once CoInitializeEx and MFStartup succeeded
-	bool m_bUnk158;
+	bool m_bStarted;
 
 	IMFSinkWriter *m_pSinkWriter;
 	uint32 m_nVideoStreamIndex;
@@ -72,7 +72,7 @@ public:
 	int64 m_nUnk178;
 
 	// YUY2 conversion buffer of the current frame
-	CUtlVector< uint8 > m_Unk180;
+	CUtlVector< uint8 > m_YUY2Buffer;
 };
 
 #endif // IMEDIAFOUNDATION_H
