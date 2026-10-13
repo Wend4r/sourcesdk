@@ -11,6 +11,7 @@
 #endif
 
 #include <appframework/iappsystem.h>
+#include <scenesystem/iscenesystem.h>
 #include <tier0/utlstringtoken.h>
 
 #include <memory>
@@ -29,19 +30,28 @@ class ITonemapSystem;
 class IVolumetricFog;
 class CWindController;
 class CCharacterDecalRenderer;
+class IProceduralLayerRenderer;
+struct VertexColor_t;
+struct VertexPos2DTex2D_t;
+enum SceneLayerMSAAMode_t : uint32;
+enum RenderImageLayout_t : uint32;
+
+FORWARD_DECLARE_HANDLE( HSceneViewRenderTarget );
+
+using ScreenSpaceVertex_t = VertexPos2DTex2D_t;
 
 abstract_class ISceneUtils : public IAppSystem
 {
 public:
-	virtual void Add2xDownsampleLayerToView( ISceneView *pView, void *pTexture, void *pUnk, bool bUnk ) = 0;
+	virtual void Add2xDownsampleLayerToView( ISceneView *pView, HRenderTexture hTexture, void *pUnk, bool bUnk ) = 0;
 
-	virtual void Add4xDownsampleLayerToView( ISceneView *pView, void *pTexture, void *pUnk, bool bUnk ) = 0;
+	virtual void Add4xDownsampleLayerToView( ISceneView *pView, HRenderTexture hTexture, void *pUnk, bool bUnk ) = 0;
 	virtual void Add2xDownsampleLayerToView( ISceneView *pView, uint64 nTextureIndex, void *pUnk, bool bUnk ) = 0;
 	virtual void Add4xDownsampleLayerToView( ISceneView *pView, uint64 nTextureIndex, void *pUnk, bool bUnk ) = 0;
 	virtual ISceneLayer *AddSimpleLayerToView( ISceneView *pView, const char *pszLayerName, const RenderViewport_t &viewport, const CUtlStringToken &token, uint64 nFlags, uint64 nUnk, const SceneLayerOutputs_t &outputs ) = 0;
-	virtual void Unk_AddTranslucentScreenspaceLayerToView( void *p ) = 0;
+	virtual void AddTranslucentScreenspaceLayerToView( void *p ) = 0;
 	virtual void RenderScreenQuad( IRenderContext *pRenderContext, Vector *pUnk, const char *pszUnk ) = 0;
-	virtual void Unk_CreateTextureBarrierLayerRenderer( void *p ) = 0;
+	virtual ISceneLayer *AddTextureBarrierLayer( ISceneView *pView, const char *pszDebugName, int nTextureCount, const HRenderTexture *pTextures, int nRenderTargetCount, const HSceneViewRenderTarget *pRenderTargets, const SceneLayerMSAAMode_t *pMSAAModes, const RenderImageLayout_t *pImageLayouts ) = 0;
 
 	virtual std::shared_ptr< ITonemapSystem > CreateTonemapSystem() = 0;
 
@@ -66,14 +76,14 @@ public:
 	virtual float PixelVisibility_FractionVisible( const pixelvis_queryparams_t &params, int *pQueryHandle, const CViewId &viewId ) = 0;
 	virtual void PixelVisibility_IssueQuery( const pixelvis_queryparams_t &params, int *pQueryHandle, IRenderContext *pRenderContext, const CFrustum &frustum, const CViewId &viewId ) = 0;
 	virtual void PixelVisibility_AppendViewProducerToViewIdsForPlayerQueries( int nUnk1, int nUnk2 ) = 0;
-	virtual void Unk_ComputeScreenSpaceVertices( void *p ) = 0;
-	virtual void Unk_CreateFullscreenQuadRenderer( void *p ) = 0;
-	virtual void Unk_CreateScalableAORenderer( void *p ) = 0;
-	virtual void Unk_CreateSignalSemaphoreRenderer( void *p ) = 0;
+	virtual void ComputeScreenSpaceVertices( const RenderViewport_t &viewport, int nDestX, int nDestY, int nDestWidth, int nDestHeight, float flSrcTextureX0, float flSrcTextureY0, float flSrcTextureX1, float flSrcTextureY1, int nSrcTextureWidth, int nSrcTextureHeight, ScreenSpaceVertex_t *pVertices ) = 0;
+	virtual IProceduralLayerRenderer *CreateFullscreenQuadRenderer( HMaterialWeak hMaterial, const VertexColor_t &modulationColor ) = 0;
+	virtual void CreateScalableAORenderer( void *p ) = 0;
+	virtual void CreateSignalSemaphoreRenderer( void *p ) = 0;
 	virtual void unk040() = 0;
-	virtual void Unk_FilterTexture( void *p ) = 0;
-	virtual void Unk_CreateFilterLayerRenderer( void *p ) = 0;
-	virtual void Unk_CreateMDL() = 0;
+	virtual void FilterTexture( void *p ) = 0;
+	virtual void CreateFilterLayerRenderer( void *p ) = 0;
+	virtual void CreateMDL() = 0;
 	virtual void unk044() = 0;
 
 	// NULL unless the scene system has character decals enabled.
@@ -86,11 +96,11 @@ public:
 	virtual void unk050() = 0;
 	virtual void unk051() = 0;
 	virtual void unk052() = 0;
-	virtual void Unk_GPUSort( void *p ) = 0;
+	virtual void GPUSort( void *p ) = 0;
 	virtual void unk054() = 0;
-	virtual void Unk_CreateRenderGraphBuilder( void *p ) = 0;
-	virtual void Unk_CreateSimplePostProcessingLayerRenderer( void *p ) = 0;
-	virtual void Unk_CreateQuadRenderer( void *p ) = 0;
+	virtual void CreateRenderGraphBuilder( void *p ) = 0;
+	virtual void CreateSimplePostProcessingLayerRenderer( void *p ) = 0;
+	virtual void CreateQuadRenderer( void *p ) = 0;
 	virtual void unk058() = 0;
 	virtual void unk059() = 0;
 	virtual void unk060() = 0;
