@@ -181,31 +181,23 @@ struct NavPolyDef_t
 //-----------------------------------------------------------------------------
 class CNavGeometryManager
 {
-private:
-	// Bit 0, read from the nav file: the vertices carry the gravity directions of m_Unk08.
-	uint32 m_nUnk00;
-	uint8 m_Unk04[ 4 ];
-	// One per vertex while bit 0 of m_nUnk00 is set; adding a vertex stores its gravity, and
-	// entries added to fill the gap are default. Rotated by movable mesh updates whose meshes
-	// have gravity follow their rotation.
-	CUtlVector< NavGravity_t > m_Unk08;
-
 public:
+	// Bit 0: m_VertexAttributes holds one entry per vertex. Read from the nav file; building
+	// from generated geometry ORs in the flags of the generator's output.
+	uint32 m_nVertexAttributeFlags;
+	// Gravity of each vertex while bit 0 of m_nVertexAttributeFlags is set; a vertex added
+	// without one, and every gap before it, gets the default. Rotated by movable mesh updates
+	// whose meshes have gravity follow their rotation.
+	CUtlVector< NavGravity_t > m_VertexAttributes;
 	CUtlVector< Vector > m_Vertices;
-
-private:
-	// One per vertex; zeroed when a vertex index is reused.
-	CUtlVector< int > m_Unk38;
-	// Indices of removed vertices; adding a vertex takes the last one before growing
-	// m_Vertices.
-	CUtlVector< int > m_Unk50;
-
-public:
+	// The number of polygons that use each vertex; a vertex is freed when it drops to 0, and
+	// a freed vertex holds -1.
+	CUtlVector< int > m_VertexRefCounts;
+	// Indices of freed vertices; adding a vertex takes the last one before growing m_Vertices.
+	CUtlVector< int > m_FreeVertices;
 	CUtlVector< NavPolyDef_t > m_Polys;
-
-private:
 	// Indices of removed polygons; adding a polygon takes the last one before growing m_Polys.
-	CUtlVector< int > m_Unk80;
+	CUtlVector< int > m_FreePolys;
 };
 
 //-----------------------------------------------------------------------------
