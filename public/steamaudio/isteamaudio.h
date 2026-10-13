@@ -15,15 +15,17 @@
 #include "tier0/utlstring.h"
 #include "tier2/tier2.h"
 
+class ISteamAudioScene;
+
 abstract_class ISteamAudio : public IAppSystem
 {
 public:
 	virtual ~ISteamAudio() {}
 	virtual void unk012() = 0;
-	virtual void unk013() = 0;
+	virtual ISteamAudioScene *unk013() = 0;
 	// Creates a CSteamAudioScene
-	virtual void *Unk_CreateScene( void *p ) = 0;
-	virtual void unk015() = 0;
+	virtual ISteamAudioScene *CreateScene( const void *pUnk1, bool bUnk, void *pUnk2 ) = 0;
+	virtual ISteamAudioScene *unk015() = 0;
 	virtual void unk016() = 0;
 	virtual void unk017() = 0;
 	virtual void unk018() = 0;
@@ -51,9 +53,9 @@ public:
 	virtual CUtlString GetMapPathingDataFilename( const char *pMapName ) = 0;
 	virtual CUtlString GetMapDataFilename( const char *pMapName, const char *pExtension ) = 0;
 	virtual void unk038() = 0;
-	virtual void Unk_GetReverbBakeDefaults( void *p ) = 0;
-	virtual void Unk_GetPathingBakeDefaults( void *p ) = 0;
-	virtual void Unk_GetCustomDataBakeDefaults( void *p ) = 0;
+	virtual void GetReverbBakeDefaults( void *p ) = 0;
+	virtual void GetPathingBakeDefaults( void *p ) = 0;
+	virtual void GetCustomDataBakeDefaults( void *p ) = 0;
 	virtual void unk042() = 0;
 	virtual void unk043() = 0;
 	virtual void unk044() = 0;
@@ -64,9 +66,9 @@ public:
 	virtual void unk049() = 0;
 	virtual void unk050() = 0;
 	virtual void unk051() = 0;
-	virtual void Unk_BakeReverb( void *p ) = 0;
-	virtual void Unk_BakePathData( void *p ) = 0;
-	virtual void Unk_BakeDimensions( void *p ) = 0;
+	virtual void BakeReverb( void *p ) = 0;
+	virtual void BakePathing( void *p ) = 0;
+	virtual void BakeDimensions( void *p ) = 0;
 	virtual void unk055() = 0;
 	virtual void unk056() = 0;
 	virtual void unk057() = 0;
