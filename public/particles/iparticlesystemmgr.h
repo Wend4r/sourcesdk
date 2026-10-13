@@ -15,6 +15,7 @@
 #include <materialsystem2/imaterial2.h>
 #include <resourcesystem/resourcehandle.h>
 #include <resourcesystem/iresourcesystem.h>
+#include <scenesystem/sceneobject.h>
 #include <schemasystem/schematypes.h>
 #include <tier0/utlhashtable.h>
 #include <tier0/utlleanvector.h>
@@ -28,7 +29,6 @@
 class CGpuImplicitRenderer;
 class CInstancedMeshSceneObject;
 class CPoolAllocator;
-class CSceneObject;
 class CSchemaClassInfo;
 class IParticleCollection;
 class IParticleFunctionDefinition;
@@ -227,12 +227,6 @@ public:
 	virtual void SimulateGPUParticles( CUtlLeanVector< IParticleCollection * > collections, IRenderContext *pRenderContext ) = 0;
 };
 
-abstract_class ISceneObjectListener
-{
-public:
-	virtual void unk000( CSceneObject *pSceneObject ) = 0;
-};
-
 //-----------------------------------------------------------------------------
 // Key of the instanced mesh scene objects of CParticleSystemMgr
 //-----------------------------------------------------------------------------
@@ -277,7 +271,7 @@ struct ParticleGPUReadback_t
 class CParticleSystemMgr : public CTier3AppSystem< IParticleSystemMgr >, public ISceneObjectListener, public IToolsResourceListener
 {
 public:
-	void unk000( CSceneObject *pSceneObject ) override;
+	void OnSceneObjectDeleted( CSceneObject *pSceneObject ) override;
 	void NotifyResourceStatusChange( const ResourceStatusChange_t *pChanges, int nNumChanges ) override;
 
 	CUtlVector< IParticleFunctionDefinition * > m_ParticleOperators[ 9 ];
