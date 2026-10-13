@@ -19,6 +19,7 @@
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
 #include <bitmap/imageformat_declarations.h>
+#include <scenesystem/scenesystem_flags.h>
 
 #include <functional>
 
@@ -102,7 +103,7 @@ enum SetupPerObjectLighting_t : uint32
 abstract_class ISceneSystem : public IAppSystem
 {
 public:
-	virtual CSceneObject *CreateSceneObject( ISceneObjectDesc *pDesc, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
+	virtual CSceneObject *CreateSceneObject( ISceneObjectDesc *pDesc, ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld ) = 0;
 
 	virtual CSceneObject *CreateSceneObjectFromBuffers( ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, int nPrimitiveType, const char *pszDescName, bool bOwnVBAndIB, uint64 nFlags ) = 0;
 
@@ -193,7 +194,7 @@ public:
 
 	virtual void unk071( bool bUnk ) = 0;
 
-	virtual void InitObject( CSceneObject *pObject, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
+	virtual void InitObject( CSceneObject *pObject, ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld ) = 0;
 
 	virtual void MoveObjectToWorld( CSceneObject *pObject, ISceneWorld *pWorld ) = 0;
 
