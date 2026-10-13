@@ -12,6 +12,10 @@
 
 #include <IEngineService.h>
 #include <con_nprint.h>
+#include <engine2/irenderservice.h>
+#include <engine2/iinputservice.h>
+#include <tier0/convar.h>
+#include <rendersystem/rendersystemtypes.h>
 
 namespace panorama
 {
@@ -53,6 +57,42 @@ public:
 
 	virtual void Con_NPrintf( int nRow, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
 	virtual void Con_NPrintf( const con_nprint_t *pInfo, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
+};
+
+class CGameUIService : public CBaseEngineService< IGameUIService >, public IRenderHandler
+{
+public:
+	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime, const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) override = 0;
+
+	// Called by the panorama input handler the service installs
+	virtual InputHandlerResult_t HandleInputEvent( const InputEvent_t &event, CSplitScreenSlot nSlot ) = 0;
+
+public:
+	uint8 m_unk040[ 8 ];
+	CConCommandMemberAccessor< CGameUIService > m_ToggleConsoleCommand;
+	CConCommandMemberAccessor< CGameUIService > m_HideConsoleCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ShowConsoleCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ClearCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ClearAllCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ConsoleToolCommand;
+	uint8 m_unk1C8[ 8 ];
+	void *m_pConsole;
+	InputContextHandle_t m_hMouseControlContext;
+	InputContextHandle_t m_hPanoramaHUDContext;
+	InputContextHandle_t m_hGameUIContext;
+	InputContextHandle_t m_hPanoramaUIContext;
+	RenderViewport_t m_Viewport;
+	double m_flLastMouseMoveTime;
+	bool m_bUnk220;
+	bool m_bUnk221;
+	bool m_bUnk222;
+	int m_nUnk224;
+	int m_nBlockConsoleToggleCount;
+	int m_nUnk22C;
+	bool m_bUnk230;
+	IInputHandler *m_pInputHandler;
+	void *m_unk240;
+	uint64 m_unk248[ 4 ][ 3 ];
 };
 
 #endif // IGAMEUISERVICE_H
