@@ -1177,6 +1177,18 @@ private:
 //
 //-----------------------------------------------------------------------------
 
+enum ThreadPriorityEnum_t
+{
+	TP_PRIORITY_DEFAULT = 0,
+	TP_PRIORITY_NORMAL = 0,
+	TP_PRIORITY_HIGH = 1,
+	TP_PRIORITY_LOW = -1,
+	TP_PRIORITY_HIGHEST = 2,
+	TP_PRIORITY_LOWEST = -2,
+};
+
+enum CThreadClassKind_t : int;
+
 class PLATFORM_CLASS CThread
 {
 public:
@@ -1188,14 +1200,12 @@ public:
 	const char *GetName();
 	void SetName( const char * );
 
-	size_t CalcStackDepth( void *pStackVariable )		{ return ((byte *)m_pStackBase - (byte *)pStackVariable); }
-
 	//-----------------------------------------------------
 	// Functions for the other threads
 	//-----------------------------------------------------
 
 	// Start thread running  - error if already running
-	virtual bool Start( unsigned nBytesStack = 0 );
+	virtual bool Start( unsigned nBytesStack = 0, ThreadPriorityEnum_t nPriority = TP_PRIORITY_DEFAULT );
 
 	// Returns true if thread has been created and hasn't yet exited
 	bool IsAlive();
@@ -1208,7 +1218,7 @@ public:
 	ThreadHandle_t GetThreadHandle();
 
 #ifdef PLATFORM_WINDOWS
-	uint GetThreadId();
+	uint GetThreadID() const { return m_threadId; }
 #endif
 
 	//-----------------------------------------------------
@@ -1222,17 +1232,21 @@ public:
 	// Forcibly, abnormally, but relatively cleanly stop the thread
 	void Stop( int exitCode = 0 );
 
+#ifdef PLATFORM_WINDOWS
 	// Get the priority
-	int GetPriority() const;
+	ThreadPriorityEnum_t GetPriority() const;
 
 	// Set the priority
-	bool SetPriority( int );
+	bool SetPriority( ThreadPriorityEnum_t );
+#endif
 
 	// Suspend a thread
 	unsigned Suspend();
 
 	// Resume a suspended thread
 	unsigned Resume();
+
+	CThreadClassKind_t GetClassKind() const { return m_ClassKind; }
 
 	// Force hard-termination of thread.  Used for critical failures.
 	bool Terminate( int exitCode = 0 );
@@ -1257,11 +1271,10 @@ public:
 	// time has elapsed, more or less. Duration is in milliseconds
 	static void Sleep( unsigned duration );
 
-protected:
+	// Returns the class kind of the CThread that runs the calling thread
+	static CThreadClassKind_t GetCurrentCThreadClassKind();
 
-	// Optional pre-run call, with ability to fail-create. Note Init()
-	// is forced synchronous with Start()
-	virtual bool Init();
+protected:
 
 	// Thread will run this function on startup, must be supplied by
 	// derived class, performs the intended action of the thread.
@@ -1270,13 +1283,19 @@ protected:
 	// Called when the thread exits
 	virtual void OnExit();
 
-#ifdef PLATFORM_WINDOWS
 	// Allow for custom start waiting
 	virtual bool WaitForCreateComplete( CThreadEvent *pEvent );
-#endif
+
+	virtual bool IsThreadRunning();
+
+	// Thread initially runs this. param is actually 'this'. function
+	// just gets this and calls ThreadProc
+	static uintp ThreadProc( void *pv );
 
 	CAtomicMutex m_Lock;
+#ifdef PLATFORM_POSIX
 	CThreadEvent m_ExitEvent;	// Set right before the thread's function exits.
+#endif
 
 private:
 	enum Flags
@@ -1284,22 +1303,12 @@ private:
 		SUPPORT_STOP_PROTOCOL = 1 << 0
 	};
 
-	// Thread initially runs this. param is actually 'this'. function
-	// just gets this and calls ThreadProc
+	// The argument of ThreadProc, allocated by Start
 	struct ThreadInit_t
 	{
 		CThread *     pThread;
-#ifdef PLATFORM_WINDOWS
-		CThreadEvent *pInitCompleteEvent;
-#endif
-		bool *        pfInitSuccess;
+		ThreadPriorityEnum_t priority;
 	};
-
-#ifdef PLATFORM_WINDOWS
-	static unsigned long __stdcall ThreadProc( void * pv );
-#else
-	static void* ThreadProc( void * pv );
-#endif
 
 	// make copy constructor and assignment operator inaccessible
 	CThread( const CThread & );
@@ -1307,14 +1316,16 @@ private:
 
 #ifdef PLATFORM_WINDOWS
 	HANDLE 	m_hThread;
+	ThreadId_t m_threadId;
 #elif defined(PLATFORM_POSIX)
 	pthread_t m_threadId;
-	CInterlockedInt m_nSuspendCount;
 #endif
 	int		m_result;
+	bool	m_bAlive;
 	char	m_szName[32];
-	void *	m_pStackBase;
 	unsigned m_flags;
+	CThreadClassKind_t m_ClassKind;
+	CThreadManualEvent m_NotSuspendedEvent;
 };
 
 //-----------------------------------------------------------------------------
