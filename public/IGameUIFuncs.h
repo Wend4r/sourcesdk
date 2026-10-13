@@ -40,10 +40,10 @@ class CGameUIFuncs : public CTier3AppSystem< IGameUIFuncs >
 public:
 	// Result of the last GetVideoModes call, reused while the adapter, output and
 	// windowed flag are unchanged
-	int m_nUnk0024;
-	int m_nUnk0028;
-	bool m_bUnk002C;
-	CUtlVector< RenderDisplayMode_t > m_Unk0030;
+	int m_nVideoModesAdapter;
+	int m_nVideoModesOutput;
+	bool m_bVideoModesCommonWindowed;
+	CUtlVector< RenderDisplayMode_t > m_VideoModes;
 };
 
 #endif // IGAMEUIFUNCS_H
