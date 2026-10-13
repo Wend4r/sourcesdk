@@ -244,11 +244,17 @@ public:
 	IP4 *( *m_pfnGetCP4ImplInterface )();
 
 	// Implementation the calls are forwarded to: Perforce, CP4Dummy or CP4Mimic
-	IP4 *m_pUnk010;
+	IP4 *m_pImplementation;
 
-	bool m_bUnk018;
-	PlatModule_t m_hUnk020;
-	ThreadId_t m_nUnk028;
+	// Set by Init when p4lib_perforce exports GetCP4ImplInterface; SetImplementationType
+	// falls back to CP4Dummy without it
+	bool m_bPerforceAvailable;
+
+	// p4lib_perforce, loaded unless running on a customer machine or disabled by the command line
+	PlatModule_t m_hPerforceModule;
+
+	// Thread that ran Init
+	ThreadId_t m_nInitThreadId;
 };
 
 // Used when Perforce is not available
