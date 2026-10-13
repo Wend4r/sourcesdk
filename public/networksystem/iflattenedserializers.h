@@ -385,14 +385,11 @@ COMPILE_TIME_ASSERT( sizeof( CFlattenedSerializer ) == 536 );
 
 struct CFlattenedSerializerBucket_t
 {
+	CAtomicMutex m_Mutex;
 	CUtlVector< FlattenedSerializerDesc_t > m_Serializers; // Symbol-indexed serializers in bucket.
-	byte m_pad0018[16];
-	uint m_nSymbolTableGrowSize;
-	byte m_pad002C[4];
 	CUtlSymbolTable m_SymbolTable; // Symbol table used to map serializer names to bucket entries.
-	byte m_pad0090[48];
+	CThreadSpinRWLock m_SymbolTableLock;
 };
-COMPILE_TIME_ASSERT( sizeof( CFlattenedSerializerBucket_t ) == 192 );
 
 // One written field as reported to serializer spew listeners (the VConsole2 flattened serializer view).
 // Filled per field by CFlattenedSerializer::WriteFieldList.
@@ -495,23 +492,23 @@ class CFlattenedSerializers : public IFlattenedSerializers
 public:
 	CConCommandMemberAccessor< CFlattenedSerializers > m_NetPermutationInfoCommand; // Command "net_permutation_info"; shows permutation information for a serializer
 	CFlattenedSerializerBucket_t m_SerializerBuckets[32]; // Hash(name) & 0x1F serializer buckets
-	byte m_pad1848[112];
+	CUtlSymbolTableLargeMT m_UnkSymbolTableMT; // Only constructed and destroyed
 	CUtlVector< FlattenedSerializerListener_t * > m_SpewListeners;
 	CUtlVector< FlattenedSerializerSaveRestoreOps_t > m_SaveRestoreOps; // Save/restore operation records registered by RegisterSaveRestoreOps
 	FlattenedSerializerFieldNamePool_t *m_pFieldNamePool; // Field-name pool created by BuildFieldNamePool
 	CUtlString m_NetworkSpewCreate; // "-networkspewcreate" value
-	int m_nUnk18F8;
+	int m_nBuildThreadCount; // A hashed command line option, 100 without a value; BuildEntityClassSerializers builds in parallel above 1
 	int m_nNetworkSpewEntity; // "-networkspewentity", -999 when absent
 	int m_nSpewReadFieldListEntIndex; // "fs_spew_readfieldlist entindex <optional min change bytes>"
 	int m_nSpewReadFieldListMinChangeBytes;
 	bool m_bNetworkSpewCreate; // "-networkspewcreate"
-	bool m_bUnk1909;
+	bool m_bUnk1909; // Set by the value "server" of the m_nBuildThreadCount option
 	bool m_bNetworkSpew; // "-networkspew"
 	bool m_bNetworkSpewExcludes; // "-networkspewexcludes"
 	bool m_bUnk190C;
 	bool m_bForceRebuildFieldNamePool;
 	bool m_bNetworkVarValidate; // "-networkvar_validate"
-	bool m_bUnk190F;
+	bool m_bUnk190F; // Set while a serializer named by -networkspewcreate is being built
 };
 
 #endif /* FLATTENEDSERIALIZERS_H */
