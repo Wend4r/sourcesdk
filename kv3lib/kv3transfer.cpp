@@ -137,7 +137,7 @@ bool CKV3TransferSaveContext::CanSaveField( int nFlags ) const
 
 	// The SDK's ISave declares a different interface, so the game's virtual is called by its slot.
 	// The game declares the destructor first: it takes one slot on MSVC and two on Itanium.
-	using Unk_10_t = bool ( * )( ISave * );
+	using GetSaveSlotFlag_t = bool ( * )( ISave * );
 
 #ifdef _WIN32
 	constexpr int nSlot = 9;
@@ -145,7 +145,7 @@ bool CKV3TransferSaveContext::CanSaveField( int nFlags ) const
 	constexpr int nSlot = 10;
 #endif
 
-	return !( *reinterpret_cast< Unk_10_t *const * >( m_pSave ) )[ nSlot ]( m_pSave ) || nFlags == 2;
+	return !( *reinterpret_cast< GetSaveSlotFlag_t *const * >( m_pSave ) )[ nSlot ]( m_pSave ) || nFlags == 2;
 }
 
 KeyValues3 *CKV3TransferSaveContext::CreateTargetMember( const CKV3MemberName &name )
