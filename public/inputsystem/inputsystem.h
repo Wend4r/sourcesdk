@@ -30,9 +30,9 @@ public:
 		CBitVec< 0x204 > m_ButtonState;
 
 		// Read by WasButtonPressed, WasButtonDoubleClicked and WasButtonReleased
-		CBitVec< 0x204 > m_Unk044;
-		CBitVec< 0x204 > m_Unk088;
-		CBitVec< 0x204 > m_Unk0CC;
+		CBitVec< 0x204 > m_ButtonPressed;
+		CBitVec< 0x204 > m_ButtonDoubleClicked;
+		CBitVec< 0x204 > m_ButtonReleased;
 
 		int m_ButtonPressedTick[ 0x204 ];
 		int m_ButtonReleasedTick[ 0x204 ];
@@ -66,7 +66,7 @@ public:
 	bool m_bPumpEnabled;
 
 	// Index of the m_InputState that PostUserEvent and the button events write
-	uint8 m_nUnk04A;
+	uint8 m_nCurrentInputState;
 
 	uint8 m_pad04B;
 	bool m_bHasFocus;
@@ -97,7 +97,7 @@ public:
 	int m_nPollCount;
 
 	// Plat_FloatTime() of the last SampleDevices, returned by GetPollTime and stamped on posted events
-	double m_flUnk2508;
+	double m_flLastPollTime;
 
 	uint32 m_uiMouseWheel;
 
@@ -105,7 +105,7 @@ public:
 	bool m_bJoystickEnabled;
 
 	// Changed by EnableJoystickInput, one bit per joystick
-	uint16 m_nUnk2516;
+	uint16 m_nEnabledJoystickMask;
 
 	int m_nJoystickCount;
 
@@ -144,8 +144,8 @@ public:
 	bool m_curFingerActive;
 	int m_nFingersDown;
 
-	// Incremented by QueueResetInputState, consumed by PollInputState
-	CInterlockedInt m_nUnk28A0;
+	// Incremented by QueueResetInputState, consumed by PollInputState ("Applying deferred input state reset")
+	CInterlockedInt m_nDeferredInputStateResets;
 
 	// Set to 3 and the event name by the "OnEventThatMightCauseFrameRateHitch" handler and read while pumping window messages
 	int m_nUnk28A4;
