@@ -45,40 +45,41 @@ public:
 
 	CConCommandMemberAccessor< CSoundService > m_PlaySoundCommand;
 
-	// Set while m_Unk080 overrides the audio state (unk028 / unk029)
-	bool m_bUnk078;
-	CAudioState m_Unk080;
+	// Set while m_AudioState holds the state of OverrideAudioState instead of the one built every frame
+	bool m_bAudioStateOverridden;
+	CAudioState m_AudioState;
 
-	CThreadFastMutex m_UnkMutex198;
-	CUtlVector< IVoiceTarget * > m_Unk1A8;
+	CThreadFastMutex m_VoiceTargetsMutex;
+	CUtlVector< IVoiceTarget * > m_VoiceTargets;
 	uint8 m_pad1C0[ 0x8 ];
 	int m_nUnk1C8;
 
 	// Voice capture: input stream, captured samples, encoded Opus frames, encoder and noise suppression state
-	IAudioInputStream *m_pUnk1D0;
-	CCircularBuffer m_Unk1D8;
-	CCircularBuffer m_Unk1F0;
-	CUtlLeanVector< uint8 > m_Unk208;
-	CUtlLeanVector< uint8 > m_Unk218;
+	IAudioInputStream *m_pVoiceInputStream;
+	CCircularBuffer m_CapturedSamples;
+	CCircularBuffer m_EncodedFrames;
+	CUtlLeanVector< uint8 > m_OpusEncoder;
+	CUtlLeanVector< uint8 > m_NoiseSuppression;
 
 	// Noise gate (SetVoiceThreshold, SetVoiceThresholdDelay, SetVoiceThresholdAttack, SetVoiceThresholdHold)
 	struct
 	{
-		float m_flUnk00;
-		float m_flUnk04;
+		float m_flEnvelope;
+		float m_flThreshold;
 		float m_flUnk08;
 		float m_flUnk0C;
-		float m_flUnk10;
-		int m_nUnk14;
+		float m_flDelayRate;
+		int m_nHoldSamples;
 		int m_nUnk18;
 		float m_flUnk1C;
-		int m_nUnk20;
+		int m_nHoldCounter;
 		int m_nUnk24;
 		int m_nUnk28;
-		CUtlVector< float > m_Unk30;
-	} m_Unk228;
+		// Delays the captured samples by the attack time (SetVoiceThresholdAttack)
+		CUtlVector< float > m_AttackDelayLine;
+	} m_NoiseGate;
 
-	float m_flUnk270;
+	float m_flCurrentPeak;
 	float m_flUnk274;
 	float m_flUnk278;
 	bool m_bUnk27C;
@@ -87,11 +88,11 @@ public:
 	int m_nUnk28C;
 	int m_nUnk290;
 	int m_nUnk294;
-	double m_flUnk298;
+	double m_flLastFocusTime;
 	double m_flUnk2A0;
 	bool m_bUnk2A8;
 	uint8 m_pad2A9;
-	bool m_bUnk2AA;
+	bool m_bRecordingVoice;
 	bool m_bUnk2AB;
 	bool m_bUnk2AC;
 	uint8 m_pad2AD;
@@ -102,7 +103,7 @@ public:
 	int m_nUnk2B8;
 	int m_nUnk2BC;
 	bool m_bUnk2C0;
-	CUtlVector< RecentlyPlayedNetworkVoice_t > m_Unk2C8;
+	CUtlVector< RecentlyPlayedNetworkVoice_t > m_RecentlyPlayedNetworkVoices;
 };
 
 #endif // SOUNDSERVICE_H
