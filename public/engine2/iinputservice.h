@@ -27,6 +27,13 @@ public:
 	virtual InputHandlerResult_t HandleInputEvent( const InputEvent_t &event, CSplitScreenSlot nSlot ) = 0;
 };
 
+// Notified by SetBinding with the button whose binding changed
+abstract_class IKeybindChangeListener
+{
+public:
+	virtual void unk000( ButtonCode_t code ) = 0;
+};
+
 abstract_class IInputService : public IEngineService
 {
 public:
@@ -74,8 +81,8 @@ public:
 	// nSlot < 0 clears every slot
 	virtual void UnbindAllKeys( int nSlot ) = 0;
 
-	virtual void AddBindingListener( void *pListener ) = 0;
-	virtual void RemoveBindingListener( void *pListener ) = 0;
+	virtual void AddBindingListener( IKeybindChangeListener *pListener ) = 0;
+	virtual void RemoveBindingListener( IKeybindChangeListener *pListener ) = 0;
 
 	virtual bool WasButtonPressed( ButtonCode_t code ) = 0;
 	virtual bool WasButtonDoubleClicked( ButtonCode_t code ) = 0;
@@ -99,8 +106,8 @@ public:
 	// 8 with Engine2/AllowKeyChordBindings, 1 otherwise
 	virtual int GetNumChords() = 0;
 
-	// Stores both pointers in two parallel lists
-	virtual void unk062( void *pUnk1, void *pUnk2 ) = 0;
+	// Stores both pointers in two parallel lists; the client passes its input frame counter and the static next to it
+	virtual void unk062( int *pUnk1, void *pUnk2 ) = 0;
 };
 
 #endif // IINPUTSERVICE_H
