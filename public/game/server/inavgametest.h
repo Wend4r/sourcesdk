@@ -19,7 +19,7 @@ abstract_class INavGameTest : public IAppSystem
 public:
 	// Runs the simple ground, simple air to air and mesh space transition pathfinding tests in that
 	// order and stops at the first group that fails; true when all of them pass.
-	virtual bool Unk_RunPathfindTests() = 0;
+	virtual bool RunPathfindTests() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -29,7 +29,7 @@ public:
 class CNavGameTest : public CTier3AppSystem< INavGameTest >
 {
 public:
-	bool Unk_RunPathfindTests() override;
+	bool RunPathfindTests() override;
 };
 
 #endif // INAVGAMETEST_H
