@@ -295,7 +295,7 @@ public:
 
 	DLL_CLASS_IMPORT KeyValues *CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pChild );
 
-	DLL_CLASS_IMPORT void RemoveSubKey( KeyValues *subKey, bool bDelete = true, bool bUnk = false );	// removes a subkey from the list, DOES NOT DELETE IT
+	DLL_CLASS_IMPORT void RemoveSubKey( KeyValues *subKey, bool bDelete = true, bool bOptional = false );	// removes a subkey from the list, DOES NOT DELETE IT
 	DLL_CLASS_IMPORT void RemoveOptionalSubKey( KeyValues *subKey );
 	DLL_CLASS_IMPORT void InsertSubKey( int nIndex, KeyValues *pSubKey ); // Inserts the given sub-key before the Nth child location
 	DLL_CLASS_IMPORT bool ContainsSubKey( KeyValues *pSubKey ); // Returns true if this key values contains the specified sub key, false otherwise.
