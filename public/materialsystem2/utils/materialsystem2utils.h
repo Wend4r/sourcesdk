@@ -29,11 +29,11 @@ public:
 
 	// Renderables queued by the Queue* methods, and the CUtlMap from the queue token to their index
 	CUtlVector< CUtlVector< IQueuedRenderable * > > m_LayoutLists;
-	uint8 m_unk060[ 0x28 ];
+	uint8 m_LayoutListMap[ 0x28 ];
 
 	// Renderables drawn by RenderFrame(), and the CUtlMap from the queue token to their index
 	CUtlVector< CUtlVector< IQueuedRenderable * > > m_viewLayoutLists;
-	uint8 m_unk0A0[ 0x28 ];
+	uint8 m_viewLayoutListMap[ 0x28 ];
 
 	// Cleared when the UI material is unloaded
 	const IMaterialMode *m_pTexturedMaterialMode;
