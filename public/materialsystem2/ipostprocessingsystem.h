@@ -10,6 +10,7 @@
 
 #include <resourcesystem/resourcehandle.h>
 #include <tier0/platform.h>
+#include <tier0/utlvector.h>
 #include <tier2/tier2.h>
 
 class CPostProcessingState;
@@ -45,6 +46,20 @@ public:
 class CPostProcessingSystem : public CTier2AppSystem< IPostProcessingSystem >
 {
 public:
+	// Added by AddColorCorrectionLookup() and removed by RemoveColorCorrectionLookup()
+	struct ColorCorrectionLookup_t
+	{
+		// The hash of the name, returned as the lookup handle
+		uint64 m_hLookup;
+
+		// The "vpost" resource loaded by the resource name
+		CStrongHandleBase m_hResource;
+
+		// Set to 0 and true when the lookup is added; no reader found
+		int m_nUnk010;
+		bool m_bUnk014;
+	};
+
 	bool m_bColorCorrectionEditorOverrideEnabled;
 
 	// Holds a strong reference to the lookup texture
@@ -52,8 +67,7 @@ public:
 
 	const PostProcessingResource_t *m_pColorCorrectionEditorOverrideParams;
 
-	// CUtlVector of 24-byte lookups, each found by the handle that AddColorCorrectionLookup() returns
-	uint8 m_unk040[ 0x18 ];
+	CUtlVector< ColorCorrectionLookup_t > m_ColorCorrectionLookups;
 
 	// "Tonemapping_LocalOperator" of "Engine2/RenderingPipeline" in gameinfo
 	bool m_bTonemappingLocalOperator;
