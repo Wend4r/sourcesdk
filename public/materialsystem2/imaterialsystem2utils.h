@@ -25,7 +25,9 @@ class CRenderAttributes;
 class CTextLayoutInfo;
 class IQueuedRenderable;
 class InfoForResourceTypeCTextureBase;
+struct MaterialRenderablePass_t;
 struct MeshBuilderBuffers_t;
+struct VertexColor_t;
 struct RsStencilStateOverride_t;
 struct RsDepthBiasStateOverride_t;
 FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
@@ -40,7 +42,7 @@ abstract_class IMaterialSystem2Utils : public IAppSystem
 {
 public:
 	// Used by the text layout whenever a caller passes font 0
-	virtual HFont GetDefaultFont( bool bUnk ) = 0;
+	virtual HFont GetDefaultFont( bool bOutline ) = 0;
 
 	virtual bool SetMaterialModeState( IRenderContext *pRenderContext, const IMaterialMode *pMode, const CRenderAttributes *pAttributes, RenderInputLayout_t hInputLayout, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 
@@ -58,7 +60,10 @@ public:
 	virtual void QueueSetMaterialMode( uint32 nQueue, const IMaterialMode *pMode, const CRenderAttributes *pAttributes, uint64 nKey, bool bForce, float flTimeToLive ) = 0;
 
 	virtual void RenderBox( IRenderContext *pRenderContext, const Vector &vecOrigin, const QAngle &angles, const Vector &vecMins, const Vector &vecMaxs, Color color, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, bool bInsideOut ) = 0;
-	virtual void unk022( void *p ) = 0;
+
+	// Draws a dest rectangle of the screen with a rectangle of a src texture, diced into nXDice by nYDice quads at depth flZ
+	virtual void DrawScreenSpaceRectangle( IRenderContext *pRenderContext, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, int nDestX, int nDestY, int nWidth, int nHeight, float flSrcTextureX0, float flSrcTextureY0, float flSrcTextureX1, float flSrcTextureY1, int nSrcTextureWidth, int nSrcTextureHeight, int nXDice, int nYDice, float flZ, VertexColor_t *pVertexColors, const RsStencilStateOverride_t *pOverrideStencilState ) = 0;
+
 	virtual void DrawNDCSpaceUntexturedPolygon( IRenderContext *pRenderContext, const IMaterial2 *pMaterial, const CRenderAttributes *pAttributes, int nVertexCount, Vector2D *pScreenSpaceCoordinates ) = 0;
 
 	virtual bool RenderText( IRenderContext *pRenderContext, const char *pText, const Vector2D &vecPos, Color color, HFont hFont, int nMode, int nScaleMode ) = 0;
@@ -124,7 +129,8 @@ public:
 	virtual bool AllocateCompressionTexturesGPU( ImageFormat nFormat, int nWidth, int nHeight, int nNumMipLevels, const char *pDebugName, CStrongHandle< InfoForResourceTypeCTextureBase > *pCompressedOutputTexture, CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCTextureBase > > &intermediateOutputTextures ) = 0;
 	virtual bool CompressTextureGPU( EGPUTextureCompressOptions_t nOptions, IRenderContext *pRenderContext, CWeakHandle< InfoForResourceTypeCTextureBase > hSrcTexture, CWeakHandle< InfoForResourceTypeCTextureBase > hDestTexture, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCTextureBase > > &intermediateOutputTextures, int nNumMipLevels ) = 0;
 
-	virtual CBufferString unk060( ResourceHandle_t hMaterial, int nMode ) = 0;
+	// Shader name and combo values of a shader type of the pass
+	virtual CBufferString unk060( const MaterialRenderablePass_t &renderablePass, int nShaderType ) = 0;
 
 	virtual ~IMaterialSystem2Utils() {}
 };
