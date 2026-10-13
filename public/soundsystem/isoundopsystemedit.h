@@ -54,16 +54,19 @@ public:
 	virtual void unk032( const char *pSoundEventName, const char *pGroupName, int nIndex ) = 0;
 	virtual void unk033( const char *pSoundEventName, CUtlVector< const char * > &list ) = 0;
 	virtual const char *unk034( const char *pSoundEventName, int nIndex ) = 0;
-	virtual void unk035() = 0;
+	// Names of the vsnds of the sound event
+	virtual void unk035( const char *pSoundEventName, CUtlVector< const char * > &list ) = 0;
 	// Public field names of the update stack of the sound event, then the names of its own fields
 	virtual void unk036( const char *pSoundEventName, CUtlVector< CUtlString > *pList ) = 0;
-	virtual void unk037() = 0;
+	// First name of unk036 whose field has the type
+	virtual bool unk037( const char *pSoundEventName, SOFieldDataType_t nType, CUtlString &sFieldName ) = 0;
 	// Field editing of the sound event, unk038 adds the field with the values of its stack
 	virtual void unk038( const char *pSoundEventName, const char *pFieldName ) = 0;
 	virtual void unk039( const char *pSoundEventName, const char *pFieldName ) = 0;
 	// Field names of the definition of the sound event
 	virtual void unk040( const char *pSoundEventName, CUtlVector< CUtlString > *pList ) = 0;
-	virtual void unk041() = 0;
+	// Keys of the field table of the sound event
+	virtual void unk041( const char *pSoundEventName, CUtlVector< CUtlString > *pList ) = 0;
 	virtual void unk042( const char *pSoundEventName, const char *pFieldName, int16 nCount ) = 0;
 	virtual void unk043( const char *pSoundEventName, const char *pFieldName ) = 0;
 	// Sets an element of the field from its text form
@@ -75,7 +78,8 @@ public:
 	virtual void unk047( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	virtual void unk048( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	virtual void unk049( const char *pSoundEventName, const char *pFieldName, int nIndex1, int nIndex2 ) = 0;
-	virtual void unk050() = 0;
+	// Value names of an enum or mix group field of the update stack of the sound event
+	virtual void unk050( const char *pSoundEventName, const char *pFieldName, CUtlVector< CUtlString > *pList ) = 0;
 	// State of the field for the sound event (0 to 5), pnCount receives its element count
 	virtual int unk051( const char *pSoundEventName, const char *pFieldName, int *pnCount, int nIndex ) = 0;
 	// Calls unk044 when the state of unk051 allows it
