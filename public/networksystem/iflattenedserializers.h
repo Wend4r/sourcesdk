@@ -244,49 +244,54 @@ struct NetworkFieldScratchMemoryStackList_t
 	int m_nMemoryStackCount;
 };
 
-class INetworkFieldScratchAllocator
-{
-public:
-	virtual ~INetworkFieldScratchAllocator() {}
-	virtual void FreeAll() = 0;
-	virtual byte *Alloc( uint nBytes, uintp nFieldOffset, uint nFieldType, uintp nFieldSize, uintp nFieldName, uintp nNetworkName, uintp nOwner, uintp nContext, uintp nSerializer, uintp nSerializerField, uintp nFieldPath, uintp nDebugName ) = 0;
-};
+class IFieldChangeLimitSpew;
 
+// Scratch memory for queued field changes, implemented by the client (CNetworkFieldScratchData).
 abstract_class INetworkFieldScratchData
 {
 public:
 	virtual ~INetworkFieldScratchData() {}
-	virtual void ResetFrameAllocator() = 0; // Resets the backing allocator and clears m_nCurrentChangeFrame.
-	virtual void ClearQueuedChanges() = 0;
+	virtual void Init( uint32 nSize, LoggingChannelID_t channelID ) = 0;
+	virtual void *Alloc( uint32 nSize ) = 0;
+	virtual void Purge() = 0;
+	virtual LoggingChannelID_t LoggingChannel() const = 0;
+};
+
+abstract_class INetworkFieldChangedEventQueue
+{
+public:
+	virtual ~INetworkFieldChangedEventQueue() {}
 	virtual bool QueueChange( int nEntityIndex, const CFieldPath &path, const char *pszFieldName, byte *pField, uintp nFieldOffset, uintp nFieldSize, int nChangeFrame, uint nFieldType, FlattenedSerializerUserData_t *pContext, int nFieldBytes, const char *pszDebugName, int *pArrayIndex ) = 0;
 	virtual bool QueueReplayCompatFieldChange( int nEntityIndex, const CFieldPath &path, const char *pszFieldName, byte *pField, uintp nFieldOffset, int nChangeFrame, FlattenedSerializerUserData_t *pContext, byte nFlags, const CFieldPath *pReplayPath ) = 0;
-	virtual void ProcessQueuedChanges( uint nChangeFrame ) = 0;
+
+	// Invokes the queued change callbacks, reporting each callback slower than flTimeLimitMs to the change limit spew
+	virtual void InvokeChangeCallbacks( int nChangeFrame, float flTimeLimitMs ) = 0;
+	virtual void ResetFrameAllocator() = 0; // Purges the scratch data and clears m_nProcessedOrder.
+	virtual void ClearQueuedChanges() = 0;
 	virtual void RebaseQueuedDelegates( bool bSpew, byte *pOldBase, byte *pNewBase, uintp nSize ) = 0;
 	virtual void MarkShrunkDelegatesInvalid( bool bSpew, byte *pOldBase, byte *pOldEnd ) = 0;
-	virtual void SetContext( FlattenedSerializerUserData_t *pContext ) = 0;
+	virtual void SetChangeCallbackTimeLimitSpewFunc( IFieldChangeLimitSpew *pSpew ) = 0;
 	virtual void SetDebugCallback( bool bEnabled, const char *pszFieldName ) = 0;
 	virtual bool IsDebugCallbackEnabled() const = 0;
 	virtual void SetDebugFieldName( const char *pszFieldName ) = 0;
 	virtual void QueuePointerRecreation( const NetworkFieldScratchChange_t *pChange, bool bSpew, FlattenedSerializerUserData_t *pContext ) = 0;
 };
 
-class CNetworkFieldScratchData : public INetworkFieldScratchData
+class CNetworkFieldChangedEventQueue : public INetworkFieldChangedEventQueue
 {
 public:
 	CUtlVector< NetworkFieldScratchThreadQueue_t > m_ThreadQueues; // One queue per worker thread.
-	CUtlVector< int > m_EntityChangeFrames; // Snapshot of network change frames from the entity system.
-	byte m_EntityChangeFrameStorage[128]; // Inline storage used before m_EntityChangeFrames grows.
+	CUtlVectorFixedGrowable< int, 32 > m_orderPriority; // Snapshot of network change frames from the entity system.
 	CUtlString m_DebugCallbackName; // Field name that triggers DebugCallback spew.
 	CUtlString m_DebugFieldName; // Extra debug field filter.
-	INetworkFieldScratchAllocator *m_pAllocator; // Scratch allocator used by QueueChange.
-	FlattenedSerializerUserData_t *m_pContext; // Context set through the vtable setter.
-	int m_nCurrentChangeFrame; // Last processed change frame.
+	INetworkFieldScratchData *m_pScratchData; // Scratch memory used by QueueChange.
+	IFieldChangeLimitSpew *m_pfnChangeLimitSpew;
+	int m_nProcessedOrder; // Last processed change frame.
 	int m_nEntityChangeFrameCount; // Count copied from the entity system.
 	bool m_bDebugQueueChanges; // Enables QueueChange spew.
-	byte m_pad00E1[7];
 };
 
-COMPILE_TIME_ASSERT( sizeof( CNetworkFieldScratchData ) == 232 );
+COMPILE_TIME_ASSERT( sizeof( CNetworkFieldChangedEventQueue ) == 232 );
 
 struct FlattenedSerializerPackedField_t
 {
@@ -436,7 +441,7 @@ public:
 	virtual void SpewCounts( int nBucket, bool bVerbose ) = 0;
 	virtual void RegisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Appends a unique save/restore ops record
 	virtual void UnregisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Removes a save/restore ops record
-	virtual INetworkFieldScratchData *CreateNetworkFieldScratchData( INetworkFieldScratchAllocator *pAllocator, FlattenedSerializerUserData_t *pContext ) = 0; // Allocates a 232-byte scratch-data object and seeds it with allocator/context pointers.
+	virtual INetworkFieldChangedEventQueue *CreateNetworkFieldScratchData( INetworkFieldScratchData *pScratchData, IFieldChangeLimitSpew *pChangeLimitSpew ) = 0; // Allocates a CNetworkFieldChangedEventQueue
 	virtual void BuildFieldNamePool( bool bForce ) = 0; // Creates m_pFieldNamePool
 	virtual void DestroyFieldNamePool() = 0; // Frees m_pFieldNamePool
 	// AMNOTE: Disabled fields are skipped when gathering send proxy results, building deltas and gathering polymorphic metadata
