@@ -53,7 +53,7 @@ typedef NetworkFieldResult_t ( *NetworkFieldUnserializeBufferCB )(NetworkUnseria
 typedef uint ( *NetworkFieldInfoCB )(NetworkFieldInfo_t const&);
 typedef bool ( *NetworkFieldMetaInfoCB )(FieldMetaInfo_t const&, CSchemaClassBindingBase const*, NetworkFieldInfo_t const&, void *);
 typedef bool ( *NetworkableDataCB )(NetworkableData_t const*, CUtlString &);
-typedef const char* ( *NetworkUnkCB001 )(void);
+typedef const char* ( *NetworkFieldSerializerNameCB )(void);
 
 #define NETWORKMESSAGES_INTERFACE_VERSION "NetworkMessagesVersion001"
 
@@ -83,7 +83,7 @@ public:
 	virtual void DeallocateNetMessageAbstract( INetworkSerializerPB *pNetMessage, CNetMessage *pData ) = 0;
 
 	virtual void *RegisterNetworkFieldSerializer( const char *, NetworkSerializationMode_t, NetworkableDataType_t, int, NetworkFieldSerializeCB, NetworkFieldUnserializeCB, NetworkFieldInfoCB, 
-		NetworkFieldMetaInfoCB, NetworkableDataCB, NetworkUnkCB001, NetworkFieldSerializeCB, NetworkFieldUnserializeCB ) = 0;
+		NetworkFieldMetaInfoCB, NetworkableDataCB, NetworkFieldSerializerNameCB, NetworkFieldSerializeCB, NetworkFieldUnserializeCB ) = 0;
 	virtual void *RegisterNetworkArrayFieldSerializer( const char *, NetworkSerializationMode_t, NetworkFieldSerializeBufferCB, NetworkFieldUnserializeBufferCB, NetworkFieldInfoCB,
 		NetworkFieldMetaInfoCB, NetworkFieldSerializeBufferCB, NetworkFieldUnserializeBufferCB ) = 0;
 
