@@ -74,7 +74,7 @@ struct P4Revision_t
 
 	CUtlSymbolLarge m_sUser;	// submitting user
 	CUtlSymbolLarge m_sClient;	// submitting client 
-	CUtlString m_Description;
+	CUtlSymbolLarge m_Description;
 };
 
 
