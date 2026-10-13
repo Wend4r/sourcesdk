@@ -6,18 +6,41 @@
 #endif
 
 #include "meshsystem/imeshsystem.h"
+#include <tier0/threadtools.h>
+#include <tier0/utlvector.h>
 #include <tier3/tier3.h>
 
 //-----------------------------------------------------------------------------
-// Implementation of IMeshSystem. Its members are kept as padding: the render
-// mesh manager (polymorphic, g_pRenderMeshManager points at it) at 0x28, the
-// model resource type manager (three vtables) from 0x38, two CUtlVectors and a
-// lock from 0xA8, and a std::function at 0xF0.
+// Implementation of IMeshSystem. Members whose types are not declared in the
+// SDK are kept as padding of their size.
 //-----------------------------------------------------------------------------
 class CMeshSystem : public CTier3AppSystem< IMeshSystem >
 {
 public:
-	uint8 m_unk028[ 0x108 ];
+	// CRenderMeshManager, polymorphic, g_pRenderMeshManager points at it
+	void *m_RenderableManager[ 2 ];
+
+	// CModelTypeManager, the "vmdl" resource type manager (three vtables)
+	void *m_modelTypeManager[ 14 ];
+
+	// Added by unk037()
+	CUtlVector< void * > m_unk0A8;
+
+	// Locks m_unk0D0
+	CAtomicMutex m_unk0C0;
+
+	// Copied out by unk038()
+	CUtlVector< void * > m_unk0D0;
+
+	// "AnimatableSceneObjectDesc", looked up by the two-argument CreateMeshInstance()
+	ISceneObjectDesc *m_pAnimatableDesc;
+
+	// std::function set by unk035()
+#ifdef _WIN32
+	uint8 m_unk0F0[ 0x40 ];
+#else
+	uint8 m_unk0F0[ 0x20 ];
+#endif
 };
 
 #endif // MESHSYSTEM_H
