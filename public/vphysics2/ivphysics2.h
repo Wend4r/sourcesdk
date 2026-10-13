@@ -21,6 +21,8 @@
 #include "tier0/utlvector.h"
 #include "tier2/tier2.h"
 
+#include "schemacompiler/schemaon.h"
+
 class IVPhysics2World;
 class CVPhysics2SurfacePropertyManager;
 class IPhysicsShape;
@@ -65,10 +67,7 @@ class IFnPhysicsBody;
 class IFnPhysicsSoftbody;
 class IFnPhysicsWorld;
 
-struct RnSphere_t;
-struct RnCapsule_t;
 struct RnHull_t;
-struct RnPlane_t;
 struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
@@ -79,6 +78,24 @@ struct DebugSceneObjectParams_t;
 struct SceneObjectBuffers_t;
 struct EmbeddedPhysicsInfo_t;
 struct RnHullSimplificationParams_t;
+
+schema struct RnSphere_t
+{
+	Vector m_vCenter;
+	float m_flRadius;
+};
+
+schema struct RnCapsule_t
+{
+	Vector m_vCenter[ 2 ];
+	float m_flRadius;
+};
+
+schema struct RnPlane_t
+{
+	Vector m_vNormal;
+	float m_flOffset;
+};
 
 // Holds a reference to aggregate data through IVPhysics2::AddDataReference and ReleaseDataReference
 class CPhysAggregateDataHandle
@@ -424,5 +441,7 @@ public:
 	// Softbodies created by CreateListedSoftbody
 	CUtlLeanVector< void * > m_Softbodies;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // IVPHYSICS2_H
