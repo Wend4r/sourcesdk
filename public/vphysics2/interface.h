@@ -118,19 +118,19 @@ public:
 	virtual void CleanupDeleteList() = 0;
 
 	virtual void unk006() = 0;
-	virtual void unk007( float flTimeStep ) = 0;
-	virtual void unk008( float flTimeStep ) = 0;
+	virtual void AdvanceTime( float flTimeStep ) = 0;
+	virtual void Step( float flTimeStep ) = 0;
 
 	// Empty in release builds
 	virtual void unk009() = 0;
 	virtual void unk010() = 0;
 
 	virtual void BeginAsyncPostTickJobs( void *pUnused, bool bUnknown ) = 0;
-	virtual void unk012() = 0;
+	virtual void EndAsyncPostTickJobs() = 0;
 	virtual void unk013( const void *pUnknown, bool bUnknown ) = 0;
-	virtual void unk014() = 0;
+	virtual void UpdateParticleRopes() = 0;
 	virtual bool unk015() = 0;
-	virtual void unk016( float flTimeStep ) = 0;
+	virtual void Collide( float flTimeStep ) = 0;
 	virtual void unk017() = 0;
 
 	virtual void SetGravity( const Vector &vGravity ) = 0;
@@ -157,14 +157,14 @@ public:
 	// Multithreading of the world step; the server applies phys_multithreading_enabled here
 	virtual bool IsMultithreadingEnabled() = 0;
 	virtual void SetMultithreadingEnabled( bool bEnabled ) = 0;
-	virtual int unk036() = 0;
-	virtual void unk037( int nValue ) = 0;
+	virtual int GetThreadCount() = 0;
+	virtual void SetThreadCount( int nThreadCount ) = 0;
 	virtual void unk038( uint8 nValue ) = 0;
 
-	virtual float unk039() = 0;
+	virtual float GetSimulationTime() = 0;
 	virtual float unk040() = 0;
 	virtual float unk041() = 0;
-	virtual int unk042() = 0;
+	virtual int GetStepCount() = 0;
 
 	virtual void unk043( int nValue ) = 0;
 	virtual int unk044() = 0;
@@ -186,7 +186,7 @@ public:
 	virtual const IPhysicsBody *GetBody( int nIndex ) const = 0;
 
 	// True if the body belongs to this world
-	virtual bool unk059( IPhysicsBody *pBody ) = 0;
+	virtual bool HasBody( IPhysicsBody *pBody ) = 0;
 
 	// MSVC groups these overloads in reverse order; the declaration order is Linux's
 	virtual IPhysicsBody *AddBody() = 0;
@@ -212,7 +212,7 @@ public:
 	virtual const IPhysicsJoint *GetJoint( int nIndex ) const = 0;
 
 	// True if the joint belongs to this world
-	virtual bool unk077( IPhysicsJoint *pJoint ) = 0;
+	virtual bool HasJoint( IPhysicsJoint *pJoint ) = 0;
 
 	virtual IPhysicsJoint *AddSphericalJoint( const PhysicsSphericalJointDesc_t &desc ) = 0;
 	virtual IPhysicsJoint *AddRevoluteJoint( const PhysicsRevoluteJointDesc_t &desc ) = 0;
@@ -227,7 +227,7 @@ public:
 	virtual IPhysicsJoint *AddWheelJoint( const PhysicsJointDesc_t &desc ) = 0;
 
 	// Creates the joints of a set of joint descriptions and appends them to joints
-	virtual void unk089( const void *pJoints, const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, bool bUnknown, CUtlVector< IPhysicsJoint * > &joints, CUtlVector< int > &parts ) = 0;
+	virtual void AddJoints( const void *pJoints, const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, bool bUnknown, CUtlVector< IPhysicsJoint * > &joints, CUtlVector< int > &parts ) = 0;
 
 	virtual void RemoveJoint( IPhysicsJoint *pJoint ) = 0;
 
@@ -239,8 +239,8 @@ public:
 	virtual IPhysicsJoint *CreatePrismaticConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_slidingparams_t &sliding, bool bUseBlockSolver ) = 0;
 	virtual IPhysicsJoint *CreateFixedConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_fixedparams_t &fixed, bool bUseBlockSolver ) = 0;
 
-	virtual void unk097( IPhysicsBody *pBody, CUtlVector< IPhysicsBody * > &bodies ) = 0;
-	virtual int unk098( IPhysicsBody *pBody ) = 0;
+	virtual void GetConnectedBodies( IPhysicsBody *pBody, CUtlVector< IPhysicsBody * > &bodies ) = 0;
+	virtual int GetConnectedBodyCount( IPhysicsBody *pBody ) = 0;
 
 	virtual IPhysicsRope *CreateRope() = 0;
 
@@ -282,7 +282,7 @@ public:
 	virtual int GetAggregateCount() = 0;
 	virtual void GetActiveAggregateInstances( CUtlVector< IPhysAggregateInstance * > &aggregates ) = 0;
 	virtual IPhysAggregateInstance *GetAggregate( int nIndex ) = 0;
-	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nUnknown, int nMotionType ) = 0;
+	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nFlags, int nMotionType ) = 0;
 	virtual void DestroyAggregateInstance( IPhysAggregateInstance *pAggregate ) = 0;
 
 	virtual IPhysicsRagdoll *CreateRagdoll( void *pUnknown1, const void *pUnknown2, int nUnknown1, void *pUnknown3, void *pUnknown4, float flUnknown, int nUnknown2, uint16 nUnknown3 ) = 0;
@@ -308,7 +308,7 @@ public:
 	virtual bool IsEntityPairDisabled( uint32 nEntity1, uint32 nEntity2 ) = 0;
 	virtual void RemoveAllPairsForEntityId( uint32 nEntity ) = 0;
 	virtual bool DoesEntityHaveCollisionPairs( uint32 nEntity ) = 0;
-	virtual void unk149( void *pOut ) = 0;
+	virtual void GetDisabledEntityPairs( void *pOut ) = 0;
 
 	virtual bool ShouldHit( const IPhysicsShape *pShape, const RnQueryAttr_t &attr ) = 0;
 	virtual uint64 unk151( uint32 nValue ) = 0;
@@ -319,7 +319,7 @@ public:
 	virtual void unk153() = 0;
 
 	// The bounds of everything in the broadphase
-	virtual AABB_t unk154() = 0;
+	virtual AABB_t GetBroadphaseBounds() = 0;
 
 	// The bounds of all coordinates the world accepts
 	virtual AABB_t GetWorldBounds() = 0;
@@ -328,7 +328,7 @@ public:
 	virtual VPhysics2WorldUnk156_t unk156() = 0;
 	virtual VPhysics2WorldUnk156_t unk157() = 0;
 
-	virtual void unk158( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, IPhysicsBody *pBody ) = 0;
+	virtual void CastRayAgainstBody( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, IPhysicsBody *pBody ) = 0;
 
 	// Traces against the world. The Multiple versions collect every hit
 	virtual void CastRaySingle( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
@@ -338,7 +338,7 @@ public:
 	virtual void unk162( void *pOut, const Vector &vStart, const Vector &vEnd ) = 0;
 	virtual void ToolCastRayMultipleUnfiltered( CUtlVectorFixedGrowable< RnToolQueryHit_t, 8 > &hits, const Vector &vStart, const Vector &vEnd, float flUnknown ) = 0;
 	virtual void CastRayIntervals( CRayIntervalVector &intervals, const Vector &vStart, const Vector &vEnd, const RnQueryAttr_t &attr, bool bUnknown, float flUnknown ) = 0;
-	virtual void unk165( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, float flRadius, IPhysicsBody *pBody ) = 0;
+	virtual void CastSphereAgainstBody( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, float flRadius, IPhysicsBody *pBody ) = 0;
 
 	// A radius that is not positive casts a ray
 	virtual void CastSphereSingle( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, float flRadius, const RnQueryAttr_t &attr ) = 0;
@@ -422,9 +422,9 @@ public:
 	virtual VPhysics2WorldUnk212_t unk213() = 0;
 	virtual VPhysics2WorldUnk212_t unk214() = 0;
 
-	virtual IPhysReflContext *unk215() = 0;
+	virtual IPhysReflContext *GetReflContext() = 0;
 	virtual void unk216( bool bUnknown ) = 0;
-	virtual void unk217() = 0;
+	virtual void UpdateDebugScene() = 0;
 
 	// Empty
 	virtual void unk218() = 0;
@@ -440,8 +440,8 @@ public:
 	virtual void *unk224() = 0;
 
 	// The debug draw options used by Draw and UpdateSceneObjects
-	virtual uint64 unk225() = 0;
-	virtual void unk226( uint64 nOptions ) = 0;
+	virtual uint64 GetDebugDrawOptions() = 0;
+	virtual void SetDebugDrawOptions( uint64 nOptions ) = 0;
 
 	virtual void unk227( void *pValue ) = 0;
 	virtual void *unk228() = 0;
@@ -456,13 +456,13 @@ public:
 	virtual IPhysicsBody *unk232( void *pUnknown, void *pOut ) = 0;
 
 	// Debug draw filtering; both notify the event listener
-	virtual void unk233( const void *pParams ) = 0;
-	virtual void unk234() = 0;
+	virtual void SetDebugDrawFilter( const void *pParams ) = 0;
+	virtual void ClearDebugDrawFilter() = 0;
 	virtual bool unk235( void *pUnknown ) = 0;
-	virtual bool unk236( IPhysicsShape *pShape ) = 0;
-	virtual bool unk237( IPhysicsBody *pBody, bool bUnknown ) = 0;
-	virtual bool unk238( IPhysicsSoftbody *pSoftbody ) = 0;
-	virtual bool unk239( IPhysicsJoint *pJoint ) = 0;
+	virtual bool ShouldDrawShape( IPhysicsShape *pShape ) = 0;
+	virtual bool ShouldDrawBody( IPhysicsBody *pBody, bool bUnknown ) = 0;
+	virtual bool ShouldDrawSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
+	virtual bool ShouldDrawJoint( IPhysicsJoint *pJoint ) = 0;
 	virtual void unk240( void *pUnknown1, void *pUnknown2 ) = 0;
 	virtual void unk241() = 0;
 
@@ -470,21 +470,21 @@ public:
 	virtual const char *GetDebugName() = 0;
 
 	// Describes the physics library build, for example "Rubikon Release No-Names non-SIMD"
-	virtual const char *unk243() = 0;
+	virtual const char *GetBuildString() = 0;
 
 	// Handles the physics world console command: snapshots, saving and dumping of the world
 	virtual void DumpState( const CCommand &args, float flUnknown ) = 0;
 
 	// Dumps the bodies, shapes and joints of the world to a file
-	virtual void unk245( const char *pszFileName, void *pUnknown ) = 0;
+	virtual void DumpToJSON( const char *pszFileName, void *pUnknown ) = 0;
 
-	virtual void unk246( CBufferString &path ) = 0;
+	virtual void GetBenchmarkPath( CBufferString &path ) = 0;
 
 	virtual int unk247() = 0;
 	virtual void *unk248() = 0;
 
 	virtual void unk249( void *pUnknown, IPhysicsShape *pShape1, IPhysicsShape *pShape2 ) = 0;
-	virtual void unk250( CBufferString &text, IPhysicsShape *pShape, void *pUnknown ) = 0;
+	virtual void DescribeShape( CBufferString &text, IPhysicsShape *pShape, void *pUnknown ) = 0;
 };
 
 
@@ -513,7 +513,7 @@ public:
 	uint32 m_nCreateFlags;
 
 	// Taken from a counter that every new world increments
-	int m_nUnk014;
+	int m_nWorldId;
 
 	RnDebugDrawOptions_t m_DebugDrawOptions;
 	void *m_pUnk028;
@@ -578,15 +578,15 @@ public:
 	virtual bool unk014() = 0;
 	virtual bool unk015() = 0;
 	virtual int unk016() = 0;
-	virtual void unk017() = 0;
+	virtual void UpdateDebugScene() = 0;
 
 	// Empty
 	virtual void unk018() = 0;
 	virtual void unk019() = 0;
 
 	// Broadphase proxies
-	virtual IPhysicsShape *unk020( uint32 nProxy ) = 0;
-	virtual AABB_t unk021( uint32 nProxy ) = 0;
+	virtual IPhysicsShape *GetProxyShape( uint32 nProxy ) = 0;
+	virtual AABB_t GetProxyBounds( uint32 nProxy ) = 0;
 
 	virtual float unk022( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, void *pUnknown4 ) = 0;
 	virtual bool unk023( void *pObject ) = 0;
@@ -599,7 +599,7 @@ public:
 	virtual bool unk027( uint32 nValue ) = 0;
 	virtual void unk028() = 0;
 	virtual void unk029( void *pObject, void *pUnknown ) = 0;
-	virtual CRnQueryCache *unk030( void *pUnknown ) = 0;
+	virtual CRnQueryCache *CreateQueryCache( void *pUnknown ) = 0;
 
 	// Empty
 	virtual void unk031() = 0;
