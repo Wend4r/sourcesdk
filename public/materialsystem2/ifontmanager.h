@@ -30,7 +30,13 @@ struct FontAlias_t
 	CUtlSymbolLarge m_FontName;
 	CUtlSymbolLarge m_TrueFontName;
 	FontRange_t m_FontRange;
-	uint32 m_nUnk018;
+
+	// GetFont() and LoadFont() set their flag when they use the alias
+	HFont m_Font : 15;
+	uint32 m_bProportional : 1;
+	uint32 m_bGetFontUsed : 1;
+	uint32 m_bLoadFontUsed : 1;
+	uint32 m_bUnused : 14;
 };
 
 //-----------------------------------------------------------------------------
