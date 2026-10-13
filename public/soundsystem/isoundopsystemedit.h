@@ -87,7 +87,7 @@ public:
 	virtual void unk055( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	// Calls ISoundOpSystem::SetSoundEventParam
 	virtual bool unk056( SoundEventGuid_t guid, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
-	virtual void EditGetDomainAttrInfo( void *p1, void *p2, void *p3, void *p4 ) = 0;
+	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk1, int nUnk2, void *p2 ) = 0;
 	virtual bool unk060( const char *pSoundEventName, uint32 nUnk1, uint32 nUnk2 ) = 0;
 	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk1, int nUnk2, void *p2, CUtlVector< CUtlString > *pList ) = 0;
 	virtual bool unk060( const char *pSoundEventName, uint32 nUnk1, int nUnk2, CUtlVector< CUtlString > *pList ) = 0;
