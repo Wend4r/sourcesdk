@@ -7,6 +7,7 @@
 
 #include "engine2/isoundservice.h"
 #include "engine2/iengineservicemgr.h"
+#include "soundsystem/isoundsystem.h"
 #include "tier0/circularbuffer.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlstring.h"
@@ -19,7 +20,7 @@ public:
 	CConCommandMemberAccessor< CSoundService > m_PlaySoundCommand;
 	bool m_bUnk078;
 	uint8 m_pad079[ 0x7 ];
-	uint8 m_pad080[ 0x118 ];
+	CAudioState m_Unk080;
 	CThreadFastMutex m_UnkMutex198;
 	CUtlVector< IVoiceTarget * > m_Unk1A8;
 	uint8 m_pad1C0[ 0x8 ];
