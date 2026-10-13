@@ -80,6 +80,8 @@ struct SceneObjectBuffers_t;
 struct EmbeddedPhysicsInfo_t;
 struct RnHullSimplificationParams_t;
 struct RnSimplexCache_t;
+struct CShapeCastResult;
+struct PhysicsTrace_t;
 struct Ray_t;
 
 schema struct RnSphere_t
@@ -243,12 +245,13 @@ public:
 	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const Ray_t &shape1, const RnSweptTransform_t &sweep2, const Ray_t &shape2 ) = 0;
 	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const CGJKProxy &proxy1, float flRadius1, const RnSweptTransform_t &sweep2, const CGJKProxy &proxy2, float flRadius2 ) = 0;
 
-	virtual void unk043( void *p ) = 0;
-	virtual void unk044( void *p ) = 0;
+	// Cast vStart + vDelta against a scaled mesh or hull
+	virtual bool unk043( CShapeCastResult *pResult, const RnMesh_t *pMesh, const Vector &vScale, const Vector &vStart, const Vector &vDelta ) = 0;
+	virtual bool unk044( CShapeCastResult *pResult, const RnHull_t *pHull, float flScale, const Vector &vStart, const Vector &vDelta ) = 0;
 
-	virtual void unk045( void *p ) = 0;
-
-	virtual void TraceShape( void *p ) = 0;
+	// Cast a shape moved by vDelta from vStart against another shape placed at shapeTransform
+	virtual bool unk045( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, const CTransform &shapeTransform ) = 0;
+	virtual bool TraceShape( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, const CTransform &shapeTransform ) = 0;
 
 	virtual RnDistanceQueryResult_t ClosestPoints( const CTransform &transform1, IPhysicsShape *pShape1, const CTransform &transform2, IPhysicsShape *pShape2 ) = 0;
 	virtual RnDistanceQueryResult_t ClosestPoints( const CTransform &transform1, const RnHull_t *pHull1, const CTransform &transform2, const RnHull_t *pHull2, RnSimplexCache_t *pCache ) = 0;
@@ -258,7 +261,10 @@ public:
 	virtual float GetDistanceBetweenHulls( const Vector *pVertices1, int nVertexCount1, const Vector *pVertices2, int nVertexCount2 ) = 0;
 	virtual float GetDistanceBetweenHulls( const matrix3x4_t &transform1, const Vector *pVertices1, int nVertexCount1, const matrix3x4_t &transform2, const Vector *pVertices2, int nVertexCount2 ) = 0;
 
-	virtual void unk052( void *p ) = 0;
+	// Distance between the two shapes minus their radii
+	virtual float unk052( IPhysicsShape *pShape1, const matrix3x4_t &transform1, IPhysicsShape *pShape2, const matrix3x4_t &transform2 ) = 0;
+
+	// Takes ( const RnSimplexCache_t &, const RnHull_t *, const RnHull_t * ) and returns the hull feature pair of the cached simplex as a 16-byte struct
 	virtual void unk053( void *p ) = 0;
 
 #ifdef _WIN32
