@@ -125,9 +125,9 @@ class CAudioState
 public:
 	CAudioState()
 	{
-		m_flUnk00 = 0.0;
-		m_flUnk08 = 0.0;
-		m_flUnk10 = 0.0;
+		m_flAccumulatedTime = 0.0;
+		m_flFrameTime = 0.0;
+		m_flRealTime = 0.0;
 		m_pSteamUser = nullptr;
 		m_bUnk20_0 = false;
 		m_bUnk20_1 = false;
@@ -138,21 +138,21 @@ public:
 
 		for ( int i = 0; i < 4; i++ )
 		{
-			m_Unk24[ i ].m_vecUnk00.Init();
-			m_Unk24[ i ].m_angUnk0C.Init();
-			m_Unk24[ i ].m_vecUnk18.Init();
-			m_Unk24[ i ].m_vecUnk24.Init();
-			m_Unk24[ i ].m_nUnk30 = -1;
-			m_Unk24[ i ].m_nUnk34 = -1;
-			m_Unk24[ i ].m_bUnk38_0 = false;
-			m_Unk24[ i ].m_bUnk38_1 = false;
+			m_Listeners[ i ].m_vecOrigin.Init();
+			m_Listeners[ i ].m_angAngles.Init();
+			m_Listeners[ i ].m_vecUnk18.Init();
+			m_Listeners[ i ].m_vecUnk24.Init();
+			m_Listeners[ i ].m_nViewEntity = -1;
+			m_Listeners[ i ].m_nUnk34 = -1;
+			m_Listeners[ i ].m_bUnk38_0 = false;
+			m_Listeners[ i ].m_bActive = false;
 		}
 	}
 
-	// Accumulated frame time, last frame time and the time the state was built
-	double m_flUnk00;
-	double m_flUnk08;
-	double m_flUnk10;
+	// Sum of the frame times, the last frame time and the time the state was built
+	double m_flAccumulatedTime;
+	double m_flFrameTime;
+	double m_flRealTime;
 	ISteamUser *m_pSteamUser;
 	bool m_bUnk20_0 : 1;
 	bool m_bUnk20_1 : 1;
@@ -161,17 +161,31 @@ public:
 	bool m_bUnk20_4 : 1;
 	bool m_bUnk20_5 : 1;
 
+	// One listener per split screen slot
 	struct
 	{
-		Vector m_vecUnk00;
-		QAngle m_angUnk0C;
+		Vector m_vecOrigin;
+		QAngle m_angAngles;
 		Vector m_vecUnk18;
 		Vector m_vecUnk24;
-		int m_nUnk30;
+		int m_nViewEntity;
 		int m_nUnk34;
 		bool m_bUnk38_0 : 1;
-		bool m_bUnk38_1 : 1;
-	} m_Unk24[ 4 ];
+		bool m_bActive : 1;
+	} m_Listeners[ 4 ];
+};
+
+
+//-----------------------------------------------------------------------------
+// Direction vectors the sound system derives from the angles of a listener,
+// and the listening position next to its origin
+//-----------------------------------------------------------------------------
+struct audio_listener_vectors_t
+{
+	Vector m_vecForward;
+	Vector m_vecLeft;
+	Vector m_vecUp;
+	Vector m_vecPosition;
 };
 
 
