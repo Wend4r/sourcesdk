@@ -162,22 +162,52 @@ enum ResourceStreamingType_t : int
 	RESOURCE_STREAMING_TYPE_NONE = 0,
 };
 
+// Returned by IResourceTypeManager::AsyncProcessData
+abstract_class IAsyncProcessedDataResult
+{
+public:
+	virtual ~IAsyncProcessedDataResult() = 0;
+};
+
+inline IAsyncProcessedDataResult::~IAsyncProcessedDataResult() {}
+
 class IResourceTypeManager
 {
 public:
-	virtual bool Init( IResourceSystemUtils *pUtils ) { return false; }
+	// The resource system passes 3 as the second argument
+	virtual bool Init( IResourceSystemUtils *pUtils, int nUnknown ) { return false; }
 	virtual void Shutdown() {}
+	virtual void unk002() {}
 	virtual void *GetErrorResource() { return nullptr; }
 	virtual bool NeedsFrameUpdate() const { return false; }
 	virtual void FrameUpdate( int nFrame ) {}
 	virtual bool RequiresFinalizeResourceCall() const { return false; }
 	virtual void FinalizeResource( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
-	virtual ResourceStreamingType_t GetStreamingType() const { return RESOURCE_STREAMING_TYPE_NONE; }
-	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool ) { return 0; }
+
+	// Cached in the type registration
+	virtual bool unk008() { return false; }
+
+	virtual void unk009() {}
+
+	// Gates the GetNonStreamingDataLoadSize call when a resource is loaded
+	virtual bool unk010() { return false; }
+
+	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool bUnknown ) { return -1; }
 	virtual void LoadStreamingData( ResourceHandle_t hResource, IResourceSystemUtils *pUtils ) {}
 	virtual void AllocateResource( ResourceHandle_t hResource, ResourceId_t nId, const ResourceFileHeader_t *pHeader, IRD_RegisterResourceDataUtils *pUtils ) {}
 	virtual void DeallocateResource( void *pData, IResourceDeallocatorUtils *pUtils ) {}
 	virtual void NotifyResourceWithWorkPendingLoadCancelled( ResourceHandle_t hResource, void *pData ) {}
+	virtual bool UsesData() const { return false; }
+	virtual bool unk017() { return true; }
+	virtual bool WantsAsyncProcessData() const { return false; }
+	virtual std::unique_ptr< IAsyncProcessedDataResult > AsyncProcessData( ResourceHandle_t hResource, const ResourceFileHeader_t *pHeader ) { return nullptr; }
+
+	// Cached in the type registration
+	virtual bool unk020() { return false; }
+
+	virtual void unk021() {}
+	virtual void unk022() {}
+	virtual void unk023() {}
 };
 
 #endif // RESOURCESYSTEM_H
