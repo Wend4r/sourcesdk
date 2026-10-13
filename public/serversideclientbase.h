@@ -502,7 +502,9 @@ public:
 	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with reason 39
 	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
 	bool m_bPendingSignonStateMsg = false; // set when signon -> CONNECTED, consumed in ProcessSignonStateMsg
-	CCommand *m_pLastCommand;
+	// The client's user info convar values (IVEngineServer2::GetClientUserInfo returns it), resized to
+	// ICvar::GetTotalUserInfoCvarsByteSize() and handed to ISource2GameClients::ClientStringTableData
+	ConVarUserInfoSet_t m_UserInfoCvarData;
 };
 
 #endif // SERVERSIDECLIENTBASE_H
