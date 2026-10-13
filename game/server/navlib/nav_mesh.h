@@ -18,6 +18,9 @@
 #include "tier0/utlvector.h"
 #include "tier0/utlleanvector.h"
 #include "tier0/utlhashtable.h"
+#include "tier0/utlpair.h"
+#include "tier0/threadtools.h"
+#include "tier1/utlhashmaplarge.h"
 #include "nav_area.h"
 #include "nav_ladder.h"
 
@@ -189,13 +192,103 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// The areas of movable meshes (moving platforms) and their transforms. It has no virtuals; its
-// members are not reconstructed.
+// Integers of which the first N are kept inline and the rest in a vector. Movable meshes are
+// identified by one, parsed from their ':'-separated mesh id string; the manager keys them by
+// its hash.
+//-----------------------------------------------------------------------------
+template < typename T, int N >
+class CUtlIntString
+{
+public:
+	// Number of used entries in m_Inline.
+	int m_nInlineCount;
+	T m_Inline[ N ];
+	// The entries after the first N.
+	CUtlVector< T > m_Overflow;
+};
+
+//-----------------------------------------------------------------------------
+// One area to add to a grid cell after a movable mesh update.
+//-----------------------------------------------------------------------------
+struct NavBatchUpdateAreaInGridOp_t
+{
+	CNavArea *m_pArea;
+	// Cell index (y * width + x) in the grid.
+	int m_nUnk08;
+	// 0 when queued by the geometry change of the area.
+	bool m_bUnk0C;
+};
+
+//-----------------------------------------------------------------------------
+// The areas associated with movable meshes, keyed by movable mesh hash.
+//-----------------------------------------------------------------------------
+class CNavMovableMeshCatalog
+{
+private:
+	// The areas of each movable mesh whose m_nAttributeDynamicFlags lack 4.
+	CUtlHashtable< uint32, CUtlVector< CNavArea * > * > m_Unk00;
+	// The areas of each movable mesh whose m_nAttributeDynamicFlags have 4.
+	CUtlHashtable< uint32, CUtlHashtable< CNavArea * > * > m_Unk20;
+	// By area ID: the first and the second movable mesh the area was added for, -1 when unset.
+	CUtlHashtable< uint32, CUtlPair< uint32, uint32 > > m_Unk40;
+};
+
+//-----------------------------------------------------------------------------
+// The areas of movable meshes (moving platforms) and their transforms. It has no virtuals.
 //-----------------------------------------------------------------------------
 class CNavMovableMeshesManager
 {
+public:
+	struct MovableMeshContext_t
+	{
+		// The transform the areas were last moved with.
+		matrix3x4_t m_Unk00;
+		// The last transform received; while the mesh is in m_Unk180 only this one is updated.
+		matrix3x4_t m_Unk30;
+		// Bit 3: movable_mesh_gravity_follows_rotation.
+		uint32 m_nFlags;
+	};
+
+	// Filled by several threads: a slot is taken by incrementing m_nUnk80 and entries past the
+	// preallocated m_Unk00 go to m_Unk10 under the mutex. The counter is on its own cache line.
+	template < typename T >
+	struct AppendBuffer_t
+	{
+		CUtlLeanVector< T > m_Unk00;
+		CUtlLeanVector< T > m_Unk10;
+		CAtomicMutex m_Unk20;
+
+	private:
+		uint8 m_pad[ 128 - 32 - sizeof( CAtomicMutex ) ];
+
+	public:
+		int m_nUnk80;
+		// -1 once the buffer is flushed.
+		int m_nUnk84;
+
+	private:
+		uint8 m_pad88[ 120 ];
+	};
+
 private:
-	uint8 m_Data[ 0x1A0 ];
+	// The mesh id of each movable mesh hash.
+	CUtlHashMap< uint32, CUtlIntString< int, 6 > > m_Unk00;
+	CUtlHashMap< uint32, MovableMeshContext_t > m_Unk50;
+	CNavMovableMeshCatalog m_Unk0A0;
+	// Incremented by every transform update and stored in m_Unk108 for each vertex it moves.
+	int m_nUnk100;
+	// One per geometry vertex.
+	CUtlVector< int > m_Unk108;
+	// One per hull (CNavArea::m_nHullIdx).
+	CUtlVector< AppendBuffer_t< NavBatchUpdateAreaInGridOp_t > > m_Unk120;
+	// One per geometry vertex: the position before the update.
+	CUtlVector< Vector > m_Unk138;
+	// The areas of each update.
+	CUtlVector< CUtlVector< CNavArea * > > m_Unk150;
+	// One per hull (CNavArea::m_nHullIdx): the areas whose geometry changed.
+	CUtlVector< AppendBuffer_t< CNavArea * > > m_Unk168;
+	// Movable mesh hashes whose areas are not moved by transform updates.
+	CUtlHashtable< uint32 > m_Unk180;
 };
 
 //-----------------------------------------------------------------------------
