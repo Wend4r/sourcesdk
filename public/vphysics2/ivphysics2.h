@@ -30,6 +30,7 @@ class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
+class CMesh;
 
 class IFnPhysicsContact;
 class IFnPhysicsAnyJoint;
@@ -61,6 +62,7 @@ struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
 struct VPhysXAggregateData_t;
+struct RnHullSimplificationParams_t;
 
 abstract_class IVPhysics2 : public IAppSystem
 {
@@ -168,18 +170,13 @@ public:
 	virtual void unk054( void *p ) = 0;
 #endif
 
-	// Convex hull geometry. A NULL pDestHull allocates a new hull
-	virtual RnHull_t *CreateBoxHull( const Vector &vCenter, const Vector &vHalfExtents, RnHull_t *pDestHull ) = 0;
-	virtual RnHull_t *CreateConeHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pDestHull ) = 0;
-	virtual RnHull_t *CreateCylinderHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pDestHull ) = 0;
+	// Convex hull geometry. A NULL pPreallocatedHull allocates a new hull
+	virtual RnHull_t *CreateBoxHull( const Vector &vExtent, const Vector &vCenter, RnHull_t *pPreallocatedHull ) = 0;
+	virtual RnHull_t *CreateConeHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pPreallocatedHull ) = 0;
+	virtual RnHull_t *CreateCylinderHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pPreallocatedHull ) = 0;
 
-#ifdef _WIN32
-	virtual void CreateHullFromStream( void *p ) = 0;
-	virtual RnHull_t *CreateHull( int nPointCount, const Vector *pPoints, RnHull_t *pDestHull, const void *p ) = 0;
-#else
-	virtual RnHull_t *CreateHull( int nPointCount, const Vector *pPoints, RnHull_t *pDestHull, const void *p ) = 0;
-	virtual void CreateHullFromStream( void *p ) = 0;
-#endif
+	virtual RnHull_t *CreateHull( int nVertexCount, const Vector *pvVertexBase, RnHull_t *pPreallocatedHull, RnHullSimplificationParams_t *pSimplificationParams ) = 0;
+	virtual RnHull_t *CreateHull( CMesh *pMesh, RnHull_t *pPreallocatedHull, RnHullSimplificationParams_t *pSimplificationParams ) = 0;
 
 	virtual RnHull_t *CreateRuntimeHull( int nPointCount, const Vector *pPoints ) = 0;
 	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const RnPlane_t *pPlanes, float flUnknown, const Vector &vUnknown ) = 0;
@@ -191,13 +188,9 @@ public:
 
 	virtual RnMesh_t *CreateGridMesh( int nHalfExtent, float flSpacing, float flHeight ) = 0;
 
-#ifdef _WIN32
-	virtual void CreateMeshFromStream( void *p ) = 0;
-	virtual void CreateMesh( void *p ) = 0;
-#else
-	virtual void CreateMesh( void *p ) = 0;
-	virtual void CreateMeshFromStream( void *p ) = 0;
-#endif
+	// pSimplifyParams is an optional mesh simplification block, its layout is not recovered
+	virtual RnMesh_t *CreateMesh( int nTriangleCount, const uint32 *pIndexBase, const uint8 *pMaterialBase, int nVertexCount, const Vector *pVertexBase, RnMesh_t *pPreallocatedMesh, const void *pSimplifyParams ) = 0;
+	virtual RnMesh_t *CreateMesh( CMesh *pMesh, RnMesh_t *pPreallocatedMesh, const void *pSimplifyParams ) = 0;
 
 	virtual void CloneMesh( RnMesh_t *pDestMesh, const RnMesh_t *pSourceMesh ) = 0;
 	virtual void DestroyMesh( RnMesh_t *pMesh ) = 0;
