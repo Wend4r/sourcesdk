@@ -49,6 +49,7 @@ class InstantReplayMessage_t;
 class IEntityReport;
 class INetworkFieldChangedEventQueue;
 class InfoForResourceTypeCTextureBase;
+class IToolClientSimulationAPI;
 class IToolObject;
 class ISceneView;
 class ISceneWorld;
@@ -287,7 +288,7 @@ public:
 	// Entity list of the client entity system, summarized in the crash dump comment
 	virtual CConcreteEntityList *unk140() = 0;
 	// Returns the CToolClientSimulationAPI singleton
-	virtual void *GetToolClientSimulationAPI() = 0;
+	virtual IToolClientSimulationAPI *GetToolClientSimulationAPI() = 0;
 	virtual void unk142() = 0;
 	virtual void unk143() = 0;
 	virtual bool unk144() = 0;
