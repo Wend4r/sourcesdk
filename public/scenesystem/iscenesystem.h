@@ -176,8 +176,8 @@ public:
 	virtual void GetStatsSummaryString( CBufferString *pOut ) = 0;
 	virtual void PrintPerFrameStats( CBufferString *pOut, const char *pszHeader ) = 0;
 	virtual SceneSystemPerFrameStats_t &GetPerFrameStats() = 0;
-	virtual int GetFrameCounter() const = 0;
-	virtual int unk086() = 0;
+	virtual uint32 GetFinishRenderingViewsCounter() const = 0;
+	virtual uint32 GetFrameUpdateCounter() const = 0;
 	virtual void BindTransformTextureAndInstanceIDBuffer( IRenderContext *pRenderContext, int nVBSlot, int nTransformSlotIndex, bool bUnk ) = 0;
 	// Binds the transform buffer at offset 0.
 	virtual void unk088( IRenderContext *pRenderContext, int nVBSlot ) = 0;
