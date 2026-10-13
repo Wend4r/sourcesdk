@@ -75,6 +75,16 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// The areas selected in the nav editor. Splitting a selected area puts both halves in the set
+// and takes the split area out.
+//-----------------------------------------------------------------------------
+class CNavSelectionSet
+{
+public:
+	CUtlVector< CNavArea * > m_SetAreas;
+};
+
+//-----------------------------------------------------------------------------
 // The names of the places (callouts) of a mesh.
 //-----------------------------------------------------------------------------
 class CNavPlaceDatabase
@@ -317,12 +327,7 @@ private:
 
 public:
 	CUtlString m_NavFilename;
-
-private:
-	// A vector freed by the destructor.
-	uint8 m_Unk80[ 0x18 ];
-
-public:
+	CNavSelectionSet m_SelectionSet;
 	CNavPlaceDatabase m_PlaceDatabase;
 	// Owned; released through m_pPhysicsInterface.
 	CTraceFilter *m_pTraceFilterWalkableEntities;
