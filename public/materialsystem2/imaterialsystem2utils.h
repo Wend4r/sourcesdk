@@ -25,6 +25,7 @@ class CRenderAttributes;
 class CTextLayoutInfo;
 class IQueuedRenderable;
 class InfoForResourceTypeCTextureBase;
+struct MeshBuilderBuffers_t;
 struct RsStencilStateOverride_t;
 struct RsDepthBiasStateOverride_t;
 FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
@@ -93,10 +94,10 @@ public:
 	virtual void QueueRenderQuad( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, void *p5, void *p6, void *p7, int n8 ) = 0;
 
 	// Takes ownership of the mesh buffers and the attributes
-	virtual void QueueAndOwnRenderMeshWithMode( void *p ) = 0;
+	virtual void QueueAndOwnRenderMeshWithMode( uint32 nQueue, const MeshBuilderBuffers_t *pMesh, const IMaterialMode *pMode, CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, int nPositionType, float flTimeToLive ) = 0;
 
 	// Copies the mesh buffers and the attributes, then queues the copy as QueueAndOwnRenderMeshWithMode does
-	virtual void QueueRenderMeshWithMode( void *p ) = 0;
+	virtual void QueueRenderMeshWithMode( uint32 nQueue, const MeshBuilderBuffers_t *pMesh, const IMaterialMode *pMode, const CRenderAttributes *pAttributes, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, int nPositionType, float flTimeToLive ) = 0;
 
 	virtual void QueueRenderConvexGeometry( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
 	virtual void QueueRenderQuads( uint32 nQueue, const void *pVertices, const Color *pColors, const void *pTexCoords, int nCount, void *p6, void *p7, void *p8, int n9 ) = 0;
