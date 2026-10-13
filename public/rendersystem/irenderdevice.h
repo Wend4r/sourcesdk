@@ -14,6 +14,7 @@
 #include "tier0/platwindow.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlvector.h"
+#include "tier0/utlstringtoken.h"
 #include "tier1/utldelegate.h"
 #include "bitmap/imageformat_declarations.h"
 #include "mathlib/vector.h"
@@ -52,6 +53,7 @@ struct DisplayListToSubmit_t;
 struct RenderTargetDesc_t;
 struct RenderDescriptorDesc_t;
 struct RenderDescriptorBinding_t;
+struct BLASCreateDesc_t;
 struct TLASCreateDesc_t;
 struct TLASInstance_t;
 struct RayTracePipelineStateCreateDesc_t;
@@ -290,9 +292,9 @@ public:
 	virtual void SetTextureGlobalMipLODBias( float flMipLODBias ) = 0;
 	virtual float GetTextureGlobalMipLODBias() = 0;
 	virtual void UnThrottlePipelineCreationForNFrames( uint32 nNumberOfFramesForUnthrottledPipelineCreation ) = 0;
-	virtual void unk179( void *p ) = 0;
-	virtual void unk180( void *p ) = 0;
-	virtual void unk181( void *p ) = 0;
+	virtual RenderDescriptorSetHandle_t GetRegisteredDescriptorSetLayout( CUtlStringToken descriptorSetName ) = 0;
+	virtual RenderBLASHandle_t CreateBLAS( const BLASCreateDesc_t &desc, uint32 *pSizeCounter ) = 0;
+	virtual bool IsCompactible( RenderBLASHandle_t hBLAS ) = 0;
 	virtual void unk182( void *p ) = 0;
 	virtual IsReadyToCompactResult_t IsReadyToCompact( RenderBLASHandle_t hBLAS ) = 0;
 	virtual void DestroyBLAS( RenderBLASHandle_t hBLAS ) = 0;
