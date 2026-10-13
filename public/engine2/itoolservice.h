@@ -23,6 +23,15 @@ class IToolGameSimulationAPI;
 class CEntityClass;
 class ISceneWorld;
 class IScreenshotCallback;
+class InfoForResourceTypeCTextureBase;
+class IToolObject;
+class Vector;
+class Vector4D;
+struct EconItemInfo_t;
+struct ParticleProjectedTextureInfo_t;
+
+FORWARD_DECLARE_HANDLE( HDeferredLight );
+FORWARD_DECLARE_HANDLE( HProjectedTexture );
 
 abstract_class IToolService : public IEngineService
 {
@@ -45,29 +54,30 @@ public:
 	virtual void *GetToolClientSimulationAPI() = 0;
 
 	// Forward to the game client
-	virtual void UpdateProjectedTexture( const void *pInfo, void **ppTexture ) = 0;
-	virtual void DeleteProjectedTexture( void *pTexture ) = 0;
-	virtual void *UpdateDeferredLight( void *p ) = 0;
-	virtual void DeleteDeferredLight( void *p ) = 0;
+	virtual void UpdateProjectedTexture( const ParticleProjectedTextureInfo_t &info, HProjectedTexture &hTexture ) = 0;
+	virtual void DeleteProjectedTexture( HProjectedTexture hTexture ) = 0;
+	virtual void *UpdateDeferredLight( ISceneWorld *pSceneWorld, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, Vector &vecUnk1, float flUnk1, Vector4D &vecUnk2, float flUnk2, float flUnk3, float flUnk4, Vector vecUnk3, float flUnk5, float flUnk6, float flUnk7, float flUnk8, float flUnk9, HDeferredLight &hLight ) = 0;
+	virtual void DeleteDeferredLight( HDeferredLight hLight ) = 0;
 	// Forward to game client methods that are not identified yet
 	virtual void unk039() = 0;
 	virtual void unk040() = 0;
 	virtual void unk041() = 0;
 	virtual void unk042() = 0;
-	virtual void unk043() = 0;
-	virtual void unk044() = 0;
-	virtual void unk045() = 0;
-	virtual void unk046() = 0;
+	// Forward to the game client
+	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
+	virtual void GetEconItemsInfoForCharacter( const char *pszCharacterName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void *unk047() = 0;
 	// 1.0 without a game client
-	virtual float unk048() = 0;
-	virtual float unk049() = 0;
+	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
+	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
 	virtual void unk050() = 0;
 	virtual bool unk051() = 0;
 	virtual void unk052() = 0;
 	virtual void unk053() = 0;
-	virtual void UpdateGlobalLightFromLightInfos( void *p ) = 0;
-	virtual bool GetGlobalLightParameters( void *p ) = 0;
+	virtual void UpdateGlobalLightFromLightInfos( IToolObject *pUnk, const CUtlVector< IToolObject * > &lightInfos, const Vector &vecUnk, int nUnk, float flUnk1, float flUnk2, float flUnk3 ) = 0;
+	virtual bool GetGlobalLightParameters( int *pnUnk, float *pflUnk1, float *pflUnk2 ) = 0;
 	virtual void *GetEconItemSystem_Client() = 0;
 
 	// Forwards to the game server
