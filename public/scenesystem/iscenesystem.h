@@ -40,6 +40,8 @@ class CBufferString;
 class IRayTraceSceneWorld;
 class ISceneViewDebugOverlays;
 class ISparseShadowTree;
+class ISceneLightListener;
+class ISceneObjectListener;
 class CViewId;
 class CFrustum;
 struct AABB_t;
@@ -305,10 +307,14 @@ public:
 	// Draw flags are 16 bit here, int in the s&box declaration.
 	virtual void SceneObject_GetMaterialsForObject( CSceneObject *pObject, CUtlVectorFixedGrowable< HMaterialWeak, 2 > &materials, CUtlVectorFixedGrowable< int16, 2 > &drawFlags ) = 0;
 
-	virtual void unk163() = 0;
-	virtual void unk164() = 0;
-	virtual void unk165() = 0;
-	virtual void unk166() = 0;
+	// Add and remove a listener of the global light list, which the light descriptors notify when a light is destroyed.
+	virtual void RegisterSceneLightListener( ISceneLightListener *pListener ) = 0;
+	virtual void UnregisterSceneLightListener( ISceneLightListener *pListener ) = 0;
+
+	// Add and remove a listener of the global scene object list, which is notified when a scene object is deleted.
+	virtual void unk165( ISceneObjectListener *pListener ) = 0;
+	virtual void unk166( ISceneObjectListener *pListener ) = 0;
+
 	virtual void unk167() = 0;
 	virtual int unk168() = 0;
 	virtual void unk169() = 0;
