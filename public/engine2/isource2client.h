@@ -22,11 +22,13 @@
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
 #include "tier0/tslist.h"
+#include "tier0/bitvec.h"
 #include "game_saverestore.h"
 
 #include <functional>
 
 class CBufferString;
+class ClientClass;
 class CCommand;
 class CGlobalVarsBase;
 class CSVCMsg_HltvReplay_t;
@@ -36,6 +38,8 @@ class CThreadedJob;
 class CTransform;
 class CUtlBuffer;
 class IDemoMessageSink;
+class IEntityReport;
+class INetworkFieldChangedEventQueue;
 class InfoForResourceTypeCTextureBase;
 class IToolObject;
 class ISceneView;
@@ -46,6 +50,7 @@ class QAngle;
 class Vector;
 class Vector4D;
 struct EconItemInfo_t;
+struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
 struct ParticleProjectedTextureInfo_t;
 struct RenderViewport_t;
@@ -77,6 +82,11 @@ public:
 abstract_class ISource2Client : public IAppSystem, public IFieldChangeLimitSpew
 {
 public:
+	// The engine passes 0 and 1; the enumerator names are unknown
+	enum NotifyShouldTransmitType_t : int
+	{
+	};
+
 	// NULL restores the module's own globals. Returns the previous globals, or NULL when they were the module's own
 	virtual CGlobalVarsBase *SetGlobals( CGlobalVarsBase *pGlobals ) = 0;
 
@@ -95,8 +105,8 @@ public:
 	virtual int unk019( CSplitScreenSlot nSlot ) = 0;
 	virtual int unk020( int nUnk ) = 0;
 	virtual void unk021() = 0;
-	// Forwards to the input system
-	virtual void unk022( int nSlot, void *pUnk, bool bUnk ) = 0;
+	// Forwards to the input system with absolute queries allowed
+	virtual void ProcessInput( CSplitScreenSlot nSlot, float flFrameTime, bool bActive ) = 0;
 	virtual bool unk023( int nUnk1, void *pUnk, int nUnk2, int nUnk3 ) = 0;
 	virtual void unk024( CSplitScreenSlot nSlot, void *pUnk, int nCommandNumber ) = 0;
 	virtual void unk025() = 0;
@@ -105,15 +115,16 @@ public:
 	// Forward to the game rules
 	virtual void unk027( bool bUnk ) = 0;
 	virtual void unk028() = 0;
-	// Forward to an object owned by the client entity system
-	virtual void unk029() = 0;
-	virtual void unk030() = 0;
+	// Forward to the network classes of the client entity system
+	virtual bool GetEntity2Networkable( CEntityIndex nEntityIndex, Entity2Networkable_t &networkable ) = 0;
+	virtual void unk030( void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk031( void *pUnk, bool bUnk ) = 0;
-	virtual void *unk032() = 0;
-	virtual void unk033( void *pUnk1, int *pUnk2, int nUnk ) = 0;
-	// Forwards to an object owned by the client entity system
-	virtual void unk034() = 0;
-	virtual void unk035( void *pUnk1, void *pUnk2 ) = 0;
+	virtual INetworkFieldChangedEventQueue *GetNetworkFieldChangeCallbackQueue() = 0;
+	// Called with 0 and then with 1 while the engine processes packet entities
+	virtual void NotifyShouldTransmit( IEntityReport *pReport, CBitVec< 16384 > *pTransmitBits, NotifyShouldTransmitType_t nType ) = 0;
+	virtual CUtlVector< ClientClass * > *GetAllClasses() = 0;
+	// Copies the session configuration and asks the loop mode game shared state for it
+	virtual bool ReceivedServerInfo( const GameSessionConfiguration_t &config, ILoopModePrerequisiteRegistry *pRegistry ) = 0;
 
 	virtual void FrameStageNotify( int nStage ) = 0;
 
