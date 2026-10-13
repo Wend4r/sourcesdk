@@ -46,7 +46,6 @@ class IRenderAsyncShaderCompileListener;
 class IUpscaler;
 class Vector2D;
 struct RenderDeviceInfo_t;
-struct RenderInputLayoutField_t;
 struct RsRasterizerStateDesc_t;
 struct RsDepthStencilStateDesc_t;
 struct RsBlendStateDesc_t;

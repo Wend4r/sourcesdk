@@ -8,6 +8,8 @@
 #include "tier0/basetypes.h"
 #include "network_connection.pb.h"
 
+#include "schemacompiler/schemaon.h"
+
 FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
 
 DECLARE_POINTER_HANDLE( RenderResourceHandle_t );
@@ -28,6 +30,25 @@ DECLARE_POINTER_HANDLE( SamplerStateHandle_t );
 DECLARE_DERIVED_POINTER_HANDLE( RenderBLASHandle_t, RenderResourceHandle_t );
 DECLARE_DERIVED_POINTER_HANDLE( RenderTLASHandle_t, RenderResourceHandle_t );
 DECLARE_DERIVED_POINTER_HANDLE( RenderRayTracePipelineHandle_t, RenderResourceHandle_t );
+
+schema enum RenderSlotType_t : int8
+{
+	RENDER_SLOT_INVALID = -1,
+	RENDER_SLOT_PER_VERTEX = 0,
+	RENDER_SLOT_PER_INSTANCE,
+};
+
+// One vertex attribute of an input layout
+schema struct RenderInputLayoutField_t
+{
+	char m_pSemanticName[ 32 ];
+	int8 m_nSemanticIndex;
+	noschema uint32 m_Format;
+	int16 m_nOffset;
+	int8 m_nSlot;
+	RenderSlotType_t m_nSlotType;
+	char m_szShaderSemantic[ 32 ];
+};
 
 enum RenderMultisampleType_t : uint8
 {
@@ -51,5 +72,7 @@ struct RenderViewport_t
 	float m_flMinZ;
 	float m_flMaxZ;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // RENDERSYSTEM_RENDERSYSTEMTYPES_H
