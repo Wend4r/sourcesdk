@@ -31,6 +31,7 @@ class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
+class CPhysAggregateData;
 class CMesh;
 
 class IFnPhysicsContact;
@@ -63,7 +64,32 @@ struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
 struct VPhysXAggregateData_t;
+struct EmbeddedPhysicsInfo_t;
 struct RnHullSimplificationParams_t;
+
+// Holds a reference to aggregate data through IVPhysics2::AddDataReference and ReleaseDataReference
+class CPhysAggregateDataHandle
+{
+public:
+	CPhysAggregateDataHandle() : m_pData( nullptr ) {}
+	CPhysAggregateDataHandle( CPhysAggregateData *pData ) : m_pData( nullptr ) { Set( pData ); }
+	CPhysAggregateDataHandle( const CPhysAggregateDataHandle &other ) : m_pData( nullptr ) { Set( other.m_pData ); }
+	CPhysAggregateDataHandle( CPhysAggregateDataHandle &&other ) : m_pData( other.m_pData ) { other.m_pData = nullptr; }
+	~CPhysAggregateDataHandle() { Clear(); }
+
+	CPhysAggregateDataHandle &operator=( const CPhysAggregateDataHandle &other ) { Set( other.m_pData ); return *this; }
+
+	inline void Set( CPhysAggregateData *pData );
+	inline void Clear();
+
+	CPhysAggregateData *Get() const { return m_pData; }
+	CPhysAggregateData *operator->() const { return m_pData; }
+	bool IsValid() const { return m_pData != nullptr; }
+	explicit operator bool() const { return IsValid(); }
+
+private:
+	CPhysAggregateData *m_pData;
+};
 
 abstract_class IVPhysics2 : public IAppSystem
 {
@@ -200,12 +226,14 @@ public:
 	virtual void CloneCompound( RnCompound_t *pDestCompound, const RnCompound_t *pSourceCompound ) = 0;
 	virtual void DestroyCompound( RnCompound_t *pCompound ) = 0;
 
-	virtual void CreateFromResource( void *p ) = 0;
+	// Takes over the aggregate data loaded from a resource block
+	virtual CPhysAggregateDataHandle CreateAggregateDataFromEmbeddedDiskData( const EmbeddedPhysicsInfo_t &embeddedPhysicsInfo ) = 0;
 
 	virtual void unk081( void *p ) = 0;
 
-	virtual void AddRef( void *p ) = 0;
-	virtual void Release( void *p ) = 0;
+	// Reference counting of the aggregate data, used by CPhysAggregateDataHandle
+	virtual void AddDataReference( CPhysAggregateData *pData ) = 0;
+	virtual void ReleaseDataReference( CPhysAggregateData *pData ) = 0;
 
 	virtual bool unk084( CUtlVector< PhysicsBodyDef_t > &bodies, const VPhysXAggregateData_t *pAggregateData ) = 0;
 
@@ -216,7 +244,7 @@ public:
 	virtual bool unk087( void *p ) = 0;
 	virtual void unk088( void *p ) = 0;
 
-	virtual void Create( void *p ) = 0;
+	virtual CPhysAggregateDataHandle CreateAggregateDataFromDiskData( VPhysXAggregateData_t *pDiskDataRoot ) = 0;
 
 	// Standalone softbodies
 	virtual IPhysicsSoftbody *CreateSoftbody( void *p ) = 0;
@@ -309,6 +337,27 @@ public:
 
 	virtual const char *GetMassDescription( float flMass ) = 0;
 };
+
+inline void CPhysAggregateDataHandle::Set( CPhysAggregateData *pData )
+{
+	if ( pData )
+	{
+		g_pVPhysics2->AddDataReference( pData );
+	}
+
+	Clear();
+	m_pData = pData;
+}
+
+inline void CPhysAggregateDataHandle::Clear()
+{
+	if ( m_pData )
+	{
+		g_pVPhysics2->ReleaseDataReference( m_pData );
+	}
+
+	m_pData = nullptr;
+}
 
 class CVPhysics2Interface : public CTier2AppSystem< IVPhysics2 >
 {
