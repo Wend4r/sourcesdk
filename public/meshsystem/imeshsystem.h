@@ -86,10 +86,19 @@ public:
 	virtual CSmartPtr< CRenderMesh > CreateRenderMesh( const char *pName ) = 0;
 	virtual void InvalidateMeshRayTrace( CRenderMesh *pRenderMesh ) = 0;
 	virtual void LoadModelSyncNoExtrefs( void *p ) = 0;
-	virtual void unk035() = 0;
-	virtual void unk036() = 0;
-	virtual void unk037() = 0;
-	virtual void unk038() = 0;
+
+	// Moves the std::function at pFunction into CMeshSystem::m_unk0F0
+	virtual void unk035( void *pFunction ) = 0;
+
+	// Does nothing unless hModel is loaded
+	virtual void unk036( ResourceHandle_t hModel ) = 0;
+
+	// Adds pListener to CMeshSystem::m_unk0A8 when it is not there yet
+	virtual void unk037( void *pListener ) = 0;
+
+	// Appends CMeshSystem::m_unk0D0 to pOut under its lock
+	virtual void unk038( CUtlVector< void * > *pOut ) = 0;
+
 
 	virtual int FindInputIndex( ResourceHandle_t hMaterial, int nIndex ) = 0;
 
