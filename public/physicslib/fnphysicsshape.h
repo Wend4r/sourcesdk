@@ -15,6 +15,7 @@
 
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
+#include "mathlib/vector4d.h"
 #include "physicslib/param_types.h"
 #include "physicslib/serialize.h"
 
@@ -78,10 +79,11 @@ public:
 	virtual void unk023( bool bUnknown ) = 0;
 	virtual void unk024( bool bUnknown ) = 0;
 	virtual void unk025( bool bUnknown ) = 0;
-	virtual void unk026( void *p ) = 0;
+	// Store color 0 and color 1 of the debug shape
+	virtual void unk026( const Vector4D &vColor ) = 0;
 	virtual float unk027() = 0;
 	virtual void unk028() = 0;
-	virtual void unk029( void *p ) = 0;
+	virtual void unk029( const Vector4D &vColor ) = 0;
 	virtual void unk030() = 0;
 
 	virtual CRnShape *GetRnShape() const = 0;
