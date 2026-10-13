@@ -11,6 +11,12 @@
 #include <tier0/bitbuf.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlsymbol.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/utlhashtable.h>
+#include <tier0/utlmap.h>
+#include <tier0/utldict.h>
+#include <tier0/utlsortvector.h>
+#include <tier0/threadtools.h>
 #include <tier1/utldelegate.h>
 #include <tier0/logging.h>
 #include <tier0/convar.h>
@@ -144,7 +150,83 @@ public:
 	CConCommandMemberAccessor< CNetworkMessages > m_NetValidateMessagesCommand; // "net_validatemessages"
 	CConCommandMemberAccessor< CNetworkMessages > m_NetListAllMessagesCommand; // "net_listallmessages"
 	CConCommandMemberAccessor< CNetworkMessages > m_NetMessageInfoCommand; // "net_messageinfo"
-	byte m_pad0C8[1616];
+
+	struct NetCategoryInfo_t
+	{
+		CUtlString m_DebugName; // Set by RegisterNetworkCategory
+		int m_nAssociationCount; // Incremented by AssociateNetMessageWithChannelCategoryAbstract and AssociateNetMessageGroupIdWithChannelCategory
+	};
+
+	// Registered by RegisterNetworkFieldChangeCallbackInternal
+	struct ChangeCallbackInfo_t
+	{
+		CUtlAbstractDelegate m_Callback;
+		uint64 m_nUnk1; // The unnamed uint64 argument
+		uint8 m_FieldType; // NetworkFieldChangedDelegateType_t
+		NetworkFieldChangeCallbackPerformType_t m_PerformType;
+		int m_nPriority;
+		bool m_bUnk1;
+	};
+
+	// Set by SetNetworkSerializationContextData, one pointer per serialization mode
+	struct NetworkContextData_t
+	{
+		::NetworkContextData_t *m_pData[NET_SERIALIZATION_MODE_COUNT];
+	};
+
+	class CPriorityLess
+	{
+	public:
+		bool Less( const int &lhs, const int &rhs, void *pCtx );
+	};
+
+	CUtlVector< NetCategoryInfo_t > m_NetCategories; // Indexed by NetworkCategoryId, 32 entries
+
+	// Messages that can be networked, registered by FindOrCreateNetMessage
+	CUtlMap< NetworkMessageId, INetworkSerializerPB *, unsigned short > m_NetworkableMessages;
+	CUtlMap< int, int, unsigned short > m_NetworkableMessageNameIndices; // Keyed by the name symbol
+	CUtlSymbolTable m_NetworkableMessageNames;
+	CThreadSpinRWLock m_NetworkableMessageNamesLock;
+	CAtomicMutex m_NetworkableMessagesMutex;
+
+	// Messages registered with bCannotBeNetworked, ids are auto-assigned
+	CUtlMap< NetworkMessageId, INetworkSerializerPB *, unsigned short > m_NonNetworkableMessages;
+	CUtlMap< int, int, unsigned short > m_NonNetworkableMessageNameIndices; // Keyed by the name symbol
+	CUtlSymbolTable m_NonNetworkableMessageNames;
+	CThreadSpinRWLock m_NonNetworkableMessageNamesLock;
+	CAtomicMutex m_NonNetworkableMessagesMutex;
+
+	CUtlDict< void *, unsigned int > m_FakeFieldInfos; // Values are 96-byte records numbered by m_nFakeFieldInfoCount, created for fake serializer fields
+	CUtlSymbolTable m_NetworkGroupNames; // NetworkGroupId is the symbol, at most 256 groups
+	CThreadSpinRWLock m_NetworkGroupNamesLock;
+
+	CUtlDict< CUtlString, unsigned int > m_SchemaTypeOverrides; // RegisterSchemaTypeOverride
+
+	byte m_NetworkFieldSerializers[24]; // CUtlVector of 120-byte records, RegisterNetworkFieldSerializer
+	CUtlSymbolTable m_NetworkFieldSerializerNames;
+	CThreadSpinRWLock m_NetworkFieldSerializerNamesLock;
+
+	byte m_NetworkArrayFieldSerializers[24]; // CUtlVector of 104-byte records, RegisterNetworkArrayFieldSerializer
+	CUtlSymbolTable m_NetworkArrayFieldSerializerNames;
+	CThreadSpinRWLock m_NetworkArrayFieldSerializerNamesLock;
+
+	CUtlHashtable< CUtlSymbolLarge, ChangeCallbackInfo_t, PointerHashFunctor, PointerEqualFunctor > m_FieldChangeCallbacks; // Keyed by m_FieldChangeCallbackNames symbols
+	CUtlSymbolTableLarge m_FieldChangeCallbackNames;
+
+	CUtlVector< NetworkContextData_t > m_NetworkSerializationContexts; // Indexed by NetworkContextDataId
+	CUtlSymbolTable m_NetworkSerializationContextNames;
+	CThreadSpinRWLock m_NetworkSerializationContextNamesLock;
+
+	CUtlSortVector< int, CPriorityLess > m_FieldChangeCallbackPriorities; // RegisterFieldChangeCallbackPriority
+	int m_nFakeFieldInfoCount;
+	bool m_bAllowAdditionalMessageRegistration;
+	bool m_bCanStillRegisterCallbackPriorities;
+	bool m_bIsForServer;
+	CAtomicMutex m_MessageRegistrationMutex; // Held by FindOrCreateNetMessage
+	CAtomicMutex m_FakeFieldInfosMutex; // Held while inserting into m_FakeFieldInfos
+	CAtomicMutex m_FieldChangeCallbackPrioritiesMutex;
+	CUtlSymbolTableLargeMT m_UnkSymbolTableMT; // Purged by two network system helpers, no name found
+	CUtlAbstractDelegate m_NetworkChangeTagCallback; // SetNetworkChangeTagCallback
 	byte m_CoordEncodingParams[96]; // SetCoordEncodingParams copies it, GetCoordEncodingParams returns its address
 };
 
