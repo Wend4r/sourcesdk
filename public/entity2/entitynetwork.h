@@ -291,9 +291,11 @@ public:
 	// Most offsets one shared change info record holds
 	noschema int32 m_nMaxChangedOffsets;
 
-	noschema Entity2Networkable_t *m_pNetworkable;
+	// Set when the component is bound to its entity
+	noschema CEntityInstance *m_pEntityInstance;
 
-	noschema int32 m_nUnk2F0; // -1 at construction
+	// Index of the entity, set when the component is bound to it; -1 at construction
+	noschema int32 m_nEntityIndex;
 	noschema uint16 m_nSharedChangeInfoIndex;
 	noschema uint16 m_nSharedChangeInfoSerial; // Serial paired with m_nSharedChangeInfoIndex
 
