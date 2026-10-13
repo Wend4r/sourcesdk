@@ -24,6 +24,7 @@ class IAssetPreviewEmbedded;
 class IAssetPreviewLive;
 class IAssetPreviewExternal;
 class IAssetPreviewSettingsChangedListener;
+class ILiveEmbeddedPreviewStateListener;
 class IToolSceneNodeControllerFactory;
 
 abstract_class IAssetPreviewSystem : public IAppSystem
@@ -36,8 +37,9 @@ public:
 	virtual IAssetPreviewExternal *CreateExternalPreview() = 0;
 	virtual void DestroyExternalPreview( IAssetPreviewExternal *pPreview ) = 0;
 
-	// Creates the two light rig controllers
-	virtual void unk017( bool bUnknown ) = 0;
+	// Creates the two light rig controllers; the tool framework calls it during Init ("Initializing
+	// preview system...") with false when "-disableassetsystem" is set
+	virtual void unk017( bool bAssetSystemEnabled ) = 0;
 
 	// Opens the thumbnail cache management window
 	virtual void ShowThumbnailCacheManager() = 0;
@@ -66,8 +68,8 @@ public:
 	virtual void LoadSettings( KeyValues3 *pSettings ) = 0;
 
 	// Listeners called with the new value by SetLivePreviewEnabled
-	virtual void unk031( void *pListener ) = 0;
-	virtual void unk032( void *pListener ) = 0;
+	virtual void AddLiveEmbeddedPreviewStateListener( ILiveEmbeddedPreviewStateListener *pListener ) = 0;
+	virtual void RemoveLiveEmbeddedPreviewStateListener( ILiveEmbeddedPreviewStateListener *pListener ) = 0;
 
 	virtual void ResetBackgroundColor() = 0;
 
@@ -102,7 +104,9 @@ public:
 	virtual void PruneStaleThumbnails() = 0;
 	virtual void *unk054( void *p ) = 0;
 
-	virtual bool GenerateThumbnails( void *pUnk1, int nUnk2, bool bUnk3 ) = 0;
+	// Arguments of the "-generatethumbnailssubstr", "-generatethumbnailsmaxtime" (300 by default)
+	// and "-generatethumbnailsclear" command line options
+	virtual bool GenerateThumbnails( const char *pSubstr, int nMaxTime, bool bClear ) = 0;
 
 	virtual ~IAssetPreviewSystem() {}
 };
