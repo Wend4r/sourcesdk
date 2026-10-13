@@ -267,7 +267,7 @@ public:
 	virtual int GetWorldCount() = 0;
 	virtual IVPhysics2World *GetWorld( int nIndex ) = 0;
 
-	virtual void SimulateWorlds( IVPhysics2World **ppWorlds, int nWorldCount, float flTimeStep, int nSubsteps, bool bAllowThreading, void *pContext ) = 0;
+	virtual void SimulateWorlds( IVPhysics2World **ppWorlds, int nWorldCount, float flTimeStep, int nSubsteps, bool bAllowThreading, VPhysXWorldStepResults *pResults ) = 0;
 
 	// Steps the softbodies of all given worlds in parallel jobs, nSubsteps times flSubstepTime each
 	virtual void SimulateSoftbodies( IVPhysics2World **ppWorlds, int nWorldCount, float flSubstepTime, int nSubsteps ) = 0;
