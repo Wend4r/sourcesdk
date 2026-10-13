@@ -16,6 +16,7 @@
 #include "appframework/iappsystem.h"
 #include "resourcesystem/resourcehandle.h"
 #include "tier0/threadtools.h"
+#include "tier0/utlhandletable.h"
 #include "tier0/utlsymbollarge.h"
 #include "tier0/utlvector.h"
 #include "tier3/tier3.h"
@@ -79,7 +80,7 @@ public:
 	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &blackboardResourceName, CBasePulseGraphInstance *pListenerInstance, int nVarDocNodeID, const void *pPrevValue, const void *pCurValue ) = 0;
 
 	virtual void *GetTypeQueriesForScopes() = 0;
-	virtual void *GetOpaqueHandleTable() = 0;
+	virtual CUtlHandleTable< void, 10 > *GetOpaqueHandleTable() = 0;
 
 	virtual void ForEachGraphInstance( const std::function< void( CBasePulseGraphInstance * ) > &func ) = 0;
 
@@ -206,9 +207,10 @@ public:
 	// CUtlHashtable with 24-byte entries, walked by ForEachGraphInstance and the execution history methods
 	uint64 m_UnkB150[ 4 ];
 
-	// Returned by GetTypeQueriesForScopes and GetOpaqueHandleTable
+	// Returned by GetTypeQueriesForScopes
 	void *m_pUnkB170;
-	void *m_pUnkB178;
+
+	CUtlHandleTable< void, 10 > *m_pOpaqueHandleTable;
 
 	// CUtlMap< PulseSymbol_t, IPulseBlackboardView *, int > filled by RegisterBlackboard and read by FindBlackboard
 	uint64 m_Blackboards[ 5 ];
