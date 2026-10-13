@@ -468,7 +468,7 @@ public:
 	CUtlVector< uint8 > m_ToolsToUnload;
 
 	// CEnvironmentBlock returned by GetEnvironmentBlock, captured by Connect
-	uint8 m_unk0A8[ 0x30 ];
+	uint8 m_EnvironmentBlock[ 0x30 ];
 
 	// Labels added by AddSplashScreenLabel to the loading splash screen
 	QWidget *m_pSplashScreen;
@@ -502,7 +502,7 @@ public:
 	uint8 m_unk214[ 4 ];
 
 	// "VToolMessage" notification channel
-	uint8 m_unk218[ 0x18 ];
+	uint8 m_VToolMessageChannel[ 0x18 ];
 
 	// Listeners of RegisterResponseListener
 	CUtlVector< void * > m_ResponseListeners;
