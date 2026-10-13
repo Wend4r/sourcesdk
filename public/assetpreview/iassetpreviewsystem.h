@@ -55,7 +55,8 @@ public:
 	// Queues the thumbnail for generation when it is not cached yet
 	virtual bool GetThumbnail( void *pAsset, QPixmap *pPixmap ) = 0;
 
-	// Thumbnail database lookup by asset path
+	// Thumbnail database lookup by asset path. Takes by value a 16-byte span (entries, 64-bit count) of
+	// 16-byte entries: fingerprint, found flag, then the asset
 	virtual bool unk024( void *pUnk ) = 0;
 
 	virtual bool IsLivePreviewEnabled() = 0;
@@ -76,6 +77,7 @@ public:
 	virtual void AddSettingsChangedListener( IAssetPreviewSettingsChangedListener *pListener ) = 0;
 	virtual void RemoveSettingsChangedListener( IAssetPreviewSettingsChangedListener *pListener ) = 0;
 
+	// Both take 16-byte spans (asset pointers, 64-bit count) by value, which MSVC passes by address
 	virtual void MaybeUpdateThumbnail( void *pAsset ) = 0;
 	virtual void unk037( void *pAsset1, void *pAsset2 ) = 0;
 
@@ -92,7 +94,9 @@ public:
 
 	virtual void ReloadLightRigConfig() = 0;
 
-	virtual void *unk049() = 0;
+	// Waits for the thumbnail worker and clears its pending requests; the asset browser calls it before
+	// resetting all tool settings
+	virtual void unk049() = 0;
 
 	// Cached command line switch
 	virtual bool unk050() = 0;
