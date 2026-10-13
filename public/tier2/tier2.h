@@ -78,7 +78,8 @@ class CTier2AppSystemDict : public CTier1AppSystemDict
 public:
 	CUtlStringMap<int> m_addonRefcounts;
 	CUtlStringMap<KeyValues3 *> m_addonInfo;
-	CUtlVector<void*> m_StartupManifests;
+	KeyValues *m_pKeyValues;
+	CUtlLeanVector< void * > m_StartupManifests;
 	int m_nStartupManifestSuppressionCount;
 	bool m_bStaleStartupResources;
 	bool m_bUseModPathBinDir;
