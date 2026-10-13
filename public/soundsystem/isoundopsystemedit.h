@@ -14,7 +14,10 @@
 #include "appframework/iappsystem.h"
 #include "soundsystem/isoundopsystem.h"
 
+class CSosOperatorSystem;
+class CSoundMixGroupSystem;
 class CUtlString;
+class CUtlSymbolTable;
 class KeyValues3;
 struct ResourceBindingBase_t;
 
@@ -132,21 +135,29 @@ public:
 	virtual void *unk082( HSOSLIBSTACKHASH hStack, int *pnSize ) = 0;
 	virtual bool unk083( HSOSLIBSTACKHASH hStack, uint32 nFieldToken ) = 0;
 	virtual bool unk083( const char *pStackName, const char *pFieldName ) = 0;
-	virtual void unk085() = 0;
-	virtual void unk086() = 0;
-	virtual void unk087() = 0;
-	virtual void unk088() = 0;
-	virtual void unk089() = 0;
-	virtual void unk090() = 0;
-	virtual void unk091() = 0;
-	virtual void unk092() = 0;
-	virtual void unk093() = 0;
-	virtual void unk094() = 0;
-	virtual void unk095() = 0;
-	virtual void unk096() = 0;
-	virtual void unk097() = 0;
-	virtual void unk098() = 0;
-	virtual void unk099() = 0;
+	// Fills a field entry of unk074, the lookup is empty and it returns false
+	virtual bool unk085( HSOSLIBSTACKHASH hStack, uint32 nUnk, const void *pUnk, void *pField ) = 0;
+	// Three name lists of the operator type, the char * elements are copies the caller deletes
+	virtual void unk086( const char *pName, CUtlVector< char * > &list ) = 0;
+	virtual void unk087( const char *pName, CUtlVector< char * > &list ) = 0;
+	virtual void unk088( const char *pName, CUtlVector< char * > &list ) = 0;
+	// Stops every sound event, empties the library stacks and returns the SoundSystem/UsePlatTime setting
+	virtual bool unk089() = 0;
+	// Text of a field value, characters other than digits, '-', '.' and ' ' become spaces for the float types
+	virtual CUtlString unk090( const CUtlString &sValue, SOFieldDataType_t nType ) = 0;
+	virtual void *unk091() = 0;
+	virtual void *unk092() = 0;
+	// Loads the sound mixers
+	virtual bool unk093() = 0;
+	virtual CSoundMixGroupSystem *unk094() = 0;
+	// Adds the names that do not start with an underscore
+	virtual void unk095( CUtlSymbolTable *pNames ) = 0;
+	virtual uint32 unk096( const char *pName ) = 0;
+	// Replaces the library stack with the one in pStack
+	virtual bool unk097( const char *pStackName, KeyValues3 *pStack ) = 0;
+	virtual CSosOperatorSystem *unk098() = 0;
+	// Table of the operator types
+	virtual void *unk099() = 0;
 };
 
 class CSosEdit : public CTier2AppSystem< ISoundOpSystemEdit >
