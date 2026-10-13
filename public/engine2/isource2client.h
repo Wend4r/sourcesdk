@@ -45,6 +45,7 @@ class KeyValues;
 class QAngle;
 class Vector;
 class Vector4D;
+struct EconItemInfo_t;
 struct FlattenedSerializerSpewField_t;
 struct ParticleProjectedTextureInfo_t;
 struct RenderViewport_t;
@@ -320,14 +321,14 @@ public:
 	virtual void unk188( int nUnk, void *pUnk1, void *pUnk2 ) = 0;
 
 	virtual void unk189( void *pUnk, int nUnk1, int nUnk2 ) = 0;
-	virtual void unk190() = 0;
-	virtual void unk191() = 0;
-	virtual void unk192() = 0;
-	virtual void unk193() = 0;
+	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
+	virtual void GetEconItemsInfoForCharacter( const char *pszCharacterName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void unk194() = 0;
 	virtual void *unk195() = 0;
-	virtual float unk196() = 0;
-	virtual float unk197() = 0;
+	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
+	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
 	virtual void unk198( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 	virtual bool unk199( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 	virtual void unk200() = 0;
