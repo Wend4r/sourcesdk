@@ -93,15 +93,15 @@ public:
 	virtual void ParseParticleState( CUtlBuffer &buf, float flTimeStep ) = 0;
 	virtual CUtlString PrintParticleState() const = 0;
 	virtual int GetParticleCount() const = 0;
-	virtual void unk041( int nParticle, const CTransform &tm ) = 0;
+	virtual void SetCtrl( int nParticle, const CTransform &tm ) = 0;
 	virtual Vector GetCtrlVelocity( uint nCtrl ) const = 0;
 
 	virtual void unk043( float flValue ) = 0;
 	virtual float unk044() const = 0;
 
 	virtual bool unk045( int nUnknown, void *pUnknown ) = 0;
-	virtual void *unk046( int nUnknown ) = 0;
-	virtual void unk047( int nUnknown ) = 0;
+	virtual void *FindEffect( int nEffectId ) = 0;
+	virtual void RemoveEffect( int nEffectId ) = 0;
 
 	virtual void unk048( bool bUnknown ) = 0;
 	virtual bool unk049() const = 0;
@@ -212,9 +212,9 @@ public:
 	virtual void unk122( bool bUnknown ) = 0;
 	virtual bool unk123() const = 0;
 
-	virtual void unk124( IPhysicsSoftbody *pOther ) = 0;
-	virtual void unk125( IPhysicsSoftbody *pOther ) = 0;
-	virtual void unk126() = 0;
+	virtual void LinkSoftbody( IPhysicsSoftbody *pOther ) = 0;
+	virtual void UnlinkSoftbody( IPhysicsSoftbody *pOther ) = 0;
+	virtual void UnlinkAllSoftbodies() = 0;
 	virtual void unk127( IPhysicsSoftbody *pOther ) = 0;
 
 	virtual bool unk128() const = 0;
@@ -223,7 +223,7 @@ public:
 	virtual void unk129() = 0;
 	virtual int unk130() const = 0;
 
-	virtual uint unk131() const = 0;
+	virtual uint GetIndexInWorld() const = 0;
 	virtual CRnSoftbody *GetSoftbody() const = 0;
 
 	// Empty in release builds
@@ -247,13 +247,13 @@ struct FnPhysicsSoftbodyUnk006_t
 abstract_class IFnPhysicsSoftbody
 {
 public:
-	virtual void unk000( IPhysicsSoftbody *pSoftbody ) = 0;
-	virtual IPhysicsSoftbody *unk001() const = 0;
-	virtual void unk002( CRnSoftbody *pSoftbody ) = 0;
-	virtual CRnSoftbody *unk003() const = 0;
+	virtual void SetSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
+	virtual IPhysicsSoftbody *GetSoftbody() const = 0;
+	virtual void SetRnSoftbody( CRnSoftbody *pSoftbody ) = 0;
+	virtual CRnSoftbody *GetRnSoftbody() const = 0;
 
 	// Appends the non-default cloth settings
-	virtual void unk004( CBufferString *pDescription ) const = 0;
+	virtual void Describe( CBufferString *pDescription ) const = 0;
 
 	// Empty in release builds
 	virtual void unk005() = 0;
@@ -273,20 +273,20 @@ public:
 	// Empty in release builds
 	virtual void unk012() = 0;
 
-	virtual void unk013( int8 nValue ) = 0;
-	virtual int8 unk014() const = 0;
-	virtual void unk015( int8 nValue ) = 0;
-	virtual int8 unk016() const = 0;
-	virtual void unk017( uint8 nValue ) = 0;
-	virtual uint8 unk018() const = 0;
+	virtual void SetDebugDrawTreeBeginLevel( int8 nLevel ) = 0;
+	virtual int8 GetDebugDrawTreeBeginLevel() const = 0;
+	virtual void SetDebugDrawTreeEndLevel( int8 nLevel ) = 0;
+	virtual int8 GetDebugDrawTreeEndLevel() const = 0;
+	virtual void SetDebugDrawTreeFlags( uint8 nFlags ) = 0;
+	virtual uint8 GetDebugDrawTreeFlags() const = 0;
 
-	virtual void unk019( bool bEnable ) = 0;
+	virtual void EnableDebugDraw( bool bEnable ) = 0;
 	virtual void unk020( uint8 nUnknown ) = 0;
-	virtual bool unk021() const = 0;
+	virtual bool IsDebugDrawEnabled() const = 0;
 	virtual void unk022( void *pUnknown ) = 0;
 
 	// Active state, false without a softbody
-	virtual bool unk023() const = 0;
+	virtual bool IsActive() const = 0;
 
 	virtual void unk024( int nValue ) = 0;
 
@@ -295,16 +295,16 @@ public:
 	virtual int unk026() const = 0;
 
 	// Appends a one line description of the softbody and its state
-	virtual void unk027( CUtlString *pDescription ) const = 0;
+	virtual void AppendDebugInfo( CUtlString *pDescription ) const = 0;
 
 	// Index of the softbody in its world, -1 without a softbody
-	virtual int unk028() const = 0;
+	virtual int GetIndexInWorld() const = 0;
 
 	virtual uint unk029() const = 0;
 	virtual void unk030( bool bUnknown ) = 0;
 	virtual uint unk031() const = 0;
 	virtual int unk032() const = 0;
-	virtual int unk033() const = 0;
+	virtual int GetEffectCount() const = 0;
 	virtual void unk034( int nIndex, void *pUnknown ) = 0;
 	virtual void unk035( float flValue ) = 0;
 	virtual void unk036( bool bEnable ) = 0;
@@ -316,9 +316,9 @@ public:
 	virtual AABB_t unk039() const = 0;
 
 	// Softbodies linked to this one
-	virtual int unk040() const = 0;
-	virtual IPhysicsSoftbody *unk041( int nIndex ) const = 0;
-	virtual void unk042() = 0;
+	virtual int GetLinkedSoftbodyCount() const = 0;
+	virtual IPhysicsSoftbody *GetLinkedSoftbody( int nIndex ) const = 0;
+	virtual void UnlinkAllSoftbodies() = 0;
 
 	virtual int unk043() const = 0;
 	virtual void unk044( void *pUnknown ) = 0;
