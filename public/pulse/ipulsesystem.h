@@ -76,8 +76,8 @@ public:
 	virtual void QueueObservableVariableSourceChangedEvent( const PulseSymbol_t &clock, CBasePulseGraphInstance *pInstance, int nVariable, const void *pPrevValue, const void *pCurValue ) = 0;
 	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &blackboardResourceName, CBasePulseGraphInstance *pListenerInstance, int nVarDocNodeID, const void *pPrevValue, const void *pCurValue ) = 0;
 
-	virtual void *Unk_GetTypeQueriesForScopes() = 0;
-	virtual void *Unk_GetOpaqueHandleTable() = 0;
+	virtual void *GetTypeQueriesForScopes() = 0;
+	virtual void *GetOpaqueHandleTable() = 0;
 
 	virtual void ForEachGraphInstance( const std::function< void( CBasePulseGraphInstance * ) > &func ) = 0;
 
@@ -101,8 +101,8 @@ public:
 	virtual void *GetExecutionHistory( PulseGraphInstanceID_t id ) = 0;
 
 	// Opaque pointer stored with the graph's runtime data.
-	virtual void Unk_SetGraphUserData( ResourceHandle_t hGraph, void *pUserData ) = 0;
-	virtual void *Unk_GetGraphUserData( ResourceHandle_t hGraph ) = 0;
+	virtual void SetGraphUserData( ResourceHandle_t hGraph, void *pUserData ) = 0;
+	virtual void *GetGraphUserData( ResourceHandle_t hGraph ) = 0;
 
 	virtual CPulseExecCursor *GetExecutingCursor() = 0;
 	virtual bool PushExecutingCursor( CPulseExecCursor *pCursor, CPulseExecCursor **ppPrevious ) = 0;
@@ -115,7 +115,7 @@ public:
 
 	virtual HPulseGraphDefWeak CreateTestGraphDef( CPulseGraphDef *pDef ) = 0;
 
-	virtual bool Unk_ReplaceGraphDefData( ResourceHandle_t hGraph, CPulseGraphDef *pNewDef, void *pUnk ) = 0;
+	virtual bool ReplaceGraphDefData( ResourceHandle_t hGraph, CPulseGraphDef *pNewDef, void *pUnk ) = 0;
 
 	virtual int GetTestIntValue() = 0;
 	virtual void SetTestIntValue( int nValue, bool bNotify ) = 0;
@@ -129,7 +129,7 @@ public:
 
 	virtual void RegisterBlackboard( const PulseSymbol_t &name, IPulseBlackboardView *pBlackboard ) = 0;
 	virtual IPulseBlackboardView *FindBlackboard( const PulseSymbol_t &name ) = 0;
-	virtual void Unk_RemoveAllBlackboards() = 0;
+	virtual void RemoveAllBlackboards() = 0;
 	// Copies every registered blackboard into its read-only view.
 	virtual void UpdateReadOnlyBlackboardViews() = 0;
 
@@ -146,8 +146,8 @@ public:
 	virtual void LoadInstanceSystemState( CBasePulseGraphInstance *pInstance, CKV3TransferLoadContext *pContext ) = 0;
 	virtual void SaveInstanceSystemState( CBasePulseGraphInstance *pInstance, CKV3TransferSaveContext *pContext ) = 0;
 
-	virtual bool Unk_IsDomainAvailable( const char *pszDomain, int nScope ) = 0;
-	virtual CBasePulseGraphInstance *Unk_CreateGraphInstanceForDomain( const char *pszDomain ) = 0;
+	virtual bool IsDomainAvailable( const char *pszDomain, int nScope ) = 0;
+	virtual CBasePulseGraphInstance *CreateGraphInstanceForDomain( const char *pszDomain ) = 0;
 
 	virtual void RemovePendingEventsForCursor( CPulseExecCursor *pCursor ) = 0;
 	virtual void RecordExecutionHistory( CPulseExecCursor *pCursor, uint16 nEventType, int nEditorID, const PulseSymbol_t &seqPoint ) = 0;
@@ -176,7 +176,7 @@ public:
 
 	uint8 m_pad0F8[ 0xB078 ];
 
-	// Returned by Unk_GetTypeQueriesForScopes and Unk_GetOpaqueHandleTable
+	// Returned by GetTypeQueriesForScopes and GetOpaqueHandleTable
 	void *m_pUnkB170;
 	void *m_pUnkB178;
 
