@@ -112,13 +112,14 @@ public:
 	bool m_bTypeManifestPriorityHasBeenSpecified;
 
 	// Filled by SetResourceTypeManifestPriority
-	CUtlHashtable< ResourceType_t, int > m_Unk2DF8;
+	CUtlHashtable< ResourceType_t, int > m_ResourceTypeManifestPriorities;
 
 	CThreadEvent m_ResourceProgressEvent;
 	CUtlSymbolTableLarge m_ResourceNameSymbols;
 	CUtlStringList m_whiteListedMissingResourceNames;
 	CUtlVectorFixedGrowable< ForcedSynchronizationCallbackInfo_t, 8 > m_ForcedSynchronizationCallbacks;
-	uint64 m_Unk2F40[ 10 ];
+	// Reference counts of the "ugc:" resources, keyed by the published file id (container not identified)
+	uint64 m_UGCReferences[ 10 ];
 	CUtlVector< IToolsResourcePreReloadListener * > m_ToolsResourceListeners;
 
 	// AddResourceListeners and RemoveResourceListeners pick one by the listener kind
@@ -137,10 +138,10 @@ public:
 	IFileSystem *m_pPreviousFullFileSystem;
 
 	// Filled by QueueCallbackForNextUpdate
-	CUtlVector< CUtlDelegate< void () > > m_Unk3008;
+	CUtlVector< CUtlDelegate< void () > > m_NextUpdateCallbacks;
 
 	// Lock, Unlock and IsLockedByCurrentThread
-	CAtomicMutex m_Unk3020;
+	CAtomicMutex m_Lock;
 
 	CTSListBase m_Unk3030;
 };
