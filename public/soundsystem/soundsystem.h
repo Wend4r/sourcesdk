@@ -58,35 +58,42 @@ public:
 class CSoundSystem : public CTier2AppSystem< ISoundSystem >, public IVConCommDataReceived
 {
 public:
-	uint32 m_nUnk030;
-	uint32 m_nUnk034;
-	uint32 m_nUnk038;
-	uint32 m_nUnk03C;
+	// Last guids handed out by GenerateLocalSoundGuid, GenerateServerSoundGuid, GenerateLocalSoundEventGuid and GenerateServerSoundEventGuid
+	uint32 m_nLastLocalSoundGuid;
+	uint32 m_nLastServerSoundGuid;
+	uint32 m_nLastLocalSoundEventGuid;
+	uint32 m_nLastServerSoundEventGuid;
 	bool m_bUnk040 : 1;
 	bool m_bNeedsRestart : 1;
 	uint8 m_pad041[ 0xF ];
-	CVMixTypeManager *m_pUnk050;
+	CVMixTypeManager *m_pVMixTypeManager;
 
 	// Copy of the last audio state passed to Update, extended by the listener data the mixer derives from it
 	struct : public CAudioState
 	{
-		float m_flUnk118;
-		uint32 m_nUnk11C[ 4 ];
-		int m_nUnk12C;
+		// snd_gain, snd_musicvolume, snd_gamevolume, snd_gamevoicevolume and snd_voipvolume of the frame
+		float m_flGain;
+		float m_flMusicVolume;
+		float m_flGameVolume;
+		float m_flGameVoiceVolume;
+		float m_flVoipVolume;
+		int m_nActiveListenerCount;
 		bool m_bUnk130;
 		bool m_bUnk131;
-		Vector m_vecUnk134[ 4 ][ 4 ];
+		audio_listener_vectors_t m_ListenerVectors[ 4 ];
 	} m_AudioState;
 
 	CAudioDeviceList m_DeviceList;
 	double m_flDisableMuteUntil;
 	uint8 m_pad298[ 0x8 ];
-	CSoundDebugVisualizer *m_pUnk2A0;
+	CSoundDebugVisualizer *m_pDebugVisualizer;
 	float m_flUnk2A8;
-	int m_nUnk2AC;
-	CVSndParameterTable m_Unk2B0;
-	CThreadFastMutex m_UnkMutex2C8;
-	CTSQueue< std::function< void() > * > m_Unk2E0;
+	int m_nInitCount;
+	CVSndParameterTable m_VSndParameterTable;
+	// Guards the networked voice streams
+	CThreadFastMutex m_VoiceStreamMutex;
+	// Functions queued by QueueFunction
+	CTSQueue< std::function< void() > * > m_QueuedFunctions;
 	uint8 m_pad320[ 0x2 ];
 	bool m_bUnk322;
 	bool m_bUnk323;
