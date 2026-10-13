@@ -337,8 +337,8 @@ public:
 	virtual void UnregisterSceneLightListener( ISceneLightListener *pListener ) = 0;
 
 	// Add and remove a listener of the global scene object list, which is notified when a scene object is deleted.
-	virtual void unk165( ISceneObjectListener *pListener ) = 0;
-	virtual void unk166( ISceneObjectListener *pListener ) = 0;
+	virtual void RegisterSceneObjectListener( ISceneObjectListener *pListener ) = 0;
+	virtual void UnregisterSceneObjectListener( ISceneObjectListener *pListener ) = 0;
 
 	// The mode is kept per requester; GetGPUProfilerMode returns the union of all requested modes.
 	virtual void SetGPUProfilerMode( CUtlStringToken requester, SceneSystemGPUProfilerMode_t eGPUProfilerMode ) = 0;
