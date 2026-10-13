@@ -124,13 +124,15 @@ struct NetworkStateChangedLookupKey_t
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedLookupKey_t ) == 8 );
 
-struct NetworkStateChangedLookupCache_t
+// The last 16 looked up keys, split in two arrays that are compared four at a time
+struct ALIGN16 NetworkStateChangedLookupCache_t
 {
-	NetworkStateChangedLookupKey_t m_Keys[16];
+	uint32 m_nLocalOffsets[16];
+	ChangeAccessorFieldPathIndex_t m_PathIndices[16];
 	int32 m_nCount;
 	int32 m_nNextSlot;
-};
-COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedLookupCache_t ) == 136 );
+} ALIGN16_POST;
+COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedLookupCache_t ) == 144 );
 
 struct NetworkSharedChangeRecord_t
 {
@@ -180,11 +182,8 @@ struct NetworkSharedChangeInfoOverflow_t
 	CUtlLeanVectorFixedGrowable< int32, 4 > m_ChangeAccessorPaths;
 	void *m_pRootPathOffsetLookup;
 	CUtlVectorFixedGrowableCompat< void *, 4 > m_PathOffsetLookups;
-	uint8 m_pad058[0x08];
 	NetworkStateChangedLookupCache_t m_CachedIgnoredLookups;
-	uint8 m_pad0E8[0x08];
 	NetworkStateChangedLookupCache_t m_CachedTrackedLookups;
-	uint8 m_pad178[0x08];
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfoOverflow_t ) == 384 );
 
