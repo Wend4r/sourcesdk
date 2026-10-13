@@ -190,9 +190,9 @@ public:
 //-----------------------------------------------------------------------------
 // Purpose: Concrete client base. Adds the network message Process* handlers,
 // clock-drift / prediction internals and the sign-on state machine.
-// Overrides of the secondary bases (message pre-filter, connectionless packet
-// handler, channel notify, game event watcher) live in their own vtables on
-// Windows and are not declared here.
+// Overrides of the secondary bases (message pre-filter, channel notify, game
+// event watcher) and the destructor live only in their own vtables on Windows;
+// the Itanium ABI also gives each of them a slot at its declaration here.
 //-----------------------------------------------------------------------------
 class CNetworkGameClientBase : public INetworkGameClient, public CUtlSlot, public INetworkMessageProcessingPreFilter, public IConnectionlessPacketHandler, public INetworkChannelNotify, public IGameEventWatcher
 {
@@ -206,6 +206,10 @@ public:
 	virtual void *unk069() = 0;
 	virtual void *unk070() = 0;
 	virtual void *unk071() = 0;
+
+	// Overrides the connectionless packet handler's virtual destructor: no slot of its own on Windows, two here on Linux
+	virtual ~CNetworkGameClientBase() {}
+
 	virtual void *unk072() = 0;
 	virtual void *unk073() = 0;
 	virtual void ApplyClockDrift( int nServerTick, int nClientTick ) = 0;
@@ -220,6 +224,12 @@ public:
 	virtual void *unk083() = 0;
 	virtual void *unk084() = 0;
 	virtual void *unk085() = 0;
+
+	// Overrides of the secondary bases: no slots of their own on Windows, one each here on Linux
+	virtual bool FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) override = 0;
+	virtual void OnShutdownChannel( INetChannel *pChannel, bool bUnk ) override = 0;
+	virtual bool OnGameEventReceived( const CNetMessage *pData ) override = 0;
+
 	virtual void *unk086() = 0;
 	virtual void *unk087() = 0;
 
@@ -348,10 +358,14 @@ public:
 	bool m_bBlockDisconnectionTracking;
 };
 
-// The most-derived client class. Overrides a handful of base virtuals but
-// adds no new vtable slots.
+// The most-derived client class. Overrides a handful of base virtuals and
+// adds no new slots on Windows.
 class CNetworkGameClient : public CNetworkGameClientBase, public ISwitchLoopModeStatusNotify
 {
+public:
+	// Last slot of the Linux primary vtable; on Windows only in the notify vtable
+	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nUnk, bool bSuccess ) override = 0;
+
 public:
 	CClientFrameManager m_FrameManager;
 	uint64 m_unk2C1520[ 0x2008 / 8 ];
