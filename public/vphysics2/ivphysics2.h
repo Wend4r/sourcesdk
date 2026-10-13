@@ -32,6 +32,7 @@ class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
+class CSceneAnimatableObject;
 class IPhysSerialStreamSnapshot;
 class IDataDescConvertor;
 class CPhysAggregateData;
@@ -67,6 +68,8 @@ struct RnMesh_t;
 struct RnCompound_t;
 struct PhysicsBodyDef_t;
 struct VPhysXAggregateData_t;
+struct DebugSceneObjectParams_t;
+struct SceneObjectBuffers_t;
 struct EmbeddedPhysicsInfo_t;
 struct RnHullSimplificationParams_t;
 
@@ -329,8 +332,8 @@ public:
 	// Debug draws every world (physics_debug_draw)
 	virtual void DebugDrawWorlds( ISceneViewDebugOverlays *pDebugOverlays ) = 0;
 
-	virtual void CreateDebugSceneObject( void *p ) = 0;
-	virtual void DestroyDebugSceneObject( void *pSceneObject ) = 0;
+	virtual bool CreateDebugSceneObject( const DebugSceneObjectParams_t &params, SceneObjectBuffers_t *pOut ) = 0;
+	virtual void DestroyDebugSceneObject( CSceneAnimatableObject *pSceneObject ) = 0;
 	virtual void UpdateDebugSceneObject( void *p ) = 0;
 
 	// Empty
