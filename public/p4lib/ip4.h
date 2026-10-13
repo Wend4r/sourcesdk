@@ -83,10 +83,10 @@ struct P4Revision_t
 //-----------------------------------------------------------------------------
 struct P4Client_t
 {
-	CUtlSymbol m_sName;
-	CUtlSymbol m_sUser;
-	CUtlSymbol m_sHost;			// machine name this client is on
-	CUtlSymbol m_sLocalRoot;	// local path
+	CUtlSymbolLarge m_sName;
+	CUtlSymbolLarge m_sUser;
+	CUtlSymbolLarge m_sHost;		// machine name this client is on
+	CUtlSymbolLarge m_sLocalRoot;	// local path
 };
 
 
