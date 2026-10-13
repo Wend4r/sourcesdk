@@ -60,7 +60,7 @@ public:
 	uint8 m_unk090[ 0x48 ];
 
 	// Vector of 48-byte compile messages that carry their severity (1 warning, 2 error)
-	uint8 m_unk0D8[ 0x18 ];
+	uint8 m_CompileMessages[ 0x18 ];
 
 	// Warning and error counts added to the compile summary
 	int m_nUnk0F0;
