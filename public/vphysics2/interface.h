@@ -573,7 +573,7 @@ public:
 	virtual void *unk009( int nIndex ) = 0;
 	virtual int unk010() = 0;
 	virtual int unk011() = 0;
-	virtual bool unk012() = 0;
+	virtual bool IsRecordingTraces() = 0;
 	virtual bool unk013() = 0;
 	virtual bool unk014() = 0;
 	virtual bool unk015() = 0;
@@ -590,7 +590,7 @@ public:
 
 	virtual float unk022( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, void *pUnknown4 ) = 0;
 	virtual bool unk023( void *pObject ) = 0;
-	virtual void unk024() = 0;
+	virtual void DestroyContact( void *pContact ) = 0;
 
 	// Returns zeros
 	virtual FnPhysicsWorldUnk025_t unk025() = 0;
