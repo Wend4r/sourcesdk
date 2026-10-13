@@ -224,6 +224,16 @@ schema class CNetworkTransmitComponent : public IEventRegisterCallback
 public:
 	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
 
+	struct pvsmask_t
+	{
+		// Only used in the first entry, which holds the number of entries
+		uint16 m_nCount;
+
+		// Index of the 32-bit word in the cluster bitmask
+		uint16 m_nOffset;
+		uint32 m_nMask;
+	};
+
 	// Turns a pending state change into a full change
 	void FireEvent() override = 0;
 
@@ -244,17 +254,22 @@ public:
 	// While it holds changes, state changes are only marked pending
 	noschema void *m_pNetworkStateChangedRouter;
 
-	noschema uint32 m_nNetworkStateChangedRouterData; // 0 at construction
-	noschema uint32 m_nUnk024; // 0 at construction
-	noschema uint64 m_nUnk020; // 0 at construction
+	// Center of the entity's collision bounds the PVS masks were last collected for
+	noschema Vector m_vecPVSCenter;
 
-	// Not set by the constructor
-	noschema uint8 m_pad028[0x100];
+	// Number of entries in m_PVSMasks, also kept in m_PVSMasks[0].m_nCount
+	noschema int32 m_nPVSMaskCount;
+
+	// The non-empty 32-bit words of the PVS cluster bitmask the collision bounds overlap.
+	// More than 32 words collapse to the single entry { 1, 0, 1 }
+	noschema pvsmask_t m_PVSMasks[32];
 
 	noschema CThreadRWLock_FastRead m_StateChangeLock;
 
-	// Where the lock is smaller
-	noschema uint8 m_padAfterLock[24];
+	// Reset to an empty box when the component is bound to its entity; with sv_use_pvs_cache,
+	// sv_pvs_max_distance is measured from the viewer to this box instead of the entity origin
+	noschema Vector m_vecPVSCacheMins;
+	noschema Vector m_vecPVSCacheMaxs;
 
 	// 0 at construction
 	noschema NetworkStateChangeFlags_t m_eStateChangeFlags;
@@ -265,7 +280,11 @@ public:
 	// A state change arrived while the router held pending changes
 	noschema bool m_bPendingStateChange;
 
-	noschema uint8 m_pad2DE[2];
+	// Makes the next transmit check pick the spawn group in m_hPVSSpawnGroup again
+	noschema bool m_bPVSSpawnGroupDirty;
+
+	// Makes the next transmit check collect m_vecPVSCenter and m_PVSMasks again
+	noschema bool m_bPVSMasksDirty;
 
 	noschema bool m_bNetworkUpdatesDisabled;
 
@@ -277,11 +296,16 @@ public:
 	noschema int32 m_nUnk2F0; // -1 at construction
 	noschema uint16 m_nSharedChangeInfoIndex;
 	noschema uint16 m_nSharedChangeInfoSerial; // Serial paired with m_nSharedChangeInfoIndex
-	noschema uint32 m_nUnk2F8; // 0 at construction
+
+	// A spawn group whose bounds accept the collision bounds, the entity's own when it is one of them;
+	// the transmit check compares it with the viewer's
+	noschema SpawnGroupHandle_t m_hPVSSpawnGroup;
 
 	// Never locked by the server
 	noschema CAtomicMutex m_UnkMutex300;
-	noschema CAtomicMutex m_UnkMutex310;
+
+	// Held while m_vecPVSCenter and m_PVSMasks are collected again
+	noschema CAtomicMutex m_PVSMasksMutex;
 
 	// Built on demand and rebuilt while marked dirty
 	noschema CEntityInstancePolymorphicMetadataHelper *m_pPolymorphicMetadataHelper;
