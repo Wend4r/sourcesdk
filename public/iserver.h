@@ -27,6 +27,7 @@
 #include <steam/steamnetworkingtypes.h>
 #include <networkbasetypes.pb.h>
 #include <utlhash.h>
+#include <utlhashmaplarge.h>
 
 enum server_state_t : int
 {
@@ -145,7 +146,7 @@ public:
 	virtual int 	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t, const char * ) = 0;
 
-	virtual void*	StartChangeLevel( const char *pszMapName, const char *pszLandmark, const char *pszAddons ) = 0;
+	virtual CServerChangelevelState *StartChangeLevel( const char *pszMapName, const char *pszLandmark, const char *pszAddons ) = 0;
 	virtual void	FinishChangeLevel( CServerChangelevelState * ) = 0;
 	virtual bool	IsChangelevelPending( void ) const = 0;
 
@@ -226,8 +227,8 @@ public:
 	virtual void	FillServerInfo( CSVCMsg_ServerInfo_t *pServerInfo ) = 0;
 	virtual void	UserInfoChanged( CPlayerSlot slot ) = 0;
 
-	// 2nd arg is unused.
-	virtual void	GetClassBaseline( void *, ServerClass *pClass, intp *pOut ) = 0;
+	// 2nd arg is unused. Returns false when the class has no instance baseline yet
+	virtual bool	GetClassBaseline( void *, ServerClass *pClass, intp *pOut ) = 0;
 
 	virtual void	StartHLTVMaster() = 0;
 
@@ -295,8 +296,9 @@ public:
 	INetworkStringTable* m_pUserInfoTable;
 
 	CFrameSnapshotManager* m_pFrameSnapshotManager;
-	CUtlLeanVector<byte> m_BaselineBuffer;
-	char m_BaselineHelper[80];
+	// Serialized instance baselines by ServerClass::m_InstanceBaselineIndex, read by GetClassBaseline
+	CAtomicMutex m_InstanceBaselinesMutex;
+	CUtlHashMapImpl< int, intp, CUtlHashMapLargeDefEquals< int >, MurmurHash3Functor< int >, int, CVariableBitString > m_InstanceBaselines;
 
 	bf_write m_Signon;
 	CUtlLeanVector<byte> m_SignonBuffer;
@@ -356,7 +358,8 @@ public:
 	float m_fLastCPUCheckTime;
 	float m_fCPUPercent;
 	float m_flTimescale;
-	uint16 m_nTimescaleFlags;
+	// Checked and cleared at the end of the simulation, which then refreshes the Steam game server data of every client
+	bool m_bUnk1140;
 	bool m_bIsMultiplayer;
 
 	int m_nFrameTimeBucketCount;
