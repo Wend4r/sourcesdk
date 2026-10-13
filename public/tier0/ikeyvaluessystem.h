@@ -136,8 +136,7 @@ class CKeyValuesSystem : public CKeyValuesSystemBase
 public:
 	CUtlMemoryPoolBase *m_pMemPool;
 	bool m_bIgnoreMemPool;
-	uint8 m_unk1849[15];
-	uint8 m_KvConditionalSymbolTable[32]; // Red-black tree of HKeySymbol to bool, one 24-byte node per expression symbol
+	uint64 m_KvConditionalSymbolTable[5]; // Red-black tree of HKeySymbol to bool: stored less functor, lean vector of 24-byte nodes, root, count, first free
 	bool m_bUnk1896; // Only written, by the virtual after SetTemporaryKeyValueAllocationScope
 	bool m_bUnk1897;
 };
