@@ -60,8 +60,8 @@ struct P4Revision_t
 	int m_nYear, m_nMonth, m_nDay;
 	int m_nHour, m_nMinute, m_nSecond;
 
-	CUtlSymbol m_sUser;		// submitting user
-	CUtlSymbol m_sClient;	// submitting client 
+	CUtlSymbolLarge m_sUser;	// submitting user
+	CUtlSymbolLarge m_sClient;	// submitting client 
 	CUtlString m_Description;
 };
 
@@ -104,8 +104,11 @@ public:
 	virtual void GetOpenedFileList( const char *pRootDirectory, CUtlVector< P4File_t > &fileList ) = 0;
 	virtual void GetOpenedFileListInPath( const char *pPathID, CUtlVector< P4File_t > &fileList ) = 0;
 
+	// retrieves revision history for a file or directory
+	// Callers pass 50 or a count for nUnknown1
+	virtual CUtlVector< P4Revision_t > &GetRevisionList( const char *pPath, bool bIsDir, int nUnknown1, bool bUnknown2 ) = 0;
+
 	// Return persistent containers by reference
-	virtual void *unk022() = 0;
 	virtual void *unk023() = 0;
 	virtual void *unk024() = 0;
 
@@ -118,7 +121,7 @@ public:
 	virtual int unk028( const char *pFullPath, int nUnknown1, int nUnknown2 ) = 0;
 
 	// Only called for files that are in perforce
-	virtual bool unk029( const char *pFullPath ) = 0;
+	virtual bool OpenFileForDelete( const char *pFullPath ) = 0;
 
 	// The local backend copies pSrcPath to pDstPath
 	virtual bool unk030( const char *pSrcPath, const char *pDstPath, int nUnknown1, int nUnknown2 ) = 0;
@@ -145,8 +148,10 @@ public:
 
 	virtual bool IsFileInPerforce( const char *pFullPath ) = 0;
 	virtual bool unk044() = 0;
-	virtual bool unk045() = 0;
-	virtual void *unk046() = 0;
+	virtual bool unk045( const char *pDepotPath ) = 0;
+
+	// Zero lets the callers open the file for delete
+	virtual int unk046( const char *pFullPath ) = 0;
 	virtual void *unk047() = 0;
 
 	// Gets a string for a symbol
