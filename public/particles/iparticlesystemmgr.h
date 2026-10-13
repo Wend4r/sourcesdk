@@ -12,11 +12,13 @@
 
 #include <appframework/iappsystem.h>
 #include <mathlib/vector.h>
+#include <materialsystem2/imaterial2.h>
 #include <resourcesystem/resourcehandle.h>
 #include <resourcesystem/iresourcesystem.h>
 #include <schemasystem/schematypes.h>
 #include <tier0/utlhashtable.h>
 #include <tier0/utlleanvector.h>
+#include <tier0/utllinkedlist.h>
 #include <tier0/utlsoacontainer.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
@@ -24,6 +26,7 @@
 #include <tier3/tier3.h>
 
 class CGpuImplicitRenderer;
+class CInstancedMeshSceneObject;
 class CPoolAllocator;
 class CSceneObject;
 class CSchemaClassInfo;
@@ -36,6 +39,8 @@ class ISceneObjectDesc;
 class ISceneView;
 class ISceneWorld;
 class KeyValues3;
+
+FORWARD_DECLARE_HANDLE( RenderBufferHandle_t );
 
 class InfoForResourceTypeIParticleSystemDefinition
 {
@@ -229,10 +234,45 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// Implementation of IParticleSystemMgr. Engine containers whose element types
-// are not known stay as padding: 17 hash tables with 24-byte entries after the
-// flags, a hash table of 88-byte entries keyed by instanced mesh parameters
-// after the lock, and the linked list of GPU readback batches.
+// Key of the instanced mesh scene objects of CParticleSystemMgr
+//-----------------------------------------------------------------------------
+struct ParticleInstancedMeshKey_t
+{
+	// Copy of the key passed to AddInstancedMeshes(), its first qword is a model handle
+	uint8 m_Key[ 32 ];
+
+	// Byte 29 of the resource binding the first qword of the key points to
+	int m_nUnk20;
+
+	// Left zero
+	uint64 m_nUnk28[ 2 ];
+
+	struct HashFunctor_t
+	{
+		unsigned int operator()( const ParticleInstancedMeshKey_t &key ) const;
+	};
+};
+
+//-----------------------------------------------------------------------------
+// GPU readback batch of CParticleSystemMgr: the readback buffer and the
+// collections whose simulation results it holds
+//-----------------------------------------------------------------------------
+struct ParticleGPUReadback_t
+{
+	struct Collection_t
+	{
+		IParticleCollection *m_pCollection;
+
+		// Unique id hash of the collection, the results are applied only while it is in the live set of the manager
+		uint64 m_nCollectionId;
+	};
+
+	RenderBufferHandle_t m_hReadbackBuffer;
+	CUtlVector< Collection_t > m_Collections;
+};
+
+//-----------------------------------------------------------------------------
+// Implementation of IParticleSystemMgr
 //-----------------------------------------------------------------------------
 class CParticleSystemMgr : public CTier3AppSystem< IParticleSystemMgr >, public ISceneObjectListener, public IToolsResourceListener
 {
@@ -241,8 +281,14 @@ public:
 	void NotifyResourceStatusChange( const ResourceStatusChange_t *pChanges, int nNumChanges ) override;
 
 	CUtlVector< IParticleFunctionDefinition * > m_ParticleOperators[ 9 ];
+
+private:
 	uint8 m_unk110[ 8 ];
-	uint8 m_unk118[ 4 ];
+
+public:
+	// Zeroed by the constructors only
+	int m_nUnk118;
+
 	float m_flLastSimulationDuration;
 
 	// particle_profile / particle_profile_spike state
@@ -260,12 +306,15 @@ public:
 	float m_flSimThresholdMs;
 	int m_nCPULevel;
 	int m_nGPULevel;
+
+private:
 	uint8 m_unk154[ 4 ];
 
+public:
 	// Incremented when the type manager releases a particle system definition
-	uint64 m_nUnk158;
+	uint64 m_nDefinitionReleaseSerial;
 
-	bool m_bUnk160;
+	bool m_bLowViolence;
 
 	// Game info settings read in Init
 	bool m_bPerObjectLightingSetup;
@@ -277,33 +326,48 @@ public:
 	bool m_bParticlesFoggedByDefault;
 	bool m_bDisableSorting;
 
-	int m_nUnk16C;
-	uint8 m_unk170[ 17 ][ 32 ];
-	CUtlVectorFixedGrowable< CUtlString, 16 > m_Unk390;
+	int m_nDisabledRendererTypes;
+
+	// Procedural sprite materials by the hash of their parameters, one table per renderer shader type;
+	// override shaders use 1 + their index in m_ShaderOverrideNames
+	CUtlHashtable< uint64, HMaterialStrong > m_ProceduralMaterials[ 17 ];
+
+	CUtlVectorFixedGrowable< CUtlString, 16 > m_ShaderOverrideNames;
+
+private:
 	uint8 m_unk428[ 0xA0 ];
-	CStrongHandle< InfoForResourceTypeIParticleSystemDefinition > m_hUnk4C8;
-	uint8 m_unk4D0[ 8 ];
+
+public:
+	CStrongHandle< InfoForResourceTypeIParticleSystemDefinition > m_hHoveredParticleSystem;
+
+	// Zeroed by the constructors only
+	uint64 m_nUnk4D0;
+
 	CGpuImplicitRenderer *m_pGpuImplicitRenderer;
 
 	// 1 = no_gpu_blobs, 2 = non_homogenous_forward_layer_only (Particles/features)
-	int m_nFlags;
+	int m_nFeatureFlags;
 
 	CThreadRWLock_FastRead m_Lock;
-	uint8 m_unk528[ 0x20 ];
+	CUtlHashtable< ParticleInstancedMeshKey_t, CUtlLinkedList< CInstancedMeshSceneObject *, unsigned short >, ParticleInstancedMeshKey_t::HashFunctor_t > m_InstancedMeshSceneObjects;
 	ISceneObjectDesc *m_pInstancedMeshSceneObjectDesc;
 	HGameResourceManifest m_hGPUParticleRequiredResources;
 	CUtlVector< CUtlString > m_Unk558;
-	CPoolAllocator *m_pUnk570;
-	CPoolAllocator *m_pUnk578;
 
-	// Uploaded to the per-frame buffer, sized to the first pool
-	CUtlVector< uint8 > m_Unk580;
+	// Ranges of GPU particle slots and one slot per GPU collection
+	CPoolAllocator *m_pGPUParticlePool;
+	CPoolAllocator *m_pGPUCollectionPool;
 
-	void *m_hReadbackBuffer;
-	void *m_hPerFrameBuffer;
+	// One byte per GPU particle slot, uploaded to the per-frame buffer
+	CUtlVector< uint8 > m_GPUParticleData;
+
+	RenderBufferHandle_t m_hReadbackBuffer;
+	RenderBufferHandle_t m_hPerFrameBuffer;
 	CAtomicMutex m_Mutex;
-	uint64 m_unk5B8[ 3 ];
-	CUtlHashtable< uint64 > m_Unk5D0;
+	CUtlLinkedList< ParticleGPUReadback_t, unsigned short > m_GPUReadbacks;
+
+	// Unique id hashes of the live GPU collections
+	CUtlHashtable< uint64 > m_GPUCollectionIds;
 };
 
 #endif // IPARTICLESYSTEMMGR_H
