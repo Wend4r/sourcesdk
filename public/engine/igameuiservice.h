@@ -93,12 +93,16 @@ public:
 	RenderViewport_t m_Viewport;
 	double m_flLastMouseMoveTime;
 	bool m_bUnk220;
-	bool m_bUnk221;
+	// Set once the service has run the "PanoramaUIStartup" step
+	bool m_bPanoramaUIStarted;
 	bool m_bUnk222;
 	int m_nUnk224;
 	int m_nBlockConsoleToggleCount;
-	int m_nUnk22C;
-	bool m_bUnk230;
+	// Button code of the "Engine2/RestrictConsoleCloseKey" game info key
+	int m_nRestrictConsoleCloseKey;
+
+	// "Engine2/PauseOnCtrlConsole" game info key
+	bool m_bPauseOnCtrlConsole;
 	IInputHandler *m_pInputHandler;
 	void *m_unk240;
 	uint64 m_unk248[ 4 ][ 3 ];
