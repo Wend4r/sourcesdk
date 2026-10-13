@@ -71,7 +71,8 @@ public:
 		float m_flDelayRate;
 		int m_nHoldSamples;
 		int m_nUnk18;
-		float m_flUnk1C;
+		// RMS of the last captured block
+		float m_flRMS;
 		int m_nHoldCounter;
 		int m_nUnk24;
 		int m_nUnk28;
@@ -80,27 +81,34 @@ public:
 	} m_NoiseGate;
 
 	float m_flCurrentPeak;
-	float m_flUnk274;
-	float m_flUnk278;
-	bool m_bUnk27C;
+	// RMS of the last captured block in dB (m_flCurrentPeak is its peak in dB)
+	float m_flCurrentRMS;
+
+	// Time of the last captured block; a gap longer than voice_input_stallout sets m_bInputStalled
+	float m_flLastInputTime;
+	bool m_bInputStalled;
 	CUtlString m_Unk280;
 	bool m_bUnk288;
-	int m_nUnk28C;
-	int m_nUnk290;
+	// Level of the last encoded block, raw and normalized to [0, 1]
+	int m_nVoiceLevel;
+	float m_flVoiceLevel;
 	int m_nUnk294;
 	double m_flLastFocusTime;
-	double m_flUnk2A0;
-	bool m_bUnk2A8;
+	// Set with its time while the level stays below voice_threshold; cleared voice_threshold_delay after it rises above
+	double m_flBelowThresholdTime;
+	bool m_bBelowThreshold;
 	uint8 m_pad2A9;
 	bool m_bRecordingVoice;
 	bool m_bUnk2AB;
-	bool m_bUnk2AC;
+	// The speaking state last reported to ISteamFriends::SetInGameVoiceSpeaking
+	bool m_bInGameVoiceSpeaking;
 	uint8 m_pad2AD;
 	bool m_bUnk2AE;
 	bool m_bUnk2AF;
 	bool m_bUnk2B0;
 	int m_nUnk2B4;
-	int m_nUnk2B8;
+	// Sequence number of the voice packets, skips -1
+	int m_nVoiceSequence;
 	int m_nUnk2BC;
 	bool m_bUnk2C0;
 	CUtlVector< RecentlyPlayedNetworkVoice_t > m_RecentlyPlayedNetworkVoices;
