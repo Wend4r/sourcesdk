@@ -74,11 +74,13 @@ class CHelpSystem : public CTier3AppSystem< IHelpSystem >
 {
 public:
 	// Loaded help contexts, searched by name
-	CUtlVector< void * > m_vecUnk028;
+	CUtlVector< void * > m_HelpContexts;
 
-	CUtlVector< CQHelpEditorWidget * > m_vecUnk040;
-	CUtlVector< CQHelpDisplayWidget * > m_vecUnk058;
-	CUtlVector< IHelpChangeListener * > m_vecUnk070;
+	// Widgets register themselves on construction
+	CUtlVector< CQHelpEditorWidget * > m_HelpEditorWidgets;
+	CUtlVector< CQHelpDisplayWidget * > m_HelpDisplayWidgets;
+
+	CUtlVector< IHelpChangeListener * > m_HelpChangeListeners;
 };
 
 #endif // IHELPSYSTEM_H
