@@ -306,8 +306,10 @@ public:
 	virtual void unk071( CUtlVector< SoundEventGuid_t > &list ) = 0;
 	virtual bool unk072() = 0;
 	virtual void unk073( bool bUnk ) = 0;
-	virtual void *unk074( uint32 nUnk ) = 0;
-	virtual void unk075( int nUnk ) = 0;
+	// History entry kept for the sound event: its stack hash and the field data recorded while it played
+	virtual void *unk074( SoundEventGuid_t guid ) = 0;
+	// Sound event whose history is kept after it stops; the history of the previous one is removed unless it still plays
+	virtual void unk075( SoundEventGuid_t guid ) = 0;
 	// Symbol of the vsnd name in the vsnd resource type manager, used as the value of SOFTYPE_VSND fields
 	virtual uint32 unk076( const char *pVsndName ) = 0;
 	virtual bool unk077( KeyValues *pKV, KeyValues3 *pKV3 ) = 0;

@@ -157,7 +157,7 @@ public:
 	virtual void unk074( HSOSLIBSTACKHASH hStack, const char *pOperatorName, void *pFields ) = 0;
 	virtual void unk074( SoundEventGuid_t guid, const char *pOperatorName, void *pFields ) = 0;
 	// Values of the fields of the operator for the stack at nIndex (from the end when negative) of the unk074 entry of ISoundOpSystem
-	virtual void unk076( uint32 nUnk, int nIndex, const char *pOperatorName, CUtlVector< CUtlString > *pList ) = 0;
+	virtual void unk076( SoundEventGuid_t guid, int nIndex, const char *pOperatorName, CUtlVector< CUtlString > *pList ) = 0;
 	// Public field names of the stack, unk078 filters them
 	virtual void unk077( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
 	virtual void unk078( HSOSLIBSTACKHASH hStack, CUtlVector< const char * > *pList ) = 0;
