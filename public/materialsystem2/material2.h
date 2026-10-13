@@ -17,6 +17,8 @@
 class CMaterial2 : public IMaterial2
 {
 public:
+	struct StaticComboVcsLoad_t;
+
 	// Returned by GetCopySource()
 	HMaterialStrong m_hCopySource;
 
@@ -29,8 +31,8 @@ public:
 	// Returned by unk026()
 	CUtlLeanVector< CUtlString > m_unk040;
 
-	// CUtlLeanVector of trivially destructible elements
-	void *m_unk050[ 2 ];
+	// Waited for and released when the material is finalized
+	CUtlLeanVector< StaticComboVcsLoad_t *, int > m_staticComboLoadRequests;
 
 	// Returned by unk028()
 	CStrongHandleBase m_unk060;
