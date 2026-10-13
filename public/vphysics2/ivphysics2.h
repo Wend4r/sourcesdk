@@ -129,7 +129,7 @@ public:
 
 	virtual void unk045( void *p ) = 0;
 
-	virtual void Unk_TraceShape( void *p ) = 0;
+	virtual void TraceShape( void *p ) = 0;
 
 #ifdef _WIN32
 	virtual void unk047( void *p ) = 0;
@@ -172,11 +172,11 @@ public:
 	virtual RnHull_t *CreateCylinderHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pDestHull ) = 0;
 
 #ifdef _WIN32
-	virtual void Unk_CreateHullFromStream( void *p ) = 0;
-	virtual void Unk_CreateHull( void *p ) = 0;
+	virtual void CreateHullFromStream( void *p ) = 0;
+	virtual void CreateHull( void *p ) = 0;
 #else
-	virtual void Unk_CreateHull( void *p ) = 0;
-	virtual void Unk_CreateHullFromStream( void *p ) = 0;
+	virtual void CreateHull( void *p ) = 0;
+	virtual void CreateHullFromStream( void *p ) = 0;
 #endif
 
 	virtual RnHull_t *CreateRuntimeHull( int nPointCount, const Vector *pPoints ) = 0;
@@ -190,30 +190,30 @@ public:
 	virtual RnMesh_t *CreateGridMesh( int nHalfExtent, float flSpacing, float flHeight ) = 0;
 
 #ifdef _WIN32
-	virtual void Unk_CreateMeshFromStream( void *p ) = 0;
-	virtual void Unk_CreateMesh( void *p ) = 0;
+	virtual void CreateMeshFromStream( void *p ) = 0;
+	virtual void CreateMesh( void *p ) = 0;
 #else
-	virtual void Unk_CreateMesh( void *p ) = 0;
-	virtual void Unk_CreateMeshFromStream( void *p ) = 0;
+	virtual void CreateMesh( void *p ) = 0;
+	virtual void CreateMeshFromStream( void *p ) = 0;
 #endif
 
 	virtual void CloneMesh( RnMesh_t *pDestMesh, const RnMesh_t *pSourceMesh ) = 0;
 	virtual void DestroyMesh( RnMesh_t *pMesh ) = 0;
 	virtual void UpdateMeshChangedVertices( RnMesh_t *pMesh ) = 0;
 
-	virtual void Unk_UpdateMeshTriangleAABBs( void *p ) = 0;
-	virtual void Unk_HideMeshTriangles( void *p ) = 0;
+	virtual void UpdateMeshTriangleAABBs( void *p ) = 0;
+	virtual void HideMeshTriangles( void *p ) = 0;
 
-	virtual void Unk_CreateCompound( void *p ) = 0;
+	virtual void CreateCompound( void *p ) = 0;
 	virtual void CloneCompound( RnCompound_t *pDestCompound, const RnCompound_t *pSourceCompound ) = 0;
 	virtual void DestroyCompound( RnCompound_t *pCompound ) = 0;
 
-	virtual void Unk_CreateFromResource( void *p ) = 0;
+	virtual void CreateFromResource( void *p ) = 0;
 
 	virtual void unk081( void *p ) = 0;
 
-	virtual void Unk_AddRef( void *p ) = 0;
-	virtual void Unk_Release( void *p ) = 0;
+	virtual void AddRef( void *p ) = 0;
+	virtual void Release( void *p ) = 0;
 
 	virtual bool unk084( CUtlVector< PhysicsBodyDef_t > &bodies, const VPhysXAggregateData_t *pAggregateData ) = 0;
 
@@ -224,20 +224,20 @@ public:
 	virtual bool unk087( void *p ) = 0;
 	virtual void unk088( void *p ) = 0;
 
-	virtual void Unk_Create( void *p ) = 0;
+	virtual void Create( void *p ) = 0;
 
 	// Standalone softbodies
-	virtual IPhysicsSoftbody *Unk_CreateSoftbody( void *p ) = 0;
+	virtual IPhysicsSoftbody *CreateSoftbody( void *p ) = 0;
 	virtual void DestroySoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
 	// Softbodies kept in the interface's own softbody list
-	virtual void Unk_CreateListedSoftbody( void *p ) = 0;
+	virtual void CreateListedSoftbody( void *p ) = 0;
 	virtual void DestroyListedSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
 	virtual int GetSoftbodyCount() = 0;
 	virtual void unk095( void *p ) = 0;
 
-	virtual IIkSolver *Unk_CreateIkSolver( void *p ) = 0;
+	virtual IIkSolver *CreateIkSolver( void *p ) = 0;
 	virtual void DestroyIkSolver( IIkSolver *pSolver ) = 0;
 
 	virtual void unk098( void *p ) = 0;
@@ -258,7 +258,7 @@ public:
 	virtual void unk102( void *p ) = 0;
 #endif
 
-	virtual void Unk_LoadPhysicsDebugMaterials( void *p ) = 0;
+	virtual void LoadPhysicsDebugMaterials( void *p ) = 0;
 
 	virtual IFnPhysicsContact *ConstructFnPhysicsContact( void *pMemory, int nMemorySize ) = 0;
 	virtual IFnPhysicsAnyJoint *ConstructFnPhysicsAnyJoint( void *pMemory, int nMemorySize ) = 0;
@@ -291,9 +291,9 @@ public:
 	virtual bool unk130() = 0;
 	virtual bool StreamToPhysicsDebugger( bool bStart ) = 0;
 	virtual bool IsStreamingToPhysicsDebugger() = 0;
-	virtual void Unk_CreateSerialStreamSnapshot( void *p ) = 0;
+	virtual void CreateSerialStreamSnapshot( void *p ) = 0;
 	virtual void *unk134() = 0;
-	virtual void Unk_CreateDataDescConvertor( void *p ) = 0;
+	virtual void CreateDataDescConvertor( void *p ) = 0;
 
 	// Empty in release builds
 	virtual void unk136( int nUnknown ) = 0;
@@ -304,9 +304,9 @@ public:
 	// Debug draws every world (physics_debug_draw)
 	virtual void DebugDrawWorlds( ISceneViewDebugOverlays *pDebugOverlays ) = 0;
 
-	virtual void Unk_CreateDebugSceneObject( void *p ) = 0;
+	virtual void CreateDebugSceneObject( void *p ) = 0;
 	virtual void DestroyDebugSceneObject( void *pSceneObject ) = 0;
-	virtual void Unk_UpdateDebugSceneObject( void *p ) = 0;
+	virtual void UpdateDebugSceneObject( void *p ) = 0;
 
 	// Empty
 	virtual void unk143() = 0;
