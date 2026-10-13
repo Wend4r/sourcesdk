@@ -54,13 +54,13 @@ public:
 	CConCommandMemberAccessor< CIMEManager > ime_info;
 
 	// Platform backend, created by InitForWindow
-	IMEManagerBase *m_pUnk058;
+	IMEManagerBase *m_pBackend;
 
-	// Read by IsIMESupported
-	bool m_bUnk060;
+	// Set by InitForWindow when the backend initialized, returned by IsIMESupported
+	bool m_bIMESupported;
 
-	// Read by IsIMEEnabled
-	bool m_bUnk061;
+	// SetIMEEnabled and IsIMEEnabled
+	bool m_bIMEEnabled;
 };
 
 #endif // IIMEMANAGER_H
