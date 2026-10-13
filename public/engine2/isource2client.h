@@ -195,8 +195,8 @@ public:
 
 	// Forward to the mouth (lip sync) system; the first one allocates a mouth and returns its id
 	virtual uint16 AllocateMouth( int nUnk ) = 0;
-	virtual void unk050( uint16 nUnk ) = 0;
-	virtual void unk051( void *pUnk, int nUnk1, int nUnk2 ) = 0;
+	virtual void FreeMouth( uint16 nMouth ) = 0;
+	virtual void GetMouthInfo( void *pInfo, CEntityIndex nEntityIndex, int nUnk ) = 0;
 	// Fills the listener origin and angles, then the two vectors that follow through unk098()
 	virtual void UpdateAudioState( AudioState_t *pAudioState, CSplitScreenSlot nSlot ) = 0;
 	virtual void OnScreenSizeChanged( int nOldWidth, int nOldHeight ) = 0;
@@ -246,26 +246,27 @@ public:
 	virtual bool IsEntityDormant( CEntityIndex nEntityIndex ) = 0;
 	// Handle of the first split screen slot's local player pawn
 	virtual CEntityHandle GetLocalPlayerPawnHandle() = 0;
-	virtual bool unk083( int nUnk ) = 0;
+	// True for the local player controller and pawn and for the player the local pawn observes
+	virtual bool IsLocalOrObservedPlayer( int nEntityIndex ) = 0;
 
 	// Per-entity queries
 	virtual bool GetEntity2AbsOrigin( CEntityIndex nEntityIndex, Vector *pOrigin ) = 0;
-	virtual float unk085( CEntityIndex nEntityIndex ) = 0;
+	virtual float GetEntity2AbsScale( CEntityIndex nEntityIndex ) = 0;
 	virtual void GetEntity2AbsAngles( CEntityIndex nEntityIndex, QAngle *pAngles ) = 0;
 	// Zeroes both vectors first
-	virtual bool unk087( CEntityIndex nEntityIndex, Vector *pvecUnk1, Vector *pvecUnk2 ) = 0;
-	virtual bool unk088( CEntityIndex nEntityIndex, int *pOut1, int *pOut2 ) = 0;
+	virtual bool GetEntity2WorldBounds( CEntityIndex nEntityIndex, Vector *pvecMins, Vector *pvecMaxs ) = 0;
+	virtual bool GetEntity2Health( CEntityIndex nEntityIndex, int *pHealth, int *pMaxHealth ) = 0;
 	virtual CEntityHandle unk089() = 0;
 	virtual void unk090( CEntityIndex nEntityIndex, void *pUnk ) = 0;
 	// Falls back to GetEntity2AbsOrigin() when the attachment token is 0
 	virtual bool GetEntity2AttachmentAbsOrigin( CEntityIndex nEntityIndex, Vector *pOrigin, CUtlStringToken &attachment ) = 0;
 	// Builds the transform from GetEntity2AbsOrigin() and GetEntity2AbsAngles() when the attachment token is 0
 	virtual bool GetEntity2AttachmentTransform( CEntityIndex nEntityIndex, CTransform *pTransform, CUtlStringToken &attachment ) = 0;
-	virtual bool unk093( CEntityIndex nEntityIndex ) = 0;
-	virtual void unk094( CEntityIndex nEntityIndex, Vector *pvecUnk1, Vector *pvecUnk2, Vector *pvecUnk3 ) = 0;
-	virtual bool unk095() = 0;
-	virtual bool unk096() = 0;
-	virtual CEntityHandle unk097() = 0;
+	virtual uint8 GetEntity2TeamNum( CEntityIndex nEntityIndex ) = 0;
+	virtual void GetEntity2Vectors( CEntityIndex nEntityIndex, Vector *pvecForward, Vector *pvecLeft, Vector *pvecUp ) = 0;
+	virtual uint8 GetLocalPlayerTeamNum() = 0;
+	virtual bool IsLocalPlayerObserverRoaming() = 0;
+	virtual CEntityHandle GetLocalPlayerObserverTarget() = 0;
 	// Zeroes both outputs
 	virtual void unk098( CSplitScreenSlot nSlot, Vector *pvecUnk1, Vector *pvecUnk2 ) = 0;
 
@@ -326,7 +327,7 @@ public:
 	virtual void unk133( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
 	virtual void unk134( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
 	// Returns "core.global_stack"
-	virtual const char *unk135() = 0;
+	virtual const char *GetGlobalSoundStackName() = 0;
 	virtual bool unk136() = 0;
 	// Total and custom game Steam UGC subscription counts for the crash dump comment; zeroes them and returns false
 	virtual bool GetUGCSubscriptionCounts( uint32 *pnSubscriptionCounts ) = 0;
@@ -345,12 +346,12 @@ public:
 	virtual Source2ClientUnk146_t unk146() = 0;
 	virtual void unk147( int nUnk1, int nUnk2, int nUnk3, int nUnk4 ) = 0;
 	virtual void unk148() = 0;
-	virtual const char *unk149( CEntityIndex nEntityIndex ) = 0;
+	virtual const char *GetEntity2UniqueHammerID( CEntityIndex nEntityIndex ) = 0;
 	virtual CEntityHandle unk150( CEntityHandle hEntity ) = 0;
 	virtual void unk151() = 0;
 	// Forwards to the game rules
 	virtual void unk152() = 0;
-	virtual const char *unk153() = 0;
+	virtual const char *GetFriendlyMapName() = 0;
 	// Fires a panorama event with the state
 	virtual void OnCommandQueueStateChanged( const GameClientCommandQueueState_t &state ) = 0;
 	virtual void unk155( CEntityIndex nEntityIndex, int *pUnk, int nUnk ) = 0;
@@ -363,7 +364,7 @@ public:
 	virtual void UnregisterSoundArea( SoundAreaGuid_t guid ) = 0;
 
 	virtual CEntityHandle GetPlayerControllerHandle( CPlayerSlot nSlot ) = 0;
-	virtual void unk161() = 0;
+	virtual void *GetCompositeMaterialManager() = 0;
 	// The engine renames classes through it while it links classes for replay compatibility ("scripts/replay_compatability_settings.txt")
 	virtual ISerializerMatchToMetaReplayCompatHelper *GetReplayCompatHelper() = 0;
 	virtual bool unk163( void *pUnk ) = 0;
