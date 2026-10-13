@@ -6,7 +6,11 @@
 #endif
 
 #include "inputsystem/iinputsystem.h"
+#include "tier0/bitvec.h"
+#include "tier0/threadtools.h"
 #include "tier0/utlstring.h"
+#include "tier0/utlstringmap.h"
+#include "tier1/utlvector.h"
 #include "tier2/tier2.h"
 
 class CInputSystem : public CTier2AppSystem< IInputSystem >
@@ -14,30 +18,133 @@ class CInputSystem : public CTier2AppSystem< IInputSystem >
 public:
 	virtual ~CInputSystem() {}
 
-	uint8 m_pad028[ 0x8 ];
+	struct InputWindow_t
+	{
+		void *m_hAttachedHWnd;
+		void *m_ChainedWndProc;
+	};
 
-	// Windows attached through AttachToWindow, 0x10 bytes each
-	uint8 m_Unk030[ 0x18 ];
+	// The engine's button and analog code tables are larger than the ButtonCode_t and AnalogCode_t enums
+	struct InputState_t
+	{
+		CBitVec< 0x204 > m_ButtonState;
 
-	uint8 m_pad048[ 0x5 ];
-	bool m_bUnk04D;
-	bool m_bUnk04E;
+		// Read by WasButtonPressed, WasButtonDoubleClicked and WasButtonReleased
+		CBitVec< 0x204 > m_Unk044;
+		CBitVec< 0x204 > m_Unk088;
+		CBitVec< 0x204 > m_Unk0CC;
+
+		int m_ButtonPressedTick[ 0x204 ];
+		int m_ButtonReleasedTick[ 0x204 ];
+		float m_pAnalogDelta[ 27 ];
+		float m_pAnalogValue[ 27 ];
+		CUtlVector< InputEvent_t > m_Events;
+		uint64 m_Unk1220[ 3 ];
+		bool m_bDirty;
+	};
+
+	struct JoystickInfo_t
+	{
+		uint32 m_nUnk000;
+		uint8 m_pad004[ 0x3C ];
+		bool m_bDiagonalPOVControlEnabled;
+		uint8 m_pad041[ 0x7 ];
+	};
+
+	struct CursorEntry_t;
+
+	struct UserCursor_t
+	{
+		CursorEntry_t *pCursorEntry;
+	};
+
+	uint64 m_pad028;
+	CUtlVector< InputWindow_t > m_Windows;
+	bool m_bEnabled;
+	bool m_bPumpEnabled;
+
+	// Index of the m_InputState that PostUserEvent and the button events write
+	uint8 m_nUnk04A;
+
+	uint8 m_pad04B;
+	bool m_bHasFocus;
+	bool m_bIsActivated;
+	bool m_bEnablePowerManagement;
+
+	// Set by a command line parameter, read by SetCursorClip
 	bool m_bUnk04F;
-	uint8 m_pad050[ 0x4 ];
-	bool m_bRelativeMouseMode;
-	uint8 m_pad055[ 0x1B ];
 
-	// Flags changed by unk075
-	uint32 m_nUnk070;
+	bool m_bButtonCodeIsScanCode;
 
-	uint8 m_pad074[ 0x25D4 ];
+	// SetButtonCodeIsScanCode ignores changes while it is set
+	bool m_bUnk051;
+
+	bool m_bIMEAllowed;
+	bool m_bCursorVisible;
+	bool m_bMouseRelativeMode;
+	float m_flCursorBiasX;
+	float m_flCursorBiasY;
+	float m_flCursorScaleX;
+	float m_flCursorScaleY;
+	PlatWindow_t m_hCursorCoordinateBiasWindow;
+	uint32 m_nInputSystemCommandEnableFlags;
+	InputState_t m_InputState[ 2 ];
+	uint32 m_StartupTimeTick;
+	int m_nLastPollTick;
+	int m_nLastSampleTick;
+	int m_nPollCount;
+
+	// Returned by GetPollTime
+	double m_flUnk2508;
+
+	uint32 m_uiMouseWheel;
+
+	// Set by joystick command line parameters
+	bool m_bUnk2514;
+
+	// Changed by EnableJoystickInput, one bit per joystick
+	uint16 m_nUnk2516;
+
+	int m_nJoystickCount;
+
+	// Set once the SDL game controller subsystem is initialized
+	bool m_bUnk251C;
+
+	JoystickInfo_t m_pJoystickInfo[ 4 ];
+
+	// IsMouseCaptured
+	PlatWindow_t m_hUnk2640;
+
 	PlatWindow_t m_hCursorClipWindow;
-	uint8 m_pad2650[ 0x228 ];
 
-	// SDL_WINDOWS_CLOSE_ON_ALT_F4 hint value saved by unk075
-	CUtlString m_Unk2878;
-	bool m_bUnk2880;
-	uint8 m_pad2881[ 0x2F ];
+	// GetStandardCursor
+	InputCursorHandle_t m_Unk2650[ 26 ];
+
+	// GetStandardCursorOverride and SetStandardCursorOverride
+	InputCursorHandle_t m_Unk2720[ 26 ];
+
+	CUtlStringMap< UserCursor_t > m_UserCursors;
+	float m_fLoadedCursorScale;
+
+	// EnableAutoCursorScale and CanSetCursorScale
+	bool m_bUnk286C;
+	bool m_bUnk286D;
+
+	InputCursorHandle_t m_hCursor;
+	CUtlString m_strPrevSDLAltF4Hint;
+	bool m_bAllowAltF4;
+	bool m_bPass_VK_PROCESSKEY;
+	uint32 m_unLastFingerDownTime;
+	void *m_pSDLHaptic;
+	int64 m_curFingerID;
+	bool m_curFingerActive;
+	int m_nFingersDown;
+
+	// Incremented by QueueResetInputState, consumed by PollInputState
+	CInterlockedInt m_nUnk28A0;
+
+	int m_nUnk28A4;
+	CUtlString m_Unk28A8;
 
 #ifdef _WIN32
 	CUtlVector< InputWindowMessageHookFn_t > m_WindowMessageHooks;
