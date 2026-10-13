@@ -12,6 +12,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
 #include "mathlib/vector.h"
@@ -310,6 +311,96 @@ public:
 
 	// Returned by unk124 and freed by the destructor; no code reads its elements
 	CUtlVector< void * > m_unk020;
+};
+
+// Function table over a body, constructed in caller memory by IVPhysics2::ConstructFnPhysicsBody
+abstract_class IFnPhysicsBody
+{
+public:
+	// MSVC lays these overloads out in reverse order
+	virtual void unk000( IPhysicsBody *pBody ) = 0;
+	virtual IPhysicsBody *unk001() const = 0;
+	virtual void unk000( CRnBody *pBody ) = 0;
+
+	virtual void unk003( CRnBody *pBody ) = 0;
+	virtual CRnBody *unk004() const = 0;
+
+	// Continuous collision flags of the body
+	virtual void unk005( bool bEnable ) = 0;
+	virtual bool unk006() const = 0;
+	virtual void unk007( bool bEnable ) = 0;
+
+	// Dynamic continuous contact behavior of the body description
+	virtual void unk008( uint8 nBehavior ) = 0;
+	virtual uint8 unk009() const = 0;
+
+	// Minimum velocity and position solver iterations
+	virtual int unk010() const = 0;
+	virtual int unk011() const = 0;
+	virtual void unk012( int nVelocityIterations, int nPositionIterations ) = 0;
+
+	virtual bool unk013() const = 0;
+	virtual CTransform unk014() const = 0;
+	virtual Vector unk015() const = 0;
+	virtual Vector unk016() const = 0;
+	virtual float unk017() const = 0;
+	virtual void unk018() = 0;
+
+	virtual AABB_t unk019() const = 0;
+	virtual AABB_t unk020( const CTransform &transform ) const = 0;
+	virtual AABB_t unk021() const = 0;
+
+	virtual float unk022() const = 0;
+
+	// Rebuilds the mass properties from the shapes, optionally dropping the overridden mass, mass center and inertia first
+	virtual void unk023( bool bResetOverrides ) = 0;
+
+	// Adds the shapes, then sets the mass when pMass is given or rebuilds it
+	virtual void unk024( IPhysicsShape **ppShapes, int nCount, const float *pMass ) = 0;
+
+	// Inverse mass and inertia scales
+	virtual float unk025() const = 0;
+	virtual float unk026() const = 0;
+
+	// Return a struct by value; the types are not recovered
+	virtual void unk027( void *pResult ) const = 0;
+	virtual void unk028( void *pResult ) const = 0;
+	virtual void unk029( void *pResult ) const = 0;
+
+	virtual void unk030( bool bEnable ) = 0;
+	virtual void unk031( uint32 nUnknown ) = 0;
+
+	// Writes a one line description of the body and its shapes
+	virtual void unk032( CUtlString *pDescription ) const = 0;
+
+	virtual void unk033( void *pUnknown1, void *pUnknown2 ) = 0;
+	virtual void unk034( void *pUnknown1, void *pUnknown2, const float *pUnknown3 ) = 0;
+
+	virtual void UpdateShapeSceneObjects() = 0;
+
+	virtual void unk036( void *pUnknown ) = 0;
+	virtual void unk037() = 0;
+	virtual void unk038() = 0;
+	virtual void unk039( bool bUnknown, float flUnknown ) = 0;
+
+	virtual const char *unk040() const = 0;
+
+	// Index of the body in its world, -1 without a body
+	virtual int unk041() const = 0;
+	virtual bool unk042() const = 0;
+
+	// Returns a struct by value; the type is not recovered
+	virtual void unk043( void *pResult ) const = 0;
+
+	virtual void OutputDebugInfo() const = 0;
+
+	// Empty in release builds
+	virtual void unk045() = 0;
+
+	// Returns a zeroed struct by value; the type is not recovered
+	virtual void unk046( void *pResult ) const = 0;
+
+	virtual void unk047() = 0;
 };
 
 #endif // IPHYSICSBODY_H
