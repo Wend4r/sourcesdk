@@ -79,7 +79,7 @@ public:
 	virtual int OnBeforePlayerDamage( CCSPlayerPawn *pPlayer, CTakeDamageInfo &info ) = 0;
 
 	// Index of the instance in creation order
-	int m_nUnk020;
+	int m_nInstanceIndex;
 
 	// v8::Global< v8::Context > of the script
 	void *m_pContext;
