@@ -143,9 +143,10 @@ public:
 	bool m_bUnk4868;
 	// Run over computed paths when set, unless disabled by a convar.
 	CPathOptimizer *m_pOptimizer;
-
-private:
-	uint8 m_Unk4878[ 8 ];
+	// Null at construction and never set by the game. When set, slot 0 is called with the
+	// path and m_Query.m_pPathCost right after the segments are post-processed, like
+	// m_pOptimizer later.
+	void *m_pUnk4878;
 };
 
 //-----------------------------------------------------------------------------
