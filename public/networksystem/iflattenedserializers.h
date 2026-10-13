@@ -10,6 +10,10 @@
 #include "tier0/utlsymbollarge.h"
 #include "tier0/utlvector.h"
 #include "tier0/utlleanvector.h"
+#include "tier0/utllinkedlist.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/threadtools.h"
+#include "tier1/utldelegate.h"
 #include "entity2/entityindex.h"
 
 #include "fieldpath.h"
@@ -201,42 +205,70 @@ public:
 	virtual void SpewLine( const char *pszText ) = 0;
 };
 
+// Request passed to INetworkFieldChangedEventQueue::QueuePointerRecreation, copied into a CNetworkFieldPointerAllocationQueueInfo_t.
 struct NetworkFieldScratchChange_t
 {
-	const char *m_pszFieldName; // Field owner or serializer name used by debug spew.
-	byte *m_pField; // Pointer captured by queue/rebase/shrink processing.
-	uintp m_nFieldOffset;
-	uintp m_nFieldSize;
-	FlattenedSerializerUserData_t *m_pContext;
-	byte m_nFieldType;
-	byte m_pad0021[7];
-	CFieldPath m_Path;
-	CUtlString m_DebugName;
-	byte m_pad0060[24];
 	int m_nEntityIndex;
-	byte m_nChangeKind;
-	bool m_bRemoved;
-	bool m_bInvalid;
-	byte m_pad0077;
-	CUtlVector< CFieldPath > *m_pReplayCompatPaths;
-	int m_nPrev;
-	int m_nNext;
+	const CFieldPath *m_pPath;
+	const char *m_pszFieldName; // Compared with the debug callback field name.
+	void *m_pUnk1;
+	void *m_pUnk2;
+	const char *m_pszTypeName; // Spewed as "allocate %s *" / "deallocate %s *".
+	void *m_pUnk3;
+	void *m_pUnk4;
+	CUtlAbstractDelegate m_delegate;
+	uint8 m_nUnk1;
 };
 
+// Queued change callback, one per changed field and order.
+struct CNetworkFieldChangedEventQueueChangeInfo_t
+{
+	const char *m_pszFieldName;
+	CUtlAbstractDelegate m_delegate; // Its object is the field owner struct.
+	void *m_pContext; // "[context entity 0x%p]"
+	void *m_pData; // Copy of the new value, allocated from the scratch data.
+	CFieldPath m_Path;
+	uint32 m_unAllocSize; // Size of m_pData, rounded up to 16.
+	int32 m_nObjectId;
+	struct
+	{
+		void *m_pUnk1;
+		void *m_pUnk2; // Spewed through when m_nArrayIndex >= 0.
+		int32 m_nArrayIndex; // Passed to the array delegates, -1 when unset.
+		uint8 m_nUnk1;
+	} m_ArrayInfo; // Copied from pArrayInfo for the array delegate types.
+	uint8 m_type; // NetworkFieldChangedDelegateType_t, NETWORK_FIELD_CHANGED_COUNT_TYPE when unset.
+	void *m_pReplayCompatData; // Passed by address to the replay compat delegates and freed after the call.
+	int32 m_nTagValue; // Passed by address to the tag delegates.
+	bool m_bCancelled; // Skipped by InvokeChangeCallbacks.
+	uint32 m_nNextInChain; // Next change with the same key, ~0u at the end.
+};
+
+// Queued pointer recreation, one per allocated or deallocated pointer field.
+struct CNetworkFieldPointerAllocationQueueInfo_t
+{
+	const char *m_pszFieldName;
+	CUtlAbstractDelegate m_delegate;
+	uint8 m_nUnk1;
+	void *m_pUnk1;
+	void *m_pUnk2;
+	CFieldPath m_Path;
+	CUtlString m_TypeName;
+	void *m_pUnk3;
+	void *m_pUnk4;
+	int m_nEntityIndex;
+	uint8 m_nKind; // 1 "allocate %s *", 2 "deallocate %s *"
+	uint8 m_nUnk2;
+};
+
+// Per-thread part of CNetworkFieldChangedEventQueue, chosen by the thread pool thread index.
 struct NetworkFieldScratchThreadQueue_t
 {
-	CAtomicMutex m_Mutex; // Used around per-thread queue writes.
-	CUtlVector< byte > m_FieldChangeMarks; // Bit/byte marks for fields that have queued changes.
-	int m_nChangeCount;
-	int m_nChangeCapacity;
-	NetworkFieldScratchChange_t *m_pChanges;
-	int m_nHead;
-	int m_nTail;
-	int m_nQueuedCount;
-	byte m_pad0044[4];
+	CAtomicMutex m_Mutex;
+	CUtlVector< CUtlLinkedList< CNetworkFieldChangedEventQueueChangeInfo_t, unsigned int > > m_queuedChanges; // One list per order.
+	CUtlVector< CUtlHashtable< uint32, uint32 > > m_queuedChangeLookup; // One table per order, maps a change key to its list index.
+	CUtlLinkedList< CNetworkFieldPointerAllocationQueueInfo_t, unsigned int > m_PointerAllocations;
 };
-
-COMPILE_TIME_ASSERT( sizeof( NetworkFieldScratchThreadQueue_t ) == 72 );
 
 struct NetworkFieldScratchMemoryStackList_t
 {
@@ -261,8 +293,9 @@ abstract_class INetworkFieldChangedEventQueue
 {
 public:
 	virtual ~INetworkFieldChangedEventQueue() {}
-	virtual bool QueueChange( int nEntityIndex, const CFieldPath &path, const char *pszFieldName, byte *pField, uintp nFieldOffset, uintp nFieldSize, int nChangeFrame, uint nFieldType, FlattenedSerializerUserData_t *pContext, int nFieldBytes, const char *pszDebugName, int *pArrayIndex ) = 0;
-	virtual bool QueueReplayCompatFieldChange( int nEntityIndex, const CFieldPath &path, const char *pszFieldName, byte *pField, uintp nFieldOffset, int nChangeFrame, FlattenedSerializerUserData_t *pContext, byte nFlags, const CFieldPath *pReplayPath ) = 0;
+	// nOrder < 0 queues into the last order. pData receives the scratch copy of the value. bCancel marks an already queued change as cancelled instead of queuing one.
+	virtual bool QueueChange( int nObjectId, const CFieldPath &path, const char *pszFieldName, void *pContext, void *pFieldOwnerStruct, void *&pData, int nOrder, uint8 type, const CUtlAbstractDelegate &delegate, int nAllocSize, const void *pArrayInfo, const int *pTagValue, bool bCancel ) = 0;
+	virtual bool QueueReplayCompatFieldChange( int nObjectId, const CFieldPath &path, const char *pszFieldName, void *pContext, void *pFieldOwnerStruct, int nOrder, const CUtlAbstractDelegate &delegate, uint8 nFlags, const void *pReplayCompatData ) = 0; // "nullptr != pFieldOwnerStruct"
 
 	// Invokes the queued change callbacks, reporting each callback slower than flTimeLimitMs to the change limit spew
 	virtual void InvokeChangeCallbacks( int nChangeFrame, float flTimeLimitMs ) = 0;
@@ -274,7 +307,7 @@ public:
 	virtual void SetDebugCallback( bool bEnabled, const char *pszFieldName ) = 0;
 	virtual bool IsDebugCallbackEnabled() const = 0;
 	virtual void SetDebugFieldName( const char *pszFieldName ) = 0;
-	virtual void QueuePointerRecreation( const NetworkFieldScratchChange_t *pChange, bool bSpew, FlattenedSerializerUserData_t *pContext ) = 0;
+	virtual void QueuePointerRecreation( const NetworkFieldScratchChange_t *pRequest, uint8 nKind, uint8 nUnk ) = 0; // nKind 1 allocates, 2 deallocates, 3 removes a queued deallocation
 };
 
 class CNetworkFieldChangedEventQueue : public INetworkFieldChangedEventQueue
