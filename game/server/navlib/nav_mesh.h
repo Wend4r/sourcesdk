@@ -349,9 +349,17 @@ public:
 	CNavMovableMeshesManager m_MovableMeshesManager;
 
 private:
-	// Three vectors, the second collecting dock areas, followed by a pointer back to the mesh.
-	// No class name or accessor identifies the object.
-	uint8 m_Unk3D0[ 0x48 ];
+	// The next four members are one object whose methods take its address; no class name
+	// identifies it.
+	// Storage of destroyed areas: CreateArea reuses the last one for the next area it builds
+	// on a polygon, and the destructor frees what is left.
+	CUtlVector< CNavArea * > m_Unk3D0;
+	// Areas queued for removal. Flushing marks them with dynamic attribute bit 3, removes them
+	// from the mesh, destroys them and moves their storage to m_Unk3D0.
+	CUtlVector< CNavArea * > m_Unk3E8;
+	// A vector only emptied and freed by the object's destructor.
+	uint8 m_Unk400[ 0x18 ];
+	// The mesh the object belongs to; the active mesh is used while it is null.
 	CNavMesh *m_pUnk418;
 
 public:
