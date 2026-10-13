@@ -190,7 +190,7 @@ public:
 
 	// MSVC groups these overloads in reverse order; the declaration order is Linux's
 	virtual IPhysicsBody *AddBody() = 0;
-	virtual IPhysicsBody *AddBody( const Vector &vPosition, const Quaternion &qOrientation, float flUnknown ) = 0;
+	virtual IPhysicsBody *AddBody( const Vector &vPosition, const Quaternion &qOrientation, float flScale ) = 0;
 	virtual void RemoveBody( IPhysicsBody *pBody ) = 0;
 
 	virtual int GetAwakeBodyCount() = 0;
