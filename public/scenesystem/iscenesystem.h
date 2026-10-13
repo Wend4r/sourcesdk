@@ -16,6 +16,7 @@
 #include <mathlib/fltx4.h>
 #include <resourcesystem/resourcehandle.h>
 #include <tier0/utlstringtoken.h>
+#include <tier0/utlvector.h>
 #include <bitmap/imageformat_declarations.h>
 
 #include <functional>
@@ -67,6 +68,12 @@ public:
 };
 
 using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
+
+enum SceneSystemBoxCullMode_t : uint32
+{
+	SCENESYSTEM_BOX_CULL_INSIDE = 0,
+	SCENESYSTEM_BOX_CULL_OUTSIDE = 1,
+};
 
 enum SetupPerObjectLighting_t : uint32
 {
@@ -292,9 +299,12 @@ public:
 	virtual void LoadAOProxies( void *p ) = 0;
 
 	virtual void UpdateAOProxySceneObject( void *p ) = 0;
-	virtual void unk160() = 0;
-	virtual void unk161() = 0;
-	virtual void unk162() = 0;
+	virtual uint32 AddCullingBox( ISceneWorld *pWorld, SceneSystemBoxCullMode_t nCullMode, const Vector &vOrigin, const QAngle &vAngles, Vector vExtents ) = 0;
+	virtual void RemoveCullingBox( ISceneWorld *pWorld, uint32 nBoxId ) = 0;
+
+	// Draw flags are 16 bit here, int in the s&box declaration.
+	virtual void SceneObject_GetMaterialsForObject( CSceneObject *pObject, CUtlVectorFixedGrowable< HMaterialWeak, 2 > &materials, CUtlVectorFixedGrowable< int16, 2 > &drawFlags ) = 0;
+
 	virtual void unk163() = 0;
 	virtual void unk164() = 0;
 	virtual void unk165() = 0;
