@@ -26,6 +26,7 @@
 #include "tier0/tslist.h"
 #include "tier0/bitvec.h"
 #include "steam/steamclientpublic.h"
+#include "spawngrouptypes.h"
 #include "game_saverestore.h"
 
 #include <functional>
@@ -48,6 +49,7 @@ class CUtlBuffer;
 class IDemoMessageSink;
 class InstantReplayMessage_t;
 class IEntityReport;
+class ILoadingSpawnGroup;
 class INetworkFieldChangedEventQueue;
 class InfoForResourceTypeCTextureBase;
 class IToolClientSimulationAPI;
@@ -65,6 +67,7 @@ struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
 struct LightDesc_t;
 struct matrix3x4_t;
+class matrix3x4a_t;
 struct ParticleProjectedTextureInfo_t;
 struct RenderViewport_t;
 struct RnQueryAttr_t;
@@ -287,9 +290,10 @@ public:
 	virtual void NotifyDisconnect( int nReason ) = 0;
 	// Releases *pCombinedModel and clears *pUnk
 	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppUnk1, const CUtlVector< int > **ppUnk2 ) = 0;
-	// Save/restore block handling
-	virtual void unk133( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
-	virtual void unk134( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
+	// Called by the client spawn group's SaveRestoreMap() and SaveRestoreMap2() with its loading spawn group; forward to the
+	// entity system save/restore when ILoadingSpawnGroup::ShouldLoadEntitiesFromSave() and ILoadingSpawnGroup::IsLevelTransition() are set
+	virtual void unk133( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
+	virtual void unk134( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
 	// Returns "core.global_stack"
 	virtual const char *unk135() = 0;
 	virtual bool unk136() = 0;
