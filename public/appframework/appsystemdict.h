@@ -11,7 +11,6 @@ class IAppSystem;
 class IApplication;
 class ILoggingListener;
 class KeyValues;
-class CTier2Application;
 
 using FactoryFn = void* (*)(char const*, int*);
 
@@ -19,12 +18,23 @@ abstract_class CAppSystemDict
 {
 public:
 	virtual ~CAppSystemDict() = 0;
-	virtual void Init() = 0;
-	virtual int GetSomeFlags() = 0;
-	virtual CUtlString GetConsoleLogFilename() = 0;
-	virtual void ChangeLogFileSuffix(const char* suffix) = 0;
-	virtual CTier2Application* CreateApplication() = 0;
+	virtual bool Init() = 0;
+	// Flags the log file is opened with, 0 unless the dictionary logs to a file
+	virtual int GetLogFileFlags() = 0;
+	virtual CUtlString GetConsoleLogFilename() const = 0;
+	virtual void ChangeLogFileSuffix( const char *pSuffix ) = 0;
+	virtual IApplication *CreateApplication() = 0;
 	virtual void OnAppSystemLoaded() = 0;
+
+	// Detected during this run, whether or not the user acknowledged the warning
+	bool HasInsufficientPagefile() const { return ( m_nMemoryWarnings & 1 ) != 0; }
+	bool HasLowAvailableVirtualMemory() const { return ( m_nMemoryWarnings & 2 ) != 0; }
+
+	struct WindowSize_t
+	{
+		int m_nWidth;
+		int m_nHeight;
+	};
 
 	struct ModuleInfo_t
 	{
@@ -53,7 +63,8 @@ public:
 	KeyValues* m_pGameInfo;
 	KeyValues* m_pApplicationInfo;
 	void* m_hInstance;
-	void *m_pUnk240;
+	// Created as 640x480 by a command line option, then set to the resolution the render device uses
+	WindowSize_t *m_pWindowSizeOverride;
 	bool m_bIsConsoleApp;
 	bool m_bInToolsMode;
 	bool m_bIsInDeveloperMode;
@@ -69,14 +80,17 @@ public:
 	IApplication* m_pApplication;
 	bool m_bInitialized;
 	bool m_bSuppressCOMInitialization;
+	bool m_bAllowScreensaver;
 	int m_nStartupManifestsDisabledCount;
 	int m_nAppSystemPhase;
 	bool m_bIsRetail;
 	bool m_bIsLowViolence;
 	bool m_bInvokedPreShutdown;
-	int m_nUnk336;
-	int m_nUnk340;
-	CBufferString m_Unk344;
+	// Bit 1: insufficient page file, bit 2: low available virtual memory
+	int m_nMemoryWarnings;
+	// Warnings the user has not acknowledged yet, kept across runs in the file below
+	int m_nUnacknowledgedMemoryWarnings;
+	CBufferString m_UnacknowledgedMemoryWarningsFile;
 	CBufferStringN< 200 > m_Unk360;
 	CBufferStringN< 128 > m_Unk568;
 	bool m_bUnk704;
