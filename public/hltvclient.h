@@ -17,7 +17,7 @@ public:
 	virtual void SetUpdateRate( float fUpdateRate ) override = 0;
 	virtual void Clear() override = 0;
 	virtual bool ExecuteStringCommand( const CNETMsg_StringCmd_t &msg ) override = 0;
-	virtual bool ApplyConVars( const CMsg_CVars &list ) override = 0;
+	virtual bool ProcessSetConVar( const CNETMsg_SetConVar_t &msg ) override = 0;
 	virtual bool ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) override = 0;
 	virtual bool ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) override = 0;
 	virtual bool ProcessMove( const CCLCMsg_Move_t &msg ) override = 0;

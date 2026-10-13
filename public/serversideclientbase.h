@@ -35,6 +35,8 @@ class CNetworkServerSpawnGroup;
 class CMsg_CVars;
 class CNETMsg_StringCmd_t;
 class CNETMsg_Tick_t;
+class CNETMsg_SetConVar_t;
+class CNETMsg_SignonState_t;
 class CNETMsg_SpawnGroup_LoadCompleted_t;
 class CCLCMsg_ClientInfo_t;
 class CCLCMsg_BaselineAck_t;
@@ -46,6 +48,11 @@ class CCLCMsg_Move_t;
 class CCLCMsg_VoiceData_t;
 class CCLCMsg_FileCRCCheck_t;
 class CCLCMsg_RespondCvarValue_t;
+class CCLCMsg_RconServerDetails_t;
+class CCLCMsg_Diagnostic_t;
+class CCLCMsg_HltvReplay_t;
+class CCLCMsg_HltvFixupOperatorTick_t;
+class CSVCMsg_UserMessage_t;
 class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
 class NetMessageConnectionClosed_t;
@@ -242,11 +249,9 @@ public: // Message Handlers
 	virtual bool             ProcessTick( const CNETMsg_Tick_t& msg ) = 0;
 	virtual bool             ProcessStringCmd( const CNETMsg_StringCmd_t& msg ) = 0;
 
-public:
-	virtual bool             ApplyConVars( const CMsg_CVars &list ) = 0;
-
 	// iterates KV pairs from client, calls KeyValues::SetString on userinfo
-	virtual bool             ProcessSetConVar( const CMsg_CVars &list ) = 0;
+	virtual bool             ProcessSetConVar( const CNETMsg_SetConVar_t &msg ) = 0;
+	virtual bool             ProcessSignonState( const CNETMsg_SignonState_t &msg ) = 0;
 
 public:
 	virtual bool             ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) = 0;
@@ -257,8 +262,8 @@ public:
 	virtual bool             ProcessSplitPlayerDisconnect( const CCLCMsg_SplitPlayerDisconnect_t &msg ) = 0;
 	virtual bool             ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) = 0;
 
-	virtual bool             SendRconServerDetails() = 0;
-	virtual bool             OnSignonStateChanged() { return true; }
+	virtual bool             ProcessRconServerDetails( const CCLCMsg_RconServerDetails_t &msg ) = 0;
+	virtual bool             ProcessDiagnostic( const CCLCMsg_Diagnostic_t &msg ) { return true; }
 
 public:
 	virtual bool             ProcessMove( const CCLCMsg_Move_t &msg ) = 0;
@@ -273,9 +278,9 @@ public:
 public:
 	virtual bool             ProcessChangeSplitscreenUser( const NetMessageSplitscreenUserChanged_t &msg ) = 0;
 
-	virtual bool             UnusedVirtual45() { return false; }
-	virtual bool             UnusedVirtual46() { return false; }
-	virtual bool             OnDisconnectForwarding() { return true; }
+	virtual bool             ProcessHltvReplay( const CCLCMsg_HltvReplay_t &msg ) { return false; }
+	virtual bool             ProcessHltvFixupOperatorTick( const CCLCMsg_HltvFixupOperatorTick_t &msg ) { return false; }
+	virtual bool             ProcessUserMessage( const CSVCMsg_UserMessage_t &msg ) { return true; }
 
 public:
 	virtual void             ConnectionStart( INetChannel *pNetChannel ) = 0;
