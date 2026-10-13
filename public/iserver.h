@@ -347,9 +347,13 @@ public:
 	// Set by SetGameSessionManifest
 	HGameResourceManifest m_hGameSessionManifest;
 	int m_nNotifyFlags;
-	void* m_pServerServiceState;
+	// The four pointers point into a reservation state owned by the server service (CHLTVServer keeps its own)
+	// IsReserved() returns *m_pnReservationCookie != 0
 	uint64* m_pnReservationCookie;
+	// -1 while a client is connected, the time the server became empty otherwise
 	float* m_pflTimeLastClientLeft;
+	// Initialized to -1, no access found
+	float* m_pflUnk968;
 	float* m_pflReservationExpiryTime;
 	// Reset by SetGameSpawnGroupMgr, read as an int when snapshots are built
 	int m_nUnk952;
