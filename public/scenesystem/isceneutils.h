@@ -23,6 +23,8 @@ class IRenderingPipeline;
 class CViewId;
 class CFrustum;
 class Vector;
+class QAngle;
+class Vector4D;
 struct RenderViewport_t;
 struct SceneLayerOutputs_t;
 struct pixelvis_queryparams_t;
@@ -69,8 +71,11 @@ public:
 	virtual void UnregisterRenderingPipeline( IRenderingPipeline *pPipeline ) = 0;
 	virtual IRenderingPipeline *FindRenderingPipeline( CUtlStringToken token ) = 0;
 	virtual void AliasRenderingPipeline( const char *pszAlias, CUtlStringToken token ) = 0;
-	virtual void unk028() = 0;
-	virtual void unk029() = 0;
+
+	// Overloads: MSVC places the texture one first.
+	virtual ISceneLayer *AddTextureDebugLayer( ISceneView *pView, const char *pDebugName, const SceneLayerOutputs_t &outputs, const RenderViewport_t &viewport, HSceneViewRenderTarget hTexture, int nDebugShowTextureMode, bool bTextureIsSrgb ) = 0;
+	virtual ISceneLayer *AddTextureDebugLayer( ISceneView *pView, const char *pDebugName, const SceneLayerOutputs_t &outputs, const RenderViewport_t &viewport, HRenderTexture hTexture, int nDebugShowTextureMode, bool bTextureIsSrgb ) = 0;
+
 	virtual CViewId AppendViewProducerToViewId( CViewId viewId, int nViewProducer ) = 0;
 	virtual int AllocateViewProducerIndex() = 0;
 	virtual bool PixelVisibility_IsAvailable() const = 0;
@@ -91,9 +96,9 @@ public:
 	virtual CCharacterDecalRenderer *CreateCharacterDecalRenderer() = 0;
 
 	virtual void DestroyCharacterDecalRenderer( CCharacterDecalRenderer *pRenderer ) = 0;
-	virtual void unk047() = 0;
+	virtual void Compute3DSkyboxFrustum( const CFrustum &inFrustum, const Vector &vSkyboxOrigin, const QAngle &vSkyboxAngles, const Vector &vSkyboxCameraOrigin, float flSkyboxScale, CFrustum *pOutSkyboxFrustum ) = 0;
 	virtual void unk048() = 0;
-	virtual void unk049() = 0;
+	virtual bool FindClipSpaceRectForObject( const CSceneObject *pObject, const ISceneView *pView, Vector4D &vRect ) = 0;
 	virtual void unk050() = 0;
 	virtual void unk051() = 0;
 	virtual void unk052() = 0;
