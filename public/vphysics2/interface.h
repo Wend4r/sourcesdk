@@ -561,7 +561,7 @@ abstract_class IFnPhysicsWorld
 {
 public:
 	virtual void SetWorld( IVPhysics2World *pWorld ) = 0;
-	virtual void unk001( CRnWorld *pRnWorld ) = 0;
+	virtual void SetRnWorld( CRnWorld *pRnWorld ) = 0;
 	virtual IVPhysics2World *GetWorld() = 0;
 
 	virtual void *unk003( int nIndex ) = 0;
