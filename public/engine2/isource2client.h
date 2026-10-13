@@ -241,9 +241,10 @@ public:
 	virtual void unk114( CEntityIndex nEntityIndex, void *pUnk ) = 0;
 	virtual void unk114( CEntityInstance *pEntity, uint64 *pUnk1, void *pUnk2 ) = 0;
 	virtual void LaunchApplicationOnExit( const char *pszValue ) = 0;
-	// Returns its argument
-	virtual void *unk117( void *pUnk ) = 0;
-	virtual bool unk118() = 0;
+	// Asked through the engine sound services; returns its argument
+	virtual const char *DotaEconGetSoundReplacement( const char *pszSoundName ) = 0;
+	// Asked through the engine sound services; false
+	virtual bool DotaIsGroundUnderWater( float flX, float flY ) = 0;
 	virtual float unk119() = 0;
 	virtual void unk120() = 0;
 	virtual void unk121() = 0;
