@@ -231,11 +231,12 @@ public:
 	virtual void DestroySoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
 	// Softbodies kept in the interface's own softbody list
-	virtual void CreateListedSoftbody( void *p ) = 0;
+	virtual IPhysicsSoftbody *CreateListedSoftbody( void *p ) = 0;
 	virtual void DestroyListedSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
+	// Both include the softbodies of every world
 	virtual int GetSoftbodyCount() = 0;
-	virtual void unk095( void *p ) = 0;
+	virtual int GetSoftbodies( int nFlags, IPhysicsSoftbody **ppSoftbodies ) = 0;
 
 	virtual IIkSolver *CreateIkSolver( void *p ) = 0;
 	virtual void DestroyIkSolver( IIkSolver *pSolver ) = 0;
