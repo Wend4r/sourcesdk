@@ -149,8 +149,8 @@ public:
 	virtual bool ProcessHltvReplay( const CCLCMsg_HltvReplay_t &msg ) override = 0;
 	virtual bool ProcessHltvFixupOperatorTick( const CCLCMsg_HltvFixupOperatorTick_t &msg ) override = 0;
 	virtual bool ProcessUserMessage( const CSVCMsg_UserMessage_t &msg ) override = 0;
-	virtual void BuildServerInfoMessage() override = 0;
-	virtual void PerformPrespawn() override = 0;
+	virtual void unk049( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) override = 0;
+	virtual void SendInitialSpawnGroups( CUtlVector< CNetworkServerSpawnGroup * > &vecSpawnGroups, bool bAsync ) override = 0;
 	virtual bool UpdateAcknowledgedFramecount( int tick ) override = 0;
 	virtual bool ShouldSendMessages() override = 0;
 	virtual void UpdateUserSettings() override = 0;

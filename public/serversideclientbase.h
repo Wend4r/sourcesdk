@@ -287,12 +287,9 @@ public:
 public:
 	virtual void             ConnectionStart( INetChannel *pNetChannel ) = 0;
 
-	virtual void             BuildServerInfoMessage() = 0;
-	virtual void             PerformPrespawn() = 0;
-
 public:
+	// MSVC places the virtual overload below at the position of the first declaration of the name
 	void                     ExecuteDelayedCall( empty_t & ) {}
-	virtual void             ExecuteDelayedCall( BuildServerInfoMessageAsync_t &call ) = 0;
 	void                     ExecuteDelayedCall( OnSpawnGroupActivateCall_t &call );
 	void                     ExecuteDelayedCall( OnSpawnGroupDeactivateCall_t &call );
 	void                     ExecuteDelayedCall( SendNetMessageCall_t &call );
@@ -303,6 +300,11 @@ public:
 	void                     ExecuteDelayedCall( SignonStateNewCall_t &call );
 	void                     ExecuteDelayedCall( SignonStateNewFailedCall_t &call );
 	void                     ExecuteDelayedCall( DisconnectCall_t &call );
+
+	// Collects the server's initial spawn groups for the server info message and marks them as sent
+	virtual void             unk049( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) = 0;
+	virtual void             SendInitialSpawnGroups( CUtlVector< CNetworkServerSpawnGroup * > &vecSpawnGroups, bool bAsync ) = 0;
+	virtual void             ExecuteDelayedCall( BuildServerInfoMessageAsync_t &call ) = 0;
 
 	virtual bool             UpdateAcknowledgedFramecount( int tick ) = 0;
 	void                     ForceFullUpdate()
