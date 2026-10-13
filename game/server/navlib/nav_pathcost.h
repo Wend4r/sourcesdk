@@ -51,16 +51,16 @@ public:
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
 	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
 	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
-	virtual const char *Unk_GetClassName() const = 0;
+	virtual const char *GetClassName() const = 0;
 	virtual ~INavPathCost() {}
-	virtual void Unk_5( void *p ) = 0;
+	virtual void unk005( void *p ) = 0;
 	// The first check of every step: whether pToArea may be entered from pFromArea along pAdj.
 	// CNavPathCost only requires pToArea to be built for this cost's hull (or the hull to be -1).
 	virtual bool IsToAreaTraversable( const CNavArea *pToArea, const CNavArea *pFromArea, const NavAreaAdj_t *pAdj ) const = 0;
 	// CNavPathCost: a heap copy of this cost.
-	virtual INavPathCost *Unk_Clone() const = 0;
+	virtual INavPathCost *Clone() const = 0;
 	// CNavPathCost: whether pszClassName names this cost's class.
-	virtual bool Unk_IsClass( const char *pszClassName ) const = 0;
+	virtual bool IsClass( const char *pszClassName ) const = 0;
 
 public:
 	NavHull_t m_navHull;
@@ -73,17 +73,17 @@ schema abstract_class CNavPathCost : public INavPathCost
 {
 public:
 	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
-	virtual void Unk_9( void *p ) = 0;
-	virtual void Unk_10( void *p ) = 0;
-	virtual void Unk_11( void *p ) = 0;
-	virtual void Unk_12( void *p ) = 0;
+	virtual void unk009( void *p ) = 0;
+	virtual void unk010( void *p ) = 0;
+	virtual void unk011( void *p ) = 0;
+	virtual void unk012( void *p ) = 0;
 	// Costs the step from pFromArea along pAdj into *pResult: -1 unless IsToAreaTraversable,
 	// else CalcCostFloorAreas for floor steps and CalcCostLadder for ladder steps. pUnkPos and
 	// bUnk are handed on to CalcCostFloorAreas; pUnk is not used for the cost.
-	virtual void Unk_CalcCost( const CNavArea *pFromArea, const NavAreaAdj_t *pAdj, const void *pUnk, const Vector *pUnkPos, bool bUnk, PathCostResult_t *pResult ) const = 0;
-	virtual void Unk_14( void *p ) = 0;
+	virtual void CalcCost( const CNavArea *pFromArea, const NavAreaAdj_t *pAdj, const void *pUnk, const Vector *pUnkPos, bool bUnk, PathCostResult_t *pResult ) const = 0;
+	virtual void unk014( void *p ) = 0;
 	// The distance between the positions plus m_flTransitionPenalty.
-	virtual float Unk_TransitionCost( const void *pUnk1, const void *pUnk2, const Vector *pFrom, const Vector *pTo ) const = 0;
+	virtual float TransitionCost( const void *pUnk1, const void *pUnk2, const Vector *pFrom, const Vector *pTo ) const = 0;
 	// Returns flDist unchanged; game costs add their penalties here, and treat a height change
 	// above their agent's climb as impassable.
 	virtual float FloorAreaCost( const CNavArea *pArea, const CNavArea *pFromArea, float flDist, float flHeightChange ) const = 0;
