@@ -29,7 +29,6 @@ class CSceneObject;
 class CSchemaClassInfo;
 class IParticleCollection;
 class IParticleFunctionDefinition;
-class IParticleSnapshot;
 class IParticleSystemDefinition;
 class IParticleSystemQuery;
 class IRenderContext;
@@ -46,11 +45,89 @@ public:
 
 using HParticleSystemDefinition = CWeakHandle< InfoForResourceTypeIParticleSystemDefinition >;
 
+//-----------------------------------------------------------------------------
+// Arrays of particle attribute values that fill a snapshot, one element per
+// particle for every non-null array; each array maps to the particle attribute
+// its name gives
+//-----------------------------------------------------------------------------
+struct ParticleSnapshotAttributeData_t
+{
+	const Vector *m_pXYZ;
+	const Vector *m_pPrevXYZ;
+	const Vector *m_pNormal;
+	const Vector *m_pTintRGB;
+	const Vector *m_pBoxMins;
+	const Vector *m_pBoxMaxs;
+	const Vector *m_pBoxAngles;
+	const Vector *m_pHitboxRelativeXYZ;
+	const Vector *m_pScratchVec;
+	const Vector *m_pScratchVec2;
+	const float *m_pRadius;
+	const float *m_pForceScale;
+	const float *m_pAlpha;
+	const float *m_pAlpha2;
+	const float *m_pScratchFloat;
+	const float *m_pScratchFloat1;
+	const float *m_pScratchFloat2;
+	const float *m_pCreationTime;
+	const float *m_pLifeDuration;
+	const float *m_pGlowAlpha;
+	const float *m_pSequenceNumber;
+	const int *m_pBoxFlags;
+	const int *m_pHitboxIndex;
+	const int *m_pRopeSegmentId;
+};
+
+//-----------------------------------------------------------------------------
+// A particle snapshot: an attribute container indexed by particle (column),
+// row and slice, with a mapping from particle attributes to container fields
+//-----------------------------------------------------------------------------
+abstract_class IParticleSnapshot
+{
+public:
+	struct AttributeMap
+	{
+		int m_nContainerAttribute;
+		int m_nParticleAttribute;
+	};
+
+	using AttributeMapVector = CUtlVector< AttributeMap >;
+
+	virtual bool Init( int nX, int nY, int nZ, const AttributeMapVector &attributeMaps ) = 0;
+
+	// Maps every non-null array of the data to its attribute and fills nCount particles
+	virtual bool InitFromAttributeData( int nCount, const ParticleSnapshotAttributeData_t *pData ) = 0;
+
+	// Resets the particle count
+	virtual void Clear() = 0;
+
+	// Appends up to nCount particles, pContainerAttributes gives the container field of each array of the data
+	virtual int AddAttributeData( int nCount, const ParticleSnapshotAttributeData_t *pData, const int *pContainerAttributes ) = 0;
+
+	// Returns the particle count, same as NumCols()
+	virtual int unk004() const = 0;
+
+	virtual int NumCols() const = 0;
+	virtual int NumRows() const = 0;
+	virtual int NumSlices() const = 0;
+	virtual bool HasAttribute( int nParticleAttribute, EAttributeDataType nDataType ) const = 0;
+	virtual float *ElementPointerf( int nParticleAttribute, int nX, int nY, int nZ ) const = 0;
+	virtual FourVectors *ElementPointer4V( int nParticleAttribute, int nX, int nY, int nZ ) const = 0;
+	virtual CUtlVector< CUtlString > &GetBoneNameList() = 0;
+
+	// Incremented by every change of the snapshot
+	virtual int GetSerialNumber() const = 0;
+
+	virtual ~IParticleSnapshot() {}
+};
+
 class InfoForResourceTypeIParticleSnapshot
 {
 public:
 	using RuntimeClass_t = IParticleSnapshot;
 };
+
+using HParticleSnapshot = CWeakHandle< InfoForResourceTypeIParticleSnapshot >;
 
 abstract_class IParticleSystemMgr : public IAppSystem
 {
@@ -103,17 +180,26 @@ public:
 	virtual bool unk039( const KeyValues3 *pKeyValues, void *pOut ) = 0;
 	virtual void unk040() = 0;
 
-	virtual CWeakHandle< InfoForResourceTypeIParticleSnapshot > CreateProceduralSnapshot( CUtlString sName ) = 0;
+	virtual HParticleSnapshot CreateProceduralSnapshot( CUtlString sName ) = 0;
 
-	virtual bool unk042( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nCount, const void *pData ) = 0;
-	virtual bool unk043( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nX, int nY, int nZ, const void *pAttributeMaps ) = 0;
-	virtual CWeakHandle< InfoForResourceTypeIParticleSnapshot > unk044( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, const CUtlString &sName ) = 0;
-	virtual void unk045( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nX, int nY, int nZ, const int &nAttribute, Vector vecValue ) = 0;
-	virtual Vector unk046( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nAttribute, int nX, int nY, int nZ ) = 0;
-	virtual int unk047( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot ) = 0;
-	virtual bool unk048( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, int nAttribute, EAttributeDataType nDataType ) = 0;
-	virtual void unk049( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot, const char *pszUnk, void *pUnk ) = 0;
-	virtual void unk050( CWeakHandle< InfoForResourceTypeIParticleSnapshot > hSnapshot ) = 0;
+	// Forward to the snapshot
+	virtual bool InitSnapshotFromAttributeData( HParticleSnapshot hSnapshot, int nCount, const ParticleSnapshotAttributeData_t *pData ) = 0;
+	virtual bool InitSnapshot( HParticleSnapshot hSnapshot, int nX, int nY, int nZ, const IParticleSnapshot::AttributeMapVector &attributeMaps ) = 0;
+
+	// Creates a procedural snapshot with the name and copies the snapshot into it
+	virtual HParticleSnapshot CopySnapshot( HParticleSnapshot hSnapshot, const CUtlString &sName ) = 0;
+
+	// Element ( nX, nY, nZ ) of a vector container field
+	virtual void SetSnapshotVector( HParticleSnapshot hSnapshot, int nX, int nY, int nZ, const int &nContainerAttribute, Vector vecValue ) = 0;
+	virtual Vector GetSnapshotVector( HParticleSnapshot hSnapshot, int nParticleAttribute, int nX, int nY, int nZ ) = 0;
+
+	virtual int GetSnapshotParticleCount( HParticleSnapshot hSnapshot ) = 0;
+	virtual bool SnapshotHasAttribute( HParticleSnapshot hSnapshot, int nParticleAttribute, EAttributeDataType nDataType ) = 0;
+
+	// Stores the particle indices of a named subset, which operators select by name
+	virtual void SetSnapshotSubset( HParticleSnapshot hSnapshot, const char *pszSubsetName, const CUtlVector< int > &indices ) = 0;
+
+	virtual void ClearSnapshot( HParticleSnapshot hSnapshot ) = 0;
 	virtual int GetParticleSystemVersion() = 0;
 	virtual const char *GetParticleSystemVersionChangeDescription( int nVersion ) = 0;
 	virtual void unk053( HParticleSystemDefinition hDefinition ) = 0;
