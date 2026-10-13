@@ -356,12 +356,12 @@ public:
 	virtual int unk232( SwapChainHandle_t hSwapChain ) = 0;
 
 	// Device generated commands
-	virtual void CreateIndirectCommandsLayout( void *p ) = 0;
-	virtual void DestroyIndirectCommandsLayout( void *hLayout ) = 0;
-	virtual void CreateIndirectCommandsPreprocessBuffer( void *p ) = 0;
-	virtual void CreateIndirectExecutionSet( void *p ) = 0;
-	virtual void UpdateIndirectExecutionSet( void *p ) = 0;
-	virtual void unk238( void *p ) = 0;
+	virtual void *CreateIndirectCommandsLayout( IRenderContext *pRenderContext, uint32 nTokenCount, const void *pTokens, uint32 nIndirectStride, bool bExplicitPreprocess ) = 0;
+	virtual void DestroyIndirectCommandsLayout( void *hIndirectCommandsLayout ) = 0;
+	virtual RenderBufferHandle_t CreateIndirectCommandsPreprocessBuffer( void *hIndirectCommandsLayout, void *hIndirectExecutionSet, uint32 nMaxSequenceCount ) = 0;
+	virtual void *CreateIndirectExecutionSet( IRenderContext *pRenderContext, int nMaxPipelineCount ) = 0;
+	virtual bool UpdateIndirectExecutionSet( void *hIndirectExecutionSet, IRenderContext *pRenderContext, int nPipelineIndex ) = 0;
+	virtual void unk238( void *hIndirectExecutionSet ) = 0;
 
 	virtual void unk239( const char *pName ) = 0;
 
