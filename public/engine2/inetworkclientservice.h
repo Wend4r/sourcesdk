@@ -16,6 +16,13 @@
 #include <networksystem/inetchannel.h>
 #include <networkbasetypes.pb.h>
 #include <steam/steamclientpublic.h>
+#include <tier0/convar.h>
+#include <tier0/tslist.h>
+#include <tier0/utlleanvector.h>
+#include <tier0/utlsignalslot.h>
+#include <tier0/utlstring.h>
+#include <tier0/utlvector.h>
+#include <vconcomm/ivconcomm.h>
 
 class CNetworkGameClient;
 class IGameSpawnGroupMgr;
@@ -27,6 +34,9 @@ class ILoopModePrerequisiteRegistry;
 class CTransform;
 class IEntityReport;
 class CCompressedResourceManifest;
+class CClientChangelevelState;
+class CGameClientConnectPrerequisite;
+class CVConsole2FlattenedSerializerListener;
 
 abstract_class INetworkClientService : public IEngineService
 {
@@ -95,7 +105,45 @@ public:
 
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr() = 0;
 
+	// Sends the entries of m_unk0F8 to VConsole
 	virtual void unk063() = 0;
+};
+
+class CNetworkClientService : public CBaseEngineService< INetworkClientService >, public CUtlSlot, public IVConCommDataReceived
+{
+public:
+	// Pushed by SendNetMessage off the main thread, sent on the main thread
+	struct QueuedNetMessage_t
+	{
+		CSplitScreenSlot m_nSlot;
+		CNetMessage *m_pData; // Clone of the message
+		NetChannelBufType_t m_nBufType;
+	};
+
+	uint8 m_unk068;
+	bool m_bEntityReportActive;
+	bool m_bDisconnecting;
+	ENetworkDisconnectionReason m_nDisconnectReason;
+	CUtlString m_sDisconnectReason;
+	CUtlLeanVector< CUtlString > m_unk078;
+	IEntityReport *m_pEntityReport;
+	int m_nClientSocket;
+	int m_nUnk094;
+	CGameClientConnectPrerequisite *m_pConnectPrerequisite;
+	CNetworkGameClient *m_pNetworkGameClient;
+	CTSQueue< QueuedNetMessage_t > m_QueuedNetMessages;
+	CClientChangelevelState *m_pChangelevelState;
+	CUtlVector< void * > m_unk0F8; // 60-byte entries
+	CUtlVector< void * > m_unk110; // 64-byte per net message relay entries
+	CEventDispatcher< CEventIDManager_Default > m_NetMessageDispatcher;
+	CVConsole2FlattenedSerializerListener *m_pFlattenedSerializerListener;
+	bool m_bUnk170;
+	CConCommandMemberAccessor< CNetworkClientService > m_DisconnectCommand;
+	CConCommandMemberAccessor< CNetworkClientService > m_StatusCommand;
+	CConCommandMemberAccessor< CNetworkClientService > m_FullUpdateCommand;
+	CConCommandMemberAccessor< CNetworkClientService > m_PauseCommand;
+	CConCommandMemberAccessor< CNetworkClientService > m_SetPauseCommand;
+	CConCommandMemberAccessor< CNetworkClientService > m_UnpauseCommand;
 };
 
 #endif // INETWORKCLIENTSERVICE_H
