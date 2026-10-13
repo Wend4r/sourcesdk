@@ -84,12 +84,6 @@ class CTier1AppSystemDict : public CAppSystemDict
 {
 public:
 	bool m_bNoExeCheck;
-	int m_nUnk;
-	CBufferString unk;
-	CBufferString unk1;
-	char m_unnk[192];
-	CBufferString unk2;
-	char m_unnk1[218];
 };
 
 class CTier1Application : public CTier1AppSystem< IApplication >
