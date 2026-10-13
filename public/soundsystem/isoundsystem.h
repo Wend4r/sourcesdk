@@ -14,6 +14,7 @@
 #include "mathlib/vector.h"
 #include "resourcesystem/resourcehandle.h"
 #include "soundsystem/isoundopsystem.h"
+#include "soundsystem/soundflags.h"
 #include "tier0/platwindow.h"
 #include "tier0/utlmap.h"
 #include "tier0/utlstring.h"
@@ -190,9 +191,26 @@ struct audio_listener_vectors_t
 
 
 //-----------------------------------------------------------------------------
-// Parameters of the capture stream created by ISoundSystem::unk015
+// Description of a playing voice (ISoundSystem::GetActiveSounds)
 //-----------------------------------------------------------------------------
-struct SoundSystemUnk015_t
+struct SndInfo_t
+{
+	SoundGuid_t m_nGuid;
+	int m_nUnk04;
+	int m_nUnk08;
+	int m_nUnk0C;
+	float m_flVolume;
+	int m_nPitch;
+	uint64 m_nUnk18;
+	int m_nUnk20;
+	int m_nUnk24;
+};
+
+
+//-----------------------------------------------------------------------------
+// Parameters of the capture stream created by ISoundSystem::CreateInputStream
+//-----------------------------------------------------------------------------
+struct AudioInputStreamParams_t
 {
 	int m_nSampleRate;
 	uint32 m_nDeviceID;
@@ -210,101 +228,114 @@ public:
 	virtual IAudioDevice2 *CreateDefaultDevice() = 0;
 	virtual void DestroyDevice( IAudioDevice2 *pDevice ) = 0;
 	// Creates a CPresetDSPAudioProcessor through the sound system processor factory
-	virtual CAudioProcessor *unk013( const char *pName, int nUnk1, float flUnk, int nUnk2, int nUnk3, bool bUnk ) = 0;
+	virtual CAudioProcessor *CreatePresetDSPProcessor( const char *pName, int nUnk1, float flCrossFade, int nChannels, int nUnk3, bool bUnk ) = 0;
 	virtual IAudioDevice2 *CreateNullDevice() = 0;
-	virtual IAudioInputStream *unk015( SoundSystemUnk015_t &params ) = 0;
-	virtual void unk016( IAudioInputStream *pInputStream ) = 0;
+	// Opens a capture stream of the input device (voice chat)
+	virtual IAudioInputStream *CreateInputStream( AudioInputStreamParams_t &params ) = 0;
+	virtual void DestroyInputStream( IAudioInputStream *pInputStream ) = 0;
 	virtual IAudioOutputStream *CreateDirectMixOutputStream( uint32 nSampleRate, uint32 nChannels, uint32 nBits ) = 0;
-	virtual IAudioOutputStream *unk018( SoundEventGuid_t guid, const char *pFieldName, uint32 nSampleRate, uint32 nChannels, uint32 nBits ) = 0;
+	// Creates an output stream that plays through a field of a playing sound event
+	virtual IAudioOutputStream *CreateAttachedOutputStream( SoundEventGuid_t guid, const char *pFieldName, uint32 nSampleRate, uint32 nChannels, uint32 nBits ) = 0;
 	virtual void DestroyOutputStream( IAudioOutputStream *pOutputStream ) = 0;
 	virtual void InitSoundSystem( PlatWindow_t hWindow, ISoundSystemServices *pSoundSystemServices ) = 0;
 	virtual bool IsSoundEnabled() = 0;
 	virtual void Update( const CAudioState *pAudioState, bool bAllowAsync ) = 0;
 	virtual void StopAllSounds() = 0;
-	virtual void unk024() = 0;
+	// Stops every voice and every sound event stack
+	virtual void StopAllSoundsAndSoundEvents() = 0;
 	// Starts a voice from sound parameters and returns its guid
 	virtual SoundGuid_t StartSound( StartSoundParams_t &params ) = 0;
 	virtual void StopSound( SoundGuid_t guid, bool bForceSync ) = 0;
-	virtual uint32 unk027( double flTime, int nIndex ) = 0;
-	virtual void unk028( int nIndex ) = 0;
-	virtual float unk029( SoundGuid_t guid ) = 0;
+	// Returns the mixer sample time of a host time, keeping the offset of the clock stable between calls
+	virtual uint32 SyncSampleClock( double flTime, int nClock ) = 0;
+	virtual void ResetSampleClock( int nClock ) = 0;
+	virtual float GetSoundDuration( SoundGuid_t guid ) = 0;
 	virtual bool IsSoundPlaying( SoundGuid_t guid ) = 0;
-	virtual void unk032( SoundGuid_t guid, float flValue ) = 0;
-	virtual bool unk033( SoundGuid_t guid ) = 0;
+	virtual void SetSoundVolume( SoundGuid_t guid, float flVolume ) = 0;
+	virtual bool IsSoundLooped( SoundGuid_t guid ) = 0;
 	virtual CSfxTable *PrecacheSound( const char *pSample ) = 0;
 	virtual void PreloadSoundEvent( CSoundEvent *pSoundEvent, uint16 nUnk ) = 0;
 	virtual void PreloadSoundEvent( const char *pSoundEventName, uint16 nUnk ) = 0;
 	virtual void PreloadSound( CSfxTable *pSfx, uint16 nUnk ) = 0;
 	virtual void PreloadSound( const char *pSoundName, uint16 nUnk ) = 0;
-	virtual float unk039( int nUnk ) = 0;
+	// snd_gain attenuated by the distance multiplier of the sound level
+	virtual float GetGainFromSoundLevel( soundlevel_t nSoundLevel, float flDistance, float flUnk ) = 0;
 	virtual void SetMixGroupOfCurrentMixer( const char *pszGroupName, const char *pszParam, float flValue ) = 0;
 	// Returns -1 for an unknown mix layer
 	virtual int GetMixLayerIndex( const char *pLayerName ) = 0;
 	virtual void SetMixLayerLevel( int nLayer, float flLevel ) = 0;
 	virtual void unk043( float flValue ) = 0;
 	virtual float unk044() = 0;
-	virtual void unk045( IAudioStreamRecorder *pRecorder, bool bAdd ) = 0;
-	virtual IAudioWAVRecorder *unk046() = 0;
-	virtual bool unk047() = 0;
-	virtual IAudioWAVRecorder *unk048( int nUnk ) = 0;
+	// Adding the first recorder switches the output to the audio capture device, removing the last one restores the default device
+	virtual void RegisterAudioStreamRecorder( IAudioStreamRecorder *pRecorder, bool bRegister ) = 0;
+	virtual IAudioWAVRecorder *CreateWAVRecorder() = 0;
+	virtual bool IsUsingAudioCaptureDevice() = 0;
+	virtual IAudioWAVRecorder *CreateMicrophoneWAVRecorder( int nUnk ) = 0;
 	virtual void ResetMixControlInput( CUtlStringToken nName ) = 0;
-	virtual void unk050( CUtlStringToken nName ) = 0;
-	virtual void unk051( CUtlStringToken nName ) = 0;
-	virtual void unk052( CUtlStringToken nName ) = 0;
-	virtual void unk053( CUtlStringToken nName ) = 0;
-	virtual void SetMixControlInput( CUtlStringToken nName, float flValue, bool bUnk ) = 0;
-	virtual bool unk055( CUtlStringToken nName ) = 0;
+	virtual void ClearMixControlInputOverride( CUtlStringToken nName ) = 0;
+	virtual void ClearMixImpulseResponseInputOverride( CUtlStringToken nName ) = 0;
+	virtual void ClearMixControlTransientInputOverride( CUtlStringToken nName ) = 0;
+	virtual void ClearMixFloatArrayInputOverride( CUtlStringToken nName ) = 0;
+	// An override value ignores the later calls without bOverride until its override is cleared
+	virtual void SetMixControlInput( CUtlStringToken nName, float flValue, bool bOverride ) = 0;
+	virtual bool TriggerMixControlTransientInput( CUtlStringToken nName ) = 0;
 	virtual void SetMixNameInput( CUtlStringToken nName, uint32 nValue ) = 0;
-	virtual uint32 unk057( CUtlStringToken nName ) = 0;
+	virtual uint32 GetMixNameInputValue( CUtlStringToken nName ) = 0;
 	virtual float GetMixControlInputValue( CUtlStringToken nName ) = 0;
 	virtual double unk059( uint32 nUnk ) = 0;
-	virtual uint32 unk060( int nIndex ) = 0;
-	virtual CUtlString unk061( int nIndex ) = 0;
-	virtual int unk062() = 0;
-	virtual void unk063( uint32 nUnk, void *pUnk, bool bUnk ) = 0;
-	virtual void unk064( CUtlVector< CUtlString > &vecOut ) = 0;
+	virtual uint32 GetDSPPresetNameToken( int nIndex ) = 0;
+	virtual CUtlString GetDSPPresetName( int nIndex ) = 0;
+	virtual int GetDSPPresetCount() = 0;
+	// pImpulseResponse points to an intrusive reference to the impulse response object
+	virtual void SetMixImpulseResponseInput( CUtlStringToken nName, void *pImpulseResponse, bool bOverride ) = 0;
+	virtual void GetMixGraphNames( CUtlVector< CUtlString > &vecOut ) = 0;
 	virtual SoundGuid_t GetGuidForLastSoundEmitted() = 0;
-	virtual void unk066( void *pUnk ) = 0;
-	virtual bool unk067( uint64 nXUID, uint32 nUnk, void *pUnk ) = 0;
-	virtual void unk068( uint64 nXUID, uint32 nUnk1, uint32 nUnk2, const void *pData, int nSize, void *pUnk ) = 0;
-	virtual void unk069( uint64 nXUID, int nUnk1, int nUnk2, void *pUnk1, int nUnk3, void *pUnk2, bool bUnk ) = 0;
-	virtual bool unk070( uint64 nXUID ) = 0;
-	virtual void unk071( uint64 nXUID, float flUnk ) = 0;
-	virtual float unk072( uint64 nXUID ) = 0;
-	virtual void unk073() = 0;
+	virtual void GetActiveSounds( CUtlVector< SndInfo_t > &vecSounds ) = 0;
+	// Networked voice: one stream per player, created on the first data at 48 kHz
+	virtual bool PlayVoiceStream( uint64 nXUID, CEntityIndex nEntityIndex, const char *pszSoundName ) = 0;
+	virtual void QueueVoiceSamples( uint64 nXUID, CEntityIndex nEntityIndex, uint32 nSampleRate, const float *pSamples, int nSampleCount, const char *pszSoundName ) = 0;
+	virtual void QueueVoiceFrames( uint64 nXUID, CEntityIndex nEntityIndex, const void **ppFrames, const int *pFrameSizes, int nFrameCount, const char *pszSoundName, bool bUnk ) = 0;
+	// True without a stream, or when its buffer ran low and no data came for voice_stall_ms
+	virtual bool IsVoiceStreamStalled( uint64 nXUID ) = 0;
+	virtual void SetVoiceVolume( uint64 nXUID, float flVolume ) = 0;
+	virtual float GetVoiceVolume( uint64 nXUID ) = 0;
+	virtual void ResetVoiceVolumes() = 0;
 	// Copies the device list when its stamp differs from the one in pDeviceList
-	virtual bool unk074( CAudioDeviceList *pDeviceList ) = 0;
-	virtual void unk075() = 0;
-	virtual void unk076() = 0;
-	virtual void unk077() = 0;
-	virtual void unk078() = 0;
-	virtual void unk079() = 0;
-	virtual void unk080() = 0;
-	virtual bool unk081() = 0;
-	virtual void unk082( int *pUnk1, int *pUnk2, bool bUnk ) = 0;
-	virtual bool unk083( SoundGuid_t guid, float flUnk, bool bUnk ) = 0;
+	virtual bool GetAudioDeviceList( CAudioDeviceList *pDeviceList ) = 0;
+	// Guids for sounds and sound events started here (negative range) and by the server (positive range)
+	virtual SoundGuid_t GenerateLocalSoundGuid() = 0;
+	virtual SoundGuid_t GenerateServerSoundGuid() = 0;
+	virtual SoundEventGuid_t GenerateLocalSoundEventGuid() = 0;
+	virtual SoundEventGuid_t GenerateServerSoundEventGuid() = 0;
+	// Records the voices that start and stop while enabled
+	virtual void EnableSubvoiceTrace() = 0;
+	virtual void DisableSubvoiceTrace() = 0;
+	virtual bool IsSubvoiceTraceEnabled() = 0;
+	virtual void GetSubvoiceTrace( void *pStarted, void *pStopped, bool bClear ) = 0;
+	virtual bool FadeOutSound( SoundGuid_t guid, float flFadeTime, sound_fade_type_t nFadeType ) = 0;
 	virtual void FadeOutAllSounds( float flFadeTime, sound_voice_layer_t nVoiceLayer, sound_fade_type_t nFadeType ) = 0;
-	virtual bool unk085( int nUnk, float flUnk, bool bUnk ) = 0;
-	virtual CAudioState *unk086() = 0;
+	virtual bool unk085( int nUnk, float flFadeTime, sound_fade_type_t nFadeType ) = 0;
+	virtual CAudioState *GetAudioState() = 0;
 	virtual bool IsSoundPlaying( SoundEventGuid_t guid ) = 0;
 	virtual void unk087( bool bUnk ) = 0;
 	virtual bool unk088() = 0;
 	virtual bool unk089() = 0;
 	// Plays a wave file through the operating system
 	virtual void PlaySystemSound( const char *pWavFile ) = 0;
-	virtual void unk091( bool bUnk1, bool bUnk2 ) = 0;
-	virtual CSfxTable *unk092( SoundGuid_t guid ) = 0;
-	virtual void unk093( void *pUnk, const char *pszUnk ) = 0;
-	virtual void unk094( void *pUnk ) = 0;
+	virtual void UnloadAddonSoundResources( bool bUnk1, bool bUnk2 ) = 0;
+	virtual CSfxTable *GetSoundSfx( SoundGuid_t guid ) = 0;
+	virtual void LoadSteamAudioScene( void *pUnk, const char *pszName ) = 0;
+	virtual void UnloadSteamAudioScene( void *pUnk ) = 0;
 	virtual bool DisableAudioMuting( float flDisableDurationSeconds ) = 0;
 	virtual void ResetMainGraphInputs() = 0;
 	virtual void *unk097( void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk098( void *pUnk, const char *pszUnk ) = 0;
-	virtual CUtlString unk099( SoundGuid_t guid ) = 0;
+	virtual CUtlString GetSoundName( SoundGuid_t guid ) = 0;
 	virtual void unk100( void *pUnk ) = 0;
-	virtual void unk101() = 0;
-	virtual void unk102() = 0;
-	virtual void unk103( void *pUnk ) = 0;
+	virtual void StartVoiceTrace() = 0;
+	virtual void StopVoiceTrace() = 0;
+	// Copies the recorded voice trace into pOut and clears it
+	virtual void GetVoiceTrace( void *pOut ) = 0;
 	virtual SoundGuid_t unk104( int nUnk1, int nUnk2, void *pUnk ) = 0;
 	virtual void unk105( SoundGuid_t guid, void *pUnk ) = 0;
 	virtual void unk106( uint32 nUnk, void *pUnk ) = 0;
@@ -313,29 +344,31 @@ public:
 	virtual void unk109( void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk110( void *pUnk ) = 0;
 	virtual void *unk111( void *pUnk ) = 0;
-	virtual void unk112() = 0;
+	// Wakes the mixer of the current device
+	virtual void OnFrameBoundary() = 0;
 	// Writes the state of the active voices and sound events as text
 	virtual void OutputDebugInfo( CUtlBuffer &buf ) = 0;
-	virtual float unk114( uint32 nUnk ) = 0;
+	virtual float GetSoundEventElapsedTime( SoundEventGuid_t guid ) = 0;
 	virtual void unk115( bool bUnk ) = 0;
 	virtual void unk116() = 0;
 	virtual void unk117() = 0;
 	virtual void unk118() = 0;
 	virtual void unk119() = 0;
-	virtual std::unique_ptr< CAudioMixer > unk120( CAudioSource *pSource ) = 0;
+	virtual std::unique_ptr< CAudioMixer > CreateAudioMixer( CAudioSource *pSource ) = 0;
 	virtual int unk121( void *pUnk ) = 0;
 	virtual void unk122( int nUnk ) = 0;
-	virtual std::unique_ptr< CAudioSource > unk123( CSfxTable *pSfx, VSound_t *pSound ) = 0;
-	virtual std::unique_ptr< IAudioCacheHandle > unk124( CSfxTable *pSfx ) = 0;
-	virtual IAudioDecoder *unk125( void *pUnk, float flUnk ) = 0;
-	virtual uint32 unk126( CSfxTable *pSfx ) = 0;
-	virtual const char *unk127( CSfxTable *pSfx, CBufferString *pBuf ) = 0;
-	virtual CVSndParameterTable *unk128() = 0;
-	virtual std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > unk129() = 0;
+	virtual std::unique_ptr< CAudioSource > CreateAudioSource( CSfxTable *pSfx, VSound_t *pSound ) = 0;
+	virtual std::unique_ptr< IAudioCacheHandle > CreateAudioCacheHandle( CSfxTable *pSfx ) = 0;
+	virtual IAudioDecoder *CreateStretchDecoder( void *pUnk, float flStretch ) = 0;
+	virtual uint32 GetSfxSampleCount( CSfxTable *pSfx ) = 0;
+	virtual const char *GetSfxFileName( CSfxTable *pSfx, CBufferString *pBuf ) = 0;
+	virtual CVSndParameterTable *GetVSndParameterTable() = 0;
+	virtual std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > CreateVoiceContainerParams() = 0;
 	virtual void unk130( CSfxTable *pSfx ) = 0;
 	virtual void unk130( CSoundEvent *pSoundEvent ) = 0;
-	virtual HSound unk132( const char *pName, void *pUnk ) = 0;
-	virtual void unk133( std::function< void() > func ) = 0;
+	virtual HSound CreateProceduralSound( const char *pName, void *pUnk ) = 0;
+	// Runs the function now or queues it for the next update
+	virtual void QueueFunction( std::function< void() > func ) = 0;
 };
 
 
