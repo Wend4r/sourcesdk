@@ -19,11 +19,22 @@
 #include <resourcefile/resourcetype.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
+#include <tier0/utlbuffer.h>
+#include <tier0/utlsignalslot.h>
+#include <tier0/threadtools.h>
+#include <tier1/bitbuf.h>
+#include <tier0/bitvec.h>
+#include <globalvars_base.h>
+#include <networksystem/inetchannel.h>
+#include <inetmsghandler.h>
+#include <iloopmode.h>
+#include <engine/hoststate.h>
+#include <engine/clientframe.h>
+#include <source2_steam_stats.pb.h>
 
 class INetChannel;
 class CNetworkGameClient;
 class CClientChangelevelState;
-class CGlobalVars;
 class IGameSpawnGroupMgr;
 class CCommand;
 class CTransform;
@@ -83,6 +94,12 @@ class NetMessageSplitscreenUserChanged_t;
 class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
 
+abstract_class IGameEventWatcher
+{
+public:
+	virtual void unk000() = 0;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Engine-facing client interface. Implemented by CNetworkGameClientBase.
 // Vtable indices are absolute (primary vtable of CNetworkGameClient, engine2.dll).
@@ -95,8 +112,8 @@ public:
 	virtual int AddRef() = 0;
 	virtual int Release() = 0;
 
-	// Returns &m_GlobalVars (embedded CGlobalVars). Client-side globals getter.
-	virtual CGlobalVars *GetGlobals() = 0;
+	// Returns &m_GlobalVars
+	virtual CGlobalVarsBase *GetGlobals() = 0;
 
 	virtual int GetClientTickCount() const = 0;
 	virtual int GetServerTickCount() const = 0;
@@ -172,7 +189,7 @@ public:
 // handler, channel notify, game event watcher) live in their own vtables on
 // Windows and are not declared here.
 //-----------------------------------------------------------------------------
-class CNetworkGameClientBase : public INetworkGameClient
+class CNetworkGameClientBase : public INetworkGameClient, public CUtlSlot, public INetworkMessageProcessingPreFilter, public IConnectionlessPacketHandler, public INetworkChannelNotify, public IGameEventWatcher
 {
 public:
 	virtual void TransmitNetChannel() = 0;
@@ -267,36 +284,100 @@ public:
 	virtual void CopyExistingEntity( IEntityReport *pReport, CEntityReadInfo &readInfo ) = 0;
 	virtual void OnReceivedUncompressedPacket() = 0;
 	virtual void *unk144() = 0;
+
+public:
+	uint8 m_unk050[ 0x40 ];
+	CGlobalVarsBase m_GlobalVars;
+	uint8 m_unk0F0[ 0x60 ];
+	CUtlVector< void * > m_unk150;
+	void *m_unk168;
+	uint8 m_unk170[ 0x30 ];
+	uint8 m_unk1A0[ 0x20 ];
+	void *m_unk1C0;
+	void *m_unk1C8;
+	CUtlBuffer m_unk1D0;
+	CUtlString m_unk220;
+	CUtlString m_unk228;
+	void *m_unk230;
+	void *m_unk238;
+	SignonState_t m_nSignonState;
+	int m_nUnk244;
+	int m_nRefCount;
+	int m_unk24C[ 4 ];
+	int m_nDeltaTick;
+	int m_unk260[ 19 ];
+	bool m_bUnk2AC;
+	bool m_bUnk2AD;
+	bool m_bUnk2AE;
+	GameSessionConfiguration_t m_unk2B0;
+	CAtomicMutex m_unk348;
+	uint64 m_unk358[ 10 ];
+	int m_nClientTick;
+	int m_nUnk3AC;
+	void *m_pWorldSession;
+	IGameSpawnGroupMgr *m_pSpawnGroupMgr;
+	bool m_bUnk3C0;
+	uint64 m_unk3C8[ 3 ];
+	CUtlString m_unk3E0;
+	uint64 m_unk3E8[ 3 ];
+	CUtlString m_unk400;
+	uint64 m_unk408[ 2 ][ 0x160008 / 8 ];
+	CBitVec< MAX_EDICTS > m_unk2C0418[ 2 ];
+	int m_nUnk2C1418;
+	CAtomicMutex m_unk2C1420;
+	HGameResourceManifest m_hGameSessionManifests[ 2 ];
+	int m_nUnk2C1440;
+	int m_nUnk2C1444;
+	int m_nMaxSplitScreenPlayers;
+	int m_nUnk2C144C;
+	int m_nUnk2C1450;
+	bool m_bUnk2C1454;
+	bool m_bUnk2C1455;
+	bool m_bChangelevelPending;
+	bool m_bIsBackgroundMap;
+	bool m_bUnk2C1458;
+	bool m_bUnk2C1459;
+	bool m_bUnk2C145A;
+	int m_nUnk2C145C;
+	bool m_bUnk2C1460;
+	bool m_bBlockDisconnectionTracking;
 };
 
 // The most-derived client class. Overrides a handful of base virtuals but
-// adds no new vtable slots, so it is layout-compatible with the base.
-class CNetworkGameClient : public CNetworkGameClientBase
+// adds no new vtable slots.
+class CNetworkGameClient : public CNetworkGameClientBase, public ISwitchLoopModeStatusNotify
 {
-private:
-	char pad_0[ 200 ];
 public:
-	bool m_bInSimulation;
-
-private:
-	char pad_1[ 47 ];
-
-public:
-	bool m_bAllowClientSidePredict;
-
-private:
-	char pad_2[ 331 ];
-
-public:
-	int32 m_nDeltaTick;
-
-private:
-	char pad_3[ 296 ];
-
-public:
-	int32 m_nClientTick;
-	int32 m_nServerTick;
-
+	CClientFrameManager m_FrameManager;
+	uint64 m_unk2C1520[ 0x2008 / 8 ];
+	CUtlVector< void * > m_unk2C3528;
+	uint64 m_unk2C3540[ 5 ];
+	uint16 m_nUnk2C3568;
+	bool m_bUnk2C356A;
+	float m_flUnk2C356C;
+	float m_flUnk2C3570;
+	float m_flFrameTime;
+	int m_unk2C3578[ 14 ];
+	CUtlString m_unk2C35B0;
+	uint8 m_unk2C35B8[ 256 ][ 56 ];
+	void *m_unk2C6DB8;
+	uint8 m_unk2C6DC0[ 2 ][ 1196 ];
+	float m_flUnk2C7718;
+	uint8 m_unk2C771C[ 0x385C ];
+	uint8 m_unk2CAF78[ 0x2000 ];
+	bf_write m_unk2CCF78;
+	void *m_unk2CCFA0;
+	int m_nUnk2CCFA8;
+	void *m_unk2CCFB0;
+	CAtomicMutex m_unk2CCFB8;
+	uint64 m_unk2CCFC8[ 3 ];
+	int m_nUnk2CCFE0;
+	void *m_unk2CCFE8;
+	float m_flUnk2CCFF0;
+	float m_flUnk2CCFF4;
+	void *m_unk2CCFF8;
+	CMsgSource2NetworkFlowQuality m_unk2CD000[ 2 ];
+	void *m_unk2CD260[ 2 ];
 };
 
 #endif // ICLIENT_H
