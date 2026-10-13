@@ -14,6 +14,8 @@
 #include "appframework/iappsystem.h"
 #include "tier0/platform.h"
 #include "tier0/utlvector.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/murmurhash3.h"
 #include "tier0/basetypes.h"
 #include "tier2/tier2.h"
 #include "entity2/entityindex.h"
@@ -406,9 +408,16 @@ public:
 	virtual bool unk61( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) override;
 	virtual bool unk62( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
 
-	uint8 m_unk008[ 0x58 ];
-	uint8 m_unk060[ 0x8 ];
-	// Deferred sound events, 0xa0 bytes each
+	// Sound events by hash
+	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_unk008;
+	// Sound events taken out of m_unk008 that are still referenced, deleted by DereferenceSoundEvent
+	CUtlVector< CSoundEvent * > m_unk028;
+	// Set by unk53 and cleared by unk54
+	bool m_unk040;
+	// Sound events that AddSoundEvent replaced while m_unk040 was set, unk55 puts them back into m_unk008
+	CUtlHashtable< uint32, CSoundEvent *, MurmurHash3IntFunctor > m_unk048;
+	// Deferred sound events, 0xa0 bytes each: the name (128 chars), its KeyValues3 and resource binding,
+	// a done flag and the time it was deferred
 	uint8 m_unk068[ 0x18 ];
 	// Time of the last check for timed out deferred sound events
 	double m_unk080;
