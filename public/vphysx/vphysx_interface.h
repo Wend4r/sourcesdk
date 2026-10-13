@@ -1,6 +1,6 @@
 //===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
-// Purpose: Surface property access of the physics interface
+// Purpose: Surface property access and world step results of the physics interface
 //
 //===========================================================================//
 
@@ -40,6 +40,14 @@ public:
 
 	// A NULL pProperties uses the default surface properties
 	virtual void InitializeRnMaterialFromSurfaceProperty( const CPhysSurfaceProperties *pProperties, RnMaterial_t *pMaterial ) const = 0;
+};
+
+// Filled by IVPhysics2World::StepEndReadOnlyGetResults after a step
+struct VPhysXWorldStepResults
+{
+	CUtlVector< void * > m_wokeup;
+	CUtlVector< void * > m_asleep;
+	CUtlVector< void * > m_awake;
 };
 
 #endif // VPHYSX_INTERFACE_H
