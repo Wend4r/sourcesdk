@@ -211,9 +211,9 @@ public:
 	/// Confines the cursor to the window; NULL releases it
 	virtual void SetCursorClip( PlatWindow_t hWnd ) = 0;
 
-	virtual void unk074( bool bEnable ) = 0;
+	virtual void EnablePowerManagement( bool bEnable ) = 0;
 
-	virtual void unk075( uint32 nFlags, bool bSet ) = 0;
+	virtual void EnableSystemCommands( uint32 nSystemCommandFlags, bool bEnable ) = 0;
 
 	/// Relative mouse mode on all attached windows
 	virtual void SetRelativeMouseMode( bool bEnable ) = 0;
