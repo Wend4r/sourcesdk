@@ -21,6 +21,7 @@
 
 class CSceneObject;
 class CRenderMesh;
+class CModel;
 class CModelBuilder;
 class CMeshInstance;
 class IMeshRayTrace;
@@ -86,7 +87,9 @@ public:
 	virtual void unk031() = 0;
 	virtual CSmartPtr< CRenderMesh > CreateRenderMesh( const char *pName ) = 0;
 	virtual void InvalidateMeshRayTrace( CRenderMesh *pRenderMesh ) = 0;
-	virtual void LoadModelSyncNoExtrefs( void *p ) = 0;
+	// Loads the model resource pModelName without its external references, compiling it through p first
+	// when bCompile is set; NULL when the name is not a model or loading fails
+	virtual CModel *LoadModelSyncNoExtrefs( const char *pModelName, bool bCompile, void *p ) = 0;
 
 	// Moves the std::function at pFunction into CMeshSystem::m_unk0F0
 	virtual void unk035( void *pFunction ) = 0;
