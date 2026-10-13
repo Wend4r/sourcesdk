@@ -31,6 +31,7 @@ class IVolumetricFog;
 class CWindController;
 class CCharacterDecalRenderer;
 class IProceduralLayerRenderer;
+class CRenderGraphBuilder;
 struct VertexColor_t;
 struct VertexPos2DTex2D_t;
 enum SceneLayerMSAAMode_t : uint32;
@@ -78,13 +79,13 @@ public:
 	virtual void PixelVisibility_AppendViewProducerToViewIdsForPlayerQueries( int nUnk1, int nUnk2 ) = 0;
 	virtual void ComputeScreenSpaceVertices( const RenderViewport_t &viewport, int nDestX, int nDestY, int nDestWidth, int nDestHeight, float flSrcTextureX0, float flSrcTextureY0, float flSrcTextureX1, float flSrcTextureY1, int nSrcTextureWidth, int nSrcTextureHeight, ScreenSpaceVertex_t *pVertices ) = 0;
 	virtual IProceduralLayerRenderer *CreateFullscreenQuadRenderer( HMaterialWeak hMaterial, const VertexColor_t &modulationColor ) = 0;
-	virtual void CreateScalableAORenderer( void *p ) = 0;
-	virtual void CreateSignalSemaphoreRenderer( void *p ) = 0;
+	virtual IProceduralLayerRenderer *CreateScalableAORenderer( void *pUnk, RenderMultisampleType_t nMultisampleType, float flUnk1, float flUnk2, float flUnk3, bool bUnk, int nUnk ) = 0;
+	virtual IProceduralLayerRenderer *CreateSignalSemaphoreRenderer( const char *pszName ) = 0;
 	virtual void unk040() = 0;
 	virtual void FilterTexture( void *p ) = 0;
 	virtual void CreateFilterLayerRenderer( void *p ) = 0;
 	virtual void CreateMDL() = 0;
-	virtual void unk044() = 0;
+	virtual CSceneObject *Create6FaceSkybox( ISceneWorld *pWorld, HMaterialWeak *pMaterials, CUtlStringToken token ) = 0;
 
 	// NULL unless the scene system has character decals enabled.
 	virtual CCharacterDecalRenderer *CreateCharacterDecalRenderer() = 0;
@@ -98,9 +99,9 @@ public:
 	virtual void unk052() = 0;
 	virtual void GPUSort( void *p ) = 0;
 	virtual void unk054() = 0;
-	virtual void CreateRenderGraphBuilder( void *p ) = 0;
-	virtual void CreateSimplePostProcessingLayerRenderer( void *p ) = 0;
-	virtual void CreateQuadRenderer( void *p ) = 0;
+	virtual std::shared_ptr< CRenderGraphBuilder > CreateRenderGraphBuilder( void *pUnk ) = 0;
+	virtual IProceduralLayerRenderer *CreateSimplePostProcessingLayerRenderer( const void *pUnk, bool bUnk ) = 0;
+	virtual IProceduralLayerRenderer *CreateQuadRenderer( HMaterialWeak hMaterial, const VertexColor_t &modulationColor, const RenderViewport_t &viewport ) = 0;
 	virtual void unk058() = 0;
 	virtual void unk059() = 0;
 	virtual void unk060() = 0;
