@@ -379,11 +379,13 @@ public:
 public:
 	CClientFrameManager m_FrameManager;
 	uint64 m_unk2C1520[ 0x2008 / 8 ];
-	CUtlVector< void * > m_unk2C3528;
+	// Indexed by player slot (GetPlayerInfo, GetPlayerUserId)
+	CUtlVector< CMsgPlayerInfo > m_unk2C3528;
 	uint64 m_unk2C3540[ 5 ];
-	uint16 m_nUnk2C3568;
+	bool m_bUnk2C3568;
+	bool m_bUnk2C3569;
 	bool m_bUnk2C356A;
-	float m_flUnk2C356C;
+	float m_flTickRemainder;
 	float m_flUnk2C3570;
 	float m_flFrameTime;
 	int m_unk2C3578[ 14 ];
