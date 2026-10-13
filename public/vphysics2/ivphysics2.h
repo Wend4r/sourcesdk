@@ -17,22 +17,24 @@
 #include "mathlib/transform.h"
 #include "mathlib/vector.h"
 #include "physicslib/physaggregatedata.h"
+#include "resourcefile/introspectedtokv3typemanager.h"
+#include "resourcesystem/iresourcesystem.h"
 #include "tier0/refcount.h"
 #include "tier0/smartptr.h"
 #include "tier0/threadtools.h"
+#include "tier0/utlhash.h"
 #include "tier0/utlleanvector.h"
 #include "tier0/utlvector.h"
 #include "tier2/tier2.h"
+#include "vconcomm/ivconcomm.h"
 #include "vphysics2/intersection_controller_interface.h"
 #include "vphysx/vphysx_interface.h"
 
 #include "schemacompiler/schemaon.h"
 
 class IVPhysics2World;
-class CVPhysics2SurfacePropertyManager;
 class IPhysicsShape;
 class IPhysicsSoftbody;
-class CIntersectionDictionary;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
@@ -552,23 +554,162 @@ inline void CPhysAggregateDataHandle::Clear()
 	m_pData = nullptr;
 }
 
+// The VConsole link of the physics debugger, registered with IVConComm by IVPhysics2::SetVConComm
+class CVPhysics2ConComm : public IVConCommDataReceived
+{
+public:
+	bool OnDataReceived( uint32 nMsgType, uint16 nVersion, uint32 nSize, void *pMessage, uint32 nSourceAddress ) override;
+
+	// Link state bits, 0x1000 while streaming to the physics debugger; IsConCommActive tests it for zero
+	CInterlockedUInt m_nFlags;
+
+	uint32 m_unk00C;
+	int m_unk010;
+
+	// Set to 20 when the state bit 8 is handled
+	int m_unk014;
+	int m_unk018;
+
+	// Copy of the PhysicsWorldUpdateConCommParams_t passed to IVPhysics2::UpdateConCommParams
+	float m_unk01C;
+
+	// Without it, starting a stream prints "Please start Physics Debugger"
+	bool m_bPhysicsDebuggerStarted;
+
+	bool m_unk021;
+
+	// 1 streams every world on each RunVConCommFrame
+	int m_unk024;
+};
+
+// The resource type manager of VPhysXAggregateData_t ('vphys').
+// The binaries have two more virtuals in CBaseIntrospectedToKV3TypeManager than the SDK declares, so the overrides
+// of this class (the KV3 load, the release of the aggregate data, the reallocation hook that forwards to
+// IVPhysics2::unk081) are not declared here
+class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< 0x7379687076ull, VPhysXAggregateData_t >
+{
+};
+
+// The bases of CVPhysics2SurfacePropertyManager named by the run-time type information. The SDK does not declare them
+// elsewhere; which of the two declares each member and virtual is not known, all of them are declared in the first one
+template < ResourceType_t RESOURCE_TYPE >
+class CKV3ResourceTypeManager : public IResourceTypeManager
+{
+public:
+	virtual void unk024( void *p );
+
+	// CVPhysics2SurfacePropertyManager frees the CUtlVector< CPhysSurfaceProperties * > of a loaded resource and its elements here
+	virtual void unk025( void *p );
+
+	// Calls unk024
+	virtual void unk026( void *p );
+
+	virtual bool unk027();
+
+public:
+	// Stored by IResourceTypeManager::Init
+	IResourceSystemUtils *m_pResourceSystemUtils;
+
+	// The version the loaded resources must have ("Unsupported version %d for resource '%s' (Expected %d)")
+	int m_nResourceVersion;
+
+	// "generic" in CVPhysics2SurfacePropertyManager
+	const char *m_unk018;
+
+	uint64 m_unk020[ 2 ];
+};
+
+template < ResourceType_t RESOURCE_TYPE >
+class CDefaultKV3TransferResourceTypeManager : public CKV3ResourceTypeManager< RESOURCE_TYPE >
+{
+};
+
+// The resource type manager of the surface properties ('vsurf') and the IPhysSurfacePropertyController of the physics interface
+class CVPhysics2SurfacePropertyManager : public CDefaultKV3TransferResourceTypeManager< 0x6672757376ull >, public IPhysSurfacePropertyController
+{
+public:
+	virtual ~CVPhysics2SurfacePropertyManager() {}
+
+	// The binaries list the overriders in this order in the Linux primary vtable
+	const CPhysSurfaceProperties *FindSurfaceProperties( CUtlStringToken token, bool *pFound ) const override;
+	int GetSurfacePropCount() const override;
+	const CPhysSurfaceProperties *GetSurfaceProperty( int nIndex ) const override;
+	void GetSurfacePropertiesNames( CUtlVector< CUtlString > *pNames, CUtlVector< CUtlString > *pDescriptions, bool bIncludeHidden ) const override;
+	const CPhysSurfaceProperties *GetDefaultSurfaceProperties() const override;
+	void InitializeRnMaterialFromSurfaceProperty( const CPhysSurfaceProperties *pProperties, RnMaterial_t *pMaterial ) const override;
+	int unk007() const override;
+
+	struct CSurfacePropertiesPair
+	{
+		const CPhysSurfaceProperties *m_pDescrition;
+	};
+
+public:
+	// The loaded surface properties resource; its data is a CUtlVector< CPhysSurfaceProperties * >
+	ResourceHandle_t m_hSurfaceProperties;
+
+	// FindSurfaceProperties looks the token up here
+	CUtlScalarHash< CSurfacePropertiesPair, CPassthroughHash32 > m_surfacePropertiesDescription;
+
+	// Returned by unk007, starts at 1
+	int m_unk058;
+
+	const CPhysSurfaceProperties *m_pDefaultSurfaceProperties;
+};
+
+// IVPhysics2::GetIntersectionDictionary returns a static instance; InitIntersectionDictionary creates a copy of it
+class CIntersectionDictionary : public IPhysIntersectionDictionary
+{
+public:
+	struct KeyedMask_t
+	{
+		int m_nKey;
+		uint64 m_nMask;
+	};
+
+	// The three CNameIndex objects (IPhysNameIndex implementations) returned by unk014( 0 ) to unk014( 2 ).
+	// Their layout is not recovered; their size differs between the platforms (0x90 on Linux, 0xA8 on Windows)
+#ifdef _WIN32
+	uint64 m_NameIndices[ 3 ][ 21 ];
+#else
+	uint64 m_NameIndices[ 3 ][ 18 ];
+#endif
+
+	// Read and written by unk016 to unk019
+	CUtlVector< KeyedMask_t > m_KeyedMasks;
+
+	// The entry of m_KeyedMasks whose mask unk018 also stores in m_nCurrentMask
+	int m_nCurrentKeyedMask;
+
+	// Returned by unk011 and used by unk010
+	uint64 m_nCurrentMask;
+
+	// unk012 ORs into it
+	uint64 m_unk1E0;
+
+	// Set by unk013
+	uint64 m_unk1E8;
+
+	uint16 m_unk1F0;
+	uint8 m_unk1F2;
+
+	// CUtlHashtable< CUtlStringToken, 64-byte record > looked up by unk004 and unk005; the record type is not recovered
+	uint64 m_unk1F8[ 4 ];
+};
+
 class CVPhysics2Interface : public CTier2AppSystem< IVPhysics2 >
 {
 public:
-	// The surface property manager embedded in this object; GetSurfacePropertyController returns its controller base
-	virtual CVPhysics2SurfacePropertyManager *unk146() = 0;
+	// Returns m_SurfacePropertyManager; GetSurfacePropertyController returns its controller base
+	virtual CVPhysics2SurfacePropertyManager *GetSurfacePropertyManager() = 0;
 
-	// CVPhysics2ConComm, the VConsole physics debugger link
-	uint64 m_ConComm[ 5 ];
+	CVPhysics2ConComm m_ConComm;
 
 	// Created by InitIntersectionDictionary
 	CIntersectionDictionary *m_pIntersectionDictionary;
 
-	// CPhysDataTypeManager for VPhysXAggregateData_t
-	uint64 m_typeManagerPhysData[ 4 ];
-
-	// CVPhysics2SurfacePropertyManager, with its IPhysSurfacePropertyController base at 0xB8
-	uint64 m_SurfacePropertyManager[ 13 ];
+	CPhysDataTypeManager m_typeManagerPhysData;
+	CVPhysics2SurfacePropertyManager m_SurfacePropertyManager;
 
 	CUtlVector< IVPhysics2World * > m_Worlds;
 
@@ -579,7 +720,7 @@ public:
 	// Guards m_Softbodies
 	CAtomicMutex m_SoftbodyMutex;
 
-	// Softbodies created by CreateListedSoftbody
+	// The internal softbody objects created by CreateListedSoftbody
 	CUtlLeanVector< void * > m_Softbodies;
 };
 
