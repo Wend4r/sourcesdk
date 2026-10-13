@@ -29,6 +29,7 @@
 class CBufferString;
 class CCommand;
 class CGlobalVarsBase;
+class CSVCMsg_HltvReplay_t;
 class CSVCMsg_UserCommands_t;
 class CSteamID;
 class CThreadedJob;
@@ -199,7 +200,7 @@ public:
 	virtual void UpdateProjectedTexture( const void *pInfo, void **ppTexture ) = 0;
 	// Calls the deleting destructor of pTexture
 	virtual void DeleteProjectedTexture( void *pTexture ) = 0;
-	virtual void *Unk_UpdateDeferredLight( void *p ) = 0;
+	virtual void *UpdateDeferredLight( void *p ) = 0;
 	virtual void Unk_DeleteDeferredLight( void *p ) = 0;
 	virtual void unk107( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 	// Forwards to the scene system
@@ -275,8 +276,7 @@ public:
 	virtual void unk161() = 0;
 	virtual void *unk162() = 0;
 	virtual bool unk163( void *pUnk ) = 0;
-	// HLTV replay state ("OnHltvReplay")
-	virtual void Unk_OnHltvReplay( void *p ) = 0;
+	virtual void OnHltvReplay( const CSVCMsg_HltvReplay_t *pMsg ) = 0;
 	virtual void unk165() = 0;
 	virtual void unk166() = 0;
 	virtual void unk167( void *pMsg ) = 0;
