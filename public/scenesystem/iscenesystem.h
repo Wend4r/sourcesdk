@@ -48,6 +48,7 @@ class CFrustum;
 struct AABB_t;
 struct OBB_t;
 class FourVectors;
+class VMatrix;
 struct RenderViewport_t;
 struct LightDesc_t;
 struct MeshBuilderBuffers_t;
@@ -179,7 +180,8 @@ public:
 	virtual HRenderTexture unk062( int nIndex, int nSet ) = 0;
 	virtual int unk063( HRenderTexture hTexture, int nSet ) = 0;
 	virtual int unk064( int nValue, int nSet ) = 0;
-	virtual void unk065() = 0;
+	// The texture the textures of the set are copied into.
+	virtual HRenderTexture unk065( int nSet ) = 0;
 	virtual uint16 unk066( int nSet ) = 0;
 
 	virtual ISceneViewDebugOverlays *CreateSceneViewDebugOverlayList( int nTimingType, const char *pszName ) = 0;
@@ -220,7 +222,8 @@ public:
 	// Allocate frame scoped 8 and 4 byte entries.
 	virtual void *unk091( int nCount, int *pFirstIndex ) = 0;
 	virtual void *unk092( int nCount, int *pFirstIndex ) = 0;
-	virtual void unk093() = 0;
+	// Returns the id of a 32 byte key, adding it when it is missing.
+	virtual int unk093( const uint32 *pKey ) = 0;
 	virtual ISceneView *CreateTemplateView( const char *pszName, ISceneWorld *pWorld, const uint32 *pUnk ) = 0;
 	virtual CViewId CreateViewId( int nPlayer ) = 0;
 	virtual void DeleteSceneObjectAtFrameEnd( CSceneObject *pObject ) = 0;
@@ -242,8 +245,9 @@ public:
 	virtual void QueueSceneObjectUpdateJob( std::function< void() > &&job ) = 0;
 	virtual void ExecuteQueuedSceneObjectUpdateJobs() = 0;
 	virtual void InstallMaterialDependentSceneObjectUpdater( const std::function< void( CSceneObject * ) > &updater ) = 0;
-	virtual void unk110() = 0;
-	virtual void unk111() = 0;
+	// Add and remove an object whose first virtual is called when it is added.
+	virtual void unk110( void *pUnk ) = 0;
+	virtual void unk111( void *pUnk ) = 0;
 	virtual void SetIgnoreAlphaFade( bool bIgnoreAlphaFade ) = 0;
 	virtual void SetupPerObjectLighting( CRenderAttributes &renderAttributes, CSceneObject *pSceneObject, const ISceneLayer *pSceneLayerInterface, SetupPerObjectLighting_t flags ) = 0;
 
@@ -259,7 +263,8 @@ public:
 	virtual void CreateSparseShadowTree( void *pUnk, int nIndex ) = 0;
 	virtual void DestroySparseShadowTree( int nIndex ) = 0;
 
-	virtual void unk121() = 0;
+	// Finds the object named by a string attribute of pObject among the objects of the worlds of the view.
+	virtual CSceneObject *unk121( ISceneView *pView, CSceneObject *pObject ) = 0;
 
 	// Sets the per class settings byte that GetObjectSettings returns.
 	virtual void unk122( uint8 nClass, uint8 nSettings ) = 0;
@@ -269,7 +274,8 @@ public:
 	virtual void SceneObject_AttachExtraData( CSceneObject *pObject ) = 0;
 	virtual void SceneObject_AttachLightingCache( CSceneObject *pObject ) = 0;
 	virtual void SceneObject_UpdateFlagsBasedOnMaterial( CSceneObject *pObject ) = 0;
-	virtual void unk128() = 0;
+	// Stores a 76 byte record in the extra data of the object (interned by hash).
+	virtual void unk128( CSceneObject *pObject, const void *pData ) = 0;
 	virtual void unk129() = 0;
 
 	// Holds a strong reference to the material; the s&box declaration adds a layer attribute token and value.
@@ -290,8 +296,9 @@ public:
 	virtual float GetCurrentRenderTime() = 0;
 	virtual void AdvanceNonRenderedFrame() = 0;
 	virtual uint8 GetObjectSettings( const CSceneObject *pObject ) const = 0;
-	virtual void unk144() = 0;
-	virtual void unk145() = 0;
+	// Matrices selected by a scene system flag from a view description.
+	virtual VMatrix unk144( const void *pUnk, Vector *pOut ) = 0;
+	virtual VMatrix unk145( const void *pUnk ) = 0;
 	virtual void GenerateCompositeMorphTextureAtlas( void *p ) = 0;
 
 	// Gates ISceneUtils::CreateVolumetricFog.
@@ -345,29 +352,34 @@ public:
 	virtual int unk172( int *pOut ) = 0;
 	virtual IRayTraceSceneWorld *CreateRayTraceWorld( const char *pszDebugName, int nMaxRayTypes, bool bUnk ) = 0;
 	virtual void DestroyRayTraceWorld( IRayTraceSceneWorld *pWorld ) = 0;
-	virtual void unk175() = 0;
-	virtual void unk176() = 0;
-	virtual void unk177() = 0;
-	virtual void unk178() = 0;
+	virtual void unk175( const void *pUnk ) = 0;
+	virtual void unk176( void *pUnk ) = 0;
+	virtual void unk177( const void *pUnk ) = 0;
+	// Distance field scene.
+	virtual int unk178( void *pUnk ) = 0;
 	virtual void unk179() = 0;
-	virtual void unk180() = 0;
-	virtual void unk181() = 0;
-	virtual void unk182() = 0;
-	virtual void unk183() = 0;
-	virtual void unk184() = 0;
-	virtual void unk185() = 0;
+	virtual void unk180( void *pUnk ) = 0;
+	virtual int unk181( int nIndex ) = 0;
+	virtual void unk182( int nIndex, int *pOut1, int *pOut2 ) = 0;
+	virtual bool unk183( int nIndex ) = 0;
+	virtual bool unk184( int nIndex ) = 0;
+	virtual int unk185( uint64 nKey, int nUnk, CUtlVector< int > &out ) = 0;
 	virtual CSceneObject *CreateDistanceFieldInstanceSceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
-	virtual void unk187() = 0;
-	virtual void unk188() = 0;
+	// Returns the distance field scene.
+	virtual void *unk187() = 0;
+
+	// Resizes the hair simulation buffers.
+	virtual void unk188( int nCount ) = 0;
 	virtual void unk189( void *pUnk ) = 0;
 	virtual void *unk190( int nIndex ) = 0;
 	virtual void AcquireImGuiLock() = 0;
 	virtual void ReleaseImGuiLock( bool bUnk ) = 0;
 	virtual bool IsImGuiLocked() = 0;
 	virtual bool IsImGuiLockedByCurrentThread() = 0;
-	virtual void unk195() = 0;
+	// The function runs in WaitForRenderingToComplete.
+	virtual void unk195( std::function< void() > &&fn ) = 0;
 	virtual int unk196() = 0;
-	virtual void unk197() = 0;
+	virtual void unk197( ISceneView *pView ) = 0;
 };
 
 #endif // ISCENESYSTEM_H
