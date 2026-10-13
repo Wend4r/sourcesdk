@@ -113,9 +113,9 @@ public:
 	virtual void StopSound( SoundGuid_t guid, bool bForceSync ) = 0;
 	virtual void unk027() = 0;
 	virtual void unk028() = 0;
-	virtual void unk029() = 0;
+	virtual float unk029( SoundGuid_t guid ) = 0;
 	virtual bool IsSoundPlaying( SoundGuid_t guid ) = 0;
-	virtual void unk032() = 0;
+	virtual void unk032( SoundGuid_t guid, float flValue ) = 0;
 	virtual void unk033() = 0;
 	virtual CSfxTable *PrecacheSound( const char *pSample ) = 0;
 	virtual void PreloadSoundEvent( CSoundEvent *pSoundEvent, uint16 nUnk ) = 0;
@@ -217,8 +217,8 @@ public:
 	virtual void unk127() = 0;
 	virtual CVSndParameterTable *unk128() = 0;
 	virtual void unk129() = 0;
-	virtual void unk130( void *p ) = 0;
-	virtual void unk130( const void *p ) = 0;
+	virtual void unk130( CSfxTable *pSfx ) = 0;
+	virtual void unk130( CSoundEvent *pSoundEvent ) = 0;
 	virtual void unk132() = 0;
 	virtual void unk133() = 0;
 };
