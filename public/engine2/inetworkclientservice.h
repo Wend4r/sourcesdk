@@ -34,7 +34,7 @@ public:
 	virtual CNetworkGameClient *GetNetworkGameClient() = 0;
 	virtual void SetGameSpawnGroupMgr( IGameSpawnGroupMgr *pMgr ) = 0;
 
-	virtual void AddClientPrerequisites( int nUnk, const char *pszName, const char *pszUrl, bool bUnk, ILoopModePrerequisiteRegistry *pRegistry, KeyValues *pOptions ) = 0;
+	virtual void AddClientPrerequisites( int nType, const char *pszName, const char *pszUrl, bool bUnk, ILoopModePrerequisiteRegistry *pRegistry, KeyValues *pOptions ) = 0;
 
 	virtual void StartupClient( KeyValues *pLoopOptions ) = 0;
 	virtual void DisconnectGameNow( ENetworkDisconnectionReason reason ) = 0;
@@ -74,7 +74,8 @@ public:
 	virtual bool SendNetMessage( CSplitScreenSlot nSlot, const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 
 	virtual void ReceivedServerInfo( const CCompressedResourceManifest &manifest ) = 0;
-	virtual void *GetGameSessionInitPrerequisites() = 0;
+	// Registry of the startup resource prerequisite of the connect prerequisite
+	virtual ILoopModePrerequisiteRegistry *GetGameSessionInitPrerequisites() = 0;
 
 	virtual void StartChangeLevel() = 0;
 	virtual bool FinishChangeLevel() = 0;
@@ -86,7 +87,7 @@ public:
 	virtual bool SteamIDAllowedToP2PConnect( CSteamID steamID ) = 0;
 	virtual void OnLevelLoadingStarted() = 0;
 
-	virtual void *GetNetMessageDispatcher() = 0;
+	virtual CEventDispatcher< CEventIDManager_Default > *GetNetMessageDispatcher() = 0;
 	virtual void RegisterNetMessage( INetworkMessageInternal *pNetMessage, bool bUnk ) = 0;
 
 	// Client and SourceTV status lines
