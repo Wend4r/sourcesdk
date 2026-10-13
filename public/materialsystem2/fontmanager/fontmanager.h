@@ -21,7 +21,7 @@ class CFontManager : public CTier2AppSystem< IFontManager >
 {
 public:
 	// CUtlVector of 48-byte font amalgams
-	uint8 m_unk028[ 0x18 ];
+	uint8 m_FontAmalgams[ 0x18 ];
 
 	// CUtlMap of the platform fonts
 	uint8 m_unk040[ 0x38 ];
