@@ -36,6 +36,7 @@ class ClientClass;
 class CCommand;
 class CEngineGotvSyncPacket;
 class CEntityInstance;
+class CSceneObject;
 class CGameTrace;
 class CGlobalVarsBase;
 class CSVCMsg_HltvReplay_t;
@@ -62,6 +63,8 @@ struct AudioState_t;
 struct EconItemInfo_t;
 struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
+struct LightDesc_t;
+struct matrix3x4_t;
 struct ParticleProjectedTextureInfo_t;
 struct RenderViewport_t;
 struct RnQueryAttr_t;
@@ -244,12 +247,14 @@ public:
 	virtual void DeleteProjectedTexture( HProjectedTexture hTexture ) = 0;
 	virtual void *UpdateDeferredLight( ISceneWorld *pSceneWorld, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, Vector &vecUnk1, float flUnk1, Vector4D &vecUnk2, float flUnk2, float flUnk3, float flUnk4, Vector vecUnk3, float flUnk5, float flUnk6, float flUnk7, float flUnk8, float flUnk9, HDeferredLight &hLight ) = 0;
 	virtual void DeleteDeferredLight( HDeferredLight hLight ) = 0;
-	virtual void unk107( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	// Forwards to the scene system
-	virtual void unk108() = 0;
-	virtual void unk109( void *pUnk1, void *pUnk2, void *pUnk3, void *pUnk4 ) = 0;
-	// Forwards to the scene system
-	virtual void unk110() = 0;
+	// Creates the light through ISceneSystem::CreateLight() when hLight is NULL, otherwise copies desc into it
+	virtual CSceneObject *UpdateStandardLight( ISceneWorld *pSceneWorld, const LightDesc_t &desc, HDeferredLight &hLight ) = 0;
+	// Deletes the scene object of hLight
+	virtual void DeleteStandardLight( HDeferredLight hLight ) = 0;
+	// Same as UpdateStandardLight() for a barn light, which also takes the transform of the scene object
+	virtual CSceneObject *unk109( ISceneWorld *pSceneWorld, const void *pBarnLightDesc, const matrix3x4_t &transform, HDeferredLight &hLight ) = 0;
+	// Deletes the scene object of hLight
+	virtual void unk110( HDeferredLight hLight ) = 0;
 	// Traces a line through the game physics query with a filter built from attr; resets the trace without one
 	virtual bool unk111( const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr, CGameTrace *pTrace ) = 0;
 	virtual void unk112( int nUnk1, int nUnk2, int nUnk3, void *pUnk ) = 0;
