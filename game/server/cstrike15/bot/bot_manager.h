@@ -81,7 +81,7 @@ public:
 	// 0 is the highest priority.
 	virtual unsigned int GetPlayerPriority( CCSPlayerPawn *pPlayer ) const = 0;
 	// Empty in the base, not overridden and never called, so nothing names it.
-	virtual void Unk_9() = 0;
+	virtual void unk009() = 0;
 
 public:
 	enum
