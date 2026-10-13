@@ -14,6 +14,8 @@
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
 #include "mathlib/vector.h"
+#include "tier0/threadtools.h"
+#include "tier0/utlleanvector.h"
 #include "tier0/utlvector.h"
 #include "tier2/tier2.h"
 
@@ -339,7 +341,15 @@ public:
 
 	CUtlVector< IVPhysics2World * > m_Worlds;
 
-	uint64 m_pad108[ 4 ];
+	// Set when Init installs the resource type managers, cleared by Shutdown
+	bool m_bPhysDataTypeManagerInstalled;
+	bool m_bSurfacePropertyManagerInstalled;
+
+	// Guards m_Softbodies
+	CAtomicMutex m_SoftbodyMutex;
+
+	// Softbodies created by CreateListedSoftbody
+	CUtlLeanVector< void * > m_Softbodies;
 };
 
 #endif // IVPHYSICS2_H
