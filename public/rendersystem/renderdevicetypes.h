@@ -67,4 +67,10 @@ struct BufferDesc_t
 	const char *m_pBudgetGroupName;
 };
 
+struct RenderShaderStats_t
+{
+	int32 m_nInstructionCount;
+	int32 m_nRegisterCount;
+};
+
 #endif // RENDERSYSTEM_RENDERDEVICETYPES_H
