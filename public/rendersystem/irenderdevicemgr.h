@@ -15,6 +15,7 @@
 #include "rendersystem/renderdevicetypes.h"
 
 class KeyValues;
+class CMiniDumpComment;
 class IRenderDeviceSetup;
 class IRenderDeviceEventListener;
 struct RenderAdapterInfo_t;
@@ -70,7 +71,7 @@ public:
 
 	virtual bool GetVideoMemoryInfo( int nAdapter, uint64 *pBudgetInBytesOut, uint64 *pUsageInBytesOut, uint64 *pRenderSystemUsageInBytesOut ) = 0;
 
-	virtual void AppendMinidumpInfo( void *pComment, uint32 nUnk ) = 0;
+	virtual void AppendMinidumpInfo( CMiniDumpComment *pComment, uint32 nUnk ) = 0;
 
 	// Highest DX level the device supports (110, 111, 120)
 	virtual int GetMaxDXLevel() = 0;
