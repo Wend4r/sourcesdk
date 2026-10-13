@@ -430,6 +430,12 @@ struct SpotOrder
 	};
 };
 
+// A line segment.
+struct Ray
+{
+	Vector from, to;
+};
+
 //-----------------------------------------------------------------------------
 // One way through an area, from one neighbour to another, and the spots to watch on the way.
 //-----------------------------------------------------------------------------
@@ -439,11 +445,9 @@ struct SpotEncounter
 	int fromDir;
 	CNavConnect to;
 	int toDir;
-
-private:
-	uint8 m_Unk2C[ 0x1C ];
-
-public:
+	// From the middle of the edge to 'from' to the middle of the edge to 'to', 62 units above the
+	// floor; set by the encounter computation and not saved.
+	Ray path;
 	CUtlVector< SpotOrder > spots;
 };
 
