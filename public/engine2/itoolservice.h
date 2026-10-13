@@ -145,7 +145,7 @@ public:
 
 	// Forward to the game client; the second one does nothing for 0
 	virtual uint16 AllocateMouth( int nUnk ) = 0;
-	virtual void unk090( uint16 nUnk ) = 0;
+	virtual void FreeMouth( uint16 nMouth ) = 0;
 };
 
 #endif // ITOOLSERVICE_H
