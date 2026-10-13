@@ -42,7 +42,7 @@ class CSingleWorldRep : public IWorldReference
 {
 public:
 	CSingleWorldRep( const CreateWorldInfo_t &info );
-	virtual ~CSingleWorldRep();
+	~CSingleWorldRep();
 
 	const char *GetWorldName() const { return m_worldName.Get(); }
 	const char *GetFolder() const { return m_folder.Get(); }
@@ -58,10 +58,22 @@ public:
 	CVoxelVisibility *m_pWorldVisibility;
 	IComputeWorldOriginCallback *m_pComputeOriginCallback;
 	ISceneWorld *m_pSceneWorld;
-	uint8 m_priority;
+	ResourceManifestLoadPriority_t m_priority;
 	WorldGroupId_t m_worldGroupId;
-	uint8 m_nFlags;
-	uint8 m_nFlags2;
+
+	bool m_bLoaded : 1;
+	bool m_bLoadVis : 1;
+	bool m_bMarkedForDeletion : 1;
+	bool m_bUnk3 : 1; // CreateWorldInfo_t::m_bUnk02B, IWorldReference::unk007.
+	bool m_bIsEmptyWorld : 1;
+	bool m_bUnk5 : 1; // CreateWorldInfo_t::m_bUnk031.
+	bool m_bBlockUntilLoaded : 1;
+	bool m_bUnk7 : 1; // CreateWorldInfo_t::m_bUnk02C.
+	bool m_bDisableNodeStreaming : 1;
+	bool m_bOwnsSceneWorld : 1;
+	bool m_bUnk10 : 1; // Set by IWorldRendererMgr::UnkMarkGeometryWorld.
+	bool m_bUnk11 : 1; // CreateWorldInfo_t::m_bUnk033.
+
 	int32 m_nRefCount;
 	SpawnGroupHandle_t m_hSpawnGroup;
 };
@@ -105,8 +117,8 @@ public:
 	World_t *m_pWorldData;
 	matrix3x4a_t m_mWorldTransform;
 	CWorldRendererBakedLightingInfo m_worldBakedLightingInfo;
-	bool m_bUnk1F0;
-	CUtlMap< WorldTraversalId_t, WorldTraversal_t * > m_traversalMap;
+	// Whether the nodes of each traversal are loaded.
+	CUtlMap< WorldTraversalId_t, bool, int > m_traversalMap;
 	ISceneWorld *m_pSceneWorld;
 	ResourceManifestLoadPriority_t m_priority;
 
