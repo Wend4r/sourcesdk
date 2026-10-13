@@ -32,6 +32,10 @@ class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
 class ISceneViewDebugOverlays;
+class InfoForResourceTypeIMaterial2;
+
+template < class T >
+class CWeakHandle;
 class CSceneAnimatableObject;
 class IPhysSerialStreamSnapshot;
 class IDataDescConvertor;
@@ -103,6 +107,18 @@ struct RnMassProperties_t
 	matrix3x4_t m_Inertia;
 	Vector m_vCenter;
 	float m_flMass;
+};
+
+enum PhysicsDebugMaterialId_t
+{
+	PHYSICS_DEBUG_MATERIAL_SOLID_WITH_EDGES = 0,
+	PHYSICS_DEBUG_MATERIAL_SOLID,
+	PHYSICS_DEBUG_MATERIAL_WIRE,
+	PHYSICS_DEBUG_MATERIAL_TRANSLUCENT,
+	PHYSICS_DEBUG_MATERIAL_NODEPTHTEST,
+	PHYSICS_DEBUG_MATERIAL_TRANSLUCENT_NODEPTHTEST,
+
+	PHYSICS_DEBUG_MATERIAL_COUNT
 };
 
 abstract_class IVPhysics2 : public IAppSystem
@@ -287,7 +303,8 @@ public:
 	virtual RnMassProperties_t ComputeMass( const RnCapsule_t *pCapsule, const RnMaterial_t &material ) = 0;
 	virtual RnMassProperties_t ComputeMass( const RnHull_t *pHull, float flScale, const RnMaterial_t &material ) = 0;
 
-	virtual void LoadPhysicsDebugMaterials( void *p ) = 0;
+	// Loads the physics debug materials on first use; a non-zero nUnknown selects a replacement for the solid and translucent materials
+	virtual CWeakHandle< InfoForResourceTypeIMaterial2 > GetWellKnownMaterial( PhysicsDebugMaterialId_t nMaterial, uint32 nUnknown ) = 0;
 
 	virtual IFnPhysicsContact *ConstructFnPhysicsContact( void *pMemory, int nMemorySize ) = 0;
 	virtual IFnPhysicsAnyJoint *ConstructFnPhysicsAnyJoint( void *pMemory, int nMemorySize ) = 0;
