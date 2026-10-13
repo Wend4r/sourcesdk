@@ -19,6 +19,7 @@
 
 #include "schemacompiler/schemaon.h"
 
+class CKV3MemberName;
 class CSosOperatorSystem;
 class CSoundMixGroupSystem;
 class CUtlString;
@@ -129,11 +130,13 @@ public:
 	virtual void unk055( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	// Calls ISoundOpSystem::SetSoundEventParam
 	virtual bool unk056( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
-	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk1, int nUnk2, void *p2 ) = 0;
-	virtual bool unk060( const char *pSoundEventName, uint32 nUnk1, uint32 nUnk2 ) = 0;
-	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk1, int nUnk2, void *p2, CUtlVector< CUtlString > *pList ) = 0;
-	virtual bool unk060( const char *pSoundEventName, uint32 nUnk1, int nUnk2, CUtlVector< CUtlString > *pList ) = 0;
-	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, uint32 nUnk, void *p1, void *p2 ) = 0;
+	// Attribute info and field type of a field of the stack; nField indexes the names of unk036, which fill pList when it is empty.
+	// pInfo receives the field type, the name, the display and property groups, the help text and the flags of the field
+	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, int nField, void *pInfo ) = 0;
+	virtual SOFieldDataType_t unk060( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, int nField ) = 0;
+	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, int nField, void *pInfo, CUtlVector< CUtlString > *pList ) = 0;
+	virtual SOFieldDataType_t unk060( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, int nField, CUtlVector< CUtlString > *pList ) = 0;
+	virtual void EditGetDomainAttrInfo( const char *pSoundEventName, HSOSLIBSTACKHASH hStack, void *pInfo, const CKV3MemberName *pFieldName ) = 0;
 	virtual bool unk062( const char *pName1, const char *pName2, CUtlString &sValue ) = 0;
 	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3, CUtlString &sValue ) = 0;
 	virtual bool unk063( const char *pName1, const char *pName2, const char *pName3 ) = 0;
