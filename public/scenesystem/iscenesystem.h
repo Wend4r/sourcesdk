@@ -37,6 +37,7 @@ class ISceneLayer;
 class CBufferString;
 class IRayTraceSceneWorld;
 class ISceneViewDebugOverlays;
+class CSparseShadowTree;
 class CViewId;
 class CFrustum;
 struct RenderViewport_t;
@@ -120,7 +121,7 @@ public:
 	virtual IndexBufferHandle_t GetWellKnownIndexBuffer( int nBuffer ) = 0;
 	virtual void *GetWellKnownInputLayout( int nLayout, uint8 nVariation ) = 0;
 	virtual RenderInputLayoutField_t *GetWellKnownInputLayoutFields( int nLayout, int *pFieldCount ) = 0;
-	virtual void unk050() = 0;
+	virtual void *unk050( int nIndex ) = 0;
 	virtual HRenderTexture GetWellKnownTexture( int nTexture ) = 0;
 	virtual IMaterial2 *GetWellKnownMaterial( int nMaterial ) = 0;
 	virtual HMaterialWeak GetWellKnownMaterialHandle( int nMaterial ) = 0;
@@ -130,18 +131,23 @@ public:
 	virtual void GetRenderTargetSize( int nSize, int *pWidth, int *pHeight ) = 0;
 	virtual int BestRenderTargetSize( int nWidth, int nHeight ) = 0;
 	virtual void SetMinimumFrameBufferRenderTargetSize( int nWidth, int nHeight ) = 0;
-	virtual void AddTextureToSet( void *p ) = 0;
-	virtual void unk061() = 0;
-	virtual void unk062() = 0;
-	virtual void unk063() = 0;
-	virtual void unk064() = 0;
+	// Texture sets, guarded by one global mutex.
+	virtual bool AddTextureToSet( HRenderTexture hTexture, int nSet ) = 0;
+	virtual void unk061( HRenderTexture hTexture, int nSet ) = 0;
+	virtual HRenderTexture unk062( int nIndex, int nSet ) = 0;
+	virtual int unk063( HRenderTexture hTexture, int nSet ) = 0;
+	virtual int unk064( int nValue, int nSet ) = 0;
 	virtual void unk065() = 0;
-	virtual void unk066() = 0;
-	virtual void CreateSceneViewDebugOverlayList( void *p ) = 0;
+	virtual uint16 unk066( int nSet ) = 0;
+
+	virtual ISceneViewDebugOverlays *CreateSceneViewDebugOverlayList( int nTimingType, const char *pszName ) = 0;
 	virtual void DestroySceneViewDebugOverlayList( ISceneViewDebugOverlays *pOverlays ) = 0;
-	virtual void unk069() = 0;
-	virtual void unk070() = 0;
-	virtual void unk071() = 0;
+
+	// Creates and destroys debug overlay lists kept in a second list.
+	virtual ISceneViewDebugOverlays *unk069() = 0;
+	virtual void unk070( ISceneViewDebugOverlays *pOverlays ) = 0;
+
+	virtual void unk071( bool bUnk ) = 0;
 
 	virtual void InitObject( CSceneObject *pObject, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 
@@ -161,15 +167,17 @@ public:
 	virtual void PrintPerFrameStats( CBufferString *pOut, const char *pszHeader ) = 0;
 	virtual SceneSystemPerFrameStats_t &GetPerFrameStats() = 0;
 	virtual int GetFrameCounter() const = 0;
-	virtual void unk086() = 0;
+	virtual int unk086() = 0;
 	virtual void BindTransformTextureAndInstanceIDBuffer( IRenderContext *pRenderContext, int nVBSlot, int nTransformSlotIndex, bool bUnk ) = 0;
-	virtual void unk088() = 0;
+	// Binds the transform buffer at offset 0.
+	virtual void unk088( IRenderContext *pRenderContext, int nVBSlot ) = 0;
 
 	virtual void AllocateFrameScopedTransforms( int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
 
 	virtual void AllocateFrameScopedTransforms( int nUnk, int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
-	virtual void unk091() = 0;
-	virtual void unk092() = 0;
+	// Allocate frame scoped 8 and 4 byte entries.
+	virtual void *unk091( int nCount, int *pFirstIndex ) = 0;
+	virtual void *unk092( int nCount, int *pFirstIndex ) = 0;
 	virtual void unk093() = 0;
 	virtual ISceneView *CreateTemplateView( const char *pszName, ISceneWorld *pWorld, const uint32 *pUnk ) = 0;
 	virtual CViewId CreateViewId( int nPlayer ) = 0;
@@ -196,13 +204,17 @@ public:
 	virtual void unk111() = 0;
 	virtual void SetIgnoreAlphaFade( bool bIgnoreAlphaFade ) = 0;
 	virtual void unk113() = 0;
-	virtual void unk114() = 0;
+	// Destroys every sparse shadow tree, then loads them again when nUnk is positive.
+	virtual void unk114( int nUnk ) = 0;
+
+	// Destroys every sparse shadow tree.
 	virtual void unk115() = 0;
-	virtual void LoadSparseShadowTreeManifest( void *p ) = 0;
+
+	virtual void LoadSparseShadowTreeManifest() = 0;
 	virtual void UnloadSparseShadowTreeManifest() = 0;
-	virtual void GetSparseShadowTree( void *p ) = 0;
-	virtual void CreateSparseShadowTree( void *p ) = 0;
-	virtual void DestroySparseShadowTree( void *p ) = 0;
+	virtual CSparseShadowTree *GetSparseShadowTree( int nIndex, bool bOnlyIfEnabled ) = 0;
+	virtual void CreateSparseShadowTree( void *pUnk, int nIndex ) = 0;
+	virtual void DestroySparseShadowTree( int nIndex ) = 0;
 	virtual void unk121() = 0;
 	virtual void unk122() = 0;
 	virtual void SceneObject_ScheduleDirtyUpdate( CSceneObject *pObject ) = 0;
@@ -245,8 +257,9 @@ public:
 	// Gates ISceneUtils::CreateCharacterDecalRenderer.
 	virtual bool IsCharacterDecalRenderingEnabled() = 0;
 
-	virtual void unk152() = 0;
-	virtual void unk153() = 0;
+	// Add and remove a pair of pointers.
+	virtual void unk152( void *pUnk1, void *pUnk2 ) = 0;
+	virtual void unk153( void *pUnk1, void *pUnk2 ) = 0;
 	virtual ISceneView *FindView( const char *pszName ) = 0;
 	virtual ImageFormat GetPrimaryRenderTargetFormat() = 0;
 	virtual ImageFormat GetBackBufferFormat() = 0;
@@ -264,11 +277,12 @@ public:
 	virtual void unk165() = 0;
 	virtual void unk166() = 0;
 	virtual void unk167() = 0;
-	virtual void unk168() = 0;
+	virtual int unk168() = 0;
 	virtual void unk169() = 0;
-	virtual void unk170() = 0;
+	virtual bool unk170() = 0;
 	virtual void unk171() = 0;
-	virtual void unk172() = 0;
+	// ORs the state flags of the overlay lists created by CreateSceneViewDebugOverlayList.
+	virtual int unk172( int *pOut ) = 0;
 	virtual IRayTraceSceneWorld *CreateRayTraceWorld( const char *pszDebugName, int nMaxRayTypes, bool bUnk ) = 0;
 	virtual void DestroyRayTraceWorld( IRayTraceSceneWorld *pWorld ) = 0;
 	virtual void unk175() = 0;
@@ -285,14 +299,14 @@ public:
 	virtual CSceneObject *CreateDistanceFieldInstanceSceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 	virtual void unk187() = 0;
 	virtual void unk188() = 0;
-	virtual void unk189() = 0;
-	virtual void unk190() = 0;
+	virtual void unk189( void *pUnk ) = 0;
+	virtual void *unk190( int nIndex ) = 0;
 	virtual void AcquireImGuiLock() = 0;
 	virtual void ReleaseImGuiLock( bool bUnk ) = 0;
 	virtual bool IsImGuiLocked() = 0;
 	virtual bool IsImGuiLockedByCurrentThread() = 0;
 	virtual void unk195() = 0;
-	virtual void unk196() = 0;
+	virtual int unk196() = 0;
 	virtual void unk197() = 0;
 };
 
