@@ -91,6 +91,23 @@ struct P4Client_t
 
 
 //-----------------------------------------------------------------------------
+// Purpose: a pending changelist
+//-----------------------------------------------------------------------------
+struct P4Changelist_t
+{
+	int m_iChange;					// changelist number
+	uint8 m_unk004[ 18 ];
+	CUtlSymbol m_sDescription;
+};
+
+
+//-----------------------------------------------------------------------------
+// Perforce file type of a file opened for add or edit
+//-----------------------------------------------------------------------------
+enum PerforceFileType_t : int;
+
+
+//-----------------------------------------------------------------------------
 // Purpose: Interface to accessing P4 commands
 //-----------------------------------------------------------------------------
 #define P4_MAX_INPUT_BUFFER_SIZE	16384		// descriptions should be limited to this size!
@@ -98,19 +115,26 @@ struct P4Client_t
 abstract_class IP4 : public IAppSystem
 {
 public:
-	virtual bool IsConnectedToServer() = 0;
+	// False with the dummy and local backends; callers skip every Perforce operation then
+	virtual bool unk011() = 0;
 
+	// 0 is the dummy backend, 1 the local backend that works without Perforce and 2 the Perforce one
 	virtual int GetImplementationType() = 0;
-
 	virtual bool SetImplementationType( int nType ) = 0;
 
+	// name of the current clientspec
 	virtual P4Client_t &GetActiveClient() = 0;
+
+	// changes the current client
 	virtual void SetActiveClient( const char *pClientName ) = 0;
+
+	// Refreshes the current client from p4 settings
 	virtual void RefreshActiveClient() = 0;
 
 	// Translates the path; the result is shown with p4v history
 	virtual void unk017( CBufferString *pResult, const char *pFullPath ) = 0;
 
+	// retrieves the list of files in a path
 	virtual CUtlVector< P4File_t > &GetFileList( const char *pPath, bool bUnknown ) = 0;
 
 	// returns the list of files opened for edit/integrate/delete (MSVC places the second overload first)
@@ -118,39 +142,41 @@ public:
 	virtual void GetOpenedFileList( const char *pRootDirectory, CUtlVector< P4File_t > &fileList ) = 0;
 	virtual void GetOpenedFileListInPath( const char *pPathID, CUtlVector< P4File_t > &fileList ) = 0;
 
-	// retrieves revision history for a file or directory
-	// Callers pass 50 or a count for nUnknown1
-	virtual CUtlVector< P4Revision_t > &GetRevisionList( const char *pPath, bool bIsDir, int nUnknown1, bool bUnknown2 ) = 0;
+	// retrieves revision history for a file or directory, at most nMaxRevisions entries
+	virtual CUtlVector< P4Revision_t > &GetRevisionList( const char *pPath, bool bIsDir, int nMaxRevisions, bool bUnknown ) = 0;
 
-	// Return persistent containers by reference
-	virtual void *unk023() = 0;
+	// returns a list of clientspecs
+	virtual CUtlVector< P4Client_t > &GetClientList() = 0;
 
-	// Container of 24-byte changelist entries: the number at +0, the description as a CUtlSymbol at +22
-	virtual void *unk024() = 0;
+	// returns the pending changelists of the active client
+	virtual CUtlVector< P4Changelist_t > &GetPendingChangelists() = 0;
 
-	virtual void unk025( bool bUnknown ) = 0;
+	// changes the clientspec to remove the specified path (cloaking)
+	virtual void RemovePathFromActiveClientspec( const char *pPath ) = 0;
 
-	// Callers pass ( path, 0 or 1, -1 )
-	virtual bool OpenFileForAdd( const char *pFullPath, int nUnknown1, int nUnknown2 ) = 0;
-	virtual bool OpenFileForEdit( const char *pFullPath, int nUnknown1, int nUnknown2 ) = 0;
+	// file manipulation; callers pass -1 for nUnknown
+	virtual bool OpenFileForAdd( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
+	virtual bool OpenFileForEdit( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
 
-	virtual int unk028( const char *pFullPath, int nUnknown1, int nUnknown2 ) = 0;
+	// Opens an existing file for edit: -1 on failure, 0 if it does not exist yet (callers add it later),
+	// 1 when opened and 2 when it has to be reopened (see ReopenFile)
+	virtual int unk028( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
 
 	// Only called for files that are in perforce
 	virtual bool OpenFileForDelete( const char *pFullPath ) = 0;
 
-	// Callers open a file for move with it; the local backend copies pSrcPath to pDstPath
-	virtual bool unk030( const char *pSrcPath, const char *pDstPath, int nUnknown1, int nUnknown2 ) = 0;
+	// The local backend copies pSrcPath to pDstPath
+	virtual bool OpenFileForMove( const char *pSrcPath, const char *pDstPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
 	virtual bool unk031() = 0;
 
-	// Callers pass -1 to sync to the head revision
+	// default revision is to sync to the head revision
 	virtual bool SyncFile( const char *pFullPath, int nRevision = -1 ) = 0;
 
 	// submit/revert
 	virtual bool SubmitFile( const char *pFullPath, const char *pDescription ) = 0;
 	virtual bool RevertFile( const char *pFullPath ) = 0;
 
-	// Sets the changelist description files get opened under
+	// sets the name of the changelist to open files under, NULL for "Default" changelist
 	virtual void SetOpenFileChangeList( const char *pChangeListName ) = 0;
 
 	// file checkin/checkout for multiple files
@@ -164,11 +190,14 @@ public:
 
 	virtual bool unk041() = 0;
 
-	// Used to revert the files that are unchanged
-	virtual bool unk042( const char *pFullPath ) = 0;
+	// Reverts the file if it is opened but unchanged
+	virtual bool RevertUnchangedFile( const char *pFullPath ) = 0;
 
+	// Is this file in perforce?
 	virtual bool IsFileInPerforce( const char *pFullPath ) = 0;
 	virtual bool unk044() = 0;
+
+	// Callers pass a depot path with a "#have" revision before copying it
 	virtual bool unk045( const char *pDepotPath ) = 0;
 
 	// Get the perforce file state
@@ -187,34 +216,41 @@ public:
 	virtual bool GetClientSpecForDirectory( const char *pFullPathDir, CBufferString *pClientSpec, CBufferString *pPort ) = 0;
 	virtual bool GetClientSpecForPath( const char *pPathId, CBufferString *pClientSpec, CBufferString *pPort ) = 0;
 
-	// False shows the server as disconnected
-	virtual bool unk053() = 0;
+	// have we connected? if not, nothing works
+	virtual bool IsConnectedToServer( bool bRetry = true ) = 0;
 	virtual bool unk054() = 0;
 	virtual bool unk055() = 0;
+
 	// Returns file information for a single file
 	virtual bool GetFileInfo( const char *pFullPath, P4File_t *pFileInfo ) = 0;
 
-	// Retrieves the last error from the last op (which is likely to span multiple lines)
+	// retrieves the last error from the last op (which is likely to span multiple lines)
 	virtual const char *GetLastError() = 0;
-	virtual void unk058() = 0;
 
-	// Creates a changelist and returns its number, negative on failure
-	virtual int unk059( const char *pDescription ) = 0;
+	virtual void GetFileListInChangelist( unsigned int nChangeListNumber, CUtlVector< P4File_t > &fileList ) = 0;
 
-	// Sets the description of the changelist
-	virtual bool unk060( int nChangelist, const char *pDescription ) = 0;
+	// Creates a pending changelist and returns its number, negative on failure
+	virtual int CreateChangelist( const char *pDescription ) = 0;
+	virtual bool SetChangelistDescription( int nChangelist, const char *pDescription ) = 0;
 
-	// Opens the file in the changelist; the local backend opens it for edit
-	virtual bool unk061( const char *pFullPath, int *pChangelist, int nUnknown1, int nUnknown2 ) = 0;
+	// Moves an opened file to the changelist (the default one for nullptr); the local backend opens it for edit
+	virtual bool ReopenFile( const char *pFullPath, int *pChangelist, PerforceFileType_t eFileType, int nUnknown ) = 0;
 
 	// True while working disconnected
-	virtual bool unk062() = 0;
+	virtual bool IsWorkingDisconnected() = 0;
 
-	virtual bool unk063( const char *pSrcPath, const char *pDstPath ) = 0;
-	virtual bool unk064( const char *pSrcPath, const char *pDstPath ) = 0;
+	// Opens pDstPath for integrate from pSrcPath; the local backend copies the file and makes the copy writable
+	virtual bool IntegrateFile( const char *pSrcPath, const char *pDstPath ) = 0;
+
+	// Opens pDstPath for copy from pSrcPath; the local backend copies the file
+	virtual bool CopyFile( const char *pSrcPath, const char *pDstPath ) = 0;
 
 	virtual void unk065() = 0;
+
+	// The implementation calls it with false before and true after the GetClientSpecFor* methods
 	virtual void unk066( bool bUnknown ) = 0;
+
+	// Returns an 8-byte static object in the dummy and local backends
 	virtual void *unk067() = 0;
 
 	virtual int GetCounterValue( const char *pCounterName ) = 0;
@@ -224,8 +260,8 @@ public:
 	virtual void unk072() = 0;
 	virtual bool unk073() = 0;
 
-	// Returns a 24-byte vector by value through pResult
-	virtual void unk074( void *pResult ) = 0;
+	// Returns an empty vector in the dummy and local backends; the element type is unknown
+	virtual CUtlVector< void * > unk074() = 0;
 	virtual bool unk075() = 0;
 	virtual void *unk076() = 0;
 
