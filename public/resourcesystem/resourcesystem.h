@@ -74,8 +74,7 @@ public:
 	int m_nPendingGlobalStreamingDataRequests;
 	CInterlockedInt m_nUnk2A7C;
 
-	// CTSQueue< CResourceManifest * >
-	alignas( 16 ) uint8 m_PendingResourceManifests[ 0x40 ];
+	CTSQueue< CResourceManifest * > m_PendingResourceManifests;
 
 	CUtlVector< CResourceManifest * > m_PendingResourceManifestDeletions;
 	CAtomicMutex m_Unk2AD8;
@@ -83,8 +82,7 @@ public:
 	CUtlLinkedList< CResourceManifest *, unsigned short > m_activeResourceManifests;
 	CUtlBlockLinkedList< ExtRefList_t *, unsigned int > m_extRefs;
 
-	// CTSQueue< ResourceHandle_t >
-	alignas( 16 ) uint8 m_DeletionRequests[ 0x40 ];
+	CTSQueue< ResourceHandle_t > m_DeletionRequests;
 
 	CUtlVector< HGameResourceManifest > m_JustInTimeManifests;
 	CAtomicMutex m_Unk2B98;
