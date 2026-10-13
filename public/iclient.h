@@ -253,10 +253,14 @@ public:
 	virtual void Clear( bool bUnk ) = 0;
 	virtual void FullConnect( const ns_address &addr ) = 0;
 	virtual void SetSignonState( SignonState_t state, int nSpawnCount, const CNETMsg_SignonState_t *pMsg ) = 0;
-	virtual void *unk135() = 0;
-	virtual void *unk136() = 0;
-	virtual void *unk137() = 0;
-	virtual void *unk138() = 0;
+	// Applies the rate convars to the net channel
+	virtual void RunFrame() = 0;
+	// Installs the engine callbacks of the string tables, then the game client's
+	virtual void InstallStringTableCallback( bool bUnk ) = 0;
+	// Looks up the engine string tables, then lets the game client install its callbacks
+	virtual void HookClientStringTable( bool bUnk ) = 0;
+	// Value of the "name" convar
+	virtual const char *GetClientName( CSplitScreenSlot nSlot ) = 0;
 	virtual void *unk139() = 0;
 	virtual void OnPreserveEntity( CEntityReadInfo &readInfo ) = 0;
 	virtual void CopyNewEntity( IEntityReport *pReport, CEntityReadInfo &readInfo, ClientClass *pClientClass, int nUnk, unsigned int nUnk2 ) = 0;
