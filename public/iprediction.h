@@ -39,9 +39,9 @@ public:
 	// Resets the prediction state after a full update
 	virtual void OnReceivedUncompressedPacket() = 0;
 
-	virtual void unk017( int nSimulationTick, float flUnk, int *pUnk ) = 0;
+	virtual void unk017( int nClientTick, float flClientTickFraction, float *pflFinalPredictedTickFraction ) = 0;
 	virtual float unk018() = 0;
-	virtual void unk019( int nUnk, float flUnk1, float flUnk2 ) = 0;
+	virtual void unk019( int nClientTick, float flClientTickFraction, float flFinalPredictedTickFraction ) = 0;
 	virtual int unk020() = 0;
 
 	// Local origin and rotation of the pawn of nSlot

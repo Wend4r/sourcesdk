@@ -102,9 +102,10 @@ private:
 
 public:
 	// TrueView prediction time offset in seconds, see IPrediction::unk018
-	float m_flUnk00D0;
-	// Returned by IPrediction::unk028 and IPrediction::unk029
-	bool m_bUnk00D4;
+	float m_flPredictionTimeOffset;
+	// Returned by IPrediction::unk028
+	bool m_bTrueViewActive;
+	// Set when the prediction time offset could not be determined, returned by IPrediction::unk029
 	bool m_bUnk00D5;
 
 private:
@@ -114,8 +115,11 @@ public:
 	// Returned by IPrediction::unk030
 	int m_nUnk00D8;
 
+	int m_nFinalPredictedTick;
+	float m_flFinalPredictedTickFraction;
+
 private:
-	uint8 m_nUnknown00DC[16];
+	uint8 m_nUnknown00E4[8];
 
 public:
 	// Returned by IPrediction::unk020
