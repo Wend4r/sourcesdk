@@ -175,7 +175,7 @@ public:
 	virtual const char *GetSubLanguage( LanguageType_t nType ) = 0;
 	virtual bool IsInToolsMode() = 0;
 	virtual bool IsConsoleApp() = 0;
-	virtual void *unk024() = 0;
+	virtual CAppSystemDict::WindowSize_t *GetWindowSizeOverride() = 0;
 	virtual bool IsInDeveloperMode() = 0;
 	// Full path of the executable module
 	virtual const char *GetExecutablePath() = 0;
