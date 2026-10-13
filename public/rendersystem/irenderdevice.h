@@ -236,7 +236,7 @@ public:
 	virtual void ReleasePipelineFrameStats( CRenderPipelineFrameStats &frameStats ) = 0;
 	virtual bool IsTextureSwapChain( HRenderTexture hTexture ) = 0;
 	virtual bool GetSwapChainFromTexture( HRenderTexture hTexture, SwapChainHandle_t *pSwapChain, int *pBuffer ) = 0;
-	virtual ImageFormat GetNearestSupportedColorFormat( ImageFormat nFormat, bool bUnk ) = 0;
+	virtual ImageFormat GetNearestSupportedColorFormat( ImageFormat nFormat, bool bIsRenderTarget, bool bIsVertexTexture, bool bIsFilterableRequired ) = 0;
 	virtual uint32 ComputeTextureMemorySize( const CTextureDesc &desc ) = 0;
 	virtual void GetTextureResidencyInfo( CUtlVector< TextureResidencyInfo_t > &textures, TextureResidencyStats_t &textureResidencyStats ) = 0;
 	virtual bool GetSheetSequenceTextureData( HRenderTexture hTexture, HRenderTexture *pTextureOut, Vector2D *pvecUVOut, int *pSequenceCount ) = 0;
@@ -291,8 +291,8 @@ public:
 	virtual void PushRenderDeviceFlags( uintp nFlags ) = 0;
 	virtual void PopRenderDeviceFlags( uintp nFlags ) = 0;
 
-	// Needs RENDERDEBUGFLAG_ENABLE_GPU_TIMING
-	virtual bool GetGPUFrameTimeMS( void *pUnk, float *pTimeMS, uint32 *pUnk2 ) = 0;
+	// Needs RENDERDEBUGFLAG_ENABLE_GPU_TIMESTAMPS
+	virtual bool GetGPUFrameTimeMS( SwapChainHandle_t hSwapChain, float *pGPUFrameTimeMSOut, uint32 *pFrameNumberOut ) = 0;
 
 	virtual int unk167() = 0;
 	virtual bool IsUsing32BitDepthBuffer() = 0;
@@ -386,7 +386,7 @@ public:
 	virtual void OnPresentCompleted( SwapChainHandle_t hSwapChain, int nPresentId, CDeviceFence *pDeviceFence, IRenderDevicePresentCallback *pCallback ) = 0;
 	virtual void OnRenderDeviceFlagsEnabled( uintp nFlags ) = 0;
 	virtual void OnRenderDeviceFlagsDisabled( uintp nFlags ) = 0;
-	virtual bool InitDevice( int nAdapter, int nUnk1, uint32 nUnk2 ) = 0;
+	virtual bool InitDevice( int nAdapter, int nFlags, int nDXLevel ) = 0;
 	virtual void ShutdownDevice() = 0;
 	virtual bool IsDeactivated() = 0;
 	virtual bool IsMultisampleTypeSupported( int nFormat, RenderMultisampleType_t nType ) = 0;
