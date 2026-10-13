@@ -11,6 +11,7 @@
 #include "tier0/utlsymbollarge.h"
 #include "tier0/utlhashtable.h"
 #include "tier0/murmurhash3.h"
+#include "kv3lib/keyvalues3.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -118,15 +119,14 @@ public:
 class CPulseRuntimeMethodArg
 {
 public:
-	uint32 m_nNameHash;
-	int32 m_nUnk0004;
-	const char* m_pName;
+	// Static records carry no symbol: the symbol part is UTL_INVAL_SYMBOL_LARGE.
+	CKV3MemberName m_Name;
 	CPulseValueFullType m_Type;
 	uint64 m_nUnk0028;
+	// A CPulseCallContextValue of m_Type holding the default value.
 	uint8 m_defaultValue[32];
-	uint16 m_nFlags;
-	uint8 m_unk0052[6];
-	void* m_pUnk0058;
+	uint16 m_nMetadataCount;
+	PulseBindingMetadata_t* m_pMetadata;
 	void* m_pfnUnk0060;
 	void* m_pUnk0068;
 };
