@@ -58,26 +58,33 @@ public:
 	// Public field names of the update stack of the sound event, then the names of its own fields
 	virtual void unk036( const char *pSoundEventName, CUtlVector< CUtlString > *pList ) = 0;
 	virtual void unk037() = 0;
-	virtual void unk038() = 0;
-	virtual void unk039() = 0;
+	// Field editing of the sound event, unk038 adds the field with the values of its stack
+	virtual void unk038( const char *pSoundEventName, const char *pFieldName ) = 0;
+	virtual void unk039( const char *pSoundEventName, const char *pFieldName ) = 0;
 	// Field names of the definition of the sound event
 	virtual void unk040( const char *pSoundEventName, CUtlVector< CUtlString > *pList ) = 0;
 	virtual void unk041() = 0;
-	virtual void unk042() = 0;
-	virtual void unk043() = 0;
-	virtual void unk044() = 0;
+	virtual void unk042( const char *pSoundEventName, const char *pFieldName, int16 nCount ) = 0;
+	virtual void unk043( const char *pSoundEventName, const char *pFieldName ) = 0;
+	// Sets an element of the field from its text form
+	virtual bool unk044( const char *pSoundEventName, const char *pFieldName, const CUtlString &sValue, int16 nIndex ) = 0;
 	// Element count of the field, pbArray tells whether it is an array field
 	virtual int unk045( const char *pSoundEventName, const char *pFieldName, bool *pbArray ) = 0;
-	virtual void unk046() = 0;
-	virtual void unk047() = 0;
-	virtual void unk048() = 0;
-	virtual void unk049() = 0;
+	// Element editing of an array field: resize, insert, remove and swap
+	virtual void unk046( const char *pSoundEventName, const char *pFieldName, int nCount ) = 0;
+	virtual void unk047( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
+	virtual void unk048( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
+	virtual void unk049( const char *pSoundEventName, const char *pFieldName, int nIndex1, int nIndex2 ) = 0;
 	virtual void unk050() = 0;
-	virtual void unk051() = 0;
-	virtual void unk052() = 0;
-	virtual void unk053() = 0;
-	virtual void unk054() = 0;
-	virtual void unk055() = 0;
+	// State of the field for the sound event (0 to 5), pnCount receives its element count
+	virtual int unk051( const char *pSoundEventName, const char *pFieldName, int *pnCount, int nIndex ) = 0;
+	// Calls unk044 when the state of unk051 allows it
+	virtual bool unk052( const char *pSoundEventName, const char *pFieldName, const CUtlString &sValue, int16 nIndex ) = 0;
+	virtual void unk053( const char *pSoundEventName, const char *pFieldName ) = 0;
+	// Value of a public field of the stack and its element count
+	virtual int unk054( HSOSLIBSTACKHASH hStack, const char *pFieldName, void **ppData, int nIndex ) = 0;
+	// Element removal, depending on the state of unk051
+	virtual void unk055( const char *pSoundEventName, const char *pFieldName, int nIndex ) = 0;
 	// Calls ISoundOpSystem::SetSoundEventParam
 	virtual bool unk056( SoundEventGuid_t guid, uint32 nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
 	virtual void EditGetDomainAttrInfo( void *p1, void *p2, void *p3, void *p4 ) = 0;
