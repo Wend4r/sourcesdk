@@ -162,8 +162,8 @@ public:
 	uint64 GetRequiredMemoryPoolCapacity() const { return m_nRequiredMemoryPoolCapacity; }
 	void AddRequiredMemoryPoolCapacity( uint64 nSize ) { m_nRequiredMemoryPoolCapacity += nSize; }
 
-	// True without an ISave. Otherwise false when the ISave virtual at slot 10, unidentified, returns true,
-	// unless nFlags is 2.
+	// True without an ISave. Otherwise false when an unidentified ISave getter returns true, unless nFlags is 2.
+	// The getter returns a flag that the previous virtual sets; it is slot 9 on MSVC and slot 10 on Itanium.
 	bool CanSaveField( int nFlags ) const;
 
 	// The test of every schema field: with an ISave, a field holding its default value is skipped
@@ -287,7 +287,7 @@ public:
 
 	const KeyValues3 *FindSourceMember( const CKV3MemberName &name ) const { return m_pSourceObject->FindMember( name ); }
 
-	// True unless nFlags is 1 and the IRestore virtual at slot 6, unidentified, returns true.
+	// True unless nFlags is 1 and the restore is in global mode (IRestore slot 5 on MSVC and slot 6 on Itanium).
 	bool CanLoadField( int nFlags ) const;
 
 	// The member of the class being loaded. Null for a null source; fails for a source that is not a table.
