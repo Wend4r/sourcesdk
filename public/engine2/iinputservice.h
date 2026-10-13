@@ -15,6 +15,7 @@
 #include <inputsystem/AnalogCode.h>
 #include <splitscreenslot.h>
 #include <tier0/utlstring.h>
+#include <tier1/utldelegate.h>
 
 class IInputHandler;
 class CInputValueBase;
@@ -50,7 +51,8 @@ public:
 
 	virtual void RegisterInputValue( CInputValueBase *pInputValue ) = 0;
 	virtual void UnregisterInputValue( CInputValueBase *pInputValue ) = 0;
-	virtual void ForEachInputValue( void *pDelegate ) = 0;
+	// Stops when the callback returns false
+	virtual void ForEachInputValue( const CUtlDelegate< bool ( CInputValueBase * ) > &callback ) = 0;
 
 	virtual void EnableKeyBindingSystem( bool bEnable ) = 0;
 	virtual void unk041( bool bUnk ) = 0;
