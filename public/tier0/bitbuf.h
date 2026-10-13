@@ -6,7 +6,7 @@
 //
 //===========================================================================//
 
-// NOTE: old_bf_read is guaranteed to return zeros if it overflows.
+// NOTE: bf_read is guaranteed to return zeros if it overflows.
 
 #ifndef BITBUF_H
 #define BITBUF_H
@@ -458,15 +458,15 @@ public:
 // Used for unserialization
 //-----------------------------------------------------------------------------
 
-class old_bf_read
+class bf_read
 {
 public:
-	old_bf_read();
+	bf_read();
 
 	// nMaxBits can be used as the number of bits in the buffer. 
 	// It must be <= nBytes*8. If you leave it at -1, then it's set to nBytes * 8.
-	old_bf_read( const void *pData, int nBytes, int nBits = -1 );
-	old_bf_read( const char *pDebugName, const void *pData, int nBytes, int nBits = -1 );
+	bf_read( const void *pData, int nBytes, int nBits = -1 );
+	bf_read( const char *pDebugName, const void *pData, int nBytes, int nBits = -1 );
 
 	// Start reading from the specified buffer.
 	// pData's start address must be dword-aligned.
@@ -625,27 +625,27 @@ private:
 // Inlines.
 //-----------------------------------------------------------------------------
 
-inline int old_bf_read::GetNumBytesRead()	
+inline int bf_read::GetNumBytesRead()	
 {
 	return BitByte(m_iCurBit);
 }
 
-inline int old_bf_read::GetNumBitsLeft()	
+inline int bf_read::GetNumBitsLeft()	
 {
 	return m_nDataBits - m_iCurBit;
 }
 
-inline int old_bf_read::GetNumBytesLeft()	
+inline int bf_read::GetNumBytesLeft()	
 {
 	return GetNumBitsLeft() >> 3;
 }
 
-inline int old_bf_read::GetNumBitsRead() const
+inline int bf_read::GetNumBitsRead() const
 {
 	return m_iCurBit;
 }
 
-inline void old_bf_read::SetOverflowFlag()
+inline void bf_read::SetOverflowFlag()
 {
 	if ( m_bAssertOnOverflow )
 	{
@@ -655,7 +655,7 @@ inline void old_bf_read::SetOverflowFlag()
 	m_bOverflow = true;
 }
 
-inline bool old_bf_read::Seek(int iBit)
+inline bool bf_read::Seek(int iBit)
 {
 	if(iBit < 0 || iBit > m_nDataBits)
 	{
@@ -671,12 +671,12 @@ inline bool old_bf_read::Seek(int iBit)
 }
 
 // Seek to an offset from the current position.
-inline bool	old_bf_read::SeekRelative(int iBitDelta)		
+inline bool	bf_read::SeekRelative(int iBitDelta)		
 {
 	return Seek(m_iCurBit+iBitDelta);
 }	
 
-inline bool old_bf_read::CheckForOverflow(int nBits)
+inline bool bf_read::CheckForOverflow(int nBits)
 {
 	if( m_iCurBit + nBits > m_nDataBits )
 	{
@@ -687,19 +687,19 @@ inline bool old_bf_read::CheckForOverflow(int nBits)
 	return m_bOverflow;
 }
 
-inline int old_bf_read::ReadOneBitNoCheck()
+inline int bf_read::ReadOneBitNoCheck()
 {
 	int value = m_pData[m_iCurBit >> 3] & (1 << (m_iCurBit & 7));
 	++m_iCurBit;
 	return !!value;
 }
 
-inline int old_bf_read::ReadOneBit()
+inline int bf_read::ReadOneBit()
 {
 	return (!CheckForOverflow(1)) ?	ReadOneBitNoCheck() : 0;
 }
 
-inline float old_bf_read::ReadBitFloat()
+inline float bf_read::ReadBitFloat()
 {
 	int32 val;
 
@@ -721,7 +721,7 @@ inline float old_bf_read::ReadBitFloat()
 	return *((float*)&val);
 }
 
-inline unsigned int old_bf_read::ReadUBitLong( int numbits )
+inline unsigned int bf_read::ReadUBitLong( int numbits )
 {
 	if ( (m_iCurBit+numbits) > m_nDataBits )
 	{
@@ -966,7 +966,7 @@ public:
 
 	// Copy the bits straight out of pIn. This seeks pIn forward by nBits.
 	// Returns an error if this buffer or the read buffer overflows.
-	bool WriteBitsFromBuffer( class bf_read *pIn, int nBits );
+	bool WriteBitsFromBuffer( class old_bf_read *pIn, int nBits );
 	
 };
 
@@ -1383,18 +1383,18 @@ int CBitRead::ReadWord( void )
 }
 
 #define WRAP_READ( bc ) 																									  \
-class bf_read : public bc																									  \
+class old_bf_read : public bc																									  \
 {																															  \
 public:																														  \
-    FORCEINLINE bf_read( void ) : bc(  )																								  \
+    FORCEINLINE old_bf_read( void ) : bc(  )																								  \
 	{																														  \
 	}																														  \
 																															  \
-	FORCEINLINE bf_read( const void *pData, int nBytes, int nBits = -1 ) : bc( pData, nBytes, nBits )									  \
+	FORCEINLINE old_bf_read( const void *pData, int nBytes, int nBits = -1 ) : bc( pData, nBytes, nBits )									  \
 	{																														  \
 	}																														  \
 																															  \
-	FORCEINLINE bf_read( const char *pDebugName, const void *pData, int nBytes, int nBits = -1 ) : bc( pDebugName, pData, nBytes, nBits ) \
+	FORCEINLINE old_bf_read( const char *pDebugName, const void *pData, int nBytes, int nBits = -1 ) : bc( pDebugName, pData, nBytes, nBits ) \
 	{																														  \
 	}																														  \
 };
@@ -1424,9 +1424,9 @@ public:																														  \
 #define DELEGATE0I( m )	DELEGATE0( int, m )
 #define DELEGATE0LL( m ) DELEGATE0( int64, m )
 
-class bf_read
+class old_bf_read
 {
-	old_bf_read old1;
+	bf_read old1;
 	CBitRead new1;
 
 	void Check( void ) const
@@ -1438,15 +1438,15 @@ class bf_read
 	}
 
 public:
-    FORCEINLINE bf_read( void ) : old1(), new1()
+    FORCEINLINE old_bf_read( void ) : old1(), new1()
 	{
 	}
 
-	FORCEINLINE bf_read( const void *pData, int nBytes, int nBits = -1 ) : old1( pData, nBytes, nBits ),new1( pData, nBytes, nBits )
+	FORCEINLINE old_bf_read( const void *pData, int nBytes, int nBits = -1 ) : old1( pData, nBytes, nBits ),new1( pData, nBytes, nBits )
 	{
 	}
 
-	FORCEINLINE bf_read( const char *pDebugName, const void *pData, int nBytes, int nBits = -1 ) : old1( pDebugName, pData, nBytes, nBits ), new1( pDebugName, pData, nBytes, nBits )
+	FORCEINLINE old_bf_read( const char *pDebugName, const void *pData, int nBytes, int nBits = -1 ) : old1( pDebugName, pData, nBytes, nBits ), new1( pDebugName, pData, nBytes, nBits )
 	{
 	}
 

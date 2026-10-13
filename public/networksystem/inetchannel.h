@@ -75,7 +75,7 @@ enum NetChannelBufType_t : int8
 struct netpacket_s
 {
 	ns_address		from;		// sender address
-	old_bf_read		message;	// easy bitbuf data access
+	bf_read		message;	// easy bitbuf data access
 	SteamNetworkingMessage_t *pSteamNetworkingMessage; // released after the packet is parsed
 	const unsigned char *data;	// m_pData of the Steam message
 	void			*pUnk88;	// owned polymorphic object, destroyed with the packet
