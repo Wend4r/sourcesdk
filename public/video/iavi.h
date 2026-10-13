@@ -14,9 +14,12 @@
 #include "appframework/iappsystem.h"
 #include "materialsystem2/imaterial2.h"
 #include "tier0/platwindow.h"
+#include "tier0/utllinkedlist.h"
 #include "tier3/tier3.h"
 
 struct BGR888_t;
+class CAVIMaterial;
+class CAviFile;
 class IRenderContext;
 
 struct AVIParams_t
@@ -92,9 +95,8 @@ public:
 	// OS handle of the window passed to SetMainWindow
 	void *m_hMainWindow;
 
-	// Recordings and materials, indexed by AVIHandle_t and AVIMaterial_t
-	uint8 m_Unk030[ 0x18 ];
-	uint8 m_Unk048[ 0x18 ];
+	CUtlLinkedList< CAviFile, AVIHandle_t > m_AVIFiles;
+	CUtlLinkedList< CAVIMaterial *, AVIMaterial_t > m_AVIMaterials;
 };
 
 #endif // IAVI_H
