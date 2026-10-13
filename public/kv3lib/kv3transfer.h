@@ -251,7 +251,7 @@ public:
 		struct
 		{
 			uint32 m_nValue;
-			uint32 m_nTag; // ContextPathTag_t
+			ContextPathTag_t m_nTag;
 		};
 	};
 
