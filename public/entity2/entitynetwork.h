@@ -156,17 +156,19 @@ COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedBranchPath_t ) == 32 );
 
 struct NetworkSharedChangeInfo_t
 {
-	CUtlVector< NetworkSharedChangeRecord_t > m_Records;
-	uint8 m_pad018[0x240];
-	CUtlVector< uint16 * > m_ArrayIndexLists;
-	uint8 m_pad270[0x80];
+	// Points at its fixed storage, which holds the default maximum of 48 changed offsets
+	CUtlVectorFixedGrowableCompat< NetworkSharedChangeRecord_t, 48 > m_Records;
+	CUtlVectorFixedGrowableCompat< uint16 *, 16 > m_ArrayIndexLists;
 	CUtlVector< NetworkStateChangedBranchPath_t > m_BranchPaths;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfo_t ) == 776 );
 
+struct NetworkSharedChangeInfoOverflow_t;
+
 struct NetworkSharedChangeInfoEntry_t
 {
-	void *m_pLookupCache;
+	// The owning component's overflow, set when the entry is acquired
+	NetworkSharedChangeInfoOverflow_t *m_pLookupCache;
 	NetworkSharedChangeInfo_t m_ChangeInfo;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfoEntry_t ) == 784 );
