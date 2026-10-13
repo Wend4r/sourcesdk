@@ -17,9 +17,15 @@
 #include <tier0/utlstring.h>
 #include <tier1/utldelegate.h>
 
-class IInputHandler;
 class CInputValueBase;
 class CUtlBuffer;
+
+// Installed with InstallInputHandler; handlers run by descending priority
+abstract_class IInputHandler
+{
+public:
+	virtual InputHandlerResult_t HandleInputEvent( const InputEvent_t &event, CSplitScreenSlot nSlot ) = 0;
+};
 
 abstract_class IInputService : public IEngineService
 {
