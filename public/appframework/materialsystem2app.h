@@ -27,6 +27,7 @@
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
+enum RenderMultisampleType_t : uint8;
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 
 
@@ -117,5 +118,24 @@ inline int CMaterialSystem2App::GetThreadCount() const
 	return m_nThreadCount;
 }
 
+
+class CMaterialSystem2AppSystemDict : public CTier2AppSystemDict, public IRenderDeviceSetup
+{
+public:
+	SwapChainHandle_t m_hSwapChain;
+	int m_nThreadCount;
+	CreateInterfaceFn m_RenderFactory;
+	CUtlString m_WindowTitle;
+	CUtlString m_WindowIcon;
+	CUtlString m_DefaultRenderSystemOption;
+	bool m_unk1224;
+	CUtlString m_WindowInitialImage;
+	RenderMultisampleType_t m_MultisampleType;
+	bool m_bInitWithoutMaterialSystem;
+	bool m_bEnableExtendedMaterialInfo;
+	bool m_bDefaultToRendersystemEmpty;
+	bool m_bDiscardMouseFocusClick;
+	bool m_bRenderSystemOptionOnCommandLine;
+};
 
 #endif // MATERIALSYSTEM2APP_H
