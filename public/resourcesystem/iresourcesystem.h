@@ -17,6 +17,7 @@ class CVDataTypeManager;
 class CResourceSystemProfiler;
 class CResourceSystemLeakTracker;
 class IToolsResourceListener;
+class IToolsResourcePreReloadListener;
 class IFileSystem;
 class IAsyncResourceDataRequest;
 
@@ -95,8 +96,8 @@ public:
 	virtual void UnregisterForcedSynchronizationCallback( void ( *pfnCallback )( void *pParam ), void *pParam ) = 0;
 	virtual void GetResourcesNamesInManifest( HGameResourceManifest pGameResourceManifest, CUtlVector< CUtlString > &pVector ) = 0;
 	virtual void GetAllResourcesInManifestTree( HGameResourceManifest pGameResourceManifest, CUtlVector< ResourceHandle_t > &pVector ) = 0;
-	virtual void AddResourceListeners( void *pListener ) = 0;
-	virtual void RemoveResourceListeners( void *pListener ) = 0;
+	virtual void AddResourceListeners( IToolsResourceListener *pListener ) = 0;
+	virtual void RemoveResourceListeners( IToolsResourceListener *pListener ) = 0;
 	virtual void RegisterAsyncResourceListener( void *pListener ) = 0;
 	virtual void UnregisterAsyncResourceListener( void *pListener ) = 0;
 	virtual ICodeResourceManifestManager *GetCodeResourceManifestManager() = 0;
@@ -110,8 +111,8 @@ public:
 	virtual CVDataTypeManager *GetVDataTypeManager() = 0;
 	virtual bool IsShuttingDown() = 0;
 	virtual bool GetDebugFlag( int nFlag ) = 0;
-	virtual void RegisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
-	virtual void UnregisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
+	virtual void RegisterToolsResourceListener( IToolsResourcePreReloadListener *pListener ) = 0;
+	virtual void UnregisterToolsResourceListener( IToolsResourcePreReloadListener *pListener ) = 0;
 	virtual void InstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void Lock() = 0;

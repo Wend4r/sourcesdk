@@ -114,11 +114,11 @@ public:
 	CUtlStringList m_whiteListedMissingResourceNames;
 	CUtlVectorFixedGrowable< ForcedSynchronizationCallbackInfo_t, 8 > m_ForcedSynchronizationCallbacks;
 	uint64 m_Unk2F40[ 10 ];
-	CUtlVector< IToolsResourceListener * > m_ToolsResourceListeners;
+	CUtlVector< IToolsResourcePreReloadListener * > m_ToolsResourceListeners;
 
 	// AddResourceListeners and RemoveResourceListeners pick one by the listener kind
-	CUtlVector< void * > m_Unk2FA8;
-	CUtlVector< void * > m_Unk2FC0;
+	CUtlVector< IToolsResourceListener * > m_Unk2FA8;
+	CUtlVector< IToolsResourceListener * > m_Unk2FC0;
 
 	// CUtlVector of 32-byte items
 	uint64 m_Unk2FD8[ 3 ];
