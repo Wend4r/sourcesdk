@@ -78,16 +78,18 @@ public:
 	virtual CEngineToolInfo *GetEngineToolInfo( uint8 nToolIndex ) = 0;
 	virtual CExternalToolInfo *GetExternalToolInfo( uint8 nExternalToolIndex ) = 0;
 
-	// Open assets in a tool and warn about assets no tool handles
-	// Open assets in a tool and warn about assets no tool handles; 0xFF picks the tool by asset type.
-	// The asset entries are 24 bytes and start with the IAsset
-	virtual void unk027( IAsset *pAsset, uint8 nToolIndex ) = 0;
-	virtual void unk028( void *pAssetEntry, uint8 nToolIndex ) = 0;
-	virtual void unk029( const CUtlVector< IAsset * > *pAssets, uint8 nToolIndex ) = 0;
+	// Overloads that open assets in a tool and warn about assets no tool handles; 0xFF picks the tool
+	// by asset type. Declared in the Itanium order: MSVC places them in reverse, so the last one is
+	// the first slot there. The asset entries are 24 bytes and start with the IAsset; pAssetEntries
+	// is a CUtlVector of them
+	virtual void unk027( void *pAssetEntries, uint8 nToolIndex ) = 0;
 
 	// Opens the assets the object's ninth method lists
-	virtual void unk030( void *pAssets ) = 0;
-	virtual void unk031( void *pAssetEntries, uint8 nToolIndex ) = 0;
+	virtual void unk027( void *pAssets ) = 0;
+
+	virtual void unk027( const CUtlVector< IAsset * > *pAssets, uint8 nToolIndex ) = 0;
+	virtual void unk027( const void *pAssetEntry, uint8 nToolIndex ) = 0;
+	virtual void unk027( IAsset *pAsset, uint8 nToolIndex ) = 0;
 
 	virtual void ExecuteCommand( const char *pCommand ) = 0;
 
