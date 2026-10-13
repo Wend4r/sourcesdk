@@ -13,6 +13,7 @@
 #include <appframework/iappsystem.h>
 #include <materialsystem2/imaterial2.h>
 #include <mathlib/vector.h>
+#include <mathlib/fltx4.h>
 #include <resourcesystem/resourcehandle.h>
 #include <tier0/utlstringtoken.h>
 #include <bitmap/imageformat_declarations.h>
@@ -42,6 +43,7 @@ class CViewId;
 class CFrustum;
 struct AABB_t;
 struct OBB_t;
+class FourVectors;
 struct RenderViewport_t;
 struct LightDesc_t;
 struct MeshBuilderBuffers_t;
@@ -201,7 +203,7 @@ public:
 	// Called from the CSceneObject destructor.
 	virtual void DestructSceneObject( CSceneObject *pObject ) = 0;
 
-	virtual void unk103() = 0;
+	virtual void SetSceneObjectTransformsFast( CSceneObject **pObjectList, int nNumObjects, const FourVectors *pXYZOrigins, const fltx4 *pRadii, const FourVectors *pTints, const fltx4 *pRotations, const fltx4 *pYaws, const fltx4 *pPitches, float flRadiusScale, const fltx4 *pXAxisScale, const fltx4 *pYAxisScale, const fltx4 *pZAxisScale ) = 0;
 
 	virtual ISceneView *AddViewFromTemplate( const char *pszViewTemplateName, const char *pszViewName, const ISceneView *pParentView, const CFrustum &frustum, SwapChainHandle_t hSwapChain, ISceneWorld *pWorld, const RenderViewport_t &viewport, const uint32 *pVis, const CRenderAttributes *pAttributes ) = 0;
 
