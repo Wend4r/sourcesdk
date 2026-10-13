@@ -57,7 +57,7 @@ public:
 	CWorld *m_pGeometryWorld;
 	CVoxelVisibility *m_pWorldVisibility;
 	IComputeWorldOriginCallback *m_pComputeOriginCallback;
-	HResourceManifest m_hResourceManifest;
+	ISceneWorld *m_pSceneWorld;
 	uint8 m_priority;
 	WorldGroupId_t m_worldGroupId;
 	uint8 m_nFlags;
