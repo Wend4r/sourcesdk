@@ -445,6 +445,15 @@ struct SerializedUserMessage_t
 class CSource2Client : public CGameAppSystem< ISource2Client >, public IStreamEntitiesFromFileCompletion
 {
 public:
+	// Queued by DestroyClientSideNetworkedEntity() when bDeferred is set
+	struct DeferredEntityDestruction_t
+	{
+		CEntityHandle m_hEntity;
+
+		// The current time plus the delay the entity returns
+		float m_flDestroyTime;
+	};
+
 	// Recorded for the demo scrubbing data by unk066()
 	struct PlayerConnectionEvent_t
 	{
@@ -526,8 +535,7 @@ public:
 	// -1.0 after the constructor and Connect()
 	float m_unk468;
 	uint8 m_unk46C[ 0x4 ];
-	// CUtlVector of 8-byte ( CEntityHandle, float time ) entries appended by DestroyClientSideNetworkedEntity()
-	uint8 m_unk470[ 0x18 ];
+	CUtlVector< DeferredEntityDestruction_t > m_DeferredEntityDestructions;
 };
 
 #endif // ISOURCE2CLIENT_H
