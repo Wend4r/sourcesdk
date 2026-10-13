@@ -22,6 +22,7 @@
 #include "physicslib/physaggregatedata.h"
 #include "physicslib/serialize.h"
 #include "resourcefile/introspectedtokv3typemanager.h"
+#include "resourcefile/kv3typemanager.h"
 #include "resourcesystem/iresourcesystem.h"
 #include "tier0/refcount.h"
 #include "tier0/smartptr.h"
@@ -542,40 +543,6 @@ public:
 // Its overrides (the typesafe allocation and release of the aggregate data, and the reallocation hook after them that
 // forwards to IVPhysics2::unk081) are not declared here
 class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< 0x7379687076ull, VPhysXAggregateData_t >
-{
-};
-
-// The bases of CVPhysics2SurfacePropertyManager named by the run-time type information. The SDK does not declare them
-// elsewhere; which of the two declares each member and virtual is not known, all of them are declared in the first one
-template < ResourceType_t RESOURCE_TYPE >
-class CKV3ResourceTypeManager : public IResourceTypeManager
-{
-public:
-	virtual void unk024( void *p );
-
-	// CVPhysics2SurfacePropertyManager frees the CUtlVector< CPhysSurfaceProperties * > of a loaded resource and its elements here
-	virtual void unk025( void *p );
-
-	// Calls unk024
-	virtual void unk026( void *p );
-
-	virtual bool unk027();
-
-public:
-	// Stored by IResourceTypeManager::Init
-	IResourceSystemUtils *m_pResourceSystemUtils;
-
-	// The version the loaded resources must have ("Unsupported version %d for resource '%s' (Expected %d)")
-	int m_nResourceVersion;
-
-	// "generic" in CVPhysics2SurfacePropertyManager
-	const char *m_unk018;
-
-	uint64 m_unk020[ 2 ];
-};
-
-template < ResourceType_t RESOURCE_TYPE >
-class CDefaultKV3TransferResourceTypeManager : public CKV3ResourceTypeManager< RESOURCE_TYPE >
 {
 };
 
