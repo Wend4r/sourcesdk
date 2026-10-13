@@ -37,12 +37,17 @@ struct ResourceTypeRegistration_t
 	const char *m_pResourceTypeName;
 	HGameResourceManifest m_hErrorManifest;
 	uint8 m_pad058[ 0x4 ];
-	bool m_bUnk05C;
+
+	// Cached from the type manager by InstallTypeManager
+	bool m_bUsesData;
+
 	bool m_bIsPlaceholderEntry;
-	bool m_bUnk05E;
-	bool m_bUnk05F;
-	bool m_bUnk060;
-	bool m_bUnk061;
+
+	// Cached from the type manager by InstallTypeManager
+	bool m_bRequiresFinalizeResourceCall;
+	bool m_bUnk05F; // IResourceTypeManager::unk008
+	bool m_bNeedsFrameUpdate;
+	bool m_bUnk061; // IResourceTypeManager::unk020
 	uint8 m_pad062[ 0x46 ];
 };
 
