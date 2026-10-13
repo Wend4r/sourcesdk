@@ -106,6 +106,20 @@ public:
 	{
 	};
 
+	// Built by the engine from each CMsgServerPeer of a peer list message
+	struct PeerListEntry_t
+	{
+		// The peer's SteamID with the universe of the local user, and 3 next to it; both zero without a SteamID
+		CSteamID m_SteamID;
+		int m_nUnk008;
+		int m_nUnk00C;
+
+		int m_nPlayerSlot;
+		bool m_bYouHearThem;
+		bool m_bTheyHearYou;
+		bool m_bIsListenServerHost;
+	};
+
 	// NULL restores the module's own globals. Returns the previous globals, or NULL when they were the module's own
 	virtual CGlobalVarsBase *SetGlobals( CGlobalVarsBase *pGlobals ) = 0;
 
@@ -283,7 +297,7 @@ public:
 	virtual void UpdateWhenNotInGame( float flFrameTime ) = 0;
 	virtual void UpdateGlobalLightFromLightInfos( IToolObject *pUnk, const CUtlVector< IToolObject * > &lightInfos, const Vector &vecUnk, int nUnk, float flUnk1, float flUnk2, float flUnk3 ) = 0;
 	virtual bool GetGlobalLightParameters( int *pnUnk, float *pflUnk1, float *pflUnk2 ) = 0;
-	virtual void OnReceivedUpdatedServerPeerList( void *pPeerList, size_t nPeerCount ) = 0;
+	virtual void OnReceivedUpdatedServerPeerList( PeerListEntry_t *pPeerList, size_t nPeerCount ) = 0;
 	virtual void UpdateEventListeners() = 0;
 	virtual void *GetEconItemSystem() = 0;
 	// Forwards to the game network string tables
