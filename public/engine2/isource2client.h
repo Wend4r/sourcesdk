@@ -32,6 +32,7 @@ class CConcreteEntityList;
 class ClientClass;
 class CCommand;
 class CEntityInstance;
+class CGameTrace;
 class CGlobalVarsBase;
 class CSVCMsg_HltvReplay_t;
 class CSVCMsg_UserCommands_t;
@@ -57,6 +58,7 @@ struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
 struct ParticleProjectedTextureInfo_t;
 struct RenderViewport_t;
+struct RnQueryAttr_t;
 struct vrect_t;
 
 template < class T > class CWeakHandle;
@@ -201,15 +203,17 @@ public:
 	virtual bool GetEntity2AbsOrigin( CEntityIndex nEntityIndex, Vector *pOrigin ) = 0;
 	virtual float unk085( CEntityIndex nEntityIndex ) = 0;
 	virtual void GetEntity2AbsAngles( CEntityIndex nEntityIndex, QAngle *pAngles ) = 0;
-	virtual bool unk087( CEntityIndex nEntityIndex, void *pOut1, void *pOut2 ) = 0;
+	// Zeroes both vectors first
+	virtual bool unk087( CEntityIndex nEntityIndex, Vector *pvecUnk1, Vector *pvecUnk2 ) = 0;
 	virtual bool unk088( CEntityIndex nEntityIndex, int *pOut1, int *pOut2 ) = 0;
 	virtual CEntityHandle unk089() = 0;
 	virtual void unk090( CEntityIndex nEntityIndex, void *pUnk ) = 0;
 	// Falls back to GetEntity2AbsOrigin() when the attachment token is 0
 	virtual bool GetEntity2AttachmentAbsOrigin( CEntityIndex nEntityIndex, Vector *pOrigin, CUtlStringToken &attachment ) = 0;
-	virtual bool unk092( CEntityIndex nEntityIndex, void *pOut, int *pUnk ) = 0;
-	virtual bool unk093( int nUnk ) = 0;
-	virtual void unk094( CEntityIndex nEntityIndex, void *pOut1, void *pOut2, void *pOut3 ) = 0;
+	// Builds the transform from GetEntity2AbsOrigin() and GetEntity2AbsAngles() when the attachment token is 0
+	virtual bool unk092( CEntityIndex nEntityIndex, CTransform *pTransform, CUtlStringToken &attachment ) = 0;
+	virtual bool unk093( CEntityIndex nEntityIndex ) = 0;
+	virtual void unk094( CEntityIndex nEntityIndex, Vector *pvecUnk1, Vector *pvecUnk2, Vector *pvecUnk3 ) = 0;
 	virtual bool unk095() = 0;
 	virtual bool unk096() = 0;
 	virtual CEntityHandle unk097() = 0;
@@ -234,8 +238,8 @@ public:
 	virtual void unk109( void *pUnk1, void *pUnk2, void *pUnk3, void *pUnk4 ) = 0;
 	// Forwards to the scene system
 	virtual void unk110() = 0;
-	// Physics shape trace
-	virtual bool unk111( int nUnk1, int nUnk2, void *pUnk1, void *pUnk2 ) = 0;
+	// Traces a line through the game physics query with a filter built from attr; resets the trace without one
+	virtual bool unk111( const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr, CGameTrace *pTrace ) = 0;
 	virtual void unk112( int nUnk1, int nUnk2, int nUnk3, void *pUnk ) = 0;
 	virtual void unk113( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 	// Overloads: the first one looks the entity up and calls the second one. Linux keeps this order, MSVC reverses it
@@ -262,7 +266,7 @@ public:
 	// Fires the "client_disconnect" game event
 	virtual void NotifyDisconnect( int nReason ) = 0;
 	// Releases *pCombinedModel and clears *pUnk
-	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk, const void **ppUnk1, const void **ppUnk2 ) = 0;
+	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppUnk1, const CUtlVector< int > **ppUnk2 ) = 0;
 	// Save/restore block handling
 	virtual void unk133( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
 	virtual void unk134( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
