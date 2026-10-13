@@ -155,6 +155,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// The gravity direction at a nav vertex.
+//-----------------------------------------------------------------------------
+schema struct NavGravity_t
+{
+	TYPEMETA( MGetKV3ClassDefaults );
+	DECLARE_SCHEMA_DATA_CLASS( NavGravity_t );
+
+	Vector m_vGravity;
+	// Set when m_vGravity equals the default ( 0, 0, -1 ).
+	bool m_bDefault;
+};
+
+//-----------------------------------------------------------------------------
 // One polygon of the geometry manager: indices into its vertex array.
 //-----------------------------------------------------------------------------
 struct NavPolyDef_t
@@ -169,12 +182,13 @@ struct NavPolyDef_t
 class CNavGeometryManager
 {
 private:
-	// Bit 0, read from the nav file: the vertices carry the records of m_Unk08.
+	// Bit 0, read from the nav file: the vertices carry the gravity directions of m_Unk08.
 	uint32 m_nUnk00;
 	uint8 m_Unk04[ 4 ];
-	// A vector of 16-byte records, one per vertex while bit 0 of m_nUnk00 is set; adding a
-	// vertex stores its record, and records added to fill the gap get byte 12 set.
-	uint8 m_Unk08[ 0x18 ];
+	// One per vertex while bit 0 of m_nUnk00 is set; adding a vertex stores its gravity, and
+	// entries added to fill the gap are default. Rotated by movable mesh updates whose meshes
+	// have gravity follow their rotation.
+	CUtlVector< NavGravity_t > m_Unk08;
 
 public:
 	CUtlVector< Vector > m_Vertices;
