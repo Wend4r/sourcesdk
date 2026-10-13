@@ -93,11 +93,11 @@ public:
 class CClientAlphaPropertyMgr : public IClientAlphaPropertyMgr
 {
 public:
-	// Incremented by CreateClientAlphaProperty, decremented by DestroyClientAlphaProperty
-	int m_nUnk0008;
+	// Number of live alpha properties; the pool is cleared when it drops to zero
+	int m_nAlphaPropertyCount;
 
 	// Pool the CClientAlphaProperty objects are allocated from
-	CUtlMemoryPoolBase m_Unk0010;
+	CUtlMemoryPoolBase m_AlphaPropertyPool;
 };
 
 #ifndef SWDS
