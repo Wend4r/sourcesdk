@@ -186,10 +186,11 @@ public:
 	// Increments a counter for true, decrements it for false; the tools are not muted while it is set
 	virtual void unk078( bool bPush ) = 0;
 
-	// Loads the tool and passes it the request
+	// Loads the tool and passes it the request; called by the "tool_request" console command and
+	// the "tool_request" VToolMessage
 	virtual void unk079( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
-	// Queues the request for Tools_RunFrame
+	// Queues the request for unk079, dispatched by Tools_RunFrame
 	virtual void unk080( const char *pToolName, KeyValues3 *pRequest ) = 0;
 
 	virtual KeyValues3 *unk081( uint8 nToolIndex ) = 0;
