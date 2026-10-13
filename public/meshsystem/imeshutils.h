@@ -16,7 +16,7 @@
 abstract_class IMeshUtils : public IAppSystem
 {
 public:
-	virtual void Unk_CreateSkeletonSceneObject( void *p ) = 0;
+	virtual void CreateSkeletonSceneObject( void *p ) = 0;
 };
 
 //-----------------------------------------------------------------------------

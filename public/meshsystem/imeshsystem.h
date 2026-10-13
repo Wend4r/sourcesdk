@@ -36,10 +36,10 @@ public:
 
 	virtual void DestroyMeshInstance( CMeshInstance *pMeshInstance ) = 0;
 
-	virtual void Unk_CreateProjectedDecal( void *p ) = 0;
+	virtual void CreateProjectedDecal( void *p ) = 0;
 
-	virtual void Unk_DestroyProjectedDecal( void *p ) = 0;
-	virtual CSceneObject *Unk_GetProjectedDecalSceneObject( void *pDecal ) = 0;
+	virtual void DestroyProjectedDecal( void *p ) = 0;
+	virtual CSceneObject *GetProjectedDecalSceneObject( void *pDecal ) = 0;
 
 	virtual CSceneObject *CreateSceneObject( ResourceHandle_t hModel, const matrix3x4_t &modelToWorld, const char *pszDescName, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 
@@ -59,18 +59,18 @@ public:
 	virtual IMeshRayTrace *FindOrCreateMeshRayTrace( const CRenderMesh *pMesh ) = 0;
 	virtual void GetToolsGeometryInfo( const CRenderMesh *pRenderMesh, const void **ppOutTraceData ) = 0;
 	virtual void unk031() = 0;
-	virtual void Unk_CreateRenderMesh( void *p ) = 0;
+	virtual void CreateRenderMesh( void *p ) = 0;
 	virtual void InvalidateMeshRayTrace( CRenderMesh *pRenderMesh ) = 0;
-	virtual void Unk_LoadModelSyncNoExtrefs( void *p ) = 0;
+	virtual void LoadModelSyncNoExtrefs( void *p ) = 0;
 	virtual void unk035() = 0;
 	virtual void unk036() = 0;
 	virtual void unk037() = 0;
 	virtual void unk038() = 0;
 
-	virtual int Unk_FindInputIndex( ResourceHandle_t hMaterial, int nIndex ) = 0;
+	virtual int FindInputIndex( ResourceHandle_t hMaterial, int nIndex ) = 0;
 
-	virtual int Unk_FindInputIndex( ResourceHandle_t hMaterial, const char *pszName ) = 0;
-	virtual int Unk_FindInputIndex( ResourceHandle_t hMaterial, CUtlStringToken token ) = 0;
+	virtual int FindInputIndex( ResourceHandle_t hMaterial, const char *pszName ) = 0;
+	virtual int FindInputIndex( ResourceHandle_t hMaterial, CUtlStringToken token ) = 0;
 	virtual void unk042() = 0;
 };
 
