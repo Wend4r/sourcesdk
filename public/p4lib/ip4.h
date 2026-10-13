@@ -11,6 +11,7 @@
 #endif
 
 #include "tier0/utlsymbol.h"
+#include "tier0/utlsymbollarge.h"
 #include "tier0/utlvector.h"
 #include "tier0/utlstring.h"
 #include "appframework/iappsystem.h"
@@ -97,9 +98,11 @@ public:
 	virtual void unk017() = 0;
 
 	virtual CUtlVector< P4File_t > &GetFileList( const char *pPath, bool bUnknown ) = 0;
-	virtual void unk019() = 0;
-	virtual void unk020() = 0;
-	virtual void unk021() = 0;
+
+	// returns the list of files opened for edit/integrate/delete (MSVC places the second overload first)
+	virtual void GetOpenedFileList( CUtlVector< P4File_t > &fileList, bool bDefaultChangeOnly ) = 0;
+	virtual void GetOpenedFileList( const char *pRootDirectory, CUtlVector< P4File_t > &fileList ) = 0;
+	virtual void GetOpenedFileListInPath( const char *pPathID, CUtlVector< P4File_t > &fileList ) = 0;
 
 	// Return persistent containers by reference
 	virtual void *unk022() = 0;
@@ -123,15 +126,18 @@ public:
 
 	// Callers pass -1 to sync to the head revision
 	virtual bool SyncFile( const char *pFullPath, int nRevision = -1 ) = 0;
-	virtual bool unk033() = 0;
-	virtual bool unk034() = 0;
+
+	// submit/revert
+	virtual bool SubmitFile( const char *pFullPath, const char *pDescription ) = 0;
+	virtual bool RevertFile( const char *pFullPath ) = 0;
 
 	// Sets the changelist description files get opened under
 	virtual void SetOpenFileChangeList( const char *pChangeListName ) = 0;
 
-	virtual bool Unk_OpenFilesForAdd( void *p ) = 0;
+	// file checkin/checkout for multiple files
+	virtual bool OpenFilesForAdd( int nCount, const char **ppFullPathList ) = 0;
 	virtual bool OpenFilesForEdit( int nCount, const char **ppFullPathList ) = 0;
-	virtual bool Unk_OpenFilesForDelete( void *p ) = 0;
+	virtual bool OpenFilesForDelete( void *p ) = 0;
 	virtual bool unk039() = 0;
 	virtual bool unk040() = 0;
 	virtual bool unk041() = 0;
@@ -143,9 +149,12 @@ public:
 	virtual void *unk046() = 0;
 	virtual void *unk047() = 0;
 
-	// Takes an 8-byte symbol by value
-	virtual const char *Unk_String( void *p ) = 0;
+	// Gets a string for a symbol
 	virtual const char *String( CUtlSymbol s ) const = 0;
+
+	// Placed before the overload above on MSVC. Passed by value in the engine, where the type is not
+	// trivially copyable; the reference keeps that calling convention with the SDK type
+	virtual const char *String( const CUtlSymbolLarge &s ) const = 0;
 
 	virtual bool GetClientSpecForFile( const char *pFullPath, char *pClientSpec, int nMaxLen ) = 0;
 	virtual bool GetClientSpecForDirectory( const char *pFullPathDir, char *pClientSpec, int nMaxLen ) = 0;
@@ -154,8 +163,11 @@ public:
 	virtual bool unk053() = 0;
 	virtual bool unk054() = 0;
 	virtual bool unk055() = 0;
-	virtual bool unk056() = 0;
-	virtual void *unk057() = 0;
+	// Returns file information for a single file
+	virtual bool GetFileInfo( const char *pFullPath, P4File_t *pFileInfo ) = 0;
+
+	// Retrieves the last error from the last op (which is likely to span multiple lines)
+	virtual const char *GetLastError() = 0;
 	virtual void unk058() = 0;
 	virtual void *unk059() = 0;
 	virtual bool unk060() = 0;
