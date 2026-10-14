@@ -18,6 +18,8 @@
 #include "bufferstring.h"
 #include "tier0/generichash.h"
 
+#include "schemacompiler/schemaon.h"
+
 #define DEBUG_STRINGTOKENS 0
 #define STRINGTOKEN_MURMURHASH_SEED 0x31415926
 
@@ -194,5 +196,7 @@ FORCEINLINE CUtlStringToken MakeStringToken2( const char *pString, int nLen = -1
 
 	return CUtlStringToken( nHash );
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLSTRINGTOKEN_H

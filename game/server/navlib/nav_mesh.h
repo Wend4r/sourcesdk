@@ -21,6 +21,8 @@
 #include "nav_area.h"
 #include "nav_ladder.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CUtlBuffer;
 class KeyValues3;
 class CTraceFilter;
@@ -351,5 +353,7 @@ public:
 	// Loaded from scripts/nav_hulls.vdata; null when that file is missing.
 	CNavHullVDataFileManager *m_pHullVDataFileManager;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // NAV_MESH_H

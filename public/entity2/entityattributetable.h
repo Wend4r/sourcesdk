@@ -10,6 +10,8 @@
 #include "tier0/utlmap.h"
 #include "tier1/utlobjectattributetable.h"
 
+#include "schemacompiler/schemaon.h"
+
 // Attributes of an entity, keyed by the lowercase hash of the name.
 schema class CEntityAttributeTable
 {
@@ -232,5 +234,7 @@ private:
 	}
 	bool RemoveStoredName( const Key_t &key ) { return m_Names.Remove( key ); }
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYATTRIBUTETABLE_H

@@ -18,6 +18,8 @@
 #include "tier4/tier4.h"
 #include "engine2/iengineservicemgr.h"
 
+#include "schemacompiler/schemaon.h"
+
 struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;
 class IAddonListChangeNotify;
@@ -119,5 +121,7 @@ public:
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
 	virtual void		SetFramePerformanceTag( const char *pszTag, int nValue, int, float flDuration ) = 0;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // IENGINESERVICE_H

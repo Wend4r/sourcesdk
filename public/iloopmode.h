@@ -19,6 +19,8 @@
 #include "rendersystem/rendersystemtypes.h"
 #include "engine2/isource2serverconfig.h"
 
+#include "schemacompiler/schemaon.h"
+
 class ISource2WorldSession;
 class ISceneView;
 class IPrerequisite;
@@ -124,5 +126,7 @@ public:
 	virtual void DestroyLoopMode( ILoopMode *pLoopMode ) =0;
 	virtual LoopModeType_t GetLoopModeType( void ) const =0;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ILOOPMODE_H

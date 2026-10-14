@@ -20,6 +20,8 @@
 
 #include <initializer_list>
 
+#include "schemacompiler/schemaon.h"
+
 #if defined(DEBUG) && defined(BUFFERSTRING_OVERFLOW_CATCH)
 // Assertion macro for catching stack buffer overflows in debug mode.
 #define Assert_BSO( exp ) { if ( IsStackAllocated() && !CanHeapAllocate() ) Assert( exp ); }
@@ -600,5 +602,7 @@ inline CBufferString operator""_bs( const char *pString, size_t nLen )
 {
 	return CBufferString( pString, static_cast<int>(nLen) );
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif /* BUFFERSTRING_H */

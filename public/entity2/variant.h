@@ -20,6 +20,7 @@
 #include "mathlib/mathlib.h"
 
 #include "tier0/memdbgon.h"
+#include "schemacompiler/schemaon.h"
 
 FORWARD_DECLARE_HANDLE( HSCRIPT );
 
@@ -1284,5 +1285,6 @@ inline bool operator!=( const CVariantBase< A1 > &v1, const CVariantBase< A2 > &
 }
 
 #include "tier0/memdbgoff.h"
+#include "schemacompiler/schemaoff.h"
 
 #endif // CVARIANT_H

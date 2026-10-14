@@ -17,6 +17,8 @@
 #include "resourcesystem/resourcehandle.h"
 #include "tier0/utlvector.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CBasePulseGraphInstance;
 class CPulseArgumentPack;
 class CPulseExecCursor;
@@ -154,5 +156,7 @@ public:
 	virtual void NotifyBreakpointChanged( ResourceHandle_t hGraph, const void *pBreakpointDesc ) = 0;
 	virtual bool unk075() = 0;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // IPULSESYSTEM_H

@@ -7,6 +7,8 @@
 
 #include "resourcefile/resourcetype.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // Typed resource handles, reconstructed from the s&box DWARF dump
 //
@@ -171,5 +173,7 @@ public:
 		return *this;
 	}
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // RESOURCEHANDLE_H

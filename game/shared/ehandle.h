@@ -21,6 +21,8 @@
 #include "entityhandle.h"
 #include "entity2/entitysystem.h"
 
+#include "schemacompiler/schemaon.h"
+
 
 class IHandleEntity;
 
@@ -153,5 +155,7 @@ T* CHandle<T>::operator -> () const
 	return Get();
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // EHANDLE_H

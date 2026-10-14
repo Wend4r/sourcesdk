@@ -5,6 +5,8 @@
 #include <tier0/strtools.h>
 #include <cstrike15/bot/cs_bot_timers.h>
 
+#include <schemacompiler/schemaon.h>
+
 enum TestKV3TransferMode_t
 {
 	TEST_KV3TRANSFER_MODE_OFF,

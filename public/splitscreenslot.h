@@ -7,6 +7,8 @@
 
 #include "tier0/basetypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 schema struct CSplitScreenSlot
 {
 	CSplitScreenSlot()
@@ -30,5 +32,7 @@ schema struct CSplitScreenSlot
 	
 	int m_Data;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SPLITSCREENSLOT_H

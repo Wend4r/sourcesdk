@@ -7,6 +7,8 @@
 #include "mathlib/mathlib.h"
 #include "mathlib/vectorws.h"
 
+#include "schemacompiler/schemaon.h"
+
 
 /// Axis-aligned 3d bounding box.
 schema struct AABB_t
@@ -235,5 +237,7 @@ inline AABB_t GetAabb( const VectorAligned *pPos, int nCount )
 	}
 	return aabb;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif

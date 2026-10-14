@@ -27,6 +27,8 @@
 #include "color.h"
 #include "exprevaluator.h"
 
+#include "schemacompiler/schemaon.h"
+
 class IBaseFileSystem;
 class IFileSystem;
 class CUtlBuffer;
@@ -615,5 +617,7 @@ inline bool KeyValuesDumpAsDevMsg( KeyValues *pKeyValues, int nIndentLevel = 0, 
 	return pKeyValues->Dump( &ctx, nIndentLevel );
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // KEYVALUES_H

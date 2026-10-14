@@ -16,6 +16,8 @@
 #include "appframework/iappsystem.h"
 #include "const.h"
 
+#include "schemacompiler/schemaon.h"
+
 
 enum ClientAlphaDistanceFadeMode_t
 {
@@ -86,5 +88,7 @@ public:
 extern IClientAlphaPropertyMgr *g_pClientAlphaPropertyMgr;
 #endif
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ICLIENTALPHAPROPERTY_H

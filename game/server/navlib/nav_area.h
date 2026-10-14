@@ -15,6 +15,8 @@
 #include "mathlib/vector.h"
 #include "tier0/utlvector.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CNavArea;
 class CNavMesh;
 class CNavLadder;
@@ -420,5 +422,7 @@ private:
 public:
 	CUtlVector< SpotOrder > spots;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // NAV_AREA_H

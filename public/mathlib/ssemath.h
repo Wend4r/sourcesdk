@@ -27,6 +27,8 @@
 
 #include "mathlib/fltx4.h"
 
+#include "schemacompiler/schemaon.h"
+
 // The FLTX4 type is a fltx4 used as a parameter to a function.
 // On the 360, the best way to do this is pass-by-copy on the registers.
 // On the PC, the best way is to pass by const reference. 
@@ -5969,4 +5971,7 @@ FORCEINLINE fltx4 operator*=( fltx4 &a, FLTX4 b )
 }
 
 #endif
+
+#include "schemacompiler/schemaoff.h"
+
 #endif // _ssemath_h

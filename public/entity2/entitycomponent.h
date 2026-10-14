@@ -15,6 +15,8 @@
 #include "schemasystem/schematypes.h"
 #include "entitytypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CEntityInstance;
 class CEntityIdentity;
 class CEntityComponentHelper;
@@ -108,5 +110,7 @@ public:
 	virtual CEntityComponentHelper *GetComponentHelper() = 0;
 	virtual const char *GetComponentName() = 0;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYCOMPONENT_H

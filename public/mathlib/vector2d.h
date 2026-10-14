@@ -25,6 +25,8 @@
 #include "tier0/dbg.h"
 #include "mathlib/math_pfns.h"
 
+#include "schemacompiler/schemaon.h"
+
 #ifndef M_PI
 	#define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
 #endif
@@ -641,6 +643,8 @@ inline Vector2D operator*(float fl, const Vector2D& v)
 }
 
 #endif //slow
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // VECTOR2D_H
 

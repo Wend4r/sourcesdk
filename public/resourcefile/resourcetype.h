@@ -16,6 +16,8 @@
 #include "resourcesystem/resourcesystemtypes.h"
 #include "resourcesystem/resourcemanifesthelpers.h"
 
+#include "schemacompiler/schemaon.h"
+
 typedef uint64 ResourceType_t;
 
 // Resource type of the info class, the packed file extension, e.g. 'vmap'
@@ -180,5 +182,7 @@ struct ResourceBindingBase_t
 
 typedef const ResourceBindingBase_t* ResourceHandle_t;
 typedef void *HGameResourceManifest;
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // RESOURCETYPE_H

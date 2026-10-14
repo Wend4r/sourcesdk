@@ -15,6 +15,8 @@
 #include "platform.h"
 #include "tier0/basetypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: Basic handler for an rgb set of colors
 //			This class is fully inline
@@ -120,5 +122,7 @@ struct color24
 {
 	byte r, g, b;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // COLOR_H

@@ -17,6 +17,8 @@
 #include "platform.h"
 #include "tier0/utlvector.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // Forward declarations
 //-----------------------------------------------------------------------------
@@ -51,6 +53,8 @@ inline bool operator ==( const UniqueId_t& lhs, const UniqueId_t& rhs )
 	return !Q_memcmp( (void *)&lhs.m_Value[ 0 ], (void *)&rhs.m_Value[ 0 ], sizeof( lhs.m_Value ) );
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UNIQUEID_H
 

@@ -17,6 +17,8 @@
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // Matrix 3x4_t
 //-----------------------------------------------------------------------------
@@ -394,6 +396,8 @@ inline CTransform matrix3x4_t::ToTransform() const
 	return MatrixTransform( *this );
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // TRANSFORM_H
 

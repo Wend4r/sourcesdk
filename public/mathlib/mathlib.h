@@ -34,6 +34,8 @@
 
 #endif
 
+#include "schemacompiler/schemaon.h"
+
 // plane_t structure
 // !!! if this is changed, it must be changed in asm code too !!!
 // FIXME: does the asm code even exist anymore?
@@ -3235,6 +3237,8 @@ void PointsFromBox( const Vector &mins, const Vector &maxs, Vector *points );
 void BuildTransformedBox( Vector *v2, Vector const &bbmin, Vector const &bbmax, const matrix3x4_t& m );
 
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif	// MATH_BASE_H
 

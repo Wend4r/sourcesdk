@@ -18,35 +18,6 @@
 #define DLLExtTokenPaste2(x) DLLExtTokenPaste(x)
 #define DLL_EXT_STRING DLLExtTokenPaste2( _DLL_EXT )
 
-//////////////////////////////////////////////////////////////////////////
-
-#ifndef schema
-#define schema namespace ValveSchemaMarker {}
-#endif
-#ifndef valve_schema
-#define valve_schema schema
-#endif
-#define noschema
-#define schema_pragma( ... )
-#define META( ... )
-#define TYPEMETA( ... )
-#define META_USE_CODEGEN_TAG( ... )
-
-
-#ifdef COMPILING_SCHEMA
-#define UNSCHEMATIZED_METHOD( x )
-#define INTERNAL_SCHEMA_CLASS_MARKER_DATA `__schema_class_marker_data__`
-#else
-#define UNSCHEMATIZED_METHOD( x ) x
-#define INTERNAL_SCHEMA_CLASS_MARKER_DATA
-#endif
-
-// Data classes (no vtable)
-#define DECLARE_SCHEMA_DATA_CLASS( _className ) \
-	INTERNAL_SCHEMA_CLASS_MARKER_DATA
-
-//////////////////////////////////////////////////////////////////////////
-
 #include "tier0/platform.h"
 #include "commonmacros.h"
 #include "wchartypes.h"
@@ -73,6 +44,9 @@
 #define PATH_MAX CELL_FS_MAX_FS_PATH_LENGTH
 #define _MAX_PATH PATH_MAX
 #endif
+
+#include "schemacompiler/schemaon.h"
+
 // stdio.h
 #ifndef NULL
 #define NULL 0
@@ -761,5 +735,7 @@ struct SoundEventGuid_t {
 
 	int32 m_Data;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // BASETYPES_H

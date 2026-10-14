@@ -20,6 +20,8 @@
 #include "cs_gamestate.h"
 #include "navlib/nav_path.h"
 
+#include "schemacompiler/schemaon.h"
+
 class BotChatterInterface;
 class CBaseEntity;
 class CBtTree;
@@ -538,5 +540,7 @@ public:
 	noschema BotChatterInterface *m_pChatter;
 	int m_lastValidReactionQueueFrame;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // CS_BOT_H

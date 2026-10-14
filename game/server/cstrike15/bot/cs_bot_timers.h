@@ -18,6 +18,8 @@
 #include "spawngrouptypes.h"
 #include "schemasystem/schematypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 class CNetworkSerializerClassInfo;
@@ -178,5 +180,7 @@ inline void IntervalTimer::KV3TransferLoad_IntervalTimer( CKV3TransferLoadContex
 	BotTimer_LoadField( this, pContext, "m_timestamp", m_timestamp, GameTime_t( 0.0f ) );
 	BotTimer_LoadWorldGroupId( this, pContext, m_nWorldGroupId );
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // CS_BOT_TIMERS_H

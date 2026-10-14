@@ -14,6 +14,11 @@
 #include "basetypes.h"
 #include "bittools.h"
 #include "const.h"
+#include "soundsystem/soundflags.h"
+#include "entity2/entityindex.h"
+#include "entity2/entityclass.h"
+
+#include "schemacompiler/schemaon.h"
 
 // CS2 runs at a fixed 64 tick rate; CGlobalVarsBase no longer stores the tick interval
 #define TICK_INTERVAL			( 1.0f / 64.0f )
@@ -859,10 +864,6 @@ struct ModelScale
 	float		m_flModelScaleStartTime;
 };
 
-#include "soundsystem/soundflags.h"
-#include "entity2/entityindex.h"
-#include "entity2/entityclass.h"
-
 struct CSoundParameters;
 
 // Bits of EmitSound_t::m_nFlags
@@ -1152,5 +1153,7 @@ enum
 // Used by base entity for spotted by masks
 static int const kNumSpottedByMask = ALIGN_VALUE( MAX_PLAYERS, 32 ) / 32;
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SHAREDDEFS_H

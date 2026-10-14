@@ -6,6 +6,8 @@
 #include "basetypes.h"
 #include "schemasystem/schematypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 // The input bits and their per-command state, apart from the user command itself so that
 // entity code can use them without the protobuf message.
 schema enum InputBitMask_t : int64
@@ -67,5 +69,7 @@ public:
 	// Pressed, changed and scroll bits
 	uint64 m_pButtonStates[ 3 ] = {};
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // CSTRIKE15_INBUTTONSTATE_H

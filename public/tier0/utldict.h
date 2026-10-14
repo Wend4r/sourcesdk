@@ -21,6 +21,8 @@
 
 #include "tier0/memdbgon.h"
 
+#include "schemacompiler/schemaon.h"
+
 enum EDictCompareType
 {
 	k_eDictCompareTypeCaseSensitive=0,
@@ -362,5 +364,7 @@ I CUtlDict<T, I, COMPARE_TYPE>::Next( I i ) const
 }
 
 #include "tier0/memdbgoff.h"
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLDICT_H

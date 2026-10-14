@@ -22,6 +22,8 @@
 #include "tier0/utlvector.h"
 #include "tier0/utlhashtable.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // CUtlSymbolTableLarge:
 // description:
@@ -383,5 +385,7 @@ typedef CUtlSymbolTableLargeBase< true, 2048, CThreadNullMutex > CUtlSymbolTable
 typedef CUtlSymbolTableLargeBase< false, 2048, CAtomicMutex > CUtlSymbolTableLargeMT;
 // Multi-threaded case-insensitive
 typedef CUtlSymbolTableLargeBase< true, 2048, CAtomicMutex > CUtlSymbolTableLargeMT_CI;
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLSYMBOLLARGE_H

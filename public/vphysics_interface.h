@@ -19,6 +19,8 @@
 #include "vcollide.h"
 #include "tier3/tier3.h"
 
+#include "schemacompiler/schemaon.h"
+
 // ------------------------------------------------------------------------------------
 // UNITS:
 // ------------------------------------------------------------------------------------
@@ -1174,5 +1176,7 @@ template <class PHYSPTR> inline PhysInterfaceId_t GetPhysIID(PHYSPTR **); // wil
 DEFINE_PIID( IPhysicsMotionController,	PIID_IPHYSICSMOTIONCONTROLLER );
 
 //-----------------------------------------------------------------------------
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // VPHYSICS_INTERFACE_H

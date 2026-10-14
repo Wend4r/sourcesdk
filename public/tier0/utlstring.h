@@ -18,6 +18,8 @@
 #include "limits.h"
 #include <string_view>
 
+#include "schemacompiler/schemaon.h"
+
 #ifndef SIZE_MAX
 #define SIZE_MAX ((size_t) -1)
 #endif
@@ -450,5 +452,7 @@ inline CUtlString operator""_utls( const char *pString, size_t nLen )
 	return CUtlString( pString, static_cast<int>(nLen) );
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLSTRING_H

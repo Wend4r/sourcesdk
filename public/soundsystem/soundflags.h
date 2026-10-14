@@ -14,6 +14,8 @@
 
 #include "tier0/basetypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 
 //-----------------------------------------------------------------------------
 // channels
@@ -156,5 +158,7 @@ enum SoundFlags_t : uint16
 #define DEFAULT_SOUND_PACKET_VOLUME 1.0f
 #define DEFAULT_SOUND_PACKET_PITCH	100
 #define DEFAULT_SOUND_PACKET_DELAY	0.0f
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SOUNDFLAGS_H

@@ -50,6 +50,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // Henry Goffin (henryg) was here. Questions? Bugs? Go slap him around a bit.
 //-----------------------------------------------------------------------------
@@ -1093,5 +1095,7 @@ inline UtlHashHandle_t CUtlStableHashtable<K,V,H,E,S,A>::DoInsert( KeyArgumentT 
 	m_table.template DoInsertNoCheck<IndirectIndex>( IndirectIndex( idx ), empty_t(), hash );
 	return idx;
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLHASHTABLE_H

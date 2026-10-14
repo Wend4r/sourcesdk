@@ -12,6 +12,8 @@
 #include "fieldpath.h"
 #include "schemasystem/schemametatag.h"
 
+#include "schemacompiler/schemaon.h"
+
 enum NetworkResolveFlags_t : uint8
 {
 	NETWORK_RESOLVE_PATH_RESOLVED = 1 << 0, // Is resolved
@@ -712,5 +714,7 @@ DECLARE_SCHEMA_META_TAG( MNetworkVarChainer, META_TAG_ON_FIELD, META_TAG_ONLY() 
 
 // The field path index of a change accessor, e.g. m_PathIndex
 DECLARE_SCHEMA_META_TAG( MNetworkChangeAccessorFieldPathIndex, META_TAG_ON_FIELD, META_TAG_ONLY() );
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // NETWORKSYSTEM_NETWORKVAR_H

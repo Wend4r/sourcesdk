@@ -16,6 +16,8 @@
 
 #include "spawngrouptypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 class ServerClass;
 class ClientClass;
 class CNetworkTransmitComponent;
@@ -305,5 +307,7 @@ public:
 	CUtlMap< int, Entity2Networkable_t > m_NetworkedEntities2;
 };
 COMPILE_TIME_ASSERT( sizeof( CEntity2NetworkClasses ) == 72 );
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYNETWORK_H

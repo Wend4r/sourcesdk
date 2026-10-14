@@ -13,6 +13,8 @@
 
 #include "tier0/basetypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 
 //
 // Commands for the screen shake effect.
@@ -90,5 +92,7 @@ inline ScreenShake_t::ScreenShake_t( ShakeCommand_t _command, float _amplitude, 
 	command(_command), amplitude(_amplitude), frequency(_frequency),
 		duration(_duration), direction(_direction)
 {}
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SHAKE_H

@@ -15,6 +15,8 @@
 
 #include <type_traits>
 
+#include "schemacompiler/schemaon.h"
+
 class CRefCountAccessor
 {
 public:
@@ -369,5 +371,7 @@ private:
 	T m_valPop;
 };
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SMARTPTR_H

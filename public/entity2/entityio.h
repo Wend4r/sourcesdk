@@ -17,6 +17,8 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlsymbollarge.h"
 
+#include "schemacompiler/schemaon.h"
+
 #define ENTITY_INVLAID_OUTPUT_OFFSET ( ~0 )
 
 class CEntityInstance;
@@ -254,5 +256,7 @@ struct InputData_t
 	variant_t value;
 	int nOutputID;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYIO_H

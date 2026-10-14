@@ -5,6 +5,8 @@
 
 #include "tier0/basetypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 #define INVALID_ENTITY_INDEX -1
 
 schema class CEntityIndex
@@ -25,5 +27,7 @@ public:
 private:
 	int m_Data;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // !defined( ENTITYINDEX_H )

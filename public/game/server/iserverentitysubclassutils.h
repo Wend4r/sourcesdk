@@ -15,6 +15,8 @@
 #include "tier0/utlstring.h"
 #include "tier0/utlvector.h"
 
+#include "schemacompiler/schemaon.h"
+
 schema enum EntitySubclassScope_t : int
 {
 	SUBCLASS_SCOPE_NONE = -1,
@@ -37,5 +39,7 @@ public:
 
 	virtual void GetSchemaBaseClassNames( const char *pszClassName, CUtlVector< CUtlString > *pBaseClassNames ) = 0;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ISERVERENTITYSUBCLASSUTILS_H

@@ -17,6 +17,8 @@
 #include "nav_area.h"
 #include "nav_ladder.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // One step from an area to a neighbour: the neighbour, how it is reached (NavTraverseType),
 // through which edge, and the ladder for ladder steps.
@@ -105,5 +107,7 @@ public:
 	bool m_bSupportsTransitions;
 	float m_flTransitionPenalty;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // NAV_PATHCOST_H

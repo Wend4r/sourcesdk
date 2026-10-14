@@ -41,6 +41,8 @@ private:
 #pragma intrinsic(_BitScanForward)
 #endif
 
+#include "schemacompiler/schemaon.h"
+
 inline int FirstBitInWord( unsigned int elem, int offset )
 {
 #if _WIN32
@@ -1691,5 +1693,7 @@ inline CBitVecAccessor::operator uint32()
 
 
 //=============================================================================
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // BITVEC_H

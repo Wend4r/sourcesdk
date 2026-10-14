@@ -29,6 +29,8 @@
 
 #include "tier0/keyvalues3.h"
 
+#include "schemacompiler/schemaon.h"
+
 class KeyValues3;
 class CKeyValues3Array;
 class CKeyValues3Table;
@@ -886,5 +888,7 @@ void KeyValues3::SetValue( T value, KV3TypeEx_t type, KV3SubType_t subtype )
 }
 
 #include "tier0/memdbgoff.h"
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // KEYVALUES3_H

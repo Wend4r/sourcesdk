@@ -11,6 +11,8 @@
 
 #include "tier0/memdbgon.h"
 
+#include "schemacompiler/schemaon.h"
+
 #define FOR_EACH_ENTITYKEY( ekv, iter ) \
 	for ( auto iter = ekv->First(); ekv->IsValidIterator( iter ); iter = ekv->Next( iter ) )
 
@@ -485,5 +487,7 @@ inline void CEntityKeyValues::SetMatrix3x4( const EntityKeyId_t &id, const matri
 }
 
 #include "tier0/memdbgoff.h"
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYKEYVALUES_H

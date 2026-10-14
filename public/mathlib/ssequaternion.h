@@ -13,6 +13,8 @@
 
 #include "mathlib/ssemath.h"
 
+#include "schemacompiler/schemaon.h"
+
 // Use this #define to allow SSE versions of Quaternion math
 // to exist on PC.
 // On PC, certain horizontal vector operations are not supported.
@@ -1260,6 +1262,8 @@ inline void FourVectors::RotateBy( const FourQuaternions &quats )
 }
 */
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SSEQUATMATH_H
 

@@ -14,6 +14,8 @@
 #include "tier0/platform.h"
 #include "nav_pathcost.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CCSBot;
 
 //-----------------------------------------------------------------------------
@@ -37,5 +39,7 @@ private:
 	// whenever the step enters that area.
 	noschema uint8 m_Unk48[ 0x18 ];
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // CS_NAV_PATHCOST_H

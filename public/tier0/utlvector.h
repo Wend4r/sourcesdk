@@ -30,6 +30,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "schemacompiler/schemaon.h"
+
 #define UTL_INVAL_VECTOR_ELEM ((I)~0)
 
 #define FOR_EACH_TYPED_VEC( vecName, iterType, iteratorName ) \
@@ -1882,5 +1884,7 @@ public:
 
 // Source1 legacy: CSplitString was declared here
 #include "tier0/splitstring.h"
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // CCVECTOR_H

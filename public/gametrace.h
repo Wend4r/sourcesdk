@@ -19,6 +19,8 @@
 #include "tier0/generichash.h"
 #include "tier0/utlvector.h"
 
+#include "schemacompiler/schemaon.h"
+
 class IPhysicsBody;
 class IPhysicsShape;
 
@@ -558,5 +560,8 @@ public:
 	// against the culled volume exclusively.
 	virtual bool CanTraceRay( const Ray_t &ray ) = 0;
 };
+
+#include "schemacompiler/schemaoff.h"
+
 #endif // GAMETRACE_H
 

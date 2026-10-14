@@ -15,6 +15,8 @@
 #include "tier0/basetypes.h"
 #include "tier0/bitvec.h"
 
+#include "schemacompiler/schemaon.h"
+
 // the command line param that tells the engine to use steam
 #define STEAM_PARM					"-steam"
 // the command line param to tell dedicated server to restart 
@@ -504,6 +506,8 @@ typedef CThreadNullMutex CSourceMutex;
 #define IsServerDll() false
 #define IsClientDll() false
 #endif
+
+#include "schemacompiler/schemaoff.h"
 
 #endif
 

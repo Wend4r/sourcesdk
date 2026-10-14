@@ -14,6 +14,8 @@
 #include "entity2/variant.h"
 #include "vscript_shared.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CEntityClass;
 class CEntityKeyValues;
 class CFieldPath;
@@ -228,5 +230,7 @@ public:
 	noschema CEntityKeyValues *m_pKeyValues;
 	CScriptComponent *m_CScriptComponent;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYINSTANCE_H

@@ -17,6 +17,8 @@
 
 #include "limits.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // Base class, containing simple memory management
 //-----------------------------------------------------------------------------
@@ -145,5 +147,7 @@ inline void CUtlBinaryBlock::Purge()
 	m_Memory.Purge();
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLBINARYBLOCK_H

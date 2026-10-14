@@ -45,6 +45,8 @@
 #include "tier0/memalloc.h"
 #include "tier0/random.h"
 
+#include "schemacompiler/schemaon.h"
+
 // Uncomment this to add extra Asserts to check for NANs, uninitialized vecs, etc.
 //#define VECTOR_PARANOIA	1
 
@@ -2991,6 +2993,8 @@ inline  const Vector Snap( const Vector &a, float flSnap )
 {
 	return Vector( Snap( a.x, flSnap ), Snap( a.y, flSnap ), Snap( a.z, flSnap ) );
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif
 

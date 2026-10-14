@@ -12,6 +12,8 @@
 #include "tier0/utlhashtable.h"
 #include "tier0/murmurhash3.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CBasePulseGraphInstance;
 class CEntityClass;
 class CEntityInstance;
@@ -239,5 +241,7 @@ public:
 class CEntitySharedPulseSignature : public CEntityClassPulseSignature
 {
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYPULSE_H

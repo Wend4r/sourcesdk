@@ -10,6 +10,8 @@
 #include "entity2/entitycomponent.h"
 #include "entity2/variant.h"
 
+#include "schemacompiler/schemaon.h"
+
 FORWARD_DECLARE_HANDLE( HSCRIPT );
 
 class CEntityIOOutput;
@@ -106,5 +108,7 @@ public:
 
 	CUtlSymbolLarge m_scriptClassName; META( MNotSaved );
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SCRIPTCOMPONENT_H

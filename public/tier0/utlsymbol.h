@@ -24,6 +24,8 @@
 #include "tier0/utlvector.h"
 #include "tier0/utllinkedlist.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // forward declarations
 //-----------------------------------------------------------------------------
@@ -449,5 +451,7 @@ private:
 	{																\
 		return g_##typename##SymbolTable.String( m_SymbolId );		\
 	}
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLSYMBOL_H

@@ -19,6 +19,8 @@
 
 #include <type_traits>
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 //
 // Purpose:	An associative container. Pretty much identical to std::map.
@@ -442,5 +444,7 @@ public:
 	{
 	}
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLMAP_H

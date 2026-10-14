@@ -26,6 +26,8 @@
 
 #include "spawngrouptypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CEntityClass;
 class CEntityInstance;
 
@@ -172,5 +174,7 @@ public:
 	CEntityIdentity *m_pPrevByClass; META( MNotSaved );
 	CEntityIdentity *m_pNextByClass; META( MNotSaved );
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYIDENTITY_H

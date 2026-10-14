@@ -12,6 +12,8 @@
 
 #include "const.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CEntityInstance;
 
 schema class CEntityHandle
@@ -169,5 +171,7 @@ inline const CEntityHandle &CEntityHandle::operator=( const CEntityInstance *pEn
 }
 
 typedef CEntityHandle CBaseHandle;
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYHANDLE_H

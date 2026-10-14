@@ -17,6 +17,8 @@
 #include "cstrike15/usercmd.h"
 #include "schemasystem/schematypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 class BotProfile;
 class CCSPlayerController;
 class CCSPlayerPawn;
@@ -125,5 +127,7 @@ public:
 	noschema PostureContext_t m_PostureStack[ MAX_POSTURE_STACK ];
 	int m_postureStackIndex;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // BOT_H

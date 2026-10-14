@@ -6,6 +6,8 @@
 // it's intrusive: the class that is pointed to must contain and maintain an index
 #include "tier0/utlvector.h"
 
+#include "schemacompiler/schemaon.h"
+
 template < class T, typename I >
 struct DefaultIncrementalVectorAccessor_t
 {
@@ -275,5 +277,7 @@ protected:
 		static void SetIndex( const CLASS * p, int nIndex ) { p->MEMBER = nIndex; }				\
 	};																							\
 	typedef CUtlIncrementalVector < CLASS, CLASS##_##NAME##_IncrementalVectorAccessor_t > 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif

@@ -8,6 +8,8 @@
 #include "tier0/basetypes.h"
 #include "tier0/smartptr.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CEntityInstance;
 
 enum EntityFlags_t : uint32
@@ -102,5 +104,7 @@ class CEntityOwnerPtr : public CSmartPtr< CEntityInstance, CNullRefCountAccessor
 public:
 	// ...
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYTYPES_H

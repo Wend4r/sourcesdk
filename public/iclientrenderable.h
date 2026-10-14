@@ -17,6 +17,8 @@
 #include "client_render_handle.h"
 #include "engine/ivmodelrender.h"
 
+#include "schemacompiler/schemaon.h"
+
 struct model_t;
 struct matrix3x4_t;
 
@@ -321,5 +323,7 @@ public:
 	ClientRenderHandle_t m_hRenderHandle;
 };
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ICLIENTRENDERABLE_H

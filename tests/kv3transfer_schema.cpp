@@ -6,6 +6,8 @@
 
 #include <cstddef>
 
+#include <schemacompiler/schemaon.h>
+
 enum TestKV3SchemaMode_t : int32
 {
 	TEST_KV3SCHEMA_MODE_OFF,
