@@ -242,7 +242,9 @@ public:
 	int32 FindOutputIndex( const char *pszName ) const;
 
 public:
-	uint64 m_unk0008;
+	// Set while the signature is rebuilt: the connections of its instances are saved and its inputs
+	// and outputs are cleared, then declared again and the connections restored when it is cleared
+	bool m_bRebuilding;
 	CUtlVector< uint16 > m_inputNames;
 	CUtlVector< uint16 > m_outputNames;
 	CUtlVector< PulseSignatureOutput_t > m_outputs;
