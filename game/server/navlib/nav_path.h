@@ -49,10 +49,14 @@ struct CPathSegment
 	// The ladder of a ladder segment.
 	const CNavLadder *pLadder;
 
-private:
-	uint8 m_Unk18[ 0x10 ];
-
-public:
+	// Distance to the next segment's position; 0 for the last segment.
+	float length;
+	// Sum of the lengths of the previous segments.
+	float distanceFromStart;
+	// 0 for the only segment of a one-segment path.
+	float m_flUnk20;
+	// FLT_MAX when the lengths are computed.
+	float m_flUnk24;
 	// Bit 0: the step failed the cost check and must not be optimized away.
 	int m_nFlags;
 	// The start position for the first segment; the point the segment is entered at for the rest.
@@ -100,10 +104,12 @@ public:
 
 private:
 	uint8 m_Unk480D[ 3 ];
-	// A vector with inline room for two four-byte elements.
-	uint8 m_Unk4810[ 0x20 ];
 
 public:
+	// IDs of the nav link areas (dynamic attribute 0x200) the path goes through, whose segments
+	// get type 7.
+	CUtlVectorFixedGrowable< uint32, 2 > m_Unk4810;
+
 	int m_PathResultStatus;
 	bool m_bUnk4834;
 };
@@ -137,9 +143,10 @@ public:
 	bool m_bUnk4868;
 	// Run over computed paths when set, unless disabled by a convar.
 	CPathOptimizer *m_pOptimizer;
-
-private:
-	uint8 m_Unk4878[ 8 ];
+	// Null at construction and never set by the game. When set, slot 0 is called with the
+	// path and m_Query.m_pPathCost right after the segments are post-processed, like
+	// m_pOptimizer later.
+	void *m_pUnk4878;
 };
 
 //-----------------------------------------------------------------------------
@@ -156,8 +163,8 @@ public:
 
 private:
 	uint8 m_Unk09[ 7 ];
-	// A vector of unknown elements.
-	uint8 m_Unk10[ 0x18 ];
+	// Filled from the transitions FindNextOccludedNode collects.
+	CUtlVector< NavTransition_t > m_Unk10;
 };
 
 //-----------------------------------------------------------------------------

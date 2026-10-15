@@ -267,11 +267,13 @@ public:
 
 	// Deletion deferred until the queued creation ends
 	bool m_bQueuedDeletionDeferred;
-	bool m_Unk2; // bDeallocateImmediately for the deferred deletion
-	bool m_Unk3;
+	// bDeallocateImmediately of the deferred deletions, combined
+	bool m_bPerformDeallocationPostCreation;
+	bool m_bInvokePostDataUpdates;
 	bool m_bEnableAutoDeletionExecution;
-	bool m_Unk4;
-	bool m_Unk5;
+	bool m_bProfilingResourceSystem;
+	// Activates queued entities with the restore activate type
+	bool m_bInRestoreActivation;
 	bool m_Unk6;
 
 	CUtlVector<CreationInfo_t> m_queuedCreations;
