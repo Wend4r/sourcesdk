@@ -417,7 +417,11 @@ public:
 
 	/// Replaces characters or substrings.
 	DLL_CLASS_IMPORT int Replace( char cFrom, char cTo );
+	DLL_CLASS_IMPORT int Replace( char cFrom, const char *pToString );
 	DLL_CLASS_IMPORT int Replace( const char *pMatch, const char *pToString, bool bDontUseStrStr = false );
+
+	/// Returns the chars from nStart up to nEnd, negative indices count from the end.
+	DLL_CLASS_IMPORT CBufferString Slice( int nStart, int nEnd = 0x7FFFFFFF ) const;
 
 	/// Replace contents at given index with new string.
 	DLL_CLASS_IMPORT const char *ReplaceAt( int nStartIndex, int nOldChars, const char *pToString, int nLen = -1, bool bIgnoreAlignment = false );

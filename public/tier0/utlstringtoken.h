@@ -132,6 +132,7 @@ public:
 
 	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement element ) const;
 	DLL_CLASS_IMPORT static bool TrackTokenCreation( const char *s1, const char *s2 );
+	DLL_CLASS_IMPORT static CUtlStringToken Make( const char *pString );
 
 private:
 	uint32 m_nHashCode;

@@ -17,6 +17,9 @@
 
 #include "schemacompiler/schemaon.h"
 
+class IFormatOutputStream;
+class CFormatStringElement;
+
 //-----------------------------------------------------------------------------
 // Purpose: Basic handler for an rgb set of colors
 //			This class is fully inline
@@ -46,6 +49,8 @@ public:
 	// initialize from color32
 	Color(color32 clr)
 		: m_r(clr.r), m_g(clr.g), m_b(clr.b), m_a(clr.a) {}
+
+	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element ) const;
 
 	// set the color
 	void SetColor(int r, int g, int b, int a = 0)

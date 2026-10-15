@@ -98,6 +98,9 @@ public:
 	void ReportHash(char *szReport, uint8 uReportType = REPORT_HEX);
 #endif
 	void GetHash(uint8 *uDest);
+#if !defined(_MINIMUM_BUILD_) 
+	DLL_CLASS_IMPORT void GetHashHex( char *pszDest, int nDestSize );
+#endif
 
 private:
 	// Private SHA-1 transformation

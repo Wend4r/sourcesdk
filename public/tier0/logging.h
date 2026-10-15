@@ -339,7 +339,7 @@ public:
 
 struct LoggingChannel_t
 {
-	DLL_CLASS_IMPORT bool HasTag( const char *pName );
+	DLL_CLASS_IMPORT bool HasTag( const char *pName ) const;
 };
 
 //////////////////////////////////////////////////////////////////////////

@@ -50,6 +50,7 @@ public:
 
 private:
 	DLL_CLASS_IMPORT bool CommitTo( byte * ) RESTRICT;
+	DLL_CLASS_IMPORT bool MaybeCommitTo( byte * );
 
 	byte *m_pNextAlloc;
 	byte *m_pCommitLimit;
