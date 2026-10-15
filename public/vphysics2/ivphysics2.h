@@ -573,7 +573,7 @@ class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< 0x737
 };
 
 // The resource type manager of the surface properties ('vsurf') and the IPhysSurfacePropertyController of the physics interface
-class CVPhysics2SurfacePropertyManager : public CDefaultKV3TransferResourceTypeManager< 0x6672757376ull >, public IPhysSurfacePropertyController
+class CVPhysics2SurfacePropertyManager : public CDefaultKV3TransferResourceTypeManager< RESOURCE_TYPE_SURFACE_PROPERTIES >, public IPhysSurfacePropertyController
 {
 public:
 	virtual ~CVPhysics2SurfacePropertyManager() {}

@@ -20,6 +20,16 @@
 
 typedef uint64 ResourceType_t;
 
+// Builds a resource type from the characters of its extension (up to 8), the first character in the low byte, e.g. RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' )
+#define RESOURCE_TYPE_ID_EXPAND( x ) x
+#define RESOURCE_TYPE_ID_IMPL( c0, c1, c2, c3, c4, c5, c6, c7, ... ) \
+	( ( ResourceType_t )( uint8 )( c0 ) | ( ( ResourceType_t )( uint8 )( c1 ) << 8 ) | ( ( ResourceType_t )( uint8 )( c2 ) << 16 ) | ( ( ResourceType_t )( uint8 )( c3 ) << 24 ) | \
+	  ( ( ResourceType_t )( uint8 )( c4 ) << 32 ) | ( ( ResourceType_t )( uint8 )( c5 ) << 40 ) | ( ( ResourceType_t )( uint8 )( c6 ) << 48 ) | ( ( ResourceType_t )( uint8 )( c7 ) << 56 ) )
+#define RESOURCE_TYPE_ID( ... ) RESOURCE_TYPE_ID_EXPAND( RESOURCE_TYPE_ID_IMPL( __VA_ARGS__, 0, 0, 0, 0, 0, 0, 0, 0 ) )
+
+// Surface properties, "surfaceproperties/surfaceproperties.vsurf"
+#define RESOURCE_TYPE_SURFACE_PROPERTIES RESOURCE_TYPE_ID( 'v', 's', 'u', 'r', 'f' )
+
 // Resource type of the info class, the packed file extension, e.g. 'vmap'
 DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );
 
