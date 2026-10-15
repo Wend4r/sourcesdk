@@ -21,6 +21,8 @@
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
 #include "physicslib/param_types.h"
+#include "physicslib/serialize.h"
+#include "vphysx/vphysx_collisionmesh_resource.h"
 #include "vphysics2/iphysicsshape.h"
 #include "schemasystem/schematypes.h"
 
@@ -32,13 +34,56 @@ class IPhysicsFrictionSnapshot;
 class CRnBody;
 class CSchemaClassInfo;
 
-struct RnSphere_t;
-struct RnCapsule_t;
-struct RnHull_t;
-struct RnMesh_t;
-struct RnCompound_t;
 struct RnCollisionAttr_t;
 struct RnMassProperties_t;
+
+//-----------------------------------------------------------------------------
+// Shapes of a body description, filled from the shape descriptions of a body part.
+// The type names are not recovered; the layouts are
+//-----------------------------------------------------------------------------
+struct PhysicsShapeDef_t
+{
+	PhysicsShapeType_t m_nType;
+
+	// Taken from VPhysXAggregateData_t::m_surfacePropertyHashes by the surface property index
+	uint32 m_nSurfacePropertyHash;
+
+	// A copy of the aggregate data record the collision attribute index selects
+	VPhysXCollisionAttributes_t m_CollisionAttributes;
+};
+
+struct PhysicsSphereDef_t : public PhysicsShapeDef_t
+{
+	RnSphere_t m_Sphere;
+};
+
+struct PhysicsCapsuleDef_t : public PhysicsShapeDef_t
+{
+	RnCapsule_t m_Capsule;
+};
+
+// The geometry of hulls, meshes and compounds is a heap copy of the aggregate data geometry,
+// which the destructor of the description does not release
+struct PhysicsHullDef_t : public PhysicsShapeDef_t
+{
+	RnHull_t *m_pHull;
+};
+
+struct PhysicsMeshDef_t : public PhysicsShapeDef_t
+{
+	RnMesh_t *m_pMesh;
+};
+
+struct PhysicsCompoundDef_t : public PhysicsShapeDef_t
+{
+	RnCompound_t *m_pCompound;
+};
+
+COMPILE_TIME_ASSERT( sizeof( PhysicsSphereDef_t ) == 0xE8 );
+COMPILE_TIME_ASSERT( sizeof( PhysicsCapsuleDef_t ) == 0xF8 );
+COMPILE_TIME_ASSERT( sizeof( PhysicsHullDef_t ) == 0xE0 );
+COMPILE_TIME_ASSERT( sizeof( PhysicsMeshDef_t ) == 0xE0 );
+COMPILE_TIME_ASSERT( sizeof( PhysicsCompoundDef_t ) == 0xE0 );
 
 // Body description built from a body part of physics aggregate data
 struct PhysicsBodyDef_t
@@ -57,13 +102,14 @@ struct PhysicsBodyDef_t
 	float m_flAngularDrag;
 	uint32 m_unk140;
 
-	// Shapes by kind: spheres, capsules, hulls, meshes and compounds; the element types (232, 248, 224, 224 and 224 bytes) are not recovered
-	CUtlLeanVector< void * > m_SphereShapes;
-	CUtlLeanVector< void * > m_CapsuleShapes;
-	CUtlLeanVector< void * > m_HullShapes;
-	CUtlLeanVector< void * > m_MeshShapes;
-	CUtlLeanVector< void * > m_CompoundShapes;
+	CUtlLeanVector< PhysicsSphereDef_t > m_SphereShapes;
+	CUtlLeanVector< PhysicsCapsuleDef_t > m_CapsuleShapes;
+	CUtlLeanVector< PhysicsHullDef_t > m_HullShapes;
+	CUtlLeanVector< PhysicsMeshDef_t > m_MeshShapes;
+	CUtlLeanVector< PhysicsCompoundDef_t > m_CompoundShapes;
 };
+
+COMPILE_TIME_ASSERT( sizeof( PhysicsBodyDef_t ) == 0xE0 );
 
 // Methods with an unknown name that MSVC lays out as one overload group keep one shared unkNNN name
 abstract_class IPhysicsBody

@@ -25,8 +25,27 @@
 struct PhysShapeMarkup_t;
 struct VPhysXConstraint2_t;
 struct VPhysXJoint_t;
-struct VPhysXCollisionAttributes_t;
 struct PhysFeModelDesc_t;
+
+// Collision group and interaction layers that shapes of the aggregate data refer to by index
+schema struct VPhysXCollisionAttributes_t
+{
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	int32 m_nIncludeDetailLayerCount;
+	uint32 m_CollisionGroup;
+	CUtlVector< uint32 > m_InteractAs;
+	CUtlVector< uint32 > m_InteractWith;
+	CUtlVector< uint32 > m_InteractExclude;
+	CUtlVector< uint32 > m_DetailLayers;
+	CUtlString m_CollisionGroupString;
+	CUtlVector< CUtlString > m_InteractAsStrings;
+	CUtlVector< CUtlString > m_InteractWithStrings;
+	CUtlVector< CUtlString > m_InteractExcludeStrings;
+	CUtlVector< CUtlString > m_DetailLayerStrings;
+};
+
+COMPILE_TIME_ASSERT( sizeof( VPhysXCollisionAttributes_t ) == 0xD0 );
 
 schema struct VPhysics2ShapeDef_t
 {
