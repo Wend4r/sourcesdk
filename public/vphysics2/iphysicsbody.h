@@ -20,6 +20,7 @@
 #include "mathlib/mathlib.h"
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
+#include "mathlib/matrix3x3.h"
 #include "physicslib/param_types.h"
 #include "physicslib/serialize.h"
 #include "vphysx/vphysx_collisionmesh_resource.h"
@@ -33,6 +34,7 @@ class IPhysicsShadowController;
 class IPhysicsFrictionSnapshot;
 class CRnBody;
 class CSchemaClassInfo;
+class ISceneViewDebugOverlays;
 
 struct RnCollisionAttr_t;
 struct RnMassProperties_t;
@@ -370,16 +372,19 @@ public:
 	CUtlVector< void * > m_unk020;
 };
 
-// The 52-byte result of IFnPhysicsBody::unk027 (thirteen floats built from the inertia of the body); only its size is known
-struct FnPhysicsBodyUnk027_t
+// The box with the mass and the principal inertia of a body
+struct PhysicsInertiaBox_t
 {
-	float m_flData[ 13 ];
-};
+	// Rotation to the principal axes of the inertia: x, y, z, w (not 16-byte aligned)
+	float m_qOrientation[ 4 ];
 
-// The 36-byte result of IFnPhysicsBody::unk029 (nine floats); only its size is known
-struct FnPhysicsBodyUnk029_t
-{
-	float m_flData[ 9 ];
+	// The mass center
+	Vector m_vCenter;
+
+	// Half extents along the principal axes of a box of the same mass with the same principal inertia
+	Vector m_vHalfExtents;
+
+	Vector m_vPrincipalInertia;
 };
 
 // The zeroed 40-byte struct IFnPhysicsBody::unk046 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
@@ -400,10 +405,12 @@ public:
 	virtual void SetRnBody( CRnBody *pBody ) = 0;
 	virtual CRnBody *GetRnBody() const = 0;
 
-	// Continuous collision flags of the body
-	virtual void unk005( bool bEnable ) = 0;
-	virtual bool unk006() const = 0;
-	virtual void unk007( bool bEnable ) = 0;
+	// RnBodyDesc_t::m_bIsContinuousEnabled
+	virtual void SetContinuousEnabled( bool bEnable ) = 0;
+	virtual bool IsContinuousEnabled() const = 0;
+
+	// While this body is keyframed, the dynamic bodies touching it can use continuous contacts against it
+	virtual void SetKeyframedContinuousEnabled( bool bEnable ) = 0;
 
 	// Dynamic continuous contact behavior of the body description
 	virtual void SetDynamicContinuousContactBehavior( uint8 nBehavior ) = 0;
@@ -414,18 +421,32 @@ public:
 	virtual int GetMinPositionIterations() const = 0;
 	virtual void SetMinIterations( int nVelocityIterations, int nPositionIterations ) = 0;
 
+	// A transform and velocities the solver stores in the body and that putting the body to sleep clears (the position becomes FLT_MAX).
+	// unk013 tells whether they are set, the others return them, or the current transform and velocities while they are not set
 	virtual bool unk013() const = 0;
 	virtual CTransform unk014() const = 0;
 	virtual Vector unk015() const = 0;
+
+	// In degrees per second
 	virtual Vector unk016() const = 0;
-	virtual float unk017() const = 0;
+
+	// Time the body has been resting; putting the body to sleep resets it
+	virtual float GetSleepTimer() const = 0;
+
+	// Sets a flag that the solver and putting the body to sleep clear
 	virtual void unk018() = 0;
 
-	virtual AABB_t unk019() const = 0;
-	virtual AABB_t unk020( const CTransform &transform ) const = 0;
+	// Union of the broadphase proxy bounds of the shapes
+	virtual AABB_t GetProxyBounds() const = 0;
+
+	// Union of the bounds of the shapes placed at the transform
+	virtual AABB_t BuildBounds( const CTransform &transform ) const = 0;
+
+	// Computes the same union of the proxy bounds as GetProxyBounds
 	virtual AABB_t unk021() const = 0;
 
-	virtual float unk022() const = 0;
+	// Smallest centroid radius of the shapes, FLT_MAX without shapes
+	virtual float GetMinCentroidRadius() const = 0;
 
 	// Rebuilds the mass properties from the shapes, optionally dropping the overridden mass, mass center and inertia first
 	virtual void BuildMassProperties( bool bResetOverrides ) = 0;
@@ -437,24 +458,29 @@ public:
 	virtual float GetInvMassScale() const = 0;
 	virtual float GetInvInertiaScale() const = 0;
 
-	virtual FnPhysicsBodyUnk027_t unk027() const = 0;
+	virtual PhysicsInertiaBox_t GetInertiaBox() const = 0;
 
 	// Diagonalizes the inertia tensor scaled by the inverse mass: the rotation to its principal axes and the principal values
-	virtual void ComputePrincipalInertia( Quaternion *pRotation, Vector *pPrincipalInertia ) const = 0;
+	virtual void ComputePrincipalInertia( Quaternion &rotation, Vector &vPrincipalInertia ) const = 0;
 
-	virtual FnPhysicsBodyUnk029_t unk029() const = 0;
+	// Inverse inertia in body space, zero unless the body is dynamic
+	virtual Matrix3x3 GetLocalInvInertia() const = 0;
 
 	virtual void unk030( bool bEnable ) = 0;
-	virtual void unk031( uint32 nUnknown ) = 0;
+
+	// True when a contact of the body, or an entry of a second list of the body, passes a test of the flags
+	virtual bool unk031( uint32 nFlags ) = 0;
 
 	// Writes a one line description of the body and its shapes
-	virtual void Describe( CUtlString *pDescription ) const = 0;
+	virtual void Describe( CUtlString &description ) const = 0;
 
-	virtual void unk033( void *pUnknown1, void *pUnknown2 ) = 0;
-	virtual void unk034( void *pUnknown1, void *pUnknown2, const float *pUnknown3 ) = 0;
+	// Debug draw of the shapes of the body, and of the axes at the mass center of a dynamic body; DrawAtTransform places the body at the transform when one is given
+	virtual void Draw( ISceneViewDebugOverlays *pDebugOverlays, uint64 nDebugDrawOptions ) = 0;
+	virtual void DrawAtTransform( ISceneViewDebugOverlays *pDebugOverlays, uint64 nDebugDrawOptions, const CTransform *pTransform ) = 0;
 
 	virtual void UpdateShapeSceneObjects() = 0;
 
+	// Call methods of the debug shapes of the shapes
 	virtual void unk036( void *pUnknown ) = 0;
 	virtual void unk037() = 0;
 	virtual void unk038() = 0;
@@ -467,7 +493,7 @@ public:
 	virtual bool unk042() const = 0;
 
 	// The sums of IPhysicsShape::GetContactCounts over the shapes of the body
-	virtual PhysicsShapeContactCounts_t unk043() const = 0;
+	virtual PhysicsShapeContactCounts_t GetContactCounts() const = 0;
 
 	virtual void OutputDebugInfo() const = 0;
 
