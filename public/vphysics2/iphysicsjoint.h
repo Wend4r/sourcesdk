@@ -72,8 +72,8 @@ public:
 	virtual PhysicsSplineJointDesc_t GetSplineJointDesc() const = 0;
 	virtual PhysicsWheelJointDesc_t GetWheelJointDesc() const = 0;
 
-	// Origin 1 and basis 1 are in the space of the reference body, the legacy constraints pass their reference object (the one
-	// the ragdoll constraint frame is relative to) as it. Origin 2 and basis 2 are in the space of the attached body.
+	// The reference origin and basis are in the space of the reference body, the legacy constraints pass their reference object
+	// (the one the ragdoll constraint frame is relative to) as it. The attached origin and basis are in the space of the attached body.
 	// GetBody and SetBody take index 0 for the reference body and index 1 for the attached body
 	virtual IPhysicsBody *GetBody( int nIndex ) const = 0;
 	virtual void SetBody( int nIndex, IPhysicsBody *pBody ) = 0;
@@ -85,19 +85,19 @@ public:
 
 	virtual void WakeBodies() = 0;
 
-	virtual Vector GetWorldOrigin1() const = 0;
-	virtual Vector GetLocalOrigin1() const = 0;
-	virtual void SetLocalOrigin1( const Vector &vOrigin ) = 0;
-	virtual Vector GetWorldOrigin2() const = 0;
-	virtual Vector GetLocalOrigin2() const = 0;
-	virtual void SetLocalOrigin2( const Vector &vOrigin ) = 0;
+	virtual Vector GetWorldReferenceOrigin() const = 0;
+	virtual Vector GetLocalReferenceOrigin() const = 0;
+	virtual void SetLocalReferenceOrigin( const Vector &vOrigin ) = 0;
+	virtual Vector GetWorldAttachedOrigin() const = 0;
+	virtual Vector GetLocalAttachedOrigin() const = 0;
+	virtual void SetLocalAttachedOrigin( const Vector &vOrigin ) = 0;
 
-	virtual Quaternion GetWorldBasis1() const = 0;
-	virtual Quaternion GetLocalBasis1() const = 0;
-	virtual void SetLocalBasis1( const Quaternion &qBasis ) = 0;
-	virtual Quaternion GetWorldBasis2() const = 0;
-	virtual Quaternion GetLocalBasis2() const = 0;
-	virtual void SetLocalBasis2( const Quaternion &qBasis ) = 0;
+	virtual Quaternion GetWorldReferenceBasis() const = 0;
+	virtual Quaternion GetLocalReferenceBasis() const = 0;
+	virtual void SetLocalReferenceBasis( const Quaternion &qBasis ) = 0;
+	virtual Quaternion GetWorldAttachedBasis() const = 0;
+	virtual Quaternion GetLocalAttachedBasis() const = 0;
+	virtual void SetLocalAttachedBasis( const Quaternion &qBasis ) = 0;
 
 	// nIndex 0 or 1 selects the body
 	virtual Vector GetWorldOrigin( int nIndex ) const = 0;

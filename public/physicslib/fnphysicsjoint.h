@@ -32,18 +32,18 @@ public:
 
 	virtual IPhysicsJoint *GetJoint() const = 0;
 
-	virtual Vector GetWorldOrigin1() const = 0;
-	virtual Vector GetLocalOrigin1() const = 0;
-	virtual Vector GetWorldOrigin2() const = 0;
-	virtual Vector GetLocalOrigin2() const = 0;
+	virtual Vector GetWorldReferenceOrigin() const = 0;
+	virtual Vector GetLocalReferenceOrigin() const = 0;
+	virtual Vector GetWorldAttachedOrigin() const = 0;
+	virtual Vector GetLocalAttachedOrigin() const = 0;
 
-	virtual Quaternion GetLocalBasis1() const = 0;
-	virtual Quaternion GetWorldBasis1() const = 0;
-	virtual Quaternion GetLocalBasis2() const = 0;
-	virtual Quaternion GetWorldBasis2() const = 0;
+	virtual Quaternion GetLocalReferenceBasis() const = 0;
+	virtual Quaternion GetWorldReferenceBasis() const = 0;
+	virtual Quaternion GetLocalAttachedBasis() const = 0;
+	virtual Quaternion GetWorldAttachedBasis() const = 0;
 
-	virtual void SetLocalOrigin1( const Vector &vOrigin ) = 0;
-	virtual void SetLocalOrigin2( const Vector &vOrigin ) = 0;
+	virtual void SetLocalReferenceOrigin( const Vector &vOrigin ) = 0;
+	virtual void SetLocalAttachedOrigin( const Vector &vOrigin ) = 0;
 
 	virtual void SetEnableCollision( bool bEnable ) = 0;
 	virtual bool IsCollisionEnabled() const = 0;
@@ -201,18 +201,18 @@ public:
 	virtual void SetDampingRatio( float flDampingRatio ) = 0;
 	virtual float GetDampingRatio() const = 0;
 
-	virtual Vector GetGround1() const = 0;
-	virtual Vector GetGround2() const = 0;
-	virtual void SetGround1( const Vector &vGround ) = 0;
-	virtual void SetGround2( const Vector &vGround ) = 0;
+	virtual Vector GetReferenceGround() const = 0;
+	virtual Vector GetAttachedGround() const = 0;
+	virtual void SetReferenceGround( const Vector &vGround ) = 0;
+	virtual void SetAttachedGround( const Vector &vGround ) = 0;
 
 	virtual float GetRatio() const = 0;
 	virtual void SetRatio( float flRatio ) = 0;
 
-	virtual float GetRestLength1() const = 0;
-	virtual float GetRestLength2() const = 0;
-	virtual void SetRestLength1( float flLength ) = 0;
-	virtual void SetRestLength2( float flLength ) = 0;
+	virtual float GetReferenceRestLength() const = 0;
+	virtual float GetAttachedRestLength() const = 0;
+	virtual void SetReferenceRestLength( float flLength ) = 0;
+	virtual void SetAttachedRestLength( float flLength ) = 0;
 };
 
 abstract_class IFnPhysicsConicalJoint : public IFnPhysicsJoint
@@ -294,7 +294,7 @@ struct FnPhysicsSplineJointUnk036_t
 abstract_class IFnPhysicsSplineJoint : public IFnPhysicsJoint
 {
 public:
-	// Anchor of the first body in the tangent space of the spline
+	// Anchor of the reference body in the tangent space of the spline
 	virtual Vector GetTangentSpaceAnchor() const = 0;
 	virtual void SetTangentSpaceAnchor( const Vector &vAnchor ) = 0;
 	virtual Vector ComputeTangentSpaceAnchor( const Vector &vWorldAnchor ) const = 0;

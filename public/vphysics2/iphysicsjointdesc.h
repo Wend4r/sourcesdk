@@ -28,13 +28,13 @@ struct PhysicsJointDesc_t
 
 	PhysicsJointType_t m_nType;
 
-	// The reference body, the space of origin 1 and basis 1, and the attached body, the space of origin 2 and basis 2
+	// The reference body, the space of the reference origin and basis, and the attached body, the space of the attached origin and basis
 	IPhysicsBody *m_pReferenceBody;
 	IPhysicsBody *m_pAttachedBody;
-	Vector m_vLocalOrigin1;
-	Quaternion m_qLocalBasis1;
-	Vector m_vLocalOrigin2;
-	Quaternion m_qLocalBasis2;
+	Vector m_vLocalReferenceOrigin;
+	Quaternion m_qLocalReferenceBasis;
+	Vector m_vLocalAttachedOrigin;
+	Quaternion m_qLocalAttachedBasis;
 	bool m_bIsEnabled;
 	bool m_bIsLinearConstraintEnabled;
 	bool m_bIsAngularConstraintEnabled;
@@ -117,10 +117,10 @@ struct PhysicsSpringJointDesc_t : public PhysicsJointDesc_t
 
 struct PhysicsPulleyJointDesc_t : public PhysicsJointDesc_t
 {
-	Vector m_vGround1;
-	Vector m_vGround2;
-	float m_flRestLength1;
-	float m_flRestLength2;
+	Vector m_vReferenceGround;
+	Vector m_vAttachedGround;
+	float m_flReferenceRestLength;
+	float m_flAttachedRestLength;
 	float m_flRatio;
 	float m_flFrequency;
 	float m_flDampingRatio;
