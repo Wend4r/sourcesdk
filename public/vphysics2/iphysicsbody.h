@@ -94,8 +94,8 @@ struct PhysicsBodyDef_t
 	Vector m_vAngularVelocity;
 	float m_flAngularDamping;
 	float m_flAngularDrag;
-	uint32 m_unk140;
 
+	// The 4 bytes before the shapes are alignment padding: the default construction, the conversion and the copy assignment never touch them
 	CUtlLeanVector< PhysicsSphereDef_t > m_SphereShapes;
 	CUtlLeanVector< PhysicsCapsuleDef_t > m_CapsuleShapes;
 	CUtlLeanVector< PhysicsHullDef_t > m_HullShapes;
