@@ -22,6 +22,40 @@ REGISTER_NAMED_TEST( "StringToken.MakeMatchesTheInlineHash", StringToken_MakeMat
 	TEST_EQ( CUtlStringToken::Make( "HELLO" ).GetHashCode(), CUtlStringToken::Make( "hello" ).GetHashCode() );
 }
 
+REGISTER_NAMED_TEST( "StringAndToken.PointsAtTheStringWithItsToken", StringAndToken_PointsAtTheStringWithItsToken )
+{
+	const char szName[] = "Entity42";
+	CUtlStringAndToken name( szName );
+
+	// The string is not copied.
+	TEST_EQ( name.Get(), static_cast< const char * >( szName ) );
+	TEST_EQ( name.GetToken().GetHashCode(), MakeStringToken( "entity42" ) );
+	TEST_TRUE( name.IsEqual_FastCaseInsensitive( "ENTITY42" ) );
+
+	CUtlStringAndToken empty;
+	TEST_NULL( empty.Get() );
+}
+
+REGISTER_NAMED_TEST( "StringAndToken.StorageKeepsItsOwnCopy", StringAndToken_StorageKeepsItsOwnCopy )
+{
+	char szName[] = "Entity42";
+	CUtlStringAndTokenWithStorage name( szName );
+
+	// Changing the source does not change the stored copy.
+	szName[ 0 ] = 'X';
+	TEST_EQ( strcmp( name.Get(), "Entity42" ), 0 );
+
+	// A copy points at its own storage.
+	CUtlStringAndTokenWithStorage copy( name );
+	TEST_NE( copy.Get(), name.Get() );
+	TEST_EQ( strcmp( copy.Get(), "Entity42" ), 0 );
+	TEST_EQ( copy.GetToken().GetHashCode(), name.GetToken().GetHashCode() );
+
+	copy.Set( "Other" );
+	TEST_EQ( strcmp( copy.Get(), "Other" ), 0 );
+	TEST_EQ( copy.GetToken().GetHashCode(), MakeStringToken( "other" ) );
+}
+
 REGISTER_NAMED_TEST( "StringAndToken.FormatKeepsTheTextAndItsToken", StringAndToken_FormatKeepsTheTextAndItsToken )
 {
 	CUtlStringAndTokenWithStorage name;
@@ -78,6 +112,19 @@ REGISTER_NAMED_TEST( "FilterString.MatchesTermsAlternativesAndExclusions", Filte
 	TEST_FALSE( filter.DoesMatchString( "fox and dog" ) );
 	TEST_TRUE( filter.DoesMatchString( "Cat" ) );
 	TEST_FALSE( filter.DoesMatchString( "bird" ) );
+}
+
+REGISTER_NAMED_TEST( "FilterString.EmptyFilterMatchesEverything", FilterString_EmptyFilterMatchesEverything )
+{
+	CFilterString filter( "  ", FILTER_STRING_OP_CONTAINS, FILTER_STRING_CASE_INSENSITIVE );
+
+	// The filter is trimmed, an empty one matches any string.
+	TEST_TRUE( filter.IsEmpty() );
+	TEST_TRUE( filter.DoesMatchString( "anything" ) );
+
+	filter.SetString( "fox", FILTER_STRING_OP_CONTAINS, FILTER_STRING_CASE_INSENSITIVE );
+	TEST_FALSE( filter.IsEmpty() );
+	TEST_EQ( strcmp( filter.GetString(), "fox" ), 0 );
 }
 
 REGISTER_NAMED_TEST( "FilterString.CaseSensitiveMode", FilterString_CaseSensitiveMode )
@@ -147,6 +194,7 @@ REGISTER_NAMED_TEST( "StableSymbolTable.SymbolsKeepTheirIds", StableSymbolTable_
 
 	TEST_EQ( table.Count(), 2 );
 	TEST_EQ( strcmp( table.GetSymbol( nAlpha ), "Alpha" ), 0 );
+	TEST_EQ( strcmp( table.GetAllSymbols()[ 1 ], "Beta" ), 0 );
 
 	// Insert places a symbol at a chosen id, growing the table up to it.
 	table.Insert( 5, "Gamma" );

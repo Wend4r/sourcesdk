@@ -4,6 +4,7 @@
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
 #include <tier0/eventutils.h>
+#include <tier0/fibertools.h>
 
 #include <atomic>
 #include <cstring>
@@ -162,6 +163,30 @@ REGISTER_NAMED_TEST( "Thread.AtomicSemaphoreWakesASleepingWait", Thread_AtomicSe
 	TEST_EQ( semaphore.GetCount(), 0u );
 }
 
+REGISTER_NAMED_TEST( "Thread.MultiWaitObjectCanBeWaitedOnAlone", Thread_MultiWaitObjectCanBeWaitedOnAlone )
+{
+	CThreadMultiWaitEvent event( true );
+	CThreadMultiWaitSemaphore semaphore;
+
+	ThreadMultiWaitItem_t item;
+	ThreadMultiWaitExtra_t extra;
+	semaphore.GetWaitItem( &item, &extra );
+	TEST_EQ( extra.nFlags, 1u );
+	TEST_EQ( event.GetExtraFlags(), 4u );
+
+	TEST_FALSE( event.Check() );
+	event.Set();
+
+	// A manual-reset event stays set.
+	TEST_TRUE( event.Wait( 0 ) );
+	TEST_TRUE( event.Check() );
+
+	// A semaphore lets one wait through per release.
+	semaphore.Release();
+	TEST_TRUE( semaphore.Check() );
+	TEST_FALSE( semaphore.Check() );
+}
+
 REGISTER_NAMED_TEST( "Thread.MultiWaitSemaphoreCountsReleases", Thread_MultiWaitSemaphoreCountsReleases )
 {
 	CThreadMultiWaitSemaphore semaphore;
@@ -302,4 +327,63 @@ REGISTER_NAMED_TEST( "Thread.CrossProcessMutexCanBeTakenAndReleased", Thread_Cro
 
 	TEST_TRUE( mutex.Wait( 0 ) );
 	TEST_TRUE( mutex.Release() );
+}
+
+static void FiberStoreJob( void *pContext )
+{
+	int *pValue = *static_cast< int ** >( pContext );
+	*pValue = 42;
+}
+
+REGISTER_NAMED_TEST( "Fiber.RunsAJobOnItsOwnStack", Fiber_RunsAJobOnItsOwnStack )
+{
+	CFiber *pFiber = CFiber::AllocPooledFiber( CFiber::STACKSIZE_64KB, 0 );
+
+	TEST_NOT_NULL( pFiber );
+	TEST_FALSE( pFiber->HasAJob() );
+
+	// The context is copied to the top of the fiber stack.
+	int nValue = 0;
+	int *pValue = &nValue;
+	void *pContext = pFiber->SetFiberJob( &FiberStoreJob, &pValue, sizeof( pValue ) );
+
+	TEST_TRUE( pFiber->HasAJob() );
+	TEST_EQ( pFiber->GetFiberJobContext(), pContext );
+	TEST_TRUE( pFiber->IsMemoryInFiberRange( pContext ) );
+	TEST_FALSE( pFiber->IsMemoryInFiberRange( &nValue ) );
+
+	// ResumeJob returns true once the job has finished.
+	TEST_TRUE( pFiber->ResumeJob( nullptr ) );
+	TEST_EQ( nValue, 42 );
+	TEST_FALSE( pFiber->HasAJob() );
+
+	pFiber->Release();
+}
+
+static int s_nFiberYieldStage;
+
+static void FiberYieldJob( void * )
+{
+	s_nFiberYieldStage = 1;
+	CFiber::GetCurrentFiber()->FiberYield();
+	s_nFiberYieldStage = 2;
+}
+
+REGISTER_NAMED_TEST( "Fiber.YieldReturnsToTheResumingThread", Fiber_YieldReturnsToTheResumingThread )
+{
+	CFiber *pFiber = CFiber::AllocPooledFiber( CFiber::STACKSIZE_64KB, 0 );
+
+	TEST_NOT_NULL( pFiber );
+
+	s_nFiberYieldStage = 0;
+	pFiber->SetFiberJob( &FiberYieldJob );
+
+	// The job yields half way, so the first resume returns before it finishes.
+	TEST_FALSE( pFiber->ResumeJob( nullptr ) );
+	TEST_EQ( s_nFiberYieldStage, 1 );
+
+	TEST_TRUE( pFiber->ResumeJob( nullptr ) );
+	TEST_EQ( s_nFiberYieldStage, 2 );
+
+	pFiber->Release();
 }

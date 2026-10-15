@@ -74,6 +74,19 @@ REGISTER_NAMED_TEST( "VirtualMemorySnapshot.DescribesTheMappedRegions", VirtualM
 	}
 
 	TEST_TRUE( bFound );
+
+	// Mapped files carry their path as the description.
+	bool bFoundDesc = false;
+
+	for ( int i = 0; i < snapshot.GetRegionsCount(); i++ )
+	{
+		const CVirtualMemorySnapshot::Region_t *pRegion = snapshot.GetRegion( i );
+
+		if ( snapshot.RegionHasDesc( pRegion ) && snapshot.GetRegionDesc( pRegion )[ 0 ] != '\0' )
+			bFoundDesc = true;
+	}
+
+	TEST_TRUE( bFoundDesc );
 }
 
 // A stack function that records how CCallStackCapture calls it and returns three made up frames.
@@ -104,6 +117,18 @@ REGISTER_NAMED_TEST( "CallStackCapture.StoresTheFramesOfTheStackFunction", CallS
 	// The capture asks for nMaxCapture frames and skips its own frame on top of nSkipCalls.
 	TEST_EQ( s_nRequestedFrames, 16 );
 	TEST_EQ( s_nRequestedSkip, 3 );
+
+	// Copies keep the captured frames.
+	CCallStackCapture copy( &capture );
+	TEST_EQ( copy.nValidEntries, 3u );
+	TEST_EQ( copy.pStack[ 1 ], reinterpret_cast< void * >( 0x2000 ) );
+
+	CCallStackCapture partial( capture.pStack, 2 );
+	TEST_EQ( partial.nValidEntries, 2u );
+	TEST_EQ( partial.pStack[ 1 ], reinterpret_cast< void * >( 0x2000 ) );
+
+	CCallStackCapture none( static_cast< const CCallStackCapture * >( nullptr ) );
+	TEST_EQ( none.nValidEntries, 0u );
 
 	// Without a stack function nothing is captured.
 	capture.Capture( nullptr, 0, 16 );
