@@ -12,8 +12,11 @@
 
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
+#include "tier1/utlvector.h"
+#include "tier3/tier3.h"
 
 struct BGR888_t;
+struct IMFSinkWriter;
 
 struct MediaFoundationParams_t
 {
@@ -51,6 +54,25 @@ public:
 	// Frame is converted to YUY2 before being written
 	virtual void AppendMovieFrame( const BGR888_t *pRGBData ) = 0;
 	virtual void AppendMovieSound( const void *pData, uint32 nBytes ) = 0;
+};
+
+class CMediaFoundation : public CTier3AppSystem< IMediaFoundation >
+{
+public:
+	// Copy of the StartMovie parameters, with the extension set to "mp4" or "m4a"
+	MediaFoundationParams_t m_Params;
+
+	// Set once CoInitializeEx and MFStartup succeeded
+	bool m_bStarted;
+
+	IMFSinkWriter *m_pSinkWriter;
+	uint32 m_nVideoStreamIndex;
+	uint32 m_nAudioStreamIndex;
+	int m_nUnk170;
+	int64 m_nUnk178;
+
+	// YUY2 conversion buffer of the current frame
+	CUtlVector< uint8 > m_YUY2Buffer;
 };
 
 #endif // IMEDIAFOUNDATION_H
