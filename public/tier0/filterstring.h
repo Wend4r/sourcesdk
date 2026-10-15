@@ -9,10 +9,33 @@
 #include "tier0/utlstring.h"
 #include "tier0/utlvector.h"
 
-// The comparison of CFilterString. Values 4 to 7 compare the input as a number with the filter
-// (less, greater, less or equal, greater or equal), the lower values match text.
-enum FilterStringOp_t : int;
-enum FilterStringCase_t : int;
+// The comparison of CFilterString
+enum FilterStringOp_t : int
+{
+	// The input contains the terms of one of the "|" separated alternatives and none of
+	// the excluded ones
+	FILTER_STRING_OP_CONTAINS = 0,
+
+	// The input equals the whole filter
+	FILTER_STRING_OP_EQUALS = 1,
+
+	// The negations of the two above
+	FILTER_STRING_OP_NOT_CONTAINS = 2,
+	FILTER_STRING_OP_NOT_EQUALS = 3,
+
+	// The input as a number compared with the filter as a number
+	FILTER_STRING_OP_LESS = 4,
+	FILTER_STRING_OP_GREATER = 5,
+	FILTER_STRING_OP_LESS_EQUAL = 6,
+	FILTER_STRING_OP_GREATER_EQUAL = 7,
+};
+
+// The case handling of the text comparisons of CFilterString
+enum FilterStringCase_t : int
+{
+	FILTER_STRING_CASE_INSENSITIVE = 0,
+	FILTER_STRING_CASE_SENSITIVE = 1,
+};
 
 //-----------------------------------------------------------------------------
 // Matches strings against a filter of "|" separated alternatives of " " separated

@@ -14,15 +14,6 @@
 
 #include <cstring>
 
-// The comparisons and case modes of CFilterString used here.
-static const FilterStringOp_t FILTER_CONTAINS = FilterStringOp_t( 0 );
-static const FilterStringOp_t FILTER_LESS = FilterStringOp_t( 4 );
-static const FilterStringOp_t FILTER_GREATER = FilterStringOp_t( 5 );
-static const FilterStringOp_t FILTER_LESS_OR_EQUAL = FilterStringOp_t( 6 );
-static const FilterStringOp_t FILTER_GREATER_OR_EQUAL = FilterStringOp_t( 7 );
-static const FilterStringCase_t FILTER_CASE_INSENSITIVE = FilterStringCase_t( 0 );
-static const FilterStringCase_t FILTER_CASE_SENSITIVE = FilterStringCase_t( 1 );
-
 REGISTER_NAMED_TEST( "StringToken.MakeMatchesTheInlineHash", StringToken_MakeMatchesTheInlineHash )
 {
 	TEST_EQ( CUtlStringToken::Make( "Hello" ).GetHashCode(), MakeStringToken( "Hello" ) );
@@ -80,7 +71,7 @@ REGISTER_NAMED_TEST( "UtlString.RemoveFromEnd", UtlString_RemoveFromEnd )
 REGISTER_NAMED_TEST( "FilterString.MatchesTermsAlternativesAndExclusions", FilterString_MatchesTermsAlternativesAndExclusions )
 {
 	// "fox" but not "dog", or "cat".
-	CFilterString filter( "fox -dog|cat", FILTER_CONTAINS, FILTER_CASE_INSENSITIVE );
+	CFilterString filter( "fox -dog|cat", FILTER_STRING_OP_CONTAINS, FILTER_STRING_CASE_INSENSITIVE );
 
 	TEST_TRUE( filter.DoesMatchString( "quick fox" ) );
 	TEST_TRUE( filter.DoesMatchString( "foxes" ) );
@@ -91,32 +82,49 @@ REGISTER_NAMED_TEST( "FilterString.MatchesTermsAlternativesAndExclusions", Filte
 
 REGISTER_NAMED_TEST( "FilterString.CaseSensitiveMode", FilterString_CaseSensitiveMode )
 {
-	CFilterString filter( "cat", FILTER_CONTAINS, FILTER_CASE_SENSITIVE );
+	CFilterString filter( "cat", FILTER_STRING_OP_CONTAINS, FILTER_STRING_CASE_SENSITIVE );
 
 	TEST_TRUE( filter.DoesMatchString( "cat" ) );
 	TEST_FALSE( filter.DoesMatchString( "Cat" ) );
 
 	// SetString replaces the filter.
-	filter.SetString( "Cat", FILTER_CONTAINS, FILTER_CASE_SENSITIVE );
+	filter.SetString( "Cat", FILTER_STRING_OP_CONTAINS, FILTER_STRING_CASE_SENSITIVE );
 	TEST_TRUE( filter.DoesMatchString( "Cat" ) );
 	TEST_FALSE( filter.DoesMatchString( "cat" ) );
 }
 
+REGISTER_NAMED_TEST( "FilterString.EqualsAndNegations", FilterString_EqualsAndNegations )
+{
+	// Equality compares the whole filter, without splitting it into terms.
+	CFilterString equals( "fox -dog", FILTER_STRING_OP_EQUALS, FILTER_STRING_CASE_INSENSITIVE );
+	TEST_TRUE( equals.DoesMatchString( "FOX -DOG" ) );
+	TEST_FALSE( equals.DoesMatchString( "fox" ) );
+
+	CFilterString notEquals( "fox", FILTER_STRING_OP_NOT_EQUALS, FILTER_STRING_CASE_INSENSITIVE );
+	TEST_FALSE( notEquals.DoesMatchString( "Fox" ) );
+	TEST_TRUE( notEquals.DoesMatchString( "foxes" ) );
+
+	CFilterString notContains( "fox -dog|cat", FILTER_STRING_OP_NOT_CONTAINS, FILTER_STRING_CASE_INSENSITIVE );
+	TEST_FALSE( notContains.DoesMatchString( "quick fox" ) );
+	TEST_TRUE( notContains.DoesMatchString( "fox and dog" ) );
+	TEST_TRUE( notContains.DoesMatchString( "bird" ) );
+}
+
 REGISTER_NAMED_TEST( "FilterString.ComparesNumbers", FilterString_ComparesNumbers )
 {
-	CFilterString less( "10", FILTER_LESS, FILTER_CASE_INSENSITIVE );
+	CFilterString less( "10", FILTER_STRING_OP_LESS, FILTER_STRING_CASE_INSENSITIVE );
 	TEST_TRUE( less.DoesMatchString( "5" ) );
 	TEST_FALSE( less.DoesMatchString( "10" ) );
 
-	CFilterString greater( "10", FILTER_GREATER, FILTER_CASE_INSENSITIVE );
+	CFilterString greater( "10", FILTER_STRING_OP_GREATER, FILTER_STRING_CASE_INSENSITIVE );
 	TEST_TRUE( greater.DoesMatchString( "15" ) );
 	TEST_FALSE( greater.DoesMatchString( "10" ) );
 
-	CFilterString lessOrEqual( "10", FILTER_LESS_OR_EQUAL, FILTER_CASE_INSENSITIVE );
+	CFilterString lessOrEqual( "10", FILTER_STRING_OP_LESS_EQUAL, FILTER_STRING_CASE_INSENSITIVE );
 	TEST_TRUE( lessOrEqual.DoesMatchString( "10" ) );
 	TEST_FALSE( lessOrEqual.DoesMatchString( "15" ) );
 
-	CFilterString greaterOrEqual( "10", FILTER_GREATER_OR_EQUAL, FILTER_CASE_INSENSITIVE );
+	CFilterString greaterOrEqual( "10", FILTER_STRING_OP_GREATER_EQUAL, FILTER_STRING_CASE_INSENSITIVE );
 	TEST_TRUE( greaterOrEqual.DoesMatchString( "10" ) );
 	TEST_FALSE( greaterOrEqual.DoesMatchString( "5" ) );
 }
