@@ -13,9 +13,11 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlstringtoken.h"
+#include "tier0/utlvector.h"
 #include "rubikon/intersection.h"
 
 class IVPhysics2World;
+struct CollisionDetailLayerInfo_t;
 struct RnCollisionAttr_t;
 struct RnQueryShapeAttr_t;
 
@@ -78,41 +80,50 @@ public:
 	virtual const IPhysNameIndex *GetInteractionLayers() const = 0;
 	virtual IPhysNameIndex *GetInteractionLayers() = 0;
 
-	virtual const IPhysNameIndex *unk002() const = 0;
-	virtual IPhysNameIndex *unk002() = 0;
+	// The detail layers ("Detail Layers", 16 names)
+	virtual const IPhysNameIndex *GetDetailLayers() const = 0;
+	virtual IPhysNameIndex *GetDetailLayers() = 0;
 
-	virtual bool unk004() const = 0;
+	// The detail layer infos are loaded from scripts/collision_detail_layers.vdata, keyed by the token of the lowercase name
+	virtual bool HasDetailLayerInfos() const = 0;
+	virtual const CollisionDetailLayerInfo_t *FindDetailLayerInfo( uint32 nToken ) const = 0;
 
-	// Looks up a 64-byte record by its key
-	virtual const void *unk005( uint32 nKey ) const = 0;
+	// Fills the vector with all detail layer infos sorted by their friendly names
+	virtual void GetDetailLayerInfos( CUtlVector< const CollisionDetailLayerInfo_t * > &infos ) = 0;
 
-	virtual void unk006( void *p ) = 0;
-
-	// The last argument is an output record whose layout is not recovered
-	virtual void unk007( PhysSpan_t< const char * const > names1, PhysSpan_t< const char * const > names2, void *p ) = 0;
+	// Sets m_nDetailLayerMask and m_nDetailLayerMaskType of the attributes from the subtree layers of the named
+	// detail layer infos: with included layers the type is 1 and the excluded layers are cleared from the included ones,
+	// otherwise the type is 0 and the mask holds the excluded layers
+	virtual void GetDetailLayerMask( PhysSpan_t< const char * const > includedLayers, PhysSpan_t< const char * const > excludedLayers, RnCollisionAttr_t &attr ) = 0;
 
 	// The collision groups ("collision group" attribute)
 	virtual const IPhysNameIndex *GetCollisionGroups() const = 0;
 	virtual IPhysNameIndex *GetCollisionGroups() = 0;
 
-	// Sets m_nInteractsAs and m_nInteractsWith to the mask returned by unk011 and the collision group to 4
-	virtual void unk010( RnCollisionAttr_t &attr ) const = 0;
+	// Sets m_nInteractsAs and m_nInteractsWith to GetDefaultInteractionMask and the collision group to 4
+	virtual void InitDefaultCollisionAttr( RnCollisionAttr_t &attr ) const = 0;
 
-	virtual uint64 unk011() const = 0;
-	virtual void unk012( uint64 nMask ) = 0;
-	virtual void unk013( uint64 nMask ) = 0;
+	// Mask of the default interaction mask entry (the "CONTENTS_SOLID" one by default),
+	// used for shapes with the default collision group and no "interacts as" layers
+	virtual uint64 GetDefaultInteractionMask() const = 0;
 
-	// 0 is GetInteractionLayers, 1 is unk002, 2 is GetCollisionGroups
-	virtual const IPhysNameIndex *unk014( int nIndex ) const = 0;
-	virtual IPhysNameIndex *unk014( int nIndex ) = 0;
+	// ORs into the interaction layers a shape interacts-as override replaces in the attributes
+	virtual void AddOverrideMask( uint64 nMask ) = 0;
 
-	// Keyed list of interaction masks
-	virtual int unk016( int nKey ) const = 0;
-	virtual uint64 unk017( int nIndex ) const = 0;
-	virtual void unk018( int nIndex, uint64 nMask ) = 0;
+	// Interaction layers that make a shape interacts-as override replace the whole attributes, clearing m_nInteractsWith and m_nInteractsExclude
+	virtual void SetExclusiveOverrideMask( uint64 nMask ) = 0;
 
-	// Sets the mask of the key to the mask of the tokens, adding the key when it is missing, and returns its index
-	virtual int unk019( const int &nKey, PhysSpan_t< const CUtlStringToken > tokens ) = 0;
+	// 0 is GetInteractionLayers, 1 is GetDetailLayers, 2 is GetCollisionGroups
+	virtual const IPhysNameIndex *GetNameIndex( int nIndex ) const = 0;
+	virtual IPhysNameIndex *GetNameIndex( int nIndex ) = 0;
+
+	// Named interaction masks keyed by a string token ("CONTENTS_SOLID", "CONTENTS_SOLID_NO_BLOCK_LOS", ...)
+	virtual int FindInteractionMask( int nKey ) const = 0;
+	virtual uint64 GetInteractionMask( int nIndex ) const = 0;
+	virtual void SetInteractionMask( int nIndex, uint64 nMask ) = 0;
+
+	// Sets the mask of the key to the mask of the interaction layer tokens, adding the key when it is missing, and returns its index
+	virtual int AddInteractionMask( const int &nKey, PhysSpan_t< const CUtlStringToken > tokens ) = 0;
 
 	virtual void DumpStatus() const = 0;
 

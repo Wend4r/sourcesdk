@@ -615,7 +615,7 @@ public:
 		uint64 m_nMask;
 	};
 
-	// The three CNameIndex objects (IPhysNameIndex implementations) returned by unk014( 0 ) to unk014( 2 ).
+	// The three CNameIndex objects (IPhysNameIndex implementations) returned by GetNameIndex( 0 ) to GetNameIndex( 2 ).
 	// Their layout is not recovered; their size differs between the platforms (0x90 on Linux, 0xA8 on Windows)
 #ifdef _WIN32
 	uint64 m_NameIndices[ 3 ][ 21 ];
@@ -623,25 +623,25 @@ public:
 	uint64 m_NameIndices[ 3 ][ 18 ];
 #endif
 
-	// Read and written by unk016 to unk019
+	// Read and written by FindInteractionMask, GetInteractionMask, SetInteractionMask and AddInteractionMask
 	CUtlVector< KeyedMask_t > m_KeyedMasks;
 
-	// The entry of m_KeyedMasks whose mask unk018 also stores in m_nCurrentMask
+	// The entry of m_KeyedMasks whose mask SetInteractionMask also stores in m_nCurrentMask
 	int m_nCurrentKeyedMask;
 
-	// Returned by unk011 and used by unk010
+	// Returned by GetDefaultInteractionMask and used by InitDefaultCollisionAttr
 	uint64 m_nCurrentMask;
 
-	// unk012 ORs into it
+	// AddOverrideMask ORs into it
 	uint64 m_unk1E0;
 
-	// Set by unk013
+	// Set by SetExclusiveOverrideMask
 	uint64 m_unk1E8;
 
 	uint16 m_unk1F0;
 	uint8 m_unk1F2;
 
-	// CUtlHashtable< CUtlStringToken, 64-byte record > looked up by unk004 and unk005; the record type is not recovered
+	// CUtlHashtable< CUtlStringToken, CollisionDetailLayerInfo_t > read by HasDetailLayerInfos, FindDetailLayerInfo and GetDetailLayerInfos
 	uint64 m_unk1F8[ 4 ];
 };
 
