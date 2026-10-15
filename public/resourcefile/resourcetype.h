@@ -13,6 +13,7 @@
 #include <schemasystem/schemametatag.h>
 
 #include <initializer_list>
+#include <type_traits>
 #include "resourcesystem/resourcesystemtypes.h"
 #include "resourcesystem/resourcemanifesthelpers.h"
 
@@ -20,12 +21,24 @@
 
 typedef uint64 ResourceType_t;
 
-// Builds a resource type from the characters of its extension (up to 8), the first character in the low byte, e.g. RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' )
-#define RESOURCE_TYPE_ID_EXPAND( x ) x
-#define RESOURCE_TYPE_ID_IMPL( c0, c1, c2, c3, c4, c5, c6, c7, ... ) \
-	( ( ResourceType_t )( uint8 )( c0 ) | ( ( ResourceType_t )( uint8 )( c1 ) << 8 ) | ( ( ResourceType_t )( uint8 )( c2 ) << 16 ) | ( ( ResourceType_t )( uint8 )( c3 ) << 24 ) | \
-	  ( ( ResourceType_t )( uint8 )( c4 ) << 32 ) | ( ( ResourceType_t )( uint8 )( c5 ) << 40 ) | ( ( ResourceType_t )( uint8 )( c6 ) << 48 ) | ( ( ResourceType_t )( uint8 )( c7 ) << 56 ) )
-#define RESOURCE_TYPE_ID( ... ) RESOURCE_TYPE_ID_EXPAND( RESOURCE_TYPE_ID_IMPL( __VA_ARGS__, 0, 0, 0, 0, 0, 0, 0, 0 ) )
+// Builds a resource type from the characters of its extension (up to 8), the first character in the low byte
+template < typename... Chars >
+constexpr std::enable_if_t< ( sizeof...( Chars ) >= 1 && sizeof...( Chars ) <= 8 ), ResourceType_t > MakeResourceTypeId( Chars... chars )
+{
+	const char pszExtension[] = { static_cast< char >( chars )... };
+
+	ResourceType_t nResourceType = 0;
+
+	for ( size_t i = 0; i < sizeof...( Chars ); i++ )
+	{
+		nResourceType |= ( ResourceType_t )( uint8 )pszExtension[ i ] << ( 8 * i );
+	}
+
+	return nResourceType;
+}
+
+// e.g. RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' )
+#define RESOURCE_TYPE_ID( ... ) MakeResourceTypeId( __VA_ARGS__ )
 
 // Surface properties, "surfaceproperties/surfaceproperties.vsurf"
 #define RESOURCE_TYPE_SURFACE_PROPERTIES RESOURCE_TYPE_ID( 'v', 's', 'u', 'r', 'f' )
