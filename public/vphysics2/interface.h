@@ -231,14 +231,14 @@ public:
 
 	virtual void RemoveJoint( IPhysicsJoint *pJoint ) = 0;
 
-	// Constraints created from the legacy constraint parameters: pBody1 is the reference object (constraintToReference is
-	// relative to it) and becomes body 1 of the joint, pBody2 is the attached object and becomes body 2
-	virtual IPhysicsJoint *CreateBallsocketConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_ballsocketparams_t &ballsocket ) = 0;
-	virtual IPhysicsJoint *CreateRagdollConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const matrix3x4_t &constraintToReference, const constraint_ragdollparams_t &ragdoll ) = 0;
-	virtual IPhysicsJoint *CreatePulleyConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_pulleyparams_t &pulley ) = 0;
-	virtual IPhysicsJoint *CreateDistanceConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_lengthparams_t &length ) = 0;
-	virtual IPhysicsJoint *CreatePrismaticConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_slidingparams_t &sliding, bool bUseBlockSolver ) = 0;
-	virtual IPhysicsJoint *CreateFixedConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_fixedparams_t &fixed, bool bUseBlockSolver ) = 0;
+	// Constraints created from the legacy constraint parameters: the reference body (constraintToReference is relative to it)
+	// becomes body 1 of the joint, the attached body becomes body 2
+	virtual IPhysicsJoint *CreateBallsocketConstraint( IPhysicsBody *pReferenceBody, IPhysicsBody *pAttachedBody, const constraint_ballsocketparams_t &ballsocket ) = 0;
+	virtual IPhysicsJoint *CreateRagdollConstraint( IPhysicsBody *pReferenceBody, IPhysicsBody *pAttachedBody, const matrix3x4_t &constraintToReference, const constraint_ragdollparams_t &ragdoll ) = 0;
+	virtual IPhysicsJoint *CreatePulleyConstraint( IPhysicsBody *pReferenceBody, IPhysicsBody *pAttachedBody, const constraint_pulleyparams_t &pulley ) = 0;
+	virtual IPhysicsJoint *CreateDistanceConstraint( IPhysicsBody *pReferenceBody, IPhysicsBody *pAttachedBody, const constraint_lengthparams_t &length ) = 0;
+	virtual IPhysicsJoint *CreatePrismaticConstraint( IPhysicsBody *pReferenceBody, IPhysicsBody *pAttachedBody, const constraint_slidingparams_t &sliding, bool bUseBlockSolver ) = 0;
+	virtual IPhysicsJoint *CreateFixedConstraint( IPhysicsBody *pReferenceBody, IPhysicsBody *pAttachedBody, const constraint_fixedparams_t &fixed, bool bUseBlockSolver ) = 0;
 
 	virtual void GetConnectedBodies( IPhysicsBody *pBody, CUtlVector< IPhysicsBody * > &bodies ) = 0;
 	virtual int GetConnectedBodyCount( IPhysicsBody *pBody ) = 0;
