@@ -1269,12 +1269,13 @@ public:
 	const char *GetThreadName() const { return m_szThreadName; }
 	DLL_CLASS_IMPORT void SetThreadName( const char *pBuffer );
 
-	int GetTier0ThreadID() const { return m_nTier0ThreadID; }
-
 protected:
 	CThreadLocalScope *m_pAllScopesListNext;
 	ThreadHandle_t m_hOwningThread;
-	int m_nTier0ThreadID;
+	bool m_bInScopeList; // Set once the scope is linked into the list of all scopes
+#ifdef PLATFORM_WINDOWS
+	uint32 m_nThreadId;
+#endif
 	char m_szThreadName[ 32 ];
 	int m_nInternalFlags;
 };
