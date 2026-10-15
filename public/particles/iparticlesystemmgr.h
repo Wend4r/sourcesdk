@@ -241,8 +241,11 @@ struct ParticleInstancedMeshKey_t
 	// Looked up in the material group tokens of the model to pick the material remapping
 	CUtlStringToken m_MaterialGroup;
 
-	// Copied into the draw record of every instance
-	float m_flUnk0C[ 4 ];
+	// m_fSizeCullScale of the model renderer, copied into the draw record of every instance next to its bounding radius
+	float m_flSizeCullScale;
+
+	// Copied into the draw record of every instance; the particle renderers leave them zero
+	float m_flUnk10[ 3 ];
 
 	// Neither compared, hashed nor copied
 	uint32 m_nUnk1C;
@@ -260,9 +263,14 @@ struct ParticleInstancedMeshKey_t
 			return false;
 		}
 
-		for ( int i = 0; i < ARRAYSIZE( m_flUnk0C ); i++ )
+		if ( m_flSizeCullScale != other.m_flSizeCullScale )
 		{
-			if ( m_flUnk0C[ i ] != other.m_flUnk0C[ i ] )
+			return false;
+		}
+
+		for ( int i = 0; i < ARRAYSIZE( m_flUnk10 ); i++ )
+		{
+			if ( m_flUnk10[ i ] != other.m_flUnk10[ i ] )
 			{
 				return false;
 			}
@@ -281,9 +289,11 @@ struct ParticleInstancedMeshKey_t
 			uint32 nHash = Combine( nSeed, MurmurHash2( &key.m_hModel, sizeof( key.m_hModel ), nSeed ) );
 			nHash = Combine( nHash, key.m_MaterialGroup.GetHashCode() );
 
-			for ( int i = 0; i < ARRAYSIZE( key.m_flUnk0C ); i++ )
+			nHash = Combine( nHash, MurmurHash2( &key.m_flSizeCullScale, sizeof( float ), nSeed ) );
+
+			for ( int i = 0; i < ARRAYSIZE( key.m_flUnk10 ); i++ )
 			{
-				nHash = Combine( nHash, MurmurHash2( &key.m_flUnk0C[ i ], sizeof( float ), nSeed ) );
+				nHash = Combine( nHash, MurmurHash2( &key.m_flUnk10[ i ], sizeof( float ), nSeed ) );
 			}
 
 			return Combine( nHash, static_cast< uint32 >( key.m_nModelReloadCounter ) );
