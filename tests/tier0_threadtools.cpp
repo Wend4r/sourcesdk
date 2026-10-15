@@ -124,6 +124,44 @@ REGISTER_NAMED_TEST( "Thread.AutoResetEventWakesOneWait", Thread_AutoResetEventW
 	TEST_FALSE( event.Wait( 0 ) );
 }
 
+REGISTER_NAMED_TEST( "Thread.AtomicSemaphoreHandsOutReleasedCounts", Thread_AtomicSemaphoreHandsOutReleasedCounts )
+{
+	CAtomicSemaphore semaphore( 1 );
+
+	// The initial count lets one wait through.
+	TEST_TRUE( semaphore.TryWait() );
+	TEST_FALSE( semaphore.TryWait() );
+
+	semaphore.Release( 2 );
+	TEST_EQ( semaphore.GetCount(), 2u );
+
+	semaphore.Wait();
+	TEST_EQ( semaphore.GetCount(), 1u );
+}
+
+REGISTER_NAMED_TEST( "Thread.AtomicSemaphoreWakesASleepingWait", Thread_AtomicSemaphoreWakesASleepingWait )
+{
+	CAtomicSemaphore semaphore;
+	std::atomic< int > nStage( 0 );
+
+	std::thread waiter( [ & ]()
+	{
+		nStage = 1;
+		semaphore.Wait();
+		nStage = 2;
+	} );
+
+	// The waiter spins, then sleeps until a count is released.
+	ThreadSleep( 50 );
+	TEST_EQ( nStage.load(), 1 );
+
+	semaphore.Release();
+	waiter.join();
+
+	TEST_EQ( nStage.load(), 2 );
+	TEST_EQ( semaphore.GetCount(), 0u );
+}
+
 REGISTER_NAMED_TEST( "Thread.MultiWaitSemaphoreCountsReleases", Thread_MultiWaitSemaphoreCountsReleases )
 {
 	CThreadMultiWaitSemaphore semaphore;
