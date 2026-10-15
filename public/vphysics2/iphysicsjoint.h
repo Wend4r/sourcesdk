@@ -74,14 +74,14 @@ public:
 
 	// Body 1 is the reference body: origin 1 and basis 1 are in its space, and the legacy constraints take their reference
 	// object (the one the ragdoll constraint frame is relative to) as body 1. Body 2 is the attached body, the space of
-	// origin 2 and basis 2. GetBody and SetBody take index 0 for body 1 and index 1 for body 2
+	// origin 2 and basis 2. GetBody and SetBody take index 0 for the reference body and index 1 for the attached body
 	virtual IPhysicsBody *GetBody( int nIndex ) const = 0;
 	virtual void SetBody( int nIndex, IPhysicsBody *pBody ) = 0;
-	virtual IPhysicsBody *GetBody1() const = 0;
-	virtual IPhysicsBody *GetBody2() const = 0;
+	virtual IPhysicsBody *GetReferenceBody() const = 0;
+	virtual IPhysicsBody *GetAttachedBody() const = 0;
 	virtual IPhysicsBody *GetOtherBody( IPhysicsBody *pBody ) const = 0;
-	virtual void SetBody1( IPhysicsBody *pBody ) = 0;
-	virtual void SetBody2( IPhysicsBody *pBody ) = 0;
+	virtual void SetReferenceBody( IPhysicsBody *pBody ) = 0;
+	virtual void SetAttachedBody( IPhysicsBody *pBody ) = 0;
 
 	virtual void WakeBodies() = 0;
 
