@@ -263,10 +263,11 @@ public:
 	// Size of the data Serialize writes
 	virtual uint32 GetSerializedSize() const = 0;
 
-	// Writes a 0x1D0-byte header followed by the snapshot data and advances *ppBuffer
-	virtual void Serialize( uint8 **ppBuffer ) = 0;
+	// Writes a 0x1D0-byte header followed by the snapshot data and advances pBuffer
+	virtual void Serialize( uint8 *&pBuffer ) = 0;
 
-	virtual void unk003() = 0;
+	// Another size: the header, the keyed records of every type and the strings of the recorded debug data
+	virtual uint32 unk003() = 0;
 
 	// Empty in release builds
 	virtual void unk004() = 0;
@@ -280,10 +281,11 @@ public:
 	// Filled with zeros in release builds
 	virtual PhysSerialStreamSnapshotUnk007_t unk007() = 0;
 
-	// Copy the pointers of one of the recorded lists
-	virtual void unk008( int nType, CUtlVector< void * > *pOut ) const = 0;
-	virtual void unk009( int nType, CUtlVector< void * > *pOut ) const = 0;
-	virtual void unk010( CUtlVector< void * > *pOut ) const = 0;
+	// Copy the pointers of one of the recorded lists: the pointer list of one of the 24 types, the keys of the serialized
+	// records of a type, and the list shared by all types. What the types and the pointers are is not recovered
+	virtual void unk008( int nType, CUtlVector< void * > &out ) const = 0;
+	virtual void unk009( int nType, CUtlVector< void * > &out ) const = 0;
+	virtual void unk010( CUtlVector< void * > &out ) const = 0;
 
 	// Return 0
 	virtual void *unk011() = 0;
