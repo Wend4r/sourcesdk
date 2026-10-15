@@ -515,8 +515,6 @@ protected:
 	static constexpr size_t DEFAULT_CAPACITY_SIZE = 256;
 };
 
-//TODO: class CBufferStringFormatOutputStream : public CBufferString, public IFormatOutputStream
-
 // CBufferStringN - templated version of CBufferString with custom stack size 
 // Allows predefining larger buffers without heap allocation by default.
 template< size_t SIZE >
