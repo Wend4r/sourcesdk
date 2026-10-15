@@ -231,6 +231,8 @@ public:
 //-----------------------------------------------------------------------------
 // Key of the instanced mesh scene objects of CParticleSystemMgr
 //-----------------------------------------------------------------------------
+#define PARTICLE_INSTANCED_MESH_KEY_HASH_SEED 0x3501A674
+
 struct ParticleInstancedMeshKey_t
 {
 	// The first 32 bytes are a copy of the key passed to AddInstancedMeshes(), which the instanced mesh scene object reads too
@@ -284,16 +286,14 @@ struct ParticleInstancedMeshKey_t
 	{
 		unsigned int operator()( const ParticleInstancedMeshKey_t &key ) const
 		{
-			const uint32 nSeed = 0x3501A674;
-
-			uint32 nHash = Combine( nSeed, MurmurHash2( &key.m_hModel, sizeof( key.m_hModel ), nSeed ) );
+			uint32 nHash = Combine( PARTICLE_INSTANCED_MESH_KEY_HASH_SEED, MurmurHash2( &key.m_hModel, sizeof( key.m_hModel ), PARTICLE_INSTANCED_MESH_KEY_HASH_SEED ) );
 			nHash = Combine( nHash, key.m_MaterialGroup.GetHashCode() );
 
-			nHash = Combine( nHash, MurmurHash2( &key.m_flSizeCullScale, sizeof( float ), nSeed ) );
+			nHash = Combine( nHash, MurmurHash2( &key.m_flSizeCullScale, sizeof( float ), PARTICLE_INSTANCED_MESH_KEY_HASH_SEED ) );
 
 			for ( int i = 0; i < ARRAYSIZE( key.m_flUnk10 ); i++ )
 			{
-				nHash = Combine( nHash, MurmurHash2( &key.m_flUnk10[ i ], sizeof( float ), nSeed ) );
+				nHash = Combine( nHash, MurmurHash2( &key.m_flUnk10[ i ], sizeof( float ), PARTICLE_INSTANCED_MESH_KEY_HASH_SEED ) );
 			}
 
 			return Combine( nHash, static_cast< uint32 >( key.m_nModelReloadCounter ) );
