@@ -51,23 +51,23 @@ constexpr std::enable_if_t< ( N >= 2 && N <= 9 ), ResourceType_t > MakeResourceT
 	return nResourceType;
 }
 
-// e.g. RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' ) or RESOURCE_TYPE_ID( "vmap" )
+// e.g. RESOURCE_TYPE_ID( "vmap" ) or RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' )
 #define RESOURCE_TYPE_ID( ... ) MakeResourceTypeId( __VA_ARGS__ )
 
 // Surface properties, "surfaceproperties/surfaceproperties.vsurf"
-#define RESOURCE_TYPE_SURFACE_PROPERTIES RESOURCE_TYPE_ID( 'v', 's', 'u', 'r', 'f' )
+#define RESOURCE_TYPE_SURFACE_PROPERTIES RESOURCE_TYPE_ID( "vsurf" )
 
 // Physics aggregate data of models, "*.vphys"
-#define RESOURCE_TYPE_PHYSICS_DATA RESOURCE_TYPE_ID( 'v', 'p', 'h', 'y', 's' )
+#define RESOURCE_TYPE_PHYSICS_DATA RESOURCE_TYPE_ID( "vphys" )
 
 // World nodes, "*.vwnod"
-#define RESOURCE_TYPE_WORLD_NODE RESOURCE_TYPE_ID( 'v', 'w', 'n', 'o', 'd' )
+#define RESOURCE_TYPE_WORLD_NODE RESOURCE_TYPE_ID( "vwnod" )
 
 // Worlds, "*.vwrld"
-#define RESOURCE_TYPE_WORLD RESOURCE_TYPE_ID( 'v', 'w', 'r', 'l', 'd' )
+#define RESOURCE_TYPE_WORLD RESOURCE_TYPE_ID( "vwrld" )
 
 // Entity lumps of a world, "*.vents"
-#define RESOURCE_TYPE_ENTITY_LUMP RESOURCE_TYPE_ID( 'v', 'e', 'n', 't', 's' )
+#define RESOURCE_TYPE_ENTITY_LUMP RESOURCE_TYPE_ID( "vents" )
 
 // Resource type of the info class, the packed file extension, e.g. 'vmap'
 DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );
