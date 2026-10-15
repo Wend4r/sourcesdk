@@ -125,6 +125,8 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	refcount.cpp
 	stringpool.cpp
 	strtools.cpp
+	tier0_platform.cpp
+	tier0_threadtools.cpp
 	tslist.cpp
 	utlarray.cpp
 	utlbinaryblock.cpp
