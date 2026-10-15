@@ -8,8 +8,9 @@
 #include <tier1/utldelegate.h>
 #include <tier0/utlmap.h>
 #include <tier0/utlvector.h>
+#include <schemasystem/schematypes.h>
 
-struct SchemaClassInfoData_t;
+#include <type_traits>
 
 //-----------------------------------------------------------------------------
 // Base of the event dispatchers: keeps the listeners of an event sorted by descending
@@ -44,6 +45,30 @@ public:
 		bool bIsInListenerTelemetryScope;
 	};
 
+	// Scoped iteration: the destructor ends it, so a loop over Next() may break out early
+	class CListenerIterator
+	{
+	public:
+		CListenerIterator( CEventDispatcher_Base &dispatcher, const CUtlVector< EventListenerInfo_t > *pListeners, bool bForward ) : m_Dispatcher( dispatcher )
+		{
+			m_Iter.pListeners = pListeners;
+			m_bHasListeners = dispatcher.IterateListeners_Start( m_Iter, bForward );
+		}
+
+		~CListenerIterator() { m_Dispatcher.IterateListeners_End( m_Iter ); }
+
+		// Null after the last listener
+		const EventListenerInfo_t *Next() { return m_bHasListeners ? m_Dispatcher.IterateListener( m_Iter ) : nullptr; }
+
+	private:
+		CListenerIterator( const CListenerIterator & ) = delete;
+		CListenerIterator &operator=( const CListenerIterator & ) = delete;
+
+		CEventDispatcher_Base &m_Dispatcher;
+		DelegateIterator_Base_t m_Iter;
+		bool m_bHasListeners;
+	};
+
 protected:
 	DLL_CLASS_IMPORT CEventDispatcher_Base();
 
@@ -63,6 +88,9 @@ protected:
 	DLL_CLASS_IMPORT const EventListenerInfo_t *IterateListener( DelegateIterator_Base_t &iter );
 	DLL_CLASS_IMPORT void IterateListeners_End( DelegateIterator_Base_t &iter );
 
+	// For FOR_EACH_EVENT_LISTENER
+	CListenerIterator IterateListeners( const CUtlVector< EventListenerInfo_t > &listeners, bool bForward ) { return CListenerIterator( *this, &listeners, bForward ); }
+
 	// Index where a listener with nPriority goes
 	DLL_CLASS_IMPORT int FindInsertionPoint( const CUtlVector< EventListenerInfo_t > &listeners, int nPriority );
 
@@ -74,8 +102,11 @@ private:
 	CEventDispatcher_Base &operator=( const CEventDispatcher_Base & ) = delete;
 };
 
+// Events identified by the schema class of their message
 struct CEventID_SchemaBinding
 {
+	typedef SchemaMetaInfoHandle_t< CSchemaClassInfo > EventID_t;
+
 	int8 unused;
 };
 
@@ -87,16 +118,189 @@ struct CEventIDManager_Default : CEventIDManager_SchemaBinding
 {
 };
 
-template <typename T>
-struct CEventDispatcher_Identified : CEventDispatcher_Base
+//-----------------------------------------------------------------------------
+// Dispatcher that keeps a listener list per event ID. Only the schema classes in the global
+// type scope identify an event, the other IDs are ignored. The lock is held between
+// IterateListeners_Start returning true and IterateListeners_End
+//-----------------------------------------------------------------------------
+template < typename T >
+class CEventDispatcher_Identified : public CEventDispatcher_Base
 {
-	CUtlMap<const SchemaClassInfoData_t*, CUtlVector<EventListenerInfo_t>, unsigned int> m_EventListenerMap;
+public:
+	typedef typename T::EventID_t EventID_t;
+	typedef CUtlVector< EventListenerInfo_t > ListenerVector_t;
+	typedef CUtlOrderedMap< EventID_t, ListenerVector_t, CDefLess< EventID_t >, unsigned int > EventListenerMap_t;
+
+	struct DelegateIterator_t : DelegateIterator_Base_t
+	{
+		EventID_t EventID;
+	};
+
+	CEventDispatcher_Identified() = default;
+
+	static bool IDLessFunc( const EventID_t &lhs, const EventID_t &rhs ) { return lhs < rhs; }
+
+	static bool IsValidEventID( const EventID_t &eventID )
+	{
+		return eventID && ( eventID->m_nFlags1 & ( 1 << 7 ) ) != 0; // SCHEMA_CF1_GLOBAL_TYPE_SCOPE
+	}
+
+	void RegisterEventListener_Abstract( const CUtlAbstractDelegate &delegate, uint32 nDelegateParamCount, bool bDelegateReturnsVoid, EventID_t eventID, int nPriority, const char *pszName )
+	{
+		if ( !IsValidEventID( eventID ) )
+			return;
+
+		m_Lock.Lock();
+
+		auto idx = m_EventListenerMap.Find( eventID );
+
+		if ( !m_EventListenerMap.IsValidIndex( idx ) )
+		{
+			idx = m_EventListenerMap.Insert( eventID, ListenerVector_t() );
+
+			// The insertion may move the listener lists of the active iterators
+			for ( DelegateIterator_Base_t *pIter = m_pActiveIterators; pIter; pIter = pIter->pNext )
+			{
+				if ( !pIter->pListeners )
+					continue;
+
+				auto iterIdx = m_EventListenerMap.Find( static_cast< DelegateIterator_t * >( pIter )->EventID );
+
+				pIter->pListeners = m_EventListenerMap.IsValidIndex( iterIdx ) ? &m_EventListenerMap.Element( iterIdx ) : nullptr;
+			}
+		}
+
+		RegisterEventListener_Base( delegate, nDelegateParamCount, bDelegateReturnsVoid, m_EventListenerMap.Element( idx ), nPriority, pszName );
+
+		m_Lock.Unlock();
+	}
+
+	template < typename R, typename... ARGS >
+	void RegisterEventListener( const CUtlDelegate< R ( ARGS... ) > &delegate, EventID_t eventID, int nPriority = 0, const char *pszName = nullptr )
+	{
+		RegisterEventListener_Abstract( delegate.GetAbstractDelegate(), sizeof...( ARGS ), std::is_void_v< R >, eventID, nPriority, pszName );
+	}
+
+	// False when the delegate was not registered for the event
+	bool UnregisterEventListener_Abstract( const CUtlAbstractDelegate &delegate, EventID_t eventID )
+	{
+		if ( !IsValidEventID( eventID ) )
+			return false;
+
+		m_Lock.Lock();
+
+		auto idx = m_EventListenerMap.Find( eventID );
+		bool bResult = m_EventListenerMap.IsValidIndex( idx ) && UnregisterEventListener_Base( delegate, m_EventListenerMap.Element( idx ) );
+
+		m_Lock.Unlock();
+
+		return bResult;
+	}
+
+	template < typename R, typename... ARGS >
+	bool UnregisterEventListener( const CUtlDelegate< R ( ARGS... ) > &delegate, EventID_t eventID )
+	{
+		return UnregisterEventListener_Abstract( delegate.GetAbstractDelegate(), eventID );
+	}
+
+	// Appends the names of the listeners of the event
+	void GetListenerNames( EventID_t eventID, CUtlVector< CUtlString > *pNames )
+	{
+		m_Lock.Lock();
+
+		auto idx = m_EventListenerMap.Find( eventID );
+
+		if ( m_EventListenerMap.IsValidIndex( idx ) )
+			GetListenerNames_Base( m_EventListenerMap.Element( idx ), pNames );
+
+		m_Lock.Unlock();
+	}
+
+	// Returns true with the lock held when the event has a listener, call IterateListeners_End
+	// after the last IterateListener then
+	bool IterateListeners_Start( DelegateIterator_t &iter, EventID_t eventID, bool bForward )
+	{
+		if ( !eventID )
+		{
+			Assert( 0 );
+			return false;
+		}
+
+		iter.EventID = eventID;
+
+		m_Lock.Lock();
+
+		auto idx = m_EventListenerMap.Find( eventID );
+
+		iter.pListeners = m_EventListenerMap.IsValidIndex( idx ) ? &m_EventListenerMap.Element( idx ) : nullptr;
+
+		if ( !CEventDispatcher_Base::IterateListeners_Start( iter, bForward ) )
+		{
+			CEventDispatcher_Base::IterateListeners_End( iter );
+			m_Lock.Unlock();
+
+			return false;
+		}
+
+		return true;
+	}
+
+	const EventListenerInfo_t *IterateListener( DelegateIterator_t &iter ) { return CEventDispatcher_Base::IterateListener( iter ); }
+
+	void IterateListeners_End( DelegateIterator_t &iter )
+	{
+		CEventDispatcher_Base::IterateListeners_End( iter );
+		m_Lock.Unlock();
+	}
+
+	// Scoped iteration over the listeners of the event, holding the lock while there are any
+	class CListenerIterator
+	{
+	public:
+		CListenerIterator( CEventDispatcher_Identified &dispatcher, EventID_t eventID, bool bForward ) : m_Dispatcher( dispatcher )
+		{
+			m_bHasListeners = dispatcher.IterateListeners_Start( m_Iter, eventID, bForward );
+		}
+
+		~CListenerIterator()
+		{
+			if ( m_bHasListeners )
+				m_Dispatcher.IterateListeners_End( m_Iter );
+		}
+
+		// Null after the last listener
+		const EventListenerInfo_t *Next() { return m_bHasListeners ? m_Dispatcher.IterateListener( m_Iter ) : nullptr; }
+
+	private:
+		CListenerIterator( const CListenerIterator & ) = delete;
+		CListenerIterator &operator=( const CListenerIterator & ) = delete;
+
+		CEventDispatcher_Identified &m_Dispatcher;
+		DelegateIterator_t m_Iter;
+		bool m_bHasListeners;
+	};
+
+	// For FOR_EACH_EVENT_LISTENER
+	CListenerIterator IterateListeners( EventID_t eventID, bool bForward ) { return CListenerIterator( *this, eventID, bForward ); }
+
+	const EventListenerMap_t &GetEventListenerMap() const { return m_EventListenerMap; }
+
+protected:
+	EventListenerMap_t m_EventListenerMap;
 };
 
-template <typename T>
-struct CEventDispatcher : CEventDispatcher_Identified<T>
+template < typename T >
+class CEventDispatcher : public CEventDispatcher_Identified< T >
 {
 };
+
+// Visits the listeners from the highest priority (or from the lowest with _BACK). The key is
+// the listener vector for CEventDispatcher_Base and the event ID for the identified dispatchers
+#define FOR_EACH_EVENT_LISTENER( dispatcher, key, pInfo ) \
+	for ( auto pInfo##_iter = ( dispatcher ).IterateListeners( key, true ); auto pInfo = pInfo##_iter.Next(); )
+
+#define FOR_EACH_EVENT_LISTENER_BACK( dispatcher, key, pInfo ) \
+	for ( auto pInfo##_iter = ( dispatcher ).IterateListeners( key, false ); auto pInfo = pInfo##_iter.Next(); )
 
 enum EventMapRegistrationType_t : int32
 {
