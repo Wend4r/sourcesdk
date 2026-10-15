@@ -2,7 +2,7 @@ name: Build / macOS
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "s2/**" ]
     paths: &paths
       - '.github/workflows/build-macos.yml'
       - 'cmake/**'
@@ -26,7 +26,7 @@ on:
       - 'CMakeLists.txt'
       - 'CMakePresets.json'
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "s2/**" ]
     paths: *paths
   workflow_dispatch:
 
