@@ -276,7 +276,7 @@ public:
 	virtual CRnSoftbody *GetRnSoftbody() const = 0;
 
 	// Appends the non-default cloth settings
-	virtual void Describe( CBufferString *pDescription ) const = 0;
+	virtual void Describe( CBufferString &description ) const = 0;
 
 	// Empty in release builds
 	virtual void unk005() = 0;
@@ -286,10 +286,11 @@ public:
 
 	virtual void unk007( uint nUnknown, bool bUnknown ) = 0;
 
-	// Copies the per node vectors into an aligned array
-	virtual void unk008( VectorAligned *pOut ) const = 0;
+	// Computes the node positions of the animated pose into an aligned array
+	virtual void GetPoseNodePositions( VectorAligned *pOut ) const = 0;
 
-	virtual void unk009( int nValue ) = 0;
+	// 0 simulates, 1 holds the nodes at the animated pose, other values leave them as they are
+	virtual void SetSimulationMode( int nMode ) = 0;
 	virtual void unk010( int *pUnknown, const void *pUnknown2, const void *pUnknown3 ) = 0;
 	virtual void unk011( void *pUnknown, float flUnknown ) = 0;
 
@@ -304,21 +305,22 @@ public:
 	virtual uint8 GetDebugDrawTreeFlags() const = 0;
 
 	virtual void EnableDebugDraw( bool bEnable ) = 0;
-	virtual void unk020( uint8 nUnknown ) = 0;
+	virtual void EnableDebugRendering( bool bEnable ) = 0;
 	virtual bool IsDebugDrawEnabled() const = 0;
-	virtual void unk022( void *pUnknown ) = 0;
+	// Builds a debug render mesh of the triangles in a color
+	virtual void *CreateDebugRenderMesh( const fltx4 &vColor ) = 0;
 
 	// Active state, false without a softbody
 	virtual bool IsActive() const = 0;
 
 	virtual void unk024( int nValue ) = 0;
 
-	// Empty in release builds
+	// Empty in release builds; GetDebugName returns null there
 	virtual void unk025() = 0;
-	virtual int unk026() const = 0;
+	virtual const char *GetDebugName() const = 0;
 
 	// Appends a one line description of the softbody and its state
-	virtual void AppendDebugInfo( CUtlString *pDescription ) const = 0;
+	virtual void AppendDebugInfo( CUtlString &description ) const = 0;
 
 	// Index of the softbody in its world, -1 without a softbody
 	virtual int GetIndexInWorld() const = 0;
@@ -329,7 +331,8 @@ public:
 	virtual int unk032() const = 0;
 	virtual int GetEffectCount() const = 0;
 	virtual void unk034( int nIndex, void *pUnknown ) = 0;
-	virtual void unk035( float flValue ) = 0;
+	// Time the timed simulation steps up to
+	virtual void SetSimulationTime( float flTime ) = 0;
 	virtual void unk036( bool bEnable ) = 0;
 
 	// Empty in release builds
@@ -343,12 +346,13 @@ public:
 	virtual IPhysicsSoftbody *GetLinkedSoftbody( int nIndex ) const = 0;
 	virtual void UnlinkAllSoftbodies() = 0;
 
-	virtual int unk043() const = 0;
+	virtual int GetStepCount() const = 0;
 	virtual void unk044( void *pUnknown ) = 0;
-	virtual void unk045() = 0;
+	// Rebuilds the simulated ctrl transforms from the current node positions
+	virtual void UpdateSimulatedTransforms() = 0;
 
 	// Moves the nodes and the transforms by an offset
-	virtual void unk046( fltx4 vDelta ) = 0;
+	virtual void Translate( fltx4 vDelta ) = 0;
 	virtual bool unk047( const VectorAligned *pUnknown, fltx4 vUnknown ) = 0;
 
 	// Empty in release builds
