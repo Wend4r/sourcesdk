@@ -23,7 +23,7 @@ typedef uint64 ResourceType_t;
 
 // Builds a resource type from the characters of its extension (up to 8), the first character in the low byte
 template < typename... Chars >
-constexpr std::enable_if_t< ( sizeof...( Chars ) >= 1 && sizeof...( Chars ) <= 8 ), ResourceType_t > MakeResourceTypeId( Chars... chars )
+constexpr std::enable_if_t< ( sizeof...( Chars ) >= 1 && sizeof...( Chars ) <= 8 && std::conjunction_v< std::is_integral< Chars >... > ), ResourceType_t > MakeResourceTypeId( Chars... chars )
 {
 	const char pszExtension[] = { static_cast< char >( chars )... };
 
@@ -37,7 +37,21 @@ constexpr std::enable_if_t< ( sizeof...( Chars ) >= 1 && sizeof...( Chars ) <= 8
 	return nResourceType;
 }
 
-// e.g. RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' )
+// The same from a string literal of the extension, e.g. MakeResourceTypeId( "vmap" )
+template < size_t N >
+constexpr std::enable_if_t< ( N >= 2 && N <= 9 ), ResourceType_t > MakeResourceTypeId( const char ( &pszExtension )[ N ] )
+{
+	ResourceType_t nResourceType = 0;
+
+	for ( size_t i = 0; i < N - 1; i++ )
+	{
+		nResourceType |= ( ResourceType_t )( uint8 )pszExtension[ i ] << ( 8 * i );
+	}
+
+	return nResourceType;
+}
+
+// e.g. RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' ) or RESOURCE_TYPE_ID( "vmap" )
 #define RESOURCE_TYPE_ID( ... ) MakeResourceTypeId( __VA_ARGS__ )
 
 // Surface properties, "surfaceproperties/surfaceproperties.vsurf"
