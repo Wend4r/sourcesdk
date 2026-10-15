@@ -231,6 +231,9 @@ public:
 private:
 	CVirtualMachineCallStackTranslationEncoder *m_pNext;
 	VirtualMachineCallStackTranslationEncoderInternalData_t *m_pInternalData;
+
+	CVirtualMachineCallStackTranslationEncoder( const CVirtualMachineCallStackTranslationEncoder & ) = delete;
+	CVirtualMachineCallStackTranslationEncoder &operator=( const CVirtualMachineCallStackTranslationEncoder & ) = delete;
 };
 
 

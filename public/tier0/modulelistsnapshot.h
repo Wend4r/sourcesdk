@@ -51,6 +51,9 @@ private:
 	uint8 *m_pBufferEnd;
 	uint8 *m_pAllocatedBuffer;
 	int m_nModuleCount;
+
+	CModuleListSnapshot( const CModuleListSnapshot & ) = delete;
+	CModuleListSnapshot &operator=( const CModuleListSnapshot & ) = delete;
 };
 
 #endif // MODULELISTSNAPSHOT_H

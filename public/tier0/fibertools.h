@@ -202,6 +202,9 @@ private:
 	ThreadId_t m_hJobsOriginatingThreadId;
 	size_t m_nClearedMemoryInterval;
 	void *unk110;
+
+	CFiber( const CFiber & ) = delete;
+	CFiber &operator=( const CFiber & ) = delete;
 };
 
 //-----------------------------------------------------------------------------
@@ -219,6 +222,9 @@ public:
 
 private:
 	CFiber *m_pFiber;
+
+	CThreadFiber( const CThreadFiber & ) = delete;
+	CThreadFiber &operator=( const CThreadFiber & ) = delete;
 };
 
 #endif // FIBERTOOLS_H

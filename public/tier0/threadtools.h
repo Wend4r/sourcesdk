@@ -1248,6 +1248,10 @@ protected:
 	int m_hEventFd;
 #endif
 	uint32 m_nExtraFlags; // ThreadMultiWaitExtra_t flags: 1 for semaphores, 2 for auto-reset events, 4 for manual-reset events
+
+private:
+	CThreadMultiWaitObject( const CThreadMultiWaitObject & ) = delete;
+	CThreadMultiWaitObject &operator=( const CThreadMultiWaitObject & ) = delete;
 };
 
 class CThreadMultiWaitEvent : public CThreadMultiWaitObject
@@ -1283,6 +1287,9 @@ public:
 
 private:
 	void *m_pImpl; // Counters, a mutex and a condition variable allocated by tier0
+
+	CThreadBarrier( const CThreadBarrier & ) = delete;
+	CThreadBarrier &operator=( const CThreadBarrier & ) = delete;
 };
 
 
@@ -1304,6 +1311,9 @@ public:
 
 private:
 	void *m_pImpl; // State, a mutex and a condition variable allocated by tier0
+
+	CThreadBackgroundWorkGate( const CThreadBackgroundWorkGate & ) = delete;
+	CThreadBackgroundWorkGate &operator=( const CThreadBackgroundWorkGate & ) = delete;
 };
 
 
@@ -1324,6 +1334,9 @@ public:
 	private:
 		FN_OnScopeChange m_pHandler;
 		CScopeCreatedOrDestroyedHandler *m_pNext;
+
+		CScopeCreatedOrDestroyedHandler( const CScopeCreatedOrDestroyedHandler & ) = delete;
+		CScopeCreatedOrDestroyedHandler &operator=( const CScopeCreatedOrDestroyedHandler & ) = delete;
 	};
 
 	DLL_CLASS_IMPORT CThreadLocalScope( ThreadHandle_t hThreadHandle, bool bDeleteOnThreadDetach );
@@ -1347,6 +1360,10 @@ protected:
 #endif
 	char m_szThreadName[ 32 ];
 	int m_nInternalFlags;
+
+private:
+	CThreadLocalScope( const CThreadLocalScope & ) = delete;
+	CThreadLocalScope &operator=( const CThreadLocalScope & ) = delete;
 };
 
 

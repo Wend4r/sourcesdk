@@ -234,6 +234,9 @@ private:
 	void *unk068;
 	IProcess *m_pProcess;
 	bool m_bFailedToStart;
+
+	CRunProcess( const CRunProcess & ) = delete;
+	CRunProcess &operator=( const CRunProcess & ) = delete;
 };
 
 #endif // IPROCESSUTILS_H

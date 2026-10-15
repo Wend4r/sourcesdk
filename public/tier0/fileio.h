@@ -280,6 +280,9 @@ private:
 	uint32 m_nMetaFlags;
 	Watcher_t *m_pWatchers;
 	MonitoringThreadInfo_t m_MonitoringThreadInfo;
+
+	CDirTreeWatchManager( const CDirTreeWatchManager & ) = delete;
+	CDirTreeWatchManager &operator=( const CDirTreeWatchManager & ) = delete;
 };
 
 bool CreateDirRecursive( const char *pchPathIn );

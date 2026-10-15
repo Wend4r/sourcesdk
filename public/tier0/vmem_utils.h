@@ -75,6 +75,9 @@ private:
 	int m_nRegionsCount;
 	bool m_bCaptureErrors;
 	bool m_bIsDiff;
+
+	CVirtualMemorySnapshot( const CVirtualMemorySnapshot & ) = delete;
+	CVirtualMemorySnapshot &operator=( const CVirtualMemorySnapshot & ) = delete;
 };
 
 #endif // VMEM_UTILS_H

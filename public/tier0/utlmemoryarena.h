@@ -42,6 +42,9 @@ private:
 	byte *m_pMemory;
 	uint32 m_nAllocationSize;
 	uint32 m_nAllocStatsId;
+
+	CUtlMemoryArena( const CUtlMemoryArena & ) = delete;
+	CUtlMemoryArena &operator=( const CUtlMemoryArena & ) = delete;
 };
 
 #endif // UTLMEMORYARENA_H

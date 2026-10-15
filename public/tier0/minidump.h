@@ -105,6 +105,9 @@ public:
 
 private:
 	CMiniDumpCommentBuilderBase *m_pNext;
+
+	CMiniDumpCommentBuilderBase( const CMiniDumpCommentBuilderBase & ) = delete;
+	CMiniDumpCommentBuilderBase &operator=( const CMiniDumpCommentBuilderBase & ) = delete;
 };
 
 #endif // MINIDUMP_H

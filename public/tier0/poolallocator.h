@@ -40,6 +40,9 @@ private:
 
 	// Trees of the free and the allocated ranges
 	void *m_pImpl;
+
+	CPoolAllocator( const CPoolAllocator & ) = delete;
+	CPoolAllocator &operator=( const CPoolAllocator & ) = delete;
 };
 
 #endif // POOLALLOCATOR_H

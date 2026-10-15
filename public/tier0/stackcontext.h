@@ -65,6 +65,9 @@ private:
 	StackContext_LongJumpLink_t *m_pParkedTargetReturnLink;
 	void *m_pActiveSwapContext;
 	ThreadId_t m_hRunningThreadID;
+
+	CThreadSwapTarget( const CThreadSwapTarget & ) = delete;
+	CThreadSwapTarget &operator=( const CThreadSwapTarget & ) = delete;
 };
 
 //-----------------------------------------------------------------------------
@@ -85,6 +88,9 @@ private:
 	StackContext_StartData_t *m_pParkedContext;
 	void *m_pParkedThreadMemory;
 	size_t m_nParkedThreadMemorySize;
+
+	CThreadSwapContext_Base( const CThreadSwapContext_Base & ) = delete;
+	CThreadSwapContext_Base &operator=( const CThreadSwapContext_Base & ) = delete;
 };
 
 //-----------------------------------------------------------------------------
@@ -104,6 +110,9 @@ private:
 	CThreadManualEvent m_JobDone;
 	void (*m_pfnJob)( void * );
 	void *m_pJobContext;
+
+	CThreadSwapJob( const CThreadSwapJob & ) = delete;
+	CThreadSwapJob &operator=( const CThreadSwapJob & ) = delete;
 };
 
 #endif // STACKCONTEXT_H
