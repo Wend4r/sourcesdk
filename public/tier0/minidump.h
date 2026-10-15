@@ -90,4 +90,21 @@ private:
 
 COMPILE_TIME_ASSERT( sizeof( CMiniDumpComment ) == 32 );
 
+//-----------------------------------------------------------------------------
+// Adds its own text to the minidump comment, the builders register themselves
+// in a list on construction
+//-----------------------------------------------------------------------------
+class CMiniDumpCommentBuilderBase
+{
+public:
+	DLL_CLASS_IMPORT CMiniDumpCommentBuilderBase();
+	DLL_CLASS_IMPORT virtual ~CMiniDumpCommentBuilderBase();
+
+	DLL_CLASS_IMPORT virtual CMiniDumpCommentBuilderBase *GetNextCommentBuilder();
+	virtual void unk003( MiniDumpStandardData_t *pData, CMiniDumpComment *pComment ) = 0;
+
+private:
+	CMiniDumpCommentBuilderBase *m_pNext;
+};
+
 #endif // MINIDUMP_H
