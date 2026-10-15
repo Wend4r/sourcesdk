@@ -43,7 +43,8 @@ public:
 	DLL_CLASS_IMPORT int NumColumns() const;
 	DLL_CLASS_IMPORT int NumRows() const;
 
-	DLL_CLASS_IMPORT void GetLines( CUtlVector< CUtlString > &lines, bool bUnknown ) const;
+	// bIncludeHeader starts the lines with the column headers and the divider under them
+	DLL_CLASS_IMPORT void GetLines( CUtlVector< CUtlString > &lines, bool bIncludeHeader ) const;
 	DLL_CLASS_IMPORT void Spew( LoggingChannelID_t channelID, const char *pszPrefix ) const;
 	DLL_CLASS_IMPORT void SimpleSpew( LoggingChannelID_t channelID, const char *pszPrefix ) const;
 	DLL_CLASS_IMPORT void SimpleSpewColor( LoggingChannelID_t channelID, const Color &color, const char *pszPrefix ) const;
