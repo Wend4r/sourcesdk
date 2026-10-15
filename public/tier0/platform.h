@@ -1252,6 +1252,7 @@ PLATFORM_INTERFACE void Plat_Printf ( const tchar *pFmt, ... ) FMTFUNCTION( 1, 2
 PLATFORM_INTERFACE void Plat_DebugPrint( const char *pFormat, ... ) FMTFUNCTION( 1, 2 );
 PLATFORM_INTERFACE void Plat_DebugPrintV( const char *pFormat, va_list args );
 PLATFORM_INTERFACE void Plat_DebugString_Buffered( const char *pMsg, uint64 nBufferTimeUS );
+PLATFORM_INTERFACE void Plat_DemangleRawTypeName( const char *pMangledName, CBufferString &out );
 
 //-----------------------------------------------------------------------------
 // Posix platform helpers
@@ -1819,6 +1820,9 @@ PLATFORM_INTERFACE char *			Plat_asctime( const struct tm *pTime, char *pBuf, si
 
 typedef class CSysModule* PlatModule_t;
 #define PLAT_MODULE_INVALID ((PlatModule_t)0)
+
+// Loads pModuleName and resolves nNames exports into pPointers; bit 0 of the optional per name pFlags allows a missing export
+PLATFORM_INTERFACE PlatModule_t		Plat_GetProcAddresses( const char *pModuleName, int nNames, const char **pNames, size_t nTotalPointerBytes, void *pPointers, size_t nTotalFlagsBytes, uint32 *pFlags, bool bFailFatal );
 
 // Get the process' executable filename.
 PLATFORM_INTERFACE void				Plat_GetModuleFilename( char *pOut, int nMaxBytes );
