@@ -14,6 +14,7 @@
 #include "mathlib/vector.h"
 #include "mathlib/intvector3d.h"
 
+struct RenderAdapterInfo_t;
 enum RenderMultisampleType_t : uint8;
 
 abstract_class IRenderHardwareConfig
@@ -37,10 +38,10 @@ public:
 	// r_prefer_loop_unrolling
 	virtual bool PreferLoopUnrolling() = 0;
 
-	virtual bool unk009() = 0;
-	virtual bool unk010() = 0;
+	virtual bool ReverseDepth() = 0;
+	virtual bool IsFastSubrectClearSupported() = 0;
 
-	virtual const void *unk011() = 0;
+	virtual const RenderAdapterInfo_t &AdapterInfo() = 0;
 
 	virtual int GetRenderSystemType() = 0;
 
@@ -58,20 +59,20 @@ public:
 	virtual int FindRenderSystemByCommandLineSwitch( const void *pRenderSystems, const char *pSwitch ) = 0;
 	virtual int FindRenderSystemByType( const void *pRenderSystems, int nType ) = 0;
 
-	virtual bool unk022( bool bUnk ) = 0;
+	virtual bool IsSubrectResolveSupported( bool bMSAA ) = 0;
 
 	virtual bool IsMultisampleTypeSupported( int nFormat, RenderMultisampleType_t nType ) = 0;
 
 	// Highest supported multisample type not above nDesired
 	virtual RenderMultisampleType_t GetBestSupportedMultisampleType( int nFormat, RenderMultisampleType_t nDesired ) = 0;
 
-	virtual bool unk025() = 0;
+	virtual bool SupportsDescriptorSets() = 0;
 
 	virtual int GetMaxPerStageSampledTextures() = 0;
 	virtual int GetMaxPushConstantsSize() = 0;
 	virtual int GetMinConstantBufferOffsetAlignment() = 0;
 
-	virtual bool unk029() = 0;
+	virtual bool SupportsBarriers() = 0;
 
 	// Separate async compute queue
 	virtual bool SupportsAsyncCompute() = 0;
