@@ -220,6 +220,42 @@ REGISTER_NAMED_TEST( "StableSymbolTable.SymbolsKeepTheirIds", StableSymbolTable_
 	TEST_FALSE( bIsNew );
 }
 
+// Exposes the hash and equality of the symbol table for the tests.
+class CTestStableSymbolTable : public CStableSymbolTable
+{
+public:
+	using CStableSymbolTable::Hash_t;
+	using CStableSymbolTable::Eq_t;
+
+	// Finds the id of a symbol with the same hash and equality that tier0 uses in GetId
+	int Find( const char *pSymbol ) const
+	{
+		UtlHashHandle_t hSymbol = m_SymbolToId.Find( pSymbol );
+		return hSymbol != m_SymbolToId.InvalidHandle() ? m_SymbolToId[ hSymbol ] : -1;
+	}
+};
+
+REGISTER_NAMED_TEST( "StableSymbolTable.HashAndEqualityIgnoreCase", StableSymbolTable_HashAndEqualityIgnoreCase )
+{
+	CTestStableSymbolTable::Hash_t hash;
+	CTestStableSymbolTable::Eq_t eq;
+
+	TEST_EQ( hash( "Alpha" ), hash( "ALPHA" ) );
+	TEST_EQ( hash( "Alpha" ), static_cast< uint >( MakeStringToken( "alpha" ) ) );
+	TEST_NE( hash( "Alpha" ), hash( "Beta" ) );
+
+	TEST_TRUE( eq( "Alpha", "aLPHA" ) );
+	TEST_FALSE( eq( "Alpha", "Alpha2" ) );
+
+	// Lookups through the table find what tier0 added.
+	CTestStableSymbolTable table;
+	bool bIsNew = false;
+	const int nBeta = table.GetId( "Beta", &bIsNew );
+
+	TEST_EQ( table.Find( "BETA" ), nBeta );
+	TEST_EQ( table.Find( "Gamma" ), -1 );
+}
+
 REGISTER_NAMED_TEST( "UtlBuffer.AccessPutAndAccessGetMoveTheCursors", UtlBuffer_AccessPutAndAccessGetMoveTheCursors )
 {
 	CUtlBuffer buffer;

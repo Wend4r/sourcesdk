@@ -9,6 +9,8 @@
 #include "tier0/utlhashtable.h"
 #include "tier0/utlvector.h"
 #include "tier0/memblockallocator.h"
+#include "tier0/strtools.h"
+#include "tier0/utlstringtoken.h"
 
 #define FOR_EACH_STABLE_SYMBOL( table, iter ) \
 	for ( int iter = 0; iter < ( table ).Count(); iter++ )
@@ -29,15 +31,16 @@ public:
 	const char *const *GetAllSymbols() const { return m_IdToSymbol.Base(); }
 
 protected:
-	// Case-insensitive MurmurHash2 of the symbol
+	// MurmurHash2 of the lowercased symbol with the string token seed, the case-insensitive
+	// string token of the symbol
 	struct Hash_t
 	{
-		uint operator()( const char *pString ) const;
+		uint operator()( const char *pString ) const { return MakeStringToken( pString ); }
 	};
 
 	struct Eq_t
 	{
-		bool operator()( const char *a, const char *b ) const;
+		bool operator()( const char *a, const char *b ) const { return V_stricmp_fast( a, b ) == 0; }
 	};
 
 	CUtlHashtable< const char *, int, Hash_t, Eq_t > m_SymbolToId;
