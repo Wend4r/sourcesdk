@@ -145,6 +145,70 @@ schema struct RnWing_t
 	int32 m_nIndex[ 3 ];
 };
 
+// Vertex array of a mesh, registered as an atomic type with the CUtlVector< Vector > layout.
+// Its buffer always has room for one element past the count, so a 16-byte load of the last
+// vertex stays inside the allocation; every mutator here keeps that spare element
+class CUtlVectorSIMDPaddedVector
+{
+public:
+	CUtlVectorSIMDPaddedVector() = default;
+	CUtlVectorSIMDPaddedVector( const CUtlVectorSIMDPaddedVector &copyFrom ) { CopyArray( copyFrom.Base(), copyFrom.Count() ); }
+	CUtlVectorSIMDPaddedVector( CUtlVectorSIMDPaddedVector &&moveFrom ) = default;
+
+	CUtlVectorSIMDPaddedVector &operator=( const CUtlVectorSIMDPaddedVector &copyFrom )
+	{
+		if ( this != &copyFrom )
+		{
+			CopyArray( copyFrom.Base(), copyFrom.Count() );
+		}
+
+		return *this;
+	}
+
+	CUtlVectorSIMDPaddedVector &operator=( CUtlVectorSIMDPaddedVector &&moveFrom ) = default;
+
+	int Count() const { return m_Vertices.Count(); }
+	bool IsEmpty() const { return m_Vertices.IsEmpty(); }
+	bool IsValidIndex( int i ) const { return m_Vertices.IsValidIndex( i ); }
+
+	Vector &operator[]( int i ) { return m_Vertices[ i ]; }
+	const Vector &operator[]( int i ) const { return m_Vertices[ i ]; }
+
+	Vector *Base() { return m_Vertices.Base(); }
+	const Vector *Base() const { return m_Vertices.Base(); }
+
+	Vector *begin() { return Base(); }
+	const Vector *begin() const { return Base(); }
+	Vector *end() { return Base() + Count(); }
+	const Vector *end() const { return Base() + Count(); }
+
+	int AddToTail( const Vector &src )
+	{
+		m_Vertices.EnsureCapacity( Count() + 2 );
+		return m_Vertices.AddToTail( src );
+	}
+
+	void SetCount( int nCount )
+	{
+		m_Vertices.EnsureCapacity( nCount + 1 );
+		m_Vertices.SetCount( nCount );
+	}
+
+	void CopyArray( const Vector *pArray, int nCount )
+	{
+		m_Vertices.EnsureCapacity( nCount + 1 );
+		m_Vertices.CopyArray( pArray, nCount );
+	}
+
+	void RemoveAll() { m_Vertices.RemoveAll(); }
+	void Purge() { m_Vertices.Purge(); }
+
+private:
+	CUtlVector< Vector > m_Vertices;
+};
+
+COMPILE_TIME_ASSERT( sizeof( CUtlVectorSIMDPaddedVector ) == 0x18 );
+
 schema struct RnMesh_t
 {
 	TYPEMETA( MGetKV3ClassDefaults );
@@ -152,10 +216,7 @@ schema struct RnMesh_t
 	Vector m_vMin;
 	Vector m_vMax;
 	CUtlVector< RnNode_t > m_Nodes;
-
-	// The engine registers this vector as CUtlVectorSIMDPaddedVector, a vector of Vector with the CUtlVector layout
-	CUtlVector< Vector > m_Vertices;
-
+	CUtlVectorSIMDPaddedVector m_Vertices;
 	CUtlVector< RnTriangle_t > m_Triangles;
 	CUtlVector< RnWing_t > m_Wings;
 	CUtlVector< uint8 > m_TriangleEdgeFlags;
@@ -165,6 +226,8 @@ schema struct RnMesh_t
 	uint32 m_nDebugFlags;
 	float m_flSurfaceArea;
 };
+
+COMPILE_TIME_ASSERT( sizeof( RnMesh_t ) == 0xC0 );
 
 //-----------------------------------------------------------------------------
 // Compound of spheres, capsules, hulls and meshes with a bounding tree
