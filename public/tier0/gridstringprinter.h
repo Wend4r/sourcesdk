@@ -13,6 +13,15 @@
 
 class Color;
 
+#define FOR_EACH_GRID_ROW( grid, iter ) \
+	for ( int iter = 0; iter < ( grid ).NumRows(); iter++ )
+#define FOR_EACH_GRID_ROW_BACK( grid, iter ) \
+	for ( int iter = ( grid ).NumRows() - 1; iter >= 0; iter-- )
+#define FOR_EACH_GRID_COLUMN( grid, iter ) \
+	for ( int iter = 0; iter < ( grid ).NumColumns(); iter++ )
+#define FOR_EACH_GRID_COLUMN_BACK( grid, iter ) \
+	for ( int iter = ( grid ).NumColumns() - 1; iter >= 0; iter-- )
+
 //-----------------------------------------------------------------------------
 // Prints strings as a table of aligned columns
 //-----------------------------------------------------------------------------

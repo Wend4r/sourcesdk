@@ -10,6 +10,11 @@
 #include "tier0/utlvector.h"
 #include "tier0/memblockallocator.h"
 
+#define FOR_EACH_STABLE_SYMBOL( table, iter ) \
+	for ( int iter = 0; iter < ( table ).Count(); iter++ )
+#define FOR_EACH_STABLE_SYMBOL_BACK( table, iter ) \
+	for ( int iter = ( table ).Count() - 1; iter >= 0; iter-- )
+
 //-----------------------------------------------------------------------------
 // Case-insensitive symbol table with stable ids, the symbols are stored in a block allocator
 //-----------------------------------------------------------------------------

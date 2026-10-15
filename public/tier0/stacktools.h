@@ -175,6 +175,11 @@ public:
 };
 
 
+#define FOR_EACH_CALLSTACK_FRAME( capture, iter ) \
+	for ( int iter = 0; iter < ( int )( capture ).nValidEntries; iter++ )
+#define FOR_EACH_CALLSTACK_FRAME_BACK( capture, iter ) \
+	for ( int iter = ( int )( capture ).nValidEntries - 1; iter >= 0; iter-- )
+
 //-----------------------------------------------------------------------------
 // Captured call stack
 //-----------------------------------------------------------------------------

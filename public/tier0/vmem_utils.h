@@ -9,6 +9,12 @@
 #include "tier0/bufferstring.h"
 #include "tier0/logging.h"
 
+// The index works with GetRegion, GetRegionByStart and GetRegionByBytes
+#define FOR_EACH_VMEM_REGION( snapshot, iter ) \
+	for ( int iter = 0; iter < ( snapshot ).GetRegionsCount(); iter++ )
+#define FOR_EACH_VMEM_REGION_BACK( snapshot, iter ) \
+	for ( int iter = ( snapshot ).GetRegionsCount() - 1; iter >= 0; iter-- )
+
 //-----------------------------------------------------------------------------
 // Snapshot of the virtual memory regions mapped into a process
 //-----------------------------------------------------------------------------

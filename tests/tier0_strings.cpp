@@ -196,6 +196,23 @@ REGISTER_NAMED_TEST( "StableSymbolTable.SymbolsKeepTheirIds", StableSymbolTable_
 	TEST_EQ( strcmp( table.GetSymbol( nAlpha ), "Alpha" ), 0 );
 	TEST_EQ( strcmp( table.GetAllSymbols()[ 1 ], "Beta" ), 0 );
 
+	// The ids run from 0 to Count() - 1.
+	const char *pszOrder[] = { "Alpha", "Beta" };
+
+	FOR_EACH_STABLE_SYMBOL( table, nId )
+	{
+		TEST_EQ( strcmp( table.GetSymbol( nId ), pszOrder[ nId ] ), 0 );
+	}
+
+	int nLastId = -1;
+
+	FOR_EACH_STABLE_SYMBOL_BACK( table, nId )
+	{
+		nLastId = nId;
+	}
+
+	TEST_EQ( nLastId, 0 );
+
 	// Insert places a symbol at a chosen id, growing the table up to it.
 	table.Insert( 5, "Gamma" );
 	TEST_EQ( table.Count(), 6 );
@@ -304,6 +321,35 @@ REGISTER_NAMED_TEST( "GridStringPrinter.LinesUpColumns", GridStringPrinter_Lines
 	TEST_EQ( grid.NumColumns(), 2 );
 	TEST_EQ( strcmp( grid.GetString( 1, 0 ).Get(), "pears" ), 0 );
 	TEST_EQ( strcmp( grid.GetColumnHeader( 1 ).Get(), "Count" ), 0 );
+
+	// The rows and columns can be walked in both directions.
+	CUtlString names;
+
+	FOR_EACH_GRID_ROW( grid, nRow )
+	{
+		names.Append( grid.GetString( nRow, 0 ).Get() );
+	}
+
+	FOR_EACH_GRID_ROW_BACK( grid, nRow )
+	{
+		names.Append( grid.GetString( nRow, 0 ).Get() );
+	}
+
+	TEST_EQ( strcmp( names.Get(), "applespearspearsapples" ), 0 );
+
+	CUtlString headers;
+
+	FOR_EACH_GRID_COLUMN( grid, nColumn )
+	{
+		headers.Append( grid.GetColumnHeader( nColumn ).Get() );
+	}
+
+	FOR_EACH_GRID_COLUMN_BACK( grid, nColumn )
+	{
+		headers.Append( grid.GetColumnHeader( nColumn ).Get() );
+	}
+
+	TEST_EQ( strcmp( headers.Get(), "NameCountCountName" ), 0 );
 
 	// Every column is as wide as its longest value.
 	CUtlVector< CUtlString > lines;

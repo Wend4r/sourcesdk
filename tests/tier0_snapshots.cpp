@@ -54,18 +54,34 @@ REGISTER_NAMED_TEST( "VirtualMemorySnapshot.DescribesTheMappedRegions", VirtualM
 	TEST_TRUE( snapshot.GetTotalVirtualBytes() > 0 );
 
 	// The regions are indexed by ascending start and by descending size.
-	for ( int i = 1; i < snapshot.GetRegionsCount(); i++ )
+	FOR_EACH_VMEM_REGION( snapshot, i )
 	{
+		if ( i == 0 )
+			continue;
+
 		TEST_TRUE( snapshot.GetRegionByStart( i - 1 )->m_nStart < snapshot.GetRegionByStart( i )->m_nStart );
 		TEST_TRUE( snapshot.GetRegionByBytes( i - 1 )->m_nBytes >= snapshot.GetRegionByBytes( i )->m_nBytes );
 	}
+
+	// Walking back from the end visits the largest regions last.
+	uint64 nPrevBytes = 0;
+	int nVisitedBack = 0;
+
+	FOR_EACH_VMEM_REGION_BACK( snapshot, i )
+	{
+		TEST_TRUE( snapshot.GetRegionByBytes( i )->m_nBytes >= nPrevBytes );
+		nPrevBytes = snapshot.GetRegionByBytes( i )->m_nBytes;
+		nVisitedBack++;
+	}
+
+	TEST_EQ( nVisitedBack, snapshot.GetRegionsCount() );
 
 	// A local variable lives in one of the mapped regions.
 	int nLocal = 0;
 	const uint64 nAddress = reinterpret_cast< uintp >( &nLocal );
 	bool bFound = false;
 
-	for ( int i = 0; i < snapshot.GetRegionsCount(); i++ )
+	FOR_EACH_VMEM_REGION( snapshot, i )
 	{
 		const CVirtualMemorySnapshot::Region_t *pRegion = snapshot.GetRegion( i );
 
@@ -78,7 +94,7 @@ REGISTER_NAMED_TEST( "VirtualMemorySnapshot.DescribesTheMappedRegions", VirtualM
 	// Mapped files carry their path as the description.
 	bool bFoundDesc = false;
 
-	for ( int i = 0; i < snapshot.GetRegionsCount(); i++ )
+	FOR_EACH_VMEM_REGION( snapshot, i )
 	{
 		const CVirtualMemorySnapshot::Region_t *pRegion = snapshot.GetRegion( i );
 
@@ -117,6 +133,23 @@ REGISTER_NAMED_TEST( "CallStackCapture.StoresTheFramesOfTheStackFunction", CallS
 	// The capture asks for nMaxCapture frames and skips its own frame on top of nSkipCalls.
 	TEST_EQ( s_nRequestedFrames, 16 );
 	TEST_EQ( s_nRequestedSkip, 3 );
+
+	// The frames are visited in order, or from the outermost one back.
+	uintp nExpected = 0x1000;
+
+	FOR_EACH_CALLSTACK_FRAME( capture, i )
+	{
+		TEST_EQ( capture.pStack[ i ], reinterpret_cast< void * >( nExpected ) );
+		nExpected += 0x1000;
+	}
+
+	FOR_EACH_CALLSTACK_FRAME_BACK( capture, i )
+	{
+		nExpected -= 0x1000;
+		TEST_EQ( capture.pStack[ i ], reinterpret_cast< void * >( nExpected ) );
+	}
+
+	TEST_EQ( nExpected, static_cast< uintp >( 0x1000 ) );
 
 	// Copies keep the captured frames.
 	CCallStackCapture copy( &capture );
