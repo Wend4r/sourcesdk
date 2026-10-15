@@ -294,6 +294,43 @@ public:
 	}
 };
 
+//-----------------------------------------------------------------------------
+// Purpose:	Reference count of a polymorphic object that deletes itself on its last
+//			release, starting at zero
+//-----------------------------------------------------------------------------
+
+template < class CRefThreading = CRefMT >
+class CMutableRefCountBase
+{
+protected:
+	CMutableRefCountBase() : m_iRefs( 0 ) {}
+	virtual ~CMutableRefCountBase() {}
+
+	int GetRefCount() const { return m_iRefs; }
+	int DoAddRef() const { return CRefThreading::Increment( &m_iRefs ); }
+
+	int DoRelease() const
+	{
+		int nRefCount = CRefThreading::Decrement( &m_iRefs );
+		if ( !nRefCount )
+			delete this;
+		return nRefCount;
+	}
+
+private:
+	mutable int m_iRefs;
+};
+
+template < class BASE >
+class CMutableRefCounted : public BASE
+{
+public:
+	virtual ~CMutableRefCounted() {}
+
+	int AddRef() const { return this->DoAddRef(); }
+	int Release() const { return this->DoRelease(); }
+};
+
 //-------------------------------------
 
 template < class BASE1, class REFCOUNT_SERVICE = CRefCountService >
