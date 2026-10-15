@@ -1120,8 +1120,8 @@ class PLATFORM_CLASS CThreadEvent : public CThreadSyncObject
 {
 public:
 	CThreadEvent( bool fManualReset = false );
-#ifdef PLATFORM_WINDOWS
 	CThreadEvent( const char *name, bool initialState = false, bool bManualReset = false );
+#ifdef PLATFORM_WINDOWS
 	static NamedEventResult_t CheckNamedEvent( const char *name, uint32 dwTimeout = 0 );
 #endif
 #ifdef WIN32

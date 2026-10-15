@@ -84,10 +84,20 @@ public:
 };
 
 
+class CCallStackMarkerBase;
+class CCallStackCapture;
+
 //Hold onto one of these to denote the top of a functional stack trace. Also allows us to string together threads to their parents
 class PLATFORM_CLASS CStackTop_Base
 {
+public:
+	static CStackTop_Base *GetCurrentTop( bool bUnknown );
+	void ChangeMarker( const CCallStackMarkerBase &marker );
+
 protected:
+	CStackTop_Base();
+	~CStackTop_Base();
+
 #if defined( ENABLE_RUNTIME_STACK_TRANSLATION )
 	CStackTop_Base *m_pPrevTop;
 	void *m_pStackBase;
@@ -102,16 +112,22 @@ protected:
 class PLATFORM_CLASS CStackTop_CopyParentStack : public CStackTop_Base
 {
 public:
-	CStackTop_CopyParentStack( void * const * pParentStackTrace, int iParentStackTraceLength );
+	CStackTop_CopyParentStack( const void * const *pParentStackTrace, int iParentStackTraceLength, const CCallStackMarkerBase &marker );
+	CStackTop_CopyParentStack( const CCallStackCapture *pParentStack, const CCallStackMarkerBase &marker );
 	~CStackTop_CopyParentStack( void );
+
+	void ChangeCopiedStack( const void * const *pParentStackTrace, int iParentStackTraceLength );
 };
 
 //just references the parent stack. Assuming that you'll keep that memory around as long as you're keeping this Stack Top marker.
 class PLATFORM_CLASS CStackTop_ReferenceParentStack : public CStackTop_Base
 {
 public:
-	CStackTop_ReferenceParentStack( void * const * pParentStackTrace = NULL, int iParentStackTraceLength = 0 );
+	CStackTop_ReferenceParentStack( const void * const *pParentStackTrace, int iParentStackTraceLength, const CCallStackMarkerBase &marker );
+	CStackTop_ReferenceParentStack( const CCallStackCapture *pParentStack, const CCallStackMarkerBase &marker );
 	~CStackTop_ReferenceParentStack( void );
+
+	void ChangeReferencedStack( const void * const *pParentStackTrace, int iParentStackTraceLength );
 	void ReleaseParentStackReferences( void ); //in case you need to delete the parent stack trace before this class goes out of scope
 };
 
