@@ -20,7 +20,7 @@ class IPhysicsShape;
 class CBufferString;
 class CRnContact;
 
-// A contact point; the points are relative to the bodies of the two shapes
+// A contact point; the points are relative to the bodies of shape 1 and shape 2 of the contact
 struct ManifoldPoint_t
 {
 	Vector m_vLocalP1;
@@ -37,7 +37,8 @@ struct Manifold_t
 	int m_nPointCount;
 	uint8 m_pad004[ 12 ];
 
-	// The separation of a point is its distance between the two shapes along the normal
+	// Points from shape 1 to shape 2: the separation of a point is the distance from its point on shape 1 to its point on shape 2
+	// along the normal, negative while the shapes penetrate
 	Vector m_vNormal;
 
 	// Holds three more floats that are scaled together with the point impulses
@@ -72,6 +73,8 @@ abstract_class IFnPhysicsContact
 public:
 	virtual void SetContact( CRnContact *pContact ) = 0;
 
+	// The bodies of shape 1 and shape 2; the manifold normals point from shape 1 to shape 2. GetBody and GetShape take
+	// index 0 for the first and index 1 for the second
 	virtual IPhysicsBody *GetBody1() const = 0;
 	virtual IPhysicsBody *GetBody2() const = 0;
 	virtual IPhysicsBody *GetBody( int nIndex ) const = 0;

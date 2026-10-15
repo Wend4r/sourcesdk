@@ -231,7 +231,8 @@ public:
 
 	virtual void RemoveJoint( IPhysicsJoint *pJoint ) = 0;
 
-	// Constraints created from the legacy constraint parameters
+	// Constraints created from the legacy constraint parameters: pBody1 is the reference object (constraintToReference is
+	// relative to it) and becomes body 1 of the joint, pBody2 is the attached object and becomes body 2
 	virtual IPhysicsJoint *CreateBallsocketConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_ballsocketparams_t &ballsocket ) = 0;
 	virtual IPhysicsJoint *CreateRagdollConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const matrix3x4_t &constraintToReference, const constraint_ragdollparams_t &ragdoll ) = 0;
 	virtual IPhysicsJoint *CreatePulleyConstraint( IPhysicsBody *pBody1, IPhysicsBody *pBody2, const constraint_pulleyparams_t &pulley ) = 0;
@@ -269,6 +270,7 @@ public:
 	virtual void unk117( int nIndex, void *pOut ) = 0;
 	virtual int unk118() = 0;
 	virtual void unk119( int nIndex, void *pOut ) = 0;
+	// The contact between the two bodies is looked up from either side, so the order of the bodies does not matter
 	virtual void DestroyContacts( IPhysicsBody *pBody1, IPhysicsBody *pBody2 ) = 0;
 	virtual bool HasContact( IPhysicsBody *pBody1, IPhysicsBody *pBody2 ) = 0;
 	virtual void unk122( void *pUnknown, bool bUnknown ) = 0;

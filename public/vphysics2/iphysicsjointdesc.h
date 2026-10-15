@@ -27,6 +27,8 @@ struct PhysicsJointDesc_t
 	PhysicsJointDesc_t() {}
 
 	PhysicsJointType_t m_nType;
+
+	// The reference body, the space of origin 1 and basis 1, and the attached body, the space of origin 2 and basis 2
 	IPhysicsBody *m_pBody1;
 	IPhysicsBody *m_pBody2;
 	Vector m_vLocalOrigin1;
