@@ -13,6 +13,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/threadtools.h"
 
 #if (defined( PLATFORM_WINDOWS ) || defined( PLATFORM_X360 )) && !defined( STEAM ) && !defined( _CERT ) && defined( TCHAR_IS_CHAR ) //designed for windows/x360, not built/tested with wide characters, not intended for release builds (but probably wouldn't damage anything)
 #	define ENABLE_RUNTIME_STACK_TRANSLATION //uncomment to enable runtime stack translation tools. All of which use on-demand loading of necessary dll's and pdb's
@@ -112,6 +113,108 @@ public:
 	CStackTop_ReferenceParentStack( void * const * pParentStackTrace = NULL, int iParentStackTraceLength = 0 );
 	~CStackTop_ReferenceParentStack( void );
 	void ReleaseParentStackReferences( void ); //in case you need to delete the parent stack trace before this class goes out of scope
+};
+
+
+//-----------------------------------------------------------------------------
+// Call stack markers, captured stacks are cut at the frames that hold an enabled marker
+//-----------------------------------------------------------------------------
+class CCallStackMarkerBase
+{
+public:
+	DLL_CLASS_IMPORT bool TestMarkerAgainstCapturedStackIndex( const void * const *pCapturedStack, int nCapturedStackLength, int nTestIndex ) const;
+
+protected:
+	void *m_pMarker;
+	uintp m_nRecursionDepth;
+};
+
+class CCallStackMarker : public CCallStackMarkerBase
+{
+public:
+	DLL_CLASS_IMPORT CCallStackMarker( bool bEnableMarker = true );
+};
+
+class CRecursionCallStackMarker : public CCallStackMarkerBase
+{
+public:
+	DLL_CLASS_IMPORT CRecursionCallStackMarker( bool bEnableMarker = true );
+};
+
+class CDeferredCallStackMarker : public CCallStackMarkerBase
+{
+public:
+	DLL_CLASS_IMPORT void Insert_NoStackCheck();
+	DLL_CLASS_IMPORT void Remove();
+};
+
+class CCallStackMarker_SmallerScope : public CCallStackMarkerBase
+{
+};
+
+class CCallStackMarker_ThisLine : public CCallStackMarker_SmallerScope
+{
+public:
+	DLL_CLASS_IMPORT CCallStackMarker_ThisLine( bool bEnableMarker = true );
+};
+
+
+//-----------------------------------------------------------------------------
+// Captured call stack
+//-----------------------------------------------------------------------------
+class CCallStackCapture_Base
+{
+public:
+	uint32 nValidEntries;
+	void *pStack[ 128 ];
+};
+
+class CCallStackCapture : public CCallStackCapture_Base
+{
+public:
+	// The stack function of tier0, which takes the thread to capture first, unlike the global FN_GetCallStack
+	typedef int (*FN_GetCallStack)( ThreadId_t nThreadId, void **pReturnAddressesOut, int nArrayCount, int nSkipCount );
+
+	DLL_CLASS_IMPORT CCallStackCapture( FN_GetCallStack GetStackFunction, uint32 nSkipCalls, uint32 nMaxCapture );
+	DLL_CLASS_IMPORT void Capture( FN_GetCallStack GetStackFunction, uint32 nSkipCalls, uint32 nMaxCapture );
+};
+
+
+//-----------------------------------------------------------------------------
+// Encodes the function, file and line of a script virtual machine frame as a native pointer,
+// so that captured call stacks can hold and translate them
+//-----------------------------------------------------------------------------
+class CVirtualMachineCallStackTranslationEncoder;
+struct VirtualMachineCallStackTranslationEncoderInternalData_t;
+
+typedef bool (*FN_VMEncodingIndexEnumerationCallback)( CVirtualMachineCallStackTranslationEncoder *pEncoder, uint32 nIndex, const char *szFunctionName, const char *szFileName, uint32 nFileLine, void *pContext );
+
+class CVirtualMachineCallStackTranslationEncoder
+{
+public:
+	DLL_CLASS_IMPORT CVirtualMachineCallStackTranslationEncoder( const char *szVirtualMachineName );
+	DLL_CLASS_IMPORT ~CVirtualMachineCallStackTranslationEncoder();
+
+	DLL_CLASS_IMPORT void *EncodeAsNativePointer( const char *szFunctionName, const char *szFileName, uint32 nFileLine );
+	DLL_CLASS_IMPORT uint32 DecodeFromNativePointer( const void *pEncoding, CBufferString *pFunctionNameOut, CBufferString *pFileNameOut, uint32 *pFileLineOut );
+
+	DLL_CLASS_IMPORT uint64 GetVMID();
+	DLL_CLASS_IMPORT const char *GetName();
+	DLL_CLASS_IMPORT uint64 GetMappingBaseAddress();
+	DLL_CLASS_IMPORT uint32 GetMappingSize();
+
+	DLL_CLASS_IMPORT uint32 GetCurrentIndexCount();
+	DLL_CLASS_IMPORT uint64 GetIndexBitMask();
+	DLL_CLASS_IMPORT uint32 GetIndexBitShift();
+	DLL_CLASS_IMPORT uint64 GetLineOffsetBitMask();
+	DLL_CLASS_IMPORT uint32 GetLineOffsetBitShift();
+	DLL_CLASS_IMPORT uint64 GetLineOffsetPostShiftedSignBitMask();
+
+	DLL_CLASS_IMPORT void EnumerateEncodingIndices( FN_VMEncodingIndexEnumerationCallback CallBackFunc, void *pContext );
+
+private:
+	CVirtualMachineCallStackTranslationEncoder *m_pNext;
+	VirtualMachineCallStackTranslationEncoderInternalData_t *m_pInternalData;
 };
 
 
