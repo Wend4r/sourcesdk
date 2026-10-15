@@ -161,50 +161,85 @@ struct IkSolverUnk010_t
 	fltx4 m_vValue;
 };
 
+// A target of IIkSolver::Solve
+struct IkSolverTarget_t
+{
+	int m_nJoint;
+	uint8 m_pad004[ 12 ];
+
+	// The joint is moved towards it; read without the w component
+	VectorAligned m_vPosition;
+
+	// Passed to the solve of the joint before the position
+	uint8 m_unk020[ 16 ];
+};
+
+struct IkSolverTargets_t
+{
+	int m_nCount;
+	IkSolverTarget_t *m_pTargets;
+};
+
+// The joint transforms IIkSolver::Solve reads and replaces, indexed like the joints of the solver
+struct IkSolverPose_t
+{
+	uint8 m_pad000[ 8 ];
+	CTransform *m_pTransforms;
+};
+
 // Created by IVPhysics2::CreateIkSolver; every method forwards to the solver object the implementation owns.
-// The vectors and transforms are read from per-index arrays of that solver, the transform arguments are applied to them
+// The solver keeps one record per joint, copied from the creation description; the transform arguments are applied to its values.
+// The roles of the joint vectors and of the two joint transforms are not recovered: nothing calls the solver
 abstract_class IIkSolver
 {
 public:
 	virtual ~IIkSolver() {}
 
-	virtual int unk001() const = 0;
-	virtual int unk002( int nIndex ) const = 0;
-	virtual float unk003( int nIndex ) const = 0;
+	virtual int GetJointCount() const = 0;
 
-	virtual Vector unk004( int nIndex ) const = 0;
-	virtual Vector unk005( int nIndex ) const = 0;
-	virtual Vector unk006( int nIndex, const CTransform &transform ) const = 0;
-	virtual Vector unk007( int nIndex ) const = 0;
+	// Index of the joint whose transform the joint is solved against
+	virtual int GetJointParent( int nJoint ) const = 0;
 
-	virtual CTransform unk008( int nIndex ) const = 0;
-	virtual CTransform unk009( int nIndex, const CTransform &transform ) const = 0;
+	// Summed with the parent value as the inverse mass of the joint pair
+	virtual float GetInvMass( int nJoint ) const = 0;
+
+	// Principal inverse inertia, rotated into the solved transform of the joint
+	virtual Vector GetInvInertia( int nJoint ) const = 0;
+
+	virtual Vector unk005( int nJoint ) const = 0;
+	virtual Vector unk006( int nJoint, const CTransform &transform ) const = 0;
+	virtual Vector unk007( int nJoint ) const = 0;
+
+	virtual CTransform unk008( int nJoint ) const = 0;
+	virtual CTransform unk009( int nJoint, const CTransform &transform ) const = 0;
 
 	// Orientation of unk008; unk011 multiplies it with the given value
-	virtual IkSolverUnk010_t unk010( int nIndex ) const = 0;
-	virtual IkSolverUnk010_t unk011( int nIndex, const IkSolverUnk010_t &value ) const = 0;
+	virtual IkSolverUnk010_t unk010( int nJoint ) const = 0;
+	virtual IkSolverUnk010_t unk011( int nJoint, const IkSolverUnk010_t &value ) const = 0;
 
 	// Position of unk008
-	virtual Vector unk012( int nIndex ) const = 0;
-	virtual Vector unk013( int nIndex, const CTransform &transform ) const = 0;
+	virtual Vector unk012( int nJoint ) const = 0;
+	virtual Vector unk013( int nJoint, const CTransform &transform ) const = 0;
 
-	virtual CTransform unk014( int nIndex ) const = 0;
-	virtual CTransform unk015( int nIndex, const CTransform &transform ) const = 0;
+	virtual CTransform unk014( int nJoint ) const = 0;
+	virtual CTransform unk015( int nJoint, const CTransform &transform ) const = 0;
 
 	// Same as unk010 and unk011 for unk014
-	virtual IkSolverUnk010_t unk016( int nIndex ) const = 0;
-	virtual IkSolverUnk010_t unk017( int nIndex, const IkSolverUnk010_t &value ) const = 0;
+	virtual IkSolverUnk010_t unk016( int nJoint ) const = 0;
+	virtual IkSolverUnk010_t unk017( int nJoint, const IkSolverUnk010_t &value ) const = 0;
 
 	// Position of unk014
-	virtual Vector unk018( int nIndex ) const = 0;
-	virtual Vector unk019( int nIndex, const CTransform &transform ) const = 0;
+	virtual Vector unk018( int nJoint ) const = 0;
+	virtual Vector unk019( int nJoint, const CTransform &transform ) const = 0;
 
-	virtual float unk020( int nIndex ) const = 0;
-	virtual float unk021( int nIndex ) const = 0;
-	virtual float unk022( int nIndex ) const = 0;
+	// Limits in radians: the rotation about the z axis of the joint frame is clamped to the twist range,
+	// a positive swing limits the rotation away from that axis
+	virtual float GetMinTwist( int nJoint ) const = 0;
+	virtual float GetMaxTwist( int nJoint ) const = 0;
+	virtual float GetMaxSwing( int nJoint ) const = 0;
 
-	// Runs the solver for a number of iterations over a list of targets
-	virtual void Solve( void *p ) = 0;
+	// Runs the solver for a number of iterations: every target is applied, then the joints are solved from the last one down to the second
+	virtual void Solve( IkSolverPose_t &pose, const IkSolverTargets_t &targets, int nIterations ) = 0;
 };
 
 // The 20-byte class IPhysSerialStreamSnapshot::unk005 returns; only its size is known
