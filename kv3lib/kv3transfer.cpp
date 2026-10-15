@@ -1,4 +1,5 @@
 #include "kv3lib/kv3transfer.h"
+#include "isaverestore.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -135,17 +136,7 @@ bool CKV3TransferSaveContext::CanSaveField( int nFlags ) const
 	if ( !m_pSave )
 		return true;
 
-	// The SDK's ISave declares a different interface, so the game's virtual is called by its slot.
-	// The game declares the destructor first: it takes one slot on MSVC and two on Itanium.
-	using GetSaveSlotFlag_t = bool ( * )( ISave * );
-
-#ifdef _WIN32
-	constexpr int nSlot = 9;
-#else
-	constexpr int nSlot = 10;
-#endif
-
-	return !( *reinterpret_cast< GetSaveSlotFlag_t *const * >( m_pSave ) )[ nSlot ]( m_pSave ) || nFlags == 2;
+	return !m_pSave->unk010() || nFlags == 2;
 }
 
 KeyValues3 *CKV3TransferSaveContext::CreateTargetMember( const CKV3MemberName &name )
@@ -273,17 +264,7 @@ bool CKV3TransferLoadContext::CanLoadField( int nFlags ) const
 	if ( nFlags != 1 )
 		return true;
 
-	// The SDK's IRestore declares a different interface, so the game's virtual is called by its slot.
-	// The game declares the destructor first: it takes one slot on MSVC and two on Itanium.
-	using GetGlobalMode_t = bool ( * )( IRestore * );
-
-#ifdef _WIN32
-	constexpr int nSlot = 5;
-#else
-	constexpr int nSlot = 6;
-#endif
-
-	return !( *reinterpret_cast< GetGlobalMode_t *const * >( m_pRestore ) )[ nSlot ]( m_pRestore );
+	return !m_pRestore->GetGlobalMode();
 }
 
 const KeyValues3 *CKV3TransferLoadContext::FindClassMember( const CKV3MemberName &name )
