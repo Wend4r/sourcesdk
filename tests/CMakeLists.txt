@@ -125,7 +125,11 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	refcount.cpp
 	stringpool.cpp
 	strtools.cpp
+	tier0_allocators.cpp
+	tier0_hashes.cpp
 	tier0_platform.cpp
+	tier0_snapshots.cpp
+	tier0_strings.cpp
 	tier0_threadtools.cpp
 	tslist.cpp
 	utlarray.cpp

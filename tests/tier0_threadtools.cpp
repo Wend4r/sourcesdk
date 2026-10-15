@@ -3,8 +3,11 @@
 
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
+#include <tier0/eventutils.h>
 
+#include <atomic>
 #include <cstring>
+#include <thread>
 
 REGISTER_NAMED_TEST( "Thread.InitOnce", Thread_InitOnce )
 {
@@ -92,4 +95,173 @@ REGISTER_NAMED_TEST( "Thread.MultiWait", Thread_MultiWait )
 	TEST_EQ( ThreadMultiWait( pSet, nullptr, nullptr, 0, false, &nSignalled, 0 ), 0 );
 
 	ThreadMultiWaitObjectSetDestroy( pSet );
+}
+
+REGISTER_NAMED_TEST( "Thread.ManualResetEventStaysSetUntilReset", Thread_ManualResetEventStaysSetUntilReset )
+{
+	CThreadEvent event( true );
+
+	TEST_FALSE( event.Check() );
+
+	// Every wait sees a manual-reset event as set until it is reset.
+	event.Set();
+	TEST_TRUE( event.Check() );
+	TEST_TRUE( event.Wait( 0 ) );
+	TEST_TRUE( event.Wait( 0 ) );
+
+	event.Reset();
+	TEST_FALSE( event.Wait( 0 ) );
+}
+
+REGISTER_NAMED_TEST( "Thread.AutoResetEventWakesOneWait", Thread_AutoResetEventWakesOneWait )
+{
+	CThreadEvent event( false );
+
+	event.Set();
+	TEST_TRUE( event.Wait( 0 ) );
+
+	// The first wait consumed the signal.
+	TEST_FALSE( event.Wait( 0 ) );
+}
+
+REGISTER_NAMED_TEST( "Thread.MultiWaitSemaphoreCountsReleases", Thread_MultiWaitSemaphoreCountsReleases )
+{
+	CThreadMultiWaitSemaphore semaphore;
+	CThreadMultiWaitObject *pObjects[] = { &semaphore };
+
+	ThreadMultiWaitObjectSet_t *pSet = ThreadMultiWaitObjectSetCreate( pObjects, 1 );
+
+	TEST_NOT_NULL( pSet );
+	TEST_EQ( pSet->m_pExtra[ 0 ].nFlags, 1u );
+
+	uint64 nSignalled = 0;
+
+	// Nothing was released yet.
+	TEST_EQ( ThreadMultiWait( pSet, nullptr, nullptr, 0, false, &nSignalled, 0 ), 0 );
+
+	// Two releases let exactly two waits through.
+	semaphore.Release();
+	semaphore.Release();
+
+	TEST_EQ( ThreadMultiWait( pSet, nullptr, nullptr, 0, false, &nSignalled, 0 ), 1 );
+	TEST_EQ( nSignalled, static_cast< uint64 >( 1 ) );
+	TEST_EQ( ThreadMultiWait( pSet, nullptr, nullptr, 0, false, &nSignalled, 0 ), 1 );
+	TEST_EQ( ThreadMultiWait( pSet, nullptr, nullptr, 0, false, &nSignalled, 0 ), 0 );
+
+	ThreadMultiWaitObjectSetDestroy( pSet );
+}
+
+REGISTER_NAMED_TEST( "Thread.BarrierReleasesThreadsOnlyWhenAllArrive", Thread_BarrierReleasesThreadsOnlyWhenAllArrive )
+{
+	CThreadBarrier barrier( 3 );
+	std::atomic< int > nArrived( 0 );
+	std::atomic< int > nPassed( 0 );
+
+	auto arrive = [ & ]()
+	{
+		nArrived++;
+		barrier.ArriveAndWait();
+		nPassed++;
+	};
+
+	std::thread first( arrive );
+	std::thread second( arrive );
+
+	while ( nArrived != 2 )
+	{
+		ThreadSleep( 1 );
+	}
+
+	// Two of the three threads are waiting, so none of them may pass yet.
+	ThreadSleep( 20 );
+	TEST_EQ( nPassed.load(), 0 );
+
+	// The third arrival releases everyone.
+	barrier.ArriveAndWait();
+
+	first.join();
+	second.join();
+	TEST_EQ( nPassed.load(), 2 );
+}
+
+REGISTER_NAMED_TEST( "Thread.WorkGatePauseWaitsForRunningWork", Thread_WorkGatePauseWaitsForRunningWork )
+{
+	CThreadBackgroundWorkGate gate;
+
+	TEST_FALSE( gate.PauseRequested() );
+
+	// Background work is running when another thread asks for a pause.
+	gate.OnBeginBackgroundWork();
+
+	std::atomic< int > nStage( 0 );
+
+	std::thread pauser( [ & ]()
+	{
+		nStage = 1;
+		gate.PauseWork();
+		nStage = 2;
+	} );
+
+	ThreadSleep( 20 );
+
+	// The pause is requested but waits until the work reaches its end.
+	TEST_TRUE( gate.PauseRequested() );
+	TEST_EQ( nStage.load(), 1 );
+
+	gate.OnEndBackgroundWork();
+
+	pauser.join();
+	TEST_EQ( nStage.load(), 2 );
+
+	// Resuming lifts the request.
+	gate.ResumeWork();
+	TEST_FALSE( gate.PauseRequested() );
+}
+
+REGISTER_NAMED_TEST( "Thread.LocalScopeKeepsTheThreadName", Thread_LocalScopeKeepsTheThreadName )
+{
+	// tier0 keeps a scope for the main thread.
+	CThreadLocalScope *pScope = CThreadLocalScope::FindScopeForThreadId( ThreadGetCurrentId() );
+
+	TEST_NOT_NULL( pScope );
+	TEST_TRUE( pScope->IsLocalThreadScope() );
+
+	pScope->SetThreadName( "SdkTestMain" );
+	TEST_EQ( strcmp( pScope->GetThreadName(), "SdkTestMain" ), 0 );
+
+	char szName[ 32 ];
+	TEST_TRUE( ThreadGetDebugNameForThreadId( ThreadGetCurrentId(), szName, sizeof( szName ) ) );
+	TEST_EQ( strcmp( szName, "SdkTestMain" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "Thread.OneTimeEventIsResetWhenReused", Thread_OneTimeEventIsResetWhenReused )
+{
+	COneTimeEvent *pEvent = COneTimeEvent::Allocate();
+
+	TEST_NOT_NULL( pEvent );
+	TEST_FALSE( pEvent->Check() );
+
+	pEvent->Set();
+	TEST_TRUE( pEvent->Check() );
+	TEST_TRUE( pEvent->Wait( 0 ) );
+
+	// Allocate hands out one reference, the last release returns the event to the pool.
+	TEST_EQ( pEvent->AddRef(), 2 );
+	TEST_EQ( pEvent->Release(), 1 );
+	TEST_EQ( pEvent->Release(), 0 );
+
+	// The pool hands the event out again, unset.
+	COneTimeEvent *pReused = COneTimeEvent::Allocate();
+
+	TEST_NOT_NULL( pReused );
+	TEST_FALSE( pReused->Check() );
+	pReused->Release();
+}
+
+REGISTER_NAMED_TEST( "Thread.CrossProcessMutexCanBeTakenAndReleased", Thread_CrossProcessMutexCanBeTakenAndReleased )
+{
+	CThreadCrossProcessMutex mutex( "sourcesdk_tests_cross_process_mutex", false );
+
+	TEST_TRUE( mutex.Wait( 0 ) );
+	TEST_TRUE( mutex.Release() );
 }

@@ -1,0 +1,261 @@
+#include "common/assert.h"
+#include "common/macros.h"
+
+#include <tier0/platform.h>
+#include <tier0/bufferstring.h>
+#include <tier0/characterset.h>
+#include <tier0/filterstring.h>
+#include <tier0/formatoutputstream.h>
+#include <tier0/gridstringprinter.h>
+#include <tier0/utlbuffer.h>
+#include <tier0/utlstablesymboltable.h>
+#include <tier0/utlstring.h>
+#include <tier0/utlstringtoken.h>
+
+#include <cstring>
+
+// The comparisons and case modes of CFilterString used here.
+static const FilterStringOp_t FILTER_CONTAINS = FilterStringOp_t( 0 );
+static const FilterStringOp_t FILTER_LESS = FilterStringOp_t( 4 );
+static const FilterStringOp_t FILTER_GREATER = FilterStringOp_t( 5 );
+static const FilterStringOp_t FILTER_LESS_OR_EQUAL = FilterStringOp_t( 6 );
+static const FilterStringOp_t FILTER_GREATER_OR_EQUAL = FilterStringOp_t( 7 );
+static const FilterStringCase_t FILTER_CASE_INSENSITIVE = FilterStringCase_t( 0 );
+static const FilterStringCase_t FILTER_CASE_SENSITIVE = FilterStringCase_t( 1 );
+
+REGISTER_NAMED_TEST( "StringToken.MakeMatchesTheInlineHash", StringToken_MakeMatchesTheInlineHash )
+{
+	TEST_EQ( CUtlStringToken::Make( "Hello" ).GetHashCode(), MakeStringToken( "Hello" ) );
+
+	// Tokens ignore case.
+	TEST_EQ( CUtlStringToken::Make( "HELLO" ).GetHashCode(), CUtlStringToken::Make( "hello" ).GetHashCode() );
+}
+
+REGISTER_NAMED_TEST( "StringAndToken.FormatKeepsTheTextAndItsToken", StringAndToken_FormatKeepsTheTextAndItsToken )
+{
+	CUtlStringAndTokenWithStorage name;
+	name.Format( "Entity%d", 42 );
+
+	TEST_EQ( strcmp( name.Get(), "Entity42" ), 0 );
+	TEST_EQ( name.GetToken().GetHashCode(), MakeStringToken( "entity42" ) );
+
+	TEST_TRUE( name.IsEqual_CaseSensitive( "Entity42" ) );
+	TEST_FALSE( name.IsEqual_CaseSensitive( "ENTITY42" ) );
+	TEST_TRUE( name.IsEqual_FastCaseInsensitive( "ENTITY42" ) );
+	TEST_FALSE( name.IsEqual_FastCaseInsensitive( "Entity4" ) );
+}
+
+REGISTER_NAMED_TEST( "BufferString.SliceTakesARangeOfChars", BufferString_SliceTakesARangeOfChars )
+{
+	CBufferString text( "Hello, world" );
+
+	TEST_EQ( strcmp( text.Slice( 0, 5 ).Get(), "Hello" ), 0 );
+
+	// Without an end the slice runs to the end of the string.
+	TEST_EQ( strcmp( text.Slice( 7 ).Get(), "world" ), 0 );
+
+	// A negative start counts from the end.
+	TEST_EQ( strcmp( text.Slice( -5 ).Get(), "world" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "BufferString.ReplaceCharWithString", BufferString_ReplaceCharWithString )
+{
+	CBufferString list( "a,b,c" );
+
+	TEST_EQ( list.Replace( ',', " and " ), 2 );
+	TEST_EQ( strcmp( list.Get(), "a and b and c" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "UtlString.RemoveFromEnd", UtlString_RemoveFromEnd )
+{
+	CUtlString fileName( "readme.txt" );
+
+	TEST_EQ( strcmp( fileName.RemoveFromEnd( ".txt" ).Get(), "readme" ), 0 );
+	TEST_EQ( strcmp( fileName.RemoveFromEnd( ".TXT", false ).Get(), "readme" ), 0 );
+
+	// A different ending leaves the string as it is.
+	TEST_EQ( strcmp( fileName.RemoveFromEnd( ".md" ).Get(), "readme.txt" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "FilterString.MatchesTermsAlternativesAndExclusions", FilterString_MatchesTermsAlternativesAndExclusions )
+{
+	// "fox" but not "dog", or "cat".
+	CFilterString filter( "fox -dog|cat", FILTER_CONTAINS, FILTER_CASE_INSENSITIVE );
+
+	TEST_TRUE( filter.DoesMatchString( "quick fox" ) );
+	TEST_TRUE( filter.DoesMatchString( "foxes" ) );
+	TEST_FALSE( filter.DoesMatchString( "fox and dog" ) );
+	TEST_TRUE( filter.DoesMatchString( "Cat" ) );
+	TEST_FALSE( filter.DoesMatchString( "bird" ) );
+}
+
+REGISTER_NAMED_TEST( "FilterString.CaseSensitiveMode", FilterString_CaseSensitiveMode )
+{
+	CFilterString filter( "cat", FILTER_CONTAINS, FILTER_CASE_SENSITIVE );
+
+	TEST_TRUE( filter.DoesMatchString( "cat" ) );
+	TEST_FALSE( filter.DoesMatchString( "Cat" ) );
+
+	// SetString replaces the filter.
+	filter.SetString( "Cat", FILTER_CONTAINS, FILTER_CASE_SENSITIVE );
+	TEST_TRUE( filter.DoesMatchString( "Cat" ) );
+	TEST_FALSE( filter.DoesMatchString( "cat" ) );
+}
+
+REGISTER_NAMED_TEST( "FilterString.ComparesNumbers", FilterString_ComparesNumbers )
+{
+	CFilterString less( "10", FILTER_LESS, FILTER_CASE_INSENSITIVE );
+	TEST_TRUE( less.DoesMatchString( "5" ) );
+	TEST_FALSE( less.DoesMatchString( "10" ) );
+
+	CFilterString greater( "10", FILTER_GREATER, FILTER_CASE_INSENSITIVE );
+	TEST_TRUE( greater.DoesMatchString( "15" ) );
+	TEST_FALSE( greater.DoesMatchString( "10" ) );
+
+	CFilterString lessOrEqual( "10", FILTER_LESS_OR_EQUAL, FILTER_CASE_INSENSITIVE );
+	TEST_TRUE( lessOrEqual.DoesMatchString( "10" ) );
+	TEST_FALSE( lessOrEqual.DoesMatchString( "15" ) );
+
+	CFilterString greaterOrEqual( "10", FILTER_GREATER_OR_EQUAL, FILTER_CASE_INSENSITIVE );
+	TEST_TRUE( greaterOrEqual.DoesMatchString( "10" ) );
+	TEST_FALSE( greaterOrEqual.DoesMatchString( "5" ) );
+}
+
+REGISTER_NAMED_TEST( "StableSymbolTable.SymbolsKeepTheirIds", StableSymbolTable_SymbolsKeepTheirIds )
+{
+	CStableSymbolTable table;
+	bool bIsNew = false;
+
+	const int nAlpha = table.GetId( "Alpha", &bIsNew );
+	TEST_EQ( nAlpha, 0 );
+	TEST_TRUE( bIsNew );
+
+	// The lookup ignores case and returns the existing id.
+	TEST_EQ( table.GetId( "ALPHA", &bIsNew ), nAlpha );
+	TEST_FALSE( bIsNew );
+
+	TEST_EQ( table.GetId( "Beta", &bIsNew ), 1 );
+	TEST_TRUE( bIsNew );
+
+	TEST_EQ( table.Count(), 2 );
+	TEST_EQ( strcmp( table.GetSymbol( nAlpha ), "Alpha" ), 0 );
+
+	// Insert places a symbol at a chosen id, growing the table up to it.
+	table.Insert( 5, "Gamma" );
+	TEST_EQ( table.Count(), 6 );
+	TEST_EQ( table.GetId( "gamma", &bIsNew ), 5 );
+	TEST_FALSE( bIsNew );
+}
+
+REGISTER_NAMED_TEST( "UtlBuffer.AccessPutAndAccessGetMoveTheCursors", UtlBuffer_AccessPutAndAccessGetMoveTheCursors )
+{
+	CUtlBuffer buffer;
+
+	void *pPut = buffer.AccessPut( 8 );
+	TEST_NOT_NULL( pPut );
+	TEST_EQ( buffer.TellPut(), 8 );
+	memcpy( pPut, "ABCDEFGH", 8 );
+
+	const char *pGet = static_cast< const char * >( buffer.AccessGet( 3 ) );
+	TEST_NOT_NULL( pGet );
+	TEST_EQ( memcmp( pGet, "ABC", 3 ), 0 );
+	TEST_EQ( buffer.TellGet(), 3 );
+
+	// Reading past what was written fails.
+	TEST_NULL( buffer.AccessGet( 100 ) );
+}
+
+REGISTER_NAMED_TEST( "UtlBuffer.ParseTokenIntoBufferString", UtlBuffer_ParseTokenIntoBufferString )
+{
+	CUtlBuffer text( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	text.PutString( "  first second" );
+
+	characterset_t breaks;
+	CharacterSetBuild( &breaks, "" );
+
+	// Leading whitespace is skipped, the token ends at the next space.
+	CBufferString token;
+	TEST_EQ( text.ParseToken( &breaks, &token ), 5 );
+	TEST_EQ( strcmp( token.Get(), "first" ), 0 );
+
+	CUtlBuffer tagged( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	tagged.PutString( "<name>rest" );
+
+	CBufferString tag;
+	TEST_TRUE( tagged.ParseToken( "<", ">", &tag ) );
+	TEST_EQ( strcmp( tag.Get(), "name" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "FormatOutputStream.CharBufferStopsWhenFull", FormatOutputStream_CharBufferStopsWhenFull )
+{
+	char szBuffer[ 8 ];
+	CCharBufferFormatOutputStream stream( szBuffer, sizeof( szBuffer ) );
+
+	stream.PutS( "abc" );
+	TEST_FALSE( stream.IsFull() );
+	TEST_EQ( stream.RemainingCapacity(), 4 );
+
+	// The rest is cut off, one char stays free for the terminator.
+	stream.PutS( "defghijk" );
+	stream.Terminate();
+
+	TEST_TRUE( stream.IsFull() );
+	TEST_EQ( stream.GetCharsWritten(), 7 );
+	TEST_EQ( strcmp( szBuffer, "abcdefg" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "FormatOutputStream.BufferStringAppends", FormatOutputStream_BufferStringAppends )
+{
+	CBufferString text;
+	CBufferStringFormatOutputStream stream( text );
+
+	stream.PutS( "hello " );
+	stream.PutRepeatedChar( '*', 3 );
+	stream.PutC( '!' );
+
+	TEST_EQ( strcmp( text.Get(), "hello ***!" ), 0 );
+	TEST_EQ( stream.GetCharsWritten(), 10 );
+}
+
+REGISTER_NAMED_TEST( "FormatStringElement.ParsesOneConversion", FormatStringElement_ParsesOneConversion )
+{
+	// ParseElement takes the text after the '%' and returns what follows the conversion.
+	CFormatStringElement element;
+	const char *pszRest = element.ParseElement( "-8.3f tail" );
+
+	TEST_EQ( strcmp( element, "%-8.3f" ), 0 );
+	TEST_EQ( strcmp( pszRest, " tail" ), 0 );
+
+	// EnforceTypeAndSize swaps a conversion type that is not allowed for the first allowed one.
+	CFormatStringElement number( "%5d" );
+	number.EnforceTypeAndSize( "s", "" );
+	TEST_EQ( strcmp( number, "%5s" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "GridStringPrinter.LinesUpColumns", GridStringPrinter_LinesUpColumns )
+{
+	CGridStringPrinter grid;
+	grid.SetColumnHeader( 0, "Name" );
+	grid.SetColumnHeader( 1, "Count" );
+
+	grid.SetString( 0, 0, "apples" );
+	grid.SetString( 0, 1, "3" );
+
+	// DelimitedPrint adds a row, split at the delimiter.
+	grid.DelimitedPrint( ',', "%s,%d", "pears", 12 );
+
+	TEST_EQ( grid.NumRows(), 2 );
+	TEST_EQ( grid.NumColumns(), 2 );
+	TEST_EQ( strcmp( grid.GetString( 1, 0 ).Get(), "pears" ), 0 );
+	TEST_EQ( strcmp( grid.GetColumnHeader( 1 ).Get(), "Count" ), 0 );
+
+	// Every column is as wide as its longest value.
+	CUtlVector< CUtlString > lines;
+	grid.GetLines( lines, true );
+
+	TEST_EQ( lines.Count(), 4 );
+	TEST_EQ( strcmp( lines[ 0 ].Get(), "   Name | Count " ), 0 );
+	TEST_EQ( strcmp( lines[ 1 ].Get(), " ------ | ----- " ), 0 );
+	TEST_EQ( strcmp( lines[ 2 ].Get(), " apples |     3 " ), 0 );
+	TEST_EQ( strcmp( lines[ 3 ].Get(), "  pears |    12 " ), 0 );
+}
