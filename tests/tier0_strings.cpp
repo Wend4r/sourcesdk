@@ -7,6 +7,7 @@
 #include <tier0/filterstring.h>
 #include <tier0/formatoutputstream.h>
 #include <tier0/gridstringprinter.h>
+#include <tier0/identifyfailuremessages.h>
 #include <tier0/utlbuffer.h>
 #include <tier0/utlstablesymboltable.h>
 #include <tier0/utlstring.h>
@@ -396,4 +397,58 @@ REGISTER_NAMED_TEST( "GridStringPrinter.LinesUpColumns", GridStringPrinter_Lines
 	TEST_EQ( strcmp( lines[ 1 ].Get(), " ------ | ----- " ), 0 );
 	TEST_EQ( strcmp( lines[ 2 ].Get(), " apples |     3 " ), 0 );
 	TEST_EQ( strcmp( lines[ 3 ].Get(), "  pears |    12 " ), 0 );
+}
+
+REGISTER_NAMED_TEST( "IdentifyFailureMessages.FindsAFatalError", IdentifyFailureMessages_FindsAFatalError )
+{
+	CIdentifyFailureMessages scanner;
+	const char *pszEnd = nullptr;
+	const char szLog[] = "loading map\n12(Main):  FATAL ERROR: Out of memory\n";
+
+	// Ordinary lines are skipped, the log prefix in front of a line is ignored.
+	TEST_EQ( scanner.ProcessText( szLog, -1, &pszEnd ), CIdentifyFailureMessages::STATE_FATAL_ERROR_FOUND );
+	TEST_TRUE( scanner.HasFoundFailure() );
+	TEST_EQ( strcmp( scanner.GetMessage(), "Out of memory" ), 0 );
+	TEST_EQ( pszEnd, szLog + sizeof( szLog ) - 1 );
+
+	// The next text starts a new search.
+	TEST_EQ( scanner.ProcessText( "plain line\n", -1, &pszEnd ), CIdentifyFailureMessages::STATE_LINE_START );
+	TEST_FALSE( scanner.HasFoundFailure() );
+	TEST_EQ( strcmp( scanner.GetMessage(), "" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "IdentifyFailureMessages.CollectsAFailedAssertion", IdentifyFailureMessages_CollectsAFailedAssertion )
+{
+	CIdentifyFailureMessages scanner;
+	const char *pszEnd = nullptr;
+
+	TEST_EQ( scanner.ProcessText( "game/server/player.cpp (123) : Assertion Failed in function Think: pPlayer\n", -1, &pszEnd ), CIdentifyFailureMessages::STATE_ASSERTION );
+	TEST_EQ( strcmp( scanner.GetFile(), "game/server/player.cpp" ), 0 );
+	TEST_EQ( scanner.GetLine(), 123 );
+
+	// The line after the assertion completes it.
+	TEST_EQ( scanner.ProcessText( "callstack\n", -1, &pszEnd ), CIdentifyFailureMessages::STATE_ASSERTION_FOUND );
+	TEST_EQ( strcmp( scanner.GetMessage(), "Assertion Failed in function Think: pPlayer\ncallstack\n" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "IdentifyFailureMessages.CollectsAFailedAssertMsg", IdentifyFailureMessages_CollectsAFailedAssertMsg )
+{
+	CIdentifyFailureMessages scanner;
+	const char *pszEnd = nullptr;
+
+	TEST_EQ( scanner.ProcessText( "game/server/player.cpp (77) : AssertMsg Failed in function Spawn\n", -1, &pszEnd ), CIdentifyFailureMessages::STATE_ASSERTMSG );
+	TEST_EQ( scanner.ProcessText( "Bad spawn point\n", -1, &pszEnd ), CIdentifyFailureMessages::STATE_ASSERTMSG_TEXT );
+	TEST_EQ( scanner.ProcessText( "callstack\n", -1, &pszEnd ), CIdentifyFailureMessages::STATE_ASSERTION_FOUND );
+
+	TEST_EQ( strcmp( scanner.GetMessage(), "AssertMsg Failed in function Spawn\nBad spawn point\ncallstack\n" ), 0 );
+	TEST_EQ( scanner.GetLine(), 77 );
+}
+
+REGISTER_NAMED_TEST( "IdentifyFailureMessages.EmptyText", IdentifyFailureMessages_EmptyText )
+{
+	CIdentifyFailureMessages scanner;
+	const char *pszEnd = nullptr;
+
+	TEST_EQ( scanner.ProcessText( "", -1, &pszEnd ), CIdentifyFailureMessages::STATE_NO_TEXT );
+	TEST_FALSE( scanner.HasFoundFailure() );
 }
