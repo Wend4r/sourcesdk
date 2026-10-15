@@ -786,6 +786,19 @@ typedef CAtomicMutex CThreadSpinMutex;
 typedef CThreadSpinMutex CThreadFastMutex;
 
 //-----------------------------------------------------------------------------
+// Counting semaphore on ThreadAtomicWait
+//-----------------------------------------------------------------------------
+class CAtomicSemaphore
+{
+private:
+	// Waits on m_nCount while it is zero, counting the thread in m_nWaiters
+	DLL_CLASS_IMPORT void DoWait();
+
+	volatile uint32 m_nCount;
+	volatile uint32 m_nWaiters;
+};
+
+//-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
 
@@ -1038,6 +1051,26 @@ private:
 	CThreadSemaphore &operator=( const CThreadSemaphore & );
 };
 
+//-----------------------------------------------------------------------------
+// Named mutex shared between processes
+//-----------------------------------------------------------------------------
+class CThreadCrossProcessMutex : public CThreadSyncObject
+{
+public:
+	// bAllowEveryone gives every user access to the mutex
+	DLL_CLASS_IMPORT CThreadCrossProcessMutex( const char *pszName, bool bAllowEveryone );
+#ifdef PLATFORM_WINDOWS
+	DLL_CLASS_IMPORT ~CThreadCrossProcessMutex();
+
+	DLL_CLASS_IMPORT bool TryLock( const char *pFileName, int nLine, uint32 nTimeout );
+	DLL_CLASS_IMPORT void Unlock( const char *pFileName, int nLine );
+	DLL_CLASS_IMPORT bool AssertOwnedByCurrentThread() const;
+	DLL_CLASS_IMPORT void SetTrace( bool bTrace );
+#endif
+
+	DLL_CLASS_IMPORT bool Release();
+};
+
 
 //-----------------------------------------------------------------------------
 //
@@ -1128,31 +1161,122 @@ public:
 	}
 };
 
-class PLATFORM_CLASS CThreadMultiWaitEvent
+//-----------------------------------------------------------------------------
+// Objects that ThreadMultiWait can wait on
+//-----------------------------------------------------------------------------
+class CThreadMultiWaitObject
 {
 public:
-	CThreadMultiWaitEvent( bool bManualReset = false );
-	~CThreadMultiWaitEvent();
+	DLL_CLASS_IMPORT CThreadMultiWaitObject();
+	DLL_CLASS_IMPORT ~CThreadMultiWaitObject();
 
-	void Set();
-	void Reset();
+	DLL_CLASS_IMPORT void Signal();
+
+protected:
+#ifdef PLATFORM_WINDOWS
+	HANDLE m_hEventFd;
+#else
+	int m_hEventFd;
+#endif
+	uint32 m_nExtraFlags; // ThreadMultiWaitExtra_t flags: 1 for semaphores, 2 for auto-reset events, 4 for manual-reset events
+};
+
+class CThreadMultiWaitEvent : public CThreadMultiWaitObject
+{
+public:
+	DLL_CLASS_IMPORT CThreadMultiWaitEvent( bool bManualReset = false );
+	DLL_CLASS_IMPORT ~CThreadMultiWaitEvent();
+
+	DLL_CLASS_IMPORT void Set();
+	DLL_CLASS_IMPORT void Reset();
+};
+
+class CThreadMultiWaitSemaphore : public CThreadMultiWaitObject
+{
+public:
+	DLL_CLASS_IMPORT CThreadMultiWaitSemaphore();
+	DLL_CLASS_IMPORT ~CThreadMultiWaitSemaphore();
+
+	DLL_CLASS_IMPORT void Release();
+};
+
+
+//-----------------------------------------------------------------------------
+// Blocks the arriving threads until the expected count arrives
+//-----------------------------------------------------------------------------
+class CThreadBarrier
+{
+public:
+	DLL_CLASS_IMPORT CThreadBarrier( uint32 nExpected );
+	DLL_CLASS_IMPORT ~CThreadBarrier();
+
+	DLL_CLASS_IMPORT void ArriveAndWait();
 
 private:
-#ifdef PLATFORM_WINDOWS
-	HANDLE m_hEvent;
-#elif defined( PLATFORM_OSX )
-	// A pipe, signalled while it holds a byte
-	int m_nReadFd;
-	int m_nWriteFd;
-#else
-	int m_nEventFd;
-#endif
-	int m_nType; // 2 for auto-reset, 4 for manual-reset
-#ifdef PLATFORM_OSX
-	bool m_bSignalled;
-	bool m_bHasMutex;
-	pthread_mutex_t m_Mutex;
-#endif
+	void *m_pImpl; // Counters, a mutex and a condition variable allocated by tier0
+};
+
+
+//-----------------------------------------------------------------------------
+// Lets background work pause at safe points while the foreground needs it
+//-----------------------------------------------------------------------------
+class CThreadBackgroundWorkGate
+{
+public:
+	DLL_CLASS_IMPORT CThreadBackgroundWorkGate();
+	DLL_CLASS_IMPORT ~CThreadBackgroundWorkGate();
+
+	DLL_CLASS_IMPORT void PauseWork();
+	DLL_CLASS_IMPORT void ResumeWork();
+	DLL_CLASS_IMPORT bool PauseRequested() const;
+
+	DLL_CLASS_IMPORT void OnBeginBackgroundWork();
+	DLL_CLASS_IMPORT void OnEndBackgroundWork();
+
+private:
+	void *m_pImpl; // State, a mutex and a condition variable allocated by tier0
+};
+
+
+//-----------------------------------------------------------------------------
+// Per thread record tier0 keeps for every thread it knows about
+//-----------------------------------------------------------------------------
+class CThreadLocalScope
+{
+public:
+	class CScopeCreatedOrDestroyedHandler
+	{
+	public:
+		typedef void (*FN_OnScopeChange)( CThreadLocalScope *pScope, bool bCreated );
+
+		DLL_CLASS_IMPORT CScopeCreatedOrDestroyedHandler( FN_OnScopeChange pHandler );
+		DLL_CLASS_IMPORT ~CScopeCreatedOrDestroyedHandler();
+
+	private:
+		FN_OnScopeChange m_pHandler;
+		CScopeCreatedOrDestroyedHandler *m_pNext;
+	};
+
+	DLL_CLASS_IMPORT CThreadLocalScope( ThreadHandle_t hThreadHandle, bool bDeleteOnThreadDetach );
+	DLL_CLASS_IMPORT ~CThreadLocalScope();
+
+	DLL_CLASS_IMPORT bool IsLocalThreadScope() const;
+
+	DLL_CLASS_IMPORT static CAtomicMutex &GetScopeListMutex();
+	DLL_CLASS_IMPORT static CThreadLocalScope *FindScopeForThreadHandle( ThreadHandle_t hThreadHandle );
+	DLL_CLASS_IMPORT static CThreadLocalScope *FindScopeForThreadId( ThreadId_t nThreadId );
+
+	const char *GetThreadName() const { return m_szThreadName; }
+	DLL_CLASS_IMPORT void SetThreadName( const char *pBuffer );
+
+	int GetTier0ThreadID() const { return m_nTier0ThreadID; }
+
+protected:
+	CThreadLocalScope *m_pAllScopesListNext;
+	ThreadHandle_t m_hOwningThread;
+	int m_nTier0ThreadID;
+	char m_szThreadName[ 32 ];
+	int m_nInternalFlags;
 };
 
 
