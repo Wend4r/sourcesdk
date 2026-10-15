@@ -30,6 +30,18 @@ typedef uint64 ResourceType_t;
 // Surface properties, "surfaceproperties/surfaceproperties.vsurf"
 #define RESOURCE_TYPE_SURFACE_PROPERTIES RESOURCE_TYPE_ID( 'v', 's', 'u', 'r', 'f' )
 
+// Physics aggregate data of models, "*.vphys"
+#define RESOURCE_TYPE_PHYSICS_DATA RESOURCE_TYPE_ID( 'v', 'p', 'h', 'y', 's' )
+
+// World nodes, "*.vwnod"
+#define RESOURCE_TYPE_WORLD_NODE RESOURCE_TYPE_ID( 'v', 'w', 'n', 'o', 'd' )
+
+// Worlds, "*.vwrld"
+#define RESOURCE_TYPE_WORLD RESOURCE_TYPE_ID( 'v', 'w', 'r', 'l', 'd' )
+
+// Entity lumps of a world, "*.vents"
+#define RESOURCE_TYPE_ENTITY_LUMP RESOURCE_TYPE_ID( 'v', 'e', 'n', 't', 's' )
+
 // Resource type of the info class, the packed file extension, e.g. 'vmap'
 DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );
 

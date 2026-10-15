@@ -605,7 +605,7 @@ public:
 // The resource type manager of VPhysXAggregateData_t ('vphys').
 // Its overrides (the typesafe allocation and release of the aggregate data, and the reallocation hook after them that
 // forwards to IVPhysics2::OnReallocateAggregateData) are not declared here
-class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< 0x7379687076ull, VPhysXAggregateData_t >
+class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< RESOURCE_TYPE_PHYSICS_DATA, VPhysXAggregateData_t >
 {
 };
 
