@@ -29,6 +29,14 @@ PLATFORM_INTERFACE HMODULE			Plat_LoadModule( const char *pModuleName, int *pLas
 PLATFORM_INTERFACE int				Plat_LoadModuleRaw( const char *pModuleName, HMODULE *pInstance, int nFlags, bool bHideLoadingError = true ); // Returns a last error number.
 PLATFORM_INTERFACE void				Plat_UnloadModule( HMODULE module );
 
+// Finds a loaded module; bExactFileName takes pModuleName as is instead of turning it into a module file name, the outputs are optional
+PLATFORM_INTERFACE HMODULE			Plat_FindModuleByName( const char *pModuleName, bool bExactFileName, void **ppBaseAddress, size_t *pnImageSize );
+PLATFORM_INTERFACE bool				Plat_IsModuleLoaded( const char *pModuleName, bool bExactFileName );
+PLATFORM_INTERFACE HMODULE			Plat_GetExeModule();
+PLATFORM_INTERFACE bool				Plat_GetModuleInformation( HMODULE hModule, CBufferString *pModulePath, void **ppBaseAddress, size_t *pnImageSize );
+// Finds the module that contains pAddress, the outputs are optional
+PLATFORM_INTERFACE bool				Plat_GetModuleAddressInformation( const void *pAddress, HMODULE *phModule, CBufferString *pModulePath, void **ppBaseAddress, size_t *pnImageSize );
+
 // Determines if current process is running with any debug modules
 PLATFORM_INTERFACE bool				Plat_RunningWithDebugModules();
 
