@@ -17,6 +17,7 @@
 #include <resourcesystem/iresourcesystem.h>
 #include <scenesystem/sceneobject.h>
 #include <schemasystem/schematypes.h>
+#include <tier0/generichash.h>
 #include <tier0/utlhashtable.h>
 #include <tier0/utlleanvector.h>
 #include <tier0/utllinkedlist.h>
@@ -241,10 +242,58 @@ struct ParticleInstancedMeshKey_t
 	// Left zero
 	uint64 m_nUnk28[ 2 ];
 
+	// The key is compared as a 64-bit handle, a 32-bit integer and four floats; its last four bytes are left out
+	bool operator==( const ParticleInstancedMeshKey_t &other ) const
+	{
+		if ( KeyAt< uint64 >( 0 ) != other.KeyAt< uint64 >( 0 ) || KeyAt< int >( 8 ) != other.KeyAt< int >( 8 ) )
+		{
+			return false;
+		}
+
+		for ( int nOffset = 12; nOffset < 28; nOffset += sizeof( float ) )
+		{
+			if ( KeyAt< float >( nOffset ) != other.KeyAt< float >( nOffset ) )
+			{
+				return false;
+			}
+		}
+
+		return m_nUnk20 == other.m_nUnk20 && m_nUnk28[ 0 ] == other.m_nUnk28[ 0 ] && m_nUnk28[ 1 ] == other.m_nUnk28[ 1 ];
+	}
+
+	// Combines the hashes of the handle, the integer, the four floats and m_nUnk20; m_nUnk28 is not hashed
 	struct HashFunctor_t
 	{
-		unsigned int operator()( const ParticleInstancedMeshKey_t &key ) const;
+		unsigned int operator()( const ParticleInstancedMeshKey_t &key ) const
+		{
+			const uint32 nSeed = 0x3501A674;
+
+			uint32 nHash = Combine( nSeed, MurmurHash2( &key.m_Key[ 0 ], sizeof( uint64 ), nSeed ) );
+			nHash = Combine( nHash, key.KeyAt< uint32 >( 8 ) );
+
+			for ( int nOffset = 12; nOffset < 28; nOffset += sizeof( float ) )
+			{
+				nHash = Combine( nHash, MurmurHash2( &key.m_Key[ nOffset ], sizeof( float ), nSeed ) );
+			}
+
+			return Combine( nHash, static_cast< uint32 >( key.m_nUnk20 ) );
+		}
+
+	private:
+		static uint32 Combine( uint32 nHash, uint32 nValue )
+		{
+			return nHash ^ ( nValue + 0x9E3779B9 + ( nHash << 6 ) + ( nHash >> 2 ) );
+		}
 	};
+
+private:
+	template < typename T >
+	T KeyAt( int nOffset ) const
+	{
+		T value;
+		memcpy( &value, &m_Key[ nOffset ], sizeof( T ) );
+		return value;
+	}
 };
 
 //-----------------------------------------------------------------------------
