@@ -37,33 +37,36 @@ public:
 	virtual int AcquireName( const CUtlStringToken &token, const char *pszName ) = 0;
 
 	// Acquires every name of a list separated by whitespace, ',', ';' or '|' and returns the mask of their bits
-	virtual uint64 unk001( const char *pszNames ) = 0;
+	virtual uint64 AcquireNames( const char *pszNames ) = 0;
 
 	virtual bool AcquirePreindexedName( const CUtlStringToken &token, const char *pszName, int nIndex ) = 0;
 
-	virtual int unk003() const = 0;
+	// Number of names the index can hold, the bound of the indices
+	virtual int GetNameCapacity() const = 0;
 
-	// Bits of all registered names
-	virtual uint64 unk004() const = 0;
+	// Bits of all registered names, printed as "All" by IPhysIntersectionDictionary::DumpStatus
+	virtual uint64 GetAllNamesMask() const = 0;
 
 	// Index of a registered name or -1
-	virtual int unk005( CUtlStringToken token ) const = 0;
+	virtual int FindName( CUtlStringToken token ) const = 0;
 
 	// Mask of the bits of registered names, unknown names add nothing
-	virtual uint64 unk006( CUtlStringToken token ) const = 0;
-	virtual uint64 unk006( PhysSpan_t< const CUtlStringToken > tokens ) const = 0;
-	virtual uint64 unk006( const char *pszNames ) const = 0;
+	virtual uint64 GetMask( CUtlStringToken token ) const = 0;
+	virtual uint64 GetMask( PhysSpan_t< const CUtlStringToken > tokens ) const = 0;
+	virtual uint64 GetMask( const char *pszNames ) const = 0;
 
 	virtual CUtlStringToken GetName( int nIndex ) const = 0;
 	virtual const char *GetNameAsString( int nIndex ) const = 0;
 
 	// Whether every bit of the mask belongs to a registered name
-	virtual bool unk011( uint64 nMask ) const = 0;
+	virtual bool IsValidMask( uint64 nMask ) const = 0;
 
-	virtual bool unk012( int nIndex ) const = 0;
+	// Whether the index is in range and belongs to a registered name
+	virtual bool IsValidIndex( int nIndex ) const = 0;
 
-	// Name of the index itself, printed by IPhysIntersectionDictionary::DumpStatus
-	virtual const char *unk013() const = 0;
+	// Name of the index itself ("Interaction Layers", "Detail Layers", "Collision Groups"),
+	// printed by its log messages and by IPhysIntersectionDictionary::DumpStatus
+	virtual const char *GetDebugName() const = 0;
 
 	virtual ~IPhysNameIndex() {}
 };
