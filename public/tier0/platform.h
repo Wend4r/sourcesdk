@@ -1859,6 +1859,12 @@ PLATFORM_INTERFACE void				Plat_TranslateSymbolicLinks( const char *pInDir, CBuf
 PLATFORM_INTERFACE int				PlatC_ReadFileToMemory( const char *pFileName, void **ppBuffer, uint32 *pnSize, bool bNullTerminate, uint32 nMaxSize );
 
 PLATFORM_INTERFACE char const *		Plat_GetEnv( char const *pEnvVarName );
+PLATFORM_INTERFACE const char *		Plat_GetCrtEnv( const char *pEnvVarName );
+PLATFORM_INTERFACE bool				Plat_HasEnv( const char *pEnvVarName );
+PLATFORM_INTERFACE bool				Plat_SetEnv( const char *pEnvVarName, const char *pValue, bool bOverwrite );
+PLATFORM_INTERFACE bool				Plat_RemoveEnv( const char *pEnvVarName );
+// Expands the environment variable references of pIn into out and returns its string; nSyntax selects the reference syntax
+PLATFORM_INTERFACE const char *		Plat_ExpandEnvVars( const char *pIn, CBufferString &out, bool bAppend, int nSyntax );
 
 PLATFORM_INTERFACE void				Plat_ExitProcess( int nCode );
 
