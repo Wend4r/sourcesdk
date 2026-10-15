@@ -23,6 +23,8 @@
 class IPhysicsBody;
 class CGJKProxy;
 class CRnContact;
+class Color;
+class ISceneViewDebugOverlays;
 struct Ray_t;
 struct RnCollisionAttr_t;
 struct RnMassProperties_t;
@@ -91,21 +93,23 @@ public:
 	// Takes the interacts-as layers, the collision group and the detail layers of the given attributes as overrides
 	virtual void SetCollisionAttributeOverrides( const RnCollisionAttr_t &attributes ) = 0;
 
-	virtual bool CastRay( CShapeCastResult &result, const Vector &vStart, const Vector &vDelta, float flUnknown ) const = 0;
+	// The casts report a hit only below flMaxFraction and then store the material of the shape in the result
+	virtual bool CastRay( CShapeCastResult &result, const Vector &vStart, const Vector &vDelta, float flMaxFraction ) const = 0;
 
 	// A radius below FLT_EPSILON casts a ray
-	virtual bool CastSphere( CShapeCastResult &result, const Vector &vStart, const Vector &vDelta, float flRadius, float flUnknown ) const = 0;
+	virtual bool CastSphere( CShapeCastResult &result, const Vector &vStart, const Vector &vDelta, float flRadius, float flMaxFraction ) const = 0;
 
-	// Both convert the transform and forward to shape casts; the rest of the arguments is not recovered
-	virtual void unk015( void *p, const matrix3x4_t &transform ) = 0;
-	virtual void unk016( void *p, const matrix3x4_t &transform ) = 0;
+	// Cast against the shape placed at the transform: a capsule given by its center, half axis and radius, and a generic
+	// query shape (a point, a sphere, a capsule or a hull by the type stored in it)
+	virtual bool CastCapsule( CShapeCastResult &result, const matrix3x4_t &transform, const Vector &vCenter, const Vector &vDelta, const Vector &vHalfAxis, float flRadius ) = 0;
+	virtual bool CastShape( CShapeCastResult &result, const matrix3x4_t &transform, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, float flMaxFraction ) = 0;
 
 	// Overlap tests of the shape, MSVC lays the group out in reverse order: against a sphere, against bounds with the shape
-	// placed by a matrix or by a transform, and against a query whose type is not recovered with the shape placed by a transform
+	// placed by a matrix or by a transform, and against a generic query shape (a cast without motion) with the shape placed by a transform
 	virtual bool Overlaps( const Vector &vCenter, float flRadius ) = 0;
 	virtual bool Overlaps( const matrix3x4_t &transform, const AABB_t &bounds ) = 0;
 	virtual bool Overlaps( const CTransform &transform, const AABB_t &bounds ) = 0;
-	virtual bool Overlaps( const CTransform &transform, const void *p ) = 0;
+	virtual bool Overlaps( const CTransform &transform, const Ray_t &shape ) = 0;
 
 	// Projects the point onto the surface; points inside are returned unchanged
 	virtual Vector GetClosestPoint( const Vector &vPoint ) const = 0;
@@ -142,31 +146,34 @@ public:
 	// Appends the entity ids of the other bodies of the contacts, then sorts the list and removes the duplicates
 	virtual void GetContactEntityIds( CUtlVector< uint32 > &entityIds ) = 0;
 
-	virtual void unk037( bool bUnknown ) = 0;
-	virtual bool unk038() const = 0;
+	// The resolved contacts of a shape with it set are passed to the contact callback of the world
+	virtual void SetContactCallbackEnabled( bool bEnabled ) = 0;
+	virtual bool IsContactCallbackEnabled() const = 0;
 
 	// Bytes used by the shape and its geometry
 	virtual uintp GetRuntimeSize() const = 0;
 
 	virtual void ComputeSubmergedVolume( const matrix3x4a_t &surface, PhysicsShapeSubmergedVolume_t &result ) = 0;
 
-	virtual void unk041( void *p ) = 0;
-	virtual void *unk042() const = 0;
+	virtual void SetUserData( void *pUserData ) = 0;
+	virtual void *GetUserData() const = 0;
 
-	// Empty in release builds
-	virtual void unk043() = 0;
-	virtual bool unk044() = 0;
-
-	// The debug name of the body
+	// Empty in release builds, where the name is null
+	virtual void SetDebugName( const char *pszName ) = 0;
 	virtual const char *GetDebugName() = 0;
 
-	virtual void unk046( void *p ) = 0;
-	virtual void *unk047() const = 0;
+	virtual const char *GetBodyDebugName() = 0;
 
-	virtual void unk048( void *p ) = 0;
+	// The hit group of the shape markup of the aggregate data, an empty string by default
+	virtual void SetHitGroup( const char *pszHitGroup ) = 0;
+	virtual const char *GetHitGroup() const = 0;
 
-	virtual void unk049( float flUnknown ) = 0;
-	virtual float unk050() const = 0;
+	// Debug draw of the shape placed at the transform; flDuration is passed on to the overlays
+	virtual void Draw( ISceneViewDebugOverlays *pDebugOverlays, const CTransform &transform, const Color &color, uint64 nDebugDrawOptions, float flDuration ) = 0;
+
+	// Opacity factor of the debug shape, 1 by default
+	virtual void SetDebugAlpha( float flAlpha ) = 0;
+	virtual float GetDebugAlpha() const = 0;
 
 	virtual ~IPhysicsShape() {}
 };
