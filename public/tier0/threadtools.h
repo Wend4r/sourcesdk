@@ -92,6 +92,75 @@ PLATFORM_INTERFACE uintp Plat_HookSpecialThread( SpecialThreadID_t specialThread
 
 
 //-----------------------------------------------------------------------------
+// Processes
+//-----------------------------------------------------------------------------
+FORWARD_DECLARE_HANDLE( ProcessHandle_t );
+enum ThreadProcessPriority_t
+{
+	THREAD_PROCESS_PRIORITY_IDLE = 0,
+	THREAD_PROCESS_PRIORITY_LOW = 1,
+	THREAD_PROCESS_PRIORITY_NORMAL = 2,
+	THREAD_PROCESS_PRIORITY_HIGH = 3,
+	THREAD_PROCESS_PRIORITY_REALTIME = 4,
+};
+
+PLATFORM_INTERFACE int CreateSimpleProcess( const char *pCommandLine, uint32 nFlags, ProcessHandle_t *pHandle );
+PLATFORM_INTERFACE int ThreadOpenProcess( uint32 nProcessId, uint32 nAccessFlags, ProcessHandle_t *pHandle );
+#ifdef PLATFORM_POSIX
+PLATFORM_INTERFACE ProcessHandle_t ThreadWrapProcessId( uint32 nProcessId, uint32 nAccessFlags );
+#endif
+PLATFORM_INTERFACE bool ThreadCloseProcess( ProcessHandle_t hProcess );
+PLATFORM_INTERFACE ProcessHandle_t ThreadGetCurrentProcessHandle();
+PLATFORM_INTERFACE uint32 ThreadGetCurrentProcessId();
+PLATFORM_INTERFACE uint32 ThreadGetProcessIdFromHandle( ProcessHandle_t hProcess );
+PLATFORM_INTERFACE bool ThreadIsProcessIdActive( uint32 nProcessId );
+PLATFORM_INTERFACE bool ThreadIsProcessActive( ProcessHandle_t hProcess, int32 *pExitCode );
+PLATFORM_INTERFACE bool ThreadWaitForProcessExit( ProcessHandle_t hProcess, uint32 nMillis, int32 *pExitCode );
+PLATFORM_INTERFACE bool ThreadGetProcessExitCode( ProcessHandle_t hProcess, int32 *pExitCode );
+PLATFORM_INTERFACE bool ThreadTerminateProcessCode( ProcessHandle_t hProcess, int32 nExitCode );
+PLATFORM_INTERFACE ThreadProcessPriority_t ThreadGetProcessPriority( ProcessHandle_t hProcess );
+PLATFORM_INTERFACE bool ThreadSetProcessPriority( ProcessHandle_t hProcess, ThreadProcessPriority_t ePriority );
+// Reads up to nSize bytes at pAddress of the process into pBuffer, returns the number of bytes read
+PLATFORM_INTERFACE int ThreadReadProcessMemory( ProcessHandle_t hProcess, const void *pAddress, void *pBuffer, int nSize );
+PLATFORM_INTERFACE uint32 ThreadShellExecute( const char *pchApplicationName, const char *pchCommandLine, const char *pchCurrentDirectory );
+PLATFORM_INTERFACE uint32 ThreadShellExecuteEx( const char *pchVerb, const char *pchFile, const char *pchParameters, const char *pchCurrentDirectory );
+PLATFORM_INTERFACE void ThreadStartFuzzer();
+
+
+//-----------------------------------------------------------------------------
+// Waiting on several objects
+//-----------------------------------------------------------------------------
+class CThreadMultiWaitEvent;
+#ifdef PLATFORM_WINDOWS
+typedef void *ThreadMultiWaitItem_t;
+#else
+struct pollfd;
+typedef pollfd ThreadMultiWaitItem_t;
+#endif
+
+struct ThreadMultiWaitExtra_t
+{
+	uint32 nFlags; // CThreadMultiWaitEvent type: 2 for auto-reset, 4 for manual-reset
+};
+
+struct ThreadMultiWaitObjectSet_t
+{
+	ThreadMultiWaitItem_t *m_pItems;
+	ThreadMultiWaitExtra_t *m_pExtra;
+	int m_nItems;
+#ifdef PLATFORM_POSIX
+	int m_nEpoll;
+#endif
+};
+
+PLATFORM_INTERFACE ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( CThreadMultiWaitEvent **ppEvents, int nEvents );
+PLATFORM_INTERFACE void ThreadMultiWaitObjectSetDestroy( ThreadMultiWaitObjectSet_t *pSet );
+PLATFORM_INTERFACE int ThreadMultiWaitObjectSetGetCount( ThreadMultiWaitObjectSet_t *pSet );
+// Waits on pSet, or on the nItems of pItems and pExtra when pSet is NULL; pSignalled receives a bit per signalled object, all of them with bWaitAll
+PLATFORM_INTERFACE int ThreadMultiWait( ThreadMultiWaitObjectSet_t *pSet, ThreadMultiWaitItem_t *pItems, ThreadMultiWaitExtra_t *pExtra, int nItems, bool bWaitAll, uint64 *pSignalled, uint32 nMillis );
+
+
+//-----------------------------------------------------------------------------
 
 PLATFORM_OVERLOAD void ThreadAtomicNotifyOne( const uint32 *addr );
 PLATFORM_OVERLOAD void ThreadAtomicNotifyN( const uint32 *addr, uint32 n );
@@ -100,13 +169,22 @@ PLATFORM_OVERLOAD void ThreadAtomicWait( volatile uint32 *addr, uint32 value );
 
 PLATFORM_INTERFACE void ThreadSleep(unsigned duration = 0);
 PLATFORM_INTERFACE void ThreadNanoSleep(unsigned ns);
+PLATFORM_INTERFACE void ThreadSpin( unsigned int nCycles );
+PLATFORM_INTERFACE void ThreadYield();
 PLATFORM_INTERFACE ThreadId_t ThreadGetCurrentId();
 PLATFORM_INTERFACE ThreadHandle_t ThreadGetCurrentHandle();
 PLATFORM_INTERFACE int ThreadGetPriority( ThreadHandle_t hThread = NULL );
 PLATFORM_INTERFACE bool ThreadSetPriority( ThreadHandle_t hThread, int priority );
 inline		 bool ThreadSetPriority( int priority ) { return ThreadSetPriority( NULL, priority ); }
+PLATFORM_INTERFACE uint16 GetPerfSortedLogicalProcessors( uint16 *pSortIndices, uint16 nSortIndices );
+PLATFORM_INTERFACE void ThreadSetPerfSetAffinity( uint8 nPerfSet );
+PLATFORM_INTERFACE void Plat_EnableHighQoSExecutionSpeed();
 PLATFORM_INTERFACE bool ThreadInMainThread();
 PLATFORM_INTERFACE void DeclareCurrentThreadIsMainThread();
+PLATFORM_INTERFACE ThreadId_t ThreadGetMainThreadId();
+PLATFORM_INTERFACE bool ThreadInSecondaryMainThread();
+PLATFORM_INTERFACE void DeclareCurrentThreadIsSecondaryMainThread();
+PLATFORM_INTERFACE void ClearSecondaryMainThread();
 
 // NOTE: ThreadedLoadLibraryFunc_t needs to return the sleep time in milliseconds or TT_INFINITE
 typedef int (*ThreadedLoadLibraryFunc_t)(); 
@@ -140,6 +218,12 @@ PLATFORM_INTERFACE bool ThreadJoin( ThreadHandle_t, unsigned timeout = TT_INFINI
 
 PLATFORM_INTERFACE void ThreadSetDebugNameS2( ThreadHandle_t hThread, const char *pszName );
 inline		 void ThreadSetDebugName( const char *pszName ) { ThreadSetDebugNameS2( NULL, pszName ); }
+PLATFORM_INTERFACE bool ThreadGetDebugNameForThreadHandle( ThreadHandle_t hThread, char *pszNameOut, size_t nNameOutSize );
+PLATFORM_INTERFACE bool ThreadGetDebugNameForThreadId( ThreadId_t nThreadId, char *pszNameOut, size_t nNameOutSize );
+
+typedef volatile int32 ThreadInitOnce_t;
+PLATFORM_INTERFACE bool ThreadInitOnceCall_ShouldRun( ThreadInitOnce_t *pMarker );
+PLATFORM_INTERFACE void ThreadInitOnceCall_Finish( ThreadInitOnce_t *pMarker );
 
 PLATFORM_INTERFACE void ThreadSetAffinity( ThreadHandle_t hThread, int nAffinityMask );
 
