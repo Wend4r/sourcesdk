@@ -19,6 +19,16 @@ class IVPhysics2World;
 struct RnCollisionAttr_t;
 struct RnQueryShapeAttr_t;
 
+// Stand-in for std::span< T > with a dynamic extent, which these interfaces take by value.
+// It keeps the pointer and the count in the same order and size, so passed by value it goes in
+// two registers on System V and by a pointer to a temporary copy on Windows, like the span
+template< class T >
+struct PhysSpan_t
+{
+	T *m_pData;
+	size_t m_nCount;
+};
+
 // Up to 64 names registered by string token, each owning one bit of a 64-bit mask
 abstract_class IPhysNameIndex
 {
@@ -39,10 +49,9 @@ public:
 	// Index of a registered name or -1
 	virtual int unk005( CUtlStringToken token ) const = 0;
 
-	// Mask of the bits of registered names, unknown names add nothing.
-	// Three overloads, the second takes a span of tokens by value which C++17 cannot declare
+	// Mask of the bits of registered names, unknown names add nothing
 	virtual uint64 unk006( CUtlStringToken token ) const = 0;
-	virtual uint64 unk006( void *p ) const = 0;
+	virtual uint64 unk006( PhysSpan_t< const CUtlStringToken > tokens ) const = 0;
 	virtual uint64 unk006( const char *pszNames ) const = 0;
 
 	virtual CUtlStringToken GetName( int nIndex ) const = 0;
@@ -76,8 +85,8 @@ public:
 
 	virtual void unk006( void *p ) = 0;
 
-	// Takes two spans of names by value, which C++17 cannot declare
-	virtual void unk007( void *p ) = 0;
+	// The last argument is an output record whose layout is not recovered
+	virtual void unk007( PhysSpan_t< const char * const > names1, PhysSpan_t< const char * const > names2, void *p ) = 0;
 
 	// The collision groups ("collision group" attribute)
 	virtual const IPhysNameIndex *GetCollisionGroups() const = 0;
@@ -99,8 +108,8 @@ public:
 	virtual uint64 unk017( int nIndex ) const = 0;
 	virtual void unk018( int nIndex, uint64 nMask ) = 0;
 
-	// Takes the key and a span of tokens by value, which C++17 cannot declare
-	virtual void unk019( void *p ) = 0;
+	// Sets the mask of the key to the mask of the tokens, adding the key when it is missing, and returns its index
+	virtual int unk019( const int &nKey, PhysSpan_t< const CUtlStringToken > tokens ) = 0;
 
 	virtual void DumpStatus() const = 0;
 
