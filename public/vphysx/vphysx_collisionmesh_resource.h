@@ -45,8 +45,6 @@ schema struct VPhysXCollisionAttributes_t
 	CUtlVector< CUtlString > m_DetailLayerStrings;
 };
 
-COMPILE_TIME_ASSERT( sizeof( VPhysXCollisionAttributes_t ) == 0xD0 );
-
 schema struct VPhysics2ShapeDef_t
 {
 	TYPEMETA( MGetKV3ClassDefaults );

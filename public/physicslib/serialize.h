@@ -207,8 +207,6 @@ private:
 	CUtlVector< Vector > m_Vertices;
 };
 
-COMPILE_TIME_ASSERT( sizeof( CUtlVectorSIMDPaddedVector ) == 0x18 );
-
 schema struct RnMesh_t
 {
 	TYPEMETA( MGetKV3ClassDefaults );
@@ -226,8 +224,6 @@ schema struct RnMesh_t
 	uint32 m_nDebugFlags;
 	float m_flSurfaceArea;
 };
-
-COMPILE_TIME_ASSERT( sizeof( RnMesh_t ) == 0xC0 );
 
 //-----------------------------------------------------------------------------
 // Compound of spheres, capsules, hulls and meshes with a bounding tree

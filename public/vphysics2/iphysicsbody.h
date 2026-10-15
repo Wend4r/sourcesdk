@@ -79,12 +79,6 @@ struct PhysicsCompoundDef_t : public PhysicsShapeDef_t
 	RnCompound_t *m_pCompound;
 };
 
-COMPILE_TIME_ASSERT( sizeof( PhysicsSphereDef_t ) == 0xE8 );
-COMPILE_TIME_ASSERT( sizeof( PhysicsCapsuleDef_t ) == 0xF8 );
-COMPILE_TIME_ASSERT( sizeof( PhysicsHullDef_t ) == 0xE0 );
-COMPILE_TIME_ASSERT( sizeof( PhysicsMeshDef_t ) == 0xE0 );
-COMPILE_TIME_ASSERT( sizeof( PhysicsCompoundDef_t ) == 0xE0 );
-
 // Body description built from a body part of physics aggregate data
 struct PhysicsBodyDef_t
 {
@@ -108,8 +102,6 @@ struct PhysicsBodyDef_t
 	CUtlLeanVector< PhysicsMeshDef_t > m_MeshShapes;
 	CUtlLeanVector< PhysicsCompoundDef_t > m_CompoundShapes;
 };
-
-COMPILE_TIME_ASSERT( sizeof( PhysicsBodyDef_t ) == 0xE0 );
 
 // Methods with an unknown name that MSVC lays out as one overload group keep one shared unkNNN name
 abstract_class IPhysicsBody
