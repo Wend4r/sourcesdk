@@ -2082,6 +2082,69 @@ PLATFORM_INTERFACE double Plat_GetCPUUsage();
 
 PLATFORM_INTERFACE void Plat_GetCurrentDate( int *pDay, int *pMonth, int *pYear );
 
+PLATFORM_INTERFACE void Plat_SetupFPUControlWord();
+// Returns the previous MXCSR value to pass to Plat_RestoreDenormalsAreZero
+PLATFORM_INTERFACE uint32 Plat_SetDenormalsAreZero();
+PLATFORM_INTERFACE void Plat_RestoreDenormalsAreZero( uint32 nPrevMXCSR );
+PLATFORM_INTERFACE bool Plat_SetCPUTicksAreReliable();
+PLATFORM_INTERFACE int Plat_GetNumberCpusOnline();
+PLATFORM_INTERFACE bool Plat_IsCPUEmulated();
+PLATFORM_INTERFACE bool Plat_GetSystemLoad( double *pLoad );
+// Returns the battery charge in percent, or -1 when it is unknown
+PLATFORM_INTERFACE int8 Plat_GetPowerInfo( bool *pbOnBattery );
+PLATFORM_INTERFACE bool Plat_IsOSInLowPowerUseMode();
+PLATFORM_INTERFACE void Plat_NotifyOSAppIsNotHung();
+PLATFORM_INTERFACE bool Plat_IsWindowsGameModeEnabled();
+PLATFORM_INTERFACE bool Plat_IsWindowsGameDVREnabled();
+PLATFORM_INTERFACE bool Plat_SupportsMetalGraphicsAPI();
+PLATFORM_INTERFACE bool Plat_InitializeCOM();
+PLATFORM_INTERFACE void Plat_ShutdownCOM();
+
+PLATFORM_INTERFACE uint32 Plat_GetPageSize();
+PLATFORM_INTERFACE uint32 Plat_GetAllocationGranularity();
+
+enum PlatVirtualOperation_t
+{
+	PLAT_VIRTUAL_RESERVE = 1,
+	PLAT_VIRTUAL_COMMIT = 2,
+	PLAT_VIRTUAL_RESERVE_AND_COMMIT = PLAT_VIRTUAL_RESERVE | PLAT_VIRTUAL_COMMIT,
+	PLAT_VIRTUAL_DECOMMIT = 4,
+	PLAT_VIRTUAL_RELEASE = 8,
+	PLAT_VIRTUAL_ALLOW_LARGE_RESERVATION = 16,
+	PLAT_VIRTUAL_LARGE_RESERVE = PLAT_VIRTUAL_RESERVE | PLAT_VIRTUAL_ALLOW_LARGE_RESERVATION,
+	PLAT_VIRTUAL_LARGE_RESERVE_AND_COMMIT = PLAT_VIRTUAL_RESERVE_AND_COMMIT | PLAT_VIRTUAL_ALLOW_LARGE_RESERVATION,
+};
+
+PLATFORM_INTERFACE void *Plat_VirtualAlloc( void *pAddrHint, size_t nBytes, PlatVirtualOperation_t eOp, uint32 nAccess, uintp nAddressableUpperBound );
+PLATFORM_INTERFACE bool Plat_VirtualFree( void *pAlloc, size_t nBytes, PlatVirtualOperation_t eOp );
+PLATFORM_INTERFACE bool Plat_VirtualProtect( void *pAlloc, size_t nBytes, uint32 nAccess );
+PLATFORM_INTERFACE uint32 Plat_VirtualAccessFlags( uint32 nAccess );
+PLATFORM_INTERFACE size_t Plat_SetVirtualReserveWarnLimit( size_t nBytes );
+PLATFORM_INTERFACE size_t Plat_SetVirtualReserveFailLimit( size_t nBytes );
+
+struct OsMemoryStatus_t
+{
+	uint32 m_nMemoryLoad; // Percent of physical memory in use
+	uint64 m_nTotalPhys;
+	uint64 m_nAvailPhys;
+	uint64 m_nTotalPageFile;
+	uint64 m_nAvailPageFile;
+	uint64 m_nTotalVirtual;
+	uint64 m_nAvailVirtual;
+	uint64 m_nAvailExtendedVirtual;
+};
+
+PLATFORM_INTERFACE bool Plat_GlobalMemoryStatus( OsMemoryStatus_t *pMemoryStatus );
+PLATFORM_INTERFACE size_t Plat_GetCurrentRSS();
+PLATFORM_INTERFACE size_t Plat_GetPeakRSS();
+#ifdef PLATFORM_WINDOWS
+PLATFORM_INTERFACE size_t Plat_GetCurrentCommitCharge();
+PLATFORM_INTERFACE size_t Plat_GetPeakCommitCharge();
+#endif
+
+// Returns 1 when p is on the stack of the current thread, 0 when it is not and -1 when it is unknown
+PLATFORM_INTERFACE int Plat_IsPointerOnStack( const void *p );
+
 #endif // #if !defined( __SPU__ )
 
 
