@@ -16,6 +16,7 @@
 #include "tier0/platform.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlvector.h"
+#include "tier0/utldelegateimpl.h"
 #include "mathlib/vector.h"
 #include "mathlib/aabb.h"
 #include "vphysics2/handle_decl.h"
@@ -42,6 +43,7 @@ class CRnQueryCache;
 class Bounds3;
 class IMotionEvent;
 class IVPhysics2World;
+struct PhysicsContact_t;
 class ISceneViewDebugOverlays;
 class CCallQueue;
 class CCommand;
@@ -301,7 +303,8 @@ public:
 	virtual void RemovePreStepCallback( const void *pCallback ) = 0;
 	virtual void AddPostStepCallback( const void *pCallback ) = 0;
 	virtual void RemovePostStepCallback( const void *pCallback ) = 0;
-	virtual void unk143( const void *pCallbacks, void *pContext ) = 0;
+	// Called with every resolved contact of a shape that has its contact callback enabled, together with the context
+	virtual void SetContactCallback( const CUtlDelegate< void ( const PhysicsContact_t &contact, void *pContext ) > &callback, void *pContext ) = 0;
 
 	// Collision filtering of entity pairs
 	virtual bool DisableCollisionsOnEntityPair( uint32 nEntity1, uint32 nEntity2 ) = 0;
