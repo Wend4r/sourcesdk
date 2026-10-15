@@ -2742,6 +2742,53 @@ PLATFORM_INTERFACE EOSType Plat_GetOSType();
 PLATFORM_INTERFACE bool Plat_GetOSDescriptionString(char *buf, size_t size);
 PLATFORM_INTERFACE const char *GetNameFromOSType( EOSType type );
 
+PLATFORM_INTERFACE uint32 Plat_GetPlatformError();
+PLATFORM_INTERFACE bool Plat_GetComputerName( char *pBuffer, int nBufferSize );
+PLATFORM_INTERFACE bool Plat_GetUserName( char *pBuffer, int nBufferSize );
+
+PLATFORM_INTERFACE bool Plat_HasClipboardText();
+PLATFORM_INTERFACE char *Plat_GetClipboardText();
+PLATFORM_INTERFACE void Plat_SetClipboardText( const char *pszText );
+PLATFORM_INTERFACE void Plat_ClearClipboardText();
+
+PLATFORM_INTERFACE bool Plat_OpenURL( const char *pURL );
+// Registers pURLName as a URL protocol of the current user with its icon and open command
+PLATFORM_INTERFACE bool Plat_InstallUrlHandler( const char *pURLName, const char *pDefaultIcon, const char *pOpenCommand );
+
+struct V_uuid_t
+{
+	uint32 Data1;
+	uint16 Data2;
+	uint16 Data3;
+	uint8 Data4[ 8 ];
+};
+
+PLATFORM_INTERFACE void Plat_CreateUUIDImpl( V_uuid_t *pUuid, int (*pfnRand)( int, int ) );
+PLATFORM_INTERFACE void Plat_UUIDToString( const V_uuid_t *pUuid, char *pBuf, size_t nBufSize );
+PLATFORM_INTERFACE bool Plat_UUIDFromString( V_uuid_t *pUuid, const char *pBuf );
+
+typedef void *PlatRegistryKey_t;
+PLATFORM_INTERFACE bool Plat_RegistryDirectoryOpenOrCreate( const char *pRootKey, PlatRegistryKey_t &hKey );
+PLATFORM_INTERFACE void Plat_RegistryDirectoryClose( PlatRegistryKey_t &hKey );
+PLATFORM_INTERFACE int Plat_RegistryReadInt( PlatRegistryKey_t hKey, const char *pKey, int nDefaultValue );
+PLATFORM_INTERFACE void Plat_RegistryWriteInt( PlatRegistryKey_t hKey, const char *pKey, int nValue );
+PLATFORM_INTERFACE void Plat_RegistryReadString( PlatRegistryKey_t hKey, const char *pKey, char *pValue, int nValueBufferSize, const char *pDefaultValue );
+PLATFORM_INTERFACE void Plat_RegistryWriteString( PlatRegistryKey_t hKey, const char *pKey, const char *pValue );
+
+class CWindowedGameInstanceMutex;
+PLATFORM_INTERFACE CWindowedGameInstanceMutex *Plat_CreateGameInstanceMutex( const char *pGameName );
+PLATFORM_INTERFACE void Plat_DestroyGameInstanceMutex( CWindowedGameInstanceMutex *pMutex );
+PLATFORM_INTERFACE CWindowedGameInstanceMutex *Plat_GetLastGameInstanceMutex();
+
+struct GlobalListTypelessRegistry_t;
+PLATFORM_INTERFACE GlobalListTypelessRegistry_t *Plat_GetGlobalListRegistry( uint64 nUniqueHash );
+
+#ifdef PLATFORM_POSIX
+struct VSignalHandlerInfo_t;
+typedef bool (*FN_SignalHandler_t)( int nSignal, siginfo_t *pSignalInfo, void *pContext, VSignalHandlerInfo_t &info );
+PLATFORM_INTERFACE void Plat_RegisterSignalHandler( int nSignal, FN_SignalHandler_t pfnHandler, bool bUnregister );
+#endif
+
 
 //  Watchdog timer support. Call Plat_BeginWatchdogTimer( nn, issuer ) to kick the timer off.  if you don't call
 // Plat_EndWatchdogTimer within nn seconds, the program will kick off an exception.  This is for making
