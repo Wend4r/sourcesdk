@@ -154,11 +154,11 @@ struct VPhysContactImpactStrength_t
 	float m_flNormalImpact;
 };
 
-// The orientation IIkSolver::unk010, unk011, unk016 and unk017 return: a 16-byte class with one vector member, returned in
-// one vector register on Linux and through a hidden pointer on Windows. Only its size and alignment are known
-struct IkSolverUnk010_t
+// A quaternion the joint frame orientation getters of IIkSolver return: a 16-byte class with one vector member, returned in
+// one vector register on Linux and through a hidden pointer on Windows
+struct IkSolverOrientation_t
 {
-	fltx4 m_vValue;
+	fltx4 m_qOrientation;
 };
 
 // A target of IIkSolver::Solve
@@ -206,31 +206,28 @@ public:
 	// Principal inverse inertia, rotated into the solved transform of the joint
 	virtual Vector GetInvInertia( int nJoint ) const = 0;
 
-	virtual Vector unk005( int nJoint ) const = 0;
-	virtual Vector unk006( int nJoint, const CTransform &transform ) const = 0;
+	// Mass center of the body of the joint, in its space and placed at the given body transform
+	virtual Vector GetLocalMassCenter( int nJoint ) const = 0;
+	virtual Vector GetMassCenter( int nJoint, const CTransform &bodyTransform ) const = 0;
+
+	// Copied from the joint description and read by nothing else
 	virtual Vector unk007( int nJoint ) const = 0;
 
-	virtual CTransform unk008( int nJoint ) const = 0;
-	virtual CTransform unk009( int nJoint, const CTransform &transform ) const = 0;
+	// The reference frame of the joint in the space of the parent body, and placed at the given parent transform
+	virtual CTransform GetLocalReferenceFrame( int nJoint ) const = 0;
+	virtual CTransform GetReferenceFrame( int nJoint, const CTransform &parentTransform ) const = 0;
+	virtual IkSolverOrientation_t GetLocalReferenceOrientation( int nJoint ) const = 0;
+	virtual IkSolverOrientation_t GetReferenceOrientation( int nJoint, const IkSolverOrientation_t &parentOrientation ) const = 0;
+	virtual Vector GetLocalReferenceOrigin( int nJoint ) const = 0;
+	virtual Vector GetReferenceOrigin( int nJoint, const CTransform &parentTransform ) const = 0;
 
-	// Orientation of unk008; unk011 multiplies it with the given value
-	virtual IkSolverUnk010_t unk010( int nJoint ) const = 0;
-	virtual IkSolverUnk010_t unk011( int nJoint, const IkSolverUnk010_t &value ) const = 0;
-
-	// Position of unk008
-	virtual Vector unk012( int nJoint ) const = 0;
-	virtual Vector unk013( int nJoint, const CTransform &transform ) const = 0;
-
-	virtual CTransform unk014( int nJoint ) const = 0;
-	virtual CTransform unk015( int nJoint, const CTransform &transform ) const = 0;
-
-	// Same as unk010 and unk011 for unk014
-	virtual IkSolverUnk010_t unk016( int nJoint ) const = 0;
-	virtual IkSolverUnk010_t unk017( int nJoint, const IkSolverUnk010_t &value ) const = 0;
-
-	// Position of unk014
-	virtual Vector unk018( int nJoint ) const = 0;
-	virtual Vector unk019( int nJoint, const CTransform &transform ) const = 0;
+	// The attached frame of the joint in the space of its own body, and placed at the given body transform
+	virtual CTransform GetLocalAttachedFrame( int nJoint ) const = 0;
+	virtual CTransform GetAttachedFrame( int nJoint, const CTransform &bodyTransform ) const = 0;
+	virtual IkSolverOrientation_t GetLocalAttachedOrientation( int nJoint ) const = 0;
+	virtual IkSolverOrientation_t GetAttachedOrientation( int nJoint, const IkSolverOrientation_t &bodyOrientation ) const = 0;
+	virtual Vector GetLocalAttachedOrigin( int nJoint ) const = 0;
+	virtual Vector GetAttachedOrigin( int nJoint, const CTransform &bodyTransform ) const = 0;
 
 	// Limits in radians: the rotation about the z axis of the joint frame is clamped to the twist range,
 	// a positive swing limits the rotation away from that axis
