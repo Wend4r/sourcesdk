@@ -130,6 +130,7 @@ PLATFORM_INTERFACE void ThreadStartFuzzer();
 //-----------------------------------------------------------------------------
 // Waiting on several objects
 //-----------------------------------------------------------------------------
+class CThreadMultiWaitObject;
 class CThreadMultiWaitEvent;
 #ifdef PLATFORM_WINDOWS
 typedef void *ThreadMultiWaitItem_t;
@@ -140,9 +141,9 @@ typedef pollfd ThreadMultiWaitItem_t;
 
 struct ThreadMultiWaitExtra_t
 {
-	uint32 nFlags; // CThreadMultiWaitEvent type: 2 for auto-reset, 4 for manual-reset
+	uint32 nFlags; // CThreadMultiWaitObject type: 1 for a semaphore, 2 for an auto-reset event, 4 for a manual-reset event
 #ifdef PLATFORM_OSX
-	CThreadMultiWaitEvent *pEvent; // Its signalled state is reset under its mutex
+	CThreadMultiWaitObject *pObject; // Auto-reset events clear their signalled state under its mutex
 #endif
 };
 
@@ -156,7 +157,7 @@ struct ThreadMultiWaitObjectSet_t
 #endif
 };
 
-PLATFORM_INTERFACE ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( CThreadMultiWaitEvent **ppEvents, int nEvents );
+PLATFORM_INTERFACE ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( CThreadMultiWaitObject **ppObjects, int nObjects );
 PLATFORM_INTERFACE void ThreadMultiWaitObjectSetDestroy( ThreadMultiWaitObjectSet_t *pSet );
 PLATFORM_INTERFACE int ThreadMultiWaitObjectSetGetCount( ThreadMultiWaitObjectSet_t *pSet );
 // Waits on pSet, or on the nItems of pItems and pExtra when pSet is NULL; pSignalled receives a bit per signalled object, all of them with bWaitAll

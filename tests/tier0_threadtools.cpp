@@ -62,9 +62,9 @@ REGISTER_NAMED_TEST( "Thread.MultiWait", Thread_MultiWait )
 {
 	CThreadMultiWaitEvent autoReset( false );
 	CThreadMultiWaitEvent manualReset( true );
-	CThreadMultiWaitEvent *pEvents[] = { &autoReset, &manualReset };
+	CThreadMultiWaitObject *pObjects[] = { &autoReset, &manualReset };
 
-	ThreadMultiWaitObjectSet_t *pSet = ThreadMultiWaitObjectSetCreate( pEvents, 2 );
+	ThreadMultiWaitObjectSet_t *pSet = ThreadMultiWaitObjectSetCreate( pObjects, 2 );
 
 	TEST_NOT_NULL( pSet );
 	TEST_EQ( ThreadMultiWaitObjectSetGetCount( pSet ), 2 );
