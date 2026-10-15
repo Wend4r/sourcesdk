@@ -14,13 +14,34 @@
 #include <splitscreenslot.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
+#include <resourcesystem/resourcehandle.h>
 
 class CNavData;
+class CSceneObject;
+class InfoForResourceTypeCModel;
 class INavListener;
 class IToolGameSimulationAPI;
 class CEntityClass;
 class ISceneWorld;
 class IScreenshotCallback;
+class InfoForResourceTypeCTextureBase;
+class IToolObject;
+class Vector;
+class Vector4D;
+struct EconItemInfo_t;
+struct LightDesc_t;
+struct matrix3x4_t;
+struct ParticleProjectedTextureInfo_t;
+
+FORWARD_DECLARE_HANDLE( HDeferredLight );
+FORWARD_DECLARE_HANDLE( HProjectedTexture );
+
+// The 8-byte class IToolService::unk063 returns (zero without a game client, otherwise the result of ISource2Client::unk146),
+// in an integer register on Linux; only its size is known
+struct ToolServiceUnk063_t
+{
+	uint8 m_Data[ 8 ];
+};
 
 abstract_class IToolService : public IEngineService
 {
@@ -42,34 +63,36 @@ public:
 
 	virtual void *GetToolClientSimulationAPI() = 0;
 
-	// Forward to game client methods that are not identified yet
-	virtual void unk035() = 0;
-	virtual void unk036() = 0;
-	virtual void *unk037() = 0;
-	virtual void unk038() = 0;
-	virtual void unk039() = 0;
-	virtual void unk040() = 0;
-	virtual void unk041() = 0;
-	virtual void unk042() = 0;
-	virtual void unk043() = 0;
-	virtual void unk044() = 0;
-	virtual void unk045() = 0;
-	virtual void unk046() = 0;
+	// Forward to the game client
+	virtual void UpdateProjectedTexture( const ParticleProjectedTextureInfo_t &info, HProjectedTexture &hTexture ) = 0;
+	virtual void DeleteProjectedTexture( HProjectedTexture hTexture ) = 0;
+	virtual void *UpdateDeferredLight( ISceneWorld *pSceneWorld, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture, Vector &vecUnk1, float flUnk1, Vector4D &vecUnk2, float flUnk2, float flUnk3, float flUnk4, Vector vecUnk3, float flUnk5, float flUnk6, float flUnk7, float flUnk8, float flUnk9, HDeferredLight &hLight ) = 0;
+	virtual void DeleteDeferredLight( HDeferredLight hLight ) = 0;
+	virtual CSceneObject *UpdateStandardLight( ISceneWorld *pSceneWorld, const LightDesc_t &desc, HDeferredLight &hLight ) = 0;
+	virtual void DeleteStandardLight( HDeferredLight hLight ) = 0;
+	virtual CSceneObject *UpdateBarnLight( ISceneWorld *pSceneWorld, const void *pBarnLightDesc, const matrix3x4_t &transform, HDeferredLight &hLight ) = 0;
+	virtual void DeleteBarnLight( HDeferredLight hLight ) = 0;
+	// Forward to the game client
+	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
+	virtual void GetEconItemsInfoForCharacter( const char *pszCharacterName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void *unk047() = 0;
 	// 1.0 without a game client
-	virtual float unk048() = 0;
-	virtual float unk049() = 0;
+	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
+	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
 	virtual void unk050() = 0;
 	virtual bool unk051() = 0;
 	virtual void unk052() = 0;
 	virtual void unk053() = 0;
-	virtual void unk054() = 0;
-	virtual bool unk055() = 0;
-	virtual void unk056() = 0;
+	virtual void UpdateGlobalLightFromLightInfos( IToolObject *pUnk, const CUtlVector< IToolObject * > &lightInfos, const Vector &vecUnk, int nUnk, float flUnk1, float flUnk2, float flUnk3 ) = 0;
+	virtual bool GetGlobalLightParameters( int *pnUnk, float *pflUnk1, float *pflUnk2 ) = 0;
+	virtual void *GetEconItemSystem_Client() = 0;
 
-	virtual void *GetEconItemSystem() = 0;
+	// Forwards to the game server
+	virtual void *GetEconItemSystem_Server() = 0;
 
-	virtual void *unk058() = 0;
+	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 
 	virtual void unk059() = 0;
 	virtual void unk060() = 0;
@@ -78,13 +101,12 @@ public:
 
 	// Forward to the game client
 	virtual void *unk062() = 0;
-	// Returns an 8-byte value by value
-	virtual void unk063() = 0;
-	// The game client reports a valid local player entity handle
-	virtual bool unk064() = 0;
+	virtual ToolServiceUnk063_t unk063() = 0;
+	// The game client reports a valid local player pawn handle
+	virtual bool HasLocalPlayerPawn() = 0;
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
-	virtual void *unk066( CSplitScreenSlot nSlot ) = 0;
+	virtual void *GetPlayerViewSetup( CSplitScreenSlot nSlot ) = 0;
 	// -1.0 without a connected client
 	virtual float unk067( CSplitScreenSlot nSlot ) = 0;
 
@@ -121,9 +143,9 @@ public:
 	virtual void unk087() = 0;
 	virtual void unk088() = 0;
 
-	// Forward to the game client; unk090 does nothing for 0
-	virtual void *unk089() = 0;
-	virtual void unk090( uint16 nUnk ) = 0;
+	// Forward to the game client; the second one does nothing for 0
+	virtual uint16 AllocateMouth( int nUnk ) = 0;
+	virtual void FreeMouth( uint16 nMouth ) = 0;
 };
 
 #endif // ITOOLSERVICE_H

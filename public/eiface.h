@@ -477,7 +477,7 @@ public:
 	// Called when the broadcast relay answers an HLTV broadcast request with HTTP 200.
 	virtual void			OnBroadcastRelayRequestSucceeded( void *pUnk ) = 0;
 	virtual void			SendServerFrameTime( float flFrameTime ) = 0;
-	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nUnk ) = 0;
+	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nDelay ) = 0;
 	virtual void			OnClientHltvReplayStop( CPlayerSlot slot ) = 0;
 
 	// Called by the VConsole2 flattened serializer view for each network field of an entity. Rewrites the value text of entity and resource handles and appends notes, such as pose parameter names.
@@ -491,7 +491,8 @@ public:
 	// Called for FCVAR_GAMEDLL commands sent by a client. Returns false when the command is not a registered player controller command. 
 	// Otherwise queues it to the controller as a predicted string command event.
 	virtual bool			ProcessClientStringCommand( CPlayerSlot slot, const CCommand &args, uint32 nPredictionSync ) = 0;
-	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nUnk, const char *pCommand ) = 0;
+	// nQueuedMatchPlayers is the number of entries in the engine's queued match player reservation list
+	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nQueuedMatchPlayers, const char *pCommand ) = 0;
 	virtual void			SetPlayerTeammatePreferredColor( uint32 uiAccountID, int nColor ) = 0;
 	virtual void			UpdateCompTeammateColors( void ) = 0;
 
@@ -574,7 +575,7 @@ public:
 
 	virtual bool			AllowPlayerToTakeOverBots() = 0;
 
-	virtual void			Unk_OnClientFullyConnect( void *p ) = 0;
+	virtual void			OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
 
 	virtual void		GetHostStateLoopModeInfo( HostStateLoopModeType_t type, CUtlString &loopModeName, KeyValues **ppLoopModeOptions ) = 0;
 
@@ -629,13 +630,13 @@ public:
 
 	// Called when the client attempts to connect (doesn't get called for bots)
 	// returning false would reject the connection with the pRejectReason message
-	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason ) = 0;
+	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool bLoadGame, CBufferString *pRejectReason ) = 0;
 
 	// Client is connected and should be put in the game
 	// type values could be:
 	// 0 - player
 	// 1 - fake player (bot)
-	// 2 - unknown
+	// 2 - SourceTV client
 	virtual void			ClientPutInServer( CPlayerSlot slot, char const *pszName, int type, uint64 xuid ) = 0;
 
 	// Client is going active
@@ -654,8 +655,8 @@ public:
 	// The client has typed a command at the console
 	virtual void			ClientCommand( CPlayerSlot slot, const CCommand &args ) = 0;
 
-	// Stores the entity baseline / string table data buffer pointer on the player controller.
-	virtual void			ClientStringTableData( CPlayerSlot slot, void *pData ) = 0;
+	// Called with the client's user info convar data whenever the engine allocates or resizes it; stored on the player controller.
+	virtual void			ClientStringTableData( CPlayerSlot slot, ConVarUserInfoSet_t userInfo ) = 0;
 
 	// A player changed one/several replicated cvars (name etc)
 	virtual void			ClientSettingsChanged( CPlayerSlot slot ) = 0;

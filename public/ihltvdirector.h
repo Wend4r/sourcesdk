@@ -13,6 +13,11 @@
 class IHLTVServer;
 class KeyValues;
 class Vector;
+class CSteamID;
+class INetworkMessageInternal;
+class CNetMessage;
+class bf_write;
+struct NetMessageInfo_t;
 
 #define INTERFACEVERSION_HLTVDIRECTOR			"Source2GameDirector001"
 
@@ -36,14 +41,17 @@ public:
 
 	virtual const char**	GetModEvents() = 0;
 
-	virtual void	Unk_SendVersionInfo( void *p ) = 0;
-	virtual void	Unk_OnHLTVClientDisconnect( void *p ) = 0;
-	// Returns -1; no caller found.
-	virtual int		unk013() = 0;
+	// Broadcasts the hltv_versioninfo event
+	virtual void	OnStartRecording() = 0;
+	// Empty in the server
+	virtual void	OnHLTVClientDisconnect( void *p ) = 0;
+	// Returns -1 in the base director
+	virtual int		GetDirectorCameraEventId() = 0;
 	virtual void	SendTitle( int nPlayerSlot ) = 0;
-	virtual void	Unk_SendChat( void *p ) = 0;
-	virtual void	Unk_OnHLTVUncompressedSnapshot( int nPlayerSlot, void *p ) = 0;
-	virtual void	unk017( const void *pNetMessageInfo, const void *pNetMessage ) = 0;
+	// Builds the hltv_chat event message that the TV clients relay to the other TV clients
+	virtual void	CreateLocalChatMessage( const CSteamID &steamIDTalker, const char *pszName, const char *pszChat, INetworkMessageInternal *&pOutMessage, CNetMessage *&pOutData ) = 0;
+	virtual void	OnHLTVUncompressedSnapshot( int nPlayerSlot, bf_write &buf ) = 0;
+	virtual void	OnHLTVNetMessage( const NetMessageInfo_t *pInfo, const CNetMessage *pData ) = 0;
 	// Per-frame director update driven by the HLTV server.
 	virtual void	unk018( float flUnk ) = 0;
 };

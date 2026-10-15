@@ -13,10 +13,22 @@
 #include <engine/IEngineService.h>
 #include <splitscreenslot.h>
 #include <spawngrouptypes.h>
+#include <rendersystem/rendersystemtypes.h>
 
-class IRenderHandler;
 class ISceneWorld;
+class ISource2WorldSession;
 struct EventClientPreOutput_t;
+
+// Installed with InstallRenderHandler
+abstract_class IRenderHandler
+{
+public:
+	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime, const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) = 0;
+	// Returns false in the game UI service
+	virtual bool unk001() = 0;
+	// Empty in the game UI service
+	virtual void unk002() = 0;
+};
 
 abstract_class IRenderService : public IEngineService
 {
@@ -29,14 +41,15 @@ public:
 
 	virtual CUtlStringToken GetRenderingPipeline() = 0;
 
-	virtual bool unk027() = 0;
+	virtual RenderMultisampleType_t GetMultisampleType() = 0;
 
-	virtual void GetSplitScreenViewport( const void *pViewport, int nSlot, void *pOutViewport ) = 0;
+	virtual void GetSplitScreenViewport( const RenderViewport_t &viewport, CSplitScreenSlot nSlot, RenderViewport_t *pOutViewport ) = 0;
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) = 0;
 
-	virtual void *Unk_FindOrCreateWorldSession( void *p ) = 0;
+	// Creates a rendering world session per name; the second string is stored in the new session and the last argument is unused
+	virtual ISource2WorldSession *FindOrCreateWorldSession( const char *pszName, const char *pszUnk, void *pUnused ) = 0;
 
 	virtual void LaunchAsyncBeginRenderingViewsJob( const EventClientPreOutput_t &event, bool bAddViews ) = 0;
 	virtual bool FinishAsyncBeginRenderingViewsJob( bool *pbAddedViews ) = 0;

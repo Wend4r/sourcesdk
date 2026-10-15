@@ -23,6 +23,7 @@
 struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;
 class IAddonListChangeNotify;
+class CDebugVisualizerMgr;
 
 schema struct EventClientOutput_t
 {
@@ -38,7 +39,7 @@ schema struct EventClientOutput_t
 abstract_class IEngineService : public IAppSystem
 {
 public:
-	virtual void		*GetServiceDependencies( void ) = 0;
+	virtual const EngineServiceDependencies_t *GetServiceDependencies( void ) = 0;
 	virtual const char	*GetName( void ) const = 0;
 	virtual EngineServiceActivateType_t ShouldActivate( const char * ) = 0;
 	virtual void		OnLoopActivate( const EngineLoopState_t &loopState, CEventDispatcher<CEventIDManager_Default> *pEventDispatcher) = 0;
@@ -56,7 +57,7 @@ struct ActiveLoopInfo_t
 {
 	CUtlString m_LoopName;
 	CUtlString m_AddonName;
-	uint32 m_nUnk010;
+	uint32 m_unRequestId;
 	KeyValues *m_pLoopOptions;
 	bool m_bValid;
 };
@@ -74,15 +75,17 @@ public:
 	virtual PlatWindow_t	GetEngineWindow( void ) const = 0;
 	virtual SwapChainHandle_t	GetEngineSwapChain( void ) const = 0;
 	virtual InputContextHandle_t GetEngineInputContext( void ) const = 0;
-	virtual void		*GetEngineDeviceInfo( void ) const = 0;
+	// Swap chain info of the engine swap chain, from the render device
+	virtual const RenderDeviceInfo_t &GetEngineDeviceInfo( void ) const = 0;
 	virtual int			GetEngineDeviceWidth( void ) const = 0;
 	virtual int			GetEngineDeviceHeight( void ) const = 0;
 	virtual void		GetEngineSwapChainSize( int *pWidth, int *pHeight ) const = 0;
-	virtual bool		unk025( void ) const = 0;
 	virtual bool		IsLoopSwitchQueued( void ) const = 0;
 	virtual bool		IsLoopSwitchRequested( void ) const = 0;
+	// Whether the int that ExitMainLoop sets is non-zero
+	virtual bool		unk027( void ) const = 0;
 	virtual CEventDispatcher<CEventIDManager_Default> *GetEventDispatcher( void ) = 0;
-	virtual void		*GetDebugVisualizerMgr( void ) = 0;
+	virtual CDebugVisualizerMgr *GetDebugVisualizerMgr( void ) = 0;
 	virtual int			GetActiveLoopClientServerMode( void ) const = 0;
 	virtual void		PrintStatus( void ) = 0;
 	// Writes m_bValid = false when no loop is active.
