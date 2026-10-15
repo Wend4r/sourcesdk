@@ -173,4 +173,17 @@ public:
 };
 #endif // _MINIMUM_BUILD_
 
+// SHA1 hash as a hex string
+class CSHAStr
+{
+public:
+	DLL_CLASS_IMPORT CSHAStr( const SHADigest_t &digest );
+
+	const char *Get() const { return m_szHash; }
+	operator const char *() const { return m_szHash; }
+
+private:
+	char m_szHash[ k_cchHash ];
+};
+
 #endif // CHECKSUM_SHA1_H
