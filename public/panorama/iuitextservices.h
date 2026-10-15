@@ -21,6 +21,8 @@ namespace panorama
 class IUITextLayout;
 class IUITextTextureCache;
 class IUITextLayoutDrawCache;
+class IUITextTextureProvider;
+class IUITextTextureStorage;
 
 abstract_class IUITextServices : public IAppSystem
 {
@@ -34,15 +36,17 @@ public:
 
 	virtual bool RegisterCustomFontFile( const char *pszFullPath, const char *pszFileName ) = 0;
 
-	virtual IUITextLayout *CreateTextLayout( const void *pText, int nTextBytes, int nCharCount, uint8 nEncoding, const void *pLayoutParams, void *pUnk ) = 0;
+	// nTextBytes includes the terminator, nEncoding is 1 for UTF-8, 2 for UTF-16 and 3 for UTF-32.
+	// pFontMetrics, when not NULL, receives the font ascent, descent and line height (floats) and two flags
+	virtual IUITextLayout *CreateTextLayout( const void *pText, int nTextBytes, int nCharCount, uint8 nEncoding, const void *pLayoutParams, void *pFontMetrics ) = 0;
 	virtual void FreeTextLayout( IUITextLayout *pLayout ) = 0;
 
 	virtual const CUtlVector< CUtlString > &GetSortedValidFontNames() = 0;
 
-	virtual IUITextTextureCache *CreateTextTextureCache( void *pSurface ) = 0;
+	virtual IUITextTextureCache *CreateTextTextureCache( IUITextTextureProvider *pProvider ) = 0;
 	virtual void DestroyTextTextureCache( IUITextTextureCache *pCache ) = 0;
 
-	virtual IUITextLayoutDrawCache *CreateTextLayoutDrawCache( void *pSurface ) = 0;
+	virtual IUITextLayoutDrawCache *CreateTextLayoutDrawCache( IUITextTextureStorage *pStorage ) = 0;
 	virtual void DestroyTextLayoutDrawCache( IUITextLayoutDrawCache *pCache ) = 0;
 
 	virtual void SetJapaneseLineBreaking( bool bEnabled ) = 0;
