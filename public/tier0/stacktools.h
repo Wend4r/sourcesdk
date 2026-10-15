@@ -33,6 +33,8 @@ PLATFORM_INTERFACE int GetCallStack( void **pReturnAddressesOut, int iArrayCount
 //ONLY WORKS IF THE CRAWLED PORTION OF THE STACK DISABLES FRAME POINTER OMISSION (/Oy-)  "vpc /nofpo"
 PLATFORM_INTERFACE int GetCallStack_Fast( void **pReturnAddressesOut, int iArrayCount, int iSkipCount );
 
+PLATFORM_INTERFACE int Plat_GetRawCallStack( void **pReturnAddressesOut, int nArrayCount, int nSkipCount );
+
 typedef int (*FN_GetCallStack)( void **pReturnAddressesOut, int iArrayCount, int iSkipCount );
 
 //where we'll find our PDB's for win32.

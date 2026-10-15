@@ -87,6 +87,9 @@ typedef uintp (*ThreadFunc_t)( void *pParam );
 PLATFORM_INTERFACE ThreadHandle_t CreateSimpleThread( ThreadFunc_t, void *pParam, unsigned stackSize = 0 );
 PLATFORM_INTERFACE bool ReleaseThreadHandle( ThreadHandle_t );
 
+enum SpecialThreadID_t : uint32;
+PLATFORM_INTERFACE uintp Plat_HookSpecialThread( SpecialThreadID_t specialThreadID, ThreadFunc_t pfnCallback, void *pParam, size_t nReplacementThreadStackSize, const char *pszReplacementThreadName, size_t nDuplicateParamSize );
+
 
 //-----------------------------------------------------------------------------
 
