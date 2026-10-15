@@ -33,6 +33,7 @@ class CGameSaveRestoreInfo;
 class CSaveRestoreLoggingInfo;
 class CEntityInstance;
 class CEntityHandle;
+class CEntityIndex;
 class CBufferString;
 class KeyValues3;
 class CKV3MemberName;
@@ -116,46 +117,50 @@ abstract_class CDefSaveRestoreBlockHandler : public ISaveRestoreBlockHandler
 // ISave
 //
 // Builds the KeyValues3 tree of a save through a KV3 transfer context: blocks are
-// named members of the current target and arrays hold one table per element
+// named members of the current block and arrays hold one table per element
 //
 //-----------------------------------------------------------------------------
 
 abstract_class ISave : public CMutableRefCounted< CMutableRefCountBase< CRefMT > >
 {
 public:
-	// Starts a member of the current target and makes it the target, bReuseExisting
+	// Starts a member of the current block and makes it the current block, bReuseExisting
 	// takes a member that was already saved instead of failing with a double save
 	virtual void StartBlock( const CKV3MemberName &name, bool bReuseExisting ) = 0;
 	virtual void EndBlock() = 0;
 
 	virtual CGameSaveRestoreInfo *GetGameSaveRestoreInfo() = 0;
 	virtual CSaveRestoreLoggingInfo *GetSaveRestoreLogging() = 0;
-	virtual CSaveRestoreData *unk006() = 0;
-	virtual int unk007() = 0;
+	virtual CSaveRestoreData *GetSaveRestoreData() = 0;
+
+	// The save file version (129) written after the file id
+	virtual int GetSaveVersion() = 0;
 
 	// The base tick of the game save restore info
-	virtual int unk008() = 0;
+	virtual int GetBaseTick() = 0;
 
 	// KV3 transfers skip a field while unk010 returns true, unless the field asks otherwise
 	virtual void unk009( bool bUnknown ) = 0;
 	virtual bool unk010() = 0;
 
-	virtual bool unk011() = 0;
-	virtual bool unk012() = 0;
-	virtual bool unk013() = 0;
+	// The kind of the save: an autosave (also a dangerous one), a quicksave, or a save
+	// that carries a level transition
+	virtual bool IsAutosave() = 0;
+	virtual bool IsQuicksave() = 0;
+	virtual bool IsLevelTransition() = 0;
 
-	// The entity being saved, set by unk016
-	virtual CEntityInstance *unk014() = 0;
-	virtual CEntityInstance *unk015() = 0;
-	virtual void unk016( CEntityInstance *pEntity ) = 0;
+	// The entity being saved, SetCurrentEntity also matches it against the logging filter
+	virtual CEntityInstance *GetCurrentEntity() = 0;
+	virtual const CEntityInstance *GetCurrentEntity() const = 0;
+	virtual void SetCurrentEntity( CEntityInstance *pEntity ) = 0;
 
-	// Index of the resource name in the symbol table of the game save restore info
-	virtual int unk017( const CBufferString &sName ) = 0;
+	// Index of the resource in the resource list of the game save restore info, added when missing
+	virtual int FindOrAddResource( const CBufferString &sName ) = 0;
 
 	// Index of the entity in the entity table, -1 if it is not saved
 	virtual int EntityIndex( const CEntityInstance *pEntity ) = 0;
 	virtual int EntityIndex( CEntityHandle hEntity ) = 0;
-	virtual int unk020( int nEntityIndex ) = 0;
+	virtual int EntityIndexFromEntIndex( int nEntIndex ) = 0;
 
 	// Rebase a time or a tick to the base of the game save restore info
 	virtual float WriteTime( float flTime ) = 0;
@@ -164,28 +169,26 @@ public:
 	// True when every byte of the data is zero
 	virtual bool DataEmpty( const char *pData, int nSize ) = 0;
 
-	// The current target
-	virtual KeyValues3 *unk024() = 0;
+	virtual KeyValues3 *GetCurrentBlock() = 0;
 
-	// Makes the current target an array of nCount tables, if nCount is above 1
-	virtual void unk025( int nCount ) = 0;
+	// Makes the current block an array of nCount tables, if nCount is above 1
+	virtual void SetArrayCount( int nCount ) = 0;
 
 	// Like StartBlock, and makes the member an array of nCount tables if nCount is above 1 or bArray is set
-	virtual void unk026( const CKV3MemberName &name, int nCount, bool bArray ) = 0;
+	virtual void StartArrayBlock( const CKV3MemberName &name, int nCount, bool bArray ) = 0;
 
-	// Make element nIndex of the current target the target, unk028 only if the target is an array
-	virtual void unk027( int nIndex ) = 0;
-	virtual bool unk028( int nIndex ) = 0;
+	// Make element nIndex of the current block the current block, TryStartArrayElement
+	// only if the current block is an array
+	virtual void StartArrayElement( int nIndex ) = 0;
+	virtual bool TryStartArrayElement( int nIndex ) = 0;
+	virtual void EndArrayElement() = 0;
+	virtual void EndArrayBlock() = 0;
 
-	// End unk028 and unk026
-	virtual void unk029() = 0;
-	virtual void unk030() = 0;
+	// MarkBlock remembers the current block, IsAtMarkedBlock tells whether it is still current
+	virtual KeyValues3 *MarkBlock() = 0;
+	virtual bool IsAtMarkedBlock() = 0;
 
-	// unk031 remembers the current target, unk032 tells whether it is still the target
-	virtual KeyValues3 *unk031() = 0;
-	virtual bool unk032() = 0;
-
-	virtual CKV3TransferSaveContext *unk033() = 0;
+	virtual CKV3TransferSaveContext *GetTransferContext() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -199,11 +202,11 @@ public:
 abstract_class IRestore : public CMutableRefCounted< CMutableRefCountBase< CRefMT > >
 {
 public:
-	// Makes the member of the current target the target, null when it is missing
+	// Makes the member of the current block the current block, null when it is missing
 	virtual void StartBlock( const CKV3MemberName &name ) = 0;
 
-	// Like StartBlock unless the current target is an array, false when the member is missing
-	virtual bool unk003( const CKV3MemberName &name ) = 0;
+	// Like StartBlock unless the current block is an array, false when the member is missing
+	virtual bool TryStartBlock( const CKV3MemberName &name ) = 0;
 	virtual void EndBlock() = 0;
 
 	// KV3 transfers skip global fields in global mode
@@ -212,53 +215,53 @@ public:
 
 	virtual CGameSaveRestoreInfo *GetGameSaveRestoreInfo() = 0;
 	virtual CSaveRestoreLoggingInfo *GetSaveRestoreLogging() = 0;
-	virtual CSaveRestoreData *unk009() = 0;
-	virtual int unk010() = 0;
+	virtual CSaveRestoreData *GetSaveRestoreData() = 0;
 
+	// The save file version (129) read after the file id
+	virtual int GetSaveVersion() = 0;
+
+	// The same flag as ISave::unk009 and ISave::unk010
 	virtual void unk011( bool bUnknown ) = 0;
 	virtual bool unk012() = 0;
 
-	// The entity being restored, set by unk015
-	virtual CEntityInstance *unk013() = 0;
-	virtual CEntityInstance *unk014() = 0;
-	virtual void unk015( CEntityInstance *pEntity ) = 0;
+	// The entity being restored, SetCurrentEntity also matches it against the logging filter
+	virtual CEntityInstance *GetCurrentEntity() = 0;
+	virtual const CEntityInstance *GetCurrentEntity() const = 0;
+	virtual void SetCurrentEntity( CEntityInstance *pEntity ) = 0;
 
-	virtual void *unk016() = 0;
+	// The object read from the "Save Header" member by the entity block handler
+	virtual void *GetSaveHeader() = 0;
 
-	// The entity of an index in the entity table, unk018 gives its handle and unk019 its entity index
+	// The entity of an index in the entity table, null if there is none
 	virtual CEntityInstance *EntityFromIndex( int nIndex ) = 0;
-	// MSVC orders these two the other way
-#ifdef _WIN32
-	virtual int unk019( int nIndex ) = 0;
-	virtual CEntityHandle unk018( int nIndex ) = 0;
-#else
-	virtual CEntityHandle unk018( int nIndex ) = 0;
-	virtual int unk019( int nIndex ) = 0;
-#endif
+
+	// The handle bits of that entity, -1 if there is none
+	virtual uint32 EntityHandleFromIndex( int nIndex ) = 0;
+
+	// The entity index of that entity
+	virtual CEntityIndex EntIndexFromIndex( int nIndex ) = 0;
 
 	// Rebase a time or a tick from the base of the game save restore info
 	virtual float ReadTime( float flTime ) = 0;
 	virtual int ReadTick( int nTick ) = 0;
 
-	// The current target
-	virtual KeyValues3 *unk022() = 0;
+	virtual KeyValues3 *GetCurrentBlock() = 0;
 
 	// Like StartBlock, returns the element count of an array, else whether the member is present
-	virtual int unk023( const CKV3MemberName &name ) = 0;
+	virtual int StartArrayBlock( const CKV3MemberName &name ) = 0;
 
-	// Make element nIndex of the current target the target, unk025 only if the target is an array
-	virtual void unk024( int nIndex ) = 0;
-	virtual bool unk025( int nIndex ) = 0;
+	// Make element nIndex of the current block the current block, TryStartArrayElement
+	// only if the current block is an array
+	virtual void StartArrayElement( int nIndex ) = 0;
+	virtual bool TryStartArrayElement( int nIndex ) = 0;
+	virtual void EndArrayElement() = 0;
+	virtual void EndArrayBlock() = 0;
 
-	// End unk025 and unk023
-	virtual void unk026() = 0;
-	virtual void unk027() = 0;
+	// MarkBlock remembers the current block, IsAtMarkedBlock tells whether it is still current
+	virtual KeyValues3 *MarkBlock() = 0;
+	virtual bool IsAtMarkedBlock() = 0;
 
-	// unk028 remembers the current target, unk029 tells whether it is still the target
-	virtual KeyValues3 *unk028() = 0;
-	virtual bool unk029() = 0;
-
-	virtual CKV3TransferLoadContext *unk030() = 0;
+	virtual CKV3TransferLoadContext *GetTransferContext() = 0;
 };
 
 //-----------------------------------------------------------------------------
