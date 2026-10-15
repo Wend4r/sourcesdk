@@ -791,12 +791,80 @@ typedef CThreadSpinMutex CThreadFastMutex;
 //-----------------------------------------------------------------------------
 class CAtomicSemaphore
 {
+public:
+	CAtomicSemaphore( uint32 nInitialCount = 0 ) : m_nCount( nInitialCount ), m_nWaiters( 0 ) {}
+
+	// Takes one count, spinning a while before it sleeps until one is released
+	void Wait()
+	{
+		uint32 nCount = m_nCount;
+
+		for ( ;; )
+		{
+			if ( nCount == 0 )
+			{
+				for ( uint32 nSpin = 0; nSpin < 64 && nCount == 0; nSpin++ )
+				{
+					ThreadSpin( 1u << MIN( nSpin, 8u ) );
+					nCount = m_nCount;
+				}
+
+				while ( nCount == 0 )
+				{
+					DoWait();
+					nCount = m_nCount;
+				}
+			}
+
+			const uint32 nPrevCount = ThreadInterlockedCompareExchange( &m_nCount, nCount - 1, nCount );
+
+			if ( nPrevCount == nCount )
+				return;
+
+			nCount = nPrevCount;
+		}
+	}
+
+	// Takes one count if one is available
+	bool TryWait()
+	{
+		uint32 nCount = m_nCount;
+
+		while ( nCount > 0 )
+		{
+			const uint32 nPrevCount = ThreadInterlockedCompareExchange( &m_nCount, nCount - 1, nCount );
+
+			if ( nPrevCount == nCount )
+				return true;
+
+			nCount = nPrevCount;
+		}
+
+		return false;
+	}
+
+	// Adds nCount counts and wakes up to as many waiting threads
+	void Release( uint32 nCount = 1 )
+	{
+		ThreadInterlockedExchangeAdd( &m_nCount, nCount );
+
+		const uint32 nWaiters = m_nWaiters;
+
+		if ( nWaiters != 0 )
+			ThreadAtomicNotifyN( const_cast< const uint32 * >( &m_nCount ), MIN( nWaiters, nCount ) );
+	}
+
+	uint32 GetCount() const { return m_nCount; }
+
 private:
 	// Waits on m_nCount while it is zero, counting the thread in m_nWaiters
 	DLL_CLASS_IMPORT void DoWait();
 
 	volatile uint32 m_nCount;
 	volatile uint32 m_nWaiters;
+
+	CAtomicSemaphore( const CAtomicSemaphore & ) = delete;
+	CAtomicSemaphore &operator=( const CAtomicSemaphore & ) = delete;
 };
 
 //-----------------------------------------------------------------------------
