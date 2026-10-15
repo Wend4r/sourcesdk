@@ -20,8 +20,6 @@ class IPhysicsShape;
 class CBufferString;
 class CRnContact;
 
-struct PhysicsContact_t;
-
 // A contact point; the points are relative to the bodies of the two shapes
 struct ManifoldPoint_t
 {
@@ -46,6 +44,19 @@ struct Manifold_t
 	uint8 m_pad01C[ 36 ];
 
 	ManifoldPoint_t m_Points[ 4 ];
+};
+
+// The shapes and the manifolds of a contact. The manifolds are a reference counted block (the reference count, the manifold count
+// and the manifolds); IPhysicsShape::GetContacts releases the references of the old elements before it fills the vector again
+struct PhysicsContact_t
+{
+	IPhysicsShape *m_pShape1;
+	IPhysicsShape *m_pShape2;
+
+	// Zeroed together with the contact
+	uint8 m_pad010[ 8 ];
+
+	void *m_pManifolds;
 };
 
 // The manifolds of a contact, returned in two integer registers on Linux

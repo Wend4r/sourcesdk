@@ -466,8 +466,8 @@ public:
 	virtual int GetIndexInWorld() const = 0;
 	virtual bool unk042() const = 0;
 
-	// The sums of IPhysicsShape::unk033 over the shapes of the body
-	virtual PhysicsShapeUnk033_t unk043() const = 0;
+	// The sums of IPhysicsShape::GetContactCounts over the shapes of the body
+	virtual PhysicsShapeContactCounts_t unk043() const = 0;
 
 	virtual void OutputDebugInfo() const = 0;
 

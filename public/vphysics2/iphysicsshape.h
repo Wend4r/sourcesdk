@@ -22,21 +22,44 @@
 
 class IPhysicsBody;
 class CGJKProxy;
+class CRnContact;
 struct Ray_t;
 struct RnCollisionAttr_t;
 struct RnMassProperties_t;
+struct PhysicsContact_t;
 
-// The 16-byte result of IPhysicsShape::unk026: the support point of the shape in the given direction and one more float,
-// four floats returned in two vector registers on Linux. Only its size is known
-struct PhysicsShapeUnk026_t
+// The farthest point of a shape along a direction
+struct PhysicsShapeSupport_t
 {
-	float m_flData[ 4 ];
+	Vector m_vPoint;
+
+	// The distance of the point along the direction
+	float m_flDistance;
 };
 
-// The 20-byte sums IPhysicsShape::unk033 returns over the contacts of the shape (five 32-bit counters); only its size is known
-struct PhysicsShapeUnk033_t
+// Counters over the contacts of a shape; a point touches when its separation is not positive
+struct PhysicsShapeContactCounts_t
 {
-	uint32 m_nData[ 5 ];
+	int m_nContactCount;
+
+	// Contacts with a touching point against a static body
+	int m_nStaticTouchingContactCount;
+
+	int m_nPointCount;
+	int m_nTouchingPointCount;
+	int m_nManifoldCount;
+};
+
+// The part of a shape below the plane z = 0 of a frame
+struct PhysicsShapeSubmergedVolume_t
+{
+	// The centroid of the submerged part multiplied by its volume
+	Vector m_vWeightedCentroid;
+
+	float m_flSubmergedVolume;
+
+	// The volume of the whole shape
+	float m_flVolume;
 };
 
 abstract_class IPhysicsShape
@@ -50,7 +73,7 @@ public:
 	virtual PhysicsShapeType_t GetType() const = 0;
 
 	// Describes the shape as a generic query shape; the type is stored at the end, as in Ray_t
-	virtual bool GetGenericShape( Ray_t *pShape ) const = 0;
+	virtual bool GetGenericShape( Ray_t &shape ) const = 0;
 
 	// bUpdateMass recomputes the mass properties of the body when the density changes
 	virtual bool SetMaterial( const RnMaterial_t &material, bool bUpdateMass ) = 0;
@@ -68,22 +91,21 @@ public:
 	// Takes the interacts-as layers, the collision group and the detail layers of the given attributes as overrides
 	virtual void SetCollisionAttributeOverrides( const RnCollisionAttr_t &attributes ) = 0;
 
-	virtual bool CastRay( CShapeCastResult *pResult, const Vector &vStart, const Vector &vDelta, float flUnknown ) const = 0;
+	virtual bool CastRay( CShapeCastResult &result, const Vector &vStart, const Vector &vDelta, float flUnknown ) const = 0;
 
 	// A radius below FLT_EPSILON casts a ray
-	virtual bool CastSphere( CShapeCastResult *pResult, const Vector &vStart, const Vector &vDelta, float flRadius, float flUnknown ) const = 0;
+	virtual bool CastSphere( CShapeCastResult &result, const Vector &vStart, const Vector &vDelta, float flRadius, float flUnknown ) const = 0;
 
 	// Both convert the transform and forward to shape casts; the rest of the arguments is not recovered
 	virtual void unk015( void *p, const matrix3x4_t &transform ) = 0;
 	virtual void unk016( void *p, const matrix3x4_t &transform ) = 0;
 
-	// Point within a distance of the shape
-	virtual bool unk017( void *p ) = 0;
-
-	// Overlap tests through the same shape routine, with the shape placed by a matrix or by a transform
-	virtual bool unk018( const matrix3x4_t &transform, const void *p ) = 0;
-	virtual bool unk018( const CTransform &transform, const void *p ) = 0;
-	virtual bool unk020( const void *p1, const void *p2 ) = 0;
+	// Overlap tests of the shape, MSVC lays the group out in reverse order: against a sphere, against bounds with the shape
+	// placed by a matrix or by a transform, and against a query whose type is not recovered with the shape placed by a transform
+	virtual bool Overlaps( const Vector &vCenter, float flRadius ) = 0;
+	virtual bool Overlaps( const matrix3x4_t &transform, const AABB_t &bounds ) = 0;
+	virtual bool Overlaps( const CTransform &transform, const AABB_t &bounds ) = 0;
+	virtual bool Overlaps( const CTransform &transform, const void *p ) = 0;
 
 	// Projects the point onto the surface; points inside are returned unchanged
 	virtual Vector GetClosestPoint( const Vector &vPoint ) const = 0;
@@ -98,27 +120,27 @@ public:
 	virtual AABB_t GetWorldBounds() const = 0;
 
 	// MSVC groups these overloads in reverse order; the second one places the shape at the transform
-	virtual PhysicsShapeUnk026_t unk026( const Vector &vDirection ) = 0;
-	virtual PhysicsShapeUnk026_t unk026( const CTransform &transform, const Vector &vDirection ) = 0;
+	virtual PhysicsShapeSupport_t GetSupport( const Vector &vDirection ) = 0;
+	virtual PhysicsShapeSupport_t GetSupport( const CTransform &transform, const Vector &vDirection ) = 0;
 
 	// Support mapping of the shape for the GJK queries
 	virtual CGJKProxy GetGJKProxy() const = 0;
 	virtual float GetVolume() const = 0;
 
-	// A constant for a sphere, a stored vector for a hull or a mesh
-	virtual Vector unk030() = 0;
+	// pi / 4 on every axis for a sphere, the stored areas of a hull or a mesh
+	virtual Vector GetOrthographicAreas() = 0;
 
 	// MSVC groups the overloads of these two names in reverse order at the position of their first declaration
 	virtual IPhysicsShape *GetOtherShape( IPhysicsShape *const *ppShapePair ) const = 0;
-	virtual void GetContacts( void *pContacts ) const = 0;
+	virtual void GetContacts( CUtlVector< PhysicsContact_t > &contacts ) const = 0;
 
-	// Sums over the contacts of the shape
-	virtual PhysicsShapeUnk033_t unk033() = 0;
+	virtual PhysicsShapeContactCounts_t GetContactCounts() = 0;
 
-	virtual IPhysicsShape *GetOtherShape( const void *pContact ) const = 0;
-	virtual void GetContacts( CUtlVector< const void * > *pContacts ) const = 0;
+	virtual IPhysicsShape *GetOtherShape( const CRnContact *pContact ) const = 0;
+	virtual void GetContacts( CUtlVector< CRnContact * > &contacts ) const = 0;
 
-	virtual bool unk036( CUtlVector< int > *pList ) = 0;
+	// Appends the entity ids of the other bodies of the contacts, then sorts the list and removes the duplicates
+	virtual void GetContactEntityIds( CUtlVector< uint32 > &entityIds ) = 0;
 
 	virtual void unk037( bool bUnknown ) = 0;
 	virtual bool unk038() const = 0;
@@ -126,7 +148,7 @@ public:
 	// Bytes used by the shape and its geometry
 	virtual uintp GetRuntimeSize() const = 0;
 
-	virtual void unk040( void *p1, void *p2 ) = 0;
+	virtual void ComputeSubmergedVolume( const matrix3x4a_t &surface, PhysicsShapeSubmergedVolume_t &result ) = 0;
 
 	virtual void unk041( void *p ) = 0;
 	virtual void *unk042() const = 0;
@@ -134,7 +156,9 @@ public:
 	// Empty in release builds
 	virtual void unk043() = 0;
 	virtual bool unk044() = 0;
-	virtual void *unk045() = 0;
+
+	// The debug name of the body
+	virtual const char *GetDebugName() = 0;
 
 	virtual void unk046( void *p ) = 0;
 	virtual void *unk047() const = 0;
