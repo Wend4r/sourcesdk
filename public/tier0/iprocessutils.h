@@ -15,6 +15,9 @@
 #include "appframework/iappsystem.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlbuffer.h"
+#include "tier0/logging.h"
+
+#include <functional>
 
 
 //-----------------------------------------------------------------------------
@@ -188,5 +191,49 @@ public:
 
 DECLARE_TIER1_INTERFACE( IProcessUtils, g_pProcessUtils );
 
+
+//-----------------------------------------------------------------------------
+// Runs a process through IProcessUtils and collects its output
+//-----------------------------------------------------------------------------
+class CRunProcess
+{
+public:
+	DLL_CLASS_IMPORT CRunProcess();
+	DLL_CLASS_IMPORT CRunProcess( const char *pCommandLine, int fFlags );
+	~CRunProcess() { Close(); }
+
+	// Returns the exit code, -1 when the process could not be started
+	DLL_CLASS_IMPORT int Run( const char *pCommandLine, int fFlags );
+	DLL_CLASS_IMPORT void Close();
+
+	// Logs the exit code and the last nLines lines of the output when the process failed
+	DLL_CLASS_IMPORT bool LogFailureOutput( LoggingChannelID_t channelID, int nLines );
+
+	int GetExitCode() const { return m_nExitCode; }
+	const char *GetStdout() const { return m_Stdout.Get(); }
+	const char *GetStderr() const { return m_Stderr.Get(); }
+
+protected:
+	// nPipes is 1 for stdout, 2 for stderr
+	DLL_CLASS_IMPORT void ReadPipeOutput( uint32 nPipes );
+	DLL_CLASS_IMPORT void RunWait();
+
+private:
+	IProcessUtils *m_pProcessUtils;
+	StartProcessInfo_t m_StartInfo;
+	int m_nFlags;
+	int m_nExitCode;
+	bool m_bReadStdout;
+	bool m_bReadStderr;
+	CUtlString m_Stdout;
+	CUtlString m_Stderr;
+
+	// Receives each line of the output, returning false stops reading
+	std::function< bool ( CRunProcess *, const char * ) > m_fnLineCallback;
+
+	void *unk068;
+	IProcess *m_pProcess;
+	bool m_bFailedToStart;
+};
 
 #endif // IPROCESSUTILS_H
