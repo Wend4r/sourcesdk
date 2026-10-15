@@ -233,50 +233,60 @@ public:
 //-----------------------------------------------------------------------------
 struct ParticleInstancedMeshKey_t
 {
-	// Copy of the key passed to AddInstancedMeshes(), its first qword is a model handle
-	uint8 m_Key[ 32 ];
+	// The first 32 bytes are a copy of the key passed to AddInstancedMeshes(), which the instanced mesh scene object reads too
 
-	// Byte 29 of the resource binding the first qword of the key points to
-	int m_nUnk20;
+	// Taken as a strong reference by the scene object
+	ResourceHandle_t m_hModel;
 
-	// Left zero
-	uint64 m_nUnk28[ 2 ];
+	// Looked up in the material group tokens of the model to pick the material remapping
+	CUtlStringToken m_MaterialGroup;
 
-	// The key is compared as a 64-bit handle, a 32-bit integer and four floats; its last four bytes are left out
+	// Copied into the draw record of every instance
+	float m_flUnk0C[ 4 ];
+
+	// Neither compared, hashed nor copied
+	uint32 m_nUnk1C;
+
+	// m_nReloadCounter of the model binding, so that a reloaded model gets its own scene object
+	int m_nModelReloadCounter;
+
+	// Always zero
+	uint64 m_nReserved[ 2 ];
+
 	bool operator==( const ParticleInstancedMeshKey_t &other ) const
 	{
-		if ( KeyAt< uint64 >( 0 ) != other.KeyAt< uint64 >( 0 ) || KeyAt< int >( 8 ) != other.KeyAt< int >( 8 ) )
+		if ( m_hModel != other.m_hModel || m_MaterialGroup != other.m_MaterialGroup )
 		{
 			return false;
 		}
 
-		for ( int nOffset = 12; nOffset < 28; nOffset += sizeof( float ) )
+		for ( int i = 0; i < ARRAYSIZE( m_flUnk0C ); i++ )
 		{
-			if ( KeyAt< float >( nOffset ) != other.KeyAt< float >( nOffset ) )
+			if ( m_flUnk0C[ i ] != other.m_flUnk0C[ i ] )
 			{
 				return false;
 			}
 		}
 
-		return m_nUnk20 == other.m_nUnk20 && m_nUnk28[ 0 ] == other.m_nUnk28[ 0 ] && m_nUnk28[ 1 ] == other.m_nUnk28[ 1 ];
+		return m_nModelReloadCounter == other.m_nModelReloadCounter && m_nReserved[ 0 ] == other.m_nReserved[ 0 ] && m_nReserved[ 1 ] == other.m_nReserved[ 1 ];
 	}
 
-	// Combines the hashes of the handle, the integer, the four floats and m_nUnk20; m_nUnk28 is not hashed
+	// Combines the hashes of every compared member except m_nReserved
 	struct HashFunctor_t
 	{
 		unsigned int operator()( const ParticleInstancedMeshKey_t &key ) const
 		{
 			const uint32 nSeed = 0x3501A674;
 
-			uint32 nHash = Combine( nSeed, MurmurHash2( &key.m_Key[ 0 ], sizeof( uint64 ), nSeed ) );
-			nHash = Combine( nHash, key.KeyAt< uint32 >( 8 ) );
+			uint32 nHash = Combine( nSeed, MurmurHash2( &key.m_hModel, sizeof( key.m_hModel ), nSeed ) );
+			nHash = Combine( nHash, key.m_MaterialGroup.GetHashCode() );
 
-			for ( int nOffset = 12; nOffset < 28; nOffset += sizeof( float ) )
+			for ( int i = 0; i < ARRAYSIZE( key.m_flUnk0C ); i++ )
 			{
-				nHash = Combine( nHash, MurmurHash2( &key.m_Key[ nOffset ], sizeof( float ), nSeed ) );
+				nHash = Combine( nHash, MurmurHash2( &key.m_flUnk0C[ i ], sizeof( float ), nSeed ) );
 			}
 
-			return Combine( nHash, static_cast< uint32 >( key.m_nUnk20 ) );
+			return Combine( nHash, static_cast< uint32 >( key.m_nModelReloadCounter ) );
 		}
 
 	private:
@@ -285,15 +295,6 @@ struct ParticleInstancedMeshKey_t
 			return nHash ^ ( nValue + 0x9E3779B9 + ( nHash << 6 ) + ( nHash >> 2 ) );
 		}
 	};
-
-private:
-	template < typename T >
-	T KeyAt( int nOffset ) const
-	{
-		T value;
-		memcpy( &value, &m_Key[ nOffset ], sizeof( T ) );
-		return value;
-	}
 };
 
 //-----------------------------------------------------------------------------
