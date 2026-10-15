@@ -235,6 +235,53 @@ private:
 };
 #endif // _PS3
 
+class CBufferString;
+struct FioBaseFileInfo_t;
+
+//-----------------------------------------------------------------------------
+// Watches directory trees for file changes
+//-----------------------------------------------------------------------------
+class CDirTreeWatchManager
+{
+public:
+	// Receives the files and directories of a traversal
+	class Visitor
+	{
+	public:
+		virtual void unk000( const char *pszPath, void *pUnknown ) = 0;
+		virtual void EnterDirectory( const char *pszDirectory ) = 0;
+		virtual void LeaveDirectory() = 0;
+		virtual void unk003( const char *pszPath ) {}
+		virtual void unk004() {}
+	};
+
+#if defined( PLATFORM_WINDOWS )
+	typedef uint32 MonitoringThreadInfo_t;
+#elif defined( PLATFORM_OSX )
+	typedef struct __CFRunLoop *MonitoringThreadInfo_t;
+#else
+	typedef void *MonitoringThreadInfo_t;
+#endif
+
+	DLL_CLASS_IMPORT CDirTreeWatchManager( uint32 nMetaFlags = 19 );
+	DLL_CLASS_IMPORT ~CDirTreeWatchManager();
+
+	DLL_CLASS_IMPORT bool AddWatch( const char *pszPath, Visitor *pVisitor, size_t nUnknown );
+	DLL_CLASS_IMPORT bool GetChangedFile( CBufferString *pFile, FioBaseFileInfo_t *pFileInfo );
+	DLL_CLASS_IMPORT void TraverseChangedFiles( Visitor *pVisitor );
+	DLL_CLASS_IMPORT void SetMonitoringThreadInfo( MonitoringThreadInfo_t info );
+	DLL_CLASS_IMPORT void Stop();
+
+	DLL_CLASS_IMPORT static void CheckForPendingChanges();
+
+private:
+	struct Watcher_t;
+
+	uint32 m_nMetaFlags;
+	Watcher_t *m_pWatchers;
+	MonitoringThreadInfo_t m_MonitoringThreadInfo;
+};
+
 bool CreateDirRecursive( const char *pchPathIn );
 bool BFileExists( const char *pchFileNameIn );
 bool BCreateDirectory( const char *path );
