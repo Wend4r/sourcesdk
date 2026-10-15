@@ -60,6 +60,10 @@ public:
 	DLL_CLASS_IMPORT void SetString( const char *pString, FilterStringOp_t eOp, FilterStringCase_t eCase );
 	DLL_CLASS_IMPORT bool DoesMatchString( const char *pValue ) const;
 
+	// An empty filter matches every string
+	bool IsEmpty() const { return m_InputString.IsEmpty(); }
+	const char *GetString() const { return m_InputString.Get(); }
+
 private:
 	FilterStringOp_t m_eOp;
 	FilterStringCase_t m_eCase;

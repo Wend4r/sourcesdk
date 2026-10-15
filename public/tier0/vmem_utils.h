@@ -60,6 +60,11 @@ public:
 	const Region_t *GetRegionByStart( int nIndex ) const { return &m_pRegions[ m_pRegionsByStart[ nIndex ] ]; }
 	const Region_t *GetRegionByBytes( int nIndex ) const { return &m_pRegions[ m_pRegionsByBytes[ nIndex ] ]; }
 
+	// The description of a region, such as the mapped file, from the region strings
+	const char *GetRegionString( int nOffset ) const { return m_RegionStrings.Get() + nOffset; }
+	bool RegionHasDesc( const Region_t *pRegion ) const { return pRegion->m_nDescString >= 0; }
+	const char *GetRegionDesc( const Region_t *pRegion ) const { return RegionHasDesc( pRegion ) ? GetRegionString( pRegion->m_nDescString ) : ""; }
+
 private:
 	uint32 m_nProcessId;
 	uint64 m_nTotalVirtualBytes;

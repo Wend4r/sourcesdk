@@ -56,6 +56,7 @@ public:
 	DLL_CLASS_IMPORT void ReleaseOwnerThread();
 
 	ThreadId_t GetOwnerThread() const { return m_hRunningThreadID; }
+	bool IsCurrentThread() const { return m_hRunningThreadID == ThreadGetCurrentId(); }
 
 private:
 	// Queue of the pending swap contexts and jobs, the tail points at the link of the last item

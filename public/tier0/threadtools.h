@@ -135,7 +135,7 @@ class CThreadMultiWaitEvent;
 #ifdef PLATFORM_WINDOWS
 typedef void *ThreadMultiWaitItem_t;
 #else
-struct pollfd;
+#include <poll.h>
 typedef pollfd ThreadMultiWaitItem_t;
 #endif
 
@@ -1240,6 +1240,34 @@ public:
 	DLL_CLASS_IMPORT ~CThreadMultiWaitObject();
 
 	DLL_CLASS_IMPORT void Signal();
+
+	// Waits for the object alone, consuming the signal like ThreadMultiWait does
+	bool Wait( uint32 nTimeout = TT_INFINITE )
+	{
+		ThreadMultiWaitItem_t item;
+		ThreadMultiWaitExtra_t extra;
+		GetWaitItem( &item, &extra );
+
+		uint64 nSignalled;
+		return ThreadMultiWait( nullptr, &item, &extra, 1, false, &nSignalled, nTimeout ) > 0;
+	}
+
+	bool Check() { return Wait( 0 ); }
+
+	// The item and the extra data that ThreadMultiWait takes for the object
+	void GetWaitItem( ThreadMultiWaitItem_t *pItem, ThreadMultiWaitExtra_t *pExtra ) const
+	{
+#ifdef PLATFORM_WINDOWS
+		*pItem = m_hEventFd;
+#else
+		pItem->fd = m_hEventFd;
+		pItem->events = POLLIN;
+		pItem->revents = 0;
+#endif
+		pExtra->nFlags = m_nExtraFlags;
+	}
+
+	uint32 GetExtraFlags() const { return m_nExtraFlags; }
 
 protected:
 #ifdef PLATFORM_WINDOWS

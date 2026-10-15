@@ -188,6 +188,23 @@ public:
 class CCallStackCapture : public CCallStackCapture_Base
 {
 public:
+	CCallStackCapture() { nValidEntries = 0; }
+
+	// Copies the first nCount frames of ppFrames, up to the capacity
+	CCallStackCapture( const void *const *ppFrames, uint32 nCount )
+	{
+		nValidEntries = MIN( nCount, ( uint32 )ARRAYSIZE( pStack ) );
+		memcpy( pStack, ppFrames, nValidEntries * sizeof( void * ) );
+	}
+
+	CCallStackCapture( const CCallStackCapture *pOther )
+	{
+		nValidEntries = pOther ? pOther->nValidEntries : 0;
+
+		if ( nValidEntries )
+			memcpy( pStack, pOther->pStack, nValidEntries * sizeof( void * ) );
+	}
+
 	// The stack function of tier0, which takes the thread to capture first, unlike the global FN_GetCallStack
 	typedef int (*FN_GetCallStack)( ThreadId_t nThreadId, void **pReturnAddressesOut, int nArrayCount, int nSkipCount );
 

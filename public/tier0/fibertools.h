@@ -158,6 +158,15 @@ public:
 
 	// Returns to the thread that resumed the fiber, pfnResumeHint tells when it is ready to resume
 	DLL_CLASS_IMPORT void *FiberYield( bool (*pfnResumeHint)( void * ), void *pResumeHintContext );
+	void *FiberYield() { return FiberYield( nullptr, nullptr ); }
+
+	// Sets the job that ResumeJob starts, nJobContextSize bytes of pJobContext are copied
+	// to the top of the fiber stack when it is not zero; returns the context the job gets
+	void *SetFiberJob( void (*pfnJob)( void * ), void *pJobContext = nullptr, size_t nJobContextSize = 0 ) { return InternalSetFiberJob( pfnJob, pJobContext, nJobContextSize, false ); }
+	void *GetFiberJobContext() const { return m_pCurrentJobContext; }
+	bool HasAJob() const { return m_pCurrentJobFunc != nullptr; }
+
+	bool IsMemoryInFiberRange( const void *pMemory ) const { return pMemory >= m_StackMemoryRange.pLow && pMemory < m_StackMemoryRange.pHigh; }
 
 	DLL_CLASS_IMPORT static CFiber *GetCurrentFiber();
 	DLL_CLASS_IMPORT static CFiber *SetCurrentFiber( CFiber *pFiber );

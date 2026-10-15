@@ -207,6 +207,9 @@ class CKV3TransferSaveContext;
 class CUtlStringAndToken
 {
 public:
+	CUtlStringAndToken() : m_pString( nullptr ) {}
+	CUtlStringAndToken( const char *pString ) : m_nToken( pString ? MakeStringToken( pString ) : 0 ), m_pString( pString ) {}
+
 	DLL_CLASS_IMPORT bool IsEqual_CaseSensitive( const char *pString ) const;
 	DLL_CLASS_IMPORT bool IsEqual_FastCaseInsensitive( const char *pString ) const;
 
@@ -224,6 +227,21 @@ protected:
 class CUtlStringAndTokenWithStorage : public CUtlStringAndToken
 {
 public:
+	CUtlStringAndTokenWithStorage() {}
+	CUtlStringAndTokenWithStorage( const char *pString ) { Set( pString ); }
+	CUtlStringAndTokenWithStorage( const CUtlStringAndTokenWithStorage &other ) : CUtlStringAndToken() { Set( other.Get() ); }
+
+	CUtlStringAndTokenWithStorage &operator=( const CUtlStringAndTokenWithStorage &other )
+	{
+		if ( this != &other )
+			Set( other.Get() );
+
+		return *this;
+	}
+
+	// Copies the string into the storage and points at the copy
+	void Set( const char *pString ) { Format( "%s", pString ? pString : "" ); }
+
 	DLL_CLASS_IMPORT void Format( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 );
 
 	DLL_CLASS_IMPORT void KV3TransferLoad( CKV3TransferLoadContext *pContext );

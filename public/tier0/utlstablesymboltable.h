@@ -21,6 +21,7 @@ public:
 
 	const char *GetSymbol( int nId ) const { return m_IdToSymbol[ nId ]; }
 	int Count() const { return m_IdToSymbol.Count(); }
+	const char *const *GetAllSymbols() const { return m_IdToSymbol.Base(); }
 
 protected:
 	// Case-insensitive MurmurHash2 of the symbol
