@@ -11,6 +11,7 @@
 #include "tier0/utlsymbollarge.h"
 #include "tier0/utlhashtable.h"
 #include "tier0/murmurhash3.h"
+#include "kv3lib/keyvalues3.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -19,7 +20,6 @@ class CEntityClass;
 class CEntityInstance;
 class CPulseAPIExtensionRegistrationContext;
 class CPulseExecCursor;
-class CPulseRuntimeMethodArg;
 class KeyValues3;
 class CPulseArgumentPack;
 class CPulseInputParamMap;
@@ -115,18 +115,41 @@ public:
 	CUtlSymbolLarge m_subType;
 };
 
-class CPulseRuntimeMethodArg
+class ALIGN16 CPulseCallContextValue
 {
 public:
-	uint32 m_nNameHash;
-	int32 m_nUnk0004;
-	const char* m_pName;
+	CPulseCallContextValue() : m_pValue( nullptr ) {}
+	CPulseCallContextValue( const CPulseCallContextValue &other ) : CPulseCallContextValue() { *this = other; }
+	~CPulseCallContextValue() { SetType( CPulseValueFullType() ); }
+
+	CPulseCallContextValue &operator=( const CPulseCallContextValue &other );
+
+	bool IsStoredInline() const;
+	void *GetData() { return IsStoredInline() ? static_cast< void * >( &m_pValue ) : m_pValue; }
+	const void *GetData() const { return IsStoredInline() ? static_cast< const void * >( &m_pValue ) : m_pValue; }
+
+	// Replaces the value with a default one of the new type
+	void SetType( const CPulseValueFullType &type );
+
+	void VariantCompatibility_SetPulseVariantFromEntityVariant( const CVariant &value );
+	void VariantCompatibility_SetEntityVariantFromPulseVariant( CVariant &value ) const;
+
+public:
+	void *m_pValue;
 	CPulseValueFullType m_Type;
-	uint64 m_nUnk0028;
-	uint8 m_defaultValue[32];
-	uint16 m_nFlags;
-	uint8 m_unk0052[6];
-	void* m_pUnk0058;
+} ALIGN16_POST;
+
+// Static argument or return value record of a binding; the graph definition stores CPulseRuntimeMethodArg instead
+struct PulseMethodArg_t
+{
+	// Static records carry no symbol: the symbol part is UTL_INVAL_SYMBOL_LARGE.
+	CKV3MemberName m_Name;
+	CPulseValueFullType m_Type;
+
+	CPulseCallContextValue m_DefaultValue;
+
+	uint16 m_nMetadataCount;
+	PulseBindingMetadata_t* m_pMetadata;
 	void* m_pfnUnk0060;
 	void* m_pUnk0068;
 };
@@ -134,9 +157,14 @@ public:
 // A view of a static argument array, returned by value
 struct PulseMethodArgList_t
 {
+	int Count() const { return m_nCount; }
+
+	const PulseMethodArg_t &operator[]( int i ) const { return m_pElements[ i ]; }
+	const PulseMethodArg_t &Element( int i ) const { return m_pElements[ i ]; }
+
 	int32 m_nCount;
 	int32 m_nAllocated;
-	const CPulseRuntimeMethodArg* m_pElements;
+	const PulseMethodArg_t* m_pElements;
 };
 
 struct PulseHostTable_t
@@ -214,7 +242,9 @@ public:
 	int32 FindOutputIndex( const char *pszName ) const;
 
 public:
-	uint64 m_unk0008;
+	// Set while the signature is rebuilt: the connections of its instances are saved and its inputs
+	// and outputs are cleared, then declared again and the connections restored when it is cleared
+	bool m_bRebuilding;
 	CUtlVector< uint16 > m_inputNames;
 	CUtlVector< uint16 > m_outputNames;
 	CUtlVector< PulseSignatureOutput_t > m_outputs;
