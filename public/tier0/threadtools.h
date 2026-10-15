@@ -964,7 +964,7 @@ public:
 
 #ifdef PLATFORM_POSIX
 	bool Wait_NoDiagnostics( uint32 dwTimeout );
-	virtual bool WaitImpl( uint32 dwTimeout ) { return false; }
+	virtual bool WaitImpl( uint32 dwTimeout );
 	bool AcquireSemaphoreInternal( uint value );
 	void CloseSemaphoreInternal( int semid, bool bUnlink, const char* pszName );
 	bool CreateAnonymousSyncObjectInternal( int nInitialValue, bool bManualReset );
