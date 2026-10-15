@@ -12,7 +12,10 @@
 
 #include "tier0/platform.h"
 #include "tier0/bufferstring.h"
+#include "tier0/utlstring.h"
+#include "tier1/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier3/tier3dm.h"
 
 class IResourceCompileFileSystemInterface;
 
@@ -26,17 +29,42 @@ public:
 	virtual void *unk013( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 	virtual void *CalculateSpecialDependencyFingerprint( void *pResult, void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 
-	virtual const char *unk015( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData, CBufferString *pOut ) = 0;
+	// The compiler's string for the special dependency in pOut; without such a compiler pOut is the
+	// dependency itself
+	virtual const char *GetSpecialDependencyString( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData, CBufferString *pOut ) = 0;
 
 	virtual void *CalculateSpecialInputDependencyFingerprint( void *pResult, void *pUnk1, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, void *pUnk2 ) = 0;
 
-	// Same as unk015 for a special input dependency
-	virtual const char *unk017( void *pUnk, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, CBufferString *pOut ) = 0;
+	// Same as GetSpecialDependencyString for a special input dependency
+	virtual const char *GetSpecialInputDependencyString( void *pUnk, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, CBufferString *pOut ) = 0;
 
 	virtual void InstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
 
 	virtual void unk020( void *pKey, void *pResults ) = 0;
+};
+
+class CResourceCompilerSystem : public CTier3DmAppSystem< IResourceCompilerSystem >
+{
+public:
+	bool m_bUnk028;
+	int m_nUnk02C;
+	int m_nUnk030;
+	int m_nUnk034;
+	uint8 m_unk038[ 0x10 ];
+	CUtlString m_sUnk048;
+	CUtlString m_sUnk050;
+	void *m_pUnk058;
+	CUtlVector< CUtlString > m_vecUnk060;
+	CUtlVector< CUtlString > m_vecUnk078;
+	uint8 m_unk090[ 0x48 ];
+
+	// Vector of 48-byte compile messages that carry their severity (1 warning, 2 error)
+	uint8 m_CompileMessages[ 0x18 ];
+
+	// Warning and error counts added to the compile summary
+	int m_nUnk0F0;
+	int m_nUnk0F4;
 };
 
 #endif // IRESOURCECOMPILERSYSTEM_H
