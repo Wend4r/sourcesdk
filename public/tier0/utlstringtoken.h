@@ -197,6 +197,41 @@ FORCEINLINE CUtlStringToken MakeStringToken2( const char *pString, int nLen = -1
 	return CUtlStringToken( nHash );
 }
 
+class CKV3TransferLoadContext;
+class CKV3TransferSaveContext;
+
+//-----------------------------------------------------------------------------
+// String with its case-insensitive token, the string is not owned
+//-----------------------------------------------------------------------------
+class CUtlStringAndToken
+{
+public:
+	DLL_CLASS_IMPORT bool IsEqual_CaseSensitive( const char *pString ) const;
+	DLL_CLASS_IMPORT bool IsEqual_FastCaseInsensitive( const char *pString ) const;
+
+	CUtlStringToken GetToken() const { return m_nToken; }
+	const char *Get() const { return m_pString; }
+
+protected:
+	CUtlStringToken m_nToken;
+	const char *m_pString;
+};
+
+//-----------------------------------------------------------------------------
+// String with its token that owns the string
+//-----------------------------------------------------------------------------
+class CUtlStringAndTokenWithStorage : public CUtlStringAndToken
+{
+public:
+	DLL_CLASS_IMPORT void Format( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 );
+
+	DLL_CLASS_IMPORT void KV3TransferLoad( CKV3TransferLoadContext *pContext );
+	DLL_CLASS_IMPORT void KV3TransferSave( CKV3TransferSaveContext *pContext ) const;
+
+protected:
+	CBufferString m_Storage;
+};
+
 #include "schemacompiler/schemaoff.h"
 
 #endif // UTLSTRINGTOKEN_H
