@@ -13,6 +13,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlstring.h"
+#include "tier0/utlvector.h"
 #include "mathlib/vector.h"
 #include "mathlib/fltx4.h"
 #include "mathlib/aabb.h"
@@ -21,6 +22,7 @@
 class IVPhysics2World;
 class CRnSoftbody;
 class CFeModel;
+class CFeModelReplaceContext;
 class CUtlBuffer;
 class CBufferString;
 
@@ -29,7 +31,6 @@ struct SetNodePositionsParams_t;
 
 // Nodes are the simulated points of the finite element model, ctrls (particles) are the transforms bound to model bones;
 // the transform array holds the animated ctrl transforms followed by the simulated ones
-// Methods with an unknown name that MSVC lays out as one overload group keep one shared unkNNN name
 abstract_class IPhysicsSoftbody
 {
 public:
@@ -37,10 +38,11 @@ public:
 
 	virtual IVPhysics2World *GetWorld() const = 0;
 
-	virtual void unk003( float flValue ) = 0;
-	virtual float unk004() const = 0;
+	// Scales the collision radii and the bone transforms of the model
+	virtual void SetModelScale( float flModelScale ) = 0;
+	virtual float GetModelScale() const = 0;
 
-	virtual void unk005( void *pContext ) = 0;
+	virtual void ReplaceFeModel( CFeModelReplaceContext &context ) = 0;
 
 	virtual const CFeModel *GetFeModel() const = 0;
 	virtual CFeModel *GetFeModel() = 0;
@@ -49,8 +51,9 @@ public:
 	virtual uint32 GetStateHash() const = 0;
 	virtual void TouchAnimatedTransforms() = 0;
 
-	virtual void FilterTransforms( const void *pUnknown, void *pOutput ) = 0;
-	virtual void FilterTransforms( const void *pParams ) = 0;
+	// Feeds the animated ctrl transforms from the model bone transforms; pBoneMap is the model data mapping ctrls to bones
+	virtual void SetAnimatedTransforms( const void *pBoneMap, const CTransform *pBoneTransforms ) = 0;
+	virtual void SetAnimatedTransforms( const void *pParams ) = 0;
 
 	virtual void *GetParticleTransforms( const VectorAligned *pInputNodePos = NULL, uint nFlags = 0 ) = 0;
 
@@ -59,22 +62,26 @@ public:
 	virtual const CTransform *GetSimulatedTransforms() const = 0;
 	virtual CTransform *GetSimulatedTransforms() = 0;
 
-	virtual bool unk017() const = 0;
-	virtual void unk018( void *pUnknown ) = 0;
-	virtual CTransform unk019( int nIndex ) const = 0;
+	virtual bool BeforeFilterTransforms() = 0;
+	// Writes the simulated transforms back to the model bones
+	virtual void FilterTransforms( void *pParams ) = 0;
+	// 1 is the current transform, 3 and 2 the transforms of the last two steps, 0 the transform of the last simulated state
+	virtual CTransform GetRootTransform( int nIndex ) const = 0;
 
-	virtual void SetAbsOrigin( const VectorAligned &vNewOrigin, bool bTeleport ) = 0;
+	// Teleporting carries the nodes along rigidly
+	virtual void SetAbsTransform( const CTransform &transform, bool bTeleport ) = 0;
 
 	virtual void SetAnimSpace( int nAnimSpace ) = 0;
 	virtual int GetAnimSpace() const = 0;
 
 	virtual void SetPose( const CTransform *pPose ) = 0;
 	virtual void SetPose( const CTransform &tm, const CTransform *pPose ) = 0;
-	virtual void unk025( const void *pUnknown, void *pOutput ) = 0;
+	virtual void InitializeTransforms( const void *pBoneMap, const CTransform *pBoneTransforms ) = 0;
 
 	virtual const VectorAligned *GetNodePositions( int nFrame = 1 ) const = 0;
 	virtual VectorAligned *GetNodePositions( int nFrame = 1 ) = 0;
-	virtual Vector *unk028() = 0;
+	// Node positions of the animated pose
+	virtual Vector *GetPoseNodePositions() = 0;
 
 	virtual void SetNodePositions( const VectorAligned *pPos, int nCount, int nFrame = 1 ) = 0;
 	virtual void SetNodePositions( const SetNodePositionsParams_t &params ) = 0;
@@ -83,12 +90,13 @@ public:
 	virtual void ComputeInterpolatedNodePositions( float flFactor, VectorAligned *pPosOut ) = 0;
 
 	// Offset every (one) dynamic node of the previous frame, changing its velocity, unless frozen or dormant
-	virtual void unk032( fltx4 vDelta, float flScale ) = 0;
-	virtual void unk033( uint nNode, const VectorAligned &vDelta, float flScale ) = 0;
+	virtual void AddVelocity( fltx4 vVelocity, float flScale ) = 0;
+	virtual void AddNodeVelocity( uint nNode, const VectorAligned &vVelocity, float flScale ) = 0;
 
 	virtual uint GetNodeCount() const = 0;
 	virtual Vector GetNodeVelocity( uint nNode ) const = 0;
-	virtual void unk036( float flUnknown1, float flUnknown2 ) = 0;
+	// Scales the node velocities and clamps their per step displacement; a non-positive maximum stops the nodes
+	virtual void LimitVelocities( float flMaxDisplacement, float flScale ) = 0;
 	virtual uint GetCtrlCount() const = 0;
 	virtual void ParseParticleState( CUtlBuffer &buf, float flTimeStep ) = 0;
 	virtual CUtlString PrintParticleState() const = 0;
@@ -99,7 +107,8 @@ public:
 	virtual void unk043( float flValue ) = 0;
 	virtual float unk044() const = 0;
 
-	virtual bool unk045( int nUnknown, void *pUnknown ) = 0;
+	// Starts the effect of the model with this name hash after stopping the ones it lists in StopEffects; false when the model has none
+	virtual bool StartEffect( uint32 nEffectNameHash, void *pUnknown ) = 0;
 	virtual void *FindEffect( int nEffectId ) = 0;
 	virtual void RemoveEffect( int nEffectId ) = 0;
 
@@ -145,10 +154,12 @@ public:
 	virtual void GoDormant() = 0;
 	virtual bool AdvanceSleepCounter() = 0;
 
-	virtual void unk081( bool bUnknown ) = 0;
-	virtual bool unk082() const = 0;
-	virtual void unk083( bool bUnknown ) = 0;
-	virtual bool unk084() const = 0;
+	// Steps skip the simulation; IsSimulationDisabled is also true while locked to the transform
+	virtual void SetSimulationDisabled( bool bDisabled ) = 0;
+	virtual bool IsSimulationDisabled() const = 0;
+	// Stops simulating and carries the nodes rigidly with the transform
+	virtual void SetLockedToTransform( bool bLocked ) = 0;
+	virtual bool IsLockedToTransform() const = 0;
 
 	virtual AABB_t BuildBounds() const = 0;
 
@@ -160,9 +171,9 @@ public:
 
 	virtual void unk089( void *pUnknown ) = 0;
 
-	// Sets or clears one bit of a mask; unk091 reports whether the mask is empty
-	virtual void unk090( int nBit, bool bClear ) = 0;
-	virtual bool unk091() const = 0;
+	// Sets or clears one bit of a mask that suppresses collision with the world while not empty
+	virtual void DisableWorldCollision( int nBit, bool bClear ) = 0;
+	virtual bool IsWorldCollisionEnabled() const = 0;
 
 	virtual void unk092( int nValue ) = 0;
 	virtual int unk093() const = 0;
@@ -170,10 +181,12 @@ public:
 	virtual void SetGroundZ( float flGroundZ ) = 0;
 	virtual float GetGroundZ() const = 0;
 
-	virtual void unk096( fltx4 vUnknown ) = 0;
+	// Traces the ground below the origin once it moved far enough from the last trace
+	virtual void TraceGroundZ( fltx4 vOrigin ) = 0;
 
-	virtual void unk097( float flValue ) = 0;
-	virtual float unk098() const = 0;
+	// Height above the origin the ground trace starts at
+	virtual void SetGroundTraceRaise( float flRaise ) = 0;
+	virtual float GetGroundTraceRaise() const = 0;
 
 	virtual int CastCone( const Vector &vStart, const Vector &vDir, float flConePitch ) = 0;
 
@@ -184,16 +197,19 @@ public:
 	virtual int unk102() const = 0;
 	virtual int unk103() const = 0;
 
-	virtual void unk104() = 0;
+	// Moves the nodes to the animated pose and stops them
+	virtual void ResetToPose() = 0;
 	virtual void *unk105() = 0;
 	virtual void unk106( const void *pUnknown, int nUnknown ) = 0;
-	virtual void unk107( int nUnknown, float flUnknown ) = 0;
-	virtual bool unk108( void *pUnknown, const float *pUnknown2 ) = 0;
+	// Returns whether it simulated
+	virtual uint Step( int nIterations, float flTimeStep ) = 0;
+	// Steps up to the given time, then filters the transforms; returns false
+	virtual bool SimulateAndFilterTransforms( void *pParams, const float *pTiming ) = 0;
 
 	virtual float GetTimeStep() const = 0;
 
-	virtual void unk110( bool bUnknown ) = 0;
-	virtual bool unk111() const = 0;
+	virtual void EnableSleep( bool bEnable ) = 0;
+	virtual bool IsSleepEnabled() const = 0;
 	virtual void SetDormancyDisabled( bool bDisabled ) = 0;
 	virtual bool IsDormancyDisabled() const = 0;
 
@@ -203,31 +219,38 @@ public:
 	virtual void SetUserData( uint nIndex, void *pData ) = 0;
 	virtual void *GetUserData( uint nIndex ) const = 0;
 
-	virtual void unk117( uint8 nUnknown, float flUnknown1, float flUnknown2 ) = 0;
-	virtual void unk118( uint8 nUnknown, float flUnknown1, float flUnknown2, float flUnknown3 ) = 0;
-	virtual float unk119( uint8 nUnknown, int nUnknown2 ) const = 0;
-	virtual void unk120( uint8 nUnknown, int *pUnknown, int nUnknown2 ) = 0;
-	virtual void unk121() = 0;
+	// Five blended parameters per vertex set, described as "pas", "pab", "vas", "vab" and an unnamed one;
+	// nVertexSetHash is the name hash of a vertex set, 0 for the whole softbody
+	virtual void SetClothParam( uint8 nParam, float flValue, float flBlendTime, uint32 nVertexSetHash ) = 0;
+	// Queued after the changes already pending
+	virtual void QueueClothParam( uint8 nParam, float flDelay, float flValue, float flBlendTime, uint32 nVertexSetHash ) = 0;
+	virtual float GetClothParam( uint8 nParam, uint32 nVertexSetHash ) const = 0;
+	// Appends the start times of the queued changes
+	virtual void GetQueuedClothParamTimes( uint8 nParam, CUtlVector< float > &times, uint32 nVertexSetHash ) = 0;
+	// False while the simulation is disabled, the second parameter of the whole softbody reached 1, or it may sleep and settled
+	virtual bool IsSimulating() = 0;
 
-	virtual void unk122( bool bUnknown ) = 0;
-	virtual bool unk123() const = 0;
+	// The world skips stepping it
+	virtual void SetManualStep( bool bManual ) = 0;
+	virtual bool IsManualStep() const = 0;
 
 	virtual void LinkSoftbody( IPhysicsSoftbody *pOther ) = 0;
 	virtual void UnlinkSoftbody( IPhysicsSoftbody *pOther ) = 0;
 	virtual void UnlinkAllSoftbodies() = 0;
-	virtual void unk127( IPhysicsSoftbody *pOther ) = 0;
+	virtual void SetLinkParent( IPhysicsSoftbody *pParent ) = 0;
 
-	virtual bool unk128() const = 0;
+	// IsActive that is false without a simulation object
+	virtual bool IsSoftbodyActive() const = 0;
 
 	// Empty in release builds
-	virtual void unk129() = 0;
-	virtual int unk130() const = 0;
+	virtual void SetDebugName( const char *pName ) = 0;
+	virtual const char *GetDebugName() const = 0;
 
 	virtual uint GetIndexInWorld() const = 0;
 	virtual CRnSoftbody *GetSoftbody() const = 0;
 
 	// Empty in release builds
-	virtual void unk133() = 0;
+	virtual void RunUnitTest() = 0;
 };
 
 class CPhysicsSoftbody : public IPhysicsSoftbody
