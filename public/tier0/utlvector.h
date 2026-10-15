@@ -388,6 +388,8 @@ public:
 	I NumAllocated() const { return BaseClass::NumAllocated() ? BaseClass::NumAllocated() - 1 : 0; }
 	void Grow( I num = 1 ) { BaseClass::Grow( NumAllocated() + num + 1 - BaseClass::NumAllocated() ); }
 	void EnsureCapacity( I num ) { BaseClass::EnsureCapacity( num + 1 ); }
+	void Purge() { BaseClass::Purge(); }
+	void Purge( I numElements ) { BaseClass::Purge( numElements ? numElements + 1 : 0 ); }
 };
 
 template< class T, typename I = int >
