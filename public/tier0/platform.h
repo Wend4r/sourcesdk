@@ -1830,6 +1830,33 @@ PLATFORM_INTERFACE int64			Plat_FileSize( const char *pFileName, bool bDontFollo
 PLATFORM_INTERFACE bool				Plat_IsDirectory( const char *pFilepath, bool bDontFollowLinks = false );
 PLATFORM_INTERFACE bool				Plat_FileIsReadOnly(const char *pFileName);
 PLATFORM_INTERFACE bool				Plat_FileExists( const char *pFileName, int flags );
+PLATFORM_INTERFACE bool				Plat_IsFile( const char *pFileName, bool bDontFollowLinks = false );
+PLATFORM_INTERFACE bool				Plat_IsSymlink( const char *pPath );
+PLATFORM_INTERFACE bool				Plat_GetFileType( const char *pPath, CBufferString &out );
+PLATFORM_INTERFACE bool				Plat_SetFileReadOnly( const char *pFileName, bool bReadOnly );
+// Sets the permission bits selected by nMask to the ones in nPermissions; nMask must include an execute bit
+PLATFORM_INTERFACE bool				Plat_SetFileExecutable( const char *pFileName, uint32 nPermissions, uint32 nMask );
+PLATFORM_INTERFACE bool				Plat_RenameFile( const char *pFrom, const char *pTo );
+PLATFORM_INTERFACE bool				Plat_RemoveFile( const char *pFileName, bool bDontFollowLinks = false );
+PLATFORM_INTERFACE bool				Plat_SafeRemoveFile( const char *pFileName, bool bRequireSafe );
+
+PLATFORM_INTERFACE bool				Plat_CreateDirectory( const char *pFileName, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_CreateDirectoryTree( const char *pPath, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_CreateDirectoryTreeForFile( const char *pFileName, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_EnsureDirectory( const char *pPath, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_RemoveDirectory( const char *pFileName, bool bDontFollowLinks = false );
+PLATFORM_INTERFACE bool				Plat_RemoveDirectoryTree( const char *pPath, bool bDontFollowLinks = false );
+// Creates a uniquely named directory under pParentDirectory, or under the temp directory when it is empty
+PLATFORM_INTERFACE bool				Plat_CreateTempDirectory( CBufferString &outPath, const char *pPrefix, bool bWriteEveryone, const char *pParentDirectory );
+
+PLATFORM_INTERFACE bool				Plat_GetCurrentDirectory( CBufferString &out, bool bAppendSlash );
+PLATFORM_INTERFACE bool				Plat_SetCurrentDirectory( const char *pDir );
+PLATFORM_INTERFACE void				Plat_GetDocumentDirectory( CBufferString &out );
+PLATFORM_INTERFACE bool				Plat_GetTempDirectory( CBufferString &out );
+PLATFORM_INTERFACE void				Plat_TranslateSymbolicLinks( const char *pInDir, CBufferString &out );
+
+// Reads a whole file into a buffer allocated by g_pMemAlloc, returns 0 or a platform error code
+PLATFORM_INTERFACE int				PlatC_ReadFileToMemory( const char *pFileName, void **ppBuffer, uint32 *pnSize, bool bNullTerminate, uint32 nMaxSize );
 
 PLATFORM_INTERFACE char const *		Plat_GetEnv( char const *pEnvVarName );
 
