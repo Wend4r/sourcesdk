@@ -1770,6 +1770,32 @@ PLATFORM_INTERFACE uint64			Plat_GetClockStart();	// Snapshot of the clock when 
 PLATFORM_INTERFACE int32			Plat_timezone( void );
 PLATFORM_INTERFACE int32			Plat_daylight( void );
 
+// Relative ticks and conversions between tick counts and durations
+PLATFORM_INTERFACE uint64			Plat_RelativeTicks();
+PLATFORM_INTERFACE uint64			Plat_RelativeTickFrequency();
+PLATFORM_INTERFACE uint64			Plat_TickDiffSec( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE double			Plat_TickDiffSecF( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE uint64			Plat_TickDiffMilliSec( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE double			Plat_TickDiffMilliSecF( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE uint64			Plat_TickDiffMicroSec( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE double			Plat_TickDiffMicroSecF( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE uint64			Plat_SecTickDiff( uint64 nSecs );
+PLATFORM_INTERFACE uint64			Plat_SecTickDiffF( double fSecs );
+PLATFORM_INTERFACE uint64			Plat_MilliSecTickDiff( uint64 nMillis );
+PLATFORM_INTERFACE uint64			Plat_MilliSecTickDiffF( double fMillis );
+PLATFORM_INTERFACE uint64			Plat_MicroSecTickDiff( uint64 nMicros );
+PLATFORM_INTERFACE uint64			Plat_MicroSecTickDiffF( double fMicros );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterSecs( uint64 nSecs );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterSecsF( double fSecs );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMilliSecs( uint64 nMillis );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMilliSecsF( double fMillis );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMicroSecs( uint64 nMicros );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMicroSecsF( double fMicros );
+
+PLATFORM_INTERFACE uint64			Plat_GetCurrentFrame();
+PLATFORM_INTERFACE void				Plat_SetCurrentFrame( uint64 nFrame );
+PLATFORM_INTERFACE void				Plat_ChangeCurrentFrame( int64 nDelta );
+
 // Get the local calendar time.
 // Same as time() followed by localtime(), but non-crash-prone and threadsafe.
 PLATFORM_INTERFACE void				Plat_GetLocalTime( struct tm *pNow );
@@ -1785,6 +1811,8 @@ PLATFORM_INTERFACE void				Plat_GetTimeString( struct tm *pTime, char *pOut, int
 PLATFORM_INTERFACE struct tm*		Plat_gmtime64( const time_t *nTime, struct tm *pTime );
 PLATFORM_INTERFACE time_t			Plat_timegm64( struct tm *timeptr );
 PLATFORM_INTERFACE struct tm *		Plat_localtime64( const time_t *timep, struct tm *result );
+PLATFORM_INTERFACE time_t			Plat_mktime64( struct tm *pTime );
+PLATFORM_INTERFACE char *			Plat_asctime( const struct tm *pTime, char *pBuf, size_t nBufSize );
 
 typedef class CSysModule* PlatModule_t;
 #define PLAT_MODULE_INVALID ((PlatModule_t)0)
