@@ -247,8 +247,8 @@ struct ParticleInstancedMeshKey_t
 	// Copied into the draw record of every instance; the particle renderers leave them zero
 	float m_flUnk10[ 3 ];
 
-	// Neither compared, hashed nor copied
-	uint32 m_nUnk1C;
+	// Tail padding of the 32-byte key: the renderers never write it and nothing compares or hashes it
+	uint8 m_pad1C[ 4 ];
 
 	// m_nReloadCounter of the model binding, so that a reloaded model gets its own scene object
 	int m_nModelReloadCounter;
