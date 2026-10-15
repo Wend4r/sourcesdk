@@ -25,8 +25,8 @@ class CRnContact;
 // and the manifolds); IPhysicsShape::GetContacts releases the references of the old elements before it fills the vector again
 struct PhysicsContact_t
 {
-	IPhysicsShape *m_pShape1;
-	IPhysicsShape *m_pShape2;
+	IPhysicsShape *m_pShapeA;
+	IPhysicsShape *m_pShapeB;
 
 	// Zeroed together with the contact
 	uint8 m_pad010[ 8 ];
@@ -47,10 +47,10 @@ abstract_class IFnPhysicsContact
 public:
 	virtual void SetContact( CRnContact *pContact ) = 0;
 
-	// The bodies of shape 1 and shape 2; the manifold normals point from shape 1 to shape 2. GetBody and GetShape take
-	// index 0 for the first and index 1 for the second
-	virtual IPhysicsBody *GetBody1() const = 0;
-	virtual IPhysicsBody *GetBody2() const = 0;
+	// The bodies of shape A and shape B; the manifold normals point from shape A to shape B. GetBody and GetShape take
+	// index 0 for A and index 1 for B
+	virtual IPhysicsBody *GetBodyA() const = 0;
+	virtual IPhysicsBody *GetBodyB() const = 0;
 	virtual IPhysicsBody *GetBody( int nIndex ) const = 0;
 	virtual IPhysicsBody *GetOther( IPhysicsBody *pBody ) const = 0;
 
