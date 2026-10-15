@@ -1249,6 +1249,9 @@ PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessa
 
 
 PLATFORM_INTERFACE void Plat_Printf ( const tchar *pFmt, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void Plat_DebugPrint( const char *pFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void Plat_DebugPrintV( const char *pFormat, va_list args );
+PLATFORM_INTERFACE void Plat_DebugString_Buffered( const char *pMsg, uint64 nBufferTimeUS );
 
 //-----------------------------------------------------------------------------
 // Posix platform helpers
@@ -1819,10 +1822,12 @@ typedef class CSysModule* PlatModule_t;
 
 // Get the process' executable filename.
 PLATFORM_INTERFACE void				Plat_GetModuleFilename( char *pOut, int nMaxBytes );
+PLATFORM_INTERFACE void				Plat_SetModuleFilename( const char *pExeName );
 PLATFORM_INTERFACE bool				Plat_GetExecutablePath( char* pBuff, size_t nBuff );
 PLATFORM_INTERFACE int				Plat_GetExecutablePathUTF8( CBufferString *buf );
 
 PLATFORM_INTERFACE const char *		Plat_GetGameDirectory( int unknown=0 );
+PLATFORM_INTERFACE void				Plat_SetGameDirectory( const char *pGameDir );
 
 PLATFORM_INTERFACE int				Plat_chmod(const char *filename, int pmode);
 // bDontFollowLinks checks a symbolic link itself rather than its target. Returns -1 when the file doesn't exist.
@@ -1869,6 +1874,12 @@ PLATFORM_INTERFACE const char *		Plat_ExpandEnvVars( const char *pIn, CBufferStr
 PLATFORM_INTERFACE void				Plat_ExitProcess( int nCode );
 
 PLATFORM_INTERFACE bool				Plat_ShouldCollectMiniDumpsForFatalErrors();
+PLATFORM_INTERFACE void				Plat_CollectMiniDumpsForFatalErrors();
+
+// Error text attached to minidumps
+PLATFORM_INTERFACE void				Plat_AppendMiniDumpErrorString( const char *pFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void				Plat_ClearMiniDumpErrorString();
+PLATFORM_INTERFACE const char *		Plat_GetMiniDumpErrorString();
 
 PLATFORM_INTERFACE void				Plat_NonFatalErrorFunc( const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
 
@@ -1883,6 +1894,22 @@ PLATFORM_INTERFACE void				Plat_ExitProcessWithError( int nCode, bool bGenerateM
 //to be terminated
 typedef bool (*ExitProcessWithErrorCBFn)( int nCode );
 PLATFORM_INTERFACE void				Plat_SetExitProcessWithErrorCB( ExitProcessWithErrorCBFn pfnCB );
+
+PLATFORM_INTERFACE void				Plat_RestartCurrentProcess();
+PLATFORM_INTERFACE void				Plat_OnExecutableExitingMain();
+PLATFORM_INTERFACE bool				Plat_HasEnteredFatalState();
+PLATFORM_INTERFACE void				Plat_InstallControlCHandler();
+PLATFORM_INTERFACE void				Plat_AttachDebuggerToProcess( bool bBreakImmediately, bool bAutomaticallyChooseDebugger );
+
+PLATFORM_INTERFACE bool				Plat_IsConsoleApplication();
+PLATFORM_INTERFACE void				Plat_SetIsConsoleApplication( bool bIsConsoleApplication );
+PLATFORM_INTERFACE bool				Plat_IsInHeadlessMode();
+PLATFORM_INTERFACE void				Plat_EnableHeadlessMode();
+PLATFORM_INTERFACE bool				Plat_IsRunningOnCustomerMachine();
+PLATFORM_INTERFACE void				Plat_EnableCustomerMachineMode();
+PLATFORM_INTERFACE bool				Plat_IgnoreContentAsserts();
+PLATFORM_INTERFACE void				Plat_DisableIOBuffering();
+PLATFORM_INTERFACE uint32			Plat_GetThisProcessStdioRedirectFlags();
 
 // If OSX or Linux have 2GB of address space for 32-bit apps, then return true here when that case is detected
 #if defined( OSX )
