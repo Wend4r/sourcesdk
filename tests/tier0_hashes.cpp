@@ -87,6 +87,65 @@ REGISTER_NAMED_TEST( "SHA1.DigestIsWrittenAsLowercaseHex", SHA1_DigestIsWrittenA
 	TEST_EQ( strcmp( hashString.Get(), "a9993e364706816aba3e25717850c26c9cd0d89d" ), 0 );
 }
 
+REGISTER_NAMED_TEST( "SHA1.HashesTheData", SHA1_HashesTheData )
+{
+	// The SHA-1 of "abc" from FIPS 180-1.
+	const SHADigest_t expected =
+	{
+		0xa9, 0x99, 0x3e, 0x36, 0x47, 0x06, 0x81, 0x6a, 0xba, 0x3e,
+		0x25, 0x71, 0x78, 0x50, 0xc2, 0x6c, 0x9c, 0xd0, 0xd8, 0x9d,
+	};
+
+	CSHA1 sha1;
+	sha1.Update( "abc", 3 );
+	sha1.Final();
+
+	SHADigest_t digest;
+	sha1.GetHash( digest );
+	TEST_EQ( memcmp( digest, expected, k_cubHash ), 0 );
+
+	// Unlike CSHAStr, tier0 writes the hex digits in uppercase.
+	char szHex[ k_cchHash ];
+	sha1.GetHashHex( szHex, sizeof( szHex ) );
+	TEST_EQ( strcmp( szHex, "A9993E364706816ABA3E25717850C26C9CD0D89D" ), 0 );
+
+	// The report appends the bytes separated by spaces.
+	char szReport[ 80 ] = "";
+	sha1.ReportHash( szReport );
+	TEST_EQ( strncmp( szReport, "A9 99 3E 36 47", 14 ), 0 );
+	TEST_EQ( strlen( szReport ), static_cast< size_t >( 59 ) );
+
+	char szDigits[ 80 ] = "";
+	sha1.ReportHash( szDigits, CSHA1::REPORT_DIGIT );
+	TEST_EQ( strncmp( szDigits, "169 153 62 54", 13 ), 0 );
+}
+
+REGISTER_NAMED_TEST( "SHA1.ResetStartsANewHash", SHA1_ResetStartsANewHash )
+{
+	SHADigest_t first, second;
+
+	{
+		CSHA1 sha1;
+		sha1.Update( "abc", 3 );
+		sha1.Final();
+		sha1.GetHash( first );
+	}
+
+	// Data hashed before a reset does not change the digest.
+	CSHA1 sha1;
+	sha1.Update( "garbage", 7 );
+	sha1.Reset();
+	sha1.Update( "abc", 3 );
+	sha1.Final();
+	sha1.GetHash( second );
+
+	TEST_EQ( memcmp( first, second, k_cubHash ), 0 );
+
+	SHADigest_t generated;
+	GenerateHash( generated, "abc", 3 );
+	TEST_EQ( memcmp( first, generated, k_cubHash ), 0 );
+}
+
 REGISTER_NAMED_TEST( "BlockCompress.RoundTripRestoresTheData", BlockCompress_RoundTripRestoresTheData )
 {
 	// Repetitive data that compresses well.
