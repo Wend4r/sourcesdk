@@ -17,7 +17,10 @@ class COneTimeEvent : public IRefCounted
 public:
 	DLL_CLASS_IMPORT static COneTimeEvent *Allocate();
 
-	virtual int AddRef();
+	virtual int AddRef() { return ++m_nRefCount; }
+
+	// The last reference returns the event to the pool of tier0, which is only reachable
+	// through the vtable of the events Allocate hands out
 	virtual int Release();
 
 	void Set() { m_Event.Set(); }
@@ -26,7 +29,7 @@ public:
 
 private:
 	COneTimeEvent();
-	virtual ~COneTimeEvent();
+	virtual ~COneTimeEvent() {}
 
 	CThreadEvent m_Event;
 	CInterlockedInt m_nRefCount;

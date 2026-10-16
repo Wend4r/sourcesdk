@@ -72,11 +72,11 @@ public:
 
 	// Constructor and Destructor
 #if !defined(_MINIMUM_BUILD_) 
-	CSHA1();
-	virtual ~CSHA1() ;
+	CSHA1() { m_block = (SHA1_WORKSPACE_BLOCK *)m_workspace; Reset(); }
+	virtual ~CSHA1() { Reset(); }
 #else
-	Minimum_CSHA1() ; 
-	~Minimum_CSHA1() ;	// no virtual destructor's in the minimal builds !
+	Minimum_CSHA1() { m_block = (SHA1_WORKSPACE_BLOCK *)m_workspace; Reset(); }
+	~Minimum_CSHA1() { Reset(); }	// no virtual destructor's in the minimal builds !
 #endif	
 
 	unsigned int m_state[5];
@@ -95,10 +95,30 @@ public:
 	// Finalize hash and report
 	void Final();
 #if !defined(_MINIMUM_BUILD_) 
-	void ReportHash(char *szReport, uint8 uReportType = REPORT_HEX);
+	// Appends the bytes of the digest separated by spaces, as uppercase hex or as decimal
+	void ReportHash( char *szReport, uint8 uReportType = REPORT_HEX )
+	{
+		const char *pszFirst = uReportType == REPORT_HEX ? "%02X" : "%u";
+		const char *pszNext = uReportType == REPORT_HEX ? " %02X" : " %u";
+
+		if ( uReportType != REPORT_HEX && uReportType != REPORT_DIGIT )
+		{
+			strcpy( szReport, "Error: Unknown report type!" );
+			return;
+		}
+
+		char szTemp[ 12 ];
+
+		for ( unsigned int i = 0; i < k_cubHash; i++ )
+		{
+			snprintf( szTemp, sizeof( szTemp ), i ? pszNext : pszFirst, m_digest[ i ] );
+			strcat( szReport, szTemp );
+		}
+	}
 #endif
-	void GetHash(uint8 *uDest);
+	void GetHash( uint8 *uDest ) { memcpy( uDest, m_digest, k_cubHash ); }
 #if !defined(_MINIMUM_BUILD_) 
+	// Uppercase hex, empties pszDest when it is shorter than k_cchHash
 	DLL_CLASS_IMPORT void GetHashHex( char *pszDest, int nDestSize );
 #endif
 
