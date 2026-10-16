@@ -406,3 +406,123 @@ REGISTER_NAMED_TEST( "Fiber.YieldReturnsToTheResumingThread", Fiber_YieldReturns
 
 	pFiber->Release();
 }
+
+REGISTER_NAMED_TEST( "Fiber.EventLockHandsTheLockToTheWaiter", Fiber_EventLockHandsTheLockToTheWaiter )
+{
+	CEventLock lock;
+
+	TEST_TRUE( lock.TryLock() );
+	TEST_FALSE( lock.TryLock() );
+
+	std::atomic< bool > bWaiterOwns( false );
+	std::thread waiter( [ & ]()
+	{
+		lock.Lock();
+		bWaiterOwns = true;
+		lock.Unlock();
+	} );
+
+	// The waiter stays queued while the lock is held.
+	ThreadSleep( 50 );
+	TEST_FALSE( bWaiterOwns.load() );
+
+	lock.Unlock();
+	waiter.join();
+
+	TEST_TRUE( bWaiterOwns.load() );
+
+	// The waiter freed the lock again.
+	TEST_TRUE( lock.TryLock() );
+	lock.Unlock();
+}
+
+REGISTER_NAMED_TEST( "Fiber.EventRWLockWriteLockNests", Fiber_EventRWLockWriteLockNests )
+{
+	CEventRWLock lock;
+	CEventListNode node;
+
+	lock.LockForWrite( node );
+	lock.LockForWrite( node );
+	TEST_EQ( lock.GetWriteLockEvent(), &node );
+
+	lock.UnlockWrite();
+	TEST_EQ( lock.GetWriteLockEvent(), &node );
+
+	lock.UnlockWrite();
+	TEST_NULL( lock.GetWriteLockEvent() );
+}
+
+REGISTER_NAMED_TEST( "Fiber.EventRWLockReaderWaitsForTheWriter", Fiber_EventRWLockReaderWaitsForTheWriter )
+{
+	CEventRWLock lock;
+
+	lock.LockForWrite();
+
+	std::atomic< bool > bReaderOwns( false );
+	std::thread reader( [ & ]()
+	{
+		lock.LockForRead();
+		bReaderOwns = true;
+		lock.UnlockRead();
+	} );
+
+	ThreadSleep( 50 );
+	TEST_FALSE( bReaderOwns.load() );
+
+	lock.UnlockWrite();
+	reader.join();
+
+	TEST_TRUE( bReaderOwns.load() );
+}
+
+REGISTER_NAMED_TEST( "Fiber.EventRWLockWriterWaitsForTheReaders", Fiber_EventRWLockWriterWaitsForTheReaders )
+{
+	CEventRWLock lock;
+
+	// Read locks are shared.
+	lock.LockForRead();
+	lock.LockForRead();
+
+	std::atomic< bool > bWriterOwns( false );
+	std::thread writer( [ & ]()
+	{
+		lock.LockForWrite();
+		bWriterOwns = true;
+		lock.UnlockWrite();
+	} );
+
+	ThreadSleep( 50 );
+	TEST_FALSE( bWriterOwns.load() );
+
+	lock.UnlockRead();
+	ThreadSleep( 50 );
+	TEST_FALSE( bWriterOwns.load() );
+
+	lock.UnlockRead();
+	writer.join();
+
+	TEST_TRUE( bWriterOwns.load() );
+}
+
+REGISTER_NAMED_TEST( "Fiber.EventRWLockWritersTakeTurns", Fiber_EventRWLockWritersTakeTurns )
+{
+	CEventRWLock lock;
+	int nCounter = 0;
+
+	auto work = [ & ]()
+	{
+		for ( int i = 0; i < 10000; i++ )
+		{
+			lock.LockForWrite();
+			nCounter++;
+			lock.UnlockWrite();
+		}
+	};
+
+	std::thread first( work );
+	std::thread second( work );
+	first.join();
+	second.join();
+
+	TEST_EQ( nCounter, 20000 );
+}

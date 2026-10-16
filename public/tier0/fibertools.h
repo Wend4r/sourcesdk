@@ -38,9 +38,86 @@ class CEventList : public CTSFastPushQueue_Base< CEventListNode, CEventListNode,
 class CEventLock
 {
 public:
+	// Queue of the nodes waiting for the lock, its pop slot holds EVENTLOCK_EMPTY_BUT_OWNED
+	// while the lock is owned and nobody waits, and null while the lock is free
 	class CLockList : public CTSFastPushQueue_Base< CEventListNode, CEventListNode, CEventListNode, &CEventListNode::m_pNext >
 	{
+	public:
+		enum
+		{
+			EVENTLOCK_EMPTY_BUT_OWNED = 2,
+		};
+
+		CLockList( bool bLocked )
+		{
+			if ( bLocked )
+				m_pPop = GetEmptyButOwned();
+		}
+
+		// Takes the lock when it is free
+		bool TryLock()
+		{
+			return ThreadInterlockedCompareExchangePointer( PopSlot(), GetEmptyButOwned(), nullptr ) == nullptr;
+		}
+
+		// Queues the node behind the owner; false when the lock was released meanwhile, so
+		// the node is the first one in the queue and owns the lock
+		bool InternalPush( CEventListNode &node )
+		{
+			CEventListNode *pPrev = static_cast< CEventListNode * >( ThreadInterlockedExchangePointer( ( void *volatile * )&m_pPush, &node ) );
+			void *pPrevNext = ThreadInterlockedExchangePointer( ( void *volatile * )NextSlot( pPrev ), &node );
+
+			return pPrev != GetLoopbackAddress() || pPrevNext != nullptr;
+		}
+
+		// Removes the first node, which owns the lock from then on; frees the lock and
+		// returns null when nobody waits
+		CEventListNode *InternalPop()
+		{
+			CEventListNode *pFirst = static_cast< CEventListNode * >( ThreadInterlockedCompareExchangePointer( PopSlot(), nullptr, GetEmptyButOwned() ) );
+
+			if ( pFirst == GetEmptyButOwned() )
+				return nullptr;
+
+			if ( ThreadInterlockedCompareExchangePointer( ( void *volatile * )&m_pPush, GetLoopbackAddress(), pFirst ) == pFirst )
+			{
+				ThreadInterlockedCompareExchangePointer( PopSlot(), GetEmptyButOwned(), pFirst );
+			}
+			else
+			{
+				while ( !*NextSlot( pFirst ) )
+					;
+
+				m_pPop = *NextSlot( pFirst );
+			}
+
+			pFirst->m_pNext = nullptr;
+
+			return pFirst;
+		}
+
+	private:
+		void *volatile *PopSlot() { return ( void *volatile * )&m_pPop; }
+		static CEventListNode *GetEmptyButOwned() { return reinterpret_cast< CEventListNode * >( EVENTLOCK_EMPTY_BUT_OWNED ); }
 	};
+
+	// bLocked makes the lock start owned, with no owner to hand it back
+	CEventLock( bool bLocked = false ) : m_LockList( bLocked ) {}
+
+	bool TryLock() { return m_LockList.TryLock(); }
+
+	// Waits in node until the owner hands the lock over, yielding when called on a fiber
+	inline void Lock( CEventListNode &node );
+
+	// Waits in the node of the current fiber or in a temporary node of the thread
+	inline void Lock();
+
+	// Hands the lock to the first waiting node or frees it
+	void Unlock()
+	{
+		if ( CEventListNode *pNext = m_LockList.InternalPop() )
+			pNext->m_Event.Set();
+	}
 
 private:
 	CLockList m_LockList;
@@ -52,7 +129,95 @@ private:
 class CEventRWLock
 {
 public:
-	CEventRWLock() : m_pWritingEvent( nullptr ), m_nWritingThreadLockCount( 0 ) {}
+	// The write lock queue stays owned while nobody waits, the writers that find the write
+	// lock taken wait in it until UnlockWrite hands it over
+	CEventRWLock() : m_WriteLockQueue( true ), m_pWritingEvent( nullptr ), m_nWritingThreadLockCount( 0 ) {}
+
+	// Takes a read lock, waiting for the writer when there is one
+	void LockForRead( CEventListNode &node )
+	{
+		uint32 nInterlock = ++m_Interlock;
+
+		if ( nInterlock & WRITE_LOCK_MASK )
+			WaitForReadLockTransition( node, nInterlock );
+	}
+
+	inline void LockForRead();
+
+	void UnlockRead( const char *pFileName = nullptr, int nLine = -1 )
+	{
+		uint32 nInterlock = --m_Interlock;
+
+		if ( !( nInterlock & ( WRITE_LOCK_MASK | READ_LOCK_ACCOUNTING_BIT ) ) )
+			return;
+
+		if ( nInterlock & READ_LOCK_ACCOUNTING_BIT )
+		{
+			// The writer waits for the last of the read locks that it counts
+			if ( ++m_ReadlockAccounting == 0 )
+				m_pWritingEvent->m_Event.Set();
+		}
+		else if ( m_nSecondaryFlags & SF_READ_LOCKS_ACTIVE_WHILE_HOLDING_WRITE_LOCK )
+		{
+			UnlockWrite( pFileName, nLine );
+		}
+	}
+
+	// Takes the write lock, again when node already holds it
+	void LockForWrite( CEventListNode &node )
+	{
+		if ( m_pWritingEvent == &node )
+		{
+			m_nWritingThreadLockCount++;
+			return;
+		}
+
+		uint32 nInterlock = m_Interlock.AtomicAdd( WRITE_LOCK_INCREMENT );
+
+		if ( nInterlock & WRITE_LOCK_MASK )
+			m_WriteLockQueue.Lock();
+		else if ( nInterlock & READ_LOCK_MASK )
+			HandleFirstWriteLockTransition( node );
+
+		m_pWritingEvent = &node;
+		m_nWritingThreadLockCount = 1;
+	}
+
+	// Takes the write lock with the node of the current fiber or with a temporary node
+	inline void LockForWrite( const char *pFileName = nullptr, int nLine = -1 );
+
+	// Releases one level of the write lock, then wakes the waiting readers or the next writer
+	void UnlockWrite( const char *pFileName = nullptr, int nLine = -1 )
+	{
+		if ( --m_nWritingThreadLockCount != 0 )
+			return;
+
+		m_pWritingEvent = nullptr;
+
+		uint32 nFlags;
+
+		do
+		{
+			nFlags = m_nSecondaryFlags;
+		}
+		while ( !m_nSecondaryFlags.AssignIf( nFlags, nFlags & ~SF_READ_LOCKS_ACTIVE_WHILE_HOLDING_WRITE_LOCK ) );
+
+		if ( ( m_Interlock.AtomicAdd( -WRITE_LOCK_INCREMENT ) & WRITE_LOCK_MASK ) != WRITE_LOCK_INCREMENT )
+		{
+			m_WriteLockQueue.Unlock();
+			return;
+		}
+
+		for ( CEventListNode *pReader = m_WaitingReadLocks.Detach(); pReader; )
+		{
+			CEventListNode *pNext = pReader->m_pNext;
+
+			pReader->m_pNext = nullptr;
+			pReader->m_Event.Set();
+
+			pReader = pNext;
+		}
+	}
 
 	DLL_CLASS_IMPORT void DuplicateReadLock();
 
@@ -63,6 +228,20 @@ public:
 	const CEventListNode *GetWriteLockEvent() const { return m_pWritingEvent; }
 
 protected:
+	enum InterlockBits_t
+	{
+		READ_LOCK_MASK = 0x0000FFFF,
+		WRITE_LOCK_INCREMENT = 0x00010000,
+		WRITE_LOCK_MASK = 0x7FFF0000,
+		READ_LOCK_ACCOUNTING_BIT = 0x80000000,
+	};
+
+	enum SecondaryFlags_t
+	{
+		SF_READ_LOCKS_ACTIVE_WHILE_HOLDING_WRITE_LOCK = 1 << 0,
+		SF_READ_LOCK_ACCOUNTING_NOTIFY_WRITER_WHEN_OFF = 1 << 1,
+	};
+
 	DLL_CLASS_IMPORT void HandleFirstWriteLockTransition( CEventListNode &node );
 	DLL_CLASS_IMPORT void WaitForReadLockTransition( CEventListNode &node, uint32 nFlags );
 
@@ -215,6 +394,68 @@ private:
 	CFiber( const CFiber & ) = delete;
 	CFiber &operator=( const CFiber & ) = delete;
 };
+
+
+inline void CEventLock::Lock( CEventListNode &node )
+{
+	node.m_pNext = nullptr;
+
+	if ( m_LockList.TryLock() )
+		return;
+
+	if ( !m_LockList.InternalPush( node ) )
+	{
+		// The lock was released meanwhile, take the node out of the queue again
+		m_LockList.InternalPop();
+		return;
+	}
+
+	if ( CFiber *pFiber = CFiber::GetCurrentFiber() )
+		pFiber->FiberYield( []( void *pEvent ) { return static_cast< CThreadEvent * >( pEvent )->Check(); }, &node.m_Event );
+	else
+		node.m_Event.Wait();
+
+	node.m_Event.Reset();
+}
+
+inline void CEventLock::Lock()
+{
+	if ( CFiber *pFiber = CFiber::GetCurrentFiber() )
+	{
+		Lock( pFiber->m_EventListNode );
+		return;
+	}
+
+	CEventListNode *pNode = CEventListNode::AllocTempNode();
+	Lock( *pNode );
+	CEventListNode::FreeTempNode( pNode );
+}
+
+inline void CEventRWLock::LockForRead()
+{
+	if ( CFiber *pFiber = CFiber::GetCurrentFiber() )
+	{
+		LockForRead( pFiber->m_EventListNode );
+		return;
+	}
+
+	CEventListNode *pNode = CEventListNode::AllocTempNode();
+	LockForRead( *pNode );
+	CEventListNode::FreeTempNode( pNode );
+}
+
+inline void CEventRWLock::LockForWrite( const char *pFileName, int nLine )
+{
+	if ( CFiber *pFiber = CFiber::GetCurrentFiber() )
+	{
+		LockForWrite( pFiber->m_EventListNode );
+		return;
+	}
+
+	CEventListNode *pNode = CEventListNode::AllocTempNode();
+	LockForWrite( *pNode );
+	CEventListNode::FreeTempNode( pNode );
+}
 
 //-----------------------------------------------------------------------------
 // Turns the current thread into a fiber for the lifetime of the object
