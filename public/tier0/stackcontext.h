@@ -102,9 +102,11 @@ class CThreadSwapJob
 public:
 	DLL_CLASS_IMPORT CThreadSwapJob( CThreadSwapTarget *pTarget );
 
-private:
+	// Runs pfnJob on the thread of the target and waits for it, or runs it right away when
+	// the target has no thread or is the current one
 	DLL_CLASS_IMPORT void InternalRunJob( void (*pfnJob)( void * ), void *pContext );
 
+private:
 	CThreadSwapJob *m_pNext;
 	CThreadSwapTarget *m_pTarget;
 	int m_nKind; // 1 for a swap context, 2 for a job

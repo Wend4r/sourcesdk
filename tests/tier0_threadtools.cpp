@@ -526,3 +526,26 @@ REGISTER_NAMED_TEST( "Fiber.EventRWLockWritersTakeTurns", Fiber_EventRWLockWrite
 
 	TEST_EQ( nCounter, 20000 );
 }
+
+REGISTER_NAMED_TEST( "Fiber.ThreadSwapJobRunsInPlaceWithoutATargetThread", Fiber_ThreadSwapJobRunsInPlaceWithoutATargetThread )
+{
+	CThreadSwapTarget target;
+	CThreadSwapJob job( &target );
+
+	struct JobContext_t
+	{
+		ThreadId_t m_hThread = 0;
+		int m_nRuns = 0;
+	} context;
+
+	job.InternalRunJob( []( void *pContext )
+	{
+		JobContext_t *pJobContext = static_cast< JobContext_t * >( pContext );
+
+		pJobContext->m_hThread = ThreadGetCurrentId();
+		pJobContext->m_nRuns++;
+	}, &context );
+
+	TEST_EQ( context.m_nRuns, 1 );
+	TEST_EQ( context.m_hThread, ThreadGetCurrentId() );
+}
