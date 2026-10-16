@@ -139,9 +139,10 @@ public:
 	// The base tick of the game save restore info
 	virtual int GetBaseTick() = 0;
 
-	// KV3 transfers skip a field while unk010 returns true, unless the field asks otherwise
-	virtual void unk009( bool bUnknown ) = 0;
-	virtual bool unk010() = 0;
+	// KV3 transfers skip every field in skip fields mode, unless its save behavior is 2,
+	// which no game field has; the game never turns it on
+	virtual void SetSkipFieldsMode( bool bSkipFields ) = 0;
+	virtual bool GetSkipFieldsMode() = 0;
 
 	// The kind of the save: an autosave (also a dangerous one), a quicksave, or a save
 	// that carries a level transition
@@ -220,9 +221,9 @@ public:
 	// The save file version (129) read after the file id
 	virtual int GetSaveVersion() = 0;
 
-	// The same flag as ISave::unk009 and ISave::unk010
-	virtual void unk011( bool bUnknown ) = 0;
-	virtual bool unk012() = 0;
+	// The same flag as ISave::SetSkipFieldsMode and ISave::GetSkipFieldsMode, not read on restore
+	virtual void SetSkipFieldsMode( bool bSkipFields ) = 0;
+	virtual bool GetSkipFieldsMode() = 0;
 
 	// The entity being restored, SetCurrentEntity also matches it against the logging filter
 	virtual CEntityInstance *GetCurrentEntity() = 0;
