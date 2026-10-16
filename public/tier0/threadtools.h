@@ -141,6 +141,9 @@ typedef pollfd ThreadMultiWaitItem_t;
 struct ThreadMultiWaitExtra_t
 {
 	uint32 nFlags; // CThreadMultiWaitEvent type: 2 for auto-reset, 4 for manual-reset
+#ifdef PLATFORM_OSX
+	CThreadMultiWaitEvent *pEvent; // Its signalled state is reset under its mutex
+#endif
 };
 
 struct ThreadMultiWaitObjectSet_t
@@ -148,7 +151,7 @@ struct ThreadMultiWaitObjectSet_t
 	ThreadMultiWaitItem_t *m_pItems;
 	ThreadMultiWaitExtra_t *m_pExtra;
 	int m_nItems;
-#ifdef PLATFORM_POSIX
+#if defined( PLATFORM_POSIX ) && !defined( PLATFORM_OSX )
 	int m_nEpoll;
 #endif
 };
@@ -1137,10 +1140,19 @@ public:
 private:
 #ifdef PLATFORM_WINDOWS
 	HANDLE m_hEvent;
+#elif defined( PLATFORM_OSX )
+	// A pipe, signalled while it holds a byte
+	int m_nReadFd;
+	int m_nWriteFd;
 #else
 	int m_nEventFd;
 #endif
 	int m_nType; // 2 for auto-reset, 4 for manual-reset
+#ifdef PLATFORM_OSX
+	bool m_bSignalled;
+	bool m_bHasMutex;
+	pthread_mutex_t m_Mutex;
+#endif
 };
 
 
