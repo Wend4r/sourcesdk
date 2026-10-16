@@ -102,33 +102,119 @@ private:
 	CEventDispatcher_Base &operator=( const CEventDispatcher_Base & ) = delete;
 };
 
-// Events identified by the schema class of their message
+enum EventMapRegistrationType_t : int32
+{
+	EVENT_MAP_REGISTER = 0,
+	EVENT_MAP_UNREGISTER,
+};
+
+//-----------------------------------------------------------------------------
+// Events identified by the schema class of their message. An event ID is valid when the class
+// is in the global type scope, and the ID of an event type comes from the static binding of
+// the class that the schema compiler declares in it
+//-----------------------------------------------------------------------------
 class CEventID_SchemaBinding
 {
 public:
 	typedef SchemaMetaInfoHandle_t< CSchemaClassInfo > EventID_t;
 
-	int8 unused;
+	template < typename EVENT_DESCRIPTOR >
+	class EventIDGenerator
+	{
+	public:
+		static EventID_t GetEventID() { return EventID_t( const_cast< CSchemaClassInfo * >( EVENT_DESCRIPTOR::Schema_StaticBinding() ) ); }
+	};
+
+	static bool IsValidEventID( EventID_t eventID )
+	{
+		return eventID && ( eventID->m_nFlags1 & ( 1 << 7 ) ) != 0; // SCHEMA_CF1_GLOBAL_TYPE_SCOPE
+	}
+
+	// Copies the class name of the event to pszBuffer and returns it
+	static const char *GetEventName( EventID_t eventID, char *pszBuffer, size_t nBufferSize )
+	{
+		V_strncpy( pszBuffer, eventID && eventID->m_pszName ? eventID->m_pszName : "<null>", static_cast< int >( nBufferSize ) );
+
+		return pszBuffer;
+	}
+};
+
+//-----------------------------------------------------------------------------
+// Signature of the events with one parameter, the event message by const reference. The
+// listeners may return void or bool, and a listener returning false stops the dispatch
+//-----------------------------------------------------------------------------
+class CEventSignature_Bool_ConstStructRef
+{
+public:
+	class EventSignature_Base
+	{
+	public:
+		enum
+		{
+			PARAMETER_COUNT = 1
+		};
+
+		typedef bool ReturnType_t;
+
+		static ReturnType_t GetDefaultReturnValue() { return true; }
+
+		// Takes the value of the last listener, false ends the iteration
+		static bool MergeReturnValueAndContinueIterating( ReturnType_t &result, const ReturnType_t &value )
+		{
+			result = value;
+
+			return value;
+		}
+	};
+
+	template < typename EVENT_DESCRIPTOR >
+	class EventSignature : public EventSignature_Base
+	{
+	public:
+		typedef const EVENT_DESCRIPTOR &Param1Type_t;
+	};
 };
 
 class CEventIDManager_SchemaBinding : public CEventID_SchemaBinding
 {
+public:
+	template < typename EVENT_DESCRIPTOR >
+	class EventDescription : public EventIDGenerator< EVENT_DESCRIPTOR >, public CEventSignature_Bool_ConstStructRef::EventSignature< EVENT_DESCRIPTOR >
+	{
+	};
 };
 
 class CEventIDManager_Default : public CEventIDManager_SchemaBinding
 {
 };
 
+// Result of a dispatch, merged from the return values of the listeners
+template < typename EVENT_DESCRIPTION, typename RETURN_TYPE >
+class CEventDispatcher_WrappedReturnType
+{
+public:
+	typedef RETURN_TYPE ReturnType_t;
+
+	CEventDispatcher_WrappedReturnType() : m_Value( EVENT_DESCRIPTION::GetDefaultReturnValue() ) {}
+
+	bool MergeReturnValueAndContinueIterating( const ReturnType_t &value ) { return EVENT_DESCRIPTION::MergeReturnValueAndContinueIterating( m_Value, value ); }
+	ReturnType_t &Get() { return m_Value; }
+
+private:
+	ReturnType_t m_Value;
+};
+
 //-----------------------------------------------------------------------------
-// Dispatcher that keeps a listener list per event ID. Only the schema classes in the global
-// type scope identify an event, the other IDs are ignored. The lock is held between
+// Dispatcher that keeps a listener list per event ID. Only the valid IDs of EVENT_ID_MANAGER
+// identify an event, the other ones are ignored. The lock is held between
 // IterateListeners_Start returning true and IterateListeners_End
 //-----------------------------------------------------------------------------
-template < typename T >
+template < typename EVENT_ID_MANAGER >
 class CEventDispatcher_Identified : public CEventDispatcher_Base
 {
 public:
-	typedef typename T::EventID_t EventID_t;
+	typedef CEventDispatcher_Base BaseClass;
+	typedef typename EVENT_ID_MANAGER::EventID_t EventID_t;
 	typedef CUtlVector< EventListenerInfo_t > ListenerVector_t;
 	typedef CUtlOrderedMap< EventID_t, ListenerVector_t, CDefLess< EventID_t >, unsigned int > EventListenerMap_t;
 
@@ -137,18 +223,77 @@ public:
 		EventID_t EventID;
 	};
 
-	CEventDispatcher_Identified() = default;
+	explicit CEventDispatcher_Identified( int nGrowSize = 0 ) : m_EventListenerMap( nGrowSize, 0 ) {}
 
+	static const char *GetEventName( EventID_t eventID, char *pszBuffer, size_t nBufferSize ) { return EVENT_ID_MANAGER::GetEventName( eventID, pszBuffer, nBufferSize ); }
 	static bool IDLessFunc( const EventID_t &lhs, const EventID_t &rhs ) { return lhs < rhs; }
 
-	static bool IsValidEventID( const EventID_t &eventID )
+	bool HasListeners( EventID_t eventID )
 	{
-		return eventID && ( eventID->m_nFlags1 & ( 1 << 7 ) ) != 0; // SCHEMA_CF1_GLOBAL_TYPE_SCOPE
+		m_Lock.Lock();
+
+		auto idx = m_EventListenerMap.Find( eventID );
+		bool bResult = m_EventListenerMap.IsValidIndex( idx ) && m_EventListenerMap.Element( idx ).Count() > 0;
+
+		m_Lock.Unlock();
+
+		return bResult;
+	}
+
+	// Appends the names of the listeners of the event
+	void GetListenerNames( EventID_t eventID, CUtlVector< CUtlString > *pNames )
+	{
+		m_Lock.Lock();
+
+		auto idx = m_EventListenerMap.Find( eventID );
+
+		if ( m_EventListenerMap.IsValidIndex( idx ) )
+			GetListenerNames_Base( m_EventListenerMap.Element( idx ), pNames );
+
+		m_Lock.Unlock();
+	}
+
+	// Returns true with the lock held when the event has a listener, call IterateListeners_End
+	// after the last IterateListener then
+	bool IterateListeners_Start( DelegateIterator_t &iter, EventID_t eventID, bool bForward )
+	{
+		if ( !eventID )
+		{
+			Assert( eventID );
+
+			return false;
+		}
+
+		iter.EventID = eventID;
+
+		m_Lock.Lock();
+
+		auto idx = m_EventListenerMap.Find( eventID );
+
+		iter.pListeners = m_EventListenerMap.IsValidIndex( idx ) ? &m_EventListenerMap.Element( idx ) : nullptr;
+
+		if ( !BaseClass::IterateListeners_Start( iter, bForward ) )
+		{
+			BaseClass::IterateListeners_End( iter );
+			m_Lock.Unlock();
+
+			return false;
+		}
+
+		return true;
+	}
+
+	const EventListenerInfo_t *IterateListener( DelegateIterator_t &iter ) { return BaseClass::IterateListener( iter ); }
+
+	void IterateListeners_End( DelegateIterator_t &iter )
+	{
+		BaseClass::IterateListeners_End( iter );
+		m_Lock.Unlock();
 	}
 
 	void RegisterEventListener_Abstract( const CUtlAbstractDelegate &delegate, uint32 nDelegateParamCount, bool bDelegateReturnsVoid, EventID_t eventID, int nPriority, const char *pszName )
 	{
-		if ( !IsValidEventID( eventID ) )
+		if ( !EVENT_ID_MANAGER::IsValidEventID( eventID ) )
 			return;
 
 		m_Lock.Lock();
@@ -176,81 +321,18 @@ public:
 		m_Lock.Unlock();
 	}
 
-	template < typename R, typename... ARGS >
-	void RegisterEventListener( const CUtlDelegate< R ( ARGS... ) > &delegate, EventID_t eventID, int nPriority = 0, const char *pszName = nullptr )
+	void UnregisterEventListener_Abstract( const CUtlAbstractDelegate &delegate, EventID_t eventID )
 	{
-		RegisterEventListener_Abstract( delegate.GetAbstractDelegate(), sizeof...( ARGS ), std::is_void_v< R >, eventID, nPriority, pszName );
-	}
+		if ( !EVENT_ID_MANAGER::IsValidEventID( eventID ) )
+			return;
 
-	// False when the delegate was not registered for the event
-	bool UnregisterEventListener_Abstract( const CUtlAbstractDelegate &delegate, EventID_t eventID )
-	{
-		if ( !IsValidEventID( eventID ) )
-			return false;
-
-		m_Lock.Lock();
-
-		auto idx = m_EventListenerMap.Find( eventID );
-		bool bResult = m_EventListenerMap.IsValidIndex( idx ) && UnregisterEventListener_Base( delegate, m_EventListenerMap.Element( idx ) );
-
-		m_Lock.Unlock();
-
-		return bResult;
-	}
-
-	template < typename R, typename... ARGS >
-	bool UnregisterEventListener( const CUtlDelegate< R ( ARGS... ) > &delegate, EventID_t eventID )
-	{
-		return UnregisterEventListener_Abstract( delegate.GetAbstractDelegate(), eventID );
-	}
-
-	// Appends the names of the listeners of the event
-	void GetListenerNames( EventID_t eventID, CUtlVector< CUtlString > *pNames )
-	{
 		m_Lock.Lock();
 
 		auto idx = m_EventListenerMap.Find( eventID );
 
 		if ( m_EventListenerMap.IsValidIndex( idx ) )
-			GetListenerNames_Base( m_EventListenerMap.Element( idx ), pNames );
+			UnregisterEventListener_Base( delegate, m_EventListenerMap.Element( idx ) );
 
-		m_Lock.Unlock();
-	}
-
-	// Returns true with the lock held when the event has a listener, call IterateListeners_End
-	// after the last IterateListener then
-	bool IterateListeners_Start( DelegateIterator_t &iter, EventID_t eventID, bool bForward )
-	{
-		if ( !eventID )
-		{
-			Assert( 0 );
-			return false;
-		}
-
-		iter.EventID = eventID;
-
-		m_Lock.Lock();
-
-		auto idx = m_EventListenerMap.Find( eventID );
-
-		iter.pListeners = m_EventListenerMap.IsValidIndex( idx ) ? &m_EventListenerMap.Element( idx ) : nullptr;
-
-		if ( !CEventDispatcher_Base::IterateListeners_Start( iter, bForward ) )
-		{
-			CEventDispatcher_Base::IterateListeners_End( iter );
-			m_Lock.Unlock();
-
-			return false;
-		}
-
-		return true;
-	}
-
-	const EventListenerInfo_t *IterateListener( DelegateIterator_t &iter ) { return CEventDispatcher_Base::IterateListener( iter ); }
-
-	void IterateListeners_End( DelegateIterator_t &iter )
-	{
-		CEventDispatcher_Base::IterateListeners_End( iter );
 		m_Lock.Unlock();
 	}
 
@@ -287,12 +369,190 @@ public:
 	const EventListenerMap_t &GetEventListenerMap() const { return m_EventListenerMap; }
 
 protected:
+	template < typename R, typename... ARGS >
+	void RegisterEventListener( const CUtlDelegate< R ( ARGS... ) > &delegate, int nPriority, const char *pszName, EventID_t eventID )
+	{
+		RegisterEventListener_Abstract( delegate.GetAbstractDelegate(), sizeof...( ARGS ), std::is_void_v< R >, eventID, nPriority, pszName );
+	}
+
+	template < typename R, typename... ARGS >
+	void UnregisterEventListener( const CUtlDelegate< R ( ARGS... ) > &delegate, EventID_t eventID )
+	{
+		UnregisterEventListener_Abstract( delegate.GetAbstractDelegate(), eventID );
+	}
+
 	EventListenerMap_t m_EventListenerMap;
 };
 
-template < typename T >
-class CEventDispatcher : public CEventDispatcher_Identified< T >
+//-----------------------------------------------------------------------------
+// Typed access to the listeners of one event, reached through CEventDispatcher::Event. Each
+// level accepts the delegates of one signature: without and with the event parameter, and
+// returning void or the return type of the event
+//-----------------------------------------------------------------------------
+template < typename EVENT_ID_MANAGER, typename EVENT_DESCRIPTOR, typename RETURNTYPE, int PARAMCOUNT >
+class CEvent_Register;
+
+template < typename EVENT_ID_MANAGER, typename EVENT_DESCRIPTOR >
+class CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, void, 0 > : public CEventDispatcher_Identified< EVENT_ID_MANAGER >
 {
+public:
+	typedef CEventDispatcher_Identified< EVENT_ID_MANAGER > BaseClass;
+	typedef typename BaseClass::EventID_t EventID_t;
+	typedef typename EVENT_ID_MANAGER::template EventDescription< EVENT_DESCRIPTOR > EventDescription_t;
+
+	void RegisterEventListener( const CUtlDelegate< void () > &delegate, int nPriority = 0, const char *pszName = nullptr, EventID_t eventID = EventDescription_t::GetEventID() ) { BaseClass::RegisterEventListener( delegate, nPriority, pszName, eventID ); }
+	void UnregisterEventListener( const CUtlDelegate< void () > &delegate, EventID_t eventID = EventDescription_t::GetEventID() ) { BaseClass::UnregisterEventListener( delegate, eventID ); }
+
+private:
+	CEvent_Register();
+};
+
+template < typename EVENT_ID_MANAGER, typename EVENT_DESCRIPTOR, typename RETURNTYPE >
+class CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, RETURNTYPE, 0 > : public CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, void, EVENT_ID_MANAGER::template EventDescription< EVENT_DESCRIPTOR >::PARAMETER_COUNT >
+{
+public:
+	typedef CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, void, EVENT_ID_MANAGER::template EventDescription< EVENT_DESCRIPTOR >::PARAMETER_COUNT > BaseClass;
+	typedef typename BaseClass::EventID_t EventID_t;
+	typedef typename BaseClass::EventDescription_t EventDescription_t;
+
+	using BaseClass::RegisterEventListener;
+	using BaseClass::UnregisterEventListener;
+
+	void RegisterEventListener( const CUtlDelegate< RETURNTYPE () > &delegate, int nPriority = 0, const char *pszName = nullptr, EventID_t eventID = EventDescription_t::GetEventID() ) { CEventDispatcher_Identified< EVENT_ID_MANAGER >::RegisterEventListener( delegate, nPriority, pszName, eventID ); }
+	void UnregisterEventListener( const CUtlDelegate< RETURNTYPE () > &delegate, EventID_t eventID = EventDescription_t::GetEventID() ) { CEventDispatcher_Identified< EVENT_ID_MANAGER >::UnregisterEventListener( delegate, eventID ); }
+
+private:
+	CEvent_Register();
+};
+
+template < typename EVENT_ID_MANAGER, typename EVENT_DESCRIPTOR, typename RETURNTYPE >
+class CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, RETURNTYPE, 1 > : public CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, RETURNTYPE, 0 >
+{
+public:
+	typedef CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, RETURNTYPE, 0 > BaseClass;
+	typedef typename BaseClass::EventID_t EventID_t;
+	typedef typename BaseClass::EventDescription_t EventDescription_t;
+	typedef typename EventDescription_t::Param1Type_t Param1Type_t;
+
+	using BaseClass::RegisterEventListener;
+	using BaseClass::UnregisterEventListener;
+
+	void RegisterEventListener( const CUtlDelegate< RETURNTYPE ( Param1Type_t ) > &delegate, int nPriority = 0, const char *pszName = nullptr, EventID_t eventID = EventDescription_t::GetEventID() ) { CEventDispatcher_Identified< EVENT_ID_MANAGER >::RegisterEventListener( delegate, nPriority, pszName, eventID ); }
+	void UnregisterEventListener( const CUtlDelegate< RETURNTYPE ( Param1Type_t ) > &delegate, EventID_t eventID = EventDescription_t::GetEventID() ) { CEventDispatcher_Identified< EVENT_ID_MANAGER >::UnregisterEventListener( delegate, eventID ); }
+
+private:
+	CEvent_Register();
+};
+
+//-----------------------------------------------------------------------------
+// Calls the listeners of an event in the order of their priorities, or in the reverse order
+// when bForward is false, until a listener returning a value asks to stop
+//-----------------------------------------------------------------------------
+template < typename EVENT_ID_MANAGER, typename EVENT_DESCRIPTOR, int PARAMCOUNT >
+class CEvent_Dispatch;
+
+template < typename EVENT_ID_MANAGER, typename EVENT_DESCRIPTOR >
+class CEvent_Dispatch< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, 1 > : public CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, typename EVENT_ID_MANAGER::template EventDescription< EVENT_DESCRIPTOR >::ReturnType_t, 1 >
+{
+public:
+	typedef CEvent_Register< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, typename EVENT_ID_MANAGER::template EventDescription< EVENT_DESCRIPTOR >::ReturnType_t, 1 > BaseClass;
+	typedef typename BaseClass::EventID_t EventID_t;
+	typedef typename BaseClass::EventDescription_t EventDescription_t;
+	typedef typename EventDescription_t::ReturnType_t ReturnType_t;
+	typedef typename EventDescription_t::Param1Type_t Param1Type_t;
+
+	ReturnType_t DispatchEvent( Param1Type_t param1, bool bForward = true, EventID_t eventID = EventDescription_t::GetEventID() )
+	{
+		CEventDispatcher_WrappedReturnType< EventDescription_t, ReturnType_t > result;
+		typename BaseClass::DelegateIterator_t iter;
+
+		if ( !this->IterateListeners_Start( iter, eventID, bForward ) )
+			return result.Get();
+
+		while ( const CEventDispatcher_Base::EventListenerInfo_t *pInfo = this->IterateListener( iter ) )
+		{
+			if ( pInfo->m_bDelegateReturnsVoid )
+			{
+				if ( pInfo->m_nDelegateParamCount == 0 )
+				{
+					CUtlDelegate< void () > delegate;
+					delegate.SetAbstractDelegate( pInfo->m_Delegate );
+					delegate();
+				}
+				else
+				{
+					Assert( pInfo->m_nDelegateParamCount == 1 );
+
+					CUtlDelegate< void ( Param1Type_t ) > delegate;
+					delegate.SetAbstractDelegate( pInfo->m_Delegate );
+					delegate( param1 );
+				}
+
+				continue;
+			}
+
+			ReturnType_t value;
+
+			if ( pInfo->m_nDelegateParamCount == 0 )
+			{
+				CUtlDelegate< ReturnType_t () > delegate;
+				delegate.SetAbstractDelegate( pInfo->m_Delegate );
+				value = delegate();
+			}
+			else
+			{
+				Assert( pInfo->m_nDelegateParamCount == 1 );
+
+				CUtlDelegate< ReturnType_t ( Param1Type_t ) > delegate;
+				delegate.SetAbstractDelegate( pInfo->m_Delegate );
+				value = delegate( param1 );
+			}
+
+			if ( !result.MergeReturnValueAndContinueIterating( value ) )
+				break;
+		}
+
+		this->IterateListeners_End( iter );
+
+		return result.Get();
+	}
+
+private:
+	CEvent_Dispatch();
+};
+
+template < typename EVENT_ID_MANAGER, typename EVENT_DESCRIPTOR >
+class CEvent_Manager : public CEvent_Dispatch< EVENT_ID_MANAGER, EVENT_DESCRIPTOR, EVENT_ID_MANAGER::template EventDescription< EVENT_DESCRIPTOR >::PARAMETER_COUNT >
+{
+private:
+	CEvent_Manager();
+};
+
+//-----------------------------------------------------------------------------
+// The dispatcher the engine passes to the services and loop modes:
+//
+//	pEventDispatcher->Event< EventServerPollNetworking_t >().RegisterEventListener( UtlMakeDelegate( this, &CMyService::OnPollNetworking ), 0, "CMyService::OnPollNetworking" );
+//	pEventDispatcher->Event< EventServerPollNetworking_t >().DispatchEvent( msg );
+//-----------------------------------------------------------------------------
+template < typename EVENT_ID_MANAGER >
+class CEventDispatcher : public CEventDispatcher_Identified< EVENT_ID_MANAGER >
+{
+public:
+	typedef CEventDispatcher_Identified< EVENT_ID_MANAGER > BaseClass;
+
+	explicit CEventDispatcher( int nGrowSize = 0 ) : BaseClass( nGrowSize ) {}
+
+	// The event classes add no members, so the dispatcher is used as the one of the event
+	template < typename EVENT_DESCRIPTOR >
+	CEvent_Manager< EVENT_ID_MANAGER, EVENT_DESCRIPTOR > &Event() { return *reinterpret_cast< CEvent_Manager< EVENT_ID_MANAGER, EVENT_DESCRIPTOR > * >( this ); }
+};
+
+// Registrar of the services and loop modes without events
+template < typename EVENT_ID_MANAGER >
+class CEventMapEmptyRegistrar
+{
+public:
+	static void OnEventMapRegistration( CEventDispatcher< EVENT_ID_MANAGER > *pEventDispatcher, EventMapRegistrationType_t nRegistrationType ) {}
 };
 
 // Visits the listeners from the highest priority (or from the lowest with _BACK). The key is
@@ -302,11 +562,5 @@ class CEventDispatcher : public CEventDispatcher_Identified< T >
 
 #define FOR_EACH_EVENT_LISTENER_BACK( dispatcher, key, pInfo ) \
 	for ( auto pInfo##_iter = ( dispatcher ).IterateListeners( key, false ); auto pInfo = pInfo##_iter.Next(); )
-
-enum EventMapRegistrationType_t : int32
-{
-	EVENT_MAP_REGISTER = 0,
-	EVENT_MAP_UNREGISTER,
-};
 
 #endif // EVENTDISPATCHER_H
