@@ -81,6 +81,10 @@ PLATFORM_INTERFACE uint32 V_tier0_crc32( uint32 nStartCrc, const void *pBuf, siz
 
 PLATFORM_INTERFACE void V_abort();
 
+// Plat_CreateOpenTempFile opening the file with pMode, which must start with "w"; null on failure
+class CBufferString;
+PLATFORM_INTERFACE FILE *Plat_CreateFOpenTempFile( const char *pMode, CBufferString *pOutPath, const char *pPrefix, const char *pDirectory );
+
 #ifdef _WIN32
 PLATFORM_INTERFACE int V_stat( const char *pPath, struct stat *pStat );
 PLATFORM_INTERFACE int V_setmode( int nFileDescriptor, int nMode );

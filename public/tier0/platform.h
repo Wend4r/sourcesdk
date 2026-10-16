@@ -2458,6 +2458,42 @@ RETURN_TYPE FASTCALL __Function_##NAME<nArgument>::Run ARGS
 	}
 
 //-----------------------------------------------------------------------------
+// Whether the CPU has an invariant time stamp counter, so that the CPU ticks measure time
+//-----------------------------------------------------------------------------
+PLATFORM_INTERFACE bool g_bPlatCPUTicksAreReliable;
+
+// "windows", "linux" or "macos"; pbIs64Bit receives whether the process is 64 bit
+PLATFORM_INTERFACE const char *GetPlatformName( bool *pbIs64Bit );
+
+PLATFORM_INTERFACE const char *GetLocalHostname();
+
+//-----------------------------------------------------------------------------
+// Creates a temporary file with the prefix in the directory, named after the process ID and
+// the time, and returns its file descriptor or -1; pOutPath receives its path
+//-----------------------------------------------------------------------------
+PLATFORM_INTERFACE int Plat_CreateOpenTempFile( CBufferString *pOutPath, const char *pPrefix, const char *pDirectory );
+
+//-----------------------------------------------------------------------------
+// Redirects the standard output (nStreams bit 1) and the standard error (bit 2) of the process
+// to the file; Plat_UpdateThisProcessStdioRedirect moves the streams redirected to one file
+// descriptor to another
+//-----------------------------------------------------------------------------
+PLATFORM_OVERLOAD bool Plat_RedirectThisProcessStdioToFile( int nFileDescriptor, uint32 nStreams );
+#ifdef _WIN32
+PLATFORM_OVERLOAD bool Plat_RedirectThisProcessStdioToFile( void *hFile, uint32 nStreams );
+#endif
+PLATFORM_OVERLOAD bool Plat_UpdateThisProcessStdioRedirect( int nOldFileDescriptor, int nNewFileDescriptor );
+
+//-----------------------------------------------------------------------------
+// Relaunching the game from an alternate location of its binaries
+//-----------------------------------------------------------------------------
+PLATFORM_INTERFACE bool IsRunningFromAlternateLocation();
+PLATFORM_INTERFACE bool ShouldAllowRestart();
+
+// Nonzero when the argument is one of the arguments the relaunch adds for itself
+PLATFORM_INTERFACE int RestartSelf_TestIfInternalArg( const char *pArg );
+
+//-----------------------------------------------------------------------------
 // Dynamic libs support
 //-----------------------------------------------------------------------------
 #if defined( PLATFORM_WINDOWS )
