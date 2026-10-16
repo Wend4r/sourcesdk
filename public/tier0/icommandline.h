@@ -73,5 +73,10 @@ public:
 //-----------------------------------------------------------------------------
 PLATFORM_INTERFACE ICommandLine *CommandLine();
 
+// A command line of its own, apart from the one CommandLine() returns; release it with
+// FreeCommandLine
+PLATFORM_INTERFACE ICommandLine *CreateCommandLine();
+PLATFORM_INTERFACE void FreeCommandLine( ICommandLine *pCommandLine );
+
 #endif // TIER0_ICOMMANDLINE_H
 

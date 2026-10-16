@@ -308,5 +308,8 @@ public:
 DECLARE_TIER1_INTERFACE( ICvar, cvar );
 DECLARE_TIER1_INTERFACE( ICvar, g_pCVar );
 
+// The factory of tier0's own ICvar, for the modules that connect to it without the app system
+PLATFORM_INTERFACE CreateInterfaceFn Import_GetICVarFactory();
+
 
 #endif // ICVAR_H
