@@ -227,6 +227,8 @@ REGISTER_NAMED_TEST( "Plat.MiniDumpErrorString", Plat_MiniDumpErrorString )
 
 REGISTER_NAMED_TEST( "Plat.ApplicationState", Plat_ApplicationState )
 {
+#ifndef PLATFORM_WINDOWS
+	// The Windows tier0 ignores the setter and answers whether the standard output is open.
 	const bool bSaved = Plat_IsConsoleApplication();
 
 	Plat_SetIsConsoleApplication( true );
@@ -236,6 +238,7 @@ REGISTER_NAMED_TEST( "Plat.ApplicationState", Plat_ApplicationState )
 	TEST_FALSE( Plat_IsConsoleApplication() );
 
 	Plat_SetIsConsoleApplication( bSaved );
+#endif // !PLATFORM_WINDOWS
 
 	char szName[ 256 ];
 
