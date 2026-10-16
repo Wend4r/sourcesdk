@@ -68,4 +68,28 @@ PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyVal
 PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, CUtlString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3ToFile( const KV3ID_t& encoding, const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, const char* filename, const char* path, uint flags = KV3_SAVE_TEXT_NONE );
 
+// Detection of the KV3 data in a buffer. pOutDetectedFormat receives the format; for text, its
+// name is copied to pFormatName (nFormatNameSize chars) and pOutDetectedFormat points at it
+PLATFORM_OVERLOAD bool LooksLikeKV3BinaryData( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat );
+PLATFORM_OVERLOAD bool LooksLikeKV3TextData( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat, char *pFormatName, int nFormatNameSize );
+PLATFORM_OVERLOAD bool LooksLikeOldSchemaText( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat );
+PLATFORM_OVERLOAD bool IsKV3Data( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat, char *pFormatName, int nFormatNameSize );
+PLATFORM_OVERLOAD bool IsKV3Data( const CUtlBuffer *pSrcBuffer, KV3ID_t *pOutDetectedFormat, char *pFormatName, int nFormatNameSize );
+
+// The current format of the files with the extension, "generic" for an unknown one
+PLATFORM_OVERLOAD KV3ID_t GetCurrentKV3FormatVersionForExtension( const char *pExtension, bool *pbUnknown );
+
+// Converts the data in pRoot from one format to another
+PLATFORM_INTERFACE bool ConvertKV3Format( KeyValues3 *pRoot, const KV3ID_t &fromFormat, const KV3ID_t &toFormat, CUtlString *pOutError );
+
+// Whether the format is one of the model document formats, which pOutFormat receives
+PLATFORM_INTERFACE bool IsModelDocFormat( const KV3ID_t &id, KV3ID_t *pOutFormat );
+
+// Splits "Name{ args... }" into the name and the KV3 arguments
+PLATFORM_INTERFACE bool SplitNameAndKV3Args( const char *pString, CBufferString *pOutName, KeyValues3 *pOutArgs, CUtlString *pOutError );
+
+// Particle system data helpers
+PLATFORM_OVERLOAD bool IsParticleSystemBehaviorVersionDeprecated( KeyValues3 *pParticleSystem, int *pBehaviorVersion );
+PLATFORM_OVERLOAD bool TryCullParticleSystemDisabledBlocks( KeyValues3 *pParticleSystem );
+
 #endif // TIER0_KEYVALUES3_H
