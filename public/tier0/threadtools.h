@@ -1301,6 +1301,12 @@ public:
 	DLL_CLASS_IMPORT void Release();
 };
 
+// Takes an array of events, which are multi-wait objects at the same address
+inline ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( CThreadMultiWaitEvent **ppEvents, int nEvents )
+{
+	return ThreadMultiWaitObjectSetCreate( reinterpret_cast< CThreadMultiWaitObject ** >( ppEvents ), nEvents );
+}
+
 
 //-----------------------------------------------------------------------------
 // Blocks the arriving threads until the expected count arrives

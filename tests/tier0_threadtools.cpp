@@ -187,6 +187,25 @@ REGISTER_NAMED_TEST( "Thread.MultiWaitObjectCanBeWaitedOnAlone", Thread_MultiWai
 	TEST_FALSE( semaphore.Check() );
 }
 
+REGISTER_NAMED_TEST( "Thread.MultiWaitEventArray", Thread_MultiWaitEventArray )
+{
+	CThreadMultiWaitEvent manualReset( true );
+	CThreadMultiWaitEvent *pEvents[] = { &manualReset };
+
+	ThreadMultiWaitObjectSet_t *pSet = ThreadMultiWaitObjectSetCreate( pEvents, 1 );
+
+	TEST_NOT_NULL( pSet );
+	TEST_EQ( pSet->m_pExtra[ 0 ].nFlags, 4u );
+
+	uint64 nSignalled = 0;
+
+	manualReset.Set();
+	TEST_EQ( ThreadMultiWait( pSet, nullptr, nullptr, 0, false, &nSignalled, 0 ), 1 );
+	TEST_EQ( nSignalled, static_cast< uint64 >( 1 ) );
+
+	ThreadMultiWaitObjectSetDestroy( pSet );
+}
+
 REGISTER_NAMED_TEST( "Thread.MultiWaitSemaphoreCountsReleases", Thread_MultiWaitSemaphoreCountsReleases )
 {
 	CThreadMultiWaitSemaphore semaphore;
