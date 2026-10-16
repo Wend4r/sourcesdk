@@ -98,6 +98,9 @@ public:
 	// Appends the bytes of the digest separated by spaces, as uppercase hex or as decimal
 	void ReportHash( char *szReport, uint8 uReportType = REPORT_HEX )
 	{
+		if ( !szReport )
+			return;
+
 		const char *pszFirst = uReportType == REPORT_HEX ? "%02X" : "%u";
 		const char *pszNext = uReportType == REPORT_HEX ? " %02X" : " %u";
 

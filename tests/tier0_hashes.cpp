@@ -118,6 +118,9 @@ REGISTER_NAMED_TEST( "SHA1.HashesTheData", SHA1_HashesTheData )
 	char szDigits[ 80 ] = "";
 	sha1.ReportHash( szDigits, CSHA1::REPORT_DIGIT );
 	TEST_EQ( strncmp( szDigits, "169 153 62 54", 13 ), 0 );
+
+	// A null report buffer is ignored
+	sha1.ReportHash( nullptr );
 }
 
 REGISTER_NAMED_TEST( "SHA1.ResetStartsANewHash", SHA1_ResetStartsANewHash )
