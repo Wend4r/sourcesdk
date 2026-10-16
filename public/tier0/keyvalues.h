@@ -546,6 +546,21 @@ inline bool KeyValuesDumpAsDevMsg( KeyValues *pKeyValues, int nIndentLevel = 0, 
 }
 
 
+//-----------------------------------------------------------------------------
+// Values of the game info (gameinfo.gi) by a path of key names separated by slashes, or the
+// default when there is no game info or no such key
+//-----------------------------------------------------------------------------
+PLATFORM_OVERLOAD KeyValues *GetGameInfoKey( const char *keyName );
+PLATFORM_OVERLOAD const char *GetGameInfoString( const char *keyName, const char *defaultValue, char *pScratchSpace, size_t nScratchSpaceCount );
+PLATFORM_OVERLOAD int GetGameInfoInt( const char *keyName, int defaultValue );
+PLATFORM_OVERLOAD uint64 GetGameInfoUint64( const char *keyName, uint64 defaultValue );
+PLATFORM_OVERLOAD float GetGameInfoFloat( const char *keyName, float defaultValue );
+PLATFORM_OVERLOAD bool GetGameInfoBool( const char *keyName, bool defaultValue );
+
+// Conversion between KeyValues and JSON text
+PLATFORM_INTERFACE KeyValues *KeyValuesFromJSON( CUtlBuffer &inputBuffer, bool bIgnoreFailures, bool *pSuccess );
+PLATFORM_INTERFACE bool KeyValuesToJSON( const KeyValues *pKeyValues, CUtlBuffer &outBuffer );
+
 #include "schemacompiler/schemaoff.h"
 
 #endif // KEYVALUES_H
