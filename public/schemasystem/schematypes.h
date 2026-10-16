@@ -382,6 +382,7 @@ struct SchemaClassInfoData_t
 	
 	SchemaClassManipulatorFn_t m_pfnManipulator;
 
+#if defined(CS2) || defined(DOTA2) || defined(DEADLOCK)
 	// Fatal for a class that does not allow it
 	void DestructInPlace( void *pObject ) const
 	{
@@ -391,6 +392,7 @@ struct SchemaClassInfoData_t
 		if ( !m_pfnManipulator || !m_pfnManipulator( SCHEMA_CLASS_MANIPULATOR_ACTION_DESCTRUCT_IN_PLACE, pObject ) )
 			Plat_FatalError( "%s: %s\n", m_pszName, "Cannot destruct abstract class" );
 	}
+#endif // defined(CS2) || defined(DOTA2) || defined(DEADLOCK)
 
 	CSchemaClassInfo* GetParent()
 	{
