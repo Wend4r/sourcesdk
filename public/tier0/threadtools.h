@@ -1288,6 +1288,9 @@ public:
 		pItem->revents = 0;
 #endif
 		pExtra->nFlags = m_nExtraFlags;
+#ifdef PLATFORM_OSX
+		pExtra->pObject = const_cast< CThreadMultiWaitObject * >( this );
+#endif
 	}
 
 	uint32 GetExtraFlags() const { return m_nExtraFlags; }
@@ -1298,7 +1301,15 @@ protected:
 #else
 	int m_hEventFd;
 #endif
+#ifdef PLATFORM_OSX
+	int m_nWriteFd; // The other end of the pipe that m_hEventFd reads, signalled while it holds a byte
+#endif
 	uint32 m_nExtraFlags; // ThreadMultiWaitExtra_t flags: 1 for semaphores, 2 for auto-reset events, 4 for manual-reset events
+#ifdef PLATFORM_OSX
+	bool m_bSignalled;
+	bool m_bHasMutex; // Only events have the mutex
+	pthread_mutex_t m_Mutex;
+#endif
 
 private:
 	CThreadMultiWaitObject( const CThreadMultiWaitObject & ) = delete;
