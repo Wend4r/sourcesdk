@@ -76,6 +76,8 @@ public:
 
 	UtlSymId_t GetId() const { return m_Id; }
 
+	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element ) const;
+
 	// Is valid?
 	static UtlSymId_t Invalid() { return UTL_INVAL_SYMBOL; }
 	bool IsValid() const { return GetId() != Invalid(); }

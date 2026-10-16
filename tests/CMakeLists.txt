@@ -1,5 +1,7 @@
 include(CTest)
 
+find_package(Threads REQUIRED)
+
 set(SOURCESDK_TEST_COMMON_SOURCES
 	common/runner.cpp
 	common/source2_main.cpp
@@ -46,6 +48,7 @@ function(sourcesdk_setup_test_target target_name)
 	target_link_libraries(${target_name} PRIVATE
 		${SOURCESDK_KV3LIB_NAME}
 		${SOURCESDK_TIER1_NAME}
+		Threads::Threads
 	)
 
 	if(EXISTS "${SOURCESDK_TIER0_LIB_FILENAME}")
@@ -125,7 +128,12 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	refcount.cpp
 	stringpool.cpp
 	strtools.cpp
+	tier0_allocators.cpp
+	tier0_eventdispatcher.cpp
+	tier0_hashes.cpp
 	tier0_platform.cpp
+	tier0_snapshots.cpp
+	tier0_strings.cpp
 	tier0_threadtools.cpp
 	tslist.cpp
 	utlarray.cpp

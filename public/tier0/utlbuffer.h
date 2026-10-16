@@ -221,6 +221,7 @@ public:
 	DLL_CLASS_IMPORT bool			IsBigEndian( void );
 
 	DLL_CLASS_IMPORT void	AlignBuffer( int alignment );
+	DLL_CLASS_IMPORT bool	AlignBufferGet( int alignment );
 
 	// Resets the buffer; but doesn't free memory
 	void			Clear();
@@ -304,7 +305,7 @@ public:
 	// If successful, the get index is advanced and the function returns true,
 	// otherwise the index is not advanced and the function returns false.
 	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, char* pString, int nMaxLen );
-	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, CBufferString &buffer );
+	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, CBufferString *pBuffer );
 
 	// Advance the get index until after the particular string is found
 	// Do not eat whitespace before starting. Return false if it failed
@@ -314,7 +315,7 @@ public:
 	// Parses the next token, given a set of character breaks to stop at
 	// Returns the length of the token parsed in bytes (-1 if none parsed)
 	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, char *pTokenBuf, int nMaxLen, bool bParseComments = true );
-	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, CBufferString &token, bool bParseComments = true );
+	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, CBufferString *pToken, bool bParseComments = true );
 
 	// Write stuff in
 	// Binary mode: it'll just write the bits directly in, and strings will be
@@ -353,6 +354,10 @@ public:
 	void* PeekPut( int offset = 0 );
 	const void* PeekGet( int offset = 0 ) const;
 	DLL_CLASS_IMPORT const void* PeekGet( int nMaxSize, int nOffset );
+
+	// Advances the get or put index by nBytes, returns where it was or null when out of range
+	DLL_CLASS_IMPORT const void* AccessGet( int nBytes );
+	DLL_CLASS_IMPORT void* AccessPut( int nBytes );
 
 	// Where am I writing (put)/reading (get)?
 	int TellPut( ) const;
