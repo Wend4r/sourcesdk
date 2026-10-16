@@ -291,8 +291,13 @@ REGISTER_NAMED_TEST( "Plat.CPU", Plat_CPU )
 
 	double flLoad = -1.0;
 
+#ifdef PLATFORM_OSX
+	// The macOS tier0 has no system load.
+	TEST_FALSE( Plat_GetSystemLoad( &flLoad ) );
+#else
 	TEST_TRUE( Plat_GetSystemLoad( &flLoad ) );
 	TEST_TRUE( flLoad >= 0.0 );
+#endif // PLATFORM_OSX
 
 	// The previous MXCSR value restores the denormal flags.
 	const uint32 nOriginal = _mm_getcsr();
