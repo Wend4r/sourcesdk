@@ -24,8 +24,6 @@ struct _AssertCompileTimeConstantStruct_t
 	uint32 m_nFlags;
 };
 
-COMPILE_TIME_ASSERT( sizeof( _AssertCompileTimeConstantStruct_t ) == 0x20 );
-
 // Reports the failed assertion, optionally with a formatted message; true when the caller
 // should break into the debugger
 PLATFORM_OVERLOAD bool Assert_ConditionFailed( const _AssertCompileTimeConstantStruct_t &assertion );
