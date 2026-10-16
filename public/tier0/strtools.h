@@ -166,6 +166,7 @@ class VectorWS;
 class Quaternion;
 class Color;
 class QAngle;
+class CUtlBuffer;
 class CUtlString;
 
 template< class T, typename I, size_t N > class CUtlVectorMemory_Growable;
@@ -1040,6 +1041,12 @@ PLATFORM_INTERFACE void V_URLEncode( OUT_Z_CAP(nDestLen) char *pchDest, int nDes
 //
 // Returns the amount of space actually used in the output buffer.  
 PLATFORM_INTERFACE size_t V_URLDecode( OUT_CAP(nDecodeDestLen) char *pchDecodeDest, int nDecodeDestLen, const char *pchEncodedSource, int nEncodedSourceLen );
+
+// Base64 encoding and decoding
+PLATFORM_INTERFACE unsigned int base64_encode( char *pDst, unsigned int nDstLength, const byte *pSrc, unsigned int nSrcLength );
+PLATFORM_INTERFACE unsigned int base64_decode( byte *pDst, unsigned int nDstLength, const char *pSrc, unsigned int nSrcLength );
+PLATFORM_OVERLOAD bool base64_encode( CUtlBuffer &dst, const CUtlBuffer &src );
+PLATFORM_OVERLOAD bool base64_decode( CUtlBuffer &dst, const CUtlBuffer &src );
 
 // 3d memcpy. Copy (up-to) 3 dimensional data with arbitrary source and destination
 // strides. Optimizes to just a single memcpy when possible. For 2d data, set numslices to 1.
