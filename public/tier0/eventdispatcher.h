@@ -103,18 +103,19 @@ private:
 };
 
 // Events identified by the schema class of their message
-struct CEventID_SchemaBinding
+class CEventID_SchemaBinding
 {
+public:
 	typedef SchemaMetaInfoHandle_t< CSchemaClassInfo > EventID_t;
 
 	int8 unused;
 };
 
-struct CEventIDManager_SchemaBinding : CEventID_SchemaBinding
+class CEventIDManager_SchemaBinding : public CEventID_SchemaBinding
 {
 };
 
-struct CEventIDManager_Default : CEventIDManager_SchemaBinding
+class CEventIDManager_Default : public CEventIDManager_SchemaBinding
 {
 };
 
