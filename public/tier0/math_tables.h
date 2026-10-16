@@ -23,6 +23,9 @@
 	DLL_IMPORT float g_Mathlib_lineartovertex[4096];	
 	DLL_IMPORT unsigned char g_Mathlib_lineartolightmap[4096];	
 
+	// Linear values of the 256 sRGB encoded byte values
+	DLL_IMPORT const float g_Mathlib_GammaToLinearByteTable[256];
+
 #endif
 
 
