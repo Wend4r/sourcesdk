@@ -152,4 +152,29 @@ struct FullStackInfo_t
 };
 #pragma pack(pop)
 
+//-----------------------------------------------------------------------------
+// The modules the stack translation knows about. The loaders report modules as they map and
+// unmap them; on Windows the stack tools ask the system instead and these do nothing
+//-----------------------------------------------------------------------------
+struct StackTranslation_LoadedModuleInfo_t;
+class CVirtualMachineCallStackTranslationEncoder;
+class IModuleMappingListener;
+
+PLATFORM_INTERFACE void StackToolsNotify_BeginLoadingModule();
+PLATFORM_INTERFACE void StackToolsNotify_EndLoadingModule();
+PLATFORM_INTERFACE void StackToolsNotify_LoadedModule( const char *szModuleName, PlatModule_t hModule, void *pBaseAddress, uint32 nSize );
+PLATFORM_INTERFACE void StackToolsNotify_UnloadedModule( PlatModule_t hModule );
+PLATFORM_INTERFACE void StackToolsNotify_SetSymbolSearchPath( const char *szSemicolonSeparatedList );
+
+// Calls the callback for the known modules and the virtual machine encoders
+typedef bool ( *FN_ModuleEnumerationCallback )( const StackTranslation_LoadedModuleInfo_t *, uint32, void *pContext );
+PLATFORM_INTERFACE uint32 StackTools_EnumerateKnownLoadedModules( FN_ModuleEnumerationCallback CallBackFunc, void *pContext );
+
+typedef bool ( *FN_VMEncoderEnumerationCallback )( CVirtualMachineCallStackTranslationEncoder *pEncoder, void *pContext );
+PLATFORM_INTERFACE void StackTools_EnumerateVirtualMachineEncoders( FN_VMEncoderEnumerationCallback CallBackFunc, void *pContext );
+
+PLATFORM_INTERFACE void StackTools_InstallModuleMappingListener( IModuleMappingListener *pListener );
+PLATFORM_INTERFACE void StackTools_RemoveModuleMappingListener( IModuleMappingListener *pListener );
+PLATFORM_INTERFACE void StackTools_VerifyLoadedModuleMappings();
+
 #endif //#ifndef TIER0_STACKTOOLS_H
