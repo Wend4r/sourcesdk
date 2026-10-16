@@ -533,6 +533,37 @@ PLATFORM_INTERFACE float64 V_StringToFloat64Raw(const char *buf, float64 default
 // Parses string as a float32 value, if the parsing fails, default_value is returned, doesn't perform error checking/reporting
 PLATFORM_INTERFACE float32 V_StringToFloat32Raw(const char *buf, float32 default_value, bool *successful = NULL, char **remainder = NULL);
 
+// Checked parsing: returns whether buf holds a valid value, stores it (or default_value when it
+// does not) in pValue and writes the parsing error to pszError when given, a buffer of at least
+// 256 chars. Of the PARSING_FLAG_* flags only PARSING_FLAG_ERROR_IF_EMPTY and the base flags
+// apply; the checks never assert or warn
+PLATFORM_INTERFACE bool V_CheckStringToBool( const char *buf, char *pszError, uint16 flags, bool *pValue, bool default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt8( const char *buf, char *pszError, uint16 flags, int8 *pValue, int8 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint8( const char *buf, char *pszError, uint16 flags, uint8 *pValue, uint8 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt16( const char *buf, char *pszError, uint16 flags, int16 *pValue, int16 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint16( const char *buf, char *pszError, uint16 flags, uint16 *pValue, uint16 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt32( const char *buf, char *pszError, uint16 flags, int32 *pValue, int32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint32( const char *buf, char *pszError, uint16 flags, uint32 *pValue, uint32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt64( const char *buf, char *pszError, uint16 flags, int64 *pValue, int64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint64( const char *buf, char *pszError, uint16 flags, uint64 *pValue, uint64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat32( const char *buf, char *pszError, uint16 flags, float32 *pValue, float32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat64( const char *buf, char *pszError, uint16 flags, float64 *pValue, float64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt64Limit( const char *buf, int64 min, int64 max, char *pszError, uint16 flags, int64 *pValue, int64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint64Limit( const char *buf, uint64 min, uint64 max, char *pszError, uint16 flags, uint64 *pValue, uint64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat32Limit( const char *buf, float32 min, float32 max, char *pszError, uint16 flags, float32 *pValue, float32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat64Limit( const char *buf, float64 min, float64 max, char *pszError, uint16 flags, float64 *pValue, float64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToVector( const char *buf, char *pszError, uint16 flags, Vector *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToVector2D( const char *buf, char *pszError, uint16 flags, Vector2D *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToVector4D( const char *buf, char *pszError, uint16 flags, Vector4D *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToVectorWS( const char *buf, char *pszError, uint16 flags, VectorWS *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToColor( const char *buf, char *pszError, uint16 flags, Color *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToQAngle( const char *buf, char *pszError, uint16 flags, QAngle *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToQuaternion( const char *buf, char *pszError, uint16 flags, Quaternion *pValue );
+
+// Reports a parsing error of the V_StringTo* functions as their flags say: to err_listener,
+// as a warning and as an assertion
+PLATFORM_INTERFACE void V_StringParseError( uint flags, IErrorListener *err_listener, const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
+
 // Templatised and shortened version of the generic V_StringTo* functions
 // these are silent, so you won't get error console warnings if parsing fails by default
 template <typename T>
