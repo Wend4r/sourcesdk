@@ -538,7 +538,7 @@ REGISTER_NAMED_TEST( "Fiber.ThreadSwapJobRunsInPlaceWithoutATargetThread", Fiber
 		int m_nRuns = 0;
 	} context;
 
-	job.InternalRunJob( []( void *pContext )
+	job.RunJob( []( void *pContext )
 	{
 		JobContext_t *pJobContext = static_cast< JobContext_t * >( pContext );
 

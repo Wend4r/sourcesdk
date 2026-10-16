@@ -104,9 +104,12 @@ public:
 
 	// Runs pfnJob on the thread of the target and waits for it, or runs it right away when
 	// the target has no thread or is the current one
-	DLL_CLASS_IMPORT void InternalRunJob( void (*pfnJob)( void * ), void *pContext );
+	void RunJob( void (*pfnJob)( void * ), void *pContext ) { InternalRunJob( pfnJob, pContext ); }
 
 private:
+	// Private in tier0, which MSVC encodes in the exported name
+	DLL_CLASS_IMPORT void InternalRunJob( void (*pfnJob)( void * ), void *pContext );
+
 	CThreadSwapJob *m_pNext;
 	CThreadSwapTarget *m_pTarget;
 	int m_nKind; // 1 for a swap context, 2 for a job
