@@ -58,7 +58,10 @@ REGISTER_NAMED_TEST( "VirtualMemorySnapshot.DescribesTheMappedRegions", VirtualM
 	TEST_FALSE( snapshot.GetCaptureHasErrors() );
 	TEST_FALSE( snapshot.IsDiff() );
 	TEST_TRUE( snapshot.GetRegionsCount() > 1 );
+#ifndef PLATFORM_WINDOWS
+	// The Windows tier0 lists the regions without counting the bytes of the process.
 	TEST_TRUE( snapshot.GetTotalVirtualBytes() > 0 );
+#endif // !PLATFORM_WINDOWS
 
 	// The regions are indexed by ascending start and by descending size.
 	FOR_EACH_VMEM_REGION( snapshot, i )
