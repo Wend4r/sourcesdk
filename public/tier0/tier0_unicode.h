@@ -155,4 +155,22 @@ private:
 	bool m_bOriginal : 1;
 };
 
+// Number of bytes the UTF-8 form of nStringUnits units of pString takes
+PLATFORM_OVERLOAD int V_GetUTF8BytesNeeded( const char *pString, int nStringUnits );
+PLATFORM_OVERLOAD int V_GetUTF8BytesNeeded( const uchar16 *pString, int nStringUnits );
+PLATFORM_OVERLOAD int V_GetUTF8BytesNeeded( const uchar32 *pString, int nStringUnits );
+
+// Reports a string that failed to convert between the Unicode forms
+PLATFORM_OVERLOAD void ReportInvalidStringConversion( const char *pString );
+PLATFORM_OVERLOAD void ReportInvalidStringConversion( const uchar16 *pString );
+PLATFORM_OVERLOAD void ReportInvalidStringConversion( const uchar32 *pString );
+
+#ifdef _WIN32
+class CBufferString;
+
+// Converts the text of buf from one Windows code page to another in place and returns it
+PLATFORM_OVERLOAD const char *V_ConvertBetweenStringEncodings( CBufferString &buf, uint32 nFromCodePage, uint32 nToCodePage );
+PLATFORM_OVERLOAD const char *V_ConvertWin32ANSILatinToUTF8( CBufferString &buf );
+#endif
+
 #endif // TIER0_TIER0_UNICODE_H
