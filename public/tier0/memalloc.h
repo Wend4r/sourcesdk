@@ -280,6 +280,22 @@ MEM_INTERFACE IMemAlloc* g_pMemAlloc;
 
 #endif
 
+// Plain functions over g_pMemAlloc, for libraries that take allocator callbacks
+MEM_INTERFACE void *MemAlloc_AllocFunc( size_t nSize );
+MEM_INTERFACE void *MemAlloc_CallocFunc( size_t nCount, size_t nSize );
+MEM_INTERFACE void *MemAlloc_ReallocFunc( void *pMem, size_t nSize );
+MEM_INTERFACE void MemAlloc_FreeFunc( void *pMem );
+MEM_INTERFACE void *MemAlloc_AllocAlignedFunc( size_t nSize, size_t align );
+MEM_INTERFACE void MemAlloc_FreeAlignedFunc( void *pMem );
+MEM_INTERFACE size_t MemAlloc_GetSizeFunc( void *pMem );
+MEM_INTERFACE MemAllocAttribute_t MemAlloc_GetAllocAttributesFunc( void *pMem );
+MEM_INTERFACE void MemAlloc_SetAllocAttributesFunc( void *pMem, MemAllocAttribute_t alloc_attribute, int unk );
+
+// Copies of the string in memory from g_pMemAlloc, null for a null string
+MEM_INTERFACE char *MemAlloc_StrDupFunc( const char *pString );
+MEM_INTERFACE char *MemAlloc_StrDupWrapperFunc( const char *pString );
+MEM_INTERFACE wchar_t *MemAlloc_WcStrDupFunc( const wchar_t *pString );
+
 //-----------------------------------------------------------------------------
 
 #ifdef MEMALLOC_REGIONS
