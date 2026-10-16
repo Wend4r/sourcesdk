@@ -379,6 +379,11 @@ PLATFORM_INTERFACE void Msg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFU
 PLATFORM_INTERFACE void Warning( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
 PLATFORM_INTERFACE void Warning_SpewCallStack( int iMaxCallStackLength, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) FMTFUNCTION( 2, 3 );
 
+// Logs the message as a warning of the channel, LOG_GENERAL for the variant without one
+PLATFORM_INTERFACE void SeriousWarning( PRINTF_FORMAT_STRING const char *pMsgFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_OVERLOAD void SeriousWarning( LoggingChannelID_t channelID, PRINTF_FORMAT_STRING const char *pMsgFormat, ... ) FMTFUNCTION( 2, 3 );
+PLATFORM_OVERLOAD void SeriousWarning( LoggingChannelID_t channelID, Color spewColor, PRINTF_FORMAT_STRING const char *pMsgFormat, ... ) FMTFUNCTION( 3, 4 );
+
 #ifdef _PS3
 
 PLATFORM_OVERLOAD void DevMsg( int level, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 2, 3 );
