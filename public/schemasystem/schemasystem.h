@@ -12,6 +12,7 @@
 #include "tier0/utltshash.h"
 #include "tier0/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier2/tier2.h"
 #include "schemasystem/schematypes.h"
 #include "schemasystem/minschema.h"
 
@@ -151,7 +152,7 @@ public:
 	virtual ~ISchemaSystem() = 0;
 };
 
-class CSchemaSystem : public ISchemaSystem
+class CSchemaSystem : public CTier2AppSystem< ISchemaSystem >
 {
 	struct DetectedSchemaMismatch_t
 	{
@@ -174,9 +175,6 @@ class CSchemaSystem : public ISchemaSystem
 	};
 	
 public:
-	CUtlVector<ResourceManifestDesc_t*> m_ResourceManifestDescs;
-	int m_nNumConnections;
-
 	CThreadFastMutex m_Mutex;
 
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaListBindings;
