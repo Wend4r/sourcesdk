@@ -177,11 +177,6 @@ public:
 	CUtlVector<ResourceManifestDesc_t*> m_ResourceManifestDescs;
 	int m_nNumConnections;
 
-private:
-	// AMNOTE: isn't used anywhere at construction/destruction, most likely padding
-	int m_unk001;
-
-public:
 	CThreadFastMutex m_Mutex;
 
 	CConCommandMemberAccessor<CSchemaSystem> m_SchemaListBindings;
@@ -204,8 +199,6 @@ public:
 	int m_nIgnored;
 	int m_nRedundant;
 	size_t m_nIgnoredBytes;
-	
-	CUtlVector<CompleteModuleRegistrationCallback_t> m_CompleteModuleRegistrationCallbacks;
 };
 
 #endif // SCHEMASYSTEM_H

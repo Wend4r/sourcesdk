@@ -162,8 +162,7 @@ public:
 	uint64 GetRequiredMemoryPoolCapacity() const { return m_nRequiredMemoryPoolCapacity; }
 	void AddRequiredMemoryPoolCapacity( uint64 nSize ) { m_nRequiredMemoryPoolCapacity += nSize; }
 
-	// True without an ISave. Otherwise false when the ISave virtual at slot 10, unidentified, returns true,
-	// unless nFlags is 2.
+	// True without an ISave. Otherwise false when ISave::unk010 returns true, unless nFlags is 2.
 	bool CanSaveField( int nFlags ) const;
 
 	// The test of every schema field: with an ISave, a field holding its default value is skipped
@@ -251,7 +250,7 @@ public:
 		struct
 		{
 			uint32 m_nValue;
-			uint32 m_nTag; // ContextPathTag_t
+			ContextPathTag_t m_nTag;
 		};
 	};
 
@@ -287,7 +286,7 @@ public:
 
 	const KeyValues3 *FindSourceMember( const CKV3MemberName &name ) const { return m_pSourceObject->FindMember( name ); }
 
-	// True unless nFlags is 1 and the IRestore virtual at slot 6, unidentified, returns true.
+	// True unless nFlags is 1 and the restore is in global mode (IRestore::GetGlobalMode).
 	bool CanLoadField( int nFlags ) const;
 
 	// The member of the class being loaded. Null for a null source; fails for a source that is not a table.

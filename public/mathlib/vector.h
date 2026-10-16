@@ -1800,7 +1800,7 @@ public:
 	inline Quaternion operator-( void ) const { return Quaternion( -x, -y, -z, -w ); }
 
 	vec_t x, y, z, w;
-} ALIGN16_POST;
+};
 
 // Random Quaternion that is UNIFORMLY distributed over the S^3
 // should be good for random generation of orientation for unit tests and for game

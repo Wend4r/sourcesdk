@@ -29,7 +29,7 @@ enum NetworkValidationMode_t
 
 };
 
-enum NetworkSerializationMode_t
+enum NetworkSerializationMode_t : int
 {
 	NET_SERIALIZATION_MODE_0 = 0x0,
 	NET_SERIALIZATION_MODE_1 = 0x1,
@@ -323,7 +323,7 @@ struct NetMessageInfo_t
 	NetChannelBufType_t m_nBufType : 6;
 	// AMNOTE: Set by FindOrCreateNetMessage's bCannotBeNetworked
 	bool m_bCannotBeNetworked : 1;
-	uint8 m_unk001 : 1;
+	uint8 m_bAssumeFieldsNotNetworked : 1;
 
 	// AMNOTE: AddCategoryMask ORs nMask into it too when bRequireHandler is true. ConfirmAllMessageHandlersInstalled
 	// reports channels in these categories that have no handler registered for the message

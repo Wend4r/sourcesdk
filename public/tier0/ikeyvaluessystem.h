@@ -11,6 +11,12 @@
 #endif
 
 #include "tier0/basetypes.h"
+#include "tier0/memstack.h"
+#include "tier0/mempool.h"
+#include "tier0/threadtools.h"
+#include "tier0/utlvector.h"
+#include "tier1/utlhashtable.h"
+#include "tier0/utlmap.h"
 
 class CUtlCharConversion;
 class KeyValues;
@@ -80,5 +86,60 @@ public:
 };
 
 PLATFORM_INTERFACE IKeyValuesSystem *KeyValuesSystem();
+
+// The shared implementation; CDisposableKeyValuesSystem derives from it without adding members.
+class CKeyValuesSystemBase : public IKeyValuesSystem
+{
+public:
+	struct hash_item_t
+	{
+		int stringIndex;
+		hash_item_t *next;
+	};
+
+	struct IndexedString_t
+	{
+		HKeySymbol hCaseInsensitiveSymbol;
+		uint32 nStringMemoryOffset;
+	};
+
+	struct SharedStringData_t
+	{
+		uint8 nReferences;
+		char stringData[1];
+	};
+
+	struct ReferenceMap_t
+	{
+		CUtlHashtable< SharedStringData_t *, CInterlockedInt > Hash;
+		CThreadRWLock_FastRead RWLock;
+	};
+
+	struct SharingMap_t
+	{
+		CUtlHashtable< uint32, SharedStringData_t * > Hash;
+		CThreadRWLock_FastRead RWLock;
+		ReferenceMap_t OverflowReferences;
+		bool bHasHashEverCollided;
+	};
+
+	CMemoryStack m_Strings;
+	CUtlVector< hash_item_t > m_HashTable;
+	CUtlVector< IndexedString_t > m_IndexedStrings;
+	CThreadRWLock_FastRead m_Symbol_RWLock;
+	CThreadRWLock_FastRead m_ConditionalSymbolTable_RWLock;
+	SharingMap_t m_SharedStrings;
+};
+
+// The global system that KeyValuesSystem() returns.
+class CKeyValuesSystem : public CKeyValuesSystemBase
+{
+public:
+	CUtlMemoryPoolBase *m_pMemPool;
+	bool m_bIgnoreMemPool;
+	CUtlMap< HKeySymbol, bool, int > m_KvConditionalSymbolTable;
+	bool m_bUnk1896; // Only written, by the virtual after SetTemporaryKeyValueAllocationScope
+	bool m_bUnk1897;
+};
 
 #endif // VSTDLIB_IKEYVALUESSYSTEM_H
