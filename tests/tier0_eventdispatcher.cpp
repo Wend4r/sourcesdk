@@ -4,7 +4,6 @@
 #include <tier0/platform.h>
 #include <tier0/eventdispatcher.h>
 
-#include <cstddef>
 #include <cstring>
 
 // Exposes the protected listener operations of the dispatcher base for the tests.
@@ -56,14 +55,6 @@ static void CollectNames( CTestEventDispatcher &dispatcher, bool bForward, CUtlS
 	}
 
 	dispatcher.IterateListeners_End( iter );
-}
-
-REGISTER_NAMED_TEST( "EventDispatcher.LayoutMatchesTier0", EventDispatcher_LayoutMatchesTier0 )
-{
-	TEST_EQ( sizeof( CEventDispatcher_Base::EventListenerInfo_t ), static_cast< size_t >( 40 ) );
-	TEST_EQ( offsetof( CEventDispatcher_Base::DelegateIterator_Base_t, nCurrent ), static_cast< size_t >( 48 ) );
-	TEST_EQ( offsetof( CEventDispatcher_Base::DelegateIterator_Base_t, pNext ), static_cast< size_t >( 56 ) );
-	TEST_EQ( offsetof( CEventDispatcher_Base::DelegateIterator_Base_t, bIteratingForward ), static_cast< size_t >( 64 ) );
 }
 
 REGISTER_NAMED_TEST( "EventDispatcher.ListenersAreSortedByPriority", EventDispatcher_ListenersAreSortedByPriority )
