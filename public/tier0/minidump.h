@@ -101,7 +101,9 @@ public:
 	DLL_CLASS_IMPORT virtual ~CMiniDumpCommentBuilderBase();
 
 	DLL_CLASS_IMPORT virtual CMiniDumpCommentBuilderBase *GetNextCommentBuilder();
-	virtual void unk003( MiniDumpStandardData_t *pData, CMiniDumpComment *pComment ) = 0;
+	// Appends the text of this builder to the comment of the minidump being written; tier0 calls
+	// it for every registered builder in turn (the client adds its "setpos ...;setang ..." line)
+	virtual void BuildComment( MiniDumpStandardData_t *pData, CMiniDumpComment *pComment ) = 0;
 
 private:
 	CMiniDumpCommentBuilderBase *m_pNext;
