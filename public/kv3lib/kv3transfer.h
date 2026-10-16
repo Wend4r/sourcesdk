@@ -162,7 +162,7 @@ public:
 	uint64 GetRequiredMemoryPoolCapacity() const { return m_nRequiredMemoryPoolCapacity; }
 	void AddRequiredMemoryPoolCapacity( uint64 nSize ) { m_nRequiredMemoryPoolCapacity += nSize; }
 
-	// True without an ISave. Otherwise false when ISave::unk010 returns true, unless nFlags is 2.
+	// True without an ISave. Otherwise false when ISave::GetSkipFieldsMode returns true, unless nFlags is 2.
 	bool CanSaveField( int nFlags ) const;
 
 	// The test of every schema field: with an ISave, a field holding its default value is skipped

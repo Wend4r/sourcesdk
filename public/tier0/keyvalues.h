@@ -539,6 +539,31 @@ protected:
 	int m_nDeveloperLevel;
 };
 
+class CKeyValuesDumpContextToBufferString : public IKeyValuesDumpContextAsText
+{
+public:
+	CKeyValuesDumpContextToBufferString( CBufferString *pStrBuf ) : m_pStrBuf( pStrBuf ) {}
+
+public:
+	DLL_CLASS_IMPORT virtual bool KvWriteText( char const *szText );
+
+protected:
+	CBufferString *m_pStrBuf;
+};
+
+class CKeyValuesDumpContextToLoggingChannel : public IKeyValuesDumpContextAsText
+{
+public:
+	CKeyValuesDumpContextToLoggingChannel( LoggingChannelID_t channelID, LoggingSeverity_t severity ) : m_channelID( channelID ), m_severity( severity ) {}
+
+public:
+	DLL_CLASS_IMPORT virtual bool KvWriteText( char const *szText );
+
+protected:
+	LoggingChannelID_t m_channelID;
+	LoggingSeverity_t m_severity;
+};
+
 inline bool KeyValuesDumpAsDevMsg( KeyValues *pKeyValues, int nIndentLevel = 0, int nDeveloperLevel = 1 )
 {
 	CKeyValuesDumpContextAsDevMsg ctx( nDeveloperLevel );

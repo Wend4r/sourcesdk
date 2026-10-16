@@ -113,4 +113,26 @@ private:
 
 COMPILE_TIME_ASSERT( sizeof( CMiniDumpComment ) == 32 );
 
+//-----------------------------------------------------------------------------
+// Adds its own text to the minidump comment, the builders register themselves
+// in a list on construction
+//-----------------------------------------------------------------------------
+class CMiniDumpCommentBuilderBase
+{
+public:
+	DLL_CLASS_IMPORT CMiniDumpCommentBuilderBase();
+	DLL_CLASS_IMPORT virtual ~CMiniDumpCommentBuilderBase();
+
+	DLL_CLASS_IMPORT virtual CMiniDumpCommentBuilderBase *GetNextCommentBuilder();
+	// Appends the text of this builder to the comment of the minidump being written; tier0 calls
+	// it for every registered builder in turn (the client adds its "setpos ...;setang ..." line)
+	virtual void BuildComment( MiniDumpStandardData_t *pData, CMiniDumpComment *pComment ) = 0;
+
+private:
+	CMiniDumpCommentBuilderBase *m_pNext;
+
+	CMiniDumpCommentBuilderBase( const CMiniDumpCommentBuilderBase & ) = delete;
+	CMiniDumpCommentBuilderBase &operator=( const CMiniDumpCommentBuilderBase & ) = delete;
+};
+
 #endif // MINIDUMP_H

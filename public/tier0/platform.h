@@ -1249,6 +1249,10 @@ PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessa
 
 
 PLATFORM_INTERFACE void Plat_Printf ( const tchar *pFmt, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void Plat_DebugPrint( const char *pFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void Plat_DebugPrintV( const char *pFormat, va_list args );
+PLATFORM_INTERFACE void Plat_DebugString_Buffered( const char *pMsg, uint64 nBufferTimeUS );
+PLATFORM_INTERFACE void Plat_DemangleRawTypeName( const char *pMangledName, CBufferString &out );
 
 //-----------------------------------------------------------------------------
 // Posix platform helpers
@@ -1770,6 +1774,32 @@ PLATFORM_INTERFACE uint64			Plat_GetClockStart();	// Snapshot of the clock when 
 PLATFORM_INTERFACE int32			Plat_timezone( void );
 PLATFORM_INTERFACE int32			Plat_daylight( void );
 
+// Relative ticks and conversions between tick counts and durations
+PLATFORM_INTERFACE uint64			Plat_RelativeTicks();
+PLATFORM_INTERFACE uint64			Plat_RelativeTickFrequency();
+PLATFORM_INTERFACE uint64			Plat_TickDiffSec( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE double			Plat_TickDiffSecF( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE uint64			Plat_TickDiffMilliSec( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE double			Plat_TickDiffMilliSecF( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE uint64			Plat_TickDiffMicroSec( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE double			Plat_TickDiffMicroSecF( uint64 nStartTicks, uint64 nEndTicks );
+PLATFORM_INTERFACE uint64			Plat_SecTickDiff( uint64 nSecs );
+PLATFORM_INTERFACE uint64			Plat_SecTickDiffF( double fSecs );
+PLATFORM_INTERFACE uint64			Plat_MilliSecTickDiff( uint64 nMillis );
+PLATFORM_INTERFACE uint64			Plat_MilliSecTickDiffF( double fMillis );
+PLATFORM_INTERFACE uint64			Plat_MicroSecTickDiff( uint64 nMicros );
+PLATFORM_INTERFACE uint64			Plat_MicroSecTickDiffF( double fMicros );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterSecs( uint64 nSecs );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterSecsF( double fSecs );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMilliSecs( uint64 nMillis );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMilliSecsF( double fMillis );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMicroSecs( uint64 nMicros );
+PLATFORM_INTERFACE uint64			Plat_TicksAfterMicroSecsF( double fMicros );
+
+PLATFORM_INTERFACE uint64			Plat_GetCurrentFrame();
+PLATFORM_INTERFACE void				Plat_SetCurrentFrame( uint64 nFrame );
+PLATFORM_INTERFACE void				Plat_ChangeCurrentFrame( int64 nDelta );
+
 // Get the local calendar time.
 // Same as time() followed by localtime(), but non-crash-prone and threadsafe.
 PLATFORM_INTERFACE void				Plat_GetLocalTime( struct tm *pNow );
@@ -1785,16 +1815,23 @@ PLATFORM_INTERFACE void				Plat_GetTimeString( struct tm *pTime, char *pOut, int
 PLATFORM_INTERFACE struct tm*		Plat_gmtime64( const time_t *nTime, struct tm *pTime );
 PLATFORM_INTERFACE time_t			Plat_timegm64( struct tm *timeptr );
 PLATFORM_INTERFACE struct tm *		Plat_localtime64( const time_t *timep, struct tm *result );
+PLATFORM_INTERFACE time_t			Plat_mktime64( struct tm *pTime );
+PLATFORM_INTERFACE char *			Plat_asctime( const struct tm *pTime, char *pBuf, size_t nBufSize );
 
 typedef class CSysModule* PlatModule_t;
 #define PLAT_MODULE_INVALID ((PlatModule_t)0)
 
+// Loads pModuleName and resolves nNames exports into pPointers; bit 0 of the optional per name pFlags allows a missing export
+PLATFORM_INTERFACE PlatModule_t		Plat_GetProcAddresses( const char *pModuleName, int nNames, const char **pNames, size_t nTotalPointerBytes, void *pPointers, size_t nTotalFlagsBytes, uint32 *pFlags, bool bFailFatal );
+
 // Get the process' executable filename.
 PLATFORM_INTERFACE void				Plat_GetModuleFilename( char *pOut, int nMaxBytes );
+PLATFORM_INTERFACE void				Plat_SetModuleFilename( const char *pExeName );
 PLATFORM_INTERFACE bool				Plat_GetExecutablePath( char* pBuff, size_t nBuff );
 PLATFORM_INTERFACE int				Plat_GetExecutablePathUTF8( CBufferString *buf );
 
 PLATFORM_INTERFACE const char *		Plat_GetGameDirectory( int unknown=0 );
+PLATFORM_INTERFACE void				Plat_SetGameDirectory( const char *pGameDir );
 
 PLATFORM_INTERFACE int				Plat_chmod(const char *filename, int pmode);
 // bDontFollowLinks checks a symbolic link itself rather than its target. Returns -1 when the file doesn't exist.
@@ -1802,12 +1839,51 @@ PLATFORM_INTERFACE int64			Plat_FileSize( const char *pFileName, bool bDontFollo
 PLATFORM_INTERFACE bool				Plat_IsDirectory( const char *pFilepath, bool bDontFollowLinks = false );
 PLATFORM_INTERFACE bool				Plat_FileIsReadOnly(const char *pFileName);
 PLATFORM_INTERFACE bool				Plat_FileExists( const char *pFileName, int flags );
+PLATFORM_INTERFACE bool				Plat_IsFile( const char *pFileName, bool bDontFollowLinks = false );
+PLATFORM_INTERFACE bool				Plat_IsSymlink( const char *pPath );
+PLATFORM_INTERFACE bool				Plat_GetFileType( const char *pPath, CBufferString &out );
+PLATFORM_INTERFACE bool				Plat_SetFileReadOnly( const char *pFileName, bool bReadOnly );
+// Sets the permission bits selected by nMask to the ones in nPermissions; nMask must include an execute bit
+PLATFORM_INTERFACE bool				Plat_SetFileExecutable( const char *pFileName, uint32 nPermissions, uint32 nMask );
+PLATFORM_INTERFACE bool				Plat_RenameFile( const char *pFrom, const char *pTo );
+PLATFORM_INTERFACE bool				Plat_RemoveFile( const char *pFileName, bool bDontFollowLinks = false );
+PLATFORM_INTERFACE bool				Plat_SafeRemoveFile( const char *pFileName, bool bRequireSafe );
+
+PLATFORM_INTERFACE bool				Plat_CreateDirectory( const char *pFileName, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_CreateDirectoryTree( const char *pPath, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_CreateDirectoryTreeForFile( const char *pFileName, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_EnsureDirectory( const char *pPath, bool bWriteEveryone );
+PLATFORM_INTERFACE bool				Plat_RemoveDirectory( const char *pFileName, bool bDontFollowLinks = false );
+PLATFORM_INTERFACE bool				Plat_RemoveDirectoryTree( const char *pPath, bool bDontFollowLinks = false );
+// Creates a uniquely named directory under pParentDirectory, or under the temp directory when it is empty
+PLATFORM_INTERFACE bool				Plat_CreateTempDirectory( CBufferString &outPath, const char *pPrefix, bool bWriteEveryone, const char *pParentDirectory );
+
+PLATFORM_INTERFACE bool				Plat_GetCurrentDirectory( CBufferString &out, bool bAppendSlash );
+PLATFORM_INTERFACE bool				Plat_SetCurrentDirectory( const char *pDir );
+PLATFORM_INTERFACE void				Plat_GetDocumentDirectory( CBufferString &out );
+PLATFORM_INTERFACE bool				Plat_GetTempDirectory( CBufferString &out );
+PLATFORM_INTERFACE void				Plat_TranslateSymbolicLinks( const char *pInDir, CBufferString &out );
+
+// Reads a whole file into a buffer allocated by g_pMemAlloc, returns 0 or a platform error code
+PLATFORM_INTERFACE int				PlatC_ReadFileToMemory( const char *pFileName, void **ppBuffer, uint32 *pnSize, bool bNullTerminate, uint32 nMaxSize );
 
 PLATFORM_INTERFACE char const *		Plat_GetEnv( char const *pEnvVarName );
+PLATFORM_INTERFACE const char *		Plat_GetCrtEnv( const char *pEnvVarName );
+PLATFORM_INTERFACE bool				Plat_HasEnv( const char *pEnvVarName );
+PLATFORM_INTERFACE bool				Plat_SetEnv( const char *pEnvVarName, const char *pValue, bool bOverwrite );
+PLATFORM_INTERFACE bool				Plat_RemoveEnv( const char *pEnvVarName );
+// Expands the environment variable references of pIn into out and returns its string; nSyntax selects the reference syntax
+PLATFORM_INTERFACE const char *		Plat_ExpandEnvVars( const char *pIn, CBufferString &out, bool bAppend, int nSyntax );
 
 PLATFORM_INTERFACE void				Plat_ExitProcess( int nCode );
 
 PLATFORM_INTERFACE bool				Plat_ShouldCollectMiniDumpsForFatalErrors();
+PLATFORM_INTERFACE void				Plat_CollectMiniDumpsForFatalErrors();
+
+// Error text attached to minidumps
+PLATFORM_INTERFACE void				Plat_AppendMiniDumpErrorString( const char *pFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void				Plat_ClearMiniDumpErrorString();
+PLATFORM_INTERFACE const char *		Plat_GetMiniDumpErrorString();
 
 PLATFORM_INTERFACE void				Plat_NonFatalErrorFunc( const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
 
@@ -1822,6 +1898,22 @@ PLATFORM_INTERFACE void				Plat_ExitProcessWithError( int nCode, bool bGenerateM
 //to be terminated
 typedef bool (*ExitProcessWithErrorCBFn)( int nCode );
 PLATFORM_INTERFACE void				Plat_SetExitProcessWithErrorCB( ExitProcessWithErrorCBFn pfnCB );
+
+PLATFORM_INTERFACE void				Plat_RestartCurrentProcess();
+PLATFORM_INTERFACE void				Plat_OnExecutableExitingMain();
+PLATFORM_INTERFACE bool				Plat_HasEnteredFatalState();
+PLATFORM_INTERFACE void				Plat_InstallControlCHandler();
+PLATFORM_INTERFACE void				Plat_AttachDebuggerToProcess( bool bBreakImmediately, bool bAutomaticallyChooseDebugger );
+
+PLATFORM_INTERFACE bool				Plat_IsConsoleApplication();
+PLATFORM_INTERFACE void				Plat_SetIsConsoleApplication( bool bIsConsoleApplication );
+PLATFORM_INTERFACE bool				Plat_IsInHeadlessMode();
+PLATFORM_INTERFACE void				Plat_EnableHeadlessMode();
+PLATFORM_INTERFACE bool				Plat_IsRunningOnCustomerMachine();
+PLATFORM_INTERFACE void				Plat_EnableCustomerMachineMode();
+PLATFORM_INTERFACE bool				Plat_IgnoreContentAsserts();
+PLATFORM_INTERFACE void				Plat_DisableIOBuffering();
+PLATFORM_INTERFACE uint32			Plat_GetThisProcessStdioRedirectFlags();
 
 // If OSX or Linux have 2GB of address space for 32-bit apps, then return true here when that case is detected
 #if defined( OSX )
@@ -1993,6 +2085,69 @@ PLATFORM_INTERFACE uint64 Plat_CPUTickFrequency();
 PLATFORM_INTERFACE double Plat_GetCPUUsage();
 
 PLATFORM_INTERFACE void Plat_GetCurrentDate( int *pDay, int *pMonth, int *pYear );
+
+PLATFORM_INTERFACE void Plat_SetupFPUControlWord();
+// Returns the previous MXCSR value to pass to Plat_RestoreDenormalsAreZero
+PLATFORM_INTERFACE uint32 Plat_SetDenormalsAreZero();
+PLATFORM_INTERFACE void Plat_RestoreDenormalsAreZero( uint32 nPrevMXCSR );
+PLATFORM_INTERFACE bool Plat_SetCPUTicksAreReliable();
+PLATFORM_INTERFACE int Plat_GetNumberCpusOnline();
+PLATFORM_INTERFACE bool Plat_IsCPUEmulated();
+PLATFORM_INTERFACE bool Plat_GetSystemLoad( double *pLoad );
+// Returns the battery charge in percent, or -1 when it is unknown
+PLATFORM_INTERFACE int8 Plat_GetPowerInfo( bool *pbOnBattery );
+PLATFORM_INTERFACE bool Plat_IsOSInLowPowerUseMode();
+PLATFORM_INTERFACE void Plat_NotifyOSAppIsNotHung();
+PLATFORM_INTERFACE bool Plat_IsWindowsGameModeEnabled();
+PLATFORM_INTERFACE bool Plat_IsWindowsGameDVREnabled();
+PLATFORM_INTERFACE bool Plat_SupportsMetalGraphicsAPI();
+PLATFORM_INTERFACE bool Plat_InitializeCOM();
+PLATFORM_INTERFACE void Plat_ShutdownCOM();
+
+PLATFORM_INTERFACE uint32 Plat_GetPageSize();
+PLATFORM_INTERFACE uint32 Plat_GetAllocationGranularity();
+
+enum PlatVirtualOperation_t
+{
+	PLAT_VIRTUAL_RESERVE = 1,
+	PLAT_VIRTUAL_COMMIT = 2,
+	PLAT_VIRTUAL_RESERVE_AND_COMMIT = PLAT_VIRTUAL_RESERVE | PLAT_VIRTUAL_COMMIT,
+	PLAT_VIRTUAL_DECOMMIT = 4,
+	PLAT_VIRTUAL_RELEASE = 8,
+	PLAT_VIRTUAL_ALLOW_LARGE_RESERVATION = 16,
+	PLAT_VIRTUAL_LARGE_RESERVE = PLAT_VIRTUAL_RESERVE | PLAT_VIRTUAL_ALLOW_LARGE_RESERVATION,
+	PLAT_VIRTUAL_LARGE_RESERVE_AND_COMMIT = PLAT_VIRTUAL_RESERVE_AND_COMMIT | PLAT_VIRTUAL_ALLOW_LARGE_RESERVATION,
+};
+
+PLATFORM_INTERFACE void *Plat_VirtualAlloc( void *pAddrHint, size_t nBytes, PlatVirtualOperation_t eOp, uint32 nAccess, uintp nAddressableUpperBound );
+PLATFORM_INTERFACE bool Plat_VirtualFree( void *pAlloc, size_t nBytes, PlatVirtualOperation_t eOp );
+PLATFORM_INTERFACE bool Plat_VirtualProtect( void *pAlloc, size_t nBytes, uint32 nAccess );
+PLATFORM_INTERFACE uint32 Plat_VirtualAccessFlags( uint32 nAccess );
+PLATFORM_INTERFACE size_t Plat_SetVirtualReserveWarnLimit( size_t nBytes );
+PLATFORM_INTERFACE size_t Plat_SetVirtualReserveFailLimit( size_t nBytes );
+
+struct OsMemoryStatus_t
+{
+	uint32 m_nMemoryLoad; // Percent of physical memory in use
+	uint64 m_nTotalPhys;
+	uint64 m_nAvailPhys;
+	uint64 m_nTotalPageFile;
+	uint64 m_nAvailPageFile;
+	uint64 m_nTotalVirtual;
+	uint64 m_nAvailVirtual;
+	uint64 m_nAvailExtendedVirtual;
+};
+
+PLATFORM_INTERFACE bool Plat_GlobalMemoryStatus( OsMemoryStatus_t *pMemoryStatus );
+PLATFORM_INTERFACE size_t Plat_GetCurrentRSS();
+PLATFORM_INTERFACE size_t Plat_GetPeakRSS();
+#ifdef PLATFORM_WINDOWS
+PLATFORM_INTERFACE size_t Plat_GetCurrentCommitCharge();
+PLATFORM_INTERFACE size_t Plat_GetPeakCommitCharge();
+#endif
+
+// Returns 1 when p is on the stack of the current thread, 0 when it is not and -1 when it is unknown
+PLATFORM_INTERFACE int Plat_IsPointerOnStack( const void *p );
 
 #endif // #if !defined( __SPU__ )
 
@@ -2626,6 +2781,53 @@ enum EOSType
 PLATFORM_INTERFACE EOSType Plat_GetOSType();
 PLATFORM_INTERFACE bool Plat_GetOSDescriptionString(char *buf, size_t size);
 PLATFORM_INTERFACE const char *GetNameFromOSType( EOSType type );
+
+PLATFORM_INTERFACE uint32 Plat_GetPlatformError();
+PLATFORM_INTERFACE bool Plat_GetComputerName( char *pBuffer, int nBufferSize );
+PLATFORM_INTERFACE bool Plat_GetUserName( char *pBuffer, int nBufferSize );
+
+PLATFORM_INTERFACE bool Plat_HasClipboardText();
+PLATFORM_INTERFACE char *Plat_GetClipboardText();
+PLATFORM_INTERFACE void Plat_SetClipboardText( const char *pszText );
+PLATFORM_INTERFACE void Plat_ClearClipboardText();
+
+PLATFORM_INTERFACE bool Plat_OpenURL( const char *pURL );
+// Registers pURLName as a URL protocol of the current user with its icon and open command
+PLATFORM_INTERFACE bool Plat_InstallUrlHandler( const char *pURLName, const char *pDefaultIcon, const char *pOpenCommand );
+
+struct V_uuid_t
+{
+	uint32 Data1;
+	uint16 Data2;
+	uint16 Data3;
+	uint8 Data4[ 8 ];
+};
+
+PLATFORM_INTERFACE void Plat_CreateUUIDImpl( V_uuid_t *pUuid, int (*pfnRand)( int, int ) );
+PLATFORM_INTERFACE void Plat_UUIDToString( const V_uuid_t *pUuid, char *pBuf, size_t nBufSize );
+PLATFORM_INTERFACE bool Plat_UUIDFromString( V_uuid_t *pUuid, const char *pBuf );
+
+typedef void *PlatRegistryKey_t;
+PLATFORM_INTERFACE bool Plat_RegistryDirectoryOpenOrCreate( const char *pRootKey, PlatRegistryKey_t &hKey );
+PLATFORM_INTERFACE void Plat_RegistryDirectoryClose( PlatRegistryKey_t &hKey );
+PLATFORM_INTERFACE int Plat_RegistryReadInt( PlatRegistryKey_t hKey, const char *pKey, int nDefaultValue );
+PLATFORM_INTERFACE void Plat_RegistryWriteInt( PlatRegistryKey_t hKey, const char *pKey, int nValue );
+PLATFORM_INTERFACE void Plat_RegistryReadString( PlatRegistryKey_t hKey, const char *pKey, char *pValue, int nValueBufferSize, const char *pDefaultValue );
+PLATFORM_INTERFACE void Plat_RegistryWriteString( PlatRegistryKey_t hKey, const char *pKey, const char *pValue );
+
+class CWindowedGameInstanceMutex;
+PLATFORM_INTERFACE CWindowedGameInstanceMutex *Plat_CreateGameInstanceMutex( const char *pGameName );
+PLATFORM_INTERFACE void Plat_DestroyGameInstanceMutex( CWindowedGameInstanceMutex *pMutex );
+PLATFORM_INTERFACE CWindowedGameInstanceMutex *Plat_GetLastGameInstanceMutex();
+
+struct GlobalListTypelessRegistry_t;
+PLATFORM_INTERFACE GlobalListTypelessRegistry_t *Plat_GetGlobalListRegistry( uint64 nUniqueHash );
+
+#ifdef PLATFORM_POSIX
+struct VSignalHandlerInfo_t;
+typedef bool (*FN_SignalHandler_t)( int nSignal, siginfo_t *pSignalInfo, void *pContext, VSignalHandlerInfo_t &info );
+PLATFORM_INTERFACE void Plat_RegisterSignalHandler( int nSignal, FN_SignalHandler_t pfnHandler, bool bUnregister );
+#endif
 
 
 //  Watchdog timer support. Call Plat_BeginWatchdogTimer( nn, issuer ) to kick the timer off.  if you don't call

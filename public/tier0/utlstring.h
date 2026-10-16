@@ -96,7 +96,7 @@ public:
 	DLL_CLASS_IMPORT CUtlString AbsPath(const char *pStartingDir = NULL) const;
 
 	// Calls CBufferString::EnsureOwnedAllocation
-	DLL_CLASS_IMPORT void Acquire(CBufferString &buffer, bool bHasStackAllocation = false);
+	DLL_CLASS_IMPORT void Acquire(CBufferString *pBuffer, bool bHasStackAllocation = false);
 
 	DLL_CLASS_IMPORT void Append(const char *pchAddition);
 	DLL_CLASS_IMPORT void Append(const char *pAddition, int nChars);
@@ -151,6 +151,7 @@ public:
 	DLL_CLASS_IMPORT CUtlString Remove(const char *string, bool bCaseSensitive = true) const;
 	DLL_CLASS_IMPORT void		RemoveDotSlashes(char replacement);
 	DLL_CLASS_IMPORT CUtlString RemoveFromStart(const char *search, bool bCaseSensitive = true) const;
+	DLL_CLASS_IMPORT CUtlString RemoveFromEnd(const char *search, bool bCaseSensitive = true) const;
 
 	// Replaces all instances of specified char with a char
 	DLL_CLASS_IMPORT CUtlString Replace(char cSearch, char cReplace) const;

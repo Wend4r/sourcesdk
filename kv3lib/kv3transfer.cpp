@@ -136,7 +136,7 @@ bool CKV3TransferSaveContext::CanSaveField( int nFlags ) const
 	if ( !m_pSave )
 		return true;
 
-	return !m_pSave->unk010() || nFlags == 2;
+	return !m_pSave->GetSkipFieldsMode() || nFlags == 2;
 }
 
 KeyValues3 *CKV3TransferSaveContext::CreateTargetMember( const CKV3MemberName &name )

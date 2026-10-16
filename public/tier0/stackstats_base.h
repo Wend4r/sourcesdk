@@ -99,4 +99,50 @@ public:
 	BasicStatStructFieldCombineMethods_t m_Combine;	
 };
 
+class CCallStackMarkerBase;
+class CCallStackStatsGatherer_Base;
+struct CallStackStatsGatherer_SharedInstanceData_t;
+
+namespace detail
+{
+	template< class GATHERER >
+	struct CallStackGatherer_FunctionTable_Template;
+}
+
+typedef detail::CallStackGatherer_FunctionTable_Template< CCallStackStatsGatherer_Base > CallStackGatherer_FunctionTable;
+
+//-----------------------------------------------------------------------------
+// Describes the fields of a stat struct, compiled out in CS2 (writes nothing)
+//-----------------------------------------------------------------------------
+class CStackStatsStructInfo
+{
+public:
+	DLL_CLASS_IMPORT size_t WriteStructDescription( uint8 *pWriteBuffer, size_t nWriteBufferSize );
+};
+
+//-----------------------------------------------------------------------------
+// Type-erased base of the call stack stats gatherers. The gatherers are compiled out
+// in CS2: the STUB_ members do nothing and its data members are never accessed
+//-----------------------------------------------------------------------------
+class CCallStackStatsGatherer_Base
+{
+public:
+	DLL_CLASS_IMPORT static const CallStackGatherer_FunctionTable *GetSTUBFunctionTable();
+
+protected:
+	DLL_CLASS_IMPORT uint32 STUB_GetCapturedCallStackDepth() const;
+	DLL_CLASS_IMPORT uint32 STUB_GetStatStructSize() const;
+	DLL_CLASS_IMPORT const char *STUB_GetStatStructName() const;
+	DLL_CLASS_IMPORT void STUB_GetVectorData_StatEntries( const void *&pEntries, uint32 &nCount ) const;
+	DLL_CLASS_IMPORT void STUB_GetVectorData_StoredSubTrees( const CCallStackStatsGatherer_Base *const *&pSubTrees, uint32 &nCount ) const;
+	DLL_CLASS_IMPORT void STUB_EvaluateGathererLinkage( CCallStackStatsGatherer_Base &gatherer );
+	DLL_CLASS_IMPORT void STUB_OnGathererRemoved( const CCallStackStatsGatherer_Base &gatherer );
+	DLL_CLASS_IMPORT void STUB_OnLinkedGathererPushed( const CCallStackStatsGatherer_Base &gatherer, const CCallStackMarkerBase &marker );
+	DLL_CLASS_IMPORT void STUB_OnLinkedGathererPopped( const CCallStackStatsGatherer_Base &gatherer );
+	DLL_CLASS_IMPORT void *STUB_LockEntry( uint32 nEntry );
+	DLL_CLASS_IMPORT void STUB_UnlockEntry( uint32 nEntry );
+	DLL_CLASS_IMPORT void STUB_PopFromLinkedGatherers() const;
+	DLL_CLASS_IMPORT void STUB_RemoveSharedInstanceData( const CallStackStatsGatherer_SharedInstanceData_t &data );
+};
+
 #endif // TIER0_STACKSTATS_BASE_H

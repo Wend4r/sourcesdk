@@ -588,7 +588,7 @@ public:
 	
 	uint64 GetCounterValue( int index ) const;
 	const char *GetCounterName( int index ) const;
-	const char *GetCounterNameAndValue( int index, uint64 &val ) const;
+	const char *GetCounterNameAndValue( int index, size_t &val ) const;
 	CounterGroup_t GetCounterGroup( int index ) const;
 
 	CVProfNode *GetCurrentNode();
@@ -606,6 +606,10 @@ protected:
 	void DumpNodes( const VProfReportSettings_t &, const CVProfNode *pNode, int indent, bool bAverageAndCountOnly, const CVProfSummingContext &, double, double, bool );
 	static int FindBudgetGroupName( const char *pBudgetGroupName );
 	static int AddBudgetGroupName( const char *pBudgetGroupName, int budgetFlags );
+
+	static void EnterNodeScopeBackground( CVProfNode *pNode );
+	static bool ExitNodeScopeBackground( CVProfNode *pNode );
+	static void MergeBackgroundNodes_R( CVProfNode *pNode, CVProfNode *pOther );
 
 public:
 	bool m_bVTuneGroupEnabled;
