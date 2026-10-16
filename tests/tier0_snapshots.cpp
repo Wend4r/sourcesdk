@@ -47,6 +47,13 @@ REGISTER_NAMED_TEST( "VirtualMemorySnapshot.DescribesTheMappedRegions", VirtualM
 {
 	CVirtualMemorySnapshot snapshot;
 
+#ifdef PLATFORM_OSX
+	// The macOS tier0 has no capture, it always fails.
+	TEST_FALSE( snapshot.Capture( ThreadGetCurrentProcessId() ) );
+	TEST_EQ( snapshot.GetRegionsCount(), 0 );
+	return;
+#endif
+
 	TEST_TRUE( snapshot.Capture( ThreadGetCurrentProcessId() ) );
 	TEST_FALSE( snapshot.GetCaptureHasErrors() );
 	TEST_FALSE( snapshot.IsDiff() );
