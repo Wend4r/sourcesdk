@@ -6,6 +6,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/memalloc.h"
 
 //-----------------------------------------------------------------------------
 // Snapshot of the modules loaded into a process, kept as variable-sized records
@@ -15,7 +16,8 @@ class CModuleListSnapshot
 {
 public:
 	DLL_CLASS_IMPORT CModuleListSnapshot( uint8 *pBuffer = nullptr, size_t nBufferSize = 0 );
-	~CModuleListSnapshot() { delete[] m_pAllocatedBuffer; }
+	// The heap buffer comes from g_pMemAlloc like in Purge
+	~CModuleListSnapshot() { g_pMemAlloc->Free( m_pAllocatedBuffer ); }
 
 	DLL_CLASS_IMPORT bool Capture( uint32 nProcessId );
 	DLL_CLASS_IMPORT bool Capture( void *hProcess );
