@@ -279,6 +279,18 @@ COMPILE_TIME_ASSERT( sizeof( VProfBudgetGroupEntry ) == 4104 );
 PLATFORM_INTERFACE void VProf_EnterScopeAdHoc( const char *pszName, CUtlSourceLocation location );
 PLATFORM_INTERFACE void VProf_ExitScope();
 
+// A new ID for a time span of the profiler
+PLATFORM_INTERFACE int VProf_AssignNextTimespanId();
+
+// The always available lightweight profiler
+PLATFORM_INTERFACE bool VProfLite_GetEnabled();
+PLATFORM_INTERFACE void VProfLite_SetEnabled( bool bEnabled );
+PLATFORM_INTERFACE void VProfLite_SetExclusivePercentiles( bool bExclusive );
+PLATFORM_INTERFACE void VProfLite_Clear();
+
+// Marks the start of the sleep of a dedicated server between its frames
+PLATFORM_INTERFACE void VProfLite_DedicatedServerSleepBegin();
+
 typedef void (*VProfExitScopeCB)();
 
 //-----------------------------------------------------------------------------
@@ -480,6 +492,9 @@ enum CounterGroup_t
 	COUNTER_GROUP_TEXTURE_GLOBAL,		// Global texture usage counters (totals for what is currently in memory).
 	COUNTER_GROUP_TEXTURE_PER_FRAME		// Per-frame texture usage counters.
 }; 
+
+// CVProfile::FindOrCreateCounter of the current profile
+PLATFORM_INTERFACE uint64 *VProf_FindOrCreateCounter( const char *pName, CounterGroup_t eCounterGroup );
 
 class PLATFORM_CLASS CVProfile 
 {
