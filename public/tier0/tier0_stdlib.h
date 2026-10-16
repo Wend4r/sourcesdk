@@ -81,6 +81,14 @@ PLATFORM_INTERFACE uint32 V_tier0_crc32( uint32 nStartCrc, const void *pBuf, siz
 
 PLATFORM_INTERFACE void V_abort();
 
+// The <ctype.h> classification and case conversion of tier0
+PLATFORM_INTERFACE int VCRT_isalnum( int c );
+PLATFORM_INTERFACE int VCRT_isalpha( int c );
+PLATFORM_INTERFACE int VCRT_isdigit( int c );
+PLATFORM_INTERFACE int VCRT_isprint( int c );
+PLATFORM_INTERFACE int VCRT_tolower( int c );
+PLATFORM_INTERFACE int VCRT_toupper( int c );
+
 // Plat_CreateOpenTempFile opening the file with pMode, which must start with "w"; null on failure
 class CBufferString;
 PLATFORM_INTERFACE FILE *Plat_CreateFOpenTempFile( const char *pMode, CBufferString *pOutPath, const char *pPrefix, const char *pDirectory );
