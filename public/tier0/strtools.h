@@ -166,6 +166,7 @@ class VectorWS;
 class Quaternion;
 class Color;
 class QAngle;
+class CUtlBuffer;
 class CUtlString;
 
 template< class T, typename I, size_t N > class CUtlVectorMemory_Growable;
@@ -274,10 +275,10 @@ PLATFORM_INTERFACE double		V_atofloat64( const char *str );
 
 PLATFORM_INTERFACE double		V_strtod( const char *str, char **endptr = NULL );
 PLATFORM_INTERFACE double		V_wcstod( const wchar_t *str, wchar_t **endptr = NULL );
-PLATFORM_INTERFACE int64		V_strtoi64( const char *str, char **endptr = NULL );
-PLATFORM_INTERFACE int64		V_wcstoi64( const wchar_t *str, wchar_t **endptr = NULL );
-PLATFORM_INTERFACE uint64		V_strtoui64( const char *str, char **endptr = NULL );
-PLATFORM_INTERFACE uint64		V_wcstoui64( const wchar_t *str, wchar_t **endptr = NULL );
+PLATFORM_INTERFACE int64		V_strtoi64( const char *str, char **endptr = NULL, int base = 10 );
+PLATFORM_INTERFACE int64		V_wcstoi64( const wchar_t *str, wchar_t **endptr = NULL, int base = 10 );
+PLATFORM_INTERFACE uint64		V_strtoui64( const char *str, char **endptr = NULL, int base = 10 );
+PLATFORM_INTERFACE uint64		V_wcstoui64( const wchar_t *str, wchar_t **endptr = NULL, int base = 10 );
 
 PLATFORM_INTERFACE char *		V_strtok( const char *str, const char *delim );
 
@@ -532,6 +533,37 @@ PLATFORM_INTERFACE float64 V_StringToFloat64Raw(const char *buf, float64 default
 
 // Parses string as a float32 value, if the parsing fails, default_value is returned, doesn't perform error checking/reporting
 PLATFORM_INTERFACE float32 V_StringToFloat32Raw(const char *buf, float32 default_value, bool *successful = NULL, char **remainder = NULL);
+
+// Checked parsing: returns whether buf holds a valid value, stores it (or default_value when it
+// does not) in pValue and writes the parsing error to pszError when given, a buffer of at least
+// 256 chars. Of the PARSING_FLAG_* flags only PARSING_FLAG_ERROR_IF_EMPTY and the base flags
+// apply; the checks never assert or warn
+PLATFORM_INTERFACE bool V_CheckStringToBool( const char *buf, char *pszError, uint16 flags, bool *pValue, bool default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt8( const char *buf, char *pszError, uint16 flags, int8 *pValue, int8 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint8( const char *buf, char *pszError, uint16 flags, uint8 *pValue, uint8 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt16( const char *buf, char *pszError, uint16 flags, int16 *pValue, int16 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint16( const char *buf, char *pszError, uint16 flags, uint16 *pValue, uint16 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt32( const char *buf, char *pszError, uint16 flags, int32 *pValue, int32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint32( const char *buf, char *pszError, uint16 flags, uint32 *pValue, uint32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt64( const char *buf, char *pszError, uint16 flags, int64 *pValue, int64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint64( const char *buf, char *pszError, uint16 flags, uint64 *pValue, uint64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat32( const char *buf, char *pszError, uint16 flags, float32 *pValue, float32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat64( const char *buf, char *pszError, uint16 flags, float64 *pValue, float64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToInt64Limit( const char *buf, int64 min, int64 max, char *pszError, uint16 flags, int64 *pValue, int64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToUint64Limit( const char *buf, uint64 min, uint64 max, char *pszError, uint16 flags, uint64 *pValue, uint64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat32Limit( const char *buf, float32 min, float32 max, char *pszError, uint16 flags, float32 *pValue, float32 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToFloat64Limit( const char *buf, float64 min, float64 max, char *pszError, uint16 flags, float64 *pValue, float64 default_value );
+PLATFORM_INTERFACE bool V_CheckStringToVector( const char *buf, char *pszError, uint16 flags, Vector *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToVector2D( const char *buf, char *pszError, uint16 flags, Vector2D *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToVector4D( const char *buf, char *pszError, uint16 flags, Vector4D *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToVectorWS( const char *buf, char *pszError, uint16 flags, VectorWS *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToColor( const char *buf, char *pszError, uint16 flags, Color *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToQAngle( const char *buf, char *pszError, uint16 flags, QAngle *pValue );
+PLATFORM_INTERFACE bool V_CheckStringToQuaternion( const char *buf, char *pszError, uint16 flags, Quaternion *pValue );
+
+// Reports a parsing error of the V_StringTo* functions as their flags say: to err_listener,
+// as a warning and as an assertion
+PLATFORM_INTERFACE void V_StringParseError( uint flags, IErrorListener *err_listener, const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
 
 // Templatised and shortened version of the generic V_StringTo* functions
 // these are silent, so you won't get error console warnings if parsing fails by default
@@ -1010,6 +1042,12 @@ PLATFORM_INTERFACE void V_URLEncode( OUT_Z_CAP(nDestLen) char *pchDest, int nDes
 // Returns the amount of space actually used in the output buffer.  
 PLATFORM_INTERFACE size_t V_URLDecode( OUT_CAP(nDecodeDestLen) char *pchDecodeDest, int nDecodeDestLen, const char *pchEncodedSource, int nEncodedSourceLen );
 
+// Base64 encoding and decoding
+PLATFORM_INTERFACE unsigned int base64_encode( char *pDst, unsigned int nDstLength, const byte *pSrc, unsigned int nSrcLength );
+PLATFORM_INTERFACE unsigned int base64_decode( byte *pDst, unsigned int nDstLength, const char *pSrc, unsigned int nSrcLength );
+PLATFORM_OVERLOAD bool base64_encode( CUtlBuffer &dst, const CUtlBuffer &src );
+PLATFORM_OVERLOAD bool base64_decode( CUtlBuffer &dst, const CUtlBuffer &src );
+
 // 3d memcpy. Copy (up-to) 3 dimensional data with arbitrary source and destination
 // strides. Optimizes to just a single memcpy when possible. For 2d data, set numslices to 1.
 PLATFORM_INTERFACE void V_CopyMemory3D(
@@ -1018,6 +1056,131 @@ PLATFORM_INTERFACE void V_CopyMemory3D(
 	int nSrcBytesPerRow, int nSrcBytesPerSlice, // strides for source.
 	int nDestBytesPerRow, int nDestBytesPerSlice // strides for dest
 );
+
+// Classification of whole strings, false for an empty string
+PLATFORM_INTERFACE bool V_isalnum_str_fast( const char *pStr );
+PLATFORM_INTERFACE bool V_isalpha_str_fast( const char *pStr );
+PLATFORM_INTERFACE bool V_isstrlower_fast( const char *pStr );
+PLATFORM_INTERFACE bool V_isstrupper_fast( const char *pStr );
+PLATFORM_INTERFACE bool V_isEntirelyWhitespace( const char *pStr );
+PLATFORM_INTERFACE bool V_containsWhitespace( const char *pStr );
+PLATFORM_INTERFACE bool V_StringHasNonAsciiCharacters( const char *pStr );
+PLATFORM_INTERFACE bool V_AppearsToBeANumber( const char *pString );
+PLATFORM_INTERFACE bool V_isvalidhex( const char *in, int inputchars );
+
+PLATFORM_INTERFACE int V_iswalnum( uchar32 c );
+PLATFORM_INTERFACE int V_iswalpha( uchar32 c );
+PLATFORM_INTERFACE int V_iswcntrl( uchar32 c );
+PLATFORM_INTERFACE int V_iswlower( uchar32 c );
+PLATFORM_INTERFACE int V_iswupper( uchar32 c );
+PLATFORM_INTERFACE int V_iswpunct( uchar32 c );
+PLATFORM_INTERFACE int V_isbreakablewspace( wchar_t ch );
+PLATFORM_INTERFACE int V_isbreakablewspace32( uchar32 ch );
+PLATFORM_INTERFACE int V_tier0_isgraph( int c );
+PLATFORM_INTERFACE int V_tier0_ispunct( int c );
+
+PLATFORM_INTERFACE const char *V_tier0_strchr( const char *s, char c );
+PLATFORM_INTERFACE size_t V_strspn( const char *str, const char *strCharSet );
+PLATFORM_INTERFACE int32 V_strtoi32( const char *str, char **endptr, int base );
+PLATFORM_INTERFACE uint32 V_strtoui32( const char *str, char **endptr, int base );
+
+PLATFORM_INTERFACE bool _V_strEndsWith( const char *pStr, const char *pSuffix, bool bCaseSensitive );
+#define V_strEndsWith( pStr, pSuffix, bCaseSensitive ) _V_strEndsWith( ( pStr ), ( pSuffix ), ( bCaseSensitive ) )
+
+PLATFORM_INTERFACE char *_V_StringAfterLeadingWhitespace( char *str );
+#define V_StringAfterLeadingWhitespace( str ) _V_StringAfterLeadingWhitespace( str )
+
+// Removes the whitespace at both ends in place; V_StrTrim returns the new length
+PLATFORM_INTERFACE void V_StripSurroundingWhitespace( char *ppline );
+PLATFORM_INTERFACE int V_StrTrim( char *pStr );
+
+// Removes the zeros after the last nonzero digit following the decimal point
+PLATFORM_INTERFACE void V_StripExcessTrailingZeros( char *pStr );
+
+// Decodes the backslash escape sequences of the string in place
+PLATFORM_INTERFACE void V_DecodeBackslashSequencesInString( char *pStr );
+
+PLATFORM_INTERFACE int V_CountTextLines( const char *pText, int nLength );
+PLATFORM_INTERFACE int V_BoyerMooreSearch( const byte *pNeedle, int nNeedleLength, const byte *pHayStack, int nHayStackLength );
+PLATFORM_INTERFACE int V_LevenshteinDistance( const char *pString1, const char *pString2, bool *pbUnknown );
+
+// Numbers to text: the _Unsafe variants write the shortest text of the value to a buffer that
+// must be large enough for it and terminate it, the _NoExponent variants never use an exponent
+// and return false when the text does not fit
+PLATFORM_INTERFACE void V_Int8ToString_Unsafe( int8 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_UInt8ToString_Unsafe( uint8 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_Int16ToString_Unsafe( int16 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_UInt16ToString_Unsafe( uint16 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_Int32ToString_Unsafe( int32 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_UInt32ToString_Unsafe( uint32 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_Int64ToString_Unsafe( int64 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_UInt64ToString_Unsafe( uint64 nValue, char *pBuffer );
+PLATFORM_INTERFACE void V_FloatToString_Unsafe( float flValue, char *pBuffer );
+PLATFORM_INTERFACE void V_DoubleToString_Unsafe( double flValue, char *pBuffer );
+PLATFORM_INTERFACE bool V_FloatToString_NoExponent( float flValue, char *pBuffer, int nBufferSize );
+PLATFORM_INTERFACE bool V_DoubleToString_NoExponent( double flValue, char *pBuffer, int nBufferSize );
+
+// Writes the number in pIn, which may have an exponent, without the exponent
+PLATFORM_INTERFACE bool V_ExpandScientificNotation( char *pOut, const char *pIn, int nOutSize );
+
+// The value with digitsafterdecimal digits after the point
+PLATFORM_INTERFACE char *V_PrettifyFloat( float value, int digitsafterdecimal );
+
+// Formats a duration as "1d.02:03:04", "2h:03:04", "3m:04" or "4s" followed by ".567" for the
+// milliseconds. nFlags: 1 appends to pOut instead of replacing it, 2 leaves the milliseconds out
+PLATFORM_INTERFACE const char *V_PrettifyDurationMs( CBufferString *pOut, uint64 nMilliseconds, uint nFlags );
+
+// Escapes the XML special characters of nLength chars of pIn (up to the terminator when
+// negative). nFlags: 1 appends to pOut instead of replacing it, 4 also turns line breaks and
+// spaces into HTML
+PLATFORM_INTERFACE const char *V_XMLEncode( const char *pIn, CBufferString *pOut, int nLength, uint nFlags );
+
+PLATFORM_OVERLOAD const char *V_SanitizeTextForCommandLine( const char *pText, CBufferString *pOut, bool bUnknown, int nUnknown );
+
+PLATFORM_OVERLOAD CUtlString JsonEscape( const char *pString );
+PLATFORM_OVERLOAD CUtlString V_RandomString( int nLen );
+
+// Writes the lines of data to output, each after the label and " >> " or " << " by input
+PLATFORM_INTERFACE void V_LogMultiline( bool input, const char *label, const char *data, size_t len, CUtlString &output );
+
+// Parsing of text: the next line or token of pStrIn, and the rest of the text after it, or
+// null at the end
+PLATFORM_INTERFACE const char *V_ParseLine( const char *pStrIn, CBufferString *pLine );
+PLATFORM_INTERFACE const char *V_ParseToken( const char *pStrIn, char *pToken, int bufsize, bool *pbOverflowed, const struct characterset_t *pTokenBreakCharacters );
+PLATFORM_INTERFACE bool V_TokenWaiting( const char *buffer );
+
+// Reads a line of the file into pLine, with its line break when bKeepNewLine; false at the end
+// of the file
+PLATFORM_INTERFACE bool V_ReadLine( FILE *fp, CBufferString *pLine, bool bKeepNewLine );
+
+// Paths
+PLATFORM_INTERFACE bool V_AreFileNamesEqual( const char *pFileName1, const char *pFileName2, bool bDirectoryNames );
+PLATFORM_INTERFACE bool V_PathNamesAreEquivalent( const char *pFirst, const char *pSecond );
+PLATFORM_INTERFACE bool V_PathsMatch( const char *pPath1, const char *pPath2 );
+PLATFORM_INTERFACE bool V_PathContainsPath( const char *pOuter, const char *pInner, bool bAllowMatch );
+PLATFORM_INTERFACE bool V_AreSlashesCorrect( const char *pname, char separator );
+PLATFORM_INTERFACE bool V_IsFakePath( const char *pStr );
+PLATFORM_INTERFACE int V_GetPathOriginLength( const char *pPath );
+PLATFORM_INTERFACE int V_GetPathForm( const char *pPath );
+PLATFORM_INTERFACE int V_GetVPKPathForm( const char *pPath );
+PLATFORM_INTERFACE const char *V_StripLeadingSlash( const char *pPath );
+PLATFORM_INTERFACE char *V_AbbreviatePathInPlace( char *pPath, const int nMaxCharsAllowed, const char *pReplacementString );
+PLATFORM_INTERFACE void V_FixInvalidPathCharacters( char *pFileName );
+PLATFORM_INTERFACE void V_FixInvalidFileNameCharacters( char *pFileName );
+PLATFORM_INTERFACE void V_FixupPathCharToUnderscore( char *pPath, char ch );
+PLATFORM_INTERFACE void V_FixupPathSpaceToUnderscore( char *pPath );
+PLATFORM_INTERFACE void V_CommonPrefixToUnderscore( CBufferString *pString, const char *pOther );
+PLATFORM_INTERFACE const char *V_MakeAbsolutePathBufferUnfixed( CBufferString *pOut, const char *pPath, const char *pStartingDir );
+PLATFORM_INTERFACE bool V_MakeAbsoluteVPKPathName( char *pOut, int nBufLen, const char *pInPathName, const char *pStartingDir, bool bLowercaseName );
+PLATFORM_INTERFACE bool V_MakeAbsoluteVPKPathNameBuffer( CBufferString *pOut, const char *pInPathName );
+
+// Wide char formatting with the size in chars; V_vsnwprintfRet_cch reports truncation
+PLATFORM_INTERFACE int V_snwprintf_cch( wchar_t *pDest, int maxLenInChars, const wchar_t *pFormat, ... );
+PLATFORM_INTERFACE int V_vsnwprintfRet_cch( wchar_t *pDest, int maxLenInChars, const wchar_t *pFormat, va_list params, bool *pbTruncated );
+
+#ifdef _WIN32
+PLATFORM_INTERFACE bool V_IsPointerOnStack( const void *p );
+#endif
 
 // NOTE: This is for backward compatability!
 // We need to DLL-export the Q methods in vstdlib but not link to them in other projects

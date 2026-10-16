@@ -611,6 +611,20 @@ PLATFORM_INTERFACE void LoggingSystem_SetChannelColor( LoggingChannelID_t channe
 PLATFORM_INTERFACE LoggingChannelFlags_t LoggingSystem_GetChannelFlags( LoggingChannelID_t channelID );
 PLATFORM_INTERFACE void LoggingSystem_SetChannelFlags( LoggingChannelID_t channelID, LoggingChannelFlags_t flags );
 
+// Raises the verbosity of the channel to at least the given one
+PLATFORM_INTERFACE void LoggingSystem_EnsureChannelVerbosity( LoggingChannelID_t channelID, LoggingVerbosity_t verbosity );
+
+// The verbosity a channel needs to show messages of the severity
+PLATFORM_INTERFACE LoggingVerbosity_t LoggingSystem_GetVerbosityForSeverity( LoggingSeverity_t severity );
+
+// Indentation of the messages of a channel; both return the previous indentation
+PLATFORM_INTERFACE int LoggingSystem_SetChannelIndent( LoggingChannelID_t channelID, int nIndent );
+PLATFORM_INTERFACE int LoggingSystem_ChangeChannelIndent( LoggingChannelID_t channelID, int nDelta );
+
+// Whether the last message of the channel ended its line
+PLATFORM_INTERFACE bool LoggingSystem_GetLastChannelLineComplete( LoggingChannelID_t channelID );
+PLATFORM_INTERFACE void LoggingSystem_SetLastChannelLineComplete( LoggingChannelID_t channelID, bool bComplete );
+
 //-----------------------------------------------------------------------------
 // Logs a variable-argument to a given channel with the specified severity.
 // NOTE: if adding overloads to this function, remember that the Log_***
@@ -637,6 +651,14 @@ PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t 
 PLATFORM_OVERLOAD LoggingResponse_t LoggingSystem_LogDirect( LoggingChannelID_t channelID, LoggingSeverity_t severity, const LoggingRareOptions_t &rareOptions, Color spewColor, const LoggingMetaData_t *metaData, const char *pMessage );
 
 PLATFORM_INTERFACE LoggingResponse_t LoggingSystem_LogAssert( const char *pMessageFormat, ... ) FMTFUNCTION( 1, 2 );
+
+// Logs every line of nLength chars of pText (up to the terminator when negative) as a message
+// of its own. A positive nMaxLines keeps the first lines, a negative one the last ones, and a
+// line tells how many were left out. Returns the number of messages
+PLATFORM_INTERFACE int LoggingSystem_LogLines( LoggingChannelID_t channelID, LoggingSeverity_t severity, const char *pText, int nLength, int nMaxLines );
+
+// Flushes the listeners of the current logging state and the backdoor listeners
+PLATFORM_INTERFACE void LoggingSystem_Flush();
 
 PLATFORM_INTERFACE LoggingTagHandle_t LoggingSystem_FirstTag();
 PLATFORM_INTERFACE LoggingTagHandle_t LoggingSystem_NextTag( LoggingTagHandle_t currentTag );

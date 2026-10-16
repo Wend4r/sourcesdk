@@ -188,5 +188,15 @@ public:
 
 DECLARE_TIER1_INTERFACE( IProcessUtils, g_pProcessUtils );
 
+// tier0's own process utilities, usable before the app systems connect
+PLATFORM_INTERFACE IProcessUtils *V_GetProcessUtils();
+
+FORWARD_DECLARE_HANDLE( ProcessHandle_t );
+
+// Whether Windows raises the priority of the process while its window has the focus; nothing
+// on other platforms
+PLATFORM_INTERFACE bool GetDisableFocusBasedPriorityBoost( ProcessHandle_t hProcess );
+PLATFORM_INTERFACE void SetDisableFocusBasedPriorityBoost( ProcessHandle_t hProcess, bool bDisableFocusBasedPriorityBoost );
+
 
 #endif // IPROCESSUTILS_H

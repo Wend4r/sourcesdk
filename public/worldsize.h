@@ -11,6 +11,10 @@
 #define WORLDSIZE_H
 #pragma once
 
+#include "tier0/platform.h"
+
+class KeyValues;
+
 
 // These definitions must match the coordinate message sizes in coordsize.h
 
@@ -39,5 +43,28 @@
 									 ((v).z>=MIN_COORD_INTEGER*2) && ((v).z<=MAX_COORD_INTEGER*2))
 
 #define ASSERT_COORD( v )			Assert( TEST_COORD( v ) );
+
+// The extent of the world tier0 reads from the game info (`Engine2/MapMaxCoord`, MAX_COORD_FLOAT
+// by default), which a session may override; the integer is kept in sync with the float
+PLATFORM_INTERFACE float g_flConfigMaxCoord;
+PLATFORM_INTERFACE int g_nConfigMaxCoord;
+
+// The largest position of an object (`Engine2/MaxObjectPosition`, 1000000 by default)
+PLATFORM_INTERFACE float g_flConfigMaxObjectPosition;
+
+// The far clip distance of the tools views
+PLATFORM_INTERFACE float g_flToolsDefaultFarZ;
+
+// Reads the world extent from the game info
+PLATFORM_INTERFACE void Worldsize_Init( KeyValues *pGameInfo );
+
+// The extent from the game info, without the override of the session
+PLATFORM_INTERFACE float Worldsize_GetGameInfoMaxCoordFloat();
+
+// Overrides the extent for the current session; false when flMaxCoord is not in (0, 2^24]
+PLATFORM_INTERFACE bool Worldsize_SetSessionMaxCoord( float flMaxCoord );
+
+// Goes back to the extent from the game info
+PLATFORM_INTERFACE void Worldsize_ClearSessionMaxCoord();
 
 #endif // WORLDSIZE_H

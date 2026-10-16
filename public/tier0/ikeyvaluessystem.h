@@ -87,6 +87,10 @@ public:
 
 PLATFORM_INTERFACE IKeyValuesSystem *KeyValuesSystem();
 
+// A new key values system with symbol tables of its own, for KeyValues that should not grow the
+// global one
+PLATFORM_INTERFACE IKeyValuesSystem *CreateDisposableKeyValuesSystem();
+
 // The shared implementation; CDisposableKeyValuesSystem derives from it without adding members.
 class CKeyValuesSystemBase : public IKeyValuesSystem
 {

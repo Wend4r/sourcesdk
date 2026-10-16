@@ -44,3 +44,10 @@ PLATFORM_INTERFACE bool Plat_LoadInterface(
 	const char *pInterfaceVersionName,
 	HMODULE *pOutModule,
 	void **pOutInterface );
+
+//-----------------------------------------------------------------------------
+// Objects the modules share by name through tier0
+//-----------------------------------------------------------------------------
+PLATFORM_INTERFACE void RegisterGlobalObject( const char *pObjectName, void *pObject );
+PLATFORM_INTERFACE void UnRegisterGlobalObject( const char *pObjectName );
+PLATFORM_INTERFACE void *FindRegisteredGlobalObjectInternal( const char *pObjectName );
