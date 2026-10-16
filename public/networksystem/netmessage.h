@@ -124,7 +124,7 @@ public:
 			return s_szResult.c_str();
 		}
 
-		virtual int GetSize() const { return sizeof( PBType_t ); }
+		virtual int GetSize() const { return sizeof( MyType_t ); }
 
 		virtual const char *ToString( CNetMessage *pData, CUtlString &sResult ) const
 		{

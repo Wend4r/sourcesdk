@@ -10,6 +10,12 @@
 #include "tier0/utlsymbollarge.h"
 #include "tier0/utlvector.h"
 #include "tier0/utlleanvector.h"
+#include "tier0/bitvec.h"
+#include "const.h"
+#include "tier0/utllinkedlist.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/threadtools.h"
+#include "tier1/utldelegate.h"
 #include "entity2/entityindex.h"
 
 #include "fieldpath.h"
@@ -28,6 +34,8 @@ class CFlattenedSerializer;
 class PackedEntity;
 class ServerClass;
 class IMemAlloc;
+
+enum NetworkSerializationMode_t : int;
 
 struct FlattenedSerializerOwner_t;
 struct FlattenedSerializerUserData_t;
@@ -199,42 +207,70 @@ public:
 	virtual void SpewLine( const char *pszText ) = 0;
 };
 
+// Request passed to INetworkFieldChangedEventQueue::QueuePointerRecreation, copied into a CNetworkFieldPointerAllocationQueueInfo_t.
 struct NetworkFieldScratchChange_t
 {
-	const char *m_pszFieldName; // Field owner or serializer name used by debug spew.
-	byte *m_pField; // Pointer captured by queue/rebase/shrink processing.
-	uintp m_nFieldOffset;
-	uintp m_nFieldSize;
-	FlattenedSerializerUserData_t *m_pContext;
-	byte m_nFieldType;
-	byte m_pad0021[7];
-	CFieldPath m_Path;
-	CUtlString m_DebugName;
-	byte m_pad0060[24];
 	int m_nEntityIndex;
-	byte m_nChangeKind;
-	bool m_bRemoved;
-	bool m_bInvalid;
-	byte m_pad0077;
-	CUtlVector< CFieldPath > *m_pReplayCompatPaths;
-	int m_nPrev;
-	int m_nNext;
+	const CFieldPath *m_pPath;
+	const char *m_pszFieldName; // Compared with the debug callback field name.
+	void *m_pUnk1;
+	void *m_pUnk2;
+	const char *m_pszTypeName; // Spewed as "allocate %s *" / "deallocate %s *".
+	void *m_pUnk3;
+	void *m_pUnk4;
+	CUtlAbstractDelegate m_delegate;
+	uint8 m_nUnk1;
 };
 
+// Queued change callback, one per changed field and order.
+struct CNetworkFieldChangedEventQueueChangeInfo_t
+{
+	const char *m_pszFieldName;
+	CUtlAbstractDelegate m_delegate; // Its object is the field owner struct.
+	void *m_pContext; // "[context entity 0x%p]"
+	void *m_pData; // Copy of the new value, allocated from the scratch data.
+	CFieldPath m_Path;
+	uint32 m_unAllocSize; // Size of m_pData, rounded up to 16.
+	int32 m_nObjectId;
+	struct
+	{
+		void *m_pUnk1;
+		void *m_pUnk2; // Spewed through when m_nArrayIndex >= 0.
+		int32 m_nArrayIndex; // Passed to the array delegates, -1 when unset.
+		uint8 m_nUnk1;
+	} m_ArrayInfo; // Copied from pArrayInfo for the array delegate types.
+	uint8 m_type; // NetworkFieldChangedDelegateType_t, NETWORK_FIELD_CHANGED_COUNT_TYPE when unset.
+	void *m_pReplayCompatData; // Passed by address to the replay compat delegates and freed after the call.
+	int32 m_nTagValue; // Passed by address to the tag delegates.
+	bool m_bCancelled; // Skipped by InvokeChangeCallbacks.
+	uint32 m_nNextInChain; // Next change with the same key, ~0u at the end.
+};
+
+// Queued pointer recreation, one per allocated or deallocated pointer field.
+struct CNetworkFieldPointerAllocationQueueInfo_t
+{
+	const char *m_pszFieldName;
+	CUtlAbstractDelegate m_delegate;
+	uint8 m_nUnk1;
+	void *m_pUnk1;
+	void *m_pUnk2;
+	CFieldPath m_Path;
+	CUtlString m_TypeName;
+	void *m_pUnk3;
+	void *m_pUnk4;
+	int m_nEntityIndex;
+	uint8 m_nKind; // 1 "allocate %s *", 2 "deallocate %s *"
+	uint8 m_nUnk2;
+};
+
+// Per-thread part of CNetworkFieldChangedEventQueue, chosen by the thread pool thread index.
 struct NetworkFieldScratchThreadQueue_t
 {
-	CAtomicMutex m_Mutex; // Used around per-thread queue writes.
-	CUtlVector< byte > m_FieldChangeMarks; // Bit/byte marks for fields that have queued changes.
-	int m_nChangeCount;
-	int m_nChangeCapacity;
-	NetworkFieldScratchChange_t *m_pChanges;
-	int m_nHead;
-	int m_nTail;
-	int m_nQueuedCount;
-	byte m_pad0044[4];
+	CAtomicMutex m_Mutex;
+	CUtlVector< CUtlLinkedList< CNetworkFieldChangedEventQueueChangeInfo_t, unsigned int > > m_queuedChanges; // One list per order.
+	CUtlVector< CUtlHashtable< uint32, uint32 > > m_queuedChangeLookup; // One table per order, maps a change key to its list index.
+	CUtlLinkedList< CNetworkFieldPointerAllocationQueueInfo_t, unsigned int > m_PointerAllocations;
 };
-
-COMPILE_TIME_ASSERT( sizeof( NetworkFieldScratchThreadQueue_t ) == 72 );
 
 struct NetworkFieldScratchMemoryStackList_t
 {
@@ -242,49 +278,55 @@ struct NetworkFieldScratchMemoryStackList_t
 	int m_nMemoryStackCount;
 };
 
-class INetworkFieldScratchAllocator
-{
-public:
-	virtual ~INetworkFieldScratchAllocator() {}
-	virtual void FreeAll() = 0;
-	virtual byte *Alloc( uint nBytes, uintp nFieldOffset, uint nFieldType, uintp nFieldSize, uintp nFieldName, uintp nNetworkName, uintp nOwner, uintp nContext, uintp nSerializer, uintp nSerializerField, uintp nFieldPath, uintp nDebugName ) = 0;
-};
+class IFieldChangeLimitSpew;
 
+// Scratch memory for queued field changes, implemented by the client (CNetworkFieldScratchData).
 abstract_class INetworkFieldScratchData
 {
 public:
 	virtual ~INetworkFieldScratchData() {}
-	virtual void ResetFrameAllocator() = 0; // Resets the backing allocator and clears m_nCurrentChangeFrame.
+	virtual void Init( uint32 nSize, LoggingChannelID_t channelID ) = 0;
+	virtual void *Alloc( uint32 nSize ) = 0;
+	virtual void Purge() = 0;
+	virtual LoggingChannelID_t LoggingChannel() const = 0;
+};
+
+abstract_class INetworkFieldChangedEventQueue
+{
+public:
+	virtual ~INetworkFieldChangedEventQueue() {}
+	// nOrder < 0 queues into the last order. pData receives the scratch copy of the value. bCancel marks an already queued change as cancelled instead of queuing one.
+	virtual bool QueueChange( int nObjectId, const CFieldPath &path, const char *pszFieldName, void *pContext, void *pFieldOwnerStruct, void *&pData, int nOrder, uint8 type, const CUtlAbstractDelegate &delegate, int nAllocSize, const void *pArrayInfo, const int *pTagValue, bool bCancel ) = 0;
+	virtual bool QueueReplayCompatFieldChange( int nObjectId, const CFieldPath &path, const char *pszFieldName, void *pContext, void *pFieldOwnerStruct, int nOrder, const CUtlAbstractDelegate &delegate, uint8 nFlags, const void *pReplayCompatData ) = 0; // "nullptr != pFieldOwnerStruct"
+
+	// Invokes the queued change callbacks, reporting each callback slower than flTimeLimitMs to the change limit spew
+	virtual void InvokeChangeCallbacks( int nChangeFrame, float flTimeLimitMs ) = 0;
+	virtual void ResetFrameAllocator() = 0; // Purges the scratch data and clears m_nProcessedOrder.
 	virtual void ClearQueuedChanges() = 0;
-	virtual bool QueueChange( int nEntityIndex, const CFieldPath &path, const char *pszFieldName, byte *pField, uintp nFieldOffset, uintp nFieldSize, int nChangeFrame, uint nFieldType, FlattenedSerializerUserData_t *pContext, int nFieldBytes, const char *pszDebugName, int *pArrayIndex ) = 0;
-	virtual bool QueueReplayCompatFieldChange( int nEntityIndex, const CFieldPath &path, const char *pszFieldName, byte *pField, uintp nFieldOffset, int nChangeFrame, FlattenedSerializerUserData_t *pContext, byte nFlags, const CFieldPath *pReplayPath ) = 0;
-	virtual void ProcessQueuedChanges( uint nChangeFrame ) = 0;
 	virtual void RebaseQueuedDelegates( bool bSpew, byte *pOldBase, byte *pNewBase, uintp nSize ) = 0;
 	virtual void MarkShrunkDelegatesInvalid( bool bSpew, byte *pOldBase, byte *pOldEnd ) = 0;
-	virtual void SetContext( FlattenedSerializerUserData_t *pContext ) = 0;
+	virtual void SetChangeCallbackTimeLimitSpewFunc( IFieldChangeLimitSpew *pSpew ) = 0;
 	virtual void SetDebugCallback( bool bEnabled, const char *pszFieldName ) = 0;
 	virtual bool IsDebugCallbackEnabled() const = 0;
 	virtual void SetDebugFieldName( const char *pszFieldName ) = 0;
-	virtual void QueuePointerRecreation( const NetworkFieldScratchChange_t *pChange, bool bSpew, FlattenedSerializerUserData_t *pContext ) = 0;
+	virtual void QueuePointerRecreation( const NetworkFieldScratchChange_t *pRequest, uint8 nKind, uint8 nUnk ) = 0; // nKind 1 allocates, 2 deallocates, 3 removes a queued deallocation
 };
 
-class CNetworkFieldScratchData : public INetworkFieldScratchData
+class CNetworkFieldChangedEventQueue : public INetworkFieldChangedEventQueue
 {
 public:
 	CUtlVector< NetworkFieldScratchThreadQueue_t > m_ThreadQueues; // One queue per worker thread.
-	CUtlVector< int > m_EntityChangeFrames; // Snapshot of network change frames from the entity system.
-	byte m_EntityChangeFrameStorage[128]; // Inline storage used before m_EntityChangeFrames grows.
+	CUtlVectorFixedGrowable< int, 32 > m_orderPriority; // Snapshot of network change frames from the entity system.
 	CUtlString m_DebugCallbackName; // Field name that triggers DebugCallback spew.
 	CUtlString m_DebugFieldName; // Extra debug field filter.
-	INetworkFieldScratchAllocator *m_pAllocator; // Scratch allocator used by QueueChange.
-	FlattenedSerializerUserData_t *m_pContext; // Context set through the vtable setter.
-	int m_nCurrentChangeFrame; // Last processed change frame.
+	INetworkFieldScratchData *m_pScratchData; // Scratch memory used by QueueChange.
+	IFieldChangeLimitSpew *m_pfnChangeLimitSpew;
+	int m_nProcessedOrder; // Last processed change frame.
 	int m_nEntityChangeFrameCount; // Count copied from the entity system.
 	bool m_bDebugQueueChanges; // Enables QueueChange spew.
-	byte m_pad00E1[7];
 };
 
-COMPILE_TIME_ASSERT( sizeof( CNetworkFieldScratchData ) == 232 );
+COMPILE_TIME_ASSERT( sizeof( CNetworkFieldChangedEventQueue ) == 232 );
 
 struct FlattenedSerializerPackedField_t
 {
@@ -303,16 +345,25 @@ struct FlattenedSerializerPolymorphicField_t
 	byte m_pad48[8];
 };
 
-struct FlattenedSerializerFieldPathCache_t
+// Recipients computed by a send proxy for a field path, or for a range of field paths
+struct CSendProxyData
 {
-	CUtlVector< int > m_FieldPaths; // Cached encoded field paths for serializer traversal.
-	const int16 *m_pPath; // Root path used while building or resolving the cache.
-	int16 m_nPathCount;
-	bool m_bReadOnlyPath;
-	byte m_pad0023[5];
+	const char *m_pszName; // Taken from the proxy record, "" when it has none
+	CFieldPath m_Path;
+	CFieldPath m_EndPath;
+	CPlayerBitVec m_Recipients; // Filled by the proxy's recipients filter callback
+	bool m_bIsRange; // m_EndPath differs from m_Path
 };
 
-COMPILE_TIME_ASSERT( sizeof( FlattenedSerializerFieldPathCache_t ) == 40 );
+// Send proxy results gathered while encoding, kept sorted by path
+struct CSendProxyDataList
+{
+	CUtlVector< CSendProxyData > m_Data;
+	int64 m_nUniqueId; // The engine assigns it from a global counter
+	uint8 m_nUnk1; // When set, the proxies are not called and every recipient mask is cleared
+	bool m_bUnk2; // Set when a proxy returns no recipients
+	bool m_bGathered; // The proxies are evaluated only while it is false
+};
 
 // Size and field offsets are from CFlattenedSerializer allocation/field access.
 class CFlattenedSerializer
@@ -332,8 +383,8 @@ public:
 	int m_nPolymorphicFieldCount; // Table count scanned by HasField
 	FlattenedSerializerPolymorphicField_t *m_pPolymorphicFields;
 	byte m_pad0178[32];
-	FlattenedSerializerFieldPathCache_t m_FieldPathCache; // Primary cache for serializer field-path traversal.
-	FlattenedSerializerFieldPathCache_t m_SecondaryFieldPathCache; // Secondary cache used by the alternate traversal path.
+	CSendProxyDataList m_SendProxyData;
+	CSendProxyDataList m_SecondarySendProxyData;
 	byte m_pad01E8[36];
 	int m_nScratchPathIndex; // Cleared before scratch path traversal.
 	byte m_pad0210;
@@ -345,14 +396,11 @@ COMPILE_TIME_ASSERT( sizeof( CFlattenedSerializer ) == 536 );
 
 struct CFlattenedSerializerBucket_t
 {
+	CAtomicMutex m_Mutex;
 	CUtlVector< FlattenedSerializerDesc_t > m_Serializers; // Symbol-indexed serializers in bucket.
-	byte m_pad0018[16];
-	uint m_nSymbolTableGrowSize;
-	byte m_pad002C[4];
 	CUtlSymbolTable m_SymbolTable; // Symbol table used to map serializer names to bucket entries.
-	byte m_pad0090[48];
+	CThreadSpinRWLock m_SymbolTableLock;
 };
-COMPILE_TIME_ASSERT( sizeof( CFlattenedSerializerBucket_t ) == 192 );
 
 // One written field as reported to serializer spew listeners (the VConsole2 flattened serializer view).
 // Filled per field by CFlattenedSerializer::WriteFieldList.
@@ -393,20 +441,20 @@ public:
 	virtual CUtlString GetDebugFieldPathName( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket, bool bUseFieldPath, bool bServer ) = 0; // Formats sentinel and field-path names for debug output.
 	virtual const char *FieldPathToName( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket, CUtlString *pOut ) = 0; // Converts a CFieldPath to a display name and falls back to "unknown"/"???"
 	virtual const char *FieldPathIndexToName( const FlattenedSerializerDesc_t &pSerializer, int nFieldPath, CEntityInstance *pEntity, int nBucket, CUtlString *pOut ) = 0; // Converts a packed field-path index to a name.
-	virtual bool ReadFields( const FlattenedSerializerDesc_t &pSerializer, bf_read *pBuf, SerializedEntityData_t *pOut, int nEntityIndex, bool bUnk1, bool bUnk2 ) = 0; // "ReadFields"
-	virtual bool Encode( const FlattenedSerializerDesc_t &pSerializer, SerializedEntityData_t *pOut, CEntityInstance *pEntity, int nEntityIndex, int nUnk, int *pUnk ) = 0;
-	virtual bool GatherSendProxyResults( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nUnk, FlattenedSerializerChangeArray_t *pOutChangeInfo ) = 0; // "GatherSendProxyResults"
-	virtual bool DecodeEntity( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, void *pUnk1, int nEntityIndex, int nUnk, void *pUnk2, int nFlags ) = 0; // "CFlattenedSerializer::Decode"
-	virtual void CalcDelta( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, const SerializedEntityData_t *pTo, int *pUnk, int nEntityIndex, int nUnk, int *pOutChanges ) = 0; // "CDeltaCalculator::FieldCalcDelta"
+	virtual bool ReadFields( const FlattenedSerializerDesc_t &pSerializer, bf_read *pBuf, SerializedEntityData_t *pOut, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, bool bTrackEncodingStats ) = 0; // "ReadFields"; bTrackEncodingStats reports every read field to CNetworkEncodingStats when it is collecting
+	virtual bool Encode( const FlattenedSerializerDesc_t &pSerializer, SerializedEntityData_t *pOut, CEntityInstance *pEntity, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, CSendProxyDataList *pSendProxyData ) = 0; // Uses a local list when pSendProxyData is NULL
+	virtual bool GatherSendProxyResults( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, FlattenedSerializerChangeArray_t *pOutChangeInfo ) = 0; // "GatherSendProxyResults"
+	virtual bool DecodeEntity( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, void *pDestObject, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, INetworkFieldChangedEventQueue *pChangedEventQueue, int nFlags ) = 0; // "CFlattenedSerializer::Decode"; field change callbacks are queued only when pChangedEventQueue is set
+	virtual int CalcDelta( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pFrom, const SerializedEntityData_t *pTo, CUtlLeanVectorFixedGrowable< int, 4 > *pOutFieldPaths, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, int *pOutChanges ) = 0; // "CDeltaCalculator::FieldCalcDelta"
 
-	virtual SerializedEntityData_t *BuildDeltaProperties( const FlattenedSerializerDesc_t &pSerializer, void *p1, int nEntityIndex, int nUnk, const SerializedEntityData_t *pData, CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, CUtlLeanVectorFixedGrowable< int, 4 > *pOutFieldPaths, void *p2, bool *pbOut1, bool *pbOut2 ) = 0;
+	virtual SerializedEntityData_t *BuildDeltaProperties( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, const SerializedEntityData_t *pData, CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, CUtlLeanVectorFixedGrowable< int, 4 > *pOutFieldPaths, CSendProxyDataList *pSendProxyData, bool *pbOut1, bool *pbOut2 ) = 0;
 
 	// Copies the fields of pData into pBuf, only those whose encoded field path is in pFieldPaths when it is not NULL (the engine passes the CalcDelta changes).
 	// Each written field is reported to the spew listeners a FlattenedSerializerSpewField_t, filtered by nEntityIndex and nRecipient. Always returns true.
-	virtual bool WriteFieldList( const FlattenedSerializerDesc_t &pSerializer, bf_write *pBuf, const SerializedEntityData_t *pData, int nEntityIndex, int nUnk, const CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, int nRecipient ) = 0; // "CFlattenedSerializer::WriteFieldList"
-	virtual void MergeDeltas( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pOld, void *p2, void *p3, int nEntityIndex, bool bUnk, int *pOut ) = 0; // "CFlattenedSerializer::MergeDeltas"
+	virtual bool WriteFieldList( const FlattenedSerializerDesc_t &pSerializer, bf_write *pBuf, const SerializedEntityData_t *pData, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, const CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, int nRecipient ) = 0; // "CFlattenedSerializer::WriteFieldList"
+	virtual bool MergeDeltas( const FlattenedSerializerDesc_t &pSerializer, const SerializedEntityData_t *pOld, const SerializedEntityData_t *p2, SerializedEntityData_t *p3, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, int *pOut ) = 0; // "CFlattenedSerializer::MergeDeltas"
 	virtual bool BuildMergedSerializedEntity( const FlattenedSerializerDesc_t &pSerializer, byte *pDeltaData, SerializedEntityData_t *pBase, CUtlVector< int > *pFieldPaths, bool bCull, int nEntityIndex ) = 0; // "BuildMergedSerializedEntity"
-	virtual int CullUnchangedFieldPaths( const FlattenedSerializerDesc_t &pSerializer, int nEntityIndex, int nUnk, CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, const void *pCullRules, CUtlLeanVectorFixedGrowable< int, 4 > *pOutFieldPaths ) = 0;
+	virtual int CullUnchangedFieldPaths( const FlattenedSerializerDesc_t &pSerializer, int nPlayerSlot, int nEntityIndex, CUtlLeanVectorFixedGrowable< int, 4 > *pFieldPaths, const CSendProxyDataList *pSendProxyData, CUtlLeanVectorFixedGrowable< int, 4 > *pOutFieldPaths ) = 0;
 	virtual uint32 RemoveArrayElementsOutsideOfArrayMetadataBounds( const FlattenedSerializerDesc_t &pSerializer, SerializedEntityData_t *pData, uint32 *pInOutCount, int nEntityIndex, int nFlags ) = 0; // Returns *pInOutCount unchanged without the serializer or the data
 	virtual void SpewSerializer( const FlattenedSerializerDesc_t &pSerializer, int nBucket, IFlattenedSerializerSpewFunc *pSpew ) = 0;
 	virtual bool MakeSerializersMatchByMeta( const char *pszSerializerName, FlattenedSerializerFieldPathMap_t *pFieldPathMap, const FlattenedSerializerDesc_t &pSerializer, int nBucket, int nFlags, bool bCreateMissing ) = 0; // Rebuilds serializer field paths from metadata when layouts differ.
@@ -419,7 +467,7 @@ public:
 	virtual bool GetFieldPathChildIndices( const FlattenedSerializerDesc_t &pSerializer, CEntityInstancePolymorphicMetadataHelper *, int, const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) = 0;
 
 	// AMNOTE: GatherSendProxyResults starting at path
-	virtual bool GatherSendProxyResultsForPath( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, void *pUnk, int nEntityIndex, int nUnk, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut ) = 0;
+	virtual bool GatherSendProxyResultsForPath( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, CEntityInstancePolymorphicMetadataHelper *pMetadataHelper, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, const CFieldPath *pRootPath, FlattenedSerializerChangeArray_t *pOut ) = 0;
 	virtual const FlattenedSerializerFieldData_t *GetFieldSerializerData( const FlattenedSerializerDesc_t &pSerializer, const CFieldPath &pPath, CEntityInstance *pEntity, int nBucket ) = 0;
 	virtual bool HasField( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans field and subfield names.
 	virtual bool HasFieldInternal( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName ) = 0; // Scans flattened fields directly by name
@@ -434,20 +482,20 @@ public:
 	virtual void SpewCounts( int nBucket, bool bVerbose ) = 0;
 	virtual void RegisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Appends a unique save/restore ops record
 	virtual void UnregisterSaveRestoreOps( FlattenedSerializerSaveRestoreOps_t *pSaveRestoreOps ) = 0; // Removes a save/restore ops record
-	virtual INetworkFieldScratchData *CreateNetworkFieldScratchData( INetworkFieldScratchAllocator *pAllocator, FlattenedSerializerUserData_t *pContext ) = 0; // Allocates a 232-byte scratch-data object and seeds it with allocator/context pointers.
+	virtual INetworkFieldChangedEventQueue *CreateNetworkFieldScratchData( INetworkFieldScratchData *pScratchData, IFieldChangeLimitSpew *pChangeLimitSpew ) = 0; // Allocates a CNetworkFieldChangedEventQueue
 	virtual void BuildFieldNamePool( bool bForce ) = 0; // Creates m_pFieldNamePool
 	virtual void DestroyFieldNamePool() = 0; // Frees m_pFieldNamePool
 	// AMNOTE: Disabled fields are skipped when gathering send proxy results, building deltas and gathering polymorphic metadata
 	virtual void SetFieldEnabled( const FlattenedSerializerDesc_t &pSerializer, const char *pszFieldName, bool bEnabled ) = 0; // "Setting FS %s field %s to %s"
 
-	virtual void GatherPolymorphicMetadata( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, int nFlags, void *pOutMetadata ) = 0; // "Polymorphic"
+	virtual void GatherPolymorphicMetadata( const FlattenedSerializerDesc_t &pSerializer, CEntityInstance *pEntity, int nEntityIndex, NetworkSerializationMode_t eSerializationMode, void *pOutMetadata ) = 0; // "Polymorphic"
 
 	// AMNOTE: Writes the variant class names of metadata gathered by GatherPolymorphicMetadata, the third argument is unused
 	virtual void GetPolymorphicMetadataDescription( const FlattenedSerializerDesc_t &pSerializer, const void *pMetadata, void *, CUtlVector< CUtlString > *pOutLines ) = 0;
 	virtual bool HasPolymorphicFields( const FlattenedSerializerDesc_t &pSerializer ) = 0; // Tests CFlattenedSerializer::m_nFlags bit (1 << 7)
 	virtual void ResetFieldPathPool() = 0;
 	virtual bool UserGroupHasFields( const FlattenedSerializerDesc_t &pSerializer, const char *pszUserGroup ) = 0;
-	virtual bool GetFieldPathCaches( const FlattenedSerializerDesc_t &pSerializer, FlattenedSerializerFieldPathCache_t **ppSecondaryFieldPathCache, FlattenedSerializerFieldPathCache_t **ppFieldPathCache ) = 0; // Exposes the serializer field-path caches for callers that need to reuse traversal state.
+	virtual bool GetFieldPathCaches( const FlattenedSerializerDesc_t &pSerializer, CSendProxyDataList **ppSecondarySendProxyData, CSendProxyDataList **ppSendProxyData ) = 0; // Exposes the serializer's send proxy data lists
 };
 
 class CFlattenedSerializers : public IFlattenedSerializers
@@ -455,12 +503,23 @@ class CFlattenedSerializers : public IFlattenedSerializers
 public:
 	CConCommandMemberAccessor< CFlattenedSerializers > m_NetPermutationInfoCommand; // Command "net_permutation_info"; shows permutation information for a serializer
 	CFlattenedSerializerBucket_t m_SerializerBuckets[32]; // Hash(name) & 0x1F serializer buckets
-	byte m_pad1848[112];
+	CUtlSymbolTableLargeMT m_UnkSymbolTableMT; // Only constructed and destroyed
 	CUtlVector< FlattenedSerializerListener_t * > m_SpewListeners;
 	CUtlVector< FlattenedSerializerSaveRestoreOps_t > m_SaveRestoreOps; // Save/restore operation records registered by RegisterSaveRestoreOps
 	FlattenedSerializerFieldNamePool_t *m_pFieldNamePool; // Field-name pool created by BuildFieldNamePool
-	byte m_pad18F0[29];
+	CUtlString m_NetworkSpewCreate; // "-networkspewcreate" value
+	int m_nBuildThreadCount; // A hashed command line option, 100 without a value; BuildEntityClassSerializers builds in parallel above 1
+	int m_nNetworkSpewEntity; // "-networkspewentity", -999 when absent
+	int m_nSpewReadFieldListEntIndex; // "fs_spew_readfieldlist entindex <optional min change bytes>"
+	int m_nSpewReadFieldListMinChangeBytes;
+	bool m_bNetworkSpewCreate; // "-networkspewcreate"
+	bool m_bUnk1909; // Set by the value "server" of the m_nBuildThreadCount option
+	bool m_bNetworkSpew; // "-networkspew"
+	bool m_bNetworkSpewExcludes; // "-networkspewexcludes"
+	bool m_bUnk190C;
 	bool m_bForceRebuildFieldNamePool;
+	bool m_bNetworkVarValidate; // "-networkvar_validate"
+	bool m_bUnk190F; // Set while a serializer named by -networkspewcreate is being built
 };
 
 #endif /* FLATTENEDSERIALIZERS_H */

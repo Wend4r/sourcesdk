@@ -12,6 +12,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/netadr.h"
+#include "tier1/ns_address.h"
 #include "inetchannelinfo.h"
 #include "steam/steamnetworkingtypes.h"
 #include "tier0/bitbuf.h"
@@ -73,15 +74,16 @@ enum NetChannelBufType_t : int8
 #define NET_PACKET_ST_DEFINED
 struct netpacket_s
 {
-	netadr_t		from;		// sender IP
-	int				source;		// received source
-	double			received;	// received time
-	unsigned char	*data;		// pointer to raw packet data
-	bf_read			message;	// easy bitbuf data access
+	ns_address		from;		// sender address
+	bf_read		message;	// easy bitbuf data access
+	SteamNetworkingMessage_t *pSteamNetworkingMessage; // released after the packet is parsed
+	const unsigned char *data;	// m_pData of the Steam message
+	void			*pUnk88;	// owned polymorphic object, destroyed with the packet
+	SteamNetworkingMicroseconds received; // m_usecTimeReceived of the Steam message
+	int64			nUnk104;	// copied into each CNetMessage parsed from the packet
+	HSteamNetConnection hConnection;
 	int				size;		// size in bytes
-	int				wiresize;   // size in bytes before decompression
-	bool			stream;		// was send as stream
-	struct netpacket_s *pNext;	// for internal use, should be NULL in public
+	int				source;		// received source
 };
 #endif // NET_PACKET_ST_DEFINED
 
