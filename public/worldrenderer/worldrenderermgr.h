@@ -151,11 +151,11 @@ struct WindEntry_t
 };
 COMPILE_TIME_ASSERT( sizeof( WindEntry_t ) == 0x40 );
 
-class CWorldNodeManager : public CDefaultIntrospectedToKV3TypeManager< 0x646F6E7776 /* 'vwnod' */, WorldNode_t >
+class CWorldNodeManager : public CDefaultIntrospectedToKV3TypeManager< RESOURCE_TYPE_WORLD_NODE, WorldNode_t >
 {
 };
 
-class CWorldManager : public CDefaultIntrospectedToKV3TypeManager< 0x646C727776 /* 'vwrld' */, World_t >
+class CWorldManager : public CDefaultIntrospectedToKV3TypeManager< RESOURCE_TYPE_WORLD, World_t >
 {
 };
 
@@ -163,7 +163,7 @@ class CVoxelVisibilityTypeManager : public IResourceTypeManager
 {
 };
 
-class CEntityMgr : public CTypesafeIntrospectedToKV3TypeManager< 0x73746E6576 /* 'vents' */, PermEntityLumpData_t >
+class CEntityMgr : public CTypesafeIntrospectedToKV3TypeManager< RESOURCE_TYPE_ENTITY_LUMP, PermEntityLumpData_t >
 {
 };
 

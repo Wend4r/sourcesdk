@@ -13,48 +13,310 @@
 
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
+#include "mathlib/fltx4.h"
+#include "mathlib/mathlib.h"
+#include "mathlib/transform.h"
 #include "mathlib/vector.h"
+#include "physicslib/fnphysicsjoint.h"
+#include "physicslib/fnphysicsshape.h"
+#include "physicslib/param_types.h"
+#include "physicslib/physaggregatedata.h"
+#include "physicslib/serialize.h"
+#include "resourcefile/introspectedtokv3typemanager.h"
+#include "resourcefile/kv3typemanager.h"
+#include "resourcesystem/iresourcesystem.h"
+#include "tier0/refcount.h"
+#include "tier0/smartptr.h"
+#include "tier0/threadtools.h"
+#include "tier0/utlhash.h"
+#include "tier0/utlleanvector.h"
 #include "tier0/utlvector.h"
+#include "tier2/tier2.h"
+#include "vconcomm/ivconcomm.h"
+#include "vphysics2/handle_decl.h"
+#include "vphysics2/interface.h"
+#include "vphysics2/intersection_controller_interface.h"
+#include "vphysics2/iphysicsbody.h"
+#include "vphysics2/iphysicscontact.h"
+#include "vphysics2/iphysicsjoint.h"
+#include "vphysics2/iphysicsshape.h"
+#include "vphysics2/iphysicssoftbody.h"
+#include "vphysx/vphysx_collisionmesh_resource.h"
+#include "vphysx/vphysx_interface.h"
+#include "vphysx/vphysx_interface_params.h"
 
-class IVPhysics2World;
-class IPhysicsShape;
-class IPhysicsSoftbody;
-class IIkSolver;
-class IPhysSurfacePropertyController;
-class IPhysIntersectionDictionary;
-class IPhysIntersectionController;
 class IVConComm;
 class CCommand;
+class ISceneViewDebugOverlays;
+class CFrustum;
+class InfoForResourceTypeIMaterial2;
 
-class IFnPhysicsContact;
-class IFnPhysicsAnyJoint;
-class IFnPhysicsWheelJoint;
-class IFnPhysicsWeldJoint;
-class IFnPhysicsPrismaticJoint;
-class IFnPhysicsRevoluteJoint;
-class IFnPhysicsConicalJoint;
-class IFnPhysicsSpringJoint;
-class IFnPhysicsSphericalJoint;
-class IFnPhysicsPulleyJoint;
-class IFnPhysicsGenericJoint;
-class IFnPhysicsSplineJoint;
-class IFnPhysicsAnyShape;
-class IFnPhysicsSphereShape;
-class IFnPhysicsCapsuleShape;
-class IFnPhysicsHullShape;
-class IFnPhysicsMeshShape;
-class IFnPhysicsCompoundShape;
-class IFnPhysicsBody;
-class IFnPhysicsSoftbody;
-class IFnPhysicsWorld;
+template < class T >
+class CWeakHandle;
+class CSceneAnimatableObject;
+class CMesh;
+class CFeModel;
+class CGJKProxy;
 
-struct RnSphere_t;
-struct RnCapsule_t;
-struct RnHull_t;
-struct RnMesh_t;
-struct RnCompound_t;
-struct PhysicsBodyDef_t;
-struct VPhysXAggregateData_t;
+struct VPhysIntersectionNotification_t;
+struct SceneObjectBuffers_t;
+struct RnHullSimplificationParams_t;
+struct RnSimplexCache_t;
+struct PhysicsWorldUpdateConCommParams_t;
+struct Ray_t;
+
+enum RnState_t
+{
+	STATE_UNKNOWN = 0,
+	STATE_FAILED,
+	STATE_OVERLAPPED,
+	STATE_TOUCHING,
+	STATE_SEPARATED
+};
+
+// Start and end placement of a shape moving over a time step
+struct RnSweptTransform_t
+{
+	Vector m_vPosition1;
+	Vector m_vPosition2;
+	Quaternion m_qOrientation1;
+	Quaternion m_qOrientation2;
+};
+
+struct RnConvexCastResult_t
+{
+	RnState_t m_nState;
+	float m_flTime;
+};
+
+struct RnLinearCastResult_t
+{
+	RnState_t m_nState;
+	float m_flTime;
+	Vector m_vClosest1;
+	Vector m_vClosest2;
+	Vector m_vNormal;
+};
+
+struct RnDistanceQueryResult_t
+{
+	float m_flDistance;
+	Vector m_vPoint1;
+	Vector m_vPoint2;
+};
+
+// Holds a reference to aggregate data through IVPhysics2::AddDataReference and ReleaseDataReference
+class CPhysAggregateDataHandle
+{
+public:
+	CPhysAggregateDataHandle() : m_pData( nullptr ) {}
+	CPhysAggregateDataHandle( CPhysAggregateData *pData ) : m_pData( nullptr ) { Set( pData ); }
+	CPhysAggregateDataHandle( const CPhysAggregateDataHandle &other ) : m_pData( nullptr ) { Set( other.m_pData ); }
+	CPhysAggregateDataHandle( CPhysAggregateDataHandle &&other ) : m_pData( other.m_pData ) { other.m_pData = nullptr; }
+	~CPhysAggregateDataHandle() { Clear(); }
+
+	CPhysAggregateDataHandle &operator=( const CPhysAggregateDataHandle &other ) { Set( other.m_pData ); return *this; }
+
+	inline void Set( CPhysAggregateData *pData );
+	inline void Clear();
+
+	CPhysAggregateData *Get() const { return m_pData; }
+	CPhysAggregateData *operator->() const { return m_pData; }
+	bool IsValid() const { return m_pData != nullptr; }
+	explicit operator bool() const { return IsValid(); }
+
+private:
+	CPhysAggregateData *m_pData;
+};
+
+struct RnMassProperties_t
+{
+	matrix3x4_t m_Inertia;
+	Vector m_vCenter;
+	float m_flMass;
+};
+
+enum PhysicsDebugMaterialId_t
+{
+	PHYSICS_DEBUG_MATERIAL_SOLID_WITH_EDGES = 0,
+	PHYSICS_DEBUG_MATERIAL_SOLID,
+	PHYSICS_DEBUG_MATERIAL_WIRE,
+	PHYSICS_DEBUG_MATERIAL_TRANSLUCENT,
+	PHYSICS_DEBUG_MATERIAL_NODEPTHTEST,
+	PHYSICS_DEBUG_MATERIAL_TRANSLUCENT_NODEPTHTEST,
+
+	PHYSICS_DEBUG_MATERIAL_COUNT
+};
+
+struct VPhysContactImpactStrength_t
+{
+	float m_flTangentImpact;
+	float m_flNormalImpact;
+};
+
+// A quaternion the joint frame orientation getters of IIkSolver return: a 16-byte class with one vector member, returned in
+// one vector register on Linux and through a hidden pointer on Windows
+struct IkSolverOrientation_t
+{
+	fltx4 m_qOrientation;
+};
+
+// A target of IIkSolver::Solve
+struct IkSolverTarget_t
+{
+	int m_nJoint;
+	uint8 m_pad004[ 12 ];
+
+	// The joint is moved towards it; read without the w component
+	VectorAligned m_vPosition;
+
+	// Passed to the solve of the joint before the position
+	uint8 m_unk020[ 16 ];
+};
+
+struct IkSolverTargets_t
+{
+	int m_nCount;
+	IkSolverTarget_t *m_pTargets;
+};
+
+// The joint transforms IIkSolver::Solve reads and replaces, indexed like the joints of the solver
+struct IkSolverPose_t
+{
+	uint8 m_pad000[ 8 ];
+	CTransform *m_pTransforms;
+};
+
+// Created by IVPhysics2::CreateIkSolver; every method forwards to the solver object the implementation owns.
+// The solver keeps one record per joint, copied from the creation description; the transform arguments are applied to its values.
+// The roles of the joint vectors and of the two joint transforms are not recovered: nothing calls the solver
+abstract_class IIkSolver
+{
+public:
+	virtual ~IIkSolver() {}
+
+	virtual int GetJointCount() const = 0;
+
+	// Index of the joint whose transform the joint is solved against
+	virtual int GetJointParent( int nJoint ) const = 0;
+
+	// Summed with the parent value as the inverse mass of the joint pair
+	virtual float GetInvMass( int nJoint ) const = 0;
+
+	// Principal inverse inertia, rotated into the solved transform of the joint
+	virtual Vector GetInvInertia( int nJoint ) const = 0;
+
+	// Mass center of the body of the joint, in its space and placed at the given body transform
+	virtual Vector GetLocalMassCenter( int nJoint ) const = 0;
+	virtual Vector GetMassCenter( int nJoint, const CTransform &bodyTransform ) const = 0;
+
+	// Copied from the joint description and read by nothing else
+	virtual Vector unk007( int nJoint ) const = 0;
+
+	// The reference frame of the joint in the space of the parent body, and placed at the given parent transform
+	virtual CTransform GetLocalReferenceFrame( int nJoint ) const = 0;
+	virtual CTransform GetReferenceFrame( int nJoint, const CTransform &parentTransform ) const = 0;
+	virtual IkSolverOrientation_t GetLocalReferenceOrientation( int nJoint ) const = 0;
+	virtual IkSolverOrientation_t GetReferenceOrientation( int nJoint, const IkSolverOrientation_t &parentOrientation ) const = 0;
+	virtual Vector GetLocalReferenceOrigin( int nJoint ) const = 0;
+	virtual Vector GetReferenceOrigin( int nJoint, const CTransform &parentTransform ) const = 0;
+
+	// The attached frame of the joint in the space of its own body, and placed at the given body transform
+	virtual CTransform GetLocalAttachedFrame( int nJoint ) const = 0;
+	virtual CTransform GetAttachedFrame( int nJoint, const CTransform &bodyTransform ) const = 0;
+	virtual IkSolverOrientation_t GetLocalAttachedOrientation( int nJoint ) const = 0;
+	virtual IkSolverOrientation_t GetAttachedOrientation( int nJoint, const IkSolverOrientation_t &bodyOrientation ) const = 0;
+	virtual Vector GetLocalAttachedOrigin( int nJoint ) const = 0;
+	virtual Vector GetAttachedOrigin( int nJoint, const CTransform &bodyTransform ) const = 0;
+
+	// Limits in radians: the rotation about the z axis of the joint frame is clamped to the twist range,
+	// a positive swing limits the rotation away from that axis
+	virtual float GetMinTwist( int nJoint ) const = 0;
+	virtual float GetMaxTwist( int nJoint ) const = 0;
+	virtual float GetMaxSwing( int nJoint ) const = 0;
+
+	// Runs the solver for a number of iterations: every target is applied, then the joints are solved from the last one down to the second
+	virtual void Solve( IkSolverPose_t &pose, const IkSolverTargets_t &targets, int nIterations ) = 0;
+};
+
+// The 20-byte class IPhysSerialStreamSnapshot::unk005 returns; only its size is known
+struct PhysSerialStreamSnapshotUnk005_t
+{
+	uint8 m_Data[ 20 ];
+};
+
+// The 8-byte class IPhysSerialStreamSnapshot::unk007 returns in a register on Linux; only its size is known
+struct PhysSerialStreamSnapshotUnk007_t
+{
+	uint8 m_Data[ 8 ];
+};
+
+// Reference counted through CSmartPtr; returned by IVPhysics2::CreateSerialStreamSnapshot
+abstract_class IPhysSerialStreamSnapshot
+{
+public:
+	virtual ~IPhysSerialStreamSnapshot() {}
+
+	// Size of the data Serialize writes
+	virtual uint32 GetSerializedSize() const = 0;
+
+	// Writes a 0x1D0-byte header followed by the snapshot data and advances pBuffer
+	virtual void Serialize( uint8 *&pBuffer ) = 0;
+
+	// Another size: the header, the keyed records of every type and the strings of the recorded debug data
+	virtual uint32 unk003() = 0;
+
+	// Empty in release builds
+	virtual void unk004() = 0;
+
+	// Filled with zeros in release builds
+	virtual PhysSerialStreamSnapshotUnk005_t unk005() = 0;
+
+	// Returns 0 in release builds
+	virtual void *unk006() = 0;
+
+	// Filled with zeros in release builds
+	virtual PhysSerialStreamSnapshotUnk007_t unk007() = 0;
+
+	// Copy the pointers of one of the recorded lists: the pointer list of one of the 24 types, the keys of the serialized
+	// records of a type, and the list shared by all types. What the types and the pointers are is not recovered
+	virtual void unk008( int nType, CUtlVector< void * > &out ) const = 0;
+	virtual void unk009( int nType, CUtlVector< void * > &out ) const = 0;
+	virtual void unk010( CUtlVector< void * > &out ) const = 0;
+
+	// Return 0
+	virtual void *unk011() = 0;
+	virtual void *unk012( void *p ) = 0;
+
+	virtual void unk013( void *p ) = 0;
+
+	// Returns 0 in release builds
+	virtual void *unk014() = 0;
+
+	int AddRef() { return ++m_nRefCount; }
+	int Release()
+	{
+		int nRefCount = --m_nRefCount;
+		if ( nRefCount == 0 )
+			delete this;
+
+		return nRefCount;
+	}
+
+private:
+	CInterlockedInt m_nRefCount;
+};
+
+// Reference counted through CSmartPtr; returned by IVPhysics2::CreateDataDescConvertor
+abstract_class IDataDescConvertor : public CRefCounted<>
+{
+};
+
+// The pair of hull features IVPhysics2::unk053 returns, 16 bytes in two integer registers on Linux; only its size is known
+struct VPhysics2Unk053_t
+{
+	ALIGN8 uint8 m_Data[ 16 ] ALIGN8_POST;
+};
 
 abstract_class IVPhysics2 : public IAppSystem
 {
@@ -66,10 +328,10 @@ public:
 	virtual int GetWorldCount() = 0;
 	virtual IVPhysics2World *GetWorld( int nIndex ) = 0;
 
-	virtual void SimulateWorlds( IVPhysics2World **ppWorlds, int nWorldCount, float flTimeStep, int nSubsteps, bool bAllowThreading, void *pContext ) = 0;
+	virtual void SimulateWorlds( IVPhysics2World **ppWorlds, int nWorldCount, float flTimeStep, int nSubsteps, bool bAllowThreading, VPhysXWorldStepResults *pResults ) = 0;
 
-	// Steps the softbodies of all given worlds in parallel jobs
-	virtual void SimulateSoftbodies( IVPhysics2World **ppWorlds, int nWorldCount, float flTimeStep, int nUnknown ) = 0;
+	// Steps the softbodies of all given worlds in parallel jobs, nSubsteps times flSubstepTime each
+	virtual void SimulateSoftbodies( IVPhysics2World **ppWorlds, int nWorldCount, float flSubstepTime, int nSubsteps ) = 0;
 
 	// Locks every world and resets a set of its per-step arrays
 	virtual void unk018() = 0;
@@ -100,116 +362,89 @@ public:
 
 	virtual bool ShapesHaveSameCollisionFilter( IPhysicsShape *pShape1, IPhysicsShape *pShape2 ) = 0;
 
-#ifdef _WIN32
-	virtual void unk037( void *p ) = 0;
-	virtual void unk038( void *p ) = 0;
-#else
-	virtual void unk038( void *p ) = 0;
-	virtual void unk037( void *p ) = 0;
-#endif
+	// Casts two convex proxies, each moving by its own translation
+	virtual RnLinearCastResult_t LinearCast( const CTransform &transform1, const CGJKProxy &proxy1, const Vector &vTranslation1, const CTransform &transform2, const CGJKProxy &proxy2, const Vector &vTranslation2, float flUnknown, float flRadius ) = 0;
+	virtual RnLinearCastResult_t LinearCast( const CTransform &transform1, const CGJKProxy &proxy1, float flRadius1, const Vector &vTranslation1, const CTransform &transform2, const CGJKProxy &proxy2, float flRadius2, const Vector &vTranslation2 ) = 0;
 
-#ifdef _WIN32
-	virtual void unk039( void *p ) = 0;
-	virtual void unk040( void *p ) = 0;
-	virtual void unk041( void *p ) = 0;
-	virtual void unk042( void *p ) = 0;
-#else
-	virtual void unk042( void *p ) = 0;
-	virtual void unk041( void *p ) = 0;
-	virtual void unk040( void *p ) = 0;
-	virtual void unk039( void *p ) = 0;
-#endif
+	// Time of impact of two shapes moving between the placements of their swept transforms
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, IPhysicsShape *pShape1, const RnSweptTransform_t &sweep2, IPhysicsShape *pShape2 ) = 0;
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const RnHull_t *pHull1, const RnSweptTransform_t &sweep2, const RnHull_t *pHull2 ) = 0;
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const Ray_t &shape1, const RnSweptTransform_t &sweep2, const Ray_t &shape2 ) = 0;
+	virtual RnConvexCastResult_t ConvexCast( const RnSweptTransform_t &sweep1, const CGJKProxy &proxy1, float flRadius1, const RnSweptTransform_t &sweep2, const CGJKProxy &proxy2, float flRadius2 ) = 0;
 
-	virtual void unk043( void *p ) = 0;
-	virtual void unk044( void *p ) = 0;
+	// Cast vStart + vDelta against a scaled mesh or hull
+	virtual bool CastRayAgainstMesh( CShapeCastResult *pResult, const RnMesh_t *pMesh, const Vector &vScale, const Vector &vStart, const Vector &vDelta ) = 0;
+	virtual bool CastRayAgainstHull( CShapeCastResult *pResult, const RnHull_t *pHull, float flScale, const Vector &vStart, const Vector &vDelta ) = 0;
 
-	virtual void unk045( void *p ) = 0;
+	// Cast a shape moved by vDelta from vStart against another shape placed at shapeTransform
+	virtual bool CastShapeAgainstShape( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, const CTransform &shapeTransform ) = 0;
+	virtual bool TraceShape( PhysicsTrace_t *pTrace, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const Ray_t &shape, const CTransform &shapeTransform ) = 0;
 
-	virtual void Unk_TraceShape( void *p ) = 0;
+	virtual RnDistanceQueryResult_t ClosestPoints( const CTransform &transform1, IPhysicsShape *pShape1, const CTransform &transform2, IPhysicsShape *pShape2 ) = 0;
+	virtual RnDistanceQueryResult_t ClosestPoints( const CTransform &transform1, const RnHull_t *pHull1, const CTransform &transform2, const RnHull_t *pHull2, RnSimplexCache_t *pCache ) = 0;
+	virtual RnDistanceQueryResult_t ClosestPoints( const matrix3x4_t &transform1, const CGJKProxy &proxy1, const matrix3x4_t &transform2, const CGJKProxy &proxy2, RnSimplexCache_t *pCache, int nMaxIterations ) = 0;
 
-#ifdef _WIN32
-	virtual void unk047( void *p ) = 0;
-	virtual void unk048( void *p ) = 0;
-	virtual void unk049( void *p ) = 0;
-#else
-	virtual void unk049( void *p ) = 0;
-	virtual void unk048( void *p ) = 0;
-	virtual void unk047( void *p ) = 0;
-#endif
+	// Clamped to zero below a small margin
+	virtual float GetDistanceBetweenHulls( const Vector *pVertices1, int nVertexCount1, const Vector *pVertices2, int nVertexCount2 ) = 0;
+	virtual float GetDistanceBetweenHulls( const matrix3x4_t &transform1, const Vector *pVertices1, int nVertexCount1, const matrix3x4_t &transform2, const Vector *pVertices2, int nVertexCount2 ) = 0;
 
-#ifdef _WIN32
-	virtual void unk050( void *p ) = 0;
-	virtual void unk051( void *p ) = 0;
-#else
-	virtual void unk051( void *p ) = 0;
-	virtual void unk050( void *p ) = 0;
-#endif
+	// Distance between the two shapes minus their radii
+	virtual float GetShapeDistance( IPhysicsShape *pShape1, const matrix3x4_t &transform1, IPhysicsShape *pShape2, const matrix3x4_t &transform2 ) = 0;
 
-	virtual void unk052( void *p ) = 0;
-	virtual void unk053( void *p ) = 0;
+	// The hull feature pair of the cached simplex
+	virtual VPhysics2Unk053_t unk053( const RnSimplexCache_t &cache, const RnHull_t *pHull1, const RnHull_t *pHull2 ) = 0;
 
-#ifdef _WIN32
-	virtual void unk054( void *p ) = 0;
-	virtual void unk055( void *p ) = 0;
-	virtual void unk056( void *p ) = 0;
-	virtual void unk057( void *p ) = 0;
-	virtual void unk058( void *p ) = 0;
-#else
-	virtual void unk058( void *p ) = 0;
-	virtual void unk057( void *p ) = 0;
-	virtual void unk056( void *p ) = 0;
-	virtual void unk055( void *p ) = 0;
-	virtual void unk054( void *p ) = 0;
-#endif
+	// Contact generation: the callees add contact points to pOut and the result tells whether there are any.
+	// The five form one overload set, which MSVC lists in reverse order. pOut and the other pointers are internal types of the physics module;
+	// each float is paired with the pointer that follows it into a { pointer, float } block for the callee
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, void *pUnknown4, int nUnknown ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const CTransform &transform1, const void *pUnknown2, int nUnknown1, const CTransform &transform2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, float flUnknown1, const void *pUnknown2, int nUnknown1, const matrix3x4_t &transform2, float flUnknown2, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, int nUnknown2 ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, int nUnknown, float flUnknown2 ) = 0;
+	virtual bool GenerateContacts( void *pOut, const void *pUnknown1, const matrix3x4_t &transform1, const void *pUnknown2, const matrix3x4_t &transform2, float flUnknown1, const void *pUnknown3, const void *pUnknown4, void *pUnknown5, float flUnknown2 ) = 0;
 
-	// Convex hull geometry. A NULL pDestHull allocates a new hull
-	virtual RnHull_t *CreateBoxHull( const Vector &vCenter, const Vector &vHalfExtents, RnHull_t *pDestHull ) = 0;
-	virtual RnHull_t *CreateConeHull( const Vector &vStart, const Vector &vEnd, float flRadius, void *pUnknown ) = 0;
-	virtual RnHull_t *CreateCylinderHull( const Vector &vStart, const Vector &vEnd, float flRadius, void *pUnknown ) = 0;
+	// Convex hull geometry. A NULL pPreallocatedHull allocates a new hull
+	virtual RnHull_t *CreateBoxHull( const Vector &vExtent, const Vector &vCenter, RnHull_t *pPreallocatedHull ) = 0;
+	virtual RnHull_t *CreateConeHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pPreallocatedHull ) = 0;
+	virtual RnHull_t *CreateCylinderHull( const Vector &vStart, const Vector &vEnd, float flRadius, RnHull_t *pPreallocatedHull ) = 0;
 
-#ifdef _WIN32
-	virtual void Unk_CreateHullFromStream( void *p ) = 0;
-	virtual void Unk_CreateHull( void *p ) = 0;
-#else
-	virtual void Unk_CreateHull( void *p ) = 0;
-	virtual void Unk_CreateHullFromStream( void *p ) = 0;
-#endif
+	virtual RnHull_t *CreateHull( int nVertexCount, const Vector *pvVertexBase, RnHull_t *pPreallocatedHull, RnHullSimplificationParams_t *pSimplificationParams ) = 0;
+	virtual RnHull_t *CreateHull( CMesh *pMesh, RnHull_t *pPreallocatedHull, RnHullSimplificationParams_t *pSimplificationParams ) = 0;
 
 	virtual RnHull_t *CreateRuntimeHull( int nPointCount, const Vector *pPoints ) = 0;
-	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const void *pPlanes, float flUnknown, const Vector &vUnknown ) = 0;
+	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const RnPlane_t *pPlanes, float flUnknown, const Vector &vUnknown ) = 0;
 
-	virtual RnHull_t *CreateRandomHull( int nPointCount, float flRadius, float flUnknown ) = 0;
+	virtual RnHull_t *CreateRandomHull( int nPointCount, float flRadius, float flUnknown, RnHull_t *pPreallocatedHull ) = 0;
 
 	virtual void CloneHull( RnHull_t *pDestHull, const RnHull_t *pSourceHull ) = 0;
 	virtual void DestroyHull( RnHull_t *pHull ) = 0;
 
 	virtual RnMesh_t *CreateGridMesh( int nHalfExtent, float flSpacing, float flHeight ) = 0;
 
-#ifdef _WIN32
-	virtual void Unk_CreateMeshFromStream( void *p ) = 0;
-	virtual void Unk_CreateMesh( void *p ) = 0;
-#else
-	virtual void Unk_CreateMesh( void *p ) = 0;
-	virtual void Unk_CreateMeshFromStream( void *p ) = 0;
-#endif
+	// pSimplifyParams is an optional mesh simplification block, its layout is not recovered
+	virtual RnMesh_t *CreateMesh( int nTriangleCount, const uint32 *pIndexBase, const uint8 *pMaterialBase, int nVertexCount, const Vector *pVertexBase, RnMesh_t *pPreallocatedMesh, const void *pSimplifyParams ) = 0;
+	virtual RnMesh_t *CreateMesh( CMesh *pMesh, RnMesh_t *pPreallocatedMesh, const void *pSimplifyParams ) = 0;
 
 	virtual void CloneMesh( RnMesh_t *pDestMesh, const RnMesh_t *pSourceMesh ) = 0;
 	virtual void DestroyMesh( RnMesh_t *pMesh ) = 0;
 	virtual void UpdateMeshChangedVertices( RnMesh_t *pMesh ) = 0;
 
-	virtual void Unk_UpdateMeshTriangleAABBs( void *p ) = 0;
-	virtual void Unk_HideMeshTriangles( void *p ) = 0;
+	virtual void UpdateMeshTriangleAABBs( void *p ) = 0;
+	virtual void HideMeshTriangles( void *p ) = 0;
 
-	virtual void Unk_CreateCompound( void *p ) = 0;
+	virtual void CreateCompound( void *p ) = 0;
 	virtual void CloneCompound( RnCompound_t *pDestCompound, const RnCompound_t *pSourceCompound ) = 0;
 	virtual void DestroyCompound( RnCompound_t *pCompound ) = 0;
 
-	virtual void Unk_CreateFromResource( void *p ) = 0;
+	// Takes over the aggregate data loaded from a resource block
+	virtual CPhysAggregateDataHandle CreateAggregateDataFromEmbeddedDiskData( const EmbeddedPhysicsInfo_t &embeddedPhysicsInfo ) = 0;
 
-	virtual void unk081( void *p ) = 0;
+	// Moves the cloth data of reallocated aggregate data; the data type manager forwards its reallocation here
+	virtual void OnReallocateAggregateData( const CPhysAggregateData *pOldData, CPhysAggregateData *pNewData ) = 0;
 
-	virtual void Unk_AddRef( void *p ) = 0;
-	virtual void Unk_Release( void *p ) = 0;
+	// Reference counting of the aggregate data, used by CPhysAggregateDataHandle
+	virtual void AddDataReference( CPhysAggregateData *pData ) = 0;
+	virtual void ReleaseDataReference( CPhysAggregateData *pData ) = 0;
 
 	virtual bool unk084( CUtlVector< PhysicsBodyDef_t > &bodies, const VPhysXAggregateData_t *pAggregateData ) = 0;
 
@@ -217,44 +452,41 @@ public:
 
 	virtual void ConvertBody( PhysicsBodyDef_t &body, const VPhysXAggregateData_t *pAggregateData, int nPartIndex ) = 0;
 
-	virtual bool unk087( void *p ) = 0;
-	virtual void unk088( void *p ) = 0;
+	// Both are called for every body part of loaded aggregate data, unk088 only when unk087 returns true
+	virtual bool unk087( VPhysics2ShapeDef_t *pShape ) = 0;
+	virtual void unk088( VPhysXBodyPart_t *pPart ) = 0;
 
-	virtual void Unk_Create( void *p ) = 0;
+	virtual CPhysAggregateDataHandle CreateAggregateDataFromDiskData( VPhysXAggregateData_t *pDiskDataRoot ) = 0;
 
 	// Standalone softbodies
-	virtual IPhysicsSoftbody *Unk_CreateSoftbody( void *p ) = 0;
+	virtual IPhysicsSoftbody *CreateSoftbody( const CFeModel *pFeModel ) = 0;
 	virtual void DestroySoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
 	// Softbodies kept in the interface's own softbody list
-	virtual void Unk_CreateListedSoftbody( void *p ) = 0;
+	virtual IPhysicsSoftbody *CreateListedSoftbody( const CFeModel *pFeModel ) = 0;
 	virtual void DestroyListedSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
+	// Both include the softbodies of every world
 	virtual int GetSoftbodyCount() = 0;
-	virtual void unk095( void *p ) = 0;
+	virtual int GetSoftbodies( int nFlags, IPhysicsSoftbody **ppSoftbodies ) = 0;
 
-	virtual IIkSolver *Unk_CreateIkSolver( void *p ) = 0;
+	virtual IIkSolver *CreateIkSolver( void *p ) = 0;
 	virtual void DestroyIkSolver( IIkSolver *pSolver ) = 0;
 
-	virtual void unk098( void *p ) = 0;
+	virtual VPhysContactImpactStrength_t ComputeImpactStrength( const VPhysIntersectionNotification_t &notification ) = 0;
 
 	// Pop from and push to a lock-free free list
-	virtual void *unk099( uint32 nUnknown ) = 0;
-	virtual void unk100( void *p ) = 0;
+	virtual void *AllocateContactBlock( uint32 nCount ) = 0;
+	virtual void FreeContactBlock( void *p ) = 0;
 
 	virtual void DestroyTaggedGeometry( uintp nTaggedGeometry ) = 0;
 
-#ifdef _WIN32
-	virtual void unk102( void *p ) = 0;
-	virtual void unk103( void *p ) = 0;
-	virtual void unk104( void *p ) = 0;
-#else
-	virtual void unk104( void *p ) = 0;
-	virtual void unk103( void *p ) = 0;
-	virtual void unk102( void *p ) = 0;
-#endif
+	virtual RnMassProperties_t ComputeMass( const RnSphere_t *pSphere, const RnMaterial_t &material ) = 0;
+	virtual RnMassProperties_t ComputeMass( const RnCapsule_t *pCapsule, const RnMaterial_t &material ) = 0;
+	virtual RnMassProperties_t ComputeMass( const RnHull_t *pHull, float flScale, const RnMaterial_t &material ) = 0;
 
-	virtual void Unk_LoadPhysicsDebugMaterials( void *p ) = 0;
+	// Loads the physics debug materials on first use; a non-zero nUnknown selects a replacement for the solid and translucent materials
+	virtual CWeakHandle< InfoForResourceTypeIMaterial2 > GetWellKnownMaterial( PhysicsDebugMaterialId_t nMaterial, uint32 nUnknown ) = 0;
 
 	virtual IFnPhysicsContact *ConstructFnPhysicsContact( void *pMemory, int nMemorySize ) = 0;
 	virtual IFnPhysicsAnyJoint *ConstructFnPhysicsAnyJoint( void *pMemory, int nMemorySize ) = 0;
@@ -279,17 +511,18 @@ public:
 	virtual IFnPhysicsWorld *ConstructFnPhysicsWorld( void *pMemory, int nMemorySize ) = 0;
 
 	// Physics debugger link over the VConsole connection
-	virtual bool unk127( const uint32 *pUnknown ) = 0;
+	virtual bool UpdateConCommParams( PhysicsWorldUpdateConCommParams_t &params ) = 0;
 	virtual void SetVConComm( IVConComm *pVConComm ) = 0;
 	virtual void RunVConCommFrame() = 0;
 
 	// True while the VConsole link has any state flag set
-	virtual bool unk130() = 0;
+	virtual bool IsConCommActive() = 0;
 	virtual bool StreamToPhysicsDebugger( bool bStart ) = 0;
 	virtual bool IsStreamingToPhysicsDebugger() = 0;
-	virtual void Unk_CreateSerialStreamSnapshot( void *p ) = 0;
+	// Both are stubs in release builds
+	virtual CSmartPtr< IPhysSerialStreamSnapshot > CreateSerialStreamSnapshot( void *p ) = 0;
 	virtual void *unk134() = 0;
-	virtual void Unk_CreateDataDescConvertor( void *p ) = 0;
+	virtual CSmartPtr< IDataDescConvertor > CreateDataDescConvertor( const void *pData ) = 0;
 
 	// Empty in release builds
 	virtual void unk136( int nUnknown ) = 0;
@@ -298,19 +531,179 @@ public:
 	virtual void PrintInfo( const CCommand &args ) = 0;
 
 	// Debug draws every world (physics_debug_draw)
-	virtual void DebugDrawWorlds( int nUnknown ) = 0;
+	virtual void DebugDrawWorlds( ISceneViewDebugOverlays *pDebugOverlays ) = 0;
 
-	virtual void Unk_CreateDebugSceneObject( void *p ) = 0;
-	virtual void DestroyDebugSceneObject( void *pSceneObject ) = 0;
-	virtual void Unk_UpdateDebugSceneObject( void *p ) = 0;
+	virtual bool CreateDebugSceneObject( const DebugSceneObjectParams_t &params, SceneObjectBuffers_t *pOut ) = 0;
+	virtual void DestroyDebugSceneObject( CSceneAnimatableObject *pSceneObject ) = 0;
+	virtual void UpdateDebugSceneObject( const DebugSceneObjectParams_t &params, void *pUnknown1, void *pUnknown2 ) = 0;
 
 	// Empty
 	virtual void unk143() = 0;
 
-	// Copies a 128-byte block into every world
-	virtual void unk144( void *p ) = 0;
+	// Copies the frustum into every world for the physics debugger
+	virtual void SetVisualDebugCameraHint( int nUnknown, const CFrustum &frustum ) = 0;
 
 	virtual const char *GetMassDescription( float flMass ) = 0;
+
+public:
+	// Freed by the destructor, not used otherwise
+	CUtlLeanVector< CPhysAggregateData * > m_AggDataRegistry;
+};
+
+inline void CPhysAggregateDataHandle::Set( CPhysAggregateData *pData )
+{
+	if ( pData )
+	{
+		g_pVPhysics2->AddDataReference( pData );
+	}
+
+	Clear();
+	m_pData = pData;
+}
+
+inline void CPhysAggregateDataHandle::Clear()
+{
+	if ( m_pData )
+	{
+		g_pVPhysics2->ReleaseDataReference( m_pData );
+	}
+
+	m_pData = nullptr;
+}
+
+// The VConsole link of the physics debugger, registered with IVConComm by IVPhysics2::SetVConComm
+class CVPhysics2ConComm : public IVConCommDataReceived
+{
+public:
+	bool OnDataReceived( uint32 nMsgType, uint16 nVersion, uint32 nSize, void *pMessage, uint32 nSourceAddress ) override;
+
+	// Link state bits, 0x1000 while streaming to the physics debugger; IsConCommActive tests it for zero
+	CInterlockedUInt m_nFlags;
+
+	uint32 m_unk00C;
+	int m_unk010;
+
+	// Set to 20 when the state bit 8 is handled
+	int m_unk014;
+	int m_unk018;
+
+	// Copy of the PhysicsWorldUpdateConCommParams_t passed to IVPhysics2::UpdateConCommParams
+	float m_unk01C;
+
+	// Without it, starting a stream prints "Please start Physics Debugger"
+	bool m_bPhysicsDebuggerStarted;
+
+	bool m_unk021;
+
+	// 1 streams every world on each RunVConCommFrame
+	int m_unk024;
+};
+
+// The resource type manager of VPhysXAggregateData_t ('vphys').
+// Its overrides (the typesafe allocation and release of the aggregate data, and the reallocation hook after them that
+// forwards to IVPhysics2::OnReallocateAggregateData) are not declared here
+class CPhysDataTypeManager : public CTypesafeIntrospectedToKV3TypeManager< RESOURCE_TYPE_PHYSICS_DATA, VPhysXAggregateData_t >
+{
+};
+
+// The resource type manager of the surface properties ('vsurf') and the IPhysSurfacePropertyController of the physics interface
+class CVPhysics2SurfacePropertyManager : public CDefaultKV3TransferResourceTypeManager< RESOURCE_TYPE_SURFACE_PROPERTIES >, public IPhysSurfacePropertyController
+{
+public:
+	virtual ~CVPhysics2SurfacePropertyManager() {}
+
+	// The binaries list the overriders in this order in the Linux primary vtable
+	const CPhysSurfaceProperties *FindSurfaceProperties( CUtlStringToken token, bool *pFound ) const override;
+	int GetSurfacePropCount() const override;
+	const CPhysSurfaceProperties *GetSurfaceProperty( int nIndex ) const override;
+	void GetSurfacePropertiesNames( CUtlVector< CUtlString > *pNames, CUtlVector< CUtlString > *pDescriptions, bool bIncludeHidden ) const override;
+	const CPhysSurfaceProperties *GetDefaultSurfaceProperties() const override;
+	void InitializeRnMaterialFromSurfaceProperty( const CPhysSurfaceProperties *pProperties, RnMaterial_t *pMaterial ) const override;
+	int unk007() const override;
+
+	struct CSurfacePropertiesPair
+	{
+		const CPhysSurfaceProperties *m_pDescrition;
+	};
+
+public:
+	// The loaded surface properties resource; its data is a CUtlVector< CPhysSurfaceProperties * >
+	ResourceHandle_t m_hSurfaceProperties;
+
+	// FindSurfaceProperties looks the token up here
+	CUtlScalarHash< CSurfacePropertiesPair, CPassthroughHash32 > m_surfacePropertiesDescription;
+
+	// Returned by unk007, starts at 1
+	int m_unk058;
+
+	const CPhysSurfaceProperties *m_pDefaultSurfaceProperties;
+};
+
+// IVPhysics2::GetIntersectionDictionary returns a static instance; InitIntersectionDictionary creates a copy of it
+class CIntersectionDictionary : public IPhysIntersectionDictionary
+{
+public:
+	struct KeyedMask_t
+	{
+		int m_nKey;
+		uint64 m_nMask;
+	};
+
+	// The three CNameIndex objects (IPhysNameIndex implementations) returned by GetNameIndex( 0 ) to GetNameIndex( 2 ).
+	// Their layout is not recovered; their size differs between the platforms (0x90 on Linux, 0xA8 on Windows)
+#ifdef _WIN32
+	uint64 m_NameIndices[ 3 ][ 21 ];
+#else
+	uint64 m_NameIndices[ 3 ][ 18 ];
+#endif
+
+	// Read and written by FindInteractionMask, GetInteractionMask, SetInteractionMask and AddInteractionMask
+	CUtlVector< KeyedMask_t > m_KeyedMasks;
+
+	// The entry of m_KeyedMasks whose mask SetInteractionMask also stores in m_nCurrentMask
+	int m_nCurrentKeyedMask;
+
+	// Returned by GetDefaultInteractionMask and used by InitDefaultCollisionAttr
+	uint64 m_nCurrentMask;
+
+	// AddOverrideMask ORs into it
+	uint64 m_unk1E0;
+
+	// Set by SetExclusiveOverrideMask
+	uint64 m_unk1E8;
+
+	uint16 m_unk1F0;
+	uint8 m_unk1F2;
+
+	// CUtlHashtable< CUtlStringToken, CollisionDetailLayerInfo_t > read by HasDetailLayerInfos, FindDetailLayerInfo and GetDetailLayerInfos
+	uint64 m_unk1F8[ 4 ];
+};
+
+class CVPhysics2Interface : public CTier2AppSystem< IVPhysics2 >
+{
+public:
+	// Returns m_SurfacePropertyManager; GetSurfacePropertyController returns its controller base
+	virtual CVPhysics2SurfacePropertyManager *GetSurfacePropertyManager() = 0;
+
+	CVPhysics2ConComm m_ConComm;
+
+	// Created by InitIntersectionDictionary
+	CIntersectionDictionary *m_pIntersectionDictionary;
+
+	CPhysDataTypeManager m_typeManagerPhysData;
+	CVPhysics2SurfacePropertyManager m_SurfacePropertyManager;
+
+	CUtlVector< IVPhysics2World * > m_Worlds;
+
+	// Set when Init installs the resource type managers, cleared by Shutdown
+	bool m_bPhysDataTypeManagerInstalled;
+	bool m_bSurfacePropertyManagerInstalled;
+
+	// Guards m_Softbodies
+	CAtomicMutex m_SoftbodyMutex;
+
+	// The internal softbody objects created by CreateListedSoftbody
+	CUtlLeanVector< void * > m_Softbodies;
 };
 
 #endif // IVPHYSICS2_H
