@@ -296,6 +296,12 @@ MEM_INTERFACE char *MemAlloc_StrDupFunc( const char *pString );
 MEM_INTERFACE char *MemAlloc_StrDupWrapperFunc( const char *pString );
 MEM_INTERFACE wchar_t *MemAlloc_WcStrDupFunc( const wchar_t *pString );
 
+// The allocator callbacks tier0 hands to Qt: MemAlloc_AllocFunc, MemAlloc_FreeFunc and MemAlloc_ReallocFunc
+typedef void *( *QAlloc_t )( size_t nSize );
+typedef void ( *QFree_t )( void *pMem );
+typedef void *( *QRealloc_t )( void *pMem, size_t nSize );
+MEM_INTERFACE void Qt_GetCustomAllocators( QAlloc_t *pAlloc, QFree_t *pFree, QRealloc_t *pRealloc );
+
 //-----------------------------------------------------------------------------
 
 #ifdef MEMALLOC_REGIONS
