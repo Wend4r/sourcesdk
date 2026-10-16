@@ -274,10 +274,10 @@ PLATFORM_INTERFACE double		V_atofloat64( const char *str );
 
 PLATFORM_INTERFACE double		V_strtod( const char *str, char **endptr = NULL );
 PLATFORM_INTERFACE double		V_wcstod( const wchar_t *str, wchar_t **endptr = NULL );
-PLATFORM_INTERFACE int64		V_strtoi64( const char *str, char **endptr = NULL );
-PLATFORM_INTERFACE int64		V_wcstoi64( const wchar_t *str, wchar_t **endptr = NULL );
-PLATFORM_INTERFACE uint64		V_strtoui64( const char *str, char **endptr = NULL );
-PLATFORM_INTERFACE uint64		V_wcstoui64( const wchar_t *str, wchar_t **endptr = NULL );
+PLATFORM_INTERFACE int64		V_strtoi64( const char *str, char **endptr = NULL, int base = 10 );
+PLATFORM_INTERFACE int64		V_wcstoi64( const wchar_t *str, wchar_t **endptr = NULL, int base = 10 );
+PLATFORM_INTERFACE uint64		V_strtoui64( const char *str, char **endptr = NULL, int base = 10 );
+PLATFORM_INTERFACE uint64		V_wcstoui64( const wchar_t *str, wchar_t **endptr = NULL, int base = 10 );
 
 PLATFORM_INTERFACE char *		V_strtok( const char *str, const char *delim );
 
