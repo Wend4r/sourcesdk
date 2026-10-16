@@ -57,6 +57,38 @@ struct CTestEventClass
 	CSchemaClassInfo m_Info;
 };
 
+// The message of a test event; its schema binding is the class info a test sets.
+struct TestEvent_t
+{
+	static const CSchemaClassInfo *Schema_StaticBinding() { return s_pBinding; }
+
+	static CSchemaClassInfo *s_pBinding;
+
+	int m_nValue;
+};
+
+CSchemaClassInfo *TestEvent_t::s_pBinding = nullptr;
+
+typedef CEvent_Manager< CEventIDManager_Default, TestEvent_t > TestEventManager_t;
+
+// Records the calls of the test event listeners.
+static CUtlString s_Calls;
+static int s_nLastValue;
+
+static void OnEventA( const TestEvent_t &msg ) { s_Calls.Append( "A" ); s_nLastValue = msg.m_nValue; }
+static void OnEventB( const TestEvent_t &msg ) { s_Calls.Append( "B" ); s_nLastValue = msg.m_nValue; }
+static void OnEventC( const TestEvent_t &msg ) { s_Calls.Append( "C" ); s_nLastValue = msg.m_nValue; }
+static void OnEventNoParam() { s_Calls.Append( "N" ); }
+static bool OnEventContinue( const TestEvent_t & ) { s_Calls.Append( "T" ); return true; }
+static bool OnEventStop() { s_Calls.Append( "F" ); return false; }
+
+static CUtlDelegate< void ( const TestEvent_t & ) > s_EventA( &OnEventA );
+static CUtlDelegate< void ( const TestEvent_t & ) > s_EventB( &OnEventB );
+static CUtlDelegate< void ( const TestEvent_t & ) > s_EventC( &OnEventC );
+static CUtlDelegate< void () > s_EventNoParam( &OnEventNoParam );
+static CUtlDelegate< bool ( const TestEvent_t & ) > s_EventContinue( &OnEventContinue );
+static CUtlDelegate< bool () > s_EventStop( &OnEventStop );
+
 static void ListenerA( int ) {}
 static void ListenerB( int ) {}
 static void ListenerC( int ) {}
@@ -212,10 +244,11 @@ REGISTER_NAMED_TEST( "EventDispatcher.ListenersAreKeptPerEvent", EventDispatcher
 {
 	CTestIdentifiedDispatcher dispatcher;
 	CTestEventClass startEvent( true ), stopEvent( true );
+	TestEventManager_t &event = dispatcher.Event< TestEvent_t >();
 
-	dispatcher.RegisterEventListener( s_DelegateA, startEvent.ID(), 0, "A" );
-	dispatcher.RegisterEventListener( s_DelegateB, startEvent.ID(), 10, "B" );
-	dispatcher.RegisterEventListener( s_DelegateC, stopEvent.ID(), 0, "C" );
+	event.RegisterEventListener( s_EventA, 0, "A", startEvent.ID() );
+	event.RegisterEventListener( s_EventB, 10, "B", startEvent.ID() );
+	event.RegisterEventListener( s_EventC, 0, "C", stopEvent.ID() );
 
 	CUtlString start;
 	FOR_EACH_EVENT_LISTENER( dispatcher, startEvent.ID(), pInfo )
@@ -232,6 +265,7 @@ REGISTER_NAMED_TEST( "EventDispatcher.ListenersAreKeptPerEvent", EventDispatcher
 	TEST_EQ( strcmp( start.Get(), "BA" ), 0 );
 	TEST_EQ( strcmp( stopBack.Get(), "C" ), 0 );
 	TEST_EQ( dispatcher.GetEventListenerMap().Count(), 2 );
+	TEST_TRUE( dispatcher.HasListeners( startEvent.ID() ) );
 
 	CUtlVector< CUtlString > names;
 	dispatcher.GetListenerNames( startEvent.ID(), &names );
@@ -243,12 +277,16 @@ REGISTER_NAMED_TEST( "EventDispatcher.OnlyGlobalScopeClassesIdentifyEvents", Eve
 {
 	CTestIdentifiedDispatcher dispatcher;
 	CTestEventClass localEvent( false );
+	TestEventManager_t &event = dispatcher.Event< TestEvent_t >();
 
-	dispatcher.RegisterEventListener( s_DelegateA, localEvent.ID(), 0, "A" );
-	dispatcher.RegisterEventListener( s_DelegateA, EventID_t(), 0, "A" );
+	TEST_FALSE( CEventIDManager_Default::IsValidEventID( localEvent.ID() ) );
+	TEST_FALSE( CEventIDManager_Default::IsValidEventID( EventID_t() ) );
+
+	event.RegisterEventListener( s_EventA, 0, "A", localEvent.ID() );
+	event.RegisterEventListener( s_EventA, 0, "A", EventID_t() );
 
 	TEST_EQ( dispatcher.GetEventListenerMap().Count(), 0 );
-	TEST_FALSE( dispatcher.UnregisterEventListener( s_DelegateA, localEvent.ID() ) );
+	TEST_FALSE( dispatcher.HasListeners( localEvent.ID() ) );
 
 	int nVisited = 0;
 	FOR_EACH_EVENT_LISTENER( dispatcher, localEvent.ID(), pInfo )
@@ -263,18 +301,16 @@ REGISTER_NAMED_TEST( "EventDispatcher.OnlyGlobalScopeClassesIdentifyEvents", Eve
 REGISTER_NAMED_TEST( "EventDispatcher.UnregisterRemovesOnlyFromItsEvent", EventDispatcher_UnregisterRemovesOnlyFromItsEvent )
 {
 	CTestIdentifiedDispatcher dispatcher;
-	CTestEventClass startEvent( true ), stopEvent( true ), otherEvent( true );
+	CTestEventClass startEvent( true ), stopEvent( true );
+	TestEventManager_t &event = dispatcher.Event< TestEvent_t >();
 
-	dispatcher.RegisterEventListener( s_DelegateA, startEvent.ID(), 0, "A" );
-	dispatcher.RegisterEventListener( s_DelegateA, stopEvent.ID(), 0, "A" );
+	event.RegisterEventListener( s_EventA, 0, "A", startEvent.ID() );
+	event.RegisterEventListener( s_EventA, 0, "A", stopEvent.ID() );
 
-	TEST_TRUE( dispatcher.UnregisterEventListener( s_DelegateA, startEvent.ID() ) );
-	TEST_FALSE( dispatcher.UnregisterEventListener( s_DelegateA, startEvent.ID() ) );
-	TEST_FALSE( dispatcher.UnregisterEventListener( s_DelegateA, otherEvent.ID() ) );
+	event.UnregisterEventListener( s_EventA, startEvent.ID() );
 
-	CUtlVector< CUtlString > names;
-	dispatcher.GetListenerNames( stopEvent.ID(), &names );
-	TEST_EQ( names.Count(), 1 );
+	TEST_FALSE( dispatcher.HasListeners( startEvent.ID() ) );
+	TEST_TRUE( dispatcher.HasListeners( stopEvent.ID() ) );
 }
 
 REGISTER_NAMED_TEST( "EventDispatcher.NewEventsDoNotBreakActiveIterations", EventDispatcher_NewEventsDoNotBreakActiveIterations )
@@ -282,9 +318,10 @@ REGISTER_NAMED_TEST( "EventDispatcher.NewEventsDoNotBreakActiveIterations", Even
 	CTestIdentifiedDispatcher dispatcher;
 	CTestEventClass startEvent( true );
 	CTestEventClass newEvents[ 64 ];
+	TestEventManager_t &event = dispatcher.Event< TestEvent_t >();
 
-	dispatcher.RegisterEventListener( s_DelegateA, startEvent.ID(), 10, "A" );
-	dispatcher.RegisterEventListener( s_DelegateB, startEvent.ID(), 0, "B" );
+	event.RegisterEventListener( s_EventA, 10, "A", startEvent.ID() );
+	event.RegisterEventListener( s_EventB, 0, "B", startEvent.ID() );
 
 	// A listener that registers for new events grows the map under the iteration, which then
 	// has to follow its listener list to the new place.
@@ -293,11 +330,89 @@ REGISTER_NAMED_TEST( "EventDispatcher.NewEventsDoNotBreakActiveIterations", Even
 	{
 		order.Append( pInfo->m_pszName );
 
-		for ( auto &event : newEvents )
-			dispatcher.RegisterEventListener( s_DelegateC, event.ID(), 0, "C" );
+		for ( auto &newEvent : newEvents )
+			event.RegisterEventListener( s_EventC, 0, "C", newEvent.ID() );
 	}
 
 	TEST_EQ( strcmp( order.Get(), "AB" ), 0 );
 	TEST_EQ( dispatcher.GetEventListenerMap().Count(), 65 );
 	TEST_TRUE( dispatcher.m_pActiveIterators == nullptr );
+}
+
+REGISTER_NAMED_TEST( "EventDispatcher.DispatchCallsTheListenersByPriority", EventDispatcher_DispatchCallsTheListenersByPriority )
+{
+	CTestIdentifiedDispatcher dispatcher;
+	CTestEventClass eventClass( true );
+	TestEventManager_t &event = dispatcher.Event< TestEvent_t >();
+
+	event.RegisterEventListener( s_EventA, 0, "A", eventClass.ID() );
+	event.RegisterEventListener( s_EventB, 10, "B", eventClass.ID() );
+	event.RegisterEventListener( s_EventNoParam, 5, "N", eventClass.ID() );
+
+	TestEvent_t msg = { 42 };
+
+	s_Calls.Clear();
+	s_nLastValue = 0;
+	TEST_TRUE( event.DispatchEvent( msg, true, eventClass.ID() ) );
+	TEST_EQ( strcmp( s_Calls.Get(), "BNA" ), 0 );
+	TEST_EQ( s_nLastValue, 42 );
+
+	s_Calls.Clear();
+	event.DispatchEvent( msg, false, eventClass.ID() );
+	TEST_EQ( strcmp( s_Calls.Get(), "ANB" ), 0 );
+	TEST_TRUE( dispatcher.m_pActiveIterators == nullptr );
+}
+
+REGISTER_NAMED_TEST( "EventDispatcher.ListenerReturningFalseStopsTheDispatch", EventDispatcher_ListenerReturningFalseStopsTheDispatch )
+{
+	CTestIdentifiedDispatcher dispatcher;
+	CTestEventClass eventClass( true );
+	TestEventManager_t &event = dispatcher.Event< TestEvent_t >();
+
+	event.RegisterEventListener( s_EventContinue, 20, "T", eventClass.ID() );
+	event.RegisterEventListener( s_EventStop, 10, "F", eventClass.ID() );
+	event.RegisterEventListener( s_EventA, 0, "A", eventClass.ID() );
+
+	TestEvent_t msg = { 1 };
+
+	s_Calls.Clear();
+	TEST_FALSE( event.DispatchEvent( msg, true, eventClass.ID() ) );
+	TEST_EQ( strcmp( s_Calls.Get(), "TF" ), 0 );
+
+	// Without listeners the dispatch returns the default value.
+	event.UnregisterEventListener( s_EventStop, eventClass.ID() );
+	event.UnregisterEventListener( s_EventContinue, eventClass.ID() );
+	event.UnregisterEventListener( s_EventA, eventClass.ID() );
+
+	s_Calls.Clear();
+	TEST_TRUE( event.DispatchEvent( msg, true, eventClass.ID() ) );
+	TEST_EQ( s_Calls.Length(), 0 );
+}
+
+REGISTER_NAMED_TEST( "EventDispatcher.EventIDComesFromTheSchemaBinding", EventDispatcher_EventIDComesFromTheSchemaBinding )
+{
+	CTestIdentifiedDispatcher dispatcher;
+	CTestEventClass eventClass( true );
+	eventClass.m_Info.m_pszName = "TestEvent_t";
+	TestEvent_t::s_pBinding = &eventClass.m_Info;
+
+	TestEventManager_t &event = dispatcher.Event< TestEvent_t >();
+
+	// Without an explicit ID the listener goes to the event of the binding.
+	event.RegisterEventListener( s_EventA, 0, "A" );
+	TEST_TRUE( dispatcher.HasListeners( eventClass.ID() ) );
+
+	TestEvent_t msg = { 7 };
+
+	s_Calls.Clear();
+	event.DispatchEvent( msg );
+	TEST_EQ( strcmp( s_Calls.Get(), "A" ), 0 );
+
+	char szName[ 32 ];
+	TEST_EQ( strcmp( dispatcher.GetEventName( eventClass.ID(), szName, sizeof( szName ) ), "TestEvent_t" ), 0 );
+
+	event.UnregisterEventListener( s_EventA );
+	TEST_FALSE( dispatcher.HasListeners( eventClass.ID() ) );
+
+	TestEvent_t::s_pBinding = nullptr;
 }
