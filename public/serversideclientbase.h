@@ -208,7 +208,7 @@ public:
 	virtual void             Reconnect() = 0;
 	virtual void             Disconnect( ENetworkDisconnectionReason reason, const char *pszInternalReason ) = 0;
 	virtual bool             CheckConnect() = 0;
-	virtual void             Create( CPlayerSlot &nSlot, CSteamID nSteamID, const char *pszName ) = 0;
+	virtual CPlayerSlot      Create( CSteamID nSteamID, const char *pszName ) = 0; // Fake clients: sets the steamid and name (SetName), returns the slot
 	virtual void             SetRate( int nRate ) = 0;
 	virtual void             SetUpdateRate( float fUpdateRate ) = 0;
 	virtual int              GetRate() = 0;
