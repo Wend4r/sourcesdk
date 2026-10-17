@@ -19,6 +19,8 @@
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
 
+#include "schemacompiler/schemaon.h"
+
 /*
 * AMNOTE: To create your own gamesystem, you need to inherit from CBaseGameSystem or CAutoGameSystem,
 * and define the events that you are interested in receiving via the GS_EVENT macro, example:
@@ -617,5 +619,7 @@ private:
 
 // Deprecated, use CAutoGameSystem instead
 using CBaseGameSystem = CAutoGameSystem;
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // IGAMESYSTEM_H
