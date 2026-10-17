@@ -31,7 +31,7 @@ public:
 	virtual void SpawnPlayer() override = 0;
 	virtual void FillServerInfo( void *pInfo ) override = 0;
 	virtual void Await() override = 0;
-	virtual bool ProcessSignonStateMsg( int state ) override = 0;
+	virtual bool ProcessSignonStateMsg( SignonState_t state, int nSpawnCount ) override = 0;
 
 public:
 	CNetworkGameServerBase *m_pHLTV;

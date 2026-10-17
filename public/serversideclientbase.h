@@ -42,6 +42,7 @@ class CCLCMsg_LoadingProgress_t;
 class CCLCMsg_SplitPlayerConnect_t;
 class CCLCMsg_SplitPlayerDisconnect_t;
 class CCLCMsg_CmdKeyValues_t;
+class CCLCMsg_Diagnostic_t;
 class CCLCMsg_Move_t;
 class CCLCMsg_VoiceData_t;
 class CCLCMsg_FileCRCCheck_t;
@@ -258,7 +259,7 @@ public:
 	virtual bool             ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) = 0;
 
 	virtual bool             SendRconServerDetails() = 0;
-	virtual bool             OnSignonStateChanged() { return true; }
+	virtual bool             ProcessDiagnostic( const CCLCMsg_Diagnostic_t &msg ) = 0; // Forwards to ISource2GameClients::ClientDiagnostic
 
 public:
 	virtual bool             ProcessMove( const CCLCMsg_Move_t &msg ) = 0;
@@ -356,7 +357,7 @@ public:
 	virtual void             OnSendJobFinished() = 0;
 	virtual void             OnSendJobStarted() = 0;
 
-	virtual bool             ProcessSignonStateMsg( int state ) = 0;
+	virtual bool             ProcessSignonStateMsg( SignonState_t state, int nSpawnCount ) = 0; // CNETMsg_SignonState::signon_state, ::spawn_count
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
 
 public:

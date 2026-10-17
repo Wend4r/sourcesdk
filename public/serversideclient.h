@@ -138,7 +138,7 @@ public:
 	virtual bool ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) override = 0;
 	virtual bool ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) override = 0;
 	virtual bool ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) override = 0;
-	virtual bool OnSignonStateChanged() override = 0;
+	virtual bool ProcessDiagnostic( const CCLCMsg_Diagnostic_t &msg ) override = 0;
 	virtual bool ProcessMove( const CCLCMsg_Move_t &msg ) override = 0;
 	virtual bool ProcessVoiceData( const CCLCMsg_VoiceData_t &msg ) override = 0;
 	virtual bool ProcessRespondCvarValue( const CCLCMsg_RespondCvarValue_t &msg ) override = 0;
@@ -168,7 +168,7 @@ public:
 	virtual void Await() override = 0;
 	virtual void OnSendJobFinished() override = 0;
 	virtual void OnSendJobStarted() override = 0;
-	virtual bool ProcessSignonStateMsg( int state ) override = 0;
+	virtual bool ProcessSignonStateMsg( SignonState_t state, int nSpawnCount ) override = 0;
 	virtual void PerformDisconnection( ENetworkDisconnectionReason reason ) override = 0;
 
 	void ExecuteDelayedCall( StopHltvReplayCall_t &call );
