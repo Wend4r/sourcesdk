@@ -18,22 +18,10 @@
 #include "tier4/tier4.h"
 #include "engine2/iengineservicemgr.h"
 
-#include "schemacompiler/schemaon.h"
-
 struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;
 class IAddonListChangeNotify;
-
-schema struct EventClientOutput_t
-{
-	DECLARE_SCHEMA_DATA_CLASS( EventClientOutput_t );
-
-	EngineLoopState_t m_LoopState;
-	float m_flRenderTime;
-	float m_flRealTime;
-	float m_flRenderFrameTimeUnbounded;
-	bool m_bRenderOnly;
-};
+struct EventClientOutput_t;
 
 abstract_class IEngineService : public IAppSystem
 {
@@ -121,7 +109,5 @@ public:
 	virtual const char *GetFrameTimeAmnesty( bool check_cvar ) = 0;
 	virtual void		SetFramePerformanceTag( const char *pszTag, int nValue, int, float flDuration ) = 0;
 };
-
-#include "schemacompiler/schemaoff.h"
 
 #endif // IENGINESERVICE_H
