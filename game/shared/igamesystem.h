@@ -14,6 +14,7 @@
 #include "iloopmode.h"
 #include "network_connection.pb.h"
 
+#include <engine/IEngineService.h>
 #include <entity2/entityidentity.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
@@ -184,14 +185,7 @@ schema GS_EVENT_MSG( ClientPreOutput )
 
 schema GS_EVENT_MSG_CHILD( ClientPreOutputParallelWithServer, ClientPreOutput ) { };
 
-schema GS_EVENT_MSG( ClientOutput )
-{
-	EngineLoopState_t m_LoopState;
-	float m_flRenderTime;
-	float m_flRealTime;
-	float m_flRenderFrameTimeUnbounded;
-	bool m_bRenderOnly;
-};
+// EventClientOutput_t is declared in engine/IEngineService.h
 
 schema GS_EVENT_MSG_CHILD( ClientPreSimulate, Simulate ) { };
 
