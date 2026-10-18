@@ -20,6 +20,8 @@
 #include "tier0/platwindow.h"
 #include "spawngrouptypes.h"
 
+#include <cmath>
+
 //-----------------------------------------------------------------------------
 // forward declarations
 //-----------------------------------------------------------------------------
@@ -79,7 +81,8 @@ public:
 	// Sends pszCmd to the server over the net channel of nSlot
 	virtual void ServerCmd( CSplitScreenSlot nSlot, const char *pszCmd ) = 0;
 	// Callers pass a fixed double and 0 for the last two arguments
-	virtual void ClientCommand( CSplitScreenSlot nSlot, const char *pszCmd, bool bUnrestricted, double flUnk, uint64 nUnk ) = 0;
+	// flInputTime and nInputTimestamp go to CCommandBuffer::AddText, a flInputTime other than NAN can wrap the command in __beginseq and __endseq
+	virtual void ClientCommand( CSplitScreenSlot nSlot, const char *pszCmd, bool bUnrestricted, double flInputTime = NAN, uint64 nInputTimestamp = 0 ) = 0;
 	virtual void SetRestrictServerCommands( bool bRestrict ) = 0;
 	virtual void SetRestrictClientCommands( bool bRestrict ) = 0;
 	virtual bool unk054() = 0;
