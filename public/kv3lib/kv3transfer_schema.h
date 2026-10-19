@@ -106,8 +106,8 @@ struct CKV3TransferEqualityVector
 template < typename T, typename I, typename A >
 struct CKV3TransferEquality< CUtlVector< T, I, A > > : CKV3TransferEqualityVector< CUtlVector< T, I, A > > {};
 
-template < typename T, int N >
-struct CKV3TransferEquality< CUtlVectorFixedGrowable< T, N > > : CKV3TransferEqualityVector< CUtlVectorFixedGrowable< T, N > > {};
+template < typename T, size_t N, typename I >
+struct CKV3TransferEquality< CUtlVectorFixedGrowable< T, N, I > > : CKV3TransferEqualityVector< CUtlVectorFixedGrowable< T, N, I > > {};
 
 template < typename T, typename I, typename A >
 struct CKV3TransferEquality< CUtlLeanVector< T, I, A > > : CKV3TransferEqualityVector< CUtlLeanVector< T, I, A > > {};

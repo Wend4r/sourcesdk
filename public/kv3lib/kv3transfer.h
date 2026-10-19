@@ -776,8 +776,8 @@ struct CKV3TransferValHelperVector
 template < typename T, typename I, typename A >
 struct CKV3TransferValHelper< CUtlVector< T, I, A > > : CKV3TransferValHelperVector< CUtlVector< T, I, A > > {};
 
-template < typename T, int N >
-struct CKV3TransferValHelper< CUtlVectorFixedGrowable< T, N > > : CKV3TransferValHelperVector< CUtlVectorFixedGrowable< T, N > > {};
+template < typename T, size_t N, typename I >
+struct CKV3TransferValHelper< CUtlVectorFixedGrowable< T, N, I > > : CKV3TransferValHelperVector< CUtlVectorFixedGrowable< T, N, I > > {};
 
 template < typename T, typename I, typename A >
 struct CKV3TransferValHelper< CUtlLeanVector< T, I, A > > : CKV3TransferValHelperVector< CUtlLeanVector< T, I, A > > {};

@@ -394,10 +394,10 @@ public:
 // The CUtlVectorFixed class:
 // A array class with a fixed allocation scheme
 //-----------------------------------------------------------------------------
-schema template< class T, int MAX_SIZE >
-class CUtlVectorFixed : public CUtlVectorBase< T, int, CUtlVectorMemory_Fixed<T, MAX_SIZE > >
+schema template< class T, size_t MAX_SIZE, class I = int >
+class CUtlVectorFixed : public CUtlVectorBase< T, I, CUtlVectorMemory_Fixed<T, MAX_SIZE > >
 {
-	typedef CUtlVectorBase< T, int, CUtlVectorMemory_Fixed<T, MAX_SIZE > > BaseClass;
+	typedef CUtlVectorBase< T, I, CUtlVectorMemory_Fixed<T, MAX_SIZE > > BaseClass;
 
 public:
 	// constructor, destructor
@@ -410,10 +410,10 @@ public:
 // The CUtlVectorFixedGrowable class:
 // A array class with a fixed allocation scheme backed by a dynamic one
 //-----------------------------------------------------------------------------
-schema template< class T, int MAX_SIZE >
-class CUtlVectorFixedGrowable : public CUtlVectorBase< T, int, CUtlVectorMemory_FixedGrowable<T, MAX_SIZE, int > >
+schema template< class T, size_t MAX_SIZE, class I = int >
+class CUtlVectorFixedGrowable : public CUtlVectorBase< T, I, CUtlVectorMemory_FixedGrowable<T, MAX_SIZE, I > >
 {
-	typedef CUtlVectorBase< T, int, CUtlVectorMemory_FixedGrowable< T, MAX_SIZE > > BaseClass;
+	typedef CUtlVectorBase< T, I, CUtlVectorMemory_FixedGrowable< T, MAX_SIZE, I > > BaseClass;
 
 public:
 	// constructor, destructor
