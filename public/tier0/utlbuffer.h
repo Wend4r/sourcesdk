@@ -1177,6 +1177,21 @@ inline void CUtlBuffer::PutChar( char c )
 	PutTypeBin( c );
 }
 
+inline void CUtlBuffer::PutDelimitedCharInternal( CUtlCharConversion *pConv, char c )
+{
+	int nLength = pConv->GetConversionLength( c );
+
+	if ( nLength == 0 )
+	{
+		PutChar( c );
+	}
+	else
+	{
+		PutChar( pConv->GetEscapeChar() );
+		Put( pConv->GetConversionString( c ), nLength );
+	}
+}
+
 inline void CUtlBuffer::PutUnsignedChar( unsigned char c )
 {
 	if (!IsText())

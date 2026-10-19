@@ -122,3 +122,29 @@ REGISTER_NAMED_TEST( "CUtlBuffer.CopyAndMove", CUtlBuffer_CopyAndMove )
 	assigned = Move( moved );
 	TEST_EQ( V_strcmp( ( const char * )assigned.Base(), "copy-data" ), 0 );
 }
+
+class CUtlBufferDelimitedCharTest : public CUtlBuffer
+{
+public:
+	using CUtlBuffer::CUtlBuffer;
+	using CUtlBuffer::PutDelimitedCharInternal;
+};
+
+REGISTER_NAMED_TEST( "CUtlBuffer.DelimitedCharInternal", CUtlBuffer_DelimitedCharInternal )
+{
+	// The inline helper writes the same escapes as the exported PutDelimitedChar.
+	const char szChars[] = "a\"\\\n\tz";
+
+	CUtlBufferDelimitedCharTest inlineBuffer( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	CUtlBuffer exportedBuffer( 0, 0, CUtlBuffer::TEXT_BUFFER );
+
+	for ( const char *p = szChars; *p; p++ )
+	{
+		inlineBuffer.PutDelimitedCharInternal( GetCStringCharConversion(), *p );
+		exportedBuffer.PutDelimitedChar( GetCStringCharConversion(), *p );
+	}
+
+	TEST_EQ( inlineBuffer.TellPut(), exportedBuffer.TellPut() );
+	TEST_TRUE( inlineBuffer.TellPut() > ( int )( sizeof( szChars ) - 1 ) );
+	TEST_EQ( memcmp( inlineBuffer.Base(), exportedBuffer.Base(), exportedBuffer.TellPut() ), 0 );
+}
