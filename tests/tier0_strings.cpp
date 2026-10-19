@@ -452,3 +452,32 @@ REGISTER_NAMED_TEST( "IdentifyFailureMessages.EmptyText", IdentifyFailureMessage
 	TEST_EQ( scanner.ProcessText( "", -1, &pszEnd ), CIdentifyFailureMessages::STATE_NO_TEXT );
 	TEST_FALSE( scanner.HasFoundFailure() );
 }
+
+REGISTER_NAMED_TEST( "GridStringPrinter.WrapsAtSpaces", GridStringPrinter_WrapsAtSpaces )
+{
+	// A wrapped column cuts the value at its maximum length, or after the last space before it.
+	const char *pszExpected[ 2 ][ 3 ] =
+	{
+		{ " alpha beta ", " gamma delt ", "          a " },
+		{ "     alpha  ", " betagamma  ", "      delta " },
+	};
+
+	for ( int nWrapAtSpaces = 0; nWrapAtSpaces < 2; nWrapAtSpaces++ )
+	{
+		CGridStringPrinter grid;
+		grid.SetColumnHeader( 0, "Words" );
+		grid.SetMaxStringLengthAllColumns( 10 );
+		grid.SetWordWrapColumn( 0, true, nWrapAtSpaces != 0 );
+		grid.SetString( 0, 0, "alpha betagamma delta" );
+
+		CUtlVector< CUtlString > lines;
+		grid.GetLines( lines, false );
+
+		TEST_EQ( lines.Count(), 3 );
+
+		for ( int i = 0; i < 3; i++ )
+		{
+			TEST_EQ( strcmp( lines[ i ].Get(), pszExpected[ nWrapAtSpaces ][ i ] ), 0 );
+		}
+	}
+}
