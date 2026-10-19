@@ -130,6 +130,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	strtools.cpp
 	tier0_allocators.cpp
 	tier0_eventdispatcher.cpp
+	tier0_fileio.cpp
 	tier0_hashes.cpp
 	tier0_keyvalues.cpp
 	tier0_platform.cpp

@@ -17,6 +17,7 @@ typedef __time64_t time64_t;
 typedef int64_t time64_t;
 #if !defined( _PS3 )
 #include <signal.h>
+#include <dirent.h>
 #endif // _PS3
 #endif
 
@@ -25,108 +26,151 @@ typedef int64_t time64_t;
 #include "tier0/utlstring.h"
 #include "tier0/utllinkedlist.h"
 
+class CBufferString;
+class CUtlBuffer;
+template < class T, typename I, size_t N > class CUtlVectorMemory_Growable;
+template < class T, typename I, class A > class CUtlVector;
+
+//-----------------------------------------------------------------------------
+// Absolute path with fixed slashes and no double slashes, in buffers from a pool
+// of tier0, and its wide form with \\?\ in front for unicode aware file calls
+//-----------------------------------------------------------------------------
 class CPathString
 {
 public:
+	// One pooled block that holds the text of a path (128 KB, 4 KB on macOS)
+	struct Buffer_t;
 
-	// Constructors: Automatically fixes slashes and removes double slashes when the object is
-	// constructed, and then knows how to append magic \\?\ on Windows for unicode paths
-	CPathString( const char *pchUTF8Path );
-	~CPathString();
+	CPathString() : m_pUTF8Path( NULL ), m_pWCharPathPrePended( NULL ) {}
+	explicit CPathString( const char *pchUTF8Path ) : m_pUTF8Path( NULL ), m_pWCharPathPrePended( NULL ) { Set( pchUTF8Path ); }
+	DLL_CLASS_IMPORT ~CPathString();
 
-	// Gets the path in UTF8
-	const char *GetUTF8Path();
+	DLL_CLASS_IMPORT void Set( const char *pchUTF8Path );
 
-	// Gets wchar_t based path, with \\?\ pre-pended (allowing long paths on Win32, should only be used with unicode aware filesystem calls)
-	const wchar_t *GetWCharPathPrePended();
+	// Composes the path from a directory and a file name
+	DLL_CLASS_IMPORT void Set( const char *pchDirectory, const char *pchFileName );
+
+	const char *GetUTF8Path() const { return reinterpret_cast< const char * >( m_pUTF8Path ); }
+
+	// Null when there is no path
+	const wchar_t *GetWCharPathPrePended()
+	{
+		PopulateWCharPath();
+		return reinterpret_cast< const wchar_t * >( m_pWCharPathPrePended );
+	}
+
+	DLL_CLASS_IMPORT static Buffer_t *NewPathStringBuffer();
+	DLL_CLASS_IMPORT static void DeletePathStringBuffer( Buffer_t *pBuffer );
+
+protected:
+	// Empties the path, keeping its buffer
+	DLL_CLASS_IMPORT void Reset();
+
+	DLL_CLASS_IMPORT void PopulateWCharPath();
+	DLL_CLASS_IMPORT void DeleteWCharPath();
 
 private:
+	Buffer_t *m_pUTF8Path;
+	Buffer_t *m_pWCharPathPrePended;
 
-	void PopulateWCharPath();
-
-	char *m_pchUTF8Path;
-	wchar_t *m_pwchWideCharPathPrepended;
-
+	CPathString( const CPathString & ) = delete;
+	CPathString &operator=( const CPathString & ) = delete;
 };
 
-// iterator class, initialize with the path & pattern you want to want files/dirs for.
-//
-// all string setters and accessors use UTF-8 encoding.
+//-----------------------------------------------------------------------------
+// Size, times and kind of a file
+//-----------------------------------------------------------------------------
+struct FioBaseFileInfo_t
+{
+	enum Flags_t
+	{
+		FILE_IS_FILE = ( 1 << 0 ),
+		FILE_IS_DIRECTORY = ( 1 << 1 ),
+
+		// A symbolic link or another reparse point
+		FILE_IS_LINK = ( 1 << 2 ),
+		FILE_IS_READ_ONLY = ( 1 << 3 ),
+	};
+
+	uint64 m_nSize;
+
+	// File times, FioFileTimeToTimeT converts them
+	uint64 m_nCreationTime;
+	uint64 m_nLastWriteTime;
+
+	// Bits of the members that were filled in
+	uint32 m_nValidFields;
+	uint32 m_nFlags;
+};
+
+//-----------------------------------------------------------------------------
+// Iterates the files and directories that match a pattern, UTF-8 everywhere
+//-----------------------------------------------------------------------------
 class CDirIterator
 {
 public:
+	DLL_CLASS_IMPORT CDirIterator();
 
-#if !defined( _PS3 )
-	CDirIterator( const char *pchSearchPath );
-#endif
+	// nFlags are passed on to FioGetBaseFileInfo, more than 1 fills the file info of every file
+	DLL_CLASS_IMPORT CDirIterator( const char *pchPath, const char *pchPattern, uint32 nFlags );
+	DLL_CLASS_IMPORT CDirIterator( const char *pchSearchPath, uint32 nFlags );
+	DLL_CLASS_IMPORT ~CDirIterator();
 
-	CDirIterator( const char *pchPath, const char *pchPattern );
-	~CDirIterator();
+	// Moves to the next file, the first call keeps the one found by the constructor
+	DLL_CLASS_IMPORT bool NextFile();
 
-	bool IsValid() const;
-
-	// fetch the next file
-	bool BNextFile();
-
-	// name of the current file - file portion only, not full path
-	const char *CurrentFileName();
-
-	// size of the current file
-	int64 CurrentFileLength() const;
-
-	// creation time of the current file
-	time64_t CurrentFileCreateTime() const;
-
-	// mod time of the current file
-	time64_t CurrentFileWriteTime() const;
-
-	// mode/type checks:
-
-	// is the current file actually a directory?
-	bool BCurrentIsDir() const;
-
-	// is the current file hidden?
-	bool BCurrentIsHidden() const;
-
-	// is the current file read-only?
-	bool BCurrentIsReadOnly() const;
-
-	// is the current file a system file?
-	bool BCurrentIsSystem() const;
-
-	// is the current file's archive bit set?
-	bool BCurrentIsMarkedForArchive() const;
-
-#ifdef DBGFLAG_VALIDATE
-	void Validate( CValidator &validator, const char *pchName )
+	// Name of the current file, without the path
+	const char *CurrentFileName() const
 	{
-#if defined( _PS3 )
-		ValidateObj( m_strPattern );
+#ifdef _WIN32
+		return reinterpret_cast< const char * >( m_pFileName );
 #else
-		validator.ClaimMemory( m_pFindData );
+		return m_ppEntries[ m_nCurrentEntry ]->d_name;
 #endif
 	}
-#endif
 
-private:
-	void Init( const char *pchSearchPath );
-	bool BValidFilename();
-	bool m_bNoFiles, m_bUsedFirstFile;
+	DLL_CLASS_IMPORT const char *CurrentFileFullPath();
 
-#if defined(_PS3)
-	bool BFindNextPS3();
-	bool m_bOpenHandle;		// don't see an invalid value for the FD returned from OpenDir
-	int m_hFind;
-	CellFsDirectoryEntry *m_pDirEntry;
-	CUtlString m_strPattern;
-#elif defined(_WIN32)
+	const FioBaseFileInfo_t &CurrentFileInfo() const { return m_FileInfo; }
+	int64 CurrentFileLength() const { return m_FileInfo.m_nSize; }
+	bool BCurrentIsDir() const { return ( m_FileInfo.m_nFlags & FioBaseFileInfo_t::FILE_IS_DIRECTORY ) != 0; }
+	bool BCurrentIsReadOnly() const { return ( m_FileInfo.m_nFlags & FioBaseFileInfo_t::FILE_IS_READ_ONLY ) != 0; }
+
+	DLL_CLASS_IMPORT void Stop();
+
+protected:
+	DLL_CLASS_IMPORT void Construct();
+	DLL_CLASS_IMPORT bool Init( const char *pchPath, const char *pchPattern, const char *pchSearchPath, uint32 nFlags );
+	DLL_CLASS_IMPORT bool SplitPathAndPattern( const char *pchSearchPath, CUtlString *pPath, CUtlString *pPattern );
+
+	uint32 m_nFlags;
+	bool m_bNoFiles;
+	bool m_bFullPathValid;
+
+public:
+	// Lets Windows fetch larger blocks of the directory, read by the next Init
+	bool m_bLargeFetch;
+
+protected:
+	CUtlString m_strPath;
+	CPathString::Buffer_t *m_pFullPath;
+	int m_nFullPathSize;
+	FioBaseFileInfo_t m_FileInfo;
+	bool m_bUsedFirstFile;
+
+#ifdef _WIN32
 	HANDLE m_hFind;
-	struct _WIN32_FIND_DATAW *m_pFindData;
-	char m_rgchFileName[MAX_PATH * 4];
+	CPathString::Buffer_t *m_pFileName;
+	int m_nFileNameSize;
 #else
-	int64 m_hFind;
-	struct _finddata_t *m_pFindData;
+	// From scandir
+	struct dirent **m_ppEntries;
+	int m_nEntries;
+	int m_nCurrentEntry;
 #endif
+
+	CDirIterator( const CDirIterator & ) = delete;
+	CDirIterator &operator=( const CDirIterator & ) = delete;
 };
 
 //-----------------------------------------------------------------------------
@@ -191,52 +235,73 @@ inline uint64 CFileWriter::GetBytesWritten()
 
 #if !defined(_PS3)
 //-----------------------------------------------------------------------------
-// Purpose: Encapsulates watching a directory for file changes
+// Watches a directory for file changes
 //-----------------------------------------------------------------------------
 class CDirWatcher
 {
 public:
-	CDirWatcher();
-	~CDirWatcher();
+	enum ChangeFlags_t
+	{
+		// File and directory names
+		CHANGE_NAME = ( 1 << 0 ),
+		CHANGE_SIZE = ( 1 << 1 ),
+		CHANGE_ATTRIBUTES = ( 1 << 2 ),
+		CHANGE_CREATION = ( 1 << 3 ),
+		CHANGE_LAST_WRITE = ( 1 << 4 ),
+	};
 
-	// only one directory can be watched at a time
-	void SetDirToWatch( const char *pchDir );
-
-	// retrieve any changes
-	bool GetChangedFile( CUtlString *psFile );
-
-#ifdef DBGFLAG_VALIDATE
-	void Validate( CValidator &validator, const char *pchName );
+#if defined( PLATFORM_WINDOWS )
+	// The thread that receives the change notifications, 0 for the calling one
+	typedef uint32 MonitoringThreadInfo_t;
+#elif defined( PLATFORM_OSX )
+	typedef struct __CFRunLoop *MonitoringThreadInfo_t;
+#else
+	typedef void *MonitoringThreadInfo_t;
 #endif
 
+	DLL_CLASS_IMPORT CDirWatcher();
+	~CDirWatcher() { Stop(); }
+
+	// Only one directory can be watched at a time, nChangeFlags are ChangeFlags_t,
+	// nBufferSize is the size of the notification buffer, 0 for 16 KB
+	DLL_CLASS_IMPORT bool SetDirToWatch( const char *pchDir, uint32 nChangeFlags, bool bRecursive, MonitoringThreadInfo_t monitoringThreadInfo, size_t nBufferSize );
+
+	// Takes the next changed file with the watched directory in front
+	DLL_CLASS_IMPORT bool GetChangedFile( CBufferString *pFile );
+
+	// Puts the changed files into pBuffer, or appends pointers into it to pFiles, returns their count
+	DLL_CLASS_IMPORT uint32 GetChangedFiles( CUtlBuffer *pBuffer, CUtlVector< char *, int, CUtlVectorMemory_Growable< char *, int, 0 > > *pFiles );
+
+	DLL_CLASS_IMPORT void Stop();
+
 private:
-	CUtlLinkedList<CUtlString> m_listChangedFiles;
+	DLL_CLASS_IMPORT void AddFileToChangeList( const char *pchFile );
+#ifdef PLATFORM_WINDOWS
+	DLL_CLASS_IMPORT bool PostDirWatch();
+#endif
+
+	CUtlString m_BaseDir;
+	CUtlLinkedList< CUtlString, int > m_listChangedFiles;
 	void *m_hFile;
 	void *m_pOverlapped;
 	void *m_pFileInfo;
-#ifdef OSX
-public:
+	size_t m_nFileInfoSize;
+	bool m_bRecursive;
+
+	// FILE_NOTIFY_CHANGE_ bits made from the change flags
+	uint32 m_nNotifyFilter;
+#ifdef PLATFORM_OSX
 	struct timespec m_modTime;
-	void AddFileToChangeList( const char *pchFile );
-	CUtlString m_BaseDir;
-private:
 	void *m_WatcherStream;
 #endif
+
 	friend class CDirWatcherFriend;
 
-#ifdef _LINUX
-	void AddFileToChangeList( const char *pchFile );
-#endif
-#ifdef WIN32
-	// used by callback functions to push a file onto the list
-	void AddFileToChangeList( const char *pchFile );
-	void PostDirWatch();
-#endif
+	CDirWatcher( const CDirWatcher & ) = delete;
+	CDirWatcher &operator=( const CDirWatcher & ) = delete;
 };
 #endif // _PS3
 
-class CBufferString;
-struct FioBaseFileInfo_t;
 
 //-----------------------------------------------------------------------------
 // Watches directory trees for file changes
