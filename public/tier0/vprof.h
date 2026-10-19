@@ -510,8 +510,8 @@ public:
 	void Stop();
 	void Term();
 
-	void SetTargetThreadId( unsigned id );
-	uint32 GetTargetThreadId();
+	void SetTargetThreadId( ThreadId_t id );
+	ThreadId_t GetTargetThreadId();
 	bool InTargetThread();
 
 	void CalcBudgetGroupTimes_Recursive( CVProfNode *, unsigned int *, int, float );
