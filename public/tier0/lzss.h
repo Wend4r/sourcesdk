@@ -29,8 +29,9 @@ class CUtlBuffer;
 class CLZSS
 {
 public:
-	unsigned char*	Compress( unsigned char *pInput, int inputlen, unsigned int *pOutputSize );
-	unsigned char*	CompressNoAlloc( unsigned char *pInput, int inputlen, unsigned char *pOutput, unsigned int *pOutputSize );
+	// bFast checks only the first 8 earlier matches of each position
+	unsigned char*	Compress( unsigned char *pInput, int inputlen, unsigned int *pOutputSize, bool bFast = false );
+	unsigned char*	CompressNoAlloc( unsigned char *pInput, int inputlen, unsigned char *pOutput, unsigned int *pOutputSize, bool bFast = false );
 	unsigned int	Uncompress( unsigned char *pInput, unsigned char *pOutput );
 	//unsigned int	Uncompress( unsigned char *pInput, CUtlBuffer &buf );
 	unsigned int	SafeUncompress( unsigned char *pInput, unsigned char *pOutput, unsigned int unBufSize );
