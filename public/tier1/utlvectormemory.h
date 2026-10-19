@@ -198,7 +198,7 @@ protected:
 			uint32 m_bExternal : 1;
 		};
 
-		uint32 m_nGrowSizeStaff;
+		uint32 m_nGrowSizeStuff;
 	};
 };
 
@@ -507,7 +507,7 @@ template< class T, class I >
 CUtlVectorMemory< T, I >::CUtlVectorMemory( const CUtlVectorMemory< T, I > &copyFrom ) :
 	m_pMemory( nullptr ),
 	m_nAllocationCount( 0 ),
-	m_nGrowSizeStaff( 0 )
+	m_nGrowSizeStuff( 0 )
 {
 	CopyFrom( copyFrom );
 }
@@ -517,7 +517,7 @@ template< class T, class I >
 CUtlVectorMemory< T, I >::CUtlVectorMemory( CUtlVectorMemory< T, I > &&moveFrom ) :
 	m_pMemory( nullptr ),
 	m_nAllocationCount( 0 ),
-	m_nGrowSizeStaff( 0 )
+	m_nGrowSizeStuff( 0 )
 {
 	MoveFrom( Move( moveFrom ) );
 }
@@ -564,11 +564,11 @@ CUtlVectorMemory< T, I > &CUtlVectorMemory< T, I >::MoveFrom( CUtlVectorMemory< 
 
 	m_pMemory = moveFrom.m_pMemory;
 	m_nAllocationCount = moveFrom.m_nAllocationCount;
-	m_nGrowSizeStaff = moveFrom.m_nGrowSizeStaff;
+	m_nGrowSizeStuff = moveFrom.m_nGrowSizeStuff;
 
 	moveFrom.m_pMemory = nullptr;
 	moveFrom.m_nAllocationCount = 0;
-	moveFrom.m_nGrowSizeStaff = 0;
+	moveFrom.m_nGrowSizeStuff = 0;
 
 	return *this;
 }
@@ -603,7 +603,7 @@ void CUtlVectorMemory< T, I >::Swap( CUtlVectorMemory< T, I > &mem )
 {
 	V_swap( m_pMemory, mem.m_pMemory );
 	V_swap( m_nAllocationCount, mem.m_nAllocationCount );
-	V_swap( m_nGrowSizeStaff, mem.m_nGrowSizeStaff );
+	V_swap( m_nGrowSizeStuff, mem.m_nGrowSizeStuff );
 }
 
 

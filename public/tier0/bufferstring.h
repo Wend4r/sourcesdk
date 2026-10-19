@@ -106,8 +106,8 @@ public:
 	CBufferString( CBufferString &&moveFrom ) noexcept :
 	    CBufferString()
 	{
-		V_swap( m_nLengthStaff, moveFrom.m_nLengthStaff );
-		V_swap( m_nAllocatedStaff, moveFrom.m_nAllocatedStaff );
+		V_swap( m_nLengthStuff, moveFrom.m_nLengthStuff );
+		V_swap( m_nAllocatedStuff, moveFrom.m_nAllocatedStuff );
 		V_swap( m_Buffer, moveFrom.m_Buffer );
 	}
 
@@ -488,7 +488,7 @@ private:
 			uint32 m_bFreeHeap : 1; // Whether heap memory should be freed (+1 bit).
 		};
 
-		uint32 m_nLengthStaff; // To copy/move one.
+		uint32 m_nLengthStuff; // To copy/move one.
 	};
 
 	union
@@ -500,7 +500,7 @@ private:
 			uint32 m_bAllowHeapAllocation : 1; // Allows the bufferstring to grow beyond the static size on the heap (+1 bit).
 		};
 
-		uint32 m_nAllocatedStaff; // To copy/move one.
+		uint32 m_nAllocatedStuff; // To copy/move one.
 	};
 
 protected:
