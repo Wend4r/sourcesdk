@@ -616,7 +616,7 @@ public:
 	static int BudgetGroupNameToBudgetGroupIDNoCreate( const char *pBudgetGroupName );
 
 	void HideBudgetGroup( int budgetGroupID, bool bHide = true );
-	void HideBudgetGroup( const char *pszName, bool bHide = true );
+	void HideBudgetGroup( const char *pszName, bool bHide = true ) { HideBudgetGroup( BudgetGroupNameToBudgetGroupID( pszName ), bHide ); }
 
 	uint64 *FindOrCreateCounter( const char *pName, CounterGroup_t eCounterGroup = COUNTER_GROUP_DEFAULT );
 	void ResetCounters( CounterGroup_t eCounterGroup );

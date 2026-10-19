@@ -68,6 +68,12 @@ REGISTER_NAMED_TEST( "VProfile.TargetThreadScopes", VProfile_TargetThreadScopes 
 	TEST_EQ( CVProfile::GetBudgetGroupFlags( nBudgetGroupID ) & ( BUDGETFLAG_OTHER | BUDGETFLAG_SERVER ), BUDGETFLAG_OTHER | BUDGETFLAG_SERVER );
 	TEST_EQ( CVProfile::BudgetGroupNameToBudgetGroupIDNoCreate( s_szGroup ), nBudgetGroupID );
 
+	// A group can be hidden by its name.
+	profile.HideBudgetGroup( s_szGroup, true );
+	TEST_TRUE( ( CVProfile::GetBudgetGroupFlags( nBudgetGroupID ) & BUDGETFLAG_HIDDEN ) != 0 );
+	profile.HideBudgetGroup( s_szGroup, false );
+	TEST_TRUE( ( CVProfile::GetBudgetGroupFlags( nBudgetGroupID ) & BUDGETFLAG_HIDDEN ) == 0 );
+
 	// Leaving it goes back to the root.
 	profile.ExitScopeTargetThreadChecked();
 	TEST_TRUE( profile.GetCurrentNode() == profile.GetRoot() );
