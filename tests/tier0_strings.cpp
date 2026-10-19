@@ -340,6 +340,10 @@ REGISTER_NAMED_TEST( "FormatStringElement.ParsesOneConversion", FormatStringElem
 	CFormatStringElement number( "%5d" );
 	number.EnforceTypeAndSize( "s", "" );
 	TEST_EQ( strcmp( number, "%5s" ), 0 );
+
+	// The element holds up to 11 chars of the conversion.
+	CFormatStringElement longElement( "%-123456789.3f" );
+	TEST_EQ( strcmp( longElement, "%-123456789" ), 0 );
 }
 
 REGISTER_NAMED_TEST( "GridStringPrinter.LinesUpColumns", GridStringPrinter_LinesUpColumns )
