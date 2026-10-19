@@ -195,7 +195,12 @@ schema class KeyValues : public CKeyValues_Data
 	friend class CKeyValuesTokenReader;
 
 public:
+	// Tag of the constructor that gives the key a disposable string table of its own
+	enum KV_DISPOSABLE_STRING_TABLE_STATE : int;
+
 	DLL_CLASS_IMPORT explicit KeyValues( const char *setName, IKeyValuesSystem *customSystem = NULL, bool ownsCustomSystem = false );
+	// Owns a new disposable key values system, the tag is not read
+	DLL_CLASS_IMPORT KeyValues( const char *setName, KV_DISPOSABLE_STRING_TABLE_STATE );
 
 	//
 	// AutoDelete class to automatically free the keyvalues.

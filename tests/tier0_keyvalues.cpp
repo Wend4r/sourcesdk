@@ -36,3 +36,15 @@ REGISTER_NAMED_TEST( "KeyValues.RemoveOptionalSubKey", KeyValues_RemoveOptionalS
 	pThird->deleteThis();
 	pRoot->deleteThis();
 }
+
+REGISTER_NAMED_TEST( "KeyValues.DisposableStringTable", KeyValues_DisposableStringTable )
+{
+	// The names of the key and its subkeys live in a string table of its own.
+	KeyValues *pRoot = new KeyValues( "disposable_root", KeyValues::KV_DISPOSABLE_STRING_TABLE_STATE() );
+	TEST_EQ( strcmp( pRoot->GetName(), "disposable_root" ), 0 );
+
+	pRoot->SetInt( "disposable_value", 7 );
+	TEST_EQ( pRoot->GetInt( "disposable_value" ), 7 );
+
+	pRoot->deleteThis();
+}
