@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "tier0/platform.h"
+#include "tier0/tier0_stdlib.h"
 
 class CBufferString;
 class CUtlBuffer;
@@ -124,9 +125,13 @@ public:
 	DLL_CLASS_IMPORT virtual void PutC( char c );
 	DLL_CLASS_IMPORT virtual void PutS( std::string_view sv );
 
-#ifdef PLATFORM_WINDOWS
-	DLL_CLASS_IMPORT void FlushIfDesired();
-#endif
+	void FlushIfDesired()
+	{
+		if ( m_bFlush )
+		{
+			V_fflush( m_pFile );
+		}
+	}
 
 private:
 	FILE *m_pFile;
