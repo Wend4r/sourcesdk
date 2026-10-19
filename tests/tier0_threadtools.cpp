@@ -37,6 +37,7 @@ REGISTER_NAMED_TEST( "Thread.Helpers", Thread_Helpers )
 {
 	ThreadSpin( 100 );
 	ThreadYield();
+	CThread::Yield();
 
 	// The sorted processor indices are valid logical processor numbers.
 	uint16 nIndices[ 256 ];

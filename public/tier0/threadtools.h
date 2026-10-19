@@ -1624,6 +1624,10 @@ public:
 	// Resume a suspended thread
 	unsigned Resume();
 
+#ifdef PLATFORM_WINDOWS
+	bool IsSuspended();
+#endif
+
 	CThreadClassKind_t GetClassKind() const { return m_ClassKind; }
 
 	// Force hard-termination of thread.  Used for critical failures.
@@ -1642,7 +1646,7 @@ public:
 #ifdef Yield
 #undef Yield
 #endif
-	static void Yield();
+	static void Yield() { ThreadYield(); }
 
 	// This method causes the current thread to yield and not to be
 	// scheduled for further execution until a certain amount of real
