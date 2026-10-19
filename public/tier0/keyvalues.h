@@ -285,7 +285,7 @@ public:
 	DLL_CLASS_IMPORT void AddSubKey( KeyValues *pSubkey );	// Adds a subkey. Make sure the subkey isn't a child of some other keyvalues
 
 	DLL_CLASS_IMPORT void RemoveSubKey( KeyValues *subKey, bool bDelete = true, bool bOptional = false );	// removes a subkey from the list, DOES NOT DELETE IT
-	DLL_CLASS_IMPORT void RemoveOptionalSubKey( KeyValues *subKey );
+	void RemoveOptionalSubKey( KeyValues *subKey ); // removes a subkey from the list without deleting it
 	DLL_CLASS_IMPORT void InsertSubKey( int nIndex, KeyValues *pSubKey ); // Inserts the given sub-key before the Nth child location
 	DLL_CLASS_IMPORT bool ContainsSubKey( KeyValues *pSubKey ); // Returns true if this key values contains the specified sub key, false otherwise.
 	DLL_CLASS_IMPORT void SwapSubKey( KeyValues *pExistingSubKey, KeyValues *pNewSubKey );	// Swaps an existing subkey for a new one, DOES NOT DELETE THE OLD ONE but takes ownership of the new one
@@ -487,6 +487,40 @@ inline const wchar_t *KeyValues::GetWString( const char *keyName, const wchar_t 
 inline KeyValues::types_t KeyValues::GetDataType( void ) const
 {
 	return ( types_t )m_iDataType;
+}
+
+inline void KeyValues::RemoveOptionalSubKey( KeyValues *subKey )
+{
+	if ( !subKey )
+		return;
+
+	if ( m_iDataType == TYPE_NONE && m_bStoredSubKey )
+	{
+		if ( m_pSub == subKey )
+		{
+			if ( subKey->m_pPeer )
+			{
+				m_pSub = subKey->m_pPeer;
+			}
+			else
+			{
+				m_bStoredSubKey = false;
+			}
+		}
+		else
+		{
+			for ( KeyValues *pPrev = m_pSub; pPrev->m_pPeer; pPrev = pPrev->m_pPeer )
+			{
+				if ( pPrev->m_pPeer == subKey )
+				{
+					pPrev->m_pPeer = subKey->m_pPeer;
+					break;
+				}
+			}
+		}
+	}
+
+	subKey->m_pPeer = NULL;
 }
 
 // for backwards compat - we used to need this to force the free to run from the same DLL
