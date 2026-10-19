@@ -33,9 +33,9 @@ typedef void ( *LZMAReadProgressCallbackFunc_t )();
 class CLZMA
 {
 public:
-	unsigned int	Uncompress( unsigned char *pInput, unsigned char *pOutput, LZMAReadProgressCallbackFunc_t pCallback = NULL );
-	bool			IsCompressed( unsigned char *pInput );
-	unsigned int	GetActualSize( unsigned char *pInput );
+	unsigned int	Uncompress( const unsigned char *pInput, unsigned char *pOutput, LZMAReadProgressCallbackFunc_t pCallback = NULL );
+	bool			IsCompressed( const unsigned char *pInput );
+	unsigned int	GetActualSize( const unsigned char *pInput );
 
 private:
 };
