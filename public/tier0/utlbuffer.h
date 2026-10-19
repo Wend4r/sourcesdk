@@ -48,11 +48,11 @@ public:
 
 	CUtlCharConversion( char nEscapeChar, const char *pDelimiter, int nCount, const ConversionArray_t *pArray );
 
-	CUtlCharConversion( CUtlCharConversion &&rhs ) noexcept;
-	CUtlCharConversion( const CUtlCharConversion &rhs );
+	CUtlCharConversion( CUtlCharConversion &&rhs ) noexcept = default;
+	CUtlCharConversion( const CUtlCharConversion &rhs ) = default;
 
-	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept;
-	CUtlCharConversion &operator=( const CUtlCharConversion &rhs );
+	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept = default;
+	CUtlCharConversion &operator=( const CUtlCharConversion &rhs ) = default;
 
 	char GetEscapeChar() const { return m_nEscapeChar; }
 	const char *GetDelimiter() const { return m_pDelimiter; }

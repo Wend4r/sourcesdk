@@ -148,3 +148,14 @@ REGISTER_NAMED_TEST( "CUtlBuffer.DelimitedCharInternal", CUtlBuffer_DelimitedCha
 	TEST_TRUE( inlineBuffer.TellPut() > ( int )( sizeof( szChars ) - 1 ) );
 	TEST_EQ( memcmp( inlineBuffer.Base(), exportedBuffer.Base(), exportedBuffer.TellPut() ), 0 );
 }
+
+REGISTER_NAMED_TEST( "CUtlCharConversion.Copy", CUtlCharConversion_Copy )
+{
+	// A copy converts like the conversion of tier0 it was made from.
+	CUtlCharConversion copy( *GetCStringCharConversion() );
+	CUtlCharConversion assigned = copy;
+
+	TEST_EQ( copy.GetEscapeChar(), GetCStringCharConversion()->GetEscapeChar() );
+	TEST_EQ( assigned.GetConversionLength( '\n' ), GetCStringCharConversion()->GetConversionLength( '\n' ) );
+	TEST_EQ( strcmp( assigned.GetConversionString( '\n' ), GetCStringCharConversion()->GetConversionString( '\n' ) ), 0 );
+}
