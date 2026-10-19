@@ -137,6 +137,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	tier0_snapshots.cpp
 	tier0_strings.cpp
 	tier0_threadtools.cpp
+	tier0_vertexkdtree.cpp
 	tier0_vprof.cpp
 	tslist.cpp
 	utlarray.cpp
