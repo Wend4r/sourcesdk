@@ -41,3 +41,17 @@ REGISTER_NAMED_TEST( "CTSListWithFreeList.PushPop", CTSListWithFreeList_PushPop 
 	TEST_EQ( nValue, 1 );
 	TEST_FALSE( list.PopItem( &nValue ) );
 }
+
+REGISTER_NAMED_TEST( "CTSList.IsEmpty", CTSList_IsEmpty )
+{
+	// A list is empty when its head has no node.
+	CTSList< int > list;
+	TEST_TRUE( list.IsEmpty() );
+
+	list.PushItem( 1 );
+	TEST_FALSE( list.IsEmpty() );
+
+	int nValue = 0;
+	TEST_TRUE( list.PopItem( &nValue ) );
+	TEST_TRUE( list.IsEmpty() );
+}

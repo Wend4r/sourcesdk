@@ -182,6 +182,11 @@ public:
 		return &m_Head;
 	}
 
+	bool IsEmpty() const
+	{
+		return m_Head.value.Next == NULL;
+	}
+
 	int Count() const
 	{
 #ifdef USE_NATIVE_SLIST
