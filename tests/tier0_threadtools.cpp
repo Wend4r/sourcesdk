@@ -49,6 +49,29 @@ REGISTER_NAMED_TEST( "Thread.Helpers", Thread_Helpers )
 	}
 }
 
+class CThreadHandleTestThread : public CThread
+{
+public:
+	ThreadHandle_t GetConstThreadHandle() const { return GetThreadHandle(); }
+
+protected:
+	virtual int Run() { return 42; }
+};
+
+REGISTER_NAMED_TEST( "Thread.ConstThreadHandle", Thread_ConstThreadHandle )
+{
+	CThreadHandleTestThread thread;
+	thread.SetName( "ConstThreadHandle" );
+	TEST_TRUE( thread.Start() );
+
+	// The const handle of the derived classes is the public one.
+	TEST_TRUE( thread.GetThreadHandle() != nullptr );
+	TEST_TRUE( thread.GetConstThreadHandle() == thread.GetThreadHandle() );
+
+	TEST_TRUE( thread.Join() );
+	TEST_EQ( thread.GetResult(), 42 );
+}
+
 REGISTER_NAMED_TEST( "Thread.CurrentProcess", Thread_CurrentProcess )
 {
 	const uint32 nProcessId = ThreadGetCurrentProcessId();

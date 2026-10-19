@@ -1674,6 +1674,16 @@ protected:
 	// just gets this and calls ThreadProc
 	static uintp ThreadProc( void *pv );
 
+	// The thread handle for the const methods
+	ThreadHandle_t GetThreadHandle() const
+	{
+#ifdef PLATFORM_WINDOWS
+		return ( ThreadHandle_t )m_hThread;
+#else
+		return ( ThreadHandle_t )m_threadId;
+#endif
+	}
+
 	CAtomicMutex m_Lock;
 #ifdef PLATFORM_POSIX
 	CThreadEvent m_ExitEvent;	// Set right before the thread's function exits.
