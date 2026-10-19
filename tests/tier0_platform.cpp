@@ -6,6 +6,7 @@
 #include <tier0/memalloc.h>
 #include <tier0/bufferstring.h>
 #include <tier0/stacktools.h>
+#include <tier0/appinstance.h>
 
 #include <cmath>
 #include <cstdio>
@@ -371,4 +372,12 @@ REGISTER_NAMED_TEST( "Plat.GlobalListRegistry", Plat_GlobalListRegistry )
 
 	TEST_NOT_NULL( pRegistry );
 	TEST_EQ( Plat_GetGlobalListRegistry( 0x5EED ), pRegistry );
+}
+
+REGISTER_NAMED_TEST( "SingleAppInstance.Shutdown", SingleAppInstance_Shutdown )
+{
+	// The instance can be released before the destructor, which then does nothing more.
+	CSingleAppInstance instance( "sourcesdk_tests_single_app_instance" );
+	TEST_TRUE( instance.IsUniqueInstance() );
+	instance.ShutdownInstance();
 }

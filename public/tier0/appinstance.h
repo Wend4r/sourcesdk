@@ -44,12 +44,15 @@ typedef void *HANDLE;
 class CSingleAppInstance
 {
 	public:
-		explicit CSingleAppInstance( tchar* InstanceName, bool exitOnNotUnique = false, bool displayMsgIfNotUnique = false );
+		explicit CSingleAppInstance( const char *InstanceName, bool exitOnNotUnique = false, bool displayMsgIfNotUnique = false );
 				~CSingleAppInstance();
 
 		bool	CheckForOtherRunningInstances( bool exitOnNotUnique = false, bool displayMsgIfNotUnique = true );
+
+		// Releases the instance, the destructor calls it
+		void	ShutdownInstance();
 		
-		static bool CheckForRunningInstance( tchar* InstanceName );
+		static bool CheckForRunningInstance( const char *InstanceName );
 
 		bool	IsUniqueInstance()	{ return m_isUniqueInstance; }
 		HANDLE	GetHandle()			{ return reinterpret_cast< HANDLE >( (intp) m_hMutex ); }
