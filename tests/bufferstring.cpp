@@ -3,6 +3,7 @@
 
 #include <tier0/bufferstring.h>
 #include <tier0/utlstring.h>
+#include <tier0/utlvector.h>
 
 #include <cstdlib>
 #include <cstring>
@@ -300,4 +301,35 @@ REGISTER_NAMED_TEST( "CBufferString.CUtlStringInterop", CBufferString_CUtlString
 
 	assigned = source;
 	TEST_TRUE( assigned == "utl-string-value" );
+}
+
+REGISTER_NAMED_TEST( "V_ParseURLQuery_Unsafe.KeyValuePairs", V_ParseURLQuery_Unsafe_KeyValuePairs )
+{
+	CUtlVector< URLQueryParameter_t > parameters;
+
+	// The leading '?' and trailing '/' are skipped, keys and values are URL-decoded.
+	V_ParseURLQuery_Unsafe( "?a=1&bb=two%20x&c=/", &parameters );
+	TEST_EQ( parameters.Count(), 3 );
+	TEST_EQ( V_strcmp( parameters[ 0 ].m_Key.Get(), "a" ), 0 );
+	TEST_EQ( V_strcmp( parameters[ 0 ].m_Value.Get(), "1" ), 0 );
+	TEST_EQ( V_strcmp( parameters[ 1 ].m_Key.Get(), "bb" ), 0 );
+	TEST_EQ( V_strcmp( parameters[ 1 ].m_Value.Get(), "two x" ), 0 );
+	TEST_EQ( V_strcmp( parameters[ 2 ].m_Key.Get(), "c" ), 0 );
+	TEST_TRUE( parameters[ 2 ].m_Value.IsEmpty() );
+
+	// The vector is cleared first, '+' is a space.
+	V_ParseURLQuery_Unsafe( "k%41=v+w", &parameters );
+	TEST_EQ( parameters.Count(), 1 );
+	TEST_EQ( V_strcmp( parameters[ 0 ].m_Key.Get(), "kA" ), 0 );
+	TEST_EQ( V_strcmp( parameters[ 0 ].m_Value.Get(), "v w" ), 0 );
+
+	V_ParseURLQuery_Unsafe( "", &parameters );
+	TEST_EQ( parameters.Count(), 0 );
+}
+
+REGISTER_NAMED_TEST( "URLQueryParameter_t.Layout", URLQueryParameter_t_Layout )
+{
+	// tier0 steps over 32 bytes per pair, the value right after the key.
+	TEST_EQ( sizeof( URLQueryParameter_t ), static_cast< size_t >( 2 * sizeof( CBufferString ) ) );
+	TEST_EQ( offsetof( URLQueryParameter_t, m_Value ), sizeof( CBufferString ) );
 }

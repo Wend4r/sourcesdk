@@ -135,6 +135,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	tier0_keyvalues.cpp
 	tier0_platform.cpp
 	tier0_snapshots.cpp
+	tier0_stdlib.cpp
 	tier0_strings.cpp
 	tier0_threadtools.cpp
 	tier0_vertexkdtree.cpp

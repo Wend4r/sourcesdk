@@ -4,6 +4,7 @@
 #include <tier0/platform.h>
 #include <tier0/bufferstring.h>
 #include <tier0/characterset.h>
+#include <tier0/exprevaluator.h>
 #include <tier0/filterstring.h>
 #include <tier0/formatoutputstream.h>
 #include <tier0/gridstringprinter.h>
@@ -484,4 +485,73 @@ REGISTER_NAMED_TEST( "GridStringPrinter.WrapsAtSpaces", GridStringPrinter_WrapsA
 			TEST_EQ( strcmp( lines[ i ].Get(), pszExpected[ nWrapAtSpaces ][ i ] ), 0 );
 		}
 	}
+}
+
+REGISTER_NAMED_TEST( "DefaultConditionalSymbolProc.PlatformSymbols", DefaultConditionalSymbolProc_PlatformSymbols )
+{
+	// The $ is optional and the case does not matter.
+#if defined( _WIN32 )
+	TEST_TRUE( DefaultConditionalSymbolProc( "$WIN32", nullptr ) );
+	TEST_TRUE( DefaultConditionalSymbolProc( "windows", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$LINUX", nullptr ) );
+#elif defined( OSX )
+	TEST_TRUE( DefaultConditionalSymbolProc( "$OSX", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$WIN32", nullptr ) );
+#else
+	TEST_TRUE( DefaultConditionalSymbolProc( "$LINUX", nullptr ) );
+	TEST_TRUE( DefaultConditionalSymbolProc( "posix", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$WIN32", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$OSX", nullptr ) );
+#endif
+}
+
+REGISTER_NAMED_TEST( "DefaultConditionalErrorProc.Warns", DefaultConditionalErrorProc_Warns )
+{
+	// Only a warning, the call returns.
+	DefaultConditionalErrorProc( "DefaultConditionalErrorProc test", nullptr );
+}
+
+REGISTER_NAMED_TEST( "DefaultConditionalSymbolProc.EvaluatorDefault", DefaultConditionalSymbolProc_EvaluatorDefault )
+{
+	// The procs fit the callbacks of the evaluator.
+	CExpressionEvaluator evaluator;
+	bool bResult = false;
+
+#if defined( _WIN32 )
+	TEST_TRUE( evaluator.Evaluate( bResult, "$WIN32 && !$OSX", DefaultConditionalSymbolProc, DefaultConditionalErrorProc ) );
+#elif defined( OSX )
+	TEST_TRUE( evaluator.Evaluate( bResult, "$OSX && !$WIN32", DefaultConditionalSymbolProc, DefaultConditionalErrorProc ) );
+#else
+	TEST_TRUE( evaluator.Evaluate( bResult, "$LINUX && !$WIN32", DefaultConditionalSymbolProc, DefaultConditionalErrorProc ) );
+#endif
+
+	TEST_TRUE( bResult );
+}
+
+REGISTER_NAMED_TEST( "FormatArgumentsToBuffer.PlainText", FormatArgumentsToBuffer_PlainText )
+{
+	// Without arguments the text is copied and %% becomes %.
+	CBufferString text;
+	CBufferStringFormatOutputStream stream( text );
+	FormatArgumentsToBuffer( &stream, "plain 100%% text\nnext", nullptr, 0 );
+	TEST_EQ( V_strcmp( text.Get(), "plain 100% text\nnext" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "Formatting_AdjustIndentation.FourSpacesPerLevel", Formatting_AdjustIndentation_FourSpacesPerLevel )
+{
+	CBufferString text;
+	CBufferStringFormatOutputStream stream( text );
+
+	stream.OutputIndentation();
+	TEST_TRUE( text.IsEmpty() );
+
+	Formatting_AdjustIndentation( 2 );
+	stream.OutputIndentation();
+	TEST_EQ( V_strcmp( text.Get(), "        " ), 0 );
+
+	// Back to no indentation.
+	Formatting_AdjustIndentation( -2 );
+	text.Clear();
+	stream.OutputIndentation();
+	TEST_TRUE( text.IsEmpty() );
 }
