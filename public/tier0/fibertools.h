@@ -515,8 +515,10 @@ public:
 	virtual void RegisterWorkerThreadPool( IFiberThreadWorkerPool *pPool ) = 0;
 	virtual void UnregisterWorkerThreadPool( IFiberThreadWorkerPool *pPool ) = 0;
 
-	// Newer than the s&box build, takes the fiber locks of the pool
-	virtual void unk005() = 0;
+	// Under the write lock of the pool, has every registered worker pool quit and waits for the
+	// default worker thread, then aborts the waiting fibers with a resume value of -1 and
+	// releases them; newer than the s&box build, the name is ours
+	virtual void Shutdown() = 0;
 };
 
 PLATFORM_INTERFACE IFiberJobPool *g_pFiberJobPool;

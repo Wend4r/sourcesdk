@@ -13,6 +13,7 @@
 #include <thread>
 
 #ifndef PLATFORM_WINDOWS
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -735,5 +736,44 @@ REGISTER_NAMED_TEST( "ThreadMultiWaitObjectSetCreate.Items", ThreadMultiWaitObje
 
 	close( fds[ 0 ] );
 	close( fds[ 1 ] );
+}
+#endif
+
+#ifndef PLATFORM_WINDOWS
+static int TestFiberJobPoolShutdown()
+{
+	CTestFiberWorkerPool workers;
+	g_pFiberJobPool->RegisterWorkerThreadPool( &workers );
+
+	CFiber *pFiber = CFiber::AllocPooledFiber( CFiber::STACKSIZE_64KB, 0 );
+	pFiber->SetFiberJob( &FiberYieldJob );
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+
+	g_pFiberJobPool->Shutdown();
+
+	if ( workers.m_nQuits != 1 )
+		return 1;
+
+	// The waiting fiber is gone and the pool hears nothing more.
+	bool bSkippedFibers = false;
+	if ( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) != nullptr )
+		return 2;
+
+	return 0;
+}
+
+REGISTER_NAMED_TEST( "IFiberJobPool.Shutdown", IFiberJobPool_Shutdown )
+{
+	// The pool of the process is shut down for good, so in a child.
+	const pid_t nChild = fork();
+	TEST_TRUE( nChild >= 0 );
+
+	if ( nChild == 0 )
+		_exit( TestFiberJobPoolShutdown() );
+
+	int nStatus = 0;
+	TEST_EQ( waitpid( nChild, &nStatus, 0 ), nChild );
+	TEST_TRUE( WIFEXITED( nStatus ) );
+	TEST_EQ( WEXITSTATUS( nStatus ), 0 );
 }
 #endif
