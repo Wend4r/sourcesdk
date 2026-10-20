@@ -938,6 +938,21 @@ private:
 PLATFORM_INTERFACE void RegisterAssertionFailureListener( IAssertionFailureListener *pListener );
 PLATFORM_INTERFACE void UnregisterAssertionFailureListener( IAssertionFailureListener *pListener );
 
+// A listener registered for its lifetime
+class CAutoAssertionFailureListener : public IAssertionFailureListener
+{
+public:
+	CAutoAssertionFailureListener( bool bOnlyMonitorsEachAssertionOnce = false ) : IAssertionFailureListener( bOnlyMonitorsEachAssertionOnce )
+	{
+		RegisterAssertionFailureListener( this );
+	}
+
+	virtual ~CAutoAssertionFailureListener()
+	{
+		UnregisterAssertionFailureListener( this );
+	}
+};
+
 // Failures of the debug checks of the containers
 PLATFORM_INTERFACE void UtlRBTree_FailedInsertDuplicate();
 PLATFORM_INTERFACE void SortCheck_Failure();

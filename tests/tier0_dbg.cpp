@@ -8,18 +8,10 @@
 #include <cstring>
 
 // Records the failed assertions while it is registered
-class CTestAssertionListener : public IAssertionFailureListener
+class CTestAssertionListener : public CAutoAssertionFailureListener
 {
 public:
-	CTestAssertionListener( bool bOnlyOnce = false ) : IAssertionFailureListener( bOnlyOnce )
-	{
-		RegisterAssertionFailureListener( this );
-	}
-
-	~CTestAssertionListener()
-	{
-		UnregisterAssertionFailureListener( this );
-	}
+	CTestAssertionListener( bool bOnlyOnce = false ) : CAutoAssertionFailureListener( bOnlyOnce ) {}
 
 	virtual void *AssertionFailure( AssertionFailureInfo_t *pInfo )
 	{
