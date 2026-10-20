@@ -6,10 +6,10 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier0/utlsymbollarge.h"
 
 //-----------------------------------------------------------------------------
-// A process-wide reference counted string table of symbols
+// A process-wide reference counted string table; a symbol is the pooled string itself, so equal
+// strings give equal pointers
 //-----------------------------------------------------------------------------
 abstract_class IGlobalSymbolMap
 {
@@ -17,11 +17,16 @@ public:
 	virtual void AddUser() = 0;
 	virtual void ReleaseUser() = 0;
 
-	virtual UtlSymLargeId_t GetSymbol( const char *pString ) = 0;
-	virtual const char *GetString( UtlSymLargeId_t symbol ) = 0;
+	virtual const char *GetSymbol( const char *pString ) = 0;
+	virtual const char *GetString( const char *pSymbol ) = 0;
 	virtual uint GetSymbolCount() = 0;
-	virtual UtlSymLargeId_t Find( const char *pString ) = 0;
-	virtual int GetElements( int nFirstElement, int nCount, UtlSymLargeId_t *pElements ) = 0;
+
+	// Null when the string is not in the table
+	virtual const char *Find( const char *pString ) = 0;
+
+	// Copies up to nCount symbols from nFirstElement on, returns how many
+	virtual int GetElements( int nFirstElement, int nCount, const char **ppElements ) = 0;
+
 	virtual size_t GetMemoryUsage() = 0;
 	virtual void Commit() = 0;
 };
