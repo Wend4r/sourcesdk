@@ -5,7 +5,6 @@
 #include <tier0/jsonparser.h>
 #include <tier0/memalloc.h>
 #include <tier0/strtools.h>
-#include <tier0/utlbuffer.h>
 
 #include <cstddef>
 #include <cstring>
@@ -39,13 +38,6 @@ static int TestJSONCallback( void *pContext, int nType, const JSON_value *pValue
 	return 1;
 }
 
-static bool ParseJSONText( const JSON_config *pConfig, const char *pszText )
-{
-	CUtlBuffer buffer( 0, 0, CUtlBuffer::TEXT_BUFFER );
-	buffer.PutString( pszText );
-	return V_ParseJSONBuffer( pConfig, &buffer );
-}
-
 REGISTER_NAMED_TEST( "V_InitJSONConfig.Defaults", V_InitJSONConfig_Defaults )
 {
 	JSON_config config;
@@ -64,25 +56,24 @@ REGISTER_NAMED_TEST( "V_InitJSONConfig.Defaults", V_InitJSONConfig_Defaults )
 REGISTER_NAMED_TEST( "V_ParseJSONBuffer.ValidAndInvalid", V_ParseJSONBuffer_ValidAndInvalid )
 {
 	// Null takes the defaults.
-	TEST_TRUE( ParseJSONText( nullptr, "{ \"a\": [ 1, 2.5, \"x\", true, false, null ] }" ) );
-	TEST_FALSE( ParseJSONText( nullptr, "{ \"a\": [ 1, 2 }" ) );
-	TEST_FALSE( ParseJSONText( nullptr, "{ \"a\": 1" ) );
+	TEST_TRUE( V_ParseJSONString( nullptr, "{ \"a\": [ 1, 2.5, \"x\", true, false, null ] }" ) );
+	TEST_FALSE( V_ParseJSONString( nullptr, "{ \"a\": [ 1, 2 }" ) );
+	TEST_FALSE( V_ParseJSONString( nullptr, "{ \"a\": 1" ) );
 
 	// A complete value of any kind is a document.
-	TEST_TRUE( ParseJSONText( nullptr, "[]" ) );
+	TEST_TRUE( V_ParseJSONString( nullptr, "[]" ) );
 }
 
 REGISTER_NAMED_TEST( "V_ParseJSONBuffer.Callback", V_ParseJSONBuffer_Callback )
 {
-	JSON_config config;
-	V_InitJSONConfig( &config );
-
 	TestJSONEvents_t events;
 	memset( &events, 0, sizeof( events ) );
-	config.callback = TestJSONCallback;
-	config.callback_ctx = &events;
 
-	TEST_TRUE( ParseJSONText( &config, "{\"key\":[42,1.5,\"text\"]}" ) );
+	JSON_config config;
+	V_InitJSONConfig( &config, TestJSONCallback, &events );
+	TEST_EQ( config.depth, 127 );
+
+	TEST_TRUE( V_ParseJSONString( &config, "{\"key\":[42,1.5,\"text\"]}" ) );
 
 	const int nExpected[] = { JSON_T_OBJECT_BEGIN, JSON_T_KEY, JSON_T_ARRAY_BEGIN, JSON_T_INTEGER, JSON_T_FLOAT, JSON_T_STRING, JSON_T_ARRAY_END, JSON_T_OBJECT_END };
 	TEST_EQ( events.m_nCount, 8 );
@@ -101,18 +92,18 @@ REGISTER_NAMED_TEST( "V_ParseJSONBuffer.Depth", V_ParseJSONBuffer_Depth )
 	V_InitJSONConfig( &config );
 	config.depth = 2;
 
-	TEST_TRUE( ParseJSONText( &config, "[[1]]" ) );
-	TEST_FALSE( ParseJSONText( &config, "[[[1]]]" ) );
+	TEST_TRUE( V_ParseJSONString( &config, "[[1]]" ) );
+	TEST_FALSE( V_ParseJSONString( &config, "[[[1]]]" ) );
 }
 
 REGISTER_NAMED_TEST( "V_ParseJSONBuffer.Comments", V_ParseJSONBuffer_Comments )
 {
 	JSON_config config;
 	V_InitJSONConfig( &config );
-	TEST_FALSE( ParseJSONText( &config, "[1 /* note */]" ) );
+	TEST_FALSE( V_ParseJSONString( &config, "[1 /* note */]" ) );
 
 	config.allow_comments = 1;
-	TEST_TRUE( ParseJSONText( &config, "[1 /* note */]" ) );
+	TEST_TRUE( V_ParseJSONString( &config, "[1 /* note */]" ) );
 }
 
 REGISTER_NAMED_TEST( "JSON_config.Layout", JSON_config_Layout )

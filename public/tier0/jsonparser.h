@@ -6,8 +6,7 @@
 #endif
 
 #include "tier0/platform.h"
-
-class CUtlBuffer;
+#include "tier0/utlbuffer.h"
 
 //-----------------------------------------------------------------------------
 // The JSON_parser (JSON_checker) of tier0: a push parser that reports every value
@@ -76,5 +75,21 @@ PLATFORM_INTERFACE void V_InitJSONConfig( JSON_config *pConfig );
 // Feeds the text of pBuffer up to its end or a null character to a parser with pConfig (the
 // defaults when null), returns whether it is a complete JSON document
 PLATFORM_INTERFACE bool V_ParseJSONBuffer( const JSON_config *pConfig, CUtlBuffer *pBuffer );
+
+// The defaults with a callback
+inline void V_InitJSONConfig( JSON_config *pConfig, JSON_parser_callback pfnCallback, void *pContext )
+{
+	V_InitJSONConfig( pConfig );
+	pConfig->callback = pfnCallback;
+	pConfig->callback_ctx = pContext;
+}
+
+// Same as V_ParseJSONBuffer for a null-terminated text
+inline bool V_ParseJSONString( const JSON_config *pConfig, const char *pszText )
+{
+	CUtlBuffer buffer( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	buffer.PutString( pszText );
+	return V_ParseJSONBuffer( pConfig, &buffer );
+}
 
 #endif // TIER0_JSONPARSER_H
