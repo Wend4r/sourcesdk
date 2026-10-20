@@ -42,6 +42,17 @@ struct _EXCEPTION_POINTERS;
 // into MiniDumpStandardData_t::m_Options
 struct MiniDumpOptions_t
 {
+	MiniDumpOptions_t() { memset( this, 0, sizeof( *this ) ); }
+
+	// The options of the callers: the reason and the notes of the file, flags 0x40
+	MiniDumpOptions_t( const char *pszReason, const char *pszNotes = NULL )
+	{
+		memset( this, 0, sizeof( *this ) );
+		m_pszReason = pszReason;
+		m_pszNotes = pszNotes;
+		m_nFlags = 0x40;
+	}
+
 	// Part of the file name, "crash" or "forced" when null
 	const char *m_pszReason;
 

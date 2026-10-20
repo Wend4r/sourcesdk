@@ -110,16 +110,6 @@ static int TestMiniDumpHandler( MiniDumpStandardData_t *pData )
 	return 1;
 }
 
-static MiniDumpOptions_t MakeTestOptions()
-{
-	MiniDumpOptions_t options;
-	memset( &options, 0, sizeof( options ) );
-	options.m_pszReason = "sourcesdk";
-	options.m_pszNotes = "sourcesdk notes";
-	options.m_nFlags = 0x40;
-	return options;
-}
-
 REGISTER_NAMED_TEST( "GetNewMiniDumpFileName.Parts", GetNewMiniDumpFileName_Parts )
 {
 	CBufferString fileName;
@@ -152,7 +142,7 @@ REGISTER_NAMED_TEST( "InvokeMiniDumpHandler.FalseOnPosix", InvokeMiniDumpHandler
 {
 	// Only Windows raises the exception for the handler.
 	s_nTestHandlerCalls = 0;
-	const MiniDumpOptions_t options = MakeTestOptions();
+	const MiniDumpOptions_t options( "sourcesdk", "sourcesdk notes" );
 	TEST_FALSE( InvokeMiniDumpHandler( TestMiniDumpHandler, &options, false ) );
 	TEST_EQ( s_nTestHandlerCalls, 0 );
 }
@@ -160,7 +150,7 @@ REGISTER_NAMED_TEST( "InvokeMiniDumpHandler.FalseOnPosix", InvokeMiniDumpHandler
 static int TestAlwaysInvoke()
 {
 	s_nTestHandlerCalls = 0;
-	const MiniDumpOptions_t options = MakeTestOptions();
+	const MiniDumpOptions_t options( "sourcesdk", "sourcesdk notes" );
 
 	if ( !AlwaysInvokeMiniDumpHandler( TestMiniDumpHandler, &options ) )
 		return 1;
@@ -182,7 +172,7 @@ REGISTER_NAMED_TEST( "AlwaysInvokeMiniDumpHandler.CallsHandler", AlwaysInvokeMin
 
 static int TestExceptionHandler()
 {
-	const MiniDumpOptions_t options = MakeTestOptions();
+	const MiniDumpOptions_t options( "sourcesdk", "sourcesdk notes" );
 
 	// The POSIX builds only warn that the handler is a Windows one.
 	return MiniDumpExceptionHandler( 0x80000003, nullptr, 0, nullptr, 1, &options ) == 0 && MiniDumpExceptionHandler( 0x80000003, nullptr, 1, nullptr, 1, &options ) == 0 ? 0 : 1;
@@ -198,11 +188,10 @@ static int TestGenericHandlerEx()
 	if ( chdir( s_szMiniDumpDir ) != 0 )
 		return 1;
 
-	MiniDumpStandardData_t data;
-	memset( &data, 0, sizeof( data ) );
+	MiniDumpStandardData_t data = {};
 	data.m_uStructuredExceptionCode = 0x80000003;
 	data.m_nUnknown = 1;
-	data.m_Options = MakeTestOptions();
+	data.m_Options = MiniDumpOptions_t( "sourcesdk", "sourcesdk notes" );
 
 	char szFileName[ 512 ] = {};
 	if ( !Tier0GenericMiniDumpHandlerEx( &data, szFileName, 0 ) )
@@ -360,6 +349,22 @@ REGISTER_NAMED_TEST( "UploadFilesToAnalyzer.Disabled", UploadFilesToAnalyzer_Dis
 REGISTER_NAMED_TEST( "UploadTracyFile.Disabled", UploadTracyFile_Disabled )
 {
 	TEST_FALSE( UploadTracyFile() );
+}
+
+REGISTER_NAMED_TEST( "MiniDumpOptions_t.Constructors", MiniDumpOptions_t_Constructors )
+{
+	const MiniDumpOptions_t empty;
+	TEST_NULL( empty.m_pszReason );
+	TEST_NULL( empty.m_pszNotes );
+	TEST_EQ( empty.m_nMiniDumpTypeFlags, 0u );
+	TEST_EQ( ( int )empty.m_nFlags, 0 );
+
+	// The flags of the callers come with the reason.
+	const MiniDumpOptions_t options( "reason" );
+	TEST_EQ( V_strcmp( options.m_pszReason, "reason" ), 0 );
+	TEST_NULL( options.m_pszNotes );
+	TEST_EQ( ( int )options.m_nFlags, 0x40 );
+	TEST_EQ( options.m_uExceptionCode, 0u );
 }
 
 REGISTER_NAMED_TEST( "MiniDumpOptions_t.Layout", MiniDumpOptions_t_Layout )
