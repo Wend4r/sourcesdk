@@ -111,7 +111,10 @@ template <typename T> struct DefaultEqualFunctor;
 //  http://en.wikipedia.org/wiki/Avalanche_effect
 //  http://home.comcast.net/~bretm/hash/5.html
 // 
-template <typename T, typename = void> struct DefaultHashFunctor;
+// Enums are hashed by their underlying value; the base keeps the single template parameter of
+// the engine, which is part of the mangled names of the exported functions that take hash tables
+template < typename T, bool = std::is_enum_v< T > && std::is_same_v< T, std::remove_cv_t< T > > > struct DefaultHashFunctor_Enum {};
+template <typename T> struct DefaultHashFunctor : DefaultHashFunctor_Enum< T > {};
 
 // Argument type information. Struct currently contains one or two typedefs:
 //   typename Arg_t = primary argument type. Usually const T&, sometimes T.
@@ -245,8 +248,7 @@ template <> struct DefaultHashFunctor<CUtlStringToken> { unsigned int operator()
 template <> struct DefaultHashFunctor<wchar_t> : Mix32HashFunctor { };
 #endif
 
-// Enums are hashed by their underlying value
-template < typename T > struct DefaultHashFunctor< T, std::enable_if_t< std::is_enum_v< T > && std::is_same_v< T, std::remove_cv_t< T > > > >
+template < typename T > struct DefaultHashFunctor_Enum< T, true >
 {
 	unsigned int operator()( T e ) const { return DefaultHashFunctor< std::underlying_type_t< T > >()( static_cast< std::underlying_type_t< T > >( e ) ); }
 };
