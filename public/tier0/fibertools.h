@@ -18,13 +18,16 @@ class CFiber;
 class CEventListNode
 {
 public:
-	CEventListNode() : m_pNext( nullptr ), unk008( nullptr ) {}
+	CEventListNode() : m_pNext( nullptr ), m_pUserData( nullptr ) {}
 
 	DLL_CLASS_IMPORT static CEventListNode *AllocTempNode();
 	DLL_CLASS_IMPORT static void FreeTempNode( CEventListNode *pNode );
 
 	CEventListNode *m_pNext;
-	void *unk008;
+
+	// Free for the owner of a node that it queues itself, tier0 only clears it
+	// (CMovieRecorder of engine2 keeps the pixels of a screenshot there)
+	void *m_pUserData;
 	CThreadManualEvent m_Event;
 };
 
