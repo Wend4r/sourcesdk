@@ -136,12 +136,6 @@ public:
 // AMNOTE: Other flags the engine checks: 0x20 don't inherit handles, 0x40 adds -attachtodebugger, 0x80 adds -breakimmediately,
 // 0x100 kill with parent process, 0x200 no console window, 0x400 run under crash monitor, 0x800 no stdout pipe, 0x1000 no stderr pipe
 
-#ifdef _WIN32
-typedef void *OSFILEHANDLE;
-#else
-typedef int OSFILEHANDLE;
-#endif
-
 struct StartProcessInfo_t
 {
 	PLATFORM_CLASS void CloseIo();

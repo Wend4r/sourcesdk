@@ -1369,6 +1369,13 @@ typedef int socklen_t;
 
 #define MAX_UNICODE_PATH_IN_UTF8 MAX_UNICODE_PATH*4
 
+// Native file handle of the platform, as FioCreateFile and the process utils use it
+#ifdef _WIN32
+typedef void *OSFILEHANDLE;
+#else
+typedef int OSFILEHANDLE;
+#endif
+
 //-----------------------------------------------------------------------------
 // FP exception handling
 //-----------------------------------------------------------------------------
