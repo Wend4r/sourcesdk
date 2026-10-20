@@ -1,7 +1,9 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
+#include <tier0/dbg.h>
 #include <tier0/keyvalues.h>
+#include <tier0/keyvaluesjson.h>
 
 #include <cstring>
 
@@ -47,4 +49,11 @@ REGISTER_NAMED_TEST( "KeyValues.DisposableStringTable", KeyValues_DisposableStri
 	TEST_EQ( pRoot->GetInt( "disposable_value" ), 7 );
 
 	pRoot->deleteThis();
+}
+
+REGISTER_NAMED_TEST( "TestKeyValuesJSONParser.Passes", TestKeyValuesJSONParser_Passes )
+{
+	// The self test of tier0 asserts on a wrong result.
+	SetAssertionPrompt( ASSERTION_TYPE_ALL_TYPES, AP_NOTHING );
+	TestKeyValuesJSONParser();
 }
