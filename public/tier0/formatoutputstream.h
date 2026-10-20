@@ -60,7 +60,8 @@ public:
 	virtual void PutC( char c ) = 0;
 	DLL_CLASS_IMPORT virtual void PutS( std::string_view sv );
 	DLL_CLASS_IMPORT virtual void PutRepeatedChar( char c, int nCount );
-	DLL_CLASS_IMPORT virtual void FormatArray( CTypeErasedFormattingWrapper wrapper, CFormatStringElement element, const void **ppElements, int nCount, bool bUnknown );
+	// "{ a, b }" with "..." for a null element, bTruncated adds " ... " before the brace
+	DLL_CLASS_IMPORT virtual void FormatArray( CTypeErasedFormattingWrapper wrapper, CFormatStringElement element, const void **ppElements, int nCount, bool bTruncated );
 	DLL_CLASS_IMPORT virtual void Format2DTable( CTypeErasedFormattingWrapper wrapper, CFormatStringElement element, const void **ppElements, int nDim0, int nDim1 );
 	DLL_CLASS_IMPORT virtual void FormatEnumHelper( CFormatStringElement element, int nValue, std::initializer_list< std::pair< int, const char * > > names );
 	DLL_CLASS_IMPORT virtual void FormatMaskHelper( int nValue, std::initializer_list< std::pair< int, const char * > > names );

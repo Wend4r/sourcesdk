@@ -1143,7 +1143,9 @@ PLATFORM_INTERFACE const char *V_XMLEncode( const char *pIn, CBufferString *pOut
 // text to pOut, appending to it when bit 0 of nFlags is set; returns the text of pOut
 PLATFORM_INTERFACE const char *V_XMLDecode( const char *pIn, CBufferString *pOut, int nLength, uint nFlags );
 
-PLATFORM_OVERLOAD const char *V_SanitizeTextForCommandLine( const char *pText, CBufferString *pOut, bool bUnknown, int nUnknown );
+// Writes nLength chars of pText (all of it for a negative length) to pOut with the double
+// quotes made single quotes, appending to it with bAppend; returns the text of pOut
+PLATFORM_OVERLOAD const char *V_SanitizeTextForCommandLine( const char *pText, CBufferString *pOut, bool bAppend, int nLength );
 
 PLATFORM_OVERLOAD CUtlString JsonEscape( const char *pString );
 PLATFORM_OVERLOAD CUtlString V_RandomString( int nLen );

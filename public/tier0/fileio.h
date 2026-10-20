@@ -565,7 +565,8 @@ public:
 	DLL_CLASS_IMPORT CDirTreeWatchManager( uint32 nMetaFlags = 19 );
 	DLL_CLASS_IMPORT ~CDirTreeWatchManager();
 
-	DLL_CLASS_IMPORT bool AddWatch( const char *pszPath, Visitor *pVisitor, size_t nUnknown );
+	// The watch of a directory is the one of CDirWatcher::SetDirToWatch with nBufferSize
+	DLL_CLASS_IMPORT bool AddWatch( const char *pszPath, Visitor *pVisitor, size_t nBufferSize );
 	DLL_CLASS_IMPORT bool GetChangedFile( CBufferString *pFile, FioBaseFileInfo_t *pFileInfo );
 	DLL_CLASS_IMPORT void TraverseChangedFiles( Visitor *pVisitor );
 	DLL_CLASS_IMPORT void SetMonitoringThreadInfo( MonitoringThreadInfo_t info );

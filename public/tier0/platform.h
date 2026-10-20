@@ -2889,9 +2889,10 @@ struct AlternateLaunchLocation_t;
 PLATFORM_INTERFACE AlternateLaunchLocation_t *GetAlternateLaunchLocation();
 
 // Compares pszDependency of pszSourceDirectory, or of pszFallbackDirectory, with the one of
-// pszDestDirectory and copies it on Windows: 0 when the copy is up to date, 1 when there is
-// no source, 2 when it differs in size or time
-PLATFORM_INTERFACE int CopyDependencyToAlternateLocation( const char *pszSourceDirectory, const char *pszDependency, const char *pszDestDirectory, bool bUnknown, const char *pszFallbackDirectory );
+// pszDestDirectory: 1 when there is no source; 0 when the copy is up to date, otherwise 2 on
+// POSIX, while Windows copies it, 0 when that worked and 2 when it failed; bRetry makes three
+// attempts of the copy a second apart, POSIX does not read it
+PLATFORM_INTERFACE int CopyDependencyToAlternateLocation( const char *pszSourceDirectory, const char *pszDependency, const char *pszDestDirectory, bool bRetry, const char *pszFallbackDirectory );
 PLATFORM_INTERFACE int RestartSelfFromAlternateLocation( const RestartSelfFromAlternateLocationInfo_t *pInfo );
 
 // Fixes the shortcut of the taskbar pin of hWindow to start the original executable, Windows

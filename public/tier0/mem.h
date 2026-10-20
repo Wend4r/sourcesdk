@@ -90,6 +90,7 @@ struct TransferMemoryStep_t
 };
 
 // Runs the steps up to OP_END for nCount elements; the streams advance by their strides
+// pUnknown and nUnknown are not read by any build
 PLATFORM_INTERFACE void TransferMemory( const TransferMemoryStep_t *pSteps, void *pUnknown, uint8 *const *ppSrcStreams, const int *pSrcStrides, int nUnknown, uint8 *const *ppDstStreams, const int *pDstStrides, int nCount );
 
 #endif /* TIER0_MEM_H */

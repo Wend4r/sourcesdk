@@ -31,18 +31,20 @@ public:
 
 	int GetModuleCount() const { return m_nModuleCount; }
 
-	DLL_CLASS_IMPORT static bool IsElfHeader( const void *pData, size_t nSize, bool bUnknown );
-	DLL_CLASS_IMPORT static bool IsElfHeader( void *hProcess, uint64 nAddress, uint64 nSize, bool bUnknown );
-	DLL_CLASS_IMPORT static bool IsMachoHeader( const void *pData, size_t nSize, bool bUnknown );
+	// An executable or a shared library; b64BitOnly refuses a 32-bit one
+	DLL_CLASS_IMPORT static bool IsElfHeader( const void *pData, size_t nSize, bool b64BitOnly );
+	DLL_CLASS_IMPORT static bool IsElfHeader( void *hProcess, uint64 nAddress, uint64 nSize, bool b64BitOnly );
+	DLL_CLASS_IMPORT static bool IsMachoHeader( const void *pData, size_t nSize, bool b64BitOnly );
 	DLL_CLASS_IMPORT static bool IsExeModule( const void *pData, size_t nSize );
 	DLL_CLASS_IMPORT static bool IsNotPlatModule( const char *pszName, const void *pData, size_t nSize );
 
 	DLL_CLASS_IMPORT static bool FindElfBuildId( const void *pData, size_t nSize, uint8 **ppBuildId, uint32 *pBuildIdSize );
 	DLL_CLASS_IMPORT static bool FindMachoUuid( const void *pData, size_t nSize, uint8 **ppUuid, uint32 *pUuidSize );
 
-	DLL_CLASS_IMPORT static size_t FindElfVirtualSize( const void *pData, size_t nSize, size_t nUnknown );
-	DLL_CLASS_IMPORT static size_t FindElfVirtualSize( void *hProcess, uint64 nAddress, uint64 nSize, size_t nUnknown );
-	DLL_CLASS_IMPORT static size_t FindMachoVirtualSize( const void *pData, size_t nSize, size_t nUnknown );
+	// The extent of the loadable segments, rounded out to nAlignment (a power of two)
+	DLL_CLASS_IMPORT static size_t FindElfVirtualSize( const void *pData, size_t nSize, size_t nAlignment );
+	DLL_CLASS_IMPORT static size_t FindElfVirtualSize( void *hProcess, uint64 nAddress, uint64 nSize, size_t nAlignment );
+	DLL_CLASS_IMPORT static size_t FindMachoVirtualSize( const void *pData, size_t nSize, size_t nAlignment );
 	DLL_CLASS_IMPORT static size_t FindModuleVirtualSize( const void *pData, size_t nSize );
 #ifdef PLATFORM_LINUX
 	DLL_CLASS_IMPORT static size_t FindModuleVirtualSize( void *hProcess, uint64 nAddress, uint64 nSize );

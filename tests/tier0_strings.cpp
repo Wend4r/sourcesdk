@@ -615,3 +615,12 @@ REGISTER_NAMED_TEST( "V_UnicodeConvertAndCaseStr.UTF16Output", V_UnicodeConvertA
 	TEST_EQ( ( int )szBuffer[ 2 ], ( int )'c' );
 	TEST_EQ( ( int )szBuffer[ 3 ], 0 );
 }
+
+REGISTER_NAMED_TEST( "V_SanitizeTextForCommandLine.Quotes", V_SanitizeTextForCommandLine_Quotes )
+{
+	// Double quotes become single ones, bAppend keeps the text and nLength limits the input.
+	CBufferString out;
+	TEST_EQ( V_strcmp( V_SanitizeTextForCommandLine( "a\"b\"c", &out, false, -1 ), "a'b'c" ), 0 );
+	TEST_EQ( V_strcmp( V_SanitizeTextForCommandLine( "xyz", &out, true, 2 ), "a'b'cxy" ), 0 );
+	TEST_EQ( V_strcmp( V_SanitizeTextForCommandLine( "new", &out, false, -1 ), "new" ), 0 );
+}

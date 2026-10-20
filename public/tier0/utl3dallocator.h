@@ -18,7 +18,9 @@ class CUtl3DAllocator
 {
 public:
 	DLL_CLASS_IMPORT void Reset( int nWidth, int nHeight, int nDepth );
-	DLL_CLASS_IMPORT bool Allocate3D( int nWidth, int nHeight, int nDepth, bool bUnknown, Rect3D_t *pResult );
+	// Takes the free block with the least waste; with bUseClosestBlock and no block large enough,
+	// the one closest in size, and pResult is cut to it
+	DLL_CLASS_IMPORT bool Allocate3D( int nWidth, int nHeight, int nDepth, bool bUseClosestBlock, Rect3D_t *pResult );
 
 	int TotalFree() const { return m_nTotalFree; }
 
