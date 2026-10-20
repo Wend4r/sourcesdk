@@ -315,8 +315,8 @@ template <size_t cchDest> wchar_t *V_wcscat_safe( INOUT_Z_ARRAY wchar_t( &pDest 
 
 // Returns the number of characters printed (not including the NULL), or maxLenInChars if truncation occurs.
 // pDest is always null-terminated.
-#ifdef S2E_NO_DEPRECATED
 PLATFORM_INTERFACE int V_snprintfNoSecurityDoNotUse( OUT_Z_CAP(maxLenInChars) char *pDest, int maxLenInChars, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
+#ifdef S2E_NO_DEPRECATED
 #define V_snprintf V_snprintfNoSecurityDoNotUse
 #else // !S2E_NO_DEPRECATED
 PLATFORM_INTERFACE int V_snprintf( OUT_Z_CAP( destLen ) char *pDest, int destLen, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
@@ -326,6 +326,9 @@ PLATFORM_INTERFACE int V_snprintfcat( OUT_Z_CAP(maxLenInChars) char *pDest, int 
 PLATFORM_INTERFACE int V_snprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 4, 5 );
 
 PLATFORM_INTERFACE int V_vsnprintf( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
+
+// The length of the formatted text without the terminator, -1 for an invalid format on Windows
+PLATFORM_INTERFACE int V_vscprintf( PRINTF_FORMAT_STRING const char *pFormat, va_list params );
 PLATFORM_INTERFACE int V_vsnprintfcat( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
 PLATFORM_INTERFACE int V_vsnprintfRet( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
 // Returns the length of the whole formatted string without the terminator. pDest can be null with a length of 0.
@@ -734,6 +737,7 @@ PLATFORM_OVERLOAD bool V_UnicodeCaseStringInString( const uchar16 *pUTF16, const
 PLATFORM_OVERLOAD bool V_UnicodeCaseStringInString( const uchar32 *pUTF32, const uchar32 *substr, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 
 PLATFORM_OVERLOAD uchar32 *V_UnicodeConvertAndCaseStr( const char *pUTF8, OUT_Z_BYTECAP( dest_size ) uchar32 *dest, int dest_size, uchar32 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
+PLATFORM_OVERLOAD uchar16 *V_UnicodeConvertAndCaseStr( const char *pUTF8, OUT_Z_BYTECAP( dest_size ) uchar16 *dest, int dest_size, uchar16 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 PLATFORM_OVERLOAD uchar32 *V_UnicodeConvertAndCaseStr( const uchar16 *pUTF16, OUT_Z_BYTECAP( dest_size ) uchar32 *dest, int dest_size, uchar32 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 PLATFORM_OVERLOAD uchar32 *V_UnicodeConvertAndCaseStr( const uchar32 *pUTF32, OUT_Z_BYTECAP( dest_size ) uchar32 *dest, int dest_size, uchar32 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 
@@ -1189,6 +1193,7 @@ PLATFORM_INTERFACE bool V_TryAndMakeFriendlyNameFromCppName( const char *pszCppN
 
 // Wide char formatting with the size in chars; V_vsnwprintfRet_cch reports truncation
 PLATFORM_INTERFACE int V_snwprintf_cch( wchar_t *pDest, int maxLenInChars, const wchar_t *pFormat, ... );
+PLATFORM_INTERFACE int V_snwprintf_bytes( wchar_t *pDest, int maxLenInBytes, const wchar_t *pFormat, ... );
 PLATFORM_INTERFACE int V_vsnwprintfRet_cch( wchar_t *pDest, int maxLenInChars, const wchar_t *pFormat, va_list params, bool *pbTruncated );
 
 #ifdef _WIN32

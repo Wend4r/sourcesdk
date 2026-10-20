@@ -15,6 +15,7 @@
 #include <tier0/utlstringtoken.h>
 
 #include <cstring>
+#include <cwchar>
 
 REGISTER_NAMED_TEST( "StringToken.MakeMatchesTheInlineHash", StringToken_MakeMatchesTheInlineHash )
 {
@@ -554,4 +555,63 @@ REGISTER_NAMED_TEST( "Formatting_AdjustIndentation.FourSpacesPerLevel", Formatti
 	text.Clear();
 	stream.OutputIndentation();
 	TEST_TRUE( text.IsEmpty() );
+}
+
+REGISTER_NAMED_TEST( "FormatTo.BasicTypes", FormatTo_BasicTypes )
+{
+	char szBuffer[ 128 ];
+	CCharBufferFormatOutputStream stream( szBuffer, sizeof( szBuffer ) );
+
+	FormatTo( &stream, CFormatStringElement( "%d" ), 42 );
+	FormatTo( &stream, CFormatStringElement( "%u" ), 7u );
+	FormatTo( &stream, CFormatStringElement( "%s" ), true );
+	FormatTo( &stream, CFormatStringElement( "%c" ), 'x' );
+	FormatTo( &stream, CFormatStringElement( "%.2f" ), 1.5 );
+	FormatTo( &stream, CFormatStringElement( "%s" ), "str" );
+	FormatTo( &stream, CFormatStringElement( "%s" ), static_cast< const char * >( nullptr ) );
+	FormatTo( &stream, CFormatStringElement( "%s" ), std::string_view( "view" ) );
+	FormatTo( &stream, CFormatStringElement( "%s" ), CUtlString( "utl" ) );
+	stream.Terminate();
+
+	TEST_EQ( V_strcmp( szBuffer, "427truex1.50str*nullptr*viewutl" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "V_snprintfNoSecurityDoNotUse.Truncates", V_snprintfNoSecurityDoNotUse_Truncates )
+{
+	char szBuffer[ 8 ];
+	TEST_EQ( V_snprintfNoSecurityDoNotUse( szBuffer, sizeof( szBuffer ), "%s", "abcdefghijk" ), 7 );
+	TEST_EQ( V_strcmp( szBuffer, "abcdefg" ), 0 );
+}
+
+static int TestVscprintf( const char *pszFormat, ... )
+{
+	va_list params;
+	va_start( params, pszFormat );
+	const int nLength = V_vscprintf( pszFormat, params );
+	va_end( params );
+	return nLength;
+}
+
+REGISTER_NAMED_TEST( "V_vscprintf.Length", V_vscprintf_Length )
+{
+	TEST_EQ( TestVscprintf( "%d-%s", 123, "abcd" ), 8 );
+	TEST_EQ( TestVscprintf( "" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "V_snwprintf_bytes.SizeInBytes", V_snwprintf_bytes_SizeInBytes )
+{
+	wchar_t szBuffer[ 8 ];
+	TEST_EQ( V_snwprintf_bytes( szBuffer, sizeof( szBuffer ), L"%d", 1234 ), 4 );
+	TEST_EQ( wcscmp( szBuffer, L"1234" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "V_UnicodeConvertAndCaseStr.UTF16Output", V_UnicodeConvertAndCaseStr_UTF16Output )
+{
+	uchar16 szBuffer[ 16 ];
+	uchar16 *pNewBuffer = nullptr;
+	TEST_TRUE( V_UnicodeConvertAndCaseStr( "AbC", szBuffer, sizeof( szBuffer ), &pNewBuffer, 0 ) == szBuffer );
+	TEST_NULL( pNewBuffer );
+	TEST_EQ( ( int )szBuffer[ 0 ], ( int )'a' );
+	TEST_EQ( ( int )szBuffer[ 2 ], ( int )'c' );
+	TEST_EQ( ( int )szBuffer[ 3 ], 0 );
 }
