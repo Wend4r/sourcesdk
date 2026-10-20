@@ -30,7 +30,7 @@ class CGridStringPrinter
 public:
 	CGridStringPrinter() :
 		unk098( false ), m_bUseOuterSeparators( false ), m_bWordWrapAllColumns( false ), m_bUseHeaderDivider( true ), m_bTrimValues( true ),
-		m_nMaxStringLength( -1 ), m_chColumnSeparator( '|' ), m_chHeaderDivider( '-' ), unk0a6( 0 ) {}
+		m_nMaxStringLength( -1 ), m_chColumnSeparator( '|' ), m_chHeaderDivider( '-' ) {}
 
 	DLL_CLASS_IMPORT void Clear();
 
@@ -89,8 +89,6 @@ private:
 	int m_nMaxStringLength;
 	char m_chColumnSeparator;
 	char m_chHeaderDivider;
-	char unk0a6;
-	CUtlVector< void * > unk0a8;
 };
 
 #endif // GRIDSTRINGPRINTER_H
