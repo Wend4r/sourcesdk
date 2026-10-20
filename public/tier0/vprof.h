@@ -291,6 +291,62 @@ PLATFORM_INTERFACE void VProfLite_Clear();
 // Marks the start of the sleep of a dedicated server between its frames
 PLATFORM_INTERFACE void VProfLite_DedicatedServerSleepBegin();
 
+// Ends the sleep: takes it out of the time of the open scopes, at most flSleepTime seconds of it
+// when that is positive
+PLATFORM_INTERFACE void VProfLite_DedicatedServerSleepEnd( double flSleepTime );
+
+// Ends the frame of the main thread: 1 counts it in VProfLiteHistoricalData_t::m_nDiscardedFrames,
+// 2 leaves it out of the per second maximums
+PLATFORM_INTERFACE void VProfLite_NextFrame( int nFrameType );
+
+// The seconds of a budget group in the current frame up to nCurrentTicks (Plat_RelativeTicks()),
+// zeros while VProfLite is disabled
+struct VProfLiteFrameStats_t
+{
+	float m_flInclusive;
+	float m_flExclusive;
+};
+
+PLATFORM_INTERFACE VProfLiteFrameStats_t VProfLite_GetBudgetGroupCurrentFrameStats( int nBudgetGroup, uint64 nCurrentTicks );
+
+// Seconds per frame of a budget group
+struct VProfLitePercentiles_t
+{
+	float m_flAverage;
+	float m_flP25;
+	float m_flP50;
+	float m_flP95;
+	float m_flP99;
+};
+
+// A budget group of the history, sent as CMsgSource2VProfLiteReportItem
+struct VProfLiteReportItem_t
+{
+	int m_nBudgetGroup;
+	const char *m_pszName;
+
+	// Frames where the group was active, and the same of the maximum of each second
+	int m_nActiveSamples;
+	int m_nActiveSamples1SecMax;
+
+	// Over the active frames and over all frames
+	VProfLitePercentiles_t m_Active;
+	VProfLitePercentiles_t m_All;
+	VProfLitePercentiles_t m_Active1SecMax;
+	VProfLitePercentiles_t m_All1SecMax;
+
+	float m_flMax;
+};
+
+// Sent as CMsgSource2VProfLiteReport, the first item is the total (budget group 1)
+struct VProfLiteHistoricalData_t
+{
+	int m_nDiscardedFrames;
+	CUtlVector< VProfLiteReportItem_t > m_Items;
+};
+
+PLATFORM_INTERFACE void VProfLite_GetHistoricalData( VProfLiteHistoricalData_t *pData );
+
 typedef void (*VProfExitScopeCB)();
 
 //-----------------------------------------------------------------------------
