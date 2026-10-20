@@ -331,11 +331,15 @@ public:
 	class Visitor
 	{
 	public:
-		virtual void unk000( const char *pszPath, void *pUnknown ) = 0;
+		// A file (not a directory) of the current directory, with its info
+		virtual void VisitFile( const char *pszFileName, const FioBaseFileInfo_t *pFileInfo ) = 0;
 		virtual void EnterDirectory( const char *pszDirectory ) = 0;
 		virtual void LeaveDirectory() = 0;
-		virtual void unk003( const char *pszPath ) {}
-		virtual void unk004() {}
+
+		// TraverseChangedFiles calls them around the changed files of every watched tree,
+		// with the root path of the tree first
+		virtual void BeginWatchedTree( const char *pszRootPath ) {}
+		virtual void EndWatchedTree() {}
 	};
 
 #if defined( PLATFORM_WINDOWS )
