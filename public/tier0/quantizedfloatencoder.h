@@ -42,7 +42,10 @@ struct QuantizedFloatEncoder_t
 	uint8 m_nDeclaredFlags : 4;
 
 	uint8 m_bNoScale : 1;
-	uint8 unk01e : 7;
+
+	// Set by the setup of the definition
+	uint8 m_bInitialized : 1;
+	uint8 unk01e : 6;
 };
 
 //-----------------------------------------------------------------------------

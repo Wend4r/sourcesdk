@@ -25,6 +25,7 @@ REGISTER_NAMED_TEST( "FindOrCreateQuantizedFloatEncoder.Encoder", FindOrCreateQu
 	TEST_EQ( ( int )pEncoder->m_nFlags, ( int )QFE_ENCODE_ZERO_EXACTLY );
 	TEST_EQ( ( int )pEncoder->m_nDeclaredFlags, ( int )QFE_ENCODE_ZERO_EXACTLY );
 	TEST_FALSE( pEncoder->m_bNoScale );
+	TEST_TRUE( pEncoder->m_bInitialized );
 
 	// 1023 steps over the range.
 	TEST_TRUE( fabs( pEncoder->m_flHighLowMul - 1023.0 / 128.0 ) < 1e-6 );
@@ -36,6 +37,7 @@ REGISTER_NAMED_TEST( "FindOrCreateQuantizedFloatEncoder.Encoder", FindOrCreateQu
 	pEncoder = GetQuantizedFloatEncoderByReg( &noScale );
 	TEST_EQ( ( int )pEncoder->m_nBitCount, 32 );
 	TEST_TRUE( pEncoder->m_bNoScale );
+	TEST_TRUE( pEncoder->m_bInitialized );
 }
 
 REGISTER_NAMED_TEST( "FindOrCreateQuantizedFloatEncoder.SharedDefinition", FindOrCreateQuantizedFloatEncoder_SharedDefinition )

@@ -79,7 +79,7 @@ struct MiniDumpStandardData_t
 
 	uint32 m_uStructuredExceptionCode;
 	// 1 indicates a forced minidump, nonzero makes MiniDumpExceptionHandler skip its debugger and -nominidumps checks
-	int32 m_nUnknown;
+	int32 m_nForced;
 	// Null on Linux
 	_EXCEPTION_POINTERS *m_pExceptionInfo;
 	// State of the handler queue, a byte at +5 tells whether a debugger may be attached
@@ -121,7 +121,7 @@ PLATFORM_INTERFACE bool AlwaysInvokeMiniDumpHandler( FnMiniDumpHandler pfnHandle
 #endif
 
 // The exception handler of the minidumps: nAction 0 returns 1, 1 returns 0 and anything else
-// exits the process when minidumps are off; nForced is MiniDumpStandardData_t::m_nUnknown
+// exits the process when minidumps are off; nForced is MiniDumpStandardData_t::m_nForced
 PLATFORM_INTERFACE int MiniDumpExceptionHandler( uint32 uStructuredExceptionCode, _EXCEPTION_POINTERS *pExceptionInfo, int nAction, void *pUnknown, int nForced, const MiniDumpOptions_t *pOptions );
 
 // The file name of a new minidump: the directory, pszPrefix, the executable, the date, _pszReason and pszExtension

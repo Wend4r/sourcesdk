@@ -156,7 +156,7 @@ static int TestAlwaysInvoke()
 		return 1;
 
 	// A forced breakpoint minidump with the options of the caller.
-	if ( s_nTestHandlerCalls != 1 || s_LastHandlerData.m_uStructuredExceptionCode != 0x80000003 || s_LastHandlerData.m_nUnknown != 1 )
+	if ( s_nTestHandlerCalls != 1 || s_LastHandlerData.m_uStructuredExceptionCode != 0x80000003 || s_LastHandlerData.m_nForced != 1 )
 		return 2;
 
 	if ( V_strcmp( s_LastHandlerData.m_Options.m_pszReason, "sourcesdk" ) != 0 || V_strcmp( s_LastHandlerData.m_Options.m_pszNotes, "sourcesdk notes" ) != 0 )
@@ -190,7 +190,7 @@ static int TestGenericHandlerEx()
 
 	MiniDumpStandardData_t data = {};
 	data.m_uStructuredExceptionCode = 0x80000003;
-	data.m_nUnknown = 1;
+	data.m_nForced = 1;
 	data.m_Options = MiniDumpOptions_t( "sourcesdk", "sourcesdk notes" );
 
 	char szFileName[ 512 ] = {};
