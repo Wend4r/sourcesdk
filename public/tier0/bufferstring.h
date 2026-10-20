@@ -605,6 +605,17 @@ inline CBufferString operator""_bs( const char *pString, size_t nLen )
 	return CBufferString( pString, static_cast<int>(nLen) );
 }
 
+// One "key=value" pair of a URL query
+struct URLQueryParameter_t
+{
+	CBufferString m_Key;
+	CBufferString m_Value;
+};
+
+// Splits the query (an optional leading '?' and trailing '/' are skipped) on '&' into the pairs
+// without decoding them, pParameters is cleared first
+PLATFORM_INTERFACE void V_ParseURLQuery_Unsafe( const char *pszURLQuery, CUtlVector< URLQueryParameter_t, int, CUtlVectorMemory_Growable< URLQueryParameter_t, int, 0 > > *pParameters );
+
 #include "schemacompiler/schemaoff.h"
 
 #endif /* BUFFERSTRING_H */

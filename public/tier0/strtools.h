@@ -1135,6 +1135,10 @@ PLATFORM_INTERFACE const char *V_PrettifyDurationMs( CBufferString *pOut, uint64
 // spaces into HTML
 PLATFORM_INTERFACE const char *V_XMLEncode( const char *pIn, CBufferString *pOut, int nLength, uint nFlags );
 
+// Reverses V_XMLEncode: replaces the entities of pIn (nLength chars, -1 for all) and writes the
+// text to pOut, appending to it when bit 0 of nFlags is set; returns the text of pOut
+PLATFORM_INTERFACE const char *V_XMLDecode( const char *pIn, CBufferString *pOut, int nLength, uint nFlags );
+
 PLATFORM_OVERLOAD const char *V_SanitizeTextForCommandLine( const char *pText, CBufferString *pOut, bool bUnknown, int nUnknown );
 
 PLATFORM_OVERLOAD CUtlString JsonEscape( const char *pString );
@@ -1162,6 +1166,10 @@ PLATFORM_INTERFACE bool V_AreSlashesCorrect( const char *pname, char separator )
 PLATFORM_INTERFACE bool V_IsFakePath( const char *pStr );
 PLATFORM_INTERFACE int V_GetPathOriginLength( const char *pPath );
 PLATFORM_INTERFACE int V_GetPathForm( const char *pPath );
+
+// True when pszSuffix can be appended to pszPrefix, i.e. it is not absolute, drive-relative or
+// current-drive-root; warns otherwise unless bQuiet. The third argument is unused by tier0
+PLATFORM_INTERFACE bool V_ValidatePathConcat( const char *pszPrefix, const char *pszSuffix, void *pUnused, bool bQuiet );
 PLATFORM_INTERFACE int V_GetVPKPathForm( const char *pPath );
 PLATFORM_INTERFACE const char *V_StripLeadingSlash( const char *pPath );
 PLATFORM_INTERFACE char *V_AbbreviatePathInPlace( char *pPath, const int nMaxCharsAllowed, const char *pReplacementString );
@@ -1173,6 +1181,11 @@ PLATFORM_INTERFACE void V_CommonPrefixToUnderscore( CBufferString *pString, cons
 PLATFORM_INTERFACE const char *V_MakeAbsolutePathBufferUnfixed( CBufferString *pOut, const char *pPath, const char *pStartingDir );
 PLATFORM_INTERFACE bool V_MakeAbsoluteVPKPathName( char *pOut, int nBufLen, const char *pInPathName, const char *pStartingDir, bool bLowercaseName );
 PLATFORM_INTERFACE bool V_MakeAbsoluteVPKPathNameBuffer( CBufferString *pOut, const char *pInPathName );
+
+// Makes a display name from a member name: strips "m_" and a Hungarian prefix (e, fl, i, mat, n,
+// psz, str, u, v, x, _) and spaces the words, m_flMaxSpeed becomes "Max Speed". The second
+// argument is unused by tier0
+PLATFORM_INTERFACE bool V_TryAndMakeFriendlyNameFromCppName( const char *pszCppName, void *pUnused, CBufferString *pOut );
 
 // Wide char formatting with the size in chars; V_vsnwprintfRet_cch reports truncation
 PLATFORM_INTERFACE int V_snwprintf_cch( wchar_t *pDest, int maxLenInChars, const wchar_t *pFormat, ... );
