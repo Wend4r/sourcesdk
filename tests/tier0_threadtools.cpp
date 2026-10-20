@@ -12,6 +12,10 @@
 #include <cstring>
 #include <thread>
 
+#ifndef PLATFORM_WINDOWS
+#include <unistd.h>
+#endif
+
 REGISTER_NAMED_TEST( "Thread.InitOnce", Thread_InitOnce )
 {
 	// The first caller runs the initialization, later callers see it finished.
@@ -32,6 +36,7 @@ REGISTER_NAMED_TEST( "Thread.SecondaryMainThread", Thread_SecondaryMainThread )
 
 	DeclareCurrentThreadIsMainThread();
 	TEST_TRUE( ThreadInMainThread() );
+	TEST_TRUE( ThreadInPrimaryOrSecondaryMainThread() );
 	TEST_EQ( ThreadGetMainThreadId(), static_cast< ThreadId_t >( ThreadGetCurrentId() ) );
 }
 
@@ -687,5 +692,27 @@ REGISTER_NAMED_TEST( "ToolsStallMonitor_Initialize.StartAndShutdown", ToolsStall
 	ToolsStallMonitor_Initialize( ThreadGetCurrentId(), 10 * 60 * 1000 );
 	ToolsStallMonitor_IndicateActivity();
 	ToolsStallMonitor_Shutdown();
+}
+#endif
+
+#ifndef PLATFORM_WINDOWS
+REGISTER_NAMED_TEST( "ThreadMultiWaitObjectSetCreate.Items", ThreadMultiWaitObjectSetCreate_Items )
+{
+	// A set of the native items, a descriptor of a pipe here.
+	int fds[ 2 ];
+	TEST_EQ( pipe( fds ), 0 );
+
+	ThreadMultiWaitItem_t items[ 1 ] = {};
+	items[ 0 ].fd = fds[ 0 ];
+	items[ 0 ].events = POLLIN;
+	ThreadMultiWaitExtra_t extra[ 1 ] = {};
+
+	ThreadMultiWaitObjectSet_t *pSet = ThreadMultiWaitObjectSetCreate( items, extra, 1 );
+	TEST_NOT_NULL( pSet );
+	TEST_EQ( ThreadMultiWaitObjectSetGetCount( pSet ), 1 );
+	ThreadMultiWaitObjectSetDestroy( pSet );
+
+	close( fds[ 0 ] );
+	close( fds[ 1 ] );
 }
 #endif

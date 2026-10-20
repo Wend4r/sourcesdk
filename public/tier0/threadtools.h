@@ -158,6 +158,9 @@ struct ThreadMultiWaitObjectSet_t
 };
 
 PLATFORM_INTERFACE ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( CThreadMultiWaitObject **ppObjects, int nObjects );
+
+// A set of the native wait items, with the flags of each one in pExtra
+PLATFORM_OVERLOAD ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( const ThreadMultiWaitItem_t *pItems, const ThreadMultiWaitExtra_t *pExtra, int nItems );
 PLATFORM_INTERFACE void ThreadMultiWaitObjectSetDestroy( ThreadMultiWaitObjectSet_t *pSet );
 PLATFORM_INTERFACE int ThreadMultiWaitObjectSetGetCount( ThreadMultiWaitObjectSet_t *pSet );
 // Waits on pSet, or on the nItems of pItems and pExtra when pSet is NULL; pSignalled receives a bit per signalled object, all of them with bWaitAll
@@ -188,6 +191,9 @@ PLATFORM_INTERFACE void DeclareCurrentThreadIsMainThread();
 PLATFORM_INTERFACE ThreadId_t ThreadGetMainThreadId();
 PLATFORM_INTERFACE bool ThreadInSecondaryMainThread();
 PLATFORM_INTERFACE void DeclareCurrentThreadIsSecondaryMainThread();
+
+// True in the main thread or in the secondary main thread
+PLATFORM_INTERFACE bool ThreadInPrimaryOrSecondaryMainThread();
 PLATFORM_INTERFACE void ClearSecondaryMainThread();
 
 // NOTE: ThreadedLoadLibraryFunc_t needs to return the sleep time in milliseconds or TT_INFINITE

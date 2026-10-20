@@ -334,6 +334,10 @@ PLATFORM_INTERFACE void RunThreadPoolPerFrameTests();
 PLATFORM_INTERFACE IThreadPool *g_pThreadPool;
 PLATFORM_INTERFACE double g_flThreadedJobWaitTimeAccumulator;
 
+// Waits for the unfinished jobs, with one YieldWait of each thread pool for its jobs (g_pThreadPool
+// for the jobs without a pool); bExecuteWaitedJobs runs the queued ones in this thread
+PLATFORM_INTERFACE void Wait( const CUtlVector< CThreadedJob * > &jobs, bool bExecuteWaitedJobs );
+
 //-----------------------------------------------------------------------------
 // Class to combine the metadata for an operation and the ability to perform
 // the operation. Meant for inheritance.

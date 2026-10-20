@@ -220,6 +220,22 @@ REGISTER_NAMED_TEST( "CJobSet.WaitForFinish", CJobSet_WaitForFinish )
 	TEST_EQ( pool.m_nWaitedJobs, 2 );
 }
 
+REGISTER_NAMED_TEST( "Wait.YieldsOnThePoolOfTheJobs", Wait_YieldsOnThePoolOfTheJobs )
+{
+	CTestThreadPool pool;
+	int nValue = 0;
+
+	// The finished job is left out, the queued one goes to YieldWait of its pool.
+	CUtlVector< CThreadedJob * > jobs;
+	jobs.AddToTail( pool.AddCall( &AddValue, &nValue, 1 ) );
+	jobs.AddToTail( pool.QueueCall( &AddValue, &nValue, 2 ) );
+	Wait( jobs, true );
+	TEST_EQ( pool.m_nWaitedJobs, 1 );
+
+	for ( CThreadedJob *pJob : jobs )
+		pJob->Release();
+}
+
 REGISTER_NAMED_TEST( "IterRangeParallel.Direct", IterRangeParallel_Direct )
 {
 	CTestThreadPool pool;
