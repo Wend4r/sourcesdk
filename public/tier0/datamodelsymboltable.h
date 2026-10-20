@@ -38,4 +38,23 @@ public:
 // The symbols of the datamodel element type names
 PLATFORM_INTERFACE IGlobalSymbolMap *GetDmElementTypeSymbolMap();
 
+//-----------------------------------------------------------------------------
+// A user of a symbol map for the lifetime of the object
+//-----------------------------------------------------------------------------
+class CGlobalSymbolMapUser
+{
+public:
+	explicit CGlobalSymbolMapUser( IGlobalSymbolMap *pMap ) : m_pMap( pMap ) { m_pMap->AddUser(); }
+	~CGlobalSymbolMapUser() { m_pMap->ReleaseUser(); }
+
+	CGlobalSymbolMapUser( const CGlobalSymbolMapUser & ) = delete;
+	CGlobalSymbolMapUser &operator=( const CGlobalSymbolMapUser & ) = delete;
+
+	IGlobalSymbolMap *Get() const { return m_pMap; }
+	IGlobalSymbolMap *operator->() const { return m_pMap; }
+
+private:
+	IGlobalSymbolMap *m_pMap;
+};
+
 #endif // TIER0_DATAMODELSYMBOLTABLE_H

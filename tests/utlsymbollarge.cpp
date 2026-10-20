@@ -121,7 +121,8 @@ REGISTER_NAMED_TEST( "IGlobalSymbolMap.DmElementTypeSymbols", IGlobalSymbolMap_D
 	TEST_NOT_NULL( pMap );
 	TEST_TRUE( GetDmElementTypeSymbolMap() == pMap );
 
-	pMap->AddUser();
+	CGlobalSymbolMapUser user( pMap );
+	TEST_TRUE( user.Get() == pMap );
 
 	// The symbol is the pooled string.
 	const char *pSymbol = pMap->GetSymbol( "sourcesdk_dm_type" );
@@ -148,6 +149,5 @@ REGISTER_NAMED_TEST( "IGlobalSymbolMap.DmElementTypeSymbols", IGlobalSymbolMap_D
 	TEST_TRUE( bFound );
 	TEST_EQ( pMap->GetElements( ( int )nCount, 8, pElements ), 0 );
 
-	pMap->Commit();
-	pMap->ReleaseUser();
+	user->Commit();
 }
