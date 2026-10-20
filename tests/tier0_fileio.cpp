@@ -34,14 +34,15 @@ REGISTER_NAMED_TEST( "PathString.SetAndWide", PathString_SetAndWide )
 REGISTER_NAMED_TEST( "PathString.PooledBuffer", PathString_PooledBuffer )
 {
 	// tier0 allocates the blocks with four bytes for every character of the longest path.
-	TEST_EQ( sizeof( CPathString::Buffer_t ), static_cast< size_t >( CPathString::MAX_PATH_CHARS * 4 ) );
+	TEST_EQ( sizeof( CPathString::Buffer_t ), static_cast< size_t >( CPathString::k_nPathStringBufferBytes ) );
 
 	// A block from the pool takes the whole size and goes back to it.
 	CPathString::Buffer_t *pBuffer = CPathString::NewPathStringBuffer();
 	TEST_TRUE( pBuffer != NULL );
-	memset( pBuffer->m_szUTF8Path, 'a', sizeof( pBuffer->m_szUTF8Path ) - 1 );
-	pBuffer->m_szUTF8Path[ sizeof( pBuffer->m_szUTF8Path ) - 1 ] = '\0';
-	TEST_EQ( strlen( pBuffer->m_szUTF8Path ), sizeof( pBuffer->m_szUTF8Path ) - 1 );
+	char *pszText = reinterpret_cast< char * >( pBuffer->m_data );
+	memset( pszText, 'a', CPathString::k_nUTF8PathStringBufferChars - 1 );
+	pszText[ CPathString::k_nUTF8PathStringBufferChars - 1 ] = '\0';
+	TEST_EQ( strlen( pszText ), static_cast< size_t >( CPathString::k_nUTF8PathStringBufferChars - 1 ) );
 	CPathString::DeletePathStringBuffer( pBuffer );
 
 	// A path longer than the SDK's MAX_PATH fits.
@@ -79,7 +80,7 @@ REGISTER_NAMED_TEST( "DirIterator.ListsFiles", DirIterator_ListsFiles )
 
 		TEST_TRUE( strcmp( pszName, "a.txt" ) == 0 || strcmp( pszName, "b.txt" ) == 0 );
 		TEST_FALSE( iterator.BCurrentIsDir() );
-		TEST_EQ( iterator.CurrentFileLength(), ( int64 )5 );
+		TEST_EQ( iterator.CurrentFileLength(), ( uint64 )5 );
 
 		std::string strFull = std::string( szDir ) + "/" + pszName;
 		TEST_EQ( strcmp( iterator.CurrentFileFullPath(), strFull.c_str() ), 0 );

@@ -26,6 +26,7 @@ typedef int64_t time64_t;
 #include "tier0/t0constants.h"
 #include "tier0/utlstring.h"
 #include "tier0/utllinkedlist.h"
+#include "tier0/utlhashtable.h"
 
 class CBufferString;
 class CUtlBuffer;
@@ -39,28 +40,26 @@ template < class T, typename I, class A > class CUtlVector;
 class CPathString
 {
 public:
-	// The longest path of the platform in characters
+	// Bytes of a pooled block: four per character of the longest path of the platform
 #ifdef PLATFORM_WINDOWS
-	enum { MAX_PATH_CHARS = 32767 };
+	static const int k_nPathStringBufferBytes = 128 * 1024;
+#elif defined( PLATFORM_OSX )
+	static const int k_nPathStringBufferBytes = 4 * 1024;
 #else
-	enum { MAX_PATH_CHARS = PATH_MAX };
+	static const int k_nPathStringBufferBytes = 16 * 1024;
 #endif
+	static const int k_nUTF8PathStringBufferChars = k_nPathStringBufferBytes;
+	static const int k_nWCharPathStringBufferChars = k_nPathStringBufferBytes / sizeof( wchar_t );
 
-	// One pooled block that holds the text of a path, four bytes per character
-	// (128 KB on Windows, 16 KB on Linux, 4 KB on macOS)
-	union ALIGN16 Buffer_t
+	// One pooled block that holds the text of a path, the UTF-8 or the wide one
+	struct Buffer_t
 	{
-		// Next free block while the block is in the pool of tier0 (a TSLNodeBase_t)
-		Buffer_t *m_pNext;
+		uint8 m_data[ k_nPathStringBufferBytes ];
+	};
 
-		char m_szUTF8Path[ MAX_PATH_CHARS * 4 ];
-
-		// UTF-16 on Windows, UTF-32 elsewhere, after the \\?\ or \\?\UNC\ prefix
-		wchar_t m_wszPath[ MAX_PATH_CHARS * 4 / sizeof( wchar_t ) ];
-	} ALIGN16_POST;
-
-	CPathString() : m_pUTF8Path( NULL ), m_pWCharPathPrePended( NULL ) {}
-	explicit CPathString( const char *pchUTF8Path ) : m_pUTF8Path( NULL ), m_pWCharPathPrePended( NULL ) { Set( pchUTF8Path ); }
+	CPathString() : m_pchUTF8Path( NULL ), m_pwchWideCharPathPrepended( NULL ) {}
+	explicit CPathString( const char *pchUTF8Path ) : m_pchUTF8Path( NULL ), m_pwchWideCharPathPrepended( NULL ) { Set( pchUTF8Path ); }
+	CPathString( const char *pchDirectory, const char *pchFileName ) : m_pchUTF8Path( NULL ), m_pwchWideCharPathPrepended( NULL ) { Set( pchDirectory, pchFileName ); }
 	DLL_CLASS_IMPORT ~CPathString();
 
 	DLL_CLASS_IMPORT void Set( const char *pchUTF8Path );
@@ -68,58 +67,198 @@ public:
 	// Composes the path from a directory and a file name
 	DLL_CLASS_IMPORT void Set( const char *pchDirectory, const char *pchFileName );
 
-	const char *GetUTF8Path() const { return m_pUTF8Path ? m_pUTF8Path->m_szUTF8Path : NULL; }
+	const char *GetUTF8Path() const { return m_pchUTF8Path; }
 
-	// Null when there is no path
+	// The path after \\?\ or \\?\UNC\, UTF-16 on Windows and UTF-32 elsewhere, null when there is no path
 	const wchar_t *GetWCharPathPrePended()
 	{
 		PopulateWCharPath();
-		return m_pWCharPathPrePended ? m_pWCharPathPrePended->m_wszPath : NULL;
+		return m_pwchWideCharPathPrepended;
 	}
 
 	DLL_CLASS_IMPORT static Buffer_t *NewPathStringBuffer();
 	DLL_CLASS_IMPORT static void DeletePathStringBuffer( Buffer_t *pBuffer );
 
-protected:
-	// Empties the path, keeping its buffer
-	DLL_CLASS_IMPORT void Reset();
+	static char *NewUTF8PathStringBuffer() { return reinterpret_cast< char * >( NewPathStringBuffer() ); }
+	static void DeleteUTF8PathStringBuffer( char *pBuffer ) { DeletePathStringBuffer( reinterpret_cast< Buffer_t * >( pBuffer ) ); }
+	static wchar_t *NewWCharPathStringBuffer() { return reinterpret_cast< wchar_t * >( NewPathStringBuffer() ); }
+	static void DeleteWCharPathStringBuffer( wchar_t *pBuffer ) { DeletePathStringBuffer( reinterpret_cast< Buffer_t * >( pBuffer ) ); }
 
+protected:
 	DLL_CLASS_IMPORT void PopulateWCharPath();
 	DLL_CLASS_IMPORT void DeleteWCharPath();
 
+	// Empties the path, keeping its buffer
+	DLL_CLASS_IMPORT void Reset();
+
 private:
-	Buffer_t *m_pUTF8Path;
-	Buffer_t *m_pWCharPathPrePended;
+	char *m_pchUTF8Path;
+	wchar_t *m_pwchWideCharPathPrepended;
 
 	CPathString( const CPathString & ) = delete;
 	CPathString &operator=( const CPathString & ) = delete;
 };
 
 //-----------------------------------------------------------------------------
+// File I/O of tier0 on the native handles; the functions return 0 or the error code
+// of the platform (GetLastError, errno)
+//-----------------------------------------------------------------------------
+enum EFioAccessFlags : uint32
+{
+	k_EFioRead = 1,
+	k_EFioWrite = 2,
+	k_EFioReadWrite = 3,
+};
+
+enum EFioShareFlags : uint32
+{
+	k_EFioShareNone = 0,
+	k_EFioShareRead = 1,
+	k_EFioShareWrite = 2,
+	k_EFioShareReadWrite = 3,
+	k_EFioShareDelete = 4,
+	k_EFioShareReadDelete = 5,
+	k_EFioShareWriteDelete = 6,
+	k_EFioShareReadWriteDelete = 7,
+};
+
+enum EFioCreateMode : uint32
+{
+	k_EFioOpenExisting = 0,
+	k_EFioOpenAlways = 1,
+	k_EFioCreateNew = 2,
+	k_EFioCreateAlways = 3,
+};
+
+// Modifiers of FioCreateFile
+enum EFioModifiers : uint32
+{
+	k_EFioNoModifiers = 0,
+	k_EFioAsync = 1,
+	k_EFioNoBuffering = 2,
+	k_EFioNoAccessTime = 4,
+	k_EFioSequentialScan = 8,
+	k_EFioTemporary = 16,
+	k_EFioDeleteOnClose = 32,
+};
+
+enum EFioSeekMode : uint32
+{
+	k_EFioSeekSet = 0,
+	k_EFioSeekCurrent = 1,
+	k_EFioSeekEnd = 2,
+};
+
+// What FioGetBaseFileInfo fills in, FioBaseFileInfo_t::nValidInfo tells what it did
+enum EFioMetadataFlags : uint32
+{
+	k_EFioMetadataName = 1,
+	k_EFioMetadataLength = 2,
+	k_EFioMetadataFileFlags = 4,
+	k_EFioMetadataCreateTime = 8,
+	k_EFioMetadataWriteTime = 16,
+	k_EFioMetadataFollowSymbolicLinks = 32,
+	k_EFioMetadataDoesNotExist = 64,
+	k_EFioStandardMetadata = 31,
+};
+
+enum EFioFileInfoFlags : uint32
+{
+	k_EFioFileInfoFile = 1,
+	k_EFioFileInfoDirectory = 2,
+
+	// A symbolic link or another reparse point
+	k_EFioFileInfoSymbolicLink = 4,
+	k_EFioFileInfoReadOnly = 8,
+};
+
+// Time of the platform's file system, FioFileTimeToTimeT converts it
+typedef uint64 FioFileTime_t;
+
+//-----------------------------------------------------------------------------
 // Size, times and kind of a file
 //-----------------------------------------------------------------------------
 struct FioBaseFileInfo_t
 {
-	enum Flags_t
-	{
-		FILE_IS_FILE = ( 1 << 0 ),
-		FILE_IS_DIRECTORY = ( 1 << 1 ),
+	uint64 nLength;
+	FioFileTime_t nCreateTime;
+	FioFileTime_t nWriteTime;
 
-		// A symbolic link or another reparse point
-		FILE_IS_LINK = ( 1 << 2 ),
-		FILE_IS_READ_ONLY = ( 1 << 3 ),
-	};
+	// EFioMetadataFlags of the members that were filled in
+	uint nValidInfo;
 
-	uint64 m_nSize;
-
-	// File times, FioFileTimeToTimeT converts them
-	uint64 m_nCreationTime;
-	uint64 m_nLastWriteTime;
-
-	// Bits of the members that were filled in
-	uint32 m_nValidFields;
-	uint32 m_nFlags;
+	// EFioFileInfoFlags
+	uint nFileFlags;
 };
+
+// Space of the disk of a path, in bytes
+struct FioDiskInfo_t
+{
+	uint64 nTotalBytes;
+	uint64 nFreeBytesAvailableToCaller;
+	uint64 nTotalFreeBytes;
+};
+
+PLATFORM_OVERLOAD int FioCreateFile( const char *pFileName, EFioAccessFlags eAccess, EFioShareFlags eShare, EFioCreateMode eMode, uint nModifiers, OSFILEHANDLE *pHandle );
+PLATFORM_OVERLOAD int FioCreatePipe( OSFILEHANDLE *pRead, OSFILEHANDLE *pWrite, int32 nBufferBytesHint );
+PLATFORM_OVERLOAD int FioDuplicate( OSFILEHANDLE Handle, bool bInherit, OSFILEHANDLE *pDuplicate );
+PLATFORM_OVERLOAD int FioClose( OSFILEHANDLE Handle );
+PLATFORM_OVERLOAD int FioCancelIo( OSFILEHANDLE Handle );
+PLATFORM_OVERLOAD int FioFlush( OSFILEHANDLE Handle );
+
+PLATFORM_OVERLOAD int FioRead( OSFILEHANDLE Handle, void *pBuffer, int32 nBytes, int32 *pBytesRead );
+PLATFORM_OVERLOAD int FioRead( OSFILEHANDLE Handle, void *pBuffer, size_t nBytes, size_t *pBytesRead );
+PLATFORM_OVERLOAD int FioReadAt( OSFILEHANDLE Handle, uint64 nFilePos, void *pBuffer, int32 nBytes, int32 *pBytesRead );
+PLATFORM_OVERLOAD int FioWrite( OSFILEHANDLE Handle, const void *pBuffer, int32 nBytes, int32 *pBytesWritten );
+PLATFORM_OVERLOAD int FioWrite( OSFILEHANDLE Handle, const void *pBuffer, size_t nBytes, size_t *pBytesWritten );
+PLATFORM_OVERLOAD int FioWriteAt( OSFILEHANDLE Handle, uint64 nFilePos, const void *pBuffer, int32 nBytes, int32 *pBytesWritten );
+
+PLATFORM_OVERLOAD int FioSeek( OSFILEHANDLE Handle, int64 nOffset, EFioSeekMode eHow, uint64 *pNewPosition );
+PLATFORM_OVERLOAD int FioGetSize( OSFILEHANDLE Handle, uint64 *pBytes );
+PLATFORM_OVERLOAD int FioSetSize( OSFILEHANDLE Handle, uint64 nBytes );
+PLATFORM_OVERLOAD int FioTruncateToSeekPosition( OSFILEHANDLE Handle );
+
+// Identity of the disk and the file, equal for every path of one file
+PLATFORM_OVERLOAD int FioGetFileIdentity( OSFILEHANDLE Handle, uint64 *pDiskId, uint64 *pFileId );
+PLATFORM_OVERLOAD int FioGetFileIdentity( const char *pFileName, uint64 *pDiskId, uint64 *pFileId );
+
+// 0 for the same file, ERROR_NOT_SAME_DEVICE (17) for different files, otherwise an error code
+PLATFORM_OVERLOAD int FioIsSameFileIdentity( OSFILEHANDLE Handle1, OSFILEHANDLE Handle2 );
+PLATFORM_OVERLOAD int FioIsSameFileIdentity( const char *pFileName1, const char *pFileName2 );
+
+// nMetaFlags is a combination of EFioMetadataFlags
+PLATFORM_OVERLOAD int FioGetBaseFileInfo( const char *pFileName, FioBaseFileInfo_t *pInfo, uint nMetaFlags );
+
+// Puts the k_EFioFileInfoFile, k_EFioFileInfoDirectory and k_EFioFileInfoSymbolicLink bits of the file in pFileType
+PLATFORM_INTERFACE int FioGetFileType( const char *pFileName, uint nMetaFlags, int *pFileType );
+
+PLATFORM_OVERLOAD int FioGetDiskInfo( const char *pDiskPath, FioDiskInfo_t *pInfo );
+PLATFORM_OVERLOAD int FioGetSectorSize( const char *pDiskPath, int *pSectorSize );
+PLATFORM_OVERLOAD int64 FioFileTimeToTimeT( FioFileTime_t nFioTime );
+
+// True for . and ..
+PLATFORM_OVERLOAD bool FioIsDotDir( const char *pDir );
+
+PLATFORM_OVERLOAD int FioReadFileToBuffer( const char *pFileName, CUtlBuffer *pBuffer, int32 nMaxBytes );
+
+// The content is allocated with g_pMemAlloc
+PLATFORM_OVERLOAD int FioReadFileToMemory( const char *pFileName, void **pContent, int32 *pContentBytes, bool bZeroTerminate, int32 nMaxBytes );
+PLATFORM_OVERLOAD int FioReadFileToMemory( const char *pFileName, void **pContent, size_t *pContentBytes, bool bZeroTerminate, size_t nMaxBytes );
+
+PLATFORM_OVERLOAD int FioCopyFile( const char *pSourceFileName, const char *pDestFileName, bool bFailIfExists );
+PLATFORM_OVERLOAD int FioCreateSymbolicLink( const char *pLinkName, const char *pTargetName, bool bDirectory );
+PLATFORM_OVERLOAD int FioReadLink( const char *pLinkName, CBufferString *pTargetBuf, bool bFullPath );
+
+PLATFORM_OVERLOAD int FioGetFileCRC32( const char *pFileName, uint32 *pCRC32, int32 nMaxBytes, uint64 *pFileBytes );
+PLATFORM_OVERLOAD int FioGetFileCRC32Buffer( const char *pFileName, uint32 *pCRC32, uint8 *pWorkBuffer, int32 nWorkBufferBytes, uint64 *pFileBytes );
+
+// The path of pFile with the name as the directory spells it, null when there is no such file;
+// bRequireUniqueMatch fails when the name matches more than one file
+PLATFORM_OVERLOAD const char *FioFindFileInDirCaseInsensitive( const char *pFile, CBufferString *pFileNameOut, bool bRequireUniqueMatch );
+PLATFORM_OVERLOAD bool FioGetActualFilenameCase( const char *pFileName, CBufferString *pActualFileName, bool bRequireUniqueMatch );
+
+// Adds the absolute paths of the files under pDirectory, traversing it on the thread pool
+PLATFORM_OVERLOAD bool FioEnumerateAbsPathsInDirRecursive( const char *pDirectory, CUtlHashtable< CUtlString > *pPaths );
 
 //-----------------------------------------------------------------------------
 // Iterates the files and directories that match a pattern, UTF-8 everywhere
@@ -129,62 +268,71 @@ class CDirIterator
 public:
 	DLL_CLASS_IMPORT CDirIterator();
 
-	// nFlags are passed on to FioGetBaseFileInfo, more than 1 fills the file info of every file
-	DLL_CLASS_IMPORT CDirIterator( const char *pchPath, const char *pchPattern, uint32 nFlags );
-	DLL_CLASS_IMPORT CDirIterator( const char *pchSearchPath, uint32 nFlags );
+	// nMetaFlags are the EFioMetadataFlags passed on to FioGetBaseFileInfo, more than
+	// k_EFioMetadataName fills the file info of every file
+	DLL_CLASS_IMPORT CDirIterator( const char *pchPath, const char *pchPattern, uint32 nMetaFlags );
+	DLL_CLASS_IMPORT CDirIterator( const char *pchSearchPath, uint32 nMetaFlags );
 	DLL_CLASS_IMPORT ~CDirIterator();
 
 	// Moves to the next file, the first call keeps the one found by the constructor
 	DLL_CLASS_IMPORT bool NextFile();
+	bool BNextFile() { return NextFile(); }
 
 	// Name of the current file, without the path
 	const char *CurrentFileName() const
 	{
 #ifdef _WIN32
-		return m_pFileName->m_szUTF8Path;
+		return m_pFileName;
 #else
-		return m_ppEntries[ m_nCurrentEntry ]->d_name;
+		return m_pNames[ m_nCurName ]->d_name;
 #endif
 	}
 
 	DLL_CLASS_IMPORT const char *CurrentFileFullPath();
 
-	const FioBaseFileInfo_t &CurrentFileInfo() const { return m_FileInfo; }
-	int64 CurrentFileLength() const { return m_FileInfo.m_nSize; }
-	bool BCurrentIsDir() const { return ( m_FileInfo.m_nFlags & FioBaseFileInfo_t::FILE_IS_DIRECTORY ) != 0; }
-	bool BCurrentIsReadOnly() const { return ( m_FileInfo.m_nFlags & FioBaseFileInfo_t::FILE_IS_READ_ONLY ) != 0; }
+	uint CurrentFileInfoMetaFlags() const { return m_CurInfo.nValidInfo; }
+	const FioBaseFileInfo_t &CurrentFileInfo() const { return m_CurInfo; }
+	uint64 CurrentFileLength() const { return m_CurInfo.nLength; }
+	FioFileTime_t CurrentFileCreateTime() const { return m_CurInfo.nCreateTime; }
+	FioFileTime_t CurrentFileWriteTime() const { return m_CurInfo.nWriteTime; }
+	uint CurrentFileFlags() const { return m_CurInfo.nFileFlags; }
+	bool CurrentIsDir() const { return ( m_CurInfo.nFileFlags & k_EFioFileInfoDirectory ) != 0; }
+	bool CurrentIsDotDir() const { return FioIsDotDir( CurrentFileName() ); }
+	bool CurrentIsReadOnly() const { return ( m_CurInfo.nFileFlags & k_EFioFileInfoReadOnly ) != 0; }
+	bool CurrentIsSymbolicLink() const { return ( m_CurInfo.nFileFlags & k_EFioFileInfoSymbolicLink ) != 0; }
+	bool BCurrentIsDir() const { return CurrentIsDir(); }
 
 	DLL_CLASS_IMPORT void Stop();
 
 protected:
 	DLL_CLASS_IMPORT void Construct();
-	DLL_CLASS_IMPORT bool Init( const char *pchPath, const char *pchPattern, const char *pchSearchPath, uint32 nFlags );
+	DLL_CLASS_IMPORT bool Init( const char *pchPath, const char *pchPattern, const char *pchSearchPath, uint32 nMetaFlags );
 	DLL_CLASS_IMPORT bool SplitPathAndPattern( const char *pchSearchPath, CUtlString *pPath, CUtlString *pPattern );
 
-	uint32 m_nFlags;
+	uint m_nMetaFlags;
 	bool m_bNoFiles;
-	bool m_bFullPathValid;
+	bool m_bHaveFullPath;
 
 public:
 	// Lets Windows fetch larger blocks of the directory, read by the next Init
 	bool m_bLargeFetch;
 
 protected:
-	CUtlString m_strPath;
-	CPathString::Buffer_t *m_pFullPath;
-	int m_nFullPathSize;
-	FioBaseFileInfo_t m_FileInfo;
+	CUtlString m_pBasePath;
+	char *m_pFullPath;
+	int m_nFullPathChars;
+	FioBaseFileInfo_t m_CurInfo;
 	bool m_bUsedFirstFile;
 
 #ifdef _WIN32
 	HANDLE m_hFind;
-	CPathString::Buffer_t *m_pFileName;
-	int m_nFileNameSize;
+	char *m_pFileName;
+	int m_nFileNameChars;
 #else
 	// From scandir
-	struct dirent **m_ppEntries;
-	int m_nEntries;
-	int m_nCurrentEntry;
+	struct dirent **m_pNames;
+	int m_nNames;
+	int m_nCurName;
 #endif
 
 	CDirIterator( const CDirIterator & ) = delete;
