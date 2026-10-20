@@ -30,6 +30,25 @@ REGISTER_NAMED_TEST( "PathString.SetAndWide", PathString_SetAndWide )
 	TEST_EQ( strcmp( path.GetUTF8Path(), "/tmp/file.txt" ), 0 );
 }
 
+REGISTER_NAMED_TEST( "PathString.PooledBuffer", PathString_PooledBuffer )
+{
+	// tier0 allocates the blocks with four bytes for every character of the longest path.
+	TEST_EQ( sizeof( CPathString::Buffer_t ), static_cast< size_t >( CPathString::MAX_PATH_CHARS * 4 ) );
+
+	// A block from the pool takes the whole size and goes back to it.
+	CPathString::Buffer_t *pBuffer = CPathString::NewPathStringBuffer();
+	TEST_TRUE( pBuffer != NULL );
+	memset( pBuffer->m_szUTF8Path, 'a', sizeof( pBuffer->m_szUTF8Path ) - 1 );
+	pBuffer->m_szUTF8Path[ sizeof( pBuffer->m_szUTF8Path ) - 1 ] = '\0';
+	TEST_EQ( strlen( pBuffer->m_szUTF8Path ), sizeof( pBuffer->m_szUTF8Path ) - 1 );
+	CPathString::DeletePathStringBuffer( pBuffer );
+
+	// A path longer than the SDK's MAX_PATH fits.
+	std::string strLong = "/tmp/" + std::string( 1000, 'p' );
+	CPathString path( strLong.c_str() );
+	TEST_EQ( strcmp( path.GetUTF8Path(), strLong.c_str() ), 0 );
+}
+
 REGISTER_NAMED_TEST( "DirIterator.ListsFiles", DirIterator_ListsFiles )
 {
 	char szDir[] = "/tmp/sourcesdk_dir_iterator_XXXXXX";

@@ -18,6 +18,7 @@ typedef int64_t time64_t;
 #if !defined( _PS3 )
 #include <signal.h>
 #include <dirent.h>
+#include <limits.h>
 #endif // _PS3
 #endif
 
@@ -38,8 +39,25 @@ template < class T, typename I, class A > class CUtlVector;
 class CPathString
 {
 public:
-	// One pooled block that holds the text of a path (128 KB, 4 KB on macOS)
-	struct Buffer_t;
+	// The longest path of the platform in characters
+#ifdef PLATFORM_WINDOWS
+	enum { MAX_PATH_CHARS = 32767 };
+#else
+	enum { MAX_PATH_CHARS = PATH_MAX };
+#endif
+
+	// One pooled block that holds the text of a path, four bytes per character
+	// (128 KB on Windows, 16 KB on Linux, 4 KB on macOS)
+	union ALIGN16 Buffer_t
+	{
+		// Next free block while the block is in the pool of tier0 (a TSLNodeBase_t)
+		Buffer_t *m_pNext;
+
+		char m_szUTF8Path[ MAX_PATH_CHARS * 4 ];
+
+		// UTF-16 on Windows, UTF-32 elsewhere, after the \\?\ or \\?\UNC\ prefix
+		wchar_t m_wszPath[ MAX_PATH_CHARS * 4 / sizeof( wchar_t ) ];
+	} ALIGN16_POST;
 
 	CPathString() : m_pUTF8Path( NULL ), m_pWCharPathPrePended( NULL ) {}
 	explicit CPathString( const char *pchUTF8Path ) : m_pUTF8Path( NULL ), m_pWCharPathPrePended( NULL ) { Set( pchUTF8Path ); }
@@ -50,13 +68,13 @@ public:
 	// Composes the path from a directory and a file name
 	DLL_CLASS_IMPORT void Set( const char *pchDirectory, const char *pchFileName );
 
-	const char *GetUTF8Path() const { return reinterpret_cast< const char * >( m_pUTF8Path ); }
+	const char *GetUTF8Path() const { return m_pUTF8Path ? m_pUTF8Path->m_szUTF8Path : NULL; }
 
 	// Null when there is no path
 	const wchar_t *GetWCharPathPrePended()
 	{
 		PopulateWCharPath();
-		return reinterpret_cast< const wchar_t * >( m_pWCharPathPrePended );
+		return m_pWCharPathPrePended ? m_pWCharPathPrePended->m_wszPath : NULL;
 	}
 
 	DLL_CLASS_IMPORT static Buffer_t *NewPathStringBuffer();
@@ -123,7 +141,7 @@ public:
 	const char *CurrentFileName() const
 	{
 #ifdef _WIN32
-		return reinterpret_cast< const char * >( m_pFileName );
+		return m_pFileName->m_szUTF8Path;
 #else
 		return m_ppEntries[ m_nCurrentEntry ]->d_name;
 #endif
