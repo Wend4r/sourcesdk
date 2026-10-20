@@ -9,20 +9,6 @@
 #include <cmath>
 #include <cstddef>
 
-// The definitions of the aliases of the test, the registry keeps them for the process
-static int FindTestAlias( const char *pszAliasName, QuantizedFloatEncoderDef_t *pDef )
-{
-	for ( int i = 0; i < GetQuantizedFloatEncoderAliasCount(); i++ )
-	{
-		const char *pszName = nullptr;
-
-		if ( GetQuantizedFloatEncoderAlias( i, &pszName, pDef ) && V_strcmp( pszName, pszAliasName ) == 0 )
-			return i;
-	}
-
-	return -1;
-}
-
 REGISTER_NAMED_TEST( "FindOrCreateQuantizedFloatEncoder.Encoder", FindOrCreateQuantizedFloatEncoder_Encoder )
 {
 	QuantizedFloatEncoderReg_t reg = {};
@@ -68,23 +54,22 @@ REGISTER_NAMED_TEST( "FindOrCreateQuantizedFloatEncoder.SharedDefinition", FindO
 REGISTER_NAMED_TEST( "GetQuantizedFloatEncoderByReg.SameEncoder", GetQuantizedFloatEncoderByReg_SameEncoder )
 {
 	QuantizedFloatEncoderReg_t first = {}, second = {};
-	FindOrCreateQuantizedFloatEncoder( &first, true, "m_flSourceSDKByRegA", 9, 0, -1.0f, 1.0f );
-	FindOrCreateQuantizedFloatEncoder( &second, true, "m_flSourceSDKByRegB", 9, 0, -1.0f, 1.0f );
-	TEST_TRUE( GetQuantizedFloatEncoderByReg( &first ) == GetQuantizedFloatEncoderByReg( &second ) );
+	const QuantizedFloatEncoder_t *pFirst = RegisterQuantizedFloatEncoder( &first, "m_flSourceSDKByRegA", 9, 0, -1.0f, 1.0f );
+	TEST_TRUE( RegisterQuantizedFloatEncoder( &second, "m_flSourceSDKByRegB", 9, 0, -1.0f, 1.0f ) == pFirst );
 }
 
 REGISTER_NAMED_TEST( "GetQuantizedFloatEncoderNameByReg.FieldName", GetQuantizedFloatEncoderNameByReg_FieldName )
 {
 	QuantizedFloatEncoderReg_t reg = {};
-	FindOrCreateQuantizedFloatEncoder( &reg, true, "m_flSourceSDKNamed", 8, 0, 0.0f, 10.0f );
+	RegisterQuantizedFloatEncoder( &reg, "m_flSourceSDKNamed", 8, 0, 0.0f, 10.0f );
 	TEST_EQ( V_strcmp( GetQuantizedFloatEncoderNameByReg( &reg ), "m_flSourceSDKNamed" ), 0 );
 }
 
 REGISTER_NAMED_TEST( "GetQuantizedFloatEncodersSharingReg.FieldNames", GetQuantizedFloatEncodersSharingReg_FieldNames )
 {
 	QuantizedFloatEncoderReg_t first = {}, second = {};
-	FindOrCreateQuantizedFloatEncoder( &first, true, "m_flSourceSDKSharingA", 13, QFE_ROUNDUP, -5.0f, 5.0f );
-	FindOrCreateQuantizedFloatEncoder( &second, true, "m_flSourceSDKSharingB", 13, QFE_ROUNDUP, -5.0f, 5.0f );
+	RegisterQuantizedFloatEncoder( &first, "m_flSourceSDKSharingA", 13, QFE_ROUNDUP, -5.0f, 5.0f );
+	RegisterQuantizedFloatEncoder( &second, "m_flSourceSDKSharingB", 13, QFE_ROUNDUP, -5.0f, 5.0f );
 
 	CUtlVector< const char * > names;
 	GetQuantizedFloatEncodersSharingReg( &first, &names );
@@ -98,6 +83,45 @@ REGISTER_NAMED_TEST( "GetQuantizedFloatEncodersSharingReg.FieldNames", GetQuanti
 	}
 
 	TEST_TRUE( bFoundA && bFoundB );
+}
+
+REGISTER_NAMED_TEST( "RegisterQuantizedFloatEncoder.Once", RegisterQuantizedFloatEncoder_Once )
+{
+	QuantizedFloatEncoderReg_t reg = {};
+	const QuantizedFloatEncoder_t *pEncoder = RegisterQuantizedFloatEncoder( &reg, "m_flSourceSDKOnce", 6, 0, 0.0f, 2.0f );
+	TEST_TRUE( reg.m_bRegistered );
+	TEST_EQ( ( int )pEncoder->m_nBitCount, 6 );
+
+	// A registered handle keeps its encoder.
+	TEST_TRUE( RegisterQuantizedFloatEncoder( &reg, "m_flSourceSDKOnce", 12, 0, 0.0f, 9.0f ) == pEncoder );
+}
+
+static const QuantizedFloatEncoder_t *GetTestMacroEncoder( float flHighValue )
+{
+	return QUANTIZED_FLOAT_ENCODER( "m_flSourceSDKMacro", 5, 0, 0.0f, flHighValue );
+}
+
+REGISTER_NAMED_TEST( "QUANTIZED_FLOAT_ENCODER.HandleOfThePlace", QUANTIZED_FLOAT_ENCODER_HandleOfThePlace )
+{
+	// The first call at the place registers, the later ones reuse it.
+	const QuantizedFloatEncoder_t *pEncoder = GetTestMacroEncoder( 3.0f );
+	TEST_NOT_NULL( pEncoder );
+	TEST_EQ( pEncoder->m_flHighValue, 3.0f );
+	TEST_TRUE( GetTestMacroEncoder( 7.0f ) == pEncoder );
+}
+
+REGISTER_NAMED_TEST( "RegisterQuantizedFloatEncoderAlias.Once", RegisterQuantizedFloatEncoderAlias_Once )
+{
+	QuantizedFloatEncoderDef_t def = { 9, 0, -3.0f, 3.0f, false };
+	QuantizedFloatEncoderReg_t reg = {};
+	const QuantizedFloatEncoder_t *pEncoder = RegisterQuantizedFloatEncoderAlias( &reg, "m_flSourceSDKAliasOnce", "sourcesdk_alias_once", &def );
+	TEST_TRUE( reg.m_bRegistered );
+	TEST_EQ( pEncoder->m_flLowValue, -3.0f );
+
+	QuantizedFloatEncoderDef_t found = {};
+	TEST_TRUE( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_once", &found ) >= 0 );
+	TEST_EQ( found.m_nBits, 9 );
+	TEST_EQ( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_missing", &found ), -1 );
 }
 
 REGISTER_NAMED_TEST( "FindOrCreateQuantizedFloatEncoderAlias.Definition", FindOrCreateQuantizedFloatEncoderAlias_Definition )
@@ -128,7 +152,7 @@ REGISTER_NAMED_TEST( "GetQuantizedFloatEncoderAlias.NameAndDefinition", GetQuant
 	FindOrCreateQuantizedFloatEncoderAlias( &reg, "m_flSourceSDKGetAlias", "sourcesdk_alias_get", &def );
 
 	QuantizedFloatEncoderDef_t found = {};
-	TEST_TRUE( FindTestAlias( "sourcesdk_alias_get", &found ) >= 0 );
+	TEST_TRUE( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_get", &found ) >= 0 );
 	TEST_EQ( found.m_nBits, 7 );
 	TEST_EQ( found.m_nFlags, ( int )QFE_ROUNDDOWN );
 	TEST_EQ( found.m_flLowValue, -2.0f );
@@ -160,7 +184,7 @@ REGISTER_NAMED_TEST( "OverrideQuantizedFloatEncoderAlias.ReplacesDefinition", Ov
 	OverrideQuantizedFloatEncoderAlias( "sourcesdk_alias_override", &override );
 
 	QuantizedFloatEncoderDef_t found = {};
-	TEST_TRUE( FindTestAlias( "sourcesdk_alias_override", &found ) >= 0 );
+	TEST_TRUE( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_override", &found ) >= 0 );
 	TEST_EQ( found.m_nBits, 12 );
 	TEST_EQ( found.m_flHighValue, 2.0f );
 
@@ -172,7 +196,7 @@ REGISTER_NAMED_TEST( "OverrideQuantizedFloatEncoderAlias.ReplacesDefinition", Ov
 	// An unusable definition is ignored with a warning.
 	QuantizedFloatEncoderDef_t unusable = { 40, 0, 0.0f, 1.0f, false };
 	OverrideQuantizedFloatEncoderAlias( "sourcesdk_alias_override", &unusable );
-	TEST_TRUE( FindTestAlias( "sourcesdk_alias_override", &found ) >= 0 );
+	TEST_TRUE( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_override", &found ) >= 0 );
 	TEST_EQ( found.m_nBits, 12 );
 
 	ResetQuantizedFloatEncoderAliasOverrides();
@@ -191,12 +215,12 @@ REGISTER_NAMED_TEST( "RegisterQuantizedFloatEncoderAliasTuning.UnderOverrides", 
 
 	// The override wins over the tuning.
 	QuantizedFloatEncoderDef_t found = {};
-	TEST_TRUE( FindTestAlias( "sourcesdk_alias_tuning", &found ) >= 0 );
+	TEST_TRUE( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_tuning", &found ) >= 0 );
 	TEST_EQ( found.m_nBits, 12 );
 
 	// Without the overrides the tuning remains.
 	ResetQuantizedFloatEncoderAliasOverrides();
-	TEST_TRUE( FindTestAlias( "sourcesdk_alias_tuning", &found ) >= 0 );
+	TEST_TRUE( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_tuning", &found ) >= 0 );
 	TEST_EQ( found.m_nBits, 16 );
 	TEST_EQ( found.m_flHighValue, 3.0f );
 }
@@ -212,7 +236,7 @@ REGISTER_NAMED_TEST( "ResetQuantizedFloatEncoderAliasOverrides.BackToDefinition"
 	ResetQuantizedFloatEncoderAliasOverrides();
 
 	QuantizedFloatEncoderDef_t found = {};
-	TEST_TRUE( FindTestAlias( "sourcesdk_alias_reset", &found ) >= 0 );
+	TEST_TRUE( FindQuantizedFloatEncoderAlias( "sourcesdk_alias_reset", &found ) >= 0 );
 	TEST_EQ( found.m_nBits, 9 );
 	TEST_EQ( found.m_flHighValue, 1.0f );
 }

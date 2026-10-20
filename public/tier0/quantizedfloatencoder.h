@@ -92,4 +92,47 @@ PLATFORM_INTERFACE const char *GetQuantizedFloatEncoderNameByReg( const Quantize
 // Appends the names of the fields that use the encoder of pReg
 PLATFORM_INTERFACE void GetQuantizedFloatEncodersSharingReg( const QuantizedFloatEncoderReg_t *pReg, CUtlVector< const char *, int, CUtlVectorMemory_Growable< const char *, int, 0 > > *pFieldNames );
 
+// The registration of a field as the callers do it, once per handle; returns the encoder
+inline const QuantizedFloatEncoder_t *RegisterQuantizedFloatEncoder( QuantizedFloatEncoderReg_t *pReg, const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue, bool bUnknown = true )
+{
+	if ( !pReg->m_bRegistered )
+	{
+		FindOrCreateQuantizedFloatEncoder( pReg, bUnknown, pszFieldName, nBits, nFlags, flLowValue, flHighValue );
+		pReg->m_bRegistered = 1;
+	}
+
+	return GetQuantizedFloatEncoderByReg( pReg );
+}
+
+inline const QuantizedFloatEncoder_t *RegisterQuantizedFloatEncoderAlias( QuantizedFloatEncoderReg_t *pReg, const char *pszFieldName, const char *pszAliasName, const QuantizedFloatEncoderDef_t *pDef )
+{
+	if ( !pReg->m_bRegistered )
+	{
+		FindOrCreateQuantizedFloatEncoderAlias( pReg, pszFieldName, pszAliasName, pDef );
+		pReg->m_bRegistered = 1;
+	}
+
+	return GetQuantizedFloatEncoderByReg( pReg );
+}
+
+// The encoder of a field through a handle of its own at the place of the macro
+#define QUANTIZED_FLOAT_ENCODER( pszFieldName, nBits, nFlags, flLowValue, flHighValue ) \
+	( [&]() -> const QuantizedFloatEncoder_t * { static QuantizedFloatEncoderReg_t s_QuantizedFloatEncoderReg; return RegisterQuantizedFloatEncoder( &s_QuantizedFloatEncoderReg, pszFieldName, nBits, nFlags, flLowValue, flHighValue ); }() )
+
+// The index of the alias and its definition, -1 when there is no such alias
+inline int FindQuantizedFloatEncoderAlias( const char *pszAliasName, QuantizedFloatEncoderDef_t *pDef )
+{
+	const int nCount = GetQuantizedFloatEncoderAliasCount();
+
+	for ( int i = 0; i < nCount; i++ )
+	{
+		const char *pszName = NULL;
+
+		if ( GetQuantizedFloatEncoderAlias( i, &pszName, pDef ) && strcmp( pszName, pszAliasName ) == 0 )
+			return i;
+	}
+
+	return -1;
+}
+
 #endif // TIER0_QUANTIZEDFLOATENCODER_H
