@@ -5,6 +5,7 @@
 #include <tier0/threadtools.h>
 #include <tier0/vprof.h>
 
+#include <cstddef>
 #include <cstring>
 
 REGISTER_NAMED_TEST( "VProfile.StartPauseAndFrames", VProfile_StartPauseAndFrames )
@@ -93,4 +94,141 @@ REGISTER_NAMED_TEST( "VProfile.TargetThreadScopes", VProfile_TargetThreadScopes 
 
 	profile.Stop();
 	profile.SetTargetThreadId( nOldTargetThread );
+}
+
+// Lets about 2 ms of a frame pass
+static void SpendFrameTime()
+{
+	const double flStart = Plat_FloatTime();
+	while ( Plat_FloatTime() - flStart < 0.002 )
+		;
+}
+
+// Runs a few frames of VProfLite and stops it, its history stays until VProfLite_Clear
+class CTestVProfLiteFrames
+{
+public:
+	CTestVProfLiteFrames()
+	{
+		VProfLite_SetEnabled( true );
+		VProfLite_Clear();
+
+		for ( int i = 0; i < 4; i++ )
+		{
+			VProfLite_NextFrame( 0 );
+			SpendFrameTime();
+		}
+	}
+
+	~CTestVProfLiteFrames()
+	{
+		VProfLite_Clear();
+		VProfLite_SetEnabled( false );
+	}
+};
+
+REGISTER_NAMED_TEST( "VProfLite_NextFrame.FrameTypes", VProfLite_NextFrame_FrameTypes )
+{
+	CTestVProfLiteFrames frames;
+
+	VProfLiteHistoricalData_t data;
+	VProfLite_GetHistoricalData( &data );
+	const int nDiscarded = data.m_nDiscardedFrames;
+
+	// 1 counts the frame as discarded, 2 does not.
+	VProfLite_NextFrame( 1 );
+	VProfLite_GetHistoricalData( &data );
+	TEST_EQ( data.m_nDiscardedFrames, nDiscarded + 1 );
+
+	VProfLite_NextFrame( 2 );
+	VProfLite_GetHistoricalData( &data );
+	TEST_EQ( data.m_nDiscardedFrames, nDiscarded + 1 );
+}
+
+REGISTER_NAMED_TEST( "VProfLite_GetBudgetGroupCurrentFrameStats.FrameTotal", VProfLite_GetBudgetGroupCurrentFrameStats_FrameTotal )
+{
+	// Zeros while VProfLite is off.
+	VProfLiteFrameStats_t stats = VProfLite_GetBudgetGroupCurrentFrameStats( 1, Plat_RelativeTicks() );
+	TEST_EQ( stats.m_flInclusive, 0.0f );
+	TEST_EQ( stats.m_flExclusive, 0.0f );
+
+	CTestVProfLiteFrames frames;
+
+	// Group 1 is the frame total: the frame so far is in it.
+	VProfLite_NextFrame( 0 );
+	SpendFrameTime();
+	stats = VProfLite_GetBudgetGroupCurrentFrameStats( 1, Plat_RelativeTicks() );
+	TEST_TRUE( stats.m_flInclusive >= 0.001f );
+	TEST_TRUE( stats.m_flInclusive < 1.0f );
+	TEST_TRUE( stats.m_flExclusive <= stats.m_flInclusive );
+
+	// An invalid group has no stats.
+	stats = VProfLite_GetBudgetGroupCurrentFrameStats( -1, Plat_RelativeTicks() );
+	TEST_EQ( stats.m_flInclusive, 0.0f );
+	stats = VProfLite_GetBudgetGroupCurrentFrameStats( CVProfile::GetNumBudgetGroups(), Plat_RelativeTicks() );
+	TEST_EQ( stats.m_flInclusive, 0.0f );
+}
+
+REGISTER_NAMED_TEST( "VProfLite_DedicatedServerSleepEnd.TakesSleepOut", VProfLite_DedicatedServerSleepEnd_TakesSleepOut )
+{
+	CTestVProfLiteFrames frames;
+	VProfLite_NextFrame( 0 );
+
+	// The sleep leaves the frame time only on the thread that VProfLite profiles, so the test
+	// only checks that the frame stays consistent.
+	VProfLiteHistoricalData_t data;
+	VProfLite_GetHistoricalData( &data );
+	const int nDiscarded = data.m_nDiscardedFrames;
+
+	VProfLite_DedicatedServerSleepBegin();
+	ThreadSleep( 5 );
+	VProfLite_DedicatedServerSleepEnd( 0.005 );
+
+	VProfLiteFrameStats_t stats = VProfLite_GetBudgetGroupCurrentFrameStats( 1, Plat_RelativeTicks() );
+	TEST_TRUE( stats.m_flInclusive >= 0.0f );
+	TEST_TRUE( stats.m_flExclusive <= stats.m_flInclusive );
+
+	VProfLite_GetHistoricalData( &data );
+	TEST_EQ( data.m_nDiscardedFrames, nDiscarded );
+}
+
+REGISTER_NAMED_TEST( "VProfLite_GetHistoricalData.TotalFirst", VProfLite_GetHistoricalData_TotalFirst )
+{
+	CTestVProfLiteFrames frames;
+
+	VProfLiteHistoricalData_t data;
+	VProfLite_GetHistoricalData( &data );
+	TEST_TRUE( data.m_Items.Count() >= 1 );
+
+	// The total, budget group 1, comes first.
+	const VProfLiteReportItem_t &total = data.m_Items[ 0 ];
+	TEST_EQ( total.m_nBudgetGroup, 1 );
+	TEST_NOT_NULL( total.m_pszName );
+	TEST_EQ( V_strcmp( total.m_pszName, "FrameTotal" ), 0 );
+	TEST_TRUE( total.m_nActiveSamples >= 0 );
+
+	// The other items are groups with samples.
+	for ( int i = 1; i < data.m_Items.Count(); i++ )
+	{
+		TEST_TRUE( data.m_Items[ i ].m_nBudgetGroup != 1 );
+		TEST_TRUE( data.m_Items[ i ].m_nActiveSamples > 0 );
+	}
+
+	// VProfLite_Clear drops the samples.
+	VProfLite_Clear();
+	VProfLite_GetHistoricalData( &data );
+	TEST_EQ( data.m_nDiscardedFrames, 0 );
+}
+
+REGISTER_NAMED_TEST( "VProfLiteReportItem_t.Layout", VProfLiteReportItem_t_Layout )
+{
+	TEST_EQ( sizeof( VProfLiteFrameStats_t ), ( size_t )8 );
+	TEST_EQ( sizeof( VProfLitePercentiles_t ), ( size_t )20 );
+	TEST_EQ( sizeof( VProfLiteReportItem_t ), ( size_t )112 );
+	TEST_EQ( offsetof( VProfLiteReportItem_t, m_Active ), ( size_t )24 );
+	TEST_EQ( offsetof( VProfLiteReportItem_t, m_All ), ( size_t )44 );
+	TEST_EQ( offsetof( VProfLiteReportItem_t, m_Active1SecMax ), ( size_t )64 );
+	TEST_EQ( offsetof( VProfLiteReportItem_t, m_All1SecMax ), ( size_t )84 );
+	TEST_EQ( offsetof( VProfLiteReportItem_t, m_flMax ), ( size_t )104 );
+	TEST_EQ( offsetof( VProfLiteHistoricalData_t, m_Items ), ( size_t )8 );
 }
