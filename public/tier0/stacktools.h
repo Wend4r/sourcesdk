@@ -323,12 +323,9 @@ PLATFORM_INTERFACE void StackTools_InstallModuleMappingListener( IModuleMappingL
 PLATFORM_INTERFACE void StackTools_RemoveModuleMappingListener( IModuleMappingListener *pListener );
 PLATFORM_INTERFACE void StackTools_VerifyLoadedModuleMappings();
 
-// Module, symbol and source line of an address; the lengths are of the out buffers, the
-// return is the number of the pieces found
-PLATFORM_INTERFACE uint32 GetAddressTranslationData( const void *pAddress, char *pModuleNameOut, uint32 nMaxModuleNameLength, char *pSymbolNameOut, uint32 nMaxSymbolNameLength, char *pFileNameOut, uint32 nMaxFileNameLength, uint32 *pLineNumberOut, uint32 *pSymbolDisplacementOut, uint32 *pLineDisplacementOut );
-
-// The same for a call that was inlined into pAddress; tier0 has no data for it in CS2 and
-// only empties the outputs
+// Module, symbol and source line of an address, and the same for a call that was inlined into
+// it; tier0 has no data for them in CS2, both only empty the outputs and return false
+PLATFORM_INTERFACE bool GetAddressTranslationData( const void *pAddress, CBufferString *pModuleNameOut, CBufferString *pSymbolNameOut, CBufferString *pFileNameOut, uint32 *pLineNumberOut, uint64 *pSymbolDisplacementOut, uint64 *pLineDisplacementOut );
 PLATFORM_INTERFACE bool GetAddressInlineCallData( const void *pAddress, uint32 nInlineIndex, CBufferString *pModuleNameOut, CBufferString *pSymbolNameOut, CBufferString *pFileNameOut, uint32 *pLineNumberOut, uint64 *pSymbolDisplacementOut, uint64 *pLineDisplacementOut );
 
 class IStack_Annotation;
