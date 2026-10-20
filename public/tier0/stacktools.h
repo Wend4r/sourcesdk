@@ -323,4 +323,39 @@ PLATFORM_INTERFACE void StackTools_InstallModuleMappingListener( IModuleMappingL
 PLATFORM_INTERFACE void StackTools_RemoveModuleMappingListener( IModuleMappingListener *pListener );
 PLATFORM_INTERFACE void StackTools_VerifyLoadedModuleMappings();
 
+// Module, symbol and source line of an address; the lengths are of the out buffers, the
+// return is the number of the pieces found
+PLATFORM_INTERFACE uint32 GetAddressTranslationData( const void *pAddress, char *pModuleNameOut, uint32 nMaxModuleNameLength, char *pSymbolNameOut, uint32 nMaxSymbolNameLength, char *pFileNameOut, uint32 nMaxFileNameLength, uint32 *pLineNumberOut, uint32 *pSymbolDisplacementOut, uint32 *pLineDisplacementOut );
+
+// The same for a call that was inlined into pAddress; tier0 has no data for it in CS2 and
+// only empties the outputs
+PLATFORM_INTERFACE bool GetAddressInlineCallData( const void *pAddress, uint32 nInlineIndex, CBufferString *pModuleNameOut, CBufferString *pSymbolNameOut, CBufferString *pFileNameOut, uint32 *pLineNumberOut, uint64 *pSymbolDisplacementOut, uint64 *pLineDisplacementOut );
+
+class IStack_Annotation;
+class IStack_VM_Segment_Marker;
+
+// The markers of the stack of the current thread, to move them to another one and back
+struct StackMarkupState_t
+{
+	void Clear()
+	{
+		pStackTop = NULL;
+		pDeferredMarkers = NULL;
+		pStackAnnotation = NULL;
+		pStackVMSegmentMarker = NULL;
+	}
+
+	CStackTop_Base *pStackTop;
+	CCallStackMarkerBase *pDeferredMarkers;
+	IStack_Annotation *pStackAnnotation;
+	IStack_VM_Segment_Marker *pStackVMSegmentMarker;
+};
+
+PLATFORM_INTERFACE void StackMarkup_SaveState( StackMarkupState_t &saveDest );
+PLATFORM_INTERFACE void StackMarkup_RestoreState( const StackMarkupState_t &restoreSource );
+
+// Calls the callback with each annotation of a captured stack: the address, its index and the text
+typedef bool ( *FN_IterateStackAnnotationCallback )( const void *pAddress, int nIndex, const char *pszAnnotation, void *pContext );
+PLATFORM_INTERFACE void IterateCapturedStackAnnotations( const void *const *pCapturedStack, int nCapturedCount, FN_IterateStackAnnotationCallback pCallback, void *pContext );
+
 #endif //#ifndef TIER0_STACKTOOLS_H
