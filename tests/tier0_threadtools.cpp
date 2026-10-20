@@ -5,6 +5,8 @@
 #include <tier0/threadtools.h>
 #include <tier0/eventutils.h>
 #include <tier0/fibertools.h>
+#include <tier0/asyncfunction.h>
+#include <tier0/tools_stall_monitor.h>
 
 #include <atomic>
 #include <cstring>
@@ -573,3 +575,117 @@ REGISTER_NAMED_TEST( "Fiber.ThreadSwapJobRunsInPlaceWithoutATargetThread", Fiber
 	TEST_EQ( context.m_nRuns, 1 );
 	TEST_EQ( context.m_hThread, ThreadGetCurrentId() );
 }
+
+class CTestFiberWorkerPool : public IFiberThreadWorkerPool
+{
+public:
+	virtual void FiberJobAvailable() { m_nJobsAvailable++; }
+	virtual void unk001() { m_nQuits++; }
+
+	int m_nJobsAvailable = 0;
+	int m_nQuits = 0;
+};
+
+REGISTER_NAMED_TEST( "IFiberJobPool.EmptyPool", IFiberJobPool_EmptyPool )
+{
+	TEST_NOT_NULL( g_pFiberJobPool );
+
+	bool bUnknown = true;
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) );
+}
+
+REGISTER_NAMED_TEST( "IFiberJobPool.AddGetRemove", IFiberJobPool_AddGetRemove )
+{
+	CFiber *pFiber = new CFiber;
+	CTestFiberWorkerPool workers;
+	g_pFiberJobPool->RegisterWorkerThreadPool( &workers );
+
+	// A fiber that is not waiting cannot be removed.
+	TEST_FALSE( g_pFiberJobPool->RemoveFiberJob( pFiber ) );
+
+	// Adding a fiber tells the registered pools.
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+	TEST_EQ( workers.m_nJobsAvailable, 1 );
+
+	bool bUnknown = true;
+	TEST_TRUE( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) == pFiber );
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) );
+
+	// A waiting fiber can be removed again.
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+	TEST_TRUE( g_pFiberJobPool->RemoveFiberJob( pFiber ) );
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) );
+
+	g_pFiberJobPool->UnregisterWorkerThreadPool( &workers );
+	TEST_EQ( workers.m_nQuits, 0 );
+
+	// An unregistered pool hears of no new jobs.
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+	TEST_EQ( workers.m_nJobsAvailable, 2 );
+	TEST_TRUE( g_pFiberJobPool->RemoveFiberJob( pFiber ) );
+	delete pFiber;
+}
+
+static std::atomic< int > s_nScheduledCalls;
+
+static float TestScheduledFunction()
+{
+	s_nScheduledCalls++;
+
+	// No next call.
+	return 0.0f;
+}
+
+REGISTER_NAMED_TEST( "IAsyncScheduledFunctions.RegisterCallUnregister", IAsyncScheduledFunctions_RegisterCallUnregister )
+{
+	TEST_NOT_NULL( g_pScheduledFunctions );
+	g_pScheduledFunctions->Init();
+
+	CUtlDelegate< float() > function;
+	function.Bind( &TestScheduledFunction );
+	AsyncFunctionHandle_t hFunction = g_pScheduledFunctions->RegisterScheduledFunction( function, Plat_FloatTime() );
+
+	// The thread of the scheduler calls it soon.
+	for ( int i = 0; i < 200 && s_nScheduledCalls == 0; i++ )
+		ThreadSleep( 10 );
+
+	TEST_EQ( s_nScheduledCalls.load(), 1 );
+
+	// A registered function can be moved, then removed.
+	TEST_TRUE( g_pScheduledFunctions->RescheduleFunction( hFunction, Plat_FloatTime() + 1000.0 ) );
+	g_pScheduledFunctions->UnregisterScheduledFunction( hFunction );
+	g_pScheduledFunctions->Shutdown();
+	TEST_EQ( s_nScheduledCalls.load(), 1 );
+}
+
+REGISTER_NAMED_TEST( "AsyncFunctionHandle_t.RawValue", AsyncFunctionHandle_t_RawValue )
+{
+	AsyncFunctionHandle_t hFirst( 3 );
+	TEST_EQ( hFirst.GetRaw(), 3 );
+
+	AsyncFunctionHandle_t hSecond;
+	hSecond.SetRaw( 5 );
+	TEST_TRUE( hFirst != hSecond );
+	TEST_TRUE( hFirst < hSecond );
+
+	*hSecond.GetRawPtrForWrite() = 3;
+	TEST_TRUE( hFirst == hSecond );
+
+	hSecond.GetRawRef() = 7;
+	const AsyncFunctionHandle_t &hConst = hSecond;
+	TEST_EQ( hConst.GetRawRef(), 7 );
+
+	hSecond = 9;
+	TEST_EQ( hSecond.GetRaw(), 9 );
+	TEST_EQ( sizeof( AsyncFunctionHandle_t ), sizeof( int32 ) );
+}
+
+#ifdef PLATFORM_WINDOWS
+REGISTER_NAMED_TEST( "ToolsStallMonitor_Initialize.StartAndShutdown", ToolsStallMonitor_Initialize_StartAndShutdown )
+{
+	// A threshold no test reaches.
+	ToolsStallMonitor_Initialize( ThreadGetCurrentId(), 10 * 60 * 1000 );
+	ToolsStallMonitor_IndicateActivity();
+	ToolsStallMonitor_Shutdown();
+}
+#endif

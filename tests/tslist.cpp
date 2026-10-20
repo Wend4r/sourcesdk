@@ -2,6 +2,9 @@
 #include "common/macros.h"
 
 #include <tier0/tslist.h>
+#include <tier0/tspointerlist.h>
+
+#include <cstddef>
 
 REGISTER_NAMED_TEST( "CTSList.PushPop", CTSList_PushPop )
 {
@@ -54,4 +57,23 @@ REGISTER_NAMED_TEST( "CTSList.IsEmpty", CTSList_IsEmpty )
 	int nValue = 0;
 	TEST_TRUE( list.PopItem( &nValue ) );
 	TEST_TRUE( list.IsEmpty() );
+}
+
+REGISTER_NAMED_TEST( "TSPointerListNode_t.Pool", TSPointerListNode_t_Pool )
+{
+	// The node carries the pointer after the link.
+	TEST_EQ( offsetof( TSPointerListNode_t, pData ), sizeof( TSLNodeBase_t ) );
+
+	TSPointerListNode_t *pFirst = g_TSPointerListNodes.Alloc();
+	TSPointerListNode_t *pSecond = g_TSPointerListNodes.Alloc();
+	TEST_NOT_NULL( pFirst );
+	TEST_NOT_NULL( pSecond );
+	TEST_TRUE( pFirst != pSecond );
+
+	int nValue = 0;
+	pFirst->pData = &nValue;
+	TEST_TRUE( pFirst->pData == &nValue );
+
+	g_TSPointerListNodes.Free( pSecond );
+	g_TSPointerListNodes.Free( pFirst );
 }

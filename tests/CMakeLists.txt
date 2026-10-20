@@ -156,6 +156,7 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlintrusivelist.cpp
 	utlleanvector.cpp
 	utllinkedlist.cpp
+	utllrucache.cpp
 	utlmap.cpp
 	utlmemory.cpp
 	utlmultilist.cpp

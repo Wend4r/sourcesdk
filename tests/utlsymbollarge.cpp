@@ -2,6 +2,8 @@
 #include "common/macros.h"
 
 #include <tier0/utlsymbollarge.h>
+#include <tier0/datamodelsymboltable.h>
+#include <tier0/strtools.h>
 
 REGISTER_NAMED_TEST( "CUtlSymbolTableLarge.AddFind", CUtlSymbolTableLarge_AddFind )
 {
@@ -111,4 +113,41 @@ REGISTER_NAMED_TEST( "CUtlSymbolTableLarge.ManySymbols", CUtlSymbolTableLarge_Ma
 	TestSymbolTableLarge< CUtlSymbolTableLarge_CI, true >();
 	TestSymbolTableLarge< CUtlSymbolTableLargeMT, false >();
 	TestSymbolTableLarge< CUtlSymbolTableLargeMT_CI, true >();
+}
+
+REGISTER_NAMED_TEST( "IGlobalSymbolMap.DmElementTypeSymbols", IGlobalSymbolMap_DmElementTypeSymbols )
+{
+	IGlobalSymbolMap *pMap = GetDmElementTypeSymbolMap();
+	TEST_NOT_NULL( pMap );
+	TEST_TRUE( GetDmElementTypeSymbolMap() == pMap );
+
+	pMap->AddUser();
+
+	// The symbol is the pooled string.
+	const char *pSymbol = pMap->GetSymbol( "sourcesdk_dm_type" );
+	TEST_NOT_NULL( pSymbol );
+	TEST_EQ( V_strcmp( pSymbol, "sourcesdk_dm_type" ), 0 );
+	TEST_TRUE( pMap->GetSymbol( "sourcesdk_dm_type" ) == pSymbol );
+	TEST_TRUE( pMap->GetString( pSymbol ) == pSymbol );
+	TEST_TRUE( pMap->Find( "sourcesdk_dm_type" ) == pSymbol );
+	TEST_NULL( pMap->Find( "sourcesdk_dm_type_missing" ) );
+
+	const uint nCount = pMap->GetSymbolCount();
+	TEST_TRUE( nCount >= 1 );
+	TEST_TRUE( pMap->GetMemoryUsage() > 0 );
+
+	// The elements are the symbols in order.
+	const char *pElements[ 256 ];
+	const int nElements = pMap->GetElements( 0, 256, pElements );
+	TEST_EQ( nElements, ( int )( nCount < 256 ? nCount : 256 ) );
+
+	bool bFound = false;
+	for ( int i = 0; i < nElements; i++ )
+		bFound = bFound || pElements[ i ] == pSymbol;
+
+	TEST_TRUE( bFound );
+	TEST_EQ( pMap->GetElements( ( int )nCount, 8, pElements ), 0 );
+
+	pMap->Commit();
+	pMap->ReleaseUser();
 }
