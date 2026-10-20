@@ -6,9 +6,7 @@
 #endif
 
 #include "tier0/platform.h"
-
-template< class T, typename I, size_t N > class CUtlVectorMemory_Growable;
-template< class T, typename I, class A > class CUtlVector;
+#include "tier0/utlvector.h"
 
 //-----------------------------------------------------------------------------
 // Controls the registered LRU caches by name, a null name affects every cache
@@ -43,6 +41,41 @@ struct LRUCacheRegistryEntry_t
 	CUtlLRUCacheBase *m_pCache;
 };
 
-PLATFORM_INTERFACE CUtlVector< LRUCacheRegistryEntry_t, int, CUtlVectorMemory_Growable< LRUCacheRegistryEntry_t, int, 0 > > *GetLRUCacheRegistry();
+typedef CUtlVector< LRUCacheRegistryEntry_t > CUtlLRUCacheRegistry;
+
+PLATFORM_INTERFACE CUtlLRUCacheRegistry *GetLRUCacheRegistry();
+
+//-----------------------------------------------------------------------------
+// The registry entry of a cache for the lifetime of the object
+//-----------------------------------------------------------------------------
+class CUtlLRUCacheRegistration
+{
+public:
+	CUtlLRUCacheRegistration( const char *pszCacheName, CUtlLRUCacheBase *pCache ) : m_pCache( pCache )
+	{
+		LRUCacheRegistryEntry_t entry = { pszCacheName, pCache };
+		GetLRUCacheRegistry()->AddToTail( entry );
+	}
+
+	~CUtlLRUCacheRegistration()
+	{
+		CUtlLRUCacheRegistry *pRegistry = GetLRUCacheRegistry();
+
+		for ( int i = pRegistry->Count(); --i >= 0; )
+		{
+			if ( pRegistry->Element( i ).m_pCache == m_pCache )
+			{
+				pRegistry->Remove( i );
+				break;
+			}
+		}
+	}
+
+	CUtlLRUCacheRegistration( const CUtlLRUCacheRegistration & ) = delete;
+	CUtlLRUCacheRegistration &operator=( const CUtlLRUCacheRegistration & ) = delete;
+
+private:
+	CUtlLRUCacheBase *m_pCache;
+};
 
 #endif // UTLLRUCACHE_H
