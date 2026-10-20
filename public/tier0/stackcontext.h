@@ -16,22 +16,96 @@ struct MemoryRange_t
 	void *pHigh;
 };
 
-// Saved registers and links of a jump between stacks, their layout depends on the platform
 struct JmpBuf_AlternateStack_t;
 struct StackContext_StartData_t;
 
 struct StackContext_LongJumpLink_t
 {
+	enum JumpFlags_t : uintp
+	{
+		UNBREAKABLE = 1,
+	};
+
+	// The link is the first member of the frame
+	inline JmpBuf_AlternateStack_t *GetEnclosingJmpBuf();
+
 	StackContext_StartData_t *m_pExitContext;
 	StackContext_StartData_t *m_pEnterContext;
 	uintp m_nJumpFlags;
 };
 
 //-----------------------------------------------------------------------------
+// Registers that a call preserves, in the order the assembly of tier0 pushes them
+//-----------------------------------------------------------------------------
+struct NonVolatileSIMDRegisters_t
+{
+#ifdef PLATFORM_WINDOWS
+	ALIGN16 uint8 m_XMM6[ 16 ] ALIGN16_POST;
+	uint8 m_XMM7[ 16 ];
+	uint8 m_XMM8[ 16 ];
+	uint8 m_XMM9[ 16 ];
+	uint8 m_XMM10[ 16 ];
+	uint8 m_XMM11[ 16 ];
+	uint8 m_XMM12[ 16 ];
+	uint8 m_XMM13[ 16 ];
+	uint8 m_XMM14[ 16 ];
+	uint8 m_XMM15[ 16 ];
+#endif
+};
+
+struct _SIMDRegisterAlignmentPadding_t
+{
+	void *alignmentPadding1;
+};
+
+struct NonVolatileIntegerRegisters_t
+{
+	IntegerRegisterValue_t m_R12;
+	IntegerRegisterValue_t m_R13;
+	IntegerRegisterValue_t m_R14;
+	IntegerRegisterValue_t m_R15;
+	IntegerRegisterValue_t m_RBX;
+#ifdef PLATFORM_WINDOWS
+	IntegerRegisterValue_t m_RSI;
+	IntegerRegisterValue_t m_RDI;
+#endif
+	IntegerRegisterValue_t m_RBP;
+};
+
+struct NonVolatileRegisters_t : public NonVolatileSIMDRegisters_t, public _SIMDRegisterAlignmentPadding_t, public NonVolatileIntegerRegisters_t
+{
+};
+
+//-----------------------------------------------------------------------------
+// Frame that RunWithAlternateStack and JmpToAlternateStack build on the stack they leave
+//-----------------------------------------------------------------------------
+struct JmpBuf_AlternateStack_t
+{
+	StackContext_LongJumpLink_t m_ExitLink;
+#ifdef PLATFORM_WINDOWS
+	// Stack limits of the TEB, restored on return
+	void *m_pStackLimit;
+	void *m_pStackBase;
+#endif
+	void *alignmentPadding1;
+	NonVolatileRegisters_t m_Registers;
+};
+
+inline JmpBuf_AlternateStack_t *StackContext_LongJumpLink_t::GetEnclosingJmpBuf()
+{
+	return reinterpret_cast< JmpBuf_AlternateStack_t * >( this );
+}
+
+//-----------------------------------------------------------------------------
 // Start of a stack context, a stack that code runs on through RunWithAlternateStack
 //-----------------------------------------------------------------------------
 struct StackContext_StartData_t
 {
+	enum ContextFlags_t : uintp
+	{
+		THREAD_TOP = 1,
+	};
+
 	DLL_CLASS_IMPORT void UnlinkFromLongJumpHierarchy();
 	DLL_CLASS_IMPORT void ReplaceReturnContext( JmpBuf_AlternateStack_t *pReturnTo );
 
@@ -70,6 +144,29 @@ private:
 	CThreadSwapTarget( const CThreadSwapTarget & ) = delete;
 	CThreadSwapTarget &operator=( const CThreadSwapTarget & ) = delete;
 };
+
+// Runs pfnRun( pPassThroughArg ) on the stack of alternateStackRange; *ppJmpBack receives the
+// frame that JmpToAlternateStack jumps back to, null makes the context unbreakable
+PLATFORM_INTERFACE intp RunWithAlternateStack( const MemoryRange_t &alternateStackRange, intp (*pfnRun)( void * ), void *pPassThroughArg, JmpBuf_AlternateStack_t **ppJmpBack );
+
+// Continues the stack of jmpTo, which then returns nReturnValue; *ppJmpBack receives the frame
+// of the current stack
+PLATFORM_INTERFACE intp JmpToAlternateStack( JmpBuf_AlternateStack_t &jmpTo, JmpBuf_AlternateStack_t **ppJmpBack, intp nReturnValue );
+
+template < typename R, typename T >
+R RunWithAlternateStack( const MemoryRange_t &alternateStackRange, R (*pFnRun)( T ), T pPassThroughArg, JmpBuf_AlternateStack_t **ppJmpBack )
+{
+	return ( R )RunWithAlternateStack( alternateStackRange, reinterpret_cast< intp (*)( void * ) >( pFnRun ), ( void * )pPassThroughArg, ppJmpBack );
+}
+
+#ifdef PLATFORM_POSIX
+// The context returns into JmpToAlternateStack to the frame of pJmpBuf
+PLATFORM_INTERFACE void StackContext_SetContextReturn_To_JmpToAlternateStack( StackContext_StartData_t *pContext, JmpBuf_AlternateStack_t *pJmpBuf );
+
+// Checks of the assembly that tier0 runs once
+PLATFORM_INTERFACE bool TestStackPointerAlignment_ASM();
+PLATFORM_INTERFACE intp TestStackVolatility_ASM( JmpBuf_AlternateStack_t &jmpBuf, intp (*pfnRun)( void * ), void *pPassThroughArg, JmpBuf_AlternateStack_t &jmpBack );
+#endif
 
 #ifdef PLATFORM_OSX
 // Swap targets of the threads that macOS and SDL require some calls to run on
