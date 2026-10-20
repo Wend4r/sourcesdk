@@ -180,63 +180,88 @@ REGISTER_NAMED_TEST( "FioCreateFile.CreateWriteReadClose", FioCreateFile_CreateW
 	TEST_NE( FioCreateFile( dir.Path( "missing" ).c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
 }
 
+REGISTER_NAMED_TEST( "CFioFile.OwnsTheHandle", CFioFile_OwnsTheHandle )
+{
+	CFioTestDir dir;
+	CFioFile file;
+	TEST_FALSE( file.IsOpen() );
+	TEST_EQ( file.Close(), 0 );
+
+	// A failed open leaves the file closed.
+	TEST_NE( file.Open( dir.Path( "missing" ).c_str() ), 0 );
+	TEST_FALSE( file.IsOpen() );
+	TEST_TRUE( file.GetHandle() == INVALID_OSFILEHANDLE );
+
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
+	TEST_TRUE( file.IsOpen() );
+
+	// The detached handle is the caller's to close.
+	OSFILEHANDLE hFile = file.Detach();
+	TEST_FALSE( file.IsOpen() );
+	TEST_EQ( FioClose( hFile ), 0 );
+
+	// The destructor closes the handle, a second open closes the first one.
+	{
+		CFioFile scoped;
+		TEST_EQ( scoped.Open( dir.m_strFile.c_str() ), 0 );
+		TEST_EQ( scoped.Open( dir.m_strFile.c_str() ), 0 );
+	}
+}
+
 REGISTER_NAMED_TEST( "FioRead.Int32", FioRead_Int32 )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
 
 	char szBuffer[ 16 ] = {};
 	int32 nRead = 0;
-	TEST_EQ( FioRead( hFile, szBuffer, ( int32 )4, &nRead ), 0 );
+	TEST_EQ( file.Read( szBuffer, ( int32 )4, &nRead ), 0 );
 	TEST_EQ( nRead, 4 );
 	TEST_EQ( memcmp( szBuffer, "0123", 4 ), 0 );
 
 	// The handle moved on.
-	TEST_EQ( FioRead( hFile, szBuffer, ( int32 )16, &nRead ), 0 );
+	TEST_EQ( file.Read( szBuffer, ( int32 )16, &nRead ), 0 );
 	TEST_EQ( nRead, 6 );
 	TEST_EQ( memcmp( szBuffer, "456789", 6 ), 0 );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioRead.SizeT", FioRead_SizeT )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
 
 	char szBuffer[ 16 ] = {};
 	size_t nRead = 0;
-	TEST_EQ( FioRead( hFile, szBuffer, sizeof( szBuffer ), &nRead ), 0 );
+	TEST_EQ( file.Read( szBuffer, sizeof( szBuffer ), &nRead ), 0 );
 	TEST_EQ( nRead, ( size_t )10 );
 	TEST_EQ( memcmp( szBuffer, "0123456789", 10 ), 0 );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioReadAt.ReadsAtOffset", FioReadAt_ReadsAtOffset )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
 
 	char szBuffer[ 4 ] = {};
 	int32 nRead = 0;
-	TEST_EQ( FioReadAt( hFile, 7, szBuffer, 3, &nRead ), 0 );
+	TEST_EQ( file.ReadAt( 7, szBuffer, 3, &nRead ), 0 );
 	TEST_EQ( nRead, 3 );
 	TEST_EQ( memcmp( szBuffer, "789", 3 ), 0 );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioWrite.SizeT", FioWrite_SizeT )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioWrite, k_EFioShareNone, k_EFioCreateAlways, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str(), k_EFioWrite, k_EFioShareNone, k_EFioCreateAlways ), 0 );
 
 	size_t nWritten = 0;
-	TEST_EQ( FioWrite( hFile, "xyz", ( size_t )3, &nWritten ), 0 );
+	TEST_EQ( file.Write( "xyz", ( size_t )3, &nWritten ), 0 );
 	TEST_EQ( nWritten, ( size_t )3 );
-	FioClose( hFile );
+	TEST_EQ( file.Close(), 0 );
 
 	// k_EFioCreateAlways truncated the old content.
 	uint32 nCRC = 0;
@@ -248,84 +273,79 @@ REGISTER_NAMED_TEST( "FioWrite.SizeT", FioWrite_SizeT )
 REGISTER_NAMED_TEST( "FioWriteAt.WritesAtOffset", FioWriteAt_WritesAtOffset )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioReadWrite, k_EFioShareNone, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str(), k_EFioReadWrite, k_EFioShareNone ), 0 );
 
 	int32 nWritten = 0;
-	TEST_EQ( FioWriteAt( hFile, 2, "AB", 2, &nWritten ), 0 );
+	TEST_EQ( file.WriteAt( 2, "AB", 2, &nWritten ), 0 );
 	TEST_EQ( nWritten, 2 );
 
 	char szBuffer[ 10 ] = {};
 	int32 nRead = 0;
-	TEST_EQ( FioReadAt( hFile, 0, szBuffer, 10, &nRead ), 0 );
+	TEST_EQ( file.ReadAt( 0, szBuffer, 10, &nRead ), 0 );
 	TEST_EQ( memcmp( szBuffer, "01AB456789", 10 ), 0 );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioSeek.SetCurrentEnd", FioSeek_SetCurrentEnd )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
 
 	uint64 nPosition = 0;
-	TEST_EQ( FioSeek( hFile, 3, k_EFioSeekSet, &nPosition ), 0 );
+	TEST_EQ( file.Seek( 3, k_EFioSeekSet, &nPosition ), 0 );
 	TEST_EQ( nPosition, ( uint64 )3 );
-	TEST_EQ( FioSeek( hFile, 2, k_EFioSeekCurrent, &nPosition ), 0 );
+	TEST_EQ( file.Seek( 2, k_EFioSeekCurrent, &nPosition ), 0 );
 	TEST_EQ( nPosition, ( uint64 )5 );
-	TEST_EQ( FioSeek( hFile, -1, k_EFioSeekEnd, &nPosition ), 0 );
+	TEST_EQ( file.Seek( -1, k_EFioSeekEnd, &nPosition ), 0 );
 	TEST_EQ( nPosition, ( uint64 )9 );
 
 	char c = 0;
 	int32 nRead = 0;
-	TEST_EQ( FioRead( hFile, &c, ( int32 )1, &nRead ), 0 );
+	TEST_EQ( file.Read( &c, ( int32 )1, &nRead ), 0 );
 	TEST_EQ( c, '9' );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioGetSize.FileLength", FioGetSize_FileLength )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
 
 	uint64 nBytes = 0;
-	TEST_EQ( FioGetSize( hFile, &nBytes ), 0 );
+	TEST_EQ( file.GetSize( &nBytes ), 0 );
 	TEST_EQ( nBytes, ( uint64 )10 );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioSetSize.GrowsAndShrinks", FioSetSize_GrowsAndShrinks )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioReadWrite, k_EFioShareNone, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str(), k_EFioReadWrite, k_EFioShareNone ), 0 );
 
 	uint64 nBytes = 0;
-	TEST_EQ( FioSetSize( hFile, 32 ), 0 );
-	TEST_EQ( FioGetSize( hFile, &nBytes ), 0 );
+	TEST_EQ( file.SetSize( 32 ), 0 );
+	TEST_EQ( file.GetSize( &nBytes ), 0 );
 	TEST_EQ( nBytes, ( uint64 )32 );
 
-	TEST_EQ( FioSetSize( hFile, 4 ), 0 );
-	TEST_EQ( FioGetSize( hFile, &nBytes ), 0 );
+	TEST_EQ( file.SetSize( 4 ), 0 );
+	TEST_EQ( file.GetSize( &nBytes ), 0 );
 	TEST_EQ( nBytes, ( uint64 )4 );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioTruncateToSeekPosition.CutsAtPosition", FioTruncateToSeekPosition_CutsAtPosition )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioReadWrite, k_EFioShareNone, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str(), k_EFioReadWrite, k_EFioShareNone ), 0 );
 
 	uint64 nPosition = 0;
-	TEST_EQ( FioSeek( hFile, 6, k_EFioSeekSet, &nPosition ), 0 );
-	TEST_EQ( FioTruncateToSeekPosition( hFile ), 0 );
+	TEST_EQ( file.Seek( 6, k_EFioSeekSet, &nPosition ), 0 );
+	TEST_EQ( file.TruncateToSeekPosition(), 0 );
 
 	uint64 nBytes = 0;
-	TEST_EQ( FioGetSize( hFile, &nBytes ), 0 );
+	TEST_EQ( file.GetSize( &nBytes ), 0 );
 	TEST_EQ( nBytes, ( uint64 )6 );
-	FioClose( hFile );
 }
 
 REGISTER_NAMED_TEST( "FioCreatePipe.WriteThenRead", FioCreatePipe_WriteThenRead )
@@ -367,38 +387,35 @@ REGISTER_NAMED_TEST( "FioDuplicate.SameFile", FioDuplicate_SameFile )
 REGISTER_NAMED_TEST( "FioCancelIo.NothingPending", FioCancelIo_NothingPending )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
-	TEST_EQ( FioCancelIo( hFile ), 0 );
-	FioClose( hFile );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
+	TEST_EQ( FioCancelIo( file.GetHandle() ), 0 );
 }
 
 REGISTER_NAMED_TEST( "FioClose.InvalidHandle", FioClose_InvalidHandle )
 {
 	// The error of the platform.
-	TEST_NE( FioClose( ( OSFILEHANDLE )-1 ), 0 );
+	TEST_NE( FioClose( INVALID_OSFILEHANDLE ), 0 );
 }
 
 REGISTER_NAMED_TEST( "FioFlush.WrittenFile", FioFlush_WrittenFile )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioWrite, k_EFioShareNone, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str(), k_EFioWrite, k_EFioShareNone ), 0 );
 	int32 nWritten = 0;
-	TEST_EQ( FioWrite( hFile, "z", 1, &nWritten ), 0 );
-	TEST_EQ( FioFlush( hFile ), 0 );
-	FioClose( hFile );
+	TEST_EQ( file.Write( "z", 1, &nWritten ), 0 );
+	TEST_EQ( file.Flush(), 0 );
 }
 
 REGISTER_NAMED_TEST( "FioGetFileIdentity.HandleAndName", FioGetFileIdentity_HandleAndName )
 {
 	CFioTestDir dir;
-	OSFILEHANDLE hFile;
-	TEST_EQ( FioCreateFile( dir.m_strFile.c_str(), k_EFioRead, k_EFioShareRead, k_EFioOpenExisting, k_EFioNoModifiers, &hFile ), 0 );
+	CFioFile file;
+	TEST_EQ( file.Open( dir.m_strFile.c_str() ), 0 );
 
 	uint64 nDiskByHandle = 0, nFileByHandle = 0;
-	TEST_EQ( FioGetFileIdentity( hFile, &nDiskByHandle, &nFileByHandle ), 0 );
-	FioClose( hFile );
+	TEST_EQ( FioGetFileIdentity( file.GetHandle(), &nDiskByHandle, &nFileByHandle ), 0 );
 
 	uint64 nDiskByName = 0, nFileByName = 0;
 	TEST_EQ( FioGetFileIdentity( dir.m_strFile.c_str(), &nDiskByName, &nFileByName ), 0 );

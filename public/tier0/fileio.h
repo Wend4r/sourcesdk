@@ -262,6 +262,68 @@ PLATFORM_OVERLOAD bool FioGetActualFilenameCase( const char *pFileName, CBufferS
 PLATFORM_OVERLOAD bool FioEnumerateAbsPathsInDirRecursive( const char *pDirectory, CUtlHashtable< CUtlString > *pPaths );
 
 //-----------------------------------------------------------------------------
+// A native file handle closed by the destructor; the members return what the Fio functions do
+//-----------------------------------------------------------------------------
+class CFioFile
+{
+public:
+	CFioFile() : m_hFile( INVALID_OSFILEHANDLE ) {}
+	~CFioFile() { Close(); }
+
+	CFioFile( const CFioFile & ) = delete;
+	CFioFile &operator=( const CFioFile & ) = delete;
+
+	int Open( const char *pFileName, EFioAccessFlags eAccess = k_EFioRead, EFioShareFlags eShare = k_EFioShareRead, EFioCreateMode eMode = k_EFioOpenExisting, uint nModifiers = k_EFioNoModifiers )
+	{
+		Close();
+
+		int nError = FioCreateFile( pFileName, eAccess, eShare, eMode, nModifiers, &m_hFile );
+
+		if ( nError != 0 )
+			m_hFile = INVALID_OSFILEHANDLE;
+
+		return nError;
+	}
+
+	int Close()
+	{
+		if ( !IsOpen() )
+			return 0;
+
+		int nError = FioClose( m_hFile );
+		m_hFile = INVALID_OSFILEHANDLE;
+		return nError;
+	}
+
+	bool IsOpen() const { return m_hFile != INVALID_OSFILEHANDLE; }
+	OSFILEHANDLE GetHandle() const { return m_hFile; }
+
+	// Gives the handle up without closing it
+	OSFILEHANDLE Detach()
+	{
+		OSFILEHANDLE hFile = m_hFile;
+		m_hFile = INVALID_OSFILEHANDLE;
+		return hFile;
+	}
+
+	int Read( void *pBuffer, int32 nBytes, int32 *pBytesRead ) { return FioRead( m_hFile, pBuffer, nBytes, pBytesRead ); }
+	int Read( void *pBuffer, size_t nBytes, size_t *pBytesRead ) { return FioRead( m_hFile, pBuffer, nBytes, pBytesRead ); }
+	int ReadAt( uint64 nFilePos, void *pBuffer, int32 nBytes, int32 *pBytesRead ) { return FioReadAt( m_hFile, nFilePos, pBuffer, nBytes, pBytesRead ); }
+	int Write( const void *pBuffer, int32 nBytes, int32 *pBytesWritten ) { return FioWrite( m_hFile, pBuffer, nBytes, pBytesWritten ); }
+	int Write( const void *pBuffer, size_t nBytes, size_t *pBytesWritten ) { return FioWrite( m_hFile, pBuffer, nBytes, pBytesWritten ); }
+	int WriteAt( uint64 nFilePos, const void *pBuffer, int32 nBytes, int32 *pBytesWritten ) { return FioWriteAt( m_hFile, nFilePos, pBuffer, nBytes, pBytesWritten ); }
+	int Flush() { return FioFlush( m_hFile ); }
+
+	int Seek( int64 nOffset, EFioSeekMode eHow, uint64 *pNewPosition ) { return FioSeek( m_hFile, nOffset, eHow, pNewPosition ); }
+	int GetSize( uint64 *pBytes ) const { return FioGetSize( m_hFile, pBytes ); }
+	int SetSize( uint64 nBytes ) { return FioSetSize( m_hFile, nBytes ); }
+	int TruncateToSeekPosition() { return FioTruncateToSeekPosition( m_hFile ); }
+
+private:
+	OSFILEHANDLE m_hFile;
+};
+
+//-----------------------------------------------------------------------------
 // Iterates the files and directories that match a pattern, UTF-8 everywhere
 //-----------------------------------------------------------------------------
 class CDirIterator

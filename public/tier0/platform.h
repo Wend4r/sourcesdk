@@ -1373,6 +1373,9 @@ typedef void *OSFILEHANDLE;
 typedef int OSFILEHANDLE;
 #endif
 
+// INVALID_HANDLE_VALUE on Windows, -1 on POSIX
+#define INVALID_OSFILEHANDLE ( ( OSFILEHANDLE )-1 )
+
 //-----------------------------------------------------------------------------
 // FP exception handling
 //-----------------------------------------------------------------------------
