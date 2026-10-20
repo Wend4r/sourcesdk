@@ -195,8 +195,13 @@ schema class KeyValues : public CKeyValues_Data
 	friend class CKeyValuesTokenReader;
 
 public:
-	// Tag of the constructor that gives the key a disposable string table of its own
-	enum KV_DISPOSABLE_STRING_TABLE_STATE : int;
+	// Tag of the constructor that gives the key a disposable string table of its own.
+	// Every caller in engine2 and server passes 0, tier0 does not read it; the name of
+	// the enumerator is not in the binaries
+	enum KV_DISPOSABLE_STRING_TABLE_STATE
+	{
+		KV_DISPOSABLE_STRING_TABLE = 0,
+	};
 
 	DLL_CLASS_IMPORT explicit KeyValues( const char *setName, IKeyValuesSystem *customSystem = NULL, bool ownsCustomSystem = false );
 	// Owns a new disposable key values system, the tag is not read
