@@ -19,13 +19,23 @@ class CUtlString;
 // (GUID and age), 2 a CodeView NB10 record (signature and age), 8 a 16 byte build ID shown as a GUID
 enum StackTools_ModuleIDFormat_t : int;
 
-// The CPU of a module, as in the minidumps
-enum VWMD_CPU_ARCHITECTURE : int;
+// The CPU of a module, the PROCESSOR_ARCHITECTURE_ values of Windows as in the minidumps;
+// the fat Mach-O reader maps the CPU types of the slices to them
+enum VWMD_CPU_ARCHITECTURE : int
+{
+	VWMD_CPU_ARCHITECTURE_INTEL = 0,
+	VWMD_CPU_ARCHITECTURE_ARM = 5,
+	VWMD_CPU_ARCHITECTURE_AMD64 = 9,
+	VWMD_CPU_ARCHITECTURE_ARM64 = 12,
+	VWMD_CPU_ARCHITECTURE_UNKNOWN = 0xFFFF,
+};
 
 // The kind of a resolved symbol
 enum VSymbolKind_t : int;
 
 struct VSymbolInlineInfo_t;
+class CDwarfModule;
+class CVBreakpadSymbolModule;
 struct BreakpadWinFpoData_t;
 struct BreakpadCfiFrameData_t;
 struct BreakpadWinFrameProgram_t;
@@ -34,13 +44,16 @@ struct BreakpadWinFrameProgram_t;
 // The symbols of a module for the stack translation: DWARF or Mach-O symbols, a Breakpad symbol
 // file or DbgHelp. Reference counted, it caches the source server path of each source file.
 // The virtual functions are pure here, the derived classes implement them; the names of the
-// unknown ones are ours
+// slots are ours, the enumerations keep no parameters as their callbacks are not restored
 //-----------------------------------------------------------------------------
 class CVSymbolModule
 {
 public:
-	virtual void unk000();
-	virtual void unk001();
+	// SymFunctionTableAccess64 of the module base plus nOffset for DbgHelp, null otherwise
+	virtual void *GetFunctionTableEntry( uint64 nOffset );
+
+	// The module has symbols beyond the exports and the fallbacks
+	virtual bool HasSymbols();
 
 	// "ELF DWARF symbols", "Mach-O fallback symbols", "no symbols" and so on; a DWARF module needs
 	// its Init first
@@ -49,20 +62,32 @@ public:
 	// The path of the symbol file, returns the text of pOut
 	virtual const char *GetSymbolFilePath( CBufferString *pOut );
 
-	virtual void unk004();
-	virtual void unk005();
-	virtual void unk006();
-	virtual void unk007();
-	virtual void unk008();
-	virtual void unk009();
-	virtual void unk010();
+	// The identity of the module the symbols match: the format, the ID bytes and the age
+	virtual void GetModuleIdentity( uint8 *pIDFormat, CUtlVector< uint8 > *pModuleID, uint32 *pAge );
+
+	// The reader of a DWARF module, null for the others; bDetach takes it from the module and
+	// releases the reference of the module
+	virtual CDwarfModule *GetDwarfModule( bool bDetach );
+
+	// This of a Breakpad module, null for the others
+	virtual CVBreakpadSymbolModule *GetBreakpadModule();
+
+	// SymEnumSymbolsEx, SymEnumSymbolsForAddr, SymEnumSourceLines and SymEnumSourceFiles for
+	// DbgHelp, the same over the parsed symbols for the others
+	virtual void EnumerateSymbols();
+	virtual void EnumerateSymbolsForAddress();
+	virtual void EnumerateSourceLines();
+	virtual void EnumerateSourceFiles();
 
 	// The "VERSIONCONTROL=p4" header of the source server stream and its line of a source file
 	virtual bool WriteSourceServerHeader( CUtlBuffer *pBuffer );
 	virtual void WriteSourceServerFileLine( CUtlBuffer *pBuffer, const char *pszLocalPath, const char *pszDepotPath, int nRevision );
 
-	virtual void unk013();
-	virtual void unk014();
+	// The "SRCSRV: end" line of the source server stream
+	virtual void WriteSourceServerFooter( CUtlBuffer *pBuffer );
+
+	// The CFI records of a Breakpad symbol file; DbgHelp only prints that it lacks them
+	virtual bool WriteBreakpadCfiInfo( FILE *pFile );
 
 	virtual ~CVSymbolModule();
 
@@ -103,19 +128,20 @@ protected:
 //-----------------------------------------------------------------------------
 // The DWARF symbols of an ELF or the Mach-O symbols of a module
 //-----------------------------------------------------------------------------
-class CDwarfModule;
-
 class CVDwarfSymbolModule : public CVSymbolModule
 {
 public:
 	DLL_CLASS_IMPORT CVDwarfSymbolModule();
 	virtual ~CVDwarfSymbolModule();
 
-	// Opens the module at pszModulePath, false when it is already open or cannot be read
-	DLL_CLASS_IMPORT bool Init( const char *pszModulePath, uint32 nUnknown, VWMD_CPU_ARCHITECTURE eArchitecture, uint64 nModuleBase, uint64 nModuleSize, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize );
+	// Opens the module at pszModulePath, false when it is already open or cannot be read; a fat
+	// Mach-O takes its slice by nSliceIndex or by eArchitecture, not both
+	// (VWMD_CPU_ARCHITECTURE_UNKNOWN for none)
+	DLL_CLASS_IMPORT bool Init( const char *pszModulePath, uint32 nSliceIndex, VWMD_CPU_ARCHITECTURE eArchitecture, uint64 nModuleBase, uint64 nModuleSize, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize );
 
-	// Reads the symbols of the opened module
-	DLL_CLASS_IMPORT bool OpenAndParseSymbols( const char *pszSearchPath, uint32 nUnknown, const char *pszUnknown );
+	// Reads the symbols of the opened module; nParseFlags are the parts of the debug info to
+	// read, 0 or 1 for none of them, and pszPrimaryFile overrides the file with them
+	DLL_CLASS_IMPORT bool OpenAndParseSymbols( const char *pszSearchPath, uint32 nParseFlags, const char *pszPrimaryFile );
 
 private:
 	CDwarfModule *m_pDwarfModule;
@@ -212,18 +238,19 @@ public:
 	DLL_CLASS_IMPORT bool HasStackWalkEx_();
 	DLL_CLASS_IMPORT bool SupportsInlineContext_();
 
-	// SymInitialize of the local process or of another one, with the search path pszSearchPath
+	// SymInitialize of the local process or of another one, with the search path pszSearchPath;
+	// EitherSymInitialize shares the local one with bLocalProcess, otherwise it makes a handle
 	DLL_CLASS_IMPORT void LocalSymInitialize( const char *pszSearchPath );
 	DLL_CLASS_IMPORT void LocalSymCleanup();
 	DLL_CLASS_IMPORT void BaseSymInitialize( void *hProcess, const char *pszSearchPath, bool bInvadeProcess );
 	DLL_CLASS_IMPORT void BaseSymCleanup( void *hProcess );
-	DLL_CLASS_IMPORT void *EitherSymInitialize( const char *pszSearchPath, bool bInvadeProcess );
+	DLL_CLASS_IMPORT void *EitherSymInitialize( const char *pszSearchPath, bool bLocalProcess );
 	DLL_CLASS_IMPORT void EitherSymCleanup( void *hProcess );
 	DLL_CLASS_IMPORT void ApplySymSrvDebugOutputWorkaround( void *hProcess );
 
 	// Looks for pszFileName as given, then in the directory of pszNextToFile, then with SymFindFileInPath
 	DLL_CLASS_IMPORT bool SearchForImageOrSymbolFile( void *hProcess, const char *pszFileName, const char *pszNextToFile, const void *pID, unsigned long nTwo, unsigned long nThree, unsigned long nFlags, char *pszFoundFile, unsigned __int64 nFoundFileSize );
-	DLL_CLASS_IMPORT void FindDebugFiles( void *hProcess, const char *pszModulePath, uint32 nUnknown, const char *pszSearchPath, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, unsigned __int64 nUnknown2, char *pszImageFile, unsigned __int64 nImageFileSize, char *pszSymbolFile, unsigned __int64 nSymbolFileSize );
+	DLL_CLASS_IMPORT void FindDebugFiles( void *hProcess, const char *pszModulePath, uint32 nModuleSize, const char *pszSearchPath, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, unsigned __int64 nModuleIDSize, char *pszImageFile, unsigned __int64 nImageFileSize, char *pszSymbolFile, unsigned __int64 nSymbolFileSize );
 
 	DLL_CLASS_IMPORT int SymInitialize_( void *hProcess, const wchar_t *UserSearchPath, int fInvadeProcess );
 	DLL_CLASS_IMPORT int SymCleanup_( void *hProcess );
@@ -267,13 +294,52 @@ public:
 private:
 	DLL_CLASS_IMPORT void AttemptToLoad();
 
-	// The functions of the DLL
-	void *unk000[ 34 ];
+	// The functions of the DLL, a stub that fails for one the DLL lacks
+	void *m_pfnSymGetOptions;
+	void *m_pfnSymSetOptions;
+	void *m_pfnSymInitializeW;
+	void *m_pfnSymCleanup;
+	void *m_pfnSymSetSearchPathW;
+	void *m_pfnSymGetSearchPathW;
+	void *m_pfnSymEnumerateModulesW64;
+	void *m_pfnEnumerateLoadedModulesW64;
+	void *m_pfnSymLoadModuleExW;
+	void *m_pfnSymUnloadModule64;
+	void *m_pfnSymFunctionTableAccess64;
+	void *m_pfnSymGetModuleBase64;
+	void *m_pfnSymSrvGetFileIndexesW;
+	void *m_pfnSymSrvGetFileIndexInfoW;
+	void *m_pfnSymFindFileInPathW;
+	void *m_pfnSymRegisterCallbackW64;
+	void *m_pfnSymSetHomeDirectoryW;
+	void *m_pfnSymFromAddrW;
+	void *m_pfnSymEnumSymbolsExW;
+	void *m_pfnSymEnumSymbolsForAddrW;
+	void *m_pfnSymGetLineFromAddrW64;
+	void *m_pfnSymEnumSourceLinesW;
+	void *m_pfnSymEnumSourceFilesW;
+	void *m_pfnSymGetModuleInfoW64;
+	void *m_pfnStackWalk64;
+	void *m_pfnStackWalkEx;
+	void *m_pfnSymRefreshModuleList;
+	void *m_pfnSymQueryInlineTrace;
+	void *m_pfnSymFromInlineContextW;
+	void *m_pfnSymGetLineFromInlineContextW;
+	void *m_pfnSymGetSourceFileTokenW;
+	void *m_pfnSymGetSourceVarFromTokenW;
+	void *m_pfnSymNextW;
+	void *m_pfnSymPrevW;
 
 	CAtomicMutex m_Mutex;
-	uint8 unk11c[ 20 ];
-	bool unk130;
-	bool unk131;
+	HMODULE m_hDbgHelp;
+
+	// Of LocalSymInitialize, the local process is initialized once
+	int m_nLocalSymInitializeCount;
+
+	// The options of SymSetOptions_, set again when the DLL is loaded
+	unsigned long m_nSymOptions;
+	bool m_bLoaded;
+	bool m_bSymSrvDebugOutputWorkaroundApplied;
 };
 
 //-----------------------------------------------------------------------------
@@ -293,12 +359,13 @@ private:
 	DLL_CLASS_IMPORT void EnsureReady();
 	DLL_CLASS_IMPORT void AttemptToLoad();
 
-	// ImageLoad, ImageUnload and ImageRvaToVa
-	void *unk000[ 3 ];
+	void *m_pfnImageLoad;
+	void *m_pfnImageRvaToVa;
+	void *m_pfnImageUnload;
 
 	CAtomicMutex m_Mutex;
-	bool unk024;
-	void *unk028;
+	bool m_bLoaded;
+	HMODULE m_hImageHlp;
 };
 
 //-----------------------------------------------------------------------------
@@ -318,11 +385,11 @@ private:
 	DLL_CLASS_IMPORT void EnsureReady();
 	DLL_CLASS_IMPORT void AttemptToLoad();
 
-	// GetModuleInformation
-	void *unk000;
-	bool unk008;
-	void *unk010;
-	void *unk018;
+	// K32GetModuleInformation of kernel32.dll, or GetModuleInformation of psapi.dll without it
+	void *m_pfnGetModuleInformation;
+	bool m_bLoaded;
+	HMODULE m_hPSApi;
+	HMODULE m_hKernel32;
 };
 
 //-----------------------------------------------------------------------------
@@ -334,12 +401,14 @@ public:
 	DLL_CLASS_IMPORT CVDbgHelpSymbolModule();
 	virtual ~CVDbgHelpSymbolModule();
 
-	DLL_CLASS_IMPORT bool Init( CDbgHelpFunctionsLoader *pDbgHelp, void *hProcess, const char *pszModulePath, const char *pszModuleName, const char *pszSearchPath, uint64 nModuleBase, uint64 nModuleSize, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize, bool bUnknown );
+	// Loads the module into the DbgHelp session of hProcess; bRequireSymbols fails when DbgHelp
+	// found no symbols for it
+	DLL_CLASS_IMPORT bool Init( CDbgHelpFunctionsLoader *pDbgHelp, void *hProcess, const char *pszModulePath, const char *pszModuleName, const char *pszSearchPath, uint64 nModuleBase, uint64 nModuleSize, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize, bool bRequireSymbols );
 
 private:
-	void *unk0a0;
-	void *unk0a8;
-	void *unk0b0;
+	CDbgHelpFunctionsLoader *m_pDbgHelp;
+	void *m_hProcess;
+	CUtlString m_ModuleName;
 };
 
 // For the watch window of the debugger, never called

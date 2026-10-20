@@ -55,7 +55,7 @@ static CVDwarfSymbolModule *CreateTier0DwarfModule()
 
 	CVDwarfSymbolModule *pModule = new CVDwarfSymbolModule;
 
-	if ( !pModule->Init( info.dli_fname, 0, ( VWMD_CPU_ARCHITECTURE )9, reinterpret_cast< uint64 >( info.dli_fbase ), 0x600000, ( StackTools_ModuleIDFormat_t )0, nullptr, 0 ) )
+	if ( !pModule->Init( info.dli_fname, 0, VWMD_CPU_ARCHITECTURE_AMD64, reinterpret_cast< uint64 >( info.dli_fbase ), 0x600000, ( StackTools_ModuleIDFormat_t )0, nullptr, 0 ) )
 	{
 		delete pModule;
 		return nullptr;
@@ -74,8 +74,8 @@ REGISTER_NAMED_TEST( "CVDwarfSymbolModule.Init", CVDwarfSymbolModule_Init )
 
 	// No path fails.
 	CVDwarfSymbolModule *pEmpty = new CVDwarfSymbolModule;
-	TEST_FALSE( pEmpty->Init( nullptr, 0, ( VWMD_CPU_ARCHITECTURE )9, 0, 0, ( StackTools_ModuleIDFormat_t )0, nullptr, 0 ) );
-	TEST_FALSE( pEmpty->Init( "", 0, ( VWMD_CPU_ARCHITECTURE )9, 0, 0, ( StackTools_ModuleIDFormat_t )0, nullptr, 0 ) );
+	TEST_FALSE( pEmpty->Init( nullptr, 0, VWMD_CPU_ARCHITECTURE_AMD64, 0, 0, ( StackTools_ModuleIDFormat_t )0, nullptr, 0 ) );
+	TEST_FALSE( pEmpty->Init( "", 0, VWMD_CPU_ARCHITECTURE_AMD64, 0, 0, ( StackTools_ModuleIDFormat_t )0, nullptr, 0 ) );
 	delete pEmpty;
 	delete pModule;
 }
@@ -92,6 +92,36 @@ REGISTER_NAMED_TEST( "CVDwarfSymbolModule.OpenAndParseSymbols", CVDwarfSymbolMod
 	CVDwarfSymbolModule *pEmpty = new CVDwarfSymbolModule;
 	TEST_FALSE( pEmpty->OpenAndParseSymbols( nullptr, 0, nullptr ) );
 	delete pEmpty;
+}
+
+REGISTER_NAMED_TEST( "CVSymbolModule.KindSlots", CVSymbolModule_KindSlots )
+{
+	CVDwarfSymbolModule *pModule = CreateTier0DwarfModule();
+	TEST_NOT_NULL( pModule );
+
+	// A DWARF module has its reader and no Breakpad or DbgHelp parts.
+	TEST_NOT_NULL( pModule->GetDwarfModule( false ) );
+	TEST_NULL( pModule->GetBreakpadModule() );
+	TEST_NULL( pModule->GetFunctionTableEntry( 0 ) );
+
+	uint8 nIDFormat = 0xff;
+	uint32 nAge = 1;
+	CUtlVector< uint8 > moduleID;
+	pModule->GetModuleIdentity( &nIDFormat, &moduleID, &nAge );
+	TEST_EQ( ( int )nIDFormat, 0 );
+	TEST_EQ( moduleID.Count(), 0 );
+
+	CUtlBuffer buffer;
+	pModule->WriteSourceServerFooter( &buffer );
+	TEST_EQ( buffer.TellPut(), 0 );
+	delete pModule;
+
+	// A Breakpad module is its own Breakpad part and has no symbols before Open.
+	CVBreakpadSymbolModule *pBreakpad = new CVBreakpadSymbolModule;
+	TEST_TRUE( pBreakpad->GetBreakpadModule() == pBreakpad );
+	TEST_NULL( pBreakpad->GetDwarfModule( false ) );
+	TEST_FALSE( pBreakpad->HasSymbols() );
+	delete pBreakpad;
 }
 
 REGISTER_NAMED_TEST( "CVSymbolModule.ResolveSymbolInfo", CVSymbolModule_ResolveSymbolInfo )
