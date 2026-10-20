@@ -42,7 +42,8 @@ public:
 	virtual void unk000();
 	virtual void unk001();
 
-	// "ELF DWARF symbols", "Mach-O fallback symbols", "no symbols" and so on
+	// "ELF DWARF symbols", "Mach-O fallback symbols", "no symbols" and so on; a DWARF module needs
+	// its Init first
 	virtual const char *GetSymbolsDescription();
 
 	// The path of the symbol file, returns the text of pOut
@@ -130,7 +131,9 @@ public:
 	DLL_CLASS_IMPORT CVBreakpadSymbolModule();
 	virtual ~CVBreakpadSymbolModule();
 
-	DLL_CLASS_IMPORT bool Open( const char *pszSymbolFile, const char *pszModuleName, const char *pszSearchPath, uint64 nModuleBase, uint64 nModuleSize, uint32 nUnknown, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize, uint32 nUnknown2 );
+	// Looks the symbol file up under pszSymbolPath by the name of the module (pszDebugFileName
+	// when given) and its identity with nAge; eIDFormat must be 1, 2 or 5 to 8
+	DLL_CLASS_IMPORT bool Open( const char *pszSymbolPath, const char *pszModuleName, const char *pszDebugFileName, uint64 nModuleBase, uint64 nModuleSize, uint32 nUnknown, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize, uint32 nAge );
 
 	// The unwind records of the address
 	DLL_CLASS_IMPORT bool FindWinFrameProgram( uint64 nAddress, BreakpadWinFrameProgram_t *pData ) const;
@@ -174,7 +177,11 @@ struct _tagADDRESS64;
 struct _tagSTACKFRAME64;
 struct _tagSTACKFRAME_EX;
 struct _TEB;
+
+// An unnamed struct of dbghelp.h, which therefore has to be included first when both are used
+#ifndef _DBGHELP_
 struct SYMSRV_INDEX_INFOW;
+#endif
 
 //-----------------------------------------------------------------------------
 // The functions of dbghelp.dll, loaded on first use from a known path; a function the loaded
