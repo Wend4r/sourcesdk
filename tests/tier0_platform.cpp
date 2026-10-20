@@ -7,11 +7,26 @@
 #include <tier0/bufferstring.h>
 #include <tier0/stacktools.h>
 #include <tier0/appinstance.h>
+#include <tier0/mem.h>
+#include <tier0/platwindow.h>
+#include <tier0/threadtools.h>
+#include <tier0/utlvector.h>
+#include <tier0/win32consoleio.h>
 
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
+#include <cstddef>
 #include <xmmintrin.h>
+
+#ifdef PLATFORM_WINDOWS
+#include <windows.h>
+#include <evntprov.h>
+#else
+#include <dlfcn.h>
+#include <stdlib.h>
+#endif
 
 REGISTER_NAMED_TEST( "Plat.RelativeTicks", Plat_RelativeTicks_Conversions )
 {
@@ -381,3 +396,493 @@ REGISTER_NAMED_TEST( "SingleAppInstance.Shutdown", SingleAppInstance_Shutdown )
 	TEST_TRUE( instance.IsUniqueInstance() );
 	instance.ShutdownInstance();
 }
+
+REGISTER_NAMED_TEST( "Plat_LoadSDL.TableOrNull", Plat_LoadSDL_TableOrNull )
+{
+	// Without the library every entry point of SDL is null, with it the table is the same.
+	void *pSDL = Plat_LoadSDL();
+
+	if ( pSDL )
+	{
+		TEST_TRUE( Plat_CheckSDL() == pSDL );
+		TEST_TRUE( Plat_RequireSDL() == pSDL );
+		TEST_NOT_NULL( Plat_GetModuleSDL() );
+	}
+	else
+	{
+		TEST_NULL( Plat_CheckSDL() );
+		TEST_TRUE( Plat_GetModuleSDL() == PLAT_MODULE_INVALID );
+	}
+
+	// Loading twice gives the same table.
+	TEST_TRUE( Plat_LoadSDL() == pSDL );
+}
+
+REGISTER_NAMED_TEST( "Plat_CheckSDL.OnlyWhenLoaded", Plat_CheckSDL_OnlyWhenLoaded )
+{
+	TEST_TRUE( Plat_CheckSDL() == nullptr || Plat_CheckSDL() == Plat_LoadSDL() );
+}
+
+REGISTER_NAMED_TEST( "Plat_RequireSDL.SameTable", Plat_RequireSDL_SameTable )
+{
+	// Plat_RequireSDL fails fatally without the library.
+	if ( !Plat_LoadSDL() )
+		return;
+
+	TEST_TRUE( Plat_RequireSDL() == Plat_LoadSDL() );
+}
+
+REGISTER_NAMED_TEST( "Plat_GetModuleSDL.MatchesTable", Plat_GetModuleSDL_MatchesTable )
+{
+	TEST_EQ( Plat_GetModuleSDL() != PLAT_MODULE_INVALID, Plat_LoadSDL() != nullptr );
+}
+
+REGISTER_NAMED_TEST( "Plat_UnloadSDL.KeepsTable", Plat_UnloadSDL_KeepsTable )
+{
+	// The function is empty, the table stays.
+	void *pSDL = Plat_LoadSDL();
+	Plat_UnloadSDL();
+	TEST_TRUE( Plat_CheckSDL() == pSDL );
+}
+
+REGISTER_NAMED_TEST( "Plat_RegisterModule.Appends", Plat_RegisterModule_Appends )
+{
+	void *const *ppModules = Plat_GetRegisteredModules();
+	TEST_NOT_NULL( ppModules );
+
+	int nModules = 0;
+	while ( nModules < 100 && ppModules[ nModules ] )
+		nModules++;
+
+	TEST_TRUE( nModules < 100 );
+
+	static int s_nModuleBase;
+	Plat_RegisterModule( &s_nModuleBase );
+	TEST_TRUE( ppModules[ nModules ] == &s_nModuleBase );
+}
+
+REGISTER_NAMED_TEST( "Plat_GetRegisteredModules.NullTerminated", Plat_GetRegisteredModules_NullTerminated )
+{
+	void *const *ppModules = Plat_GetRegisteredModules();
+	TEST_NOT_NULL( ppModules );
+
+	bool bFoundEnd = false;
+	for ( int i = 0; i < 100 && !bFoundEnd; i++ )
+		bFoundEnd = ppModules[ i ] == nullptr;
+
+	TEST_TRUE( bFoundEnd );
+	TEST_TRUE( Plat_GetRegisteredModules() == ppModules );
+}
+
+REGISTER_NAMED_TEST( "EarlyInit_Tier0.NullReference", EarlyInit_Tier0_NullReference )
+{
+	// Without a dependency to link there is nothing to do.
+	EarlyInit_Tier0( nullptr );
+}
+
+#ifndef PLATFORM_WINDOWS
+class CTestImportLibraryVisitor : public IPlatModuleImportLibraryVisitor
+{
+public:
+	virtual bool VisitImportLibrary( const char *pszImportLibrary, const char *pszModule )
+	{
+		m_nImports++;
+		m_bFoundLibDl = m_bFoundLibDl || V_stristr( pszImportLibrary, "libdl" ) != nullptr || V_stristr( pszImportLibrary, "libSystem" ) != nullptr;
+		m_bModuleMatches = m_bModuleMatches && pszModule && V_strcmp( pszModule, m_pszModule ) == 0;
+		return true;
+	}
+
+	const char *m_pszModule = nullptr;
+	int m_nImports = 0;
+	bool m_bFoundLibDl = false;
+	bool m_bModuleMatches = true;
+};
+
+REGISTER_NAMED_TEST( "Plat_EnumerateModuleImportLibraries.Tier0", Plat_EnumerateModuleImportLibraries_Tier0 )
+{
+	Dl_info info;
+	TEST_TRUE( dladdr( reinterpret_cast< void * >( &Plat_LoadSDL ), &info ) != 0 );
+
+	// The libraries tier0 links, each with the path of tier0.
+	CTestImportLibraryVisitor visitor;
+	visitor.m_pszModule = info.dli_fname;
+	TEST_TRUE( visitor.ReadFileOfLoadedModule() );
+	Plat_EnumerateModuleImportLibraries( info.dli_fname, &visitor );
+	TEST_TRUE( visitor.m_nImports > 0 );
+	TEST_TRUE( visitor.m_bFoundLibDl );
+	TEST_TRUE( visitor.m_bModuleMatches );
+}
+#endif // !PLATFORM_WINDOWS
+
+REGISTER_NAMED_TEST( "Plat_ReportDllLoadDenial.CountsAndNames", Plat_ReportDllLoadDenial_CountsAndNames )
+{
+	int nBefore = 0;
+	Plat_GetLastDllLoadDenial( &nBefore );
+
+	Plat_ReportDllLoadDenial( "sourcesdk_denier", nullptr, "sourcesdk_denied_module", nullptr );
+	int nCount = 0;
+	const char *pszModule = Plat_GetLastDllLoadDenial( &nCount );
+	TEST_NOT_NULL( pszModule );
+	TEST_EQ( V_strcmp( pszModule, "sourcesdk_denied_module" ), 0 );
+	TEST_EQ( nCount, nBefore + 1 );
+
+	// UTF-16 names are converted.
+	Plat_ReportDllLoadDenial( nullptr, L"sourcesdk_wide_denier", nullptr, L"sourcesdk_wide_module" );
+	pszModule = Plat_GetLastDllLoadDenial( &nCount );
+	TEST_NOT_NULL( pszModule );
+	TEST_EQ( V_strcmp( pszModule, "sourcesdk_wide_module" ), 0 );
+	TEST_EQ( nCount, nBefore + 2 );
+}
+
+REGISTER_NAMED_TEST( "Plat_GetLastDllLoadDenial.CountWithoutName", Plat_GetLastDllLoadDenial_CountWithoutName )
+{
+	int nCount = -1;
+	const char *pszModule = Plat_GetLastDllLoadDenial( &nCount );
+	TEST_TRUE( nCount >= 0 );
+	TEST_EQ( pszModule == nullptr, nCount == 0 );
+
+	// The count is optional.
+	TEST_TRUE( Plat_GetLastDllLoadDenial( nullptr ) == pszModule );
+}
+
+REGISTER_NAMED_TEST( "Plat_GetDebugMonitor.PlatformMonitor", Plat_GetDebugMonitor_PlatformMonitor )
+{
+#ifdef PLATFORM_WINDOWS
+	TEST_TRUE( Plat_GetDebugMonitor() == Plat_GetDebugMonitor() );
+#else
+	TEST_NULL( Plat_GetDebugMonitor() );
+#endif
+}
+
+static const void *TestClipboardData( void *pUserData, const char *pszMimeType, size_t *pSize )
+{
+	*pSize = 4;
+	return "text";
+}
+
+static void TestClipboardCleanup( void *pUserData )
+{
+}
+
+REGISTER_NAMED_TEST( "Plat_SetClipboardData.ThroughSDL", Plat_SetClipboardData_ThroughSDL )
+{
+	// tier0 calls SDL_SetClipboardData without checking that SDL is loaded.
+	if ( !Plat_LoadSDL() )
+		return;
+
+	const char *pszMimeTypes[] = { "text/plain" };
+	Plat_SetClipboardData( TestClipboardData, TestClipboardCleanup, nullptr, pszMimeTypes, 1 );
+}
+
+REGISTER_NAMED_TEST( "OSTypesAreCompatible.Families", OSTypesAreCompatible_Families )
+{
+	// A version is compatible with itself and the older ones of its family.
+	TEST_TRUE( OSTypesAreCompatible( k_eLinux50, k_eLinux50 ) );
+	TEST_TRUE( OSTypesAreCompatible( k_eLinux50, k_eLinux26 ) );
+	TEST_FALSE( OSTypesAreCompatible( k_eLinux26, k_eLinux50 ) );
+
+	// The unknown version of a family takes any of it.
+	TEST_TRUE( OSTypesAreCompatible( k_eLinux418, k_eLinuxUnknown ) );
+	TEST_TRUE( OSTypesAreCompatible( k_eMacOS1014, k_eMacOSUnknown ) );
+	TEST_FALSE( OSTypesAreCompatible( k_eMacOS1014, k_eLinuxUnknown ) );
+
+	// Windows versions are positive.
+	TEST_TRUE( OSTypesAreCompatible( k_eWindows10, k_eWindows7 ) );
+	TEST_FALSE( OSTypesAreCompatible( k_eWindows7, k_eWindows10 ) );
+
+	// Any OS takes k_eOSUnknown.
+	TEST_TRUE( OSTypesAreCompatible( k_eLinux50, k_eOSUnknown ) );
+}
+
+REGISTER_NAMED_TEST( "GetAlternateLaunchLocation.Stable", GetAlternateLaunchLocation_Stable )
+{
+	AlternateLaunchLocation_t *pLocation = GetAlternateLaunchLocation();
+	TEST_NOT_NULL( pLocation );
+	TEST_TRUE( GetAlternateLaunchLocation() == pLocation );
+}
+
+#ifndef PLATFORM_WINDOWS
+REGISTER_NAMED_TEST( "CopyDependencyToAlternateLocation.Results", CopyDependencyToAlternateLocation_Results )
+{
+	char szSource[] = "/tmp/sourcesdk_alt_src_XXXXXX";
+	char szDest[] = "/tmp/sourcesdk_alt_dst_XXXXXX";
+	TEST_NOT_NULL( mkdtemp( szSource ) );
+	TEST_NOT_NULL( mkdtemp( szDest ) );
+
+	// No source file.
+	TEST_EQ( CopyDependencyToAlternateLocation( szSource, "dep.bin", szDest, false, nullptr ), 1 );
+
+	char szPath[ 128 ];
+	V_snprintf( szPath, sizeof( szPath ), "%s/dep.bin", szSource );
+	FILE *pFile = fopen( szPath, "wb" );
+	TEST_NOT_NULL( pFile );
+	fputs( "dependency", pFile );
+	fclose( pFile );
+
+	// The destination is missing: it differs and the POSIX build does not copy.
+	TEST_EQ( CopyDependencyToAlternateLocation( szSource, "dep.bin", szDest, false, nullptr ), 2 );
+
+	// The fallback directory is used when the source has no file.
+	char szEmpty[] = "/tmp/sourcesdk_alt_empty_XXXXXX";
+	TEST_NOT_NULL( mkdtemp( szEmpty ) );
+	TEST_EQ( CopyDependencyToAlternateLocation( szEmpty, "dep.bin", szDest, false, szSource ), 2 );
+
+	// A copy with the same size and time is up to date.
+	char szCommand[ 512 ];
+	V_snprintf( szCommand, sizeof( szCommand ), "cp -p %s %s/dep.bin", szPath, szDest );
+	TEST_EQ( system( szCommand ), 0 );
+	TEST_EQ( CopyDependencyToAlternateLocation( szSource, "dep.bin", szDest, false, nullptr ), 0 );
+
+	V_snprintf( szCommand, sizeof( szCommand ), "rm -rf %s %s %s", szSource, szDest, szEmpty );
+	( void )!system( szCommand );
+}
+#endif // !PLATFORM_WINDOWS
+
+REGISTER_NAMED_TEST( "RestartSelfFromAlternateLocation.Exported", RestartSelfFromAlternateLocation_Exported )
+{
+	// The call copies the dependencies and starts the executable again, which a test cannot do.
+	TEST_NOT_NULL( reinterpret_cast< void * >( &RestartSelfFromAlternateLocation ) );
+}
+
+REGISTER_NAMED_TEST( "RestartSelf_FixTaskbarPinShortcut.IgnoredOutsideWindows", RestartSelf_FixTaskbarPinShortcut_IgnoredOutsideWindows )
+{
+	// Windows rewrites the shortcut of a pinned window, the other builds only build the command line.
+#ifndef PLATFORM_WINDOWS
+	RestartSelf_FixTaskbarPinShortcut( nullptr, nullptr, nullptr );
+#endif
+	TEST_NOT_NULL( reinterpret_cast< void * >( &RestartSelf_FixTaskbarPinShortcut ) );
+}
+
+REGISTER_NAMED_TEST( "RestartSelf_ShowGenericRestartErrorForBadShortcut.NeedsSDL", RestartSelf_ShowGenericRestartErrorForBadShortcut_NeedsSDL )
+{
+	// The message box of SDL waits for the user, so the test only calls it without SDL, where
+	// it returns at once.
+	if ( Plat_LoadSDL() )
+		return;
+
+	RestartSelf_ShowGenericRestartErrorForBadShortcut();
+}
+
+REGISTER_NAMED_TEST( "Plat_GetCurrentDisplayMode.NeedsSDL", Plat_GetCurrentDisplayMode_NeedsSDL )
+{
+	// A null mode fails before SDL is needed.
+	TEST_FALSE( Plat_GetCurrentDisplayMode( 0, nullptr ) );
+
+	// Plat_RequireSDL fails fatally without the library.
+	if ( !Plat_LoadSDL() )
+		return;
+
+	PlatDisplayMode_t mode;
+	if ( Plat_GetCurrentDisplayMode( 0, &mode ) )
+	{
+		TEST_TRUE( mode.m_nWidth > 0 );
+		TEST_TRUE( mode.m_nHeight > 0 );
+	}
+}
+
+REGISTER_NAMED_TEST( "Plat_GetFullscreenDisplayModes.NeedsSDL", Plat_GetFullscreenDisplayModes_NeedsSDL )
+{
+	if ( !Plat_LoadSDL() )
+		return;
+
+	int nModes = 0;
+	if ( Plat_GetFullscreenDisplayModes( 0, &nModes, nullptr ) && nModes > 0 )
+	{
+		PlatDisplayMode_t modes[ 64 ];
+		nModes = nModes < 64 ? nModes : 64;
+		TEST_TRUE( Plat_GetFullscreenDisplayModes( 0, &nModes, modes ) );
+		TEST_TRUE( modes[ 0 ].m_nWidth > 0 );
+	}
+}
+
+REGISTER_NAMED_TEST( "PlatDisplayMode_t.Layout", PlatDisplayMode_t_Layout )
+{
+	TEST_EQ( sizeof( PlatDisplayMode_t ), ( size_t )12 );
+	TEST_EQ( offsetof( PlatDisplayMode_t, m_flRefreshRate ), ( size_t )8 );
+}
+
+REGISTER_NAMED_TEST( "GetThreadLocalStackAllocator.PerThreadBlock", GetThreadLocalStackAllocator_PerThreadBlock )
+{
+	ThreadLocalStackAllocator_t *pAllocator = GetThreadLocalStackAllocator();
+	TEST_NOT_NULL( pAllocator );
+	TEST_TRUE( GetThreadLocalStackAllocator() == pAllocator );
+
+	// 256 KB of g_pMemAlloc, the next allocation inside it.
+	TEST_EQ( ( size_t )( pAllocator->m_pLimit - pAllocator->m_pBase ), ( size_t )0x40000 );
+	TEST_TRUE( pAllocator->m_pNext >= pAllocator->m_pBase );
+	TEST_TRUE( pAllocator->m_pNext <= pAllocator->m_pLimit );
+	TEST_TRUE( pAllocator->m_nAllocations >= 0 );
+}
+
+REGISTER_NAMED_TEST( "DebugBuild_InitFillMemory.ReturnsMemory", DebugBuild_InitFillMemory_ReturnsMemory )
+{
+	// The release build leaves the memory as it is.
+	char szBuffer[ 8 ] = "abcdefg";
+	TEST_TRUE( DebugBuild_InitFillMemory( szBuffer ) == szBuffer );
+	TEST_EQ( V_strcmp( szBuffer, "abcdefg" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "TransferMemory.CopiesStreams", TransferMemory_CopiesStreams )
+{
+	struct Src_t
+	{
+		int a;
+		float b;
+		short c;
+	};
+
+	struct Dst_t
+	{
+		float b;
+		int a;
+	};
+
+	Src_t src[ 3 ] = { { 1, 1.5f, 10 }, { 2, 2.5f, 20 }, { 3, 3.5f, 30 } };
+	Dst_t dst[ 3 ] = {};
+
+	uint8 *pSrcStreams[] = { reinterpret_cast< uint8 * >( src ) };
+	uint8 *pDstStreams[] = { reinterpret_cast< uint8 * >( dst ) };
+	const int nSrcStrides[] = { sizeof( Src_t ) };
+	const int nDstStrides[] = { sizeof( Dst_t ) };
+
+	TransferMemoryStep_t steps[ 3 ];
+	memset( steps, 0, sizeof( steps ) );
+	steps[ 0 ].m_nOp = TransferMemoryStep_t::OP_COPY;
+	steps[ 0 ].m_nSrcOffset = offsetof( Src_t, a );
+	steps[ 0 ].m_nDstOffset = offsetof( Dst_t, a );
+	steps[ 0 ].m_nBytes = sizeof( int );
+	steps[ 1 ].m_nOp = TransferMemoryStep_t::OP_COPY;
+	steps[ 1 ].m_nSrcOffset = offsetof( Src_t, b );
+	steps[ 1 ].m_nDstOffset = offsetof( Dst_t, b );
+	steps[ 1 ].m_nBytes = sizeof( float );
+	steps[ 2 ].m_nOp = TransferMemoryStep_t::OP_END;
+
+	TransferMemory( steps, nullptr, pSrcStreams, nSrcStrides, 0, pDstStreams, nDstStrides, 3 );
+
+	for ( int i = 0; i < 3; i++ )
+	{
+		TEST_EQ( dst[ i ].a, src[ i ].a );
+		TEST_EQ( dst[ i ].b, src[ i ].b );
+	}
+}
+
+REGISTER_NAMED_TEST( "TransferMemoryStep_t.Layout", TransferMemoryStep_t_Layout )
+{
+	TEST_EQ( sizeof( TransferMemoryStep_t ), ( size_t )16 );
+	TEST_EQ( offsetof( TransferMemoryStep_t, m_nSrcOffset ), ( size_t )4 );
+	TEST_EQ( offsetof( TransferMemoryStep_t, m_nBytes ), ( size_t )8 );
+}
+
+REGISTER_NAMED_TEST( "ThreadLocalStackAllocator_t.Layout", ThreadLocalStackAllocator_t_Layout )
+{
+	TEST_EQ( sizeof( ThreadLocalStackAllocator_t ), ( size_t )40 );
+	TEST_EQ( offsetof( ThreadLocalStackAllocator_t, m_pBase ), ( size_t )24 );
+}
+
+REGISTER_NAMED_TEST( "GetWin32ConsoleCursorColumnIndex.Column", GetWin32ConsoleCursorColumnIndex_Column )
+{
+#ifdef PLATFORM_WINDOWS
+	TEST_TRUE( GetWin32ConsoleCursorColumnIndex() < 0x10000 );
+#else
+	TEST_EQ( GetWin32ConsoleCursorColumnIndex(), 0u );
+#endif
+}
+
+#ifdef PLATFORM_WINDOWS
+REGISTER_NAMED_TEST( "Plat_LoadCOM.TableAndCheck", Plat_LoadCOM_TableAndCheck )
+{
+	void *pCOM = Plat_LoadCOM();
+	TEST_NOT_NULL( pCOM );
+	TEST_TRUE( Plat_CheckCOM() == pCOM );
+	TEST_TRUE( Plat_RequireCOM() == pCOM );
+	Plat_UnloadCOM();
+	TEST_TRUE( Plat_CheckCOM() == pCOM );
+}
+
+REGISTER_NAMED_TEST( "Plat_LoadOleAut.TableAndCheck", Plat_LoadOleAut_TableAndCheck )
+{
+	void *pOleAut = Plat_LoadOleAut();
+	TEST_NOT_NULL( pOleAut );
+	TEST_TRUE( Plat_CheckOleAut() == pOleAut );
+	TEST_TRUE( Plat_RequireOleAut() == pOleAut );
+	Plat_UnloadOleAut();
+	TEST_TRUE( Plat_CheckOleAut() == pOleAut );
+}
+
+REGISTER_NAMED_TEST( "Plat_GetLoadedModules.HasTier0", Plat_GetLoadedModules_HasTier0 )
+{
+	CUtlVector< HMODULE > modules;
+	TEST_TRUE( Plat_GetLoadedModules( &modules ) );
+	TEST_TRUE( modules.Find( GetModuleHandleA( "tier0.dll" ) ) != modules.InvalidIndex() );
+}
+
+REGISTER_NAMED_TEST( "Plat_IsSafeToLoadModules.Result", Plat_IsSafeToLoadModules_Result )
+{
+	const int nResult = Plat_IsSafeToLoadModules( 0 );
+	TEST_TRUE( nResult >= 0 && nResult <= 2 );
+}
+
+REGISTER_NAMED_TEST( "Plat_NotifyModuleLoad.Exported", Plat_NotifyModuleLoad_Exported )
+{
+	// The notification data comes from the loader of Windows.
+	TEST_NOT_NULL( reinterpret_cast< void * >( &Plat_NotifyModuleLoad ) );
+}
+
+REGISTER_NAMED_TEST( "Plat_EventRegister.RegisterWriteUnregister", Plat_EventRegister_RegisterWriteUnregister )
+{
+	// {5C1A3E2F-6A0B-4B5E-9D4E-2F1A7C3B9E01}, a provider of the test.
+	static const GUID s_ProviderId = { 0x5c1a3e2f, 0x6a0b, 0x4b5e, { 0x9d, 0x4e, 0x2f, 0x1a, 0x7c, 0x3b, 0x9e, 0x01 } };
+
+	uint64 hRegistration = 0;
+	TEST_EQ( Plat_EventRegister( reinterpret_cast< const _GUID * >( &s_ProviderId ), nullptr, nullptr, &hRegistration ), 0ul );
+	TEST_TRUE( hRegistration != 0 );
+
+	EVENT_DESCRIPTOR descriptor = {};
+	TEST_EQ( Plat_EventWriteTransfer( hRegistration, reinterpret_cast< const _EVENT_DESCRIPTOR * >( &descriptor ), nullptr, nullptr, 0, nullptr ), 0ul );
+	TEST_EQ( Plat_EventUnregister( hRegistration ), 0ul );
+}
+
+REGISTER_NAMED_TEST( "Plat_EventActivityIdControl.CreateId", Plat_EventActivityIdControl_CreateId )
+{
+	// EVENT_ACTIVITY_CTRL_CREATE_ID
+	GUID activityId = {};
+	TEST_EQ( Plat_EventActivityIdControl( 3, reinterpret_cast< _GUID * >( &activityId ) ), 0ul );
+	TEST_TRUE( activityId.Data1 != 0 || activityId.Data2 != 0 || activityId.Data3 != 0 );
+}
+#endif // PLATFORM_WINDOWS
+
+#ifdef PLATFORM_OSX
+REGISTER_NAMED_TEST( "Plat_GetAppleMajorMinorPatchVersion.Version", Plat_GetAppleMajorMinorPatchVersion_Version )
+{
+	int nMajor = 0, nMinor = 0, nPatch = 0;
+	TEST_TRUE( Plat_GetAppleMajorMinorPatchVersion( &nMajor, &nMinor, &nPatch ) );
+	TEST_TRUE( nMajor >= 10 );
+	TEST_TRUE( nMinor >= 0 && nPatch >= 0 );
+}
+
+REGISTER_NAMED_TEST( "IsAppleOSVersionSupported.Versions", IsAppleOSVersionSupported_Versions )
+{
+	int nMajor = 0, nMinor = 0, nPatch = 0;
+	TEST_TRUE( Plat_GetAppleMajorMinorPatchVersion( &nMajor, &nMinor, &nPatch ) );
+	TEST_TRUE( IsAppleOSVersionSupported( nMajor, nMinor, nPatch ) );
+	TEST_TRUE( IsAppleOSVersionSupported( 10, 0, 0 ) );
+	TEST_FALSE( IsAppleOSVersionSupported( nMajor + 1, 0, 0 ) );
+}
+
+REGISTER_NAMED_TEST( "GetMoltenVKSupportsMetal.Answers", GetMoltenVKSupportsMetal_Answers )
+{
+	TEST_EQ( GetMoltenVKSupportsMetal(), GetMoltenVKSupportsMetal() );
+}
+
+REGISTER_NAMED_TEST( "GetMoltenVKMonitorContentsScale.Positive", GetMoltenVKMonitorContentsScale_Positive )
+{
+	TEST_TRUE( GetMoltenVKMonitorContentsScale() >= 0.0f );
+}
+
+REGISTER_NAMED_TEST( "GetMoltenVKMetalLayer.NeedsWindow", GetMoltenVKMetalLayer_NeedsWindow )
+{
+	// Both take an NSWindow, which the tests do not create.
+	TEST_NOT_NULL( reinterpret_cast< void * >( &GetMoltenVKMetalLayer ) );
+	TEST_NOT_NULL( reinterpret_cast< void * >( &GetMoltenVKWindowContentsScale ) );
+}
+#endif // PLATFORM_OSX
