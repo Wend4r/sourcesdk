@@ -41,8 +41,9 @@ PLATFORM_INTERFACE void Coroutine_YieldToMain();
 PLATFORM_INTERFACE bool Coroutine_IsActive();
 
 #ifdef PLATFORM_LINUX
-// Assembly of the POSIX coroutines: stores the stack bounds of the new coroutine, runs
-// pfnExec( pvParam ) on it and then pfnFinish, which does not return
+// Assembly of the POSIX coroutines: pushes the non-volatile registers on the current stack,
+// stores where they begin and end in *ppStackHigh and *ppStackLow, runs pfnExec( pvParam ) and
+// then pfnFinish, which must not return
 PLATFORM_INTERFACE void Coroutine_Launch_ASM( byte **ppStackHigh, byte **ppStackLow, void (*pfnExec)( void * ), void *pvParam, void (*pfnFinish)() );
 
 // Stores rbx, rbp, r12, r13, r14 and r15 in that order

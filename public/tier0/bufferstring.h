@@ -613,7 +613,7 @@ struct URLQueryParameter_t
 };
 
 // Splits the query (an optional leading '?' and trailing '/' are skipped) on '&' into the pairs
-// without decoding them, pParameters is cleared first
+// and URL-decodes their keys and values, pParameters is cleared first
 PLATFORM_INTERFACE void V_ParseURLQuery_Unsafe( const char *pszURLQuery, CUtlVector< URLQueryParameter_t, int, CUtlVectorMemory_Growable< URLQueryParameter_t, int, 0 > > *pParameters );
 
 #include "schemacompiler/schemaoff.h"

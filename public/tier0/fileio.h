@@ -249,7 +249,8 @@ PLATFORM_OVERLOAD int FioCopyFile( const char *pSourceFileName, const char *pDes
 PLATFORM_OVERLOAD int FioCreateSymbolicLink( const char *pLinkName, const char *pTargetName, bool bDirectory );
 PLATFORM_OVERLOAD int FioReadLink( const char *pLinkName, CBufferString *pTargetBuf, bool bFullPath );
 
-PLATFORM_OVERLOAD int FioGetFileCRC32( const char *pFileName, uint32 *pCRC32, int32 nMaxBytes, uint64 *pFileBytes );
+// The CRC32 of the whole file, read in chunks of nChunkBytes
+PLATFORM_OVERLOAD int FioGetFileCRC32( const char *pFileName, uint32 *pCRC32, int32 nChunkBytes, uint64 *pFileBytes );
 PLATFORM_OVERLOAD int FioGetFileCRC32Buffer( const char *pFileName, uint32 *pCRC32, uint8 *pWorkBuffer, int32 nWorkBufferBytes, uint64 *pFileBytes );
 
 // The path of pFile with the name as the directory spells it, null when there is no such file;

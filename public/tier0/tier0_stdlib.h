@@ -82,7 +82,9 @@ PLATFORM_INTERFACE uint32 V_tier0_crc32( uint32 nStartCrc, const void *pBuf, siz
 
 PLATFORM_INTERFACE void V_abort();
 
-// setjmp/longjmp of tier0 across the module boundary
+// setjmp/longjmp of tier0 across the module boundary. V_setjmp saves the context of its own frame,
+// which is gone once it returns, so a jump back to it is not usable; V_longjmp works with a
+// buffer filled by the setjmp of the caller
 typedef struct _jmp_buf_holder
 {
 	jmp_buf buf;

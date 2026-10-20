@@ -75,6 +75,8 @@ PLATFORM_INTERFACE void FindOrCreateQuantizedFloatEncoder( QuantizedFloatEncoder
 // later ones that declare another definition are warned about
 PLATFORM_INTERFACE void FindOrCreateQuantizedFloatEncoderAlias( QuantizedFloatEncoderReg_t *pReg, const char *pszFieldName, const char *pszAliasName, const QuantizedFloatEncoderDef_t *pDef );
 
+// The definition of an alias for its new fields: an override wins over a tuning, the reset drops
+// the overrides; an unusable definition is ignored with a warning
 PLATFORM_INTERFACE void OverrideQuantizedFloatEncoderAlias( const char *pszAliasName, const QuantizedFloatEncoderDef_t *pDef );
 PLATFORM_INTERFACE void RegisterQuantizedFloatEncoderAliasTuning( const char *pszAliasName, const QuantizedFloatEncoderDef_t *pDef );
 PLATFORM_INTERFACE void ResetQuantizedFloatEncoderAliasOverrides();
