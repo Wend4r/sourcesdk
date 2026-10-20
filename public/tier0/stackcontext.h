@@ -12,6 +12,9 @@ typedef uintp IntegerRegisterValue_t;
 
 struct MemoryRange_t
 {
+	size_t GetSize() const { return ( size_t )( ( uint8 * )pHigh - ( uint8 * )pLow ); }
+	bool Contains( const void *p ) const { return p >= pLow && p < pHigh; }
+
 	void *pLow;
 	void *pHigh;
 };

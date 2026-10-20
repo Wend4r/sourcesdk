@@ -334,6 +334,8 @@ class IStack_VM_Segment_Marker;
 // The markers of the stack of the current thread, to move them to another one and back
 struct StackMarkupState_t
 {
+	StackMarkupState_t() { Clear(); }
+
 	void Clear()
 	{
 		pStackTop = NULL;

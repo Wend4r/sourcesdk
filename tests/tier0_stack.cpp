@@ -24,8 +24,6 @@ public:
 
 	~CTestAlternateStack() { free( m_pMemory ); }
 
-	bool Contains( const void *p ) const { return p >= m_Range.pLow && p < m_Range.pHigh; }
-
 	static const size_t k_nBytes = 256 * 1024;
 
 	uint8 *m_pMemory;
@@ -38,13 +36,17 @@ static bool s_bRanOnAlternateStack;
 static intp TestRunPlusOne( void *pArg )
 {
 	int nLocal = 0;
-	s_bRanOnAlternateStack = s_pRunningStack && s_pRunningStack->Contains( &nLocal );
+	s_bRanOnAlternateStack = s_pRunningStack && s_pRunningStack->m_Range.Contains( &nLocal );
 	return reinterpret_cast< intp >( pArg ) + 1;
 }
 
 REGISTER_NAMED_TEST( "RunWithAlternateStack.RunsOnTheStack", RunWithAlternateStack_RunsOnTheStack )
 {
 	CTestAlternateStack stack;
+	TEST_EQ( stack.m_Range.GetSize(), ( size_t )CTestAlternateStack::k_nBytes );
+	TEST_TRUE( stack.m_Range.Contains( stack.m_pMemory ) );
+	TEST_FALSE( stack.m_Range.Contains( stack.m_pMemory + CTestAlternateStack::k_nBytes ) );
+
 	s_pRunningStack = &stack;
 	s_bRanOnAlternateStack = false;
 
@@ -86,7 +88,7 @@ REGISTER_NAMED_TEST( "JmpToAlternateStack.OutAndBack", JmpToAlternateStack_OutAn
 	TEST_EQ( nFirst, ( intp )7 );
 	TEST_NOT_NULL( s_pJmpBackToCaller );
 	TEST_NOT_NULL( s_pJmpBackToInner );
-	TEST_TRUE( stack.Contains( s_pJmpBackToInner ) );
+	TEST_TRUE( stack.m_Range.Contains( s_pJmpBackToInner ) );
 
 	// Jumping back continues the function, whose return ends up here.
 	JmpBuf_AlternateStack_t *pJmpBack = nullptr;
@@ -206,8 +208,12 @@ REGISTER_NAMED_TEST( "GetAddressInlineCallData.EmptiesOutputs", GetAddressInline
 
 REGISTER_NAMED_TEST( "StackMarkupState_t.Clear", StackMarkupState_t_Clear )
 {
+	// A new state is clear.
 	StackMarkupState_t state;
-	memset( &state, 0xff, sizeof( state ) );
+	TEST_NULL( state.pStackTop );
+	TEST_NULL( state.pStackVMSegmentMarker );
+
+	memset( static_cast< void * >( &state ), 0xff, sizeof( state ) );
 	state.Clear();
 	TEST_NULL( state.pStackTop );
 	TEST_NULL( state.pDeferredMarkers );
@@ -219,7 +225,6 @@ REGISTER_NAMED_TEST( "StackMarkup_SaveState.NoMarkers", StackMarkup_SaveState_No
 {
 	// CS2 keeps no markers, the state stays as it was.
 	StackMarkupState_t state;
-	state.Clear();
 	StackMarkup_SaveState( state );
 	TEST_NULL( state.pStackTop );
 	TEST_NULL( state.pDeferredMarkers );
@@ -228,11 +233,9 @@ REGISTER_NAMED_TEST( "StackMarkup_SaveState.NoMarkers", StackMarkup_SaveState_No
 REGISTER_NAMED_TEST( "StackMarkup_RestoreState.NoMarkers", StackMarkup_RestoreState_NoMarkers )
 {
 	StackMarkupState_t state;
-	state.Clear();
 	StackMarkup_RestoreState( state );
 
 	StackMarkupState_t saved;
-	saved.Clear();
 	StackMarkup_SaveState( saved );
 	TEST_NULL( saved.pStackTop );
 }
