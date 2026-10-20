@@ -129,13 +129,16 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	stringpool.cpp
 	strtools.cpp
 	tier0_allocators.cpp
+	tier0_compression.cpp
 	tier0_coroutine.cpp
 	tier0_dbg.cpp
 	tier0_eventdispatcher.cpp
 	tier0_fileio.cpp
 	tier0_hashes.cpp
+	tier0_jsonparser.cpp
 	tier0_keyvalues.cpp
 	tier0_platform.cpp
+	tier0_quantizedfloatencoder.cpp
 	tier0_snapshots.cpp
 	tier0_stack.cpp
 	tier0_stackhelpers.cpp
@@ -186,6 +189,9 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 foreach(test_source IN LISTS SOURCESDK_CONTAINER_TEST_SOURCES)
 	sourcesdk_add_cpp_test("" containers_main.cpp ${test_source})
 endforeach()
+
+# The minidumps of tier0 stop the threads of the process, which stalls under the load of the other tests
+set_tests_properties(minidump_tests PROPERTIES RUN_SERIAL TRUE)
 
 set(SOURCESDK_SMOKE_TEST_SOURCES
 	tier0_headers.cpp
