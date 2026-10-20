@@ -171,4 +171,10 @@ private:
 	CBufferString *m_pString;
 };
 
+// Changes the indentation level of the thread that OutputIndentation() writes
+PLATFORM_OVERLOAD void Formatting_AdjustIndentation( int nDelta );
+
+// Writes pszFormat to pOutputStream, formatting the next of the nArgs arguments at each conversion
+PLATFORM_OVERLOAD void FormatArgumentsToBuffer( IFormatOutputStream *pOutputStream, const char *pszFormat, const CTypeErasedFormattingWrapper *pArgs, int nArgs );
+
 #endif // FORMATOUTPUTSTREAM_H

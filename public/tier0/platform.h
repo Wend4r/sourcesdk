@@ -1857,6 +1857,12 @@ PLATFORM_INTERFACE void Plat_UnloadOleAut(); // empty
 PLATFORM_INTERFACE void Plat_RegisterModule( void *pModuleBase );
 PLATFORM_INTERFACE void *const *Plat_GetRegisteredModules();
 
+// The ordered constructor dependency of tier0, which a module that constructs its globals in
+// order references before using tier0
+template < typename T > class COrderedConstructor_DependencyManagement;
+typedef COrderedConstructor_DependencyManagement< void > COrderedSystem_DependencyManagement;
+PLATFORM_INTERFACE void EarlyInit_Tier0( COrderedSystem_DependencyManagement *pReferencedFrom );
+
 // Receives the import libraries of a module for Plat_EnumerateModuleImportLibraries; the
 // names are ours
 class IPlatModuleImportLibraryVisitor

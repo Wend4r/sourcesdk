@@ -7,6 +7,9 @@
 
 #include "tier0/platform.h"
 
+template< class T, typename I, size_t N > class CUtlVectorMemory_Growable;
+template< class T, typename I, class A > class CUtlVector;
+
 //-----------------------------------------------------------------------------
 // Controls the registered LRU caches by name, a null name affects every cache
 // where the member allows it
@@ -18,6 +21,28 @@ public:
 	DLL_CLASS_IMPORT static void Flush( const char *pszCacheName );
 	DLL_CLASS_IMPORT static void ResetCacheStats( const char *pszCacheName );
 	DLL_CLASS_IMPORT static void SpewStats();
+
+	// Called by the statics above for the caches of the name
+	virtual void SetCacheSize( int nSize ) = 0;
+	virtual void Flush() = 0;
+
+protected:
+	int m_nCacheSize;
+
+	// The statistics, ResetCacheStats() zeroes the counters and restarts m_nStatsStartTime
+	int m_nRequests;
+	time_t m_nStatsStartTime; // Plat_GetTime()
+	int m_nHits;
+	int m_nEvictions;
 };
+
+// An entry of the registry the statics of CUtlLRUCacheBase search by name
+struct LRUCacheRegistryEntry_t
+{
+	const char *m_pszName;
+	CUtlLRUCacheBase *m_pCache;
+};
+
+PLATFORM_INTERFACE CUtlVector< LRUCacheRegistryEntry_t, int, CUtlVectorMemory_Growable< LRUCacheRegistryEntry_t, int, 0 > > *GetLRUCacheRegistry();
 
 #endif // UTLLRUCACHE_H

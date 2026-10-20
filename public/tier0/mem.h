@@ -63,6 +63,9 @@ struct ThreadLocalStackAllocator_t
 
 PLATFORM_INTERFACE ThreadLocalStackAllocator_t *GetThreadLocalStackAllocator();
 
+// Fills the memory with a debug pattern in debug builds of tier0, returns pMemory
+PLATFORM_INTERFACE void *DebugBuild_InitFillMemory( void *pMemory );
+
 //-----------------------------------------------------------------------------
 // One step of TransferMemory, which copies m_nBytes at m_nSrcOffset of the source stream
 // to m_nDstOffset of the destination stream for every element; the names are ours
