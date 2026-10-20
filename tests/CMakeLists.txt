@@ -129,12 +129,15 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	stringpool.cpp
 	strtools.cpp
 	tier0_allocators.cpp
+	tier0_coroutine.cpp
 	tier0_eventdispatcher.cpp
 	tier0_fileio.cpp
 	tier0_hashes.cpp
 	tier0_keyvalues.cpp
 	tier0_platform.cpp
 	tier0_snapshots.cpp
+	tier0_stack.cpp
+	tier0_stackhelpers.cpp
 	tier0_stdlib.cpp
 	tier0_strings.cpp
 	tier0_threadtools.cpp
