@@ -480,4 +480,38 @@ private:
 	CThreadFiber &operator=( const CThreadFiber & ) = delete;
 };
 
+//-----------------------------------------------------------------------------
+// Thread pool that runs the fiber jobs of the job pool
+//-----------------------------------------------------------------------------
+abstract_class IFiberThreadWorkerPool
+{
+public:
+	// The job pool has a fiber job to run
+	virtual void FiberJobAvailable() = 0;
+
+	// The default worker of tier0 sets its quit flag and wakes up
+	virtual void unk001() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Fibers waiting to run, shared by the worker thread pools
+//-----------------------------------------------------------------------------
+abstract_class IFiberJobPool
+{
+public:
+	virtual void AddFiberToJobPool( CFiber *pFiber, bool bUnknown ) = 0;
+
+	// Takes the next waiting fiber, null when there is none
+	virtual CFiber *GetWaitingFiberJob( bool *pbUnknown ) = 0;
+	virtual bool RemoveFiberJob( volatile CFiber *pFiber ) = 0;
+
+	virtual void RegisterWorkerThreadPool( IFiberThreadWorkerPool *pPool ) = 0;
+	virtual void UnregisterWorkerThreadPool( IFiberThreadWorkerPool *pPool ) = 0;
+
+	// Newer than the s&box build, takes the fiber locks of the pool
+	virtual void unk005() = 0;
+};
+
+PLATFORM_INTERFACE IFiberJobPool *g_pFiberJobPool;
+
 #endif // FIBERTOOLS_H

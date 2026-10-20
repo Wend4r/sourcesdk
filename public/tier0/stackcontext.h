@@ -71,6 +71,12 @@ private:
 	CThreadSwapTarget &operator=( const CThreadSwapTarget & ) = delete;
 };
 
+#ifdef PLATFORM_OSX
+// Swap targets of the threads that macOS and SDL require some calls to run on
+PLATFORM_INTERFACE CThreadSwapTarget *g_pThreadSwapTarget_Apple_Main_Thread;
+PLATFORM_INTERFACE CThreadSwapTarget *g_pThreadSwapTarget_SDL_Main_Thread;
+#endif
+
 //-----------------------------------------------------------------------------
 // Moves the current stack to the target thread for the lifetime of the object,
 // pParkedThreadMemory is the stack the parked thread runs on meanwhile
