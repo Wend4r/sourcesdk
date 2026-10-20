@@ -345,6 +345,9 @@ public:
 	// Sets the job that ResumeJob starts, nJobContextSize bytes of pJobContext are copied
 	// to the top of the fiber stack when it is not zero; returns the context the job gets
 	void *SetFiberJob( void (*pfnJob)( void * ), void *pJobContext = nullptr, size_t nJobContextSize = 0 ) { return InternalSetFiberJob( pfnJob, pJobContext, nJobContextSize, false ); }
+
+	// Same, the job also gets the value of the ResumeJob that starts it
+	void *SetFiberJob( void (*pfnJob)( void *, void * ), void *pJobContext = nullptr, size_t nJobContextSize = 0 ) { return InternalSetFiberJob( reinterpret_cast< void (*)( void * ) >( pfnJob ), pJobContext, nJobContextSize, true ); }
 	void *GetFiberJobContext() const { return m_pCurrentJobContext; }
 	bool HasAJob() const { return m_pCurrentJobFunc != nullptr; }
 
@@ -370,8 +373,10 @@ protected:
 
 private:
 	DLL_CLASS_IMPORT void ReachedZeroReferences();
-	// Copies nJobContextSize bytes of pJobContext to the top of the stack when it is not zero
-	DLL_CLASS_IMPORT void *InternalSetFiberJob( void (*pfnJob)( void * ), void *pJobContext, size_t nJobContextSize, bool bUnknown );
+	// Copies nJobContextSize bytes of pJobContext to the top of the stack when it is not zero;
+	// with bJobTakesResumeValue the job is called as void ( void *pContext, void *pResumeVal ),
+	// flag 0x80 of m_nFlags
+	DLL_CLASS_IMPORT void *InternalSetFiberJob( void (*pfnJob)( void * ), void *pJobContext, size_t nJobContextSize, bool bJobTakesResumeValue );
 
 public:
 	CFiber *volatile m_pNext;
@@ -489,8 +494,8 @@ public:
 	// The job pool has a fiber job to run
 	virtual void FiberJobAvailable() = 0;
 
-	// The default worker of tier0 sets its quit flag and wakes up
-	virtual void unk001() = 0;
+	// The default worker of tier0 sets its quit flag and wakes up; the name is ours
+	virtual void Quit() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -499,10 +504,12 @@ public:
 abstract_class IFiberJobPool
 {
 public:
-	virtual void AddFiberToJobPool( CFiber *pFiber, bool bUnknown ) = 0;
+	// The pool takes the reference of the caller with bPassReference, otherwise it adds one
+	virtual void AddFiberToJobPool( CFiber *pFiber, bool bPassReference ) = 0;
 
-	// Takes the next waiting fiber, null when there is none
-	virtual CFiber *GetWaitingFiberJob( bool *pbUnknown ) = 0;
+	// Takes the next waiting fiber that is ready to resume, null when there is none; with
+	// pbSkippedFibers, it is set when a fiber that is not ready yet was passed over
+	virtual CFiber *GetWaitingFiberJob( bool *pbSkippedFibers ) = 0;
 	virtual bool RemoveFiberJob( volatile CFiber *pFiber ) = 0;
 
 	virtual void RegisterWorkerThreadPool( IFiberThreadWorkerPool *pPool ) = 0;

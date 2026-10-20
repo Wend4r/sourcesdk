@@ -137,12 +137,12 @@ public:
 
 	virtual bool Start( const ThreadPoolStartParams_t &startParams, const char *pszNameOverride ) { return true; }
 	virtual bool Stop() { return true; }
-	virtual void unk001( const ThreadPoolStartParams_t &startParams ) {}
+	virtual void Restart( const ThreadPoolStartParams_t &startParams ) {}
 	virtual int GetCoreTypeRequest() { return 0; }
 	virtual int NumThreads() { return m_nThreads; }
 	virtual int NumIdleThreads() { return m_nIdleThreads; }
 	virtual int GetCurrentThreadIndex() { return -1; }
-	virtual int unk101( int, int nDefault ) { return nDefault; }
+	virtual int GetCurrentThreadSlot( int, int nOtherThreadSlot ) { return nOtherThreadSlot; }
 	virtual int SuspendExecution() { return 0; }
 	virtual int ResumeExecution() { return 0; }
 #ifdef _WIN32

@@ -410,6 +410,27 @@ REGISTER_NAMED_TEST( "Fiber.RunsAJobOnItsOwnStack", Fiber_RunsAJobOnItsOwnStack 
 	pFiber->Release();
 }
 
+static void *s_pFiberResumeValue;
+
+static void FiberResumeValueJob( void *pContext, void *pResumeVal )
+{
+	s_pFiberResumeValue = pResumeVal;
+}
+
+REGISTER_NAMED_TEST( "Fiber.JobGetsTheResumeValue", Fiber_JobGetsTheResumeValue )
+{
+	CFiber *pFiber = CFiber::AllocPooledFiber( CFiber::STACKSIZE_64KB, 0 );
+	TEST_NOT_NULL( pFiber );
+
+	int nResume = 0;
+	s_pFiberResumeValue = nullptr;
+	pFiber->SetFiberJob( &FiberResumeValueJob );
+	TEST_TRUE( pFiber->ResumeJob( &nResume ) );
+	TEST_TRUE( s_pFiberResumeValue == &nResume );
+
+	pFiber->Release();
+}
+
 static int s_nFiberYieldStage;
 
 static void FiberYieldJob( void * )
@@ -585,7 +606,7 @@ class CTestFiberWorkerPool : public IFiberThreadWorkerPool
 {
 public:
 	virtual void FiberJobAvailable() { m_nJobsAvailable++; }
-	virtual void unk001() { m_nQuits++; }
+	virtual void Quit() { m_nQuits++; }
 
 	int m_nJobsAvailable = 0;
 	int m_nQuits = 0;
@@ -595,8 +616,8 @@ REGISTER_NAMED_TEST( "IFiberJobPool.EmptyPool", IFiberJobPool_EmptyPool )
 {
 	TEST_NOT_NULL( g_pFiberJobPool );
 
-	bool bUnknown = true;
-	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) );
+	bool bSkippedFibers = true;
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) );
 }
 
 REGISTER_NAMED_TEST( "IFiberJobPool.AddGetRemove", IFiberJobPool_AddGetRemove )
@@ -612,14 +633,14 @@ REGISTER_NAMED_TEST( "IFiberJobPool.AddGetRemove", IFiberJobPool_AddGetRemove )
 	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
 	TEST_EQ( workers.m_nJobsAvailable, 1 );
 
-	bool bUnknown = true;
-	TEST_TRUE( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) == pFiber );
-	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) );
+	bool bSkippedFibers = true;
+	TEST_TRUE( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) == pFiber );
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) );
 
 	// A waiting fiber can be removed again.
 	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
 	TEST_TRUE( g_pFiberJobPool->RemoveFiberJob( pFiber ) );
-	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bUnknown ) );
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) );
 
 	g_pFiberJobPool->UnregisterWorkerThreadPool( &workers );
 	TEST_EQ( workers.m_nQuits, 0 );
