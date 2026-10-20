@@ -9,6 +9,7 @@
 #include <tier0/appinstance.h>
 #include <tier0/mem.h>
 #include <tier0/platwindow.h>
+#include <tier0/random.h>
 #include <tier0/threadtools.h>
 #include <tier0/utlvector.h>
 #include <tier0/win32consoleio.h>
@@ -886,3 +887,42 @@ REGISTER_NAMED_TEST( "GetMoltenVKMetalLayer.NeedsWindow", GetMoltenVKMetalLayer_
 	TEST_NOT_NULL( reinterpret_cast< void * >( &GetMoltenVKWindowContentsScale ) );
 }
 #endif // PLATFORM_OSX
+
+REGISTER_NAMED_TEST( "Plat_GetProcAddress.LoadsAndResolves", Plat_GetProcAddress_LoadsAndResolves )
+{
+	// The module name is the one of Plat_LoadModule, without the prefix and the extension.
+	typedef double ( *FloatTimeFn_t )();
+	FloatTimeFn_t pfnFloatTime = reinterpret_cast< FloatTimeFn_t >( Plat_GetProcAddress( "tier0", "Plat_FloatTime" ) );
+	TEST_NOT_NULL( reinterpret_cast< void * >( pfnFloatTime ) );
+	TEST_TRUE( pfnFloatTime() > 0.0 );
+	TEST_NULL( Plat_GetProcAddress( "tier0", "sourcesdk_missing_export" ) );
+	TEST_NULL( Plat_GetProcAddress( "sourcesdk_missing_module", "Plat_FloatTime" ) );
+}
+
+REGISTER_NAMED_TEST( "Plat_AlertUser.Overloads", Plat_AlertUser_Overloads )
+{
+	// Both need a window or a desktop session, which the tests do not have.
+	void ( *pfnUTF8 )( PlatWindow_t, const char *, const char * ) = &Plat_AlertUser;
+	void ( *pfnWide )( PlatWindow_t, const wchar_t *, const wchar_t * ) = &Plat_AlertUser;
+	TEST_NOT_NULL( reinterpret_cast< void * >( pfnUTF8 ) );
+	TEST_NOT_NULL( reinterpret_cast< void * >( pfnWide ) );
+	TEST_NOT_NULL( reinterpret_cast< void * >( &Plat_MessageBox ) );
+}
+
+REGISTER_NAMED_TEST( "RandomizeBits.FillsTheBuffer", RandomizeBits_FillsTheBuffer )
+{
+	uint8 bytes[ 64 ] = {};
+	RandomizeBits( bytes, sizeof( bytes ) );
+
+	int nNonZero = 0;
+	for ( uint8 nByte : bytes )
+		nNonZero += nByte != 0;
+
+	TEST_TRUE( nNonZero > 32 );
+
+	// A count that is not a multiple of 4 leaves the bytes after it alone.
+	uint8 tail[ 8 ] = {};
+	RandomizeBits( tail, 5 );
+	TEST_EQ( ( int )tail[ 5 ], 0 );
+	TEST_EQ( ( int )tail[ 7 ], 0 );
+}

@@ -1241,11 +1241,8 @@ inline bool Plat_IsInDebugSession() { return false; }
 //-----------------------------------------------------------------------------
 // Message Box
 //-----------------------------------------------------------------------------
-#if defined( PLATFORM_WINDOWS_PC )
+// An SDL message box outside Windows, only logged in the headless mode
 PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessage, HWND hwnd = nullptr );
-#else
-#define Plat_MessageBox( ... ) ((void)0)
-#endif
 
 
 PLATFORM_INTERFACE void Plat_Printf ( const tchar *pFmt, ... ) FMTFUNCTION( 1, 2 );
@@ -2739,9 +2736,9 @@ PLATFORM_INTERFACE int RestartSelf_TestIfInternalArg( const char *pArg );
 //-----------------------------------------------------------------------------
 // Dynamic libs support
 //-----------------------------------------------------------------------------
-#if defined( PLATFORM_WINDOWS )
 
-PLATFORM_INTERFACE void *Plat_GetProcAddress( const char *pszModule, const char *pszName );
+// Plat_LoadModule and Plat_GetModuleProcAddress in one, null when either fails
+PLATFORM_INTERFACE void *Plat_GetProcAddress( const char *pszModule, const char *pszName, bool bHideLoadingError = true );
 
 template <typename FUNCPTR_TYPE>
 class CDynamicFunction
@@ -2764,7 +2761,6 @@ public:
 private:
 	FUNCPTR_TYPE m_pfn;
 };
-#endif
 
 //-----------------------------------------------------------------------------
 // What OS version are we?

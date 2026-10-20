@@ -170,7 +170,9 @@ PLATFORM_INTERFACE float Plat_GetWindowContentsScale( PlatWindow_t hWindow );
 //-----------------------------------------------------------------------------
 // User notifications
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE void Plat_AlertUser( PlatWindow_t hWindow, const wchar_t *pszTitle, const wchar_t *pszMessage );
+// Flashes the window on Windows; a desktop notification elsewhere, the UTF-8 overload goes to Plat_DesktopNotify
+PLATFORM_INTERFACE void Plat_AlertUser( PlatWindow_t hWindow, const char *pszUTF8Title, const char *pszUTF8Message );
+PLATFORM_OVERLOAD void Plat_AlertUser( PlatWindow_t hWindow, const wchar_t *pszTitle, const wchar_t *pszMessage );
 PLATFORM_INTERFACE bool Plat_DesktopNotify( const char *pszUTF8Title, const char *pszUTF8Message );
 PLATFORM_INTERFACE bool Plat_SetDesktopNotifyIconPath( const char *pFullPath );
 
