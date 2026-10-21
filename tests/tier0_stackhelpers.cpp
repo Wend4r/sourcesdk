@@ -15,8 +15,10 @@
 #include <tier0/stackhelpers.h>
 
 #include <cstring>
+#include <new>
 
 #include <tier0/bufferstring.h>
+#include <tier0/memalloc.h>
 #include <tier0/strtools.h>
 #include <tier0/utlbuffer.h>
 
@@ -723,7 +725,8 @@ REGISTER_NAMED_TEST( "CVDbgHelpSymbolModule.Init", CVDbgHelpSymbolModule_Init )
 	MODULEINFO info = {};
 	GetModuleInformation( GetCurrentProcess(), hTier0, &info, sizeof( info ) );
 
-	CVDbgHelpSymbolModule *pModule = new CVDbgHelpSymbolModule;
+	// The deleting destructor of tier0 frees the module with g_pMemAlloc.
+	CVDbgHelpSymbolModule *pModule = new ( MemAlloc_Alloc( sizeof( CVDbgHelpSymbolModule ) ) ) CVDbgHelpSymbolModule;
 	TEST_TRUE( pModule->Init( session.m_pDbgHelp, session.m_hProcess, szPath, "tier0.dll", nullptr, ( uint64 )hTier0, info.SizeOfImage, ( StackTools_ModuleIDFormat_t )0, nullptr, 0, false ) );
 	TEST_NOT_NULL( pModule->GetSymbolsDescription() );
 
