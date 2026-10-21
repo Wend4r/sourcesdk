@@ -580,6 +580,17 @@ REGISTER_NAMED_TEST( "CDbgHelpFunctionsLoader.SymRegisterCallbackW64_", CDbgHelp
 	TEST_TRUE( session.m_pDbgHelp->SymRegisterCallbackW64_( session.m_hProcess, []( void *, unsigned long, unsigned __int64, unsigned __int64 ) -> int { return FALSE; }, 0 ) != 0 );
 }
 
+// The routines of the stack walk through the loader, the tests do not link dbghelp.lib
+static void *__cdecl TestFunctionTableAccess( void *hProcess, unsigned __int64 nAddrBase )
+{
+	return StackHelpers_Windows_GetDbgHelpWrapper()->SymFunctionTableAccess64_( hProcess, nAddrBase );
+}
+
+static unsigned __int64 __cdecl TestGetModuleBase( void *hProcess, unsigned __int64 nAddress )
+{
+	return StackHelpers_Windows_GetDbgHelpWrapper()->SymGetModuleBase64_( hProcess, nAddress );
+}
+
 REGISTER_NAMED_TEST( "CDbgHelpFunctionsLoader.StackWalk64_", CDbgHelpFunctionsLoader_StackWalk64_ )
 {
 	CDbgHelpFunctionsLoader *pDbgHelp = StackHelpers_Windows_GetDbgHelpWrapper();
@@ -599,7 +610,7 @@ REGISTER_NAMED_TEST( "CDbgHelpFunctionsLoader.StackWalk64_", CDbgHelpFunctionsLo
 
 	// The function table and the module bases come from the loader too.
 	TEST_NOT_NULL( pDbgHelp->SymFunctionTableAccess64_( hProcess, context.Rip ) );
-	TEST_TRUE( pDbgHelp->StackWalk64_( IMAGE_FILE_MACHINE_AMD64, hProcess, GetCurrentThread(), reinterpret_cast< _tagSTACKFRAME64 * >( &frame ), &context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr ) != 0 );
+	TEST_TRUE( pDbgHelp->StackWalk64_( IMAGE_FILE_MACHINE_AMD64, hProcess, GetCurrentThread(), reinterpret_cast< _tagSTACKFRAME64 * >( &frame ), &context, nullptr, TestFunctionTableAccess, TestGetModuleBase, nullptr ) != 0 );
 
 	if ( pDbgHelp->HasStackWalkEx_() )
 	{
@@ -610,7 +621,7 @@ REGISTER_NAMED_TEST( "CDbgHelpFunctionsLoader.StackWalk64_", CDbgHelpFunctionsLo
 		frameEx.AddrPC.Mode = AddrModeFlat;
 		frameEx.AddrStack.Offset = context.Rsp;
 		frameEx.AddrStack.Mode = AddrModeFlat;
-		TEST_TRUE( pDbgHelp->StackWalkEx_( IMAGE_FILE_MACHINE_AMD64, hProcess, GetCurrentThread(), reinterpret_cast< _tagSTACKFRAME_EX * >( &frameEx ), &context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr, 0 /* SYM_STKWALK_DEFAULT */ ) != 0 );
+		TEST_TRUE( pDbgHelp->StackWalkEx_( IMAGE_FILE_MACHINE_AMD64, hProcess, GetCurrentThread(), reinterpret_cast< _tagSTACKFRAME_EX * >( &frameEx ), &context, nullptr, TestFunctionTableAccess, TestGetModuleBase, nullptr, 0 /* SYM_STKWALK_DEFAULT */ ) != 0 );
 	}
 
 	pDbgHelp->SymCleanup_( hProcess );
