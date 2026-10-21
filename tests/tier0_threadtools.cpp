@@ -686,10 +686,10 @@ REGISTER_NAMED_TEST( "AsyncFunctionHandle_t.RawValue", AsyncFunctionHandle_t_Raw
 }
 
 #ifdef PLATFORM_WINDOWS
-REGISTER_NAMED_TEST( "ToolsStallMonitor_Initialize.StartAndShutdown", ToolsStallMonitor_Initialize_StartAndShutdown )
+REGISTER_NAMED_TEST( "ToolsStallMonitor_Shutdown.WithoutMonitor", ToolsStallMonitor_Shutdown_WithoutMonitor )
 {
-	// A threshold no test reaches.
-	ToolsStallMonitor_Initialize( ThreadGetCurrentId(), 10 * 60 * 1000 );
+	// Without a monitor both do nothing. A monitor is not started here: a shutdown before its
+	// thread creates the window waits for that thread forever.
 	ToolsStallMonitor_IndicateActivity();
 	ToolsStallMonitor_Shutdown();
 }

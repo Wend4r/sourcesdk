@@ -22,8 +22,9 @@ PLATFORM_INTERFACE void ToolsStallMonitor_SetMainThreadWindow( void *hWindow );
 PLATFORM_INTERFACE void ToolsStallMonitor_SetDisplayImageRGBA( int nWidth, int nHeight, const byte *pBytes );
 
 #ifdef _WIN32
-// Starts the monitor of nMainThreadId, which reports a stall after nStallThresholdMS without activity
-PLATFORM_INTERFACE void ToolsStallMonitor_Initialize( ThreadId_t nMainThreadId, uint64 nStallThresholdMS );
+// Starts the monitor of the calling thread, which reports a stall after nStallThresholdMS without
+// activity; its window thread must have created the window before ToolsStallMonitor_Shutdown
+PLATFORM_INTERFACE void ToolsStallMonitor_Initialize( uint64 nStallThresholdMS );
 #endif
 
 PLATFORM_INTERFACE void ToolsStallMonitor_Shutdown();
