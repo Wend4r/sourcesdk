@@ -654,7 +654,7 @@ REGISTER_NAMED_TEST( "CDbgHelpFunctionsLoader.SymFindFileInPath_", CDbgHelpFunct
 	TEST_FALSE( session.m_pDbgHelp->SymFindFileInPath_( session.m_hProcess, L".", L"sourcesdk_missing.pdb", nullptr, 0, 0, SSRVOPT_DWORD, szFound, nullptr, nullptr ) != 0 );
 
 	char szFoundA[ MAX_PATH ] = {};
-	TEST_FALSE( session.m_pDbgHelp->SearchForImageOrSymbolFile( session.m_hProcess, ".", "sourcesdk_missing.pdb", nullptr, 0, 0, SSRVOPT_DWORD, szFoundA, sizeof( szFoundA ) ) );
+	TEST_FALSE( session.m_pDbgHelp->SearchForImageOrSymbolFile( session.m_hProcess, "sourcesdk_missing.pdb", nullptr, nullptr, 0, 0, SSRVOPT_DWORD, szFoundA, sizeof( szFoundA ) ) );
 }
 
 REGISTER_NAMED_TEST( "CDbgHelpFunctionsLoader.FindDebugFiles", CDbgHelpFunctionsLoader_FindDebugFiles )

@@ -221,7 +221,8 @@ public:
 	DLL_CLASS_IMPORT void EitherSymCleanup( void *hProcess );
 	DLL_CLASS_IMPORT void ApplySymSrvDebugOutputWorkaround( void *hProcess );
 
-	DLL_CLASS_IMPORT bool SearchForImageOrSymbolFile( void *hProcess, const char *pszSearchPath, const char *pszFileName, const void *pID, unsigned long nTwo, unsigned long nThree, unsigned long nFlags, char *pszFoundFile, unsigned __int64 nFoundFileSize );
+	// Looks for pszFileName as given, then in the directory of pszNextToFile, then with SymFindFileInPath
+	DLL_CLASS_IMPORT bool SearchForImageOrSymbolFile( void *hProcess, const char *pszFileName, const char *pszNextToFile, const void *pID, unsigned long nTwo, unsigned long nThree, unsigned long nFlags, char *pszFoundFile, unsigned __int64 nFoundFileSize );
 	DLL_CLASS_IMPORT void FindDebugFiles( void *hProcess, const char *pszModulePath, uint32 nUnknown, const char *pszSearchPath, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, unsigned __int64 nUnknown2, char *pszImageFile, unsigned __int64 nImageFileSize, char *pszSymbolFile, unsigned __int64 nSymbolFileSize );
 
 	DLL_CLASS_IMPORT int SymInitialize_( void *hProcess, const wchar_t *UserSearchPath, int fInvadeProcess );
