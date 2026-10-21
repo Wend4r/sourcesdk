@@ -287,7 +287,8 @@ public:
 	// Takes the next changed file with the watched directory in front
 	DLL_CLASS_IMPORT bool GetChangedFile( CBufferString *pFile );
 
-	// Puts the changed files into pBuffer, or appends pointers into it to pFiles, returns their count
+	// Puts the changed files into pBuffer, or appends pointers into it to pFiles, returns their count;
+	// pBuffer is required
 	DLL_CLASS_IMPORT uint32 GetChangedFiles( CUtlBuffer *pBuffer, CUtlVector< char *, int, CUtlVectorMemory_Growable< char *, int, 0 > > *pFiles );
 
 	DLL_CLASS_IMPORT void Stop();

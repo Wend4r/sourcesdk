@@ -4,6 +4,7 @@
 #include <tier0/platform.h>
 #include <tier0/fileio.h>
 #include <tier0/bufferstring.h>
+#include <tier0/utlbuffer.h>
 
 #include <cstdio>
 #include <cstring>
@@ -108,7 +109,10 @@ REGISTER_NAMED_TEST( "DirWatcher.WatchesADirectory", DirWatcher_WatchesADirector
 	// Nothing changed yet.
 	CBufferString file;
 	TEST_FALSE( watcher.GetChangedFile( &file ) );
-	TEST_EQ( watcher.GetChangedFiles( NULL, NULL ), ( uint32 )0 );
+
+	// The macOS tier0 reads pBuffer before it looks for changes.
+	CUtlBuffer buffer;
+	TEST_EQ( watcher.GetChangedFiles( &buffer, NULL ), ( uint32 )0 );
 
 	watcher.Stop();
 	rmdir( szDir );
