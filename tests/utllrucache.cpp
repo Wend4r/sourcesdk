@@ -12,7 +12,7 @@
 class CTestLRUCache : public CUtlLRUCacheBase
 {
 public:
-	CTestLRUCache()
+	CTestLRUCache( const char *pszCacheName = "sourcesdk_test_cache" ) : CUtlLRUCacheBase( pszCacheName )
 	{
 		m_nCacheSize = 0;
 		m_nRequests = 10;
@@ -23,6 +23,7 @@ public:
 
 	virtual void SetCacheSize( int nSize ) { m_nCacheSize = nSize; m_nSetSizeCalls++; }
 	virtual void Flush() { m_nFlushCalls++; }
+	virtual void Purge() { m_nPurgeCalls++; }
 
 	int CacheSize() const { return m_nCacheSize; }
 	int Requests() const { return m_nRequests; }
@@ -39,6 +40,7 @@ public:
 
 	int m_nSetSizeCalls = 0;
 	int m_nFlushCalls = 0;
+	int m_nPurgeCalls = 0;
 };
 
 REGISTER_NAMED_TEST( "GetLRUCacheRegistry.Stable", GetLRUCacheRegistry_Stable )
@@ -60,15 +62,14 @@ REGISTER_NAMED_TEST( "LRUCacheRegistryEntry_t.Layout", LRUCacheRegistryEntry_t_L
 	TEST_EQ( CTestLRUCache::OffsetOfEvictions(), ( size_t )28 );
 }
 
-REGISTER_NAMED_TEST( "CUtlLRUCacheRegistration.AddsAndRemoves", CUtlLRUCacheRegistration_AddsAndRemoves )
+REGISTER_NAMED_TEST( "CUtlLRUCacheBase.RegistersItself", CUtlLRUCacheBase_RegistersItself )
 {
 	CUtlLRUCacheRegistry *pRegistry = GetLRUCacheRegistry();
 	const int nCount = pRegistry->Count();
 
-	CTestLRUCache first, second;
 	{
-		CUtlLRUCacheRegistration firstRegistration( "sourcesdk_first_cache", &first );
-		CUtlLRUCacheRegistration secondRegistration( "sourcesdk_second_cache", &second );
+		// A cache is in the registry for its lifetime.
+		CTestLRUCache first( "sourcesdk_first_cache" ), second( "sourcesdk_second_cache" );
 		TEST_EQ( pRegistry->Count(), nCount + 2 );
 		TEST_TRUE( pRegistry->Tail().m_pCache == &second );
 		TEST_EQ( V_strcmp( pRegistry->Tail().m_pszName, "sourcesdk_second_cache" ), 0 );
@@ -80,7 +81,6 @@ REGISTER_NAMED_TEST( "CUtlLRUCacheRegistration.AddsAndRemoves", CUtlLRUCacheRegi
 REGISTER_NAMED_TEST( "CUtlLRUCacheBase.SetCacheSize", CUtlLRUCacheBase_SetCacheSize )
 {
 	CTestLRUCache cache;
-	CUtlLRUCacheRegistration registration( "sourcesdk_test_cache", &cache );
 
 	CUtlLRUCacheBase::SetCacheSize( "sourcesdk_test_cache", 42 );
 	TEST_EQ( cache.m_nSetSizeCalls, 1 );
@@ -95,7 +95,6 @@ REGISTER_NAMED_TEST( "CUtlLRUCacheBase.SetCacheSize", CUtlLRUCacheBase_SetCacheS
 REGISTER_NAMED_TEST( "CUtlLRUCacheBase.Flush", CUtlLRUCacheBase_Flush )
 {
 	CTestLRUCache cache;
-	CUtlLRUCacheRegistration registration( "sourcesdk_test_cache", &cache );
 
 	CUtlLRUCacheBase::Flush( "sourcesdk_test_cache" );
 	TEST_EQ( cache.m_nFlushCalls, 1 );
@@ -106,7 +105,6 @@ REGISTER_NAMED_TEST( "CUtlLRUCacheBase.Flush", CUtlLRUCacheBase_Flush )
 REGISTER_NAMED_TEST( "CUtlLRUCacheBase.ResetCacheStats", CUtlLRUCacheBase_ResetCacheStats )
 {
 	CTestLRUCache cache;
-	CUtlLRUCacheRegistration registration( "sourcesdk_test_cache", &cache );
 
 	// The counters restart at the time of the reset.
 	CUtlLRUCacheBase::ResetCacheStats( "sourcesdk_test_cache" );
@@ -124,7 +122,6 @@ REGISTER_NAMED_TEST( "CUtlLRUCacheBase.ResetCacheStats", CUtlLRUCacheBase_ResetC
 REGISTER_NAMED_TEST( "CUtlLRUCacheBase.SpewStats", CUtlLRUCacheBase_SpewStats )
 {
 	CTestLRUCache cache;
-	CUtlLRUCacheRegistration registration( "sourcesdk_test_cache", &cache );
 	CUtlLRUCacheBase::ResetCacheStats( "sourcesdk_test_cache" );
 
 	// Prints a table of every cache with requests.

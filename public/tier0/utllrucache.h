@@ -6,6 +6,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/dbg.h"
 #include "tier0/utlvector.h"
 
 //-----------------------------------------------------------------------------
@@ -20,9 +21,22 @@ public:
 	DLL_CLASS_IMPORT static void ResetCacheStats( const char *pszCacheName );
 	DLL_CLASS_IMPORT static void SpewStats();
 
+	// Registers the cache under pszCacheName, which is kept rather than copied; the derived cache
+	// sets its size and the statistics
+	CUtlLRUCacheBase( const char *pszCacheName );
+
 	// Called by the statics above for the caches of the name
 	virtual void SetCacheSize( int nSize ) = 0;
+
+	// Removes every entry, Purge also frees the memory; the name of Purge is ours
 	virtual void Flush() = 0;
+	virtual void Purge() = 0;
+
+	// Removes the cache from the registry
+	virtual ~CUtlLRUCacheBase();
+
+	CUtlLRUCacheBase( const CUtlLRUCacheBase & ) = delete;
+	CUtlLRUCacheBase &operator=( const CUtlLRUCacheBase & ) = delete;
 
 protected:
 	int m_nCacheSize;
@@ -45,41 +59,37 @@ typedef CUtlVector< LRUCacheRegistryEntry_t > CUtlLRUCacheRegistry;
 
 PLATFORM_INTERFACE CUtlLRUCacheRegistry *GetLRUCacheRegistry();
 
-//-----------------------------------------------------------------------------
-// The registry entry of a cache for the lifetime of the object
-//-----------------------------------------------------------------------------
-class CUtlLRUCacheRegistration
+inline CUtlLRUCacheBase::CUtlLRUCacheBase( const char *pszCacheName )
 {
-public:
-	CUtlLRUCacheRegistration( const char *pszCacheName, CUtlLRUCacheBase *pCache ) : m_pszName( pszCacheName ), m_pCache( pCache )
-	{
-		LRUCacheRegistryEntry_t entry = { pszCacheName, pCache };
-		GetLRUCacheRegistry()->AddToTail( entry );
-	}
+	CUtlLRUCacheRegistry *pRegistry = GetLRUCacheRegistry();
 
-	~CUtlLRUCacheRegistration()
+	FOR_EACH_VEC( *pRegistry, i )
 	{
-		CUtlLRUCacheRegistry *pRegistry = GetLRUCacheRegistry();
-
-		for ( int i = pRegistry->Count(); --i >= 0; )
+		if ( pRegistry->Element( i ).m_pCache == this )
 		{
-			const LRUCacheRegistryEntry_t &entry = pRegistry->Element( i );
-
-			// The same cache can be registered under several names
-			if ( entry.m_pCache == m_pCache && entry.m_pszName == m_pszName )
-			{
-				pRegistry->Remove( i );
-				break;
-			}
+			Warning( "Attempt to re-add CUtlLRUCache cache %s to registry!\n", pszCacheName );
+			return;
 		}
 	}
 
-	CUtlLRUCacheRegistration( const CUtlLRUCacheRegistration & ) = delete;
-	CUtlLRUCacheRegistration &operator=( const CUtlLRUCacheRegistration & ) = delete;
+	LRUCacheRegistryEntry_t entry = { pszCacheName, this };
+	pRegistry->AddToTail( entry );
+}
 
-private:
-	const char *m_pszName;
-	CUtlLRUCacheBase *m_pCache;
-};
+inline CUtlLRUCacheBase::~CUtlLRUCacheBase()
+{
+	CUtlLRUCacheRegistry *pRegistry = GetLRUCacheRegistry();
+
+	FOR_EACH_VEC( *pRegistry, i )
+	{
+		if ( pRegistry->Element( i ).m_pCache == this )
+		{
+			pRegistry->Remove( i );
+			return;
+		}
+	}
+
+	Warning( "Attempt to remove unknown CUtlLRUCache cache from registry!\n" );
+}
 
 #endif // UTLLRUCACHE_H
