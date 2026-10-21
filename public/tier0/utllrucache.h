@@ -51,7 +51,7 @@ PLATFORM_INTERFACE CUtlLRUCacheRegistry *GetLRUCacheRegistry();
 class CUtlLRUCacheRegistration
 {
 public:
-	CUtlLRUCacheRegistration( const char *pszCacheName, CUtlLRUCacheBase *pCache ) : m_pCache( pCache )
+	CUtlLRUCacheRegistration( const char *pszCacheName, CUtlLRUCacheBase *pCache ) : m_pszName( pszCacheName ), m_pCache( pCache )
 	{
 		LRUCacheRegistryEntry_t entry = { pszCacheName, pCache };
 		GetLRUCacheRegistry()->AddToTail( entry );
@@ -63,7 +63,10 @@ public:
 
 		for ( int i = pRegistry->Count(); --i >= 0; )
 		{
-			if ( pRegistry->Element( i ).m_pCache == m_pCache )
+			const LRUCacheRegistryEntry_t &entry = pRegistry->Element( i );
+
+			// The same cache can be registered under several names
+			if ( entry.m_pCache == m_pCache && entry.m_pszName == m_pszName )
 			{
 				pRegistry->Remove( i );
 				break;
@@ -75,6 +78,7 @@ public:
 	CUtlLRUCacheRegistration &operator=( const CUtlLRUCacheRegistration & ) = delete;
 
 private:
+	const char *m_pszName;
 	CUtlLRUCacheBase *m_pCache;
 };
 
