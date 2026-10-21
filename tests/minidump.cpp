@@ -219,7 +219,12 @@ static int TestGenericHandlerEx()
 REGISTER_NAMED_TEST( "Tier0GenericMiniDumpHandlerEx.WritesMinidump", Tier0GenericMiniDumpHandlerEx_WritesMinidump )
 {
 	TEST_TRUE( MakeMiniDumpDir() );
+#ifdef PLATFORM_OSX
+	// The macOS tier0 has no minidump writer, the handler fails
+	TEST_EQ( RunInChildProcess( TestGenericHandlerEx ), 2 );
+#else
 	TEST_EQ( RunInChildProcess( TestGenericHandlerEx ), 0 );
+#endif
 	RemoveMiniDumpDir();
 }
 
@@ -261,7 +266,12 @@ static int TestVWMDWriteDump()
 REGISTER_NAMED_TEST( "VWMD_tier0_MiniDumpWriteDump.ProcessIdAndFileName", VWMD_tier0_MiniDumpWriteDump_ProcessIdAndFileName )
 {
 	TEST_TRUE( MakeMiniDumpDir() );
+#ifdef PLATFORM_OSX
+	// The macOS tier0 has no minidump writer
+	TEST_EQ( RunInChildProcess( TestVWMDWriteDump ), 1 );
+#else
 	TEST_EQ( RunInChildProcess( TestVWMDWriteDump ), 0 );
+#endif
 	RemoveMiniDumpDir();
 }
 
@@ -285,7 +295,12 @@ static int TestVWMDWriteDumpHandle()
 REGISTER_NAMED_TEST( "VWMD_tier0_MiniDumpWriteDump.Handle", VWMD_tier0_MiniDumpWriteDump_Handle )
 {
 	TEST_TRUE( MakeMiniDumpDir() );
+#ifdef PLATFORM_OSX
+	// The macOS tier0 has no minidump writer
+	TEST_EQ( RunInChildProcess( TestVWMDWriteDumpHandle ), 2 );
+#else
 	TEST_EQ( RunInChildProcess( TestVWMDWriteDumpHandle ), 0 );
+#endif
 	RemoveMiniDumpDir();
 }
 
