@@ -61,7 +61,8 @@ class CSingleAppInstance
 		CSingleAppInstance();		// Hidden for a reason.  You must specify the instance name
 
 #ifdef OSX
-		char m_szLockPath[ MAX_PATH ];
+		// The lock file, tier0 keeps PATH_MAX characters of it
+		char m_szLockPath[ 1024 ];
 		int	m_hMutex;
 #else
 		HANDLE	m_hMutex;
