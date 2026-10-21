@@ -951,6 +951,10 @@ public:
 	{
 		UnregisterAssertionFailureListener( this );
 	}
+
+	// A copy would take over the link of the list
+	CAutoAssertionFailureListener( const CAutoAssertionFailureListener & ) = delete;
+	CAutoAssertionFailureListener &operator=( const CAutoAssertionFailureListener & ) = delete;
 };
 
 // Failures of the debug checks of the containers
