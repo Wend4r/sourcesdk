@@ -1883,9 +1883,9 @@ PLATFORM_INTERFACE void Plat_ReportDllLoadDenial( const char *pszDenier, const w
 
 #ifdef _WIN32
 // The modules of the process, with K32EnumProcessModules
-template < class T, typename I, size_t N > class CUtlVectorMemory_Growable;
-template < class T, typename I, class A > class CUtlVector;
-PLATFORM_INTERFACE bool Plat_GetLoadedModules( CUtlVector< HMODULE, int, CUtlVectorMemory_Growable< HMODULE, int, 0 > > *pModules );
+class CMemAllocAllocator;
+template < class T, typename I, class A > class CUtlLeanVector;
+PLATFORM_INTERFACE bool Plat_GetLoadedModules( CUtlLeanVector< HMODULE, int, CMemAllocAllocator > *pModules );
 
 // Waits up to nTimeoutMS for the loader lock of the process; 2 when it timed out or cannot tell
 PLATFORM_INTERFACE int Plat_IsSafeToLoadModules( uint32 nTimeoutMS );
