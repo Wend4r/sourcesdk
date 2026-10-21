@@ -49,6 +49,7 @@ function(sourcesdk_setup_test_target target_name)
 		${SOURCESDK_KV3LIB_NAME}
 		${SOURCESDK_TIER1_NAME}
 		Threads::Threads
+		${CMAKE_DL_LIBS}
 	)
 
 	if(EXISTS "${SOURCESDK_TIER0_LIB_FILENAME}")
