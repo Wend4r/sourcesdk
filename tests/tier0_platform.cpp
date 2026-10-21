@@ -11,6 +11,7 @@
 #include <tier0/platwindow.h>
 #include <tier0/random.h>
 #include <tier0/threadtools.h>
+#include <tier0/utlleanvector.h>
 #include <tier0/utlvector.h>
 #include <tier0/win32consoleio.h>
 
@@ -812,9 +813,9 @@ REGISTER_NAMED_TEST( "Plat_LoadOleAut.TableAndCheck", Plat_LoadOleAut_TableAndCh
 
 REGISTER_NAMED_TEST( "Plat_GetLoadedModules.HasTier0", Plat_GetLoadedModules_HasTier0 )
 {
-	CUtlVector< HMODULE > modules;
+	CUtlLeanVector< HMODULE > modules;
 	TEST_TRUE( Plat_GetLoadedModules( &modules ) );
-	TEST_TRUE( modules.Find( GetModuleHandleA( "tier0.dll" ) ) != modules.InvalidIndex() );
+	TEST_TRUE( modules.Find( GetModuleHandleA( "tier0.dll" ) ) != -1 );
 }
 
 REGISTER_NAMED_TEST( "Plat_IsSafeToLoadModules.Result", Plat_IsSafeToLoadModules_Result )
