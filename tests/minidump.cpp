@@ -44,6 +44,10 @@ static int RunInChildProcessOnce( int ( *pfnTest )() )
 {
 	const pid_t nChild = fork();
 
+	// Without a child, the kills below would signal every process of the user
+	if ( nChild < 0 )
+		return -1;
+
 	if ( nChild == 0 )
 	{
 		setpgid( 0, 0 );
