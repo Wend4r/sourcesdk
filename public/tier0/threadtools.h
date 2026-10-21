@@ -158,6 +158,9 @@ struct ThreadMultiWaitObjectSet_t
 };
 
 PLATFORM_INTERFACE ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( CThreadMultiWaitObject **ppObjects, int nObjects );
+
+// A set of the native wait items, with the flags of each one in pExtra
+PLATFORM_OVERLOAD ThreadMultiWaitObjectSet_t *ThreadMultiWaitObjectSetCreate( const ThreadMultiWaitItem_t *pItems, const ThreadMultiWaitExtra_t *pExtra, int nItems );
 PLATFORM_INTERFACE void ThreadMultiWaitObjectSetDestroy( ThreadMultiWaitObjectSet_t *pSet );
 PLATFORM_INTERFACE int ThreadMultiWaitObjectSetGetCount( ThreadMultiWaitObjectSet_t *pSet );
 // Waits on pSet, or on the nItems of pItems and pExtra when pSet is NULL; pSignalled receives a bit per signalled object, all of them with bWaitAll
@@ -188,6 +191,9 @@ PLATFORM_INTERFACE void DeclareCurrentThreadIsMainThread();
 PLATFORM_INTERFACE ThreadId_t ThreadGetMainThreadId();
 PLATFORM_INTERFACE bool ThreadInSecondaryMainThread();
 PLATFORM_INTERFACE void DeclareCurrentThreadIsSecondaryMainThread();
+
+// True in the main thread or in the secondary main thread
+PLATFORM_INTERFACE bool ThreadInPrimaryOrSecondaryMainThread();
 PLATFORM_INTERFACE void ClearSecondaryMainThread();
 
 // NOTE: ThreadedLoadLibraryFunc_t needs to return the sleep time in milliseconds or TT_INFINITE
@@ -1624,6 +1630,10 @@ public:
 	// Resume a suspended thread
 	unsigned Resume();
 
+#ifdef PLATFORM_WINDOWS
+	bool IsSuspended();
+#endif
+
 	CThreadClassKind_t GetClassKind() const { return m_ClassKind; }
 
 	// Force hard-termination of thread.  Used for critical failures.
@@ -1642,7 +1652,7 @@ public:
 #ifdef Yield
 #undef Yield
 #endif
-	static void Yield();
+	static void Yield() { ThreadYield(); }
 
 	// This method causes the current thread to yield and not to be
 	// scheduled for further execution until a certain amount of real
@@ -1669,6 +1679,16 @@ protected:
 	// Thread initially runs this. param is actually 'this'. function
 	// just gets this and calls ThreadProc
 	static uintp ThreadProc( void *pv );
+
+	// The thread handle for the const methods
+	ThreadHandle_t GetThreadHandle() const
+	{
+#ifdef PLATFORM_WINDOWS
+		return ( ThreadHandle_t )m_hThread;
+#else
+		return ( ThreadHandle_t )m_threadId;
+#endif
+	}
 
 	CAtomicMutex m_Lock;
 #ifdef PLATFORM_POSIX

@@ -1241,11 +1241,8 @@ inline bool Plat_IsInDebugSession() { return false; }
 //-----------------------------------------------------------------------------
 // Message Box
 //-----------------------------------------------------------------------------
-#if defined( PLATFORM_WINDOWS_PC )
+// An SDL message box outside Windows, only logged in the headless mode
 PLATFORM_INTERFACE void Plat_MessageBox( const char *pTitle, const tchar *pMessage, HWND hwnd = nullptr );
-#else
-#define Plat_MessageBox( ... ) ((void)0)
-#endif
 
 
 PLATFORM_INTERFACE void Plat_Printf ( const tchar *pFmt, ... ) FMTFUNCTION( 1, 2 );
@@ -1368,6 +1365,16 @@ typedef int socklen_t;
 #endif
 
 #define MAX_UNICODE_PATH_IN_UTF8 MAX_UNICODE_PATH*4
+
+// Native file handle of the platform, as FioCreateFile and the process utils use it
+#ifdef _WIN32
+typedef void *OSFILEHANDLE;
+#else
+typedef int OSFILEHANDLE;
+#endif
+
+// INVALID_HANDLE_VALUE on Windows, -1 on POSIX
+#define INVALID_OSFILEHANDLE ( ( OSFILEHANDLE )-1 )
 
 //-----------------------------------------------------------------------------
 // FP exception handling
@@ -1823,6 +1830,87 @@ typedef class CSysModule* PlatModule_t;
 
 // Loads pModuleName and resolves nNames exports into pPointers; bit 0 of the optional per name pFlags allows a missing export
 PLATFORM_INTERFACE PlatModule_t		Plat_GetProcAddresses( const char *pModuleName, int nNames, const char **pNames, size_t nTotalPointerBytes, void *pPointers, size_t nTotalFlagsBytes, uint32 *pFlags, bool bFailFatal );
+
+// The libraries that tier0 loads on demand. Load returns the table of the functions it resolved,
+// null when the library is missing; Check returns it only when it is loaded already, Require
+// fails fatally without it; the layouts of the tables are internal to tier0
+PLATFORM_INTERFACE void *Plat_LoadSDL();
+PLATFORM_INTERFACE void *Plat_CheckSDL();
+PLATFORM_INTERFACE void *Plat_RequireSDL();
+PLATFORM_INTERFACE PlatModule_t Plat_GetModuleSDL();
+PLATFORM_INTERFACE void Plat_UnloadSDL(); // empty
+
+#ifdef _WIN32
+PLATFORM_INTERFACE void *Plat_LoadCOM();
+PLATFORM_INTERFACE void *Plat_CheckCOM();
+PLATFORM_INTERFACE void *Plat_RequireCOM();
+PLATFORM_INTERFACE void Plat_UnloadCOM(); // empty
+
+PLATFORM_INTERFACE void *Plat_LoadOleAut();
+PLATFORM_INTERFACE void *Plat_CheckOleAut();
+PLATFORM_INTERFACE void *Plat_RequireOleAut();
+PLATFORM_INTERFACE void Plat_UnloadOleAut(); // empty
+#endif
+
+// The modules that registered themselves at startup with their base address, up to 100,
+// the rest of the array is null
+PLATFORM_INTERFACE void Plat_RegisterModule( void *pModuleBase );
+PLATFORM_INTERFACE void *const *Plat_GetRegisteredModules();
+
+// The ordered constructor dependency of tier0, which a module that constructs its globals in
+// order references before using tier0
+template < typename T > class COrderedConstructor_DependencyManagement;
+typedef COrderedConstructor_DependencyManagement< void > COrderedSystem_DependencyManagement;
+PLATFORM_INTERFACE void EarlyInit_Tier0( COrderedSystem_DependencyManagement *pReferencedFrom );
+
+// Receives the import libraries of a module for Plat_EnumerateModuleImportLibraries; the
+// names are ours
+class IPlatModuleImportLibraryVisitor
+{
+public:
+	// False skips the file of a module that is loaded already
+	virtual bool ReadFileOfLoadedModule() { return true; }
+
+	virtual bool VisitImportLibrary( const char *pszImportLibrary, const char *pszModule ) = 0;
+};
+
+PLATFORM_INTERFACE bool Plat_EnumerateModuleImportLibraries( const char *pszModule, IPlatModuleImportLibraryVisitor *pVisitor );
+
+// The last module whose loading a library denied, with the number of the denials; null when none was
+PLATFORM_INTERFACE const char *Plat_GetLastDllLoadDenial( int *pDenialCount );
+// Logs that pszDenier denied loading pszModule, either name can be given as UTF-16 instead
+PLATFORM_INTERFACE void Plat_ReportDllLoadDenial( const char *pszDenier, const wchar_t *pwszDenier, const char *pszModule, const wchar_t *pwszModule );
+
+#ifdef _WIN32
+// The modules of the process, with K32EnumProcessModules
+class CMemAllocAllocator;
+template < class T, typename I, class A > class CUtlLeanVector;
+PLATFORM_INTERFACE bool Plat_GetLoadedModules( CUtlLeanVector< HMODULE, int, CMemAllocAllocator > *pModules );
+
+// Waits up to nTimeoutMS for the loader lock of the process; 2 when it timed out or cannot tell
+PLATFORM_INTERFACE int Plat_IsSafeToLoadModules( uint32 nTimeoutMS );
+
+// The loader notification of hModule, which tier0 checks for BinaryProperties_GetValue
+PLATFORM_INTERFACE void Plat_NotifyModuleLoad( HMODULE hModule, const void *pNotificationData );
+
+// Event tracing for Windows from advapi32.dll, with the arguments of the functions without Plat_
+struct _GUID;
+struct _EVENT_DESCRIPTOR;
+struct _EVENT_DATA_DESCRIPTOR;
+typedef void ( __stdcall *PlatEventEnableCallback_t )( const _GUID *pSourceId, unsigned long nIsEnabled, unsigned char nLevel, uint64 nMatchAnyKeyword, uint64 nMatchAllKeyword, void *pFilterData, void *pCallbackContext );
+PLATFORM_INTERFACE unsigned long Plat_EventRegister( const _GUID *pProviderId, PlatEventEnableCallback_t pfnEnableCallback, void *pCallbackContext, uint64 *pRegHandle );
+PLATFORM_INTERFACE unsigned long Plat_EventUnregister( uint64 hRegHandle );
+PLATFORM_INTERFACE unsigned long Plat_EventWriteTransfer( uint64 hRegHandle, const _EVENT_DESCRIPTOR *pEventDescriptor, const _GUID *pActivityId, const _GUID *pRelatedActivityId, unsigned long nUserDataCount, _EVENT_DATA_DESCRIPTOR *pUserData );
+PLATFORM_INTERFACE unsigned long Plat_EventActivityIdControl( unsigned long nControlCode, _GUID *pActivityId );
+#endif
+
+// The monitor of the debug output, null on POSIX
+PLATFORM_INTERFACE void *Plat_GetDebugMonitor();
+
+// Puts data of the MIME types on the clipboard through SDL_SetClipboardData
+typedef const void *( *PlatClipboardDataCallback_t )( void *pUserData, const char *pszMimeType, size_t *pSize );
+typedef void ( *PlatClipboardCleanupCallback_t )( void *pUserData );
+PLATFORM_INTERFACE bool Plat_SetClipboardData( PlatClipboardDataCallback_t pfnCallback, PlatClipboardCleanupCallback_t pfnCleanup, void *pUserData, const char **ppMimeTypes, size_t nMimeTypes );
 
 // Get the process' executable filename.
 PLATFORM_INTERFACE void				Plat_GetModuleFilename( char *pOut, int nMaxBytes );
@@ -2651,9 +2739,9 @@ PLATFORM_INTERFACE int RestartSelf_TestIfInternalArg( const char *pArg );
 //-----------------------------------------------------------------------------
 // Dynamic libs support
 //-----------------------------------------------------------------------------
-#if defined( PLATFORM_WINDOWS )
 
-PLATFORM_INTERFACE void *Plat_GetProcAddress( const char *pszModule, const char *pszName );
+// Plat_LoadModule and Plat_GetModuleProcAddress in one, null when either fails
+PLATFORM_INTERFACE void *Plat_GetProcAddress( const char *pszModule, const char *pszName, bool bHideLoadingError = true );
 
 template <typename FUNCPTR_TYPE>
 class CDynamicFunction
@@ -2676,7 +2764,6 @@ public:
 private:
 	FUNCPTR_TYPE m_pfn;
 };
-#endif
 
 //-----------------------------------------------------------------------------
 // What OS version are we?
@@ -2781,6 +2868,37 @@ enum EOSType
 PLATFORM_INTERFACE EOSType Plat_GetOSType();
 PLATFORM_INTERFACE bool Plat_GetOSDescriptionString(char *buf, size_t size);
 PLATFORM_INTERFACE const char *GetNameFromOSType( EOSType type );
+
+// Whether eOSTypeDetected is eOSTypeRequired or a newer version of the same family
+PLATFORM_INTERFACE bool OSTypesAreCompatible( EOSType eOSTypeDetected, EOSType eOSTypeRequired );
+
+#ifdef PLATFORM_OSX
+PLATFORM_INTERFACE bool Plat_GetAppleMajorMinorPatchVersion( int *pMajor, int *pMinor, int *pPatch );
+
+// Whether the version of macOS is at least nMajor.nMinor.nPatch
+PLATFORM_INTERFACE bool IsAppleOSVersionSupported( int nMajor, int nMinor, int nPatch );
+#endif
+
+//-----------------------------------------------------------------------------
+// Restarts of the executable from a copy in another location, used by the tools to update
+// themselves; the layouts of the configuration and the location are internal to tier0
+//-----------------------------------------------------------------------------
+struct RestartSelfFromAlternateLocationInfo_t;
+struct AlternateLaunchLocation_t;
+
+PLATFORM_INTERFACE AlternateLaunchLocation_t *GetAlternateLaunchLocation();
+
+// Compares pszDependency of pszSourceDirectory, or of pszFallbackDirectory, with the one of
+// pszDestDirectory: 1 when there is no source; 0 when the copy is up to date, otherwise 2 on
+// POSIX, while Windows copies it, 0 when that worked and 2 when it failed; bRetry makes three
+// attempts of the copy a second apart, POSIX does not read it
+PLATFORM_INTERFACE int CopyDependencyToAlternateLocation( const char *pszSourceDirectory, const char *pszDependency, const char *pszDestDirectory, bool bRetry, const char *pszFallbackDirectory );
+PLATFORM_INTERFACE int RestartSelfFromAlternateLocation( const RestartSelfFromAlternateLocationInfo_t *pInfo );
+
+// Fixes the shortcut of the taskbar pin of hWindow to start the original executable, Windows
+// only: the other builds ignore the arguments
+PLATFORM_INTERFACE void RestartSelf_FixTaskbarPinShortcut( void *hWindow, const char *pszUnknown1, const char *pszUnknown2 );
+PLATFORM_INTERFACE void RestartSelf_ShowGenericRestartErrorForBadShortcut();
 
 PLATFORM_INTERFACE uint32 Plat_GetPlatformError();
 PLATFORM_INTERFACE bool Plat_GetComputerName( char *pBuffer, int nBufferSize );

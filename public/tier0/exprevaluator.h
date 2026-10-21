@@ -39,6 +39,11 @@ typedef ExprNode *ExprTree;
 typedef bool (*GetSymbolProc_t)( const char *pKey, void *pData );
 typedef void (*SyntaxErrorProc_t)( const char *pReason, void *pData );
 
+// The conditionals of KeyValues: the symbol proc answers the platform symbols ($WIN32, $LINUX,
+// $HIGHDPI and so on) and asks IKeyValuesSystem for the rest, the error proc warns
+PLATFORM_INTERFACE bool DefaultConditionalSymbolProc( const char *pKey, void *pContext );
+PLATFORM_INTERFACE void DefaultConditionalErrorProc( const char *pReason, void *pContext );
+
 class CExpressionEvaluator
 {
 public:

@@ -112,8 +112,9 @@ public:
 	//-----------------------------------------------------
 	virtual bool Start( const ThreadPoolStartParams_t &startParams, const char *pszNameOverride = NULL ) = 0;
 	virtual bool Stop() = 0;
-	// Stops the threads and starts them again with new parameters under the current name
-	virtual void unk001( const ThreadPoolStartParams_t &startParams ) = 0;
+	// Stops the threads and starts them again with new parameters under the current name; the
+	// name is ours
+	virtual void Restart( const ThreadPoolStartParams_t &startParams ) = 0;
 
 	//-----------------------------------------------------
 	// Functions for any thread
@@ -122,8 +123,9 @@ public:
 	virtual int NumThreads() = 0;
 	virtual int NumIdleThreads() = 0;
 	virtual int GetCurrentThreadIndex() = 0;
-	// Returns 0 on the main thread, the thread index + 1 on a thread of this pool, otherwise the last argument
-	virtual int unk101( int, int ) = 0;
+	// 0 on the main thread, the thread index + 1 on a thread of this pool, otherwise
+	// nOtherThreadSlot; the first argument is not read, the name is ours
+	virtual int GetCurrentThreadSlot( int nUnused, int nOtherThreadSlot ) = 0;
 
 	//-----------------------------------------------------
 	// Pause/resume processing jobs
@@ -333,6 +335,10 @@ PLATFORM_INTERFACE void RunThreadPoolPerFrameTests();
 
 PLATFORM_INTERFACE IThreadPool *g_pThreadPool;
 PLATFORM_INTERFACE double g_flThreadedJobWaitTimeAccumulator;
+
+// Waits for the unfinished jobs, with one YieldWait of each thread pool for its jobs (g_pThreadPool
+// for the jobs without a pool); bExecuteWaitedJobs runs the queued ones in this thread
+PLATFORM_INTERFACE void Wait( const CUtlVector< CThreadedJob * > &jobs, bool bExecuteWaitedJobs );
 
 //-----------------------------------------------------------------------------
 // Class to combine the metadata for an operation and the ability to perform

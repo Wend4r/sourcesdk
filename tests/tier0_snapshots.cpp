@@ -43,6 +43,47 @@ REGISTER_NAMED_TEST( "ModuleListSnapshot.ListsTheLoadedModules", ModuleListSnaps
 	TEST_EQ( snapshot.GetModuleCount(), 0 );
 }
 
+REGISTER_NAMED_TEST( "CModuleListSnapshot.HeaderChecks", CModuleListSnapshot_HeaderChecks )
+{
+	// A shared object of either class, b64BitOnly refuses the 32-bit one.
+	uint8 elf32[ 64 ] = { 0x7f, 'E', 'L', 'F', 1, 1, 1 };
+	uint8 elf64[ 64 ] = { 0x7f, 'E', 'L', 'F', 2, 1, 1 };
+	elf32[ 16 ] = elf64[ 16 ] = 3;
+	TEST_TRUE( CModuleListSnapshot::IsElfHeader( elf32, sizeof( elf32 ), false ) );
+	TEST_FALSE( CModuleListSnapshot::IsElfHeader( elf32, sizeof( elf32 ), true ) );
+	TEST_TRUE( CModuleListSnapshot::IsElfHeader( elf64, sizeof( elf64 ), true ) );
+
+	// MH_DYLIB of MH_MAGIC and MH_MAGIC_64.
+	uint32 macho32[ 8 ] = { 0xFEEDFACE, 7, 3, 6 };
+	uint32 macho64[ 8 ] = { 0xFEEDFACF, 0x01000007, 3, 6 };
+	TEST_TRUE( CModuleListSnapshot::IsMachoHeader( macho32, sizeof( macho32 ), false ) );
+	TEST_FALSE( CModuleListSnapshot::IsMachoHeader( macho32, sizeof( macho32 ), true ) );
+	TEST_TRUE( CModuleListSnapshot::IsMachoHeader( macho64, sizeof( macho64 ), true ) );
+}
+
+REGISTER_NAMED_TEST( "CModuleListSnapshot.FindElfVirtualSize", CModuleListSnapshot_FindElfVirtualSize )
+{
+	// Two PT_LOAD segments at 0x1000 (0x234 bytes) and 0x3000 (0x10 bytes).
+	uint8 image[ 64 + 2 * 56 ] = { 0x7f, 'E', 'L', 'F', 2, 1, 1 };
+	image[ 16 ] = 3;
+	*reinterpret_cast< uint64 * >( image + 32 ) = 64;
+	*reinterpret_cast< uint16 * >( image + 54 ) = 56;
+	*reinterpret_cast< uint16 * >( image + 56 ) = 2;
+
+	uint8 *pSegment = image + 64;
+	*reinterpret_cast< uint32 * >( pSegment ) = 1;
+	*reinterpret_cast< uint64 * >( pSegment + 16 ) = 0x1000;
+	*reinterpret_cast< uint64 * >( pSegment + 40 ) = 0x234;
+	pSegment += 56;
+	*reinterpret_cast< uint32 * >( pSegment ) = 1;
+	*reinterpret_cast< uint64 * >( pSegment + 16 ) = 0x3000;
+	*reinterpret_cast< uint64 * >( pSegment + 40 ) = 0x10;
+
+	// The extent is rounded out to the alignment.
+	TEST_EQ( CModuleListSnapshot::FindElfVirtualSize( image, sizeof( image ), 0x1000 ), ( size_t )0x3000 );
+	TEST_EQ( CModuleListSnapshot::FindElfVirtualSize( image, sizeof( image ), 0x10 ), ( size_t )0x2010 );
+}
+
 REGISTER_NAMED_TEST( "VirtualMemorySnapshot.DescribesTheMappedRegions", VirtualMemorySnapshot_DescribesTheMappedRegions )
 {
 	CVirtualMemorySnapshot snapshot;

@@ -95,7 +95,7 @@ protected:
 				I m_bExternal : 1;
 			};
 
-			I m_nAllocatedStaff;
+			I m_nAllocatedStuff;
 		};
 
 		T* m_pElements;
@@ -190,7 +190,7 @@ template< class T, typename I, class A >
 void CUtlLeanVectorBase<T, I, A>::Swap( CUtlLeanVectorBase< T, I, A >& mem )
 {
 	V_swap( m_nCount, mem.m_nCount );
-	V_swap( m_nAllocatedStaff, mem.m_nAllocatedStaff );
+	V_swap( m_nAllocatedStuff, mem.m_nAllocatedStuff );
 	V_swap( m_pElements, mem.m_pElements );
 }
 

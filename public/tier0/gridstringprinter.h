@@ -29,14 +29,14 @@ class CGridStringPrinter
 {
 public:
 	CGridStringPrinter() :
-		unk098( false ), unk099( false ), m_bWordWrapAllColumns( false ), m_bUseHeaderDivider( true ), m_bTrimValues( true ),
-		m_nMaxStringLength( -1 ), m_chColumnSeparator( '|' ), m_chHeaderDivider( '-' ), unk0a6( 0 ) {}
+		unk098( false ), m_bUseOuterSeparators( false ), m_bWordWrapAllColumns( false ), m_bUseHeaderDivider( true ), m_bTrimValues( true ),
+		m_nMaxStringLength( -1 ), m_chColumnSeparator( '|' ), m_chHeaderDivider( '-' ) {}
 
 	DLL_CLASS_IMPORT void Clear();
 
 	DLL_CLASS_IMPORT void SetColumnHeader( int nColumn, const char *pszHeader );
 	DLL_CLASS_IMPORT void SetColumnJustification( int nColumn, bool bJustification );
-	DLL_CLASS_IMPORT void SetWordWrapColumn( int nColumn, bool bWordWrap, bool bUnknown );
+	DLL_CLASS_IMPORT void SetWordWrapColumn( int nColumn, bool bWordWrap, bool bWrapAtSpaces );
 	DLL_CLASS_IMPORT void SetWordWrapAllColumns( bool bWordWrap );
 	DLL_CLASS_IMPORT void SetMaxStringLengthAllColumns( int nMaxLength );
 	DLL_CLASS_IMPORT void SetUseHeaderDivider( bool bUseHeaderDivider );
@@ -62,10 +62,14 @@ protected:
 	struct ColumnHeader_t
 	{
 		CUtlSymbolLarge m_Name;
-		int unk008;
+
+		// -1 uses the maximum length set for all columns
+		int m_nMaxStringLength;
 		bool m_bJustification;
 		bool m_bWordWrap;
-		bool unk00e;
+
+		// A wrapped line that would split a word ends after the last space instead
+		bool m_bWrapAtSpaces;
 	};
 
 	DLL_CLASS_IMPORT ColumnHeader_t *GetHeader( int nColumn );
@@ -76,15 +80,15 @@ private:
 	CUtlVector< ColumnHeader_t > m_Headers;
 	CUtlSymbolTableLarge m_Symbols;
 	bool unk098;
-	bool unk099;
+
+	// Puts the column separator before the first and after the last column too
+	bool m_bUseOuterSeparators;
 	bool m_bWordWrapAllColumns;
 	bool m_bUseHeaderDivider;
 	bool m_bTrimValues;
 	int m_nMaxStringLength;
 	char m_chColumnSeparator;
 	char m_chHeaderDivider;
-	char unk0a6;
-	CUtlVector< void * > unk0a8;
 };
 
 #endif // GRIDSTRINGPRINTER_H

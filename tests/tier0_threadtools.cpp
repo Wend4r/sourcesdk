@@ -5,10 +5,17 @@
 #include <tier0/threadtools.h>
 #include <tier0/eventutils.h>
 #include <tier0/fibertools.h>
+#include <tier0/asyncfunction.h>
+#include <tier0/tools_stall_monitor.h>
 
 #include <atomic>
 #include <cstring>
 #include <thread>
+
+#ifndef PLATFORM_WINDOWS
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
 
 REGISTER_NAMED_TEST( "Thread.InitOnce", Thread_InitOnce )
 {
@@ -30,6 +37,7 @@ REGISTER_NAMED_TEST( "Thread.SecondaryMainThread", Thread_SecondaryMainThread )
 
 	DeclareCurrentThreadIsMainThread();
 	TEST_TRUE( ThreadInMainThread() );
+	TEST_TRUE( ThreadInPrimaryOrSecondaryMainThread() );
 	TEST_EQ( ThreadGetMainThreadId(), static_cast< ThreadId_t >( ThreadGetCurrentId() ) );
 }
 
@@ -37,6 +45,7 @@ REGISTER_NAMED_TEST( "Thread.Helpers", Thread_Helpers )
 {
 	ThreadSpin( 100 );
 	ThreadYield();
+	CThread::Yield();
 
 	// The sorted processor indices are valid logical processor numbers.
 	uint16 nIndices[ 256 ];
@@ -46,6 +55,29 @@ REGISTER_NAMED_TEST( "Thread.Helpers", Thread_Helpers )
 	{
 		TEST_TRUE( nIndices[ i ] < 256 );
 	}
+}
+
+class CThreadHandleTestThread : public CThread
+{
+public:
+	ThreadHandle_t GetConstThreadHandle() const { return GetThreadHandle(); }
+
+protected:
+	virtual int Run() { return 42; }
+};
+
+REGISTER_NAMED_TEST( "Thread.ConstThreadHandle", Thread_ConstThreadHandle )
+{
+	CThreadHandleTestThread thread;
+	thread.SetName( "ConstThreadHandle" );
+	TEST_TRUE( thread.Start() );
+
+	// The const handle of the derived classes is the public one.
+	TEST_TRUE( thread.GetThreadHandle() != nullptr );
+	TEST_TRUE( thread.GetConstThreadHandle() == thread.GetThreadHandle() );
+
+	TEST_TRUE( thread.Join() );
+	TEST_EQ( thread.GetResult(), 42 );
 }
 
 REGISTER_NAMED_TEST( "Thread.CurrentProcess", Thread_CurrentProcess )
@@ -379,6 +411,27 @@ REGISTER_NAMED_TEST( "Fiber.RunsAJobOnItsOwnStack", Fiber_RunsAJobOnItsOwnStack 
 	pFiber->Release();
 }
 
+static void *s_pFiberResumeValue;
+
+static void FiberResumeValueJob( void *pContext, void *pResumeVal )
+{
+	s_pFiberResumeValue = pResumeVal;
+}
+
+REGISTER_NAMED_TEST( "Fiber.JobGetsTheResumeValue", Fiber_JobGetsTheResumeValue )
+{
+	CFiber *pFiber = CFiber::AllocPooledFiber( CFiber::STACKSIZE_64KB, 0 );
+	TEST_NOT_NULL( pFiber );
+
+	int nResume = 0;
+	s_pFiberResumeValue = nullptr;
+	pFiber->SetFiberJob( &FiberResumeValueJob );
+	TEST_TRUE( pFiber->ResumeJob( &nResume ) );
+	TEST_TRUE( s_pFiberResumeValue == &nResume );
+
+	pFiber->Release();
+}
+
 static int s_nFiberYieldStage;
 
 static void FiberYieldJob( void * )
@@ -549,3 +602,178 @@ REGISTER_NAMED_TEST( "Fiber.ThreadSwapJobRunsInPlaceWithoutATargetThread", Fiber
 	TEST_EQ( context.m_nRuns, 1 );
 	TEST_EQ( context.m_hThread, ThreadGetCurrentId() );
 }
+
+class CTestFiberWorkerPool : public IFiberThreadWorkerPool
+{
+public:
+	virtual void FiberJobAvailable() { m_nJobsAvailable++; }
+	virtual void Quit() { m_nQuits++; }
+
+	int m_nJobsAvailable = 0;
+	int m_nQuits = 0;
+};
+
+REGISTER_NAMED_TEST( "IFiberJobPool.EmptyPool", IFiberJobPool_EmptyPool )
+{
+	TEST_NOT_NULL( g_pFiberJobPool );
+
+	bool bSkippedFibers = true;
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) );
+}
+
+REGISTER_NAMED_TEST( "IFiberJobPool.AddGetRemove", IFiberJobPool_AddGetRemove )
+{
+	CFiber *pFiber = new CFiber;
+	CTestFiberWorkerPool workers;
+	g_pFiberJobPool->RegisterWorkerThreadPool( &workers );
+
+	// A fiber that is not waiting cannot be removed.
+	TEST_FALSE( g_pFiberJobPool->RemoveFiberJob( pFiber ) );
+
+	// Adding a fiber tells the registered pools.
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+	TEST_EQ( workers.m_nJobsAvailable, 1 );
+
+	bool bSkippedFibers = true;
+	TEST_TRUE( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) == pFiber );
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) );
+
+	// A waiting fiber can be removed again.
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+	TEST_TRUE( g_pFiberJobPool->RemoveFiberJob( pFiber ) );
+	TEST_NULL( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) );
+
+	g_pFiberJobPool->UnregisterWorkerThreadPool( &workers );
+	TEST_EQ( workers.m_nQuits, 0 );
+
+	// An unregistered pool hears of no new jobs.
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+	TEST_EQ( workers.m_nJobsAvailable, 2 );
+	TEST_TRUE( g_pFiberJobPool->RemoveFiberJob( pFiber ) );
+	delete pFiber;
+}
+
+static std::atomic< int > s_nScheduledCalls;
+
+static float TestScheduledFunction()
+{
+	s_nScheduledCalls++;
+
+	// No next call.
+	return 0.0f;
+}
+
+REGISTER_NAMED_TEST( "IAsyncScheduledFunctions.RegisterCallUnregister", IAsyncScheduledFunctions_RegisterCallUnregister )
+{
+	TEST_NOT_NULL( g_pScheduledFunctions );
+	g_pScheduledFunctions->Init();
+
+	CUtlDelegate< float() > function;
+	function.Bind( &TestScheduledFunction );
+	AsyncFunctionHandle_t hFunction = g_pScheduledFunctions->RegisterScheduledFunction( function, Plat_FloatTime() );
+
+	// The thread of the scheduler calls it soon.
+	for ( int i = 0; i < 200 && s_nScheduledCalls == 0; i++ )
+		ThreadSleep( 10 );
+
+	TEST_EQ( s_nScheduledCalls.load(), 1 );
+
+	// A registered function can be moved, then removed.
+	TEST_TRUE( g_pScheduledFunctions->RescheduleFunction( hFunction, Plat_FloatTime() + 1000.0 ) );
+	g_pScheduledFunctions->UnregisterScheduledFunction( hFunction );
+	g_pScheduledFunctions->Shutdown();
+	TEST_EQ( s_nScheduledCalls.load(), 1 );
+}
+
+REGISTER_NAMED_TEST( "AsyncFunctionHandle_t.RawValue", AsyncFunctionHandle_t_RawValue )
+{
+	AsyncFunctionHandle_t hFirst( 3 );
+	TEST_EQ( hFirst.GetRaw(), 3 );
+
+	AsyncFunctionHandle_t hSecond;
+	hSecond.SetRaw( 5 );
+	TEST_TRUE( hFirst != hSecond );
+	TEST_TRUE( hFirst < hSecond );
+
+	*hSecond.GetRawPtrForWrite() = 3;
+	TEST_TRUE( hFirst == hSecond );
+
+	hSecond.GetRawRef() = 7;
+	const AsyncFunctionHandle_t &hConst = hSecond;
+	TEST_EQ( hConst.GetRawRef(), 7 );
+
+	hSecond = 9;
+	TEST_EQ( hSecond.GetRaw(), 9 );
+	TEST_EQ( sizeof( AsyncFunctionHandle_t ), sizeof( int32 ) );
+}
+
+#ifdef PLATFORM_WINDOWS
+REGISTER_NAMED_TEST( "ToolsStallMonitor_Shutdown.WithoutMonitor", ToolsStallMonitor_Shutdown_WithoutMonitor )
+{
+	// Without a monitor both do nothing. A monitor is not started here: a shutdown before its
+	// thread creates the window waits for that thread forever.
+	ToolsStallMonitor_IndicateActivity();
+	ToolsStallMonitor_Shutdown();
+}
+#endif
+
+#ifndef PLATFORM_WINDOWS
+REGISTER_NAMED_TEST( "ThreadMultiWaitObjectSetCreate.Items", ThreadMultiWaitObjectSetCreate_Items )
+{
+	// A set of the native items, a descriptor of a pipe here.
+	int fds[ 2 ];
+	TEST_EQ( pipe( fds ), 0 );
+
+	ThreadMultiWaitItem_t items[ 1 ] = {};
+	items[ 0 ].fd = fds[ 0 ];
+	items[ 0 ].events = POLLIN;
+	ThreadMultiWaitExtra_t extra[ 1 ] = {};
+
+	ThreadMultiWaitObjectSet_t *pSet = ThreadMultiWaitObjectSetCreate( items, extra, 1 );
+	TEST_NOT_NULL( pSet );
+	TEST_EQ( ThreadMultiWaitObjectSetGetCount( pSet ), 1 );
+	ThreadMultiWaitObjectSetDestroy( pSet );
+
+	close( fds[ 0 ] );
+	close( fds[ 1 ] );
+}
+#endif
+
+#ifndef PLATFORM_WINDOWS
+static int TestFiberJobPoolShutdown()
+{
+	CTestFiberWorkerPool workers;
+	g_pFiberJobPool->RegisterWorkerThreadPool( &workers );
+
+	CFiber *pFiber = CFiber::AllocPooledFiber( CFiber::STACKSIZE_64KB, 0 );
+	pFiber->SetFiberJob( &FiberYieldJob );
+	g_pFiberJobPool->AddFiberToJobPool( pFiber, false );
+
+	g_pFiberJobPool->Shutdown();
+
+	if ( workers.m_nQuits != 1 )
+		return 1;
+
+	// The waiting fiber is gone and the pool hears nothing more.
+	bool bSkippedFibers = false;
+	if ( g_pFiberJobPool->GetWaitingFiberJob( &bSkippedFibers ) != nullptr )
+		return 2;
+
+	return 0;
+}
+
+REGISTER_NAMED_TEST( "IFiberJobPool.Shutdown", IFiberJobPool_Shutdown )
+{
+	// The pool of the process is shut down for good, so in a child.
+	const pid_t nChild = fork();
+	TEST_TRUE( nChild >= 0 );
+
+	if ( nChild == 0 )
+		_exit( TestFiberJobPoolShutdown() );
+
+	int nStatus = 0;
+	TEST_EQ( waitpid( nChild, &nStatus, 0 ), nChild );
+	TEST_TRUE( WIFEXITED( nStatus ) );
+	TEST_EQ( WEXITSTATUS( nStatus ), 0 );
+}
+#endif

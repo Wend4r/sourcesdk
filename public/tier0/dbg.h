@@ -831,4 +831,134 @@ private:
 #endif
 
 
+//-----------------------------------------------------------------------------
+// Assertion dialog, prompts and listeners
+//-----------------------------------------------------------------------------
+enum AssertAction_t
+{
+	ASSERT_ACTION_INVALID = -1,
+	ASSERT_ACTION_BREAK = 0,
+	ASSERT_ACTION_IGNORE_THIS = 1,
+	ASSERT_ACTION_IGNORE_ALWAYS = 2,
+	ASSERT_ACTION_IGNORE_FILE = 3,
+	ASSERT_ACTION_IGNORE_ALL = 4,
+	ASSERT_ACTION_IGNORE_NEARBY = 5,
+	ASSERT_ACTION_IGNORE_ONEDAY = 6,
+	ASSERT_ACTION_OTHER = 7,
+	ASSERT_ACTION_BROADCAST_MINIDUMP = 8,
+	ASSERT_ACTION_EXIT_PROGRAM = 9,
+	ASSERT_ACTION_OPEN_FULL_DIALOG = 10,
+};
+
+enum BroadcastMinidumpType_t : uint32
+{
+	BROADCAST_TYPE_CODE_ASSERTION = 0,
+	BROADCAST_TYPE_CONTENT_ASSERTION = 1,
+	BROADCAST_TYPE_FATAL_ERROR = 2,
+};
+
+// What a failed assertion of a type does
+enum AssertionPrompt_t : uint32
+{
+	AP_NOTHING = 0,
+	AP_FULL_DIALOG_IF_DEBUGGING = 1,
+	AP_FULL_DIALOG = 2,
+	AP_UNDEBUGGABLE_DIALOG = 3,
+	AP_EXIT_PROCESS = 4,
+	AP_BREAK_IN_DEBUGGER = 5,
+	AP_BREAK_OR_EXIT = 6,
+};
+
+// The state of the assertion dialog that its buttons act on
+struct DialogInitInfo_t
+{
+	const char *m_pFilename;
+	int m_iLine;
+	const char *m_pExpression;
+	AssertAction_t m_result;
+	int m_nIgnoreTimes;
+	BroadcastMinidumpType_t m_type;
+	bool m_bAutoSelectDebugger;
+	bool m_bContinueLoggingFailures;
+	char m_szMinidumpNotes[ 4096 ];
+};
+
+// Called with the message of a failed assertion and whether it is fatal
+typedef void ( *AssertionCallbackType )( const char *pszMessage, bool bFatal );
+
+PLATFORM_INTERFACE void SetAssertionCallback( AssertionCallbackType pCallback );
+PLATFORM_INTERFACE void RemoveAssertionCallback( AssertionCallbackType pCallback );
+PLATFORM_INTERFACE void SetAssertionPrompt( AssertionType_t type, AssertionPrompt_t promptType );
+
+// The actions of the buttons of the assertion dialog
+PLATFORM_INTERFACE void SendActionToAssertDialog( AssertAction_t assertAction, const char *pMinidumpNotes );
+PLATFORM_INTERFACE void IgnoreAssertsInCurrentFile( DialogInitInfo_t *pInitInfo );
+PLATFORM_INTERFACE void IgnoreAssertsNearby( DialogInitInfo_t *pInitInfo, int nRange, int nCount );
+PLATFORM_INTERFACE void IgnoreAssertForADay( DialogInitInfo_t *pInitInfo );
+
+#ifdef _WIN32
+// The window of the assertion dialog while it is shown
+PLATFORM_INTERFACE HWND GetActiveAssertDialogHwnd();
+#endif
+
+struct AssertionFailureInfo_t
+{
+	const char *m_pFormattedMsg;
+	const char *m_pBaseMsg;
+	const char *m_pFile;
+	const char *m_pFunction;
+	const char *m_pRawExpression;
+	int m_nLine;
+	int m_nInstanceReportCount;
+	AssertionType_t m_type;
+	bool m_bFatal;
+	bool m_bIgnored;
+};
+
+//-----------------------------------------------------------------------------
+// Receives every failed assertion while it is registered
+//-----------------------------------------------------------------------------
+class IAssertionFailureListener
+{
+public:
+	IAssertionFailureListener( bool bOnlyMonitorsEachAssertionOnce ) : m_pNext( NULL ), m_bRegistered( false ), m_bOnlyMonitorsEachAssertionOnce( bOnlyMonitorsEachAssertionOnce ) {}
+	virtual ~IAssertionFailureListener() {}
+
+	virtual void *AssertionFailure( AssertionFailureInfo_t *pInfo ) = 0;
+
+	bool OnlyMonitorsEachAssertionOnce() const { return m_bOnlyMonitorsEachAssertionOnce; }
+
+private:
+	// The list of RegisterAssertionFailureListener
+	IAssertionFailureListener *m_pNext;
+	bool m_bRegistered;
+	bool m_bOnlyMonitorsEachAssertionOnce;
+};
+
+PLATFORM_INTERFACE void RegisterAssertionFailureListener( IAssertionFailureListener *pListener );
+PLATFORM_INTERFACE void UnregisterAssertionFailureListener( IAssertionFailureListener *pListener );
+
+// A listener registered for its lifetime
+class CAutoAssertionFailureListener : public IAssertionFailureListener
+{
+public:
+	CAutoAssertionFailureListener( bool bOnlyMonitorsEachAssertionOnce = false ) : IAssertionFailureListener( bOnlyMonitorsEachAssertionOnce )
+	{
+		RegisterAssertionFailureListener( this );
+	}
+
+	virtual ~CAutoAssertionFailureListener()
+	{
+		UnregisterAssertionFailureListener( this );
+	}
+
+	// A copy would take over the link of the list
+	CAutoAssertionFailureListener( const CAutoAssertionFailureListener & ) = delete;
+	CAutoAssertionFailureListener &operator=( const CAutoAssertionFailureListener & ) = delete;
+};
+
+// Failures of the debug checks of the containers
+PLATFORM_INTERFACE void UtlRBTree_FailedInsertDuplicate();
+PLATFORM_INTERFACE void SortCheck_Failure();
+
 #endif /* DBG_H */

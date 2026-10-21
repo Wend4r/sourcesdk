@@ -8,6 +8,7 @@
 #include "tier0/platform.h"
 
 #include <locale.h>
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <sys/stat.h>
@@ -80,6 +81,17 @@ PLATFORM_INTERFACE float V_strtof( const char *str, char **endptr );
 PLATFORM_INTERFACE uint32 V_tier0_crc32( uint32 nStartCrc, const void *pBuf, size_t nBufLen );
 
 PLATFORM_INTERFACE void V_abort();
+
+// setjmp/longjmp of tier0 across the module boundary. V_setjmp saves the context of its own frame,
+// which is gone once it returns, so a jump back to it is not usable; V_longjmp works with a
+// buffer filled by the setjmp of the caller
+typedef struct _jmp_buf_holder
+{
+	jmp_buf buf;
+} jmp_buf_holder;
+
+PLATFORM_INTERFACE int V_setjmp( jmp_buf_holder *env );
+PLATFORM_INTERFACE void V_longjmp( jmp_buf_holder *env, int value );
 
 // The <ctype.h> classification and case conversion of tier0
 PLATFORM_INTERFACE int VCRT_isalnum( int c );

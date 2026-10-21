@@ -11,9 +11,11 @@
 #include <utility>
 
 #include "tier0/platform.h"
+#include "tier0/tier0_stdlib.h"
 
 class CBufferString;
 class CUtlBuffer;
+class CUtlString;
 class CTypeErasedFormattingWrapper;
 
 //-----------------------------------------------------------------------------
@@ -36,7 +38,7 @@ public:
 
 private:
 	uint16 unk000;
-	char m_szElement[ 14 ];
+	char m_szElement[ 12 ];
 };
 
 //-----------------------------------------------------------------------------
@@ -58,7 +60,8 @@ public:
 	virtual void PutC( char c ) = 0;
 	DLL_CLASS_IMPORT virtual void PutS( std::string_view sv );
 	DLL_CLASS_IMPORT virtual void PutRepeatedChar( char c, int nCount );
-	DLL_CLASS_IMPORT virtual void FormatArray( CTypeErasedFormattingWrapper wrapper, CFormatStringElement element, const void **ppElements, int nCount, bool bUnknown );
+	// "{ a, b }" with "..." for a null element, bTruncated adds " ... " before the brace
+	DLL_CLASS_IMPORT virtual void FormatArray( CTypeErasedFormattingWrapper wrapper, CFormatStringElement element, const void **ppElements, int nCount, bool bTruncated );
 	DLL_CLASS_IMPORT virtual void Format2DTable( CTypeErasedFormattingWrapper wrapper, CFormatStringElement element, const void **ppElements, int nDim0, int nDim1 );
 	DLL_CLASS_IMPORT virtual void FormatEnumHelper( CFormatStringElement element, int nValue, std::initializer_list< std::pair< int, const char * > > names );
 	DLL_CLASS_IMPORT virtual void FormatMaskHelper( int nValue, std::initializer_list< std::pair< int, const char * > > names );
@@ -124,9 +127,13 @@ public:
 	DLL_CLASS_IMPORT virtual void PutC( char c );
 	DLL_CLASS_IMPORT virtual void PutS( std::string_view sv );
 
-#ifdef PLATFORM_WINDOWS
-	DLL_CLASS_IMPORT void FlushIfDesired();
-#endif
+	void FlushIfDesired()
+	{
+		if ( m_bFlush )
+		{
+			V_fflush( m_pFile );
+		}
+	}
 
 private:
 	FILE *m_pFile;
@@ -165,5 +172,29 @@ public:
 private:
 	CBufferString *m_pString;
 };
+
+// Changes the indentation level of the thread that OutputIndentation() writes
+PLATFORM_OVERLOAD void Formatting_AdjustIndentation( int nDelta );
+
+// Writes pszFormat to pOutputStream, formatting the next of the nArgs arguments at each conversion
+PLATFORM_OVERLOAD void FormatArgumentsToBuffer( IFormatOutputStream *pOutputStream, const char *pszFormat, const CTypeErasedFormattingWrapper *pArgs, int nArgs );
+
+// The formatting of the basic types with the conversion of element: bool and char are written
+// as is, a null string as "*nullptr*"
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, bool bValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, char cValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, int nValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, unsigned int nValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, long nValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, unsigned long nValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, long long nValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, unsigned long long nValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, float flValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, double flValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, const void *pValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, const char *pszValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, const wchar_t *pwszValue );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, std::string_view sv );
+PLATFORM_OVERLOAD void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element, const CUtlString &value );
 
 #endif // FORMATOUTPUTSTREAM_H

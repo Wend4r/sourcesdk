@@ -2,14 +2,12 @@
 #include "common/macros.h"
 
 #include <tier0/platform.h>
+#include <tier0/bufferstring.h>
 #include <tier0/interface.h>
 #include <tier0/commandbuffer.h>
 #include <tier0/icvar.h>
 
 #include <cstring>
-
-// The factory of the linked tier0, the one CCommandBuffer runs in
-DLL_IMPORT void *CreateInterface( const char *pName, int *pReturnCode );
 
 //-----------------------------------------------------------------------------
 // AddText needs the cvar system of tier0, connected and initialized once
@@ -20,9 +18,19 @@ static bool InitTier0Cvar()
 
 	if ( !s_bInitialized )
 	{
-		ICvar *pCvar = static_cast< ICvar * >( CreateInterface( CVAR_INTERFACE_VERSION, nullptr ) );
+		// The tier0 that CCommandBuffer runs in, by its directory: on Linux the tests link it by path,
+		// and Plat_LoadModule( "tier0" ) alone loads the copy next to the test
+		CBufferString modulePath, moduleName;
+		Plat_GetModuleAddressInformation( reinterpret_cast< const void * >( &Plat_LoadModule ), nullptr, &modulePath, nullptr, nullptr );
+		moduleName.ExtractFilePath( modulePath.Get() );
+		moduleName.EnsureTrailingSlash( CORRECT_PATH_SEPARATOR );
+		moduleName.Append( "tier0" );
 
-		s_bInitialized = pCvar && pCvar->Connect( CreateInterface ) && pCvar->Init() == INIT_OK;
+		HMODULE hTier0 = Plat_LoadModule( moduleName.Get() );
+		CreateInterfaceFn fnFactory = hTier0 ? Plat_GetModuleInterfaceFactory( hTier0 ) : nullptr;
+		ICvar *pCvar = fnFactory ? static_cast< ICvar * >( fnFactory( CVAR_INTERFACE_VERSION, nullptr ) ) : nullptr;
+
+		s_bInitialized = pCvar && pCvar->Connect( fnFactory ) && pCvar->Init() == INIT_OK;
 	}
 
 	return s_bInitialized;

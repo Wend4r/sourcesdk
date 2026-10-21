@@ -135,6 +135,28 @@ PLATFORM_INTERFACE bool Plat_GetMonitorBounds( int nMonitorIndex, int *pX, int *
 PLATFORM_INTERFACE bool Plat_GetDesktopBounds( int nMonitorIndex, int *pX, int *pY, int *pWidth, int *pHeight );
 PLATFORM_INTERFACE float Plat_GetMonitorContentsScale( int nMonitorIndex );
 
+// A mode of a monitor, from SDL_DisplayMode; the names are ours
+struct PlatDisplayMode_t
+{
+	int m_nWidth;
+	int m_nHeight;
+	float m_flRefreshRate;
+};
+
+PLATFORM_INTERFACE bool Plat_GetCurrentDisplayMode( int nMonitorIndex, PlatDisplayMode_t *pMode );
+
+// *pModeCount is the size of pModes on input and the number of the modes on output; pModes
+// can be null to count them
+PLATFORM_INTERFACE bool Plat_GetFullscreenDisplayModes( int nMonitorIndex, int *pModeCount, PlatDisplayMode_t *pModes );
+
+#ifdef PLATFORM_OSX
+// The MetalView of the content view of an NSWindow, and the scales of MoltenVK
+PLATFORM_INTERFACE void *GetMoltenVKMetalLayer( void *pNSWindow );
+PLATFORM_INTERFACE float GetMoltenVKWindowContentsScale( void *pNSWindow );
+PLATFORM_INTERFACE float GetMoltenVKMonitorContentsScale();
+PLATFORM_INTERFACE bool GetMoltenVKSupportsMetal();
+#endif
+
 
 //-----------------------------------------------------------------------------
 // DPI
@@ -148,7 +170,9 @@ PLATFORM_INTERFACE float Plat_GetWindowContentsScale( PlatWindow_t hWindow );
 //-----------------------------------------------------------------------------
 // User notifications
 //-----------------------------------------------------------------------------
-PLATFORM_INTERFACE void Plat_AlertUser( PlatWindow_t hWindow, const wchar_t *pszTitle, const wchar_t *pszMessage );
+// Flashes the window on Windows; a desktop notification elsewhere, the UTF-8 overload goes to Plat_DesktopNotify
+PLATFORM_INTERFACE void Plat_AlertUser( PlatWindow_t hWindow, const char *pszUTF8Title, const char *pszUTF8Message );
+PLATFORM_OVERLOAD void Plat_AlertUser( PlatWindow_t hWindow, const wchar_t *pszTitle, const wchar_t *pszMessage );
 PLATFORM_INTERFACE bool Plat_DesktopNotify( const char *pszUTF8Title, const char *pszUTF8Message );
 PLATFORM_INTERFACE bool Plat_SetDesktopNotifyIconPath( const char *pFullPath );
 

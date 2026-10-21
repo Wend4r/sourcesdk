@@ -291,6 +291,62 @@ PLATFORM_INTERFACE void VProfLite_Clear();
 // Marks the start of the sleep of a dedicated server between its frames
 PLATFORM_INTERFACE void VProfLite_DedicatedServerSleepBegin();
 
+// Ends the sleep: takes it out of the time of the open scopes, at most flSleepTime seconds of it
+// when that is positive
+PLATFORM_INTERFACE void VProfLite_DedicatedServerSleepEnd( double flSleepTime );
+
+// Ends the frame of the main thread: 1 counts it in VProfLiteHistoricalData_t::m_nDiscardedFrames,
+// 2 leaves it out of the per second maximums
+PLATFORM_INTERFACE void VProfLite_NextFrame( int nFrameType );
+
+// The seconds of a budget group in the current frame up to nCurrentTicks (Plat_RelativeTicks()),
+// zeros while VProfLite is disabled
+struct VProfLiteFrameStats_t
+{
+	float m_flInclusive;
+	float m_flExclusive;
+};
+
+PLATFORM_INTERFACE VProfLiteFrameStats_t VProfLite_GetBudgetGroupCurrentFrameStats( int nBudgetGroup, uint64 nCurrentTicks );
+
+// Seconds per frame of a budget group
+struct VProfLitePercentiles_t
+{
+	float m_flAverage;
+	float m_flP25;
+	float m_flP50;
+	float m_flP95;
+	float m_flP99;
+};
+
+// A budget group of the history, sent as CMsgSource2VProfLiteReportItem
+struct VProfLiteReportItem_t
+{
+	int m_nBudgetGroup;
+	const char *m_pszName;
+
+	// Frames where the group was active, and the same of the maximum of each second
+	int m_nActiveSamples;
+	int m_nActiveSamples1SecMax;
+
+	// Over the active frames and over all frames
+	VProfLitePercentiles_t m_Active;
+	VProfLitePercentiles_t m_All;
+	VProfLitePercentiles_t m_Active1SecMax;
+	VProfLitePercentiles_t m_All1SecMax;
+
+	float m_flMax;
+};
+
+// Sent as CMsgSource2VProfLiteReport, the first item is the total (budget group 1)
+struct VProfLiteHistoricalData_t
+{
+	int m_nDiscardedFrames;
+	CUtlVector< VProfLiteReportItem_t > m_Items;
+};
+
+PLATFORM_INTERFACE void VProfLite_GetHistoricalData( VProfLiteHistoricalData_t *pData );
+
 typedef void (*VProfExitScopeCB)();
 
 //-----------------------------------------------------------------------------
@@ -308,7 +364,7 @@ public:
 	CVProfNode( const char *pszName, CVProfNode *pParent, VProfBudgetGroupCallSite &pBudgetGroupName, const CUtlSourceLocation &location );
 	~CVProfNode();
 	
-	CVProfNode &operator=( const CVProfNode & );
+	CVProfNode &operator=( const CVProfNode & ) = default;
 
 	CVProfNode *GetVParent() { return m_pParent; }
 	const CVProfNode *GetVParent() const { return m_pParent; }
@@ -367,6 +423,16 @@ protected:
 	int GetUniqueNodeID() const { return m_iUniqueNodeID; }
 
 	static int s_iCurrentUniqueNodeID;
+
+public:
+	// The next unique node ID
+#ifdef _WIN32
+	static int GetUniqueNodeCount();
+#else
+	static int GetUniqueNodeCount() { return s_iCurrentUniqueNodeID; }
+#endif
+
+protected:
 
 private:
 	static double CyclesToMilliseconds( uint64 nCycles ) { return nCycles * ( 1000.0 / Plat_CPUTickFrequency() ); }
@@ -510,8 +576,8 @@ public:
 	void Stop();
 	void Term();
 
-	void SetTargetThreadId( unsigned id );
-	uint32 GetTargetThreadId();
+	void SetTargetThreadId( ThreadId_t id );
+	ThreadId_t GetTargetThreadId();
 	bool InTargetThread();
 
 	void CalcBudgetGroupTimes_Recursive( CVProfNode *, unsigned int *, int, float );
@@ -525,8 +591,11 @@ public:
 	static VProfExitScopeCB EnterScopeBackgroundThread( const char *pszName, VProfBudgetGroupCallSite &budgetGroup, const CUtlSourceLocation &location );
 	static void ExitScopeBackgroundThread();
 	CVProfNode *GetBackgroundRoot();
+	CVProfNode *GetBackgroundRootNoCreate() const;
+	CThreadFastMutex &GetBackgroundRootMutex();
 	void MergeBackgroundTrees();
 	void SetProfileAllThreads( bool bProfileAllThreads );
+	bool IsProfilingAllThreads() const;
 
 	void MarkFrame();
 	void ResetPeaks();
@@ -549,8 +618,32 @@ public:
 	void EnableVTuneGroup( const char *pGroupName );
 	void DisableVTuneGroup( void );
 	
+	// vtune() is not exported on Windows, where tier0 exports these instead
+#ifdef _WIN32
 	void PushGroup( int nGroupID );
 	void PopGroup( void );
+#else
+	void PushGroup( int nGroupID )
+	{
+		m_nGroupIDStack[ m_nGroupIDStackDepth ] = nGroupID;
+		m_nGroupIDStackDepth++;
+
+		if ( m_nGroupIDStack[ m_nGroupIDStackDepth - 2 ] != nGroupID && VTuneGroupEnabled() && nGroupID == VTuneGroupID() )
+		{
+			vtune( true );
+		}
+	}
+
+	void PopGroup( void )
+	{
+		m_nGroupIDStackDepth--;
+
+		if ( m_nGroupIDStack[ m_nGroupIDStackDepth ] != m_nGroupIDStack[ m_nGroupIDStackDepth + 1 ] && VTuneGroupEnabled() && m_nGroupIDStack[ m_nGroupIDStackDepth + 1 ] == VTuneGroupID() )
+		{
+			vtune( false );
+		}
+	}
+#endif
 #endif
 	
 	int NumFramesSampled() const;
@@ -579,7 +672,7 @@ public:
 	static int BudgetGroupNameToBudgetGroupIDNoCreate( const char *pBudgetGroupName );
 
 	void HideBudgetGroup( int budgetGroupID, bool bHide = true );
-	void HideBudgetGroup( const char *pszName, bool bHide = true );
+	void HideBudgetGroup( const char *pszName, bool bHide = true ) { HideBudgetGroup( BudgetGroupNameToBudgetGroupID( pszName ), bHide ); }
 
 	uint64 *FindOrCreateCounter( const char *pName, CounterGroup_t eCounterGroup = COUNTER_GROUP_DEFAULT );
 	void ResetCounters( CounterGroup_t eCounterGroup );
@@ -659,6 +752,272 @@ COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27256 );
 #else
 COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27272 );
 #endif
+
+//-------------------------------------
+
+inline void CVProfile::Start()
+{
+	if ( ++m_nEnabled == 1 )
+	{
+		m_Root.EnterScope();
+		m_flStartTime = Plat_FloatTime();
+		m_flStopTime = 0.0;
+		m_flPauseStartTime = 0.0;
+		m_flTotalPauseTime = 0.0;
+	}
+}
+
+inline void CVProfile::Stop()
+{
+	if ( --m_nEnabled == 0 )
+	{
+		m_Root.ExitScope();
+		m_flStopTime = Plat_FloatTime();
+	}
+}
+
+inline void CVProfile::SetTargetThreadId( ThreadId_t id )
+{
+	m_nTargetThreadID = id;
+}
+
+inline ThreadId_t CVProfile::GetTargetThreadId()
+{
+	return m_nTargetThreadID;
+}
+
+inline bool CVProfile::InTargetThread()
+{
+	return m_nTargetThreadID == ThreadGetCurrentId();
+}
+
+inline void CVProfile::EnterScopeTargetThread( const char *pszName, bool bAssertAccounted, VProfBudgetGroupCallSite &budgetGroup, const CUtlSourceLocation &location )
+{
+	if ( pszName && ( m_nEnabled != 0 || !m_bAtRoot ) && InTargetThread() )
+	{
+		EnterScopeTargetThreadChecked( pszName, bAssertAccounted, budgetGroup, location );
+	}
+}
+
+inline void CVProfile::EnterScopeTargetThreadChecked( const char *pszName, bool bAssertAccounted, VProfBudgetGroupCallSite &budgetGroup, const CUtlSourceLocation &location )
+{
+	if ( pszName != m_pCurNode->GetName() )
+	{
+		m_pCurNode = m_pCurNode->FindOrCreateChild( pszName, budgetGroup, location );
+	}
+
+	// The budget group of the node takes the flags of every call site
+	int nBudgetGroupID = m_pCurNode->GetBudgetGroupID();
+
+	if ( ( GetBudgetGroupFlags( nBudgetGroupID ) & budgetGroup.m_nFlags ) != budgetGroup.m_nFlags )
+	{
+		BudgetGroupNameToBudgetGroupID( GetBudgetGroupName( nBudgetGroupID ), budgetGroup.m_nFlags );
+	}
+
+	m_pCurNode->EnterScope();
+	m_bAtRoot = false;
+}
+
+inline void CVProfile::ExitScopeTargetThreadChecked()
+{
+	if ( m_pCurNode->ExitScope() )
+	{
+		CVProfNode *pParent = m_pCurNode->GetVParent();
+
+		if ( pParent )
+		{
+			m_pCurNode = pParent;
+		}
+	}
+
+	m_bAtRoot = ( m_pCurNode == &m_Root );
+}
+
+inline CVProfNode *CVProfile::GetBackgroundRootNoCreate() const
+{
+	return m_pBackgroundRoot;
+}
+
+inline CThreadFastMutex &CVProfile::GetBackgroundRootMutex()
+{
+	return m_BackgroundRootMutex;
+}
+
+inline bool CVProfile::IsProfilingAllThreads() const
+{
+	return m_bProfileAllThreads;
+}
+
+inline void CVProfile::MarkFrame()
+{
+	if ( m_nEnabled )
+	{
+		m_Root.ExitScope();
+		++m_nFrames;
+		m_Root.MarkFrame();
+		m_Root.EnterScope();
+
+		AUTO_LOCK( m_BackgroundRootMutex );
+		MergeBackgroundTrees();
+
+		if ( m_pBackgroundRoot )
+		{
+			m_pBackgroundRoot->MarkFrame();
+		}
+	}
+}
+
+inline void CVProfile::ResetPeaks()
+{
+	m_Root.ResetPeak();
+
+	AUTO_LOCK( m_BackgroundRootMutex );
+
+	if ( m_pBackgroundRoot )
+	{
+		m_pBackgroundRoot->ResetPeak();
+	}
+}
+
+inline void CVProfile::Pause()
+{
+	m_nPausedEnabledDepth = m_nEnabled;
+
+	if ( m_nEnabled )
+	{
+		m_flPauseStartTime = Plat_FloatTime();
+	}
+
+	m_nEnabled = 0;
+
+	if ( !AtRoot() )
+	{
+		m_Root.Pause();
+	}
+}
+
+inline void CVProfile::Resume()
+{
+	m_nEnabled = m_nPausedEnabledDepth;
+
+	if ( m_nEnabled )
+	{
+		m_flTotalPauseTime += Plat_FloatTime() - m_flPauseStartTime;
+		m_flPauseStartTime = 0.0;
+	}
+
+	if ( !AtRoot() )
+	{
+		m_Root.Resume();
+	}
+}
+
+inline void CVProfile::Reset()
+{
+	m_Root.Reset();
+	m_nFrames = 0;
+	m_flStartTime = 0.0;
+	m_flStopTime = 0.0;
+	m_flPauseStartTime = 0.0;
+	m_flTotalPauseTime = 0.0;
+
+	AUTO_LOCK( m_BackgroundRootMutex );
+
+	if ( m_pBackgroundRoot )
+	{
+		m_pBackgroundRoot->Reset();
+	}
+}
+
+inline bool CVProfile::IsEnabled() const
+{
+	return m_nEnabled != 0;
+}
+
+inline bool CVProfile::AtRoot() const
+{
+	return m_bAtRoot;
+}
+
+#ifdef VPROF_VTUNE_GROUP
+inline void CVProfile::EnableVTuneGroup( const char *pGroupName )
+{
+	m_nVTuneGroupID = BudgetGroupNameToBudgetGroupID( pGroupName );
+	m_bVTuneGroupEnabled = true;
+}
+
+inline void CVProfile::DisableVTuneGroup( void )
+{
+	m_bVTuneGroupEnabled = false;
+}
+
+inline bool CVProfile::VTuneGroupEnabled()
+{
+	return m_bVTuneGroupEnabled;
+}
+
+inline int CVProfile::VTuneGroupID()
+{
+	return m_nVTuneGroupID;
+}
+#endif
+
+inline int CVProfile::NumFramesSampled() const
+{
+	return m_nFrames;
+}
+
+inline double CVProfile::GetPeakFrameTime() const
+{
+	return m_Root.GetPeakTime();
+}
+
+inline double CVProfile::GetTotalTimeSampled() const
+{
+	return m_Root.GetTotalTime();
+}
+
+inline double CVProfile::GetTimeLastFrame() const
+{
+	return m_Root.GetCurTime();
+}
+
+inline double CVProfile::GetTotalSecondsSampled() const
+{
+	return m_Root.GetTotalTime() / 1000.0;
+}
+
+// Wall clock time since Start, without the pauses
+inline double CVProfile::GetTotalWallClockSecondsSampled()
+{
+	double flEndTime;
+
+	if ( IsEnabled() )
+	{
+		flEndTime = Plat_FloatTime();
+	}
+	else
+	{
+		flEndTime = m_flPauseStartTime != 0.0 ? m_flPauseStartTime : m_flStopTime;
+	}
+
+	return flEndTime - m_flStartTime - m_flTotalPauseTime;
+}
+
+inline CVProfNode *CVProfile::GetRoot()
+{
+	return &m_Root;
+}
+
+inline int CVProfile::BudgetGroupNameToBudgetGroupIDNoCreate( const char *pBudgetGroupName )
+{
+	return FindBudgetGroupName( pBudgetGroupName );
+}
+
+inline CVProfNode *CVProfile::GetCurrentNode()
+{
+	return m_pCurNode;
+}
 
 //-------------------------------------
 

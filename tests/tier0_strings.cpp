@@ -4,6 +4,7 @@
 #include <tier0/platform.h>
 #include <tier0/bufferstring.h>
 #include <tier0/characterset.h>
+#include <tier0/exprevaluator.h>
 #include <tier0/filterstring.h>
 #include <tier0/formatoutputstream.h>
 #include <tier0/gridstringprinter.h>
@@ -14,6 +15,7 @@
 #include <tier0/utlstringtoken.h>
 
 #include <cstring>
+#include <cwchar>
 
 REGISTER_NAMED_TEST( "StringToken.MakeMatchesTheInlineHash", StringToken_MakeMatchesTheInlineHash )
 {
@@ -340,6 +342,10 @@ REGISTER_NAMED_TEST( "FormatStringElement.ParsesOneConversion", FormatStringElem
 	CFormatStringElement number( "%5d" );
 	number.EnforceTypeAndSize( "s", "" );
 	TEST_EQ( strcmp( number, "%5s" ), 0 );
+
+	// The element holds up to 11 chars of the conversion.
+	CFormatStringElement longElement( "%-123456789.3f" );
+	TEST_EQ( strcmp( longElement, "%-123456789" ), 0 );
 }
 
 REGISTER_NAMED_TEST( "GridStringPrinter.LinesUpColumns", GridStringPrinter_LinesUpColumns )
@@ -451,4 +457,170 @@ REGISTER_NAMED_TEST( "IdentifyFailureMessages.EmptyText", IdentifyFailureMessage
 
 	TEST_EQ( scanner.ProcessText( "", -1, &pszEnd ), CIdentifyFailureMessages::STATE_NO_TEXT );
 	TEST_FALSE( scanner.HasFoundFailure() );
+}
+
+REGISTER_NAMED_TEST( "GridStringPrinter.WrapsAtSpaces", GridStringPrinter_WrapsAtSpaces )
+{
+	// A wrapped column cuts the value at its maximum length, or after the last space before it.
+	const char *pszExpected[ 2 ][ 3 ] =
+	{
+		{ " alpha beta ", " gamma delt ", "          a " },
+		{ "     alpha  ", " betagamma  ", "      delta " },
+	};
+
+	for ( int nWrapAtSpaces = 0; nWrapAtSpaces < 2; nWrapAtSpaces++ )
+	{
+		CGridStringPrinter grid;
+		grid.SetColumnHeader( 0, "Words" );
+		grid.SetMaxStringLengthAllColumns( 10 );
+		grid.SetWordWrapColumn( 0, true, nWrapAtSpaces != 0 );
+		grid.SetString( 0, 0, "alpha betagamma delta" );
+
+		CUtlVector< CUtlString > lines;
+		grid.GetLines( lines, false );
+
+		TEST_EQ( lines.Count(), 3 );
+
+		for ( int i = 0; i < 3; i++ )
+		{
+			TEST_EQ( strcmp( lines[ i ].Get(), pszExpected[ nWrapAtSpaces ][ i ] ), 0 );
+		}
+	}
+}
+
+REGISTER_NAMED_TEST( "DefaultConditionalSymbolProc.PlatformSymbols", DefaultConditionalSymbolProc_PlatformSymbols )
+{
+	// The $ is optional and the case does not matter.
+#if defined( _WIN32 )
+	TEST_TRUE( DefaultConditionalSymbolProc( "$WIN32", nullptr ) );
+	TEST_TRUE( DefaultConditionalSymbolProc( "windows", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$LINUX", nullptr ) );
+#elif defined( OSX )
+	TEST_TRUE( DefaultConditionalSymbolProc( "$OSX", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$WIN32", nullptr ) );
+#else
+	TEST_TRUE( DefaultConditionalSymbolProc( "$LINUX", nullptr ) );
+	TEST_TRUE( DefaultConditionalSymbolProc( "posix", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$WIN32", nullptr ) );
+	TEST_FALSE( DefaultConditionalSymbolProc( "$OSX", nullptr ) );
+#endif
+}
+
+REGISTER_NAMED_TEST( "DefaultConditionalErrorProc.Warns", DefaultConditionalErrorProc_Warns )
+{
+	// Only a warning, the call returns.
+	DefaultConditionalErrorProc( "DefaultConditionalErrorProc test", nullptr );
+}
+
+REGISTER_NAMED_TEST( "DefaultConditionalSymbolProc.EvaluatorDefault", DefaultConditionalSymbolProc_EvaluatorDefault )
+{
+	// The procs fit the callbacks of the evaluator.
+	CExpressionEvaluator evaluator;
+	bool bResult = false;
+
+#if defined( _WIN32 )
+	TEST_TRUE( evaluator.Evaluate( bResult, "$WIN32 && !$OSX", DefaultConditionalSymbolProc, DefaultConditionalErrorProc ) );
+#elif defined( OSX )
+	TEST_TRUE( evaluator.Evaluate( bResult, "$OSX && !$WIN32", DefaultConditionalSymbolProc, DefaultConditionalErrorProc ) );
+#else
+	TEST_TRUE( evaluator.Evaluate( bResult, "$LINUX && !$WIN32", DefaultConditionalSymbolProc, DefaultConditionalErrorProc ) );
+#endif
+
+	TEST_TRUE( bResult );
+}
+
+REGISTER_NAMED_TEST( "FormatArgumentsToBuffer.PlainText", FormatArgumentsToBuffer_PlainText )
+{
+	// Without arguments the text is copied and %% becomes %.
+	CBufferString text;
+	CBufferStringFormatOutputStream stream( text );
+	FormatArgumentsToBuffer( &stream, "plain 100%% text\nnext", nullptr, 0 );
+	TEST_EQ( V_strcmp( text.Get(), "plain 100% text\nnext" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "Formatting_AdjustIndentation.FourSpacesPerLevel", Formatting_AdjustIndentation_FourSpacesPerLevel )
+{
+	CBufferString text;
+	CBufferStringFormatOutputStream stream( text );
+
+	stream.OutputIndentation();
+	TEST_TRUE( text.IsEmpty() );
+
+	Formatting_AdjustIndentation( 2 );
+	stream.OutputIndentation();
+	TEST_EQ( V_strcmp( text.Get(), "        " ), 0 );
+
+	// Back to no indentation.
+	Formatting_AdjustIndentation( -2 );
+	text.Clear();
+	stream.OutputIndentation();
+	TEST_TRUE( text.IsEmpty() );
+}
+
+REGISTER_NAMED_TEST( "FormatTo.BasicTypes", FormatTo_BasicTypes )
+{
+	char szBuffer[ 128 ];
+	CCharBufferFormatOutputStream stream( szBuffer, sizeof( szBuffer ) );
+
+	FormatTo( &stream, CFormatStringElement( "%d" ), 42 );
+	FormatTo( &stream, CFormatStringElement( "%u" ), 7u );
+	FormatTo( &stream, CFormatStringElement( "%s" ), true );
+	FormatTo( &stream, CFormatStringElement( "%c" ), 'x' );
+	FormatTo( &stream, CFormatStringElement( "%.2f" ), 1.5 );
+	FormatTo( &stream, CFormatStringElement( "%s" ), "str" );
+	FormatTo( &stream, CFormatStringElement( "%s" ), static_cast< const char * >( nullptr ) );
+	FormatTo( &stream, CFormatStringElement( "%s" ), std::string_view( "view" ) );
+	FormatTo( &stream, CFormatStringElement( "%s" ), CUtlString( "utl" ) );
+	stream.Terminate();
+
+	TEST_EQ( V_strcmp( szBuffer, "427truex1.50str*nullptr*viewutl" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "V_snprintfNoSecurityDoNotUse.Truncates", V_snprintfNoSecurityDoNotUse_Truncates )
+{
+	char szBuffer[ 8 ];
+	TEST_EQ( V_snprintfNoSecurityDoNotUse( szBuffer, sizeof( szBuffer ), "%s", "abcdefghijk" ), 7 );
+	TEST_EQ( V_strcmp( szBuffer, "abcdefg" ), 0 );
+}
+
+static int TestVscprintf( const char *pszFormat, ... )
+{
+	va_list params;
+	va_start( params, pszFormat );
+	const int nLength = V_vscprintf( pszFormat, params );
+	va_end( params );
+	return nLength;
+}
+
+REGISTER_NAMED_TEST( "V_vscprintf.Length", V_vscprintf_Length )
+{
+	TEST_EQ( TestVscprintf( "%d-%s", 123, "abcd" ), 8 );
+	TEST_EQ( TestVscprintf( "" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "V_snwprintf_bytes.SizeInBytes", V_snwprintf_bytes_SizeInBytes )
+{
+	wchar_t szBuffer[ 8 ];
+	TEST_EQ( V_snwprintf_bytes( szBuffer, sizeof( szBuffer ), L"%d", 1234 ), 4 );
+	TEST_EQ( wcscmp( szBuffer, L"1234" ), 0 );
+}
+
+REGISTER_NAMED_TEST( "V_UnicodeConvertAndCaseStr.UTF16Output", V_UnicodeConvertAndCaseStr_UTF16Output )
+{
+	uchar16 szBuffer[ 16 ];
+	uchar16 *pNewBuffer = nullptr;
+	TEST_TRUE( V_UnicodeConvertAndCaseStr( "AbC", szBuffer, sizeof( szBuffer ), &pNewBuffer, 0 ) == szBuffer );
+	TEST_NULL( pNewBuffer );
+	TEST_EQ( ( int )szBuffer[ 0 ], ( int )'a' );
+	TEST_EQ( ( int )szBuffer[ 2 ], ( int )'c' );
+	TEST_EQ( ( int )szBuffer[ 3 ], 0 );
+}
+
+REGISTER_NAMED_TEST( "V_SanitizeTextForCommandLine.Quotes", V_SanitizeTextForCommandLine_Quotes )
+{
+	// Double quotes become single ones, bAppend keeps the text and nLength limits the input.
+	CBufferString out;
+	TEST_EQ( V_strcmp( V_SanitizeTextForCommandLine( "a\"b\"c", &out, false, -1 ), "a'b'c" ), 0 );
+	TEST_EQ( V_strcmp( V_SanitizeTextForCommandLine( "xyz", &out, true, 2 ), "a'b'cxy" ), 0 );
+	TEST_EQ( V_strcmp( V_SanitizeTextForCommandLine( "new", &out, false, -1 ), "new" ), 0 );
 }

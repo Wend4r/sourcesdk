@@ -2,6 +2,7 @@
 #include "common/macros.h"
 
 #include <tier0/platform.h>
+#include <tier0/lzss.h>
 #include <tier0/blake3hash.h>
 #include <tier0/blockcompress.h>
 #include <tier0/checksum_sha1.h>
@@ -170,4 +171,33 @@ REGISTER_NAMED_TEST( "BlockCompress.RoundTripRestoresTheData", BlockCompress_Rou
 
 	TEST_EQ( nRestoredSize, static_cast< uint32 >( sizeof( source ) ) );
 	TEST_EQ( memcmp( source, restored, sizeof( source ) ), 0 );
+}
+
+REGISTER_NAMED_TEST( "LZSS.CompressRoundTrip", LZSS_CompressRoundTrip )
+{
+	unsigned char input[ 4096 ];
+
+	for ( int i = 0; i < ( int )sizeof( input ); i++ )
+	{
+		input[ i ] = ( unsigned char )( ( i * 7 ) % 61 );
+	}
+
+	// The fast mode compares fewer earlier matches, both decompress to the input.
+	for ( int nFast = 0; nFast < 2; nFast++ )
+	{
+		CLZSS lzss;
+		unsigned int nCompressedSize = 0;
+		unsigned char *pCompressed = lzss.Compress( input, sizeof( input ), &nCompressedSize, nFast != 0 );
+
+		TEST_TRUE( pCompressed != NULL );
+		TEST_TRUE( lzss.IsCompressed( pCompressed ) );
+		TEST_TRUE( nCompressedSize < sizeof( input ) );
+		TEST_EQ( lzss.GetActualSize( pCompressed ), ( unsigned int )sizeof( input ) );
+
+		unsigned char output[ sizeof( input ) ];
+		TEST_EQ( lzss.SafeUncompress( pCompressed, output, sizeof( output ) ), ( unsigned int )sizeof( input ) );
+		TEST_EQ( memcmp( input, output, sizeof( input ) ), 0 );
+
+		MemAlloc_Free( pCompressed );
+	}
 }

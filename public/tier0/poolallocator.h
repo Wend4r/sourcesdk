@@ -36,7 +36,7 @@ public:
 private:
 	uint32 m_nPoolSize;
 	uint32 m_nAllocatedSize;
-	uint32 unk008;
+	uint32 m_nPeakAllocatedSize;
 
 	// Trees of the free and the allocated ranges
 	void *m_pImpl;

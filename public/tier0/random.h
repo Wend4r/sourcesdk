@@ -78,6 +78,7 @@ DLL_IMPORT float	RandomFloat( float flMinVal = 0.0f, float flMaxVal = 1.0f );
 DLL_IMPORT float	RandomFloatExp( float flMinVal = 0.0f, float flMaxVal = 1.0f, float flExponent = 1.0f );
 DLL_IMPORT int		RandomInt( int iMinVal, int iMaxVal );
 DLL_IMPORT float	RandomGaussianFloat( float flMean = 0.0f, float flStdDev = 1.0f );
+DLL_IMPORT void		RandomizeBits( void *pOut, size_t nBytes );
 
 // A seed that differs between runs and threads, mixed from the clock and the current thread
 DLL_IMPORT uint32	GenerateDefaultRandomSeed();

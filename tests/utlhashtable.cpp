@@ -576,3 +576,31 @@ REGISTER_NAMED_TEST( "CUtlHashtable.EnumAndPairKeys", CUtlHashtable_EnumAndPairK
 	TEST_EQ( pairTable.Element( pairTable.Find( std::make_pair( 2, 1 ) ) ), 21 );
 	TEST_FALSE( pairTable.HasElement( std::make_pair( 3, 3 ) ) );
 }
+
+enum TestHashEnum_t : int
+{
+	TEST_HASH_ENUM_A = 1,
+	TEST_HASH_ENUM_B = 7,
+};
+
+REGISTER_NAMED_TEST( "DefaultHashFunctor.EnumByUnderlyingValue", DefaultHashFunctor_EnumByUnderlyingValue )
+{
+	// An enum hashes as its underlying value.
+	TEST_EQ( DefaultHashFunctor< TestHashEnum_t >()( TEST_HASH_ENUM_B ), DefaultHashFunctor< int >()( 7 ) );
+	TEST_TRUE( DefaultHashFunctor< TestHashEnum_t >()( TEST_HASH_ENUM_A ) != DefaultHashFunctor< TestHashEnum_t >()( TEST_HASH_ENUM_B ) );
+
+	// Tables of enums use it.
+	CUtlHashtable< TestHashEnum_t > table;
+	table.Insert( TEST_HASH_ENUM_A );
+	TEST_TRUE( table.HasElement( TEST_HASH_ENUM_A ) );
+	TEST_FALSE( table.HasElement( TEST_HASH_ENUM_B ) );
+}
+
+REGISTER_NAMED_TEST( "DefaultHashFunctor.CUtlStringKeys", DefaultHashFunctor_CUtlStringKeys )
+{
+	// The single template parameter of the engine, as in CUtlHashtable< CUtlString >.
+	CUtlHashtable< CUtlString > table;
+	table.Insert( CUtlString( "sourcesdk" ) );
+	TEST_TRUE( table.HasElement( CUtlString( "sourcesdk" ) ) );
+	TEST_EQ( DefaultHashFunctor< CUtlString >()( CUtlString( "abc" ) ), DefaultHashFunctor< CUtlString >()( CUtlString( "abc" ) ) );
+}

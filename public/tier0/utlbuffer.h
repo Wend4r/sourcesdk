@@ -48,11 +48,11 @@ public:
 
 	CUtlCharConversion( char nEscapeChar, const char *pDelimiter, int nCount, const ConversionArray_t *pArray );
 
-	CUtlCharConversion( CUtlCharConversion &&rhs ) noexcept;
-	CUtlCharConversion( const CUtlCharConversion &rhs );
+	CUtlCharConversion( CUtlCharConversion &&rhs ) noexcept = default;
+	CUtlCharConversion( const CUtlCharConversion &rhs ) = default;
 
-	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept;
-	CUtlCharConversion &operator=( const CUtlCharConversion &rhs );
+	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept = default;
+	CUtlCharConversion &operator=( const CUtlCharConversion &rhs ) = default;
 
 	char GetEscapeChar() const { return m_nEscapeChar; }
 	const char *GetDelimiter() const { return m_pDelimiter; }
@@ -77,8 +77,8 @@ protected:
 	int m_nDelimiterLength;
 	int m_nCount;
 	int m_nMaxConversionLength;
-	char m_pList[255];
-	ConversionInfo_t m_pReplacements[255];
+	char m_pList[256];
+	ConversionInfo_t m_pReplacements[256];
 };
 
 #define BEGIN_CHAR_CONVERSION( _name, _delimiter, _escapeChar )	\
@@ -1175,6 +1175,21 @@ inline void CUtlBuffer::PutChar( char c )
 	}
 
 	PutTypeBin( c );
+}
+
+inline void CUtlBuffer::PutDelimitedCharInternal( CUtlCharConversion *pConv, char c )
+{
+	int nLength = pConv->GetConversionLength( c );
+
+	if ( nLength == 0 )
+	{
+		PutChar( c );
+	}
+	else
+	{
+		PutChar( pConv->GetEscapeChar() );
+		Put( pConv->GetConversionString( c ), nLength );
+	}
 }
 
 inline void CUtlBuffer::PutUnsignedChar( unsigned char c )

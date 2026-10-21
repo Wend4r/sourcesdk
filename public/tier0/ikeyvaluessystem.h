@@ -80,8 +80,14 @@ public:
 	// Returns the previous scope
 	virtual HTemporaryKeyValueAllocationScope SetTemporaryKeyValueAllocationScope( HTemporaryKeyValueAllocationScope hScope ) = 0;
 
+	// Source2Main of engine2 passes true before it starts the engine and false after
+	// Plat_OnExecutableExitingMain; tier0 stores it in a member that nothing reads
 	virtual void unk101( bool ) = 0;
+
+	// Source2Main of engine2 passes true last, after unk101( false ); empty in tier0
 	virtual void unk102( bool ) = 0;
+
+	// engine2 calls it after the engine loop has shut down its systems; empty in tier0
 	virtual void unk103() = 0;
 };
 

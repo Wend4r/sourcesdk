@@ -96,6 +96,20 @@ REGISTER_NAMED_TEST( "3DAllocator.FillsTheVolumeWithBoxes", Allocator3D_FillsThe
 	TEST_FALSE( allocator.Allocate3D( 8, 8, 8, &box ) );
 }
 
+REGISTER_NAMED_TEST( "CUtl3DAllocator.UseClosestBlock", CUtl3DAllocator_UseClosestBlock )
+{
+	CUtl3DAllocator allocator;
+	allocator.Reset( 8, 8, 8 );
+
+	// No block is wide enough, the closest one is taken and the box is cut to it.
+	Rect3D_t box = {};
+	TEST_FALSE( allocator.Allocate3D( 16, 4, 4, false, &box ) );
+	TEST_TRUE( allocator.Allocate3D( 16, 4, 4, true, &box ) );
+	TEST_EQ( box.width, 8 );
+	TEST_EQ( box.height, 4 );
+	TEST_EQ( box.depth, 4 );
+}
+
 REGISTER_NAMED_TEST( "VertexKDTree.FindsNearbyVertices", VertexKDTree_FindsNearbyVertices )
 {
 	const float vertices[] =

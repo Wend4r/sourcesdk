@@ -315,8 +315,8 @@ template <size_t cchDest> wchar_t *V_wcscat_safe( INOUT_Z_ARRAY wchar_t( &pDest 
 
 // Returns the number of characters printed (not including the NULL), or maxLenInChars if truncation occurs.
 // pDest is always null-terminated.
-#ifdef S2E_NO_DEPRECATED
 PLATFORM_INTERFACE int V_snprintfNoSecurityDoNotUse( OUT_Z_CAP(maxLenInChars) char *pDest, int maxLenInChars, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
+#ifdef S2E_NO_DEPRECATED
 #define V_snprintf V_snprintfNoSecurityDoNotUse
 #else // !S2E_NO_DEPRECATED
 PLATFORM_INTERFACE int V_snprintf( OUT_Z_CAP( destLen ) char *pDest, int destLen, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 3, 4 );
@@ -326,6 +326,9 @@ PLATFORM_INTERFACE int V_snprintfcat( OUT_Z_CAP(maxLenInChars) char *pDest, int 
 PLATFORM_INTERFACE int V_snprintfWarnTrunc( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, bool bIgnoreWarn, PRINTF_FORMAT_STRING const char *pFormat, ... ) FMTFUNCTION( 4, 5 );
 
 PLATFORM_INTERFACE int V_vsnprintf( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
+
+// The length of the formatted text without the terminator, -1 for an invalid format on Windows
+PLATFORM_INTERFACE int V_vscprintf( PRINTF_FORMAT_STRING const char *pFormat, va_list params );
 PLATFORM_INTERFACE int V_vsnprintfcat( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params );
 PLATFORM_INTERFACE int V_vsnprintfRet( OUT_Z_CAP(maxLenInCharacters) char *pDest, int maxLenInCharacters, PRINTF_FORMAT_STRING const char *pFormat, va_list params, bool *pbTruncated );
 // Returns the length of the whole formatted string without the terminator. pDest can be null with a length of 0.
@@ -734,6 +737,7 @@ PLATFORM_OVERLOAD bool V_UnicodeCaseStringInString( const uchar16 *pUTF16, const
 PLATFORM_OVERLOAD bool V_UnicodeCaseStringInString( const uchar32 *pUTF32, const uchar32 *substr, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 
 PLATFORM_OVERLOAD uchar32 *V_UnicodeConvertAndCaseStr( const char *pUTF8, OUT_Z_BYTECAP( dest_size ) uchar32 *dest, int dest_size, uchar32 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
+PLATFORM_OVERLOAD uchar16 *V_UnicodeConvertAndCaseStr( const char *pUTF8, OUT_Z_BYTECAP( dest_size ) uchar16 *dest, int dest_size, uchar16 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 PLATFORM_OVERLOAD uchar32 *V_UnicodeConvertAndCaseStr( const uchar16 *pUTF16, OUT_Z_BYTECAP( dest_size ) uchar32 *dest, int dest_size, uchar32 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 PLATFORM_OVERLOAD uchar32 *V_UnicodeConvertAndCaseStr( const uchar32 *pUTF32, OUT_Z_BYTECAP( dest_size ) uchar32 *dest, int dest_size, uchar32 **new_buf, int flags, EStringConvertErrorPolicy ePolicy = STRINGCONVERT_SKIP );
 
@@ -1135,7 +1139,13 @@ PLATFORM_INTERFACE const char *V_PrettifyDurationMs( CBufferString *pOut, uint64
 // spaces into HTML
 PLATFORM_INTERFACE const char *V_XMLEncode( const char *pIn, CBufferString *pOut, int nLength, uint nFlags );
 
-PLATFORM_OVERLOAD const char *V_SanitizeTextForCommandLine( const char *pText, CBufferString *pOut, bool bUnknown, int nUnknown );
+// Reverses V_XMLEncode: replaces the entities of pIn (nLength chars, -1 for all) and writes the
+// text to pOut, appending to it when bit 0 of nFlags is set; returns the text of pOut
+PLATFORM_INTERFACE const char *V_XMLDecode( const char *pIn, CBufferString *pOut, int nLength, uint nFlags );
+
+// Writes nLength chars of pText (all of it for a negative length) to pOut with the double
+// quotes made single quotes, appending to it with bAppend; returns the text of pOut
+PLATFORM_OVERLOAD const char *V_SanitizeTextForCommandLine( const char *pText, CBufferString *pOut, bool bAppend, int nLength );
 
 PLATFORM_OVERLOAD CUtlString JsonEscape( const char *pString );
 PLATFORM_OVERLOAD CUtlString V_RandomString( int nLen );
@@ -1162,6 +1172,10 @@ PLATFORM_INTERFACE bool V_AreSlashesCorrect( const char *pname, char separator )
 PLATFORM_INTERFACE bool V_IsFakePath( const char *pStr );
 PLATFORM_INTERFACE int V_GetPathOriginLength( const char *pPath );
 PLATFORM_INTERFACE int V_GetPathForm( const char *pPath );
+
+// True when pszSuffix can be appended to pszPrefix, i.e. it is not absolute, drive-relative or
+// current-drive-root; warns otherwise unless bQuiet. The third argument is unused by tier0
+PLATFORM_INTERFACE bool V_ValidatePathConcat( const char *pszPrefix, const char *pszSuffix, void *pUnused, bool bQuiet );
 PLATFORM_INTERFACE int V_GetVPKPathForm( const char *pPath );
 PLATFORM_INTERFACE const char *V_StripLeadingSlash( const char *pPath );
 PLATFORM_INTERFACE char *V_AbbreviatePathInPlace( char *pPath, const int nMaxCharsAllowed, const char *pReplacementString );
@@ -1174,8 +1188,14 @@ PLATFORM_INTERFACE const char *V_MakeAbsolutePathBufferUnfixed( CBufferString *p
 PLATFORM_INTERFACE bool V_MakeAbsoluteVPKPathName( char *pOut, int nBufLen, const char *pInPathName, const char *pStartingDir, bool bLowercaseName );
 PLATFORM_INTERFACE bool V_MakeAbsoluteVPKPathNameBuffer( CBufferString *pOut, const char *pInPathName );
 
+// Makes a display name from a member name: strips "m_" and a Hungarian prefix (e, fl, i, mat, n,
+// psz, str, u, v, x, _) and spaces the words, m_flMaxSpeed becomes "Max Speed". The second
+// argument is unused by tier0
+PLATFORM_INTERFACE bool V_TryAndMakeFriendlyNameFromCppName( const char *pszCppName, void *pUnused, CBufferString *pOut );
+
 // Wide char formatting with the size in chars; V_vsnwprintfRet_cch reports truncation
 PLATFORM_INTERFACE int V_snwprintf_cch( wchar_t *pDest, int maxLenInChars, const wchar_t *pFormat, ... );
+PLATFORM_INTERFACE int V_snwprintf_bytes( wchar_t *pDest, int maxLenInBytes, const wchar_t *pFormat, ... );
 PLATFORM_INTERFACE int V_vsnwprintfRet_cch( wchar_t *pDest, int maxLenInChars, const wchar_t *pFormat, va_list params, bool *pbTruncated );
 
 #ifdef _WIN32

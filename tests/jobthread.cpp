@@ -137,12 +137,12 @@ public:
 
 	virtual bool Start( const ThreadPoolStartParams_t &startParams, const char *pszNameOverride ) { return true; }
 	virtual bool Stop() { return true; }
-	virtual void unk001( const ThreadPoolStartParams_t &startParams ) {}
+	virtual void Restart( const ThreadPoolStartParams_t &startParams ) {}
 	virtual int GetCoreTypeRequest() { return 0; }
 	virtual int NumThreads() { return m_nThreads; }
 	virtual int NumIdleThreads() { return m_nIdleThreads; }
 	virtual int GetCurrentThreadIndex() { return -1; }
-	virtual int unk101( int, int nDefault ) { return nDefault; }
+	virtual int GetCurrentThreadSlot( int, int nOtherThreadSlot ) { return nOtherThreadSlot; }
 	virtual int SuspendExecution() { return 0; }
 	virtual int ResumeExecution() { return 0; }
 #ifdef _WIN32
@@ -218,6 +218,22 @@ REGISTER_NAMED_TEST( "CJobSet.WaitForFinish", CJobSet_WaitForFinish )
 	jobSet.WaitForFinish( &pool );
 	TEST_EQ( nValue, 3 );
 	TEST_EQ( pool.m_nWaitedJobs, 2 );
+}
+
+REGISTER_NAMED_TEST( "Wait.YieldsOnThePoolOfTheJobs", Wait_YieldsOnThePoolOfTheJobs )
+{
+	CTestThreadPool pool;
+	int nValue = 0;
+
+	// The finished job is left out, the queued one goes to YieldWait of its pool.
+	CUtlVector< CThreadedJob * > jobs;
+	jobs.AddToTail( pool.AddCall( &AddValue, &nValue, 1 ) );
+	jobs.AddToTail( pool.QueueCall( &AddValue, &nValue, 2 ) );
+	Wait( jobs, true );
+	TEST_EQ( pool.m_nWaitedJobs, 1 );
+
+	for ( CThreadedJob *pJob : jobs )
+		pJob->Release();
 }
 
 REGISTER_NAMED_TEST( "IterRangeParallel.Direct", IterRangeParallel_Direct )

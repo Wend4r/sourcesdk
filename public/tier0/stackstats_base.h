@@ -145,4 +145,15 @@ protected:
 	DLL_CLASS_IMPORT void STUB_RemoveSharedInstanceData( const CallStackStatsGatherer_SharedInstanceData_t &data );
 };
 
+// The gatherers of the call stack stats, compiled out in CS2
+typedef bool ( *FN_StackStats_EnumInstances_Callback )( CCallStackStatsGatherer_Base *pGatherer, const char *szUniqueID, void *pContext );
+PLATFORM_INTERFACE void StackStats_EnumerateRegisteredInstances( FN_StackStats_EnumInstances_Callback pFN_Callback, void *pContext );
+PLATFORM_INTERFACE bool StackStats_DumpNamedInstance( const char *szUniqueID, const char *szFileName, bool bDumpTranslationTable, bool bAllowMemoryAllocations );
+PLATFORM_INTERFACE void StackStats_GathererRegistration( CCallStackStatsGatherer_Base &StatsGatherer, bool bRegister );
+PLATFORM_INTERFACE bool StackStats_GetSymbolTranslationDefault();
+
+// The instances of the gatherers shared between modules by their name
+PLATFORM_INTERFACE CCallStackStatsGatherer_Base *_CCallStackStatsGatherer_GetSharedGlobalInstance( const char *szUniqueID, CCallStackStatsGatherer_Base *( *pCreateNewFunc )( void *pContext ), void *pContext );
+PLATFORM_INTERFACE void _CCallStackStatsGatherer_ReleaseSharedGlobalInstance( const char *szUniqueID, CCallStackStatsGatherer_Base *pGatherer, const CallStackStatsGatherer_SharedInstanceData_t *pRemoveSharedInstanceData, void ( *pDeleteThisTypeFunc )( CCallStackStatsGatherer_Base *pGatherer ) );
+
 #endif // TIER0_STACKSTATS_BASE_H

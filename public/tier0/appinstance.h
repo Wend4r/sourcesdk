@@ -44,12 +44,15 @@ typedef void *HANDLE;
 class CSingleAppInstance
 {
 	public:
-		explicit CSingleAppInstance( tchar* InstanceName, bool exitOnNotUnique = false, bool displayMsgIfNotUnique = false );
+		explicit CSingleAppInstance( const char *InstanceName, bool exitOnNotUnique = false, bool displayMsgIfNotUnique = false );
 				~CSingleAppInstance();
 
 		bool	CheckForOtherRunningInstances( bool exitOnNotUnique = false, bool displayMsgIfNotUnique = true );
+
+		// Releases the instance, the destructor calls it
+		void	ShutdownInstance();
 		
-		static bool CheckForRunningInstance( tchar* InstanceName );
+		static bool CheckForRunningInstance( const char *InstanceName );
 
 		bool	IsUniqueInstance()	{ return m_isUniqueInstance; }
 		HANDLE	GetHandle()			{ return reinterpret_cast< HANDLE >( (intp) m_hMutex ); }
@@ -58,7 +61,8 @@ class CSingleAppInstance
 		CSingleAppInstance();		// Hidden for a reason.  You must specify the instance name
 
 #ifdef OSX
-		char m_szLockPath[ MAX_PATH ];
+		// The lock file, tier0 keeps PATH_MAX characters of it
+		char m_szLockPath[ 1024 ];
 		int	m_hMutex;
 #else
 		HANDLE	m_hMutex;

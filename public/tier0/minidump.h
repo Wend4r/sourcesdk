@@ -37,16 +37,54 @@ PLATFORM_INTERFACE void CatchAndWriteMiniDumpExForVoidPtrFn( FnVoidPtrFn pfn, vo
 //#include <dbghelp.h>
 struct _EXCEPTION_POINTERS;
 
-// Incomplete, only its start is known
+// What the caller of a minidump asks for; the names of the type and its members are ours,
+// InvokeMiniDumpHandler, AlwaysInvokeMiniDumpHandler and MiniDumpExceptionHandler copy it
+// into MiniDumpStandardData_t::m_Options
+struct MiniDumpOptions_t
+{
+	MiniDumpOptions_t() { memset( this, 0, sizeof( *this ) ); }
+
+	// The options of the callers: the reason and the notes of the file, flags 0x40
+	MiniDumpOptions_t( const char *pszReason, const char *pszNotes = NULL )
+	{
+		memset( this, 0, sizeof( *this ) );
+		m_pszReason = pszReason;
+		m_pszNotes = pszNotes;
+		m_nFlags = 0x40;
+	}
+
+	// Part of the file name, "crash" or "forced" when null
+	const char *m_pszReason;
+
+	// The type flags of the minidump, GetDefaultMiniDumpTypeFlags when the caller has none
+	uint32 m_nMiniDumpTypeFlags;
+
+	// The exception that InvokeMiniDumpHandler raises on Windows, 0 for the default one
+	uint32 m_uExceptionCode;
+
+	// 0x20 adds _-report-_ to the file name; the callers set 0x40
+	uint8 m_nFlags;
+	uint8 unk011[ 7 ];
+	uint8 unk018[ 24 ];
+
+	// Notes of the minidump, the command line value of -minidumpnotes is used when null
+	const char *m_pszNotes;
+	uint8 unk038[ 48 ];
+};
+
+// The minidump that a handler writes
 struct MiniDumpStandardData_t
 {
 	DLL_CLASS_IMPORT void HandlerQueueHeartBeat() const;
 
 	uint32 m_uStructuredExceptionCode;
 	// 1 indicates a forced minidump, nonzero makes MiniDumpExceptionHandler skip its debugger and -nominidumps checks
-	int32 m_nUnknown;
+	int32 m_nForced;
 	// Null on Linux
 	_EXCEPTION_POINTERS *m_pExceptionInfo;
+	// State of the handler queue, a byte at +5 tells whether a debugger may be attached
+	void *m_pHandlerState;
+	MiniDumpOptions_t m_Options;
 };
 
 typedef int ( *FnMiniDumpHandler )( MiniDumpStandardData_t *pData );
@@ -58,6 +96,75 @@ PLATFORM_INTERFACE FnMiniDumpHandler GetDefaultMiniDumpHandler();
 // The generic minidump handler of tier0, which writes the minidump of pData
 PLATFORM_INTERFACE int Tier0GenericMiniDumpHandler( MiniDumpStandardData_t *pData );
 PLATFORM_INTERFACE void Tier0GenericMiniDumpHandler_SetFilenamePrefix( const char *pszPrefix );
+
+// Writes the minidump of pData and copies its file name to pszFileNameOut; nFlags bit 0 prints
+// the result to stderr, bit 3 asks for notes, -1 returns at once
+PLATFORM_INTERFACE bool Tier0GenericMiniDumpHandlerEx( MiniDumpStandardData_t *pData, char *pszFileNameOut, int nFlags );
+
+// The type of the minidumps of the generic handler: bFullMemory adds the full memory, bFilterMemory
+// keeps the memory filter; bRegisterForUnhandledExceptions calls MiniDumpRegisterForUnhandledExceptions
+PLATFORM_INTERFACE void Tier0GenericMiniDumpHandler_SetOptions( bool bFullMemory, bool bFilterMemory, bool bRegisterForUnhandledExceptions );
+
+// Called before the generic handler writes a minidump, with an internal state of tier0
+PLATFORM_INTERFACE void Tier0GenericMiniDumpHandler_SetPreHandlerCallback( void ( *pfnCallback )( void *pContext ) );
+
+// Empty in every build of tier0, the parameters are not known
+PLATFORM_INTERFACE void Tier0GenericMiniDumpHandler_SetGetAdditionalFileAttachmentCallback();
+
+// Raises an exception on Windows so that the default handler writes a minidump with pOptions,
+// bBreakOnBreakpoint breaks into the debugger for a breakpoint exception; false on POSIX
+PLATFORM_INTERFACE bool InvokeMiniDumpHandler( FnMiniDumpHandler pfnHandler, const MiniDumpOptions_t *pOptions, bool bBreakOnBreakpoint );
+
+#ifdef PLATFORM_POSIX
+// Calls pfnHandler with a forced breakpoint minidump of pOptions; true when it wrote one
+PLATFORM_INTERFACE bool AlwaysInvokeMiniDumpHandler( FnMiniDumpHandler pfnHandler, const MiniDumpOptions_t *pOptions );
+#endif
+
+// The exception handler of the minidumps: nAction 0 returns 1, 1 returns 0 and anything else
+// exits the process when minidumps are off; nForced is MiniDumpStandardData_t::m_nForced
+PLATFORM_INTERFACE int MiniDumpExceptionHandler( uint32 uStructuredExceptionCode, _EXCEPTION_POINTERS *pExceptionInfo, int nAction, void *pUnknown, int nForced, const MiniDumpOptions_t *pOptions );
+
+// The file name of a new minidump: the directory, pszPrefix, the executable, the date, _pszReason and pszExtension
+PLATFORM_INTERFACE const char *GetNewMiniDumpFileName( const char *pszReason, CBufferString *pFileName, const char *pszDirectory, const char *pszPrefix, const char *pszExtension );
+
+// Creates the file of GetNewMiniDumpFileName, trying new names up to nMaxAttempts times
+PLATFORM_INTERFACE OSFILEHANDLE CreateNewMiniDumpFile( const char *pszReason, CBufferString *pFileName, const char *pszDirectory, const char *pszPrefix, const char *pszExtension, int nMaxAttempts );
+
+// Empty in every build of tier0, the parameters are not known
+PLATFORM_INTERFACE void InitMiniDumpReportOptions();
+PLATFORM_INTERFACE void MailMiniDump();
+PLATFORM_INTERFACE void SendMiniDumpReport();
+PLATFORM_INTERFACE bool UploadFilesToAnalyzer();
+PLATFORM_INTERFACE bool UploadTracyFile();
+
+#ifdef _WIN32
+// The log of the minidump handler, and the removal of its old files
+PLATFORM_INTERFACE void MinidumpLog( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 1, 2 );
+PLATFORM_INTERFACE void MinidumpAgeLogs();
+#endif
+
+//-----------------------------------------------------------------------------
+// tier0's own MiniDumpWriteDump, which also writes the minidumps of POSIX processes
+//-----------------------------------------------------------------------------
+enum VWMD_MINIDUMP_TYPE : int;
+struct _VWMD_MINIDUMP_EXCEPTION_INFORMATION;
+struct _VWMD_MINIDUMP_USER_STREAM_INFORMATION;
+struct _VWMD_MINIDUMP_CALLBACK_INFORMATION;
+struct _VWMD_MINIDUMP_CALLBACK_INPUT;
+struct _VWMD_MINIDUMP_CALLBACK_OUTPUT;
+class CVDebugProcess;
+
+// The type of _VWMD_MINIDUMP_CALLBACK_INFORMATION::CallbackRoutine, after MINIDUMP_CALLBACK_ROUTINE
+typedef int ( *VWMD_MINIDUMP_CALLBACK_ROUTINE )( void *pContext, const _VWMD_MINIDUMP_CALLBACK_INPUT *pInput, _VWMD_MINIDUMP_CALLBACK_OUTPUT *pOutput );
+
+PLATFORM_OVERLOAD bool VWMD_tier0_MiniDumpWriteDump( void *hProcess, uint32 nProcessId, OSFILEHANDLE hFile, VWMD_MINIDUMP_TYPE eDumpType, _VWMD_MINIDUMP_EXCEPTION_INFORMATION *pExceptionParam, _VWMD_MINIDUMP_USER_STREAM_INFORMATION *pUserStreamParam, _VWMD_MINIDUMP_CALLBACK_INFORMATION *pCallbackParam );
+PLATFORM_OVERLOAD bool VWMD_tier0_MiniDumpWriteDump( uint32 nProcessId, const char *pszFileName, bool bUnknown, VWMD_MINIDUMP_TYPE eDumpType, _VWMD_MINIDUMP_EXCEPTION_INFORMATION *pExceptionParam, _VWMD_MINIDUMP_USER_STREAM_INFORMATION *pUserStreamParam, _VWMD_MINIDUMP_CALLBACK_INFORMATION *pCallbackParam );
+PLATFORM_OVERLOAD bool VWMD_tier0_MiniDumpWriteDump( CVDebugProcess *pProcess, const char *pszFileName, bool bUnknown, VWMD_MINIDUMP_TYPE eDumpType, _VWMD_MINIDUMP_EXCEPTION_INFORMATION *pExceptionParam, _VWMD_MINIDUMP_USER_STREAM_INFORMATION *pUserStreamParam, _VWMD_MINIDUMP_CALLBACK_INFORMATION *pCallbackParam );
+
+// The callback of the minidumps of tier0, which leaves out the modules it does not need;
+// MinidumpDefaultWriteCallbackInit puts it into pCallbackInfo with no parameter
+PLATFORM_INTERFACE int MinidumpDefaultWriteCallback( void *pContext, const _VWMD_MINIDUMP_CALLBACK_INPUT *pInput, _VWMD_MINIDUMP_CALLBACK_OUTPUT *pOutput );
+PLATFORM_INTERFACE VWMD_MINIDUMP_CALLBACK_ROUTINE MinidumpDefaultWriteCallbackInit( _VWMD_MINIDUMP_CALLBACK_INFORMATION *pCallbackInfo );
 
 // The minidump type flags tier0 writes by default
 PLATFORM_INTERFACE uint32 GetDefaultMiniDumpTypeFlags();

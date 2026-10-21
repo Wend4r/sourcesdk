@@ -106,8 +106,8 @@ public:
 	CBufferString( CBufferString &&moveFrom ) noexcept :
 	    CBufferString()
 	{
-		V_swap( m_nLengthStaff, moveFrom.m_nLengthStaff );
-		V_swap( m_nAllocatedStaff, moveFrom.m_nAllocatedStaff );
+		V_swap( m_nLengthStuff, moveFrom.m_nLengthStuff );
+		V_swap( m_nAllocatedStuff, moveFrom.m_nAllocatedStuff );
 		V_swap( m_Buffer, moveFrom.m_Buffer );
 	}
 
@@ -488,7 +488,7 @@ private:
 			uint32 m_bFreeHeap : 1; // Whether heap memory should be freed (+1 bit).
 		};
 
-		uint32 m_nLengthStaff; // To copy/move one.
+		uint32 m_nLengthStuff; // To copy/move one.
 	};
 
 	union
@@ -500,7 +500,7 @@ private:
 			uint32 m_bAllowHeapAllocation : 1; // Allows the bufferstring to grow beyond the static size on the heap (+1 bit).
 		};
 
-		uint32 m_nAllocatedStaff; // To copy/move one.
+		uint32 m_nAllocatedStuff; // To copy/move one.
 	};
 
 protected:
@@ -604,6 +604,17 @@ inline CBufferString operator""_bs( const char *pString, size_t nLen )
 {
 	return CBufferString( pString, static_cast<int>(nLen) );
 }
+
+// One "key=value" pair of a URL query
+struct URLQueryParameter_t
+{
+	CBufferString m_Key;
+	CBufferString m_Value;
+};
+
+// Splits the query (an optional leading '?' and trailing '/' are skipped) on '&' into the pairs
+// and URL-decodes their keys and values, pParameters is cleared first
+PLATFORM_INTERFACE void V_ParseURLQuery_Unsafe( const char *pszURLQuery, CUtlVector< URLQueryParameter_t, int, CUtlVectorMemory_Growable< URLQueryParameter_t, int, 0 > > *pParameters );
 
 #include "schemacompiler/schemaoff.h"
 

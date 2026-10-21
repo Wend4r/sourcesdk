@@ -12,6 +12,14 @@
 //-----------------------------------------------------------------------------
 typedef int LoggingChannelID_t;
 
+// Kinds of assertions, content ones come from data and can be ignored separately
+enum AssertionType_t
+{
+	ASSERTION_TYPE_CODE = 0,
+	ASSERTION_TYPE_CONTENT = 1,
+	ASSERTION_TYPE_ALL_TYPES = -1,
+};
+
 //-----------------------------------------------------------------------------
 // The static record of a failed assertion that the assert macros pass to tier0
 //-----------------------------------------------------------------------------
