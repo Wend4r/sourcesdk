@@ -61,8 +61,14 @@ REGISTER_NAMED_TEST( "CTSList.IsEmpty", CTSList_IsEmpty )
 
 REGISTER_NAMED_TEST( "TSPointerListNode_t.Pool", TSPointerListNode_t_Pool )
 {
-	// The node carries the pointer after the link.
+	// The node carries the pointer after the link. MSVC places it right after the pointer of the
+	// 16-aligned link, so the Windows tier0 pools nodes of 16 bytes.
+#ifdef _MSC_VER
+	TEST_EQ( offsetof( TSPointerListNode_t, pData ), sizeof( TSLNodeBase_t * ) );
+	TEST_EQ( sizeof( TSPointerListNode_t ), static_cast< size_t >( 16 ) );
+#else
 	TEST_EQ( offsetof( TSPointerListNode_t, pData ), sizeof( TSLNodeBase_t ) );
+#endif
 
 	TSPointerListNode_t *pFirst = g_TSPointerListNodes.Alloc();
 	TSPointerListNode_t *pSecond = g_TSPointerListNodes.Alloc();
