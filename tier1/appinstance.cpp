@@ -129,6 +129,11 @@ CSingleAppInstance::CSingleAppInstance( const char *InstanceName, bool exitOnNot
 
 CSingleAppInstance::~CSingleAppInstance()
 {
+	ShutdownInstance();
+}
+
+void CSingleAppInstance::ShutdownInstance()
+{
 #ifndef _PS3
 #ifdef WIN32
 	if ( IsPlatformWindows() && m_hMutex )
