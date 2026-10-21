@@ -18,6 +18,10 @@ public:
 	virtual void ReleaseUser() = 0;
 
 	virtual const char *GetSymbol( const char *pString ) = 0;
+#ifdef PLATFORM_OSX
+	// The macOS tier0 has a second Find here; the name is ours
+	virtual const char *FindSymbol( const char *pString ) = 0;
+#endif
 	virtual const char *GetString( const char *pSymbol ) = 0;
 	virtual uint GetSymbolCount() = 0;
 
