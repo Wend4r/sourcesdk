@@ -92,7 +92,8 @@ PLATFORM_INTERFACE const char *GetQuantizedFloatEncoderNameByReg( const Quantize
 // Appends the names of the fields that use the encoder of pReg
 PLATFORM_INTERFACE void GetQuantizedFloatEncodersSharingReg( const QuantizedFloatEncoderReg_t *pReg, CUtlVector< const char *, int, CUtlVectorMemory_Growable< const char *, int, 0 > > *pFieldNames );
 
-// The registration of a field as the callers do it, once per handle; returns the encoder
+// The registration of a field as the callers do it, once per handle; returns the encoder.
+// The first call for a handle and the registry itself are not synchronized
 inline const QuantizedFloatEncoder_t *RegisterQuantizedFloatEncoder( QuantizedFloatEncoderReg_t *pReg, const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue, bool bUnknown = true )
 {
 	if ( !pReg->m_bRegistered )
@@ -115,9 +116,19 @@ inline const QuantizedFloatEncoder_t *RegisterQuantizedFloatEncoderAlias( Quanti
 	return GetQuantizedFloatEncoderByReg( pReg );
 }
 
-// The encoder of a field through a handle of its own at the place of the macro
+// A registered handle, for the initialization of a function static
+inline QuantizedFloatEncoderReg_t CreateQuantizedFloatEncoderReg( const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue, bool bUnknown = true )
+{
+	QuantizedFloatEncoderReg_t reg = {};
+	RegisterQuantizedFloatEncoder( &reg, pszFieldName, nBits, nFlags, flLowValue, flHighValue, bUnknown );
+
+	return reg;
+}
+
+// The encoder of a field through a handle of its own at the place of the macro; the
+// initialization of the static registers it once even when threads reach the place together
 #define QUANTIZED_FLOAT_ENCODER( pszFieldName, nBits, nFlags, flLowValue, flHighValue ) \
-	( [&]() -> const QuantizedFloatEncoder_t * { static QuantizedFloatEncoderReg_t s_QuantizedFloatEncoderReg; return RegisterQuantizedFloatEncoder( &s_QuantizedFloatEncoderReg, pszFieldName, nBits, nFlags, flLowValue, flHighValue ); }() )
+	( [&]() -> const QuantizedFloatEncoder_t * { static const QuantizedFloatEncoderReg_t s_QuantizedFloatEncoderReg = CreateQuantizedFloatEncoderReg( pszFieldName, nBits, nFlags, flLowValue, flHighValue ); return GetQuantizedFloatEncoderByReg( &s_QuantizedFloatEncoderReg ); }() )
 
 // The index of the alias and its definition, -1 when there is no such alias
 inline int FindQuantizedFloatEncoderAlias( const char *pszAliasName, QuantizedFloatEncoderDef_t *pDef )
