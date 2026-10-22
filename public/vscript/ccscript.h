@@ -42,7 +42,7 @@ public:
 	virtual void CreateEntityTemplate( /* v8::Local< v8::FunctionTemplate > */ void *pTemplate ) = 0;
 
 	// Clears m_Callbacks; the entity script also stops listening for game events
-	virtual void unk009() = 0;
+	virtual void ClearCallbacks() = 0;
 
 	virtual void OnBeginRoundRestart() = 0;
 	virtual void OnPlayerReset( CCSPlayerPawn *pPlayer ) = 0;
