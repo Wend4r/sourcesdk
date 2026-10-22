@@ -344,7 +344,8 @@ public:
 	virtual bool unk144() = 0;
 	virtual void *unk145() = 0;
 	virtual Source2ClientUnk146_t unk146() = 0;
-	virtual void unk147( int nUnk1, int nUnk2, int nUnk3, int nUnk4 ) = 0;
+	// Duplicates the user command nCommandNumber until the newest command reaches nLastExecutedCommand ("Duplicating command %d %dx to catch up")
+	virtual void unk147( CSplitScreenSlot nSlot, int nLastExecutedCommand, int nServerTick, int nCommandNumber ) = 0;
 	virtual void unk148() = 0;
 	virtual const char *GetEntity2UniqueHammerID( CEntityIndex nEntityIndex ) = 0;
 	virtual CEntityHandle unk150( CEntityHandle hEntity ) = 0;
