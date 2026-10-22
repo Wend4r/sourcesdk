@@ -178,6 +178,34 @@ public:
 		bool m_bInVPK;
 	};
 
+	// A static combo of a shader program that computing the renderable passes of a mode found missing
+	struct ShaderCompileRequest_t
+	{
+		// "(unnamed)" when the mode has no material
+		const char *m_pMaterialName;
+
+		// The program of the requested shader type in the shader of the mode
+		void *m_pShaderProgram;
+
+		// Set by the compile, NULL when it failed
+		void *m_pCompileResult;
+
+		// 7 with "-shaderdebugging", 2 when "-shaderopt" is also given
+		int m_nShaderDebugLevel;
+
+		int m_nStaticComboId;
+		uint64 m_nDynamicComboId;
+
+		// mat_shader_cache, unless the shaders are force reloaded
+		bool m_bUseShaderCache;
+
+		// Requests with it set are skipped by the compile
+		bool m_bUnk029;
+
+		uint32 m_unk02C[ 16 ][ 3 ];
+		int m_nUnk02CCount;
+	};
+
 	// Set by QueueMaterialReload(), the next FrameUpdate() reloads the materials
 	bool m_bMaterialReloadQueued;
 
@@ -199,15 +227,16 @@ public:
 
 	// Keyed by the shader file name
 	CUtlHashtable< CUtlString, ShaderFileLocation_t > m_ShaderFileLocations;
-	CAtomicMutex m_unk0E0;
+	CAtomicMutex m_ShaderCompileQueueMutex;
 
-	// CUtlVector of 0xF0 byte shader combos queued by the renderable pass computation, compiled by the dynamic
-	// shader compile; locked by m_unk0E0 and m_unk120
-	void *m_ShaderCompileQueue[ 3 ];
+	// Compiled by the dynamic shader compile
+	CUtlVector< ShaderCompileRequest_t > m_ShaderCompileQueue;
 
 	// Substrings of the shader names that dynamic shader compile reloads
 	CUtlVector< CUtlString > m_DynamicShaderCompileFilters;
-	CAtomicMutex m_unk120;
+
+	// Held while the queued shaders are compiled
+	CAtomicMutex m_ShaderCompileMutex;
 
 	// "MaterialSystem2/RenderModes" of gameinfo, "Default" when it has none
 	CUtlVector< ModeInfo_t > m_modeInfo;
