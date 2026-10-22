@@ -25,7 +25,7 @@ struct audio_device_description_t
 	wchar_t m_deviceName[ 256 ];
 	char m_friendlyName[ 256 ];
 	uint32 m_nDeviceID;
-	uint32 m_nUnk304;
+	uint32 m_nSampleRate;
 	uint8 m_nSubsystemId;
 	uint8 m_nChannelCount;
 	bool m_bIsDefault : 1;
@@ -40,7 +40,8 @@ class CAudioDeviceList
 public:
 	uint32 m_nDeviceStamp;
 	CUtlVector< audio_device_description_t > m_list;
-	CUtlVector< audio_device_description_t > m_Unk20;
+	// Capture devices, the voice input stream takes its device from here
+	CUtlVector< audio_device_description_t > m_inputList;
 	int m_nDefaultDevice;
 };
 
@@ -50,9 +51,10 @@ public:
 class CVSndParameterTable
 {
 public:
-	virtual std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > unk000();
+	// Creates the map through ISoundSystem::CreateVoiceContainerParams on first use
+	virtual std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > GetParams();
 
-	std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > m_pUnk008;
+	std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > m_pParams;
 };
 
 class CSoundSystem : public CTier2AppSystem< ISoundSystem >, public IVConCommDataReceived
@@ -95,9 +97,12 @@ public:
 	// Functions queued by QueueFunction
 	CTSQueue< std::function< void() > * > m_QueuedFunctions;
 	uint8 m_pad320[ 0x2 ];
-	bool m_bUnk322;
-	bool m_bUnk323;
-	bool m_bUnk324;
+	// QueueFunction runs the function at once instead of queuing it
+	bool m_bRunFunctionsImmediately;
+	// Functions run by Update or QueueFunction while it is set are dropped instead
+	bool m_bSkipQueuedFunctions;
+	// Set while Update runs the queued functions
+	bool m_bRunningQueuedFunctions;
 };
 
 #endif // SOUNDSYSTEM_H
