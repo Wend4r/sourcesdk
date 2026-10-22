@@ -27,11 +27,11 @@ struct ResourceTypeRegistration_t
 	// Null when m_bIsPlaceholderEntry is set
 	IResourceTypeManager *m_pTypeManager;
 
-	uint32 m_nUnk010;
-	uint32 m_nUnk014;
-
-	// Points at m_ErrorResource
-	SerialResourceHandle_t m_Unk018;
+	// Header of the embedded error binding read by HandleUtils_MakeSerialHandle and HandleUtils_Deref:
+	// the serial whose low bits tag the handle, the binding marker and the serial handle itself
+	uint32 m_nErrorResourceSerial;
+	uint32 m_nErrorResourceMarker;
+	SerialResourceHandle_t m_hErrorResourceSerial;
 
 	ResourceBindingBase_t m_ErrorResource;
 	const char *m_pResourceTypeName;
