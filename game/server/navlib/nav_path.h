@@ -164,12 +164,14 @@ public:
 	virtual ~CPathOptimizer() = 0;
 
 public:
-	bool m_bUnk8;
+	// OptimizePath has FindNextOccludedNode collect the transitions it crosses into m_Transitions
+	bool m_bCollectTransitions;
 
 private:
 	uint8 m_Unk09[ 7 ];
-	// Filled from the transitions FindNextOccludedNode collects.
-	CUtlVector< NavTransition_t > m_Unk10;
+
+public:
+	CUtlVector< NavTransition_t > m_Transitions;
 };
 
 //-----------------------------------------------------------------------------
