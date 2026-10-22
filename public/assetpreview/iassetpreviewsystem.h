@@ -108,7 +108,10 @@ struct ThumbnailDatabaseEntry_t
 abstract_class IAssetPreviewSystem : public IAppSystem
 {
 public:
-	// nUnknown 0 makes the thumbnail show the asset name as its tool tip
+	// With nUnknown 0 the thumbnail shows the asset name as its tool tip, a right click opens the asset
+	// browser's context menu for the asset and a double click opens it in a tool; otherwise both clicks
+	// are ignored. A left click on the thumbnail passes the asset to the second virtual of pUnknown, which
+	// the context menu also receives
 	virtual IAssetPreviewEmbedded *CreateEmbeddedPreview( QWidget *pParent, int nUnknown, void *pUnknown ) = 0;
 	virtual void DestroyEmbeddedPreview( IAssetPreviewEmbedded *pPreview ) = 0;
 	virtual IAssetPreviewLive *CreateLivePreview( QWidget *pParent ) = 0;
