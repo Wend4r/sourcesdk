@@ -123,8 +123,8 @@ public:
 	virtual const CUtlVector< CUtlString > &GetDesignerNamesForClass( const char *pClassName ) = 0;
 	virtual void GetSubclassAutoCompleteList( const void *pUnk, CUtlVector< const char * > &completions ) = 0;
 
-	// Forwards to the game client
-	virtual void unk077() = 0;
+	// Forwards to the game client, NULL without one
+	virtual void *GetCompositeMaterialManager() = 0;
 
 	// "" without the game server
 	virtual const char *GetNativeClassForScriptClass( const char *pScriptClassName ) = 0;

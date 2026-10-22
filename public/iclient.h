@@ -231,8 +231,8 @@ public:
 	virtual void SetTickRemainder( float flTickRemainder ) = 0;
 	virtual void unk073( float flUnk ) = 0;
 	virtual void ApplyClockDrift( int nServerTick, int nClientTick ) = 0;
-	// Whether the game client reports a valid value
-	virtual bool unk075() = 0;
+	// ISource2Client::GetLocalPlayerPawnHandle() is not -1
+	virtual bool HasLocalPlayerPawn() = 0;
 	virtual void unk076() = 0;
 	virtual void unk077() = 0;
 	virtual void unk078() = 0;
