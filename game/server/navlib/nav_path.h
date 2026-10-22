@@ -17,6 +17,7 @@
 #include "nav_area.h"
 #include "nav_ladder.h"
 
+class CBaseEntity;
 class INavPathCost;
 class CNavPathCost;
 class CNavPath;
@@ -125,8 +126,10 @@ public:
 	// Copied from the request each time a path is computed.
 	struct Query_t
 	{
-		bool m_bUnk0;
-		void *m_pUnk8;
+		// Draws the traces and the adjusted segment positions with the debug overlay
+		bool m_bDebugDraw;
+		// Ignored, with its owner, by the traces that check the path
+		CBaseEntity *m_pPassEntity;
 		const INavPathCost *m_pPathCost;
 		// -1 until set.
 		float m_flUnk18;
