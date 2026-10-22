@@ -87,7 +87,9 @@ public:
 	// HLSL SM6.0 subgroup wave operations
 	virtual bool SupportsWaveOps() = 0;
 
-	virtual bool unk035() = 0;
+	// GPU texture compression writes the blocks straight into mip views of the compressed texture when set,
+	// through intermediate textures and copies otherwise
+	virtual bool SupportsDirectCompressedTextureWrites() = 0;
 
 	// Ray tracing pipelines; also requires DX level 120
 	virtual bool SupportsRayTracing() = 0;
@@ -111,14 +113,14 @@ public:
 	virtual int GetLowLatencyMode() = 0;
 
 	// The Vulkan device sets it when it has the VK_KHR_shader_float16_int8 and VK_KHR_16bit_storage features
-	virtual bool unk047() = 0;
+	virtual bool SupportsNative16BitShaderOps() = 0;
 
 	virtual bool unk048() = 0;
 	virtual bool SupportsDeviceGeneratedCommands() = 0;
 	virtual bool SupportsShaderInvocationReorder() = 0;
 
 	// The Vulkan device sets it when its second queue family can present to the swap chain surface
-	virtual bool unk051() = 0;
+	virtual bool SupportsPresentFromSecondQueue() = 0;
 
 	virtual bool SupportsMeshShaders() = 0;
 
