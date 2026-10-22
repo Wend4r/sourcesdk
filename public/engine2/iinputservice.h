@@ -88,7 +88,8 @@ public:
 	virtual bool WasButtonDoubleClicked( ButtonCode_t code ) = 0;
 	virtual bool WasButtonReleased( ButtonCode_t code ) = 0;
 	virtual bool IsButtonDown( ButtonCode_t code ) = 0;
-	virtual bool unk053( ButtonCode_t code ) = 0;
+	// While input events are dispatched, the shift, alt, control and windows keys come from the modifier state of the event
+	virtual bool IsModifierButtonDown( ButtonCode_t code ) = 0;
 
 	// Cursor position in the engine window
 	virtual void GetCursorPosition( float *pX, float *pY ) = 0;
