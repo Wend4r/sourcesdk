@@ -20,6 +20,15 @@
 class IResourceCompileFileSystemInterface;
 class KeyValues;
 class KeyValues3;
+class CKV3MemberName;
+
+struct ModuleMetadataValue_t
+{
+	// "module_name" of the metadata file
+	const char *m_pszModuleName;
+
+	KeyValues3 *m_pValue;
+};
 
 abstract_class IResourceCompilerSystem : public IAppSystem
 {
@@ -48,7 +57,8 @@ public:
 	virtual void InstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
 
-	virtual void unk020( void *pKey, void *pResults ) = 0;
+	// Appends the member of that name of every loaded module metadata file ("vmodulemetadata")
+	virtual void GetModuleMetadataValues( CKV3MemberName name, CUtlVector< ModuleMetadataValue_t > *pResults ) = 0;
 };
 
 class CResourceCompilerSystem : public CTier3DmAppSystem< IResourceCompilerSystem >
