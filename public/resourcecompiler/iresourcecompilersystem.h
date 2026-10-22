@@ -42,8 +42,10 @@ public:
 	virtual bool RecompileResource( const char *pInputFile, const char *pOverrideInputData, void *pOutputCallback, KeyValues *pParams ) = 0;
 
 	// pModName is the game directory whose gameinfo.gi the compiler can query; a "<game>_addons" directory
-	// uses the one of <game>
-	virtual void *unk013( const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
+	// uses the one of <game>. Returns 0 without the compiler, otherwise the compiler's value for the special
+	// dependency: 1 for all of them except PulseGraphDef, which returns 2 for "@" dependencies and its
+	// compiler version
+	virtual int unk013( const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 	virtual void *CalculateSpecialDependencyFingerprint( void *pResult, const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 
 	// The compiler's string for the special dependency in pOut; without such a compiler pOut is the
