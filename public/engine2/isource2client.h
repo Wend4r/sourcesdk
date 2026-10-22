@@ -524,34 +524,34 @@ public:
 	EUniverse m_eUniverse;
 	uint8 m_unk144[ 0x4 ];
 	// Nine game event groups filled by the constructor: event names, the ids of those events, and the copies kept for scrubbing,
-	// fired by OnScrubDemo()
-	CUtlVector< const char * > m_unk148;
-	CUtlVector< int > m_unk160;
-	CUtlVector< SerializedEvent_t > m_unk178;
-	CUtlVector< const char * > m_unk190;
-	CUtlVector< int > m_unk1A8;
-	CUtlVector< SerializedEvent_t > m_unk1C0;
-	CUtlVector< const char * > m_unk1D8;
-	CUtlVector< int > m_unk1F0;
-	CUtlVector< SerializedEvent_t > m_unk208;
-	CUtlVector< const char * > m_unk220;
-	CUtlVector< int > m_unk238;
-	CUtlVector< SerializedEvent_t > m_unk250;
-	CUtlVector< const char * > m_unk268;
-	CUtlVector< int > m_unk280;
-	CUtlVector< SerializedEvent_t > m_unk298;
-	CUtlVector< const char * > m_unk2B0;
-	CUtlVector< int > m_unk2C8;
-	CUtlVector< SerializedEvent_t > m_unk2E0;
-	CUtlVector< const char * > m_unk2F8;
-	CUtlVector< int > m_unk310;
-	CUtlVector< SerializedEvent_t > m_unk328;
-	CUtlVector< const char * > m_unk340;
-	CUtlVector< int > m_unk358;
-	CUtlVector< SerializedEvent_t > m_unk370;
-	CUtlVector< const char * > m_unk388;
-	CUtlVector< int > m_unk3A0;
-	CUtlVector< SerializedEvent_t > m_unk3B8;
+	// fired by OnScrubDemo(); the camera group holds "hltv_cameraman", "hltv_fixed" and "hltv_chase", the others one event each
+	CUtlVector< const char * > m_RoundPrestartEventNames;
+	CUtlVector< int > m_RoundPrestartEventIds;
+	CUtlVector< SerializedEvent_t > m_RoundPrestartEvents;
+	CUtlVector< const char * > m_RoundOfficiallyEndedEventNames;
+	CUtlVector< int > m_RoundOfficiallyEndedEventIds;
+	CUtlVector< SerializedEvent_t > m_RoundOfficiallyEndedEvents;
+	CUtlVector< const char * > m_PlayerDisconnectEventNames;
+	CUtlVector< int > m_PlayerDisconnectEventIds;
+	CUtlVector< SerializedEvent_t > m_PlayerDisconnectEvents;
+	CUtlVector< const char * > m_PlayerDeathEventNames;
+	CUtlVector< int > m_PlayerDeathEventIds;
+	CUtlVector< SerializedEvent_t > m_PlayerDeathEvents;
+	CUtlVector< const char * > m_PlayerHurtEventNames;
+	CUtlVector< int > m_PlayerHurtEventIds;
+	CUtlVector< SerializedEvent_t > m_PlayerHurtEvents;
+	CUtlVector< const char * > m_HltvCameraEventNames;
+	CUtlVector< int > m_HltvCameraEventIds;
+	CUtlVector< SerializedEvent_t > m_HltvCameraEvents;
+	CUtlVector< const char * > m_PlayerConnectEventNames;
+	CUtlVector< int > m_PlayerConnectEventIds;
+	CUtlVector< SerializedEvent_t > m_PlayerConnectEvents;
+	CUtlVector< const char * > m_BulletDamageEventNames;
+	CUtlVector< int > m_BulletDamageEventIds;
+	CUtlVector< SerializedEvent_t > m_BulletDamageEvents;
+	CUtlVector< const char * > m_PlayerSpawnEventNames;
+	CUtlVector< int > m_PlayerSpawnEventIds;
+	CUtlVector< SerializedEvent_t > m_PlayerSpawnEvents;
 	// Built by SetupScrubbingData() and purged by ClearScrubbingData()
 	CUtlVector< SerializedUserMessage_t > m_ScrubbingUserMessages;
 	// Filled by InitInstantReplayData() and purged by ClearInstantReplayData()
