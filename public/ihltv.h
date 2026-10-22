@@ -48,7 +48,7 @@ public:
 	virtual void	GetGlobalStats( int &proxies, int &slots, int &specs ) = 0; 
 
 	// AMNOTE: Returns this server's own public address with its SourceTV port, on master and relay alike
-	virtual const netadr_t *unk101( void ) = 0;
+	virtual const netadr_t *GetPublicAddress( void ) = 0;
 	virtual const netadr_t *GetRelayAddress( void ) = 0; // returns relay address
 
 	virtual bool	IsMasterProxy( void ) = 0; // true, if this is the HLTV master proxy
@@ -61,7 +61,7 @@ public:
 	virtual bool IsRecording(void) = 0;
 	virtual const char *GetRecordingDemoFilename(void) = 0;
 	// AMNOTE: Returns the tick of the first broadcast frame, -1 until one arrives
-	virtual int unk201( void ) = 0;
+	virtual int GetFirstBroadcastTick( void ) = 0;
 	virtual int StartAutoRecording(void) = 0;
 	virtual void StopRecording(CGameInfo const *info) = 0;
 	virtual void AddSaveGame( CSteamID steamID, uint64, int, const CUtlBuffer &buf ) = 0;
@@ -76,9 +76,10 @@ public:
 	virtual void unk000( void *pFrame ) = 0;
 	// Records the frame into the demo and builds the client frames from it
 	virtual void unk001( void *pFrame ) = 0;
-	virtual void *unk002() = 0;
-	// Compared with the server tick count by the TV client's ShouldSendMessages
-	virtual int unk003() = 0;
+	// The current RunFrame job of the async server
+	virtual void *GetRunFrameJob() = 0;
+	// Tick of the last frame given to unk001, compared with the server tick count by the TV client's ShouldSendMessages
+	virtual int GetLastFrameTick() = 0;
 	// The TV client's SendNetMessage forwards to it
 	virtual bool SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 };
