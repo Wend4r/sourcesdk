@@ -272,6 +272,20 @@ struct SoundVoicePlayback_t
 	void *m_pStack;
 };
 
+//-----------------------------------------------------------------------------
+// Listener of ISoundSystem::SetListenerAndMainGraphInputs. The names are the keys the voice trace
+// writes it under.
+//-----------------------------------------------------------------------------
+struct SoundVoiceListener_t
+{
+	Vector m_vecOrigin;
+	QAngle m_angAngles;
+	Vector m_vecHandLeft;
+	Vector m_vecHandRight;
+	bool m_bIsUnderwater;
+	bool m_bIsPaused;
+};
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -404,8 +418,7 @@ public:
 	virtual void SetVoiceGraphInputs( SoundGuid_t guid, const void *pInputs ) = 0;
 	virtual void StartSubvoice( SoundGuid_t guid, const void *pSubvoice ) = 0;
 	virtual void StopSubvoice( SoundGuid_t guid, uint16 nSubvoiceId ) = 0;
-	// pListener holds the origin, angles, left and right hand positions and a flag
-	virtual void SetListenerAndMainGraphInputs( const void *pListener, const void *pInputs ) = 0;
+	virtual void SetListenerAndMainGraphInputs( const SoundVoiceListener_t *pListener, const void *pInputs ) = 0;
 	// Time of the last frame, a count summed over the frames and the frame count of the active voice trace
 	virtual void GetVoiceTraceSummary( void *pSummary ) = 0;
 	// Writes a trace taken with GetVoiceTrace as KeyValues3 frames
