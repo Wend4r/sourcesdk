@@ -91,7 +91,8 @@ public:
 	float m_flLastInputTime;
 	bool m_bInputStalled;
 	CUtlString m_Unk280;
-	bool m_bUnk288;
+	// Set by the voice target and networked voice code when the first slot of any registered voice target returns true
+	bool m_bVoiceTargetActive;
 	// Level of the last encoded block, raw and normalized to [0, 1]
 	int m_nVoiceLevel;
 	float m_flVoiceLevel;
@@ -106,8 +107,9 @@ public:
 	// The speaking state last reported to ISteamFriends::SetInGameVoiceSpeaking
 	bool m_bInGameVoiceSpeaking;
 	uint8 m_pad2AD;
-	bool m_bUnk2AE;
-	bool m_bUnk2AF;
+	// IInputService::IsAppActive of the last frame, and set between OnLoopActivate and OnLoopDeactivate
+	bool m_bAppIsActive;
+	bool m_bGameIsActive;
 	bool m_bUnk2B0;
 	int m_nUnk2B4;
 	// Sequence number of the voice packets, skips -1
