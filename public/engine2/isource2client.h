@@ -258,8 +258,10 @@ public:
 	// Zeroes both vectors first
 	virtual bool GetEntity2WorldBounds( CEntityIndex nEntityIndex, Vector *pvecMins, Vector *pvecMaxs ) = 0;
 	virtual bool GetEntity2Health( CEntityIndex nEntityIndex, int *pHealth, int *pMaxHealth ) = 0;
-	virtual CEntityHandle unk089() = 0;
-	virtual void unk090( CEntityIndex nEntityIndex, void *pUnk ) = 0;
+	// Player slot of the pawn the local player observes in the in-eye or chase mode, otherwise of the local player pawn
+	virtual CPlayerSlot GetLocalOrObservedPlayerSlot() = 0;
+	// Only for sound event entities
+	virtual void GetSoundEventEntityAbsOrigin( CEntityIndex nEntityIndex, Vector *pOrigin ) = 0;
 	// Falls back to GetEntity2AbsOrigin() when the attachment token is 0
 	virtual bool GetEntity2AttachmentAbsOrigin( CEntityIndex nEntityIndex, Vector *pOrigin, CUtlStringToken &attachment ) = 0;
 	// Builds the transform from GetEntity2AbsOrigin() and GetEntity2AbsAngles() when the attachment token is 0
@@ -298,8 +300,8 @@ public:
 	virtual void TraceLineIntervals( void *pIntervals, const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr ) = 0;
 	virtual uint64 GetPointContents( const Vector &vecPosition, int nMask ) = 0;
 	// Overloads: the first one looks the entity up and calls the second one. Linux keeps this order, MSVC reverses it
-	virtual void unk114( CEntityIndex nEntityIndex, void *pUnk ) = 0;
-	virtual void unk114( CEntityInstance *pEntity, uint64 *pUnk1, void *pUnk2 ) = 0;
+	virtual void GetSoundSpatialization( CEntityIndex nEntityIndex, void *pInfo ) = 0;
+	virtual void GetSoundSpatialization( CEntityInstance *pEntity, uint64 *pUnk, void *pInfo ) = 0;
 	virtual void LaunchApplicationOnExit( const char *pszValue ) = 0;
 	// Asked through the engine sound services; returns its argument
 	virtual const char *DotaEconGetSoundReplacement( const char *pszSoundName ) = 0;
@@ -383,7 +385,8 @@ public:
 	virtual void EngineGotvSyncPacket( const CEngineGotvSyncPacket *pPkt ) = 0;
 	// Fills matchmaking KeyValues ( "members/machine0/player0" )
 	virtual void unk172( KeyValues *pKV, void *pUnk ) = 0;
-	virtual CEntityHandle unk173( CEntityIndex nEntityIndex ) = 0;
+	// Follows the owner entities up to a player pawn or controller; -1 when there is none
+	virtual CPlayerSlot GetEntity2OwnerPlayerSlot( CEntityIndex nEntityIndex ) = 0;
 	// Designer name of the entity, falling back to its class name; "" for an invalid index
 	virtual const char *GetEntity2ClassName( CEntityIndex nEntityIndex ) = 0;
 	// True when the class name of the entity or of one of its base classes is pszClassName
@@ -435,10 +438,13 @@ public:
 	// Asked before ISource2Server::GetMatchID() for the crash dump comment
 	virtual uint64 GetMatchID() = 0;
 	virtual bool unk205( CEntityIndex nEntityIndex ) = 0;
-	virtual CEntityHandle unk206( CEntityIndex nEntityIndex ) = 0;
-	virtual CEntityHandle unk207( int nUnk ) = 0;
-	virtual void unk208( const char *pszUnk, int *pOut ) = 0;
-	virtual void unk209( int nUnk, void *pUnk ) = 0;
+	// Entity index of the pawn of a player controller
+	virtual CEntityIndex GetControllerPawnIndex( CEntityIndex nControllerIndex ) = 0;
+	virtual CEntityIndex FindEntityByName( const char *pszName ) = 0;
+	// Clears pEntities first
+	virtual void FindEntitiesByName( const char *pszName, CUtlVector< CEntityIndex > *pEntities ) = 0;
+	// One of the 8 positions of the current soundscape; false when it is not set
+	virtual bool GetSoundscapePosition( int nIndex, Vector *pPosition ) = 0;
 };
 
 // A game event kept for demo scrubbing, sorted by tick
