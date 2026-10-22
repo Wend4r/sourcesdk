@@ -83,6 +83,20 @@ enum MXRMixGroupFields_t
 	MXR_MIXGROUP_MUTE,
 };
 
+// Ducking values of the rule of a mix group, as UpdateAllDuckerVolumes leaves them
+struct MixGroupDuckState_t
+{
+	// Sum of the mix trigger volumes of the group when the rule has causes_ducking, the group ducks the groups of
+	// lower priority above its ducker_threshold
+	float m_flTotalVolume;
+	// Sum of the mix trigger volumes of the group, their maximum with max_trigger_amounts
+	float m_flTriggerVolume;
+	// Current duck volume, ramped towards the duck_to_percent of the rule while a group of higher priority ducks it
+	float m_flDuckVolume;
+	// is_ducked of the rule
+	uint16 m_nIsDucked;
+};
+
 // Sound mixers, mix layers and mix groups of the sound system (128 mix groups, 32 mix layers)
 abstract_class ISoundMixGroupSystem
 {
@@ -90,10 +104,10 @@ public:
 	virtual const char *GetCurrentSoundMixer() = 0;
 	virtual void SetCurrentSoundMixer( const char *pszSoundMixer ) = 0;
 	virtual void SetMixGroupOfMixLayer( int nMixGroupIndex, int nMixLayerIndex, MXRMixGroupFields_t nMixGroupField, float flValue ) = 0;
-	// Adds and removes an entry of a tree keyed by nKey that holds flValue and the eight mix group ids of pMixGroupIds,
-	// the ducker update reads it
-	virtual void unk003( int nKey, float flValue, const int *pMixGroupIds ) = 0;
-	virtual void unk004( int nKey ) = 0;
+	// Volume a mix trigger operator of the sound event adds to the eight mix groups of pMixGroupIds each ducker update,
+	// as if a sound of that volume played in them; stopping the sound event removes it
+	virtual void SetMixTrigger( SoundEventGuid_t guid, float flVolume, const int *pMixGroupIds ) = 0;
+	virtual void RemoveMixTrigger( SoundEventGuid_t guid ) = 0;
 	// Runs at most at the update rate of its convar
 	virtual void UpdateAllDuckerVolumes( float flFrameTime ) = 0;
 	// Mix groups the current sound mixer sets
@@ -111,8 +125,7 @@ public:
 	virtual void SetMixLayerLevel( int nIndex, float flLevel ) = 0;
 	virtual int GetMixgroupFromName( const char *pszGroupName ) = 0;
 	virtual float GetMixLayerLevel( int nIndex ) = 0;
-	// Three floats and the 16-bit flag of the rule of the mix group
-	virtual void unk016( int nMixGroupId, void *pValues ) = 0;
+	virtual void GetMixGroupDuckState( int nMixGroupId, MixGroupDuckState_t *pState ) = 0;
 	// pflValues holds the volume, level, dsp, solo and mute of the mix group
 	virtual void SetMixGroupOfSoundMixer( const char *pszSoundMixer, int nMixGroupIndex, const float *pflValues ) = 0;
 	// Directory name of the rule of the mix group
