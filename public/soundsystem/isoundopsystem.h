@@ -141,7 +141,8 @@ struct SosStartSoundEventParams_t
 	// -1 for the next random seed of the operator system
 	SOSRANDSEED m_nSeed;
 	sound_voice_layer_t m_nLayer;
-	uint8 m_nUnk23;
+	// The voices of the sound event are mixed at the volume of the tool layer
+	bool m_bIsToolVoice;
 	// Only the server traces soundscapes
 	bool m_bTraceSoundscapes;
 };
