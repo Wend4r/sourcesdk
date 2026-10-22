@@ -177,7 +177,10 @@ public:
 	// The resource system passes 3 as the second argument
 	virtual bool Init( IResourceSystemUtils *pUtils, int nUnknown ) { return false; }
 	virtual void Shutdown() {}
-	virtual void unk002() {}
+
+	// Called by RemoveResourceTypeManager after Shutdown, once the queued deletions are drained
+	virtual void OnRemoved() {}
+
 	virtual void *GetErrorResource() { return nullptr; }
 	virtual bool NeedsFrameUpdate() const { return false; }
 	virtual void FrameUpdate( int nFrame ) {}
@@ -188,8 +191,8 @@ public:
 	virtual bool WantsAsyncPreFinalize() { return false; }
 	virtual void AsyncPreFinalize( ResourceHandle_t hResource, int nUnknown ) {}
 
-	// Gates the GetNonStreamingDataLoadSize call when a resource is loaded
-	virtual bool unk010() { return false; }
+	// Gates the GetNonStreamingDataLoadSize and LoadStreamingData calls
+	virtual bool HasStreamingData() { return false; }
 
 	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool bIsBlockingLoad ) { return -1; }
 	virtual void LoadStreamingData( ResourceHandle_t hResource, IResourceSystemUtils *pUtils ) {}
@@ -201,12 +204,13 @@ public:
 	virtual bool WantsAsyncProcessData() const { return false; }
 	virtual std::unique_ptr< IAsyncProcessedDataResult > AsyncProcessData( ResourceHandle_t hResource, const ResourceFileHeader_t *pHeader ) { return nullptr; }
 
-	// Cached in the type registration
-	virtual bool unk020() { return false; }
+	// FlushNotifications runs with the resource status change flush when the type wants it
+	virtual bool WantsFlushNotifications() { return false; }
+	virtual void FlushNotifications() {}
 
-	virtual void unk021() {}
-	virtual void unk022() {}
-	virtual void unk023() {}
+	// Called around the drain of the resource deletion queue
+	virtual void OnBeginResourceDeletions() {}
+	virtual void OnEndResourceDeletions() {}
 };
 
 #endif // RESOURCESYSTEM_H

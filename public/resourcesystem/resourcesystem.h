@@ -47,7 +47,7 @@ struct ResourceTypeRegistration_t
 	bool m_bRequiresFinalizeResourceCall;
 	bool m_bWantsAsyncPreFinalize;
 	bool m_bNeedsFrameUpdate;
-	bool m_bUnk061; // IResourceTypeManager::unk020
+	bool m_bWantsFlushNotifications;
 	uint8 m_pad062[ 0x46 ];
 };
 
