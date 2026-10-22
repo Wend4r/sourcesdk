@@ -15,6 +15,7 @@
 #include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
 #include "tier0/utlmap.h"
+#include "tier0/errorlistener.h"
 #include "appframework/iappsystem.h"
 #include "tier3/tier3dm.h"
 
@@ -99,8 +100,9 @@ public:
 	// gameinfo.gi of each mod name the compilers query, a "<game>_addons" mod shares the one of <game>
 	CUtlOrderedMap< const char *, KeyValues *, CDefFastCaselessStringLess > m_GameInfos;
 
-	// Vector of 48-byte compile messages that carry their severity (1 warning, 2 error)
-	uint8 m_CompileMessages[ 0x18 ];
+	// Copies of the messages reported to the compile contexts, counted and listed by severity in the
+	// compile summary
+	CUtlVector< ErrorListenerMessage_t > m_CompileMessages;
 
 	// Warnings and errors that were not logged because there were too many, added to the compile summary
 	int m_nUnloggedWarningCount;
