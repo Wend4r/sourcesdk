@@ -50,10 +50,11 @@ public:
 	// last_command_number of the latest move message
 	int m_nLastCommandNumber = 0;
 	bool m_bNoChat = false;
-	bool m_bUnk0C05 = false;
+	// Set by IVEngineServer2::SetHLTVChatBan, blocks the client's say command
+	bool m_bChatBanned = false;
 	// Set by the server's client message pass when tv_instant_replay_full_frame is on and the next full frame is due,
 	// the full frame split job starts once the snapshot is sent
-	bool m_bUnk0C06 = false;
+	bool m_bBuildFullFrame = false;
 	CHLTVBuildFullFrameSplitJob *m_pJob;
 	CUtlVector< INetMessage * > m_QueuedMessages;
 };
