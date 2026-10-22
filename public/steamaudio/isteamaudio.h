@@ -83,7 +83,7 @@ struct SteamAudioCustomDataDimensionsSettings_t
 };
 
 // Custom data bake defaults ("ResourceCompiler/SteamAudio/CustomDataDefaults/...")
-struct SteamAudioUnk041_t
+struct SteamAudioCustomDataSettings_t
 {
 	bool m_bBakeOcclusion;
 	bool m_bBakeDimensions;
@@ -176,7 +176,7 @@ public:
 	// pflGridSpacingAndHeight receives GridSpacing and HeightAboveFloor
 	virtual void GetReverbBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioReverbSettings_t *pReverbSettings, SteamAudioReverbClusteringSettings_t *pClusteringSettings, SteamAudioReverbCompressionSettings_t *pCompressionSettings, int32 *pRebakeOption ) = 0;
 	virtual void GetPathingBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioPathSettings_t *pPathSettings, int32 *pRebakeOption ) = 0;
-	virtual void GetCustomDataBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioUnk041_t *pCustomDataSettings, int32 *pRebakeOption ) = 0;
+	virtual void GetCustomDataBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioCustomDataSettings_t *pCustomDataSettings, int32 *pRebakeOption ) = 0;
 	// Number of simulation threads from the CPU information
 	virtual int GetSimulationThreadCount() = 0;
 	// Runs iplSimulatorRunPathingPerSource for the source; bUseEQ takes the simulated EQ instead of a flat one, bNormalize
@@ -278,7 +278,7 @@ struct IPLPerspectiveCorrection
 class CSteamAudioPartitioner;
 class CSteamAudioReverbSimulator;
 
-struct SteamAudioUnk548_t
+struct SteamAudioSceneEntry_t
 {
 	ISteamAudioScene *m_pScene;
 	void *m_pKey;
@@ -331,7 +331,7 @@ public:
 	int m_nUnk538[ 3 ];
 
 	// Scenes registered by AddScene
-	CUtlVectorFixedGrowable< SteamAudioUnk548_t, 4 > m_Scenes;
+	CUtlVectorFixedGrowable< SteamAudioSceneEntry_t, 4 > m_Scenes;
 
 	// Listener and HRTF state written by SetListenerOrigin (layout not resolved)
 	uint64 m_Unk5A0[ 132 ];
