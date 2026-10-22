@@ -97,7 +97,8 @@ public:
 	virtual bool LoadEntityLump( IWorldReference *pWorldRef, const char *pLumpName, EntityLumpLoadType_t nLoadType ) = 0;
 	virtual bool IsEntityLumpLoaded( IWorldReference *pWorldRef, const char *pLumpName ) = 0;
 
-	virtual void UnkMarkGeometryWorld( int nCompareFlags, int nCompareValue ) = 0;
+	// Worlds whose spawn group handle masked by nSpawnGroupMask equals nSpawnGroupValue are no longer found by FindWorldReferenceAndAddRef.
+	virtual void ExcludeWorldsFromSpawnGroupLookup( int nSpawnGroupMask, int nSpawnGroupValue ) = 0;
 	virtual void ServiceWorldRequests() = 0;
 	virtual IWorld *FindWorld( WorldGroupId_t hWorldGroupId, const char *pWorldName ) = 0;
 
@@ -111,10 +112,10 @@ public:
 	virtual void InstallWorldVPKOverrideManager( IWorldVPKOverrideManager *pVPKMgr ) = 0;
 	virtual void RemoveWorldVPKOverrideManager( IWorldVPKOverrideManager *pVPKMgr ) = 0;
 
-	// VPK override entries, each holding two strings
-	virtual int UnkGetCount() = 0;
-	virtual const char *UnkGetStringElm( int i ) const = 0;
-	virtual const char *UnkGetString2Elm( int i ) const = 0;
+	// World VPKs that an override manager replaced when they were mounted, and their overrides
+	virtual int GetWorldVPKOverrideCount() = 0;
+	virtual const char *GetOverriddenWorldVPKName( int i ) const = 0;
+	virtual const char *GetWorldVPKOverrideName( int i ) const = 0;
 
 	virtual void OnClientPreOutput( float flRenderFrameTime, float flRenderTime ) = 0;
 	virtual void SetOverrideRenderTime( float flRenderFrameTime, float flRenderTime ) = 0;
@@ -133,13 +134,13 @@ public:
 	virtual void ForgetWindForWorld( const ISceneWorld *pSceneWorld ) = 0;
 	virtual void GetCurrentWindParams( const ISceneWorld *pSceneWorld, Vector &vStrengthFreq, Vector &vOffset, Vector &vWindDir ) = 0;
 
-	// Sets a float of the grass data of the scene world.
-	virtual void unk052( const ISceneWorld *pSceneWorld, float flValue ) = 0;
+	// The strengths queued by FlattenGrass are divided by it.
+	virtual void SetMaxGrassFlatteningStrength( const ISceneWorld *pSceneWorld, float flMaxStrength ) = 0;
 
 	virtual void GetSceneWorldsForWorldGroup( WorldGroupId_t hWorldGroupId, CUtlVector< ISceneWorld * > &worldsOut ) = 0;
 
-	// Calls a CWorld update on every world that has IWorldReference::unk007 set.
-	virtual void unk054() = 0;
+	// Starts the world node loads that UpdateObjectsForRendering queued, for the worlds that have IWorldReference::unk007 set.
+	virtual void LoadQueuedWorldNodes() = 0;
 
 	// Weather of a scene world, set from the map info entity (CMapInfo).
 	virtual void SetRainTraceToSkyEnabled( const ISceneWorld *pSceneWorld, bool bRainTraceToSkyEnabled ) = 0;
