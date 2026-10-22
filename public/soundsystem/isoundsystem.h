@@ -425,8 +425,10 @@ public:
 	// Output peak in dB of the device, 0 for the null device
 	virtual float GetOutputPeakLevel() = 0;
 	virtual std::unique_ptr< CAudioMixer > CreateAudioMixer( CAudioSource *pSource ) = 0;
-	virtual int unk121( void *pUnk ) = 0;
-	virtual void unk122( int nUnk ) = 0;
+	// The mixer calls the function on each update until it returns true; the function is not copied and must outlive
+	// the registration. Returns the id RemoveMixerCallback takes.
+	virtual int AddMixerCallback( std::function< bool() > *pCallback ) = 0;
+	virtual void RemoveMixerCallback( int nCallbackId ) = 0;
 	virtual std::unique_ptr< CAudioSource > CreateAudioSource( CSfxTable *pSfx, VSound_t *pSound ) = 0;
 	virtual std::unique_ptr< IAudioCacheHandle > CreateAudioCacheHandle( CSfxTable *pSfx ) = 0;
 	virtual IAudioDecoder *CreateStretchDecoder( IAudioDecoder *pDecoder, float flStretch ) = 0;
