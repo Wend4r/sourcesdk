@@ -56,7 +56,7 @@ public:
 	virtual void SetLocalViewAngles( CSplitScreenSlot nSlot, const QAngle &ang ) = 0;
 
 	// True while cl_pred_track tracks an entity field; the engine then spews the prediction reasons
-	virtual bool unk026() = 0;
+	virtual bool IsPredictionTrackingEnabled() = 0;
 	virtual bool IsPlayerSlotPredicted( int nPlayerSlot ) = 0;
 	virtual bool IsTrueViewActive() = 0;
 	// True when the last TrueView offset could not be determined
