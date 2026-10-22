@@ -46,7 +46,10 @@ public:
 	virtual int GetRenderSystemType() = 0;
 
 	virtual int unk013() = 0;
-	virtual int unk014() = 0;
+
+	// The render system the engine offers to switch to, 0 for none; the Vulkan module recommends DX11 only with
+	// "-force_recommend_dx11" and when the current render system is not Vulkan
+	virtual int GetRecommendedRenderSystemType() = 0;
 
 	virtual const char *RenderSystemTypeToString( int nType ) = 0;
 	virtual const char *RenderSystemTypeToDisplayName( int nType ) = 0;
