@@ -141,7 +141,9 @@ public:
 	CUtlVector< HResourceManifest > m_pendingManifests;
 	CUtlVector< HEntityLump > m_entityLumps;
 	int32 m_nUnk2B0;
-	int32 m_nUnk2B4;
+
+	// World requests queued for the world; the deletion of the world waits while any is pending
+	int32 m_nPendingWorldRequests;
 };
 
 // Set by IWorldRendererMgr::SetWeatherForWorld
