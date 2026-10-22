@@ -188,18 +188,33 @@ public:
 	virtual CBasePulseGraphInstance *GetGraphInstance() = 0;
 };
 
+// A line the turtle cursor draws while its pen is down
+struct PulseTurtleGraphicsLine_t
+{
+	Vector2D m_vecStart;
+	Vector2D m_vecEnd;
+	Color m_Color;
+};
+
+abstract_class IPulseTurtleGraphicsListener
+{
+public:
+	// Called after every line the cursor appends
+	virtual void OnLineAdded() = 0;
+};
+
 abstract_class IPulseGraphInstance_TurtleGraphics
 {
 public:
 	virtual ~IPulseGraphInstance_TurtleGraphics() {}
 
-	virtual CBasePulseGraphInstance *unk002() = 0;
-	virtual void *unk003() = 0;
+	virtual CBasePulseGraphInstance *GetGraphInstance() = 0;
+	virtual CUtlVector< PulseTurtleGraphicsLine_t > *GetLines() = 0;
 
 	// Calls the graph's Go hook
 	virtual void Go() = 0;
 
-	virtual void unk005( void *p ) = 0;
+	virtual void SetListener( IPulseTurtleGraphicsListener *pListener ) = 0;
 };
 
 abstract_class IPulseSystem : public IAppSystem
