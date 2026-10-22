@@ -13,6 +13,8 @@
 #include <IEngineService.h>
 #include <ns_address.h>
 #include <steam/steamclientpublic.h>
+#include <steam/steamnetworkingtypes.h>
+#include <tier0/bitvec.h>
 #include <tier0/convar.h>
 #include <tier0/threadtools.h>
 #include <tier0/utlsignalslot.h>
@@ -53,14 +55,33 @@ public:
 class CNetworkP2PService : public CBaseEngineService< INetworkP2PService >, public CUtlSlot
 {
 public:
+	// Peer listed by the list peers command as "Known Peer State"
+	struct KnownPeer_t
+	{
+		CPeerToPeerAddress m_Address;
+		SteamNetworkingIdentity m_Identity;
+		// One bit per entry of m_PeerGroupHandlers that knows the peer
+		CVarBitVecBase< int, 64 > m_KnownByHandlers;
+		// Shown as "(You)"
+		bool m_bLocalUser;
+		bool m_bEverConnected;
+		bool m_bConnected;
+		// Net time of the last successful send, negative until then ("Untested Direct Routing")
+		double m_flLastSendTime;
+		// Net time the peer was added or the last handler stopped knowing it; a peer that no handler knows is removed 120 seconds later
+		double m_flLastKnownTime;
+	};
+
 	uint8 m_unk060[ 8 ];
 	CUtlVector< IPeerGroupHandler * > m_PeerGroupHandlers;
-	CUtlVector< void * > m_unk080; // 192-byte peer entries with one bit per peer group handler
+	CUtlVector< KnownPeer_t * > m_KnownPeers;
 	CEventDispatcher< CEventIDManager_Default > m_AllPeersEventDispatcher;
-	bool m_bUnk0D8;
-	CAtomicMutex m_unk0E0; // Guards m_unk080
-	CAtomicMutex m_unk0F0;
-	double m_flUnk100;
+	// Set while the P2P messages of the channel are received and dispatched
+	bool m_bReceivingMessages;
+	CAtomicMutex m_KnownPeersMutex;
+	CAtomicMutex m_PeerGroupHandlersMutex;
+	// Earliest time a known peer can expire, -1.0 when there are none
+	double m_flNextPeerExpireTime;
 	CConCommandMemberAccessor< CNetworkP2PService > m_ListPeersCommand;
 };
 
