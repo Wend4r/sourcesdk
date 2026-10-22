@@ -91,8 +91,8 @@ public:
 	virtual bool FinishChangeLevel() = 0;
 	virtual bool IsChangeLevelPending() = 0;
 
-	// Socket opened for the client
-	virtual int GetClientSocket() = 0;
+	// EventClientAdvanceTick_t::m_nTotalTicks of the last client tick; the demo and replay players count their ticks from it
+	virtual int GetTotalTicks() = 0;
 	// Returns false in this build
 	virtual bool SteamIDAllowedToP2PConnect( CSteamID steamID ) = 0;
 	virtual void OnLevelLoadingStarted() = 0;
@@ -127,8 +127,9 @@ public:
 	CUtlString m_sDisconnectReason;
 	CUtlLeanVector< CUtlString > m_unk078;
 	IEntityReport *m_pEntityReport;
+	int m_nTotalTicks;
+	// Client socket created by CNetworkService::OpenSockets, passed to the game client
 	int m_nClientSocket;
-	int m_nUnk094;
 	CGameClientConnectPrerequisite *m_pConnectPrerequisite;
 	CNetworkGameClient *m_pNetworkGameClient;
 	CTSQueue< QueuedNetMessage_t > m_QueuedNetMessages;
