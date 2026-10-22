@@ -143,9 +143,15 @@ public:
 	int32 m_nUnk2B4;
 };
 
-struct WorldWindParams_t
+// Set by IWorldRendererMgr::SetWeatherForWorld
+struct WorldWeatherParams_t
 {
-	float m_flParams[6];
+	float m_flEnvRainStrength;
+	float m_flEnvPuddleRippleStrength;
+	float m_flEnvPuddleRippleDirection;
+	float m_flEnvWetnessCoverage;
+	float m_flEnvWetnessDryingAmount;
+	float m_unk014;
 };
 
 struct WindEntry_t
@@ -208,8 +214,8 @@ public:
 	CUtlVector< void * > m_worldRequestQueue;
 	CUtlVector< WindEntry_t > m_windEntries;
 	Vector m_vDefaultWindOffset;
-	CUtlVector< IWorldLoadUnloadCallback * > m_worldCreateCallbacks;
-	CUtlOrderedMap< const ISceneWorld *, WorldWindParams_t > m_windEntryMap;
+	CUtlVector< const ISceneWorld * > m_rainTraceToSkyWorlds;
+	CUtlOrderedMap< const ISceneWorld *, WorldWeatherParams_t > m_worldWeatherParams;
 	float m_flOverrideRenderFrameTime;
 	float m_flOverrideRenderTime;
 
