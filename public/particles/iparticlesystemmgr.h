@@ -187,7 +187,8 @@ public:
 	// Collections whose renderers all have types in the mask are not rendered
 	virtual void SetDisabledRendererTypes( int nRendererTypes ) = 0;
 
-	virtual bool unk039( const KeyValues3 *pKeyValues, void *pOut ) = 0;
+	// Loads the polymorphic MGPUParticleFunction object the KV3 describes
+	virtual bool LoadGPUParticleFunction( const KeyValues3 *pKeyValues, void *pOut ) = 0;
 
 	// Releases the buffers of the GPU implicit renderer and the instanced mesh scene objects unused for 100 frames
 	virtual void PurgeRenderObjects() = 0;
@@ -221,9 +222,12 @@ public:
 
 	// Adds instances to the instanced mesh scene object matching the world, flags and the 32-byte key, creating it when missing; records are 100 bytes
 	virtual void AddInstancedMeshes( ISceneWorld *pWorld, uint64 nFlags, uint64 nTypeFlagsMask, uint64 nTypeFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bUnk ) = 0;
-	virtual void unk056( CUtlString sName ) = 0;
-	virtual CUtlVector< CUtlString > *unk057() = 0;
-	virtual void unk058() = 0;
+
+	// Physics types of the C_OP_ClientPhysics operators (m_strPhysicsType), each added once
+	virtual void AddClientPhysicsType( CUtlString sPhysicsType ) = 0;
+	virtual CUtlVector< CUtlString > *GetClientPhysicsTypes() = 0;
+	virtual void ClearClientPhysicsTypes() = 0;
+
 	virtual void unk059( ISceneView *pView ) = 0;
 	virtual void SimulateGPUParticles( CUtlLeanVector< IParticleCollection * > collections, IRenderContext *pRenderContext ) = 0;
 };
@@ -406,7 +410,7 @@ public:
 	CUtlHashtable< ParticleInstancedMeshKey_t, CUtlLinkedList< CInstancedMeshSceneObject *, unsigned short >, ParticleInstancedMeshKey_t::HashFunctor_t > m_InstancedMeshSceneObjects;
 	ISceneObjectDesc *m_pInstancedMeshSceneObjectDesc;
 	HGameResourceManifest m_hGPUParticleRequiredResources;
-	CUtlVector< CUtlString > m_Unk558;
+	CUtlVector< CUtlString > m_ClientPhysicsTypes;
 
 	// Ranges of GPU particle slots and one slot per GPU collection
 	CPoolAllocator *m_pGPUParticlePool;
