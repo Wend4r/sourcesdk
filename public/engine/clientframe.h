@@ -53,9 +53,10 @@ public:
 	CUtlLinkedList< CClientFrame *, unsigned short > m_FrameList;
 	uint8 m_unk038[ 8 ];
 	CUtlMemoryPoolMT< CClientFrame > m_ClientFramePool;
-	int m_nUnk0A0;
-	int m_nUnk0A4;
-	void *m_unk0A8;
+	int m_nNewestFrameTick;
+	int m_nOldestFrameTick;
+	// Shared frame store: looked up for ticks older than the oldest frame in the list, and given the frames the list releases
+	void *m_pFrameCache;
 };
 COMPILE_TIME_ASSERT( sizeof( CClientFrameManager ) == 176 );
 
