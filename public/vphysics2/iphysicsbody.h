@@ -437,8 +437,8 @@ public:
 	// Time the body has been resting; putting the body to sleep resets it
 	virtual float GetSleepTimer() const = 0;
 
-	// Sets a flag that the solver and putting the body to sleep clear
-	virtual void unk018() = 0;
+	// The solver puts the body to sleep after the next step whatever its velocity; the step clears the request
+	virtual void RequestSleep() = 0;
 
 	// Union of the broadphase proxy bounds of the shapes
 	virtual AABB_t GetProxyBounds() const = 0;
