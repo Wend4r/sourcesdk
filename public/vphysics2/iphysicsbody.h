@@ -13,6 +13,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlleanvector.h"
+#include "tier0/utlsortvector.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
@@ -190,7 +191,9 @@ public:
 
 	// Body space inertia tensor
 	virtual matrix3x4_t GetLocalInertia() const = 0;
-	virtual Vector unk046() const = 0;
+
+	// PhysicsInertiaBox_t::m_vPrincipalInertia of the inertia box of the body
+	virtual Vector GetPrincipalInertia() const = 0;
 
 	virtual void ScaleInertia( float flScale ) = 0;
 
@@ -286,22 +289,24 @@ public:
 
 	virtual float unk104( const void *pParams, float flUnknown1, float flUnknown2 ) = 0;
 
-	// True while the joint list GetFirstJoint walks is not empty, and while a second list of the body is not empty
+	// True while the joint list GetFirstJoint walks is not empty, and while the CRnLink list of the body is not empty
 	virtual bool HasJoints() const = 0;
-	virtual bool unk106() const = 0;
+	virtual bool HasLinks() const = 0;
 
 	// Iterate the joints of the body, and find the joint to another body
 	virtual IPhysicsJoint *GetFirstJoint() const = 0;
 	virtual IPhysicsJoint *GetNextJoint( IPhysicsJoint *pJoint ) const = 0;
 	virtual IPhysicsJoint *FindJoint( IPhysicsBody *pOther ) const = 0;
 
-	virtual bool unk110() const = 0;
+	// True when a shape of the body has a contact
+	virtual bool HasContacts() const = 0;
 
 	// MSVC lays these overloads out in reverse order
 	virtual bool GetContactPoint( Vector *pContactPoint, IPhysicsBody **ppContactObject ) const = 0;
 	virtual bool GetContactPoint( Vector *pContactPoint ) const = 0;
 
-	virtual void unk113() = 0;
+	// Inserts the entity ids of the bodies the shapes of the body touch
+	virtual void GetContactEntityIds( CUtlSortVector< uint32 > &entityIds ) = 0;
 
 	virtual IPhysicsFrictionSnapshot *CreateFrictionSnapshot() = 0;
 	virtual void DestroyFrictionSnapshot( IPhysicsFrictionSnapshot *pSnapshot ) = 0;
@@ -484,10 +489,10 @@ public:
 
 	virtual void UpdateShapeSceneObjects() = 0;
 
-	// Call methods of the debug shapes of the shapes: IFnPhysicsShape::unk026, unk030 and unk028
+	// Call methods of the debug shapes of the shapes: IFnPhysicsShape::unk026, unk030 and SetDebugShapeAlphaFactor
 	virtual void unk036( const Vector4D &vColor ) = 0;
 	virtual void unk037( float flValue ) = 0;
-	virtual void unk038( int nIndex, float flValue ) = 0;
+	virtual void SetDebugShapeAlphaFactor( int nIndex, float flValue ) = 0;
 	virtual void unk039( bool bUnknown, float flUnknown ) = 0;
 
 	virtual const char *GetDebugName() const = 0;
