@@ -196,8 +196,9 @@ public:
 	virtual void OnSoundEventFieldsMessages( const CSosMessageQueue< SoundEventGuid_t > &messages ) = 0;
 	// Messages that set fields of library stacks
 	virtual void OnLibraryStackFieldsMessages( const CSosMessageQueue< HSOSLIBSTACKHASH > &messages ) = 0;
-	// Vector of 12-byte entries the sound system collects once per frame
-	virtual void unk04( const void *pList ) = 0;
+	// Sounds the mixer started since the last update, a CUtlVector of 12-byte entries that hold the guid of the sound event,
+	// the guid of the sound and a value of its sfx
+	virtual void OnSoundsStarted( const void *pList ) = 0;
 	// Called for every sound event the operator system starts
 	virtual void OnSoundEventStarted( SoundEventGuid_t guid, SoundEventGuid_t parentGuid, SoundEventGuid_t rootGuid ) = 0;
 };
