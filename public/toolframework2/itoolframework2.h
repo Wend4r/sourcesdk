@@ -323,10 +323,11 @@ public:
 	// Activates and raises the remembered tool window, otherwise the asset browser
 	virtual void ReactivateToolWindow() = 0;
 
-	// <settings dir>/<pName>/settings.txt; bUnknown adds a prefix to the file name
-	virtual void LoadSettings( const char *pName, CUtlBuffer &buf, bool bUnknown ) = 0;
-	virtual void SaveSettings( const char *pName, CUtlBuffer &buf, bool bUnknown ) = 0;
-	virtual void GetSettingsPath( const char *pName, CBufferString *pPath, bool bUnknown ) = 0;
+	// <settings dir>/<pName>/settings.txt; bModGameSubdirPrefix prefixes the file name with
+	// IApplication::GetModGameSubdir() and "_"
+	virtual void LoadSettings( const char *pName, CUtlBuffer &buf, bool bModGameSubdirPrefix ) = 0;
+	virtual void SaveSettings( const char *pName, CUtlBuffer &buf, bool bModGameSubdirPrefix ) = 0;
+	virtual void GetSettingsPath( const char *pName, CBufferString *pPath, bool bModGameSubdirPrefix ) = 0;
 
 	// Copies the settings to the next free numbered backup
 	virtual void BackupSettings() = 0;
@@ -369,8 +370,8 @@ public:
 	virtual void SetToolSettings( uint8 nToolIndex, KeyValues3 *pSettings ) = 0;
 
 	// Load and save the named settings file as KV3, see LoadSettings
-	virtual void LoadSettingsKV3( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
-	virtual void SaveSettingsKV3( const char *pName, KeyValues3 *pSettings, bool bUnknown ) = 0;
+	virtual void LoadSettingsKV3( const char *pName, KeyValues3 *pSettings, bool bModGameSubdirPrefix ) = 0;
+	virtual void SaveSettingsKV3( const char *pName, KeyValues3 *pSettings, bool bModGameSubdirPrefix ) = 0;
 
 	// pFileList is a ';' separated list of the files to import
 	virtual void ShowImportWizard( const char *pFileList ) = 0;
