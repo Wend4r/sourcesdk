@@ -68,8 +68,12 @@ public:
 	IMFSinkWriter *m_pSinkWriter;
 	uint32 m_nVideoStreamIndex;
 	uint32 m_nAudioStreamIndex;
-	int m_nUnk170;
-	int64 m_nUnk178;
+
+	// Video frames written since StartMovie; the next sample time is this times the frame duration
+	int m_nVideoFrameCount;
+
+	// Audio sample frames written since StartMovie; AppendMovieSound adds nBytes * 8 / ( m_nSampleBits * m_nNumChannels )
+	int64 m_nAudioSampleCount;
 
 	// YUY2 conversion buffer of the current frame
 	CUtlVector< uint8 > m_YUY2Buffer;
