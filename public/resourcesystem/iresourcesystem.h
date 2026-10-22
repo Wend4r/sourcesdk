@@ -176,7 +176,10 @@ struct ResourceStatusChange_t
 abstract_class IToolsResourceListener
 {
 public:
-	virtual bool unk000() = 0;
+	// Which list AddResourceListeners puts the listener in: 1 is notified at once, 2 in batches when
+	// the frame update flushes the queued changes, 0 picks one from the command line
+	virtual int GetNotificationType() = 0;
+
 	virtual void NotifyResourceStatusChange( const ResourceStatusChange_t *pChanges, int nNumChanges ) = 0;
 };
 
