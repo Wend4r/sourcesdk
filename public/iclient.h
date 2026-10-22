@@ -112,7 +112,7 @@ public:
 abstract_class INetworkGameClient
 {
 public:
-	virtual void Init( int nUnk ) = 0;
+	virtual void Init( int nSocket ) = 0;
 	virtual void SetGameSpawnGroupMgr( IGameSpawnGroupMgr *pMgr ) = 0;
 	virtual int AddRef() = 0;
 	virtual int Release() = 0;
@@ -127,7 +127,7 @@ public:
 	virtual int unk009() = 0;
 	virtual bool unk010( int nUnk ) = 0;
 	virtual void SetFrameTime( float flFrameTime ) = 0;
-	virtual void Connect( CSplitScreenSlot nSlot, int nUnk, const ns_address &addr ) = 0;
+	virtual void Connect( CSplitScreenSlot nSlot, int nSocket, const ns_address &addr ) = 0;
 	virtual void Disconnect( ENetworkDisconnectionReason reason ) = 0;
 	virtual bool IsActive() const = 0;
 	virtual bool IsConnected() const = 0;
@@ -336,7 +336,9 @@ public:
 	SignonState_t m_nSignonState;
 	int m_nUnk244;
 	int m_nRefCount;
-	int m_unk24C[ 4 ];
+	// Socket of the net channels and of the connectionless packet polling
+	int m_nSocket;
+	int m_unk250[ 3 ];
 	int m_nDeltaTick;
 	int m_unk260[ 19 ];
 	bool m_bUnk2AC;
