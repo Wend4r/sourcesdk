@@ -99,6 +99,7 @@ public:
 	// Creates a material derived from an already loaded one, applying overrides on top of it.
 	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, ResourceHandle_t hSrcMaterial, KeyValues3 *pOverrides, int nFlags, bool bCreateAsync ) = 0;
 
+	// Creates a material from the KeyValues3 description pData and keeps a strong reference to hResource in it ( see IMaterial2::unk028() )
 	virtual HMaterialWeak unk030( const char *pMaterialName, KeyValues3 *pData, ResourceHandle_t hResource, bool bUnk ) = 0;
 
 	// Value of setting.shaderquality
@@ -122,7 +123,8 @@ public:
 	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext ) = 0;
 	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 
-	virtual void unk042( int nCount, IMaterial2 *const *ppMaterials, const uint16 *pValues ) = 0;
+	// Requests the textures of every material through IRenderDevice::RequestTextureMipLevels(), with the largest value given for each material
+	virtual void RequestTextureMipLevels( int nCount, IMaterial2 *const *ppMaterials, const uint16 *pValues ) = 0;
 
 	// Loaded material whose unique id (CMaterial2::m_nUniqueId) is nUniqueId
 	virtual HMaterialWeak unk043( uint32 nUniqueId ) = 0;
