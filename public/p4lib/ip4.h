@@ -116,7 +116,7 @@ abstract_class IP4 : public IAppSystem
 {
 public:
 	// False with the dummy and local backends; callers skip every Perforce operation then
-	virtual bool unk011() = 0;
+	virtual bool IsAvailable() = 0;
 
 	// 0 is the dummy backend, 1 the local backend that works without Perforce and 2 the Perforce one
 	virtual int GetImplementationType() = 0;
@@ -160,7 +160,7 @@ public:
 
 	// Opens an existing file for edit: -1 on failure, 0 if it does not exist yet (callers add it later),
 	// 1 when opened and 2 when it has to be reopened (see ReopenFile)
-	virtual int unk028( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
+	virtual int TryOpenFileForEdit( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
 
 	// Only called for files that are in perforce
 	virtual bool OpenFileForDelete( const char *pFullPath ) = 0;
