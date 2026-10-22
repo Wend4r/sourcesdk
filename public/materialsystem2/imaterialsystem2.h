@@ -48,9 +48,10 @@ abstract_class IShaderReloadListener
 {
 public:
 	// Called by the dynamic shader compile before every material is unloaded for a shader reload
-	virtual void unk000() = 0;
+	virtual void OnPreShaderReload() = 0;
 
-	virtual void unk001() = 0;
+	// Called by the dynamic shader compile after the shaders were compiled and the materials reloaded
+	virtual void OnPostShaderReload() = 0;
 };
 
 //-----------------------------------------------------------------------------
