@@ -38,7 +38,7 @@ public:
 
 private:
 	// An area and an extra cost added whenever the step enters that area.
-	noschema std::vector< std::pair< CNavArea *, float > > m_Unk48;
+	noschema std::vector< std::pair< CNavArea *, float > > m_ExtraAreaCosts;
 };
 
 #include "schemacompiler/schemaoff.h"
