@@ -100,7 +100,9 @@ public:
 public:
 	CPathSegment m_path[ MAX_PATH_SEGMENTS ];
 	int m_nSegmentCount;
-	bool m_bUnk480C;
+	// Set once the path went through the portal optimization and m_pOptimizer, so neither runs twice; cleared by
+	// InvalidatePath
+	bool m_bOptimized;
 
 private:
 	uint8 m_Unk480D[ 3 ];
