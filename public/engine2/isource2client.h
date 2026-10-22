@@ -109,6 +109,13 @@ struct Source2ClientUnk146_t
 	uint8 m_Data[ 8 ];
 };
 
+// The 8-byte tick and fraction value ISource2Client::unk169 returns, in an integer register on Linux and through a hidden
+// pointer on Windows; only its size is known
+struct Source2ClientUnk169_t
+{
+	uint8 m_Data[ 8 ];
+};
+
 abstract_class ISource2Client : public IAppSystem, public IFieldChangeLimitSpew
 {
 public:
@@ -379,7 +386,7 @@ public:
 	virtual int GetHltvReplayDelay() = 0;
 	virtual void unk167( void *pMsg ) = 0;
 	virtual void unk168() = 0;
-	virtual void unk169( void *pUnk1, void *pUnk2 ) = 0;
+	virtual Source2ClientUnk169_t unk169() = 0;
 	virtual void unk170() = 0;
 	// Sends the packet to the game coordinator as the data of a CMsgGCCStrike15_GotvSyncPacket
 	virtual void EngineGotvSyncPacket( const CEngineGotvSyncPacket *pPkt ) = 0;
