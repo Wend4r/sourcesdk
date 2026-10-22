@@ -12,6 +12,7 @@
 #include <resourcefile/resourcetype.h>
 
 #include <mathlib/vector4d.h>
+#include <tier0/bufferstring.h>
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
 #include <tier0/utlhashtable.h>
@@ -164,6 +165,19 @@ public:
 		CUtlString m_modeCategory;
 	};
 
+	// Where a shader file was found in the GAME search path
+	struct ShaderFileLocation_t
+	{
+		// The VPK the file is in, or the mod directory it was found under
+		CBufferStringN< 150 > m_Path;
+
+		// The mod directory, set when the file is not in a VPK
+		CBufferStringN< 32 > m_ModDirectory;
+
+		// The file is opened as "<m_Path>:<name>" instead of "<m_Path>\<name>"
+		bool m_bInVPK;
+	};
+
 	// Set by QueueMaterialReload(), the next FrameUpdate() reloads the materials
 	bool m_bMaterialReloadQueued;
 
@@ -183,8 +197,8 @@ public:
 	CUtlHashtable< CUtlSymbol, void *, Mix32HashFunctor > m_Shaders;
 	CUtlSymbolTable m_shaderNameDictionary;
 
-	// CUtlHashtable from a CUtlString path to a 0xD0 byte entry, locked by m_unk0E0
-	void *m_unk0C0[ 4 ];
+	// Keyed by the shader file name
+	CUtlHashtable< CUtlString, ShaderFileLocation_t > m_ShaderFileLocations;
 	CAtomicMutex m_unk0E0;
 
 	// CUtlVector of 0xF0 byte shader combos queued by the renderable pass computation, compiled by the dynamic
