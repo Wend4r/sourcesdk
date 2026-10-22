@@ -72,6 +72,11 @@ public:
 	// Registered by AddCustomFontFile()
 	CUtlVector< CustomFontInfo_t > m_CustomFonts;
 
+#ifdef PLATFORM_POSIX
+	// FT_Library, created by Init() through FT_Init_FreeType()
+	struct FT_LibraryRec_ *m_pFTLibrary;
+#endif
+
 	char m_szLanguage[ 64 ];
 
 	// CFontTextureCache, points back to the font manager
