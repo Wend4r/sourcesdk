@@ -13,8 +13,14 @@
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
 #include "materialsystem2/imaterial2.h"
+#include "tier0/platwindow.h"
+#include "tier0/utllinkedlist.h"
+#include "tier3/tier3.h"
 
 struct BGR888_t;
+class CAVIMaterial;
+class CAviFile;
+class CRenderAttributes;
 class IRenderContext;
 
 struct AVIParams_t
@@ -53,7 +59,7 @@ enum
 abstract_class IAvi : public IAppSystem
 {
 public:
-	virtual void SetMainWindow( void *hWnd ) = 0;
+	virtual void SetMainWindow( PlatWindow_t hWnd ) = 0;
 
 	// Start/stop recording an AVI
 	virtual AVIHandle_t StartAVI( const AVIParams_t &params ) = 0;
@@ -65,7 +71,7 @@ public:
 	virtual AVIMaterial_t CreateAVIMaterial( const char *pMaterialName, const char *pFileName, const char *pPathID ) = 0;
 	virtual void DestroyAVIMaterial( AVIMaterial_t hMaterial ) = 0;
 
-	virtual HMaterialWeak SetTime( AVIMaterial_t hMaterial, float flTime, IRenderContext *pRenderContext, void *pUnk ) = 0;
+	virtual HMaterialWeak SetTime( AVIMaterial_t hMaterial, float flTime, IRenderContext *pRenderContext, CRenderAttributes *pRenderAttributes ) = 0;
 
 	virtual HMaterialWeak GetMaterial( AVIMaterial_t hMaterial ) = 0;
 
@@ -79,9 +85,19 @@ public:
 	virtual int GetFrameCount( AVIMaterial_t hMaterial ) = 0;
 
 	// Same as SetTime, but takes a frame index instead of seconds
-	virtual HMaterialWeak SetFrame( AVIMaterial_t hMaterial, float flFrame, IRenderContext *pRenderContext, void *pUnk ) = 0;
+	virtual HMaterialWeak SetFrame( AVIMaterial_t hMaterial, float flFrame, IRenderContext *pRenderContext, CRenderAttributes *pRenderAttributes ) = 0;
 
 	virtual bool IsFinished( AVIMaterial_t hMaterial ) = 0;
+};
+
+class CAvi : public CTier3AppSystem< IAvi >
+{
+public:
+	// OS handle of the window passed to SetMainWindow
+	void *m_hMainWindow;
+
+	CUtlLinkedList< CAviFile, AVIHandle_t > m_AVIFiles;
+	CUtlLinkedList< CAVIMaterial *, AVIMaterial_t > m_AVIMaterials;
 };
 
 #endif // IAVI_H

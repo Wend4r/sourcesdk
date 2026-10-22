@@ -12,6 +12,16 @@
 
 #include "tier0/platform.h"
 #include "appframework/iappsystem.h"
+#include "tier1/utlvector.h"
+#include "tier2/tier2.h"
+
+namespace v8
+{
+	class Isolate;
+	class PromiseRejectMessage;
+
+	typedef void ( *PromiseRejectCallback )( PromiseRejectMessage message );
+}
 
 abstract_class ISource2V8System : public IAppSystem
 {
@@ -29,8 +39,18 @@ public:
 	virtual void unk017( void *p ) = 0;
 	virtual void unk018( void *p ) = 0;
 
-	virtual void PushPromiseRejectCallback( void *pfnCallback ) = 0;
+	virtual void PushPromiseRejectCallback( v8::PromiseRejectCallback pfnCallback ) = 0;
 	virtual void PopPromiseRejectCallback() = 0;
+};
+
+class CSource2V8System : public CTier2AppSystem< ISource2V8System >
+{
+public:
+	v8::Isolate *m_pIsolate;
+	uint8 m_pad030[ 0x8 ];
+
+	// The top one is installed on the isolate
+	CUtlVector< v8::PromiseRejectCallback > m_PromiseRejectCallbacks;
 };
 
 #endif // ISOURCE2V8SYSTEM_H
