@@ -45,7 +45,7 @@ struct ResourceTypeRegistration_t
 
 	// Cached from the type manager by InstallTypeManager
 	bool m_bRequiresFinalizeResourceCall;
-	bool m_bUnk05F; // IResourceTypeManager::unk008
+	bool m_bWantsAsyncPreFinalize;
 	bool m_bNeedsFrameUpdate;
 	bool m_bUnk061; // IResourceTypeManager::unk020
 	uint8 m_pad062[ 0x46 ];
@@ -77,7 +77,9 @@ public:
 	int m_nBlockingLoadCount;
 	CUtlVector< int * > m_FrameCounters;
 	int m_nPendingGlobalStreamingDataRequests;
-	CInterlockedInt m_nUnk2A7C;
+
+	// Queued AsyncPreFinalize jobs that have not finished yet
+	CInterlockedInt m_nPendingAsyncPreFinalizeJobs;
 
 	CTSQueue< CResourceManifest * > m_PendingResourceManifests;
 
