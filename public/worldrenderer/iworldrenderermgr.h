@@ -119,17 +119,15 @@ public:
 	virtual void OnClientPreOutput( float flRenderFrameTime, float flRenderTime ) = 0;
 	virtual void SetOverrideRenderTime( float flRenderFrameTime, float flRenderTime ) = 0;
 
-	// Creates a grass tile scene object.
-	virtual CSceneObject *unk044( void *pUnk1, const matrix3x4_t &mat, ISceneWorld *pWorld, void *pUnk2, bool bUnk ) = 0;
+	virtual CSceneObject *CreateGrassTileSceneObject( void *pUnk1, const matrix3x4_t &mat, ISceneWorld *pWorld, void *pUnk2, bool bUnk ) = 0;
 
-	// Grass flattening tracker: unk045 allocates the state (last position and radius),
-	// unk046 flattens along the movement once it exceeds the radius, unk047 frees it.
-	virtual void *unk045( float flRadius ) = 0;
-	virtual void unk046( void *pState, const ISceneWorld *pSceneWorld, const Vector &vecPos, float flRadius, float flStrength, bool bUnk ) = 0;
-	virtual void unk047( void *pState ) = 0;
+	// The flattening state keeps the last position and the squared radius; the update
+	// flattens along the movement once it exceeds the radius
+	virtual void *CreateGrassFlatteningState( float flRadius ) = 0;
+	virtual void UpdateGrassFlattening( void *pState, const ISceneWorld *pSceneWorld, const Vector &vecPos, float flRadius, float flStrength, bool bUnk ) = 0;
+	virtual void DestroyGrassFlatteningState( void *pState ) = 0;
 
-	// Flattens the grass of the scene world at a position along a direction.
-	virtual void unk048( const ISceneWorld *pSceneWorld, const Vector &vecPos, const Vector &vecDir, float flRadius, float flStrength, bool bUnk ) = 0;
+	virtual void FlattenGrass( const ISceneWorld *pSceneWorld, const Vector &vecPos, const Vector &vecDir, float flRadius, float flStrength, bool bUnk ) = 0;
 
 	virtual void SetWindForWorld( const ISceneWorld *pSceneWorld, const Vector &vWindDir, float flWindSpeed, float flTime, bool bOverride ) = 0;
 	virtual void ForgetWindForWorld( const ISceneWorld *pSceneWorld ) = 0;
@@ -144,14 +142,14 @@ public:
 	virtual void unk054() = 0;
 
 	// Weather of a scene world, set from the map info entity (CMapInfo).
-	virtual void unk055( const ISceneWorld *pSceneWorld, bool bRainTraceToSkyEnabled ) = 0;
-	virtual bool unk056( const ISceneWorld *pSceneWorld ) = 0;
-	virtual void unk057( const ISceneWorld *pSceneWorld, float flEnvRainStrength, float flEnvPuddleRippleStrength, float flEnvPuddleRippleDirection, float flEnvWetnessCoverage, float flEnvWetnessDryingAmount ) = 0;
-	virtual bool unk058( const ISceneWorld *pSceneWorld, float *pflEnvRainStrength, float *pflEnvPuddleRippleStrength, float *pflEnvPuddleRippleDirection, float *pflEnvWetnessCoverage, float *pflEnvWetnessDryingAmount ) = 0;
-	virtual void unk059( const ISceneWorld *pSceneWorld ) = 0;
+	virtual void SetRainTraceToSkyEnabled( const ISceneWorld *pSceneWorld, bool bRainTraceToSkyEnabled ) = 0;
+	virtual bool IsRainTraceToSkyEnabled( const ISceneWorld *pSceneWorld ) = 0;
+	virtual void SetWeatherForWorld( const ISceneWorld *pSceneWorld, float flEnvRainStrength, float flEnvPuddleRippleStrength, float flEnvPuddleRippleDirection, float flEnvWetnessCoverage, float flEnvWetnessDryingAmount ) = 0;
+	virtual bool GetWeatherForWorld( const ISceneWorld *pSceneWorld, float *pflEnvRainStrength, float *pflEnvPuddleRippleStrength, float *pflEnvPuddleRippleDirection, float *pflEnvWetnessCoverage, float *pflEnvWetnessDryingAmount ) = 0;
+	virtual void ForgetWeatherForWorld( const ISceneWorld *pSceneWorld ) = 0;
 
-	// Mounts the world VPK; releasing the reference unmounts it.
-	virtual IWorldVPKReference *unk060( const char *pVPKName ) = 0;
+	// Releasing the reference unmounts the VPK
+	virtual IWorldVPKReference *MountWorldVPK( const char *pVPKName ) = 0;
 };
 
 class IWorld;
