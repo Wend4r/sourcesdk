@@ -55,7 +55,8 @@ public:
 	CThreadFastMutex m_VoiceTargetsMutex;
 	CUtlVector< IVoiceTarget * > m_VoiceTargets;
 	uint8 m_pad1C0[ 0x8 ];
-	int m_nUnk1C8;
+	// Voice status changes the capture code queued for ISource2Client::VoiceStatus, reported on the next frame
+	int m_nPendingVoiceStatusCount;
 
 	// Voice capture: input stream, captured samples, encoded Opus frames, encoder and noise suppression state
 	IAudioInputStream *m_pVoiceInputStream;
@@ -69,16 +70,19 @@ public:
 	{
 		float m_flEnvelope;
 		float m_flThreshold;
-		float m_flUnk08;
-		float m_flUnk0C;
+		// Envelope steps towards a higher and a lower peak
+		float m_flAttackRate;
+		// Peak of the last four samples
+		float m_flPeak;
 		float m_flDelayRate;
 		int m_nHoldSamples;
-		int m_nUnk18;
+		// Read position of m_AttackDelayLine relative to m_nAttackDelayIndex, the write position
+		int m_nAttackDelay;
 		// RMS of the last captured block
 		float m_flRMS;
 		int m_nHoldCounter;
 		int m_nUnk24;
-		int m_nUnk28;
+		int m_nAttackDelayIndex;
 		// Delays the captured samples by the attack time (SetVoiceThresholdAttack)
 		CUtlVector< float > m_AttackDelayLine;
 	} m_NoiseGate;
@@ -90,32 +94,41 @@ public:
 	// Time of the last captured block; a gap longer than voice_input_stallout sets m_bInputStalled
 	float m_flLastInputTime;
 	bool m_bInputStalled;
-	CUtlString m_Unk280;
+	// voice_device_override the input stream was created for
+	CUtlString m_sVoiceDeviceOverride;
 	// Set by the voice target and networked voice code when the first slot of any registered voice target returns true
 	bool m_bVoiceTargetActive;
 	// Level of the last encoded block, raw and normalized to [0, 1]
 	int m_nVoiceLevel;
 	float m_flVoiceLevel;
-	int m_nUnk294;
+	// ISteamUser::GetVoiceOptimalSampleRate, the rate Steam voice is decompressed at
+	int m_nVoiceSampleRate;
 	double m_flLastFocusTime;
 	// Set with its time while the level stays below voice_threshold; cleared voice_threshold_delay after it rises above
 	double m_flBelowThresholdTime;
 	bool m_bBelowThreshold;
-	uint8 m_pad2A9;
+	// Talking state of the queued voice status changes, set while Steam voice returns decompressed data
+	bool m_bVoiceStatusTalking;
 	bool m_bRecordingVoice;
-	bool m_bUnk2AB;
+	// Set once ISteamUser::GetAvailableVoice reports that recording ended, starts the next voice sequence
+	bool m_bVoiceRecordingFinished;
 	// The speaking state last reported to ISteamFriends::SetInGameVoiceSpeaking
 	bool m_bInGameVoiceSpeaking;
-	uint8 m_pad2AD;
+	// The speaking state last reported while voice_in_process is set
+	bool m_bInProcessVoiceSpeaking;
 	// IInputService::IsAppActive of the last frame, and set between OnLoopActivate and OnLoopDeactivate
 	bool m_bAppIsActive;
 	bool m_bGameIsActive;
-	bool m_bUnk2B0;
-	int m_nUnk2B4;
+	// Creating the input stream failed, it is retried once voice_device_override changes
+	bool m_bInputStreamFailed;
+	// Scheduled function that StopVoiceRecording and Shutdown cancel, -1 for none
+	int m_hScheduledFunction;
 	// Sequence number of the voice packets, skips -1
 	int m_nVoiceSequence;
-	int m_nUnk2BC;
-	bool m_bUnk2C0;
+	// Encoded bytes sent in the current voice sequence
+	int m_nVoiceOffset;
+	// Latches m_bVoiceTargetActive, keeps the microphone sampled once a voice target was active
+	bool m_bVoiceTargetWasActive;
 	CUtlVector< RecentlyPlayedNetworkVoice_t > m_RecentlyPlayedNetworkVoices;
 };
 
