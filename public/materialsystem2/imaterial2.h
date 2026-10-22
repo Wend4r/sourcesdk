@@ -61,7 +61,7 @@ public:
 	virtual IMaterial2 *unk006( const CUtlStringToken &mode ) = 0;
 
 	virtual const CRenderAttributes *GetAttributes() = 0;
-	virtual void unk008() = 0;
+	virtual bool HasAttribute( CUtlStringToken name ) = 0;
 	virtual bool GetBoolAttribute( bool *pValue, CUtlStringToken name ) = 0;
 	virtual bool GetIntAttribute( int *pValue, CUtlStringToken name ) = 0;
 	virtual bool GetFloatAttribute( float *pValue, CUtlStringToken name ) = 0;
@@ -83,7 +83,7 @@ public:
 	virtual bool OverrideTextureParam( const char *pName, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture ) = 0;
 
 	virtual uint32 GetShaderStateOverriddenByMaterial() = 0;
-	virtual const CUtlLeanVector< CUtlString > *unk026() = 0;
+	virtual const CUtlLeanVector< CUtlString > *GetRenderAttributesUsed() = 0;
 	virtual void *unk027( const CUtlStringToken &mode, int nShaderType ) = 0;
 	virtual CWeakHandleBase unk028() = 0;
 
@@ -97,7 +97,7 @@ public:
 	virtual const char *GetStringParam( const char *pName, const char *pFallback ) = 0;
 	virtual ResourceHandle_t *GetTextureParam( ResourceHandle_t *pOut, const char *pName ) = 0;
 	virtual Vector4D *GetVecParam( Vector4D *pOut, const char *pName, const Vector4D *pFallback ) = 0;
-	virtual bool unk036() = 0;
+	virtual bool HasDynamicParams() = 0;
 
 	// Updates the constants of every mode from pAttributes
 	virtual void unk037( const void *p, const CRenderAttributes *pAttributes ) = 0;
@@ -119,8 +119,8 @@ public:
 
 	bool m_bIsFinalized : 1;
 
-	// Returned by unk036()
-	bool m_bUnk00B_4 : 1;
+	// Set when the resource data has dynamic or dynamic texture parameters
+	bool m_bHasDynamicParams : 1;
 
 private:
 	uint8 m_unk00C[ 4 ];

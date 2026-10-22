@@ -28,8 +28,8 @@ public:
 	// Taken from a global counter when the material is created
 	uint32 m_nUniqueId;
 
-	// Returned by unk026()
-	CUtlLeanVector< CUtlString > m_unk040;
+	// Copied from m_renderAttributesUsed of the resource data
+	CUtlLeanVector< CUtlString > m_renderAttributesUsed;
 
 	// Waited for and released when the material is finalized
 	CUtlLeanVector< StaticComboVcsLoad_t *, int > m_staticComboLoadRequests;
