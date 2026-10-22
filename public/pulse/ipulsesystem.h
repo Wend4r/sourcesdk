@@ -217,6 +217,28 @@ public:
 	virtual void SetListener( IPulseTurtleGraphicsListener *pListener ) = 0;
 };
 
+abstract_class IPulseGraphLoadErrorReporter
+{
+public:
+	virtual void PushErrorScope( const CKV3MemberName &name ) = 0;
+	// Stores the message under the innermost scope's name
+	virtual void ReportError( const char *pszMessage ) = 0;
+	virtual void PopErrorScope() = 0;
+};
+
+class CPulseGraphLoadContext : public IPulseGraphLoadErrorReporter
+{
+public:
+	CKV3TransferLoadContext *m_pTransferContext;
+	bool m_bOwnsTransferContext;
+
+	// Variable values per PulseVariableKeysSource_t ( private, C++, vmap, vmdl, xml, vdata )
+	const KeyValues3 *m_pVariableKeys[ 6 ];
+
+	CUtlVector< CKV3MemberName > m_ErrorScopes;
+	KeyValues3 m_Errors;
+};
+
 abstract_class IPulseSystem : public IAppSystem
 {
 public:
@@ -290,8 +312,9 @@ public:
 	virtual float *GetTestFloatValue() = 0;
 	virtual CUtlString *GetTestStringValue() = 0;
 
-	virtual IPulseGraphInstance_TurtleGraphics *CreateTurtleGraphicsInstance( ResourceHandle_t hGraph, void *pUnk ) = 0;
-	virtual IPulseGraphInstance_TestDomain *CreateTestDomainInstance( const PulseSymbol_t &domain, ResourceHandle_t hGraph, void *pUnk ) = 0;
+	// The keys are loaded as the C++ variable keys source of the instance
+	virtual IPulseGraphInstance_TurtleGraphics *CreateTurtleGraphicsInstance( ResourceHandle_t hGraph, const KeyValues3 *pVariableKeys ) = 0;
+	virtual IPulseGraphInstance_TestDomain *CreateTestDomainInstance( const PulseSymbol_t &domain, ResourceHandle_t hGraph, const KeyValues3 *pVariableKeys ) = 0;
 	// Time of the TestClock_ExplicitStepped test clock.
 	virtual void SetTestClockTime( double flTime ) = 0;
 
