@@ -51,10 +51,28 @@ struct ResourceTypeRegistration_t
 	uint8 m_pad062[ 0x46 ];
 };
 
-// The ResourceIdMap_t layout is not recovered
+// Bindings keyed by their resource id, split into 4 submaps picked by the hash, each an
+// open-addressing hash set with 16-wide control byte groups that owns its binding nodes
 struct ResourceIdMap_t
 {
-	uint8 m_pad000[ 0x100 ];
+	struct Submap_t
+	{
+		CThreadSpinRWLock m_Lock;
+		int8 *m_pControl;
+		ResourceBindingBase_t **m_ppSlots;
+		size_t m_nSize;
+		size_t m_nCapacity;
+
+#ifdef _WIN32
+		uint8 m_unk[ 16 ];
+#else
+		uint8 m_unk[ 8 ];
+#endif
+
+		size_t m_nGrowthLeft;
+	};
+
+	Submap_t m_Submaps[ 4 ];
 };
 
 class CResourceSystem : public CTier2AppSystem< IResourceSystem >, public IResourceSystemUtils, public IResourceHandleUtils, public IResourceManifestRegistry
