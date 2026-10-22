@@ -409,8 +409,8 @@ public:
 	// Steps the softbodies of all given worlds in parallel jobs, nSubsteps times flSubstepTime each
 	virtual void SimulateSoftbodies( IVPhysics2World **ppWorlds, int nWorldCount, float flSubstepTime, int nSubsteps ) = 0;
 
-	// Locks every world and resets a set of its per-step arrays
-	virtual void unk018() = 0;
+	// Calls IVPhysics2World::FlushDebugRecording( false ) on every world
+	virtual void FlushDebugRecordings() = 0;
 
 	// Rubikon threading and SIMD switches; both are process-wide
 	virtual bool IsMultithreadingEnabled() = 0;

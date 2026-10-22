@@ -429,7 +429,11 @@ public:
 	virtual VPhysics2WorldUnk212_t unk214() = 0;
 
 	virtual IPhysReflContext *GetReflContext() = 0;
-	virtual void unk216( bool bUnknown ) = 0;
+
+	// Sends the frame recorded for the physics debugger while streaming to it, otherwise drops the recorded data.
+	// bUnknown sets the bit of the CRnWorld flags that starting a stream sets on every world
+	virtual void FlushDebugRecording( bool bUnknown ) = 0;
+
 	virtual void UpdateDebugScene() = 0;
 
 	// Empty
