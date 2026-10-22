@@ -33,6 +33,7 @@
 
 class CBufferString;
 class CConcreteEntityList;
+class ConVarRefAbstract;
 class ClientClass;
 class CCommand;
 class CEngineGotvSyncPacket;
@@ -79,6 +80,7 @@ struct PipelineRenderTargetInfo_t;
 struct RenderViewport_t;
 struct RnQueryAttr_t;
 struct vrect_t;
+union CVValue_t;
 
 template < class T > class CWeakHandle;
 template < class T > class CStrongHandleCopyable;
@@ -441,7 +443,8 @@ public:
 	virtual void unk200() = 0;
 	// Clears the result
 	virtual void unk201( void *pUnk, CBufferString &result ) = 0;
-	virtual bool unk202() = 0;
+	// The engine's filter callback of fps_max; the client allows the change while disconnected or on a local server, among others
+	virtual bool IsFpsMaxChangeAllowed( ConVarRefAbstract *pConVar, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue ) = 0;
 	// The engine passes it with GetReplayCompatHelper() to the flattened serializers while it links classes
 	virtual void *unk203() = 0;
 	// Asked before ISource2Server::GetMatchID() for the crash dump comment
