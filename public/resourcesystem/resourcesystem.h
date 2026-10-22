@@ -85,11 +85,12 @@ public:
 	};
 
 	// Guards the type registrations
-	CAtomicMutex m_Unk040;
+	CAtomicMutex m_ResourceTypeLock;
 
-	int m_nUnk04C;
+	int m_nResourceTypeCount;
 	ResourceTypeRegistration_t m_ResourceType[ 64 ];
-	int m_nUnk2A50;
+	// Copy of m_nResourceTypeCount for the readers that do not take m_ResourceTypeLock
+	int m_nPublishedResourceTypeCount;
 
 	int m_nFrameCount;
 	int m_nBlockingLoadCount;
@@ -102,7 +103,7 @@ public:
 	CTSQueue< CResourceManifest * > m_PendingResourceManifests;
 
 	CUtlVector< CResourceManifest * > m_PendingResourceManifestDeletions;
-	CAtomicMutex m_Unk2AD8;
+	CAtomicMutex m_PendingResourceManifestDeletionsLock;
 	CResourceManifest *m_pActiveBlockingManifest;
 	CUtlLinkedList< CResourceManifest *, unsigned short > m_activeResourceManifests;
 	CUtlBlockLinkedList< ExtRefList_t *, unsigned int > m_extRefs;
@@ -121,7 +122,7 @@ public:
 	ResourceIdMap_t m_IdMap;
 	ResourceIdMap_t m_AnonymousMap;
 	uint64 m_nNextAnonymousId;
-	bool m_bUnk2DE8;
+	bool m_bForceAllResourceLoadsToFail;
 	bool m_bErrorResourcesReloaded;
 	bool m_bInFrameUpdate;
 	bool m_bDisallowNewManifestsStarting;
@@ -143,13 +144,14 @@ public:
 	CUtlVector< IToolsResourcePreReloadListener * > m_ToolsResourceListeners;
 
 	// AddResourceListeners and RemoveResourceListeners pick one by the listener kind
-	CUtlVector< IToolsResourceListener * > m_Unk2FA8;
-	CUtlVector< IToolsResourceListener * > m_Unk2FC0;
+	CUtlVector< IToolsResourceListener * > m_ImmediateResourceListeners;
+	CUtlVector< IToolsResourceListener * > m_DeferredResourceListeners;
 
-	// CUtlVector of 32-byte items
-	uint64 m_Unk2FD8[ 3 ];
+	// CUtlVector of the 32-byte status changes queued for m_DeferredResourceListeners
+	uint64 m_PendingResourceStatusChanges[ 3 ];
 
-	int m_nUnk2FF0;
+	// The queued status changes are flushed only outside ForceSynchronizationAndBlockUntilManifestLoaded
+	int m_nForceSynchronizationDepth;
 
 	// Indexed by the SetDebugFlag and GetDebugFlag flag
 	bool m_pDebugModeEnabled[ 3 ];
@@ -163,7 +165,8 @@ public:
 	// Lock, Unlock and IsLockedByCurrentThread
 	CAtomicMutex m_Lock;
 
-	CTSListBase m_Unk3030;
+	// Binding nodes freed from the id maps, reused by the next insertion
+	CTSListBase m_FreeBindingNodes;
 };
 
 #endif // RESOURCESYSTEM_RESOURCESYSTEM_H
