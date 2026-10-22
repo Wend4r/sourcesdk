@@ -447,8 +447,9 @@ public:
 	// Locks and unlocks the operator system
 	virtual void LockOperatorSystem() = 0;
 	virtual void UnlockOperatorSystem() = 0;
-	// Loads the stacks of the default manifest with LoadManifestStacksForParsing and checks each of them; pErrors (type not recovered) receives
-	// the formatted error messages
+	// Loads the stacks of the default manifest with LoadManifestStacksForParsing and checks each of them. pErrors may be null;
+	// otherwise it is an object (type not recovered) whose IErrorListener base 8 bytes in receives each error as an
+	// ERROR_LISTENER_SEVERITY_ERROR message
 	virtual void ParseManifestStacksForErrors( KeyValues3 *pStacks, void *pErrors ) = 0;
 };
 
