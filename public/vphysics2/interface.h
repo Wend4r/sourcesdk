@@ -16,6 +16,7 @@
 #include "tier0/platform.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlvector.h"
+#include "tier0/utlleanvector.h"
 #include "tier0/utldelegateimpl.h"
 #include "mathlib/vector.h"
 #include "mathlib/aabb.h"
@@ -60,6 +61,8 @@ struct RnQueryAttr_t;
 struct RnToolQueryHit_t;
 struct PhysicsClosestPoint_t;
 struct PhysicsWorldTraceProfile_t;
+struct RecordedTrace_t;
+struct RecordedTraceResult_t;
 struct PhysicsJointDesc_t;
 struct PhysicsSphericalJointDesc_t;
 struct PhysicsRevoluteJointDesc_t;
@@ -573,10 +576,17 @@ public:
 
 	virtual void *unk003( int nIndex ) = 0;
 	virtual void *unk004( int nIndex ) = 0;
-	virtual void unk005( const void *pCallback ) = 0;
-	virtual void unk006( void *pUnknown, float flUnknown1, float flUnknown2, float flUnknown3 ) = 0;
-	virtual void unk007( const void *pUnknown1, void *pUnknown2 ) = 0;
-	virtual void *unk008( int nIndex, uint32 nList ) = 0;
+
+	// Calls the callback for every trace recorded while IsRecordingTraces is set; the traces are kept in eight lists by type
+	virtual void unk005( const std::function< void( const RecordedTrace_t & ) > &callback ) = 0;
+
+	// Appends a copy of the trace to its list and returns its index, -1 while traces are not recorded
+	virtual int unk006( const RecordedTrace_t &trace ) = 0;
+
+	virtual void ReRunRecordedTrace( const RecordedTrace_t &trace, CUtlLeanVectorFixedGrowable< RecordedTraceResult_t, 1 > *pResults ) = 0;
+
+	// A recorded trace of one of the eight lists, null when out of range
+	virtual RecordedTrace_t *unk008( int nIndex, uint32 nList ) = 0;
 	virtual void *unk009( int nIndex ) = 0;
 	virtual int unk010() = 0;
 	virtual int unk011() = 0;
