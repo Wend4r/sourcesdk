@@ -431,8 +431,10 @@ public:
 	virtual const char *GetSfxFileName( CSfxTable *pSfx, CBufferString *pBuf ) = 0;
 	virtual CVSndParameterTable *GetVSndParameterTable() = 0;
 	virtual std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > CreateVoiceContainerParams() = 0;
-	virtual void unk130( CSfxTable *pSfx ) = 0;
-	virtual void unk130( CSoundEvent *pSoundEvent ) = 0;
+	// Inverse of PreloadSound and PreloadSoundEvent: drops the preload priority of the sfx, or of every vsnd of the
+	// sound event
+	virtual void UnpreloadSound( CSfxTable *pSfx ) = 0;
+	virtual void UnpreloadSound( CSoundEvent *pSoundEvent ) = 0;
 	virtual HSound CreateProceduralSound( const char *pName, void *pUnk ) = 0;
 	// Runs the function now or queues it for the next update
 	virtual void QueueFunction( std::function< void() > func ) = 0;
