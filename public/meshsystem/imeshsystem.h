@@ -107,7 +107,7 @@ public:
 	virtual void unk037( uint32 ( *pfnCallback )( IMaterial2 *pMaterial, uint32 nFlags ) ) = 0;
 
 	// Appends CMeshSystem::m_unk0D0 to pOut under its lock
-	virtual void unk038( CUtlVector< void * > *pOut ) = 0;
+	virtual void unk038( CUtlVector< CMeshInstance * > *pOut ) = 0;
 
 
 	virtual int FindInputIndex( ResourceHandle_t hMaterial, int nIndex ) = 0;

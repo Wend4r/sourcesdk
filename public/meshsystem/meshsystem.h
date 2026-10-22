@@ -31,8 +31,9 @@ public:
 	// Locks m_unk0D0
 	CAtomicMutex m_unk0C0;
 
-	// Copied out by unk038()
-	CUtlVector< void * > m_unk0D0;
+	// Added by the nine-argument CreateMeshInstance() for some render meshes, removed by the mesh instance destructor
+	// and when the model is unloaded, copied out by unk038()
+	CUtlVector< CMeshInstance * > m_unk0D0;
 
 	// "AnimatableSceneObjectDesc", looked up by the two-argument CreateMeshInstance()
 	ISceneObjectDesc *m_pAnimatableDesc;
