@@ -213,7 +213,8 @@ public:
 	virtual bool IsTextureCubeMap( HRenderTexture hTexture ) = 0;
 	virtual bool IsTextureFullyResident( HRenderTexture hTexture ) = 0;
 	virtual bool IsTextureStandIn( HRenderTexture hTexture ) = 0;
-	virtual int unk106() = 0;
+	// "Setting max texture resolution to: %dx%d", clamped to the maximum texture width and height of the hardware
+	virtual int GetMaxTextureResolution() = 0;
 	virtual void AddTextureResidencyListener( ITextureResidencyListener *pListener ) = 0;
 	virtual void RemoveTextureResidencyListener( ITextureResidencyListener *pListener ) = 0;
 	virtual void AddAsyncShaderCompileListener( IRenderAsyncShaderCompileListener *pListener ) = 0;
@@ -263,7 +264,8 @@ public:
 	virtual RenderDescriptorSetHandle_t CreateDescriptorSet( const char *pName, int32 nNumDescriptors, const RenderDescriptorDesc_t *pDescriptorDescs, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings, uint8 nFlags ) = 0;
 	virtual void UpdateDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
 	virtual void AllocateUpdateAfterBindDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
-	virtual void unk151( RenderDescriptorSetHandle_t hDescriptorSet, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
+	// UpdateDescriptorSet() of a set allocated by AllocateUpdateAfterBindDescriptorSet(), without allocating it again
+	virtual void UpdateUpdateAfterBindDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
 	virtual void DestroyDescriptorSet( RenderDescriptorSetHandle_t hDescriptorSet ) = 0;
 	virtual bool GetDescriptorSetDescs( RenderDescriptorSetHandle_t hDescriptorSet, CUtlVector< RenderDescriptorDesc_t > &descriptorDescs ) = 0;
 	virtual bool AddDescriptorsToGlobalPerFrameDescriptorSet( int32 nNumDescriptors, const RenderDescriptorDesc_t *pDescriptorDescs ) = 0;
@@ -273,7 +275,8 @@ public:
 	virtual bool IsMultiGPUEnabled() = 0;
 	virtual int GetMultiGPUCount() = 0;
 	virtual uint32 GetMultiGPUDeviceMask() = 0;
-	virtual float unk159() = 0;
+	// 1 / ( GetMultiGPUCount() / 2 ) with multi-GPU enabled, 1 otherwise
+	virtual float GetMultiGPUFrameFactor() = 0;
 
 	virtual float GetLastPresentTime() = 0;
 	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
@@ -313,7 +316,8 @@ public:
 	virtual void DestroyRayTraceShaderBindingTable( IRaytraceShaderBindingTable *pSBT ) = 0;
 	virtual RenderResourceHandle_t CreateOpacityMicromap( const void *pDesc ) = 0;
 	virtual void DestroyOpacityMicromap( RenderResourceHandle_t hOpacityMicromap ) = 0;
-	virtual uint64 unk195( RenderResourceHandle_t hOpacityMicromap ) = 0;
+	// buildScratchSize of the VkMicromapBuildSizesInfoEXT queried when the micromap was created
+	virtual uint64 GetOpacityMicromapBuildScratchSize( RenderResourceHandle_t hOpacityMicromap ) = 0;
 	virtual bool IsRayTracingSupported() = 0;
 	virtual bool IsAsyncPresentEnabled() = 0;
 	virtual void EnableAsyncPresent( bool bEnable ) = 0;
@@ -340,9 +344,11 @@ public:
 	virtual bool IsSuperSamplingAvailable( int nType ) = 0;
 
 	virtual void DestroyUpscaler( IUpscaler *pUpscaler ) = 0;
-	virtual void unk219( bool bUnk, bool bAsync ) = 0;
+	// What vulkan_vma_defrag starts; nAlgorithm as r_vma_defrag_algorithm (0 fast, 1 balanced, 2 full, 3 extensive)
+	virtual void DefragmentDeviceMemory( uint8 nAlgorithm, bool bAsync ) = 0;
 	virtual void BeginRenderingToSwapChain( SwapChainHandle_t hSwapChain ) = 0;
-	virtual void unk221( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// r_show_gpu_memory_visualizer; the Windows Vulkan build ignores the arguments
+	virtual void Unk_DrawGPUMemoryVisualizer( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 
 	virtual void *CreateDeviceMemoryPool( uint64 nMinBlockSize ) = 0;
 	virtual void DestroyDeviceMemoryPool( void *hPool ) = 0;
@@ -352,7 +358,8 @@ public:
 	virtual void FreeBufferFromPool( void *hPool, RenderBufferHandle_t hBuffer ) = 0;
 	virtual bool GetDeviceMemoryTextureAllocationInfo( HRenderTexture hTexture, void *pInfoOut ) = 0;
 	virtual bool GetDeviceMemoryBufferAllocationInfo( RenderBufferHandle_t hBuffer, void *pInfoOut ) = 0;
-	virtual bool unk230( HRenderTexture hTexture, int nCount, const HRenderTexture *pTextures ) = 0;
+	// Binds every texture of pTextures to the device memory of hTexture
+	virtual bool AliasTexturesToTextureMemory( HRenderTexture hTexture, int nCount, const HRenderTexture *pTextures ) = 0;
 	virtual uint32 CheckFormatSupport( ImageFormat nFormat ) = 0;
 	virtual int unk232( SwapChainHandle_t hSwapChain ) = 0;
 
@@ -364,13 +371,20 @@ public:
 	virtual bool UpdateIndirectExecutionSet( void *hIndirectExecutionSet, IRenderContext *pRenderContext, int nPipelineIndex ) = 0;
 	virtual void DestroyIndirectExecutionSet( void *hIndirectExecutionSet ) = 0;
 
-	// Keeps pName, whose file name is appended to RenderDoc capture names, and flushes the pipeline cache
-	virtual void unk239( const char *pName ) = 0;
+	// Called by the engine when level loading finishes. Keeps pName, whose file name is appended to RenderDoc
+	// capture names, warns about shaders that were not compiled during the load and flushes the pipeline cache
+	virtual void OnLevelLoadingFinished( const char *pName ) = 0;
 
-	virtual int unk240() = 0;
+	// GetPresentCount() + 1
+	virtual int GetNextPresentCount() = 0;
+
 	virtual int unk241() = 0;
-	virtual void *unk242() = 0;
-	virtual void unk243( void *pObject ) = 0;
+
+	// Pointer to the RENDERDOC_API_1_6_0 pointer, NULL when RenderDoc is not loaded
+	virtual void *GetRenderDocAPI() = 0;
+
+	// The handler gets the data of textures with a handler flag instead of the upload, and their destruction
+	virtual void SetTextureDataHandler( void *pHandler ) = 0;
 	virtual bool ReadCompiledTextureMips( HRenderTexture hTexture, int nSlice, int nFirstMip, int nMipCount, ImageFormat nFormat, std::shared_ptr< IReadTexturePixelsCallback > pCallback ) = 0;
 	virtual void OnPresentSubmitted() = 0;
 	virtual void QueueFencedRecycling( CPipelineFence *pFence ) = 0;
