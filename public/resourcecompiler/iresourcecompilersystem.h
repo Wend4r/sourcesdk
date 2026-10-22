@@ -68,6 +68,9 @@ public:
 	// -v: also passed to IP4::SetVerbose and to the compile contexts
 	bool m_bVerbose;
 
+	// Set when the module was loaded by resourcecompiler.exe; Init then starts the "GlobPool" thread pool
+	bool m_bIsResourceCompilerExe;
+
 	// Results of RecompileResource, as in the compile summary
 	int m_nCompiledCount;
 	int m_nSkippedCount;
