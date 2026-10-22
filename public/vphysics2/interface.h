@@ -23,6 +23,7 @@
 #include "vphysics2/handle_decl.h"
 #include "vphysx/vphysx_interface.h"
 #include "resourcefile/resourcetype.h"
+#include "gametrace.h"
 
 class IRD_RegisterResourceDataUtils;
 class IPhysicsBody;
@@ -61,8 +62,6 @@ struct RnQueryAttr_t;
 struct RnToolQueryHit_t;
 struct PhysicsClosestPoint_t;
 struct PhysicsWorldTraceProfile_t;
-struct RecordedTrace_t;
-struct RecordedTraceResult_t;
 struct PhysicsJointDesc_t;
 struct PhysicsSphericalJointDesc_t;
 struct PhysicsRevoluteJointDesc_t;
@@ -560,6 +559,52 @@ public:
 	ThreadId_t m_nSimulationThreadId;
 };
 
+// A result that ReRunRecordedTrace appends; only its size and 8-byte alignment are known
+struct RecordedTraceResult_t
+{
+	ALIGN8 uint8 m_Data[ 88 ] ALIGN8_POST;
+};
+
+// A world query recorded while IFnPhysicsWorld::IsRecordingTraces is set
+struct RecordedTrace_t
+{
+	// The ray shape: the bounds of a hull, the radius of a sphere or a capsule (whose centers are in m_Points)
+	Vector m_vMins;
+	Vector m_vMaxs;
+	float m_flRadius;
+
+	// The world query that ReRunRecordedTrace repeats (0 to 7), also the list the trace is kept in
+	int m_nType;
+
+	RayType_t m_nRayType;
+
+	// Flag 2 picks the single hit version of a query over the one that collects every hit
+	uint32 m_nFlags;
+
+	// Passed as the last argument of CastRayIntervals
+	float m_flUnk040;
+
+	VectorAligned m_vStart;
+
+	// The rest of the start placement and the end placement that sweeps pass on
+	uint8 m_unk064[ 48 ];
+
+	Vector m_vDelta;
+	RnQueryAttr_t m_QueryAttr;
+
+	// Index of the trace in its list, and the world that recorded it
+	int m_nIndex;
+	CRnWorld *m_pWorld;
+
+	CUtlLeanVectorFixedGrowable< RecordedTraceResult_t, 1 > m_Results;
+
+	// The ray points: the center of a line or a sphere, the two centers of a capsule
+	CUtlLeanVectorFixedGrowable< Vector, 2 > m_Points;
+
+	// Cleared when the trace is recorded
+	uint8 m_unk328[ 96 ];
+};
+
 // The zeroed 40-byte struct IFnPhysicsWorld::unk025 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
 struct FnPhysicsWorldUnk025_t
 {
@@ -578,15 +623,15 @@ public:
 	virtual void *unk004( int nIndex ) = 0;
 
 	// Calls the callback for every trace recorded while IsRecordingTraces is set; the traces are kept in eight lists by type
-	virtual void unk005( const std::function< void( const RecordedTrace_t & ) > &callback ) = 0;
+	virtual void ForEachRecordedTrace( const std::function< void( const RecordedTrace_t & ) > &callback ) = 0;
 
 	// Appends a copy of the trace to its list and returns its index, -1 while traces are not recorded
-	virtual int unk006( const RecordedTrace_t &trace ) = 0;
+	virtual int RecordTrace( const RecordedTrace_t &trace ) = 0;
 
 	virtual void ReRunRecordedTrace( const RecordedTrace_t &trace, CUtlLeanVectorFixedGrowable< RecordedTraceResult_t, 1 > *pResults ) = 0;
 
 	// A recorded trace of one of the eight lists, null when out of range
-	virtual RecordedTrace_t *unk008( int nIndex, uint32 nList ) = 0;
+	virtual RecordedTrace_t *GetRecordedTrace( int nIndex, uint32 nList ) = 0;
 	virtual void *unk009( int nIndex ) = 0;
 	virtual int unk010() = 0;
 	virtual int unk011() = 0;
