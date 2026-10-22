@@ -85,7 +85,9 @@ public:
 
 	virtual uint32 GetShaderStateOverriddenByMaterial() = 0;
 	virtual const CUtlLeanVector< CUtlString > *GetRenderAttributesUsed() = 0;
-	virtual void *unk027( const CUtlStringToken &mode, int nShaderType ) = 0;
+	// Parameters of the mode's shader program of nShaderType (-1 to 6): a CUtlVector of 0x218 byte constant,
+	// sampler and render state descriptions that the material binds; NULL when the mode or type is invalid
+	virtual void *GetShaderParams( const CUtlStringToken &mode, int nShaderType ) = 0;
 	// Resource referenced by the material, see IMaterialSystem2::CreateMaterialReferencingResource()
 	virtual CWeakHandleBase GetReferencedResource() = 0;
 
