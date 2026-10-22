@@ -108,8 +108,13 @@ public:
 	virtual IProceduralLayerRenderer *CreateSimplePostProcessingLayerRenderer( const void *pUnk, bool bUnk ) = 0;
 	virtual IProceduralLayerRenderer *CreateQuadRenderer( HMaterialWeak hMaterial, const VertexColor_t &modulationColor, const RenderViewport_t &viewport ) = 0;
 	virtual void unk058() = 0;
-	virtual void unk059() = 0;
-	virtual void unk060() = 0;
+
+	// Adds a CSignalSemaphoreRenderer layer named "<pszLayerName>Layer"
+	virtual void AddSignalSemaphoreLayerToView( ISceneView *pView, void *pUnk, const char *pszLayerName, bool bUnk ) = 0;
+
+	// Same as AddSignalSemaphoreLayerToView, with the layer flag 0x8000000 set as well
+	virtual void unk060( ISceneView *pView, void *pUnk, const char *pszLayerName, bool bUnk ) = 0;
+
 	virtual void unk061() = 0;
 };
 
