@@ -292,7 +292,8 @@ public:
 	IPLAudioSettings m_AudioSettings;
 	IPLContext m_Context;
 	CUtlVector< IPLHRTF > m_HRTFs;
-	int m_nUnk050;
+	// Index into m_HRTFs SetListenerOrigin takes from its convar, 0 when out of range or not loaded
+	int m_nHRTFIndex;
 	IPLEmbreeDevice m_EmbreeDevice;
 	IPLOpenCLDevice m_OpenCLDevice;
 	IPLRadeonRaysDevice m_RadeonRaysDevice;
@@ -301,12 +302,15 @@ public:
 
 	// Base simulation settings, also passed to the reverb and source objects
 	IPLSimulationSettings m_SimulationSettings;
-	ISteamAudioScene *m_pUnk0E8;
+	// Empty scene the reverb simulator works on
+	ISteamAudioScene *m_pReverbScene;
 	IPLSource m_Unk0F0;
-	IPLSimulationSettings m_Unk0F8;
+	// m_SimulationSettings with the direct and pathing flags, m_Simulator is created from them
+	IPLSimulationSettings m_SimulatorSettings;
 	IPLSimulator m_Simulator;
 	IPLProbeNeighborhood m_ProbeNeighborhood;
-	ISteamAudioScene *m_pUnk170;
+	// Scene of m_Simulator, also used for the probe occlusion checks of SetListenerOrigin
+	ISteamAudioScene *m_pSimulationScene;
 	int m_nUnk178;
 	int m_nUnk17C;
 	int m_nUnk180;
