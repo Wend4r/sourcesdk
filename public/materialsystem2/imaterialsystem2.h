@@ -296,8 +296,9 @@ public:
 	// "MaterialSystem2/ShaderIDColors" of gameinfo, alpha is 1
 	CUtlHashtable< CUtlStringToken, Vector4D > m_ShaderIDColors;
 
-	// Bit masks keyed by a 64-bit value
-	CUtlHashtable< uint64, uint64 > m_unk258;
+	// From the "materials" of the "-batcherrors" file: the resource id of a material to the mask of the indices
+	// in m_modeInfo of the modes it is required to be batchable in
+	CUtlHashtable< uint64, uint64 > m_BatchErrorModes;
 
 	// AddShaderReloadListener() and RemoveShaderReloadListener()
 	CUtlVector< IShaderReloadListener * > m_ShaderReloadListeners;
