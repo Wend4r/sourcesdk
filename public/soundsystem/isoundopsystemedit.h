@@ -69,7 +69,8 @@ struct SosEditFieldInfo_t
 	int m_nOperatorOffset;
 	// Offset of the field in the field data of the stack
 	int m_nStackOffset;
-	int m_nUnk20;
+	// Stack offset of the output the input field is connected to, -1 when it is not connected
+	int m_nConnectedOffset;
 };
 
 enum MXRMixGroupFields_t
