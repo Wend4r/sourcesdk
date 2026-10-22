@@ -21,6 +21,7 @@
 
 class CBufferString;
 class CRnShape;
+class IRnDebugShape;
 class IPhysicsShape;
 
 // The zeroed 40-byte struct IFnPhysicsShape::unk019 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
@@ -84,19 +85,20 @@ public:
 	// Returns zeros
 	virtual FnPhysicsShapeUnk019_t unk019() = 0;
 
-	// Debug shape of the shape, created on demand
-	virtual void *CreateDebugShape( void *p ) = 0;
+	// Debug shape of the shape, created on demand with vColor as its color 0
+	virtual IRnDebugShape *CreateDebugShape( const Vector4D &vColor ) = 0;
 	virtual void DestroyDebugShape() = 0;
-	virtual void *unk022() = 0;
+	virtual bool unk022() = 0;
 	virtual void unk023( bool bUnknown ) = 0;
 	virtual void unk024( bool bUnknown ) = 0;
 	virtual void unk025( bool bUnknown ) = 0;
-	// Store color 0 and color 1 of the debug shape
+
+	// Store color 0 and color 1 of the debug shape; unk027 and unk028 get and set one of its four float factors (index 0 to 3)
 	virtual void unk026( const Vector4D &vColor ) = 0;
-	virtual float unk027() = 0;
-	virtual void unk028() = 0;
+	virtual float unk027( int nIndex ) = 0;
+	virtual void unk028( int nIndex, float flValue ) = 0;
 	virtual void unk029( const Vector4D &vColor ) = 0;
-	virtual void unk030() = 0;
+	virtual void unk030( float flValue ) = 0;
 
 	virtual CRnShape *GetRnShape() const = 0;
 	virtual int unk032() const = 0;
