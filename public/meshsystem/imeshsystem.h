@@ -79,7 +79,7 @@ public:
 	virtual void UpdateTranslucencyFlagsOnMaterialChange( CSceneObject *pSceneObject ) = 0;
 
 	// UpdateTranslucencyFlagsOnMaterialChange() with hMaterial in place of the material of every draw
-	virtual void unk028( CSceneObject *pSceneObject, ResourceHandle_t hMaterial ) = 0;
+	virtual void UpdateTranslucencyFlagsForMaterialOverride( CSceneObject *pSceneObject, ResourceHandle_t hMaterial ) = 0;
 	virtual CMeshInstance *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter, CModelMeshHandle hRenderMesh, int nSceneObjectIndex, uint64 nOriginalSceneObjectFlags, CSceneObject *pSceneObject, uint64 nMeshGroupMask, uint8 nLODGroupMask, const int16 *pLocalToMasterTable ) = 0;
 
 	// NULL unless EnableTraceLines() was called
@@ -100,11 +100,11 @@ public:
 
 	// Draw flags of a loaded material, computed from its attributes ("bShaderBlended", "NeedsDynamicShadows",
 	// "AlphaTestZPrepass", "ForceZPrepass", "BindlessResources", "DisableLODBlending", ...) and then passed through
-	// every callback added by unk037(); 0 when hMaterial is not loaded
-	virtual uint32 unk036( ResourceHandle_t hMaterial ) = 0;
+	// every callback added by AddMaterialFlagsCallback(); 0 when hMaterial is not loaded
+	virtual uint32 GetMaterialFlags( ResourceHandle_t hMaterial ) = 0;
 
-	// Adds pfnCallback to the callbacks of unk036() when it is not there yet and refreshes every loaded model
-	virtual void unk037( uint32 ( *pfnCallback )( IMaterial2 *pMaterial, uint32 nFlags ) ) = 0;
+	// Adds pfnCallback to the callbacks of GetMaterialFlags() when it is not there yet and refreshes every loaded model
+	virtual void AddMaterialFlagsCallback( uint32 ( *pfnCallback )( IMaterial2 *pMaterial, uint32 nFlags ) ) = 0;
 
 	// Appends CMeshSystem::m_unk0D0 to pOut under its lock
 	virtual void unk038( CUtlVector< CMeshInstance * > *pOut ) = 0;

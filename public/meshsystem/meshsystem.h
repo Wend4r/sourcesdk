@@ -25,8 +25,8 @@ public:
 	// CModelTypeManager, the "vmdl" resource type manager (three vtables)
 	void *m_modelTypeManager[ 14 ];
 
-	// Added by unk037(), applied by unk036()
-	CUtlVector< uint32 ( * )( IMaterial2 *pMaterial, uint32 nFlags ) > m_unk0A8;
+	// Added by AddMaterialFlagsCallback(), applied by GetMaterialFlags()
+	CUtlVector< uint32 ( * )( IMaterial2 *pMaterial, uint32 nFlags ) > m_MaterialFlagsCallbacks;
 
 	// Locks m_unk0D0
 	CAtomicMutex m_unk0C0;
