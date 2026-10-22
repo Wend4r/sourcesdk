@@ -29,7 +29,8 @@ abstract_class IGameUIRenderCallback
 public:
 	// Called before the layer's view is added: 0 has the layer call unk001 this frame, 2 removes the handler from the layer, other values skip it
 	virtual int unk000() = 0;
-	virtual void unk001( void *pUnk1, void *pUnk2 ) = 0;
+	// Gets the three arguments of the procedural layer renderer call unchanged
+	virtual void unk001( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 };
 
 abstract_class IGameUIService : public IEngineService
