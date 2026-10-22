@@ -286,6 +286,19 @@ struct SoundVoiceListener_t
 	bool m_bIsPaused;
 };
 
+//-----------------------------------------------------------------------------
+// Entry of ISoundSystem::GetVoicePositions; the mixer collects them for the voices it reports and keeps the list
+// of the last mix sorted by m_nId
+//-----------------------------------------------------------------------------
+struct SoundVoicePosition_t
+{
+	void *m_pUnk00;
+	// Playback position in seconds
+	float m_flPosition;
+	float m_flUnk0C;
+	uint16 m_nId;
+};
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -406,7 +419,8 @@ public:
 	// Reads the compiled vsnd file of pszName and decodes its samples
 	virtual bool ToolLoadVSnd( CSimplePCMWaveData *pWaveData, const char *pszName ) = 0;
 	virtual CUtlString GetSoundName( SoundGuid_t guid ) = 0;
-	virtual void unk100( void *pUnk ) = 0;
+	// Appends the entries of the last mix
+	virtual void GetVoicePositions( CUtlVector< SoundVoicePosition_t > &vecPositions ) = 0;
 	virtual void StartVoiceTrace() = 0;
 	virtual void StopVoiceTrace() = 0;
 	// Copies the recorded voice trace into pOut and clears it
