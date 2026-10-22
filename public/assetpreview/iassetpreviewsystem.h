@@ -28,6 +28,8 @@ class CToolSceneNode;
 class CQAssetPreviewToolSceneWidget;
 class CLightingControlRig;
 
+FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
+
 //-----------------------------------------------------------------------------
 // Previews created by IAssetPreviewSystem
 //-----------------------------------------------------------------------------
@@ -131,9 +133,11 @@ public:
 	virtual void ShowThumbnailCacheManager() = 0;
 
 	// Render through a tool scene with the editor camera. RenderAsset simulates particle systems
-	// first; RenderMaterialToPixels accepts only materials and writes nWidth * nHeight pixels of
+	// first and renders with the swap chain textures 0 and 1 of hSwapChain, reading the pixels back to pPixels when
+	// set; pRenderAttributes, when set, is merged into the attributes of the tool scene (nUnknown is not
+	// read). RenderMaterialToPixels accepts only materials and writes nWidth * nHeight pixels of
 	// IMAGE_FORMAT_RGBA8888 or IMAGE_FORMAT_RGB888 to pPixels, failing for other formats
-	virtual void RenderAsset( IAsset *pAsset, int nWidth, int nHeight, int nUnknown, void *pUnk5, void *pUnk6, void *pUnk7 ) = 0;
+	virtual void RenderAsset( IAsset *pAsset, int nWidth, int nHeight, int nUnknown, uint8 *pPixels, void *pRenderAttributes, SwapChainHandle_t hSwapChain ) = 0;
 	virtual bool RenderMaterialToPixels( IAsset *pMaterial, int nWidth, int nHeight, ImageFormat nFormat, uint8 *pPixels ) = 0;
 
 	// Updates the previews and the tool scene widgets every tools frame ("Asset Preview System")
