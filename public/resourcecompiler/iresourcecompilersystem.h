@@ -18,13 +18,16 @@
 #include "tier3/tier3dm.h"
 
 class IResourceCompileFileSystemInterface;
+class KeyValues;
 
 abstract_class IResourceCompilerSystem : public IAppSystem
 {
 public:
 	virtual bool GenerateResourceFile( const char *pInputFile, const void *pParams ) = 0;
 
-	virtual bool RecompileResource( const char *pInputFile, const char *pOverrideInputData, void *pUnk1, void *pUnk2 ) = 0;
+	// pParams are the compile parameters (string, int, float and pointer keys). The first virtual of
+	// pOutputCallback receives the compiled resource instead of the file being written when it is set
+	virtual bool RecompileResource( const char *pInputFile, const char *pOverrideInputData, void *pOutputCallback, KeyValues *pParams ) = 0;
 
 	virtual void *unk013( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 	virtual void *CalculateSpecialDependencyFingerprint( void *pResult, void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
