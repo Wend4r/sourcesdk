@@ -16,6 +16,7 @@
 #include "soundsystem/isoundopsystem.h"
 #include "soundsystem/soundflags.h"
 #include "tier0/platwindow.h"
+#include "tier0/utlbuffer.h"
 #include "tier0/utlmap.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
@@ -47,6 +48,7 @@ class ISteamUser;
 struct StartSoundParams_t;
 class CVSndParameterTable;
 class CUtlBuffer;
+struct ResourceFileHeader_t;
 struct VoiceContainerParamMem_t;
 struct VSound_t;
 
@@ -219,6 +221,22 @@ struct AudioInputStreamParams_t
 
 
 //-----------------------------------------------------------------------------
+// PCM samples of a decoded sound (ISoundSystem::ToolLoadVSnd)
+//-----------------------------------------------------------------------------
+class CSimplePCMWaveData
+{
+public:
+	uint16 m_nFormat;
+	uint32 m_nSampleRate;
+	uint32 m_nChannels;
+	uint32 m_nSampleCount;
+	uint32 m_nBits;
+	float m_flDuration;
+	CUtlBuffer m_pcmData;
+};
+
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #define SOUNDSYSTEM_INTERFACE_VERSION "SoundSystem001"
 
@@ -329,8 +347,10 @@ public:
 	virtual void UnloadSteamAudioScene( void *pKey ) = 0;
 	virtual bool DisableAudioMuting( float flDisableDurationSeconds ) = 0;
 	virtual void ResetMainGraphInputs() = 0;
-	virtual void *unk097( void *pUnk1, void *pUnk2 ) = 0;
-	virtual void unk098( void *pUnk, const char *pszUnk ) = 0;
+	// Builds the VSound_t of a compiled vsnd resource in pBuffer and returns it
+	virtual VSound_t *AllocVSound( const ResourceFileHeader_t *pHeader, CUtlVector< uint8 > *pBuffer ) = 0;
+	// Reads the compiled vsnd file of pszName and decodes its samples
+	virtual bool ToolLoadVSnd( CSimplePCMWaveData *pWaveData, const char *pszName ) = 0;
 	virtual CUtlString GetSoundName( SoundGuid_t guid ) = 0;
 	virtual void unk100( void *pUnk ) = 0;
 	virtual void StartVoiceTrace() = 0;
