@@ -70,11 +70,11 @@ public:
 	};
 
 	virtual EUniverse GetSteamUniverse() const = 0;
-	virtual CPlayerSlot GetPlayerSlotByNetworkIDString( const char *pszNetworkID ) = 0;
-	virtual const char *GetPlayerNetworkIDString( CPlayerSlot nSlot ) = 0;
-	virtual CPlayerSlot GetLocalPlayer( bool bUnk = false ) = 0;
-	virtual CPlayerSlot GetLastValidPlayerSlot( bool bUnk = false ) = 0;
-	virtual bool IsPlayerSlotActive( CPlayerSlot nSlot ) = 0;
+	virtual WorldGroupId_t FindWorldGroupByName( const char *pszName ) = 0;
+	virtual const char *GetWorldGroupName( WorldGroupId_t hWorldGroupId ) = 0;
+	virtual WorldGroupId_t GetFirstWorldGroupId( bool bClientSide ) = 0;
+	virtual WorldGroupId_t MaxWorldGroupId( bool bClientSide ) = 0;
+	virtual bool IsWorldGroupValid( WorldGroupId_t hWorldGroupId ) = 0;
 	virtual float &GetFrameTime() = 0;
 	virtual void SetFrameTimeAmnesty( const char *pszReason, int nFrames, float flDuration ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool bCheckCvar ) = 0;
