@@ -254,10 +254,10 @@ public:
 	virtual void SetSoundVolume( SoundGuid_t guid, float flVolume ) = 0;
 	virtual bool IsSoundLooped( SoundGuid_t guid ) = 0;
 	virtual CSfxTable *PrecacheSound( const char *pSample ) = 0;
-	virtual void PreloadSoundEvent( CSoundEvent *pSoundEvent, uint16 nUnk ) = 0;
-	virtual void PreloadSoundEvent( const char *pSoundEventName, uint16 nUnk ) = 0;
-	virtual void PreloadSound( CSfxTable *pSfx, uint16 nUnk ) = 0;
-	virtual void PreloadSound( const char *pSoundName, uint16 nUnk ) = 0;
+	virtual void PreloadSoundEvent( CSoundEvent *pSoundEvent, int16 nPriority ) = 0;
+	virtual void PreloadSoundEvent( const char *pSoundEventName, int16 nPriority ) = 0;
+	virtual void PreloadSound( CSfxTable *pSfx, int16 nPriority ) = 0;
+	virtual void PreloadSound( const char *pSoundName, int16 nPriority ) = 0;
 	// snd_gain attenuated by the distance multiplier of the sound level
 	virtual float GetGainFromSoundLevel( soundlevel_t nSoundLevel, float flDistance, float flUnk ) = 0;
 	virtual void SetMixGroupOfCurrentMixer( const char *pszGroupName, const char *pszParam, float flValue ) = 0;
