@@ -47,6 +47,7 @@ class ISoundSystemServices;
 class ISteamUser;
 struct StartSoundParams_t;
 class CVSndParameterTable;
+class CVoiceTraceKV3;
 class CUtlBuffer;
 struct ResourceFileHeader_t;
 struct VoiceContainerParamMem_t;
@@ -237,6 +238,36 @@ public:
 
 
 //-----------------------------------------------------------------------------
+// Voice settings of ISoundSystem::StartVoice and UpdateVoice. The names are the keys the voice trace
+// writes them under.
+//-----------------------------------------------------------------------------
+struct SoundVoiceParams_t
+{
+	float m_flMasterVolume;
+	float m_flPitch;
+	float m_flSeekTime;
+	float m_flMaxVolumeChangePerBuffer;
+	float m_flSystemVolumeFadeRate;
+	float m_flTimeScale;
+	// A start sample other than 0 schedules the start on the sample clock
+	uint32 m_nStartSample;
+	uint8 m_nChannelSelect;
+	sound_voice_layer_t m_nLayer;
+	bool m_bShouldPause;
+};
+
+//-----------------------------------------------------------------------------
+// What ISoundSystem::StartVoice and UpdateVoice apply, either part may be null
+//-----------------------------------------------------------------------------
+struct SoundVoicePlayback_t
+{
+	SoundVoiceParams_t *m_pVoice;
+	// Origin, room and facing DSP sends, volume, send list and mix groups of the voice (layout not recovered)
+	void *m_pStack;
+};
+
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #define SOUNDSYSTEM_INTERFACE_VERSION "SoundSystem001"
 
@@ -357,21 +388,27 @@ public:
 	virtual void StopVoiceTrace() = 0;
 	// Copies the recorded voice trace into pOut and clears it
 	virtual void GetVoiceTrace( void *pOut ) = 0;
-	virtual SoundGuid_t unk104( int nUnk1, int nUnk2, void *pUnk ) = 0;
-	virtual void unk105( SoundGuid_t guid, void *pUnk ) = 0;
-	virtual void unk106( uint32 nUnk, void *pUnk ) = 0;
-	virtual void unk107( uint32 nUnk, void *pUnk ) = 0;
-	virtual void unk108( SoundGuid_t guid, uint16 nUnk ) = 0;
-	virtual void unk109( void *pUnk1, void *pUnk2 ) = 0;
-	virtual void unk110( void *pUnk ) = 0;
-	virtual void *unk111( void *pUnk ) = 0;
+	// Voices driven directly, recorded by the voice trace as "startVoice", "updateVoice", "graph", "startSubvoice",
+	// "stopSubvoice", "listener" and "mainGraph". pInputs holds the control and name inputs of a graph.
+	virtual SoundGuid_t StartVoice( FileNameHandle_t hVSndName, CUtlStringToken nGraphName, const SoundVoicePlayback_t *pPlayback ) = 0;
+	virtual void UpdateVoice( SoundGuid_t guid, const SoundVoicePlayback_t *pPlayback ) = 0;
+	virtual void SetVoiceGraphInputs( SoundGuid_t guid, const void *pInputs ) = 0;
+	virtual void StartSubvoice( SoundGuid_t guid, const void *pSubvoice ) = 0;
+	virtual void StopSubvoice( SoundGuid_t guid, uint16 nSubvoiceId ) = 0;
+	// pListener holds the origin, angles, left and right hand positions and a flag
+	virtual void SetListenerAndMainGraphInputs( const void *pListener, const void *pInputs ) = 0;
+	// Time of the last frame, a count summed over the frames and the frame count of the active voice trace
+	virtual void GetVoiceTraceSummary( void *pSummary ) = 0;
+	// Writes a trace taken with GetVoiceTrace as KeyValues3 frames
+	virtual CVoiceTraceKV3 *CreateVoiceTraceKV3( const void *pTrace ) = 0;
 	// Wakes the mixer of the current device
 	virtual void OnFrameBoundary() = 0;
 	// Writes the state of the active voices and sound events as text
 	virtual void OutputDebugInfo( CUtlBuffer &buf ) = 0;
 	virtual float GetSoundEventElapsedTime( SoundEventGuid_t guid ) = 0;
 	virtual void unk115( bool bUnk ) = 0;
-	virtual void unk116() = 0;
+	// The sample clock base of StartVoice with a start sample resyncs on the next such start
+	virtual void ResetVoiceStartSampleBase() = 0;
 	// While enabled the output device keeps the peak of the samples it writes
 	virtual void EnableOutputPeakMeter() = 0;
 	virtual void DisableOutputPeakMeter() = 0;
