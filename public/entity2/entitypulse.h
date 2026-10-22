@@ -20,6 +20,7 @@ class CEntityClass;
 class CEntityInstance;
 class CPulseAPIExtensionRegistrationContext;
 class CPulseExecCursor;
+class CKV3TransferSaveContext;
 class KeyValues3;
 class CPulseArgumentPack;
 class CPulseInputParamMap;
@@ -150,8 +151,10 @@ struct PulseMethodArg_t
 
 	uint16 m_nMetadataCount;
 	PulseBindingMetadata_t* m_pMetadata;
-	void* m_pfnUnk0060;
-	void* m_pUnk0068;
+	// Adds entries to the argument's metadata table when the binding is described to the editor
+	void ( *m_pfnAddMetadata )( KeyValues3 *pMetadata );
+	// Writes "default_value" in place of m_DefaultValue when set
+	void ( *m_pfnSaveDefaultValue )( CKV3TransferSaveContext *pContext );
 };
 
 // A view of a static argument array, returned by value
