@@ -440,7 +440,8 @@ public:
 	// sound event
 	virtual void UnpreloadSound( CSfxTable *pSfx ) = 0;
 	virtual void UnpreloadSound( CSoundEvent *pSoundEvent ) = 0;
-	virtual HSound CreateProceduralSound( const char *pName, void *pUnk ) = 0;
+	// Registers *ppSound as the procedural vsnd resource pName and takes it over, *ppSound is cleared
+	virtual HSound CreateProceduralSound( const char *pName, VSound_t **ppSound ) = 0;
 	// Runs the function now or queues it for the next update
 	virtual void QueueFunction( std::function< void() > func ) = 0;
 };
