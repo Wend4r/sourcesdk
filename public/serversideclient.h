@@ -178,7 +178,6 @@ public:
 	CPlayerBitVec m_VoiceProximity;
 	CCheckTransmitInfo m_PackInfo;
 	CClientFrameManager m_FrameManager;
-	void *m_pUnk0EC8;
 	CClientFrame *m_pCurrentFrame;
 
 	// AMNOTE: Move messages in the current packet, the client is disconnected when there's more than one
