@@ -97,7 +97,7 @@ public:
 	virtual CUtlString GetUserSettingsFileName( const char *pszName, bool *pbExists, bool bNoCfgDir ) = 0;
 	virtual void AppendChordModifiers( CUtlString &sName, int nChord ) = 0;
 
-	// Flag checked when printing convar values
+	// When set, an input convar value that fails to parse asserts instead of warning
 	virtual void unk058( bool bUnk ) = 0;
 	// Empty in this build
 	virtual void unk059() = 0;
