@@ -85,8 +85,8 @@ public:
 	virtual uint32 GetLongFrameCount() = 0;
 	virtual bool GetPlayerInfo( int nPlayerIndex, CMsgPlayerInfo *pInfo ) = 0;
 	virtual CPlayerUserId GetPlayerUserId( int nPlayerIndex ) = 0;
-	// Player slot the network game client holds for nSlot ( -1 reads slot 0 )
-	virtual CPlayerSlot unk034( CSplitScreenSlot nSlot ) = 0;
+	// -1 reads split screen slot 0
+	virtual CPlayerSlot GetLocalPlayer( CSplitScreenSlot nSlot ) = 0;
 	virtual CSplitScreenSlot GetSplitScreenSlotForPlayer( CPlayerSlot nPlayerSlot ) = 0;
 	virtual float GetLastTimeStamp() = 0;
 	virtual int GetLastServerTick() = 0;
