@@ -30,7 +30,10 @@ public:
 	// 2 from MOD for a "<prefix>/<name>" context name, passing <prefix> to the file lookup
 	virtual void LoadHelpContext( const char *pContextName, int nLocation ) = 0;
 
-	virtual void RegisterElementHelp( void *p ) = 0;
+	// pGameData is a collection of entity classes (vector of classes first): loads the help contexts it lists and
+	// sets the default name and help of "Element.<class>" and of each class variable in the help
+	// context of the class
+	virtual void RegisterElementHelp( void *pGameData ) = 0;
 
 	virtual IHelpDisplayWidget *CreateHelpDisplayWidget( QWidget *pParent ) = 0;
 
