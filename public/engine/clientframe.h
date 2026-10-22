@@ -37,8 +37,8 @@ public:
 
 	// Used by server to indicate if the entity was in the player's pvs
 	CBitVec<MAX_EDICTS>	transmit_entity; // if bit n is set, entity n will be send to client
-	CBitVec<MAX_EDICTS>	unkBitVec2080;
-	CBitVec<MAX_EDICTS>	unkBitVec4128;
+	CBitVec<MAX_EDICTS>	non_transmit_entity;
+	CBitVec<MAX_EDICTS>	transmit_out_of_pvs;
 	CBitVec<MAX_EDICTS>	*transmit_always; // if bit is set, don't do PVS checks before sending (HLTV only)
 };
 
