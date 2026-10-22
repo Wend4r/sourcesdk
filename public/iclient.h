@@ -123,7 +123,8 @@ public:
 	virtual int GetClientTickCount() const = 0;
 	virtual int GetServerTickCount() const = 0;
 	virtual int unk007() = 0;
-	virtual int unk008() = 0;
+	// Tick of the last CNETMsg_Tick, logged as the "s" tick by cl_clockdbg
+	virtual int GetServerTick() = 0;
 	// last_cmd_number_executed of the last CSVCMsg_PacketEntities
 	virtual int GetLastCommandNumberExecuted() = 0;
 	// Flag of the command history entry, for commands up to the last executed one
@@ -148,8 +149,8 @@ public:
 	// Run the game client's frame stage notifications 10 and 11
 	virtual void OnServerPostSimulate( const EventServerPostSimulate_t &event ) = 0;
 	virtual void OnServerBeginAsyncPostTickWork( const EventServerBeginAsyncPostTickWork_t &event ) = 0;
-	// Value of a 2-entry float table per index, clamped to -9.9 from below
-	virtual float unk030( int nIndex, bool bUnk ) = 0;
+	// cl_ticktiming stage time in seconds, the last sample or its running average, clamped to -9.9 from below
+	virtual float GetTickTiming( int nTiming, bool bSmoothed ) = 0;
 	virtual void RequestServerStatus( CSplitScreenSlot nSlot ) = 0;
 	virtual void ForceFullUpdate( const char *pszReason ) = 0;
 	virtual void PrintSpawnGroupStatus() const = 0;
@@ -350,7 +351,7 @@ public:
 	CAtomicMutex m_unk348;
 	uint64 m_unk358[ 10 ];
 	int m_nClientTick;
-	int m_nUnk3AC;
+	int m_nServerTick;
 	ISource2WorldSession *m_pWorldSession;
 	IGameSpawnGroupMgr *m_pSpawnGroupMgr;
 	bool m_bUnk3C0;
