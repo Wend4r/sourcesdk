@@ -85,10 +85,10 @@ public:
 	// NULL unless EnableTraceLines() was called
 	virtual IMeshRayTrace *FindOrCreateMeshRayTrace( const CRenderMesh *pMesh ) = 0;
 	virtual void GetToolsGeometryInfo( const CRenderMesh *pRenderMesh, const void **ppOutTraceData ) = 0;
-	// Subtracts the vertex, index and "VertexPaintBlendParams" sizes of the buffer description p from the mesh
-	// memory counters when EnableTraceLines() was called; the animation system calls it for every 112-byte
-	// description of an array before freeing it
-	virtual void unk031( const void *p ) = 0;
+	// Subtracts the vertex, index and "VertexPaintBlendParams" sizes of the 112-byte trace data from the counters
+	// of mesh_trace_data_memory_report when EnableTraceLines() was called; the animation system calls it for
+	// every trace data of an array before freeing it
+	virtual void UntrackTraceDataMemory( const void *pTraceData ) = 0;
 	virtual CSmartPtr< CRenderMesh > CreateRenderMesh( const char *pName ) = 0;
 	virtual void InvalidateMeshRayTrace( CRenderMesh *pRenderMesh ) = 0;
 	// Loads the model resource pModelName without its external references, compiling it through p first
