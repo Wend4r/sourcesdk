@@ -189,7 +189,7 @@ public:
 
 	// Resources of a type that wants it get an AsyncPreFinalize call from an "AsyncPreFinalize" thread pool job
 	virtual bool WantsAsyncPreFinalize() { return false; }
-	virtual void AsyncPreFinalize( ResourceHandle_t hResource, int nUnknown ) {}
+	virtual void AsyncPreFinalize( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
 
 	// Gates the GetNonStreamingDataLoadSize and LoadStreamingData calls
 	virtual bool HasStreamingData() { return false; }
@@ -200,7 +200,8 @@ public:
 	virtual void DeallocateResource( void *pData, IResourceDeallocatorUtils *pUtils ) {}
 	virtual void NotifyResourceWithWorkPendingLoadCancelled( ResourceHandle_t hResource, void *pData ) {}
 	virtual bool UsesData() const { return false; }
-	virtual bool unk017( ResourceHandle_t hResource ) { return true; }
+	// A resource of a type with streaming data gets a LoadStreamingData call when this returns false
+	virtual bool IsStreamingDataLoaded( ResourceHandle_t hResource ) { return true; }
 	virtual bool WantsAsyncProcessData() const { return false; }
 	virtual std::unique_ptr< IAsyncProcessedDataResult > AsyncProcessData( ResourceHandle_t hResource, const ResourceFileHeader_t *pHeader ) { return nullptr; }
 
