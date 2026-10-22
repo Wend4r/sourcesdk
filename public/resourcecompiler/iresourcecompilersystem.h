@@ -29,12 +29,14 @@ public:
 	// pOutputCallback receives the compiled resource instead of the file being written when it is set
 	virtual bool RecompileResource( const char *pInputFile, const char *pOverrideInputData, void *pOutputCallback, KeyValues *pParams ) = 0;
 
-	virtual void *unk013( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
-	virtual void *CalculateSpecialDependencyFingerprint( void *pResult, void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
+	// pModName is the game directory whose gameinfo.gi the compiler can query; a "<game>_addons" directory
+	// uses the one of <game>
+	virtual void *unk013( const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
+	virtual void *CalculateSpecialDependencyFingerprint( void *pResult, const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 
 	// The compiler's string for the special dependency in pOut; without such a compiler pOut is the
 	// dependency itself
-	virtual const char *GetSpecialDependencyString( void *pUnk, const char *pCompilerName, const char *pSpecialDependency, int nUserData, CBufferString *pOut ) = 0;
+	virtual const char *GetSpecialDependencyString( const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData, CBufferString *pOut ) = 0;
 
 	virtual void *CalculateSpecialInputDependencyFingerprint( void *pResult, void *pUnk1, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, void *pUnk2 ) = 0;
 
