@@ -207,17 +207,39 @@ public:
 class CAssetPreviewSystem : public CTier3DmAppSystem< IAssetPreviewSystem >
 {
 public:
+	// Embedded preview rendered live onto a page of m_LivePreviewPages
+	struct EmbeddedLivePreview_t
+	{
+		QWidget *m_pWidget;
+		void *m_pLivePreview;
+		IAsset *m_pAsset;
+
+		// Page and rectangle the widget copies its pixmap from, the page is -1 while the widget is hidden
+		int m_nPage;
+		int m_nX;
+		int m_nY;
+		int m_nWidth;
+		int m_nHeight;
+
+		uint8 m_unk02C[ 0x1C ];
+	};
+
 	// Tool scene widgets of the previews, run by RunFrame
 	CUtlVector< IToolFrameListener * > m_ToolFrameListeners;
 
 	CUtlVector< IAssetPreviewSettingsChangedListener * > m_SettingsChangedListeners;
 	CUtlDict< IToolSceneNodeControllerFactory * > m_ToolSceneNodeControllerFactories;
 
-	// Embedded previews: 72-byte entries (thumbnail widget, tool scene widget of the live
-	// preview, asset, ...) and the objects deleted by Shutdown
-	uint8 m_unk080[ 0x18 ];
-	uint8 m_unk098[ 0x18 ];
-	uint8 m_unk0B0[ 0x10 ];
+	CUtlVector< EmbeddedLivePreview_t > m_EmbeddedLivePreviews;
+
+	// Pages of the size of the monitor resolution the live previews are rendered to, deleted by Shutdown
+	CUtlVector< QPixmap * > m_LivePreviewPages;
+	int m_nLivePreviewPageWidth;
+	int m_nLivePreviewPageHeight;
+
+	// Plat_FloatTime of the last live preview render
+	float m_flLastLivePreviewRenderTime;
+	uint8 m_unk0BC[ 4 ];
 
 	// CThreadEvent, whose size differs between the platforms
 	uint8 m_unk0C0[ 0x10 ];
