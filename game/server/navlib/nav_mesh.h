@@ -139,10 +139,26 @@ schema struct CNavHullVData
 class CNavGenParams
 {
 public:
-	// One entry of HullParams: a hull's agent settings and its name.
+	// One entry of HullParams: a hull's agent settings and its name. The settings are those of
+	// CNavHullVData in another order, as the nav file reader and the NavAgent*_N gameinfo keys
+	// store them.
 	struct HullParams_t
 	{
-		CNavHullVData m_Hull;
+		bool m_bAgentEnabled;
+		float m_flAgentRadius;
+		int m_nAgentBorderErosion;
+		float m_flAgentHeight;
+		bool m_bAgentShortHeightEnabled;
+		float m_flAgentShortHeight;
+		bool m_bAgentCrawlEnabled;
+		float m_flAgentCrawlHeight;
+		float m_flAgentMaxClimb;
+		int m_nAgentMaxSlope;
+		float m_flAgentMaxJumpDownDist;
+		float m_flAgentMaxJumpHorizDistBase;
+		float m_flAgentMaxJumpUpDist;
+		bool m_bFlowMapGenerationEnabled;
+		float m_flFlowMapNodeMaxRadius;
 		CUtlString m_sName;
 	};
 
