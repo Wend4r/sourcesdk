@@ -111,7 +111,7 @@ private:
 public:
 	// IDs of the nav link areas (dynamic attribute 0x200) the path goes through, whose segments
 	// get type 7.
-	CUtlVectorFixedGrowable< uint32, 2 > m_Unk4810;
+	CUtlVectorFixedGrowable< uint32, 2 > m_NavLinkAreaIds;
 
 	int m_PathResultStatus;
 	bool m_bUnk4834;
@@ -131,21 +131,27 @@ public:
 		// Ignored, with its owner, by the traces that check the path
 		CBaseEntity *m_pPassEntity;
 		const INavPathCost *m_pPathCost;
+		// The goal segment added after a partial path is cut to what is left of this length;
+		// -1 for no limit.
+		float m_flMaxPathLength;
 		// -1 until set.
-		float m_flUnk18;
 		float m_flUnk1C;
-		// 1 until set.
-		float m_flUnk20;
-		float m_flUnk24;
-		bool m_bUnk28;
+		// A step that rises more than this gets a climb segment; the bots pass their hull's
+		// agent max climb. 1 until set.
+		float m_flMaxClimb;
+		// Height of the box traced down from above the climb to find where it ends. 1 until set.
+		float m_flClimbTraceHeight;
+		// A path that ends as PATH_PARTIAL counts as computed instead of being invalidated
+		bool m_bAllowPartialPath;
 	};
 
 	const INavPathCost *GetPathCost() const { return m_Query.m_pPathCost; }
 
 public:
 	Query_t m_Query;
-	// Passed to the goal area search; true until set.
-	bool m_bUnk4868;
+	// Passed to the start and goal area searches, which then stop one ring of grid cells after
+	// the first area found instead of covering their whole range; true until set.
+	bool m_bStopNearestAreaSearchAtFirstHit;
 	// Run over computed paths when set, unless disabled by a convar.
 	CPathOptimizer *m_pOptimizer;
 	// Null at construction and never set by the game. When set, slot 0 is called with the
