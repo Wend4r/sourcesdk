@@ -199,14 +199,15 @@ struct audio_listener_vectors_t
 struct SndInfo_t
 {
 	SoundGuid_t m_nGuid;
-	int m_nUnk04;
+	// File name of the sfx of the voice
+	FileNameHandle_t m_hFileName;
 	int m_nUnk08;
 	int m_nUnk0C;
 	float m_flVolume;
+	// Percent
 	int m_nPitch;
-	uint64 m_nUnk18;
-	int m_nUnk20;
-	int m_nUnk24;
+	Vector m_vecOrigin;
+	float m_flUnk24;
 };
 
 
