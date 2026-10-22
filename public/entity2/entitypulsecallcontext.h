@@ -6,29 +6,6 @@
 #include "tier0/utlleanvector.h"
 #include "tier0/utlvector.h"
 
-class CPulseCallContextValue
-{
-public:
-	CPulseCallContextValue() : m_pValue( nullptr ) {}
-	CPulseCallContextValue( const CPulseCallContextValue &other ) : CPulseCallContextValue() { *this = other; }
-	~CPulseCallContextValue() { SetType( CPulseValueFullType() ); }
-
-	CPulseCallContextValue &operator=( const CPulseCallContextValue &other );
-
-	bool IsStoredInline() const;
-	void *GetData() { return IsStoredInline() ? static_cast< void * >( &m_pValue ) : m_pValue; }
-	const void *GetData() const { return IsStoredInline() ? static_cast< const void * >( &m_pValue ) : m_pValue; }
-
-	// Replaces the value with a default one of the new type
-	void SetType( const CPulseValueFullType &type );
-
-	void VariantCompatibility_SetPulseVariantFromEntityVariant( const CVariant &value );
-	void VariantCompatibility_SetEntityVariantFromPulseVariant( CVariant &value ) const;
-
-public:
-	void *m_pValue;
-	CPulseValueFullType m_Type;
-};
 COMPILE_TIME_ASSERT( sizeof( CPulseCallContextValue ) == 32 );
 
 class CPulseCallContextInfo
