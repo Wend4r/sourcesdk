@@ -36,7 +36,9 @@ struct ResourceTypeRegistration_t
 	ResourceBindingBase_t m_ErrorResource;
 	const char *m_pResourceTypeName;
 	HGameResourceManifest m_hErrorManifest;
-	uint8 m_pad058[ 0x4 ];
+
+	// Counted by the frame update when FrameUpdate of the type manager runs too long
+	int m_nLongFrameUpdateCount;
 
 	// Cached from the type manager by InstallTypeManager
 	bool m_bUsesData;
@@ -48,7 +50,17 @@ struct ResourceTypeRegistration_t
 	bool m_bWantsAsyncPreFinalize;
 	bool m_bNeedsFrameUpdate;
 	bool m_bWantsFlushNotifications;
-	uint8 m_pad062[ 0x46 ];
+
+	// Load statistics printed by rs_dump_stats, times in microseconds
+	int m_nLoadCount;
+	int64 m_nAllocTime;
+	int64 m_nFinalizeTime;
+	int64 m_nAsyncTime;
+	int64 m_nLoadedSize;
+	int m_nStreamingLoadCount;
+	int64 m_nStreamingLoadedSize;
+	int64 m_nStreamingCallbackTime;
+	int64 m_nStreamingAsyncCallbackTime;
 };
 
 // Bindings keyed by their resource id, split into 4 submaps picked by the hash, each an
