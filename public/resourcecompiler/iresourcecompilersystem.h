@@ -14,6 +14,7 @@
 #include "tier0/bufferstring.h"
 #include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
+#include "tier0/utlmap.h"
 #include "appframework/iappsystem.h"
 #include "tier3/tier3dm.h"
 
@@ -64,27 +65,43 @@ public:
 class CResourceCompilerSystem : public CTier3DmAppSystem< IResourceCompilerSystem >
 {
 public:
-	bool m_bUnk028;
+	// -v: also passed to IP4::SetVerbose and to the compile contexts
+	bool m_bVerbose;
 
 	// Results of RecompileResource, as in the compile summary
 	int m_nCompiledCount;
 	int m_nSkippedCount;
 	int m_nFailedCount;
 
-	uint8 m_unk038[ 0x10 ];
-	CUtlString m_sUnk048;
-	CUtlString m_sUnk050;
-	void *m_pUnk058;
+	int m_nInitCount;
+	int m_nConnectCount;
+	CreateInterfaceFn m_pConnectFactory;
+
+	// Default Perforce changelists of the input files and of the compiled files a compile adds,
+	// "Tools Auto-Checkout" for the compiled ones; GenerateResourceFile parameters override them
+	CUtlString m_sInputFilesChangelist;
+	CUtlString m_sOutputFilesChangelist;
+
+	// Asset types loaded from assettypes_common.txt (and assettypes_internal.txt) by Init
+	void *m_pAssetConfig;
+
 	CUtlVector< CUtlString > m_vecUnk060;
-	CUtlVector< CUtlString > m_vecUnk078;
-	uint8 m_unk090[ 0x48 ];
+
+	// File extensions given with -skiptype
+	CUtlVector< CUtlString > m_SkipTypes;
+
+	// A CUtlHashtable with 8-byte keys that only the destructor touches
+	uint8 m_unk090[ 0x20 ];
+
+	// gameinfo.gi of each mod name the compilers query, a "<game>_addons" mod shares the one of <game>
+	CUtlOrderedMap< const char *, KeyValues *, CDefFastCaselessStringLess > m_GameInfos;
 
 	// Vector of 48-byte compile messages that carry their severity (1 warning, 2 error)
 	uint8 m_CompileMessages[ 0x18 ];
 
-	// Warning and error counts added to the compile summary
-	int m_nUnk0F0;
-	int m_nUnk0F4;
+	// Warnings and errors that were not logged because there were too many, added to the compile summary
+	int m_nUnloggedWarningCount;
+	int m_nUnloggedErrorCount;
 };
 
 #endif // IRESOURCECOMPILERSYSTEM_H
