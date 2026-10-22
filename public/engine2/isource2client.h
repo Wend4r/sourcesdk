@@ -336,7 +336,7 @@ public:
 	// Total and custom game Steam UGC subscription counts for the crash dump comment; zeroes them and returns false
 	virtual bool GetUGCSubscriptionCounts( uint32 *pnSubscriptionCounts ) = 0;
 	// Asked for the addon id when "AddonConfig/AllowAddonDownload" is set; the engine handles the results 1 and 2
-	virtual int unk138( uint64 nAddonId ) = 0;
+	virtual int DownloadWorkshopAddon( uint64 nAddonId ) = 0;
 	virtual bool unk139( const char **ppszUnk, int nUnk, CUtlString *pOut ) = 0;
 	// Entity list of the client entity system, summarized in the crash dump comment
 	virtual CConcreteEntityList *GetEntityList() = 0;
