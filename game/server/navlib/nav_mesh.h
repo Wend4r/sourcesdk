@@ -377,9 +377,9 @@ public:
 	// Empty in the game's meshes; given the nav file's KeyValues3 block for versions 31 to 35.
 	virtual void unk030( const KeyValues3 *pKV ) = 0;
 	// Forwards to SaveNavGenHullParams.
-	virtual void unk031( KeyValues3 *pKV ) const = 0;
-	// Forwards to LoadNavGenHullParams.
-	virtual void unk032( const KeyValues3 *pKV ) = 0;
+	virtual void SaveHullParams( KeyValues3 *pKV ) const = 0;
+	// Forwards to LoadNavGenHullParams; LoadNavMesh calls it with the nav file's KeyValues3 block.
+	virtual void LoadHullParams( const KeyValues3 *pKV ) = 0;
 	// Empty in the game's meshes; called by BuildFromNavGen once the areas are added.
 	virtual void ReadNavGenMarkup( const CNavGenInput &input ) = 0;
 	// NavGenParams.HullParams: the Name, FlowMap_Enabled and FlowMap_NodeMaxRadius of every
