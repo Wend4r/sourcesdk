@@ -51,7 +51,8 @@ public:
 	// The video.cfg settings in use
 	virtual KeyValues *GetVideoConfig() = 0;
 
-	virtual KeyValues *unk026() = 0;
+	// The backup of the video config file ("cfg\\video.txt.bak"), loaded once; NULL when there is none
+	virtual KeyValues *GetBackupVideoConfig() = 0;
 
 	virtual int GetMonitorIndex() = 0;
 
@@ -69,7 +70,8 @@ public:
 
 	virtual bool GetVideoMemoryInfo( int nAdapter, uint64 *pBudgetInBytesOut, uint64 *pUsageInBytesOut, uint64 *pRenderSystemUsageInBytesOut ) = 0;
 
-	virtual void AppendMinidumpInfo( CMiniDumpComment *pComment, uint32 nUnk ) = 0;
+	// The flag 4 in nFlags adds the resident texture memory and the "setting." values of the video config
+	virtual void AppendMinidumpInfo( CMiniDumpComment *pComment, uint32 nFlags ) = 0;
 
 	// Highest DX level the device supports (110, 111, 120)
 	virtual int GetMaxDXLevel() = 0;
