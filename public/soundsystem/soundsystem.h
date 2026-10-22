@@ -82,7 +82,8 @@ public:
 		int m_nActiveListenerCount;
 		// Set when any active listener is underwater
 		bool m_bAnyListenerUnderwater;
-		bool m_bUnk131;
+		// 0 pauses with m_bPaused, 2 always pauses, other values never pause; SetIgnorePause stores its bool
+		uint8 m_nPauseOverride;
 		audio_listener_vectors_t m_ListenerVectors[ 4 ];
 	} m_AudioState;
 

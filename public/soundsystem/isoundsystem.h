@@ -375,8 +375,9 @@ public:
 	virtual bool FadeOutSoundEventVoice( SoundEventGuid_t guid, float flFadeTime, sound_fade_type_t nFadeType ) = 0;
 	virtual CAudioState *GetAudioState() = 0;
 	virtual bool IsSoundPlaying( SoundEventGuid_t guid ) = 0;
-	virtual void unk087( bool bUnk ) = 0;
-	virtual bool unk088() = 0;
+	// Clears or sets CAudioState::m_bMuteGame of the frame state, the next Update copies the flag from its state again
+	virtual void SetGameLayerEnabled( bool bEnabled ) = 0;
+	virtual bool IsGameLayerEnabled() = 0;
 	virtual bool IsMuted() = 0;
 	// Plays a wave file through the operating system
 	virtual void PlaySystemSound( const char *pWavFile ) = 0;
@@ -414,7 +415,8 @@ public:
 	// Writes the state of the active voices and sound events as text
 	virtual void OutputDebugInfo( CUtlBuffer &buf ) = 0;
 	virtual float GetSoundEventElapsedTime( SoundEventGuid_t guid ) = 0;
-	virtual void unk115( bool bUnk ) = 0;
+	// Keeps the voices playing while the game is paused
+	virtual void SetIgnorePause( bool bIgnorePause ) = 0;
 	// The sample clock base of StartVoice with a start sample resyncs on the next such start
 	virtual void ResetVoiceStartSampleBase() = 0;
 	// While enabled the output device keeps the peak of the samples it writes
