@@ -128,7 +128,7 @@ public:
 	virtual int GetServerTick() = 0;
 	// last_cmd_number_executed of the last CSVCMsg_PacketEntities
 	virtual int GetLastCommandNumberExecuted() = 0;
-	// Flag of the command history entry, for commands up to the last executed one
+	// CNetworkGameClient::CommandHistoryEntry_t::m_bUnk30 of the command, for commands up to the last executed one
 	virtual bool unk010( int nCommandNumber ) = 0;
 	virtual void SetFrameTime( float flFrameTime ) = 0;
 	virtual void Connect( CSplitScreenSlot nSlot, int nSocket, const ns_address &addr ) = 0;
@@ -237,7 +237,8 @@ public:
 	virtual void unk077() = 0;
 	virtual void unk078() = 0;
 	virtual void unk079() = 0;
-	virtual float unk080() = 0;
+	// CNetworkGameClient::m_flAsyncMoveSendDelay
+	virtual float GetAsyncMoveSendDelay() = 0;
 	// Logs "SentTickSync"
 	virtual void SendTickSync() = 0;
 	virtual void unk082() = 0;
@@ -390,6 +391,23 @@ public:
 class CNetworkGameClient : public CNetworkGameClientBase, public ISwitchLoopModeStatusNotify
 {
 public:
+	// Send and receive record of one user command, indexed by the low byte of its number
+	struct CommandHistoryEntry_t
+	{
+		int m_nCommandNumber;
+		// ISource2Client::GetCommandTime of the command
+		double m_flCommandTime;
+		double m_flUnk10;
+		// Copies of m_flLastMoveSendTime and m_nLastMoveSequenceNr taken when the entry is filled
+		double m_flSendTime;
+		float m_flUnk20;
+		int m_nSendSequenceNr;
+		// Receive margin the server reported for the command ("User command %d recv on server ..."), FLT_MAX until then
+		float m_flServerRecvMargin;
+		int m_nUnk2C;
+		bool m_bUnk30;
+	};
+
 	// Last slot of the Linux primary vtable; on Windows only in the notify vtable
 	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nUnk, bool bSuccess ) override = 0;
 
@@ -411,22 +429,28 @@ public:
 	int m_nLastCommandNumberReceived;
 	int m_unk2C3590[ 8 ];
 	CUtlString m_unk2C35B0;
-	uint8 m_unk2C35B8[ 256 ][ 56 ];
+	CommandHistoryEntry_t m_CommandHistory[ 256 ];
 	void *m_unk2C6DB8;
 	uint8 m_unk2C6DC0[ 2 ][ 1196 ];
 	float m_flUnk2C7718;
 	uint8 m_unk2C771C[ 0x385C ];
-	uint8 m_unk2CAF78[ 0x2000 ];
-	bf_write m_unk2CCF78;
-	void *m_unk2CCFA0;
+	// Buffer of m_MoveMessage, the datagram SendMove transmits ("ClientSendMove")
+	uint8 m_MoveMessageData[ 0x2000 ];
+	bf_write m_MoveMessage;
+	// Range of the user commands written to m_MoveMessage ("SentTickAsync   cmds %d...%d")
+	int m_nMoveFirstCommandNumber;
+	int m_nMoveLastCommandNumber;
 	int m_nUnk2CCFA8;
-	void *m_unk2CCFB0;
-	CAtomicMutex m_unk2CCFB8;
+	// Time the asynchronous move send was requested; the send callback warns when it runs more than 10 ms later
+	double m_flAsyncMoveSendRequestTime;
+	CAtomicMutex m_AsyncMoveSendMutex;
 	uint64 m_unk2CCFC8[ 3 ];
-	int m_nUnk2CCFE0;
-	void *m_unk2CCFE8;
+	// Sequence number and Plat_FloatTime() of the last move datagram, -1 when it could not be sent
+	int m_nLastMoveSequenceNr;
+	double m_flLastMoveSendTime;
 	float m_flUnk2CCFF0;
-	float m_flUnk2CCFF4;
+	// Lateness of the asynchronous move send, raised to new peaks (up to 10 ms) and decayed on every send
+	float m_flAsyncMoveSendDelay;
 	void *m_unk2CCFF8;
 	CMsgSource2NetworkFlowQuality m_NetworkFlowQuality[ 2 ];
 	void *m_unk2CD260[ 2 ];
