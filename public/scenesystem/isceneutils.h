@@ -103,19 +103,22 @@ public:
 	virtual void unk051() = 0;
 	virtual void unk052() = 0;
 	virtual void GPUSort( void *p ) = 0;
-	virtual void unk054() = 0;
+	// Fills the "HairVolumeInfoBuffer" constant buffer and dispatches "HairShadowTileCompute".
+	virtual void DispatchHairShadowTileCompute( void *p ) = 0;
 	virtual std::shared_ptr< CRenderGraphBuilder > CreateRenderGraphBuilder( void *pUnk ) = 0;
 	virtual IProceduralLayerRenderer *CreateSimplePostProcessingLayerRenderer( const void *pUnk, bool bUnk ) = 0;
 	virtual IProceduralLayerRenderer *CreateQuadRenderer( HMaterialWeak hMaterial, const VertexColor_t &modulationColor, const RenderViewport_t &viewport ) = 0;
-	virtual void unk058() = 0;
+	// Builds the "EyeBallDataConstants_t" constant buffer from the "eye_data_list" of a model.
+	virtual void CreateEyeballDataConstants( void *p ) = 0;
 
 	// Adds a CSignalSemaphoreRenderer layer named "<pszLayerName>Layer"
 	virtual void AddSignalSemaphoreLayerToView( ISceneView *pView, void *pUnk, const char *pszLayerName, bool bUnk ) = 0;
 
-	// Same as AddSignalSemaphoreLayerToView, with the layer flag 0x8000000 set as well
-	virtual void unk060( ISceneView *pView, void *pUnk, const char *pszLayerName, bool bUnk ) = 0;
+	// Same as AddSignalSemaphoreLayerToView, with the layer flag that puts the layer on the compute queue
+	virtual void AddComputeSignalSemaphoreLayerToView( ISceneView *pView, void *pUnk, const char *pszLayerName, bool bUnk ) = 0;
 
-	virtual void unk061() = 0;
+	// Adds the "DrawDepthOpaque", "DrawDepthNeedsDynamic", "DrawDepthAlphaTest", "DrawDepthTranslucent" and "DrawDepth Fade" layers to the view
+	virtual void AddDepthLayersToView( ISceneView *pView, const void *pUnk, const SceneLayerOutputs_t &outputs ) = 0;
 };
 
 #endif // ISCENEUTILS_H
