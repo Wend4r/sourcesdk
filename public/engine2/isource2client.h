@@ -396,7 +396,8 @@ public:
 	virtual bool ShouldCreateMoveEveryFrame() = 0;
 	virtual void unk177() = 0;
 	virtual void unk178() = 0;
-	virtual float unk179() = 0;
+	// cl_interp_ratio clamped to sv_client_min_interp_ratio and sv_client_max_interp_ratio, in seconds
+	virtual float GetClientInterpAmount() = 0;
 	// Forwards to an object owned by the client entity system
 	virtual void unk180() = 0;
 	// The engine passes the contents of a ".evidence" demo file, which the Overwatch UI component decodes in place
