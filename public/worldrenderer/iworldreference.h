@@ -36,8 +36,8 @@ public:
 	virtual void PrecacheAllWorldNodes( bool bBlockUntilFinished ) = 0;
 	virtual bool GetCompileFingerprint( uint64 *pOutTime, uint64 *pOutFingerprint ) const = 0;
 
-	// Shows or hides the scene objects of every world layer.
-	virtual void unk016( bool bVisible ) = 0;
+	// Shows or hides the scene objects of every world layer
+	virtual void SetAllWorldLayersVisibility( bool bVisible ) = 0;
 
 	// Same result as GetWorldBounds, copied out through temporaries.
 	virtual bool unk017( Vector &vecMins, Vector &vecMaxs ) const = 0;
