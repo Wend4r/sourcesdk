@@ -99,7 +99,8 @@ public:
 
 	virtual Vector GetWorldAxis() const = 0;
 
-	virtual float unk040() const = 0;
+	// True for the block solver joint variants (CRnRevoluteBlockJoint, CRnPrismaticBlockJoint and CRnBlockWeldJoint)
+	virtual bool UsesBlockSolver() const = 0;
 };
 
 abstract_class IFnPhysicsPrismaticJoint : public IFnPhysicsJoint
@@ -132,7 +133,8 @@ public:
 	virtual float GetVelocity() const = 0;
 	virtual Vector GetWorldAxis() const = 0;
 
-	virtual float unk039() const = 0;
+	// True for the block solver joint variants (CRnRevoluteBlockJoint, CRnPrismaticBlockJoint and CRnBlockWeldJoint)
+	virtual bool UsesBlockSolver() const = 0;
 };
 
 abstract_class IFnPhysicsWeldJoint : public IFnPhysicsJoint
@@ -151,7 +153,8 @@ public:
 	virtual void SetMaxTorque( float flMaxTorque ) = 0;
 	virtual float GetMaxTorque() const = 0;
 
-	virtual float unk031() const = 0;
+	// True for the block solver joint variants (CRnRevoluteBlockJoint, CRnPrismaticBlockJoint and CRnBlockWeldJoint)
+	virtual bool UsesBlockSolver() const = 0;
 };
 
 abstract_class IFnPhysicsSpringJoint : public IFnPhysicsJoint
@@ -282,7 +285,8 @@ public:
 	virtual void SetMaxAngularImpulse( JointAxis_t nAxis, float flMaxImpulse ) = 0;
 	virtual float GetMaxAngularImpulse( JointAxis_t nAxis ) const = 0;
 
-	virtual float unk036() const = 0;
+	// True for the block solver joint variants (CRnRevoluteBlockJoint, CRnPrismaticBlockJoint and CRnBlockWeldJoint)
+	virtual bool UsesBlockSolver() const = 0;
 };
 
 // The 32-byte result of IFnPhysicsSplineJoint::unk036 (16-byte vector at +16); only its size and alignment are known
