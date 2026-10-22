@@ -46,13 +46,31 @@ public:
 		bool m_bDirty;
 	};
 
+	// One poll of a joystick
+	struct JoystickState_t
+	{
+		int16 m_nAxisValues[ MAX_JOYSTICK_AXES ];
+
+		// One bit per pressed button, per pressed POV direction and per axis direction past the threshold
+		uint32 m_nButtons;
+		uint32 m_nPOVButtons;
+		uint32 m_nAxisButtons;
+	};
+
 	struct JoystickInfo_t
 	{
 		// SDL id from the device event that added the joystick, printed by "initializing SDL joystick" and matched by the removal event
 		uint32 m_nSDLJoystickID;
-		uint8 m_pad004[ 0x3C ];
+
+		// SDL joystick opened for that id; polled for the axes and buttons and closed on removal
+		void *m_pJoystick;
+
+		JoystickState_t m_State;
+
+		// The previous poll; the button events are posted for the bits that differ from it
+		JoystickState_t m_PrevState;
+
 		bool m_bDiagonalPOVControlEnabled;
-		uint8 m_pad041[ 0x7 ];
 	};
 
 	struct CursorEntry_t;
