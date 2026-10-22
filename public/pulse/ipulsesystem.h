@@ -154,8 +154,8 @@ struct ALIGN16 PulseGraphHookCall_t
 abstract_class IPulseCursorListener
 {
 public:
-	// Key of the listener's table in the saved state of a cursor
-	virtual CKV3MemberName unk000() = 0;
+	// Key of the listener's table under "listeners" in the saved state of a cursor
+	virtual CKV3MemberName GetName() = 0;
 
 	virtual void SaveCursorState( CPulseExecCursor *pCursor, CKV3TransferSaveContext *pContext ) = 0;
 	virtual void LoadCursorState( CPulseExecCursor *pCursor, CKV3TransferLoadContext *pContext ) = 0;
@@ -176,12 +176,13 @@ public:
 	virtual HPulseGraphDefWeak GetBlackboardResource() = 0;
 	virtual PulseSymbol_t GetBlackboardResourceName() = 0;
 
-	virtual void unk005( PulseGraphInstanceID_t id ) = 0;
-	virtual void unk006( PulseGraphInstanceID_t id ) = 0;
+	// Graph instances notified when an observable variable of the blackboard changes
+	virtual void AddObservableVariableListener( PulseGraphInstanceID_t listenerID ) = 0;
+	virtual void RemoveObservableVariableListener( PulseGraphInstanceID_t listenerID ) = 0;
 
 	// The read-only view saves its values, rebuilds itself from its resource and loads them back; empty in the view of a
 	// graph instance
-	virtual void unk007() = 0;
+	virtual void ReloadFromResource() = 0;
 
 	// The graph instance whose variables the view shows; null for a read-only view
 	virtual CBasePulseGraphInstance *GetGraphInstance() = 0;
