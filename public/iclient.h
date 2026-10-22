@@ -124,8 +124,10 @@ public:
 	virtual int GetServerTickCount() const = 0;
 	virtual int unk007() = 0;
 	virtual int unk008() = 0;
-	virtual int unk009() = 0;
-	virtual bool unk010( int nUnk ) = 0;
+	// last_cmd_number_executed of the last CSVCMsg_PacketEntities
+	virtual int GetLastCommandNumberExecuted() = 0;
+	// Flag of the command history entry, for commands up to the last executed one
+	virtual bool unk010( int nCommandNumber ) = 0;
 	virtual void SetFrameTime( float flFrameTime ) = 0;
 	virtual void Connect( CSplitScreenSlot nSlot, int nSocket, const ns_address &addr ) = 0;
 	virtual void Disconnect( ENetworkDisconnectionReason reason ) = 0;
@@ -398,7 +400,11 @@ public:
 	float m_flTickRemainder;
 	float m_flUnk2C3570;
 	float m_flFrameTime;
-	int m_unk2C3578[ 14 ];
+	int m_unk2C3578[ 4 ];
+	int m_nLastCommandNumberExecuted;
+	// m_nLastCommandNumberExecuted plus last_cmd_number_recv_delta of the last CSVCMsg_PacketEntities
+	int m_nLastCommandNumberReceived;
+	int m_unk2C3590[ 8 ];
 	CUtlString m_unk2C35B0;
 	uint8 m_unk2C35B8[ 256 ][ 56 ];
 	void *m_unk2C6DB8;
