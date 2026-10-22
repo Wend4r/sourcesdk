@@ -98,9 +98,11 @@ struct RenderDeviceInfo_t
 	// RenderDisplayModeFlags_t
 	uint8 m_nModeUsage;
 
-	uint8 m_unk026_0 : 1;
+	uint8 m_bUseStencil : 1;
 	uint8 m_bWaitForVSync : 1;
-	uint8 m_unk026_2 : 3;
+	uint8 m_bScaleToOutputResolution : 1;
+	uint8 m_bProgressive : 1;
+	uint8 m_bUsingMultipleWindows : 1;
 	uint8 m_bIsMainWindow : 1;
 	uint8 m_unk026_6 : 2;
 	uint8 m_pad027[ 1 ];
