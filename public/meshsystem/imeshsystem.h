@@ -115,8 +115,9 @@ public:
 	virtual int FindInputIndex( ResourceHandle_t hMaterial, const char *pszName ) = 0;
 	virtual int FindInputIndex( ResourceHandle_t hMaterial, CUtlStringToken token ) = 0;
 
-	// Texture of the material when it has the attribute that enables it, read by FindInputIndex()
-	virtual CWeakHandle< InfoForResourceTypeCTextureBase > unk042( ResourceHandle_t hMaterial ) = 0;
+	// "DecalSheetTexture" of the material when a bool attribute enables it, its sheet is what FindInputIndex()
+	// searches
+	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetDecalSheetTexture( ResourceHandle_t hMaterial ) = 0;
 
 	virtual ~IMeshSystem() {}
 };
