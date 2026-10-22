@@ -266,8 +266,8 @@ public:
 	// No-op in this build; the client passes CUserMessageLagCompensationError::distance
 	virtual void unk177( float flLagCompensationError ) = 0;
 	// Adds or removes a command name (hashed lower-case) from the set of commands that the
-	// client handles before they are forwarded to the server
-	virtual void unk178( const char *pszCommand, bool bEnable ) = 0;
+	// engine passes to ISource2Client::PredictStringCommand before they are forwarded to the server
+	virtual void SetPredictedStringCommand( const char *pszCommand, bool bPredicted ) = 0;
 	// Clears the flag that allows connecting to secure servers
 	virtual void DisallowSecureServers() = 0;
 	virtual void SendVProfLiteReportToServer( void *pReport ) = 0;
@@ -287,8 +287,8 @@ public:
 	// Set by SetRestrictClientCommands; ClientCommand applies it unless bUnrestricted is set
 	bool m_bRestrictClientCommands;
 
-	// Hashes of lower-case command names, added and removed by unk178
-	CUtlSortVector< uint32 > m_Unk0028;
+	// Hashes of lower-case command names, added and removed by SetPredictedStringCommand
+	CUtlSortVector< uint32 > m_PredictedStringCommands;
 };
 
 typedef IVEngineClient2 IVEngineClient;
