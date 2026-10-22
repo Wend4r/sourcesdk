@@ -312,6 +312,82 @@ abstract_class IDataDescConvertor : public CRefCounted<>
 {
 };
 
+// A joint of physics aggregate data converted from VPhysXJoint_t by IVPhysics2::ConvertAggregateData
+struct PhysicsAggregateJointDef_t
+{
+	PhysicsJointType_t m_nType;
+
+	// -3 when the joint has JOINT_FLAGS_BODY1_FIXED
+	int m_nBody1;
+	CTransform m_Frame1;
+	int m_nBody2;
+	CTransform m_Frame2;
+	bool m_bEnableCollision;
+	CUtlString m_Tag;
+};
+
+// The joint friction is VPhysXJoint_t::m_flFriction when it is positive, otherwise it is derived from the maximal force or torque and the mass of m_nBody2
+struct PhysicsAggregateSphericalJointDef_t : public PhysicsAggregateJointDef_t
+{
+	float m_flFriction;
+};
+
+struct PhysicsAggregateConicalJointDef_t : public PhysicsAggregateJointDef_t
+{
+	float m_flFriction;
+
+	// In degrees
+	bool m_bEnableSwingLimit;
+	float m_flSwingLimit;
+	bool m_bEnableTwistLimit;
+	float m_flMinTwistAngle;
+	float m_flMaxTwistAngle;
+};
+
+struct PhysicsAggregateRevoluteJointDef_t : public PhysicsAggregateJointDef_t
+{
+	float m_flFriction;
+
+	// In degrees
+	bool m_bEnableLimit;
+	float m_flMinAngle;
+	float m_flMaxAngle;
+
+	bool m_bUseBlockSolver;
+};
+
+struct PhysicsAggregatePrismaticJointDef_t : public PhysicsAggregateJointDef_t
+{
+	float m_flFriction;
+
+	bool m_bEnableLimit;
+	float m_flMinOffset;
+	float m_flMaxOffset;
+};
+
+struct PhysicsAggregateWeldJointDef_t : public PhysicsAggregateJointDef_t
+{
+	float m_flLinearFrequency;
+	float m_flLinearDampingRatio;
+	float m_flAngularFrequency;
+	float m_flAngularDampingRatio;
+};
+
+// Filled by IVPhysics2::ConvertAggregateData; the joints are sorted into one list per type
+struct PhysicsAggregateDef_t
+{
+	CUtlVector< PhysicsBodyDef_t > m_Bodies;
+	CUtlVector< PhysShapeMarkup_t > m_ShapeMarkups;
+	CUtlVector< PhysicsAggregateSphericalJointDef_t > m_SphericalJoints;
+
+	// Both QUAT_ORTHOTWIST_JOINT and CONICAL_JOINT joints, converted to CONICAL_JOINT
+	CUtlVector< PhysicsAggregateConicalJointDef_t > m_ConicalJoints;
+	CUtlVector< PhysicsAggregateRevoluteJointDef_t > m_RevoluteJoints;
+	CUtlVector< PhysicsAggregatePrismaticJointDef_t > m_PrismaticJoints;
+	CUtlVector< PhysicsAggregateWeldJointDef_t > m_WeldJoints;
+	CUtlVector< PhysicsAggregateJointDef_t > m_NullJoints;
+};
+
 // The pair of hull features IVPhysics2::unk053 returns, 16 bytes in two integer registers on Linux; only its size is known
 struct VPhysics2Unk053_t
 {
@@ -446,15 +522,18 @@ public:
 	virtual void AddDataReference( CPhysAggregateData *pData ) = 0;
 	virtual void ReleaseDataReference( CPhysAggregateData *pData ) = 0;
 
-	virtual bool unk084( CUtlVector< PhysicsBodyDef_t > &bodies, const VPhysXAggregateData_t *pAggregateData ) = 0;
+	// Converts the bodies, the shape markups and the joints; false without aggregate data
+	virtual bool ConvertAggregateData( PhysicsAggregateDef_t &aggregate, const VPhysXAggregateData_t *pAggregateData ) = 0;
 
 	virtual void ConvertBodies( CUtlVector< PhysicsBodyDef_t > &bodies, const VPhysXAggregateData_t *pAggregateData ) = 0;
 
 	virtual void ConvertBody( PhysicsBodyDef_t &body, const VPhysXAggregateData_t *pAggregateData, int nPartIndex ) = 0;
 
-	// Both are called for every body part of loaded aggregate data, unk088 only when unk087 returns true
-	virtual bool unk087( VPhysics2ShapeDef_t *pShape ) = 0;
-	virtual void unk088( VPhysXBodyPart_t *pPart ) = 0;
+	// Called for every body part of aggregate data without packed compounds and shape markups, before setting m_bCompoundsPacked.
+	// PackCompounds groups the shapes of a part without compounds and with at least 20 shapes into compounds and returns true when
+	// it did; the part's m_CollisionAttributeIndices are then rebuilt from the collision attribute indices of its shapes
+	virtual bool PackCompounds( VPhysics2ShapeDef_t *pShape ) = 0;
+	virtual void UpdateCollisionAttributeIndices( VPhysXBodyPart_t *pPart ) = 0;
 
 	virtual CPhysAggregateDataHandle CreateAggregateDataFromDiskData( VPhysXAggregateData_t *pDiskDataRoot ) = 0;
 

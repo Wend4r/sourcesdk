@@ -13,6 +13,7 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/globalsymbol.h"
 #include "tier0/utlleanvector.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlvector.h"
@@ -83,6 +84,16 @@ schema struct VPhysXBodyPart_t
 	float m_flAngularDrag;
 	bool m_bOverrideMassCenter;
 	Vector m_vMassCenterOverride;
+};
+
+// Hit group of one shape of a body part
+schema struct PhysShapeMarkup_t
+{
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	int32 m_nBodyInAggregate;
+	int32 m_nShapeInBody;
+	CGlobalSymbol m_sHitGroup;
 };
 
 schema struct VPhysXAggregateData_t
