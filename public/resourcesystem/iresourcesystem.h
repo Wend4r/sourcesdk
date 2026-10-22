@@ -145,7 +145,7 @@ public:
 	virtual bool IsBlockingOnManifestLoad() = 0;
 
 	// Rebuilds the external reference list of the resource from the references of the given types
-	virtual void unk004( ResourceHandle_t hResource, int nTypeCount, const ResourceType_t *pTypes ) = 0;
+	virtual void RebuildExternalReferences( ResourceHandle_t hResource, int nTypeCount, const ResourceType_t *pTypes ) = 0;
 };
 
 class IRD_RegisterResourceDataUtils;
