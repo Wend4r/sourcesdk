@@ -104,24 +104,30 @@ struct SteamAudioUnk038_t
 	Vector m_vecSize;
 };
 
-// Pathing result of ISteamAudio::unk043
-struct SteamAudioUnk043_t
+// Pathing result of ISteamAudio::SimulatePathing; the coefficient arrays belong to CSteamAudio
+struct SteamAudioPathingResult_t
 {
-	int m_nUnk00;
-	Vector *m_pUnk08;
-	int m_nUnk10;
-	float *m_pUnk18;
+	int m_nEQBandCount;
+	float *m_pEQCoeffs;
+	int m_nSHCoeffCount;
+	float *m_pSHCoeffs;
 	float m_flUnk20;
-	float m_flUnk24;
-	float m_flUnk28;
-	float m_flUnk2C;
+	// Converted back from Steam Audio coordinates
+	Vector m_vecDirection;
 };
 
-// Direct simulation result of ISteamAudio::unk045
-struct SteamAudioUnk045_t
+// Direct simulation result of ISteamAudio::SimulateDirect, from the IPLDirectEffectParams of the source
+struct SteamAudioDirectParams_t
 {
-	float m_flUnk00[ 10 ];
+	float m_flDistanceAttenuation;
+	float m_flAirAbsorption[ 3 ];
+	float m_flUnk10;
+	float m_flOcclusion;
+	float m_flTransmission[ 3 ];
+	float m_flDirectivity;
 };
+
+struct IPLPerspectiveCorrection;
 
 // Draws one segment of a simulated sound path
 typedef void ( *SteamAudioPathVisualizationFn_t )( const Vector &vecFrom, const Vector &vecTo, bool bOccluded );
@@ -173,10 +179,15 @@ public:
 	virtual void GetCustomDataBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioUnk041_t *pCustomDataSettings, int32 *pRebakeOption ) = 0;
 	// Number of simulation threads from the CPU information
 	virtual int GetSimulationThreadCount() = 0;
-	virtual SteamAudioUnk043_t unk043( const Vector &vecUnk1, const Vector &vecUnk2, bool bUnk1, bool bUnk2, bool bUnk3, int nSource, SteamAudioPathVisualizationFn_t pfnVisualize, bool *pbUnk ) = 0;
-	virtual float unk044( const Vector &vecUnk1, const Vector &vecUnk2, float flUnk, int nUnk ) = 0;
-	virtual SteamAudioUnk045_t unk045( const Vector &vecUnk1, const Vector &vecUnk2, const void *pUnk ) = 0;
-	virtual void *unk046() = 0;
+	// Runs iplSimulatorRunPathingPerSource for the source; bUseEQ takes the simulated EQ instead of a flat one, bNormalize
+	// scales the SH coefficients by the first one, pbPathFound is set when the first SH coefficient is positive
+	virtual SteamAudioPathingResult_t SimulatePathing( const Vector &vecUnk1, const Vector &vecUnk2, bool bUnk1, bool bUseEQ, bool bNormalize, int nSource, SteamAudioPathVisualizationFn_t pfnVisualize, bool *pbPathFound ) = 0;
+	// Fraction of nSamples traces between points spread over a disc of flRadius around both ends that are not blocked
+	virtual float ComputeOcclusion( const Vector &vecStart, const Vector &vecEnd, float flRadius, int nSamples ) = 0;
+	// Runs iplSimulatorRunDirect for one source
+	virtual SteamAudioDirectParams_t SimulateDirect( const Vector &vecSource, const Vector &vecListener, const void *pParams ) = 0;
+	// Perspective correction SetListenerOrigin builds from the view (snd_steamaudio_perspective_correction_factor)
+	virtual const IPLPerspectiveCorrection *GetPerspectiveCorrection() = 0;
 	virtual IImpulseResponse *CreateImpulseResponse() = 0;
 	virtual void unk048( const Vector &vecUnk ) = 0;
 	virtual ISteamAudioSimulationData *CreateSimulationData() = 0;
@@ -256,6 +267,14 @@ struct IPLSimulationSettings
 	uint64 m_nUnk60;
 };
 
+struct IPLPerspectiveCorrection
+{
+	bool enabled;
+	float32 xfactor;
+	float32 yfactor;
+	VMatrix transform;
+};
+
 class CSteamAudioPartitioner;
 class CSteamAudioReverbSimulator;
 
@@ -290,11 +309,7 @@ public:
 	int m_nUnk17C;
 	int m_nUnk180;
 
-	// Returned by unk046
-	bool m_bUnk184;
-	float m_flUnk188;
-	float m_flUnk18C;
-	VMatrix m_Unk190;
+	IPLPerspectiveCorrection m_PerspectiveCorrection;
 
 	// Source registry: next id, free ids, id to IPLSource hash map (container not identified)
 	int m_nNextSourceId;
@@ -303,7 +318,7 @@ public:
 	CThreadFastMutex m_UnkMutex240;
 	CThreadFastMutex m_UnkMutex24C;
 
-	// Pathing output of unk043 and the tables the constructor fills with constants (layout not resolved)
+	// Pathing output of SimulatePathing and the tables the constructor fills with constants (layout not resolved)
 	int m_nUnk258;
 	int m_nUnk25C;
 	uint64 m_Unk260[ 81 ];
