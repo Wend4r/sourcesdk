@@ -34,13 +34,16 @@ public:
 
 		uint64 m_nXUID;
 		int m_nSequence;
-		int m_nUnk0C;
-		int m_nUnk10;
-		double m_flUnk18;
+		// Offset of the last played block in the sequence and the offset the next block has to start at
+		int m_nLastOffset;
+		int m_nNextOffset;
+		// Time of the last accepted packet, packets of an older sequence are dropped for 10 seconds after it
+		double m_flLastReceiveTime;
 		uint16 m_nLevel;
-		CUtlVector< uint8 > m_Unk28;
-		CUtlString m_Unk40;
-		CUtlVector< BufferedVoiceData_t > m_Unk48;
+		// Data of the blocks that wait for their turn
+		CUtlVector< uint8 > m_BufferedData;
+		CUtlString m_sSoundNameOverride;
+		CUtlVector< BufferedVoiceData_t > m_BufferedBlocks;
 	};
 
 	CConCommandMemberAccessor< CSoundService > m_PlaySoundCommand;
