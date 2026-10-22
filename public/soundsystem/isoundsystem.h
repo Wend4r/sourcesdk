@@ -212,7 +212,8 @@ struct SndInfo_t
 	// Percent
 	int m_nPitch;
 	Vector m_vecOrigin;
-	float m_flUnk24;
+	// Seconds the voice has played, 0 when the mixer has no timing entry for it
+	float m_flElapsedTime;
 };
 
 
