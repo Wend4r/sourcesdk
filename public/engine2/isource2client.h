@@ -387,8 +387,8 @@ public:
 	// True when the class name of the entity or of one of its base classes is pszClassName
 	virtual bool IsEntity2OfClass( CEntityIndex nEntityIndex, const char *pszClassName ) = 0;
 
-	// Forward to the input system
-	virtual bool unk176() = 0;
+	// Forwards to the input system; true makes the engine create and send a move every client frame instead of only on new ticks
+	virtual bool ShouldCreateMoveEveryFrame() = 0;
 	virtual void unk177() = 0;
 	virtual void unk178() = 0;
 	virtual float unk179() = 0;
@@ -400,13 +400,16 @@ public:
 	virtual void unk182( const CSVCMsg_UserCommands_t *pMsg ) = 0;
 	virtual void unk183( const CSVCMsg_UserCommands_t *pMsg ) = 0;
 
-	// Forward to the input system
-	virtual bool unk184() = 0;
-	virtual void unk185( CSplitScreenSlot nSlot, int *pnUnk ) = 0;
-	virtual void unk186( CSplitScreenSlot nSlot, int *pnUnk ) = 0;
-	// The engine asks the first one before it runs a key binding of an input button and calls the second one after it
-	virtual bool unk187( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
-	virtual void unk188( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
+	// Forward to the input system. True makes the engine wrap the key binding commands of one input event in "__beginseq" and "__endseq"
+	virtual bool ShouldSequenceInputEvents() = 0;
+	// Called with the commands of one input event sequence before and after the engine runs them; the first one
+	// drops the whole sequence when it combines several movement commands
+	virtual void BeginInputEvent( CSplitScreenSlot nSlot, CUtlVector< CCommand * > *pCommands ) = 0;
+	virtual void EndInputEvent( CSplitScreenSlot nSlot, CUtlVector< CCommand * > *pCommands ) = 0;
+	// The engine asks the first one before it runs a key binding of an input button and calls the second one after it.
+	// True ignores a movement command that follows another one in the same input event
+	virtual bool ShouldIgnoreButtonCommand( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
+	virtual void OnButtonCommandExecuted( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
 
 	// Called with the new net channel of the connection
 	virtual void OnNetChannelCreated( INetChannel *pNetChannel, int nUnk, bool bUnk ) = 0;
