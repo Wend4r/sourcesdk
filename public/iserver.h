@@ -269,13 +269,7 @@ public:
 	}
 
 public:
-	struct ResourceGroupVector_t
-	{
-		CUtlVector<CUtlString> m_Vec;
-		bool m_bAutoPurge;
-	};
-
-	ResourceGroupVector_t m_ResourceGroups;
+	WorldGroupList_t m_WorldGroups;
 
 	server_state_t m_State;
 	int m_nRefCount;

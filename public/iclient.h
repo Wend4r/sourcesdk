@@ -324,7 +324,9 @@ public:
 	virtual void CL_ClearState( bool bUnk ) = 0;
 
 public:
-	uint8 m_unk050[ 0x40 ];
+	// Server-side and client-side world groups of the connection
+	WorldGroupList_t m_WorldGroups;
+	WorldGroupList_t m_ClientSideWorldGroups;
 	CGlobalVarsBase m_GlobalVars;
 	uint8 m_unk0F0[ 0x60 ];
 	CUtlVector< void * > m_unk150;
