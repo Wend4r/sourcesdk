@@ -97,10 +97,11 @@ public:
 
 	matrix3x4a_t m_transform;
 
-	// Set to -1 by the constructor.
-	int m_nUnk050;
-	int m_nUnk054;
-	int m_nUnk058;
+	// Set to -1 by the constructor. The frame scoped transform written for the object, the one of the frame
+	// before, and the GetFinishRenderingViewsCounter value of the frame it was written in.
+	int m_nTransformIndex;
+	int m_nPrevTransformIndex;
+	int m_nTransformFrame;
 
 	float m_flStartFadeDistanceSquared;
 	float m_flFarCullDistanceSquared;
@@ -122,7 +123,10 @@ public:
 	uint8 m_nSizeCullBloat : 2;
 	uint8 m_nBoundsType : 1;
 	uint8 m_bIsDeleted : 1;
-	uint8 m_nUnk08A : 2;
+
+	// Drops m_nPrevTransformIndex when the next transform is written.
+	uint8 m_bResetPrevTransform : 1;
+	uint8 m_nUnk08A : 1;
 
 	// Index into the object classes of ISceneSystem::FindOrCreateSceneObjectClass.
 	uint8 m_nObjectClass;
