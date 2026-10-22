@@ -136,19 +136,19 @@ public:
 		m_bInGame = false;
 		m_bPaused = false;
 		m_bMuted = false;
-		m_bUnk20_3 = false;
-		m_bUnk20_4 = false;
+		m_bMuteGame = false;
+		m_bMuteUI = false;
 		m_bMuteTools = false;
 
 		for ( int i = 0; i < 4; i++ )
 		{
 			m_Listeners[ i ].m_vecOrigin.Init();
 			m_Listeners[ i ].m_angAngles.Init();
-			m_Listeners[ i ].m_vecUnk18.Init();
-			m_Listeners[ i ].m_vecUnk24.Init();
+			m_Listeners[ i ].m_vecHandLeft.Init();
+			m_Listeners[ i ].m_vecHandRight.Init();
 			m_Listeners[ i ].m_nViewEntity = -1;
 			m_Listeners[ i ].m_nUnk34 = -1;
-			m_Listeners[ i ].m_bUnk38_0 = false;
+			m_Listeners[ i ].m_bIsUnderwater = false;
 			m_Listeners[ i ].m_bActive = false;
 		}
 	}
@@ -163,9 +163,10 @@ public:
 	// INetworkGameClient::IsPaused
 	bool m_bPaused : 1;
 	bool m_bMuted : 1;
-	// Both set from the game mute of IToolFramework2::GetAudioMuteState; DisableAudioMuting clears only the second one
-	bool m_bUnk20_3 : 1;
-	bool m_bUnk20_4 : 1;
+	// Silence the game and the UI voice layers; both set from the game mute of IToolFramework2::GetAudioMuteState,
+	// DisableAudioMuting clears only m_bMuteUI
+	bool m_bMuteGame : 1;
+	bool m_bMuteUI : 1;
 	// Tools mute of IToolFramework2::GetAudioMuteState
 	bool m_bMuteTools : 1;
 
@@ -174,11 +175,11 @@ public:
 	{
 		Vector m_vecOrigin;
 		QAngle m_angAngles;
-		Vector m_vecUnk18;
-		Vector m_vecUnk24;
+		Vector m_vecHandLeft;
+		Vector m_vecHandRight;
 		int m_nViewEntity;
 		int m_nUnk34;
-		bool m_bUnk38_0 : 1;
+		bool m_bIsUnderwater : 1;
 		bool m_bActive : 1;
 	} m_Listeners[ 4 ];
 };

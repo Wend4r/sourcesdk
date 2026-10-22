@@ -80,7 +80,8 @@ public:
 		float m_flGameVoiceVolume;
 		float m_flVoipVolume;
 		int m_nActiveListenerCount;
-		bool m_bUnk130;
+		// Set when any active listener is underwater
+		bool m_bAnyListenerUnderwater;
 		bool m_bUnk131;
 		audio_listener_vectors_t m_ListenerVectors[ 4 ];
 	} m_AudioState;
