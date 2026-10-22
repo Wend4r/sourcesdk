@@ -34,8 +34,8 @@ public:
 	// Waited for and released when the material is finalized
 	CUtlLeanVector< StaticComboVcsLoad_t *, int > m_staticComboLoadRequests;
 
-	// Set by IMaterialSystem2::unk030(), returned by unk028()
-	CStrongHandleBase m_unk060;
+	// Set by IMaterialSystem2::CreateMaterialReferencingResource(), returned by GetReferencedResource()
+	CStrongHandleBase m_hReferencedResource;
 
 	// Frame count of the material system when GetMode() was last called
 	uint32 m_nLastFrameUsed;

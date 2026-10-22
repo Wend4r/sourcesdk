@@ -100,8 +100,9 @@ public:
 	// Creates a material derived from an already loaded one, applying overrides on top of it.
 	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, ResourceHandle_t hSrcMaterial, KeyValues3 *pOverrides, int nFlags, bool bCreateAsync ) = 0;
 
-	// Creates a material from the KeyValues3 description pData and keeps a strong reference to hResource in it ( see IMaterial2::unk028() )
-	virtual HMaterialWeak unk030( const char *pMaterialName, KeyValues3 *pData, ResourceHandle_t hResource, bool bUnk ) = 0;
+	// Creates a material from the KeyValues3 description pData and keeps a strong reference to hResource in it
+	// ( see IMaterial2::GetReferencedResource() ). bCheckValid is passed to the lookups of the texture parameters
+	virtual HMaterialWeak CreateMaterialReferencingResource( const char *pMaterialName, KeyValues3 *pData, ResourceHandle_t hResource, bool bCheckValid ) = 0;
 
 	// Value of setting.shaderquality
 	virtual int GetShaderQuality() = 0;
@@ -116,7 +117,8 @@ public:
 
 	virtual bool GetKV3MaterialDescription( ResourceHandle_t hMaterial, KeyValues3 *pKV ) = 0;
 
-	virtual void unk037( ResourceHandle_t hMaterial, CUtlVector< ResourceHandle_t > *pResources ) = 0;
+	// Appends the textures of the texture parameters; nothing for a fallback material
+	virtual void GetMaterialTextures( ResourceHandle_t hMaterial, CUtlVector< ResourceHandle_t > *pTextures ) = 0;
 
 	virtual void AddShaderReloadListener( IShaderReloadListener *pListener ) = 0;
 	virtual void RemoveShaderReloadListener( IShaderReloadListener *pListener ) = 0;
@@ -128,16 +130,17 @@ public:
 	virtual void RequestTextureMipLevels( int nCount, IMaterial2 *const *ppMaterials, const uint16 *pValues ) = 0;
 
 	// Loaded material whose unique id (CMaterial2::m_nUniqueId) is nUniqueId
-	virtual HMaterialWeak unk043( uint32 nUniqueId ) = 0;
+	virtual HMaterialWeak FindMaterialByUniqueId( uint32 nUniqueId ) = 0;
 
 	// "pc" or "vulkan" depending on the render device
-	virtual void unk044( CUtlString &sName ) = 0;
+	virtual void GetShaderPlatformName( CUtlString &sName ) = 0;
 
+	// Index into the shader platforms "PC_SM_5_0", "PC_SM_5_0_VULKAN" and "PC_SM_6_0_VULKAN":
 	// 2 when rendering through Vulkan, 0 otherwise
-	virtual int unk045() = 0;
+	virtual int GetShaderPlatform() = 0;
 
-	// Sets CMaterialSystem2::m_bUnk2C0 and returns its previous value
-	virtual bool unk046( bool bValue ) = 0;
+	// Returns the previous value
+	virtual bool SetCompileMissingShaderCombos( bool bCompile ) = 0;
 
 	virtual void AddMaterialParamChangedListener( void *pListener ) = 0;
 	virtual void RemoveMaterialParamChangedListener( void *pListener ) = 0;
@@ -184,8 +187,9 @@ public:
 	void *m_unk0C0[ 4 ];
 	CAtomicMutex m_unk0E0;
 
-	// CUtlVector of 0xF0 byte entries, locked by m_unk0E0 and m_unk120
-	void *m_unk0F0[ 3 ];
+	// CUtlVector of 0xF0 byte shader combos queued by the renderable pass computation, compiled by the dynamic
+	// shader compile; locked by m_unk0E0 and m_unk120
+	void *m_ShaderCompileQueue[ 3 ];
 
 	// Substrings of the shader names that dynamic shader compile reloads
 	CUtlVector< CUtlString > m_DynamicShaderCompileFilters;
@@ -259,8 +263,9 @@ public:
 	RenderBufferHandle_t m_hDefaultUAVBuffer;
 	CStrongHandleBase m_hDefaultUAVTexture;
 
-	// Set by unk046(), which returns the previous value
-	bool m_bUnk2C0;
+	// SetCompileMissingShaderCombos(), computing the renderable passes of a mode then compiles its missing static
+	// combos through the dynamic shader compile
+	bool m_bCompileMissingShaderCombos;
 };
 
 #endif // IMATERIALSYSTEM2_H

@@ -85,7 +85,8 @@ public:
 	virtual uint32 GetShaderStateOverriddenByMaterial() = 0;
 	virtual const CUtlLeanVector< CUtlString > *GetRenderAttributesUsed() = 0;
 	virtual void *unk027( const CUtlStringToken &mode, int nShaderType ) = 0;
-	virtual CWeakHandleBase unk028() = 0;
+	// Resource referenced by the material, see IMaterialSystem2::CreateMaterialReferencingResource()
+	virtual CWeakHandleBase GetReferencedResource() = 0;
 
 	virtual void EnterOverrideScope() = 0;
 
