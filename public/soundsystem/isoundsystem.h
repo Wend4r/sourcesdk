@@ -227,8 +227,8 @@ abstract_class ISoundSystem : public IAppSystem
 public:
 	virtual IAudioDevice2 *CreateDefaultDevice() = 0;
 	virtual void DestroyDevice( IAudioDevice2 *pDevice ) = 0;
-	// Creates a CPresetDSPAudioProcessor through the sound system processor factory
-	virtual CAudioProcessor *CreatePresetDSPProcessor( const char *pName, int nUnk1, float flCrossFade, int nChannels, int nUnk3, bool bUnk ) = 0;
+	// Creates a CPresetDSPAudioProcessor through the sound system processor factory, nUnused is read by neither build
+	virtual CAudioProcessor *CreatePresetDSPProcessor( const char *pName, int nUnk1, float flCrossFade, int nChannels, int nUnused, bool bUnk ) = 0;
 	virtual IAudioDevice2 *CreateNullDevice() = 0;
 	// Opens a capture stream of the input device (voice chat)
 	virtual IAudioInputStream *CreateInputStream( AudioInputStreamParams_t &params ) = 0;
@@ -258,8 +258,8 @@ public:
 	virtual void PreloadSoundEvent( const char *pSoundEventName, int16 nPriority ) = 0;
 	virtual void PreloadSound( CSfxTable *pSfx, int16 nPriority ) = 0;
 	virtual void PreloadSound( const char *pSoundName, int16 nPriority ) = 0;
-	// snd_gain attenuated by the distance multiplier of the sound level
-	virtual float GetGainFromSoundLevel( soundlevel_t nSoundLevel, float flDistance, float flUnk ) = 0;
+	// snd_gain attenuated by the distance multiplier of the sound level, flFoliageLoss adds a loss in dB per 1200 units
+	virtual float GetGainFromSoundLevel( soundlevel_t nSoundLevel, float flDistance, float flFoliageLoss ) = 0;
 	virtual void SetMixGroupOfCurrentMixer( const char *pszGroupName, const char *pszParam, float flValue ) = 0;
 	// Returns -1 for an unknown mix layer
 	virtual int GetMixLayerIndex( const char *pLayerName ) = 0;
@@ -270,7 +270,7 @@ public:
 	virtual void RegisterAudioStreamRecorder( IAudioStreamRecorder *pRecorder, bool bRegister ) = 0;
 	virtual IAudioWAVRecorder *CreateWAVRecorder() = 0;
 	virtual bool IsUsingAudioCaptureDevice() = 0;
-	virtual IAudioWAVRecorder *CreateMicrophoneWAVRecorder( int nUnk ) = 0;
+	virtual IAudioWAVRecorder *CreateMicrophoneWAVRecorder( const char *pszFileName ) = 0;
 	virtual void ResetMixControlInput( CUtlStringToken nName ) = 0;
 	virtual void ClearMixControlInputOverride( CUtlStringToken nName ) = 0;
 	virtual void ClearMixImpulseResponseInputOverride( CUtlStringToken nName ) = 0;
@@ -294,7 +294,7 @@ public:
 	// Networked voice: one stream per player, created on the first data at 48 kHz
 	virtual bool PlayVoiceStream( uint64 nXUID, CEntityIndex nEntityIndex, const char *pszSoundName ) = 0;
 	virtual void QueueVoiceSamples( uint64 nXUID, CEntityIndex nEntityIndex, uint32 nSampleRate, const float *pSamples, int nSampleCount, const char *pszSoundName ) = 0;
-	virtual void QueueVoiceFrames( uint64 nXUID, CEntityIndex nEntityIndex, const void **ppFrames, const int *pFrameSizes, int nFrameCount, const char *pszSoundName, bool bUnk ) = 0;
+	virtual void QueueVoiceFrames( uint64 nXUID, CEntityIndex nEntityIndex, const void **ppFrames, const int *pFrameSizes, int nFrameCount, const char *pszSoundName, bool bCreateStream ) = 0;
 	// True without a stream, or when its buffer ran low and no data came for voice_stall_ms
 	virtual bool IsVoiceStreamStalled( uint64 nXUID ) = 0;
 	virtual void SetVoiceVolume( uint64 nXUID, float flVolume ) = 0;
@@ -322,10 +322,10 @@ public:
 	virtual bool IsMuted() = 0;
 	// Plays a wave file through the operating system
 	virtual void PlaySystemSound( const char *pWavFile ) = 0;
-	virtual void UnloadAddonSoundResources( bool bUnk1, bool bUnk2 ) = 0;
+	virtual void UnloadAddonSoundResources( bool bAddonsUnmounted, bool bAddonsMounted ) = 0;
 	virtual CSfxTable *GetSoundSfx( SoundGuid_t guid ) = 0;
-	virtual void LoadSteamAudioScene( void *pUnk, const char *pszName ) = 0;
-	virtual void UnloadSteamAudioScene( void *pUnk ) = 0;
+	virtual void LoadSteamAudioScene( void *pKey, const char *pszName ) = 0;
+	virtual void UnloadSteamAudioScene( void *pKey ) = 0;
 	virtual bool DisableAudioMuting( float flDisableDurationSeconds ) = 0;
 	virtual void ResetMainGraphInputs() = 0;
 	virtual void *unk097( void *pUnk1, void *pUnk2 ) = 0;
@@ -359,7 +359,7 @@ public:
 	virtual void unk122( int nUnk ) = 0;
 	virtual std::unique_ptr< CAudioSource > CreateAudioSource( CSfxTable *pSfx, VSound_t *pSound ) = 0;
 	virtual std::unique_ptr< IAudioCacheHandle > CreateAudioCacheHandle( CSfxTable *pSfx ) = 0;
-	virtual IAudioDecoder *CreateStretchDecoder( void *pUnk, float flStretch ) = 0;
+	virtual IAudioDecoder *CreateStretchDecoder( IAudioDecoder *pDecoder, float flStretch ) = 0;
 	virtual uint32 GetSfxSampleCount( CSfxTable *pSfx ) = 0;
 	virtual const char *GetSfxFileName( CSfxTable *pSfx, CBufferString *pBuf ) = 0;
 	virtual CVSndParameterTable *GetVSndParameterTable() = 0;
