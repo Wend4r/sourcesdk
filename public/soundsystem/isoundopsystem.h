@@ -447,8 +447,9 @@ public:
 	// Locks and unlocks the operator system
 	virtual void LockOperatorSystem() = 0;
 	virtual void UnlockOperatorSystem() = 0;
-	// Loads the stacks of the default manifest with LoadManifestStacksForParsing and checks each of them, pUnk receives the errors
-	virtual void ParseManifestStacksForErrors( KeyValues3 *pStacks, void *pUnk ) = 0;
+	// Loads the stacks of the default manifest with LoadManifestStacksForParsing and checks each of them; pErrors (type not recovered) receives
+	// the formatted error messages
+	virtual void ParseManifestStacksForErrors( KeyValues3 *pStacks, void *pErrors ) = 0;
 };
 
 class CSoundEventManager : public ISoundEventManager
@@ -610,8 +611,8 @@ public:
 	virtual bool GetSoundEventKeyValue( const char *pSoundEventName, const char *pKey, CUtlString &sValue ) override;
 	virtual bool GetSoundEventVSnds( const char *pSoundEventName, CUtlVector< CUtlString > *pVSndNames, float *pflMaxDuration ) override;
 	// Uses the default manifest
-	virtual void LoadManifestStacksForParsing( KeyValues3 *pStacks, void *pUnk );
-	virtual void LoadManifestStacksForParsing( const char *pManifestName, KeyValues3 *pStacks, void *pUnk );
+	virtual void LoadManifestStacksForParsing( KeyValues3 *pStacks, void *pErrors );
+	virtual void LoadManifestStacksForParsing( const char *pManifestName, KeyValues3 *pStacks, void *pErrors );
 
 	// Incremented by Init and decremented by Shutdown
 	int m_nInitCount;
