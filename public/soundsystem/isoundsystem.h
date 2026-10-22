@@ -352,9 +352,11 @@ public:
 	virtual float GetSoundEventElapsedTime( SoundEventGuid_t guid ) = 0;
 	virtual void unk115( bool bUnk ) = 0;
 	virtual void unk116() = 0;
-	virtual void unk117() = 0;
-	virtual void unk118() = 0;
-	virtual void unk119() = 0;
+	// While enabled the output device keeps the peak of the samples it writes
+	virtual void EnableOutputPeakMeter() = 0;
+	virtual void DisableOutputPeakMeter() = 0;
+	// Output peak in dB of the device, 0 for the null device
+	virtual float GetOutputPeakLevel() = 0;
 	virtual std::unique_ptr< CAudioMixer > CreateAudioMixer( CAudioSource *pSource ) = 0;
 	virtual int unk121( void *pUnk ) = 0;
 	virtual void unk122( int nUnk ) = 0;
