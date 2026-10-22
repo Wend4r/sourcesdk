@@ -144,6 +144,7 @@ public:
 	virtual uint64 GetIndexBufferDeviceAddress( IndexBufferHandle_t hIndexBuffer ) = 0;
 	virtual uint64 GetPooledVertexBufferDeviceAddress( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
 	virtual uint64 GetPooledIndexBufferDeviceAddress( PooledIndexBufferHandle_t hPooledIndexBuffer ) = 0;
+	// bUnk is passed on to the texture upload of the render context, which the Vulkan backend ignores
 	virtual HRenderTexture FindOrCreateTexture( const char *pResourceName, bool bIsAnonymous, const CTextureCreationDesc *pDescriptor, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk ) = 0;
 	virtual HRenderTexture GetErrorTexture( RenderTextureDimension_t nDimension ) = 0;
 	virtual HRenderTexture FindOrCreateFileTexture( const char *pFileName, int nLoadMode ) = 0;
@@ -363,6 +364,7 @@ public:
 	virtual bool UpdateIndirectExecutionSet( void *hIndirectExecutionSet, IRenderContext *pRenderContext, int nPipelineIndex ) = 0;
 	virtual void DestroyIndirectExecutionSet( void *hIndirectExecutionSet ) = 0;
 
+	// Keeps pName, whose file name is appended to RenderDoc capture names, and flushes the pipeline cache
 	virtual void unk239( const char *pName ) = 0;
 
 	virtual int unk240() = 0;
