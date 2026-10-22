@@ -1,3 +1,9 @@
+#ifndef HOSTSTATE_H
+#define HOSTSTATE_H
+#ifdef _WIN32
+#pragma once
+#endif
+
 #include "tier0/utlstring.h"
 #include "tier0/keyvalues.h"
 #include "appframework/iappsystem.h"
@@ -53,15 +59,15 @@ class IHostStateMgr : public IAppSystem
 {
 public:
 	virtual void RequestHS_Quit(void) = 0;
-	virtual void RequestHS_Idle(KeyValues *) = 0;
-	virtual void RequestHS_Connect(const char *, KeyValues *) = 0;
-	virtual void RequestHS_ChangelevelReconnect(const char *, KeyValues *) = 0;
+	virtual void RequestHS_Idle(KeyValues *pKV) = 0;
+	virtual void RequestHS_Connect(const char *pszAddress, KeyValues *pKV) = 0;
+	virtual void RequestHS_ChangelevelReconnect(const char *pszAddons, KeyValues *pKV) = 0;
 	virtual void RequestHS_LoadSpawnGroup(const char *, const char *, bool, KeyValues *) = 0;
-	virtual void RequestHS_LoadSaveGame(const char *, const char *, KeyValues *) = 0;
-	virtual void RequestHS_PlayDemo(const char *, const char *, bool, KeyValues *) = 0;
-	virtual void RequestHS_PlayBroadcast(const char *, KeyValues *) = 0;
-	virtual void RequestHS_DownloadAddons(KeyValues *) = 0;
-	virtual void RequestHS_SourceTVRelay(const char *, KeyValues *) = 0;
+	virtual void RequestHS_LoadSaveGame(const char *pszSaveGame, const char *pszAddons, KeyValues *pKV) = 0;
+	virtual void RequestHS_PlayDemo(const char *pszDemoFile, const char *pszAddons, bool bTimeDemo, KeyValues *pKV) = 0;
+	virtual void RequestHS_PlayBroadcast(const char *pszDemoFile, KeyValues *pKV) = 0;
+	virtual void RequestHS_DownloadAddons(KeyValues *pKV) = 0;
+	virtual void RequestHS_SourceTVRelay(const char *pszAddress, KeyValues *pKV) = 0;
 	virtual void RequestHS_ReloadLastSaveGame(void) = 0;
 	virtual void RequestHS_RestartSpawnGroups(void) = 0;
 
@@ -88,3 +94,5 @@ public:
 	int m_ID;                                         // 0x90
 	CUtlVector<CHostStateRequest *> m_QueuedRequests; // 0x98
 };
+
+#endif // HOSTSTATE_H

@@ -27,6 +27,8 @@
 #include <steam/steamnetworkingtypes.h>
 #include <networkbasetypes.pb.h>
 #include <utlhash.h>
+#include <utlhashmaplarge.h>
+#include <ihltv.h>
 
 enum server_state_t : int
 {
@@ -65,6 +67,10 @@ class CBaselineEntityData;
 class CNetworkServerSpawnGroup;
 class CSteamID;
 class IEntityReport;
+class ISceneViewDebugOverlays;
+class IHLTVDirector;
+class CHLTVServerAsync;
+class CTvDirectDemoRecorder;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -145,7 +151,7 @@ public:
 	virtual int 	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t, const char * ) = 0;
 
-	virtual void*	StartChangeLevel( const char *pszMapName, const char *pszLandmark, const char *pszAddons ) = 0;
+	virtual CServerChangelevelState *StartChangeLevel( const char *pszMapName, const char *pszLandmark, const char *pszAddons ) = 0;
 	virtual void	FinishChangeLevel( CServerChangelevelState * ) = 0;
 	virtual bool	IsChangelevelPending( void ) const = 0;
 
@@ -166,7 +172,8 @@ public:
 	virtual void	SetClientConnect( CPlayerSlot slot, bool b = true ) = 0;
 	virtual SignonState_t	GetClientSignonState( CPlayerSlot slot ) = 0;
 
-	virtual void	NotifySceneViewDebugOverlays( void *pSceneView, bool bUnk ) = 0;
+	// Adds (or removes) the engine's scene view debug overlays listener to the given overlays
+	virtual void	NotifySceneViewDebugOverlays( ISceneViewDebugOverlays *pDebugOverlays, bool bAddListener ) = 0;
 
 	virtual void	BroadcastMessage( INetworkMessageInternal *pSerializer, const CNetMessage *pNetMessage, const IRecipientFilter *pFilter ) = 0;
 	virtual bool	IsRecordingDemo() = 0;
@@ -226,8 +233,8 @@ public:
 	virtual void	FillServerInfo( CSVCMsg_ServerInfo_t *pServerInfo ) = 0;
 	virtual void	UserInfoChanged( CPlayerSlot slot ) = 0;
 
-	// 2nd arg is unused.
-	virtual void	GetClassBaseline( void *, ServerClass *pClass, intp *pOut ) = 0;
+	// 2nd arg is unused. Returns false when the class has no instance baseline yet
+	virtual bool	GetClassBaseline( void *, ServerClass *pClass, intp *pOut ) = 0;
 
 	virtual void	StartHLTVMaster() = 0;
 
@@ -262,13 +269,7 @@ public:
 	}
 
 public:
-	struct ResourceGroupVector_t
-	{
-		CUtlVector<CUtlString> m_Vec;
-		bool m_bAutoPurge;
-	};
-
-	ResourceGroupVector_t m_ResourceGroups;
+	WorldGroupList_t m_WorldGroups;
 
 	server_state_t m_State;
 	int m_nRefCount;
@@ -295,8 +296,9 @@ public:
 	INetworkStringTable* m_pUserInfoTable;
 
 	CFrameSnapshotManager* m_pFrameSnapshotManager;
-	CUtlLeanVector<byte> m_BaselineBuffer;
-	char m_BaselineHelper[80];
+	// Serialized instance baselines by ServerClass::m_InstanceBaselineIndex, read by GetClassBaseline
+	CAtomicMutex m_InstanceBaselinesMutex;
+	CUtlHashMapImpl< int, intp, CUtlHashMapLargeDefEquals< int >, MurmurHash3Functor< int >, int, CVariableBitString > m_InstanceBaselines;
 
 	bf_write m_Signon;
 	CUtlLeanVector<byte> m_SignonBuffer;
@@ -327,22 +329,34 @@ public:
 
 	CUtlVector<uint64> m_QueuedSpawnGroupUnloads; // SpawnGroupUnloadEntry_t (handle + flags)
 	int m_bQueueSpawnGroupUnloads;
+	// Spawn group created for the resources of the just in time manifests, unloaded when their count drops to 0
+	SpawnGroupHandle_t m_hJustInTimeResourceSpawnGroup;
 
 	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect;
 	CUtlString m_GameType;
 	int m_nGameDataVersion;
 	CUtlVector<byte> m_GameData2;
 
+	// Client whose command is being executed (Source 1 host_client), cleared by ServerEndSimulate; the kick command names it, or "Console" when it is unset
+	CServerSideClientBase *m_pHostClient;
 	IGameSpawnGroupMgr* m_pSpawnGroupMgr;
+	// Told when the active spawn group changes
 	void* m_pNotificationSink;
-	void* m_pPerfCounters;
-	void* m_pNetworkSerializerSceneSystem;
+	// Set by SetGameSessionManifest
+	HGameResourceManifest m_hGameSessionManifest;
 	int m_nNotifyFlags;
-	void* m_pServerServiceState;
+	// The four pointers point into a reservation state owned by the server service (CHLTVServer keeps its own)
+	// IsReserved() returns *m_pnReservationCookie != 0
 	uint64* m_pnReservationCookie;
+	// -1 while a client is connected, the time the server became empty otherwise
 	float* m_pflTimeLastClientLeft;
+	// Initialized to -1, no access found
+	float* m_pflUnk968;
 	float* m_pflReservationExpiryTime;
-	void* m_pUnk952;
+	// Incremented by OnSpawnGroupActivate ("CreationSequence=%d"), reset by SetGameSpawnGroupMgr
+	int m_nSpawnGroupCreationSequence;
+	// Last IResourceSystem::GetJustInTimeManifestCount() seen by the just in time spawn group update
+	int m_nJustInTimeManifestCount;
 
 	// handle = slot | (serial << 8). Init all 0xFFFF.
 	uint16 m_nClientSlotSerial[ABSOLUTE_PLAYER_LIMIT];
@@ -352,7 +366,8 @@ public:
 	float m_fLastCPUCheckTime;
 	float m_fCPUPercent;
 	float m_flTimescale;
-	uint16 m_nTimescaleFlags;
+	// Set when a real client's settings or listening state change; the end of the simulation clears it and refreshes the Steam game server data of every client
+	bool m_bClientDataChanged;
 	bool m_bIsMultiplayer;
 
 	int m_nFrameTimeBucketCount;
@@ -366,9 +381,12 @@ public:
 	uint64 m_nComputeTimeCount;
 
 	uint64 m_nReservationCookie;
-	uint64 m_nUnk1744;
-	uint64 m_nUnk1752;
-	int m_nUnk1760;
+	// Created with the "DemoAutoRecorder" fake client, records the demo straight from the game server
+	CTvDirectDemoRecorder *m_pTvDirectDemoRecorder;
+	// ICvar::GetTotalUserInfoCvarsByteSize(), refreshed by OnConVarCreated which then resizes every client's user info convar data
+	uint64 m_nTotalUserInfoCvarsByteSize;
+	// Atomic count of client net channels whose connection type has bit 0, raised by ConnectionStart and lowered by OnShutdownChannel
+	int m_nNetChannelCount;
 	void* m_pReplayDirector;
 };
 
@@ -381,14 +399,94 @@ public:
 	CPrecacheItem m_Precache[MAX_GENERIC];
 	INetworkStringTable* m_pGenericPrecacheTable;
 	bool m_bAllowSignonWrites;
-}; // sizeof 10056 (0x2748)
+}; // sizeof 10088 (0x2768)
 
 
-class CHLTVServer : public CNetworkGameServerBase
+// Cached delta entity bit buffers of the HLTV server, one list per entity index
+class CDeltaEntityCache
 {
 public:
+	struct DeltaEntityEntry_s
+	{
+		DeltaEntityEntry_s *pNext;
+		int nDeltaTick;
+		int nBits;
+	};
 
-}; // sizeof 3120232
+	int m_nTick;
+	// Number of m_Cache entries in use, the destructor frees each of them
+	int m_nMaxEntities;
+	int m_nCacheSize;
+	DeltaEntityEntry_s *m_Cache[ MAX_EDICTS ];
+};
+
+class CHLTVServer : public CNetworkGameServerBase, public IHLTVServer, public ITvStreamSink
+{
+public:
+	// Only constructed and destroyed
+	CUtlString m_szUnk1824;
+
+	// Targets of the reservation pointers of the base class
+	uint64 m_nHLTVReservationCookie;
+	float m_flHLTVTimeLastClientLeft;
+	float m_flHLTVUnk968;
+	float m_flHLTVReservationExpiryTime;
+
+	// Owns the broadcast and the demo recorder ("HLTVServerAsync" thread pool)
+	CHLTVServerAsync *m_pAsync;
+	// Client of the game server that feeds this master proxy, nullptr on a relay (IsMasterProxy)
+	CServerSideClientBase *m_MasterClient;
+	// Game server of m_MasterClient
+	CNetworkGameServer *m_Server;
+
+	// CHLTVClientState, the connection of a relay to its upstream server
+#ifdef PLATFORM_WINDOWS
+	uint8 m_ClientState[ 2888824 ];
+#else
+	uint8 m_ClientState[ 2888848 ];
+#endif
+
+	IHLTVDirector *m_Director;
+	// Slot of the HLTV client on the game server (GetHLTVSlot)
+	CPlayerSlot m_nPlayerSlot;
+	CDeltaEntityCache m_DeltaCache;
+
+	// Set when a relay receives CSVCMsg_PacketReliable with state; CHLTVClient::SendSnapshot uses it when tv_grouprelaydatareliable is off
+	bool m_bGroupRelayDataReliable;
+	// Set by StartRelay, cleared when the signon completes
+	bool m_bSignonState;
+	// Set by the start-up when either of two command line parameters is present; the retry command then reports "SourceTV in Primary-Only mode."
+	bool m_bPrimaryOnlyMode;
+	// Zeroed with the flags above, no access found
+	uint8 m_unk3021835[ 3 ];
+
+	// GetOnlineTime() returns the time since it
+	float m_flStartTime;
+	float m_flFPS;
+	int m_nGameServerMaxClients;
+	// The status is sent again 8 seconds after it
+	float m_fNextSendUpdateTime;
+	netadr_t m_RootServer;
+	// GetGlobalStats()
+	int m_nGlobalSlots;
+	int m_nGlobalClients;
+	int m_nGlobalProxies;
+	// Zeroed by the constructor, no access found
+	uint8 m_unk3021880[ 12 ];
+
+	bf_write m_FullSendTables;
+	CUtlLeanVector< byte > m_FullSendTablesBuffer;
+	// ServerPostSimulate refreshes the game server's GC lobby and calls UpdateGCInformation every 60 seconds
+	float m_flNextGCInformationUpdateTime;
+	// Storage of m_BroadcastEventBuf, set up by StartMaster
+	byte m_BroadcastEventBufData[ 98304 ];
+	// Serializes the events of BroadcastHltvEvent
+	bf_write m_BroadcastEventBuf;
+	// SourceTV relay instance ("relay" / "non-relay")
+	bool m_bRelay;
+	// SourceTV[%d]
+	int m_nInstanceIndex;
+};
 
 abstract_class INetworkServerService : public IEngineService
 {

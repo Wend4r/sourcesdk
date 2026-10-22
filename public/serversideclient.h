@@ -133,12 +133,10 @@ public:
 	virtual bool ExecuteStringCommand( const CNETMsg_StringCmd_t &msg ) override = 0;
 	virtual bool SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) override = 0;
 	virtual bool IsHearingClient( CPlayerSlot nSlot ) const override = 0;
-	virtual bool IsProximityHearingClient() const override = 0;
-	virtual bool ApplyConVars( const CMsg_CVars &list ) override = 0;
-	virtual bool ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) override = 0;
+	virtual bool IsProximityHearingClient( CPlayerSlot nSlot ) const override = 0;
 	virtual bool ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) override = 0;
 	virtual bool ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) override = 0;
-	virtual bool OnSignonStateChanged() override = 0;
+	virtual bool ProcessDiagnostic( const CCLCMsg_Diagnostic_t &msg ) override = 0;
 	virtual bool ProcessMove( const CCLCMsg_Move_t &msg ) override = 0;
 	virtual bool ProcessVoiceData( const CCLCMsg_VoiceData_t &msg ) override = 0;
 	virtual bool ProcessRespondCvarValue( const CCLCMsg_RespondCvarValue_t &msg ) override = 0;
@@ -146,23 +144,23 @@ public:
 	virtual bool ProcessPacketEnd( const NetMessagePacketEnd_t &msg ) override = 0;
 	virtual bool ProcessConnectionClosed( const NetMessageConnectionClosed_t &msg ) override = 0;
 	virtual bool ProcessConnectionCrashed( const NetMessageConnectionCrashed_t &msg ) override = 0;
-	virtual bool UnusedVirtual45() override = 0;
-	virtual bool UnusedVirtual46() override = 0;
-	virtual bool OnDisconnectForwarding() override = 0;
-	virtual void BuildServerInfoMessage() override = 0;
-	virtual void PerformPrespawn() override = 0;
+	virtual bool ProcessHltvReplay( const CCLCMsg_HltvReplay_t &msg ) override = 0;
+	virtual bool ProcessHltvFixupOperatorTick( const CCLCMsg_HltvFixupOperatorTick_t &msg ) override = 0;
+	virtual bool ProcessUserMessage( const CSVCMsg_UserMessage_t &msg ) override = 0;
+	virtual void unk049( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) override = 0;
+	virtual void SendInitialSpawnGroups( CUtlVector< CNetworkServerSpawnGroup * > &vecSpawnGroups, bool bAsync ) override = 0;
 	virtual bool UpdateAcknowledgedFramecount( int tick ) override = 0;
 	virtual bool ShouldSendMessages() override = 0;
 	virtual void UpdateUserSettings() override = 0;
-	virtual void SendSnapshot() override = 0;
+	virtual CClientFrame *GetDeltaFrame( int nTick ) override = 0;
 	virtual void SendSignonData() override = 0;
 	virtual void SpawnPlayer() override = 0;
 	virtual void ActivatePlayer() override = 0;
-	virtual void ShouldReceiveStringTableUserData() override = 0;
-	virtual bool StartHltvReplay() override = 0;
-	virtual void StopHltvReplay() override = 0;
-	virtual int GetHltvLastSendTick() override = 0;
-	virtual bool CanStartHltvReplay() override = 0;
+	virtual bool ShouldReceiveStringTableUserData( const INetworkStringTable *pTable, int nStringNumber ) override = 0;
+	virtual bool StartHltvReplay( const HltvReplayParams_t &params ) override = 0;
+	virtual void StopHltvReplay( bool bForce ) override = 0;
+	virtual int GetHltvReplayDelay() override = 0;
+	virtual bool CanStartHltvReplay( int nDelay ) override = 0;
 	virtual void ResetHltvReplayRequestTime() override = 0;
 	virtual const char *GetHltvReplayStats() override = 0;
 	virtual void Await() override = 0;
@@ -180,7 +178,6 @@ public:
 	CPlayerBitVec m_VoiceProximity;
 	CCheckTransmitInfo m_PackInfo;
 	CClientFrameManager m_FrameManager;
-	void *m_pUnk0EC8;
 	CClientFrame *m_pCurrentFrame;
 
 	// AMNOTE: Move messages in the current packet, the client is disconnected when there's more than one
