@@ -250,8 +250,8 @@ public:
 	virtual float GetSoundDuration( uint32 nSoundEvent ) = 0;
 	virtual const char *GetVSndNameForSoundEvent( const char *pSoundEventName, bool bFromSymbolTable ) = 0;
 	virtual void GetVSndNameListForSoundEvent( const char *pSoundEventName, CUtlVector< const char * > &list, bool bFromSymbolTable ) = 0;
-	virtual void PreloadSoundEvent( uint32 nSoundEvent, uint16 nUnk ) = 0;
-	virtual void PreloadSoundEvent( const char *pSoundEventName, uint16 nUnk ) = 0;
+	virtual void PreloadSoundEvent( uint32 nSoundEvent, int16 nPriority ) = 0;
+	virtual void PreloadSoundEvent( const char *pSoundEventName, int16 nPriority ) = 0;
 	// bUpdate replaces an existing sound event; without bNoDefer a sound event whose base or stack is missing is deferred;
 	// bUnused is read by neither build
 	virtual bool AddSoundEvent( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding, bool bUpdate, bool bNoDefer, bool bUnused ) = 0;
@@ -499,8 +499,8 @@ public:
 	virtual float GetSoundDuration( uint32 nSoundEvent ) override;
 	virtual const char *GetVSndNameForSoundEvent( const char *pSoundEventName, bool bFromSymbolTable ) override;
 	virtual void GetVSndNameListForSoundEvent( const char *pSoundEventName, CUtlVector< const char * > &list, bool bFromSymbolTable ) override;
-	virtual void PreloadSoundEvent( uint32 nSoundEvent, uint16 nUnk ) override;
-	virtual void PreloadSoundEvent( const char *pSoundEventName, uint16 nUnk ) override;
+	virtual void PreloadSoundEvent( uint32 nSoundEvent, int16 nPriority ) override;
+	virtual void PreloadSoundEvent( const char *pSoundEventName, int16 nPriority ) override;
 	virtual bool AddSoundEvent( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding, bool bUpdate, bool bNoDefer, bool bUnused ) override;
 	virtual void AddSoundEvents( KeyValues3 *pKV, const ResourceBindingBase_t *pBinding ) override;
 	virtual void RemoveTimedOutDeferredSoundEvent() override;
@@ -586,8 +586,8 @@ public:
 	virtual float GetSoundDuration( uint32 nSoundEvent ) override;
 	virtual const char *GetVSndNameForSoundEvent( const char *pSoundEventName, bool bFromSymbolTable ) override;
 	virtual void GetVSndNameListForSoundEvent( const char *pSoundEventName, CUtlVector< const char * > &list, bool bFromSymbolTable ) override;
-	virtual void PreloadSoundEvent( uint32 nSoundEvent, uint16 nUnk ) override;
-	virtual void PreloadSoundEvent( const char *pSoundEventName, uint16 nUnk ) override;
+	virtual void PreloadSoundEvent( uint32 nSoundEvent, int16 nPriority ) override;
+	virtual void PreloadSoundEvent( const char *pSoundEventName, int16 nPriority ) override;
 	virtual bool AddSoundEvent( const char *pSoundEventName, KeyValues3 *pKV, const ResourceBindingBase_t *pBinding, bool bUpdate, bool bNoDefer, bool bUnused ) override;
 	virtual void AddSoundEvents( KeyValues3 *pKV, const ResourceBindingBase_t *pBinding ) override;
 	virtual void RemoveTimedOutDeferredSoundEvent() override;
