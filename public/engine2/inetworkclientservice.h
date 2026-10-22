@@ -74,9 +74,11 @@ public:
 	virtual double ClockDriftAdjustFrameTime( double flFrameTime ) = 0;
 	// Empty in this build
 	virtual void unk044() = 0;
-	virtual float unk045() = 0;
+	// INetworkGameClient::GetTime of the game client, 0 without one
+	virtual float GetTime() = 0;
 	virtual float GetClientTime() = 0;
-	virtual float unk047() = 0;
+	// CNetworkGameClient::m_flFrameTime, 0 while paused
+	virtual float GetFrameTime() = 0;
 	virtual bool IsEntityReportActive() = 0;
 	virtual IEntityReport *GetEntityReport() = 0;
 
