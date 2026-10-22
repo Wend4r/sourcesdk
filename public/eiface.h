@@ -620,13 +620,14 @@ struct ClientCommandQueueInfo_t
 	int m_nLastCommandNumberExecuted;
 	// Sent as last_cmd_number_recv_delta relative to m_nLastCommandNumberExecuted
 	int m_nLastCommandNumberReceived;
-	// First cmd_recv_status entry, in 1/4096 units clamped below 16; a negative value sends no entries
-	float m_flUnk08;
+	// Sent as the first cmd_recv_status entry, in 1/4096 units clamped below 16; a negative value sends no entries.
+	// The client's net graph shows it as server_cmd_recv_margin
+	float m_flCommandRecvMargin;
 	// Further cmd_recv_status entries, up to the first 65599
 	int m_nCommandRecvStatus[ 8 ];
 	int m_nStarvedCommandTicks;
 	int m_nDiscardedCommandTicks;
-	int m_nUnk34;
+	int m_nServerTick;
 	// Set when the server's command queue is enabled and handles this client, the counters above are only filled then
 	bool m_bCommandQueueActive;
 };

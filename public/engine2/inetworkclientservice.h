@@ -11,6 +11,7 @@
 #endif
 
 #include <engine/IEngineService.h>
+#include <eiface.h>
 #include <splitscreenslot.h>
 #include <playerslot.h>
 #include <networksystem/inetchannel.h>
@@ -107,8 +108,9 @@ public:
 
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr() = 0;
 
-	// Sends the entries of m_unk0F8 to VConsole
-	virtual void unk063() = 0;
+	// While the net graph is active, sends each entry of m_CommandQueueInfoHistory to VConsole as KeyValues3
+	// (server_cmd_queue, starved_ticks, discarded_ticks, server_tick, tick_interval, server_cmd_recv_margin) and clears it
+	virtual void SendCommandQueueInfoToVConsole() = 0;
 };
 
 class CNetworkClientService : public CBaseEngineService< INetworkClientService >, public CUtlSlot, public IVConCommDataReceived
@@ -136,7 +138,8 @@ public:
 	CNetworkGameClient *m_pNetworkGameClient;
 	CTSQueue< QueuedNetMessage_t > m_QueuedNetMessages;
 	CClientChangelevelState *m_pChangelevelState;
-	CUtlVector< void * > m_unk0F8; // 60-byte entries
+	// The last 20 command queue infos received by the game client while the net graph is active
+	CUtlVector< ClientCommandQueueInfo_t > m_CommandQueueInfoHistory;
 	CUtlVector< void * > m_unk110; // 64-byte per net message relay entries
 	CEventDispatcher< CEventIDManager_Default > m_NetMessageDispatcher;
 	CVConsole2FlattenedSerializerListener *m_pFlattenedSerializerListener;

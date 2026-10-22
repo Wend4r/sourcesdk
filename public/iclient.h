@@ -12,6 +12,7 @@
 #endif
 
 #include <engine/IEngineService.h>
+#include <eiface.h>
 #include <engine2/inetworkclientservice.h>
 #include <playerslot.h>
 #include <playeruserid.h>
@@ -343,7 +344,10 @@ public:
 	int m_nSocket;
 	int m_unk250[ 3 ];
 	int m_nDeltaTick;
-	int m_unk260[ 19 ];
+	int m_nUnk260;
+	// Command queue state of the last packet from the server, see CNetworkClientService::m_CommandQueueInfoHistory
+	ClientCommandQueueInfo_t m_CommandQueueInfo;
+	int m_unk2A0[ 3 ];
 	bool m_bUnk2AC;
 	bool m_bUnk2AD;
 	bool m_bUnk2AE;
