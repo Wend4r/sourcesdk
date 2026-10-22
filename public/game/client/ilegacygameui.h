@@ -50,11 +50,11 @@ public:
 	// True while the main menu or the pause menu is shown
 	virtual bool unk027() = 0;
 
-	// pUnk1 is not used; pszPanelID is the ID of the popup panel
-	virtual void CreateCommandMsgBox( const char *pszTitle, const char *pszMessage, bool bShowOk, bool bShowCancel, const char *pszOkCommand, const char *pszCancelCommand, const char *pszClosedCommand, void *pUnk1, const char *pszPanelID ) = 0;
-	virtual void CreateCommandMsgBoxInSlot( int nSlot, const char *pszTitle, const char *pszMessage, bool bShowOk, bool bShowCancel, const char *pszOkCommand, const char *pszCancelCommand, const char *pszClosedCommand, void *pUnk1 ) = 0;
+	// pszLegend is not used; pszPanelID is the ID of the popup panel
+	virtual void CreateCommandMsgBox( const char *pszTitle, const char *pszMessage, bool bShowOk, bool bShowCancel, const char *pszOkCommand, const char *pszCancelCommand, const char *pszClosedCommand, const char *pszLegend, const char *pszPanelID ) = 0;
+	virtual void CreateCommandMsgBoxInSlot( int nSlot, const char *pszTitle, const char *pszMessage, bool bShowOk, bool bShowCancel, const char *pszOkCommand, const char *pszCancelCommand, const char *pszClosedCommand, const char *pszLegend ) = 0;
 	// CreateCommandMsgBox parented to the main menu
-	virtual void unk030( const char *pszTitle, const char *pszMessage, bool bShowOk, bool bShowCancel, const char *pszOkCommand, const char *pszCancelCommand, const char *pszClosedCommand, void *pUnk1, const char *pszPanelID ) = 0;
+	virtual void unk030( const char *pszTitle, const char *pszMessage, bool bShowOk, bool bShowCancel, const char *pszOkCommand, const char *pszCancelCommand, const char *pszClosedCommand, const char *pszLegend, const char *pszPanelID ) = 0;
 	virtual void unk031( panorama::CPanel2D *pParentPanel, const char *pszTitle, const char *pszMessage, const char *pszButton1Label, const char *pszButton2Label, const char *pszButton1Command, const char *pszButton2Command, const char *pszHelpCommand ) = 0;
 	// unk031 parented to the main menu
 	virtual void unk032( const char *pszTitle, const char *pszMessage, const char *pszButton1Label, const char *pszButton2Label, const char *pszButton1Command, const char *pszButton2Command, const char *pszHelpCommand ) = 0;
