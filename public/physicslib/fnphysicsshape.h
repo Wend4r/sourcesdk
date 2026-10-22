@@ -72,12 +72,14 @@ public:
 	virtual const RnMaterial_t *GetMaterial() const = 0;
 
 	// True when the material of the shape is not the one of its geometry
-	virtual bool unk015() const = 0;
+	virtual bool HasMaterialOverride() const = 0;
 
 	// Same type, collision group, interacts-as and interacts-with layers
 	virtual bool HasSameCollisionFilter( IPhysicsShape *pOther ) const = 0;
 
-	virtual int unk017() const = 0;
+	// The geometry pointer tagged in its low bits like IVPhysics2::DestroyTaggedGeometry takes it: a hull, a mesh | 1,
+	// a compound | 2, or 3 for a sphere or a capsule
+	virtual uintp GetTaggedGeometry() const = 0;
 
 	// Empty
 	virtual void unk018() = 0;
@@ -88,15 +90,23 @@ public:
 	// Debug shape of the shape, created on demand with vColor as its color 0
 	virtual IRnDebugShape *CreateDebugShape( const Vector4D &vColor ) = 0;
 	virtual void DestroyDebugShape() = 0;
-	virtual bool unk022() = 0;
+
+	// The debug shape scene object is not disabled
+	virtual bool IsDebugShapeVisible() = 0;
 	virtual void unk023( bool bUnknown ) = 0;
-	virtual void unk024( bool bUnknown ) = 0;
+
+	// Selects the depth-tested debug materials instead of the no-depth-test ones; true creates the debug shape
+	virtual void SetDebugShapeDepthTest( bool bDepthTest ) = 0;
+
 	virtual void unk025( bool bUnknown ) = 0;
 
-	// Store color 0 and color 1 of the debug shape; unk027 and unk028 get and set one of its four float factors (index 0 to 3)
+	// unk026 and unk029 store color 0 and color 1 of the debug shape
 	virtual void unk026( const Vector4D &vColor ) = 0;
-	virtual float unk027( int nIndex ) = 0;
-	virtual void unk028( int nIndex, float flValue ) = 0;
+
+	// Four factors (index 0 to 3) whose product hides the debug shape at zero and selects the translucent materials below one
+	virtual float GetDebugShapeAlphaFactor( int nIndex ) = 0;
+	virtual void SetDebugShapeAlphaFactor( int nIndex, float flValue ) = 0;
+
 	virtual void unk029( const Vector4D &vColor ) = 0;
 	virtual void unk030( float flValue ) = 0;
 
@@ -106,7 +116,8 @@ public:
 	// Always zero
 	virtual FnPhysicsShapeUnk033_t unk033() = 0;
 
-	virtual const char *unk034( int nUnknown ) const = 0;
+	// Name of the tool material with this token from the tools material list, an empty string for 0
+	virtual const char *GetToolMaterialName( uint32 nToken ) const = 0;
 };
 
 abstract_class IFnPhysicsAnyShape : public IFnPhysicsShape
