@@ -35,8 +35,8 @@ public:
 
 	virtual const CPhysSurfaceProperties *GetDefaultSurfaceProperties() const = 0;
 
-	// The game compares it with a cached value and rebuilds its surface property data when it changes
-	virtual int unk007() const = 0;
+	// Counts the loads of the surface properties resource; the game compares it with a cached value and rebuilds its surface property data when it changes
+	virtual int GetSurfacePropertiesLoadCount() const = 0;
 
 	// A NULL pProperties uses the default surface properties
 	virtual void InitializeRnMaterialFromSurfaceProperty( const CPhysSurfaceProperties *pProperties, RnMaterial_t *pMaterial ) const = 0;

@@ -619,7 +619,7 @@ public:
 	void GetSurfacePropertiesNames( CUtlVector< CUtlString > *pNames, CUtlVector< CUtlString > *pDescriptions, bool bIncludeHidden ) const override;
 	const CPhysSurfaceProperties *GetDefaultSurfaceProperties() const override;
 	void InitializeRnMaterialFromSurfaceProperty( const CPhysSurfaceProperties *pProperties, RnMaterial_t *pMaterial ) const override;
-	int unk007() const override;
+	int GetSurfacePropertiesLoadCount() const override;
 
 	struct CSurfacePropertiesPair
 	{
@@ -633,8 +633,8 @@ public:
 	// FindSurfaceProperties looks the token up here
 	CUtlScalarHash< CSurfacePropertiesPair, CPassthroughHash32 > m_surfacePropertiesDescription;
 
-	// Returned by unk007, starts at 1
-	int m_unk058;
+	// Incremented each time the surface properties resource is allocated, starts at 1
+	int m_nLoadCount;
 
 	const CPhysSurfaceProperties *m_pDefaultSurfaceProperties;
 };
