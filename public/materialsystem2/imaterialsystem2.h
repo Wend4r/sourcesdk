@@ -257,12 +257,15 @@ public:
 
 	// Set by EnableDynamicShaderCompile(), the shaders are reloaded when it is set
 	bool m_bDynamicShaderCompile : 1;
-	bool m_bUnk230_1 : 1;
+
+	// mat_forcereloadshaders, the shaders are compiled instead of loaded from the .vcs files until the reload ends
+	bool m_bForceReloadShaders : 1;
 
 	// "-shaderdebugging"
 	bool m_bShaderDebugging : 1;
 
-	bool m_bUnk230_3 : 1;
+	// "-shaderopt", lowers the debug level of "-shaderdebugging"
+	bool m_bShaderOpt : 1;
 
 	// "-batchwarnings" and "-batcherrors"
 	bool m_bBatchWarnings : 1;
@@ -275,7 +278,8 @@ public:
 	// "-shaderstats"
 	bool m_bShaderStats : 1;
 
-	bool m_bUnk231_1 : 1;
+	// "-shaders_force_recompile", the .vcs files are not loaded
+	bool m_bShadersForceRecompile : 1;
 
 	// "MaterialSystem2/ErrorMaterialIsFatalError" of gameinfo
 	bool m_bErrorMaterialIsFatalError : 1;
