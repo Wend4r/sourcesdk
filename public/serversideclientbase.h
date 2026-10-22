@@ -353,7 +353,7 @@ public:
 	virtual void             StopHltvReplay( bool bForce ) {}
 
 public:
-	virtual int              GetHltvLastSendTick() = 0;
+	virtual int              GetHltvReplayDelay() = 0;
 
 	virtual bool             CanStartHltvReplay( int nDelay ) { return false; }
 	virtual void             ResetHltvReplayRequestTime() {}

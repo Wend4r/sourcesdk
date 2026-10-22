@@ -159,7 +159,7 @@ public:
 	virtual bool ShouldReceiveStringTableUserData( const INetworkStringTable *pTable, int nStringNumber ) override = 0;
 	virtual bool StartHltvReplay( const HltvReplayParams_t &params ) override = 0;
 	virtual void StopHltvReplay( bool bForce ) override = 0;
-	virtual int GetHltvLastSendTick() override = 0;
+	virtual int GetHltvReplayDelay() override = 0;
 	virtual bool CanStartHltvReplay( int nDelay ) override = 0;
 	virtual void ResetHltvReplayRequestTime() override = 0;
 	virtual const char *GetHltvReplayStats() override = 0;
