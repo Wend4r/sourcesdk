@@ -184,13 +184,15 @@ class CEntityMgr : public CTypesafeIntrospectedToKV3TypeManager< 0x73746E6576 /*
 {
 };
 
-struct SingleWorldEntityLump_t
+// Added when an IWorldVPKOverrideManager provides an override for a world VPK being mounted
+struct WorldVPKOverride_t
 {
-	CUtlString m_worldName;
-	HEntityLumpStrong m_hEntityLump;
-};
+	CUtlString m_vpkName;
+	CUtlString m_overrideVPKName;
 
-COMPILE_TIME_ASSERT( sizeof( SingleWorldEntityLump_t ) == 16 );
+	// Returned by the override manager with the override name and passed back to every manager
+	uint64 m_nUnk010;
+};
 
 class CWorldRendererMgr : public CTier3AppSystem< IWorldRendererMgr >
 {
@@ -207,7 +209,7 @@ public:
 	CUtlVector< CSingleWorldRep * > m_worldDeletionList;
 	CThreadRWLock_FastRead m_worldLock;
 	CUtlStringMap< int > m_worldVPKRefcounts;
-	CUtlVector< SingleWorldEntityLump_t > m_worldEntityLumps;
+	CUtlVector< WorldVPKOverride_t > m_worldVPKOverrides;
 	CUtlVector< IWorldVPKOverrideManager * > m_vpkOverrideManagers;
 	CUtlVector< IWorldLoadUnloadCallback * > m_worldLoadHandlers;
 	CAtomicMutex m_worldRequestsMutex;
