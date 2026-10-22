@@ -61,6 +61,7 @@ class IToolClientSimulationAPI;
 class IToolObject;
 class ISceneView;
 class ISceneWorld;
+class ISceneViewDebugOverlays;
 class ISerializerMatchToMetaReplayCompatHelper;
 class InfoForResourceTypeCModel;
 class KeyValues;
@@ -387,7 +388,8 @@ public:
 	virtual void OnHltvReplayTick() = 0;
 	virtual int GetHltvReplayDelay() = 0;
 	virtual void unk167( void *pMsg ) = 0;
-	virtual void unk168() = 0;
+	// Scene view debug overlays of the client CDebugOverlayGameSystem; the engine passes received CNETMsg_DebugOverlay messages to it
+	virtual ISceneViewDebugOverlays *GetDebugOverlayGameSystem() = 0;
 	virtual Source2ClientUnk169_t unk169() = 0;
 	virtual void unk170() = 0;
 	// Sends the packet to the game coordinator as the data of a CMsgGCCStrike15_GotvSyncPacket
