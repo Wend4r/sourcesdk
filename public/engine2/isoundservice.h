@@ -51,7 +51,8 @@ struct VoiceRecordingLevel_t
 abstract_class ISoundService : public IEngineService
 {
 public:
-	virtual bool PlayNetworkedVoice( uint64 nXUID, CEntityIndex nEntityIndex, const VoiceRecordingDescription_t &desc, const void *pData, int nSize, bool bUnk, VoiceRecordingLevel_t *pLevel ) = 0;
+	// bIgnoreSequence plays the block at once instead of buffering it until the blocks before it in its sequence arrive
+	virtual bool PlayNetworkedVoice( uint64 nXUID, CEntityIndex nEntityIndex, const VoiceRecordingDescription_t &desc, const void *pData, int nSize, bool bIgnoreSequence, VoiceRecordingLevel_t *pLevel ) = 0;
 
 	virtual bool GetNetworkedVoiceLevel( uint64 nXUID, VoiceRecordingLevel_t *pLevel ) = 0;
 
