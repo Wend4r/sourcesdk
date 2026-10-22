@@ -13,9 +13,11 @@
 #include "interface.h"
 #include "appframework/iappsystem.h"
 #include "tier0/logging.h"
+#include "tier2/tier2.h"
 
 class CChoreoScene;
 class IChoreoEventCallback;
+class CChoreoSceneTypeManager;
 
 // Values read from the root of a compiled scene resource
 struct SceneCachedData_t
@@ -34,11 +36,19 @@ COMPILE_TIME_ASSERT( sizeof( SceneCachedData_t ) == 0xC );
 abstract_class ISceneFileCache : public IAppSystem
 {
 public:
-	virtual bool unk011( const char *pszFile ) = 0;
+	// GetSceneCachedData( pszFile, nullptr )
+	virtual bool HasSceneCachedData( const char *pszFile ) = 0;
 
 	virtual CChoreoScene *LoadScene( const char *pszFile, IChoreoEventCallback *pCallback, LoggingChannelID_t nLogChannel, void ( *pfnPrintf )( const char *pszFormat, ... ) ) = 0;
 
 	virtual bool GetSceneCachedData( const char *pszFile, SceneCachedData_t *pData ) = 0;
+};
+
+class CSceneFileCache : public CTier2AppSystem< ISceneFileCache >
+{
+public:
+	// Installed for RESOURCE_TYPE_CHOREO_SCENE in Init, removed in Shutdown.
+	CChoreoSceneTypeManager *m_pChoreoSceneTypeManager;
 };
 
 #define SCENE_FILE_CACHE_INTERFACE_VERSION "SceneFileCache002"
