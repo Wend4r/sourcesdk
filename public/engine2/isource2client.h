@@ -405,8 +405,9 @@ public:
 	virtual void unk178() = 0;
 	// cl_interp_ratio clamped to sv_client_min_interp_ratio and sv_client_max_interp_ratio, in seconds
 	virtual float GetClientInterpAmount() = 0;
-	// Forwards to an object owned by the client entity system
-	virtual void unk180() = 0;
+	// Forwards to an object owned by the client entity system; the engine walks the returned table of
+	// 112-byte entity entries when it reconciles the entities of a packet
+	virtual void *unk180() = 0;
 	// The engine passes the contents of a ".evidence" demo file, which the Overwatch UI component decodes in place
 	virtual void PrepareSignedEvidenceData( void *pvData, int nNumBytes ) = 0;
 
@@ -434,7 +435,7 @@ public:
 	virtual void *unk195() = 0;
 	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
 	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
-	virtual void unk198( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	virtual void unk198( void *pUnk1, bool bUnk, void *pUnk2 ) = 0;
 	// Clears the result
 	virtual bool unk199( void *pUnk1, void *pUnk2, CBufferString &result ) = 0;
 	virtual void unk200() = 0;
