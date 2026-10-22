@@ -186,7 +186,7 @@ public:
 	virtual Vector GetMassCenter() const = 0;
 	virtual Vector GetLocalMassCenter() const = 0;
 	virtual RnMassProperties_t GetMassProperties() const = 0;
-	virtual bool unk044() const = 0;
+	virtual bool GetOverrideInertia() const = 0;
 
 	// Body space inertia tensor
 	virtual matrix3x4_t GetLocalInertia() const = 0;
@@ -274,8 +274,9 @@ public:
 	virtual void SetAngularDamping( float flDamping ) = 0;
 	virtual float GetAngularDamping() const = 0;
 
-	virtual void unk098( float flUnknown ) = 0;
-	virtual float unk099() const = 0;
+	// Scales the friction of the materials of the body in its contacts
+	virtual void SetFrictionScale( float flScale ) = 0;
+	virtual float GetFrictionScale() const = 0;
 
 	virtual void SetLinearFluidDragScale( float flScale ) = 0;
 	virtual void SetAngularFluidDragScale( float flScale ) = 0;
@@ -285,8 +286,8 @@ public:
 
 	virtual float unk104( const void *pParams, float flUnknown1, float flUnknown2 ) = 0;
 
-	// True while a joint or a contact references the body
-	virtual bool unk105() const = 0;
+	// True while the joint list GetFirstJoint walks is not empty, and while a second list of the body is not empty
+	virtual bool HasJoints() const = 0;
 	virtual bool unk106() const = 0;
 
 	// Iterate the joints of the body, and find the joint to another body
@@ -308,20 +309,22 @@ public:
 	// Creates the shadow controller on first use
 	virtual IPhysicsShadowController *CreateShadowController() = 0;
 	virtual void RemoveShadowController() = 0;
-	virtual void unk118( bool bEnable ) = 0;
+	// A keyframed body always has a shadow controller; this keeps one on a dynamic body too
+	virtual void EnableDynamicShadowController( bool bEnable ) = 0;
 	virtual IPhysicsShadowController *GetShadowController() const = 0;
 
 	// Forwarded to the shadow controller
 	virtual void unk120() = 0;
-	virtual void unk121( const Vector &vPosition, const void *pUnknown, bool bUnknown, float flUnknown ) = 0;
+	virtual void UpdateShadow( const Vector &vTargetPosition, const Quaternion &targetOrientation, bool bUnknown, float flUnknown ) = 0;
 	virtual float unk122() = 0;
-	virtual bool unk123() = 0;
+	// False without a shadow controller
+	virtual bool GetShadowPosition( Vector *pPosition, QAngle *pAngles ) = 0;
 
 	virtual CUtlVector< void * > *unk124() = 0;
 
 	// Turning it off on a dynamic body wakes the body
-	virtual void unk125( bool bEnable ) = 0;
-	virtual bool unk126() const = 0;
+	virtual void EnableSleep( bool bEnable ) = 0;
+	virtual bool IsSleepEnabled() const = 0;
 
 	virtual void Sleep() = 0;
 	virtual void Wake() = 0;
