@@ -82,8 +82,8 @@ public:
 	virtual void		GetEngineSwapChainSize( int *pWidth, int *pHeight ) const = 0;
 	virtual bool		IsLoopSwitchQueued( void ) const = 0;
 	virtual bool		IsLoopSwitchRequested( void ) const = 0;
-	// Whether the int that ExitMainLoop sets is non-zero
-	virtual bool		unk027( void ) const = 0;
+	// Set by ExitMainLoop; in tools mode the tool framework may still cancel the exit
+	virtual bool		IsExitMainLoopRequested( void ) const = 0;
 	virtual CEventDispatcher<CEventIDManager_Default> *GetEventDispatcher( void ) = 0;
 	virtual CDebugVisualizerMgr *GetDebugVisualizerMgr( void ) = 0;
 	virtual int			GetActiveLoopClientServerMode( void ) const = 0;
@@ -99,11 +99,10 @@ public:
 	virtual const char	*GetAddon( int ) const = 0;
 	virtual bool		IsAddonMounted( const char * ) const = 0;
 	virtual const char	*GetAddonsString( void ) const = 0;
-	virtual void		unk042( const char *pszAddon ) = 0;
-	// Whether the name is in the list filled by unk042.
-	virtual bool		unk043( const char *pszAddon ) const = 0;
-	// Runs unk043 over every mounted addon.
-	virtual bool		unk044( void ) const = 0;
+	virtual void		AddExternalAddon( const char *pszAddon ) = 0;
+	virtual bool		IsExternalAddon( const char *pszAddon ) const = 0;
+	// Whether a mounted addon is not in the external addon list
+	virtual bool		HasNonExternalAddons( void ) const = 0;
 	virtual void		InstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		UninstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		InstallAddonListChangeNotify( IAddonListChangeNotify * ) = 0;
@@ -112,7 +111,8 @@ public:
 	virtual void		AddLogCaptureString( const char * ) = 0;
 	virtual void		AddLogCaptureStringV( const char *pFormat, va_list args ) = 0;
 	virtual void		AddLogCaptureStringF( const char *pFormat, ... ) = 0;
-	virtual int			unk053( void ) const = 0;
+	// Registered prerequisites the main loop has not finished yet
+	virtual int			GetPendingPrerequisiteCount( void ) const = 0;
 	virtual void		ExitMainLoop( void ) = 0;
 	virtual void		RegisterPrerequisite( IPrerequisite * ) = 0;
 
