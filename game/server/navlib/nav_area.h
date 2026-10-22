@@ -155,6 +155,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// The gravity direction at a nav vertex.
+//-----------------------------------------------------------------------------
+schema struct NavGravity_t
+{
+	TYPEMETA( MGetKV3ClassDefaults );
+	DECLARE_SCHEMA_DATA_CLASS( NavGravity_t );
+
+	Vector m_vGravity;
+	// Set when m_vGravity equals the default ( 0, 0, -1 ).
+	bool m_bDefault;
+};
+
+//-----------------------------------------------------------------------------
 // One polygon of the geometry manager: indices into its vertex array.
 //-----------------------------------------------------------------------------
 struct NavPolyDef_t
@@ -168,20 +181,23 @@ struct NavPolyDef_t
 //-----------------------------------------------------------------------------
 class CNavGeometryManager
 {
-private:
-	uint8 m_Unk00[ 0x20 ];
-
 public:
+	// Bit 0: m_VertexAttributes holds one entry per vertex. Read from the nav file; building
+	// from generated geometry ORs in the flags of the generator's output.
+	uint32 m_nVertexAttributeFlags;
+	// Gravity of each vertex while bit 0 of m_nVertexAttributeFlags is set; a vertex added
+	// without one, and every gap before it, gets the default. Rotated by movable mesh updates
+	// whose meshes have gravity follow their rotation.
+	CUtlVector< NavGravity_t > m_VertexAttributes;
 	CUtlVector< Vector > m_Vertices;
-
-private:
-	uint8 m_Unk38[ 0x30 ];
-
-public:
+	// The number of polygons that use each vertex; a vertex is freed when it drops to 0, and
+	// a freed vertex holds -1.
+	CUtlVector< int > m_VertexRefCounts;
+	// Indices of freed vertices; adding a vertex takes the last one before growing m_Vertices.
+	CUtlVector< int > m_FreeVertices;
 	CUtlVector< NavPolyDef_t > m_Polys;
-
-private:
-	uint8 m_Unk80[ 0x18 ];
+	// Indices of removed polygons; adding a polygon takes the last one before growing m_Polys.
+	CUtlVector< int > m_FreePolys;
 };
 
 //-----------------------------------------------------------------------------
@@ -406,6 +422,12 @@ struct SpotOrder
 	};
 };
 
+// A line segment.
+struct Ray
+{
+	Vector from, to;
+};
+
 //-----------------------------------------------------------------------------
 // One way through an area, from one neighbour to another, and the spots to watch on the way.
 //-----------------------------------------------------------------------------
@@ -415,11 +437,9 @@ struct SpotEncounter
 	int fromDir;
 	CNavConnect to;
 	int toDir;
-
-private:
-	uint8 m_Unk2C[ 0x1C ];
-
-public:
+	// From the middle of the edge to 'from' to the middle of the edge to 'to', 62 units above the
+	// floor; set by the encounter computation and not saved.
+	Ray path;
 	CUtlVector< SpotOrder > spots;
 };
 

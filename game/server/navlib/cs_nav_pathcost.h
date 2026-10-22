@@ -12,6 +12,8 @@
 #endif
 
 #include "tier0/platform.h"
+#include <utility>
+#include <vector>
 #include "nav_pathcost.h"
 
 #include "schemacompiler/schemaon.h"
@@ -35,9 +37,8 @@ public:
 	float m_flAgentMaxClimb;
 
 private:
-	// Begin, end and capacity pointers of 16-byte entries: an area and an extra cost added
-	// whenever the step enters that area.
-	noschema uint8 m_Unk48[ 0x18 ];
+	// An area and an extra cost added whenever the step enters that area.
+	noschema std::vector< std::pair< CNavArea *, float > > m_ExtraAreaCosts;
 };
 
 #include "schemacompiler/schemaoff.h"

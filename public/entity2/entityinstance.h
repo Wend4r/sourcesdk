@@ -128,7 +128,7 @@ public:
 	virtual bool FullEdictChanged() { return false; }
 
 	virtual void InvalidatePolymorphicMetadataHelper() {}
-	virtual void Unk_36() {} // Empty and never overridden
+	virtual void unk036() {} // Empty and never overridden
 
 	virtual ChangeAccessorFieldPathIndex_t AddChangeAccessorPath( const CFieldPath &path ) { return ChangeAccessorFieldPathIndex_t(); }
 	virtual void AssignChangeAccessorPathIds() {}
@@ -137,7 +137,7 @@ public:
 	virtual const NetworkSharedChangeInfoOverflow_t *GetChangeAccessorPathInfo() const { return nullptr; }
 
 	virtual bool GetFieldPathChildIndices( const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) { return false; }
-	virtual bool Unk_42() { return false; } // Returns false and never overridden
+	virtual bool unk042() { return false; } // Returns false and never overridden
 
 	virtual void OnAttributeChanged() {}
 
