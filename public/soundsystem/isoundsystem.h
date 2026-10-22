@@ -133,12 +133,12 @@ public:
 		m_flFrameTime = 0.0;
 		m_flRealTime = 0.0;
 		m_pSteamUser = nullptr;
-		m_bUnk20_0 = false;
-		m_bUnk20_1 = false;
+		m_bInGame = false;
+		m_bPaused = false;
 		m_bMuted = false;
 		m_bUnk20_3 = false;
 		m_bUnk20_4 = false;
-		m_bUnk20_5 = false;
+		m_bMuteTools = false;
 
 		for ( int i = 0; i < 4; i++ )
 		{
@@ -158,12 +158,16 @@ public:
 	double m_flFrameTime;
 	double m_flRealTime;
 	ISteamUser *m_pSteamUser;
-	bool m_bUnk20_0 : 1;
-	bool m_bUnk20_1 : 1;
+	// Signon state past SIGNONSTATE_SPAWN
+	bool m_bInGame : 1;
+	// INetworkGameClient::IsPaused
+	bool m_bPaused : 1;
 	bool m_bMuted : 1;
+	// Both set from the game mute of IToolFramework2::GetAudioMuteState; DisableAudioMuting clears only the second one
 	bool m_bUnk20_3 : 1;
 	bool m_bUnk20_4 : 1;
-	bool m_bUnk20_5 : 1;
+	// Tools mute of IToolFramework2::GetAudioMuteState
+	bool m_bMuteTools : 1;
 
 	// One listener per split screen slot
 	struct
