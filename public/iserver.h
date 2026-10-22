@@ -372,8 +372,8 @@ public:
 	float m_fLastCPUCheckTime;
 	float m_fCPUPercent;
 	float m_flTimescale;
-	// Checked and cleared at the end of the simulation, which then refreshes the Steam game server data of every client
-	bool m_bUnk1140;
+	// Set when a real client's settings or listening state change; the end of the simulation clears it and refreshes the Steam game server data of every client
+	bool m_bClientDataChanged;
 	bool m_bIsMultiplayer;
 
 	int m_nFrameTimeBucketCount;
@@ -391,7 +391,8 @@ public:
 	CTvDirectDemoRecorder *m_pTvDirectDemoRecorder;
 	// ICvar::GetTotalUserInfoCvarsByteSize(), refreshed by OnConVarCreated which then resizes every client's user info convar data
 	uint64 m_nTotalUserInfoCvarsByteSize;
-	int m_nUnk1760;
+	// Atomic count of client net channels whose connection type has bit 0, raised by ConnectionStart and lowered by OnShutdownChannel
+	int m_nNetChannelCount;
 	void* m_pReplayDirector;
 };
 
@@ -456,8 +457,8 @@ public:
 	CPlayerSlot m_nPlayerSlot;
 	CDeltaEntityCache m_DeltaCache;
 
-	// Read by CHLTVClient::SendSnapshot
-	bool m_bUnk3021832;
+	// Set when a relay receives CSVCMsg_PacketReliable with state; CHLTVClient::SendSnapshot uses it when tv_grouprelaydatareliable is off
+	bool m_bGroupRelayDataReliable;
 	// Set by StartRelay, cleared when the signon completes
 	bool m_bSignonState;
 	// Set by the start-up when either of two command line parameters is present; the retry command then reports "SourceTV in Primary-Only mode."
@@ -481,8 +482,8 @@ public:
 
 	bf_write m_FullSendTables;
 	CUtlLeanVector< byte > m_FullSendTablesBuffer;
-	// Read by ServerPostSimulate
-	float m_flUnk3021952;
+	// ServerPostSimulate refreshes the game server's GC lobby and calls UpdateGCInformation every 60 seconds
+	float m_flNextGCInformationUpdateTime;
 	// Storage of m_BroadcastEventBuf, set up by StartMaster
 	byte m_BroadcastEventBufData[ 98304 ];
 	// Serializes the events of BroadcastHltvEvent
