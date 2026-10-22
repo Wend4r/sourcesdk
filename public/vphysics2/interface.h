@@ -42,6 +42,7 @@ class IPhysicsWorldEventListener;
 class IPhysReflContext;
 class CRnWorld;
 class CRnQueryCache;
+class CRnContact;
 class Bounds3;
 class IMotionEvent;
 class IVPhysics2World;
@@ -269,10 +270,12 @@ public:
 	virtual IPhysicsCharacterProxy *GetCharacterProxy( int nIndex ) = 0;
 	virtual const IPhysicsCharacterProxy *GetCharacterProxy( int nIndex ) const = 0;
 
-	virtual int unk116() = 0;
-	virtual void unk117( int nIndex, void *pOut ) = 0;
-	virtual int unk118() = 0;
-	virtual void unk119( int nIndex, void *pOut ) = 0;
+	// The contacts the solver resolves (contact flag 1) and the contacts that only report
+	virtual int GetSolverContactCount() = 0;
+	virtual void GetSolverContact( int nIndex, PhysicsContact_t &contact ) = 0;
+	virtual int GetReportContactCount() = 0;
+	virtual void GetReportContact( int nIndex, PhysicsContact_t &contact ) = 0;
+
 	// The contact between the two bodies is looked up from either side, so the order of the bodies does not matter
 	virtual void DestroyContacts( IPhysicsBody *pBodyA, IPhysicsBody *pBodyB ) = 0;
 	virtual bool HasContact( IPhysicsBody *pBodyA, IPhysicsBody *pBodyB ) = 0;
@@ -623,8 +626,9 @@ public:
 	virtual void SetRnWorld( CRnWorld *pRnWorld ) = 0;
 	virtual IVPhysics2World *GetWorld() = 0;
 
-	virtual void *unk003( int nIndex ) = 0;
-	virtual void *unk004( int nIndex ) = 0;
+	// The solver and the report contact lists of the world
+	virtual CRnContact *GetSolverContact( int nIndex ) = 0;
+	virtual CRnContact *GetReportContact( int nIndex ) = 0;
 
 	// Calls the callback for every trace recorded while IsRecordingTraces is set; the traces are kept in eight lists by type
 	virtual void ForEachRecordedTrace( const std::function< void( const RecordedTrace_t & ) > &callback ) = 0;
@@ -655,8 +659,9 @@ public:
 	virtual AABB_t GetProxyBounds( uint32 nProxy ) = 0;
 
 	virtual float unk022( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, void *pUnknown4 ) = 0;
-	virtual bool unk023( void *pObject ) = 0;
-	virtual void DestroyContact( void *pContact ) = 0;
+	// Whether the solver or the report contact list holds the contact at its index
+	virtual bool IsContactInWorld( CRnContact *pContact ) = 0;
+	virtual void DestroyContact( CRnContact *pContact ) = 0;
 
 	// Returns zeros
 	virtual FnPhysicsWorldUnk025_t unk025() = 0;
@@ -671,7 +676,7 @@ public:
 	virtual void unk031() = 0;
 
 	// Forwards to the same function of the world
-	virtual void unk032( bool bUnknown ) = 0;
+	virtual void FlushDebugRecording( bool bUnknown ) = 0;
 
 	// Returns 0
 	virtual int unk033() = 0;
