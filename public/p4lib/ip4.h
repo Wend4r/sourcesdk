@@ -151,8 +151,8 @@ public:
 	// returns the pending changelists of the active client
 	virtual CUtlVector< P4Changelist_t > &GetPendingChangelists() = 0;
 
-	// changes the clientspec to remove the specified path (cloaking)
-	virtual void RemovePathFromActiveClientspec( const char *pPath ) = 0;
+	// Verbose output of the Perforce operations
+	virtual void SetVerbose( bool bVerbose ) = 0;
 
 	// file manipulation; callers pass -1 for nUnknown
 	virtual bool OpenFileForAdd( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
