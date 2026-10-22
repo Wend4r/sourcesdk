@@ -27,7 +27,7 @@ namespace panorama
 abstract_class IGameUIRenderCallback
 {
 public:
-	// Called before the layer's view is added: 0 skips the handler this frame, 2 removes it from the layer
+	// Called before the layer's view is added: 0 has the layer call unk001 this frame, 2 removes the handler from the layer, other values skip it
 	virtual int unk000() = 0;
 	virtual void unk001( void *pUnk1, void *pUnk2 ) = 0;
 };
@@ -95,7 +95,8 @@ public:
 	bool m_bUnk220;
 	// Set once the service has run the "PanoramaUIStartup" step
 	bool m_bPanoramaUIStarted;
-	bool m_bUnk222;
+	// Set when the toggle console key press toggled the console, cleared on its release; text input is swallowed meanwhile
+	bool m_bToggleConsoleKeyDown;
 	int m_nUnk224;
 	int m_nBlockConsoleToggleCount;
 	// Button code of the "Engine2/RestrictConsoleCloseKey" game info key
