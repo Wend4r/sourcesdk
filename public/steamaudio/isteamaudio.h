@@ -150,13 +150,15 @@ public:
 	virtual void DestroyScene( ISteamAudioScene *pScene ) = 0;
 	virtual void RemoveAndDestroyScene( void *pKey ) = 0;
 	virtual void SetListenerOrigin( const Vector &vecListenerOrigin ) = 0;
-	virtual ISourceProcessor *CreateSourceProcessor( const Vector &vecUnk ) = 0;
+	// vecDirection is the direction the binaural effect of the processor renders
+	virtual ISourceProcessor *CreateSourceProcessor( const Vector &vecDirection ) = 0;
 	virtual void DestroySourceProcessor( ISourceProcessor *pProcessor ) = 0;
 	virtual IPathingProcessor *CreatePathingProcessor( const Vector &vecUnk ) = 0;
 	virtual void DestroyPathingProcessor( IPathingProcessor *pProcessor ) = 0;
 	virtual IDirectProcessor *CreateDirectProcessor( const int32 *pNumChannels ) = 0;
 	virtual void DestroyDirectProcessor( IDirectProcessor *pProcessor ) = 0;
-	virtual IHybridReverbProcessor *CreateHybridReverbProcessor( int nUnk ) = 0;
+	// nChannels selects the speaker layout of the effect: 1, 2, 4, 6 or 8
+	virtual IHybridReverbProcessor *CreateHybridReverbProcessor( int nChannels ) = 0;
 	// Returns -1 on failure
 	virtual int AddSource() = 0;
 	virtual void RemoveSource( int nSource ) = 0;
