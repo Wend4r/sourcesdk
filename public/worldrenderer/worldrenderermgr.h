@@ -66,13 +66,13 @@ public:
 	bool m_bMarkedForDeletion : 1;
 	bool m_bUnk3 : 1; // CreateWorldInfo_t::m_bUnk02B, IWorldReference::unk007.
 	bool m_bIsEmptyWorld : 1;
-	bool m_bUnk5 : 1; // CreateWorldInfo_t::m_bUnk031.
+	bool m_bMountVPK : 1;
 	bool m_bBlockUntilLoaded : 1;
-	bool m_bUnk7 : 1; // CreateWorldInfo_t::m_bUnk02C.
+	bool m_bSkipSceneObjectCreation : 1;
 	bool m_bDisableNodeStreaming : 1;
 	bool m_bOwnsSceneWorld : 1;
-	bool m_bUnk10 : 1; // Set by IWorldRendererMgr::UnkMarkGeometryWorld.
-	bool m_bUnk11 : 1; // CreateWorldInfo_t::m_bUnk033.
+	bool m_bExcludedFromSpawnGroupLookup : 1;
+	bool m_bHideBaseLayer : 1;
 
 	int32 m_nRefCount;
 	SpawnGroupHandle_t m_hSpawnGroup;
@@ -112,7 +112,8 @@ public:
 public:
 	CStrongHandleBase m_hUnk008;
 	CWorldUnk010 m_Unk010;
-	int32 m_nUnk108;
+	// Bit 0 while the world node loads, bit 1 once it is loaded, bit 2 when its load is left to UpdateObjectsForRendering
+	int32 m_nWorldNodeLoadState;
 	HWorldStrong m_hWorld;
 	World_t *m_pWorldData;
 	matrix3x4a_t m_mWorldTransform;
@@ -128,13 +129,13 @@ public:
 	CUtlString m_worldPath;
 
 	bool m_bIsEmptyWorld : 1;
-	bool m_bUnk1 : 1;
-	bool m_bUnk2 : 1; // Constructor argument.
+	bool m_bForceBlockingLoad : 1;
+	bool m_bSkipSceneObjectCreation : 1;
 	bool m_bBakedLightingIsInvalid : 1;
 	bool m_bBakedLightingIsPreview : 1;
 	bool m_bUnk5 : 1; // Set in Init from the scene world.
-	bool m_bUnk6 : 1; // Constructor argument.
-	bool m_bUnk7 : 1;
+	bool m_bHideBaseLayer : 1;
+	bool m_bWorldNodeLoadQueued : 1;
 
 	CWorldSceneObjectRefHash m_sceneObjectRefs;
 	CUtlVector< HResourceManifest > m_pendingManifests;

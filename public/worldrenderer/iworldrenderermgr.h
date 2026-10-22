@@ -44,8 +44,8 @@ struct CreateWorldInfo_t
 	// Looks the world up by spawn group and checks its origin callback; worlds created with it render.
 	bool m_bUnk02B;
 
-	// Looks the world up by spawn group.
-	bool m_bUnk02C;
+	// Looks the world up by spawn group; the world node of the world loads without scene objects.
+	bool m_bSkipSceneObjectCreation;
 
 	bool m_bDisableNodeStreaming;
 	bool m_bCreateSceneWorld;
@@ -56,12 +56,13 @@ struct CreateWorldInfo_t
 	bool m_bRequireMountVPK;
 
 	// Mounts the world VPK before loading.
-	bool m_bUnk031;
+	bool m_bMountVPK;
 
-	// Passed to the lookup of an existing world by name.
-	bool m_bUnk032;
+	// The lookup of an existing world by name ignores the world group.
+	bool m_bFindInAnyWorldGroup;
 
-	bool m_bUnk033;
+	// Hides "world_layer_base" once the scene objects of the world node are created.
+	bool m_bHideBaseLayer;
 };
 
 abstract_class IWorldRendererMgr : public IAppSystem
