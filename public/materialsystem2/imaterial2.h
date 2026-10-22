@@ -100,11 +100,12 @@ public:
 	virtual Vector4D *GetVecParam( Vector4D *pOut, const char *pName, const Vector4D *pFallback ) = 0;
 	virtual bool HasDynamicParams() = 0;
 
-	// Updates the constants of every mode from pAttributes
-	virtual void unk037( const void *p, const CRenderAttributes *pAttributes ) = 0;
+	// Updates the constants of every mode from pAttributes, called with the material's own attributes after a
+	// parameter changes
+	virtual void UpdateConstants( const void *p, const CRenderAttributes *pAttributes ) = 0;
 
-	// Value of the static combo pName of the first loaded mode
-	virtual bool unk038( const char *pName ) = 0;
+	// Whether the static combo pName of the first loaded mode stays set once the combo rules are applied
+	virtual bool IsStaticComboEnabled( const char *pName ) = 0;
 	virtual ~IMaterial2() {}
 
 public:
