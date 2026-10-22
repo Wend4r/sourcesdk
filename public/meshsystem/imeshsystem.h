@@ -78,7 +78,8 @@ public:
 	virtual uint64 ComputeSceneObjectTranslucencyFlags( uint32 nTranslucencyType, uint64 nFlags, uint64 nTypeFlags ) = 0;
 	virtual void UpdateTranslucencyFlagsOnMaterialChange( CSceneObject *pSceneObject ) = 0;
 
-	virtual void unk028( CSceneObject *pSceneObject ) = 0;
+	// UpdateTranslucencyFlagsOnMaterialChange() with hMaterial in place of the material of every draw
+	virtual void unk028( CSceneObject *pSceneObject, ResourceHandle_t hMaterial ) = 0;
 	virtual CMeshInstance *CreateMeshInstance( ISceneObjectDesc *pDesc, uint32 nSceneSystemFrameCounter, CModelMeshHandle hRenderMesh, int nSceneObjectIndex, uint64 nOriginalSceneObjectFlags, CSceneObject *pSceneObject, uint64 nMeshGroupMask, uint8 nLODGroupMask, const int16 *pLocalToMasterTable ) = 0;
 
 	// NULL unless EnableTraceLines() was called
@@ -94,8 +95,8 @@ public:
 	// when bCompile is set; NULL when the name is not a model or loading fails
 	virtual CModel *LoadModelSyncNoExtrefs( const char *pModelName, bool bCompile, void *p ) = 0;
 
-	// Moves the std::function at pFunction into CMeshSystem::m_unk0F0
-	virtual void unk035( void *pFunction ) = 0;
+	// Moves the std::function at pFunction into CMeshSystem::m_LegacyModelLoadCallback
+	virtual void SetLegacyModelLoadCallback( void *pFunction ) = 0;
 
 	// Draw flags of a loaded material, computed from its attributes ("bShaderBlended", "NeedsDynamicShadows",
 	// "AlphaTestZPrepass", "ForceZPrepass", "BindlessResources", "DisableLODBlending", ...) and then passed through

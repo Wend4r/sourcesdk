@@ -37,8 +37,8 @@ public:
 	// "AnimatableSceneObjectDesc", looked up by the two-argument CreateMeshInstance()
 	ISceneObjectDesc *m_pAnimatableDesc;
 
-	// Set by unk035(), the model type manager calls it with the id of a legacy model it loads
-	std::function< void( ResourceId_t nResourceId ) > m_unk0F0;
+	// The model type manager calls it with the id of a legacy model it loads when "legacy_models_supported" is set
+	std::function< void( ResourceId_t nResourceId ) > m_LegacyModelLoadCallback;
 };
 
 #endif // MESHSYSTEM_H
