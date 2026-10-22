@@ -26,7 +26,9 @@ class CQHelpDisplayWidget;
 abstract_class IHelpSystem : public IAppSystem
 {
 public:
-	virtual void LoadHelpContext( const char *pContextName, int nUnknown ) = 0;
+	// Loads resource/toolhelp_<name>_<language>.txt: nLocation 0 from the MOD search path, 1 from GAME,
+	// 2 from MOD for a "<prefix>/<name>" context name, passing <prefix> to the file lookup
+	virtual void LoadHelpContext( const char *pContextName, int nLocation ) = 0;
 
 	virtual void RegisterElementHelp( void *p ) = 0;
 
@@ -42,8 +44,9 @@ public:
 	virtual bool GetObjectHelp( QObject *pObject, CUtlString &sContextName, CUtlString &sHelpId ) = 0;
 	virtual void ClearObjectHelp( QObject *pObject ) = 0;
 
-	// pUnknown is shown in brackets to the right of the entry name
-	virtual bool GetHelpText( const char *pContextName, const char *pHelpId, const char *pUnknown, CUtlString &sText, bool bUnknown ) = 0;
+	// pUnknown is shown in brackets to the right of the entry name; bShowHelpBinding appends the key
+	// bound to the help command from the tool framework's input bind manager
+	virtual bool GetHelpText( const char *pContextName, const char *pHelpId, const char *pUnknown, CUtlString &sText, bool bShowHelpBinding ) = 0;
 
 	virtual void EditHelp( QWidget *pParent, const char *pContextName, const char *pHelpId ) = 0;
 
