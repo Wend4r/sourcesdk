@@ -110,12 +110,16 @@ public:
 
 	virtual int GetLowLatencyMode() = 0;
 
+	// The Vulkan device sets it when it has the VK_KHR_shader_float16_int8 and VK_KHR_16bit_storage features
 	virtual bool unk047() = 0;
 
 	virtual bool unk048() = 0;
 	virtual bool SupportsDeviceGeneratedCommands() = 0;
 	virtual bool SupportsShaderInvocationReorder() = 0;
+
+	// The Vulkan device sets it when its second queue family can present to the swap chain surface
 	virtual bool unk051() = 0;
+
 	virtual bool SupportsMeshShaders() = 0;
 
 	virtual int GetMaxMeshWorkGroupTotalCount() = 0;
@@ -124,7 +128,10 @@ public:
 	virtual bool MeshShaderPrefersLocalInvocationVertexOutput() = 0;
 
 	virtual bool SupportsConditionalRendering() = 0;
-	virtual bool unk058() = 0;
+
+	// NVIDIA Reflex is initialized and reports "Latewarp.Available"
+	virtual bool SupportsLateWarp() = 0;
+
 	virtual bool SupportsRayTracingPositionFetch() = 0;
 	virtual int GetMinAccelerationStructureScratchOffsetAlignment() = 0;
 	virtual bool SupportsVariableRateShading() = 0;
