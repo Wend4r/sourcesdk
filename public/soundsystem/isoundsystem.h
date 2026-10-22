@@ -370,7 +370,8 @@ public:
 	virtual void GetSubvoiceTrace( void *pStarted, void *pStopped, bool bClear ) = 0;
 	virtual bool FadeOutSound( SoundGuid_t guid, float flFadeTime, sound_fade_type_t nFadeType ) = 0;
 	virtual void FadeOutAllSounds( float flFadeTime, sound_voice_layer_t nVoiceLayer, sound_fade_type_t nFadeType ) = 0;
-	virtual bool unk085( int nUnk, float flFadeTime, sound_fade_type_t nFadeType ) = 0;
+	// Fades out the first voice started by the sound event, false when it has none
+	virtual bool FadeOutSoundEventVoice( SoundEventGuid_t guid, float flFadeTime, sound_fade_type_t nFadeType ) = 0;
 	virtual CAudioState *GetAudioState() = 0;
 	virtual bool IsSoundPlaying( SoundEventGuid_t guid ) = 0;
 	virtual void unk087( bool bUnk ) = 0;
