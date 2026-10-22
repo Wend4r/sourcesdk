@@ -32,7 +32,7 @@ public:
 	virtual CClientFrame *GetDeltaFrame( int nTick ) override = 0;
 	virtual void SendSignonData() override = 0;
 	virtual void SpawnPlayer() override = 0;
-	virtual void unk067( void *pInfo ) override = 0;
+	virtual void GetCommandQueueInfo( ClientCommandQueueInfo_t *pInfo ) override = 0;
 	virtual void Await() override = 0;
 	virtual bool ProcessSignonStateMsg( int state ) override = 0;
 

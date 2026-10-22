@@ -614,6 +614,22 @@ struct ClientReplayEventParams_t
 	bool m_bForceUseTheseSettings = false;
 };
 
+// Command queue state of a client that the engine writes into its CSVCMsg_PacketEntities
+struct ClientCommandQueueInfo_t
+{
+	int m_nLastCommandNumberExecuted;
+	// Sent as last_cmd_number_recv_delta relative to m_nLastCommandNumberExecuted
+	int m_nLastCommandNumberReceived;
+	// First cmd_recv_status entry, in 1/4096 units clamped below 16; a negative value sends no entries
+	float m_flUnk08;
+	// Further cmd_recv_status entries, up to the first 65599
+	int m_nCommandRecvStatus[ 8 ];
+	int m_nStarvedCommandTicks;
+	int m_nDiscardedCommandTicks;
+	int m_nUnk34;
+	bool m_bUnk38;
+};
+
 enum EncryptedMessageKeyType_t
 {
 	kEncryptedMessageKeyType_None = 0, // not encrypted
@@ -707,7 +723,7 @@ public:
 	// return m_nTickBase
 	virtual uint32			GetPlayerTickBase( CPlayerSlot slot ) = 0;
 
-	virtual void			GetClientVisibilityInfo( CPlayerSlot slot, vis_info_t *pOutVisInfo ) = 0;
+	virtual void			GetClientCommandQueueInfo( CPlayerSlot slot, ClientCommandQueueInfo_t *pInfo ) = 0;
 
 	// Handles incoming usermessages from the client
 	virtual void			ClientSvcUserMessage( CPlayerSlot slot, int um_type, uint32 size, const void *buf ) = 0;

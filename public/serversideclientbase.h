@@ -61,6 +61,7 @@ class NetMessageSplitscreenUserChanged_t;
 class ITvStreamSink;
 class INetworkStringTable;
 struct HltvReplayParams_t;
+struct ClientCommandQueueInfo_t;
 
 struct Spike_t
 {
@@ -348,7 +349,7 @@ public:
 	virtual bool             ShouldReceiveStringTableUserData( const INetworkStringTable *pTable, int nStringNumber ) = 0;
 
 	// Passes the client's slot to ISource2GameClients, which fills the structure from the player controller
-	virtual void             unk067( void *pInfo ) = 0;
+	virtual void             GetCommandQueueInfo( ClientCommandQueueInfo_t *pInfo ) = 0;
 	virtual bool             StartHltvReplay( const HltvReplayParams_t &params ) { return false; }
 	virtual void             StopHltvReplay( bool bForce ) {}
 
