@@ -160,8 +160,8 @@ public:
 	virtual void SaveCursorState( CPulseExecCursor *pCursor, CKV3TransferSaveContext *pContext ) = 0;
 	virtual void LoadCursorState( CPulseExecCursor *pCursor, CKV3TransferLoadContext *pContext ) = 0;
 
-	// Called when the pending events of the cursor are removed
-	virtual void unk003( CPulseExecCursor *pCursor ) = 0;
+	// Called by IPulseSystem::RemovePendingEventsForCursor with its cursor
+	virtual void RemovePendingEventsForCursor( CPulseExecCursor *pCursor ) = 0;
 };
 
 abstract_class IPulseBlackboardView
@@ -170,17 +170,21 @@ public:
 	virtual ~IPulseBlackboardView() {}
 
 	// Finds a variable by its editor node or by name and returns its type and storage
-	virtual bool unk002( PulseDocNodeID_t nNodeID, const char *pszName, CPulseValueFullType &type, void **ppValue ) = 0;
+	virtual bool FindBlackboardReference( PulseDocNodeID_t nNodeID, const char *pszName, CPulseValueFullType &type, void **ppValue ) = 0;
 
-	virtual ResourceHandle_t unk003() = 0;
-
-	// Name of the resource unk003 returns
-	virtual PulseSymbol_t unk004() = 0;
+	// The graph definition the blackboard's variables come from; RegisterBlackboard builds the read-only view from it
+	virtual HPulseGraphDefWeak GetBlackboardResource() = 0;
+	virtual PulseSymbol_t GetBlackboardResourceName() = 0;
 
 	virtual void unk005( PulseGraphInstanceID_t id ) = 0;
 	virtual void unk006( PulseGraphInstanceID_t id ) = 0;
-	virtual void unk007( void *p ) = 0;
-	virtual void *unk008() = 0;
+
+	// The read-only view saves its values, rebuilds itself from its resource and loads them back; empty in the view of a
+	// graph instance
+	virtual void unk007() = 0;
+
+	// The graph instance whose variables the view shows; null for a read-only view
+	virtual CBasePulseGraphInstance *GetGraphInstance() = 0;
 };
 
 abstract_class IPulseGraphInstance_TurtleGraphics
