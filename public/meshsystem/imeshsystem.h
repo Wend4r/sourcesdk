@@ -106,8 +106,8 @@ public:
 	// Adds pfnCallback to the callbacks of GetMaterialFlags() when it is not there yet and refreshes every loaded model
 	virtual void AddMaterialFlagsCallback( uint32 ( *pfnCallback )( IMaterial2 *pMaterial, uint32 nFlags ) ) = 0;
 
-	// Appends CMeshSystem::m_unk0D0 to pOut under its lock
-	virtual void unk038( CUtlVector< CMeshInstance * > *pOut ) = 0;
+	// Appends the mesh instances of render meshes with groom data to pOut
+	virtual void GetGroomMeshInstances( CUtlVector< CMeshInstance * > *pOut ) = 0;
 
 
 	virtual int FindInputIndex( ResourceHandle_t hMaterial, int nIndex ) = 0;

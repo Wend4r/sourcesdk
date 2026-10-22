@@ -28,12 +28,11 @@ public:
 	// Added by AddMaterialFlagsCallback(), applied by GetMaterialFlags()
 	CUtlVector< uint32 ( * )( IMaterial2 *pMaterial, uint32 nFlags ) > m_MaterialFlagsCallbacks;
 
-	// Locks m_unk0D0
-	CAtomicMutex m_unk0C0;
+	CAtomicMutex m_GroomMeshInstancesMutex;
 
-	// Added by the nine-argument CreateMeshInstance() for some render meshes, removed by the mesh instance destructor
-	// and when the model is unloaded, copied out by unk038()
-	CUtlVector< CMeshInstance * > m_unk0D0;
+	// Added by the nine-argument CreateMeshInstance() when the render mesh has groom data, removed by the mesh
+	// instance destructor and when the model is unloaded
+	CUtlVector< CMeshInstance * > m_GroomMeshInstances;
 
 	// "AnimatableSceneObjectDesc", looked up by the two-argument CreateMeshInstance()
 	ISceneObjectDesc *m_pAnimatableDesc;
