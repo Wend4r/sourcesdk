@@ -53,9 +53,12 @@ class CResourceCompilerSystem : public CTier3DmAppSystem< IResourceCompilerSyste
 {
 public:
 	bool m_bUnk028;
-	int m_nUnk02C;
-	int m_nUnk030;
-	int m_nUnk034;
+
+	// Results of RecompileResource, as in the compile summary
+	int m_nCompiledCount;
+	int m_nSkippedCount;
+	int m_nFailedCount;
+
 	uint8 m_unk038[ 0x10 ];
 	CUtlString m_sUnk048;
 	CUtlString m_sUnk050;
