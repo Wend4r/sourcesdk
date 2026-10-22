@@ -17,6 +17,7 @@
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
 #include "mathlib/vector.h"
+#include "mathlib/vector4d.h"
 #include "mathlib/mathlib.h"
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
@@ -480,10 +481,10 @@ public:
 
 	virtual void UpdateShapeSceneObjects() = 0;
 
-	// Call methods of the debug shapes of the shapes
-	virtual void unk036( void *pUnknown ) = 0;
-	virtual void unk037() = 0;
-	virtual void unk038() = 0;
+	// Call methods of the debug shapes of the shapes: IFnPhysicsShape::unk026, unk030 and unk028
+	virtual void unk036( const Vector4D &vColor ) = 0;
+	virtual void unk037( float flValue ) = 0;
+	virtual void unk038( int nIndex, float flValue ) = 0;
 	virtual void unk039( bool bUnknown, float flUnknown ) = 0;
 
 	virtual const char *GetDebugName() const = 0;
