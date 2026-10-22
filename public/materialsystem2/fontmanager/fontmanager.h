@@ -74,8 +74,8 @@ public:
 
 	char m_szLanguage[ 64 ];
 
-	// Font texture cache, points back to the font manager
-	uint8 m_unk158[ 0x1078 ];
+	// CFontTextureCache, points back to the font manager
+	uint8 m_FontTextureCache[ 0x1078 ];
 
 	CUtlVector< FontAliasList_t * > m_pFontAliasLists;
 	CAtomicMutex m_FontTextureCacheMutex;
