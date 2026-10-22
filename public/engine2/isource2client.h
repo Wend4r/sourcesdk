@@ -320,8 +320,8 @@ public:
 	virtual bool GameCreateNetworkStringTables() = 0;
 	// Fires the "client_disconnect" game event
 	virtual void NotifyDisconnect( int nReason ) = 0;
-	// Releases *pCombinedModel and clears *pUnk
-	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *pCombinedModel, int *pUnk, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppUnk1, const CUtlVector< int > **ppUnk2 ) = 0;
+	// Releases *phBaseModel and clears *piBaseSkin
+	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 	// Called by the client spawn group's SaveRestoreMap() and SaveRestoreMap2() with its loading spawn group; forward to the
 	// entity system save/restore when ILoadingSpawnGroup::ShouldLoadEntitiesFromSave() and ILoadingSpawnGroup::IsLevelTransition() are set
 	virtual void unk133( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
