@@ -61,8 +61,9 @@ public:
 	// Outside tools mode always true
 	virtual bool ShouldRender() = 0;
 
-	// Flag set by the client output event handler
-	virtual bool unk038() = 0;
+	// Set by the client output handler once it has sent the pending OnEngineLevelLoadingFinished
+	// match event, cleared when the loop activates
+	virtual bool HasLevelLoadingFinished() = 0;
 };
 
 #endif // IRENDERSERVICE_H
