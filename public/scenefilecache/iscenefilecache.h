@@ -46,8 +46,8 @@ public:
 class CSceneFileCache : public CTier2AppSystem< ISceneFileCache >
 {
 public:
-	// Created in Init, destroyed in Shutdown.
-	CChoreoSceneTypeManager *m_pUnk028;
+	// Installed for RESOURCE_TYPE_CHOREO_SCENE in Init, removed in Shutdown.
+	CChoreoSceneTypeManager *m_pChoreoSceneTypeManager;
 };
 
 #define SCENE_FILE_CACHE_INTERFACE_VERSION "SceneFileCache002"
