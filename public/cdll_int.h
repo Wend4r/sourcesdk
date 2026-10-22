@@ -258,7 +258,7 @@ public:
 	// Newest completed present timing record
 	virtual unk173_t unk173() = 0;
 	// Applies a GOTV sync packet from the GC to the broadcast player
-	virtual bool unk174( const CEngineGotvSyncPacket *pSyncPacket ) = 0;
+	virtual bool EngineGotvSyncPacket( const CEngineGotvSyncPacket *pPkt ) = 0;
 	// No-op in this build; the client passes CUserMessageServerFrameTime::frame_time
 	virtual void unk175( float flServerFrameTime ) = 0;
 	// No-op in this build; the client passes the number of prediction errors of the tick
