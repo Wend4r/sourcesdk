@@ -14,6 +14,7 @@
 #include "mathlib/vector.h"
 #include "mathlib/intvector3d.h"
 
+struct RenderAdapterInfo_t;
 enum RenderMultisampleType_t : uint8;
 
 abstract_class IRenderHardwareConfig
@@ -37,15 +38,18 @@ public:
 	// r_prefer_loop_unrolling
 	virtual bool PreferLoopUnrolling() = 0;
 
-	virtual bool unk009() = 0;
-	virtual bool unk010() = 0;
+	virtual bool ReverseDepth() = 0;
+	virtual bool IsFastSubrectClearSupported() = 0;
 
-	virtual const void *unk011() = 0;
+	virtual const RenderAdapterInfo_t &AdapterInfo() = 0;
 
 	virtual int GetRenderSystemType() = 0;
 
 	virtual int unk013() = 0;
-	virtual int unk014() = 0;
+
+	// The render system the engine offers to switch to, 0 for none; the Vulkan module recommends DX11 only with
+	// "-force_recommend_dx11" and when the current render system is not Vulkan
+	virtual int GetRecommendedRenderSystemType() = 0;
 
 	virtual const char *RenderSystemTypeToString( int nType ) = 0;
 	virtual const char *RenderSystemTypeToDisplayName( int nType ) = 0;
@@ -58,20 +62,20 @@ public:
 	virtual int FindRenderSystemByCommandLineSwitch( const void *pRenderSystems, const char *pSwitch ) = 0;
 	virtual int FindRenderSystemByType( const void *pRenderSystems, int nType ) = 0;
 
-	virtual bool unk022( bool bUnk ) = 0;
+	virtual bool IsSubrectResolveSupported( bool bMSAA ) = 0;
 
 	virtual bool IsMultisampleTypeSupported( int nFormat, RenderMultisampleType_t nType ) = 0;
 
 	// Highest supported multisample type not above nDesired
 	virtual RenderMultisampleType_t GetBestSupportedMultisampleType( int nFormat, RenderMultisampleType_t nDesired ) = 0;
 
-	virtual bool unk025() = 0;
+	virtual bool SupportsDescriptorSets() = 0;
 
 	virtual int GetMaxPerStageSampledTextures() = 0;
 	virtual int GetMaxPushConstantsSize() = 0;
 	virtual int GetMinConstantBufferOffsetAlignment() = 0;
 
-	virtual bool unk029() = 0;
+	virtual bool SupportsBarriers() = 0;
 
 	// Separate async compute queue
 	virtual bool SupportsAsyncCompute() = 0;
@@ -86,7 +90,9 @@ public:
 	// HLSL SM6.0 subgroup wave operations
 	virtual bool SupportsWaveOps() = 0;
 
-	virtual bool unk035() = 0;
+	// GPU texture compression writes the blocks straight into mip views of the compressed texture when set,
+	// through intermediate textures and copies otherwise
+	virtual bool SupportsDirectCompressedTextureWrites() = 0;
 
 	// Ray tracing pipelines; also requires DX level 120
 	virtual bool SupportsRayTracing() = 0;
@@ -109,12 +115,16 @@ public:
 
 	virtual int GetLowLatencyMode() = 0;
 
-	virtual bool unk047() = 0;
+	// The Vulkan device sets it when it has the VK_KHR_shader_float16_int8 and VK_KHR_16bit_storage features
+	virtual bool SupportsNative16BitShaderOps() = 0;
 
 	virtual bool unk048() = 0;
 	virtual bool SupportsDeviceGeneratedCommands() = 0;
 	virtual bool SupportsShaderInvocationReorder() = 0;
-	virtual bool unk051() = 0;
+
+	// The Vulkan device sets it when its second queue family can present to the swap chain surface
+	virtual bool SupportsPresentFromSecondQueue() = 0;
+
 	virtual bool SupportsMeshShaders() = 0;
 
 	virtual int GetMaxMeshWorkGroupTotalCount() = 0;
@@ -123,7 +133,10 @@ public:
 	virtual bool MeshShaderPrefersLocalInvocationVertexOutput() = 0;
 
 	virtual bool SupportsConditionalRendering() = 0;
-	virtual bool unk058() = 0;
+
+	// NVIDIA Reflex is initialized and reports "Latewarp.Available"
+	virtual bool SupportsLateWarp() = 0;
+
 	virtual bool SupportsRayTracingPositionFetch() = 0;
 	virtual int GetMinAccelerationStructureScratchOffsetAlignment() = 0;
 	virtual bool SupportsVariableRateShading() = 0;
