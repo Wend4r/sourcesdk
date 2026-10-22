@@ -13,12 +13,61 @@
 #include <schemasystem/schemametatag.h>
 
 #include <initializer_list>
+#include <type_traits>
 #include "resourcesystem/resourcesystemtypes.h"
 #include "resourcesystem/resourcemanifesthelpers.h"
 
 #include "schemacompiler/schemaon.h"
 
 typedef uint64 ResourceType_t;
+
+// Builds a resource type from the characters of its extension (up to 8), the first character in the low byte
+template < typename... Chars >
+constexpr std::enable_if_t< ( sizeof...( Chars ) >= 1 && sizeof...( Chars ) <= 8 && std::conjunction_v< std::is_integral< Chars >... > ), ResourceType_t > MakeResourceTypeId( Chars... chars )
+{
+	const char pszExtension[] = { static_cast< char >( chars )... };
+
+	ResourceType_t nResourceType = 0;
+
+	for ( size_t i = 0; i < sizeof...( Chars ); i++ )
+	{
+		nResourceType |= ( ResourceType_t )( uint8 )pszExtension[ i ] << ( 8 * i );
+	}
+
+	return nResourceType;
+}
+
+// The same from a string literal of the extension, e.g. MakeResourceTypeId( "vmap" )
+template < size_t N >
+constexpr std::enable_if_t< ( N >= 2 && N <= 9 ), ResourceType_t > MakeResourceTypeId( const char ( &pszExtension )[ N ] )
+{
+	ResourceType_t nResourceType = 0;
+
+	for ( size_t i = 0; i < N - 1; i++ )
+	{
+		nResourceType |= ( ResourceType_t )( uint8 )pszExtension[ i ] << ( 8 * i );
+	}
+
+	return nResourceType;
+}
+
+// e.g. RESOURCE_TYPE_ID( "vmap" ) or RESOURCE_TYPE_ID( 'v', 'm', 'a', 'p' )
+#define RESOURCE_TYPE_ID( ... ) MakeResourceTypeId( __VA_ARGS__ )
+
+// Surface properties, "surfaceproperties/surfaceproperties.vsurf"
+#define RESOURCE_TYPE_SURFACE_PROPERTIES RESOURCE_TYPE_ID( "vsurf" )
+
+// Physics aggregate data of models, "*.vphys"
+#define RESOURCE_TYPE_PHYSICS_DATA RESOURCE_TYPE_ID( "vphys" )
+
+// World nodes, "*.vwnod"
+#define RESOURCE_TYPE_WORLD_NODE RESOURCE_TYPE_ID( "vwnod" )
+
+// Worlds, "*.vwrld"
+#define RESOURCE_TYPE_WORLD RESOURCE_TYPE_ID( "vwrld" )
+
+// Entity lumps of a world, "*.vents"
+#define RESOURCE_TYPE_ENTITY_LUMP RESOURCE_TYPE_ID( "vents" )
 
 // Resource type of the info class, the packed file extension, e.g. 'vmap'
 DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );

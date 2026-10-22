@@ -373,6 +373,32 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// The CUtlVectorSIMDPadded class:
+// A growable array whose buffer always has room for one element past its capacity,
+// so a 16-byte load of the last element stays inside the allocation
+//-----------------------------------------------------------------------------
+template< class T, class I = int >
+class CUtlVectorMemory_SIMDPadded : public CUtlVectorMemory< T, I >
+{
+	typedef CUtlVectorMemory< T, I > BaseClass;
+
+public:
+	CUtlVectorMemory_SIMDPadded( I nGrowSize = 0, I nInitSize = 0 ) : BaseClass( nGrowSize, nInitSize ? nInitSize + 1 : 0 ) {}
+
+	I NumAllocated() const { return BaseClass::NumAllocated() ? BaseClass::NumAllocated() - 1 : 0; }
+	void Grow( I num = 1 ) { BaseClass::Grow( NumAllocated() + num + 1 - BaseClass::NumAllocated() ); }
+	void EnsureCapacity( I num ) { BaseClass::EnsureCapacity( num + 1 ); }
+	void Purge() { BaseClass::Purge(); }
+	void Purge( I numElements ) { BaseClass::Purge( numElements ? numElements + 1 : 0 ); }
+};
+
+template< class T, typename I = int >
+using CUtlVectorSIMDPadded = CUtlVector< T, I, CUtlVectorMemory_SIMDPadded< T, I > >;
+
+// Registered as an atomic type with the CUtlVector< Vector > layout
+typedef CUtlVectorSIMDPadded< Vector > CUtlVectorSIMDPaddedVector;
+
+//-----------------------------------------------------------------------------
 // The CUtlVectorMT class:
 // An array class with spurious mutex protection. Nothing is actually protected
 // unless you call Lock and Unlock. Also, the Mutex_t is actually not a type
