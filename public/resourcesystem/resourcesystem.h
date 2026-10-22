@@ -135,7 +135,7 @@ public:
 	CUtlHashtable< ResourceType_t, int > m_ResourceTypeManifestPriorities;
 
 	CThreadEvent m_ResourceProgressEvent;
-	CUtlSymbolTableLarge m_ResourceNameSymbols;
+	CUtlSymbolTableLargeBase< false, 2048, CThreadSpinRWLock > m_ResourceNameSymbols;
 	CUtlStringList m_whiteListedMissingResourceNames;
 	CUtlVectorFixedGrowable< ForcedSynchronizationCallbackInfo_t, 8 > m_ForcedSynchronizationCallbacks;
 	// Reference counts of the "ugc:" resources, keyed by the published file id (container not identified)
