@@ -84,11 +84,11 @@ public:
 	// v8::Global< v8::Context > of the script
 	void *m_pContext;
 
-	// Checked before any callback is called
-	bool m_bUnk030;
+	// Set once the script imports its "cs_script/<name>" module; checked before any callback is called
+	bool m_bModuleImported;
 
-	// Names added to m_ClassTemplates and m_EnumObjects
-	CUtlVector< CUtlString > m_Unk038;
+	// Export names of that module, each looked up in m_ClassTemplates and then in m_EnumObjects
+	CUtlVector< CUtlString > m_ModuleExportNames;
 
 	// The values of these tables are heap-allocated v8::Global handles
 
@@ -101,10 +101,11 @@ public:
 	// Callbacks of the script, by name ("Registering callback", "Invoking callback", "Remove callback")
 	CUtlHashtable< CGlobalSymbol, void *, CGlobalSymbolHashFunctor > m_Callbacks;
 
-	CUtlHashtable< int, void * > m_Unk0B0;
+	// Objects wrapping each entity, by its handle as an integer
+	CUtlHashtable< int, void * > m_EntityObjects;
 
-	// Keyed by the id of a "CSWeaponData" object
-	CUtlHashtable< int, void * > m_Unk0D0;
+	// Objects wrapping each "CSWeaponData", by its id
+	CUtlHashtable< int, void * > m_WeaponDataObjects;
 };
 
 class CCSScript_EntityScript : public CCSBaseScript, public IGameEventListener2
