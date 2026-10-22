@@ -40,8 +40,9 @@ public:
 		float m_pAnalogValue[ 27 ];
 		CUtlVector< InputEvent_t > m_Events;
 
-		// Heap blocks freed through g_pMemAlloc when the state is cleared or copied over
-		CUtlVector< void * > m_Unk1220;
+		// Copies of the WM_COPYDATA payloads that IE_CopyData events point to, freed through g_pMemAlloc when the
+		// state is cleared or copied over
+		CUtlVector< void * > m_CopyDataBuffers;
 		bool m_bDirty;
 	};
 
