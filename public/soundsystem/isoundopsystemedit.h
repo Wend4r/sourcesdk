@@ -213,11 +213,11 @@ public:
 	// Mod the library stack was loaded from
 	virtual void GetStackModName( const char *pStackName, CUtlString &sValue ) = 0;
 	// Lists of names, the char * elements are copies the caller deletes: library stacks, operator types
-	// (GetOperatorTypes) with "operator_override", the same with their indices, and the names of another table of the operator system
+	// (GetOperatorTypes) with "operator_override", the same with their indices, and the field data types ("none", "bool", ... "public_opvar")
 	virtual void CopyLibraryStackNames( CUtlVector< char * > &list ) = 0;
 	virtual void CopyOperatorTypeNames( CUtlVector< char * > &list ) = 0;
 	virtual void CopyOperatorTypeNamesAndIndices( CUtlVector< int > &indices, CUtlVector< char * > &names ) = 0;
-	virtual void unk069( CUtlVector< char * > &list ) = 0;
+	virtual void CopyFieldDataTypeNames( CUtlVector< char * > &list ) = 0;
 	// Names of the library stacks
 	virtual void GetLibraryStackNames( CUtlVector< const char * > &list ) = 0;
 	// Library stacks whose "display_game" value is the game name
@@ -261,8 +261,8 @@ public:
 	virtual CSoundMixGroupSystem *GetSoundMixGroupSystem() = 0;
 	// Adds the names of the voice graphs that do not start with an underscore
 	virtual void GetVoiceGraphNames( CUtlSymbolTable *pNames ) = 0;
-	// Value at +208 of the voice graph with the name
-	virtual uint32 unk096( const char *pName ) = 0;
+	// Number of submixes of the voice graph with the name, 0 when there is none
+	virtual int GetVoiceGraphSubmixCount( const char *pName ) = 0;
 	// Replaces the library stack with the one in pStack
 	virtual bool ReplaceLibraryStack( const char *pStackName, KeyValues3 *pStack ) = 0;
 	virtual CSosOperatorSystem *GetOperatorSystem() = 0;
