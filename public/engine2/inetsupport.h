@@ -74,7 +74,8 @@ public:
 		int m_numHumanPlayers;
 		bool m_bLobbyExclusive : 1;
 		bool m_bGroupExclusive : 1;
-		uint16 m_nUnk032;
+		// ISteamNetworkingSockets::GetHostedDedicatedServerPort() of the game server sockets, 0 without them
+		uint16 m_nHostedDedicatedServerPort;
 	};
 
 	struct ServerInfo_t : public BaseServerInfo_t, public ExtendedServerInfo_t
