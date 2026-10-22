@@ -19,6 +19,7 @@
 
 class IResourceCompileFileSystemInterface;
 class KeyValues;
+class KeyValues3;
 
 abstract_class IResourceCompilerSystem : public IAppSystem
 {
@@ -38,10 +39,11 @@ public:
 	// dependency itself
 	virtual const char *GetSpecialDependencyString( const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData, CBufferString *pOut ) = 0;
 
-	virtual void *CalculateSpecialInputDependencyFingerprint( void *pResult, void *pUnk1, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, void *pUnk2 ) = 0;
+	// pDependencyData is the data the compiler stored with the special input dependency
+	virtual void *CalculateSpecialInputDependencyFingerprint( void *pResult, const char *pModName, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, KeyValues3 *pDependencyData ) = 0;
 
 	// Same as GetSpecialDependencyString for a special input dependency
-	virtual const char *GetSpecialInputDependencyString( void *pUnk, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, CBufferString *pOut ) = 0;
+	virtual const char *GetSpecialInputDependencyString( const char *pModName, const char *pCompilerName, const char *pInputFile, const char *pSpecialDependency, CBufferString *pOut ) = 0;
 
 	virtual void InstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( IResourceCompileFileSystemInterface *pTestFS ) = 0;
