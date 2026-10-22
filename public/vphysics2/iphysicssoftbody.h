@@ -112,8 +112,9 @@ public:
 	virtual void *FindEffect( int nEffectId ) = 0;
 	virtual void RemoveEffect( int nEffectId ) = 0;
 
-	virtual void unk048( bool bUnknown ) = 0;
-	virtual bool unk049() const = 0;
+	// The step pre-process runs CFeModel::IntegrateSprings while enabled
+	virtual void EnableSpringIntegration( bool bEnable ) = 0;
+	virtual bool IsSpringIntegrationEnabled() const = 0;
 
 	virtual float GetEnergy( int nEnergy ) const = 0;
 	virtual float GetElasticEnergy() const = 0;
