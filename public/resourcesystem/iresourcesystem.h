@@ -184,21 +184,20 @@ public:
 	virtual bool RequiresFinalizeResourceCall() const { return false; }
 	virtual void FinalizeResource( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
 
-	// Cached in the type registration
-	virtual bool unk008() { return false; }
-
-	virtual void unk009() {}
+	// Resources of a type that wants it get an AsyncPreFinalize call from an "AsyncPreFinalize" thread pool job
+	virtual bool WantsAsyncPreFinalize() { return false; }
+	virtual void AsyncPreFinalize( ResourceHandle_t hResource, int nUnknown ) {}
 
 	// Gates the GetNonStreamingDataLoadSize call when a resource is loaded
 	virtual bool unk010() { return false; }
 
-	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool bUnknown ) { return -1; }
+	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool bIsBlockingLoad ) { return -1; }
 	virtual void LoadStreamingData( ResourceHandle_t hResource, IResourceSystemUtils *pUtils ) {}
 	virtual void AllocateResource( ResourceHandle_t hResource, ResourceId_t nId, const ResourceFileHeader_t *pHeader, IRD_RegisterResourceDataUtils *pUtils ) {}
 	virtual void DeallocateResource( void *pData, IResourceDeallocatorUtils *pUtils ) {}
 	virtual void NotifyResourceWithWorkPendingLoadCancelled( ResourceHandle_t hResource, void *pData ) {}
 	virtual bool UsesData() const { return false; }
-	virtual bool unk017() { return true; }
+	virtual bool unk017( ResourceHandle_t hResource ) { return true; }
 	virtual bool WantsAsyncProcessData() const { return false; }
 	virtual std::unique_ptr< IAsyncProcessedDataResult > AsyncProcessData( ResourceHandle_t hResource, const ResourceFileHeader_t *pHeader ) { return nullptr; }
 
