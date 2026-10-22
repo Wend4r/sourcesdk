@@ -148,7 +148,8 @@ public:
 	// Latest user command number the client generated
 	virtual int GetLatestCommandNumber( CSplitScreenSlot nSlot ) = 0;
 	virtual int unk019( CSplitScreenSlot nSlot ) = 0;
-	virtual int unk020( CSplitScreenSlot nSlot ) = 0;
+	// Number of commands kept in the command history: the latest command number, at most the history size of 150
+	virtual int GetStoredCommandCount( CSplitScreenSlot nSlot ) = 0;
 	// Called with the command numbers of a packet entities message; empty
 	virtual void unk021( CSplitScreenSlot nSlot, int nLastCommandNumberExecuted, int nUnk ) = 0;
 	// Forwards to the input system with absolute queries allowed
@@ -157,7 +158,8 @@ public:
 	virtual bool WriteUsercmdDeltaToBuffer( CSplitScreenSlot nSlot, CUtlBuffer *pBuffer, int nFrom, int nTo ) = 0;
 	virtual void EncodeUserCmdToBuffer( CSplitScreenSlot nSlot, CUtlBuffer *pBuffer, int nCommandNumber ) = 0;
 	virtual void unk025() = 0;
-	virtual double unk026( CSplitScreenSlot nSlot, int nCommandNumber ) = 0;
+	// Time stored with the command in the command history, 0.0 when it is no longer kept
+	virtual double GetCommandTime( CSplitScreenSlot nSlot, int nCommandNumber ) = 0;
 
 	// Forward to the game rules: the first one logs "paused on tick" and "unpaused on tick", the second one clears the pause ticks.
 	// The engine calls them for the demo player's pause state
