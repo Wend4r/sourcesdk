@@ -57,8 +57,9 @@ public:
 	virtual bool IsLoaded() = 0;
 	virtual IMaterialMode *GetMode( const CUtlStringToken &mode ) = 0;
 
-	// Material of the mode, this material when it has no such mode
-	virtual IMaterial2 *unk006( const CUtlStringToken &mode ) = 0;
+	// GetSimilarityKey() of a single mode: the key computed from the static combos of the mode, the address of this
+	// material when it has no such mode
+	virtual uint64 GetModeSimilarityKey( const CUtlStringToken &mode ) = 0;
 
 	virtual const CRenderAttributes *GetAttributes() = 0;
 	virtual bool HasAttribute( CUtlStringToken name ) = 0;
