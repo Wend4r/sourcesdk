@@ -98,11 +98,13 @@ struct ThumbnailFingerprintQuery_t
 	IAsset *m_pAsset;
 };
 
-// Element of the second span of MaybeUpdateThumbnails, queued to the thumbnail database writer
+// Element of both spans of MaybeUpdateThumbnails: the asset and its thumbnail fingerprint. The entries
+// of the second span are queued to the thumbnail database writer, which reads the thumbnail of that
+// path and fingerprint
 struct ThumbnailDatabaseEntry_t
 {
-	uint64 m_nUnk000;
-	uint32 m_nUnk008;
+	IAsset *m_pAsset;
+	uint32 m_nFingerprint;
 };
 
 abstract_class IAssetPreviewSystem : public IAppSystem
@@ -164,7 +166,7 @@ public:
 	// Thumbnail cache updates of the assets; MaybeUpdateThumbnails is the thumbnail cache's
 	// MaybeUpdateThumbnail for two spans
 	virtual void MaybeUpdateThumbnail( AssetPreviewSpan_t< IAsset * > assets ) = 0;
-	virtual void MaybeUpdateThumbnails( AssetPreviewSpan_t< IAsset * > assets, AssetPreviewSpan_t< ThumbnailDatabaseEntry_t > entries ) = 0;
+	virtual void MaybeUpdateThumbnails( AssetPreviewSpan_t< ThumbnailDatabaseEntry_t > assets, AssetPreviewSpan_t< ThumbnailDatabaseEntry_t > entries ) = 0;
 
 	virtual bool IsPreviewCameraLocked() = 0;
 	virtual void SetPreviewCameraLocked( bool bLocked ) = 0;
