@@ -627,7 +627,8 @@ struct ClientCommandQueueInfo_t
 	int m_nStarvedCommandTicks;
 	int m_nDiscardedCommandTicks;
 	int m_nUnk34;
-	bool m_bUnk38;
+	// Set when the server's command queue is enabled and handles this client, the counters above are only filled then
+	bool m_bCommandQueueActive;
 };
 
 enum EncryptedMessageKeyType_t
