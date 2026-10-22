@@ -203,8 +203,11 @@ public:
 	virtual int unk065( int nIndex ) = 0;
 	virtual void *unk066() = 0;
 	virtual void unk067( void *pUnk ) = 0;
-	virtual void unk068( int nUnk1, int nUnk2, float flUnk, void *pUnk ) = 0;
-	virtual bool unk069( int nUnk ) = 0;
+	// snd_steamaudio_display_probes: nProbeType 0 off, 1 reverb, 2 pathing, 3 occlusion, 4 dimensions, 5 materials;
+	// nMode 0 default, 1 always, 2 once; pDrawFn draws each probe within flRadius
+	virtual void SetProbeDisplay( int nProbeType, int nMode, float flRadius, void *pDrawFn ) = 0;
+	// True when the probes of the type are displayed with a non-zero mode
+	virtual bool IsDisplayingProbes( int nProbeType ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -326,12 +329,12 @@ public:
 	uint64 m_TransformMap[ 10 ];
 	CThreadFastMutex m_TransformMapMutex;
 
-	// Set by unk068
-	int m_nUnkA34;
-	int m_nUnkA38;
-	float m_flUnkA3C;
-	void *m_pUnkA40;
-	int m_nUnkA48;
+	// Probe display of SetProbeDisplay; the count of probe updates lets the "once" mode draw a single update
+	int m_nProbeDisplayType;
+	int m_nProbeDisplayMode;
+	float m_flProbeDisplayRadius;
+	void *m_pProbeDrawFn;
+	int m_nProbeDisplayUpdateCount;
 	Vector m_vecUnkA4C;
 	Vector m_vecUnkA58;
 	uint8 m_UnkA64[ 0x28 ];
