@@ -39,13 +39,16 @@ public:
 		float m_pAnalogDelta[ 27 ];
 		float m_pAnalogValue[ 27 ];
 		CUtlVector< InputEvent_t > m_Events;
-		uint64 m_Unk1220[ 3 ];
+
+		// Heap blocks freed through g_pMemAlloc when the state is cleared or copied over
+		CUtlVector< void * > m_Unk1220;
 		bool m_bDirty;
 	};
 
 	struct JoystickInfo_t
 	{
-		uint32 m_nUnk000;
+		// SDL id from the device event that added the joystick, printed by "initializing SDL joystick" and matched by the removal event
+		uint32 m_nSDLJoystickID;
 		uint8 m_pad004[ 0x3C ];
 		bool m_bDiagonalPOVControlEnabled;
 		uint8 m_pad041[ 0x7 ];
@@ -147,9 +150,10 @@ public:
 	// Incremented by QueueResetInputState, consumed by PollInputState ("Applying deferred input state reset")
 	CInterlockedInt m_nDeferredInputStateResets;
 
-	// Set to 3 and the event name by the "OnEventThatMightCauseFrameRateHitch" handler and read while pumping window messages
-	int m_nUnk28A4;
-	CUtlString m_Unk28A8;
+	// Set to 3 by the "OnEventThatMightCauseFrameRateHitch" handler; each SDL event pump while it is positive decrements it
+	// and passes m_strFrameTimeAmnestyReason to IEngineServiceMgr::SetFrameTimeAmnesty
+	int m_nFrameTimeAmnestyPumps;
+	CUtlString m_strFrameTimeAmnestyReason;
 
 #ifdef _WIN32
 	CUtlVector< InputWindowMessageHookFn_t > m_WindowMessageHooks;
