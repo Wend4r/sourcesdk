@@ -72,6 +72,7 @@ struct AudioState_t;
 struct EconItemInfo_t;
 struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
+struct FlattenedSerializerUserData_t;
 struct GameClientCommandQueueState_t;
 struct LightDesc_t;
 struct matrix3x4_t;
@@ -447,8 +448,8 @@ public:
 	virtual void unk201( void *pUnk, CBufferString &result ) = 0;
 	// The engine's filter callback of fps_max; the client allows the change while disconnected or on a local server, among others
 	virtual bool IsFpsMaxChangeAllowed( ConVarRefAbstract *pConVar, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue ) = 0;
-	// The engine passes it with GetReplayCompatHelper() to the flattened serializers while it links classes
-	virtual void *unk203() = 0;
+	// The engine passes it with GetReplayCompatHelper() as the user data of the flattened serializers while it links classes
+	virtual FlattenedSerializerUserData_t *GetFlattenedSerializerUserData() = 0;
 	// Asked before ISource2Server::GetMatchID() for the crash dump comment
 	virtual uint64 GetMatchID() = 0;
 	virtual bool unk205( CEntityIndex nEntityIndex ) = 0;
