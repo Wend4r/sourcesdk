@@ -281,8 +281,9 @@ abstract_class ISoundSystem : public IAppSystem
 public:
 	virtual IAudioDevice2 *CreateDefaultDevice() = 0;
 	virtual void DestroyDevice( IAudioDevice2 *pDevice ) = 0;
-	// Creates a CPresetDSPAudioProcessor through the sound system processor factory, nUnused is read by neither build
-	virtual CAudioProcessor *CreatePresetDSPProcessor( const char *pName, int nUnk1, float flCrossFade, int nChannels, int nUnused, bool bUnk ) = 0;
+	// Creates a CPresetDSPAudioProcessor through the sound system processor factory, nUnused is read by neither build;
+	// nPresetNameToken is looked up in the loaded DSP presets, an unknown one falls back to the default preset
+	virtual CAudioProcessor *CreatePresetDSPProcessor( const char *pName, uint32 nPresetNameToken, float flCrossFade, int nChannels, int nUnused, bool bUnk ) = 0;
 	virtual IAudioDevice2 *CreateNullDevice() = 0;
 	// Opens a capture stream of the input device (voice chat)
 	virtual IAudioInputStream *CreateInputStream( AudioInputStreamParams_t &params ) = 0;
