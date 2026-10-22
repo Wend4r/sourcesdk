@@ -14,6 +14,7 @@
 #include <tier2/tier2.h>
 
 class CPostProcessingState;
+class InfoForResourceTypeCTextureBase;
 struct PostProcessingResource_t;
 
 abstract_class IPostProcessingSystem : public IAppSystem
@@ -36,8 +37,8 @@ public:
 
 	virtual bool ComputeOverrideColorCorrection( void *p, const void *pParams, void *pColorCorrection ) = 0;
 
-	// Copies the pointer-sized value at +8 of the resource data of h (NULL for a NULL h) into a returned class
-	virtual CWeakHandleBase unk021( ResourceHandle_t h ) = 0;
+	// The color correction volume texture created from the post processing resource, NULL for a NULL handle
+	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetColorCorrectionTexture( ResourceHandle_t hPostProcessing ) = 0;
 };
 
 //-----------------------------------------------------------------------------
