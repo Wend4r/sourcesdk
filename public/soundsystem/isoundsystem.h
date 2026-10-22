@@ -282,7 +282,8 @@ public:
 	virtual void SetMixNameInput( CUtlStringToken nName, uint32 nValue ) = 0;
 	virtual uint32 GetMixNameInputValue( CUtlStringToken nName ) = 0;
 	virtual float GetMixControlInputValue( CUtlStringToken nName ) = 0;
-	virtual double unk059( uint32 nUnk ) = 0;
+	// 0 when the mixer has no entry for the value
+	virtual float unk059( uint32 nUnk ) = 0;
 	virtual uint32 GetDSPPresetNameToken( int nIndex ) = 0;
 	virtual CUtlString GetDSPPresetName( int nIndex ) = 0;
 	virtual int GetDSPPresetCount() = 0;
