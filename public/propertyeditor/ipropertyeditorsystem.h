@@ -26,7 +26,8 @@ class CQPropertyEditor;
 abstract_class IPropertyEditorSystem : public IAppSystem
 {
 public:
-	virtual IPropertyEditor *CreatePropertyEditor( QWidget *pParent, uint32 nUnknown ) = 0;
+	// Bit flags; with both 1 and 2 set the editor has no attribute filter bar
+	virtual IPropertyEditor *CreatePropertyEditor( QWidget *pParent, uint32 nFlags ) = 0;
 	virtual void DestroyPropertyEditor( IPropertyEditor *pEditor ) = 0;
 
 	// Act on every editor whose domain equals pDomain
