@@ -361,7 +361,7 @@ public:
 	{
 		PulseGraphInstanceID_t m_nGraphInstanceID;
 		PulseCursorID_t m_nCursorID;
-		int32 m_nUnk008;
+		int32 m_nYieldToken;
 		float m_flWakeTime;
 		PulseSymbol_t m_Clock;
 	};
