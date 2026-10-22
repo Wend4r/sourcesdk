@@ -188,7 +188,8 @@ public:
 	virtual bool SubmitFiles( int nCount, const char **ppFullPathList, const char *pDescription ) = 0;
 	virtual bool RevertFiles( int nCount, const char **ppFullPathList ) = 0;
 
-	virtual bool unk041() = 0;
+	// Reverts the unchanged files of the changelist set by SetOpenFileChangeList
+	virtual bool RevertUnchangedFiles() = 0;
 
 	// Reverts the file if it is opened but unchanged
 	virtual bool RevertUnchangedFile( const char *pFullPath ) = 0;
