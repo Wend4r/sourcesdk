@@ -37,9 +37,9 @@ public:
 	virtual void AddListener( void *pListener ) = 0;
 	virtual void RemoveListener( void *pListener ) = 0;
 
-	// State of the "panorama_ingame" input context, which unk022 enables or disables
-	virtual bool unk021() = 0;
-	virtual void unk022( bool bEnable ) = 0;
+	// State of the "panorama_ingame" input context
+	virtual bool IsInGameInputContextEnabled() = 0;
+	virtual void EnableInGameInputContext( bool bEnable ) = 0;
 	virtual void *unk023() = 0;
 
 	virtual void SetClientUIState( ClientUIState_t nState ) = 0;
