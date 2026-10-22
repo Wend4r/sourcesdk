@@ -180,10 +180,11 @@ public:
 	virtual void RemoveTextureFromSet( HRenderTexture hTexture, int nSet ) = 0;
 	virtual HRenderTexture GetTextureInSet( int nIndex, int nSet ) = 0;
 	virtual int FindTextureInSet( HRenderTexture hTexture, int nSet ) = 0;
-	virtual int unk064( int nValue, int nSet ) = 0;
-	// The texture the textures of the set are copied into.
-	virtual HRenderTexture unk065( int nSet ) = 0;
-	virtual uint16 unk066( int nSet ) = 0;
+	// Finds a texture by the token of its key in the game info section the set was loaded from ("SceneSystem/WellKnownLightCookies").
+	virtual int FindTextureInSetByName( CUtlStringToken name, int nSet ) = 0;
+	// The array texture the textures of the set are copied into, and its depth.
+	virtual HRenderTexture GetTextureSetArrayTexture( int nSet ) = 0;
+	virtual uint16 GetTextureSetArrayDepth( int nSet ) = 0;
 
 	virtual ISceneViewDebugOverlays *CreateSceneViewDebugOverlayList( int nTimingType, const char *pszName ) = 0;
 	virtual void DestroySceneViewDebugOverlayList( ISceneViewDebugOverlays *pOverlays ) = 0;
@@ -220,9 +221,8 @@ public:
 	virtual void AllocateFrameScopedTransforms( int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
 
 	virtual void AllocateFrameScopedTransforms( int nUnk, int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
-	// Allocate frame scoped 8 and 4 byte entries.
-	virtual void *unk091( int nCount, int *pFirstIndex ) = 0;
-	virtual void *unk092( int nCount, int *pFirstIndex ) = 0;
+	virtual void *AllocateFrameScopedMeshlets( int nCount, int *pFirstIndex ) = 0;
+	virtual void *AllocateFrameScopedParticleData( int nCount, int *pFirstIndex ) = 0;
 	// Returns the id of a 32 byte key, adding it when it is missing.
 	virtual int unk093( const uint32 *pKey ) = 0;
 	virtual ISceneView *CreateTemplateView( const char *pszName, ISceneWorld *pWorld, const uint32 *pUnk ) = 0;
@@ -345,9 +345,9 @@ public:
 	virtual void SetGPUProfilerMode( CUtlStringToken requester, SceneSystemGPUProfilerMode_t eGPUProfilerMode ) = 0;
 	virtual SceneSystemGPUProfilerMode_t GetGPUProfilerMode() = 0;
 
-	// Enables a per requester flag for half a second, or removes it.
-	virtual void unk169( CUtlStringToken requester, bool bEnable ) = 0;
-	virtual bool unk170() = 0;
+	// A request lasts half a second; while any is active, the GPU culling counters are read back into the per frame stats.
+	virtual void SetGPUCullingStatsEnabled( CUtlStringToken requester, bool bEnable ) = 0;
+	virtual bool IsGPUCullingStatsEnabled() = 0;
 
 	virtual void GetMostRecentTimestampFrameSummary( SwapChainHandle_t hSwapChain, CUtlVector< SceneSystemTimestampFrameData_t > &timestampFrameSummaryOut, int nUnk ) = 0;
 	// ORs the state flags of the overlay lists created by CreateSceneViewDebugOverlayList.
