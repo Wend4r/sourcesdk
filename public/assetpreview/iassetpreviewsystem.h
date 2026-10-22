@@ -77,7 +77,8 @@ public:
 abstract_class IToolSceneNodeControllerFactory
 {
 public:
-	virtual QWidget *CreateController( QWidget *pParent, QObject *pUnknown ) = 0;
+	// pToolSceneWidget is the tool scene widget of the live preview the controller is created for
+	virtual QWidget *CreateController( QWidget *pParent, CQAssetPreviewToolSceneWidget *pToolSceneWidget ) = 0;
 	virtual void SetControllerNode( QWidget *pController, CToolSceneNode *pNode ) = 0;
 };
 
