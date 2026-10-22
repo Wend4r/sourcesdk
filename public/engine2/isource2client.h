@@ -393,7 +393,8 @@ public:
 	virtual float unk179() = 0;
 	// Forwards to an object owned by the client entity system
 	virtual void unk180() = 0;
-	virtual void unk181( void *pUnk, int nUnk ) = 0;
+	// The engine passes the contents of a ".evidence" demo file, which the Overwatch UI component decodes in place
+	virtual void PrepareSignedEvidenceData( void *pvData, int nNumBytes ) = 0;
 
 	virtual void unk182( const CSVCMsg_UserCommands_t *pMsg ) = 0;
 	virtual void unk183( const CSVCMsg_UserCommands_t *pMsg ) = 0;
