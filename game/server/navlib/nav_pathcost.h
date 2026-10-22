@@ -85,10 +85,10 @@ public:
 	// along pAdj. The path optimizer's visibility walk rejects the steps it refuses, and
 	// ComputePathDetails marks the segment so that the optimizer keeps it. True in every cost of
 	// the game except the one approach areas are computed with.
-	virtual bool unk011( const CNavArea *pFromArea, const Vector *pFromPos, const NavAreaAdj_t *pAdj ) const = 0;
-	// Called by ComputePathDetails with the same arguments as unk011; true marks the segment so
+	virtual bool CanOptimizeStep( const CNavArea *pFromArea, const Vector *pFromPos, const NavAreaAdj_t *pAdj ) const = 0;
+	// Called by ComputePathDetails with the same arguments as CanOptimizeStep; true marks the segment so
 	// that the optimizer keeps it. False in every cost of the game.
-	virtual bool unk012( const CNavArea *pFromArea, const Vector *pFromPos, const NavAreaAdj_t *pAdj ) const = 0;
+	virtual bool MustKeepStep( const CNavArea *pFromArea, const Vector *pFromPos, const NavAreaAdj_t *pAdj ) const = 0;
 	// Costs the step from pFromArea, reached at pFromPos, along pAdj into *pResult: -1 unless
 	// IsToAreaTraversable, else CalcCostFloorAreas for floor steps and CalcCostLadder for ladder
 	// steps. The search records pFromPos as the position of pFromArea first; pGoalPos and
@@ -99,7 +99,7 @@ public:
 	// pFromPos is within 0.03125 of that block, else a cost computed from the portal bounds that
 	// follow the block pointer in pAdj and from pGoalPos when it is given. pAdj is an element of
 	// the space search's 56-byte neighbour list, whose type is not reconstructed.
-	virtual void unk014( const CNavBlock *pFromBlock, const void *pAdj, const Vector *pFromPos, const Vector *pGoalPos, PathCostResult_t *pResult ) const = 0;
+	virtual void CalcCostBlock( const CNavBlock *pFromBlock, const void *pAdj, const Vector *pFromPos, const Vector *pGoalPos, PathCostResult_t *pResult ) const = 0;
 	// The cost of a transition between two areas (m_bSupportsTransitions): the distance between
 	// the positions plus m_flTransitionPenalty. pUnk is the transition's transform object, which
 	// the search uses to move positions between the two sides.
