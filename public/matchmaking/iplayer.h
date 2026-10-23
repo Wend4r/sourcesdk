@@ -68,11 +68,6 @@ public:
 abstract_class IPlayerLocal : public IPlayer
 {
 public:
-	virtual const UserProfileData& GetPlayerProfileData() = 0;
-
-	virtual const void * GetPlayerTitleData( int iTitleDataIndex ) = 0;
-	virtual void UpdatePlayerTitleData( int iTitleDataIndex, const void *pvNewTitleData, int numBytesOffset, int numNewBytes ) = 0;
-
 	virtual void GetLeaderboardData( KeyValues *pLeaderboardInfo ) = 0;
 	virtual void UpdateLeaderboardData( KeyValues *pLeaderboardInfo ) = 0;
 };
