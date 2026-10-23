@@ -226,7 +226,7 @@ public:
 //-----------------------------------------------------------------------------
 // Helper implementation of an IAppSystem for tier0
 //-----------------------------------------------------------------------------
-template< class IInterface > 
+template< class IInterface, int64 ConVarFlag = 0 > 
 class CTier0AppSystem : public CBaseAppSystem< IInterface >
 {
 public:

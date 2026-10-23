@@ -49,7 +49,7 @@ void InitCommandLineProgram( int &argc, char ** &argv );
 //-----------------------------------------------------------------------------
 // Helper empty implementation of an IAppSystem for tier2 libraries
 //-----------------------------------------------------------------------------
-template< class IInterface, int ConVarFlag = 0 > 
+template< class IInterface, int64 ConVarFlag = 0 > 
 class CTier2AppSystem : public CTier1AppSystem< IInterface, ConVarFlag >
 {
 	typedef CTier1AppSystem< IInterface, ConVarFlag > BaseClass;
