@@ -151,8 +151,11 @@ struct WindEntry_t
 };
 COMPILE_TIME_ASSERT( sizeof( WindEntry_t ) == 0x40 );
 
-class CWorldNodeManager : public CDefaultIntrospectedToKV3TypeManager< RESOURCE_TYPE_WORLD_NODE, WorldNode_t >
+class CWorldNodeManager : public CTypesafeIntrospectedToKV3TypeManager< RESOURCE_TYPE_WORLD_NODE, WorldNode_t >
 {
+public:
+	// Clears the global node manager pointer that the constructor sets
+	virtual ~CWorldNodeManager();
 };
 
 class CWorldManager : public CDefaultIntrospectedToKV3TypeManager< RESOURCE_TYPE_WORLD, World_t >
