@@ -53,6 +53,10 @@ public:
 
 	virtual void *AllocateTypesafe( T *pData, IKV3ResourceAllocatorUtils *pUtils ) { return nullptr; }
 	virtual void DeallocateTypesafe( void *pObject, IKV3ResourceDeallocatorUtils *pUtils ) {}
+
+	// Called after AllocateTypesafe with the data of the resource binding and the new object,
+	// when the register utils' slot 2 returns true
+	virtual void unk028( void *pBindingData, void *pObject ) {}
 };
 
 COMPILE_TIME_ASSERT( sizeof( CBaseIntrospectedToKV3TypeManager ) == 0x20 );
