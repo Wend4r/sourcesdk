@@ -149,8 +149,6 @@ public:
 	virtual void unk104() = 0;
 	virtual void unk105() = 0;
 	virtual void unk106() = 0;
-	virtual void unk107() = 0;
-	virtual void unk108() = 0;
 	virtual void unk109() = 0;
 	virtual void unk110() = 0;
 	virtual void unk111() = 0;
@@ -165,6 +163,11 @@ public:
 	virtual void unk120() = 0;
 	virtual void unk121() = 0;
 	virtual void unk122() = 0;
+	// Captures the mixed output for the echo canceller of voice recording
+	virtual void SetOutputCaptureEnabled( bool bEnabled ) = 0;
+	// Returns the number of samples read
+	virtual int ReadOutputCapture( float *pSamples, int nMaxSamples ) = 0;
+	virtual int GetOutputCaptureSampleRate() = 0;
 	virtual void unk123() = 0;
 	virtual void unk124() = 0;
 	virtual void unk125() = 0;
