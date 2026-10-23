@@ -15,13 +15,9 @@ class IMatchSystem
 public:
 	virtual IPlayerManager * GetPlayerManager() = 0;
 
-	virtual IMatchVoice * GetMatchVoice() = 0;
-
-	virtual IServerManager * GetUserGroupsServerManager() = 0;
-
-	virtual ISearchManager * CreateGameSearchManager( KeyValues *pParams ) = 0;
-
-	virtual IDatacenter * GetDatacenter() = 0;
+	// Returns NULL; the name follows the slot order of the older interface,
+	// which declared `GetMatchVoice` next.
+	virtual void * Unk_GetMatchVoice( void *p ) = 0;
 };
 
 #endif
