@@ -60,23 +60,11 @@ public:
 	// Whether we are a single-player title or multi-player title
 	virtual bool IsMultiplayer() = 0;
 
-	// Prepare network startup params for the title
-	virtual void PrepareNetStartupParams( void *pNetStartupParams ) = 0;
-
 	// Get total number of players supported by the title
 	virtual int GetTotalNumPlayersSupported() = 0;
 
 	// Get a guest player name
 	virtual char const * GetGuestPlayerName( int iUserIndex ) = 0;
-
-	// Decipher title data fields
-	virtual TitleDataFieldsDescription_t const * DescribeTitleDataStorage() = 0;
-
-	// Title achievements
-	virtual TitleAchievementsDescription_t const * DescribeTitleAchievements() = 0;
-
-	// Title avatar awards
-	virtual TitleAvatarAwardsDescription_t const * DescribeTitleAvatarAwards() = 0;
 
 	// Title leaderboards
 	virtual KeyValues * DescribeTitleLeaderboard( char const *szLeaderboardView ) = 0;
@@ -87,6 +75,9 @@ public:
 
 	// Start up a listen server with the given settings
 	virtual bool StartServerMap( KeyValues *pSettings ) = 0;
+
+	// Run frame of the title, called from the matchmaking framework frame
+	virtual void RunFrame() = 0;
 };
 
 //
