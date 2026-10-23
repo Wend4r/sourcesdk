@@ -17,7 +17,7 @@ void DisconnectTier4Libraries();
 //-----------------------------------------------------------------------------
 // Helper empty implementation of an IAppSystem for tier3 libraries
 //-----------------------------------------------------------------------------
-template< class IInterface, int ConVarFlag = 0 > 
+template< class IInterface, int64 ConVarFlag = 0 > 
 class CTier4AppSystem : public CTier3AppSystem< IInterface, ConVarFlag >
 {
 	typedef CTier3AppSystem< IInterface, ConVarFlag > BaseClass;
