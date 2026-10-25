@@ -303,8 +303,8 @@ public:
 	virtual bool StashHltvReplay( uint32 nStashId, float flSeconds ) = 0;
 	virtual void AddHltvRelayProxyWhitelist( uint32 a, uint32 b, uint32 c, uint32 d, uint32 numbits ) = 0;
 	virtual bool WasShutDownRequested() const = 0;
-	// AMNOTE: Extends the queued matchmaking reservation timeout and sends the data in a connectionless packet to every reservation entry, or only to the entry matching the int when it is non-zero
-	virtual void unk101( int nAccountID, uint8, uint8, uint32 nDataSize, const void *pData ) = 0;
+	// Extends the queued matchmaking reservation timeout and sends the data in a connectionless packet to every reservation entry, or only to the entry of nAccountID when it is non-zero
+	virtual void SendQueuedMatchReservationData( int nAccountID, uint8, uint8, uint32 nDataSize, const void *pData ) = 0;
 	virtual bool IsTvRecording() = 0;
 	virtual void StartAutoRecording() = 0;
 	virtual void RecordDemo( const char *pszFilename ) = 0;
