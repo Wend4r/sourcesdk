@@ -204,7 +204,8 @@ public:
 	virtual void unk143() = 0;
 	virtual void unk144() = 0;
 	virtual void unk145() = 0;
-	virtual void Unk_GenerateCompositeMorphTextureAtlas( void *p ) = 0;
+	// Fills the per-view constants from the view and the previous view description (matrices through unk144, viewport and clip values).
+	virtual void Unk_ComputeViewConstants( void *p ) = 0;
 
 	// Gates ISceneUtils::CreateVolumetricFog.
 	virtual bool Unk_IsVolumetricFogEnabled() = 0;
