@@ -110,8 +110,8 @@ public:
 	// Appends up to nCount particles, pContainerAttributes gives the container field of each array of the data
 	virtual int AddAttributeData( int nCount, const ParticleSnapshotAttributeData_t *pData, const int *pContainerAttributes ) = 0;
 
-	// Returns the particle count, same as NumCols()
-	virtual int unk004() const = 0;
+	// Same as NumCols(); CopySnapshot reads it as the particle count
+	virtual int GetParticleCount() const = 0;
 
 	virtual int NumCols() const = 0;
 	virtual int NumRows() const = 0;
@@ -165,12 +165,13 @@ public:
 	virtual void SetLastSimulationDuration( float flDuration ) = 0;
 	virtual float GetLastSimulationDuration() = 0;
 
-	virtual void DumpParticleSystems( const char *pszFilter, bool bUnk ) = 0;
+	virtual void DumpParticleSystems( const char *pszFilter, bool bSkipAsleep ) = 0;
 
 	virtual CSceneObject *CreateParticleSceneObject( const char *pszName, ISceneWorld *pWorld, IParticleSystemQuery *pQuery, float flDelay, int nRandomSeed ) = 0;
 
 	virtual CSceneObject *CreateParticleSceneObject( HParticleSystemDefinition hDefinition, ISceneWorld *pWorld, IParticleSystemQuery *pQuery, float flDelay, int nRandomSeed ) = 0;
-	virtual CSceneObject *CreateParticleSceneObject( IParticleCollection *pCollection, ISceneWorld *pWorld, bool bUnk ) = 0;
+	// bOwnsCollection makes the scene object destroy the collection; the other overloads pass true
+	virtual CSceneObject *CreateParticleSceneObject( IParticleCollection *pCollection, ISceneWorld *pWorld, bool bOwnsCollection ) = 0;
 	virtual void unk032( Vector vecUnk, void *pUnk1, IParticleCollection *pCollection, void *pUnk2, bool bUnk1, void *pUnk3, void *pUnk4, int nUnk1, bool bUnk2, int nUnk2 ) = 0;
 
 	// Draws from the random sequence of a particle collection
@@ -220,8 +221,9 @@ public:
 
 	virtual bool HasFeatureFlags( int nFlags ) = 0;
 
-	// Adds instances to the instanced mesh scene object matching the world, flags and the 32-byte key, creating it when missing; records are 100 bytes
-	virtual void AddInstancedMeshes( ISceneWorld *pWorld, uint64 nFlags, uint64 nTypeFlagsMask, uint64 nTypeFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bUnk ) = 0;
+	// Adds instances to the instanced mesh scene object matching the world, flags and the 32-byte key, creating it when missing; records are 100 bytes.
+	// bMotionVectors lets the scene object draw motion vectors for these instances (sc_instanced_mesh_motion_vectors); the model renderers pass true for one of their two instance lists
+	virtual void AddInstancedMeshes( ISceneWorld *pWorld, uint64 nFlags, uint64 nTypeFlagsMask, uint64 nTypeFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bMotionVectors ) = 0;
 
 	// Physics types of the C_OP_ClientPhysics operators (m_strPhysicsType), each added once
 	virtual void AddClientPhysicsType( CUtlString sPhysicsType ) = 0;
