@@ -322,19 +322,22 @@ public:
 	CUtlLeanVector< int > m_FreeSourceIds;
 	uint64 m_Unk1E8[ 11 ];
 	CThreadFastMutex m_UnkMutex240;
-	CThreadFastMutex m_UnkMutex24C;
+	CThreadFastMutex m_UnkMutex250;
 
-	// Pathing output of SimulatePathing and the tables the constructor fills with constants (layout not resolved)
-	int m_nUnk258;
-	int m_nUnk25C;
-	uint64 m_Unk260[ 81 ];
+	int m_nUnk260;
+	// Coefficients SimulatePathing returns, the counts are set by the constructor
+	int m_nPathingSHCoeffCount;
+	float m_flPathingEQCoeffs[ 3 ];
+	float m_flPathingSHCoeffs[ 16 ];
+	// Tables the constructor fills with constants (layout not resolved)
+	uint8 m_Unk2B4[ 0x23C ];
 
 	// Index tables of unk059..unk065
-	int m_nUnk4E8[ 3 ];
-	int m_nUnk4F4[ 3 ];
-	int m_nUnk500[ 3 ];
-	int m_nUnk50C[ 11 ];
-	int m_nUnk538[ 3 ];
+	int m_nUnk4F0[ 3 ];
+	int m_nUnk4FC[ 3 ];
+	int m_nUnk508[ 3 ];
+	int m_nUnk514[ 11 ];
+	int m_nUnk540[ 3 ];
 
 	// Scenes registered by AddScene
 	CUtlVectorFixedGrowable< SteamAudioSceneEntry_t, 4 > m_Scenes;
@@ -345,7 +348,8 @@ public:
 
 	CSteamAudioReverbSimulator *m_pReverbSimulator;
 	CSteamAudioPartitioner *m_pPartitioner;
-	bool m_bUnk9D0;
+	// SetListenerOrigin enables enable_iir_order_8 of the context once
+	bool m_bIIROrder8Enabled;
 
 	// Hash map of SetTransform transforms (container not identified) and the mutex LockTransforms takes
 	uint64 m_TransformMap[ 10 ];
@@ -357,11 +361,11 @@ public:
 	float m_flProbeDisplayRadius;
 	void *m_pProbeDrawFn;
 	int m_nProbeDisplayUpdateCount;
-	Vector m_vecUnkA4C;
-	Vector m_vecUnkA58;
-	uint8 m_UnkA64[ 0x28 ];
-	CUtlVector< void * > m_UnkA90;
-	int m_nUnkAA8;
+	Vector m_vecUnkA64;
+	Vector m_vecUnkA70;
+	uint8 m_UnkA7C[ 0x28 ];
+	CUtlVector< void * > m_UnkAA8;
+	int m_nPathingEQBandCount;
 };
 
 #endif // ISTEAMAUDIO_H
