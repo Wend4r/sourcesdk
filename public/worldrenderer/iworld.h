@@ -48,7 +48,6 @@ public:
 	virtual bool SetWorldLayerVisibility( const char *pLayerName, bool bVisible ) = 0;
 
 	virtual void FindEntitiesByClassname( const char *pClassname, const char *pSearchLump, CUtlVector< const CEntityKeyValues * > &res ) const = 0;
-	virtual bool unk014( void *p ) = 0;
 };
 
 #endif // IWORLD_H
