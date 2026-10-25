@@ -368,13 +368,13 @@ public:
 	// Called on round_start before every area's OnRoundRestart; resets the obstruction manager.
 	virtual void OnRoundRestart() = 0;
 	// Puts the area into the grid and the id hash; a movable mesh id other than -1 also
-	// registers it with that movable mesh and sets NAV_AREA_MOVABLE. bUnk passes docks
-	// (NAV_AREA_DOCK) on to the obstruction manager.
+	// registers it with that movable mesh and sets NAV_AREA_MOVABLE. bNotifyObstructionManager
+	// passes docks (NAV_AREA_DOCK) on to the obstruction manager.
 	// The two overloads take their slots in this order on Linux and in the reverse order on
 	// Windows, as MSVC groups overloads.
-	virtual void AddNavArea( CNavArea *pArea, uint32 nMovableMeshId, bool bUnk ) = 0;
+	virtual void AddNavArea( CNavArea *pArea, uint32 nMovableMeshId, bool bNotifyObstructionManager ) = 0;
 	// Forwards to AddNavArea with no movable mesh.
-	virtual void AddNavArea( CNavArea *pArea, bool bUnk ) = 0;
+	virtual void AddNavArea( CNavArea *pArea, bool bNotifyObstructionManager ) = 0;
 	// Takes the areas out of the grid, the id hash, the movable meshes and the geometry, and
 	// notifies the managers.
 	virtual void RemoveNavArea( int nCount, CNavArea **ppAreas ) = 0;
@@ -421,7 +421,7 @@ public:
 private:
 	// An interface told of activation and of added and removed areas; the game's own mesh
 	// construction does not set it.
-	void *m_pUnk30;
+	void *m_pAreaListener;
 
 public:
 	INavMarkupManager *m_pMarkupManager;
@@ -437,7 +437,7 @@ public:
 
 private:
 	// An interface ticked by Update and told of movable mesh changes.
-	void *m_pUnk68;
+	void *m_pMovableMeshListener;
 	// -1 while Update runs, then the value of a serial shared by every mesh, which each Update
 	// advances (wrapping from 0x7FFF to 1).
 	int16 m_nLastUpdateSerial;
