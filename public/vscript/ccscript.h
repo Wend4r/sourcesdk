@@ -3,6 +3,7 @@
 
 #include "entitysystem.h"
 #include "igameevents.h"
+#include "tier0/generichash.h"
 #include "tier0/globalsymbol.h"
 #include "tier0/utlstring.h"
 #include "tier1/utlhashtable.h"
@@ -16,10 +17,24 @@ class CPlantedC4;
 class CTakeDamageInfo;
 class CTakeDamageResult;
 
+namespace v8
+{
+	class Function;
+	class FunctionTemplate;
+	class Object;
+	template < class T > class Global;
+}
+
 // Hashes a CGlobalSymbol by the 32-bit hash stored in front of its string
 struct CGlobalSymbolHashFunctor
 {
 	unsigned int operator()( const CGlobalSymbol &sym ) const { return sym.IsValid() ? reinterpret_cast< const uint32 * >( sym.String() )[ -1 ] : 0; }
+};
+
+// Hashes an entity handle stored as an integer
+struct CCSScriptEntityHandleHashFunctor
+{
+	unsigned int operator()( int nHandle ) const { return MurmurHash2( &nHandle, sizeof( nHandle ), 0x3501A674 ); }
 };
 
 template < typename T >
@@ -92,25 +107,29 @@ public:
 	// Set once the script imports its "cs_script/<name>" module; checked before any callback is called
 	bool m_bModuleImported;
 
-	// Export names of that module, each looked up in m_ClassTemplates and then in m_EnumObjects
+	// Export names of that module, each looked up in m_SingletonTemplates, m_ClassTemplates and then m_EnumObjects
 	CUtlVector< CUtlString > m_ModuleExportNames;
 
-	// The values of these tables are heap-allocated v8::Global handles
+	// Templates of the singleton objects ("Instance", "Console", "GameRules"), exported as a new instance of each
+	CUtlHashtable< CGlobalSymbol, v8::Global< v8::FunctionTemplate > *, CGlobalSymbolHashFunctor > m_SingletonTemplates;
 
 	// Function templates by class name ("Entity", "BaseModelEntity", "CSWeaponBase", ...)
-	CUtlHashtable< CGlobalSymbol, void *, CGlobalSymbolHashFunctor > m_ClassTemplates;
+	CUtlHashtable< CGlobalSymbol, v8::Global< v8::FunctionTemplate > *, CGlobalSymbolHashFunctor > m_ClassTemplates;
 
 	// Objects holding the values of each registered enumeration, by its name
-	CUtlHashtable< CGlobalSymbol, void *, CGlobalSymbolHashFunctor > m_EnumObjects;
+	CUtlHashtable< CGlobalSymbol, v8::Global< v8::Object > *, CGlobalSymbolHashFunctor > m_EnumObjects;
 
 	// Callbacks of the script, by name ("Registering callback", "Invoking callback", "Remove callback")
-	CUtlHashtable< CGlobalSymbol, void *, CGlobalSymbolHashFunctor > m_Callbacks;
+	CUtlHashtable< CGlobalSymbol, v8::Global< v8::Function > *, CGlobalSymbolHashFunctor > m_Callbacks;
 
 	// Objects wrapping each entity, by its handle as an integer
-	CUtlHashtable< int, void * > m_EntityObjects;
+	CUtlHashtable< int, v8::Global< v8::Object > *, CCSScriptEntityHandleHashFunctor > m_EntityObjects;
 
 	// Objects wrapping each "CSWeaponData", by its id
-	CUtlHashtable< int, void * > m_WeaponDataObjects;
+	CUtlHashtable< int, v8::Global< v8::Object > *, IdentityHashFunctor > m_WeaponDataObjects;
+
+	// "CSPrecache" objects returned by Instance.Precache, by their id
+	CUtlHashtable< int, v8::Global< v8::Object > * > m_PrecacheObjects;
 };
 
 class CCSScript_EntityScript : public CCSBaseScript, public IGameEventListener2
