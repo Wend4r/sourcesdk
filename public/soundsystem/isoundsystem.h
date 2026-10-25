@@ -426,13 +426,11 @@ public:
 	virtual void StopVoiceTrace() = 0;
 	// Copies the recorded voice trace into pOut and clears it
 	virtual void GetVoiceTrace( void *pOut ) = 0;
-	// Voices driven directly, recorded by the voice trace as "startVoice", "updateVoice", "graph", "startSubvoice",
-	// "stopSubvoice", "listener" and "mainGraph". pInputs holds the control and name inputs of a graph.
+	// Voices driven directly, recorded by the voice trace as "startVoice", "updateVoice", "graph", "listener" and
+	// "mainGraph". pInputs holds the control and name inputs of a graph.
 	virtual SoundGuid_t StartVoice( FileNameHandle_t hVSndName, CUtlStringToken nGraphName, const SoundVoicePlayback_t *pPlayback ) = 0;
 	virtual void UpdateVoice( SoundGuid_t guid, const SoundVoicePlayback_t *pPlayback ) = 0;
 	virtual void SetVoiceGraphInputs( SoundGuid_t guid, const void *pInputs ) = 0;
-	virtual void StartSubvoice( SoundGuid_t guid, const void *pSubvoice ) = 0;
-	virtual void StopSubvoice( SoundGuid_t guid, uint16 nSubvoiceId ) = 0;
 	virtual void SetListenerAndMainGraphInputs( const SoundVoiceListener_t *pListener, const void *pInputs ) = 0;
 	// Time of the last frame, a count summed over the frames and the frame count of the active voice trace
 	virtual void GetVoiceTraceSummary( void *pSummary ) = 0;
@@ -457,6 +455,11 @@ public:
 	// the registration. Returns the id RemoveMixerCallback takes.
 	virtual int AddMixerCallback( std::function< bool() > *pCallback ) = 0;
 	virtual void RemoveMixerCallback( int nCallbackId ) = 0;
+	// Captures the mixed output for the echo canceller of voice recording
+	virtual void SetOutputCaptureEnabled( bool bEnabled ) = 0;
+	// Returns the number of samples read
+	virtual int ReadOutputCapture( float *pSamples, int nMaxSamples ) = 0;
+	virtual int GetOutputCaptureSampleRate() = 0;
 	virtual std::unique_ptr< CAudioSource > CreateAudioSource( CSfxTable *pSfx, VSound_t *pSound ) = 0;
 	virtual std::unique_ptr< IAudioCacheHandle > CreateAudioCacheHandle( CSfxTable *pSfx ) = 0;
 	virtual IAudioDecoder *CreateStretchDecoder( IAudioDecoder *pDecoder, float flStretch ) = 0;
