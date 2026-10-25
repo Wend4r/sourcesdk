@@ -178,7 +178,8 @@ public:
 	virtual void unk047( int nValue ) = 0;
 	virtual int unk048() = 0;
 
-	virtual void unk049( void *pCallback ) = 0;
+	// Wind velocity at a position, sampled by the softbody step; the server installs its wind lookup
+	virtual void SetWindCallback( Vector ( *pfnGetWind )( const Vector &vPosition ) ) = 0;
 	virtual void SetSleepingEnabled( bool bEnabled ) = 0;
 	virtual bool IsSleepingEnabled() = 0;
 	virtual int GetSleepingBodyCount() = 0;
