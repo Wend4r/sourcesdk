@@ -56,6 +56,7 @@ class IGameEvent;
 class ILoadingSpawnGroup;
 class INetChannel;
 class INetworkFieldChangedEventQueue;
+class INetworkStringTableContainer;
 class InfoForResourceTypeCTextureBase;
 class IToolClientSimulationAPI;
 class IToolObject;
@@ -68,6 +69,7 @@ class KeyValues;
 class QAngle;
 class Vector;
 class Vector4D;
+class bf_read;
 struct AudioState_t;
 struct EconItemInfo_t;
 struct Entity2Networkable_t;
@@ -225,16 +227,17 @@ public:
 	virtual void OnDemoRecordStart( const char *pszDemoBaseName, IDemoMessageSink *pSink ) = 0;
 	virtual void OnDemoRecordStop( IDemoMessageSink *pSink ) = 0;
 
-	// Fires the "demo_start" game event
-	virtual void OnDemoPlaybackStart( const char *pszFilename, void *pUnk, KeyValues *pOptions ) = 0;
+	// With pStringTableNames, fills it with the names of the string tables the engine looks up while skipping
+	// ("userinfo", "instancebaseline", ...), applies pOptions and clears the scrubbing data; without, fires the "demo_start" game event
+	virtual void OnDemoPlaybackStart( const char *pszFilename, CUtlVector< CUtlString > *pStringTableNames, KeyValues *pOptions ) = 0;
 	// Fires the "demo_stop" game event
 	virtual void OnDemoPlaybackStop() = 0;
 	virtual void unk064( void *pUnk ) = 0;
-	virtual void SetupScrubbingData( bool bSignon, int nUnk, int nMessageId, void *pUnk ) = 0;
+	virtual void SetupScrubbingData( bool bSignon, int nTick, int nMessageId, bf_read *pBuffer ) = 0;
 	// Logged as the connection info of the scrubbing data
-	virtual void AddPlayerConnectionEvent( bool bSignon, int nUnk1, int nUnk2, CSteamID steamID, bool bBot, bool bHltv ) = 0;
-	// Reads the "AnimAssetData" block of pUnk1
-	virtual void ReadAnimAssetData( void *pUnk1, void *pUnk2 ) = 0;
+	virtual void AddPlayerConnectionEvent( bool bSignon, int nTick, int nConnectionInfo, CSteamID steamID, bool bBot, bool bHltv ) = 0;
+	// Reads the "AnimAssetData" string table of the demo's string tables into pAnimAssets
+	virtual void ReadAnimAssetData( INetworkStringTableContainer *pStringTables, void *pAnimAssets ) = 0;
 	// Frees the game events kept for scrubbing and clears the player connection events
 	virtual void ClearScrubbingData() = 0;
 	// Fires the game events kept for nTick
@@ -244,7 +247,7 @@ public:
 	// Asked by the demo player for each message removed while skipping
 	virtual bool ShouldNopCmdDuringDemoSkip( int nCmd ) = 0;
 	// Serializes the message into a new entry of the instant replay data
-	virtual void InitInstantReplayData( InstantReplayMessage_t *pMessage, int nUnk ) = 0;
+	virtual void InitInstantReplayData( InstantReplayMessage_t *pMessage, int nTick ) = 0;
 	virtual void ClearInstantReplayData() = 0;
 	virtual bool UpdateProgressBar( float flProgress, const char *pszDescription ) = 0;
 	virtual bool unk075() = 0;
@@ -472,7 +475,7 @@ struct SerializedEvent_t
 // A user message serialized for demo scrubbing or for the instant replay
 struct SerializedUserMessage_t
 {
-	int m_nUnk000;
+	int m_nTick;
 	int m_nMessageId;
 	CUtlVector< uint8 > m_Data;
 };
