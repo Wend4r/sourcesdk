@@ -31,7 +31,7 @@ public:
 abstract_class IKeybindChangeListener
 {
 public:
-	virtual void unk000( ButtonCode_t code ) = 0;
+	virtual void OnKeyBindingChanged( ButtonCode_t code ) = 0;
 };
 
 abstract_class IInputService : public IEngineService
@@ -68,7 +68,8 @@ public:
 	virtual void ForEachInputValue( const CUtlDelegate< bool ( CInputValueBase * ) > &callback ) = 0;
 
 	virtual void EnableKeyBindingSystem( bool bEnable ) = 0;
-	virtual void unk041( bool bUnk ) = 0;
+	// When set, exec, exec_async and perftest refuse to run and console input skips the command remap list; cleared on loop deactivation
+	virtual void SetScriptExecBlocked( bool bBlocked ) = 0;
 	// Counter incremented by each client input processing pass
 	virtual int GetFrameCount() = 0;
 
@@ -100,15 +101,15 @@ public:
 
 	// When set, an input convar value that fails to parse in ProcessConVar asserts instead of warning
 	virtual void SetAssertOnInputConVarParseFailure( bool bAssert ) = 0;
-	// Empty in this build
-	virtual void unk059() = 0;
-	virtual void unk060() = 0;
+	// Empty in this build; called around the server simulate job that runs as the secondary main thread and around test script command text
+	virtual void OnSecondaryMainThreadBegin() = 0;
+	virtual void OnSecondaryMainThreadEnd() = 0;
 
 	// 8 with Engine2/AllowKeyChordBindings, 1 otherwise
 	virtual int GetNumChords() = 0;
 
-	// Stores both pointers in two parallel lists; the client passes its input frame counter and the static next to it
-	virtual void unk062( int *pUnk1, void *pUnk2 ) = 0;
+	// Each input processing pass writes the new GetFrameCount value through pnFrameCount and the timestamp of the last input event through pnLastEventTimestamp
+	virtual void RegisterInputFrameCounters( int *pnFrameCount, uint64 *pnLastEventTimestamp ) = 0;
 };
 
 #endif // IINPUTSERVICE_H
