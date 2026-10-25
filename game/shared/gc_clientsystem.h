@@ -26,16 +26,15 @@ public:
 
 	// Runs the main loop of m_GCClient with 1000 and flFrameTime in microseconds while m_bInittedGC is set
 	virtual void Update( float flFrameTime );
-	// Placeholders are numbered by their Linux slot
-	// Returns an int member of m_GCClient
-	virtual int unk067();
-	// Forwards its arguments to an interface global
-	virtual void unk068();
+	// Returns m_GCClient's m_eConnectionStatus
+	virtual GCConnectionStatus GetConnectionStatus();
+	// Returns the engine's GetSteamUniverse()
+	virtual EUniverse GetSteamUniverse();
 	// Initializes m_GCClient with the Steam client and sets m_bInittedGC ( "CGCClientSystem - failed to init GCClient!" )
 	virtual void InitGC();
-	// Both are empty here
-	virtual void unk070();
-	virtual void unk071();
+	// Called before and after InitGC, both are empty here
+	virtual void PreInitGC();
+	virtual void PostInitGC();
 
 	GCSDK::CGCClient *GetGCClient() { return &m_GCClient; }
 	const GCSDK::CGCClient *GetGCClient() const { return &m_GCClient; }
