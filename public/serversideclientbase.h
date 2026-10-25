@@ -152,7 +152,7 @@ public:
 	{
 		CBufferString m_sManifest;
 		SpawnGroupHandle_t m_hSpawnGroup;	// msg.spawngrouphandle
-		bool m_bUnk0014;
+		bool m_bAsync;
 	};
 
 	// Copied out of CCLCMsg_BaselineAck at enqueue time (not a message pointer)
