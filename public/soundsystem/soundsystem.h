@@ -15,7 +15,6 @@
 #include <functional>
 
 class CSoundDebugVisualizer;
-class CVMixTypeManager;
 
 //-----------------------------------------------------------------------------
 // An enumerated audio output device
@@ -68,7 +67,6 @@ public:
 	bool m_bUnk040 : 1;
 	bool m_bNeedsRestart : 1;
 	uint8 m_pad041[ 0xF ];
-	CVMixTypeManager *m_pVMixTypeManager;
 
 	// Copy of the last audio state passed to Update, extended by the listener data the mixer derives from it
 	struct : public CAudioState
@@ -89,16 +87,16 @@ public:
 
 	CAudioDeviceList m_DeviceList;
 	double m_flDisableMuteUntil;
-	uint8 m_pad298[ 0x8 ];
+	uint8 m_pad288[ 0x8 ];
 	CSoundDebugVisualizer *m_pDebugVisualizer;
-	float m_flUnk2A8;
+	float m_flUnk298;
 	int m_nInitCount;
 	CVSndParameterTable m_VSndParameterTable;
 	// Guards the networked voice streams
 	CThreadFastMutex m_VoiceStreamMutex;
 	// Functions queued by QueueFunction
 	CTSQueue< std::function< void() > * > m_QueuedFunctions;
-	uint8 m_pad320[ 0x2 ];
+	uint8 m_pad310[ 0x2 ];
 	// QueueFunction runs the function at once instead of queuing it
 	bool m_bRunFunctionsImmediately;
 	// Functions run by Update or QueueFunction while it is set are dropped instead
