@@ -520,9 +520,9 @@ public:
 	virtual bool	IsEntityReportActive( void ) = 0;
 	// Returns nullptr unless the entity report is active and targets this slot or every slot
 	virtual IEntityReport *GetEntityReport( int nSlot ) = 0;
-	// Empty in this build
-	virtual void	unk046( void ) = 0;
-	virtual void	unk047( void ) = 0;
+	// Empty in this build; called around the server simulate job that runs as the secondary main thread
+	virtual void	OnSecondaryMainThreadBegin( void ) = 0;
+	virtual void	OnSecondaryMainThreadEnd( void ) = 0;
 	virtual bool	ThreadInPrimaryOrSecondaryMainThread( void ) = 0;
 	virtual void	EnterSyncInterval( void ) = 0;
 	// AMNOTE: The bool picks which of two parallel work modes clients enter

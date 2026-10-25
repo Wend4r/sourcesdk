@@ -71,9 +71,9 @@ public:
 	virtual void RequestHS_ReloadLastSaveGame(void) = 0;
 	virtual void RequestHS_RestartSpawnGroups(void) = 0;
 
-	// Empty in the engine implementation.
-	virtual void unk023(void) = 0;
-	virtual void unk024(void) = 0;
+	// Empty in the engine implementation; called around the server simulate job that runs as the secondary main thread
+	virtual void OnSecondaryMainThreadBegin(void) = 0;
+	virtual void OnSecondaryMainThreadEnd(void) = 0;
 };
 
 class CHostStateMgr : public CTier4AppSystem<IHostStateMgr>, public ISwitchLoopModeStatusNotify
