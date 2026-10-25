@@ -33,8 +33,9 @@ public:
 	virtual void unk007() = 0;
 	virtual void unk008() = 0;
 	virtual void SetViewport( void *pUnk, int nTopLeftX, int nTopLeftY, int nWidth, int nHeight ) = 0;
-	virtual void unk010() = 0;
-	virtual void unk011() = 0;
+	// Ends the recording with EndDisplayList and hands the list to IRenderDevice::SubmitDisplayLists
+	virtual void SubmitDisplayList() = 0;
+	virtual CDisplayList *EndDisplayList() = 0;
 	virtual void unk012() = 0;
 	virtual void unk013() = 0;
 	virtual void GetViewport( RenderViewport_t *pViewport, int nIndex ) = 0;
@@ -99,7 +100,8 @@ public:
 	virtual bool BindVertexBuffer( int nSlot, VertexBufferHandle_t hVertexBuffer, int nOffset, int nStride ) = 0;
 	virtual void unk074() = 0;
 	virtual void unk075() = 0;
-	virtual void unk076() = 0;
+	// Recorded by IRenderDevice::AsyncSetTextureData with the same arguments
+	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
 	virtual void unk077() = 0;
 	virtual void unk078() = 0;
 	virtual void unk079() = 0;
