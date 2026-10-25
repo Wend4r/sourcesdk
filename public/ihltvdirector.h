@@ -52,8 +52,8 @@ public:
 	virtual void	CreateLocalChatMessage( const CSteamID &steamIDTalker, const char *pszName, const char *pszChat, INetworkMessageInternal *&pOutMessage, CNetMessage *&pOutData ) = 0;
 	virtual void	OnHLTVUncompressedSnapshot( int nPlayerSlot, bf_write &buf ) = 0;
 	virtual void	OnHLTVNetMessage( const NetMessageInfo_t *pInfo, const CNetMessage *pData ) = 0;
-	// Per-frame director update driven by the HLTV server.
-	virtual void	unk018( float flUnk ) = 0;
+	// Per-frame director update driven by the HLTV server; flDelay is the age of the broadcast frame in seconds.
+	virtual void	FrameUpdate( float flDelay ) = 0;
 };
 
 #endif // IHLTVDIRECTOR_H
