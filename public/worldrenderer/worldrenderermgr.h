@@ -133,14 +133,15 @@ public:
 	bool m_bSkipSceneObjectCreation : 1;
 	bool m_bBakedLightingIsInvalid : 1;
 	bool m_bBakedLightingIsPreview : 1;
-	bool m_bUnk5 : 1; // Set in Init from the scene world.
+	// Set while m_worldBakedLightingInfo is added to the scene world (from Init until Shutdown)
+	bool m_bBakedLightingAddedToSceneWorld : 1;
 	bool m_bHideBaseLayer : 1;
 	bool m_bWorldNodeLoadQueued : 1;
 
 	CWorldSceneObjectRefHash m_sceneObjectRefs;
 	CUtlVector< HResourceManifest > m_pendingManifests;
 	CUtlVector< HEntityLump > m_entityLumps;
-	int32 m_nUnk2B0;
+	SpawnGroupHandle_t m_hSpawnGroup;
 
 	// World requests queued for the world; the deletion of the world waits while any is pending
 	int32 m_nPendingWorldRequests;
