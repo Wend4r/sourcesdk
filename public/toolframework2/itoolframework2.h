@@ -151,7 +151,7 @@ public:
 	// on the next frame
 	virtual int RequestQuit() = 0;
 
-	virtual void OnGameLoopActiveChanged( bool bUnknown, bool bActive ) = 0;
+	virtual void OnGameLoopActiveChanged( bool bServer, bool bActive ) = 0;
 
 	virtual void HandleToolRequest( KeyValues3 *pRequest ) = 0;
 };
@@ -276,9 +276,9 @@ public:
 	// Reloads tools/stylesheets/qtabbedstyle_colors.vsc and applies the style
 	virtual void ReloadTabbedStyle() = 0;
 
-	// Forwards both values to IToolSystem2::OnGameLoopActiveChanged of every loaded tool; the game loop
-	// mode passes true and whether it is being activated
-	virtual void NotifyGameLoopActive( bool bUnknown, bool bActive ) = 0;
+	// Forwards both values to IToolSystem2::OnGameLoopActiveChanged of every loaded tool; called when the
+	// server or client game loop mode is activated or deactivated
+	virtual void NotifyGameLoopActive( bool bServer, bool bActive ) = 0;
 
 	virtual void MarkSettingsDirty() = 0;
 
