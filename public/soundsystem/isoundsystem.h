@@ -137,7 +137,6 @@ public:
 		m_bPaused = false;
 		m_bMuted = false;
 		m_bMuteGame = false;
-		m_bMuteUI = false;
 		m_bMuteTools = false;
 
 		for ( int i = 0; i < 4; i++ )
@@ -162,11 +161,10 @@ public:
 	bool m_bInGame : 1;
 	// INetworkGameClient::IsPaused
 	bool m_bPaused : 1;
+	// snd_mute_losefocus while the application is inactive; DisableAudioMuting clears it
 	bool m_bMuted : 1;
-	// Silence the game and the UI voice layers; both set from the game mute of IToolFramework2::GetAudioMuteState,
-	// DisableAudioMuting clears only m_bMuteUI
+	// Game mute of IToolFramework2::GetAudioMuteState
 	bool m_bMuteGame : 1;
-	bool m_bMuteUI : 1;
 	// Tools mute of IToolFramework2::GetAudioMuteState
 	bool m_bMuteTools : 1;
 
