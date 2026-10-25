@@ -38,7 +38,6 @@ public:
 	virtual ~CCSBaseScript() {}
 
 	virtual const char *GetName() = 0;
-	virtual CGlobalSymbol GetGlobalSymbol() = 0;
 	virtual void CreateEntityTemplate( /* v8::Local< v8::FunctionTemplate > */ void *pTemplate ) = 0;
 
 	// Clears m_Callbacks; the entity script also stops listening for game events
@@ -56,6 +55,12 @@ public:
 	virtual void OnBombDefuseAbort( CPlantedC4 *pPlantedC4 ) = 0;
 	virtual void OnBombDefuse( CPlantedC4 *pPlantedC4, CCSPlayerPawn *pDefuser ) = 0;
 	virtual void OnBombExplode( CPlantedC4 *pPlantedC4 ) = 0;
+	virtual void OnHostagePickUpStart( CEntityInstance *pHostage ) = 0;
+	virtual void OnHostagePickUpAbort( CEntityInstance *pHostage, CEntityInstance *pPlayer ) = 0;
+	virtual void OnHostagePickUp( CEntityInstance *pHostage ) = 0;
+	virtual void OnHostageDrop( CEntityInstance *pHostage, CEntityInstance *pDropper ) = 0;
+	virtual void OnHostageRescue( CEntityInstance *pHostage ) = 0;
+	virtual void OnHostageKill( CEntityInstance *pHostage, CEntityInstance *pAttacker ) = 0;
 
 	// The script may change the damage, its types and flags, or abort it
 	virtual int OnModifyPlayerDamage( CCSPlayerPawn *pPlayer, CTakeDamageInfo &info ) = 0;
