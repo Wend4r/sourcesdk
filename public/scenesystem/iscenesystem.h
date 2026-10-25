@@ -352,8 +352,9 @@ public:
 	virtual bool IsGPUCullingStatsEnabled() = 0;
 
 	virtual void GetMostRecentTimestampFrameSummary( SwapChainHandle_t hSwapChain, CUtlVector< SceneSystemTimestampFrameData_t > &timestampFrameSummaryOut, int nUnk ) = 0;
-	// ORs the state flags of the overlay lists created by CreateSceneViewDebugOverlayList.
-	virtual int unk172( int *pOut ) = 0;
+	// ORs the ImGui state of the overlay lists created by CreateSceneViewDebugOverlayList: bit 0 when pMouseCursor is set
+	// (-1 hides the cursor), bit 1 while they take mouse input; the client picks its cursor and consumes mouse events from it.
+	virtual int GetImGuiInputState( int *pMouseCursor ) = 0;
 	virtual IRayTraceSceneWorld *CreateRayTraceWorld( const char *pszDebugName, int nMaxRayTypes, bool bUnk ) = 0;
 	virtual void DestroyRayTraceWorld( IRayTraceSceneWorld *pWorld ) = 0;
 	virtual void unk175( const void *pUnk ) = 0;
