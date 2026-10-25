@@ -101,9 +101,9 @@ public:
 	// the space search's 56-byte neighbour list, whose type is not reconstructed.
 	virtual void CalcCostBlock( const CNavBlock *pFromBlock, const void *pAdj, const Vector *pFromPos, const Vector *pGoalPos, PathCostResult_t *pResult ) const = 0;
 	// The cost of a transition between two areas (m_bSupportsTransitions): the distance between
-	// the positions plus m_flTransitionPenalty. pUnk is the transition's transform object, which
+	// the positions plus m_flTransitionPenalty. pTransitionTransform is the transition's transform object, which
 	// the search uses to move positions between the two sides.
-	virtual float TransitionCost( const CNavArea *pFromArea, const CNavArea *pToArea, const Vector *pFrom, const Vector *pTo, const Vector *pGoalPos, const void *pUnk ) const = 0;
+	virtual float TransitionCost( const CNavArea *pFromArea, const CNavArea *pToArea, const Vector *pFrom, const Vector *pTo, const Vector *pGoalPos, const void *pTransitionTransform ) const = 0;
 	// Returns flDist unchanged; game costs add their penalties here, and treat a height change
 	// above their agent's climb as impassable.
 	virtual float FloorAreaCost( const CNavArea *pArea, const CNavArea *pFromArea, float flDist, float flHeightChange ) const = 0;
