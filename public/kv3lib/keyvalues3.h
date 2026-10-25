@@ -257,7 +257,8 @@ public:
 	template< uintp N > constexpr CKV3MemberName( const char (&szInit)[N] ) : CKV3MemberHash( szInit ), m_iSymLarge( UTL_INVAL_SYMBOL_LARGE ), m_pszString( (const char *)szInit ) {}
 	CKV3MemberName( const char *pszString, int nLen ) : CKV3MemberHash( MakeStringToken2( pszString, nLen ) ), m_iSymLarge( UTL_INVAL_SYMBOL_LARGE ), m_pszString( pszString ) {}
 	CKV3MemberName( uint32 nHash = 0, UtlSymLargeId_t index = UTL_INVAL_SYMBOL_LARGE, const char* pszString = StringFuncs<char>::EmptyString() ) : CKV3MemberHash( nHash ), m_iSymLarge( index ), m_pszString( pszString ) {}
-	CKV3MemberName( const CKV3MemberName &other ) = default;
+	// User-provided like in the game binaries: a CKV3MemberName return goes through a hidden pointer (IPulseCursorListener::GetName)
+	CKV3MemberName( const CKV3MemberName &other ) : CKV3MemberHash( other ), m_iSymLarge( other.m_iSymLarge ), m_pszString( other.m_pszString ) {}
 
 	CKV3MemberName &operator=( const CKV3MemberName &other )
 	{
