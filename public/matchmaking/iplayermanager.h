@@ -6,6 +6,7 @@
 class IPlayer;
 class IPlayerFriend;
 class IPlayerLocal;
+class ISteamFriends;
 
 abstract_class IPlayerManager
 {
@@ -40,6 +41,12 @@ public:
 	//	returns player interface by player's XUID or NULL if player not found or not available
 	//
 	virtual IPlayer * FindPlayer( XUID xuid ) = 0;
+
+	//
+	// GetSteamFriends
+	//	returns the friends interface that caches persona data in process
+	//
+	virtual ISteamFriends * GetSteamFriends() = 0;
 };
 
 
