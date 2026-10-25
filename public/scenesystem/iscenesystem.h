@@ -199,7 +199,8 @@ public:
 
 	virtual void MoveObjectToWorld( CSceneObject *pObject, ISceneWorld *pWorld ) = 0;
 
-	virtual void FrameUpdate( bool bUnk ) = 0;
+	// bAdvanceGPUProfilerFrame reads back the GPU timestamp queries and moves to the next profiler frame while a profiler mode is set
+	virtual void FrameUpdate( bool bAdvanceGPUProfilerFrame ) = 0;
 	virtual void AllocateScratchRenderTargets( void *p ) = 0;
 
 	virtual void ComputePipelineRenderTargetInfo( SwapChainHandle_t hSwapChain, bool bUnk, PipelineRenderTargetInfo_t *pInfo ) = 0;
@@ -315,9 +316,9 @@ public:
 	// Gates ISceneUtils::CreateCharacterDecalRenderer.
 	virtual bool IsCharacterDecalRenderingEnabled() = 0;
 
-	// Add and remove a pair of pointers.
-	virtual void unk152( void *pUnk1, void *pUnk2 ) = 0;
-	virtual void unk153( void *pUnk1, void *pUnk2 ) = 0;
+	// Add and remove a callback, called with pContext as its last argument after the render attributes of a view are set up.
+	virtual void AddViewAttributesCallback( void *pfnCallback, void *pContext ) = 0;
+	virtual void RemoveViewAttributesCallback( void *pfnCallback, void *pContext ) = 0;
 	virtual ISceneView *FindView( const char *pszName ) = 0;
 	virtual ImageFormat GetPrimaryRenderTargetFormat() = 0;
 	virtual ImageFormat GetBackBufferFormat() = 0;
@@ -375,7 +376,8 @@ public:
 	virtual void unk189( void *pUnk ) = 0;
 	virtual void *unk190( int nIndex ) = 0;
 	virtual void AcquireImGuiLock() = 0;
-	virtual void ReleaseImGuiLock( bool bUnk ) = 0;
+	// bCompleteDeferredRendering finishes the rendering that FinishRenderingViews left pending because this thread held the lock
+	virtual void ReleaseImGuiLock( bool bCompleteDeferredRendering ) = 0;
 	virtual bool IsImGuiLocked() = 0;
 	virtual bool IsImGuiLockedByCurrentThread() = 0;
 	// The function runs in WaitForRenderingToComplete.
