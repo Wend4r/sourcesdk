@@ -80,14 +80,18 @@ struct CWorldRendererBakedLightingInfo
 	CUtlHashtable< uint32, void * > m_lightmapTable;
 };
 
-struct CWorldUnk010
+// Scene objects that CWorld creates from its world node
+struct CWorldNodeSceneObjects
 {
-	CUtlVector< void * > m_Unk00;
+	CUtlVector< CWorldSceneObjectRef * > m_sceneObjects;
 	CUtlVector< void * > m_Unk18;
 	uint64 m_nUnk30;
-	uint16 m_nUnk38;
+	bool m_bSceneObjectsCreated;
+	bool m_bVisible;
 	CWorldRendererBakedLightingInfo m_bakedLightingInfo;
-	CUtlVector< void * > m_UnkE0;
+
+	// World layer index of each scene object
+	CUtlVector< int8 > m_sceneObjectLayerIndices;
 };
 
 class CWorld : public IWorld
@@ -98,9 +102,12 @@ public:
 	const CUtlVector< HEntityLump > &GetEntityLumps() const { return m_entityLumps; }
 
 public:
-	CStrongHandleBase m_hUnk008;
-	CWorldUnk010 m_Unk010;
-	int32 m_nUnk108;
+	// Node 0 of the world data
+	HWorldNodeStrong m_hWorldNode;
+	CWorldNodeSceneObjects m_worldNodeSceneObjects;
+
+	// 0 = not requested, bit 0 = precache requested, 2 = node loaded
+	int32 m_nWorldNodeLoadState;
 	HWorldStrong m_hWorld;
 	World_t *m_pWorldData;
 	matrix3x4a_t m_mWorldTransform;
@@ -128,7 +135,7 @@ public:
 	CWorldSceneObjectRefHash m_sceneObjectRefs;
 	CUtlVector< HResourceManifest > m_pendingManifests;
 	CUtlVector< HEntityLump > m_entityLumps;
-	int32 m_nUnk2B0;
+	SpawnGroupHandle_t m_hSpawnGroup;
 	int32 m_nUnk2B4;
 };
 
