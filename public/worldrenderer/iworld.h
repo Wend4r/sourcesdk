@@ -30,14 +30,14 @@ public:
 	// Players
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) const = 0;
 
-	// Precache
-	virtual void PrecacheAllWorldNodes( bool bUnknown, bool bBlockUntilFinished ) = 0;
+	// Precache; bInitiallyUseFallbacks selects RESOURCE_MANIFEST_INITIALLY_USE_FALLBACKS for the node manifest
+	virtual void PrecacheAllWorldNodes( bool bInitiallyUseFallbacks, bool bBlockUntilFinished ) = 0;
 
 	// Entities and lighting
 	virtual const CUtlVector< const CEntityKeyValues * > *GetEntityList( const char *pSearchLump = NULL ) const = 0; // Can be return NULL value.
 
-	// Searches for "[PR#]" followed by pTargetname when bUnknown is false; the world renderer manager passes false
-	virtual void FindEntitiesByTargetname( const char *pTargetname, const char *pSearchLump, CUtlVector< const CEntityKeyValues * > &res, bool bUnknown ) const = 0;
+	// Searches for "[PR#]" followed by pTargetname unless bNoPrefabPrefix is set; the world renderer manager passes false
+	virtual void FindEntitiesByTargetname( const char *pTargetname, const char *pSearchLump, CUtlVector< const CEntityKeyValues * > &res, bool bNoPrefabPrefix ) const = 0;
 
 	virtual bool HasLightmaps() const = 0;
 	virtual bool HasBakedLighting() const = 0;
