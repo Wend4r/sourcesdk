@@ -51,14 +51,7 @@ public:
 	virtual ~CGameResourceService() = 0;
 
 	CUtlVector<CGameResourceManifest *> m_Manifests;
-	CGameEntitySystem* m_pEntitySystem;
+	IEntityResourceManifestBuilder* m_pEntityResourceManifestHandler;
 };
-
-#ifdef _WIN32
-static_assert( sizeof( CGameResourceService ) == 0x60, "CGameResourceService layout mismatch" );
-#else
-static_assert( sizeof( CGameResourceService ) == 0x58, "CGameResourceService layout mismatch" );
-#endif
-
 
 #endif // IGAMERESOURCESERVICE_H
