@@ -278,13 +278,14 @@ public:
 	virtual int GetVoiceGraphSubmixCount( const char *pName ) = 0;
 	// Replaces the library stack with the one in pStack
 	virtual bool ReplaceLibraryStack( const char *pStackName, KeyValues3 *pStack ) = 0;
-	virtual CSosOperatorSystem *GetOperatorSystem() = 0;
-	// Table of the operator types
-	virtual void *GetOperatorTypes() = 0;
 };
 
 class CSosEdit : public CTier2AppSystem< ISoundOpSystemEdit >
 {
+public:
+	virtual CSosOperatorSystem *GetOperatorSystem();
+	// Table of the operator types
+	virtual void *GetOperatorTypes();
 };
 
 #include "schemacompiler/schemaoff.h"
