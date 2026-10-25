@@ -303,7 +303,7 @@ public:
 	void                     ExecuteDelayedCall( DisconnectCall_t &call );
 
 	// Collects the server's initial spawn groups for the server info message and marks them as sent
-	virtual void             unk049( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) = 0;
+	virtual void             CollectInitialSpawnGroups( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) = 0;
 	virtual void             SendInitialSpawnGroups( CUtlVector< CNetworkServerSpawnGroup * > &vecSpawnGroups, bool bAsync ) = 0;
 	virtual void             ExecuteDelayedCall( BuildServerInfoMessageAsync_t &call ) = 0;
 

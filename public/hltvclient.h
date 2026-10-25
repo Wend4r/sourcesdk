@@ -24,7 +24,7 @@ public:
 	virtual bool ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) override = 0;
 	virtual bool ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) override = 0;
 	virtual bool ProcessMove( const CCLCMsg_Move_t &msg ) override = 0;
-	virtual void unk049( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) override = 0;
+	virtual void CollectInitialSpawnGroups( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) override = 0;
 	virtual void SendInitialSpawnGroups( CUtlVector< CNetworkServerSpawnGroup * > &vecSpawnGroups, bool bAsync ) override = 0;
 	virtual bool UpdateAcknowledgedFramecount( int tick ) override = 0;
 	virtual bool ShouldSendMessages() override = 0;
