@@ -339,8 +339,9 @@ public:
 	// Scenes registered by AddScene
 	CUtlVectorFixedGrowable< SteamAudioSceneEntry_t, 4 > m_Scenes;
 
-	// Listener and HRTF state written by SetListenerOrigin (layout not resolved)
-	uint64 m_Unk5A0[ 132 ];
+	// Listener and HRTF state written by SetListenerOrigin, copied from a default the constructor builds once
+	// (layout not resolved)
+	ALIGN16 uint8 m_Unk5B0[ 0x420 ] ALIGN16_POST;
 
 	CSteamAudioReverbSimulator *m_pReverbSimulator;
 	CSteamAudioPartitioner *m_pPartitioner;
