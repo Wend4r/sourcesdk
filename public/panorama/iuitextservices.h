@@ -37,7 +37,8 @@ public:
 	virtual bool RegisterCustomFontFile( const char *pszFullPath, const char *pszFileName ) = 0;
 
 	// nTextBytes includes the terminator, nEncoding is 1 for UTF-8, 2 for UTF-16 and 3 for UTF-32.
-	// pFontMetrics, when not NULL, receives the font ascent, descent and line height (floats) and two flags
+	// pFontMetrics, when not NULL, receives the font ascent, descent, line height and maximum advance width (floats),
+	// then a fixed-width flag and a flag set when the face metrics were read
 	virtual IUITextLayout *CreateTextLayout( const void *pText, int nTextBytes, int nCharCount, uint8 nEncoding, const void *pLayoutParams, void *pFontMetrics ) = 0;
 	virtual void FreeTextLayout( IUITextLayout *pLayout ) = 0;
 
