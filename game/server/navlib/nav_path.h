@@ -156,8 +156,9 @@ public:
 	CPathOptimizer *m_pOptimizer;
 	// Null at construction and never set by the game. When set, slot 0 is called with the
 	// path and m_Query.m_pPathCost right after the segments are post-processed, like
-	// m_pOptimizer later.
-	void *m_pUnk4878;
+	// m_pOptimizer later; the inlined default of that slot moves the landing of every
+	// PATH_SEG_JUMP_DOWN segment through slot 1 (path, cost, segment index).
+	void *m_pJumpDownProcessor;
 };
 
 //-----------------------------------------------------------------------------
