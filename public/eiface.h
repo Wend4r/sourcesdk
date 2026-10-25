@@ -116,8 +116,8 @@ struct HltvReplayParams_t
 	float m_flSlowdownRate = 1.0f;
 	bool m_bAbortCurrentReplay = false;
 	int m_nReason = 0;
-	// AMNOTE: Flags: 1 = replay the stash m_nStashId, 2 = replay all of the stash instead of its last m_flDelay seconds
-	uint32 m_unk101 = 0;
+	// 1 = replay the stash m_nStashId, 2 = replay all of the stash instead of its last m_flDelay seconds
+	uint32 m_nFlags = 0;
 	uint32 m_nStashId = 0;
 };
 
