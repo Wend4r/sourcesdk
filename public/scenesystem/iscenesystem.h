@@ -302,7 +302,8 @@ public:
 	// Matrices selected by a scene system flag from a view description.
 	virtual VMatrix unk144( const void *pUnk, Vector *pOut ) = 0;
 	virtual VMatrix unk145( const void *pUnk ) = 0;
-	virtual void GenerateCompositeMorphTextureAtlas( void *p ) = 0;
+	// Fills the per-view constants from the view and the previous view description (matrices through unk144, viewport and clip values).
+	virtual void Unk_ComputeViewConstants( void *p ) = 0;
 
 	// Gates ISceneUtils::CreateVolumetricFog.
 	virtual bool VolumetricFogEnabled() = 0;
