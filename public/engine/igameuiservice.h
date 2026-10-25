@@ -23,14 +23,26 @@ namespace panorama
 	class IUIWindow;
 };
 
+class ISceneView;
+class ISceneLayer;
+class IRenderContext;
+
 // Layer handler of the game UI service, called while its render handler adds the views
 abstract_class IGameUIRenderCallback
 {
 public:
-	// Called before the layer's view is added: 0 has the layer call unk001 this frame, 2 removes the handler from the layer, other values skip it
-	virtual int unk000() = 0;
-	// Gets the three arguments of the procedural layer renderer call unchanged
-	virtual void unk001( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// Called before the layer's view is added: 0 has the layer call Render this frame, 2 removes the handler from the layer, other values skip it
+	virtual int PreRender() = 0;
+	// Gets the arguments of the layer's IProceduralLayerRenderer call unchanged
+	virtual void Render( ISceneView *pView, IRenderContext *pRenderContext, ISceneLayer *pLayer ) = 0;
+};
+
+struct GameUILayerHandler_t
+{
+	IGameUIRenderCallback *m_pHandler;
+	int m_nPriority;
+	// Result of the handler's PreRender for the current frame
+	int m_nPreRenderResult;
 };
 
 abstract_class IGameUIService : public IEngineService
@@ -56,10 +68,11 @@ public:
 	// Forwards to the console panel when it exists
 	virtual void ClearConsole() = 0;
 
-	// Wraps the window in a procedural layer, then creates its root panel through the panorama client
-	virtual panorama::CPanel2D *AddPanoramaView( const char *pszName, panorama::IUIWindow *pWindow, bool bUnk1, bool bUnk2 ) = 0;
-	// Returns NULL in this build
-	virtual void *unk034() = 0;
+	// Wraps the window in a procedural layer, then creates its root panel through the panorama client.
+	// bUseDepthBuffer gives the layer a "backDepthBuffer" target; bResizeWithSwapChain resizes the window when the swap chain size changes
+	virtual panorama::CPanel2D *AddPanoramaView( const char *pszName, panorama::IUIWindow *pWindow, bool bUseDepthBuffer, bool bResizeWithSwapChain ) = 0;
+	// Returns NULL in this build; the client walks the focus chain of a non-NULL result to allow IME input and block game input
+	virtual panorama::CPanel2D *GetFocusedPanoramaView() = 0;
 
 	// Per layer (0 to 3) handler lists, sorted by nPriority
 	virtual void AddLayerHandler( int nLayer, IGameUIRenderCallback *pHandler, int nPriority ) = 0;
@@ -107,7 +120,7 @@ public:
 	bool m_bPauseOnCtrlConsole;
 	IInputHandler *m_pInputHandler;
 	void *m_unk240;
-	uint64 m_unk248[ 4 ][ 3 ];
+	CUtlVector< GameUILayerHandler_t > m_LayerHandlers[ 4 ];
 };
 
 #endif // IGAMEUISERVICE_H
