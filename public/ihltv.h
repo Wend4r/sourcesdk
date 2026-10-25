@@ -73,7 +73,7 @@ class ITvStreamSink
 {
 public:
 	// Takes a broadcast frame; the first one sets the tick of the first broadcast frame and activates the server
-	virtual void unk000( void *pFrame ) = 0;
+	virtual void AddNewFrame( void *pFrame ) = 0;
 	// Records the frame into the demo and builds the client frames from it
 	virtual void unk001( void *pFrame ) = 0;
 	// The current RunFrame job of the async server
