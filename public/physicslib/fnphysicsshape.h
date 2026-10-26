@@ -45,6 +45,13 @@ struct PhysicsShapeVertex_t
 	Vector m_vNormal;
 };
 
+// Tags in the low two bits of a tagged geometry pointer
+#define PHYSICS_TAGGED_GEOMETRY_HULL 0
+#define PHYSICS_TAGGED_GEOMETRY_MESH 1
+#define PHYSICS_TAGGED_GEOMETRY_COMPOUND 2
+#define PHYSICS_TAGGED_GEOMETRY_SPHERE_OR_CAPSULE 3 // No geometry pointer
+#define PHYSICS_TAGGED_GEOMETRY_TAG_MASK 3
+
 abstract_class IFnPhysicsShape
 {
 public:
@@ -93,8 +100,7 @@ public:
 	// Same type, collision group, interacts-as and interacts-with layers
 	virtual bool HasSameCollisionFilter( IPhysicsShape *pOther ) const = 0;
 
-	// The geometry pointer tagged in its low bits like IVPhysics2::DestroyTaggedGeometry takes it: a hull, a mesh | 1,
-	// a compound | 2, or 3 for a sphere or a capsule
+	// The geometry pointer with a PHYSICS_TAGGED_GEOMETRY_* tag in its low bits, as IVPhysics2::DestroyTaggedGeometry takes it
 	virtual uintp GetTaggedGeometry() const = 0;
 
 	// Empty

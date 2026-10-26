@@ -580,6 +580,7 @@ public:
 	virtual void *AllocateContactBlock( uint32 nCount ) = 0;
 	virtual void FreeContactBlock( void *p ) = 0;
 
+	// Destroys the hull, mesh or compound by the PHYSICS_TAGGED_GEOMETRY_* tag of the pointer, see IFnPhysicsShape::GetTaggedGeometry
 	virtual void DestroyTaggedGeometry( uintp nTaggedGeometry ) = 0;
 
 	virtual RnMassProperties_t ComputeMass( const RnSphere_t *pSphere, const RnMaterial_t &material ) = 0;
