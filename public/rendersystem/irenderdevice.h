@@ -378,7 +378,8 @@ public:
 	// GetPresentCount() + 1
 	virtual int GetNextPresentCount() = 0;
 
-	virtual int unk241() = 0;
+	// Frame number below which PerformQueuedTextureDeletions frees queued textures
+	virtual int GetCompletedFrameNumber() = 0;
 
 	// Pointer to the RENDERDOC_API_1_6_0 pointer, NULL when RenderDoc is not loaded
 	virtual void *GetRenderDocAPI() = 0;

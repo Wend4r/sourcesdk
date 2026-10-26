@@ -45,7 +45,8 @@ public:
 
 	virtual int GetRenderSystemType() = 0;
 
-	virtual int unk013() = 0;
+	// The render device manager's render system type, GetRenderSystemType() when the manager set none
+	virtual int GetEffectiveRenderSystemType() = 0;
 
 	// The render system the engine offers to switch to, 0 for none; the Vulkan module recommends DX11 only with
 	// "-force_recommend_dx11" and when the current render system is not Vulkan
