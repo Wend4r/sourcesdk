@@ -193,9 +193,10 @@ public:
 	virtual bool GetCameraPosition( CSplitScreenSlot nSlot, CTransform *pTransform ) = 0;
 	virtual CPlayerSlot GetLocalPlayer( CSplitScreenSlot nSlot ) const = 0;
 
+	// nTarget picks the split screen client whose channel sends the command; out of range targets go through SendStringCmd with -1
 	// MSVC places the CCommand overload first
-	virtual void ServerCmd( int nCommandSrc, const char *pszCmd ) = 0;
-	virtual void ServerCmd( int nCommandSrc, const CCommand &args ) = 0;
+	virtual void ServerCmd( CommandTarget_t nTarget, const char *pszCmd ) = 0;
+	virtual void ServerCmd( CommandTarget_t nTarget, const CCommand &args ) = 0;
 
 	virtual void SendStringCmd( CSplitScreenSlot nSlot, const char *pszCmd ) = 0;
 	virtual void SplitScreenConnect( CSplitScreenSlot nSlot ) = 0;

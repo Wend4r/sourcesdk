@@ -72,7 +72,7 @@ public:
 	// -1 while not connected
 	virtual CPlayerSlot GetLocalPlayerSlot( CSplitScreenSlot nSlot ) = 0;
 
-	virtual void ServerCmd( int nCommandSrc, const CCommand &args ) = 0;
+	virtual void ServerCmd( CommandTarget_t nTarget, const CCommand &args ) = 0;
 	virtual void SendStringCmd( CSplitScreenSlot nSlot, const char *pszCmd ) = 0;
 	virtual void SplitScreenConnect( CSplitScreenSlot nSlot ) = 0;
 	virtual int GetMaxSplitScreenPlayers() = 0;
