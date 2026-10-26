@@ -172,7 +172,9 @@ public:
 	virtual CSceneObject *CreateParticleSceneObject( HParticleSystemDefinition hDefinition, ISceneWorld *pWorld, IParticleSystemQuery *pQuery, float flDelay, int nRandomSeed ) = 0;
 	// bOwnsCollection makes the scene object destroy the collection; the other overloads pass true
 	virtual CSceneObject *CreateParticleSceneObject( IParticleCollection *pCollection, ISceneWorld *pWorld, bool bOwnsCollection ) = 0;
-	virtual void unk032( Vector vecUnk, void *pUnk1, IParticleCollection *pCollection, void *pUnk2, bool bUnk1, void *pUnk3, void *pUnk4, int nUnk1, bool bUnk2, int nUnk2 ) = 0;
+	// Behavioural names, no caller in any available module: reads Position, Radius, Roll, Yaw (zero when bIgnoreYaw), Color, Alpha and
+	// attribute nExtraAttribute of the listed particles into pOutData and *ppOutCursor; nMode 0 to 2 picks one of three layouts.
+	virtual void ExtractParticleRenderData( Vector vecOrigin, const void *pOriginParams, IParticleCollection *pCollection, const CUtlVector< int > *pParticleIndices, bool bBatched, float *pOutData, float **ppOutCursor, int nMode, bool bIgnoreYaw, int nExtraAttribute ) = 0;
 
 	// Draws from the random sequence of a particle collection
 	virtual int RandomInt( IParticleCollection *pCollection, int nMin, int nMax ) = 0;
@@ -343,7 +345,7 @@ public:
 	CUtlVector< IParticleFunctionDefinition * > m_ParticleOperators[ 9 ];
 
 private:
-	uint8 m_unk110[ 8 ];
+	uint8 m_pad110[ 8 ];
 
 public:
 	// Zeroed by the constructors only
@@ -368,7 +370,7 @@ public:
 	int m_nGPULevel;
 
 private:
-	uint8 m_unk154[ 4 ];
+	uint8 m_pad154[ 4 ];
 
 public:
 	// Incremented when the type manager releases a particle system definition
@@ -395,7 +397,7 @@ public:
 	CUtlVectorFixedGrowable< CUtlString, 16 > m_ShaderOverrideNames;
 
 private:
-	uint8 m_unk428[ 0xA0 ];
+	uint8 m_pad428[ 0xA0 ];
 
 public:
 	CStrongHandle< InfoForResourceTypeIParticleSystemDefinition > m_hHoveredParticleSystem;
