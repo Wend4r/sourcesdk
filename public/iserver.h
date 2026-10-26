@@ -29,6 +29,7 @@
 #include <utlhash.h>
 #include <utlhashmaplarge.h>
 #include <ihltv.h>
+#include <iprerequisite.h>
 
 enum server_state_t : int
 {
@@ -157,7 +158,8 @@ public:
 	virtual server_state_t GetServerState( void ) = 0; // return m_State
 	virtual bool	SpawnServer( const char * ) = 0;
 
-	virtual int 	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
+	// PS_PENDING while the spawn group's create prerequisites run, PS_SATISFIED once it is created, PS_FAILED for an unknown handle
+	virtual PrerequisiteStatus_t GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t, const char * ) = 0;
 
 	virtual CServerChangelevelState *StartChangeLevel( const char *pszMapName, const char *pszLandmark, const char *pszAddons ) = 0;
