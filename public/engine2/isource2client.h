@@ -426,7 +426,7 @@ public:
 	virtual void unk167( void *pMsg ) = 0;
 	// Scene view debug overlays of the client CDebugOverlayGameSystem; the engine passes received CNETMsg_DebugOverlay messages to it
 	virtual ISceneViewDebugOverlays *GetDebugOverlayGameSystem() = 0;
-	// Tick and fraction of the client's prediction timing (the object that also holds the user command prediction time offset)
+	// CPrediction::m_nPredictedTickBase as a tick and fraction
 	virtual GameTickFraction_t GetPredictionTickFraction() = 0;
 	// Called by the broadcast player each time it has played a keyframe fragment; resets the spectator target
 	virtual void OnBroadcastKeyframePlayed() = 0;
