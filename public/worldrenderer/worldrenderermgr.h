@@ -121,6 +121,11 @@ struct CWorldNodeSceneObjects
 	CUtlVector< int8 > m_sceneObjectLayerIndices;
 };
 
+// Bits of CWorld::m_nWorldNodeLoadState
+#define WORLD_NODE_LOAD_STATE_LOADING	( 1 << 0 )	// The world node resource is loading
+#define WORLD_NODE_LOAD_STATE_LOADED	( 1 << 1 )	// The world node resource is loaded
+#define WORLD_NODE_LOAD_STATE_DEFERRED	( 1 << 2 )	// The load is left to IWorldRendererMgr::UpdateObjectsForRendering
+
 class CWorld : public IWorld
 {
 public:
@@ -131,7 +136,7 @@ public:
 public:
 	HWorldNodeStrong m_hWorldNode;
 	CWorldNodeSceneObjects m_worldNodeSceneObjects;
-	// Bit 0 while the world node loads, bit 1 once it is loaded, bit 2 when its load is left to UpdateObjectsForRendering
+	// WORLD_NODE_LOAD_STATE_* bits
 	int32 m_nWorldNodeLoadState;
 	HWorldStrong m_hWorld;
 	World_t *m_pWorldData;
