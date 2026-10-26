@@ -82,7 +82,9 @@ public:
 
 	// World group id
 	virtual int FindLoadedWorldIndex( WorldGroupId_t hWorldGroupId, const char *pWorldName, CThreadRWLock *lock = NULL ) const = 0;
-	virtual void UpdateObjectsForRendering( WorldGroupId_t hWorldGroupId, int nSkipFlags, const Vector &vCameraPos, float flLODScale, float flFarPlane, float flElapsedTime = 0.0f, const Vector *pCameraPos2 = NULL ) = 0;
+	// nTraversalIndex is not a flag set: with the world group id it forms the WorldTraversalId_t key (high 32 bits) of the
+	// traversal of each world that is updated.
+	virtual void UpdateObjectsForRendering( WorldGroupId_t hWorldGroupId, int nTraversalIndex, const Vector &vCameraPos, float flLODScale, float flFarPlane, float flElapsedTime = 0.0f, const Vector *pCameraPos2 = NULL ) = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) const = 0;
 	virtual void GetBoundsForWorld( WorldGroupId_t hWorldGroupId, Vector &vecMins, Vector &vecMaxs ) const = 0;
 	virtual void GetWorldNodeSceneObjects( WorldGroupId_t hWorldGroupId, CUtlVector< CSceneObject * > *pOutSceneObjects ) = 0;
