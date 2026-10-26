@@ -174,7 +174,7 @@ struct WorldWeatherParams_t
 	float m_flEnvPuddleRippleDirection;
 	float m_flEnvWetnessCoverage;
 	float m_flEnvWetnessDryingAmount;
-	float m_unk014;
+	uint8 m_pad014[ 4 ];
 };
 
 struct WindEntry_t
@@ -217,7 +217,7 @@ struct WorldVPKOverride_t
 	CUtlString m_overrideVPKName;
 
 	// Returned by the override manager with the override name and passed back to every manager
-	uint64 m_nUnk010;
+	uint64 m_nOverrideUserData;
 };
 
 class CWorldRendererMgr : public CTier3AppSystem< IWorldRendererMgr >

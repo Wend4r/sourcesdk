@@ -8,6 +8,7 @@
 #include "worldschema.h"
 
 #include <appframework/iappsystem.h>
+#include <materialsystem2/imaterial2.h>
 #include <resourcefile/resourcetype.h>
 #include <tier0/platform.h>
 
@@ -122,7 +123,9 @@ public:
 	virtual void OnClientPreOutput( float flRenderFrameTime, float flRenderTime ) = 0;
 	virtual void SetOverrideRenderTime( float flRenderFrameTime, float flRenderTime ) = 0;
 
-	virtual CSceneObject *CreateGrassTileSceneObject( void *pUnk1, const matrix3x4_t &mat, ISceneWorld *pWorld, void *pUnk2, bool bUnk ) = 0;
+	// pMaterials holds the 4 grass materials the tile takes strong references to (their float and int parameters set up the tile);
+	// pGrassWorldKey selects the grass world together with pWorld; bUnused is not read by the implementation.
+	virtual CSceneObject *CreateGrassTileSceneObject( const HMaterialWeak *pMaterials, const matrix3x4_t &mat, ISceneWorld *pWorld, const void *pGrassWorldKey, bool bUnused ) = 0;
 
 	// The flattening state keeps the last position and the squared radius; the update
 	// flattens along the movement once it exceeds the radius

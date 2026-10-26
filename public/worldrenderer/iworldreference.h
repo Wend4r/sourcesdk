@@ -39,8 +39,8 @@ public:
 	// Shows or hides the scene objects of every world layer
 	virtual void SetAllWorldLayersVisibility( bool bVisible ) = 0;
 
-	// Same result as GetWorldBounds, copied out through temporaries.
-	virtual bool unk017( Vector &vecMins, Vector &vecMaxs ) const = 0;
+	// Behavioural name: the only implementation returns exactly what GetWorldBounds returns, copied out through temporaries.
+	virtual bool GetWorldBounds2( Vector &vecMins, Vector &vecMaxs ) const = 0;
 };
 
 #endif // IWORLDREFERENCE_H
