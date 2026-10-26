@@ -400,7 +400,9 @@ public:
 	// Recorded for the render thread when multiple GPUs are linked: blits pSrcRect of hSrcTexture into pDstRect
 	// of hDstTexture with device group submits on the given GPU indices; nUnused0/nUnused1 are recorded but not read
 	virtual void BlitTextureAcrossGPUs( HRenderTexture hSrcTexture, HRenderTexture hDstTexture, int nSecondPassGPU, int nFirstPassGPU, int nUnused0, int nUnused1, const Rect_t *pSrcRect, const Rect_t *pDstRect, bool bFirstPass, bool bSecondPass ) = 0;
-	virtual void unk145() = 0;
+	// Returns the context's render attribute block; libmaterialsystem2 sets texture and integer attributes in the
+	// containers at +0x110 and +0x180 of it
+	virtual void *GetRenderAttributes() = 0;
 	virtual bool BindPooledIndexBuffer( PooledIndexBufferHandle_t hIndexBuffer ) = 0;
 	virtual bool BindPooledVertexBuffer( int nSlot, RenderResourceHandle_t hPooledVertexBuffer ) = 0;
 	virtual void ExecuteGeneratedCommands( void *hIndirectCommandsLayout, void *hIndirectExecutionSet, RenderBufferHandle_t hIndirectBuffer, bool bIsPreprocessed, RenderBufferHandle_t hPreprocessBuffer, uint32 nMaxSequenceCount, RenderBufferHandle_t hSequenceCountBuffer, uint32 nMaxDrawCount ) = 0;
