@@ -208,6 +208,10 @@ struct RenderMemoryBarrier_t
 	uint32 m_nDstAccessMask;
 };
 
+// BLASGeometryDesc_t::m_nGeometryFlags, passed on as the Vulkan geometry flags
+#define RENDER_BLAS_GEOMETRY_OPAQUE ( 1 << 0 )
+#define RENDER_BLAS_GEOMETRY_NO_DUPLICATE_ANY_HIT ( 1 << 1 )
+
 // A triangle geometry of BLASBuildDesc_t
 struct BLASGeometryDesc_t
 {
@@ -222,7 +226,7 @@ struct BLASGeometryDesc_t
 	int m_nVertexOffset;
 	int m_nIndexOffset;
 
-	// Only the low 2 bits are passed on as the geometry flags
+	// RENDER_BLAS_GEOMETRY_* bits; the other bits are dropped
 	uint32 m_nGeometryFlags;
 	uint8 m_pad02C[ 68 ];
 
