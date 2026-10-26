@@ -83,7 +83,7 @@ public:
 
 	virtual void BlockConsoleToggle( bool bBlock ) = 0;
 
-	// Plat_FloatTime() of the last input event of type 5
+	// Plat_FloatTime() of the last IE_CursorPositionChanged input event
 	virtual double GetLastMouseMoveTime() = 0;
 
 	// NULL for an unknown layer
