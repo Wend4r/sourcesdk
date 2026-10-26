@@ -550,7 +550,7 @@ public:
 
 public:
 	// Zeroed by the constructor; no reader found
-	uint8 m_unk038[ 0x10 ];
+	uint64 m_unk038[ 2 ];
 	// Set by LaunchApplicationOnExit()
 	CUtlString m_sApplicationOnExit;
 	// The factory passed to Connect(), read by Init()
@@ -562,7 +562,7 @@ public:
 	CUtlOrderedMap< int, int > m_PlayerConnectionEventIndices;
 	// Universe of the last player SteamID recorded by AddPlayerConnectionEvent()
 	EUniverse m_eUniverse;
-	uint8 m_unk144[ 0x4 ];
+	uint8 m_pad144[ 0x4 ];
 	// Ten game event groups filled by the constructor: event names, the ids of those events, and the copies kept for scrubbing,
 	// fired by OnScrubDemo(); the camera group holds "hltv_cameraman", "hltv_fixed" and "hltv_chase", the others one event each
 	CUtlVector< const char * > m_RoundPrestartEventNames;
