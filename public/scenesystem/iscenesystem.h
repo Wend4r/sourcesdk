@@ -107,14 +107,15 @@ abstract_class ISceneSystem : public IAppSystem
 public:
 	virtual CSceneObject *CreateSceneObject( ISceneObjectDesc *pDesc, ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld ) = 0;
 
-	virtual CSceneObject *CreateSceneObjectFromBuffers( ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, int nPrimitiveType, const char *pszDescName, bool bOwnVBAndIB, uint64 nFlags ) = 0;
+	// The renderable flags come from the material (opaque, translucent or opaque with shadows).
+	virtual CSceneObject *CreateSceneObjectFromBuffers( ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, int nPrimitiveType, const char *pszDescName, bool bOwnVBAndIB, ESceneObjectTypeFlags nTypeFlags ) = 0;
 
-	virtual CSceneObject *CreateSceneObjectFromBuffers( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, int nPrimitiveType, int16 nDrawPrimitiveFlags, const char *pszDescName, bool bOwnVBAndIB ) = 0;
+	virtual CSceneObject *CreateSceneObjectFromBuffers( ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, int nPrimitiveType, int16 nDrawPrimitiveFlags, const char *pszDescName, bool bOwnVBAndIB ) = 0;
 
 	// Creates a CMeshBuilderSceneObjectDesc object.
-	virtual CSceneObject *CreateSceneObjectFromStaticBuffers( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld, const MeshBuilderBuffers_t &buffers, HMaterialWeak hMaterial, bool bDeleteAtFrameEnd ) = 0;
+	virtual CSceneObject *CreateSceneObjectFromStaticBuffers( ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld, const MeshBuilderBuffers_t &buffers, HMaterialWeak hMaterial, bool bDeleteAtFrameEnd ) = 0;
 
-	virtual CSceneAnimatableObject *CreateAnimatableSceneObjectFromBuffers( ISceneWorld *pWorld, HMaterialWeak hMaterial, SceneObjectBuffers_t &data, uint64 nFlags, uint64 nTypeFlags, bool bOwnVBAndIB ) = 0;
+	virtual CSceneAnimatableObject *CreateAnimatableSceneObjectFromBuffers( ISceneWorld *pWorld, HMaterialWeak hMaterial, SceneObjectBuffers_t &data, ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, bool bOwnVBAndIB ) = 0;
 
 	virtual void DeleteSceneObject( CSceneObject *pObject ) = 0;
 
@@ -342,7 +343,7 @@ public:
 	virtual ISceneView *FindView( const char *pszName ) = 0;
 	virtual ImageFormat GetPrimaryRenderTargetFormat() = 0;
 	virtual ImageFormat GetBackBufferFormat() = 0;
-	virtual CSceneObject *CreateAOProxySceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
+	virtual CSceneObject *CreateAOProxySceneObject( ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld ) = 0;
 
 	// Reads ao_proxy_capsule_list and ao_proxy_box_list.
 	virtual void LoadAOProxies( void *p ) = 0;
@@ -401,7 +402,8 @@ public:
 	virtual bool HasDistanceFieldInstanceFlags( int nInstance ) = 0;
 	// Copies the distance field instance indices of a model when its version differs from nKnownVersion; returns the version.
 	virtual int GetModelDistanceFieldInstances( CWeakHandle< InfoForResourceTypeCModel > hModel, int nKnownVersion, CUtlVector< int > &instances ) = 0;
-	virtual CSceneObject *CreateDistanceFieldInstanceSceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
+	// Replaces SCENEOBJECTTYPEFLAG_HAS_PVS_DATA with SCENEOBJECTTYPEFLAG_DISTANCE_FIELD_INSTANCE in nTypeFlags.
+	virtual CSceneObject *CreateDistanceFieldInstanceSceneObject( ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld ) = 0;
 	// Returns the distance field scene.
 	virtual void *GetDistanceFieldScene() = 0;
 

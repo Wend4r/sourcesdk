@@ -54,7 +54,8 @@ public:
 	virtual void Add4xDownsampleLayerToView( ISceneView *pView, HRenderTexture hTexture, const RenderTargetDesc_t &renderTargetDesc, bool bFlagAttribute ) = 0;
 	virtual void Add2xDownsampleLayerToView( ISceneView *pView, uint64 nTextureIndex, const RenderTargetDesc_t &renderTargetDesc, bool bFlagAttribute ) = 0;
 	virtual void Add4xDownsampleLayerToView( ISceneView *pView, uint64 nTextureIndex, const RenderTargetDesc_t &renderTargetDesc, bool bFlagAttribute ) = 0;
-	virtual ISceneLayer *AddSimpleLayerToView( ISceneView *pView, const char *pszLayerName, const RenderViewport_t &viewport, const CUtlStringToken &token, uint64 nFlags, uint64 nFlagsHigh, const SceneLayerOutputs_t &outputs ) = 0;
+	// The layer renders the objects whose flags contain all of nRequiredObjectFlags and none of nExcludedObjectFlags.
+	virtual ISceneLayer *AddSimpleLayerToView( ISceneView *pView, const char *pszLayerName, const RenderViewport_t &viewport, const CUtlStringToken &token, ESceneObjectFlags nRequiredObjectFlags, ESceneObjectFlags nExcludedObjectFlags, const SceneLayerOutputs_t &outputs ) = 0;
 	virtual void AddTranslucentScreenspaceLayerToView( void *p ) = 0;
 	// Draws a full screen quad whose four vertices carry pCornerVectors[ 0..3 ]; pszDebugName names its dynamic vertex buffer.
 	virtual void RenderScreenQuad( IRenderContext *pRenderContext, const Vector *pCornerVectors, const char *pszDebugName ) = 0;

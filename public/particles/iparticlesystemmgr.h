@@ -226,8 +226,10 @@ public:
 	virtual bool HasFeatureFlags( int nFlags ) = 0;
 
 	// Adds instances to the instanced mesh scene object matching the world, flags and the 32-byte key, creating it when missing; records are 100 bytes.
+	// A scene object matches when its type flags contain nTypeFlags and its original renderable flags masked by nFlagsMask equal nFlags;
+	// new objects get SCENEOBJECTTYPEFLAG_INSTANCED_MESH added.
 	// bMotionVectors lets the scene object draw motion vectors for these instances (sc_instanced_mesh_motion_vectors); the model renderers pass true for one of their two instance lists
-	virtual void AddInstancedMeshes( ISceneWorld *pWorld, uint64 nFlags, uint64 nTypeFlagsMask, uint64 nTypeFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bMotionVectors ) = 0;
+	virtual void AddInstancedMeshes( ISceneWorld *pWorld, ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlagsMask, ESceneObjectFlags nFlags, const void *pKey, const void *pInstances, uint32 nCount, bool bMotionVectors ) = 0;
 
 	// Physics types of the C_OP_ClientPhysics operators (m_strPhysicsType), each added once
 	virtual void AddClientPhysicsType( CUtlString sPhysicsType ) = 0;
