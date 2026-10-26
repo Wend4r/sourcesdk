@@ -13,9 +13,18 @@
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
 #include "mathlib/intvector3d.h"
+#include "tier0/utlvector.h"
 
 struct RenderAdapterInfo_t;
 enum RenderMultisampleType_t : uint8;
+
+// An entry of IRenderHardwareConfig::GetAvailableRenderSystems
+struct RenderSystemInfo_t
+{
+	CUtlString m_Name;
+	CUtlString m_CommandLineSwitch;
+	int m_nType;
+};
 
 abstract_class IRenderHardwareConfig
 {
@@ -56,12 +65,12 @@ public:
 	virtual const char *RenderSystemTypeToDisplayName( int nType ) = 0;
 	virtual const char *RenderSystemTypeToCommandLineSwitch( int nType ) = 0;
 
-	virtual int GetAvailableRenderSystems( void *pRenderSystems ) = 0;
+	virtual int GetAvailableRenderSystems( CUtlVector< RenderSystemInfo_t > &renderSystems ) = 0;
 
 	// Search such a list, return -1 when not found
-	virtual int FindRenderSystemByName( const void *pRenderSystems, const char *pName ) = 0;
-	virtual int FindRenderSystemByCommandLineSwitch( const void *pRenderSystems, const char *pSwitch ) = 0;
-	virtual int FindRenderSystemByType( const void *pRenderSystems, int nType ) = 0;
+	virtual int FindRenderSystemByName( const CUtlVector< RenderSystemInfo_t > &renderSystems, const char *pName ) = 0;
+	virtual int FindRenderSystemByCommandLineSwitch( const CUtlVector< RenderSystemInfo_t > &renderSystems, const char *pSwitch ) = 0;
+	virtual int FindRenderSystemByType( const CUtlVector< RenderSystemInfo_t > &renderSystems, int nType ) = 0;
 
 	virtual bool IsSubrectResolveSupported( bool bMSAA ) = 0;
 

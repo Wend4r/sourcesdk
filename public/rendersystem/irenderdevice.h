@@ -73,6 +73,43 @@ using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
 
 typedef CUtlDelegate< void ( const void * ) > DataRecycleDelegate_t;
 
+// A specialization constant of IRenderDevice::CreateShader
+struct RenderShaderSpecializationConstant_t
+{
+	uint32 m_nId;
+
+	// When set, m_nId is matched against the first key of the shader's specialization constant table and
+	// replaced by the constant id stored with it; otherwise it is the constant id
+	bool m_bIdIsKey;
+	uint32 m_nValue;
+};
+
+// IRenderDevice::RequestTextureMipLevels
+struct RenderTextureMipLevelRequest_t
+{
+	HRenderTexture m_hTexture;
+	uint16 m_nRequiredMipSize;
+};
+
+// Filled by IRenderDevice::GetDeviceMemoryTextureAllocationInfo and GetDeviceMemoryBufferAllocationInfo from the
+// backend allocation
+struct RenderDeviceMemoryAllocationInfo_t
+{
+	void *m_pDeviceMemory;
+	uint64 m_nOffset;
+	uint64 m_nSize;
+};
+
+// A token of IRenderDevice::CreateIndirectCommandsLayout
+struct RenderIndirectCommandsToken_t
+{
+	int m_nType;
+
+	// Token type specific dwords, NULL for the types without data
+	const uint32 *m_pData;
+	uint32 m_nOffset;
+};
+
 abstract_class IRenderDevice
 {
 public:
@@ -106,7 +143,7 @@ public:
 	virtual void ForceFlushGPU( SwapChainHandle_t hSwapChain ) = 0;
 	virtual void SetHardwareGammaRamp( SwapChainHandle_t hSwapChain, float flGamma ) = 0;
 	virtual std::unique_ptr< IRenderShaderByteCode > CompileShader( const char *pProgram, uint32 nBufLen, const char *pShaderVersion ) = 0;
-	virtual RenderShaderHandle_t CreateShader( int nType, std::unique_ptr< IRenderShaderByteCode > pShader, const char *pDebugName, int nSpecializationConstantCount, const void *pSpecializationConstants ) = 0;
+	virtual RenderShaderHandle_t CreateShader( int nType, std::unique_ptr< IRenderShaderByteCode > pShader, const char *pDebugName, int nSpecializationConstantCount, const RenderShaderSpecializationConstant_t *pSpecializationConstants ) = 0;
 	virtual void DestroyShader( int nShaderType, RenderShaderHandle_t hShader ) = 0;
 
 	// Register counts and binary size of a compiled shader
@@ -323,7 +360,7 @@ public:
 	virtual void EnableAsyncPresent( bool bEnable ) = 0;
 	virtual bool StartRenderDocCapture( PlatWindow_t hWnd ) = 0;
 	virtual bool EndRenderDocCapture( PlatWindow_t hWnd, int ( *pfnCaptureCallback )( const char *pCaptureFilePath, void *pRenderDocAPI, void *pContext ), void *pContext ) = 0;
-	virtual void RequestTextureMipLevels( int nCount, const void *pTextureRequests ) = 0;
+	virtual void RequestTextureMipLevels( int nCount, const RenderTextureMipLevelRequest_t *pTextureRequests ) = 0;
 	virtual uint32 GetTextureViewIndex( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, RenderTextureDimension_t nDimension ) = 0;
 	virtual HRenderTexture GetTextureFromViewIndex( uint32 nTextureViewIndex ) = 0;
 	virtual uint32 GetSamplerIndex( SamplerStateHandle_t hSamplerState ) = 0;
@@ -337,7 +374,8 @@ public:
 	virtual uint32 GetPooledVertexBufferBaseVertex( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
 	virtual uint32 GetPooledVertexBufferVertexCount( RenderResourceHandle_t hPooledVertexBuffer, uint32 *pVertexSizeOut ) = 0;
 	virtual VertexBufferHandle_t GetPooledVertexBuffer() = 0;
-	virtual void unk215() = 0;
+	// Calls vkCreateShaderModule with a wrong structure type and no code, provoking a validation error
+	virtual void TriggerValidationError() = 0;
 	virtual IUpscaler *CreateUpscaler( int nType ) = 0;
 
 	// XeSS / FidelityFX availability
@@ -356,15 +394,15 @@ public:
 	virtual void FreeTextureFromPool( void *hPool, HRenderTexture hTexture ) = 0;
 	virtual bool AllocateBufferInPool( void *hPool, RenderBufferHandle_t hBuffer ) = 0;
 	virtual void FreeBufferFromPool( void *hPool, RenderBufferHandle_t hBuffer ) = 0;
-	virtual bool GetDeviceMemoryTextureAllocationInfo( HRenderTexture hTexture, void *pInfoOut ) = 0;
-	virtual bool GetDeviceMemoryBufferAllocationInfo( RenderBufferHandle_t hBuffer, void *pInfoOut ) = 0;
+	virtual bool GetDeviceMemoryTextureAllocationInfo( HRenderTexture hTexture, RenderDeviceMemoryAllocationInfo_t *pInfoOut ) = 0;
+	virtual bool GetDeviceMemoryBufferAllocationInfo( RenderBufferHandle_t hBuffer, RenderDeviceMemoryAllocationInfo_t *pInfoOut ) = 0;
 	// Binds every texture of pTextures to the device memory of hTexture
 	virtual bool AliasTexturesToTextureMemory( HRenderTexture hTexture, int nCount, const HRenderTexture *pTextures ) = 0;
 	virtual uint32 CheckFormatSupport( ImageFormat nFormat ) = 0;
 	virtual int unk232( SwapChainHandle_t hSwapChain ) = 0;
 
 	// Device generated commands
-	virtual void *CreateIndirectCommandsLayout( IRenderContext *pRenderContext, uint32 nTokenCount, const void *pTokens, uint32 nIndirectStride, bool bExplicitPreprocess ) = 0;
+	virtual void *CreateIndirectCommandsLayout( IRenderContext *pRenderContext, uint32 nTokenCount, const RenderIndirectCommandsToken_t *pTokens, uint32 nIndirectStride, bool bExplicitPreprocess ) = 0;
 	virtual void DestroyIndirectCommandsLayout( void *hIndirectCommandsLayout ) = 0;
 	virtual RenderBufferHandle_t CreateIndirectCommandsPreprocessBuffer( void *hIndirectCommandsLayout, void *hIndirectExecutionSet, uint32 nMaxSequenceCount ) = 0;
 	virtual void *CreateIndirectExecutionSet( IRenderContext *pRenderContext, int nMaxPipelineCount ) = 0;
