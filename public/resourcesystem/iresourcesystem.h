@@ -202,7 +202,7 @@ public:
 	virtual bool HasStreamingData() { return false; }
 
 	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool bIsBlockingLoad ) { return -1; }
-	virtual void LoadStreamingData( ResourceHandle_t hResource, IResourceSystemUtils *pUtils ) {}
+	virtual void LoadStreamingData( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
 	virtual void AllocateResource( ResourceHandle_t hResource, ResourceId_t nId, const ResourceFileHeader_t *pHeader, IRD_RegisterResourceDataUtils *pUtils ) {}
 	virtual void DeallocateResource( void *pData, IResourceDeallocatorUtils *pUtils ) {}
 	virtual void NotifyResourceWithWorkPendingLoadCancelled( ResourceHandle_t hResource, void *pData ) {}
