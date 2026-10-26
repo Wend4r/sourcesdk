@@ -158,6 +158,12 @@ enum RenderVariableRefreshRateStatus_t : int
 #define RENDER_DESCRIPTOR_SET_CREATE_NO_TEXTURE_TRACKING ( 1 << 0 ) // keeps no references to the bound textures
 #define RENDER_DESCRIPTOR_SET_CREATE_REGISTER_SHADER_LAYOUT ( 1 << 1 ) // for GetRegisteredDescriptorSetLayout
 
+// IRenderDevice::PushRenderDeviceFlags bits (reference counted per bit)
+#define RENDER_DEVICE_FLAG_TEXTURE_STREAMING_BUDGET_BOOST ( 1 << 1 ) // raises the texture streaming budget while set
+
+// nFlags of IRenderDevice::InitDevice and IRenderDeviceMgr::CreateDevice
+#define RENDER_DEVICE_INIT_ALLOW_WINDOW_RESIZING ( 1 << 0 ) // returned by IsWindowResizingEnabled
+
 abstract_class IRenderDevice
 {
 public:
