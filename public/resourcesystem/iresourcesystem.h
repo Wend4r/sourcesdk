@@ -175,8 +175,7 @@ inline IAsyncProcessedDataResult::~IAsyncProcessedDataResult() {}
 class IResourceTypeManager
 {
 public:
-	// The resource system passes 3 as the second argument
-	virtual bool Init( IResourceSystemUtils *pUtils, int nUnknown ) { return false; }
+	virtual bool Init( IResourceSystemUtils *pUtils ) { return false; }
 	virtual void Shutdown() {}
 
 	// Called by RemoveResourceTypeManager after Shutdown, once the queued deletions are drained
