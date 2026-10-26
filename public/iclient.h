@@ -113,6 +113,23 @@ struct SerializedEntityData_t;
 struct EventServerPostSimulate_t;
 struct EventServerBeginAsyncPostTickWork_t;
 
+// cl_ticktiming stages, named after the lines of its detailed report
+enum TickTimingStage_t
+{
+	TICK_TIMING_FIRST_INPUT_TO_NET_SEND = 0,
+	TICK_TIMING_SERVER_RECV_MARGIN,
+	TICK_TIMING_SERVER_SIM,
+	// From the receive of a server tick to the start of its simulation
+	TICK_TIMING_RECV_TO_SIMULATE,
+	// Frame quantization hidden by interpolation
+	TICK_TIMING_FRAME_QUANTIZATION,
+	TICK_TIMING_CLIENT_RECV_MARGIN,
+	TICK_TIMING_RENDER,
+	TICK_TIMING_TOTAL,
+
+	TICK_TIMING_COUNT
+};
+
 abstract_class IGameEventWatcher
 {
 public:
@@ -169,7 +186,7 @@ public:
 	virtual void OnServerPostSimulate( const EventServerPostSimulate_t &event ) = 0;
 	virtual void OnServerBeginAsyncPostTickWork( const EventServerBeginAsyncPostTickWork_t &event ) = 0;
 	// cl_ticktiming stage time in seconds, the last sample or its running average, clamped to -9.9 from below
-	virtual float GetTickTiming( int nTiming, bool bSmoothed ) = 0;
+	virtual float GetTickTiming( TickTimingStage_t nStage, bool bSmoothed ) = 0;
 	virtual void RequestServerStatus( CSplitScreenSlot nSlot ) = 0;
 	virtual void ForceFullUpdate( const char *pszReason ) = 0;
 	virtual void PrintSpawnGroupStatus() const = 0;
@@ -705,7 +722,7 @@ public:
 	float m_flLookAheadTicks;
 	int m_nLookAheadFixup;
 	// cl_ticktiming stages, the last sample and its running average each; read by GetTickTiming
-	float m_flTickTimings[ 8 ][ 2 ];
+	float m_flTickTimings[ TICK_TIMING_COUNT ][ 2 ];
 	// Buffer of m_MoveMessage, the datagram SendMove transmits ("ClientSendMove")
 	uint8 m_MoveMessageData[ 0x2000 ];
 	bf_write m_MoveMessage;
