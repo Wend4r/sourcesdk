@@ -137,6 +137,17 @@ enum ClientFrameStage_t : int
 	FRAME_CLIENT_FRAME_SIMULATE,
 };
 
+// Result of ISource2Client::DownloadWorkshopAddon(), polled by the engine while it loads a workshop map
+enum WorkshopAddonDownloadStatus_t : int
+{
+	// The download is running; the engine asks again
+	WORKSHOP_ADDON_DOWNLOAD_IN_PROGRESS = 0,
+	// The addon is installed, or there is nothing to download; the engine continues loading
+	WORKSHOP_ADDON_DOWNLOAD_COMPLETE,
+	// The download failed or timed out ( cl_workshop_map_download_timeout ); the engine goes idle
+	WORKSHOP_ADDON_DOWNLOAD_FAILED,
+};
+
 // Identifies a sound area registered with the client
 class SoundAreaGuid_t
 {
@@ -451,8 +462,8 @@ public:
 	virtual bool ShouldStartGlobalSoundStack() = 0;
 	// Total and custom game Steam UGC subscription counts for the crash dump comment; zeroes them and returns false
 	virtual bool GetUGCSubscriptionCounts( uint32 *pnSubscriptionCounts ) = 0;
-	// Asked for the addon id when "AddonConfig/AllowAddonDownload" is set; the engine handles the results 1 and 2
-	virtual int DownloadWorkshopAddon( uint64 nAddonId ) = 0;
+	// Asked for the addon id when "AddonConfig/AllowAddonDownload" is set
+	virtual WorkshopAddonDownloadStatus_t DownloadWorkshopAddon( uint64 nAddonId ) = 0;
 	// Looks the map name up in the workshop map table and formats the file id kept for nPatchVersion; false for the
 	// running patch version or an unknown map
 	virtual bool GetWorkshopMapFileIdForVersion( const char **ppszMapName, int nPatchVersion, CUtlString *pFileId ) = 0;
