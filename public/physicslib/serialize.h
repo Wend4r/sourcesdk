@@ -105,6 +105,10 @@ public:
 	CUtlVector< uint32 > m_Nodes;
 };
 
+// RnHull_t::m_nFlags
+#define RN_HULL_FLAGS_BOX ( ( 1 << 0 ) | ( 1 << 1 ) ) // Set by RnHullCreateBox; the GJK proxy and the hull pair tests take box paths
+#define RN_HULL_FLAG_CYLINDER ( 1 << 2 ) // Set by RnHullCreateCylinder
+
 schema struct RnHull_t
 {
 	TYPEMETA( MGetKV3ClassDefaults );
@@ -153,6 +157,15 @@ schema struct RnWing_t
 	int32 m_nIndex[ 3 ];
 };
 
+// RnMesh_t::m_nFlags
+#define RN_MESH_FLAG_CLOSED ( 1 << 0 ) // The mesh has no open edges; the point inside tests need it
+#define RN_MESH_FLAG_INVERTED ( 1 << 1 ) // The volume of the closed mesh is negative, which flips its inside tests
+#define RN_MESH_FLAG_VERTEX_VELOCITIES ( 1 << 2 ) // Required by IFnPhysicsMeshShape::UpdateVertices with nMode 1
+#define RN_MESH_FLAG_HIDDEN_TRIANGLES ( 1 << 3 ) // Set by RnMeshHideTriangles, which also clears RN_MESH_FLAG_CLOSED and RN_MESH_FLAG_INVERTED
+
+// RnMesh_t::m_nDebugFlags
+#define RN_MESH_DEBUG_FLAG_NOT_CLOSED ( 1 << 0 ) // Set by the mesh build instead of RN_MESH_FLAG_CLOSED
+
 schema struct RnMesh_t
 {
 	TYPEMETA( MGetKV3ClassDefaults );
@@ -174,6 +187,10 @@ schema struct RnMesh_t
 //-----------------------------------------------------------------------------
 // Compound of spheres, capsules, hulls and meshes with a bounding tree
 //-----------------------------------------------------------------------------
+// RnCompoundTreeNode_t::m_nType of a leaf, whose m_nSubtreeEndOrCompoundId is the index of the compound child; the traversals
+// treat the other types as inner nodes, whose m_nSubtreeEndOrCompoundId is the node count of their subtree
+#define RN_COMPOUND_TREE_NODE_LEAF 3
+
 schema struct RnCompoundTreeNode_t
 {
 	TYPEMETA( MGetKV3ClassDefaults );
