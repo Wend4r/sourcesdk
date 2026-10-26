@@ -34,8 +34,8 @@ FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
 
 enum EGPUTextureCompressOptions_t : uint32
 {
-	GPU_COMPRESS_PERCEPTUAL_ERROR_METRIC = 0x1,
-	GPU_COMPRESS_ENDPOINT_OPTIMIZATION = 0x2,
+	GPU_COMPRESS_PERCEPTUAL_ERROR_METRIC = ( 1 << 0 ),
+	GPU_COMPRESS_ENDPOINT_OPTIMIZATION = ( 1 << 1 ),
 };
 
 abstract_class IMaterialSystem2Utils : public IAppSystem
