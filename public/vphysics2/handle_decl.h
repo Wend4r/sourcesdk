@@ -31,8 +31,8 @@ struct PhysicsTrace_t
 		m_pSurfaceProperties = nullptr;
 		m_flHitOffset = 0.0f;
 		m_flFraction = 1.0f;
+		m_nHitChild = -1;
 		m_nHitTriangle = -1;
-		m_nUnk03C = -1;
 		m_bStartInSolid = false;
 	}
 
@@ -48,10 +48,10 @@ struct PhysicsTrace_t
 	float m_flHitOffset;
 
 	float m_flFraction;
-	int m_nHitTriangle;
 
-	// Set together with m_nHitTriangle by mesh traces
-	int m_nUnk03C;
+	// The sub-shape that was hit: the child of a compound shape and the triangle of a mesh shape, -1 otherwise
+	int m_nHitChild;
+	int m_nHitTriangle;
 
 	bool m_bStartInSolid;
 };

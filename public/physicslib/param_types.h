@@ -89,9 +89,8 @@ struct CShapeCastResult
 	Vector m_vHitPoint;
 	Vector m_vHitNormal;
 
-	// Cleared to -1 by the mesh cast
-	int m_nUnk1C;
-
+	// The child of a compound shape that was hit and the triangle of a mesh shape, -1 otherwise
+	int m_nChild;
 	int m_nTriangle;
 	const RnMaterial_t *m_pMaterial;
 	bool m_bStartInSolid;
