@@ -319,6 +319,65 @@ enum RenderTextureAddressMode_t
 	RENDER_TEXTURE_ADDRESS_MIRROR_ONCE,
 };
 
+// Predefined states of IRenderContext::SetStandardRasterizerState: solid fill with depth clip and multisampling
+enum RenderStandardRasterizerState_t
+{
+	RENDER_RASTERIZER_STATE_CULL_BACK = 0,
+	RENDER_RASTERIZER_STATE_CULL_FRONT,
+	RENDER_RASTERIZER_STATE_CULL_NONE,
+	RENDER_RASTERIZER_STATE_COUNT,
+};
+
+// Predefined states of IRenderContext::SetStandardDepthStencilState. The depth test is less-or-equal
+// unless named otherwise; the stencil variants compare against the reference value the state carries
+// (1 for STENCIL_REPLACE and STENCIL_EQUAL, 0 otherwise)
+enum RenderStandardDepthStencilState_t
+{
+	RENDER_DEPTH_STENCIL_STATE_NO_DEPTH = 0,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_WRITE,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_WRITE_GREATER,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_GREATER,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_EQUAL,
+	RENDER_DEPTH_STENCIL_STATE_NO_DEPTH_STENCIL_NOT_EQUAL,
+
+	// Writes the reference into the stencil where the depth test passes
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_WRITE_STENCIL_REPLACE,
+
+	// Clears the stencil where it is not equal to the reference and the depth test passes
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_STENCIL_NOT_EQUAL_CLEAR,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_GREATER_STENCIL_NOT_EQUAL_CLEAR,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_STENCIL_EQUAL,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_GREATER_STENCIL_EQUAL,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_STENCIL_NOT_EQUAL,
+	RENDER_DEPTH_STENCIL_STATE_DEPTH_TEST_GREATER_STENCIL_NOT_EQUAL,
+	RENDER_DEPTH_STENCIL_STATE_COUNT,
+};
+
+// Predefined states of IRenderContext::SetStandardBlendState, applied to every render target
+enum RenderStandardBlendState_t
+{
+	// No blending, RGB writes
+	RENDER_BLEND_STATE_OPAQUE_RGB = 0,
+	RENDER_BLEND_STATE_NO_COLOR_WRITE,
+
+	// No blending, RGBA writes
+	RENDER_BLEND_STATE_OPAQUE,
+
+	// Source alpha, inverse source alpha
+	RENDER_BLEND_STATE_ALPHA_BLEND,
+
+	// Source alpha, one
+	RENDER_BLEND_STATE_ADDITIVE_ALPHA,
+
+	// One, one
+	RENDER_BLEND_STATE_ADDITIVE,
+
+	// Zero, source color; RGBA writes
+	RENDER_BLEND_STATE_MODULATE,
+	RENDER_BLEND_STATE_COUNT,
+};
+
 // nStateFlags of IRenderContext::ResetState: the shader bits unbind that stage's shader, the state bits
 // restore the device's default state
 #define RENDER_RESET_PIXEL_SHADER ( 1 << 0 )
@@ -396,12 +455,11 @@ public:
 	virtual RsBlendStateHandle_t FindOrCreateBlendState( const RsBlendStateDesc_t *pDesc ) = 0;
 	virtual void SetBlendState( RsBlendStateHandle_t hState, const float *pBlendFactor, uint32 nSampleMask ) = 0;
 	virtual void SetBlendStateOverride( RsBlendStateHandle_t hState, const float *pBlendFactor, uint32 nSampleMask ) = 0;
-	// Selects one of the render device's predefined states
-	virtual void SetStandardRasterizerState( int nState ) = 0;
+	virtual void SetStandardRasterizerState( RenderStandardRasterizerState_t nState ) = 0;
 	// Selects the alternate front face winding of the rasterizer state
 	virtual void SetFrontFaceFlip( bool bFlip ) = 0;
-	virtual void SetStandardBlendState( int nState, const float *pBlendFactor ) = 0;
-	virtual void SetStandardDepthStencilState( int nState ) = 0;
+	virtual void SetStandardBlendState( RenderStandardBlendState_t nState, const float *pBlendFactor ) = 0;
+	virtual void SetStandardDepthStencilState( RenderStandardDepthStencilState_t nState ) = 0;
 	virtual void GetMaxDynamicVertexAndIndexCounts( uint32 nVertexSize, uint32 nIndexSize, int *pMaxVertices, int *pMaxIndices ) = 0;
 	// Returns the backend buffer object, NULL for a deleted buffer
 	virtual void *GetDeviceSpecificVertexBuffer( VertexBufferHandle_t hVertexBuffer ) = 0;
