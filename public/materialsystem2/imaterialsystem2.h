@@ -178,6 +178,16 @@ public:
 		bool m_bInVPK;
 	};
 
+	struct SpecializationConstant_t
+	{
+		uint32 m_nId;
+
+		// The producer stores a zero byte here and nothing reads it
+		uint8 m_pad004[ 4 ];
+
+		uint32 m_nValue;
+	};
+
 	// A static combo of a shader program that computing the renderable passes of a mode found missing
 	struct ShaderCompileRequest_t
 	{
@@ -202,8 +212,8 @@ public:
 		// Requests with it set are skipped by the compile
 		bool m_bSkipCompile;
 
-		// { constant id, 0, value } of the shader's specialization constants resolved for the material
-		uint32 m_SpecializationConstants[ 16 ][ 3 ];
+		// The shader's specialization constants resolved for the material
+		SpecializationConstant_t m_SpecializationConstants[ 16 ];
 		int m_nSpecializationConstantCount;
 	};
 
