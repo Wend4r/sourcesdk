@@ -14,10 +14,175 @@
 #include "rendersystem/irenderdevice.h"
 #include "rendersystem/rendersystemtypes.h"
 
+#include <functional>
 #include <memory>
 
 class IBarrierHelper;
 class IReadBufferCallback;
+
+// Value type of RenderDocAnnotation_t, translated to the RenderDoc annotation types
+enum RenderDocAnnotationType_t : uint8
+{
+	RENDERDOC_ANNOTATION_BOOL = 0,
+	RENDERDOC_ANNOTATION_FLOAT,
+	RENDERDOC_ANNOTATION_INT32,
+	RENDERDOC_ANNOTATION_UINT64,
+	RENDERDOC_ANNOTATION_STRING,
+	RENDERDOC_ANNOTATION_FLOAT4,
+	RENDERDOC_ANNOTATION_API_OBJECT,
+	RENDERDOC_ANNOTATION_EMPTY,
+};
+
+// Returned by the annotation callbacks of IRenderContext::SetRenderDocCommandAnnotations and
+// SetRenderDocObjectAnnotations
+struct RenderDocAnnotation_t
+{
+	CUtlString m_Key;
+
+	union
+	{
+		bool m_bValue;
+		float m_flValue;
+		int32 m_nValue;
+		uint64 m_nUInt64Value;
+
+		// The buffer of a CUtlString owned by the record
+		char *m_pszValue;
+		float m_flValues[ 4 ];
+		void *m_pAPIObject;
+	};
+
+	RenderDocAnnotationType_t m_nType;
+};
+
+// Bound by IRenderContext::SetRenderTargets
+struct RenderTargetSet_t
+{
+	HRenderTexture m_hColorTargets[ 8 ];
+	HRenderTexture m_hDepthStencilTarget;
+	HRenderTexture m_hShadingRateTarget;
+
+	// The mip level of a mipmapped target, the array slice of an array target
+	int m_nColorTargetMipOrSlice[ 8 ];
+	RenderColorSpace_t m_nColorTargetColorSpace[ 8 ];
+	int m_nDepthStencilMipOrSlice;
+	int16 m_nColorTargetCount;
+
+	// Binds the depth-stencil target's read-only view with the "none" store ops
+	bool m_bReadOnlyDepthStencil : 1;
+};
+
+// Used by IRenderContext::ClearRenderTargets and IRenderContext::SetViewport; the depth clear value
+// comes from the device and the stencil one is 0
+struct RenderClearDesc_t
+{
+	// One per cleared color target, the last one repeats for the remaining targets
+	const Vector4D *m_pColors;
+	int m_nColorCount;
+
+	// Bits 0-7 select the color targets, 0x100 the depth and 0x200 the stencil
+	uint32 m_nClearMask;
+};
+
+// A shader resource or storage image binding of IRenderContext::SetTextures and SetUnorderedAccessViews
+struct RenderTextureBinding_t
+{
+	HRenderTexture m_hTexture;
+	RenderBufferHandle_t m_hBuffer;
+	uint16 m_nRequiredMipSize;
+	RenderColorSpace_t m_nColorSpace;
+	RenderTextureDimension_t m_nDimension;
+
+	// -1 binds all mip levels
+	int8 m_nMipLevel;
+	bool m_bIsBuffer;
+	const char *m_pDebugName;
+};
+
+// Barrier records of IRenderContext::TextureBarriers, BufferBarriers and MemoryBarriers; the stage and
+// access masks are render system flags translated to the Vulkan ones
+struct RenderTextureBarrier_t
+{
+	HRenderTexture m_hTexture;
+	uint32 m_nSrcStageMask;
+	uint32 m_nDstStageMask;
+	uint32 m_nSrcAccessMask;
+	uint32 m_nDstAccessMask;
+
+	// A negative base mip level means 0, a non-positive mip count means all levels
+	int m_nBaseMipLevel;
+	int m_nMipLevelCount;
+	uint32 m_nLayout;
+};
+
+struct RenderBufferBarrier_t
+{
+	RenderBufferHandle_t m_hBuffer;
+	uint32 m_nSrcStageMask;
+	uint32 m_nDstStageMask;
+	uint32 m_nSrcAccessMask;
+	uint32 m_nDstAccessMask;
+};
+
+struct RenderMemoryBarrier_t
+{
+	uint32 m_nSrcStageMask;
+	uint32 m_nDstStageMask;
+	uint32 m_nSrcAccessMask;
+	uint32 m_nDstAccessMask;
+};
+
+// A triangle geometry of BLASBuildDesc_t
+struct BLASGeometryDesc_t
+{
+	RenderBufferHandle_t m_hVertexBuffer;
+	RenderBufferHandle_t m_hIndexBuffer;
+	int m_nVertexStride;
+	int m_nMaxVertex;
+	int m_nTriangleCount;
+
+	// 2 selects 16-bit indices, anything else 32-bit ones
+	int m_nIndexSize;
+	int m_nVertexOffset;
+	int m_nIndexOffset;
+
+	// Only the low 2 bits are passed on as the geometry flags
+	uint32 m_nGeometryFlags;
+	uint8 m_pad02C[ 68 ];
+
+	// Optional opacity micromap of the geometry
+	RenderResourceHandle_t m_hOpacityMicromap;
+	uint32 m_nOpacityMicromapBaseTriangle;
+
+	// 2 selects 16-bit and 4 32-bit micromap indices
+	uint8 m_nOpacityMicromapIndexSize;
+	uint32 m_nOpacityMicromapIndexStride;
+	RenderBufferHandle_t m_hOpacityMicromapIndexBuffer;
+};
+
+// IRenderContext::BuildBLAS; a NULL m_hScratchBuffer makes the build allocate the scratch memory
+struct BLASBuildDesc_t
+{
+	RenderBLASHandle_t m_hBLAS;
+	const BLASGeometryDesc_t *m_pGeometries;
+	int m_nGeometryCount;
+
+	// Updates the BLAS in place instead of rebuilding it
+	bool m_bUpdate;
+	RenderBufferHandle_t m_hScratchBuffer;
+	uint32 m_nScratchOffset;
+};
+
+// IRenderContext::BuildOpacityMicromaps
+struct OpacityMicromapBuildDesc_t
+{
+	RenderResourceHandle_t m_hOpacityMicromap;
+	RenderBufferHandle_t m_hDataBuffer;
+	RenderBufferHandle_t m_hTriangleArrayBuffer;
+	uint8 m_pad018[ 8 ];
+	RenderBufferHandle_t m_hScratchBuffer;
+	uint32 m_nScratchOffset;
+};
 
 // Created by IRenderDevice::CreateRenderContext. Slots whose purpose is not known yet are
 // placeholders named after their vtable index
@@ -27,15 +192,11 @@ public:
 	// Resets the states selected by nStateFlags to their defaults: 1, 2, 4, 0x20 and 0x10000 unbind shader stages,
 	// 0x80 the rasterizer state, 0x100 the depth-stencil state and 0x200 the blend state
 	virtual void ResetState( uint32 nStateFlags ) = 0;
-	// pRenderTargets holds 8 color textures, the depth-stencil texture, the shading rate texture, per-target
-	// mip levels and color spaces and the target count
-	virtual void SetRenderTargets( const void *pRenderTargets ) = 0;
+	virtual void SetRenderTargets( const RenderTargetSet_t &renderTargets ) = 0;
 	// Resolves (or copies, when the sample counts match) the bound depth-stencil target into hDstTexture
 	virtual void ResolveDepthStencil( const Rect_t *pSrcRect, int nDstX, int nDstY, HRenderTexture hDstTexture ) = 0;
 	virtual void ResolveRenderTarget( int nRenderTarget, const Rect_t *pSrcRect, int nDstX, int nDstY, HRenderTexture hDstTexture ) = 0;
-	// pClearDesc holds a pointer to 16-byte clear colors, their count and the target mask (bits 0-7 color targets,
-	// 0x100 depth, 0x200 stencil)
-	virtual void ClearRenderTargets( const void *pClearDesc ) = 0;
+	virtual void ClearRenderTargets( const RenderClearDesc_t &clearDesc ) = 0;
 	virtual void ClearUnorderedAccessViewUint( HRenderTexture hTexture, int nMipLevel, const uint32 *pValues ) = 0;
 	virtual void ClearUnorderedAccessViewFloat( HRenderTexture hTexture, int nMipLevel, const float *pValues ) = 0;
 	// nTargetMask: bits 0-7 color targets, 0x100 depth, 0x200 stencil; nDiscardFlags: 1 discards the contents
@@ -43,7 +204,7 @@ public:
 	virtual void DiscardRenderTargets( uint16 nTargetMask, uint8 nDiscardFlags ) = 0;
 	virtual void unk008() = 0;
 	// Sets the viewport and then clears it with pClearDesc (see ClearRenderTargets)
-	virtual void SetViewport( const void *pClearDesc, int nTopLeftX, int nTopLeftY, int nWidth, int nHeight ) = 0;
+	virtual void SetViewport( const RenderClearDesc_t &clearDesc, int nTopLeftX, int nTopLeftY, int nWidth, int nHeight ) = 0;
 	// Ends the recording with EndDisplayList and hands the list to IRenderDevice::SubmitDisplayLists
 	virtual void SubmitDisplayList() = 0;
 	virtual CDisplayList *EndDisplayList() = 0;
@@ -52,17 +213,15 @@ public:
 	virtual void GetViewport( RenderViewport_t *pViewport, int nIndex ) = 0;
 	virtual void SetViewports( int nCount, const RenderViewport_t *pViewports ) = 0;
 	virtual void SetScissorRects( int nCount, const Rect_t *pRects ) = 0;
-	// pInputSignature is a { count, array } pair matched against the input layout semantics
-	virtual void BindVertexShader( RenderShaderHandle_t hShader, RenderInputLayout_t hInputLayout, const void *pInputSignature ) = 0;
+	// The input layout fields without a slot are matched by semantic against pInputSignature
+	virtual void BindVertexShader( RenderShaderHandle_t hShader, RenderInputLayout_t hInputLayout, const VsInputSignature_t *pInputSignature ) = 0;
 	virtual void BindShader( int nShaderType, RenderShaderHandle_t hShader ) = 0;
 	virtual void SetTexture( int nSlot, HRenderTexture hTexture, RenderTextureDimension_t nDimension, int nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
 	// nMipLevel -1 binds all mip levels (SetTexture passes -1)
 	virtual void SetTextureMip( int nSlot, HRenderTexture hTexture, int nMipLevel, RenderTextureDimension_t nDimension, int nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
-	// pBindings are 32-byte records: texture handle, buffer, required mip size, dimension, color space, mip level,
-	// "is buffer" flag and debug name
-	virtual void SetTextures( int nFirstSlot, int nCount, const void *pBindings, int nShaderType ) = 0;
-	// Same records as SetTextures, bound as storage images in the general layout
-	virtual void SetUnorderedAccessViews( int nFirstSlot, int nCount, const void *pBindings, int nShaderType ) = 0;
+	virtual void SetTextures( int nFirstSlot, int nCount, const RenderTextureBinding_t *pBindings, int nShaderType ) = 0;
+	// Binds storage images in the general layout
+	virtual void SetUnorderedAccessViews( int nFirstSlot, int nCount, const RenderTextureBinding_t *pBindings, int nShaderType ) = 0;
 	// Transitions the texture into the shader read layout (general when it is a storage image)
 	virtual void TransitionTextureForShaderRead( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize, int nMipLevel ) = 0;
 	virtual void SetPixelShaderSamplerState( int nSlot, uint8 nFilter, int nAddressU, int nAddressV, int nAddressW, int nComparisonFunc ) = 0;
@@ -153,8 +312,7 @@ public:
 	virtual void DrawIndexedIndirectCount( int nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset, int nMaxDrawCount, RenderResourceHandle_t hCountBuffer, uint32 nCountOffset ) = 0;
 	virtual void Dispatch( int nThreadCountX, int nThreadCountY, int nThreadCountZ ) = 0;
 	virtual void DispatchIndirect( RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
-	// pBuildDescs are 40-byte records starting with the BLAS handle
-	virtual void BuildBLAS( int nCount, const void *pBuildDescs ) = 0;
+	virtual void BuildBLAS( int nCount, const BLASBuildDesc_t *pBuildDescs ) = 0;
 	// Queries the compacted size of the BLAS
 	virtual void RequestBLASCompaction( RenderBLASHandle_t hBLAS ) = 0;
 	virtual void CompactBLAS( RenderBLASHandle_t hBLAS ) = 0;
@@ -164,8 +322,7 @@ public:
 	virtual void UploadRayTraceShaderBindingTable( IRaytraceShaderBindingTable *pSBT ) = 0;
 	virtual void TraceRays( IRaytraceShaderBindingTable *pSBT, uint32 nWidth, uint32 nHeight, uint32 nDepth ) = 0;
 	virtual void TraceRaysIndirect( IRaytraceShaderBindingTable *pSBT, RenderBufferHandle_t hArgsBuffer, uint32 nOffset ) = 0;
-	// pBuildDescs are 48-byte records starting with the opacity micromap handle
-	virtual void BuildOpacityMicromaps( int nCount, const void *pBuildDescs ) = 0;
+	virtual void BuildOpacityMicromaps( int nCount, const OpacityMicromapBuildDesc_t *pBuildDescs ) = 0;
 	virtual void unk109() = 0;
 	virtual void SetIndexBufferData( IndexBufferHandle_t hIndexBuffer, const void *pData, size_t nNumBytes, size_t nOffset, const DataRecycleDelegate_t *pDataRecycleDelegate, void *pRecycleContext ) = 0;
 	// Submits the display list and waits for the GPU
@@ -178,18 +335,18 @@ public:
 	virtual void EndPIXEvent() = 0;
 	virtual void SetPIXMarker( uint32 nColor, const char *pName ) = 0;
 	virtual void SetPIXMarker( const char *pName ) = 0;
-	virtual void SetRenderDocCommandAnnotations( const void *pfnGetAnnotations, bool bQueue ) {}
-	virtual void SetRenderDocObjectAnnotations( void *pObject, const void *pfnGetAnnotations ) {}
+	// bRemove sends the keys with empty values, removing them
+	virtual void SetRenderDocCommandAnnotations( const std::function< CUtlVector< RenderDocAnnotation_t >() > &fnGetAnnotations, bool bRemove ) {}
+	virtual void SetRenderDocObjectAnnotations( void *pObject, const std::function< CUtlVector< RenderDocAnnotation_t >() > &fnGetAnnotations ) {}
 	virtual void BeginQuery( RenderQueryHandle_t hQuery ) = 0;
 	virtual void EndQuery( RenderQueryHandle_t hQuery ) = 0;
 	virtual void SetDepthBoundsTestEnable( bool bEnable ) = 0;
 	virtual void SetDepthBounds( float flMinDepth, float flMaxDepth ) = 0;
 	virtual std::unique_ptr< IBarrierHelper > GetBarrierHelper() = 0;
 	virtual void TransitionTextures( int nCount, const HRenderTexture *pTextures, const uint32 *pLayouts ) = 0;
-	// Barrier records of 40 bytes: texture handle, stage and access masks, layout, mip and slice range
-	virtual void TextureBarriers( int nCount, const void *pBarriers ) = 0;
-	virtual void BufferBarriers( int nCount, const void *pBarriers ) = 0;
-	virtual void MemoryBarriers( int nCount, const void *pBarriers ) = 0;
+	virtual void TextureBarriers( int nCount, const RenderTextureBarrier_t *pBarriers ) = 0;
+	virtual void BufferBarriers( int nCount, const RenderBufferBarrier_t *pBarriers ) = 0;
+	virtual void MemoryBarriers( int nCount, const RenderMemoryBarrier_t *pBarriers ) = 0;
 	// Transitions the textures from the undefined layout, dropping their contents
 	virtual void DiscardTextures( int nCount, const HRenderTexture *pTextures, const uint32 *pLayouts ) = 0;
 	virtual void unk132() = 0;

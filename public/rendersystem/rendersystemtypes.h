@@ -6,6 +6,7 @@
 #endif
 
 #include "tier0/basetypes.h"
+#include "tier0/utlvector.h"
 #include "network_connection.pb.h"
 
 #include "schemacompiler/schemaon.h"
@@ -48,6 +49,20 @@ schema struct RenderInputLayoutField_t
 	int8 m_nSlot;
 	RenderSlotType_t m_nSlotType;
 	char m_szShaderSemantic[ 32 ];
+};
+
+schema struct VsInputSignatureElement_t
+{
+	char m_pName[ 64 ];
+	char m_pSemantic[ 64 ];
+	char m_pD3DSemanticName[ 64 ];
+	int32 m_nD3DSemanticIndex;
+};
+
+schema struct VsInputSignature_t
+{
+	CUtlVector< VsInputSignatureElement_t > m_elems;
+	CUtlVector< VsInputSignatureElement_t > m_depth_elems;
 };
 
 enum RenderMultisampleType_t : uint8
