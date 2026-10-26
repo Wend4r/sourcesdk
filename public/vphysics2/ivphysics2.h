@@ -688,8 +688,8 @@ public:
 	// Set while VConsole is connected; losing the connection clears the debug draw filters of the worlds
 	bool m_bConnected;
 
-	// 1 streams every world on each RunVConCommFrame
-	int m_unk024;
+	// 1 (the default, and a start stream message without flag 2) streams every world on each RunVConCommFrame
+	int m_nStreamAllWorlds;
 };
 
 // The resource type manager of VPhysXAggregateData_t ('vphys').
