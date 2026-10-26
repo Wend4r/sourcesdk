@@ -93,7 +93,9 @@ public:
 
 	// The debug shape scene object is not disabled
 	virtual bool IsDebugShapeVisible() = 0;
-	virtual void unk023( bool bUnknown ) = 0;
+
+	// Keeps the debug shape enabled when its alpha factors fade it out; true creates the debug shape
+	virtual void SetDebugShapeAlwaysVisible( bool bAlwaysVisible ) = 0;
 
 	// Selects the depth-tested debug materials instead of the no-depth-test ones; true creates the debug shape
 	virtual void SetDebugShapeDepthTest( bool bDepthTest ) = 0;
@@ -111,7 +113,9 @@ public:
 	virtual void unk030( float flValue ) = 0;
 
 	virtual CRnShape *GetRnShape() const = 0;
-	virtual int unk032() const = 0;
+
+	// A unique number taken from a global counter when the shape is created or its geometry changes
+	virtual int GetShapeId() const = 0;
 
 	// Always zero
 	virtual FnPhysicsShapeUnk033_t unk033() = 0;
