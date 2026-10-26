@@ -19,6 +19,8 @@
 #include "physicslib/param_types.h"
 #include "physicslib/serialize.h"
 
+#include <functional>
+
 class CBufferString;
 class CRnShape;
 class IRnDebugShape;
@@ -36,6 +38,13 @@ struct FnPhysicsShapeUnk033_t
 	uint8 m_Data[ 4 ];
 };
 
+// A vertex of the triangulated surface of a shape
+struct PhysicsShapeVertex_t
+{
+	Vector m_vPosition;
+	Vector m_vNormal;
+};
+
 abstract_class IFnPhysicsShape
 {
 public:
@@ -45,14 +54,21 @@ public:
 
 	virtual IPhysicsShape *GetShape() const = 0;
 
-	// MSVC groups these overloads in reverse order
-	virtual void unk003( int nUnknown1, int nUnknown2, int nUnknown3 ) = 0;
-	virtual void unk003( void *p1, const void *p2, void *p3 ) = 0;
+	// Triangulates the surface of the shape (spheres and capsules with a fixed tessellation) and appends the vertices, three indices per
+	// triangle and, when pSubShapes is given, the sub-shape of each triangle. MSVC groups these overloads in reverse order
+	virtual void Triangulate( CUtlVector< PhysicsShapeVertex_t > &vertices, CUtlVector< int > &indices, CUtlVector< uint64 > *pSubShapes ) = 0;
+	virtual void Triangulate( CUtlVector< Vector > &vertices, CUtlVector< int > &indices, CUtlVector< uint64 > *pSubShapes ) = 0;
 
-	// Switch on the shape type that calls the std::function callbacks given for each type
-	virtual void unk005( void *p ) = 0;
-	virtual void unk006( void *p ) = 0;
-	virtual void unk007( void *p ) = 0;
+	// Calls the callback with every sub-shape: -1 for a sphere, a capsule or a hull, each triangle of a mesh and each child of a compound
+	virtual void ForEachSubShape( const std::function< void( uint64 nSubShape ) > &callback ) const = 0;
+
+	// Calls the callback of the type of the shape, or of each child of a compound, with the geometry, the scale and the sub-shape
+	virtual void ForEachGeometry( const std::function< void( const RnSphere_t &sphere, int nSubShape ) > &sphereCallback, const std::function< void( const RnCapsule_t &capsule, int nSubShape ) > &capsuleCallback,
+		const std::function< void( const RnHull_t *pHull, float flScale, int nSubShape ) > &hullCallback, const std::function< void( const RnMesh_t *pMesh, const Vector &vScale, int nSubShape ) > &meshCallback ) const = 0;
+
+	// Calls the callback of the type of the geometry of a sub-shape (the scaled child of a compound); false for the sub-shape -1 of a compound
+	virtual bool VisitSubShapeGeometry( int nSubShape, const std::function< void( const RnSphere_t &sphere ) > &sphereCallback, const std::function< void( const RnCapsule_t &capsule ) > &capsuleCallback,
+		const std::function< void( const RnHull_t *pHull, float flScale ) > &hullCallback, const std::function< void( const RnMesh_t *pMesh, const Vector &vScale ) > &meshCallback ) const = 0;
 
 	// One for a sphere, two for a capsule, the vertices of a hull or a mesh
 	virtual int GetVertexCount() const = 0;
@@ -100,17 +116,21 @@ public:
 	// Selects the depth-tested debug materials instead of the no-depth-test ones; true creates the debug shape
 	virtual void SetDebugShapeDepthTest( bool bDepthTest ) = 0;
 
-	virtual void unk025( bool bUnknown ) = 0;
+	// Sets the scene object flag of moving objects on the debug shape; adding the shape to a body passes whether the body is dynamic
+	virtual void SetDebugShapeDynamic( bool bDynamic ) = 0;
 
-	// unk026 and unk029 store color 0 and color 1 of the debug shape
-	virtual void unk026( const Vector4D &vColor ) = 0;
+	// Color 0 of the debug shape, which CreateDebugShape also takes; its tint and the alpha factors multiply it
+	virtual void SetDebugShapeColor( const Vector4D &vColor ) = 0;
 
 	// Four factors (index 0 to 3) whose product hides the debug shape at zero and selects the translucent materials below one
 	virtual float GetDebugShapeAlphaFactor( int nIndex ) = 0;
 	virtual void SetDebugShapeAlphaFactor( int nIndex, float flValue ) = 0;
 
-	virtual void unk029( const Vector4D &vColor ) = 0;
-	virtual void unk030( float flValue ) = 0;
+	// Color 1 of the debug shape, multiplied with its color
+	virtual void SetDebugShapeTint( const Vector4D &vTint ) = 0;
+
+	// Passed to the debug materials; at 0.125 or less the debug shape is hidden unless it is always visible
+	virtual void SetDebugShapeOpacity( float flOpacity ) = 0;
 
 	virtual CRnShape *GetRnShape() const = 0;
 
@@ -162,16 +182,27 @@ public:
 	// bUpdateMass recomputes the mass properties of the body
 	virtual void SetHull( const RnHull_t *pHull, bool bUpdateMass ) = 0;
 
-	// Wakes the body to update its mass properties when bUpdateMass is set
-	virtual void unk037( bool bUpdateMass ) = 0;
+	// Updates the shape after its vertices changed in place, waking the body to update its mass properties when bUpdateMass is set
+	virtual void UpdateVertices( bool bUpdateMass ) = 0;
 
 	virtual float GetScale() const = 0;
 
-	// Queries against the hull; the arguments are not recovered
-	virtual bool unk039( void *p ) = 0;
-	virtual void unk040( void *p ) = 0;
-	virtual bool unk041( void *p ) = 0;
-	virtual bool unk042( void *p ) = 0;
+	// Casts a sphere of flRadius from vStart along vDelta against the hull, up to flMaxFraction; true on a hit. CastSphere uses the
+	// face clipping cast only when the hull has its face tree and the GJK cast otherwise, CastSphereClipped always tries the face
+	// clipping cast first, CastSphereBounded rejects casts that miss the bounding sphere of the hull
+	virtual bool CastSphere( CShapeCastResult *pResult, const Vector &vStart, const Vector &vDelta, float flRadius, float flMaxFraction ) = 0;
+	virtual void CastSphereBounded( CShapeCastResult *pResult, const Vector &vStart, const Vector &vDelta, float flRadius ) = 0;
+	virtual bool CastSphereClipped( CShapeCastResult *pResult, const Vector &vStart, const Vector &vDelta, float flRadius, float flMaxFraction ) = 0;
+
+	// The same face clipping cast against another hull, ignoring the bound shape
+	virtual bool CastSphereAgainstHull( CShapeCastResult *pResult, const RnHull_t *pHull, const Vector &vStart, const Vector &vDelta, float flScale, float flRadius, float flMaxFraction ) = 0;
+};
+
+// The vertex velocities IFnPhysicsMeshShape::UpdateVertices takes by value
+struct PhysicsMeshVertexVelocities_t
+{
+	const Vector *m_pVelocities;
+	intp m_nCount;
 };
 
 abstract_class IFnPhysicsMeshShape : public IFnPhysicsShape
@@ -182,20 +213,27 @@ public:
 	// bUpdateMass recomputes the mass properties of the body
 	virtual void SetMesh( const RnMesh_t *pMesh, bool bUpdateMass ) = 0;
 
-	// MSVC groups these overloads in reverse order; the second takes a 16-byte struct by value
-	virtual void unk037( bool bUpdateMass ) = 0;
-	virtual void unk037( void *p ) = 0;
+	// Updates the shape after its vertices changed in place, waking the body to update its mass properties when bUpdateMass is set.
+	// The second overload also stores a velocity for each vertex, which contacts on the triangles use, when the count matches the
+	// vertex count and a velocity is not zero; nMode 1 needs a mesh flagged for it. MSVC groups these overloads in reverse order
+	virtual void UpdateVertices( bool bUpdateMass ) = 0;
+	virtual void UpdateVertices( PhysicsMeshVertexVelocities_t velocities, int nMode ) = 0;
 
-	virtual void unk039() = 0;
-	virtual Vector unk040( int nIndex ) const = 0;
-	virtual void unk041( int nIndex, void *p ) = 0;
+	virtual void ClearVertexVelocities() = 0;
+
+	// Zero without vertex velocities
+	virtual Vector GetVertexVelocity( int nVertex ) const = 0;
+
+	// The vertex velocities of a triangle interpolated at a point on it
+	virtual Vector GetVertexVelocityAtPoint( int nTriangle, const Vector &vPoint ) const = 0;
 
 	virtual Vector GetScale() const = 0;
 
 	// Scaled vertices of a triangle
 	virtual void GetTriangleVertices( int nTriangle, Vector *pVertex1, Vector *pVertex2, Vector *pVertex3 ) const = 0;
 
-	virtual void unk044( void *p ) = 0;
+	// Appends the triangles whose bounds overlap the bounds, or that overlap the box itself unless bBoundsOnly is set
+	virtual void GetTrianglesInBox( CUtlVector< int > &triangles, const AABB_t &bounds, bool bBoundsOnly ) const = 0;
 };
 
 abstract_class IFnPhysicsCompoundShape : public IFnPhysicsShape
