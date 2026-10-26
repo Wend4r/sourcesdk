@@ -164,6 +164,10 @@ enum RenderVariableRefreshRateStatus_t : int
 // nFlags of IRenderDevice::InitDevice and IRenderDeviceMgr::CreateDevice
 #define RENDER_DEVICE_INIT_ALLOW_WINDOW_RESIZING ( 1 << 0 ) // returned by IsWindowResizingEnabled
 
+// nBindFlags of IRenderDevice::AllocatePooledVertexBuffer, the D3D11_BIND_* values
+#define RENDER_POOLED_BUFFER_BIND_VERTEX_BUFFER ( 1 << 0 )
+#define RENDER_POOLED_BUFFER_BIND_UNORDERED_ACCESS ( 1 << 7 )
+
 abstract_class IRenderDevice
 {
 public:
@@ -425,8 +429,7 @@ public:
 	virtual void FreePooledIndexBuffer( PooledIndexBufferHandle_t hBuffer ) = 0;
 	virtual uint GetPooledIndexBufferOffset( PooledIndexBufferHandle_t hBuffer, uint32 *pIndexSizeOut, uint32 *pIndexCountOut ) = 0;
 	virtual IndexBufferHandle_t GetPooledIndexBuffer() = 0;
-	// nBindFlags follows the D3D11 bind flags the callers pass (1 vertex buffer, 0x80 unordered access); the Vulkan
-	// backend ignores it
+	// nBindFlags: RENDER_POOLED_BUFFER_BIND_* bits, ignored by the Vulkan backend
 	virtual RenderResourceHandle_t AllocatePooledVertexBuffer( uint nVertexCount, uint nVertexSize, const void *pVertices, uint32 nBindFlags, const char *pDebugName ) = 0;
 	virtual void FreePooledVertexBuffer( RenderResourceHandle_t hBuffer ) = 0;
 	virtual uint32 GetPooledVertexBufferBaseVertex( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
