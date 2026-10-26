@@ -86,8 +86,46 @@ enum ESceneObjectFlags : uint64
 enum ESceneObjectTypeFlags : uint64
 {
 	SCENEOBJECTTYPEFLAG_NONE = 0x0,
+
+	// Deleting the object returns it to the pool it was allocated from.
+	SCENEOBJECTTYPEFLAG_FROM_POOL = 0x1,
+
 	SCENEOBJECTTYPEFLAG_HAS_MESH_INSTANCE_DATA = 0x2,
 	SCENEOBJECTTYPEFLAG_DELETE_MESH_INSTANCE_DATA = 0x4,
+
+	// ISceneSystem::CreateSceneObject allocates the PVS data, whose cluster bits the culling tests;
+	// the world renderer leaves it out for OBJECT_TYPE_DISABLE_VIS_CULLING.
+	SCENEOBJECTTYPEFLAG_HAS_PVS_DATA = 0x8,
+
+	// World aggregates with a vertex emissive stream and OBJECT_TYPE_HAS_EMISSIVE_GI.
+	SCENEOBJECTTYPEFLAG_HAS_EMISSIVE_VERTEX_STREAM = 0x800,
+
+	// Light, barn light, environment map and light probe volume objects.
+	SCENEOBJECTTYPEFLAG_IS_LIGHT = 0x1000,
+	SCENEOBJECTTYPEFLAG_IS_LIGHT_VOLUME = 0x4000,
+	SCENEOBJECTTYPEFLAG_IS_ENVMAP = 0x20000,
+	SCENEOBJECTTYPEFLAG_IS_DIRECT_LIGHT = 0x40000,
+	SCENEOBJECTTYPEFLAG_IS_INDIRECT_LIGHT = 0x80000,
+
+	// Taken from the "mapbuilder.blocklight" material attribute.
+	SCENEOBJECTTYPEFLAG_BLOCK_LIGHT = 0x100000,
+
+	// World aggregates that are not models (OBJECT_TYPE_MODEL clear).
+	SCENEOBJECTTYPEFLAG_WORLD_GEOMETRY = 0x200000,
+
+	SCENEOBJECTTYPEFLAG_DISTANCE_FIELD_INSTANCE = 0x400000,
+	SCENEOBJECTTYPEFLAG_INSTANCED_MESH = 0x2000000,
+
+	// Objects the world renderer creates from a world node; the scene world keeps them in a separate list.
+	SCENEOBJECTTYPEFLAG_WORLD_NODE_OBJECT = 0x4000000,
+
+	SCENEOBJECTTYPEFLAG_NOT_BATCHABLE = 0x100000000ull,
+
+	// The world renderer sets it for world objects with OBJECT_TYPE_DISABLED_IN_LOW_QUALITY.
+	SCENEOBJECTTYPEFLAG_DISABLED_IN_LOW_QUALITY = 0x800000000ull,
+
+	// Rendering the object stores the current frame counter in CSceneObject::m_nGameRenderCounter.
+	SCENEOBJECTTYPEFLAG_UPDATE_GAME_RENDER_COUNTER = 0x2000000000ull,
 };
 
 #endif // SCENESYSTEM_FLAGS_H
