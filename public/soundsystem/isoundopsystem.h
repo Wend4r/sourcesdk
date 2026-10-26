@@ -91,6 +91,20 @@ enum SOAtomicDataType_t : int32
 	SOATYPE_STRING_TOKEN = 7,
 };
 
+// Values of the "array_selection_type" enum field of the opvar array index operators
+enum SosArraySelectionType_t
+{
+	// SelectIndex picks nothing, the operator keeps its input_index
+	SOS_ARRAY_SELECTION_INDEX = 0,
+	SOS_ARRAY_SELECTION_FORWARD,
+	SOS_ARRAY_SELECTION_BACKWARD,
+	SOS_ARRAY_SELECTION_RANDOM,
+	// Random among the indices whose bit in the selection state is clear
+	SOS_ARRAY_SELECTION_RANDOM_EXCLUSIVE,
+	SOS_ARRAY_SELECTION_RANDOM_WEIGHTED,
+	SOS_ARRAY_SELECTION_MAX_VALUE,
+};
+
 struct CSosFieldData
 {
 	SOAtomicDataType_t	m_nAtomicDataType;
@@ -408,9 +422,9 @@ public:
 	virtual SOSRANDSEED GetNextRandomSeed() = 0;
 	// Name of the active sound event
 	virtual const char *GetActiveSoundEventName( SoundEventGuid_t guid ) = 0;
-	// Picks an index up to nMax: nMode 1 next, 2 previous, 3 random, 4 random without repeats (pState holds a bit per index),
-	// 5 random by pWeights; for 1 and 2 pState holds the last index
-	virtual int SelectIndex( CSosOperatorStack *pStack, uint8 *pState, int nMode, int nMax, CUtlVector< float > *pWeights ) = 0;
+	// Picks an index up to nMax; for FORWARD and BACKWARD pState holds the last index, for RANDOM_EXCLUSIVE a bit per index,
+	// RANDOM_WEIGHTED without weights selects like RANDOM_EXCLUSIVE
+	virtual int SelectIndex( CSosOperatorStack *pStack, uint8 *pState, SosArraySelectionType_t nMode, int nMax, CUtlVector< float > *pWeights ) = 0;
 	// Name of the update group
 	virtual const char *GetUpdateGroupName( int8 nGroup ) = 0;
 	// Guids of the active sound events
