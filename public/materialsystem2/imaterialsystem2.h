@@ -35,6 +35,16 @@ struct RsStencilStateOverride_t;
 struct RsDepthBiasStateOverride_t;
 class CMaterial2;
 class CMaterialTypeManager;
+
+// The shader of a mode, see CMaterialMode
+class CVfx;
+
+// Notified by IMaterialSystem2::SetMaterialParamFromString() after the parameter is set
+abstract_class IMaterialParamChangedListener
+{
+public:
+	virtual void OnMaterialParamChanged( ResourceHandle_t hMaterial, const char *pParamName, const Vector4D &vecValue ) = 0;
+};
 FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
 FORWARD_DECLARE_HANDLE( RenderShaderHandle_t );
 FORWARD_DECLARE_HANDLE( RenderBufferHandle_t );
@@ -144,8 +154,8 @@ public:
 	// Returns the previous value
 	virtual bool SetCompileMissingShaderCombos( bool bCompile ) = 0;
 
-	virtual void AddMaterialParamChangedListener( void *pListener ) = 0;
-	virtual void RemoveMaterialParamChangedListener( void *pListener ) = 0;
+	virtual void AddMaterialParamChangedListener( IMaterialParamChangedListener *pListener ) = 0;
+	virtual void RemoveMaterialParamChangedListener( IMaterialParamChangedListener *pListener ) = 0;
 
 	virtual ~IMaterialSystem2() {}
 };
@@ -235,7 +245,7 @@ public:
 	int m_nMaterialGeneration;
 
 	// Shaders, keyed by their symbol in m_shaderNameDictionary
-	CUtlHashtable< CUtlSymbol, void *, Mix32HashFunctor > m_Shaders;
+	CUtlHashtable< CUtlSymbol, CVfx *, Mix32HashFunctor > m_Shaders;
 	CUtlSymbolTable m_shaderNameDictionary;
 
 	// Keyed by the shader file name
@@ -317,7 +327,7 @@ public:
 	CUtlVector< IShaderReloadListener * > m_ShaderReloadListeners;
 
 	// AddMaterialParamChangedListener() and RemoveMaterialParamChangedListener()
-	CUtlVector< void * > m_MaterialParamChangedListeners;
+	CUtlVector< IMaterialParamChangedListener * > m_MaterialParamChangedListeners;
 
 	// "DefaultTextureBuffer", "DefaultUAVBuffer" and "DefaultUAV.vtex"
 	RenderBufferHandle_t m_hDefaultTextureBuffer;
