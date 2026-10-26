@@ -67,8 +67,10 @@ enum CreateSpawnGroupType_t
 enum ESpawnGroupUnloadOption
 {
 	kSGUO_None = 0,
-	kSGUO_SaveEntities,
+	// The spawn group's manifests went to its owner; clients are not sent the unload
 	kSGUO_MergedIntoOwner,
+	// Not checked by the engine
+	kSGUO_SaveEntities,
 };
 
 enum SpawnGroupEntityFilterType_t
