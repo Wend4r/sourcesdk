@@ -9,6 +9,7 @@
 #include <iprediction.h>
 
 #include <entityhandle.h>
+#include <splitscreenslot.h>
 #include <tier0/platform.h>
 #include <tier0/utldict.h>
 #include <tier0/utlstring.h>
@@ -26,45 +27,81 @@ class C_CSGOUserCmd;
 //-----------------------------------------------------------------------------
 // Per-split-screen-slot prediction state.
 //
-// Only the represented field offsets are verified.
+// The int members named m_nUnknown are cleared when the slot is reset and have
+// no reader in the prediction code.
 //-----------------------------------------------------------------------------
 struct PredictionSplit_t
 {
-private:
-	uint8 m_nUnknown0000[4];
+	// Prediction errors of the predicted entities ( cl_showerror ), keyed by an int of the entity: a red-black
+	// tree with unsigned short links over 48-byte nodes, each holding a CUtlVector of 32-byte field error records
+	struct PredictionErrorTree_t
+	{
+		uint16 m_nNodeCount;
+		uint16 m_nNodeAllocationCount;
+		void *m_pNodes;
+		uint16 m_nRoot;
+		uint16 m_nElementCount;
+		uint16 m_nFirstFree;
 
-public:
+	private:
+		uint8 m_pad16[ 2 ];
+	};
+
+	// m_nSplitScreenSlot of the controller while it is the local player controller, otherwise -1
+	CSplitScreenSlot m_nSplitScreenSlot;
 	CPlayerSlot m_nPlayerSlot;
+	int m_nUnknown0008;
 
-private:
-	uint8 m_nUnknown0008[4];
-
-public:
 	// Set for the slot that is predicted for TrueView spectating
 	bool m_bTrueView;
 
 private:
-	uint8 m_nUnknown000D[11];
+	uint8 m_pad0D[ 3 ];
+
+public:
+	// Non-zero marks the prediction state as changed when the slot's predictables are shut down
+	int m_nUnknown0010;
+
+private:
+	uint8 m_pad14[ 4 ];
 
 public:
 	CEntityInstance *m_pController;
+	int m_nUnknown0020;
 
 private:
-	uint8 m_nUnknown0020[40];
+	// The constructor of a slot was not found; a byte at +0x28 is used there
+	uint8 m_nUnknown0024[ 12 ];
 
 public:
+	PredictionErrorTree_t m_PredictionErrors;
 	CUtlVector< CEntityInstance * > m_PredictedEntities;
 
 private:
-	uint8 m_nUnknown0060[32];
+	// The constructor of a slot was not found; a qword at +0x60 and a byte at +0x68 are used there
+	uint8 m_nUnknown0060[ 16 ];
 
 public:
+	int m_nUnknown0070;
+	int m_nUnknown0074;
+	int m_nUnknown0078;
+	int m_nUnknown007C;
 	int m_nLastExecutedCommand;
 	int m_nBasePredictedCommand;
 	int m_nLastPredictedCommand;
 
 private:
-	uint8 m_nUnknown008C[44];
+	uint8 m_nUnknown008C[ 12 ];
+
+public:
+	int m_nUnknown0098;
+
+private:
+	uint8 m_pad9C[ 4 ];
+
+public:
+	// Element type not recovered; only cleared and freed when the slot is reset or shut down
+	CUtlVector< void * > m_UnknownVector00A0;
 };
 
 //-----------------------------------------------------------------------------
@@ -81,7 +118,7 @@ public:
 	bool m_bIsEnginePaused;
 
 private:
-	uint8 m_nUnknown0036[2];
+	uint8 m_pad36[ 2 ];
 
 public:
 	C_CSGOUserCmd *m_pPredictionCommand;
@@ -89,13 +126,15 @@ public:
 	bool m_bPrintDebug;
 
 private:
-	uint8 m_nUnknown0041[3];
+	uint8 m_pad41[ 3 ];
 
 public:
 	int m_nSnapshotTick;
 
 private:
-	uint8 m_nUnknown0048[8];
+	// -1 after the constructor, like m_nSnapshotTick; no reader found
+	int m_nUnknown0048;
+	uint8 m_pad4C[ 4 ];
 
 public:
 	CUtlVector< PredictionSplit_t > m_Splits;
@@ -111,14 +150,14 @@ public:
 
 private:
 	// Read by the client check for whether prediction is enabled; never written outside the constructor
-	uint8 m_nUnknown00CB[1];
+	bool m_bUnknown00CB;
 
 public:
 	// "enable" key of the prediction data received over VConComm
 	bool m_bEnable;
 
 private:
-	uint8 m_nUnknown00CD[3];
+	uint8 m_padCD[ 3 ];
 
 public:
 	// TrueView prediction time offset in seconds
@@ -127,7 +166,7 @@ public:
 	bool m_bPredictionTimeOffsetUnknown;
 
 private:
-	uint8 m_nUnknown00D6[2];
+	uint8 m_padD6[ 2 ];
 
 public:
 	// Version of the demo being played back when TrueView can use it, otherwise 0
@@ -136,11 +175,10 @@ public:
 	int m_nFinalPredictedTick;
 	float m_flFinalPredictedTickFraction;
 
-private:
-	// Only cleared together with the final predicted tick, never read
-	uint8 m_nUnknown00E4[8];
+	// The final predicted tick and fraction before the latest update ( "TrueView target time going in reverse" )
+	int m_nPreviousFinalPredictedTick;
+	float m_flPreviousFinalPredictedTickFraction;
 
-public:
 	// Prediction time offset rounded to ticks
 	int m_nPredictionTimeOffsetTicks;
 
@@ -150,7 +188,7 @@ public:
 	bool m_bPlayerOriginTypedescriptionSearched;
 
 private:
-	uint8 m_nUnknown00F2[6];
+	uint8 m_padF2[ 6 ];
 
 public:
 	// Pawn the origin field was looked up on; a different pawn restarts the lookup
@@ -185,7 +223,7 @@ public:
 	bool m_bReportReset;
 
 private:
-	uint8 m_nUnknown0125[3];
+	uint8 m_pad125[ 3 ];
 
 public:
 	// Per entity report state keyed by entity handle, each value owns a hash table of 80-byte field records ("entities")
@@ -195,7 +233,7 @@ public:
 	bool m_bReinitPredictables;
 
 private:
-	uint8 m_nUnknown0179[7];
+	uint8 m_pad179[ 7 ];
 };
 
 #endif // PREDICTION_H
