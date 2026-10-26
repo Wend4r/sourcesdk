@@ -314,8 +314,8 @@ struct SteamAudioDimensionsDisplay_t
 struct SteamAudioOcclusionDisplayProbe_t
 {
 	Vector m_vecPosition;
-	// Never read by the display
-	float m_flUnk0C;
+	// Radius of the probe in inches, not drawn by the display
+	float m_flRadius;
 	float m_flOcclusion;
 	// The display merges entries by it
 	int m_nId;
