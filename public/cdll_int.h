@@ -207,7 +207,7 @@ public:
 	virtual bool MapLoadFailed() = 0;
 	virtual void SetMapLoadFailed( bool bState ) = 0;
 	virtual SpawnGroupHandle_t LoadSpawnGroup( const SpawnGroupDesc_t &desc ) = 0;
-	virtual void UnloadSpawnGroup( SpawnGroupHandle_t hSpawnGroup, /*ESpawnGroupUnloadOption*/ int nOption ) = 0;
+	virtual void UnloadSpawnGroup( SpawnGroupHandle_t hSpawnGroup, ESpawnGroupUnloadOption nOption ) = 0;
 	virtual void SetSpawnGroupDescription( SpawnGroupHandle_t hSpawnGroup, const char *pszDescription ) = 0;
 	virtual bool IsSpawnGroupLoaded( SpawnGroupHandle_t hSpawnGroup ) = 0;
 	virtual bool IsSpawnGroupLoading( SpawnGroupHandle_t hSpawnGroup ) = 0;
