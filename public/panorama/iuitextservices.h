@@ -24,6 +24,63 @@ class IUITextLayoutDrawCache;
 class IUITextTextureProvider;
 class IUITextTextureStorage;
 
+// Encoding of the text passed to IUITextServices::CreateTextLayout()
+enum UITextEncoding_t : uint8
+{
+	UITEXT_ENCODING_UTF8 = 1,
+	UITEXT_ENCODING_UTF16,
+	UITEXT_ENCODING_UTF32,
+};
+
+// How UITextLayoutParams_t::m_flLineHeight is read, as panorama parses line-height
+enum UITextLineHeightMode_t : int
+{
+	// "normal": the line height comes from the font metrics
+	UITEXT_LINE_HEIGHT_NORMAL = 0,
+	UITEXT_LINE_HEIGHT_PIXELS,
+	// Percent of the font size
+	UITEXT_LINE_HEIGHT_PERCENT,
+};
+
+// The font-weight, font-style, font-stretch and text-align values in the order panorama parses them
+enum UITextFontWeight_t : int8
+{
+	UITEXT_FONT_WEIGHT_UNSET = -1,
+	UITEXT_FONT_WEIGHT_NORMAL,
+	UITEXT_FONT_WEIGHT_MEDIUM,
+	UITEXT_FONT_WEIGHT_BOLD,
+	UITEXT_FONT_WEIGHT_BLACK,
+	UITEXT_FONT_WEIGHT_THIN,
+	UITEXT_FONT_WEIGHT_LIGHT,
+	UITEXT_FONT_WEIGHT_SEMI_BOLD,
+};
+
+enum UITextFontStyle_t : int8
+{
+	UITEXT_FONT_STYLE_UNSET = -1,
+	UITEXT_FONT_STYLE_NORMAL = 0,
+	UITEXT_FONT_STYLE_ITALIC = 2,
+};
+
+enum UITextFontStretch_t : int8
+{
+	UITEXT_FONT_STRETCH_UNSET = -1,
+	UITEXT_FONT_STRETCH_NORMAL,
+	UITEXT_FONT_STRETCH_CONDENSED,
+	UITEXT_FONT_STRETCH_EXPANDED,
+};
+
+enum UITextAlign_t : int8
+{
+	UITEXT_ALIGN_UNSET = -1,
+	UITEXT_ALIGN_LEFT,
+	UITEXT_ALIGN_CENTER,
+	UITEXT_ALIGN_RIGHT,
+	UITEXT_ALIGN_JUSTIFY,
+	// Spreads the letters over m_flMaxWidth without wrapping
+	UITEXT_ALIGN_JUSTIFY_LETTER_SPACING,
+};
+
 // Layout parameters of IUITextServices::CreateTextLayout(); the int8 style members are -1 when the property is unset
 struct UITextLayoutParams_t
 {
@@ -35,18 +92,12 @@ public:
 	// Font family list; "Arial" is appended as the last fallback
 	const char *m_pszFontFamily;
 	float m_flFontSize;
-	// Pixels for line height mode 1, percent of the font size for mode 2
 	float m_flLineHeight;
-	// 0 takes the line height from the font metrics
-	int m_nLineHeightMode;
-	// Pango weight 500, 700, 900, 100, 300 and 600 for 1 to 6, 400 otherwise
-	int8 m_nFontWeight;
-	// 2 is italic
-	int8 m_nFontStyle;
-	// 1 is condensed, 2 expanded
-	int8 m_nFontStretch;
-	// 1 center, 2 right, 3 justify, 4 spreads the letters over m_flMaxWidth without wrapping
-	int8 m_nTextAlign;
+	UITextLineHeightMode_t m_nLineHeightMode;
+	UITextFontWeight_t m_nFontWeight;
+	UITextFontStyle_t m_nFontStyle;
+	UITextFontStretch_t m_nFontStretch;
+	UITextAlign_t m_nTextAlign;
 	bool m_bWrap;
 	bool m_bEllipsis;
 
@@ -86,9 +137,8 @@ public:
 
 	virtual bool RegisterCustomFontFile( const char *pszFullPath, const char *pszFileName ) = 0;
 
-	// nTextBytes includes the terminator, nEncoding is 1 for UTF-8, 2 for UTF-16 and 3 for UTF-32, so pText has no single type.
-	// pFontMetrics may be NULL
-	virtual IUITextLayout *CreateTextLayout( const void *pText, int nTextBytes, int nCharCount, uint8 nEncoding, const UITextLayoutParams_t *pLayoutParams, UITextFontMetrics_t *pFontMetrics ) = 0;
+	// nTextBytes includes the terminator; pText has the type of nEncoding. pFontMetrics may be NULL
+	virtual IUITextLayout *CreateTextLayout( const void *pText, int nTextBytes, int nCharCount, UITextEncoding_t nEncoding, const UITextLayoutParams_t *pLayoutParams, UITextFontMetrics_t *pFontMetrics ) = 0;
 	virtual void FreeTextLayout( IUITextLayout *pLayout ) = 0;
 
 	virtual const CUtlVector< CUtlString > &GetSortedValidFontNames() = 0;
