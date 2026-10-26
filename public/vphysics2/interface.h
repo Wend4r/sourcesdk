@@ -175,6 +175,10 @@ struct VPhysics2WorldUnk212_t
 	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
 };
 
+// Flags of IVPhysics2::CreateWorld; phys_debug_draw selects the worlds with them as client, server and other (neither) worlds
+#define PHYSICS_WORLD_CLIENT ( 1 << 0 ) // Body parts with VPhysXBodyPart_t::FLAG_ALWAYS_DYNAMIC_ON_CLIENT become dynamic
+#define PHYSICS_WORLD_SERVER ( 1 << 1 )
+
 abstract_class IVPhysics2World
 {
 public:
@@ -507,7 +511,7 @@ public:
 	// the server calls it from CBaseEntity::UpdateOnRemove with the handle of the entity
 	virtual int AddRemovedEntityId( uint32 nEntityId ) = 0;
 
-	// The flags IVPhysics2::CreateWorld was called with
+	// The PHYSICS_WORLD_* flags IVPhysics2::CreateWorld was called with
 	virtual uint32 GetCreateFlags() = 0;
 	virtual void SetWorldReferenceBody( IPhysicsBody *pBody ) = 0;
 	virtual IPhysicsBody *GetWorldReferenceBody() = 0;
@@ -720,6 +724,7 @@ public:
 	bool unk000() override;
 
 public:
+	// PHYSICS_WORLD_* flags
 	uint32 m_nCreateFlags;
 
 	// Taken from a counter that every new world increments

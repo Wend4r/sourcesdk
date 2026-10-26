@@ -409,6 +409,7 @@ abstract_class IVPhysics2 : public IAppSystem
 public:
 	virtual ~IVPhysics2() {}
 
+	// nFlags takes PHYSICS_WORLD_* flags
 	virtual IVPhysics2World *CreateWorld( uint32 nFlags ) = 0;
 	virtual void DestroyWorld( IVPhysics2World *pWorld ) = 0;
 	virtual int GetWorldCount() = 0;
