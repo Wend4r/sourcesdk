@@ -661,16 +661,25 @@ inline void CPhysAggregateDataHandle::Clear()
 	m_pData = nullptr;
 }
 
+// CVPhysics2ConComm::m_nFlags: the link state and the messages it sends to the physics debugger on the next world frame.
+// Starting a stream and the debugger messages also set bit 1 and bit 4, which nothing reads
+#define PHYSICS_CONCOMM_SEND_WORLD_INFO_FIELDS ( 1 << 1 ) // The field names of the world info ("Id", "Create Flags", ...)
+#define PHYSICS_CONCOMM_SEND_WORLD_INFO ( 1 << 3 ) // The world info (create flags, aggregate and motion controller counts), sent every frame while set
+#define PHYSICS_CONCOMM_SEND_DEBUG_DRAW_OPTIONS ( 1 << 4 ) // The debug draw options of the world, once
+#define PHYSICS_CONCOMM_WORLDS_CHANGED ( 1 << 6 ) // A world was created or destroyed; the world list is sent again
+#define PHYSICS_CONCOMM_STREAMING ( 1 << 12 ) // Streaming to the physics debugger
+#define PHYSICS_CONCOMM_SEND_OBJECT_COUNTS ( 1 << 14 ) // The body, softbody, joint and contact counts, sent every frame while set
+
 // The VConsole link of the physics debugger, registered with IVConComm by IVPhysics2::SetVConComm
 class CVPhysics2ConComm : public IVConCommDataReceived
 {
 public:
 	bool OnDataReceived( uint32 nMsgType, uint16 nVersion, uint32 nSize, void *pMessage, uint32 nSourceAddress ) override;
 
-	// Link state bits, 0x1000 while streaming to the physics debugger; IsConCommActive tests it for zero
+	// PHYSICS_CONCOMM_* bits; IsConCommActive tests them for zero
 	CInterlockedUInt m_nFlags;
 
-	// Flags the debugger commands set; copied to every world while streaming
+	// PHYSICS_DEBUGGER_FLAG_* flags the debugger messages set; copied to every world while streaming
 	uint32 m_nDebuggerFlags;
 
 	// The stream id of the start stream message, 0x8000 by default; the stop message sends it back

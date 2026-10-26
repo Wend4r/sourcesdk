@@ -869,6 +869,12 @@ struct FnPhysicsWorldUnk025_t
 	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
 };
 
+// Flags the physics debugger sets with its messages (CVPhysics2ConComm::m_nDebuggerFlags), which every world gets a copy of while
+// streaming. The debugger messages also set bit 1, bit 4, bit 8 and bit 0x20, which nothing in the library reads apart from
+// IFnPhysicsWorld::IsDebuggerFlag4Set and IsDebuggerFlag8Set
+#define PHYSICS_DEBUGGER_FLAG_RECORD_TRACES ( 1 << 1 ) // IFnPhysicsWorld::IsRecordingTraces
+#define PHYSICS_DEBUGGER_FLAG_KEEP_AWAKE_BODY_LIST ( 1 << 4 ) // IFnPhysicsWorld::ClearAwakeBodies keeps the awake body list
+
 // Function table over a world, placed into caller memory by IVPhysics2::ConstructFnPhysicsWorld
 abstract_class IFnPhysicsWorld
 {
@@ -897,15 +903,15 @@ public:
 	virtual int GetDebugRecordCount() = 0;
 	virtual int GetDebugRecordBufferSize() = 0;
 
-	// Debugger flag 2; the next two test the debugger flags 4 and 8, which nothing in the library reads
+	// PHYSICS_DEBUGGER_FLAG_RECORD_TRACES; the next two test the debugger flags 4 and 8, which nothing in the library reads
 	virtual bool IsRecordingTraces() = 0;
 	virtual bool IsDebuggerFlag4Set() = 0;
 	virtual bool IsDebuggerFlag8Set() = 0;
 
-	// Debugger flag 0x10, which keeps ClearAwakeBodies from emptying the awake body list
+	// PHYSICS_DEBUGGER_FLAG_KEEP_AWAKE_BODY_LIST
 	virtual bool IsAwakeBodyListKept() = 0;
 
-	// The flags the physics debugger sets, unless the world overrides them
+	// The PHYSICS_DEBUGGER_FLAG_* flags the physics debugger sets, unless the world overrides them
 	virtual int GetDebuggerFlags() = 0;
 	virtual void UpdateDebugScene() = 0;
 
@@ -931,7 +937,7 @@ public:
 
 	// False without an active debug draw filter; with an id list, whether the id is in it
 	virtual bool PassesDebugDrawFilter( uint32 nId ) = 0;
-	// Empties the awake body list, unless debugger flag 0x10 is set
+	// Empties the awake body list, unless PHYSICS_DEBUGGER_FLAG_KEEP_AWAKE_BODY_LIST is set
 	virtual void ClearAwakeBodies() = 0;
 	virtual void unk029( void *pObject, void *pUnknown ) = 0;
 	// Reads a query cache from the buffer
