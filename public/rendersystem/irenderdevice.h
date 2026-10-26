@@ -362,7 +362,7 @@ public:
 	virtual void DiscardDisplayList( CDisplayList *pCommandList ) = 0;
 	virtual CDependencyDescriptor *GetDependencyDescriptor( int nNumBatchesWhichWillBeSubmitted, const char *pDebugString ) = 0;
 	virtual ConstantBufferHandle_t CreateConstantBuffer( int nType, uint32 nNumBytes, void *pData, const char *pDebugName ) = 0;
-	virtual ConstantBufferHandle_t CreateMultiViewConstantBuffer( int nType, uint32 nNumBytes, uint32 nViews, uint32 nCreateFlags, const char *pDebugName ) = 0;
+	virtual ConstantBufferHandle_t CreateMultiViewConstantBuffer( int nType, uint32 nNumBytes, uint32 nViews, const char *pDebugName ) = 0;
 	virtual void DestroyConstantBuffer( ConstantBufferHandle_t hConstantBuffer ) = 0;
 	virtual uint32 GetConstantBufferSize( ConstantBufferHandle_t hConstantBuffer ) = 0;
 	virtual uint32 GetMultiViewConstantBufferSizes( ConstantBufferHandle_t hConstantBuffer, uint32 *pViewBytes, uint32 *pNumViews ) = 0;
