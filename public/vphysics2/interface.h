@@ -388,7 +388,8 @@ public:
 	virtual int GetAggregateCount() = 0;
 	virtual void GetActiveAggregateInstances( CUtlVector< IPhysAggregateInstance * > &aggregates ) = 0;
 	virtual IPhysAggregateInstance *GetAggregate( int nIndex ) = 0;
-	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nFlags, int nMotionType ) = 0;
+	// The server passes the entity handle as nEntityId
+	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nEntityId, int nMotionType ) = 0;
 	virtual void DestroyAggregateInstance( IPhysAggregateInstance *pAggregate ) = 0;
 
 	// Creates a body of nBodyType (PhysicsBodyType_t) for each body of the aggregate whose name is a bone of the model; the velocities
