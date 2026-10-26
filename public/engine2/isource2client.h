@@ -425,7 +425,8 @@ public:
 	virtual IToolClientSimulationAPI *GetToolClientSimulationAPI() = 0;
 	// The engine render view setup calls them before PerformClientSpecificSetupForPlayerViews(), the first one with the same attributes
 	virtual void SetupPlayerViewRenderAttributes( CRenderAttributes *pAttributes ) = 0;
-	virtual void unk143( void *pUnk ) = 0;
+	// The second one gets the render attributes of the "Player %d" scene view (ISceneView slot 55); empty in the client
+	virtual void SetupPlayerSceneViewRenderAttributes( CRenderAttributes *pAttributes ) = 0;
 	virtual bool unk144() = 0;
 	// SFM reads the "modelID" attribute of the element the first one returns for an entity and builds the model from it with
 	// the second one; NULL and an empty handle in the client
@@ -521,7 +522,9 @@ public:
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void GetEconItemsInfoForCharacter( const CharacterInfo_t *pCharacter, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void unk194() = 0;
-	virtual void *unk195() = 0;
+	// SFM's particle system query forwards IParticleSystemQuery slot 50 here, which the model renderer asks for the index of
+	// C_OP_RenderModels::m_EconSlotName (-1 when the name is empty); 0 in the client
+	virtual int GetEconSlotIndex( const char *pszEconSlotName ) = 0;
 	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
 	virtual float GetDefaultScaleForCharacter( const CharacterInfo_t *pCharacter ) = 0;
 	// Only clears the persona in the client
