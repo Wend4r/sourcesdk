@@ -123,10 +123,11 @@ public:
 	CTSQueue< ResourceHandle_t > m_DeletionRequests;
 
 	CUtlVector< HGameResourceManifest > m_JustInTimeManifests;
-	CAtomicMutex m_Unk2B98;
+	CAtomicMutex m_PendingReferenceRecordsMutex;
 
-	// CUtlLeanVector of 32-byte items, guarded by m_Unk2B98
-	uint64 m_Unk2BA8[ 2 ];
+	// CUtlLeanVector of 32-byte records, two resource bindings each, queued while external
+	// references are resolved and handed to the resource tracker by the frame update
+	uint64 m_PendingReferenceRecords[ 2 ];
 
 	CUtlVector< void * > m_AsyncResourceListeners;
 	IResourceUpdater *m_pResourceUpdater;
