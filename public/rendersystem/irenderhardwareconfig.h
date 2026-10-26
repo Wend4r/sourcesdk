@@ -29,7 +29,8 @@ struct RenderSystemInfo_t
 abstract_class IRenderHardwareConfig
 {
 public:
-	virtual int unk000() = 0;
+	// Highest anisotropic filtering level, 0 for none (16 on Vulkan)
+	virtual int GetMaxAnisotropy() = 0;
 
 	virtual int GetMaxTextureWidth() = 0;
 	virtual int GetMaxTextureHeight() = 0;
@@ -42,6 +43,8 @@ public:
 
 	virtual int GetMaxTextureDepth() = 0;
 	virtual int GetMaxViewports() = 0;
+	// Reads a flag of the caps as detected, before the dxlevel config is applied; the Vulkan adapter enumeration
+	// clears it and nothing calls it
 	virtual bool unk007() = 0;
 
 	// r_prefer_loop_unrolling
@@ -128,6 +131,8 @@ public:
 	// The Vulkan device sets it when it has the VK_KHR_shader_float16_int8 and VK_KHR_16bit_storage features
 	virtual bool SupportsNative16BitShaderOps() = 0;
 
+	// Capability flag the Vulkan adapter enumeration always sets and the empty render system leaves clear; nothing
+	// calls it
 	virtual bool unk048() = 0;
 	virtual bool SupportsDeviceGeneratedCommands() = 0;
 	virtual bool SupportsShaderInvocationReorder() = 0;
@@ -159,6 +164,8 @@ public:
 
 	virtual bool SupportsComputeShaderDerivatives() = 0;
 	virtual bool SupportsOpacityMicromap() = 0;
+	// Capability flag the Vulkan adapter enumeration always sets and the empty render system leaves clear; nothing
+	// calls it
 	virtual bool unk068() = 0;
 };
 
