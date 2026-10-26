@@ -4,6 +4,7 @@
 #pragma once
 
 #include "spawngrouptypes.h"
+#include "basespawngroup.h"
 #include "iloadingspawngroup.h"
 #include "ispawngroup.h"
 #include "mapspawngroup.h"
@@ -46,10 +47,6 @@ public:
 };
 
 // AMNOTE: Short stubs representing game class hierarchy
-class CBaseSpawnGroup : public ISpawnGroup, public IComputeWorldOriginCallback, public IGameResourceManifestLoadCompletionCallback
-{
-};
-
 class CLoadingSpawnGroup : public ILoadingSpawnGroup
 {
 };
