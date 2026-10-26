@@ -46,6 +46,10 @@ class CDeviceFence;
 class FloatBitMap_t;
 class IRenderAsyncShaderCompileListener;
 class IUpscaler;
+
+// Installed with IRenderDevice::SetTextureDataHandler: slot 0 receives the data of textures with the handler flag
+// instead of their upload, slot 1 their destruction, slot 4 the texture manager on install and NULL on removal
+class ITextureDataHandler;
 class Vector2D;
 struct RsRasterizerStateDesc_t;
 struct RsDepthStencilStateDesc_t;
@@ -108,6 +112,24 @@ struct RenderIndirectCommandsToken_t
 	// Token type specific dwords, NULL for the types without data
 	const uint32 *m_pData;
 	uint32 m_nOffset;
+};
+
+// An entry of OpacityMicromapCreateDesc_t, copied into a VkMicromapUsageEXT
+struct OpacityMicromapUsage_t
+{
+	uint32 m_nCount;
+	uint32 m_nSubdivisionLevel;
+	uint16 m_nFormat;
+};
+
+// IRenderDevice::CreateOpacityMicromap reads the usages and the inline debug name ("OMM %s"); its length is not
+// determinable because nothing in the available builds calls CreateOpacityMicromap
+struct OpacityMicromapCreateDesc_t
+{
+	int m_nUsageCount;
+	const OpacityMicromapUsage_t *m_pUsages;
+	uint8 m_pad010[ 8 ];
+	char m_pDebugName[ 1 ];
 };
 
 // Returned by IRenderDevice::GetVariableRefreshRateStatus
@@ -360,7 +382,7 @@ public:
 	virtual bool IsCreatingRayTracePipelines() = 0;
 	virtual IRaytraceShaderBindingTable *CreateRayTraceShaderBindingTable( const ShaderBindingTableCreateDesc_t &desc ) = 0;
 	virtual void DestroyRayTraceShaderBindingTable( IRaytraceShaderBindingTable *pSBT ) = 0;
-	virtual RenderResourceHandle_t CreateOpacityMicromap( const void *pDesc ) = 0;
+	virtual RenderResourceHandle_t CreateOpacityMicromap( const OpacityMicromapCreateDesc_t *pDesc ) = 0;
 	virtual void DestroyOpacityMicromap( RenderResourceHandle_t hOpacityMicromap ) = 0;
 	// buildScratchSize of the VkMicromapBuildSizesInfoEXT queried when the micromap was created
 	virtual uint64 GetOpacityMicromapBuildScratchSize( RenderResourceHandle_t hOpacityMicromap ) = 0;
@@ -396,8 +418,9 @@ public:
 	// What vulkan_vma_defrag starts; nAlgorithm as r_vma_defrag_algorithm (0 fast, 1 balanced, 2 full, 3 extensive)
 	virtual void DefragmentDeviceMemory( uint8 nAlgorithm, bool bAsync ) = 0;
 	virtual void BeginRenderingToSwapChain( SwapChainHandle_t hSwapChain ) = 0;
-	// r_show_gpu_memory_visualizer; the Windows Vulkan build ignores the arguments
-	virtual void Unk_DrawGPUMemoryVisualizer( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// Draws the visualizer while r_show_gpu_memory_visualizer is set and clears the convar when drawing fails; the
+	// arguments go to a drawing routine that is a stub in the shipped builds and reads none of them
+	virtual void DrawGPUMemoryVisualizer( void *pUnused1, void *pUnused2, void *pUnused3 ) = 0;
 
 	virtual void *CreateDeviceMemoryPool( uint64 nMinBlockSize ) = 0;
 	virtual void DestroyDeviceMemoryPool( void *hPool ) = 0;
@@ -435,7 +458,7 @@ public:
 	virtual void *GetRenderDocAPI() = 0;
 
 	// The handler gets the data of textures with a handler flag instead of the upload, and their destruction
-	virtual void SetTextureDataHandler( void *pHandler ) = 0;
+	virtual void SetTextureDataHandler( ITextureDataHandler *pHandler ) = 0;
 	virtual bool ReadCompiledTextureMips( HRenderTexture hTexture, int nSlice, int nFirstMip, int nMipCount, ImageFormat nFormat, std::shared_ptr< IReadTexturePixelsCallback > pCallback ) = 0;
 	virtual void OnPresentSubmitted() = 0;
 	virtual void QueueFencedRecycling( CPipelineFence *pFence ) = 0;
