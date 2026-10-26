@@ -501,7 +501,7 @@ public:
 
 	// Counter of PushToolsAudioUnmute
 	int m_nToolsAudioUnmuteCount;
-	uint8 m_unk214[ 4 ];
+	uint8 m_pad214[ 4 ];
 
 	// "VToolMessage" notification channel
 	uint8 m_VToolMessageChannel[ 0x18 ];
