@@ -153,9 +153,16 @@ class IRD_RegisterResourceDataUtils;
 class IResourceDeallocatorUtils;
 struct ResourceFileHeader_t;
 
+// How a resource got its data, passed to the type manager's LoadStreamingData, AsyncPreFinalize and FinalizeResource
 enum ResourceLoadType_t : int
 {
 	RESOURCE_LOAD_TYPE_DEFAULT = 0,
+
+	// The resource failed to load and is bound to the error resource of its type
+	RESOURCE_LOAD_TYPE_ERROR_RESOURCE,
+
+	// Loaded through a RESOURCE_MANIFEST_TYPE_BLOCKING_RELOAD manifest (the error resource of such a load counts too)
+	RESOURCE_LOAD_TYPE_RELOAD,
 };
 
 enum ResourceStreamingType_t : int
