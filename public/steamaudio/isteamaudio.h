@@ -276,10 +276,14 @@ struct IPLSimulationSettings
 	IPLOpenCLDevice openCLDevice;
 	IPLRadeonRaysDevice radeonRaysDevice;
 	IPLTrueAudioNextDevice tanDevice;
-	float32 m_flUnk50;
-	int32 m_nUnk54;
-	uint64 m_nUnk58;
-	uint64 m_nUnk60;
+	// Members of the libphonon build of the game, past the public Steam Audio settings; libphonon passes them to the
+	// reflection simulator together with the devices
+	// Seconds per energy field bin (0.01 by default), the bin count is maxDuration / binDuration
+	float32 binDuration;
+	// Above 1 the energy field also accumulates the energy by its offset within a bin, in this many steps (1 by default)
+	int32 numSubBins;
+	IPLCUDADevice cudaDevice;
+	IPLOptiXDevice optixDevice;
 };
 
 struct IPLPerspectiveCorrection
