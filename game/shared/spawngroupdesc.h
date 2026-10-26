@@ -31,7 +31,7 @@ public:
 	    m_bSaveEntities(true),
 	    m_bLevelTransition(false),
 	    m_bSuppressAllEntities(false),
-	    m_bUnk3(false)
+	    m_bHideBaseLayer(false)
 	{
 		SetIdentityMatrix(m_vecWorldOffset);
 	}
@@ -64,7 +64,8 @@ public:
 	bool m_bLevelTransition;
 	// Restored from the save file spawn group record; set when its entities were saved with another spawn group
 	bool m_bSuppressAllEntities;
-	bool m_bUnk3;
+	// CreateWorldInfo_t::m_bHideBaseLayer of the world load request the spawn group makes.
+	bool m_bHideBaseLayer;
 };
 
 struct SpawnGroupDescReceive_t
