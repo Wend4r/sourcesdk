@@ -43,9 +43,11 @@ struct VoiceRecordingLevel_t
 	float m_flLevel;
 	int m_nLevel;
 	int m_nMaxLevel;
-	bool m_bUnk0C;
-	bool m_bUnk0D;
-	float m_flUnk10;
+	// Set by every writer that fills the level
+	bool m_bValid;
+	uint8 m_pad0D[ 0x3 ];
+	// The playback writes the 0..1 level of m_flLevel; the client voice status also takes a value of 0 or below as dB
+	float m_flVoiceLevel;
 };
 
 abstract_class ISoundService : public IEngineService
