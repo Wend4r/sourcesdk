@@ -180,7 +180,7 @@ public:
 	// The queued status changes are flushed only outside ForceSynchronizationAndBlockUntilManifestLoaded
 	int m_nForceSynchronizationDepth;
 
-	// Indexed by the SetDebugFlag and GetDebugFlag flag
+	// Indexed by ResourceSystemDebugFlag_t
 	bool m_pDebugModeEnabled[ 3 ];
 
 	void *m_pTestFS;
