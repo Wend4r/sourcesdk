@@ -13,6 +13,8 @@ struct MaterialParam_t
 	Vector4D m_vValue;
 	ResourceHandle_t m_hTexture;
 	uint32 m_nValueHash;
+
+	// MaterialParamFlags_t bits
 	uint32 m_nFlags;
 	void *m_pBlob;
 	CUtlSymbolLarge m_symName;

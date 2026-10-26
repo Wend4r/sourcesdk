@@ -77,6 +77,7 @@ public:
 	virtual void DestroyProjectedDecal( void *pDecal ) = 0;
 	virtual CSceneObject *GetProjectedDecalSceneObject( void *pDecal ) = 0;
 
+	// nFlags and nTypeFlags are the ESceneObjectFlags and ESceneObjectTypeFlags of the scene system
 	virtual CSceneObject *CreateSceneObject( ResourceHandle_t hModel, const matrix3x4_t &modelToWorld, const char *pszDescName, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 
 	virtual CSceneObject *CreateSceneObject( ResourceHandle_t hModel, const CTransform &modelToWorld, const char *pszDescName, uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;

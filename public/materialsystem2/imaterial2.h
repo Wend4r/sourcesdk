@@ -42,7 +42,7 @@ struct MaterialRenderablePass_t
 	const IMaterialMode *pMode;
 	uint32 dynamicComboArrayIdx[ 7 ];
 
-	// The render state bits the selected dynamic combos set
+	// The render state bits the selected dynamic combos set, in the RENDER_RESET_* encoding
 	uint32 nAllStateSetBits;
 
 	// Hash of the mode key and the dynamic combos
@@ -139,7 +139,7 @@ public:
 
 	virtual uint32 GetShaderStateOverriddenByMaterial() = 0;
 	virtual const CUtlLeanVector< CUtlString > *GetRenderAttributesUsed() = 0;
-	// Parameters of the mode's shader program of nShaderType (-1 to 6): a CUtlVector of 0x218 byte constant,
+	// Parameters of the mode's shader program of nShaderType (a RenderShaderType_t, INVALID for the features program): a CUtlVector of 0x218 byte constant,
 	// sampler and render state descriptions that the material binds; NULL when the mode or type is invalid
 	virtual void *GetShaderParams( const CUtlStringToken &mode, int nShaderType ) = 0;
 	// Resource referenced by the material, see IMaterialSystem2::CreateMaterialReferencingResource()

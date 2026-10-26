@@ -132,6 +132,7 @@ public:
 	virtual bool CompressTextureGPU( EGPUTextureCompressOptions_t nOptions, IRenderContext *pRenderContext, CWeakHandle< InfoForResourceTypeCTextureBase > hSrcTexture, CWeakHandle< InfoForResourceTypeCTextureBase > hDestTexture, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCTextureBase > > &intermediateOutputTextures, int nNumMipLevels ) = 0;
 
 	// Program name of a shader type of the pass followed by " S_NAME=n" for its static and dynamic combos
+	// nShaderType: a RenderShaderType_t
 	virtual CBufferString GetShaderComboString( const MaterialRenderablePass_t &renderablePass, int nShaderType ) = 0;
 
 	virtual ~IMaterialSystem2Utils() {}

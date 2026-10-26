@@ -83,9 +83,12 @@ public:
 
 	virtual HMaterialWeak FindOrCreateMaterialFromResource( const char *pMaterialName ) = 0;
 
+	// nRenderStateSetNotAllowed: the render states the pass must leave alone, in the RENDER_RESET_* bit encoding of
+	// IRenderContext::ResetState; the shader stages not set by the pass are reset
 	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, const CRenderAttributes *pAttributes2, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) = 0;
 
+	// nShaderType: a RenderShaderType_t
 	virtual RenderShaderHandle_t GetShaderForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass ) = 0;
 	virtual int GetConstantBufferInfoForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass, MaterialPassConstantBufferInfo_t *pBufferInfo, int nBufferInfoMax ) = 0;
 	virtual bool GetRenderStatesForRenderablePass( int nShaderType, const MaterialRenderablePass_t &renderablePass, void *pRenderStates ) = 0;

@@ -75,8 +75,9 @@ public:
 	// Combined hash of the set attributes, updated as attributes are set
 	uint64 m_nHash;
 
-	// Shader type of the geometry stage the draws use: 1 (vertex shader) by default, 4 for a mesh shader, which
-	// CMaterialSystem2::SetRenderStateForMode then requires from the material
+	// RenderShaderType_t of the geometry stage the draws use: RENDER_SHADER_TYPE_VERTEX by default,
+	// RENDER_SHADER_TYPE_MESH for a mesh shader, which CMaterialSystem2::SetRenderStateForMode then requires from
+	// the material
 	int m_nGeometryShaderType;
 
 private:
