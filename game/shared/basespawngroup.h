@@ -49,6 +49,61 @@ public:
 	virtual void TransferOwnershipOfManifestsTo( ISpawnGroup *pTarget ) = 0;
 	virtual IGameSpawnGroupMgr *GetSpawnGroupMgr() const = 0;
 
+public:
+	SpawnGroupHandle_t m_hSpawnGroupHandle;
+	SpawnGroupState_t m_nState;
+	SpawnGroupHandle_t m_hOwnerSpawnGroup;
+	SpawnGroupHandle_t m_hParentSpawnGroup;
+	WorldGroupId_t m_hWorldGroupId;
+	ISource2WorldSession *m_pWorldSession;
+	IWorldReference *m_pWorldReference;
+	matrix3x4a_t m_vecWorldOffset;
+	IComputeWorldOriginCallback *m_pWorldOffsetCallback;
+	CUtlString m_sWorldName;
+	CUtlString m_sWorldMountName;
+	CUtlString m_sEntityLumpName;
+	CUtlString m_sEntityFilterName;
+	CUtlString m_sDescriptiveName;
+	CUtlString m_sParentNameFixup;
+	CUtlString m_sLocalNameFixup;
+	CUtlString m_sSaveFileName;
+	CUtlString m_sWorldGroupName;
+	ResourceManifestLoadPriority_t m_manifestLoadPriority;
+	int m_iPriorityLoader;
+	// Passed on to the owner spawn group with the manifests when it is higher
+	int m_nCreationSequence;
+	ILoadingSpawnGroup *m_pLoadingSpawnGroup;
+	CCompressedResourceManifest m_CompressedManifest;
+	// Manifests added by GetEntityPrerequisites; EntityPrerequisitesSatisfied waits for them
+	CGameResourceManifestPrerequisite m_ManifestPrerequisite;
+	CUtlVector< SpawnGroupHandle_t > m_ChildSpawnGroups;
+	float m_flTimeoutInterval;
+	// Plat_FloatTime() of the last m_nState change
+	double m_flStateChangeTime;
+
+	// Uses the server game resource service and describes itself as "SV"
+	uint16 m_bServerSide : 1;
+	uint16 m_padBit1 : 1;
+	// Set while the manifest completion callback is pending
+	uint16 m_bWaitingForFutureDependentResources : 1;
+	// Set on a child by AddSpawnGroupChild of its parent, cleared once the parent's wait for its children completes
+	uint16 m_bWaitForParentSpawnGroup : 1;
+	uint16 m_bDontSpawnEntities : 1;
+	uint16 m_bBlockUntilLoaded : 1;
+	// CreateWorldInfo_t::m_bDisableNodeStreaming of the world load request
+	uint16 m_bDisableNodeStreaming : 1;
+	uint16 m_bSynchronousSpawn : 1;
+	uint16 m_bLoadStreamingData : 1;
+	uint16 m_bCreateNewSceneWorld : 1;
+	uint16 m_bManualCompletion : 1;
+	uint16 m_bSetActivePostLoad : 1;
+	// SpawnGroupDesc_t::m_bUnk
+	uint16 m_bUnk : 1;
+	uint16 m_bLevelTransition : 1;
+	uint16 m_bReadyToSpawnEntities : 1;
+	// SpawnGroupDesc_t::m_bUnk2
+	uint16 m_bUnk2 : 1;
+	uint8 m_bHideBaseLayer : 1;
 };
 
 #endif // BASESPAWNGROUP_H
