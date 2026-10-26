@@ -57,9 +57,11 @@ class CRayIntervalVector;
 class CBufferString;
 class CTransform;
 class Quaternion;
+class ISceneWorld;
 struct matrix3x4_t;
 struct Ray_t;
 struct RnQueryAttr_t;
+struct RnCollisionAttr_t;
 struct RnToolQueryHit_t;
 struct PhysicsClosestPoint_t;
 struct PhysicsWorldTraceProfile_t;
@@ -99,6 +101,23 @@ struct VPhysics2WorldUnk173_t
 	uint32 m_Data[ 7 ];
 };
 
+// Called with user data 0 of each softbody that IVPhysics2 re-initialises from a replaced softbody model
+typedef void ( *SoftbodyModelReplacedFn_t )( void *pUserData );
+
+// The object counts IVPhysics2World::GetObjectCounts returns
+struct PhysicsWorldObjectCounts_t
+{
+	int m_nBodyCount;
+	int m_nSoftbodyCount;
+	int m_nJointCount;
+
+	// The solver and the report contacts
+	int m_nContactCount;
+
+	// Always 0
+	int m_nUnk010;
+};
+
 // The zeroed 40-byte struct IVPhysics2World::unk212, unk213 and unk214 return; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
 struct VPhysics2WorldUnk212_t
 {
@@ -126,9 +145,9 @@ public:
 	virtual void AdvanceTime( float flTimeStep ) = 0;
 	virtual void Step( float flTimeStep ) = 0;
 
-	// Empty in release builds
-	virtual void unk009() = 0;
-	virtual void unk010() = 0;
+	// Empty in release builds; at every game frame boundary the server calls EndFrame and then BeginFrame on each world
+	virtual void BeginFrame() = 0;
+	virtual void EndFrame() = 0;
 
 	virtual void BeginAsyncPostTickJobs( void *pUnused, bool bUnknown ) = 0;
 	virtual void EndAsyncPostTickJobs() = 0;
@@ -141,10 +160,14 @@ public:
 	virtual void SetGravity( const Vector &vGravity ) = 0;
 	virtual const VectorAligned &GetGravity() = 0;
 
-	virtual void unk020( float flValue ) = 0;
-	virtual float unk021() = 0;
-	virtual void unk022( int nValue ) = 0;
-	virtual int unk023() = 0;
+	// Air density in kg/m^3 (1.2 by default) that the drag of bodies uses
+	virtual void SetAirDensity( float flDensity ) = 0;
+	virtual float GetAirDensity() = 0;
+
+	// 1 (the default) enables continuous collision of the bodies that have it enabled, as long as there are TOI iterations
+	virtual void SetContinuousCollisionMode( int nMode ) = 0;
+	virtual int GetContinuousCollisionMode() = 0;
+
 	virtual void SetPositionIterations( int nIterations ) = 0;
 	virtual int GetPositionIterations() = 0;
 	virtual void SetVelocityIterations( int nIterations ) = 0;
@@ -164,7 +187,8 @@ public:
 	virtual void SetMultithreadingEnabled( bool bEnabled ) = 0;
 	virtual int GetThreadCount() = 0;
 	virtual void SetThreadCount( int nThreadCount ) = 0;
-	virtual void unk038( uint8 nValue ) = 0;
+	// Priority of the parallel jobs of the step (2 by default); the server uses 3 for its game world
+	virtual void SetJobPriority( uint8 nPriority ) = 0;
 
 	virtual float GetSimulationTime() = 0;
 	virtual float GetStepStartTime() = 0;
@@ -208,10 +232,12 @@ public:
 	virtual IPhysicsSoftbody *GetSoftbody( int nIndex ) = 0;
 	virtual const IPhysicsSoftbody *GetSoftbody( int nIndex ) const = 0;
 
-	virtual float unk070() = 0;
-	virtual void unk071( float flValue ) = 0;
-	virtual void unk072( void *pValue ) = 0;
-	virtual void *unk073() = 0;
+	// The ground trace raise new softbodies start with (100 by default)
+	virtual float GetSoftbodyGroundTraceRaise() = 0;
+	virtual void SetSoftbodyGroundTraceRaise( float flRaise ) = 0;
+
+	virtual void SetSoftbodyModelReplacedCallback( SoftbodyModelReplacedFn_t pfnCallback ) = 0;
+	virtual SoftbodyModelReplacedFn_t GetSoftbodyModelReplacedCallback() = 0;
 
 	virtual int GetJointCount() = 0;
 	virtual IPhysicsJoint *GetJoint( int nIndex ) = 0;
@@ -280,8 +306,10 @@ public:
 	// The contact between the two bodies is looked up from either side, so the order of the bodies does not matter
 	virtual void DestroyContacts( IPhysicsBody *pBodyA, IPhysicsBody *pBodyB ) = 0;
 	virtual bool HasContact( IPhysicsBody *pBodyA, IPhysicsBody *pBodyB ) = 0;
-	virtual void unk122( void *pUnknown, bool bUnknown ) = 0;
-	virtual void unk123() = 0;
+
+	// Copies the contact begin and end events (256-byte records) into a CUtlVector; unless bKeepEvents is set, the events are consumed
+	virtual void GetContactEvents( void *pEvents, bool bKeepEvents ) = 0;
+	virtual void ClearContactEvents() = 0;
 	virtual void unk124( void *pOut ) = 0;
 
 	virtual IPhysicsMotionController *CreateMotionController( IMotionEvent *pHandler ) = 0;
@@ -321,7 +349,9 @@ public:
 	virtual void GetDisabledEntityPairs( void *pOut ) = 0;
 
 	virtual bool ShouldHit( const IPhysicsShape *pShape, const RnQueryAttr_t &attr ) = 0;
-	virtual uint64 unk151( uint32 nValue ) = 0;
+
+	// The union of the collision bits of every shape: nMaskType 0 the interaction layers, 1 the detail layers, 2 the collision groups
+	virtual uint64 GetUsedCollisionMask( uint32 nMaskType ) = 0;
 
 	virtual VPhysics2WorldUnk152_t unk152() = 0;
 
@@ -347,7 +377,8 @@ public:
 	virtual void CastRaySingleUnfiltered( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta ) = 0;
 	virtual void CastRayMultipleUnfiltered( void *pResults, const Vector &vStart, const Vector &vDelta ) = 0;
 	virtual void ToolCastRayMultipleUnfiltered( CUtlVectorFixedGrowable< RnToolQueryHit_t, 8 > &hits, const Vector &vStart, const Vector &vEnd, float flUnknown ) = 0;
-	virtual void CastRayIntervals( CRayIntervalVector &intervals, const Vector &vStart, const Vector &vEnd, const RnQueryAttr_t &attr, bool bUnknown, float flUnknown ) = 0;
+	// bMergeIntervals joins neighbouring intervals of the same kind
+	virtual void CastRayIntervals( CRayIntervalVector &intervals, const Vector &vStart, const Vector &vEnd, const RnQueryAttr_t &attr, bool bMergeIntervals, float flUnknown ) = 0;
 	virtual void CastSphereAgainstBody( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, float flRadius, IPhysicsBody *pBody ) = 0;
 
 	// A radius that is not positive casts a ray
@@ -384,7 +415,8 @@ public:
 	virtual void Query( CQueryResult &results, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 	virtual bool Query( void *pResults, const void *pQuery ) = 0;
 
-	virtual bool unk188( void *pUnknown1, bool bUnknown, void *pUnknown2 ) = 0;
+	// Runs the query on the broadphase trees whose type bit is in nTreeMask, with the callback context
+	virtual bool QueryBroadphaseTrees( const void *pQuery, uint8 nTreeMask, void *pContext ) = 0;
 
 	virtual CRnQueryCache *CreateQueryCache( void *pUnknown1, void *pUnknown2 ) = 0;
 	virtual void DestroyQueryCache( CRnQueryCache *pCache ) = 0;
@@ -394,10 +426,12 @@ public:
 	virtual float ClosestPoint( const Vector &vPoint, float flMaxDistance, const std::function< bool( IPhysicsShape * ) > &filter, PhysicsClosestPoint_t *pClosest ) = 0;
 	virtual float ClosestPoint( const Vector &vPoint, float flMaxDistance, const std::function< bool( IPhysicsShape * ) > &filter, Vector *pClosest ) = 0;
 
-	virtual void CollideShape( void *pUnknown1, void *pUnknown2, void *pUnknown3, void *pUnknown4, bool bUnknown, float flUnknown ) = 0;
+	// flMargin (clamped to 0) widens the bounds the shapes are collected from
+	virtual void CollideShape( void *pResults, const CTransform &transform, const Ray_t &ray, const RnQueryAttr_t &attr, bool bUnknown, float flMargin ) = 0;
 
-	virtual void unk194( void *pValue ) = 0;
-	virtual void *unk195() = 0;
+	// A grid of ground heights that softbodies sample for their ground height
+	virtual void SetGroundHeightGrid( void *pHeightGrid ) = 0;
+	virtual void *GetGroundHeightGrid() = 0;
 	virtual int unk196( uint32 nValue ) = 0;
 
 	// The flags IVPhysics2::CreateWorld was called with
@@ -405,11 +439,12 @@ public:
 	virtual void SetWorldReferenceBody( IPhysicsBody *pBody ) = 0;
 	virtual IPhysicsBody *GetWorldReferenceBody() = 0;
 
-	// Save and restore of object references. MSVC groups these overloads in reverse order; the declaration order is Linux's
-	virtual bool unk200( const void *pObject ) = 0;
-	virtual bool unk200( const CUtlVector< void * > &objects ) = 0;
+	// Save and restore of object references. A restore translates the saved pointers through the mappings, which the server
+	// adds before it restores the objects: a count followed by that many pairs of saved and current pointers
+	virtual bool SaveObject( const void *pObject ) = 0;
+	virtual void AddRestoreObjectMappings( const void *pMappings ) = 0;
 	virtual bool RestoreObject( const void *pObject ) = 0;
-	virtual void unk203() = 0;
+	virtual void ClearRestoreObjectMappings() = 0;
 
 	// Returns 0
 	virtual int unk204() = 0;
@@ -425,7 +460,7 @@ public:
 	virtual int unk209() = 0;
 
 	virtual void DisableDebugRecording( bool bDisable ) = 0;
-	virtual void unk211( void *p ) = 0;
+	virtual PhysicsWorldObjectCounts_t GetObjectCounts() = 0;
 
 	// Each of these returns zeros
 	virtual VPhysics2WorldUnk212_t unk212() = 0;
@@ -444,8 +479,9 @@ public:
 	virtual void unk218() = 0;
 
 	virtual void unk219( void *pUnknown1, void *pUnknown2, void *pUnknown3, void *pUnknown4, void *pUnknown5 ) = 0;
-	virtual void unk220( bool bUnknown ) = 0;
-	virtual void unk221() = 0;
+	// Creates or updates the debug shapes of the shapes that pass the debug draw filter when bEnabled is set
+	virtual void UpdateDebugShapes( bool bEnabled ) = 0;
+	virtual void DestroyDebugShapes() = 0;
 
 	// Debug draw of the world through the given overlays, also used by IVPhysics2::DebugDrawWorlds
 	virtual void Draw( ISceneViewDebugOverlays *pDebugOverlays, const CFrustum *pFrustum ) = 0;
@@ -457,11 +493,12 @@ public:
 	virtual uint64 GetDebugDrawOptions() = 0;
 	virtual void SetDebugDrawOptions( uint64 nOptions ) = 0;
 
-	virtual void unk227( void *pValue ) = 0;
-	virtual void *unk228() = 0;
+	// The scene world of the debug shapes; changing it destroys them. The server clears it when the game deactivates
+	virtual void SetDebugSceneWorld( ISceneWorld *pSceneWorld ) = 0;
+	virtual ISceneWorld *GetDebugSceneWorld() = 0;
 
 	// IVPhysics2::SetVisualDebugCameraHint copies the frustum into every world
-	virtual void SetVisualDebugCameraHint( int nUnknown, const CFrustum &frustum ) = 0;
+	virtual void SetVisualDebugCameraHint( int nUnused, const CFrustum &frustum ) = 0;
 	virtual const CFrustum &GetVisualDebugCameraHint() = 0;
 
 	// Empty in release builds
@@ -472,9 +509,11 @@ public:
 	// Debug draw filtering; both notify the event listener
 	virtual void SetDebugDrawFilter( const void *pParams ) = 0;
 	virtual void ClearDebugDrawFilter() = 0;
-	virtual bool ShouldDrawCollisionAttributes( void *pUnknown ) = 0;
+	virtual bool ShouldDrawCollisionAttributes( const RnCollisionAttr_t &attr ) = 0;
 	virtual bool ShouldDrawShape( IPhysicsShape *pShape ) = 0;
-	virtual bool ShouldDrawBody( IPhysicsBody *pBody, bool bUnknown ) = 0;
+
+	// bTestShapes also requires a shape of the body to pass ShouldDrawShape
+	virtual bool ShouldDrawBody( IPhysicsBody *pBody, bool bTestShapes ) = 0;
 	virtual bool ShouldDrawSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 	virtual bool ShouldDrawJoint( IPhysicsJoint *pJoint ) = 0;
 	virtual void unk240( void *pUnknown1, void *pUnknown2 ) = 0;
@@ -490,15 +529,17 @@ public:
 	virtual void DumpState( const CCommand &args, float flUnknown ) = 0;
 
 	// Dumps the bodies, shapes and joints of the world to a file
-	virtual void DumpToJSON( const char *pszFileName, void *pUnknown ) = 0;
+	virtual void DumpToJSON( const char *pszFileName, void *pUnused ) = 0;
 
 	virtual void GetBenchmarkPath( CBufferString &path ) = 0;
 
-	virtual int unk247() = 0;
-	virtual void *unk248() = 0;
+	// Line segments (40-byte records with the end points at +16 and +28) that debug draw option 0x200 draws
+	virtual int GetDebugLineCount() = 0;
+	virtual void *GetDebugLines() = 0;
 
 	virtual void DescribeShapeCollision( CBufferString &text, IPhysicsShape *pShapeA, IPhysicsShape *pShapeB ) = 0;
-	virtual void DescribeShape( CBufferString &text, IPhysicsShape *pShape, void *pUnknown ) = 0;
+	// Describes how the collision attributes of the shape match the query attributes
+	virtual void DescribeShape( CBufferString &text, IPhysicsShape *pShape, const RnQueryAttr_t &attr ) = 0;
 };
 
 
