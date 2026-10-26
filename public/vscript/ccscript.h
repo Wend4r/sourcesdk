@@ -25,6 +25,35 @@ namespace v8
 	template < class T > class Global;
 }
 
+// The weapon attack OnKnifeAttack reports; the script sees it as CSWeaponAttackType.
+enum class WeaponAttackType_t : int32
+{
+	eInvalid = -1,
+	ePrimary = 0,
+	eSecondary = 1,
+
+	eCount = 2,
+};
+
+// Why a round ended, as OnRoundEnd reports it; the script sees the CSRoundEndReason enumerator of
+// the same name.
+enum RoundEndReason_t
+{
+	ROUND_END_REASON_UNKNOWN = -1,
+	ROUND_END_REASON_IN_PROGRESS = 0,
+	ROUND_END_REASON_TARGET_BOMBED = 1,
+	ROUND_END_REASON_BOMB_DEFUSED = 7,
+	ROUND_END_REASON_CTS_WIN = 8,
+	ROUND_END_REASON_TERRORISTS_WIN = 9,
+	ROUND_END_REASON_DRAW = 10,
+	ROUND_END_REASON_HOSTAGES_RESCUED = 11,
+	ROUND_END_REASON_TARGET_SAVED = 12,
+	ROUND_END_REASON_HOSTAGES_NOT_RESCUED = 13,
+	ROUND_END_REASON_GAME_COMMENCING = 16,
+	ROUND_END_REASON_TERRORISTS_SURRENDER = 17,
+	ROUND_END_REASON_CTS_SURRENDER = 18,
+};
+
 // Hashes a CGlobalSymbol by the 32-bit hash stored in front of its string
 struct CGlobalSymbolHashFunctor
 {
@@ -62,7 +91,7 @@ public:
 	virtual void OnPlayerReset( CCSPlayerPawn *pPlayer ) = 0;
 	virtual void OnPlayerTeamChanged( CCSPlayerPawn *pPlayer, int nOldTeam ) = 0;
 	virtual void OnRoundStart() = 0;
-	virtual void OnRoundEnd( int nWinningTeam, int nReason ) = 0;
+	virtual void OnRoundEnd( int nWinningTeam, RoundEndReason_t nReason ) = 0;
 	virtual void OnBombPlantStart( CCSPlayerPawn *pPlanter ) = 0;
 	virtual void OnBombPlantAbort( CCSPlayerPawn *pPlanter ) = 0;
 	virtual void OnBombPlant( CPlantedC4 *pPlantedC4, CCSPlayerPawn *pPlanter ) = 0;
@@ -93,7 +122,7 @@ public:
 	virtual void OnWeaponPickup( CCSWeaponBase *pWeapon ) = 0;
 	virtual void OnGrenadeThrow( CCSWeaponBase *pWeapon, CBaseEntity *pProjectile ) = 0;
 	virtual void OnGrenadeBounce( CBaseEntity *pProjectile, CBaseEntity *pHitEntity, Vector vecNormal, int nBounces ) = 0;
-	virtual void OnKnifeAttack( CCSWeaponBase *pWeapon, int nAttackType ) = 0;
+	virtual void OnKnifeAttack( CCSWeaponBase *pWeapon, WeaponAttackType_t nAttackType ) = 0;
 	virtual void OnCustomHudClicked( CCSPlayerController *pPlayer, CBaseEntity *pLayout, const void *pButtonId ) = 0;
 
 	virtual int OnBeforePlayerDamage( CCSPlayerPawn *pPlayer, CTakeDamageInfo &info ) = 0;
