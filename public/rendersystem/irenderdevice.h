@@ -104,10 +104,26 @@ struct RenderDeviceMemoryAllocationInfo_t
 	uint64 m_nSize;
 };
 
+// RenderIndirectCommandsToken_t::m_nType, translated to VkIndirectCommandsTokenTypeEXT
+enum RenderIndirectCommandsTokenType_t
+{
+	RENDER_INDIRECT_COMMANDS_TOKEN_EXECUTION_SET = 0,
+	RENDER_INDIRECT_COMMANDS_TOKEN_PUSH_CONSTANT,
+	RENDER_INDIRECT_COMMANDS_TOKEN_SEQUENCE_INDEX,
+	RENDER_INDIRECT_COMMANDS_TOKEN_INDEX_BUFFER,
+	RENDER_INDIRECT_COMMANDS_TOKEN_VERTEX_BUFFER,
+	RENDER_INDIRECT_COMMANDS_TOKEN_DRAW_INDEXED,
+	RENDER_INDIRECT_COMMANDS_TOKEN_DRAW,
+	RENDER_INDIRECT_COMMANDS_TOKEN_DRAW_INDEXED_COUNT,
+	RENDER_INDIRECT_COMMANDS_TOKEN_DRAW_COUNT,
+	RENDER_INDIRECT_COMMANDS_TOKEN_DISPATCH,
+	RENDER_INDIRECT_COMMANDS_TOKEN_TRACE_RAYS,
+};
+
 // A token of IRenderDevice::CreateIndirectCommandsLayout
 struct RenderIndirectCommandsToken_t
 {
-	int m_nType;
+	RenderIndirectCommandsTokenType_t m_nType;
 
 	// Token type specific dwords, NULL for the types without data
 	const uint32 *m_pData;
