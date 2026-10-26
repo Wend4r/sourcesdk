@@ -152,6 +152,15 @@ struct ALIGN16 PulseGraphHookCall_t
 	bool m_bCalled;
 } ALIGN16_POST;
 
+// Result a cursor completes with, reported to the cell observing it
+enum PulseCursorResult_t
+{
+	PULSE_CURSOR_RESULT_FAILED = 0,
+	PULSE_CURSOR_RESULT_SUCCEEDED = 1,
+	// The observer gets its cancel callback instead of the completion one
+	PULSE_CURSOR_RESULT_CANCELED = 2,
+};
+
 abstract_class IPulseCursorListener
 {
 public:
@@ -406,7 +415,8 @@ public:
 	virtual int GetNumAutoWakeCursors( const PulseSymbol_t &clock ) = 0;
 
 	virtual void QueueYieldResumeEvent( CPulseExecCursor *pCursor, const void *pResumeData ) = 0;
-	virtual void QueueCursorResultEvent( int nSubject, const void *phObserver, int nResult, const CPulseArgumentPack &outParams ) = 0;
+	// nSubject is the id of the cursor that completed; the observer is notified when the events are processed
+	virtual void QueueCursorResultEvent( int nSubject, const void *phObserver, PulseCursorResult_t nResult, const CPulseArgumentPack &outParams ) = 0;
 	virtual void QueueObservableVariableSourceChangedEvent( const PulseSymbol_t &clock, CBasePulseGraphInstance *pInstance, int nVariable, const CPulseCallContextValue &prevValue, const CPulseCallContextValue &curValue ) = 0;
 	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &blackboardResourceName, CBasePulseGraphInstance *pListenerInstance, PulseDocNodeID_t nVarDocNodeID, const CPulseCallContextValue &prevValue, const CPulseCallContextValue &curValue ) = 0;
 
