@@ -12,12 +12,15 @@
 #endif
 
 #include "appframework/iappsystem.h"
+#include "mathlib/camera.h"
 #include "mathlib/vector.h"
 #include "mathlib/vmatrix.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlleanvector.h"
+#include "tier0/utlpriorityqueue.h"
 #include "tier0/utlvector.h"
 #include "tier0/utlstring.h"
+#include "tier1/utlhashmaplarge.h"
 #include "tier2/tier2.h"
 
 class CTransform;
@@ -96,8 +99,8 @@ struct SteamAudioCustomDataSettings_t
 // Values returned by ISteamAudio
 //-----------------------------------------------------------------------------
 
-// Box of the object passed to ISteamAudio::unk038
-struct SteamAudioUnk038_t
+// Box (center and size) ISteamAudio::GetBoundsBox builds from the bounds of an object
+struct SteamAudioBox_t
 {
 	float m_flUnk00[ 4 ];
 	Vector m_vecCenter;
@@ -111,7 +114,9 @@ struct SteamAudioPathingResult_t
 	float *m_pEQCoeffs;
 	int m_nSHCoeffCount;
 	float *m_pSHCoeffs;
-	float m_flUnk20;
+	// 1.0 for a source closer than a unit, else the path ratio of the source outputs (or the direct distance over
+	// snd_steamaudio_invalid_path_length), at most 1.0
+	float m_flPathDistanceRatio;
 	// Converted back from Steam Audio coordinates
 	Vector m_vecDirection;
 };
@@ -142,8 +147,9 @@ public:
 	// Creates the CUDA and OptiX devices
 	virtual bool CreateCUDADevices() = 0;
 	virtual ISteamAudioScene *CreateEmptyScene() = 0;
-	// Creates a CSteamAudioScene
-	virtual ISteamAudioScene *CreateScene( const void *pUnk1, bool bUnk, void *pUnk2 ) = 0;
+	// Creates a CSteamAudioScene from the geometry; bCreateGPUScene also builds the scene for the GPU device, and
+	// pReplacementMaterial replaces every material with a value below 1.0
+	virtual ISteamAudioScene *CreateScene( const void *pGeometry, bool bCreateGPUScene, void *pReplacementMaterial ) = 0;
 	virtual ISteamAudioScene *GetFirstScene() = 0;
 	virtual void AddScene( void *pKey, ISteamAudioScene *pScene ) = 0;
 	virtual ISteamAudioScene *RemoveScene( void *pKey ) = 0;
@@ -153,7 +159,7 @@ public:
 	// vecDirection is the direction the binaural effect of the processor renders
 	virtual ISourceProcessor *CreateSourceProcessor( const Vector &vecDirection ) = 0;
 	virtual void DestroySourceProcessor( ISourceProcessor *pProcessor ) = 0;
-	virtual IPathingProcessor *CreatePathingProcessor( const Vector &vecUnk ) = 0;
+	virtual IPathingProcessor *CreatePathingProcessor( const Vector &vecUnused ) = 0;
 	virtual void DestroyPathingProcessor( IPathingProcessor *pProcessor ) = 0;
 	virtual IDirectProcessor *CreateDirectProcessor( const int32 *pNumChannels ) = 0;
 	virtual void DestroyDirectProcessor( IDirectProcessor *pProcessor ) = 0;
@@ -174,16 +180,18 @@ public:
 	// maps/<pMapName>.sapaths
 	virtual CUtlString GetMapPathingDataFilename( const char *pMapName ) = 0;
 	virtual CUtlString GetMapDataFilename( const char *pMapName, const char *pExtension ) = 0;
-	virtual SteamAudioUnk038_t unk038( void *pUnk ) = 0;
+	// pObject gives the bounds through its virtual slot 154
+	virtual SteamAudioBox_t GetBoundsBox( void *pObject ) = 0;
 	// pflGridSpacingAndHeight receives GridSpacing and HeightAboveFloor
 	virtual void GetReverbBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioReverbSettings_t *pReverbSettings, SteamAudioReverbClusteringSettings_t *pClusteringSettings, SteamAudioReverbCompressionSettings_t *pCompressionSettings, int32 *pRebakeOption ) = 0;
 	virtual void GetPathingBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioPathSettings_t *pPathSettings, int32 *pRebakeOption ) = 0;
 	virtual void GetCustomDataBakeDefaults( const KeyValues3 *pKV, int32 *pGridGenerationType, bool *pbFilterUsingVolumes, bool *pbFilterUsingNavMesh, float *pflGridSpacingAndHeight, SteamAudioCustomDataSettings_t *pCustomDataSettings, int32 *pRebakeOption ) = 0;
 	// Number of simulation threads from the CPU information
 	virtual int GetSimulationThreadCount() = 0;
-	// Runs iplSimulatorRunPathingPerSource for the source; bUseEQ takes the simulated EQ instead of a flat one, bNormalize
+	// Runs iplSimulatorRunPathingPerSource for the source; bFindAlternatePaths sets both enableValidation and
+	// findAlternatePaths of the source inputs, bUseEQ takes the simulated EQ instead of a flat one, bNormalize
 	// scales the SH coefficients by the first one, pbPathFound is set when the first SH coefficient is positive
-	virtual SteamAudioPathingResult_t SimulatePathing( const Vector &vecUnk1, const Vector &vecUnk2, bool bUnk1, bool bUseEQ, bool bNormalize, int nSource, SteamAudioPathVisualizationFn_t pfnVisualize, bool *pbPathFound ) = 0;
+	virtual SteamAudioPathingResult_t SimulatePathing( const Vector &vecSource, const Vector &vecListener, bool bFindAlternatePaths, bool bUseEQ, bool bNormalize, int nSource, SteamAudioPathVisualizationFn_t pfnVisualize, bool *pbPathFound ) = 0;
 	// Fraction of nSamples traces between points spread over a disc of flRadius around both ends that are not blocked
 	virtual float ComputeOcclusion( const Vector &vecStart, const Vector &vecEnd, float flRadius, int nSamples ) = 0;
 	// Runs iplSimulatorRunDirect for one source
@@ -191,7 +199,8 @@ public:
 	// Perspective correction SetListenerOrigin builds from the view (snd_steamaudio_perspective_correction_factor)
 	virtual const IPLPerspectiveCorrection *GetPerspectiveCorrection() = 0;
 	virtual IImpulseResponse *CreateImpulseResponse() = 0;
-	virtual void unk048( const Vector &vecUnk ) = 0;
+	// Origin of the listener coordinate space of the reverb simulator
+	virtual void SetReverbListenerOrigin( const Vector &vecOrigin ) = 0;
 	virtual ISteamAudioSimulationData *CreateSimulationData() = 0;
 	virtual void DestroySimulationData( ISteamAudioSimulationData *pData ) = 0;
 	// Value of snd_steamaudio_enable_editor_profiling
@@ -205,15 +214,19 @@ public:
 	virtual void UnlockTransforms() = 0;
 	// Stores the transform as a matrix (position w is the scale) under the index
 	virtual void SetTransform( int nIndex, const CTransform &transform ) = 0;
-	// Average of the 11 values
-	virtual void unk058( const float *pflValues, float *pflAverage ) = 0;
-	virtual void unk059( const float *pflIn, float *pflOut ) = 0;
-	virtual void unk060( const float *pflIn, float *pflOut ) = 0;
-	virtual void unk061( const float *pflIn, float *pflOut ) = 0;
-	virtual void unk062( const Vector &vecIn, Vector &vecOut ) = 0;
-	virtual void unk063( const Vector &vecIn, Vector &vecOut ) = 0;
-	virtual int unk064( int nIndex ) = 0;
-	virtual int unk065( int nIndex ) = 0;
+	// Band conversions through the band tables of CSteamAudio, between 11 bands and the 3 Steam Audio bands; the input
+	// conversions feed the EQ of the Steam Audio processors, the output conversions map the simulation results back
+	// Average of the 11 bands
+	virtual void AverageBands( const float *pflBands, float *pflAverage ) = 0;
+	// 3 of the 11 bands, one per Steam Audio band
+	virtual void SampleInputBands( const float *pflBands, float *pflSteamAudioBands ) = 0;
+	// Each of the 11 bands takes the value of its Steam Audio band
+	virtual void ExpandInputBands( const float *pflSteamAudioBands, float *pflBands ) = 0;
+	virtual void SampleOutputBands( const float *pflBands, float *pflSteamAudioBands ) = 0;
+	virtual void ConvertInputEQ( const Vector &vecEQ, Vector &vecSteamAudioEQ ) = 0;
+	virtual void ConvertOutputEQ( const Vector &vecSteamAudioEQ, Vector &vecEQ ) = 0;
+	virtual int GetInputEQBand( int nBand ) = 0;
+	virtual int GetOutputEQBand( int nBand ) = 0;
 	virtual void *unk066() = 0;
 	virtual void unk067( void *pUnk ) = 0;
 	// snd_steamaudio_display_probes: nProbeType 0 off, 1 reverb, 2 pathing, 3 occlusion, 4 dimensions, 5 materials;
@@ -304,55 +317,66 @@ public:
 	IPLSimulationSettings m_SimulationSettings;
 	// Empty scene the reverb simulator works on
 	ISteamAudioScene *m_pReverbScene;
-	IPLSource m_Unk0F0;
+	// Source of SimulateDirect, created with the direct flag and added to m_Simulator in Init
+	IPLSource m_DirectSource;
 	// m_SimulationSettings with the direct and pathing flags, m_Simulator is created from them
 	IPLSimulationSettings m_SimulatorSettings;
 	IPLSimulator m_Simulator;
 	IPLProbeNeighborhood m_ProbeNeighborhood;
 	// Scene of m_Simulator, also used for the probe occlusion checks of SetListenerOrigin
 	ISteamAudioScene *m_pSimulationScene;
-	int m_nUnk178;
+	// Id Shutdown removes from m_Sources; only the constructor writes it (-1)
+	int m_nSourceId;
 	int m_nUnk17C;
-	int m_nUnk180;
+	// SimulatePathing and the probe neighborhood update of SetListenerOrigin run only while it is positive; only the
+	// constructor writes it (0)
+	int m_nPathingEnableCount;
 
 	IPLPerspectiveCorrection m_PerspectiveCorrection;
 
-	// Source registry: next id, free ids, id to IPLSource hash map (container not identified)
+	// Source registry of AddSource and RemoveSource: the lowest free id is reused before m_nNextSourceId grows
 	int m_nNextSourceId;
-	CUtlLeanVector< int > m_FreeSourceIds;
-	uint64 m_Unk1E8[ 11 ];
-	CThreadFastMutex m_UnkMutex240;
-	CThreadFastMutex m_UnkMutex250;
+	CUtlPriorityQueue< int > m_FreeSourceIds;
+	CUtlHashMap< int, IPLSource, CDefEquals< int >, MurmurHash3Functor< int > > m_Sources;
+	CThreadFastMutex m_FreeSourceIdsMutex;
+	CThreadFastMutex m_SourcesMutex;
 
 	int m_nUnk260;
 	// Coefficients SimulatePathing returns, the counts are set by the constructor
 	int m_nPathingSHCoeffCount;
 	float m_flPathingEQCoeffs[ 3 ];
 	float m_flPathingSHCoeffs[ 16 ];
-	// Tables the constructor fills with constants (layout not resolved)
-	uint8 m_Unk2B4[ 0x23C ];
+	uint8 m_pad2B4[ 0xC ];
 
-	// Index tables of unk059..unk065
-	int m_nUnk4F0[ 3 ];
-	int m_nUnk4FC[ 3 ];
-	int m_nUnk508[ 3 ];
-	int m_nUnk514[ 11 ];
-	int m_nUnk540[ 3 ];
+	// Sample points of ComputeOcclusion on a unit disc (squared radius, angle as a fraction of a turn), constants of
+	// the constructor; nSamples is clamped to the count
+	int m_nOcclusionSampleCount;
+	float m_flOcclusionSampleRadiusSq[ 64 ];
+	float m_flOcclusionSampleAngle[ 64 ];
+
+	// Band tables of the band conversions, constants of the constructor: the band maps give the Steam Audio band of
+	// each of the 11 bands, the sample tables the band each Steam Audio band takes, the EQ tables order the Steam Audio bands
+	// Same values as m_nInputBandMap, never read
+	int m_nUnk4C4[ 11 ];
+	int m_nOutputEQBands[ 3 ];
+	int m_nOutputBandSamples[ 3 ];
+	int m_nInputEQBands[ 3 ];
+	int m_nInputBandMap[ 11 ];
+	int m_nInputBandSamples[ 3 ];
 
 	// Scenes registered by AddScene
 	CUtlVectorFixedGrowable< SteamAudioSceneEntry_t, 4 > m_Scenes;
 
-	// Listener and HRTF state written by SetListenerOrigin, copied from a default the constructor builds once
-	// (layout not resolved)
-	ALIGN16 uint8 m_Unk5B0[ 0x420 ] ALIGN16_POST;
+	// View frustum SetListenerOrigin builds from the client view, its view projection is the perspective correction transform
+	CFrustum m_ListenerFrustum;
 
 	CSteamAudioReverbSimulator *m_pReverbSimulator;
 	CSteamAudioPartitioner *m_pPartitioner;
 	// SetListenerOrigin enables enable_iir_order_8 of the context once
 	bool m_bIIROrder8Enabled;
 
-	// Hash map of SetTransform transforms (container not identified) and the mutex LockTransforms takes
-	uint64 m_TransformMap[ 10 ];
+	// Transforms of SetTransform by index and the mutex LockTransforms takes
+	CUtlHashMap< int, matrix3x4_t, CDefEquals< int >, IdentityHashFunctor > m_TransformMap;
 	CThreadFastMutex m_TransformMapMutex;
 
 	// Probe display of SetProbeDisplay; the count of probe updates lets the "once" mode draw a single update
