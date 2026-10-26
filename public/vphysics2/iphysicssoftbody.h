@@ -18,6 +18,7 @@
 #include "mathlib/fltx4.h"
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
+#include "rubikon/param_types.h"
 
 class IVPhysics2World;
 class CRnSoftbody;
@@ -67,7 +68,7 @@ struct PhysicsSoftbodyCollisionReport_t
 	uint16 m_nCtrlCount;
 };
 
-// A sample of an effect of type 1: the position of a particle at one of its trail points and its packed RGBA color (the library
+// A sample of a SOFTBODY_EFFECT_WIND effect: the position of a particle at one of its trail points and its packed RGBA color (the library
 // sets alpha 32 when it spawns the particle)
 struct PhysicsSoftbodyEffectSample_t
 {
@@ -109,6 +110,7 @@ public:
 	virtual void SetAnimatedTransforms( const void *pBoneMap, const CTransform *pBoneTransforms ) = 0;
 	virtual void SetAnimatedTransforms( const void *pParams ) = 0;
 
+	// nFlags takes PhysicsSoftbodySimTransformsFlags_t bits
 	virtual void *GetParticleTransforms( const VectorAligned *pInputNodePos = NULL, uint nFlags = 0 ) = 0;
 
 	virtual const CTransform *GetAnimatedTransforms() const = 0;
@@ -125,8 +127,8 @@ public:
 	// Teleporting carries the nodes along rigidly
 	virtual void SetAbsTransform( const CTransform &transform, bool bTeleport ) = 0;
 
-	virtual void SetAnimSpace( int nAnimSpace ) = 0;
-	virtual int GetAnimSpace() const = 0;
+	virtual void SetAnimSpace( PhysicsSoftbodyAnimSpace_t nAnimSpace ) = 0;
+	virtual PhysicsSoftbodyAnimSpace_t GetAnimSpace() const = 0;
 
 	virtual void SetPose( const CTransform *pPose ) = 0;
 	virtual void SetPose( const CTransform &tm, const CTransform *pPose ) = 0;
@@ -173,7 +175,7 @@ public:
 	virtual void EnableSpringIntegration( bool bEnable ) = 0;
 	virtual bool IsSpringIntegrationEnabled() const = 0;
 
-	virtual float GetEnergy( int nEnergy ) const = 0;
+	virtual float GetEnergy( PhysicsSoftbodyEnergyTypeEnum_t nEnergy ) const = 0;
 	virtual float GetElasticEnergy() const = 0;
 	virtual float GetPotentialEnergy() const = 0;
 	virtual float GetKinematicEnergy() const = 0;
@@ -233,9 +235,9 @@ public:
 	virtual void DisableWorldCollision( int nBit, bool bClear ) = 0;
 	virtual bool IsWorldCollisionEnabled() const = 0;
 
-	// What SetAbsTransform does with the ground: 1 moves the ground point to the origin, 2 traces the ground below the origin
-	virtual void SetGroundMode( int nMode ) = 0;
-	virtual int GetGroundMode() const = 0;
+	// What SetAbsTransform does with the ground
+	virtual void SetGroundMode( PhysicsSoftbodyGroundMode_t nMode ) = 0;
+	virtual PhysicsSoftbodyGroundMode_t GetGroundMode() const = 0;
 
 	virtual void SetGroundZ( float flGroundZ ) = 0;
 	virtual float GetGroundZ() const = 0;
@@ -285,15 +287,15 @@ public:
 	virtual void SetUserData( uint nIndex, void *pData ) = 0;
 	virtual void *GetUserData( uint nIndex ) const = 0;
 
-	// Five blended parameters per vertex set, described as "pas", "pab", "vas", "vab" and an unnamed one;
-	// nVertexSetHash is the name hash of a vertex set, 0 for the whole softbody
+	// Five blended parameters per vertex set, nParam is a PhysicsSoftbodyClothParam_t; nVertexSetHash is the name hash of a vertex set,
+	// 0 for the whole softbody
 	virtual void SetClothParam( uint8 nParam, float flValue, float flBlendTime, uint32 nVertexSetHash ) = 0;
 	// Queued after the changes already pending
 	virtual void QueueClothParam( uint8 nParam, float flDelay, float flValue, float flBlendTime, uint32 nVertexSetHash ) = 0;
 	virtual float GetClothParam( uint8 nParam, uint32 nVertexSetHash ) const = 0;
 	// Appends the start times of the queued changes
 	virtual void GetQueuedClothParamTimes( uint8 nParam, CUtlVector< float > &times, uint32 nVertexSetHash ) = 0;
-	// False while the simulation is disabled, the second parameter of the whole softbody reached 1, or it may sleep and settled
+	// False while the simulation is disabled, SOFTBODY_CLOTH_PARAM_PAB of the whole softbody reached 1, or it may sleep and settled
 	virtual bool IsSimulating() = 0;
 
 	// The world skips stepping it
@@ -332,6 +334,10 @@ struct FnPhysicsSoftbodyUnk006_t
 	ALIGN8 uint8 m_Data[ 40 ] ALIGN8_POST;
 };
 
+// Flags of IFnPhysicsSoftbody::Benchmark
+#define SOFTBODY_BENCHMARK_FLUSH_CACHE ( 1 << 0 ) // Fills a buffer the size of the L3 cache before each step
+#define SOFTBODY_BENCHMARK_ANIM_POSE ( 1 << 1 ) // Times moving the nodes to the animated pose instead of a step
+
 // Function table operating on the softbody it is bound to
 abstract_class IFnPhysicsSoftbody
 {
@@ -350,15 +356,13 @@ public:
 	// Returns zeros
 	virtual FnPhysicsSoftbodyUnk006_t unk006() const = 0;
 
-	// Runs nSteps steps on copies of the node positions and returns the microseconds they took; nFlags 1 flushes the CPU cache
-	// before each step, 2 times only the transform update
+	// Runs nSteps steps on copies of the node positions and returns the microseconds they took; nFlags takes SOFTBODY_BENCHMARK_* flags
 	virtual uint64 Benchmark( uint nSteps, uint8 nFlags ) = 0;
 
 	// Computes the node positions of the animated pose into an aligned array
 	virtual void GetPoseNodePositions( VectorAligned *pOut ) const = 0;
 
-	// 0 simulates, 1 holds the nodes at the animated pose, other values leave them as they are
-	virtual void SetSimulationMode( int nMode ) = 0;
+	virtual void SetSimulationMode( PhysicsSoftbodySimulationMode_t nMode ) = 0;
 	// Casts a ray against the nodes, rods and quads for the tools; IVPhysics2World::ToolCastRayMultipleUnfiltered calls it
 	virtual void ToolCastRay( CUtlVector< RnToolQueryHit_t > &hits, const Vector &vStart, const Vector &vEnd ) = 0;
 
@@ -372,6 +376,7 @@ public:
 	virtual int8 GetDebugDrawTreeBeginLevel() const = 0;
 	virtual void SetDebugDrawTreeEndLevel( int8 nLevel ) = 0;
 	virtual int8 GetDebugDrawTreeEndLevel() const = 0;
+	// PhysicsSoftbodyDebugDrawFlags_t bits
 	virtual void SetDebugDrawTreeFlags( uint8 nFlags ) = 0;
 	virtual uint8 GetDebugDrawTreeFlags() const = 0;
 
@@ -409,7 +414,7 @@ public:
 	// Consecutive steps in which the nodes barely moved; 30 and more count as resting
 	virtual int GetRestingStepCount() const = 0;
 	virtual int GetEffectCount() const = 0;
-	// For an effect of type 1, allocates its 2048 sample array on first use and fills pSamples
+	// For a SOFTBODY_EFFECT_WIND effect, allocates its 2048 sample array on first use and fills pSamples
 	virtual void GetEffectSamples( int nIndex, PhysicsSoftbodyEffectSamples_t *pSamples ) = 0;
 	// Time the timed simulation steps up to
 	virtual void SetSimulationTime( float flTime ) = 0;
