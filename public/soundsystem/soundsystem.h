@@ -64,7 +64,8 @@ public:
 	uint32 m_nLastServerSoundGuid;
 	uint32 m_nLastLocalSoundEventGuid;
 	uint32 m_nLastServerSoundEventGuid;
-	bool m_bUnk040 : 1;
+	// Set by the VSND message of VConsole; turning it on sends the async wave cache contents to VConsole at once
+	bool m_bSendAsyncCacheToVConsole : 1;
 	bool m_bNeedsRestart : 1;
 	uint8 m_pad041[ 0xF ];
 
