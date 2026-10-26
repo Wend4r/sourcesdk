@@ -141,6 +141,13 @@ enum RenderVariableRefreshRateStatus_t : int
 	RENDER_VRR_STATUS_ACTIVE,
 };
 
+// nRenderContextFlags of IRenderDevice::CreateRenderContext and Present
+#define RENDER_CONTEXT_SOFTWARE_COMMAND_LISTS ( 1 << 0 ) // records into software command lists
+#define RENDER_CONTEXT_SIMULTANEOUS_USE ( 1 << 1 ) // the command buffer may be submitted more than once
+#define RENDER_CONTEXT_ASYNC_COMPUTE ( 1 << 2 ) // records for and submits to the async compute queue
+#define RENDER_CONTEXT_HOLD_TEXTURE_LOCK ( 1 << 4 ) // holds the texture manager read lock while recording
+#define RENDER_CONTEXT_NO_SOFTWARE_COMMAND_LISTS ( 1 << 5 ) // ignores the device's software command list default
+
 abstract_class IRenderDevice
 {
 public:
