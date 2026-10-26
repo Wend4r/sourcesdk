@@ -53,7 +53,7 @@ public:
 	struct ServerTickTime_t;
 
 	// Present timing record of one client/server loop frame (no type name in any binary)
-	struct unk173_t
+	struct PresentTimingRecord_t
 	{
 		// Frame number of the presented frame
 		int m_nFrame;
@@ -101,7 +101,7 @@ public:
 	virtual bool IsRecordingDemo() = 0;
 	virtual bool IsPlayingTimeDemo() = 0;
 	// True when the active loop was started with a "demofile" option
-	virtual bool unk047() = 0;
+	virtual bool IsDemoFileLoopActive() = 0;
 	virtual bool IsPlayingBroadcast() = 0;
 	virtual IBroadcastPlayer *GetBroadcastPlayer() = 0;
 	// Sends pszCmd to the server over the net channel of nSlot
@@ -139,15 +139,14 @@ public:
 	virtual int GetDemoPlaybackTotalTicks() = 0;
 	virtual const char *GetDemoPlaybackFileName() = 0;
 	virtual void PlayDemo( const char *pszFilename ) = 0;
-	// Setter and getter of the same demo player flag; while it is set the demo console commands
-	// (demo_goto, demo_pause, demo_resume, ...) do nothing
-	virtual void unk080( bool bValue ) = 0;
-	virtual bool unk081() = 0;
+	// While set, the demo console commands (demo_goto, demo_pause, demo_resume, ...) do nothing
+	virtual void SetDemoCommandsDisabled( bool bDisabled ) = 0;
+	virtual bool AreDemoCommandsDisabled() = 0;
 	virtual void PauseDemo() = 0;
 	virtual void ResumeDemo() = 0;
 	virtual void SkipToDemoTick( int nTick ) = 0;
 	// While set, the demo player pauses at the end of the demo instead of disconnecting
-	virtual void unk085( bool bValue ) = 0;
+	virtual void SetPauseAtDemoEnd( bool bPause ) = 0;
 	// Also true while an HLTV replay is shown
 	virtual bool IsHLTV() = 0;
 	// Value of cl_language
@@ -235,7 +234,8 @@ public:
 	virtual void MarkRenderSystemOptionRecommended() = 0;
 	// Writes cfg/boot.vcfg.
 	virtual void SaveBootConfig() = 0;
-	virtual void unk157( const EngineLoopState_t &loopState ) = 0;
+	// Sets the game UI frame size from the loop state and resizes Panorama to it; called before RunPanoramaAnimUpdate()
+	virtual void PreparePanoramaFrame( const EngineLoopState_t &loopState ) = 0;
 	virtual void RunPanoramaAnimUpdate() = 0;
 	virtual void WaitForPanoramaAnimUpdate() = 0;
 	virtual const char *GetLanguage( int nType ) = 0;
@@ -254,17 +254,17 @@ public:
 	// Returns the constant 0.1.
 	virtual double unk171() = 0;
 	// Present timing record of the frame in flight, NULL when there is none
-	virtual unk173_t *unk172() = 0;
+	virtual PresentTimingRecord_t *GetCurrentPresentTimingRecord() = 0;
 	// Newest completed present timing record
-	virtual unk173_t unk173() = 0;
+	virtual PresentTimingRecord_t GetLastPresentTimingRecord() = 0;
 	// Applies a GOTV sync packet from the GC to the broadcast player
 	virtual bool EngineGotvSyncPacket( const CEngineGotvSyncPacket *pPkt ) = 0;
 	// No-op in this build; the client passes CUserMessageServerFrameTime::frame_time
-	virtual void unk175( float flServerFrameTime ) = 0;
+	virtual void ReceivedServerFrameTime( float flServerFrameTime ) = 0;
 	// No-op in this build; the client passes the number of prediction errors of the tick
-	virtual void unk176( int nPredictionErrors ) = 0;
+	virtual void ReceivedPredictionErrorCount( int nPredictionErrors ) = 0;
 	// No-op in this build; the client passes CUserMessageLagCompensationError::distance
-	virtual void unk177( float flLagCompensationError ) = 0;
+	virtual void ReceivedLagCompensationError( float flLagCompensationError ) = 0;
 	// Adds or removes a command name (hashed lower-case) from the set of commands that the
 	// engine passes to ISource2Client::PredictStringCommand before they are forwarded to the server
 	virtual void SetPredictedStringCommand( const char *pszCommand, bool bPredicted ) = 0;
