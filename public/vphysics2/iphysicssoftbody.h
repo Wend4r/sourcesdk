@@ -28,6 +28,7 @@ class CBufferString;
 
 struct RnCollisionAttr_t;
 struct SetNodePositionsParams_t;
+struct RnToolQueryHit_t;
 
 // Nodes are the simulated points of the finite element model, ctrls (particles) are the transforms bound to model bones;
 // the transform array holds the animated ctrl transforms followed by the simulated ones
@@ -104,8 +105,10 @@ public:
 	virtual void SetCtrl( int nParticle, const CTransform &tm ) = 0;
 	virtual Vector GetCtrlVelocity( uint nCtrl ) const = 0;
 
-	virtual void unk043( float flValue ) = 0;
-	virtual float unk044() const = 0;
+	// Initialized from the model default that precedes the gravity scale and the air drag defaults, which is the thread stretch in
+	// the order of PhysFeModelDesc_t; the dampen velocity effect divides its damping by it for some nodes
+	virtual void SetThreadStretch( float flStretch ) = 0;
+	virtual float GetThreadStretch() const = 0;
 
 	// Starts the effect of the model with this name hash after stopping the ones it lists in StopEffects; false when the model has none
 	virtual bool StartEffect( uint32 nEffectNameHash, void *pUnknown ) = 0;
@@ -170,14 +173,17 @@ public:
 	// Always 0
 	virtual uint GetContactCount() const = 0;
 
-	virtual void unk089( void *pUnknown ) = 0;
+	// A report the step fills: it clears the int at +0 every step and stores the world shape the nodes touched last at +24; setting
+	// it also stores the ctrl count at +32
+	virtual void SetCollisionReport( void *pReport ) = 0;
 
 	// Sets or clears one bit of a mask that suppresses collision with the world while not empty
 	virtual void DisableWorldCollision( int nBit, bool bClear ) = 0;
 	virtual bool IsWorldCollisionEnabled() const = 0;
 
-	virtual void unk092( int nValue ) = 0;
-	virtual int unk093() const = 0;
+	// What SetAbsTransform does with the ground: 1 moves the ground point to the origin, 2 traces the ground below the origin
+	virtual void SetGroundMode( int nMode ) = 0;
+	virtual int GetGroundMode() const = 0;
 
 	virtual void SetGroundZ( float flGroundZ ) = 0;
 	virtual float GetGroundZ() const = 0;
@@ -191,8 +197,10 @@ public:
 
 	virtual int CastCone( const Vector &vStart, const Vector &vDir, float flConePitch ) = 0;
 
-	virtual bool unk100() const = 0;
-	virtual void unk101( bool bUnknown ) = 0;
+	// The last relaxation iteration of a step runs the follow-the-leader pass instead of the regular constraints; initialized from
+	// a flag of the model
+	virtual bool IsFtlPassEnabled() const = 0;
+	virtual void EnableFtlPass( bool bEnable ) = 0;
 
 	// Always 0
 	virtual int unk102() const = 0;
@@ -200,8 +208,11 @@ public:
 
 	// Moves the nodes to the animated pose and stops them
 	virtual void ResetToPose() = 0;
-	virtual void *unk105() = 0;
-	virtual void unk106( const void *pUnknown, int nUnknown ) = 0;
+	// The root transforms of the last two steps (GetRootTransform indices 2 and 3)
+	virtual CTransform *GetLastStepTransforms() = 0;
+
+	// Steps the softbody with a parameter block: the time step at +88, the substep time at +92 and the substep count at +96
+	virtual void Simulate( const void *pParams ) = 0;
 	// Returns whether it simulated
 	virtual uint Step( int nIterations, float flTimeStep ) = 0;
 	// Steps up to the given time, then filters the transforms; returns false
@@ -214,7 +225,9 @@ public:
 	virtual void SetDormancyDisabled( bool bDisabled ) = 0;
 	virtual bool IsDormancyDisabled() const = 0;
 
-	virtual void unk114( void *pUnknown, bool bUnknown ) = 0;
+	// Writes the static node positions of the animated pose into pNodePositions, relaxes the constraints once and, with bCollide,
+	// collides the nodes
+	virtual void RelaxNodePositions( VectorAligned *pNodePositions, bool bCollide ) = 0;
 
 	// Two slots
 	virtual void SetUserData( uint nIndex, void *pData ) = 0;
@@ -285,15 +298,20 @@ public:
 	// Returns zeros
 	virtual FnPhysicsSoftbodyUnk006_t unk006() const = 0;
 
-	virtual void unk007( uint nUnknown, bool bUnknown ) = 0;
+	// Runs nSteps steps on copies of the node positions and returns the microseconds they took; nFlags 1 flushes the CPU cache
+	// before each step, 2 times only the transform update
+	virtual uint64 Benchmark( uint nSteps, uint8 nFlags ) = 0;
 
 	// Computes the node positions of the animated pose into an aligned array
 	virtual void GetPoseNodePositions( VectorAligned *pOut ) const = 0;
 
 	// 0 simulates, 1 holds the nodes at the animated pose, other values leave them as they are
 	virtual void SetSimulationMode( int nMode ) = 0;
-	virtual void unk010( int *pUnknown, const void *pUnknown2, const void *pUnknown3 ) = 0;
-	virtual void unk011( void *pUnknown, float flUnknown ) = 0;
+	// Casts a ray against the nodes, rods and quads for the tools; IVPhysics2World::ToolCastRayMultipleUnfiltered calls it
+	virtual void ToolCastRay( CUtlVector< RnToolQueryHit_t > &hits, const Vector &vStart, const Vector &vEnd ) = 0;
+
+	// The velocity one constraint step from rest gives each dynamic node, zero for the static nodes
+	virtual void ComputeConstraintVelocities( VectorAligned *pVelocities, float flTimeStep ) = 0;
 
 	// Empty in release builds
 	virtual void unk012() = 0;
@@ -314,10 +332,11 @@ public:
 	// Active state, false without a softbody
 	virtual bool IsActive() const = 0;
 
-	virtual void unk024( int nValue ) = 0;
+	// Stored for the debug draw; release builds do not read it
+	virtual void SetDebugSelection( int nSelection ) = 0;
 
-	// Empty in release builds; GetDebugName returns null there
-	virtual void unk025() = 0;
+	// Release builds ignore the debug name and GetDebugName returns null there
+	virtual void SetDebugName( const char *pszName ) = 0;
 	virtual const char *GetDebugName() const = 0;
 
 	// Appends a one line description of the softbody and its state
@@ -326,8 +345,11 @@ public:
 	// Index of the softbody in its world, -1 without a softbody
 	virtual int GetIndexInWorld() const = 0;
 
-	virtual uint unk029() const = 0;
-	virtual void unk030( bool bUnknown ) = 0;
+	// Frames in the recording buffer (6 values per node and one more per frame); release builds only clear it
+	virtual uint GetRecordedFrameCount() const = 0;
+
+	// Release builds store the flag without reading it
+	virtual void SetRecording( bool bRecord ) = 0;
 
 	// A unique number taken from a global counter when the softbody is created, tagged with 0x40000000
 	virtual uint GetSoftbodyId() const = 0;
@@ -335,10 +357,12 @@ public:
 	// Consecutive steps in which the nodes barely moved; 30 and more count as resting
 	virtual int GetRestingStepCount() const = 0;
 	virtual int GetEffectCount() const = 0;
-	virtual void unk034( int nIndex, void *pUnknown ) = 0;
+	// For an effect of type 1, allocates its 2048 sample array and fills pSamples with the array pointer and the counts 512 and 4
+	virtual void GetEffectSamples( int nIndex, void *pSamples ) = 0;
 	// Time the timed simulation steps up to
 	virtual void SetSimulationTime( float flTime ) = 0;
-	virtual void unk036( bool bEnable ) = 0;
+	// Collides the nodes once before the relaxation instead of in its iterations; initialized from a flag of the model
+	virtual void SetSingleCollisionPass( bool bEnable ) = 0;
 
 	// Empty in release builds
 	virtual void unk037() = 0;
@@ -352,13 +376,15 @@ public:
 	virtual void UnlinkAllSoftbodies() = 0;
 
 	virtual int GetStepCount() const = 0;
-	virtual void unk044( void *pUnknown ) = 0;
+	// The node positions of the initial pose of the model placed at the current transform
+	virtual void GetInitPoseNodePositions( VectorAligned *pOut ) const = 0;
 	// Rebuilds the simulated ctrl transforms from the current node positions
 	virtual void UpdateSimulatedTransforms() = 0;
 
 	// Moves the nodes and the transforms by an offset
 	virtual void Translate( fltx4 vDelta ) = 0;
-	virtual bool unk047( const VectorAligned *pUnknown, fltx4 vUnknown ) = 0;
+	// The closest point to vPoint on the tapered capsule colliders of the model; false without colliders
+	virtual bool GetClosestPointOnColliders( VectorAligned *pClosest, fltx4 vPoint ) = 0;
 
 	// Empty in release builds
 	virtual void unk048() = 0;
