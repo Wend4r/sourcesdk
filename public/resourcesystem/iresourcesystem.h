@@ -140,7 +140,8 @@ abstract_class IResourceSystemUtils
 {
 public:
 	virtual void MarkLoadingWorkPending( ResourceHandle_t hResource, bool bHasWork ) = 0;
-	virtual std::shared_ptr< IAsyncResourceDataRequest > CreateAsyncResourceDataRequest( ResourceHandle_t hResource, int64 nFileOffset, size_t nLoadSizeBytes, int nUnknown, const char *pFileNameOverride ) = 0;
+	// nReadPriority 1 queues the file read at the front of the async filesystem I/O queue, other values at the back
+	virtual std::shared_ptr< IAsyncResourceDataRequest > CreateAsyncResourceDataRequest( ResourceHandle_t hResource, int64 nFileOffset, size_t nLoadSizeBytes, int nReadPriority, const char *pFileNameOverride ) = 0;
 	virtual void SubmitAsyncResourceDataRequest( IAsyncResourceDataRequest *pRequestInterface ) = 0;
 	virtual bool IsBlockingOnManifestLoad() = 0;
 
