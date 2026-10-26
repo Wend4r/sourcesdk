@@ -55,8 +55,8 @@ public:
 	virtual bool HasSetActivePostLoad() const = 0;
 	// Not a descriptor flag: updated from the result of the wait for the child spawn groups.
 	virtual bool HasUnk2() const = 0;
-	// SpawnGroupDesc_t::m_bUnk of the descriptor the spawn group was created with.
-	virtual bool HasUnk() const = 0;
+	// SpawnGroupDesc_t::m_bSaveEntities of the descriptor the spawn group was created with.
+	virtual bool ShouldSaveEntities() const = 0;
 	// Sets what GetDestructionTick returns on client spawn groups; empty on server ones.
 	virtual void SetDestructionTick(uint32 nTick) = 0;
 	virtual bool HasLevelTransition() const = 0;

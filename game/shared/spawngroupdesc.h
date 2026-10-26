@@ -28,7 +28,7 @@ public:
 	    m_bCreateNewSceneWorld(false),
 	    m_bManualCompletion(false),
 	    m_bSetActivePostLoad(false),
-	    m_bUnk(true),
+	    m_bSaveEntities(true),
 	    m_bLevelTransition(false),
 	    m_bUnk2(false),
 	    m_bHideBaseLayer(false)
@@ -59,7 +59,8 @@ public:
 	bool m_bCreateNewSceneWorld;
 	bool m_bManualCompletion;
 	bool m_bSetActivePostLoad;
-	bool m_bUnk; // AMNOTE: Spawn groups created by point_prefab clear it
+	// Only spawn groups with it set have their entities streamed to save files; point_prefab clears it
+	bool m_bSaveEntities;
 	bool m_bLevelTransition;
 	// The spawn group passes it to its entity spawner when it loads the entities; returned by
 	// ISpawnGroup::GetUnk2AndLastFlagBits.
