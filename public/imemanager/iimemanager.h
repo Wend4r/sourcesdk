@@ -14,6 +14,12 @@
 #include "tier0/platwindow.h"
 #include "tier0/logging.h"
 #include "appframework/iappsystem.h"
+#include "tier0/convar.h"
+#include "tier2/tier2.h"
+
+class IMEManagerBase;
+class IIMEUIView;
+class IIMEUIObject;
 
 abstract_class IIMEManager : public IAppSystem
 {
@@ -29,16 +35,32 @@ public:
 	virtual bool HandleIMEEvent( PlatWindow_t hWindow, uint nMsg, uint64 wParam, int64 lParam ) = 0;
 	virtual bool HandleIMEEventPreProcess( PlatWindow_t hWindow, uint nMsg, uint64 wParam, int64 lParam ) = 0;
 
-	virtual void Unk_FinalizeCompositionForView( void *p ) = 0;
+	virtual void FinalizeCompositionForView( IIMEUIView *pUIView, IIMEUIObject *pObject ) = 0;
 
-	virtual void Unk_FinalizeCompositionOnFocusLost( void *p ) = 0;
+	// Acts only when bHasFocus is false
+	virtual void FinalizeCompositionOnFocusLost( IIMEUIView *pUIView, bool bHasFocus ) = 0;
 
-	virtual void SetActiveUIView( void *pUIView, bool bActive ) = 0;
-	virtual void *GetActiveUIView() = 0;
+	virtual void SetActiveUIView( IIMEUIView *pUIView, bool bActive ) = 0;
+	virtual IIMEUIView *GetActiveUIView() = 0;
 
 	virtual LoggingChannelID_t GetLoggingChannel() = 0;
 
 	virtual ~IIMEManager() {}
+};
+
+class CIMEManager : public CTier2AppSystem< IIMEManager >
+{
+public:
+	CConCommandMemberAccessor< CIMEManager > ime_info;
+
+	// Platform backend, created by InitForWindow
+	IMEManagerBase *m_pBackend;
+
+	// Set by InitForWindow when the backend initialized, returned by IsIMESupported
+	bool m_bIMESupported;
+
+	// SetIMEEnabled and IsIMEEnabled
+	bool m_bIMEEnabled;
 };
 
 #endif // IIMEMANAGER_H
