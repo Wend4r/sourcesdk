@@ -20,6 +20,14 @@
 
 class CCSBot;
 
+// The kind of route a bot asks for when it computes a path.
+enum RouteType
+{
+	FASTEST_ROUTE = 1,
+	// Adds the area's danger for the bot's team to the cost.
+	SAFEST_ROUTE = 2,
+};
+
 //-----------------------------------------------------------------------------
 // Adds danger and damaging-area penalties to the floor cost. Adds no virtuals of its own.
 //-----------------------------------------------------------------------------
@@ -30,8 +38,7 @@ public:
 
 	// The bot the cost is computed for; null costs skip the bot-specific penalties.
 	noschema CCSBot *m_me;
-	// The bot's RouteType; with 2 (SAFEST_ROUTE) the area's danger for the bot's team is added.
-	noschema int m_route;
+	noschema RouteType m_route;
 	float m_dangerFactor;
 	float m_damagingAreasPenaltyCost;
 	float m_flAgentMaxClimb;
