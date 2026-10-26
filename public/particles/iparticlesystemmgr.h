@@ -349,6 +349,14 @@ struct ParticleGPUReadback_t
 	CUtlVector< Collection_t > m_Collections;
 };
 
+// What a particle_profile or particle_profile_spike request measures
+enum ParticleProfileType_t
+{
+	PARTICLE_PROFILE_NONE = 0,
+	PARTICLE_PROFILE_SYSTEMS,		// "systems"
+	PARTICLE_PROFILE_OPERATORS,		// "operators"
+};
+
 //-----------------------------------------------------------------------------
 // Implementation of IParticleSystemMgr
 //-----------------------------------------------------------------------------
@@ -376,7 +384,7 @@ public:
 	float m_flSimTimeMax;
 	int m_nProfileFrameCount;
 	int m_nProfileSpikeThresholdMs;
-	int m_nProfileType;
+	ParticleProfileType_t m_nProfileType;
 
 	float m_flFallbackBase;
 	float m_flFallbackMultiplier;
