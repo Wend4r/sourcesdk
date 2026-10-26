@@ -44,6 +44,20 @@ FORWARD_DECLARE_HANDLE( HSceneViewRenderTarget );
 
 using ScreenSpaceVertex_t = VertexPos2DTex2D_t;
 
+//-----------------------------------------------------------------------------
+// Shape of an area light (m_nLuminaireType); the names are the KV3 enumerator
+// strings of the light descriptor.
+//-----------------------------------------------------------------------------
+enum LuminaireType_t : uint8
+{
+	LUMINAIRE_TYPE_PUNCTUAL = 0,			// Zero-area light
+	LUMINAIRE_TYPE_QUAD,					// Quad-shaped light
+	LUMINAIRE_TYPE_DISK,					// Disk-shaped light
+	LUMINAIRE_TYPE_SPHERE,					// Spherical light
+	LUMINAIRE_TYPE_TUBE,					// Tube light without end caps
+	LUMINAIRE_TYPE_TUBE_WITH_END_CAPS,		// Tube light with end caps
+};
+
 abstract_class ISceneUtils : public IAppSystem
 {
 public:
@@ -109,9 +123,9 @@ public:
 	// bIgnoreFogOverride is set, and the colour is scaled by the HDR colour scale unless bNoHDRColorScale is set.
 	virtual void ComputeFogColor( ISceneView *pView, Vector4D *pColor, bool bIgnoreFogOverride, bool bNoHDRColorScale ) = 0;
 	virtual bool FindClipSpaceRectForObject( const CSceneObject *pObject, const ISceneView *pView, Vector4D &vRect ) = 0;
-	// Builds the mesh of an area light shape (nShape 0 to 5, sized by pSize) and creates its scene object, then sets its colour
-	// through SetAreaLightColor.
-	virtual CSceneObject *CreateAreaLightSceneObject( const Vector *pColor, uint8 nShape, const Vector2D *pSize, ISceneWorld *pWorld ) = 0;
+	// Builds the mesh of an area light shape (sized by pSize) and creates its scene object, then sets its colour through
+	// SetAreaLightColor.
+	virtual CSceneObject *CreateAreaLightSceneObject( const Vector *pColor, LuminaireType_t nShape, const Vector2D *pSize, ISceneWorld *pWorld ) = 0;
 	virtual void SetAreaLightColor( CSceneObject *pObject, const Vector *pColor ) = 0;
 	// Fills the "rtx_random_samples" well-known texture with a compute shader over a power of 2 by power of 3 grid.
 	virtual void UpdateRTXRandomSamples( IRenderContext *pRenderContext, int nSeed ) = 0;
