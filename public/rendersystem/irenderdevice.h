@@ -210,6 +210,15 @@ enum RenderLatencyMarker_t
 	RENDER_LATENCY_MARKER_PC_LATENCY_PING,
 };
 
+// IRenderDevice::DefragmentDeviceMemory, as r_vma_defrag_algorithm
+enum RenderDefragAlgorithm_t : uint8
+{
+	RENDER_DEFRAG_ALGORITHM_FAST = 0,
+	RENDER_DEFRAG_ALGORITHM_BALANCED,
+	RENDER_DEFRAG_ALGORITHM_FULL,
+	RENDER_DEFRAG_ALGORITHM_EXTENSIVE,
+};
+
 abstract_class IRenderDevice
 {
 public:
@@ -485,8 +494,8 @@ public:
 	virtual bool IsSuperSamplingAvailable( int nType ) = 0;
 
 	virtual void DestroyUpscaler( IUpscaler *pUpscaler ) = 0;
-	// What vulkan_vma_defrag starts; nAlgorithm as r_vma_defrag_algorithm (0 fast, 1 balanced, 2 full, 3 extensive)
-	virtual void DefragmentDeviceMemory( uint8 nAlgorithm, bool bAsync ) = 0;
+	// What vulkan_vma_defrag starts
+	virtual void DefragmentDeviceMemory( RenderDefragAlgorithm_t nAlgorithm, bool bAsync ) = 0;
 	virtual void BeginRenderingToSwapChain( SwapChainHandle_t hSwapChain ) = 0;
 	// Draws the visualizer while r_show_gpu_memory_visualizer is set and clears the convar when drawing fails; the
 	// arguments go to a drawing routine that is a stub in the shipped builds and reads none of them
