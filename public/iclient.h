@@ -246,7 +246,7 @@ public:
 	virtual void unk082() = 0;
 	virtual void ClientPredictionPostNetupdate() = 0;
 	virtual void unk084() = 0;
-	virtual bool unk085() = 0;
+	virtual bool IsHLTV() = 0;
 
 	// Overrides of the secondary bases: no slots of their own on Windows, one each here on Linux
 	virtual bool FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) override = 0;
@@ -422,7 +422,8 @@ public:
 	// Indexed by player slot (GetPlayerInfo, GetPlayerUserId)
 	CUtlVector< CMsgPlayerInfo > m_PlayerInfos;
 	uint64 m_unk2C3540[ 5 ];
-	bool m_bUnk2C3568;
+	// Set from CSVCMsg_ServerInfo, logged as "ishltv"
+	bool m_bIsHLTV;
 	bool m_bUnk2C3569;
 	bool m_bUnk2C356A;
 	float m_flTickRemainder;
