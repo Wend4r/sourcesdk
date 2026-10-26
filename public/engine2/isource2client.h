@@ -323,6 +323,7 @@ public:
 	// Fills the listener origin and angles, then the two vectors that follow through unk098()
 	virtual void UpdateAudioState( AudioState_t *pAudioState, CSplitScreenSlot nSlot ) = 0;
 	virtual void OnScreenSizeChanged( int nOldWidth, int nOldHeight ) = 0;
+	// nEventCode is 1 for a pressed and 0 for a released button; returns 0 when the client swallowed the key
 	virtual int IN_KeyEvent( CSplitScreenSlot nSlot, int nEventCode, ButtonCode_t nButtonCode, const char *pszCurrentBinding ) = 0;
 	virtual void View_Render( vrect_t *pRect ) = 0;
 	// Called when the signon state of the network game client changes; the client acts on SIGNONSTATE_FULL
@@ -422,6 +423,7 @@ public:
 	virtual bool TraceLine( const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr, CGameTrace *pTrace ) = 0;
 	// Forward to the game physics query methods of the same names, the first one with a -1.0 default
 	virtual void TraceLineIntervals( void *pIntervals, const Vector &vecStart, const Vector &vecEnd, const RnQueryAttr_t &attr ) = 0;
+	// The CONTENTS_* bits of the game physics at the position; nMask holds the CONTENTS_* bits to query ( MASK_* )
 	virtual uint64 GetPointContents( const Vector &vecPosition, int nMask ) = 0;
 	// Overloads: the first one looks the entity up and calls the second one. Linux keeps this order, MSVC reverses it
 	virtual void GetSoundSpatialization( CEntityIndex nEntityIndex, void *pInfo ) = 0;
