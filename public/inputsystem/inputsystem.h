@@ -111,6 +111,7 @@ public:
 	float m_flCursorScaleX;
 	float m_flCursorScaleY;
 	PlatWindow_t m_hCursorCoordinateBiasWindow;
+	// INPUT_SYSTEM_COMMAND_* bits
 	uint32 m_nInputSystemCommandEnableFlags;
 	InputState_t m_InputState[ 2 ];
 	uint32 m_StartupTimeTick;

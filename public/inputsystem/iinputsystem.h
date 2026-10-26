@@ -51,6 +51,15 @@ enum InputStandardCursor_t
 
 
 ///-----------------------------------------------------------------------------
+/// System commands for IInputSystem::EnableSystemCommands; all are enabled at start.
+///-----------------------------------------------------------------------------
+/// The screen saver may run (SDL_EnableScreenSaver, else SDL_DisableScreenSaver)
+#define INPUT_SYSTEM_COMMAND_SCREEN_SAVER ( 1 << 1 )
+/// Alt+F4 closes the window (SDL_WINDOWS_CLOSE_ON_ALT_F4)
+#define INPUT_SYSTEM_COMMAND_ALT_F4 ( 1 << 3 )
+
+
+///-----------------------------------------------------------------------------
 ///-----------------------------------------------------------------------------
 typedef bool ( *InputSDLEventHookFn_t )( const void *pSDLEvent );
 #ifdef _WIN32
@@ -197,8 +206,7 @@ public:
 	/// Does one of the attached windows have focus?
 	virtual bool IsWindowFocused() const = 0;
 
-	/// Returns the name of an InputEventType_t value
-	virtual const char *InputEventTypeToString( int nType ) const = 0;
+	virtual const char *InputEventTypeToString( InputEventType_t nType ) const = 0;
 
 	/// Is the application active?
 	virtual bool IsAppActive() const = 0;
@@ -213,6 +221,7 @@ public:
 
 	virtual void EnablePowerManagement( bool bEnable ) = 0;
 
+	/// Sets or clears INPUT_SYSTEM_COMMAND_* bits
 	virtual void EnableSystemCommands( uint32 nSystemCommandFlags, bool bEnable ) = 0;
 
 	/// Relative mouse mode on all attached windows
@@ -257,8 +266,8 @@ public:
 	virtual void ResetIME() = 0;
 	virtual void CreateIMEWindow() = 0;
 
-	virtual void PostButtonPressedEvent( PlatWindow_t hWnd, int nType, int nTick, ButtonCode_t code, int nData2, bool bDoubleClick, uint64 nSDLTimestamp ) = 0;
-	virtual void PostButtonReleasedEvent( PlatWindow_t hWnd, int nType, int nTick, ButtonCode_t code, int nData2, uint64 nSDLTimestamp ) = 0;
+	virtual void PostButtonPressedEvent( PlatWindow_t hWnd, InputEventType_t nType, int nTick, ButtonCode_t code, int nData2, bool bDoubleClick, uint64 nSDLTimestamp ) = 0;
+	virtual void PostButtonReleasedEvent( PlatWindow_t hWnd, InputEventType_t nType, int nTick, ButtonCode_t code, int nData2, uint64 nSDLTimestamp ) = 0;
 
 #ifdef _WIN32
 	/// Window message hooks, called before the input system handles a message; returning true consumes it
