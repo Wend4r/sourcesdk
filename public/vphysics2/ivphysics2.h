@@ -29,6 +29,7 @@
 #include "tier0/smartptr.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlhash.h"
+#include "tier0/utlhashtable.h"
 #include "tier0/utlleanvector.h"
 #include "tier0/utlvector.h"
 #include "tier2/tier2.h"
@@ -756,8 +757,8 @@ public:
 	uint16 m_nQueryOnlyDetailLayerMask;
 	uint8 m_unk1F2;
 
-	// CUtlHashtable< CUtlStringToken, CollisionDetailLayerInfo_t > read by HasDetailLayerInfos, FindDetailLayerInfo and GetDetailLayerInfos
-	uint64 m_unk1F8[ 4 ];
+	// Read by HasDetailLayerInfos, FindDetailLayerInfo and GetDetailLayerInfos
+	CUtlHashtable< CUtlStringToken, CollisionDetailLayerInfo_t > m_DetailLayerInfos;
 };
 
 class CVPhysics2Interface : public CTier2AppSystem< IVPhysics2 >

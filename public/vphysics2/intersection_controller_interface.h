@@ -13,13 +13,30 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlstringtoken.h"
+#include "tier0/utlstring.h"
 #include "tier0/utlvector.h"
 #include "rubikon/intersection.h"
 
 class IVPhysics2World;
-struct CollisionDetailLayerInfo_t;
 struct RnCollisionAttr_t;
 struct RnQueryShapeAttr_t;
+
+// A detail layer of the collision detail layers resource, keyed by the token of its name
+struct CollisionDetailLayerInfo_t
+{
+	struct Name_t
+	{
+		CUtlStringToken m_nNameToken;
+		CUtlString m_sNameString;
+	};
+
+	CUtlString m_sDescription;
+	CUtlString m_sFriendlyName;
+	bool m_bIsQueryOnly;
+	CUtlString m_sParentDetailLayer;
+	CUtlVector< Name_t > m_vecSubtreeDetailLayers;
+	bool m_bNotPickable;
+};
 
 // Stand-in for std::span< T > with a dynamic extent, which these interfaces take by value.
 // It keeps the pointer and the count in the same order and size, so passed by value it goes in
