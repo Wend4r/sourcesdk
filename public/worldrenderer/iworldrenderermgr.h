@@ -127,10 +127,11 @@ public:
 	// The flattening state keeps the last position and the squared radius; the update
 	// flattens along the movement once it exceeds the radius
 	virtual void *CreateGrassFlatteningState( float flRadius ) = 0;
-	virtual void UpdateGrassFlattening( void *pState, const ISceneWorld *pSceneWorld, const Vector &vecPos, float flRadius, float flStrength, bool bUnk ) = 0;
+	virtual void UpdateGrassFlattening( void *pState, const ISceneWorld *pSceneWorld, const Vector &vecPos, float flRadius, float flStrength, bool bRadial ) = 0;
 	virtual void DestroyGrassFlatteningState( void *pState ) = 0;
 
-	virtual void FlattenGrass( const ISceneWorld *pSceneWorld, const Vector &vecPos, const Vector &vecDir, float flRadius, float flStrength, bool bUnk ) = 0;
+	// bRadial pushes the grass away from vecPos instead of along vecDir.
+	virtual void FlattenGrass( const ISceneWorld *pSceneWorld, const Vector &vecPos, const Vector &vecDir, float flRadius, float flStrength, bool bRadial ) = 0;
 
 	virtual void SetWindForWorld( const ISceneWorld *pSceneWorld, const Vector &vWindDir, float flWindSpeed, float flTime, bool bOverride ) = 0;
 	virtual void ForgetWindForWorld( const ISceneWorld *pSceneWorld ) = 0;
