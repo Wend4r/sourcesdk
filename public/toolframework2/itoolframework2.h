@@ -128,6 +128,14 @@ struct ToolActivationRequest_t
 	CUtlVector< CUtlString > m_Files;
 };
 
+// The answer of IToolSystem2::RequestQuit and IToolFramework2::RequestToolsQuit; any other value
+// asks again on the next frame
+enum ToolQuitResponse_t
+{
+	TOOL_QUIT_ALLOW = 0,
+	TOOL_QUIT_CANCEL = 1,
+};
+
 // An asset to open in a tool; a non-null m_pContext opens it with TOOL_ACTIVATION_OPEN_ASSET_WITH_CONTEXT
 struct ToolOpenAssetEntry_t
 {
@@ -149,9 +157,8 @@ public:
 
 	virtual void RunFrame() = 0;
 
-	// Asked before the engine quits: 0 lets it quit, 1 cancels the quit, any other value asks again
-	// on the next frame
-	virtual int RequestQuit() = 0;
+	// Asked before the engine quits
+	virtual ToolQuitResponse_t RequestQuit() = 0;
 
 	virtual void OnGameLoopActiveChanged( bool bServer, bool bActive ) = 0;
 
@@ -230,7 +237,7 @@ public:
 	virtual void UnloadQueuedTools() = 0;
 
 	// IToolSystem2::RequestQuit of the loaded tools: the first non-zero answer, otherwise 0
-	virtual int RequestToolsQuit() = 0;
+	virtual ToolQuitResponse_t RequestToolsQuit() = 0;
 
 	virtual void AddToolFrameListener( IToolFrameListener *pListener ) = 0;
 	virtual void RemoveToolFrameListener( IToolFrameListener *pListener ) = 0;
