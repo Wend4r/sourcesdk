@@ -21,7 +21,8 @@ template < ResourceType_t RESOURCE_TYPE >
 class CKV3ResourceTypeManager : public IResourceTypeManager
 {
 public:
-	bool Init( IResourceSystemUtils *pUtils, int nUnknown ) override;
+	// Stores pUtils; the resource system passes 3 as the int, which the implementation does not read
+	bool Init( IResourceSystemUtils *pUtils, int nUnused ) override;
 
 	// Checks the resource version against m_nExpectedResourceVersion ("Unsupported version %d for resource '%s' (Expected %d)"),
 	// then creates the resource data with AllocateEx
