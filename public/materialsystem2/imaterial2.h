@@ -13,6 +13,7 @@
 #include <tier0/utlsymbollarge.h>
 #include <tier0/utlleanvector.h>
 #include <tier0/utlstring.h>
+#include <tier0/utlstringtoken.h>
 #include <tier0/utlvector.h>
 #include "materialsystem2/material_resource_data.h"
 
@@ -21,6 +22,18 @@ class CRenderAttributes;
 class CVsInputSignatureVector;
 class IMaterialMode;
 class InfoForResourceTypeCTextureBase;
+
+// An entry IMaterial2::GetAllTextureAttributes() appends, one per texture attribute of the material
+struct MaterialTextureAttribute_t
+{
+	CUtlStringToken m_Name;
+
+	// -1 binds every mip
+	int32 m_nSpecificMipLevelToBind;
+
+	// HRenderTexture
+	CWeakHandleBase m_hTexture;
+};
 
 //-----------------------------------------------------------------------------
 // A single shader parameter of a material. Textures are stored as a resource
@@ -73,13 +86,14 @@ public:
 	virtual bool GetVector4DAttribute( Vector4D *pValue, CUtlStringToken name ) = 0;
 	virtual bool GetTextureAttribute( CWeakHandle< InfoForResourceTypeCTextureBase > *pValue, CUtlStringToken name ) = 0;
 	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetFirstTextureAttribute() = 0;
-	virtual void GetAllTextureAttributes( void *pAttributes ) = 0;
+	virtual void GetAllTextureAttributes( CUtlVector< MaterialTextureAttribute_t > *pAttributes ) = 0;
 	virtual const CVsInputSignatureVector *GetVertexShaderInputSignature() = 0;
 	virtual bool IsBatchableInMode( const CUtlStringToken &mode, int nFlags ) = 0;
 	virtual void GetRepresentativeTextureSize( int *pWidth, int *pHeight, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
 	// Reads "WorldMappingWidth" / "WorldMappingHeight", or "WorldMappingWidth2" / "WorldMappingHeight2" when nMapping is 1
 	virtual void GetWorldMappingSize( int *pWidth, int *pHeight, int nMapping, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
-	virtual void unk023() = 0;
+	// CMaterial2 returns true without reading any state; nothing calls it
+	virtual bool unk023() = 0;
 
 	// Only inside an EnterOverrideScope() / LeaveOverrideScope() pair
 	virtual bool OverrideTextureParam( const char *pName, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture ) = 0;
