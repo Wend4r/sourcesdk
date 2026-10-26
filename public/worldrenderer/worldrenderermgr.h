@@ -42,7 +42,7 @@ class CSingleWorldRep : public IWorldReference
 {
 public:
 	CSingleWorldRep( const CreateWorldInfo_t &info );
-	virtual ~CSingleWorldRep();
+	~CSingleWorldRep();
 
 	const char *GetWorldName() const { return m_worldName.Get(); }
 	const char *GetFolder() const { return m_folder.Get(); }
@@ -57,11 +57,23 @@ public:
 	CWorld *m_pGeometryWorld;
 	CVoxelVisibility *m_pWorldVisibility;
 	IComputeWorldOriginCallback *m_pComputeOriginCallback;
-	HResourceManifest m_hResourceManifest;
-	uint8 m_priority;
+	ISceneWorld *m_pSceneWorld;
+	ResourceManifestLoadPriority_t m_priority;
 	WorldGroupId_t m_worldGroupId;
-	uint8 m_nFlags;
-	uint8 m_nFlags2;
+
+	bool m_bLoaded : 1;
+	bool m_bLoadVis : 1;
+	bool m_bMarkedForDeletion : 1;
+	bool m_bUpdateForRendering : 1;
+	bool m_bIsEmptyWorld : 1;
+	bool m_bMountVPK : 1;
+	bool m_bBlockUntilLoaded : 1;
+	bool m_bSkipSceneObjectCreation : 1;
+	bool m_bDisableNodeStreaming : 1;
+	bool m_bOwnsSceneWorld : 1;
+	bool m_bExcludedFromSpawnGroupLookup : 1;
+	bool m_bHideBaseLayer : 1;
+
 	int32 m_nRefCount;
 	SpawnGroupHandle_t m_hSpawnGroup;
 };
@@ -80,15 +92,39 @@ struct CWorldRendererBakedLightingInfo
 	CUtlHashtable< uint32, void * > m_lightmapTable;
 };
 
-struct CWorldUnk010
+FORWARD_DECLARE_HANDLE( VertexBufferHandle_t );
+
+// A "WorldExtraVertexStream" pooled vertex buffer of the world node and its "PooledLayout" input layout.
+struct WorldExtraVertexStream_t
 {
-	CUtlVector< void * > m_Unk00;
-	CUtlVector< void * > m_Unk18;
-	uint64 m_nUnk30;
-	uint16 m_nUnk38;
-	CWorldRendererBakedLightingInfo m_bakedLightingInfo;
-	CUtlVector< void * > m_UnkE0;
+	VertexBufferHandle_t m_hVertexBuffer;
+	void *m_pInputLayout;
 };
+
+// The scene objects that a world creates from its world node.
+struct CWorldNodeSceneObjects
+{
+	CUtlVector< CWorldSceneObjectRef * > m_sceneObjectRefs;
+	CUtlVector< WorldExtraVertexStream_t > m_extraVertexStreams;
+
+	// The layer mask of the world node last applied to the scene objects.
+	uint64 m_nVisibleLayerMask;
+
+	bool m_bSceneObjectsCreated;
+
+	// Clear hides every scene object; set shows the objects whose layer is in the visible layer mask.
+	bool m_bVisible;
+
+	CWorldRendererBakedLightingInfo m_bakedLightingInfo;
+
+	// The world layer index of each scene object, in the order of m_sceneObjectRefs.
+	CUtlVector< int8 > m_sceneObjectLayerIndices;
+};
+
+// Bits of CWorld::m_nWorldNodeLoadState
+#define WORLD_NODE_LOAD_STATE_LOADING	( 1 << 0 )	// The world node resource is loading
+#define WORLD_NODE_LOAD_STATE_LOADED	( 1 << 1 )	// The world node resource is loaded
+#define WORLD_NODE_LOAD_STATE_DEFERRED	( 1 << 2 )	// The load is left to IWorldRendererMgr::UpdateObjectsForRendering
 
 class CWorld : public IWorld
 {
@@ -98,15 +134,16 @@ public:
 	const CUtlVector< HEntityLump > &GetEntityLumps() const { return m_entityLumps; }
 
 public:
-	CStrongHandleBase m_hUnk008;
-	CWorldUnk010 m_Unk010;
-	int32 m_nUnk108;
+	HWorldNodeStrong m_hWorldNode;
+	CWorldNodeSceneObjects m_worldNodeSceneObjects;
+	// WORLD_NODE_LOAD_STATE_* bits
+	int32 m_nWorldNodeLoadState;
 	HWorldStrong m_hWorld;
 	World_t *m_pWorldData;
 	matrix3x4a_t m_mWorldTransform;
 	CWorldRendererBakedLightingInfo m_worldBakedLightingInfo;
-	bool m_bUnk1F0;
-	CUtlMap< WorldTraversalId_t, WorldTraversal_t * > m_traversalMap;
+	// Whether the nodes of each traversal are loaded.
+	CUtlMap< WorldTraversalId_t, bool, int > m_traversalMap;
 	ISceneWorld *m_pSceneWorld;
 	ResourceManifestLoadPriority_t m_priority;
 
@@ -115,26 +152,34 @@ public:
 
 	CUtlString m_worldPath;
 
-	bool m_bVisibleBoundsValid : 1;
-	bool m_bVisibilityUpdated : 1;
 	bool m_bIsEmptyWorld : 1;
-	bool m_bBlockUntilLoaded : 1;
-	bool m_bPrecacheOnly : 1;
-	bool m_bLoadSun : 1;
-	bool m_bHasBakedLighting : 1;
-	bool m_bLoadRequestsInFlight : 1;
-	bool m_bDisableNodeStreaming : 1;
+	bool m_bForceBlockingLoad : 1;
+	bool m_bSkipSceneObjectCreation : 1;
+	bool m_bBakedLightingIsInvalid : 1;
+	bool m_bBakedLightingIsPreview : 1;
+	// Set while m_worldBakedLightingInfo is added to the scene world (from Init until Shutdown)
+	bool m_bBakedLightingAddedToSceneWorld : 1;
+	bool m_bHideBaseLayer : 1;
+	bool m_bWorldNodeLoadQueued : 1;
 
 	CWorldSceneObjectRefHash m_sceneObjectRefs;
 	CUtlVector< HResourceManifest > m_pendingManifests;
 	CUtlVector< HEntityLump > m_entityLumps;
-	int32 m_nUnk2B0;
-	int32 m_nUnk2B4;
+	SpawnGroupHandle_t m_hSpawnGroup;
+
+	// World requests queued for the world; the deletion of the world waits while any is pending
+	int32 m_nPendingWorldRequests;
 };
 
-struct WorldWindParams_t
+// Set by IWorldRendererMgr::SetWeatherForWorld
+struct WorldWeatherParams_t
 {
-	float m_flParams[6];
+	float m_flEnvRainStrength;
+	float m_flEnvPuddleRippleStrength;
+	float m_flEnvPuddleRippleDirection;
+	float m_flEnvWetnessCoverage;
+	float m_flEnvWetnessDryingAmount;
+	uint8 m_pad014[ 4 ];
 };
 
 struct WindEntry_t
@@ -151,8 +196,11 @@ struct WindEntry_t
 };
 COMPILE_TIME_ASSERT( sizeof( WindEntry_t ) == 0x40 );
 
-class CWorldNodeManager : public CDefaultIntrospectedToKV3TypeManager< 0x646F6E7776 /* 'vwnod' */, WorldNode_t >
+class CWorldNodeManager : public CTypesafeIntrospectedToKV3TypeManager< 0x646F6E7776 /* 'vwnod' */, WorldNode_t >
 {
+public:
+	// Clears the global node manager pointer that the constructor sets
+	virtual ~CWorldNodeManager();
 };
 
 class CWorldManager : public CDefaultIntrospectedToKV3TypeManager< 0x646C727776 /* 'vwrld' */, World_t >
@@ -167,13 +215,15 @@ class CEntityMgr : public CTypesafeIntrospectedToKV3TypeManager< 0x73746E6576 /*
 {
 };
 
-struct SingleWorldEntityLump_t
+// Added when an IWorldVPKOverrideManager provides an override for a world VPK being mounted
+struct WorldVPKOverride_t
 {
-	CUtlString m_worldName;
-	HEntityLumpStrong m_hEntityLump;
-};
+	CUtlString m_vpkName;
+	CUtlString m_overrideVPKName;
 
-COMPILE_TIME_ASSERT( sizeof( SingleWorldEntityLump_t ) == 16 );
+	// Returned by the override manager with the override name and passed back to every manager
+	uint64 m_nOverrideUserData;
+};
 
 class CWorldRendererMgr : public CTier3AppSystem< IWorldRendererMgr >
 {
@@ -190,15 +240,15 @@ public:
 	CUtlVector< CSingleWorldRep * > m_worldDeletionList;
 	CThreadRWLock_FastRead m_worldLock;
 	CUtlStringMap< int > m_worldVPKRefcounts;
-	CUtlVector< SingleWorldEntityLump_t > m_worldEntityLumps;
+	CUtlVector< WorldVPKOverride_t > m_worldVPKOverrides;
+	CUtlVector< IWorldVPKOverrideManager * > m_vpkOverrideManagers;
 	CUtlVector< IWorldLoadUnloadCallback * > m_worldLoadHandlers;
-	CUtlVector< IWorldLoadUnloadCallback * > m_worldCreateCallbacks;
 	CAtomicMutex m_worldRequestsMutex;
 	CUtlVector< void * > m_worldRequestQueue;
 	CUtlVector< WindEntry_t > m_windEntries;
 	Vector m_vDefaultWindOffset;
-	CUtlVector< IWorldVPKOverrideManager * > m_vpkOverrideManagers;
-	CUtlOrderedMap< const ISceneWorld *, WorldWindParams_t > m_windEntryMap;
+	CUtlVector< const ISceneWorld * > m_rainTraceToSkyWorlds;
+	CUtlOrderedMap< const ISceneWorld *, WorldWeatherParams_t > m_worldWeatherParams;
 	float m_flOverrideRenderFrameTime;
 	float m_flOverrideRenderTime;
 

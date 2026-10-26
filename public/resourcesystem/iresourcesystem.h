@@ -177,6 +177,27 @@ enum ResourceLoadType_t : int
 	RESOURCE_LOAD_TYPE_RELOAD,
 };
 
+//-----------------------------------------------------------------------------
+// One entry of the batch passed to IToolsResourceListener
+//-----------------------------------------------------------------------------
+struct ResourceStatusChange_t
+{
+	ResourceId_t m_nResourceId;
+	ResourceHandle_t m_hResource;
+	ResourceType_t m_nResourceType;
+	ResourceLoadType_t m_nLoadType;
+};
+
+abstract_class IToolsResourceListener
+{
+public:
+	// Which list AddResourceListeners puts the listener in: 1 is notified at once, 2 in batches when
+	// the frame update flushes the queued changes, 0 picks one from the command line
+	virtual int GetNotificationType() = 0;
+
+	virtual void NotifyResourceStatusChange( const ResourceStatusChange_t *pChanges, int nNumChanges ) = 0;
+};
+
 // Returned by IResourceTypeManager::AsyncProcessData
 abstract_class IAsyncProcessedDataResult
 {
