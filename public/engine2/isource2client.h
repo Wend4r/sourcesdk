@@ -115,11 +115,32 @@ struct Source2ClientUnk146_t
 	uint8 m_Data[ 8 ];
 };
 
-// The 8-byte tick and fraction value ISource2Client::unk169 returns, in an integer register on Linux and through a hidden
-// pointer on Windows; only its size is known
-struct Source2ClientUnk169_t
+// A tick with the fraction of the tick that has passed, normalized to [0, 1)
+struct GameTickFraction_t
 {
-	uint8 m_Data[ 8 ];
+	int m_nTick;
+	float m_flFraction;
+};
+
+// Given by the client to the engine for demos recorded before the serializers carried their own encoding parameters
+struct LegacyNetworkEncoding_t
+{
+	// World extent for Worldsize_SetSessionMaxCoord(); 0 keeps the game info one
+	float m_flMaxCoord;
+
+	// Pairs of a quantized float encoder alias name and its QuantizedFloatEncoderDef_t (32 bytes each), applied
+	// through OverrideQuantizedFloatEncoderAlias()
+	const void *m_pEncoderAliases;
+	int m_nEncoderAliasCount;
+
+	// Whether the coord size parameters below are set; they mirror ProtoCoordSizeParams_t
+	bool m_bHasCoordSizeParams;
+	int m_nCoordIntegerBits;
+	int m_nCoordFractionalBits;
+	int m_nCoordIntegerBitsMP;
+	int m_nCoordFractionalBitsMP;
+	int m_nNormalFractionalBits;
+	int m_nAngleBits;
 };
 
 abstract_class ISource2Client : public IAppSystem, public IFieldChangeLimitSpew
@@ -154,17 +175,20 @@ public:
 	virtual void PlayerInfoChanged( int nPlayerIndex ) = 0;
 
 	virtual void CreateMove( int nSlot, bool bActive ) = 0;
-	// Forward to the input system; the engine calls them for every split screen slot while it builds the move message
-	virtual void unk016( CSplitScreenSlot nSlot ) = 0;
-	virtual void unk017( CSplitScreenSlot nSlot ) = 0;
+	// Forward to the input system; the engine calls them for every split screen slot while it builds the move message.
+	// The first one starts the move of the next tick from the latest user command, the second one applies the queued
+	// subtick moves of the current tick; both shift the remaining subtick moves back by one tick
+	virtual void BeginNextTickMove( CSplitScreenSlot nSlot ) = 0;
+	virtual void ApplyQueuedSubtickMoves( CSplitScreenSlot nSlot ) = 0;
 
 	// Latest user command number the client generated
 	virtual int GetLatestCommandNumber( CSplitScreenSlot nSlot ) = 0;
-	virtual int unk019( CSplitScreenSlot nSlot ) = 0;
+	// The latest command number, minus one while the state of that command in the history is 2
+	virtual int GetLatestFinishedCommandNumber( CSplitScreenSlot nSlot ) = 0;
 	// Number of commands kept in the command history: the latest command number, at most the history size of 150
 	virtual int GetStoredCommandCount( CSplitScreenSlot nSlot ) = 0;
-	// Called with the command numbers of a packet entities message; empty
-	virtual void unk021( CSplitScreenSlot nSlot, int nLastCommandNumberExecuted, int nUnk ) = 0;
+	// Called with the executed and received command numbers of a packet entities message; empty
+	virtual void OnCommandNumbersAcknowledged( CSplitScreenSlot nSlot, int nLastCommandNumberExecuted, int nLastCommandNumberReceived ) = 0;
 	// Forwards to the input system with absolute queries allowed
 	virtual void ProcessInput( CSplitScreenSlot nSlot, float flFrameTime, bool bActive ) = 0;
 	// Writes the user commands nFrom through nTo, each one delta encoded against the previous one
@@ -232,7 +256,8 @@ public:
 	virtual void OnDemoPlaybackStart( const char *pszFilename, CUtlVector< CUtlString > *pStringTableNames, KeyValues *pOptions ) = 0;
 	// Fires the "demo_stop" game event
 	virtual void OnDemoPlaybackStop() = 0;
-	virtual void unk064( void *pUnk ) = 0;
+	// Called by the broadcast player once it plays the first keyframe of a broadcast, with NULL; sets up the demo controller
+	virtual void OnBroadcastPlaybackStarted( void *pUnk ) = 0;
 	virtual void SetupScrubbingData( bool bSignon, int nTick, int nMessageId, bf_read *pBuffer ) = 0;
 	// Logged as the connection info of the scrubbing data
 	virtual void AddPlayerConnectionEvent( bool bSignon, int nTick, int nConnectionInfo, CSteamID steamID, bool bBot, bool bHltv ) = 0;
@@ -321,9 +346,11 @@ public:
 	virtual const char *DotaEconGetSoundReplacement( const char *pszSoundName ) = 0;
 	// Asked through the engine sound services; false
 	virtual bool DotaIsGroundUnderWater( float flX, float flY ) = 0;
-	virtual float unk119() = 0;
-	virtual void unk120() = 0;
-	virtual void unk121() = 0;
+	// Asked by the sound system through the engine sound services: the first one by the "calc_audibility" operator
+	// (returns 1.0), the others by the "citadel_entity_info" and "citadel_point_effect_info" operators (empty)
+	virtual float CalculateAudibility( const Vector &vecSource, const Vector &vecListener, const char *pszCaller, float flRadius ) = 0;
+	virtual void GetCitadelEntityInfo( int nEntityIndex, float *pflRelevance, bool *pbEnemyIsTargetingLocalPlayer, bool *pbEnemyIsPrimaryTargetingLocalPlayer, float *pflEnclosure, bool *pbHasSkyExposure, bool *pbIsNPC, bool *pbIsShrunken ) = 0;
+	virtual void GetCitadelPointEffectInfo( const Vector &vecPosition, void *pUnk, int *pnEffect, bool *pbEffectMatchesListener ) = 0;
 	// Increments the Steam callback counter
 	virtual void NotifyPreSteamRunCallbacks() = 0;
 	// False
@@ -342,39 +369,43 @@ public:
 	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 	// Called by the client spawn group's SaveRestoreMap() and SaveRestoreMap2() with its loading spawn group; forward to the
 	// entity system save/restore when ILoadingSpawnGroup::ShouldLoadEntitiesFromSave() and ILoadingSpawnGroup::IsLevelTransition() are set
-	virtual void unk133( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
-	virtual void unk134( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
+	virtual void SaveRestoreMap( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
+	virtual void SaveRestoreMap2( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
 	// Returns "core.global_stack"
 	virtual const char *GetGlobalSoundStackName() = 0;
-	virtual bool unk136() = 0;
+	// The sound system starts the GetGlobalSoundStackName() sound event only while this returns true; false
+	virtual bool ShouldStartGlobalSoundStack() = 0;
 	// Total and custom game Steam UGC subscription counts for the crash dump comment; zeroes them and returns false
 	virtual bool GetUGCSubscriptionCounts( uint32 *pnSubscriptionCounts ) = 0;
 	// Asked for the addon id when "AddonConfig/AllowAddonDownload" is set; the engine handles the results 1 and 2
 	virtual int DownloadWorkshopAddon( uint64 nAddonId ) = 0;
-	virtual bool unk139( const char **ppszUnk, int nUnk, CUtlString *pOut ) = 0;
+	// Looks the map name up in the workshop map table and formats the file id kept for nPatchVersion; false for the
+	// running patch version or an unknown map
+	virtual bool GetWorkshopMapFileIdForVersion( const char **ppszMapName, int nPatchVersion, CUtlString *pFileId ) = 0;
 	// Entity list of the client entity system, summarized in the crash dump comment
 	virtual CConcreteEntityList *GetEntityList() = 0;
 	// Returns the CToolClientSimulationAPI singleton
 	virtual IToolClientSimulationAPI *GetToolClientSimulationAPI() = 0;
 	// The engine render view setup calls them before PerformClientSpecificSetupForPlayerViews(), the first one with the same attributes
-	virtual void unk142( CRenderAttributes *pAttributes ) = 0;
+	virtual void SetupPlayerViewRenderAttributes( CRenderAttributes *pAttributes ) = 0;
 	virtual void unk143( void *pUnk ) = 0;
 	virtual bool unk144() = 0;
 	virtual void *unk145() = 0;
 	virtual Source2ClientUnk146_t unk146() = 0;
 	// Duplicates the user command nCommandNumber until the newest command reaches nLastExecutedCommand ("Duplicating command %d %dx to catch up")
-	virtual void unk147( CSplitScreenSlot nSlot, int nLastExecutedCommand, int nServerTick, int nCommandNumber ) = 0;
+	virtual void DuplicateCommandToCatchUp( CSplitScreenSlot nSlot, int nLastExecutedCommand, int nServerTick, int nCommandNumber ) = 0;
 	virtual void unk148() = 0;
 	virtual const char *GetEntity2UniqueHammerID( CEntityIndex nEntityIndex ) = 0;
 	virtual CEntityHandle unk150( CEntityHandle hEntity ) = 0;
 	virtual void unk151() = 0;
-	// Forwards to the game rules
-	virtual void unk152() = 0;
+	// Forwards to the game rules; the engine passes its host frame timings, more of them than ISource2Server::OnHostFrameTiming() gets
+	virtual void OnHostFrameTiming( const double *pFrameTimes ) = 0;
 	virtual const char *GetFriendlyMapName() = 0;
 	// Fires a panorama event with the state
 	virtual void OnCommandQueueStateChanged( const GameClientCommandQueueState_t &state ) = 0;
-	virtual void unk155( CEntityIndex nEntityIndex, int *pUnk, int nUnk ) = 0;
-	virtual void unk156( CEntityIndex nEntityIndex, int *pUnk ) = 0;
+	// Read the attribute table of the entity identity like CEntityIdentity::Attribute_GetIntValue() and Attribute_GetFloatValue()
+	virtual int GetEntity2AttributeIntValue( CEntityIndex nEntityIndex, const CUtlStringToken &key, int nDefault ) = 0;
+	virtual float GetEntity2AttributeFloatValue( CEntityIndex nEntityIndex, const CUtlStringToken &key, float flDefault ) = 0;
 
 	// Back the "sound_area_register", "sound_area_contains_point" and "sound_area_unregister" sound operators
 	virtual SoundAreaGuid_t RegisterSoundArea( const Vector &vecPosition, float flRadius, const char *pszAreaType ) = 0;
@@ -386,7 +417,8 @@ public:
 	virtual void *GetCompositeMaterialManager() = 0;
 	// The engine renames classes through it while it links classes for replay compatibility ("scripts/replay_compatability_settings.txt")
 	virtual ISerializerMatchToMetaReplayCompatHelper *GetReplayCompatHelper() = 0;
-	virtual bool unk163( void *pUnk ) = 0;
+	// The engine asks for it when a demo's server info or serializers carry no encoding parameters
+	virtual bool GetLegacyNetworkEncoding( LegacyNetworkEncoding_t *pEncoding ) = 0;
 	virtual void OnHltvReplay( const CSVCMsg_HltvReplay_t *pMsg ) = 0;
 	// Forward to the HLTV replay system, which OnHltvReplay() feeds
 	virtual void OnHltvReplayTick() = 0;
@@ -394,12 +426,14 @@ public:
 	virtual void unk167( void *pMsg ) = 0;
 	// Scene view debug overlays of the client CDebugOverlayGameSystem; the engine passes received CNETMsg_DebugOverlay messages to it
 	virtual ISceneViewDebugOverlays *GetDebugOverlayGameSystem() = 0;
-	virtual Source2ClientUnk169_t unk169() = 0;
-	virtual void unk170() = 0;
+	// Tick and fraction of the client's prediction timing (the object that also holds the user command prediction time offset)
+	virtual GameTickFraction_t GetPredictionTickFraction() = 0;
+	// Called by the broadcast player each time it has played a keyframe fragment; resets the spectator target
+	virtual void OnBroadcastKeyframePlayed() = 0;
 	// Sends the packet to the game coordinator as the data of a CMsgGCCStrike15_GotvSyncPacket
 	virtual void EngineGotvSyncPacket( const CEngineGotvSyncPacket *pPkt ) = 0;
-	// Fills matchmaking KeyValues ( "members/machine0/player0" )
-	virtual void unk172( KeyValues *pKV, void *pUnk ) = 0;
+	// Fills the local player's matchmaking settings ( "members/machine0/player0", "game/ranking", ... ); the "client" context skips the ranking
+	virtual void FillMatchmakingPlayerSettings( KeyValues *pSettings, const char *pszContext ) = 0;
 	// Follows the owner entities up to a player pawn or controller; -1 when there is none
 	virtual CPlayerSlot GetEntity2OwnerPlayerSlot( CEntityIndex nEntityIndex ) = 0;
 	// Designer name of the entity, falling back to its class name; "" for an invalid index
@@ -413,14 +447,16 @@ public:
 	virtual void unk178() = 0;
 	// cl_interp_ratio clamped to sv_client_min_interp_ratio and sv_client_max_interp_ratio, in seconds
 	virtual float GetClientInterpAmount() = 0;
-	// Forwards to an object owned by the client entity system; the engine walks the returned table of
-	// 112-byte entity entries when it reconciles the entities of a packet
-	virtual void *unk180() = 0;
+	// Forwards to IEntity2Networkables::GetEntity2Networkables() of the client entity system; the engine walks it when it
+	// reconciles the entities of a packet
+	virtual CUtlMap< int, Entity2Networkable_t > &GetEntity2Networkables() = 0;
 	// The engine passes the contents of a ".evidence" demo file, which the Overwatch UI component decodes in place
 	virtual void PrepareSignedEvidenceData( void *pvData, int nNumBytes ) = 0;
 
-	virtual void unk182( const CSVCMsg_UserCommands_t *pMsg ) = 0;
-	virtual void unk183( const CSVCMsg_UserCommands_t *pMsg ) = 0;
+	// The second one decodes the command baselines of the message as soon as the engine receives it, the first one
+	// applies the server execution ticks to the cached commands when the engine processes it
+	virtual void ProcessUserCommands( const CSVCMsg_UserCommands_t *pMsg ) = 0;
+	virtual void OnUserCommandsReceived( const CSVCMsg_UserCommands_t *pMsg ) = 0;
 
 	// Forward to the input system. True makes the engine wrap the key binding commands of one input event in "__beginseq" and "__endseq"
 	virtual bool ShouldSequenceInputEvents() = 0;
@@ -455,7 +491,8 @@ public:
 	virtual FlattenedSerializerUserData_t *GetFlattenedSerializerUserData() = 0;
 	// Asked before ISource2Server::GetMatchID() for the crash dump comment
 	virtual uint64 GetMatchID() = 0;
-	virtual bool unk205( CEntityIndex nEntityIndex ) = 0;
+	// Asked by the "game_get_source_player_info" sound operator for its is_stealthy output
+	virtual bool IsPlayerStealthy( CEntityIndex nEntityIndex ) = 0;
 	// Entity index of the pawn of a player controller
 	virtual CEntityIndex GetControllerPawnIndex( CEntityIndex nControllerIndex ) = 0;
 	virtual CEntityIndex FindEntityByName( const char *pszName ) = 0;
