@@ -137,6 +137,28 @@ struct IPLPerspectiveCorrection;
 // Draws one segment of a simulated sound path
 typedef void ( *SteamAudioPathVisualizationFn_t )( const Vector &vecFrom, const Vector &vecTo, bool bOccluded );
 
+// Probes snd_steamaudio_display_probes shows ("reverb", "pathing", "occlusion", "dimensions", "materials", "off")
+enum SteamAudioProbeDisplayType_t
+{
+	STEAMAUDIO_PROBE_DISPLAY_NONE = 0,
+	STEAMAUDIO_PROBE_DISPLAY_REVERB,
+	STEAMAUDIO_PROBE_DISPLAY_PATHING,
+	STEAMAUDIO_PROBE_DISPLAY_OCCLUSION,
+	STEAMAUDIO_PROBE_DISPLAY_DIMENSIONS,
+	STEAMAUDIO_PROBE_DISPLAY_MATERIALS,
+};
+
+// Update mode of the probe display ("always", "once", "off" or none)
+enum SteamAudioProbeDisplayMode_t
+{
+	// The probes are drawn without the listener data of the dimensions and occlusion displays
+	STEAMAUDIO_PROBE_DISPLAY_MODE_OFF = 0,
+	// The listener data is updated on every probe update
+	STEAMAUDIO_PROBE_DISPLAY_MODE_ALWAYS,
+	// The listener data is taken on the first probe update only
+	STEAMAUDIO_PROBE_DISPLAY_MODE_ONCE,
+};
+
 // Reports the progress of a bake
 typedef void ( *SteamAudioProgressFn_t )( float flProgress, void *pUserData );
 
@@ -229,11 +251,10 @@ public:
 	virtual int GetOutputEQBand( int nBand ) = 0;
 	virtual void *unk066() = 0;
 	virtual void unk067( void *pUnk ) = 0;
-	// snd_steamaudio_display_probes: nProbeType 0 off, 1 reverb, 2 pathing, 3 occlusion, 4 dimensions, 5 materials;
-	// nMode 0 default, 1 always, 2 once; pDrawFn draws each probe within flRadius
-	virtual void SetProbeDisplay( int nProbeType, int nMode, float flRadius, void *pDrawFn ) = 0;
-	// True when the probes of the type are displayed with a non-zero mode
-	virtual bool IsDisplayingProbes( int nProbeType ) = 0;
+	// snd_steamaudio_display_probes; pDrawFn draws each probe within flRadius
+	virtual void SetProbeDisplay( SteamAudioProbeDisplayType_t nProbeType, SteamAudioProbeDisplayMode_t nMode, float flRadius, void *pDrawFn ) = 0;
+	// True when the probes of the type are displayed with a mode other than STEAMAUDIO_PROBE_DISPLAY_MODE_OFF
+	virtual bool IsDisplayingProbes( SteamAudioProbeDisplayType_t nProbeType ) = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -408,8 +429,8 @@ public:
 	CThreadFastMutex m_TransformMapMutex;
 
 	// Probe display of SetProbeDisplay; the count of probe updates lets the "once" mode draw a single update
-	int m_nProbeDisplayType;
-	int m_nProbeDisplayMode;
+	SteamAudioProbeDisplayType_t m_nProbeDisplayType;
+	SteamAudioProbeDisplayMode_t m_nProbeDisplayMode;
 	float m_flProbeDisplayRadius;
 	void *m_pProbeDrawFn;
 	int m_nProbeDisplayUpdateCount;
