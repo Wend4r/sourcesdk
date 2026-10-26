@@ -473,7 +473,7 @@ public:
 	virtual void UnlockDynamicVertexBuffer( VertexBufferHandle_t hVertexBuffer, uint32 nNumBytes ) = 0;
 	virtual IndexBufferHandle_t CreateDynamicIndexBuffer( const BufferDesc_t &desc, void **ppData ) = 0;
 	virtual void UnlockDynamicIndexBuffer( IndexBufferHandle_t hIndexBuffer, uint32 nNumBytes ) = 0;
-	virtual RenderBufferHandle_t CreateDynamicGPUBuffer( const BufferDesc_t &desc, int nFlags, ImageFormat nFormat, void **ppData ) = 0;
+	virtual RenderBufferHandle_t CreateDynamicGPUBuffer( const BufferDesc_t &desc, RenderBufferFlags_t nFlags, ImageFormat nFormat, void **ppData ) = 0;
 	virtual void UnlockDynamicGPUBuffer( RenderBufferHandle_t hBuffer, uint32 nNumBytes ) = 0;
 	virtual bool LockIndexBuffer( IndexBufferHandle_t hIndexBuffer, uint32 nNumBytes, void **ppData ) = 0;
 	virtual void UnlockIndexBuffer( IndexBufferHandle_t hIndexBuffer, uint32 nNumBytes ) = 0;

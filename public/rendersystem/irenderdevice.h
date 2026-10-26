@@ -305,19 +305,19 @@ public:
 	virtual RsBlendStateHandle_t FindOrCreateBlendState( const RsBlendStateDesc_t *pDesc ) = 0;
 
 	// Overloads in declaration order; MSVC groups them in reverse
-	virtual VertexBufferHandle_t CreateVertexBuffer( int nType, const BufferDesc_t &desc, int nExtraUsageFlags ) = 0;
-	virtual VertexBufferHandle_t CreateVertexBuffer( int nType, const BufferDesc_t &desc, int nLayoutFields, const RenderInputLayoutField_t *pLayoutFields, int nExtraUsageFlags ) = 0;
-	virtual VertexBufferHandle_t CreateVertexBuffer( int nType, const BufferDesc_t &desc, RenderInputLayout_t hLayout, int nExtraUsageFlags ) = 0;
+	virtual VertexBufferHandle_t CreateVertexBuffer( int nType, const BufferDesc_t &desc, RenderBufferFlags_t nExtraUsageFlags ) = 0;
+	virtual VertexBufferHandle_t CreateVertexBuffer( int nType, const BufferDesc_t &desc, int nLayoutFields, const RenderInputLayoutField_t *pLayoutFields, RenderBufferFlags_t nExtraUsageFlags ) = 0;
+	virtual VertexBufferHandle_t CreateVertexBuffer( int nType, const BufferDesc_t &desc, RenderInputLayout_t hLayout, RenderBufferFlags_t nExtraUsageFlags ) = 0;
 
 	virtual void DestroyVertexBuffer( VertexBufferHandle_t hVertexBuffer ) = 0;
-	virtual IndexBufferHandle_t CreateIndexBuffer( int nType, const BufferDesc_t &desc, int nExtraUsageFlags ) = 0;
+	virtual IndexBufferHandle_t CreateIndexBuffer( int nType, const BufferDesc_t &desc, RenderBufferFlags_t nExtraUsageFlags ) = 0;
 	virtual void DestroyIndexBuffer( IndexBufferHandle_t hIndexBuffer ) = 0;
 	virtual void GetVertexBufferDesc( VertexBufferHandle_t hBuffer, BufferDesc_t *pDesc ) = 0;
 	virtual void GetIndexBufferDesc( IndexBufferHandle_t hBuffer, BufferDesc_t *pDesc ) = 0;
 	virtual void GetGPUBufferDesc( RenderBufferHandle_t hBuffer, BufferDesc_t *pDesc ) = 0;
 	virtual RenderInputLayout_t GetVertexBufferInputLayout( VertexBufferHandle_t hVertexBuffer ) = 0;
-	virtual RenderBufferHandle_t CreateGPUBuffer( int nType, const BufferDesc_t &desc, int nFlags, const void *pInitialData ) = 0;
-	virtual RenderBufferHandle_t CreateGPUBufferFormatted( int nType, const BufferDesc_t &desc, int nFlags, ImageFormat nFormat, const void *pInitialData ) = 0;
+	virtual RenderBufferHandle_t CreateGPUBuffer( int nType, const BufferDesc_t &desc, RenderBufferFlags_t nFlags, const void *pInitialData ) = 0;
+	virtual RenderBufferHandle_t CreateGPUBufferFormatted( int nType, const BufferDesc_t &desc, RenderBufferFlags_t nFlags, ImageFormat nFormat, const void *pInitialData ) = 0;
 	virtual uint64 GetGPUBufferDeviceAddress( RenderBufferHandle_t hGPUBuffer ) = 0;
 	virtual void DestroyGPUBuffer( RenderBufferHandle_t hGPUBuffer ) = 0;
 	virtual uint64 GetVertexBufferDeviceAddress( VertexBufferHandle_t hVertexBuffer ) = 0;
