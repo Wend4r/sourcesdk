@@ -22,6 +22,14 @@ class IPhysicsShape;
 class CBufferString;
 class CRnContact;
 
+// The kind of a contact, by the CRnContact subclass that implements it
+enum PhysicsContactType_t
+{
+	PHYSICS_CONTACT_TYPE_CONVEX = 0, // CRnConvexContact, between convex shapes
+	PHYSICS_CONTACT_TYPE_MESH, // CRnMeshContact, against a mesh
+	PHYSICS_CONTACT_TYPE_WHEEL, // CRnWheelContact
+};
+
 // The shapes and the manifolds of a contact. The manifolds are a reference counted block (the reference count, the manifold count
 // and the manifolds); IPhysicsShape::GetContacts releases the references of the old elements before it fills the vector again
 struct PhysicsContact_t
@@ -58,8 +66,7 @@ public:
 	virtual IPhysicsShape *GetShape( int nIndex ) = 0;
 	virtual const IPhysicsShape *GetShape( int nIndex ) const = 0;
 
-	// 0 between convex shapes, 1 against a mesh, 2 for a wheel
-	virtual int GetContactType() const = 0;
+	virtual PhysicsContactType_t GetContactType() const = 0;
 
 	virtual bool HasManifolds() const = 0;
 
