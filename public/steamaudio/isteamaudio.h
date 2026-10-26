@@ -293,6 +293,30 @@ struct IPLPerspectiveCorrection
 class CSteamAudioPartitioner;
 class CSteamAudioReverbSimulator;
 
+// What the dimensions probe display draws, computed for the listener on a display update
+struct SteamAudioDimensionsDisplay_t
+{
+	Vector m_vecListenerOrigin;
+	Vector m_vecListenerForward;
+	float m_flInOut;
+	float m_flSize;
+	float m_flOutsideDistance;
+	Vector m_vecOutsideDirection;
+	float m_flInsideDistance;
+	Vector m_vecInsideDirection;
+};
+
+// Entry the occlusion probe display draws
+struct SteamAudioOcclusionDisplayProbe_t
+{
+	Vector m_vecPosition;
+	// Never read by the display
+	float m_flUnk0C;
+	float m_flOcclusion;
+	// The display merges entries by it
+	int m_nId;
+};
+
 struct SteamAudioSceneEntry_t
 {
 	ISteamAudioScene *m_pScene;
@@ -385,10 +409,9 @@ public:
 	float m_flProbeDisplayRadius;
 	void *m_pProbeDrawFn;
 	int m_nProbeDisplayUpdateCount;
-	Vector m_vecUnkA64;
-	Vector m_vecUnkA70;
-	uint8 m_UnkA7C[ 0x28 ];
-	CUtlVector< void * > m_UnkAA8;
+	// Data passed to the draw function for the dimensions and occlusion displays
+	SteamAudioDimensionsDisplay_t m_DimensionsDisplay;
+	CUtlVector< SteamAudioOcclusionDisplayProbe_t > m_OcclusionDisplayProbes;
 	int m_nPathingEQBandCount;
 };
 
