@@ -157,8 +157,9 @@ public:
 
 	virtual CSceneObject *CreateSkyBox( HMaterialWeak hMaterial, ISceneWorld *pWorld ) = 0;
 	virtual CSceneLightProbeVolumeObject *CreateLightProbeVolume( ISceneWorld *pWorld ) = 0;
-	// Tests the lights and barn lights that belong to one of the worlds of the view.
-	virtual bool unk041( ISceneView *pView ) = 0;
+	// Behavioural name: true when a light or barn light of one of the worlds of the view has the int render attribute token 0xEDC61ED4 set
+	// (the light descriptors read it as the switch for the float attribute 0x266C41FB; the strings are in no shipped binary or shader).
+	virtual bool HasFlaggedLightInView( ISceneView *pView ) = 0;
 	virtual void MarkLightProbeVolumeObjectUpdated( CSceneLightProbeVolumeObject *pLightProbe ) = 0;
 	virtual void MarkEnvironmentMapObjectUpdated( CEnvMapSceneObject *pEnvMap ) = 0;
 	virtual ISceneWorld *CreateWorld( const char *pszDebugName ) = 0;
@@ -271,7 +272,9 @@ public:
 	virtual void LoadSparseShadowTreeManifest() = 0;
 	virtual void UnloadSparseShadowTreeManifest() = 0;
 	virtual ISparseShadowTree *GetSparseShadowTree( int nIndex, bool bOnlyIfEnabled ) = 0;
-	virtual void CreateSparseShadowTree( void *pUnk, int nIndex ) = 0;
+	// pBuildCallbacks is kept by the tree and its CBuildSparseShadowTree helper; the tree calls its slot 1 when a build starts and polls its
+	// slot 0 until it returns false.
+	virtual void CreateSparseShadowTree( void *pBuildCallbacks, int nIndex ) = 0;
 	virtual void DestroySparseShadowTree( int nIndex ) = 0;
 
 	// Finds the sky box object named by a string attribute of pObject among the sky box objects of the worlds of the view.
@@ -296,7 +299,8 @@ public:
 	virtual void SceneObject_SetMaterialOverride( CSceneObject *pObj, HMaterialWeak hOverride ) = 0;
 
 	// nPlayerIndex -1 applies to every player.
-	virtual void SceneObject_SetVisibilityToPlayerIndex( CSceneObject *pObject, int nPlayerIndex, bool bUnk, bool bVisible ) = 0;
+	// bUnused is not read by the implementation.
+	virtual void SceneObject_SetVisibilityToPlayerIndex( CSceneObject *pObject, int nPlayerIndex, bool bUnused, bool bVisible ) = 0;
 
 	virtual void SceneObject_SetSplitScreenMask( CSceneObject *pObject, uint32 nMask ) = 0;
 	virtual void SceneObject_AddChild( CSceneObject *pParent, CUtlStringToken token, CSceneObject *pChild, uint32 nFlags ) = 0;
@@ -364,11 +368,14 @@ public:
 	virtual void SetGPUCullingStatsEnabled( CUtlStringToken requester, bool bEnable ) = 0;
 	virtual bool IsGPUCullingStatsEnabled() = 0;
 
-	virtual void GetMostRecentTimestampFrameSummary( SwapChainHandle_t hSwapChain, CUtlVector< SceneSystemTimestampFrameData_t > &timestampFrameSummaryOut, int nUnk ) = 0;
+	// Walks the timestamp tree down to nMaxDepth levels and sums the entries of the same name below it; 0 or less sums everything.
+	virtual void GetMostRecentTimestampFrameSummary( SwapChainHandle_t hSwapChain, CUtlVector< SceneSystemTimestampFrameData_t > &timestampFrameSummaryOut, int nMaxDepth ) = 0;
 	// ORs the ImGui state of the overlay lists created by CreateSceneViewDebugOverlayList: bit 0 when pMouseCursor is set
 	// (-1 hides the cursor), bit 1 while they take mouse input; the client picks its cursor and consumes mouse events from it.
 	virtual int GetImGuiInputState( int *pMouseCursor ) = 0;
-	virtual IRayTraceSceneWorld *CreateRayTraceWorld( const char *pszDebugName, int nMaxRayTypes, bool bUnk ) = 0;
+	// bTLASFlag40 adds flag 0x40 to the "SceneTLAS" creation flags (the Vulkan device does not read it); an IRayTraceSceneWorld setter sets
+	// the same flag later.
+	virtual IRayTraceSceneWorld *CreateRayTraceWorld( const char *pszDebugName, int nMaxRayTypes, bool bTLASFlag40 ) = 0;
 	virtual void DestroyRayTraceWorld( IRayTraceSceneWorld *pWorld ) = 0;
 	// Queues a 192 byte BLAS geometry update keyed by a 64 bit id, merged with a pending update of the same id.
 	virtual void QueueBLASUpdate( const void *pUpdate ) = 0;
@@ -382,10 +389,14 @@ public:
 	virtual void ReleaseModelFromDistanceFieldScene( CWeakHandle< InfoForResourceTypeCModel > hModel ) = 0;
 	// Rebuilds the entry of a model that is present.
 	virtual void UpdateModelInDistanceFieldScene( CWeakHandle< InfoForResourceTypeCModel > hModel ) = 0;
-	virtual int unk181( int nIndex ) = 0;
-	virtual void unk182( int nIndex, int *pOut1, int *pOut2 ) = 0;
-	virtual bool unk183( int nIndex ) = 0;
-	virtual bool unk184( int nIndex ) = 0;
+	// Fields of a distance field instance (an index from GetModelDistanceFieldInstances) taken from the model's distance field data.
+	// Behavioural name: the index that the model's token table (model +304) gives the instance's token, -1 when it has none.
+	virtual int GetDistanceFieldInstanceTokenIndex( int nInstance ) = 0;
+	// Behavioural name: the two ints at +16 and +20 of the model's instance data.
+	virtual void GetDistanceFieldInstanceValues( int nInstance, int *pValue1, int *pValue2 ) = 0;
+	// Behavioural names: flag bit 0 of the instance (instance data byte +37), and bits 0 or 1 (bytes +37 or +38).
+	virtual bool IsDistanceFieldInstanceFlagged( int nInstance ) = 0;
+	virtual bool HasDistanceFieldInstanceFlags( int nInstance ) = 0;
 	// Copies the distance field instance indices of a model when its version differs from nKnownVersion; returns the version.
 	virtual int GetModelDistanceFieldInstances( CWeakHandle< InfoForResourceTypeCModel > hModel, int nKnownVersion, CUtlVector< int > &instances ) = 0;
 	virtual CSceneObject *CreateDistanceFieldInstanceSceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
@@ -394,7 +405,9 @@ public:
 
 	// Resizes the hair simulation buffers.
 	virtual void ResizeHairBuffers( int nCount ) = 0;
-	virtual void unk189( void *pUnk ) = 0;
+	// Render device memory pool for the "CMTatlastexturePooled_" morph target atlas and the dynamic BLAS "vertex cache" buffers;
+	// ignored unless SceneSystem/ComputeShaderSkinning is set.
+	virtual void SetResourceMemoryPool( void *pPool ) = 0;
 	// The "vertex cache" buffers of the frame ("Resizing Vertex Cache Buffer").
 	virtual void *GetVertexCacheBuffer( int nIndex ) = 0;
 	virtual void AcquireImGuiLock() = 0;
@@ -406,7 +419,9 @@ public:
 	virtual void QueueRenderingCompleteJob( std::function< void() > &&fn ) = 0;
 	// Incremented by each AllocateScratchRenderTargets call.
 	virtual int GetScratchRenderTargetAllocationCount() = 0;
-	virtual void unk197( ISceneView *pView ) = 0;
+	// Queues the view once; the next BeginRenderingViews renders its debug overlays ("Render3DDebugOverlays", "Render2DDebugOverlays")
+	// unless the overlay list reports them handled.
+	virtual void QueueViewDebugOverlayRendering( ISceneView *pView ) = 0;
 };
 
 #endif // ISCENESYSTEM_H
