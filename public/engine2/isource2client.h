@@ -292,7 +292,7 @@ public:
 	// Queues the entity handle with a time when bDeferred is set and the entity qualifies, otherwise forwards to the network classes
 	virtual void DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
 	virtual INetworkFieldChangedEventQueue *GetNetworkFieldChangeCallbackQueue() = 0;
-	// Called with 0 and then with 1 while the engine processes packet entities
+	// Called with SHOULDTRANSMIT_START and then with SHOULDTRANSMIT_END while the engine processes packet entities
 	virtual void NotifyShouldTransmit( IEntityReport *pReport, CBitVec< 16384 > *pTransmitBits, NotifyShouldTransmitType_t nType ) = 0;
 	virtual CUtlVector< ClientClass * > *GetAllClasses() = 0;
 	// Copies the session configuration and asks the loop mode game shared state for it
