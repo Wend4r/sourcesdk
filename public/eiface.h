@@ -97,6 +97,9 @@ namespace google
 
 #define INTERFACEVERSION_VENGINESERVER	"Source2EngineToServer001"
 
+// ISource2Server::GetServerGameDLLFlags
+#define SERVER_GAME_DLL_FLAG_HIDDEN_GAME	( 1 << 2 )	// A listen server rejects remote clients with NETWORK_DISCONNECT_REJECT_HIDDEN_GAME
+
 enum ClientNetMessageHandlersAction_t
 {
 	CLIENT_NET_MESSAGE_HANDLERS_INIT_AND_REGISTER = 0, // Also creates the shared message bindings on first use
@@ -384,6 +387,7 @@ public:
 
 	virtual void			PrintStatus( CEntityIndex nPlayerEntityIndex, CBufferString &output ) = 0;
 
+	// SERVER_GAME_DLL_FLAG_*
 	virtual int				GetServerGameDLLFlags( void ) const = 0;
 
 	// Get the list of cvars that require tags to show differently in the server browser
