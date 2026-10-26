@@ -931,7 +931,7 @@ public:
 	// Returns zeros
 	virtual FnPhysicsWorldUnk025_t unk025() = 0;
 
-	// Clears flag 4 of every softbody, updates the debug scene, cleans up the delete list and clears the CRnBody pointer that
+	// Clears IPhysicsSoftbody::SetManualStep of every softbody, updates the debug scene, cleans up the delete list and clears the CRnBody pointer that
 	// IPhysicsBody::SetUserPointer sets on every body
 	virtual void ClearDebugState() = 0;
 

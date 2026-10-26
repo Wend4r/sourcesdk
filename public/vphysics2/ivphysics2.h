@@ -404,6 +404,11 @@ struct RnHullFeaturePair_t
 	RnHullFeature_t m_Feature2;
 };
 
+// Flags of IVPhysics2::GetSoftbodies
+#define PHYSICS_GET_SOFTBODIES_ACTIVE ( 1 << 0 ) // Only the active softbodies (IPhysicsSoftbody::IsActive)
+#define PHYSICS_GET_SOFTBODIES_SKIP_MANUAL_STEP ( 1 << 1 ) // Leaves out the softbodies with IPhysicsSoftbody::SetManualStep
+#define PHYSICS_GET_SOFTBODIES_WORLDS_ONLY ( 1 << 2 ) // Leaves out the softbodies created by CreateListedSoftbody
+
 abstract_class IVPhysics2 : public IAppSystem
 {
 public:
@@ -556,7 +561,7 @@ public:
 	virtual IPhysicsSoftbody *CreateListedSoftbody( const CFeModel *pFeModel ) = 0;
 	virtual void DestroyListedSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 
-	// Both include the softbodies of every world
+	// Both include the softbodies of every world; GetSoftbodies takes PHYSICS_GET_SOFTBODIES_* flags
 	virtual int GetSoftbodyCount() = 0;
 	virtual int GetSoftbodies( int nFlags, IPhysicsSoftbody **ppSoftbodies ) = 0;
 
