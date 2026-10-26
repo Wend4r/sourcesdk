@@ -314,7 +314,7 @@ public:
 	// Same body as the VertexBufferHandle_t overload
 	virtual bool BindVertexBuffer( int nSlot, RenderBufferHandle_t hBuffer, int nOffset, int nStride ) = 0;
 	// Recorded by IRenderDevice::AsyncSetTextureData with the same arguments
-	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
+	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnused, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
 	virtual void ReadTexturePixelsAsync( HRenderTexture hTexture, std::shared_ptr< IReadTexturePixelsCallback > pCallback, int nSlice, int nMipLevel, const Rect_t *pSrcRect ) = 0;
 	// Records a command that makes the render thread retire the submissions whose fences have completed
 	virtual void RetireCompletedSubmissions() = 0;

@@ -212,8 +212,9 @@ public:
 	virtual uint64 GetIndexBufferDeviceAddress( IndexBufferHandle_t hIndexBuffer ) = 0;
 	virtual uint64 GetPooledVertexBufferDeviceAddress( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
 	virtual uint64 GetPooledIndexBufferDeviceAddress( PooledIndexBufferHandle_t hPooledIndexBuffer ) = 0;
-	// bUnk is passed on to the texture upload of the render context, which the Vulkan backend ignores
-	virtual HRenderTexture FindOrCreateTexture( const char *pResourceName, bool bIsAnonymous, const CTextureCreationDesc *pDescriptor, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk ) = 0;
+	// bUnused is passed on to the texture upload of the render context, which the Vulkan backend ignores; every
+	// caller passes false
+	virtual HRenderTexture FindOrCreateTexture( const char *pResourceName, bool bIsAnonymous, const CTextureCreationDesc *pDescriptor, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnused ) = 0;
 	virtual HRenderTexture GetErrorTexture( RenderTextureDimension_t nDimension ) = 0;
 	virtual HRenderTexture FindOrCreateFileTexture( const char *pFileName, int nLoadMode ) = 0;
 	virtual HRenderTexture FindFileTexture( ResourceId_t nId, int nLoadMode ) = 0;
@@ -347,7 +348,7 @@ public:
 	virtual float GetMultiGPUFrameFactor() = 0;
 
 	virtual float GetLastPresentTime() = 0;
-	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
+	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnused, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
 	virtual void *GetGraphicsAPISpecificTextureHandle( HRenderTexture hTexture ) = 0;
 	virtual void GetLargestMonitorDimensions( int *pWidth, int *pHeight ) = 0;
 	virtual void PushRenderDeviceFlags( uintp nFlags ) = 0;
