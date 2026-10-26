@@ -64,12 +64,12 @@ schema struct VPhysXBodyPart_t
 
 	enum VPhysXFlagEnum_t
 	{
-		FLAG_STATIC = 1,
-		FLAG_KINEMATIC = 2,
-		FLAG_JOINT = 4,
-		FLAG_MASS = 8,
-		FLAG_ALWAYS_DYNAMIC_ON_CLIENT = 16,
-		FLAG_DISABLE_CCD = 32,
+		FLAG_STATIC = ( 1 << 0 ),
+		FLAG_KINEMATIC = ( 1 << 1 ),
+		FLAG_JOINT = ( 1 << 2 ),
+		FLAG_MASS = ( 1 << 3 ),
+		FLAG_ALWAYS_DYNAMIC_ON_CLIENT = ( 1 << 4 ),
+		FLAG_DISABLE_CCD = ( 1 << 5 ),
 	};
 
 	uint32 m_nFlags;
@@ -102,9 +102,9 @@ schema struct VPhysXAggregateData_t
 
 	enum VPhysXFlagEnum_t
 	{
-		FLAG_IS_POLYSOUP_GEOMETRY = 1,
-		FLAG_LEVEL_COLLISION = 16,
-		FLAG_IGNORE_SCALE_OBSOLETE_DO_NOT_USE = 32,
+		FLAG_IS_POLYSOUP_GEOMETRY = ( 1 << 0 ),
+		FLAG_LEVEL_COLLISION = ( 1 << 4 ),
+		FLAG_IGNORE_SCALE_OBSOLETE_DO_NOT_USE = ( 1 << 5 ),
 	};
 
 	uint16 m_nFlags;
