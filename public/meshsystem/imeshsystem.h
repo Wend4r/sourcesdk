@@ -45,6 +45,22 @@ class CModelMeshHandle : public CModelMeshHandleBase< CWeakHandle< InfoForResour
 {
 };
 
+// Draw flags of a material, IMeshSystem::GetMaterialFlags(); named after the material attribute that sets them
+#define MESH_MATERIAL_FLAG_OPAQUE ( 1 << 0 ) // neither "Translucent" nor "bShaderBlended"
+#define MESH_MATERIAL_FLAG_ALPHA_TEST ( 1 << 1 ) // "alphatest"
+#define MESH_MATERIAL_FLAG_TRANSLUCENT ( 1 << 2 ) // "Translucent"
+#define MESH_MATERIAL_FLAG_SHADER_BLENDED ( 1 << 3 ) // "bShaderBlended"
+#define MESH_MATERIAL_FLAG_OVERLAY ( 1 << 4 ) // "overlay", clears OPAQUE and TRANSLUCENT
+#define MESH_MATERIAL_FLAG_CASTS_SHADOWS ( 1 << 5 ) // unless "DoNotCastShadows"
+#define MESH_MATERIAL_FLAG_NEEDS_DYNAMIC_SHADOWS ( 1 << 6 ) // "NeedsDynamicShadows"
+#define MESH_MATERIAL_FLAG_Z_PREPASS ( 1 << 7 ) // unless "NoZPrepass"
+#define MESH_MATERIAL_FLAG_ALPHA_TEST_Z_PREPASS ( 1 << 8 ) // "AlphaTestZPrepass"
+#define MESH_MATERIAL_FLAG_HAIR_SHADER ( 1 << 10 ) // "HairShader"
+#define MESH_MATERIAL_FLAG_DISABLE_LOD_BLENDING ( 1 << 11 ) // "DisableLODBlending"
+#define MESH_MATERIAL_FLAG_BINDLESS_RESOURCES ( 1 << 12 ) // "BindlessResources"
+#define MESH_MATERIAL_FLAG_FORCE_Z_PREPASS ( 1 << 16 ) // "ForceZPrepass", with Z_PREPASS
+#define MESH_MATERIAL_FLAG_WANTS_FB_COPY_TEXTURE ( 1 << 17 ) // "bWantsFBCopyTexture"
+
 abstract_class IMeshSystem : public IAppSystem
 {
 public:
@@ -74,8 +90,8 @@ public:
 	virtual void EnableTraceLines() = 0;
 	virtual void GetModelBounds( ResourceHandle_t hModel, Vector *pMins, Vector *pMaxs ) = 0;
 
-	// Adds the translucency bits of nTranslucencyType to nTypeFlags
-	virtual uint64 ComputeSceneObjectTranslucencyFlags( uint32 nTranslucencyType, uint64 nFlags, uint64 nTypeFlags ) = 0;
+	// Adds the translucency bits for the MESH_MATERIAL_FLAG_* bits of nMaterialFlags to nTypeFlags
+	virtual uint64 ComputeSceneObjectTranslucencyFlags( uint32 nMaterialFlags, uint64 nFlags, uint64 nTypeFlags ) = 0;
 	virtual void UpdateTranslucencyFlagsOnMaterialChange( CSceneObject *pSceneObject ) = 0;
 
 	// UpdateTranslucencyFlagsOnMaterialChange() with hMaterial in place of the material of every draw
@@ -98,9 +114,8 @@ public:
 	// Moves the std::function at pFunction into CMeshSystem::m_LegacyModelLoadCallback
 	virtual void SetLegacyModelLoadCallback( void *pFunction ) = 0;
 
-	// Draw flags of a loaded material, computed from its attributes ("bShaderBlended", "NeedsDynamicShadows",
-	// "AlphaTestZPrepass", "ForceZPrepass", "BindlessResources", "DisableLODBlending", ...) and then passed through
-	// every callback added by AddMaterialFlagsCallback(); 0 when hMaterial is not loaded
+	// MESH_MATERIAL_FLAG_* bits of a loaded material, computed from its attributes and then passed through every
+	// callback added by AddMaterialFlagsCallback(); 0 when hMaterial is not loaded
 	virtual uint32 GetMaterialFlags( ResourceHandle_t hMaterial ) = 0;
 
 	// Adds pfnCallback to the callbacks of GetMaterialFlags() when it is not there yet and refreshes every loaded model
