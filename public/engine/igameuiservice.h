@@ -42,12 +42,21 @@ enum GameUILayer_t
 	GAMEUI_LAYER_COUNT
 };
 
+// Result of IGameUIRenderCallback::PreRender; other values skip the handler for the frame
+enum GameUIPreRenderResult_t
+{
+	// The layer calls Render this frame
+	GAMEUI_PRERENDER_RENDER = 0,
+	// The handler is removed from the layer
+	GAMEUI_PRERENDER_REMOVE_HANDLER = 2,
+};
+
 // Layer handler of the game UI service, called while its render handler adds the views
 abstract_class IGameUIRenderCallback
 {
 public:
-	// Called before the layer's view is added: 0 has the layer call Render this frame, 2 removes the handler from the layer, other values skip it
-	virtual int PreRender() = 0;
+	// Called before the layer's view is added
+	virtual GameUIPreRenderResult_t PreRender() = 0;
 	// Gets the arguments of the layer's IProceduralLayerRenderer call unchanged
 	virtual void Render( ISceneView *pView, IRenderContext *pRenderContext, ISceneLayer *pLayer ) = 0;
 };
@@ -57,7 +66,7 @@ struct GameUILayerHandler_t
 	IGameUIRenderCallback *m_pHandler;
 	int m_nPriority;
 	// Result of the handler's PreRender for the current frame
-	int m_nPreRenderResult;
+	GameUIPreRenderResult_t m_nPreRenderResult;
 };
 
 abstract_class IGameUIService : public IEngineService
