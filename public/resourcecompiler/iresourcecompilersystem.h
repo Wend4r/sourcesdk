@@ -45,7 +45,7 @@ public:
 	// uses the one of <game>. Returns 0 without the compiler, otherwise the compiler's value for the special
 	// dependency: 1 for all of them except PulseGraphDef, which returns 2 for "@" dependencies and its
 	// compiler version
-	virtual int unk013( const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
+	virtual int GetSpecialDependencyVersion( const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 	virtual void *CalculateSpecialDependencyFingerprint( void *pResult, const char *pModName, const char *pCompilerName, const char *pSpecialDependency, int nUserData ) = 0;
 
 	// The compiler's string for the special dependency in pOut; without such a compiler pOut is the
