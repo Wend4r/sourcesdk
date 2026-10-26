@@ -228,15 +228,93 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// One area to add to a grid cell after a movable mesh update.
+// Generated geometry that CNavMesh::BuildFromNavGen replaces the mesh with.
+//-----------------------------------------------------------------------------
+struct NavGenVertex_t
+{
+	double x, y, z;
+};
+
+// The generated vertices; m_VertexAttributes replaces the geometry manager's attributes when it
+// holds one entry per vertex.
+struct NavGenGeometry_t
+{
+	CUtlVector< NavGenVertex_t > m_Vertices;
+	CUtlVector< NavGravity_t > m_VertexAttributes;
+};
+
+// Per-hull connection data of a generated polygon, not reconstructed.
+struct NavGenPolyHullLinks_t;
+
+// A generated polygon; the area created for the polygon at the same index takes its hull,
+// attributes and movable mesh.
+struct NavGenPoly_t
+{
+	int m_nVertexCount;
+	// Passed to AddNavArea, -1 when the polygon is not on a movable mesh.
+	uint32 m_nMovableMeshId;
+
+private:
+	uint8 m_pad008[ 56 ];
+
+public:
+	// 1 adds NAV_AREA_BOUNDARY and 2 NAV_AREA_DEFORMABLE to the area attributes.
+	uint8 m_nAreaKind;
+
+private:
+	uint8 m_pad041[ 3 ];
+
+public:
+	// Bit 3 adds NAV_AREA_DOCKING_CANDIDATE and bit 4 NAV_AREA_HAS_TACTICAL_SEARCH_ANNOTATIONS.
+	uint8 m_nFlags;
+
+private:
+	uint8 m_pad045[ 29 ];
+
+public:
+	// Copied to CNavPoly::m_nHullIdx.
+	uint8 m_nHullIdx;
+
+private:
+	uint8 m_pad063[ 5 ];
+
+public:
+	// Indices into NavGenGeometry_t::m_Vertices.
+	int m_nVertexIndices[ 6 ];
+	const NavGenPolyHullLinks_t *m_pHullLinks;
+};
+
+// A movable mesh of the generated geometry.
+struct NavGenMovableMesh_t
+{
+	CUtlIntString< int, 6 > m_MeshId;
+	matrix3x4_t m_Transform;
+	// movable_mesh_gravity_follows_rotation
+	bool m_bGravityFollowsRotation;
+};
+
+// A generated ladder: indices of the areas created from the generated polygons, -1 for none.
+struct NavGenLadder_t
+{
+	int m_nTopForwardArea;
+	int m_nTopLeftArea;
+	int m_nTopRightArea;
+	int m_nTopBehindArea;
+	// CNavLadder::m_pBottomArea and the two bottom areas after it.
+	int m_nBottomAreas[ 3 ];
+};
+
+//-----------------------------------------------------------------------------
+// One area to add to or remove from a grid cell after a movable mesh update.
 //-----------------------------------------------------------------------------
 struct NavBatchUpdateAreaInGridOp_t
 {
 	CNavArea *m_pArea;
 	// Cell index (y * width + x) in the grid.
 	int m_nCellIndex;
-	// 0 when queued by the geometry change of the area.
-	bool m_bUnk0C;
+	// Removes the area from the cell instead of adding it; false when queued by the geometry
+	// change of the area.
+	bool m_bRemove;
 };
 
 //-----------------------------------------------------------------------------
@@ -285,7 +363,7 @@ public:
 
 	public:
 		int m_nCount;
-		// -1 once the buffer is flushed.
+		// 0 while the buffer is filled and -1 once it is flushed; nothing reads it.
 		int m_nUnk84;
 
 	private:
@@ -360,9 +438,7 @@ public:
 	virtual void SaveCustomDataPreArea( CUtlBuffer &fileBuffer ) const = 0;
 	virtual void LoadCustomDataPreArea( CUtlBuffer &fileBuffer ) = 0;
 	// Replaces the mesh with generated geometry, taking the generation settings from input.
-	// The first four arguments are the generated vertices, polygons and their data; their types
-	// are not reconstructed.
-	virtual void BuildFromNavGen( const void *pUnk1, const void *pUnk2, const void *pUnk3, const void *pUnk4, const CNavGenInput &input ) = 0;
+	virtual void BuildFromNavGen( const NavGenGeometry_t *pGeometry, const CUtlVector< NavGenPoly_t > *pPolys, const CUtlVector< NavGenMovableMesh_t > *pMovableMeshes, const CUtlVector< NavGenLadder_t > *pLadders, const CNavGenInput &input ) = 0;
 	// Calls OnServerActivate on every area.
 	virtual void OnServerActivate() = 0;
 	// Called on round_start before every area's OnRoundRestart; resets the obstruction manager.
@@ -383,10 +459,9 @@ public:
 	virtual void RemoveInvalidNavAreas() = 0;
 	// Sets the area's m_nMeshIndex.
 	virtual void SetAreaMeshIndex( CNavArea *pArea, int nMeshIndex ) = 0;
-	// The movable meshes' movable_mesh_gravity_follows_rotation settings. Save reads them from
-	// 112-byte movable mesh records (the flag is the byte at 104), whose type is not
-	// reconstructed; Load appends one flag per movable mesh to pGravityFollowsRotation.
-	virtual void SaveMovableMeshSettings( KeyValues3 *pKV, const void *pUnk ) const = 0;
+	// The movable meshes' movable_mesh_gravity_follows_rotation settings. Load appends one flag
+	// per movable mesh to pGravityFollowsRotation.
+	virtual void SaveMovableMeshSettings( KeyValues3 *pKV, const CUtlVector< NavGenMovableMesh_t > *pMovableMeshes ) const = 0;
 	virtual void LoadMovableMeshSettings( const KeyValues3 *pKV, CUtlVector< bool > *pGravityFollowsRotation ) = 0;
 	// Empty in the game's meshes.
 	virtual void unk029( void *p ) = 0;
