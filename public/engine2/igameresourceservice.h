@@ -12,11 +12,34 @@
 
 #include <engine/IEngineService.h>
 #include <entity2/entitysystem.h>
+#include <tier0/utlstring.h>
+#include <tier0/utlsymbol.h>
+#include <tier0/utlvector.h>
 
 class CGameResourceManifestLock;
 class CGameResourceManifest;
-class CCompressedResourceManifest;
 class IGameResourceManifestLoadCompletionCallback;
+
+// Resource names of a manifest, built by IGameResourceService::BuildCompressedManifest and sent to clients
+class CCompressedResourceManifest
+{
+public:
+	struct Resource_t
+	{
+		// Directory of the resource name, in m_Paths
+		CUtlSymbol m_Path;
+		// File name without the extension
+		CUtlString m_sBaseName;
+		// In m_Extensions
+		CUtlSymbol m_Extension;
+	};
+
+	// Indexed by the symbol of the resource name in m_ResourceNames
+	CUtlVector< Resource_t > m_Resources;
+	CUtlSymbolTable m_ResourceNames;
+	CUtlSymbolTable m_Paths;
+	CUtlSymbolTable m_Extensions;
+};
 
 class IGameResourceService : public IEngineService
 {

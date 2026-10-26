@@ -13,6 +13,8 @@
 #include <tier0/bitvec.h>
 #include <const.h>
 #include <tier0/mempool.h>
+#include <tier0/threadtools.h>
+#include <tier0/utllinkedlist.h>
 
 class CFrameSnapshot;
 
@@ -35,11 +37,10 @@ public:
 
 	// Used by server to indicate if the entity was in the player's pvs
 	CBitVec<MAX_EDICTS>	transmit_entity; // if bit n is set, entity n will be send to client
-	CBitVec<MAX_EDICTS>	unkBitVec2080;
-	CBitVec<MAX_EDICTS>	unkBitVec4128;
-	CBitVec<MAX_EDICTS>	unkBitVec6176;
+	CBitVec<MAX_EDICTS>	non_transmit_entity;
+	CBitVec<MAX_EDICTS>	transmit_out_of_pvs;
 	CBitVec<MAX_EDICTS>	*transmit_always; // if bit is set, don't do PVS checks before sending (HLTV only)
-};  // sizeof 8232
+};
 
 class CClientFrameManager
 {
@@ -47,12 +48,16 @@ public:
 	virtual ~CClientFrameManager(void) = default;
 
 public:
-	/*CUtlLeanVector<CClientFrame*> m_FrameList;
-	CUtlMemoryPoolMT<CClientFrame> m_ClientFramePool;
-	int m_nOldestTick; // +160
-	int m_nNewestTick; // +164*/
-	char pad[160];
-}; // sizeof 168
-COMPILE_TIME_ASSERT( sizeof( CClientFrameManager ) == 168 );
+	int m_nUnk008;
+	CAtomicMutex m_Mutex;
+	CUtlLinkedList< CClientFrame *, unsigned short > m_FrameList;
+	uint8 m_unk038[ 8 ];
+	CUtlMemoryPoolMT< CClientFrame > m_ClientFramePool;
+	int m_nNewestFrameTick;
+	int m_nOldestFrameTick;
+	// Shared frame store: looked up for ticks older than the oldest frame in the list, and given the frames the list releases
+	void *m_pFrameCache;
+};
+COMPILE_TIME_ASSERT( sizeof( CClientFrameManager ) == 176 );
 
 #endif // CLIENTFRAME_H

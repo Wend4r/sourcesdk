@@ -265,6 +265,10 @@ enum CommandTarget_t
 	CT_NO_TARGET = -1,
 	CT_FIRST_SPLITSCREEN_CLIENT = 0,
 	CT_LAST_SPLITSCREEN_CLIENT = 3,
+	// Command buffer of the server
+	CT_SERVER = 4,
+	// The server buffer while only a local server runs, otherwise the input_forceuser split screen client
+	CT_AUTO = 5,
 };
 
 class CCommandContext

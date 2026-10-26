@@ -13,10 +13,23 @@
 #include <engine/IEngineService.h>
 #include <splitscreenslot.h>
 #include <spawngrouptypes.h>
+#include <rendersystem/rendersystemtypes.h>
 
-class IRenderHandler;
 class ISceneWorld;
+class ISource2WorldSession;
+class CResourceManifestPrerequisite;
 struct EventClientPreOutput_t;
+
+// Installed with InstallRenderHandler
+abstract_class IRenderHandler
+{
+public:
+	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime, const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) = 0;
+	// Handlers returning true add their views in the async AddViews job, the others on the main thread when that job ran
+	virtual bool ShouldAddViewsAsync() = 0;
+	// Called on every handler after the main thread views pass, before the scene system finishes rendering views
+	virtual void OnViewsAdded() = 0;
+};
 
 abstract_class IRenderService : public IEngineService
 {
@@ -29,14 +42,15 @@ public:
 
 	virtual CUtlStringToken GetRenderingPipeline() = 0;
 
-	virtual bool unk027() = 0;
+	virtual RenderMultisampleType_t GetMultisampleType() = 0;
 
-	virtual void GetSplitScreenViewport( const void *pViewport, int nSlot, void *pOutViewport ) = 0;
+	virtual void GetSplitScreenViewport( const RenderViewport_t &viewport, CSplitScreenSlot nSlot, RenderViewport_t *pOutViewport ) = 0;
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) = 0;
 
-	virtual void *Unk_FindOrCreateWorldSession( void *p ) = 0;
+	// Creates a rendering world session per name; the world name is stored in the new session and pPrerequisite is unused
+	virtual ISource2WorldSession *FindOrCreateWorldSession( const char *pszWorldSessionName, const char *pszWorldName, CResourceManifestPrerequisite *pPrerequisite ) = 0;
 
 	virtual void LaunchAsyncBeginRenderingViewsJob( const EventClientPreOutput_t &event, bool bAddViews ) = 0;
 	virtual bool FinishAsyncBeginRenderingViewsJob( bool *pbAddedViews ) = 0;
@@ -48,8 +62,9 @@ public:
 	// Outside tools mode always true
 	virtual bool ShouldRender() = 0;
 
-	// Flag set by the client output event handler
-	virtual bool unk038() = 0;
+	// Set by the client output handler once it has sent the pending OnEngineLevelLoadingFinished
+	// match event, cleared when the loop activates
+	virtual bool HasLevelLoadingFinished() = 0;
 };
 
 #endif // IRENDERSERVICE_H

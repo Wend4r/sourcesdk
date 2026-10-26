@@ -21,7 +21,8 @@ struct EntityNotification_t
 struct EntitySpawnInfo_t : EntityNotification_t
 {
 	const CEntityKeyValues* m_pKeyValues;
-	int m_Unk1;
+	// Index of the entity in the entity table of the save it is restored from, -1 for entities created from the map
+	int m_nSaveEntityTableIndex;
 	uint16 m_SpawnOrder;
 	uint8 m_Depth;
 	uint8 m_OriginalSpawnOrder;

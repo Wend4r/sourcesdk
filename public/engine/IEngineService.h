@@ -23,6 +23,7 @@
 struct RenderDeviceInfo_t;
 class ISwitchLoopModeStatusNotify;
 class IAddonListChangeNotify;
+class CDebugVisualizerMgr;
 
 schema struct EventClientOutput_t
 {
@@ -38,7 +39,7 @@ schema struct EventClientOutput_t
 abstract_class IEngineService : public IAppSystem
 {
 public:
-	virtual void		*GetServiceDependencies( void ) = 0;
+	virtual const EngineServiceDependencies_t *GetServiceDependencies( void ) = 0;
 	virtual const char	*GetName( void ) const = 0;
 	virtual EngineServiceActivateType_t ShouldActivate( const char * ) = 0;
 	virtual void		OnLoopActivate( const EngineLoopState_t &loopState, CEventDispatcher<CEventIDManager_Default> *pEventDispatcher) = 0;
@@ -56,7 +57,7 @@ struct ActiveLoopInfo_t
 {
 	CUtlString m_LoopName;
 	CUtlString m_AddonName;
-	uint32 m_nUnk010;
+	uint32 m_unRequestId;
 	KeyValues *m_pLoopOptions;
 	bool m_bValid;
 };
@@ -74,16 +75,19 @@ public:
 	virtual PlatWindow_t	GetEngineWindow( void ) const = 0;
 	virtual SwapChainHandle_t	GetEngineSwapChain( void ) const = 0;
 	virtual InputContextHandle_t GetEngineInputContext( void ) const = 0;
-	virtual void		*GetEngineDeviceInfo( void ) const = 0;
+	// Swap chain info of the engine swap chain, from the render device
+	virtual const RenderDeviceInfo_t &GetEngineDeviceInfo( void ) const = 0;
 	virtual int			GetEngineDeviceWidth( void ) const = 0;
 	virtual int			GetEngineDeviceHeight( void ) const = 0;
 	virtual void		GetEngineSwapChainSize( int *pWidth, int *pHeight ) const = 0;
-	virtual bool		unk025( void ) const = 0;
 	virtual bool		IsLoopSwitchQueued( void ) const = 0;
 	virtual bool		IsLoopSwitchRequested( void ) const = 0;
+	// Set by ExitMainLoop; in tools mode the tool framework may still cancel the exit
+	virtual bool		IsExitMainLoopRequested( void ) const = 0;
 	virtual CEventDispatcher<CEventIDManager_Default> *GetEventDispatcher( void ) = 0;
-	virtual void		*GetDebugVisualizerMgr( void ) = 0;
-	virtual int			GetActiveLoopClientServerMode( void ) const = 0;
+	virtual CDebugVisualizerMgr *GetDebugVisualizerMgr( void ) = 0;
+	// CLIENTSERVERMODE_NONE without an active loop or for a simple loop type
+	virtual ClientServerMode_t	GetActiveLoopClientServerMode( void ) const = 0;
 	virtual void		PrintStatus( void ) = 0;
 	// Writes m_bValid = false when no loop is active.
 	virtual void		GetActiveLoop( ActiveLoopInfo_t &info ) = 0;
@@ -96,11 +100,10 @@ public:
 	virtual const char	*GetAddon( int ) const = 0;
 	virtual bool		IsAddonMounted( const char * ) const = 0;
 	virtual const char	*GetAddonsString( void ) const = 0;
-	virtual void		unk042( const char *pszAddon ) = 0;
-	// Whether the name is in the list filled by unk042.
-	virtual bool		unk043( const char *pszAddon ) const = 0;
-	// Runs unk043 over every mounted addon.
-	virtual bool		unk044( void ) const = 0;
+	virtual void		AddExternalAddon( const char *pszAddon ) = 0;
+	virtual bool		IsExternalAddon( const char *pszAddon ) const = 0;
+	// Whether a mounted addon is not in the external addon list
+	virtual bool		HasNonExternalAddons( void ) const = 0;
 	virtual void		InstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		UninstallSwitchLoopModeStatusNotify( ISwitchLoopModeStatusNotify * ) = 0;
 	virtual void		InstallAddonListChangeNotify( IAddonListChangeNotify * ) = 0;
@@ -109,7 +112,8 @@ public:
 	virtual void		AddLogCaptureString( const char * ) = 0;
 	virtual void		AddLogCaptureStringV( const char *pFormat, va_list args ) = 0;
 	virtual void		AddLogCaptureStringF( const char *pFormat, ... ) = 0;
-	virtual int			unk053( void ) const = 0;
+	// Registered prerequisites the main loop has not finished yet
+	virtual int			GetPendingPrerequisiteCount( void ) const = 0;
 	virtual void		ExitMainLoop( void ) = 0;
 	virtual void		RegisterPrerequisite( IPrerequisite * ) = 0;
 

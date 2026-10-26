@@ -1,3 +1,9 @@
+#ifndef HOSTSTATE_H
+#define HOSTSTATE_H
+#ifdef _WIN32
+#pragma once
+#endif
+
 #include "tier0/utlstring.h"
 #include "tier0/keyvalues.h"
 #include "appframework/iappsystem.h"
@@ -46,28 +52,29 @@ COMPILE_TIME_ASSERT( sizeof( CHostStateRequest ) == 0x68 );
 
 class ISwitchLoopModeStatusNotify
 {
-	virtual void OnSwitchLoopModeFinished(const char *, uint32, bool) = 0;
+	// nRequestID is the CHostStateRequest::m_ID of the request that switched the loop mode
+	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nRequestID, bool bSuccess ) = 0;
 };
 
 class IHostStateMgr : public IAppSystem
 {
 public:
 	virtual void RequestHS_Quit(void) = 0;
-	virtual void RequestHS_Idle(KeyValues *) = 0;
-	virtual void RequestHS_Connect(const char *, KeyValues *) = 0;
-	virtual void RequestHS_ChangelevelReconnect(const char *, KeyValues *) = 0;
+	virtual void RequestHS_Idle(KeyValues *pKV) = 0;
+	virtual void RequestHS_Connect(const char *pszAddress, KeyValues *pKV) = 0;
+	virtual void RequestHS_ChangelevelReconnect(const char *pszAddons, KeyValues *pKV) = 0;
 	virtual void RequestHS_LoadSpawnGroup(const char *, const char *, bool, KeyValues *) = 0;
-	virtual void RequestHS_LoadSaveGame(const char *, const char *, KeyValues *) = 0;
-	virtual void RequestHS_PlayDemo(const char *, const char *, bool, KeyValues *) = 0;
-	virtual void RequestHS_PlayBroadcast(const char *, KeyValues *) = 0;
-	virtual void RequestHS_DownloadAddons(KeyValues *) = 0;
-	virtual void RequestHS_SourceTVRelay(const char *, KeyValues *) = 0;
+	virtual void RequestHS_LoadSaveGame(const char *pszSaveGame, const char *pszAddons, KeyValues *pKV) = 0;
+	virtual void RequestHS_PlayDemo(const char *pszDemoFile, const char *pszAddons, bool bTimeDemo, KeyValues *pKV) = 0;
+	virtual void RequestHS_PlayBroadcast(const char *pszDemoFile, KeyValues *pKV) = 0;
+	virtual void RequestHS_DownloadAddons(KeyValues *pKV) = 0;
+	virtual void RequestHS_SourceTVRelay(const char *pszAddress, KeyValues *pKV) = 0;
 	virtual void RequestHS_ReloadLastSaveGame(void) = 0;
 	virtual void RequestHS_RestartSpawnGroups(void) = 0;
 
-	// Empty in the engine implementation.
-	virtual void unk023(void) = 0;
-	virtual void unk024(void) = 0;
+	// Empty in the engine implementation; called around the server simulate job that runs as the secondary main thread
+	virtual void OnSecondaryMainThreadBegin(void) = 0;
+	virtual void OnSecondaryMainThreadEnd(void) = 0;
 };
 
 class CHostStateMgr : public CTier4AppSystem<IHostStateMgr>, public ISwitchLoopModeStatusNotify
@@ -88,3 +95,5 @@ public:
 	int m_ID;                                         // 0x90
 	CUtlVector<CHostStateRequest *> m_QueuedRequests; // 0x98
 };
+
+#endif // HOSTSTATE_H

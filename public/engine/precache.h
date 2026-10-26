@@ -17,17 +17,6 @@ struct model_t;
 class CPrecacheItem
 {
 private:
-	enum
-	{
-		TYPE_UNK = 0,
-		TYPE_MODEL,
-		TYPE_SOUND,
-		TYPE_GENERIC,
-		TYPE_DECAL
-	};
-
-	unsigned int	m_nType : 3;
-	unsigned int	m_uiRefcount : 29;
 	union precacheptr
 	{
 		model_t		*model;
@@ -35,6 +24,9 @@ private:
 		CSfxTable	*sound;
 		char const	*name;
 	} u;
+
+	// Reset to 0 when the pointer is set
+	unsigned int	m_uiRefcount;
 };
 
 #endif // PRECACHE_H

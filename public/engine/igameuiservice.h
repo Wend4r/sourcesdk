@@ -12,13 +12,69 @@
 
 #include <IEngineService.h>
 #include <con_nprint.h>
+#include <engine2/irenderservice.h>
+#include <engine2/iinputservice.h>
+#include <tier0/convar.h>
+#include <rendersystem/rendersystemtypes.h>
+
+namespace panorama
+{
+	class CPanel2D;
+	class IUIWindow;
+};
+
+class ISceneView;
+class ISceneLayer;
+class IRenderContext;
+
+// Layers of the game UI service, each with its input context and its render handler list
+enum GameUILayer_t
+{
+	// The engine input context
+	GAMEUI_LAYER_ENGINE = 0,
+	// "Panorama HUD" input context
+	GAMEUI_LAYER_PANORAMA_HUD,
+	// "gameui" input context
+	GAMEUI_LAYER_GAMEUI,
+	// "Panorama UI" input context
+	GAMEUI_LAYER_PANORAMA_UI,
+
+	GAMEUI_LAYER_COUNT
+};
+
+// Result of IGameUIRenderCallback::PreRender; other values skip the handler for the frame
+enum GameUIPreRenderResult_t
+{
+	// The layer calls Render this frame
+	GAMEUI_PRERENDER_RENDER = 0,
+	// The handler is removed from the layer
+	GAMEUI_PRERENDER_REMOVE_HANDLER = 2,
+};
+
+// Layer handler of the game UI service, called while its render handler adds the views
+abstract_class IGameUIRenderCallback
+{
+public:
+	// Called before the layer's view is added
+	virtual GameUIPreRenderResult_t PreRender() = 0;
+	// Gets the arguments of the layer's IProceduralLayerRenderer call unchanged
+	virtual void Render( ISceneView *pView, IRenderContext *pRenderContext, ISceneLayer *pLayer ) = 0;
+};
+
+struct GameUILayerHandler_t
+{
+	IGameUIRenderCallback *m_pHandler;
+	int m_nPriority;
+	// Result of the handler's PreRender for the current frame
+	GameUIPreRenderResult_t m_nPreRenderResult;
+};
 
 abstract_class IGameUIService : public IEngineService
 {
 public:
 	virtual bool IsConsoleEnabled() = 0;
 	// IsConsoleEnabled without con_enable
-	virtual bool unk024() = 0;
+	virtual bool IsConsoleEnabledByCommandLine() = 0;
 
 	virtual bool IsConsoleVisible() = 0;
 	virtual void ToggleConsole() = 0;
@@ -27,25 +83,69 @@ public:
 
 	virtual void BlockConsoleToggle( bool bBlock ) = 0;
 
-	// Plat_FloatTime() of the last input event of type 5
-	virtual double unk029() = 0;
+	// Plat_FloatTime() of the last IE_CursorPositionChanged input event
+	virtual double GetLastMouseMoveTime() = 0;
 
-	virtual InputContextHandle_t GetInputContext( int nLayer ) = 0;
+	// NULL for an unknown layer
+	virtual InputContextHandle_t GetInputContext( GameUILayer_t nLayer ) = 0;
 
 	virtual bool HasConsole() = 0;
 	// Forwards to the console panel when it exists
-	virtual void unk032() = 0;
+	virtual void ClearConsole() = 0;
 
-	virtual void *AddProceduralLayer( const char *pszName, void *pRenderer, bool bUnk1, bool bUnk2 ) = 0;
-	// Returns NULL in this build
-	virtual void *unk034() = 0;
+	// Wraps the window in a procedural layer, then creates its root panel through the panorama client.
+	// bUseDepthBuffer gives the layer a "backDepthBuffer" target; bResizeWithSwapChain resizes the window when the swap chain size changes
+	virtual panorama::CPanel2D *AddPanoramaView( const char *pszName, panorama::IUIWindow *pWindow, bool bUseDepthBuffer, bool bResizeWithSwapChain ) = 0;
+	// Returns NULL in this build; the client walks the focus chain of a non-NULL result to allow IME input and block game input
+	virtual panorama::CPanel2D *GetFocusedPanoramaView() = 0;
 
-	// Per layer (0 to 3) handler lists, sorted by nPriority
-	virtual void AddLayerHandler( int nLayer, void *pHandler, int nPriority ) = 0;
-	virtual void RemoveLayerHandler( int nLayer, void *pHandler ) = 0;
+	// Per layer handler lists, sorted by nPriority
+	virtual void AddLayerHandler( GameUILayer_t nLayer, IGameUIRenderCallback *pHandler, int nPriority ) = 0;
+	virtual void RemoveLayerHandler( GameUILayer_t nLayer, IGameUIRenderCallback *pHandler ) = 0;
 
 	virtual void Con_NPrintf( int nRow, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
 	virtual void Con_NPrintf( const con_nprint_t *pInfo, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
+};
+
+class CGameUIService : public CBaseEngineService< IGameUIService >, public IRenderHandler
+{
+public:
+	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime, const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) override = 0;
+
+	// Called by the panorama input handler the service installs
+	virtual InputHandlerResult_t HandleInputEvent( const InputEvent_t &event, CSplitScreenSlot nSlot ) = 0;
+
+public:
+	uint8 m_unk040[ 8 ];
+	CConCommandMemberAccessor< CGameUIService > m_ToggleConsoleCommand;
+	CConCommandMemberAccessor< CGameUIService > m_HideConsoleCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ShowConsoleCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ClearCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ClearAllCommand;
+	CConCommandMemberAccessor< CGameUIService > m_ConsoleToolCommand;
+	uint8 m_unk1C8[ 8 ];
+	void *m_pConsole;
+	InputContextHandle_t m_hMouseControlContext;
+	InputContextHandle_t m_hPanoramaHUDContext;
+	InputContextHandle_t m_hGameUIContext;
+	InputContextHandle_t m_hPanoramaUIContext;
+	RenderViewport_t m_Viewport;
+	double m_flLastMouseMoveTime;
+	bool m_bUnk220;
+	// Set once the service has run the "PanoramaUIStartup" step
+	bool m_bPanoramaUIStarted;
+	// Set when the toggle console key press toggled the console, cleared on its release; text input is swallowed meanwhile
+	bool m_bToggleConsoleKeyDown;
+	int m_nUnk224;
+	int m_nBlockConsoleToggleCount;
+	// Button code of the "Engine2/RestrictConsoleCloseKey" game info key
+	int m_nRestrictConsoleCloseKey;
+
+	// "Engine2/PauseOnCtrlConsole" game info key
+	bool m_bPauseOnCtrlConsole;
+	IInputHandler *m_pInputHandler;
+	void *m_unk240;
+	CUtlVector< GameUILayerHandler_t > m_LayerHandlers[ GAMEUI_LAYER_COUNT ];
 };
 
 #endif // IGAMEUISERVICE_H

@@ -77,6 +77,7 @@ class CEntityClass;
 class CSVCMsg_UserCommands_t;
 class ISceneViewDebugOverlays;
 class CCLCMsg_Diagnostic_t;
+class CEngineGotvSyncPacket;
 struct FlattenedSerializerSpewField_t;
 struct Entity2Networkable_t;
 
@@ -96,12 +97,19 @@ namespace google
 
 #define INTERFACEVERSION_VENGINESERVER	"Source2EngineToServer001"
 
+// ISource2Server::GetServerGameDLLFlags
+#define SERVER_GAME_DLL_FLAG_HIDDEN_GAME	( 1 << 2 )	// A listen server rejects remote clients with NETWORK_DISCONNECT_REJECT_HIDDEN_GAME
+
 enum ClientNetMessageHandlersAction_t
 {
 	CLIENT_NET_MESSAGE_HANDLERS_INIT_AND_REGISTER = 0, // Also creates the shared message bindings on first use
 	CLIENT_NET_MESSAGE_HANDLERS_UNREGISTER = 1,
 	CLIENT_NET_MESSAGE_HANDLERS_REGISTER = 2,
 };
+
+// HltvReplayParams_t::m_nFlags
+#define HLTV_REPLAY_FLAG_FROM_STASH		( 1 << 0 )	// Replay the stash m_nStashId
+#define HLTV_REPLAY_FLAG_WHOLE_STASH	( 1 << 1 )	// Replay all of the stash instead of its last m_flDelay seconds
 
 // Times are in seconds, relative to the current time
 struct HltvReplayParams_t
@@ -115,8 +123,8 @@ struct HltvReplayParams_t
 	float m_flSlowdownRate = 1.0f;
 	bool m_bAbortCurrentReplay = false;
 	int m_nReason = 0;
-	// AMNOTE: Flags: 1 = replay the stash m_nStashId, 2 = replay all of the stash instead of its last m_flDelay seconds
-	uint32 m_unk101 = 0;
+	// HLTV_REPLAY_FLAG_*
+	uint32 m_nFlags = 0;
 	uint32 m_nStashId = 0;
 };
 
@@ -210,7 +218,7 @@ public:
 	virtual CPlayerSlot GetSplitScreenPlayerAttachToEdict( CPlayerSlot nSlot ) = 0;
 	virtual CPlayerSlot GetSplitScreenPlayerForEdict( CPlayerSlot nSlot, int nSplitScreenSlot ) = 0;
 
-	virtual void	UnloadSpawnGroup( SpawnGroupHandle_t spawnGroup, /*ESpawnGroupUnloadOption*/ int nOption ) = 0;
+	virtual void	UnloadSpawnGroup( SpawnGroupHandle_t spawnGroup, ESpawnGroupUnloadOption nOption ) = 0;
 	virtual SpawnGroupHandle_t	LoadSpawnGroup( const SpawnGroupDesc_t &desc ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t spawnGroup, const char *pszDescription ) = 0;
 	virtual bool	IsSpawnGroupLoaded( SpawnGroupHandle_t spawnGroup ) const = 0;
@@ -302,8 +310,8 @@ public:
 	virtual bool StashHltvReplay( uint32 nStashId, float flSeconds ) = 0;
 	virtual void AddHltvRelayProxyWhitelist( uint32 a, uint32 b, uint32 c, uint32 d, uint32 numbits ) = 0;
 	virtual bool WasShutDownRequested() const = 0;
-	// AMNOTE: Extends the queued matchmaking reservation timeout and sends the data in a connectionless packet to every reservation entry, or only to the entry matching the int when it is non-zero
-	virtual void unk101( int, uint8, uint8, uint32 nDataSize, const void *pData ) = 0;
+	// Extends the queued matchmaking reservation timeout and sends the data in a connectionless packet to every reservation entry, or only to the entry of nAccountID when it is non-zero
+	virtual void SendQueuedMatchReservationData( int nAccountID, uint8, uint8, uint32 nDataSize, const void *pData ) = 0;
 	virtual bool IsTvRecording() = 0;
 	virtual void StartAutoRecording() = 0;
 	virtual void RecordDemo( const char *pszFilename ) = 0;
@@ -379,6 +387,7 @@ public:
 
 	virtual void			PrintStatus( CEntityIndex nPlayerEntityIndex, CBufferString &output ) = 0;
 
+	// SERVER_GAME_DLL_FLAG_*
 	virtual int				GetServerGameDLLFlags( void ) const = 0;
 
 	// Get the list of cvars that require tags to show differently in the server browser
@@ -453,7 +462,9 @@ public:
 	// Returns the designer name of the entity class the subclass is built on.
 	virtual const char		*GetSubclassDesignerName( const char *pSubclassName ) = 0;
 
-	virtual void			UpdateGCInformation( bool bUnk1, bool bUnk2 ) = 0;
+	// Both flags are ignored by CSource2Server: the engine sets bFromSteamCallback when the Steam servers connected or auth
+	// ticket response callbacks update the Steam game server, and bReservationCleared when the reservation cookie becomes 0
+	virtual void			UpdateGCInformation( bool bFromSteamCallback, bool bReservationCleared ) = 0;
 
 	// Sorted designer names of every entity class derived from the C++ class pClassName (e.g. "CCSWeaponBase"),
 	// or the subclass names of a scope when pClassName is that scope's handler type.
@@ -475,9 +486,9 @@ public:
 	virtual bool			ShouldHoldGameServerReservation( float flTimeElapsedWithoutClients ) = 0;
 
 	// Called when the broadcast relay answers an HLTV broadcast request with HTTP 200.
-	virtual void			OnBroadcastRelayRequestSucceeded( void *pUnk ) = 0;
+	virtual void			OnBroadcastRelayRequestSucceeded( CEngineGotvSyncPacket *pSyncPacket ) = 0;
 	virtual void			SendServerFrameTime( float flFrameTime ) = 0;
-	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nUnk ) = 0;
+	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nDelay ) = 0;
 	virtual void			OnClientHltvReplayStop( CPlayerSlot slot ) = 0;
 
 	// Called by the VConsole2 flattened serializer view for each network field of an entity. Rewrites the value text of entity and resource handles and appends notes, such as pose parameter names.
@@ -491,7 +502,8 @@ public:
 	// Called for FCVAR_GAMEDLL commands sent by a client. Returns false when the command is not a registered player controller command. 
 	// Otherwise queues it to the controller as a predicted string command event.
 	virtual bool			ProcessClientStringCommand( CPlayerSlot slot, const CCommand &args, uint32 nPredictionSync ) = 0;
-	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nUnk, const char *pCommand ) = 0;
+	// nQueuedMatchPlayers is the number of entries in the engine's queued match player reservation list
+	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nQueuedMatchPlayers, const char *pCommand ) = 0;
 	virtual void			SetPlayerTeammatePreferredColor( uint32 uiAccountID, int nColor ) = 0;
 	virtual void			UpdateCompTeammateColors( void ) = 0;
 
@@ -574,7 +586,7 @@ public:
 
 	virtual bool			AllowPlayerToTakeOverBots() = 0;
 
-	virtual void			Unk_OnClientFullyConnect( void *p ) = 0;
+	virtual void			OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
 
 	virtual void		GetHostStateLoopModeInfo( HostStateLoopModeType_t type, CUtlString &loopModeName, KeyValues **ppLoopModeOptions ) = 0;
 
@@ -602,14 +614,42 @@ public:
 
 #define INTERFACEVERSION_SERVERGAMECLIENTS		"Source2GameClients001"
 
+// Type of the client ISource2GameClients::ClientPutInServer puts in the game
+enum ClientType_t
+{
+	CLIENT_TYPE_PLAYER = 0,
+	// Bot
+	CLIENT_TYPE_FAKE_PLAYER,
+	CLIENT_TYPE_SOURCETV,
+};
+
 struct ClientReplayEventParams_t
 {
-	int m_nEventType = 0; // ReplayEventType_t
+	// REPLAY_EVENT_DEATH or REPLAY_EVENT_GENERIC, the request of CCLCMsg_HltvReplay
+	ReplayEventType_t m_nEventType = REPLAY_EVENT_CANCEL;
 	float m_flSlowdownLength = 0.0f;
 	float m_flSlowdownRate = 1.0f;
 	int m_nPrimaryTargetEntIndex = -1;
 	float m_flEventTime = 0.0f;
 	bool m_bForceUseTheseSettings = false;
+};
+
+// Command queue state of a client that the engine writes into its CSVCMsg_PacketEntities
+struct ClientCommandQueueInfo_t
+{
+	int m_nLastCommandNumberExecuted;
+	// Sent as last_cmd_number_recv_delta relative to m_nLastCommandNumberExecuted
+	int m_nLastCommandNumberReceived;
+	// Sent as the first cmd_recv_status entry, in 1/4096 units clamped below 16; a negative value sends no entries.
+	// The client's net graph shows it as server_cmd_recv_margin
+	float m_flCommandRecvMargin;
+	// Further cmd_recv_status entries, up to the first 65599
+	int m_nCommandRecvStatus[ 8 ];
+	int m_nStarvedCommandTicks;
+	int m_nDiscardedCommandTicks;
+	int m_nServerTick;
+	// Set when the server's command queue is enabled and handles this client, the counters above are only filled then
+	bool m_bCommandQueueActive;
 };
 
 enum EncryptedMessageKeyType_t
@@ -629,14 +669,10 @@ public:
 
 	// Called when the client attempts to connect (doesn't get called for bots)
 	// returning false would reject the connection with the pRejectReason message
-	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason ) = 0;
+	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool bLoadGame, CBufferString *pRejectReason ) = 0;
 
 	// Client is connected and should be put in the game
-	// type values could be:
-	// 0 - player
-	// 1 - fake player (bot)
-	// 2 - unknown
-	virtual void			ClientPutInServer( CPlayerSlot slot, char const *pszName, int type, uint64 xuid ) = 0;
+	virtual void			ClientPutInServer( CPlayerSlot slot, char const *pszName, ClientType_t type, uint64 xuid ) = 0;
 
 	// Client is going active
 	// If bLoadGame is true, don't spawn the player because its state is already setup.
@@ -654,8 +690,8 @@ public:
 	// The client has typed a command at the console
 	virtual void			ClientCommand( CPlayerSlot slot, const CCommand &args ) = 0;
 
-	// Stores the entity baseline / string table data buffer pointer on the player controller.
-	virtual void			ClientStringTableData( CPlayerSlot slot, void *pData ) = 0;
+	// Called with the client's user info convar data whenever the engine allocates or resizes it; stored on the player controller.
+	virtual void			ClientStringTableData( CPlayerSlot slot, ConVarUserInfoSet_t userInfo ) = 0;
 
 	// A player changed one/several replicated cvars (name etc)
 	virtual void			ClientSettingsChanged( CPlayerSlot slot ) = 0;
@@ -705,7 +741,7 @@ public:
 	// return m_nTickBase
 	virtual uint32			GetPlayerTickBase( CPlayerSlot slot ) = 0;
 
-	virtual void			GetClientVisibilityInfo( CPlayerSlot slot, vis_info_t *pOutVisInfo ) = 0;
+	virtual void			GetClientCommandQueueInfo( CPlayerSlot slot, ClientCommandQueueInfo_t *pInfo ) = 0;
 
 	// Handles incoming usermessages from the client
 	virtual void			ClientSvcUserMessage( CPlayerSlot slot, int um_type, uint32 size, const void *buf ) = 0;

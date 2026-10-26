@@ -5,6 +5,8 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlstringtoken.h"
+#include "tier0/utlstring.h"
+#include "tier0/utlvector.h"
 #include "engine2/isource2engine.h"
 
 #define MAX_SPAWN_GROUP_WORLD_NAME_LENGTH 4096
@@ -23,6 +25,23 @@ public:
 	bool operator<( const WorldGroupId_t &other ) const { return m_nId < other.m_nId; }
 
 	uint32 m_nId;
+};
+
+// World groups registered by name with the network game server and client. A WorldGroupId_t is the index of
+// an entry, with the high bit set in the client-side list.
+struct WorldGroupList_t
+{
+	struct Entry_t
+	{
+		// Lower-case name
+		CUtlStringToken m_NameToken;
+		CUtlString m_sName;
+		// The entry is free while this is not positive
+		int m_nRefCount;
+	};
+
+	CUtlVector< Entry_t > m_Entries;
+	bool m_bClientSide;
 };
 
 enum SpawnGroupState_t
@@ -48,8 +67,10 @@ enum CreateSpawnGroupType_t
 enum ESpawnGroupUnloadOption
 {
 	kSGUO_None = 0,
-	kSGUO_SaveEntities,
+	// The spawn group's manifests went to its owner; clients are not sent the unload
 	kSGUO_MergedIntoOwner,
+	// Not checked by the engine
+	kSGUO_SaveEntities,
 };
 
 enum SpawnGroupEntityFilterType_t

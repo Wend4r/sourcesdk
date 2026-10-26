@@ -24,6 +24,8 @@ class CUtlBuffer;
 class CSteamID;
 struct netadr_t;
 class CGameInfo;
+class CClientFrame;
+enum NetChannelBufType_t : int8;
 
 //-----------------------------------------------------------------------------
 // Interface the HLTV module exposes to the engine
@@ -47,7 +49,7 @@ public:
 	virtual void	GetGlobalStats( int &proxies, int &slots, int &specs ) = 0; 
 
 	// AMNOTE: Returns this server's own public address with its SourceTV port, on master and relay alike
-	virtual const netadr_t *unk101( void ) = 0;
+	virtual const netadr_t *GetPublicAddress( void ) = 0;
 	virtual const netadr_t *GetRelayAddress( void ) = 0; // returns relay address
 
 	virtual bool	IsMasterProxy( void ) = 0; // true, if this is the HLTV master proxy
@@ -60,10 +62,27 @@ public:
 	virtual bool IsRecording(void) = 0;
 	virtual const char *GetRecordingDemoFilename(void) = 0;
 	// AMNOTE: Returns the tick of the first broadcast frame, -1 until one arrives
-	virtual int unk201( void ) = 0;
+	virtual int GetFirstBroadcastTick( void ) = 0;
 	virtual int StartAutoRecording(void) = 0;
 	virtual void StopRecording(CGameInfo const *info) = 0;
 	virtual void AddSaveGame( CSteamID steamID, uint64, int, const CUtlBuffer &buf ) = 0;
+};
+
+// Receives the frames and messages a SourceTV server streams to its clients (CHLTVServer implements it,
+// CServerSideClientBase::m_pTvStreamSink of a TV client points to one)
+class ITvStreamSink
+{
+public:
+	// Takes a broadcast frame; the first one sets the tick of the first broadcast frame and activates the server
+	virtual void AddNewFrame( CClientFrame *pFrame ) = 0;
+	// Records the frame into the demo and stores it as a delta frame, or passes it to AddNewFrame without tv_enable_delta_frames
+	virtual void AddNewDeltaFrame( CClientFrame *pFrame ) = 0;
+	// The current RunFrame job of the async server
+	virtual void *GetRunFrameJob() = 0;
+	// Tick of the last frame given to AddNewDeltaFrame, compared with the server tick count by the TV client's ShouldSendMessages
+	virtual int GetLastFrameTick() = 0;
+	// The TV client's SendNetMessage forwards to it
+	virtual bool SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
 };
 
 #endif
