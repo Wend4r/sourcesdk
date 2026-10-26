@@ -306,15 +306,16 @@ public: // Message Handlers
 public:
 	// Parses the entities of the message into a local entity read info
 	virtual bool ParsePacketEntities( const CSVCMsg_PacketEntities_t &msg ) = 0;
-	virtual void Clear( bool bUnk ) = 0;
+	// bClearStringTables also drops the "genericprecache" and "userinfo" table pointers
+	virtual void Clear( bool bClearStringTables ) = 0;
 	virtual void FullConnect( const ns_address &addr ) = 0;
 	virtual void SetSignonState( SignonState_t state, int nSpawnCount, const CNETMsg_SignonState_t *pMsg ) = 0;
 	// Applies the rate convars to the net channel
 	virtual void RunFrame() = 0;
 	// Installs the engine callbacks of the string tables, then the game client's
-	virtual void InstallStringTableCallback( bool bUnk ) = 0;
+	virtual void InstallStringTableCallback( bool bCallForExistingStrings ) = 0;
 	// Looks up the engine string tables, then lets the game client install its callbacks
-	virtual void HookClientStringTable( bool bUnk ) = 0;
+	virtual void HookClientStringTable( bool bCallForExistingStrings ) = 0;
 	// Value of the "name" convar
 	virtual const char *GetClientName( CSplitScreenSlot nSlot ) = 0;
 	virtual void ProcessReadPacketEntitiesWorkItems( CEntityReadInfo &readInfo ) = 0;
@@ -323,7 +324,7 @@ public:
 	virtual void CopyExistingEntity( IEntityReport *pReport, CEntityReadInfo &readInfo ) = 0;
 	virtual void OnReceivedUncompressedPacket() = 0;
 	// Tail call to Clear
-	virtual void CL_ClearState( bool bUnk ) = 0;
+	virtual void CL_ClearState( bool bClearStringTables ) = 0;
 
 public:
 	// Server-side and client-side world groups of the connection
