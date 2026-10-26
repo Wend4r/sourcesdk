@@ -73,6 +73,16 @@ struct RenderTargetSet_t
 	bool m_bReadOnlyDepthStencil : 1;
 };
 
+// Render target selection of RenderClearDesc_t::m_nClearMask and IRenderContext::DiscardRenderTargets
+#define RENDER_TARGET_MASK_COLOR( nTarget ) ( 1 << ( nTarget ) )
+#define RENDER_TARGET_MASK_ALL_COLOR 0xFF
+#define RENDER_TARGET_MASK_DEPTH ( 1 << 8 )
+#define RENDER_TARGET_MASK_STENCIL ( 1 << 9 )
+
+// nDiscardFlags of IRenderContext::DiscardRenderTargets
+#define RENDER_DISCARD_BEFORE_PASS ( 1 << 0 ) // load op "don't care"
+#define RENDER_DISCARD_AFTER_PASS ( 1 << 1 ) // store op "don't care"
+
 // Used by IRenderContext::ClearRenderTargets and IRenderContext::SetViewport; the depth clear value
 // comes from the device and the stencil one is 0
 struct RenderClearDesc_t
@@ -81,7 +91,7 @@ struct RenderClearDesc_t
 	const Vector4D *m_pColors;
 	int m_nColorCount;
 
-	// Bits 0-7 select the color targets, 0x100 the depth and 0x200 the stencil
+	// RENDER_TARGET_MASK_* bits
 	uint32 m_nClearMask;
 };
 
@@ -224,8 +234,7 @@ public:
 	virtual void ClearRenderTargets( const RenderClearDesc_t &clearDesc ) = 0;
 	virtual void ClearUnorderedAccessViewUint( HRenderTexture hTexture, int nMipLevel, const uint32 *pValues ) = 0;
 	virtual void ClearUnorderedAccessViewFloat( HRenderTexture hTexture, int nMipLevel, const float *pValues ) = 0;
-	// nTargetMask: bits 0-7 color targets, 0x100 depth, 0x200 stencil; nDiscardFlags: 1 discards the contents
-	// before the pass (load op "don't care"), 2 after it (store op "don't care")
+	// nTargetMask: RENDER_TARGET_MASK_* bits; nDiscardFlags: RENDER_DISCARD_* bits
 	virtual void DiscardRenderTargets( uint16 nTargetMask, uint8 nDiscardFlags ) = 0;
 	virtual void unk008() = 0;
 	// Sets the viewport and then clears it with pClearDesc (see ClearRenderTargets)
