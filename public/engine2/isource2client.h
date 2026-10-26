@@ -30,6 +30,7 @@
 #include "resourcefile/resourcetype.h"
 #include "spawngrouptypes.h"
 #include "game_saverestore.h"
+#include "networkbasetypes.pb.h"
 
 #include <functional>
 
@@ -323,7 +324,8 @@ public:
 	virtual void OnScreenSizeChanged( int nOldWidth, int nOldHeight ) = 0;
 	virtual int IN_KeyEvent( CSplitScreenSlot nSlot, int nEventCode, ButtonCode_t nButtonCode, const char *pszCurrentBinding ) = 0;
 	virtual void View_Render( vrect_t *pRect ) = 0;
-	virtual void NotifyClientSignon( int nSignonState ) = 0;
+	// Called when the signon state of the network game client changes; the client acts on SIGNONSTATE_FULL
+	virtual void NotifyClientSignon( SignonState_t nSignonState ) = 0;
 	virtual bool CanRecordDemo( CBufferString *pErrorMsg ) const = 0;
 	// Asked by the engine's in-memory demo buffer for an 8-byte key; on true the engine decrypts the demo file in 8-byte blocks with it.
 	// Returns false
