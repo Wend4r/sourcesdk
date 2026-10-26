@@ -72,8 +72,8 @@ public:
 	virtual PhysicsContactManifolds_t GetManifolds() const = 0;
 	virtual int GetContactPointCount() const = 0;
 
-	// The same body as HasManifolds on both platforms; nothing tells the two apart
-	virtual bool unk014() const = 0;
+	// The manifold count is not zero; the shipped code folds it with HasManifolds
+	virtual bool IsTouching() const = 0;
 
 	// Fills the shapes and a reference to the manifolds
 	virtual void GetContact( PhysicsContact_t &contact ) const = 0;
