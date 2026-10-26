@@ -39,6 +39,7 @@ class CKV3TransferSaveContext;
 class CUtlString;
 class IPulseGraphInstance_TestDomain;
 class IPulseHost_YieldingCursor;
+class IPulseReloadListener;
 
 struct PulseSystemEventBase_t;
 
@@ -305,7 +306,9 @@ public:
 
 	virtual HPulseGraphDefWeak CreateTestGraphDef( CPulseGraphDef *pDef ) = 0;
 
-	virtual bool ReplaceGraphDefData( ResourceHandle_t hGraph, CPulseGraphDef *pNewDef, void *pUnk ) = 0;
+	// pReloadListener gets its first method called before the swap and is offered to each instance's EndGraphReload
+	// as the IPulseReloadListener transfer interface
+	virtual bool ReplaceGraphDefData( ResourceHandle_t hGraph, CPulseGraphDef *pNewDef, IPulseReloadListener *pReloadListener ) = 0;
 
 	virtual int GetTestIntValue() = 0;
 	virtual void SetTestIntValue( int nValue, bool bNotify ) = 0;
@@ -351,7 +354,7 @@ public:
 
 	// True when any listener's fifth method returns true; the engine ticks the server in parallel
 	// with the client (sv_tick_parallel_with_client) only while this returns false
-	virtual bool unk075() = 0;
+	virtual bool ShouldBlockParallelTick() = 0;
 };
 
 class CPulseSystem : public CTier3AppSystem< IPulseSystem >
