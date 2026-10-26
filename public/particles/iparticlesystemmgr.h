@@ -153,7 +153,9 @@ public:
 	virtual IParticleCollection *CreateParticleCollection( const char *pszName, void *pOwner, IParticleSystemQuery *pQuery, bool bCheckSystemLevel, float flDelay, int nRandomSeed ) = 0;
 	virtual IParticleCollection *CreateParticleCollection( HParticleSystemDefinition hDefinition, void *pOwner, IParticleSystemQuery *pQuery, bool bCheckSystemLevel, float flDelay, int nRandomSeed ) = 0;
 	virtual void DestroyParticleCollection( IParticleCollection *pCollection ) = 0;
-	virtual bool unk020( void *p ) = 0;
+	// Behavioural name: an empty stub returning true; the client's CParticleMgr calls it with the first value of each queued deferred
+	// callback entry right before it runs the callback.
+	virtual bool OnQueuedCallback( void *pCallbackArg ) = 0;
 	virtual bool unk021() = 0;
 	virtual void unk022() = 0;
 
@@ -254,8 +256,9 @@ struct ParticleInstancedMeshKey_t
 	// m_fSizeCullScale of the model renderer, copied into the draw record of every instance next to its bounding radius
 	float m_flSizeCullScale;
 
-	// Copied into the draw record of every instance; the particle renderers leave them zero
-	float m_flUnk10[ 3 ];
+	// Behavioural name: copied by the instanced mesh scene object into its per-model GPU data record (after the size cull scale and the
+	// bounding radius) that is uploaded for the shaders; the particle renderers leave them zero
+	float m_flGPUModelParams[ 3 ];
 
 	// Tail padding of the 32-byte key: the renderers never write it and nothing compares or hashes it
 	uint8 m_pad1C[ 4 ];
@@ -278,9 +281,9 @@ struct ParticleInstancedMeshKey_t
 			return false;
 		}
 
-		for ( int i = 0; i < ARRAYSIZE( m_flUnk10 ); i++ )
+		for ( int i = 0; i < ARRAYSIZE( m_flGPUModelParams ); i++ )
 		{
-			if ( m_flUnk10[ i ] != other.m_flUnk10[ i ] )
+			if ( m_flGPUModelParams[ i ] != other.m_flGPUModelParams[ i ] )
 			{
 				return false;
 			}
@@ -299,9 +302,9 @@ struct ParticleInstancedMeshKey_t
 
 			nHash = Combine( nHash, MurmurHash2( &key.m_flSizeCullScale, sizeof( float ), PARTICLE_INSTANCED_MESH_KEY_HASH_SEED ) );
 
-			for ( int i = 0; i < ARRAYSIZE( key.m_flUnk10 ); i++ )
+			for ( int i = 0; i < ARRAYSIZE( key.m_flGPUModelParams ); i++ )
 			{
-				nHash = Combine( nHash, MurmurHash2( &key.m_flUnk10[ i ], sizeof( float ), PARTICLE_INSTANCED_MESH_KEY_HASH_SEED ) );
+				nHash = Combine( nHash, MurmurHash2( &key.m_flGPUModelParams[ i ], sizeof( float ), PARTICLE_INSTANCED_MESH_KEY_HASH_SEED ) );
 			}
 
 			return Combine( nHash, static_cast< uint32 >( key.m_nModelReloadCounter ) );
