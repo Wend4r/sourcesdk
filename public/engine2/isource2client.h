@@ -100,6 +100,43 @@ template < class T > class CStrongHandleCopyable;
 FORWARD_DECLARE_HANDLE( HDeferredLight );
 FORWARD_DECLARE_HANDLE( HProjectedTexture );
 
+// Stage of the client frame passed to ISource2Client::FrameStageNotify(). The names that the client frame of Source 1
+// already had keep them; the others are named after the engine code that notifies them
+enum ClientFrameStage_t : int
+{
+	// The client's current stage before the first notification
+	FRAME_UNDEFINED = -1,
+
+	// ProcessInput() enters it before the input of the frame is processed
+	FRAME_START,
+	// The network game client starts ClientPollNetworking()
+	FRAME_CLIENT_POLL_NETWORKING,
+	// The network game client starts ClientProcessNetworking(), before it processes the socket messages
+	FRAME_CLIENT_PROCESS_NETWORKING_START,
+	// ClientProcessNetworking() processed the socket messages of a connected net channel
+	FRAME_CLIENT_PROCESS_NETWORKING_END,
+
+	// A non-incremental update is received; the client clears its networked entities
+	FRAME_NET_FULL_FRAME_UPDATE_ON_REMOVE,
+	// A packet entities message is being processed
+	FRAME_NET_UPDATE_START,
+	// The entities have been read and PostDataUpdate() calls start
+	FRAME_NET_UPDATE_POSTDATAUPDATE_START,
+	// PostDataUpdate() has been called on all entities
+	FRAME_NET_UPDATE_POSTDATAUPDATE_END,
+	// The packet entities message has been processed
+	FRAME_NET_UPDATE_END,
+
+	// A client spawn group is forced to load synchronously because of its creation tick
+	FRAME_SPAWN_GROUP_FORCE_BLOCKING_LOAD,
+	// The network game client's OnServerPostSimulate() of a local server; the client starts restoring the server authoritative state
+	FRAME_SERVER_POST_SIMULATE,
+	// The network game client's OnServerBeginAsyncPostTickWork()
+	FRAME_SERVER_BEGIN_ASYNC_POST_TICK_WORK,
+	// The network game client's OnClientFrameSimulate() once the signon state is past SIGNONSTATE_PRESPAWN
+	FRAME_CLIENT_FRAME_SIMULATE,
+};
+
 // Identifies a sound area registered with the client
 class SoundAreaGuid_t
 {
@@ -248,7 +285,7 @@ public:
 	// Copies the session configuration and asks the loop mode game shared state for it
 	virtual bool ReceivedServerInfo( const GameSessionConfiguration_t &config, ILoopModePrerequisiteRegistry *pRegistry ) = 0;
 
-	virtual void FrameStageNotify( int nStage ) = 0;
+	virtual void FrameStageNotify( ClientFrameStage_t nStage ) = 0;
 
 	virtual int HudVidInit() = 0;
 	virtual void HudUpdate( bool bActive ) = 0;
