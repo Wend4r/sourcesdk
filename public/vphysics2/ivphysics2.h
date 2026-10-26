@@ -432,7 +432,7 @@ public:
 
 	virtual void InitIntersectionDictionary() = 0;
 
-	virtual void LoadCollisionDetailLayers( bool bUnknown ) = 0;
+	virtual void LoadCollisionDetailLayers( bool bCheckForChanges ) = 0;
 
 	virtual IPhysIntersectionDictionary *GetIntersectionDictionary() = 0;
 	virtual const IPhysIntersectionDictionary *GetIntersectionDictionary() const = 0;
@@ -449,7 +449,7 @@ public:
 	virtual bool ShapesHaveSameCollisionFilter( IPhysicsShape *pShape1, IPhysicsShape *pShape2 ) = 0;
 
 	// Casts two convex proxies, each moving by its own translation
-	virtual RnLinearCastResult_t LinearCast( const CTransform &transform1, const CGJKProxy &proxy1, const Vector &vTranslation1, const CTransform &transform2, const CGJKProxy &proxy2, const Vector &vTranslation2, float flUnknown, float flRadius ) = 0;
+	virtual RnLinearCastResult_t LinearCast( const CTransform &transform1, const CGJKProxy &proxy1, const Vector &vTranslation1, const CTransform &transform2, const CGJKProxy &proxy2, const Vector &vTranslation2, float flUnused, float flRadius ) = 0;
 	virtual RnLinearCastResult_t LinearCast( const CTransform &transform1, const CGJKProxy &proxy1, float flRadius1, const Vector &vTranslation1, const CTransform &transform2, const CGJKProxy &proxy2, float flRadius2, const Vector &vTranslation2 ) = 0;
 
 	// Time of impact of two shapes moving between the placements of their swept transforms
@@ -498,9 +498,9 @@ public:
 	virtual RnHull_t *CreateHull( CMesh *pMesh, RnHull_t *pPreallocatedHull, RnHullSimplificationParams_t *pSimplificationParams ) = 0;
 
 	virtual RnHull_t *CreateRuntimeHull( int nPointCount, const Vector *pPoints ) = 0;
-	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const RnPlane_t *pPlanes, float flUnknown, const Vector &vUnknown ) = 0;
+	virtual RnHull_t *CreateRuntimeHullFromPlanes( int nPlaneCount, const RnPlane_t *pPlanes, float flTolerance, const Vector &vInteriorPoint ) = 0;
 
-	virtual RnHull_t *CreateRandomHull( int nPointCount, float flRadius, float flUnknown, RnHull_t *pPreallocatedHull ) = 0;
+	virtual RnHull_t *CreateRandomHull( int nPointCount, float flRadius, float flMaxOffset, RnHull_t *pPreallocatedHull ) = 0;
 
 	virtual void CloneHull( RnHull_t *pDestHull, const RnHull_t *pSourceHull ) = 0;
 	virtual void DestroyHull( RnHull_t *pHull ) = 0;
@@ -574,8 +574,8 @@ public:
 	virtual RnMassProperties_t ComputeMass( const RnCapsule_t *pCapsule, const RnMaterial_t &material ) = 0;
 	virtual RnMassProperties_t ComputeMass( const RnHull_t *pHull, float flScale, const RnMaterial_t &material ) = 0;
 
-	// Loads the physics debug materials on first use; a non-zero nUnknown selects a replacement for the solid and translucent materials
-	virtual CWeakHandle< InfoForResourceTypeIMaterial2 > GetWellKnownMaterial( PhysicsDebugMaterialId_t nMaterial, uint32 nUnknown ) = 0;
+	// Loads the physics debug materials on first use; a non-zero nMaterialVariant selects a replacement for the solid and translucent materials
+	virtual CWeakHandle< InfoForResourceTypeIMaterial2 > GetWellKnownMaterial( PhysicsDebugMaterialId_t nMaterial, uint32 nMaterialVariant ) = 0;
 
 	virtual IFnPhysicsContact *ConstructFnPhysicsContact( void *pMemory, int nMemorySize ) = 0;
 	virtual IFnPhysicsAnyJoint *ConstructFnPhysicsAnyJoint( void *pMemory, int nMemorySize ) = 0;
@@ -767,7 +767,9 @@ public:
 
 	// A bit for each detail layer whose CollisionDetailLayerInfo_t is query only
 	uint16 m_nQueryOnlyDetailLayerMask;
-	uint8 m_unk1F2;
+
+	// Set once the collision detail layers are loaded, cleared by the reset; only copied otherwise
+	bool m_bDetailLayersLoaded;
 
 	// Read by HasDetailLayerInfos, FindDetailLayerInfo and GetDetailLayerInfos
 	CUtlHashtable< CUtlStringToken, CollisionDetailLayerInfo_t > m_DetailLayerInfos;
