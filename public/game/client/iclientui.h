@@ -30,7 +30,7 @@ public:
 	virtual void UpdateProgressBar( float flProgress, const char *pszStatusText ) = 0;
 
 	// While the game UI is shown, the engine applies fps_max_ui only when this returns false
-	virtual bool unk017() = 0;
+	virtual bool ShouldIgnoreFpsMaxUI() = 0;
 
 	virtual ClientUIState_t GetClientUIState() = 0;
 
