@@ -128,15 +128,16 @@ public:
 	virtual int GetServerTick() = 0;
 	// last_cmd_number_executed of the last CSVCMsg_PacketEntities
 	virtual int GetLastCommandNumberExecuted() = 0;
-	// CNetworkGameClient::CommandHistoryEntry_t::m_bUnk30 of the command, for commands up to the last executed one
-	virtual bool unk010( int nCommandNumber ) = 0;
+	// CNetworkGameClient::CommandHistoryEntry_t::m_bReceivedLate of the command, for commands up to the last executed one
+	virtual bool WasCommandReceivedLate( int nCommandNumber ) = 0;
 	virtual void SetFrameTime( float flFrameTime ) = 0;
 	virtual void Connect( CSplitScreenSlot nSlot, int nSocket, const ns_address &addr ) = 0;
 	virtual void Disconnect( ENetworkDisconnectionReason reason ) = 0;
 	virtual bool IsActive() const = 0;
 	virtual bool IsConnected() const = 0;
 	virtual bool IsPaused() const = 0;
-	virtual bool unk017() = 0;
+	// The local server is paused by pause group 3 ("setpause bug")
+	virtual bool IsBugPaused() = 0;
 	virtual bool IsInGame() const = 0;
 	virtual bool IsBackgroundMap() const = 0;
 	virtual int GetMaxClients() const = 0;
@@ -229,7 +230,8 @@ public:
 	virtual ~CNetworkGameClientBase() {}
 
 	virtual void SetTickRemainder( float flTickRemainder ) = 0;
-	virtual void unk073( float flUnk ) = 0;
+	// Copied to CGlobalVarsBase::m_flUsercmdTickFraction on each client frame simulate
+	virtual void SetUsercmdTickFraction( float flFraction ) = 0;
 	virtual void ApplyClockDrift( int nServerTick, int nClientTick ) = 0;
 	// ISource2Client::GetLocalPlayerPawnHandle() is not -1
 	virtual bool HasLocalPlayerPawn() = 0;
@@ -407,7 +409,8 @@ public:
 		// Receive margin the server reported for the command ("User command %d recv on server ..."), FLT_MAX until then
 		float m_flServerRecvMargin;
 		int m_nUnk2C;
-		bool m_bUnk30;
+		// Set when the server reported a negative receive margin for the command ("LATE")
+		bool m_bReceivedLate;
 	};
 
 	// Last slot of the Linux primary vtable; on Windows only in the notify vtable
@@ -423,7 +426,7 @@ public:
 	bool m_bUnk2C3569;
 	bool m_bUnk2C356A;
 	float m_flTickRemainder;
-	float m_flUnk2C3570;
+	float m_flUsercmdTickFraction;
 	float m_flFrameTime;
 	int m_unk2C3578[ 4 ];
 	int m_nLastCommandNumberExecuted;
@@ -434,7 +437,8 @@ public:
 	CommandHistoryEntry_t m_CommandHistory[ 256 ];
 	void *m_unk2C6DB8;
 	uint8 m_unk2C6DC0[ 2 ][ 1196 ];
-	float m_flUnk2C7718;
+	// Receive margin below which a command the server reports is logged as "later than desired"
+	float m_flDesiredRecvMargin;
 	uint8 m_unk2C771C[ 0x385C ];
 	// Buffer of m_MoveMessage, the datagram SendMove transmits ("ClientSendMove")
 	uint8 m_MoveMessageData[ 0x2000 ];
