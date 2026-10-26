@@ -246,6 +246,19 @@ struct NavGenGeometry_t
 // Per-hull connection data of a generated polygon, not reconstructed.
 struct NavGenPolyHullLinks_t;
 
+// The agent height a generated polygon was built for.
+enum NavGenPolyHeight_t : uint8
+{
+	// Adds NAV_MESH_CROUCH_HEIGHT to the area attributes.
+	NAV_GEN_POLY_HEIGHT_CROUCH = 1,
+	// Adds NAV_MESH_CRAWL_HEIGHT to the area attributes.
+	NAV_GEN_POLY_HEIGHT_CRAWL = 2,
+};
+
+// NavGenPoly_t::m_nFlags; each adds the attribute of the same name to the area.
+#define NAV_GEN_POLY_NON_ZUP ( 1 << 3 )
+#define NAV_GEN_POLY_NON_ZUP_TRANSITION ( 1 << 4 )
+
 // A generated polygon; the area created for the polygon at the same index takes its hull,
 // attributes and movable mesh.
 struct NavGenPoly_t
@@ -258,14 +271,13 @@ private:
 	uint8 m_pad008[ 56 ];
 
 public:
-	// 1 adds NAV_AREA_BOUNDARY and 2 NAV_AREA_DEFORMABLE to the area attributes.
-	uint8 m_nAreaKind;
+	NavGenPolyHeight_t m_nHeightType;
 
 private:
 	uint8 m_pad041[ 3 ];
 
 public:
-	// Bit 3 adds NAV_AREA_DOCKING_CANDIDATE and bit 4 NAV_AREA_HAS_TACTICAL_SEARCH_ANNOTATIONS.
+	// NAV_GEN_POLY_* bits.
 	uint8 m_nFlags;
 
 private:
