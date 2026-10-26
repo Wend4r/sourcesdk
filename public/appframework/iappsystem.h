@@ -152,6 +152,46 @@ class CAppSystemDict;
 class CBufferString;
 class KeyValues3;
 
+// The step of the engine's app system loading (LoadAppSystems) IApplication::SetInitializationPhase
+// records; each is set before the systems it names are loaded.
+enum AppSystemInitializationPhase_t
+{
+	// Engine2, the mod's client app systems, localization, mesh system and world renderer
+	APP_SYSTEM_INITIALIZATION_PHASE_ENGINE_SYSTEMS = 0,
+
+	// The server configuration (Source2ServerConfig001) from the game binaries
+	APP_SYSTEM_INITIALIZATION_PHASE_SERVER_CONFIG = 1,
+
+	// The tool framework (ToolFramework2_002)
+	APP_SYSTEM_INITIALIZATION_PHASE_TOOLS = 2,
+
+	// The engine services (EngineServiceMgr001, HostStateMgr001)
+	APP_SYSTEM_INITIALIZATION_PHASE_ENGINE_SERVICES = 3,
+
+	// The game and client interfaces (Source2Server001, Source2Client002, ...)
+	APP_SYSTEM_INITIALIZATION_PHASE_GAME_INTERFACES = 4,
+
+	// Loading finished
+	APP_SYSTEM_INITIALIZATION_PHASE_FINISHED = 5,
+};
+
+// Kinds of addons IApplication::GetAvailableAddons lists from the ADDONS search paths.
+// The addon directories
+#define AVAILABLE_ADDONS_DIRECTORIES ( 1 << 0 )
+// The .vpk files in the "vpks" directory of each path
+#define AVAILABLE_ADDONS_VPKS ( 1 << 1 )
+
+// Flags of the console log file (IApplication::GetAppSystemFlags), passed to the file logging
+// listener that writes it.
+// Opens the file for appending instead of truncating it
+#define APP_SYSTEM_LOG_FILE_APPEND ( 1 << 0 )
+// Prefixes each line with the local date and time
+#define APP_SYSTEM_LOG_FILE_TIMESTAMPS ( 1 << 1 )
+// Prefixes each line of a channel other than LOG_GENERAL with "[<channel name>] "
+#define APP_SYSTEM_LOG_FILE_CHANNEL_NAMES ( 1 << 2 )
+// Redirects the process's stdout and stderr to the file
+#define APP_SYSTEM_LOG_FILE_REDIRECT_STDIO ( 1 << 3 )
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 class IApplication : public IAppSystem
@@ -181,6 +221,7 @@ public:
 	virtual KeyValues *GetApplicationInfo() = 0;
 	virtual void *GetAppInstance() = 0;
 	virtual const char *GetContentPath() = 0;
+	// APP_SYSTEM_LOG_FILE_* bits of the application's system dictionary
 	virtual int GetAppSystemFlags() = 0;
 	virtual CUtlString GetConsoleLogFilename() = 0;
 	virtual void ChangeLogFileSuffix( const char *pSuffix ) = 0;
@@ -194,6 +235,7 @@ public:
 	virtual bool GetAddonsDirectory( CBufferString &sDirectory ) = 0;
 	virtual bool GetAddonsContentDirectory( CBufferString &sDirectory ) = 0;
 	virtual bool IsFileInAddon( const char *pFilename ) = 0;
+	// nFlags holds AVAILABLE_ADDONS_* bits
 	virtual void GetAvailableAddons( CUtlVector< CUtlString > &vecAddons, int nFlags ) = 0;
 	virtual bool GetAddonInfo( KeyValues3 *pAddonInfo, const char *pAddonName ) = 0;
 	virtual bool IsRunningOnCustomerMachine() = 0;
@@ -201,8 +243,8 @@ public:
 	virtual bool IsPerforceWorkspace() = 0;
 	virtual bool IsLowViolence() = 0;
 	virtual void SetLowViolence( bool bLowViolence ) = 0;
-	virtual void SetInitializationPhase( int nInitializationPhase ) = 0;
-	virtual int GetInitializationPhase() = 0;
+	virtual void SetInitializationPhase( AppSystemInitializationPhase_t nInitializationPhase ) = 0;
+	virtual AppSystemInitializationPhase_t GetInitializationPhase() = 0;
 	virtual const char *GetRestrictAddonsTo() = 0;
 	// Reference counted, every true must be matched by a false
 	virtual void SetAllowAddonChanges( bool bAllowAddonChanges ) = 0;
@@ -224,7 +266,7 @@ public:
 //-----------------------------------------------------------------------------
 // Helper implementation of an IAppSystem for tier0
 //-----------------------------------------------------------------------------
-template< class IInterface > 
+template< class IInterface, int64 ConVarFlag = 0 > 
 class CTier0AppSystem : public CBaseAppSystem< IInterface >
 {
 public:
@@ -241,6 +283,7 @@ abstract_class CAppSystemDict
 public:
 	virtual ~CAppSystemDict() = 0;
 	virtual void Init() = 0;
+	// APP_SYSTEM_LOG_FILE_* bits; 0 in the base dictionary
 	virtual int GetSomeFlags() = 0;
 	virtual CUtlString GetConsoleLogFilename() = 0;
 	virtual void ChangeLogFileSuffix(const char* suffix) = 0;
