@@ -27,6 +27,21 @@ class ISceneView;
 class ISceneLayer;
 class IRenderContext;
 
+// Layers of the game UI service, each with its input context and its render handler list
+enum GameUILayer_t
+{
+	// The engine input context
+	GAMEUI_LAYER_ENGINE = 0,
+	// "Panorama HUD" input context
+	GAMEUI_LAYER_PANORAMA_HUD,
+	// "gameui" input context
+	GAMEUI_LAYER_GAMEUI,
+	// "Panorama UI" input context
+	GAMEUI_LAYER_PANORAMA_UI,
+
+	GAMEUI_LAYER_COUNT
+};
+
 // Layer handler of the game UI service, called while its render handler adds the views
 abstract_class IGameUIRenderCallback
 {
@@ -62,7 +77,8 @@ public:
 	// Plat_FloatTime() of the last input event of type 5
 	virtual double GetLastMouseMoveTime() = 0;
 
-	virtual InputContextHandle_t GetInputContext( int nLayer ) = 0;
+	// NULL for an unknown layer
+	virtual InputContextHandle_t GetInputContext( GameUILayer_t nLayer ) = 0;
 
 	virtual bool HasConsole() = 0;
 	// Forwards to the console panel when it exists
@@ -74,9 +90,9 @@ public:
 	// Returns NULL in this build; the client walks the focus chain of a non-NULL result to allow IME input and block game input
 	virtual panorama::CPanel2D *GetFocusedPanoramaView() = 0;
 
-	// Per layer (0 to 3) handler lists, sorted by nPriority
-	virtual void AddLayerHandler( int nLayer, IGameUIRenderCallback *pHandler, int nPriority ) = 0;
-	virtual void RemoveLayerHandler( int nLayer, IGameUIRenderCallback *pHandler ) = 0;
+	// Per layer handler lists, sorted by nPriority
+	virtual void AddLayerHandler( GameUILayer_t nLayer, IGameUIRenderCallback *pHandler, int nPriority ) = 0;
+	virtual void RemoveLayerHandler( GameUILayer_t nLayer, IGameUIRenderCallback *pHandler ) = 0;
 
 	virtual void Con_NPrintf( int nRow, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
 	virtual void Con_NPrintf( const con_nprint_t *pInfo, const char *pszFormat, ... ) FMTFUNCTION( 3, 4 ) = 0;
@@ -120,7 +136,7 @@ public:
 	bool m_bPauseOnCtrlConsole;
 	IInputHandler *m_pInputHandler;
 	void *m_unk240;
-	CUtlVector< GameUILayerHandler_t > m_LayerHandlers[ 4 ];
+	CUtlVector< GameUILayerHandler_t > m_LayerHandlers[ GAMEUI_LAYER_COUNT ];
 };
 
 #endif // IGAMEUISERVICE_H
