@@ -41,8 +41,8 @@ struct CPathSegment
 		// The game also uses 7 for a segment in a nav link area.
 	};
 
-	// NavTraverseType; GO_SAME_AREA for the first segment.
-	int how;
+	// GO_SAME_AREA for the first segment.
+	NavTraverseType how;
 	// SegmentType.
 	int type;
 	// The edge of the previous area crossed into this one, -1 for the first segment.

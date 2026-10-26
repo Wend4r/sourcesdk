@@ -102,8 +102,7 @@ schema enum NavDirType
 	NUM_NAV_DIR_TYPE_DIRECTIONS = 4,
 };
 
-// How a path segment is entered. Values 0 to 3 cross the edge with that index; the game uses
-// further values (7, 8) for other floor transitions.
+// How a path segment is entered. Values 0 to 3 cross the edge with that index.
 enum NavTraverseType
 {
 	GO_NORTH = 0,
@@ -113,6 +112,14 @@ enum NavTraverseType
 	GO_SAME_AREA = 4,
 	GO_LADDER_UP = 5,
 	GO_LADDER_DOWN = 6,
+	// Through a transition of the nav connection registry (nav_create_indirect_connection);
+	// only collected when the neighbour query asks for transitions.
+	GO_TRANSITION = 7,
+	// Through a nav link, from an area with NAV_AREA_NAV_LINK or NAV_AREA_CONNECTED_TO_NAV_LINK_OUT.
+	GO_NAV_LINK = 8,
+
+	// Also stored as the step of an empty neighbour record.
+	NUM_TRAVERSE_TYPES = 9,
 };
 
 // What an area or position visitor returns to the mesh's iteration and search helpers.

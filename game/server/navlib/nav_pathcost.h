@@ -24,13 +24,13 @@ class CKV3TransferSaveContext;
 class CNavBlock;
 
 //-----------------------------------------------------------------------------
-// One step from an area to a neighbour: the neighbour, how it is reached (NavTraverseType),
-// through which edge, and the ladder for ladder steps.
+// One step from an area to a neighbour: the neighbour, how it is reached, through which edge,
+// and the ladder for ladder steps.
 //-----------------------------------------------------------------------------
 struct NavAreaAdj_t
 {
 	CNavArea *m_pArea;
-	int m_nHow;
+	NavTraverseType m_nHow;
 	int8 m_nEdge;
 	CNavLadder *m_pLadder;
 };
@@ -112,7 +112,7 @@ public:
 	// Finds where the step from pFromPos crosses into pToArea through nEdge (or ends at pGoalPos
 	// when it is given) and costs it with FloorAreaCost. With bDistanceOnly the cost is the
 	// plain distance whenever FloorAreaCost allows the step.
-	virtual void CalcCostFloorAreas( PathCostResult_t *pResult, const CNavArea *pFromArea, const Vector *pFromPos, const CNavArea *pToArea, int nHow, int8 nEdge, bool bDistanceOnly, const Vector *pGoalPos ) const = 0;
+	virtual void CalcCostFloorAreas( PathCostResult_t *pResult, const CNavArea *pFromArea, const Vector *pFromPos, const CNavArea *pToArea, NavTraverseType nHow, int8 nEdge, bool bDistanceOnly, const Vector *pGoalPos ) const = 0;
 	// Ends the step at the ladder's top and costs it with LadderCost.
 	virtual void CalcCostLadder( PathCostResult_t *pResult, const CNavArea *pFromArea, const CNavArea *pToArea, const CNavLadder *pLadder ) const = 0;
 
