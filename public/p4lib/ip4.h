@@ -104,7 +104,44 @@ struct P4Changelist_t
 //-----------------------------------------------------------------------------
 // Perforce file type of a file opened for add or edit
 //-----------------------------------------------------------------------------
-enum PerforceFileType_t : int;
+enum PerforceFileType_t : int
+{
+	// What every caller passes; no shipped backend reads the type
+	PERFORCE_FILE_TYPE_DEFAULT = 0,
+};
+
+
+//-----------------------------------------------------------------------------
+// The backend IP4 forwards to
+//-----------------------------------------------------------------------------
+enum P4ImplementationType_t
+{
+	// CP4Dummy
+	P4_IMPLEMENTATION_DUMMY = 0,
+
+	// CP4Mimic, which works on the local files without Perforce
+	P4_IMPLEMENTATION_MIMIC = 1,
+
+	// The p4lib_perforce implementation, CP4Dummy without it
+	P4_IMPLEMENTATION_PERFORCE = 2,
+};
+
+
+//-----------------------------------------------------------------------------
+// Result of IP4::TryOpenFileForEdit
+//-----------------------------------------------------------------------------
+enum P4TryOpenResult_t : int
+{
+	P4_TRY_OPEN_FAILED = -1,
+
+	// The file is not in Perforce yet; callers add it later
+	P4_TRY_OPEN_NOT_IN_PERFORCE = 0,
+
+	P4_TRY_OPEN_OPENED = 1,
+
+	// The file has to be reopened, see IP4::ReopenFile
+	P4_TRY_OPEN_NEEDS_REOPEN = 2,
+};
 
 
 //-----------------------------------------------------------------------------
@@ -138,9 +175,8 @@ public:
 	// False with the dummy and local backends; callers skip every Perforce operation then
 	virtual bool IsAvailable() = 0;
 
-	// 0 is the dummy backend, 1 the local backend that works without Perforce and 2 the Perforce one
-	virtual int GetImplementationType() = 0;
-	virtual bool SetImplementationType( int nType ) = 0;
+	virtual P4ImplementationType_t GetImplementationType() = 0;
+	virtual bool SetImplementationType( P4ImplementationType_t nType ) = 0;
 
 	// name of the current clientspec
 	virtual P4Client_t &GetActiveClient() = 0;
@@ -178,9 +214,8 @@ public:
 	virtual bool OpenFileForAdd( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
 	virtual bool OpenFileForEdit( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
 
-	// Opens an existing file for edit: -1 on failure, 0 if it does not exist yet (callers add it later),
-	// 1 when opened and 2 when it has to be reopened (see ReopenFile)
-	virtual int TryOpenFileForEdit( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
+	// Opens an existing file for edit
+	virtual P4TryOpenResult_t TryOpenFileForEdit( const char *pFullPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
 
 	// Only called for files that are in perforce
 	virtual bool OpenFileForDelete( const char *pFullPath ) = 0;

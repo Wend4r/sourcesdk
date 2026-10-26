@@ -19,6 +19,7 @@
 
 
 enum PerforceFileType_t : int;
+enum P4TryOpenResult_t : int;
 
 
 //
@@ -35,7 +36,7 @@ public:
 	virtual bool Edit( void );
 
 	// See IP4::TryOpenFileForEdit
-	virtual int TryOpenFileForEdit();
+	virtual P4TryOpenResult_t TryOpenFileForEdit();
 
 	// Opens the file for add
 	virtual bool Add( void );
