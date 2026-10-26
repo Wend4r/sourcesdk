@@ -108,11 +108,12 @@ public:
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual void *GetPlayerViewSetup( CSplitScreenSlot nSlot ) = 0;
-	// -1.0 without a connected client
-	virtual float unk067( CSplitScreenSlot nSlot ) = 0;
+	// Current exposure of the split screen player's tonemap system in the world session, -1.0 without a connected client or
+	// world session
+	virtual float GetTonemapExposure( CSplitScreenSlot nSlot ) = 0;
 
-	// Forwards to the game client
-	virtual void unk068() = 0;
+	// Forwards to ISource2Client::GetEntityMaterialAttributes
+	virtual void GetEntityMaterialAttributes( CUtlVector< void * > *pAttributes ) = 0;
 
 	virtual const char *GetVDataClassName( const char *pName, const char *pScopeFile ) = 0;
 	virtual const char *GetVDataClassNameByDataType( const char *pName, const char *pGenericDataType ) = 0;
