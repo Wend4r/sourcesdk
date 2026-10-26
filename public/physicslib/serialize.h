@@ -37,6 +37,14 @@ schema enum JointMotion_t
 	JOINT_MOTION_COUNT,
 };
 
+// Whether a dynamic body uses continuous contacts against other dynamic bodies (RnBodyDesc_t::m_nDynamicContinuousContactBehavior)
+schema enum DynamicContinuousContactBehavior_t : uint8
+{
+	DYNAMIC_CONTINUOUS_ALLOW_IF_REQUESTED_BY_OTHER_BODY = 0,
+	DYNAMIC_CONTINUOUS_ALWAYS,
+	DYNAMIC_CONTINUOUS_NEVER,
+};
+
 // Registered as an atomic type, not as a schema class
 struct RnSphere_t
 {

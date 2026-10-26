@@ -485,9 +485,9 @@ public:
 	// While this body is keyframed, the dynamic bodies touching it can use continuous contacts against it
 	virtual void SetKeyframedContinuousEnabled( bool bEnable ) = 0;
 
-	// Dynamic continuous contact behavior of the body description
-	virtual void SetDynamicContinuousContactBehavior( uint8 nBehavior ) = 0;
-	virtual uint8 GetDynamicContinuousContactBehavior() const = 0;
+	// RnBodyDesc_t::m_nDynamicContinuousContactBehavior
+	virtual void SetDynamicContinuousContactBehavior( DynamicContinuousContactBehavior_t nBehavior ) = 0;
+	virtual DynamicContinuousContactBehavior_t GetDynamicContinuousContactBehavior() const = 0;
 
 	// Minimum velocity and position solver iterations
 	virtual int GetMinVelocityIterations() const = 0;
