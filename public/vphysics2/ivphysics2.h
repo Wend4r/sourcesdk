@@ -171,8 +171,8 @@ struct IkSolverTarget_t
 	// The joint is moved towards it; read without the w component
 	VectorAligned m_vPosition;
 
-	// Passed to the solve of the joint before the position
-	uint8 m_unk020[ 16 ];
+	// Passed to the orientation solve of the joint, which does not read it
+	uint8 m_pad020[ 16 ];
 };
 
 struct IkSolverTargets_t
@@ -264,8 +264,8 @@ public:
 	// Writes a 0x1D0-byte header followed by the snapshot data and advances pBuffer
 	virtual void Serialize( uint8 *&pBuffer ) = 0;
 
-	// Another size: the header, the keyed records of every type and the strings of the recorded debug data
-	virtual uint32 unk003() = 0;
+	// The size with the debug data: the header, the keyed records of every type and the string tables of the recorded debug data
+	virtual uint32 GetSizeWithDebugData() = 0;
 
 	// Empty in release builds
 	virtual void unk004() = 0;
@@ -279,11 +279,11 @@ public:
 	// Filled with zeros in release builds
 	virtual PhysSerialStreamSnapshotUnk007_t unk007() = 0;
 
-	// Copy the pointers of one of the recorded lists: the pointer list of one of the 24 types, the keys of the serialized
-	// records of a type, and the list shared by all types. What the types and the pointers are is not recovered
-	virtual void unk008( int nType, CUtlVector< void * > &out ) const = 0;
-	virtual void unk009( int nType, CUtlVector< void * > &out ) const = 0;
-	virtual void unk010( CUtlVector< void * > &out ) const = 0;
+	// Copy the pointers of one of the recorded lists: the objects of one of the 24 types, the keys of the serialized records of a
+	// type, and the list shared by all types. What the types are is not recovered
+	virtual void GetObjects( int nType, CUtlVector< void * > &out ) const = 0;
+	virtual void GetRecordKeys( int nType, CUtlVector< void * > &out ) const = 0;
+	virtual void GetSharedObjects( CUtlVector< void * > &out ) const = 0;
 
 	// Return 0
 	virtual void *unk011() = 0;
@@ -389,10 +389,19 @@ struct PhysicsAggregateDef_t
 	CUtlVector< PhysicsAggregateJointDef_t > m_NullJoints;
 };
 
-// The pair of hull features IVPhysics2::unk053 returns, 16 bytes in two integer registers on Linux; only its size is known
-struct VPhysics2Unk053_t
+// A feature of a hull: a vertex, an edge or a face and its index
+struct RnHullFeature_t
 {
-	ALIGN8 uint8 m_Data[ 16 ] ALIGN8_POST;
+	// 0 vertex, 1 edge, 2 face
+	int m_nType;
+	int m_nIndex;
+};
+
+// The features of two hulls, returned in two integer registers on Linux
+struct RnHullFeaturePair_t
+{
+	RnHullFeature_t m_Feature1;
+	RnHullFeature_t m_Feature2;
 };
 
 abstract_class IVPhysics2 : public IAppSystem
@@ -468,8 +477,8 @@ public:
 	// Distance between the two shapes minus their radii
 	virtual float GetShapeDistance( IPhysicsShape *pShape1, const matrix3x4_t &transform1, IPhysicsShape *pShape2, const matrix3x4_t &transform2 ) = 0;
 
-	// The hull feature pair of the cached simplex
-	virtual VPhysics2Unk053_t unk053( const RnSimplexCache_t &cache, const RnHull_t *pHull1, const RnHull_t *pHull2 ) = 0;
+	// Drops the simplex vertices with tiny weights and returns the feature of each hull its remaining vertices span
+	virtual RnHullFeaturePair_t GetSimplexFeatures( const RnSimplexCache_t &cache, const RnHull_t *pHull1, const RnHull_t *pHull2 ) = 0;
 
 	// Contact generation: the callees add contact points to pOut and the result tells whether there are any.
 	// The five form one overload set, which MSVC lists in reverse order. pOut and the other pointers are internal types of the physics module;
@@ -662,19 +671,22 @@ public:
 
 	// Flags the debugger commands set; copied to every world while streaming
 	uint32 m_nDebuggerFlags;
-	int m_unk010;
 
-	// Set to 20 when the state bit 8 is handled
-	int m_unk014;
-	int m_unk018;
+	// The stream id of the start stream message, 0x8000 by default; the stop message sends it back
+	int m_nStreamId;
 
-	// Copy of the PhysicsWorldUpdateConCommParams_t passed to IVPhysics2::UpdateConCommParams
-	float m_unk01C;
+	// Payload sizes of the world info and the frame messages, the first computed (as 20) on its first send
+	int m_nWorldInfoMessageSize;
+	int m_nFrameMessageSize;
+
+	// Copy of the PhysicsWorldUpdateConCommParams_t passed to IVPhysics2::UpdateConCommParams, -1 by default; nothing reads it
+	float m_flUpdateParams;
 
 	// Without it, starting a stream prints "Please start Physics Debugger"
 	bool m_bPhysicsDebuggerStarted;
 
-	bool m_unk021;
+	// Set while VConsole is connected; losing the connection clears the debug draw filters of the worlds
+	bool m_bConnected;
 
 	// 1 streams every world on each RunVConCommFrame
 	int m_unk024;
