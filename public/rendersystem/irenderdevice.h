@@ -130,12 +130,19 @@ struct RenderIndirectCommandsToken_t
 	uint32 m_nOffset;
 };
 
+// OpacityMicromapUsage_t::m_nFormat, the VkOpacityMicromapFormatEXT values
+enum RenderOpacityMicromapFormat_t : uint16
+{
+	RENDER_OPACITY_MICROMAP_FORMAT_2_STATE = 1,
+	RENDER_OPACITY_MICROMAP_FORMAT_4_STATE,
+};
+
 // An entry of OpacityMicromapCreateDesc_t, copied into a VkMicromapUsageEXT
 struct OpacityMicromapUsage_t
 {
 	uint32 m_nCount;
 	uint32 m_nSubdivisionLevel;
-	uint16 m_nFormat;
+	RenderOpacityMicromapFormat_t m_nFormat;
 };
 
 // IRenderDevice::CreateOpacityMicromap reads the usages and the inline debug name ("OMM %s"); its length is not
