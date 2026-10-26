@@ -247,11 +247,11 @@ struct SceneSystemTimestampFrameData_t
 
 enum SetupPerObjectLighting_t : uint32
 {
-	SETUP_PER_OBJECT_LIGHTING_DIFFUSE = 0x1,
-	SETUP_PER_OBJECT_LIGHTING_SPECULAR = 0x2,
+	SETUP_PER_OBJECT_LIGHTING_DIFFUSE = ( 1 << 0 ),
+	SETUP_PER_OBJECT_LIGHTING_SPECULAR = ( 1 << 1 ),
 
 	// Binds the light probe data of the object's lighting cache.
-	SETUP_PER_OBJECT_LIGHTING_LIGHT_PROBE = 0x4,
+	SETUP_PER_OBJECT_LIGHTING_LIGHT_PROBE = ( 1 << 2 ),
 };
 
 // Child flags of ISceneSystem::SceneObject_AddChild: what the parent passes on to the child
