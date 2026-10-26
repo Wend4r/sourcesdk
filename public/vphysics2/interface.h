@@ -17,6 +17,8 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlvector.h"
 #include "tier0/utlleanvector.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/utlstring.h"
 #include "tier0/utldelegateimpl.h"
 #include "mathlib/vector.h"
 #include "mathlib/aabb.h"
@@ -579,8 +581,15 @@ public:
 
 	bool m_bDebugRecordingDisabled;
 
-	// Two hash tables, one of them is filled from the body map of StepEndReadOnlyGetResults
-	ALIGN8 uint8 m_unk040[88] ALIGN8_POST;
+	// When set, StepEndReadOnlyGetResults saves the world to <this path>/<step count>.rnsave after every step
+	CUtlString m_sStepSavePath;
+
+	CUtlLeanVector< IPhysAggregateInstance * > m_Aggregates;
+
+	// The user data objects of the awake bodies, and of the bodies that woke up or fell asleep since the last
+	// StepEndReadOnlyGetResults, which fills the woke up, asleep and awake lists of the results from them
+	CUtlHashtable< void * > m_AwakeObjects;
+	CUtlHashtable< void * > m_SleepStateChangedObjects;
 
 	CUtlVector< IPhysicsMotionController * > m_MotionControllers;
 
