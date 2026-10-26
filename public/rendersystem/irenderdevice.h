@@ -110,6 +110,15 @@ struct RenderIndirectCommandsToken_t
 	uint32 m_nOffset;
 };
 
+// Returned by IRenderDevice::GetVariableRefreshRateStatus
+enum RenderVariableRefreshRateStatus_t : int
+{
+	RENDER_VRR_STATUS_UNKNOWN = 0,
+	RENDER_VRR_STATUS_UNAVAILABLE,
+	RENDER_VRR_STATUS_INACTIVE,
+	RENDER_VRR_STATUS_ACTIVE,
+};
+
 abstract_class IRenderDevice
 {
 public:
@@ -369,7 +378,9 @@ public:
 	virtual void FreePooledIndexBuffer( PooledIndexBufferHandle_t hBuffer ) = 0;
 	virtual uint GetPooledIndexBufferOffset( PooledIndexBufferHandle_t hBuffer, uint32 *pIndexSizeOut, uint32 *pIndexCountOut ) = 0;
 	virtual IndexBufferHandle_t GetPooledIndexBuffer() = 0;
-	virtual RenderResourceHandle_t AllocatePooledVertexBuffer( uint nVertexCount, uint nVertexSize, const void *pVertices, uint32 nUnk, const char *pDebugName ) = 0;
+	// nBindFlags follows the D3D11 bind flags the callers pass (1 vertex buffer, 0x80 unordered access); the Vulkan
+	// backend ignores it
+	virtual RenderResourceHandle_t AllocatePooledVertexBuffer( uint nVertexCount, uint nVertexSize, const void *pVertices, uint32 nBindFlags, const char *pDebugName ) = 0;
 	virtual void FreePooledVertexBuffer( RenderResourceHandle_t hBuffer ) = 0;
 	virtual uint32 GetPooledVertexBufferBaseVertex( RenderResourceHandle_t hPooledVertexBuffer ) = 0;
 	virtual uint32 GetPooledVertexBufferVertexCount( RenderResourceHandle_t hPooledVertexBuffer, uint32 *pVertexSizeOut ) = 0;
@@ -399,7 +410,8 @@ public:
 	// Binds every texture of pTextures to the device memory of hTexture
 	virtual bool AliasTexturesToTextureMemory( HRenderTexture hTexture, int nCount, const HRenderTexture *pTextures ) = 0;
 	virtual uint32 CheckFormatSupport( ImageFormat nFormat ) = 0;
-	virtual int unk232( SwapChainHandle_t hSwapChain ) = 0;
+	// Variable refresh rate state of the swap chain output; the Vulkan backend returns RENDER_VRR_STATUS_UNKNOWN
+	virtual RenderVariableRefreshRateStatus_t GetVariableRefreshRateStatus( SwapChainHandle_t hSwapChain ) = 0;
 
 	// Device generated commands
 	virtual void *CreateIndirectCommandsLayout( IRenderContext *pRenderContext, uint32 nTokenCount, const RenderIndirectCommandsToken_t *pTokens, uint32 nIndirectStride, bool bExplicitPreprocess ) = 0;
