@@ -20,6 +20,16 @@ namespace webrtc
 	class AudioProcessing;
 }
 
+// Aggressiveness of the WebRTC noise suppression of the captured voice (voice_webrtc_ns_level), in the order of the levels
+// of webrtc::AudioProcessing
+enum VoiceNoiseSuppressionLevel_t
+{
+	VOICE_NOISE_SUPPRESSION_LOW = 0,
+	VOICE_NOISE_SUPPRESSION_MODERATE = 1,
+	VOICE_NOISE_SUPPRESSION_HIGH = 2,
+	VOICE_NOISE_SUPPRESSION_VERY_HIGH = 3,
+};
+
 class CSoundService : public CBaseEngineService< ISoundService >
 {
 public:
@@ -104,7 +114,7 @@ public:
 		{
 			bool m_bEchoCancellation;
 			bool m_bNoiseSuppression;
-			int m_nNoiseSuppressionLevel;
+			VoiceNoiseSuppressionLevel_t m_nNoiseSuppressionLevel;
 			bool m_bGainControl;
 			float m_flFixedGainDB;
 			bool m_bHighPassFilter;
