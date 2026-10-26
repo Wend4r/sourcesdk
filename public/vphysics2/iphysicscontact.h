@@ -14,6 +14,7 @@
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
 #include "rubikon/param_types.h"
+#include "rubikon/intersection.h"
 
 class IVPhysics2World;
 class IPhysicsBody;
@@ -62,11 +63,11 @@ public:
 
 	virtual bool HasManifolds() const = 0;
 
-	// Both the found and the lost notification flags are set
+	// Both INTERSECTION_PAIR_NOTIFY_TOUCH_FOUND and INTERSECTION_PAIR_NOTIFY_TOUCH_LOST are set (INTERSECTION_PAIR_TRIGGER)
 	virtual bool IsFoundAndLost() const = 0;
 
-	// 1 resolve, 4 notify found, 8 notify persist, 16 notify lost
-	virtual uint16 GetFlags() const = 0;
+	// The IntersectionPairFlags_t bits of the pair of collision groups the contact was created with
+	virtual IntersectionLayerPairFlags GetFlags() const = 0;
 
 	virtual int GetManifoldCount() const = 0;
 	virtual PhysicsContactManifolds_t GetManifolds() const = 0;

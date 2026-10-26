@@ -358,7 +358,7 @@ public:
 	virtual IPhysicsCharacterProxy *GetCharacterProxy( int nIndex ) = 0;
 	virtual const IPhysicsCharacterProxy *GetCharacterProxy( int nIndex ) const = 0;
 
-	// The contacts the solver resolves (contact flag 1) and the contacts that only report
+	// The contacts the solver resolves (INTERSECTION_PAIR_RESOLVE_CONTACTS) and the contacts that only report
 	virtual int GetSolverContactCount() = 0;
 	virtual void GetSolverContact( int nIndex, PhysicsContact_t &contact ) = 0;
 	virtual int GetReportContactCount() = 0;
@@ -368,7 +368,10 @@ public:
 	virtual void DestroyContacts( IPhysicsBody *pBodyA, IPhysicsBody *pBodyB ) = 0;
 	virtual bool HasContact( IPhysicsBody *pBodyA, IPhysicsBody *pBodyB ) = 0;
 
-	// Copies the contact begin and end events (256-byte records) into a CUtlVector; unless bKeepEvents is set, the events are consumed
+	// Copies the contact begin and end events (256-byte records) into a CUtlVector; unless bKeepEvents is set, the events are consumed.
+	// The first int of a record is its type as IntersectionPairFlags_t bits: INTERSECTION_PAIR_NOTIFY_TOUCH_FOUND (with
+	// INTERSECTION_PAIR_RESOLVE_CONTACTS when the contact resolves), INTERSECTION_PAIR_RESOLVE_CONTACTS alone,
+	// INTERSECTION_PAIR_NOTIFY_TOUCH_PERSISTS or INTERSECTION_PAIR_NOTIFY_TOUCH_LOST
 	virtual void GetContactEvents( void *pEvents, bool bKeepEvents ) = 0;
 	virtual void ClearContactEvents() = 0;
 	// Moves the impact events recorded since the last call into the vector
