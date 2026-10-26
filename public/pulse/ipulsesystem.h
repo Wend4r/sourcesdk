@@ -218,6 +218,18 @@ public:
 	virtual void SetListener( IPulseTurtleGraphicsListener *pListener ) = 0;
 };
 
+// Sources of the variable values a graph instance is loaded with
+schema enum class PulseVariableKeysSource_t
+{
+	PRIVATE = 0,
+	CPP = 1,
+	VMAP = 2,
+	VMDL = 3,
+	XML = 4,
+	VDATA = 5,
+	COUNT = 6,
+};
+
 abstract_class IPulseGraphLoadErrorReporter
 {
 public:
@@ -233,8 +245,7 @@ public:
 	CKV3TransferLoadContext *m_pTransferContext;
 	bool m_bOwnsTransferContext;
 
-	// Variable values per PulseVariableKeysSource_t ( private, C++, vmap, vmdl, xml, vdata )
-	const KeyValues3 *m_pVariableKeys[ 6 ];
+	const KeyValues3 *m_pVariableKeys[ static_cast< int >( PulseVariableKeysSource_t::COUNT ) ];
 
 	CUtlVector< CKV3MemberName > m_ErrorScopes;
 	KeyValues3 m_Errors;
