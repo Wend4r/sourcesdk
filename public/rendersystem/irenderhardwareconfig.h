@@ -14,16 +14,39 @@
 #include "mathlib/vector.h"
 #include "mathlib/intvector3d.h"
 #include "tier0/utlvector.h"
+#include "bitmap/imageformat_declarations.h"
 
 struct RenderAdapterInfo_t;
 enum RenderMultisampleType_t : uint8;
+
+// The render system modules, named by IRenderHardwareConfig::RenderSystemTypeToString ("None", "DX11", "Empty",
+// "Vulkan") and RenderSystemTypeToCommandLineSwitch ("-dx11", "-empty", "-vulkan")
+enum RenderSystemType_t
+{
+	RENDER_SYSTEM_TYPE_NONE = 0,
+	RENDER_SYSTEM_TYPE_DX11 = 2,
+	RENDER_SYSTEM_TYPE_EMPTY = 4,
+	RENDER_SYSTEM_TYPE_VULKAN = 5,
+};
+
+// IRenderHardwareConfig::GetLowLatencyMode
+enum RenderLowLatencyMode_t
+{
+	RENDER_LOW_LATENCY_MODE_NONE = 0,
+
+	// NVIDIA adapters
+	RENDER_LOW_LATENCY_MODE_NVIDIA_REFLEX,
+
+	// AMD adapters
+	RENDER_LOW_LATENCY_MODE_AMD_ANTI_LAG,
+};
 
 // An entry of IRenderHardwareConfig::GetAvailableRenderSystems
 struct RenderSystemInfo_t
 {
 	CUtlString m_Name;
 	CUtlString m_CommandLineSwitch;
-	int m_nType;
+	RenderSystemType_t m_nType;
 };
 
 abstract_class IRenderHardwareConfig
@@ -56,32 +79,32 @@ public:
 
 	virtual const RenderAdapterInfo_t &AdapterInfo() = 0;
 
-	virtual int GetRenderSystemType() = 0;
+	virtual RenderSystemType_t GetRenderSystemType() = 0;
 
 	// The render device manager's render system type, GetRenderSystemType() when the manager set none
-	virtual int GetEffectiveRenderSystemType() = 0;
+	virtual RenderSystemType_t GetEffectiveRenderSystemType() = 0;
 
-	// The render system the engine offers to switch to, 0 for none; the Vulkan module recommends DX11 only with
-	// "-force_recommend_dx11" and when the current render system is not Vulkan
-	virtual int GetRecommendedRenderSystemType() = 0;
+	// The render system the engine offers to switch to, RENDER_SYSTEM_TYPE_NONE for none; the Vulkan module
+	// recommends DX11 only with "-force_recommend_dx11" and when the current render system is not Vulkan
+	virtual RenderSystemType_t GetRecommendedRenderSystemType() = 0;
 
-	virtual const char *RenderSystemTypeToString( int nType ) = 0;
-	virtual const char *RenderSystemTypeToDisplayName( int nType ) = 0;
-	virtual const char *RenderSystemTypeToCommandLineSwitch( int nType ) = 0;
+	virtual const char *RenderSystemTypeToString( RenderSystemType_t nType ) = 0;
+	virtual const char *RenderSystemTypeToDisplayName( RenderSystemType_t nType ) = 0;
+	virtual const char *RenderSystemTypeToCommandLineSwitch( RenderSystemType_t nType ) = 0;
 
 	virtual int GetAvailableRenderSystems( CUtlVector< RenderSystemInfo_t > &renderSystems ) = 0;
 
 	// Search such a list, return -1 when not found
 	virtual int FindRenderSystemByName( const CUtlVector< RenderSystemInfo_t > &renderSystems, const char *pName ) = 0;
 	virtual int FindRenderSystemByCommandLineSwitch( const CUtlVector< RenderSystemInfo_t > &renderSystems, const char *pSwitch ) = 0;
-	virtual int FindRenderSystemByType( const CUtlVector< RenderSystemInfo_t > &renderSystems, int nType ) = 0;
+	virtual int FindRenderSystemByType( const CUtlVector< RenderSystemInfo_t > &renderSystems, RenderSystemType_t nType ) = 0;
 
 	virtual bool IsSubrectResolveSupported( bool bMSAA ) = 0;
 
-	virtual bool IsMultisampleTypeSupported( int nFormat, RenderMultisampleType_t nType ) = 0;
+	virtual bool IsMultisampleTypeSupported( ImageFormat nFormat, RenderMultisampleType_t nType ) = 0;
 
 	// Highest supported multisample type not above nDesired
-	virtual RenderMultisampleType_t GetBestSupportedMultisampleType( int nFormat, RenderMultisampleType_t nDesired ) = 0;
+	virtual RenderMultisampleType_t GetBestSupportedMultisampleType( ImageFormat nFormat, RenderMultisampleType_t nDesired ) = 0;
 
 	virtual bool SupportsDescriptorSets() = 0;
 
@@ -127,7 +150,7 @@ public:
 	virtual int GetMinSubgroupSize() = 0;
 	virtual int GetMaxSubgroupSize() = 0;
 
-	virtual int GetLowLatencyMode() = 0;
+	virtual RenderLowLatencyMode_t GetLowLatencyMode() = 0;
 
 	// The Vulkan device sets it when it has the VK_KHR_shader_float16_int8 and VK_KHR_16bit_storage features
 	virtual bool SupportsNative16BitShaderOps() = 0;
