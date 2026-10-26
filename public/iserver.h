@@ -350,7 +350,8 @@ public:
 
 	// AsyncUnloadSpawnGroup calls made while a CNetworkGameServerSpawnGroupAutoLock is held
 	CUtlVector< QueuedSpawnGroupUnload_t > m_QueuedSpawnGroupUnloads;
-	int m_bQueueSpawnGroupUnloads;
+	// Atomic count of the CNetworkGameServerSpawnGroupAutoLock instances; spawn group unloads are queued while it is not 0
+	int m_nSpawnGroupAutoLockCount;
 	// Spawn group created for the resources of the just in time manifests, unloaded when their count drops to 0
 	SpawnGroupHandle_t m_hJustInTimeResourceSpawnGroup;
 
