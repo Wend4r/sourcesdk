@@ -219,6 +219,17 @@ enum RenderDefragAlgorithm_t : uint8
 	RENDER_DEFRAG_ALGORITHM_EXTENSIVE,
 };
 
+// Conversion of the read pixels in IRenderDevice::ReadTexturePixels; 1 converts like RENDER_GAMMA_LINEAR
+enum RenderGammaType_t : uint8
+{
+	RENDER_GAMMA_LINEAR = 0,
+	RENDER_GAMMA_SRGB = 2,
+	RENDER_GAMMA_1_8,
+	RENDER_GAMMA_2_0,
+	RENDER_GAMMA_2_2,
+	RENDER_GAMMA_1_0,
+};
+
 abstract_class IRenderDevice
 {
 public:
@@ -322,7 +333,7 @@ public:
 
 	// Overloads in declaration order; MSVC groups them in reverse
 	virtual bool ReadTexturePixels( HRenderTexture hTexture, Rect_t *pSrcRect, int nSrcSlice, int nSrcMip, Rect_t *pDstRect, void *pData, ImageFormat dstFormat, int nDstStride ) = 0;
-	virtual bool ReadTexturePixels( FloatBitMap_t *pBitmap, HRenderTexture hTexture, uint8 nGammaType ) = 0;
+	virtual bool ReadTexturePixels( FloatBitMap_t *pBitmap, HRenderTexture hTexture, RenderGammaType_t nGammaType ) = 0;
 
 	virtual bool ReadBuffer( RenderBufferHandle_t hBuffer, uint32 nOffsetInBytes, void *pBuf, uint32 nBytesToRead ) = 0;
 	virtual bool IsPolledBufferReadbackReady( void *hRequest ) = 0;
