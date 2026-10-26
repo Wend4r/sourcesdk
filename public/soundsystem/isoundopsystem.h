@@ -215,8 +215,9 @@ public:
 	virtual CSoundEvent *GetSoundEvent( const char *pSoundEventName ) const = 0;
 	// Binding the sound event was added with
 	virtual const ResourceBindingBase_t *GetSoundEventResourceBinding( const char *pSoundEventName ) = 0;
-	// Looks up the resource of the sound event binding in the asset system; true when the asset exists and its slot 66 reports 0
-	virtual bool unk07( const char *pSoundEventName ) = 0;
+	// Looks up the resource of the sound event binding in the asset system; true when the asset exists and the mod index of
+	// its files is 0 (IAsset slot 66)
+	virtual bool IsSoundEventAssetInFirstMod( const char *pSoundEventName ) = 0;
 	virtual void ListSoundEvents( CUtlVector< const char * > &list ) const = 0;
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const = 0;
 	// Sound events added with pBinding
@@ -474,7 +475,7 @@ public:
 	virtual CSoundEvent *GetSoundEvent( uint32 nSoundEvent, bool bWarn ) const override;
 	virtual CSoundEvent *GetSoundEvent( const char *pSoundEventName ) const override;
 	virtual const ResourceBindingBase_t *GetSoundEventResourceBinding( const char *pSoundEventName ) override;
-	virtual bool unk07( const char *pSoundEventName ) override;
+	virtual bool IsSoundEventAssetInFirstMod( const char *pSoundEventName ) override;
 	virtual void ListSoundEvents( CUtlVector< const char * > &list ) const override;
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const override;
 	virtual void ListSoundEventsForResource( CUtlVector< const char * > &list, const ResourceBindingBase_t *pBinding ) override;
@@ -555,7 +556,7 @@ public:
 	virtual CSoundEvent *GetSoundEvent( uint32 nSoundEvent, bool bWarn ) const override;
 	virtual CSoundEvent *GetSoundEvent( const char *pSoundEventName ) const override;
 	virtual const ResourceBindingBase_t *GetSoundEventResourceBinding( const char *pSoundEventName ) override;
-	virtual bool unk07( const char *pSoundEventName ) override;
+	virtual bool IsSoundEventAssetInFirstMod( const char *pSoundEventName ) override;
 	virtual bool GetSoundEventVoiceGraph( uint32 nSoundEvent, CUtlString &sValue ) override;
 	virtual void ListSoundEvents( CUtlVector< const char * > &list ) const override;
 	virtual void ListSoundEvents( CUtlVector< CUtlString > &list ) const override;
