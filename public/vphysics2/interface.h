@@ -200,9 +200,10 @@ public:
 	virtual void BeginFrame() = 0;
 	virtual void EndFrame() = 0;
 
-	virtual void BeginAsyncPostTickJobs( void *pUnused, bool bUnknown ) = 0;
+	virtual void BeginAsyncPostTickJobs( void *pUnused, bool bHighPriority ) = 0;
 	virtual void EndAsyncPostTickJobs() = 0;
-	virtual void PostRopeJob( const void *pJob, bool bUnknown ) = 0;
+	// bHighPriorityOnly queues the job on the list that only the high priority pass runs
+	virtual void PostRopeJob( const std::function< void() > &job, bool bHighPriorityOnly ) = 0;
 	virtual void UpdateParticleRopes() = 0;
 	virtual bool IsInAsyncPostTickJobs() = 0;
 	virtual void Collide( float flTimeStep ) = 0;
@@ -250,12 +251,14 @@ public:
 	virtual float GetCurrentTime() = 0;
 	virtual int GetStepCount() = 0;
 
-	virtual void unk043( int nValue ) = 0;
-	virtual int unk044() = 0;
-	virtual void unk045( int nValue ) = 0;
-	virtual int unk046() = 0;
-	virtual void unk047( int nValue ) = 0;
-	virtual int unk048() = 0;
+	// Store CRnWorld ints that nothing in the library reads: the first (4 by default) precedes the multithreading fields, the third
+	// (1 by default) follows the TOI iterations in the iteration block, the second (1 by default) follows it
+	virtual void SetUnreadSetting1( int nValue ) = 0;
+	virtual int GetUnreadSetting1() = 0;
+	virtual void SetUnreadSetting2( int nValue ) = 0;
+	virtual int GetUnreadSetting2() = 0;
+	virtual void SetUnreadSetting3( int nValue ) = 0;
+	virtual int GetUnreadSetting3() = 0;
 
 	// Wind velocity at a position, sampled by the softbody step; the server installs its wind lookup
 	virtual void SetWindCallback( Vector ( *pfnGetWind )( const Vector &vPosition ) ) = 0;
@@ -313,8 +316,9 @@ public:
 	virtual IPhysicsJoint *AddSplineJoint( const PhysicsJointDesc_t &desc ) = 0;
 	virtual IPhysicsJoint *AddWheelJoint( const PhysicsJointDesc_t &desc ) = 0;
 
-	// Creates the joints of a set of joint descriptions and appends them to joints
-	virtual void AddJoints( const PhysicsAggregateDef_t &aggregate, const CUtlVector< IPhysicsBody * > &bodies, const void *pUnused1, const void *pUnused2, bool bUnknown, CUtlVector< IPhysicsJoint * > &joints, CUtlVector< int > &parts ) = 0;
+	// Creates the joints of a set of joint descriptions and appends them to joints; bUseCurrentBodyTransforms builds the joint frames
+	// from the current body transforms instead of the stored local frames
+	virtual void AddJoints( const PhysicsAggregateDef_t &aggregate, const CUtlVector< IPhysicsBody * > &bodies, const void *pUnused1, const void *pUnused2, bool bUseCurrentBodyTransforms, CUtlVector< IPhysicsJoint * > &joints, CUtlVector< int > &parts ) = 0;
 
 	virtual void RemoveJoint( IPhysicsJoint *pJoint ) = 0;
 
@@ -334,8 +338,9 @@ public:
 	// Clears the pointer on success
 	virtual bool DestroyRope( IPhysicsRope **ppRope ) = 0;
 
-	// The nodes are placed at the points transformed by transform; a value that is not positive selects the default (0.1, 2 and 8)
-	virtual IPhysicsParticleRope *CreateParticleRope( const void *pUnknown, const CTransform &transform, const CUtlVector< Vector > &points, float flNodeMass, float flNodeRadius, float flSegmentLength ) = 0;
+	// The nodes are placed at the points transformed by transform; a value that is not positive selects the default (0.1, 2 and 8).
+	// The rope copies the collision attributes
+	virtual IPhysicsParticleRope *CreateParticleRope( const RnCollisionAttr_t *pCollisionAttr, const CTransform &transform, const CUtlVector< Vector > &points, float flNodeMass, float flNodeRadius, float flSegmentLength ) = 0;
 	virtual bool DestroyParticleRope( IPhysicsParticleRope **ppRope ) = 0;
 	virtual int GetParticleRopeCount() = 0;
 	virtual IPhysicsParticleRope *GetParticleRope( int nIndex ) = 0;
@@ -518,7 +523,8 @@ public:
 	virtual void SetDebugName( const char *pszName ) = 0;
 	virtual void unk206() = 0;
 
-	virtual void *unk207() = 0;
+	// A CRnWorld member of two hash tables with 24-byte entries that only the constructor and the cleanup touch
+	virtual void *GetUnusedHashtables() = 0;
 
 	// Both return 0
 	virtual int unk208() = 0;
@@ -535,15 +541,15 @@ public:
 	virtual IPhysReflContext *GetReflContext() = 0;
 
 	// Sends the frame recorded for the physics debugger while streaming to it, otherwise drops the recorded data.
-	// bUnknown sets the bit of the CRnWorld flags that starting a stream sets on every world
-	virtual void FlushDebugRecording( bool bUnknown ) = 0;
+	// bStateChanged sets the bit of the CRnWorld flags that starting a stream sets on every world
+	virtual void FlushDebugRecording( bool bStateChanged ) = 0;
 
 	virtual void UpdateDebugScene() = 0;
 
 	// Empty
 	virtual void unk218() = 0;
 
-	virtual void unk219( void *pUnknown1, void *pUnknown2, void *pUnknown3, void *pUnknown4, void *pUnknown5 ) = 0;
+	virtual void unk219( void *pUnused1, void *pUnused2, void *pUnused3, void *pUnused4, void *pUnused5 ) = 0;
 	// Creates or updates the debug shapes of the shapes that pass the debug draw filter when bEnabled is set
 	virtual void UpdateDebugShapes( bool bEnabled ) = 0;
 	virtual void DestroyDebugShapes() = 0;
@@ -552,7 +558,8 @@ public:
 	virtual void Draw( ISceneViewDebugOverlays *pDebugOverlays, const CFrustum *pFrustum ) = 0;
 	virtual void UpdateSceneObjects( CCallQueue &callQueue ) = 0;
 
-	virtual void *unk224() = 0;
+	// A 16-byte CRnWorld member that only the constructor writes
+	virtual void *GetUnusedWorldBlock() = 0;
 
 	// The debug draw options used by Draw and UpdateSceneObjects
 	virtual uint64 GetDebugDrawOptions() = 0;
@@ -595,7 +602,7 @@ public:
 	virtual const char *GetBuildString() = 0;
 
 	// Handles the physics world console command: snapshots, saving and dumping of the world
-	virtual void DumpState( const CCommand &args, float flUnknown ) = 0;
+	virtual void DumpState( const CCommand &args, float flCurrentTime ) = 0;
 
 	// Dumps the bodies, shapes and joints of the world to a file
 	virtual void DumpToJSON( const char *pszFileName, void *pUnused ) = 0;
@@ -775,10 +782,10 @@ public:
 	virtual int GetDebugRecordCount() = 0;
 	virtual int GetDebugRecordBufferSize() = 0;
 
-	// Debugger flag 2; unk013 and unk014 test the debugger flags 4 and 8, which nothing in the library reads
+	// Debugger flag 2; the next two test the debugger flags 4 and 8, which nothing in the library reads
 	virtual bool IsRecordingTraces() = 0;
-	virtual bool unk013() = 0;
-	virtual bool unk014() = 0;
+	virtual bool IsDebuggerFlag4Set() = 0;
+	virtual bool IsDebuggerFlag8Set() = 0;
 
 	// Debugger flag 0x10, which keeps ClearAwakeBodies from emptying the awake body list
 	virtual bool IsAwakeBodyListKept() = 0;
@@ -819,7 +826,7 @@ public:
 	virtual void unk031() = 0;
 
 	// Forwards to the same function of the world
-	virtual void FlushDebugRecording( bool bUnknown ) = 0;
+	virtual void FlushDebugRecording( bool bStateChanged ) = 0;
 
 	// Returns 0
 	virtual int unk033() = 0;
