@@ -38,13 +38,17 @@ struct CPathSegment
 		PATH_SEG_CLIMB_UP = 4,
 		PATH_SEG_LADDER_UP = 5,
 		PATH_SEG_LADDER_DOWN = 6,
-		// The game also uses 7 for a segment in a nav link area.
+		// A segment in an area with NAV_AREA_NAV_LINK.
+		PATH_SEG_NAV_LINK = 7,
+		// A segment in an area with NAV_MESH_NON_ZUP; drawn with the nav link segments.
+		PATH_SEG_NON_ZUP = 8,
+		// A segment added where the path crosses a transition between two areas.
+		PATH_SEG_TRANSITION = 10,
 	};
 
 	// GO_SAME_AREA for the first segment.
 	NavTraverseType how;
-	// SegmentType.
-	int type;
+	SegmentType type;
 	// The edge of the previous area crossed into this one, -1 for the first segment.
 	int8 inEdge;
 	// The ladder of a ladder segment.
@@ -96,7 +100,7 @@ public:
 	bool IsValid() const { return m_nSegmentCount > 0; }
 	int GetSegmentCount() const { return m_nSegmentCount; }
 	const CPathSegment &GetSegment( int i ) const { return m_path[ i ]; }
-	PathResult_t GetResult() const { return ( PathResult_t )m_PathResultStatus; }
+	PathResult_t GetResult() const { return m_PathResultStatus; }
 
 public:
 	CPathSegment m_path[ MAX_PATH_SEGMENTS ];
@@ -109,11 +113,11 @@ private:
 	uint8 m_Unk480D[ 3 ];
 
 public:
-	// IDs of the nav link areas (dynamic attribute 0x200) the path goes through, whose segments
-	// get type 7.
+	// IDs of the nav link areas (NAV_AREA_NAV_LINK) the path goes through, whose segments get
+	// PATH_SEG_NAV_LINK.
 	CUtlVectorFixedGrowable< uint32, 2 > m_NavLinkAreaIds;
 
-	int m_PathResultStatus;
+	PathResult_t m_PathResultStatus;
 	bool m_bUnk4834;
 };
 
