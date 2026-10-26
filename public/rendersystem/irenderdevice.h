@@ -154,6 +154,10 @@ enum RenderVariableRefreshRateStatus_t : int
 // Records the per-texture streaming state the texture manager reports
 #define RENDERDEBUGFLAG_TRACK_TEXTURE_STREAMING ( 1 << 5 )
 
+// nFlags of IRenderDevice::CreateDescriptorSet
+#define RENDER_DESCRIPTOR_SET_CREATE_NO_TEXTURE_TRACKING ( 1 << 0 ) // keeps no references to the bound textures
+#define RENDER_DESCRIPTOR_SET_CREATE_REGISTER_SHADER_LAYOUT ( 1 << 1 ) // for GetRegisteredDescriptorSetLayout
+
 abstract_class IRenderDevice
 {
 public:
