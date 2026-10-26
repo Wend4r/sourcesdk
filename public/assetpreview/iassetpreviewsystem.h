@@ -11,6 +11,8 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/threadtools.h"
+#include "mathlib/vector.h"
 #include "tier0/utldict.h"
 #include "color.h"
 #include "tier1/utlvector.h"
@@ -27,6 +29,11 @@ class IToolFrameListener;
 class CToolSceneNode;
 class CQAssetPreviewToolSceneWidget;
 class CLightingControlRig;
+class CAssetPreviewToolScene;
+
+// Render attribute set (vectors, matrices, integers, handles and strings keyed by string tokens)
+// that RenderAsset merges into the attributes of its tool scene
+class CRenderAttributeSet;
 
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 
@@ -135,9 +142,9 @@ public:
 	// Render through a tool scene with the editor camera. RenderAsset simulates particle systems
 	// first and renders with the swap chain textures 0 and 1 of hSwapChain, reading the pixels back to pPixels when
 	// set; pRenderAttributes, when set, is merged into the attributes of the tool scene (nUnknown is not
-	// read). RenderMaterialToPixels accepts only materials and writes nWidth * nHeight pixels of
+	// read, hammer and met pass 2). RenderMaterialToPixels accepts only materials and writes nWidth * nHeight pixels of
 	// IMAGE_FORMAT_RGBA8888 or IMAGE_FORMAT_RGB888 to pPixels, failing for other formats
-	virtual void RenderAsset( IAsset *pAsset, int nWidth, int nHeight, int nUnknown, uint8 *pPixels, void *pRenderAttributes, SwapChainHandle_t hSwapChain ) = 0;
+	virtual void RenderAsset( IAsset *pAsset, int nWidth, int nHeight, int nUnknown, uint8 *pPixels, const CRenderAttributeSet *pRenderAttributes, SwapChainHandle_t hSwapChain ) = 0;
 	virtual bool RenderMaterialToPixels( IAsset *pMaterial, int nWidth, int nHeight, ImageFormat nFormat, uint8 *pPixels ) = 0;
 
 	// Updates the previews and the tool scene widgets every tools frame ("Asset Preview System")
@@ -216,7 +223,7 @@ public:
 	struct EmbeddedLivePreview_t
 	{
 		QWidget *m_pWidget;
-		void *m_pLivePreview;
+		CAssetPreviewToolScene *m_pToolScene;
 		IAsset *m_pAsset;
 
 		// Page and rectangle the widget copies its pixmap from, the page is -1 while the widget is hidden
@@ -226,7 +233,26 @@ public:
 		int m_nWidth;
 		int m_nHeight;
 
-		uint8 m_unk02C[ 0x1C ];
+		// Framing bounds that ease halfway towards the bounds of the scene on every render
+		Vector m_vecFramingMins;
+		Vector m_vecFramingMaxs;
+	};
+
+	// Thumbnail cache statistics of this run, shown by the thumbnail cache manager; times in seconds
+	struct ThumbnailCacheStats_t
+	{
+		uint64 m_nShownFromCache;
+		uint64 m_nGenerated;
+		uint64 m_nDownloaded;
+		uint64 m_nDownloadsNotFound;
+		uint64 m_nWebFailures;
+
+		double m_flCacheReadTime;
+		double m_flCacheDecodeTime;
+		double m_flDownloadLookupTime;
+		double m_flDownloadRetrieveTime;
+		double m_flDownloadDecodeTime;
+		double m_flGenerateTime;
 	};
 
 	// Tool scene widgets of the previews, run by RunFrame
@@ -244,10 +270,16 @@ public:
 
 	// Plat_FloatTime of the last live preview render
 	float m_flLastLivePreviewRenderTime;
-	uint8 m_unk0BC[ 4 ];
 
-	// CThreadEvent, whose size differs between the platforms
-	uint8 m_unk0C0[ 0x10 ];
+	// Pixel readbacks of the live previews in flight; the last one to complete sets the event,
+	// which the render resets before issuing them and waits for
+	CInterlockedInt m_nPendingLivePreviewReadbacks;
+#ifdef PLATFORM_WINDOWS
+	CThreadEvent m_LivePreviewReadbacksDone;
+#else
+	// assetpreview ships only on Windows; the POSIX CThreadEvent is larger
+	uint8 m_LivePreviewReadbacksDone[ 16 ];
+#endif
 
 	// "live_preview" and "background_color" settings
 	bool m_bLivePreviewEnabled;
@@ -263,10 +295,10 @@ public:
 	bool m_bPreviewOverlayIconsEnabled;
 	bool m_bPreviewModelVertexFramingEnabled;
 
-	// RunFrame copies the thumbnail cache statistics into m_unk118 at this interval
+	// RunFrame copies the thumbnail cache statistics into m_ThumbnailCacheStats at this interval
 	double m_flNextThumbnailStatsTime;
 	double m_flThumbnailStatsStartTime;
-	uint8 m_unk118[ 0x58 ];
+	ThumbnailCacheStats_t m_ThumbnailCacheStats;
 };
 
 #endif // IASSETPREVIEWSYSTEM_H
