@@ -76,10 +76,11 @@ public:
 // Output registered by an entity class
 struct EntOutput_t
 {
-private:
-	uint8 m_pad0000[ 16 ];
+	// The output's name; FindOutput looks outputs up by it
+	const char *m_pName;
+	// 0 when the output is registered
+	uint32 m_nFlags;
 
-public:
 	// Object that holds the output, such as a component; null when the entity holds it
 	void *( *m_pfnGetOutputOwner )( CEntityInstance *pEntity );
 
@@ -140,9 +141,21 @@ class IEntityIONotify
 {
 public:
 	virtual void OnConnectionFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection, const CPulseArgumentPack *pArgs ) = 0;
-	virtual void Unk_01() = 0;
+	// Called by the event queue for the inputs it delivers to pTarget
+	virtual void OnEntityIOInput( CEntityInstance *pTarget, const char *pszInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const variant_t *pValue, const CPulseArgumentPack *pArgs ) = 0;
 	virtual void OnConnectionRemoved( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection ) = 0;
 	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) = 0;
+};
+
+// The server's notifier, a static instance without members: it logs fired connections, inputs,
+// removed connections and outputs, and draws debug overlays for inputs.
+class CEntityIONotify : public IEntityIONotify
+{
+public:
+	void OnConnectionFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection, const CPulseArgumentPack *pArgs ) override;
+	void OnEntityIOInput( CEntityInstance *pTarget, const char *pszInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const variant_t *pValue, const CPulseArgumentPack *pArgs ) override;
+	void OnConnectionRemoved( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection ) override;
+	void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) override;
 };
 
 schema class CEntityIOOutput

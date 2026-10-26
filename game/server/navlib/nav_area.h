@@ -102,8 +102,7 @@ schema enum NavDirType
 	NUM_NAV_DIR_TYPE_DIRECTIONS = 4,
 };
 
-// How a path segment is entered. Values 0 to 3 cross the edge with that index; the game uses
-// further values (7, 8) for other floor transitions.
+// How a path segment is entered. Values 0 to 3 cross the edge with that index.
 enum NavTraverseType
 {
 	GO_NORTH = 0,
@@ -113,6 +112,14 @@ enum NavTraverseType
 	GO_SAME_AREA = 4,
 	GO_LADDER_UP = 5,
 	GO_LADDER_DOWN = 6,
+	// Through a transition of the nav connection registry (nav_create_indirect_connection);
+	// only collected when the neighbour query asks for transitions.
+	GO_TRANSITION = 7,
+	// Through a nav link, from an area with NAV_AREA_NAV_LINK or NAV_AREA_CONNECTED_TO_NAV_LINK_OUT.
+	GO_NAV_LINK = 8,
+
+	// Also stored as the step of an empty neighbour record.
+	NUM_TRAVERSE_TYPES = 9,
 };
 
 // What an area or position visitor returns to the mesh's iteration and search helpers.
@@ -155,6 +162,19 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// The gravity direction at a nav vertex.
+//-----------------------------------------------------------------------------
+schema struct NavGravity_t
+{
+	TYPEMETA( MGetKV3ClassDefaults );
+	DECLARE_SCHEMA_DATA_CLASS( NavGravity_t );
+
+	Vector m_vGravity;
+	// Set when m_vGravity equals the default ( 0, 0, -1 ).
+	bool m_bDefault;
+};
+
+//-----------------------------------------------------------------------------
 // One polygon of the geometry manager: indices into its vertex array.
 //-----------------------------------------------------------------------------
 struct NavPolyDef_t
@@ -166,22 +186,28 @@ struct NavPolyDef_t
 //-----------------------------------------------------------------------------
 // The shared vertices and polygons the areas of a mesh are made of. Every mesh embeds one.
 //-----------------------------------------------------------------------------
+// CNavGeometryManager::m_nVertexAttributeFlags: m_VertexAttributes holds one entry per vertex.
+#define NAV_GEOMETRY_VERTEX_ATTRIBUTES ( 1 << 0 )
+
 class CNavGeometryManager
 {
-private:
-	uint8 m_Unk00[ 0x20 ];
-
 public:
+	// NAV_GEOMETRY_* bits. Read from the nav file; building from generated geometry ORs in the
+	// flags of the generator's output.
+	uint32 m_nVertexAttributeFlags;
+	// Gravity of each vertex while NAV_GEOMETRY_VERTEX_ATTRIBUTES is set; a vertex added
+	// without one, and every gap before it, gets the default. Rotated by movable mesh updates
+	// whose meshes have gravity follow their rotation.
+	CUtlVector< NavGravity_t > m_VertexAttributes;
 	CUtlVector< Vector > m_Vertices;
-
-private:
-	uint8 m_Unk38[ 0x30 ];
-
-public:
+	// The number of polygons that use each vertex; a vertex is freed when it drops to 0, and
+	// a freed vertex holds -1.
+	CUtlVector< int > m_VertexRefCounts;
+	// Indices of freed vertices; adding a vertex takes the last one before growing m_Vertices.
+	CUtlVector< int > m_FreeVertices;
 	CUtlVector< NavPolyDef_t > m_Polys;
-
-private:
-	uint8 m_Unk80[ 0x18 ];
+	// Indices of removed polygons; adding a polygon takes the last one before growing m_Polys.
+	CUtlVector< int > m_FreePolys;
 };
 
 //-----------------------------------------------------------------------------
@@ -231,6 +257,10 @@ typedef CNavConnectVector::Data_t NavConnectList_t;
 // The geometry of an area: one polygon of the mesh's geometry manager, its centre, normal,
 // bounds and attributes.
 //-----------------------------------------------------------------------------
+
+// CNavPoly::m_nPolyFlags: the polygon's corners are within 0.05 units of one height.
+#define NAV_POLY_FLAT ( 1 << 0 )
+
 abstract_class CNavPoly
 {
 public:
@@ -263,7 +293,7 @@ public:
 	const Vector &GetNormal() const { return m_vecNormal; }
 	const Vector &GetExtentMins() const { return m_vecExtentMins; }
 	const Vector &GetExtentMaxs() const { return m_vecExtentMaxs; }
-	bool IsFlat() const { return ( m_nPolyFlags & 1 ) != 0; }
+	bool IsFlat() const { return ( m_nPolyFlags & NAV_POLY_FLAT ) != 0; }
 
 	const CNavAttribute &GetAttributes() const { return m_AreaAttributes; }
 	bool HasAttributes( uint64 nMask ) const { return m_AreaAttributes.HasAny( nMask ); }
@@ -286,7 +316,7 @@ public:
 	uint8 m_nHullIdx;
 	// Set while the area is listed in its mesh's grid.
 	bool m_bIsInGrid;
-	// Bit 0: the polygon's corners are within 0.05 units of one height.
+	// NAV_POLY_* bits.
 	uint8 m_nPolyFlags;
 };
 
@@ -406,6 +436,12 @@ struct SpotOrder
 	};
 };
 
+// A line segment.
+struct Ray
+{
+	Vector from, to;
+};
+
 //-----------------------------------------------------------------------------
 // One way through an area, from one neighbour to another, and the spots to watch on the way.
 //-----------------------------------------------------------------------------
@@ -415,11 +451,9 @@ struct SpotEncounter
 	int fromDir;
 	CNavConnect to;
 	int toDir;
-
-private:
-	uint8 m_Unk2C[ 0x1C ];
-
-public:
+	// From the middle of the edge to 'from' to the middle of the edge to 'to', 62 units above the
+	// floor; set by the encounter computation and not saved.
+	Ray path;
 	CUtlVector< SpotOrder > spots;
 };
 

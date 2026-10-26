@@ -18,6 +18,9 @@
 #include "tier0/utlvector.h"
 #include "tier0/utlleanvector.h"
 #include "tier0/utlhashtable.h"
+#include "tier0/utlpair.h"
+#include "tier0/threadtools.h"
+#include "tier1/utlhashmaplarge.h"
 #include "nav_area.h"
 #include "nav_ladder.h"
 
@@ -75,6 +78,16 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// The areas selected in the nav editor. Splitting a selected area puts both halves in the set
+// and takes the split area out.
+//-----------------------------------------------------------------------------
+class CNavSelectionSet
+{
+public:
+	CUtlVector< CNavArea * > m_SetAreas;
+};
+
+//-----------------------------------------------------------------------------
 // The names of the places (callouts) of a mesh.
 //-----------------------------------------------------------------------------
 class CNavPlaceDatabase
@@ -126,10 +139,26 @@ schema struct CNavHullVData
 class CNavGenParams
 {
 public:
-	// One entry of HullParams: a hull's agent settings and its name.
+	// One entry of HullParams: a hull's agent settings and its name. The settings are those of
+	// CNavHullVData in another order, as the nav file reader and the NavAgent*_N gameinfo keys
+	// store them.
 	struct HullParams_t
 	{
-		CNavHullVData m_Hull;
+		bool m_bAgentEnabled;
+		float m_flAgentRadius;
+		int m_nAgentBorderErosion;
+		float m_flAgentHeight;
+		bool m_bAgentShortHeightEnabled;
+		float m_flAgentShortHeight;
+		bool m_bAgentCrawlEnabled;
+		float m_flAgentCrawlHeight;
+		float m_flAgentMaxClimb;
+		int m_nAgentMaxSlope;
+		float m_flAgentMaxJumpDownDist;
+		float m_flAgentMaxJumpHorizDistBase;
+		float m_flAgentMaxJumpUpDist;
+		bool m_bFlowMapGenerationEnabled;
+		float m_flFlowMapNodeMaxRadius;
 		CUtlString m_sName;
 	};
 
@@ -145,10 +174,11 @@ public:
 	int m_nEdgeMaxLen;
 	float m_flEdgeMaxError;
 	int m_nVertsPerPoly;
+	// NavSmallAreaOnEdgeRemovalSize of the project defaults. Read from settings version 7 on;
+	// -1 by default.
+	float m_flSmallAreaOnEdgeRemovalSize;
 
 private:
-	// Read from settings version 7 on; -1 by default.
-	float m_flUnk2C;
 	// Two strings read from settings version 12 on.
 	CUtlString m_sUnk30;
 	CUtlString m_sUnk38;
@@ -158,7 +188,11 @@ public:
 	CUtlVector< HullParams_t > m_HullParams;
 
 private:
-	uint8 m_Unk58[ 2 ];
+	// Cleared in the project defaults.
+	bool m_bUnk58;
+	// Read from the nav file after the hull parameters (settings version 12 on); compared with
+	// the project defaults.
+	bool m_bUnk59;
 };
 
 //-----------------------------------------------------------------------------
@@ -178,13 +212,199 @@ private:
 };
 
 //-----------------------------------------------------------------------------
-// The areas of movable meshes (moving platforms) and their transforms. It has no virtuals; its
-// members are not reconstructed.
+// Integers of which the first N are kept inline and the rest in a vector. Movable meshes are
+// identified by one, parsed from their ':'-separated mesh id string; the manager keys them by
+// its hash.
 //-----------------------------------------------------------------------------
-class CNavMovableMeshesManager
+template < typename T, int N >
+class CUtlIntString
+{
+public:
+	// Number of used entries in m_Inline.
+	int m_nInlineCount;
+	T m_Inline[ N ];
+	// The entries after the first N.
+	CUtlVector< T > m_Overflow;
+};
+
+//-----------------------------------------------------------------------------
+// Generated geometry that CNavMesh::BuildFromNavGen replaces the mesh with.
+//-----------------------------------------------------------------------------
+struct NavGenVertex_t
+{
+	double x, y, z;
+};
+
+// The generated vertices; m_VertexAttributes replaces the geometry manager's attributes when it
+// holds one entry per vertex.
+struct NavGenGeometry_t
+{
+	CUtlVector< NavGenVertex_t > m_Vertices;
+	CUtlVector< NavGravity_t > m_VertexAttributes;
+};
+
+// Per-hull connection data of a generated polygon, not reconstructed.
+struct NavGenPolyHullLinks_t;
+
+// The agent height a generated polygon was built for.
+enum NavGenPolyHeight_t : uint8
+{
+	// Adds NAV_MESH_CROUCH_HEIGHT to the area attributes.
+	NAV_GEN_POLY_HEIGHT_CROUCH = 1,
+	// Adds NAV_MESH_CRAWL_HEIGHT to the area attributes.
+	NAV_GEN_POLY_HEIGHT_CRAWL = 2,
+};
+
+// NavGenPoly_t::m_nFlags; each adds the attribute of the same name to the area.
+#define NAV_GEN_POLY_NON_ZUP ( 1 << 3 )
+#define NAV_GEN_POLY_NON_ZUP_TRANSITION ( 1 << 4 )
+
+// A generated polygon; the area created for the polygon at the same index takes its hull,
+// attributes and movable mesh.
+struct NavGenPoly_t
+{
+	int m_nVertexCount;
+	// Passed to AddNavArea, -1 when the polygon is not on a movable mesh.
+	uint32 m_nMovableMeshId;
+
+private:
+	uint8 m_pad008[ 56 ];
+
+public:
+	NavGenPolyHeight_t m_nHeightType;
+
+private:
+	uint8 m_pad041[ 3 ];
+
+public:
+	// NAV_GEN_POLY_* bits.
+	uint8 m_nFlags;
+
+private:
+	uint8 m_pad045[ 29 ];
+
+public:
+	// Copied to CNavPoly::m_nHullIdx.
+	uint8 m_nHullIdx;
+
+private:
+	uint8 m_pad063[ 5 ];
+
+public:
+	// Indices into NavGenGeometry_t::m_Vertices.
+	int m_nVertexIndices[ 6 ];
+	const NavGenPolyHullLinks_t *m_pHullLinks;
+};
+
+// A movable mesh of the generated geometry.
+struct NavGenMovableMesh_t
+{
+	CUtlIntString< int, 6 > m_MeshId;
+	matrix3x4_t m_Transform;
+	// movable_mesh_gravity_follows_rotation
+	bool m_bGravityFollowsRotation;
+};
+
+// A generated ladder: indices of the areas created from the generated polygons, -1 for none.
+struct NavGenLadder_t
+{
+	int m_nTopForwardArea;
+	int m_nTopLeftArea;
+	int m_nTopRightArea;
+	int m_nTopBehindArea;
+	// CNavLadder::m_pBottomArea and the two bottom areas after it.
+	int m_nBottomAreas[ 3 ];
+};
+
+//-----------------------------------------------------------------------------
+// One area to add to or remove from a grid cell after a movable mesh update.
+//-----------------------------------------------------------------------------
+struct NavBatchUpdateAreaInGridOp_t
+{
+	CNavArea *m_pArea;
+	// Cell index (y * width + x) in the grid.
+	int m_nCellIndex;
+	// Removes the area from the cell instead of adding it; false when queued by the geometry
+	// change of the area.
+	bool m_bRemove;
+};
+
+//-----------------------------------------------------------------------------
+// The areas associated with movable meshes, keyed by movable mesh hash.
+//-----------------------------------------------------------------------------
+class CNavMovableMeshCatalog
 {
 private:
-	uint8 m_Data[ 0x1A0 ];
+	// The areas of each movable mesh that lack NAV_AREA_EXTERNALLY_CREATED.
+	CUtlHashtable< uint32, CUtlVector< CNavArea * > * > m_AreasByMesh;
+	// The areas of each movable mesh that have NAV_AREA_EXTERNALLY_CREATED.
+	CUtlHashtable< uint32, CUtlHashtable< CNavArea * > * > m_DynamicAreasByMesh;
+	// By area ID: the first and the second movable mesh the area was added for, -1 when unset.
+	CUtlHashtable< uint32, CUtlPair< uint32, uint32 > > m_MeshesByArea;
+};
+
+//-----------------------------------------------------------------------------
+// The areas of movable meshes (moving platforms) and their transforms. It has no virtuals.
+//-----------------------------------------------------------------------------
+// CNavMovableMeshesManager::MovableMeshContext_t::m_nFlags: movable_mesh_gravity_follows_rotation.
+#define NAV_MOVABLE_MESH_GRAVITY_FOLLOWS_ROTATION ( 1 << 3 )
+
+class CNavMovableMeshesManager
+{
+public:
+	struct MovableMeshContext_t
+	{
+		// The transform the areas were last moved with.
+		matrix3x4_t m_AppliedTransform;
+		// The last transform received; while the mesh is in m_SuspendedMeshes only this one is
+		// updated.
+		matrix3x4_t m_PendingTransform;
+		// NAV_MOVABLE_MESH_* bits.
+		uint32 m_nFlags;
+	};
+
+	// Filled by several threads: a slot is taken by incrementing m_nCount and entries past the
+	// preallocated m_Elements go to m_Overflow under m_OverflowMutex. The counter is on its own
+	// cache line.
+	template < typename T >
+	struct AppendBuffer_t
+	{
+		CUtlLeanVector< T > m_Elements;
+		CUtlLeanVector< T > m_Overflow;
+		CAtomicMutex m_OverflowMutex;
+
+	private:
+		uint8 m_pad[ 128 - 32 - sizeof( CAtomicMutex ) ];
+
+	public:
+		int m_nCount;
+		// 0 while the buffer is filled and -1 once it is flushed; nothing reads it.
+		int m_nUnk84;
+
+	private:
+		uint8 m_pad88[ 120 ];
+	};
+
+private:
+	// The mesh id of each movable mesh hash.
+	CUtlHashMap< uint32, CUtlIntString< int, 6 > > m_MeshIds;
+	CUtlHashMap< uint32, MovableMeshContext_t > m_MeshContexts;
+	CNavMovableMeshCatalog m_Catalog;
+	// Incremented by every transform update and stored in m_VertexUpdateSerials for each vertex
+	// it moves, so a vertex shared by several areas moves once.
+	int m_nUpdateSerial;
+	// One per geometry vertex.
+	CUtlVector< int > m_VertexUpdateSerials;
+	// One per hull (CNavArea::m_nHullIdx): the grid cells to put moved areas in.
+	CUtlVector< AppendBuffer_t< NavBatchUpdateAreaInGridOp_t > > m_GridUpdateOps;
+	// One per geometry vertex: the position before the update.
+	CUtlVector< Vector > m_VertexOldPositions;
+	// The areas of each update.
+	CUtlVector< CUtlVector< CNavArea * > > m_UpdateAreas;
+	// One per hull (CNavArea::m_nHullIdx): the areas whose geometry changed.
+	CUtlVector< AppendBuffer_t< CNavArea * > > m_ChangedAreas;
+	// Movable mesh hashes whose areas are not moved by transform updates.
+	CUtlHashtable< uint32 > m_SuspendedMeshes;
 };
 
 //-----------------------------------------------------------------------------
@@ -212,10 +432,10 @@ public:
 	virtual void ResetNavMesh() = 0;
 	// Called when the mesh becomes the active one; raises the next area id above the mesh's own
 	// ids and activates the managers.
-	virtual void Unk_OnActivated() = 0;
+	virtual void OnActivated() = 0;
 	// Called on the active mesh when another one replaces it, and when it is destroyed while
 	// active.
-	virtual void Unk_OnDeactivated() = 0;
+	virtual void OnDeactivated() = 0;
 	virtual void Update() = 0;
 	// Parses a nav file already read into memory; returns 0 on success. pszMapName is the name
 	// the file was looked up by.
@@ -233,19 +453,19 @@ public:
 	virtual void SaveCustomDataPreArea( CUtlBuffer &fileBuffer ) const = 0;
 	virtual void LoadCustomDataPreArea( CUtlBuffer &fileBuffer ) = 0;
 	// Replaces the mesh with generated geometry, taking the generation settings from input.
-	// The first four arguments are the generated vertices, polygons and their data; their types
-	// are not reconstructed.
-	virtual void BuildFromNavGen( const void *pUnk1, const void *pUnk2, const void *pUnk3, const void *pUnk4, const CNavGenInput &input ) = 0;
+	virtual void BuildFromNavGen( const NavGenGeometry_t *pGeometry, const CUtlVector< NavGenPoly_t > *pPolys, const CUtlVector< NavGenMovableMesh_t > *pMovableMeshes, const CUtlVector< NavGenLadder_t > *pLadders, const CNavGenInput &input ) = 0;
 	// Calls OnServerActivate on every area.
 	virtual void OnServerActivate() = 0;
 	// Called on round_start before every area's OnRoundRestart; resets the obstruction manager.
 	virtual void OnRoundRestart() = 0;
-	// Forwards to AddNavArea with no movable mesh.
-	virtual void Unk_AddNavArea( CNavArea *pArea, bool bUnk ) = 0;
 	// Puts the area into the grid and the id hash; a movable mesh id other than -1 also
-	// registers it with that movable mesh and sets NAV_AREA_MOVABLE. bUnk passes docks
-	// (NAV_AREA_DOCK) on to the obstruction manager.
-	virtual void AddNavArea( CNavArea *pArea, uint32 nMovableMeshId, bool bUnk ) = 0;
+	// registers it with that movable mesh and sets NAV_AREA_MOVABLE. bNotifyObstructionManager
+	// passes docks (NAV_AREA_DOCK) on to the obstruction manager.
+	// The two overloads take their slots in this order on Linux and in the reverse order on
+	// Windows, as MSVC groups overloads.
+	virtual void AddNavArea( CNavArea *pArea, uint32 nMovableMeshId, bool bNotifyObstructionManager ) = 0;
+	// Forwards to AddNavArea with no movable mesh.
+	virtual void AddNavArea( CNavArea *pArea, bool bNotifyObstructionManager ) = 0;
 	// Takes the areas out of the grid, the id hash, the movable meshes and the geometry, and
 	// notifies the managers.
 	virtual void RemoveNavArea( int nCount, CNavArea **ppAreas ) = 0;
@@ -253,24 +473,26 @@ public:
 	// them.
 	virtual void RemoveInvalidNavAreas() = 0;
 	// Sets the area's m_nMeshIndex.
-	virtual void Unk_SetAreaMeshIndex( CNavArea *pArea, int nMeshIndex ) = 0;
-	// The movable meshes' movable_mesh_gravity_follows_rotation settings.
-	virtual void Unk_SaveMovableMeshSettings( KeyValues3 *pKV, const void *pUnk ) const = 0;
-	virtual void Unk_LoadMovableMeshSettings( const KeyValues3 *pKV, void *pUnk ) = 0;
+	virtual void SetAreaMeshIndex( CNavArea *pArea, int nMeshIndex ) = 0;
+	// The movable meshes' movable_mesh_gravity_follows_rotation settings. Load appends one flag
+	// per movable mesh to pGravityFollowsRotation.
+	virtual void SaveMovableMeshSettings( KeyValues3 *pKV, const CUtlVector< NavGenMovableMesh_t > *pMovableMeshes ) const = 0;
+	virtual void LoadMovableMeshSettings( const KeyValues3 *pKV, CUtlVector< bool > *pGravityFollowsRotation ) = 0;
 	// Empty in the game's meshes.
-	virtual void Unk_29( void *p ) = 0;
-	// Empty in the game's meshes; given the nav file's KeyValues3 block for versions 31 to 35.
-	virtual void Unk_30( const KeyValues3 *pKV ) = 0;
-	// Forwards to Unk_SaveNavGenHullParams.
-	virtual void Unk_31( KeyValues3 *pKV ) const = 0;
-	// Forwards to Unk_LoadNavGenHullParams.
-	virtual void Unk_32( const KeyValues3 *pKV ) = 0;
-	// Empty in the game's meshes; called by BuildFromNavGen.
-	virtual void Unk_33( void *p ) = 0;
+	virtual void unk029( void *p ) = 0;
+	// Empty in the game's meshes; LoadNavMesh passes the KeyValues3 block that follows the pre-area
+	// custom data of a version 36 nav file.
+	virtual void LoadCustomDataKV3( const KeyValues3 *pKV ) = 0;
+	// Forwards to SaveNavGenHullParams.
+	virtual void SaveHullParams( KeyValues3 *pKV ) const = 0;
+	// Forwards to LoadNavGenHullParams; LoadNavMesh calls it with the nav file's KeyValues3 block.
+	virtual void LoadHullParams( const KeyValues3 *pKV ) = 0;
+	// Empty in the game's meshes; called by BuildFromNavGen once the areas are added.
+	virtual void ReadNavGenMarkup( const CNavGenInput &input ) = 0;
 	// NavGenParams.HullParams: the Name, FlowMap_Enabled and FlowMap_NodeMaxRadius of every
 	// hull in m_NavGenParams.
-	virtual void Unk_LoadNavGenHullParams( const KeyValues3 *pKV ) = 0;
-	virtual void Unk_SaveNavGenHullParams( KeyValues3 *pKV ) const = 0;
+	virtual void LoadNavGenHullParams( const KeyValues3 *pKV ) = 0;
+	virtual void SaveNavGenHullParams( KeyValues3 *pKV ) const = 0;
 
 	int GetNavAreaCount() const { return m_NavAreas.Count(); }
 	CNavArea *GetNavArea( int i ) const { return m_NavAreas[ i ]; }
@@ -290,7 +512,7 @@ public:
 private:
 	// An interface told of activation and of added and removed areas; the game's own mesh
 	// construction does not set it.
-	void *m_pUnk30;
+	void *m_pAreaListener;
 
 public:
 	INavMarkupManager *m_pMarkupManager;
@@ -306,18 +528,14 @@ public:
 
 private:
 	// An interface ticked by Update and told of movable mesh changes.
-	void *m_pUnk68;
-	// A copy of a frame counter, -1 while Update runs.
-	int16 m_nUnk70;
+	void *m_pMovableMeshListener;
+	// -1 while Update runs, then the value of a serial shared by every mesh, which each Update
+	// advances (wrapping from 0x7FFF to 1).
+	int16 m_nLastUpdateSerial;
 
 public:
 	CUtlString m_NavFilename;
-
-private:
-	// A vector freed by the destructor.
-	uint8 m_Unk80[ 0x18 ];
-
-public:
+	CNavSelectionSet m_SelectionSet;
 	CNavPlaceDatabase m_PlaceDatabase;
 	// Owned; released through m_pPhysicsInterface.
 	CTraceFilter *m_pTraceFilterWalkableEntities;
@@ -344,10 +562,18 @@ public:
 	CNavMovableMeshesManager m_MovableMeshesManager;
 
 private:
-	// Three vectors, the second collecting dock areas, followed by a pointer back to the mesh.
-	// No class name or accessor identifies the object.
-	uint8 m_Unk3D0[ 0x48 ];
-	CNavMesh *m_pUnk418;
+	// The next four members are one object whose methods take its address; no class name
+	// identifies it.
+	// Storage of destroyed areas: CreateArea reuses the last one for the next area it builds
+	// on a polygon, and the destructor frees what is left.
+	CUtlVector< CNavArea * > m_RecycledAreas;
+	// Areas queued for removal. Flushing marks them with NAV_AREA_SHOULD_BE_DESTROYED, removes them
+	// from the mesh, destroys them and moves their storage to m_RecycledAreas.
+	CUtlVector< CNavArea * > m_PendingAreaRemovals;
+	// A vector only emptied and freed by the object's destructor; nothing adds to it.
+	uint8 m_Unk400[ 0x18 ];
+	// The mesh the object belongs to; the active mesh is used while it is null.
+	CNavMesh *m_pRecyclerMesh;
 
 public:
 	// Loaded from scripts/nav_hulls.vdata; null when that file is missing.

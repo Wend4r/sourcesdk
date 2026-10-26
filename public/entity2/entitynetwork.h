@@ -124,18 +124,33 @@ struct NetworkStateChangedLookupKey_t
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedLookupKey_t ) == 8 );
 
-struct NetworkStateChangedLookupCache_t
+// The last 16 looked up keys, split in two arrays that are compared four at a time
+struct ALIGN16 NetworkStateChangedLookupCache_t
 {
-	NetworkStateChangedLookupKey_t m_Keys[16];
+	uint32 m_nLocalOffsets[16];
+	ChangeAccessorFieldPathIndex_t m_PathIndices[16];
 	int32 m_nCount;
 	int32 m_nNextSlot;
-};
-COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedLookupCache_t ) == 136 );
+} ALIGN16_POST;
+COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedLookupCache_t ) == 144 );
+
+// NetworkSharedChangeRecord_t::m_nArrayIndexCountAndFlags: 0xFFFF for a record without changed
+// array elements, otherwise these fields.
+// Number of indices in the record's list in m_ArrayIndexLists (at most 64).
+#define NETWORK_CHANGE_RECORD_INDEX_COUNT_MASK 0x007F
+// The indices were added in ascending order.
+#define NETWORK_CHANGE_RECORD_INDICES_SORTED ( 1 << 7 )
+// The record's index into NetworkSharedChangeInfo_t::m_ArrayIndexLists.
+#define NETWORK_CHANGE_RECORD_INDEX_LIST_MASK 0x7F00
+#define NETWORK_CHANGE_RECORD_INDEX_LIST_SHIFT 8
+// A change without an array index arrived: the whole array changed.
+#define NETWORK_CHANGE_RECORD_ALL_INDICES ( 1 << 15 )
 
 struct NetworkSharedChangeRecord_t
 {
 	uint32 m_nLocalOffset;
 	ChangeAccessorFieldPathIndex_t m_PathIndex;
+	// NETWORK_CHANGE_RECORD_* fields.
 	uint16 m_nArrayIndexCountAndFlags;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeRecord_t ) == 12 );
@@ -156,17 +171,19 @@ COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedBranchPath_t ) == 32 );
 
 struct NetworkSharedChangeInfo_t
 {
-	CUtlVector< NetworkSharedChangeRecord_t > m_Records;
-	uint8 m_pad018[0x240];
-	CUtlVector< uint16 * > m_ArrayIndexLists;
-	uint8 m_pad270[0x80];
+	// Points at its fixed storage, which holds the default maximum of 48 changed offsets
+	CUtlVectorFixedGrowableCompat< NetworkSharedChangeRecord_t, 48 > m_Records;
+	CUtlVectorFixedGrowableCompat< uint16 *, 16 > m_ArrayIndexLists;
 	CUtlVector< NetworkStateChangedBranchPath_t > m_BranchPaths;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfo_t ) == 776 );
 
+struct NetworkSharedChangeInfoOverflow_t;
+
 struct NetworkSharedChangeInfoEntry_t
 {
-	void *m_pLookupCache;
+	// The owning component's overflow, set when the entry is acquired
+	NetworkSharedChangeInfoOverflow_t *m_pLookupCache;
 	NetworkSharedChangeInfo_t m_ChangeInfo;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfoEntry_t ) == 784 );
@@ -178,11 +195,8 @@ struct NetworkSharedChangeInfoOverflow_t
 	CUtlLeanVectorFixedGrowable< int32, 4 > m_ChangeAccessorPaths;
 	void *m_pRootPathOffsetLookup;
 	CUtlVectorFixedGrowableCompat< void *, 4 > m_PathOffsetLookups;
-	uint8 m_pad058[0x08];
 	NetworkStateChangedLookupCache_t m_CachedIgnoredLookups;
-	uint8 m_pad0E8[0x08];
 	NetworkStateChangedLookupCache_t m_CachedTrackedLookups;
-	uint8 m_pad178[0x08];
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeInfoOverflow_t ) == 384 );
 
@@ -223,6 +237,16 @@ schema class CNetworkTransmitComponent : public IEventRegisterCallback
 public:
 	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
 
+	struct pvsmask_t
+	{
+		// Only used in the first entry, which holds the number of entries
+		uint16 m_nCount;
+
+		// Index of the 32-bit word in the cluster bitmask
+		uint16 m_nOffset;
+		uint32 m_nMask;
+	};
+
 	// Turns a pending state change into a full change
 	void FireEvent() override = 0;
 
@@ -243,17 +267,22 @@ public:
 	// While it holds changes, state changes are only marked pending
 	noschema void *m_pNetworkStateChangedRouter;
 
-	noschema uint32 m_nNetworkStateChangedRouterData; // 0 at construction
-	noschema uint32 m_nUnk024; // 0 at construction
-	noschema uint64 m_nUnk020; // 0 at construction
+	// Center of the entity's collision bounds the PVS masks were last collected for
+	noschema Vector m_vecPVSCenter;
 
-	// Not set by the constructor
-	noschema uint8 m_pad028[0x100];
+	// Number of entries in m_PVSMasks, also kept in m_PVSMasks[0].m_nCount
+	noschema int32 m_nPVSMaskCount;
+
+	// The non-empty 32-bit words of the PVS cluster bitmask the collision bounds overlap.
+	// More than 32 words collapse to the single entry { 1, 0, 1 }
+	noschema pvsmask_t m_PVSMasks[32];
 
 	noschema CThreadRWLock_FastRead m_StateChangeLock;
 
-	// Where the lock is smaller
-	noschema uint8 m_padAfterLock[24];
+	// Reset to an empty box when the component is bound to its entity; with sv_use_pvs_cache,
+	// sv_pvs_max_distance is measured from the viewer to this box instead of the entity origin
+	noschema Vector m_vecPVSCacheMins;
+	noschema Vector m_vecPVSCacheMaxs;
 
 	// 0 at construction
 	noschema NetworkStateChangeFlags_t m_eStateChangeFlags;
@@ -264,27 +293,52 @@ public:
 	// A state change arrived while the router held pending changes
 	noschema bool m_bPendingStateChange;
 
-	noschema uint8 m_pad2DE[2];
+	// Makes the next transmit check pick the spawn group in m_hPVSSpawnGroup again
+	noschema bool m_bPVSSpawnGroupDirty;
+
+	// Makes the next transmit check collect m_vecPVSCenter and m_PVSMasks again
+	noschema bool m_bPVSMasksDirty;
 
 	noschema bool m_bNetworkUpdatesDisabled;
 
 	// Most offsets one shared change info record holds
 	noschema int32 m_nMaxChangedOffsets;
 
-	noschema Entity2Networkable_t *m_pNetworkable;
+	// Set when the component is bound to its entity
+	noschema CEntityInstance *m_pEntityInstance;
 
-	noschema int32 m_nUnk2F0; // -1 at construction
+	// Index of the entity, set when the component is bound to it; -1 at construction
+	noschema int32 m_nEntityIndex;
 	noschema uint16 m_nSharedChangeInfoIndex;
 	noschema uint16 m_nSharedChangeInfoSerial; // Serial paired with m_nSharedChangeInfoIndex
-	noschema uint32 m_nUnk2F8; // 0 at construction
+
+	// A spawn group whose bounds accept the collision bounds, the entity's own when it is one of them;
+	// the transmit check compares it with the viewer's
+	noschema SpawnGroupHandle_t m_hPVSSpawnGroup;
 
 	// Never locked by the server
 	noschema CAtomicMutex m_UnkMutex300;
-	noschema CAtomicMutex m_UnkMutex310;
+
+	// Held while m_vecPVSCenter and m_PVSMasks are collected again
+	noschema CAtomicMutex m_PVSMasksMutex;
 
 	// Built on demand and rebuilt while marked dirty
 	noschema CEntityInstancePolymorphicMetadataHelper *m_pPolymorphicMetadataHelper;
 	noschema bool m_bPolymorphicMetadataDirty; // True at construction
+};
+
+// The entity a network update describes, read by CreateClientSideNetworkedEntity on the client
+struct ClientSideNetworkedEntityDesc_t
+{
+	// Its CEntityClass names the class of the entity to create
+	ClientClass *m_pClientClass;
+	int32 m_nEntityIndex;
+	int32 m_nSerialNumber;
+	// The active spawn group for -1, unless the class overrides it
+	SpawnGroupHandle_t m_hSpawnGroup;
+	// The slot may still hold an entity: queued operations are executed and that entity is deleted
+	// before the new one is created
+	bool m_bReusesSlot;
 };
 
 class IEntity2Networkables
@@ -294,8 +348,12 @@ public:
 
 	virtual bool GetEntity2Networkable( CEntityIndex nEntryIndex, Entity2Networkable_t *info ) = 0;
 	virtual CUtlMap< int, Entity2Networkable_t > &GetEntity2Networkables( void ) const = 0;
-	virtual void Unk01() = 0;
-	virtual void Unk02() = 0;
+	// Client only: creates the entity a network update describes and returns its networkable.
+	// Empty on the server.
+	virtual bool CreateClientSideNetworkedEntity( const ClientSideNetworkedEntityDesc_t *pDesc, Entity2Networkable_t *pNetworkable ) = 0;
+	// Client only: queues the networkable's entity for destruction, or for deferred deletion when
+	// bDeferred is set. Empty on the server.
+	virtual void DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
 	virtual CUtlVector< ServerClass * > *GetClassList() = 0;
 };
 

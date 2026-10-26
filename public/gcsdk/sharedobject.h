@@ -99,7 +99,7 @@ public:
 	virtual bool BIsKeyLess( const CSharedObject & soRHS ) const = 0;
 	virtual void Copy( const CSharedObject & soRHS ) = 0;
 	virtual void Dump() const = 0;
-	virtual int Unk_FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const = 0;
+	virtual int FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const = 0;
 	virtual bool BAddToMessage( std::string *pBuffer, bool bUnk ) const = 0;
 	virtual bool BAddDestroyToMessage( std::string *pBuffer ) const = 0;
 

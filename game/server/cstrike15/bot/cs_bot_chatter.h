@@ -17,6 +17,7 @@
 #include "mathlib/vector.h"
 #include "tier0/utlvector.h"
 #include "cs_bot_timers.h"
+#include "cs_gamestate.h"
 
 class CCSBot;
 class BotChatterInterface;
@@ -125,8 +126,7 @@ public:
 abstract_class BotBombStatusMeme : public BotMeme
 {
 public:
-	// A CSGameState::BombState.
-	int m_state;
+	CSGameState::BombState m_state;
 	Vector m_pos;
 };
 

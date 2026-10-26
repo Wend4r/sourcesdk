@@ -41,7 +41,8 @@ public:
 
 public:
 	virtual bool DontSpawnEntities() const = 0;
-	virtual uint8 GetUnk2AndLastFlagBits() const = 0;
+	// SpawnGroupDesc_t::m_bSuppressAllEntities of the descriptor the spawn group was created with.
+	virtual bool ShouldSuppressAllEntities() const = 0;
 	virtual SpawnGroupHandle_t GetParentSpawnGroup() const = 0;
 	virtual uint32 GetChildSpawnGroupCount() const = 0;
 	virtual void GetSpawnGroupDesc(SpawnGroupDesc_t *pDesc) const = 0;
@@ -52,9 +53,12 @@ public:
 	virtual void LoadAllGameResourceManifests(void *) = 0;
 	virtual void AddSpawnGroupChild(SpawnGroupHandle_t hSpawnGroup) = 0;
 	virtual bool HasSetActivePostLoad() const = 0;
+	// Not a descriptor flag: updated from the result of the wait for the child spawn groups.
 	virtual bool HasUnk2() const = 0;
-	virtual bool HasUnk() const = 0;
-	virtual void UnkSetter(uint32 n) = 0;
+	// SpawnGroupDesc_t::m_bSaveEntities of the descriptor the spawn group was created with.
+	virtual bool ShouldSaveEntities() const = 0;
+	// Sets what GetDestructionTick returns on client spawn groups; empty on server ones.
+	virtual void SetDestructionTick(uint32 nTick) = 0;
 	virtual bool HasLevelTransition() const = 0;
 	virtual WorldGroupId_t GetWorldGroupId() const = 0;
 
@@ -72,8 +76,8 @@ public:
 
 public:
 	virtual bool LoadEntities() = 0;
-	virtual void SaveRestoreMap(ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
-	virtual void SaveRestoreMap2(ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
+	virtual void SaveRestoreMap(HGameResourceManifest hManifest, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
+	virtual void SaveRestoreMap2(HGameResourceManifest hManifest, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
 	virtual void SetParentSpawnGroupForChild(SpawnGroupHandle_t hSpawnGroup) = 0;
 
 public:

@@ -17,11 +17,15 @@
 #include "nav_area.h"
 #include "nav_ladder.h"
 
+class CBaseEntity;
 class INavPathCost;
 class CNavPathCost;
 class CNavPath;
 class CPathOptimizer;
 struct NavTransition_t;
+
+// CPathSegment::m_nFlags: the step failed the cost check and must not be optimized away.
+#define PATH_SEGMENT_DONT_OPTIMIZE ( 1 << 0 )
 
 //-----------------------------------------------------------------------------
 // One step of a path: the area it is in and how it is entered from the previous one.
@@ -37,23 +41,31 @@ struct CPathSegment
 		PATH_SEG_CLIMB_UP = 4,
 		PATH_SEG_LADDER_UP = 5,
 		PATH_SEG_LADDER_DOWN = 6,
-		// The game also uses 7 for a segment in a nav link area.
+		// A segment in an area with NAV_AREA_NAV_LINK.
+		PATH_SEG_NAV_LINK = 7,
+		// A segment in an area with NAV_MESH_NON_ZUP; drawn with the nav link segments.
+		PATH_SEG_NON_ZUP = 8,
+		// A segment added where the path crosses a transition between two areas.
+		PATH_SEG_TRANSITION = 10,
 	};
 
-	// NavTraverseType; GO_SAME_AREA for the first segment.
-	int how;
-	// SegmentType.
-	int type;
+	// GO_SAME_AREA for the first segment.
+	NavTraverseType how;
+	SegmentType type;
 	// The edge of the previous area crossed into this one, -1 for the first segment.
 	int8 inEdge;
 	// The ladder of a ladder segment.
 	const CNavLadder *pLadder;
 
-private:
-	uint8 m_Unk18[ 0x10 ];
-
-public:
-	// Bit 0: the step failed the cost check and must not be optimized away.
+	// Distance to the next segment's position; 0 for the last segment.
+	float length;
+	// Sum of the lengths of the previous segments.
+	float distanceFromStart;
+	// 0 for the only segment of a one-segment path.
+	float m_flUnk20;
+	// FLT_MAX when the lengths are computed.
+	float m_flUnk24;
+	// PATH_SEGMENT_* bits.
 	int m_nFlags;
 	// The start position for the first segment; the point the segment is entered at for the rest.
 	Vector vPos;
@@ -91,20 +103,24 @@ public:
 	bool IsValid() const { return m_nSegmentCount > 0; }
 	int GetSegmentCount() const { return m_nSegmentCount; }
 	const CPathSegment &GetSegment( int i ) const { return m_path[ i ]; }
-	PathResult_t GetResult() const { return ( PathResult_t )m_PathResultStatus; }
+	PathResult_t GetResult() const { return m_PathResultStatus; }
 
 public:
 	CPathSegment m_path[ MAX_PATH_SEGMENTS ];
 	int m_nSegmentCount;
-	bool m_bUnk480C;
+	// Set once the path went through the portal optimization and m_pOptimizer, so neither runs twice; cleared by
+	// InvalidatePath
+	bool m_bOptimized;
 
 private:
 	uint8 m_Unk480D[ 3 ];
-	// A vector with inline room for two four-byte elements.
-	uint8 m_Unk4810[ 0x20 ];
 
 public:
-	int m_PathResultStatus;
+	// IDs of the nav link areas (NAV_AREA_NAV_LINK) the path goes through, whose segments get
+	// PATH_SEG_NAV_LINK.
+	CUtlVectorFixedGrowable< uint32, 2 > m_NavLinkAreaIds;
+
+	PathResult_t m_PathResultStatus;
 	bool m_bUnk4834;
 };
 
@@ -117,29 +133,39 @@ public:
 	// Copied from the request each time a path is computed.
 	struct Query_t
 	{
-		bool m_bUnk0;
-		void *m_pUnk8;
+		// Draws the traces and the adjusted segment positions with the debug overlay
+		bool m_bDebugDraw;
+		// Ignored, with its owner, by the traces that check the path
+		CBaseEntity *m_pPassEntity;
 		const INavPathCost *m_pPathCost;
+		// The goal segment added after a partial path is cut to what is left of this length;
+		// -1 for no limit.
+		float m_flMaxPathLength;
 		// -1 until set.
-		float m_flUnk18;
 		float m_flUnk1C;
-		// 1 until set.
-		float m_flUnk20;
-		float m_flUnk24;
-		bool m_bUnk28;
+		// A step that rises more than this gets a climb segment; the bots pass their hull's
+		// agent max climb. 1 until set.
+		float m_flMaxClimb;
+		// Height of the box traced down from above the climb to find where it ends. 1 until set.
+		float m_flClimbTraceHeight;
+		// A path that ends as PATH_PARTIAL counts as computed instead of being invalidated
+		bool m_bAllowPartialPath;
 	};
 
 	const INavPathCost *GetPathCost() const { return m_Query.m_pPathCost; }
 
 public:
 	Query_t m_Query;
-	// Passed to the goal area search; true until set.
-	bool m_bUnk4868;
+	// Passed to the start and goal area searches, which then stop one ring of grid cells after
+	// the first area found instead of covering their whole range; true until set.
+	bool m_bStopNearestAreaSearchAtFirstHit;
 	// Run over computed paths when set, unless disabled by a convar.
 	CPathOptimizer *m_pOptimizer;
-
-private:
-	uint8 m_Unk4878[ 8 ];
+	// Null at construction and never set by the game. When set, slot 0 is called with the
+	// path and m_Query.m_pPathCost right after the segments are post-processed, like
+	// m_pOptimizer later; the inlined default of that slot moves the landing of every
+	// PATH_SEG_JUMP_DOWN segment through slot 1 (path, cost, segment index).
+	void *m_pJumpDownProcessor;
 };
 
 //-----------------------------------------------------------------------------
@@ -152,12 +178,14 @@ public:
 	virtual ~CPathOptimizer() = 0;
 
 public:
-	bool m_bUnk8;
+	// OptimizePath has FindNextOccludedNode collect the transitions it crosses into m_Transitions
+	bool m_bCollectTransitions;
 
 private:
 	uint8 m_Unk09[ 7 ];
-	// A vector of unknown elements.
-	uint8 m_Unk10[ 0x18 ];
+
+public:
+	CUtlVector< NavTransition_t > m_Transitions;
 };
 
 //-----------------------------------------------------------------------------

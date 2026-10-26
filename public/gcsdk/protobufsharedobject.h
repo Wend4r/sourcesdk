@@ -43,7 +43,7 @@ public:
 	virtual bool BIsKeyLess( const CSharedObject & soRHS ) const ;
 	virtual void Copy( const CSharedObject & soRHS );
 	virtual void Dump() const OVERRIDE;
-	virtual int Unk_FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const OVERRIDE;
+	virtual int FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const OVERRIDE;
 	virtual bool BAddToMessage( std::string *pBuffer, bool bUnk ) const OVERRIDE;
 	virtual bool BAddDestroyToMessage( std::string *pBuffer ) const OVERRIDE;
 
