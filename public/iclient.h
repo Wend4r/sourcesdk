@@ -145,8 +145,9 @@ public:
 	// CNetworkGameClient::CommandHistoryEntry_t::m_bReceivedLate of the command, for commands up to the last executed one
 	virtual bool WasCommandReceivedLate( int nCommandNumber ) = 0;
 	virtual void SetFrameTime( float flFrameTime ) = 0;
-	// nConnectionLocality is 2 for a server in another process on this machine, 3 for a loopback or same-process server
-	// and 4 for a remote server
+	// nConnectionLocality holds CONNECTION_TYPE_* flags (serversideclientbase.h): CONNECTION_TYPE_LOCAL_MACHINE for a server in
+	// another process on this machine, with CONNECTION_TYPE_SAME_PROCESS for a loopback or same-process server, and
+	// CONNECTION_TYPE_REMOTE for a remote server
 	virtual void Connect( CSplitScreenSlot nSlot, int nSocket, const ns_address &addr, HSteamNetConnection hConnection, uint8 nConnectionLocality ) = 0;
 	virtual void Disconnect( ENetworkDisconnectionReason reason ) = 0;
 	virtual bool IsActive() const = 0;

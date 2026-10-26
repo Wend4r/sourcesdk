@@ -102,6 +102,13 @@ enum ClientSlotReservation_t : int
 	CLIENT_SLOT_CREATED,
 };
 
+// CServerSideClientBase::m_nConnectionTypeFlags, also the connection locality of INetworkGameClient::Connect.
+// Fake clients have none of them
+#define CONNECTION_TYPE_SAME_PROCESS	( 1 << 0 )	// The peer runs in this process (loopback address, or a local address served by this process)
+#define CONNECTION_TYPE_LOCAL_MACHINE	( 1 << 1 )	// The peer runs on this machine (loopback or local address)
+#define CONNECTION_TYPE_REMOTE			( 1 << 2 )
+#define CONNECTION_TYPE_SPLITSCREEN		( 1 << 3 )	// Split screen user sharing the connection of the client it is attached to; added to that client's flags
+
 class CServerSideClientBase : public CUtlSlot, public INetworkChannelNotify, public INetworkMessageProcessingPreFilter
 {
 public:
@@ -210,7 +217,7 @@ public:
 	const netadr_t          *GetRemoteAddress() const { return m_Addr.Get<netadr_t>(); }
 	CNetworkGameServerBase  *GetServer() const { return m_pGameServer; }
 
-	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, uint8 nConnectionTypeFlags, uint32 uChallengeNumber ) = 0; // bool bFakePlayer = !nConnectionTypeFlags || (nConnectionTypeFlags & 8) != 0;
+	virtual void             Connect( int socket, const char* pszName, int nUserID, INetChannel* pNetChannel, uint8 nConnectionTypeFlags, uint32 uChallengeNumber ) = 0; // bool bFakePlayer = !nConnectionTypeFlags || (nConnectionTypeFlags & CONNECTION_TYPE_SPLITSCREEN) != 0;
 	virtual void             Inactivate( const char *pszAddons ) = 0;
 	virtual void             Reactivate( CPlayerSlot nSlot ) = 0;
 	virtual void             SetServer( CNetworkGameServer *pNetServer ) = 0;
@@ -378,7 +385,7 @@ public:
 	CEntityIndex m_nEntityIndex;
 	CNetworkGameServerBase *m_pGameServer;
 	INetChannel *m_pNetChannel;
-	// CServerSideClientBase::Connect( name='%s', userid=%d, fake=%d, connectiontypeflags=%d, chan->addr=%s )
+	// CServerSideClientBase::Connect( name='%s', userid=%d, fake=%d, connectiontypeflags=%d, chan->addr=%s ); CONNECTION_TYPE_* flags
 	uint8 m_nConnectionTypeFlags;
 	ClientSendJobState_t m_nSendJobState;
 

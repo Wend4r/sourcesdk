@@ -190,6 +190,7 @@ public:
 	virtual void	BroadcastMessage( INetworkMessageInternal *pSerializer, const CNetMessage *pNetMessage, const IRecipientFilter *pFilter ) = 0;
 	virtual bool	IsRecordingDemo() = 0;
 
+	// CONNECTION_TYPE_* flags (serversideclientbase.h) of the client, 0 for an empty slot
 	virtual uint8	GetClientConnectionType( CPlayerSlot slot ) = 0;
 
 	virtual bool	HasReplayDirector() = 0;
@@ -399,7 +400,7 @@ public:
 	CTvDirectDemoRecorder *m_pTvDirectDemoRecorder;
 	// ICvar::GetTotalUserInfoCvarsByteSize(), refreshed by OnConVarCreated which then resizes every client's user info convar data
 	uint64 m_nTotalUserInfoCvarsByteSize;
-	// Atomic count of client net channels whose connection type has bit 0, raised by ConnectionStart and lowered by OnShutdownChannel
+	// Atomic count of client net channels whose connection type has CONNECTION_TYPE_SAME_PROCESS, raised by ConnectionStart and lowered by OnShutdownChannel
 	int m_nNetChannelCount;
 	void* m_pReplayDirector;
 };
