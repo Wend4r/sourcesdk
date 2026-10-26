@@ -24,6 +24,7 @@
 #include "mathlib/vector.h"
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
+#include "physicslib/param_types.h"
 #include "vphysics2/handle_decl.h"
 #include "vphysx/vphysx_interface.h"
 #include "resourcefile/resourcetype.h"
@@ -405,9 +406,9 @@ public:
 	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nEntityId, PhysicsAggregateMotionType_t nMotionType ) = 0;
 	virtual void DestroyAggregateInstance( IPhysAggregateInstance *pAggregate ) = 0;
 
-	// Creates a body of nBodyType (PhysicsBodyType_t) for each body of the aggregate whose name is a bone of the model; the velocities
+	// Creates a body of nBodyType for each body of the aggregate whose name is a bone of the model; the velocities
 	// come from the previous and the current bone transforms flDeltaTime apart, and the bodies get the entity id and the game index
-	virtual IPhysicsRagdoll *CreateRagdoll( const void *pModel, const PhysicsAggregateDef_t *pAggregate, int nBodyType, const CTransform *pPrevBoneTransforms, const CTransform *pBoneTransforms, float flDeltaTime, uint32 nEntityId, uint16 nGameIndex ) = 0;
+	virtual IPhysicsRagdoll *CreateRagdoll( const void *pModel, const PhysicsAggregateDef_t *pAggregate, PhysicsBodyType_t nBodyType, const CTransform *pPrevBoneTransforms, const CTransform *pBoneTransforms, float flDeltaTime, uint32 nEntityId, uint16 nGameIndex ) = 0;
 	virtual void DestroyRagdoll( IPhysicsRagdoll *pRagdoll ) = 0;
 	// The first takes a reference-counted pointer to the data, the second a raw one.
 	// MSVC groups these overloads in reverse order; the declaration order is Linux's
