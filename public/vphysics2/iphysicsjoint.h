@@ -17,6 +17,7 @@
 #include "mathlib/vector.h"
 #include "mathlib/transform.h"
 #include "physicslib/param_types.h"
+#include "physicslib/serialize.h"
 #include "schemasystem/schematypes.h"
 
 #include "schemacompiler/schemaon.h"
@@ -120,7 +121,7 @@ public:
 	virtual bool IsAngularConstraintEnabled() const = 0;
 
 	// MSVC groups these overloads in reverse order
-	virtual float GetLinearImpulse( int nAxis ) const = 0;
+	virtual float GetLinearImpulse( JointAxis_t nAxis ) const = 0;
 	virtual float GetLinearImpulse() const = 0;
 	virtual float GetAngularImpulse() const = 0;
 
