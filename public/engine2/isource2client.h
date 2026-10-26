@@ -596,17 +596,25 @@ public:
 	CUtlVector< SerializedUserMessage_t > m_ScrubbingUserMessages;
 	// Filled by InitInstantReplayData() and purged by ClearInstantReplayData()
 	CUtlVector< SerializedUserMessage_t > m_InstantReplayUserMessages;
-	CTSQueue< std::function< void() > * > m_unk400;
+	// Handlers of hooked user messages (CUserMessageCameraTransition) queued by their delegate hooks and run by the
+	// game loop mode once per frame
+	CTSQueue< std::function< void() > * > m_QueuedMessageHandlers;
 	// Zeroed by the constructor; no reader found
-	int m_unk440;
-	bool m_unk444;
+	bool m_unk440[ 2 ];
+	// Read by the delegate hook and the queue drain, never set: the first one runs a handler at once instead of
+	// queueing it, the second one destroys handlers without running them
+	bool m_bRunMessageHandlersImmediately;
+	bool m_bDiscardMessageHandlers;
+	// Set while handlers run
+	bool m_bRunningMessageHandlers;
 	uint8 m_unk445[ 0xB ];
-	// 0x20-byte objects starting with a CUtlString that FrameStageNotify() formats as "FrameNetUpdate(%.3f %d)" and
-	// "FramePostDataUpdate(%.3f %d)"
-	void *m_unk450;
-	void *m_unk458;
-	// Waited for and released by FrameStageNotify()
-	CThreadedJob *m_unk460;
+	// 0x20-byte profiling records starting with a CUtlString that FrameStageNotify() formats as "FrameNetUpdate(%.3f %d)"
+	// and "FramePostDataUpdate(%.3f %d)" and opens and closes around those stages
+	void *m_pFrameNetUpdateRecord;
+	void *m_pFramePostDataUpdateRecord;
+	// The "Client Restore Server State" job (cl_async_restore_server_authoritative_state) FrameStageNotify() starts;
+	// waited for and released by the next FrameStageNotify()
+	CThreadedJob *m_pRestoreServerStateJob;
 	// -1.0 after the constructor and Connect()
 	float m_unk468;
 	uint8 m_unk46C[ 0x4 ];
