@@ -155,23 +155,24 @@ public:
 	virtual Vector GetFarthestPoint( const Vector &vDirection ) const = 0;
 	virtual Vector GetFarthestPoint( const CTransform &transform, const Vector &vDirection ) const = 0;
 
-	// Shape queries; the first tests a point with a tolerance, the others pass the query to every shape
-	virtual bool unk025( const Vector &vPoint, float flTolerance ) const = 0;
-	virtual bool unk025( const void *pQuery, const CTransform &transform ) const = 0;
-	virtual bool unk025( const void *pQuery ) const = 0;
+	// Overlap tests of the shapes; the first tests a point with a tolerance, the others pass the query to every shape
+	virtual bool TestOverlap( const Vector &vPoint, float flTolerance ) const = 0;
+	virtual bool TestOverlap( const void *pQuery, const CTransform &transform ) const = 0;
+	virtual bool TestOverlap( const void *pQuery ) const = 0;
 
 	virtual Vector GetClosestPoint( const Vector &vPoint ) const = 0;
 
 	// Closest point of the shapes to a segment
-	virtual Vector GetClosestPointToSegment( const Vector &vStart, const Vector &vEnd, void *pUnknown ) const = 0;
+	virtual Vector GetClosestPointToSegment( const Vector &vStart, const Vector &vEnd, void *pUnused ) const = 0;
 
 	// Bounds of the shapes in body space
 	virtual AABB_t BuildLocalBounds() const = 0;
 	virtual AABB_t BuildBounds() const = 0;
 
-	virtual void SetMass( float flMass, bool bUnknown ) = 0;
+	// bRecomputeMassProperties rebuilds the mass center and the inertia from the shapes
+	virtual void SetMass( float flMass, bool bRecomputeMassProperties ) = 0;
 	virtual void SetLocalMassCenter( const Vector &vMassCenter ) = 0;
-	virtual void SetMassProperties( const RnMassProperties_t &massProperties, bool bUnknown ) = 0;
+	virtual void SetMassProperties( const RnMassProperties_t &massProperties, bool bUnused ) = 0;
 
 	// Set while the mass, the mass center and the inertia are overridden instead of built from the shapes
 	virtual bool GetOverrideMassProperties() const = 0;
@@ -242,8 +243,9 @@ public:
 	virtual void ApplyLinearImpulseAtWorldSpace( const Vector &vImpulse, const Vector &vPosition ) = 0;
 	virtual void ApplyAngularImpulse( const Vector &vImpulse ) = 0;
 
-	// Drives a dynamic body towards a transform over the given time
-	virtual void MoveTo( const CTransform &target, float flTime, float flUnknown1, float flUnknown2 ) = 0;
+	// Drives a dynamic body towards a transform over the given time; the body wakes when the resulting linear or angular
+	// velocity exceeds the threshold
+	virtual void MoveTo( const CTransform &target, float flTime, float flLinearWakeThreshold, float flAngularWakeThreshold ) = 0;
 
 	virtual void CalculateVelocityOffset( const Vector &vForce, const Vector &vPosition, Vector *pCenterVelocity, Vector *pCenterAngularVelocity ) const = 0;
 
@@ -320,7 +322,7 @@ public:
 
 	// Forwarded to the shadow controller
 	virtual void unk120() = 0;
-	virtual void UpdateShadow( const Vector &vTargetPosition, const Quaternion &targetOrientation, bool bUnknown, float flUnknown ) = 0;
+	virtual void UpdateShadow( const Vector &vTargetPosition, const Quaternion &targetOrientation, bool bUnused, float flTimeOffset ) = 0;
 	virtual float unk122() = 0;
 	// False without a shadow controller
 	virtual bool GetShadowPosition( Vector *pPosition, QAngle *pAngles ) = 0;
@@ -430,14 +432,15 @@ public:
 	virtual int GetMinPositionIterations() const = 0;
 	virtual void SetMinIterations( int nVelocityIterations, int nPositionIterations ) = 0;
 
-	// A transform and velocities the solver stores in the body and that putting the body to sleep clears (the position becomes FLT_MAX).
-	// unk013 tells whether they are set, the others return them, or the current transform and velocities while they are not set
-	virtual bool unk013() const = 0;
-	virtual CTransform unk014() const = 0;
-	virtual Vector unk015() const = 0;
+	// The transform and velocities the step stores in the body before it integrates; putting the body to sleep clears them (the
+	// position becomes FLT_MAX). HasStepStartState tells whether they are set, the others return them, or the current transform
+	// and velocities while they are not set
+	virtual bool HasStepStartState() const = 0;
+	virtual CTransform GetStepStartTransform() const = 0;
+	virtual Vector GetStepStartVelocity() const = 0;
 
 	// In degrees per second
-	virtual Vector unk016() const = 0;
+	virtual Vector GetStepStartAngularVelocity() const = 0;
 
 	// Time the body has been resting; putting the body to sleep resets it
 	virtual float GetSleepTimer() const = 0;
@@ -452,7 +455,7 @@ public:
 	virtual AABB_t BuildBounds( const CTransform &transform ) const = 0;
 
 	// Computes the same union of the proxy bounds as GetProxyBounds
-	virtual AABB_t unk021() const = 0;
+	virtual AABB_t ComputeProxyBounds() const = 0;
 
 	// Smallest centroid radius of the shapes, FLT_MAX without shapes
 	virtual float GetMinCentroidRadius() const = 0;
@@ -499,7 +502,9 @@ public:
 
 	// Index of the body in its world, -1 without a body
 	virtual int GetIndexInWorld() const = 0;
-	virtual bool unk042() const = 0;
+
+	// Set when the body is removed from its world and waits in the deletion list
+	virtual bool IsPendingDestruction() const = 0;
 
 	// The sums of IPhysicsShape::GetContactCounts over the shapes of the body
 	virtual PhysicsShapeContactCounts_t GetContactCounts() const = 0;
