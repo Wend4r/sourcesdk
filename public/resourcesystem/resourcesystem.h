@@ -14,6 +14,7 @@
 #include "tier0/utlstringlist.h"
 #include "tier0/utlsymbollarge.h"
 #include "tier1/utlvector.h"
+#include "tier1/utlhashmaplarge.h"
 #include "tier2/tier2.h"
 #include "iresourcehandleutils.h"
 
@@ -76,9 +77,9 @@ struct ResourceIdMap_t
 		size_t m_nCapacity;
 
 #ifdef _WIN32
-		uint8 m_unk[ 16 ];
+		uint8 m_pad058[ 16 ];
 #else
-		uint8 m_unk[ 8 ];
+		uint8 m_pad058[ 8 ];
 #endif
 
 		size_t m_nGrowthLeft;
@@ -101,10 +102,10 @@ public:
 	struct PendingResourceReference_t
 	{
 		// Raised onto the referenced resource and, recursively, onto its own references
-		int8 m_nLoadPriority;
+		ResourceManifestLoadPriority_t m_nLoadPriority;
 
-		// Copied into the referenced resource's data next to the priority, use not traced
-		uint8 m_unk01;
+		// Kept in the referenced resource's data and passed to the manifests it creates
+		ResourceManifestLoadBehavior_t m_nLoadBehavior;
 
 		ResourceHandle_t m_hReferencingResource;
 		ResourceHandle_t m_hReferencedResource;
@@ -164,8 +165,9 @@ public:
 	CUtlSymbolTableLargeBase< false, 2048, CThreadSpinRWLock > m_ResourceNameSymbols;
 	CUtlStringList m_whiteListedMissingResourceNames;
 	CUtlVectorFixedGrowable< ForcedSynchronizationCallbackInfo_t, 8 > m_ForcedSynchronizationCallbacks;
-	// Reference counts of the "ugc:" resources, keyed by the published file id (container not identified)
-	uint64 m_UGCReferences[ 10 ];
+	// Reference counts of the "ugc:" resources, keyed by the published file id; the migrated bucket bits are a
+	// CVariableBitString here, unlike the CLargeVarBitVec of CUtlHashMapLarge
+	CUtlHashMapImpl< uint64, int, CUtlHashMapLargeDefEquals< uint64 >, MurmurHash3Functor< uint64 >, int, CVariableBitString > m_UGCReferences;
 	CUtlVector< IToolsResourcePreReloadListener * > m_ToolsResourceListeners;
 
 	// AddResourceListeners and RemoveResourceListeners pick one by the listener kind
