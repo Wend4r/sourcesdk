@@ -17,13 +17,16 @@ class CPostProcessingState;
 class InfoForResourceTypeCTextureBase;
 struct PostProcessingResource_t;
 
+// The color correction state the post processing system computes (Vector4D at +0x150, bool at +0x14C)
+struct PostProcessingColorCorrection_t;
+
 abstract_class IPostProcessingSystem : public IAppSystem
 {
 public:
 	virtual CPostProcessingState *CreatePostProcessingState() = 0;
 	virtual void DestroyPostProcessingState( CPostProcessingState *pState ) = 0;
 
-	virtual void GetNoopColorCorrection( void *pColorCorrection ) = 0;
+	virtual void GetNoopColorCorrection( PostProcessingColorCorrection_t *pColorCorrection ) = 0;
 
 	virtual void EnableColorCorrectionEditorOverride( bool bEnable ) = 0;
 	virtual bool IsColorCorrectionEditorOverrideEnabled() = 0;
@@ -35,7 +38,8 @@ public:
 	virtual uint64 AddColorCorrectionLookup( const char *pName, const char *pResourceName ) = 0;
 	virtual bool RemoveColorCorrectionLookup( uint64 hLookup ) = 0;
 
-	virtual bool ComputeOverrideColorCorrection( void *p, const void *pParams, void *pColorCorrection ) = 0;
+	// p is stored in the result at +8 and not dereferenced
+	virtual bool ComputeOverrideColorCorrection( void *p, const PostProcessingResource_t *pParams, PostProcessingColorCorrection_t *pColorCorrection ) = 0;
 
 	// The color correction volume texture created from the post processing resource, NULL for a NULL handle
 	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetColorCorrectionTexture( ResourceHandle_t hPostProcessing ) = 0;
