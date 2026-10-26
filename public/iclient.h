@@ -575,13 +575,28 @@ struct NetworkFlowSamples_t
 	T m_Min;
 };
 
+// Delivery outcome of a tick, counted into CMsgSource2NetworkFlowQuality ticks_good ... ticks_bad_other
+enum NetworkTickOutcome_t
+{
+	NETWORK_TICK_GOOD = 0,
+	NETWORK_TICK_GOOD_ALMOST_LATE,
+	NETWORK_TICK_BAD_DROPPED,
+	NETWORK_TICK_BAD_LATE,
+	NETWORK_TICK_BAD_OTHER,
+	// Dropped or late, but hidden by a frame time amnesty or by the interpolation
+	NETWORK_TICK_FIXED_DROPPED,
+	NETWORK_TICK_FIXED_LATE,
+
+	NETWORK_TICK_OUTCOME_COUNT
+};
+
 // Tick delivery statistics of one network flow, reported through CMsgSource2NetworkFlowQuality
 struct NetworkFlowQualityStats_t
 {
-	// Ticks per outcome since the last miss rate sample (reset after more than 256 ticks), then since the connection
-	// started: good, good almost late, bad dropped, bad late, bad other, fixed dropped, fixed late
-	int m_nTickCounts[ 7 ];
-	int m_nTotalTickCounts[ 7 ];
+	// Ticks per NetworkTickOutcome_t since the last miss rate sample (reset after more than 256 ticks), then since the
+	// connection started
+	int m_nTickCounts[ NETWORK_TICK_OUTCOME_COUNT ];
+	int m_nTotalTickCounts[ NETWORK_TICK_OUTCOME_COUNT ];
 	// Percentage of the ticks of the last sample window that were dropped or late ("%.1f%% %s missed due to network")
 	float m_flNetworkMissRate;
 	// Sample windows without network misses, and without any misses
@@ -706,7 +721,7 @@ public:
 	int m_nUnk2C6DB8;
 	// Last command number whose delivery outcome was counted into m_NetworkFlowQualityStats
 	int m_nLastEvaluatedCommandNumber;
-	// Indexed by flow: 0 outgoing (user commands), 1 incoming (server ticks)
+	// Indexed by flow: FLOW_OUTGOING (user commands), FLOW_INCOMING (server ticks)
 	NetworkFlowQualityStats_t m_NetworkFlowQualityStats[ 2 ];
 	// Receive margin below which a command the server reports is logged as "later than desired"
 	float m_flDesiredRecvMargin;
