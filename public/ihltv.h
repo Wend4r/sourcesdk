@@ -24,6 +24,7 @@ class CUtlBuffer;
 class CSteamID;
 struct netadr_t;
 class CGameInfo;
+class CClientFrame;
 enum NetChannelBufType_t : int8;
 
 //-----------------------------------------------------------------------------
@@ -73,12 +74,12 @@ class ITvStreamSink
 {
 public:
 	// Takes a broadcast frame; the first one sets the tick of the first broadcast frame and activates the server
-	virtual void AddNewFrame( void *pFrame ) = 0;
-	// Records the frame into the demo and builds the client frames from it
-	virtual void unk001( void *pFrame ) = 0;
+	virtual void AddNewFrame( CClientFrame *pFrame ) = 0;
+	// Records the frame into the demo and stores it as a delta frame, or passes it to AddNewFrame without tv_enable_delta_frames
+	virtual void AddNewDeltaFrame( CClientFrame *pFrame ) = 0;
 	// The current RunFrame job of the async server
 	virtual void *GetRunFrameJob() = 0;
-	// Tick of the last frame given to unk001, compared with the server tick count by the TV client's ShouldSendMessages
+	// Tick of the last frame given to AddNewDeltaFrame, compared with the server tick count by the TV client's ShouldSendMessages
 	virtual int GetLastFrameTick() = 0;
 	// The TV client's SendNetMessage forwards to it
 	virtual bool SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType ) = 0;
