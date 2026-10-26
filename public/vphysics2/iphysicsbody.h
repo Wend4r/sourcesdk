@@ -30,6 +30,7 @@
 #include "schemasystem/schematypes.h"
 
 class IVPhysics2World;
+class IPhysicsBody;
 class IPhysicsShape;
 class IPhysicsJoint;
 class IPhysicsShadowController;
@@ -105,6 +106,63 @@ struct PhysicsBodyDef_t
 	CUtlLeanVector< PhysicsHullDef_t > m_HullShapes;
 	CUtlLeanVector< PhysicsMeshDef_t > m_MeshShapes;
 	CUtlLeanVector< PhysicsCompoundDef_t > m_CompoundShapes;
+};
+
+// A piecewise linear curve over the submerged fraction of a body; fractions below the first key take the first value and
+// fractions past the last key take the last value
+struct PhysicsFluidCurve_t
+{
+	const float *m_pFractions;
+	const float *m_pValues;
+	int m_nCount;
+};
+
+// Supplies the flow of a fluid at the center of buoyancy; the result is subtracted from the body velocities before the drag
+abstract_class IPhysicsFluidFlowCallback
+{
+public:
+	virtual void GetFlow( const Vector &vPosition, Vector *pVelocity, Vector *pAngularVelocity ) = 0;
+};
+
+// The fluid IPhysicsBody::ApplyFluidForces applies to the shapes of the body that touch it
+struct PhysicsFluidParams_t
+{
+	// Stored, with the submerged fraction, in the wheel record of a vehicle the body is a wheel of when this fluid submerges it the most
+	uint32 m_nFluidId;
+
+	// Only the shapes whose interaction mask has a bit in common take part
+	uint64 m_nCollisionMask;
+
+	// Multiplies the drag exponent and the velocity change of the drag
+	float m_flTimeStep;
+
+	// Multiplied by IPhysicsBody::GetBuoyancyScale and the submerged fraction for the buoyancy and the drag
+	float m_flDensity;
+
+	// With m_bUseGravityScale set (and no body override), the gravity of the body is scaled toward this value by the submerged
+	// fraction instead of applying the density buoyancy
+	float m_flGravityScale;
+
+	// Not read by the Linux implementation
+	float m_flLinearDamping;
+	float m_flAngularDamping;
+
+	bool m_bUseGravityScale;
+
+	// Evaluated at the submerged fraction for the wheel record of a vehicle the body is a wheel of: the first scales the record
+	// value at +116, the second is added to the one at +120
+	PhysicsFluidCurve_t m_WheelScaleCurve;
+	PhysicsFluidCurve_t m_WheelOffsetCurve;
+
+	// When set, only the shapes in contact with this body take part
+	IPhysicsBody *m_pFluidBody;
+
+	// The submerged depth is measured from this plane instead of the fluid shapes
+	bool m_bHasSurfacePlane;
+	Vector m_vSurfaceNormal;
+	float m_flSurfaceDistance;
+
+	IPhysicsFluidFlowCallback *m_pFlowCallback;
 };
 
 // Methods with an unknown name that MSVC lays out as one overload group keep one shared unkNNN name
@@ -289,11 +347,9 @@ public:
 	virtual void SetBuoyancyScale( float flScale ) = 0;
 	virtual float GetBuoyancyScale() const = 0;
 
-	// Applies the buoyancy and the drag of a fluid to the body and returns the submerged volume. pFluid holds the collision mask of
-	// the fluid shapes at +8, the fluid type token, the density, the neutrally buoyant gravity, linear and angular damping and flag
-	// at +16 to +36, the fluid body at +88, a surface plane flag, normal and distance at +96 to +112 and a flow callback at +120.
-	// The Linux implementation does not read the floats
-	virtual float ApplyFluidForces( const void *pFluid, float flUnused1, float flUnused2 ) = 0;
+	// Applies the buoyancy and the drag of a fluid to the body and returns the submerged volume. The Linux implementation does not
+	// read the floats
+	virtual float ApplyFluidForces( const PhysicsFluidParams_t *pFluid, float flUnused1, float flUnused2 ) = 0;
 
 	// True while the joint list GetFirstJoint walks is not empty, and while the CRnLink list of the body is not empty
 	virtual bool HasJoints() const = 0;
