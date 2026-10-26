@@ -34,7 +34,7 @@ public:
 	virtual void SpawnPlayer() override = 0;
 	virtual void GetCommandQueueInfo( ClientCommandQueueInfo_t *pInfo ) override = 0;
 	virtual void Await() override = 0;
-	virtual bool ProcessSignonStateMsg( int state ) override = 0;
+	virtual bool ProcessSignonStateMsg( SignonState_t state ) override = 0;
 
 public:
 	CHLTVServer *m_pHLTV;

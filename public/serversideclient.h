@@ -166,7 +166,7 @@ public:
 	virtual void Await() override = 0;
 	virtual void OnSendJobFinished() override = 0;
 	virtual void OnSendJobStarted() override = 0;
-	virtual bool ProcessSignonStateMsg( int state ) override = 0;
+	virtual bool ProcessSignonStateMsg( SignonState_t state ) override = 0;
 	virtual void PerformDisconnection( ENetworkDisconnectionReason reason ) override = 0;
 
 	void ExecuteDelayedCall( StopHltvReplayCall_t &call );

@@ -374,7 +374,7 @@ public:
 	virtual void             OnSendJobFinished() = 0;
 	virtual void             OnSendJobStarted() = 0;
 
-	virtual bool             ProcessSignonStateMsg( int state ) = 0;
+	virtual bool             ProcessSignonStateMsg( SignonState_t state ) = 0;
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
 
 public:

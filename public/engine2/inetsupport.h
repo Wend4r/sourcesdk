@@ -85,7 +85,7 @@ public:
 	struct ClientInfo_t
 	{
 		INetChannel *m_pNetChannel;
-		int m_nSignonState;
+		SignonState_t m_nSignonState;
 		int m_nSocket;
 		int m_numHumanPlayers;
 	};
