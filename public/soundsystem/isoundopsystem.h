@@ -42,6 +42,12 @@ typedef short SosStringHandle_t;
 // Memory of field values
 typedef uint8 SosFieldValueMem_t;
 
+// Bits of the flags of an operator stack (ISoundOpSystem::GetStackFlags), set in tools mode by its operators
+// A start voice operator of the stack starts a vsnd
+#define SOS_STACK_FLAG_STARTS_VSND ( 1 << 0 )
+// A start sound event operator of the stack starts sound events
+#define SOS_STACK_FLAG_STARTS_SOUNDEVENTS ( 1 << 1 )
+
 enum SOFieldDataType_t : int8
 {
 	SOFTYPE_INVALID = -1,
@@ -242,7 +248,7 @@ public:
 	virtual uint32 GetSoundEventUpdateStackHash( uint32 nSoundEvent ) const = 0;
 	virtual uint32 GetSoundEventUpdateStackHash( const char *pSoundEventName ) const = 0;
 	virtual void GetSoundEventUpdateStackName( uint32 nSoundEvent, CUtlString &sName ) = 0;
-	// Stack flags of the update stack of the sound event, as returned by ISoundOpSystem::GetStackFlags
+	// SOS_STACK_FLAG_* bits of the update stack of the sound event, as returned by ISoundOpSystem::GetStackFlags
 	virtual uint8 *GetSoundEventUpdateStackFlags( uint32 nSoundEvent ) = 0;
 	// Written as "custom_stack" by WriteSoundEventsKV3
 	virtual bool SoundEventHasCustomStack( uint32 nSoundEvent ) = 0;
@@ -340,7 +346,7 @@ public:
 	// Decrements the pause count of every paused sound event
 	virtual void UnPauseAllSoundEvents() = 0;
 	virtual CSosOperatorStack *GetStack( HSOSLIBSTACKHASH hStack ) = 0;
-	// Stack flags, bit 0 is set when the stack starts a vsnd and bit 1 when it starts sound events
+	// SOS_STACK_FLAG_* bits of the stack
 	virtual uint8 *GetStackFlags( HSOSLIBSTACKHASH hStack ) = 0;
 	virtual bool SetSoundEventParam( SoundEventGuid_t guid, HSOSOPFIELDHASH nFieldToken, const CSosFieldData *pData, int16 nIndex ) = 0;
 	// pData holds nSize bytes of packed field data, queued for the sound event or the library stack
