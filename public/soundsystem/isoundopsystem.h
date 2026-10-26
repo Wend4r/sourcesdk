@@ -69,11 +69,20 @@ enum SOFieldDataType_t : int8
 	SOFTYPE_PUBLIC_OPVAR,
 };
 
+// How the elements of a field data type are stored (GetAtomicDataType)
 enum SOAtomicDataType_t : int32
 {
 	SOATYPE_INVALID = 0,
+	// Float elements, also the bool, enum and float types
 	SOATYPE_NUMERIC = 1,
+	// 16-bit symbol of the string table of the operator system: string, dsppreset, sndevt, mixgroup and public_opvar
+	SOATYPE_SYMBOL = 2,
 	SOATYPE_INTEGER = 3,
+	SOATYPE_UINT32 = 4,
+	SOATYPE_UINT64 = 5,
+	// Symbol of the vsnd name, see GetVSndSymbol
+	SOATYPE_VSND = 6,
+	SOATYPE_STRING_TOKEN = 7,
 };
 
 struct CSosFieldData
