@@ -170,14 +170,19 @@ DEFPARTICLE_ATTRIBUTE( ROPE_SEGMENT_DATA, 48, ATTRDATATYPE_4V );	// Rope Segment
 //-----------------------------------------------------------------------------
 enum ParticleFunctionType_t
 {
-	FUNCTION_RENDERER = 0,
-	FUNCTION_OPERATOR,
-	FUNCTION_INITIALIZER,
+	// The order of the definition lists of CParticleSystemDefinition (m_PreEmissionOperators ... m_Renderers, m_Children);
+	// CParticleSystemMgr registers its function definitions with these types
+	FUNCTION_PREEMISSION_OPERATOR = 0,
 	FUNCTION_EMITTER,
+	FUNCTION_INITIALIZER,
+	FUNCTION_OPERATOR,
+	FUNCTION_FORCEGENERATOR,
+	FUNCTION_CONSTRAINT,
+	FUNCTION_RENDERER,
 	FUNCTION_CHILDREN,	// NOTE: This one is a fake function type, only here to help eliminate a ton of duplicated code in the editor
-    FUNCTION_FORCEGENERATOR,
-    FUNCTION_CONSTRAINT,
-	PARTICLE_FUNCTION_COUNT
+
+	// CParticleSystemMgr keeps 9 definition lists; nothing registers a definition in the last one
+	PARTICLE_FUNCTION_COUNT = 9
 };
 
 //-----------------------------------------------------------------------------
