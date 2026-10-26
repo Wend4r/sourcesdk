@@ -39,7 +39,9 @@ struct PhysicsJointDesc_t
 	bool m_bIsLinearConstraintEnabled;
 	bool m_bIsAngularConstraintEnabled;
 	bool m_bEnableCollision;
-	bool m_bUnk54;
+
+	// The local origins are scaled: the world divides them by the scale of their body
+	bool m_bLocalOriginsScaled;
 
 	float m_flFriction;
 	float m_flElasticity;
@@ -52,7 +54,8 @@ struct PhysicsJointDesc_t
 
 	const char *m_Tag;
 
-	bool m_bUnk90;
+	// Creates the joint even when the reference or the attached body is missing
+	bool m_bAllowMissingBody;
 };
 
 struct PhysicsSphericalJointDesc_t : public PhysicsJointDesc_t
