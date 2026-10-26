@@ -114,9 +114,9 @@ using HSound = CWeakHandle< InfoForResourceTypeVSound_t >;
 //-----------------------------------------------------------------------------
 enum FindAudioSourceFlags_t
 {
-	FINDAUDIOSOURCE_NODELAY = 0x1,
-	FINDAUDIOSOURCE_PREFETCH = 0x2,
-	FINDAUDIOSOURCE_PLAYONCE = 0x4,
+	FINDAUDIOSOURCE_NODELAY = ( 1 << 0 ),
+	FINDAUDIOSOURCE_PREFETCH = ( 1 << 1 ),
+	FINDAUDIOSOURCE_PLAYONCE = ( 1 << 2 ),
 };
 
 
