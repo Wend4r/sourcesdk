@@ -26,6 +26,8 @@
 #include "tier0/tslist.h"
 #include "tier0/bitvec.h"
 #include "steam/steamclientpublic.h"
+#include "tier1/ns_address.h"
+#include "resourcefile/resourcetype.h"
 #include "spawngrouptypes.h"
 #include "game_saverestore.h"
 
@@ -175,18 +177,20 @@ struct LegacyNetworkEncoding_t
 abstract_class ISource2Client : public IAppSystem, public IFieldChangeLimitSpew
 {
 public:
-	// The engine passes 0 and 1; the enumerator names are unknown
+	// Like ShouldTransmitState_t: START makes the entities whose transmit bits were set active, END makes the entities
+	// whose bits were cleared dormant ( cl_dormant_spew "Entity %d: %s became %s on client" )
 	enum NotifyShouldTransmitType_t : int
 	{
+		SHOULDTRANSMIT_START = 0,
+		SHOULDTRANSMIT_END
 	};
 
 	// Built by the engine from each CMsgServerPeer of a peer list message
 	struct PeerListEntry_t
 	{
-		// The peer's SteamID with the universe of the local user, and 3 next to it; both zero without a SteamID
-		CSteamID m_SteamID;
-		int m_nUnk008;
-		int m_nUnk00C;
+		// The peer's SteamID with the universe of the local user on Steam channel 3; zero without a SteamID. The client
+		// skips addresses that are not P2P_STEAMID and hands the others to the network P2P service as peers
+		CPeerToPeerAddress m_Address;
 
 		int m_nPlayerSlot;
 		bool m_bYouHearThem;
@@ -401,8 +405,9 @@ public:
 	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 	// Called by the client spawn group's SaveRestoreMap() and SaveRestoreMap2() with its loading spawn group; forward to the
 	// entity system save/restore when ILoadingSpawnGroup::ShouldLoadEntitiesFromSave() and ILoadingSpawnGroup::IsLevelTransition() are set
-	virtual void SaveRestoreMap( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
-	virtual void SaveRestoreMap2( void *pUnk, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
+	// The save/restore keeps hManifest locked through IGameResourceService::LockGameResourceManifest() while it restores
+	virtual void SaveRestoreMap( HGameResourceManifest hManifest, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
+	virtual void SaveRestoreMap2( HGameResourceManifest hManifest, ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset ) = 0;
 	// Returns "core.global_stack"
 	virtual const char *GetGlobalSoundStackName() = 0;
 	// The sound system starts the GetGlobalSoundStackName() sound event only while this returns true; false
