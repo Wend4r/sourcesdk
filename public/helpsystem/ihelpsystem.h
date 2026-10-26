@@ -47,9 +47,9 @@ public:
 	virtual bool GetObjectHelp( QObject *pObject, CUtlString &sContextName, CUtlString &sHelpId ) = 0;
 	virtual void ClearObjectHelp( QObject *pObject ) = 0;
 
-	// pUnknown is shown in brackets to the right of the entry name; bShowHelpBinding appends the key
+	// pAnnotation is shown in brackets to the right of the entry name; bShowHelpBinding appends the key
 	// bound to the help command from the tool framework's input bind manager
-	virtual bool GetHelpText( const char *pContextName, const char *pHelpId, const char *pUnknown, CUtlString &sText, bool bShowHelpBinding ) = 0;
+	virtual bool GetHelpText( const char *pContextName, const char *pHelpId, const char *pAnnotation, CUtlString &sText, bool bShowHelpBinding ) = 0;
 
 	virtual void EditHelp( QWidget *pParent, const char *pContextName, const char *pHelpId ) = 0;
 
