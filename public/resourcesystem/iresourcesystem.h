@@ -53,7 +53,7 @@ enum ResourceSystemDebugFlag_t
 	RESOURCE_SYSTEM_DEBUG_FLAG_NO_MANIFEST_UNLOAD = 0,
 
 	// Silences the warnings about type managers installed twice or not removed before shutdown
-	RESOURCE_SYSTEM_DEBUG_FLAG_NO_TYPE_MANAGER_WARNINGS = 2,
+	RESOURCE_SYSTEM_DEBUG_FLAG_NO_TYPE_MANAGER_WARNINGS = ( 1 << 1 ),
 };
 
 class IResourceSystem : public IAppSystem
