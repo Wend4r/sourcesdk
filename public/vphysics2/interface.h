@@ -682,14 +682,19 @@ public:
 
 	// A recorded trace of one of the eight lists, null when out of range
 	virtual RecordedTrace_t *GetRecordedTrace( int nIndex, uint32 nList ) = 0;
-	virtual void *unk009( int nIndex ) = 0;
-	virtual int unk010() = 0;
-	virtual int unk011() = 0;
+
+	// The records of the frame recorded for the physics debugger: a byte buffer and an offset per record, cleared with the recording
+	virtual void *GetDebugRecord( int nIndex ) = 0;
+	virtual int GetDebugRecordCount() = 0;
+	virtual int GetDebugRecordBufferSize() = 0;
+
 	virtual bool IsRecordingTraces() = 0;
 	virtual bool unk013() = 0;
 	virtual bool unk014() = 0;
 	virtual bool unk015() = 0;
-	virtual int unk016() = 0;
+
+	// The flags the physics debugger sets, unless the world overrides them
+	virtual int GetDebuggerFlags() = 0;
 	virtual void UpdateDebugScene() = 0;
 
 	// Empty
@@ -710,7 +715,8 @@ public:
 
 	virtual void unk026() = 0;
 	virtual bool unk027( uint32 nValue ) = 0;
-	virtual void unk028() = 0;
+	// Empties the awake body list, unless debugger flag 0x10 is set
+	virtual void ClearAwakeBodies() = 0;
 	virtual void unk029( void *pObject, void *pUnknown ) = 0;
 	virtual CRnQueryCache *CreateQueryCache( void *pUnknown ) = 0;
 
