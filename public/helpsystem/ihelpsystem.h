@@ -23,12 +23,32 @@ class IHelpChangeListener;
 class CQHelpEditorWidget;
 class CQHelpDisplayWidget;
 
+// Where IHelpSystem::LoadHelpContext looks for resource/toolhelp_<name>_<language>.txt
+enum HelpContextLocation_t
+{
+	// The MOD search path
+	HELP_CONTEXT_LOCATION_MOD = 0,
+
+	// The GAME search path
+	HELP_CONTEXT_LOCATION_GAME = 1,
+
+	// MOD for a "<prefix>/<name>" context name, passing <prefix> to the file lookup
+	HELP_CONTEXT_LOCATION_MOD_PREFIXED = 2,
+};
+
+// The text of a help entry IHelpSystem::SetHelpEntryText replaces
+enum HelpEntryField_t
+{
+	HELP_ENTRY_FIELD_NAME = 0,
+	HELP_ENTRY_FIELD_SHORT_HELP = 1,
+	HELP_ENTRY_FIELD_HELP = 2,
+};
+
 abstract_class IHelpSystem : public IAppSystem
 {
 public:
-	// Loads resource/toolhelp_<name>_<language>.txt: nLocation 0 from the MOD search path, 1 from GAME,
-	// 2 from MOD for a "<prefix>/<name>" context name, passing <prefix> to the file lookup
-	virtual void LoadHelpContext( const char *pContextName, int nLocation ) = 0;
+	// Loads resource/toolhelp_<name>_<language>.txt
+	virtual void LoadHelpContext( const char *pContextName, HelpContextLocation_t nLocation ) = 0;
 
 	// pGameData is a collection of entity classes (vector of classes first): loads the help contexts it lists and
 	// sets the default name and help of "Element.<class>" and of each class variable in the help
@@ -59,8 +79,7 @@ public:
 	// Case-insensitive search of the entry's texts
 	virtual bool HelpEntryContainsText( const char *pContextName, const char *pHelpId, const char *pSearch ) = 0;
 
-	// nField: 0 name, 1 short help, 2 help
-	virtual void SetHelpEntryText( const char *pContextName, const char *pHelpId, int nField, const char *pText ) = 0;
+	virtual void SetHelpEntryText( const char *pContextName, const char *pHelpId, HelpEntryField_t nField, const char *pText ) = 0;
 
 	// Writes the context back to its help file
 	virtual void SaveHelpContext( const char *pContextName ) = 0;
