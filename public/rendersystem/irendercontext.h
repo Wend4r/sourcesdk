@@ -110,8 +110,73 @@ struct RenderTextureBinding_t
 	const char *m_pDebugName;
 };
 
-// Barrier records of IRenderContext::TextureBarriers, BufferBarriers and MemoryBarriers; the stage and
-// access masks are render system flags translated to the Vulkan ones
+// Pipeline stages of the barrier records and IRenderContext::FillBuffer; each bit maps to one
+// VK_PIPELINE_STAGE_2_* bit (the name after the prefix)
+#define RENDER_PIPELINE_STAGE_DRAW_INDIRECT ( 1 << 0 )
+#define RENDER_PIPELINE_STAGE_INDEX_INPUT ( 1 << 1 )
+#define RENDER_PIPELINE_STAGE_VERTEX_ATTRIBUTE_INPUT ( 1 << 2 )
+#define RENDER_PIPELINE_STAGE_PRE_RASTERIZATION_SHADERS ( 1 << 3 )
+#define RENDER_PIPELINE_STAGE_FRAGMENT_SHADER ( 1 << 4 )
+#define RENDER_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS ( 1 << 5 )
+#define RENDER_PIPELINE_STAGE_LATE_FRAGMENT_TESTS ( 1 << 6 )
+#define RENDER_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT ( 1 << 7 )
+#define RENDER_PIPELINE_STAGE_COMPUTE_SHADER ( 1 << 8 )
+#define RENDER_PIPELINE_STAGE_ALL_GRAPHICS ( 1 << 9 )
+#define RENDER_PIPELINE_STAGE_RAY_TRACING_SHADER ( 1 << 10 )
+#define RENDER_PIPELINE_STAGE_COMMAND_PREPROCESS ( 1 << 11 )
+#define RENDER_PIPELINE_STAGE_COPY ( 1 << 12 )
+#define RENDER_PIPELINE_STAGE_RESOLVE ( 1 << 13 )
+#define RENDER_PIPELINE_STAGE_BLIT ( 1 << 14 )
+#define RENDER_PIPELINE_STAGE_CLEAR ( 1 << 15 )
+#define RENDER_PIPELINE_STAGE_CONDITIONAL_RENDERING ( 1 << 16 )
+#define RENDER_PIPELINE_STAGE_ACCELERATION_STRUCTURE_BUILD ( 1 << 17 )
+#define RENDER_PIPELINE_STAGE_ACCELERATION_STRUCTURE_COPY ( 1 << 18 )
+#define RENDER_PIPELINE_STAGE_FRAGMENT_SHADING_RATE_ATTACHMENT ( 1 << 19 )
+#define RENDER_PIPELINE_STAGE_MESH_SHADER ( 1 << 20 )
+
+// Memory accesses of the barrier records and IRenderContext::FillBuffer; each bit maps to one
+// VK_ACCESS_2_* bit (the name after the prefix)
+#define RENDER_ACCESS_INDIRECT_COMMAND_READ ( 1 << 0 )
+#define RENDER_ACCESS_INDEX_READ ( 1 << 1 )
+#define RENDER_ACCESS_VERTEX_ATTRIBUTE_READ ( 1 << 2 )
+#define RENDER_ACCESS_UNIFORM_READ ( 1 << 3 )
+#define RENDER_ACCESS_SHADER_SAMPLED_READ ( 1 << 4 )
+#define RENDER_ACCESS_SHADER_STORAGE_READ ( 1 << 5 )
+#define RENDER_ACCESS_INPUT_ATTACHMENT_READ ( 1 << 6 )
+#define RENDER_ACCESS_SHADER_WRITE ( 1 << 7 )
+#define RENDER_ACCESS_COLOR_ATTACHMENT_READ ( 1 << 8 )
+#define RENDER_ACCESS_COLOR_ATTACHMENT_WRITE ( 1 << 9 )
+#define RENDER_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ ( 1 << 10 )
+#define RENDER_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE ( 1 << 11 )
+#define RENDER_ACCESS_TRANSFER_READ ( 1 << 12 )
+#define RENDER_ACCESS_TRANSFER_WRITE ( 1 << 13 )
+#define RENDER_ACCESS_COMMAND_PREPROCESS_READ ( 1 << 14 )
+#define RENDER_ACCESS_COMMAND_PREPROCESS_WRITE ( 1 << 15 )
+#define RENDER_ACCESS_CONDITIONAL_RENDERING_READ ( 1 << 16 )
+#define RENDER_ACCESS_ACCELERATION_STRUCTURE_READ ( 1 << 17 )
+#define RENDER_ACCESS_ACCELERATION_STRUCTURE_WRITE ( 1 << 18 )
+#define RENDER_ACCESS_MEMORY_WRITE ( 1 << 19 )
+#define RENDER_ACCESS_MEMORY_READ ( 1 << 20 )
+#define RENDER_ACCESS_FRAGMENT_SHADING_RATE_ATTACHMENT_READ ( 1 << 21 )
+
+// Texture layouts of the barrier and transition records, translated to the Vulkan image layouts
+enum RenderTextureLayout_t : uint32
+{
+	RENDER_TEXTURE_LAYOUT_UNDEFINED = 0,
+	RENDER_TEXTURE_LAYOUT_GENERAL,
+	RENDER_TEXTURE_LAYOUT_COLOR_TARGET,
+	RENDER_TEXTURE_LAYOUT_DEPTH_STENCIL_TARGET,
+
+	// Read-only depth with a writable stencil
+	RENDER_TEXTURE_LAYOUT_DEPTH_READ_ONLY,
+	RENDER_TEXTURE_LAYOUT_SHADER_READ,
+	RENDER_TEXTURE_LAYOUT_COPY_SOURCE,
+	RENDER_TEXTURE_LAYOUT_COPY_DEST,
+	RENDER_TEXTURE_LAYOUT_PRESENT,
+};
+
+// Barrier records of IRenderContext::TextureBarriers, BufferBarriers and MemoryBarriers; the stage masks
+// are RENDER_PIPELINE_STAGE_* bits, the access masks RENDER_ACCESS_* bits
 struct RenderTextureBarrier_t
 {
 	HRenderTexture m_hTexture;
@@ -123,7 +188,7 @@ struct RenderTextureBarrier_t
 	// A negative base mip level means 0, a non-positive mip count means all levels
 	int m_nBaseMipLevel;
 	int m_nMipLevelCount;
-	uint32 m_nLayout;
+	RenderTextureLayout_t m_nLayout;
 };
 
 struct RenderBufferBarrier_t
@@ -188,7 +253,7 @@ struct BLASBuildDesc_t
 struct RenderTextureLayoutTransition_t
 {
 	HRenderTexture m_hTexture;
-	uint32 m_nLayout;
+	RenderTextureLayout_t m_nLayout;
 };
 
 // IRenderContext::SubmitBarrierBatch
@@ -363,7 +428,7 @@ public:
 	virtual void TraceRays( IRaytraceShaderBindingTable *pSBT, uint32 nWidth, uint32 nHeight, uint32 nDepth ) = 0;
 	virtual void TraceRaysIndirect( IRaytraceShaderBindingTable *pSBT, RenderBufferHandle_t hArgsBuffer, uint32 nOffset ) = 0;
 	virtual void BuildOpacityMicromaps( int nCount, const OpacityMicromapBuildDesc_t *pBuildDescs ) = 0;
-	// Fills the whole buffer with nValue (vkCmdFillBuffer) between the given access and stage masks
+	// Fills the whole buffer with nValue (vkCmdFillBuffer) between the given RENDER_ACCESS_* and RENDER_PIPELINE_STAGE_* masks
 	virtual void FillBuffer( RenderBufferHandle_t hBuffer, uint32 nValue, uint32 nSrcAccessMask, uint32 nSrcStageMask, uint32 nDstAccessMask, uint32 nDstStageMask ) = 0;
 	virtual void SetIndexBufferData( IndexBufferHandle_t hIndexBuffer, const void *pData, size_t nNumBytes, size_t nOffset, const DataRecycleDelegate_t *pDataRecycleDelegate, void *pRecycleContext ) = 0;
 	// Submits the display list and waits for the GPU
@@ -385,12 +450,12 @@ public:
 	virtual void SetDepthBoundsTestEnable( bool bEnable ) = 0;
 	virtual void SetDepthBounds( float flMinDepth, float flMaxDepth ) = 0;
 	virtual std::unique_ptr< IBarrierHelper > GetBarrierHelper() = 0;
-	virtual void TransitionTextures( int nCount, const HRenderTexture *pTextures, const uint32 *pLayouts ) = 0;
+	virtual void TransitionTextures( int nCount, const HRenderTexture *pTextures, const RenderTextureLayout_t *pLayouts ) = 0;
 	virtual void TextureBarriers( int nCount, const RenderTextureBarrier_t *pBarriers ) = 0;
 	virtual void BufferBarriers( int nCount, const RenderBufferBarrier_t *pBarriers ) = 0;
 	virtual void MemoryBarriers( int nCount, const RenderMemoryBarrier_t *pBarriers ) = 0;
 	// Transitions the textures from the undefined layout, dropping their contents
-	virtual void DiscardTextures( int nCount, const HRenderTexture *pTextures, const uint32 *pLayouts ) = 0;
+	virtual void DiscardTextures( int nCount, const HRenderTexture *pTextures, const RenderTextureLayout_t *pLayouts ) = 0;
 	// Records the pending barriers of the textures before the following commands
 	virtual void FlushTextureBarriers( int nCount, const HRenderTexture *pTextures ) = 0;
 	virtual void SubmitBarrierBatch( const RenderBarrierBatch_t &batch ) = 0;
