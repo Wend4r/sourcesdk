@@ -78,9 +78,21 @@ enum JobPriority_t
 	JP_NUM_PRIORITIES
 };
 
+// Cores a thread pool runs on; the engine keeps it as the boot config's GlobalThreadPoolMode with the names below
+// and uses THREAD_POOL_CORE_TYPE_SPLIT when it is unset or unknown
+enum ThreadPoolCoreTypeRequest_t : int
+{
+	THREAD_POOL_CORE_TYPE_PERFORMANCE = 0, // "performance"
+	THREAD_POOL_CORE_TYPE_EFFICIENCY, // "efficiency"
+	THREAD_POOL_CORE_TYPE_SPLIT, // "split"
+	THREAD_POOL_CORE_TYPE_UNDIFFERENTIATED, // "undifferentiated"
+	THREAD_POOL_CORE_TYPE_AUTO_THREADS, // "auto_threads"
+	THREAD_POOL_CORE_TYPE_MAX_THREADS = 6, // "max_threads"
+};
+
 struct ThreadPoolStartParams_t
 {
-	int nCoreTypeRequest; // 0 performance, 1 efficiency, 2 split, 3 undifferentiated, 4 auto_threads, 6 max_threads
+	ThreadPoolCoreTypeRequest_t nCoreTypeRequest;
 	int nThreads; // Negative to count the cores nCoreTypeRequest picks
 	int nMaxThreads;
 	int iThreadPriority;
@@ -118,7 +130,7 @@ public:
 	//-----------------------------------------------------
 	// Functions for any thread
 	//-----------------------------------------------------
-	virtual int GetCoreTypeRequest() = 0;
+	virtual ThreadPoolCoreTypeRequest_t GetCoreTypeRequest() = 0;
 	virtual int NumThreads() = 0;
 	virtual int NumIdleThreads() = 0;
 	virtual int GetCurrentThreadIndex() = 0;

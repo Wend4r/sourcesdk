@@ -43,6 +43,7 @@ class IBroadcastPlayer;
 class CEngineGotvSyncPacket;
 struct SpawnGroupDesc_t;
 struct EngineLoopState_t;
+enum ThreadPoolCoreTypeRequest_t : int;
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface the engine exposes to the client DLL (Source2EngineToClient001).
@@ -272,8 +273,9 @@ public:
 	// Clears the flag that allows connecting to secure servers
 	virtual void DisallowSecureServers() = 0;
 	virtual void SendVProfLiteReportToServer( void *pReport ) = 0;
-	virtual int GetGlobalThreadPoolMode() = 0;
-	virtual void SetGlobalThreadPoolMode( int nMode ) = 0;
+	// The boot config's GlobalThreadPoolMode, THREAD_POOL_CORE_TYPE_SPLIT when it is unset
+	virtual ThreadPoolCoreTypeRequest_t GetGlobalThreadPoolMode() = 0;
+	virtual void SetGlobalThreadPoolMode( ThreadPoolCoreTypeRequest_t nMode ) = 0;
 	// Removes the stored mode from the boot config.
 	virtual void ResetGlobalThreadPoolMode() = 0;
 	virtual void PrintNetworkSummaryReport() = 0;
