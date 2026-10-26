@@ -144,7 +144,7 @@ public:
 	// token is pszLayerName.
 	virtual void AddSignalSemaphoreLayerToView( ISceneView *pView, ISceneView *pWaitingView, const char *pszLayerName, bool bCreateLabelLayer ) = 0;
 
-	// Same as AddSignalSemaphoreLayerToView, with the layer flag that puts the layer on the compute queue
+	// Same as AddSignalSemaphoreLayerToView, with LAYERFLAGS_ASYNC_COMPUTE added to the layer flags
 	virtual void AddComputeSignalSemaphoreLayerToView( ISceneView *pView, ISceneView *pWaitingView, const char *pszLayerName, bool bCreateLabelLayer ) = 0;
 
 	// Adds the "DrawDepthOpaque", "DrawDepthNeedsDynamic", "DrawDepthAlphaTest", "DrawDepthTranslucent" and "DrawDepth Fade" layers to the view

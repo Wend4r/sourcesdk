@@ -311,7 +311,7 @@ public:
 
 	virtual void SetPVSFromClusterMembership( CSceneObject *pObject, const uint32 *pClusters, int nClusterCount ) = 0;
 
-	// Recompute the PVS data of the object from bounds or an oriented box in its world, unless PVS_NO_RECOMPUTE is set on it.
+	// Recompute the PVS data of the object from bounds or an oriented box in its world, unless bit 0 of the flags of its PVS data is set.
 	// Overloads: MSVC places the oriented box one first.
 	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const AABB_t &bounds, bool bIsStatic ) = 0;
 	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const OBB_t &bounds, bool bIsStatic ) = 0;
