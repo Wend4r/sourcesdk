@@ -18,6 +18,7 @@
 #include <memory>
 
 class IBarrierHelper;
+class ICommandCallback;
 class IReadBufferCallback;
 
 // Value type of RenderDocAnnotation_t, translated to the RenderDoc annotation types
@@ -173,6 +174,30 @@ struct BLASBuildDesc_t
 	uint32 m_nScratchOffset;
 };
 
+// A texture and the layout IRenderContext::SubmitBarrierBatch transitions it to
+struct RenderTextureLayoutTransition_t
+{
+	HRenderTexture m_hTexture;
+	uint32 m_nLayout;
+};
+
+// IRenderContext::SubmitBarrierBatch
+struct RenderBarrierBatch_t
+{
+	uint32 m_nLayoutTransitionCount;
+	const RenderTextureLayoutTransition_t *m_pLayoutTransitions;
+	uint32 m_nTextureBarrierCount;
+	const RenderTextureBarrier_t *m_pTextureBarriers;
+	uint32 m_nBufferBarrierCount;
+	const RenderBufferBarrier_t *m_pBufferBarriers;
+	uint32 m_nMemoryBarrierCount;
+	const RenderMemoryBarrier_t *m_pMemoryBarriers;
+
+	// Passed to FlushTextureBarriers first
+	uint32 m_nFlushedTextureCount;
+	const HRenderTexture *m_pFlushedTextures;
+};
+
 // IRenderContext::BuildOpacityMicromaps
 struct OpacityMicromapBuildDesc_t
 {
@@ -208,8 +233,10 @@ public:
 	// Ends the recording with EndDisplayList and hands the list to IRenderDevice::SubmitDisplayLists
 	virtual void SubmitDisplayList() = 0;
 	virtual CDisplayList *EndDisplayList() = 0;
-	virtual void unk012() = 0;
-	virtual void unk013() = 0;
+	// The display list waits until the dependency is signalled by all its batches
+	virtual void WaitOnDependency( CDependencyDescriptor *pDependency ) = 0;
+	// Counts one of the dependency's batches as submitted when the display list is
+	virtual void SignalDependency( CDependencyDescriptor *pDependency ) = 0;
 	virtual void GetViewport( RenderViewport_t *pViewport, int nIndex ) = 0;
 	virtual void SetViewports( int nCount, const RenderViewport_t *pViewports ) = 0;
 	virtual void SetScissorRects( int nCount, const Rect_t *pRects ) = 0;
@@ -284,19 +311,21 @@ public:
 	virtual bool BindVertexBuffer( int nSlot, VertexBufferHandle_t hVertexBuffer, int nOffset, int nStride ) = 0;
 	// Used with the buffers of CreateDynamicVertexBuffer, forwards to BindVertexBuffer
 	virtual bool BindDynamicVertexBuffer( int nSlot, VertexBufferHandle_t hVertexBuffer, int nOffset, int nStride ) = 0;
-	virtual void unk075() = 0;
+	// Same body as the VertexBufferHandle_t overload
+	virtual bool BindVertexBuffer( int nSlot, RenderBufferHandle_t hBuffer, int nOffset, int nStride ) = 0;
 	// Recorded by IRenderDevice::AsyncSetTextureData with the same arguments
 	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
 	virtual void ReadTexturePixelsAsync( HRenderTexture hTexture, std::shared_ptr< IReadTexturePixelsCallback > pCallback, int nSlice, int nMipLevel, const Rect_t *pSrcRect ) = 0;
-	// Records an empty command into the display list
-	virtual void MarkIssuesCommands() = 0;
+	// Records a command that makes the render thread retire the submissions whose fences have completed
+	virtual void RetireCompletedSubmissions() = 0;
 	virtual void ReadBuffer( RenderBufferHandle_t hBuffer, std::shared_ptr< IReadBufferCallback > pCallback, uint32 nOffset, uint32 nNumBytes ) = 0;
 	virtual void *QueuePolledBufferReadback( RenderBufferHandle_t hBuffer, uint32 nOffset, uint32 nNumBytes ) = 0;
 	virtual void ReadBufferIndirect( RenderBufferHandle_t hBuffer, uint32 nUnused, RenderBufferHandle_t hIndirectBuffer, uint32 nIndirectOffset, std::shared_ptr< IReadBufferCallback > pCallback ) = 0;
 	virtual void GenerateMipmaps( HRenderTexture hTexture ) = 0;
 	virtual void CopyTexture( HRenderTexture hSrcTexture, HRenderTexture hDstTexture, const Rect_t *pSrcRect, int nDstX, int nDstY, int nSrcMipLevel, int nSrcSlice, int nDstMipLevel, int nDstSlice ) = 0;
 	virtual void CopyFromVolumeTexture( HRenderTexture hSrcTexture, HRenderTexture hDstTexture, const Rect3D_t *pSrcBox, int nDstX, int nDstY, int nDstZ, int nSrcMipLevel, int nSrcSlice, int nDstMipLevel, int nDstSlice ) = 0;
-	virtual void unk085() = 0;
+	// Forwards to the RenderBufferHandle_t overload
+	virtual void CopyBuffer( VertexBufferHandle_t hDstBuffer, uint32 nDstOffset, VertexBufferHandle_t hSrcBuffer ) = 0;
 	// Copies the whole of hSrcBuffer
 	virtual void CopyBuffer( RenderBufferHandle_t hDstBuffer, uint32 nDstOffset, RenderBufferHandle_t hSrcBuffer ) = 0;
 	virtual void CopyBuffer( RenderBufferHandle_t hDstBuffer, uint32 nDstOffset, RenderBufferHandle_t hSrcBuffer, uint32 nSrcOffset, uint64 nNumBytes ) = 0;
@@ -323,11 +352,13 @@ public:
 	virtual void TraceRays( IRaytraceShaderBindingTable *pSBT, uint32 nWidth, uint32 nHeight, uint32 nDepth ) = 0;
 	virtual void TraceRaysIndirect( IRaytraceShaderBindingTable *pSBT, RenderBufferHandle_t hArgsBuffer, uint32 nOffset ) = 0;
 	virtual void BuildOpacityMicromaps( int nCount, const OpacityMicromapBuildDesc_t *pBuildDescs ) = 0;
-	virtual void unk109() = 0;
+	// Fills the whole buffer with nValue (vkCmdFillBuffer) between the given access and stage masks
+	virtual void FillBuffer( RenderBufferHandle_t hBuffer, uint32 nValue, uint32 nSrcAccessMask, uint32 nSrcStageMask, uint32 nDstAccessMask, uint32 nDstStageMask ) = 0;
 	virtual void SetIndexBufferData( IndexBufferHandle_t hIndexBuffer, const void *pData, size_t nNumBytes, size_t nOffset, const DataRecycleDelegate_t *pDataRecycleDelegate, void *pRecycleContext ) = 0;
 	// Submits the display list and waits for the GPU
 	virtual void ForceFlushGPU() = 0;
-	virtual void unk112() = 0;
+	// Flushes and waits for the GPU on a context of its own, then frees the resources pending deletion
+	virtual void FlushGPUAndFreeDeletedResources() = 0;
 	virtual void unk113() = 0;
 	virtual IRenderDevice *GetRenderDevice() = 0;
 	virtual void BeginPIXEvent( uint32 nColor, const char *pName ) = 0;
@@ -349,20 +380,26 @@ public:
 	virtual void MemoryBarriers( int nCount, const RenderMemoryBarrier_t *pBarriers ) = 0;
 	// Transitions the textures from the undefined layout, dropping their contents
 	virtual void DiscardTextures( int nCount, const HRenderTexture *pTextures, const uint32 *pLayouts ) = 0;
-	virtual void unk132() = 0;
-	virtual void unk133() = 0;
-	virtual void unk134() = 0;
-	virtual void unk135() = 0;
+	// Records the pending barriers of the textures before the following commands
+	virtual void FlushTextureBarriers( int nCount, const HRenderTexture *pTextures ) = 0;
+	virtual void SubmitBarrierBatch( const RenderBarrierBatch_t &batch ) = 0;
+	// While the top of this stack is true, buffer copies and fills skip their automatic barriers
+	virtual void PushManualBufferBarriers( bool bManual ) = 0;
+	virtual void PopManualBufferBarriers() = 0;
 	virtual void unk136() = 0;
 	virtual void unk137() = 0;
 	virtual void unk138() = 0;
 	virtual const char *GetDebugName() = 0;
-	virtual void unk140() = 0;
+	// The render thread calls the callback when it reaches the command
+	virtual void QueueCommandCallback( ICommandCallback *pCallback ) = 0;
 	// Returns the semaphore the display list signals when it completes, created on first use
 	virtual RenderSemaphoreHandle_t SemaphoreSignalAtEnd( const char *pDebugName ) = 0;
 	virtual void SemaphoreWaitAtBegin( RenderSemaphoreHandle_t hSemaphore ) = 0;
-	virtual void unk143() = 0;
-	virtual void unk144() = 0;
+	// Device mask of the following submissions; 23294 restores the previous mask and 4269 reuses it
+	virtual void SetMultiGPUDeviceMask( uint32 nDeviceMask ) = 0;
+	// Recorded for the render thread when multiple GPUs are linked: blits pSrcRect of hSrcTexture into pDstRect
+	// of hDstTexture with device group submits on the given GPU indices; nUnused0/nUnused1 are recorded but not read
+	virtual void BlitTextureAcrossGPUs( HRenderTexture hSrcTexture, HRenderTexture hDstTexture, int nSecondPassGPU, int nFirstPassGPU, int nUnused0, int nUnused1, const Rect_t *pSrcRect, const Rect_t *pDstRect, bool bFirstPass, bool bSecondPass ) = 0;
 	virtual void unk145() = 0;
 	virtual bool BindPooledIndexBuffer( PooledIndexBufferHandle_t hIndexBuffer ) = 0;
 	virtual bool BindPooledVertexBuffer( int nSlot, RenderResourceHandle_t hPooledVertexBuffer ) = 0;
