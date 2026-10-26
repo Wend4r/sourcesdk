@@ -131,8 +131,8 @@ public:
 	// Refreshes the current client from p4 settings
 	virtual void RefreshActiveClient() = 0;
 
-	// Translates the path; the result is shown with p4v history
-	virtual void unk017( CBufferString *pResult, const char *pFullPath ) = 0;
+	// The path the asset browser passes to "p4v.exe -p4vc history" for the file
+	virtual void GetHistoryPath( CBufferString *pResult, const char *pFullPath ) = 0;
 
 	// retrieves the list of files in a path
 	virtual CUtlVector< P4File_t > &GetFileList( const char *pPath, bool bUnknown ) = 0;
