@@ -106,14 +106,15 @@ public:
 
 	virtual void QueueMaterialReload() = 0;
 
-	// Names the copy "<source>_copy<n>"
-	virtual HMaterialWeak CreateProceduralMaterialCopy( ResourceHandle_t hSrcMaterial, int nMode, bool bRecreateStaticBuffers ) = 0;
+	// With bNamed the copy is named "<source>_copy<n>" and bound by that name, otherwise it is an anonymous resource
+	virtual HMaterialWeak CreateProceduralMaterialCopy( ResourceHandle_t hSrcMaterial, bool bNamed, bool bRecreateStaticBuffers ) = 0;
 
-	// Creates a material from scratch out of a KeyValues3 description.
-	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, KeyValues3 *pData, int nFlags, bool bLoadAsync ) = 0;
+	// Creates a material from scratch out of a KeyValues3 description; bNamed is passed to
+	// IResourceSystem::FindOrCreateProceduralResource (a named or an anonymous resource)
+	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, KeyValues3 *pData, bool bNamed, bool bLoadAsync ) = 0;
 
 	// Creates a material derived from an already loaded one, applying overrides on top of it.
-	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, ResourceHandle_t hSrcMaterial, KeyValues3 *pOverrides, int nFlags, bool bCreateAsync ) = 0;
+	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, ResourceHandle_t hSrcMaterial, KeyValues3 *pOverrides, bool bNamed, bool bCreateAsync ) = 0;
 
 	// Creates a material from the KeyValues3 description pData and keeps a strong reference to hResource in it
 	// ( see IMaterial2::GetReferencedResource() ). bCheckValid is passed to the lookups of the texture parameters
