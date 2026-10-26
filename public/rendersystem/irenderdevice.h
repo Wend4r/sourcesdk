@@ -194,6 +194,22 @@ enum RenderDeviceSpecificInfo_t
 	RENDER_DEVICE_INFO_VK_RAY_TRACING_PIPELINE_PROPERTIES,
 };
 
+// IRenderDevice::SetLatencyMarker, passed on as the NVIDIA Reflex latency markers
+enum RenderLatencyMarker_t
+{
+	RENDER_LATENCY_MARKER_SIMULATION_START = 0,
+	RENDER_LATENCY_MARKER_SIMULATION_END,
+	RENDER_LATENCY_MARKER_RENDERSUBMIT_START,
+	RENDER_LATENCY_MARKER_RENDERSUBMIT_END,
+	RENDER_LATENCY_MARKER_PRESENT_START,
+	RENDER_LATENCY_MARKER_PRESENT_END,
+	RENDER_LATENCY_MARKER_INPUT_SAMPLE,
+
+	// Sent only while r_low_latency_trigger_flash is set
+	RENDER_LATENCY_MARKER_TRIGGER_FLASH,
+	RENDER_LATENCY_MARKER_PC_LATENCY_PING,
+};
+
 abstract_class IRenderDevice
 {
 public:
@@ -414,7 +430,7 @@ public:
 	virtual int GetPresentCount() = 0;
 	virtual bool IsUsing32BitDepthBuffer() = 0;
 	virtual void LowLatencySleep() = 0;
-	virtual void SetLatencyMarker( uint32 nMarker ) = 0;
+	virtual void SetLatencyMarker( RenderLatencyMarker_t nMarker ) = 0;
 	virtual bool IsLatencyStatsPingMessage( uint32 nWindowMessage ) = 0;
 	virtual bool IsFramePacingSupported() = 0;
 	virtual double ConvertTimestampToSeconds( uint64 nTimestamp ) = 0;
