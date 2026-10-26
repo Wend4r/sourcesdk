@@ -39,6 +39,11 @@ class CClientChangelevelState;
 class CGameClientConnectPrerequisite;
 class CVConsole2FlattenedSerializerListener;
 
+// Flags of the status lines printed by INetworkClientService::PrintStatus
+#define STATUS_FLAG_ADDRESSES	( 1 << 0 )	// Adds the "adr" column; always set for the SourceTV servers
+#define STATUS_FLAG_SHORT		( 1 << 1 )	// "status short"
+#define STATUS_FLAG_FULL		( 1 << 2 )	// "status full"
+
 abstract_class INetworkClientService : public IEngineService
 {
 public:
@@ -105,7 +110,7 @@ public:
 	// Messages the client receives get a relay entry that forwards them to GetNetMessageDispatcher(); bClientToServer messages only get their channel category
 	virtual void RegisterNetMessage( INetworkMessageInternal *pNetMessage, bool bClientToServer ) = 0;
 
-	// Client and SourceTV status lines; nFlags has 2 for "status short" and 4 for "status full"
+	// Client and SourceTV status lines; nFlags holds STATUS_FLAG_*
 	virtual void PrintStatus( CommandTarget_t nTarget, int nFlags ) = 0;
 
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr() = 0;
