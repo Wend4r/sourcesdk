@@ -54,22 +54,20 @@ public:
 abstract_class IPlayerFriend : public IPlayer
 {
 public:
-	virtual wchar_t const * GetRichPresence() = 0;
+	virtual char const * GetRichPresence() = 0;
 
 	virtual KeyValues *GetGameDetails() = 0;
+	virtual KeyValues *GetPublishedPresence() = 0;
 
 	virtual bool IsJoinable() = 0;
 	virtual void Join() = 0;
+
+	virtual uint64 GetTitleID() = 0;
 };
 
 abstract_class IPlayerLocal : public IPlayer
 {
 public:
-	virtual const UserProfileData& GetPlayerProfileData() = 0;
-
-	virtual const void * GetPlayerTitleData( int iTitleDataIndex ) = 0;
-	virtual void UpdatePlayerTitleData( int iTitleDataIndex, const void *pvNewTitleData, int numBytesOffset, int numNewBytes ) = 0;
-
 	virtual void GetLeaderboardData( KeyValues *pLeaderboardInfo ) = 0;
 	virtual void UpdateLeaderboardData( KeyValues *pLeaderboardInfo ) = 0;
 };

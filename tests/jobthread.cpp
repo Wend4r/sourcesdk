@@ -138,7 +138,7 @@ public:
 	virtual bool Start( const ThreadPoolStartParams_t &startParams, const char *pszNameOverride ) { return true; }
 	virtual bool Stop() { return true; }
 	virtual void unk001( const ThreadPoolStartParams_t &startParams ) {}
-	virtual int GetCoreTypeRequest() { return 0; }
+	virtual ThreadPoolCoreTypeRequest_t GetCoreTypeRequest() { return THREAD_POOL_CORE_TYPE_PERFORMANCE; }
 	virtual int NumThreads() { return m_nThreads; }
 	virtual int NumIdleThreads() { return m_nIdleThreads; }
 	virtual int GetCurrentThreadIndex() { return -1; }

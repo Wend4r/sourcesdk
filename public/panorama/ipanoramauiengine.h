@@ -11,9 +11,12 @@
 #endif
 
 #include "tier0/platform.h"
+#include "tier0/globalsymbol.h"
 #include "tier0/utlvector.h"
 #include "appframework/iappsystem.h"
 #include "inputsystem/inputenums.h"
+
+struct ResourceBindingBase_t;
 
 namespace panorama
 {
@@ -35,7 +38,22 @@ public:
 
 	virtual int DeleteClosedWindows() = 0;
 
-	virtual bool unk017( void *p1, void *p2 ) = 0;
+	// Element of a layout file collected by GetLayoutFileElements()
+	struct LayoutFileElement_t
+	{
+		// Value of the element's "id" attribute, NULL when it has none
+		CGlobalSymbol m_ID;
+		// Element name
+		CGlobalSymbol m_Name;
+
+		// Position of the element in the layout source text, both counted from 1
+		int m_nLine;
+		int m_nColumn;
+	};
+
+	// Appends every element of the loaded layout file (a "vxml" resource) to pElements;
+	// returns false when the resource is not loaded
+	virtual bool GetLayoutFileElements( const ResourceBindingBase_t *hLayout, CUtlVector< LayoutFileElement_t > *pElements ) = 0;
 };
 
 #endif // IPANORAMAUIENGINE_H

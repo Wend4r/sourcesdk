@@ -24,6 +24,18 @@ public:
 	CGCClientSystem();
 	virtual ~CGCClientSystem();
 
+	// Runs the main loop of m_GCClient with 1000 and flFrameTime in microseconds while m_bInittedGC is set
+	virtual void Update( float flFrameTime );
+	// Returns m_GCClient's m_eConnectionStatus
+	virtual GCConnectionStatus GetConnectionStatus();
+	// Returns the engine's GetSteamUniverse()
+	virtual EUniverse GetSteamUniverse();
+	// Initializes m_GCClient with the Steam client and sets m_bInittedGC ( "CGCClientSystem - failed to init GCClient!" )
+	virtual void InitGC();
+	// Called before and after InitGC, both are empty here
+	virtual void PreInitGC();
+	virtual void PostInitGC();
+
 	GCSDK::CGCClient *GetGCClient() { return &m_GCClient; }
 	const GCSDK::CGCClient *GetGCClient() const { return &m_GCClient; }
 

@@ -60,23 +60,11 @@ public:
 	// Whether we are a single-player title or multi-player title
 	virtual bool IsMultiplayer() = 0;
 
-	// Prepare network startup params for the title
-	virtual void PrepareNetStartupParams( void *pNetStartupParams ) = 0;
-
 	// Get total number of players supported by the title
 	virtual int GetTotalNumPlayersSupported() = 0;
 
 	// Get a guest player name
 	virtual char const * GetGuestPlayerName( int iUserIndex ) = 0;
-
-	// Decipher title data fields
-	virtual TitleDataFieldsDescription_t const * DescribeTitleDataStorage() = 0;
-
-	// Title achievements
-	virtual TitleAchievementsDescription_t const * DescribeTitleAchievements() = 0;
-
-	// Title avatar awards
-	virtual TitleAvatarAwardsDescription_t const * DescribeTitleAvatarAwards() = 0;
 
 	// Title leaderboards
 	virtual KeyValues * DescribeTitleLeaderboard( char const *szLeaderboardView ) = 0;
@@ -87,6 +75,9 @@ public:
 
 	// Start up a listen server with the given settings
 	virtual bool StartServerMap( KeyValues *pSettings ) = 0;
+
+	// Run frame of the title, called from the matchmaking framework frame
+	virtual void RunFrame() = 0;
 };
 
 //
@@ -125,12 +116,11 @@ public:
 	// Defines session search keys for matchmaking
 	virtual KeyValues * DefineSessionSearchKeys( KeyValues *pSettings ) = 0;
 
-	// Defines dedicated server search key
-	virtual KeyValues * DefineDedicatedSearchKeys( KeyValues *pSettings ) = 0;
-
-
 	// Initializes full game settings from potentially abbreviated game settings
-	virtual void InitializeGameSettings( KeyValues *pSettings ) = 0;
+	virtual void InitializeGameSettings( KeyValues *pSettings, char const *szReason ) = 0;
+
+	// Sets the bspname key given a mapgroup
+	virtual void SetBspnameFromMapgroup( KeyValues *pSettings ) = 0;
 
 	// Extends game settings update packet before it gets merged with
 	// session settings and networked to remote clients
@@ -157,6 +147,31 @@ public:
 	// Returns the update/delete package to be applied to session settings
 	// and pushed to dependent two sesssion of the two teams.
 	virtual KeyValues * PrepareTeamLinkForGame( KeyValues *pSettingsLocal, KeyValues *pSettingsRemote ) = 0;
+
+	// Prepares the client lobby for migration
+	// Returns NULL if migration should proceed normally
+	virtual KeyValues * PrepareClientLobbyForMigration( KeyValues *pSettingsLocal, KeyValues *pMigrationInfo ) = 0;
+
+	// Prepares the session for server disconnect
+	// Returns [ kvroot { "disconnecthdlr" "<opt>" } ] if disconnect should be handled differently
+	virtual KeyValues * PrepareClientLobbyForGameDisconnect( KeyValues *pSettingsLocal, KeyValues *pDisconnectInfo ) = 0;
+
+	// Called by the client to notify matchmaking that it should update matchmaking properties based
+	// on player distribution among the teams
+	virtual void UpdateTeamProperties( KeyValues *pSettings, KeyValues *pTeamProperties ) = 0;
+
+	virtual void unk015() = 0;
+	virtual void unk016() = 0;
+	virtual void unk017() = 0;
+
+	// Builds the settings update package that moves the team lobby to the game
+	virtual KeyValues * ExtendTeamLobbyToGame( KeyValues *pSettings ) = 0;
+
+	// Retrieves the indexed formula from the match system settings
+	virtual char const * GetFormulaAverage( int index ) = 0;
+
+	// Returns true
+	virtual bool AllowClientProfileUpdate( KeyValues *kvUpdate ) = 0;
 };
 
 #endif // IMATCHTITLE_H
