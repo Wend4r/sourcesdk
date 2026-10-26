@@ -84,7 +84,8 @@ public:
 	virtual void SetFrameTimeAmnesty( const char *pszReason, int nFrames, float flDuration ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool bCheckCvar ) = 0;
 	virtual void SetFramePerformanceTag( const char *pszTag, int nValue, int nFrames, float flDuration ) = 0;
-	virtual void PrintVProfLiteReport( void *pReport, bool bDetailed, int nLogChannel ) = 0;
+	// A negative channel logs to LOG_VPROF
+	virtual void PrintVProfLiteReport( void *pReport, bool bDetailed, LoggingChannelID_t nLogChannel ) = 0;
 	virtual void DumpNetStats( void *pNetStatData, void ( *pfnOutput )( const char * ) ) = 0;
 	virtual bool ShouldForceMaxFrametimeToTickInterval() = 0;
 	virtual uint32 GetLongFrameCount() = 0;
