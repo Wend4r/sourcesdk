@@ -170,8 +170,8 @@ public:
 	// Retrieves the indexed formula from the match system settings
 	virtual char const * GetFormulaAverage( int index ) = 0;
 
-	// Returns true; named after the older interface's `AllowClientProfileUpdate`
-	virtual bool Unk_AllowClientProfileUpdate( void *p ) = 0;
+	// Returns true
+	virtual bool AllowClientProfileUpdate( KeyValues *kvUpdate ) = 0;
 };
 
 #endif // IMATCHTITLE_H
