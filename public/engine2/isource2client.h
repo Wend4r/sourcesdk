@@ -51,7 +51,9 @@ class CSteamID;
 class CThreadedJob;
 class CTransform;
 class CUtlBuffer;
+class ICompositeMaterialManager;
 class IDemoMessageSink;
+class IEconItemSystem;
 class InstantReplayMessage_t;
 class IEntityReport;
 class IGameEvent;
@@ -389,7 +391,8 @@ public:
 	virtual bool GetGlobalLightParameters( int *pnWeatherType, float *pflTimeOfDayAmount, float *pflSmoothedTimeOfDayAmount ) = 0;
 	virtual void OnReceivedUpdatedServerPeerList( PeerListEntry_t *pPeerList, size_t nPeerCount ) = 0;
 	virtual void UpdateEventListeners() = 0;
-	virtual void *GetEconItemSystem() = 0;
+	// The CCStrike15ItemSystem singleton
+	virtual IEconItemSystem *GetEconItemSystem() = 0;
 	// Forwards to the game network string tables
 	virtual bool GameCreateNetworkStringTables() = 0;
 	// Fires the "client_disconnect" game event
@@ -447,7 +450,8 @@ public:
 	virtual void UnregisterSoundArea( SoundAreaGuid_t guid ) = 0;
 
 	virtual CEntityHandle GetPlayerControllerHandle( CPlayerSlot nSlot ) = 0;
-	virtual void *GetCompositeMaterialManager() = 0;
+	// The CCompositeMaterialManager singleton
+	virtual ICompositeMaterialManager *GetCompositeMaterialManager() = 0;
 	// The engine renames classes through it while it links classes for replay compatibility ("scripts/replay_compatability_settings.txt")
 	virtual ISerializerMatchToMetaReplayCompatHelper *GetReplayCompatHelper() = 0;
 	// The engine asks for it when a demo's server info or serializers carry no encoding parameters
