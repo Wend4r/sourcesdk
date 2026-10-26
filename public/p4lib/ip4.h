@@ -96,7 +96,7 @@ struct P4Client_t
 struct P4Changelist_t
 {
 	int m_iChange;					// changelist number
-	uint8 m_unk004[ 18 ];
+	uint8 m_pad004[ 18 ];
 	CUtlSymbol m_sDescription;
 };
 
