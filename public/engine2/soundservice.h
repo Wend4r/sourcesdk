@@ -86,7 +86,7 @@ public:
 		// RMS of the last captured block
 		float m_flRMS;
 		int m_nHoldCounter;
-		int m_nUnk24;
+		uint8 m_pad24[ 0x4 ];
 		int m_nAttackDelayIndex;
 		// Delays the captured samples by the attack time (SetVoiceThresholdAttack)
 		CUtlVector< float > m_AttackDelayLine;
