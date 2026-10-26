@@ -15,6 +15,11 @@
 #include "tier1/convar.h"
 #include "tier1/utlvector.h"
 
+namespace webrtc
+{
+	class AudioProcessing;
+}
+
 class CSoundService : public CBaseEngineService< ISoundService >
 {
 public:
@@ -86,6 +91,46 @@ public:
 		// Delays the captured samples by the attack time (SetVoiceThresholdAttack)
 		CUtlVector< float > m_AttackDelayLine;
 	} m_NoiseGate;
+
+	//-----------------------------------------------------------------------------
+	// WebRTC audio processing of the captured voice (voice_webrtc_apm): echo cancellation against the output capture of
+	// the sound system, noise suppression, gain control and high pass filter, in 10 ms frames
+	//-----------------------------------------------------------------------------
+	struct AudioProcessing_t
+	{
+		// voice_webrtc_aec, voice_webrtc_ns, voice_webrtc_ns_level, voice_webrtc_agc, voice_webrtc_fixed_gain_db, voice_webrtc_hpf
+		// and voice_webrtc_stream_delay_ms; a change of any of them reconfigures the processing
+		struct Settings_t
+		{
+			bool m_bEchoCancellation;
+			bool m_bNoiseSuppression;
+			int m_nNoiseSuppressionLevel;
+			bool m_bGainControl;
+			float m_flFixedGainDB;
+			bool m_bHighPassFilter;
+			// Passed as the stream delay before every captured frame unless negative
+			int m_nStreamDelayMs;
+		};
+
+		// Heap cell holding the reference to the processing object, null until it is created
+		webrtc::AudioProcessing **m_ppAudioProcessing;
+		Settings_t m_Settings;
+		int m_nCaptureSampleRate;
+		// ISoundSystem::GetOutputCaptureSampleRate
+		int m_nRenderSampleRate;
+		// Output capture samples waiting for a full render frame
+		float *m_pRenderSamples;
+		int m_nRenderSampleCapacity;
+		int m_nRenderSampleCount;
+		// Frames processed on each stream, printed by voice_webrtc_stats
+		uint32 m_nCaptureFrameCount;
+		uint32 m_nRenderFrameCount;
+	} m_AudioProcessing;
+
+	// Creating the audio processing failed; it is not retried until the voice input stream starts again
+	bool m_bAudioProcessingFailed;
+	// Captured blocks while voice_webrtc_stats is set, the statistics are printed every 100th
+	int m_nAudioProcessingStatsCounter;
 
 	float m_flCurrentPeak;
 	// RMS of the last captured block in dB (m_flCurrentPeak is its peak in dB)
