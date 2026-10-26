@@ -77,7 +77,9 @@ public:
 	virtual void DestroyResourceManifest( HGameResourceManifest pGameResourceManifest ) = 0;
 	virtual const char *GetResourceManifestDebugName( HGameResourceManifest pGameResourceManifest ) = 0;
 	virtual void ForceSynchronizationAndBlockUntilManifestLoaded( HGameResourceManifest pGameResourceManifest ) = 0;
-	virtual ResourceHandle_t FindOrCreateProceduralResource( CResourceString &pResourceName, const void *pPermanentData, size_t nDataSize ) = 0;
+	// Binds pPermanentData to a new anonymous resource unless bNamed, in which case the binding of pResourceName is
+	// found or created
+	virtual ResourceHandle_t FindOrCreateProceduralResource( CResourceString &pResourceName, const void *pPermanentData, bool bNamed ) = 0;
 	virtual ResourceHandle_t FindResourceById( ResourceId_t nResourceId, ResourceType_t nType ) = 0;
 	virtual void GetAllNamedResourcesByTypeDefault( ResourceType_t nType, CUtlVector< ResourceHandle_t > &pVector, ResourceSystemGetNamedResourcesFlags_t nFlags ) = 0;
 	virtual void GetAllNamedResources( CUtlVector< ResourceHandle_t > &pVector, ResourceSystemGetNamedResourcesFlags_t nFlags ) = 0;
