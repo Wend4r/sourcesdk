@@ -348,7 +348,9 @@ public:
 	virtual float GetMultiGPUFrameFactor() = 0;
 
 	virtual float GetLastPresentTime() = 0;
-	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnused, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
+	// pDataRecycleDelegate is invoked with pData and pRecycleContext once the upload has consumed the data; the
+	// Vulkan backend does not read nTextureUpdateFlags
+	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnused, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, void *pRecycleContext ) = 0;
 	virtual void *GetGraphicsAPISpecificTextureHandle( HRenderTexture hTexture ) = 0;
 	virtual void GetLargestMonitorDimensions( int *pWidth, int *pHeight ) = 0;
 	virtual void PushRenderDeviceFlags( uintp nFlags ) = 0;
