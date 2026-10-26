@@ -25,6 +25,7 @@
 #include "mathlib/aabb.h"
 #include "mathlib/transform.h"
 #include "physicslib/param_types.h"
+#include "rubikon/intersection.h"
 #include "vphysics2/handle_decl.h"
 #include "vphysx/vphysx_interface.h"
 #include "resourcefile/resourcetype.h"
@@ -436,8 +437,9 @@ public:
 
 	virtual bool ShouldHit( const IPhysicsShape *pShape, const RnQueryAttr_t &attr ) = 0;
 
-	// The union of the collision bits of every shape: nMaskType 0 the interaction layers, 1 the detail layers, 2 the collision groups
-	virtual uint64 GetUsedCollisionMask( uint32 nMaskType ) = 0;
+	// The union of the collision bits of every shape: the interaction layers (interacts as, with and exclude), the detail layers or
+	// the collision groups
+	virtual uint64 GetUsedCollisionMask( IntersectionNameIndex_t nMaskType ) = 0;
 
 	virtual VPhysics2WorldUnk152_t unk152() = 0;
 

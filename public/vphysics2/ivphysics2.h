@@ -743,7 +743,7 @@ public:
 		uint64 m_nMask;
 	};
 
-	// The three CNameIndex objects (IPhysNameIndex implementations) returned by GetNameIndex( 0 ) to GetNameIndex( 2 ).
+	// The three CNameIndex objects (IPhysNameIndex implementations) returned by GetNameIndex for the IntersectionNameIndex_t values.
 	// Their layout is not recovered; their size differs between the platforms (0x90 on Linux, 0xA8 on Windows)
 #ifdef _WIN32
 	uint64 m_NameIndices[ 3 ][ 21 ];

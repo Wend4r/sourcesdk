@@ -19,6 +19,17 @@ typedef int32 CollisionGroupIndex;
 // Index of a registered interaction layer, the bit position in the interaction masks
 typedef int32 IntersectionLayerIndex;
 
+// The three name indices of the intersection dictionary, by their debug names "Interaction Layers", "Detail Layers" and
+// "Collision Groups"; also selects the collision attribute bits IVPhysics2World::GetUsedCollisionMask collects
+enum IntersectionNameIndex_t
+{
+	INTERSECTION_NAME_INDEX_INTERACTION_LAYERS = 0,
+	INTERSECTION_NAME_INDEX_DETAIL_LAYERS,
+	INTERSECTION_NAME_INDEX_COLLISION_GROUPS,
+
+	INTERSECTION_NAME_INDEX_COUNT
+};
+
 // Flags of a pair of collision groups, see IPhysIntersectionController; a contact keeps the flags of its pair
 enum IntersectionPairFlags_t
 {

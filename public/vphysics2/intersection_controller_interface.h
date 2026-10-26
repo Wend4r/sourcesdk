@@ -130,9 +130,9 @@ public:
 	// Interaction layers that make a shape interacts-as override replace the whole attributes, clearing m_nInteractsWith and m_nInteractsExclude
 	virtual void SetExclusiveOverrideMask( uint64 nMask ) = 0;
 
-	// 0 is GetInteractionLayers, 1 is GetDetailLayers, 2 is GetCollisionGroups
-	virtual const IPhysNameIndex *GetNameIndex( int nIndex ) const = 0;
-	virtual IPhysNameIndex *GetNameIndex( int nIndex ) = 0;
+	// The same objects as GetInteractionLayers, GetDetailLayers and GetCollisionGroups
+	virtual const IPhysNameIndex *GetNameIndex( IntersectionNameIndex_t nIndex ) const = 0;
+	virtual IPhysNameIndex *GetNameIndex( IntersectionNameIndex_t nIndex ) = 0;
 
 	// Named interaction masks keyed by a string token ("CONTENTS_SOLID", "CONTENTS_SOLID_NO_BLOCK_LOS", ...)
 	virtual int FindInteractionMask( int nKey ) const = 0;
