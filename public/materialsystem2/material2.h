@@ -50,7 +50,7 @@ public:
 	uint8 m_modeArray[ 0x3C8 ];
 
 private:
-	uint8 m_unk7D8[ 0x8 ];
+	uint8 m_pad7D8[ 0x8 ];
 };
 
 #endif // MATERIAL2_H

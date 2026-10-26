@@ -18,6 +18,7 @@
 
 class CBufferString;
 class CRenderAttributes;
+class CVsInputSignatureVector;
 class IMaterialMode;
 class InfoForResourceTypeCTextureBase;
 
@@ -73,7 +74,7 @@ public:
 	virtual bool GetTextureAttribute( CWeakHandle< InfoForResourceTypeCTextureBase > *pValue, CUtlStringToken name ) = 0;
 	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetFirstTextureAttribute() = 0;
 	virtual void GetAllTextureAttributes( void *pAttributes ) = 0;
-	virtual const void *GetVertexShaderInputSignature() = 0;
+	virtual const CVsInputSignatureVector *GetVertexShaderInputSignature() = 0;
 	virtual bool IsBatchableInMode( const CUtlStringToken &mode, int nFlags ) = 0;
 	virtual void GetRepresentativeTextureSize( int *pWidth, int *pHeight, int nDefWidth, int nDefHeight, bool bClamp ) = 0;
 	// Reads "WorldMappingWidth" / "WorldMappingHeight", or "WorldMappingWidth2" / "WorldMappingHeight2" when nMapping is 1
@@ -128,7 +129,7 @@ public:
 	bool m_bHasDynamicParams : 1;
 
 private:
-	uint8 m_unk00C[ 4 ];
+	uint8 m_pad00C[ 4 ];
 
 public:
 	// Returned by GetName()

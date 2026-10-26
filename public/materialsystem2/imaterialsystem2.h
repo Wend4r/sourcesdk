@@ -182,8 +182,9 @@ public:
 	{
 		uint32 m_nId;
 
-		// The producer stores a zero byte here and nothing reads it
-		uint8 m_pad004[ 4 ];
+		// When set, the render device looks m_nId up as a key of the shader's specialization constant table;
+		// the producer leaves it false, so m_nId is the constant id
+		bool m_bIdIsKey;
 
 		uint32 m_nValue;
 	};
