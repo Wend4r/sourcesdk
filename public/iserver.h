@@ -359,7 +359,8 @@ public:
 	void* m_pNotificationSink;
 	// Set by SetGameSessionManifest
 	HGameResourceManifest m_hGameSessionManifest;
-	int m_nNotifyFlags;
+	// Handle of the next server spawn group; SetGameSpawnGroupMgr restarts it at 1
+	SpawnGroupHandle_t m_nNextSpawnGroupHandle;
 	// The four pointers point into a reservation state owned by the server service (CHLTVServer keeps its own)
 	// IsReserved() returns *m_pnReservationCookie != 0
 	uint64* m_pnReservationCookie;
