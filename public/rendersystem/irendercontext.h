@@ -332,8 +332,10 @@ public:
 	virtual void FillFallbackTextures() = 0;
 	virtual void Draw( int nPrimitiveType, int nFirstVertex, int nVertexCount ) = 0;
 	virtual void DrawInstanced( int nPrimitiveType, int nFirstVertex, int nVertexCount, int nInstanceCount ) = 0;
-	virtual void DrawIndexed( int nPrimitiveType, int nFirstIndex, int nIndexCount, int nUnk, int nBaseVertex ) = 0;
-	virtual void DrawIndexedInstanced( int nPrimitiveType, int nFirstIndex, int nIndexCount, int nInstanceCount, int nUnk, int nBaseVertex, int nFirstInstance ) = 0;
+	// nVertexCount is the number of vertices the indices reference (libmaterialsystem2 passes the mesh vertex count,
+	// 0 when unknown); the Vulkan backend ignores it
+	virtual void DrawIndexed( int nPrimitiveType, int nFirstIndex, int nIndexCount, int nVertexCount, int nBaseVertex ) = 0;
+	virtual void DrawIndexedInstanced( int nPrimitiveType, int nFirstIndex, int nIndexCount, int nInstanceCount, int nVertexCount, int nBaseVertex, int nFirstInstance ) = 0;
 	virtual void MultiDrawIndexed( int nPrimitiveType, int nDrawCount, const uint32 *pDraws, int nInstanceCount, int nFirstInstance ) = 0;
 	virtual void DrawIndirect( int nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
 	virtual void DrawIndexedIndirect( int nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
