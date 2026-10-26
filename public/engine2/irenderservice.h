@@ -17,6 +17,7 @@
 
 class ISceneWorld;
 class ISource2WorldSession;
+class CResourceManifestPrerequisite;
 struct EventClientPreOutput_t;
 
 // Installed with InstallRenderHandler
@@ -24,10 +25,10 @@ abstract_class IRenderHandler
 {
 public:
 	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime, const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) = 0;
-	// Returns false in the game UI service
-	virtual bool unk001() = 0;
-	// Empty in the game UI service
-	virtual void unk002() = 0;
+	// Handlers returning true add their views in the async AddViews job, the others on the main thread when that job ran
+	virtual bool ShouldAddViewsAsync() = 0;
+	// Called on every handler after the main thread views pass, before the scene system finishes rendering views
+	virtual void OnViewsAdded() = 0;
 };
 
 abstract_class IRenderService : public IEngineService
@@ -48,8 +49,8 @@ public:
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) = 0;
 
-	// Creates a rendering world session per name; the second string is stored in the new session and the last argument is unused
-	virtual ISource2WorldSession *FindOrCreateWorldSession( const char *pszName, const char *pszUnk, void *pUnused ) = 0;
+	// Creates a rendering world session per name; the world name is stored in the new session and pPrerequisite is unused
+	virtual ISource2WorldSession *FindOrCreateWorldSession( const char *pszWorldSessionName, const char *pszWorldName, CResourceManifestPrerequisite *pPrerequisite ) = 0;
 
 	virtual void LaunchAsyncBeginRenderingViewsJob( const EventClientPreOutput_t &event, bool bAddViews ) = 0;
 	virtual bool FinishAsyncBeginRenderingViewsJob( bool *pbAddedViews ) = 0;
