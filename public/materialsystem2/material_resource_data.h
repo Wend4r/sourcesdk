@@ -20,7 +20,7 @@ struct MaterialParam_t
 	bool m_bShaderDefault;
 
 private:
-	uint8 m_nUnknown0039[7];
+	uint8 m_pad039[ 7 ];
 };
 
 #endif // MATERIALSYSTEM2_MATERIAL_RESOURCE_DATA_H
