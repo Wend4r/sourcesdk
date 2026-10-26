@@ -53,6 +53,10 @@ public:
 
 	virtual void *AllocateTypesafe( T *pData, IKV3ResourceAllocatorUtils *pUtils ) { return nullptr; }
 	virtual void DeallocateTypesafe( void *pObject, IKV3ResourceDeallocatorUtils *pUtils ) {}
+
+	// Called after AllocateTypesafe with the object the resource binding held so far and the new one,
+	// when the register utils' slot 2 returns true (vphysics2 moves the old aggregate data's cloth state here)
+	virtual void OnReallocate( void *pOldObject, void *pNewObject ) {}
 };
 
 COMPILE_TIME_ASSERT( sizeof( CBaseIntrospectedToKV3TypeManager ) == 0x20 );
