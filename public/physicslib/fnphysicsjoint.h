@@ -16,6 +16,7 @@
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
 #include "mathlib/vector2d.h"
+#include "mathlib/transform.h"
 #include "physicslib/param_types.h"
 #include "physicslib/serialize.h"
 
@@ -91,7 +92,9 @@ public:
 	virtual void SetLimitAngles( const Vector2D &vLimits ) = 0;
 	virtual Vector2D GetLimitAngles() const = 0;
 
-	virtual void unk036( float flUnknown ) = 0;
+	// The rotation the server passes for the limit debug visualization (m_flLimitsDebugVisRotation of the hinge); the joint
+	// stores it and the library does not read it
+	virtual void SetLimitsDebugVisRotation( float flRotation ) = 0;
 
 	// In degrees and degrees per second
 	virtual float GetAngle() const = 0;
@@ -289,12 +292,6 @@ public:
 	virtual bool UsesBlockSolver() const = 0;
 };
 
-// The 32-byte result of IFnPhysicsSplineJoint::unk036 (16-byte vector at +16); only its size and alignment are known
-struct FnPhysicsSplineJointUnk036_t
-{
-	ALIGN16 uint8 m_Data[ 32 ] ALIGN16_POST;
-};
-
 abstract_class IFnPhysicsSplineJoint : public IFnPhysicsJoint
 {
 public:
@@ -323,10 +320,12 @@ public:
 	virtual void SetLimitEnabled( bool bEnabled ) = 0;
 	virtual bool IsLimitEnabled() const = 0;
 
-	virtual float unk034() const = 0;
-	virtual void unk035() = 0;
+	// The parameter of the anchor along the spline, found on the first solve; -1 until then
+	virtual float GetSplineParameter() const = 0;
 
-	virtual FnPhysicsSplineJointUnk036_t unk036( float flUnknown ) = 0;
+	// The point and the frame (the point and the orientation of the tangent) of the spline at a parameter, in world space
+	virtual Vector GetWorldPointAtParameter( float flParameter ) const = 0;
+	virtual CTransform GetWorldTransformAtParameter( float flParameter ) const = 0;
 };
 
 abstract_class IFnPhysicsWheelJoint : public IFnPhysicsJoint
