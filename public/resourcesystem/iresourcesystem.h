@@ -7,6 +7,8 @@
 #include "resourcefile/resourcetype.h"
 #include "tier1/utldelegate.h"
 
+#include <memory>
+
 class IResourceUpdater;
 class IResourceTypeManager;
 class IResourceDataProvider;
@@ -15,8 +17,44 @@ class CVDataTypeManager;
 class CResourceSystemProfiler;
 class CResourceSystemLeakTracker;
 class IToolsResourceListener;
+class IToolsResourcePreReloadListener;
+class IFileSystem;
+class IAsyncResourceDataRequest;
 
 typedef void ( *FnResourceLoadCompleteCallback_t )( HGameResourceManifest hManifest, void *pUserData );
+
+enum ResourceManifestType_t : uint8
+{
+	RESOURCE_MANIFEST_TYPE_DEFAULT = 0,
+	RESOURCE_MANIFEST_TYPE_BLOCKING_LOAD,
+	RESOURCE_MANIFEST_TYPE_BLOCKING_RELOAD,
+};
+
+struct ResourceManifestCreationInfo_t
+{
+	int m_nCount;
+	const char **m_ppResourceFiles;
+
+	// Any type other than the default loads with the immediate priority
+	ResourceManifestType_t m_nType;
+	ResourceManifestLoadBehavior_t m_nLoadBehavior;
+
+	const char *m_pDebugName;
+	ResourceManifestLoadPriority_t m_nPriority;
+
+	FnResourceLoadCompleteCallback_t m_callback;
+	void *m_pContext;
+};
+
+// nFlag of IResourceSystem::SetDebugFlag and GetDebugFlag
+enum ResourceSystemDebugFlag_t
+{
+	// The frame update skips the unloading of the manifests that are being destroyed
+	RESOURCE_SYSTEM_DEBUG_FLAG_NO_MANIFEST_UNLOAD = 0,
+
+	// Silences the warnings about type managers installed twice or not removed before shutdown
+	RESOURCE_SYSTEM_DEBUG_FLAG_NO_TYPE_MANAGER_WARNINGS = ( 1 << 1 ),
+};
 
 class IResourceSystem : public IAppSystem
 {
@@ -24,7 +62,7 @@ public:
 	virtual void InstallTypeManager( ResourceType_t nResourceType, IResourceTypeManager *pResourceTypeMgr, const char *pszResourceType, const char *pszPreloadManifest = nullptr ) = 0;
 	virtual void InstallNullTypeManager( ResourceType_t nResourceType, const char *pszResourceType ) = 0;
 	virtual void Update( int nTimeBudgetNs, ResourceSystemUpdateMode_t nMode ) = 0;
-	// Update with a 10 ms budget and mode 0.
+	// Update with a 10 ms budget and RESOURCE_SYSTEM_UPDATE_MODE_DEFAULT.
 	virtual void UpdateSimple() = 0;
 	virtual bool HasPendingWork() = 0;
 	virtual void RemoveNullTypeManager( ResourceType_t nResourceType ) = 0;
@@ -33,13 +71,15 @@ public:
 	virtual HGameResourceManifest CreateResourceManifest( const char *pszResourceName, ResourceManifestLoadBehavior_t nManifestLoadBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t nLoadPriority ) = 0;
 	virtual HGameResourceManifest CreateResourceGroupManifest( const char *pszResourceGroupName, ResourceManifestLoadBehavior_t nManifestLoadBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t nLoadPriority ) = 0;
 	virtual HGameResourceManifest CreateResourceRnmdManifest( const char *pszResourceGroupName, ResourceManifestLoadBehavior_t nManifestLoadBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t nLoadPriority ) = 0;
-	virtual HGameResourceManifest CreateResourceManifestInternal( const void *pCreateInfo ) = 0;
+	virtual HGameResourceManifest CreateResourceManifestInternal( const ResourceManifestCreationInfo_t &info ) = 0;
 	virtual void SetManifestCompletionCallback( HGameResourceManifest pGameResourceManifest, FnResourceLoadCompleteCallback_t pfnCallback, void *pUserData ) = 0;
 	virtual bool IsManifestLoaded( HGameResourceManifest pGameResourceManifest ) = 0;
 	virtual void DestroyResourceManifest( HGameResourceManifest pGameResourceManifest ) = 0;
 	virtual const char *GetResourceManifestDebugName( HGameResourceManifest pGameResourceManifest ) = 0;
 	virtual void ForceSynchronizationAndBlockUntilManifestLoaded( HGameResourceManifest pGameResourceManifest ) = 0;
-	virtual ResourceHandle_t FindOrCreateProceduralResource( CResourceString &pResourceName, const void *pPermanentData, size_t nDataSize ) = 0;
+	// Binds pPermanentData to a new anonymous resource unless bNamed, in which case the binding of pResourceName is
+	// found or created
+	virtual ResourceHandle_t FindOrCreateProceduralResource( CResourceString &pResourceName, const void *pPermanentData, bool bNamed ) = 0;
 	virtual ResourceHandle_t FindResourceById( ResourceId_t nResourceId, ResourceType_t nType ) = 0;
 	virtual void GetAllNamedResourcesByTypeDefault( ResourceType_t nType, CUtlVector< ResourceHandle_t > &pVector, ResourceSystemGetNamedResourcesFlags_t nFlags ) = 0;
 	virtual void GetAllNamedResources( CUtlVector< ResourceHandle_t > &pVector, ResourceSystemGetNamedResourcesFlags_t nFlags ) = 0;
@@ -64,12 +104,12 @@ public:
 	virtual ResourceStatus_t GetResourceStatus( CResourceString &pResourceName ) = 0;
 	virtual ResourceStatus_t GetResourceStatus( ResourceId_t nResourceId ) = 0;
 	virtual ResourceStatus_t GetResourceStatus( ResourceHandle_t pResourceHdl ) = 0;
-	virtual void RegisterForcedSynchronizationCallback( void *pCallback, void *pParam ) = 0;
-	virtual void UnregisterForcedSynchronizationCallback( void *pCallback, void *pParam ) = 0;
+	virtual void RegisterForcedSynchronizationCallback( void ( *pfnCallback )( void *pParam ), void *pParam ) = 0;
+	virtual void UnregisterForcedSynchronizationCallback( void ( *pfnCallback )( void *pParam ), void *pParam ) = 0;
 	virtual void GetResourcesNamesInManifest( HGameResourceManifest pGameResourceManifest, CUtlVector< CUtlString > &pVector ) = 0;
 	virtual void GetAllResourcesInManifestTree( HGameResourceManifest pGameResourceManifest, CUtlVector< ResourceHandle_t > &pVector ) = 0;
-	virtual void AddResourceListeners( void *pListener ) = 0;
-	virtual void RemoveResourceListeners( void *pListener ) = 0;
+	virtual void AddResourceListeners( IToolsResourceListener *pListener ) = 0;
+	virtual void RemoveResourceListeners( IToolsResourceListener *pListener ) = 0;
 	virtual void RegisterAsyncResourceListener( void *pListener ) = 0;
 	virtual void UnregisterAsyncResourceListener( void *pListener ) = 0;
 	virtual ICodeResourceManifestManager *GetCodeResourceManifestManager() = 0;
@@ -78,13 +118,13 @@ public:
 	virtual void SetResourceTypeManifestPriority( ResourceType_t nResourceType, ResourceManifestLoadPriority_t nResourceManifestLoadPriority ) = 0;
 	virtual void BlockingFinishAllCurrentlyLoadingManifests() = 0;
 	virtual bool IsBlockingOnManifestLoad() = 0;
-	virtual void SetDebugFlag( int nFlag, bool bValue ) = 0;
+	virtual void SetDebugFlag( ResourceSystemDebugFlag_t nFlag, bool bValue ) = 0;
 	virtual ResourceManifestLoadPriority_t ResolveManifestLoadPriority( ResourceManifestLoadPriority_t nPriority ) = 0;
 	virtual CVDataTypeManager *GetVDataTypeManager() = 0;
 	virtual bool IsShuttingDown() = 0;
-	virtual bool GetDebugFlag( int nFlag ) = 0;
-	virtual void Unk_RegisterLoadListener( void *p ) = 0;
-	virtual void Unk_UnregisterLoadListener( void *p ) = 0;
+	virtual bool GetDebugFlag( ResourceSystemDebugFlag_t nFlag ) = 0;
+	virtual void RegisterToolsResourceListener( IToolsResourcePreReloadListener *pListener ) = 0;
+	virtual void UnregisterToolsResourceListener( IToolsResourcePreReloadListener *pListener ) = 0;
 	virtual void InstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void Lock() = 0;
@@ -107,37 +147,85 @@ public:
 
 DECLARE_TIER2_INTERFACE( IResourceManifestRegistry, g_pResourceManifestRegistry );
 
-class IResourceSystemUtils;
+// Passed to IResourceTypeManager; CResourceSystem implements it
+abstract_class IResourceSystemUtils
+{
+public:
+	virtual void MarkLoadingWorkPending( ResourceHandle_t hResource, bool bHasWork ) = 0;
+	// nReadPriority 1 queues the file read at the front of the async filesystem I/O queue, other values at the back
+	virtual std::shared_ptr< IAsyncResourceDataRequest > CreateAsyncResourceDataRequest( ResourceHandle_t hResource, int64 nFileOffset, size_t nLoadSizeBytes, int nReadPriority, const char *pFileNameOverride ) = 0;
+	virtual void SubmitAsyncResourceDataRequest( IAsyncResourceDataRequest *pRequestInterface ) = 0;
+	virtual bool IsBlockingOnManifestLoad() = 0;
+
+	// Rebuilds the external reference list of the resource from the references of the given types
+	virtual void RebuildExternalReferences( ResourceHandle_t hResource, int nTypeCount, const ResourceType_t *pTypes ) = 0;
+};
+
 class IRD_RegisterResourceDataUtils;
 class IResourceDeallocatorUtils;
 struct ResourceFileHeader_t;
 
+// How a resource got its data, passed to the type manager's LoadStreamingData, AsyncPreFinalize and FinalizeResource
 enum ResourceLoadType_t : int
 {
 	RESOURCE_LOAD_TYPE_DEFAULT = 0,
+
+	// The resource failed to load and is bound to the error resource of its type
+	RESOURCE_LOAD_TYPE_ERROR_RESOURCE,
+
+	// Loaded through a RESOURCE_MANIFEST_TYPE_BLOCKING_RELOAD manifest (the error resource of such a load counts too)
+	RESOURCE_LOAD_TYPE_RELOAD,
 };
 
-enum ResourceStreamingType_t : int
+// Returned by IResourceTypeManager::AsyncProcessData
+abstract_class IAsyncProcessedDataResult
 {
-	RESOURCE_STREAMING_TYPE_NONE = 0,
+public:
+	virtual ~IAsyncProcessedDataResult() = 0;
 };
+
+inline IAsyncProcessedDataResult::~IAsyncProcessedDataResult() {}
 
 class IResourceTypeManager
 {
 public:
 	virtual bool Init( IResourceSystemUtils *pUtils ) { return false; }
 	virtual void Shutdown() {}
+
+	// Called by RemoveResourceTypeManager after Shutdown, once the queued deletions are drained
+	virtual void OnRemoved() {}
+
 	virtual void *GetErrorResource() { return nullptr; }
 	virtual bool NeedsFrameUpdate() const { return false; }
 	virtual void FrameUpdate( int nFrame ) {}
 	virtual bool RequiresFinalizeResourceCall() const { return false; }
 	virtual void FinalizeResource( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
-	virtual ResourceStreamingType_t GetStreamingType() const { return RESOURCE_STREAMING_TYPE_NONE; }
-	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool ) { return 0; }
-	virtual void LoadStreamingData( ResourceHandle_t hResource, IResourceSystemUtils *pUtils ) {}
+
+	// Resources of a type that wants it get an AsyncPreFinalize call from an "AsyncPreFinalize" thread pool job
+	virtual bool WantsAsyncPreFinalize() { return false; }
+	virtual void AsyncPreFinalize( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
+
+	// Gates the GetNonStreamingDataLoadSize and LoadStreamingData calls
+	virtual bool HasStreamingData() { return false; }
+
+	virtual int GetNonStreamingDataLoadSize( ResourceHandle_t hResource, bool bIsBlockingLoad ) { return -1; }
+	virtual void LoadStreamingData( ResourceHandle_t hResource, ResourceLoadType_t nLoadType ) {}
 	virtual void AllocateResource( ResourceHandle_t hResource, ResourceId_t nId, const ResourceFileHeader_t *pHeader, IRD_RegisterResourceDataUtils *pUtils ) {}
 	virtual void DeallocateResource( void *pData, IResourceDeallocatorUtils *pUtils ) {}
 	virtual void NotifyResourceWithWorkPendingLoadCancelled( ResourceHandle_t hResource, void *pData ) {}
+	virtual bool UsesData() const { return false; }
+	// A resource of a type with streaming data gets a LoadStreamingData call when this returns false
+	virtual bool IsStreamingDataLoaded( ResourceHandle_t hResource ) { return true; }
+	virtual bool WantsAsyncProcessData() const { return false; }
+	virtual std::unique_ptr< IAsyncProcessedDataResult > AsyncProcessData( ResourceHandle_t hResource, const ResourceFileHeader_t *pHeader ) { return nullptr; }
+
+	// FlushNotifications runs with the resource status change flush when the type wants it
+	virtual bool WantsFlushNotifications() { return false; }
+	virtual void FlushNotifications() {}
+
+	// Called around the drain of the resource deletion queue
+	virtual void OnBeginResourceDeletions() {}
+	virtual void OnEndResourceDeletions() {}
 };
 
 #endif // RESOURCESYSTEM_H

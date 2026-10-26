@@ -55,12 +55,33 @@ enum ResourceBindingFlags_t
 	RESOURCE_BINDING_FIRST_UNUSED_FLAG = 0x200
 };
 
+// nMode of IResourceSystem::Update: what the update does with the time budget left once no work is ready
 enum ResourceSystemUpdateMode_t : int
 {
+	// Returns as soon as no work is ready
+	RESOURCE_SYSTEM_UPDATE_MODE_DEFAULT = 0,
+
+	// Waits for load progress until the budget runs out
+	RESOURCE_SYSTEM_UPDATE_MODE_WAIT_FOR_PROGRESS,
+
+	// Sleeps for the rest of the budget
+	RESOURCE_SYSTEM_UPDATE_MODE_SLEEP_FOR_BUDGET,
+
+	// Waits for load progress, a third of the remaining budget at a time
+	RESOURCE_SYSTEM_UPDATE_MODE_WAIT_FOR_PROGRESS_SLICED,
 };
 
+// nFlags of IResourceSystem::GetAllNamedResources and GetAllNamedResourcesByType
 enum ResourceSystemGetNamedResourcesFlags_t : int
 {
+	// Also returns the resources whose load record has not reached the loaded state
+	RESOURCE_SYSTEM_GET_NAMED_RESOURCES_ANY_STATE = ( 1 << 0 ),
+
+	// The resources bound to a resource id
+	RESOURCE_SYSTEM_GET_NAMED_RESOURCES_NAMED = ( 1 << 1 ),
+
+	// The anonymous resources
+	RESOURCE_SYSTEM_GET_NAMED_RESOURCES_ANONYMOUS = ( 1 << 2 ),
 };
 
 schema struct ResourceId_t
