@@ -60,6 +60,7 @@ struct SceneSystemPerFrameStats_t;
 struct RenderInputLayoutField_t;
 struct PipelineRenderTargetInfo_t;
 enum RenderMultisampleType_t : uint8;
+enum RenderPrimitiveType_t : int32;
 
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 FORWARD_DECLARE_HANDLE( VertexBufferHandle_t );
@@ -108,9 +109,9 @@ public:
 	virtual CSceneObject *CreateSceneObject( ISceneObjectDesc *pDesc, ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld ) = 0;
 
 	// The renderable flags come from the material (opaque, translucent or opaque with shadows).
-	virtual CSceneObject *CreateSceneObjectFromBuffers( ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, int nPrimitiveType, const char *pszDescName, bool bOwnVBAndIB, ESceneObjectTypeFlags nTypeFlags ) = 0;
+	virtual CSceneObject *CreateSceneObjectFromBuffers( ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, RenderPrimitiveType_t nPrimitiveType, const char *pszDescName, bool bOwnVBAndIB, ESceneObjectTypeFlags nTypeFlags ) = 0;
 
-	virtual CSceneObject *CreateSceneObjectFromBuffers( ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, int nPrimitiveType, int16 nDrawPrimitiveFlags, const char *pszDescName, bool bOwnVBAndIB ) = 0;
+	virtual CSceneObject *CreateSceneObjectFromBuffers( ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld, VertexBufferHandle_t hVertexBuffer, IndexBufferHandle_t hIndexBuffer, HMaterialWeak hMaterial, int nVertices, int nIndices, const Vector &vecBoundsMin, const Vector &vecBoundsMax, RenderPrimitiveType_t nPrimitiveType, int16 nDrawPrimitiveFlags, const char *pszDescName, bool bOwnVBAndIB ) = 0;
 
 	// Creates a CMeshBuilderSceneObjectDesc object.
 	virtual CSceneObject *CreateSceneObjectFromStaticBuffers( ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld, const MeshBuilderBuffers_t &buffers, HMaterialWeak hMaterial, bool bDeleteAtFrameEnd ) = 0;
