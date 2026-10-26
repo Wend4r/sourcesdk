@@ -113,11 +113,11 @@ struct ThumbnailDatabaseEntry_t
 abstract_class IAssetPreviewSystem : public IAppSystem
 {
 public:
-	// With nUnknown 0 the thumbnail shows the asset name as its tool tip, a right click opens the asset
+	// With nPickerMode 0 the thumbnail shows the asset name as its tool tip, a right click opens the asset
 	// browser's context menu for the asset and a double click opens it in a tool; otherwise both clicks
-	// are ignored. A left click on the thumbnail passes the asset to the second virtual of pUnknown, which
-	// the context menu also receives
-	virtual IAssetPreviewEmbedded *CreateEmbeddedPreview( QWidget *pParent, int nUnknown, void *pUnknown ) = 0;
+	// are ignored; the asset picker passes 1. A left click on the thumbnail passes the asset to the second
+	// virtual of pCallbacks, which the context menu also receives
+	virtual IAssetPreviewEmbedded *CreateEmbeddedPreview( QWidget *pParent, int nPickerMode, void *pCallbacks ) = 0;
 	virtual void DestroyEmbeddedPreview( IAssetPreviewEmbedded *pPreview ) = 0;
 	virtual IAssetPreviewLive *CreateLivePreview( QWidget *pParent ) = 0;
 	virtual void DestroyLivePreview( IAssetPreviewLive *pPreview ) = 0;
