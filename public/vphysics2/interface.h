@@ -800,6 +800,27 @@ struct RecordedTraceResult_t
 	ALIGN8 uint8 m_Data[ 88 ] ALIGN8_POST;
 };
 
+// The world query of a recorded trace, which IFnPhysicsWorld::ReRunRecordedTrace repeats; each type has its own list of traces.
+// The library records no trace itself, the callers of IFnPhysicsWorld::RecordTrace choose the type
+enum RecordedTraceType_t
+{
+	RECORDED_TRACE_CAST_SHAPE = 0, // CastShapeSingle or CastShapeMultiple
+	RECORDED_TRACE_SWEEP_SHAPE, // SweepShapeSingle or SweepShapeMultiple with the ray shape
+	RECORDED_TRACE_COLLIDE_SHAPE, // CollideShape
+	RECORDED_TRACE_LINEAR_CAST, // LinearCast
+	RECORDED_TRACE_RAY_INTERVALS, // CastRayIntervals
+	RECORDED_TRACE_CLOSEST_POINT, // ClosestPoint
+	RECORDED_TRACE_QUERY, // Query with the ray shape swept from m_vStart by m_vDelta
+	RECORDED_TRACE_CAST_SHAPE2, // Repeated the same way as RECORDED_TRACE_CAST_SHAPE
+
+	RECORDED_TRACE_TYPE_COUNT
+};
+
+// RecordedTrace_t::m_nFlags
+#define RECORDED_TRACE_SINGLE ( 1 << 1 ) // The single hit version of a query instead of the one that collects every hit
+#define RECORDED_TRACE_KEEP_SKIN ( 1 << 4 ) // The bKeepSkin argument of the sweeps and of LinearCast
+#define RECORDED_TRACE_COLLIDE_KEEP_SKIN ( 1 << 6 ) // The bKeepSkin argument of CollideShape
+
 // A world query recorded while IFnPhysicsWorld::IsRecordingTraces is set
 struct RecordedTrace_t
 {
@@ -808,13 +829,12 @@ struct RecordedTrace_t
 	Vector m_vMaxs;
 	float m_flRadius;
 
-	// The world query that ReRunRecordedTrace repeats (0 to 7), also the list the trace is kept in
-	int m_nType;
+	// Also the list the trace is kept in
+	RecordedTraceType_t m_nType;
 
 	RayType_t m_nRayType;
 
-	// Flag 2 picks the single hit version of a query over the one that collects every hit; 0x10 is the bKeepSkin argument of the
-	// sweeps and of LinearCast, 0x40 the one of CollideShape
+	// RECORDED_TRACE_* flags
 	uint32 m_nFlags;
 
 	// The flMaxDistance argument of CastRayIntervals
@@ -861,7 +881,7 @@ public:
 	virtual CRnContact *GetSolverContact( int nIndex ) = 0;
 	virtual CRnContact *GetReportContact( int nIndex ) = 0;
 
-	// Calls the callback for every trace recorded while IsRecordingTraces is set; the traces are kept in eight lists by type
+	// Calls the callback for every trace recorded while IsRecordingTraces is set; the traces are kept in one list per RecordedTraceType_t
 	virtual void ForEachRecordedTrace( const std::function< void( const RecordedTrace_t & ) > &callback ) = 0;
 
 	// Appends a copy of the trace to its list and returns its index, -1 while traces are not recorded
@@ -869,8 +889,8 @@ public:
 
 	virtual void ReRunRecordedTrace( const RecordedTrace_t &trace, CUtlLeanVectorFixedGrowable< RecordedTraceResult_t, 1 > *pResults ) = 0;
 
-	// A recorded trace of one of the eight lists, null when out of range
-	virtual RecordedTrace_t *GetRecordedTrace( int nIndex, uint32 nList ) = 0;
+	// A recorded trace of the list of a type, null when out of range
+	virtual RecordedTrace_t *GetRecordedTrace( int nIndex, RecordedTraceType_t nList ) = 0;
 
 	// The records of the frame recorded for the physics debugger: a byte buffer and an offset per record, cleared with the recording
 	virtual void *GetDebugRecord( int nIndex ) = 0;
