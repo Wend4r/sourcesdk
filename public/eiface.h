@@ -610,6 +610,15 @@ public:
 
 #define INTERFACEVERSION_SERVERGAMECLIENTS		"Source2GameClients001"
 
+// Type of the client ISource2GameClients::ClientPutInServer puts in the game
+enum ClientType_t
+{
+	CLIENT_TYPE_PLAYER = 0,
+	// Bot
+	CLIENT_TYPE_FAKE_PLAYER,
+	CLIENT_TYPE_SOURCETV,
+};
+
 struct ClientReplayEventParams_t
 {
 	// REPLAY_EVENT_DEATH or REPLAY_EVENT_GENERIC, the request of CCLCMsg_HltvReplay
@@ -659,11 +668,7 @@ public:
 	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool bLoadGame, CBufferString *pRejectReason ) = 0;
 
 	// Client is connected and should be put in the game
-	// type values could be:
-	// 0 - player
-	// 1 - fake player (bot)
-	// 2 - SourceTV client
-	virtual void			ClientPutInServer( CPlayerSlot slot, char const *pszName, int type, uint64 xuid ) = 0;
+	virtual void			ClientPutInServer( CPlayerSlot slot, char const *pszName, ClientType_t type, uint64 xuid ) = 0;
 
 	// Client is going active
 	// If bLoadGame is true, don't spawn the player because its state is already setup.
