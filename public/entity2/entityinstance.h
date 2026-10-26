@@ -51,6 +51,80 @@ public:
 	virtual void Visit( CEntityInstance *pEntity, void *pField ) = 0;
 };
 
+// The debug overlays an entity draws (ent_text, ent_bbox and the like), as bits.
+schema enum DebugOverlayBits_t : uint64
+{
+	OVERLAY_TEXT_BIT = ( 1 << 0 ),
+	OVERLAY_NAME_BIT = ( 1 << 1 ),
+	OVERLAY_BBOX_BIT = ( 1 << 2 ),
+	OVERLAY_PIVOT_BIT = ( 1 << 3 ),
+	OVERLAY_MESSAGE_BIT = ( 1 << 4 ),
+	OVERLAY_ABSBOX_BIT = ( 1 << 5 ),
+	OVERLAY_RBOX_BIT = ( 1 << 6 ),
+	OVERLAY_SHOW_BLOCKSLOS = ( 1 << 7 ),
+	OVERLAY_ATTACHMENTS_BIT = ( 1 << 8 ),
+	OVERLAY_INTERPOLATED_ATTACHMENTS_BIT = ( 1 << 9 ),
+	OVERLAY_INTERPOLATED_PIVOT_BIT = ( 1 << 10 ),
+	OVERLAY_SKELETON_BIT = ( 1 << 11 ),
+	OVERLAY_INTERPOLATED_SKELETON_BIT = ( 1 << 12 ),
+	OVERLAY_TRIGGER_BOUNDS_BIT = ( 1 << 13 ),
+	OVERLAY_HITBOX_BIT = ( 1 << 14 ),
+	OVERLAY_INTERPOLATED_HITBOX_BIT = ( 1 << 15 ),
+	OVERLAY_AUTOAIM_BIT = ( 1 << 16 ),
+	OVERLAY_NPC_SELECTED_BIT = ( 1 << 17 ),
+	OVERLAY_JOINT_INFO_BIT = ( 1 << 18 ),
+	OVERLAY_NPC_ROUTE_BIT = ( 1 << 19 ),
+	OVERLAY_VISIBILITY_TRACES_BIT = ( 1 << 20 ),
+	OVERLAY_NPC_ENEMIES_BIT = ( 1 << 22 ),
+	OVERLAY_NPC_CONDITIONS_BIT = ( 1 << 23 ),
+	OVERLAY_NPC_COMBAT_BIT = ( 1 << 24 ),
+	OVERLAY_NPC_TASK_BIT = ( 1 << 25 ),
+	OVERLAY_NPC_BODYLOCATIONS = ( 1 << 26 ),
+	OVERLAY_NPC_VIEWCONE_BIT = ( 1 << 27 ),
+	OVERLAY_NPC_KILL_BIT = ( 1 << 28 ),
+	OVERLAY_BUDDHA_MODE = ( 1 << 30 ),
+	OVERLAY_NPC_STEERING_REGULATIONS = ( 1ull << 31 ),
+	OVERLAY_NPC_TASK_TEXT_BIT = ( 1ull << 32 ),
+	OVERLAY_PROP_DEBUG = ( 1ull << 33 ),
+	OVERLAY_NPC_RELATION_BIT = ( 1ull << 34 ),
+	OVERLAY_VIEWOFFSET = ( 1ull << 35 ),
+	OVERLAY_VCOLLIDE_WIREFRAME_BIT = ( 1ull << 36 ),
+	OVERLAY_NPC_SCRIPTED_COMMANDS_BIT = ( 1ull << 37 ),
+	OVERLAY_ACTORNAME_BIT = ( 1ull << 38 ),
+	OVERLAY_NPC_CONDITIONS_TEXT_BIT = ( 1ull << 39 ),
+	OVERLAY_NPC_ABILITY_RANGE_DEBUG_BIT = ( 1ull << 40 ),
+	OVERLAY_MINIMAL_TEXT = ( 1ull << 41 ),
+	OVERLAY_NPC_GOD_MODE = ( 1ull << 42 ),
+	OVERLAY_NPC_ANIM_AI_HANDSHAKES_BIT = ( 1ull << 43 ),
+	OVERLAY_NPC_PATH_QUERIES_BIT = ( 1ull << 44 ),
+};
+
+// The nFlags of CEntityInstance::DrawDebugTextOverlays: the ent_text_filter keywords of the same
+// names, from ent_text_flags_active.
+#define ENT_TEXT_FILTER_NAME ( 1 << 0 )
+#define ENT_TEXT_FILTER_HEALTH ( 1 << 1 )
+#define ENT_TEXT_FILTER_GLOBNAME ( 1 << 2 )
+#define ENT_TEXT_FILTER_POS ( 1 << 3 )
+#define ENT_TEXT_FILTER_FULLPOS ( 1 << 4 )
+#define ENT_TEXT_FILTER_LOS ( 1 << 5 )
+#define ENT_TEXT_FILTER_MODEL ( 1 << 6 )
+#define ENT_TEXT_FILTER_CONTEXT ( 1 << 7 )
+#define ENT_TEXT_FILTER_FLAGS ( 1 << 8 )
+#define ENT_TEXT_FILTER_EFFECTS ( 1 << 9 )
+#define ENT_TEXT_FILTER_SCRIPT ( 1 << 10 )
+#define ENT_TEXT_FILTER_ANIM ( 1 << 11 )
+#define ENT_TEXT_FILTER_PHYS ( 1 << 12 )
+#define ENT_TEXT_FILTER_PLAYER ( 1 << 13 )
+#define ENT_TEXT_FILTER_AI ( 1 << 14 )
+#define ENT_TEXT_FILTER_OTHER ( 1 << 15 )
+#define ENT_TEXT_FILTER_CLOTH ( 1 << 16 )
+#define ENT_TEXT_FILTER_GRAPH_STATES ( 1 << 17 )
+#define ENT_TEXT_FILTER_GRAPH_PARAM ( 1 << 18 )
+#define ENT_TEXT_FILTER_MODIFIERS ( 1 << 19 )
+// Not a keyword: set by DrawEntityDebugOverlays, which clears the two graph filters; the name
+// line is drawn only with it.
+#define ENT_TEXT_FILTER_ENTITY_OVERLAYS ( 1 << 20 )
+
 enum AcceptInputResult_t
 {
 	ACCEPT_INPUT_NONE = 0,
@@ -100,8 +174,9 @@ public:
 
 	virtual void PreDataUpdate( DataUpdateType_t updateType ) {}
 
-	virtual void DrawEntityDebugOverlays( uint64 nDebugBits ) {}
-	virtual void DrawDebugTextOverlays( DebugTextState_t &state, uint64 nDebugBits, int nFlags ) {}
+	virtual void DrawEntityDebugOverlays( DebugOverlayBits_t nDebugBits ) {}
+	// nFlags holds ENT_TEXT_FILTER_* bits.
+	virtual void DrawDebugTextOverlays( DebugTextState_t &state, DebugOverlayBits_t nDebugBits, int nFlags ) {}
 
 	// save/restore stuff
 	virtual int Save( ISave &save ) { return 1; }
