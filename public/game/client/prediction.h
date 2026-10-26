@@ -27,8 +27,9 @@ class C_CSGOUserCmd;
 //-----------------------------------------------------------------------------
 // Per-split-screen-slot prediction state.
 //
-// The int members named m_nUnknown are cleared when the slot is reset and have
-// no reader in the prediction code.
+// Members named m_nUnknown are zeroed by the constructor (CPrediction adds a
+// slot for each predicted player) and, the ints, again when the slot is reset;
+// no reader was found in the prediction code.
 //-----------------------------------------------------------------------------
 struct PredictionSplit_t
 {
@@ -62,26 +63,20 @@ public:
 	// Non-zero marks the prediction state as changed when the slot's predictables are shut down
 	int m_nUnknown0010;
 
-private:
-	uint8 m_pad14[ 4 ];
-
-public:
+	int m_nUnknown0014;
 	CEntityInstance *m_pController;
 	int m_nUnknown0020;
+	int m_nUnknown0024;
 
 private:
-	// The constructor of a slot was not found; a byte at +0x28 is used there
-	uint8 m_nUnknown0024[ 12 ];
+	// Not initialized by the constructor and not used
+	uint8 m_pad28[ 8 ];
 
 public:
 	PredictionErrorTree_t m_PredictionErrors;
 	CUtlVector< CEntityInstance * > m_PredictedEntities;
 
-private:
-	// The constructor of a slot was not found; a qword at +0x60 and a byte at +0x68 are used there
-	uint8 m_nUnknown0060[ 16 ];
-
-public:
+	uint64 m_nUnknown0060[ 2 ];
 	int m_nUnknown0070;
 	int m_nUnknown0074;
 	int m_nUnknown0078;
@@ -90,17 +85,12 @@ public:
 	int m_nBasePredictedCommand;
 	int m_nLastPredictedCommand;
 
-private:
-	uint8 m_nUnknown008C[ 12 ];
-
-public:
+	int m_nUnknown008C;
+	uint64 m_nUnknown0090;
 	int m_nUnknown0098;
+	int m_nUnknown009C;
 
-private:
-	uint8 m_pad9C[ 4 ];
-
-public:
-	// Element type not recovered; only cleared and freed when the slot is reset or shut down
+	// Element type not recovered: the prediction code only clears and frees it when the slot is reset or shut down
 	CUtlVector< void * > m_UnknownVector00A0;
 };
 
