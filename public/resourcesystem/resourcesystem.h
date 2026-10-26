@@ -96,6 +96,21 @@ public:
 		void *m_pContext;
 	};
 
+	// Queued by the external reference resolution (or by a manifest load with m_pManifest set) and
+	// passed to the resource loading in the frame update
+	struct PendingResourceReference_t
+	{
+		// Raised onto the referenced resource and, recursively, onto its own references
+		int8 m_nLoadPriority;
+
+		// Copied into the referenced resource's data next to the priority, use not traced
+		uint8 m_unk01;
+
+		ResourceHandle_t m_hReferencingResource;
+		ResourceHandle_t m_hReferencedResource;
+		CResourceManifest *m_pManifest;
+	};
+
 	// Guards the type registrations
 	CAtomicMutex m_ResourceTypeLock;
 
@@ -123,11 +138,8 @@ public:
 	CTSQueue< ResourceHandle_t > m_DeletionRequests;
 
 	CUtlVector< HGameResourceManifest > m_JustInTimeManifests;
-	CAtomicMutex m_PendingReferenceRecordsMutex;
-
-	// CUtlLeanVector of 32-byte records, two resource bindings each, queued while external
-	// references are resolved and handed to the resource tracker by the frame update
-	uint64 m_PendingReferenceRecords[ 2 ];
+	CAtomicMutex m_PendingReferencesMutex;
+	CUtlLeanVector< PendingResourceReference_t > m_PendingReferences;
 
 	CUtlVector< void * > m_AsyncResourceListeners;
 	IResourceUpdater *m_pResourceUpdater;
