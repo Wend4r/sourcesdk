@@ -104,6 +104,10 @@ enum ClientNetMessageHandlersAction_t
 	CLIENT_NET_MESSAGE_HANDLERS_REGISTER = 2,
 };
 
+// HltvReplayParams_t::m_nFlags
+#define HLTV_REPLAY_FLAG_FROM_STASH		( 1 << 0 )	// Replay the stash m_nStashId
+#define HLTV_REPLAY_FLAG_WHOLE_STASH	( 1 << 1 )	// Replay all of the stash instead of its last m_flDelay seconds
+
 // Times are in seconds, relative to the current time
 struct HltvReplayParams_t
 {
@@ -116,7 +120,7 @@ struct HltvReplayParams_t
 	float m_flSlowdownRate = 1.0f;
 	bool m_bAbortCurrentReplay = false;
 	int m_nReason = 0;
-	// 1 = replay the stash m_nStashId, 2 = replay all of the stash instead of its last m_flDelay seconds
+	// HLTV_REPLAY_FLAG_*
 	uint32 m_nFlags = 0;
 	uint32 m_nStashId = 0;
 };
