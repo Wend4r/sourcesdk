@@ -211,7 +211,7 @@ public:
 	virtual CPlayerSlot GetSplitScreenPlayerAttachToEdict( CPlayerSlot nSlot ) = 0;
 	virtual CPlayerSlot GetSplitScreenPlayerForEdict( CPlayerSlot nSlot, int nSplitScreenSlot ) = 0;
 
-	virtual void	UnloadSpawnGroup( SpawnGroupHandle_t spawnGroup, /*ESpawnGroupUnloadOption*/ int nOption ) = 0;
+	virtual void	UnloadSpawnGroup( SpawnGroupHandle_t spawnGroup, ESpawnGroupUnloadOption nOption ) = 0;
 	virtual SpawnGroupHandle_t	LoadSpawnGroup( const SpawnGroupDesc_t &desc ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t spawnGroup, const char *pszDescription ) = 0;
 	virtual bool	IsSpawnGroupLoaded( SpawnGroupHandle_t spawnGroup ) const = 0;
