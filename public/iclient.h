@@ -583,7 +583,7 @@ enum NetworkTickOutcome_t
 	NETWORK_TICK_BAD_DROPPED,
 	NETWORK_TICK_BAD_LATE,
 	NETWORK_TICK_BAD_OTHER,
-	// Dropped or late, but hidden by a frame time amnesty or by the interpolation
+	// Dropped or late, but before the client needed the tick ("Hidden by %s")
 	NETWORK_TICK_FIXED_DROPPED,
 	NETWORK_TICK_FIXED_LATE,
 
@@ -608,6 +608,14 @@ struct NetworkFlowQualityStats_t
 	NetworkFlowSamples_t< int16, 500 > m_RecvMarginSamples;
 };
 
+// ServerTickHistoryEntry_t::m_nFlags
+#define SERVER_TICK_FLAG_EXPECTED_BEFORE_RECEIVE	( 1 << 0 )	// The look-ahead window reached the tick before it was received
+#define SERVER_TICK_FLAG_NEEDED_BEFORE_RECEIVE		( 1 << 1 )	// "Server tick %d was not available when we needed it"
+#define SERVER_TICK_FLAG_FRAME_TIME_AMNESTY			( 1 << 2 )	// A frame time amnesty was active, late ticks are not reported
+#define SERVER_TICK_FLAG_OUT_OF_ORDER				( 1 << 3 )	// The net channel reported the frame as delivered out of order
+#define SERVER_TICK_FLAG_JITTER_LATE				( 1 << 4 )	// The frame jitter exceeded the late threshold
+#define SERVER_TICK_FLAG_BELOW_DESIRED_RECV_MARGIN	( 1 << 5 )	// Arrived below cl_clock_recvmargin_desired
+
 // Receive record of one server tick
 struct ServerTickHistoryEntry_t
 {
@@ -618,8 +626,7 @@ struct ServerTickHistoryEntry_t
 	float m_flFrameJitter;
 	// CNETMsg_Tick host_computationtime in seconds
 	float m_flHostComputationTime;
-	// Bits 3 to 5: the frame was dropped, its jitter exceeded the late threshold, it arrived below the desired receive
-	// margin
+	// SERVER_TICK_FLAG_*
 	uint8 m_nFlags;
 	// Plat_FloatTime() of the receive, of the start of its simulation, of its render and of its present
 	double m_flReceiveTime;
