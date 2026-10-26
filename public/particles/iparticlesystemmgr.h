@@ -135,6 +135,16 @@ public:
 
 using HParticleSnapshot = CWeakHandle< InfoForResourceTypeIParticleSnapshot >;
 
+// Particles/features game info flags of IParticleSystemMgr::HasFeatureFlags
+#define PARTICLE_FEATURE_FLAG_NO_GPU_BLOBS							( 1 << 0 )	// "no_gpu_blobs"
+#define PARTICLE_FEATURE_FLAG_NON_HOMOGENOUS_FORWARD_LAYER_ONLY		( 1 << 1 )	// "non_homogenous_forward_layer_only"
+
+// Renderer type bits of IParticleSystemMgr::SetDisabledRendererTypes; each renderer reports one through a virtual
+#define PARTICLE_RENDERER_TYPE_DEFAULT		( 1 << 1 )	// Sprites, ropes, trails and every renderer that does not override the type
+#define PARTICLE_RENDERER_TYPE_MODELS		( 1 << 2 )	// C_OP_RenderModels, C_OP_RenderAsModels, C_OP_RenderSimpleModelCollection
+#define PARTICLE_RENDERER_TYPE_LIGHTS		( 1 << 3 )	// C_OP_RenderLights, C_OP_RenderDeferredLight, C_OP_RenderStandardLight, C_OP_RenderOmni2Light, C_OP_RenderLightBeam
+#define PARTICLE_RENDERER_TYPE_PROJECTED	( 1 << 4 )	// C_OP_RenderProjected
+
 abstract_class IParticleSystemMgr : public IAppSystem
 {
 public:
@@ -189,7 +199,7 @@ public:
 	// Restarts every collection of the definition
 	virtual void RestartParticleSystem( HParticleSystemDefinition hDefinition ) = 0;
 
-	// Collections whose renderers all have types in the mask are not rendered
+	// Collections whose renderers all have PARTICLE_RENDERER_TYPE_* types in the mask are not rendered
 	virtual void SetDisabledRendererTypes( int nRendererTypes ) = 0;
 
 	// Loads the polymorphic MGPUParticleFunction object the KV3 describes
@@ -223,6 +233,7 @@ public:
 	// The editor sets the particle system under the cursor; renderers highlight its collections and their children
 	virtual void SetHoveredParticleSystem( HParticleSystemDefinition hDefinition ) = 0;
 
+	// PARTICLE_FEATURE_FLAG_* flags
 	virtual bool HasFeatureFlags( int nFlags ) = 0;
 
 	// Adds instances to the instanced mesh scene object matching the world, flags and the 32-byte key, creating it when missing; records are 100 bytes.
@@ -393,6 +404,7 @@ public:
 	bool m_bParticlesFoggedByDefault;
 	bool m_bDisableSorting;
 
+	// PARTICLE_RENDERER_TYPE_* bits
 	int m_nDisabledRendererTypes;
 
 	// Procedural sprite materials by the hash of their parameters, one table per renderer shader type;
@@ -412,7 +424,7 @@ public:
 
 	CGpuImplicitRenderer *m_pGpuImplicitRenderer;
 
-	// 1 = no_gpu_blobs, 2 = non_homogenous_forward_layer_only (Particles/features)
+	// PARTICLE_FEATURE_FLAG_* flags read from Particles/features
 	int m_nFeatureFlags;
 
 	CThreadRWLock_FastRead m_Lock;
