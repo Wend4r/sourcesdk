@@ -615,22 +615,28 @@ public:
 class IPhysReflContext
 {
 public:
+	// Returns false
 	virtual bool unk000() = 0;
-	virtual void *unk001() = 0;
+
+	// The world the context belongs to
+	virtual IVPhysics2World *GetWorld() = 0;
 };
 
-// The debug draw options of a world, passed by value to the debug draw functions
+// The debug draw options of a world, a 128-bit mask passed by value to the debug draw functions
 struct RnDebugDrawOptions_t
 {
-	uint64 m_nUnk000;
-	uint64 m_nUnk008;
+	// The option bits GetDebugDrawOptions and SetDebugDrawOptions access
+	uint64 m_nFlags;
+
+	// The upper half of the mask, which the constructor clears and no option test reads
+	uint64 m_nExtendedFlags;
 };
 
 class CVPhys2World : public IVPhysics2World, public IPhysReflContext
 {
 public:
 	// Itanium also lists these in the primary vtable
-	void *unk001() override;
+	IVPhysics2World *GetWorld() override;
 	bool unk000() override;
 
 public:
@@ -640,10 +646,12 @@ public:
 	int m_nWorldId;
 
 	RnDebugDrawOptions_t m_DebugDrawOptions;
+
+	// Cleared by the constructor and not used otherwise
 	void *m_pUnk028;
 	CRnWorld *m_pRnWorld;
 
-	// Set when a command line parameter is present
+	// Set by the constructor when a command line parameter is present; nothing reads it
 	bool m_bUnk038;
 
 	bool m_bDebugRecordingDisabled;
@@ -767,10 +775,13 @@ public:
 	virtual int GetDebugRecordCount() = 0;
 	virtual int GetDebugRecordBufferSize() = 0;
 
+	// Debugger flag 2; unk013 and unk014 test the debugger flags 4 and 8, which nothing in the library reads
 	virtual bool IsRecordingTraces() = 0;
 	virtual bool unk013() = 0;
 	virtual bool unk014() = 0;
-	virtual bool unk015() = 0;
+
+	// Debugger flag 0x10, which keeps ClearAwakeBodies from emptying the awake body list
+	virtual bool IsAwakeBodyListKept() = 0;
 
 	// The flags the physics debugger sets, unless the world overrides them
 	virtual int GetDebuggerFlags() = 0;
@@ -792,8 +803,12 @@ public:
 	// Returns zeros
 	virtual FnPhysicsWorldUnk025_t unk025() = 0;
 
-	virtual void unk026() = 0;
-	virtual bool unk027( uint32 nValue ) = 0;
+	// Clears flag 4 of every softbody, updates the debug scene, cleans up the delete list and clears the CRnBody pointer that
+	// IPhysicsBody::SetUserPointer sets on every body
+	virtual void ClearDebugState() = 0;
+
+	// False without an active debug draw filter; with an id list, whether the id is in it
+	virtual bool PassesDebugDrawFilter( uint32 nId ) = 0;
 	// Empties the awake body list, unless debugger flag 0x10 is set
 	virtual void ClearAwakeBodies() = 0;
 	virtual void unk029( void *pObject, void *pUnknown ) = 0;
@@ -814,7 +829,9 @@ public:
 	// Returns 0
 	virtual int unk035() = 0;
 
-	virtual void unk036( void *pUnknown ) = 0;
+	// Calls the callback for every node of the broadphase trees with its bounds and depth, and the shape of a leaf (NULL for
+	// the inner nodes)
+	virtual void ForEachBroadphaseNode( const std::function< void( const AABB_t &bounds, int nDepth, IPhysicsShape *pShape ) > &callback ) = 0;
 	virtual void Profile( PhysicsWorldTraceProfile_t &profile ) = 0;
 };
 

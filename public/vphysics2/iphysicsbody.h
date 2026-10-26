@@ -366,7 +366,7 @@ public:
 	virtual void SetGameIndex( uint16 nIndex ) = 0;
 	virtual uint16 GetGameIndex() const = 0;
 
-	// A pointer stored in the CRnBody for the caller
+	// A pointer stored in the CRnBody for the caller; IFnPhysicsWorld::ClearDebugState clears it on every body
 	virtual void SetUserPointer( void *pPointer ) = 0;
 	virtual void *GetUserPointer() const = 0;
 
