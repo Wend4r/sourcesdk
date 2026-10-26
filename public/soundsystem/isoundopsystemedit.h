@@ -85,6 +85,21 @@ struct SosEditFieldInfo_t
 	int m_nConnectedOffset;
 };
 
+// State of a field of the update stack for a sound event definition (ISoundOpSystemEdit::GetSoundEventFieldState)
+enum SosEditFieldState_t
+{
+	// Scalar fields: whether the definition sets the field
+	SOS_EDIT_FIELD_STATE_NOT_SET = 0,
+	SOS_EDIT_FIELD_STATE_SET = 1,
+	// Array fields: whether the definition sets the array
+	SOS_EDIT_FIELD_STATE_ARRAY_SET = 2,
+	SOS_EDIT_FIELD_STATE_ARRAY_NOT_SET = 3,
+	// The index is past the element count of the field
+	SOS_EDIT_FIELD_STATE_INVALID_INDEX = 4,
+	// The update stack has no such field
+	SOS_EDIT_FIELD_STATE_NO_FIELD = 5,
+};
+
 enum MXRMixGroupFields_t
 {
 	MXR_MIXGROUP_NONE = 0,
@@ -210,9 +225,8 @@ public:
 	virtual void SwapSoundEventArrayFieldElements( const char *pSoundEventName, const char *pFieldName, int nIndex1, int nIndex2 ) = 0;
 	// Value names of an enum or mix group field of the update stack of the sound event
 	virtual void GetSoundEventFieldValueNames( const char *pSoundEventName, const char *pFieldName, CUtlVector< CUtlString > *pList ) = 0;
-	// State of the field for the sound event: 0 or 1 whether the definition sets the scalar field, 2 or 3 whether it sets the array
-	// field, 4 for an index past the element count and 5 for a field the update stack does not have; pnCount receives the element count
-	virtual int GetSoundEventFieldState( const char *pSoundEventName, const char *pFieldName, int *pnCount, int nIndex ) = 0;
+	// pnCount receives the element count of the field in the definition
+	virtual SosEditFieldState_t GetSoundEventFieldState( const char *pSoundEventName, const char *pFieldName, int *pnCount, int nIndex ) = 0;
 	// Calls SetSoundEventFieldValue when the state of GetSoundEventFieldState allows it
 	virtual bool TrySetSoundEventFieldValue( const char *pSoundEventName, const char *pFieldName, const CUtlString &sValue, int16 nIndex ) = 0;
 	// Removes the field from the definition, depending on the state of GetSoundEventFieldState
