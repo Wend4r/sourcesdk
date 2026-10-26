@@ -238,14 +238,15 @@ public:
 	virtual void PreparePanoramaFrame( const EngineLoopState_t &loopState ) = 0;
 	virtual void RunPanoramaAnimUpdate() = 0;
 	virtual void WaitForPanoramaAnimUpdate() = 0;
-	virtual const char *GetLanguage( int nType ) = 0;
-	virtual void SetLanguage( int nType, const char *pszLanguage ) = 0;
-	// -language, or -textlanguage for nType 0.
-	virtual bool IsLanguageSetOnCommandLine( int nType ) = 0;
-	virtual const char *GetSubLanguage( int nType ) = 0;
-	virtual void SetSubLanguage( int nType, const char *pszSubLanguage ) = 0;
-	// -textsublanguage, nType 0 only.
-	virtual bool IsSubLanguageSetOnCommandLine( int nType ) = 0;
+	// The boot config's UILanguage and AudioLanguage, UISubLanguage and AudioSubLanguage
+	virtual const char *GetLanguage( LanguageType_t nType ) = 0;
+	virtual void SetLanguage( LanguageType_t nType, const char *pszLanguage ) = 0;
+	// -language, or -textlanguage for LanguageType_UI.
+	virtual bool IsLanguageSetOnCommandLine( LanguageType_t nType ) = 0;
+	virtual const char *GetSubLanguage( LanguageType_t nType ) = 0;
+	virtual void SetSubLanguage( LanguageType_t nType, const char *pszSubLanguage ) = 0;
+	// -textsublanguage, LanguageType_UI only.
+	virtual bool IsSubLanguageSetOnCommandLine( LanguageType_t nType ) = 0;
 	virtual void WriteMinidumpSystemInfo( CUtlBuffer *pBuffer ) = 0;
 	virtual bool GetLowViolence() = 0;
 	virtual void SetLowViolence( bool bLowViolence ) = 0;
