@@ -108,6 +108,26 @@ enum PerforceFileType_t : int;
 
 
 //-----------------------------------------------------------------------------
+// Called with the Perforce command ("add", "integ", "copy", ...) and the files it ran on
+//-----------------------------------------------------------------------------
+typedef void ( *P4CommandCallbackFn_t )( const char *pCommand, int nFileCount, const char **ppFileList );
+
+
+//-----------------------------------------------------------------------------
+// File CRC cache the asset system reads before computing the CRC of a file and fills after
+//-----------------------------------------------------------------------------
+abstract_class IP4FileCRCCache
+{
+public:
+	virtual ~IP4FileCRCCache() {}
+
+	// Returns false when the cache has no CRC for the file
+	virtual bool GetFileCRC( const char *pFullPath, uint32 *pCRC ) = 0;
+	virtual void SetFileCRC( const char *pFullPath, uint32 nCRC ) = 0;
+};
+
+
+//-----------------------------------------------------------------------------
 // Purpose: Interface to accessing P4 commands
 //-----------------------------------------------------------------------------
 #define P4_MAX_INPUT_BUFFER_SIZE	16384		// descriptions should be limited to this size!
@@ -167,10 +187,12 @@ public:
 
 	// The local backend copies pSrcPath to pDstPath
 	virtual bool OpenFileForMove( const char *pSrcPath, const char *pDstPath, PerforceFileType_t eFileType, int nUnknown ) = 0;
-	virtual bool unk031() = 0;
 
 	// default revision is to sync to the head revision
 	virtual bool SyncFile( const char *pFullPath, int nRevision = -1 ) = 0;
+
+	// Syncs to "pFullPath@pRevisionSpec" (MSVC places this overload first)
+	virtual bool SyncFile( const char *pFullPath, const char *pRevisionSpec ) = 0;
 
 	// submit/revert
 	virtual bool SubmitFile( const char *pFullPath, const char *pDescription ) = 0;
@@ -197,9 +219,7 @@ public:
 	// Is this file in perforce?
 	virtual bool IsFileInPerforce( const char *pFullPath ) = 0;
 	virtual bool unk044() = 0;
-
-	// Callers pass a depot path with a "#have" revision before copying it
-	virtual bool unk045( const char *pDepotPath ) = 0;
+	virtual bool unk045() = 0;
 
 	// Get the perforce file state
 	virtual P4FileState_t GetFileState( const char *pFullPath ) = 0;
@@ -246,10 +266,11 @@ public:
 	// Opens pDstPath for copy from pSrcPath; the local backend copies the file
 	virtual bool CopyFile( const char *pSrcPath, const char *pDstPath ) = 0;
 
-	virtual void unk065() = 0;
+	// Called for every Perforce command that is run
+	virtual void SetCommandCallback( P4CommandCallbackFn_t pfnCallback ) = 0;
 
-	// The implementation calls it with false before and true after the GetClientSpecFor* methods
-	virtual void unk066( bool bUnknown ) = 0;
+	// CP4 turns it off before and back on after each GetClientSpecFor* query
+	virtual void EnableCommandCallback( bool bEnable ) = 0;
 
 	// Returns an 8-byte static object in the dummy and local backends
 	virtual void *unk067() = 0;
@@ -264,7 +285,9 @@ public:
 	// Returns an empty vector in the dummy and local backends; the element type is unknown
 	virtual CUtlVector< void * > unk074() = 0;
 	virtual bool unk075() = 0;
-	virtual void *unk076() = 0;
+
+	// The caller owns the returned cache and deletes it; nullptr without a Perforce backend
+	virtual IP4FileCRCCache *CreateFileCRCCache() = 0;
 
 	// Takes a 16-byte object by value
 	virtual bool unk077( void *p ) = 0;
