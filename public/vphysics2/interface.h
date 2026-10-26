@@ -22,6 +22,7 @@
 #include "tier0/utldelegateimpl.h"
 #include "mathlib/vector.h"
 #include "mathlib/aabb.h"
+#include "mathlib/transform.h"
 #include "vphysics2/handle_decl.h"
 #include "vphysx/vphysx_interface.h"
 #include "resourcefile/resourcetype.h"
@@ -49,6 +50,8 @@ class Bounds3;
 class IMotionEvent;
 class IVPhysics2World;
 struct PhysicsContact_t;
+struct PhysicsAggregateDef_t;
+class CUtlBuffer;
 class ISceneViewDebugOverlays;
 class CCallQueue;
 class CCommand;
@@ -97,10 +100,29 @@ struct VPhysics2WorldUnk156_t
 	uint8 m_Data[ 24 ];
 };
 
-// The 28-byte result of IVPhysics2World::LinearCast, SweepBodySingle and SweepShapeSingle (fraction 1.0 and ids -1 when nothing is hit); only its size is known
-struct VPhysics2WorldUnk173_t
+// The first hit of a sweep: fraction 1.0, null objects and sub-shape -1 when nothing is hit
+struct CSweepResult
 {
-	uint32 m_Data[ 7 ];
+	IPhysicsBody *m_pBody;
+	IPhysicsShape *m_pShape;
+	float m_flFraction;
+
+	// The sub-shape that was hit: a compound child and a mesh triangle
+	uint32 m_nSubShapeChild;
+	uint32 m_nSubShapeTriangle;
+};
+
+// The first hit of IVPhysics2World::LinearCast, with the closest points of the two shapes at the time of impact
+// (the fields of CSweepResult followed by the points, which start in what is its tail padding)
+struct CLinearSweepResult
+{
+	IPhysicsBody *m_pBody;
+	IPhysicsShape *m_pShape;
+	float m_flFraction;
+	uint32 m_nSubShapeChild;
+	uint32 m_nSubShapeTriangle;
+	Vector m_vWitnessPoint1;
+	Vector m_vWitnessPoint2;
 };
 
 // Called with user data 0 of each softbody that IVPhysics2 re-initialises from a replaced softbody model
@@ -157,7 +179,8 @@ public:
 	virtual void UpdateParticleRopes() = 0;
 	virtual bool IsInAsyncPostTickJobs() = 0;
 	virtual void Collide( float flTimeStep ) = 0;
-	virtual void unk017() = 0;
+	// Stops the dynamic bodies whose broadphase proxies leave the world bounds and moves them back inside, then updates the broadphase
+	virtual void ClampBodiesToWorldBounds() = 0;
 
 	virtual void SetGravity( const Vector &vGravity ) = 0;
 	virtual const VectorAligned &GetGravity() = 0;
@@ -181,8 +204,9 @@ public:
 	virtual int GetTOIIterations() = 0;
 
 	virtual void ScaleImpulses( float flScale ) = 0;
-	virtual bool unk032() = 0;
-	virtual void unk033( bool bValue ) = 0;
+	// When set (the default), joint-connected groups that reach 25 bodies or joints are tracked separately; the server clears it
+	virtual bool IsJointGroupTrackingEnabled() = 0;
+	virtual void SetJointGroupTrackingEnabled( bool bEnabled ) = 0;
 
 	// Multithreading of the world step; the server applies phys_multithreading_enabled here
 	virtual bool IsMultithreadingEnabled() = 0;
@@ -194,7 +218,9 @@ public:
 
 	virtual float GetSimulationTime() = 0;
 	virtual float GetStepStartTime() = 0;
-	virtual float unk041() = 0;
+
+	// The same body as GetSimulationTime on both platforms
+	virtual float GetCurrentTime() = 0;
 	virtual int GetStepCount() = 0;
 
 	virtual void unk043( int nValue ) = 0;
@@ -261,7 +287,7 @@ public:
 	virtual IPhysicsJoint *AddWheelJoint( const PhysicsJointDesc_t &desc ) = 0;
 
 	// Creates the joints of a set of joint descriptions and appends them to joints
-	virtual void AddJoints( const void *pJoints, const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, bool bUnknown, CUtlVector< IPhysicsJoint * > &joints, CUtlVector< int > &parts ) = 0;
+	virtual void AddJoints( const PhysicsAggregateDef_t &aggregate, const CUtlVector< IPhysicsBody * > &bodies, const void *pUnused1, const void *pUnused2, bool bUnknown, CUtlVector< IPhysicsJoint * > &joints, CUtlVector< int > &parts ) = 0;
 
 	virtual void RemoveJoint( IPhysicsJoint *pJoint ) = 0;
 
@@ -281,7 +307,8 @@ public:
 	// Clears the pointer on success
 	virtual bool DestroyRope( IPhysicsRope **ppRope ) = 0;
 
-	virtual IPhysicsParticleRope *CreateParticleRope( void *pUnknown1, const void *pUnknown2, void *pUnknown3, float flUnknown1, float flUnknown2, float flUnknown3 ) = 0;
+	// The nodes are placed at the points transformed by transform; a value that is not positive selects the default (0.1, 2 and 8)
+	virtual IPhysicsParticleRope *CreateParticleRope( const void *pUnknown, const CTransform &transform, const CUtlVector< Vector > &points, float flNodeMass, float flNodeRadius, float flSegmentLength ) = 0;
 	virtual bool DestroyParticleRope( IPhysicsParticleRope **ppRope ) = 0;
 	virtual int GetParticleRopeCount() = 0;
 	virtual IPhysicsParticleRope *GetParticleRope( int nIndex ) = 0;
@@ -324,7 +351,9 @@ public:
 	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nFlags, int nMotionType ) = 0;
 	virtual void DestroyAggregateInstance( IPhysAggregateInstance *pAggregate ) = 0;
 
-	virtual IPhysicsRagdoll *CreateRagdoll( void *pUnknown1, const void *pUnknown2, int nUnknown1, void *pUnknown3, void *pUnknown4, float flUnknown, int nUnknown2, uint16 nUnknown3 ) = 0;
+	// Creates a body of nBodyType (PhysicsBodyType_t) for each body of the aggregate whose name is a bone of the model; the velocities
+	// come from the previous and the current bone transforms flDeltaTime apart, and the bodies get the entity id and the game index
+	virtual IPhysicsRagdoll *CreateRagdoll( const void *pModel, const PhysicsAggregateDef_t *pAggregate, int nBodyType, const CTransform *pPrevBoneTransforms, const CTransform *pBoneTransforms, float flDeltaTime, uint32 nEntityId, uint16 nGameIndex ) = 0;
 	virtual void DestroyRagdoll( IPhysicsRagdoll *pRagdoll ) = 0;
 	// The first takes a reference-counted pointer to the data, the second a raw one.
 	// MSVC groups these overloads in reverse order; the declaration order is Linux's
@@ -378,9 +407,10 @@ public:
 
 	virtual void CastRaySingleUnfiltered( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta ) = 0;
 	virtual void CastRayMultipleUnfiltered( void *pResults, const Vector &vStart, const Vector &vDelta ) = 0;
-	virtual void ToolCastRayMultipleUnfiltered( CUtlVectorFixedGrowable< RnToolQueryHit_t, 8 > &hits, const Vector &vStart, const Vector &vEnd, float flUnknown ) = 0;
+	virtual void ToolCastRayMultipleUnfiltered( CUtlVectorFixedGrowable< RnToolQueryHit_t, 8 > &hits, const Vector &vStart, const Vector &vEnd, float flRadius ) = 0;
 	// bMergeIntervals joins neighbouring intervals of the same kind
-	virtual void CastRayIntervals( CRayIntervalVector &intervals, const Vector &vStart, const Vector &vEnd, const RnQueryAttr_t &attr, bool bMergeIntervals, float flUnknown ) = 0;
+	// flMaxDistance limits the cast from vStart; a negative value casts the whole segment
+	virtual void CastRayIntervals( CRayIntervalVector &intervals, const Vector &vStart, const Vector &vEnd, const RnQueryAttr_t &attr, bool bMergeIntervals, float flMaxDistance ) = 0;
 	virtual void CastSphereAgainstBody( PhysicsTrace_t *pTrace, const Vector &vStart, const Vector &vDelta, float flRadius, IPhysicsBody *pBody ) = 0;
 
 	// A radius that is not positive casts a ray
@@ -398,13 +428,15 @@ public:
 	virtual bool CastShapeMultiple( CTraceVector &results, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 
 	// SweepShapeSingle and SweepShapeMultiple are overload sets that MSVC groups in reverse order; the declaration order is Linux's
-	virtual VPhysics2WorldUnk173_t LinearCast( const void *pUnknown1, const void *pUnknown2, const void *pUnknown3, const void *pUnknown4, bool bUnknown ) = 0;
-	virtual VPhysics2WorldUnk173_t SweepBodySingle( const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void SweepBodyMultiple( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsBody *pBody, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual VPhysics2WorldUnk173_t SweepShapeSingle( const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void SweepShapeMultiple( void *pOut, const void *pUnknown1, const void *pUnknown2, IPhysicsShape *pShape, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual VPhysics2WorldUnk173_t SweepShapeSingle( const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
-	virtual void SweepShapeMultiple( void *pOut, const void *pUnknown1, const void *pUnknown2, const Ray_t &ray, const void *pUnknown3, bool bUnknown ) = 0;
+	// LinearCast moves the ray shape by vDelta from transform; the sweeps move a body, a shape or the ray shape from start to end.
+	// bKeepSkin keeps the 1/16 unit separation of the time of impact solve instead of solving to touching
+	virtual CLinearSweepResult LinearCast( const CTransform &transform, const Ray_t &ray, const Vector &vDelta, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
+	virtual CSweepResult SweepBodySingle( const CTransform &start, const CTransform &end, IPhysicsBody *pBody, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
+	virtual void SweepBodyMultiple( CUtlVectorFixedGrowable< CSweepResult, 128 > &results, const CTransform &start, const CTransform &end, IPhysicsBody *pBody, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
+	virtual CSweepResult SweepShapeSingle( const CTransform &start, const CTransform &end, IPhysicsShape *pShape, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
+	virtual void SweepShapeMultiple( CUtlVectorFixedGrowable< CSweepResult, 128 > &results, const CTransform &start, const CTransform &end, IPhysicsShape *pShape, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
+	virtual CSweepResult SweepShapeSingle( const CTransform &start, const CTransform &end, const Ray_t &ray, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
+	virtual void SweepShapeMultiple( CUtlVectorFixedGrowable< CSweepResult, 128 > &results, const CTransform &start, const CTransform &end, const Ray_t &ray, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
 
 	// Shape queries that collect the shapes overlapping a volume or a swept volume. The game queries spheres, boxes and shapes with these.
 	// MSVC groups these overloads in reverse order; the declaration order is Linux's
@@ -420,7 +452,8 @@ public:
 	// Runs the query on the broadphase trees whose type bit is in nTreeMask, with the callback context
 	virtual bool QueryBroadphaseTrees( const void *pQuery, uint8 nTreeMask, void *pContext ) = 0;
 
-	virtual CRnQueryCache *CreateQueryCache( void *pUnknown1, void *pUnknown2 ) = 0;
+	// Caches the broadphase proxies inside the bounds that pass the query attributes
+	virtual CRnQueryCache *CreateQueryCache( const AABB_t &bounds, const RnQueryAttr_t &attr ) = 0;
 	virtual void DestroyQueryCache( CRnQueryCache *pCache ) = 0;
 
 	// Closest point of the shapes that pass the filter to a point, within a maximum distance; returns the distance.
@@ -429,7 +462,7 @@ public:
 	virtual float ClosestPoint( const Vector &vPoint, float flMaxDistance, const std::function< bool( IPhysicsShape * ) > &filter, Vector *pClosest ) = 0;
 
 	// flMargin (clamped to 0) widens the bounds the shapes are collected from
-	virtual void CollideShape( void *pResults, const CTransform &transform, const Ray_t &ray, const RnQueryAttr_t &attr, bool bUnknown, float flMargin ) = 0;
+	virtual void CollideShape( void *pResults, const CTransform &transform, const Ray_t &ray, const RnQueryAttr_t &attr, bool bKeepSkin, float flMargin ) = 0;
 
 	// A grid of ground heights that softbodies sample for their ground height
 	virtual void SetGroundHeightGrid( void *pHeightGrid ) = 0;
@@ -636,16 +669,18 @@ struct RecordedTrace_t
 
 	RayType_t m_nRayType;
 
-	// Flag 2 picks the single hit version of a query over the one that collects every hit
+	// Flag 2 picks the single hit version of a query over the one that collects every hit; 0x10 is the bKeepSkin argument of the
+	// sweeps and of LinearCast, 0x40 the one of CollideShape
 	uint32 m_nFlags;
 
-	// Passed as the last argument of CastRayIntervals
-	float m_flUnk040;
+	// The flMaxDistance argument of CastRayIntervals
+	float m_flMaxDistance;
 
+	// The start transform of the sweeps and the transform of LinearCast and CollideShape (m_vStart and m_qStartOrientation),
+	// and the end transform of the sweeps
 	VectorAligned m_vStart;
-
-	// The rest of the start placement and the end placement that sweeps pass on
-	uint8 m_unk064[ 48 ];
+	Quaternion m_qStartOrientation;
+	CTransform m_EndTransform;
 
 	Vector m_vDelta;
 	RnQueryAttr_t m_QueryAttr;
@@ -659,8 +694,9 @@ struct RecordedTrace_t
 	// The ray points: the center of a line or a sphere, the two centers of a capsule
 	CUtlLeanVectorFixedGrowable< Vector, 2 > m_Points;
 
-	// Cleared when the trace is recorded
-	uint8 m_unk328[ 96 ];
+	// Up to 12 keys of debug strings, zero terminated, that the debug draw filter matches against its name; release builds leave
+	// them zero
+	uint64 m_nDebugStringKeys[ 12 ];
 };
 
 // The zeroed 40-byte struct IFnPhysicsWorld::unk025 returns; only its size and 8-byte alignment are known (fields at +16, +24 and +32)
@@ -727,7 +763,8 @@ public:
 	// Empties the awake body list, unless debugger flag 0x10 is set
 	virtual void ClearAwakeBodies() = 0;
 	virtual void unk029( void *pObject, void *pUnknown ) = 0;
-	virtual CRnQueryCache *CreateQueryCache( void *pUnknown ) = 0;
+	// Reads a query cache from the buffer
+	virtual CRnQueryCache *CreateQueryCache( CUtlBuffer &buffer ) = 0;
 
 	// Empty
 	virtual void unk031() = 0;
