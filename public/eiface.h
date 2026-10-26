@@ -612,7 +612,8 @@ public:
 
 struct ClientReplayEventParams_t
 {
-	int m_nEventType = 0; // ReplayEventType_t
+	// REPLAY_EVENT_DEATH or REPLAY_EVENT_GENERIC, the request of CCLCMsg_HltvReplay
+	ReplayEventType_t m_nEventType = REPLAY_EVENT_CANCEL;
 	float m_flSlowdownLength = 0.0f;
 	float m_flSlowdownRate = 1.0f;
 	int m_nPrimaryTargetEntIndex = -1;
