@@ -45,7 +45,8 @@ public:
 	virtual CNetworkGameClient *GetNetworkGameClient() = 0;
 	virtual void SetGameSpawnGroupMgr( IGameSpawnGroupMgr *pMgr ) = 0;
 
-	virtual void AddClientPrerequisites( int nType, const char *pszName, const char *pszUrl, bool bUnk, ILoopModePrerequisiteRegistry *pRegistry, KeyValues *pOptions ) = 0;
+	// bLocalServer is set for the "listenserver" and "dedicated" loop modes
+	virtual void AddClientPrerequisites( int nType, const char *pszName, const char *pszUrl, bool bLocalServer, ILoopModePrerequisiteRegistry *pRegistry, KeyValues *pOptions ) = 0;
 
 	virtual void StartupClient( KeyValues *pLoopOptions ) = 0;
 	virtual void DisconnectGameNow( ENetworkDisconnectionReason reason ) = 0;
@@ -101,10 +102,11 @@ public:
 	virtual void OnLevelLoadingStarted() = 0;
 
 	virtual CEventDispatcher< CEventIDManager_Default > *GetNetMessageDispatcher() = 0;
-	virtual void RegisterNetMessage( INetworkMessageInternal *pNetMessage, bool bUnk ) = 0;
+	// Messages the client receives get a relay entry that forwards them to GetNetMessageDispatcher(); bClientToServer messages only get their channel category
+	virtual void RegisterNetMessage( INetworkMessageInternal *pNetMessage, bool bClientToServer ) = 0;
 
-	// Client and SourceTV status lines
-	virtual void PrintStatus( CommandTarget_t nTarget, int nUnk ) = 0;
+	// Client and SourceTV status lines; nFlags has 2 for "status short" and 4 for "status full"
+	virtual void PrintStatus( CommandTarget_t nTarget, int nFlags ) = 0;
 
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr() = 0;
 
@@ -116,6 +118,15 @@ public:
 class CNetworkClientService : public CBaseEngineService< INetworkClientService >, public CUtlSlot, public IVConCommDataReceived
 {
 public:
+	// Registered on the net channel for each message RegisterNetMessage relays
+	struct NetMessageRelay_t : public CUtlSlot
+	{
+		CNetworkClientService *m_pService;
+		INetworkMessageInternal *m_pNetMessage;
+		// NetMessageInfo_t::m_MessageId of the message, dispatched with it
+		int m_nMessageId;
+	};
+
 	// Pushed by SendNetMessage off the main thread, sent on the main thread
 	struct QueuedNetMessage_t
 	{
@@ -129,7 +140,8 @@ public:
 	bool m_bDisconnecting;
 	ENetworkDisconnectionReason m_nDisconnectReason;
 	CUtlString m_sDisconnectReason;
-	CUtlLeanVector< CUtlString > m_unk078;
+	// Addons mounted when DisconnectGameQueued was called, passed on when the queued disconnect runs
+	CUtlLeanVector< CUtlString > m_DisconnectAddons;
 	IEntityReport *m_pEntityReport;
 	int m_nTotalTicks;
 	// Client socket created by CNetworkService::OpenSockets, passed to the game client
@@ -140,7 +152,7 @@ public:
 	CClientChangelevelState *m_pChangelevelState;
 	// The last 20 command queue infos received by the game client while the net graph is active
 	CUtlVector< ClientCommandQueueInfo_t > m_CommandQueueInfoHistory;
-	CUtlVector< void * > m_unk110; // 64-byte per net message relay entries
+	CUtlVector< NetMessageRelay_t * > m_NetMessageRelays;
 	CEventDispatcher< CEventIDManager_Default > m_NetMessageDispatcher;
 	CVConsole2FlattenedSerializerListener *m_pFlattenedSerializerListener;
 	bool m_bUnk170;
