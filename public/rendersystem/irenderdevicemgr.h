@@ -22,7 +22,8 @@ class IRenderDeviceEventListener;
 abstract_class IRenderDeviceMgr : public IAppSystem
 {
 public:
-	virtual int unk011() = 0;
+	// RENDER_DEVICE_API_VULKAN or RENDER_DEVICE_API_EMPTY; a manager that delegates to another one forwards the call
+	virtual RenderDeviceAPI_t GetRenderDeviceAPI() = 0;
 
 	virtual int GetAdapterCount() = 0;
 
