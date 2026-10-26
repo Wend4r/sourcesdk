@@ -92,14 +92,33 @@ struct CWorldRendererBakedLightingInfo
 	CUtlHashtable< uint32, void * > m_lightmapTable;
 };
 
-struct CWorldUnk010
+FORWARD_DECLARE_HANDLE( VertexBufferHandle_t );
+
+// A "WorldExtraVertexStream" pooled vertex buffer of the world node and its "PooledLayout" input layout.
+struct WorldExtraVertexStream_t
 {
-	CUtlVector< void * > m_Unk00;
-	CUtlVector< void * > m_Unk18;
-	uint64 m_nUnk30;
-	uint16 m_nUnk38;
+	VertexBufferHandle_t m_hVertexBuffer;
+	void *m_pInputLayout;
+};
+
+// The scene objects that a world creates from its world node.
+struct CWorldNodeSceneObjects
+{
+	CUtlVector< CWorldSceneObjectRef * > m_sceneObjectRefs;
+	CUtlVector< WorldExtraVertexStream_t > m_extraVertexStreams;
+
+	// The layer mask of the world node last applied to the scene objects.
+	uint64 m_nVisibleLayerMask;
+
+	bool m_bSceneObjectsCreated;
+
+	// Clear hides every scene object; set shows the objects whose layer is in the visible layer mask.
+	bool m_bVisible;
+
 	CWorldRendererBakedLightingInfo m_bakedLightingInfo;
-	CUtlVector< void * > m_UnkE0;
+
+	// The world layer index of each scene object, in the order of m_sceneObjectRefs.
+	CUtlVector< int8 > m_sceneObjectLayerIndices;
 };
 
 class CWorld : public IWorld
@@ -110,8 +129,8 @@ public:
 	const CUtlVector< HEntityLump > &GetEntityLumps() const { return m_entityLumps; }
 
 public:
-	CStrongHandleBase m_hUnk008;
-	CWorldUnk010 m_Unk010;
+	HWorldNodeStrong m_hWorldNode;
+	CWorldNodeSceneObjects m_worldNodeSceneObjects;
 	// Bit 0 while the world node loads, bit 1 once it is loaded, bit 2 when its load is left to UpdateObjectsForRendering
 	int32 m_nWorldNodeLoadState;
 	HWorldStrong m_hWorld;

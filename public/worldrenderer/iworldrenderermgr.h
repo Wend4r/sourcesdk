@@ -86,7 +86,7 @@ public:
 	virtual void GetWorldNodeSceneObjects( WorldGroupId_t hWorldGroupId, CUtlVector< CSceneObject * > *pOutSceneObjects ) = 0;
 
 	virtual bool CollectWorldPairs( WorldGroupId_t hWorldGroupId, void *pOut ) = 0;
-	// hResource is the resource that CWorld keeps at m_hUnk008.
+	// hResource is the world node resource that CWorld keeps at m_hWorldNode.
 	virtual bool CollectWorldPairs( ResourceHandle_t hResource, void *pOut ) = 0;
 
 	virtual void FindEntitiesByTargetname( WorldGroupId_t hWorldGroupId, const char *pTargetname, const char *pSearchLump, CUtlVector< const CEntityKeyValues * > &res ) const = 0;
