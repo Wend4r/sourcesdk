@@ -74,7 +74,8 @@ public:
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void GetEconItemsInfoForCharacter( const CharacterInfo_t *pCharacter, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
-	virtual void *unk047() = 0;
+	// 0 without a game client
+	virtual int GetEconSlotIndex( const char *pszEconSlotName ) = 0;
 	// 1.0 without a game client
 	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
 	virtual float GetDefaultScaleForCharacter( const CharacterInfo_t *pCharacter ) = 0;
