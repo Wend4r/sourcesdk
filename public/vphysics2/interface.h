@@ -260,7 +260,7 @@ public:
 	virtual void SetMultithreadingEnabled( bool bEnabled ) = 0;
 	virtual int GetThreadCount() = 0;
 	virtual void SetThreadCount( int nThreadCount ) = 0;
-	// Priority of the parallel jobs of the step (2 by default); the server uses 3 for its game world
+	// JobPriority_t of the parallel jobs of the step (JP_HIGH by default); the server uses JP_IMMEDIATE for its game world
 	virtual void SetJobPriority( uint8 nPriority ) = 0;
 
 	virtual float GetSimulationTime() = 0;
@@ -496,6 +496,7 @@ public:
 	virtual void SweepShapeMultiple( CUtlVectorFixedGrowable< CSweepResult, 128 > &results, const CTransform &start, const CTransform &end, const Ray_t &ray, const RnQueryAttr_t &attr, bool bKeepSkin ) = 0;
 
 	// Shape queries that collect the shapes overlapping a volume or a swept volume. The game queries spheres, boxes and shapes with these.
+	// With nOverlapTest 0 the shapes whose bounds overlap are collected, otherwise the shapes are tested exactly.
 	// MSVC groups these overloads in reverse order; the declaration order is Linux's
 	virtual void Query( CQueryResult &results, const Vector &vCenter, float flRadius, const RnQueryAttr_t &attr, int nOverlapTest ) = 0;
 	virtual void Query( CQueryResult &results, const Bounds3 &bounds, const RnQueryAttr_t &attr, int nOverlapTest ) = 0;
@@ -506,7 +507,7 @@ public:
 	virtual void Query( CQueryResult &results, const Ray_t &ray, const Vector &vStart, const Vector &vDelta, const RnQueryAttr_t &attr ) = 0;
 	virtual bool Query( void *pResults, const void *pQuery ) = 0;
 
-	// Runs the query on the broadphase trees whose type bit is in nTreeMask, with the callback context
+	// Runs the query on the broadphase trees whose RNQUERY_OBJECTS_* bit is in nTreeMask, with the callback context
 	virtual bool QueryBroadphaseTrees( const void *pQuery, uint8 nTreeMask, void *pContext ) = 0;
 
 	// Caches the broadphase proxies inside the bounds that pass the query attributes
