@@ -30,7 +30,7 @@ public:
 	    m_bSetActivePostLoad(false),
 	    m_bSaveEntities(true),
 	    m_bLevelTransition(false),
-	    m_bUnk2(false),
+	    m_bSuppressAllEntities(false),
 	    m_bUnk3(false)
 	{
 		SetIdentityMatrix(m_vecWorldOffset);
@@ -62,7 +62,8 @@ public:
 	// Only spawn groups with it set have their entities streamed to save files; point_prefab clears it
 	bool m_bSaveEntities;
 	bool m_bLevelTransition;
-	bool m_bUnk2;
+	// Restored from the save file spawn group record; set when its entities were saved with another spawn group
+	bool m_bSuppressAllEntities;
 	bool m_bUnk3;
 };
 

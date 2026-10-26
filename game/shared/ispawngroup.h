@@ -42,8 +42,8 @@ public:
 
 public:
 	virtual bool DontSpawnEntities() const = 0;
-	// SpawnGroupDesc_t::m_bUnk2 of the descriptor the spawn group was created with.
-	virtual uint8 GetUnk2AndLastFlagBits() const = 0;
+	// SpawnGroupDesc_t::m_bSuppressAllEntities of the descriptor the spawn group was created with.
+	virtual bool ShouldSuppressAllEntities() const = 0;
 	virtual SpawnGroupHandle_t GetParentSpawnGroup() const = 0;
 	virtual uint32 GetChildSpawnGroupCount() const = 0;
 	virtual void GetSpawnGroupDesc(SpawnGroupDesc_t *pDesc) const = 0;

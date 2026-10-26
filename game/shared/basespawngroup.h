@@ -101,8 +101,8 @@ public:
 	uint16 m_bSaveEntities : 1;
 	uint16 m_bLevelTransition : 1;
 	uint16 m_bReadyToSpawnEntities : 1;
-	// SpawnGroupDesc_t::m_bUnk2
-	uint16 m_bUnk2 : 1;
+	// SpawnGroupDesc_t::m_bSuppressAllEntities
+	uint16 m_bSuppressAllEntities : 1;
 	uint8 m_bHideBaseLayer : 1;
 };
 
