@@ -250,7 +250,7 @@ struct ClientConnectState_t
 	// Match session to join instead of connecting ("joinsession")
 	uint64 m_nMatchSessionID;
 	uint32 m_nChallenge;
-	// 3 for Steam authentication
+	// PROTOCOL_* value, PROTOCOL_STEAM for Steam authentication
 	uint8 m_nAuthProtocol;
 	bool m_bGameServerSecure;
 	uint8 m_pad09E[ 0xA0 - 0x9E ];
@@ -317,7 +317,7 @@ public:
 	virtual float GetTickFraction() = 0;
 	// Forwards to ISource2Client::GetPredictionTickFraction
 	virtual GameTickFraction_t GetPredictionTickFraction() = 0;
-	// The pending connection uses the Steam authentication protocol (3)
+	// The pending connection uses PROTOCOL_STEAM
 	virtual bool IsUsingSteamAuthentication() = 0;
 	// Percentage of the outgoing (user commands) or incoming (server ticks) flow's ticks that were dropped or late in the last
 	// window of more than 256 ticks

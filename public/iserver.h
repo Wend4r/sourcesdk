@@ -73,6 +73,7 @@ class IHLTVDirector;
 class CHLTVServerAsync;
 class CTvDirectDemoRecorder;
 
+// PROTOCOL_HASHEDCDKEY or PROTOCOL_STEAM (protocol.h)
 typedef int ChallengeType_t;
 // Pause groups of CCLCMsg_RequestPause and the setpause/unpause commands ("setpause bug"); the server ignores requests for other groups
 enum PauseGroup_t : int
@@ -253,7 +254,8 @@ public:
 	                                              const char *pszDecryptedPassword, const byte *pAuthTicket, int nAuthTicketLength, bool bIsLowViolence ) = 0;
 	virtual CServerSideClientBase *CreateNewClient( CPlayerSlot slot ) = 0;
 	
-	virtual bool	FinishCertificateCheck( const ns_address *pAddr, int socket, byte ) = 0;
+	// nAuthProtocol is a PROTOCOL_* value; PROTOCOL_HASHEDCDKEY is only accepted from local addresses
+	virtual bool	FinishCertificateCheck( const ns_address *pAddr, int socket, uint8 nAuthProtocol ) = 0;
 
 	virtual ChallengeType_t	GetChallengeType( const ns_address &addr ) = 0;
 	virtual bool	CheckPassword( const ns_address &addr, const char *password ) = 0;
