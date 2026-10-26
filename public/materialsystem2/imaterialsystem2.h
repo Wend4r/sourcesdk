@@ -15,6 +15,7 @@
 #include <tier0/bufferstring.h>
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
+#include <tier0/utlattributelist.h>
 #include <tier0/utlhashtable.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlstringtoken.h>
@@ -253,8 +254,8 @@ public:
 	// "MaterialSystem2/RenderModes" of gameinfo, "Default" when it has none
 	CUtlVector< ModeInfo_t > m_modeInfo;
 
-	// CUtlAttributeList< int, 16, int, 16 > from the mode token to its index in m_modeInfo
-	ALIGN16 uint8 m_modeAttributeList[ 0x90 ] ALIGN16_POST;
+	// From the mode token to its index in m_modeInfo
+	CUtlAttributeList< int, 16 > m_modeAttributeList;
 
 	RsRasterizerStateHandle_t m_hDefaultRasterizerState;
 	RsDepthStencilStateHandle_t m_hDefaultDepthStencilState;

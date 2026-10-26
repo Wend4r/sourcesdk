@@ -9,6 +9,7 @@
 #include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
 #include <tier0/utlstringtoken.h>
+#include <rendersystem/renderattrs.h>
 
 //-----------------------------------------------------------------------------
 // Implementation of IMaterial2. Members whose types are not declared in the
@@ -43,8 +44,8 @@ public:
 	// Returned by GetShaderStateOverriddenByMaterial()
 	uint32 m_nShaderStateOverrides;
 
-	// CRenderAttributes, returned by GetAttributes()
-	uint8 m_attributes[ 0x3A0 ];
+	// Returned by GetAttributes()
+	CRenderAttributes m_attributes;
 
 	// CUtlLeanVectorFixedGrowable< CMaterialMode, 6, int > of 160-byte modes
 	uint8 m_modeArray[ 0x3C8 ];
