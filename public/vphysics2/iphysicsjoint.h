@@ -15,6 +15,7 @@
 #include "tier0/utlstring.h"
 #include "tier0/utldelegateimpl.h"
 #include "mathlib/vector.h"
+#include "mathlib/transform.h"
 #include "physicslib/param_types.h"
 #include "schemasystem/schematypes.h"
 
@@ -107,9 +108,11 @@ public:
 	virtual Quaternion GetLocalBasis( int nIndex ) const = 0;
 	virtual void SetLocalBasis( int nIndex, const Quaternion &qBasis ) = 0;
 
-	// MSVC groups these overloads in reverse order; both run the same solver query, for both bodies or for one of them
-	virtual bool unk043( int nUnknown ) = 0;
-	virtual bool unk043( int nUnknown, IPhysicsBody *pBody ) = 0;
+	// Whether the enabled joint locks the degrees of freedom that nFlags selects (bits 3 to 6 choose the linear and angular axes and
+	// how many of them must be locked), between its bodies or for one of them; false when pBody is not a body of the joint.
+	// MSVC groups these overloads in reverse order
+	virtual bool IsConstrained( uint32 nFlags ) = 0;
+	virtual bool IsConstrained( uint32 nFlags, IPhysicsBody *pBody ) = 0;
 
 	virtual void SetLinearConstraintEnabled( bool bEnabled ) = 0;
 	virtual bool IsLinearConstraintEnabled() const = 0;
@@ -133,21 +136,27 @@ public:
 	virtual void SetUserData( void *pUserData ) = 0;
 	virtual void *GetUserData() const = 0;
 
-	// Empty in release builds
-	virtual void unk060() = 0;
-	virtual bool unk061() = 0;
+	// The debug name of the CRnJoint; release builds ignore it and return NULL
+	virtual void SetDebugName( const char *pszName ) = 0;
+	virtual const char *GetDebugName() const = 0;
 
 	virtual const CUtlString &GetTag() const = 0;
 	virtual void SetTag( const char *pszTag ) = 0;
 
-	virtual void unk064( int nUnknown ) = 0;
-	virtual int unk065() const = 0;
-	virtual int unk066() const = 0;
+	// A value stored in the CRnJoint for the caller, -1 by default; the library does not read it
+	virtual void SetUserIndex( int nIndex ) = 0;
+	virtual int GetUserIndex() const = 0;
+
+	// Index of the joint in its world, -1 outside of it
+	virtual int GetIndexInWorld() const = 0;
 
 	virtual void SetEnableCollision( bool bEnable ) = 0;
 	virtual bool IsCollisionEnabled() const = 0;
 
-	virtual void unk069( void *p ) = 0;
+	// The transform of pBody that satisfies the joint given the transform of the other body, projected on the linear and the
+	// angular degrees of freedom the joint locks (each when its flag is set), optionally clamped to the limits; bodyTransform when
+	// the joint is disabled or pBody is not one of its bodies
+	virtual CTransform ConstrainTransform( IPhysicsBody *pBody, const CTransform &otherTransform, const CTransform &bodyTransform, bool bLinear, bool bAngular, bool bApplyLimits ) = 0;
 
 	// Calls the break delegate, then disables the joint and wakes the bodies
 	virtual void Break() = 0;
