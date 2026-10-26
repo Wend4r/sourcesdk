@@ -30,7 +30,7 @@ public:
 	    m_bSetActivePostLoad(false),
 	    m_bSaveEntities(true),
 	    m_bLevelTransition(false),
-	    m_bUnk2(false),
+	    m_bSuppressAllEntities(false),
 	    m_bHideBaseLayer(false)
 	{
 		SetIdentityMatrix(m_vecWorldOffset);
@@ -62,9 +62,8 @@ public:
 	// Only spawn groups with it set have their entities streamed to save files; point_prefab clears it
 	bool m_bSaveEntities;
 	bool m_bLevelTransition;
-	// The spawn group passes it to its entity spawner when it loads the entities; returned by
-	// ISpawnGroup::GetUnk2AndLastFlagBits.
-	bool m_bUnk2;
+	// Restored from the save file spawn group record; set when its entities were saved with another spawn group
+	bool m_bSuppressAllEntities;
 	// CreateWorldInfo_t::m_bHideBaseLayer of the world load request the spawn group makes.
 	bool m_bHideBaseLayer;
 };
