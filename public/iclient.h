@@ -36,6 +36,8 @@
 #include <iloopmode.h>
 #include <engine/hoststate.h>
 #include <engine/clientframe.h>
+#include <engine/precache.h>
+#include <qlimits.h>
 #include <source2_steam_stats.pb.h>
 
 class INetChannel;
@@ -542,6 +544,72 @@ public:
 	bool m_bBlockDisconnectionTracking;
 };
 
+// Reservoir of up to N samples: further samples randomly replace stored ones; m_nTotalCount counts every sample offered
+template < typename T, int N >
+struct NetworkFlowSamples_t
+{
+	int m_nCount;
+	int m_nTotalCount;
+	// Samples were added since the last sort
+	bool m_bUnsorted;
+	T m_Samples[ N ];
+	T m_Max;
+	T m_Min;
+};
+
+// Tick delivery statistics of one network flow, reported through CMsgSource2NetworkFlowQuality
+struct NetworkFlowQualityStats_t
+{
+	// Ticks per outcome since the last miss rate sample (reset after more than 256 ticks), then since the connection
+	// started: good, good almost late, bad dropped, bad late, bad other, fixed dropped, fixed late
+	int m_nTickCounts[ 7 ];
+	int m_nTotalTickCounts[ 7 ];
+	// Percentage of the ticks of the last sample window that were dropped or late ("%.1f%% %s missed due to network")
+	float m_flNetworkMissRate;
+	// Sample windows without network misses, and without any misses
+	int m_nPerfectNetSamples;
+	int m_nPerfectSamples;
+	// Miss rates of the sample windows in tenths of a percent (tick_missratenet_p*_x10)
+	NetworkFlowSamples_t< uint8, 100 > m_MissRateSamples;
+	// Receive margins in milliseconds (recvmargin_p*)
+	NetworkFlowSamples_t< int16, 500 > m_RecvMarginSamples;
+};
+
+// Receive record of one server tick
+struct ServerTickHistoryEntry_t
+{
+	int m_nTick;
+	// In-sequence number of the tick's net message
+	int m_nSequenceNr;
+	// Jitter INetChannelInfo::GetFrameStatus reported for the frame
+	float m_flFrameJitter;
+	// CNETMsg_Tick host_computationtime in seconds
+	float m_flHostComputationTime;
+	// Bits 3 to 5: the frame was dropped, its jitter exceeded the late threshold, it arrived below the desired receive
+	// margin
+	uint8 m_nFlags;
+	// Plat_FloatTime() of the receive, of the start of its simulation, of its render and of its present
+	double m_flReceiveTime;
+	double m_flSimulateTime;
+	double m_flRenderTime;
+	double m_flPresentTime;
+};
+
+struct ReadPacketEntitiesWorkItem_t;
+
+// Shared state of the parallel passes over the read packet entities work items
+struct ReadPacketEntitiesWorkState_t
+{
+	// 0, 1 or 2, set before each pass
+	int m_nPass;
+	CNetworkGameClient *m_pClient;
+	// Next item to process, taken atomically, and the end of the items
+	ReadPacketEntitiesWorkItem_t *m_pNextItem;
+	ReadPacketEntitiesWorkItem_t *m_pEndItem;
+	// Serialized entities to free after the passes
+	CUtlVector< SerializedEntityData_t * > m_SerializedEntities;
+};
+
 // The most-derived client class. Overrides a handful of base virtuals and
 // adds no new slots on Windows.
 class CNetworkGameClient : public CNetworkGameClientBase, public ISwitchLoopModeStatusNotify
@@ -553,14 +621,17 @@ public:
 		int m_nCommandNumber;
 		// ISource2Client::GetCommandTime of the command
 		double m_flCommandTime;
-		double m_flUnk10;
+		// Plat_FloatTime() when BeginNextTickMoves or DuplicateCommandToCatchUp created the command, 0 until then
+		double m_flCreateTime;
 		// Copies of m_flLastMoveSendTime and m_nLastMoveSequenceNr taken when the entry is filled
 		double m_flSendTime;
-		float m_flUnk20;
+		// Copy of m_flLastMoveSendStatus; the receive margin estimate skips entries below 0
+		float m_flSendStatus;
 		int m_nSendSequenceNr;
 		// Receive margin the server reported for the command ("User command %d recv on server ..."), FLT_MAX until then
 		float m_flServerRecvMargin;
-		int m_nUnk2C;
+		// Tick of the CSVCMsg_PacketEntities that first reported the command as executed
+		int m_nExecutedTick;
 		// Set when the server reported a negative receive margin for the command ("LATE")
 		bool m_bReceivedLate;
 	};
@@ -570,49 +641,97 @@ public:
 
 public:
 	CClientFrameManager m_FrameManager;
-	uint64 m_unk2C1520[ 0x2008 / 8 ];
+	// Entries of the "genericprecache" string table
+	int m_nMaxPrecacheEntries;
+	CPrecacheItem m_GenericPrecache[ MAX_GENERIC ];
 	// Indexed by player slot (GetPlayerInfo, GetPlayerUserId)
 	CUtlVector< CMsgPlayerInfo > m_PlayerInfos;
-	uint64 m_unk2C3540[ 5 ];
+	INetworkStringTable *m_pGenericPrecacheTable;
+	INetworkStringTable *m_pInstanceBaselineTable;
+	INetworkStringTable *m_pUserInfoTable;
+	INetworkStringTable *m_pServerQueryInfoTable;
+	ReadPacketEntitiesWorkState_t *m_pReadPacketEntitiesWorkState;
 	// Set from CSVCMsg_ServerInfo, logged as "ishltv"
 	bool m_bIsHLTV;
-	bool m_bUnk2C3569;
-	bool m_bUnk2C356A;
+	// The "frame window too big" warning of ProcessPacketEntities is active
+	bool m_bFrameWindowTooBig;
+	// ClientProcessNetworking handles incoming packets; cleared while the level load loop mode runs
+	bool m_bProcessIncomingPackets;
 	float m_flTickRemainder;
 	float m_flUsercmdTickFraction;
 	float m_flFrameTime;
-	int m_unk2C3578[ 4 ];
+	// Last CCLCMsg_LoadingProgress progress sent
+	int m_nLastLoadingProgress;
+	// First server tick of the connection; m_GlobalVars times are relative to it
+	int m_nFirstServerTick;
+	// Tick of the last CSVCMsg_PacketEntities
+	int m_nLastPacketEntitiesTick;
+	// Highest tick in m_ServerTickHistory
+	int m_nHighestReceivedServerTick;
 	int m_nLastCommandNumberExecuted;
 	// m_nLastCommandNumberExecuted plus last_cmd_number_recv_delta of the last CSVCMsg_PacketEntities
 	int m_nLastCommandNumberReceived;
-	int m_unk2C3590[ 8 ];
-	CUtlString m_unk2C35B0;
+	// Command number from which the server re-synchronized the command queue ("CQ: Server set re-sync at cmd %d")
+	int m_nCommandQueueResyncCommand;
+	// Parameters of the last CSVCMsg_HltvReplay
+	int m_nHltvReplayDelay;
+	int m_nHltvReplayPrimaryTarget;
+	int m_nHltvReplayStopAt;
+	int m_nHltvReplaySlowdownBegin;
+	int m_nHltvReplaySlowdownEnd;
+	float m_flHltvReplaySlowdownRate;
+	// CNETMsg_Tick expected_long_tick and its reason ("Server tick %d was long (%.1fms) due to '%s'")
+	int m_nExpectedLongTick;
+	CUtlString m_sExpectedLongTickReason;
 	CommandHistoryEntry_t m_CommandHistory[ 256 ];
-	void *m_unk2C6DB8;
-	uint8 m_unk2C6DC0[ 2 ][ 1196 ];
+	// Only zeroed by the constructor
+	int m_nUnk2C6DB8;
+	// Last command number whose delivery outcome was counted into m_NetworkFlowQualityStats
+	int m_nLastEvaluatedCommandNumber;
+	// Indexed by flow: 0 outgoing (user commands), 1 incoming (server ticks)
+	NetworkFlowQualityStats_t m_NetworkFlowQualityStats[ 2 ];
 	// Receive margin below which a command the server reports is logged as "later than desired"
 	float m_flDesiredRecvMargin;
-	uint8 m_unk2C771C[ 0x385C ];
+	// Receive record of one server tick, indexed by the low byte of the tick
+	ServerTickHistoryEntry_t m_ServerTickHistory[ 256 ];
+	// Last server tick whose delivery outcome was counted into m_NetworkFlowQualityStats
+	int m_nLastEvaluatedServerTick;
+	// TrueViewLookAhead state: excess margin, a change marker, the look-ahead in commands and in ticks, and the fixup
+	// (-1 for the tick gobble, a positive count while the aggressive slowdown runs)
+	float m_flLookAheadExcess;
+	bool m_bLookAheadChanged;
+	int m_nLookAheadCommands;
+	float m_flLookAheadTicks;
+	int m_nLookAheadFixup;
+	// cl_ticktiming stages, the last sample and its running average each; read by GetTickTiming
+	float m_flTickTimings[ 8 ][ 2 ];
 	// Buffer of m_MoveMessage, the datagram SendMove transmits ("ClientSendMove")
 	uint8 m_MoveMessageData[ 0x2000 ];
 	bf_write m_MoveMessage;
 	// Range of the user commands written to m_MoveMessage ("SentTickAsync   cmds %d...%d")
 	int m_nMoveFirstCommandNumber;
 	int m_nMoveLastCommandNumber;
-	int m_nUnk2CCFA8;
+	// Scheduled function of the asynchronous move send, -1 when none
+	int m_nAsyncMoveSendFunction;
 	// Time the asynchronous move send was requested; the send callback warns when it runs more than 10 ms later
 	double m_flAsyncMoveSendRequestTime;
 	CAtomicMutex m_AsyncMoveSendMutex;
-	uint64 m_unk2CCFC8[ 3 ];
+	// Incoming net messages held back by cl_buffer_incoming_net_messages
+	CUtlVector< CNetMessage * > m_BufferedNetMessages;
 	// Sequence number and Plat_FloatTime() of the last move datagram, -1 when it could not be sent
 	int m_nLastMoveSequenceNr;
 	double m_flLastMoveSendTime;
-	float m_flUnk2CCFF0;
+	// 0 when SendMove transmitted the move, -1 after the history has taken it
+	float m_flLastMoveSendStatus;
 	// Lateness of the asynchronous move send, raised to new peaks (up to 10 ms) and decayed on every send
 	float m_flAsyncMoveSendDelay;
-	void *m_unk2CCFF8;
+	// Plat_FloatTime() seconds of the last VProf lite report and of the last network quality report sent to the server
+	int m_nLastVProfReportTime;
+	int m_nLastNetworkQualityReportTime;
 	CMsgSource2NetworkFlowQuality m_NetworkFlowQuality[ 2 ];
-	void *m_unk2CD260[ 2 ];
+	// Highest and current demo packet index read while peeking ahead in a demo
+	int64 m_nHighestDemoPacketIndex;
+	int64 m_nCurrentDemoPacketIndex;
 };
 
 #endif // ICLIENT_H
