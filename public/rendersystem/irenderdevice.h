@@ -148,6 +148,12 @@ enum RenderVariableRefreshRateStatus_t : int
 #define RENDER_CONTEXT_HOLD_TEXTURE_LOCK ( 1 << 4 ) // holds the texture manager read lock while recording
 #define RENDER_CONTEXT_NO_SOFTWARE_COMMAND_LISTS ( 1 << 5 ) // ignores the device's software command list default
 
+// IRenderDevice::SetRenderDebugFlags bits
+#define RENDERDEBUGFLAG_ENABLE_GPU_TIMESTAMPS ( 1 << 4 )
+
+// Records the per-texture streaming state the texture manager reports
+#define RENDERDEBUGFLAG_TRACK_TEXTURE_STREAMING ( 1 << 5 )
+
 abstract_class IRenderDevice
 {
 public:
@@ -259,7 +265,6 @@ public:
 	virtual bool ReleasePolledBufferReadback( void *hRequest ) = 0;
 	virtual const Sheet_t *GetTextureSheet( HRenderTexture hTexture ) = 0;
 
-	// RENDERDEBUGFLAG_* bits
 	virtual void SetRenderDebugFlags( uint32 nFlags, bool bSet ) = 0;
 	virtual bool IsRenderDebugFlagSet( uint32 nFlags ) = 0;
 	virtual uint32 GetRenderDebugFlags() = 0;
