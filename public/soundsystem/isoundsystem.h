@@ -234,6 +234,7 @@ struct AudioInputStreamParams_t
 class CSimplePCMWaveData
 {
 public:
+	// WAVE_FORMAT_* tag ( tier2/riff.h ), ToolLoadVSnd stores WAVE_FORMAT_PCM
 	uint16 m_nFormat;
 	uint32 m_nSampleRate;
 	uint32 m_nChannels;
