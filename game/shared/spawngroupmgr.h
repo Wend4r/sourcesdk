@@ -6,6 +6,8 @@
 #include "spawngrouptypes.h"
 #include "basespawngroup.h"
 #include "iloadingspawngroup.h"
+#include "saverestorefiledata.h"
+#include "kv3lib/keyvalues3.h"
 #include "ispawngroup.h"
 #include "mapspawngroup.h"
 #include "igamesystem.h"
@@ -46,9 +48,36 @@ public:
 	virtual CUtlString GetName() const = 0;
 };
 
-// AMNOTE: Short stubs representing game class hierarchy
+// Created by IGameSpawnGroupMgr::CreateLoadingSpawnGroup and CreateLoadingSpawnGroupForSaveFile
 class CLoadingSpawnGroup : public ILoadingSpawnGroup
 {
+public:
+	virtual int EntityCount() const override = 0;
+	virtual const EntitySpawnInfo_t *GetEntities() const override = 0;
+	virtual bool ShouldLoadEntitiesFromSave() const override = 0;
+	virtual const ISaveRestoreFileData &GetSaveRestoreFileData() const override = 0;
+	virtual void SetLevelTransitionPreviousMap( const char *pLevelTransitionMap, const char *pLandmarkName ) override = 0;
+	virtual bool IsLevelTransition() const override = 0;
+	virtual const char *GetLevelTransitionPreviousMap() const override = 0;
+	virtual const char *GetLevelTransitionLandmarkName() const override = 0;
+	virtual CKV3Arena *GetEntityKeyValuesAllocator() override = 0;
+	virtual CEntityInstance *CreateEntityToSpawn( SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset, CreateSpawnGroupType_t createType, const CEntityKeyValues *pEntityKeyValues, int nSaveEntityTableIndex ) override = 0;
+	virtual void SpawnEntities() override = 0;
+	virtual void RestoreEntities( SpawnGroupHandle_t hSpawnGroup, const char *pszSpawnGroupName, IStreamEntitiesFromFileCompletion *pCompletion, const Vector &vecSpawnOffset, CUtlVector< CEntityHandle > *pRestoredEntities ) override = 0;
+	virtual bool HasSaveRestoreFile( SpawnGroupHandle_t hSpawnGroup, const char *pszSpawnGroupName ) const override = 0;
+	virtual void Release() override = 0;
+	virtual void SetSuppressMapEntities( bool bSuppress ) override = 0;
+	virtual bool ShouldSuppressMapEntities() const override = 0;
+	virtual EntitySpawnInfo_t *GetMutableEntities() override = 0;
+
+public:
+	SpawnGroupHandle_t m_hSpawnGroup;
+	CUtlVector< EntitySpawnInfo_t > m_spawnInfo;
+	CKV3Arena m_variantMemory; // GetEntityKeyValuesAllocator
+	CSaveRestoreFileData m_SaveRestoreFileData; // The files of a save, CreateLoadingSpawnGroupForSaveFile adds one
+	CUtlString m_sLevelTransitionPreviousMap;
+	CUtlString m_sLevelTransitionLandmarkName;
+	bool m_bSuppressMapEntities;
 };
 
 class CSpawnGroupMgrGameSystem : public IGameSpawnGroupMgr, public CBaseGameSystem
