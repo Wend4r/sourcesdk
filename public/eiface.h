@@ -454,7 +454,9 @@ public:
 	// Returns the designer name of the entity class the subclass is built on.
 	virtual const char		*GetSubclassDesignerName( const char *pSubclassName ) = 0;
 
-	virtual void			UpdateGCInformation( bool bUnk1, bool bUnk2 ) = 0;
+	// Both flags are ignored by CSource2Server: the engine sets bFromSteamCallback when the Steam servers connected or auth
+	// ticket response callbacks update the Steam game server, and bReservationCleared when the reservation cookie becomes 0
+	virtual void			UpdateGCInformation( bool bFromSteamCallback, bool bReservationCleared ) = 0;
 
 	// Sorted designer names of every entity class derived from the C++ class pClassName (e.g. "CCSWeaponBase"),
 	// or the subclass names of a scope when pClassName is that scope's handler type.
