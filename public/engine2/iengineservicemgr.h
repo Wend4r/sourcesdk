@@ -16,9 +16,9 @@ enum EngineServiceActivateType_t
 
 enum EngineServiceDependencyFlags_t : uint32
 {
-	ESD_FORCE_INCLUSION = 0x1,
-	ESD_MUST_RUN_AFTER = 0x2,
-	ESD_MUST_RUN_BEFORE = 0x4,
+	ESD_FORCE_INCLUSION = ( 1 << 0 ),
+	ESD_MUST_RUN_AFTER = ( 1 << 1 ),
+	ESD_MUST_RUN_BEFORE = ( 1 << 2 ),
 };
 
 // Arrays of these end with an entry whose m_pServiceName is NULL
