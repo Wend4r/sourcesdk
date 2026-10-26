@@ -19,6 +19,9 @@ class CMiniDumpComment;
 class IRenderDeviceSetup;
 class IRenderDeviceEventListener;
 
+// nFlags of IRenderDeviceMgr::AppendMinidumpInfo
+#define RENDER_MINIDUMP_INFO_VIDEO_SETTINGS ( 1 << 2 ) // adds the resident texture memory and the "setting." values of the video config
+
 abstract_class IRenderDeviceMgr : public IAppSystem
 {
 public:
@@ -36,6 +39,7 @@ public:
 	virtual void GetModeInfo( RenderDisplayMode_t *pMode, int nAdapter, int nOutput, int nMode ) = 0;
 	virtual void GetCurrentModeInfo( RenderDisplayMode_t *pMode, int nAdapter, int nOutput ) = 0;
 
+	// nFlags: RENDER_DEVICE_INIT_* bits, passed on to IRenderDevice::InitDevice
 	virtual CreateInterfaceFn CreateDevice( int nAdapter, int nFlags, int nDXLevel ) = 0;
 
 	virtual void AddModeChangeCallback( void ( *pfnCallback )() ) = 0;
@@ -71,7 +75,7 @@ public:
 
 	virtual bool GetVideoMemoryInfo( int nAdapter, uint64 *pBudgetInBytesOut, uint64 *pUsageInBytesOut, uint64 *pRenderSystemUsageInBytesOut ) = 0;
 
-	// The flag 4 in nFlags adds the resident texture memory and the "setting." values of the video config
+	// nFlags: RENDER_MINIDUMP_INFO_* bits
 	virtual void AppendMinidumpInfo( CMiniDumpComment *pComment, uint32 nFlags ) = 0;
 
 	// Highest DX level the device supports (110, 111, 120)
