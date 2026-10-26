@@ -204,7 +204,8 @@ struct SndInfo_t
 	SoundGuid_t m_nGuid;
 	// File name of the sfx of the voice
 	FileNameHandle_t m_hFileName;
-	int m_nUnk08;
+	// Sound source of the start parameters (snd_showstart prints it as "src")
+	int m_nSoundSource;
 	int m_nUnk0C;
 	float m_flVolume;
 	// Percent
@@ -292,10 +293,12 @@ struct SoundVoiceListener_t
 //-----------------------------------------------------------------------------
 struct SoundVoicePosition_t
 {
-	void *m_pUnk00;
-	// Playback position in seconds
+	// Sound of the sfx of the voice (the handle CreateProceduralSound returns)
+	HSound m_hSound;
+	// Playback position in seconds, 0 for entries that carry m_flLevel
 	float m_flPosition;
-	float m_flUnk0C;
+	// Mean absolute amplitude of the voice output in the mix (0..1), 0 for entries that carry m_flPosition
+	float m_flLevel;
 	uint16 m_nId;
 };
 
