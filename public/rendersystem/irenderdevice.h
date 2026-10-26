@@ -178,6 +178,22 @@ enum RenderQueryType_t
 	RENDER_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE,
 };
 
+// IRenderDevice::GetDeviceSpecificInfo on the Vulkan device
+enum RenderDeviceSpecificInfo_t
+{
+	RENDER_DEVICE_INFO_VK_INSTANCE = 4,
+	RENDER_DEVICE_INFO_VK_GET_INSTANCE_PROC_ADDR,
+	RENDER_DEVICE_INFO_VK_PHYSICAL_DEVICE,
+	RENDER_DEVICE_INFO_VK_DEVICE,
+	RENDER_DEVICE_INFO_VK_GRAPHICS_QUEUE,
+
+	// Pointers to the device's VkPhysicalDeviceMemoryProperties, graphics queue family index and
+	// VkPhysicalDeviceRayTracingPipelinePropertiesKHR
+	RENDER_DEVICE_INFO_VK_MEMORY_PROPERTIES,
+	RENDER_DEVICE_INFO_VK_GRAPHICS_QUEUE_FAMILY_INDEX,
+	RENDER_DEVICE_INFO_VK_RAY_TRACING_PIPELINE_PROPERTIES,
+};
+
 abstract_class IRenderDevice
 {
 public:
@@ -343,7 +359,7 @@ public:
 
 	virtual void AppendResourceStats( CBufferString *pOut ) = 0;
 
-	virtual void *GetDeviceSpecificInfo( int nInfo ) = 0;
+	virtual void *GetDeviceSpecificInfo( RenderDeviceSpecificInfo_t nInfo ) = 0;
 	virtual bool CanRenderToSwapChain( SwapChainHandle_t hSwapChain ) = 0;
 	virtual void *GetDeviceSpecificTexture( HRenderTexture hTexture, RenderTextureDimension_t nDimension ) = 0;
 	virtual void *GetDeviceSpecificImageView( HRenderTexture hTexture, RenderTextureDimension_t nDimension, RenderColorSpace_t nColorSpace ) = 0;
