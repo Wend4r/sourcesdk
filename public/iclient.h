@@ -26,6 +26,10 @@
 #include <tier0/threadtools.h>
 #include <tier1/bitbuf.h>
 #include <tier0/bitvec.h>
+#include <tier0/utlhashtable.h>
+#include <tier0/utlmap.h>
+#include <tier1/utllinkedlist.h>
+#include <utlhashmaplarge.h>
 #include <globalvars_base.h>
 #include <networksystem/inetchannel.h>
 #include <inetmsghandler.h>
@@ -97,6 +101,13 @@ class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
 class CMsgPlayerInfo;
 class CNetMessage;
+class CNetworkClientSpawnGroup;
+class CNetworkClientSpawnGroupCreatePrerequisites;
+class INetworkStringTableContainer;
+class ServerClass;
+class CChangeFrameList;
+class CNetworkGameClientBase;
+struct SerializedEntityData_t;
 struct EventServerPostSimulate_t;
 struct EventServerBeginAsyncPostTickWork_t;
 
@@ -200,6 +211,92 @@ public:
 };
 
 struct GameTickFraction_t;
+
+// Connection of one split screen player; slot 0 is the main player
+struct ClientSplitScreenPlayer_t
+{
+	INetChannel *m_pNetChannel;
+	// Player slot from CSVCMsg_ServerInfo or CSVCMsg_SplitScreen
+	CPlayerSlot m_nPlayerSlot;
+	CSplitScreenSlot m_nSplitScreenSlot;
+	bool m_bActive;
+	// Added by CSVCMsg_SplitScreen; Disconnect removes it from the split screen manager
+	bool m_bSplitScreenUser;
+	// The nConnectionLocality of INetworkGameClient::Connect
+	uint8 m_nConnectionLocality;
+};
+
+// Server class name and the client class it was matched to ("%d : %s matched to %s")
+struct C_ServerClassInfo
+{
+	CUtlString m_ClassName;
+	ClientClass *m_pClientClass;
+};
+
+// Connection attempt state that the connectionless packet handler and the connect packet use
+struct ClientConnectState_t
+{
+	CNetworkGameClientBase *m_pClient;
+	// Sender of the S2C_CONNECTION packet
+	ns_address m_ResponseAddress;
+	uint8 m_pad028[ 0x60 - 0x28 ];
+	// Address of the server being connected to ("Connection to %s failed")
+	ns_address m_ServerAddress;
+	uint8 m_pad080[ 0x88 - 0x80 ];
+	// Game server SteamID and secure flag passed to PrepareSteamConnectResponse
+	uint64 m_nGameServerSteamID;
+	// Match session to join instead of connecting ("joinsession")
+	uint64 m_nMatchSessionID;
+	uint32 m_nChallenge;
+	// 3 for Steam authentication
+	uint8 m_nAuthProtocol;
+	bool m_bGameServerSecure;
+	uint8 m_pad09E[ 0xA0 - 0x9E ];
+	int m_nSocket;
+	uint8 m_pad0A4[ 0xB0 - 0xA4 ];
+	// Set by INetSupport::UpdateClientReservation
+	uint64 m_nReservationCookie;
+	uint8 m_pad0B8[ 0xC8 - 0xB8 ];
+};
+
+// Inline-or-heap list of 16-bit values: up to 12 in place, otherwise m_bExternal is set and the storage holds the pointer
+struct SendProxyRecipientList_t
+{
+	union
+	{
+		uint16 m_Inline[ 12 ];
+		uint16 *m_pElements;
+	};
+	int16 m_nCount;
+	bool m_bExternal;
+};
+
+// Element of PackedEntity::m_Recipients; packed entities with equal lists and equal +0x48 values compare equal
+class CSendProxyRecipients
+{
+public:
+	uint8 m_pad000[ 0x08 ];
+	SendProxyRecipientList_t m_Lists[ 2 ];
+	uint8 m_pad048[ 0x58 - 0x48 ];
+};
+
+// Serialized state of an entity, here as an entity baseline
+class PackedEntity
+{
+public:
+	// Zero on the client
+	ServerClass *m_pServerClass;
+	// Class the baseline was decoded for; a lookup with another class finds no baseline
+	ClientClass *m_pClientClass;
+	// Pooled change list, released with the entity
+	CChangeFrameList *m_pChangeFrameList;
+	int m_nEntityIndex;
+	uint8 m_pad01C[ 0x20 - 0x1C ];
+	SerializedEntityData_t *m_pData;
+	uint8 m_pad028[ 0x30 - 0x28 ];
+	CUtlVector< CSendProxyRecipients > m_Recipients;
+	uint8 m_pad048[ 0x58 - 0x48 ];
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: Concrete client base. Adds the network message Process* handlers,
@@ -345,63 +442,103 @@ public:
 	WorldGroupList_t m_WorldGroups;
 	WorldGroupList_t m_ClientSideWorldGroups;
 	CGlobalVarsBase m_GlobalVars;
-	uint8 m_unk0F0[ 0x60 ];
-	CUtlVector< void * > m_unk150;
-	void *m_unk168;
-	uint8 m_unk170[ 0x30 ];
-	uint8 m_unk1A0[ 0x20 ];
+	ClientSplitScreenPlayer_t m_SplitScreenPlayers[ 4 ];
+	// Addresses of the last connection; tv_retry reconnects a SourceTV relay to the first one
+	CUtlVector< ns_address > m_RetryAddresses;
+	ClientConnectState_t *m_pConnectState;
+	// Indexed by the server class index of the entity records
+	CUtlVector< C_ServerClassInfo > m_ServerClasses;
+	// Client classes built from the local server's classes for replay ("ConstructFakeClientClassesListFromServerClasses")
+	CUtlVector< ClientClass * > m_FakeClientClasses;
+	// Entities of fake client classes that CopyNewEntity skipped creating for replay, by entity index
+	CUtlHashtable< int, ClientClass * > m_FakeClassEntities;
 	CSVCMsg_FlattenedSerializer_t *m_pLastFlattenedSerializer; // Copy of the last flattened serializer message
-	void *m_unk1C8;
-	CUtlBuffer m_unk1D0;
-	CUtlString m_unk220;
-	CUtlString m_unk228;
-	void *m_unk230;
-	void *m_unk238;
+	// The client string table container "CL" until the server's tables are created
+	INetworkStringTableContainer *m_pStringTableContainer;
+	// Contents of cl_sendtable_cache_filename, read and written when cl_cache_sendtable is set
+	CUtlBuffer m_SendTableCacheBuffer;
+	// "maps/<map>.vpk" and the map name of CSVCMsg_ServerInfo
+	CUtlString m_sLevelFileName;
+	CUtlString m_sLevelName;
+	// Set from CSVCMsg_ServerSteamID, PrepareSteamConnectResponse and INetSupport::UpdateClientReservation
+	uint64 m_nServerSteamID;
+	// Highest spawn group creation sequence of the loaded spawn groups
+	int m_nMaxSpawnGroupCreationSequence;
+	// Index into m_SplitScreenPlayers, set by CNETMsg_SplitscreenUserChanged
+	int m_nSplitScreenSlot;
 	SignonState_t m_nSignonState;
-	int m_nUnk244;
+	// CRC of the server's serializers, compared with the send table cache
+	uint32 m_nServerSerializersCRC;
 	int m_nRefCount;
 	// Socket of the net channels and of the connectionless packet polling
 	int m_nSocket;
-	int m_unk250[ 3 ];
+	// CSVCMsg_ServerInfo max_clients, server_count and protocol
+	int m_nMaxClients;
+	int m_nServerCount;
+	int m_nServerProtocol;
 	int m_nDeltaTick;
-	int m_nUnk260;
+	// Net time that Connect stored; the HLTV relay client throttles its commands with it
+	float m_flNextCmdTime;
 	// Command queue state of the last packet from the server, see CNetworkClientService::m_CommandQueueInfoHistory
 	ClientCommandQueueInfo_t m_CommandQueueInfo;
-	int m_unk2A0[ 3 ];
-	bool m_bUnk2AC;
-	bool m_bUnk2AD;
-	bool m_bUnk2AE;
+	// Bits of a server class index, from CSVCMsg_ServerInfo max_classes
+	int m_nServerClassBits;
+	// Spawn count of the SIGNONSTATE_SPAWN message that DeferActivate held back, -1 when none
+	int m_nDeferredSpawnCount;
+	ENetworkDisconnectionReason m_nDisconnectReason;
+	// Set for CHLTVClientState, the connection of a SourceTV relay to its master; the game client's globals are not used
+	bool m_bIsHLTVRelay;
+	// CSVCMsg_SetPause paused
+	bool m_bPaused;
+	// Never set in libengine2; when set, the network quality and clock bookkeeping is skipped and the command queue
+	// messages are logged with a lower severity
+	bool m_bSkipNetworkQualityTracking;
 	GameSessionConfiguration_t m_GameSessionConfiguration;
-	CAtomicMutex m_unk348;
-	uint64 m_unk358[ 10 ];
+	CAtomicMutex m_BaselineHandlesMutex;
+	// Serialized instance baselines by instance baseline index ("m_BaselineHandles.Find(%d) failed")
+	CUtlHashMapImpl< int, SerializedEntityData_t *, CUtlHashMapLargeDefEquals< int >, MurmurHash3Functor< int >, int, CVariableBitString > m_BaselineHandles;
 	int m_nClientTick;
 	int m_nServerTick;
 	ISource2WorldSession *m_pWorldSession;
 	IGameSpawnGroupMgr *m_pSpawnGroupMgr;
-	bool m_bUnk3C0;
-	uint64 m_unk3C8[ 3 ];
+	CUtlMap< SpawnGroupHandle_t, CNetworkClientSpawnGroup * > m_SpawnGroups;
+	// Defaults to "unnamed"; only carried across a changelevel
 	CUtlString m_unk3E0;
-	uint64 m_unk3E8[ 3 ];
+	CUtlLinkedList< CNetworkClientSpawnGroupCreatePrerequisites * > m_SpawnGroupPrerequisites;
+	// The level name copied before Clear resets it; never read
 	CUtlString m_unk400;
-	uint64 m_unk408[ 2 ][ 0x160008 / 8 ];
-	CBitVec< MAX_EDICTS > m_unk2C0418[ 2 ];
-	int m_nUnk2C1418;
-	CAtomicMutex m_unk2C1420;
+	// The two entity baseline sets that CopyEntityBaseline copies between
+	CUtlVectorFixed< PackedEntity, MAX_EDICTS > m_EntityBaselines[ 2 ];
+	// Entities with a baseline in each set
+	CBitVec< MAX_EDICTS > m_EntityBaselineBits[ 2 ];
+	// Destination set of the running CopyEntityBaseline
+	int m_nCopyEntityBaselineTo;
+	CAtomicMutex m_EntityBaselineBitsMutex;
 	HGameResourceManifest m_hGameSessionManifests[ 2 ];
-	int m_nUnk2C1440;
-	int m_nUnk2C1444;
+	// Next handle of a client-side spawn group, counting up from 0x80000000
+	uint32 m_nNextClientSpawnGroupHandle;
+	SpawnGroupHandle_t m_hActiveSpawnGroup;
 	int m_nMaxSplitScreenPlayers;
-	int m_nUnk2C144C;
-	int m_nUnk2C1450;
-	bool m_bUnk2C1454;
+	// Tick of the last CSVCMsg_PacketReliable that finished a reliable state
+	int m_nLastReliablePacketTick;
+	// The first total tick count of EventClientAdvanceTick_t; the ticks since then make up m_GlobalVars.m_nClientTickCount
+	int m_nFirstTotalTicks;
+	// SetRestrictServerCommands; set by default for the mods the constructor lists
+	bool m_bRestrictServerCommands;
+	// Set when CSVCMsg_ServerInfo has been processed, cleared by Clear; never read
 	bool m_bUnk2C1455;
 	bool m_bChangelevelPending;
 	bool m_bIsBackgroundMap;
-	bool m_bUnk2C1458;
-	bool m_bUnk2C1459;
-	bool m_bUnk2C145A;
-	int m_nUnk2C145C;
-	bool m_bUnk2C1460;
+	// DeferActivate held back SIGNONSTATE_SPAWN until ResumeActivate
+	bool m_bDeferredActivate;
+	// Write the send table cache after the next flattened serializer
+	bool m_bWriteSendTableCache;
+	// ForceDemoRecordingFullUpdateAfterNextDeltaPacket
+	bool m_bForceDemoRecordingFullUpdate;
+	// CSVCMsg_HltvReplay delay
+	int m_nHltvReplayDelay;
+	// The "Disconnection during connection phase" warning was logged
+	bool m_bReportedConnectionPhaseDisconnect;
 	bool m_bBlockDisconnectionTracking;
 };
 
