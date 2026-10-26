@@ -164,6 +164,20 @@ enum RenderVariableRefreshRateStatus_t : int
 	RENDER_VRR_STATUS_ACTIVE,
 };
 
+// Shader stages of IRenderDevice::CreateShader and the IRenderContext binding slots; the Vulkan device creates
+// the shaders for the fragment, vertex, geometry, compute, mesh and ray tracing stages
+enum RenderShaderType_t
+{
+	// Programs without a render shader (libmaterialsystem2 maps its features program to it)
+	RENDER_SHADER_TYPE_INVALID = -1,
+	RENDER_SHADER_TYPE_PIXEL = 0,
+	RENDER_SHADER_TYPE_VERTEX,
+	RENDER_SHADER_TYPE_GEOMETRY,
+	RENDER_SHADER_TYPE_COMPUTE,
+	RENDER_SHADER_TYPE_MESH,
+	RENDER_SHADER_TYPE_RAYTRACING = 6,
+};
+
 // nRenderContextFlags of IRenderDevice::CreateRenderContext and Present
 #define RENDER_CONTEXT_SOFTWARE_COMMAND_LISTS ( 1 << 0 ) // records into software command lists
 #define RENDER_CONTEXT_SIMULTANEOUS_USE ( 1 << 1 ) // the command buffer may be submitted more than once
@@ -277,7 +291,7 @@ public:
 
 	virtual bool IsWindowResizingEnabled() = 0;
 
-	virtual const char *GetShaderModelString( int nShaderType ) = 0;
+	virtual const char *GetShaderModelString( RenderShaderType_t nShaderType ) = 0;
 
 	virtual void BeginRendering() = 0;
 	virtual void BeginSubmittingDisplayLists( SwapChainHandle_t hSwapChain ) = 0;
@@ -286,11 +300,11 @@ public:
 	virtual void ForceFlushGPU( SwapChainHandle_t hSwapChain ) = 0;
 	virtual void SetHardwareGammaRamp( SwapChainHandle_t hSwapChain, float flGamma ) = 0;
 	virtual std::unique_ptr< IRenderShaderByteCode > CompileShader( const char *pProgram, uint32 nBufLen, const char *pShaderVersion ) = 0;
-	virtual RenderShaderHandle_t CreateShader( int nType, std::unique_ptr< IRenderShaderByteCode > pShader, const char *pDebugName, int nSpecializationConstantCount, const RenderShaderSpecializationConstant_t *pSpecializationConstants ) = 0;
-	virtual void DestroyShader( int nShaderType, RenderShaderHandle_t hShader ) = 0;
+	virtual RenderShaderHandle_t CreateShader( RenderShaderType_t nType, std::unique_ptr< IRenderShaderByteCode > pShader, const char *pDebugName, int nSpecializationConstantCount, const RenderShaderSpecializationConstant_t *pSpecializationConstants ) = 0;
+	virtual void DestroyShader( RenderShaderType_t nShaderType, RenderShaderHandle_t hShader ) = 0;
 
 	// Register counts and binary size of a compiled shader
-	virtual void GetShaderStats( RenderShaderStats_t *pOutStats, int nType, RenderShaderHandle_t hShader ) = 0;
+	virtual void GetShaderStats( RenderShaderStats_t *pOutStats, RenderShaderType_t nType, RenderShaderHandle_t hShader ) = 0;
 
 	virtual RenderInputLayout_t CreateInputLayout( const char *pName, int nFields, const RenderInputLayoutField_t *pFields ) = 0;
 	virtual void AddRefInputLayout( RenderInputLayout_t hLayout ) = 0;

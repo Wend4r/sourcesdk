@@ -425,20 +425,20 @@ public:
 	virtual void SetScissorRects( int nCount, const Rect_t *pRects ) = 0;
 	// The input layout fields without a slot are matched by semantic against pInputSignature
 	virtual void BindVertexShader( RenderShaderHandle_t hShader, RenderInputLayout_t hInputLayout, const VsInputSignature_t *pInputSignature ) = 0;
-	virtual void BindShader( int nShaderType, RenderShaderHandle_t hShader ) = 0;
-	virtual void SetTexture( int nSlot, HRenderTexture hTexture, RenderTextureDimension_t nDimension, int nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
+	virtual void BindShader( RenderShaderType_t nShaderType, RenderShaderHandle_t hShader ) = 0;
+	virtual void SetTexture( int nSlot, HRenderTexture hTexture, RenderTextureDimension_t nDimension, RenderShaderType_t nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
 	// nMipLevel -1 binds all mip levels (SetTexture passes -1)
-	virtual void SetTextureMip( int nSlot, HRenderTexture hTexture, int nMipLevel, RenderTextureDimension_t nDimension, int nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
-	virtual void SetTextures( int nFirstSlot, int nCount, const RenderTextureBinding_t *pBindings, int nShaderType ) = 0;
+	virtual void SetTextureMip( int nSlot, HRenderTexture hTexture, int nMipLevel, RenderTextureDimension_t nDimension, RenderShaderType_t nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
+	virtual void SetTextures( int nFirstSlot, int nCount, const RenderTextureBinding_t *pBindings, RenderShaderType_t nShaderType ) = 0;
 	// Binds storage images in the general layout
-	virtual void SetUnorderedAccessViews( int nFirstSlot, int nCount, const RenderTextureBinding_t *pBindings, int nShaderType ) = 0;
+	virtual void SetUnorderedAccessViews( int nFirstSlot, int nCount, const RenderTextureBinding_t *pBindings, RenderShaderType_t nShaderType ) = 0;
 	// Transitions the texture into the shader read layout (general when it is a storage image)
 	virtual void TransitionTextureForShaderRead( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize, int nMipLevel ) = 0;
 	// nComparisonFunc is an RsComparison_t, used with the RENDER_FILTER_COMPARISON filters
 	virtual void SetPixelShaderSamplerState( int nSlot, RenderSamplerFilter_t nFilter, RenderTextureAddressMode_t nAddressU, RenderTextureAddressMode_t nAddressV, RenderTextureAddressMode_t nAddressW, int nComparisonFunc ) = 0;
 	virtual void SetVertexShaderSamplerState( int nSlot, RenderSamplerFilter_t nFilter, RenderTextureAddressMode_t nAddressU, RenderTextureAddressMode_t nAddressV, RenderTextureAddressMode_t nAddressW, int nComparisonFunc ) = 0;
-	virtual void SetSamplerState( int nSlot, const CSamplerStateDesc &desc, int nShaderType ) = 0;
-	virtual void SetSamplerStates( int nFirstSlot, int nCount, const CSamplerStateDesc *pDescs, int nShaderType ) = 0;
+	virtual void SetSamplerState( int nSlot, const CSamplerStateDesc &desc, RenderShaderType_t nShaderType ) = 0;
+	virtual void SetSamplerStates( int nFirstSlot, int nCount, const CSamplerStateDesc *pDescs, RenderShaderType_t nShaderType ) = 0;
 	virtual void SetDescriptorSets( uint32 nFirstSet, int nCount, const RenderDescriptorSetHandle_t *pDescriptorSets, const uint32 *pDynamicOffsetCounts, const uint32 *const *ppDynamicOffsets ) = 0;
 	virtual RenderDescriptorSetHandle_t CreateDynamicDescriptorSet( RenderDescriptorSetHandle_t hLayout, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
 	virtual void UpdateConstantBuffer( ConstantBufferHandle_t hConstantBuffer, const void *pData, uint32 nNumBytes ) = 0;
@@ -448,8 +448,8 @@ public:
 	virtual void *LockMultiViewDynamicConstantBuffer( uint32 nNumBytes, uint32 nViewCount, void **ppData ) = 0;
 	// Records the buffer for release like UnlockDynamicConstantBuffer, with one more value
 	virtual void UnlockMultiViewDynamicConstantBuffer( void *hBuffer, int nViewCount ) = 0;
-	virtual void SetConstantBuffer( int nShaderType, ConstantBufferHandle_t hConstantBuffer, int nSlot ) = 0;
-	virtual void SetMultiViewConstantBuffer( int nShaderType, ConstantBufferHandle_t hConstantBuffer, uint32 nView, int nSlot ) = 0;
+	virtual void SetConstantBuffer( RenderShaderType_t nShaderType, ConstantBufferHandle_t hConstantBuffer, int nSlot ) = 0;
+	virtual void SetMultiViewConstantBuffer( RenderShaderType_t nShaderType, ConstantBufferHandle_t hConstantBuffer, uint32 nView, int nSlot ) = 0;
 	virtual void SetPushConstants( const void *pData, uint32 nNumBytes ) = 0;
 	virtual RsRasterizerStateHandle_t FindOrCreateRasterizerState( const RsRasterizerStateDesc_t *pDesc ) = 0;
 	virtual void SetRasterizerState( RsRasterizerStateHandle_t hState ) = 0;
