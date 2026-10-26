@@ -86,7 +86,8 @@ public:
 	virtual bool		IsExitMainLoopRequested( void ) const = 0;
 	virtual CEventDispatcher<CEventIDManager_Default> *GetEventDispatcher( void ) = 0;
 	virtual CDebugVisualizerMgr *GetDebugVisualizerMgr( void ) = 0;
-	virtual int			GetActiveLoopClientServerMode( void ) const = 0;
+	// CLIENTSERVERMODE_NONE without an active loop or for a simple loop type
+	virtual ClientServerMode_t	GetActiveLoopClientServerMode( void ) const = 0;
 	virtual void		PrintStatus( void ) = 0;
 	// Writes m_bValid = false when no loop is active.
 	virtual void		GetActiveLoop( ActiveLoopInfo_t &info ) = 0;
