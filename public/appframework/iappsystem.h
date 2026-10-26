@@ -152,6 +152,29 @@ class CAppSystemDict;
 class CBufferString;
 class KeyValues3;
 
+// The step of the engine's app system loading (LoadAppSystems) IApplication::SetInitializationPhase
+// records; each is set before the systems it names are loaded.
+enum AppSystemInitializationPhase_t
+{
+	// Engine2, the mod's client app systems, localization, mesh system and world renderer
+	APP_SYSTEM_INITIALIZATION_PHASE_ENGINE_SYSTEMS = 0,
+
+	// The server configuration (Source2ServerConfig001) from the game binaries
+	APP_SYSTEM_INITIALIZATION_PHASE_SERVER_CONFIG = 1,
+
+	// The tool framework (ToolFramework2_002)
+	APP_SYSTEM_INITIALIZATION_PHASE_TOOLS = 2,
+
+	// The engine services (EngineServiceMgr001, HostStateMgr001)
+	APP_SYSTEM_INITIALIZATION_PHASE_ENGINE_SERVICES = 3,
+
+	// The game and client interfaces (Source2Server001, Source2Client002, ...)
+	APP_SYSTEM_INITIALIZATION_PHASE_GAME_INTERFACES = 4,
+
+	// Loading finished
+	APP_SYSTEM_INITIALIZATION_PHASE_FINISHED = 5,
+};
+
 // Kinds of addons IApplication::GetAvailableAddons lists from the ADDONS search paths.
 // The addon directories
 #define AVAILABLE_ADDONS_DIRECTORIES ( 1 << 0 )
@@ -220,8 +243,8 @@ public:
 	virtual bool IsPerforceWorkspace() = 0;
 	virtual bool IsLowViolence() = 0;
 	virtual void SetLowViolence( bool bLowViolence ) = 0;
-	virtual void SetInitializationPhase( int nInitializationPhase ) = 0;
-	virtual int GetInitializationPhase() = 0;
+	virtual void SetInitializationPhase( AppSystemInitializationPhase_t nInitializationPhase ) = 0;
+	virtual AppSystemInitializationPhase_t GetInitializationPhase() = 0;
 	virtual const char *GetRestrictAddonsTo() = 0;
 	// Reference counted, every true must be matched by a false
 	virtual void SetAllowAddonChanges( bool bAllowAddonChanges ) = 0;
