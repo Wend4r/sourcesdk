@@ -61,6 +61,7 @@ struct RenderInputLayoutField_t;
 struct PipelineRenderTargetInfo_t;
 enum RenderMultisampleType_t : uint8;
 enum RenderPrimitiveType_t : int32;
+enum InputLayoutVariation_t : uint8;
 
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 FORWARD_DECLARE_HANDLE( VertexBufferHandle_t );
@@ -76,6 +77,153 @@ public:
 };
 
 using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
+
+//-----------------------------------------------------------------------------
+// Resources the scene system creates at init, by ISceneSystem::GetWellKnown*
+// index. The names follow the debug names the resources are created with.
+//-----------------------------------------------------------------------------
+enum WellKnownVertexBuffer_t
+{
+	WELL_KNOWN_VERTEX_BUFFER_QUAD = 0,					// Four positions from -1 to 1
+	WELL_KNOWN_VERTEX_BUFFER_64X64_TRI_STRIPPED = 2,
+	WELL_KNOWN_VERTEX_BUFFER_128X128_TRI_STRIPPED,
+	WELL_KNOWN_VERTEX_BUFFER_256X256_TRI_STRIPPED,
+	WELL_KNOWN_VERTEX_BUFFER_INSTANCE_ID,				// "instanceidbuffer": uint32 instance indices
+	WELL_KNOWN_VERTEX_BUFFER_INSTANCE_ID_FLOAT,			// "instanceidbuffer2": float instance indices
+	WELL_KNOWN_VERTEX_BUFFER_12X12_TRI_STRIPPED,
+};
+
+enum WellKnownIndexBuffer_t
+{
+	WELL_KNOWN_INDEX_BUFFER_QUAD = 0,					// "scene_quadindexbuffer": two triangles
+	WELL_KNOWN_INDEX_BUFFER_64X64_TRI_LIST,				// "tesidx": 63 x 63 quads
+	WELL_KNOWN_INDEX_BUFFER_64X64_TRI_STRIPPED,			// "nxnstripped"
+	WELL_KNOWN_INDEX_BUFFER_128X128_TRI_STRIPPED,
+	WELL_KNOWN_INDEX_BUFFER_256X256_TRI_STRIPPED,
+	WELL_KNOWN_INDEX_BUFFER_12X12_TRI_LIST,				// "tesidx": 11 x 11 quads
+	WELL_KNOWN_INDEX_BUFFER_MANY_QUADS,					// "manyquads": 16384 quads
+};
+
+enum WellKnownInputLayout_t
+{
+	WELL_KNOWN_INPUT_LAYOUT_UV_TEST = 0,
+	WELL_KNOWN_INPUT_LAYOUT_COLOR_UV_TEST,
+	WELL_KNOWN_INPUT_LAYOUT_WIREFRAME_3D,
+	WELL_KNOWN_INPUT_LAYOUT_POSITION,
+	WELL_KNOWN_INPUT_LAYOUT_POSITION_DUMMY_VB1,
+	WELL_KNOWN_INPUT_LAYOUT_POST_PROCESS,
+	WELL_KNOWN_INPUT_LAYOUT_UV_TANGENT,
+	WELL_KNOWN_INPUT_LAYOUT_POS_2D_TEX_2D,
+	WELL_KNOWN_INPUT_LAYOUT_UNUSED,
+	WELL_KNOWN_INPUT_LAYOUT_CMT_MORPH_COMPOSITING,
+	WELL_KNOWN_INPUT_LAYOUT_WIREFRAME_2D,
+	WELL_KNOWN_INPUT_LAYOUT_POS_COLOR_UV_NORMAL_TANGENT,
+	WELL_KNOWN_INPUT_LAYOUT_POSITION_2D,
+	WELL_KNOWN_INPUT_LAYOUT_COLOR_POSITION,
+	WELL_KNOWN_INPUT_LAYOUT_QUAD,
+};
+
+enum WellKnownBuffer_t
+{
+	WELL_KNOWN_BUFFER_SCRAMBLED_HALTON_PERMUTATIONS = 0,
+	WELL_KNOWN_BUFFER_MESHLETS,							// "meshlet buffer" of AllocateFrameScopedMeshlets
+};
+
+enum WellKnownTexture_t
+{
+	WELL_KNOWN_TEXTURE_WHITE = 0,
+	WELL_KNOWN_TEXTURE_BLACK,
+	WELL_KNOWN_TEXTURE_TRANSPARENT_BLACK,
+	WELL_KNOWN_TEXTURE_TRANSPARENT_BLACK_3D,
+	WELL_KNOWN_TEXTURE_WHITE_ARRAY,
+	WELL_KNOWN_TEXTURE_CHECKER,
+	WELL_KNOWN_TEXTURE_BLACK_3D,
+	WELL_KNOWN_TEXTURE_BLACK_CUBE,
+	WELL_KNOWN_TEXTURE_BLACK_CUBE_ARRAY,
+	WELL_KNOWN_TEXTURE_TRANSPARENT_BLACK_ARRAY,
+	WELL_KNOWN_TEXTURE_OPAQUE_BLACK_3D,
+	WELL_KNOWN_TEXTURE_ONE_16BIT,
+	WELL_KNOWN_TEXTURE_ONE_16BIT_ARRAY,
+	WELL_KNOWN_TEXTURE_WHITE_3D,
+	WELL_KNOWN_TEXTURE_ZERO_UINT,
+	WELL_KNOWN_TEXTURE_DEPTH_D32_WHITE,
+	WELL_KNOWN_TEXTURE_DEPTH_D32_BLACK,
+	WELL_KNOWN_TEXTURE_RTX_RANDOM_SAMPLES,				// Created when ray tracing is supported
+	WELL_KNOWN_TEXTURE_BRDF_LUT,
+	WELL_KNOWN_TEXTURE_BRDF_MULTISCATTER_LUT,
+	WELL_KNOWN_TEXTURE_GREY,
+	WELL_KNOWN_TEXTURE_GREY_3D,
+};
+
+enum WellKnownMaterial_t
+{
+	WELL_KNOWN_MATERIAL_COPY_TO_BACKBUFFER = 0,
+	WELL_KNOWN_MATERIAL_DOWNSAMPLE,
+	WELL_KNOWN_MATERIAL_DEBUG_SOLID,
+	WELL_KNOWN_MATERIAL_DEBUG_WIREFRAME,
+	WELL_KNOWN_MATERIAL_DEBUG_WIREFRAME_2D,
+	WELL_KNOWN_MATERIAL_DEBUG_SHOW_TEXTURE,
+	WELL_KNOWN_MATERIAL_DEBUG_UI,
+	WELL_KNOWN_MATERIAL_MORPH_COMPOSITE,
+	WELL_KNOWN_MATERIAL_OCCLUSION_PROXY,
+	WELL_KNOWN_MATERIAL_OCCLUSION_PROXY_COUNT_DRAW,
+	WELL_KNOWN_MATERIAL_OCCLUSION_PROXY_DEBUG_DRAW,
+
+	// Two separately loaded instances of each of the next two materials.
+	WELL_KNOWN_MATERIAL_PRIMARY_WHITE,
+	WELL_KNOWN_MATERIAL_PRIMARY_WHITE_2,
+	WELL_KNOWN_MATERIAL_PRIMARY_WHITE_TRANS,
+	WELL_KNOWN_MATERIAL_PRIMARY_WHITE_TRANS_2,
+
+	WELL_KNOWN_MATERIAL_REFLECTIVITY_90,
+	WELL_KNOWN_MATERIAL_GENERAL_FILTER,
+	WELL_KNOWN_MATERIAL_LUMINAIRE,
+	WELL_KNOWN_MATERIAL_RTX_BIN_LIGHTS,
+	WELL_KNOWN_MATERIAL_RTX_HITGROUP_DEFAULT_OPAQUE,
+	WELL_KNOWN_MATERIAL_RTX_HITGROUP_DEFAULT_TRANSPARENT,
+	WELL_KNOWN_MATERIAL_RTX_GENERATE_SCRAMBLED_HALTON_SAMPLES,
+	WELL_KNOWN_MATERIAL_CS_PARALLEL_SORT,
+	WELL_KNOWN_MATERIAL_CS_PARALLEL_SORT_ONESWEEP,
+};
+
+enum WellKnownShape_t
+{
+	WELL_KNOWN_SHAPE_DODECAHEDRON = 0,
+	WELL_KNOWN_SHAPE_CONE,
+	WELL_KNOWN_SHAPE_BOX,
+	WELL_KNOWN_SHAPE_PYRAMID,
+};
+
+// Format of a scratch render target
+enum WellKnownRenderTarget_t
+{
+	WELL_KNOWN_RENDER_TARGET_RGBA8888 = 0,				// "scratch_rt_result"
+	WELL_KNOWN_RENDER_TARGET_R11G11B10F,
+	WELL_KNOWN_RENDER_TARGET_DEPTH,						// "rendertarget_dscratch"
+	WELL_KNOWN_RENDER_TARGET_RGBA16161616F_MIPS,
+
+	// The format SceneSystem/FrameBufferCopyFormat picks ("8888" or "R11G11B10F").
+	WELL_KNOWN_RENDER_TARGET_FRAMEBUFFER_COPY_FORMAT = 5,
+};
+
+// Size class of a scratch render target
+enum WellKnownRenderTargetSize_t
+{
+	WELL_KNOWN_RENDER_TARGET_SIZE_128 = 0,
+	WELL_KNOWN_RENDER_TARGET_SIZE_512,
+
+	// The size SetMinimumFrameBufferRenderTargetSize sets.
+	WELL_KNOWN_RENDER_TARGET_SIZE_FRAMEBUFFER,
+
+	// Returned by BestRenderTargetSize when no size class fits.
+	WELL_KNOWN_RENDER_TARGET_SIZE_NONE = 4,
+};
+
+// Texture sets of ISceneSystem::AddTextureToSet
+enum SceneTextureSet_t
+{
+	SCENE_TEXTURE_SET_LIGHT_COOKIES = 0,				// Loaded from SceneSystem/WellKnownLightCookies
+};
 
 enum SceneSystemBoxCullMode_t : uint32
 {
@@ -166,31 +314,31 @@ public:
 	virtual void MarkEnvironmentMapObjectUpdated( CEnvMapSceneObject *pEnvMap ) = 0;
 	virtual ISceneWorld *CreateWorld( const char *pszDebugName ) = 0;
 	virtual void DestroyWorld( ISceneWorld *pWorld ) = 0;
-	virtual VertexBufferHandle_t GetWellKnownVertexBuffer( int nBuffer ) = 0;
-	virtual IndexBufferHandle_t GetWellKnownIndexBuffer( int nBuffer ) = 0;
-	virtual void *GetWellKnownInputLayout( int nLayout, uint8 nVariation ) = 0;
-	virtual RenderInputLayoutField_t *GetWellKnownInputLayoutFields( int nLayout, int *pFieldCount ) = 0;
-	// Buffer 0 is the "ScrambledHaltonPermutations" buffer.
-	virtual RenderBufferHandle_t GetWellKnownBuffer( int nBuffer ) = 0;
-	virtual HRenderTexture GetWellKnownTexture( int nTexture ) = 0;
-	virtual IMaterial2 *GetWellKnownMaterial( int nMaterial ) = 0;
-	virtual HMaterialWeak GetWellKnownMaterialHandle( int nMaterial ) = 0;
-	virtual void *GetWellKnownShape( int nShape ) = 0;
-	virtual HRenderTexture GetWellKnownRenderTarget( int nRenderTarget, int nSize ) = 0;
-	virtual HRenderTexture GetWellKnownRenderTarget( int nRenderTarget, int nWidth, int nHeight ) = 0;
-	virtual void GetRenderTargetSize( int nSize, int *pWidth, int *pHeight ) = 0;
-	virtual int BestRenderTargetSize( int nWidth, int nHeight ) = 0;
+	virtual VertexBufferHandle_t GetWellKnownVertexBuffer( WellKnownVertexBuffer_t nBuffer ) = 0;
+	virtual IndexBufferHandle_t GetWellKnownIndexBuffer( WellKnownIndexBuffer_t nBuffer ) = 0;
+	virtual void *GetWellKnownInputLayout( WellKnownInputLayout_t nLayout, InputLayoutVariation_t nVariation ) = 0;
+	virtual RenderInputLayoutField_t *GetWellKnownInputLayoutFields( WellKnownInputLayout_t nLayout, int *pFieldCount ) = 0;
+	virtual RenderBufferHandle_t GetWellKnownBuffer( WellKnownBuffer_t nBuffer ) = 0;
+	virtual HRenderTexture GetWellKnownTexture( WellKnownTexture_t nTexture ) = 0;
+	virtual IMaterial2 *GetWellKnownMaterial( WellKnownMaterial_t nMaterial ) = 0;
+	virtual HMaterialWeak GetWellKnownMaterialHandle( WellKnownMaterial_t nMaterial ) = 0;
+	virtual void *GetWellKnownShape( WellKnownShape_t nShape ) = 0;
+	virtual HRenderTexture GetWellKnownRenderTarget( WellKnownRenderTarget_t nRenderTarget, WellKnownRenderTargetSize_t nSize ) = 0;
+	// Takes the smallest size class that holds nWidth x nHeight.
+	virtual HRenderTexture GetWellKnownRenderTarget( WellKnownRenderTarget_t nRenderTarget, int nWidth, int nHeight ) = 0;
+	virtual void GetRenderTargetSize( WellKnownRenderTargetSize_t nSize, int *pWidth, int *pHeight ) = 0;
+	virtual WellKnownRenderTargetSize_t BestRenderTargetSize( int nWidth, int nHeight ) = 0;
 	virtual void SetMinimumFrameBufferRenderTargetSize( int nWidth, int nHeight ) = 0;
 	// Texture sets, guarded by one global mutex.
-	virtual bool AddTextureToSet( HRenderTexture hTexture, int nSet ) = 0;
-	virtual void RemoveTextureFromSet( HRenderTexture hTexture, int nSet ) = 0;
-	virtual HRenderTexture GetTextureInSet( int nIndex, int nSet ) = 0;
-	virtual int FindTextureInSet( HRenderTexture hTexture, int nSet ) = 0;
+	virtual bool AddTextureToSet( HRenderTexture hTexture, SceneTextureSet_t nSet ) = 0;
+	virtual void RemoveTextureFromSet( HRenderTexture hTexture, SceneTextureSet_t nSet ) = 0;
+	virtual HRenderTexture GetTextureInSet( int nIndex, SceneTextureSet_t nSet ) = 0;
+	virtual int FindTextureInSet( HRenderTexture hTexture, SceneTextureSet_t nSet ) = 0;
 	// Finds a texture by the token of its key in the game info section the set was loaded from ("SceneSystem/WellKnownLightCookies").
-	virtual int FindTextureInSetByName( CUtlStringToken name, int nSet ) = 0;
+	virtual int FindTextureInSetByName( CUtlStringToken name, SceneTextureSet_t nSet ) = 0;
 	// The array texture the textures of the set are copied into, and its depth.
-	virtual HRenderTexture GetTextureSetArrayTexture( int nSet ) = 0;
-	virtual uint16 GetTextureSetArrayDepth( int nSet ) = 0;
+	virtual HRenderTexture GetTextureSetArrayTexture( SceneTextureSet_t nSet ) = 0;
+	virtual uint16 GetTextureSetArrayDepth( SceneTextureSet_t nSet ) = 0;
 
 	virtual ISceneViewDebugOverlays *CreateSceneViewDebugOverlayList( int nTimingType, const char *pszName ) = 0;
 	virtual void DestroySceneViewDebugOverlayList( ISceneViewDebugOverlays *pOverlays ) = 0;
