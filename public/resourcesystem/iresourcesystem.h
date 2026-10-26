@@ -52,7 +52,7 @@ public:
 	virtual void InstallTypeManager( ResourceType_t nResourceType, IResourceTypeManager *pResourceTypeMgr, const char *pszResourceType, const char *pszPreloadManifest = nullptr ) = 0;
 	virtual void InstallNullTypeManager( ResourceType_t nResourceType, const char *pszResourceType ) = 0;
 	virtual void Update( int nTimeBudgetNs, ResourceSystemUpdateMode_t nMode ) = 0;
-	// Update with a 10 ms budget and mode 0.
+	// Update with a 10 ms budget and RESOURCE_SYSTEM_UPDATE_MODE_DEFAULT.
 	virtual void UpdateSimple() = 0;
 	virtual bool HasPendingWork() = 0;
 	virtual void RemoveNullTypeManager( ResourceType_t nResourceType ) = 0;
