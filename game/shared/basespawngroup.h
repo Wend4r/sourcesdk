@@ -97,8 +97,8 @@ public:
 	uint16 m_bCreateNewSceneWorld : 1;
 	uint16 m_bManualCompletion : 1;
 	uint16 m_bSetActivePostLoad : 1;
-	// SpawnGroupDesc_t::m_bUnk
-	uint16 m_bUnk : 1;
+	// SpawnGroupDesc_t::m_bSaveEntities
+	uint16 m_bSaveEntities : 1;
 	uint16 m_bLevelTransition : 1;
 	uint16 m_bReadyToSpawnEntities : 1;
 	// SpawnGroupDesc_t::m_bUnk2

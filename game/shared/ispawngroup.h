@@ -58,8 +58,8 @@ public:
 	// Updated by the wait for the child spawn groups: the spawn group and its children reached
 	// SPAWN_GROUP_READY_TO_SPAWN_ENTITIES
 	virtual bool IsReadyToSpawnEntities() const = 0;
-	// SpawnGroupDesc_t::m_bUnk of the descriptor the spawn group was created with.
-	virtual bool HasUnk() const = 0;
+	// SpawnGroupDesc_t::m_bSaveEntities of the descriptor the spawn group was created with.
+	virtual bool ShouldSaveEntities() const = 0;
 	// Sets what GetDestructionTick returns on client spawn groups; empty on server ones.
 	virtual void SetDestructionTick(uint32 nTick) = 0;
 	virtual bool HasLevelTransition() const = 0;
