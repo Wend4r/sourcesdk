@@ -507,8 +507,10 @@ public:
 	virtual bool ShouldIgnoreButtonCommand( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
 	virtual void OnButtonCommandExecuted( CSplitScreenSlot nSlot, void *pButton, const CCommand &args ) = 0;
 
-	// Called with the new net channel of the connection
-	virtual void OnNetChannelCreated( INetChannel *pNetChannel, int nUnk, bool bUnk ) = 0;
+	// Called with the new net channel of the connection; the engine passes -1 as nUnk, which the client does not read.
+	// The HLTV client state passes true for bHLTV, and the client then removes its CBidirMsg_PredictionEvent handler from
+	// the channel instead of installing it
+	virtual void OnNetChannelCreated( INetChannel *pNetChannel, int nUnk, bool bHLTV ) = 0;
 	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
