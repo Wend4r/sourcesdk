@@ -186,13 +186,16 @@ struct NavPolyDef_t
 //-----------------------------------------------------------------------------
 // The shared vertices and polygons the areas of a mesh are made of. Every mesh embeds one.
 //-----------------------------------------------------------------------------
+// CNavGeometryManager::m_nVertexAttributeFlags: m_VertexAttributes holds one entry per vertex.
+#define NAV_GEOMETRY_VERTEX_ATTRIBUTES ( 1 << 0 )
+
 class CNavGeometryManager
 {
 public:
-	// Bit 0: m_VertexAttributes holds one entry per vertex. Read from the nav file; building
-	// from generated geometry ORs in the flags of the generator's output.
+	// NAV_GEOMETRY_* bits. Read from the nav file; building from generated geometry ORs in the
+	// flags of the generator's output.
 	uint32 m_nVertexAttributeFlags;
-	// Gravity of each vertex while bit 0 of m_nVertexAttributeFlags is set; a vertex added
+	// Gravity of each vertex while NAV_GEOMETRY_VERTEX_ATTRIBUTES is set; a vertex added
 	// without one, and every gap before it, gets the default. Rotated by movable mesh updates
 	// whose meshes have gravity follow their rotation.
 	CUtlVector< NavGravity_t > m_VertexAttributes;
@@ -254,6 +257,10 @@ typedef CNavConnectVector::Data_t NavConnectList_t;
 // The geometry of an area: one polygon of the mesh's geometry manager, its centre, normal,
 // bounds and attributes.
 //-----------------------------------------------------------------------------
+
+// CNavPoly::m_nPolyFlags: the polygon's corners are within 0.05 units of one height.
+#define NAV_POLY_FLAT ( 1 << 0 )
+
 abstract_class CNavPoly
 {
 public:
@@ -286,7 +293,7 @@ public:
 	const Vector &GetNormal() const { return m_vecNormal; }
 	const Vector &GetExtentMins() const { return m_vecExtentMins; }
 	const Vector &GetExtentMaxs() const { return m_vecExtentMaxs; }
-	bool IsFlat() const { return ( m_nPolyFlags & 1 ) != 0; }
+	bool IsFlat() const { return ( m_nPolyFlags & NAV_POLY_FLAT ) != 0; }
 
 	const CNavAttribute &GetAttributes() const { return m_AreaAttributes; }
 	bool HasAttributes( uint64 nMask ) const { return m_AreaAttributes.HasAny( nMask ); }
@@ -309,7 +316,7 @@ public:
 	uint8 m_nHullIdx;
 	// Set while the area is listed in its mesh's grid.
 	bool m_bIsInGrid;
-	// Bit 0: the polygon's corners are within 0.05 units of one height.
+	// NAV_POLY_* bits.
 	uint8 m_nPolyFlags;
 };
 

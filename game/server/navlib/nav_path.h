@@ -24,6 +24,9 @@ class CNavPath;
 class CPathOptimizer;
 struct NavTransition_t;
 
+// CPathSegment::m_nFlags: the step failed the cost check and must not be optimized away.
+#define PATH_SEGMENT_DONT_OPTIMIZE ( 1 << 0 )
+
 //-----------------------------------------------------------------------------
 // One step of a path: the area it is in and how it is entered from the previous one.
 //-----------------------------------------------------------------------------
@@ -62,7 +65,7 @@ struct CPathSegment
 	float m_flUnk20;
 	// FLT_MAX when the lengths are computed.
 	float m_flUnk24;
-	// Bit 0: the step failed the cost check and must not be optimized away.
+	// PATH_SEGMENT_* bits.
 	int m_nFlags;
 	// The start position for the first segment; the point the segment is entered at for the rest.
 	Vector vPos;

@@ -335,9 +335,9 @@ struct NavBatchUpdateAreaInGridOp_t
 class CNavMovableMeshCatalog
 {
 private:
-	// The areas of each movable mesh whose m_nAttributeDynamicFlags lack 4.
+	// The areas of each movable mesh that lack NAV_AREA_EXTERNALLY_CREATED.
 	CUtlHashtable< uint32, CUtlVector< CNavArea * > * > m_AreasByMesh;
-	// The areas of each movable mesh whose m_nAttributeDynamicFlags have 4.
+	// The areas of each movable mesh that have NAV_AREA_EXTERNALLY_CREATED.
 	CUtlHashtable< uint32, CUtlHashtable< CNavArea * > * > m_DynamicAreasByMesh;
 	// By area ID: the first and the second movable mesh the area was added for, -1 when unset.
 	CUtlHashtable< uint32, CUtlPair< uint32, uint32 > > m_MeshesByArea;
@@ -346,6 +346,9 @@ private:
 //-----------------------------------------------------------------------------
 // The areas of movable meshes (moving platforms) and their transforms. It has no virtuals.
 //-----------------------------------------------------------------------------
+// CNavMovableMeshesManager::MovableMeshContext_t::m_nFlags: movable_mesh_gravity_follows_rotation.
+#define NAV_MOVABLE_MESH_GRAVITY_FOLLOWS_ROTATION ( 1 << 3 )
+
 class CNavMovableMeshesManager
 {
 public:
@@ -356,7 +359,7 @@ public:
 		// The last transform received; while the mesh is in m_SuspendedMeshes only this one is
 		// updated.
 		matrix3x4_t m_PendingTransform;
-		// Bit 3: movable_mesh_gravity_follows_rotation.
+		// NAV_MOVABLE_MESH_* bits.
 		uint32 m_nFlags;
 	};
 
@@ -564,7 +567,7 @@ private:
 	// Storage of destroyed areas: CreateArea reuses the last one for the next area it builds
 	// on a polygon, and the destructor frees what is left.
 	CUtlVector< CNavArea * > m_RecycledAreas;
-	// Areas queued for removal. Flushing marks them with dynamic attribute bit 3, removes them
+	// Areas queued for removal. Flushing marks them with NAV_AREA_SHOULD_BE_DESTROYED, removes them
 	// from the mesh, destroys them and moves their storage to m_RecycledAreas.
 	CUtlVector< CNavArea * > m_PendingAreaRemovals;
 	// A vector only emptied and freed by the object's destructor; nothing adds to it.
