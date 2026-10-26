@@ -179,6 +179,19 @@ struct VPhysics2WorldUnk212_t
 #define PHYSICS_WORLD_CLIENT ( 1 << 0 ) // Body parts with VPhysXBodyPart_t::FLAG_ALWAYS_DYNAMIC_ON_CLIENT become dynamic
 #define PHYSICS_WORLD_SERVER ( 1 << 1 )
 
+// How the bodies of an aggregate instance move; the aggregate instance can also change it after its creation
+enum PhysicsAggregateMotionType_t
+{
+	// Keeps the current body types when changed; on creation it is the same as PHYSICS_AGGREGATE_MOTION_FROM_PARTS
+	PHYSICS_AGGREGATE_MOTION_UNCHANGED = 0,
+
+	// Static or keyframed by VPhysXBodyPart_t::FLAG_STATIC and FLAG_KINEMATIC of the body part, dynamic otherwise
+	PHYSICS_AGGREGATE_MOTION_FROM_PARTS,
+
+	PHYSICS_AGGREGATE_MOTION_STATIC,
+	PHYSICS_AGGREGATE_MOTION_KEYFRAMED,
+};
+
 abstract_class IVPhysics2World
 {
 public:
@@ -389,7 +402,7 @@ public:
 	virtual void GetActiveAggregateInstances( CUtlVector< IPhysAggregateInstance * > &aggregates ) = 0;
 	virtual IPhysAggregateInstance *GetAggregate( int nIndex ) = 0;
 	// The server passes the entity handle as nEntityId
-	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nEntityId, int nMotionType ) = 0;
+	virtual IPhysAggregateInstance *CreateAggregateInstance( const CPhysAggregateData *pData, const CTransform &transform, uint32 nEntityId, PhysicsAggregateMotionType_t nMotionType ) = 0;
 	virtual void DestroyAggregateInstance( IPhysAggregateInstance *pAggregate ) = 0;
 
 	// Creates a body of nBodyType (PhysicsBodyType_t) for each body of the aggregate whose name is a bone of the model; the velocities
