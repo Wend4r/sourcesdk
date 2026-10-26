@@ -15,6 +15,7 @@
 #include <mathlib/vector.h>
 #include <mathlib/fltx4.h>
 #include <resourcesystem/resourcehandle.h>
+#include <resourcesystem/resourcehandletypes.h>
 #include <tier0/utlstringtoken.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
@@ -63,6 +64,7 @@ enum RenderMultisampleType_t : uint8;
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 FORWARD_DECLARE_HANDLE( VertexBufferHandle_t );
 FORWARD_DECLARE_HANDLE( IndexBufferHandle_t );
+FORWARD_DECLARE_HANDLE( RenderBufferHandle_t );
 
 class CTextureBase;
 
@@ -141,8 +143,8 @@ public:
 
 	// Recompute the PVS data of the object from bounds or an oriented box in its world, unless PVS_NO_RECOMPUTE is set on it.
 	// Overloads: MSVC places the oriented box one first.
-	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const AABB_t &bounds, bool bUnk ) = 0;
-	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const OBB_t &bounds, bool bUnk ) = 0;
+	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const AABB_t &bounds, bool bIsStatic ) = 0;
+	virtual void RecomputePVSFromBounds( CSceneObject *pObject, const OBB_t &bounds, bool bIsStatic ) = 0;
 
 	// Makes the object visible from every cluster of its world.
 	virtual void ForceVisibleEverywhere( CSceneObject *pObject ) = 0;
@@ -165,7 +167,8 @@ public:
 	virtual IndexBufferHandle_t GetWellKnownIndexBuffer( int nBuffer ) = 0;
 	virtual void *GetWellKnownInputLayout( int nLayout, uint8 nVariation ) = 0;
 	virtual RenderInputLayoutField_t *GetWellKnownInputLayoutFields( int nLayout, int *pFieldCount ) = 0;
-	virtual void *unk050( int nIndex ) = 0;
+	// Buffer 0 is the "ScrambledHaltonPermutations" buffer.
+	virtual RenderBufferHandle_t GetWellKnownBuffer( int nBuffer ) = 0;
 	virtual HRenderTexture GetWellKnownTexture( int nTexture ) = 0;
 	virtual IMaterial2 *GetWellKnownMaterial( int nMaterial ) = 0;
 	virtual HMaterialWeak GetWellKnownMaterialHandle( int nMaterial ) = 0;
@@ -189,9 +192,9 @@ public:
 	virtual ISceneViewDebugOverlays *CreateSceneViewDebugOverlayList( int nTimingType, const char *pszName ) = 0;
 	virtual void DestroySceneViewDebugOverlayList( ISceneViewDebugOverlays *pOverlays ) = 0;
 
-	// Creates and destroys debug overlay lists kept in a second list.
-	virtual ISceneViewDebugOverlays *unk069() = 0;
-	virtual void unk070( ISceneViewDebugOverlays *pOverlays ) = 0;
+	// Overlay lists without a "SceneViewDebugOverlays World", kept in a second list that no view renders.
+	virtual ISceneViewDebugOverlays *CreateWorldlessSceneViewDebugOverlayList() = 0;
+	virtual void DestroyWorldlessSceneViewDebugOverlayList( ISceneViewDebugOverlays *pOverlays ) = 0;
 
 	virtual void unk071( bool bUnk ) = 0;
 
@@ -203,9 +206,10 @@ public:
 	virtual void FrameUpdate( bool bAdvanceGPUProfilerFrame ) = 0;
 	virtual void AllocateScratchRenderTargets( void *p ) = 0;
 
-	virtual void ComputePipelineRenderTargetInfo( SwapChainHandle_t hSwapChain, bool bUnk, PipelineRenderTargetInfo_t *pInfo ) = 0;
+	// bUseLargestMonitorSize takes the size from IRenderDevice::GetLargestMonitorDimensions instead of the swap chain.
+	virtual void ComputePipelineRenderTargetInfo( SwapChainHandle_t hSwapChain, bool bUseLargestMonitorSize, PipelineRenderTargetInfo_t *pInfo ) = 0;
 
-	virtual void ComputePipelineRenderTargetInfo( int nWidth, int nHeight, RenderMultisampleType_t nMultisampleType, bool bUnk, PipelineRenderTargetInfo_t *pInfo ) = 0;
+	virtual void ComputePipelineRenderTargetInfo( int nWidth, int nHeight, RenderMultisampleType_t nMultisampleType, bool bUseLargestMonitorSize, PipelineRenderTargetInfo_t *pInfo ) = 0;
 	virtual void SetMainSwapChain( SwapChainHandle_t hSwapChain ) = 0;
 	virtual void SetCanAllocateScratchRenderTargetsOnDemand( bool bCanAllocate ) = 0;
 	virtual void *GetSceneSystemStats() = 0;
@@ -215,18 +219,22 @@ public:
 	virtual SceneSystemPerFrameStats_t &GetPerFrameStats() = 0;
 	virtual uint32 GetFinishRenderingViewsCounter() const = 0;
 	virtual uint32 GetFrameUpdateCounter() const = 0;
-	virtual void BindTransformTextureAndInstanceIDBuffer( IRenderContext *pRenderContext, int nVBSlot, int nTransformSlotIndex, bool bUnk ) = 0;
+	// bSingleInstanceID binds the instance ID buffer with stride 0, so every instance reads the ID at nTransformSlotIndex.
+	virtual void BindTransformTextureAndInstanceIDBuffer( IRenderContext *pRenderContext, int nVBSlot, int nTransformSlotIndex, bool bSingleInstanceID ) = 0;
 	// Binds the transform buffer at offset 0.
 	virtual void BindTransformBuffer( IRenderContext *pRenderContext, int nVBSlot ) = 0;
 
 	virtual void AllocateFrameScopedTransforms( int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
 
-	virtual void AllocateFrameScopedTransforms( int nUnk, int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
+	// Also allocates nInstanceCount 32 byte instance records that point at the transforms (one each when the counts match, else all at
+	// the first); pFirstIndex receives the index of the first instance record.
+	virtual void AllocateFrameScopedTransforms( int nInstanceCount, int nCount, int *pFirstIndex, void **ppTransforms ) = 0;
 	virtual void *AllocateFrameScopedMeshlets( int nCount, int *pFirstIndex ) = 0;
 	virtual void *AllocateFrameScopedParticleData( int nCount, int *pFirstIndex ) = 0;
-	// Returns the id of a 32 byte key, adding it when it is missing.
-	virtual int unk093( const uint32 *pKey ) = 0;
-	virtual ISceneView *CreateTemplateView( const char *pszName, ISceneWorld *pWorld, const uint32 *pUnk ) = 0;
+	// Returns the index of a 32 byte vertex layout key built from the input layout fields of a mesh, adding it when it is missing;
+	// the table is uploaded to a GPU buffer when it changes.
+	virtual int FindOrAddVertexLayoutIndex( const uint32 *pVertexLayoutKey ) = 0;
+	virtual ISceneView *CreateTemplateView( const char *pszName, ISceneWorld *pWorld, const uint32 *pVis ) = 0;
 	virtual CViewId CreateViewId( int nPlayer ) = 0;
 	virtual void DeleteSceneObjectAtFrameEnd( CSceneObject *pObject ) = 0;
 	virtual void GetAllActiveSceneWorlds( CUtlVector< ISceneWorld * > &worlds ) = 0;
@@ -247,13 +255,14 @@ public:
 	virtual void QueueSceneObjectUpdateJob( std::function< void() > &&job ) = 0;
 	virtual void ExecuteQueuedSceneObjectUpdateJobs() = 0;
 	virtual void InstallMaterialDependentSceneObjectUpdater( const std::function< void( CSceneObject * ) > &updater ) = 0;
-	// Add and remove an object whose first virtual is called when it is added.
-	virtual void unk110( void *pUnk ) = 0;
-	virtual void unk111( void *pUnk ) = 0;
+	// Add and remove a listener of the global per-frame descriptor set: its first virtual runs once the set exists (at once when it
+	// already does), its second after each update of the set's bindings.
+	virtual void AddGlobalDescriptorSetListener( void *pListener ) = 0;
+	virtual void RemoveGlobalDescriptorSetListener( void *pListener ) = 0;
 	virtual void SetIgnoreAlphaFade( bool bIgnoreAlphaFade ) = 0;
 	virtual void SetupPerObjectLighting( CRenderAttributes &renderAttributes, CSceneObject *pSceneObject, const ISceneLayer *pSceneLayerInterface, SetupPerObjectLighting_t flags ) = 0;
 
-	// Destroys every sparse shadow tree, then loads them again when nUnk is positive.
+	// Destroys every sparse shadow tree, then loads them again when nCount is positive.
 	virtual void ReloadSparseShadowTrees( int nCount ) = 0;
 
 	// Destroys every sparse shadow tree.
@@ -265,8 +274,8 @@ public:
 	virtual void CreateSparseShadowTree( void *pUnk, int nIndex ) = 0;
 	virtual void DestroySparseShadowTree( int nIndex ) = 0;
 
-	// Finds the object named by a string attribute of pObject among the objects of the worlds of the view.
-	virtual CSceneObject *unk121( ISceneView *pView, CSceneObject *pObject ) = 0;
+	// Finds the sky box object named by a string attribute of pObject among the sky box objects of the worlds of the view.
+	virtual CSceneObject *FindSkyBoxSceneObject( ISceneView *pView, CSceneObject *pObject ) = 0;
 
 	// Sets the per class settings byte that GetObjectSettings returns.
 	virtual void SetObjectClassSettings( uint8 nClass, uint8 nSettings ) = 0;
@@ -276,10 +285,12 @@ public:
 	virtual void SceneObject_AttachExtraData( CSceneObject *pObject ) = 0;
 	virtual void SceneObject_AttachLightingCache( CSceneObject *pObject ) = 0;
 	virtual void SceneObject_UpdateFlagsBasedOnMaterial( CSceneObject *pObject ) = 0;
-	// Stores a 76 byte record in the extra data of the object (interned by hash).
-	virtual void unk128( CSceneObject *pObject, const void *pData ) = 0;
-	// Expands the record stored by unk128 into pOut and returns pOut, or NULL when the object has none.
-	virtual void *unk129( CSceneObject *pObject, void *pOut, uint64 nUnk ) = 0;
+	// Stores a 76 byte stencil description in the extra data of the object (interned by hash): two lists of eight stencil bit name
+	// tokens, then the stencil operations and an optional reference value.
+	virtual void SceneObject_SetStencilState( CSceneObject *pObject, const void *pStencilDesc ) = 0;
+	// Expands that description into the 8 byte render stencil state, allocating the named stencil bits in the view; returns pStencilState,
+	// or NULL when the object has none.
+	virtual void *SceneObject_GetStencilState( CSceneObject *pObject, void *pStencilState, ISceneView *pView ) = 0;
 
 	// Holds a strong reference to the material; the s&box declaration adds a layer attribute token and value.
 	virtual void SceneObject_SetMaterialOverride( CSceneObject *pObj, HMaterialWeak hOverride ) = 0;
@@ -299,11 +310,13 @@ public:
 	virtual float GetCurrentRenderTime() = 0;
 	virtual void AdvanceNonRenderedFrame() = 0;
 	virtual uint8 GetObjectSettings( const CSceneObject *pObject ) const = 0;
-	// Matrices selected by a scene system flag from a view description.
-	virtual VMatrix unk144( const void *pUnk, Vector *pOut ) = 0;
-	virtual VMatrix unk145( const void *pUnk ) = 0;
-	// Fills the per-view constants from the view and the previous view description (matrices through unk144, viewport and clip values).
-	virtual void Unk_ComputeViewConstants( void *p ) = 0;
+	// Matrices of a view frustum, from one of two matrix sets chosen by a scene system flag. Unless sc_force_translation_in_projection
+	// is set, the view projection matrix takes the translation of the view matrix and pCameraOffset receives the negated camera position.
+	virtual VMatrix GetViewProjectionMatrix( const CFrustum *pFrustum, Vector *pCameraOffset ) = 0;
+	virtual VMatrix GetViewMatrix( const CFrustum *pFrustum ) = 0;
+	// Fills the per-view constants from the view and the previous view frustum (matrices through GetViewProjectionMatrix, viewport and
+	// clip values); the parameters are not recovered.
+	virtual void ComputeViewConstants( void *p ) = 0;
 
 	// Gates ISceneUtils::CreateVolumetricFog.
 	virtual bool VolumetricFogEnabled() = 0;
@@ -357,18 +370,24 @@ public:
 	virtual int GetImGuiInputState( int *pMouseCursor ) = 0;
 	virtual IRayTraceSceneWorld *CreateRayTraceWorld( const char *pszDebugName, int nMaxRayTypes, bool bUnk ) = 0;
 	virtual void DestroyRayTraceWorld( IRayTraceSceneWorld *pWorld ) = 0;
-	virtual void unk175( const void *pUnk ) = 0;
-	virtual void unk176( void *pUnk ) = 0;
-	virtual void unk177( const void *pUnk ) = 0;
-	// Distance field scene.
-	virtual int unk178( void *pUnk ) = 0;
-	virtual void unk179() = 0;
-	virtual void unk180( void *pUnk ) = 0;
+	// Queues a 192 byte BLAS geometry update keyed by a 64 bit id, merged with a pending update of the same id.
+	virtual void QueueBLASUpdate( const void *pUpdate ) = 0;
+	// Compacts the BLASes of the pending scene objects that IRenderDevice::IsReadyToCompact reports ready, and drops the handled objects.
+	virtual void CompactPendingBLASes( IRenderContext *pRenderContext ) = 0;
+	// Queues a 56 byte request for the "ProceduralGeometry Updates" pass.
+	virtual void QueueProceduralGeometryUpdate( const void *pRequest ) = 0;
+	// Distance field scene, keyed by model. Adding a model that is present adds a reference; each returns the model's version, -1 without
+	// a distance field scene.
+	virtual int AddModelToDistanceFieldScene( CWeakHandle< InfoForResourceTypeCModel > hModel ) = 0;
+	virtual void ReleaseModelFromDistanceFieldScene( CWeakHandle< InfoForResourceTypeCModel > hModel ) = 0;
+	// Rebuilds the entry of a model that is present.
+	virtual void UpdateModelInDistanceFieldScene( CWeakHandle< InfoForResourceTypeCModel > hModel ) = 0;
 	virtual int unk181( int nIndex ) = 0;
 	virtual void unk182( int nIndex, int *pOut1, int *pOut2 ) = 0;
 	virtual bool unk183( int nIndex ) = 0;
 	virtual bool unk184( int nIndex ) = 0;
-	virtual int unk185( uint64 nKey, int nUnk, CUtlVector< int > &out ) = 0;
+	// Copies the distance field instance indices of a model when its version differs from nKnownVersion; returns the version.
+	virtual int GetModelDistanceFieldInstances( CWeakHandle< InfoForResourceTypeCModel > hModel, int nKnownVersion, CUtlVector< int > &instances ) = 0;
 	virtual CSceneObject *CreateDistanceFieldInstanceSceneObject( uint64 nFlags, uint64 nTypeFlags, ISceneWorld *pWorld ) = 0;
 	// Returns the distance field scene.
 	virtual void *GetDistanceFieldScene() = 0;
@@ -376,7 +395,8 @@ public:
 	// Resizes the hair simulation buffers.
 	virtual void ResizeHairBuffers( int nCount ) = 0;
 	virtual void unk189( void *pUnk ) = 0;
-	virtual void *unk190( int nIndex ) = 0;
+	// The "vertex cache" buffers of the frame ("Resizing Vertex Cache Buffer").
+	virtual void *GetVertexCacheBuffer( int nIndex ) = 0;
 	virtual void AcquireImGuiLock() = 0;
 	// bCompleteDeferredRendering finishes the rendering that FinishRenderingViews left pending because this thread held the lock
 	virtual void ReleaseImGuiLock( bool bCompleteDeferredRendering ) = 0;
@@ -384,7 +404,8 @@ public:
 	virtual bool IsImGuiLockedByCurrentThread() = 0;
 	// The function runs in WaitForRenderingToComplete.
 	virtual void QueueRenderingCompleteJob( std::function< void() > &&fn ) = 0;
-	virtual int unk196() = 0;
+	// Incremented by each AllocateScratchRenderTargets call.
+	virtual int GetScratchRenderTargetAllocationCount() = 0;
 	virtual void unk197( ISceneView *pView ) = 0;
 };
 
