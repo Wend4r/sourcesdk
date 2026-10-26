@@ -342,7 +342,14 @@ public:
 	CUtlLinkedList< CNetworkServerSpawnGroupCreatePrerequisites*> m_SpawnGroupPrerequisites;
 	CUtlMap< SpawnGroupHandle_t, CNetworkServerSpawnGroup*  > m_SpawnGroups;
 
-	CUtlVector<uint64> m_QueuedSpawnGroupUnloads; // SpawnGroupUnloadEntry_t (handle + flags)
+	struct QueuedSpawnGroupUnload_t
+	{
+		SpawnGroupHandle_t m_hSpawnGroup;
+		ESpawnGroupUnloadOption m_nOption;
+	};
+
+	// AsyncUnloadSpawnGroup calls made while a CNetworkGameServerSpawnGroupAutoLock is held
+	CUtlVector< QueuedSpawnGroupUnload_t > m_QueuedSpawnGroupUnloads;
 	int m_bQueueSpawnGroupUnloads;
 	// Spawn group created for the resources of the just in time manifests, unloaded when their count drops to 0
 	SpawnGroupHandle_t m_hJustInTimeResourceSpawnGroup;
