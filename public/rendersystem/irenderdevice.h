@@ -582,7 +582,7 @@ public:
 	virtual bool InitDevice( int nAdapter, int nFlags, int nDXLevel ) = 0;
 	virtual void ShutdownDevice() = 0;
 	virtual bool IsDeactivated() = 0;
-	virtual bool IsMultisampleTypeSupported( int nFormat, RenderMultisampleType_t nType ) = 0;
+	virtual bool IsMultisampleTypeSupported( ImageFormat nFormat, RenderMultisampleType_t nType ) = 0;
 };
 
 #endif // IRENDERDEVICE_H
