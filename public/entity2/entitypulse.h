@@ -170,9 +170,29 @@ struct PulseMethodArgList_t
 	const PulseMethodArg_t* m_pElements;
 };
 
+// Hosts a binding needs: bit N asks for m_pHosts[ N ] of the PulseHostTable_t passed to its invoke function
+enum PulseBindingCaps_t : uint32
+{
+	PULSE_BINDING_CAP_NONE				= 0,
+	// IPulseHost_GameEntity of the graph instance
+	PULSE_BINDING_CAP_GAME_ENTITY		= (1 << 0),
+	// IPulseHost_Input of the cursor
+	PULSE_BINDING_CAP_ENTITY_IO			= (1 << 1),
+	// IPulseHost_Cursor
+	PULSE_BINDING_CAP_CURSOR			= (1 << 2),
+	// IPulseHost_YieldingCursor
+	PULSE_BINDING_CAP_YIELDS			= (1 << 3),
+	// IPulseHost_BaseObservable of the cursor
+	PULSE_BINDING_CAP_OBSERVABLE_PURE	= (1 << 5),
+	// IPulseHost_EntityObservable of the cursor
+	PULSE_BINDING_CAP_OBSERVABLE_TARGET	= (1 << 6),
+};
+
+// Hosts of the graph instance and the cursor a binding is invoked for, taken from the slots of their IPulseHost_Unknown
 struct PulseHostTable_t
 {
-	uint32 m_nMask;
+	// Bits of the non-null m_pHosts entries
+	PulseBindingCaps_t m_nMask;
 	void* m_pHosts[7];
 };
 
@@ -197,18 +217,9 @@ struct PulseBindingDesc_t
 	bool m_bIsLibraryMethod;
 	bool m_bIsStep;
 	bool m_bIsTargetMethod;
-	uint32 m_nRequiredCaps;
+	PulseBindingCaps_t m_nRequiredCaps;
 	bool m_bDynamicArgs;
 	InvokeFunc_t m_pfnInvoke;
-};
-
-enum PulseBindingCaps_t : uint32
-{
-	PULSE_BINDING_CAP_NONE				= 0,
-	PULSE_BINDING_CAP_ENTITY_IO			= (1 << 1),
-	PULSE_BINDING_CAP_YIELDS			= (1 << 3),
-	PULSE_BINDING_CAP_OBSERVABLE_PURE	= (1 << 5),
-	PULSE_BINDING_CAP_OBSERVABLE_TARGET	= (1 << 6),
 };
 
 struct PulseLibraryRegistration_t
