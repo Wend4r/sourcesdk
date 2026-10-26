@@ -35,6 +35,8 @@ enum CollisionFunctionMask_t
 	FCOLLISION_FUNC_ENABLE_SELF_COLLISIONS 	= (1<<3),
 	FCOLLISION_FUNC_IGNORE_FOR_HITBOX_TEST 	= (1<<4),
 	FCOLLISION_FUNC_ENABLE_TOUCH_PERSISTS 	= (1<<5),
+	FCOLLISION_FUNC_ENABLE_COLLIDE_WITH_HIERARCHY 	= (1<<6),	// collides with shapes of the same hierarchy id even without self collisions (on either side)
+	FCOLLISION_FUNC_DISABLE_COLLIDE_OUTSIDE_HIERARCHY 	= (1<<7),	// no collision with shapes of another hierarchy id (on either side)
 };
 
 // these are on by default
@@ -439,6 +441,8 @@ public:
 	bool IsSelfCollisionsEnabled() const					{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_SELF_COLLISIONS ) != 0; }
 	bool ShouldIgnoreForHitboxTest() const					{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_IGNORE_FOR_HITBOX_TEST ) != 0; }
 	bool IsTouchPersistsEnabled() const						{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_TOUCH_PERSISTS ) != 0; }
+	bool IsCollideWithHierarchyEnabled() const				{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_ENABLE_COLLIDE_WITH_HIERARCHY ) != 0; }
+	bool IsCollideOutsideHierarchyDisabled() const			{ return ( m_nCollisionFunctionMask & FCOLLISION_FUNC_DISABLE_COLLIDE_OUTSIDE_HIERARCHY ) != 0; }
 
 	bool HasInteractsAsLayer( int nLayerIndex ) const		{ return ( m_nInteractsAs & ( 1ull << nLayerIndex ) ) != 0; }
 	bool HasInteractsWithLayer( int nLayerIndex ) const		{ return ( m_nInteractsWith & ( 1ull << nLayerIndex ) ) != 0; }
