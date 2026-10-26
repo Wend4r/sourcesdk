@@ -288,13 +288,23 @@ struct OpacityMicromapBuildDesc_t
 	uint32 m_nScratchOffset;
 };
 
+// nStateFlags of IRenderContext::ResetState: the shader bits unbind that stage's shader, the state bits
+// restore the device's default state
+#define RENDER_RESET_PIXEL_SHADER ( 1 << 0 )
+#define RENDER_RESET_VERTEX_SHADER ( 1 << 1 )
+#define RENDER_RESET_GEOMETRY_SHADER ( 1 << 2 )
+#define RENDER_RESET_COMPUTE_SHADER ( 1 << 5 )
+#define RENDER_RESET_RASTERIZER_STATE ( 1 << 7 )
+#define RENDER_RESET_DEPTH_STENCIL_STATE ( 1 << 8 )
+#define RENDER_RESET_BLEND_STATE ( 1 << 9 )
+#define RENDER_RESET_MESH_SHADER ( 1 << 16 )
+
 // Created by IRenderDevice::CreateRenderContext. Slots whose purpose is not known yet are
 // placeholders named after their vtable index
 abstract_class IRenderContext
 {
 public:
-	// Resets the states selected by nStateFlags to their defaults: 1, 2, 4, 0x20 and 0x10000 unbind shader stages,
-	// 0x80 the rasterizer state, 0x100 the depth-stencil state and 0x200 the blend state
+	// Resets the states selected by the RENDER_RESET_* bits of nStateFlags
 	virtual void ResetState( uint32 nStateFlags ) = 0;
 	virtual void SetRenderTargets( const RenderTargetSet_t &renderTargets ) = 0;
 	// Resolves (or copies, when the sample counts match) the bound depth-stencil target into hDstTexture
