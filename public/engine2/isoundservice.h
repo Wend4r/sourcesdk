@@ -21,10 +21,18 @@ class IVoiceTarget;
 // One block of encoded voice data (the recording side fills it for every
 // group of up to four 10 ms Opus frames)
 //-----------------------------------------------------------------------------
+// Encoding of a block of voice data, other values are rejected by PlayNetworkedVoice
+enum VoiceRecordingFormat_t
+{
+	// Steam voice data, decompressed through ISteamUser
+	VOICE_RECORDING_FORMAT_STEAM = 0,
+	// Up to four Opus frames
+	VOICE_RECORDING_FORMAT_OPUS = 1,
+};
+
 struct VoiceRecordingDescription_t
 {
-	// 0: Steam voice data (decompressed through ISteamUser), 1: up to four Opus frames
-	int m_nFormat;
+	VoiceRecordingFormat_t m_nFormat;
 	int m_nSampleRate;
 	int m_nSequence;
 	int m_nOffset;
