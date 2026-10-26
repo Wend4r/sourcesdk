@@ -389,11 +389,17 @@ struct PhysicsAggregateDef_t
 	CUtlVector< PhysicsAggregateJointDef_t > m_NullJoints;
 };
 
-// A feature of a hull: a vertex, an edge or a face and its index
+enum RnHullFeatureType_t
+{
+	RN_HULL_FEATURE_VERTEX = 0,
+	RN_HULL_FEATURE_EDGE,
+	RN_HULL_FEATURE_FACE,
+};
+
+// A feature of a hull and its index
 struct RnHullFeature_t
 {
-	// 0 vertex, 1 edge, 2 face
-	int m_nType;
+	RnHullFeatureType_t m_nType;
 	int m_nIndex;
 };
 
