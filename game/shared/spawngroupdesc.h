@@ -31,7 +31,7 @@ public:
 	    m_bUnk(true),
 	    m_bLevelTransition(false),
 	    m_bUnk2(false),
-	    m_bUnk3(false)
+	    m_bHideBaseLayer(false)
 	{
 		SetIdentityMatrix(m_vecWorldOffset);
 	}
@@ -64,8 +64,8 @@ public:
 	// The spawn group passes it to its entity spawner when it loads the entities; returned by
 	// ISpawnGroup::GetUnk2AndLastFlagBits.
 	bool m_bUnk2;
-	// Passed on in the world load request the spawn group makes.
-	bool m_bUnk3;
+	// CreateWorldInfo_t::m_bHideBaseLayer of the world load request the spawn group makes.
+	bool m_bHideBaseLayer;
 };
 
 struct SpawnGroupDescReceive_t
