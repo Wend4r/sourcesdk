@@ -175,11 +175,6 @@ enum ResourceLoadType_t : int
 	RESOURCE_LOAD_TYPE_RELOAD,
 };
 
-enum ResourceStreamingType_t : int
-{
-	RESOURCE_STREAMING_TYPE_NONE = 0,
-};
-
 // Returned by IResourceTypeManager::AsyncProcessData
 abstract_class IAsyncProcessedDataResult
 {
