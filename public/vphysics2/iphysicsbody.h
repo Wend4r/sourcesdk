@@ -289,7 +289,11 @@ public:
 	virtual void SetBuoyancyScale( float flScale ) = 0;
 	virtual float GetBuoyancyScale() const = 0;
 
-	virtual float unk104( const void *pParams, float flUnknown1, float flUnknown2 ) = 0;
+	// Applies the buoyancy and the drag of a fluid to the body and returns the submerged volume. pFluid holds the collision mask of
+	// the fluid shapes at +8, the fluid type token, the density, the neutrally buoyant gravity, linear and angular damping and flag
+	// at +16 to +36, the fluid body at +88, a surface plane flag, normal and distance at +96 to +112 and a flow callback at +120.
+	// The Linux implementation does not read the floats
+	virtual float ApplyFluidForces( const void *pFluid, float flUnused1, float flUnused2 ) = 0;
 
 	// True while the joint list GetFirstJoint walks is not empty, and while the CRnLink list of the body is not empty
 	virtual bool HasJoints() const = 0;
@@ -327,7 +331,8 @@ public:
 	// False without a shadow controller
 	virtual bool GetShadowPosition( Vector *pPosition, QAngle *pAngles ) = 0;
 
-	virtual CUtlVector< void * > *unk124() = 0;
+	// A vector the body owns for the caller; the library never reads its elements and frees it with the body
+	virtual CUtlVector< void * > *GetUserVector() = 0;
 
 	// Turning it off on a dynamic body wakes the body
 	virtual void EnableSleep( bool bEnable ) = 0;
@@ -361,13 +366,14 @@ public:
 	virtual void SetGameIndex( uint16 nIndex ) = 0;
 	virtual uint16 GetGameIndex() const = 0;
 
-	virtual void unk146( void *pUnknown ) = 0;
-	virtual void *unk147() const = 0;
+	// A pointer stored in the CRnBody for the caller
+	virtual void SetUserPointer( void *pPointer ) = 0;
+	virtual void *GetUserPointer() const = 0;
 
 	virtual const char *GetDebugName() const = 0;
 
-	// Empty in release builds
-	virtual void unk149() = 0;
+	// The debug name of the CRnBody; release builds ignore it
+	virtual void SetDebugName( const char *pszName ) = 0;
 
 	virtual ~IPhysicsBody() {}
 };
@@ -379,8 +385,8 @@ public:
 	void *m_pGameData;
 	IPhysicsShadowController *m_pShadowController;
 
-	// Returned by unk124 and freed by the destructor; no code reads its elements
-	CUtlVector< void * > m_unk020;
+	// Returned by GetUserVector and freed by the destructor; no code reads its elements
+	CUtlVector< void * > m_UserVector;
 };
 
 // The box with the mass and the principal inertia of a body
@@ -478,10 +484,12 @@ public:
 	// Inverse inertia in body space, zero unless the body is dynamic
 	virtual Matrix3x3 GetLocalInvInertia() const = 0;
 
-	virtual void unk030( bool bEnable ) = 0;
+	// Fluids apply the physical buoyancy of the displaced volume to the body even when they are neutrally buoyant, and skip their
+	// neutrally buoyant damping; the server sets it for func_physbox
+	virtual void SetIgnoreNeutralBuoyancy( bool bIgnore ) = 0;
 
-	// True when a contact of the body, or an entry of a second list of the body, passes a test of the flags
-	virtual bool unk031( uint32 nFlags ) = 0;
+	// True when a joint of the body (IPhysicsJoint::IsConstrained) or one of its links locks the degrees of freedom nFlags selects
+	virtual bool IsConstrainedByJoints( uint32 nFlags ) = 0;
 
 	// Writes a one line description of the body and its shapes
 	virtual void Describe( CUtlString &description ) const = 0;
@@ -492,11 +500,14 @@ public:
 
 	virtual void UpdateShapeSceneObjects() = 0;
 
-	// Call methods of the debug shapes of the shapes: IFnPhysicsShape::unk026, unk030 and SetDebugShapeAlphaFactor
-	virtual void unk036( const Vector4D &vColor ) = 0;
-	virtual void unk037( float flValue ) = 0;
+	// Call IFnPhysicsShape::SetDebugShapeColor, SetDebugShapeOpacity and SetDebugShapeAlphaFactor on the shapes of the body
+	virtual void SetDebugShapeColor( const Vector4D &vColor ) = 0;
+	virtual void SetDebugShapeOpacity( float flOpacity ) = 0;
 	virtual void SetDebugShapeAlphaFactor( int nIndex, float flValue ) = 0;
-	virtual void unk039( bool bUnknown, float flUnknown ) = 0;
+
+	// Creates or updates the debug shapes of the shapes that pass the debug draw filter when bEnabled is set, otherwise destroys
+	// them; IVPhysics2World::UpdateDebugShapes calls it for every body. The Linux implementation does not read the float
+	virtual void UpdateDebugShapes( bool bEnabled, float flUnused ) = 0;
 
 	virtual const char *GetDebugName() const = 0;
 
