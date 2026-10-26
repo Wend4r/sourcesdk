@@ -314,6 +314,20 @@ public:
 	noschema bool m_bPolymorphicMetadataDirty; // True at construction
 };
 
+// The entity a network update describes, read by CreateClientSideNetworkedEntity on the client
+struct ClientSideNetworkedEntityDesc_t
+{
+	// Its CEntityClass names the class of the entity to create
+	ClientClass *m_pClientClass;
+	int32 m_nEntityIndex;
+	int32 m_nSerialNumber;
+	// The active spawn group for -1, unless the class overrides it
+	SpawnGroupHandle_t m_hSpawnGroup;
+	// The slot may still hold an entity: queued operations are executed and that entity is deleted
+	// before the new one is created
+	bool m_bReusesSlot;
+};
+
 class IEntity2Networkables
 {
 public:
@@ -321,9 +335,9 @@ public:
 
 	virtual bool GetEntity2Networkable( CEntityIndex nEntryIndex, Entity2Networkable_t *info ) = 0;
 	virtual CUtlMap< int, Entity2Networkable_t > &GetEntity2Networkables( void ) const = 0;
-	// Client only: creates the entity a network update describes and returns its networkable;
-	// the type of the description is not reconstructed. Empty on the server.
-	virtual bool CreateClientSideNetworkedEntity( const void *pUnk, Entity2Networkable_t *pNetworkable ) = 0;
+	// Client only: creates the entity a network update describes and returns its networkable.
+	// Empty on the server.
+	virtual bool CreateClientSideNetworkedEntity( const ClientSideNetworkedEntityDesc_t *pDesc, Entity2Networkable_t *pNetworkable ) = 0;
 	// Client only: queues the networkable's entity for destruction, or for deferred deletion when
 	// bDeferred is set. Empty on the server.
 	virtual void DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
