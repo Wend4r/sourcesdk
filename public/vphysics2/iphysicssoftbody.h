@@ -25,10 +25,63 @@ class CFeModel;
 class CFeModelReplaceContext;
 class CUtlBuffer;
 class CBufferString;
+class IPhysicsShape;
+class KeyValues3;
 
 struct RnCollisionAttr_t;
 struct SetNodePositionsParams_t;
 struct RnToolQueryHit_t;
+
+// The parameter block of IPhysicsSoftbody::Simulate
+struct PhysicsSoftbodySimulateParams_t
+{
+	// The motion of the frame the softbody moves with over the step: rotation pivot, translation and rotation
+	VectorAligned m_vPivot;
+	VectorAligned m_vTranslation;
+	QuaternionAligned m_qRotation;
+
+	// Velocity of the frame; the nodes are corrected by the angular velocity about m_vPivot and the linear velocity
+	VectorAligned m_vLinearVelocity;
+	VectorAligned m_vAngularVelocity;
+
+	// Optional previous and current reference transforms (uniform scale in the w of the positions); with m_flReferenceMotionScale
+	// above 0 the root motion they describe, scaled by it, is taken out of the frame motion
+	const CTransform *m_pReferenceTransforms;
+	float m_flReferenceMotionScale;
+
+	float m_flSubstepTime;
+	int m_nSubstepCount;
+};
+
+// The report IPhysicsSoftbody::SetCollisionReport installs
+struct PhysicsSoftbodyCollisionReport_t
+{
+	// Cleared at the start of every step; nothing in the library increments it
+	int m_nCount;
+	uint8 m_pad004[ 20 ];
+
+	// The world shape the nodes touched last, cleared when installed
+	IPhysicsShape *m_pLastTouchedShape;
+
+	// The ctrl count of the model, stored when installed
+	uint16 m_nCtrlCount;
+};
+
+// A sample of an effect of type 1: the position of a particle at one of its trail points and its packed RGBA color (the library
+// sets alpha 32 when it spawns the particle)
+struct PhysicsSoftbodyEffectSample_t
+{
+	Vector m_vPosition;
+	uint32 m_nColor;
+};
+
+// Filled by GetEffectSamples: 512 particles with 4 trail samples each
+struct PhysicsSoftbodyEffectSamples_t
+{
+	PhysicsSoftbodyEffectSample_t *m_pSamples;
+	int m_nParticleCount;
+	int m_nSamplesPerParticle;
+};
 
 // Nodes are the simulated points of the finite element model, ctrls (particles) are the transforms bound to model bones;
 // the transform array holds the animated ctrl transforms followed by the simulated ones
@@ -110,8 +163,9 @@ public:
 	virtual void SetThreadStretch( float flStretch ) = 0;
 	virtual float GetThreadStretch() const = 0;
 
-	// Starts the effect of the model with this name hash after stopping the ones it lists in StopEffects; false when the model has none
-	virtual bool StartEffect( uint32 nEffectNameHash, void *pUnknown ) = 0;
+	// Starts the effect of the model with this name hash after stopping the ones it lists in StopEffects; false when the model has none.
+	// The effect reads its parameters from pOverrides first and falls back to the definition in the model
+	virtual bool StartEffect( uint32 nEffectNameHash, const KeyValues3 *pOverrides ) = 0;
 	virtual void *FindEffect( int nEffectId ) = 0;
 	virtual void RemoveEffect( int nEffectId ) = 0;
 
@@ -173,9 +227,7 @@ public:
 	// Always 0
 	virtual uint GetContactCount() const = 0;
 
-	// A report the step fills: it clears the int at +0 every step and stores the world shape the nodes touched last at +24; setting
-	// it also stores the ctrl count at +32
-	virtual void SetCollisionReport( void *pReport ) = 0;
+	virtual void SetCollisionReport( PhysicsSoftbodyCollisionReport_t *pReport ) = 0;
 
 	// Sets or clears one bit of a mask that suppresses collision with the world while not empty
 	virtual void DisableWorldCollision( int nBit, bool bClear ) = 0;
@@ -211,8 +263,8 @@ public:
 	// The root transforms of the last two steps (GetRootTransform indices 2 and 3)
 	virtual CTransform *GetLastStepTransforms() = 0;
 
-	// Steps the softbody with a parameter block: the time step at +88, the substep time at +92 and the substep count at +96
-	virtual void Simulate( const void *pParams ) = 0;
+	// Runs m_nSubstepCount substeps of m_flSubstepTime
+	virtual void Simulate( const PhysicsSoftbodySimulateParams_t *pParams ) = 0;
 	// Returns whether it simulated
 	virtual uint Step( int nIterations, float flTimeStep ) = 0;
 	// Steps up to the given time, then filters the transforms; returns false
@@ -357,8 +409,8 @@ public:
 	// Consecutive steps in which the nodes barely moved; 30 and more count as resting
 	virtual int GetRestingStepCount() const = 0;
 	virtual int GetEffectCount() const = 0;
-	// For an effect of type 1, allocates its 2048 sample array and fills pSamples with the array pointer and the counts 512 and 4
-	virtual void GetEffectSamples( int nIndex, void *pSamples ) = 0;
+	// For an effect of type 1, allocates its 2048 sample array on first use and fills pSamples
+	virtual void GetEffectSamples( int nIndex, PhysicsSoftbodyEffectSamples_t *pSamples ) = 0;
 	// Time the timed simulation steps up to
 	virtual void SetSimulationTime( float flTime ) = 0;
 	// Collides the nodes once before the relaxation instead of in its iterations; initialized from a flag of the model
