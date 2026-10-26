@@ -563,11 +563,14 @@ public:
 	// Universe of the last player SteamID recorded by AddPlayerConnectionEvent()
 	EUniverse m_eUniverse;
 	uint8 m_unk144[ 0x4 ];
-	// Nine game event groups filled by the constructor: event names, the ids of those events, and the copies kept for scrubbing,
+	// Ten game event groups filled by the constructor: event names, the ids of those events, and the copies kept for scrubbing,
 	// fired by OnScrubDemo(); the camera group holds "hltv_cameraman", "hltv_fixed" and "hltv_chase", the others one event each
 	CUtlVector< const char * > m_RoundPrestartEventNames;
 	CUtlVector< int > m_RoundPrestartEventIds;
 	CUtlVector< SerializedEvent_t > m_RoundPrestartEvents;
+	CUtlVector< const char * > m_RoundFreezeEndEventNames;
+	CUtlVector< int > m_RoundFreezeEndEventIds;
+	CUtlVector< SerializedEvent_t > m_RoundFreezeEndEvents;
 	CUtlVector< const char * > m_RoundOfficiallyEndedEventNames;
 	CUtlVector< int > m_RoundOfficiallyEndedEventIds;
 	CUtlVector< SerializedEvent_t > m_RoundOfficiallyEndedEvents;
@@ -600,14 +603,14 @@ public:
 	// game loop mode once per frame
 	CTSQueue< std::function< void() > * > m_QueuedMessageHandlers;
 	// Zeroed by the constructor; no reader found
-	bool m_unk440[ 2 ];
+	bool m_unk490[ 2 ];
 	// Read by the delegate hook and the queue drain, never set: the first one runs a handler at once instead of
 	// queueing it, the second one destroys handlers without running them
 	bool m_bRunMessageHandlersImmediately;
 	bool m_bDiscardMessageHandlers;
 	// Set while handlers run
 	bool m_bRunningMessageHandlers;
-	uint8 m_unk445[ 0xB ];
+	uint8 m_pad495[ 0xB ];
 	// 0x20-byte profiling records starting with a CUtlString that FrameStageNotify() formats as "FrameNetUpdate(%.3f %d)"
 	// and "FramePostDataUpdate(%.3f %d)" and opens and closes around those stages
 	void *m_pFrameNetUpdateRecord;
@@ -616,8 +619,8 @@ public:
 	// waited for and released by the next FrameStageNotify()
 	CThreadedJob *m_pRestoreServerStateJob;
 	// -1.0 after the constructor and Connect()
-	float m_unk468;
-	uint8 m_unk46C[ 0x4 ];
+	float m_unk4B8;
+	uint8 m_pad4BC[ 0x4 ];
 	CUtlVector< DeferredEntityDestruction_t > m_DeferredEntityDestructions;
 };
 
