@@ -23,6 +23,8 @@
 
 #include "schemacompiler/schemaon.h"
 
+enum RenderMultisampleType_t : uint8;
+
 class CUtlBuffer;
 class CEnvironmentBlock;
 class CQToolFrameworkApplication;
@@ -283,7 +285,8 @@ public:
 	virtual void MarkSettingsDirty() = 0;
 
 	virtual bool IsMSAASupported() = 0;
-	virtual bool IsMultisampleModeSupported( uint8 nMultisampleMode ) = 0;
+	// Asks the world renderer's pipeline; falls back to IsMSAASupported without one
+	virtual bool IsMultisampleModeSupported( RenderMultisampleType_t nMultisampleMode ) = 0;
 
 	virtual const char *GetDeveloperHelpURL() = 0;
 	virtual void ShowAboutDialog() = 0;
