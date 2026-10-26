@@ -620,7 +620,7 @@ public:
 	virtual void unk143() = 0;
 
 	// Copies the frustum into every world for the physics debugger
-	virtual void SetVisualDebugCameraHint( int nUnknown, const CFrustum &frustum ) = 0;
+	virtual void SetVisualDebugCameraHint( int nUnused, const CFrustum &frustum ) = 0;
 
 	virtual const char *GetMassDescription( float flMass ) = 0;
 
@@ -659,7 +659,8 @@ public:
 	// Link state bits, 0x1000 while streaming to the physics debugger; IsConCommActive tests it for zero
 	CInterlockedUInt m_nFlags;
 
-	uint32 m_unk00C;
+	// Flags the debugger commands set; copied to every world while streaming
+	uint32 m_nDebuggerFlags;
 	int m_unk010;
 
 	// Set to 20 when the state bit 8 is handled
@@ -746,12 +747,13 @@ public:
 	uint64 m_nCurrentMask;
 
 	// AddOverrideMask ORs into it
-	uint64 m_unk1E0;
+	uint64 m_nOverrideMask;
 
 	// Set by SetExclusiveOverrideMask
-	uint64 m_unk1E8;
+	uint64 m_nExclusiveOverrideMask;
 
-	uint16 m_unk1F0;
+	// A bit for each detail layer whose CollisionDetailLayerInfo_t is query only
+	uint16 m_nQueryOnlyDetailLayerMask;
 	uint8 m_unk1F2;
 
 	// CUtlHashtable< CUtlStringToken, CollisionDetailLayerInfo_t > read by HasDetailLayerInfos, FindDetailLayerInfo and GetDetailLayerInfos
