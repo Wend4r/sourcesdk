@@ -146,7 +146,7 @@ public:
 	virtual void unk088() = 0;
 
 	// Forward to the game client; the second one does nothing for 0
-	virtual uint16 AllocateMouth( int nUnk ) = 0;
+	virtual uint16 AllocateMouth( SoundEventGuid_t guid ) = 0;
 	virtual void FreeMouth( uint16 nMouth ) = 0;
 };
 
