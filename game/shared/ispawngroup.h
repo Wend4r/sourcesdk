@@ -76,8 +76,10 @@ public:
 
 public:
 	virtual bool LoadEntities() = 0;
-	virtual void SaveRestoreMap(ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
-	virtual void SaveRestoreMap2(ILoadingSpawnGroup *pLoading, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
+	// Passes pUnk on as the first argument of ISource2Client::SaveRestoreMap() and SaveRestoreMap2(), with the
+	// spawn group's loading spawn group
+	virtual void SaveRestoreMap(void *pUnk, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
+	virtual void SaveRestoreMap2(void *pUnk, SpawnGroupHandle_t hSpawnGroup, const matrix3x4a_t &vecSpawnOffset) = 0;
 	virtual void SetParentSpawnGroupForChild(SpawnGroupHandle_t hSpawnGroup) = 0;
 
 public:
