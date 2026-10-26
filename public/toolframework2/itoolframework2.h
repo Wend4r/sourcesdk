@@ -393,8 +393,9 @@ public:
 	// Collection that owns the classes of the FGD from asset registry
 	virtual void *GetFGDFromAssetClasses() = 0;
 
-	// FGD class of the asset ("fgd_from_asset", named "<path>:<nUnknown>"), created on first use
-	virtual void *FindOrCreateFGDFromAssetClass( const CBufferString &sAssetPath, int nUnknown ) = 0;
+	// FGD class of the asset ("fgd_from_asset", named "<path>:<nElementKind>"), created on first use; for
+	// pulse graphs the graph elements of kind nElementKind + 1 become the classes
+	virtual void *FindOrCreateFGDFromAssetClass( const CBufferString &sAssetPath, int nElementKind ) = 0;
 
 	// Whether the class belongs to GetFGDFromAssetClasses
 	virtual bool IsFGDFromAssetClass( void *pClass ) = 0;
