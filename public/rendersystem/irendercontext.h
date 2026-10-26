@@ -330,17 +330,17 @@ public:
 	virtual void CopyBuffer( RenderBufferHandle_t hDstBuffer, uint32 nDstOffset, RenderBufferHandle_t hSrcBuffer ) = 0;
 	virtual void CopyBuffer( RenderBufferHandle_t hDstBuffer, uint32 nDstOffset, RenderBufferHandle_t hSrcBuffer, uint32 nSrcOffset, uint64 nNumBytes ) = 0;
 	virtual void FillFallbackTextures() = 0;
-	virtual void Draw( int nPrimitiveType, int nFirstVertex, int nVertexCount ) = 0;
-	virtual void DrawInstanced( int nPrimitiveType, int nFirstVertex, int nVertexCount, int nInstanceCount ) = 0;
+	virtual void Draw( RenderPrimitiveType_t nPrimitiveType, int nFirstVertex, int nVertexCount ) = 0;
+	virtual void DrawInstanced( RenderPrimitiveType_t nPrimitiveType, int nFirstVertex, int nVertexCount, int nInstanceCount ) = 0;
 	// nVertexCount is the number of vertices the indices reference (libmaterialsystem2 passes the mesh vertex count,
 	// 0 when unknown); the Vulkan backend ignores it
-	virtual void DrawIndexed( int nPrimitiveType, int nFirstIndex, int nIndexCount, int nVertexCount, int nBaseVertex ) = 0;
-	virtual void DrawIndexedInstanced( int nPrimitiveType, int nFirstIndex, int nIndexCount, int nInstanceCount, int nVertexCount, int nBaseVertex, int nFirstInstance ) = 0;
-	virtual void MultiDrawIndexed( int nPrimitiveType, int nDrawCount, const uint32 *pDraws, int nInstanceCount, int nFirstInstance ) = 0;
-	virtual void DrawIndirect( int nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
-	virtual void DrawIndexedIndirect( int nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
-	virtual void MultiDrawIndexedIndirect( int nPrimitiveType, int nDrawCount, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
-	virtual void DrawIndexedIndirectCount( int nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset, int nMaxDrawCount, RenderResourceHandle_t hCountBuffer, uint32 nCountOffset ) = 0;
+	virtual void DrawIndexed( RenderPrimitiveType_t nPrimitiveType, int nFirstIndex, int nIndexCount, int nVertexCount, int nBaseVertex ) = 0;
+	virtual void DrawIndexedInstanced( RenderPrimitiveType_t nPrimitiveType, int nFirstIndex, int nIndexCount, int nInstanceCount, int nVertexCount, int nBaseVertex, int nFirstInstance ) = 0;
+	virtual void MultiDrawIndexed( RenderPrimitiveType_t nPrimitiveType, int nDrawCount, const uint32 *pDraws, int nInstanceCount, int nFirstInstance ) = 0;
+	virtual void DrawIndirect( RenderPrimitiveType_t nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
+	virtual void DrawIndexedIndirect( RenderPrimitiveType_t nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
+	virtual void MultiDrawIndexedIndirect( RenderPrimitiveType_t nPrimitiveType, int nDrawCount, RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
+	virtual void DrawIndexedIndirectCount( RenderPrimitiveType_t nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset, int nMaxDrawCount, RenderResourceHandle_t hCountBuffer, uint32 nCountOffset ) = 0;
 	virtual void Dispatch( int nThreadCountX, int nThreadCountY, int nThreadCountZ ) = 0;
 	virtual void DispatchIndirect( RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
 	virtual void BuildBLAS( int nCount, const BLASBuildDesc_t *pBuildDescs ) = 0;
