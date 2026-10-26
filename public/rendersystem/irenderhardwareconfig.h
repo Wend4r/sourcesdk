@@ -43,9 +43,9 @@ public:
 
 	virtual int GetMaxTextureDepth() = 0;
 	virtual int GetMaxViewports() = 0;
-	// Reads a flag of the caps as detected, before the dxlevel config is applied; the Vulkan adapter enumeration
-	// clears it and nothing calls it
-	virtual bool unk007() = 0;
+	// Bit 2 of caps +0x2A9 as detected, before the dxlevel config is applied; the Vulkan and empty adapter
+	// enumerations clear it, no GPU config key sets it and nothing calls it
+	virtual bool HasDetectedCaps2A9Bit2() = 0;
 
 	// r_prefer_loop_unrolling
 	virtual bool PreferLoopUnrolling() = 0;
@@ -132,9 +132,9 @@ public:
 	// The Vulkan device sets it when it has the VK_KHR_shader_float16_int8 and VK_KHR_16bit_storage features
 	virtual bool SupportsNative16BitShaderOps() = 0;
 
-	// Capability flag the Vulkan adapter enumeration always sets and the empty render system leaves clear; nothing
-	// calls it
-	virtual bool unk048() = 0;
+	// Bit 6 of caps +0x2AB, which CRenderDeviceMgrVulkan::Connect sets unconditionally and the empty render system
+	// leaves clear; no GPU config key sets it and nothing calls it
+	virtual bool HasCaps2ABBit6() = 0;
 	virtual bool SupportsDeviceGeneratedCommands() = 0;
 	virtual bool SupportsShaderInvocationReorder() = 0;
 
@@ -165,9 +165,9 @@ public:
 
 	virtual bool SupportsComputeShaderDerivatives() = 0;
 	virtual bool SupportsOpacityMicromap() = 0;
-	// Capability flag the Vulkan adapter enumeration always sets and the empty render system leaves clear; nothing
-	// calls it
-	virtual bool unk068() = 0;
+	// Bit 2 of caps +0x2AD, which CRenderDeviceMgrVulkan::Connect sets unconditionally and the empty render system
+	// leaves clear; no GPU config key sets it and nothing calls it
+	virtual bool HasCaps2ADBit2() = 0;
 };
 
 #endif // IRENDERHARDWARECONFIG_H
