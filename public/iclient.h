@@ -152,7 +152,7 @@ public:
 	virtual bool IsActive() const = 0;
 	virtual bool IsConnected() const = 0;
 	virtual bool IsPaused() const = 0;
-	// The local server is paused by pause group 3 ("setpause bug")
+	// The local server is paused by PAUSE_GROUP_BUG ("setpause bug")
 	virtual bool IsBugPaused() = 0;
 	virtual bool IsInGame() const = 0;
 	virtual bool IsBackgroundMap() const = 0;

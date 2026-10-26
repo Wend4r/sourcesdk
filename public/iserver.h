@@ -73,7 +73,16 @@ class CHLTVServerAsync;
 class CTvDirectDemoRecorder;
 
 typedef int ChallengeType_t;
-typedef int PauseGroup_t;
+// Pause groups of CCLCMsg_RequestPause and the setpause/unpause commands ("setpause bug"); the server ignores requests for other groups
+enum PauseGroup_t : int
+{
+	PAUSE_GROUP_DEFAULT = 0,
+	PAUSE_GROUP_OVERLAY = 2,
+	PAUSE_GROUP_BUG = 3,
+
+	// Size of the client's pause group name table
+	PAUSE_GROUP_COUNT = 5,
+};
 
 using CUtlClientVector = CUtlVector< CServerSideClientBase *, CPlayerSlot >;
 
@@ -223,7 +232,7 @@ public:
 
 	virtual bool	IsHLTV() = 0;
 	
-	virtual bool	IsPausable( PauseGroup_t ) = 0;
+	virtual bool	IsPausable( PauseGroup_t nGroup ) = 0;
 
 	// Returns sv_password cvar value, if it's set to "none" nullptr would be returned!
 	virtual const char *GetPassword() = 0;
@@ -277,6 +286,7 @@ public:
 	int m_nTickCount;
 	int m_nMinClientsLimit;
 	int m_nMaxClientsLimit;
+	// Bit ( 1 << PauseGroup_t ) per paused group
 	int m_nPauseFlags;
 
 	CGlobalVars m_globals;
