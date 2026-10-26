@@ -54,7 +54,7 @@ public:
 
 	struct Page_t
 	{
-		// The texture and the outline texture
+		// The textures of FONT_DRAW_NONADDITIVE and FONT_DRAW_ADDITIVE
 		int m_nTextureID[ 2 ];
 		CTexturePacker *m_pPacker;
 	};
@@ -93,6 +93,8 @@ public:
 		int m_weight;
 		int m_blur;
 		int m_scanlines;
+
+		// FONTFLAG_* bits
 		int m_flags;
 		bool m_haveDescs;
 	};

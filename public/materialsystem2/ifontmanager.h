@@ -14,6 +14,26 @@
 
 typedef uint32 HFont;
 
+// Font creation flags (nFlags of IFontManager::LoadFont and SetFontGlyphSet)
+#define FONTFLAG_NONE 0
+#define FONTFLAG_ITALIC ( 1 << 0 )
+#define FONTFLAG_UNDERLINE ( 1 << 1 )
+#define FONTFLAG_ANTIALIAS ( 1 << 4 )
+#define FONTFLAG_ROTARY ( 1 << 6 )
+#define FONTFLAG_DROPSHADOW ( 1 << 7 )
+#define FONTFLAG_ADDITIVE ( 1 << 8 )
+#define FONTFLAG_OUTLINE ( 1 << 9 )
+
+// nDrawType of IFontManager::GetTextureForChar
+enum FontDrawType_t
+{
+	// FONT_DRAW_ADDITIVE for FONTFLAG_ADDITIVE fonts, FONT_DRAW_NONADDITIVE otherwise
+	FONT_DRAW_DEFAULT = 0,
+	FONT_DRAW_NONADDITIVE,
+	FONT_DRAW_ADDITIVE,
+	FONT_DRAW_TYPE_COUNT = 2,
+};
+
 class InfoForResourceTypeCTextureBase;
 
 struct FontRange_t
@@ -109,7 +129,7 @@ public:
 
 	// Both run on the glyph cache under the font manager lock
 	virtual void ClearFontTextureCache() = 0;
-	virtual bool GetTextureForChar( HFont hFont, int nDrawType, uchar32 ch, int *pTextureId, float **ppTexCoords ) = 0;
+	virtual bool GetTextureForChar( HFont hFont, FontDrawType_t nDrawType, uchar32 ch, int *pTextureId, float **ppTexCoords ) = 0;
 
 	// Empty
 	virtual void ClearTemporaryFontCache() = 0;

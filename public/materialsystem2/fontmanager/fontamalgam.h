@@ -35,6 +35,8 @@ public:
 	int m_propWeight;
 	int m_propBlur;
 	int m_propScanlines;
+
+	// FONTFLAG_* bits
 	int m_propFlags;
 };
 
