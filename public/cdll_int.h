@@ -45,6 +45,10 @@ struct SpawnGroupDesc_t;
 struct EngineLoopState_t;
 enum ThreadPoolCoreTypeRequest_t : int;
 
+// Bits of the boot config's RenderSystemOptionFlags ( IVEngineClient2::GetRenderSystemOptionFlags() )
+// Set by MarkRenderSystemOptionRecommended(); while it is clear IsRenderSystemOptionRecommendationStale() is true
+#define RENDER_SYSTEM_OPTION_FLAG_RECOMMENDED ( 1 << 1 )
+
 //-----------------------------------------------------------------------------
 // Purpose: Interface the engine exposes to the client DLL (Source2EngineToClient001).
 //-----------------------------------------------------------------------------
@@ -231,7 +235,9 @@ public:
 	virtual uint64 GetRenderSystemOptionFlags() = 0;
 	// Only the low 32 bits of the stored flags survive.
 	virtual void SetRenderSystemOptionFlags( uint32 nValue, uint32 nMask ) = 0;
+	// True when RenderSystemOptionRecommendationGen differs from the engine's or RENDER_SYSTEM_OPTION_FLAG_RECOMMENDED is clear
 	virtual bool IsRenderSystemOptionRecommendationStale() = 0;
+	// Stores the engine's RenderSystemOptionRecommendationGen and sets RENDER_SYSTEM_OPTION_FLAG_RECOMMENDED
 	virtual void MarkRenderSystemOptionRecommended() = 0;
 	// Writes cfg/boot.vcfg.
 	virtual void SaveBootConfig() = 0;
