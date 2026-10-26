@@ -378,6 +378,11 @@ enum RenderStandardBlendState_t
 	RENDER_BLEND_STATE_COUNT,
 };
 
+// Special nDeviceMask values of IRenderContext::SetMultiGPUDeviceMask: SAVE remembers the current mask
+// without changing it, LOAD sets the remembered one
+#define RENDER_MULTI_GPU_DEVICE_MASK_SAVE 0x5AFE
+#define RENDER_MULTI_GPU_DEVICE_MASK_LOAD 0x10AD
+
 // nStateFlags of IRenderContext::ResetState: the shader bits unbind that stage's shader, the state bits
 // restore the device's default state
 #define RENDER_RESET_PIXEL_SHADER ( 1 << 0 )
@@ -575,7 +580,7 @@ public:
 	// Returns the semaphore the display list signals when it completes, created on first use
 	virtual RenderSemaphoreHandle_t SemaphoreSignalAtEnd( const char *pDebugName ) = 0;
 	virtual void SemaphoreWaitAtBegin( RenderSemaphoreHandle_t hSemaphore ) = 0;
-	// Device mask of the following submissions; 23294 restores the previous mask and 4269 reuses it
+	// Device mask of the following submissions, or RENDER_MULTI_GPU_DEVICE_MASK_SAVE / _LOAD
 	virtual void SetMultiGPUDeviceMask( uint32 nDeviceMask ) = 0;
 	// Recorded for the render thread when multiple GPUs are linked: blits pSrcRect of hSrcTexture into pDstRect
 	// of hDstTexture with device group submits on the given GPU indices; nUnused0/nUnused1 are recorded but not read
