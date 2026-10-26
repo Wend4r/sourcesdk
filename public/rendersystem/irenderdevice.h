@@ -522,10 +522,10 @@ public:
 	virtual VertexBufferHandle_t GetPooledVertexBuffer() = 0;
 	// Calls vkCreateShaderModule with a wrong structure type and no code, provoking a validation error
 	virtual void TriggerValidationError() = 0;
-	virtual IUpscaler *CreateUpscaler( int nType ) = 0;
+	virtual IUpscaler *CreateUpscaler( UpscalerType_t nType ) = 0;
 
 	// XeSS / FidelityFX availability
-	virtual bool IsSuperSamplingAvailable( int nType ) = 0;
+	virtual bool IsSuperSamplingAvailable( UpscalerType_t nType ) = 0;
 
 	virtual void DestroyUpscaler( IUpscaler *pUpscaler ) = 0;
 	// What vulkan_vma_defrag starts
