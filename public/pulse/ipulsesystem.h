@@ -395,6 +395,19 @@ public:
 	KeyValues3 m_Errors;
 };
 
+// Module a domain scope loader belongs to; the loader's module name gives the schema type scope
+enum PulseDomainScope_t
+{
+	PULSE_DOMAIN_SCOPE_PULSE_SYSTEM = 0,
+	PULSE_DOMAIN_SCOPE_SERVER = 1,
+	PULSE_DOMAIN_SCOPE_CLIENT = 2,
+	PULSE_DOMAIN_SCOPE_RESOURCE_COMPILER = 3,
+	PULSE_DOMAIN_SCOPE_TEST = 4,
+
+	// Also the scope of a module without a loader
+	PULSE_DOMAIN_SCOPE_COUNT = 5,
+};
+
 abstract_class IPulseSystem : public IAppSystem
 {
 public:
@@ -420,8 +433,7 @@ public:
 	virtual void QueueObservableVariableSourceChangedEvent( const PulseSymbol_t &clock, CBasePulseGraphInstance *pInstance, int nVariable, const CPulseCallContextValue &prevValue, const CPulseCallContextValue &curValue ) = 0;
 	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &blackboardResourceName, CBasePulseGraphInstance *pListenerInstance, PulseDocNodeID_t nVarDocNodeID, const CPulseCallContextValue &prevValue, const CPulseCallContextValue &curValue ) = 0;
 
-	// One domain scope loader per module scope ( pulse system, server, client, resource compiler, test ), null when
-	// the module did not register one
+	// One domain scope loader per PulseDomainScope_t, null when the module did not register one
 	virtual CPulseDomainScopeLoader **GetTypeQueriesForScopes() = 0;
 	virtual CUtlHandleTable< void, 10 > *GetWeakHandleTable() = 0;
 
@@ -496,7 +508,8 @@ public:
 	virtual void LoadInstanceSystemState( CBasePulseGraphInstance *pInstance, CKV3TransferLoadContext *pContext ) = 0;
 	virtual void SaveInstanceSystemState( CBasePulseGraphInstance *pInstance, CKV3TransferSaveContext *pContext ) = 0;
 
-	virtual bool IsDomainAvailable( const char *pszDomain, int nScope ) = 0;
+	// True for a domain no scope loader knows, else only when its loader has nScope
+	virtual bool IsDomainAvailable( const char *pszDomain, PulseDomainScope_t nScope ) = 0;
 	virtual CBasePulseGraphInstance *CreateGraphInstanceForDomain( const char *pszDomain ) = 0;
 
 	virtual void RemovePendingEventsForCursor( CPulseExecCursor *pCursor ) = 0;
@@ -566,7 +579,7 @@ public:
 
 	CUtlHashtable< uint32, CBasePulseGraphInstance *, MurmurHash3IntFunctor > m_GraphInstances;
 
-	// Allocated by the constructor, returned by GetTypeQueriesForScopes
+	// PULSE_DOMAIN_SCOPE_COUNT loaders, allocated by the constructor, returned by GetTypeQueriesForScopes
 	CPulseDomainScopeLoader **m_ppDomainScopeLoaders;
 
 	CUtlHandleTable< void, 10 > *m_pWeakHandleTable;
