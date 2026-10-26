@@ -94,9 +94,9 @@ public:
 
 	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 
-	// Dispatch EventClientSceneSystemThreadStateChange_t with true and false to the active loop
-	virtual void unk059() = 0;
-	virtual void unk060() = 0;
+	// Dispatch EventClientSceneSystemThreadStateChange_t to the active loop with m_bThreadsActive true and false
+	virtual void NotifySceneSystemThreadsActive() = 0;
+	virtual void NotifySceneSystemThreadsInactive() = 0;
 
 	virtual void GetHitGroupEnumInfo( CUtlVector< int > &values, CUtlVector< CUtlString > &names ) = 0;
 
