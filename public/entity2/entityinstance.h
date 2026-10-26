@@ -125,6 +125,28 @@ schema enum DebugOverlayBits_t : uint64
 // line is drawn only with it.
 #define ENT_TEXT_FILTER_ENTITY_OVERLAYS ( 1 << 20 )
 
+// CEntityInstance::ObjectCaps bits; the Source 1 FCAP_ bits, renumbered.
+// +use: fires Use when the use key is pressed
+#define FCAP_IMPULSE_USE ( 1 << 0 )
+// +use: fires Use every frame while the use key is held
+#define FCAP_CONTINUOUS_USE ( 1 << 1 )
+// +use: fires Use with 1 when the use key is pressed and 0 when it is released
+#define FCAP_ONOFF_USE ( 1 << 2 )
+// Usable from within a radius; set by doors with +use and by weapons
+#define FCAP_USE_IN_RADIUS ( 1 << 5 )
+// Carried across a level transition; the base class's default, cleared by point entities
+#define FCAP_ACROSS_TRANSITION ( 1 << 7 )
+// Carried across a level transition even outside the transition volume
+#define FCAP_FORCE_TRANSITION ( 1 << 8 )
+// Receives InsideTransition or OutsideTransition when a level transition happens
+#define FCAP_NOTIFY_ON_TRANSITION ( 1 << 9 )
+// Can be the master of other entities
+#define FCAP_MASTER ( 1 << 28 )
+// Set by items
+#define FCAP_WCEDIT_POSITION ( 1 << 30 )
+// Not saved
+#define FCAP_DONT_SAVE ( 1u << 31 )
+
 enum AcceptInputResult_t
 {
 	ACCEPT_INPUT_NONE = 0,
@@ -188,6 +210,7 @@ public:
 	virtual void EnumerateVisitor( IEntityVisitor *pVisitor ) {}
 
 	// capabilities for save/restore
+	// FCAP_* bits
 	virtual int ObjectCaps() { return 0; }
 
 	virtual CEntityIndex RequiredEdictIndex() { return CEntityIndex(); }
