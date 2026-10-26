@@ -200,10 +200,11 @@ public:
 		bool m_bUseShaderCache;
 
 		// Requests with it set are skipped by the compile
-		bool m_bUnk029;
+		bool m_bSkipCompile;
 
-		uint32 m_unk02C[ 16 ][ 3 ];
-		int m_nUnk02CCount;
+		// { constant id, 0, value } of the shader's specialization constants resolved for the material
+		uint32 m_SpecializationConstants[ 16 ][ 3 ];
+		int m_nSpecializationConstantCount;
 	};
 
 	// Set by QueueMaterialReload(), the next FrameUpdate() reloads the materials
