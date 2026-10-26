@@ -97,7 +97,9 @@ public:
 
 	virtual void DestroyCharacterDecalRenderer( CCharacterDecalRenderer *pRenderer ) = 0;
 	virtual void Compute3DSkyboxFrustum( const CFrustum &inFrustum, const Vector &vSkyboxOrigin, const QAngle &vSkyboxAngles, const Vector &vSkyboxCameraOrigin, float flSkyboxScale, CFrustum *pOutSkyboxFrustum ) = 0;
-	virtual void unk048() = 0;
+	// The fog colour of the view; fog_override, fog_color and fog_hdrcolorscale apply unless
+	// bIgnoreFogOverride is set, and the colour is scaled by the HDR colour scale unless bNoHDRColorScale is set.
+	virtual void ComputeFogColor( ISceneView *pView, Vector4D *pColor, bool bIgnoreFogOverride, bool bNoHDRColorScale ) = 0;
 	virtual bool FindClipSpaceRectForObject( const CSceneObject *pObject, const ISceneView *pView, Vector4D &vRect ) = 0;
 	virtual void unk050() = 0;
 	virtual void unk051() = 0;
