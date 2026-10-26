@@ -57,12 +57,24 @@ schema struct SelectedEditItemInfo_t
 	CUtlVector< SosEditItemInfo_t > m_EditItems;
 };
 
+// Kind of a field of an operator
+enum SosOpFieldKind_t : uint8
+{
+	SOS_OPFIELD_KIND_INPUT = 0,
+	SOS_OPFIELD_KIND_OUTPUT = 1,
+	// Neither input nor output, such as "voice_layer"
+	SOS_OPFIELD_KIND_OTHER = 2,
+
+	// Lists the fields of every kind
+	SOS_OPFIELD_KIND_ANY = 4,
+};
+
 // Field of an operator of a stack, as the edit interface lists it
 struct SosEditFieldInfo_t
 {
 	const char *m_pszName;
 	SOFieldDataType_t m_nType;
-	uint8 m_nFlags;
+	SosOpFieldKind_t m_nKind;
 	// Value of the field as text
 	CUtlString m_sValue;
 	// Offset of the field in the data of its operator
@@ -258,8 +270,8 @@ public:
 	virtual bool StackHasField( const char *pStackName, const char *pFieldName ) = 0;
 	// Fills a field entry of GetOperatorFields, the lookup is empty and it returns false
 	virtual bool GetStackFieldInfo( HSOSLIBSTACKHASH hStack, uint32 nUnk, const void *pUnk, SosEditFieldInfo_t *pField ) = 0;
-	// Names of the inputs, the outputs and the other fields (such as "voice_layer") of the operator type, the char * elements
-	// are copies the caller deletes
+	// Names of the SOS_OPFIELD_KIND_INPUT, SOS_OPFIELD_KIND_OUTPUT and SOS_OPFIELD_KIND_OTHER fields of the operator type, the
+	// char * elements are copies the caller deletes
 	virtual void GetOperatorInputNames( const char *pName, CUtlVector< char * > &list ) = 0;
 	virtual void GetOperatorOutputNames( const char *pName, CUtlVector< char * > &list ) = 0;
 	virtual void GetOperatorFieldNames( const char *pName, CUtlVector< char * > &list ) = 0;
