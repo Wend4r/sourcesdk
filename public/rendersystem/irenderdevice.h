@@ -168,6 +168,16 @@ enum RenderVariableRefreshRateStatus_t : int
 #define RENDER_POOLED_BUFFER_BIND_VERTEX_BUFFER ( 1 << 0 )
 #define RENDER_POOLED_BUFFER_BIND_UNORDERED_ACCESS ( 1 << 7 )
 
+// IRenderDevice::CreateQueryObject
+enum RenderQueryType_t
+{
+	// Begun with the precise flag
+	RENDER_QUERY_TYPE_OCCLUSION = 1,
+	RENDER_QUERY_TYPE_TIMESTAMP,
+	RENDER_QUERY_TYPE_PIPELINE_STATISTICS,
+	RENDER_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE,
+};
+
 abstract_class IRenderDevice
 {
 public:
@@ -249,7 +259,7 @@ public:
 	virtual bool UpdateExternalTexture( HRenderTexture hTexture, uint64 hSharedTexture ) = 0;
 	virtual SamplerStateHandle_t FindOrCreateSamplerState( const CSamplerStateDesc &samplerState, const char *pDebugName ) = 0;
 
-	virtual RenderQueryHandle_t CreateQueryObject( int nType ) = 0;
+	virtual RenderQueryHandle_t CreateQueryObject( RenderQueryType_t nType ) = 0;
 
 	// Returns 0 once the result is available
 	virtual int GetQueryObjectData( RenderQueryHandle_t hQuery, uint64 *pData ) = 0;
