@@ -507,7 +507,7 @@ public:
 	CNetworkStatTrace m_Trace;
 
 	// SV: Player %s kicked for too many failed console commands
-	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with reason 39
+	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with NETWORK_DISCONNECT_KICKED
 	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
 	bool m_bPendingSignonStateMsg = false; // set when signon -> CONNECTED, consumed in ProcessSignonStateMsg
 	// The client's user info convar values (IVEngineServer2::GetClientUserInfo returns it), resized to
