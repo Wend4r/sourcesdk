@@ -31,6 +31,7 @@
 #include "spawngrouptypes.h"
 #include "game_saverestore.h"
 #include "networkbasetypes.pb.h"
+#include "network_connection.pb.h"
 
 #include <functional>
 
@@ -449,8 +450,8 @@ public:
 	virtual IEconItemSystem *GetEconItemSystem() = 0;
 	// Forwards to the game network string tables
 	virtual bool GameCreateNetworkStringTables() = 0;
-	// Fires the "client_disconnect" game event
-	virtual void NotifyDisconnect( int nReason ) = 0;
+	// Fires the "client_disconnect" game event with the reason as "reason_code"
+	virtual void NotifyDisconnect( ENetworkDisconnectionReason reason ) = 0;
 	// Releases *phBaseModel and clears *piBaseSkin
 	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 	// Called by the client spawn group's SaveRestoreMap() and SaveRestoreMap2() with its loading spawn group; forward to the
