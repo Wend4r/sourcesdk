@@ -390,8 +390,9 @@ public:
 	virtual void LoadMovableMeshSettings( const KeyValues3 *pKV, CUtlVector< bool > *pGravityFollowsRotation ) = 0;
 	// Empty in the game's meshes.
 	virtual void unk029( void *p ) = 0;
-	// Empty in the game's meshes; given the nav file's KeyValues3 block for versions 31 to 35.
-	virtual void unk030( const KeyValues3 *pKV ) = 0;
+	// Empty in the game's meshes; LoadNavMesh passes the KeyValues3 block that follows the pre-area
+	// custom data of a version 36 nav file.
+	virtual void LoadCustomDataKV3( const KeyValues3 *pKV ) = 0;
 	// Forwards to SaveNavGenHullParams.
 	virtual void SaveHullParams( KeyValues3 *pKV ) const = 0;
 	// Forwards to LoadNavGenHullParams; LoadNavMesh calls it with the nav file's KeyValues3 block.
