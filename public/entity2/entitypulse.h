@@ -202,10 +202,18 @@ struct PulseArgBlock_t
 	void* m_pImpl;
 };
 
+// Result of PulseBindingDesc_t::m_pfnInvoke; the runtime logs any other value as a failure code
+enum PulseBindingInvokeResult_t : int32
+{
+	PULSE_BINDING_INVOKE_OK = 0,
+	// The target method was not called because the target object is missing
+	PULSE_BINDING_INVOKE_TARGET_MISSING = -2,
+};
+
 struct PulseBindingDesc_t
 {
 	typedef PulseMethodArgList_t ( *GetArgListFunc_t )();
-	typedef uint32 ( *InvokeFunc_t )( CBasePulseGraphInstance *pGraphInstance, CPulseExecCursor *pCursor, void *pTarget, const PulseHostTable_t *pHosts, PulseArgBlock_t *pInParams, uint64 nMovableArgsMask, PulseArgBlock_t *pOutParams );
+	typedef PulseBindingInvokeResult_t ( *InvokeFunc_t )( CBasePulseGraphInstance *pGraphInstance, CPulseExecCursor *pCursor, void *pTarget, const PulseHostTable_t *pHosts, PulseArgBlock_t *pInParams, uint64 nMovableArgsMask, PulseArgBlock_t *pOutParams );
 
 	const char* m_pName;
 	const char* m_pDisplayName;
