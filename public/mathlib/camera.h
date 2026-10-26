@@ -276,7 +276,6 @@ public:
 	void InitCamera( const Camera_t &Other )
 	{
 		m_camera = Other;
-		m_bDirty = true;
 	}
 
 	// For an off-center projection:
@@ -291,7 +290,6 @@ public:
 		m_flClipSpaceBottomLeftY = flClipSpaceBottomLeftY;
 		m_flClipSpaceTopRightX = flClipSpaceTopRightX;
 		m_flClipSpaceTopRightY = flClipSpaceTopRightY;
-		m_bDirty = true;
 	}
 
 	void InitOrthoCamera( const Vector &origin, const QAngle &angles, float flNear, float flFar, float flWidth, float flHeight,
@@ -304,7 +302,6 @@ public:
 		m_flClipSpaceBottomLeftY = flClipSpaceBottomLeftY;
 		m_flClipSpaceTopRightX = flClipSpaceTopRightX;
 		m_flClipSpaceTopRightY = flClipSpaceTopRightY;
-		m_bDirty = true;
 	}
 
 	bool IsOrthographic() const { return m_camera.IsOrthographic(); }
@@ -454,7 +451,12 @@ protected:
 	float m_flClipSpaceBottomLeftY;
 	float m_flClipSpaceTopRightX;
 	float m_flClipSpaceTopRightY;
-		
+
+	// Plane extraction takes the near plane from the third projection row alone, as for FrustumFromViewProj( bD3DClippingRange )
+	bool m_bD3DClippingRange;
+	// Set when m_reverseDepthProjection has an infinite far plane (perspective cameras)
+	bool m_bInfiniteReverseDepth;
+
 	Vector m_forward;
 	Vector m_left;
 	Vector m_up;
@@ -471,7 +473,19 @@ protected:
 	VMatrix m_viewProj;				// world->proj
 	VMatrix m_invViewProj;			// proj->world
 
-	bool m_bDirty;	
+	// The same matrices with reversed depth; a perspective camera gets an infinite far plane here
+	VMatrix m_reverseDepthProjection;
+	VMatrix m_invReverseDepthProjection;
+	VMatrix m_reverseDepthViewProj;
+	VMatrix m_invReverseDepthViewProj;
+
+	// Only the constructor writes it (1.0)
+	float m_flUnk408;
+	float m_flTanHalfFOV;
+	float m_flInvTanHalfFOV;
+
+	// Clip space translation applied to both projections
+	Vector2D m_vecProjectionOffset;
 };
 
 inline CFrustum::CFrustum()
@@ -489,8 +503,17 @@ inline CFrustum::CFrustum()
 	V_memset( &m_invProjection, 0, sizeof(VMatrix) );
 	V_memset( &m_viewProj, 0, sizeof(VMatrix) );
 	V_memset( &m_invViewProj, 0, sizeof(VMatrix) );
+	V_memset( &m_reverseDepthProjection, 0, sizeof(VMatrix) );
+	V_memset( &m_invReverseDepthProjection, 0, sizeof(VMatrix) );
+	V_memset( &m_reverseDepthViewProj, 0, sizeof(VMatrix) );
+	V_memset( &m_invReverseDepthViewProj, 0, sizeof(VMatrix) );
 
-	m_bDirty = true;
+	m_bD3DClippingRange = false;
+	m_bInfiniteReverseDepth = true;
+	m_flUnk408 = 1.0f;
+	m_flTanHalfFOV = 1.0f;
+	m_flInvTanHalfFOV = 1.0f;
+	m_vecProjectionOffset.Init( 0.0f, 0.0f );
 }
 
 inline void CFrustum::SetCameraPosition( const Vector &origin ) 
@@ -500,8 +523,6 @@ inline void CFrustum::SetCameraPosition( const Vector &origin )
 
 	m_camera.m_origin = origin;
 	Assert( origin.IsValid() && origin.IsReasonable() );
-
-	m_bDirty = true; 
 }
 
 inline void CFrustum::SetCameraAngles( const QAngle &angles ) 
@@ -510,7 +531,6 @@ inline void CFrustum::SetCameraAngles( const QAngle &angles )
 		return;
 
 	m_camera.m_angles = angles;
-	m_bDirty = true; 
 }
 
 
@@ -521,7 +541,6 @@ inline void CFrustum::SetCameraNearFarPlanes( float flNear, float flFar )
 
 	m_camera.m_flZNear = flNear; 
 	m_camera.m_flZFar = flFar;
-	m_bDirty = true; 
 }
 
 inline void CFrustum::SetCameraNearPlane( float flNear ) 
@@ -530,7 +549,6 @@ inline void CFrustum::SetCameraNearPlane( float flNear )
 		return;
 
 	m_camera.m_flZNear = flNear; 
-	m_bDirty = true; 
 }
 
 inline void CFrustum::SetCameraFarPlane( float flFar ) 
@@ -539,7 +557,6 @@ inline void CFrustum::SetCameraFarPlane( float flFar )
 		return;
 
 	m_camera.m_flZFar = flFar;
-	m_bDirty = true; 
 }
 
 /// Set the field of view (in degrees)
@@ -549,7 +566,6 @@ inline void CFrustum::SetCameraFOV( float flFOV )
 		return;
 
 	m_camera.m_flFOVX = flFOV;
-	m_bDirty = true; 
 }
 
 inline void CFrustum::SetCameraWidthHeight( float flWidth, float flHeight ) 
@@ -560,7 +576,6 @@ inline void CFrustum::SetCameraWidthHeight( float flWidth, float flHeight )
 	m_camera.m_flWidth = flWidth; 
 	m_camera.m_flHeight = flHeight; 
 	m_camera.m_flAspect = m_camera.m_flWidth / m_camera.m_flHeight; 
-	m_bDirty = true; 
 }
 
 inline void CFrustum::SetCameraWidth( float flWidth ) 
@@ -570,7 +585,6 @@ inline void CFrustum::SetCameraWidth( float flWidth )
 
 	m_camera.m_flWidth = flWidth; 
 	m_camera.m_flAspect = m_camera.m_flWidth / m_camera.m_flHeight; 
-	m_bDirty = true; 
 }
 
 inline void CFrustum::SetCameraHeight( float flHeight ) 
@@ -580,7 +594,6 @@ inline void CFrustum::SetCameraHeight( float flHeight )
 
 	m_camera.m_flHeight = flHeight; 
 	m_camera.m_flAspect = m_camera.m_flWidth / m_camera.m_flHeight;
-	m_bDirty = true; 
 }
 
 inline void CFrustum::SetCameraAspect( float flAspect ) 
@@ -589,7 +602,6 @@ inline void CFrustum::SetCameraAspect( float flAspect )
 		return;
 
 	m_camera.m_flAspect = flAspect;
-	m_bDirty = true; 
 }
 
 
@@ -653,7 +665,6 @@ inline void CFrustum::SetClipSpaceBounds( float flClipSpaceBottomLeftX, float fl
 	m_flClipSpaceBottomLeftY = flClipSpaceBottomLeftY;
 	m_flClipSpaceTopRightX = flClipSpaceTopRightX;
 	m_flClipSpaceTopRightY = flClipSpaceTopRightY;
-	m_bDirty = true;
 }
 
 #endif // CAMERA_H
