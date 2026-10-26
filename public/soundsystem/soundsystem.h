@@ -17,6 +17,16 @@
 class CSoundDebugVisualizer;
 
 //-----------------------------------------------------------------------------
+// Audio subsystem a device belongs to
+//-----------------------------------------------------------------------------
+enum AudioSubsystemId_t : uint8
+{
+	AUDIO_SUBSYSTEM_SDL = 0,
+	// The "Sound Disabled" device
+	AUDIO_SUBSYSTEM_NULL = 1,
+};
+
+//-----------------------------------------------------------------------------
 // An enumerated audio output device
 //-----------------------------------------------------------------------------
 struct audio_device_description_t
@@ -25,7 +35,7 @@ struct audio_device_description_t
 	char m_friendlyName[ 256 ];
 	uint32 m_nDeviceID;
 	uint32 m_nSampleRate;
-	uint8 m_nSubsystemId;
+	AudioSubsystemId_t m_nSubsystemId;
 	uint8 m_nChannelCount;
 	bool m_bIsDefault : 1;
 	bool m_bIsAvailable : 1;
