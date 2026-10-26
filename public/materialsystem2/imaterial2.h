@@ -21,6 +21,7 @@ class CBufferString;
 class CRenderAttributes;
 class CVsInputSignatureVector;
 class IMaterialMode;
+class IRenderContext;
 class InfoForResourceTypeCTextureBase;
 
 // An entry IMaterial2::GetAllTextureAttributes() appends, one per texture attribute of the material
@@ -33,6 +34,44 @@ struct MaterialTextureAttribute_t
 
 	// HRenderTexture
 	CWeakHandleBase m_hTexture;
+};
+
+// The state of a mode computed for a set of render attributes: the dynamic combos the shader types use
+struct MaterialRenderablePass_t
+{
+	const IMaterialMode *pMode;
+	uint32 dynamicComboArrayIdx[ 7 ];
+
+	// The render state bits the selected dynamic combos set
+	uint32 nAllStateSetBits;
+
+	// Hash of the mode key and the dynamic combos
+	uint64 nHash;
+
+	// Frame count of the material system when the pass was computed; using it in a later frame is an error
+	uint32 nFrameCount;
+};
+
+// A render mode of a material (CMaterialMode)
+abstract_class IMaterialMode
+{
+public:
+	// Selects the dynamic combos for the attributes, through a per-thread cache when mat_cache_renderablepasses is
+	// set; returns 0 when the mode cannot be rendered. bForce is ORed with a material system flag
+	virtual int ComputeRenderablePasses( const CRenderAttributes *pAttributes, const CRenderAttributes *pAttributes2, MaterialRenderablePass_t *pRenderablePass, bool bForce ) = 0;
+
+	// Same with the render attributes of the context
+	virtual int ComputeRenderablePassesForContext( const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, MaterialRenderablePass_t *pRenderablePass, bool bForce ) = 0;
+
+	// Computes the pass for the attributes, then returns the entry of shader type 6 for the combo through ppOut and
+	// fills pData with that type's constant data
+	virtual bool unk002( void **ppOut, CUtlVector< uint8 > *pData, uint32 *pOut, const CRenderAttributes *pAttributes, const CRenderAttributes *pAttributes2 ) = 0;
+
+	// Whether the mode's shader matches the current shader generation of the material system
+	virtual bool IsShaderUpToDate() = 0;
+
+	// The key hashed into MaterialRenderablePass_t::nHash
+	virtual uint64 GetModeKey() = 0;
 };
 
 //-----------------------------------------------------------------------------
