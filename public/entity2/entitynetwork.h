@@ -134,10 +134,23 @@ struct ALIGN16 NetworkStateChangedLookupCache_t
 } ALIGN16_POST;
 COMPILE_TIME_ASSERT( sizeof( NetworkStateChangedLookupCache_t ) == 144 );
 
+// NetworkSharedChangeRecord_t::m_nArrayIndexCountAndFlags: 0xFFFF for a record without changed
+// array elements, otherwise these fields.
+// Number of indices in the record's list in m_ArrayIndexLists (at most 64).
+#define NETWORK_CHANGE_RECORD_INDEX_COUNT_MASK 0x007F
+// The indices were added in ascending order.
+#define NETWORK_CHANGE_RECORD_INDICES_SORTED ( 1 << 7 )
+// The record's index into NetworkSharedChangeInfo_t::m_ArrayIndexLists.
+#define NETWORK_CHANGE_RECORD_INDEX_LIST_MASK 0x7F00
+#define NETWORK_CHANGE_RECORD_INDEX_LIST_SHIFT 8
+// A change without an array index arrived: the whole array changed.
+#define NETWORK_CHANGE_RECORD_ALL_INDICES ( 1 << 15 )
+
 struct NetworkSharedChangeRecord_t
 {
 	uint32 m_nLocalOffset;
 	ChangeAccessorFieldPathIndex_t m_PathIndex;
+	// NETWORK_CHANGE_RECORD_* fields.
 	uint16 m_nArrayIndexCountAndFlags;
 };
 COMPILE_TIME_ASSERT( sizeof( NetworkSharedChangeRecord_t ) == 12 );
