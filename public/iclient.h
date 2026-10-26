@@ -637,11 +637,22 @@ struct ServerTickHistoryEntry_t
 
 struct ReadPacketEntitiesWorkItem_t;
 
+// Passes over the read packet entities work items
+enum ReadPacketEntitiesPass_t
+{
+	// Reads the fields of each item into its serialized entity
+	READ_PACKET_ENTITIES_PASS_READ_FIELDS = 0,
+	// Applies the serialized entities to the entities
+	READ_PACKET_ENTITIES_PASS_APPLY,
+	// Both in one pass
+	READ_PACKET_ENTITIES_PASS_READ_AND_APPLY,
+};
+
 // Shared state of the parallel passes over the read packet entities work items
 struct ReadPacketEntitiesWorkState_t
 {
-	// 0, 1 or 2, set before each pass
-	int m_nPass;
+	// Set before each pass
+	ReadPacketEntitiesPass_t m_nPass;
 	CNetworkGameClient *m_pClient;
 	// Next item to process, taken atomically, and the end of the items
 	ReadPacketEntitiesWorkItem_t *m_pNextItem;
