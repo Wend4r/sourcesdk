@@ -11,6 +11,7 @@
 #include "tier0/utlsymbollarge.h"
 #include "tier0/utlhashtable.h"
 #include "tier0/murmurhash3.h"
+#include "kv3lib/keyvalues3.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -19,7 +20,7 @@ class CEntityClass;
 class CEntityInstance;
 class CPulseAPIExtensionRegistrationContext;
 class CPulseExecCursor;
-class CPulseRuntimeMethodArg;
+class CKV3TransferSaveContext;
 class KeyValues3;
 class CPulseArgumentPack;
 class CPulseInputParamMap;
@@ -115,33 +116,83 @@ public:
 	CUtlSymbolLarge m_subType;
 };
 
-class CPulseRuntimeMethodArg
+class ALIGN16 CPulseCallContextValue
 {
 public:
-	uint32 m_nNameHash;
-	int32 m_nUnk0004;
-	const char* m_pName;
+	CPulseCallContextValue() : m_pValue( nullptr ) {}
+	CPulseCallContextValue( const CPulseCallContextValue &other ) : CPulseCallContextValue() { *this = other; }
+	~CPulseCallContextValue() { SetType( CPulseValueFullType() ); }
+
+	CPulseCallContextValue &operator=( const CPulseCallContextValue &other );
+
+	bool IsStoredInline() const;
+	void *GetData() { return IsStoredInline() ? static_cast< void * >( &m_pValue ) : m_pValue; }
+	const void *GetData() const { return IsStoredInline() ? static_cast< const void * >( &m_pValue ) : m_pValue; }
+
+	// Replaces the value with a default one of the new type
+	void SetType( const CPulseValueFullType &type );
+
+	void VariantCompatibility_SetPulseVariantFromEntityVariant( const CVariant &value );
+	void VariantCompatibility_SetEntityVariantFromPulseVariant( CVariant &value ) const;
+
+public:
+	void *m_pValue;
 	CPulseValueFullType m_Type;
-	uint64 m_nUnk0028;
-	uint8 m_defaultValue[32];
-	uint16 m_nFlags;
-	uint8 m_unk0052[6];
-	void* m_pUnk0058;
-	void* m_pfnUnk0060;
-	void* m_pUnk0068;
+} ALIGN16_POST;
+
+// Static argument or return value record of a binding; the graph definition stores CPulseRuntimeMethodArg instead
+struct PulseMethodArg_t
+{
+	// Static records carry no symbol: the symbol part is UTL_INVAL_SYMBOL_LARGE.
+	CKV3MemberName m_Name;
+	CPulseValueFullType m_Type;
+
+	CPulseCallContextValue m_DefaultValue;
+
+	uint16 m_nMetadataCount;
+	PulseBindingMetadata_t* m_pMetadata;
+	// Adds entries to the argument's metadata table when the binding is described to the editor
+	void ( *m_pfnAddMetadata )( KeyValues3 *pMetadata );
+	// Writes "default_value" in place of m_DefaultValue when set
+	void ( *m_pfnSaveDefaultValue )( CKV3TransferSaveContext *pContext );
 };
 
 // A view of a static argument array, returned by value
 struct PulseMethodArgList_t
 {
+	int Count() const { return m_nCount; }
+
+	const PulseMethodArg_t &operator[]( int i ) const { return m_pElements[ i ]; }
+	const PulseMethodArg_t &Element( int i ) const { return m_pElements[ i ]; }
+
 	int32 m_nCount;
 	int32 m_nAllocated;
-	const CPulseRuntimeMethodArg* m_pElements;
+	const PulseMethodArg_t* m_pElements;
 };
 
+// Hosts a binding needs: bit N asks for m_pHosts[ N ] of the PulseHostTable_t passed to its invoke function
+enum PulseBindingCaps_t : uint32
+{
+	PULSE_BINDING_CAP_NONE				= 0,
+	// IPulseHost_GameEntity of the graph instance
+	PULSE_BINDING_CAP_GAME_ENTITY		= (1 << 0),
+	// IPulseHost_Input of the cursor
+	PULSE_BINDING_CAP_ENTITY_IO			= (1 << 1),
+	// IPulseHost_Cursor
+	PULSE_BINDING_CAP_CURSOR			= (1 << 2),
+	// IPulseHost_YieldingCursor
+	PULSE_BINDING_CAP_YIELDS			= (1 << 3),
+	// IPulseHost_BaseObservable of the cursor
+	PULSE_BINDING_CAP_OBSERVABLE_PURE	= (1 << 5),
+	// IPulseHost_EntityObservable of the cursor
+	PULSE_BINDING_CAP_OBSERVABLE_TARGET	= (1 << 6),
+};
+
+// Hosts of the graph instance and the cursor a binding is invoked for, taken from the slots of their IPulseHost_Unknown
 struct PulseHostTable_t
 {
-	uint32 m_nMask;
+	// Bits of the non-null m_pHosts entries
+	PulseBindingCaps_t m_nMask;
 	void* m_pHosts[7];
 };
 
@@ -151,10 +202,18 @@ struct PulseArgBlock_t
 	void* m_pImpl;
 };
 
+// Result of PulseBindingDesc_t::m_pfnInvoke; the runtime logs any other value as a failure code
+enum PulseBindingInvokeResult_t : int32
+{
+	PULSE_BINDING_INVOKE_OK = 0,
+	// The target method was not called because the target object is missing
+	PULSE_BINDING_INVOKE_TARGET_MISSING = -2,
+};
+
 struct PulseBindingDesc_t
 {
 	typedef PulseMethodArgList_t ( *GetArgListFunc_t )();
-	typedef uint32 ( *InvokeFunc_t )( CBasePulseGraphInstance *pGraphInstance, CPulseExecCursor *pCursor, void *pTarget, const PulseHostTable_t *pHosts, PulseArgBlock_t *pInParams, uint64 nMovableArgsMask, PulseArgBlock_t *pOutParams );
+	typedef PulseBindingInvokeResult_t ( *InvokeFunc_t )( CBasePulseGraphInstance *pGraphInstance, CPulseExecCursor *pCursor, void *pTarget, const PulseHostTable_t *pHosts, PulseArgBlock_t *pInParams, uint64 nMovableArgsMask, PulseArgBlock_t *pOutParams );
 
 	const char* m_pName;
 	const char* m_pDisplayName;
@@ -166,18 +225,9 @@ struct PulseBindingDesc_t
 	bool m_bIsLibraryMethod;
 	bool m_bIsStep;
 	bool m_bIsTargetMethod;
-	uint32 m_nRequiredCaps;
+	PulseBindingCaps_t m_nRequiredCaps;
 	bool m_bDynamicArgs;
 	InvokeFunc_t m_pfnInvoke;
-};
-
-enum PulseBindingCaps_t : uint32
-{
-	PULSE_BINDING_CAP_NONE				= 0,
-	PULSE_BINDING_CAP_ENTITY_IO			= (1 << 1),
-	PULSE_BINDING_CAP_YIELDS			= (1 << 3),
-	PULSE_BINDING_CAP_OBSERVABLE_PURE	= (1 << 5),
-	PULSE_BINDING_CAP_OBSERVABLE_TARGET	= (1 << 6),
 };
 
 struct PulseLibraryRegistration_t
@@ -214,7 +264,9 @@ public:
 	int32 FindOutputIndex( const char *pszName ) const;
 
 public:
-	uint64 m_unk0008;
+	// Set while the signature is rebuilt: the connections of its instances are saved and its inputs
+	// and outputs are cleared, then declared again and the connections restored when it is cleared
+	bool m_bRebuilding;
 	CUtlVector< uint16 > m_inputNames;
 	CUtlVector< uint16 > m_outputNames;
 	CUtlVector< PulseSignatureOutput_t > m_outputs;
