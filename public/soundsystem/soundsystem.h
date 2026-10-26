@@ -66,6 +66,17 @@ public:
 	std::shared_ptr< CUtlOrderedMap< CUtlStringToken, VoiceContainerParamMem_t > > m_pParams;
 };
 
+//-----------------------------------------------------------------------------
+// Whether the mixer pauses the voices
+//-----------------------------------------------------------------------------
+enum SoundPauseOverride_t : uint8
+{
+	// Paused with CAudioState::m_bPaused
+	SOUND_PAUSE_OVERRIDE_NONE = 0,
+	SOUND_PAUSE_OVERRIDE_NEVER = 1,
+	SOUND_PAUSE_OVERRIDE_ALWAYS = 2,
+};
+
 class CSoundSystem : public CTier2AppSystem< ISoundSystem >, public IVConCommDataReceived
 {
 public:
@@ -91,8 +102,8 @@ public:
 		int m_nActiveListenerCount;
 		// Set when any active listener is underwater
 		bool m_bAnyListenerUnderwater;
-		// 0 pauses with m_bPaused, 2 always pauses, other values never pause; SetIgnorePause stores its bool
-		uint8 m_nPauseOverride;
+		// SetIgnorePause stores its bool
+		SoundPauseOverride_t m_nPauseOverride;
 		audio_listener_vectors_t m_ListenerVectors[ 4 ];
 	} m_AudioState;
 
