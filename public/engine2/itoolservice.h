@@ -29,19 +29,16 @@ class IToolObject;
 class Vector;
 class Vector4D;
 struct EconItemInfo_t;
+struct CharacterInfo_t;
+class CDmElement;
+class CBufferString;
+class CEntityHandle;
 struct LightDesc_t;
 struct matrix3x4_t;
 struct ParticleProjectedTextureInfo_t;
 
 FORWARD_DECLARE_HANDLE( HDeferredLight );
 FORWARD_DECLARE_HANDLE( HProjectedTexture );
-
-// The 8-byte class IToolService::unk063 returns (zero without a game client, otherwise the result of ISource2Client::unk146),
-// in an integer register on Linux; only its size is known
-struct ToolServiceUnk063_t
-{
-	uint8 m_Data[ 8 ];
-};
 
 abstract_class IToolService : public IEngineService
 {
@@ -76,17 +73,17 @@ public:
 	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
-	virtual void GetEconItemsInfoForCharacter( const char *pszCharacterName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
+	virtual void GetEconItemsInfoForCharacter( const CharacterInfo_t *pCharacter, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void *unk047() = 0;
 	// 1.0 without a game client
 	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
-	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
-	virtual void unk050() = 0;
-	virtual bool unk051() = 0;
-	virtual void unk052() = 0;
-	virtual void unk053() = 0;
+	virtual float GetDefaultScaleForCharacter( const CharacterInfo_t *pCharacter ) = 0;
+	virtual void GetCharacterForModel( const char *pszModelName, bool bUnk, CharacterInfo_t *pCharacter ) = 0;
+	virtual bool GetCharacterModelName( const CharacterInfo_t *pCharacter, int nModelIndex, CBufferString &modelName ) = 0;
+	virtual void GetCharacterList( CUtlVector< CharacterInfo_t > *pCharacters ) = 0;
+	virtual void GetSceneDirectoryForModel( const char *pszModelName, CBufferString &sceneDirectory ) = 0;
 	virtual void UpdateGlobalLightFromLightInfos( IToolObject *pUnk, const CUtlVector< IToolObject * > &lightInfos, const Vector &vecUnk, int nUnk, float flUnk1, float flUnk2, float flUnk3 ) = 0;
-	virtual bool GetGlobalLightParameters( int *pnUnk, float *pflUnk1, float *pflUnk2 ) = 0;
+	virtual bool GetGlobalLightParameters( int *pnWeatherType, float *pflTimeOfDayAmount, float *pflSmoothedTimeOfDayAmount ) = 0;
 	virtual void *GetEconItemSystem_Client() = 0;
 
 	// Forwards to the game server
@@ -101,8 +98,9 @@ public:
 	virtual void GetHitGroupEnumInfo( CUtlVector< int > &values, CUtlVector< CUtlString > &names ) = 0;
 
 	// Forward to the game client
-	virtual void *unk062() = 0;
-	virtual ToolServiceUnk063_t unk063() = 0;
+	virtual CDmElement *GetEntityModelElement( CEntityHandle hEntity ) = 0;
+	// Null without a game client
+	virtual CWeakHandle< InfoForResourceTypeCModel > GetModelFromElement( CDmElement *pElement ) = 0;
 	// The game client reports a valid local player pawn handle
 	virtual bool HasLocalPlayerPawn() = 0;
 
