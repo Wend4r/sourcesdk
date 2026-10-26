@@ -278,11 +278,35 @@ struct IPLAudioSettings
 	int32 frameSize;
 };
 
+// Steam Audio API enumerations
+enum IPLSimulationFlags
+{
+	IPL_SIMULATIONFLAGS_DIRECT = 1 << 0,
+	IPL_SIMULATIONFLAGS_REFLECTIONS = 1 << 1,
+	IPL_SIMULATIONFLAGS_PATHING = 1 << 2,
+};
+
+enum IPLSceneType
+{
+	IPL_SCENETYPE_DEFAULT,
+	IPL_SCENETYPE_EMBREE,
+	IPL_SCENETYPE_RADEONRAYS,
+	IPL_SCENETYPE_CUSTOM,
+};
+
+enum IPLReflectionEffectType
+{
+	IPL_REFLECTIONEFFECTTYPE_CONVOLUTION,
+	IPL_REFLECTIONEFFECTTYPE_PARAMETRIC,
+	IPL_REFLECTIONEFFECTTYPE_HYBRID,
+	IPL_REFLECTIONEFFECTTYPE_TAN,
+};
+
 struct IPLSimulationSettings
 {
-	int32 flags;
-	int32 sceneType;
-	int32 reflectionType;
+	IPLSimulationFlags flags;
+	IPLSceneType sceneType;
+	IPLReflectionEffectType reflectionType;
 	int32 maxNumOcclusionSamples;
 	int32 maxNumRays;
 	int32 numDiffuseSamples;
@@ -362,13 +386,14 @@ public:
 	IPLCUDADevice m_CUDADevice;
 	IPLOptiXDevice m_OptiXDevice;
 
-	// Base simulation settings, also passed to the reverb and source objects
+	// Base simulation settings (IPL_SIMULATIONFLAGS_REFLECTIONS, IPL_SCENETYPE_CUSTOM, IPL_REFLECTIONEFFECTTYPE_HYBRID), also
+	// passed to the reverb and source objects
 	IPLSimulationSettings m_SimulationSettings;
 	// Empty scene the reverb simulator works on
 	ISteamAudioScene *m_pReverbScene;
 	// Source of SimulateDirect, created with the direct flag and added to m_Simulator in Init
 	IPLSource m_DirectSource;
-	// m_SimulationSettings with the direct and pathing flags, m_Simulator is created from them
+	// m_SimulationSettings with IPL_SIMULATIONFLAGS_DIRECT | IPL_SIMULATIONFLAGS_PATHING, m_Simulator is created from them
 	IPLSimulationSettings m_SimulatorSettings;
 	IPLSimulator m_Simulator;
 	IPLProbeNeighborhood m_ProbeNeighborhood;
