@@ -17,22 +17,33 @@
 #include <memory>
 
 class IBarrierHelper;
+class IReadBufferCallback;
 
 // Created by IRenderDevice::CreateRenderContext. Slots whose purpose is not known yet are
 // placeholders named after their vtable index
 abstract_class IRenderContext
 {
 public:
-	virtual void unk000() = 0;
-	virtual void unk001() = 0;
-	virtual void unk002() = 0;
-	virtual void unk003() = 0;
-	virtual void unk004() = 0;
-	virtual void ClearUnorderedAccessViewUint( HRenderTexture hTexture, int nUnk, const uint32 *pValues ) = 0;
-	virtual void ClearUnorderedAccessViewFloat( HRenderTexture hTexture, int nUnk, const float *pValues ) = 0;
-	virtual void unk007() = 0;
+	// Resets the states selected by nStateFlags to their defaults: 1, 2, 4, 0x20 and 0x10000 unbind shader stages,
+	// 0x80 the rasterizer state, 0x100 the depth-stencil state and 0x200 the blend state
+	virtual void ResetState( uint32 nStateFlags ) = 0;
+	// pRenderTargets holds 8 color textures, the depth-stencil texture, the shading rate texture, per-target
+	// mip levels and color spaces and the target count
+	virtual void SetRenderTargets( const void *pRenderTargets ) = 0;
+	// Resolves (or copies, when the sample counts match) the bound depth-stencil target into hDstTexture
+	virtual void ResolveDepthStencil( const Rect_t *pSrcRect, int nDstX, int nDstY, HRenderTexture hDstTexture ) = 0;
+	virtual void ResolveRenderTarget( int nRenderTarget, const Rect_t *pSrcRect, int nDstX, int nDstY, HRenderTexture hDstTexture ) = 0;
+	// pClearDesc holds a pointer to 16-byte clear colors, their count and the target mask (bits 0-7 color targets,
+	// 0x100 depth, 0x200 stencil)
+	virtual void ClearRenderTargets( const void *pClearDesc ) = 0;
+	virtual void ClearUnorderedAccessViewUint( HRenderTexture hTexture, int nMipLevel, const uint32 *pValues ) = 0;
+	virtual void ClearUnorderedAccessViewFloat( HRenderTexture hTexture, int nMipLevel, const float *pValues ) = 0;
+	// nTargetMask: bits 0-7 color targets, 0x100 depth, 0x200 stencil; nDiscardFlags: 1 discards the contents
+	// before the pass (load op "don't care"), 2 after it (store op "don't care")
+	virtual void DiscardRenderTargets( uint16 nTargetMask, uint8 nDiscardFlags ) = 0;
 	virtual void unk008() = 0;
-	virtual void SetViewport( void *pUnk, int nTopLeftX, int nTopLeftY, int nWidth, int nHeight ) = 0;
+	// Sets the viewport and then clears it with pClearDesc (see ClearRenderTargets)
+	virtual void SetViewport( const void *pClearDesc, int nTopLeftX, int nTopLeftY, int nWidth, int nHeight ) = 0;
 	// Ends the recording with EndDisplayList and hands the list to IRenderDevice::SubmitDisplayLists
 	virtual void SubmitDisplayList() = 0;
 	virtual CDisplayList *EndDisplayList() = 0;
@@ -41,28 +52,35 @@ public:
 	virtual void GetViewport( RenderViewport_t *pViewport, int nIndex ) = 0;
 	virtual void SetViewports( int nCount, const RenderViewport_t *pViewports ) = 0;
 	virtual void SetScissorRects( int nCount, const Rect_t *pRects ) = 0;
-	virtual void unk017() = 0;
-	virtual void unk018() = 0;
-	virtual void unk019() = 0;
-	virtual void unk020() = 0;
-	virtual void unk021() = 0;
-	virtual void unk022() = 0;
-	virtual void unk023() = 0;
-	virtual void unk024() = 0;
-	virtual void unk025() = 0;
-	virtual void unk026() = 0;
-	virtual void unk027() = 0;
-	virtual void unk028() = 0;
-	virtual void unk029() = 0;
-	virtual void unk030() = 0;
-	virtual void unk031() = 0;
+	// pInputSignature is a { count, array } pair matched against the input layout semantics
+	virtual void BindVertexShader( RenderShaderHandle_t hShader, RenderInputLayout_t hInputLayout, const void *pInputSignature ) = 0;
+	virtual void BindShader( int nShaderType, RenderShaderHandle_t hShader ) = 0;
+	virtual void SetTexture( int nSlot, HRenderTexture hTexture, RenderTextureDimension_t nDimension, int nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
+	// nMipLevel -1 binds all mip levels (SetTexture passes -1)
+	virtual void SetTextureMip( int nSlot, HRenderTexture hTexture, int nMipLevel, RenderTextureDimension_t nDimension, int nShaderType, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize ) = 0;
+	// pBindings are 32-byte records: texture handle, buffer, required mip size, dimension, color space, mip level,
+	// "is buffer" flag and debug name
+	virtual void SetTextures( int nFirstSlot, int nCount, const void *pBindings, int nShaderType ) = 0;
+	// Same records as SetTextures, bound as storage images in the general layout
+	virtual void SetUnorderedAccessViews( int nFirstSlot, int nCount, const void *pBindings, int nShaderType ) = 0;
+	// Transitions the texture into the shader read layout (general when it is a storage image)
+	virtual void TransitionTextureForShaderRead( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize, int nMipLevel ) = 0;
+	virtual void SetPixelShaderSamplerState( int nSlot, uint8 nFilter, int nAddressU, int nAddressV, int nAddressW, int nComparisonFunc ) = 0;
+	virtual void SetVertexShaderSamplerState( int nSlot, uint8 nFilter, int nAddressU, int nAddressV, int nAddressW, int nComparisonFunc ) = 0;
+	virtual void SetSamplerState( int nSlot, const CSamplerStateDesc &desc, int nShaderType ) = 0;
+	virtual void SetSamplerStates( int nFirstSlot, int nCount, const CSamplerStateDesc *pDescs, int nShaderType ) = 0;
+	virtual void SetDescriptorSets( uint32 nFirstSet, int nCount, const RenderDescriptorSetHandle_t *pDescriptorSets, const uint32 *pDynamicOffsetCounts, const uint32 *const *ppDynamicOffsets ) = 0;
+	virtual RenderDescriptorSetHandle_t CreateDynamicDescriptorSet( RenderDescriptorSetHandle_t hLayout, int32 nNumBindings, const RenderDescriptorBinding_t *pDescriptorBindings ) = 0;
+	virtual void UpdateConstantBuffer( ConstantBufferHandle_t hConstantBuffer, const void *pData, uint32 nNumBytes ) = 0;
+	virtual void UpdateMultiViewConstantBuffer( ConstantBufferHandle_t hConstantBuffer, uint32 nFirstView, uint32 nViewCount, const void **ppData, uint32 nNumBytes ) = 0;
 	virtual void *LockDynamicConstantBuffer( uint32 nNumBytes, void **ppData ) = 0;
-	virtual void unk033() = 0;
-	virtual void unk034() = 0;
-	virtual void unk035() = 0;
-	virtual void unk036() = 0;
-	virtual void unk037() = 0;
-	virtual void unk038() = 0;
+	virtual void UnlockDynamicConstantBuffer( void *hBuffer, uint32 nNumBytes ) = 0;
+	virtual void *LockMultiViewDynamicConstantBuffer( uint32 nNumBytes, uint32 nViewCount, void **ppData ) = 0;
+	// Records the buffer for release like UnlockDynamicConstantBuffer, with one more value
+	virtual void UnlockMultiViewDynamicConstantBuffer( void *hBuffer, int nViewCount ) = 0;
+	virtual void SetConstantBuffer( int nShaderType, ConstantBufferHandle_t hConstantBuffer, int nSlot ) = 0;
+	virtual void SetMultiViewConstantBuffer( int nShaderType, ConstantBufferHandle_t hConstantBuffer, uint32 nView, int nSlot ) = 0;
+	virtual void SetPushConstants( const void *pData, uint32 nNumBytes ) = 0;
 	virtual RsRasterizerStateHandle_t FindOrCreateRasterizerState( const RsRasterizerStateDesc_t *pDesc ) = 0;
 	virtual void SetRasterizerState( RsRasterizerStateHandle_t hState ) = 0;
 	virtual void SetRasterizerStateOverride( RsRasterizerStateHandle_t hState ) = 0;
@@ -72,48 +90,58 @@ public:
 	virtual RsBlendStateHandle_t FindOrCreateBlendState( const RsBlendStateDesc_t *pDesc ) = 0;
 	virtual void SetBlendState( RsBlendStateHandle_t hState, const float *pBlendFactor, uint32 nSampleMask ) = 0;
 	virtual void SetBlendStateOverride( RsBlendStateHandle_t hState, const float *pBlendFactor, uint32 nSampleMask ) = 0;
-	virtual void unk048() = 0;
-	virtual void unk049() = 0;
-	virtual void unk050() = 0;
-	virtual void unk051() = 0;
-	virtual void unk052() = 0;
-	virtual void unk053() = 0;
-	virtual void unk054() = 0;
-	virtual void unk055() = 0;
-	virtual void unk056() = 0;
-	virtual void unk057() = 0;
-	virtual void unk058() = 0;
-	virtual void unk059() = 0;
-	virtual void unk060() = 0;
-	virtual void unk061() = 0;
-	virtual void unk062() = 0;
-	virtual void unk063() = 0;
-	virtual void unk064() = 0;
-	virtual void unk065() = 0;
-	virtual void unk066() = 0;
-	virtual void unk067() = 0;
-	virtual void unk068() = 0;
-	virtual void unk069() = 0;
-	virtual void unk070() = 0;
-	virtual void unk071() = 0;
-	virtual void unk072() = 0;
+	// Selects one of the render device's predefined states
+	virtual void SetStandardRasterizerState( int nState ) = 0;
+	// Selects the alternate front face winding of the rasterizer state
+	virtual void SetFrontFaceFlip( bool bFlip ) = 0;
+	virtual void SetStandardBlendState( int nState, const float *pBlendFactor ) = 0;
+	virtual void SetStandardDepthStencilState( int nState ) = 0;
+	virtual void GetMaxDynamicVertexAndIndexCounts( uint32 nVertexSize, uint32 nIndexSize, int *pMaxVertices, int *pMaxIndices ) = 0;
+	// Returns the backend buffer object, NULL for a deleted buffer
+	virtual void *GetDeviceSpecificVertexBuffer( VertexBufferHandle_t hVertexBuffer ) = 0;
+	// Creates a per-context dynamic buffer and locks desc.m_nElementCount * desc.m_nElementSizeInBytes bytes of it
+	virtual VertexBufferHandle_t CreateDynamicVertexBuffer( const BufferDesc_t &desc, void **ppData ) = 0;
+	virtual void UnlockDynamicVertexBuffer( VertexBufferHandle_t hVertexBuffer, uint32 nNumBytes ) = 0;
+	virtual IndexBufferHandle_t CreateDynamicIndexBuffer( const BufferDesc_t &desc, void **ppData ) = 0;
+	virtual void UnlockDynamicIndexBuffer( IndexBufferHandle_t hIndexBuffer, uint32 nNumBytes ) = 0;
+	virtual RenderBufferHandle_t CreateDynamicGPUBuffer( const BufferDesc_t &desc, int nFlags, ImageFormat nFormat, void **ppData ) = 0;
+	virtual void UnlockDynamicGPUBuffer( RenderBufferHandle_t hBuffer, uint32 nNumBytes ) = 0;
+	virtual bool LockIndexBuffer( IndexBufferHandle_t hIndexBuffer, uint32 nNumBytes, void **ppData ) = 0;
+	virtual void UnlockIndexBuffer( IndexBufferHandle_t hIndexBuffer, uint32 nNumBytes ) = 0;
+	virtual bool LockVertexBuffer( VertexBufferHandle_t hVertexBuffer, uint32 nNumBytes, void **ppData ) = 0;
+	virtual void UnlockVertexBuffer( VertexBufferHandle_t hVertexBuffer, uint32 nNumBytes ) = 0;
+	virtual bool LockVertexBufferRange( VertexBufferHandle_t hVertexBuffer, uint32 nOffset, uint32 nNumBytes, void **ppData ) = 0;
+	virtual void UnlockVertexBufferRange( VertexBufferHandle_t hVertexBuffer, uint32 nOffset, uint32 nNumBytes, void **ppData ) = 0;
+	virtual bool LockIndexBufferRange( IndexBufferHandle_t hIndexBuffer, uint32 nOffset, uint32 nNumBytes, void **ppData ) = 0;
+	virtual void UnlockIndexBufferRange( IndexBufferHandle_t hIndexBuffer, uint32 nOffset, uint32 nNumBytes, void **ppData ) = 0;
+	// pDataRecycleDelegate is invoked with pData and pRecycleContext once the data has been consumed
+	virtual void SetVertexBufferData( VertexBufferHandle_t hVertexBuffer, const void *pData, size_t nNumBytes, size_t nOffset, const DataRecycleDelegate_t *pDataRecycleDelegate, void *pRecycleContext ) = 0;
+	virtual void SetVertexBufferData( VertexBufferHandle_t hVertexBuffer, const void *pData, size_t nNumBytes, size_t nOffset ) = 0;
+	// The index size comes from the buffer
+	virtual bool BindIndexBuffer( IndexBufferHandle_t hIndexBuffer, int nOffset ) = 0;
+	// Used with the buffers of CreateDynamicIndexBuffer, forwards to BindIndexBuffer
+	virtual bool BindDynamicIndexBuffer( IndexBufferHandle_t hIndexBuffer, int nOffset ) = 0;
+	virtual bool BindIndexBuffer( RenderBufferHandle_t hBuffer, int nIndexSize, int nOffset ) = 0;
 	virtual bool BindVertexBuffer( int nSlot, VertexBufferHandle_t hVertexBuffer, int nOffset, int nStride ) = 0;
-	virtual void unk074() = 0;
+	// Used with the buffers of CreateDynamicVertexBuffer, forwards to BindVertexBuffer
+	virtual bool BindDynamicVertexBuffer( int nSlot, VertexBufferHandle_t hVertexBuffer, int nOffset, int nStride ) = 0;
 	virtual void unk075() = 0;
 	// Recorded by IRenderDevice::AsyncSetTextureData with the same arguments
 	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, int nDataSize, bool bUnk, int nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycleDelegate, uint32 nAsyncTextureUpdateFlags ) = 0;
-	virtual void unk077() = 0;
-	virtual void unk078() = 0;
-	virtual void unk079() = 0;
-	virtual void unk080() = 0;
-	virtual void unk081() = 0;
-	virtual void unk082() = 0;
-	virtual void unk083() = 0;
-	virtual void unk084() = 0;
+	virtual void ReadTexturePixelsAsync( HRenderTexture hTexture, std::shared_ptr< IReadTexturePixelsCallback > pCallback, int nSlice, int nMipLevel, const Rect_t *pSrcRect ) = 0;
+	// Records an empty command into the display list
+	virtual void MarkIssuesCommands() = 0;
+	virtual void ReadBuffer( RenderBufferHandle_t hBuffer, std::shared_ptr< IReadBufferCallback > pCallback, uint32 nOffset, uint32 nNumBytes ) = 0;
+	virtual void *QueuePolledBufferReadback( RenderBufferHandle_t hBuffer, uint32 nOffset, uint32 nNumBytes ) = 0;
+	virtual void ReadBufferIndirect( RenderBufferHandle_t hBuffer, uint32 nUnused, RenderBufferHandle_t hIndirectBuffer, uint32 nIndirectOffset, std::shared_ptr< IReadBufferCallback > pCallback ) = 0;
+	virtual void GenerateMipmaps( HRenderTexture hTexture ) = 0;
+	virtual void CopyTexture( HRenderTexture hSrcTexture, HRenderTexture hDstTexture, const Rect_t *pSrcRect, int nDstX, int nDstY, int nSrcMipLevel, int nSrcSlice, int nDstMipLevel, int nDstSlice ) = 0;
+	virtual void CopyFromVolumeTexture( HRenderTexture hSrcTexture, HRenderTexture hDstTexture, const Rect3D_t *pSrcBox, int nDstX, int nDstY, int nDstZ, int nSrcMipLevel, int nSrcSlice, int nDstMipLevel, int nDstSlice ) = 0;
 	virtual void unk085() = 0;
-	virtual void unk086() = 0;
-	virtual void unk087() = 0;
-	virtual void unk088() = 0;
+	// Copies the whole of hSrcBuffer
+	virtual void CopyBuffer( RenderBufferHandle_t hDstBuffer, uint32 nDstOffset, RenderBufferHandle_t hSrcBuffer ) = 0;
+	virtual void CopyBuffer( RenderBufferHandle_t hDstBuffer, uint32 nDstOffset, RenderBufferHandle_t hSrcBuffer, uint32 nSrcOffset, uint64 nNumBytes ) = 0;
+	virtual void FillFallbackTextures() = 0;
 	virtual void Draw( int nPrimitiveType, int nFirstVertex, int nVertexCount ) = 0;
 	virtual void DrawInstanced( int nPrimitiveType, int nFirstVertex, int nVertexCount, int nInstanceCount ) = 0;
 	virtual void DrawIndexed( int nPrimitiveType, int nFirstIndex, int nIndexCount, int nUnk, int nBaseVertex ) = 0;
@@ -125,18 +153,23 @@ public:
 	virtual void DrawIndexedIndirectCount( int nPrimitiveType, RenderResourceHandle_t hBuffer, uint32 nOffset, int nMaxDrawCount, RenderResourceHandle_t hCountBuffer, uint32 nCountOffset ) = 0;
 	virtual void Dispatch( int nThreadCountX, int nThreadCountY, int nThreadCountZ ) = 0;
 	virtual void DispatchIndirect( RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
-	virtual void unk100() = 0;
-	virtual void unk101() = 0;
-	virtual void unk102() = 0;
-	virtual void unk103() = 0;
-	virtual void unk104() = 0;
-	virtual void unk105() = 0;
-	virtual void unk106() = 0;
-	virtual void unk107() = 0;
-	virtual void unk108() = 0;
+	// pBuildDescs are 40-byte records starting with the BLAS handle
+	virtual void BuildBLAS( int nCount, const void *pBuildDescs ) = 0;
+	// Queries the compacted size of the BLAS
+	virtual void RequestBLASCompaction( RenderBLASHandle_t hBLAS ) = 0;
+	virtual void CompactBLAS( RenderBLASHandle_t hBLAS ) = 0;
+	// A NULL hScratchBuffer makes the build allocate its own scratch memory
+	virtual void BuildTLAS( RenderTLASHandle_t hTLAS, const TLASInstance_t *pInstances, int nInstanceCount, RenderBufferHandle_t hScratchBuffer, uint32 nScratchOffset ) = 0;
+	virtual void BindRayTracePipeline( RenderRayTracePipelineHandle_t hPipeline ) = 0;
+	virtual void UploadRayTraceShaderBindingTable( IRaytraceShaderBindingTable *pSBT ) = 0;
+	virtual void TraceRays( IRaytraceShaderBindingTable *pSBT, uint32 nWidth, uint32 nHeight, uint32 nDepth ) = 0;
+	virtual void TraceRaysIndirect( IRaytraceShaderBindingTable *pSBT, RenderBufferHandle_t hArgsBuffer, uint32 nOffset ) = 0;
+	// pBuildDescs are 48-byte records starting with the opacity micromap handle
+	virtual void BuildOpacityMicromaps( int nCount, const void *pBuildDescs ) = 0;
 	virtual void unk109() = 0;
-	virtual void unk110() = 0;
-	virtual void unk111() = 0;
+	virtual void SetIndexBufferData( IndexBufferHandle_t hIndexBuffer, const void *pData, size_t nNumBytes, size_t nOffset, const DataRecycleDelegate_t *pDataRecycleDelegate, void *pRecycleContext ) = 0;
+	// Submits the display list and waits for the GPU
+	virtual void ForceFlushGPU() = 0;
 	virtual void unk112() = 0;
 	virtual void unk113() = 0;
 	virtual IRenderDevice *GetRenderDevice() = 0;
@@ -145,18 +178,20 @@ public:
 	virtual void EndPIXEvent() = 0;
 	virtual void SetPIXMarker( uint32 nColor, const char *pName ) = 0;
 	virtual void SetPIXMarker( const char *pName ) = 0;
-	virtual void unk120() {}
-	virtual void unk121() {}
+	virtual void SetRenderDocCommandAnnotations( const void *pfnGetAnnotations, bool bQueue ) {}
+	virtual void SetRenderDocObjectAnnotations( void *pObject, const void *pfnGetAnnotations ) {}
 	virtual void BeginQuery( RenderQueryHandle_t hQuery ) = 0;
 	virtual void EndQuery( RenderQueryHandle_t hQuery ) = 0;
 	virtual void SetDepthBoundsTestEnable( bool bEnable ) = 0;
 	virtual void SetDepthBounds( float flMinDepth, float flMaxDepth ) = 0;
 	virtual std::unique_ptr< IBarrierHelper > GetBarrierHelper() = 0;
-	virtual void unk127() = 0;
-	virtual void unk128() = 0;
-	virtual void unk129() = 0;
-	virtual void unk130() = 0;
-	virtual void unk131() = 0;
+	virtual void TransitionTextures( int nCount, const HRenderTexture *pTextures, const uint32 *pLayouts ) = 0;
+	// Barrier records of 40 bytes: texture handle, stage and access masks, layout, mip and slice range
+	virtual void TextureBarriers( int nCount, const void *pBarriers ) = 0;
+	virtual void BufferBarriers( int nCount, const void *pBarriers ) = 0;
+	virtual void MemoryBarriers( int nCount, const void *pBarriers ) = 0;
+	// Transitions the textures from the undefined layout, dropping their contents
+	virtual void DiscardTextures( int nCount, const HRenderTexture *pTextures, const uint32 *pLayouts ) = 0;
 	virtual void unk132() = 0;
 	virtual void unk133() = 0;
 	virtual void unk134() = 0;
@@ -164,24 +199,25 @@ public:
 	virtual void unk136() = 0;
 	virtual void unk137() = 0;
 	virtual void unk138() = 0;
-	virtual void unk139() = 0;
+	virtual const char *GetDebugName() = 0;
 	virtual void unk140() = 0;
-	virtual void unk141() = 0;
-	virtual void unk142() = 0;
+	// Returns the semaphore the display list signals when it completes, created on first use
+	virtual RenderSemaphoreHandle_t SemaphoreSignalAtEnd( const char *pDebugName ) = 0;
+	virtual void SemaphoreWaitAtBegin( RenderSemaphoreHandle_t hSemaphore ) = 0;
 	virtual void unk143() = 0;
 	virtual void unk144() = 0;
 	virtual void unk145() = 0;
 	virtual bool BindPooledIndexBuffer( PooledIndexBufferHandle_t hIndexBuffer ) = 0;
 	virtual bool BindPooledVertexBuffer( int nSlot, RenderResourceHandle_t hPooledVertexBuffer ) = 0;
-	virtual void unk148() = 0;
-	virtual void unk149() = 0;
+	virtual void ExecuteGeneratedCommands( void *hIndirectCommandsLayout, void *hIndirectExecutionSet, RenderBufferHandle_t hIndirectBuffer, bool bIsPreprocessed, RenderBufferHandle_t hPreprocessBuffer, uint32 nMaxSequenceCount, RenderBufferHandle_t hSequenceCountBuffer, uint32 nMaxDrawCount ) = 0;
+	virtual void PreprocessGeneratedCommands( void *hIndirectCommandsLayout, void *hIndirectExecutionSet, RenderBufferHandle_t hIndirectBuffer, RenderBufferHandle_t hPreprocessBuffer, uint32 nMaxSequenceCount, RenderBufferHandle_t hSequenceCountBuffer, uint32 nMaxDrawCount ) = 0;
 	virtual void DrawMeshTasks( uint32 nGroupCountX, uint32 nGroupCountY, uint32 nGroupCountZ ) = 0;
 	virtual void DrawMeshTasksIndirect( RenderResourceHandle_t hBuffer, uint32 nOffset, uint32 nDrawCount, uint32 nStride ) = 0;
 	virtual void DrawMeshTasksIndirectCount( RenderResourceHandle_t hBuffer, uint32 nOffset, RenderResourceHandle_t hCountBuffer, uint32 nCountOffset, uint32 nMaxDrawCount ) = 0;
 	virtual void BeginConditionalRendering( RenderResourceHandle_t hBuffer, uint32 nOffset ) = 0;
 	virtual void EndConditionalRendering() = 0;
 	virtual void unk155() = 0;
-	virtual void unk156() = 0;
+	virtual void SetFragmentShadingRate( uint32 nWidth, uint32 nHeight ) = 0;
 	virtual ~IRenderContext() {}
 	virtual bool BindIndexBuffer( IndexBufferHandle_t hIndexBuffer, int nOffset, int nIndexSize ) = 0;
 };
