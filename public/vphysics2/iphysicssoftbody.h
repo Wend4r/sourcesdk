@@ -328,8 +328,12 @@ public:
 
 	virtual uint unk029() const = 0;
 	virtual void unk030( bool bUnknown ) = 0;
-	virtual uint unk031() const = 0;
-	virtual int unk032() const = 0;
+
+	// A unique number taken from a global counter when the softbody is created, tagged with 0x40000000
+	virtual uint GetSoftbodyId() const = 0;
+
+	// Consecutive steps in which the nodes barely moved; 30 and more count as resting
+	virtual int GetRestingStepCount() const = 0;
 	virtual int GetEffectCount() const = 0;
 	virtual void unk034( int nIndex, void *pUnknown ) = 0;
 	// Time the timed simulation steps up to
@@ -340,7 +344,7 @@ public:
 	virtual void unk037() = 0;
 	virtual void unk038() = 0;
 
-	virtual AABB_t unk039() const = 0;
+	virtual AABB_t ComputeBounds() const = 0;
 
 	// Softbodies linked to this one
 	virtual int GetLinkedSoftbodyCount() const = 0;
