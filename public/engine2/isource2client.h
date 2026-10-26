@@ -21,6 +21,7 @@
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
 #include "tier0/utlvector.h"
+#include "tier0/utlleanvector.h"
 #include "tier0/utlsortvector.h"
 #include "tier0/utlmap.h"
 #include "tier0/tslist.h"
@@ -452,8 +453,10 @@ public:
 	virtual IEconItemSystem *GetEconItemSystem() = 0;
 	// Forwards to the game network string tables
 	virtual bool GameCreateNetworkStringTables() = 0;
-	// Fires the "client_disconnect" game event with the reason as "reason_code"
-	virtual void NotifyDisconnect( ENetworkDisconnectionReason reason ) = 0;
+	// Fires the "client_disconnect" game event with the reason as "reason_code". The engine also passes the reason text
+	// (the connection closed message or its own text, may be NULL) and the addons mounted when a queued disconnect was
+	// queued (an empty list for other disconnects); the client ignores both
+	virtual void NotifyDisconnect( ENetworkDisconnectionReason reason, const char *pszReason, CUtlLeanVector< CUtlString > *pAddons ) = 0;
 	// Releases *phBaseModel and clears *piBaseSkin
 	virtual void GetModelCombineInfo( CWeakHandle< InfoForResourceTypeCModel > hCombinedModel, CStrongHandleCopyable< InfoForResourceTypeCModel > *phBaseModel, int *piBaseSkin, const CUtlVector< CStrongHandleCopyable< InfoForResourceTypeCModel > > **ppVecAdditionalModels, const CUtlVector< int > **ppVecSkins ) = 0;
 	// Called by the client spawn group's SaveRestoreMap() and SaveRestoreMap2() with its loading spawn group; forward to the
