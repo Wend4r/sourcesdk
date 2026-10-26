@@ -14,6 +14,7 @@
 #include <materialsystem2/imaterial2.h>
 #include <mathlib/vector.h>
 #include <resourcesystem/resourcehandle.h>
+#include <resourcesystem/resourcehandletypes.h>
 
 class CSceneObject;
 class CSceneLightObject;
@@ -26,13 +27,6 @@ struct SceneSystemPerFrameStats_t;
 
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
 
-class CTextureBase;
-
-class InfoForResourceTypeCTextureBase
-{
-public:
-	using RuntimeClass_t = CTextureBase;
-};
 
 using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
 

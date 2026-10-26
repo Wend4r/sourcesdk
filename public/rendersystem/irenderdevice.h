@@ -20,6 +20,7 @@
 #include "mathlib/vector.h"
 #include "mathlib/vector4d.h"
 #include "resourcesystem/resourcehandle.h"
+#include "resourcesystem/resourcehandletypes.h"
 #include "rendersystem/rendersystemtypes.h"
 #include "rendersystem/renderdevicetypes.h"
 
@@ -34,7 +35,6 @@ class CTextureDesc;
 class CSamplerStateDesc;
 class CRenderPipelineFrameStats;
 class CPipelineFence;
-class InfoForResourceTypeCTextureBase;
 class ITextureResidencyListener;
 class IMaxSwapChainDimensionsChangedListener;
 class IRaytraceShaderBindingTable;
