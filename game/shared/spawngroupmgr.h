@@ -25,7 +25,7 @@ public:
 	virtual void ReleaseSpawnGroup(SpawnGroupHandle_t h) = 0;
 	virtual void SpawnGroupInit(SpawnGroupHandle_t handle, IEntityResourceManifest *pManifest, IEntityPrecacheConfiguration *pConfig, ISpawnGroupPrerequisiteRegistry *pRegistry) = 0;
 	virtual ILoadingSpawnGroup *CreateLoadingSpawnGroup(SpawnGroupHandle_t handle, bool bSynchronouslySpawnEntities, bool bConfirmResourcesLoaded, const CUtlVector<const CEntityKeyValues *> *pKeyValues) = 0;
-	virtual ILoadingSpawnGroup *CreateLoadingSpawnGroupForSaveFile(SpawnGroupHandle_t handle, const void *pSaveData, size_t nSaveDataSize) = 0;
+	virtual ILoadingSpawnGroup *CreateLoadingSpawnGroupForSaveFile( SpawnGroupHandle_t handle, const char *pszSaveFileName, const void *pSaveData, int nSaveDataSize ) = 0;
 	virtual void SpawnGroupSpawnEntities(SpawnGroupHandle_t handle) = 0;
 	virtual void SpawnGroupShutdown(SpawnGroupHandle_t handle) = 0;
 	virtual void SetActiveSpawnGroup(SpawnGroupHandle_t handle) = 0;
