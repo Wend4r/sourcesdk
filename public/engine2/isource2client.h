@@ -33,6 +33,8 @@
 
 class CBufferString;
 class CConcreteEntityList;
+class CDmElement;
+class CFieldPath;
 class ConVarRefAbstract;
 class ClientClass;
 class CCommand;
@@ -53,6 +55,7 @@ class IDemoMessageSink;
 class InstantReplayMessage_t;
 class IEntityReport;
 class IGameEvent;
+class ISkeletonDemoRecorder;
 class ILoadingSpawnGroup;
 class INetChannel;
 class INetworkFieldChangedEventQueue;
@@ -71,6 +74,7 @@ class Vector;
 class Vector4D;
 class bf_read;
 struct AudioState_t;
+struct ClientSideNetworkedEntityDesc_t;
 struct EconItemInfo_t;
 struct Entity2Networkable_t;
 struct FlattenedSerializerSpewField_t;
@@ -106,13 +110,36 @@ public:
 abstract_class IFieldChangeLimitSpew
 {
 public:
-	virtual void unk000() = 0;
+	// Called by CNetworkFieldChangedEventQueue::InvokeChangeCallbacks() for a change callback that ran longer than the
+	// time limit, with the object id, field name and field path of the queued change; empty in the client
+	virtual void OnChangeCallbackTimeLimitExceeded( int nObjectId, const char *pszFieldName, const CFieldPath &path ) = 0;
 };
 
-// The 8-byte class ISource2Client::unk146 returns (zero in the client), in an integer register on Linux; only its size is known
-struct Source2ClientUnk146_t
+// Sequence index of a model, -1 for none
+class HSequence
 {
-	uint8 m_Data[ 8 ];
+public:
+	HSequence() : m_Value( -1 ) {}
+	HSequence( int nValue ) : m_Value( nValue ) {}
+
+	int m_Value;
+};
+
+// A character with one of its personas, as the tools list them through ISource2Client::GetCharacterList() and pass them
+// to the methods for characters; sorted by name and then by persona
+struct CharacterInfo_t
+{
+	CUtlString m_sName;
+	int8 m_nPersona;
+};
+
+// Filled by ISource2Client::GetMouthInfo() from the mouth (lip sync) system
+struct MouthInfo_t
+{
+	// Mouth id, 0 for none
+	uint16 m_nMouth;
+	// Mouth openness the mouth system keeps for it
+	uint8 m_nMouthOpen;
 };
 
 // A tick with the fraction of the tick that has passed, normalized to [0, 1)
@@ -204,8 +231,8 @@ public:
 	virtual void ClearPauseTicks() = 0;
 	// Forward to the network classes of the client entity system
 	virtual bool GetEntity2Networkable( CEntityIndex nEntityIndex, Entity2Networkable_t &networkable ) = 0;
-	// The engine creates each new entity of a packet through it; pUnk is the engine's creation record
-	virtual bool CreateClientSideNetworkedEntity( const void *pUnk, Entity2Networkable_t *pNetworkable ) = 0;
+	// The engine creates each new entity of a packet through it
+	virtual bool CreateClientSideNetworkedEntity( const ClientSideNetworkedEntityDesc_t *pDesc, Entity2Networkable_t *pNetworkable ) = 0;
 	// Queues the entity handle with a time when bDeferred is set and the entity qualifies, otherwise forwards to the network classes
 	virtual void DestroyClientSideNetworkedEntity( const Entity2Networkable_t *pNetworkable, bool bDeferred ) = 0;
 	virtual INetworkFieldChangedEventQueue *GetNetworkFieldChangeCallbackQueue() = 0;
@@ -232,10 +259,11 @@ public:
 
 	virtual void VoiceStatus( int nEntityIndex, int nSplitScreenSlot, bool bTalking ) = 0;
 
-	// Forward to the mouth (lip sync) system; the first one allocates a mouth and returns its id
-	virtual uint16 AllocateMouth( int nUnk ) = 0;
+	// Forward to the mouth (lip sync) system; the first one allocates a mouth for a playing sound event and returns its id.
+	// The last one looks the mouth up through the entity when nEntityIndex is set, otherwise through the sound event
+	virtual uint16 AllocateMouth( SoundEventGuid_t guid ) = 0;
 	virtual void FreeMouth( uint16 nMouth ) = 0;
-	virtual void GetMouthInfo( void *pInfo, CEntityIndex nEntityIndex, int nUnk ) = 0;
+	virtual void GetMouthInfo( MouthInfo_t *pInfo, CEntityIndex nEntityIndex, SoundEventGuid_t guid ) = 0;
 	// Fills the listener origin and angles, then the two vectors that follow through unk098()
 	virtual void UpdateAudioState( AudioState_t *pAudioState, CSplitScreenSlot nSlot ) = 0;
 	virtual void OnScreenSizeChanged( int nOldWidth, int nOldHeight ) = 0;
@@ -265,8 +293,8 @@ public:
 	virtual void ReadAnimAssetData( INetworkStringTableContainer *pStringTables, void *pAnimAssets ) = 0;
 	// Frees the game events kept for scrubbing and clears the player connection events
 	virtual void ClearScrubbingData() = 0;
-	// Fires the game events kept for nTick
-	virtual void OnScrubDemo( int nUnk, int nTick ) = 0;
+	// Fires the game events kept for nTick; the engine passes the tick the skip started from first
+	virtual void OnScrubDemo( int nSkipStartTick, int nTick ) = 0;
 	// Fires the "demo_skip" game event
 	virtual void OnDemoSkip( int nPlaybackTick, int nSkipToTick, bool bInstantReplay ) = 0;
 	// Asked by the demo player for each message removed while skipping
@@ -357,7 +385,8 @@ public:
 	virtual bool VoiceReliable() = 0;
 	virtual void UpdateWhenNotInGame( float flFrameTime ) = 0;
 	virtual void UpdateGlobalLightFromLightInfos( IToolObject *pUnk, const CUtlVector< IToolObject * > &lightInfos, const Vector &vecUnk, int nUnk, float flUnk1, float flUnk2, float flUnk3 ) = 0;
-	virtual bool GetGlobalLightParameters( int *pnUnk, float *pflUnk1, float *pflUnk2 ) = 0;
+	// False in the client; SFM records the results as "weatherType", "timeOfDayAmount" and "smoothedTimeOfDayAmount"
+	virtual bool GetGlobalLightParameters( int *pnWeatherType, float *pflTimeOfDayAmount, float *pflSmoothedTimeOfDayAmount ) = 0;
 	virtual void OnReceivedUpdatedServerPeerList( PeerListEntry_t *pPeerList, size_t nPeerCount ) = 0;
 	virtual void UpdateEventListeners() = 0;
 	virtual void *GetEconItemSystem() = 0;
@@ -390,14 +419,18 @@ public:
 	virtual void SetupPlayerViewRenderAttributes( CRenderAttributes *pAttributes ) = 0;
 	virtual void unk143( void *pUnk ) = 0;
 	virtual bool unk144() = 0;
-	virtual void *unk145() = 0;
-	virtual Source2ClientUnk146_t unk146() = 0;
+	// SFM reads the "modelID" attribute of the element the first one returns for an entity and builds the model from it with
+	// the second one; NULL and an empty handle in the client
+	virtual CDmElement *GetEntityModelElement( CEntityHandle hEntity ) = 0;
+	virtual CWeakHandle< InfoForResourceTypeCModel > GetModelFromElement( CDmElement *pElement ) = 0;
 	// Duplicates the user command nCommandNumber until the newest command reaches nLastExecutedCommand ("Duplicating command %d %dx to catch up")
 	virtual void DuplicateCommandToCatchUp( CSplitScreenSlot nSlot, int nLastExecutedCommand, int nServerTick, int nCommandNumber ) = 0;
 	virtual void unk148() = 0;
 	virtual const char *GetEntity2UniqueHammerID( CEntityIndex nEntityIndex ) = 0;
-	virtual CEntityHandle unk150( CEntityHandle hEntity ) = 0;
-	virtual void unk151() = 0;
+	// Current sequence of the animation controller of the entity's skeleton, -1 without one
+	virtual HSequence GetEntitySequence( CEntityHandle hEntity ) = 0;
+	// Appends the values of CEntitySystem::m_EntityMaterialAttributes; the material editor lists them as entity render attributes
+	virtual void GetEntityMaterialAttributes( CUtlVector< void * > *pAttributes ) = 0;
 	// Forwards to the game rules; the engine passes its host frame timings, more of them than ISource2Server::OnHostFrameTiming() gets
 	virtual void OnHostFrameTiming( const double *pFrameTimes ) = 0;
 	virtual const char *GetFriendlyMapName() = 0;
@@ -443,8 +476,9 @@ public:
 
 	// Forwards to the input system; true makes the engine create and send a move every client frame instead of only on new ticks
 	virtual bool ShouldCreateMoveEveryFrame() = 0;
-	virtual void unk177() = 0;
-	virtual void unk178() = 0;
+	// The model editor's animation capture toolbar registers itself while it records and unregisters afterwards
+	virtual void AddSkeletonDemoRecorder( ISkeletonDemoRecorder *pRecorder ) = 0;
+	virtual void RemoveSkeletonDemoRecorder( ISkeletonDemoRecorder *pRecorder ) = 0;
 	// cl_interp_ratio clamped to sv_client_min_interp_ratio and sv_client_max_interp_ratio, in seconds
 	virtual float GetClientInterpAmount() = 0;
 	// Forwards to IEntity2Networkables::GetEntity2Networkables() of the client entity system; the engine walks it when it
@@ -474,17 +508,19 @@ public:
 	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bUnk1, bool bUnk2, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
-	virtual void GetEconItemsInfoForCharacter( const char *pszCharacterName, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
+	virtual void GetEconItemsInfoForCharacter( const CharacterInfo_t *pCharacter, const char *pszUnk, bool bUnk1, bool bUnk2, bool bUnk3, CUtlVector< EconItemInfo_t > &items ) = 0;
 	virtual void unk194() = 0;
 	virtual void *unk195() = 0;
 	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
-	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
-	virtual void unk198( void *pUnk1, bool bUnk, void *pUnk2 ) = 0;
-	// Clears the result
-	virtual bool unk199( void *pUnk1, void *pUnk2, CBufferString &result ) = 0;
-	virtual void unk200() = 0;
-	// Clears the result
-	virtual void unk201( void *pUnk, CBufferString &result ) = 0;
+	virtual float GetDefaultScaleForCharacter( const CharacterInfo_t *pCharacter ) = 0;
+	// Only clears the persona in the client
+	virtual void GetCharacterForModel( const char *pszModelName, bool bUnk, CharacterInfo_t *pCharacter ) = 0;
+	// The model names of a character by index; false past the last one. Clears the result in the client
+	virtual bool GetCharacterModelName( const CharacterInfo_t *pCharacter, int nModelIndex, CBufferString &modelName ) = 0;
+	// Empty in the client
+	virtual void GetCharacterList( CUtlVector< CharacterInfo_t > *pCharacters ) = 0;
+	// Directory of the scenes of a model; SFM falls back to "scenes/<hero name>" when it is empty. Clears the result in the client
+	virtual void GetSceneDirectoryForModel( const char *pszModelName, CBufferString &sceneDirectory ) = 0;
 	// The engine's filter callback of fps_max; the client allows the change while disconnected or on a local server, among others
 	virtual bool IsFpsMaxChangeAllowed( ConVarRefAbstract *pConVar, CSplitScreenSlot nSlot, const CVValue_t *pNewValue, const CVValue_t *pOldValue ) = 0;
 	// The engine passes it with GetReplayCompatHelper() as the user data of the flattened serializers while it links classes
