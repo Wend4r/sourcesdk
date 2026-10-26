@@ -52,7 +52,8 @@ COMPILE_TIME_ASSERT( sizeof( CHostStateRequest ) == 0x68 );
 
 class ISwitchLoopModeStatusNotify
 {
-	virtual void OnSwitchLoopModeFinished(const char *, uint32, bool) = 0;
+	// nRequestID is the CHostStateRequest::m_ID of the request that switched the loop mode
+	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nRequestID, bool bSuccess ) = 0;
 };
 
 class IHostStateMgr : public IAppSystem

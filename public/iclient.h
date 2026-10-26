@@ -123,7 +123,8 @@ public:
 
 	virtual int GetClientTickCount() const = 0;
 	virtual int GetServerTickCount() const = 0;
-	virtual int unk007() = 0;
+	// Tick of the last CSVCMsg_PacketEntities; 0 in CNetworkGameClientBase
+	virtual int GetLastPacketEntitiesTick() = 0;
 	// Tick of the last CNETMsg_Tick, logged as the "s" tick by cl_clockdbg
 	virtual int GetServerTick() = 0;
 	// last_cmd_number_executed of the last CSVCMsg_PacketEntities
@@ -131,7 +132,9 @@ public:
 	// CNetworkGameClient::CommandHistoryEntry_t::m_bReceivedLate of the command, for commands up to the last executed one
 	virtual bool WasCommandReceivedLate( int nCommandNumber ) = 0;
 	virtual void SetFrameTime( float flFrameTime ) = 0;
-	virtual void Connect( CSplitScreenSlot nSlot, int nSocket, const ns_address &addr ) = 0;
+	// nConnectionLocality is 2 for a server in another process on this machine, 3 for a loopback or same-process server
+	// and 4 for a remote server
+	virtual void Connect( CSplitScreenSlot nSlot, int nSocket, const ns_address &addr, HSteamNetConnection hConnection, uint8 nConnectionLocality ) = 0;
 	virtual void Disconnect( ENetworkDisconnectionReason reason ) = 0;
 	virtual bool IsActive() const = 0;
 	virtual bool IsConnected() const = 0;
@@ -175,7 +178,8 @@ public:
 	virtual void unk043() = 0;
 	virtual void UpdateAudioState( AudioState_t *pAudioState, CSplitScreenSlot nSlot ) const = 0;
 	virtual float GetTime() const = 0;
-	virtual void PrepareSteamConnectResponse( uint64 nUnk, bool bUnk, const ns_address &addr, C2S_CONNECT_Message &msg ) = 0;
+	// Fails when Steam is unavailable or no auth session ticket could be created for the game server
+	virtual bool PrepareSteamConnectResponse( uint64 nGameServerSteamID, bool bGameServerSecure, const ns_address &addr, C2S_CONNECT_Message &msg ) = 0;
 	virtual bool IsLowViolence() const = 0;
 	virtual int GetHostVersion() const = 0;
 	virtual float GetLastTimeStamp() const = 0;
@@ -195,12 +199,7 @@ public:
 	virtual void BlockDisconnectionTracking( bool bBlock ) = 0;
 };
 
-// The 8-byte tick and fraction value CNetworkGameClientBase::unk066 returns, in an integer register on Linux and through a
-// hidden pointer on Windows; only its size is known
-struct NetworkGameClientBaseUnk066_t
-{
-	uint8 m_Data[ 8 ];
-};
+struct GameTickFraction_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: Concrete client base. Adds the network message Process* handlers,
@@ -217,14 +216,18 @@ public:
 	virtual float GetTickPacketReceiveMargin() = 0;
 	// Fraction of a tick that GetTime adds to the client tick
 	virtual float GetTickFraction() = 0;
-	// The game client's tick and fraction value
-	virtual NetworkGameClientBaseUnk066_t unk066() = 0;
-	virtual bool unk067() = 0;
-	virtual float unk068() = 0;
-	virtual float unk069() = 0;
-	// Byte flag of the split screen slot's entry
-	virtual bool unk070( CSplitScreenSlot nSlot ) = 0;
-	virtual bool unk071() = 0;
+	// Forwards to ISource2Client::GetPredictionTickFraction
+	virtual GameTickFraction_t GetPredictionTickFraction() = 0;
+	// The pending connection uses the Steam authentication protocol (3)
+	virtual bool IsUsingSteamAuthentication() = 0;
+	// Percentage of the outgoing (user commands) or incoming (server ticks) flow's ticks that were dropped or late in the last
+	// window of more than 256 ticks
+	virtual float GetOutgoingNetworkMissRate() = 0;
+	virtual float GetIncomingNetworkMissRate() = 0;
+	// The nConnectionLocality that Connect stored for the split screen slot
+	virtual uint8 GetConnectionLocality( CSplitScreenSlot nSlot ) = 0;
+	// The TrueViewLookAhead tick gobble or aggressive slowdown is running
+	virtual bool IsLookAheadFixupActive() = 0;
 
 	// Overrides the connectionless packet handler's virtual destructor: no slot of its own on Windows, two here on Linux
 	virtual ~CNetworkGameClientBase() {}
@@ -235,22 +238,32 @@ public:
 	virtual void ApplyClockDrift( int nServerTick, int nClientTick ) = 0;
 	// ISource2Client::GetLocalPlayerPawnHandle() is not -1
 	virtual bool HasLocalPlayerPawn() = 0;
-	virtual void unk076() = 0;
-	virtual void unk077() = 0;
-	virtual void unk078() = 0;
-	virtual void unk079() = 0;
+	// Resets the move message, then calls ISource2Client::CreateMove for each active split screen slot; skipped on background
+	// maps and before SIGNONSTATE_FULL
+	virtual void CreateMove() = 0;
+	// ISource2Client::BeginNextTickMove for each active split screen slot (ApplyQueuedSubtickMoves on background maps), then
+	// stamps the creation time of the latest command in the command history
+	virtual void BeginNextTickMoves() = 0;
+	// Sets m_GlobalVars.m_flUsercmdTickInterval from host_timescale, adjusted by the receive margin of the recent commands
+	virtual void UpdateUsercmdTickInterval() = 0;
+	// Cancels the scheduled asynchronous move send and, under the move send lock, records the sent move in the command
+	// history, begins the next tick moves and updates the usercmd tick interval
+	virtual void CompleteAsyncMoveSend() = 0;
 	// CNetworkGameClient::m_flAsyncMoveSendDelay
 	virtual float GetAsyncMoveSendDelay() = 0;
 	// Logs "SentTickSync"
 	virtual void SendTickSync() = 0;
-	virtual void unk082() = 0;
+	// Runs client side prediction ("RunPrediction") unless a demo is playing or prediction is busy
+	virtual void RunPrediction() = 0;
 	virtual void ClientPredictionPostNetupdate() = 0;
-	virtual void unk084() = 0;
+	// Records the render and present times of the commands in the server tick history and prints cl_ticktiming
+	virtual void UpdateTickTiming() = 0;
 	virtual bool IsHLTV() = 0;
 
 	// Overrides of the secondary bases: no slots of their own on Windows, one each here on Linux
 	virtual bool FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) override = 0;
-	virtual void OnShutdownChannel( INetChannel *pChannel, bool bUnk ) override = 0;
+	// Clears the current split screen slot's channel when it is pChannel; bRequestIdle then also requests the idle host state
+	virtual void OnShutdownChannel( INetChannel *pChannel, bool bRequestIdle ) override = 0;
 	virtual bool OnGameEventReceived( const CNetMessage *pData ) override = 0;
 
 	virtual bool GetPlayerInfo( CPlayerSlot nSlot, CMsgPlayerInfo &info ) = 0;
@@ -320,8 +333,9 @@ public:
 	virtual const char *GetClientName( CSplitScreenSlot nSlot ) = 0;
 	virtual void ProcessReadPacketEntitiesWorkItems( CEntityReadInfo &readInfo ) = 0;
 	virtual void OnPreserveEntity( CEntityReadInfo &readInfo ) = 0;
-	virtual void CopyNewEntity( IEntityReport *pReport, CEntityReadInfo &readInfo, ClientClass *pClientClass, int nUnk, unsigned int nUnk2 ) = 0;
-	virtual void CopyExistingEntity( IEntityReport *pReport, CEntityReadInfo &readInfo ) = 0;
+	// nSerialNumber is the 17-bit serial and hSpawnGroup the spawn group of the enter PVS record
+	virtual void CopyNewEntity( CEntityReadInfo &readInfo, ClientClass *pClientClass, int nSerialNumber, SpawnGroupHandle_t hSpawnGroup ) = 0;
+	virtual void CopyExistingEntity( CEntityReadInfo &readInfo ) = 0;
 	virtual void OnReceivedUncompressedPacket() = 0;
 	// Tail call to Clear
 	virtual void CL_ClearState( bool bClearStringTables ) = 0;
@@ -415,7 +429,7 @@ public:
 	};
 
 	// Last slot of the Linux primary vtable; on Windows only in the notify vtable
-	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nUnk, bool bSuccess ) override = 0;
+	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nRequestID, bool bSuccess ) override = 0;
 
 public:
 	CClientFrameManager m_FrameManager;
