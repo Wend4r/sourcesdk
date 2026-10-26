@@ -18,10 +18,12 @@
 
 struct PostDataUpdateCall_t;
 
-// Reason passed to the engine-side client prediction entry point.
+// Reason passed to IPrediction::Update(); the engine spews it as "pred reason %s" with the names below
 enum PredictionReason_t : int
 {
-	PREDICTION_REASON_CLIENT_COMMAND_TICK = 0,
+	PREDICTION_REASON_CLIENT_COMMAND_TICK = 0, // "client_command_tick"
+	PREDICTION_REASON_POSTNETUPDATE, // "postnetupdate"
+	PREDICTION_REASON_CLIENT_FRAME_SIMULATE, // "client_frame_simulate"
 };
 
 //-----------------------------------------------------------------------------
