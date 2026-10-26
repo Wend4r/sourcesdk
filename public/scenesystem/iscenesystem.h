@@ -197,7 +197,9 @@ public:
 	virtual ISceneViewDebugOverlays *CreateWorldlessSceneViewDebugOverlayList() = 0;
 	virtual void DestroyWorldlessSceneViewDebugOverlayList( ISceneViewDebugOverlays *pOverlays ) = 0;
 
-	virtual void unk071( bool bUnk ) = 0;
+	// Behavioural name: CDebugOverlayGameSystem::OnClientPollInput passes whether its int at +104 equals 2 on every input poll;
+	// the value goes to a global that nothing in libscenesystem reads.
+	virtual void SetDebugOverlayPollState( bool bState ) = 0;
 
 	virtual void InitObject( CSceneObject *pObject, ESceneObjectTypeFlags nTypeFlags, ESceneObjectFlags nFlags, ISceneWorld *pWorld ) = 0;
 
