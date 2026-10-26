@@ -288,6 +288,37 @@ struct OpacityMicromapBuildDesc_t
 	uint32 m_nScratchOffset;
 };
 
+// Texture filter of IRenderContext::SetPixelShaderSamplerState and SetVertexShaderSamplerState, in the D3D11
+// filter encoding: bit 0 linear mip, bit 2 linear magnification, bit 4 linear minification
+enum RenderSamplerFilter_t : uint8
+{
+	RENDER_FILTER_MIN_MAG_MIP_POINT = 0x00,
+	RENDER_FILTER_MIN_MAG_POINT_MIP_LINEAR = 0x01,
+	RENDER_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT = 0x04,
+	RENDER_FILTER_MIN_POINT_MAG_MIP_LINEAR = 0x05,
+	RENDER_FILTER_MIN_LINEAR_MAG_MIP_POINT = 0x10,
+	RENDER_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR = 0x11,
+	RENDER_FILTER_MIN_MAG_LINEAR_MIP_POINT = 0x14,
+	RENDER_FILTER_MIN_MAG_MIP_LINEAR = 0x15,
+	RENDER_FILTER_ANISOTROPIC = 0x55,
+
+	// Combined with one of the filters above: a comparison sampler
+	RENDER_FILTER_COMPARISON = 0x80,
+
+	// Picks the filter from r_texturefilteringquality
+	RENDER_FILTER_FROM_TEXTURE_FILTERING_QUALITY = 0xFF,
+};
+
+// Texture coordinate addressing of the sampler states
+enum RenderTextureAddressMode_t
+{
+	RENDER_TEXTURE_ADDRESS_WRAP = 0,
+	RENDER_TEXTURE_ADDRESS_MIRROR,
+	RENDER_TEXTURE_ADDRESS_CLAMP,
+	RENDER_TEXTURE_ADDRESS_BORDER,
+	RENDER_TEXTURE_ADDRESS_MIRROR_ONCE,
+};
+
 // nStateFlags of IRenderContext::ResetState: the shader bits unbind that stage's shader, the state bits
 // restore the device's default state
 #define RENDER_RESET_PIXEL_SHADER ( 1 << 0 )
@@ -339,8 +370,9 @@ public:
 	virtual void SetUnorderedAccessViews( int nFirstSlot, int nCount, const RenderTextureBinding_t *pBindings, int nShaderType ) = 0;
 	// Transitions the texture into the shader read layout (general when it is a storage image)
 	virtual void TransitionTextureForShaderRead( HRenderTexture hTexture, RenderColorSpace_t nColorSpace, int32 nRequiredMipSize, int nMipLevel ) = 0;
-	virtual void SetPixelShaderSamplerState( int nSlot, uint8 nFilter, int nAddressU, int nAddressV, int nAddressW, int nComparisonFunc ) = 0;
-	virtual void SetVertexShaderSamplerState( int nSlot, uint8 nFilter, int nAddressU, int nAddressV, int nAddressW, int nComparisonFunc ) = 0;
+	// nComparisonFunc is an RsComparison_t, used with the RENDER_FILTER_COMPARISON filters
+	virtual void SetPixelShaderSamplerState( int nSlot, RenderSamplerFilter_t nFilter, RenderTextureAddressMode_t nAddressU, RenderTextureAddressMode_t nAddressV, RenderTextureAddressMode_t nAddressW, int nComparisonFunc ) = 0;
+	virtual void SetVertexShaderSamplerState( int nSlot, RenderSamplerFilter_t nFilter, RenderTextureAddressMode_t nAddressU, RenderTextureAddressMode_t nAddressV, RenderTextureAddressMode_t nAddressW, int nComparisonFunc ) = 0;
 	virtual void SetSamplerState( int nSlot, const CSamplerStateDesc &desc, int nShaderType ) = 0;
 	virtual void SetSamplerStates( int nFirstSlot, int nCount, const CSamplerStateDesc *pDescs, int nShaderType ) = 0;
 	virtual void SetDescriptorSets( uint32 nFirstSet, int nCount, const RenderDescriptorSetHandle_t *pDescriptorSets, const uint32 *pDynamicOffsetCounts, const uint32 *const *ppDynamicOffsets ) = 0;
