@@ -251,6 +251,23 @@ enum SetupPerObjectLighting_t : uint32
 	SETUP_PER_OBJECT_LIGHTING_SPECULAR = 0x2,
 };
 
+// Child flags of ISceneSystem::SceneObject_AddChild: what the parent passes on to the child
+#define SCENEOBJECT_CHILD_MIRROR_VISIBILITY		( 1 << 0 )	// SceneObject_MirrorVisibilityToChildSceneObjects
+#define SCENEOBJECT_CHILD_MIRROR_TRANSFORM		( 1 << 1 )	// SceneObject_MirrorTransformToChildSceneObjects
+#define SCENEOBJECT_CHILD_MIRROR_BOUNDS			( 1 << 2 )	// SetObjectBoundsInfinite
+
+// Bits of ISceneSystem::GetImGuiInputState
+#define SCENE_IMGUI_INPUT_STATE_MOUSE_CURSOR	( 1 << 0 )	// The mouse cursor was written
+#define SCENE_IMGUI_INPUT_STATE_WANTS_MOUSE		( 1 << 1 )	// ImGui takes the mouse input
+
+// Timing type of ISceneSystem::CreateSceneViewDebugOverlayList. Behavioural name: overlay lists of this type need an absolute
+// time when they are added to a view (any other type is SCENE_VIEW_DEBUG_OVERLAY_TYPE_RELATIVE_TIMING); libclient and the
+// worldless lists use it.
+enum SceneViewDebugOverlayType_t
+{
+	SCENE_VIEW_DEBUG_OVERLAY_TYPE_ABSOLUTE_TIMING = 1,
+};
+
 abstract_class ISceneSystem : public IAppSystem
 {
 public:
@@ -340,7 +357,7 @@ public:
 	virtual HRenderTexture GetTextureSetArrayTexture( SceneTextureSet_t nSet ) = 0;
 	virtual uint16 GetTextureSetArrayDepth( SceneTextureSet_t nSet ) = 0;
 
-	virtual ISceneViewDebugOverlays *CreateSceneViewDebugOverlayList( int nTimingType, const char *pszName ) = 0;
+	virtual ISceneViewDebugOverlays *CreateSceneViewDebugOverlayList( SceneViewDebugOverlayType_t nTimingType, const char *pszName ) = 0;
 	virtual void DestroySceneViewDebugOverlayList( ISceneViewDebugOverlays *pOverlays ) = 0;
 
 	// Overlay lists without a "SceneViewDebugOverlays World", kept in a second list that no view renders.
@@ -455,6 +472,7 @@ public:
 	virtual void SceneObject_SetVisibilityToPlayerIndex( CSceneObject *pObject, int nPlayerIndex, bool bUnused, bool bVisible ) = 0;
 
 	virtual void SceneObject_SetSplitScreenMask( CSceneObject *pObject, uint32 nMask ) = 0;
+	// nFlags takes SCENEOBJECT_CHILD_* flags.
 	virtual void SceneObject_AddChild( CSceneObject *pParent, CUtlStringToken token, CSceneObject *pChild, uint32 nFlags ) = 0;
 	virtual void SceneObject_RemoveChild( CSceneObject *pParent, CSceneObject *pChild ) = 0;
 	virtual CSceneObject *SceneObject_FindChild( const CSceneObject *pParent, CUtlStringToken token ) = 0;
@@ -522,8 +540,8 @@ public:
 
 	// Walks the timestamp tree down to nMaxDepth levels and sums the entries of the same name below it; 0 or less sums everything.
 	virtual void GetMostRecentTimestampFrameSummary( SwapChainHandle_t hSwapChain, CUtlVector< SceneSystemTimestampFrameData_t > &timestampFrameSummaryOut, int nMaxDepth ) = 0;
-	// ORs the ImGui state of the overlay lists created by CreateSceneViewDebugOverlayList: bit 0 when pMouseCursor is set
-	// (-1 hides the cursor), bit 1 while they take mouse input; the client picks its cursor and consumes mouse events from it.
+	// ORs the SCENE_IMGUI_INPUT_STATE_* bits of the overlay lists created by CreateSceneViewDebugOverlayList (a pMouseCursor of -1
+	// hides the cursor); the client picks its cursor and consumes mouse events from it.
 	virtual int GetImGuiInputState( int *pMouseCursor ) = 0;
 	// bTLASFlag40 adds flag 0x40 to the "SceneTLAS" creation flags (the Vulkan device does not read it); an IRayTraceSceneWorld setter sets
 	// the same flag later.
