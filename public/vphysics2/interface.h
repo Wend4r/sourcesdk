@@ -564,7 +564,7 @@ public:
 	// A 16-byte CRnWorld member that only the constructor writes
 	virtual void *GetUnusedWorldBlock() = 0;
 
-	// The debug draw options used by Draw and UpdateSceneObjects
+	// The RnDebugLayers_t bits that Draw and UpdateSceneObjects use
 	virtual uint64 GetDebugDrawOptions() = 0;
 	virtual void SetDebugDrawOptions( uint64 nOptions ) = 0;
 
@@ -612,7 +612,7 @@ public:
 
 	virtual void GetBenchmarkPath( CBufferString &path ) = 0;
 
-	// Line segments (40-byte records with the end points at +16 and +28) that debug draw option 0x200 draws
+	// Line segments (40-byte records with the end points at +16 and +28) that RN_DRAW_RECORDED_FORCES draws
 	virtual int GetDebugLineCount() = 0;
 	virtual void *GetDebugLines() = 0;
 
@@ -632,11 +632,81 @@ public:
 	virtual IVPhysics2World *GetWorld() = 0;
 };
 
+// The layers of the debug draw of a world. phys_debug_draw lists the names of RN_DRAW_STATIC_BODIES to RN_DRAW_SHAPE_EDGES
+// (with RN_DRAW_CONTACTS among them); the layers after them have no name in the binaries and are named after what they draw
+enum RnDebugLayers_t : uint64
+{
+	// Bodies of each type; RN_DRAW_AWAKE_BODIES limits them to the awake ones
+	RN_DRAW_STATIC_BODIES = ( 1ull << 0 ),
+	RN_DRAW_KEYFRAMED_BODIES = ( 1ull << 1 ),
+	RN_DRAW_DYNAMIC_BODIES = ( 1ull << 2 ),
+
+	// The solver contacts
+	RN_DRAW_CONTACT_POINTS = ( 1ull << 3 ),
+	RN_DRAW_CONTACT_MANIFOLDS = ( 1ull << 4 ),
+	RN_DRAW_CONTACT_INDICES = ( 1ull << 5 ),
+	RN_DRAW_CONTACTS = RN_DRAW_CONTACT_POINTS | RN_DRAW_CONTACT_MANIFOLDS | RN_DRAW_CONTACT_INDICES,
+
+	RN_DRAW_JOINTS = ( 1ull << 6 ),
+
+	// The broadphase proxy bounds of the shapes
+	RN_DRAW_PROXIES = ( 1ull << 7 ),
+
+	// The traces recorded while IFnPhysicsWorld::IsRecordingTraces is set
+	RN_DRAW_RECORDED_RAYCASTS = ( 1ull << 8 ),
+
+	// The line segments of IVPhysics2World::GetDebugLines
+	RN_DRAW_RECORDED_FORCES = ( 1ull << 9 ),
+
+	RN_DRAW_INERTIA_BOXES = ( 1ull << 10 ),
+	RN_DRAW_MESH_FACE_INDICES = ( 1ull << 11 ),
+	RN_DRAW_MESH_VERTEX_INDICES = ( 1ull << 12 ),
+	RN_DRAW_MESH_EDGE_INDICES = ( 1ull << 13 ),
+	RN_DRAW_AWAKE_BODIES = ( 1ull << 14 ),
+	RN_DRAW_SOFTBODIES = ( 1ull << 15 ),
+	RN_DRAW_SOFTBODY_INDICES = ( 1ull << 16 ),
+	RN_DRAW_SOFTBODY_FIELDS = ( 1ull << 17 ),
+	RN_DRAW_SOFTBODY_COLLISION = ( 1ull << 18 ),
+	RN_DRAW_SOFTBODY_BASES = ( 1ull << 19 ),
+	RN_DRAW_SOFTBODY_ANIM_BASES = ( 1ull << 20 ),
+	RN_DRAW_SOFTBODY_NODE_NAMES = ( 1ull << 21 ),
+	RN_DRAW_SHAPE_EDGES = ( 1ull << 22 ),
+
+	// The anchors of the joints on their two bodies, except for wheel joints
+	RN_DRAW_JOINT_ANCHORS = ( 1ull << 24 ),
+
+	// The body, contact, triangle cache and joint counts as text
+	RN_DRAW_STATISTICS = ( 1ull << 25 ),
+
+	// The shapes of the bodies through the debug overlays
+	RN_DRAW_BODY_SHAPES = ( 1ull << 26 ),
+
+	// The instances of the debug meshes the world caches, and the bounds of the cache
+	RN_DRAW_DEBUG_MESHES = ( 1ull << 27 ),
+	RN_DRAW_DEBUG_MESH_BOUNDS = ( 1ull << 28 ),
+
+	RN_DRAW_PARTICLE_ROPES = ( 1ull << 30 ),
+	RN_DRAW_VEHICLES = ( 1ull << 31 ),
+	RN_DRAW_CHARACTER_PROXIES = ( 1ull << 32 ),
+
+	// Spheres and capsules are drawn by the shape debug draw only with this layer
+	RN_DRAW_SPHERES_AND_CAPSULES = ( 1ull << 34 ),
+
+	// Keeps the debug shape scene objects of the bodies updated while no debug draw filter is set
+	RN_DRAW_DEBUG_SHAPES = ( 1ull << 36 ),
+
+	// The body islands of the world, each in its own color
+	RN_DRAW_ISLANDS = ( 1ull << 37 ),
+
+	// The GJK proxies of the sphere, capsule and hull shapes
+	RN_DRAW_GJK_PROXIES = ( 1ull << 38 ),
+};
+
 // The debug draw options of a world, a 128-bit mask passed by value to the debug draw functions
 struct RnDebugDrawOptions_t
 {
-	// The option bits GetDebugDrawOptions and SetDebugDrawOptions access
-	uint64 m_nFlags;
+	// RnDebugLayers_t bits; GetDebugDrawOptions and SetDebugDrawOptions access them
+	uint64 m_nLayers;
 
 	// The upper half of the mask, which the constructor clears and no option test reads
 	uint64 m_nExtendedFlags;

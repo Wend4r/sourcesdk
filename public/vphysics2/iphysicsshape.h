@@ -168,7 +168,7 @@ public:
 	virtual void SetHitGroup( const char *pszHitGroup ) = 0;
 	virtual const char *GetHitGroup() const = 0;
 
-	// Debug draw of the shape placed at the transform; flDuration is passed on to the overlays
+	// Debug draw of the shape placed at the transform with RnDebugLayers_t bits; flDuration is passed on to the overlays
 	virtual void Draw( ISceneViewDebugOverlays *pDebugOverlays, const CTransform &transform, const Color &color, uint64 nDebugDrawOptions, float flDuration ) = 0;
 
 	// Opacity factor of the debug shape, 1 by default

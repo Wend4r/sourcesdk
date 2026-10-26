@@ -550,7 +550,8 @@ public:
 	// Writes a one line description of the body and its shapes
 	virtual void Describe( CUtlString &description ) const = 0;
 
-	// Debug draw of the shapes of the body, and of the axes at the mass center of a dynamic body; DrawAtTransform places the body at the transform when one is given
+	// Debug draw of the shapes of the body, and of the axes at the mass center of a dynamic body, with RnDebugLayers_t bits; DrawAtTransform places the body at
+	// the transform when one is given
 	virtual void Draw( ISceneViewDebugOverlays *pDebugOverlays, uint64 nDebugDrawOptions ) = 0;
 	virtual void DrawAtTransform( ISceneViewDebugOverlays *pDebugOverlays, uint64 nDebugDrawOptions, const CTransform *pTransform ) = 0;
 
