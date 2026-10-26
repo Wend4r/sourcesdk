@@ -6,6 +6,7 @@
 #endif
 
 #include <appframework/iappsystem.h>
+#include <resourcesystem/resourcehandle.h>
 
 #include <tier0/platform.h>
 #include <tier0/utlstringtoken.h>
@@ -13,45 +14,97 @@
 
 typedef uint32 HFont;
 
+// Font creation flags (nFlags of IFontManager::LoadFont and SetFontGlyphSet)
+#define FONTFLAG_NONE 0
+#define FONTFLAG_ITALIC ( 1 << 0 )
+#define FONTFLAG_UNDERLINE ( 1 << 1 )
+#define FONTFLAG_ANTIALIAS ( 1 << 4 )
+#define FONTFLAG_ROTARY ( 1 << 6 )
+#define FONTFLAG_DROPSHADOW ( 1 << 7 )
+#define FONTFLAG_ADDITIVE ( 1 << 8 )
+#define FONTFLAG_OUTLINE ( 1 << 9 )
+
+// nDrawType of IFontManager::GetTextureForChar
+enum FontDrawType_t
+{
+	// FONT_DRAW_ADDITIVE for FONTFLAG_ADDITIVE fonts, FONT_DRAW_NONADDITIVE otherwise
+	FONT_DRAW_DEFAULT = 0,
+	FONT_DRAW_NONADDITIVE,
+	FONT_DRAW_ADDITIVE,
+	FONT_DRAW_TYPE_COUNT = 2,
+};
+
+class InfoForResourceTypeCTextureBase;
+
+struct FontRange_t
+{
+	int _min;
+	int _max;
+};
+
+//-----------------------------------------------------------------------------
+// A font of a font alias group
+//-----------------------------------------------------------------------------
+struct FontAlias_t
+{
+	CUtlSymbolLarge m_FontName;
+	CUtlSymbolLarge m_TrueFontName;
+	FontRange_t m_FontRange;
+
+	// GetFont() and LoadFont() set their flag when they use the alias
+	HFont m_Font : 15;
+	uint32 m_bProportional : 1;
+	uint32 m_bGetFontUsed : 1;
+	uint32 m_bLoadFontUsed : 1;
+	uint32 m_bUnused : 14;
+};
+
+//-----------------------------------------------------------------------------
+// A font alias group, found by its tag name or its token
+//-----------------------------------------------------------------------------
+struct FontAliasList_t
+{
+	CUtlString m_pTag;
+	CUtlStringToken m_nTagToken;
+	CUtlVector< FontAlias_t > m_FontAliases;
+};
+
 abstract_class IFontManager : public IAppSystem
 {
 public:
 	virtual HFont CreateFont() = 0;
 
 	// Clears the glyph data of every font alias group
-	virtual void unk012() = 0;
+	virtual void ClearAllFonts() = 0;
 
 	// Copied into a 64 char buffer
 	virtual void SetLanguage( const char *pLanguage ) = 0;
 	virtual const char *GetLanguage() = 0;
 
-	virtual bool AddCustomFontFile( const char *pFontName, const char *pFontFileName, int nRangeMin, int nRangeMax, void *pUnk ) = 0;
+	virtual bool AddCustomFontFile( const char *pFontName, const char *pFontFileName, int nRangeMin, int nRangeMax, const char *pGroupName ) = 0;
 
 	// Font alias group by name token, the first group for 0
-	virtual void *FindFontAliasGroup( CUtlStringToken groupName ) = 0;
+	virtual FontAliasList_t *FindFontAliasGroup( CUtlStringToken groupName ) = 0;
 
-	// Looks up a font alias group by name
-	virtual void unk017( const char *pGroupName ) = 0;
+	virtual void RemoveFontAliasList( const char *pGroupName ) = 0;
 
-	// Font entries of a font alias group, 32 bytes each
-	virtual void *unk018( const char *pGroupName ) = 0;
+	virtual CUtlVector< FontAlias_t > *GetFontAliases( const char *pGroupName ) = 0;
 
-	// Creates a font and sets it up from the arguments
-	virtual HFont unk019( int n1, int n2, bool b3 ) = 0;
+	virtual HFont CreateFontAlias( const char *pAliasName, const char *pFontName, bool bIsProportional ) = 0;
 
 	// Font with the given name in a font alias group
-	virtual HFont unk020( const char *pFontName, const char *pGroupName, bool bUnk ) = 0;
+	virtual HFont GetFont( const char *pFontName, const char *pGroupName, bool bIsProportional ) = 0;
 
-	virtual HFont unk021( const char *pFontName, const char *pWindowsFontName, int nTall, int n4, bool b5, int nWeight, int n7, int n8, int n9, int n10, void *p11 ) = 0;
+	virtual HFont LoadFont( const char *pFontName, const char *pWindowsFontName, int nTall, int nFlags, bool bIsProportional, int nWeight, int nBlur, int nScanlines, int nRangeMin, int nRangeMax, const char *pGroupName ) = 0;
 
-	virtual HFont unk022( const char *pFontName, bool bUnk, const char *pGroupName = NULL ) = 0;
-	virtual void unk023( void *p ) = 0;
+	virtual HFont FindFont( const char *pFontName, bool bIsProportional, const char *pGroupName = NULL ) = 0;
+	virtual HFont FindOrLoadFont( const char *pFontName, const char *pWindowsFontName, int nTall, int nFlags, bool bIsProportional, int nWeight, int nBlur, int nScanlines, int nRangeMin, int nRangeMax, const char *pGroupName ) = 0;
 
-	// Name of a font entry returned by unk018
-	virtual const char *unk024( void *pFontEntry ) = 0;
+	// Name of a font entry returned by GetFontAliases
+	virtual const char *GetTrueFontName( const FontAlias_t &fontAlias ) = 0;
 
-	virtual void unk025( void *p ) = 0;
-	virtual void unk026( void *p ) = 0;
+	virtual bool GetFontRange( const char *pFontName, int &nRangeMin, int &nRangeMax, const char *pGroupName ) = 0;
+	virtual void SetFontRange( const char *pFontName, int nRangeMin, int nRangeMax, const char *pGroupName ) = 0;
 
 	virtual bool SetFontGlyphSet( HFont hFont, const char *pWindowsFontName, int nTall, int nWeight, int nBlur, int nScanlines, int nFlags, int nRangeMin, int nRangeMax ) = 0;
 
@@ -63,11 +116,11 @@ public:
 	virtual void GetCharABCwide( HFont hFont, uchar32 ch, int &a, int &b, int &c ) = 0;
 	virtual void GetTextSize( HFont hFont, const uchar32 *pText, int &nWide, int &nTall ) = 0;
 
-	virtual void unk034( void *p ) = 0;
+	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetTextureHandle( int nTextureId ) = 0;
 
 	// Value read from the glyph of ch
-	virtual int unk035( HFont hFont, uchar32 ch ) = 0;
-	virtual bool unk036( HFont hFont ) = 0;
+	virtual int GetFontAscent( HFont hFont, uchar32 ch ) = 0;
+	virtual bool GetFontUnderlined( HFont hFont ) = 0;
 
 	// FONTFLAG_ADDITIVE is set
 	virtual bool IsFontAdditive( HFont hFont ) = 0;
@@ -75,11 +128,11 @@ public:
 	virtual void PrecacheFontCharacters( HFont hFont, const uchar32 *pCharacters ) = 0;
 
 	// Both run on the glyph cache under the font manager lock
-	virtual void unk039() = 0;
-	virtual void unk040( void *p ) = 0;
+	virtual void ClearFontTextureCache() = 0;
+	virtual bool GetTextureForChar( HFont hFont, FontDrawType_t nDrawType, uchar32 ch, int *pTextureId, float **ppTexCoords ) = 0;
 
 	// Empty
-	virtual void unk041() = 0;
+	virtual void ClearTemporaryFontCache() = 0;
 
 	// Prints every font of a font alias group
 	virtual void DumpFontAliasGroup( const char *pGroupName ) = 0;
