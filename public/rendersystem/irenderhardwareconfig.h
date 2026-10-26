@@ -51,7 +51,8 @@ public:
 	virtual bool PreferLoopUnrolling() = 0;
 
 	virtual bool ReverseDepth() = 0;
-	virtual bool IsFastSubrectClearSupported() = 0;
+	// "setting.HasBrokenPipelineStats" of the GPU config entry matching the adapter
+	virtual bool HasBrokenPipelineStats() = 0;
 
 	virtual const RenderAdapterInfo_t &AdapterInfo() = 0;
 
