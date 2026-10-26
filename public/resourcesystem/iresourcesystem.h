@@ -46,6 +46,16 @@ struct ResourceManifestCreationInfo_t
 	void *m_pContext;
 };
 
+// nFlag of IResourceSystem::SetDebugFlag and GetDebugFlag
+enum ResourceSystemDebugFlag_t
+{
+	// The frame update skips the unloading of the manifests that are being destroyed
+	RESOURCE_SYSTEM_DEBUG_FLAG_NO_MANIFEST_UNLOAD = 0,
+
+	// Silences the warnings about type managers installed twice or not removed before shutdown
+	RESOURCE_SYSTEM_DEBUG_FLAG_NO_TYPE_MANAGER_WARNINGS = 2,
+};
+
 class IResourceSystem : public IAppSystem
 {
 public:
@@ -106,11 +116,11 @@ public:
 	virtual void SetResourceTypeManifestPriority( ResourceType_t nResourceType, ResourceManifestLoadPriority_t nResourceManifestLoadPriority ) = 0;
 	virtual void BlockingFinishAllCurrentlyLoadingManifests() = 0;
 	virtual bool IsBlockingOnManifestLoad() = 0;
-	virtual void SetDebugFlag( int nFlag, bool bValue ) = 0;
+	virtual void SetDebugFlag( ResourceSystemDebugFlag_t nFlag, bool bValue ) = 0;
 	virtual ResourceManifestLoadPriority_t ResolveManifestLoadPriority( ResourceManifestLoadPriority_t nPriority ) = 0;
 	virtual CVDataTypeManager *GetVDataTypeManager() = 0;
 	virtual bool IsShuttingDown() = 0;
-	virtual bool GetDebugFlag( int nFlag ) = 0;
+	virtual bool GetDebugFlag( ResourceSystemDebugFlag_t nFlag ) = 0;
 	virtual void RegisterToolsResourceListener( IToolsResourcePreReloadListener *pListener ) = 0;
 	virtual void UnregisterToolsResourceListener( IToolsResourcePreReloadListener *pListener ) = 0;
 	virtual void InstallTestFilesystem( void *pTestFS ) = 0;
