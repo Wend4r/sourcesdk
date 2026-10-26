@@ -15,6 +15,7 @@
 #include "tier0/utlstring.h"
 #include "tier1/utlvector.h"
 #include "tier0/utlmap.h"
+#include "tier0/utlhashtable.h"
 #include "tier0/errorlistener.h"
 #include "appframework/iappsystem.h"
 #include "tier3/tier3dm.h"
@@ -96,8 +97,8 @@ public:
 	// File extensions given with -skiptype
 	CUtlVector< CUtlString > m_SkipTypes;
 
-	// A CUtlHashtable with 8-byte keys that only the destructor touches
-	uint8 m_unk090[ 0x20 ];
+	// Table of trivially destructible 8-byte keys that only the destructor touches
+	CUtlHashtable< uint64 > m_unk090;
 
 	// gameinfo.gi of each mod name the compilers query, a "<game>_addons" mod shares the one of <game>
 	CUtlOrderedMap< const char *, KeyValues *, CDefFastCaselessStringLess > m_GameInfos;
