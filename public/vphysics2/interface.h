@@ -19,6 +19,7 @@
 #include "tier0/utlleanvector.h"
 #include "tier0/utlhashtable.h"
 #include "tier0/utlstring.h"
+#include "tier0/utlstringtoken.h"
 #include "tier0/utldelegateimpl.h"
 #include "mathlib/vector.h"
 #include "mathlib/aabb.h"
@@ -46,6 +47,7 @@ class IPhysReflContext;
 class CRnWorld;
 class CRnQueryCache;
 class CRnContact;
+class CRnBody;
 class Bounds3;
 class IMotionEvent;
 class IVPhysics2World;
@@ -98,6 +100,31 @@ struct VPhysics2WorldUnk152_t
 struct VPhysics2WorldUnk156_t
 {
 	uint8 m_Data[ 24 ];
+};
+
+// A hard impact the contact solve records for a contact that notifies, when the closing normal speeds of its points scaled by the
+// inverse mass of the lighter body exceed 75
+struct PhysicsImpactEvent_t
+{
+	// The lighter body of the contact and its entity id
+	IPhysicsBody *m_pBody;
+
+	// Copied from +64 of the CRnContact
+	void *m_pContactData;
+
+	uint32 m_nEntityId;
+	float m_flImpact;
+
+	// The surface properties of the materials of the two shapes
+	CUtlStringToken m_SurfacePropertyA;
+	CUtlStringToken m_SurfacePropertyB;
+};
+
+// The opacity of the debug shape of the shape with this id, sorted by the id
+struct PhysicsShapeDebugOpacity_t
+{
+	int m_nShapeId;
+	float m_flOpacity;
 };
 
 // The first hit of a sweep: fraction 1.0, null objects and sub-shape -1 when nothing is hit
@@ -339,7 +366,8 @@ public:
 	// Copies the contact begin and end events (256-byte records) into a CUtlVector; unless bKeepEvents is set, the events are consumed
 	virtual void GetContactEvents( void *pEvents, bool bKeepEvents ) = 0;
 	virtual void ClearContactEvents() = 0;
-	virtual void unk124( void *pOut ) = 0;
+	// Moves the impact events recorded since the last call into the vector
+	virtual void GetImpactEvents( CUtlVector< PhysicsImpactEvent_t > &events ) = 0;
 
 	virtual IPhysicsMotionController *CreateMotionController( IMotionEvent *pHandler ) = 0;
 	virtual void DestroyMotionController( IPhysicsMotionController *pController ) = 0;
@@ -467,7 +495,9 @@ public:
 	// A grid of ground heights that softbodies sample for their ground height
 	virtual void SetGroundHeightGrid( void *pHeightGrid ) = 0;
 	virtual void *GetGroundHeightGrid() = 0;
-	virtual int unk196( uint32 nValue ) = 0;
+	// Adds the entity id to a set GetContactEvents checks the entities of the contact events against and returns its index in the set;
+	// the server calls it from CBaseEntity::UpdateOnRemove with the handle of the entity
+	virtual int AddRemovedEntityId( uint32 nEntityId ) = 0;
 
 	// The flags IVPhysics2::CreateWorld was called with
 	virtual uint32 GetCreateFlags() = 0;
@@ -536,10 +566,11 @@ public:
 	virtual void SetVisualDebugCameraHint( int nUnused, const CFrustum &frustum ) = 0;
 	virtual const CFrustum &GetVisualDebugCameraHint() = 0;
 
-	// Empty in release builds
-	virtual void unk231( void *pUnknown1, void *pUnknown2 ) = 0;
+	// The CRnBody of the body
+	virtual CRnBody *GetRnBody( const void *pUnused, IPhysicsBody *pBody ) = 0;
 
-	virtual IPhysicsBody *unk232( void *pUnknown, void *pOut ) = 0;
+	// The transform and the body of a reference frame of the CRnWorld, which only its constructor sets (to identity and NULL)
+	virtual IPhysicsBody *GetReferenceFrame( const void *pUnused, CTransform *pTransform ) = 0;
 
 	// Debug draw filtering; both notify the event listener
 	virtual void SetDebugDrawFilter( const void *pParams ) = 0;
@@ -551,8 +582,11 @@ public:
 	virtual bool ShouldDrawBody( IPhysicsBody *pBody, bool bTestShapes ) = 0;
 	virtual bool ShouldDrawSoftbody( IPhysicsSoftbody *pSoftbody ) = 0;
 	virtual bool ShouldDrawJoint( IPhysicsJoint *pJoint ) = 0;
-	virtual void unk240( void *pUnknown1, void *pUnknown2 ) = 0;
-	virtual void unk241() = 0;
+	// Sets the opacity of the debug shape of every shape to its entry in the sorted range, 0 for the shapes without one
+	virtual void SetDebugShapeOpacities( const PhysicsShapeDebugOpacity_t *pBegin, const PhysicsShapeDebugOpacity_t *pEnd ) = 0;
+
+	// Sends the debug name of the world to the physics debugger
+	virtual void SendDebugNameToDebugger() = 0;
 
 	// Returns NULL in release builds
 	virtual const char *GetDebugName() = 0;
