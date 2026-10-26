@@ -23,10 +23,25 @@ class IPropertyAttributeEditorFactory;
 class IPropertyCustomCommandFactory;
 class CQPropertyEditor;
 
+// Flags of IPropertyEditorSystem::CreatePropertyEditor; with both of the first two the editor has no
+// attribute filter bar.
+// No "(Property Name Filter)" box in the filter bar
+#define PROPERTY_EDITOR_NO_NAME_FILTER ( 1 << 0 )
+// No settings button (Show Hidden Attributes, Raw Edit Mode, Show Groups, expansion commands)
+#define PROPERTY_EDITOR_NO_SETTINGS_MENU ( 1 << 1 )
+// Hides the second label of the header row
+#define PROPERTY_EDITOR_HIDE_HEADER_DETAIL ( 1 << 2 )
+// The row list's height is fixed to the height of its rows instead of scrolling
+#define PROPERTY_EDITOR_FIT_TO_ROWS ( 1 << 7 )
+// The row list is drawn without a border
+#define PROPERTY_EDITOR_NO_ROW_LIST_BORDER ( 1 << 8 )
+// The row widgets are chained into the tab order after the editor itself
+#define PROPERTY_EDITOR_TAB_ORDER_FROM_EDITOR ( 1 << 10 )
+
 abstract_class IPropertyEditorSystem : public IAppSystem
 {
 public:
-	// Bit flags; with both 1 and 2 set the editor has no attribute filter bar
+	// nFlags holds PROPERTY_EDITOR_* bits
 	virtual IPropertyEditor *CreatePropertyEditor( QWidget *pParent, uint32 nFlags ) = 0;
 	virtual void DestroyPropertyEditor( IPropertyEditor *pEditor ) = 0;
 
