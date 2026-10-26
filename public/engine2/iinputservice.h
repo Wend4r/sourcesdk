@@ -40,7 +40,7 @@ public:
 	virtual void InstallInputHandler( const char *pszName, int nPriority, IInputHandler *pHandler ) = 0;
 	virtual void RemoveInputHandler( IInputHandler *pHandler ) = 0;
 
-	virtual void AddCommandText( int nTarget, const char *pszText, int nSource ) = 0;
+	virtual void AddCommandText( CommandTarget_t nTarget, const char *pszText, int nSource ) = 0;
 
 	virtual bool IsAppActive() = 0;
 
