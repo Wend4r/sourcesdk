@@ -41,8 +41,9 @@ struct CreateWorldInfo_t
 	bool m_bAsyncLoad;
 	bool m_bLoadVis;
 
-	// Looks the world up by spawn group and checks its origin callback; worlds created with it render.
-	bool m_bUnk02B;
+	// Looks the world up by spawn group and checks its origin callback; only such worlds are updated for rendering
+	// (IWorldReference::ShouldUpdateForRendering).
+	bool m_bUpdateForRendering;
 
 	// Looks the world up by spawn group; the world node of the world loads without scene objects.
 	bool m_bSkipSceneObjectCreation;
@@ -50,8 +51,8 @@ struct CreateWorldInfo_t
 	bool m_bDisableNodeStreaming;
 	bool m_bCreateSceneWorld;
 
-	// Passed to the world VPK mount.
-	bool m_bUnk02F;
+	// The world VPK mount does not ask the IWorldVPKOverrideManager list for an override VPK.
+	bool m_bSkipVPKOverrides;
 
 	bool m_bRequireMountVPK;
 
@@ -140,7 +141,7 @@ public:
 
 	virtual void GetSceneWorldsForWorldGroup( WorldGroupId_t hWorldGroupId, CUtlVector< ISceneWorld * > &worldsOut ) = 0;
 
-	// Starts the world node loads that UpdateObjectsForRendering queued, for the worlds that have IWorldReference::unk007 set.
+	// Starts the world node loads that UpdateObjectsForRendering queued, for the worlds that have IWorldReference::ShouldUpdateForRendering set.
 	virtual void LoadQueuedWorldNodes() = 0;
 
 	// Weather of a scene world, set from the map info entity (CMapInfo).

@@ -23,9 +23,9 @@ public:
 	virtual SpawnGroupHandle_t GetSpawnGroupHandle() const = 0;
 	virtual bool GetWorldBounds( Vector &vecMins, Vector &vecMaxs ) const = 0;
 
-	// Reads a flag taken from the world creation info; only worlds with it set are
-	// updated for rendering and checked by IWorldRendererMgr::IsFullyLoadedForPlayer.
-	virtual bool unk007() const = 0;
+	// CreateWorldInfo_t::m_bUpdateForRendering; only worlds with it set are updated for rendering, load
+	// their queued world nodes and are checked by IWorldRendererMgr::IsFullyLoadedForPlayer.
+	virtual bool ShouldUpdateForRendering() const = 0;
 
 	virtual void ClearComputeWorldOriginCallback() = 0;
 	virtual bool HasWorldGeometry() const = 0;

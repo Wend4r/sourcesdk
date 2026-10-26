@@ -64,7 +64,7 @@ public:
 	bool m_bLoaded : 1;
 	bool m_bLoadVis : 1;
 	bool m_bMarkedForDeletion : 1;
-	bool m_bUnk3 : 1; // CreateWorldInfo_t::m_bUnk02B, IWorldReference::unk007.
+	bool m_bUpdateForRendering : 1;
 	bool m_bIsEmptyWorld : 1;
 	bool m_bMountVPK : 1;
 	bool m_bBlockUntilLoaded : 1;
