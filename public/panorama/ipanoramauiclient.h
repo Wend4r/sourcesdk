@@ -23,8 +23,21 @@ namespace panorama
 	class CPanel2D;
 };
 
-class IPanoramaClientDebugger;
 class IEngineConsoleUI;
+
+// The debugger panel on a window; destroying it deletes the panel
+abstract_class IPanoramaClientDebugger
+{
+public:
+	virtual ~IPanoramaClientDebugger() {}
+
+	// Starts picking the inspected panel with the mouse; selects the hovered panel of the focused window
+	virtual void BeginInspect() = 0;
+
+	// Fraction of the debugger taken by the panel tree, kept between 0.1 and 0.9
+	virtual float GetSplitterPosition() = 0;
+	virtual void SetSplitterPosition( float flPosition ) = 0;
+};
 
 abstract_class IPanoramaUIClient : public IAppSystem
 {

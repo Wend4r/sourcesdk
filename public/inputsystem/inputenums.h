@@ -89,9 +89,9 @@ enum InputEventType_t
 	IE_ScreenOrientationChanged,
 
 	IE_FirstUIEvent = 200,
-	IE_KeyTyped = IE_FirstUIEvent,
-	IE_KeyCodeTyped,
-	IE_KeyCodeReleased,
+	IE_KeyTyped = IE_FirstUIEvent,	// m_nData contains a Unicode code point, m_nData2 contains InputEventModifier_t flags
+	IE_KeyCodeTyped,		// m_nData contains an SDL_Keycode (not a ButtonCode_t), m_nData2 contains InputEventModifier_t flags, m_nData3 is non-zero for auto-repeat
+	IE_KeyCodeReleased,		// m_nData contains an SDL_Keycode, m_nData2 contains InputEventModifier_t flags
 	IE_InputLanguageChanged,
 	IE_IMESetWindow,
 	IE_IMEStartComposition,
@@ -105,6 +105,15 @@ enum InputEventType_t
 
 	IE_FirstVguiEvent = 1000,	// Assign ranges for other systems that post user events here
 	IE_FirstAppEvent = 2000,
+};
+
+// m_nData2 of key and button events
+enum InputEventModifier_t
+{
+	IE_ShiftPressed		= 1,
+	IE_ControlPressed	= 2,
+	IE_AltPressed		= 4,
+	IE_GuiPressed		= 8, // Windows key, Mac Command key, etc.
 };
 
 struct InputEvent_t

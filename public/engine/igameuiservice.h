@@ -13,6 +13,11 @@
 #include <IEngineService.h>
 #include <con_nprint.h>
 
+namespace panorama
+{
+	class IUIWindow;
+};
+
 abstract_class IGameUIService : public IEngineService
 {
 public:
@@ -36,7 +41,9 @@ public:
 	// Forwards to the console panel when it exists
 	virtual void unk032() = 0;
 
-	virtual void *AddProceduralLayer( const char *pszName, void *pRenderer, bool bUnk1, bool bUnk2 ) = 0;
+	// Draws the panorama window as a layer of the game UI and joins it to the UI input dispatch;
+	// bFullscreen resizes the window to the main window and applies its scale factor
+	virtual void *AddProceduralLayer( const char *pszName, panorama::IUIWindow *pWindow, bool bUnk1, bool bFullscreen ) = 0;
 	// Returns NULL in this build
 	virtual void *unk034() = 0;
 
