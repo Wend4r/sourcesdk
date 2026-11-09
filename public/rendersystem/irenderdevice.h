@@ -11,8 +11,10 @@
 #endif
 
 #include "tier0/basetypes.h"
+#include "tier0/platwindow.h"
 
 class IRenderContext;
+class IRenderDevicePresentCallback;
 class CBufferString;
 struct RenderDeviceInfo_t;
 enum RenderMultisampleType_t : uint8;
@@ -25,7 +27,8 @@ public:
 	// Shader API of the device: 0 Direct3D 11, 1 Vulkan
 	virtual int GetDeviceAPI() = 0;
 
-	virtual SwapChainHandle_t Unk_CreateSwapChain( void *p ) = 0;
+	// hOsWindow is the native handle of hWindow; either of the two may be null and is then derived from the other
+	virtual SwapChainHandle_t CreateSwapChain( PlatWindow_t hWindow, void *hOsWindow, const RenderDeviceInfo_t &info, const char *pszName ) = 0;
 	virtual void DestroySwapChain( SwapChainHandle_t hSwapChain ) = 0;
 
 	// Applies a new mode to the swap chain
@@ -48,7 +51,10 @@ public:
 
 	virtual void unk014() = 0;
 	virtual void BeginSubmittingDisplayLists( void *p ) = 0;
-	virtual void Unk_Present( void *p ) = 0;
+	// pCallback rides along with the present command. The present goes through a render context created
+	// with nRenderContextFlags | 0x20, which first waits on hWaitSemaphore when set (Vulkan only; Direct3D 11
+	// uses neither).
+	virtual bool Present( SwapChainHandle_t hSwapChain, IRenderDevicePresentCallback *pCallback, uint32 nRenderContextFlags, void *hWaitSemaphore ) = 0;
 	virtual void Flush() = 0;
 	virtual void ForceFlushGPU( void *p ) = 0;
 	virtual void SetHardwareGammaRamp( SwapChainHandle_t hSwapChain, float flGamma ) = 0;

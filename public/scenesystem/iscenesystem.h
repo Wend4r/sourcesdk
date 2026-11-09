@@ -14,12 +14,14 @@
 #include <materialsystem2/imaterial2.h>
 #include <mathlib/vector.h>
 #include <resourcesystem/resourcehandle.h>
+#include <scenesystem/isceneview.h>
 
 class CSceneObject;
 class CSceneLightObject;
 class ISceneObjectDesc;
 class ISceneWorld;
 class ISceneView;
+class CFrustum;
 class IRenderDevice;
 class IRayTraceSceneWorld;
 struct SceneSystemPerFrameStats_t;
@@ -57,7 +59,9 @@ public:
 	virtual void AddRenderableType( const char *pszName, ISceneObjectDesc *pDesc ) = 0;
 	virtual void RemoveRenderableType( const char *pszName ) = 0;
 	virtual void BeginRenderingViews( IRenderDevice *pRenderDevice, bool bUpdateStats ) = 0;
-	virtual void Unk_AddView( void *p ) = 0;
+	// Between BeginRenderingViews and FinishRenderingViews; the view renders into hSwapChain.
+	// A non-null pWorld is added with ISceneView::AddWorldToRenderList( pWorld, pVisBits, true )
+	virtual ISceneView *AddView( const char *pszName, const CViewId &viewId, const CFrustum &frustum, SwapChainHandle_t hSwapChain, ISceneWorld *pWorld, const RenderViewport_t &viewport, const uint32 *pVisBits, int nPriority ) = 0;
 	virtual void Unk_AddDynamicView( void *p ) = 0;
 	virtual void Unk_BeginRenderingDynamicView( ISceneView *pView ) = 0;
 	virtual void Unk_AddDependentView( void *p ) = 0;
@@ -146,7 +150,8 @@ public:
 	virtual void unk092() = 0;
 	virtual void unk093() = 0;
 	virtual void unk094() = 0;
-	virtual void unk095() = 0;
+	// The view id of a player, -1 for views of no player: m_nViewId is the inverted CRC64 of nPlayerId
+	virtual CViewId unk095( int nPlayerId ) = 0;
 	virtual void unk096() = 0;
 	virtual void unk097() = 0;
 	virtual void unk098() = 0;
