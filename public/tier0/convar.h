@@ -1501,7 +1501,7 @@ void ConVar_PrintDescription( const ConVarRefAbstract *ref );
 #endif
 
 template< class T >
-class CConCommandMemberAccessor : public ICommandCallback, public ICommandCompletionCallback, public ConCommand
+class CConCommandMemberAccessor : public ConCommand, public ICommandCallback, public ICommandCompletionCallback
 {
 	typedef ConCommand BaseClass;
 	typedef void ( T::*FnMemberCommandCallback_t )( const CCommandContext &context, const CCommand &command );
