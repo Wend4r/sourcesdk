@@ -29,9 +29,11 @@ public:
 	virtual bool HandleIMEEvent( PlatWindow_t hWindow, uint nMsg, uint64 wParam, int64 lParam ) = 0;
 	virtual bool HandleIMEEventPreProcess( PlatWindow_t hWindow, uint nMsg, uint64 wParam, int64 lParam ) = 0;
 
-	virtual void Unk_FinalizeCompositionForView( void *p ) = 0;
+	// Ends the composition when pUIView belongs to the IME window and pCompositionTarget is the current composition target
+	virtual void FinalizeCompositionForView( void *pUIView, void *pCompositionTarget ) = 0;
 
-	virtual void Unk_FinalizeCompositionOnFocusLost( void *p ) = 0;
+	// Ends the composition of pCompositionTarget when it is the current target and bFocused is false
+	virtual void FinalizeCompositionOnFocusLost( void *pCompositionTarget, bool bFocused ) = 0;
 
 	virtual void SetActiveUIView( void *pUIView, bool bActive ) = 0;
 	virtual void *GetActiveUIView() = 0;
