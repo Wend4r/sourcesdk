@@ -19,21 +19,23 @@ abstract_class ISteamAudio : public IAppSystem
 public:
 	virtual ~ISteamAudio() {}
 	virtual void unk012() = 0;
-	virtual void unk013() = 0;
+	// Creates an empty CSteamAudioScene
+	virtual void *unk013() = 0;
 	// Creates a CSteamAudioScene
 	virtual void *Unk_CreateScene( void *p ) = 0;
-	virtual void unk015() = 0;
+	// First element of an internal list, NULL when it is empty
+	virtual void *unk015() = 0;
 	virtual void unk016() = 0;
 	virtual void unk017() = 0;
 	virtual void unk018() = 0;
 	virtual void unk019() = 0;
 	virtual void unk020() = 0;
-	virtual void unk021() = 0;
-	virtual void unk022() = 0;
-	virtual void unk023() = 0;
-	virtual void unk024() = 0;
-	virtual void unk025() = 0;
-	virtual void unk026() = 0;
+	virtual void *Unk_CreateSource3DProcessor( void *pParams ) = 0;
+	virtual void Unk_DestroySource3DProcessor( void *pProcessor ) = 0;
+	virtual void *Unk_CreatePathingProcessor( void *pParams ) = 0;
+	virtual void Unk_DestroyPathingProcessor( void *pProcessor ) = 0;
+	virtual void *Unk_CreateDirectProcessor( void *pParams ) = 0;
+	virtual void Unk_DestroyDirectProcessor( void *pProcessor ) = 0;
 	virtual void unk027() = 0;
 	virtual void unk028() = 0;
 	virtual void unk029() = 0;
@@ -57,12 +59,12 @@ public:
 	virtual void unk043() = 0;
 	virtual void unk044() = 0;
 	virtual void unk045() = 0;
-	virtual void unk046() = 0;
+	virtual void *unk046() = 0;
 	virtual void unk047() = 0;
 	virtual void unk048() = 0;
 	virtual void unk049() = 0;
 	virtual void unk050() = 0;
-	virtual void unk051() = 0;
+	virtual bool unk051() = 0;
 	virtual void Unk_BakeReverb( void *p ) = 0;
 	virtual void Unk_BakePathData( void *p ) = 0;
 	virtual void Unk_BakeDimensions( void *p ) = 0;
@@ -75,12 +77,12 @@ public:
 	virtual void unk061() = 0;
 	virtual void unk062() = 0;
 	virtual void unk063() = 0;
-	virtual void unk064() = 0;
-	virtual void unk065() = 0;
+	virtual int unk064( int nIndex ) = 0;
+	virtual int unk065( int nIndex ) = 0;
 	virtual void unk066() = 0;
 	virtual void unk067() = 0;
-	virtual void unk068() = 0;
-	virtual void unk069() = 0;
+	virtual void unk068( int nUnknown1, int nUnknown2, float flUnknown3, void *pUnknown4 ) = 0;
+	virtual bool unk069( int nUnknown ) = 0;
 };
 
 #endif // ISTEAMAUDIO_H
