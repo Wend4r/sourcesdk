@@ -34,7 +34,9 @@ COMPILE_TIME_ASSERT( sizeof( SceneCachedData_t ) == 0xC );
 abstract_class ISceneFileCache : public IAppSystem
 {
 public:
-	virtual bool unk011( const char *pszFile ) = 0;
+	// Same lookup as GetSceneCachedData() without reading the cached values:
+	// true when pszFile names a compiled scene that exists
+	virtual bool SceneExists( const char *pszFile ) = 0;
 
 	virtual CChoreoScene *LoadScene( const char *pszFile, IChoreoEventCallback *pCallback, LoggingChannelID_t nLogChannel, void ( *pfnPrintf )( const char *pszFormat, ... ) ) = 0;
 
