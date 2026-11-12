@@ -142,7 +142,7 @@ public:
 	virtual void OnConnectionFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection, const CPulseArgumentPack *pArgs ) = 0;
 	virtual void Unk_01() = 0;
 	virtual void OnConnectionRemoved( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection ) = 0;
-	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) = 0;
+	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, float flDelay, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs ) = 0;
 };
 
 schema class CEntityIOOutput
@@ -200,7 +200,7 @@ public:
 	void FireOutput( CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, float flDelay );
 
 	// Queues an event per connection and removes connections that fired their last time
-	void FireOutputInternal( CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap, const CVariant *pValue, float flDelay );
+	void FireOutputInternal( CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, float flDelay, const CPulseInputParamMap *pParamMap, const CVariant *pValue );
 
 private:
 	noschema EntityIOConnection_t *m_pConnections;

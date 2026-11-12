@@ -245,14 +245,14 @@ void CEntityInstance::ScriptFireOutput( const char *pszOutputName, HSCRIPT hActi
 	FireOutput( pszOutputName, pActivator, pCaller, value, flDelay );
 }
 
-void CEntityInstance::FireOutputInternal( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap, const CVariant *pValue, float flDelay )
+void CEntityInstance::FireOutputInternal( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, float flDelay, const CPulseInputParamMap *pParamMap, const CVariant *pValue )
 {
 	CUtlVector< CEntityIOOutput * > outputs;
 
 	FindOutputs( pszOutputName, outputs );
 
 	for ( CEntityIOOutput *pOutput : outputs )
-		pOutput->FireOutputInternal( pActivator, pCaller, pArgs, pParamMap, pValue, flDelay );
+		pOutput->FireOutputInternal( pActivator, pCaller, pArgs, flDelay, pParamMap, pValue );
 }
 
 void CEntityInstance::FireOutput( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, float flDelay )
@@ -262,7 +262,7 @@ void CEntityInstance::FireOutput( const char *pszOutputName, CEntityInstance *pA
 
 	args.SetParamFromVariant( value );
 
-	FireOutputInternal( pszOutputName, pActivator, pCaller, &args, nullptr, &value, flDelay );
+	FireOutputInternal( pszOutputName, pActivator, pCaller, &args, flDelay, nullptr, &value );
 }
 
 void CEntityInstance::FireOutput( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, const KeyValues3 &params, float flDelay )
@@ -273,7 +273,7 @@ void CEntityInstance::FireOutput( const char *pszOutputName, CEntityInstance *pA
 	args.SetParamFromVariant( value );
 	paramMap.m_KV3 = params;
 
-	FireOutputInternal( pszOutputName, pActivator, pCaller, &args, &paramMap, &value, flDelay );
+	FireOutputInternal( pszOutputName, pActivator, pCaller, &args, flDelay, &paramMap, &value );
 }
 
 bool CEntityInstance::AcceptInputInternal( const CUtlSymbolLarge &sInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const variant_t &value, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap )

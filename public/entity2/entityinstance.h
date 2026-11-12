@@ -160,7 +160,7 @@ public:
 	// The script instance is the public script scope
 	HSCRIPT GetScriptInstance() { return ScriptGetOrCreatePublicScriptScope(); }
 	
-	void FireOutputInternal( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap, const CVariant *pValue, float flDelay );
+	void FireOutputInternal( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, float flDelay, const CPulseInputParamMap *pParamMap, const CVariant *pValue );
 	void FireOutput( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, float flDelay );
 	void FireOutput( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, const KeyValues3 &params, float flDelay );
 

@@ -243,15 +243,15 @@ void CEntityIOOutput::FireOutput( CEntityInstance *pActivator, CEntityInstance *
 
 	args.SetParamFromVariant( value );
 
-	FireOutputInternal( pActivator, pCaller, &args, nullptr, &value, flDelay );
+	FireOutputInternal( pActivator, pCaller, &args, flDelay, nullptr, &value );
 }
 
-void CEntityIOOutput::FireOutputInternal( CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap, const CVariant *pValue, float flDelay )
+void CEntityIOOutput::FireOutputInternal( CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, float flDelay, const CPulseInputParamMap *pParamMap, const CVariant *pValue )
 {
 	CEntitySystem *pEntitySystem = GameEntitySystem();
 
 	for ( IEntityIONotify *pNotify : pEntitySystem->m_entityIONotifiers )
-		pNotify->OnOutputFired( pActivator, pCaller, m_pDesc, pArgs, flDelay );
+		pNotify->OnOutputFired( pActivator, pCaller, flDelay, m_pDesc, pArgs );
 
 	EntityIOConnection_t *pPrev = nullptr;
 
