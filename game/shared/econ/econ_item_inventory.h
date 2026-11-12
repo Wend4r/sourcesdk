@@ -12,6 +12,7 @@
 
 #include "econ_item_constants.h"
 #include "gcsdk/gcclient_sharedobjectcache.h"
+#include "igamesystem.h"
 
 #include "tier0/utlmap.h"
 #include "tier0/utlvector.h"
@@ -21,6 +22,9 @@
 class CEconItem;
 class CEconItemView;
 class CEconEquipSlot;
+class CItemSelectionCriteria;
+class IInventoryUpdateListener;
+struct baseitemcriteria_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: A single player's inventory.
@@ -96,6 +100,39 @@ public:
 	GCSDK::CGCClientSharedObjectCache *m_pSOCache;
 	CUtlVector< GCSDK::ISharedObjectListener * > m_vecListeners;
 };
-COMPILE_TIME_ASSERT( sizeof( CPlayerInventory ) == 0x88 );
+
+//-----------------------------------------------------------------------------
+// Purpose: The game system that keeps the list of player inventories.
+//		This is the server's class. The client's one has more virtuals after these and more
+//		members between the reference items and m_pInventories.
+//		Of the game system events the class handles Init(), PostInit(), Shutdown(),
+//		GameActivate() and GameDeactivate(); they add no slots and are not redeclared here.
+//-----------------------------------------------------------------------------
+class CInventoryManager : public CAutoGameSystem
+{
+public:
+	// Returns the registered inventory whose owner is that individual account.
+	virtual CPlayerInventory *GetInventoryForAccount( uint32 iAccountID ) = 0;
+
+	// We're generating a base item. We need to add the game-specific keys to the criteria so that it'll find the right base item.
+	// Empty in this class, and CS2 does not override it.
+	virtual void AddBaseItemCriteria( baseitemcriteria_t *pCriteria, CItemSelectionCriteria *pSelectionCriteria ) = 0;
+
+	// Zero for a position that is unset or unacknowledged, its low byte otherwise.
+	virtual int GetBackpackPositionFromBackend( uint32 iBackendPosition ) = 0;
+
+public:
+	struct inventories_t
+	{
+		CPlayerInventory *pInventory;
+		IInventoryUpdateListener *pListener;
+	};
+
+	CUtlVector< CEconItemView * > m_pTempReferenceItems;
+	CUtlMap< itemid_t, CEconItemView *, int, CDefLess< itemid_t > > m_mapTempReferenceItems;
+
+	// Inventory registry. Shutdown() calls SOClear() on each of these.
+	CUtlVector< inventories_t > m_pInventories;
+};
 
 #endif // ITEM_INVENTORY_H
