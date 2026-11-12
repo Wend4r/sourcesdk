@@ -13,6 +13,11 @@
 class IHLTVServer;
 class KeyValues;
 class Vector;
+class CSteamID;
+class bf_write;
+class CNetMessage;
+class INetworkMessageInternal;
+struct NetMessageInfo_t;
 
 #define INTERFACEVERSION_HLTVDIRECTOR			"Source2GameDirector001"
 
@@ -36,16 +41,23 @@ public:
 
 	virtual const char**	GetModEvents() = 0;
 
+	// Fires the "hltv_versioninfo" event to every HLTV server; the game implementation reads no argument.
 	virtual void	Unk_SendVersionInfo( void *p ) = 0;
+	// Empty in the game implementation.
 	virtual void	Unk_OnHLTVClientDisconnect( void *p ) = 0;
-	// Returns -1; no caller found.
-	virtual int		unk013() = 0;
+	// Id of the legacy game event that CaptureCameraEvent() keeps as the last camera event, -1 when there is none.
+	virtual int		GetCameraEventId() = 0;
+	// Sends the "hltv_title" event with the tv_title text to nPlayerSlot, or to every player when it is -1.
 	virtual void	SendTitle( int nPlayerSlot ) = 0;
-	virtual void	Unk_SendChat( void *p ) = 0;
-	virtual void	Unk_OnHLTVUncompressedSnapshot( int nPlayerSlot, void *p ) = 0;
-	virtual void	unk017( const void *pNetMessageInfo, const void *pNetMessage ) = 0;
-	// Per-frame director update driven by the HLTV server.
-	virtual void	unk018( float flUnk ) = 0;
+	// Builds the "hltv_chat" event and serializes it into a new legacy game event message.
+	// On failure *ppMessage is set to NULL.
+	virtual void	SerializeChat( const CSteamID &steamID, const char *pszName, const char *pszText, INetworkMessageInternal **ppSerializer, CNetMessage **ppMessage ) = 0;
+	// Writes the last camera event, if any, into the snapshot buffer.
+	virtual void	OnHLTVUncompressedSnapshot( int nPlayerSlot, bf_write &buf ) = 0;
+	// Stores a copy of the message when it is a legacy game event whose id is GetCameraEventId().
+	virtual void	CaptureCameraEvent( const NetMessageInfo_t *pInfo, const CNetMessage *pData ) = 0;
+	// Per-frame director update driven by the HLTV server; flDelay becomes the value GetDelay() returns.
+	virtual void	UpdateDirector( float flDelay ) = 0;
 };
 
 #endif // IHLTVDIRECTOR_H
