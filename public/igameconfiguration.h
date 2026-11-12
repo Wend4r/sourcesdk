@@ -28,12 +28,18 @@ public:
 	virtual bool ParseGameSessionConfiguration( KeyValues *pOptions, GameSessionConfiguration_t *pConfig ) = 0;
 	virtual bool SetWorldSession( GameSessionConfiguration_t *pConfig ) = 0;
 	virtual void ClearWorldSession() = 0;
-	virtual const char *unk024() = 0;
-	virtual bool unk025( GameSessionConfiguration_t *pConfig, void *p ) = 0;
+	// Forwards to IApplication::GetModGameSubdir()
+	virtual const char *GetModGameSubdir() = 0;
+	// Called by the game loop mode from LoopInit and ReceivedServerInfo once it has registered its own prerequisites;
+	// a false result fails the loop mode. Returns true in CS2 without reading the arguments.
+	virtual bool unk025( GameSessionConfiguration_t *pConfig, ILoopModePrerequisiteRegistry *pRegistry ) = 0;
 	virtual void *unk026() = 0;
-	virtual void unk027( const char *pszURLQuery ) = 0;
+	// Splits the query into key/value pairs and hands them to the game specific handler, which is empty in CS2
+	virtual void ParseURLQuery( const char *pszURLQuery ) = 0;
 	virtual void *unk028() = 0;
-	virtual void unk029( void *pOutVector ) = 0;
+	// Appends the descriptions of the game's network string tables (EffectDispatch, VguiScreen, InfoPanel, Scenes, ...)
+	// to a vector of 0x68 byte entries, each starting with the CUtlString table name
+	virtual void Unk_AppendStringTableDescriptions( void *pOutVector ) = 0;
 	virtual bool unk030( int nMessageId ) = 0;
 	// KeyValues stored by SetWorldSession
 	virtual KeyValues *GetSessionKeyValues() = 0;
