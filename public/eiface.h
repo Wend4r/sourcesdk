@@ -516,11 +516,6 @@ public:
 	virtual void			OnSteamAuthWarning( const char *pszMessage ) = 0;// Receives Steam auth session diagnostics, such as a SteamID mismatch against the auth ticket
 	virtual void			OnNetworkGameServerActivated( INetworkGameServer *pNetworkGameServer ) = 0;
 	virtual uint32			GetSteamGroupAccountID( void ) = 0; // Account ID of the sv_steamgroup group, 0 when none is set
-
-#ifdef PLATFORM_LINUX
-	// AMNOTE: Does nothing in CS2
-	virtual void			unk_103( void ) = 0;
-#endif
 };
 
 #define INTERFACEVERSION_SERVERGAMEENTS			"Source2GameEntities001"
