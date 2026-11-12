@@ -59,7 +59,8 @@ public:
 	virtual void ResetVideoConfigToDefaults() = 0;
 
 	// Fills a CUtlVector of display modes of an adapter output
-	virtual void Unk_GetModeList( void *p ) = 0;
+	// Fills the vector at pModes with the modes of the given adapter output
+	virtual void Unk_GetModeList( void *pModes, int nAdapter, int nOutput, bool bUnknown ) = 0;
 
 	virtual int unk032() = 0;
 
