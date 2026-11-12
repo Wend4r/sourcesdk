@@ -15,9 +15,14 @@
 #include "entityhandle.h"
 #include "entity2/entityindex.h"
 #include "splitscreenslot.h"
+#include "tier1/utlvector.h"
+#include "tier0/utlstring.h"
 
 class CGlobalVarsBase;
 class KeyValues;
+class IDemoMessageSink;
+class CGameNetworkableClass;
+class CEngineGotvSyncPacket;
 struct FlattenedSerializerSpewField_t;
 
 abstract_class ISource2Client : public IAppSystem
@@ -29,21 +34,25 @@ public:
 	// Forwards to the game network string tables
 	virtual void unk012( bool bUnk ) = 0;
 	virtual void unk013( int nUnk, void *pUnk ) = 0;
-	virtual void unk014( int nPlayerIndex ) = 0;
+	// Fires the "player_info" game event with the engine's player info of nPlayerIndex
+	virtual void OnPlayerInfoChanged( int nPlayerIndex ) = 0;
 
 	virtual void CreateMove( int nSlot, bool bActive ) = 0;
 	// Forward to the input system
 	virtual void unk016() = 0;
 	virtual void unk017( void *pUnk ) = 0;
 
-	virtual int unk018( CSplitScreenSlot nSlot ) = 0;
+	// Number of the latest user command generated for nSlot
+	virtual int GetLatestCommandNumber( CSplitScreenSlot nSlot ) = 0;
+	// Same number, minus one while that latest command is in state 2
 	virtual int unk019( CSplitScreenSlot nSlot ) = 0;
 	virtual int unk020( int nUnk ) = 0;
 	virtual void unk021() = 0;
 	// Forwards to the input system
 	virtual void unk022( int nSlot, void *pUnk, bool bUnk ) = 0;
 	virtual bool unk023( int nUnk1, void *pUnk, int nUnk2, int nUnk3 ) = 0;
-	virtual void unk024( CSplitScreenSlot nSlot, void *pUnk, int nCommandNumber ) = 0;
+	// Serializes the user command nCommandNumber of nSlot into pBuffer as a delta from an empty command
+	virtual void EncodeUserCmdToBuffer( CSplitScreenSlot nSlot, void *pBuffer, int nCommandNumber ) = 0;
 	virtual void unk025() = 0;
 	virtual double unk026( void *pUnk, int nCommandNumber ) = 0;
 
@@ -56,19 +65,22 @@ public:
 	virtual void unk031( void *pUnk, bool bUnk ) = 0;
 	virtual void *unk032() = 0;
 	virtual void unk033( void *pUnk1, int *pUnk2, int nUnk ) = 0;
-	// Forwards to an object owned by the client entity system
-	virtual void unk034() = 0;
+	// Networkable classes of the client; the network game client builds its class dictionary from them
+	virtual CUtlVector< CGameNetworkableClass * > *GetAllClasses() = 0;
 	virtual void unk035( void *pUnk1, void *pUnk2 ) = 0;
 
 	virtual void FrameStageNotify( int nStage ) = 0;
 
-	virtual void unk037() = 0;
-	virtual void unk038() = 0;
-	virtual void unk039() = 0;
+	virtual void HudVidInit() = 0;
+	// Runs the client voice manager frame
+	virtual void HudUpdate( bool bActive ) = 0;
+	// Calls HudVidInit
+	virtual void HudReset() = 0;
 	virtual void unk040() = 0;
 	virtual void unk041() = 0;
 	virtual void HudText( const char *pszMessage ) = 0;
-	virtual void unk043() = 0;
+	// Called after a split screen client was added or removed
+	virtual void OnSplitScreenStateChanged() = 0;
 	virtual bool unk044() = 0;
 	virtual bool unk045() = 0;
 	virtual void unk046() = 0;
@@ -77,7 +89,7 @@ public:
 	virtual void VoiceStatus( int nEntityIndex, int nSplitScreenSlot, bool bTalking ) = 0;
 
 	// Forward to the mouth (lip sync) system
-	virtual void unk049( int nUnk ) = 0;
+	virtual void *unk049( int nUnk ) = 0;
 	virtual void unk050( uint16 nUnk ) = 0;
 	virtual void unk051( void *pUnk, int nUnk1, int nUnk2 ) = 0;
 	// Writes two vectors to pOut and passes them to unk098
@@ -85,15 +97,19 @@ public:
 	virtual void unk053() = 0;
 	virtual int unk054( int nSlot, int nUnk, int nButtonCode, void *pUnk ) = 0;
 	virtual void unk055( void *pUnk ) = 0;
-	virtual void unk056( int nUnk ) = 0;
+	// Called by the network game client when its signon state changes
+	virtual void OnSignonStateChanged( int nSignonState ) = 0;
 	virtual void unk057( void *pUnk ) = 0;
-	virtual bool unk058() = 0;
-	virtual bool unk059( const char *pszCommand ) = 0;
-	virtual void unk060() = 0;
-	virtual void unk061() = 0;
+	// Asked by the in-memory demo buffer for the demo file it is about to load; returns false in this build
+	virtual bool unk058( const char *pszDemoFileName, void *pOut ) = 0;
+	// Asked before a console command line is executed
+	virtual bool unk059( const char *pszCommand, int nUnk ) = 0;
+	// Both are empty in this build
+	virtual void OnDemoRecordStart( const char *pszDemoBaseName, IDemoMessageSink *pSink ) = 0;
+	virtual void OnDemoRecordStop( IDemoMessageSink *pSink ) = 0;
 
-	// Fires the "demo_start" game event
-	virtual void Unk_OnDemoPlaybackStart( void *p ) = 0;
+	// Fires the "demo_start" game event when pOutNames is NULL, otherwise appends a fixed list of names to it
+	virtual void OnDemoPlaybackStart( const char *pszDemoBaseName, CUtlVector< CUtlString > *pOutNames, void *pUnk ) = 0;
 	// Fires the "demo_stop" game event
 	virtual void OnDemoPlaybackStop() = 0;
 	virtual void unk064( void *pUnk ) = 0;
@@ -103,19 +119,20 @@ public:
 	// Reads the "AnimAssetData" block of pUnk1
 	virtual void unk067( void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk068() = 0;
-	virtual void unk069( void *pUnk, int nUnk ) = 0;
+	// Fires the game event stored for nTick, if there is one; the demo player passes two ticks
+	virtual void unk069( int nUnk, int nTick ) = 0;
 	// Fires the "demo_skip" game event
-	virtual void unk070( int nUnk1, int nUnk2, bool bUnk ) = 0;
-	// Forwards to the game configuration
-	virtual void unk071() = 0;
+	virtual void OnDemoSkip( int nPlaybackTick, int nSkipToTick, bool bInstantReplay ) = 0;
+	// Asked by the demo player about a net message id while it removes messages for a skip; forwards to the game configuration
+	virtual bool unk071( int nMessageId ) = 0;
 	virtual void unk072( void *pUnk, int nUnk ) = 0;
 	virtual void unk073() = 0;
 	// Dispatches the "UpdateProgressBar" UI event
 	virtual bool Unk_UpdateProgressBar( void *p ) = 0;
 	virtual bool unk075() = 0;
 	virtual bool unk076( int nUnk, void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	// Fires the "keybind_changed" game event
-	virtual void Unk_OnKeyBindingChanged( void *p ) = 0;
+	// Notifies the key binding listeners registered for nUnk and for pUnk2, then fires the "keybind_changed" game event
+	virtual void OnKeyBindingChanged( int nUnk, void *pUnk1, void *pUnk2 ) = 0;
 	virtual bool unk078( void *pUnk, int nUnk, void *pOut ) = 0;
 	virtual void unk079( int nUnk, void *pOut ) = 0;
 	// Forwards to the input system
@@ -148,17 +165,17 @@ public:
 
 	virtual void unk100() = 0;
 	virtual void unk101() = 0;
-	// Forwards to the game configuration
-	virtual void unk102() = 0;
+	// Forwards to the game configuration; the engine merges the KeyValues into its launch options afterwards
+	virtual void unk102( KeyValues *pKeyValues ) = 0;
 	virtual void unk103( void *pUnk1, void *pUnk2 ) = 0;
 	// Calls the deleting destructor of pObject
 	virtual void unk104( void *pObject ) = 0;
 	virtual void *unk105() = 0;
 	virtual void unk106() = 0;
-	virtual void unk107( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	virtual void *unk107( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
 	// Forwards to the scene system
 	virtual void unk108() = 0;
-	virtual void unk109( void *pUnk1, void *pUnk2, void *pUnk3, void *pUnk4 ) = 0;
+	virtual void *unk109( void *pUnk1, void *pUnk2, void *pUnk3, void *pUnk4 ) = 0;
 	// Forwards to the scene system
 	virtual void unk110() = 0;
 	// Physics shape trace
@@ -183,10 +200,11 @@ public:
 	virtual void unk127( void *pUnk1, void *pUnk2 ) = 0;
 	// Forwards to the game event manager
 	virtual void unk128( void *pUnk ) = 0;
-	virtual void unk129() = 0;
+	virtual void *unk129() = 0;
 	// Forwards to the game network string tables
 	virtual bool unk130() = 0;
-	virtual void unk131( int nReason ) = 0;
+	// Fires the "client_disconnect" game event
+	virtual void OnDisconnect( int nReasonCode ) = 0;
 	virtual void unk132( void *pUnk1, void *pUnk2, int *pUnk3 ) = 0;
 	// Save/restore block handling
 	virtual void unk133( void *pUnk1, void *pUnk2, int nUnk, void *pUnk3 ) = 0;
@@ -223,33 +241,35 @@ public:
 	virtual void unk159( int nUnk ) = 0;
 
 	virtual CEntityHandle unk160( int nUnk ) = 0;
-	virtual void unk161() = 0;
+	virtual void *unk161() = 0;
 	virtual void *unk162() = 0;
 	virtual bool unk163( void *pUnk ) = 0;
 	// HLTV replay state ("OnHltvReplay")
-	virtual void Unk_OnHltvReplay( void *p ) = 0;
+	virtual void OnHltvReplay( const void *pHltvReplayMsg ) = 0;
+	// Called once from the tick message processing of the network game client after a pending flag was raised; resets a flag of the HLTV replay state
 	virtual void unk165() = 0;
 	virtual void unk166() = 0;
 	virtual void unk167( void *pMsg ) = 0;
-	virtual void unk168() = 0;
+	virtual void *unk168() = 0;
 	virtual void unk169( void *pUnk1, void *pUnk2 ) = 0;
 	virtual void unk170() = 0;
-	// Builds a game coordinator protobuf message
-	virtual void unk171( void *pUnk ) = 0;
+	// Called when the engine requests a GOTV broadcast sync; builds a game coordinator protobuf message from the packet
+	virtual void RequestGotvSync( const CEngineGotvSyncPacket &packet ) = 0;
 	// Fills matchmaking KeyValues ( "members/machine0/player0" )
 	virtual void unk172( KeyValues *pKV, void *pUnk ) = 0;
 	virtual CEntityHandle unk173( CEntityIndex nEntityIndex ) = 0;
-	// Name of the entity class, "" for an invalid index
-	virtual const char *unk174( CEntityIndex nEntityIndex ) = 0;
-	virtual bool unk175( CEntityIndex nEntityIndex, void *pOut ) = 0;
+	// Designer name of the entity, its class name when that is empty, "" for an invalid index
+	virtual const char *GetEntityClassname( CEntityIndex nEntityIndex ) = 0;
+	// Compares pszClassName with the entity and then with every class of its hierarchy
+	virtual bool EntityClassMatches( CEntityIndex nEntityIndex, const char *pszClassName ) = 0;
 
 	// Forward to the input system
 	virtual bool unk176() = 0;
 	virtual void unk177() = 0;
 	virtual void unk178() = 0;
 	virtual float unk179() = 0;
-	// Forwards to an object owned by the client entity system
-	virtual void unk180() = 0;
+	// Forwards to an object owned by the client entity system; the result heads a list the entity delta reader walks
+	virtual void *unk180() = 0;
 	virtual void unk181( void *pUnk, int nUnk ) = 0;
 
 	virtual void unk182( const void *pMsg ) = 0;
@@ -283,6 +303,8 @@ public:
 	virtual CEntityHandle unk207( int nUnk ) = 0;
 	virtual void unk208( const char *pszUnk, int *pOut ) = 0;
 	virtual void unk209( int nUnk, void *pUnk ) = 0;
+	// C_CSPlayerPawn::m_flBigHeadScale of the player pawn at nEntityIndex, 1.0 for anything else
+	virtual float GetBigHeadScale( CEntityIndex nEntityIndex ) = 0;
 };
 
 #endif // ISOURCE2CLIENT_H
