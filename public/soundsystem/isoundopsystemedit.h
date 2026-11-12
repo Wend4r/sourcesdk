@@ -107,8 +107,6 @@ public:
 	virtual void unk095() = 0;
 	virtual void unk096() = 0;
 	virtual void unk097() = 0;
-	virtual void unk098() = 0;
-	virtual void unk099() = 0;
 };
 
 #endif // ISOUNDOPSYSTEMEDIT_H

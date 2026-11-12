@@ -54,11 +54,13 @@ public:
 	virtual void unk012() = 0;
 	virtual void unk013() = 0;
 	virtual void unk014() = 0;
-	virtual void unk015() = 0;
-	virtual void unk016() = 0;
+	// Creates an object that unk016 destroys; the engine keeps one for voice chat
+	virtual void *unk015( void *pUnknown ) = 0;
+	virtual void unk016( void *pUnknown ) = 0;
 	virtual void unk017() = 0;
-	virtual void unk018() = 0;
-	virtual void unk019() = 0;
+	// Output stream fed by the caller (sounds/__attached_output_stream_wrapper_N.vsnd); used by the Panorama movie player
+	virtual void Unk_CreateAttachedOutputStream( void *p ) = 0;
+	virtual void Unk_DestroyAttachedOutputStream( void *p ) = 0;
 	virtual void Unk_SoundInit( void *p ) = 0;
 	virtual bool IsSoundEnabled() = 0;
 	virtual void Unk_Update( void *p ) = 0;
@@ -66,18 +68,28 @@ public:
 	virtual void unk024() = 0;
 	// Starts a voice from sound parameters and returns its guid
 	virtual void Unk_StartSound( void *p ) = 0;
-	virtual void unk026() = 0;
+	virtual void unk026( uint32 nSoundGuid ) = 0;
 	virtual void unk027() = 0;
 	virtual void unk028() = 0;
 	virtual void unk029() = 0;
 	virtual bool IsSoundPlaying( uint32 nSoundGuid ) = 0;
 	virtual void unk032() = 0;
 	virtual void unk033() = 0;
-	virtual void unk034() = 0;
-	virtual void unk035() = 0;
-	virtual void unk036() = 0;
-	virtual void unk037() = 0;
-	virtual void unk038() = 0;
+	// Returns NULL on failure; used by the play command
+	virtual void *Unk_PrecacheSound( void *pUnknown ) = 0;
+	// Sound event preloading. unk036 and unk038 take the sound event object, unk035 and unk037 look it up first.
+	// Each pair is a set of overloads in the game, so the slot order differs per platform
+#ifdef _WIN32
+	virtual void unk035( void *pUnknown, uint16 nUnknown ) = 0;
+	virtual void unk036( void *pSoundEvent, uint16 nUnknown ) = 0;
+	virtual void unk037( void *pUnknown, uint16 nUnknown ) = 0;
+	virtual void unk038( void *pSoundEvent, uint16 nUnknown ) = 0;
+#else
+	virtual void unk036( void *pSoundEvent, uint16 nUnknown ) = 0;
+	virtual void unk035( void *pUnknown, uint16 nUnknown ) = 0;
+	virtual void unk038( void *pSoundEvent, uint16 nUnknown ) = 0;
+	virtual void unk037( void *pUnknown, uint16 nUnknown ) = 0;
+#endif
 	virtual void unk039() = 0;
 	virtual void unk040() = 0;
 	// Returns -1 for an unknown mix layer
@@ -85,8 +97,9 @@ public:
 	virtual void SetMixLayerLevel( int nLayer, float flLevel ) = 0;
 	virtual void unk043( float flValue ) = 0;
 	virtual float unk044() = 0;
-	virtual void unk045() = 0;
-	virtual void unk046() = 0;
+	virtual void unk045( void *pUnknown, bool bUnknown ) = 0;
+	// Returns a new CWaveTmpFileWriter; used by movie recording
+	virtual void *Unk_CreateWaveTmpFileWriter() = 0;
 	virtual void unk047() = 0;
 	virtual void unk048() = 0;
 	virtual void unk049() = 0;
@@ -110,7 +123,7 @@ public:
 	virtual void unk067() = 0;
 	virtual void unk068() = 0;
 	virtual void unk069() = 0;
-	virtual void unk070() = 0;
+	virtual bool unk070( void *pUnknown ) = 0;
 	virtual void unk071() = 0;
 	virtual void unk072() = 0;
 	virtual void unk073() = 0;
@@ -127,7 +140,8 @@ public:
 	virtual void unk084() = 0;
 	virtual void unk085() = 0;
 	virtual void unk086() = 0;
-	virtual bool IsSoundPlaying( SoundEventGuid_t guid ) = 0;
+	// Overload without arguments
+	virtual bool IsSoundPlaying() = 0;
 	virtual void unk087() = 0;
 	virtual void unk088() = 0;
 	virtual void unk089() = 0;
@@ -153,18 +167,19 @@ public:
 	virtual void unk108() = 0;
 	virtual void unk109() = 0;
 	virtual void unk110() = 0;
-	virtual void unk111() = 0;
-	virtual void unk112() = 0;
 	virtual void Unk_PrintSoundState( void *p ) = 0;
+	virtual void unk112() = 0;
+	virtual void unk113( bool bUnk ) = 0;
 	virtual void unk114() = 0;
-	virtual void unk115( bool bUnk ) = 0;
+	virtual void unk115() = 0;
 	virtual void unk116() = 0;
 	virtual void unk117() = 0;
 	virtual void unk118() = 0;
 	virtual void unk119() = 0;
 	virtual void unk120() = 0;
-	virtual void unk121() = 0;
-	virtual void unk122() = 0;
+	virtual void unk121( bool bUnknown ) = 0;
+	// Voice chat: the engine passes a float buffer of 1024 samples
+	virtual int unk122( void *pBuffer, int nCount ) = 0;
 	virtual void unk123() = 0;
 	virtual void unk124() = 0;
 	virtual void unk125() = 0;
@@ -172,10 +187,11 @@ public:
 	virtual void unk127() = 0;
 	virtual void unk128() = 0;
 	virtual void unk129() = 0;
-	virtual void unk130( void *p ) = 0;
-	virtual void unk130( const void *p ) = 0;
-	virtual void unk132() = 0;
+	virtual void unk130() = 0;
+	virtual void unk131( void *p ) = 0;
+	virtual void unk131( const void *p ) = 0;
 	virtual void unk133() = 0;
+	virtual void unk134() = 0;
 };
 
 
