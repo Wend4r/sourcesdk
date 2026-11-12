@@ -86,14 +86,13 @@ public:
 		Assert( m_cRef > 0 ); 
 		int cRef = ThreadInterlockedDecrement( &m_cRef ); 
 		if ( 0 == cRef )
-			DestroyThis();
+			delete this;
 		return cRef;
 	}
 protected:
 	// Classes that derive from this should make their destructors private and virtual!
+	// The game has no DestroyThis() virtual; the last Release() invokes the deleting destructor.
 	virtual ~CRefCount() { Assert( 0 == m_cRef ); }
-
-	virtual void DestroyThis() { delete this; }		// derived classes may override this if they want to be part of a mem pool
 
 	volatile int32 m_cRef;					// ref count of this object
 };
