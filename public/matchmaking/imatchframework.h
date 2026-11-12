@@ -84,6 +84,9 @@ public:
 	virtual void AddDebugHistoryLine( const char *pszLine ) = 0;
 
 	virtual const char *GetDebugHistory() = 0;
+
+	// Get the title's game settings manager
+	virtual IMatchTitleGameSettingsMgr *GetMatchTitleGameSettingsMgr() = 0;
 };
 
 #define IMATCHFRAMEWORK_VERSION_STRING "MATCHFRAMEWORK_001"
