@@ -99,7 +99,12 @@ public:
 	virtual bool BIsKeyLess( const CSharedObject & soRHS ) const = 0;
 	virtual void Copy( const CSharedObject & soRHS ) = 0;
 	virtual void Dump() const = 0;
-	virtual int Unk_FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const = 0;
+
+	// Called by CSharedObjectTypeCache::FindSharedObject(): looks in vecObjects for the object
+	// whose key equals this one's and returns the entry of vecIndices beside it, which is the
+	// object's index in the type cache, or -1. CS:GO did this search in the type cache itself.
+	virtual int FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const = 0;
+
 	virtual bool BAddToMessage( std::string *pBuffer, bool bUnk ) const = 0;
 	virtual bool BAddDestroyToMessage( std::string *pBuffer ) const = 0;
 
