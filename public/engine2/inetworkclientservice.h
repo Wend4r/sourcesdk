@@ -34,7 +34,8 @@ public:
 
 	virtual void StartupClient( KeyValues *pLoopOptions ) = 0;
 	virtual void DisconnectGameNow( ENetworkDisconnectionReason reason ) = 0;
-	virtual void unk028( ENetworkDisconnectionReason reason, const char *pszReason ) = 0;
+	// Stores the reason and marks the disconnect as pending instead of disconnecting right away
+	virtual void DisconnectGame( ENetworkDisconnectionReason reason, const char *pszReason ) = 0;
 
 	virtual void PrintSpawnGroupStatus() = 0;
 
@@ -45,7 +46,8 @@ public:
 	virtual bool IsConnected() = 0;
 	virtual bool IsMultiplayer() = 0;
 	virtual bool unk034() = 0;
-	virtual bool unk035() = 0;
+	// True while a disconnect is pending or there is no network game client
+	virtual bool IsDisconnectedOrDisconnecting() = 0;
 	// Returns "Server Shutting Down"
 	virtual const char *unk036() = 0;
 
@@ -58,7 +60,8 @@ public:
 	virtual int GetMaxSplitScreenPlayers() = 0;
 	virtual INetChannel *GetNetChannel( CSplitScreenSlot nSlot ) = 0;
 
-	virtual double unk043( double flTime ) = 0;
+	// Applies the client clock correction (cl_clock_recvmargin, TrueView look-ahead) to the frame time; returns it unchanged without a network game client
+	virtual double AdjustFrameTime( double flFrameTime ) = 0;
 	// Empty in this build
 	virtual void unk044() = 0;
 	virtual float unk045() = 0;

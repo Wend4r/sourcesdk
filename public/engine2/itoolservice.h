@@ -43,29 +43,48 @@ public:
 	virtual void *GetToolClientSimulationAPI() = 0;
 
 	// Forward to game client methods that are not identified yet
-	virtual void unk035() = 0;
-	virtual void unk036() = 0;
+	// Forwards to ISource2Client::unk103
+	virtual void unk035( void *pUnk1, void *pUnk2 ) = 0;
+	// Forwards to ISource2Client::unk104
+	virtual void unk036( void *pObject ) = 0;
 	virtual void *unk037() = 0;
+	// Forwards to ISource2Client::unk106
 	virtual void unk038() = 0;
-	virtual void unk039() = 0;
+	// Forwards to ISource2Client::unk107
+	virtual void *unk039( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// Forwards to ISource2Client::unk108
 	virtual void unk040() = 0;
-	virtual void unk041() = 0;
+	// Forwards to ISource2Client::unk109
+	virtual void *unk041( void *pUnk1, void *pUnk2, void *pUnk3, void *pUnk4 ) = 0;
+	// Forwards to ISource2Client::unk110
 	virtual void unk042() = 0;
+	// Forwards to ISource2Client::unk190
 	virtual void unk043() = 0;
+	// Forwards to ISource2Client::unk191
 	virtual void unk044() = 0;
 	virtual void unk045() = 0;
 	virtual void unk046() = 0;
+	// Forwards to ISource2Client::unk195
 	virtual void *unk047() = 0;
 	// 1.0 without a game client
+	// Forwards to ISource2Client::unk196
 	virtual float unk048() = 0;
+	// Forwards to ISource2Client::unk197
 	virtual float unk049() = 0;
-	virtual void unk050() = 0;
-	virtual bool unk051() = 0;
+	// Forwards to ISource2Client::unk198
+	virtual void unk050( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// Forwards to ISource2Client::unk199
+	virtual bool unk051( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
+	// Forwards to ISource2Client::unk200
 	virtual void unk052() = 0;
-	virtual void unk053() = 0;
+	// Forwards to ISource2Client::unk201
+	virtual void unk053( void *pUnk1, void *pUnk2 ) = 0;
+	// Forwards to ISource2Client::unk125
 	virtual void unk054() = 0;
+	// Forwards to ISource2Client::unk126
 	virtual bool unk055() = 0;
-	virtual void unk056() = 0;
+	// Forwards to ISource2Client::unk129
+	virtual void *unk056() = 0;
 
 	virtual void *GetEconItemSystem() = 0;
 
@@ -77,6 +96,7 @@ public:
 	virtual void GetHitGroupEnumInfo( CUtlVector< int > &values, CUtlVector< CUtlString > &names ) = 0;
 
 	// Forward to the game client
+	// Forwards to ISource2Client::unk145
 	virtual void *unk062() = 0;
 	// Returns an 8-byte value by value
 	virtual void unk063() = 0;
@@ -89,6 +109,7 @@ public:
 	virtual float unk067( CSplitScreenSlot nSlot ) = 0;
 
 	// Forwards to the game client
+	// Forwards to ISource2Client::unk151
 	virtual void unk068() = 0;
 
 	virtual const char *GetVDataClassName( const char *pName, const char *pScopeFile ) = 0;
@@ -101,7 +122,8 @@ public:
 	virtual void GetSubclassAutoCompleteList( const void *pUnk, CUtlVector< const char * > &completions ) = 0;
 
 	// Forwards to the game client
-	virtual void unk077() = 0;
+	// Forwards to ISource2Client::unk161
+	virtual void *unk077() = 0;
 
 	// "" without the game server
 	virtual const char *GetNativeClassForScriptClass( const char *pScriptClassName ) = 0;
@@ -109,6 +131,7 @@ public:
 	virtual bool IsScriptClassDerivedFrom( const char *pDesignerName, const char *pBaseName ) = 0;
 
 	// Forwards to the game client
+	// Forwards to ISource2Client::unk194
 	virtual void unk081() = 0;
 
 	virtual void RequestScreenshot( IScreenshotCallback *pCallback, void *pContext ) = 0;
@@ -122,7 +145,9 @@ public:
 	virtual void unk088() = 0;
 
 	// Forward to the game client; unk090 does nothing for 0
-	virtual void *unk089() = 0;
+	// Forwards to ISource2Client::unk049
+	virtual void *unk089( int nUnk ) = 0;
+	// Forwards to ISource2Client::unk050
 	virtual void unk090( uint16 nUnk ) = 0;
 };
 

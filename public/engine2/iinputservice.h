@@ -72,7 +72,8 @@ public:
 	virtual bool WasButtonDoubleClicked( ButtonCode_t code ) = 0;
 	virtual bool WasButtonReleased( ButtonCode_t code ) = 0;
 	virtual bool IsButtonDown( ButtonCode_t code ) = 0;
-	virtual bool unk053( ButtonCode_t code ) = 0;
+	// IsButtonDown, except that the shift, alt, control and win keys are answered from a stored modifier mask while the modifier override is active
+	virtual bool IsButtonDownWithModifierOverride( ButtonCode_t code ) = 0;
 
 	// Cursor position in the engine window
 	virtual void GetCursorPosition( float *pX, float *pY ) = 0;
