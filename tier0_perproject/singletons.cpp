@@ -8,6 +8,8 @@
 #include "tier0/strtools.h"
 #include "interfaces/interfaces.h"
 
+#include <algorithm>
+
 IApplication *g_pApplication;
 ICvar *cvar, *g_pCVar;
 IUtlStringTokenSystem *g_pStringTokenSystem;
@@ -296,15 +298,64 @@ static int s_nRegistrationCount = 0;
 
 static ConnectionRegistration_t s_pConnectionRegistration[NUM_INTERFACES + 1] = {};
 
+static CPostConnectCallback *s_pPostConnectCallbacks = NULL;
+static int s_nPostConnectCallbackCount = 0;
+
+CPostConnectCallback::CPostConnectCallback(int nPriority) :
+	m_pNext(s_pPostConnectCallbacks),
+	m_nPriority(nPriority),
+	m_nRegistrationIndex(s_nPostConnectCallbackCount++)
+{
+	s_pPostConnectCallbacks = this;
+}
+
+void CPostConnectCallback::RunPending()
+{
+	const int nCount = s_nPostConnectCallbackCount;
+	if (!nCount)
+		return;
+
+	CPostConnectCallback **ppCallbacks = (CPostConnectCallback **)stackalloc(nCount * sizeof(CPostConnectCallback *));
+
+	CPostConnectCallback *pCallback = s_pPostConnectCallbacks;
+	for (int i = 0; i < nCount; i++)
+	{
+		ppCallbacks[i] = pCallback;
+		pCallback = pCallback->m_pNext;
+	}
+
+	std::sort(ppCallbacks, ppCallbacks + nCount, [](const CPostConnectCallback *pLeft, const CPostConnectCallback *pRight)
+	{
+		if (pLeft->m_nPriority != pRight->m_nPriority)
+			return pLeft->m_nPriority < pRight->m_nPriority;
+
+		return pLeft->m_nRegistrationIndex < pRight->m_nRegistrationIndex;
+	});
+
+	// Callbacks that are not ready yet are linked back in for the next connect
+	s_nPostConnectCallbackCount = 0;
+	s_pPostConnectCallbacks = NULL;
+
+	for (int i = 0; i < nCount; i++)
+	{
+		pCallback = ppCallbacks[i];
+
+		if (pCallback->OnPostConnect() == POST_CONNECT_RETRY)
+		{
+			pCallback->m_pNext = s_pPostConnectCallbacks;
+			s_pPostConnectCallbacks = pCallback;
+			pCallback->m_nRegistrationIndex = s_nPostConnectCallbackCount++;
+		}
+	}
+}
+
 void ReconnectInterface(CreateInterfaceFn factory, char const *pInterfaceName, void **ppGlobal);
 
 void ConnectInterfaces(CreateInterfaceFn *pFactoryList, int nFactoryCount)
 {
 	if (s_nRegistrationCount < 0)
 	{
-		//Error("APPSYSTEM: In ConnectInterfaces(), s_nRegistrationCount is %d!\n", s_nRegistrationCount);
-		Plat_ExitProcess(1);
-		s_nConnectionCount++;
+		Plat_FatalError("APPSYSTEM: In ConnectInterfaces(), s_nRegistrationCount is %d!\n", s_nRegistrationCount);
 		return;
 	}
 
@@ -319,6 +370,7 @@ void ConnectInterfaces(CreateInterfaceFn *pFactoryList, int nFactoryCount)
 		}
 
 		s_nConnectionCount++;
+		CPostConnectCallback::RunPending();
 		return;
 	}
 
@@ -343,6 +395,7 @@ void ConnectInterfaces(CreateInterfaceFn *pFactoryList, int nFactoryCount)
 	}
 
 	s_nConnectionCount++;
+	CPostConnectCallback::RunPending();
 }
 
 void DisconnectInterfaces()
@@ -387,7 +440,10 @@ void ReconnectInterface(CreateInterfaceFn factory, const char *pInterfaceName)
 	{
 		const InterfaceGlobals_t &iface = g_pInterfaceGlobals[i];
 
-		if (strcmp(iface.m_pInterfaceName, pInterfaceName) == 0)
+		// A NULL name reconnects every interface
+		if (!pInterfaceName || strcmp(iface.m_pInterfaceName, pInterfaceName) == 0)
 			ReconnectInterface(factory, iface.m_pInterfaceName, (void **)iface.m_ppGlobal);
 	}
+
+	CPostConnectCallback::RunPending();
 }

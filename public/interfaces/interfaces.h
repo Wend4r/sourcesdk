@@ -792,6 +792,39 @@ DECLARE_TIER3_INTERFACE( IIMEManager, g_pIMEManager );
 DECLARE_TIER3_INTERFACE( ISmartPropsSystem, g_pSmartPropsSystem );
 
 //-----------------------------------------------------------------------------
+// Work that has to wait until the module's interface globals are connected.
+//
+// An instance links itself into a per-module list on construction. The list
+// is run at the end of ConnectInterfaces() and ReconnectInterface(), lowest
+// priority value first, then in registration order. A callback that reports
+// POST_CONNECT_RETRY stays in the list and is run again after the next connect.
+//
+// Only the class name is known from the game binaries; the method and the
+// enumerator names are descriptive.
+//-----------------------------------------------------------------------------
+enum PostConnectResult_t
+{
+	POST_CONNECT_DONE = 0,
+	POST_CONNECT_RETRY,
+};
+
+class CPostConnectCallback
+{
+public:
+	CPostConnectCallback( int nPriority );
+
+	virtual PostConnectResult_t OnPostConnect() = 0;
+
+	// Runs every pending callback of this module
+	static void RunPending();
+
+private:
+	CPostConnectCallback *m_pNext;
+	int m_nPriority;
+	int m_nRegistrationIndex;
+};
+
+//-----------------------------------------------------------------------------
 // Fills out global DLL exported interface pointers
 //-----------------------------------------------------------------------------
 void ConnectInterfaces( CreateInterfaceFn *pFactoryList, int nFactoryCount );
@@ -799,7 +832,7 @@ void DisconnectInterfaces();
 
 
 //-----------------------------------------------------------------------------
-// Reconnects an interface
+// Reconnects an interface, or every interface when pInterfaceName is NULL
 //-----------------------------------------------------------------------------
 void ReconnectInterface( CreateInterfaceFn factory, const char *pInterfaceName );
 
