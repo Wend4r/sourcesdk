@@ -46,7 +46,7 @@ public:
 			return;
 		}
 
-		if ( iItemLoadoutSlot < 0 || iItemLoadoutSlot >= LOADOUT_POSITION_COUNT )
+		if ( iItemLoadoutSlot < 0 || iItemLoadoutSlot >= LOADOUT_SLOT_COUNT )
 		{
 			return;
 		}
@@ -64,7 +64,7 @@ public:
 
 public:
 	int m_nActiveQuestID;
-	LoadoutSlot_t m_LoadoutItems[ LOADOUT_COUNT ][ LOADOUT_POSITION_COUNT ];
+	LoadoutSlot_t m_LoadoutItems[ LOADOUT_COUNT ][ LOADOUT_SLOT_COUNT ];
 };
 COMPILE_TIME_ASSERT( sizeof( CCSPlayerInventory ) == 0xF10 );
 

@@ -20,6 +20,7 @@
 // CEconItemView, CAttributeList and CEconItemAttribute from the schema have their own copies.
 class CEconItem;
 class CEconItemView;
+class CEconEquipSlot;
 
 //-----------------------------------------------------------------------------
 // Purpose: A single player's inventory.
@@ -53,9 +54,10 @@ public:
 	// drops the item from the vector and the map.
 	virtual void RemoveItem( itemid_t iItemID ) = 0;
 
-	// Called by SOCreated(), SOUpdated() and SOCacheSubscribed() for each default equipped
-	// definition instance. Pure in this class.
-	virtual void DefaultEquippedDefinitionHasBeenUpdated( void *pDefaultEquippedDefinition ) = 0; // CEconDefaultEquippedDefinitionInstanceClient
+	// Called by SOCreated(), SOUpdated() and SOCacheSubscribed() for each shared object of type
+	// k_EEconTypeEquipSlot, which took over from CS:GO's default equipped definition instance.
+	// Pure in this class.
+	virtual void DefaultEquippedDefinitionHasBeenUpdated( CEconEquipSlot *pEquipSlot ) = 0;
 
 	// Called at the end of SOCreated(), SOUpdated() and SODestroyed().
 	virtual void SendInventoryUpdateEvent() = 0;

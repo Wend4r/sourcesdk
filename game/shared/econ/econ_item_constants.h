@@ -42,11 +42,20 @@ enum EEconTypeID
 {
 	k_EEconTypeItem = 1,
 	k_EEconTypePersonaDataPublic = 2,
+	k_EEconTypeEquipSlot = 3,
+	k_EEconTypeAccountItemPersonalStore = 4,
+	k_EEconTypeRentalHistory = 5,
+	k_EEconTypeAccountXpShop = 6,
 	k_EEconTypeGameAccountClient = 7,
-	k_EEconTypeGameAccount = 8,
-	k_EEconTypeEquipInstance = 31,
-	k_EEconTypeDefaultEquippedDefinitionInstance = 42,
-	k_EEconTypeDefaultEquippedDefinitionInstanceClient = 43,
+	k_EEconTypeAccountKeychainRemoveToolCharges = 15,
+	k_EEconTypeRecurringMission = 16,
+	k_EEconTypeGameAccountSteamChina = 18,
+	k_EEconTypeAccountXpShopBids = 19,
+	k_EEconTypeVolatileItemOffer = 20,
+	k_EEconTypeVolatileItemClaimedRewards = 21,
+	k_EEconTypeAccountRecurringSubscription = 39,
+	k_EEconTypeAccountSeasonalOperation = 40,
+	k_EEconTypeAccountSeasonalOperationGS = 41,
 	k_EEconTypeCoupon = 45,
 	k_EEconTypeQuest = 46,
 };
@@ -400,7 +409,8 @@ enum EEconItemQuality
 	AE_COMPLETED,
 	AE_HAUNTED,
 	AE_TOURNAMENT,
-	AE_FAVORED,
+	AE_HIGHLIGHT,
+	AE_VOLATILE,
 
 	AE_MAX_TYPES,
 };
@@ -588,9 +598,10 @@ enum unacknowledged_item_inventory_positions_t
 	UNACK_ITEM_TOURNAMENT_DROP,
 	UNACK_ITEM_QUEST_REWARD,
 	UNACK_ITEM_LEVEL_UP_REWARD,
-#ifdef ENABLE_STORE_RENTAL_BACKEND
-	UNACK_ITEM_RENTAL_PURCHASE,
-#endif
+	UNACK_ITEM_AD,
+	UNACK_ITEM_RENTAL,
+	UNACK_ITEM_XP_SHOP_REDEEM,
+	UNACK_ITEM_PURCHASED_VOLATILE,
 
 	UNACK_NUM_METHODS,
 };

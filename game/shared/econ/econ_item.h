@@ -14,6 +14,9 @@
 #include "econ_item_interface.h"
 #include "econ_item_schema.h"
 #include "gcsdk/sharedobject.h"
+#include "gcsdk/protobufsharedobject.h"
+
+#include <base_gcmessages.pb.h>
 
 #include <string>
 
@@ -199,5 +202,33 @@ public:
 	uint8 m_unFlags; // Flags
 };
 COMPILE_TIME_ASSERT( sizeof( CEconItem ) == 0x48 );
+
+//-----------------------------------------------------------------------------
+// Purpose: What one loadout slot of one class holds: an owned item, or a default
+//			definition when there is no item id. CS2 keeps these in the SO cache
+//			where CS:GO kept CEconDefaultEquippedDefinitionInstanceClient.
+//-----------------------------------------------------------------------------
+class CEconEquipSlot : public GCSDK::CProtoBufSharedObject< CSOEconEquipSlot, k_EEconTypeEquipSlot >
+{
+public:
+	const static int k_nTypeID = k_EEconTypeEquipSlot;
+	virtual int GetTypeID() const { return k_nTypeID; }
+};
+
+// The two below exist in the client alone; the CS2-specific shared objects are in
+// cstrike15/cstrike15_gcmessages.h.
+class CEconRentalHistory : public GCSDK::CProtoBufSharedObject< CSOEconRentalHistory, k_EEconTypeRentalHistory >
+{
+public:
+	const static int k_nTypeID = k_EEconTypeRentalHistory;
+	virtual int GetTypeID() const { return k_nTypeID; }
+};
+
+class CEconGameAccountClient : public GCSDK::CProtoBufSharedObject< CSOEconGameAccountClient, k_EEconTypeGameAccountClient >
+{
+public:
+	const static int k_nTypeID = k_EEconTypeGameAccountClient;
+	virtual int GetTypeID() const { return k_nTypeID; }
+};
 
 #endif // ECONITEM_H

@@ -26,7 +26,7 @@
 // reads through. It is the table the schema's constructor registers, in its own order.
 inline const char *LoadoutPositionName( int iPosition )
 {
-	static const char *const s_pszLoadoutPositionNames[ LOADOUT_POSITION_COUNT ] =
+	static const char *const s_pszLoadoutPositionNames[ LOADOUT_SLOT_COUNT ] =
 	{
 		"melee",
 		"c4",
@@ -88,7 +88,7 @@ inline const char *LoadoutPositionName( int iPosition )
 		"pet",
 	};
 
-	if ( iPosition < 0 || iPosition >= LOADOUT_POSITION_COUNT )
+	if ( iPosition < 0 || iPosition >= LOADOUT_SLOT_COUNT )
 	{
 		return NULL;
 	}
@@ -100,10 +100,10 @@ inline int LoadoutPositionByName( const char *pszName )
 {
 	if ( !pszName )
 	{
-		return LOADOUT_POSITION_INVALID;
+		return LOADOUT_SLOT_INVALID;
 	}
 
-	for ( int iPosition = 0; iPosition < LOADOUT_POSITION_COUNT; ++iPosition )
+	for ( int iPosition = 0; iPosition < LOADOUT_SLOT_COUNT; ++iPosition )
 	{
 		if ( !strcmp( LoadoutPositionName( iPosition ), pszName ) )
 		{
@@ -111,7 +111,7 @@ inline int LoadoutPositionByName( const char *pszName )
 		}
 	}
 
-	return LOADOUT_POSITION_INVALID;
+	return LOADOUT_SLOT_INVALID;
 }
 
 class CCStrike15ItemDefinition : public CEconItemDefinition

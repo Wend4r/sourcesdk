@@ -71,64 +71,133 @@ enum EStickerAttributeType
 	k_EStickerAttribute_Wear,
 	k_EStickerAttribute_Scale,
 	k_EStickerAttribute_Rotation,
+	k_EStickerAttribute_OffsetX,
+	k_EStickerAttribute_OffsetY,
+	k_EStickerAttribute_Schema,
 	k_EStickerAttribute_Count,
 };
 
 enum EQuestVar_t
 {
-	/** Removed for partner depot **/
-	// lwss - restored these, see g_arrQuestVars for more info.
-	k_EQuestVar_KillHuman = 0,
-	k_EQuestVar_First = k_EQuestVar_KillHuman,
+	// The variables a quest expression can name, in the order of the client's name table
+	// (113 entries); the comment beside each one is the name the schema uses for it.
+	k_EQuestVar_Act_KillHuman = 0, // act_kill_human
+	k_EQuestVar_First = k_EQuestVar_Act_KillHuman,
 
-	k_EQuestVar_Act_KillChicken,
-	k_EQuestVar_Act_KillTarget,
-	k_EQuestVar_Act_WinMatch,
-	k_EQuestVar_Act_FlashbangEnemy,
-	k_EQuestVar_Act_PickupHostage,
-	k_EQuestVar_Act_RescueHostage,
-	k_EQuestVar_Act_DefuseBomb,
-	k_EQuestVar_Act_PlantBomb,
-	k_EQuestVar_Act_Damage,
-	k_EQuestVar_Act_WinRound,
-	k_EQuestVar_Act_DmBonusPoints,
-	k_EQuestVar_Act_Income,
-	k_EQuestVar_Act_Cash,
-	k_EQuestVar_Act_Spend,
-	k_EQuestVar_Act_PickupTrophy,
-	k_EQuestVar_Cond_Headshot,
-	k_EQuestVar_Cond_Burn,
-	k_EQuestVar_Cond_Match_UniqueWeapon,
-	k_EQuestVar_Cond_Match_UniqueWeaponCount,
-	k_EQuestVar_Cond_Roundstate_PistolRound,
-	k_EQuestVar_Cond_Roundstate_FinalRound,
-	k_EQuestVar_Cond_Roundstate_MatchPoint,
-	k_EQuestVar_Cond_Roundstate_BombPlanted,
-	k_EQuestVar_Cond_ItemOwn,
-	k_EQuestVar_Cond_ItemBorrowed,
-	k_EQuestVar_Cond_ItemBorrowedEnemy,
-	k_EQuestVar_Cond_ItemBorrowedTeammate,
-	k_EQuestVar_Cond_ItemBorrowedVictim,
-	k_EQuestVar_Cond_ItemNonDefault,
-	k_EQuestVar_Cond_BulletSinceSpawn,
-	k_EQuestVar_Cond_PlayerRescuing,
-	k_EQuestVar_Cond_PlayerZoomed,
-	k_EQuestVar_Cond_PlayerBlind,
-	k_EQuestVar_Cond_PlayerTerrorist,
-	k_EQuestVar_Cond_PlayerCT,
-	k_EQuestVar_Cond_LifeKillstreakHuman,
-	k_EQuestVar_Cond_LifeKillstreakChicken,
-	k_EQuestVar_Cond_MatchRoundsWon,
-	k_EQuestVar_Cond_MatchRoundsPlayed,
-	k_EQuestVar_Cond_VictimBlind,
-	k_EQuestVar_Cond_VictimZoomed,
-	k_EQuestVar_Cond_VictimRescuing,
-	k_EQuestVar_Cond_VictimTerrorist,
-	k_EQuestVar_Cond_VictimCT,
-	k_EQuestVar_Cond_VictimReloading,
+	k_EQuestVar_Act_KillChicken, // act_kill_chicken
+	k_EQuestVar_Act_KillTarget, // act_kill_target
+	k_EQuestVar_Act_WinMatch, // act_win_match
+	k_EQuestVar_Act_FlashbangEnemy, // act_flashbang_enemy
+	k_EQuestVar_Act_PickUpHostage, // act_pick_up_hostage
+	k_EQuestVar_Act_RescueHostage, // act_rescue_hostage
+	k_EQuestVar_Act_DefuseBomb, // act_defuse_bomb
+	k_EQuestVar_Act_PlantBomb, // act_plant_bomb
+	k_EQuestVar_Act_Damage, // act_damage
+	k_EQuestVar_Act_VampiricHeal, // act_vampiric_heal
+	k_EQuestVar_Act_WinRound, // act_win_round
+	k_EQuestVar_Act_RoundEnd, // act_round_end
+	k_EQuestVar_Act_RoundMVP, // act_round_mvp
+	k_EQuestVar_Act_DMBonusPoints, // act_dm_bonus_points
+	k_EQuestVar_Act_Income, // act_income
+	k_EQuestVar_Act_Cash, // act_cash
+	k_EQuestVar_Act_Spend, // act_spend
+	k_EQuestVar_Act_DZPurchaseItem, // act_dz_purchase_item
+	k_EQuestVar_Act_PickUpTrophy, // act_pick_up_trophy
+	k_EQuestVar_Act_ArmsraceLevel, // act_armsrace_level
+	k_EQuestVar_Act_MotionDetectEnemy, // act_motion_detect_enemy
+	k_EQuestVar_Act_AvoidMotionDetection, // act_avoid_motion_detection
+	k_EQuestVar_Act_ProtectChicken, // act_protect_chicken
+	k_EQuestVar_Act_ArmsraceStealLevel, // act_armsrace_steal_level
+	k_EQuestVar_Act_KillOther, // act_kill_other
+	k_EQuestVar_Act_DZGameEndPlacement, // act_dz_game_end_placement
+	k_EQuestVar_Act_ParachuteLanded, // act_parachute_landed
+	k_EQuestVar_Act_BumpmineLaunch, // act_bumpmine_launch
+	k_EQuestVar_Act_ApplyGraffiti, // act_apply_graffiti
+	k_EQuestVar_Act_DetonateSmokegrenade, // act_detonate_smokegrenade
+	k_EQuestVar_Act_DetonateMolotov, // act_detonate_molotov
+	k_EQuestVar_Act_UseHealthshot, // act_use_healthshot
+	k_EQuestVar_Act_Survivalincome, // act_survivalincome
+	k_EQuestVar_Act_GGWeaponUpgrade, // act_gg_weapon_upgrade
+	k_EQuestVar_Act_GGUpgradeToKnifegg, // act_gg_upgrade_to_knifegg
+	k_EQuestVar_Act_RetakesPickedEnemyCard, // act_retakes_picked_enemy_card
+	k_EQuestVar_Act_RetakesPickedMVPCard, // act_retakes_picked_mvp_card
+	k_EQuestVar_Cond_DamageHeadshot, // cond_damage_headshot
+	k_EQuestVar_Cond_DamageBurn, // cond_damage_burn
+	k_EQuestVar_Cond_DamagePenetrate, // cond_damage_penetrate
+	k_EQuestVar_Cond_DamageCollateral, // cond_damage_collateral
+	k_EQuestVar_Cond_DamageUtility, // cond_damage_utility
+	k_EQuestVar_Cond_MatchUniqueWeapon, // cond_match_unique_weapon
+	k_EQuestVar_Cond_MatchUniqueWeaponCount, // cond_match_unique_weapon_count
+	k_EQuestVar_Cond_MatchCTsUniqueWeapon, // cond_match_cts_unique_weapon
+	k_EQuestVar_Cond_MatchCTsUniqueWeaponCount, // cond_match_cts_unique_weapon_count
+	k_EQuestVar_Cond_MatchTsUniqueWeapon, // cond_match_ts_unique_weapon
+	k_EQuestVar_Cond_MatchTsUniqueWeaponCount, // cond_match_ts_unique_weapon_count
+	k_EQuestVar_Cond_RoundstatePistolround, // cond_roundstate_pistolround
+	k_EQuestVar_Cond_RoundstateFinalround, // cond_roundstate_finalround
+	k_EQuestVar_Cond_RoundstateMatchpoint, // cond_roundstate_matchpoint
+	k_EQuestVar_Cond_RoundstateBombPlanted, // cond_roundstate_bomb_planted
+	k_EQuestVar_Cond_RoundstateTimeElapsed, // cond_roundstate_time_elapsed
+	k_EQuestVar_Cond_ItemOwn, // cond_item_own
+	k_EQuestVar_Cond_ItemBorrowed, // cond_item_borrowed
+	k_EQuestVar_Cond_ItemBorrowedEnemy, // cond_item_borrowed_enemy
+	k_EQuestVar_Cond_ItemBorrowedTeammate, // cond_item_borrowed_teammate
+	k_EQuestVar_Cond_ItemBorrowedVictim, // cond_item_borrowed_victim
+	k_EQuestVar_Cond_ItemNondefault, // cond_item_nondefault
+	k_EQuestVar_Cond_DroneEnemy, // cond_drone_enemy
+	k_EQuestVar_Cond_ArmorNone, // cond_armor_none
+	k_EQuestVar_Cond_ArmorVestOnly, // cond_armor_vest_only
+	k_EQuestVar_Cond_ArmorHelmet, // cond_armor_helmet
+	k_EQuestVar_Cond_ArmorHeavyassaultsuit, // cond_armor_heavyassaultsuit
+	k_EQuestVar_Cond_BulletSinceSpawn, // cond_bullet_since_spawn
+	k_EQuestVar_Cond_PlayerX, // cond_player_x
+	k_EQuestVar_Cond_PlayerY, // cond_player_y
+	k_EQuestVar_Cond_PlayerZ, // cond_player_z
+	k_EQuestVar_Cond_VictimX, // cond_victim_x
+	k_EQuestVar_Cond_VictimY, // cond_victim_y
+	k_EQuestVar_Cond_VictimZ, // cond_victim_z
+	k_EQuestVar_Cond_PlayerRescuing, // cond_player_rescuing
+	k_EQuestVar_Cond_PlayerZoomed, // cond_player_zoomed
+	k_EQuestVar_Cond_PlayerBlind, // cond_player_blind
+	k_EQuestVar_Cond_PlayerTerrorist, // cond_player_terrorist
+	k_EQuestVar_Cond_PlayerCT, // cond_player_ct
+	k_EQuestVar_Cond_PlayerAirborne, // cond_player_airborne
+	k_EQuestVar_Cond_PlayerParachuteAirborneTimeTotal, // cond_player_parachute_airborne_time_total
+	k_EQuestVar_Cond_PlayerMoneyCurrent, // cond_player_money_current
+	k_EQuestVar_Cond_PlayerMoneyStart, // cond_player_money_start
+	k_EQuestVar_Cond_PlayerMoneySpent, // cond_player_money_spent
+	k_EQuestVar_Cond_PlayerMoneySpentThisRound, // cond_player_money_spent_this_round
+	k_EQuestVar_Cond_LifeKillstreakHuman, // cond_life_killstreak_human
+	k_EQuestVar_Cond_LifeKillstreakChicken, // cond_life_killstreak_chicken
+	k_EQuestVar_Cond_MatchRoundsWon, // cond_match_rounds_won
+	k_EQuestVar_Cond_MatchRoundsPlayed, // cond_match_rounds_played
+	k_EQuestVar_Cond_MatchRoundsMVP, // cond_match_rounds_mvp
+	k_EQuestVar_Cond_VictimBlind, // cond_victim_blind
+	k_EQuestVar_Cond_VictimZoomed, // cond_victim_zoomed
+	k_EQuestVar_Cond_VictimRescuing, // cond_victim_rescuing
+	k_EQuestVar_Cond_VictimTerrorist, // cond_victim_terrorist
+	k_EQuestVar_Cond_VictimCT, // cond_victim_ct
+	k_EQuestVar_Cond_VictimReloading, // cond_victim_reloading
+	k_EQuestVar_Cond_VictimSecondsSinceFire, // cond_victim_seconds_since_fire
+	k_EQuestVar_Cond_VictimAirborne, // cond_victim_airborne
+	k_EQuestVar_Cond_VictimArmsraceLeader, // cond_victim_armsrace_leader
+	k_EQuestVar_Cond_VictimDistance, // cond_victim_distance
+	k_EQuestVar_Cond_VictimThroughSmoke, // cond_victim_through_smoke
+	k_EQuestVar_Cond_TabletReceptionIsBlocked, // cond_tablet_reception_is_blocked
+	k_EQuestVar_Cond_TabletHasUpgradeHighres, // cond_tablet_has_upgrade_highres
+	k_EQuestVar_Cond_TabletHasUpgradeDroneintel, // cond_tablet_has_upgrade_droneintel
+	k_EQuestVar_Cond_TabletHasUpgradeZoneintel, // cond_tablet_has_upgrade_zoneintel
+	k_EQuestVar_Cond_TabletHasUpgradeDronepilot, // cond_tablet_has_upgrade_dronepilot
+	k_EQuestVar_Cond_RoundendCTsEliminateTs, // cond_roundend_cts_eliminate_ts
+	k_EQuestVar_Cond_RoundendTsEliminateCTs, // cond_roundend_ts_eliminate_cts
+	k_EQuestVar_Cond_RoundendTargetBombed, // cond_roundend_target_bombed
+	k_EQuestVar_Cond_RoundendFailedToPlantBomb, // cond_roundend_failed_to_plant_bomb
+	k_EQuestVar_Cond_RoundendBombDefused, // cond_roundend_bomb_defused
+	k_EQuestVar_Cond_RoundendFailedToRescueHostage, // cond_roundend_failed_to_rescue_hostage
+	k_EQuestVar_Cond_RoundendHostageRescued, // cond_roundend_hostage_rescued
+	k_EQuestVar_Cond_ScoreFirstHalf, // cond_score_first_half
+	k_EQuestVar_Cond_ScoreSecondHalf, // cond_score_second_half
 
 	k_EQuestVar_Last
-	// lwss end
 };
 
 class CEconItemRarityDefinition
@@ -1042,7 +1111,7 @@ enum item_capabilities_t
 	ITEM_CAP_CAN_CRAFT_COUNT = 1 << 10,       // NOT USED
 	ITEM_CAP_CAN_CRAFT_MARK = 1 << 11,        // NOT USED
 	ITEM_CAP_PAINTABLE_TEAM_COLORS = 1 << 12, // NOT USED
-	ITEM_CAP_CAN_BE_RESTORED = 1 << 13,       // NOT USED
+	ITEM_CAP_CAN_WRAP_STICKER = 1 << 13,      // "can_wrap_sticker"; CS:GO had "can_be_restored" in this bit
 	ITEM_CAP_CAN_USE_STRANGE_PARTS = 1 << 14, // NOT USED
 	ITEM_CAP_PAINTABLE_UNUSUAL = 1 << 15,     // NOT USED
 	ITEM_CAP_CAN_INCREMENT = 1 << 16,         // NOT USED
@@ -1052,7 +1121,8 @@ enum item_capabilities_t
 	ITEM_CAP_CAN_STICKER = 1 << 20,           // used in CS:GO on sticker tools, primary and secondary weapons
 	ITEM_CAP_STATTRACK_SWAP = 1 << 21,        // used in CS:GO on stattrack items
 	ITEM_CAP_CAN_PATCH = 1 << 22,             // used in CS:GO on customplayers
-	NUM_ITEM_CAPS = 23,
+	ITEM_CAP_CAN_KEYCHAIN = 1 << 23,          // "can_keychain"
+	NUM_ITEM_CAPS = 24,
 };
 
 enum
@@ -1106,7 +1176,11 @@ enum EItemType
 	k_EItemTypeSelfOpeningPurchase,
 	k_EItemTypeOperationCoin,
 	k_EItemTypePrestigeCoin,
+	k_EItemTypePremierSeasonCoin,
 	k_EItemTypeTool,
+	k_EItemTypeGameLicense,
+	k_EItemTypeFanShield,
+	k_EItemTypeSubscription,
 };
 
 const char *PchNameFromEItemType( EItemType eType );
