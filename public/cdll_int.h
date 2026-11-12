@@ -40,6 +40,20 @@ class CDemoSaveGame;
 struct SpawnGroupDesc_t;
 struct EngineLoopState_t;
 
+// Frame record the engine hands to the render device present callback; the engine keeps the last 10 presented ones
+struct EnginePresentedFrame_t
+{
+	int m_nFrame;
+	int m_nRenderTick;
+	float m_flRenderTickFraction;
+	int m_nPlayerTick;
+	float m_flPlayerTickFraction;
+	// Stored by the client while the frame is pending, see IVEngineClient2::GetPendingPresentedFrame
+	void *m_pClientData;
+	// Plat_FloatTime() of the present callback
+	double m_flPresentTime;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Interface the engine exposes to the client DLL (Source2EngineToClient001).
 //-----------------------------------------------------------------------------
@@ -85,9 +99,10 @@ public:
 	virtual void ClientCommand( CSplitScreenSlot nSlot, const char *pszCmd, bool bUnrestricted, double flInputTime = NAN, uint64 nInputTimestamp = 0 ) = 0;
 	virtual void SetRestrictServerCommands( bool bRestrict ) = 0;
 	virtual void SetRestrictClientCommands( bool bRestrict ) = 0;
-	virtual bool unk054() = 0;
-	// Player slot the split screen service holds for nSlot
-	virtual CPlayerSlot unk055( CSplitScreenSlot nSlot ) = 0;
+	// Forwards to IApplication::IsLowViolence
+	virtual bool IsLowViolence() = 0;
+	// Player slot the split screen service holds for nSlot; GetSplitScreenPlayer asks the network game client instead
+	virtual CPlayerSlot GetSplitScreenServicePlayer( CSplitScreenSlot nSlot ) = 0;
 	virtual bool IsSplitScreenActive() = 0;
 	virtual bool IsValidSplitScreenSlot( CSplitScreenSlot nSlot ) = 0;
 	virtual CSplitScreenSlot FirstValidSplitScreenSlot() = 0;
@@ -102,7 +117,8 @@ public:
 	virtual const char *GetLevelNameShort() = 0;
 	// Always returns NULL
 	virtual void *unk066() = 0;
-	virtual void *unk067() = 0;
+	// Forwards to ITestScriptMgr::CheckPoint
+	virtual void CheckPoint( const char *pszName ) = 0;
 	virtual CMovieRecorder *GetMovieRecorder() = 0;
 	virtual IDemoPlayer *GetDemoPlayer() = 0;
 	virtual IDemoRecorder *GetDemoRecorder() = 0;
@@ -160,7 +176,8 @@ public:
 	virtual int GetBugSubmissionCount() = 0;
 	virtual void ClearBugSubmissionCount() = 0;
 	virtual float GetServerSimulationFrameTime() = 0;
-	virtual uint64 unk116( uint64 nFirstFrame, void *pOut ) = 0;
+	// Copies the server tick timing records from nFirstIndex on (the engine keeps the last 128) into the vector at pOutRecords and returns the index after the newest record
+	virtual uint64 GetServerTickStats( uint64 nFirstIndex, void *pOutRecords ) = 0;
 	virtual bool IsInLevelLoadLoop() = 0;
 	virtual void SetConnectionPassword( const char *pszPassword ) = 0;
 	virtual void ServerCmdKeyValues( KeyValues *pKeyValues ) = 0;
@@ -224,8 +241,10 @@ public:
 	virtual const char *GetDemoRecordingFileName() = 0;
 	// Returns the constant 0.1.
 	virtual double unk171() = 0;
-	virtual void *unk172() = 0;
-	virtual void *unk173() = 0;
+	// Record of the frame being submitted, NULL outside of the engine's frame submission
+	virtual EnginePresentedFrame_t *GetPendingPresentedFrame() = 0;
+	// Copy of the most recently presented frame record
+	virtual EnginePresentedFrame_t GetLastPresentedFrame() = 0;
 	virtual bool unk174( const void *pSyncMsg ) = 0;
 	// No-op in this build.
 	virtual void unk175() = 0;
