@@ -116,7 +116,7 @@ struct HltvReplayParams_t
 	bool m_bAbortCurrentReplay = false;
 	int m_nReason = 0;
 	// AMNOTE: Flags: 1 = replay the stash m_nStashId, 2 = replay all of the stash instead of its last m_flDelay seconds
-	uint32 m_unk101 = 0;
+	uint32 m_nFlags = 0;
 	uint32 m_nStashId = 0;
 };
 
@@ -303,15 +303,16 @@ public:
 	virtual bool StashHltvReplay( uint32 nStashId, float flSeconds ) = 0;
 	virtual void AddHltvRelayProxyWhitelist( uint32 a, uint32 b, uint32 c, uint32 d, uint32 numbits ) = 0;
 	virtual bool WasShutDownRequested() const = 0;
-	// AMNOTE: Extends the queued matchmaking reservation timeout and sends the data in a connectionless packet to every reservation entry, or only to the entry matching the int when it is non-zero
-	virtual void unk101( int, uint8, uint8, uint32 nDataSize, const void *pData ) = 0;
+	// AMNOTE: Extends the queued matchmaking reservation timeout and sends the data in a connectionless packet to every queued match player, or only to the one with uiAccountID when it is non-zero.
+	// The two bytes are written to the packet in front of the data as they are.
+	virtual void SendDataToQueuedMatchPlayers( uint32 uiAccountID, uint8, uint8, uint32 nDataSize, const void *pData ) = 0;
 	virtual bool IsTvRecording() = 0;
 	virtual void StartAutoRecording() = 0;
 	virtual void RecordDemo( const char *pszFilename ) = 0;
 	virtual void StopRecordingDemo( const CGameInfo *pGameInfo ) = 0;
 
-	// Writes the message into the demo being recorded
-	virtual void BroadcastEvent( INetworkMessageInternal *pSerializer, const CNetMessage *pMessage ) = 0;
+	// Serializes the message into the event buffer of the demo being recorded
+	virtual void BroadcastEvent( const CNetMessage *pMessage ) = 0;
 	// Empty string when no demo is being recorded
 	virtual const char *GetTvRecordingDemoFilename() = 0;
 	virtual const char *GetMapName() = 0;
@@ -476,7 +477,7 @@ public:
 	virtual bool			ShouldHoldGameServerReservation( float flTimeElapsedWithoutClients ) = 0;
 
 	// Called when the broadcast relay answers an HLTV broadcast request with HTTP 200.
-	virtual void			OnBroadcastRelayRequestSucceeded( void *pUnk ) = 0;
+	virtual void			OnBroadcastRelayRequestSucceeded( void ) = 0;
 	virtual void			SendServerFrameTime( float flFrameTime ) = 0;
 	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nUnk ) = 0;
 	virtual void			OnClientHltvReplayStop( CPlayerSlot slot ) = 0;
@@ -492,7 +493,8 @@ public:
 	// Called for FCVAR_GAMEDLL commands sent by a client. Returns false when the command is not a registered player controller command. 
 	// Otherwise queues it to the controller as a predicted string command event.
 	virtual bool			ProcessClientStringCommand( CPlayerSlot slot, const CCommand &args, uint32 nPredictionSync ) = 0;
-	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nUnk, const char *pCommand ) = 0;
+	// nQueuedMatchPlayerCount is the number of players in the queued match reservation
+	virtual void			OnPreMatchInterfaceCommand( uint32 uiAccountID, int nQueuedMatchPlayerCount, const char *pCommand ) = 0;
 	virtual void			SetPlayerTeammatePreferredColor( uint32 uiAccountID, int nColor ) = 0;
 	virtual void			UpdateCompTeammateColors( void ) = 0;
 
@@ -532,7 +534,9 @@ public:
 	//
 	// This is also where an entity can force other entities to be transmitted if it refers to them
 	// with ehandles.
-	virtual void			CheckTransmit( CCheckTransmitInfo **pInfoInfoList, int nInfoCount, CBitVec<16384> &unionTransmitEdicts, CBitVec<16384> &,
+	//
+	// The two unions are OR'ed from m_pTransmitEntity and m_pTransmitOutOfPVS of every info in the list.
+	virtual void			CheckTransmit( CCheckTransmitInfo **pInfoInfoList, int nInfoCount, CBitVec<16384> &unionTransmitEdicts, CBitVec<16384> &unionTransmitOutOfPVSEdicts,
 								const Entity2Networkable_t **pNetworkables, const uint16 *pEntityIndicies, int nEntityIndices, bool bEnablePVSBits ) = 0;
 	
 	// TERROR: Perform any PVS cleanup before a full update
@@ -625,7 +629,8 @@ public:
 
 	// Called when the client attempts to connect (doesn't get called for bots)
 	// returning false would reject the connection with the pRejectReason message
-	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool unk1, CBufferString *pRejectReason ) = 0;
+	// When bLoadGame is set the player controller is not created here, as its state comes from the save game
+	virtual bool			ClientConnect( CPlayerSlot slot, const char *pszName, uint64 xuid, const char *pszNetworkID, bool bLoadGame, CBufferString *pRejectReason ) = 0;
 
 	// Client is connected and should be put in the game
 	// type values could be:
@@ -650,8 +655,9 @@ public:
 	// The client has typed a command at the console
 	virtual void			ClientCommand( CPlayerSlot slot, const CCommand &args ) = 0;
 
-	// Stores the entity baseline / string table data buffer pointer on the player controller.
-	virtual void			ClientStringTableData( CPlayerSlot slot, void *pData ) = 0;
+	// Called whenever the engine (re)allocates the client's userinfo convar buffer, the one IVEngineServer2::GetClientUserInfo() returns.
+	// The game stores it on the player controller.
+	virtual void			SetClientUserInfo( CPlayerSlot slot, ConVarUserInfoSet_t userInfo ) = 0;
 
 	// A player changed one/several replicated cvars (name etc)
 	virtual void			ClientSettingsChanged( CPlayerSlot slot ) = 0;
@@ -694,7 +700,9 @@ public:
 
 	virtual void			StartHLTVServer( CEntityIndex index ) = 0;
 
-	virtual void			SendHLTVStatusMessage( IHLTVServer *, bool, bool, const char *, int, int, int ) = 0;
+	// Sends CSVCMsg_HLTVStatus built from the last four arguments through pHLTVServer. A relay that is not
+	// connected to its master (both bools are false) fires the "hltv_message" event with the "SourceTV reconnecting ..." text instead.
+	virtual void			SendHLTVStatusMessage( IHLTVServer *pHLTVServer, bool bIsMasterProxy, bool bIsConnected, const char *pszMaster, int nProxies, int nSlots, int nClients ) = 0;
 
 	virtual IHLTVDirector	*GetHLTVDirector( void ) = 0;
 
