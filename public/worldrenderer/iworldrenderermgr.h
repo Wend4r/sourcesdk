@@ -75,31 +75,41 @@ public:
 	virtual void unk042( float flFrameTime, float flTime ) = 0;
 	virtual void unk043( float flFrameTime, float flTime ) = 0;
 
-	virtual void *unk044( void *p ) = 0;
+	// Creates a scene object from the world renderer's object pool and places it at the given transform
+	virtual void *unk044( void *pUnknown1, const matrix3x4_t &mTransform, void *pUnknown2, void *pUnknown3, bool bUnknown ) = 0;
 
-	virtual void *unk045( float flRadius ) = 0;
-	virtual void unk046( void *p ) = 0;
-	virtual void unk047( void *p ) = 0;
+	// Grass flattening (r_grass_allow_flattening). The state keeps the last reported position and the squared radius
+	virtual void *Unk_CreateGrassFlattenState( float flRadius ) = 0;
+	// Queues a flatten event for pObject once the position has moved further than the state's radius
+	virtual void Unk_UpdateGrassFlattenState( void *pState, void *pObject, const Vector &vPosition, float flUnknown1, float flUnknown2, bool bUnknown ) = 0;
+	virtual void Unk_DestroyGrassFlattenState( void *pState ) = 0;
 
-	virtual void unk048( void *p ) = 0;
+	// Queues a flatten event for pObject directly
+	virtual void Unk_AddGrassFlattenEvent( void *pObject, const Vector &vPosition, const Vector &vDirection, float flUnknown1, float flUnknown2, bool bUnknown ) = 0;
 
-	virtual void unk049( void *p ) = 0;
-	virtual void unk050( void *p ) = 0;
-	virtual void unk051( void *p ) = 0;
+	// Per-key entries holding two vector/strength pairs; bUnknown selects which pair is written
+	virtual void unk049( void *pKey, const Vector &vUnknown, float flUnknown1, float flUnknown2, bool bUnknown ) = 0;
+	virtual void unk050( void *pKey ) = 0;
+	// Reads the entry of pKey, falling back to convar defaults when there is none
+	virtual void unk051( void *pKey, Vector *pOut1, Vector *pOut2, Vector *pOut3 ) = 0;
 
-	virtual void unk052( void *p ) = 0;
+	virtual void unk052( void *pObject, float flUnknown ) = 0;
 	virtual void unk053( WorldGroupId_t hWorldGroupId, void *pOut ) = 0;
 	virtual void unk054() = 0;
 
+	// Two independent pointer lists: add or remove an entry, test for membership
 	virtual void unk055( void *p, bool bAdd ) = 0;
 	virtual bool unk056( void *p ) = 0;
-
-	// Set, get and remove an entry keyed by a 64-bit value
-	virtual void unk057( void *p ) = 0;
+	virtual void unk057( void *p, bool bAdd ) = 0;
 	virtual bool unk058( void *p ) = 0;
-	virtual void unk059( void *p ) = 0;
 
-	virtual IWorldVPKReference *unk060( const char *pVPKName ) = 0;
+	// Set, get and remove an entry keyed by a pointer; the game passes the same per-entity key to slots 49 to 61
+	virtual int unk059( void *pKey, float flUnknown1, float flUnknown2, int nUnknown1, int nUnknown2, int nUnknown3 ) = 0;
+	virtual bool unk060( void *pKey, float *pUnknown1, float *pUnknown2, int *pUnknown3, int *pUnknown4, int *pUnknown5 ) = 0;
+	virtual void unk061( void *pKey ) = 0;
+
+	// NULL when the VPK could not be mounted
+	virtual IWorldVPKReference *unk062( const char *pVPKName ) = 0;
 };
 
 class IWorld;
