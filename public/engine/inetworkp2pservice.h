@@ -31,7 +31,7 @@ public:
 
 	virtual bool IsKnownPeer( const CPeerToPeerAddress &addr ) = 0;
 
-	virtual void *GetNetMessageDispatcher() = 0;
+	virtual CEventDispatcher_Base *GetNetMessageDispatcher() = 0;
 
 	virtual bool IsKnownSteamIDPeer( uint64 nSteamID ) = 0;
 

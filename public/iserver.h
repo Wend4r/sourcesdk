@@ -53,6 +53,7 @@ class KeyValues3;
 class CPureServerWhitelist;
 class CServerSideClientBase;
 class CSVCMsg_ServerInfo_t;
+class CSVCMsg_FlattenedSerializer_t;
 class CCLCMsg_SplitPlayerConnect_t;
 class C2S_CONNECT_Message;
 class CNetworkStringTableContainer;
@@ -399,9 +400,10 @@ public:
 	virtual bool	IsActiveInGame( void ) const = 0;
 	// More than one client slot
 	virtual bool	IsMultiplayer( void ) const = 0;
-	virtual void	StartupServer( const GameSessionConfiguration_t &config, ISource2WorldSession *pWorldSession, const char * ) = 0;
+	virtual void	StartupServer( const GameSessionConfiguration_t &config, ISource2WorldSession *pWorldSession, const char *pszLevelName ) = 0;
 	virtual void	SetGameSpawnGroupMgr( IGameSpawnGroupMgr *pMgr ) = 0;
-	virtual void	AddServerPrerequisites( const GameSessionConfiguration_t &, const char *, ILoopModePrerequisiteRegistry *, bool ) = 0;
+	// pszResourceGroupName is loaded as the "Server GameSessionManifest" resource manifest group
+	virtual void	AddServerPrerequisites( const GameSessionConfiguration_t &config, const char *pszResourceGroupName, ILoopModePrerequisiteRegistry *pRegistry, bool bChangelevel ) = 0;
 	virtual bool	IsServerRunning( void ) const = 0;
 	// Also shuts down the SourceTV servers
 	virtual void	DisconnectGameNow( ENetworkDisconnectionReason ) = 0;
@@ -416,13 +418,15 @@ public:
 	virtual bool	IsChangeLevelPending( void ) const = 0;
 	virtual void	PreserveSteamID( void ) = 0;
 	virtual CRC32_t	GetServerSerializersCRC( void ) = 0;
-	virtual void	*GetServerSerializersMsg( void ) = 0;
+	// Built on first use from the server's flattened serializers
+	virtual CSVCMsg_FlattenedSerializer_t *GetServerSerializersMsg( void ) = 0;
 	virtual IGameSpawnGroupMgr *GetGameSpawnGroupMgr( void ) = 0;
 	virtual bool	IsSaveRestoreAllowed( CUtlString *pError ) = 0;
 	virtual bool	IsEntityReportActive( void ) = 0;
 	// Returns nullptr unless the entity report is active and targets this slot or every slot
 	virtual IEntityReport *GetEntityReport( int nSlot ) = 0;
-	// Empty in this build
+	// Empty in this build. Called as a begin/end pair around ISource2Server::GameFrame on the
+	// secondary main thread (outside EnterSyncInterval/ExitSyncInterval) and around closing a demo file.
 	virtual void	unk046( void ) = 0;
 	virtual void	unk047( void ) = 0;
 	virtual bool	ThreadInPrimaryOrSecondaryMainThread( void ) = 0;
