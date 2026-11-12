@@ -274,12 +274,16 @@ static const InterfaceGlobals_t g_pInterfaceGlobals[] =
 	{ SOURCE2ENGINETOCLIENTSTRINGTABLE_INTERFACE_VERSION, &g_pNetworkStringTableClient },
 	{ VPHYSICS2_INTERFACE_VERSION, &g_pVPhysics2 },
 	{ MODELDOCUTILS_INTERFACE_VERSION, &g_pModelDocUtils },
+	{ SMARTPROPSSYSTEM_INTERFACE_VERSION, &g_pSmartPropsSystem },
 	{ ANIMGRAPHEDITORUTILS_INTERFACE_VERSION, &g_pAnimGraphEditorUtils },
 	{ EXPORTSYSTEM_INTERFACE_VERSION, &g_pExportSystem },
 	{ SERVERTOOLSINFO_INTERFACE_VERSION, &g_pServerToolsInfo },
 	{ CLIENTTOOLSINFO_INTERFACE_VERSION, &g_pClientToolsInfo },
 	{ VRAD3_INTERFACE_VERSION, &g_pVRAD3 },
+#ifdef _WIN32
+	// The Linux modules do not connect the nav system
 	{ NAVSYSTEM_INTERFACE_VERSION, &g_pNavSystem },
+#endif
 	{ NAVGAMETEST_INTERFACE_VERSION, &g_pNavGameTest },
 	{ LOCALSERVERCLIENTACCESS_INTERFACE_VERSION, &g_pLocalServerClientAccess },
 	{ CLIENTLOCALSERVERACCESS_INTERFACE_VERSION, &g_pClientLocalServerAccess },
