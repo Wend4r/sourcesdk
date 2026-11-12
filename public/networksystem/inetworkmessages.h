@@ -129,31 +129,27 @@ abstract_class INetworkMessages
 public:
 	virtual void RegisterNetworkCategory( NetworkCategoryId nCategoryId, const char *szDebugName ) = 0;
 
-	virtual void AssociateNetMessageWithChannelCategoryAbstract( INetworkSerializerPB *pNetMessage, NetworkCategoryId nCategoryId, bool bCategoryMaskOverride = false ) = 0;
+	// bRequireHandler also adds the category to the message's required handler categories
+	virtual void AssociateNetMessageWithChannelCategoryAbstract( INetworkSerializerPB *pNetMessage, NetworkCategoryId nCategoryId, bool bRequireHandler = false ) = 0;
 
-	// Passing nMessasgeId as -1 would auto-assign the id based on the message name hash.
-	// AMNOTE: bCannotBeNetworked marks the message as never sent over the network, Serialize rejects it,
-	// and its id is auto-assigned too
-	virtual INetworkSerializerPB *FindOrCreateNetMessage( NetworkMessageId nMessageId, const IProtobufBinding *pProtoBinding, uint nMessageSize, INetworkSerializerPB *pGloablNetMessageInternal = nullptr, bool bCreateIfNotFound = true, bool bCannotBeNetworked = false ) = 0;
-
+	// Writes the message id and the message itself
 	virtual bool SerializeAbstract( bf_write &pBuf, const CNetMessage *pData ) = 0;
 
-	virtual bool UnserializeMessageInternal( bf_read &pBuf, CNetMessage *pData ) = 0;
+	// Returns false if failed to unserialize; the reason is written to pErrorReason, or logged when it's nullptr.
+	// Messages over the maximum message size are rejected only when nUnk is 1
+	virtual bool UnserializeMessageInternal( bf_read &pBuf, CNetMessage *pData, int nUnk, CUtlString *pErrorReason = nullptr ) = 0;
 	virtual bool SerializeMessageInternal( bf_write &pBuf, const CNetMessage *pData ) = 0;
 
-	// Returns nullptr if failed to unserialize, reason is written to err_reason
-	virtual CNetMessage *UnserializeFromStream( bf_read &pBuf, CUtlString &strError ) = 0;
-	virtual bool SerializeAbstractInternal( bf_write &pBuf, INetworkSerializerPB *pNetMessage, const CNetMessage *pData ) = 0;
-
-	virtual CNetMessage *AllocateAndCopyConstructNetMessageAbstract( INetworkSerializerPB *pNetMessage, const CNetMessage *pFrom ) = 0;
-
-	virtual void DeallocateNetMessageAbstract( INetworkSerializerPB *pNetMessage, CNetMessage *pData ) = 0;
+	// Returns nullptr if failed to unserialize, reason is written to strError.
+	// nUnk is passed on to UnserializeMessageInternal
+	virtual CNetMessage *UnserializeFromStream( bf_read &pBuf, int nUnk, CUtlString &strError ) = 0;
 
 	virtual void *RegisterNetworkFieldSerializer( const char *, NetworkSerializationMode_t, NetworkableDataType_t, int, NetworkFieldSerializeCB, NetworkFieldUnserializeCB, NetworkFieldInfoCB, 
 		NetworkFieldMetaInfoCB, NetworkableDataCB, NetworkFieldSerializerNameCB, NetworkFieldSerializeCB, NetworkFieldUnserializeCB ) = 0;
 	virtual void *RegisterNetworkArrayFieldSerializer( const char *, NetworkSerializationMode_t, NetworkFieldSerializeBufferCB, NetworkFieldUnserializeBufferCB, NetworkFieldInfoCB,
 		NetworkFieldMetaInfoCB, NetworkFieldSerializeBufferCB, NetworkFieldUnserializeBufferCB ) = 0;
 
+	// Returns pNetMessage itself, or an empty info for nullptr
 	virtual NetMessageInfo_t *GetNetMessageInfo( INetworkSerializerPB *pNetMessage ) = 0;
 
 	virtual INetworkSerializerPB *FindNetworkMessage( const char *szName ) = 0; // V_stricmp_fast. Example: "CMsgSource1LegacyGameEvent [207]"
@@ -172,6 +168,13 @@ public:
 	virtual struct NetworkContextData_t *GetNetworkSerializationContextData( NetworkContextDataId nContextId, NetworkSerializationMode_t eSerializationMode = NET_SERIALIZATION_MODE_DEFAULT ) = 0;
 
 	virtual void SetNetworkChangeTagCallback( const CUtlAbstractDelegate &callback ) = 0;
+
+	// Finds the net message named after the proto type of the message pfnAllocateMessage allocates, or registers it.
+	// A negative nMessageId auto-assigns the id from the message name hash.
+	// nSignonGroup is a SignonGroup_t passed int-wide; SG_INVALID leaves the message in the "Unknown" group.
+	// bCannotBeNetworked marks the message as never sent over the network, its id is auto-assigned too.
+	// Returns nullptr when the message isn't registered yet and additional message registration is not allowed
+	virtual INetworkSerializerPB *FindOrCreateNetMessage( NetworkMessageId nMessageId, NetMessageAllocateFn_t pfnAllocateMessage, int nSignonGroup, NetChannelBufType_t nBufType, bool bOkayToRedispatch, bool bCannotBeNetworked ) = 0;
 
 	// Doesn't support duplicated callbacks per field
 	virtual void RegisterNetworkFieldChangeCallbackInternal( const char *szFieldName, uint64, NetworkFieldChangedDelegateType_t fieldType, CUtlAbstractDelegate pCallback, NetworkFieldChangeCallbackPerformType_t cbPerformType, int nPriority ) = 0;
@@ -212,30 +215,9 @@ public:
 	struct NetCategoryInfo_t
 	{
 		CUtlString m_DebugName; // Set by RegisterNetworkCategory
-		int m_nAssociationCount; // Incremented by AssociateNetMessageWithChannelCategoryAbstract and AssociateNetMessageGroupIdWithChannelCategory
-	};
-
-	// Registered by RegisterNetworkFieldChangeCallbackInternal
-	struct ChangeCallbackInfo_t
-	{
-		CUtlAbstractDelegate m_Callback;
-		uint64 m_nUnk1; // The unnamed uint64 argument
-		uint8 m_FieldType; // NetworkFieldChangedDelegateType_t
-		NetworkFieldChangeCallbackPerformType_t m_PerformType;
-		int m_nPriority;
-		bool m_bUnk1;
-	};
-
-	// Set by SetNetworkSerializationContextData, one pointer per serialization mode
-	struct NetworkContextData_t
-	{
-		::NetworkContextData_t *m_pData[NET_SERIALIZATION_MODE_COUNT];
-	};
-
-	class CPriorityLess
-	{
-	public:
-		bool Less( const int &lhs, const int &rhs, void *pCtx );
+		// Highest NetworkGroupId associated with the category, raised by AssociateNetMessageWithChannelCategoryAbstract
+		// and AssociateNetMessageGroupIdWithChannelCategory
+		int m_nMaxGroupId;
 	};
 
 	CUtlVector< NetCategoryInfo_t > m_NetCategories; // Indexed by NetworkCategoryId, 32 entries
@@ -254,39 +236,20 @@ public:
 	CThreadSpinRWLock m_NonNetworkableMessageNamesLock;
 	CAtomicMutex m_NonNetworkableMessagesMutex;
 
-	CUtlDict< void *, unsigned int > m_FakeFieldInfos; // Values are 96-byte records numbered by m_nFakeFieldInfoCount, created for fake serializer fields
 	CUtlSymbolTable m_NetworkGroupNames; // NetworkGroupId is the symbol, at most 256 groups
 	CThreadSpinRWLock m_NetworkGroupNamesLock;
 
-	CUtlDict< CUtlString, unsigned int > m_SchemaTypeOverrides; // RegisterSchemaTypeOverride
+	// The field serializers, schema type overrides, field change callbacks, serialization contexts
+	// and coord encoding params are kept outside of the object, in the network system's globals
 
-	CUtlVector< NetworkFieldSerializerGroup_t > m_NetworkFieldSerializers; // Indexed by the name symbol in m_NetworkFieldSerializerNames
-	CUtlSymbolTable m_NetworkFieldSerializerNames;
-	CThreadSpinRWLock m_NetworkFieldSerializerNamesLock;
-
-	CUtlVector< NetworkArrayFieldSerializerGroup_t > m_NetworkArrayFieldSerializers; // Indexed by the name symbol in m_NetworkArrayFieldSerializerNames
-	CUtlSymbolTable m_NetworkArrayFieldSerializerNames;
-	CThreadSpinRWLock m_NetworkArrayFieldSerializerNamesLock;
-
-	CUtlHashtable< CUtlSymbolLarge, ChangeCallbackInfo_t, PointerHashFunctor, PointerEqualFunctor > m_FieldChangeCallbacks; // Keyed by m_FieldChangeCallbackNames symbols
-	CUtlSymbolTableLarge m_FieldChangeCallbackNames;
-
-	CUtlVector< NetworkContextData_t > m_NetworkSerializationContexts; // Indexed by NetworkContextDataId
-	CUtlSymbolTable m_NetworkSerializationContextNames;
-	CThreadSpinRWLock m_NetworkSerializationContextNamesLock;
-
-	CUtlSortVector< int, CPriorityLess > m_FieldChangeCallbackPriorities; // RegisterFieldChangeCallbackPriority
-	int m_nFakeFieldInfoCount;
 	bool m_bAllowAdditionalMessageRegistration;
-	bool m_bCanStillRegisterCallbackPriorities;
-	bool m_bIsForServer;
 	CAtomicMutex m_MessageRegistrationMutex; // Held by FindOrCreateNetMessage
-	CAtomicMutex m_FakeFieldInfosMutex; // Held while inserting into m_FakeFieldInfos
-	CAtomicMutex m_FieldChangeCallbackPrioritiesMutex;
-	CUtlSymbolTableLargeMT m_UnkSymbolTableMT; // Purged by two network system helpers, no name found
-	CUtlAbstractDelegate m_NetworkChangeTagCallback; // SetNetworkChangeTagCallback
-	byte m_CoordEncodingParams[96]; // SetCoordEncodingParams copies it, GetCoordEncodingParams returns its address
 };
+#if defined( _WIN32 )
+COMPILE_TIME_ASSERT( sizeof( CNetworkMessages ) == 0x298 );
+#elif defined( _LINUX )
+COMPILE_TIME_ASSERT( sizeof( CNetworkMessages ) == 0x360 );
+#endif
 
 DECLARE_TIER2_INTERFACE(INetworkMessages, g_pNetworkMessages);
 

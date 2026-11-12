@@ -28,13 +28,12 @@ inline constexpr const char *k_pszNetGroupNames[ SG_TOTAL ] =
 	"String Command",   // SG_STRINGCMD = 9
 	"Signon",           // SG_SIGNON = 10
 	"System",           // SG_SYSTEM = 11
-	"Unknown",          // gap (12)
+	"Decals",           // SG_DECALS = 12
 	"User Messages",    // SG_USERMSG = 13
 	"Client Messages",  // SG_CLIENTMSG = 14
 	"Spawn Groups",     // SG_SPAWNGROUPS = 15
 	"Game Engine",      // SG_ENGINE = 16
-	"Hltv Replay",      // SG_HLTVREPLAY = 17
-	"Decals"            // SG_DECALS = 18
+	"Hltv Replay"       // SG_HLTVREPLAY = 17
 };
 
 class CNetMessage
@@ -54,7 +53,14 @@ public:
 	virtual INetworkSerializerPB *GetSerializerPB() const = 0;
 	virtual CNetMessage *Clone() const = 0;
 	virtual NetworkMessageId GetMessageId() const = 0;
-	virtual const char *GetName() const = 0;
+
+	// The registered name of the message, "<proto type name> [<message id>]"
+	const char *GetName() const
+	{
+		INetworkSerializerPB *pSerializerPB = GetSerializerPB();
+
+		return pSerializerPB ? pSerializerPB->m_szName.Get() : "";
+	}
 
 	// Helper function to cast up the abstract message to a concrete T message type.
 	// Doesn't do any validity checks itself!
@@ -86,9 +92,8 @@ private:
 // AMNOTE: This is a stub class over real CNetMessagePB!
 // This is mainly to access the game constructed objects, and not for direct initialization of them
 // since this misses the CNetMessage implementation which requires supplying other proto related info like
-// proto binding object, proto msg id/group, etc.
-// So to allocate the message yourself use INetworkMessageInternal::AllocateMessage() or INetworkMessages::AllocateNetMessageAbstract()
-// functions instead of direct initialization (they both are equivalent)!
+// proto msg id/group, etc.
+// So to allocate the message yourself use INetworkMessageInternal::AllocateMessage() instead of direct initialization!
 // Example usage:
 // auto *msg = INetworkMessageInternal::AllocateMessage()->As<CYourMessage_t>();
 // msg->field1( 2 );
@@ -106,10 +111,23 @@ public:
 	static constexpr NetChannelBufType_t kBufType = BUF_TYPE;
 	static constexpr bool kIsForServer = IS_FOR_SERVER;
 
-	inline static class CProtobufBinding : public IProtobufBinding
+	// Allocates a default-constructed message; the registered NetMessageAllocateFn_t of the type
+	static CNetMessage *AllocateMessage()
+	{
+		auto *pNewMsg = Alloc< MyType_t >();
+
+		if ( !pNewMsg )
+			return nullptr;
+
+		return static_cast< CNetMessage * >( Construct( pNewMsg ) );
+	}
+
+	// Compile-time description of the message type. The network system has no binding interface anymore,
+	// it takes these values directly when the message is registered
+	inline static class CProtobufBinding
 	{
 	public:
-		virtual const char *GetName() const
+		const char *GetName() const
 		{
 			static std::string s_szResult;
 
@@ -124,9 +142,9 @@ public:
 			return s_szResult.c_str();
 		}
 
-		virtual int GetSize() const { return sizeof( MyType_t ); }
+		int GetSize() const { return sizeof( MyType_t ); }
 
-		virtual const char *ToString( CNetMessage *pData, CUtlString &sResult ) const
+		const char *ToString( CNetMessage *pData, CUtlString &sResult ) const
 		{
 			auto *pMsgPB = reinterpret_cast< MyType_t * >(pData);
 
@@ -144,7 +162,7 @@ public:
 			return sResult.String();
 		}
 
-		virtual const char *GetGroup() const
+		const char *GetGroup() const
 		{
 			if constexpr ( !( 0 <= kSignonGroup && kSignonGroup < ARRAYSIZE(k_pszNetGroupNames) ) )
 				return "Unknown";
@@ -152,7 +170,7 @@ public:
 			return k_pszNetGroupNames[ kSignonGroup ];
 		}
 
-		virtual Color GetGroupColor() const
+		Color GetGroupColor() const
 		{
 			if ( !g_pNetworkMessages )
 				return DEFAULT_NETMESSAGE_COLOR;
@@ -174,19 +192,10 @@ public:
 			return DEFAULT_NETMESSAGE_COLOR;
 		}
 
-		virtual NetChannelBufType_t GetBufType() const { return kBufType; }
-		virtual CNetMessage *AllocateMessage() const
-		{
-			auto *pNewMsg = Alloc< MyType_t >();
+		NetChannelBufType_t GetBufType() const { return kBufType; }
+		CNetMessage *AllocateMessage() const { return MyType_t::AllocateMessage(); }
 
-			if ( !pNewMsg )
-				return nullptr;
-
-			return static_cast< CNetMessage * >( Construct( pNewMsg ) );
-		}
-
-		virtual bool OkToRedispatch() const { return kIsForServer; }
-		virtual bool IsParent() const { return false; }
+		bool OkToRedispatch() const { return kIsForServer; }
 	} sm_binding;
 
 public:
@@ -206,7 +215,7 @@ public:
 
 		if ( !s_pSerializerPB && g_pNetworkMessages )
 		{
-			s_pSerializerPB = g_pNetworkMessages->FindOrCreateNetMessage( kMsgId, &sm_binding, sizeof( MyType_t ) );
+			s_pSerializerPB = g_pNetworkMessages->FindOrCreateNetMessage( kMsgId, &MyType_t::AllocateMessage, kSignonGroup, kBufType, kIsForServer, false );
 		}
 
 		return s_pSerializerPB;
@@ -226,26 +235,10 @@ public:
 	}
 
 	virtual NetworkMessageId GetMessageId() const { return kMsgId; }
-	virtual const char *GetName() const { return sm_binding.GetName(); }
 
 	struct NetMessageInfo_t *GetProtoInfo() const
 	{
-		INetworkSerializerPB *pSerializerPB = GetSerializerPB();
-
-		if ( !pSerializerPB )
-			return nullptr;
-
-		return pSerializerPB->GetNetMessageInfo();
-	}
-
-	IProtobufBinding *GetProtoBindingInfo() const
-	{
-		NetMessageInfo_t *pPrtobufInfo = GetProtoInfo();
-
-		if ( !pPrtobufInfo )
-			return nullptr;
-
-		return pPrtobufInfo->m_pBinding;
+		return GetSerializerPB();
 	}
 };
 

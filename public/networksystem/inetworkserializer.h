@@ -9,7 +9,7 @@
 #include <tier0/utlstring.h>
 #include <tier0/utlhash.h>
 
-#include <networksystem/iprotobufbinding.h>
+#include <networksystem/inetchannel.h>
 #include <tier0/utlstring.h>
 #include <tier0/bitbuf.h>
 #include <tier0/utldict.h>
@@ -23,11 +23,6 @@ class CEntityInstance;
 class CCheckTransmitInfo;
 class CNetworkSerializerCodeGenDatabase;
 class CNetMessage;
-
-enum NetworkValidationMode_t
-{
-
-};
 
 enum NetworkSerializationMode_t : int
 {
@@ -311,46 +306,44 @@ public:
 	bool m_bDebugSpew;
 };
 
+// Allocates a new message of the net message's type; the caller owns it and deletes it through its virtual destructor
+typedef CNetMessage *( *NetMessageAllocateFn_t )();
+
 struct NetMessageInfo_t
 {
-	int m_nCategories;
-	IProtobufBinding *m_pBinding;
+	// "<proto type name> [<message id>]"
+	CUtlString m_szName;
+	NetMessageAllocateFn_t m_pfnAllocateMessage;
+	// Name of the signon group the message was registered with, "Unknown" when there is none
 	CUtlString m_szGroup;
 	NetworkMessageId m_MessageId;
+
+	// Bit per NetworkCategoryId the message is associated with
+	int m_nCategories;
+	// The categories that were associated with bRequireHandler: channels of these categories
+	// are expected to have a handler registered for the message
+	int m_nRequiredHandlerCategories;
+
 	NetworkGroupId m_GroupId;
 
-	// AMNOTE: From IProtobufBinding::GetBufType()
-	NetChannelBufType_t m_nBufType : 6;
-	// AMNOTE: Set by FindOrCreateNetMessage's bCannotBeNetworked
+	NetChannelBufType_t m_nBufType : 5;
+	// The message is never sent over the network, INetworkMessages::SerializeAbstract rejects it
 	bool m_bCannotBeNetworked : 1;
-	uint8 m_bAssumeFieldsNotNetworked : 1;
-
-	// AMNOTE: AddCategoryMask ORs nMask into it too when bRequireHandler is true. ConfirmAllMessageHandlersInstalled
-	// reports channels in these categories that have no handler registered for the message
-	int m_nRequiredHandlerCategories;
-	bool m_bOkayToRedispatch;
+	// A net channel hands the message to its redispatcher after processing it
+	bool m_bOkayToRedispatch : 1;
+	// Registered without a signon group; per-group traffic stats skip the message
+	bool m_bUnknownGroup : 1;
 };
+COMPILE_TIME_ASSERT( sizeof( NetMessageInfo_t ) == 0x28 );
 
-abstract_class INetworkMessageInternal
+// A registered net message. It has no virtual table: INetworkMessages hands out the message info itself as the handle
+class INetworkMessageInternal : public NetMessageInfo_t
 {
 public:
-	virtual ~INetworkMessageInternal() = 0;
+	NetMessageInfo_t *GetNetMessageInfo() { return this; }
+	const NetMessageInfo_t *GetNetMessageInfo() const { return this; }
 
-	virtual const char *GetUnscopedName() = 0;
-	virtual NetMessageInfo_t *GetNetMessageInfo() = 0;
-
-	virtual void SetMessageId( NetworkMessageId nMessageId ) = 0;
-
-	virtual void AddCategoryMask( uint32 nMask, bool bRequireHandler = false ) = 0;
-
-	virtual void SwitchMode( NetworkValidationMode_t nMode ) = 0;
-
-	virtual CNetMessage *AllocateMessage() = 0;
-
-	// Calls to INetworkMessages::SerializeMessageInternal
-	virtual bool Serialize( bf_write &pBuf, const CNetMessage *pData ) = 0;
-	// Calls to INetworkMessages::UnserializeMessageInternal
-	virtual bool Unserialize( bf_read &pBuf, CNetMessage *pData ) = 0;
+	CNetMessage *AllocateMessage() const { return m_pfnAllocateMessage(); }
 };
 
 using INetworkSerializerPB = INetworkMessageInternal;
