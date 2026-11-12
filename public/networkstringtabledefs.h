@@ -46,6 +46,14 @@ typedef CUtlDelegate< void ( INetworkStringTable *, int, const char *, const Set
 // Returns false to fall back to a hex dump of the user data
 typedef CUtlDelegate< bool ( const char *pString, const SetStringUserDataRequest_t *pUserData, CUtlVector< CUtlString > *pOutLines ) > UserDataFormatterDelegate_t;
 
+// The two most recent ticks at which a table changed, as INetworkStringTable::ChangedBetweenTicks reads them.
+// Only these members are known; the type name is not present in the binaries.
+struct StringTableChangeTicks_t
+{
+	int m_nLastChangeTick;
+	int m_nPreviousChangeTick;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Game .dll shared string table interfaces
 //-----------------------------------------------------------------------------
@@ -61,7 +69,8 @@ public:
 	virtual int				GetNumStrings( void ) const = 0;
 
 	// Networking
-	virtual void			SetStringChangeTick( int tick, void *unknown ) = 0;
+	// pChangeTicks is copied only when tick differs from the current tick; it may be NULL
+	virtual void			SetStringChangeTick( int tick, const StringTableChangeTicks_t *pChangeTicks ) = 0;
 	virtual int				GetTick( void ) = 0;
 	virtual bool			ChangedBetweenTicks(int tickA, int tickB ) const = 0;
 

@@ -17,13 +17,23 @@
 class INetChannel;
 class CUtlBuffer;
 
+// Split screen user registered through ISplitScreenService. Only the members the service reads are known;
+// the type name is not present in the binaries.
+struct SplitScreenPlayer_t
+{
+	INetChannel *m_pNetChannel;
+	CPlayerSlot m_nPlayerSlot;
+	// Cleared by SetDisconnecting( nSlot, true )
+	bool m_bConnected;
+};
+
 abstract_class ISplitScreenService : public IEngineService
 {
 public:
 	virtual ~ISplitScreenService() {}
 
-	virtual bool AddSplitScreenUser( CSplitScreenSlot nSlot, void *pSplitPlayer ) = 0;
-	virtual bool AddBaseUser( CSplitScreenSlot nSlot, void *pSplitPlayer ) = 0;
+	virtual bool AddSplitScreenUser( CSplitScreenSlot nSlot, SplitScreenPlayer_t *pSplitPlayer ) = 0;
+	virtual bool AddBaseUser( CSplitScreenSlot nSlot, SplitScreenPlayer_t *pSplitPlayer ) = 0;
 	virtual bool RemoveSplitScreenUser( CSplitScreenSlot nSlot ) = 0;
 
 	virtual CSplitScreenSlot GetActiveSplitScreenPlayerSlot() = 0;
