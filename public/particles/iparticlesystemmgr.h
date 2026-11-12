@@ -26,9 +26,11 @@ using HParticleSystemDefinition = CWeakHandle< InfoForResourceTypeIParticleSyste
 abstract_class IParticleSystemMgr : public IAppSystem
 {
 public:
-	virtual void unk011() = 0;
-	virtual void unk012() = 0;
-	virtual void unk013() = 0;
+	virtual void unk011( float flUnknown1, float flUnknown2, float flUnknown3, float flUnknown4 ) = 0;
+	virtual void unk012( int nUnknown1, int nUnknown2 ) = 0;
+
+	// Setter and getter of the same flag
+	virtual void unk013( bool bValue ) = 0;
 	virtual bool unk014() = 0;
 
 	virtual HParticleSystemDefinition FindParticleSystem( const char *pszName, bool bWarnIfNotPrecached ) = 0;
@@ -63,10 +65,11 @@ public:
 	virtual int Unk_RandomInt( void *pCollection, int nMin, int nMax ) = 0;
 
 	virtual float Unk_RandomFloat( void *pCollection, float flMin, float flMax ) = 0;
-	virtual const char * unk035() = 0;
-	virtual int unk036() = 0;
-	virtual void unk037() = 0;
-	virtual void unk038() = 0;
+	// Returns "unknown" for an index out of range
+	virtual const char *unk035( uint32 nIndex ) = 0;
+	virtual int unk036( int nIndex ) = 0;
+	virtual void unk037( void *pUnknown ) = 0;
+	virtual void unk038( int nValue ) = 0;
 	virtual void unk039() = 0;
 	virtual void unk040() = 0;
 
@@ -77,17 +80,20 @@ public:
 	virtual void unk044() = 0;
 	virtual void unk045() = 0;
 	virtual void unk046() = 0;
-	virtual void unk047() = 0;
-	virtual void unk048() = 0;
+	virtual int unk047( void *pUnknown ) = 0;
+	virtual bool unk048( void *pUnknown1, int nUnknown2, int nUnknown3 ) = 0;
 	virtual void unk049() = 0;
-	virtual void unk050() = 0;
+	virtual int unk050( void *pUnknown ) = 0;
 	virtual int Unk_GetParticleSystemVersion() = 0;
 	virtual const char *Unk_GetParticleSystemVersionChangeDescription( int nVersion ) = 0;
-	virtual void unk053() = 0;
-	virtual bool unk054() = 0;
+	// Keeps a strong reference to hResource, NULL releases it
+	virtual void unk053( ResourceHandle_t hResource ) = 0;
+	virtual bool unk054( uint32 nFlagMask ) = 0;
 	virtual void unk055() = 0;
-	virtual void unk056() = 0;
-	virtual void unk057() = 0;
+
+	// A list of unique strings: add, get and clear
+	virtual void unk056( const CUtlString &sValue ) = 0;
+	virtual CUtlVector< CUtlString > *unk057() = 0;
 	virtual void unk058() = 0;
 	virtual void unk059() = 0;
 	virtual void Unk_SimulateGPUParticles( void *p ) = 0;
