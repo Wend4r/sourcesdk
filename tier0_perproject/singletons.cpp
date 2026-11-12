@@ -353,7 +353,7 @@ void DisconnectInterfaces()
 		{
 			ConnectionRegistration_t &reg = s_pConnectionRegistration[i];
 			if (reg.m_nConnectionPhase == s_nConnectionCount)
-				reg.m_ppGlobalStorage = NULL;
+				*(void **)reg.m_ppGlobalStorage = NULL;
 		}
 	}
 }
