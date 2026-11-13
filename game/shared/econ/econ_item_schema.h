@@ -817,6 +817,9 @@ public:
 
 	KeyValues *GetRawDefinition( void ) const override { return m_pKVAttribute; }
 
+	const class ISchemaAttributeType *GetAttributeType( void ) const { return m_pAttrType; }
+	bool IsStoredAsInteger( void ) const { return ( m_nStoredAsInteger & 1 ) != 0; }
+
 private:
 	// The raw keyvalues for this attribute definition.
 	KeyValues *m_pKVAttribute;
