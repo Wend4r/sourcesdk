@@ -209,7 +209,7 @@ public:
 	virtual const IEconLootListDefinition *GetLootListInterfaceByName( const char *pListName, int *out_piIndex = NULL ) = 0;
 	virtual const IEconLootListDefinition *GetLootListInterfaceByIndex( int iIdx ) const = 0;
 	// CS2 dropped CS:GO's GetLootListIndex(const char*) here: slot 33 is the count in both binaries.
-	virtual const int GetLootListInterfaceCount() const = 0;
+	virtual int GetLootListInterfaceCount() const = 0;
 
 	virtual KeyValues *FindDefinitionPrefabByName( const char *pszPrefabName ) const = 0;
 
