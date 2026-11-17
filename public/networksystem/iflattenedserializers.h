@@ -464,7 +464,7 @@ public:
 	virtual bool CreateReplayCompatSerializerFromMeta( const char *pszSerializerName, FlattenedSerializerDesc_t *pOut, int nBucket, bool bCreateFake, FlattenedSerializerUserData_t *pContext ) = 0; // Creates replay-compatible metadata serializers and optional "%s!fake" entries.
 	virtual void BuildFlattenedFieldPathMap( const FlattenedSerializerDesc_t &pSerializer, const NetworkEntityData_t *pEntityData, int nBucket, FlattenedSerializerFieldPathMap_t *pOut, FlattenedSerializerFieldPathMap_t *pScratch ) = 0; // Builds offset-to-field-path mappings for flattened network data.
 	virtual void ResolvePathToOffset( const FlattenedSerializerDesc_t &pSerializer, const char *pszSerializerName, const CFieldPath &pPath, int nBucket, FlattenedSerializerFieldPathMap_t *pMap, CUtlVector< int > *pOutOffsets, CUtlVector< int > *pOutFieldPaths ) = 0; // Resolves field paths to offsets and logs "Couldn't resolve offset"
-	virtual CFieldPath OffsetToFieldPath( const FlattenedSerializerDesc_t &pSerializer, int nOffset, int nBucket, bool *pOutExact ) = 0; // Converts a networked offset to a field path.
+	virtual CFieldPath OffsetToFieldPath( const FlattenedSerializerDesc_t &pSerializer, const void *pBase, const void *pField, bool *pOutExact ) = 0; // Converts the offset of pField from pBase to a field path; "CNetworkUtlVectorEmbedded: successfully late-resolved"
 
 	// The metadata helper and the int are not read
 	virtual bool GetFieldPathChildIndices( const FlattenedSerializerDesc_t &pSerializer, CEntityInstancePolymorphicMetadataHelper *, int, const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) = 0;
