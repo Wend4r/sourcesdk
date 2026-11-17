@@ -140,6 +140,7 @@ private:
 	virtual CSharedObjectTypeCache *AllocateTypeCache( int nClassID ) const OVERRIDE { return new CGCClientSharedObjectTypeCache( nClassID ); }
 	CGCClientSharedObjectTypeCache *GetTypeCacheByIndex( int nIndex ) { return (CGCClientSharedObjectTypeCache *)CSharedObjectCache::GetTypeCacheByIndex( nIndex ); }
 
+public:
 	SOID_t m_owner;
 	bool m_bInitialized;
 	bool m_bSubscribed;
