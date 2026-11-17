@@ -47,7 +47,7 @@ struct stickerMaterialReference_t
 //			An element of CAttributeList::m_Attributes: its changes reach the owner entity through
 //			the chainer, which is why the three notifications below forward to it.
 //-----------------------------------------------------------------------------
-class CEconItemAttribute
+/*class CEconItemAttribute
 {
 public:
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
@@ -94,7 +94,7 @@ public:
 };
 COMPILE_TIME_ASSERT( sizeof( CAttributeList ) == 0x78 );
 
-/*//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Purpose: An item that knows how to read itself from a datafile, describe itself to the user,
 //			and serialize itself between Servers, Clients, and Steam.
 //-----------------------------------------------------------------------------
