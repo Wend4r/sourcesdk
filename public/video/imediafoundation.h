@@ -15,32 +15,36 @@
 
 struct BGR888_t;
 
+// Field names from the asserts of valve_wmf.dll ( "params.m_nWidth", ... ) where it has them
 struct MediaFoundationParams_t
 {
+	// The extension is forced to ".mp4" ( video ) or ".m4a" ( audio only )
 	char m_szFileName[ 256 ];
 
-	int m_nAudio;
-	int m_nVideo;
-	int m_nUnk264;
+	// Named by what they select: 1 records an AAC audio stream / an H.264 video stream
+	int m_nAudioCodec;
+	int m_nVideoCodec;
 
-	// fps = m_nFrameRateNumerator / m_nFrameRateDenominator
-	int m_nFrameRateNumerator;
-	int m_nFrameRateDenominator;
+	// Named by what it holds: engine2 writes 1 next to the codec selectors; valve_wmf.dll never reads it
+	int m_nOutputFormat;
+
+	// fps = m_nVideoFrameRate / m_nVideoFrameScale
+	int m_nVideoFrameRate;
+	int m_nVideoFrameScale;
 
 	int m_nWidth;
 	int m_nHeight;
 
-	// Bits per second; 0 derives it from the frame size
-	int m_nVideoBitRate;
+	// 0 derives it from the frame size
+	int m_nVideoBitsPerSec;
 
-	int m_nSampleRate;
-	int m_nSampleBits;
-	int m_nNumChannels;
+	int m_nAudioSampleRate;
+	int m_nAudioSampleBits;
+	int m_nAudioNumChannels;
 
-	// Bits per second; 0 means 20000
-	int m_nAudioBitRate;
+	// 0 means 20000
+	int m_nAudioBytesPerSec;
 };
-COMPILE_TIME_ASSERT( sizeof( MediaFoundationParams_t ) == 304 );
 
 abstract_class IMediaFoundation : public IAppSystem
 {

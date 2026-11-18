@@ -16,12 +16,20 @@
 // Matchmaking extension name, not exported through CreateInterface
 #define WORKSHOPANNOTATIONMGR_INTERFACE_VERSION "WorkshopAnnotationMgr001"
 
+// Implemented by CUiComponent_WorkshopAnnotation in client.dll ( no Linux build: the Linux dedicated server
+// has no client module ); the server reaches it through the matchmaking extension
 abstract_class IWorkshopAnnotationMgr
 {
 public:
-	virtual void unk000() = 0;
-	virtual int unk001( const char *pszMapName, void *pAnnotations ) = 0;
-	virtual void unk002( const char *pszMapName, const char *pszPath ) = 0;
+	// Named by what it does: the next LoadMapAnnotations rescans annotations/local/<map>/*.txt
+	virtual void MarkLocalAnnotationsDirty() = 0;
+
+	// Named by what it does: loads the annotations of the map ( or of its alias ) into pAnnotations and
+	// returns how many were loaded, -1 when the map has no annotation file
+	virtual int LoadMapAnnotations( const char *pszMapName, void *pAnnotations ) = 0;
+
+	// Named by what it does: remembers the annotation file of the map
+	virtual void SetMapAnnotationPath( const char *pszMapName, const char *pszPath ) = 0;
 };
 
 #endif // IWORKSHOPANNOTATIONMGR_H
