@@ -37,6 +37,7 @@ struct SchemaEnumInfoData_t
 	uint16 m_nStaticMetadataCount;
 	
 	SchemaEnumeratorInfoData_t* m_pEnumerators;
+	uint16* m_pUnknownTable; // dota2: uint16 table, seen only on SCHEMA_EF_IS_FLAGS enums (null otherwise)
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
 	
 	CSchemaSystemTypeScope* m_pTypeScope;
