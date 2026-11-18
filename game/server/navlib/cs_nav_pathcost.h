@@ -11,6 +11,8 @@
 #pragma once
 #endif
 
+#include <vector>
+
 #include "tier0/platform.h"
 #include "nav_pathcost.h"
 
@@ -25,6 +27,14 @@ schema abstract_class PathCost : public CNavPathCost
 {
 public:
 	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
+	CLASS_USES_KV3TRANSFER_VIRTUAL_OVERRIDE( PathCost );
+
+	// An extra cost added whenever a step enters the area.
+	struct AreaCost_t
+	{
+		CNavArea *m_pArea;
+		float m_flCost;
+	};
 
 	// The bot the cost is computed for; null costs skip the bot-specific penalties.
 	noschema CCSBot *m_me;
@@ -33,11 +43,8 @@ public:
 	float m_dangerFactor;
 	float m_damagingAreasPenaltyCost;
 	float m_flAgentMaxClimb;
-
-private:
-	// Begin, end and capacity pointers of 16-byte entries: an area and an extra cost added
-	// whenever the step enters that area.
-	noschema uint8 m_Unk48[ 0x18 ];
+	// A std::vector in the game too (Clone copies it with std::vector). Named by what it holds.
+	noschema std::vector< AreaCost_t > m_extraAreaCosts;
 };
 
 #include "schemacompiler/schemaoff.h"

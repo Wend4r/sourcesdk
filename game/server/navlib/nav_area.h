@@ -13,6 +13,7 @@
 
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
+#include "mathlib/vector4d.h"
 #include "tier0/utlvector.h"
 
 #include "schemacompiler/schemaon.h"
@@ -168,20 +169,20 @@ struct NavPolyDef_t
 //-----------------------------------------------------------------------------
 class CNavGeometryManager
 {
-private:
-	uint8 m_Unk00[ 0x20 ];
-
 public:
+	// Read from the nav file (version 32 on); bit 0: m_VertexData follows.
+	int m_nFlags;
+	// Named by what is known: four floats per entry, read from the nav file when m_nFlags has
+	// bit 0.
+	CUtlVector< Vector4D > m_VertexData;
 	CUtlVector< Vector > m_Vertices;
-
-private:
-	uint8 m_Unk38[ 0x30 ];
-
-public:
+	// How many polygons use each vertex; -1 once the vertex is free.
+	CUtlVector< int > m_VertexRefCounts;
+	// Vertices whose count dropped to 0, reused by the next added vertex.
+	CUtlVector< int > m_FreeVertices;
 	CUtlVector< NavPolyDef_t > m_Polys;
-
-private:
-	uint8 m_Unk80[ 0x18 ];
+	// Removed polygons, reused by the next added polygon.
+	CUtlVector< int > m_FreePolys;
 };
 
 //-----------------------------------------------------------------------------
@@ -310,11 +311,11 @@ public:
 	virtual void SetPlace( Place place ) = 0;
 	virtual Place GetPlace() const = 0;
 	// Writes the id, the saved attribute bits, the connections and the rest of the area to the
-	// nav file. The first argument is not used by the base.
-	virtual void Save( const void *pUnk, CUtlBuffer &fileBuffer ) const = 0;
+	// nav file. pSaveContext is not used by the base; its type is not reconstructed.
+	virtual void Save( const void *pSaveContext, CUtlBuffer &fileBuffer ) const = 0;
 	// Reads what Save wrote; pLegacyData collects data of old file versions for the mesh to
-	// convert. The last argument is always null in the mesh's loader.
-	virtual void Load( CNavMesh *pMesh, CUtlBuffer &fileBuffer, uint32 nVersion, uint32 nSubVersion, LegacyNavData_t *pLegacyData, void *pUnk ) = 0;
+	// convert. pLoadContext is always null in the mesh's loader; its type is not reconstructed.
+	virtual void Load( CNavMesh *pMesh, CUtlBuffer &fileBuffer, uint32 nVersion, uint32 nSubVersion, LegacyNavData_t *pLegacyData, void *pLoadContext ) = 0;
 	// Resolves connection and ladder ids into pointers; returns non-zero on corrupt data.
 	virtual int PostLoad( CNavMesh *pMesh ) = 0;
 	virtual void OnServerActivate() = 0;
@@ -411,15 +412,18 @@ struct SpotOrder
 //-----------------------------------------------------------------------------
 struct SpotEncounter
 {
+	// The segment of the path through the area. Names from the CS:GO SpotEncounter.
+	struct Ray
+	{
+		Vector from;
+		Vector to;
+	};
+
 	CNavConnect from;
 	int fromDir;
 	CNavConnect to;
 	int toDir;
-
-private:
-	uint8 m_Unk2C[ 0x1C ];
-
-public:
+	Ray path;
 	CUtlVector< SpotOrder > spots;
 };
 

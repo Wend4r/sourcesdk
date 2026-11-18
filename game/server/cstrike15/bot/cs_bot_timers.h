@@ -24,6 +24,7 @@ class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 class CNetworkSerializerClassInfo;
 struct NetworkStateChanged_t;
+struct NetworkStateChangedRemove_t;
 
 //-----------------------------------------------------------------------------
 // Both timers are embedded schema classes with the network state change virtuals of an
@@ -50,8 +51,10 @@ public:
 
 	// Empty unless the timer is a networked member.
 	virtual void NetworkStateChanged( const NetworkStateChanged_t &data ) {}
-	// Empty and not overridden by the network variable wrapper.
-	virtual void NetworkStateChangedOld( uint32 nLocalOffset, int32 nArrayIndex, int32 nPathIndex ) {}
+	// Empty and not overridden by the network variable wrapper. The middle slot of the
+	// NetworkStateChanged / NetworkStateChangedRemove / NetworkStateChangedLog group of the
+	// embedded network classes (CGameSceneNodeHandle, CEconItemView).
+	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t &data ) {}
 	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) const {}
 
 	// The "CountdownTimer" serializer registered with the network serializer class dictionary.
@@ -81,7 +84,7 @@ public:
 	// Empty: IntervalTimer is never a networked member. The order within the three follows
 	// CountdownTimer's.
 	virtual void NetworkStateChanged( const NetworkStateChanged_t &data ) {}
-	virtual void NetworkStateChangedOld( uint32 nLocalOffset, int32 nArrayIndex, int32 nPathIndex ) {}
+	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t &data ) {}
 	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) const {}
 
 	// Save and load m_timestamp and m_nWorldGroupId.

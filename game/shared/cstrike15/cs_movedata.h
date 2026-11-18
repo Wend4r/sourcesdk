@@ -90,21 +90,17 @@ public:
 	// SetupMove copies m_vecViewAngles here.
 	QAngle m_vecAngles;
 
-private:
-	// Zeroed by the constructor.
-	uint8 m_unk50[ 0x10 ];
+	// Named by what is known: zeroed by the constructor; no reader was found (the cs2kz copy of
+	// this class calls it unused).
+	Vector m_vecReserved;
 
-public:
 	CUtlVector< SubtickMove_t > m_SubtickMoves;
 	CUtlVector< SubtickAttackMove_t > m_AttackSubtickMoves;
 
-	// Set to 1 for every command.
-	float m_flUnk90;
+	// Named by what is known: SetupMove sets it to 1 whenever it rebuilds the subtick moves
+	// (server.dll 0x180c76440); no other writer was found.
+	float m_flSetupMoveValue;
 
-private:
-	uint8 m_unk94[ 0x4 ];
-
-public:
 	// Cleared for every command.
 	CUtlVector< touchlist_t > m_TouchList;
 

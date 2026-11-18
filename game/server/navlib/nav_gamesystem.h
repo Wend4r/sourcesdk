@@ -39,9 +39,10 @@ public:
 		CNavSpaceGame *m_pNavSpace;
 		// Loaded from the map's .navflowmap file; no class name survives for it.
 		void *m_pFlowMap;
-		// When set, the spawn group becoming the active one makes the active nav space rebuild
-		// (its third virtual with false) and clears the flag. No writer of true was found.
-		bool m_bUnk20;
+		// Named by what it does: when set, the spawn group becoming the active one makes the active
+		// nav space rebuild (its third virtual with false) and clears the flag. No writer of true
+		// was found.
+		bool m_bRebuildNavSpaceOnActivate;
 	};
 
 	// The member DECLARE_GAME_SYSTEM adds.

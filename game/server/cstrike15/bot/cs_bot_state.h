@@ -158,10 +158,14 @@ public:
 	};
 
 public:
-	// Left alone by the constructor; nothing found reads it.
-	uint8 m_Unk08[ 0x44 ];
+	// The state's setup is a stub returning false in this build (server.dll 0x18032b9e0) and the
+	// state has no source counterpart, so the members below that only the constructor or nothing
+	// at all touches have no source of names; they are named by what is known of them.
+
+	// Neither the constructor nor any other code of this build touches it.
+	uint8 m_StubbedData08[ 0x44 ];
 	// Cleared by the constructor.
-	bool m_bUnk4C;
+	bool m_bStubbedFlag4C;
 	// Set together with m_desiredGrenade.
 	bool m_hasDesiredGrenade;
 	// The grenade to throw along the path: smoke, HE, molotov, incendiary, flashbang or decoy.
@@ -169,21 +173,18 @@ public:
 	// The path name criterion: the first bot_path argument, or "_to_BombsiteA" and
 	// "_to_BombsiteB" from the radio requests.
 	CUtlString m_pathName;
-	// Left alone by the constructor; nothing found reads it.
-	uint8 m_Unk70[ 0x20 ];
-
-	// Zeroed by the constructor; nothing found reads them.
-	uint64 m_nUnk90;
-	uint64 m_nUnk98;
-	uint64 m_nUnkA0;
-	int m_nUnkA8;
-	int16 m_nUnkAC;
-	uint64 m_nUnkB0;
-	int m_nUnkB8;
+	// Neither the constructor nor any other code of this build touches it.
+	uint8 m_StubbedData70[ 0x20 ];
+	// Zeroed by the constructor; nothing else touches them.
+	uint64 m_nStubbedZeroed90[ 3 ];
+	int m_nStubbedZeroedA8;
+	int16 m_nStubbedZeroedAC;
+	uint64 m_nStubbedZeroedB0;
+	int m_nStubbedZeroedB8;
 	// Freed by the bot's destructor.
-	CUtlString m_strUnkC0[ 6 ];
-	bool m_bUnkF0;
-	int m_nUnkF4;
+	CUtlString m_StubbedStrings[ 6 ];
+	bool m_bStubbedFlagF0;
+	int m_nStubbedValueF4;
 };
 
 class FetchBombState : public BotState

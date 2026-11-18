@@ -39,14 +39,11 @@ public:
 	CNavArea *m_pTopRightArea;
 	CNavArea *m_pTopBehindArea;
 	CNavArea *m_pBottomArea;
-
-private:
-	// Two more bottom areas, read from nav files of version 33 and later and accepted as the end
-	// of a downward ladder segment like m_pBottomArea; nothing names them.
-	CNavArea *m_pUnk48;
-	CNavArea *m_pUnk50;
-
-public:
+	// Named after the top left and right areas: two more bottom areas, read from nav files of
+	// version 33 and later and accepted as the end of a downward ladder segment like
+	// m_pBottomArea.
+	CNavArea *m_pBottomLeftArea;
+	CNavArea *m_pBottomRightArea;
 	// The side of the ladder the climbing surface faces; m_vNormal is derived from it.
 	NavDirType m_dir;
 	// Points away from the climbing surface.

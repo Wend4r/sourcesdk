@@ -97,7 +97,7 @@ public:
 	// A running number from 1.
 	uint32 m_id;
 
-	noschema CCSGOUserCmd m_UserCmd;
+	noschema CUserCmd m_UserCmd;
 
 	bool m_isRunning;
 	bool m_isCrouching;

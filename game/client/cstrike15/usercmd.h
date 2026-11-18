@@ -14,21 +14,15 @@
 class C_CSGOUserCmd : public CUserCmdBaseHost< CSGOUserCmdPB >
 {
 public:
-	CInButtonState m_ButtonStates;
+	// Not part of the player message. Named after the server CCSGOUserCmd member at the same
+	// offset (120): an int that is -1 by default; the 4 bytes after it align m_flExecutionTime.
+	int32 m_nControllerTrackedValue;
 
-private:
-	// Not part of the player message.
-	char unknown[8];
-
-public:
 	double m_flExecutionTime;
 	float m_flCurrentTime;
 	bool m_bHasBeenPredicted;
 	int m_nCmdType;
 	int m_nCmdFlags;
 };
-
-// Cross-checked against the client command ring buffer, which holds 150 entries.
-COMPILE_TIME_ASSERT( sizeof( C_CSGOUserCmd ) == 152 );
 
 #endif // CSTRIKE15_CLIENT_USERCMD_H

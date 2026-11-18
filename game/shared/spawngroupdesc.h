@@ -28,10 +28,10 @@ public:
 	    m_bCreateNewSceneWorld(false),
 	    m_bManualCompletion(false),
 	    m_bSetActivePostLoad(false),
-	    m_bUnk(true),
+	    m_bIsNotPointPrefab(true),
 	    m_bLevelTransition(false),
-	    m_bUnk2(false),
-	    m_bUnk3(false)
+	    m_bReservedFlag1(false),
+	    m_bReservedFlag2(false)
 	{
 		SetIdentityMatrix(m_vecWorldOffset);
 	}
@@ -59,10 +59,14 @@ public:
 	bool m_bCreateNewSceneWorld;
 	bool m_bManualCompletion;
 	bool m_bSetActivePostLoad;
-	bool m_bUnk; // AMNOTE: Spawn groups created by point_prefab clear it
+	// Named after the earlier note that spawn groups created by point_prefab clear it; true by
+	// default. ISpawnGroup::IsNotPointPrefab returns it; engine2 itself never reads it.
+	bool m_bIsNotPointPrefab;
 	bool m_bLevelTransition;
-	bool m_bUnk2;
-	bool m_bUnk3;
+	// Named by what is known: kept by the spawn group (ISpawnGroup::GetReservedFlag1 returns the
+	// first) and copied back by GetSpawnGroupDesc; engine2 never reads them otherwise.
+	bool m_bReservedFlag1;
+	bool m_bReservedFlag2;
 };
 
 struct SpawnGroupDescReceive_t
@@ -71,19 +75,9 @@ public:
 	bool m_bIsInitialSpawnGroup;
 	bool m_bCreateClientOnlyEntities;
 	bool m_bIsSynchronousSpawn;
-private:
-	uint8 m_padding[1];
-
-public:
 	CCompressedResourceManifest *m_pCompressedResource;
-
-public:
 	int32 m_nTickCount;
 	bool m_bManifestInComplete;
-private:
-	uint8 m_padding2[3];
-
-public:
 	SpawnGroupHandle_t m_hSpawnGroupParentHandle;
 	WorldGroupId_t m_hWorldGroupId;
 };

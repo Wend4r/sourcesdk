@@ -346,9 +346,9 @@ public:
 	noschema CCSBotLadderManeuver m_ladderManeuver;
 	// The ladder of the current segment.
 	noschema const CNavLadder *m_pathLadder;
-	// Never addressed and not in the datamap; a real member, since m_pathLadderEnd would
-	// otherwise sit right after the pointer.
-	noschema uint8 m_Unk4F80[ 4 ];
+	// Name from the CS:GO CCSBot member between m_pathLadder and m_pathLadderEnd
+	// (NavRelativeDirType). No instruction of this build addresses it.
+	noschema int m_pathLadderDismountDir;
 	// The z of the top when ascending, of the bottom when descending.
 	float m_pathLadderEnd;
 	noschema CCSBotSharpTurnJump m_sharpTurnJump;
