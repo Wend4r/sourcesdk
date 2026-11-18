@@ -27,6 +27,12 @@
 #include <steam/steamnetworkingtypes.h>
 #include <networkbasetypes.pb.h>
 #include <utlhash.h>
+#include <tier0/utlhashtable.h>
+#include <tier0/utlstringtoken.h>
+#include <tier1/utlhashmaplarge.h>
+#include <ihltv.h>
+#include <delayedcall.h>
+#include <iclient.h>
 
 enum server_state_t : int
 {
@@ -66,15 +72,27 @@ class CBaselineEntityData;
 class CNetworkServerSpawnGroup;
 class CSteamID;
 class IEntityReport;
+class CServerSideClient;
+class CHLTVServerAsync;
+class CTvDirectDemoRecorder;
+class CClientFrame;
+class CJob;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
 
 using CUtlClientVector = CUtlVector< CServerSideClientBase *, CPlayerSlot >;
 
-struct SplitDisconnect_t {
-	CServerSideClientBase* m_pUser;
-	CServerSideClientBase* m_pSplit;
+// Reservation bookkeeping that outlives a server instance: the game server points at a static
+// copy, each SourceTV server owns one. The server keeps a pointer to every field.
+struct ServerReservationState_t
+{
+	uint64 m_nReservationCookie;
+	// -1 while clients are connected, the time the last one left otherwise
+	float m_flTimeLastClientLeft;
+	// Named by its place between the other two times: initialised to -1, nothing reads it in this build
+	float m_flReservationSpareTime;
+	float m_flReservationExpiryTime;
 };
 
 abstract_class INetworkGameServer 
@@ -263,11 +281,9 @@ public:
 	}
 
 public:
-	struct ResourceGroupVector_t
-	{
-		CUtlVector<CUtlString> m_Vec;
-		bool m_bAutoPurge;
-	};
+	// The same resource group bookkeeping as the client's
+	typedef ::ResourceGroupRef_t ResourceGroupRef_t;
+	typedef ::ResourceGroupVector_t ResourceGroupVector_t;
 
 	ResourceGroupVector_t m_ResourceGroups;
 
@@ -275,8 +291,10 @@ public:
 	int m_nRefCount;
 	int m_Socket;
 	int m_nTickCount;
+	// Clamped from the game session configuration by SetMaxClients
 	int m_nMinClientsLimit;
 	int m_nMaxClientsLimit;
+	// One bit per PauseGroup_t
 	int m_nPauseFlags;
 
 	CGlobalVars m_globals;
@@ -284,30 +302,35 @@ public:
 
 	CUtlString m_szMapname;
 	CUtlString m_szAddons;
+	// Copied from sv_skyname by ActivateServer
 	CUtlString m_szSkyname;
-	CUtlString m_szUnk360;
+	// Named by what is known of it: constructed and freed, never set in this build
+	CUtlString m_szUnreferencedString;
 
-	KeyValues* m_pLaunchOptions;
+	KeyValues *m_pLaunchOptions;
 
-	INetworkStringTableContainer* m_pStringTables;
-	INetworkStringTableContainer* m_pStringTables2;
-	INetworkStringTable* m_pInstanceBaselineTable;
-	INetworkStringTable* m_pLightStyleTable;
-	INetworkStringTable* m_pUserInfoTable;
+	CNetworkStringTableContainer *m_pStringTables;
+	// The second container PrepareForAssetLoad sets up next to m_pStringTables
+	CNetworkStringTableContainer *m_pStringTablesSecondary;
+	INetworkStringTable *m_pInstanceBaselineTable;
+	INetworkStringTable *m_pUserInfoTable;
+	INetworkStringTable *m_pServerQueryInfoTable;
 
-	CFrameSnapshotManager* m_pFrameSnapshotManager;
-	CUtlLeanVector<byte> m_BaselineBuffer;
-	char m_BaselineHelper[80];
+	CFrameSnapshotManager *m_pFrameSnapshotManager;
+
+	// Guards m_InstanceBaselines, GetClassBaseline looks baselines up by ServerClass instance baseline index
+	CThreadFastMutex m_InstanceBaselinesMutex;
+	CUtlHashMap< uint32, CBaselineEntityData * > m_InstanceBaselines;
 
 	bf_write m_Signon;
-	CUtlLeanVector<byte> m_SignonBuffer;
+	CUtlLeanVector< byte > m_SignonBuffer;
 
-	bool m_bPaused;
+	bool m_bIsBackgroundMap;
 	CUtlClientVector m_Clients;
-	CCompressedResourceManifest* m_pResourceManifest;
+	CCompressedResourceManifest *m_pResourceManifest;
 
-	CUtlLeanVector<byte> m_FullSendBuffer;	// Init capacity ~12.5 MB
-	CUtlHash<CBaselineEntityData*> m_BaselineEntitiesMap;
+	CThreadFastMutex m_BaselineEntitiesMutex;
+	CUtlHashtable< uint32, CBaselineEntityData * > m_BaselineEntitiesMap;
 
 	SpawnGroupHandle_t m_hActiveSpawnGroup;
 	int m_nMaxClients;
@@ -317,60 +340,82 @@ public:
 	uint64 m_nCreateTime;
 
 	bool m_bPendingChangeLevel;
-	bool m_bHibernationRequested; // unverified: set by FinishChangeLevel, checked by ActivateServer
+	// Set by FinishChangeLevel, ActivateServer keeps the Steam ID only after a finished changelevel
+	bool m_bFinishedChangeLevel;
 	bool m_bPreserveSteamID;
 	bool m_bHibernating;
 
-	CUtlVector<byte> m_GameData;
+	// Calls queued for the main thread, such as starting a SourceTV recording
+	CUtlVector< CDelayedCallBase< CNetworkGameServerBase > * > m_DelayedCalls;
 
-	CUtlLinkedList< CNetworkServerSpawnGroupCreatePrerequisites*> m_SpawnGroupPrerequisites;
-	CUtlMap< SpawnGroupHandle_t, CNetworkServerSpawnGroup*  > m_SpawnGroups;
+	CUtlLinkedList< CNetworkServerSpawnGroupCreatePrerequisites * > m_SpawnGroupPrerequisites;
+	CUtlMap< SpawnGroupHandle_t, CNetworkServerSpawnGroup * > m_SpawnGroups;
 
-	CUtlVector<uint64> m_QueuedSpawnGroupUnloads; // SpawnGroupUnloadEntry_t (handle + flags)
-	int m_bQueueSpawnGroupUnloads;
+	CUtlVector< uint64 > m_QueuedSpawnGroupUnloads; // SpawnGroupUnloadEntry_t (handle + flags)
+	// AsyncUnloadSpawnGroup queues the unload while this is non-zero
+	int m_nQueueSpawnGroupUnloads;
+	SpawnGroupHandle_t m_hJustInTimeResourceSpawnGroup;
 
-	CUtlVector<SplitDisconnect_t> m_QueuedForDisconnect;
-	CUtlString m_GameType;
-	int m_nGameDataVersion;
-	CUtlVector<byte> m_GameData2;
+	// The Steam game data string (sv_search_key, sv_steamgroup, ...)
+	CUtlVector< char > m_GameData;
+	CUtlString m_szTags;
+	// Named by what it does: incremented on every client disconnect, the client stores the new value
+	int m_nDisconnectSequence;
+	// Named by what is known of it: constructed and freed, never filled in this build
+	CUtlVector< byte > m_UnreferencedBytes;
 
-	IGameSpawnGroupMgr* m_pSpawnGroupMgr;
-	void* m_pNotificationSink;
-	void* m_pPerfCounters;
-	void* m_pNetworkSerializerSceneSystem;
-	int m_nNotifyFlags;
-	void* m_pServerServiceState;
-	uint64* m_pnReservationCookie;
-	float* m_pflTimeLastClientLeft;
-	float* m_pflReservationExpiryTime;
-	void* m_pUnk952;
+	// The client whose command runs right now, nullptr for the server console
+	CServerSideClientBase *m_pCommandClient;
+	IGameSpawnGroupMgr *m_pSpawnGroupMgr;
+	ISource2WorldSession *m_pWorldSession;
+	HGameResourceManifest m_hGameSessionManifest;
+	// Named by what it does: set to 1 by SetGameSpawnGroupMgr
+	int m_nSpawnGroupMgrAssigned;
+
+	// Point into a ServerReservationState_t that outlives the server
+	uint64 *m_pnReservationCookie;
+	float *m_pflTimeLastClientLeft;
+	float *m_pflReservationSpareTime;
+	float *m_pflReservationExpiryTime;
+
+	// Counts OnSpawnGroupActivate calls, reset by SetGameSpawnGroupMgr
+	int m_nSpawnGroupCreationSequence;
+	// The resource system's count of just-in-time resources when the spawn group was last rebuilt
+	int m_nJustInTimeResourceCount;
 
 	// handle = slot | (serial << 8). Init all 0xFFFF.
-	uint16 m_nClientSlotSerial[ABSOLUTE_PLAYER_LIMIT];
+	uint16 m_nClientSlotSerial[ ABSOLUTE_PLAYER_LIMIT ];
 
-	int m_nGameDataVersion2;
+	// Incremented whenever m_GameData changes
+	int m_nGameDataVersion;
 	int m_numGameSlots;
 	float m_fLastCPUCheckTime;
 	float m_fCPUPercent;
 	float m_flTimescale;
-	uint16 m_nTimescaleFlags;
+	// Named by what it does: set when a client's peer list changes, the next tick sends CSVCMsg_PeerList
+	bool m_bPeerListDirty;
 	bool m_bIsMultiplayer;
+	// Named by what is known of it: initialised to false, nothing reads it in this build
+	bool m_bUnreferencedFlag;
 
 	int m_nFrameTimeBucketCount;
-	uint64 m_FrameTimeBuckets[11];
+	uint64 m_FrameTimeBuckets[ 11 ];
 	int64 m_nFrameTimeSum;
 	int64 m_nFrameTimeCount;
 
 	int m_nComputeTimeBucketCount;
-	uint64 m_ComputeTimeBuckets[61];
+	uint64 m_ComputeTimeBuckets[ 61 ];
 	double m_flComputeTimeSum;
 	uint64 m_nComputeTimeCount;
 
 	uint64 m_nReservationCookie;
-	uint64 m_nUnk1744;
-	uint64 m_nUnk1752;
-	int m_nUnk1760;
-	void* m_pReplayDirector;
+	// "Immediate demo recorder", started without SourceTV
+	CTvDirectDemoRecorder *m_pImmediateDemoRecorder;
+	// The size of the user info convar data last given to the clients, OnConVarCreated grows their buffers
+	uint64 m_nUserInfoConVarDataSize;
+	// Named by what it does: counts active clients whose connection type has bit 0 set
+	int m_nFlaggedConnectionTypeClients;
+	void *m_pReplayDirector;
 };
 
 class CNetworkGameServer : public CNetworkGameServerBase {
@@ -382,14 +427,100 @@ public:
 	CPrecacheItem m_Precache[MAX_GENERIC];
 	INetworkStringTable* m_pGenericPrecacheTable;
 	bool m_bAllowSignonWrites;
-}; // sizeof 10056 (0x2748)
+};
 
 
-class CHLTVServer : public CNetworkGameServerBase
+//-----------------------------------------------------------------------------
+// Purpose: Frames of a SourceTV server waiting to be broadcast, newest tick first.
+//-----------------------------------------------------------------------------
+struct HLTVFrameCache_t
 {
-public:
+	// The tick the cache was last advanced to
+	int m_nTick;
+	int m_nCount;
+	int m_nNext;
+	CClientFrame *m_pFrames[ 16384 ];
+};
 
-}; // sizeof 3120232
+//-----------------------------------------------------------------------------
+// Purpose: SourceTV server. Names from the CS:GO CHLTVServer where the field does the same.
+//-----------------------------------------------------------------------------
+class CHLTVServer : public CNetworkGameServerBase, public IHLTVServer, public ITvStreamSink
+{
+public: // IHLTVServer, in the order the class declares them
+	virtual CNetworkGameServerBase *GetBaseServer( void ) = 0;
+	virtual IHLTVDirector *GetDirector( void ) = 0;
+	virtual CPlayerSlot GetHLTVSlot( void ) = 0;
+	virtual float GetOnlineTime( void ) = 0;
+	virtual void GetLocalStats( int &proxies, int &slots, int &specs ) = 0;
+	virtual void GetGlobalStats( int &proxies, int &slots, int &specs ) = 0;
+	virtual bool IsMasterProxy( void ) = 0;
+	virtual bool IsTVRelay( void ) = 0;
+	virtual bool IsDemoPlayback( void ) = 0;
+	virtual bool IsActive( void ) = 0;
+	virtual void BroadcastEvent( INetworkMessageInternal *pEvent, const CNetMessage *pData ) = 0;
+	virtual bool IsRecording( void ) = 0;
+	virtual int StartAutoRecording( void ) = 0;
+	virtual const char *GetRecordingDemoFilename( void ) = 0;
+	virtual int GetBroadcastStartTick( void ) = 0;
+	virtual void StopRecording( const CGameInfo *pInfo ) = 0;
+	virtual void AddSaveGame( CSteamID steamID, uint64, int, const CUtlBuffer &buf ) = 0;
+	virtual const netadr_t *GetPublicAddress( void ) = 0;
+	virtual const netadr_t *GetRelayAddress( void ) = 0;
+	virtual void GetRelayStats( int &proxies, int &slots, int &specs ) = 0;
+
+public: // ITvStreamSink, in the order the class declares them
+	virtual bool SendNetMessage( const CNetMessage *pData, bool bReliable ) = 0;
+	virtual bool BeginFrame( const CClientFrame *pFrame ) = 0;
+	virtual void AddFrame( const CClientFrame *pFrame ) = 0;
+	virtual CJob *GetSendJob( void ) = 0;
+	virtual int GetLastFrameTick( void ) = 0;
+
+public:
+	// Named by what is known of it: constructed and freed, never set in this build
+	CUtlString m_szUnreferencedTVString;
+	ServerReservationState_t m_ReservationState;
+	CHLTVServerAsync *m_pAsync;
+	// The SourceTV client on the game server, set on the master proxy only
+	CServerSideClient *m_MasterClient;
+	// The game server m_MasterClient is connected to
+	CNetworkGameServerBase *m_Server;
+	CHLTVClientState m_ClientState;
+	IHLTVDirector *m_Director;
+	// Slot of the SourceTV client on the game server
+	CPlayerSlot m_nPlayerSlot;
+	HLTVFrameCache_t m_FrameCache;
+	// Set on every SourceTV server by svc_PacketReliable
+	bool m_bPacketReliableReceived;
+	// Cleared when the master proxy starts
+	bool m_bSignonState;
+	// Clamps the client limit to 1 when the master proxy starts
+	bool m_bMasterOnlyMode;
+	// Named by what is known: zeroed by the constructor, nothing reads it in this build
+	uint16 m_nUnreferencedFlags;
+	float m_flStartTime;
+	float m_flFPS;
+	int m_nGameServerMaxClients;
+	// Named by what is known: zeroed by the constructor, nothing reads it in this build
+	int m_nUnreferencedInt;
+	netadr_t m_RootServer;
+	int m_nGlobalSlots;
+	int m_nGlobalClients;
+	int m_nGlobalProxies;
+	int m_nExternalTotalViewers;
+	int m_nExternalLinkedViewers;
+	// Named by what is known: zeroed with the viewer counts, nothing reads it in this build
+	int m_nExternalReserved;
+	bf_write m_DemoEventWriteBuffer;
+	CUtlLeanVector< byte > m_DemoEventBufferMemory;
+	float m_fNextSendUpdateTime;
+	byte m_SignonBufferMemory[ 98304 ];
+	// Swapped with the asynchronous half's buffer when a frame begins
+	bf_write m_SignonBuffer;
+	// Constructor argument; relays honour tv_relay_hard_shutdown with it
+	bool m_bRelayHardShutdown;
+	int m_nInstanceIndex;
+};
 
 abstract_class INetworkServerService : public IEngineService
 {
@@ -425,10 +556,11 @@ public:
 	virtual bool	IsEntityReportActive( void ) = 0;
 	// Returns nullptr unless the entity report is active and targets this slot or every slot
 	virtual IEntityReport *GetEntityReport( int nSlot ) = 0;
-	// Empty in this build. Called as a begin/end pair around ISource2Server::GameFrame on the
-	// secondary main thread (outside EnterSyncInterval/ExitSyncInterval) and around closing a demo file.
-	virtual void	unk046( void ) = 0;
-	virtual void	unk047( void ) = 0;
+	// Empty in this build, named by where they are called: a begin/end pair around
+	// ISource2Server::GameFrame on the secondary main thread (outside EnterSyncInterval/ExitSyncInterval)
+	// and around closing a demo file.
+	virtual void	BeginSecondaryThreadWork( void ) = 0;
+	virtual void	EndSecondaryThreadWork( void ) = 0;
 	virtual bool	ThreadInPrimaryOrSecondaryMainThread( void ) = 0;
 	virtual void	EnterSyncInterval( void ) = 0;
 	// AMNOTE: The bool picks which of two parallel work modes clients enter

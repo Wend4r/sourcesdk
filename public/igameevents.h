@@ -18,6 +18,7 @@
 
 #include "interfaces/interfaces.h"
 #include "tier0/utlstring.h"
+#include "tier0/bufferstring.h"
 #include "tier0/bitbuf.h"
 #include "tier0/generichash.h"
 #include "kv3lib/keyvalues3.h"
@@ -137,6 +138,27 @@ public:
 	virtual CVariant CreateVMTable() = 0;
 
 	virtual KeyValues3* GetDataKeys() const = 0;
+};
+
+// The event list entry of an event: id at 0x0C, local flag at 0x28, reliable flag at 0x29
+class CGameEventDescriptor;
+
+//-----------------------------------------------------------------------------
+// The game's implementation of IGameEvent (server.dll / client.dll, 104 bytes on both
+// platforms). Field names follow CS:GO's CGameEvent where it has them.
+//-----------------------------------------------------------------------------
+abstract_class CGameEvent : public IGameEvent
+{
+public:
+	// GetID, IsLocal and IsReliable read it
+	CGameEventDescriptor *m_pDescriptor;
+
+	// Named by what it does: the event name the event was created with, returned by GetName
+	CBufferStringN< 64 > m_Name;
+
+	// Returned by GetDataKeys (CS:GO had a KeyValues pointer m_pDataKeys); a table that the
+	// constructor fills with "splitscreenplayer" = -1
+	KeyValues3 m_DataKeys;
 };
 
 #define EVENT_DEBUG_ID_INIT			42

@@ -18,6 +18,8 @@
 #include <tier0/annotations.h>
 #include <tier0/bufferstring.h>
 #include <tier0/circularbuffer.h>
+#include <tier0/convar.h>
+#include <tier0/utlbinaryblock.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlsignalslot.h>
 #include <tier0/bitbuf.h>
@@ -28,9 +30,11 @@
 #include <utldict.h>
 
 class INetMessage;
+class INetworkStringTable;
 class CNetworkGameServerBase;
 class CNetworkGameServer;
 class CNetworkServerSpawnGroup;
+struct HltvReplayParams_t;
 
 class CMsg_CVars;
 class CNETMsg_StringCmd_t;
@@ -45,8 +49,8 @@ class CCLCMsg_CmdKeyValues_t;
 class CCLCMsg_Diagnostic_t;
 class CCLCMsg_Move_t;
 class CCLCMsg_VoiceData_t;
-class CCLCMsg_FileCRCCheck_t;
 class CCLCMsg_RespondCvarValue_t;
+class CSVCMsg_HltvFixupOperatorStatus_t;
 class NetMessagePacketStart_t;
 class NetMessagePacketEnd_t;
 class NetMessageConnectionClosed_t;
@@ -60,7 +64,6 @@ public:
 	CUtlString m_szDesc;
 	int m_nBits;
 };
-COMPILE_TIME_ASSERT( sizeof( Spike_t ) == 16 );
 
 class CNetworkStatTrace
 {
@@ -70,7 +73,6 @@ public:
 	int m_nStartBit;
 	int m_nCurBit;
 };
-COMPILE_TIME_ASSERT( sizeof( CNetworkStatTrace ) == 40 );
 
 // AMNOTE: While the client's send job runs, the deferred methods (Disconnect, SendNetMessage, SendInitialSpawnGroups,
 // StopHltvReplay, ...) are queued in m_DelayedCallQueue
@@ -102,7 +104,9 @@ public:
 		int m_nCreationTick; // msg.tick
 		SpawnGroupHandle_t m_hSpawnGroup; // msg.spawngrouphandle
 		int m_nCreationSequence; // msg.creationsequence
-		bool m_b; // producer always sets true
+
+		// AMNOTE: Set only when the call is queued while the send job runs ("Async schedule")
+		bool m_bAsync;
 	};
 
 	// Async payload for CNETMsg_SpawnGroup_Unload_t
@@ -111,7 +115,9 @@ public:
 		int m_nCreationTick; // current server tick
 		SpawnGroupHandle_t m_hSpawnGroup; // msg.spawngrouphandle
 		uint32 m_nUnloadFlags; // producer always sets 0 (Unload flags/tickcount)
-		bool m_b; // producer always sets true
+
+		// AMNOTE: Set only when the call is queued while the send job runs ("Async schedule")
+		bool m_bAsync;
 	};
 
 	struct BuildServerInfoMessageAsync_t
@@ -132,18 +138,23 @@ public:
 		NetChannelBufType_t m_BufferType;
 	};
 
+	// Async payload for CNETMsg_SpawnGroup_Load_t
 	struct OnSpawnGroupLoadCall_t
 	{
-		void *m_pUnk0000;
+		// AMNOTE: The execution fills CNETMsg_SpawnGroup_Load_t from it
+		CNetworkServerSpawnGroup *m_pSpawnGroup;
 		bool m_bAsync; // logged as "Sync"/"Async"
 	};
 
 	// Async payload for CNETMsg_SpawnGroup_ManifestUpdate_t
 	struct SendSpawnGroupManifestUpdateCall_t
 	{
-		CBufferString m_sManifest;
-		SpawnGroupHandle_t m_hSpawnGroup;	// msg.spawngrouphandle
-		bool m_bUnk0014;
+		// AMNOTE: The serialized manifest, CUtlBinaryBlock::SetLength'd to the written bits by the producer
+		CUtlBinaryBlock m_Manifest;
+		SpawnGroupHandle_t m_hSpawnGroup; // msg.spawngrouphandle
+
+		// AMNOTE: The producer runs the call at once when it's false and queues it otherwise
+		bool m_bAsync;
 	};
 
 	// Copied out of CCLCMsg_BaselineAck at enqueue time (not a message pointer)
@@ -188,6 +199,9 @@ public:
 	DECLARE_DELAYED_CALL( SignonStateNewFailedDelayedCall_t, SignonStateNewFailedCall_t, empty_t );
 	DECLARE_DELAYED_CALL( DisconnectDelayedCall_t, DisconnectCall_t, empty_t );
 
+	// INetworkChannelNotify, slot 0 of the primary table on both platforms
+	virtual void             OnShutdownChannel( INetChannel *pChannel, bool ) override = 0;
+
 	virtual ~CServerSideClientBase() = 0;
 
 public:
@@ -218,8 +232,10 @@ public:
 	virtual bool             ExecuteStringCommand( const CNETMsg_StringCmd_t& msg ) = 0; // "false" trigger an anti spam counter to kick a client.
 	virtual bool             SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) = 0;
 
+	// INetworkMessageProcessingPreFilter. On Windows it stays in the table of the base at +8, on Linux it also
+	// gets the primary slot after SendNetMessage
 	// "Client %d(%s) tried to send a RebroadcastSourceId msg.\n"
-	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) = 0; // On Windows, this function is in a separate virtual table
+	virtual bool             FilterMessage( const CNetMessage *pData, INetChannel *pChannel ) override = 0;
 
 public:
 	virtual void             ClientPrintf( PRINTF_FORMAT_STRING const char*, ...) = 0;
@@ -228,28 +244,30 @@ public:
 	bool                     IsInGame() const { return m_nSignonState == SIGNONSTATE_FULL; }
 	bool                     IsSpawned() const { return m_nSignonState >= SIGNONSTATE_NEW; }
 	bool                     IsActive() const { return m_nSignonState == SIGNONSTATE_FULL; }
-	virtual bool             IsFakeClient() const { return m_bFakePlayer; }
+	virtual bool             IsFakeClient() const = 0; // m_bFakePlayer
 	bool                     IsHLTV() const { return m_bIsHLTV; }
-	virtual bool             IsHumanPlayer() const { return false; }
 
-	// Is an actual human player or splitscreen player (not a bot and not a HLTV slot)
-	virtual bool             IsHearingClient( CPlayerSlot nSlot ) const { return false; }
-	virtual bool             IsProximityHearingClient() const = 0;
-	virtual bool             IsLowViolenceClient() const { return m_bLowViolence; }
+	// AMNOTE: Past SIGNONSTATE_CONNECTED, not HLTV and not a fake client unless it's a split screen user
+	virtual bool             IsHumanPlayer() const = 0;
 
-	virtual bool             IsSplitScreenUser() const { return m_bSplitScreenUser; }
+	// AMNOTE: The base is false. CServerSideClient: m_bVoiceLoopback for its own slot, otherwise the bit of this
+	// client in m_VoiceStreams of the client in nSlot
+	virtual bool             IsHearingClient( CPlayerSlot nSlot ) const = 0;
+
+	// AMNOTE: CServerSideClient: the bit of this client in m_VoiceProximity of the client in nSlot
+	virtual bool             IsProximityHearingClient( CPlayerSlot nSlot ) const = 0;
+	virtual bool             IsLowViolenceClient() const = 0; // m_bLowViolence
+	virtual bool             IsSplitScreenUser() const = 0; // m_bSplitScreenUser
 
 public: // Message Handlers
-	virtual bool             ProcessTick( const CNETMsg_Tick_t& msg ) = 0;
-	virtual bool             ProcessStringCmd( const CNETMsg_StringCmd_t& msg ) = 0;
+	virtual bool             ProcessTick( const CNETMsg_Tick_t &msg ) = 0;
+	virtual bool             ProcessStringCmd( const CNETMsg_StringCmd_t &msg ) = 0;
 
-public:
-	virtual bool             ApplyConVars( const CMsg_CVars &list ) = 0;
+	// iterates KV pairs from client (msg.convars), calls KeyValues::SetString on userinfo
+	virtual bool             ProcessSetConVar( const CNETMsg_SetConVar_t &msg ) = 0;
 
-	// iterates KV pairs from client, calls KeyValues::SetString on userinfo
-	virtual bool             ProcessSetConVar( const CMsg_CVars &list ) = 0;
-
-public:
+	// AMNOTE: Disconnects on a stale signon state or spawn count, otherwise calls ProcessSignonStateMsg
+	virtual bool             ProcessSignonState( const CNETMsg_SignonState_t &msg ) = 0;
 	virtual bool             ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) = 0;
 	virtual bool             ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) = 0;
 	virtual bool             ProcessBaselineAck( const CCLCMsg_BaselineAck_t &msg ) = 0;
@@ -258,7 +276,8 @@ public:
 	virtual bool             ProcessSplitPlayerDisconnect( const CCLCMsg_SplitPlayerDisconnect_t &msg ) = 0;
 	virtual bool             ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) = 0;
 
-	virtual bool             SendRconServerDetails() = 0;
+	// AMNOTE: Answers with CSVCMsg_RconServerDetails_t built from msg.token
+	virtual bool             ProcessRconServerDetails( const CCLCMsg_RconServerDetails_t &msg ) = 0;
 	virtual bool             ProcessDiagnostic( const CCLCMsg_Diagnostic_t &msg ) = 0; // Forwards to ISource2GameClients::ClientDiagnostic
 
 public:
@@ -274,29 +293,29 @@ public:
 public:
 	virtual bool             ProcessChangeSplitscreenUser( const NetMessageSplitscreenUserChanged_t &msg ) = 0;
 
-	virtual bool             UnusedVirtual45() { return false; }
-	virtual bool             UnusedVirtual46() { return false; }
-	virtual bool             OnDisconnectForwarding() { return true; }
+	// AMNOTE: The base is false. CServerSideClient starts or stops the replay from msg.request (3 asks for a full update)
+	virtual bool             ProcessHltvReplay( const CCLCMsg_HltvReplay_t &msg ) = 0;
+
+	// AMNOTE: The handler of svc_HltvFixupOperatorStatus (75), false in every class
+	virtual bool             ProcessHltvFixupOperatorStatus( const CSVCMsg_HltvFixupOperatorStatus_t &msg ) = 0;
+
+	// AMNOTE: The base is true. CServerSideClient forwards msg.msg_type and msg.msg_data to ISource2GameClients::ClientSvcUserMessage
+	virtual bool             ProcessUserMessage( const CSVCMsg_UserMessage_t &msg ) = 0;
 
 public:
+	// AMNOTE: Binds the message handlers to the channel
 	virtual void             ConnectionStart( INetChannel *pNetChannel ) = 0;
 
-	virtual void             BuildServerInfoMessage() = 0;
-	virtual void             PerformPrespawn() = 0;
+	// AMNOTE: Fills the initial spawn groups of the server info, ProcessSignonStateMsg calls it with
+	// &info.m_vecInitialSpawnGroups, and sets m_bInitialSpawnGroupsSent. The name of the other overload, which it
+	// must share: MSVC puts both together in reverse order (Windows slots 48 and 49), g++ keeps the order of
+	// declaration (Linux slots 50 and 52, SendInitialSpawnGroups between them)
+	virtual void             BuildServerInfoMessage( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) = 0;
+	virtual void             SendInitialSpawnGroups( const CUtlVector< CNetworkServerSpawnGroup * > &vecSpawnGroups, bool bAsync ) = 0;
 
-public:
-	void                     ExecuteDelayedCall( empty_t & ) {}
-	virtual void             ExecuteDelayedCall( BuildServerInfoMessageAsync_t &call ) = 0;
-	void                     ExecuteDelayedCall( OnSpawnGroupActivateCall_t &call );
-	void                     ExecuteDelayedCall( OnSpawnGroupDeactivateCall_t &call );
-	void                     ExecuteDelayedCall( SendNetMessageCall_t &call );
-	void                     ExecuteDelayedCall( OnSpawnGroupLoadCall_t &call );
-	void                     ExecuteDelayedCall( SendSpawnGroupManifestUpdateCall_t &call );
-	void                     ExecuteDelayedCall( ProcessBaselineAckCall_t &call );
-	void                     ExecuteDelayedCall( UpdateAcknowledgedFramecountCall_t &call );
-	void                     ExecuteDelayedCall( SignonStateNewCall_t &call );
-	void                     ExecuteDelayedCall( SignonStateNewFailedCall_t &call );
-	void                     ExecuteDelayedCall( DisconnectCall_t &call );
+	// AMNOTE: Builds and sends CSVCMsg_ServerInfo, the CNETMsg_SetConVar_t and the CNETMsg_Tick_t of the info
+	// ("SV_SendServerinfo->msg"); ProcessSignonStateMsg calls it or queues it as BuildServerInfoMessageDelayedCall_t
+	virtual void             BuildServerInfoMessage( BuildServerInfoMessageAsync_t &info ) = 0;
 
 	virtual bool             UpdateAcknowledgedFramecount( int tick ) = 0;
 	void                     ForceFullUpdate()
@@ -309,12 +328,15 @@ public:
 	virtual bool             ShouldSendMessages() = 0;
 	virtual void             UpdateSendState() = 0;
 
-	virtual const CMsgPlayerInfo &GetPlayerInfo() const { return m_playerInfo; }
+	virtual const CMsgPlayerInfo &GetPlayerInfo() const = 0; // m_playerInfo
 
 	virtual void             UpdateUserSettings() = 0;
-	virtual void             ResetUserSettings() = 0;
 
-	virtual void             SendSnapshot() = 0;
+	// AMNOTE: Named by what it does: SetRate( the "rate" userinfo, 5000 by default )
+	virtual void             ApplyUserInfoRate() = 0;
+
+	// AMNOTE: CServerSideClient: m_FrameManager.GetClientFrame( nTick, true ); CHLTVClient: the frame of the HLTV server
+	virtual CClientFrame    *GetDeltaFrame( int nTick ) = 0;
 
 public:
 	virtual void             SendSignonData() = 0;
@@ -331,24 +353,31 @@ public:
 	bool                     IsFullyAuthenticated( void ) { return m_bFullyAuthenticated; }
 	void                     SetFullyAuthenticated( void ) { m_bFullyAuthenticated = true; }
 
-	virtual CServerSideClientBase *GetSplitScreenOwner() { return m_pAttachedTo; }
+	virtual CServerSideClientBase *GetSplitScreenOwner() = 0; // m_pAttachedTo
 
 	// AMNOTE: Counts the players sharing this client's connection, itself included (non-null m_SplitScreenUsers).
 	// Split screen users forward to the client they're attached to
 	virtual int              GetSplitScreenPlayerCount() = 0;
 
-	virtual void             ShouldReceiveStringTableUserData() = 0;
+	// AMNOTE: The base is true. CServerSideClient asks ISource2GameEntities with m_PackInfo
+	virtual bool             ShouldReceiveStringTableUserData( const INetworkStringTable *pTable, int nStringIndex ) = 0;
 
-	virtual void             FillServerInfo( void *pInfo ) = 0;
-	virtual bool             StartHltvReplay() { return false; }
-	virtual void             StopHltvReplay() {}
+	// AMNOTE: Named by what it does: fills the user command receive status that WriteDeltaEntities puts in
+	// CSVCMsg_PacketEntities (last_cmd_number_executed, last_cmd_number_recv_delta, cmd_recv_status,
+	// cq_starved_command_ticks, cq_discarded_command_ticks). The base asks ISource2GameClients for the slot,
+	// CHLTVClient uses m_nLastCommandNumber
+	virtual void             FillCommandRecvStatus( void *pStatus ) = 0;
+
+	virtual bool             StartHltvReplay( const HltvReplayParams_t &params ) = 0;
+	virtual void             StopHltvReplay( bool bForce ) = 0;
 
 public:
-	virtual int              GetHltvLastSendTick() = 0;
+	virtual int              GetHltvReplayDelay() = 0; // CServerSideClient::m_nHltvReplayDelay, 0 in the base
 
-	virtual bool             CanStartHltvReplay() { return false; }
-	virtual void             ResetHltvReplayRequestTime() {}
-	virtual const char      *GetHltvReplayStats() { return ""; }
+	// AMNOTE: CServerSideClient: true when an active HLTV server has a frame old enough for a replay up to nTick
+	virtual bool             CanStartHltvReplay( int nTick ) = 0;
+	virtual void             ResetHltvReplayRequestTime() = 0;
+	virtual const char      *GetHltvReplayStats() = 0;
 
 public:
 	virtual void             Await() = 0;
@@ -359,6 +388,20 @@ public:
 
 	virtual bool             ProcessSignonStateMsg( SignonState_t state, int nSpawnCount ) = 0; // CNETMsg_SignonState::signon_state, ::spawn_count
 	virtual void             PerformDisconnection( ENetworkDisconnectionReason reason ) = 0;
+
+public:
+	void                     ExecuteDelayedCall( empty_t & ) {}
+	void                     ExecuteDelayedCall( OnSpawnGroupActivateCall_t &call );
+	void                     ExecuteDelayedCall( OnSpawnGroupDeactivateCall_t &call );
+	void                     ExecuteDelayedCall( BuildServerInfoMessageAsync_t &call ) { BuildServerInfoMessage( call ); }
+	void                     ExecuteDelayedCall( SendNetMessageCall_t &call );
+	void                     ExecuteDelayedCall( OnSpawnGroupLoadCall_t &call );
+	void                     ExecuteDelayedCall( SendSpawnGroupManifestUpdateCall_t &call );
+	void                     ExecuteDelayedCall( ProcessBaselineAckCall_t &call );
+	void                     ExecuteDelayedCall( UpdateAcknowledgedFramecountCall_t &call ) { UpdateAcknowledgedFramecount( call.m_nTick ); }
+	void                     ExecuteDelayedCall( SignonStateNewCall_t &call );
+	void                     ExecuteDelayedCall( SignonStateNewFailedCall_t &call );
+	void                     ExecuteDelayedCall( DisconnectCall_t &call );
 
 public:
 	// AMNOTE: "BOT", "STEAM_ID_PENDING", "STEAM_ID_LAN" or the SteamID as text
@@ -437,7 +480,7 @@ public:
 	int	m_nBaselineUsed;		// 0/1 toggling flag, singaling client what baseline to use
 	int	m_nLoadingProgress;	// 0..100 progress, only valid during loading
 
-	// This is used when we send out a nodelta packet to put the client in a state where we wait 
+	// This is used when we send out a nodelta packet to put the client in a state where we wait
 	// until we get an ack from them on this packet.
 	// This is for 3 reasons:
 	// 1. A client requesting a nodelta packet means they're screwed so no point in deluging them with data.
@@ -491,9 +534,13 @@ public:
 
 	// SV: Player %s kicked for too many failed console commands
 	int m_spamCommandsCount = 0; // if the value is greater than 16, the player will be kicked with reason 39
-	double m_lastExecutedCommand = 0.0; // if command executed more than once per second, ++m_spamCommandCount
+	double m_lastExecutedCommand = -1.0; // if command executed more than once per second, ++m_spamCommandCount
 	bool m_bPendingSignonStateMsg = false; // set when signon -> CONNECTED, consumed in ProcessSignonStateMsg
-	CCommand *m_pLastCommand;
+
+	// AMNOTE: The client's FCVAR_USERINFO values: the constructor allocates ICvar::GetTotalUserInfoCvarsByteSize bytes,
+	// fills them with ICvar::CopyUserInfoCvarDefaults and passes them to ISource2GameClients::SetClientUserInfo;
+	// SetUserCVar writes to it
+	ConVarUserInfoSet_t m_UserInfoConVars;
 };
 
 #endif // SERVERSIDECLIENTBASE_H

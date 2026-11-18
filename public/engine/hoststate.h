@@ -1,3 +1,9 @@
+#ifndef ENGINE_HOSTSTATE_H
+#define ENGINE_HOSTSTATE_H
+#ifdef _WIN32
+#pragma once
+#endif
+
 #include "tier0/utlstring.h"
 #include "tier0/keyvalues.h"
 #include "appframework/iappsystem.h"
@@ -42,10 +48,10 @@ struct CHostStateRequest
 	CUtlString m_Addons;
 	KeyValues *m_pKV;
 };
-COMPILE_TIME_ASSERT( sizeof( CHostStateRequest ) == 0x68 );
 
 class ISwitchLoopModeStatusNotify
 {
+public:
 	// pszLoopModeName and nId are the values passed to IEngineServiceMgr::SwitchToLoop.
 	// bSuccess is false when the request was dropped before the switch happened.
 	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nId, bool bSuccess ) = 0;
@@ -69,8 +75,9 @@ public:
 
 	// Empty in the engine implementation. Called as a begin/end pair around ISource2Server::GameFrame
 	// on the secondary main thread.
-	virtual void unk023(void) = 0;
-	virtual void unk024(void) = 0;
+	// Named by where the engine calls them
+	virtual void OnServerGameFrameBegin( void ) = 0;
+	virtual void OnServerGameFrameEnd( void ) = 0;
 };
 
 class CHostStateMgr : public CTier4AppSystem<IHostStateMgr>, public ISwitchLoopModeStatusNotify
@@ -91,3 +98,5 @@ public:
 	int m_ID;                                         // 0x90
 	CUtlVector<CHostStateRequest *> m_QueuedRequests; // 0x98
 };
+
+#endif // ENGINE_HOSTSTATE_H

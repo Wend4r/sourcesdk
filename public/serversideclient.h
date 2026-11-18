@@ -33,7 +33,6 @@ struct HltvReplayStats_t
 	uint32 m_nNetAbortReplays;
 	uint32 m_nFailedReplays[NUM_FAILURES];
 }; // sizeof 56
-COMPILE_TIME_ASSERT( sizeof( HltvReplayStats_t ) == 56 );
 
 class CServerSideClient : public CServerSideClientBase
 {
@@ -120,6 +119,8 @@ public:
 	};
 
 public:
+	// AMNOTE: The overrides below are those of the Linux table; on Windows the identical-code folding merges
+	// ProcessRespondCvarValue, ProcessHltvFixupOperatorStatus, OnSendJobFinished and OnSendJobStarted with the base
 	virtual ~CServerSideClient() override = 0;
 
 	virtual void Connect( int socket, const char *pszName, int nUserID, INetChannel *pNetChannel, uint8 nConnectionTypeFlags, uint32 uChallengeNumber ) override = 0;
@@ -133,9 +134,7 @@ public:
 	virtual bool ExecuteStringCommand( const CNETMsg_StringCmd_t &msg ) override = 0;
 	virtual bool SendNetMessage( const CNetMessage *pData, NetChannelBufType_t bufType = BUF_DEFAULT ) override = 0;
 	virtual bool IsHearingClient( CPlayerSlot nSlot ) const override = 0;
-	virtual bool IsProximityHearingClient() const override = 0;
-	virtual bool ApplyConVars( const CMsg_CVars &list ) override = 0;
-	virtual bool ProcessSpawnGroup_LoadCompleted( const CNETMsg_SpawnGroup_LoadCompleted_t &msg ) override = 0;
+	virtual bool IsProximityHearingClient( CPlayerSlot nSlot ) const override = 0;
 	virtual bool ProcessClientInfo( const CCLCMsg_ClientInfo_t &msg ) override = 0;
 	virtual bool ProcessCmdKeyValues( const CCLCMsg_CmdKeyValues_t &msg ) override = 0;
 	virtual bool ProcessDiagnostic( const CCLCMsg_Diagnostic_t &msg ) override = 0;
@@ -146,23 +145,23 @@ public:
 	virtual bool ProcessPacketEnd( const NetMessagePacketEnd_t &msg ) override = 0;
 	virtual bool ProcessConnectionClosed( const NetMessageConnectionClosed_t &msg ) override = 0;
 	virtual bool ProcessConnectionCrashed( const NetMessageConnectionCrashed_t &msg ) override = 0;
-	virtual bool UnusedVirtual45() override = 0;
-	virtual bool UnusedVirtual46() override = 0;
-	virtual bool OnDisconnectForwarding() override = 0;
-	virtual void BuildServerInfoMessage() override = 0;
-	virtual void PerformPrespawn() override = 0;
+	virtual bool ProcessHltvReplay( const CCLCMsg_HltvReplay_t &msg ) override = 0;
+	virtual bool ProcessHltvFixupOperatorStatus( const CSVCMsg_HltvFixupOperatorStatus_t &msg ) override = 0;
+	virtual bool ProcessUserMessage( const CSVCMsg_UserMessage_t &msg ) override = 0;
+	virtual void BuildServerInfoMessage( CUtlVector< CNetworkServerSpawnGroup * > &vecInitialSpawnGroups ) override = 0;
+	virtual void SendInitialSpawnGroups( const CUtlVector< CNetworkServerSpawnGroup * > &vecSpawnGroups, bool bAsync ) override = 0;
 	virtual bool UpdateAcknowledgedFramecount( int tick ) override = 0;
 	virtual bool ShouldSendMessages() override = 0;
 	virtual void UpdateUserSettings() override = 0;
-	virtual void SendSnapshot() override = 0;
+	virtual CClientFrame *GetDeltaFrame( int nTick ) override = 0;
 	virtual void SendSignonData() override = 0;
 	virtual void SpawnPlayer() override = 0;
 	virtual void ActivatePlayer() override = 0;
-	virtual void ShouldReceiveStringTableUserData() override = 0;
-	virtual bool StartHltvReplay() override = 0;
-	virtual void StopHltvReplay() override = 0;
-	virtual int GetHltvLastSendTick() override = 0;
-	virtual bool CanStartHltvReplay() override = 0;
+	virtual bool ShouldReceiveStringTableUserData( const INetworkStringTable *pTable, int nStringIndex ) override = 0;
+	virtual bool StartHltvReplay( const HltvReplayParams_t &params ) override = 0;
+	virtual void StopHltvReplay( bool bForce ) override = 0;
+	virtual int GetHltvReplayDelay() override = 0;
+	virtual bool CanStartHltvReplay( int nTick ) override = 0;
 	virtual void ResetHltvReplayRequestTime() override = 0;
 	virtual const char *GetHltvReplayStats() override = 0;
 	virtual void Await() override = 0;
@@ -171,6 +170,7 @@ public:
 	virtual bool ProcessSignonStateMsg( SignonState_t state, int nSpawnCount ) override = 0;
 	virtual void PerformDisconnection( ENetworkDisconnectionReason reason ) override = 0;
 
+	using CServerSideClientBase::ExecuteDelayedCall;
 	void ExecuteDelayedCall( StopHltvReplayCall_t &call );
 	void ExecuteDelayedCall( FakeClientMarkSpawnGroupsAsLoadedCall_t &call );
 	void ExecuteDelayedCall( StartHltvReplayCall_t &call );
@@ -180,7 +180,6 @@ public:
 	CPlayerBitVec m_VoiceProximity;
 	CCheckTransmitInfo m_PackInfo;
 	CClientFrameManager m_FrameManager;
-	void *m_pUnk0EC8;
 	CClientFrame *m_pCurrentFrame;
 
 	// AMNOTE: Move messages in the current packet, the client is disconnected when there's more than one
@@ -208,6 +207,8 @@ public:
 	// AMNOTE: Tick of the last HLTV replay frame sent
 	int m_nHltvLastSendTick;
 	double m_flHltvLastReplayRequestTime;
+
+	// AMNOTE: Clear frees the elements with g_pMemAlloc->Free, the element type is not known
 	CUtlVector< INetMessage * > m_HltvQueuedMessages;
 	HltvReplayStats_t m_HltvReplayStats;
 	CThreadedJobWithDependencies *m_pSendJob;

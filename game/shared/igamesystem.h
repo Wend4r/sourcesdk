@@ -30,8 +30,8 @@
 *     {
 *         // In every event there's a ``msg`` argument provided which is a struct for this particular event
 *         // refer to struct implementation to see what members are available in it, example usage:
-*         msg->m_pConfig;
-*         msg->m_pRegistry;
+*         msg.m_pConfig;
+*         msg.m_pRegistry;
 *     }
 *     
 *     // Or you can declare the needed events in your gamesystem, and define their body somewhere else
@@ -238,6 +238,7 @@ GS_EVENT_MSG( ClientPreRenderAlt )
 schema GS_EVENT_MSG( ClientPollNetworking )
 {
 	int m_nTickCount;
+	int m_nTotalTicks;
 };
 
 schema GS_EVENT_MSG( ClientProcessNetworking )
@@ -377,7 +378,8 @@ GS_EVENT_MSG( ServerPrePackEntities )
 	const CUtlVector< Entity2Networkable_t * > *m_pEntities;
 };
 
-#define GS_EVENT_IMPL( name ) virtual void name(const Event##name##_t& msg) = 0;
+// Declares an event handler of IGameSystem; the game's IGameSystem gives every handler an empty body
+#define GS_EVENT_IMPL( name ) virtual void name( const Event##name##_t &msg ) {}
 #define GS_EVENT( name ) virtual void name(const Event##name##_t& msg) override
 #define GS_EVENT_MEMBER( gamesystem, name ) void gamesystem::name(const Event##name##_t& msg)
 
@@ -387,10 +389,17 @@ GS_EVENT_MSG( ServerPrePackEntities )
 // The order in which the server systems appear in this list are the
 // order in which they are initialized and updated. They are shut down in
 // reverse order from which they are initialized.
+//
+// The game's IGameSystem is not a pure interface: it holds the name and implements every
+// method (Init returns true, the handlers are empty, GetName/SetName use m_pName,
+// DoesGameSystemReallocate returns false); only YouForgot_DECLARE_GAME_SYSTEM is pure.
+// The handlers are named after their event messages (GS_EVENT); Valve's own names differ
+// for some of them (FrameUpdatePreEntityThink, FrameUpdatePostEntityThink, ... in Dota 2).
 //-----------------------------------------------------------------------------
 abstract_class IGameSystem
 {
 public:
+	// Element of IGameSystem::sm_GameSystemFactories (Dota 2 2017 DWARF)
 	struct FactoryInfo_t
 	{
 		FactoryInfo_t() : m_pFactory( NULL ), m_bHasBeenAdded( true ) {}
@@ -402,9 +411,9 @@ public:
 public:
 	// Init, shutdown
 	// return true on success. false to abort DLL init!
-	virtual bool Init() = 0;								// 0
-	virtual void PostInit() = 0;							// 1
-	virtual void Shutdown() = 0;							// 2
+	virtual bool Init() { return true; }					// 0
+	virtual void PostInit() {}								// 1
+	virtual void Shutdown() {}								// 2
 
 	// Game init, shutdown
 	GS_EVENT_IMPL( GameInit )								// 3
@@ -419,6 +428,7 @@ public:
 	GS_EVENT_IMPL( ClientFullySignedOn )					// 9
 	GS_EVENT_IMPL( ClientDisconnect )						// 10
 
+	// Client frame stage 10, queued as the "Client Restore Server State" job
 	GS_EVENT_IMPL( ClientRestoreServerState )				// 11
 
 	GS_EVENT_IMPL( GameDeactivate )							// 12
@@ -438,8 +448,8 @@ public:
 	GS_EVENT_IMPL( ClientPreEntityThink )					// 22
 
 	// Called in the client output that runs in parallel with the server, without the engine event as the message
-	virtual void ClientPreOutputParallelWithServer( const void *const msg ) = 0;	// 23
-	virtual void ClientPostOutputParallelWithServer( const void *const msg ) = 0;	// 24
+	virtual void ClientPreOutputParallelWithServer( const void *const msg ) {}	// 23
+	virtual void ClientPostOutputParallelWithServer( const void *const msg ) {}	// 24
 	GS_EVENT_IMPL( ClientPreRenderAlt )						// 25
 
 	GS_EVENT_IMPL( ClientPollNetworking )					// 26
@@ -448,8 +458,9 @@ public:
 	GS_EVENT_IMPL( ClientPreUpdate )						// 27
 	GS_EVENT_IMPL( ClientPostUpdate )						// 28
 
-	// Dispatched with an empty message at the end of the client network update
-	virtual void unk_101( const void *const msg ) = 0;		// 29
+	// Named by what it does: dispatched with an empty message at the end of the client's last
+	// frame stage of a network update (stage 12, after the restore server state stage)
+	virtual void ClientPostFrameNetUpdate( const void *const msg ) {}	// 29
 
 	// Called after rendering
 	GS_EVENT_IMPL( ClientPostRender )						// 30
@@ -479,6 +490,7 @@ public:
 	GS_EVENT_IMPL( ClientAdvanceNonRenderedFrame )			// 47
 
 	GS_EVENT_IMPL( GameFrameBoundary )						// 48
+	// Dispatched by CSource2Server::UpdateWhenNotInGame
 	GS_EVENT_IMPL( OutOfGameFrameBoundary )					// 49
 
 	GS_EVENT_IMPL( SaveGame )								// 50
@@ -491,136 +503,42 @@ public:
 	GS_EVENT_IMPL( WorldGroupCreated )						// 53
 	GS_EVENT_IMPL( WorldGroupDestroyed )					// 54
 
-	// AMNOTE: Nothing dispatches or overrides these in CS2
-	virtual void unk_201( const void *const msg ) = 0;		// 55
-	virtual void unk_202( const void *const msg ) = 0;		// 56
+	// Named by what the game does with them: nothing dispatches or overrides these two in
+	// server.dll, libserver.so or client.dll; the registration only caches their slot indices
+	virtual void UndispatchedEvent1( const void *const msg ) {}	// 55
+	virtual void UndispatchedEvent2( const void *const msg ) {}	// 56
 
 	// Same as to demo_skip event
 	GS_EVENT_IMPL( DemoSkip )								// 57
 
 	GS_EVENT_IMPL( ServerPrePackEntities )					// 58
 
-	virtual const char* GetName() const = 0;				// 59
-	virtual void SetGameSystemGlobalPtrs(void* pValue) = 0;	// 60
-	virtual void SetName(const char* pName) = 0;			// 61
-	virtual bool DoesGameSystemReallocate() = 0;			// 62
+	virtual const char *GetName() const { return m_pName; }	// 59
+	// Reallocating systems forward this to their factory (SetGlobalPtr)
+	virtual void SetGameSystemGlobalPtrs( void *pValue ) {}	// 60
+	virtual void SetName( const char *pName ) { m_pName = pName; }	// 61
+	// Reallocating systems forward this to their factory (IsReallocating)
+	virtual bool DoesGameSystemReallocate() { return false; }	// 62
 	virtual ~IGameSystem() {}
 	virtual void YouForgot_DECLARE_GAME_SYSTEM_InYourClassDefinition() = 0;
+
+protected:
+	// Returned by GetName (Dota 2 2017 DWARF: IGameSystem::m_pName)
+	const char *m_pName;
 };
 
 // Quick and dirty server system for users who don't care about precise ordering
-// and usually only want to implement a few of the callbacks
+// and usually only want to implement a few of the callbacks.
+// In the game it adds nothing to IGameSystem but the constructor that names it.
 class CAutoGameSystem : public IGameSystem
 {
 public:
-	CAutoGameSystem(const char* pszInitName = "unnamed")
-	 :  m_pName(pszInitName)
+	CAutoGameSystem( const char *pszInitName = "unnamed" )
 	{
+		m_pName = pszInitName;
 	}
 
-	// Init, shutdown
-	// return true on success. false to abort DLL init!
-	virtual bool Init() override { return true; }
-	virtual void PostInit() override {}
-	virtual void Shutdown() override {}
-
-	// Game init, shutdown
-	GS_EVENT( GameInit ) {}
-	GS_EVENT( GameShutdown ) {}
-	GS_EVENT( GamePostInit ) {}
-	GS_EVENT( GamePreShutdown ) {}
-
-	GS_EVENT( BuildGameSessionManifest ) {}
-
-	GS_EVENT( GameActivate ) {}
-
-	GS_EVENT( ClientFullySignedOn ) {}
-	GS_EVENT( ClientDisconnect ) {}
-
-	GS_EVENT( ClientRestoreServerState ) {}
-
-	GS_EVENT( GameDeactivate ) {}
-
-	GS_EVENT( SpawnGroupPrecache ) {}
-	GS_EVENT( SpawnGroupUncache ) {}
-	GS_EVENT( PreSpawnGroupLoad ) {}
-	GS_EVENT( PostSpawnGroupLoad ) {}
-	GS_EVENT( PreSpawnGroupUnload ) {}
-	GS_EVENT( PostSpawnGroupUnload ) {}
-	GS_EVENT( ActiveSpawnGroupChanged ) {}
-
-	GS_EVENT( ClientPostDataUpdate ) {}
-
-	// Called before rendering
-	GS_EVENT( ClientPreRender ) {}
-
-	GS_EVENT( ClientPreEntityThink ) {}
-
-	virtual void ClientPreOutputParallelWithServer( const void *const msg ) override {}
-	virtual void ClientPostOutputParallelWithServer( const void *const msg ) override {}
-	GS_EVENT( ClientPreRenderAlt ) {}
-
-	GS_EVENT( ClientPollNetworking ) {}
-
-	// Called each frame before and after entities simulate
-	GS_EVENT( ClientPreUpdate ) {}
-	GS_EVENT( ClientPostUpdate ) {}
-
-	virtual void unk_101( const void *const msg ) override {}
-
-	// Called after rendering
-	GS_EVENT( ClientPostRender ) {}
-
-	// Called each frame before entities think
-	GS_EVENT( ServerPreEntityThink ) {}
-	// called after entities think
-	GS_EVENT( ServerPostEntityThink ) {}
-
-	GS_EVENT( ServerPostPhysicsSimulate ) {}
-
-	GS_EVENT( ServerPreClientUpdate ) {}
-	GS_EVENT( ServerAdvanceTick ) {}
-	GS_EVENT( ClientAdvanceTick ) {}
-	GS_EVENT( ServerPostSimulate ) {}
-	GS_EVENT( ClientPostSimulate ) {}
-	GS_EVENT( ServerPostAdvanceTick ) {}
-	GS_EVENT( ClientPostAdvanceTick ) {}
-
-	GS_EVENT( ServerBeginAsyncPostTickWork ) {}
-	GS_EVENT( ServerGameBeginAsyncPostTickWork ) {}
-	GS_EVENT( ServerPreEndAsyncPostTickWork ) {}
-	GS_EVENT( ServerPostEndAsyncPostTickWork ) {}
-
-	GS_EVENT( ClientFrameSimulate ) {}
-	GS_EVENT( ClientPauseSimulate ) {}
-	GS_EVENT( ClientAdvanceNonRenderedFrame ) {}
-
-	GS_EVENT( GameFrameBoundary ) {}
-	GS_EVENT( OutOfGameFrameBoundary ) {}
-
-	GS_EVENT( SaveGame ) {}
-	GS_EVENT( RestoreGame ) {}
-
-	GS_EVENT( NewLevelPlayerConnect ) {}
-
-	GS_EVENT( WorldGroupCreated ) {}
-	GS_EVENT( WorldGroupDestroyed ) {}
-
-	virtual void unk_201( const void *const msg ) override {}
-	virtual void unk_202( const void *const msg ) override {}
-
-	GS_EVENT( DemoSkip ) {}
-
-	GS_EVENT( ServerPrePackEntities ) {}
-
-	virtual const char* GetName() const override { return m_pName; }
-	virtual void SetGameSystemGlobalPtrs(void* pValue) override {}
-	virtual void SetName(const char* pName) override { m_pName = pName; }
-	virtual bool DoesGameSystemReallocate() override { return false; }
 	virtual ~CAutoGameSystem() {}
-
-private:
-	const char* m_pName;
 };
 
 // Deprecated, use CAutoGameSystem instead
