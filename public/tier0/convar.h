@@ -53,6 +53,8 @@ enum EConVarType : int16_t
 {
 	EConVarType_Invalid = -1,
 	EConVarType_Bool,
+	EConVarType_Int8,
+	EConVarType_UInt8,
 	EConVarType_Int16,
 	EConVarType_UInt16,
 	EConVarType_Int32,
@@ -75,6 +77,8 @@ template<typename T>
 constexpr EConVarType TranslateConVarType();
 
 template<> constexpr EConVarType TranslateConVarType<bool>( void )		{ return EConVarType_Bool; }
+template<> constexpr EConVarType TranslateConVarType<int8>( void )		{ return EConVarType_Int8; }
+template<> constexpr EConVarType TranslateConVarType<uint8>( void )		{ return EConVarType_UInt8; }
 template<> constexpr EConVarType TranslateConVarType<int16>( void )		{ return EConVarType_Int16; }
 template<> constexpr EConVarType TranslateConVarType<uint16>( void )	{ return EConVarType_UInt16; }
 template<> constexpr EConVarType TranslateConVarType<int32>( void )		{ return EConVarType_Int32; }
@@ -102,6 +106,8 @@ union CVValue_t
 
 	CVValue_t() {}
 	CVValue_t( const bool value ) : m_bValue( value ) {}
+	CVValue_t( const int8 value ) : m_i8Value( value ) {}
+	CVValue_t( const uint8 value ) : m_u8Value( value ) {}
 	CVValue_t( const int16 value ) : m_i16Value( value ) {}
 	CVValue_t( const uint16 value ) : m_u16Value( value ) {}
 	CVValue_t( const int32 value ) : m_i32Value( value ) {}
@@ -120,6 +126,8 @@ union CVValue_t
 	~CVValue_t() {}
 
 	operator bool() const				{ return m_bValue; }
+	operator int8() const				{ return m_i8Value; }
+	operator uint8() const				{ return m_u8Value; }
 	operator int16() const				{ return m_i16Value; }
 	operator uint16() const				{ return m_u16Value; }
 	operator int32() const				{ return m_i32Value; }
@@ -138,6 +146,8 @@ union CVValue_t
 	operator const VectorWS&() const 	{ return m_vecwsValue; }
 
 	bool		m_bValue;
+	int8		m_i8Value;
+	uint8		m_u8Value;
 	int16		m_i16Value;
 	uint16		m_u16Value;
 	int32		m_i32Value;
@@ -752,6 +762,8 @@ template<> void CvarTypeTrait_ValueToStringFn<bool>( const CVValue_t *obj, CBuff
 	else
 		buf = "false";
 }
+template<> void CvarTypeTrait_ValueToStringFn<int8>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%d", obj->m_i8Value ); }
+template<> void CvarTypeTrait_ValueToStringFn<uint8>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%u", obj->m_u8Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<int16>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%d", obj->m_i16Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<uint16>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%u", obj->m_u16Value ); }
 template<> void CvarTypeTrait_ValueToStringFn<int32>( const CVValue_t *obj, CBufferString &buf ) { buf.Format( "%d", obj->m_i32Value ); }
@@ -855,6 +867,8 @@ static CVarTypeTraits *GetCvarTypeTraits( EConVarType type )
 
 	static CVarTypeTraits s_TypeTraits[EConVarType_MAX] = {
 		*CVarTypeTraits().InitAs<bool>( "bool", "false" ),
+		*CVarTypeTraits().InitAs<int8>( "int8", "0" ),
+		*CVarTypeTraits().InitAs<uint8>( "uint8", "0" ),
 		*CVarTypeTraits().InitAs<int16>( "int16", "0" ),
 		*CVarTypeTraits().InitAs<uint16>( "uint16", "0" ),
 		*CVarTypeTraits().InitAs<int32>( "int32", "0" ),
@@ -1050,6 +1064,8 @@ static ConVarData *GetInvalidConVarData( EConVarType type )
 
 	static ConVarData s_InvalidConVar[EConVarType_MAX + 1] = {
 		ConVarData( TranslateConVarType<bool>() ),
+		ConVarData( TranslateConVarType<int8>() ),
+		ConVarData( TranslateConVarType<uint8>() ),
 		ConVarData( TranslateConVarType<int16>() ),
 		ConVarData( TranslateConVarType<uint16>() ),
 		ConVarData( TranslateConVarType<int32>() ),
@@ -1389,6 +1405,8 @@ inline T ConVarRefAbstract::ConvertFromPrimitiveTo( CSplitScreenSlot slot ) cons
 		switch(GetType())
 		{
 			case EConVarType_Bool:      if constexpr(std::is_convertible_v<bool, T>) return value->m_bValue;
+			case EConVarType_Int8:      if constexpr(std::is_convertible_v<int8, T>) return value->m_i8Value;
+			case EConVarType_UInt8:     if constexpr(std::is_convertible_v<uint8, T>) return value->m_u8Value;
 			case EConVarType_Int16:     if constexpr(std::is_convertible_v<int16, T>) return value->m_i16Value;
 			case EConVarType_UInt16:    if constexpr(std::is_convertible_v<uint16, T>) return value->m_u16Value;
 			case EConVarType_Int32:     if constexpr(std::is_convertible_v<int32, T>) return value->m_i32Value;
@@ -1459,6 +1477,8 @@ inline void ConVarRefAbstract::ConvertToPrimitiveFrom( CSplitScreenSlot slot, co
 		switch(GetType())
 		{
 			case EConVarType_Bool:		if constexpr(std::is_convertible_v<bool, T>) return CConVarRef<bool>( *this ).Set( value, slot );
+			case EConVarType_Int8:		if constexpr(std::is_convertible_v<int8, T>) return CConVarRef<int8>( *this ).Set( value, slot );
+			case EConVarType_UInt8:		if constexpr(std::is_convertible_v<uint8, T>) return CConVarRef<uint8>( *this ).Set( value, slot );
 			case EConVarType_Int16:		if constexpr(std::is_convertible_v<int16, T>) return CConVarRef<int16>( *this ).Set( value, slot );
 			case EConVarType_UInt16:	if constexpr(std::is_convertible_v<uint16, T>) return CConVarRef<uint16>( *this ).Set( value, slot );
 			case EConVarType_Int32:		if constexpr(std::is_convertible_v<int32, T>) return CConVarRef<int32>( *this ).Set( value, slot );
