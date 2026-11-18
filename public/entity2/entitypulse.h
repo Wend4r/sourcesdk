@@ -11,6 +11,7 @@
 #include "tier0/utlsymbollarge.h"
 #include "tier0/utlhashtable.h"
 #include "tier0/murmurhash3.h"
+#include "kv3lib/keyvalues3.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -23,6 +24,7 @@ class CPulseRuntimeMethodArg;
 class KeyValues3;
 class CPulseArgumentPack;
 class CPulseInputParamMap;
+class CKV3TransferSaveContext;
 
 schema enum PulseApiFeature_t : uint32
 {
@@ -115,20 +117,50 @@ public:
 	CUtlSymbolLarge m_subType;
 };
 
+// A value of any pulse type, stored in place when it fits in a pointer
+class CPulseCallContextValue
+{
+public:
+	CPulseCallContextValue() : m_pValue( nullptr ) {}
+	CPulseCallContextValue( const CPulseCallContextValue &other ) : CPulseCallContextValue() { *this = other; }
+	~CPulseCallContextValue() { SetType( CPulseValueFullType() ); }
+
+	CPulseCallContextValue &operator=( const CPulseCallContextValue &other );
+
+	bool IsStoredInline() const;
+	void *GetData() { return IsStoredInline() ? static_cast< void * >( &m_pValue ) : m_pValue; }
+	const void *GetData() const { return IsStoredInline() ? static_cast< const void * >( &m_pValue ) : m_pValue; }
+
+	// Replaces the value with a default one of the new type
+	void SetType( const CPulseValueFullType &type );
+
+	void VariantCompatibility_SetPulseVariantFromEntityVariant( const CVariant &value );
+	void VariantCompatibility_SetEntityVariantFromPulseVariant( CVariant &value ) const;
+
+public:
+	void *m_pValue;
+	CPulseValueFullType m_Type;
+};
+
+// An argument or return value of a native pulse binding; the bindings return static arrays of them
 class CPulseRuntimeMethodArg
 {
 public:
-	uint32 m_nNameHash;
-	int32 m_nUnk0004;
-	const char* m_pName;
+	CKV3MemberName m_Name;
 	CPulseValueFullType m_Type;
-	uint64 m_nUnk0028;
-	uint8 m_defaultValue[32];
-	uint16 m_nFlags;
-	uint8 m_unk0052[6];
-	void* m_pUnk0058;
-	void* m_pfnUnk0060;
-	void* m_pUnk0068;
+
+	// Named by what it does: saved as "default_value" by the binding description writer. The game aligns it to 16 bytes
+	alignas( 16 ) CPulseCallContextValue m_DefaultValue;
+
+	// Read like PulseBindingDesc_t::m_pMetadata: MPropertyFriendlyName, MPropertyDescription, MPulseAdvanced and others
+	uint16 m_nMetadataCount;
+	PulseBindingMetadata_t *m_pMetadata;
+
+	// Named by what it does: called with the "metadata" table of the argument when the binding description is written; a no-op by default
+	void ( *m_pfnWriteMetadata )( KeyValues3 *pMetadata );
+
+	// Named by what it does: writes the "default_value" member when the binding description is written; null when the argument has no default
+	void ( *m_pfnSaveDefaultValue )( CKV3TransferSaveContext *pContext );
 };
 
 // A view of a static argument array, returned by value
@@ -196,13 +228,31 @@ struct PulseLibraryRegistration_t
 	bool m_bSkip;
 };
 
-struct PulseSignatureOutput_t
+class CEntityIOOutput;
+
+// The description an output connection list points to (CEntityIOOutput::GetDescription)
+struct EntityIOOutputDesc_t
 {
-	const char* m_pName;
-	int32 m_nUnk0008;
-	void* m_pScope;
-	int32 m_nOffset;
+	const char *m_pName;
+
+	// 0 for every output registered by the pulse signatures
+	uint32 m_nFlags;
 };
+
+// Output registered by an entity class, a pulse signature or a dynamic signature
+struct EntOutput_t : EntityIOOutputDesc_t
+{
+	// Object that holds the output, such as a component; null when the entity holds it
+	void *( *m_pfnGetOutputOwner )( CEntityInstance *pEntity );
+
+	// Offset of the CEntityIOOutput in the owner, ENTITY_INVLAID_OUTPUT_OFFSET for an output without storage
+	uint32 m_nOutputOffset;
+
+	CEntityIOOutput *GetOutput( CEntityInstance *pEntity ) const;
+};
+
+// The signatures keep their outputs as EntOutput_t and hand them to the entity class as such
+typedef EntOutput_t PulseSignatureOutput_t;
 
 class CDynamicIOInstance;
 
@@ -214,7 +264,8 @@ public:
 	int32 FindOutputIndex( const char *pszName ) const;
 
 public:
-	uint64 m_unk0008;
+	// Named by what it does: set when the instances were saved and the input and output names cleared, reset when they are restored
+	bool m_bClearedForSave;
 	CUtlVector< uint16 > m_inputNames;
 	CUtlVector< uint16 > m_outputNames;
 	CUtlVector< PulseSignatureOutput_t > m_outputs;
@@ -235,7 +286,8 @@ public:
 	CUtlVector< const PulseBindingDesc_t * > m_bindings;
 	CUtlVector< PulseSignatureOutput_t > m_registeredOutputs;
 	CUtlVector< CUtlString > m_ownedNameStorage;
-	bool m_bUnk0110;
+	// Named by what it does: set once m_registeredOutputs were added to the outputs of the entity class
+	bool m_bRegisteredOutputsAdded;
 };
 
 class CEntitySharedPulseSignature : public CEntityClassPulseSignature

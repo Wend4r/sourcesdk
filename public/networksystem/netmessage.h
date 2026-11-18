@@ -39,7 +39,7 @@ inline constexpr const char *k_pszNetGroupNames[ SG_TOTAL ] =
 class CNetMessage
 {
 public:
-	CNetMessage( NetChannelBufType_t bufType = BUF_DEFAULT ) : m_dbRecivedTime( -1.0 ), m_nTick( 0 ), m_bufType( bufType ), m_nBits( -1 ), m_nInSequenceNr( -1 ), m_flMargin( -1.0f ), m_nUnk( -1 ) {}
+	CNetMessage( NetChannelBufType_t bufType = BUF_DEFAULT ) : m_dbRecivedTime( -1.0 ), m_nTick( 0 ), m_bufType( bufType ), m_nBits( -1 ), m_nInSequenceNr( -1 ), m_flMargin( -1.0f ), m_nPlaybackTime( -1 ) {}
 	CNetMessage( const CNetMessage &copyFrom ) = default;
 	CNetMessage( CNetMessage &&moveFrom ) = default;
 	CNetMessage &operator=( const CNetMessage &copyFrom ) = default;
@@ -86,7 +86,8 @@ private:
 	int m_nBits;
 	int m_nInSequenceNr;
 	float m_flMargin;
-	int64 m_nUnk;
+	// netpacket_s::nPlaybackTime of the packet the message was parsed from
+	int64 m_nPlaybackTime;
 };
 
 // AMNOTE: This is a stub class over real CNetMessagePB!

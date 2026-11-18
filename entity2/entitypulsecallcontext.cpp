@@ -382,7 +382,7 @@ CKV3MemberName CPulseArgumentPack::GetArgumentName( int nIndex ) const
 	{
 		const CPulseRuntimeMethodArg &argument = pArguments->m_pElements[ nIndex ];
 
-		return CKV3MemberName( argument.m_nNameHash, static_cast< UtlSymLargeId_t >( argument.m_nUnk0004 ), argument.m_pName );
+		return argument.m_Name;
 	}
 
 	return m_pInfo->m_Keys[ nIndex ];

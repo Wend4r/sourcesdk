@@ -19,7 +19,7 @@
 
 #include "schemacompiler/schemaon.h"
 
-#define ENTITY_INVLAID_OUTPUT_OFFSET ( ~0 )
+#define ENTITY_INVLAID_OUTPUT_OFFSET 0x7FFFFFFF
 
 class CEntityInstance;
 class CKV3TransferLoadContext;
@@ -73,21 +73,6 @@ public:
 	EntityIOQueuePrioritizedEvent_t m_Events;
 };
 
-// Output registered by an entity class
-struct EntOutput_t
-{
-private:
-	uint8 m_pad0000[ 16 ];
-
-public:
-	// Object that holds the output, such as a component; null when the entity holds it
-	void *( *m_pfnGetOutputOwner )( CEntityInstance *pEntity );
-
-	uint32 : 1, m_nOutputOffset : 31;
-
-	CEntityIOOutput *GetOutput( CEntityInstance *pEntity ) const;
-};
-
 struct CEntityIOInputFunction
 {
 	typedef void (*InputAdapterFunc_t)(const CUtlAbstractDelegate *, CEntityInstance *, CEntityInstance *, CEntityInstance *, void *, const CVariant *);
@@ -128,19 +113,13 @@ struct EntityIOConnection_t : EntityIOConnectionDesc_t
 
 COMPILE_TIME_ASSERT( sizeof( EntityIOConnection_t ) == 80 );
 
-struct EntityIOOutputDesc_t
-{
-	const char* m_pName;
-	uint32 m_nFlags;
-	uint32 m_nOutputOffset;
-};
-
 // Observers of entity I/O
 class IEntityIONotify
 {
 public:
 	virtual void OnConnectionFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection, const CPulseArgumentPack *pArgs ) = 0;
-	virtual void Unk_01() = 0;
+	// Named by what it does: called after an input from the event queue was accepted by its target
+	virtual void OnInputAccepted( CEntityInstance *pTarget, const char *pszInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant *pValue, const CPulseArgumentPack *pArgs ) = 0;
 	virtual void OnConnectionRemoved( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection ) = 0;
 	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, float flDelay, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs ) = 0;
 };

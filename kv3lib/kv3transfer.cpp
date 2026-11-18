@@ -6,7 +6,7 @@
 
 CKV3TransferContextBase::CKV3TransferContextBase( const char *pszSourceName ) :
 	m_Result( KV3TRANSFER_SUCCESS ),
-	m_bUnk00C( false ),
+	m_bReservedFlag( false ),
 	m_pszSourceName( pszSourceName )
 {
 }

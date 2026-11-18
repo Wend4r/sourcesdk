@@ -84,7 +84,8 @@ public:
 
 protected:
 	KV3TransferResult_t m_Result;
-	bool m_bUnk00C;
+	// Named by what the code does with it: the load and save context constructors clear it, no transfer function reads it
+	bool m_bReservedFlag;
 
 	CBufferString m_sErrorMessage;
 	const char *m_pszSourceName;

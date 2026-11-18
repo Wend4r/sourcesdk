@@ -84,8 +84,9 @@ struct NetworkFieldSerializerGroup_t
 	{
 		NetworkFieldSerializeCB m_pfnSerialize;
 		NetworkFieldUnserializeCB m_pfnUnserialize;
-		NetworkFieldSerializeCB m_pfnUnk010;
-		NetworkFieldUnserializeCB m_pfnUnk018;
+		// Named by what the registration does with them (the last two arguments of RegisterNetworkFieldSerializer)
+		NetworkFieldSerializeCB m_pfnSerializeAlternate;
+		NetworkFieldUnserializeCB m_pfnUnserializeAlternate;
 	};
 
 	// Must match for every serialization mode of the serializer
@@ -110,8 +111,9 @@ struct NetworkArrayFieldSerializerGroup_t
 	{
 		NetworkFieldSerializeBufferCB m_pfnSerialize;
 		NetworkFieldUnserializeBufferCB m_pfnUnserialize;
-		NetworkFieldSerializeBufferCB m_pfnUnk010;
-		NetworkFieldUnserializeBufferCB m_pfnUnk018;
+		// Named by what the registration does with them (the last two arguments of RegisterNetworkArrayFieldSerializer)
+		NetworkFieldSerializeBufferCB m_pfnSerializeAlternate;
+		NetworkFieldUnserializeBufferCB m_pfnUnserializeAlternate;
 	};
 
 	// Bit per registered NetworkSerializationMode_t
@@ -136,13 +138,14 @@ public:
 	virtual bool SerializeAbstract( bf_write &pBuf, const CNetMessage *pData ) = 0;
 
 	// Returns false if failed to unserialize; the reason is written to pErrorReason, or logged when it's nullptr.
-	// Messages over the maximum message size are rejected only when nUnk is 1
-	virtual bool UnserializeMessageInternal( bf_read &pBuf, CNetMessage *pData, int nUnk, CUtlString *pErrorReason = nullptr ) = 0;
+	// nSizeCheckMode 1 rejects a message over the maximum size of its type (1500 bytes without the protobuf option,
+	// a command line switch disables the check); any other value skips the check
+	virtual bool UnserializeMessageInternal( bf_read &pBuf, CNetMessage *pData, int nSizeCheckMode, CUtlString *pErrorReason = nullptr ) = 0;
 	virtual bool SerializeMessageInternal( bf_write &pBuf, const CNetMessage *pData ) = 0;
 
 	// Returns nullptr if failed to unserialize, reason is written to strError.
-	// nUnk is passed on to UnserializeMessageInternal
-	virtual CNetMessage *UnserializeFromStream( bf_read &pBuf, int nUnk, CUtlString &strError ) = 0;
+	// nSizeCheckMode is passed on to UnserializeMessageInternal
+	virtual CNetMessage *UnserializeFromStream( bf_read &pBuf, int nSizeCheckMode, CUtlString &strError ) = 0;
 
 	virtual void *RegisterNetworkFieldSerializer( const char *, NetworkSerializationMode_t, NetworkableDataType_t, int, NetworkFieldSerializeCB, NetworkFieldUnserializeCB, NetworkFieldInfoCB, 
 		NetworkFieldMetaInfoCB, NetworkableDataCB, NetworkFieldSerializerNameCB, NetworkFieldSerializeCB, NetworkFieldUnserializeCB ) = 0;

@@ -78,9 +78,9 @@ struct netpacket_s
 	bf_read		message;	// easy bitbuf data access
 	SteamNetworkingMessage_t *pSteamNetworkingMessage; // released after the packet is parsed
 	const unsigned char *data;	// m_pData of the Steam message
-	void			*pUnk88;	// owned polymorphic object, destroyed with the packet
+	void			*pPacketOwner;	// named by what it does: polymorphic object; GetPacket calls its second virtual with the packet before reusing the packet
 	SteamNetworkingMicroseconds received; // m_usecTimeReceived of the Steam message
-	int64			nUnk104;	// copied into each CNetMessage parsed from the packet
+	uint64			nPlaybackTime;	// demo or broadcast playback time (IDemoPlayer::ReadPacketForTime compares it), 0 for network packets; copied into each CNetMessage parsed from the packet
 	HSteamNetConnection hConnection;
 	int				size;		// size in bytes
 	int				source;		// received source

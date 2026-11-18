@@ -144,7 +144,8 @@ private:
 	bool m_bIsDynamicallySized;
 
 	bool m_bHasInvalidMemberNames;
-	bool m_unk002;
+	// Named by what the code does with it: the constructor clears it, nothing in the KV3 code of tier0 reads it
+	bool m_bReservedFlag;
 
 	union
 	{

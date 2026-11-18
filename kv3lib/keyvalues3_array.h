@@ -67,8 +67,9 @@ private:
 	uint8 m_nInitialSize;
 	bool m_bIsDynamicallySized;
 
-	bool m_unk001;
-	bool m_unk002;
+	// Named by what the code does with them: the constructor clears both, nothing in the KV3 code of tier0 reads them
+	bool m_bReservedFlag1;
+	bool m_bReservedFlag2;
 
 	union
 	{

@@ -31,9 +31,9 @@ struct KV3TransferDefaultKeys_t
 	// A table, or null when saving the default instance failed.
 	const KeyValues3 *m_pDefaultKeys;
 
-	// A null value in every class seen. The game looks the member name up in it before m_pDefaultKeys
-	// without that changing which default it loads.
-	const KeyValues3 *m_pUnk08;
+	// Named by what the code does with it: looked up before m_pDefaultKeys, so a member found here wins.
+	// The null value in every class seen
+	const KeyValues3 *m_pPrimaryDefaultKeys;
 
 	// The default value of a member; the null value when there is none.
 	const KeyValues3 *FindMember( const CKV3MemberName &name ) const;

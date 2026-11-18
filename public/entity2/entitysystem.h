@@ -267,12 +267,18 @@ public:
 
 	// Deletion deferred until the queued creation ends
 	bool m_bQueuedDeletionDeferred;
-	bool m_Unk2; // bDeallocateImmediately for the deferred deletion
-	bool m_Unk3;
+	// bDeallocateImmediately for the deferred deletion
+	bool m_bPerformDeallocationPostCreation;
+	// The queued creation runs the queued PostDataUpdate calls with the activations
+	bool m_bInvokePostDataUpdates;
 	bool m_bEnableAutoDeletionExecution;
-	bool m_Unk4;
-	bool m_Unk5;
-	bool m_Unk6;
+	// Set by Activate and UpdateOnRemove when the resource system profiler wants the entity names
+	bool m_bProfilingResourceSystem;
+	// The queued activations use ACTIVATE_TYPE_ONRESTORE instead of the creation activate types while set
+	bool m_bInRestoreActivation;
+	// Named by what it does: set while the save restore system restores the entities of an adjacent map (LoadAdjacentEnts)
+	bool m_bInRestoreAdjacentEntities;
+	bool m_bProcessingQueuedActivatesAndPostDataUpdates;
 
 	CUtlVector<CreationInfo_t> m_queuedCreations;
 	CUtlVector<PostDataUpdateInfo_t> m_queuedPostDataUpdates;

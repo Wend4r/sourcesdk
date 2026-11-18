@@ -135,8 +135,10 @@ struct ReplayCompatField_t
 {
 	const char *m_FieldPath;
 	const char *m_CallbackName;
-	void *m_unk001;
-	int8 m_unk002;
+	// Named by what it does: set to the name of the flattened serializer when the replay compat fields of a class and its bases are gathered
+	const char *m_pszSerializerName;
+	// Named by what the code does with it: copied with the field, no reader found in networksystem
+	int8 m_nReservedFlag;
 };
 
 class CNetworkSerializerFieldInfo
@@ -156,7 +158,8 @@ public:
 	CUtlStringToken m_NetworkTypeAliasHash;
 	const char *m_NetworkTypeAlias;
 
-	void *m_unk001;
+	// Name of the user array network serializer of the field ("requested unknown user array network serializer %s")
+	const char *m_NetworkArraySerializer;
 
 	const char *m_NetworkSerializer;
 	const char *m_NetworkEncoder;
@@ -281,12 +284,14 @@ public:
 
 	bool m_Initialized;
 	bool m_NetworkVarsAtomic;
-	bool m_unk301;
+	// Named by what it does: the field type mappings of the class and its bases are not collected,
+	// and the "MNetworkEnable but not using CNetworkVar" check is skipped
+	bool m_bSkipFieldTypeMappings;
 	bool m_NetworkNoBase;
 	bool m_NetworkStructNotInNetworkUtlVectorEmbedded;
 	bool m_NetworkVarEmbeddedNotFlattened;
-	// Only the constructor writes it
-	bool m_unk401;
+	// Named by what the code does with it: only the constructor writes it
+	bool m_bReservedFlag;
 };
 
 class CNetworkSerializerCodeGenDatabase

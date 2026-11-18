@@ -70,12 +70,16 @@ public:
 	virtual int GetNumAutoWakeCursors( const PulseSymbol_t &clock ) = 0;
 
 	virtual void QueueYieldResumeEvent( CPulseExecCursor *pCursor, const void *pResumeData ) = 0;
-	virtual void QueueCursorResultEvent( int nUnk1, const void *pCursorHandle, int nUnk2, const CPulseArgumentPack &args ) = 0;
-	virtual void QueueObservableVariableSourceChangedEvent( const PulseSymbol_t &clock, CBasePulseGraphInstance *pInstance, int nVariable, const void *pUnk1, const void *pUnk2 ) = 0;
-	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &unk, CBasePulseGraphInstance *pInstance, int nVariable, const void *pUnk1, const void *pUnk2 ) = 0;
+	// Queued once per cursor waiting on the finished cursor nCursorId; pWaitingCursor is its 12-byte entry in the waiting list
+	virtual void QueueCursorResultEvent( int nCursorId, const void *pWaitingCursor, int nResult, const CPulseArgumentPack &args ) = 0;
+	// The two values are copied into the event as pulse values (named by what the code does, their order is not verified)
+	virtual void QueueObservableVariableSourceChangedEvent( const PulseSymbol_t &clock, CBasePulseGraphInstance *pInstance, int nVariable, const void *pNewValue, const void *pOldValue ) = 0;
+	virtual void QueueObservableVariableListenerNotifyEvent( const PulseSymbol_t &clock, const PulseSymbol_t &listener, CBasePulseGraphInstance *pInstance, int nVariable, const void *pNewValue, const void *pOldValue ) = 0;
 
-	virtual void *Unk_GetTypeQueriesForScopes() = 0;
-	virtual void *Unk_GetOpaqueHandleTable() = 0;
+	// Named by what it does: an array of one type query object per scope (5 scopes); the server indexes it by scope
+	virtual void **GetTypeQueriesForScopes() = 0;
+	// Named by what it does: the table of opaque handles (index in the low 10 bits, serial above, 16-byte entries)
+	virtual void *GetOpaqueHandleTable() = 0;
 
 	virtual void ForEachGraphInstance( const std::function< void( CBasePulseGraphInstance * ) > &func ) = 0;
 
@@ -84,7 +88,8 @@ public:
 
 	virtual void RemoveBreakpoint( ResourceHandle_t hGraph, void *pBreakpoint ) = 0;
 	virtual void *AddBreakpoint( ResourceHandle_t hGraph, const void *pBreakpointDesc, bool *pbCreated ) = 0;
-	virtual void *FindBreakpoint( ResourceHandle_t hGraph, const void *pBreakpointDesc, bool bUnk ) = 0;
+	// Without bExactMatch a breakpoint without a symbol matches as well
+	virtual void *FindBreakpoint( ResourceHandle_t hGraph, const void *pBreakpointDesc, bool bExactMatch ) = 0;
 	virtual void GetBreakpoints( ResourceHandle_t hGraph, const int *pnKey, CUtlVector< void * > &breakpoints ) = 0;
 	virtual void GetAllBreakpoints( ResourceHandle_t hGraph, CUtlVector< void * > &breakpoints ) = 0;
 
@@ -97,9 +102,9 @@ public:
 	virtual void ClearExecutionHistory( PulseGraphInstanceID_t id ) = 0;
 	virtual void *GetExecutionHistory( PulseGraphInstanceID_t id ) = 0;
 
-	// Opaque pointer stored with the graph's runtime data.
-	virtual void Unk_SetGraphUserData( ResourceHandle_t hGraph, void *pUserData ) = 0;
-	virtual void *Unk_GetGraphUserData( ResourceHandle_t hGraph ) = 0;
+	// Named by what it does: an opaque pointer stored with the graph's runtime data.
+	virtual void SetGraphUserData( ResourceHandle_t hGraph, void *pUserData ) = 0;
+	virtual void *GetGraphUserData( ResourceHandle_t hGraph ) = 0;
 
 	virtual CPulseExecCursor *GetExecutingCursor() = 0;
 	virtual bool PushExecutingCursor( CPulseExecCursor *pCursor, CPulseExecCursor **ppPrevious ) = 0;
@@ -107,26 +112,29 @@ public:
 
 	virtual void ScheduleGraphHookCall( const void *pHookCall, float flDelay ) = 0;
 
-	// Only sets an internal flag.
-	virtual void unk046() = 0;
+	// Named by what the code does: sets a flag of the pulse system that nothing in pulse_system reads
+	virtual void SetReservedFlag() = 0;
 
 	virtual HPulseGraphDefWeak CreateTestGraphDef( CPulseGraphDef *pDef ) = 0;
 
-	virtual bool Unk_ReplaceGraphDefData( ResourceHandle_t hGraph, CPulseGraphDef *pNewDef, void *pUnk ) = 0;
+	// Named by what it does: swaps the definition of a loaded graph and rebuilds its runtime data; the first virtual of pNotify is called before the swap
+	virtual bool ReplaceGraphDefData( ResourceHandle_t hGraph, CPulseGraphDef *pNewDef, void *pNotify ) = 0;
 
 	virtual int GetTestIntValue() = 0;
 	virtual void SetTestIntValue( int nValue, bool bNotify ) = 0;
 	virtual float *GetTestFloatValue() = 0;
 	virtual CUtlString *GetTestStringValue() = 0;
 
-	virtual IPulseGraphInstance_TurtleGraphics *CreateTurtleGraphicsInstance( ResourceHandle_t hGraph, void *pUnk ) = 0;
-	virtual IPulseGraphInstance_TestDomain *CreateTestDomainInstance( const PulseSymbol_t &domain, ResourceHandle_t hGraph, void *pUnk ) = 0;
+	// pLoadData is handed to the load context InitGraphInstance gets
+	virtual IPulseGraphInstance_TurtleGraphics *CreateTurtleGraphicsInstance( ResourceHandle_t hGraph, void *pLoadData ) = 0;
+	virtual IPulseGraphInstance_TestDomain *CreateTestDomainInstance( const PulseSymbol_t &domain, ResourceHandle_t hGraph, void *pLoadData ) = 0;
 	// Time of the TestClock_ExplicitStepped test clock.
 	virtual void SetTestClockTime( double flTime ) = 0;
 
 	virtual void RegisterBlackboard( const PulseSymbol_t &name, IPulseBlackboardView *pBlackboard ) = 0;
 	virtual IPulseBlackboardView *FindBlackboard( const PulseSymbol_t &name ) = 0;
-	virtual void Unk_RemoveAllBlackboards() = 0;
+	// Named by what it does: empties the blackboard table
+	virtual void RemoveAllBlackboards() = 0;
 	// Copies every registered blackboard into its read-only view.
 	virtual void UpdateReadOnlyBlackboardViews() = 0;
 
@@ -143,18 +151,22 @@ public:
 	virtual void LoadInstanceSystemState( CBasePulseGraphInstance *pInstance, CKV3TransferLoadContext *pContext ) = 0;
 	virtual void SaveInstanceSystemState( CBasePulseGraphInstance *pInstance, CKV3TransferSaveContext *pContext ) = 0;
 
-	virtual bool Unk_IsDomainAvailable( const char *pszDomain, int nScope ) = 0;
-	virtual CBasePulseGraphInstance *Unk_CreateGraphInstanceForDomain( const char *pszDomain ) = 0;
+	// Named by what it does: true when no registered domain has the name or the domain has the scope
+	virtual bool IsDomainAvailable( const char *pszDomain, int nScope ) = 0;
+	// Named by what it does: asks the domain registered under the name to create an instance
+	virtual CBasePulseGraphInstance *CreateGraphInstanceForDomain( const char *pszDomain ) = 0;
 
 	virtual void RemovePendingEventsForCursor( CPulseExecCursor *pCursor ) = 0;
-	virtual void RecordExecutionHistory( CPulseExecCursor *pCursor, uint16 nEventType, int nCellIndex, const PulseSymbol_t &unk ) = 0;
+	// sDetail is stored with the history entry
+	virtual void RecordExecutionHistory( CPulseExecCursor *pCursor, uint16 nEventType, int nCellIndex, const PulseSymbol_t &sDetail ) = 0;
 
 	virtual void LoadCursorSystemState( CPulseExecCursor *pCursor, CKV3TransferLoadContext *pContext ) = 0;
 	virtual void SaveCursorSystemState( CPulseExecCursor *pCursor, CKV3TransferSaveContext *pContext ) = 0;
 
 	// Forwards a breakpoint add or remove to every listener.
 	virtual void NotifyBreakpointChanged( ResourceHandle_t hGraph, const void *pBreakpointDesc ) = 0;
-	virtual bool unk075() = 0;
+	// Named by what it does: true when one of the AddListener listeners answers true to its fifth virtual
+	virtual bool AnyListenerActive() = 0;
 };
 
 #include "schemacompiler/schemaoff.h"

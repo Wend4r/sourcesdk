@@ -139,7 +139,7 @@ void CKV3TransferSchemaClass::KV3Transfer_DefaultKeys_Impl() const
 		m_pDefaultInstance = m_pfnAllocate();
 
 	m_DefaultKeys.m_pDefaultKeys = &m_DefaultKeysTable;
-	m_DefaultKeys.m_pUnk08 = &KeyValues3::GetNullValue();
+	m_DefaultKeys.m_pPrimaryDefaultKeys = &KeyValues3::GetNullValue();
 
 	if ( !m_pDefaultInstance )
 		return;

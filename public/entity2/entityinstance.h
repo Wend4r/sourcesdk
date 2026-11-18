@@ -34,7 +34,6 @@ struct ChangeAccessorFieldPathIndexInfo_t;
 struct datamap_t;
 class IScriptVM;
 class CNetworkSerializerClassInfo;
-struct NetworkSharedChangeInfoOverflow_t;
 
 // See entitynetwork.h
 struct NetworkStateChanged_t;
@@ -128,16 +127,18 @@ public:
 	virtual bool FullEdictChanged() { return false; }
 
 	virtual void InvalidatePolymorphicMetadataHelper() {}
-	virtual void Unk_36() {} // Empty and never overridden
+	// Named by its place among the network callbacks: empty in CEntityInstance and in every entity class of the server and the client, no caller found
+	virtual void NetworkReservedCallback() {}
 
 	virtual ChangeAccessorFieldPathIndex_t AddChangeAccessorPath( const CFieldPath &path ) { return ChangeAccessorFieldPathIndex_t(); }
 	virtual void AssignChangeAccessorPathIds() {}
 
-	virtual NetworkSharedChangeInfoOverflow_t *GetChangeAccessorPathInfo() { return nullptr; }
-	virtual const NetworkSharedChangeInfoOverflow_t *GetChangeAccessorPathInfo() const { return nullptr; }
+	virtual ChangeAccessorFieldPathIndexInfo_t *GetChangeAccessorPathInfo() { return nullptr; }
+	virtual const ChangeAccessorFieldPathIndexInfo_t *GetChangeAccessorPathInfo() const { return nullptr; }
 
 	virtual bool GetFieldPathChildIndices( const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) { return false; }
-	virtual bool Unk_42() { return false; } // Returns false and never overridden
+	// The engine calls it through ISource2GameEntities::GetWorldspaceCenter; no entity class of the server overrides it
+	virtual bool GetWorldspaceCenter( Vector *pCenter ) { return false; }
 
 	virtual void OnAttributeChanged() {}
 

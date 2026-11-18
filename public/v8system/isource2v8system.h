@@ -22,12 +22,14 @@ public:
 	// Forwards to v8::Isolate::LowMemoryNotification.
 	virtual void LowMemoryNotification() = 0;
 
-	virtual bool unk013() = 0;
-	virtual void unk014() = 0;
-	virtual void unk015( void *p1, void *p2, int n ) = 0;
-	virtual bool unk016( void *p ) = 0;
-	virtual void unk017( void *p ) = 0;
-	virtual void unk018( void *p ) = 0;
+	// Named by what the code does: the shipping v8system implements these six as stubs (false or nothing)
+	// and engine2, server and panorama never call them; RunFrame calls ReservedFrameStub( nullptr, nullptr, -1 )
+	virtual bool ReservedBoolStub() = 0;
+	virtual void ReservedStub() = 0;
+	virtual void ReservedFrameStub( void *p1, void *p2, int n ) = 0;
+	virtual bool ReservedBoolStubWithArg( void *p ) = 0;
+	virtual void ReservedStubWithArg( void *p ) = 0;
+	virtual void ReservedStubWithArgB( void *p ) = 0;
 
 	virtual void PushPromiseRejectCallback( void *pfnCallback ) = 0;
 	virtual void PopPromiseRejectCallback() = 0;

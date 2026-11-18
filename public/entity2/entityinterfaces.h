@@ -21,10 +21,18 @@ struct EntityNotification_t
 struct EntitySpawnInfo_t : EntityNotification_t
 {
 	const CEntityKeyValues* m_pKeyValues;
-	int m_Unk1;
+
+	// Named by what it does: the index the save restore system gives an entity restored from a save file, -1 for an entity of the map
+	int m_nSaveFileEntityIndex;
+
+	// Position in the queue; the last sort key
 	uint16 m_SpawnOrder;
+
+	// Depth in the parent hierarchy given by "parentname", 1 for an entity without a parent; the first sort key
 	uint8 m_Depth;
-	uint8 m_OriginalSpawnOrder;
+
+	// Named by what it does: copied from the entity class, a higher value spawns first among the entities of the same depth
+	uint8 m_ClassSpawnOrder;
 };
 
 struct SecondaryPrecacheMemberCallback_t
