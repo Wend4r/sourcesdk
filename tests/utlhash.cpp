@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlhash.h>
+#include <tier0/utlhash.h>
 
 static bool CompareIntForHash( const int &lhs, const int &rhs )
 {

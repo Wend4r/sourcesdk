@@ -22,7 +22,10 @@
 #include "tier0/dbg.h"
 #include "mathlib/math_pfns.h"
 #include "mathlib/vector.h"
-#include "tier1/random.h"
+#include "tier0/random.h"
+
+#include "schemacompiler/schemaon.h"
+
 // forward declarations
 class Vector;
 class Vector2D;
@@ -31,7 +34,7 @@ class Vector2D;
 // 4D Vector4D
 //=========================================================
 
-class Vector4D					
+schema class Vector4D					
 {
 public:
 	// Members
@@ -718,6 +721,8 @@ inline void Vector4DWeightMADSSE( vec_t w, Vector4DAligned const& vInA, Vector4D
 	vOutB.AsM128() = __vmaddfp( vInB.AsM128(), temp, vOutB.AsM128() );
 #endif
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // VECTOR4D_H
 

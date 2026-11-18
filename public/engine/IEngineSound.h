@@ -15,7 +15,7 @@
 
 #include "basetypes.h"
 #include "interfaces/interfaces.h"
-#include "soundflags.h"
+#include "soundsystem/soundflags.h"
 #include "irecipientfilter.h"
 #include "utlvector.h"
 #include "engine/SndInfo.h"
@@ -24,6 +24,8 @@
 // forward declaration
 //-----------------------------------------------------------------------------
 class Vector;
+// CS:GO IEngineSound.h names the last EmitSound parameter after it
+struct CSoundParameters;
 
 // Handy defines for EmitSound
 #define SOUND_FROM_LOCAL_PLAYER		-1
@@ -74,15 +76,15 @@ public:
 	// player (client-side only)
 	virtual int EmitSound( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSoundEntry, unsigned int nSoundEntryHash, const char *pSample, 
 		float flVolume, float flAttenuation, int nSeed, int iFlags = 0, int iPitch = PITCH_NORM, 
-		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1, void *pUnknown = NULL /* (client only) */ ) = 0;
+		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1, const CSoundParameters *params = NULL ) = 0;
 
 	virtual int EmitSound( IRecipientFilter& filter, int iEntIndex, int iChannel, const char *pSoundEntry, unsigned int nSoundEntryHash, const char *pSample, 
 		float flVolume, soundlevel_t iSoundlevel, int nSeed, int iFlags = 0, int iPitch = PITCH_NORM, 
-		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1, void *pUnknown = NULL /* (client only) */ ) = 0;
+		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1, const CSoundParameters *params = NULL ) = 0;
 
 	virtual void EmitSentenceByIndex( IRecipientFilter& filter, int iEntIndex, int iChannel, int iSentenceIndex, 
 		float flVolume, soundlevel_t iSoundlevel, int nSeed, int iFlags = 0, int iPitch = PITCH_NORM,
-		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1, void *pUnknown = NULL /* (client only) */ ) = 0;
+		const Vector *pOrigin = NULL, const Vector *pDirection = NULL, CUtlVector< Vector >* pUtlVecOrigins = NULL, bool bUpdatePositions = true, float soundtime = 0.0f, int speakerentity = -1, const CSoundParameters *params = NULL ) = 0;
 
 	virtual void StopSound( int iEntIndex, int iChannel, const char *pSample, unsigned int nSoundEntryHash ) = 0;
 

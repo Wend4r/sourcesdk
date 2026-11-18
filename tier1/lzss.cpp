@@ -7,7 +7,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
-#include "tier1/lzss.h"
+#include "tier0/lzss.h"
 #include "tier0/utlbuffer.h"
 
 #define LZSS_LOOKSHIFT		4
@@ -84,7 +84,7 @@ void CLZSS::BuildHash( unsigned char *pData )
 	pList->pStart = pTarget;
 }
 
-unsigned char *CLZSS::CompressNoAlloc( unsigned char *pInput, int inputLength, unsigned char *pOutputBuf, unsigned int *pOutputSize )
+unsigned char *CLZSS::CompressNoAlloc( unsigned char *pInput, int inputLength, unsigned char *pOutputBuf, unsigned int *pOutputSize, bool bFast )
 {
 	if ( inputLength <= sizeof( lzss_header_t ) + 8 )
 	{
@@ -133,7 +133,8 @@ unsigned char *CLZSS::CompressNoAlloc( unsigned char *pInput, int inputLength, u
 		int lookAheadLength = inputLength < LZSS_LOOKAHEAD ? inputLength : LZSS_LOOKAHEAD;
 
 		lzss_node_t *pHash = m_pHashTable[pLookAhead[0]].pStart;
-		while ( pHash )
+		int nMatchesLeft = bFast ? 8 : INT_MAX;
+		while ( pHash && nMatchesLeft-- > 0 )
 		{
 			int matchLength = 0;
 			int length = lookAheadLength;
@@ -212,10 +213,10 @@ unsigned char *CLZSS::CompressNoAlloc( unsigned char *pInput, int inputLength, u
 // Compress an input buffer. Caller must free output compressed buffer.
 // Returns NULL if compression failed (i.e. compression yielded worse results)
 //-----------------------------------------------------------------------------
-unsigned char* CLZSS::Compress( unsigned char *pInput, int inputLength, unsigned int *pOutputSize )
+unsigned char* CLZSS::Compress( unsigned char *pInput, int inputLength, unsigned int *pOutputSize, bool bFast )
 {
 	unsigned char *pStart = (unsigned char *)malloc( inputLength );
-	unsigned char *pFinal = CompressNoAlloc( pInput, inputLength, pStart, pOutputSize );
+	unsigned char *pFinal = CompressNoAlloc( pInput, inputLength, pStart, pOutputSize, bFast );
 	if ( !pFinal )
 	{
 		free( pStart );

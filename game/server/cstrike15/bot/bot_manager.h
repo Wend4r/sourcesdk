@@ -14,7 +14,7 @@
 
 #include "tier0/platform.h"
 #include "mathlib/vector.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/utllinkedlist.h"
 #include "cs_bot_timers.h"
 
 class CBaseEntity;
@@ -80,8 +80,9 @@ public:
 	virtual void StartFrame() = 0;
 	// 0 is the highest priority.
 	virtual unsigned int GetPlayerPriority( CCSPlayerPawn *pPlayer ) const = 0;
-	// Empty in the base, not overridden and never called, so nothing names it.
-	virtual void Unk_9() = 0;
+	// Named by what it does: empty in the base, not overridden by CCSBotManager and never
+	// called through the vtable.
+	virtual void EmptyVirtual() = 0;
 
 public:
 	enum

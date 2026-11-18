@@ -37,6 +37,7 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 )
 
 set(SOURCESDK_MATHLIB_SOURCE_FILES
+	${SOURCESDK_MATHLIB_DIR}/almostequal.cpp
 	${SOURCESDK_MATHLIB_DIR}/anorms.cpp
 	${SOURCESDK_MATHLIB_DIR}/bumpvects.cpp
 	${SOURCESDK_MATHLIB_DIR}/color_conversion.cpp
@@ -51,6 +52,7 @@ set(SOURCESDK_MATHLIB_SOURCE_FILES
 	${SOURCESDK_MATHLIB_DIR}/randsse.cpp
 	${SOURCESDK_MATHLIB_DIR}/simdvectormatrix.cpp
 	${SOURCESDK_MATHLIB_DIR}/sparse_convolution_noise.cpp
+	${SOURCESDK_MATHLIB_DIR}/spherical.cpp
 	${SOURCESDK_MATHLIB_DIR}/sse.cpp
 	${SOURCESDK_MATHLIB_DIR}/sseconst.cpp
 	${SOURCESDK_MATHLIB_DIR}/ssenoise.cpp

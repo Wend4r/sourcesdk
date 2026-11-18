@@ -13,10 +13,10 @@
 
 #include "tier0/fasttimer.h"
 #include "tier1/utlhashmaplarge.h"
-#include "tier1/utllinkedlist.h"
-#include "tier1/utlpair.h"
-#include "tier1/utlpriorityqueue.h"
-#include "tier1/utlvector.h"
+#include "tier0/utllinkedlist.h"
+#include "tier0/utlpair.h"
+#include "tier0/utlpriorityqueue.h"
+#include "tier0/utlvector.h"
 #include "job.h"
 #include "workthreadpool.h"
 class GCConVar;
@@ -132,7 +132,7 @@ public:
 	bool BFrameFuncRunYieldingJobs( CLimitTimer &limitTimer );
 
 	// Route this message to an existing Job, or create a new one if that JobID does not exist
-	bool BRouteMsgToJob( void *pParent, IMsgNetPacket *pNetPacket, const JobMsgInfo_t &jobMsgInfo );
+	bool BRouteMsgToJob( void *pParent, IMsgNetPacket *pNetPacket, const JobMsgInfo_t &jobMsgInfo, EGCMsgContext eContext );
 
 	// Adds a new Job to the mgr and generates a JobID for it.
 	void InsertJob( CJob &job );
@@ -237,7 +237,7 @@ private:
 	bool BRouteWorkItemCompletedInternal( JobID_t jobID, bool bWorkItemCanceled, bool bShouldExist, bool bResumeImmediately );
 
 	// Create a new job for this message
-	bool BLaunchJobFromNetworkMsg( void *pParent, const JobMsgInfo_t &jobMsgInfo, IMsgNetPacket *pNetPacket );
+	bool BLaunchJobFromNetworkMsg( void *pParent, const JobMsgInfo_t &jobMsgInfo, IMsgNetPacket *pNetPacket, EGCMsgContext eContext );
 
 	// Internal add to yield list (looks at priority)
 	void AddToYieldList( CJob &job );
@@ -282,7 +282,7 @@ protected:
 	};
 	CUtlLinkedList<JobTimeout_t, int> m_ListJobTimeouts;
 	CUtlHashMapLarge<JobID_t, int> m_MapJobTimeoutsIndexByJobID;
-	void PauseJob( CJob &job, EJobPauseReason eJobPauseReason );
+	void PauseJob( CJob &job, EJobPauseReason eJobPauseReason, const char *pszResourceName );
 	void CheckForJobTimeouts( CLimitTimer &limitTimer );
 	void TimeoutJob( CJob &job );
 	bool m_bJobTimedOut;
@@ -290,7 +290,10 @@ protected:
 	typedef bool (CJobMgr::*FrameFuncFn_t)( CLimitTimer &limitTimer );
 	CUtlVector<FrameFuncFn_t> m_vecFrameFuncs;
 
-	uint64 m_nUnk110;
+	// Named by what it does: no code touches it. The constructors, the destructors and every
+	// CJobMgr function of server.dll and libserver.so leave these 8 bytes alone, yet the work
+	// thread pool starts after them on both ABIs.
+	uint64 m_nUnused;
 
 	// thread pool usage, for running job functions in other threads
 	CWorkThreadPool m_WorkThreadPool;
@@ -372,9 +375,9 @@ inline void Job_SetJobType( CJob &job, const JobType_t *pJobType )
 //-----------------------------------------------------------------------------
 // Purpose: job registration macro
 //-----------------------------------------------------------------------------
-#define GC_REG_JOB( parentclass, jobclass, jobname, msg, servertype ) \
+#define GC_REG_JOB( parentclass, jobclass, jobname, msg, contexts ) \
 	GCSDK::CJob *CreateJob_##jobclass( parentclass *pParent, void * pvStartParam ); \
-	static const GCSDK::JobType_t g_JobType_##jobclass = { jobname, (GCSDK::MsgType_t)msg, servertype, (GCSDK::JobCreationFunc_t)CreateJob_##jobclass }; \
+	static const GCSDK::JobType_t g_JobType_##jobclass = { jobname, (GCSDK::MsgType_t)msg, (uint32)( contexts ), (GCSDK::JobCreationFunc_t)CreateJob_##jobclass }; \
 	GCSDK::CJob *CreateJob_##jobclass( parentclass *pParent, void * pvStartParam ) \
 	{ \
 		GCSDK::CJob *job = GCSDK::CJob::AllocateJob<jobclass>( pParent ); \
@@ -401,9 +404,9 @@ inline void Job_SetJobType( CJob &job, const JobType_t *pJobType )
 //-----------------------------------------------------------------------------
 // Purpose: job registration macro for job triggered by web api request
 //-----------------------------------------------------------------------------
-#define REG_WEBAPI_JOB( parentclass, jobclass, jobname, servertype ) \
+#define REG_WEBAPI_JOB( parentclass, jobclass, jobname, contexts ) \
 	CJob *CreateJob_##jobclass( parentclass *pParent, void * pvStartParam ); \
-	static const JobType_t g_JobType_##jobclass = { jobname, k_EGCMsgInvalid, servertype, (JobCreationFunc_t)CreateJob_##jobclass }; \
+	static const JobType_t g_JobType_##jobclass = { jobname, k_EGCMsgInvalid, (uint32)( contexts ), (JobCreationFunc_t)CreateJob_##jobclass }; \
 	CJob *CreateJob_##jobclass( parentclass *pParent, void * pvStartParam ) \
 { \
 	CJob *job = CJob::AllocateJob<jobclass>( pParent ); \

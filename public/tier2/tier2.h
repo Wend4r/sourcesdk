@@ -16,11 +16,11 @@
 #include "tier2_logging.h"
 
 struct ResourceManifestDesc_t;
+
 class IRenderDeviceSetup
 {
 public:
-	virtual ~IRenderDeviceSetup() = 0;
-	virtual bool CreateRenderDevice(IRenderDeviceSetup* ) = 0;
+	virtual bool CreateRenderDevice() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -68,51 +68,6 @@ class CTier2Application : public CTier1Application
 public:
 	CAppSystemDict* m_pDict;
 	int m_nAppTier2LibraryConnects;
-};
-
-class CTier2AppSystemDict : public CTier1AppSystemDict
-{
-public:
-	CUtlStringMap<int> m_unk808;
-	CUtlStringMap<int> m_addonRefcounts;
-	CUtlVector<void*> m_StartupManifests;
-	int m_nStartupManifestSuppressionCount;
-	bool m_bStaleStartupResources;
-	bool m_bUseModPathBinDir;
-	bool m_bLibrariesConnected;
-	bool m_bEnsureToolStartupManifests;
-	bool m_bEnsureVRStartupManifests;
-	bool m_bEnsureGameStartupManifests;
-	bool m_bEnsureConsoleStartupManifests;
-	bool m_bAddonsOnRestricted;
-	CInterlockedInt m_nAllowAddonChanges;
-	CUtlString m_addonToRestrictTo;
-	IUGCAddonPathResolver *m_pUGCAddonPathResolver;
-	CUtlString m_LogFilename;
-	CUtlString m_LogFileSuffix;
-	bool m_bLogToFile;
-	LoggingFileHandle_t m_bLogFileHandle;
-	CFileLoggingListener m_LogToFileListener;
-};
-
-class CMaterialSystem2AppSystemDict : public CTier2AppSystemDict, public IRenderDeviceSetup
-{
-public:
-	void* m_unk1168;
-	void* m_hSwapChain;
-	int m_nThreadCount;
-	CreateInterfaceFn m_RenderFactory;
-	CUtlString m_WindowTitle;
-	CUtlString m_WindowIcon;
-	CUtlString m_DefaultRenderSystemOption;
-	bool m_unk1224;
-	CUtlString m_WindowInitialImage;
-	bool m_bUnk1240;
-	bool m_bInitWithoutMaterialSystem;
-	bool m_bEnableExtendedMaterialInfo;
-	bool m_bDefaultToRendersystemEmpty;
-	bool m_bDiscardMouseFocusClick;
-	bool m_bRenderSystemOptionOnCommandLine;
 };
 
 //-----------------------------------------------------------------------------

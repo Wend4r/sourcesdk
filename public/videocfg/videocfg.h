@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 #include "shaderapi/IShaderDevice.h"
 
 class KeyValues;

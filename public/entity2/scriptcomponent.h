@@ -5,10 +5,12 @@
 #pragma once
 #endif
 
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
 #include "entity2/entitycomponent.h"
-#include "variant.h"
+#include "entity2/variant.h"
+
+#include "schemacompiler/schemaon.h"
 
 FORWARD_DECLARE_HANDLE( HSCRIPT );
 
@@ -18,9 +20,11 @@ struct CEntityPrecacheContext;
 
 // Script side of an entity whose class is implemented in script. The game allocates it with new when the public
 // script scope of the entity is created and frees it when that scope is released; the component helper does neither.
-class CScriptComponent : public CEntityComponent
+schema class CScriptComponent : public CEntityComponent
 {
 public:
+	TYPEMETA( MGetKV3ClassDefaults; MHasKV3TransferPolymorphicClassname );
+
 	enum ScopeFlags_t
 	{
 		// The scope handle is the script instance owned by the script system; releasing the component does not release it.
@@ -44,8 +48,7 @@ public:
 	// Not overridden here: Schema_DynamicBinding, GetDataDescMap, GetSchemaBinding and GetComponentHelper.
 	// The game returns module-owned statics from them: the schema binding of "CScriptComponent", an empty datamap
 	// named "CEntityComponent" and the lazily registered component helper named "ScriptComponent".
-	void KV3TransferSave( CKV3TransferSaveContext *pContext ) const override {}
-	void KV3TransferLoad( CKV3TransferLoadContext *pContext ) override;
+	CLASS_USES_KV3TRANSFER_VIRTUAL_OVERRIDE( CScriptComponent );
 	const char *GetComponentName() override { return "CScriptComponent"; }
 
 	// The script class instance; "Dispatch*" functions of the script system receive it.
@@ -88,22 +91,24 @@ protected:
 public:
 	// The members before m_pOwner belong to the game's second base CScriptScopeT< CDefScriptAccessorBase, true >,
 	// which directly follows the vtable pointer. Its layout differs from the SDK script scope template.
-	HSCRIPT m_hScope;
+	noschema HSCRIPT m_hScope;
 
 	// The game's vectors here are a pointer to their block, null when empty rather than the static empty block
 	// CUtlVectorUltraConservative expects, so they are kept as the block pointers.
-	FuncHandles_t *m_pFuncHandles;
+	noschema FuncHandles_t *m_pFuncHandles;
 
 	// Initialization with a script instance sets it to 3, SCOPE_EXTERNAL and an unidentified bit.
-	int m_nScopeFlags;
+	noschema int m_nScopeFlags;
 
-	CEntityOwnerPtr m_pOwner;
+	noschema CEntityOwnerPtr m_pOwner;
 
 	// Outputs declared by the script class, one per output descriptor the script system registered for it:
 	// an int count followed by the aligned outputs, null when empty. See GetScriptOutputs.
-	void *m_pScriptOutputs;
+	noschema void *m_pScriptOutputs;
 
-	CUtlSymbolLarge m_scriptClassName;
+	CUtlSymbolLarge m_scriptClassName; META( MNotSaved );
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SCRIPTCOMPONENT_H

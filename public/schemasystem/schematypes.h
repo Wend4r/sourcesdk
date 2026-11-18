@@ -8,9 +8,14 @@
 
 #include "tier0/logging.h"
 #include "tier0/threadtools.h"
+#include "tier0/strtools.h"
 #include "tier0/utlstring.h"
-#include "tier1/generichash.h"
-#include "tier1/utlmap.h"
+#include "tier0/generichash.h"
+#include "tier0/utlmap.h"
+#include "schemasystem/baseschema.h"
+#include "schemalib/schemametadata_data.h"
+#include "schemalib/schemaenuminfo_data.h"
+#include "schemalib/schemaenuminfo.h"
 
 class ISchemaSystemTypeScope;
 class CSchemaSystemTypeScope;
@@ -70,6 +75,10 @@ enum SchemaEnumFlags_t : uint8
 	SCHEMA_EF_IS_REGISTERED = (1 << 0),
 	SCHEMA_EF_MODULE_LOCAL_TYPE_SCOPE = (1 << 1),
 	SCHEMA_EF_GLOBAL_TYPE_SCOPE = (1 << 2),
+	SCHEMA_EF_UNSIGNED_STORAGE_TYPE = (1 << 3),
+	SCHEMA_EF_IS_FLAGS = (1 << 4),
+	SCHEMA_EF_IS_ENUM_CLASS = (1 << 5),
+	SCHEMA_EF_IGNORE_TYPE_SCOPE_META_CHECKS = (1 << 6), // MIgnoreTypeScopeMetaChecks
 };
 
 enum SchemaTypeCategory_t : uint8
@@ -92,25 +101,6 @@ enum SchemaAtomicCategory_t : uint8
 	SCHEMA_ATOMIC_TT,
 	SCHEMA_ATOMIC_I,
 	SCHEMA_ATOMIC_INVALID,
-};
-
-enum SchemaBuiltinType_t
-{
-	SCHEMA_BUILTIN_TYPE_INVALID = 0,
-	SCHEMA_BUILTIN_TYPE_VOID,
-	SCHEMA_BUILTIN_TYPE_CHAR,
-	SCHEMA_BUILTIN_TYPE_INT8,
-	SCHEMA_BUILTIN_TYPE_UINT8,
-	SCHEMA_BUILTIN_TYPE_INT16,
-	SCHEMA_BUILTIN_TYPE_UINT16,
-	SCHEMA_BUILTIN_TYPE_INT32,
-	SCHEMA_BUILTIN_TYPE_UINT32,
-	SCHEMA_BUILTIN_TYPE_INT64,
-	SCHEMA_BUILTIN_TYPE_UINT64,
-	SCHEMA_BUILTIN_TYPE_FLOAT32,
-	SCHEMA_BUILTIN_TYPE_FLOAT64,
-	SCHEMA_BUILTIN_TYPE_BOOL,
-	SCHEMA_BUILTIN_TYPE_COUNT,
 };
 
 // Works in combination with SchemaClassManipulatorFn_t
@@ -321,22 +311,21 @@ SCHEMATYPE_ENTRY( CSchemaType_DeclaredEnum, SCHEMA_TYPE_DECLARED_ENUM, SCHEMA_AT
 SCHEMATYPE_ENTRY( CSchemaType_FixedArray, SCHEMA_TYPE_FIXED_ARRAY, SCHEMA_ATOMIC_INVALID );
 SCHEMATYPE_ENTRY( CSchemaType_Bitfield, SCHEMA_TYPE_BITFIELD, SCHEMA_ATOMIC_INVALID );
 
-struct SchemaMetadataEntryData_t
-{
-	const char* m_pszName;
-	void* m_pData;
-};
-
 struct SchemaClassFieldData_t
 {
 	const char* m_pszName;
-	
+
+	// Before registration: 0xF top nibble with an index into the registered schema types, or null until SCHEMA_CLASS_MANIPULATOR_ACTION_REGISTER fills it in
 	CSchemaType* m_pType;
-	
+
 	int m_nSingleInheritanceOffset;
-	
-	int m_nStaticMetadataCount;
+
+	uint16 m_nStaticMetadataCount;
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
+};
+
+class CSchemaClassField : public SchemaClassFieldData_t
+{
 };
 
 struct SchemaStaticFieldData_t
@@ -347,8 +336,12 @@ struct SchemaStaticFieldData_t
 	
 	void* m_pInstance;
 	
-	int m_nStaticMetadataCount;
+	uint16 m_nStaticMetadataCount;
 	SchemaMetadataEntryData_t* m_pStaticMetadata;
+};
+
+class CSchemaStaticField : public SchemaStaticFieldData_t
+{
 };
 
 struct SchemaBaseClassInfoData_t
@@ -389,6 +382,7 @@ struct SchemaClassInfoData_t
 	
 	SchemaClassManipulatorFn_t m_pfnManipulator;
 
+#if defined(CS2) || defined(DOTA2) || defined(DEADLOCK)
 	// Fatal for a class that does not allow it
 	void DestructInPlace( void *pObject ) const
 	{
@@ -398,6 +392,7 @@ struct SchemaClassInfoData_t
 		if ( !m_pfnManipulator || !m_pfnManipulator( SCHEMA_CLASS_MANIPULATOR_ACTION_DESCTRUCT_IN_PLACE, pObject ) )
 			Plat_FatalError( "%s: %s\n", m_pszName, "Cannot destruct abstract class" );
 	}
+#endif // defined(CS2) || defined(DOTA2) || defined(DEADLOCK)
 
 	CSchemaClassInfo* GetParent()
 	{
@@ -410,45 +405,28 @@ struct SchemaClassInfoData_t
 
 class CSchemaClassInfo : public SchemaClassInfoData_t
 {
+public:
+	SchemaCollectionManipulatorFn_t GetCollectionManipulator( const char *pszField )
+	{
+		for ( CSchemaClassInfo *pClass = this; pClass; pClass = pClass->GetParent() )
+		{
+			for ( int i = 0; i < pClass->m_nFieldCount; ++i )
+			{
+				const auto &field = pClass->m_pFields[ i ];
+				if ( V_strcmp( field.m_pszName, pszField ) )
+					continue;
+
+				if ( !field.m_pType->IsA< CSchemaType_Atomic_CollectionOfT >() )
+					return nullptr;
+
+				return static_cast< CSchemaType_Atomic_CollectionOfT * >( field.m_pType )->m_pfnManipulator;
+			}
+		}
+
+		return nullptr;
+	}
 };
 
-struct SchemaEnumeratorInfoData_t
-{
-	const char* m_pszName;
-	
-	int64 m_nValue;
-	
-	int m_nStaticMetadataCount;
-	SchemaMetadataEntryData_t* m_pStaticMetadata;
-};
-
-struct SchemaEnumInfoData_t
-{
-	CSchemaEnumInfo* m_pSchemaBinding;
-	
-	const char* m_pszName;
-	const char* m_pszProjectName;
-	
-	uint8 m_nSize;
-	uint8 m_nAlignment;
-	
-	uint8 m_nFlags;
-
-	uint16 m_nEnumeratorCount;
-	uint16 m_nStaticMetadataCount;
-	
-	SchemaEnumeratorInfoData_t* m_pEnumerators;
-	SchemaMetadataEntryData_t* m_pStaticMetadata;
-	
-	CSchemaSystemTypeScope* m_pTypeScope;
-	
-	int64 m_nMinEnumeratorValue;
-	int64 m_nMaxEnumeratorValue;
-};
-
-class CSchemaEnumInfo : public SchemaEnumInfoData_t
-{
-};
 
 struct SchemaAtomicTypeInfo_t
 {

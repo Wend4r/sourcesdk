@@ -36,10 +36,12 @@
 #include "mathlib/vector4d.h"
 #include "mathlib/mathlib.h"
 
+#include "schemacompiler/schemaon.h"
+
 struct cplane_t;
 
 
-class VMatrix
+schema class VMatrix
 {
 public:
 
@@ -1003,6 +1005,8 @@ inline void ExtractClipPlanesFromTransposedMatrix( const VMatrix &transposedView
 // This function always returns normalized planes.
 //-----------------------------------------------------------------------------
 void ExtractClipPlanesFromNonTransposedMatrix( const VMatrix &viewProjMatrix, VPlane *pPlanesOut, bool bD3DClippingRange = true );
+
+#include "schemacompiler/schemaoff.h"
 
 #endif
 

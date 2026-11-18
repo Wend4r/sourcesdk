@@ -13,6 +13,8 @@
 
 #include "mathlib/ssemath.h"
 
+#include "schemacompiler/schemaon.h"
+
 // Use this #define to allow SSE versions of Quaternion math
 // to exist on PC.
 // On PC, certain horizontal vector operations are not supported.
@@ -456,9 +458,11 @@ FORCEINLINE fltx4 QuaternionSlerpSIMD( const fltx4 &p, const fltx4 &q, float t )
 
 /// class FourVectors stores 4 independent vectors for use in SIMD processing. These vectors are
 /// stored in the format x x x x y y y y z z z z so that they can be efficiently SIMD-accelerated.
-class ALIGN16 FourQuaternions
+schema class ALIGN16 FourQuaternions
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( FourQuaternions );
+
 	fltx4 x,y,z,w;
 
 	FourQuaternions(void)
@@ -1258,6 +1262,8 @@ inline void FourVectors::RotateBy( const FourQuaternions &quats )
 }
 */
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SSEQUATMATH_H
 

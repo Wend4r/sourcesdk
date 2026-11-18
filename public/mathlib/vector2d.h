@@ -20,10 +20,12 @@
 #include "tier0/basetypes.h"
 
 // For RandomFloat()
-#include "tier1/random.h"
+#include "tier0/random.h"
 
 #include "tier0/dbg.h"
 #include "mathlib/math_pfns.h"
+
+#include "schemacompiler/schemaon.h"
 
 #ifndef M_PI
 	#define M_PI		3.14159265358979323846	// matches value in gcc v2 math.h
@@ -43,7 +45,7 @@ extern void SinCos( float radians, float * RESTRICT sine, float * RESTRICT cosin
 // 2D Vector2D
 //=========================================================
 
-class Vector2D
+schema class Vector2D
 {
 public:
 	// Members
@@ -641,6 +643,8 @@ inline Vector2D operator*(float fl, const Vector2D& v)
 }
 
 #endif //slow
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // VECTOR2D_H
 

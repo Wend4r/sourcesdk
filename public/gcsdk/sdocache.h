@@ -11,8 +11,8 @@
 #endif
 
 #include "tier1/utlhashmaplarge.h"
-#include "tier1/utlqueue.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlqueue.h"
+#include "tier0/utlvector.h"
 #include <algorithm>
 
 namespace GCSDK

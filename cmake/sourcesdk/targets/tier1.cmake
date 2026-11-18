@@ -37,15 +37,12 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 )
 
 set(SOURCESDK_TIER1_SOURCE_FILES
-	${SOURCESDK_TIER1_DIR}/bitbuf.cpp
-	${SOURCESDK_TIER1_DIR}/convar.cpp
 	${SOURCESDK_TIER1_DIR}/generichash.cpp
 	${SOURCESDK_TIER1_DIR}/newbitbuf.cpp
 	${SOURCESDK_TIER1_DIR}/processor_detect.cpp
 	${SOURCESDK_TIER1_DIR}/rangecheckedvar.cpp
 	${SOURCESDK_TIER1_DIR}/tier1.cpp
 	${SOURCESDK_TIER1_DIR}/utlbufferutil.cpp
-	${SOURCESDK_TIER1_DIR}/keyvalues3.cpp
 )
 
 add_library(${SOURCESDK_TIER1_NAME} STATIC ${SOURCESDK_TIER1_SOURCE_FILES})

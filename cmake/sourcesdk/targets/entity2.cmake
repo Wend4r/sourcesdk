@@ -29,6 +29,7 @@ set(SOURCESDK_ENTITY2_INCLUDE_DIRS
 	${SOURCESDK_COMMON_DIR}
 	${SOURCESDK_PROTOBUF_SOURCE_DIR}
 	${SOURCESDK_DIR}/game/shared
+	${SOURCESDK_PUBLIC_DIR}/engine
 	${SOURCESDK_PUBLIC_ENTITY2_INCLUDE_DIR}
 	${SOURCESDK_PUBLIC_DIR}/mathlib
 	${SOURCESDK_PUBLIC_DIR}/tier0
@@ -44,12 +45,14 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 set(SOURCESDK_ENTITY2_SOURCE_FILES
 	${SOURCESDK_ENTITY2_DIR}/concreteentitylist.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityclass.cpp
+	${SOURCESDK_ENTITY2_DIR}/entitycomponent.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityhandle.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityidentity.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityinstance.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityio.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitysystem.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitykeyvalues.cpp
+	${SOURCESDK_ENTITY2_DIR}/entitynetwork.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitypulse.cpp
 	${SOURCESDK_ENTITY2_DIR}/entitypulsecallcontext.cpp
 	${SOURCESDK_ENTITY2_DIR}/entityprivatescriptscope.cpp

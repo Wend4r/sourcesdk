@@ -33,6 +33,7 @@
 	{ \
 		pDesc->m_ReturnType = ScriptDeduceType(FUNCTION_RETTYPE); \
 		FUNC_APPEND_PARAMS_##N \
+		pDesc->m_iVariantCount = 0; \
 		for (size_t i = 0; i < pDesc->m_iParamCount; ++i) \
 			if (pDesc->m_Parameters[i] == FIELD_VARIANT) \
 				++pDesc->m_iVariantCount; \
@@ -61,6 +62,7 @@ VSCRIPT_FUNC_GENERATE_ALL(DEFINE_NONMEMBER_FUNC_TYPE_DEDUCER);
 	{ \
 		pDesc->m_ReturnType = ScriptDeduceType(FUNCTION_RETTYPE); \
 		FUNC_APPEND_PARAMS_##N \
+		pDesc->m_iVariantCount = 0; \
 		for (size_t i = 0; i < pDesc->m_iParamCount; ++i) \
 			if (pDesc->m_Parameters[i] == FIELD_VARIANT) \
 				++pDesc->m_iVariantCount; \
@@ -76,6 +78,7 @@ VSCRIPT_FUNC_GENERATE_ALL( DEFINE_MEMBER_FUNC_TYPE_DEDUCER );
 	{ \
 		pDesc->m_ReturnType = ScriptDeduceType(FUNCTION_RETTYPE); \
 		FUNC_APPEND_PARAMS_##N \
+		pDesc->m_iVariantCount = 0; \
 		for (size_t i = 0; i < pDesc->m_iParamCount; ++i) \
 			if (pDesc->m_Parameters[i] == FIELD_VARIANT) \
 				++pDesc->m_iVariantCount; \
@@ -383,8 +386,8 @@ inline FUNCPTR_TYPE ScriptConvertFuncPtrFromVoid( void *p )
 				return false; \
 			} \
 			*pReturn = ((FUNC_TYPE)pFunction)( SCRIPT_BINDING_ARGS_##N ); \
-			if ( pReturn->m_type == FIELD_VECTOR ) \
-				pReturn->m_pVector = new Vector(*pReturn->m_pVector); \
+			if ( pReturn->FieldType() == FIELD_VECTOR ) \
+				pReturn->ConvertToCopiedData(); \
  			return true; \
  		} \
 	}; \
@@ -423,8 +426,8 @@ inline FUNCPTR_TYPE ScriptConvertFuncPtrFromVoid( void *p )
 				return false; \
 			} \
 			*pReturn = (((OBJECT_TYPE_PTR)(pContext))->*ScriptConvertFuncPtrFromVoid<FUNC_TYPE>(pFunction))( SCRIPT_BINDING_ARGS_##N ); \
-			if ( pReturn->m_type == FIELD_VECTOR ) \
-				pReturn->m_pVector = new Vector(*pReturn->m_pVector); \
+			if ( pReturn->FieldType() == FIELD_VECTOR ) \
+				pReturn->ConvertToCopiedData(); \
  			return true; \
  		} \
 	}; \

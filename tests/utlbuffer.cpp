@@ -66,6 +66,18 @@ REGISTER_NAMED_TEST( "CUtlBuffer.TextMode", CUtlBuffer_TextMode )
 	TEST_TRUE( buffer.TellPut() > 0 );
 }
 
+REGISTER_NAMED_TEST( "CUtlBuffer.CombinedFlags", CUtlBuffer_CombinedFlags )
+{
+	// Buffer flags should combine without an explicit cast.
+	static_assert( ( CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY ) == 0x9 );
+
+	const char szText[] = "text";
+	CUtlBuffer buffer( szText, sizeof( szText ), CUtlBuffer::TEXT_BUFFER | CUtlBuffer::READ_ONLY );
+
+	TEST_TRUE( buffer.IsText() );
+	TEST_TRUE( buffer.IsReadOnly() );
+}
+
 REGISTER_NAMED_TEST( "CUtlBuffer.CapacitySwapCopyAndPurge", CUtlBuffer_CapacitySwapCopyAndPurge )
 {
 	// Capacity changes, copy-style swaps and purge should leave both buffers usable.
@@ -109,4 +121,41 @@ REGISTER_NAMED_TEST( "CUtlBuffer.CopyAndMove", CUtlBuffer_CopyAndMove )
 
 	assigned = Move( moved );
 	TEST_EQ( V_strcmp( ( const char * )assigned.Base(), "copy-data" ), 0 );
+}
+
+class CUtlBufferDelimitedCharTest : public CUtlBuffer
+{
+public:
+	using CUtlBuffer::CUtlBuffer;
+	using CUtlBuffer::PutDelimitedCharInternal;
+};
+
+REGISTER_NAMED_TEST( "CUtlBuffer.DelimitedCharInternal", CUtlBuffer_DelimitedCharInternal )
+{
+	// The inline helper writes the same escapes as the exported PutDelimitedChar.
+	const char szChars[] = "a\"\\\n\tz";
+
+	CUtlBufferDelimitedCharTest inlineBuffer( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	CUtlBuffer exportedBuffer( 0, 0, CUtlBuffer::TEXT_BUFFER );
+
+	for ( const char *p = szChars; *p; p++ )
+	{
+		inlineBuffer.PutDelimitedCharInternal( GetCStringCharConversion(), *p );
+		exportedBuffer.PutDelimitedChar( GetCStringCharConversion(), *p );
+	}
+
+	TEST_EQ( inlineBuffer.TellPut(), exportedBuffer.TellPut() );
+	TEST_TRUE( inlineBuffer.TellPut() > ( int )( sizeof( szChars ) - 1 ) );
+	TEST_EQ( memcmp( inlineBuffer.Base(), exportedBuffer.Base(), exportedBuffer.TellPut() ), 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlCharConversion.Copy", CUtlCharConversion_Copy )
+{
+	// A copy converts like the conversion of tier0 it was made from.
+	CUtlCharConversion copy( *GetCStringCharConversion() );
+	CUtlCharConversion assigned = copy;
+
+	TEST_EQ( copy.GetEscapeChar(), GetCStringCharConversion()->GetEscapeChar() );
+	TEST_EQ( assigned.GetConversionLength( '\n' ), GetCStringCharConversion()->GetConversionLength( '\n' ) );
+	TEST_EQ( strcmp( assigned.GetConversionString( '\n' ), GetCStringCharConversion()->GetConversionString( '\n' ) ), 0 );
 }

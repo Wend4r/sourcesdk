@@ -7,400 +7,244 @@
 /* This is totally reverse-engineered code and may be wrong */
 
 #include "tier0/dbg.h"
+#include "tier0/bufferstring.h"
+#include "tier0/strtools.h"
 #include "interfaces/interfaces.h"
+#include "resourcefile/manifestregistrar.h"
+#include "schemasystem/schemaregistration.h"
+#include "schemasystem/schemasystem.h"
 
-IApplication *g_pApplication;
-ICvar *cvar, *g_pCVar;
-IUtlStringTokenSystem *g_pStringTokenSystem;
-ITestScriptMgr *g_pTestScriptMgr;
-IProcessUtils *g_pProcessUtils;
-IFileSystem *g_pFullFileSystem;
-IAsyncFileSystem *g_pAsyncFileSystem;
-IResourceSystem *g_pResourceSystem;
-IResourceManifestRegistry *g_pResourceManifestRegistry;
-IResourceHandleUtils *g_pResourceHandleUtils;
-ISchemaSystem *g_pSchemaSystem;
-IResourceCompilerSystem *g_pResourceCompilerSystem;
-IMaterialSystem2 *g_pMaterialSystem2;
-IPostProcessingSystem *g_pPostProcessingSystem;
-IInputSystem *g_pInputSystem;
-IInputStackSystem *g_pInputStackSystem;
-IRenderDeviceMgr *g_pRenderDeviceMgr;
-IRenderUtils *g_pRenderUtils;
-ISoundSystem *g_pSoundSystem;
-ISoundOpSystemEdit *g_pSoundOpSystemEdit;
-ISoundOpSystem *g_pSoundOpSystem;
-ISteamAudio *g_pSteamAudio;
-IP4 *g_pP4;
-ILocalize *g_pLocalize;
-IMediaFoundation *g_pMediaFoundation;
-IGameTypes *g_pGameTypes;
-IAvi *g_pAVI;
-IWebm *g_pWebm;
-IBik *g_pBIK;
-IMeshSystem *g_pMeshSystem;
-IMeshUtils *g_pMeshUtils;
-IRenderDevice *g_pRenderDevice;
-IRenderDeviceSetup *g_pRenderDeviceSetup;
-IRenderHardwareConfig *g_pRenderHardwareConfig;
-ISceneSystem *g_pSceneSystem;
-IPulseSystem *g_pPulseSystem;
-ISceneUtils *g_pSceneUtils;
-IWorldRendererMgr *g_pWorldRendererMgr;
-IAssetSystem *g_pAssetSystem;
-IAssetSystemTest *g_pAssetSystemTest;
-IParticleSystemMgr *g_pParticleSystemMgr;
-IScriptManager *g_pScriptManager;
-IPropertyEditorSystem *g_pPropertyEditorSystem;
-IMatchFramework *g_pMatchFramework;
-ISource2V8System *g_pV8System;
-IPanoramaUIEngine *g_pPanoramaUIEngine;
-IPanoramaUIClient *g_pPanoramaUIClient;
-panorama::IUITextServices *g_IUITextServices;
-IToolFramework2 *g_pToolFramework2;
-IMapBuilderMgr *g_pPhysicsBuilderMgr;
-IMapBuilderMgr *g_pVisBuilderMgr;
-IMapBuilderMgr *g_pBakedLODBuilderMgr;
-IHelpSystem *g_pHelpSystem;
-IToolSceneNodeFactory *g_pToolSceneNodeFactory;
-IEconItemToolModel *g_pEconItemToolModel;
-ISchemaTestExternal_Two *g_pSchemaTestExternal_Two;
-ISchemaTestExternal_One *g_pSchemaTestExternal_One;
-IAnimationSystem *g_pAnimationSystem;
-IAnimationSystemUtils *g_pAnimationSystemUtils;
-IHammerMapLoader *g_pHammerMapLoader;
-IMaterialSystem2Utils *g_pMaterialSystem2Utils;
-IFontManager *g_pFontManager;
-ITextLayout *g_pTextLayout;
-IAssetPreviewSystem *g_pAssetPreviewSystem;
-IAssetBrowserSystem *g_pAssetBrowserSystem;
-IAssetRenameSystem *g_pAssetRenameSystem;
-IVConComm *g_pVConComm;
-IModelProcessingServices *g_pModelProcessingServices;
-INetworkSystem *g_pNetworkSystem;
-INetworkMessages *g_pNetworkMessages;
-IFlattenedSerializers *g_pFlattenedSerializers;
-ISerializedEntities *g_pSerializedEntities;
-IDemoUpconverter *g_pDemoUpconverter;
-ISource2Client *g_pSource2Client;
-IClientUI *g_pIClientUI;
-IPrediction2 *g_pClientSidePrediction;
-ISource2Server *g_pSource2Server;
-ISource2ServerConfig *g_pSource2ServerConfig;
-ISource2Host *g_pSource2Host;
-ISource2ModTools *g_pSource2ModTools;
-ISource2GameClients *g_pSource2GameClients;
-ISource2GameEntities *g_pSource2GameEntities;
-IEngineServiceMgr *g_pEngineServiceMgr;
-IHostStateMgr *g_pHostStateMgr;
-INetworkService *g_pNetworkService;
-INetworkClientService *g_pNetworkClientService;
-INetworkP2PService *g_pNetworkP2PService;
-INetworkServerService *g_pNetworkServerService;
-IToolService *g_pToolService;
-IRenderService *g_pRenderService;
-IStatsService *g_pStatsService;
-IVProfService *g_pVProfService;
-IInputService *g_pInputService;
-IMapListService *g_pMapListService;
-IGameUIService *g_pGameUIService;
-ISoundService *g_pSoundService;
-IBenchmarkService *g_pBenchmarkService;
-IKeyValueCache *g_pKeyValueCache;
-IClientServerSharedHandleSystem *g_pClientServerSharedHandleSystem;
-IGameResourceService *g_pGameResourceServiceClient;
-IGameResourceService *g_pGameResourceServiceServer;
-IVEngineClient2 *g_pEngineClient;
-IVEngineServer2 *g_pEngineServer;
-INetworkStringTableContainer *g_pNetworkStringTableServer;
-INetworkStringTableContainer *g_pNetworkStringTableClient;
-IVPhysics2 *g_pVPhysics2;
-VPhys2HandleInterface *g_pVPhys2HandleInterface;
-IModelDocUtils *g_pModelDocUtils;
-IAnimGraphEditorUtils *g_pAnimGraphEditorUtils;
-IExportSystem *g_pExportSystem;
-IServerToolsInfo *g_pServerToolsInfo;
-IClientToolsInfo *g_pClientToolsInfo;
-IVRAD3 *g_pVRAD3;
-INavSystem *g_pNavSystem;
-INavGameTest *g_pNavGameTest;
-ILocalServerClientAccess *g_pLocalServerClientAccess;
-IClientLocalServerAccess *g_pClientLocalServerAccess;
+#if defined( POSIX )
+#include <dlfcn.h>
+#endif
 
-struct InterfaceGlobals_t
+// Reported through BPL_PROJECTNAME
+#ifndef MODULE_PROJECT_NAME
+#define MODULE_PROJECT_NAME "sourcesdk"
+#endif
+
+// Reported through BPL_BUILDCONFIGURATION, BPL_ISDEBUG and BPL_ISRELEASE, CMake passes the build configuration
+#ifndef MODULE_BUILD_CONFIGURATION
+#ifdef _DEBUG
+#define MODULE_BUILD_CONFIGURATION "Debug"
+#else
+#define MODULE_BUILD_CONFIGURATION "Release"
+#endif
+#endif
+
+#ifndef MODULE_BUILD_IS_DEBUG
+#ifdef _DEBUG
+#define MODULE_BUILD_IS_DEBUG 1
+#else
+#define MODULE_BUILD_IS_DEBUG 0
+#endif
+#endif
+
+// ------------------------------------------------------------------------------------ //
+// GetNameOfModule.
+// The engine bakes the file name in per module, the SDK resolves it from its own address.
+// ------------------------------------------------------------------------------------ //
+const char *GetNameOfModule()
 {
-	const char *m_pInterfaceName;
-	void *m_ppGlobal;
-};
+	static char s_szModuleName[MAX_PATH] = "";
 
-struct ConnectionRegistration_t
-{
-	void *m_ppGlobalStorage;
-	int m_nConnectionPhase;
-};
-
-static const InterfaceGlobals_t g_pInterfaceGlobals[] =
-{
-	{ APPLICATION_INTERFACE_VERSION, &g_pApplication },
-	{ CVAR_INTERFACE_VERSION, &g_pCVar },
-	{ STRINGTOKENSYSTEM_INTERFACE_VERSION, &g_pStringTokenSystem },
-	{ TESTSCRIPTMANAGER_INTERFACE_VERSION, &g_pTestScriptMgr },
-	{ PROCESSUTILS_INTERFACE_VERSION, &g_pProcessUtils },
-	{ FILESYSTEM_INTERFACE_VERSION, &g_pFullFileSystem },
-	{ ASYNCFILESYSTEM_INTERFACE_VERSION, &g_pAsyncFileSystem },
-	{ RESOURCESYSTEM_INTERFACE_VERSION, &g_pResourceSystem },
-	{ RESOURCEMANIFESTREGISTRY_INTERFACE_VERSION, &g_pResourceManifestRegistry },
-	{ RESOURCEHANDLEUTILS_INTERFACE_VERSION, &g_pResourceHandleUtils },
-	{ SCHEMASYSTEM_INTERFACE_VERSION, &g_pSchemaSystem },
-	{ RESOURCECOMPILERSYSTEM_INTERFACE_VERSION, &g_pResourceCompilerSystem },
-	{ MATERIAL_SYSTEM2_INTERFACE_VERSION, &g_pMaterialSystem2 },
-	{ POSTPROCESSINGSYSTEM_INTERFACE_VERSION, &g_pPostProcessingSystem },
-	{ INPUTSYSTEM_INTERFACE_VERSION, &g_pInputSystem },
-	{ INPUTSTACKSYSTEM_INTERFACE_VERSION, &g_pInputStackSystem },
-	{ RENDER_DEVICE_MGR_INTERFACE_VERSION, &g_pRenderDeviceMgr },
-	{ RENDER_UTILS_INTERFACE_VERSION, &g_pRenderUtils },
-	{ SOUNDSYSTEM_INTERFACE_VERSION, &g_pSoundSystem },
-	{ SOUNDOPSYSTEMEDIT_INTERFACE_VERSION, &g_pSoundOpSystemEdit },
-	{ SOUNDOPSYSTEM_INTERFACE_VERSION, &g_pSoundOpSystem },
-	{ STEAMAUDIO_INTERFACE_VERSION, &g_pSteamAudio },
-	{ P4_INTERFACE_VERSION, &g_pP4 },
-	{ LOCALIZE_INTERFACE_VERSION, &g_pLocalize },
-	{ MEDIA_FOUNDATION_INTERFACE_VERSION, &g_pMediaFoundation },
-	{ AVI_INTERFACE_VERSION, &g_pAVI },
-	{ WEBM_INTERFACE_VERSION, &g_pWebm },
-	{ BIK_INTERFACE_VERSION, &g_pBIK },
-	{ MESHSYSTEM_INTERFACE_VERSION, &g_pMeshSystem },
-	{ MESHUTILS_INTERFACE_VERSION, &g_pMeshUtils },
-	{ RENDER_DEVICE_INTERFACE_VERSION, &g_pRenderDevice },
-	{ RENDER_DEVICE_SETUP_INTERFACE_VERSION, &g_pRenderDeviceSetup },
-	{ RENDER_HARDWARECONFIG_INTERFACE_VERSION, &g_pRenderHardwareConfig },
-	{ SCENESYSTEM_INTERFACE_VERSION, &g_pSceneSystem },
-	{ PULSESYSTEM_INTERFACE_VERSION, &g_pPulseSystem },
-	{ SCENEUTILS_INTERFACE_VERSION, &g_pSceneUtils },
-	{ WORLD_RENDERER_MGR_INTERFACE_VERSION, &g_pWorldRendererMgr },
-	{ ASSETSYSTEM_INTERFACE_VERSION, &g_pAssetSystem },
-	{ ASSETSYSTEMTEST_INTERFACE_VERSION, &g_pAssetSystemTest },
-	{ PARTICLESYSTEMMGR_INTERFACE_VERSION, &g_pParticleSystemMgr },
-	{ SCRIPTMANAGER_INTERFACE_VERSION, &g_pScriptManager },
-	{ PROPERTYEDITORSYSTEM_INTERFACE_VERSION, &g_pPropertyEditorSystem },
-	{ MATCHFRAMEWORK_INTERFACE_VERSION, &g_pMatchFramework },
-	{ V8SYSTEM_INTERFACE_VERSION, &g_pV8System },
-	{ PANORAMAUIENGINE_INTERFACE_VERSION, &g_pPanoramaUIEngine },
-	{ PANORAMAUICLIENT_INTERFACE_VERSION, &g_pPanoramaUIClient },
-	{ PANORAMATEXTSERVICES_INTERFACE_VERSION, &g_IUITextServices },
-	{ TOOLFRAMEWORK2_INTERFACE_VERSION, &g_pToolFramework2 },
-	{ PHYSICSBUILDER_INTERFACE_VERSION, &g_pPhysicsBuilderMgr },
-	{ VISBUILDER_INTERFACE_VERSION, &g_pVisBuilderMgr },
-	{ BAKEDLODBUILDER_INTERFACE_VERSION, &g_pBakedLODBuilderMgr },
-	{ HELPSYSTEM_INTERFACE_VERSION, &g_pHelpSystem },
-	{ TOOLSCENENODEFACTORY_INTERFACE_VERSION, &g_pToolSceneNodeFactory },
-	{ ECONITEMTOOLMODEL_INTERFACE_VERSION, &g_pEconItemToolModel },
-	{ SCHEMATESTEXTERNALTWO_INTERFACE_VERSION, &g_pSchemaTestExternal_Two },
-	{ SCHEMATESTEXTERNALONE_INTERFACE_VERSION, &g_pSchemaTestExternal_One },
-	{ ANIMATIONSYSTEM_INTERFACE_VERSION, &g_pAnimationSystem },
-	{ ANIMATIONSYSTEMUTILS_INTERFACE_VERSION, &g_pAnimationSystemUtils },
-	{ HAMMERMAPLOADER_INTERFACE_VERSION, &g_pHammerMapLoader },
-	{ MATERIALUTILS_INTERFACE_VERSION, &g_pMaterialSystem2Utils },
-	{ FONTMANAGER_INTERFACE_VERSION, &g_pFontManager },
-	{ TEXTLAYOUT_INTERFACE_VERSION, &g_pTextLayout },
-	{ ASSETPREVIEWSYSTEM_INTERFACE_VERSION, &g_pAssetPreviewSystem },
-	{ ASSETBROWSERSYSTEM_INTERFACE_VERSION, &g_pAssetBrowserSystem },
-	{ ASSETRENAMESYSTEM_INTERFACE_VERSION, &g_pAssetRenameSystem },
-	{ VCONCOMM_INTERFACE_VERSION, &g_pVConComm },
-	{ MODELPROCESSINGSERVICES_INTERFACE_VERSION, &g_pModelProcessingServices },
-	{ NETWORKSYSTEM_INTERFACE_VERSION, &g_pNetworkSystem },
-	{ NETWORKMESSAGES_INTERFACE_VERSION, &g_pNetworkMessages },
-	{ FLATTENEDSERIALIZERS_INTERFACE_VERSION, &g_pFlattenedSerializers },
-	{ SERIALIZEDENTITIES_INTERFACE_VERSION, &g_pSerializedEntities },
-	{ DEMOUPCONVERTER_INTERFACE_VERSION, &g_pDemoUpconverter },
-	{ SOURCE2CLIENT_INTERFACE_VERSION, &g_pSource2Client },
-	{ SOURCE2CLIENTUI_INTERFACE_VERSION, &g_pIClientUI },
-	{ SOURCE2CLIENTPREDICTION_INTERFACE_VERSION, &g_pClientSidePrediction },
-	{ SOURCE2SERVER_INTERFACE_VERSION, &g_pSource2Server },
-	{ SOURCE2HOST_INTERFACE_VERSION, &g_pSource2Host },
-	{ SOURCE2MODTOOLS_INTERFACE_VERSION, &g_pSource2ModTools },
-	{ SOURCE2GAMECLIENTS_INTERFACE_VERSION, &g_pSource2GameClients },
-	{ SOURCE2GAMEENTITIES_INTERFACE_VERSION, &g_pSource2GameEntities },
-	{ ENGINESERVICEMGR_INTERFACE_VERSION, &g_pEngineServiceMgr },
-	{ HOSTSTATEMGR_INTERFACE_VERSION, &g_pHostStateMgr },
-	{ NETWORKSERVICE_INTERFACE_VERSION, &g_pNetworkService },
-	{ NETWORKCLIENTSERVICE_INTERFACE_VERSION, &g_pNetworkClientService },
-	{ NETWORKP2PSERVICE_INTERFACE_VERSION, &g_pNetworkP2PService },
-	{ NETWORKSERVERSERVICE_INTERFACE_VERSION, &g_pNetworkServerService },
-	{ TOOLSERVICE_INTERFACE_VERSION, &g_pToolService },
-	{ RENDERSERVICE_INTERFACE_VERSION, &g_pRenderService },
-	{ STATSSERVICE_INTERFACE_VERSION, &g_pStatsService },
-	{ VPROFSERVICE_INTERFACE_VERSION, &g_pVProfService },
-	{ INPUTSERVICE_INTERFACE_VERSION, &g_pInputService },
-	{ MAPLISTSERVICE_INTERFACE_VERSION, &g_pMapListService },
-	{ GAMEUISERVICE_INTERFACE_VERSION, &g_pGameUIService },
-	{ SOUNDSERVICE_INTERFACE_VERSION, &g_pSoundService },
-	{ BENCHMARKSERVICE_INTERFACE_VERSION, &g_pBenchmarkService },
-	{ KEYVALUECACHE_INTERFACE_VERSION, &g_pKeyValueCache },
-	{ CLIENTSERVERSHAREDHANDLESYSTEM_INTERFACE_VERSION, &g_pClientServerSharedHandleSystem },
-	{ GAMERESOURCESERVICECLIENT_INTERFACE_VERSION, &g_pGameResourceServiceClient },
-	{ GAMERESOURCESERVICESERVER_INTERFACE_VERSION, &g_pGameResourceServiceServer },
-	{ SOURCE2ENGINETOCLIENT_INTERFACE_VERSION, &g_pEngineClient },
-	{ SOURCE2ENGINETOSERVER_INTERFACE_VERSION, &g_pEngineServer },
-	{ SOURCE2ENGINETOSERVERSTRINGTABLE_INTERFACE_VERSION, &g_pNetworkStringTableServer },
-	{ SOURCE2ENGINETOCLIENTSTRINGTABLE_INTERFACE_VERSION, &g_pNetworkStringTableClient },
-	{ VPHYSICS2_INTERFACE_VERSION, &g_pVPhysics2 },
-	{ MODELDOCUTILS_INTERFACE_VERSION, &g_pModelDocUtils },
-	{ ANIMGRAPHEDITORUTILS_INTERFACE_VERSION, &g_pAnimGraphEditorUtils },
-	{ EXPORTSYSTEM_INTERFACE_VERSION, &g_pExportSystem },
-	{ SERVERTOOLSINFO_INTERFACE_VERSION, &g_pServerToolsInfo },
-	{ CLIENTTOOLSINFO_INTERFACE_VERSION, &g_pClientToolsInfo },
-	{ VRAD3_INTERFACE_VERSION, &g_pVRAD3 },
-	{ NAVSYSTEM_INTERFACE_VERSION, &g_pNavSystem },
-	{ NAVGAMETEST_INTERFACE_VERSION, &g_pNavGameTest },
-	{ LOCALSERVERCLIENTACCESS_INTERFACE_VERSION, &g_pLocalServerClientAccess },
-	{ CLIENTLOCALSERVERACCESS_INTERFACE_VERSION, &g_pClientLocalServerAccess },
-};
-
-static const int NUM_INTERFACES = sizeof(g_pInterfaceGlobals) / sizeof(InterfaceGlobals_t);
-
-static int s_nConnectionCount = 0;
-static int s_nRegistrationCount = 0;
-
-static ConnectionRegistration_t s_pConnectionRegistration[NUM_INTERFACES + 1] = {};
-
-void ReconnectInterface(CreateInterfaceFn factory, char const *pInterfaceName, void **ppGlobal);
-
-void ConnectInterfaces(CreateInterfaceFn *pFactoryList, int nFactoryCount)
-{
-	if (s_nRegistrationCount < 0)
+	if ( s_szModuleName[0] )
 	{
-		//Error("APPSYSTEM: In ConnectInterfaces(), s_nRegistrationCount is %d!\n", s_nRegistrationCount);
-		Plat_ExitProcess(1);
-		s_nConnectionCount++;
-		return;
+		return s_szModuleName;
 	}
 
-	if (s_nRegistrationCount)
+	const char *pszPath = NULL;
+
+#if defined( _WIN32 )
+	char szPath[MAX_PATH];
+	HMODULE hModule = NULL;
+
+	if ( GetModuleHandleExA( GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>( &GetNameOfModule ), &hModule ) &&
+	    GetModuleFileNameA( hModule, szPath, sizeof( szPath ) ) )
 	{
-		for (int i = 0; i < nFactoryCount; i++)
+		pszPath = szPath;
+	}
+#elif defined( POSIX )
+	Dl_info info;
+
+	if ( dladdr( reinterpret_cast<void *>( &GetNameOfModule ), &info ) && info.dli_fname )
+	{
+		pszPath = info.dli_fname;
+	}
+#endif
+
+	if ( !pszPath )
+	{
+		return "";
+	}
+
+	const char *pszName = pszPath;
+
+	for ( const char *pszCur = pszPath; *pszCur; pszCur++ )
+	{
+		if ( *pszCur == '/' || *pszCur == '\\' )
 		{
-			for (int j = 0; j < NUM_INTERFACES; j++)
-			{
-				ReconnectInterface(pFactoryList[i],  g_pInterfaceGlobals[j].m_pInterfaceName, (void **)g_pInterfaceGlobals[j].m_ppGlobal);
-			}
+			pszName = pszCur + 1;
 		}
-
-		s_nConnectionCount++;
-		return;
 	}
 
-	for (int i = 0; i < nFactoryCount; i++)
-	{
-		for (int j = 0; j < NUM_INTERFACES; j++)
-		{
-			const InterfaceGlobals_t &iface = g_pInterfaceGlobals[j];
+	V_strncpy( s_szModuleName, pszName, sizeof( s_szModuleName ) );
 
-			if (!(*(void **)iface.m_ppGlobal))
+	return s_szModuleName;
+}
+
+// ------------------------------------------------------------------------------------ //
+// Schema registration
+// ------------------------------------------------------------------------------------ //
+CSchemaRegistration *CSchemaRegistration::s_pSchemaRegistrationList = NULL;
+
+void CSchemaRegistration::RegisterAllModuleData( ISchemaSystem *pSchemaSystem )
+{
+	CBufferString sFailureReason;
+
+	for ( int nPhase = SCHEMA_REGISTRATION_PHASE_TYPE_TABLES; nPhase < SCHEMA_REGISTRATION_PHASE_COUNT; nPhase++ )
+	{
+		for ( int nLoops = 999; s_pSchemaRegistrationList; )
+		{
+			CBufferString *pFailureReason = nLoops == 1 ? &sFailureReason : NULL;
+
+			bool bSucceeded = true;
+
+			for ( CSchemaRegistration *pCur = s_pSchemaRegistrationList; pCur; pCur = pCur->m_pNext )
 			{
-				void *ptr = pFactoryList[i](iface.m_pInterfaceName, NULL);
-				*(void **)iface.m_ppGlobal = ptr;
-				if (ptr)
+				bSucceeded &= pCur->RegisterAllBindings( pSchemaSystem, static_cast< SchemaRegistrationPhase_t >( nPhase ), pFailureReason );
+			}
+
+			if ( bSucceeded )
+			{
+				break;
+			}
+
+			if ( --nLoops == 0 )
+			{
+				if ( sFailureReason.IsEmpty() )
 				{
-					ConnectionRegistration_t &reg = s_pConnectionRegistration[s_nRegistrationCount++];
-					reg.m_ppGlobalStorage = iface.m_ppGlobal;
-					reg.m_nConnectionPhase = s_nConnectionCount;
+					sFailureReason.Set( "<no failure reason set>" );
 				}
+
+				Plat_FatalError( "unable to register all schema data: %s\n", sFailureReason.Get() );
+				break;
 			}
 		}
 	}
 
-	s_nConnectionCount++;
+	pSchemaSystem->CompleteModuleRegistration( GetNameOfModule() );
 }
 
-void DisconnectInterfaces()
+// ------------------------------------------------------------------------------------ //
+// Module exports.
+// Queried by the engine through dynamic binding alongside CreateInterface.
+// ------------------------------------------------------------------------------------ //
+#ifndef SCHEMA_EXPORTS_OVERRIDE
+
+static bool s_bSchemaBindingsInstalled = false;
+
+bool InstallSchemaBindings( const char *pSchemaSystemInterfaceVersion, ISchemaSystem *pSchemaSystem )
 {
-	if (--s_nConnectionCount >= 0)
+	if ( V_strcmp( SCHEMASYSTEM_INTERFACE_VERSION, pSchemaSystemInterfaceVersion ) )
 	{
-		for (int i = 0; i < s_nRegistrationCount; i++)
-		{
-			ConnectionRegistration_t &reg = s_pConnectionRegistration[i];
-			if (reg.m_nConnectionPhase == s_nConnectionCount)
-				reg.m_ppGlobalStorage = NULL;
-		}
+		return false;
 	}
+
+	if ( !s_bSchemaBindingsInstalled )
+	{
+		g_pSchemaSystem = pSchemaSystem;
+		CSchemaRegistration::RegisterAllModuleData( pSchemaSystem );
+		s_bSchemaBindingsInstalled = true;
+	}
+
+	return true;
 }
 
-void ReconnectInterface(CreateInterfaceFn factory, char const *pInterfaceName, void **ppGlobal)
+#endif // SCHEMA_EXPORTS_OVERRIDE
+
+#ifndef RESOURCE_EXPORTS_OVERRIDE
+
+int GetResourceManifestCount()
 {
-	bool got = false;
+	return CManifestRegistrar::GetCount();
+}
 
-	*ppGlobal = factory(pInterfaceName, NULL);
+int GetResourceManifests( int nFirstIndex, ResourceManifestDesc_t **ppDesc, size_t nDescCount )
+{
+	size_t nCount = 0;
+	int nIndex = 0;
 
-	for (int i = 0; i < s_nRegistrationCount; i++)
+	for ( CManifestRegistrar *pCur = CManifestRegistrar::GetFirst(); pCur; pCur = pCur->m_pNext, nIndex++ )
 	{
-		if (s_pConnectionRegistration[i].m_ppGlobalStorage == ppGlobal)
+		if ( nIndex < nFirstIndex )
 		{
-			got = true;
+			continue;
+		}
+
+		ppDesc[ nCount++ ] = pCur->GetDesc();
+
+		if ( nCount >= nDescCount )
+		{
 			break;
 		}
 	}
 
-	if ((s_nRegistrationCount <= 0 || !got) && *ppGlobal)
-	{
-		ConnectionRegistration_t &reg = s_pConnectionRegistration[s_nRegistrationCount++];
-		reg.m_ppGlobalStorage = ppGlobal;
-		reg.m_nConnectionPhase = s_nConnectionCount - 1;
-	}
+	return static_cast< int >( nCount );
 }
 
-void ReconnectInterface(CreateInterfaceFn factory, const char *pInterfaceName)
+#endif // RESOURCE_EXPORTS_OVERRIDE
+
+int BinaryProperties_GetValue( BinaryProperties_Lookups_t propertyLookup, BinaryProperties_Value_t *pOutput )
 {
-	for (int i = 0; i < NUM_INTERFACES; i++)
+	switch ( propertyLookup )
 	{
-		const InterfaceGlobals_t &iface = g_pInterfaceGlobals[i];
-
-		if (strcmp(iface.m_pInterfaceName, pInterfaceName) == 0)
-			ReconnectInterface(factory, iface.m_pInterfaceName, (void **)iface.m_ppGlobal);
-	}
-}
-
-// ------------------------------------------------------------------------------------ //
-// InterfaceReg.
-// ------------------------------------------------------------------------------------ //
-InterfaceReg *s_pInterfaceRegs = NULL;
-
-InterfaceReg::InterfaceReg(InstantiateInterfaceFn fn, const char *pName) :
-	m_pName(pName)
-{
-	m_CreateFn = fn;
-	m_pNext = s_pInterfaceRegs;
-	s_pInterfaceRegs = this;
-}
-
-#ifndef CREATE_INTEFACE_OVERRIDE
-
-// ------------------------------------------------------------------------------------ //
-// CreateInterface.
-// This is the primary exported function by a dll, referenced by name via dynamic binding
-// that exposes an opqaue function pointer to the interface.
-// ------------------------------------------------------------------------------------ //
-void* CreateInterface(const char *pName, int *pReturnCode)
-{
-	InterfaceReg *pCur;
-
-	for (pCur = s_pInterfaceRegs; pCur; pCur = pCur->m_pNext)
-	{
-		if (strcmp(pCur->m_pName, pName) == 0)
+		case BPL_BUILDCONFIGURATION:
 		{
-			if (pReturnCode)
-			{
-				*pReturnCode = IFACE_OK;
-			}
-			return pCur->m_CreateFn();
+			pOutput->valueType = BPV_STRING;
+			pOutput->val.pString = MODULE_BUILD_CONFIGURATION;
+
+			return 1;
+		}
+
+		case BPL_ISDEBUG:
+		case BPL_ISRELEASE:
+		{
+			pOutput->valueType = BPV_INT64;
+			pOutput->val.nInt64 = propertyLookup == ( MODULE_BUILD_IS_DEBUG ? BPL_ISDEBUG : BPL_ISRELEASE );
+
+			return 1;
+		}
+
+		case BPL_PROJECTNAME:
+		{
+			pOutput->valueType = BPV_STRING;
+			pOutput->val.pString = MODULE_PROJECT_NAME;
+
+			return 1;
+		}
+
+		case BPL_DEV_BUILD:
+		case BPL_RETAIL_BUILD:
+		{
+			// Same as the shipped game modules
+			pOutput->valueType = BPV_INT64;
+			pOutput->val.nInt64 = propertyLookup == BPL_RETAIL_BUILD;
+
+			return 1;
+		}
+
+		case BPL_BINARY_TYPE:
+		{
+			pOutput->valueType = BPV_INT64;
+			pOutput->val.nInt64 = BP_BT_DLL;
+	
+			return 1;
+		}
+
+		default:
+		{
+			return 0;
 		}
 	}
-
-	if (pReturnCode)
-	{
-		*pReturnCode = IFACE_FAILED;
-	}
-	return NULL;
 }
-
-#endif // CREATE_INTEFACE_OVERRIDE

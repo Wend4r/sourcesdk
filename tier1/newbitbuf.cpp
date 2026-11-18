@@ -11,8 +11,8 @@
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
 #include "tier0/strtools.h"
-#include "bitvec.h"
-#include "tier1/random.h"
+#include "tier0/bitvec.h"
+#include "tier0/random.h"
 
 // FIXME: Can't use this until we get multithreaded allocations in tier0 working for tools
 // This is used by VVIS and fails to link
@@ -354,7 +354,7 @@ void CBitWrite::WriteBitAngle( float fAngle, int numbits )
 	WriteUBitLong((unsigned int)d, numbits);
 }
 
-bool CBitWrite::WriteBitsFromBuffer( bf_read *pIn, int nBits )
+bool CBitWrite::WriteBitsFromBuffer( old_bf_read *pIn, int nBits )
 {
 // This could be optimized a little by
 	while ( nBits > 32 )
@@ -1249,7 +1249,7 @@ void TestBitBufs()
 
 	{
 		CFastTimer timer;
-		printf("TestBuffer< bf_write, bf_read >: START\n" );
+		printf("TestBuffer< bf_write, old_bf_read >: START\n" );
 		timer.Start();
 		float avgTotalWrite = 0.0f;
 		float avgTotalRead = 0.0f;
@@ -1259,16 +1259,16 @@ void TestBitBufs()
 			V_memset( buffer, 0, bufsize );
 
 			avgTotalWrite += TestBitBufferWriter< bf_write >( buffer, bufsize, seed, testItemCount, debugWriteReads );
-			avgTotalRead += TestBitBufferReader< bf_read >( buffer, bufsize, seed, testItemCount, debugWriteReads );
+			avgTotalRead += TestBitBufferReader< old_bf_read >( buffer, bufsize, seed, testItemCount, debugWriteReads );
 		}
 		timer.End();
-		printf("TestBuffer< bf_write, bf_read >: END: %d times, total %4.4fus, average write %4.4f, average read %4.4f\n", 
+		printf("TestBuffer< bf_write, old_bf_read >: END: %d times, total %4.4fus, average write %4.4f, average read %4.4f\n", 
 			   repeatCount, timer.GetDuration().GetMicrosecondsF(), avgTotalWrite / repeatCount, avgTotalRead / repeatCount );
 	}
 	if ( 1 )
 	{
 		CFastTimer timer;
-		printf("TestBuffer< CBitWrite, bf_read >: START\n" );
+		printf("TestBuffer< CBitWrite, old_bf_read >: START\n" );
 		timer.Start();
 		float avgTotalWrite = 0.0f;
 		float avgTotalRead = 0.0f;
@@ -1278,10 +1278,10 @@ void TestBitBufs()
 			V_memset( buffer, 0, bufsize );
 
 			avgTotalWrite += TestBitBufferWriter< CBitWrite >( buffer, bufsize, seed, testItemCount, debugWriteReads );
-			avgTotalRead += TestBitBufferReader< bf_read >( buffer, bufsize, seed, testItemCount, debugWriteReads );
+			avgTotalRead += TestBitBufferReader< old_bf_read >( buffer, bufsize, seed, testItemCount, debugWriteReads );
 		}
 		timer.End();
-		printf("TestBuffer< CBitWrite, bf_read >: END: %d times, total %4.4fus, average write %4.4f, average read %4.4f\n", 
+		printf("TestBuffer< CBitWrite, old_bf_read >: END: %d times, total %4.4fus, average write %4.4f, average read %4.4f\n", 
 			repeatCount, timer.GetDuration().GetMicrosecondsF(), avgTotalWrite / repeatCount, avgTotalRead / repeatCount );
 	}
 

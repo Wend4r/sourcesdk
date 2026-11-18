@@ -5,11 +5,13 @@
 #endif
 
 #include "tier0/platform.h"
-#include "tier1/keyvalues3.h"
-#include "tier1/utlleanvector.h"
+#include "kv3lib/keyvalues3.h"
+#include "tier0/utlleanvector.h"
 #include "entity2/entitysystem.h"
 
 #include "tier0/memdbgon.h"
+
+#include "schemacompiler/schemaon.h"
 
 #define FOR_EACH_ENTITYKEY( ekv, iter ) \
 	for ( auto iter = ekv->First(); ekv->IsValidIterator( iter ); iter = ekv->Next( iter ) )
@@ -65,9 +67,11 @@ public:
 	T m_Object;
 };
 
-class CEntityKeyValues
+schema class CEntityKeyValues
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( CEntityKeyValues );
+
 	CEntityKeyValues( CKV3Arena* allocator = NULL, EntityKVAllocatorType_t allocator_type = EKV_ALLOCATOR_NORMAL );
 	~CEntityKeyValues();
 
@@ -111,6 +115,7 @@ public:
 	void RemoveConnectionDesc( int nDesc );
 
 	EntityIOConnectionDescFat_t* GetConnectionDesc( int nDesc ) { return &m_connectionDescs[nDesc]; }
+	const EntityIOConnectionDescFat_t* GetConnectionDesc( int nDesc ) const { return &m_connectionDescs[nDesc]; }
 	int GetNumConnectionDescs() const { return m_connectionDescs.Count(); }
 
 	void CopyFrom( const CEntityKeyValues* pSrc, bool bRemoveAllKeys = false, bool bSkipEHandles = false );
@@ -168,7 +173,7 @@ public:
 	CEntityKeyValues& operator=( const CEntityKeyValues& src ) { CopyFrom( &src ); return *this; }
 
 public:
-	KeyValues3* SetKeyValue( const EntityKeyId_t &id, const char* pAttributeName = NULL );
+	KeyValues3* SetKeyValue( const EntityKeyId_t &id, bool bAsAttribute = false );
 	void SetString( KeyValues3* kv, const char* string );
 
 private:
@@ -186,15 +191,15 @@ private:
 		EntityComplexKeyListElem_t* m_pNext;
 	};
 
-	CKV3Arena* m_pAllocator;
-	EntityComplexKeyListElem_t* m_pComplexKeys;
-	KeyValues3* m_pValues;
-	KeyValues3* m_pAttributes;
-	int16 m_nRefCount;
-	int16 m_nQueuedForSpawnCount;
-	bool m_bAllowLogging;
-	EntityKVAllocatorType_t m_eAllocatorType;
-	CUtlLeanVector<EntityIOConnectionDescFat_t, int> m_connectionDescs;
+	noschema CKV3Arena* m_pAllocator;
+	noschema EntityComplexKeyListElem_t* m_pComplexKeys;
+	noschema KeyValues3* m_pValues;
+	noschema KeyValues3* m_pAttributes;
+	noschema int16 m_nRefCount;
+	noschema int16 m_nQueuedForSpawnCount;
+	noschema bool m_bAllowLogging;
+	noschema EntityKVAllocatorType_t m_eAllocatorType;
+	noschema CUtlLeanVector<EntityIOConnectionDescFat_t, int> m_connectionDescs;
 };
 COMPILE_TIME_ASSERT( sizeof(CEntityKeyValues) == 56 );
 
@@ -375,112 +380,114 @@ inline matrix3x4_t CEntityKeyValues::GetMatrix3x4( const EntityKeyId_t &id, cons
 
 inline void CEntityKeyValues::SetBool( const EntityKeyId_t &id, bool value, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetBool( value );
 }
 
 inline void CEntityKeyValues::SetInt( const EntityKeyId_t &id, int value, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetInt( value );
 }
 
 inline void CEntityKeyValues::SetUint( const EntityKeyId_t &id, uint value, bool bAsAttribute )
 {
-	KeyValues3* val = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* val = SetKeyValue( id, bAsAttribute );
 	if ( val ) val->SetUInt( value );
 }
 
 inline void CEntityKeyValues::SetInt64( const EntityKeyId_t &id, int64 value, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetInt64( value );
 }
 
 inline void CEntityKeyValues::SetUint64( const EntityKeyId_t &id, uint64 value, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetUInt64( value );
 }
 
 inline void CEntityKeyValues::SetFloat( const EntityKeyId_t &id, float value, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetFloat( value );
 }
 
 inline void CEntityKeyValues::SetDouble( const EntityKeyId_t &id, double value, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetDouble( value );
 }
 
 inline void CEntityKeyValues::SetString( const EntityKeyId_t &id, const char* string, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) SetString( kv, string );
 }
 
 inline void CEntityKeyValues::SetPtr( const EntityKeyId_t &id, void* ptr, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetPointer( ptr );
 }
 
 inline void CEntityKeyValues::SetStringToken( const EntityKeyId_t &id, CUtlStringToken token, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetStringToken( token );
 }
 
 inline void CEntityKeyValues::SetEHandle( const EntityKeyId_t &id, CEntityHandle ehandle, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetEHandle( ehandle );
 }
 
 inline void CEntityKeyValues::SetColor( const EntityKeyId_t &id, const Color &color, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetColor( color );
 }
 
 inline void CEntityKeyValues::SetVector( const EntityKeyId_t &id, const Vector &vec, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetVector( vec );
 }
 
 inline void CEntityKeyValues::SetVector2D( const EntityKeyId_t &id, const Vector2D &vec2d, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetVector2D( vec2d );
 }
 
 inline void CEntityKeyValues::SetVector4D( const EntityKeyId_t &id, const Vector4D &vec4d, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetVector4D( vec4d );
 }
 
 inline void CEntityKeyValues::SetQuaternion( const EntityKeyId_t &id, const Quaternion &quat, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetQuaternion( quat );
 }
 
 inline void CEntityKeyValues::SetQAngle( const EntityKeyId_t &id, const QAngle &ang, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetQAngle( ang );
 }
 
 inline void CEntityKeyValues::SetMatrix3x4( const EntityKeyId_t &id, const matrix3x4_t &matrix, bool bAsAttribute )
 {
-	KeyValues3* kv = SetKeyValue( id, bAsAttribute ? id.GetString() : NULL );
+	KeyValues3* kv = SetKeyValue( id, bAsAttribute );
 	if ( kv ) kv->SetMatrix3x4( matrix );
 }
 
 #include "tier0/memdbgoff.h"
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYKEYVALUES_H

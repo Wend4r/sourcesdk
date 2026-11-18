@@ -19,10 +19,12 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlbuffer.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlhashtable.h"
-#include "tier1/utlrbtree.h"
-#include "tier1/utlvector.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/utlrbtree.h"
+#include "tier0/utlvector.h"
+#include "tier0/utllinkedlist.h"
+
+#include "schemacompiler/schemaon.h"
 
 //-----------------------------------------------------------------------------
 // forward declarations
@@ -44,9 +46,11 @@ typedef unsigned int UtlSymElm_t;
 #define FOR_EACH_SYMBOL_BACK( tableName, iter ) \
 	for ( UtlSymElm_t iter = (tableName).GetNumStrings()-1; iter >= 0; iter-- )
 
-class CUtlSymbol
+schema class CUtlSymbol
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	// constructor, destructor
 	CUtlSymbol() : m_Id(UTL_INVAL_SYMBOL) {}
 	CUtlSymbol( UtlSymId_t id ) : m_Id(id) {}
@@ -71,6 +75,8 @@ public:
 	}
 
 	UtlSymId_t GetId() const { return m_Id; }
+
+	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element ) const;
 
 	// Is valid?
 	static UtlSymId_t Invalid() { return UTL_INVAL_SYMBOL; }
@@ -130,7 +136,7 @@ public:
 	// Returns elements in the table
 	DLL_CLASS_IMPORT int GetElements( int nFirstElement, int nCount, CUtlSymbol *pElements ) const;
 
-	DLL_CLASS_IMPORT size_t GetMemoryUsage() const;
+	DLL_CLASS_IMPORT size_t AllocSize() const;
 
 	DLL_CLASS_IMPORT void SetPageSize( unsigned int nSize );
 
@@ -234,7 +240,7 @@ public:
 		}
 	};
 
-	typedef CUtlHashtable<UtlSymElm_t, empty_t, UtlSymTableHashFunctor, UtlSymTableEqualFunctor, UtlSymTableAltKey> Hashtable_t;
+	typedef CUtlHashtable<UtlSymElm_t, empty_t, UtlSymTableHashFunctor, UtlSymTableEqualFunctor> Hashtable_t;
 	typedef CUtlVector<MemBlockHandle_t, UtlSymElm_t> MemBlocksVec_t;
 
 	const Hashtable_t &GetHashtable() const
@@ -362,7 +368,7 @@ private:
 
 // The handle is a CUtlSymbol for the dirname and the same for the filename, the accessor
 //  copies them into a static char buffer for return.
-typedef void* FileNameHandle_t;
+typedef uint32 FileNameHandle_t;
 
 // Symbol table for more efficiently storing filenames by breaking paths and filenames apart.
 // Refactored from BaseFileSystem.h
@@ -376,47 +382,20 @@ class CUtlFilenameSymbolTable
 		FileNameHandleInternal_t()
 		{
 			COMPILE_TIME_ASSERT( sizeof( *this ) == sizeof( FileNameHandle_t ) );
-			COMPILE_TIME_ASSERT( sizeof( value ) == 4 );
-			value = 0;
-
-#ifdef PLATFORM_64BITS
-			pad = 0;
-#endif
+			path = 0;
+			file = 0;
 		}
 
-		// We pack the path and file values into a single 32 bit value.  We were running
-		// out of space with the two 16 bit values (more than 64k files) so instead of increasing
-		// the total size we split the underlying pool into two (paths and files) and 
-		// use a smaller path string pool and a larger file string pool.
-		unsigned int value;
-
-#ifdef PLATFORM_64BITS
-		// some padding to make sure we are the same size as FileNameHandle_t on 64 bit.
-		unsigned int pad;
-#endif
-
-		static const unsigned int cNumBitsInPath = 12;
-		static const unsigned int cNumBitsInFile = 32 - cNumBitsInPath;
-
-		static const unsigned int cMaxPathValue = 1 << cNumBitsInPath;
-		static const unsigned int cMaxFileValue = 1 << cNumBitsInFile;
-
-		static const unsigned int cPathBitMask = cMaxPathValue - 1;
-		static const unsigned int cFileBitMask = cMaxFileValue - 1;
-
 		// Part before the final '/' character
-		unsigned int	GetPath() const { return ((value >> cNumBitsInFile) & cPathBitMask); }
-		void			SetPath( unsigned int path ) { Assert( path < cMaxPathValue ); value = ((value & cFileBitMask) | ((path & cPathBitMask) << cNumBitsInFile)); }
-
+		unsigned short path;
 		// Part after the final '/', including extension
-		unsigned int	GetFile() const { return (value & cFileBitMask); }
-		void			SetFile( unsigned int file ) { Assert( file < cMaxFileValue ); value = ((value & (cPathBitMask << cNumBitsInFile)) | (file & cFileBitMask)); }
+		unsigned short file;
 	};
 
 public:
 	DLL_CLASS_IMPORT FileNameHandle_t	FindOrAddFileName( const char *pFileName );
-	DLL_CLASS_IMPORT FileNameHandle_t	FindFileName( const char *pFileName );
-	int				PathIndex( const FileNameHandle_t &handle ) { return (( const FileNameHandleInternal_t * )&handle)->GetPath(); }
+	DLL_CLASS_IMPORT FileNameHandle_t	FindFileName( const char *pFileName ) const;
+	int				PathIndex( const FileNameHandle_t &handle ) { return (( const FileNameHandleInternal_t * )&handle)->path; }
 	DLL_CLASS_IMPORT bool				String( const FileNameHandle_t& handle, char *buf, int buflen );
 	DLL_CLASS_IMPORT bool				String( const FileNameHandle_t& handle, CBufferString * );
 	DLL_CLASS_IMPORT void				RemoveAll();
@@ -474,5 +453,7 @@ private:
 	{																\
 		return g_##typename##SymbolTable.String( m_SymbolId );		\
 	}
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLSYMBOL_H

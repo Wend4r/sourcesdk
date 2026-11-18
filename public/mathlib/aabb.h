@@ -5,12 +5,17 @@
 #include "mathlib/vector4d.h"
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
+#include "mathlib/vectorws.h"
+
+#include "schemacompiler/schemaon.h"
 
 
 /// Axis-aligned 3d bounding box.
-valve_schema struct AABB_t
+schema struct AABB_t
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( AABB_t );
+
 	Vector				m_vMinBounds; 
 	Vector				m_vMaxBounds;
 
@@ -185,6 +190,24 @@ public:
 };
 
 
+/// World-space axis-aligned 3d bounding box.
+schema struct AABBWS_t
+{
+public:
+	DECLARE_SCHEMA_DATA_CLASS( AABBWS_t );
+
+	VectorWS			m_vMinBounds;
+	VectorWS			m_vMaxBounds;
+
+	FORCEINLINE AABBWS_t() {}
+
+	FORCEINLINE AABBWS_t( const VectorWS &vMins, const VectorWS &vMaxs )
+	{
+		m_vMinBounds = vMins;
+		m_vMaxBounds = vMaxs;
+	}
+};
+
 inline const AABB_t Snap( const AABB_t& aabb, float flSnap )
 {
 	return AABB_t( Snap( aabb.m_vMinBounds, flSnap ), Snap( aabb.m_vMaxBounds, flSnap ) );
@@ -214,5 +237,7 @@ inline AABB_t GetAabb( const VectorAligned *pPos, int nCount )
 	}
 	return aabb;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif

@@ -4,28 +4,7 @@
 #pragma once
 
 #include "tier0/platform.h"
-
-class CFieldPath
-{
-public:
-	enum
-	{
-		MAX_PATH_DEPTH = 10
-	};
-
-	int Count() const { return m_nCount; }
-	const int16 *Base() const { return m_bReadOnly ? m_pPath : m_Path; }
-
-public:
-	union
-	{
-		int16 *m_pPath;
-		int16 m_Path[12];
-	};
-
-	int16 m_nCount;
-	bool m_bReadOnly;
-};
+#include "tier2/fieldpath.h"
 
 COMPILE_TIME_ASSERT( sizeof( CFieldPath ) == 32 );
 

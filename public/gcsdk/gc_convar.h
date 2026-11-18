@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include "tier1/convar.h"
+#include "tier0/convar.h"
 
 
 //-----------------------------------------------------------------------------

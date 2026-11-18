@@ -14,7 +14,7 @@
 
 #include "entity2/entityinstance.h"
 #include "basetypes.h"
-#include "bitvec.h"
+#include "tier0/bitvec.h"
 #include "const.h"
 #include "bspfile.h"
 #include "playerslot.h"
@@ -46,13 +46,13 @@ class CCheckTransmitInfo
 {
 public:
 	CBitVec<MAX_EDICTS>* m_pTransmitEntity; // entities visible/sent to client
-	CBitVec<MAX_EDICTS>* m_pTransmitNonPlayers; // non-player entities needing deletion deltas
+	CBitVec<MAX_EDICTS>* m_pNonTransmitEntity; // entity n exists but isn't transmitted; filled from m_pTransmitEntity after the checks, and the client is sent its changes
 	CBitVec<MAX_EDICTS>* m_pTransmitOutOfPVS; // entities that left PVS but still need delta update
 	CBitVec<MAX_EDICTS>* m_pTransmitAlways; // entity n is always sent even if not in PVS (HLTV and Replay only)
-	CUtlVector<CPlayerSlot> m_vecTargetSlots;
-	vis_info_t m_VisInfo;
+	CUtlVector<SpawnGroupHandle_t> m_LoadedSpawnGroups; // sorted; entities from spawn groups the client hasn't loaded aren't checked
+	vis_info_t m_VisInfo; // filled by ISource2GameClients::ClientSetupVisibility
 	CPlayerSlot m_nPlayerSlot;
-	bool m_bFullUpdate = false;
+	bool m_bFullUpdate = false; // the client gets a full update instead of a delta
 };
 COMPILE_TIME_ASSERT(sizeof(CCheckTransmitInfo) == 584);
 

@@ -42,8 +42,7 @@ static void ReleaseResource( ResourceHandle_t hResource )
 	if ( !hResource || !g_pResourceHandleUtils )
 		return;
 
-	// Game: when the count drops to 0, also calls the third virtual of g_pResourceHandleUtils with the binding.
-	// The interface is not declared in the SDK.
+	// The game also calls IResourceHandleUtils::DeleteResource at zero.
 	--const_cast< ResourceBindingBase_t * >( hResource )->m_nRefCount;
 }
 

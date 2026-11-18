@@ -15,7 +15,63 @@
 #pragma once
 #endif
 
-PLATFORM_INTERFACE uint32 MurmurHash3_32( void const *key, size_t len, uint32 seed, bool bCaselessStringVariant = false );
+#include "tier0/platform.h"
+
+// MurmurHash3 x86_32. tier0 does not export it, so it is implemented inline.
+// The caseless string variant clears bit 0x20 of every source byte.
+inline uint32 MurmurHash3_32( void const *key, size_t len, uint32 seed, bool bCaselessStringVariant = false )
+{
+	const uint8 *pData = ( const uint8 * )key;
+	const size_t nBlocks = len / 4;
+	const uint32 nSourceMask = bCaselessStringVariant ? 0xDFDFDFDF : 0xFFFFFFFF;
+
+	uint32 h1 = seed;
+
+	for ( size_t i = 0; i < nBlocks; i++ )
+	{
+		uint32 k1;
+		memcpy( &k1, pData + i * 4, sizeof( k1 ) );
+
+		k1 &= nSourceMask;
+		k1 *= 0xcc9e2d51;
+		k1 = ( k1 << 15 ) | ( k1 >> 17 );
+		k1 *= 0x1b873593;
+
+		h1 ^= k1;
+		h1 = ( h1 << 13 ) | ( h1 >> 19 );
+		h1 = h1 * 5 + 0xe6546b64;
+	}
+
+	const uint8 *pTail = pData + nBlocks * 4;
+	uint32 k1 = 0;
+
+	switch ( len & 3 )
+	{
+	case 3:
+		k1 ^= ( uint32 )pTail[ 2 ] << 16;
+		[[fallthrough]];
+	case 2:
+		k1 ^= ( uint32 )pTail[ 1 ] << 8;
+		[[fallthrough]];
+	case 1:
+		k1 ^= pTail[ 0 ];
+		k1 &= nSourceMask;
+		k1 *= 0xcc9e2d51;
+		k1 = ( k1 << 15 ) | ( k1 >> 17 );
+		k1 *= 0x1b873593;
+		h1 ^= k1;
+	}
+
+	h1 ^= ( uint32 )len;
+
+	h1 ^= h1 >> 16;
+	h1 *= 0x85ebca6b;
+	h1 ^= h1 >> 13;
+	h1 *= 0xc2b2ae35;
+	h1 ^= h1 >> 16;
+
+	return h1;
+}
 
 inline uint32 MurmurHash3String( const char *pszKey, size_t len )
 {

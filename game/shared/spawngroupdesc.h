@@ -16,6 +16,7 @@ struct SpawnGroupDesc_t
 public:
 	SpawnGroupDesc_t()
 	 :  m_pWorldOffsetCallback(NULL),
+	    m_sWorldGroupname("default"),
 	    m_hOwner(0),
 	    m_iPriorityLoader(-2),
 	    m_manifestLoadPriority(RESOURCE_MANIFEST_LOAD_PRIORITY_DEFAULT),
@@ -27,9 +28,10 @@ public:
 	    m_bCreateNewSceneWorld(false),
 	    m_bManualCompletion(false),
 	    m_bSetActivePostLoad(false),
-	    m_bUnk(true),
+	    m_bIsNotPointPrefab(true),
 	    m_bLevelTransition(false),
-	    m_bUnk2(false)
+	    m_bReservedFlag1(false),
+	    m_bReservedFlag2(false)
 	{
 		SetIdentityMatrix(m_vecWorldOffset);
 	}
@@ -41,9 +43,9 @@ public:
 	CUtlString m_sDescriptiveName;
 	CUtlString m_sParentNameFixup;
 	CUtlString m_sLocalNameFixup;
-	CUtlString m_sWorldGroupname;
-	matrix3x4a_t m_vecWorldOffset;
 	IComputeWorldOriginCallback *m_pWorldOffsetCallback;
+	matrix3x4a_t m_vecWorldOffset;
+	CUtlString m_sWorldGroupname;
 	CUtlString m_sSaveFileName;
 	SpawnGroupHandle_t m_hOwner;
 	int m_iPriorityLoader;
@@ -57,9 +59,14 @@ public:
 	bool m_bCreateNewSceneWorld;
 	bool m_bManualCompletion;
 	bool m_bSetActivePostLoad;
-	bool m_bUnk;
+	// Named after the earlier note that spawn groups created by point_prefab clear it; true by
+	// default. ISpawnGroup::IsNotPointPrefab returns it; engine2 itself never reads it.
+	bool m_bIsNotPointPrefab;
 	bool m_bLevelTransition;
-	bool m_bUnk2;
+	// Named by what is known: kept by the spawn group (ISpawnGroup::GetReservedFlag1 returns the
+	// first) and copied back by GetSpawnGroupDesc; engine2 never reads them otherwise.
+	bool m_bReservedFlag1;
+	bool m_bReservedFlag2;
 };
 
 struct SpawnGroupDescReceive_t
@@ -68,19 +75,9 @@ public:
 	bool m_bIsInitialSpawnGroup;
 	bool m_bCreateClientOnlyEntities;
 	bool m_bIsSynchronousSpawn;
-private:
-	uint8 m_padding[1];
-
-public:
 	CCompressedResourceManifest *m_pCompressedResource;
-
-public:
 	int32 m_nTickCount;
 	bool m_bManifestInComplete;
-private:
-	uint8 m_padding2[3];
-
-public:
 	SpawnGroupHandle_t m_hSpawnGroupParentHandle;
 	WorldGroupId_t m_hWorldGroupId;
 };

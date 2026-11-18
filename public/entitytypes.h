@@ -6,7 +6,9 @@
 #endif
 
 #include "tier0/basetypes.h"
-#include "tier1/smartptr.h"
+#include "tier0/smartptr.h"
+
+#include "schemacompiler/schemaon.h"
 
 class CEntityInstance;
 
@@ -32,9 +34,12 @@ enum EntityFlags_t : uint32
 };
 DEFINE_ENUM_BITWISE_OPERATORS( EntityFlags_t );
 
-struct GameTime_t
+schema struct GameTime_t
 {
 public:
+	TYPEMETA( MIsBoxedFloatType );
+	DECLARE_SCHEMA_DATA_CLASS( GameTime_t );
+
 	GameTime_t( float value = 0.0f ) : m_Value( value ) {}
 
 	float GetTime() const { return m_Value; }
@@ -60,7 +65,7 @@ enum DataUpdateType_t
 	DATA_UPDATE_POST_UPDATE,
 };
 
-enum EntityDormancyType_t
+schema enum EntityDormancyType_t
 {
 	ENTITY_NOT_DORMANT = 0,
 	ENTITY_DORMANT,
@@ -93,11 +98,24 @@ enum EntityComponentHelperFlags_t : uint32
 };
 DEFINE_ENUM_BITWISE_OPERATORS( EntityComponentHelperFlags_t );
 
+// The owner entity is not owned: nothing is released when the pointer changes or goes away
+class CEntityOwnerAccessor
+{
+public:
+	template< class T >
+	static void AddRef( T *pObj ) {}
+
+	template< class T >
+	static void Release( T *pObj ) {}
+};
+
 // Captured at construction from the thread-local pointer of the entity under construction, which the entity spawn helper sets.
-class CEntityOwnerPtr : public CSmartPtr< CEntityInstance, CNullRefCountAccessor >
+class CEntityOwnerPtr : public CSmartPtr< CEntityInstance, CEntityOwnerAccessor >
 {
 public:
 	// ...
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYTYPES_H

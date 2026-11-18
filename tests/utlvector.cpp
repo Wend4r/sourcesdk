@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlvector.h>
+#include <tier0/utlvector.h>
 
 #include <utility>
 
@@ -135,6 +135,176 @@ REGISTER_NAMED_TEST( "CUtlVector.CopyMove", CUtlVector_CopyMove )
 	TEST_EQ( moved[1], 9 );
 }
 
+REGISTER_NAMED_TEST( "CUtlVector.MoveStealsBuffer", CUtlVector_MoveStealsBuffer )
+{
+	// Moving a heap allocated vector should take over its buffer and leave the source empty.
+	CUtlVector< int > vec;
+
+	vec.AddToTail( 1 );
+	vec.AddToTail( 2 );
+	vec.AddToTail( 3 );
+
+	const int *pBuffer = vec.Base();
+
+	CUtlVector< int > moved( Move( vec ) );
+
+	TEST_TRUE( moved.Base() == pBuffer );
+	TEST_EQ( moved.Count(), 3 );
+	TEST_EQ( moved[ 2 ], 3 );
+	TEST_EQ( vec.Count(), 0 );
+	TEST_TRUE( vec.Base() == nullptr );
+
+	CUtlVector< int > assigned;
+
+	assigned.AddToTail( 9 );
+	assigned = Move( moved );
+
+	TEST_TRUE( assigned.Base() == pBuffer );
+	TEST_EQ( assigned.Count(), 3 );
+	TEST_EQ( assigned[ 0 ], 1 );
+	TEST_EQ( moved.Count(), 0 );
+
+	CUtlVector< int > &self = assigned;
+
+	assigned = Move( self );
+
+	TEST_TRUE( assigned.Base() == pBuffer );
+	TEST_EQ( assigned.Count(), 3 );
+
+	vec.AddToTail( 4 );
+	TEST_EQ( vec.Count(), 1 );
+	TEST_EQ( vec[ 0 ], 4 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.MoveNonTrivial", CUtlVector_MoveNonTrivial )
+{
+	// Moving non-trivial elements should neither leak nor double destroy them.
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		CUtlVector< VectorTrackedValue_t > vec;
+
+		vec.AddToTail( VectorTrackedValue_t( 10 ) );
+		vec.AddToTail( VectorTrackedValue_t( 20 ) );
+
+		const VectorTrackedValue_t *pBuffer = vec.Base();
+
+		CUtlVector< VectorTrackedValue_t > moved( Move( vec ) );
+
+		TEST_TRUE( moved.Base() == pBuffer );
+		TEST_EQ( moved.Count(), 2 );
+		TEST_EQ( moved[ 1 ].m_nValue, 20 );
+		TEST_EQ( vec.Count(), 0 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+
+		CUtlVector< VectorTrackedValue_t > assigned;
+
+		assigned.AddToTail( VectorTrackedValue_t( 30 ) );
+		assigned = Move( moved );
+
+		TEST_EQ( assigned.Count(), 2 );
+		TEST_EQ( assigned[ 0 ].m_nValue, 10 );
+		TEST_EQ( moved.Count(), 0 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		// Conservative memory can't swap, so the elements are moved one by one.
+		CUtlVectorConservative< VectorTrackedValue_t > vec;
+
+		vec.AddToTail( VectorTrackedValue_t( 1 ) );
+		vec.AddToTail( VectorTrackedValue_t( 2 ) );
+
+		CUtlVectorConservative< VectorTrackedValue_t > moved;
+
+		moved.AddToTail( VectorTrackedValue_t( 3 ) );
+		moved = Move( vec );
+
+		TEST_EQ( moved.Count(), 2 );
+		TEST_EQ( moved[ 0 ].m_nValue, 1 );
+		TEST_EQ( moved[ 1 ].m_nValue, 2 );
+		TEST_EQ( vec.Count(), 0 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.MoveInlineStorage", CUtlVector_MoveInlineStorage )
+{
+	// Inline storage must not be handed over, so its elements are moved instead.
+	CUtlVectorFixedGrowable< int, 4 > vec;
+
+	vec.AddToTail( 5 );
+	vec.AddToTail( 6 );
+
+	CUtlVectorFixedGrowable< int, 4 > moved( Move( vec ) );
+
+	TEST_TRUE( moved.Base() != vec.Base() );
+	TEST_EQ( moved.Count(), 2 );
+	TEST_EQ( moved[ 0 ], 5 );
+	TEST_EQ( moved[ 1 ], 6 );
+	TEST_EQ( vec.Count(), 0 );
+
+	vec.AddToTail( 7 );
+	TEST_EQ( vec.Count(), 1 );
+	TEST_EQ( vec[ 0 ], 7 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVectorFixedGrowable.InlineLifetime", CUtlVectorFixedGrowable_InlineLifetime )
+{
+	// The inline storage holds no elements of its own, so only the added ones are alive.
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		CUtlVectorFixedGrowable< VectorTrackedValue_t, 4 > vec;
+
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+		vec.AddToTail( VectorTrackedValue_t( 10 ) );
+		vec.AddToTail( VectorTrackedValue_t( 20 ) );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 2 );
+
+		// Growing past the inline storage moves the elements to the heap.
+		for ( int i = 0; i < 6; ++i )
+		{
+			vec.AddToTail( VectorTrackedValue_t( i ) );
+		}
+
+		TEST_EQ( vec.Count(), 8 );
+		TEST_EQ( vec[ 0 ].m_nValue, 10 );
+		TEST_EQ( vec[ 7 ].m_nValue, 5 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 8 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVectorFixedGrowable.InlineStorageLayout", CUtlVectorFixedGrowable_InlineStorageLayout )
+{
+	// The raw inline storage keeps the size and alignment of an array of the elements.
+	struct alignas( 16 ) AlignedValue_t
+	{
+		char m_Data[ 24 ];
+	};
+
+	struct ReferenceLayout_t : CUtlVectorMemory< AlignedValue_t, int >
+	{
+		AlignedValue_t m_Fixed[ 3 ];
+	};
+
+	using FixedGrowable_t = CUtlVectorMemory_FixedGrowable< AlignedValue_t, 3, int >;
+
+	TEST_EQ( sizeof( FixedGrowable_t ), sizeof( ReferenceLayout_t ) );
+	TEST_EQ( alignof( FixedGrowable_t ), alignof( ReferenceLayout_t ) );
+
+	CUtlVectorFixedGrowable< AlignedValue_t, 3 > vec;
+
+	TEST_EQ( reinterpret_cast< uintp >( vec.Base() ) % 16, static_cast< uintp >( 0 ) );
+}
+
 REGISTER_NAMED_TEST( "CUtlVector.NonTrivialLifetime", CUtlVector_NonTrivialLifetime )
 {
 	// Non-trivial element lifetimes should balance after vector destruction.
@@ -239,6 +409,126 @@ REGISTER_NAMED_TEST( "CUtlVector.SortAndAddVector", CUtlVector_SortAndAddVector 
 	TEST_EQ( vec[4], 5 );
 }
 
+static bool __cdecl IntLessDescending( const int &left, const int &right )
+{
+	return left > right;
+}
+
+static bool __cdecl IntLessModulo( const int &left, const int &right, void *pCtx )
+{
+	const int nModulo = *static_cast< const int * >( pCtx );
+
+	return ( left % nModulo ) < ( right % nModulo );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.SortOverloads", CUtlVector_SortOverloads )
+{
+	// Every sort overload should order elements, including non-contiguous block storage.
+	CUtlVector< int > vec;
+
+	for ( int i = 0; i < 64; ++i )
+	{
+		vec.AddToTail( ( i * 37 ) % 64 );
+	}
+
+	vec.Sort();
+
+	for ( int i = 0; i < 64; ++i )
+	{
+		TEST_EQ( vec[ i ], i );
+	}
+
+	vec.Sort( &IntLessDescending );
+	TEST_EQ( vec[ 0 ], 63 );
+	TEST_EQ( vec[ 63 ], 0 );
+
+	int nModulo = 10;
+
+	vec.Sort( &IntLessModulo, &nModulo );
+
+	for ( int i = 1; i < 64; ++i )
+	{
+		TEST_TRUE( ( vec[ i - 1 ] % 10 ) <= ( vec[ i ] % 10 ) );
+	}
+
+	vec.SortPredicate( []( const int &left, const int &right ) { return left < right; } );
+	TEST_EQ( vec[ 0 ], 0 );
+	TEST_EQ( vec[ 63 ], 63 );
+}
+
+template < typename TVector >
+constexpr bool g_bVectorIterable = requires( TVector &vec, const TVector &constVec ) { vec.begin(); vec.end(); constVec.begin(); constVec.end(); };
+
+REGISTER_NAMED_TEST( "CUtlVector.ContiguousIterators", CUtlVector_ContiguousIterators )
+{
+	// Pointer iterators are only offered when the elements live in one block.
+	TEST_TRUE( g_bVectorIterable< CUtlVector< int > > );
+	TEST_TRUE( ( g_bVectorIterable< CUtlVectorFixedGrowable< int, 4 > > ) );
+}
+
+static bool __cdecl IntLessAscending( const int &left, const int &right )
+{
+	return left < right;
+}
+
+static bool __cdecl IntLessAscendingCtx( const int &left, const int &right, void * )
+{
+	return left < right;
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.SortedHelpersAndFindMatch", CUtlVector_SortedHelpersAndFindMatch )
+{
+	// Sorted searches should find matches, the last equal element and keep inserts ordered.
+	CUtlVector< int > vec;
+
+	vec.SortedInsert( 30, &IntLessAscending );
+	vec.SortedInsert( 10, &IntLessAscending );
+	vec.SortedInsert( 20, &IntLessAscendingCtx, nullptr );
+	vec.SortedInsert( 20, &IntLessAscending );
+	vec.SortedInsert( 20, &IntLessAscending );
+
+	TEST_EQ( vec.Count(), 5 );
+	TEST_EQ( vec[ 0 ], 10 );
+	TEST_EQ( vec[ 1 ], 20 );
+	TEST_EQ( vec[ 3 ], 20 );
+	TEST_EQ( vec[ 4 ], 30 );
+
+	TEST_EQ( vec.SortedFind( 10, &IntLessAscending ), 0 );
+	TEST_EQ( vec.SortedFind( 30, &IntLessAscendingCtx, nullptr ), 4 );
+	TEST_EQ( vec.SortedFind( 25, &IntLessAscending ), vec.InvalidIndex() );
+
+	TEST_EQ( vec.SortedFindLessOrEqual( 20, &IntLessAscending ), 3 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 20, &IntLessAscendingCtx, nullptr ), 3 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 25, &IntLessAscending ), 3 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 5, &IntLessAscending ), -1 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 35, &IntLessAscending ), 4 );
+	TEST_EQ( vec.SortedFindLessOrEqual( 20, &IntLessAscending, 0, 1 ), 1 );
+
+	TEST_EQ( vec.FindMatch( []( const int &nValue ) { return nValue > 15; } ), 1 );
+	TEST_EQ( vec.FindMatch( []( const int &nValue ) { return nValue > 30; } ), vec.InvalidIndex() );
+}
+
+static bool __cdecl UIntLessAscending( const unsigned int &left, const unsigned int &right )
+{
+	return left < right;
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.SortedFindUnsignedIndex", CUtlVector_SortedFindUnsignedIndex )
+{
+	// Sorted searches with an unsigned index should miss below the first element without wrapping.
+	CUtlVector< unsigned int, unsigned int > vec;
+
+	TEST_EQ( vec.SortedFind( 5u, &UIntLessAscending ), vec.InvalidIndex() );
+
+	vec.AddToTail( 3u );
+	vec.AddToTail( 7u );
+
+	TEST_EQ( vec.SortedFind( 1u, &UIntLessAscending ), vec.InvalidIndex() );
+	TEST_EQ( vec.SortedFind( 3u, &UIntLessAscending ), 0u );
+	TEST_EQ( vec.SortedFind( 7u, &UIntLessAscending ), 1u );
+	TEST_EQ( vec.SortedFind( 9u, &UIntLessAscending ), vec.InvalidIndex() );
+}
+
 REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDeleteElements )
 {
 	// Purge-and-delete should destroy heap-owned elements and empty the vector.
@@ -253,4 +543,111 @@ REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElements", CUtlVector_PurgeAndDel
 
 	TEST_EQ( VectorDeleteTracked_t::s_nDeleted, 2 );
 	TEST_EQ( vec.Count(), 0 );
+}
+
+struct VectorCountingAllocator_t
+{
+	static int s_nReallocs;
+	static int s_nFrees;
+
+	template < typename T, typename I = int >
+	static T *Realloc( T *pMem, I nCount, I &nAdjustedCount )
+	{
+		++s_nReallocs;
+		return CMemAllocAllocator::Realloc< T, I >( pMem, nCount, nAdjustedCount );
+	}
+
+	static void Free( void *pMem )
+	{
+		++s_nFrees;
+		CMemAllocAllocator::Free( pMem );
+	}
+};
+
+int VectorCountingAllocator_t::s_nReallocs = 0;
+int VectorCountingAllocator_t::s_nFrees = 0;
+
+REGISTER_NAMED_TEST( "CUtlVector.RawAllocator", CUtlVector_RawAllocatorStorage )
+{
+	// Raw allocator vectors should route storage through the selected allocator.
+	CUtlVector_RawAllocator< int > vecDefault;
+
+	vecDefault.AddToTail( 1 );
+	vecDefault.AddToTail( 2 );
+
+	TEST_EQ( vecDefault.Count(), 2 );
+	TEST_EQ( vecDefault[ 1 ], 2 );
+
+	VectorCountingAllocator_t::s_nReallocs = 0;
+	VectorCountingAllocator_t::s_nFrees = 0;
+
+	{
+		CUtlVector_RawAllocator< int, int, VectorCountingAllocator_t > vec;
+
+		for ( int i = 0; i < 16; ++i )
+		{
+			vec.AddToTail( i );
+		}
+
+		TEST_EQ( vec.Count(), 16 );
+		TEST_EQ( vec[ 15 ], 15 );
+		TEST_TRUE( VectorCountingAllocator_t::s_nReallocs > 0 );
+	}
+
+	TEST_EQ( VectorCountingAllocator_t::s_nFrees, 1 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.PurgeAndDeleteElementsNonPointer", CUtlVector_PurgeAndDeleteElementsNonPointer )
+{
+	// Purge-and-delete should only purge elements that are not pointers.
+	CUtlVector< int > vec;
+
+	vec.AddToTail( 1 );
+	vec.AddToTail( 2 );
+
+	vec.PurgeAndDeleteElements();
+
+	TEST_EQ( vec.Count(), 0 );
+}
+
+REGISTER_NAMED_TEST( "CUtlVector.CopyNonTrivial", CUtlVector_CopyNonTrivial )
+{
+	// Copies of non-trivial elements should own their own storage and balance lifetimes.
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	{
+		CUtlVector< VectorTrackedValue_t > vec;
+
+		vec.AddToTail( VectorTrackedValue_t( 10 ) );
+		vec.AddToTail( VectorTrackedValue_t( 20 ) );
+
+		CUtlVector< VectorTrackedValue_t > copy( vec );
+
+		TEST_EQ( copy.Count(), 2 );
+		TEST_EQ( copy[ 1 ].m_nValue, 20 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 4 );
+
+		copy = vec;
+		TEST_EQ( copy.Count(), 2 );
+		TEST_EQ( VectorTrackedValue_t::s_nAlive, 4 );
+	}
+
+	TEST_EQ( VectorTrackedValue_t::s_nAlive, 0 );
+
+	CUtlVector< CUtlString > vecStrings;
+
+	vecStrings.AddToTail( CUtlString( "alpha" ) );
+	vecStrings.AddToTail( CUtlString( "beta" ) );
+
+	{
+		CUtlVector< CUtlString > copy( vecStrings );
+
+		copy[ 0 ] = "gamma";
+
+		TEST_EQ( V_strcmp( copy[ 0 ].Get(), "gamma" ), 0 );
+		TEST_EQ( V_strcmp( copy[ 1 ].Get(), "beta" ), 0 );
+	}
+
+	TEST_EQ( V_strcmp( vecStrings[ 0 ].Get(), "alpha" ), 0 );
+	TEST_EQ( V_strcmp( vecStrings[ 1 ].Get(), "beta" ), 0 );
 }

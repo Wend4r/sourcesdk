@@ -29,4 +29,7 @@ PLATFORM_INTERFACE uint16 SetWin32ConsoleColor( Win32ConsoleColorContext_t *pCon
 
 PLATFORM_INTERFACE void RestoreWin32ConsoleColor( Win32ConsoleColorContext_t *pContext, uint16 prevColor );
 
+// Column of the console cursor, always 0 outside Windows
+PLATFORM_INTERFACE uint GetWin32ConsoleCursorColumnIndex();
+
 #endif 

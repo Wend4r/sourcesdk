@@ -24,7 +24,7 @@ class IMatchSession;
 #include "xbox/xboxstubs.h"
 #endif
 
-#include "inetchannel.h"
+#include "networksystem/inetchannel.h"
 
 #include "imatchasync.h"
 #include "imatchtitle.h"
@@ -63,8 +63,8 @@ public:
 
 	// Get the match system
 	virtual IMatchSystem * GetMatchSystem() = 0;
-	
-	virtual void ApplySettings(KeyValues *pSettings ) = 0;
+
+	virtual bool ApplySettings( KeyValues *pSettings ) = 0;
 
 	// Entry point to create session
 	virtual void CreateSession( KeyValues *pSettings ) = 0;
@@ -72,15 +72,21 @@ public:
 	// Entry point to match into a session
 	virtual void MatchSession( KeyValues *pSettings ) = 0;
 
-	// Accept invite
-	virtual void AcceptInvite( int iController ) = 0;
-
 	// Close the session
 	virtual void CloseSession() = 0;
-	
+
+	virtual void RegisterGameEventListeners() = 0;
+
 	virtual bool IsOnlineGame() = 0;
-	
+
 	virtual void UpdateTeamProperties( KeyValues *pProperties ) = 0;
+
+	virtual void AddDebugHistoryLine( const char *pszLine ) = 0;
+
+	virtual const char *GetDebugHistory() = 0;
+
+	// Get the title's game settings manager
+	virtual IMatchTitleGameSettingsMgr *GetMatchTitleGameSettingsMgr() = 0;
 };
 
 #define IMATCHFRAMEWORK_VERSION_STRING "MATCHFRAMEWORK_001"

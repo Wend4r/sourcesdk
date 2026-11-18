@@ -5,45 +5,46 @@
 
 #include "datamap.h"
 #include "string_t.h"
-#include "variant.h"
+#include "entity2/variant.h"
 #include "tier0/bufferstring.h"
 #include "tier1/keyvalues3.h"
+#include "kv3lib/kv3transfer_constants.h"
 #include "schemasystem/schematypes.h"
 #include "entitypulsecallcontext.h"
 #include "entityhandle.h"
 #include "entitytypes.h"
 #include "spawngrouptypes.h"
 #include "tier0/threadtools.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlsymbollarge.h"
 
-#define ENTITY_INVLAID_OUTPUT_OFFSET ( ~0 )
+#include "schemacompiler/schemaon.h"
+
+#define ENTITY_INVLAID_OUTPUT_OFFSET 0x7FFFFFFF
 
 class CEntityInstance;
 class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 class CEntityIOOutput;
 
-enum EntityIOTargetType_t
+schema enum EntityIOTargetType_t
 {
 	ENTITY_IO_TARGET_INVALID = -1,
-	ENTITY_IO_TARGET_CLASSNAME = 0,
-	ENTITY_IO_TARGET_CLASSNAME_DERIVES_FROM = 1,
 	ENTITY_IO_TARGET_ENTITYNAME = 2,
-	ENTITY_IO_TARGET_CONTAINS_COMPONENT = 3,
-	ENTITY_IO_TARGET_SPECIAL_ACTIVATOR = 4,
-	ENTITY_IO_TARGET_SPECIAL_CALLER = 5,
 	ENTITY_IO_TARGET_EHANDLE = 6,
 	ENTITY_IO_TARGET_ENTITYNAME_OR_CLASSNAME = 7,
 };
 
-struct EntityIOQueuePrioritizedEvent_t
+schema struct EntityIOQueuePrioritizedEvent_t
 {
+	TYPEMETA( MGetKV3ClassDefaults );
+	DECLARE_SCHEMA_DATA_CLASS( EntityIOQueuePrioritizedEvent_t );
+
 	EntityIOQueuePrioritizedEvent_t() = default;
 	EntityIOQueuePrioritizedEvent_t( WorldGroupId_t worldGroupId, GameTime_t flFireTime, CEntityInstance *pActivator, CEntityInstance *pCaller );
 
 	void Init( const CVariant &value, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap );
 
-	WorldGroupId_t m_WorldGroupId;
+	noschema WorldGroupId_t m_WorldGroupId;
 	GameTime_t m_flFireTime;
 	EntityIOTargetType_t m_targetType;
 	CUtlSymbolLarge m_pTarget;
@@ -52,13 +53,13 @@ struct EntityIOQueuePrioritizedEvent_t
 	CEntityHandle m_hCaller;
 	CEntityHandle m_hEntTarget; // a pointer to the entity to target; overrides m_pTarget
 
-	CVariant m_variantValue; // variable-type parameter
+	CVariant m_variantValue; META( MKV3TransferSaveOpsForField = "GetVariantSaveDataOps" ); // variable-type parameter
 
 	CPulseArgumentPack m_PulseArguments;
 	CPulseInputParamMap m_paramMap;
 
-	EntityIOQueuePrioritizedEvent_t *m_pNext;
-	EntityIOQueuePrioritizedEvent_t *m_pPrev;
+	noschema EntityIOQueuePrioritizedEvent_t *m_pNext;
+	noschema EntityIOQueuePrioritizedEvent_t *m_pPrev;
 };
 
 class CEventQueue
@@ -70,21 +71,6 @@ public:
 public:
 	CAtomicMutex m_Mutex;
 	EntityIOQueuePrioritizedEvent_t m_Events;
-};
-
-// Output registered by an entity class
-struct EntOutput_t
-{
-private:
-	uint8 m_pad0000[ 16 ];
-
-public:
-	// Object that holds the output, such as a component; null when the entity holds it
-	void *( *m_pfnGetOutputOwner )( CEntityInstance *pEntity );
-
-	uint32 : 1, m_nOutputOffset : 31;
-
-	CEntityIOOutput *GetOutput( CEntityInstance *pEntity ) const;
 };
 
 struct CEntityIOInputFunction
@@ -127,30 +113,23 @@ struct EntityIOConnection_t : EntityIOConnectionDesc_t
 
 COMPILE_TIME_ASSERT( sizeof( EntityIOConnection_t ) == 80 );
 
-struct EntityIOOutputDesc_t
-{
-	const char* m_pName;
-	uint32 m_nFlags;
-	uint32 m_nOutputOffset;
-};
-
 // Observers of entity I/O
 class IEntityIONotify
 {
 public:
 	virtual void OnConnectionFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection, const CPulseArgumentPack *pArgs ) = 0;
-	virtual void Unk_01() = 0;
+	// Named by what it does: called after an input from the event queue was accepted by its target
+	virtual void OnInputAccepted( CEntityInstance *pTarget, const char *pszInputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant *pValue, const CPulseArgumentPack *pArgs ) = 0;
 	virtual void OnConnectionRemoved( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOConnection_t *pConnection ) = 0;
-	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs, float flDelay ) = 0;
+	virtual void OnOutputFired( CEntityInstance *pActivator, CEntityInstance *pCaller, float flDelay, const EntityIOOutputDesc_t *pDesc, const CPulseArgumentPack *pArgs ) = 0;
 };
 
-class CEntityIOOutput
+schema class CEntityIOOutput
 {
 public:
 	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CEntityIOOutput );
 
 public:
 	~CEntityIOOutput()
@@ -200,11 +179,11 @@ public:
 	void FireOutput( CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, float flDelay );
 
 	// Queues an event per connection and removes connections that fired their last time
-	void FireOutputInternal( CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap, const CVariant *pValue, float flDelay );
+	void FireOutputInternal( CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, float flDelay, const CPulseInputParamMap *pParamMap, const CVariant *pValue );
 
 private:
-	EntityIOConnection_t *m_pConnections;
-	EntityIOOutputDesc_t *m_pDesc;
+	noschema EntityIOConnection_t *m_pConnections;
+	noschema EntityIOOutputDesc_t *m_pDesc;
 };
 
 COMPILE_TIME_ASSERT( sizeof( CEntityIOOutput ) == 24 );
@@ -256,5 +235,7 @@ struct InputData_t
 	variant_t value;
 	int nOutputID;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYIO_H

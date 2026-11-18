@@ -17,6 +17,8 @@
 #include "cstrike15/usercmd.h"
 #include "schemasystem/schematypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 class BotProfile;
 class CCSPlayerController;
 class CCSPlayerPawn;
@@ -35,7 +37,7 @@ class CCSPlayerPawn;
 // RunCommand folds the movement fields, the buttons and the pawn's eye angles into
 // m_UserCmd and runs it on the controller the way a client's command is run.
 //-----------------------------------------------------------------------------
-abstract_class CBot
+schema class CBot
 {
 public:
 	// The "CBot" schema class; CCSBot returns "CCSBot".
@@ -87,28 +89,28 @@ public:
 	virtual float GetMoveSpeed() = 0;
 
 public:
-	const BotProfile *m_pProfile;
+	noschema const BotProfile *m_pProfile;
 	CCSPlayerController *m_pController;
 	// The controller's pawn when the bot was made.
 	CCSPlayerPawn *m_pPlayer;
 	bool m_bHasSpawned;
 	// A running number from 1.
-	uint32 m_nID;
+	uint32 m_id;
 
-	CCSGOUserCmd m_UserCmd;
+	noschema CUserCmd m_UserCmd;
 
-	bool m_bIsRunning;
-	bool m_bIsCrouching;
+	bool m_isRunning;
+	bool m_isCrouching;
 	// -1 to 1, forward positive.
-	float m_flForwardSpeed;
+	float m_forwardSpeed;
 	// -1 to 1, left positive.
-	float m_flLeftSpeed;
+	float m_leftSpeed;
 	// 1 when idle.
-	float m_flVerticalSpeed;
+	float m_verticalSpeed;
 	// InputBitMask_t.
-	uint64 m_nButtonFlags;
-	float m_flJumpTimestamp;
-	Vector m_vecViewForward;
+	uint64 m_buttonFlags;
+	float m_jumpTimestamp;
+	Vector m_viewForward;
 
 	// Saved run and crouch states: attacking pushes one on entry and pops it on exit.
 	struct PostureContext_t
@@ -122,8 +124,10 @@ public:
 		MAX_POSTURE_STACK = 8
 	};
 
-	PostureContext_t m_PostureStack[ MAX_POSTURE_STACK ];
-	int m_nPostureStackIndex;
+	noschema PostureContext_t m_PostureStack[ MAX_POSTURE_STACK ];
+	int m_postureStackIndex;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // BOT_H

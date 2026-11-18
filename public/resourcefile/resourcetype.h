@@ -8,29 +8,29 @@
 #include <tier0/platform.h>
 #include <tier0/threadtools.h>
 #include <tier0/bufferstring.h>
-#include <tier1/utlsymbollarge.h>
-#include <tier1/generichash.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/generichash.h>
+#include <schemasystem/schemametatag.h>
 
 #include <initializer_list>
+#include "resourcesystem/resourcesystemtypes.h"
+#include "resourcesystem/resourcemanifesthelpers.h"
+
+#include "schemacompiler/schemaon.h"
 
 typedef uint64 ResourceType_t;
 
-enum ResourceStatus_t
-{
-	RESOURCE_STATUS_UNKNOWN = 0,
-	RESOURCE_STATUS_KNOWN_BUT_NOT_RESIDENT,
-	RESOURCE_STATUS_PARTIALLY_RESIDENT,
-	RESOURCE_STATUS_RESIDENT,
-};
+// Resource type of the info class, the packed file extension, e.g. 'vmap'
+DECLARE_SCHEMA_META_TAG( MResourceTypeForInfoType, META_TAG_ON_CLASS, META_VALUE( ResourceType_t ) );
 
-enum ResourceManifestLoadBehavior_t
+enum ResourceManifestLoadBehavior_t : int8
 {
 	RESOURCE_MANIFEST_LOAD_DEFAULT = -1,
 	RESOURCE_MANIFEST_LOAD_STREAMING_DATA = 0,
 	RESOURCE_MANIFEST_INITIALLY_USE_FALLBACKS,
 };
 
-enum ResourceManifestLoadPriority_t
+enum ResourceManifestLoadPriority_t : int8
 {
 	RESOURCE_MANIFEST_LOAD_PRIORITY_DEFAULT = -1,
 	RESOURCE_MANIFEST_LOAD_PRIORITY_LOW = 0,
@@ -63,12 +63,18 @@ enum ResourceSystemGetNamedResourcesFlags_t : int
 {
 };
 
-struct ResourceId_t
+schema struct ResourceId_t
 {
-	uint64 m_Data;
+	TYPEMETA( MIsBoxedIntegerType );
+	DECLARE_SCHEMA_DATA_CLASS( ResourceId_t );
+
+	ResourceId_t() : m_Value( 0 ) {}
+	ResourceId_t( uint64 nValue ) : m_Value( nValue ) {}
+
+	uint64 m_Value;
 
 	operator uint64() const { return Get(); }
-	uint64 Get() const { return m_Data; }
+	uint64 Get() const { return m_Value; }
 };
 
 struct ResourceNameInfo_t
@@ -85,7 +91,7 @@ private:
 	int32 m_nOffset;
 };
 
-template < typename T >
+schema template < typename T >
 class CResourcePointer : public CResourcePointerBase
 {
 };
@@ -94,7 +100,7 @@ class CResourceStringOffset : public CResourcePointer< char >
 {
 };
 
-class CResourceString : public CBufferStringN< 200 >
+schema class CResourceString : public CBufferStringN< 200 >
 {
 public:
 	using BaseClass = CBufferStringN< 200 >;
@@ -115,7 +121,7 @@ public:
 	{
 		Set( pszPath );
 		NormalizePathInline();
-		m_nResourceId.m_Data = MurmurHash64( String(), Length(), 0xEDABCDEFu );
+		m_nResourceId.m_Value = MurmurHash64( String(), Length(), 0xEDABCDEFu );
 		m_nResourceType = ComputeTypeFromExtension( String() );
 	}
 
@@ -154,30 +160,9 @@ private:
 
 class CStrongHandleVoid;
 
-struct ResourceManifestEntry_t
-{
-	const char *m_pResourceName;
-	bool m_bResourceNameIsManifestName;
-	CStrongHandleVoid *m_pHandle;
-	ResourceManifestEntry_t *m_pNextInstanceOfThisEntry;
-	int m_nHandleReferences;
-};
-
-typedef std::initializer_list< std::initializer_list< ResourceManifestEntry_t > > ManifestEntryGroupList_t;
-
-struct ResourceManifestDesc_t
-{
-	CUtlString m_sManifestName;
-	CUtlString m_sManifestGroup;
-	ManifestEntryGroupList_t *m_pEntryGroups;
-	CUtlString m_sFileName;
-	int m_nLine;
-	bool m_bRegistered;
-	bool m_bDisallowRegistration;
-};
-
 typedef const ResourceNameInfo_t *ResourceNameHandle_t;
 typedef uint16 LoadingResourceIndex_t;
+typedef uint16 StreamingResourceDataIndex_t;
 typedef char ResourceTypeIndex_t;
 typedef uint32 ExtRefIndex_t;
 
@@ -187,8 +172,9 @@ struct ResourceBindingBase_t
 	ResourceNameHandle_t m_Name;
 	ResourceId_t m_nResourceId;
 	uint16 m_nFlags;
-	uint16 m_nReloadCounter;
-	ResourceTypeIndex_t m_nTypeIndex;
+	StreamingResourceDataIndex_t m_nStreamingResource;
+	ResourceTypeIndex_t m_nResourceType;
+	uint8 m_nReloadCounter;
 	LoadingResourceIndex_t m_nLoadingResource;
 	CInterlockedInt m_nRefCount;
 	ExtRefIndex_t m_nExtRefHandle;
@@ -196,5 +182,7 @@ struct ResourceBindingBase_t
 
 typedef const ResourceBindingBase_t* ResourceHandle_t;
 typedef void *HGameResourceManifest;
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // RESOURCETYPE_H

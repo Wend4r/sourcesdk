@@ -43,7 +43,7 @@ public:
 	virtual bool BIsKeyLess( const CSharedObject & soRHS ) const ;
 	virtual void Copy( const CSharedObject & soRHS );
 	virtual void Dump() const OVERRIDE;
-	virtual int Unk_FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const OVERRIDE;
+	virtual int FindIndexInVector( const CUtlVector< CSharedObject * > &vecObjects, const CUtlVector< int > &vecIndices ) const OVERRIDE;
 	virtual bool BAddToMessage( std::string *pBuffer, bool bUnk ) const OVERRIDE;
 	virtual bool BAddDestroyToMessage( std::string *pBuffer ) const OVERRIDE;
 
@@ -82,7 +82,7 @@ private:
 // Purpose: Template for making a shared object that uses a specific protobuf
 //			message class for its wire protocol and in-memory representation.
 //----------------------------------------------------------------------------
-template< typename Message_t, int nTypeID, bool bPublicMutable = true >
+template< typename Message_t, int nTypeID >
 class CProtoBufSharedObject : public CProtoBufSharedObjectBase
 {
 public:
@@ -96,24 +96,13 @@ public:
 
 	virtual int GetTypeID() const { return nTypeID; }
 
-	// WHERE IS YOUR GOD NOW
-	template< typename T >
-		using Public_Message_t = typename std::enable_if< bPublicMutable && std::is_same< T, Message_t >::value, Message_t & >::type;
-	template< typename T >
-		using Protected_Message_t = typename std::enable_if< !bPublicMutable && std::is_same< T, Message_t >::value, Message_t & >::type;
-
-	template< typename T = Message_t >
-		Public_Message_t<T> Obj() { return m_msgObject; }
-
+	Message_t & Obj() { return m_msgObject; }
 	const Message_t & Obj() const { return m_msgObject; }
 
 	typedef Message_t SchObjectType_t;
 	const static int k_nTypeID = nTypeID;
 
 protected:
-	template< typename T = Message_t >
-		Protected_Message_t<T> MutObj() { return m_msgObject; }
-
 	::google::protobuf::Message *GetPObject() { return &m_msgObject; }
 
 private:

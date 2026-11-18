@@ -11,7 +11,7 @@
 #endif
 
 #include "tier0/utlbuffer.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 namespace GCSDK
 {

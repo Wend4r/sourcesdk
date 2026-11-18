@@ -7,23 +7,18 @@
 
 #include "tier0/threadtools.h"
 #include "tier0/utlstring.h"
-#include "tier1/convar.h"
-#include "tier1/utlstringmap.h"
-#include "tier1/utltshash.h"
-#include "tier1/utlvector.h"
+#include "tier0/convar.h"
+#include "tier0/utlstringmap.h"
+#include "tier0/utltshash.h"
+#include "tier0/utlvector.h"
 #include "appframework/iappsystem.h"
+#include "tier2/tier2.h"
 #include "schemasystem/schematypes.h"
+#include "schemasystem/minschema.h"
 
 class CBufferString;
 class CKV3Arena;
 struct ResourceManifestDesc_t;
-
-enum SchemaTypeScope_t : uint8
-{
-	SCHEMA_GLOBAL_TYPE_SCOPE = 0,
-	SCHEMA_MODULE_LOCAL_TYPE_SCOPE,
-	SCHEMA_DEFAULT_TYPE_SCOPE,
-};
 
 enum SchemaHierarchyIteration_t
 {
@@ -60,7 +55,7 @@ public:
 
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic>			FindType_Atomic( int nAtomicID ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_T>		FindType_Atomic_T( int nAtomicID, CSchemaType* pTemplateType ) = 0;
-	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_CollectionOfT> FindType_Atomic_CollectionOfT( int nAtomicID, CSchemaType* pTemplateType, SchemaCollectionManipulatorFn_t manipulator ) = 0;
+	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_CollectionOfT> FindType_Atomic_CollectionOfT( int nAtomicID, CSchemaType* pTemplateType, uint64 nFixedBufferCount, SchemaCollectionManipulatorFn_t manipulator ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_TT> 		FindType_Atomic_TT( int nAtomicID, CSchemaType* pTemplateType, CSchemaType* pTemplateType2 ) = 0;
 	virtual SchemaMetaInfoHandle_t<CSchemaType_Atomic_I> 		FindType_Atomic_I( int nAtomicID, int nInteger ) = 0;
 	
@@ -157,7 +152,7 @@ public:
 	virtual ~ISchemaSystem() = 0;
 };
 
-class CSchemaSystem : public ISchemaSystem
+class CSchemaSystem : public CTier2AppSystem< ISchemaSystem >
 {
 	struct DetectedSchemaMismatch_t
 	{
@@ -179,14 +174,6 @@ class CSchemaSystem : public ISchemaSystem
 		void* m_pArgument;
 	};
 	
-public:
-	CUtlVector<ResourceManifestDesc_t*> m_ResourceManifestDescs;
-	int m_nNumConnections;
-
-private:
-	// AMNOTE: isn't used anywhere at construction/destruction, most likely padding
-	int m_unk001;
-
 public:
 	CThreadFastMutex m_Mutex;
 
@@ -210,8 +197,6 @@ public:
 	int m_nIgnored;
 	int m_nRedundant;
 	size_t m_nIgnoredBytes;
-	
-	CUtlVector<CompleteModuleRegistrationCallback_t> m_CompleteModuleRegistrationCallbacks;
 };
 
 #endif // SCHEMASYSTEM_H

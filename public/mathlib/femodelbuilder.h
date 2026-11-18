@@ -2,11 +2,11 @@
 #ifndef FINITE_ELEMENT_MODEL_BUILDER_HDR
 #define FINITE_ELEMENT_MODEL_BUILDER_HDR
 
-#include "tier1/utlvector.h"
-#include "tier1/utlhashtable.h"
-#include "tier1/UtlSortVector.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlhashtable.h"
+#include "tier0/utlsortvector.h"
 #include "mathlib/femodel.h"
-#include "tier1/utlbufferstrider.h"
+#include "tier0/utlbufferstrider.h"
 
 
 template <typename T>

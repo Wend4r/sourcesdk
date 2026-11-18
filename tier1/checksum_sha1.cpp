@@ -56,24 +56,6 @@
 #define _R4(v,w,x,y,z,i) { z+=(w^x^y)+SHABLK(i)+0xCA62C1D6+ROL32(v,5); w=ROL32(w,30); }
 
 #ifdef	_MINIMUM_BUILD_
-Minimum_CSHA1::Minimum_CSHA1()
-#else
-CSHA1::CSHA1()
-#endif
-{
-	m_block = (SHA1_WORKSPACE_BLOCK *)m_workspace;
-
-	Reset();
-}
-#ifdef	_MINIMUM_BUILD_
-Minimum_CSHA1::~Minimum_CSHA1()
-#else
-CSHA1::~CSHA1()
-#endif
-{
-	// Reset();
-}
-#ifdef	_MINIMUM_BUILD_
 void Minimum_CSHA1::Reset() 
 #else
 void CSHA1::Reset()
@@ -243,51 +225,6 @@ void CSHA1::Final()
 	memset(finalcount, 0, sizeof( finalcount) );
 
 	Transform(m_state, m_buffer);
-}
-
-#if !defined(_MINIMUM_BUILD_)
-// Get the final hash as a pre-formatted string
-void CSHA1::ReportHash(char *szReport, uint8 uReportType)
-{
-	uint8 i = 0;
-	char szTemp[12];
-
-	if(szReport == NULL) return;
-
-	if(uReportType == REPORT_HEX)
-	{
-		sprintf(szTemp, "%02X", m_digest[0]);
-		strcat(szReport, szTemp);
-
-		for(i = 1; i < k_cubHash; i++)
-		{
-			sprintf(szTemp, " %02X", m_digest[i]);
-			strcat(szReport, szTemp);
-		}
-	}
-	else if(uReportType == REPORT_DIGIT)
-	{
-		sprintf(szTemp, "%u", m_digest[0]);
-		strcat(szReport, szTemp);
-
-		for(i = 1; i < k_cubHash; i++)
-		{
-			sprintf(szTemp, " %u", m_digest[i]);
-			strcat(szReport, szTemp);
-		}
-	}
-	else strcpy(szReport, "Error: Unknown report type!");
-}
-#endif // _MINIMUM_BUILD_
-
-// Get the raw message digest
-#ifdef	_MINIMUM_BUILD_
-void Minimum_CSHA1::GetHash(uint8 *uDest)
-#else
-void CSHA1::GetHash(uint8 *uDest)
-#endif
-{
-	memcpy(uDest, m_digest, k_cubHash);
 }
 
 #ifndef	_MINIMUM_BUILD_

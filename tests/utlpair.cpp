@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlpair.h>
+#include <tier0/utlpair.h>
 
 REGISTER_NAMED_TEST( "CUtlPair.CompareAndMake", CUtlPair_CompareAndMake )
 {

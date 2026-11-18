@@ -13,9 +13,9 @@
 
 #include "tier0/memdbgon.h"
 #include "tier0/fasttimer.h"
-#include "tier1/functors.h"
-#include "tier1/utllinkedlist.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/functors.h"
+#include "tier0/utllinkedlist.h"
+#include "tier0/utlleanvector.h"
 #include "vstdlib/coroutine.h"
 #include "msgbase.h"
 #include "msgprotobuf.h"
@@ -56,16 +56,39 @@ private:
 typedef CJob *(*JobCreationFunc_t)( void *pvServerParent, void * pvStartParam );
 
 
+// routing function of a job type (GC side; null in every job type of the CS2 binaries)
+typedef void (*JobRoutingFunc_t)( CUtlVector< uint32 > &vecGCsToSendTo, IMsgNetPacket *pNetPacket );
+
+//-----------------------------------------------------------------------------
+// Purpose: the contexts a message can arrive from; JobType_t::m_nValidContexts
+//			is a mask of them (all game job types use k_eGCMsgContext_All)
+//-----------------------------------------------------------------------------
+enum EGCMsgContext
+{
+	k_eGCMsgContext_None = 0,				// nobody may send this message
+	k_eGCMsgContext_Client = ( 1 << 0 ),			// from a player/client
+	k_eGCMsgContext_UnsecuredServer = ( 1 << 1 ),	// from a dedicated server that is not trusted
+	k_eGCMsgContext_TrustedServer = ( 1 << 2 ),		// from a securely managed dedicated server
+	k_eGCMsgContext_System = ( 1 << 3 ),			// from the GCH system
+	k_eGCMsgContext_OtherGC = ( 1 << 4 ),			// from another sub GC or the master GC
+
+	k_eGCMsgContext_AllServers = k_eGCMsgContext_UnsecuredServer | k_eGCMsgContext_TrustedServer,
+	k_eGCMsgContext_All = k_eGCMsgContext_Client | k_eGCMsgContext_TrustedServer | k_eGCMsgContext_UnsecuredServer | k_eGCMsgContext_System | k_eGCMsgContext_OtherGC
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: static job information
 //                      contains information relevant to one type of CJob
 //-----------------------------------------------------------------------------
 struct JobType_t
 {
-        const char *m_pchName;               // name of this type of job
-        MsgType_t m_eCreationMsg;                     // network message that creates this job
-		EServerType m_eServerType;			// the server type that responds to this message
-        JobCreationFunc_t m_pJobFactory; // virtual constructor
+	const char *m_pchName;				// name of this type of job
+	MsgType_t m_eCreationMsg;			// network message that creates this job
+	uint32 m_nValidContexts;			// mask of EGCMsgContext the message may arrive from
+	JobCreationFunc_t m_pJobFactory;	// virtual constructor
+	// The CS:GO type has m_pJobRouter and m_pControlCV here; the CS2 records are 32 bytes and keep
+	// one pointer, null in all of them. Named after the first of the two.
+	JobRoutingFunc_t m_pJobRouter;
 };
 
 
@@ -83,6 +106,7 @@ enum EJobPauseReason
 	k_EJobPauseReasonYield,
 	k_EJobPauseReasonSQL,
 	k_EJobPauseReasonWorkItem,
+	k_EJobPauseReasonJob,
 
 	k_EJobPauseReasonCount
 };
@@ -97,22 +121,19 @@ struct JobMsgInfo_t
 	MsgType_t m_eMsg;
 	JobID_t m_JobIDSource;
 	JobID_t m_JobIDTarget;
-	EServerType m_eServerType; 
 
 	JobMsgInfo_t()
 	{
 		m_eMsg = (MsgType_t)0;
 		m_JobIDSource = k_GIDNil;
 		m_JobIDTarget = k_GIDNil;
-		m_eServerType = k_EServerTypeInvalid;
 	}
 
-	JobMsgInfo_t( MsgType_t eMsg, JobID_t jobIDSource, JobID_t jobIDTarget, EServerType eServerType )
+	JobMsgInfo_t( MsgType_t eMsg, JobID_t jobIDSource, JobID_t jobIDTarget )
 	{
 		m_eMsg = eMsg;
 		m_JobIDSource = jobIDSource;
 		m_JobIDTarget = jobIDTarget;
-		m_eServerType = eServerType;
 	}
 };
 
@@ -136,7 +157,7 @@ public:
 	virtual ~CJob();
 
 	// starts the job, storing off the network msg and calling it's Run() function
-	void StartJobFromNetworkMsg( IMsgNetPacket *pNetPacket, const JobID_t &gidJobIDSrc );
+	void StartJobFromNetworkMsg( IMsgNetPacket *pNetPacket, const JobID_t &gidJobIDSrc, uint32 nContextMask );
 
 	// accessors
 	JobID_t GetJobID() const { return m_JobID; }
@@ -244,19 +265,9 @@ public:
 	// (creating a minidump).  Useful for inspecting stuck jobs
 	void GenerateAssert( const char *pchMsg = NULL );
 
-	/// Return true if we tried to waited on a message of this type,
-	/// and failed to receive it.  (If so, then this means we could
-	/// conceivably still receive a reply of that type at any moment.)
-	bool BHasFailedToReceivedMsgType( MsgType_t m ) const;
-
-	/// Mark that we awaited a message of the specified type, but timed out
-	void MarkFailedToReceivedMsgType( MsgType_t m );
-
-	/// Clear flag that we timed out waiting on a message of the specified type.
-	/// This is used to allow you to wait ont he same message again, even if
-	/// you know the reply might be a late reply.  It's up to you to deal with
-	/// mismatched replies!
-	void ClearFailedToReceivedMsgType( MsgType_t m );
+	// called to determine if the requested context is valid. If multiple contexts are provided, this will return true only if ALL the contexts are valid
+	bool BHasContext( uint32 nContext ) const			{ return ( m_nContextMask & nContext ) == nContext; }
+	uint32 GetContexts() const							{ return m_nContextMask; }
 
 protected:
 	// main job implementation, in the coroutine.  Every job must implement at least one of these methods.
@@ -288,7 +299,7 @@ private:
 	void Debug();
 
 	// pauses the current job - can only be called from inside a coroutine
-	void Pause( EJobPauseReason eReason );
+	void Pause( EJobPauseReason eReason, const char *pszResourceName );
 
 	static void BRunProxy( void *pvThis );
 
@@ -307,19 +318,34 @@ private:
 				m_bLongInterYield:1,
 				m_bTimeoutNetMsg:1,
 				m_bTimeoutOther:1,
-				m_uUnused:24;
+				// Named by what they do: BRunProxy sets the first when the coroutine starts and the
+				// second when the job body has returned; the destructor cancels the coroutine
+				// unless both are set
+				m_bCoroutineStarted:1,
+				m_bCoroutineFinished:1,
+				m_uUnused:22;
 			} m_bits;
 		uint32 m_uFlags;
 		} m_flags;
 	int m_cLocksAttempted;
 	int m_cLocksWaitedFor;
 	EJobPauseReason m_ePauseReason;
+	const char *m_pszPauseResourceName;
 	MsgType_t	m_unWaitMsgType;
+	// Named by what CJobMgr::PassMsgToJob does with them: the reply a job waiting for a message
+	// accepts. With m_bWaitMsgCheckFormat set the packet must have this format and m_unWaitMsgType;
+	// with m_bWaitMsgCheckSender set it must come from m_steamIDWaitMsgSender (a nil ID means the
+	// GC or the system). BYieldingWaitForMsg clears them once the wait ends.
+	EMsgFormatType m_eWaitMsgFormatType;
+	bool m_bWaitMsgCheckFormat;
+	bool m_bWaitMsgCheckSender;
+	CSteamID m_steamIDWaitMsgSender;		// packed, at byte 74
 	CJobTime m_STimeStarted;				// time (frame) at which this job started
 	CJobTime m_STimeSwitched;				// time (frame) at which we were last paused or continued
 	CJobTime m_STimeNextHeartbeat;		// Time at which next heartbeat should be performed
 	CFastTimer m_FastTimerDelta;		// How much time we've been running for without yielding
 	CCycleCount m_cyclecountTotal;		// Total runtime
+	uint32 m_nContextMask;				// The context that this job was created in. Typically only used for message jobs to indicate the initiator of the message
 	CJob *m_pJobPrev;					// the job that launched us
 
 	// lock manipulation
@@ -332,17 +358,17 @@ private:
 	CLock *m_pWaitingOnLock;			// lock we're waiting on, if any
 	const char *m_pWaitingOnLockFilename;
 	int m_waitingOnLockLine;
+	// Named by its place: the constructor sets it to "" like m_pWaitingOnLockFilename, nothing else
+	// in the CS2 binaries reads or writes it
+	const char *m_pWaitingOnLockDescription;
 	CJob *m_pJobToNotifyOnLockRelease;	// other job that wants this lock
 	CWorkItem *m_pWaitingOnWorkItem;	// set if job is waiting for this work item
+	JobID_t m_jobIDWaitingOn;			// The job we're waiting on.  This is used if we're actually waiting on a job, but also if we're waiting on a work item, and we know the job that is doing the work.
+	CJob *m_pFirstJobWaitingOnThis;		// Are any jobs waiting on this job to finish?  If so, this is the head of the linked list.  (m_pJobWaitingOnNext is the next link)
+	CJob *m_pJobWaitingOnNext;			// Next job in linked list of jobs waiting on the same thing.
 
 	CJobMgr &m_JobMgr;					// our job manager
 	CUtlVectorFixedGrowable< IMsgNetPacket *, 1 > m_vecNetPackets;			// list of tcp packets currently held by this job (ie, needing release on job exit)
-
-	/// List of message types that we have waited for, but timed out.
-	/// once this happens, we currently do not have a good mechanism
-	/// to recover gracefully.  But we at least can detect the situation
-	/// and avoid getting totally hosed or processing the wrong reply
-	CUtlVector<MsgType_t>	m_vecMsgTypesFailedToReceive;
 
 	// pointer to our own static job info
 	struct JobType_t const *m_pJobType;
@@ -350,16 +376,10 @@ private:
 	// Name of the job for when it's not registered
 	const char *m_pchJobName;
 
-	// A stack of do not yield guards so we can print the right warning if they're nested
-	CUtlLinkedList<const char *> m_stackDoNotYieldGuards;
-
 	// setting the job info
 	friend void Job_SetJobType( CJob &job, const JobType_t *pJobType );
 	friend class CJobMgr;
 	friend class CLock;
-
-	// used to store the memory allocation stack
-	CUtlLeanVector< unsigned char > m_memAllocStack;
 };
 
 

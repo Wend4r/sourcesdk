@@ -1,5 +1,7 @@
 include(CTest)
 
+find_package(Threads REQUIRED)
+
 set(SOURCESDK_TEST_COMMON_SOURCES
 	common/runner.cpp
 	common/source2_main.cpp
@@ -38,12 +40,16 @@ function(sourcesdk_setup_test_target target_name)
 		${CMAKE_SOURCE_DIR}/public
 		${CMAKE_SOURCE_DIR}/public/tier0
 		${CMAKE_SOURCE_DIR}/public/tier1
+		${CMAKE_SOURCE_DIR}/public/kv3lib
 		${CMAKE_SOURCE_DIR}/public/mathlib
 		${CMAKE_CURRENT_SOURCE_DIR}
 	)
 
 	target_link_libraries(${target_name} PRIVATE
+		${SOURCESDK_KV3LIB_NAME}
 		${SOURCESDK_TIER1_NAME}
+		Threads::Threads
+		${CMAKE_DL_LIBS}
 	)
 
 	if(EXISTS "${SOURCESDK_TIER0_LIB_FILENAME}")
@@ -113,19 +119,56 @@ endfunction()
 
 set(SOURCESDK_CONTAINER_TEST_SOURCES
 	bufferstring.cpp
+	commandbuffer.cpp
+	construct.cpp
+	fasttimer.cpp
+	generichash.cpp
+	memblockallocator.cpp
+	mempool.cpp
+	minidump.cpp
+	refcount.cpp
+	stringpool.cpp
+	strtools.cpp
+	tier0_allocators.cpp
+	tier0_compression.cpp
+	tier0_coroutine.cpp
+	tier0_dbg.cpp
+	tier0_eventdispatcher.cpp
+	tier0_fileio.cpp
+	tier0_hashes.cpp
+	tier0_jsonparser.cpp
+	tier0_keyvalues.cpp
+	tier0_platform.cpp
+	tier0_quantizedfloatencoder.cpp
+	tier0_snapshots.cpp
+	tier0_stack.cpp
+	tier0_stackhelpers.cpp
+	tier0_stdlib.cpp
+	tier0_strings.cpp
+	tier0_threadtools.cpp
+	tier0_vertexkdtree.cpp
+	tier0_vprof.cpp
+	tslist.cpp
 	utlarray.cpp
+	utlbinaryblock.cpp
 	utlblockmemory.cpp
+	utlblockvector.cpp
 	utlbuffer.cpp
 	utldict.cpp
 	utlfixedmemory.cpp
 	utlflags.cpp
+	utlhandletable.cpp
 	utlhash.cpp
+	utlhashmaplarge.cpp
 	utlhashtable.cpp
+	utlintrusivelist.cpp
 	utlleanvector.cpp
 	utllinkedlist.cpp
+	utllrucache.cpp
 	utlmap.cpp
 	utlmemory.cpp
 	utlmultilist.cpp
+	utlntree.cpp
 	utlpair.cpp
 	utlpriorityqueue.cpp
 	utlqueue.cpp
@@ -138,21 +181,41 @@ set(SOURCESDK_CONTAINER_TEST_SOURCES
 	utlstringmap.cpp
 	utlstringtoken.cpp
 	utlsymbol.cpp
+	utlsymbollarge.cpp
+	utltshash.cpp
 	utlvector.cpp
+	vswap.cpp
 )
 
 foreach(test_source IN LISTS SOURCESDK_CONTAINER_TEST_SOURCES)
 	sourcesdk_add_cpp_test("" containers_main.cpp ${test_source})
 endforeach()
 
+# The minidumps of tier0 stop the threads of the process, which stalls under the load of the other tests
+set_tests_properties(minidump_tests PROPERTIES RUN_SERIAL TRUE)
+
 set(SOURCESDK_SMOKE_TEST_SOURCES
+	tier0_headers.cpp
 	tier0_utl_headers.cpp
 	tier1_utl_headers.cpp
 	keyvalues3_headers.cpp
+	jobthread.cpp
 )
 
 foreach(test_source IN LISTS SOURCESDK_SMOKE_TEST_SOURCES)
 	sourcesdk_add_cpp_test(smoke smoke_main.cpp ${test_source})
+endforeach()
+
+set(SOURCESDK_MATHLIB_TEST_SOURCES
+	mathlib.cpp
+	vec3d.cpp
+)
+
+foreach(test_source IN LISTS SOURCESDK_MATHLIB_TEST_SOURCES)
+	sourcesdk_add_cpp_test("" containers_main.cpp ${test_source})
+
+	get_filename_component(test_name_we "${test_source}" NAME_WE)
+	target_link_libraries(${test_name_we}_tests PRIVATE ${SOURCESDK_MATHLIB_NAME})
 endforeach()
 
 add_executable(keyvalues3_tests
@@ -168,3 +231,22 @@ target_compile_definitions(keyvalues3_tests PRIVATE
 )
 
 sourcesdk_setup_test_target(keyvalues3_tests)
+
+sourcesdk_add_cpp_test("" keyvalues3_main.cpp keyvalues3_binary.cpp)
+sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer.cpp)
+sourcesdk_add_cpp_test("" keyvalues3_main.cpp kv3transfer_schema.cpp)
+sourcesdk_add_cpp_test("" keyvalues3_main.cpp schemametatag.cpp)
+
+sourcesdk_add_cpp_test("" containers_main.cpp convar.cpp)
+
+target_link_libraries(convar_tests PRIVATE
+	${SOURCESDK_TIER0_PERPROJECT_NAME}
+)
+
+sourcesdk_add_cpp_test("" containers_main.cpp convar_lifecycle.cpp)
+
+target_link_libraries(convar_lifecycle_tests PRIVATE
+	${SOURCESDK_TIER0_PERPROJECT_NAME}
+)
+
+sourcesdk_add_cpp_test("" containers_main.cpp vscriptbinding.cpp)

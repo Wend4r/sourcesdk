@@ -20,16 +20,16 @@
 #include "tier0/fasttimer.h"
 #include "tier0/t0constants.h"
 
-#include "tier1/utlmap.h"
-#include "tier1/utllinkedlist.h"
-#include "tier1/utlpriorityqueue.h"
+#include "tier0/utlmap.h"
+#include "tier0/utllinkedlist.h"
+#include "tier0/utlpriorityqueue.h"
 #include "tier0/checksum_crc.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlbuffer.h"
 #include "tier0/mempool.h"
 #include "tier1/tsmempool.h"
 #include "tier1/tsmultimempool.h"
-#include "tier1/fmtstr.h"
+#include "tier0/fmtstr.h"
 
 #include "vstdlib/coroutine.h"
 

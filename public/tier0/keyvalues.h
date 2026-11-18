@@ -20,12 +20,14 @@
 #endif
 #endif
 
-#include <tier1/IKeyValuesSystem.h>
+#include <tier0/ikeyvaluessystem.h>
 
 #include "platform.h"
 #include "utlvector.h"
 #include "color.h"
 #include "exprevaluator.h"
+
+#include "schemacompiler/schemaon.h"
 
 class IBaseFileSystem;
 class IFileSystem;
@@ -54,23 +56,21 @@ class CKeyValuesGrowableStringTable;
 #define FOR_EACH_VALUE( kvRoot, kvValue ) \
 	for ( KeyValues * kvValue = kvRoot->GetFirstValue(); kvValue != NULL; kvValue = kvValue->GetNextValue() )
 
-DECLARE_POINTER_HANDLE( HTemporaryKeyValueAllocationScope );
-
 class CTemporaryKeyValues
 {
+public:
 	CTemporaryKeyValues() : m_pKeyValues(nullptr), m_hScope() {}
 	~CTemporaryKeyValues()
 	{
-		// GAMMACASE: TODO: Complete with actual KeyValuesSystem call once it's reversed too.
-#if 0
-		KeyValuesSystem()->ReleaseTemporaryAllocationScope( m_hScope );
-#endif
+		KeyValuesSystem()->FreeTemporaryKeyValueAllocationScope( m_hScope );
 	}
 
 private:
 	KeyValues *m_pKeyValues;
 	HTemporaryKeyValueAllocationScope m_hScope;
 };
+
+#pragma pack( push, 4 )
 
 class CKeyValues_Data
 {
@@ -104,6 +104,7 @@ protected:
 	DLL_CLASS_IMPORT const char *ResolveStringValue() const;
 	DLL_CLASS_IMPORT const wchar_t *ResolveWStringValue() const;
 	DLL_CLASS_IMPORT KeyValues *ResolveSubKeyValue() const;
+	DLL_CLASS_IMPORT void *ResolvePtrValue() const;
 
 	DLL_CLASS_IMPORT void Internal_ClearAll();
 	DLL_CLASS_IMPORT void Internal_ClearData();
@@ -121,7 +122,7 @@ protected:
 	DLL_CLASS_IMPORT HKeySymbol Internal_GetNameSymbol() const;
 	DLL_CLASS_IMPORT HKeySymbol Internal_GetNameSymbolCaseSensitive() const;
 
-	DLL_CLASS_IMPORT void Internal_SetName( char const *szName );
+	DLL_CLASS_IMPORT bool Internal_SetName( char const *szName );
 	DLL_CLASS_IMPORT void Internal_SetNameFrom( CKeyValues_Data const &pOther );
 
 	DLL_CLASS_IMPORT Color Internal_GetColor( Color defaultClr ) const;
@@ -158,7 +159,7 @@ private:
 		KeyValues *m_pSub;
 	};
 
-	void *m_pUnk;
+	IKeyValuesSystem *m_pKeyValuesSystem;
 
 	uint32 m_iKeyNameCaseSensitive : 24;
 	uint32 m_iDataType : 3;
@@ -189,26 +190,22 @@ private:
 //	are \n, \t, \\, \n and \". The number character '#' is used for macro purposes 
 //	(eg #include), don't use it as first character in key names.
 //-----------------------------------------------------------------------------
-class KeyValues : public CKeyValues_Data
+schema class KeyValues : public CKeyValues_Data
 {
 	friend class CKeyValuesTokenReader;
 
 public:
-	//	By default, the KeyValues class uses a string table for the key names that is
-	//	limited to 4MB. The game will exit in error if this space is exhausted. In
-	//	general this is preferable for game code for performance and memory fragmentation
-	//	reasons.
-	//
-	//	If this is not acceptable, you can use this call to switch to a table that can grow
-	//	arbitrarily. This call must be made before any KeyValues objects are allocated or it
-	//	will result in undefined behavior. If you use the growable string table, you cannot
-	//	share KeyValues pointers directly with any other module. You can serialize them across
-	//	module boundaries. These limitations are acceptable in the Steam backend code 
-	//	this option was written for, but may not be in other situations. Make sure to
-	//	understand the implications before using this.
-	static void SetUseGrowableStringTable( bool bUseGrowableTable );
+	// Tag of the constructor that gives the key a disposable string table of its own.
+	// Every caller in engine2 and server passes 0, tier0 does not read it; the name of
+	// the enumerator is not in the binaries
+	enum KV_DISPOSABLE_STRING_TABLE_STATE
+	{
+		KV_DISPOSABLE_STRING_TABLE = 0,
+	};
 
 	DLL_CLASS_IMPORT explicit KeyValues( const char *setName, IKeyValuesSystem *customSystem = NULL, bool ownsCustomSystem = false );
+	// Owns a new disposable key values system, the tag is not read
+	DLL_CLASS_IMPORT KeyValues( const char *setName, KV_DISPOSABLE_STRING_TABLE_STATE );
 
 	//
 	// AutoDelete class to automatically free the keyvalues.
@@ -252,8 +249,11 @@ public:
 	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, const char *firstValue );
 	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, const wchar_t *firstValue );
 	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, int firstValue );
+	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, uint64 firstValue );
+	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, float firstValue );
+	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, bool firstValue );
 	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, const char *firstValue, const char *secondKey, const char *secondValue );
-	DLL_CLASS_IMPORT KeyValues( const char *setName, const char *firstKey, int firstValue, const char *secondKey, int secondValue );
+	DLL_CLASS_IMPORT KeyValues( const KeyValues *pOther, bool );
 
 	DLL_CLASS_IMPORT ~KeyValues();
 
@@ -267,38 +267,35 @@ public:
 
 	// File access. Set UsesEscapeSequences true, if resource file/buffer uses Escape Sequences (eg \n, \t)
 	DLL_CLASS_IMPORT void UsesEscapeSequences( bool state ); // default false
-	DLL_CLASS_IMPORT bool LoadFromFile( IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT bool LoadFromFile( IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pEvaluateSymbolContext = NULL, const char *pEmptyKeyReplacement = NULL );
 	DLL_CLASS_IMPORT bool SaveToFile( IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, bool bAllowEmptyString = false, bool binaryWrite = true );
 	// Read from a buffer...  Note that the buffer must be null terminated
-	DLL_CLASS_IMPORT bool LoadFromBuffer( char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT bool LoadFromBuffer( char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pEvaluateSymbolContext = NULL, const char *pEmptyKeyReplacement = NULL );
 
 	// Read from a utlbuffer...
-	DLL_CLASS_IMPORT bool LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT bool LoadFromBuffer( char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pEvaluateSymbolContext = NULL, const char *pEmptyKeyReplacement = NULL );
 
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromBuffer( bool, char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromBuffer( bool bUseEscapeSequences, char const *resourceName, const char *pBuffer, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, IKeyValuesErrorSpew *pErrorSpew = NULL, void *pEvaluateSymbolContext = NULL, const char *pEmptyKeyReplacement = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromBuffer( bool bUseEscapeSequences, char const *resourceName, CUtlBuffer &buf, IFileSystem *pFileSystem = NULL, const char *pPathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pEvaluateSymbolContext = NULL, const char *pEmptyKeyReplacement = NULL );
 
-	DLL_CLASS_IMPORT CTemporaryKeyValues *LoadTemporaryFromFile( bool, IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pUnk1 = NULL, const char *pUnk2 = NULL );
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *LoadTemporaryFromFile( bool bUseEscapeSequences, IFileSystem *filesystem, const char *resourceName, const char *pathID = NULL, GetSymbolProc_t pfnEvaluateSymbolProc = NULL, void *pEvaluateSymbolContext = NULL, const char *pEmptyKeyReplacement = NULL );
 
 	// Find a keyValue, create it if it is not found.
 	// Set bCreate to true to create the key if it doesn't already exist (which ensures a valid pointer will be returned)
-	DLL_CLASS_IMPORT KeyValues *FindKey( HKeySymbol keySymbol ) const;
+	DLL_CLASS_IMPORT KeyValues *FindKey( HKeySymbol keySymbol );
 	DLL_CLASS_IMPORT const KeyValues *FindKey( const char *keyName ) const;
 	DLL_CLASS_IMPORT KeyValues *FindKey( const char *keyName, bool bCreate = false );
 	DLL_CLASS_IMPORT KeyValues *FindKeyAndParent( const char *keyName, KeyValues **pParent, bool );
 	DLL_CLASS_IMPORT bool FindAndDeleteSubKey( const char *keyName );
 
-	DLL_CLASS_IMPORT KeyValues* CreateKey( const char *keyName );
 	DLL_CLASS_IMPORT KeyValues *CreateNewKey();		// creates a new key, with an autogenerated name.  name is guaranteed to be an integer, of value 1 higher than the highest other integer key name
 	DLL_CLASS_IMPORT KeyValues *CreatePeerKey( const char *keyName );
 
 	DLL_CLASS_IMPORT KeyValues *AddKey( const char *keyName );
 	DLL_CLASS_IMPORT void AddSubKey( KeyValues *pSubkey );	// Adds a subkey. Make sure the subkey isn't a child of some other keyvalues
 
-	DLL_CLASS_IMPORT KeyValues *CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pChild );
-
-	DLL_CLASS_IMPORT void RemoveSubKey( KeyValues *subKey, bool bDelete = true, bool bUnk = false );	// removes a subkey from the list, DOES NOT DELETE IT
-	DLL_CLASS_IMPORT void RemoveOptionalSubKey( KeyValues *subKey );
+	DLL_CLASS_IMPORT void RemoveSubKey( KeyValues *subKey, bool bDelete = true, bool bOptional = false );	// removes a subkey from the list, DOES NOT DELETE IT
+	void RemoveOptionalSubKey( KeyValues *subKey ); // removes a subkey from the list without deleting it
 	DLL_CLASS_IMPORT void InsertSubKey( int nIndex, KeyValues *pSubKey ); // Inserts the given sub-key before the Nth child location
 	DLL_CLASS_IMPORT bool ContainsSubKey( KeyValues *pSubKey ); // Returns true if this key values contains the specified sub key, false otherwise.
 	DLL_CLASS_IMPORT void SwapSubKey( KeyValues *pExistingSubKey, KeyValues *pNewSubKey );	// Swaps an existing subkey for a new one, DOES NOT DELETE THE OLD ONE but takes ownership of the new one
@@ -362,6 +359,19 @@ public:
 	DLL_CLASS_IMPORT void SetPtr( const char *keyName, void *value );
 	DLL_CLASS_IMPORT void SetColor( const char *keyName, Color value);
 	void SetBool( const char *keyName, bool value ) { SetInt( keyName, value ? 1 : 0 ); }
+	DLL_CLASS_IMPORT void SetFromString( const char *keyName, types_t type, const char *szValue );
+
+	// Add a new value key, even when one with the same name exists
+	DLL_CLASS_IMPORT void AddString( const char *keyName, const char *value );
+	DLL_CLASS_IMPORT void AddFloat( const char *keyName, float value );
+	DLL_CLASS_IMPORT void AddInt( const char *keyName, int value );
+	DLL_CLASS_IMPORT void AddUint64( const char *keyName, uint64 value );
+	DLL_CLASS_IMPORT void AddPtr( const char *keyName, void *value );
+
+	DLL_CLASS_IMPORT int Count() const;
+	DLL_CLASS_IMPORT KeyValues *Element( int nIndex );
+
+	DLL_CLASS_IMPORT IKeyValuesSystem *GetKeyValuesSystem() const;
 
 	// Memory allocation (optimized)
 	DLL_CLASS_IMPORT void *operator new( size_t iAllocSize );
@@ -369,25 +379,25 @@ public:
 	DLL_CLASS_IMPORT void operator delete( void *pMem );
 	DLL_CLASS_IMPORT void operator delete( void *pMem, int nBlockUse, const char *pFileName, int nLine );
 
-	DLL_CLASS_IMPORT KeyValues& operator=( KeyValues& src );
+	DLL_CLASS_IMPORT KeyValues &operator=( const KeyValues &src );
 
 	DLL_CLASS_IMPORT bool IsEqual( KeyValues *pRHS );
 
-	// Adds a chain... if we don't find stuff in this keyvalue, we'll look
-	// in the one we're chained to.
-	DLL_CLASS_IMPORT void ChainKeyValue( KeyValues* pChain );
-	
-	DLL_CLASS_IMPORT void RecursiveSaveToFile( CUtlBuffer& buf, int indentLevel );
+	DLL_CLASS_IMPORT void RecursiveSaveToFile( CUtlBuffer &buf, int indentLevel, bool bWriteRootKey, bool bWriteEmptySubKeys ) const;
+	DLL_CLASS_IMPORT void RecursiveSaveToLocalizationFile( IFileSystem *filesystem, FileHandle_t f, int indentLevel, bool bAsUTF8 );
 
 	DLL_CLASS_IMPORT bool WriteAsBinary( CUtlBuffer &buffer ) const;
-	DLL_CLASS_IMPORT bool ReadAsBinary( CUtlBuffer &buffer, int nStackDepth = 0 );
+	DLL_CLASS_IMPORT bool ReadAsBinary( CUtlBuffer &buffer );
 
 	// Same as the other binary functions, but filter out and remove empty keys (like when seralizing to a file )
 	DLL_CLASS_IMPORT bool WriteAsBinaryFiltered( CUtlBuffer &buffer );
-	DLL_CLASS_IMPORT bool ReadAsBinaryFiltered( CUtlBuffer &buffer, int nStackDepth = 0 );
+	DLL_CLASS_IMPORT bool ReadAsBinaryFiltered( CUtlBuffer &buffer );
+
+	DLL_CLASS_IMPORT static CTemporaryKeyValues *ReadTemporaryAsBinary( bool, CUtlBuffer &buffer );
 
 	// Allocate & create a new copy of the keys
 	DLL_CLASS_IMPORT KeyValues *MakeCopy( void ) const;
+	DLL_CLASS_IMPORT KeyValues *MakeCopy( IKeyValuesSystem *pKeyValuesSystem ) const;
 
 	// Make a new copy of all subkeys, add them all to the passed-in keyvalues
 	DLL_CLASS_IMPORT void CopySubkeys( KeyValues *pParent ) const;
@@ -396,22 +406,7 @@ public:
 	DLL_CLASS_IMPORT void Clear( void );
 
 	// Data type
-	enum types_t
-	{
-		TYPE_NONE = 0,
-		TYPE_STRING,
-		TYPE_INT,
-		TYPE_FLOAT,
-		TYPE_PTR,
-		TYPE_WSTRING,
-		TYPE_COLOR,
-		TYPE_UINT64,
-		TYPE_COMPILED_INT_BYTE,			// hack to collapse 1 byte ints in the compiled format
-		TYPE_COMPILED_INT_0,			// hack to collapse 0 in the compiled format
-		TYPE_COMPILED_INT_1,			// hack to collapse 1 in the compiled format
-		TYPE_NUMTYPES, 
-	};
-	DLL_CLASS_IMPORT types_t GetDataType(const char *keyName = NULL);
+	DLL_CLASS_IMPORT types_t GetDataType( const char *keyName ) const;
 	types_t GetDataType() const;
 
 	// for backward compat
@@ -436,7 +431,8 @@ public:
 		MERGE_KV_DELETE,	// update values specify keys that get deleted from storage
 		MERGE_KV_BORROW,	// update values only update existing keys in storage, keys in update that do not exist in storage are discarded
 	};
-	DLL_CLASS_IMPORT void MergeFrom( KeyValues *kvMerge, MergeKeyValuesOp_t eOp = MERGE_KV_ALL );
+	DLL_CLASS_IMPORT void MergeFrom( const KeyValues *kvMerge, MergeKeyValuesOp_t eOp = MERGE_KV_ALL );
+	DLL_CLASS_IMPORT CTemporaryKeyValues *MergeFromTemporary( const KeyValues *kvMerge, MergeKeyValuesOp_t eOp = MERGE_KV_ALL ) const;
 
 	// Assign keyvalues from a string
 	DLL_CLASS_IMPORT static KeyValues * FromString( char const *szName, char const *szStringVal, char const **ppEndOfParse = NULL );
@@ -446,55 +442,14 @@ public:
 	/// when CreateKey() wil have to re-locate the end of the list each time.  This happens,
 	/// for example, every time we load any KV file whatsoever.
 
-	DLL_CLASS_IMPORT KeyValues* CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pLastChild, IKeyValuesSystem *pKVSystem = NULL );
+	DLL_CLASS_IMPORT KeyValues *CreateKeyUsingKnownLastChild( const char *keyName, KeyValues *pLastChild );
 	DLL_CLASS_IMPORT void AddSubkeyUsingKnownLastChild( KeyValues *pSubKey, KeyValues *pLastChild );
 
 private:
-	uint32 m_iKeyName : 24;	// keyname is a symbol defined in KeyValuesSystem
-	uint32 m_iKeyNameCaseSensitive1 : 8;	// 1st part of case sensitive symbol defined in KeyValueSystem
-
-	// These are needed out of the union because the API returns string pointers
-	char *m_sValue;
-	wchar_t *m_wsValue;
-
-	// we don't delete these
-	union
-	{
-		int m_iValue;
-		float m_flValue;
-		void *m_pValue;
-		unsigned char m_Color[4];
-	};
-	
-	char	   m_iDataType;
-	char	   m_bHasEscapeSequences; // true, if while parsing this KeyValue, Escape Sequences are used (default false)
-	uint16	   m_iKeyNameCaseSensitive2;	// 2nd part of case sensitive symbol defined in KeyValueSystem;
-
-	IKeyValuesSystem *m_pKeyValuesSystem;
-	bool m_bOwnsCustomKeyValuesSystem;
-
 	KeyValues *m_pPeer;	// pointer to next key in list
-	KeyValues *m_pSub;	// pointer to Start of a new sub key list
-	KeyValues *m_pChain;// Search here if it's not in our list
-	
-	GetSymbolProc_t	m_pExpressionGetSymbolProc;
-
-private:
-	// Statics to implement the optional growable string table
-	// Function pointers that will determine which mode we are in
-	static int (*s_pfGetSymbolForString)( const char *name, bool bCreate );
-	static const char *(*s_pfGetStringForSymbol)( int symbol );
-	static CKeyValuesGrowableStringTable *s_pGrowableStringTable;
-
-public:
-	// Functions that invoke the default behavior
-	static int GetSymbolForStringClassic( const char *name, bool bCreate = true );
-	static const char *GetStringForSymbolClassic( int symbol );
-	
-	// Functions that use the growable string table
-	static int GetSymbolForStringGrowable( const char *name, bool bCreate = true );
-	static const char *GetStringForSymbolGrowable( int symbol );
 };
+
+#pragma pack( pop )
 
 typedef KeyValues::AutoDelete KeyValuesAD;
 
@@ -541,7 +496,41 @@ inline const wchar_t *KeyValues::GetWString( const char *keyName, const wchar_t 
 
 inline KeyValues::types_t KeyValues::GetDataType( void ) const
 {
-	return (types_t)m_iDataType;
+	return ( types_t )m_iDataType;
+}
+
+inline void KeyValues::RemoveOptionalSubKey( KeyValues *subKey )
+{
+	if ( !subKey )
+		return;
+
+	if ( m_iDataType == TYPE_NONE && m_bStoredSubKey )
+	{
+		if ( m_pSub == subKey )
+		{
+			if ( subKey->m_pPeer )
+			{
+				m_pSub = subKey->m_pPeer;
+			}
+			else
+			{
+				m_bStoredSubKey = false;
+			}
+		}
+		else
+		{
+			for ( KeyValues *pPrev = m_pSub; pPrev->m_pPeer; pPrev = pPrev->m_pPeer )
+			{
+				if ( pPrev->m_pPeer == subKey )
+				{
+					pPrev->m_pPeer = subKey->m_pPeer;
+					break;
+				}
+			}
+		}
+	}
+
+	subKey->m_pPeer = NULL;
 }
 
 // for backwards compat - we used to need this to force the free to run from the same DLL
@@ -553,24 +542,7 @@ inline void KeyValues::deleteThis()
 
 inline void KeyValues::SetStringValue( char const *strValue )
 {
-	// delete the old value
-	delete [] m_sValue;
-	// make sure we're not storing the WSTRING  - as we're converting over to STRING
-	delete [] m_wsValue;
-	m_wsValue = NULL;
-
-	if (!strValue)
-	{
-		// ensure a valid value
-		strValue = "";
-	}
-
-	// allocate memory for the new value and copy it in
-	size_t len = V_strlen( strValue );
-	m_sValue = new char[len + 1];
-	V_memcpy( m_sValue, strValue, len+1 );
-
-	m_iDataType = TYPE_STRING;
+	Internal_SetString( strValue ? strValue : "" );
 }
 
 //
@@ -611,11 +583,53 @@ protected:
 	int m_nDeveloperLevel;
 };
 
+class CKeyValuesDumpContextToBufferString : public IKeyValuesDumpContextAsText
+{
+public:
+	CKeyValuesDumpContextToBufferString( CBufferString *pStrBuf ) : m_pStrBuf( pStrBuf ) {}
+
+public:
+	DLL_CLASS_IMPORT virtual bool KvWriteText( char const *szText );
+
+protected:
+	CBufferString *m_pStrBuf;
+};
+
+class CKeyValuesDumpContextToLoggingChannel : public IKeyValuesDumpContextAsText
+{
+public:
+	CKeyValuesDumpContextToLoggingChannel( LoggingChannelID_t channelID, LoggingSeverity_t severity ) : m_channelID( channelID ), m_severity( severity ) {}
+
+public:
+	DLL_CLASS_IMPORT virtual bool KvWriteText( char const *szText );
+
+protected:
+	LoggingChannelID_t m_channelID;
+	LoggingSeverity_t m_severity;
+};
+
 inline bool KeyValuesDumpAsDevMsg( KeyValues *pKeyValues, int nIndentLevel = 0, int nDeveloperLevel = 1 )
 {
 	CKeyValuesDumpContextAsDevMsg ctx( nDeveloperLevel );
 	return pKeyValues->Dump( &ctx, nIndentLevel );
 }
 
+
+//-----------------------------------------------------------------------------
+// Values of the game info (gameinfo.gi) by a path of key names separated by slashes, or the
+// default when there is no game info or no such key
+//-----------------------------------------------------------------------------
+PLATFORM_OVERLOAD KeyValues *GetGameInfoKey( const char *keyName );
+PLATFORM_OVERLOAD const char *GetGameInfoString( const char *keyName, const char *defaultValue, char *pScratchSpace, size_t nScratchSpaceCount );
+PLATFORM_OVERLOAD int GetGameInfoInt( const char *keyName, int defaultValue );
+PLATFORM_OVERLOAD uint64 GetGameInfoUint64( const char *keyName, uint64 defaultValue );
+PLATFORM_OVERLOAD float GetGameInfoFloat( const char *keyName, float defaultValue );
+PLATFORM_OVERLOAD bool GetGameInfoBool( const char *keyName, bool defaultValue );
+
+// Conversion between KeyValues and JSON text
+PLATFORM_INTERFACE KeyValues *KeyValuesFromJSON( CUtlBuffer &inputBuffer, bool bIgnoreFailures, bool *pSuccess );
+PLATFORM_INTERFACE bool KeyValuesToJSON( const KeyValues *pKeyValues, CUtlBuffer &outBuffer );
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // KEYVALUES_H

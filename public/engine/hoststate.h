@@ -1,7 +1,13 @@
+#ifndef ENGINE_HOSTSTATE_H
+#define ENGINE_HOSTSTATE_H
+#ifdef _WIN32
+#pragma once
+#endif
+
 #include "tier0/utlstring.h"
 #include "tier0/keyvalues.h"
 #include "appframework/iappsystem.h"
-#include "tier2/tier2.h"
+#include "tier4/tier4.h"
 
 struct ResourceManifestDesc_t;
 
@@ -38,34 +44,43 @@ struct CHostStateRequest
 	CUtlString m_SaveGame;
 	CUtlString m_Address;
 	CUtlString m_DemoFile;
-	bool m_bLoadMap;
+	bool m_bTimeDemo;
 	CUtlString m_Addons;
 	KeyValues *m_pKV;
 };
 
 class ISwitchLoopModeStatusNotify
 {
-	virtual void OnSwitchLoopModeFinished(const char *, uint32, bool) = 0;
+public:
+	// pszLoopModeName and nId are the values passed to IEngineServiceMgr::SwitchToLoop.
+	// bSuccess is false when the request was dropped before the switch happened.
+	virtual void OnSwitchLoopModeFinished( const char *pszLoopModeName, uint32 nId, bool bSuccess ) = 0;
 };
 
 class IHostStateMgr : public IAppSystem
 {
 public:
 	virtual void RequestHS_Quit(void) = 0;
-	virtual void RequestHS_Idle(KeyValues *) = 0;
-	virtual void RequestHS_Connect(const char *, KeyValues *) = 0;
-	virtual void RequestHS_ChangelevelReconnect(const char *, KeyValues *) = 0;
-	virtual void RequestHS_LoadSpawnGroup(const char *, const char *, bool, KeyValues *) = 0;
-	virtual void RequestHS_LoadSaveGame(const char *, const char *, KeyValues *) = 0;
-	virtual void RequestHS_PlayDemo(const char *, const char *, bool, KeyValues *) = 0;
-	virtual void RequestHS_PlayBroadcast(const char *, KeyValues *) = 0;
-	virtual void RequestHS_DownloadAddons(KeyValues *) = 0;
-	virtual void RequestHS_SourceTVRelay(const char *, KeyValues *) = 0;
+	virtual void RequestHS_Idle( KeyValues *pKV ) = 0;
+	virtual void RequestHS_Connect( const char *pszAddress, KeyValues *pKV ) = 0;
+	virtual void RequestHS_ChangelevelReconnect( const char *pszAddons, KeyValues *pKV ) = 0;
+	virtual void RequestHS_LoadSpawnGroup( const char *pszLevelName, const char *pszAddons, bool bChangelevel, KeyValues *pKV ) = 0;
+	virtual void RequestHS_LoadSaveGame( const char *pszSaveGame, const char *pszAddons, KeyValues *pKV ) = 0;
+	virtual void RequestHS_PlayDemo( const char *pszDemoFile, const char *pszAddons, bool bTimeDemo, KeyValues *pKV ) = 0;
+	virtual void RequestHS_PlayBroadcast( const char *pszBroadcast, KeyValues *pKV ) = 0;
+	virtual void RequestHS_DownloadAddons( KeyValues *pKV ) = 0;
+	virtual void RequestHS_SourceTVRelay( const char *pszAddress, KeyValues *pKV ) = 0;
 	virtual void RequestHS_ReloadLastSaveGame(void) = 0;
 	virtual void RequestHS_RestartSpawnGroups(void) = 0;
+
+	// Empty in the engine implementation. Called as a begin/end pair around ISource2Server::GameFrame
+	// on the secondary main thread.
+	// Named by where the engine calls them
+	virtual void OnServerGameFrameBegin( void ) = 0;
+	virtual void OnServerGameFrameEnd( void ) = 0;
 };
 
-class CHostStateMgr : public CTier2AppSystem<IHostStateMgr>, public ISwitchLoopModeStatusNotify
+class CHostStateMgr : public CTier4AppSystem<IHostStateMgr>, public ISwitchLoopModeStatusNotify
 {
 public:
 	CHostStateRequest *m_PendingRequest;              // 0x30
@@ -75,7 +90,7 @@ public:
 	CUtlString m_LoopMode;                            // 0x50
 	KeyValues *m_pConnectKV;                          // 0x58
 	CUtlString m_LoopModeName;                        // 0x60
-	CUtlString m_Address;                             // 0x68
+	KeyValues *m_pSourceTVRelayKV;                    // 0x68
 	CUtlString m_SaveGame;                            // 0x70
 	CUtlString m_LevelName;                           // 0x78
 	CUtlString m_Addons;                              // 0x80
@@ -83,3 +98,5 @@ public:
 	int m_ID;                                         // 0x90
 	CUtlVector<CHostStateRequest *> m_QueuedRequests; // 0x98
 };
+
+#endif // ENGINE_HOSTSTATE_H

@@ -12,23 +12,27 @@
 #pragma once
 #endif
 
+#include "platform.h"
 #include "tier0/basetypes.h"
+
+#include "schemacompiler/schemaon.h"
+
+class IFormatOutputStream;
+class CFormatStringElement;
 
 //-----------------------------------------------------------------------------
 // Purpose: Basic handler for an rgb set of colors
 //			This class is fully inline
 //-----------------------------------------------------------------------------
-class alignas(4) Color
+schema class Color
 {
 public:
-#pragma pack(push, 1)
 	union
 	{
 		struct { unsigned char m_r, m_g, m_b, m_a; };
 		int m_rawColor;
 		unsigned char m_array[4];
 	};
-#pragma pack(pop)
 
 	// default constructor
 	Color(const Color &) = default;
@@ -41,6 +45,12 @@ public:
 	// initialize from components
 	Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 0)
 		: m_r(r), m_g(g), m_b(b), m_a(a) {}
+
+	// initialize from color32
+	Color(color32 clr)
+		: m_r(clr.r), m_g(clr.g), m_b(clr.b), m_a(clr.a) {}
+
+	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream *pOutputStream, CFormatStringElement element ) const;
 
 	// set the color
 	void SetColor(int r, int g, int b, int a = 0)
@@ -111,5 +121,13 @@ public:
 		m_a = c.a;
 	}
 };
+
+// FIXME: why are these here?  Hardly anyone actually needs them.
+struct color24
+{
+	byte r, g, b;
+};
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // COLOR_H

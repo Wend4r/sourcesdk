@@ -1,7 +1,8 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlmap.h>
+#include <tier0/strtools.h>
+#include <tier0/utlmap.h>
 
 #include <type_traits>
 #include <utility>
@@ -38,6 +39,28 @@ REGISTER_NAMED_TEST( "CUtlMap.InsertOrReplace", CUtlMap_InsertOrReplace )
 
 	TEST_EQ( map.Count(), 1u );
 	TEST_EQ( map[map.Find( 5 )], 55 );
+}
+
+struct CaseInsensitiveLess_t
+{
+	bool operator()( const char *pLeft, const char *pRight ) const
+	{
+		return V_stricmp( pLeft, pRight ) < 0;
+	}
+};
+
+REGISTER_NAMED_TEST( "CUtlMap.InsertOrReplaceKeepsKey", CUtlMap_InsertOrReplaceKeepsKey )
+{
+	// Replacing through an equivalent key should keep the stored key and update only the element.
+	CUtlMap< const char *, int, int, CaseInsensitiveLess_t > map;
+
+	map.Insert( "Alpha", 1 );
+
+	int i = map.InsertOrReplace( "alpha", 2 );
+
+	TEST_EQ( map.Count(), 1u );
+	TEST_EQ( V_strcmp( map.Key( i ), "Alpha" ), 0 );
+	TEST_EQ( map[i], 2 );
 }
 
 REGISTER_NAMED_TEST( "CUtlMap.InorderIteration", CUtlMap_InorderIteration )
@@ -149,4 +172,66 @@ REGISTER_NAMED_TEST( "CUtlMap.CopyAndMove", CUtlMap_CopyAndMove )
 	TEST_EQ( moveAssigned.Element( moveAssigned.Find( 1 ) ), 10 );
 	TEST_EQ( moveAssigned.Element( moveAssigned.Find( 2 ) ), 20 );
 	TEST_EQ( moveAssigned.Element( moveAssigned.Find( 3 ) ), 30 );
+}
+
+REGISTER_NAMED_TEST( "CUtlMap.FindConditionAndFindOrInsert", CUtlMap_FindConditionAndFindOrInsert )
+{
+	// Map wrappers should expose the tree's find conditions and insert behaviors.
+	CUtlMap< int, int > map;
+
+	TEST_TRUE( map.IsEmpty() );
+
+	map.Insert( 10, 100 );
+	map.Insert( 20, 200 );
+	map.Insert( 30, 300 );
+
+	TEST_FALSE( map.IsEmpty() );
+	TEST_EQ( map.Find( 25, EXACT_MATCH ), map.InvalidIndex() );
+	TEST_EQ( map.Key( map.Find( 25, MATCH_OR_LESS ) ), 20 );
+	TEST_EQ( map.Key( map.Find( 25, MATCH_OR_GREATER ) ), 30 );
+	TEST_EQ( map.FindElement( 25, -1 ), -1 );
+	TEST_EQ( map.FindElement( 25, -1, MATCH_OR_LESS ), 200 );
+	TEST_NULL( map.FindGetPtr( 25 ) );
+	TEST_EQ( *map.FindGetPtr( 25, MATCH_OR_GREATER ), 300 );
+	TEST_EQ( map.FindFirstElement( 10, -1 ), 100 );
+	TEST_EQ( map.FindFirstElement( 15, -1 ), -1 );
+	TEST_EQ( map.FindClosestElement( 15, -1, k_EGreaterThan ), 200 );
+	TEST_EQ( map.FindClosestElement( 35, -1, k_EGreaterThan ), -1 );
+
+	bool bInserted = true;
+
+	TEST_EQ( map.FindOrInsert( 10, 111, &bInserted ), map.Find( 10 ) );
+	TEST_FALSE( bInserted );
+	TEST_EQ( map.Element( map.Find( 10 ) ), 100 );
+
+	int *pForty = map.FindOrInsertGetPtr( 40, 400, &bInserted );
+	TEST_TRUE( bInserted );
+	TEST_EQ( *pForty, 400 );
+
+	int *pFifty = map.InsertGetPtr( 50, k_eInsertUpdateDupes );
+	*pFifty = 500;
+	TEST_EQ( map.InsertGetPtr( 50, k_eInsertUpdateDupes ), pFifty );
+	TEST_EQ( map.Count(), 5u );
+
+	map.InsertOrReplace( 20, 222 );
+	TEST_EQ( map.Count(), 5u );
+	TEST_EQ( map.Element( map.Find( 20 ) ), 222 );
+	TEST_TRUE( map.HasElement( 40 ) );
+}
+
+REGISTER_NAMED_TEST( "CUtlMap.PurgeAndDeleteElements", CUtlMap_PurgeAndDeleteElements )
+{
+	// PurgeAndDeleteElements should delete pointer values and only purge non-pointer ones.
+	CUtlMap< int, int * > mapPointers;
+
+	mapPointers.Insert( 1, new int( 10 ) );
+	mapPointers.Insert( 2, new int( 20 ) );
+	mapPointers.PurgeAndDeleteElements();
+	TEST_EQ( mapPointers.Count(), 0u );
+
+	CUtlMap< int, int > mapValues;
+
+	mapValues.Insert( 1, 10 );
+	mapValues.PurgeAndDeleteElements();
+	TEST_EQ( mapValues.Count(), 0u );
 }

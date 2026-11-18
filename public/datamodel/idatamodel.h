@@ -11,8 +11,8 @@
 #endif
 
 #include "tier0/interface.h"
-#include "tier1/utlvector.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlsymbollarge.h"
 #include "appframework/iappsystem.h"
 #include "datamodel/dmattributetypes.h"
 #include "datamodel/dmxheader.h"

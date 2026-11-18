@@ -45,7 +45,7 @@ public:
 	DLL_CLASS_IMPORT size_t TotalMemFree() const;
 
 	// Frees all the allocated chunks, leaving only one active chunk
-	DLL_CLASS_IMPORT void FreeAll();
+	DLL_CLASS_IMPORT void Purge();
 	// Frees all the allocated chunks that lead to the mark, would result in a crash if the mark doesn't point to any of the chunks within this memory pool
 	DLL_CLASS_IMPORT void FreeToAllocPoint( UtlScratchMemoryPoolMark_t mark );
 

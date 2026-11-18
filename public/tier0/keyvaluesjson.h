@@ -63,8 +63,7 @@ private:
 	const char *GetTokenDebugText();
 };
 
-#ifdef _DEBUG
-extern void TestKeyValuesJSONParser();
-#endif
+// Parses a few JSON documents with KeyValues and asserts on the results
+PLATFORM_INTERFACE void TestKeyValuesJSONParser();
 
 #endif // KEYVALUESJSON_H

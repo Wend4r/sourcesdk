@@ -471,9 +471,9 @@ struct VTFFileHeaderV7_1_t : public VTFFileBaseHeader_t
 	VectorAligned	reflectivity;
 #else
 	// must manually align in order to maintain pack(1) expected layout with existing binaries
-	char			pad1[4];
+	char			unused1[ 4 ];
 	Vector			reflectivity;
-	char			pad2[4];
+	char			unused2[ 4 ];
 #endif
 	float			bumpScale;
 	ImageFormat		imageFormat;
@@ -538,12 +538,12 @@ struct VTFFileHeaderV7_3_t : public VTFFileHeaderV7_2_t
 {
 	DECLARE_BYTESWAP_DATADESC()
 
-	char			pad4[3];
+	char			unused4[ 3 ];
 	uint32	numResources;
 
 #if defined( _X360 ) || defined( PLATFORM_OSX )	// OSX GCC (4.2.1) ignores the alignment parameter inside a pack(1) block.
 	// must manually align in order to maintain pack(1) expected layout with existing binaries
-	char			pad5[8];
+	char			unused5[ 8 ];
 #endif
 	
 	// AFTER THE IMPLICIT PADDING CAUSED BY THE COMPILER....

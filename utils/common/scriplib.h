@@ -58,7 +58,7 @@ typedef void ( * SCRIPT_LOADED_CALLBACK )( char const *pFilenameLoaded, char con
 SCRIPT_LOADED_CALLBACK SetScriptLoadedCallback( SCRIPT_LOADED_CALLBACK pfnNewScriptLoadedCallback );
 
 #include "tier0/utlstring.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 class CUtlBuffer;
 

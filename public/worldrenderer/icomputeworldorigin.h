@@ -7,13 +7,8 @@
 
 #include <entity2/entityidentity.h>
 #include <mathlib/mathlib.h>
+#include "worldrenderer/iworldrenderermgr.h"
 
 class IWorld;
-
-class IComputeWorldOriginCallback
-{
-public:
-	virtual matrix3x4_t ComputeWorldOrigin(const char *pWorldName, SpawnGroupHandle_t hSpawnGroup, IWorld *pWorld) = 0;
-};
 
 #endif // ICOMPUTEWORLDORIGIN_H

@@ -8,7 +8,7 @@
 #include <tier0/utlstringtoken.h>
 #include <tier0/utlsymbol.h>
 #include <tier0/utlvectormemory.h>
-#include <tier1/utlstringmap.h>
+#include <tier0/utlstringmap.h>
 
 REGISTER_NAMED_TEST( "CUtlStringMap.Include", CUtlStringMap_Include )
 {

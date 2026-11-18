@@ -20,6 +20,8 @@
 
 #include <initializer_list>
 
+#include "schemacompiler/schemaon.h"
+
 #if defined(DEBUG) && defined(BUFFERSTRING_OVERFLOW_CATCH)
 // Assertion macro for catching stack buffer overflows in debug mode.
 #define Assert_BSO( exp ) { if ( IsStackAllocated() && !CanHeapAllocate() ) Assert( exp ); }
@@ -52,9 +54,11 @@ class IFormatOutputStream;
 	In case of stack allocated buffers, if the requested size exceeds stack size, it would switch to heap allocation instead.
 */
 
-class CBufferString
+schema class CBufferString
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	enum EType_t
 	{
 		BS_TYPE_HEAP = 0,
@@ -102,8 +106,8 @@ public:
 	CBufferString( CBufferString &&moveFrom ) noexcept :
 	    CBufferString()
 	{
-		V_swap( m_nLengthStaff, moveFrom.m_nLengthStaff );
-		V_swap( m_nAllocatedStaff, moveFrom.m_nAllocatedStaff );
+		V_swap( m_nLengthStuff, moveFrom.m_nLengthStuff );
+		V_swap( m_nAllocatedStuff, moveFrom.m_nAllocatedStuff );
 		V_swap( m_Buffer, moveFrom.m_Buffer );
 	}
 
@@ -319,9 +323,9 @@ public:
 	// Given a path and a filename, composes "path\filename", inserting the (OS correct) separator if necessary
 	DLL_CLASS_IMPORT const char *ComposeFileName( const char *pPath, const char *pFile, char cSeparator );
 
-	// Converts wide characters or UTF-32 characters to buffer.
-	DLL_CLASS_IMPORT const char *ConvertIn( unsigned int const *pData, int nSize, bool bIgnoreAlignment = false );
-	DLL_CLASS_IMPORT const char *ConvertIn( wchar_t const *pData, int nSize, bool bIgnoreAlignment = false );
+	// Converts UTF-16 or UTF-32 characters to buffer.
+	DLL_CLASS_IMPORT const char *ConvertIn( const uchar16 *pData, int nSize, bool bIgnoreAlignment = false );
+	DLL_CLASS_IMPORT const char *ConvertIn( const uchar32 *pData, int nSize, bool bIgnoreAlignment = false );
 
 	// Makes path end with extension if it doesn't already have an extension
 	DLL_CLASS_IMPORT const char *DefaultExtension( const char *pExtension );
@@ -345,10 +349,10 @@ public:
 	DLL_CLASS_IMPORT const char *EnsureTrailingSlash( char cSeparator, bool bDontAppendIfEmpty = true );
 
 	// Expands current path with additional directory (with separator).
-	DLL_CLASS_IMPORT const char *ExtendPath( const char *pPath, char cSeparator );
+	DLL_CLASS_IMPORT const char *ExtendPath( const char *pPath, char cSeparator, bool bIgnoreAlignment = false );
 
 	// Extract filename without extension.
-	DLL_CLASS_IMPORT const char *ExtractFileBase( const char *pPath );
+	DLL_CLASS_IMPORT const char *ExtractFileBase( const char *pPath, bool bStripAllExtensions = false );
 
 	// Copies out the file extension into dest
 	DLL_CLASS_IMPORT const char *ExtractFileExtension( const char *pPath );
@@ -381,7 +385,7 @@ public:
 	// The first is the full path of the file to make a relative path for.
 	// The second is the full path of the directory to make the first file relative to
 	// Returns NULL if they can't be made relative (on separate drives, for example)
-	DLL_CLASS_IMPORT const char *MakeRelativePath( const char *pFullPath, const char *pDirectory );
+	DLL_CLASS_IMPORT const char *MakeRelativePath( const char *pFullPath, const char *pDirectory, bool bIgnoreAlignment = false );
 
 	// Transfers data from buffer and then purges it.
 	DLL_CLASS_IMPORT void MoveFrom( CBufferString &moveFrom );
@@ -413,7 +417,11 @@ public:
 
 	/// Replaces characters or substrings.
 	DLL_CLASS_IMPORT int Replace( char cFrom, char cTo );
+	DLL_CLASS_IMPORT int Replace( char cFrom, const char *pToString );
 	DLL_CLASS_IMPORT int Replace( const char *pMatch, const char *pToString, bool bDontUseStrStr = false );
+
+	/// Returns the chars from nStart up to nEnd, negative indices count from the end.
+	DLL_CLASS_IMPORT CBufferString Slice( int nStart, int nEnd = 0x7FFFFFFF ) const;
 
 	/// Replace contents at given index with new string.
 	DLL_CLASS_IMPORT const char *ReplaceAt( int nStartIndex, int nOldChars, const char *pToString, int nLen = -1, bool bIgnoreAlignment = false );
@@ -480,7 +488,7 @@ private:
 			uint32 m_bFreeHeap : 1; // Whether heap memory should be freed (+1 bit).
 		};
 
-		uint32 m_nLengthStaff; // To copy/move one.
+		uint32 m_nLengthStuff; // To copy/move one.
 	};
 
 	union
@@ -492,7 +500,7 @@ private:
 			uint32 m_bAllowHeapAllocation : 1; // Allows the bufferstring to grow beyond the static size on the heap (+1 bit).
 		};
 
-		uint32 m_nAllocatedStaff; // To copy/move one.
+		uint32 m_nAllocatedStuff; // To copy/move one.
 	};
 
 protected:
@@ -510,8 +518,6 @@ protected:
 	static constexpr size_t CHUNK_SIZE = sizeof( Data_t );
 	static constexpr size_t DEFAULT_CAPACITY_SIZE = 256;
 };
-
-//TODO: class CBufferStringFormatOutputStream : public CBufferString, public IFormatOutputStream
 
 // CBufferStringN - templated version of CBufferString with custom stack size 
 // Allows predefining larger buffers without heap allocation by default.
@@ -598,5 +604,18 @@ inline CBufferString operator""_bs( const char *pString, size_t nLen )
 {
 	return CBufferString( pString, static_cast<int>(nLen) );
 }
+
+// One "key=value" pair of a URL query
+struct URLQueryParameter_t
+{
+	CBufferString m_Key;
+	CBufferString m_Value;
+};
+
+// Splits the query (an optional leading '?' and trailing '/' are skipped) on '&' into the pairs
+// and URL-decodes their keys and values, pParameters is cleared first
+PLATFORM_INTERFACE void V_ParseURLQuery_Unsafe( const char *pszURLQuery, CUtlVector< URLQueryParameter_t, int, CUtlVectorMemory_Growable< URLQueryParameter_t, int, 0 > > *pParameters );
+
+#include "schemacompiler/schemaoff.h"
 
 #endif /* BUFFERSTRING_H */

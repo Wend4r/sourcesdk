@@ -11,9 +11,9 @@
 
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
-#include "tier1/smartptr.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/smartptr.h"
 #include "../networkvar.h"
 #include "entityhandle.h"
 #include "utldelegateimpl.h"
@@ -26,14 +26,19 @@
 
 #include "spawngrouptypes.h"
 
+#include "schemacompiler/schemaon.h"
+
 class CEntityClass;
 class CEntityInstance;
 
-class CEntityIdentity
+schema class CEntityIdentity
 {
 	friend class CConcreteEntityList;
 
 public:
+	TYPEMETA( MGetKV3ClassDefaults );
+	DECLARE_SCHEMA_DATA_CLASS( CEntityIdentity );
+
 	DECLARE_CLASS_NOBASE( CEntityIdentity );
 
 	using AttributeTable_t = CEntityAttributeTable;
@@ -143,31 +148,33 @@ public:
 	bool ClassMatches( const char *pszClassOrWildcard ) const;
 
 public:
-	CEntityInstance *m_pInstance;
-	CEntityClass *m_pClass;
-	CEntityHandle m_EHandle;
-	CNetworkVar( int32, m_nameStringTableIndex );
+	noschema CEntityInstance *m_pInstance;
+	noschema CEntityClass *m_pClass;
+	noschema CEntityHandle m_EHandle;
+	CNetworkVar( int32, m_nameStringTableIndex ); META( MNotSaved );
 	CUtlSymbolLarge m_name;
-	CUtlSymbolLarge m_designerName;
+	CUtlSymbolLarge m_designerName; META( MNotSaved );
 
 public:
-	uint64 m_hPublicScope; // CEntityPublicScriptScope
+	noschema uint64 m_hPublicScope; // CEntityPublicScriptScope
 
 public:
-	EntityFlags_t m_flags;
+	EntityFlags_t m_flags; META( MNotSaved );
 
 private:
-	SpawnGroupHandle_t m_hSpawnGroup;
+	noschema SpawnGroupHandle_t m_hSpawnGroup;
 
 public:
-	WorldGroupId_t m_worldGroupId;
-	uint32 m_fDataObjectTypes;
-	ChangeAccessorFieldPathIndex_t m_PathIndex;
+	WorldGroupId_t m_worldGroupId; META( MNotSaved );
+	uint32 m_fDataObjectTypes; META( MNotSaved );
+	ChangeAccessorFieldPathIndex_t m_PathIndex; META( MNotSaved );
 	CEntityAttributeTable *m_pAttributes;
-	CEntityIdentity *m_pPrev;
-	CEntityIdentity *m_pNext;
-	CEntityIdentity *m_pPrevByClass;
-	CEntityIdentity *m_pNextByClass;
+	CEntityIdentity *m_pPrev; META( MNotSaved );
+	CEntityIdentity *m_pNext; META( MNotSaved );
+	CEntityIdentity *m_pPrevByClass; META( MNotSaved );
+	CEntityIdentity *m_pNextByClass; META( MNotSaved );
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYIDENTITY_H

@@ -18,7 +18,7 @@
 
 #include "platform.h"
 #include "tier0/byteswap.h"
-#include "tier1/utlleanvector.h"
+#include "tier0/utlleanvector.h"
 #include <stdarg.h>
 
 
@@ -48,19 +48,19 @@ public:
 
 	CUtlCharConversion( char nEscapeChar, const char *pDelimiter, int nCount, const ConversionArray_t *pArray );
 
-	CUtlCharConversion( CUtlCharConversion &&rhs ) noexcept;
-	CUtlCharConversion( const CUtlCharConversion &rhs );
+	CUtlCharConversion( CUtlCharConversion &&rhs ) noexcept = default;
+	CUtlCharConversion( const CUtlCharConversion &rhs ) = default;
 
-	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept;
-	CUtlCharConversion &operator=( const CUtlCharConversion &rhs );
+	CUtlCharConversion &operator=( CUtlCharConversion &&rhs ) noexcept = default;
+	CUtlCharConversion &operator=( const CUtlCharConversion &rhs ) = default;
 
-	char GetEscapeChar() const;
-	const char *GetDelimiter() const;
-	int GetDelimiterLength() const;
+	char GetEscapeChar() const { return m_nEscapeChar; }
+	const char *GetDelimiter() const { return m_pDelimiter; }
+	int GetDelimiterLength() const { return m_nDelimiterLength; }
 
-	const char *GetConversionString( char c ) const;
-	int GetConversionLength( char c ) const;
-	int MaxConversionLength() const;
+	const char *GetConversionString( char c ) const { return m_pReplacements[ ( unsigned char )c ].m_pReplacementString; }
+	int GetConversionLength( char c ) const { return m_pReplacements[ ( unsigned char )c ].m_nLength; }
+	int MaxConversionLength() const { return m_nMaxConversionLength; }
 
 	// Finds a conversion for the passed-in string, returns length
 	virtual char FindConversion( const char *pString, int *pLength );
@@ -77,8 +77,8 @@ protected:
 	int m_nDelimiterLength;
 	int m_nCount;
 	int m_nMaxConversionLength;
-	char m_pList[255];
-	ConversionInfo_t m_pReplacements[255];
+	char m_pList[256];
+	ConversionInfo_t m_pReplacements[256];
 };
 
 #define BEGIN_CHAR_CONVERSION( _name, _delimiter, _escapeChar )	\
@@ -221,6 +221,7 @@ public:
 	DLL_CLASS_IMPORT bool			IsBigEndian( void );
 
 	DLL_CLASS_IMPORT void	AlignBuffer( int alignment );
+	DLL_CLASS_IMPORT bool	AlignBufferGet( int alignment );
 
 	// Resets the buffer; but doesn't free memory
 	void			Clear();
@@ -259,10 +260,6 @@ public:
 	DLL_CLASS_IMPORT bool	Get( void* pMem, int size );
 	DLL_CLASS_IMPORT void	GetLine( char* pLine, int nMaxChars = 0 );
 	DLL_CLASS_IMPORT void	GetLine( CBufferString *pLine );
-
-
-	// Used for getting objects that have a byteswap datadesc defined
-	template <typename T> void GetObjects( T *dest, int count = 1 );
 
 	// This will get at least 1 byte and up to nSize bytes. 
 	// It will return the number of bytes actually read.
@@ -308,7 +305,7 @@ public:
 	// If successful, the get index is advanced and the function returns true,
 	// otherwise the index is not advanced and the function returns false.
 	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, char* pString, int nMaxLen );
-	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, CBufferString &buffer );
+	DLL_CLASS_IMPORT bool			ParseToken( const char *pStartingDelim, const char *pEndingDelim, CBufferString *pBuffer );
 
 	// Advance the get index until after the particular string is found
 	// Do not eat whitespace before starting. Return false if it failed
@@ -318,7 +315,7 @@ public:
 	// Parses the next token, given a set of character breaks to stop at
 	// Returns the length of the token parsed in bytes (-1 if none parsed)
 	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, char *pTokenBuf, int nMaxLen, bool bParseComments = true );
-	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, CBufferString &token, bool bParseComments = true );
+	DLL_CLASS_IMPORT int				ParseToken( const characterset_t *pBreaks, CBufferString *pToken, bool bParseComments = true );
 
 	// Write stuff in
 	// Binary mode: it'll just write the bits directly in, and strings will be
@@ -339,9 +336,6 @@ public:
 	void			PutString( const char* pString );
 	void			Put( const void* pMem, int size );
 
-	// Used for putting objects that have a byteswap datadesc defined
-	template <typename T> void PutObjects( T *src, int count = 1 );
-
 	// This version of PutString converts \ to \\ and " to \", etc.
 	// It also places " at the beginning and end of the string
 	DLL_CLASS_IMPORT void			PutDelimitedString( CUtlCharConversion *pConv, const char *pString );
@@ -360,6 +354,10 @@ public:
 	void* PeekPut( int offset = 0 );
 	const void* PeekGet( int offset = 0 ) const;
 	DLL_CLASS_IMPORT const void* PeekGet( int nMaxSize, int nOffset );
+
+	// Advances the get or put index by nBytes, returns where it was or null when out of range
+	DLL_CLASS_IMPORT const void* AccessGet( int nBytes );
+	DLL_CLASS_IMPORT void* AccessPut( int nBytes );
 
 	// Where am I writing (put)/reading (get)?
 	int TellPut( ) const;
@@ -462,18 +460,18 @@ protected:
 	// Checks if a peek get is ok
 	DLL_CLASS_IMPORT bool CheckPeekGet( int nOffset, int nSize );
 
+public:
 	// Call this to peek arbitrarily long into memory. It doesn't fail unless
 	// it can't read *anything* new
 	DLL_CLASS_IMPORT bool CheckArbitraryPeekGet( int nOffset, int &nIncrement );
 
+protected:
 	template <typename T> void GetType( T& dest );
 	template <typename T> void GetTypeBin( T& dest );
 	template <typename T> bool GetTypeText( T &value, int nRadix = 10 );
-	template <typename T> void GetObject( T *src );
 
 	template <typename T> void PutType( T src );
 	template <typename T> void PutTypeBin( T src );
-	template <typename T> void PutObject( T *src );
 
 	// be sure to also update the copy constructor
 	// and SwapCopy() when adding members.
@@ -484,9 +482,6 @@ protected:
 	unsigned char m_Error;
 	unsigned char m_Flags;
 	unsigned char m_Reserved;
-#if defined( _GAMECONSOLE )
-	unsigned char pad;
-#endif
 
 	int m_nTab;
 	int m_nMaxPut;
@@ -498,6 +493,7 @@ protected:
 	CByteswap	m_Byteswap;
 };
 
+DEFINE_ENUM_BITWISE_OPERATORS( CUtlBuffer::BufferFlags_t );
 
 // Stream style output operators for CUtlBuffer
 inline CUtlBuffer &operator<<( CUtlBuffer &b, char v )
@@ -570,7 +566,7 @@ inline CUtlBuffer &operator<<( CUtlBuffer &b, const Vector2D &v )
 class CUtlInplaceBuffer : public CUtlBuffer
 {
 public:
-	CUtlInplaceBuffer( int growSize = 0, int initSize = 0, int nFlags = 0 );
+	DLL_CLASS_IMPORT CUtlInplaceBuffer( BufferFlags_t nFlags = NONE );
 
 	//
 	// Routines returning buffer-inplace-pointers
@@ -664,38 +660,6 @@ inline const void* CUtlBuffer::PeekGet( int offset ) const
 //-----------------------------------------------------------------------------
 // Unserialization
 //-----------------------------------------------------------------------------
-
-template <typename T> 
-inline void CUtlBuffer::GetObject( T *dest )
-{
-	if ( CheckGet( sizeof(T) ) )
-	{
-		if ( !m_Byteswap.IsSwappingBytes() || ( sizeof( T ) == 1 ) )
-		{
-			*dest = *(T *)PeekGet();
-		}
-		else
-		{
-			m_Byteswap.SwapFieldsToTargetEndian<T>( dest, (T*)PeekGet() );
-		}
-		m_Get += sizeof(T);	
-	}
-	else
-	{
-		Q_memset( &dest, 0, sizeof(T) );
-	}
-}
-
-
-template <typename T> 
-inline void CUtlBuffer::GetObjects( T *dest, int count )
-{
-	for ( int i = 0; i < count; ++i, ++dest )
-	{
-		GetObject<T>( dest );
-	}
-}
-
 
 template <typename T> 
 inline void CUtlBuffer::GetTypeBin( T &dest )
@@ -1044,35 +1008,6 @@ inline void* CUtlBuffer::PeekPut( int offset )
 //-----------------------------------------------------------------------------
 
 template <typename T> 
-inline void CUtlBuffer::PutObject( T *src )
-{
-	if ( CheckPut( sizeof(T) ) )
-	{
-		if ( !m_Byteswap.IsSwappingBytes() || ( sizeof( T ) == 1 ) )
-		{
-			*(T *)PeekPut() = *src;
-		}
-		else
-		{
-			m_Byteswap.SwapFieldsToTargetEndian<T>( (T*)PeekPut(), src );
-		}
-		m_Put += sizeof(T);
-		AddNullTermination( );
-	}
-}
-
-
-template <typename T> 
-inline void CUtlBuffer::PutObjects( T *src, int count )
-{
-	for ( int i = 0; i < count; ++i, ++src )
-	{
-		PutObject<T>( src );
-	}
-}
-
-
-template <typename T> 
 inline void CUtlBuffer::PutTypeBin( T src )
 {
 	if ( CheckPut( sizeof(T) ) )
@@ -1237,6 +1172,21 @@ inline void CUtlBuffer::PutChar( char c )
 	}
 
 	PutTypeBin( c );
+}
+
+inline void CUtlBuffer::PutDelimitedCharInternal( CUtlCharConversion *pConv, char c )
+{
+	int nLength = pConv->GetConversionLength( c );
+
+	if ( nLength == 0 )
+	{
+		PutChar( c );
+	}
+	else
+	{
+		PutChar( pConv->GetEscapeChar() );
+		Put( pConv->GetConversionString( c ), nLength );
+	}
 }
 
 inline void CUtlBuffer::PutUnsignedChar( unsigned char c )

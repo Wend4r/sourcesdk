@@ -5,9 +5,9 @@
 #pragma once
 #endif
 
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
-#include "tier1/utldict.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/utldict.h"
 #include "entity2/entitycomponent.h"
 #include "entity2/entityinstance.h"
 #include "entityhandle.h"
@@ -40,12 +40,35 @@ struct EntOutput_t;
 struct EntInput_t;
 struct datamap_t;
 
-typedef void (*BASEPTR)(CEntityInstance *ent);
+typedef enum
+{
+	USE_OFF = 0,
+	USE_ON = 1,
+	USE_SET = 2,
+	USE_TOGGLE = 3
+} USE_TYPE;
+
+struct EntityUseInput_t
+{
+	CEntityInstance *m_pActivator;
+	CEntityInstance *m_pCaller;
+	USE_TYPE m_nType;
+	float m_flValue;
+};
+
+typedef void (CEntityInstance::*BASEPTR)();
+typedef void (CEntityInstance::*ENTITYFUNCPTR)(CEntityInstance *pOther);
+typedef void (CEntityInstance::*USEPTR)(const EntityUseInput_t *pInput);
 
 struct EntClassComponentOverride_t
 {
 	const char* pszBaseComponent;
 	const char* pszOverrideComponent;
+};
+
+enum EntityClassInfoFlags_t
+{
+	ECIF_NOT_SPAWNABLE = 1 << 0, // CreateEntityByName refuses to spawn the entity if set
 };
 
 struct EntComponentNameEntry_t
@@ -59,12 +82,11 @@ class CEntityClassInfo
 public:
 	const char* m_pszClassname;
 	const char* m_pszCPPClassname;
-	const char* m_pszDescription;
+	uint32 m_nFlags; // EntityClassInfoFlags_t
 	CEntityClass *m_pClass;
 	CEntityClassInfo *m_pBaseClassInfo;
 	CSchemaClassInfo* m_pSchemaBinding;
 	datamap_t* m_pDataDescMap;
-	datamap_t* m_pPredDescMap;
 };
 
 // Size: 0x168
@@ -148,6 +170,8 @@ public:
 	}
 
 public:
+	// Convert this class' think and touch functions to and from their names,
+	// searching the parent classes as well
 	using FuncToNameCb = const char *(*)(BASEPTR think_fn);
 	using NameToFuncCb = BASEPTR (*)(const char *fn_name);
 	using RegisterPulseBindingsCb = void (*)(CPulseAPIExtensionRegistrationContext *pContext);

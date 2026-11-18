@@ -1,7 +1,7 @@
 #ifndef CONCRETEENTITYLIST_H
 #define CONCRETEENTITYLIST_H
 
-#include "bitvec.h"
+#include "tier0/bitvec.h"
 #include "entityidentity.h"
 
 class CConcreteEntityList

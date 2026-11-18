@@ -3,9 +3,13 @@
 
 #pragma once
 
+#include "tier0/basetypes.h"
+
+#include "schemacompiler/schemaon.h"
+
 #define INVALID_ENTITY_INDEX -1
 
-class CEntityIndex
+schema class CEntityIndex
 {
 public:
 	CEntityIndex( int index = INVALID_ENTITY_INDEX ) : m_Data( index ) {}
@@ -23,5 +27,7 @@ public:
 private:
 	int m_Data;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // !defined( ENTITYINDEX_H )

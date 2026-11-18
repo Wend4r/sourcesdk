@@ -16,7 +16,9 @@
 #include <limits.h>
 #include <string.h>
 #include "bufferstring.h"
-#include "tier1/generichash.h"
+#include "tier0/generichash.h"
+
+#include "schemacompiler/schemaon.h"
 
 #define DEBUG_STRINGTOKENS 0
 #define STRINGTOKEN_MURMURHASH_SEED 0x31415926
@@ -34,9 +36,11 @@ class CFormatStringElement;
 // Interact with stringtokendatabase.txt
 PLATFORM_INTERFACE void RegisterStringToken( uint32 nHashCode, const char *pStart, const char *pEnd = NULL, bool bExtraAddToDatabase = true );
 
-class CUtlStringToken
+schema class CUtlStringToken
 {
 public:
+	TYPEMETA( MAtomicTransfersAsPlainString );
+
 	static constexpr uint32 sm_nMagic    = 0x5bd1e995;
 	static constexpr uint32 sm_nRotation = 24;
 
@@ -128,10 +132,17 @@ public:
 
 	DLL_CLASS_IMPORT void FormatTo( IFormatOutputStream* pOutputStream, CFormatStringElement element ) const;
 	DLL_CLASS_IMPORT static bool TrackTokenCreation( const char *s1, const char *s2 );
+	DLL_CLASS_IMPORT static CUtlStringToken Make( const char *pString );
 
 private:
 	uint32 m_nHashCode;
 };
+
+// Hash tables keyed by a string token use its hash code directly.
+inline unsigned int DefaultHashFunctor< CUtlStringToken >::operator()( const CUtlStringToken &k ) const
+{
+	return k.GetHashCode();
+}
 
 class CUtlStringTokenNoRegistration : public CUtlStringToken
 {
@@ -186,5 +197,60 @@ FORCEINLINE CUtlStringToken MakeStringToken2( const char *pString, int nLen = -1
 
 	return CUtlStringToken( nHash );
 }
+
+class CKV3TransferLoadContext;
+class CKV3TransferSaveContext;
+
+//-----------------------------------------------------------------------------
+// String with its case-insensitive token, the string is not owned
+//-----------------------------------------------------------------------------
+class CUtlStringAndToken
+{
+public:
+	CUtlStringAndToken() : m_pString( nullptr ) {}
+	CUtlStringAndToken( const char *pString ) : m_nToken( pString ? MakeStringToken( pString ) : 0 ), m_pString( pString ) {}
+
+	DLL_CLASS_IMPORT bool IsEqual_CaseSensitive( const char *pString ) const;
+	DLL_CLASS_IMPORT bool IsEqual_FastCaseInsensitive( const char *pString ) const;
+
+	CUtlStringToken GetToken() const { return m_nToken; }
+	const char *Get() const { return m_pString; }
+
+protected:
+	CUtlStringToken m_nToken;
+	const char *m_pString;
+};
+
+//-----------------------------------------------------------------------------
+// String with its token that owns the string
+//-----------------------------------------------------------------------------
+class CUtlStringAndTokenWithStorage : public CUtlStringAndToken
+{
+public:
+	CUtlStringAndTokenWithStorage() {}
+	CUtlStringAndTokenWithStorage( const char *pString ) { Set( pString ); }
+	CUtlStringAndTokenWithStorage( const CUtlStringAndTokenWithStorage &other ) : CUtlStringAndToken() { Set( other.Get() ); }
+
+	CUtlStringAndTokenWithStorage &operator=( const CUtlStringAndTokenWithStorage &other )
+	{
+		if ( this != &other )
+			Set( other.Get() );
+
+		return *this;
+	}
+
+	// Copies the string into the storage and points at the copy
+	void Set( const char *pString ) { Format( "%s", pString ? pString : "" ); }
+
+	DLL_CLASS_IMPORT void Format( PRINTF_FORMAT_STRING const char *pszFormat, ... ) FMTFUNCTION( 2, 3 );
+
+	DLL_CLASS_IMPORT void KV3TransferLoad( CKV3TransferLoadContext *pContext );
+	DLL_CLASS_IMPORT void KV3TransferSave( CKV3TransferSaveContext *pContext ) const;
+
+protected:
+	CBufferString m_Storage;
+};
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UTLSTRINGTOKEN_H

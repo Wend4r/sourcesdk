@@ -5,97 +5,133 @@
 	#pragma once
 #endif
 
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
+#include <resourcesystem/resourcehandletypes.h>
 #include <resourcefile/resourcetype.h>
 
 #include <mathlib/vector4d.h>
 #include <tier0/platform.h>
-#include <tier1/utlsymbollarge.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlstring.h>
+#include <tier0/utlstringtoken.h>
+#include <tier0/utlsymbollarge.h>
+#include <tier0/utlvector.h>
+#include "materialsystem2/material_resource_data.h"
+
+class CBufferString;
+class CRenderAttributes;
+class IMaterialMode;
+struct Vector2D;
+struct VsInputSignature_t;
+
+enum EBatchableInModeFlags_t : int;
 
 //-----------------------------------------------------------------------------
-// A single shader parameter of a material. Textures are stored as a resource
-// handle in m_hTexture and flagged with MATERIAL_PARAM_TEXTURE.
-//-----------------------------------------------------------------------------
-enum MaterialParamFlags_t : uint32
-{
-	MATERIAL_PARAM_TEXTURE = 0x10000,
-};
-
-struct MaterialParam_t
-{
-	Vector4D m_vValue;
-	ResourceHandle_t m_hTexture;
-	uint32 m_nValueHash;
-	uint32 m_nFlags;
-	void *m_pBlob;
-	CUtlSymbolLarge m_symName;
-	CUtlSymbolLarge m_symString;
-	bool m_bShaderDefault;
-
-private:
-	uint8 m_nUnknown0039[7];
-};
-
-COMPILE_TIME_ASSERT( sizeof( MaterialParam_t ) == 64 );
-
-//-----------------------------------------------------------------------------
-// A loaded Source 2 material.
+// A loaded Source 2 material (CMaterial2 in materialsystem2).
 //
-// Reconstructed layout. The vtable is declared flat: every slot is kept in its
-// verified index, and slots whose purpose is unknown are placeholders named
-// after their index. Do not reorder, remove or collapse them. There is no
-// virtual destructor in slot 0 - GetName() owns it.
+// Method names from the s&box DWARF of IMaterial2 where the CS2 body does the
+// same thing; the slots CS2 has and s&box does not are named by what they do.
+// Slot 39 (Windows) / 39-40 (Linux) is the virtual destructor.
 //
-// Only the field offsets marked below are verified, and the total size of the
-// class is NOT verified.
+// The fields are the leading members of the game's CMaterial2 (2016 bytes in
+// CS2, ctor in CMaterialSystem2's procedural material creators); only this
+// prefix is declared, the class is never instantiated by the SDK.
 //-----------------------------------------------------------------------------
 abstract_class IMaterial2
 {
 public:
-	virtual const char *GetName() = 0;
-	virtual void Unk_Slot1( void *p ) = 0;
-	virtual bool IsLoaded() = 0;
-	virtual void Unk_Slot3( void *p ) = 0;
-	virtual void Unk_Slot4( void *p ) = 0;
-	virtual void Unk_Slot5( void *p ) = 0;
-	virtual void Unk_Slot6( void *p ) = 0;
-	virtual void Unk_Slot7( void *p ) = 0;
-	virtual void Unk_Slot8( void *p ) = 0;
-	virtual void Unk_Slot9( void *p ) = 0;
-	virtual void Unk_Slot10( void *p ) = 0;
-	virtual void Unk_Slot11( void *p ) = 0;
-	virtual void Unk_Slot12( void *p ) = 0;
-	virtual void Unk_Slot13( void *p ) = 0;
-	virtual void Unk_Slot14( void *p ) = 0;
-	virtual void Unk_Slot15( void *p ) = 0;
-	virtual void Unk_Slot16( void *p ) = 0;
-	virtual void Unk_Slot17( void *p ) = 0;
-	virtual void Unk_Slot18( void *p ) = 0;
-	virtual void Unk_Slot19( void *p ) = 0;
-	virtual void Unk_Slot20( void *p ) = 0;
-	virtual void Unk_Slot21( void *p ) = 0;
-	virtual void Unk_Slot22( void *p ) = 0;
-	virtual void Unk_Slot23( void *p ) = 0;
-	virtual void Unk_Slot24( void *p ) = 0;
-	virtual void Unk_Slot25( void *p ) = 0;
-	virtual void Unk_Slot26( void *p ) = 0;
-	virtual void Unk_Slot27( void *p ) = 0;
-	virtual void Unk_Slot28( void *p ) = 0;
-	virtual void Unk_Slot29( void *p ) = 0;
-	virtual void Unk_Slot30( void *p ) = 0;
-	virtual int GetIntParam( const char *pName, int nFallback ) = 0;
-	virtual float GetFloatParam( const char *pName, float flFallback ) = 0;
-	virtual const char *GetStringParam( const char *pName, const char *pFallback ) = 0;
-	virtual ResourceHandle_t *GetTextureParam( ResourceHandle_t *pOut, const char *pName ) = 0;
-	virtual Vector4D *GetVecParam( Vector4D *pOut, const char *pName, const Vector4D *pFallback ) = 0;
+	struct TextureAttributeValue_t
+	{
+		CUtlStringToken m_name;
+		int m_nSpecificMipLevelToBind;
+		// A CWeakHandle< InfoForResourceTypeCTextureBase > (HRenderTexture) in the game
+		ResourceHandle_t m_hTexture;
+	};
 
-private:
-	uint8 m_nUnknown0008[8];
+	virtual const char *GetName() const = 0;
+
+	// Builds "<name>_c" and resolves it through the file system into outName
+	virtual void GetNameWithMod( CBufferString &outName ) const = 0;
+	virtual const IMaterial2 *GetCopySource() const = 0;
+	virtual uint64 GetSimilarityKey() const = 0;
+	virtual bool IsLoaded() const = 0;
+	virtual const IMaterialMode *GetMode( const CUtlStringToken &shaderMode ) const = 0;
+
+	// Named by what it does: the material that owns the layer of the mode, this material
+	// when it has no such mode
+	virtual const IMaterial2 *GetMaterialForMode( const CUtlStringToken &shaderMode ) const = 0;
+	virtual const CRenderAttributes *GetAttributes() const = 0;
+
+	// Named by what it does: true when the attributes hold a value for the token
+	virtual bool HasAttribute( CUtlStringToken name ) const = 0;
+
+	virtual bool GetBoolAttribute( bool *pValue, CUtlStringToken name ) const = 0;
+	virtual bool GetIntAttribute( int *pValue, CUtlStringToken name ) const = 0;
+	virtual bool GetFloatAttribute( float *pValue, CUtlStringToken name ) const = 0;
+	virtual bool GetStringAttribute( CUtlString *pValue, CUtlStringToken name ) const = 0;
+	virtual bool GetVector2DAttribute( Vector2D *pValue, CUtlStringToken name ) const = 0;
+	virtual bool GetVectorAttribute( Vector *pValue, CUtlStringToken name ) const = 0;
+	virtual bool GetVector4DAttribute( Vector4D *pValue, CUtlStringToken name ) const = 0;
+	virtual bool GetTextureAttribute( CWeakHandle< InfoForResourceTypeCTextureBase > *pValue, CUtlStringToken name ) const = 0;
+	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetFirstTextureAttribute() const = 0;
+	virtual void GetAllTextureAttributes( CUtlVector< TextureAttributeValue_t > &attrs ) const = 0;
+	virtual const VsInputSignature_t *GetVertexShaderInputSignature() const = 0;
+	virtual bool IsBatchableInMode( const CUtlStringToken &shaderMode, EBatchableInModeFlags_t nFlags ) const = 0;
+	virtual void GetRepresentativeTextureSize( int *pWidth, int *pHeight, int nDefWidth, int nDefHeight, bool bClamp ) const = 0;
+
+	// CS2 has one more int than s&box; it selects the texture attribute pair that is read
+	virtual void GetWorldMappingSize( int *pWidth, int *pHeight, int nMode, int nDefWidth, int nDefHeight, bool bClamp ) const = 0;
+
+	// Returns 1 in CS2
+	virtual uint32 GetShaderStateOverriddenByMaterial() const = 0;
+
+	// Sets a texture parameter; only between BeginParamUpdate and EndParamUpdate
+	virtual bool Set( const char *pszParamName, CWeakHandle< InfoForResourceTypeCTextureBase > hTexture ) = 0;
+
+	// Named by what they do: the last dword of, and a pointer to, the 48-byte block at +64
+	// that is copied from the copy source and cleared on unload
+	virtual uint32 GetRenderStateOverrideFlags() const = 0;
+	virtual const void *GetRenderStateOverrides() const = 0;
+
+	// Named by what it does: the mode of the next layer after nLayer (up to 8 layers)
+	virtual const IMaterialMode *GetModeForLayer( const CUtlStringToken &shaderMode, int nLayer ) const = 0;
+
+	// Named by what it does: the resource kept at +96 (the shader reference of a raw material)
+	virtual CWeakHandleBase GetShaderExtRef() const = 0;
+
+	// Named by what they do: a nesting counter; the last EndParamUpdate rebuilds the
+	// constant buffers of the modes when a parameter changed
+	virtual void BeginParamUpdate() = 0;
+	virtual void EndParamUpdate() = 0;
+
+	virtual int GetInt( const char *pszName, int nDefault ) const = 0;
+	virtual float GetFloat( const char *pszName, float flDefault ) const = 0;
+	virtual const char *GetString( const char *pszName, const char *pszDefault ) const = 0;
+	virtual CWeakHandle< InfoForResourceTypeCTextureBase > GetTexture( const char *pszName ) const = 0;
+	virtual Vector4D GetVector4( const char *pszName, const Vector4D &vDefault ) const = 0;
+	virtual bool IsEdited() const = 0;
+
+	// Both ints are passed on to the rebuild of every layer of every mode
+	virtual void RecreateAllStaticConstantAndCommandBuffers( int nRebuildArg1, int nRebuildArg2 ) = 0;
+
+	// Named by what it does: true when a mode of the loaded material has its shaders ready
+	virtual bool IsAnyModeReady() const = 0;
+
+	virtual ~IMaterial2() {}
 
 public:
-	const char *m_pPath;
-	CUtlVector< MaterialParam_t > m_Params;
+	uint16 m_nReloadSerialNumber;
+	uint8 m_nOutstandingIORequestCount;
+	bool m_bIsLoaded : 1;
+	bool m_bIsFallbackMaterial : 1;
+
+	// Named by what it does: set by Set(), cleared by the last EndParamUpdate
+	bool m_bConstantBuffersDirty : 1;
+
+	// Named by what it does: set by every procedural material creator of CMaterialSystem2
+	bool m_bIsProceduralMaterial : 1;
+	bool m_bHasBeenEdited : 1;
+	CUtlString m_name;
+	CUtlVector< CMaterialParam > m_params;
 };
 
 class InfoForResourceTypeIMaterial2

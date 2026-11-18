@@ -165,7 +165,12 @@ private:
 public:
 
 	CTSListBase();
+#ifdef PLATFORM_OSX
+	// The macOS tier0 does not export the destructor; it only detaches the list
+	~CTSListBase() { Detach(); }
+#else
 	~CTSListBase();
+#endif
 
 	void Push( TSLNodeBase_t *pNode ) { InternalPush( pNode ); }
 	TSLNodeBase_t *Pop() { return InternalPop(); }
@@ -175,6 +180,11 @@ public:
 	TSLHead_t *AccessUnprotected()
 	{
 		return &m_Head;
+	}
+
+	bool IsEmpty() const
+	{
+		return m_Head.value.Next == NULL;
 	}
 
 	int Count() const
@@ -326,9 +336,9 @@ public:
 		Purge();
 	}
 
-	Node_t *Push( Node_t *pNode )
+	void Push( Node_t *pNode )
 	{
-		return (Node_t *)CTSListBase::Push( pNode );
+		CTSListBase::Push( pNode );
 	}
 
 	Node_t *Pop()
@@ -408,9 +418,9 @@ public:
 		}
 	}
 
-	Node_t *Push( Node_t *pNode )
+	void Push( Node_t *pNode )
 	{
-		return (Node_t *)CTSListBase::Push( pNode );
+		CTSListBase::Push( pNode );
 	}
 
 	Node_t *Pop()

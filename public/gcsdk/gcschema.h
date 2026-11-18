@@ -20,13 +20,13 @@
 // CRC references
 #include "steam/steamclientpublic.h"
 
-#include "tier1/utlmap.h"
+#include "tier0/utlmap.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlbuffer.h"
 #include "tier0/mempool.h"
 #include "tier1/tsmempool.h"
 #include "tier1/tsmultimempool.h"
-#include "tier1/fmtstr.h"
+#include "tier0/fmtstr.h"
 
 #include "vstdlib/coroutine.h"
 

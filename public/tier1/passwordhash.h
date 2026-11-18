@@ -12,7 +12,7 @@
 #endif
 
 
-#include "checksum_sha1.h"
+#include "tier0/checksum_sha1.h"
 
 typedef unsigned char BigPasswordHash_t[32];
 typedef unsigned char PBKDF2Hash_t[32];

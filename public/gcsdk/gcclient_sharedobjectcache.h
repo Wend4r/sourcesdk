@@ -140,6 +140,8 @@ private:
 	virtual CSharedObjectTypeCache *AllocateTypeCache( int nClassID ) const OVERRIDE { return new CGCClientSharedObjectTypeCache( nClassID ); }
 	CGCClientSharedObjectTypeCache *GetTypeCacheByIndex( int nIndex ) { return (CGCClientSharedObjectTypeCache *)CSharedObjectCache::GetTypeCacheByIndex( nIndex ); }
 
+public:
+	// CS:GO calls it m_IDOwner; m_owner is kept because code outside this repository reads it
 	SOID_t m_owner;
 	bool m_bInitialized;
 	bool m_bSubscribed;

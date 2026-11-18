@@ -13,7 +13,7 @@
 #endif
 
 
-#include "inputsystem/InputEnums.h"
+#include "inputsystem/inputenums.h"
 
 
 //-----------------------------------------------------------------------------
@@ -31,7 +31,6 @@ enum AnalogCode_t
 	ANALOG_CODE_INVALID = -1,
 	MOUSE_X = 0,
 	MOUSE_Y,
-	MOUSE_XY,		// Invoked when either x or y changes
 	MOUSE_WHEEL,
 
 	JOYSTICK_FIRST_AXIS,

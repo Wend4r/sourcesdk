@@ -13,6 +13,8 @@
 
 #include "appframework/iappsystem.h"
 #include "utlstring.h"
+#include "tier1/utldelegate.h"
+#include "tier0/utlvector.h"
 
 typedef int TABLEID;
 
@@ -40,6 +42,18 @@ struct StringUserData_t
 	void* m_pRawData;
 };
 
+typedef CUtlDelegate< void ( INetworkStringTable *, int, const char *, const SetStringUserDataRequest_t * ) > StringChangedCallback_t;
+// Returns false to fall back to a hex dump of the user data
+typedef CUtlDelegate< bool ( const char *pString, const SetStringUserDataRequest_t *pUserData, CUtlVector< CUtlString > *pOutLines ) > UserDataFormatterDelegate_t;
+
+// The two most recent ticks at which a table changed, as INetworkStringTable::ChangedBetweenTicks reads them.
+// Only these members are known; the type name is not present in the binaries.
+struct StringTableChangeTicks_t
+{
+	int m_nLastChangeTick;
+	int m_nPreviousChangeTick;
+};
+
 //-----------------------------------------------------------------------------
 // Purpose: Game .dll shared string table interfaces
 //-----------------------------------------------------------------------------
@@ -55,21 +69,22 @@ public:
 	virtual int				GetNumStrings( void ) const = 0;
 
 	// Networking
-	virtual int				SetTick( int tick, void *unknown ) = 0;
+	// pChangeTicks is copied only when tick differs from the current tick; it may be NULL
+	virtual void			SetStringChangeTick( int tick, const StringTableChangeTicks_t *pChangeTicks ) = 0;
 	virtual int				GetTick( void ) = 0;
 	virtual bool			ChangedBetweenTicks(int tickA, int tickB ) const = 0;
 
 	virtual int				AddString( bool bIsServer, const char *value, const SetStringUserDataRequest_t* userdata = 0 ) = 0;
 
-	virtual const char		*GetString( int stringNumber ) const = 0;
+	virtual const char		*GetString( int stringNumber, bool bFailSilent = false ) const = 0;
 	virtual bool			SetStringUserData(int stringNumber, const SetStringUserDataRequest_t *userdata, bool bForceOverride) = 0;
 	virtual const StringUserData_t* GetStringUserData(int stringNumber) const = 0;
 	virtual int				FindStringIndex( char const *string ) = 0; // returns INVALID_STRING_INDEX if not found
-	virtual void			unk001() = 0;
+	virtual void			SetStringChangedCallback( const StringChangedCallback_t &callback, bool bCallForExistingStrings ) = 0;
 	virtual void			SetAllowClientSideAddString( bool state ) = 0;
-	virtual void			unk003() = 0;
-	virtual void			unk004( const char *string ) const = 0; // all stringtables in engine/server set this to "[server]".
-	virtual void			unk005() = 0; // likely SetStringChangedCallback
+	virtual void			SetSpew( bool bSpew ) = 0;
+	virtual void			SetContainerName( const char *pszName ) = 0;
+	virtual void			SetUserDataFormatter( const UserDataFormatterDelegate_t &formatter ) = 0;
 };
 
 enum ENetworkStringtableFlags
@@ -92,6 +107,7 @@ public:
 	virtual INetworkStringTable	*FindTable( const char *tableName ) const = 0;
 	virtual INetworkStringTable	*GetTable( TABLEID stringTable ) const = 0;
 	virtual int					GetNumTables( void ) const = 0;
+	virtual const char			*GetContainerName( void ) const = 0;
 };
 
 #endif // NETWORKSTRINGTABLEDEFS_H

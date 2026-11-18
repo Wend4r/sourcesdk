@@ -7,13 +7,17 @@
 
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlmap.h"
+#include "tier0/utlmap.h"
 #include "tier1/utlobjectattributetable.h"
 
+#include "schemacompiler/schemaon.h"
+
 // Attributes of an entity, keyed by the lowercase hash of the name.
-class CEntityAttributeTable
+schema class CEntityAttributeTable
 {
 public:
+	DECLARE_SCHEMA_DATA_CLASS( CEntityAttributeTable );
+
 	using Key_t = CUtlStringTokenNoRegistration;
 	using Attribute_t = ObjectAttributeValue_t;
 	using AttributeName_t = CUtlString;
@@ -230,5 +234,7 @@ private:
 	}
 	bool RemoveStoredName( const Key_t &key ) { return m_Names.Remove( key ); }
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYATTRIBUTETABLE_H

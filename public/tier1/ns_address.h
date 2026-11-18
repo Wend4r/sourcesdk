@@ -190,6 +190,7 @@ enum NetworkSystemAddressType_t
 	NSAT_P2P,
 	NSAT_PROXIED_GAMESERVER,	// Client proxied through Steam Datagram Transport
 	NSAT_PROXIED_CLIENT,		// Client proxied through Steam Datagram Transport
+	NSAT_LOOPBACK,
 };
 
 // Used to represent a remote address which can be a network address or SteamID
@@ -256,7 +257,7 @@ struct ns_address
 
 	bool IsLoopback ( void ) const
 	{
-		return (m_AddrType == NSAT_NETADR) && m_adr.IsLoopback ( );
+		return (m_AddrType == NSAT_LOOPBACK) || ((m_AddrType == NSAT_NETADR) && m_adr.IsLoopback ( ));
 	}
 
 	bool IsLocalhost ( void ) const
@@ -284,6 +285,8 @@ struct ns_address
 		case NSAT_PROXIED_GAMESERVER:
 		case NSAT_PROXIED_CLIENT:
 			return !m_steamID.IsValid ( );
+		case NSAT_LOOPBACK:
+			return false;
 		};
 
 		return true;
@@ -299,6 +302,8 @@ struct ns_address
 		case NSAT_PROXIED_GAMESERVER:
 		case NSAT_PROXIED_CLIENT:
 			return m_steamID.IsValid ( );
+		case NSAT_LOOPBACK:
+			return true;
 		};
 
 		return false;
@@ -318,6 +323,9 @@ struct ns_address
 		case NSAT_PROXIED_GAMESERVER:
 		case NSAT_PROXIED_CLIENT:
 			return m_steamID.CompareAdr( other.m_steamID, onlyBase );
+
+		case NSAT_LOOPBACK:
+			return onlyBase || m_adr.GetPort() == other.m_adr.GetPort();
 		};
 
 		return false;
@@ -557,6 +565,10 @@ public:
 		case NSAT_PROXIED_CLIENT:
 		case NSAT_PROXIED_GAMESERVER:
 			V_sprintf_safe( m_buf, "=%s:%d", a.m_steamID.ToString(), a.m_steamID.GetSteamChannel() );
+			break;
+
+		case NSAT_LOOPBACK:
+			V_sprintf_safe( m_buf, "loopback:%d", a.m_adr.GetPort() );
 			break;
 
 		default:

@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utlfixedmemory.h>
+#include <tier0/utlfixedmemory.h>
 
 REGISTER_NAMED_TEST( "CUtlFixedMemory.GrowEnsurePurge", CUtlFixedMemory_GrowEnsurePurge )
 {

@@ -17,6 +17,8 @@
 #include "mathlib/vector.h"
 #include "mathlib/mathlib.h"
 
+#include "schemacompiler/schemaon.h"
+
 //-----------------------------------------------------------------------------
 // Matrix 3x4_t
 //-----------------------------------------------------------------------------
@@ -26,7 +28,7 @@ class CTransformUnaligned;
 //-----------------------------------------------------------------------------
 // Represents a position + orientation using quaternions
 //-----------------------------------------------------------------------------
-class ALIGN16 CTransform
+schema class ALIGN16 CTransform
 {
 public:
 	CTransform() {}
@@ -394,6 +396,8 @@ inline CTransform matrix3x4_t::ToTransform() const
 	return MatrixTransform( *this );
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // TRANSFORM_H
 

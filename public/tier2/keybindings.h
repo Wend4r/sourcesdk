@@ -14,7 +14,7 @@
 #endif
 
 #include "tier0/utlstring.h"
-#include "inputsystem/ButtonCode.h"
+#include "inputsystem/buttoncode.h"
 
 class CUtlBuffer;
 

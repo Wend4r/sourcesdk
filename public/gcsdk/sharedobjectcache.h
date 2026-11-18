@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include "tier1/utlcommon.h"
+#include "tier0/utlcommon.h"
 #include "tier1/utlhashmaplarge.h"
 
 #include "soid.h"
@@ -130,16 +130,16 @@ public:
 
 protected:
 	virtual CSharedObjectTypeCache *AllocateTypeCache( int nClassID ) const = 0;
-	CSharedObjectTypeCache *GetTypeCacheByIndex( int nIndex ) { return ( nIndex >= 0 && nIndex < m_vecTypeCaches.Count() ) ? m_vecTypeCaches[ nIndex ] : NULL; }
-	int GetTypeCacheCount() const { return m_vecTypeCaches.Count(); }
+	CSharedObjectTypeCache *GetTypeCacheByIndex( int nIndex ) { return ( nIndex >= 0 && nIndex < m_CacheObjects.Count() ) ? m_CacheObjects[ nIndex ] : NULL; }
+	int GetTypeCacheCount() const { return m_CacheObjects.Count(); }
 
 	int FirstTypeCacheIndex() { return 0; }
 	int NextTypeCacheIndex( int iCurrent ) { return iCurrent + 1; }
-	int InvalidTypeCacheIndex() { return m_vecTypeCaches.Count(); }
+	int InvalidTypeCacheIndex() { return m_CacheObjects.Count(); }
 
 	uint64 m_ulVersion;
 private:
-	CUtlVector< CSharedObjectTypeCache * > m_vecTypeCaches;
+	CUtlVector< CSharedObjectTypeCache * > m_CacheObjects;
 };
 
 

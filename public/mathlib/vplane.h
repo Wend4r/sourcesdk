@@ -15,8 +15,7 @@
 #endif
 
 #include "mathlib/vector.h"
-
-typedef int SideType;
+#include "tier0/tier0_utils_math.h"
 
 // Used to represent sides of things like planes.
 #define	SIDE_FRONT	0

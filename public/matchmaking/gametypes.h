@@ -11,8 +11,8 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringlist.h"
-#include "tier1/random.h"
-#include "tier1/utlvector.h"
+#include "tier0/random.h"
+#include "tier0/utlvector.h"
 
 class KeyValues;
 

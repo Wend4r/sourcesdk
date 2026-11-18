@@ -6,7 +6,7 @@
 #endif
 
 #include "tier0/bufferstring.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 // Base class for vectors owning dynamically allocated C strings.
 template < class VectorType >

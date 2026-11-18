@@ -15,7 +15,7 @@
 #include "filesystem.h" // FileNameHandle_t
 #include "utlrbtree.h"
 #include "utlbuffer.h"
-#include "UtlSortVector.h"
+#include "tier0/utlsortvector.h"
 #include "tier0/strtools.h"
 
 #include "tier0/memdbgon.h"

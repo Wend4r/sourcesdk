@@ -1,7 +1,7 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
-#include <tier1/utldict.h>
+#include <tier0/utldict.h>
 
 #include <string.h>
 
@@ -30,4 +30,21 @@ REGISTER_NAMED_TEST( "CUtlDict.InsertFindRemove", CUtlDict_InsertFindRemove )
 
 	dict.RemoveAll();
 	TEST_EQ( dict.Count(), 0u );
+}
+
+REGISTER_NAMED_TEST( "CUtlDict.PurgeAndDeleteElements", CUtlDict_PurgeAndDeleteElements )
+{
+	// PurgeAndDeleteElements should delete pointer values and only free keys for non-pointer ones.
+	CUtlDict< int * > dictPointers;
+
+	dictPointers.Insert( "alpha", new int( 1 ) );
+	dictPointers.Insert( "beta", new int( 2 ) );
+	dictPointers.PurgeAndDeleteElements();
+	TEST_EQ( dictPointers.Count(), 0u );
+
+	CUtlDict< int > dictValues;
+
+	dictValues.Insert( "alpha", 1 );
+	dictValues.PurgeAndDeleteElements();
+	TEST_EQ( dictValues.Count(), 0u );
 }

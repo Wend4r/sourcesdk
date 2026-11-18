@@ -9,7 +9,7 @@
 
 #include "tier0/platform.h"
 #include "tier0/dbg.h"
-#include "tier1/lzmaDecoder.h"
+#include "tier0/lzmadecoder.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -1153,7 +1153,7 @@ else
 //-----------------------------------------------------------------------------
 // Returns true if buffer is compressed.
 //-----------------------------------------------------------------------------
-bool CLZMA::IsCompressed( unsigned char *pInput )
+bool CLZMA::IsCompressed( const unsigned char *pInput )
 {
 	lzma_header_t *pHeader = (lzma_header_t *)pInput;
 	if ( pHeader && pHeader->id == LZMA_ID )
@@ -1169,7 +1169,7 @@ bool CLZMA::IsCompressed( unsigned char *pInput )
 // Returns uncompressed size of compressed input buffer. Used for allocating output
 // buffer for decompression. Returns 0 if input buffer is not compressed.
 //-----------------------------------------------------------------------------
-unsigned int CLZMA::GetActualSize( unsigned char *pInput )
+unsigned int CLZMA::GetActualSize( const unsigned char *pInput )
 {
 	lzma_header_t *pHeader = (lzma_header_t *)pInput;
 	if ( pHeader && pHeader->id == LZMA_ID )
@@ -1185,7 +1185,7 @@ unsigned int CLZMA::GetActualSize( unsigned char *pInput )
 // Uncompress a buffer, Returns the uncompressed size. Caller must provide an
 // adequate sized output buffer or memory corruption will occur.
 //-----------------------------------------------------------------------------
-unsigned int CLZMA::Uncompress( unsigned char *pInput, unsigned char *pOutput, LZMAReadProgressCallbackFunc_t pCallback )
+unsigned int CLZMA::Uncompress( const unsigned char *pInput, unsigned char *pOutput, LZMAReadProgressCallbackFunc_t pCallback )
 {
 	unsigned int actualSize = GetActualSize( pInput );
 	if ( !actualSize )

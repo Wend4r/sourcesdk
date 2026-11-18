@@ -8,11 +8,14 @@
 #include "tier0/platform.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlstringtoken.h"
-#include "tier1/utlsymbollarge.h"
-#include "tier1/smartptr.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/smartptr.h"
 #include "datamap.h"
+#include "kv3lib/kv3transfer_constants.h"
 #include "schemasystem/schematypes.h"
 #include "entitytypes.h"
+
+#include "schemacompiler/schemaon.h"
 
 class CEntityInstance;
 class CEntityIdentity;
@@ -60,20 +63,22 @@ struct ComponentUnserializerClassInfo_t
 	uint16 m_nClassInfoPtrCount;
 };
 
-struct EntComponentInfo_t
+schema struct EntComponentInfo_t
 {
+	DECLARE_SCHEMA_DATA_CLASS( EntComponentInfo_t );
+
 	const char* m_pName;
 	const char* m_pCPPClassname;
 	const char* m_pNetworkDataReferencedDescription;
 	const char* m_pNetworkDataReferencedPtrPropDescription;
 	int m_nRuntimeIndex;
 	uint m_nFlags;
-	ComponentUnserializerClassInfo_t m_componentUnserializerClassInfo;
-	ScriptClassDesc_t* m_pScriptDesc;
+	noschema ComponentUnserializerClassInfo_t m_componentUnserializerClassInfo;
+	noschema ScriptClassDesc_t* m_pScriptDesc;
 	CEntityComponentHelper* m_pBaseClassComponentHelper;
 };
 
-class CEntityComponentHelper
+schema class CEntityComponentHelper
 {
 public:
 	virtual SchemaMetaInfoHandle_t<CSchemaClassInfo> Schema_DynamicBinding() = 0;
@@ -93,18 +98,19 @@ public:
 class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 
-class CEntityComponent
+schema class CEntityComponent
 {
 public:
 	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
 	virtual datamap_t *GetDataDescMap() = 0;
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > GetSchemaBinding() = 0;
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CEntityComponent );
 
 	virtual CEntityComponentHelper *GetComponentHelper() = 0;
 	virtual const char *GetComponentName() = 0;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYCOMPONENT_H

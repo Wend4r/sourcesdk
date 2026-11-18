@@ -15,7 +15,7 @@
 #endif
 
 #include "tier0/dbg.h"
-#include "utllinkedlist.h"
+#include "tier0/utllinkedlist.h"
 
 //-----------------------------------------------------------------------------
 // Templatized helper class to deal with the kinds of things that spatial

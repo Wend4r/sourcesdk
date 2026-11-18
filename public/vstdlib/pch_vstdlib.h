@@ -32,12 +32,12 @@
 // Next, include vstdlib
 #include "vstdlib/vstdlib.h"
 #include "tier0/strtools.h"
-#include "tier1/random.h"
+#include "tier0/random.h"
 #include "tier0/keyvalues.h"
 #include "tier1/utlmemory.h"
-#include "tier1/utlrbtree.h"
-#include "tier1/utlvector.h"
-#include "tier1/utllinkedlist.h"
+#include "tier0/utlrbtree.h"
+#include "tier0/utlvector.h"
+#include "tier0/utllinkedlist.h"
 #include "tier1/utlmultilist.h"
 #include "tier0/utlsymbol.h"
 #include "tier0/icommandline.h"
@@ -45,7 +45,7 @@
 #include "tier0/mempool.h"
 #include "tier0/utlbuffer.h"
 #include "tier0/utlstring.h"
-#include "tier1/utlmap.h"
+#include "tier0/utlmap.h"
 
 #include "tier0/memdbgon.h"
 

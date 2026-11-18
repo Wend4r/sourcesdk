@@ -13,7 +13,7 @@
 #endif
 
 #include "vstdlib/vstdlib.h"
-#include "icvar.h"
+#include "tier0/icvar.h"
 
 
 //-----------------------------------------------------------------------------

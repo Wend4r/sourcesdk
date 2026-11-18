@@ -5,14 +5,14 @@
 #include "tier0/threadtools.h"
 #include "tier0/utlscratchmemory.h"
 #include "tier0/utlstring.h"
-#include "tier1/generichash.h"
-#include "tier1/keyvalues3.h"
+#include "tier0/generichash.h"
+#include "kv3lib/keyvalues3.h"
 #include "tier1/utlvectormemory.h"
-#include "tier1/utlsymbollarge.h"
-#include "tier1/utlvector.h"
-#include "tier1/utldict.h"
-#include "tier1/utlmap.h"
-#include "tier1/utlhashtable.h"
+#include "tier0/utlsymbollarge.h"
+#include "tier0/utlvector.h"
+#include "tier0/utldict.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlhashtable.h"
 #include "tier1/utldelegate.h"
 #include "networksystem/inetworkserializer.h"
 #include "vscript/ivscript.h"
@@ -29,6 +29,7 @@
 #include "resourcefile/resourcetype.h"
 
 #include "ientitylistener.h"
+#include "entity2/entityinterfaces.h"
 
 class CKV3Arena;
 class CEntityClass;
@@ -47,6 +48,7 @@ class ISpawnGroupEntityFilter;
 class IHandleEntity;
 struct ComponentUnserializerFieldInfo_t;
 
+// Null before ISource2Server::Init and after its Shutdown
 extern CGameEntitySystem* GameEntitySystem();
 
 class IEntityResourceManifest {
@@ -72,24 +74,10 @@ enum ClearEntityDatabaseMode_t
 
 // Entity notifications //
 
-struct EntityNotification_t
-{
-	CEntityIdentity* m_pEntity;
-};
-
 struct EntityDormancyChange_t : EntityNotification_t
 {
 	EntityDormancyType_t m_nPrevDormancyType;
 	EntityDormancyType_t m_nNewDormancyType;
-};
-
-struct EntitySpawnInfo_t : EntityNotification_t
-{
-	const CEntityKeyValues* m_pKeyValues;
-	int m_Unk1;
-	uint16 m_SpawnOrder;
-	uint8 m_Depth;
-	uint8 m_OriginalSpawnOrder;
 };
 
 struct EntityActivation_t : EntityNotification_t
@@ -105,29 +93,13 @@ struct PostDataUpdateInfo_t : EntityNotification_t
 	DataUpdateType_t m_updateType;
 };
 
-struct SecondaryPrecacheMemberCallback_t
-{
-	void (CEntityInstance::*pfnPrecache)(ResourceHandle_t hResource, const CEntityPrecacheContext* pContext);
-};
-
-struct CEntityResourceManifestLock
-{
-	IEntityResourceManifestBuilder* m_pBuilder;
-	matrix3x4a_t m_vSpawnGroupOffset;
-	SpawnGroupHandle_t m_hSpawnGroup;
-	IEntityPrecacheConfiguration* m_pConfig;
-	IEntityResourceManifest* m_pManifest;
-	bool m_bIsLocked;
-	bool m_bPrecacheEnable;
-};
-
 // Manifest executor //
 
 abstract_class IEntityResourceManifestBuilder
 {
 public:
 	virtual void		BuildResourceManifest(SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t *pEntities, const matrix3x4a_t *vWorldOffset, IEntityPrecacheConfiguration* pConfig, IEntityResourceManifest* pResourceManifest) = 0;
-	virtual void		BuildResourceManifest(SpawnGroupHandle_t hSpawnGroup, int iCount, const CEntityKeyValues *pKeyValues, IEntityPrecacheConfiguration* pConfig, IEntityResourceManifest* pResourceManifest) = 0;
+	virtual void		BuildResourceManifest(SpawnGroupHandle_t hSpawnGroup, int iCount, const CEntityKeyValues **ppKeyValues, IEntityPrecacheConfiguration* pConfig, IEntityResourceManifest* pResourceManifest) = 0;
 	virtual void		BuildResourceManifest(SpawnGroupHandle_t hSpawnGroup, const CUtlVector<const CEntityKeyValues*>* pEntityKeyValues, const char* pFilterName /* Usually, "mapload" and "cs_respawn"/"respawn". See CSpawnGroupEntityFilterRegistrar ctors */, IEntityPrecacheConfiguration* pConfig, IEntityResourceManifest* pResourceManifest) = 0;
 	virtual void		BuildResourceManifest(const char* pManifestNameOrGroupName, IEntityPrecacheConfiguration* pConfig, IEntityResourceManifest* pResourceManifest) = 0;
 	virtual void		BuildResourceManifest(EntityResourceManifestCreationCallback_t callback, void* pContext, IEntityPrecacheConfiguration* pConfig, IEntityResourceManifest* pResourceManifest) = 0;
@@ -186,7 +158,7 @@ private:
 		unsigned int operator()( uint32 n ) const { return MurmurHash2( &n, sizeof( uint32 ), 0x3501A674 ); } 
 	};
 
-	typedef CUtlDelegate<bool( IParsingErrorListener *, CEntityInstance *, void *, const ComponentUnserializerFieldInfo_t *, const KeyValues3 * )> KeyUnserializerDelegate;
+	typedef CUtlDelegate<bool( IErrorListener *, CEntityInstance *, void *, const ComponentUnserializerFieldInfo_t *, const KeyValues3 * )> KeyUnserializerDelegate;
 
 public:
 	virtual						~CEntitySystem() = 0;
@@ -217,6 +189,9 @@ public:
 	inline CEntityInstance *GetEntityInstance( CEntityIdentity *ident ) { return ident ? ident->m_pInstance : nullptr; }
 	inline CEntityInstance *GetEntityInstance( CEntityIndex entnum ) { return GetEntityInstance( GetEntityIdentity( entnum ) ); }
 	inline CEntityInstance *GetEntityInstance( const CEntityHandle &hEnt ) { return GetEntityInstance( GetEntityIdentity( hEnt ) ); }
+
+	// The controller of player slot N is the entity at index N + 1, only slots below CGlobalVars::maxClients have one
+	inline CEntityInstance *GetPlayerController( CPlayerSlot slot ) { return slot.IsValid() ? GetEntityInstance( slot.GetEntityIndex() ) : nullptr; }
 
 	inline void AddEntityKeyValuesAllocatorRef() { ++m_nEntityKeyValuesAllocatorRefCount; }
 	inline void ReleaseEntityKeyValuesAllocatorRef()
@@ -292,12 +267,18 @@ public:
 
 	// Deletion deferred until the queued creation ends
 	bool m_bQueuedDeletionDeferred;
-	bool m_Unk2; // bDeallocateImmediately for the deferred deletion
-	bool m_Unk3;
+	// bDeallocateImmediately for the deferred deletion
+	bool m_bPerformDeallocationPostCreation;
+	// The queued creation runs the queued PostDataUpdate calls with the activations
+	bool m_bInvokePostDataUpdates;
 	bool m_bEnableAutoDeletionExecution;
-	bool m_Unk4;
-	bool m_Unk5;
-	bool m_Unk6;
+	// Set by Activate and UpdateOnRemove when the resource system profiler wants the entity names
+	bool m_bProfilingResourceSystem;
+	// The queued activations use ACTIVATE_TYPE_ONRESTORE instead of the creation activate types while set
+	bool m_bInRestoreActivation;
+	// Named by what it does: set while the save restore system restores the entities of an adjacent map (LoadAdjacentEnts)
+	bool m_bInRestoreAdjacentEntities;
+	bool m_bProcessingQueuedActivatesAndPostDataUpdates;
 
 	CUtlVector<CreationInfo_t> m_queuedCreations;
 	CUtlVector<PostDataUpdateInfo_t> m_queuedPostDataUpdates;

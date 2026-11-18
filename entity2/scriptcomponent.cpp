@@ -10,10 +10,14 @@
 #include "tier0/strtools.h"
 #include "vscript/ivscript.h"
 
+// The component has no schema fields. The game's load only builds the default values of the class once,
+// which are an empty table, so neither transfers anything.
+void CScriptComponent::KV3TransferSave( CKV3TransferSaveContext *pContext ) const
+{
+}
+
 void CScriptComponent::KV3TransferLoad( CKV3TransferLoadContext *pContext )
 {
-	// Game: when the context has no value at its offset 320, initializes a function-local static of the module once.
-	// The component itself loads nothing.
 }
 
 void CScriptComponent::ReleaseScope()

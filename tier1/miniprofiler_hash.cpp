@@ -3,7 +3,7 @@
 #include "tier1/miniprofiler_hash.h"
 
 #if ENABLE_HARDWARE_PROFILER
-#include "tier1/utlstringmap.h"
+#include "tier0/utlstringmap.h"
 CUtlStringMap<CLinkedMiniProfiler*> g_mapMiniProfilers;
 DLL_IMPORT CLinkedMiniProfiler *g_pOtherMiniProfilers;
 CLinkedMiniProfiler *HashMiniProfiler( const char *pString )

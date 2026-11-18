@@ -54,23 +54,23 @@ struct SOIDRender_t
 struct SOID_t
 {
 	SOID_t()
-	: m_type( 0 )
-	, m_id( 0 )
+	: m_id( 0 )
+	, m_type( 0 )
 	, m_padding( 0 )
 	{
 	}
 
 	SOID_t( uint32 type, uint64 id )
-	: m_type( type )
-	, m_id( id )
+	: m_id( id )
+	, m_type( type )
 	, m_padding( 0 )
 	{
 	}
 
 	// Conversion from a SteamID
 	SOID_t( CSteamID steamID )
-	: m_type( k_SOID_Type_SteamID )
-	, m_id( steamID.ConvertToUint64() )
+	: m_id( steamID.ConvertToUint64() )
+	, m_type( k_SOID_Type_SteamID )
 	, m_padding( 0 )
 	{
 	}

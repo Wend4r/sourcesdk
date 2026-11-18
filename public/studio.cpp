@@ -10,7 +10,7 @@
 #include "datacache/idatacache.h"
 #include "datacache/imdlcache.h"
 #include "convar.h"
-#include "tier1/utlmap.h"
+#include "tier0/utlmap.h"
 #include "tier0/vprof.h"
 
 // memdbgon must be the last include file in a .cpp file!!!

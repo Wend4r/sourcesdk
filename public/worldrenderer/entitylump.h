@@ -5,12 +5,12 @@
 	#pragma once
 #endif
 
-#include "resourcefile/resourcehandle.h"
+#include "resourcesystem/resourcehandle.h"
 
 #include <entity2/entitykeyvalues.h>
 #include <tier0/platform.h>
 #include <tier0/utlstring.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlvector.h>
 
 #define FOR_EACH_ENTLUMP( lump, iter ) \
 	for ( int iter = 0; iter < ( lump )->GetNumEntities(); iter++ )

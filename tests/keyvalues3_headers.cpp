@@ -1,6 +1,9 @@
 #include "common/assert.h"
 #include "common/macros.h"
 
+#include <kv3lib/kv3formats.h>
+#include <kv3lib/keyvalues3.h>
+
 #include <tier0/keyvalues3.h>
 #include <tier1/keyvalues3.h>
 

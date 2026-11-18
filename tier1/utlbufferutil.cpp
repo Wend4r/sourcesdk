@@ -26,7 +26,7 @@
 #include "tier0/characterset.h"
 #include "tier0/utlstring.h"
 #include "tier0/strtools.h"
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlsymbollarge.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

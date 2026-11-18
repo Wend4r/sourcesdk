@@ -104,8 +104,11 @@ function(sourcesdk_compile_protos PROTO_FILENAMES PROTO_ARGS PROTO_DIR PROTO_OUT
 endfunction()
 
 # Prepare proto args
-set(SOURCESDK_PROTO_ARGS "-I${SOURCESDK_PROTOBUF_SOURCE_DIR}")
+# The game proto directories come first: they ship the extended google/protobuf/descriptor.proto
+# of their binaries (boxed_type, synthetic_default, additional_includes and so on)
+set(SOURCESDK_PROTO_ARGS)
 append_proto_dirs(SOURCESDK_PROTO_ARGS "${SOURCESDK_PROTO_DIRS}")
+list(APPEND SOURCESDK_PROTO_ARGS "-I${SOURCESDK_PROTOBUF_SOURCE_DIR}")
 
 set(SOURCESDK_CUSTOM_PROTO_ARGS
 	${SOURCESDK_PROTO_ARGS}

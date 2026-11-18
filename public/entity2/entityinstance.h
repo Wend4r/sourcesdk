@@ -4,14 +4,17 @@
 #pragma once
 #endif
 
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlsymbollarge.h"
 #include "entity2/entitycomponent.h"
 #include "entity2/entityidentity.h"
 #include "entitytypes.h"
 #include "entity2/entityprivatescriptscope.h"
+#include "kv3lib/kv3transfer_constants.h"
 #include "schemasystem/schematypes.h"
-#include "variant.h"
+#include "entity2/variant.h"
 #include "vscript_shared.h"
+
+#include "schemacompiler/schemaon.h"
 
 class CEntityClass;
 class CEntityKeyValues;
@@ -31,7 +34,6 @@ struct ChangeAccessorFieldPathIndexInfo_t;
 struct datamap_t;
 class IScriptVM;
 class CNetworkSerializerClassInfo;
-struct NetworkSharedChangeInfoOverflow_t;
 
 // See entitynetwork.h
 struct NetworkStateChanged_t;
@@ -55,15 +57,15 @@ enum AcceptInputResult_t
 	ACCEPT_INPUT_HANDLED,
 };
 
-class CEntityInstance
+schema class CEntityInstance
 {
 public:
+	TYPEMETA( MConstructibleClassBase );
+
 	virtual const CNetworkSerializerClassInfo *GetSerializerClassInfo() = 0;
 
-	// Custom KV3 save/restore for members the datamap cannot describe
-	// TODO(@Wend4r): Implement kv3lib stuff
-	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const {}
-	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) {}
+	// Custom KV3 save/restore for members the datamap cannot describe; the base versions transfer nothing
+	CLASS_USES_KV3TRANSFER_VIRTUAL( CEntityInstance );
 
 	DECLARE_ENT_SCRIPTDESC();
 
@@ -125,16 +127,18 @@ public:
 	virtual bool FullEdictChanged() { return false; }
 
 	virtual void InvalidatePolymorphicMetadataHelper() {}
-	virtual void Unk_36() {} // Empty and never overridden
+	// Named by its place among the network callbacks: empty in CEntityInstance and in every entity class of the server and the client, no caller found
+	virtual void NetworkReservedCallback() {}
 
 	virtual ChangeAccessorFieldPathIndex_t AddChangeAccessorPath( const CFieldPath &path ) { return ChangeAccessorFieldPathIndex_t(); }
 	virtual void AssignChangeAccessorPathIds() {}
 
-	virtual NetworkSharedChangeInfoOverflow_t *GetChangeAccessorPathInfo() { return nullptr; }
-	virtual const NetworkSharedChangeInfoOverflow_t *GetChangeAccessorPathInfo() const { return nullptr; }
+	virtual ChangeAccessorFieldPathIndexInfo_t *GetChangeAccessorPathInfo() { return nullptr; }
+	virtual const ChangeAccessorFieldPathIndexInfo_t *GetChangeAccessorPathInfo() const { return nullptr; }
 
 	virtual bool GetFieldPathChildIndices( const CFieldPath &path, CUtlVector< int > *pOutChildIndices ) { return false; }
-	virtual bool Unk_42() { return false; } // Returns false and never overridden
+	// The engine calls it through ISource2GameEntities::GetWorldspaceCenter; no entity class of the server overrides it
+	virtual bool GetWorldspaceCenter( Vector *pCenter ) { return false; }
 
 	virtual void OnAttributeChanged() {}
 
@@ -157,7 +161,7 @@ public:
 	// The script instance is the public script scope
 	HSCRIPT GetScriptInstance() { return ScriptGetOrCreatePublicScriptScope(); }
 	
-	void FireOutputInternal( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, const CPulseInputParamMap *pParamMap, const CVariant *pValue, float flDelay );
+	void FireOutputInternal( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CPulseArgumentPack *pArgs, float flDelay, const CPulseInputParamMap *pParamMap, const CVariant *pValue );
 	void FireOutput( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, float flDelay );
 	void FireOutput( const char *pszOutputName, CEntityInstance *pActivator, CEntityInstance *pCaller, const CVariant &value, const KeyValues3 &params, float flDelay );
 
@@ -223,9 +227,11 @@ protected:
 public:
 	CUtlSymbolLarge m_iszPrivateVScripts;
 	CEntityIdentity *m_pEntity;
-	CEntityPrivateScriptScope m_hPrivateScope;
-	CEntityKeyValues *m_pKeyValues;
+	noschema CEntityPrivateScriptScope m_hPrivateScope;
+	noschema CEntityKeyValues *m_pKeyValues;
 	CScriptComponent *m_CScriptComponent;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ENTITYINSTANCE_H

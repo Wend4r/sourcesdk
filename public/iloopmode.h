@@ -11,11 +11,15 @@
 #endif
 
 #include <appframework/iappsystem.h>
-#include <engine/eventdispatcher.h>
-#include <inputsystem/InputEnums.h>
+#include <tier0/eventdispatcher.h>
+#include <inputsystem/inputenums.h>
 #include <keyvalues.h>
 #include <splitscreenslot.h>
 #include <netmessages.pb.h>
+#include "rendersystem/rendersystemtypes.h"
+#include "engine2/isource2serverconfig.h"
+
+#include "schemacompiler/schemaon.h"
 
 class ISource2WorldSession;
 class ISceneView;
@@ -33,44 +37,20 @@ enum ClientServerMode_t : int32
 	CLIENTSERVERMODE_LISTENSERVER,
 };
 
-struct RenderViewport_t
-{
-	int m_nVersion;
-	int m_nTopLeftX;
-	int m_nTopLeftY;
-	int m_nWidth;
-	int m_nHeight;
-	float m_flMinZ;
-	float m_flMaxZ;
-};
-
-enum EventMapRegistrationType_t : int32
-{
-	EVENT_MAP_REGISTER = 0,
-	EVENT_MAP_UNREGISTER,
-};
-
 struct RHBackColorBuffer_t
 {
 	ISceneView *m_pView;
 	HSceneViewRenderTarget m_hBackColorBuffer;
 };
 
-enum HostStateLoopModeType_t
+
+schema struct EngineLoopState_t
 {
-	HOST_STATE_LOOP_MODE_IDLE = 0,
-	HOST_STATE_LOOP_MODE_GAME,
-	HOST_STATE_LOOP_MODE_SOURCETV_RELAY,
+	DECLARE_SCHEMA_DATA_CLASS( EngineLoopState_t );
 
-	HOST_STATE_LOOP_MODE_COUNT
-};
-
-
-struct EngineLoopState_t
-{
-	PlatWindow_t m_hWnd;
-	SwapChainHandle_t m_hSwapChain;
-	InputContextHandle_t m_hInputContext;
+	noschema PlatWindow_t m_hWnd;
+	noschema SwapChainHandle_t m_hSwapChain;
+	noschema InputContextHandle_t m_hInputContext;
 	int m_nPlatWindowWidth;
 	int m_nPlatWindowHeight;
 	int m_nRenderWidth;
@@ -131,9 +111,10 @@ public:
 	virtual void OnLoopDeactivate( const EngineLoopState_t &state, CEventDispatcher<CEventIDManager_Default> *pEventDispatcher ) = 0;
 	virtual void RegisterEventMap( CEventDispatcher<CEventIDManager_Default> *pEventDispatcher, EventMapRegistrationType_t nRegistrationType) = 0;
 	virtual InputHandlerResult_t HandleInputEvent( const InputEvent_t &event, CSplitScreenSlot nSplitScreenPlayerSlot ) = 0;
-	virtual ISceneView* AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime,
+	virtual RHBackColorBuffer_t AddViewsToSceneSystem( const EngineLoopState_t &state, double flRenderTime, double flRealTime,
 		const RenderViewport_t &viewport, const RHBackColorBuffer_t &backColorBuffer ) = 0;
-	virtual bool unk001( void ) = 0;
+	// AMNOTE: Named by what it does: true only while loading a level, unless -favor_consistent_framerate is set; the engine then skips frames while presents are outstanding
+	virtual bool ShouldSkipFramesWithOutstandingPresents( void ) = 0;
 };
 
 abstract_class ILoopModeFactory
@@ -145,5 +126,7 @@ public:
 	virtual void DestroyLoopMode( ILoopMode *pLoopMode ) =0;
 	virtual LoopModeType_t GetLoopModeType( void ) const =0;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // ILOOPMODE_H

@@ -6,10 +6,12 @@
 #include "entity2/entityindex.h"
 #include "const.h"
 
+#include "schemacompiler/schemaon.h"
+
 #define INVALID_PLAYER_SLOT_INDEX -1
 #define INVALID_PLAYER_SLOT CPlayerSlot( INVALID_PLAYER_SLOT_INDEX )
 
-class CPlayerSlot
+schema class CPlayerSlot
 {
 public:
 	CPlayerSlot( int slot = INVALID_PLAYER_SLOT_INDEX ) : m_Data( slot ) {}
@@ -37,5 +39,7 @@ public:
 private:
 	int m_Data;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // PLAYERSLOT_H

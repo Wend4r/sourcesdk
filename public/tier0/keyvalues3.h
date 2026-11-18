@@ -5,60 +5,31 @@
 #pragma once
 #endif
 
-#include "platform.h"
+#include "tier0/platform.h"
+#include "kv3lib/kv3formats.h"
 
-#define KV3_FLAG_OBJECT_REFERANCES (1 << 0) 
-
-class CUtlString;
-class CUtlBuffer;
-class CBufferString;
 class KeyValues3;
 class CKV3Arena;
+class CBufferString;
+class CUtlBuffer;
+class CUtlString;
 struct KV1ToKV3Translation_t;
 struct KV3ToKV1Translation_t;
 
-/* 
-	KeyValues3 is a data storage format. See https://developer.valvesoftware.com/wiki/KeyValues3
-	Supports various specific data types targeted at the Source2.
-	Each specific type corresponds to one of the basic types.
-
-	There are 2 ways to create KeyValues3:
-
-	1. Via CKV3Arena:
-	- KV's, arrays and tables are stored in fixed memory blocks (clusters) and therefore memory is allocated only when clusters are created.
-	- Supports metadata and some other things.
-
-	2. Directly through the constructor.
-*/
-
-struct KV3ID_t
-{
-	const char* m_name;
-	uint64		m_data1;
-	uint64		m_data2;
-};
-
-// encodings
-const KV3ID_t g_KV3Encoding_Text 		= { "text", 0x41C58A33E21C7F3Cull, 0xDAA323A6DA77799ull };
-const KV3ID_t g_KV3Encoding_Binary 		= { "binary", 0x40C1F7D81B860500ull, 0x14E76782A47582ADull };
-const KV3ID_t g_KV3Encoding_BinaryLZ4 	= { "binary_lz4", 0x4F5C63A16847348Aull, 0x19B1D96F805397A1ull };
-const KV3ID_t g_KV3Encoding_BinaryZSTD 	= { "binary_zstd", 0x4305FEF06F620A00ull, 0x29DBB14623045FA3ull };
-const KV3ID_t g_KV3Encoding_BinaryBC 	= { "binary_bc", 0x4F6C95BC95791A46ull, 0xD2DFB7A1BC050BA7ull };
-const KV3ID_t g_KV3Encoding_BinaryAuto 	= { "binary_auto", 0x45836B856EB109E6ull, 0x8C06046E3A7012A3ull };
-
-// formats
-const KV3ID_t g_KV3Format_Generic = { "generic", 0x469806E97412167Cull, 0xE73790B53EE6F2AFull };
-
 enum KV1TextEscapeBehavior_t
 {
-	KV1TEXT_ESC_BEHAVIOR_UNK1 = 0,
-	KV1TEXT_ESC_BEHAVIOR_UNK2 = 1,
+	KV1_NO_ESCAPE_SEQUENCES = 0,
+	KV1_HAS_ESCAPE_SEQUENCES = 1,
 };
 
+// Only LoadKV3FromOldSchemaText reads these, which LoadKV3 calls for old schema text.
 enum KV3LoadTextFlags_t
 {
 	KV3_LOAD_TEXT_NONE = 0,
-	KV3_LOAD_TEXT_HAS_OBJECT_REFERANCES = (1 << 0), // "_class" and "__oldschema_object_name" keys
+	KV3_LOAD_TEXT_OBJECT_REFERENCES_AS_STRINGS = 1 << 0, // keeps "&name" and NULL object references as strings instead of resolving them
+
+	// Previous name of KV3_LOAD_TEXT_OBJECT_REFERENCES_AS_STRINGS, kept for compatibility.
+	KV3_LOAD_TEXT_HAS_OBJECT_REFERANCES = KV3_LOAD_TEXT_OBJECT_REFERENCES_AS_STRINGS,
 };
 
 enum KV3SaveTextFlags_t
@@ -79,8 +50,8 @@ PLATFORM_OVERLOAD bool LoadKV3FromFile( KeyValues3* kv, CUtlString* error, const
 PLATFORM_OVERLOAD bool LoadKV3FromJSON( KeyValues3* kv, CUtlString* error, const char* input, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3FromJSONFile( KeyValues3* kv, CUtlString* error, const char* path, const char* filename, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3FromKV1File( KeyValues3* kv, CUtlString* error, const char* path, const char* filename, KV1TextEscapeBehavior_t esc_behavior, uint flags = KV3_LOAD_TEXT_NONE );
-PLATFORM_OVERLOAD bool LoadKV3FromKV1Text( KeyValues3* kv, CUtlString* error, const char* input, KV1TextEscapeBehavior_t esc_behavior, const char* kv_name, bool unk, uint flags = KV3_LOAD_TEXT_NONE );
-PLATFORM_OVERLOAD bool LoadKV3FromKV1Text_Translated( KeyValues3* kv, CUtlString* error, const char* input, KV1TextEscapeBehavior_t esc_behavior, const KV1ToKV3Translation_t* translation, int unk1, const char* kv_name, bool unk2, uint flags = KV3_LOAD_TEXT_NONE );
+PLATFORM_OVERLOAD bool LoadKV3FromKV1Text( KeyValues3* kv, CUtlString* error, const char* input, KV1TextEscapeBehavior_t esc_behavior, const char* kv_name, bool bIgnoreConditionals, uint flags = KV3_LOAD_TEXT_NONE );
+PLATFORM_OVERLOAD bool LoadKV3FromKV1Text_Translated( KeyValues3* kv, CUtlString* error, const char* input, KV1TextEscapeBehavior_t esc_behavior, const KV1ToKV3Translation_t* translation, int nTranslationCount, const char* kv_name, bool bIgnoreConditionals, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3FromKV3OrKV1( KeyValues3* kv, CUtlString* error, CUtlBuffer* input, const KV3ID_t& format, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3FromOldSchemaText( KeyValues3* kv, CUtlString* error, CUtlBuffer* input, const KV3ID_t& format, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
 PLATFORM_OVERLOAD bool LoadKV3Text_NoHeader( KeyValues3* kv, CUtlString* error, const char* input, const KV3ID_t& format, const char* kv_name, uint flags = KV3_LOAD_TEXT_NONE );
@@ -89,12 +60,36 @@ PLATFORM_OVERLOAD bool SaveKV3( const KV3ID_t& encoding, const KV3ID_t& format, 
 PLATFORM_OVERLOAD bool SaveKV3AsJSON( const KeyValues3* kv, CUtlString* error, CUtlBuffer* output );
 PLATFORM_OVERLOAD bool SaveKV3AsJSON( const KeyValues3* kv, CUtlString* error, CUtlString* output );
 PLATFORM_OVERLOAD bool SaveKV3AsKV1Text( const KeyValues3* kv, CUtlString* error, CUtlBuffer* output, KV1TextEscapeBehavior_t esc_behavior );
-PLATFORM_OVERLOAD bool SaveKV3AsKV1Text_Translated( const KeyValues3* kv, CUtlString* error, CUtlBuffer* output, KV1TextEscapeBehavior_t esc_behavior, const KV3ToKV1Translation_t* translation, int unk );
+PLATFORM_OVERLOAD bool SaveKV3AsKV1Text_Translated( const KeyValues3* kv, CUtlString* error, CUtlBuffer* output, KV1TextEscapeBehavior_t esc_behavior, const KV3ToKV1Translation_t* translation, int nTranslationCount );
 PLATFORM_OVERLOAD bool SaveKV3Text_NoHeader( const KeyValues3* kv, CUtlString* error, CBufferString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3Text_NoHeader( const KeyValues3* kv, CUtlString* error, CUtlBuffer* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3Text_NoHeader( const KeyValues3* kv, CUtlString* error, CUtlString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, CBufferString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3Text_ToString( const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, CUtlString* output, uint flags = KV3_SAVE_TEXT_NONE );
 PLATFORM_OVERLOAD bool SaveKV3ToFile( const KV3ID_t& encoding, const KV3ID_t& format, const KeyValues3* kv, CUtlString* error, const char* filename, const char* path, uint flags = KV3_SAVE_TEXT_NONE );
+
+// Detection of the KV3 data in a buffer. pOutDetectedFormat receives the format; for text, its
+// name is copied to pFormatName (nFormatNameSize chars) and pOutDetectedFormat points at it
+PLATFORM_OVERLOAD bool LooksLikeKV3BinaryData( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat );
+PLATFORM_OVERLOAD bool LooksLikeKV3TextData( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat, char *pFormatName, int nFormatNameSize );
+PLATFORM_OVERLOAD bool LooksLikeOldSchemaText( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat );
+PLATFORM_OVERLOAD bool IsKV3Data( const void *pData, int nBufLen, KV3ID_t *pOutDetectedFormat, char *pFormatName, int nFormatNameSize );
+PLATFORM_OVERLOAD bool IsKV3Data( const CUtlBuffer *pSrcBuffer, KV3ID_t *pOutDetectedFormat, char *pFormatName, int nFormatNameSize );
+
+// The current format of the files with the extension, "generic" for an unknown one
+PLATFORM_OVERLOAD KV3ID_t GetCurrentKV3FormatVersionForExtension( const char *pExtension, bool *pbUnknown );
+
+// Converts the data in pRoot from one format to another
+PLATFORM_INTERFACE bool ConvertKV3Format( KeyValues3 *pRoot, const KV3ID_t &fromFormat, const KV3ID_t &toFormat, CUtlString *pOutError );
+
+// Whether the format is one of the model document formats, which pOutFormat receives
+PLATFORM_INTERFACE bool IsModelDocFormat( const KV3ID_t &id, KV3ID_t *pOutFormat );
+
+// Splits "Name{ args... }" into the name and the KV3 arguments
+PLATFORM_INTERFACE bool SplitNameAndKV3Args( const char *pString, CBufferString *pOutName, KeyValues3 *pOutArgs, CUtlString *pOutError );
+
+// Particle system data helpers
+PLATFORM_OVERLOAD bool IsParticleSystemBehaviorVersionDeprecated( KeyValues3 *pParticleSystem, int *pBehaviorVersion );
+PLATFORM_OVERLOAD bool TryCullParticleSystemDisabledBlocks( KeyValues3 *pParticleSystem );
 
 #endif // TIER0_KEYVALUES3_H

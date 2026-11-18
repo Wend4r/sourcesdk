@@ -13,7 +13,7 @@
 #pragma once
 #endif
 
-#include "utllinkedlist.h"
+#include "tier0/utllinkedlist.h"
 
 // memdbgon must be the last include file in a .h file!!!
 #include "tier0/memdbgon.h"

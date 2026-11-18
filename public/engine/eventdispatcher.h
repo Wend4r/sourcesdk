@@ -1,63 +1,11 @@
-#ifndef EVENTDISPATCHER_H
-#define EVENTDISPATCHER_H
+#ifndef ENGINE_EVENTDISPATCHER_H
+#define ENGINE_EVENTDISPATCHER_H
 
 #ifdef _WIN32
 #pragma once
 #endif
 
-#include <tier1/utldelegate.h>
-#include <tier1/utlmap.h>
-#include <tier1/utlvector.h>
+// Compatibility include, the header lives in tier0.
+#include "tier0/eventdispatcher.h"
 
-struct SchemaClassInfoData_t;
-
-struct CEventDispatcher_Base
-{
-	struct EventListenerInfo_t
-	{
-		CUtlAbstractDelegate m_Delegate;
-		const char *m_pszName;
-		int32 m_nPriority;
-		uint8 m_nDelegateParamCount;
-		bool m_bDelegateReturnsVoid;
-	};
-
-	struct DelegateIterator_Base_t
-	{
-		const CUtlVector< EventListenerInfo_t > *pListeners;
-		CUtlVectorFixedGrowable< int, 4 > skipListeners;
-		int nCurrent;
-		DelegateIterator_Base_t *pNext;
-		bool bIteratingForward;
-		bool bIsInListenerTelemetryScope;
-	};
-
-	CThreadFastMutex m_Lock;
-	DelegateIterator_Base_t *m_pActiveIterators;
-};
-
-struct CEventID_SchemaBinding
-{
-	int8 unused;
-};
-
-struct CEventIDManager_SchemaBinding : CEventID_SchemaBinding
-{
-};
-
-struct CEventIDManager_Default : CEventIDManager_SchemaBinding
-{
-};
-
-template <typename T>
-struct CEventDispatcher_Identified : CEventDispatcher_Base
-{
-	CUtlMap<const SchemaClassInfoData_t*, CUtlVector<EventListenerInfo_t>, unsigned int> m_EventListenerMap;
-};
-
-template <typename T>
-struct CEventDispatcher : CEventDispatcher_Identified<T>
-{
-};
-
-#endif // EVENTDISPATCHER_H
+#endif // ENGINE_EVENTDISPATCHER_H

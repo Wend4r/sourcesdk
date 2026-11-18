@@ -29,12 +29,19 @@ PLATFORM_INTERFACE HMODULE			Plat_LoadModule( const char *pModuleName, int *pLas
 PLATFORM_INTERFACE int				Plat_LoadModuleRaw( const char *pModuleName, HMODULE *pInstance, int nFlags, bool bHideLoadingError = true ); // Returns a last error number.
 PLATFORM_INTERFACE void				Plat_UnloadModule( HMODULE module );
 
+// Finds a loaded module; bExactFileName takes pModuleName as is instead of turning it into a module file name, the outputs are optional
+PLATFORM_INTERFACE HMODULE			Plat_FindModuleByName( const char *pModuleName, bool bExactFileName, void **ppBaseAddress, size_t *pnImageSize );
+PLATFORM_INTERFACE bool				Plat_IsModuleLoaded( const char *pModuleName, bool bExactFileName );
+PLATFORM_INTERFACE HMODULE			Plat_GetExeModule();
+PLATFORM_INTERFACE bool				Plat_GetModuleInformation( HMODULE hModule, CBufferString *pModulePath, void **ppBaseAddress, size_t *pnImageSize );
+// Finds the module that contains pAddress, the outputs are optional
+PLATFORM_INTERFACE bool				Plat_GetModuleAddressInformation( const void *pAddress, HMODULE *phModule, CBufferString *pModulePath, void **ppBaseAddress, size_t *pnImageSize );
+
 // Determines if current process is running with any debug modules
 PLATFORM_INTERFACE bool				Plat_RunningWithDebugModules();
 
 PLATFORM_INTERFACE void*			Plat_GetModuleProcAddress( HMODULE hModule, const char* pName );
 
-PLATFORM_INTERFACE HMODULE Plat_FindModuleByAddress( void *pAddress );
 PLATFORM_INTERFACE CreateInterfaceFn Plat_GetModuleInterfaceFactory( HMODULE module, int *pReturnCode = NULL );
 
 // This is a helper function to load a module, get its factory, and get a specific interface.
@@ -45,3 +52,10 @@ PLATFORM_INTERFACE bool Plat_LoadInterface(
 	const char *pInterfaceVersionName,
 	HMODULE *pOutModule,
 	void **pOutInterface );
+
+//-----------------------------------------------------------------------------
+// Objects the modules share by name through tier0
+//-----------------------------------------------------------------------------
+PLATFORM_INTERFACE void RegisterGlobalObject( const char *pObjectName, void *pObject );
+PLATFORM_INTERFACE void UnRegisterGlobalObject( const char *pObjectName );
+PLATFORM_INTERFACE void *FindRegisteredGlobalObjectInternal( const char *pObjectName );

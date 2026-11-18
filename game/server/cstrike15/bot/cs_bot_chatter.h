@@ -15,7 +15,7 @@
 #include "tier0/platform.h"
 #include "navlib/cs_nav_area.h"
 #include "mathlib/vector.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 #include "cs_bot_timers.h"
 
 class CCSBot;

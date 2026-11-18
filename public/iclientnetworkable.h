@@ -13,7 +13,7 @@
 
 
 #include "iclientunknown.h"
-#include "tier1/bitbuf.h"
+#include "tier0/bitbuf.h"
 
 
 class IClientEntity;

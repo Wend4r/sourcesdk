@@ -1209,7 +1209,7 @@ inline float float16::Convert16bitFloatTo32bits( unsigned short input )
 		biased_exponent = ( (biased_exponent - float16bias + float32bias) * (biased_exponent != 0) ) << 23;
 		mantissa <<= (23-10);
 
-		*((unsigned *)&output) = ( mantissa | biased_exponent | sign );
+		output.rawFloat = BitsToFloat( mantissa | biased_exponent | sign );
 	}
 
 	return output.rawFloat;

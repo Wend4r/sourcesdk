@@ -19,6 +19,8 @@
 #include "vcollide.h"
 #include "tier3/tier3.h"
 
+#include "schemacompiler/schemaon.h"
+
 // ------------------------------------------------------------------------------------
 // UNITS:
 // ------------------------------------------------------------------------------------
@@ -92,19 +94,15 @@ struct physsaveparams_t;
 struct physrestoreparams_t;
 struct physprerestoreparams_t;
 
-enum PhysInterfaceId_t 
+schema enum PhysInterfaceId_t
 {
 	PIID_UNKNOWN,
-	PIID_IPHYSICSOBJECT,
-	PIID_IPHYSICSFLUIDCONTROLLER,
-	PIID_IPHYSICSSPRING,
-	PIID_IPHYSICSCONSTRAINTGROUP,
-	PIID_IPHYSICSCONSTRAINT,
-	PIID_IPHYSICSSHADOWCONTROLLER,
-	PIID_IPHYSICSPLAYERCONTROLLER,
+	PIID_IPHYSICSBODY,
+	PIID_IPHYSAGGREGATE,
+	PIID_IPHYSICSJOINT,
 	PIID_IPHYSICSMOTIONCONTROLLER,
-	PIID_IPHYSICSVEHICLECONTROLLER,
-	PIID_IPHYSICSGAMETRACE,
+	PIID_IPHYSICSPARTICLEROPE,
+	PIID_IPHYSICSRAGDOLLCONTROL,
 
 	PIID_NUM_TYPES
 };
@@ -475,7 +473,7 @@ public:
 
 
 
-abstract_class IPhysicsMotionController
+schema abstract_class IPhysicsMotionController
 {
 public:
 	virtual ~IPhysicsMotionController( void ) {}
@@ -984,7 +982,7 @@ struct surfacegameprops_t
 	unsigned short	material;
 	// Indicates whether or not the player is on a ladder.
 	unsigned char	climbable;
-	unsigned char	pad;
+	// Source 1 declared the alignment byte that follows as a member; the struct keeps its 12 bytes without it
 };
 
 //-----------------------------------------------------------------------------
@@ -1175,17 +1173,10 @@ struct physprerestoreparams_t
 
 template <class PHYSPTR> inline PhysInterfaceId_t GetPhysIID(PHYSPTR **); // will get link error if no match
 
-DEFINE_PIID( IPhysicsObject, 			PIID_IPHYSICSOBJECT );
-DEFINE_PIID( IPhysicsFluidController, 	PIID_IPHYSICSFLUIDCONTROLLER );
-DEFINE_PIID( IPhysicsSpring, 			PIID_IPHYSICSSPRING );
-DEFINE_PIID( IPhysicsConstraintGroup, 	PIID_IPHYSICSCONSTRAINTGROUP );
-DEFINE_PIID( IPhysicsConstraint, 		PIID_IPHYSICSCONSTRAINT );
-DEFINE_PIID( IPhysicsShadowController, 	PIID_IPHYSICSSHADOWCONTROLLER );
-DEFINE_PIID( IPhysicsPlayerController,	PIID_IPHYSICSPLAYERCONTROLLER );
 DEFINE_PIID( IPhysicsMotionController,	PIID_IPHYSICSMOTIONCONTROLLER );
-DEFINE_PIID( IPhysicsVehicleController,	PIID_IPHYSICSVEHICLECONTROLLER );
-DEFINE_PIID( IPhysicsGameTrace,			PIID_IPHYSICSGAMETRACE );
 
 //-----------------------------------------------------------------------------
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // VPHYSICS_INTERFACE_H

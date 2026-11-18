@@ -11,9 +11,9 @@
 #pragma once
 #endif
 
-#include "tier1/utlvector.h"
-#include "tier1/UtlSortVector.h"
-#include "tier1/utlmap.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlsortvector.h"
+#include "tier0/utlmap.h"
 #include "tier0/keyvalues.h"
 #include "gamecoordinator/igamecoordinator.h"
 

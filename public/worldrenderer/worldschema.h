@@ -5,11 +5,11 @@
 	#pragma once
 #endif
 
-#include <resourcefile/resourcehandle.h>
+#include <resourcesystem/resourcehandle.h>
 
 #include <tier0/platform.h>
 #include <tier0/utlstring.h>
-#include <tier1/utlvector.h>
+#include <tier0/utlvector.h>
 #include <mathlib/vector.h>
 #include <mathlib/vector2d.h>
 
@@ -38,6 +38,7 @@ public:
 using HWorldStrong = CStrongHandle<InfoForResourceTypeWorld_t>;
 using HWorldNodeStrong = CStrongHandle<InfoForResourceTypeCWorldNode>;
 using HWorldVisStrong = CStrongHandle<InfoForResourceTypeCVoxelVisibility>;
+using HWorldNode = CWeakHandle< InfoForResourceTypeCWorldNode >;
 using HResourceManifest = void*;
 
 //--------------------------------------------------------------------------------------
@@ -55,45 +56,48 @@ enum WorldNodeFlags_t
 	WORLD_NODE_MOST_DETAILED					= 0x0080,					// Node is the most detailed node containing the original geometry and textures
 };
 
+// Schema classes of worldrenderer (fields and offsets from the CS2 schema, both platforms the same)
+struct BakedLightingInfo_t
+{
+	// Which baked shadow channel a light uses on this map
+	struct BakedShadowAssignment_t
+	{
+		uint32 m_nLightHash;
+		uint32 m_nMapHash;
+		int8 m_nShadowChannel;
+	};
+
+	uint32 m_nLightmapVersionNumber;
+	uint32 m_nLightmapGameVersionNumber;
+	Vector2D m_vLightmapUvScale;
+	bool m_bHasLightmaps;
+	bool m_bBakedShadowsGamma20;
+	bool m_bCompressionEnabled;
+	int8 m_nLPVEncoding;
+	int8 m_nLightmapEncoding;
+	uint8 m_nChartPackIterations;
+	uint8 m_nVradQuality;
+	// CStrongHandle< InfoForResourceTypeCTextureBase > in the game
+	CUtlVector< ResourceHandle_t > m_lightMaps;
+	CUtlVector< BakedShadowAssignment_t > m_bakedShadows;
+};
+
 struct WorldBuilderParams_t
 {
-public:
 	float m_flMinDrawVolumeSize;
 	bool m_bBuildBakedLighting;
-	Vector2D m_vLightmapUvScale;
-private:
-	uint8 m_padding[3];
-public:
+	bool m_bAggregateInstanceStreams;
+	BakedLightingInfo_t m_bakedLightingInfo;
 	uint64 m_nCompileTimestamp;
 	uint64 m_nCompileFingerprint;
 };
 
 struct NodeData_t
 {
-public:
-	int32 m_nParent;
 	Vector m_vOrigin;
 	Vector m_vMinBounds;
 	Vector m_vMaxBounds;
-	float m_flMinimumDistance;
-	CUtlVector< int32 > m_ChildNodeIndices;
-private:
-	uint8 m_padding[4];
-public:
 	CUtlString m_worldNodePrefix;
-};
-
-struct BakedLightingInfo_t
-{
-public:
-	uint32 m_nLightmapVersionNumber;
-	uint32 m_nLightmapGameVersionNumber;
-	Vector2D m_vLightmapUvScale;
-	bool m_bHasLightmaps;
-private:
-	uint8 m_padding[7];
-public:
-	CUtlVector< void * /* CStrongHandle< InfoForResourceTypeCTextureBase > */ > m_lightMaps;
 };
 
 #include <entity2/entityidentity.h> //TODO: declare CEntityIdentity/CEntityInstance as schema classes here.

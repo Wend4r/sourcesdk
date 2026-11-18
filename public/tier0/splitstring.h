@@ -7,7 +7,7 @@
 
 #include "tier0/bufferstring.h"
 #include "tier0/utlstringlist.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
 
 #include "tier0/memdbgon.h"
 
@@ -58,6 +58,25 @@ private:
 	char *m_szBuffer; // a copy of original string, with '\0' instead of separators
 	int m_nBufferSize;
 };
+
+// Parses the numbers of pString separated by chSeparator into the vector
+PLATFORM_OVERLOAD int V_SplitNumbers( const char *pString, char chSeparator, CUtlVector< int > &values );
+PLATFORM_OVERLOAD int V_SplitNumbers( const char *pString, char chSeparator, CUtlVector< uint > &values );
+PLATFORM_OVERLOAD int V_SplitNumbers( const char *pString, char chSeparator, CUtlVector< int64 > &values );
+PLATFORM_OVERLOAD int V_SplitNumbers( const char *pString, char chSeparator, CUtlVector< uint64 > &values );
+PLATFORM_OVERLOAD int V_SplitNumbers( const char *pString, char chSeparator, CUtlVector< float > &values );
+PLATFORM_OVERLOAD int V_SplitNumbers( const char *pString, char chSeparator, CUtlVector< double > &values );
+
+// Writes the numbers separated by chSeparator to pOut and returns its text
+PLATFORM_OVERLOAD const char *V_JoinNumbers( char chSeparator, const CUtlVector< int > &values, CUtlString *pOut );
+PLATFORM_OVERLOAD const char *V_JoinNumbers( char chSeparator, const CUtlVector< uint > &values, CUtlString *pOut );
+PLATFORM_OVERLOAD const char *V_JoinNumbers( char chSeparator, const CUtlVector< int64 > &values, CUtlString *pOut );
+PLATFORM_OVERLOAD const char *V_JoinNumbers( char chSeparator, const CUtlVector< uint64 > &values, CUtlString *pOut );
+PLATFORM_OVERLOAD const char *V_JoinNumbers( char chSeparator, const CUtlVector< float > &values, CUtlString *pOut );
+PLATFORM_OVERLOAD const char *V_JoinNumbers( char chSeparator, const CUtlVector< double > &values, CUtlString *pOut );
+
+// V_LogMultiline into one string per line
+PLATFORM_INTERFACE void V_LogMultilineToArray( bool input, const char *label, const char *data, size_t len, CUtlVector< CUtlString > &output );
 
 #include "tier0/memdbgoff.h"
 

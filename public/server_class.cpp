@@ -6,7 +6,7 @@
 //
 //=============================================================================//
 
-#include "server_class.h"
+#include "engine2/server_class.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"

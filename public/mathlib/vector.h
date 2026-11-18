@@ -43,7 +43,9 @@
 #include "mathlib/vector2d.h"
 #include "mathlib/math_pfns.h"
 #include "tier0/memalloc.h"
-#include "tier1/random.h"
+#include "tier0/random.h"
+
+#include "schemacompiler/schemaon.h"
 
 // Uncomment this to add extra Asserts to check for NANs, uninitialized vecs, etc.
 //#define VECTOR_PARANOIA	1
@@ -75,7 +77,7 @@ class VectorByValue;
 //=========================================================
 // 3D Vector
 //=========================================================
-class Vector					
+schema class Vector					
 {
 public:
 	// Members
@@ -157,9 +159,9 @@ public:
 	inline bool IsZeroFast( ) const RESTRICT
 	{
 		COMPILE_TIME_ASSERT( sizeof(vec_t) == sizeof(int) );
-		return ( *reinterpret_cast<const int *>(&x) == 0 && 
-				 *reinterpret_cast<const int *>(&y) == 0 && 
-				 *reinterpret_cast<const int *>(&z) == 0 );
+		return ( FloatBits( x ) == 0 && 
+				 FloatBits( y ) == 0 && 
+				 FloatBits( z ) == 0 );
 	}
 
 	vec_t	NormalizeInPlace();								///< Normalize all components
@@ -417,7 +419,7 @@ public:
 // Here's where we add all those lovely SSE optimized routines
 //-----------------------------------------------------------------------------
 
-class ALIGN16 VectorAligned : public Vector
+schema class ALIGN16 VectorAligned : public Vector
 {
 public:
 	inline VectorAligned() : Vector(), w() {}
@@ -1752,7 +1754,7 @@ class RadianEuler;
 class DegreeEuler;
 class QAngle;
 
-class Quaternion				// same data-layout as engine's vec4_t,
+schema class Quaternion				// same data-layout as engine's vec4_t,
 {								//		which is a vec_t[4]
 public:
 	inline Quaternion()	= default;
@@ -1798,7 +1800,7 @@ public:
 	inline Quaternion operator-( void ) const { return Quaternion( -x, -y, -z, -w ); }
 
 	vec_t x, y, z, w;
-} ALIGN16_POST;
+};
 
 // Random Quaternion that is UNIFORMLY distributed over the S^3
 // should be good for random generation of orientation for unit tests and for game
@@ -2036,7 +2038,7 @@ typedef QuaternionAligned	BoneQuaternionAligned;
 class QAngle;
 #define VEC_DEG2RAD( a ) (a) * (3.14159265358979323846f / 180.0f)
 #define VEC_RAD2DEG( a ) (a) * (180.0f / 3.14159265358979323846f)
-class RadianEuler
+schema class RadianEuler
 {
 public:
 	inline RadianEuler(void)							{ }
@@ -2153,7 +2155,7 @@ inline vec_t RadianEuler::operator[](int i) const
 //-----------------------------------------------------------------------------
 // Degree Euler angle aligned to axis (NOT ROLL/PITCH/YAW)
 //-----------------------------------------------------------------------------
-class DegreeEuler
+schema class DegreeEuler
 {
 public:
 	///\name Initialization 
@@ -2265,7 +2267,7 @@ inline vec_t DegreeEuler::operator[](int i) const
 //-----------------------------------------------------------------------------
 class QAngleByValue;
 
-class QAngle					
+schema class QAngle					
 {
 public:
 	// Members
@@ -2692,7 +2694,7 @@ inline QAngle Quaternion::ToQAngle() const
 
 FORCEINLINE vec_t InvRSquared( const float* v )
 {
-	return 1.0 / MAX( 1.0, v[0] * v[0] + v[1] * v[1] + v[2] * v[2] );
+	return 1.0f / MAX( 1.0f, v[0] * v[0] + v[1] * v[1] + v[2] * v[2] );
 }
 
 FORCEINLINE vec_t InvRSquared( const Vector &v )
@@ -2991,6 +2993,8 @@ inline  const Vector Snap( const Vector &a, float flSnap )
 {
 	return Vector( Snap( a.x, flSnap ), Snap( a.y, flSnap ), Snap( a.z, flSnap ) );
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif
 

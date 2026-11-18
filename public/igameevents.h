@@ -18,9 +18,10 @@
 
 #include "interfaces/interfaces.h"
 #include "tier0/utlstring.h"
-#include "tier1/bitbuf.h"
-#include "tier1/generichash.h"
-#include "tier1/keyvalues3.h"
+#include "tier0/bufferstring.h"
+#include "tier0/bitbuf.h"
+#include "tier0/generichash.h"
+#include "kv3lib/keyvalues3.h"
 #include "entity2/entityinstance.h"
 #include "vscript/ivscript.h"
 #include "networksystem/netmessage.h"
@@ -119,8 +120,8 @@ public:
 	virtual void SetString( const GameEventKeySymbol_t &keySymbol, const char *value ) = 0;
 	virtual void SetPtr( const GameEventKeySymbol_t &keySymbol, void *value ) = 0;
 	
-	virtual void SetEntity(const GameEventKeySymbol_t &keySymbol, CEntityInstance *value) = 0;
-	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityIndex value ) = 0;
+	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityHandle value ) = 0;
+	virtual void SetEntity( const GameEventKeySymbol_t &keySymbol, CEntityInstance *value ) = 0;
 
 	// Also sets the _pawn key (Expects pawn entity to be passed)
 	virtual void SetPlayer( const GameEventKeySymbol_t &keySymbol, CEntityInstance *pawn ) = 0;
@@ -133,9 +134,31 @@ public:
 
 	virtual bool HasKey( const GameEventKeySymbol_t &keySymbol ) = 0;
 
-	virtual void CreateVMTable( ScriptVariant_t &Table ) = 0;
+	// Returns a script table with the event's keys
+	virtual CVariant CreateVMTable() = 0;
 
 	virtual KeyValues3* GetDataKeys() const = 0;
+};
+
+// The event list entry of an event: id at 0x0C, local flag at 0x28, reliable flag at 0x29
+class CGameEventDescriptor;
+
+//-----------------------------------------------------------------------------
+// The game's implementation of IGameEvent (server.dll / client.dll, 104 bytes on both
+// platforms). Field names follow CS:GO's CGameEvent where it has them.
+//-----------------------------------------------------------------------------
+abstract_class CGameEvent : public IGameEvent
+{
+public:
+	// GetID, IsLocal and IsReliable read it
+	CGameEventDescriptor *m_pDescriptor;
+
+	// Named by what it does: the event name the event was created with, returned by GetName
+	CBufferStringN< 64 > m_Name;
+
+	// Returned by GetDataKeys (CS:GO had a KeyValues pointer m_pDataKeys); a table that the
+	// constructor fills with "splitscreenplayer" = -1
+	KeyValues3 m_DataKeys;
 };
 
 #define EVENT_DEBUG_ID_INIT			42
@@ -150,6 +173,9 @@ public:
 	// KeyValue memory will be freed by manager if not needed anymore
 	virtual void FireGameEvent( IGameEvent *event ) = 0;
 };
+
+// Matchmaking extension name, not exported through CreateInterface
+#define INTERFACEVERSION_GAMEEVENTSMANAGER2 "GAMEEVENTSMANAGER002"
 
 abstract_class IGameEventManager2 : public IBaseInterface
 {

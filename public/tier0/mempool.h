@@ -21,8 +21,8 @@
 #include "tier0/memalloc.h"
 #include "tier0/tslist.h"
 #include "tier0/platform.h"
-#include "tier1/utlvector.h"
-#include "tier1/utlrbtree.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlrbtree.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Optimized pool memory allocator
@@ -39,7 +39,7 @@ enum MemoryPoolGrowType_t
 class CUtlMemoryPoolBase
 {
 public:
-	DLL_CLASS_IMPORT			CUtlMemoryPoolBase( int blockSize, int numElements, int nAlignment = 0, MemoryPoolGrowType_t growMode = UTLMEMORYPOOL_GROW_FAST, const char *pszAllocOwner = NULL, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Unk0 );
+	DLL_CLASS_IMPORT			CUtlMemoryPoolBase( int blockSize, int numElements, int nAlignment = 0, MemoryPoolGrowType_t growMode = UTLMEMORYPOOL_GROW_FAST, const char *pszAllocOwner = NULL, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Default );
 	DLL_CLASS_IMPORT			~CUtlMemoryPoolBase();
 
 	// Resets the pool
@@ -59,6 +59,9 @@ public:
 	int Size() const		{ return m_TotalSize; }
 
 	DLL_CLASS_IMPORT bool		IsAllocationWithinPool( void *pMem ) const;
+
+	// Calls pfnCallback( pAllocation, pContext ) for every allocated block, without locking the pool
+	DLL_CLASS_IMPORT void		IterateAllocationsUnsafe( void ( *pfnCallback )( void *pAllocation, void *pContext ), void *pContext );
 
 protected:
 	DLL_CLASS_IMPORT void		ClearDestruct( void (*)( void* ) );
@@ -90,8 +93,13 @@ private:
 	
 	MemAllocAttribute_t m_AllocAttribute;
 	
-	bool 			m_Unk1;
+	// Named by what it does: the constructor clears it, no function of tier0 reads or writes it
+	bool 			m_bUnused;
 	CAtomicMutex	m_Mutex;
+
+	// With grow mode 3 (each block a separate allocation, also chosen while the allocator debugs
+	// memory) Init points it at a 64-byte block of its own, a tree of the allocations and a
+	// mutex, instead of a blob
 	CBlob*			m_pBlobHead;
 	int				m_TotalSize;
 };
@@ -105,7 +113,7 @@ template< class T >
 class CUtlMemoryPool : public CUtlMemoryPoolBase
 {
 public:
-	CUtlMemoryPool( int numElements, MemoryPoolGrowType_t growMode = UTLMEMORYPOOL_GROW_FAST, const char *pszAllocOwner = MEM_ALLOC_CLASSNAME(T), MemAllocAttribute_t allocAttribute = MemAllocAttribute_Unk0 ) 
+	CUtlMemoryPool( int numElements, MemoryPoolGrowType_t growMode = UTLMEMORYPOOL_GROW_FAST, const char *pszAllocOwner = MEM_ALLOC_CLASSNAME(T), MemAllocAttribute_t allocAttribute = MemAllocAttribute_Default ) 
 		: CUtlMemoryPoolBase( sizeof(T), numElements, alignof(T), growMode, pszAllocOwner, allocAttribute ) {}
 
 	T*		Alloc();
@@ -369,7 +377,7 @@ inline void CUtlMemoryPool<T>::Free(T *pMem)
 template< class T >
 inline void CUtlMemoryPool<T>::Clear()
 {
-	CUtlMemoryPoolBase::ClearDestruct( (void (*)( void* ))&Destruct<T> );
+	CUtlMemoryPoolBase::ClearDestruct( (void (*)( void* ))static_cast< void (*)( T * ) >( &Destruct<T> ) );
 }
 
 
@@ -391,7 +399,7 @@ inline void CUtlMemoryPool<T>::Clear()
 		static   CUtlMemoryPool<_class>   s_Allocator
     
 #define DEFINE_FIXEDSIZE_ALLOCATOR( _class, _initsize, _grow )					\
-	CUtlMemoryPool<_class>   _class::s_Allocator(_initsize, _grow, #_class " CUtlMemoryPool", MemAllocAttribute_Unk2)
+	CUtlMemoryPool<_class>   _class::s_Allocator(_initsize, _grow, #_class " CUtlMemoryPool", MemAllocAttribute_Reserved2)
 
 #define DECLARE_FIXEDSIZE_ALLOCATOR_MT( _class )									\
 	public:																		\
@@ -403,7 +411,7 @@ inline void CUtlMemoryPool<T>::Clear()
 		static   CUtlMemoryPoolMT<_class>   s_Allocator
 
 #define DEFINE_FIXEDSIZE_ALLOCATOR_MT( _class, _initsize, _grow )					\
-	CUtlMemoryPoolMT<_class>   _class::s_Allocator(_initsize, _grow, #_class " CUtlMemoryPoolMT", MemAllocAttribute_Unk2)
+	CUtlMemoryPoolMT<_class>   _class::s_Allocator(_initsize, _grow, #_class " CUtlMemoryPoolMT", MemAllocAttribute_Reserved2)
 
 //-----------------------------------------------------------------------------
 // Macros that make it simple to make a class use a fixed-size allocator

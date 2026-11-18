@@ -14,6 +14,7 @@
 enum ELanguage
 {
 	k_Lang_None = -1,
+	k_Lang_First = 0,
 	k_Lang_English = 0,
 	k_Lang_German,
 	k_Lang_French,
@@ -32,6 +33,17 @@ enum ELanguage
 	k_Lang_Finnish,
 	k_Lang_Norwegian,
 	k_Lang_Swedish,
+	k_Lang_Hungarian,
+	k_Lang_Czech,
+	k_Lang_Romanian,
+	k_Lang_Turkish,
+	k_Lang_Brazilian,
+	k_Lang_Bulgarian,
+	k_Lang_Greek,
+	k_Lang_Ukrainian,
+	k_Lang_Latam_Spanish,
+	k_Lang_Vietnamese,
+	k_Lang_Indonesian,
 	k_Lang_MAX
 };
 

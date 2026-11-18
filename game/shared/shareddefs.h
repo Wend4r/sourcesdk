@@ -13,8 +13,15 @@
 
 #include "basetypes.h"
 #include "bittools.h"
+#include "const.h"
+#include "soundsystem/soundflags.h"
+#include "entity2/entityindex.h"
+#include "entity2/entityclass.h"
 
-#define TICK_INTERVAL			(gpGlobals->interval_per_tick)
+#include "schemacompiler/schemaon.h"
+
+// CS2 runs at a fixed 64 tick rate; CGlobalVarsBase no longer stores the tick interval
+#define TICK_INTERVAL			( 1.0f / 64.0f )
 
 
 #define TIME_TO_TICKS( dt )		( (int)( 0.5f + (float)(dt) / TICK_INTERVAL ) )
@@ -133,16 +140,19 @@ inline float FractionUnDucked( int msecs )
 #define	MAX_AMMO_TYPES	32		// ???
 #define MAX_AMMO_SLOTS  32		// not really slots
 
-#define HUD_PRINTNOTIFY		1
-#define HUD_PRINTCONSOLE	2
-#define HUD_PRINTTALK		3
-#define HUD_PRINTCENTER		4
-#define HUD_PRINTTALK2		5	// adds 4(EOT) to beginning of msg
-#define HUD_PRINTALERT		6
+enum TextMsgDestinations
+{
+	HUD_PRINTNOTIFY		= 1,
+	HUD_PRINTCONSOLE	= 2,
+	HUD_PRINTTALK		= 3,
+	HUD_PRINTCENTER		= 4,
+	HUD_PRINTTALK2		= 5,	// adds 4(EOT) to beginning of msg
+	HUD_PRINTALERT		= 6,
+};
 
 
 // Vote creation or processing failure codes
-typedef enum
+schema enum vote_create_failed_t
 {
 	VOTE_FAILED_GENERIC = 0,
 	VOTE_FAILED_TRANSITIONING_PLAYERS,
@@ -153,23 +163,21 @@ typedef enum
 	VOTE_FAILED_MAP_NOT_FOUND,
 	VOTE_FAILED_MAP_NAME_REQUIRED,
 	VOTE_FAILED_FAILED_RECENTLY,
-	VOTE_FAILED_FAILED_RECENT_KICK,
-	VOTE_FAILED_FAILED_RECENT_CHANGEMAP,
-	VOTE_FAILED_FAILED_RECENT_SWAPTEAMS,
-	VOTE_FAILED_FAILED_RECENT_SCRAMBLETEAMS,
-	VOTE_FAILED_FAILED_RECENT_RESTART,
 	VOTE_FAILED_TEAM_CANT_CALL,
 	VOTE_FAILED_WAITINGFORPLAYERS,
 	VOTE_FAILED_PLAYERNOTFOUND,
 	VOTE_FAILED_CANNOT_KICK_ADMIN,
 	VOTE_FAILED_SCRAMBLE_IN_PROGRESS,
-	VOTE_FAILED_SWAP_IN_PROGRESS,
 	VOTE_FAILED_SPECTATOR,
+	VOTE_FAILED_FAILED_RECENT_KICK,
+	VOTE_FAILED_FAILED_RECENT_CHANGEMAP,
+	VOTE_FAILED_FAILED_RECENT_SWAPTEAMS,
+	VOTE_FAILED_FAILED_RECENT_SCRAMBLETEAMS,
+	VOTE_FAILED_FAILED_RECENT_RESTART,
+	VOTE_FAILED_SWAP_IN_PROGRESS,
 	VOTE_FAILED_DISABLED,
 	VOTE_FAILED_NEXTLEVEL_SET,
-	VOTE_FAILED_REMATCH,
 	VOTE_FAILED_TOO_EARLY_SURRENDER,
-	VOTE_FAILED_CONTINUE,
 	VOTE_FAILED_MATCH_PAUSED,
 	VOTE_FAILED_MATCH_NOT_PAUSED,
 	VOTE_FAILED_NOT_IN_WARMUP,
@@ -178,8 +186,10 @@ typedef enum
 	VOTE_FAILED_TIMEOUT_INACTIVE,
 	VOTE_FAILED_TIMEOUT_EXHAUSTED,
 	VOTE_FAILED_CANT_ROUND_END,
+	VOTE_FAILED_REMATCH,
+	VOTE_FAILED_CONTINUE,
 	VOTE_FAILED_MAX,
-} vote_create_failed_t;
+};
 
 #define MAX_VOTE_DETAILS_LENGTH 64
 #define INVALID_ISSUE -1
@@ -219,10 +229,13 @@ enum CastVote
 };
 
 
-enum AmmoPosition_t
+schema enum AmmoPosition_t
 {
-	AMMO_POSITION_PRIMARY = 1,
-	AMMO_POSITION_SECONDARY = 2
+	AMMO_POSITION_INVALID = -1,
+	AMMO_POSITION_PRIMARY = 0,
+	AMMO_POSITION_SECONDARY,
+
+	AMMO_POSITION_COUNT
 };
 
 //===================================================================================================================
@@ -268,28 +281,31 @@ enum AmmoPosition_t
 //  and have a good answer for a bunch of perf question related to player simulation, thinking logic, tracelines, networking overhead, etc.
 // But if you are brave or are doing something interesting, go for it...   ywb 9/22/03
 
-//You might be wondering why these aren't multiple of 2. Well the reason is that if servers decide to have HLTV or Replay enabled we need the extra slot.
-//This is ok since MAX_PLAYERS is used for code specific things like arrays and loops, but it doesn't really means that this is the max number of players allowed
-//Since this is decided by the gamerules (and it can be whatever number as long as its less than MAX_PLAYERS).
-#if defined( CSTRIKE_DLL )
-	#define MAX_PLAYERS				64  // Absolute max players supported
-#else
-	#define MAX_PLAYERS				33  // Absolute max players supported
-#endif
+#define MAX_PLAYERS				ABSOLUTE_PLAYER_LIMIT
 
 #define MAX_PLACE_NAME_LENGTH		18
 
 //===================================================================================================================
 // Team Defines
-#define TEAM_ANY				-1	// for some team query methods
-#define	TEAM_INVALID			-1
-#define TEAM_UNASSIGNED			0	// not assigned to a team
-#define TEAM_SPECTATOR			1	// spectator team
-// Start your team numbers after this
-#define LAST_SHARED_TEAM		TEAM_SPECTATOR
+enum SharedTeams_t
+{
+	TEAM_ANY			= -1,	// for some team query methods
+	TEAM_INVALID		= -1,
+	TEAM_UNASSIGNED		= 0,	// not assigned to a team
+	TEAM_SPECTATOR		= 1,	// spectator team
 
-// The first team that's game specific (i.e. not unassigned / spectator)
-#define FIRST_GAME_TEAM			(LAST_SHARED_TEAM+1)
+	// Start your team numbers after this
+	LAST_SHARED_TEAM	= TEAM_SPECTATOR,
+
+	// CS Specific teams
+	CS_TEAM_NONE		= TEAM_UNASSIGNED,
+	CS_TEAM_SPECTATOR	= TEAM_SPECTATOR,
+	CS_TEAM_T			= 2,
+	CS_TEAM_CT			= 3,
+
+	// The first team that's game specific (i.e. not unassigned / spectator)
+	FIRST_GAME_TEAM		= LAST_SHARED_TEAM + 1,
+};
 
 #define MAX_TEAMS				32	// Max number of teams in a game
 #define MAX_TEAM_NAME_LENGTH	32	// Max length of a team's name
@@ -319,14 +335,18 @@ enum AmmoPosition_t
 // -----------------------------------------
 //	Flags - NOTE: KEEP g_ItemFlags IN WEAPON_PARSE.CPP UPDATED WITH THESE
 // -----------------------------------------
-#define ITEM_FLAG_SELECTONEMPTY		(1<<0)
-#define ITEM_FLAG_NOAUTORELOAD		(1<<1)
-#define ITEM_FLAG_NOAUTOSWITCHEMPTY	(1<<2)
-#define ITEM_FLAG_LIMITINWORLD		(1<<3)
-#define ITEM_FLAG_EXHAUSTIBLE		(1<<4)	// A player can totally exhaust their ammo supply and lose this weapon
-#define ITEM_FLAG_DOHITLOCATIONDMG	(1<<5)	// This weapon take hit location into account when applying damage
-#define ITEM_FLAG_NOAMMOPICKUPS		(1<<6)	// Don't draw ammo pickup sprites/sounds when ammo is received
-#define ITEM_FLAG_NOITEMPICKUP		(1<<7)	// Don't draw weapon pickup when this weapon is picked up by the player
+schema enum ItemFlagTypes_t : uint8
+{
+	ITEM_FLAG_NONE						= 0,
+	ITEM_FLAG_CAN_SELECT_WITHOUT_AMMO	= 1 << 0,
+	ITEM_FLAG_NOAUTORELOAD				= 1 << 1,
+	ITEM_FLAG_NOAUTOSWITCHEMPTY			= 1 << 2,
+	ITEM_FLAG_LIMITINWORLD				= 1 << 3,
+	ITEM_FLAG_EXHAUSTIBLE				= 1 << 4,	// A player can totally exhaust their ammo supply and lose this weapon
+	ITEM_FLAG_DOHITLOCATIONDMG			= 1 << 5,	// This weapon take hit location into account when applying damage
+	ITEM_FLAG_NOAMMOPICKUPS				= 1 << 6,	// Don't draw ammo pickup sprites/sounds when ammo is received
+	ITEM_FLAG_NOITEMPICKUP				= 1 << 7,	// Don't draw weapon pickup when this weapon is picked up by the player
+};
 // NOTE: KEEP g_ItemFlags IN WEAPON_PARSE.CPP UPDATED WITH THESE
 
 
@@ -377,15 +397,13 @@ enum
 #define TRACER_DONT_USE_ATTACHMENT	-1
 
 // Entity Dissolve types
-enum
+schema enum EntityDissolveType_t
 {
+	ENTITY_DISSOLVE_INVALID = -1,
 	ENTITY_DISSOLVE_NORMAL = 0,
 	ENTITY_DISSOLVE_ELECTRICAL,
 	ENTITY_DISSOLVE_ELECTRICAL_LIGHT,
 	ENTITY_DISSOLVE_CORE,
-
-	// NOTE: Be sure to up the bits if you make more dissolve types
-	ENTITY_DISSOLVE_BITS = 3
 };
 
 //
@@ -439,51 +457,66 @@ enum PLAYER_ANIM
 
 // For a means of resolving these consts into debug string text, see function
 // CTakeDamageInfo::DebugGetDamageTypeString(unsigned int DamageType, char *outbuf, unsigned int outbuflength )
-#define DMG_GENERIC			0			// generic damage was done
-#define DMG_CRUSH			(1 << 0)	// crushed by falling or moving object. 
-										// NOTE: It's assumed crush damage is occurring as a result of physics collision, so no extra physics force is generated by crush damage.
-										// DON'T use DMG_CRUSH when damaging entities unless it's the result of a physics collision. You probably want DMG_CLUB instead.
-#define DMG_BULLET			(1 << 1)	// shot
-#define DMG_SLASH			(1 << 2)	// cut, clawed, stabbed
-#define DMG_BURN			(1 << 3)	// heat burned
-#define DMG_VEHICLE			(1 << 4)	// hit by a vehicle
-#define DMG_FALL			(1 << 5)	// fell too far
-#define DMG_BLAST			(1 << 6)	// explosive blast damage
-#define DMG_CLUB			(1 << 7)	// crowbar, punch, headbutt
-#define DMG_SHOCK			(1 << 8)	// electric shock
-#define DMG_SONIC			(1 << 9)	// sound pulse shockwave
-#define DMG_ENERGYBEAM		(1 << 10)	// laser or other high energy beam 
-#define DMG_PREVENT_PHYSICS_FORCE		(1 << 11)	// Prevent a physics force 
-#define DMG_NEVERGIB		(1 << 12)	// with this bit OR'd in, no damage type will be able to gib victims upon death
-#define DMG_ALWAYSGIB		(1 << 13)	// with this bit OR'd in, any damage type can be made to gib victims upon death.
-#define DMG_DROWN			(1 << 14)	// Drowning
+schema enum DamageTypes_t
+{
+	DMG_GENERIC			= 0,		// generic damage was done
+	DMG_CRUSH			= 1 << 0,	// crushed by falling or moving object.
+									// NOTE: It's assumed crush damage is occurring as a result of physics collision, so no extra physics force is generated by crush damage.
+									// DON'T use DMG_CRUSH when damaging entities unless it's the result of a physics collision. You probably want DMG_CLUB instead.
+	DMG_BULLET			= 1 << 1,	// shot
+	DMG_SLASH			= 1 << 2,	// cut, clawed, stabbed
+	DMG_BURN			= 1 << 3,	// heat burned
+	DMG_VEHICLE			= 1 << 4,	// hit by a vehicle
+	DMG_FALL			= 1 << 5,	// fell too far
+	DMG_BLAST			= 1 << 6,	// explosive blast damage
+	DMG_CLUB			= 1 << 7,	// crowbar, punch, headbutt
+	DMG_SHOCK			= 1 << 8,	// electric shock
+	DMG_SONIC			= 1 << 9,	// sound pulse shockwave
+	DMG_ENERGYBEAM		= 1 << 10,	// laser or other high energy beam
+	DMG_BUCKSHOT		= 1 << 11,	// not quite a bullet. Little, rounder, different.
+	DMG_BLAST_SURFACE	= 1 << 12,	// A blast on the surface of water that cannot harm things underwater
+	DMG_DISSOLVE		= 1 << 13,	// Dissolving!
+	DMG_DROWN			= 1 << 14,	// Drowning
+	DMG_POISON			= 1 << 15,	// blood poisoning - heals over time like drowning damage
+	DMG_RADIATION		= 1 << 16,	// radiation exposure
+	DMG_DROWNRECOVER	= 1 << 17,	// drowning recovery
+	DMG_ACID			= 1 << 18,	// toxic chemicals or acid burns
 
+	// TODO: keep this up to date so all the mod-specific flags don't overlap anything.
+	DMG_LASTGENERICFLAG	= DMG_ACID, META( MPropertySuppressEnumerator; MEnumeratorIsNotAFlag )
 
-#define DMG_PARALYZE		(1 << 15)	// slows affected creature down
-#define DMG_NERVEGAS		(1 << 16)	// nerve toxins, very bad
-#define DMG_POISON			(1 << 17)	// blood poisoning - heals over time like drowning damage
-#define DMG_RADIATION		(1 << 18)	// radiation exposure
-#define DMG_DROWNRECOVER	(1 << 19)	// drowning recovery
-#define DMG_ACID			(1 << 20)	// toxic chemicals or acid burns
-#define DMG_SLOWBURN		(1 << 21)	// in an oven
+	DMG_HEADSHOT		= 1 << 19,
+};
 
-#define DMG_REMOVENORAGDOLL	(1<<22)		// with this bit OR'd in, no ragdoll will be created, and the target will be quietly removed.
-										// use this to kill an entity that you've already got a server-side ragdoll for
+schema enum TakeDamageFlags_t : uint64
+{
+	DFLAG_NONE								= 0,
+	DFLAG_SUPPRESS_HEALTH_CHANGES			= 1ull << 0,
+	DFLAG_SUPPRESS_PHYSICS_FORCE			= 1ull << 1,
+	DFLAG_SUPPRESS_EFFECTS					= 1ull << 2,
+	DFLAG_PREVENT_DEATH						= 1ull << 3,
+	DFLAG_FORCE_DEATH						= 1ull << 4,
+	DFLAG_ALWAYS_GIB						= 1ull << 5,
+	DFLAG_NEVER_GIB							= 1ull << 6,
+	DFLAG_REMOVE_NO_RAGDOLL					= 1ull << 7,
+	DFLAG_SUPPRESS_DAMAGE_MODIFICATION		= 1ull << 8,
+	DFLAG_ALWAYS_FIRE_DAMAGE_EVENTS			= 1ull << 9,
+	DFLAG_RADIUS_DMG						= 1ull << 10,
+	DFLAG_FORCEREDUCEARMOR_DMG				= 1ull << 11,
+	DFLAG_SUPPRESS_INTERRUPT_FLINCH			= 1ull << 12,
+	DFLAG_IGNORE_DESTRUCTIBLE_PARTS			= 1ull << 13,
+	DFLAG_SUPPRESS_BREAKABLES				= 1ull << 14,
+	DFLAG_FORCE_PHYSICS_FORCE				= 1ull << 15,
+	DFLAG_SUPPRESS_SCREENSPACE_DAMAGE_FX	= 1ull << 16,
+	DFLAG_ALLOW_NON_AUTHORITATIVE			= 1ull << 17,
 
-#define DMG_PHYSGUN			(1<<23)		// Hit by manipulator. Usually doesn't do any damage.
-#define DMG_PLASMA			(1<<24)		// Shot by Cremator
-#define DMG_AIRBOAT			(1<<25)		// Hit by the airboat's gun
+	DMG_LASTDFLAG							= DFLAG_ALLOW_NON_AUTHORITATIVE, META( MPropertySuppressEnumerator; MEnumeratorIsNotAFlag )
 
-#define DMG_DISSOLVE		(1<<26)		// Dissolving!
-#define DMG_BLAST_SURFACE	(1<<27)		// A blast on the surface of water that cannot harm things underwater
-#define DMG_DIRECT			(1<<28)
-#define DMG_BUCKSHOT		(1<<29)		// not quite a bullet. Little, rounder, different.
-
-// NOTE: DO NOT ADD ANY MORE CUSTOM DMG_ TYPES. MODS USE THE DMG_LASTGENERICFLAG BELOW, AND
-//		 IF YOU ADD NEW DMG_ TYPES, THEIR TYPES WILL BE HOSED. WE NEED A BETTER SOLUTION.
-
-// TODO: keep this up to date so all the mod-specific flags don't overlap anything.
-#define DMG_LASTGENERICFLAG	DMG_BUCKSHOT
+#if defined( CS2 )
+	DFLAG_IGNORE_ARMOR						= 1ull << 18,
+	DFLAG_SUPPRESS_UTILREMOVE				= 1ull << 19,
+#endif // CS2
+};
 
 
 
@@ -507,14 +540,13 @@ enum RelativeDamagedDirection_t
 
 
 // Spectator Movement modes
-enum ObserverMode_t : uint32
+schema enum ObserverMode_t : uint32
 {
 	OBS_MODE_NONE = 0,		// not in spectator mode
 	OBS_MODE_FIXED,			// view from a fixed camera position
 	OBS_MODE_IN_EYE,		// follow a player in first person view
 	OBS_MODE_CHASE,			// follow a player in third person view
 	OBS_MODE_ROAMING,		// free roaming
-	OBS_MODE_DIRECTED,
 
 	NUM_OBSERVER_MODES,
 };
@@ -563,14 +595,6 @@ enum
 
 	VGUI_SCREEN_MAX_BITS = 5
 };
-
-typedef enum
-{
-	USE_OFF = 0, 
-	USE_ON = 1, 
-	USE_SET = 2, 
-	USE_TOGGLE = 3
-} USE_TYPE;
 
 // basic team colors
 #define COLOR_RED		Color(255, 64, 64, 255)
@@ -840,9 +864,22 @@ struct ModelScale
 	float		m_flModelScaleStartTime;
 };
 
-#include "soundflags.h"
-
 struct CSoundParameters;
+
+// Bits of EmitSound_t::m_nFlags
+enum EmitSoundFlags_t : uint8
+{
+	EMITSOUND_FLAG_NONE = 0,
+	EMITSOUND_FLAG_EMIT_CLOSE_CAPTION = ( 1 << 0 ),
+	EMITSOUND_FLAG_WARN_ON_MISSING_CLOSE_CAPTION = ( 1 << 1 ),
+	EMITSOUND_FLAG_WARN_ON_DIRECT_WAVE_REFERENCE = ( 1 << 2 ), // Set by the entity's own EmitSound helpers
+	EMITSOUND_FLAG_FIND_SOURCE_SOUNDSCAPE = ( 1 << 3 ),
+	EMITSOUND_FLAG_USE_ORIGIN = ( 1 << 4 ), // Emit at m_veSoundOrigin instead of the entity's origin
+
+	EMITSOUND_FLAGS_DEFAULT = EMITSOUND_FLAG_EMIT_CLOSE_CAPTION,
+};
+DEFINE_ENUM_BITWISE_OPERATORS( EmitSoundFlags_t );
+
 //-----------------------------------------------------------------------------
 // Purpose: Aggregates and sets default parameters for EmitSound function calls
 //-----------------------------------------------------------------------------
@@ -853,20 +890,20 @@ struct EmitSound_t
 		m_veSoundOrigin( 0.0f, 0.0f, 0.0f ),
 		m_flVolume( VOL_NORM ),
 		m_flSoundTime( 0.0f ),
-		m_nUnk( 0 ),
+		m_nSpeakerEntity( INVALID_ENTITY_INDEX ),
 		m_nForceGuid( 0 ),
 		m_nSourceSoundscape( 0 ),
 		m_nPitch( PITCH_NORM ),
-		m_nFlags( 0 )
+		m_nFlags( EMITSOUND_FLAGS_DEFAULT )
 	{
 	}
 
-	EmitSound_t( const char *pSoundName, const Vector &vecSoundOrigin = Vector( 0.0f, 0.0f, 0.0f ), float flVolume = VOL_NORM, float flSoundTime = 0.0f, int16 nPitch = PITCH_NORM, uint8 nFlags = 0 ) :
+	EmitSound_t( const char *pSoundName, const Vector &vecSoundOrigin = Vector( 0.0f, 0.0f, 0.0f ), float flVolume = VOL_NORM, float flSoundTime = 0.0f, int16 nPitch = PITCH_NORM, EmitSoundFlags_t nFlags = EMITSOUND_FLAGS_DEFAULT ) :
 		m_pSoundName( pSoundName ),
 		m_veSoundOrigin( vecSoundOrigin ),
 		m_flVolume( flVolume ),
 		m_flSoundTime( flSoundTime ),
-		m_nUnk( 0 ),
+		m_nSpeakerEntity( INVALID_ENTITY_INDEX ),
 		m_nForceGuid( 0 ),
 		m_nSourceSoundscape( 0 ),
 		m_nPitch( nPitch ),
@@ -878,15 +915,11 @@ struct EmitSound_t
 	Vector m_veSoundOrigin;
 	float m_flVolume;
 	float m_flSoundTime;
-
-private:
-	uint32 m_nUnk;
-
-public:
+	CEntityIndex m_nSpeakerEntity;
 	uint32 m_nForceGuid;
 	uint32 m_nSourceSoundscape;
 	int16 m_nPitch;
-	uint8 m_nFlags;
+	EmitSoundFlags_t m_nFlags;
 
 	const char *GetSoundName() const { return m_pSoundName; }
 	void SetSoundName( const char *pSoundName ) { m_pSoundName = pSoundName; }
@@ -901,6 +934,9 @@ public:
 	float GetSoundTime() const { return m_flSoundTime; }
 	void SetSoundTime( float flSoundTime ) { m_flSoundTime = flSoundTime; }
 
+	CEntityIndex GetSpeakerEntity() const { return m_nSpeakerEntity; }
+	void SetSpeakerEntity( CEntityIndex nSpeakerEntity ) { m_nSpeakerEntity = nSpeakerEntity; }
+
 	bool HasForceGuid() const { return m_nForceGuid != 0; }
 	uint32 GetForceGuid() const { return m_nForceGuid; }
 	void SetForceGuid( uint32 nForceGuid ) { m_nForceGuid = nForceGuid; }
@@ -914,11 +950,11 @@ public:
 	int16 GetPitch() const { return m_nPitch; }
 	void SetPitch( int16 nPitch ) { m_nPitch = nPitch; }
 
-	uint8 GetFlags() const { return m_nFlags; }
-	void SetFlags( uint8 nFlags ) { m_nFlags = nFlags; }
-	void AddFlags( uint8 nFlags ) { m_nFlags |= nFlags; }
-	void RemoveFlags( uint8 nFlags ) { m_nFlags &= ( uint8 )~nFlags; }
-	bool HasFlags( uint8 nFlags ) const { return ( m_nFlags & nFlags ) == nFlags; }
+	EmitSoundFlags_t GetFlags() const { return m_nFlags; }
+	void SetFlags( EmitSoundFlags_t nFlags ) { m_nFlags = nFlags; }
+	void AddFlags( EmitSoundFlags_t nFlags ) { m_nFlags |= nFlags; }
+	void RemoveFlags( EmitSoundFlags_t nFlags ) { m_nFlags &= ~nFlags; }
+	bool HasFlags( EmitSoundFlags_t nFlags ) const { return ( m_nFlags & nFlags ) == nFlags; }
 };
 COMPILE_TIME_ASSERT( sizeof( EmitSound_t ) == 48 );
 
@@ -1059,39 +1095,23 @@ enum InvalidatePhysicsBits_t
 	SEQUENCE_CHANGED	= 0x20,		// Means sequence has changed, only interesting when surrounding bounds depends on sequence																				
 };
 
-enum Class_T
+schema enum Class_T
 {
 	CLASS_NONE = 0,
 	CLASS_PLAYER,
 	CLASS_PLAYER_ALLY,
-	CLASS_PLAYER_ALLY_VITAL,
-	CLASS_ANTLION,
-	CLASS_BARNACLE,
-	CLASS_BLOB,
-	CLASS_BULLSEYE,
-	//CLASS_BULLSQUID,	
-	CLASS_CITIZEN_PASSIVE,	
-	CLASS_CITIZEN_REBEL,
-	CLASS_COMBINE,
-	CLASS_COMBINE_GUNSHIP,
-	CLASS_CONSCRIPT,
-	CLASS_HEADCRAB,
-	//CLASS_HOUNDEYE,
-	CLASS_MANHACK,
-	CLASS_METROPOLICE,		
-	CLASS_MILITARY,		
-	CLASS_SCANNER,		
-	CLASS_STALKER,		
-	CLASS_VORTIGAUNT,
-	CLASS_ZOMBIE,
-	CLASS_PROTOSNIPER,
-	CLASS_MISSILE,
-	CLASS_FLARE,
-	CLASS_EARTH_FAUNA,
-	CLASS_HACKED_ROLLERMINE,
-	CLASS_COMBINE_HUNTER,
+	CLASS_C4_FOR_RADAR,
+	CLASS_FOOT_CONTACT_SHADOW,
+	CLASS_WEAPON,
+	CLASS_WATER_SPLASHER,
+	CLASS_HUDMODEL_WEAPON,
+	CLASS_HUDMODEL_ARMS,
+	CLASS_HUDMODEL_ADDON,
+	CLASS_WORLDMODEL_GLOVES,
+	CLASS_DOOR,
+	CLASS_PLANTED_C4,
 
-	LAST_SHARED_ENTITY_CLASS,
+	NUM_CLASSIFY_CLASSES,
 };
 
 // Factions
@@ -1133,5 +1153,7 @@ enum
 // Used by base entity for spotted by masks
 static int const kNumSpottedByMask = ALIGN_VALUE( MAX_PLAYERS, 32 ) / 32;
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SHAREDDEFS_H

@@ -54,6 +54,11 @@ public:
 	google::protobuf::Message *GetProtobufMessage() override { return static_cast< T * >( this ); }
 	CBaseUserCmdPB *MutableBase() override { return T::mutable_base(); }
 	const CBaseUserCmdPB &GetBase() const override { return T::base(); }
+
+public:
+	// Built by this class's constructor in the game; ButtonsToMessage / ButtonsFromMessage of the
+	// derived commands copy it to and from base.buttons_pb.
+	CInButtonState m_ButtonStates;
 };
 
 #endif // CSTRIKE15_USERCMD_H

@@ -8,7 +8,9 @@
 #include "rubikon/serialize.h"
 #include "mathlib/ssequaternion.h"
 #include "rubikon/param_types.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
+
+#include "schemacompiler/schemaon.h"
 
 template <typename TInt >
 inline void RemapNode( TInt &refNode, const CUtlVector< int > &remap )
@@ -1531,6 +1533,8 @@ FORCEINLINE const Vector AsVector( const fltx4& f4 )
 {
 	return *( const Vector* )( char* )&f4; // casting through char* because that's the only way to avoid pointer aliasing issues
 }
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // RUBIKON_FEM_CLOTH_HDR
 

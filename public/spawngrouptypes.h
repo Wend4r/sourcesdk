@@ -5,15 +5,25 @@
 
 #include "tier0/platform.h"
 #include "tier0/utlstringtoken.h"
+#include "engine2/isource2engine.h"
 
 #define MAX_SPAWN_GROUP_WORLD_NAME_LENGTH 4096
 
 #define INVALID_SPAWNGROUP_HANDLE ( ( SpawnGroupHandle_t ) -1 )
 
-typedef int *SaveRestoreDataHandle_t;
-
 typedef uint32 SpawnGroupHandle_t;
-typedef CUtlStringToken WorldGroupId_t;
+// AMNOTE: Index into the engine's world group table, with the high bit set for client-side groups; -1 is invalid
+class WorldGroupId_t
+{
+public:
+	WorldGroupId_t( uint32 nId = 0 ) : m_nId( nId ) {}
+
+	bool operator==( const WorldGroupId_t &other ) const { return m_nId == other.m_nId; }
+	bool operator!=( const WorldGroupId_t &other ) const { return m_nId != other.m_nId; }
+	bool operator<( const WorldGroupId_t &other ) const { return m_nId < other.m_nId; }
+
+	uint32 m_nId;
+};
 
 enum SpawnGroupState_t
 {

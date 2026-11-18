@@ -18,25 +18,6 @@
 #define DLLExtTokenPaste2(x) DLLExtTokenPaste(x)
 #define DLL_EXT_STRING DLLExtTokenPaste2( _DLL_EXT )
 
-//////////////////////////////////////////////////////////////////////////
-
-#ifndef valve_schema
-#define valve_schema namespace ValveSchemaMarker {} // 'schema' marco will conflict with google/protobuf/message.h
-#endif
-#define noschema
-#define schema_pragma( ... )
-#define META( ... )
-#define TYPEMETA( ... )
-
-
-#ifdef COMPILING_SCHEMA
-#define UNSCHEMATIZED_METHOD( x )
-#else
-#define UNSCHEMATIZED_METHOD( x ) x
-#endif
-
-//////////////////////////////////////////////////////////////////////////
-
 #include "tier0/platform.h"
 #include "commonmacros.h"
 #include "wchartypes.h"
@@ -63,6 +44,9 @@
 #define PATH_MAX CELL_FS_MAX_FS_PATH_LENGTH
 #define _MAX_PATH PATH_MAX
 #endif
+
+#include "schemacompiler/schemaon.h"
+
 // stdio.h
 #ifndef NULL
 #define NULL 0
@@ -368,7 +352,7 @@ typedef wchar_t ucs2; // under windows & PS3 wchar_t is ucs2
 typedef unsigned short ucs2;
 #endif
 
-enum ThreeState_t
+schema enum ThreeState_t
 {
 	TRS_FALSE,
 	TRS_TRUE,
@@ -401,19 +385,31 @@ inline T AlignValue( T val, uintp alignment )
 
 #ifdef __cplusplus
 
-inline unsigned long& FloatBits( vec_t& f )
+inline uint32& FloatBits( vec_t& f )
 {
-	return *reinterpret_cast<unsigned long*>(&f);
+	return *reinterpret_cast<uint32*>(&f);
 }
 
-inline unsigned long const& FloatBits( vec_t const& f )
+inline uint32 FloatBits( vec_t const& f )
 {
-	return *reinterpret_cast<unsigned long const*>(&f);
+	union Convertor_t
+	{
+		vec_t f;
+		uint32 ul;
+	} tmp;
+	tmp.f = f;
+	return tmp.ul;
 }
 
-inline vec_t BitsToFloat( unsigned long i )
+inline vec_t BitsToFloat( uint32 i )
 {
-	return *reinterpret_cast<vec_t*>(&i);
+	union Convertor_t
+	{
+		vec_t f;
+		uint32 ul;
+	} tmp;
+	tmp.ul = i;
+	return tmp.f;
 }
 
 inline bool IsFinite( const vec_t &f )
@@ -473,12 +469,6 @@ inline float FloatMakeNegative( vec_t f )
 	return -fabsf( f );// was since 2002: BitsToFloat( FloatBits(f) | 0x80000000 ); fixed in 2010
 }
 
-
-// FIXME: why are these here?  Hardly anyone actually needs them.
-struct color24
-{
-	byte r, g, b;
-};
 
 typedef struct color32_s
 {
@@ -649,6 +639,40 @@ protected:
 #define DECLARE_DERIVED_POINTER_HANDLE( _name, _basehandle ) struct _name##__ : public _basehandle##__ {}; typedef struct _name##__ *_name
 #define DECLARE_ALIASED_POINTER_HANDLE( _name, _alias ) typedef struct _alias##__ *name
 
+namespace basetypes
+{
+	template <class T>
+	inline bool IsPowerOf2( T n )
+	{
+		return n > 0 && ( n & ( n - 1 ) ) == 0;
+	}
+
+	template <class T1, class T2>
+	inline T2 ModPowerOf2( T1 a, T2 b )
+	{
+		return T2( a ) & ( b - 1 );
+	}
+
+	template <class T>
+	inline T RoundDownToMultipleOf( T n, T m )
+	{
+		return n - ( IsPowerOf2( m ) ? ModPowerOf2( n, m ) : ( n%m ) );
+	}
+
+	template <class T>
+	inline T RoundUpToMultipleOf( T n, T m )
+	{
+		if ( !n )
+		{
+			return m;
+		}
+		else
+		{
+			return RoundDownToMultipleOf( n + m - 1, m );
+		}
+	}
+}
+
 // @TODO: Find a better home for this
 #if !defined(_STATIC_LINKED) && !defined(PUBLISH_DLL_SUBSYSTEM)
 // for platforms built with dynamic linking, the dll interface does not need spoofing
@@ -671,17 +695,17 @@ protected:
 
 // this allows enumerations to be used as flags, and still remain type-safe!
 #define DEFINE_ENUM_BITWISE_OPERATORS( Type ) \
-	inline Type  operator|  ( Type  a, Type b ) { return Type( int( a ) | int( b ) ); } \
-	inline Type  operator&  ( Type  a, Type b ) { return Type( int( a ) & int( b ) ); } \
-	inline Type  operator^  ( Type  a, Type b ) { return Type( int( a ) ^ int( b ) ); } \
-	inline Type  operator<< ( Type  a, int  b ) { return Type( int( a ) << b ); } \
-	inline Type  operator>> ( Type  a, int  b ) { return Type( int( a ) >> b ); } \
-	inline Type &operator|= ( Type &a, Type b ) { return a = a |  b; } \
-	inline Type &operator&= ( Type &a, Type b ) { return a = a &  b; } \
-	inline Type &operator^= ( Type &a, Type b ) { return a = a ^  b; } \
-	inline Type &operator<<=( Type &a, int  b ) { return a = a << b; } \
-	inline Type &operator>>=( Type &a, int  b ) { return a = a >> b; } \
-	inline Type  operator~( Type a ) { return Type( ~int( a ) ); }
+	constexpr Type  operator|  ( Type  a, Type b ) { return Type( int( a ) | int( b ) ); } \
+	constexpr Type  operator&  ( Type  a, Type b ) { return Type( int( a ) & int( b ) ); } \
+	constexpr Type  operator^  ( Type  a, Type b ) { return Type( int( a ) ^ int( b ) ); } \
+	constexpr Type  operator<< ( Type  a, int  b ) { return Type( int( a ) << b ); } \
+	constexpr Type  operator>> ( Type  a, int  b ) { return Type( int( a ) >> b ); } \
+	constexpr Type &operator|= ( Type &a, Type b ) { return a = a |  b; } \
+	constexpr Type &operator&= ( Type &a, Type b ) { return a = a &  b; } \
+	constexpr Type &operator^= ( Type &a, Type b ) { return a = a ^  b; } \
+	constexpr Type &operator<<=( Type &a, int  b ) { return a = a << b; } \
+	constexpr Type &operator>>=( Type &a, int  b ) { return a = a >> b; } \
+	constexpr Type  operator~( Type a ) { return Type( ~int( a ) ); }
 
 // defines increment/decrement operators for enums for easy iteration
 #define DEFINE_ENUM_INCREMENT_OPERATORS( Type ) \
@@ -696,6 +720,22 @@ protected:
 #define MAX_SPLITSCREEN_CLIENTS	( 1 << MAX_SPLITSCREEN_CLIENT_BITS ) // 2
 
 #include "tier0/valve_on.h"
+#include "color.h"
 
+
+struct SoundEventGuid_t {
+    SoundEventGuid_t()
+		: m_Data(0)
+    {
+    }
+	SoundEventGuid_t(const int32 id)
+		: m_Data(id)
+    {
+    }
+
+	int32 m_Data;
+};
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // BASETYPES_H

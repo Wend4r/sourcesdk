@@ -11,10 +11,14 @@
 #pragma once
 #endif
 
+#include "tier0/basetypes.h"
+
+#include "schemacompiler/schemaon.h"
+
 
 //
 // Commands for the screen shake effect.
-enum ShakeCommand_t
+schema enum ShakeCommand_t
 {
 	SHAKE_START = 0,		// Starts the screen shake for all players within the radius.
 	SHAKE_STOP,				// Stops the screen shake for all players within the radius.
@@ -22,6 +26,7 @@ enum ShakeCommand_t
 	SHAKE_FREQUENCY,		// Modifies the frequency of an active screen shake for all players within the radius.
 	SHAKE_START_RUMBLEONLY,	// Starts a shake effect that only rumbles the controller, no screen effect.
 	SHAKE_START_NORUMBLE,	// Starts a shake that does NOT rumble the controller.
+	SHAKE_DURATION,
 };
 
 // This structure must have a working copy/assignment constructor. 
@@ -87,5 +92,7 @@ inline ScreenShake_t::ScreenShake_t( ShakeCommand_t _command, float _amplitude, 
 	command(_command), amplitude(_amplitude), frequency(_frequency),
 		duration(_duration), direction(_direction)
 {}
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SHAKE_H

@@ -53,7 +53,7 @@
 //  Constructor - create a named mutex on the PC and see if someone else has
 //     already done it.
 // ===========================================================================
-CSingleAppInstance::CSingleAppInstance( tchar* InstanceName, bool exitOnNotUnique, bool displayMsgIfNotUnique )
+CSingleAppInstance::CSingleAppInstance( const char *InstanceName, bool exitOnNotUnique, bool displayMsgIfNotUnique )
 {
 	// defaults for non-Windows builds
 	m_hMutex = NULL;
@@ -129,6 +129,11 @@ CSingleAppInstance::CSingleAppInstance( tchar* InstanceName, bool exitOnNotUniqu
 
 CSingleAppInstance::~CSingleAppInstance()
 {
+	ShutdownInstance();
+}
+
+void CSingleAppInstance::ShutdownInstance()
+{
 #ifndef _PS3
 #ifdef WIN32
 	if ( IsPlatformWindows() && m_hMutex )
@@ -188,7 +193,7 @@ bool CSingleAppInstance::CheckForOtherRunningInstances( bool exitOnNotUnique, bo
 //     It's a way to check if a tool is running or not, (and then presumably
 //     lauch it if it is not there).
 // ===========================================================================
-bool CSingleAppInstance::CheckForRunningInstance( tchar* InstanceName )
+bool CSingleAppInstance::CheckForRunningInstance( const char *InstanceName )
 {
 #ifndef _PS3
 	// validate input		

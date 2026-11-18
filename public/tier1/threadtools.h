@@ -5,22 +5,7 @@
 #pragma once
 #endif
 
+// Compatibility include, the header lives in tier0.
 #include "tier0/threadtools.h"
-
-enum CopiedLockState_t : int32
-{
-	CLS_NOCOPY = 0,
-	CLS_UNLOCKED = 1,
-	CLS_LOCKED_BY_COPYING_THREAD = 2,
-};
-
-template < class MUTEX, CopiedLockState_t L = CLS_UNLOCKED >
-class CCopyableLock : public MUTEX
-{
-	typedef MUTEX BaseClass;
-
-public:
-	// ...
-};
 
 #endif // TIER1_THREADTOOLS_H

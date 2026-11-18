@@ -15,7 +15,9 @@
 #endif
 
 #include "platform.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlvector.h"
+
+#include "schemacompiler/schemaon.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -26,7 +28,7 @@ class CUtlBuffer;
 //-----------------------------------------------------------------------------
 // Defines a globally unique ID
 //-----------------------------------------------------------------------------
-struct UniqueId_t
+schema struct UniqueId_t
 {
 	unsigned char m_Value[16];
 };
@@ -42,6 +44,7 @@ PLATFORM_INTERFACE bool IsUniqueIdEqual( const UniqueId_t &id1, const UniqueId_t
 PLATFORM_INTERFACE void UniqueIdToString( const UniqueId_t &id, char *pBuf, int nMaxLen );
 PLATFORM_INTERFACE bool UniqueIdFromString( UniqueId_t *pDest, const char *pBuf, int nMaxLen = 0 );
 PLATFORM_INTERFACE void CopyUniqueId( const UniqueId_t &src, UniqueId_t *pDest );
+PLATFORM_INTERFACE uint64 GenerateHashFromUniqueId( const UniqueId_t &id );
 PLATFORM_INTERFACE bool Serialize( CUtlBuffer &buf, const UniqueId_t &src );
 PLATFORM_INTERFACE bool Unserialize( CUtlBuffer &buf, UniqueId_t &dest );
 
@@ -50,6 +53,8 @@ inline bool operator ==( const UniqueId_t& lhs, const UniqueId_t& rhs )
 	return !Q_memcmp( (void *)&lhs.m_Value[ 0 ], (void *)&rhs.m_Value[ 0 ], sizeof( lhs.m_Value ) );
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // UNIQUEID_H
 

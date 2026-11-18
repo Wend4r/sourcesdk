@@ -5,7 +5,11 @@
 #pragma once
 #endif
 
-struct CSplitScreenSlot
+#include "tier0/basetypes.h"
+
+#include "schemacompiler/schemaon.h"
+
+schema struct CSplitScreenSlot
 {
 	CSplitScreenSlot()
 	 :  m_Data(0)
@@ -28,5 +32,7 @@ struct CSplitScreenSlot
 	
 	int m_Data;
 };
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // SPLITSCREENSLOT_H

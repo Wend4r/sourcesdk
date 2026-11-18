@@ -14,9 +14,9 @@
 #include "datamodel/dmattributetypes.h"
 #include "tier0/mempool.h"
 #include "tier0/utlsymbol.h"
-#include "tier1/utlvector.h"
-#include "tier1/utlrbtree.h"
-#include "tier1/UtlSortVector.h"
+#include "tier0/utlvector.h"
+#include "tier0/utlrbtree.h"
+#include "tier0/utlsortvector.h"
 #include "dmxloader/dmxattribute.h"
 
 

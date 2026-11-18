@@ -10,7 +10,7 @@
 // lock-free fashion. You must call the "FrameUpdate" function while no one is querying against
 // this cache.
 
-#include "tier1/utlintrusivelist.h"
+#include "tier0/utlintrusivelist.h"
 
 // in order to use this class, KEYTYPE must implement bool IsAcceptable( KEYTYPE const & ), and
 // RECORDTYPE must implement CreateCacheData( KEYTYPE const & )

@@ -21,13 +21,15 @@
 #include "entityhandle.h"
 #include "entity2/entitysystem.h"
 
+#include "schemacompiler/schemaon.h"
+
 
 class IHandleEntity;
 
 // -------------------------------------------------------------------------------------------------- //
 // CHandle.
 // -------------------------------------------------------------------------------------------------- //
-template< class T >
+schema template< class T >
 class CHandle : public CBaseHandle
 {
 public:
@@ -153,5 +155,7 @@ T* CHandle<T>::operator -> () const
 	return Get();
 }
 
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // EHANDLE_H

@@ -69,7 +69,7 @@ typedef struct lumpinfo_s
 	int			size;					// uncompressed
 	char		type;
 	char		compression;
-	char		pad1, pad2;
+	char		unused1, unused2;
 	char		name[TEXTURE_NAME_LENGTH];				// must be null terminated
 } lumpinfo_t;
 

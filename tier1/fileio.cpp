@@ -142,7 +142,7 @@ static int FileSelect( const char *name, const char *mask );
 
 #endif 
 
-#include "tier1/fileio.h"
+#include "tier0/fileio.h"
 #include "tier0/utlbuffer.h"
 #include "tier0/strtools.h"
 #include <errno.h>

@@ -5,7 +5,7 @@
 #pragma once
 #endif
 
-#include "variant.h"
+#include "entity2/variant.h"
 
 // Per-instance script scope of an entity, where its private scripts run.
 class CEntityPrivateScriptScope

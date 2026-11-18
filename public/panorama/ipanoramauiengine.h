@@ -1,0 +1,44 @@
+//===== Copyright (c) 1996-2005, Valve Corporation, All rights reserved. ======//
+//
+// Purpose: App system that owns the panorama UI engine instance
+//
+//===========================================================================//
+
+#ifndef IPANORAMAUIENGINE_H
+#define IPANORAMAUIENGINE_H
+#ifdef _WIN32
+#pragma once
+#endif
+
+#include "tier0/platform.h"
+#include "tier0/utlvector.h"
+#include "appframework/iappsystem.h"
+#include "inputsystem/inputenums.h"
+
+namespace panorama
+{
+	class IUIEngine;
+	class IUIWindow;
+};
+
+abstract_class IPanoramaUIEngine : public IAppSystem
+{
+public:
+	// Creates the UI engine; returns false when creation failed
+	virtual bool SetupUIEngine() = 0;
+	virtual void ShutdownUIEngine() = 0;
+	virtual panorama::IUIEngine *AccessUIEngine() = 0;
+
+	virtual bool HandleInputEvent( const InputEvent_t &event, const CUtlVector< panorama::IUIWindow * > &vecWindows, bool bRequireFocus ) = 0;
+
+	virtual void SetCustomIMEEnabled( bool bEnabled ) = 0;
+
+	virtual int DeleteClosedWindows() = 0;
+
+	// Named by what it does: walks the DOM of a layout file and appends a 24 byte record (id
+	// attribute, element name, a third value of the element) for every element to the CUtlVector;
+	// false when the layout has no document
+	virtual bool CollectLayoutFilePanelIDs( const void *pLayoutFile, void *pVecPanels ) = 0;
+};
+
+#endif // IPANORAMAUIENGINE_H

@@ -27,6 +27,8 @@
 
 #include "mathlib/fltx4.h"
 
+#include "schemacompiler/schemaon.h"
+
 // The FLTX4 type is a fltx4 used as a parameter to a function.
 // On the 360, the best way to do this is pass-by-copy on the registers.
 // On the PC, the best way is to pass by const reference. 
@@ -3633,7 +3635,7 @@ FORCEINLINE fltx4 LoadUnalignedFloatSIMD( const float *pFlt )
 /// replicate a single 32 bit integer value to all 4 components of an m128
 FORCEINLINE fltx4 ReplicateIX4( int i )
 {
-	fltx4 value = _mm_set_ss( * ( ( float *) &i ) );;
+	fltx4 value = _mm_set_ss( BitsToFloat( i ) );
 	return _mm_shuffle_ps( value, value, 0);
 }
 
@@ -4563,7 +4565,7 @@ public:
 class FourQuaternions;
 /// class FourVectors stores 4 independent vectors for use in SIMD processing. These vectors are
 /// stored in the format x x x x y y y y z z z z so that they can be efficiently SIMD-accelerated.
-class ALIGN16 FourVectors
+schema class ALIGN16 FourVectors
 {
 public:
 	fltx4 x, y, z;
@@ -5969,4 +5971,7 @@ FORCEINLINE fltx4 operator*=( fltx4 &a, FLTX4 b )
 }
 
 #endif
+
+#include "schemacompiler/schemaoff.h"
+
 #endif // _ssemath_h

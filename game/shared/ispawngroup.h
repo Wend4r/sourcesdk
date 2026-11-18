@@ -41,7 +41,8 @@ public:
 
 public:
 	virtual bool DontSpawnEntities() const = 0;
-	virtual uint8 GetUnk2AndLastFlagBits() const = 0;
+	// SpawnGroupDesc_t::m_bReservedFlag1.
+	virtual bool GetReservedFlag1() const = 0;
 	virtual SpawnGroupHandle_t GetParentSpawnGroup() const = 0;
 	virtual uint32 GetChildSpawnGroupCount() const = 0;
 	virtual void GetSpawnGroupDesc(SpawnGroupDesc_t *pDesc) const = 0;
@@ -52,15 +53,19 @@ public:
 	virtual void LoadAllGameResourceManifests(void *) = 0;
 	virtual void AddSpawnGroupChild(SpawnGroupHandle_t hSpawnGroup) = 0;
 	virtual bool HasSetActivePostLoad() const = 0;
-	virtual bool HasUnk2() const = 0;
-	virtual bool HasUnk() const = 0;
-	virtual void UnkSetter(uint32 n) = 0;
+	// Named by what it does: set while the spawn group waits for its child spawn groups (the
+	// WaitForChildSpawnGroups step of the network spawn groups).
+	virtual bool IsWaitingForChildSpawnGroups() const = 0;
+	// SpawnGroupDesc_t::m_bIsNotPointPrefab.
+	virtual bool IsNotPointPrefab() const = 0;
+	// Named by what it does: the client spawn group stores the tick GetDestructionTick returns.
+	virtual void SetDestructionTick(uint32 nTick) = 0;
 	virtual bool HasLevelTransition() const = 0;
 	virtual WorldGroupId_t GetWorldGroupId() const = 0;
 
-	virtual matrix3x4_t ComputeWorldOrigin(const char *pWorldName, SpawnGroupHandle_t hSpawnGroup, IWorld *pWorld) = 0;
-	virtual void Release() = 0;
-	virtual void OnGameResourceManifestLoaded(HGameResourceManifest hManifest, int nResourceCount, ResourceHandle_t *pResourceHandles) = 0;
+	// ComputeWorldOrigin and OnGameResourceManifestLoaded are not slots of this interface: the
+	// game's spawn groups implement them in their IComputeWorldOriginCallback and
+	// IGameResourceManifestLoadCompletionCallback bases (see CBaseSpawnGroup).
 	virtual void Init(IResourceManifestRegistry *pResourceManifest, IEntityPrecacheConfiguration *pConfig, ISpawnGroupPrerequisiteRegistry *pRegistry) = 0;
 	virtual void Shutdown() = 0;
 	virtual bool GetLoadStatus() = 0;

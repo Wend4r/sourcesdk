@@ -688,8 +688,6 @@ inline size_t CUtlStringBuilder::Format(const char *pFormat, ...)
 	return nLen;
 }
 
-int V_vscprintf(const char *format, va_list argptr);
-
 //-----------------------------------------------------------------------------
 // Purpose: Helper for Format() method
 //-----------------------------------------------------------------------------

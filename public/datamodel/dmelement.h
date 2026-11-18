@@ -10,9 +10,9 @@
 #pragma once
 #endif
 
-#include "tier1/utlmap.h"
-#include "tier1/utlhash.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlhash.h"
+#include "tier0/utlvector.h"
 #include "tier0/utlsymbol.h"
 #include "tier0/mempool.h"
 #include "datamodel/attributeflags.h"
@@ -20,7 +20,7 @@
 #include "datamodel/dmattribute.h"
 #include "datamodel/dmvar.h"
 #include "tier0/vprof.h" 
-#include "tier1/utlsymbollarge.h"
+#include "tier0/utlsymbollarge.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations: 

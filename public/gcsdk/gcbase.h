@@ -16,7 +16,7 @@
 #include "gcmsg.h"
 #include "jobmgr.h"
 #include "tier1/thash.h"
-#include "tier1/UtlSortVector.h"
+#include "tier0/utlsortvector.h"
 #include "http.h"
 #include "language.h"
 #include "accountdetails.h"

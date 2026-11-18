@@ -183,8 +183,8 @@ float _SSE_RSqrtFast(float x)
 	 __asm__ __volatile__(
 		"rsqrtss %1, %%xmm0 \n\t"
 		"movss %%xmm0, %0 \n\t"
-		: "=m" (x)
-		: "m" (rroot)
+		: "=m" (rroot)
+		: "m" (x)
 		: "%xmm0"
 	);
 #else

@@ -8,8 +8,8 @@
 #include "eiface.h"
 #include "tier0/threadtools.h"
 #include "tier1/utldelegate.h"
-#include "tier1/utlmap.h"
-#include "tier1/utlvector.h"
+#include "tier0/utlmap.h"
+#include "tier0/utlvector.h"
 
 class CBasePlayerController;
 
