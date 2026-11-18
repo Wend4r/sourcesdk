@@ -79,12 +79,13 @@ struct NmGraphInstanceCreateParams_t
 	// Name the instance is listed under, m_pszFallbackName is used when it is empty
 	const char *m_pszName;
 	const char *m_pszFallbackName;
-	// Zero in every call of the game
-	void *m_pUnknown20;
+	// Named by what the code does with it: CreateGraphInstance never reads it, the game passes NULL
+	void *m_pUnusedContext;
 	// Becomes the m_debugName of the instance
 	CUtlString m_debugName;
-	// Reported back by GetDebuggableGraphInstances; the game always passes true
-	bool m_bUnknown30;
+	// Named by what the code does with it: only copied into the entries GetDebuggableGraphInstances
+	// returns (m_bDebugListFlag there); the game always passes true
+	bool m_bDebugListFlag;
 	bool m_bDebuggable;
 };
 
@@ -100,8 +101,8 @@ struct NmDebuggableGraphInstance_t
 	CGlobalSymbol m_externalSlotID;
 	// NULL for a graph connected to an external graph slot
 	const char *m_pszName;
-	// m_bUnknown30 of the create params, false for a graph connected to an external graph slot
-	bool m_bUnknown28;
+	// m_bDebugListFlag of the create params, false for a graph connected to an external graph slot
+	bool m_bDebugListFlag;
 };
 
 abstract_class IAnimationSystem : public IAppSystem

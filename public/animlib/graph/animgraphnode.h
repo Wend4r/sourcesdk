@@ -137,8 +137,9 @@ public:
 	{
 	};
 
-	// Sets the default value in the control parameter nodes
-	virtual void Unk_ResetValue() = 0;
+	// Named by what it does: passes a value-initialized value of the node's type to SetValueInternal
+	// (every value node shares the implementation of its value type)
+	virtual void ResetValue() = 0;
 	// Both take a pointer to a value of the type the node holds
 	virtual void GetValueInternal( CNmGraphContext &context, void *pOutValue ) = 0;
 	virtual void SetValueInternal( const void *pInValue ) = 0;

@@ -14,6 +14,11 @@
 #include "mathlib/vector4d.h"
 #include "rendersystem/rendersystemtypes.h"
 #include "scenesystem/iscenelayer.h"
+#include "resourcesystem/resourcehandle.h"
+#include "resourcesystem/resourcehandletypes.h"
+#include "tier0/utlvector.h"
+
+#include <memory>
 
 class ISceneView;
 class ISceneLayer;
@@ -30,12 +35,21 @@ struct SceneViewRenderTargetInfo_t;
 struct TonemapState_t;
 struct SceneFogParams_t;
 struct RsBlendStateDesc_t;
+struct RenderTargetDesc_t;
+struct SceneVolumetricFogVolume_t;
+class CVolumeCuller;
+class CFrustum;
 
-class InfoForResourceTypeCTextureBase;
-template < class T > class CWeakHandle;
-using HRenderTexture = CWeakHandle< InfoForResourceTypeCTextureBase >;
 
 FORWARD_DECLARE_HANDLE( SwapChainHandle_t );
+
+// Returned through a hidden pointer on Windows because of the constructor, in a register on Linux
+struct SceneViewUserValue_t
+{
+	SceneViewUserValue_t() : m_nValue( 0 ) {}
+
+	int m_nValue;
+};
 
 // Identifies a view across frames
 struct CViewId
@@ -58,8 +72,9 @@ public:
 
 	virtual ISceneLayer *AddClearLayer( const char *pszName, const RenderViewport_t &viewport, int nClearFlags ) = 0;
 
-	// A null or empty pszName defaults to "GpuCull", "GpuCull-PrepareReculling" or "GpuRecull" for nCullPass 0, 1 or 2
-	virtual ISceneLayer *Unk_AddGpuCullLayer( const char *pszName, const RenderViewport_t &viewport, uint8 nCullPass ) = 0;
+	// Named by what it does. A null or empty pszName defaults to "GpuCull", "GpuCull-PrepareReculling" or "GpuRecull"
+	// for nCullPass 0, 1 or 2
+	virtual ISceneLayer *AddGpuCullLayer( const char *pszName, const RenderViewport_t &viewport, uint8 nCullPass ) = 0;
 
 	// An empty layer other layers are ordered against; named "label: <pszLabel>"
 	virtual ISceneLayer *AddLabelLayer( const char *pszLabel ) = 0;
@@ -67,37 +82,37 @@ public:
 
 	virtual void MoveLayerToBeAfterLayer( ISceneLayer *pLayer, ISceneLayer *pAfterLayer ) = 0;
 
-	// The layer waits on pSemaphore before it renders
-	virtual void Unk_AddLabelLayerSemaphore( CUtlStringToken label, void *pSemaphore ) = 0;
-	virtual void Unk_AddLayerSemaphore( ISceneLayer *pLayer, void *pSemaphore ) = 0;
+	// pLayer renders only after the label layer (or pDependency) has; s&box names
+	virtual void AddSemaphoreDependencyForLabelLayer( CUtlStringToken label, ISceneLayer *pLayer ) = 0;
+	virtual void AddSemaphoreDependency( ISceneLayer *pLayer, ISceneLayer *pDependency ) = 0;
 
-	// Appends nUnk to a byte list of pLayer when a global per-value table enables it
-	virtual void unk010( uint8 nUnk, ISceneLayer *pLayer ) = 0;
+	// Named by what it does: appends nPass to the pass list of pLayer when the global per-pass table enables it
+	virtual void AddLayerToPass( uint8 nPass, ISceneLayer *pLayer ) = 0;
 
-	// Draws pMaterial full screen into outputs
-	virtual ISceneLayer *AddSimplePostProcessingLayer( const char *pszName, const RenderViewport_t &viewport, const IMaterial2 *pMaterial, const SceneLayerOutputs_t &outputs, bool bUnk ) = 0;
+	// Draws pMaterial full screen into the target desc or the outputs; bRendererFlag is stored in the layer renderer.
+	// MSVC orders the two overloads in reverse
+	virtual ISceneLayer *AddSimplePostProcessingLayer( const char *pszName, const RenderViewport_t &viewport, const IMaterial2 *pMaterial, const RenderTargetDesc_t &desc, bool bRendererFlag ) = 0;
+	virtual ISceneLayer *AddSimplePostProcessingLayer( const char *pszName, const RenderViewport_t &viewport, const IMaterial2 *pMaterial, const SceneLayerOutputs_t &outputs, bool bRendererFlag ) = 0;
 
-	// Same as AddSimplePostProcessingLayer, but pUnk is handed to the new layer instead of the outputs.
-	// Both platforms keep this slot after the previous one, so the two are not overloads of one name
-	virtual ISceneLayer *Unk_AddSimplePostProcessingLayer( const char *pszName, const RenderViewport_t &viewport, const IMaterial2 *pMaterial, const void *pUnk, bool bUnk ) = 0;
+	// Draws the srcRect texels of a nTextureWidth x nTextureHeight texture into dstRect with shader mode shaderMode
+	virtual ISceneLayer *AddSimpleQuadRendererLayer( const char *pszName, const RenderViewport_t &viewport, const CUtlStringToken &shaderMode, ResourceHandle_t hTexture, int nTextureWidth, int nTextureHeight, const RenderViewport_t &srcRect, const RenderViewport_t &dstRect ) = 0;
 
-	// Draws the srcRect texels of a nTextureWidth x nTextureHeight texture into dstRect with a material
-	virtual ISceneLayer *Unk_AddSimpleQuadLayer( const char *pszName, const RenderViewport_t &viewport, const void *pUnk, const void *hMaterial, int nTextureWidth, int nTextureHeight, const RenderViewport_t &srcRect, const RenderViewport_t &dstRect ) = 0;
-
-	// Resolves color target nColorTargetIndex of the previous layer into hTarget; fails as the first layer
-	virtual ISceneLayer *AddResolveRenderTargetLayer( const char *pszName, const RenderViewport_t &viewport, int nUnk1, int nUnk2, int nColorTargetIndex, HSceneViewRenderTarget hTarget ) = 0;
+	// Resolves color target nColorTargetIndex of the previous layer into hTarget; fails as the first layer.
+	// The game does not read nUnusedX and nUnusedY (s&box has the same two ints)
+	virtual ISceneLayer *AddResolveRenderTargetLayer( const char *pszName, const RenderViewport_t &viewport, int nUnusedX, int nUnusedY, int nColorTargetIndex, HSceneViewRenderTarget hTarget ) = 0;
 
 	// Resolves the depth target of the previous layer into hTarget; fails as the first layer
-	virtual ISceneLayer *AddResolveDepthStencilLayer( const char *pszName, const RenderViewport_t &viewport, int nUnk1, int nUnk2, HSceneViewRenderTarget hTarget ) = 0;
+	virtual ISceneLayer *AddResolveDepthStencilLayer( const char *pszName, const RenderViewport_t &viewport, int nUnusedX, int nUnusedY, HSceneViewRenderTarget hTarget ) = 0;
 
-	virtual void AddWorldToRenderList( ISceneWorld *pWorld, const uint32 *pVisBits, bool bUnk ) = 0;
+	// bCopyWorldVolumes copies the culling boxes and fog volumes of the world into the view (RemoveCullBoxes clears them)
+	virtual void AddWorldToRenderList( ISceneWorld *pWorld, const uint32 *pVisBits, bool bCopyWorldVolumes ) = 0;
 	virtual void AddSceneObjectToRenderList( CSceneObject *pObject ) = 0;
 
 	virtual SwapChainHandle_t GetSwapChain() = 0;
 
 	virtual ~ISceneView() {}
 
-	virtual ISceneLayer *AddDebugInfoLayer( const char *pszName, const RenderViewport_t &viewport, uint32 nUnk ) = 0;
+	virtual ISceneLayer *AddDebugInfoLayer( const char *pszName, const RenderViewport_t &viewport, uint32 nDebugInfoType ) = 0;
 
 	// Render target names are looked up inside the innermost scope (up to 4 deep)
 	virtual void PushNamedRenderTargetScope( const char *pszScope ) = 0;
@@ -112,7 +127,7 @@ public:
 	virtual const TonemapState_t &GetTonemapState() = 0;
 	virtual void SetTonemapState( const TonemapState_t &state ) = 0;
 	virtual void SetFogstate( const SceneFogParams_t &params ) = 0;
-	virtual const SceneFogParams_t &Unk_GetFogstate() = 0;
+	virtual const SceneFogParams_t &GetFogstate() = 0;
 
 	// Forwards to SetPlayerViewingIndex
 	virtual void SetSplitscreenView( int nSlot ) = 0;
@@ -123,21 +138,22 @@ public:
 	virtual uint64 GetDefaultLayerObjectRequiredFlags() = 0;
 	virtual uint64 GetDefaultLayerObjectExcludedFlags() = 0;
 
-	// A second set/set/get/get pair of 64-bit layer defaults, copied into every layer added afterwards
-	virtual void unk035( uint64 nUnk ) = 0;
-	virtual void unk036( uint64 nUnk ) = 0;
-	virtual uint64 unk037() = 0;
-	virtual uint64 unk038() = 0;
+	// Named by what they do: the type flags half of the defaults (CS2 objects have flags and type flags), copied
+	// into every layer added afterwards
+	virtual void SetDefaultLayerObjectRequiredTypeFlags( uint64 nFlags ) = 0;
+	virtual void SetDefaultLayerObjectExcludedTypeFlags( uint64 nFlags ) = 0;
+	virtual uint64 GetDefaultLayerObjectRequiredTypeFlags() = 0;
+	virtual uint64 GetDefaultLayerObjectExcludedTypeFlags() = 0;
 
-	// Get and set of a 16-byte value passed by value (two registers on Linux), copied into every layer added afterwards
-	virtual void unk039() = 0;
-	virtual void unk040() = 0;
+	// Named by what they do: a 128-bit mask copied into every layer added afterwards, next to its flag masks
+	virtual SceneObjectClassMask_t GetDefaultLayerObjectClassMask() = 0;
+	virtual void SetDefaultLayerObjectClassMask( SceneObjectClassMask_t mask ) = 0;
 
 	virtual ISceneLayer *GetFinalOutputLayer() = 0;
 	virtual void GetRenderTargetInfo( HSceneViewRenderTarget hTarget, SceneViewRenderTargetInfo_t *pInfo ) = 0;
 
 	// Copies srcViewport of hSource into dstViewport of outputs
-	virtual ISceneLayer *AddBlitTextureToTargetLayer( const char *pszName, HSceneViewRenderTarget hSource, const RenderViewport_t &srcViewport, const RenderViewport_t &dstViewport, const SceneLayerOutputs_t &outputs, Vector4D *pUnk1, bool bUnk, RsBlendStateDesc_t *pBlendState, Vector4D *pUnk2 ) = 0;
+	virtual ISceneLayer *AddBlitTextureToTargetLayer( const char *pszName, HSceneViewRenderTarget hSource, const RenderViewport_t &srcViewport, const RenderViewport_t &dstViewport, const SceneLayerOutputs_t &outputs, Vector4D *pColorScale, bool bPointSample, RsBlendStateDesc_t *pBlendState, Vector4D *pColorBias ) = 0;
 
 	virtual void MarkRenderTargetRead( HSceneViewRenderTarget hTarget ) = 0;
 	virtual HRenderTexture GetRenderTargetTexture( HSceneViewRenderTarget hTarget ) = 0;
@@ -145,17 +161,18 @@ public:
 	// Only plane 0 is stored
 	virtual void SetUserClipPlane( int nIndex, const VPlane &plane ) = 0;
 
-	virtual bool unk047() = 0;
-	virtual void unk048( bool bUnk ) = 0;
+	// s&box names; the scene system only stores the flag
+	virtual bool GetShadowsEnabled() = 0;
+	virtual void SetShadowsEnabled( bool bEnabled ) = 0;
 
-	virtual void *unk049() = 0;
-	virtual void unk050( void *pUnk ) = 0;
+	virtual void *GetUserDataPtr() = 0;
+	virtual void SetUserDataPtr( void *pData ) = 0;
 
 	// Created on first use
 	virtual ISceneViewDebugOverlays *GetDebugOverlayList() = 0;
 
 	// Shares the debug overlay list of pOtherView; true if there is one
-	virtual bool Unk_ShareDebugOverlayList( ISceneView *pOtherView ) = 0;
+	virtual bool ShareDebugOverlayList( ISceneView *pOtherView ) = 0;
 
 	virtual const CRenderAttributes &GetRenderAttributes() const = 0;
 	virtual CRenderAttributes &GetRenderAttributes() = 0;
@@ -172,20 +189,23 @@ public:
 
 	virtual CViewId GetViewId() = 0;
 
-	// The index of the view among the views of the frame; -1 for dynamic views
-	virtual int unk060() = 0;
-	virtual int unk061() = 0;
+	// Named by what they do: the index of the view among the views of the frame (-1 for dynamic views), and a second
+	// 16-bit index that the light and view constants setup reads
+	virtual int GetFrameViewIndex() = 0;
+	virtual int GetViewConstantsIndex() = 0;
 
 	virtual void ComputeRenderTargetAllocations() = 0;
 
 	// Both values are percentages; the second one is clamped to [ 0, 100 ]
-	virtual void SetBoundingVolumeSizeCullThresholdInPercent( float flThreshold, float flUnk ) = 0;
-	virtual void unk064( float flUnk1, float flUnk2 ) = 0;
+	virtual void SetBoundingVolumeSizeCullThresholdInPercent( float flThreshold, float flMaxThreshold ) = 0;
+	// Named by what it does: two thresholds the GPU culling and the instanced mesh culling read
+	virtual void SetGpuCullSizeThresholds( float flThreshold, float flMaxThreshold ) = 0;
 
 	virtual void SetDistanceScaleForLODAndCulling( float flScale ) = 0;
 	virtual float GetSquaredDistanceScaleForLODAndCulling() = 0;
 
-	virtual void unk067( float flUnk ) = 0;
+	// Named by what it does: a distance scale the instanced mesh culling reads
+	virtual void SetInstancedMeshDistanceScale( float flScale ) = 0;
 
 	// -1 selects index 3
 	virtual void SetPlayerViewingIndex( int nIndex ) = 0;
@@ -205,17 +225,18 @@ public:
 	virtual void SetOverrideLODLevel( int nLevel ) = 0;
 	virtual int GetOverrideLODLevel() = 0;
 
-	virtual bool unk079() = 0;
-	virtual void unk080( bool bUnk ) = 0;
+	// s&box names (a post process flag next to the shadows one there); the scene system only stores the flag
+	virtual bool GetPostProcessEnabled() = 0;
+	virtual void SetPostProcessEnabled( bool bEnabled ) = 0;
 
 	// Set from a counter of the scene system when the view is added
 	virtual void SetIssueSortIndex( int nIndex ) = 0;
 
-	// Clears what AddWorldToRenderList copied from the worlds when bUnk is set
-	virtual void unk082() = 0;
+	// Clears the culling boxes AddWorldToRenderList copied from the worlds
+	virtual void RemoveCullBoxes() = 0;
 
-	// Copies a 0x180-byte (Windows) / 0x178-byte (Linux) block into the view
-	virtual void unk083( const void *pUnk ) = 0;
+	// Copied into the view (0x180 bytes on Windows, 0x178 on Linux)
+	virtual void SetVolumeCuller( const CVolumeCuller &culler ) = 0;
 
 	// Registers a render target of the view under pszName. MSVC orders the four overloads in reverse
 	virtual HSceneViewRenderTarget FindOrCreateRenderTarget( const char *pszName, const SceneViewRenderTargetInfo_t &info, uint8 nFlags ) = 0;
@@ -223,54 +244,58 @@ public:
 	virtual HSceneViewRenderTarget FindOrCreateRenderTarget( const char *pszName, SwapChainHandle_t hSwapChain, int nSwapChainBuffer, uint8 nFlags ) = 0;
 	virtual HSceneViewRenderTarget FindOrCreateRenderTarget( const char *pszName, ISceneView *pOtherView, HSceneViewRenderTarget hOtherViewTarget ) = 0;
 
-	// Allocates a scratch render target; nine arguments
-	virtual void unk088() = 0;
+	// Named by what it does: adds a scratch render target to the render target list of the view. The argument names
+	// are not traced beyond their types
+	virtual HSceneViewRenderTarget AllocateScratchRenderTarget( int nWidth, int nHeight, int nFormat, const SceneViewRenderTargetInfo_t *pInfo, const char *pszName, uint32 nFlags, uint32 nUsage, bool bPersistent, uint32 nArraySize ) = 0;
 
-	virtual void Unk_AddRefRenderTarget( HSceneViewRenderTarget hTarget ) = 0;
-	virtual void Unk_ReleaseRenderTarget( HSceneViewRenderTarget hTarget ) = 0;
+	virtual void AddRefRenderTarget( HSceneViewRenderTarget hTarget ) = 0;
+	virtual void ReleaseRenderTarget( HSceneViewRenderTarget hTarget ) = 0;
 
 	// If hTarget is multisampled, adds a layer (pszLayerName, which defaults to the function name) that resolves it
 	// into a new "resolved_rt" and returns that; otherwise returns hTarget
-	virtual HSceneViewRenderTarget ResolveMSAARenderTargetIfNecessary( const RenderViewport_t &viewport, HSceneViewRenderTarget hTarget, const char *pszLayerName, ISceneLayer *pUnkLayer ) = 0;
+	virtual HSceneViewRenderTarget ResolveMSAARenderTargetIfNecessary( const RenderViewport_t &viewport, HSceneViewRenderTarget hTarget, const char *pszLayerName, ISceneLayer *pAssociatedLayer ) = 0;
 
-	// Adds an "MSAAResolve" layer into a new "resolved_rt" if hTarget is multisampled, else a "CopyRT" blit into a new "copy_rt"
-	virtual HSceneViewRenderTarget Unk_ResolveOrCopyRenderTarget( const RenderViewport_t &viewport, HSceneViewRenderTarget hTarget ) = 0;
+	// Named by what it does: adds an "MSAAResolve" layer into a new "resolved_rt" if hTarget is multisampled, else a
+	// "CopyRT" blit into a new "copy_rt"
+	virtual HSceneViewRenderTarget ResolveOrCopyRenderTarget( const RenderViewport_t &viewport, HSceneViewRenderTarget hTarget ) = 0;
 
-	// Looks up the render target of hTexture; pMultisampleType gets its multisample type
-	virtual bool unk093( HRenderTexture hTexture, int *pIndex, uint8 *pMultisampleType ) = 0;
+	// Named by what they do: the render target of hTexture (pMultisampleType gets its multisample type) and its
+	// reference count
+	virtual bool FindRenderTargetForTexture( HRenderTexture hTexture, int *pIndex, uint8 *pMultisampleType ) = 0;
+	virtual int GetRenderTargetRefCount( HRenderTexture hTexture ) = 0;
 
-	// The reference count of the render target of hTexture
-	virtual int unk094( HRenderTexture hTexture ) = 0;
+	// Named by what they do: the layer that render layers added afterwards are associated with (s&box passes it to
+	// every Add*Layer)
+	virtual void SetAssociatedLayerForNewLayers( ISceneLayer *pLayer ) = 0;
+	virtual ISceneLayer *GetAssociatedLayerForNewLayers() = 0;
 
-	// The layer render layers added afterwards are linked to
-	virtual void unk095( ISceneLayer *pLayer ) = 0;
-	virtual ISceneLayer *unk096() = 0;
+	// Empty in the game; s&box name of its empty slot next to SetVolumeCuller
+	virtual void CaptureRenderDocForView() = 0;
 
-	// Empty
-	virtual void unk097() = 0;
+	// s&box name: the fog volumes AddWorldToRenderList copied from the worlds
+	virtual const CUtlVector< SceneVolumetricFogVolume_t > &GetVolumetricFogVolumes() = 0;
 
-	virtual void *unk098() = 0;
+	// Named by what they do: two std::shared_ptr members the scene system only stores
+	virtual void SetSharedUserData( const std::shared_ptr< void > &pData ) = 0;
+	virtual void SetSharedUserData2( std::shared_ptr< void > pData ) = 0;
+	virtual std::shared_ptr< void > GetSharedUserData2() = 0;
 
-	// Two std::shared_ptr members: set (by const reference), set (by value), get (by value)
-	virtual void unk099() = 0;
-	virtual void unk100() = 0;
-	virtual void unk101() = 0;
+	// s&box name; appends the frustum to the auxiliary cameras of the view
+	virtual void AddAuxiliaryRenderCamera( const CFrustum &frustum ) = 0;
 
-	virtual void unk102( void *pUnk ) = 0;
+	// Named by what they do: values the scene system only stores (the client sets and reads them)
+	virtual void SetUserFlag( bool bValue ) = 0;
+	virtual bool GetUserFlag() = 0;
 
-	virtual void unk103( bool bUnk ) = 0;
-	virtual bool unk104() = 0;
+	virtual bool HasDebugOverlayList() = 0;
 
-	virtual bool Unk_HasDebugOverlayList() = 0;
+	virtual void SetUserValue( int nValue ) = 0;
+	virtual SceneViewUserValue_t GetUserValue() = 0;
 
-	// Set and get of a 4-byte value; the getter returns a class type (hidden return pointer on MSVC)
-	virtual void unk106( int nUnk ) = 0;
-	virtual void unk107() = 0;
-
-	virtual void unk108( bool bUnk ) = 0;
-	virtual bool unk109() = 0;
-	virtual void unk110( bool bUnk ) = 0;
-	virtual bool unk111() = 0;
+	virtual void SetUserFlag2( bool bValue ) = 0;
+	virtual bool GetUserFlag2() = 0;
+	virtual void SetUserFlag3( bool bValue ) = 0;
+	virtual bool GetUserFlag3() = 0;
 };
 
 #endif // ISCENEVIEW_H
