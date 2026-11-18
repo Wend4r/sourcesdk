@@ -35,6 +35,8 @@ enum MaterialCullMode_t;
 class IDataCache;   
 struct MorphWeight_t;
 struct MeshInstanceData_t;
+struct SamplerStateCopy_t;
+class IVTFTexture;
 #ifdef _X360
 enum RTMultiSampleCount360_t;
 #endif
@@ -276,6 +278,17 @@ enum ShaderAPIOcclusionQueryResult_t
 
 
 //-----------------------------------------------------------------------------
+// Custom buffer types that can be passed from client into shader dynamic state
+//-----------------------------------------------------------------------------
+enum ClientRenderStateBuffer_t
+{
+	CLIENT_RENDER_STATE_BUFFER_PROXIMITY_PLAYERS,	// array of Vector4D (x,y,z,distance) parameters, sorted from nearest to farthest
+	CLIENT_RENDER_STATE_BUFFER_DANGERZONE_INFO,		// single Vector4D (x,y,z) position (w) radius
+	CLIENT_RENDER_STATE_BUFFER_WORLD_2D_MINS_MAXS,	// (x,y) (z,w) client world top-down mins/maxs
+};
+
+
+//-----------------------------------------------------------------------------
 // This is what the material system gets to see.
 //-----------------------------------------------------------------------------
 #define SHADERAPI_INTERFACE_VERSION		"ShaderApi029"
@@ -286,11 +299,12 @@ public:
 	// NOTE: These methods have been ported to DX10
 	//
 
+	// These four close IShaderDynamicAPI in the CS:GO sources; declared here, ishaderdynamic.h stops before them
 	virtual bool IsRenderingPaint() const = 0;
 	virtual bool IsStereoActiveThisFrame() const = 0;
 
 	virtual bool IsStandardTextureHandleValid( StandardTextureId_t nId ) = 0;
-	virtual int Unknown0( int a1, void **a2, int *a3 ) = 0;
+	virtual bool GetClientRenderStateBufferState( ClientRenderStateBuffer_t eBuffer, void const *&pvBufferBase, int &numBufferBytes ) = 0;
 
 	// Viewport methods
 	virtual void SetViewports( int nCount, const ShaderViewport_t* pViewports, bool setImmediately ) = 0;
@@ -708,7 +722,7 @@ public:
 
 	virtual void SetScissorRect( int nLeft, int nTop, int nRight, int nBottom, bool bEnableScissor ) = 0;
 
-	virtual void Unknown1() = 0;
+	virtual void ForceCommitScissorRect() = 0;
 
 	// nVidia CSAA modes, different from SupportsMSAAMode()
 	virtual bool SupportsCSAAMode( int nNumSamples, int nQualityLevel ) = 0;
@@ -814,11 +828,14 @@ public:
 	virtual void GetTextureDimensions(ShaderAPITextureHandle_t hTexture, int &nWidth, int &nHeight, int &nDepth) = 0;
 	virtual ShaderAPITextureHandle_t GetStandardTextureHandle(StandardTextureId_t nID) = 0;
 
-	virtual void Unknown2( int a1, void *a2, int a3 ) = 0;
-	virtual void *Unknown3( void *a1, int a2 ) = 0;
-	virtual void *Unknown4( void *a1, int a2 ) = 0;
-	virtual void Unknown5( void **a1, void **a2, char *a3 ) = 0;
-	virtual void Unknown6( void *a1, int a2 ) = 0;
+	virtual void SetClientRenderStateBufferState( ClientRenderStateBuffer_t eBuffer, void const *pvBufferBase, int numBufferBytes ) = 0;
+
+	virtual void *GetOSVertexShader( const char *pszName, int nIndex ) = 0;
+	virtual void *GetOSPixelShader( const char *pszName, int nIndex ) = 0;
+
+	virtual void GetShaderApiDynamicState( uint32 **ppRenderStates, SamplerStateCopy_t **ppSamplerStates, bool *pbSrgbWrite ) = 0;
+
+	virtual void TexImageFromVTF( IVTFTexture *pVTF, int iVTFFrame ) = 0;
 };
 
 

@@ -2,6 +2,9 @@
 //
 // Purpose: Enumerates graphics adapters and display modes
 //
+// Reconstructed from CS2 1.41.9.7 (CRenderDeviceMgrBase / CRenderDeviceMgrVulkan, both ABIs), names
+// from the s&box 2026-04 DWARF of librendersystemempty.so.
+//
 //===========================================================================//
 
 #ifndef IRENDERDEVICEMGR_H
@@ -11,62 +14,72 @@
 #endif
 
 #include "appframework/iappsystem.h"
+#include "tier1/utlvector.h"
 
 class KeyValues;
+class CMiniDumpComment;
+class IRenderDeviceSetup;
+class IRenderDeviceEventListener;
+struct RenderAdapterInfo_t;
+struct RenderDisplayMode_t;
+struct RenderDeviceInfo_t;
+
+typedef void ( *RenderModeChangeCallbackFunc_t )();
 
 abstract_class IRenderDeviceMgr : public IAppSystem
 {
 public:
-	virtual int unk011() = 0;
+	// The device API of the manager (Vulkan returns 1, the value of RENDER_DEVICE_API_VULKAN); a manager
+	// that wraps another one forwards the call (named by what it does)
+	virtual int GetRenderDeviceAPI() = 0;
 
 	virtual int GetAdapterCount() = 0;
-
-	virtual void GetAdapterInfo( int nAdapter, void *pInfo ) = 0;
-
-	virtual int FindAdapterForRect( int x, int y, int nWidth, int nHeight ) = 0;
+	virtual void GetAdapterInfo( int nAdapter, RenderAdapterInfo_t &info ) = 0;
+	virtual int FindAdapterForDesktopRect( int x, int y, int nWidth, int nHeight ) = 0;
 
 	// Display modes of an output of an adapter
 	virtual int GetModeCount( int nAdapter, int nOutput ) = 0;
-	virtual void GetModeInfo( void *pMode, int nAdapter, int nOutput, int nMode ) = 0;
-	virtual void GetCurrentModeInfo( void *pMode, int nAdapter, int nOutput ) = 0;
+	virtual void GetModeInfo( RenderDisplayMode_t *pMode, int nAdapter, int nOutput, int nMode ) = 0;
+	virtual void GetCurrentModeInfo( RenderDisplayMode_t *pMode, int nAdapter, int nOutput ) = 0;
 
 	virtual CreateInterfaceFn CreateDevice( int nAdapter, int nFlags, int nDXLevel ) = 0;
 
-	// Adds/removes a function that unk028 calls
-	virtual void unk019( void ( *pfnCallback )() ) = 0;
-	virtual void unk020( void ( *pfnCallback )() ) = 0;
+	// Functions InvokeModeChangeCallbacks calls
+	virtual void AddModeChangeCallback( RenderModeChangeCallbackFunc_t pfnCallback ) = 0;
+	virtual void RemoveModeChangeCallback( RenderModeChangeCallbackFunc_t pfnCallback ) = 0;
 
 	// Shuts the render device down and forgets it
 	virtual void DestroyDevice() = 0;
 
-	virtual void unk022( void *p ) = 0;
-
-	virtual void unk023( void *pListener ) = 0;
-	virtual void unk024( void *pListener ) = 0;
+	virtual void InstallRenderDeviceSetup( IRenderDeviceSetup *pSetup ) = 0;
+	virtual void AddDeviceEventListener( IRenderDeviceEventListener *pListener ) = 0;
+	virtual void RemoveDeviceEventListener( IRenderDeviceEventListener *pListener ) = 0;
 
 	// The video.cfg settings in use
 	virtual KeyValues *GetVideoConfig() = 0;
 
-	virtual KeyValues *unk026() = 0;
+	// A second video.cfg KeyValues, created on first use from the ".bak" copy of the user file
+	// (named by what it does)
+	virtual KeyValues *GetVideoConfigBackup() = 0;
 
+	// setting.monitor_index of the video config, overridable on the command line
 	virtual int GetMonitorIndex() = 0;
 
-	virtual void unk028( void *pData ) = 0;
+	virtual void InvokeModeChangeCallbacks( const RenderDeviceInfo_t &info ) = 0;
 
 	// Writes the video config back to the user settings
-	virtual void SaveVideoConfig() = 0;
+	virtual void WriteVideoConfig() = 0;
 
-	virtual void ResetVideoConfigToDefaults() = 0;
+	virtual void ResetVideoConfig() = 0;
 
-	// Fills a CUtlVector of display modes of an adapter output
-	// Fills the vector at pModes with the modes of the given adapter output
-	virtual void Unk_GetModeList( void *pModes, int nAdapter, int nOutput, bool bUnknown ) = 0;
+	// Fills modes with the display modes of an adapter output
+	virtual void GetAllDisplayModes( CUtlVector< RenderDisplayMode_t > &modes, int nAdapter, int nOutput, bool bIncludeUnsupported ) = 0;
 
-	virtual int unk032() = 0;
+	virtual uint32 GetPlatWindowFlags() = 0;
+	virtual bool GetVideoMemoryInfo( int nAdapter, uint64 *pTotal, uint64 *pDedicated, uint64 *pShared ) = 0;
 
-	virtual bool GetVideoMemoryInfo( int nAdapter, uint64 *pUnk1, uint64 *pUnk2, uint64 *pUnk3 ) = 0;
-
-	virtual void AppendMinidumpInfo( void *pComment, uint32 nUnk ) = 0;
+	// Appends the adapter and video mode description to a crash dump comment
+	virtual void AppendMinidumpInfo( CMiniDumpComment *pComment, bool bVerbose ) = 0;
 
 	// Highest DX level the device supports (110, 111, 120)
 	virtual int GetMaxDXLevel() = 0;
