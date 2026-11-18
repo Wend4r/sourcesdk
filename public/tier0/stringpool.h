@@ -65,7 +65,6 @@ public: // HACK, hash_item_t structure should not be public.
 		char*			pString;
 		unsigned short	nNextElement;
 		unsigned char	nReferenceCount;
-		unsigned char	pad;
 	};
 
 	enum

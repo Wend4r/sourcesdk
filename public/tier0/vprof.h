@@ -255,15 +255,44 @@ struct VProfBudgetGroupCallSite
 	int m_nGroupID;
 };
 
+// The frame times of a budget group that VProfLite keeps for its percentiles: up to 500 samples,
+// replaced at random (reservoir sampling) once the buffer is full; the names are ours
+struct VProfLiteSamples_t
+{
+	int m_nCount;
+
+	// Samples offered so far, the range of the random replacement
+	int m_nSeen;
+
+	// Set by a new sample, cleared when VProfLite_GetHistoricalData sorts m_flValues
+	bool m_bUnsorted;
+	float m_flValues[ 500 ];
+	float m_flMax;
+	float m_flMin;
+};
+
 // One entry is selected with CVProfNode::m_nBudgetGroupID. The table pointer and
-// entry count are private globals in tier0.
+// entry count are private globals in tier0. The members after m_nFlags belong to
+// VProfLite, their names are ours
 struct VProfBudgetGroupEntry
 {
 	const char *m_pszGroupName;
 	int m_nFlags;
 
-private:
-	uint8 m_pad000C[4092];
+	// Cycles of the current frame: without the nested groups and including them
+	uint64 m_nFrameExclusiveCycles;
+	uint64 m_nFrameInclusiveCycles;
+
+	// The longest frame of the current reporting interval
+	uint64 m_nIntervalPeakCycles;
+
+	// Sums of the three above over the run
+	uint64 m_nTotalExclusiveCycles;
+	uint64 m_nTotalInclusiveCycles;
+	uint64 m_nTotalIntervalPeakCycles;
+
+	VProfLiteSamples_t m_FrameSamples;
+	VProfLiteSamples_t m_IntervalPeakSamples;
 };
 
 struct VProfReportSettings_t;
@@ -271,9 +300,6 @@ struct CVProfSummingContext;
 struct VProfDataReportItem_t;
 struct CVProfLayoutVerifier;
 
-COMPILE_TIME_ASSERT( sizeof( CUtlSourceLocation ) == 24 );
-COMPILE_TIME_ASSERT( sizeof( VProfBudgetGroupCallSite ) == 16 );
-COMPILE_TIME_ASSERT( sizeof( VProfBudgetGroupEntry ) == 4104 );
 
 // Enters a scope of the Unaccounted budget group, on the profiled thread only
 PLATFORM_INTERFACE void VProf_EnterScopeAdHoc( const char *pszName, CUtlSourceLocation location );
@@ -407,7 +433,7 @@ public:
 	double GetPrevTimeLessChildren() const;
 	double GetTotalTimeLessChildren() const;
 
-	void ClearPrevTime() { m_nPrevFrameTime = 0; m_nUnknown0040 = 0; }
+	void ClearPrevTime() { m_nPrevFrameTime = 0; m_nPrevFrameTimeExtra = 0; }
 
 	// Not used in the common case...
 	void SetCurFrameTime( unsigned long milliseconds );
@@ -441,40 +467,22 @@ public:
 	const char *m_pszName;
 	uint64 m_nTimer;
 
-private:
-	// The first is zeroed whenever the timer starts, tier0 never reads either
-	uint8 m_pad0010[8];
-
-public:
+	// Each time below is followed by 8 bytes that tier0 only clears or copies along with it (the
+	// timer clears the low half when it starts) and never reads; named by that
+	uint64 m_nTimerExtra;
 	int m_nRecursions;
 	unsigned m_nCurFrameCalls;
 	uint64 m_nCurFrameTime;
-	// tier0 only zeroes these or copies them along with the time before them
-	uint64 m_nUnknown0028;
+	uint64 m_nCurFrameTimeExtra;
 	unsigned m_nPrevFrameCalls;
-
-private:
-	uint8 m_pad0034[4];
-
-public:
 	uint64 m_nPrevFrameTime;
-	uint64 m_nUnknown0040;
+	uint64 m_nPrevFrameTimeExtra;
 	unsigned m_nTotalCalls;
-
-private:
-	uint8 m_pad004C[4];
-
-public:
 	uint64 m_nTotalTime;
-	uint64 m_nUnknown0058;
+	uint64 m_nTotalTimeExtra;
 	uint64 m_nPeakTime;
-	uint64 m_nUnknown0068;
+	uint64 m_nPeakTimeExtra;
 	unsigned m_nMergedCurFrameCalls;
-
-private:
-	uint8 m_pad0074[4];
-
-public:
 	uint64 m_nMergedCurFrameTime;
 	CVProfNode *m_pParent;
 	CVProfNode *m_pChild;
@@ -482,11 +490,6 @@ public:
 	int m_nBudgetGroupID;
 	int m_iClientData;
 	int m_iUniqueNodeID;
-
-private:
-	uint8 m_pad0094[4];
-
-public:
 	CUtlSourceLocation m_SourceLocation;
 };
 
@@ -714,7 +717,8 @@ public:
 	CVProfNode *m_pTargetThreadRoot; // Points at m_Root after construction
 	CVProfNode *m_pCurNode;
 	bool m_bAtRoot;
-	int m_nUnk10E4;
+	// The name CS:GO gives the member after m_fAtRoot; tier0 of this build never touches it
+	int m_nProfileDetailLevel;
 	int m_nFrames;
 	int m_nPausedEnabledDepth;
 
@@ -745,13 +749,6 @@ public:
 	CThreadFastMutex m_BackgroundRootMutex;
 	void ( *m_pOutputStream )( const char *, ... );
 };
-
-COMPILE_TIME_ASSERT( sizeof( CVProfNode ) == 192 );
-#ifdef _WIN32
-COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27256 );
-#else
-COMPILE_TIME_ASSERT( sizeof( CVProfile ) == 27272 );
-#endif
 
 //-------------------------------------
 

@@ -36,6 +36,7 @@ PLATFORM_INTERFACE void CatchAndWriteMiniDumpExForVoidPtrFn( FnVoidPtrFn pfn, vo
 // Let's not include this.  We'll use forwards instead.
 //#include <dbghelp.h>
 struct _EXCEPTION_POINTERS;
+class CMiniDumpComment;
 
 // What the caller of a minidump asks for; the names of the type and its members are ours,
 // InvokeMiniDumpHandler, AlwaysInvokeMiniDumpHandler and MiniDumpExceptionHandler copy it
@@ -62,14 +63,34 @@ struct MiniDumpOptions_t
 	// The exception that InvokeMiniDumpHandler raises on Windows, 0 for the default one
 	uint32 m_uExceptionCode;
 
-	// 0x20 adds _-report-_ to the file name; the callers set 0x40
+	// Bits 0 to 6 are copied one by one, bit 7 stays as it was: 0x04 writes only the thread of the
+	// handler, 0x08 lets a headless process keep the mail option, 0x20 adds _-report-_ to the file
+	// name; the callers set 0x40
 	uint8 m_nFlags;
-	uint8 unk011[ 7 ];
-	uint8 unk018[ 24 ];
+
+	// A name and a pointer for the handler: engine2 passes "ConnectionFailure" and a pointer to the
+	// assert text, which its handler prepends to the comment of the minidump
+	const char *m_pszHandlerContext;
+	void *m_pHandlerContextData;
+
+	// Named by what the code does: the inline constructor of the callers clears it and the
+	// handlers copy it, nothing reads it
+	void *m_pUnused0;
 
 	// Notes of the minidump, the command line value of -minidumpnotes is used when null
 	const char *m_pszNotes;
-	uint8 unk038[ 48 ];
+
+	// Named by what the code does: the two arguments of the inline constructor after the notes
+	// (every caller passes null) and three members it clears; the handlers copy them, nothing reads
+	// them
+	void *m_pUnusedArg0;
+	void *m_pUnusedArg1;
+	void *m_pUnused1;
+	void *m_pUnused2;
+	void *m_pUnused3;
+
+	// The comment that the engine2 handler hands to Steam and to the minidump
+	CMiniDumpComment *m_pComment;
 };
 
 // The minidump that a handler writes
@@ -188,7 +209,7 @@ PLATFORM_INTERFACE const char *MinidumpUserStreamInfoGet( uint32 nIndex );
 class DLL_CLASS_IMPORT CMiniDumpComment
 {
 public:
-	CMiniDumpComment( int iSize, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Unk0 );
+	CMiniDumpComment( int iSize, MemAllocAttribute_t allocAttribute = MemAllocAttribute_Default );
 	~CMiniDumpComment();
 	char *GetStartPointer();
 	const char *GetStartPointer() const;

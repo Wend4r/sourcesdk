@@ -78,11 +78,15 @@
 #define MEMALLOC_REGION_FREE_5		'='
 #define MEMALLOC_REGION_FREE_6		'?'
 
+// No build has symbols for the values: the type name comes from the mangled tier0 exports
+// (CUtlMemoryPoolBase, CMiniDumpComment). In CS2 every allocator stubs GetAllocAttributes
+// (returns 0) and SetAllocAttributes, and every caller in server, client and tier0 passes 0;
+// 1 and 2 are named by their value only.
 enum MemAllocAttribute_t
 {
-	MemAllocAttribute_Unk0 = 0,
-	MemAllocAttribute_Unk1 = 1,
-	MemAllocAttribute_Unk2 = 2
+	MemAllocAttribute_Default = 0,
+	MemAllocAttribute_Reserved1 = 1,
+	MemAllocAttribute_Reserved2 = 2
 };
 
 enum MemoryState
@@ -181,11 +185,12 @@ public:
 	// otherwise a file with that name would be created at the game root folder
 	virtual void DumpStats( const char *out_path ) = 0;
 
-	// AMNOTE: Stub, returns -1
-	virtual int unk001() = 0;
+	// Named by what it does: returns -1 in every allocator of the game (standard, heap and the
+	// mimalloc pass-through)
+	virtual int GetInvalidStat() = 0;
 
-	// AMNOTE: Stub
-	virtual void unk002() = 0;
+	// Named by what it does: empty in every allocator of the game
+	virtual void EmptyStub() = 0;
 
 	// AMNOTE: Used by the CMemoryStack::Init
 	virtual void *LockAllocStatsForCurrentStack( uint32 &allocid, bool ) = 0;
@@ -248,12 +253,13 @@ public:
 	// Stub in the standard allocators, returns 0
 	virtual MemAllocAttribute_t GetAllocAttributes( void *pMem ) = 0;
 
-	// Stub in the standard allocators
-	virtual void SetAllocAttributes( void *pMem, MemAllocAttribute_t alloc_attribute, int unk ) = 0;
+	// Stub in the standard allocators; every caller in tier0 passes -1 for nUnusedArg
+	virtual void SetAllocAttributes( void *pMem, MemAllocAttribute_t alloc_attribute, int nUnusedArg ) = 0;
 
-	// AMNOTE: Copies data to an unknown struct of byte size 56
-	// Returns true if data was written, false otherwise
-	virtual bool unk103( void *out_val ) = 0;
+	// The standard allocator copies the 56 bytes it keeps after its allocation limits (zeroed by
+	// its constructor) to pOut and returns true; the others zero pOut and return false. Named by
+	// what it does, the layout of the block is not known
+	virtual bool GetAllocatorStateBlock( void *pOut ) = 0;
 
 	// Calls the lower-level allocator functions directly
 	virtual void *AllocRaw( size_t nSize ) = 0;
@@ -289,7 +295,7 @@ MEM_INTERFACE void *MemAlloc_AllocAlignedFunc( size_t nSize, size_t align );
 MEM_INTERFACE void MemAlloc_FreeAlignedFunc( void *pMem );
 MEM_INTERFACE size_t MemAlloc_GetSizeFunc( void *pMem );
 MEM_INTERFACE MemAllocAttribute_t MemAlloc_GetAllocAttributesFunc( void *pMem );
-MEM_INTERFACE void MemAlloc_SetAllocAttributesFunc( void *pMem, MemAllocAttribute_t alloc_attribute, int unk );
+MEM_INTERFACE void MemAlloc_SetAllocAttributesFunc( void *pMem, MemAllocAttribute_t alloc_attribute, int nUnusedArg );
 
 // Copies of the string in memory from g_pMemAlloc, null for a null string
 MEM_INTERFACE char *MemAlloc_StrDupFunc( const char *pString );

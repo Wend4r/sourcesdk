@@ -42,7 +42,7 @@ public:
 		STATE_NO_TEXT,
 	};
 
-	CIdentifyFailureMessages() : unk000( false ), m_State( STATE_LINE_START ), m_nLine( 0 ) {}
+	CIdentifyFailureMessages() : m_bTimePrefixedLines( false ), m_State( STATE_LINE_START ), m_nLine( 0 ) {}
 
 	// Feeds nLength chars of pszText (up to the terminator when negative), returns the state
 	// after it and the end of the processed text in ppszEnd
@@ -58,8 +58,9 @@ public:
 	int GetLine() const { return m_nLine; }
 
 private:
-	// The log prefix of the lines: "<digits>(...):  " when false, an 11 char "...s: " when true
-	bool unk000;
+	// The log prefix of the lines: "<pid>(<tid>):  " when false, an 11 char elapsed time such as
+	// "   12.345s: " when true; named by what ProcessText does with it
+	bool m_bTimePrefixedLines;
 	State_t m_State;
 	CUtlString m_Message;
 	CUtlString m_File;

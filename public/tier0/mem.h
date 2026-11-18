@@ -82,15 +82,16 @@ struct TransferMemoryStep_t
 	uint8 m_nOp;
 	uint8 m_nSrcStream;
 	uint8 m_nDstStream;
-	uint8 m_nPad;
 	uint16 m_nSrcOffset;
 	uint16 m_nDstOffset;
 	uint32 m_nBytes;
-	uint32 m_nPad2;
+
+	// Named by what it does: never read, TransferMemory steps 16 bytes at a time
+	uint32 m_nUnused;
 };
 
 // Runs the steps up to OP_END for nCount elements; the streams advance by their strides
-// pUnknown and nUnknown are not read by any build
-PLATFORM_INTERFACE void TransferMemory( const TransferMemoryStep_t *pSteps, void *pUnknown, uint8 *const *ppSrcStreams, const int *pSrcStrides, int nUnknown, uint8 *const *ppDstStreams, const int *pDstStrides, int nCount );
+// pUnusedArg and nUnusedArg are not read by any build
+PLATFORM_INTERFACE void TransferMemory( const TransferMemoryStep_t *pSteps, void *pUnusedArg, uint8 *const *ppSrcStreams, const int *pSrcStrides, int nUnusedArg, uint8 *const *ppDstStreams, const int *pDstStrides, int nCount );
 
 #endif /* TIER0_MEM_H */

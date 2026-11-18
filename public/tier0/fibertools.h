@@ -397,7 +397,10 @@ private:
 	CFiber *m_pPrevFiberInSameThread;
 	ThreadId_t m_hJobsOriginatingThreadId;
 	size_t m_nClearedMemoryInterval;
-	void *unk110;
+
+	// Named by what it is in s&box, which keeps its Tier0FiberLocals_t (stack top, call stack
+	// markers, annotations) here; this build keeps one pointer that only the constructor clears
+	void *m_pFiberLocals;
 
 	CFiber( const CFiber & ) = delete;
 	CFiber &operator=( const CFiber & ) = delete;

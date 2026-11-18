@@ -13,6 +13,8 @@
 #include <tier0/bitvec.h>
 #include <const.h>
 #include <tier0/mempool.h>
+#include <tier0/threadtools.h>
+#include <tier0/utllinkedlist.h>
 
 class CFrameSnapshot;
 
@@ -35,11 +37,15 @@ public:
 
 	// Used by server to indicate if the entity was in the player's pvs
 	CBitVec<MAX_EDICTS>	transmit_entity; // if bit n is set, entity n will be send to client
-	CBitVec<MAX_EDICTS>	unkBitVec2080;
-	CBitVec<MAX_EDICTS>	unkBitVec4128;
-	CBitVec<MAX_EDICTS>	unkBitVec6176;
+
+	// Entities of the frame that are not sent; WriteNonTransmitted reads it
+	CBitVec<MAX_EDICTS>	non_transmitted_entity;
+
+	// Entities outside the PVS of the client; WriteOOPVSDeltaEntities reads it, ReadPacketEntities
+	// of the client sets it
+	CBitVec<MAX_EDICTS>	out_of_pvs_entity;
 	CBitVec<MAX_EDICTS>	*transmit_always; // if bit is set, don't do PVS checks before sending (HLTV only)
-};  // sizeof 8232
+};
 
 class CClientFrameManager
 {
@@ -47,12 +53,26 @@ public:
 	virtual ~CClientFrameManager(void) = default;
 
 public:
-	/*CUtlLeanVector<CClientFrame*> m_FrameList;
-	CUtlMemoryPoolMT<CClientFrame> m_ClientFramePool;
-	int m_nOldestTick; // +160
-	int m_nNewestTick; // +164*/
-	char pad[160];
-}; // sizeof 168
-COMPILE_TIME_ASSERT( sizeof( CClientFrameManager ) == 168 );
+	// Named by what it does: neither the constructor nor a method of the manager touches it. It puts
+	// the mutex at +20 on Windows (MSVC starts the data of this 16-byte aligned class at +16) and at
+	// +16 on Linux
+	int m_nUnused;
+	CAtomicMutex m_FramesMutex;
+
+	// The frames from the oldest (head) to the newest (tail)
+	CUtlLinkedList< CClientFrame *, unsigned short > m_Frames;
+
+	// Blocks of 6184 bytes, 128 per blob. Its CTSListBase makes the class 16-byte aligned, which puts
+	// CServerSideClient::m_FrameManager at 3632 on Windows (3616 on Linux)
+	CUtlMemoryPoolBase m_ClientFramePool;
+
+	// tick_count of the tail and of the head frame of m_Frames
+	int m_nNewestTick;
+	int m_nOldestTick;
+
+	// Named by what it does: when it's set, frames older than its tick go to its locked queue
+	// instead of back to m_ClientFramePool
+	void *m_pFrameReleaseQueue;
+};
 
 #endif // CLIENTFRAME_H

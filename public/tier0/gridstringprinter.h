@@ -29,7 +29,7 @@ class CGridStringPrinter
 {
 public:
 	CGridStringPrinter() :
-		unk098( false ), m_bUseOuterSeparators( false ), m_bWordWrapAllColumns( false ), m_bUseHeaderDivider( true ), m_bTrimValues( true ),
+		m_bUnusedFlag( false ), m_bUseOuterSeparators( false ), m_bWordWrapAllColumns( false ), m_bUseHeaderDivider( true ), m_bTrimValues( true ),
 		m_nMaxStringLength( -1 ), m_chColumnSeparator( '|' ), m_chHeaderDivider( '-' ) {}
 
 	DLL_CLASS_IMPORT void Clear();
@@ -79,7 +79,9 @@ private:
 	CUtlVector< CUtlVector< CUtlSymbolLarge > > m_Rows;
 	CUtlVector< ColumnHeader_t > m_Headers;
 	CUtlSymbolTableLarge m_Symbols;
-	bool unk098;
+
+	// Named by what it does: the constructor clears it, no function of tier0 reads or writes it
+	bool m_bUnusedFlag;
 
 	// Puts the column separator before the first and after the last column too
 	bool m_bUseOuterSeparators;

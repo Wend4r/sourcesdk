@@ -482,9 +482,6 @@ protected:
 	unsigned char m_Error;
 	unsigned char m_Flags;
 	unsigned char m_Reserved;
-#if defined( _GAMECONSOLE )
-	unsigned char pad;
-#endif
 
 	int m_nTab;
 	int m_nMaxPut;

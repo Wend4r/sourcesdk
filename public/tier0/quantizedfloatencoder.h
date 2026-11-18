@@ -45,7 +45,9 @@ struct QuantizedFloatEncoder_t
 
 	// Set by the setup of the definition
 	uint8 m_bInitialized : 1;
-	uint8 unk01e : 6;
+
+	// log2 of the range when it is an exact power of two, 0 otherwise
+	uint8 m_nRangeLog2 : 6;
 };
 
 //-----------------------------------------------------------------------------
@@ -57,7 +59,10 @@ struct QuantizedFloatEncoderDef_t
 	int m_nFlags;
 	float m_flLowValue;
 	float m_flHighValue;
-	bool m_bUnknown;
+
+	// Named by what it does: part of the key that matches definitions; it picks one of two setups
+	// of the encoder that are identical in this build, and the game passes true
+	bool m_bMatchKey;
 };
 
 //-----------------------------------------------------------------------------
@@ -72,7 +77,7 @@ struct QuantizedFloatEncoderReg_t
 };
 
 // Finds the encoder of the definition or creates it, and points pReg of the field at it
-PLATFORM_INTERFACE void FindOrCreateQuantizedFloatEncoder( QuantizedFloatEncoderReg_t *pReg, bool bUnknown, const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue );
+PLATFORM_INTERFACE void FindOrCreateQuantizedFloatEncoder( QuantizedFloatEncoderReg_t *pReg, bool bMatchKey, const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue );
 
 // Same, with the definition of the alias; the first field to declare an alias defines it and the
 // later ones that declare another definition are warned about
@@ -97,11 +102,11 @@ PLATFORM_INTERFACE void GetQuantizedFloatEncodersSharingReg( const QuantizedFloa
 
 // The registration of a field as the callers do it, once per handle; returns the encoder.
 // The first call for a handle and the registry itself are not synchronized
-inline const QuantizedFloatEncoder_t *RegisterQuantizedFloatEncoder( QuantizedFloatEncoderReg_t *pReg, const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue, bool bUnknown = true )
+inline const QuantizedFloatEncoder_t *RegisterQuantizedFloatEncoder( QuantizedFloatEncoderReg_t *pReg, const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue, bool bMatchKey = true )
 {
 	if ( !pReg->m_bRegistered )
 	{
-		FindOrCreateQuantizedFloatEncoder( pReg, bUnknown, pszFieldName, nBits, nFlags, flLowValue, flHighValue );
+		FindOrCreateQuantizedFloatEncoder( pReg, bMatchKey, pszFieldName, nBits, nFlags, flLowValue, flHighValue );
 		pReg->m_bRegistered = 1;
 	}
 
@@ -120,10 +125,10 @@ inline const QuantizedFloatEncoder_t *RegisterQuantizedFloatEncoderAlias( Quanti
 }
 
 // A registered handle, for the initialization of a function static
-inline QuantizedFloatEncoderReg_t CreateQuantizedFloatEncoderReg( const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue, bool bUnknown = true )
+inline QuantizedFloatEncoderReg_t CreateQuantizedFloatEncoderReg( const char *pszFieldName, int nBits, int nFlags, float flLowValue, float flHighValue, bool bMatchKey = true )
 {
 	QuantizedFloatEncoderReg_t reg = {};
-	RegisterQuantizedFloatEncoder( &reg, pszFieldName, nBits, nFlags, flLowValue, flHighValue, bUnknown );
+	RegisterQuantizedFloatEncoder( &reg, pszFieldName, nBits, nFlags, flLowValue, flHighValue, bMatchKey );
 
 	return reg;
 }

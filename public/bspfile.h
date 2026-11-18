@@ -955,7 +955,7 @@ struct dleafambientlighting_t
 	byte x;		// fixed point fraction of leaf bounds
 	byte y;		// fixed point fraction of leaf bounds
 	byte z;		// fixed point fraction of leaf bounds
-	byte pad;	// unused
+	byte unused;	// alignment of the file format
 };
 
 struct dleafambientindex_t
@@ -1282,7 +1282,7 @@ typedef struct nameForDatadesc_dlightmappageinfo_t // unnamed structs collide in
 	DECLARE_BYTESWAP_DATADESC()
 	byte			page;			// lightmap page [0..?]
 	byte			offset[2];		// offset into page (s,t)
-	byte			pad;			// unused
+	byte			unused;			// alignment of the file format
 	ColorRGBExp32	avgColor;		// average used for runtime lighting calcs
 } dlightmappageinfo_t;
 

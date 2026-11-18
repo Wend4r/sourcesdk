@@ -481,7 +481,8 @@ protected:
 	VMatrix m_reverseZViewProj;
 	VMatrix m_reverseZInvViewProj;
 
-	float m_flUnk408;
+	// The name s&box gives the float at this place; the constructor sets it to 1
+	float m_flWorldScale;
 
 	// tan( FOVX / 2 ) and its inverse
 	float m_flTanHalfFOVX;
@@ -548,7 +549,7 @@ inline CFrustum::CFrustum()
 	MatrixMultiply( m_reverseZProjection, matWorldToView, m_reverseZViewProj );
 	MatrixInverseGeneral( m_reverseZViewProj, m_reverseZInvViewProj );
 
-	m_flUnk408 = 1.0f;
+	m_flWorldScale = 1.0f;
 	m_flTanHalfFOVX = 1.0f;
 	m_flInvTanHalfFOVX = 1.0f;
 	m_vProjectionOffset.Init( 0.0f, 0.0f );

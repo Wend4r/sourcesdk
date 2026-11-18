@@ -24,7 +24,7 @@ class CTypeErasedFormattingWrapper;
 class CFormatStringElement
 {
 public:
-	CFormatStringElement() : unk000( 0 ) {}
+	CFormatStringElement() : m_nUnused( 0 ) {}
 	DLL_CLASS_IMPORT CFormatStringElement( const char *pszElement );
 
 	// Parses the conversion after the '%', returns the text after it
@@ -37,7 +37,9 @@ public:
 	operator const char *() const { return m_szElement; }
 
 private:
-	uint16 unk000;
+	// Named by what it does: the constructors clear it and the element is passed around with it,
+	// no formatter of tier0 reads it
+	uint16 m_nUnused;
 	char m_szElement[ 12 ];
 };
 
@@ -54,7 +56,7 @@ public:
 		FORMAT_MULTI_LINE = ( 1 << 2 ),
 	};
 
-	IFormatOutputStream() : m_nFlags( 0 ), m_nCharsWritten( 0 ), unk010( 64 ), unk014( 1 ), unk018( 0x7FFFFFFF ) {}
+	IFormatOutputStream() : m_nFlags( 0 ), m_nCharsWritten( 0 ), m_nDefault64( 64 ), m_nDefault1( 1 ), m_nDefaultIntMax( 0x7FFFFFFF ) {}
 	virtual ~IFormatOutputStream() {}
 
 	virtual void PutC( char c ) = 0;
@@ -90,9 +92,12 @@ public:
 protected:
 	uint32 m_nFlags;
 	int m_nCharsWritten;
-	int unk010;
-	int unk014;
-	int unk018;
+
+	// Named by their initial values: the inline constructor (exported by tier0) sets them, no
+	// function of tier0 reads them and no accessor of the class exposes them
+	int m_nDefault64;
+	int m_nDefault1;
+	int m_nDefaultIntMax;
 };
 
 //-----------------------------------------------------------------------------

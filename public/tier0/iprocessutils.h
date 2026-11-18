@@ -235,7 +235,8 @@ private:
 	// Receives each line of the output, returning false stops reading
 	std::function< bool ( CRunProcess *, const char * ) > m_fnLineCallback;
 
-	void *unk068;
+	// Named by what it does: both constructors clear it, no function of tier0 reads or writes it
+	void *m_pUnused;
 	IProcess *m_pProcess;
 	bool m_bFailedToStart;
 

@@ -80,15 +80,16 @@ public:
 	// Returns the previous scope
 	virtual HTemporaryKeyValueAllocationScope SetTemporaryKeyValueAllocationScope( HTemporaryKeyValueAllocationScope hScope ) = 0;
 
-	// Source2Main of engine2 passes true before it starts the engine and false after
-	// Plat_OnExecutableExitingMain; tier0 stores it in a member that nothing reads
-	virtual void unk101( bool ) = 0;
+	// The three below are named by what their callers do. Source2Main of engine2 passes true before
+	// it starts the engine and false after Plat_OnExecutableExitingMain; tier0 stores it in a
+	// member that nothing reads
+	virtual void SetInsideExecutableMain( bool bInside ) = 0;
 
-	// Source2Main of engine2 passes true last, after unk101( false ); empty in tier0
-	virtual void unk102( bool ) = 0;
+	// Source2Main of engine2 passes true last, after SetInsideExecutableMain( false ); empty in tier0
+	virtual void SetExecutableMainExited( bool bExited ) = 0;
 
 	// engine2 calls it after the engine loop has shut down its systems; empty in tier0
-	virtual void unk103() = 0;
+	virtual void OnAppSystemsShutdown() = 0;
 };
 
 PLATFORM_INTERFACE IKeyValuesSystem *KeyValuesSystem();
@@ -148,8 +149,13 @@ public:
 	CUtlMemoryPoolBase *m_pMemPool;
 	bool m_bIgnoreMemPool;
 	CUtlMap< HKeySymbol, bool, int > m_KvConditionalSymbolTable;
-	bool m_bUnk1896; // Only written, by the virtual after SetTemporaryKeyValueAllocationScope
-	bool m_bUnk1897;
+	// Written by SetInsideExecutableMain only
+	bool m_bInsideExecutableMain;
+
+	// Named by what it does: the constructor clears it together with the bool above (one 16-bit
+	// store on both platforms), nothing else touches it; SetExecutableMainExited, its likely
+	// setter, is empty in this build
+	bool m_bExecutableMainExited;
 };
 
 #endif // VSTDLIB_IKEYVALUESSYSTEM_H

@@ -9,6 +9,7 @@
 #include "tier0/bufferstring.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlscratchmemory.h"
+#include "tier0/utlstring.h"
 #include "tier0/utlsymbol.h"
 #include "tier0/utlvector.h"
 
@@ -159,7 +160,7 @@ public:
 
 	// Looks the symbol file up under pszSymbolPath by the name of the module (pszDebugFileName
 	// when given) and its identity with nAge; eIDFormat must be 1, 2 or 5 to 8
-	DLL_CLASS_IMPORT bool Open( const char *pszSymbolPath, const char *pszModuleName, const char *pszDebugFileName, uint64 nModuleBase, uint64 nModuleSize, uint32 nUnknown, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize, uint32 nAge );
+	DLL_CLASS_IMPORT bool Open( const char *pszSymbolPath, const char *pszModuleName, const char *pszDebugFileName, uint64 nModuleBase, uint64 nModuleSize, uint32 nUnusedArg, StackTools_ModuleIDFormat_t eIDFormat, const void *pModuleID, int nModuleIDSize, uint32 nAge );
 
 	// The unwind records of the address
 	DLL_CLASS_IMPORT bool FindWinFrameProgram( uint64 nAddress, BreakpadWinFrameProgram_t *pData ) const;
@@ -167,11 +168,93 @@ public:
 	DLL_CLASS_IMPORT bool FindCfiFrameData( uint64 nAddress, BreakpadCfiFrameData_t *pData ) const;
 
 private:
-	uint8 unk0a8[ 40 ];
-	CBufferString unk0d0;
-	uint8 unk0e0[ 64 ];
-	CUtlScratchMemoryPool unk120;
-	uint8 unk130[ 192 ];
+	// The records of a parsed symbol file; the names are ours, the fields follow the Breakpad
+	// format of the line each one comes from
+	struct SymbolRecord_t
+	{
+		const char *m_pszName;
+		uint32 m_nStart;
+		uint32 m_nEnd;
+
+		// 1 for a FUNC line, 4 for a PUBLIC line
+		uint8 m_nKind;
+	};
+
+	struct LineRecord_t
+	{
+		uint32 m_nStart;
+		uint32 m_nEnd;
+
+		// Index into m_FileNames
+		uint32 m_nFile;
+		uint32 m_nLine;
+	};
+
+	// A STACK CFI INIT line (m_nEnd is its end) or a STACK CFI line (only m_nStart is used)
+	struct CfiRecord_t
+	{
+		uint32 m_nStart;
+		uint32 m_nEnd;
+		const char *m_pszRules;
+	};
+
+	// A STACK WIN line of type 4 with a program; FindWinFrameProgram hands back the program and the
+	// two sizes, which of the numeric fields of the line they are is our guess
+	struct WinFrameProgramRecord_t
+	{
+		uint32 m_nStart;
+		uint32 m_nEnd;
+		const char *m_pszProgram;
+		uint32 m_nParameterSize;
+		uint32 m_nSavedRegisterSize;
+	};
+
+	// A STACK WIN line of type 0 (FPO); FindWinFpoData hands back the three sizes and the flag
+	struct WinFpoRecord_t
+	{
+		uint32 m_nStart;
+		uint32 m_nEnd;
+		uint32 m_nParameterSize;
+		uint32 m_nSavedRegisterSize;
+		uint32 m_nLocalSize;
+		bool m_bAllocatesBasePointer;
+	};
+
+	// The argument of Open that it only stores. The game puts it at the first 8-byte boundary after
+	// the base on both ABIs (+160 Windows, +168 Linux, where the base ends at +164)
+	alignas( 8 ) uint32 m_nUnusedOpenArg;
+	uint8 m_nModuleIDFormat;
+	CUtlVector< uint8 > m_ModuleID;
+	uint32 m_nAge;
+
+	// Set for a CodeView identity (formats 1 and 2), cleared for the build ID formats 5 to 8
+	bool m_bCodeViewIdentity;
+	CBufferString m_SymbolFilePath;
+
+	// The current line of the symbol file split at spaces: the tokens and the buffer they point into
+	CUtlVector< const char * > m_LineTokens;
+	char *m_pLineTokenBuffer;
+	int m_nLineTokenBufferSize;
+
+	// The identity the MODULE line must match, and its GUID form for a 16 byte build ID
+	char *m_pszModuleID;
+	char *m_pszModuleIDAsGuid;
+	CUtlString m_SymbolFileText;
+
+	// Storage of the strings the records point to, CUtlScratchMemoryPool( 50000, 0, NULL, false )
+	CUtlScratchMemoryPool m_Strings;
+	CUtlVector< const char * > m_FileNames;
+	CUtlVector< SymbolRecord_t > m_Symbols;
+	CUtlVector< LineRecord_t > m_Lines;
+	CUtlVector< CfiRecord_t > m_CfiInitRecords;
+	CUtlVector< CfiRecord_t > m_CfiDeltaRecords;
+	CUtlVector< WinFrameProgramRecord_t > m_WinFramePrograms;
+	CUtlVector< WinFpoRecord_t > m_WinFpoRecords;
+
+	// From the MODULE line; it selects the register names of the CFI rules below
+	VWMD_CPU_ARCHITECTURE m_eArchitecture;
+	const char *const *m_ppszRegisterNames;
+	int m_nRegisterNameCount;
 };
 
 //-----------------------------------------------------------------------------

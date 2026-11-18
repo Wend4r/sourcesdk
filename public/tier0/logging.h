@@ -274,10 +274,11 @@ struct LoggingRareOptions_t
 	const Color *m_pColor = nullptr;
 	// Used instead of the arguments of the call
 	va_list *m_pVAListOverride = nullptr;
-	// Passed on to listeners after LoggingContext_t::m_MetaData, asserts point it at a 1088-byte buffer starting with a zero int
-	void *m_pUnknown = nullptr;
-	// Passed on to listeners after the pointer, VConsole lets a message over 8 MB reach a local client when bit 0 is set
-	int m_nUnknown = 0;
+	// Named by what tier0 does with them: copied into LoggingContext_t::m_pListenerData and
+	// m_nListenerFlags. Asserts point the pointer at a 1088-byte buffer starting with a zero int
+	void *m_pListenerData = nullptr;
+	// VConsole lets a message over 8 MB reach a local client when bit 0 is set
+	int m_nListenerFlags = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -297,6 +298,9 @@ struct LoggingContext_t
 	// and indicates that a suitable default should be chosen.
 	Color m_Color;
 	const LoggingMetaData_t *m_MetaData;
+	// From LoggingRareOptions_t, null and 0 for a log call without them
+	void *m_pListenerData;
+	int m_nListenerFlags;
 };
 
 //-----------------------------------------------------------------------------

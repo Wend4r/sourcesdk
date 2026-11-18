@@ -41,10 +41,11 @@ public:
 
 	virtual const char**	GetModEvents() = 0;
 
-	// Fires the "hltv_versioninfo" event to every HLTV server; the game implementation reads no argument.
-	virtual void	Unk_SendVersionInfo( void *p ) = 0;
-	// Empty in the game implementation.
-	virtual void	Unk_OnHLTVClientDisconnect( void *p ) = 0;
+	// Named by what the game implementation does: fires the "hltv_versioninfo" event to every HLTV
+	// server; it reads no argument and the type of the one the engine passes is not known.
+	virtual void	SendVersionInfo( void *pUnusedArg ) = 0;
+	// Empty in the game implementation; the name is the earlier SDK guess, the argument is not read.
+	virtual void	OnHLTVClientDisconnect( void *pUnusedArg ) = 0;
 	// Id of the legacy game event that CaptureCameraEvent() keeps as the last camera event, -1 when there is none.
 	virtual int		GetCameraEventId() = 0;
 	// Sends the "hltv_title" event with the tv_title text to nPlayerSlot, or to every player when it is -1.

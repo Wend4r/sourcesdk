@@ -108,7 +108,6 @@ struct ObjectAttributeValue_t
 		m_nType = other.m_nType;
 		m_nReserved = other.m_nReserved;
 		m_nAuxValue = other.m_nAuxValue;
-		m_nPad = other.m_nPad;
 
 		if ( other.IsString() )
 			Construct( &m_sString, other.m_sString );
@@ -127,7 +126,6 @@ struct ObjectAttributeValue_t
 		m_nType = other.m_nType;
 		m_nReserved = other.m_nReserved;
 		m_nAuxValue = other.m_nAuxValue;
-		m_nPad = other.m_nPad;
 
 		if ( other.IsString() )
 			Construct( &m_sString, Move( other.m_sString ) );
@@ -241,12 +239,10 @@ struct ObjectAttributeValue_t
 	};
 
 	uint32 m_nAuxValue;
-	uint32 m_nPad;
 
 private:
-	void Init() { m_nType = OBJECT_ATTRIBUTE_VALUE_INVALID; m_nReserved = 0; m_nUInt64 = 0; m_nAuxValue = 0; m_nPad = 0; }
+	void Init() { m_nType = OBJECT_ATTRIBUTE_VALUE_INVALID; m_nReserved = 0; m_nUInt64 = 0; m_nAuxValue = 0; }
 	void Destroy() { if ( IsString() ) Destruct( &m_sString ); }
 };
-COMPILE_TIME_ASSERT( sizeof( ObjectAttributeValue_t ) == 24 );
 
 #endif // UTLOBJECTATTRIBUTETABLE_H

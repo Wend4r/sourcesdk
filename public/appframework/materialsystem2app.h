@@ -128,7 +128,9 @@ public:
 	CUtlString m_WindowTitle;
 	CUtlString m_WindowIcon;
 	CUtlString m_DefaultRenderSystemOption;
-	bool m_unk1224;
+	// Named by what it does: cleared by the constructor and when Source2PreInit picks the default
+	// render system option, nothing reads it
+	bool m_bUnusedRenderSystemFlag;
 	CUtlString m_WindowInitialImage;
 	RenderMultisampleType_t m_MultisampleType;
 	bool m_bInitWithoutMaterialSystem;

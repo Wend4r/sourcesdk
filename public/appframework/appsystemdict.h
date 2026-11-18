@@ -5,7 +5,10 @@
 #pragma once
 #endif
 
+#include "tier0/utlhashtable.h"
 #include "tier0/utlstringmap.h"
+
+#include <functional>
 
 class IAppSystem;
 class IApplication;
@@ -91,13 +94,21 @@ public:
 	// Warnings the user has not acknowledged yet, kept across runs in the file below
 	int m_nUnacknowledgedMemoryWarnings;
 	CBufferString m_UnacknowledgedMemoryWarningsFile;
-	CBufferStringN< 200 > m_Unk360;
-	CBufferStringN< 128 > m_Unk568;
-	bool m_bUnk704;
-	uint64 m_unk712[4];
-	uint64 m_unk744[4];
-	void *m_pUnk776;
-	uint64 m_unk784[2];
+	// The members up to m_Callbacks are named by what we found of them: in engine2 only the
+	// constructor and the destructor of CAppSystemDict touch them
+	CBufferStringN< 200 > m_UnusedString200;
+	CBufferStringN< 128 > m_UnusedString128;
+	bool m_bUnused;
+
+	// Hashtables with 16-byte entries that the destructor clears; the key and value types are not
+	// known, these keep the layout
+	CUtlHashtable< uint32, void * > m_UnusedTable0;
+	CUtlHashtable< uint32, void * > m_UnusedTable1;
+	void *m_pUnused;
+
+	// std::function objects that IApplication::AddAppSystemDictCallback appends; nothing in engine2
+	// calls them, their signature is not known
+	CUtlLeanVector< std::function< void() > > m_Callbacks;
 	bool m_bIsPerforceWorkspace;
 };
 

@@ -1971,7 +1971,7 @@ struct vertexStreamFileHeader_t
 	int		numVerts;						// number of vertices
 	int		uv2StreamStart;					// offset from base to uv2 stream
 	int		uv2ElementSize;					// size of each uv2 element
-	int		pad;							// pad
+	int		unused;							// alignment of the file format
 
 public:
 

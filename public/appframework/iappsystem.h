@@ -217,7 +217,9 @@ public:
 	// Reads source_folder from publish_data.txt next to the addon
 	virtual CUtlString GetAddonSourceFolder( const char *pAddonName ) = 0;
 	virtual void OnStartupManifestGroupLoaded() = 0;
-	virtual void unk061( void *p ) = 0;
+	// Named by what it does: appends a copy of the std::function at pFunction to
+	// CAppSystemDict::m_Callbacks; its call signature is not known, nothing in engine2 calls them
+	virtual void AddAppSystemDictCallback( const void *pFunction ) = 0;
 	virtual CAppSystemDict *GetAppSystemDict() = 0;
 
 	template < class T > T* FindSystem( const char *pSystemName ) { return static_cast< T* >( FindSystem( pSystemName ) ); }
