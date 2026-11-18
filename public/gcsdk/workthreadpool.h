@@ -52,7 +52,6 @@ public:
 	CWorkItem()
 	:	m_JobID( k_GIDNil ),
 		m_bRunning( false ),
-		m_bResubmit( false ),
 		m_bCanceled( false ),
 		m_ulSequenceNumber( 0 )
 	{
@@ -63,7 +62,6 @@ public:
 	CWorkItem( JobID_t jobID )	
 	:	m_JobID( jobID ),
 		m_bRunning( false ),
-		m_bResubmit( false ),
 		m_bCanceled( false ),
 		m_ulSequenceNumber( 0 )
 	{
@@ -74,7 +72,6 @@ public:
 	CWorkItem( JobID_t jobID, int64 cTimeoutMicroseconds )
 	:	m_JobID( jobID ),
 		m_bRunning( false ),
-		m_bResubmit( false ),
 		m_bCanceled( false ),
 		m_ulSequenceNumber( 0 )
 	{
@@ -99,9 +96,6 @@ public:
 	void SetCycleCount( CCycleCount& cycleCount )		{ m_CycleCount = cycleCount ; }
 	CCycleCount GetCycleCount()							{ return m_CycleCount; }
 	uint64 GetSequenceNumber()							{ return m_ulSequenceNumber; }
-
-	// Work threads can call this to force a work item to be reprocessed (added to the end of the process queue)
-	void SetResubmit( bool bResubmit )			{ m_bResubmit = bResubmit; }
 
 	// these functions return pointers to fixed string in the code section. 
 	// We need this for VPROF nodes, you must use the DECLARE_WORK_ITEM macro
@@ -128,7 +122,8 @@ protected:
 	CCycleCount	m_CycleCount;		// A record of how long it took to execute this particular work item !
 
 private:
-	bool		m_bResubmit;		// true if the item should be resubmitted after last run
+	// CS2 has no resubmit flag: CWorkThread::Run sets m_bRunning at byte 32 around ThreadProcess and
+	// m_bCanceled at byte 33 when the item timed out before it started
 	volatile bool m_bRunning;		// true if the work item is running right now
 	bool		m_bCanceled;		// true if the work was canceled due to timeout
 	CJobTime	m_jobtimeTimeout;	// time at which this result is no longer valid, so it shouldn't start to be processed
