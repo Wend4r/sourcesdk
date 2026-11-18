@@ -14,33 +14,48 @@
 #include "appframework/iappsystem.h"
 #include "tier0/utlstring.h"
 
+class ISteamAudioScene;
+class ISteamAudioSource;
+class ISteamAudioSimulationData;
+class CSteamAudioMaterialList;
+
+// Steam Audio wrapper (steamaudio.dll, CSteamAudio). Named by the Phonon calls and log strings of each
+// slot; see re-workspace/vtables/data/proposals/sound_sdk.md.
 abstract_class ISteamAudio : public IAppSystem
 {
 public:
 	virtual ~ISteamAudio() {}
-	virtual void unk012() = 0;
+	// iplCUDADeviceCreate / iplOptiXDeviceCreate
+	virtual bool CreateGPUDevice() = 0;
 	// Creates an empty CSteamAudioScene
-	virtual void *unk013() = 0;
-	// Creates a CSteamAudioScene
-	virtual void *Unk_CreateScene( void *p ) = 0;
-	// First element of an internal list, NULL when it is empty
-	virtual void *unk015() = 0;
-	virtual void unk016() = 0;
-	virtual void unk017() = 0;
-	virtual void unk018() = 0;
-	virtual void unk019() = 0;
-	virtual void unk020() = 0;
-	virtual void *Unk_CreateSource3DProcessor( void *pParams ) = 0;
-	virtual void Unk_DestroySource3DProcessor( void *pProcessor ) = 0;
-	virtual void *Unk_CreatePathingProcessor( void *pParams ) = 0;
-	virtual void Unk_DestroyPathingProcessor( void *pProcessor ) = 0;
-	virtual void *Unk_CreateDirectProcessor( void *pParams ) = 0;
-	virtual void Unk_DestroyDirectProcessor( void *pProcessor ) = 0;
-	virtual void unk027() = 0;
-	virtual void unk028() = 0;
-	virtual void unk029() = 0;
-	virtual void unk030() = 0;
-	virtual void unk031() = 0;
+	virtual ISteamAudioScene *CreateEmptyScene() = 0;
+	// iplSceneCreate / iplStaticMeshCreate ("Unable to create scene: %d.")
+	virtual ISteamAudioScene *CreateScene( const void *pSceneData, bool bUseGPU ) = 0;
+	// First scene of the active scene list, NULL when it is empty
+	virtual ISteamAudioScene *GetActiveScene() = 0;
+	virtual void PushActiveScene( void *pOwner, ISteamAudioScene *pScene ) = 0;
+	virtual void RemoveActiveScene( ISteamAudioScene *pScene ) = 0;
+	virtual void DestroyScene( ISteamAudioScene *pScene ) = 0;
+	virtual void CommitActiveScenes( void *pContext ) = 0;
+	// Probe neighbourhood and reverb simulation for the listener ("reverb_min_absorptive_gain")
+	virtual void UpdateSimulation( const void *pListener ) = 0;
+	// iplBinauralEffectCreate
+	virtual void *CreateBinauralProcessor( void *pParams ) = 0;
+	virtual void DestroyBinauralProcessor( void *pProcessor ) = 0;
+	// iplPathEffectCreate
+	virtual void *CreatePathingProcessor( void *pParams ) = 0;
+	virtual void DestroyPathingProcessor( void *pProcessor ) = 0;
+	// iplDirectEffectCreate
+	virtual void *CreateDirectProcessor( void *pParams ) = 0;
+	virtual void DestroyDirectProcessor( void *pProcessor ) = 0;
+	// iplHybridReverbEffectCreate / iplAmbisonicsDecodeEffectCreate
+	virtual void *CreateHybridReverbProcessor( int nChannels ) = 0;
+	// iplSourceCreate / iplSourceAdd; returns the source index
+	virtual int CreateSimulationSource() = 0;
+	virtual void DestroySimulationSource( uint32 nSource ) = 0;
+	// CSteamAudioSource::CSteamAudioSource (energy field, impulse response)
+	virtual ISteamAudioSource *CreateSource() = 0;
+	virtual void DestroySource( ISteamAudioSource *pSource ) = 0;
 	// pPath with its extension replaced by .sareverb
 	virtual CUtlString GetReverbDataFilename( const char *pPath ) = 0;
 	// pPath with its extension replaced by .sapaths
@@ -51,38 +66,51 @@ public:
 	// maps/<pMapName>.sapaths
 	virtual CUtlString GetMapPathingDataFilename( const char *pMapName ) = 0;
 	virtual CUtlString GetMapDataFilename( const char *pMapName, const char *pExtension ) = 0;
-	virtual void unk038() = 0;
-	virtual void Unk_GetReverbBakeDefaults( void *p ) = 0;
-	virtual void Unk_GetPathingBakeDefaults( void *p ) = 0;
-	virtual void Unk_GetCustomDataBakeDefaults( void *p ) = 0;
-	virtual void unk042() = 0;
-	virtual void unk043() = 0;
-	virtual void unk044() = 0;
-	virtual void unk045() = 0;
-	virtual void *unk046() = 0;
-	virtual void unk047() = 0;
-	virtual void unk048() = 0;
-	virtual void unk049() = 0;
-	virtual void unk050() = 0;
-	virtual bool unk051() = 0;
-	virtual void Unk_BakeReverb( void *p ) = 0;
-	virtual void Unk_BakePathData( void *p ) = 0;
-	virtual void Unk_BakeDimensions( void *p ) = 0;
-	virtual void unk055() = 0;
-	virtual void unk056() = 0;
-	virtual void unk057() = 0;
-	virtual void unk058() = 0;
-	virtual void unk059() = 0;
-	virtual void unk060() = 0;
-	virtual void unk061() = 0;
-	virtual void unk062() = 0;
-	virtual void unk063() = 0;
-	virtual int unk064( int nIndex ) = 0;
-	virtual int unk065( int nIndex ) = 0;
-	virtual void unk066() = 0;
-	virtual void unk067() = 0;
-	virtual void unk068( int nUnknown1, int nUnknown2, float flUnknown3, void *pUnknown4 ) = 0;
-	virtual bool unk069( int nUnknown ) = 0;
+	virtual void ComputeSceneBounds( void *pBounds, void *pWorld ) = 0;
+	// ResourceCompiler/SteamAudio/ReverbDefaults/...
+	virtual void GetReverbBakeDefaults( void *pWorld, uint32 *pGridType, bool *pFilterUsingVolumes, bool *pFilterUsingNavMesh, int *pGridSpacing, void *pHeightAboveFloor, void *pRayCount, bool *pBakeConvolution, uint32 *pAmbisonicsOrder ) = 0;
+	// ResourceCompiler/SteamAudio/PathingDefaults/...
+	virtual void GetPathingBakeDefaults( void *pWorld, uint32 *pGridType, bool *pFilterUsingVolumes, bool *pFilterUsingNavMesh, int *pGridSpacing, int *pHeightAboveFloor, uint32 *pVisibilitySamples ) = 0;
+	// ResourceCompiler/SteamAudio/CustomDataDefaults/...
+	virtual void GetCustomDataBakeDefaults( void *pWorld, uint32 *pGridType, bool *pFilterUsingVolumes, bool *pFilterUsingNavMesh, int *pGridSpacing, void *pHeightAboveFloor, uint32 *pDataType ) = 0;
+	// From the CPU information and the command line
+	virtual int GetSimulationThreadCount() = 0;
+	// iplSimulatorRunPathingPerSourceForNeighborhood
+	virtual void RunPathingSimulation( void *pSource, void *pListener, float *pPathingGains, float *pPathingEQ, uint32 nFlags ) = 0;
+	// Occlusion against the world and the hitboxes of entities ("invalid_hitbox", "invalid_bone")
+	virtual float ComputeOcclusion( const float *pSource, const float *pListener, const float *pRadius, float flRadius, int nRays ) = 0;
+	// iplSimulatorRunDirect / iplSourceGetOutputs
+	virtual void RunDirectSimulation( void *pOutputs, void *pSource, void *pListener ) = 0;
+	virtual void *GetSimulationSettings() = 0;
+	// "Unable to create impulse response [%d]"
+	virtual void *CreateImpulseResponse() = 0;
+	virtual void SetListenerPosition( const void *pPosition ) = 0;
+	virtual ISteamAudioSimulationData *CreateSimulationData() = 0;
+	virtual void DestroySimulationData( ISteamAudioSimulationData *pData ) = 0;
+	virtual bool IsSteamAudioEnabled() = 0;
+	// CSteamAudio::BakeReverb
+	virtual void BakeReverb( void *pParams ) = 0;
+	// CSteamAudio::BakePathing
+	virtual void BakePathing( void *pParams ) = 0;
+	// CSteamAudio::BakeDimensions
+	virtual void BakeDimensions( void *pParams ) = 0;
+	virtual void LockSimulation() = 0;
+	virtual void UnlockSimulation() = 0;
+	virtual void SetSourceData( int nSource, const void *pData ) = 0;
+	// Mean of the 11 bands of pBands
+	virtual void GetAverageBandValue( const float *pBands, float *pValue ) = 0;
+	// Copy 3 (or 4) values out of an N-band array through the band index tables of the system
+	virtual void MapBandsToEQ3( const float *pBands, float *pOut ) = 0;
+	virtual void MapBandsToEQ4( const float *pBands, float *pOut ) = 0;
+	virtual void MapBandsToAbsorption( const float *pBands, float *pOut ) = 0;
+	virtual void MapBandsToTransmission( const float *pBands, float *pOut ) = 0;
+	virtual void MapBandsToScattering( const float *pBands, float *pOut ) = 0;
+	virtual int GetBandRemapIndex( int nIndex ) = 0;
+	virtual int GetBandSourceIndex( int nIndex ) = 0;
+	virtual CSteamAudioMaterialList *CreateMaterialList() = 0;
+	virtual void ReleaseMaterialList( CSteamAudioMaterialList *pList ) = 0;
+	virtual void SetBakeProgress( int nStep, int nSteps, float flProgress, void *pContext ) = 0;
+	virtual bool IsBakeStepActive( int nStep ) = 0;
 };
 
 #endif // ISTEAMAUDIO_H
