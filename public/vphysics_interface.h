@@ -982,7 +982,7 @@ struct surfacegameprops_t
 	unsigned short	material;
 	// Indicates whether or not the player is on a ladder.
 	unsigned char	climbable;
-	unsigned char	pad;
+	// Source 1 declared the alignment byte that follows as a member; the struct keeps its 12 bytes without it
 };
 
 //-----------------------------------------------------------------------------

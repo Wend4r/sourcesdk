@@ -307,7 +307,7 @@ public:
 		m_bShouldIgnoreDisabledPairs = true;
 		m_bIgnoreIfBothInteractWithHitboxes = false;
 		m_bForceHitEverything = false;
-		m_bUnknown = true;
+		m_bDefaultOn = true;
 	}
 	
 	bool HasInteractsAsLayer( int nLayerIndex ) const		{ return ( m_nInteractsAs & ( 1ull << nLayerIndex ) ) != 0; }
@@ -346,7 +346,9 @@ public:
 	bool m_bShouldIgnoreDisabledPairs : 1; 			// if true, then ignores if the query and shape entity IDs are in collision pairs
 	bool m_bIgnoreIfBothInteractWithHitboxes : 1;	// if true, then ignores if both query and shape interact with LAYER_INDEX_CONTENTS_HITBOX
 	bool m_bForceHitEverything : 1;					// if true, will hit any objects without any conditions
-	bool m_bUnknown : 1;							// haven't found where this is used yet
+	// Named by what is known of it: every CS2 CTraceFilter sets it (flag byte 0x49 = hit solid,
+	// ignore disabled pairs and this bit); the query explanation of vphysics2 does not read it
+	bool m_bDefaultOn : 1;
 };
 
 struct RnQueryAttr_t : public RnQueryShapeAttr_t
@@ -493,7 +495,7 @@ public:
 		m_vHitPoint.Init();
 		m_flHitOffset = 0.0f;
 		m_flFraction = 1.0f;
-		m_unk001 = -1;
+		m_nShapeFeature = -1;
 		m_nTriangle = -1;
 		m_nHitboxBoneIndex = -1;
 		m_eRayType = RAY_TYPE_LINE;
@@ -528,7 +530,10 @@ public:
 	float m_flHitOffset;				// surface normal hit offset
 	float m_flFraction;					// time completed, 1.0 = didn't hit anything
 	
-	int32 m_unk001;
+	// Named by what it does: a feature index of the hit shape, -1 when none (CGameTrace::Init sets
+	// it and m_nTriangle with one 64-bit -1). When both are -1 the hit point of a mesh shape is
+	// recomputed from the body transform
+	int32 m_nShapeFeature;
 
 	int32 m_nTriangle;					// the index of the triangle that was hit
 	int16 m_nHitboxBoneIndex; 			// the index of the hitbox bone that was hit

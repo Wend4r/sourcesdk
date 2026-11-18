@@ -9,6 +9,7 @@
 
 #include <appframework/iappsystem.h>
 #include <resourcesystem/resourcehandle.h>
+#include <resourcesystem/resourcehandletypes.h>
 #include <resourcefile/resourcetype.h>
 
 #include <tier0/platform.h>
@@ -17,87 +18,112 @@
 
 class KeyValues3;
 class IRenderContext;
+class CRenderAttributes;
+class IMaterialMode;
 class CUtlString;
+struct MaterialRenderablePass_t;
+struct MaterialPassConstantBufferInfo_t;
+struct MaterialSystem2GlobalStats_t;
+struct RsStencilStateOverride_t;
+struct RsDepthBiasStateOverride_t;
+struct RenderInputLayout_t__;
+struct RenderShaderHandle_t__;
+
+typedef RenderInputLayout_t__ *RenderInputLayout_t;
+typedef RenderShaderHandle_t__ *RenderShaderHandle_t;
+typedef void ( *FrameUpdateFunc_t )();
+
+enum RenderShaderType_t : int;
+enum ProceduralResourceType_t : int;
 
 //-----------------------------------------------------------------------------
 // Source 2 material system, exposed as MATERIAL_SYSTEM2_INTERFACE_VERSION
 // ( see g_pMaterialSystem2 ).
 //
-//
+// Names from the s&box DWARF of IMaterialSystem2 where the CS2 body matches;
+// CS2 has no RsFillModeOverride_t argument in the render state setters. The
+// slots s&box does not have are named by what they do.
 //-----------------------------------------------------------------------------
 abstract_class IMaterialSystem2 : public IAppSystem
 {
 public:
-	virtual const char *GetRenderModeName( const CUtlStringToken &renderMode ) = 0;
+	virtual const char *GetModeString( const CUtlStringToken &shaderMode ) = 0;
 
-	// Set two bits of an internal flag byte
-	virtual void unk012() = 0;
-	virtual void unk013() = 0;
+	// Set bit 6 and bit 7 of the flag byte at +560
+	virtual void EnableExtendedMaterialInfo() = 0;
+	virtual void EnableHeadlessMode() = 0;
 
-	virtual HMaterialWeak FindOrCreateMaterialFromResource( const char *pMaterialName ) = 0;
+	virtual HMaterialWeak FindOrCreateMaterialFromResource( const char *pResourceName ) = 0;
 
-	virtual bool Unk_RenderablePass( void *p1, void *p2, void *p3, void *p4, void *pPass, void *p6, void *p7, int n8, int n9 ) = 0;
-	virtual bool Unk_RenderablePass( void *p1, void *p2, void *p3, void *pPass, void *p5, void *p6, int n7, int n8 ) = 0;
+	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, const CRenderAttributes *pAttributes2, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) const = 0;
+	virtual bool SetRenderStateForRenderablePass( const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const MaterialRenderablePass_t &renderablePass, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) const = 0;
 
-	virtual void *unk017( int nMode, void *pPass ) = 0;
-	virtual int unk018( int nMode, void *pPass, int n3, int n4 ) = 0;
-	virtual bool unk019( void *p, void *pPass ) = 0;
+	virtual RenderShaderHandle_t GetShaderForRenderablePass( RenderShaderType_t programType, const MaterialRenderablePass_t &renderablePass ) const = 0;
+	virtual int GetConstantBufferInfoForRenderablePass( RenderShaderType_t programType, const MaterialRenderablePass_t &renderablePass, MaterialPassConstantBufferInfo_t *pBufferInfo, int nBufferInfoMax ) const = 0;
+
+	// Named by what it does: validates the pass for the shader type (logs when the pass data
+	// crossed a frame boundary) and writes the index of its per-shader data to pIndexOut
+	virtual bool GetShaderDataIndexForRenderablePass( RenderShaderType_t programType, const MaterialRenderablePass_t &renderablePass, int *pIndexOut ) const = 0;
 
 	virtual void FrameUpdate() = 0;
 
 	virtual void EnableDynamicShaderCompile() = 0;
 	virtual bool IsDynamicShaderCompileEnabled() = 0;
 
-	virtual bool SetMaterialParamFromString( ResourceHandle_t hMaterial, const char *pParamName, const char *pValue ) = 0;
+	virtual bool SetMaterialParam_MaterialEditor( HMaterialWeak hMaterial, const char *pParamName, const char *pParamValueAsString ) = 0;
 
 	// Callbacks are run at the start of every FrameUpdate
-	virtual void AddFrameUpdateCallback( void ( *pfnCallback )() ) = 0;
-	virtual void RemoveFrameUpdateCallback( void ( *pfnCallback )() ) = 0;
+	virtual void AddFrameUpdateFunc( FrameUpdateFunc_t pfnFunc ) = 0;
+	virtual void RemoveFrameUpdateFunc( FrameUpdateFunc_t pfnFunc ) = 0;
 
 	virtual void QueueMaterialReload() = 0;
 
-	virtual HMaterialWeak unk027( ResourceHandle_t hSrcMaterial, int nMode, bool bUnk ) = 0;
+	// Creates "<name>_copy<n>"
+	virtual HMaterialWeak CreateProceduralMaterialCopy( HMaterialWeak hSourceMaterial, ProceduralResourceType_t nResourceType, bool bLoadShadersNow ) = 0;
 
-	// Creates a material from scratch out of a KeyValues3 description.
-	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, KeyValues3 *pData, int nFlags, bool bUnk ) = 0;
+	virtual HMaterialWeak CreateProceduralMaterial( const char *pMaterialName, const KeyValues3 &data, ProceduralResourceType_t nResourceType, bool bLoadShadersNow ) = 0;
+	virtual HMaterialWeak CreateProceduralMaterial( const char *pMaterialName, HMaterialWeak hSourceMaterial, const KeyValues3 &overrides, ProceduralResourceType_t nResourceType, bool bLoadShadersNow ) = 0;
 
-	// Creates a material derived from an already loaded one, applying overrides on top of it.
-	virtual HMaterialWeak CreateMaterial( const char *pMaterialName, ResourceHandle_t hSrcMaterial, KeyValues3 *pOverrides, int nFlags, bool bUnk ) = 0;
-
-	virtual HMaterialWeak unk030( const char *pMaterialName, KeyValues3 *pData, ResourceHandle_t hResource, bool bUnk ) = 0;
+	// Named by what it does: like the KeyValues3 CreateProceduralMaterial, and keeps a counted
+	// reference to hShaderRef in the new material (see IMaterial2::GetShaderExtRef)
+	virtual HMaterialWeak CreateProceduralMaterialWithShaderRef( const char *pMaterialName, const KeyValues3 *pData, ResourceHandle_t hShaderRef, bool bLoadShadersNow ) = 0;
 
 	// Value of setting.shaderquality
 	virtual int GetShaderQuality() = 0;
 
-	// Zeroes the 36-byte block at pOut and returns false
-	virtual bool unk032( void *pOut ) = 0;
+	// CS2 zeroes the 36-byte block and returns
+	virtual bool GetGlobalStats( MaterialSystem2GlobalStats_t *pStats, bool bClear ) = 0;
 
 	virtual int GetMaterialGeneration() = 0;
 	virtual void IncrementMaterialGeneration() = 0;
 
-	virtual void GetRenderModes( CUtlVector< CUtlStringToken > *pRenderModes, const CUtlVector< const char * > *pModeTypes ) = 0;
+	virtual void GetModes( CUtlVector< CUtlStringToken > *pModeTokensOut, const CUtlVector< const char * > *pCategoryFiltersOptional ) const = 0;
 
-	virtual bool unk036( ResourceHandle_t hMaterial, KeyValues3 *pKV ) = 0;
+	virtual bool GetKV3MaterialDescription( HMaterialWeak hMaterial, KeyValues3 *pKeyValuesOut ) const = 0;
 
-	virtual void unk037( ResourceHandle_t hMaterial, CUtlVector< ResourceHandle_t > *pResources ) = 0;
+	// Named by what it does: appends the texture of every texture parameter without a buffer
+	virtual void GetMaterialTextureParams( HMaterialWeak hMaterial, CUtlVector< ResourceHandle_t > *pTexturesOut ) const = 0;
 
 	virtual void AddShaderReloadListener( void *pListener ) = 0;
 	virtual void RemoveShaderReloadListener( void *pListener ) = 0;
 
-	virtual bool SetRenderStateForMode( void *p1, void *p2, IRenderContext *pRenderContext ) = 0;
-	virtual bool SetRenderStateForMode( void *p1, void *p2, IRenderContext *pRenderContext, void *p4, void *p5, void *p6, int n7, int n8 ) = 0;
+	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext ) const = 0;
+	virtual bool SetRenderStateForMode( const IMaterialMode *pMode, const CRenderAttributes *pAttributes, IRenderContext *pRenderContext, RenderInputLayout_t hInputLayout, const RsStencilStateOverride_t *pOverrideStencilState, const RsDepthBiasStateOverride_t *pOverrideDepthBiasState, int nRequiredMipSize, uint32 nRenderStateSetNotAllowed ) const = 0;
 
-	virtual void unk042( int nCount, IMaterial2 *const *ppMaterials, const uint16 *pValues ) = 0;
+	// Named by what it does: when the render device supports it, passes the textures of
+	// every material together with its 16-bit value to the render device
+	virtual void SetMaterialTextureValues( int nCount, IMaterial2 *const *ppMaterials, const uint16 *pValues ) = 0;
 
-	virtual HMaterialWeak unk043( int nMaterialId ) = 0;
+	// Named by what it does: the vmat whose material has this m_nUniqueId (CMaterial2 +60)
+	virtual HMaterialWeak FindMaterialByUniqueId( int nUniqueId ) = 0;
 
-	// "pc" or "vulkan" depending on the render device
-	virtual void unk044( CUtlString &sName ) = 0;
+	// Named by what they do: "pc" or "vulkan", and 2 for a Vulkan render device (0 otherwise)
+	virtual void GetVfxPlatformString( CUtlString &sPlatform ) = 0;
+	virtual int GetVfxPlatformType() = 0;
 
-	// 2 when rendering through Vulkan, 0 otherwise
-	virtual int unk045() = 0;
-
-	virtual bool unk046( bool bValue ) = 0;
+	// Named by what it does: sets the flag at +704 and returns the previous value; the flag is
+	// ORed into the "load shaders now" argument of the material mode setup
+	virtual bool SetForceSynchronousShaderLoad( bool bForce ) = 0;
 
 	virtual void AddMaterialParamChangedListener( void *pListener ) = 0;
 	virtual void RemoveMaterialParamChangedListener( void *pListener ) = 0;

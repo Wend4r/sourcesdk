@@ -12,30 +12,41 @@
 
 #include <color.h>
 #include <tier0/platform.h>
+#include <tier0/utlvector.h>
 #include <tier0/wchartypes.h>
 
 class IRenderContext;
+class CRenderAttributes;
+class CTextLayoutInfo;
+struct CCharRenderGeometry;
+struct RenderViewport_t;
 
+//-----------------------------------------------------------------------------
+// Text layout of the material system. Every slot has the s&box DWARF name of
+// ITextLayout at the same index; the CS2 bodies match.
+//-----------------------------------------------------------------------------
 abstract_class ITextLayout : public IAppSystem
 {
 public:
-	virtual Vector2D LayoutText( void *pLayout, const char *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
-	virtual Vector2D LayoutText( void *pLayout, const uchar16 *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
-	virtual Vector2D LayoutText( void *pLayout, const uchar32 *pText, const Vector2D &vecPos, Color color, HFont hFont ) = 0;
+	typedef CUtlVector< CUtlVector< CCharRenderGeometry > > RenderGeometryLists_t;
 
-	// Overwrites the color of every glyph in pLayout
-	virtual void unk014( void *pLayout, Color color ) = 0;
+	virtual Vector2D SetupPrintTextRenderGeometry( RenderGeometryLists_t *pRenderGeometryLists, const char *pText, const Vector2D &vecPos, Color drawColor, HFont hFont ) = 0;
+	virtual Vector2D SetupPrintTextRenderGeometry( RenderGeometryLists_t *pRenderGeometryLists, const uchar16 *pText, const Vector2D &vecPos, Color drawColor, HFont hFont ) = 0;
+	virtual Vector2D SetupPrintTextRenderGeometry( RenderGeometryLists_t *pRenderGeometryLists, const uchar32 *pText, const Vector2D &vecPos, Color drawColor, HFont hFont ) = 0;
 
-	virtual Vector2D unk015( void *pLayout, const void *pTextDesc, void *p, float flMaxWidth ) = 0;
+	// Overwrites the color of every glyph
+	virtual void UpdateTextRenderGeometryColor( RenderGeometryLists_t *pRenderGeometryLists, Color color ) = 0;
 
-	// Renders pLayout through the material system utils
-	virtual bool unk016( IRenderContext *pRenderContext, const void *pLayout, void *p, int n ) = 0;
+	virtual Vector2D SetupTextLayoutRenderGeometry( RenderGeometryLists_t *pRenderGeometryLists, CTextLayoutInfo *pTextLayoutInfo, const RenderViewport_t *pViewport, float flProportionalBaseHeight ) = 0;
 
-	virtual void unk017( void *p ) = 0;
-	virtual void unk018( void *p ) = 0;
+	// Renders the geometry through the material system utils
+	virtual bool RenderTextGeometry( IRenderContext *pRenderContext, RenderGeometryLists_t &renderGeometryLists, const Vector2D &vecOffset, const CRenderAttributes *pAttributes ) = 0;
 
-	// Size of the text in pTextDesc
-	virtual Vector2D unk019( const void *pTextDesc ) = 0;
+	virtual void GetBounds( IRenderContext *pRenderContext, CTextLayoutInfo *pTextLayoutInfo, Vector2D *pMins, Vector2D *pMaxs ) = 0;
+	virtual void GetWBounds( CTextLayoutInfo *pTextLayoutInfo, Vector2D *pMins, Vector2D *pMaxs ) = 0;
+
+	// Size of the laid out text
+	virtual Vector2D GetWSize( CTextLayoutInfo *pTextLayoutInfo ) = 0;
 
 	virtual ~ITextLayout() {}
 };

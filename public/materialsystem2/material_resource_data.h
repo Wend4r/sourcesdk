@@ -6,21 +6,39 @@
 #endif
 
 #include <resourcefile/resourcetype.h>
-#include <mathlib/vector4d.h>
+#include <tier0/utlstringtoken.h>
+#include <tier0/utlsymbollarge.h>
 
-struct MaterialParam_t
+//-----------------------------------------------------------------------------
+// A shader parameter value: a vector, a texture or a blob. Names and layout from
+// the s&box DWARF (CVfxParam), confirmed on CS2 by CMaterial2's parameter code
+// (texture flag at byte 30 bit 0, buffer size cleared as a 16-bit word at 28,
+// buffer freed with delete[] at 32).
+//-----------------------------------------------------------------------------
+class CVfxParam
 {
-	Vector4D m_vValue;
-	ResourceHandle_t m_hTexture;
-	uint32 m_nValueHash;
-	uint32 m_nFlags;
-	void *m_pBlob;
-	CUtlSymbolLarge m_symName;
-	CUtlSymbolLarge m_symString;
-	bool m_bShaderDefault;
+public:
+	float m_flVec4[ 4 ];
 
-private:
-	uint8 m_nUnknown0039[7];
+	// A CStrongHandle< InfoForResourceTypeCTextureBase > in the game
+	ResourceHandle_t m_textureHandle;
+	CUtlStringToken m_stringToken;
+	uint32 m_nBufferSize : 16;
+	uint32 m_bIsTextureParam : 1;
+	void *m_pBuffer;
+};
+
+//-----------------------------------------------------------------------------
+// A named shader parameter of a loaded material (CMaterial2::m_params).
+// s&box DWARF names; CS2 compares m_name with V_stricmp_fast and reads the
+// shader name from m_string of the first parameter. 64 bytes on both platforms.
+//-----------------------------------------------------------------------------
+class CMaterialParam : public CVfxParam
+{
+public:
+	CUtlSymbolLarge m_name;
+	CUtlSymbolLarge m_string;
+	bool m_bIsDefaultValue;
 };
 
 #endif // MATERIALSYSTEM2_MATERIAL_RESOURCE_DATA_H
