@@ -29,14 +29,16 @@ public:
 
 	virtual CUtlStringToken GetRenderingPipeline() = 0;
 
-	virtual bool unk027() = 0;
+	// Dota 2 2018 name
+	virtual bool GetMultisampleType() = 0;
 
 	virtual void GetSplitScreenViewport( const void *pViewport, int nSlot, void *pOutViewport ) = 0;
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
 	virtual bool IsFullyLoadedForPlayer( WorldGroupId_t hWorldGroupId, CSplitScreenSlot nSlot ) = 0;
 
-	virtual void *Unk_FindOrCreateWorldSession( void *p ) = 0;
+	// Dota 2 2018 name
+	virtual void *FindOrCreateWorldSession( const char *pszWorldName, void *pPrerequisite ) = 0;
 
 	virtual void LaunchAsyncBeginRenderingViewsJob( const EventClientPreOutput_t &event, bool bAddViews ) = 0;
 	virtual bool FinishAsyncBeginRenderingViewsJob( bool *pbAddedViews ) = 0;
@@ -48,8 +50,8 @@ public:
 	// Outside tools mode always true
 	virtual bool ShouldRender() = 0;
 
-	// Flag set by the client output event handler
-	virtual bool unk038() = 0;
+	// Flag set by the client output event handler (Dota 2 2018 RenderCoordination_EngineIsRenderingThisFrame)
+	virtual bool IsEngineRenderingThisFrame() = 0;
 };
 
 #endif // IRENDERSERVICE_H

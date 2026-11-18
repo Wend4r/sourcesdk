@@ -38,10 +38,19 @@ public:
 	// This is an index into the network string table (sv.GetInstanceBaselineTable()).
 	int m_InstanceBaselineIndex; // INVALID_STRING_INDEX if not initialized yet.
 
-	bool m_Unk1;
-	bool m_Unk2; // Set if one of the base classes has the FENTCLASS_UNK008 flag
-	bool m_Unk3; // Set if one of the base classes has the FENTCLASS_UNK009 flag
-	bool m_Unk4;
+	// AMNOTE: The server builds every ServerClass in the entity networking setup (server.dll sub_180BFCCD0): it
+	// allocates 56 bytes, zeroes the dword at +48 and the byte at +52, sets m_ClassID to the index in the list and
+	// m_InstanceBaselineIndex to -1, then fills the flags below. No code of the game was found that writes
+	// m_bReservedFlag48 / m_bReservedFlag51 afterwards, so they have no name source.
+	bool m_bReservedFlag48;
+	// Named by what it does: a class of the entity class hierarchy has bit 8 (0x100) of CEntityClass::m_flags
+	bool m_bBaseClassHasFlag8;
+	// Named by what it does: a class of the entity class hierarchy has bit 9 (0x200) of CEntityClass::m_flags
+	bool m_bBaseClassHasFlag9;
+	bool m_bReservedFlag51;
+	// Named by what it does: IFlattenedSerializers::GetFieldPathCaches returned both send proxy lists of the
+	// serializer and both are non-empty
+	bool m_bHasFieldPathCaches;
 };
 
 

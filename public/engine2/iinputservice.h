@@ -33,12 +33,12 @@ public:
 	virtual void ReadKeyBindings( CSplitScreenSlot nSlot ) = 0;
 	virtual void WriteKeyBindings( CSplitScreenSlot nSlot ) = 0;
 
-	virtual void SetBinding( ButtonCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bUnk, int nChord ) = 0;
+	virtual void SetBinding( ButtonCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bTemporary, int nChord ) = 0;
 	virtual const char *GetBinding( ButtonCode_t code, CSplitScreenSlot nSlot, int nChord ) = 0;
-	virtual void SetBinding( AnalogCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bUnk, int nChord ) = 0;
+	virtual void SetBinding( AnalogCode_t code, CSplitScreenSlot nSlot, const char *pszBinding, bool bTemporary, int nChord ) = 0;
 	virtual const char *GetBinding( AnalogCode_t code, CSplitScreenSlot nSlot, int nChord ) = 0;
 
-	virtual const char *NameForBinding( const char *pszBinding, CSplitScreenSlot nSlot, int nUnk1, int nUnk2 ) = 0;
+	virtual const char *NameForBinding( const char *pszBinding, CSplitScreenSlot nSlot, int nStartCount, int nLookupFlags ) = 0;
 
 	// Whether code is bound to toggleconsole (no modifiers held)
 	virtual bool IsToggleConsoleButton( ButtonCode_t code, int nModifiers ) = 0;
@@ -51,10 +51,13 @@ public:
 	virtual void UnregisterInputValue( void *pInputValue ) = 0;
 	virtual void ForEachInputValue( void *pDelegate ) = 0;
 
-	virtual void unk040( bool bUnk ) = 0;
-	virtual void unk041( bool bUnk ) = 0;
-	// Counter incremented by each client input processing pass
-	virtual int unk042() = 0;
+	// The key binding processing does nothing while it is disabled (Dota 2 2018 name)
+	virtual void EnableKeyBindingSystem( bool bEnable ) = 0;
+	// Named by what it does: while set, the commands that execute a script file over time and perftest.cfg do
+	// nothing; cleared when the service deactivates
+	virtual void BlockTimedScriptExecution( bool bBlock ) = 0;
+	// Counter incremented by each client input processing pass (Dota 2 2018 name)
+	virtual int GetFrameCount() = 0;
 
 	// Counted lock of all command buffers
 	virtual void LockCommandBuffers( bool bLock ) = 0;
@@ -82,17 +85,18 @@ public:
 	virtual CUtlString GetUserSettingsFileName( const char *pszName, bool *pbExists, bool bNoCfgDir ) = 0;
 	virtual void AppendChordModifiers( CUtlString &sName, int nChord ) = 0;
 
-	// Flag checked when printing convar values
-	virtual void unk058( bool bUnk ) = 0;
-	// Empty in this build
-	virtual void unk059() = 0;
-	virtual void unk060() = 0;
+	// Named by what it does: while set, the convar processing logs the values it sets
+	virtual void SetPrintConVarChanges( bool bPrint ) = 0;
+	// AMNOTE: Empty on both platforms; no source names them (Dota 2018 had the cursor confinement methods
+	// elsewhere in the table)
+	virtual void EmptyInputCallback1() = 0;
+	virtual void EmptyInputCallback2() = 0;
 
 	// 8 with Engine2/AllowKeyChordBindings, 1 otherwise
 	virtual int GetNumChords() = 0;
 
-	// Stores both pointers in two parallel lists
-	virtual void unk062( void *pUnk1, void *pUnk2 ) = 0;
+	// Named by what it does: stores both pointers in two parallel lists
+	virtual void RegisterInputCallback( void *pCallback, void *pContext ) = 0;
 };
 
 #endif // IINPUTSERVICE_H

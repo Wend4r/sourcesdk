@@ -455,13 +455,15 @@ public:
 	// Returns the designer name of the entity class the subclass is built on.
 	virtual const char		*GetSubclassDesignerName( const char *pSubclassName ) = 0;
 
-	virtual void			UpdateGCInformation( bool bUnk1, bool bUnk2 ) = 0;
+	// The engine calls it from the server reservation update and from the GC connection handling; what the two flags
+	// select is not established
+	virtual void			UpdateGCInformation( bool, bool ) = 0;
 
 	// Sorted designer names of every entity class derived from the C++ class pClassName (e.g. "CCSWeaponBase"),
 	// or the subclass names of a scope when pClassName is that scope's handler type.
 	virtual const CUtlVector< CUtlString > &GetDesignerNamesForClass( const char *pClassName ) = 0;
 	// Forwards to the subclass system's auto-completion callback, which is empty in release builds.
-	virtual void			GetSubclassAutoCompleteList( const void *pUnk, CUtlVector< const char * > &completions ) = 0;
+	virtual void			GetSubclassAutoCompleteList( const void *pPartialName, CUtlVector< const char * > &completions ) = 0;
 
 	virtual bool			ReportGCQueuedMatchStart( int32 iReservationStage, uint32 *puiConfirmedAccounts, int numConfirmedAccounts ) = 0;
 
@@ -479,7 +481,8 @@ public:
 	// Called when the broadcast relay answers an HLTV broadcast request with HTTP 200.
 	virtual void			OnBroadcastRelayRequestSucceeded( void ) = 0;
 	virtual void			SendServerFrameTime( float flFrameTime ) = 0;
-	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int nUnk ) = 0;
+	// Forwards the int to a player controller method that is empty in this build
+	virtual void			OnClientHltvReplayStart( CPlayerSlot slot, int ) = 0;
 	virtual void			OnClientHltvReplayStop( CPlayerSlot slot ) = 0;
 
 	// Called by the VConsole2 flattened serializer view for each network field of an entity. Rewrites the value text of entity and resource handles and appends notes, such as pose parameter names.
@@ -505,12 +508,12 @@ public:
 
 	virtual bool			LogForHTTPListeners( const char *szLogLine ) = 0;
 
-	// Only reached through the engine tool service. 
-	// Empty in release builds
-	virtual void			unk_093( void ) = 0;
-	virtual void			unk_094( void ) = 0;
-	virtual void			unk_095( void ) = 0;
-	virtual void			unk_096( void ) = 0;
+	// AMNOTE: Only reached through IToolService::ToolServerCallback1-4 and empty in release builds; no source names
+	// them and no caller passes an argument
+	virtual void			ToolServerCallback1( void ) = 0;
+	virtual void			ToolServerCallback2( void ) = 0;
+	virtual void			ToolServerCallback3( void ) = 0;
+	virtual void			ToolServerCallback4( void ) = 0;
 
 	virtual void			RegisterClientNetMessageHandlers( INetChannel *pNetChannel, CPlayerSlot slot, ClientNetMessageHandlersAction_t eAction ) = 0;
 	virtual bool			GetAddonForMap( const char *pMapName, CUtlString &output ) = 0;
@@ -574,7 +577,8 @@ public:
 
 	virtual bool			AllowPlayerToTakeOverBots() = 0;
 
-	virtual void			Unk_OnClientFullyConnect( void *p ) = 0;
+	// Dota 2 2018 CGameConfiguration name; empty in CS2
+	virtual void			OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
 
 	virtual void		GetHostStateLoopModeInfo( HostStateLoopModeType_t type, CUtlString &loopModeName, KeyValues **ppLoopModeOptions ) = 0;
 
@@ -636,7 +640,7 @@ public:
 	// type values could be:
 	// 0 - player
 	// 1 - fake player (bot)
-	// 2 - unknown
+	// 2 - SourceTV client (CServerSideClient::ActivatePlayer passes it for HLTV clients)
 	virtual void			ClientPutInServer( CPlayerSlot slot, char const *pszName, int type, uint64 xuid ) = 0;
 
 	// Client is going active
@@ -709,7 +713,9 @@ public:
 	// return m_nTickBase
 	virtual uint32			GetPlayerTickBase( CPlayerSlot slot ) = 0;
 
-	virtual void			GetClientVisibilityInfo( CPlayerSlot slot, vis_info_t *pOutVisInfo ) = 0;
+	// Fills the user command receive status of the player (the cmd recv status of CSVCMsg_PacketEntities), through its
+	// controller; CServerSideClient::FillCommandRecvStatus asks it
+	virtual void			FillCommandRecvStatus( CPlayerSlot slot, void *pStatus ) = 0;
 
 	// Handles incoming usermessages from the client
 	virtual void			ClientSvcUserMessage( CPlayerSlot slot, int um_type, uint32 size, const void *buf ) = 0;

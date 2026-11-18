@@ -12,6 +12,7 @@
 
 #include <engine/IEngineService.h>
 #include <splitscreenslot.h>
+#include <entityhandle.h>
 #include <tier0/utlstring.h>
 #include <tier0/utlvector.h>
 
@@ -21,7 +22,11 @@ class IToolGameSimulationAPI;
 class CEntityClass;
 class ISceneWorld;
 class IScreenshotCallback;
+class CEconItemSystem;
+class Vector;
 
+// AMNOTE: Names come from the CToolService vtable of Dota 2 2018 (libengine2.dylib symbols) and from the
+// ISource2Client / ISource2Server methods the CS2 implementation forwards to.
 abstract_class IToolService : public IEngineService
 {
 public:
@@ -42,75 +47,58 @@ public:
 
 	virtual void *GetToolClientSimulationAPI() = 0;
 
-	// Forward to game client methods that are not identified yet
-	// Forwards to ISource2Client::unk103
-	virtual void unk035( void *pUnk1, void *pUnk2 ) = 0;
-	// Forwards to ISource2Client::unk104
-	virtual void unk036( void *pObject ) = 0;
-	virtual void *unk037() = 0;
-	// Forwards to ISource2Client::unk106
-	virtual void unk038() = 0;
-	// Forwards to ISource2Client::unk107
-	virtual void *unk039( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	// Forwards to ISource2Client::unk108
-	virtual void unk040() = 0;
-	// Forwards to ISource2Client::unk109
-	virtual void *unk041( void *pUnk1, void *pUnk2, void *pUnk3, void *pUnk4 ) = 0;
-	// Forwards to ISource2Client::unk110
-	virtual void unk042() = 0;
-	// Forwards to ISource2Client::unk190
-	virtual void unk043() = 0;
-	// Forwards to ISource2Client::unk191
-	virtual void unk044() = 0;
-	virtual void unk045() = 0;
-	virtual void unk046() = 0;
-	// Forwards to ISource2Client::unk195
-	virtual void *unk047() = 0;
+	// Forward to the methods of ISource2Client with the same names
+	virtual void UpdateProjectedTexture( const void *pInfo, void **phTexture ) = 0;
+	virtual void DeleteProjectedTexture( void *hTexture ) = 0;
+	virtual void *UpdateDeferredLight( ISceneWorld *pWorld, const void *pDesc, void **phLight ) = 0;
+	virtual void DeleteDeferredLight( void *hLight ) = 0;
+	virtual void *UpdateStandardLight( ISceneWorld *pWorld, const void *pDesc, void **phLight ) = 0;
+	virtual void DeleteStandardLight( void *hLight ) = 0;
+	virtual void *UpdateTransformedLight( ISceneWorld *pWorld, const void *pDesc, const void *pTransform, void **phLight ) = 0;
+	virtual void DeleteTransformedLight( void *hLight ) = 0;
+	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bExcludeItemSets, bool bExcludeLockedItems, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bExcludeItemSets, bool bExcludeLockedItems, CUtlVector< CUtlString > &names ) = 0;
+	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszSlot, bool bExcludeItemSets, bool bExcludeLockedItems, bool bExcludeDefaultItems, void *pItems ) = 0;
+	virtual void GetEconItemsInfoForCharacter( const char *pszCharacterName, const char *pszSlot, bool bExcludeItemSets, bool bExcludeLockedItems, bool bExcludeDefaultItems, void *pItems ) = 0;
+	virtual bool GetDefaultControlPointAutoUpdates( const char *pszParticleName, void *pAutoUpdates ) = 0;
 	// 1.0 without a game client
-	// Forwards to ISource2Client::unk196
-	virtual float unk048() = 0;
-	// Forwards to ISource2Client::unk197
-	virtual float unk049() = 0;
-	// Forwards to ISource2Client::unk198
-	virtual void unk050( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	// Forwards to ISource2Client::unk199
-	virtual bool unk051( void *pUnk1, void *pUnk2, void *pUnk3 ) = 0;
-	// Forwards to ISource2Client::unk200
-	virtual void unk052() = 0;
-	// Forwards to ISource2Client::unk201
-	virtual void unk053( void *pUnk1, void *pUnk2 ) = 0;
-	// Forwards to ISource2Client::unk125
-	virtual void unk054() = 0;
-	// Forwards to ISource2Client::unk126
-	virtual bool unk055() = 0;
-	// Forwards to ISource2Client::unk129
-	virtual void *unk056() = 0;
+	virtual float GetDefaultScaleForModel( const char *pszModelName ) = 0;
+	virtual float GetDefaultScaleForCharacter( const char *pszCharacterName ) = 0;
+	virtual void GetCharacterNameForModel( const char *pszModelName, int nUnused, void *pCharacterName ) = 0;
+	virtual bool GetModelNameForCharacter( const char *pszCharacterName, int nIndex, CUtlString *pModelName ) = 0;
+	virtual void GetCharacterList( CUtlVector< CUtlString > &characters ) = 0;
+	virtual void GetDefaultChoreoDirForModel( const char *pszModelName, CUtlString *pDirectory ) = 0;
+	virtual void UpdateGlobalLightFromLightInfos( void *pGlobalLight, const void *pLightInfos, const Vector &vecDirection, int nLightType, float flBrightness, float flRange, float flAngle ) = 0;
+	virtual bool GetGlobalLightParameters( int *pLightType, float *pBrightness, float *pRange ) = 0;
+	// ISource2Client::GetEconItemSystem
+	virtual CEconItemSystem *GetEconItemSystem_Client() = 0;
 
-	virtual void *GetEconItemSystem() = 0;
+	virtual CEconItemSystem *GetEconItemSystem_Server() = 0;
 
-	virtual void *unk058() = 0;
+	// ISource2Client::GetModelCombineInfo
+	virtual void GetModelCombineInfo( const void *hModel, void *pCombinedModel, int *pCombineIndex ) = 0;
 
-	virtual void unk059() = 0;
-	virtual void unk060() = 0;
+	// Named by what they do: dispatch EventClientSceneSystemThreadStateChange_t with true and with false
+	virtual void OnSceneSystemThreadsStarted() = 0;
+	virtual void OnSceneSystemThreadsStopped() = 0;
 
 	virtual void GetHitGroupEnumInfo( CUtlVector< int > &values, CUtlVector< CUtlString > &names ) = 0;
 
-	// Forward to the game client
-	// Forwards to ISource2Client::unk145
-	virtual void *unk062() = 0;
-	// Returns an 8-byte value by value
-	virtual void unk063() = 0;
-	// The game client reports a valid local player entity handle
-	virtual bool unk064() = 0;
+	// Forward to ISource2Client
+	virtual void *GetToolClientEntityInterface() = 0;
+	virtual CEntityHandle GetToolClientSelectedEntity() = 0;
+	// Named by what it does: the game client reports a valid local player pawn handle
+	virtual bool HasLocalPlayerPawn() = 0;
 
 	virtual ISceneWorld *GetSceneWorld() = 0;
-	virtual void *unk066( CSplitScreenSlot nSlot ) = 0;
+	// ISource2Client::GetPlayerViewSetup; -1 selects the active split screen slot
+	virtual void *GetPlayerViewSetup( CSplitScreenSlot nSlot ) = 0;
+	// Named by what it does: a float the view object of the network game client reports for the split screen slot,
 	// -1.0 without a connected client
-	virtual float unk067( CSplitScreenSlot nSlot ) = 0;
+	virtual float QuerySplitScreenPlayerFloat( CSplitScreenSlot nSlot ) = 0;
 
-	// Forwards to the game client
-	// Forwards to ISource2Client::unk151
-	virtual void unk068() = 0;
+	// ISource2Client::UpdateClientEntityList
+	virtual void UpdateClientEntityList() = 0;
 
 	virtual const char *GetVDataClassName( const char *pName, const char *pScopeFile ) = 0;
 	virtual const char *GetVDataClassNameByDataType( const char *pName, const char *pGenericDataType ) = 0;
@@ -119,36 +107,33 @@ public:
 	virtual void GetAllSubclassNames( CUtlVector< CUtlString > &names ) = 0;
 	virtual const char *GetSubclassDesignerName( const char *pSubclassName ) = 0;
 	virtual const CUtlVector< CUtlString > &GetDesignerNamesForClass( const char *pClassName ) = 0;
-	virtual void GetSubclassAutoCompleteList( const void *pUnk, CUtlVector< const char * > &completions ) = 0;
+	virtual void GetSubclassAutoCompleteList( const void *pPartialName, CUtlVector< const char * > &completions ) = 0;
 
-	// Forwards to the game client
-	// Forwards to ISource2Client::unk161
-	virtual void *unk077() = 0;
+	// ISource2Client::GetClientToolInterface
+	virtual void *GetClientToolInterface() = 0;
 
 	// "" without the game server
 	virtual const char *GetNativeClassForScriptClass( const char *pScriptClassName ) = 0;
 	virtual CEntityClass *GetScriptClassForDesignerName( const char *pDesignerName ) = 0;
 	virtual bool IsScriptClassDerivedFrom( const char *pDesignerName, const char *pBaseName ) = 0;
 
-	// Forwards to the game client
-	// Forwards to ISource2Client::unk194
-	virtual void unk081() = 0;
+	// ISource2Client::EmptyToolCallback
+	virtual void EmptyToolCallback() = 0;
 
 	virtual void RequestScreenshot( IScreenshotCallback *pCallback, void *pContext ) = 0;
 	virtual void RequestJpegScreenshot( IScreenshotCallback *pCallback, int nQuality, void *pContext ) = 0;
 	virtual void GenerateScreenshotFileName( const char *pszFileName, const char *pszExtension, CUtlString &sFileName ) = 0;
 
-	// Forward to game server methods that are not identified yet
-	virtual void unk085() = 0;
-	virtual void unk086() = 0;
-	virtual void unk087() = 0;
-	virtual void unk088() = 0;
+	// AMNOTE: Forward to the four empty ISource2Server slots after LogForHTTPListeners (ToolServerCallback1-4); no
+	// source names them, and neither side passes or reads an argument
+	virtual void ToolServerCallback1() = 0;
+	virtual void ToolServerCallback2() = 0;
+	virtual void ToolServerCallback3() = 0;
+	virtual void ToolServerCallback4() = 0;
 
-	// Forward to the game client; unk090 does nothing for 0
-	// Forwards to ISource2Client::unk049
-	virtual void *unk089( int nUnk ) = 0;
-	// Forwards to ISource2Client::unk050
-	virtual void unk090( uint16 nUnk ) = 0;
+	// ISource2Client::AllocateMouth / FreeMouth; FreeMouth does nothing for 0
+	virtual uint16 AllocateMouth( int nEntityIndex ) = 0;
+	virtual void FreeMouth( uint16 nMouth ) = 0;
 };
 
 #endif // ITOOLSERVICE_H

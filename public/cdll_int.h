@@ -63,16 +63,19 @@ public:
 	virtual EUniverse GetSteamUniverse() const = 0;
 	virtual CPlayerSlot GetPlayerSlotByNetworkIDString( const char *pszNetworkID ) = 0;
 	virtual const char *GetPlayerNetworkIDString( CPlayerSlot nSlot ) = 0;
-	virtual CPlayerSlot GetLocalPlayer( bool bUnk = false ) = 0;
-	virtual CPlayerSlot GetLastValidPlayerSlot( bool bUnk = false ) = 0;
+	// Without a network game client both return 0x80000000 when bInvalidWhenMissing is set, 0 otherwise
+	virtual CPlayerSlot GetLocalPlayer( bool bInvalidWhenMissing = false ) = 0;
+	virtual CPlayerSlot GetLastValidPlayerSlot( bool bInvalidWhenMissing = false ) = 0;
 	virtual bool IsPlayerSlotActive( CPlayerSlot nSlot ) = 0;
 	virtual float &GetFrameTime() = 0;
 	virtual void SetFrameTimeAmnesty( const char *pszReason, int nFrames, float flDuration ) = 0;
 	virtual const char *GetFrameTimeAmnesty( bool bCheckCvar ) = 0;
-	virtual void unk027( const char *pszName, int nAmnesty, int nFrames, float flDuration ) = 0;
+	// Forwards to the same function as IEngineServiceMgr::SetFramePerformanceTag
+	virtual void SetFramePerformanceTag( const char *pszTag, int nValue, int nFrames, float flDuration ) = 0;
 	virtual void PrintVProfLiteReport( void *pReport, bool bDetailed, int nLogChannel ) = 0;
 	virtual void DumpNetStats( void *pNetStatData, void ( *pfnOutput )( const char * ) ) = 0;
-	virtual bool unk030() = 0;
+	// Named by what it does: asks virtual 14 of the active engine loop entry (false by default)
+	virtual bool QueryActiveLoop() = 0;
 	virtual uint32 GetLongFrameCount() = 0;
 	virtual bool GetPlayerInfo( int nPlayerIndex, CMsgPlayerInfo *pInfo ) = 0;
 	virtual CPlayerUserId GetPlayerUserId( int nPlayerIndex ) = 0;
@@ -86,10 +89,13 @@ public:
 	virtual INetChannel *GetNetChannel( CSplitScreenSlot nSlot ) = 0;
 	virtual bool IsPlayingDemo() = 0;
 	virtual const char *GetDemoFilePath() = 0;
-	virtual const char *unk044() = 0;
+	// Named by what it does: string of the CDemoFile being played back (its virtual 5, the field at +368), NULL
+	// without playback
+	virtual const char *GetDemoFileIdentifier() = 0;
 	virtual bool IsRecordingDemo() = 0;
 	virtual bool IsPlayingTimeDemo() = 0;
-	virtual bool unk047() = 0;
+	// Named by what it does: byte 10 of the active engine loop entry
+	virtual bool IsActiveLoopFlagSet() = 0;
 	virtual bool IsPlayingBroadcast() = 0;
 	virtual void *GetBroadcastPlayer() = 0;
 	// Sends pszCmd to the server over the net channel of nSlot
@@ -108,15 +114,15 @@ public:
 	virtual CSplitScreenSlot FirstValidSplitScreenSlot() = 0;
 	// Returns -1 when there is no further valid slot
 	virtual CSplitScreenSlot NextValidSplitScreenSlot( CSplitScreenSlot nPreviousSlot ) = 0;
-	// Always returns -1
-	virtual int unk060() = 0;
+	// Always returns -1 (Dota 2 2018 name)
+	virtual int GetAvailableAsyncThread() = 0;
 	virtual void GetScreenSize( int &nWidth, int &nHeight ) = 0;
 	virtual bool IsLoadingLevel() = 0;
 	virtual void OnEngineLevelLoadingFinished() = 0;
 	virtual const char *GetLevelName() = 0;
 	virtual const char *GetLevelNameShort() = 0;
-	// Always returns NULL
-	virtual void *unk066() = 0;
+	// Always returns NULL (Dota 2 2018 name)
+	virtual void *GetVoiceTweakAPI() = 0;
 	// Forwards to ITestScriptMgr::CheckPoint
 	virtual void CheckPoint( const char *pszName ) = 0;
 	virtual CMovieRecorder *GetMovieRecorder() = 0;
@@ -131,14 +137,16 @@ public:
 	virtual int GetDemoPlaybackTotalTicks() = 0;
 	virtual const char *GetDemoPlaybackFileName() = 0;
 	virtual void PlayDemo( const char *pszFilename ) = 0;
-	// Setter and getter of the same demo player flag
-	virtual void unk080( bool bValue ) = 0;
-	virtual bool unk081() = 0;
+	// IDemoPlayer::SetDemoCommandsLocked / AreDemoCommandsLocked
+	virtual void SetDemoCommandsLocked( bool bLocked ) = 0;
+	virtual bool AreDemoCommandsLocked() = 0;
 	virtual void PauseDemo() = 0;
 	virtual void ResumeDemo() = 0;
 	virtual void SkipToDemoTick( int nTick ) = 0;
-	virtual void unk085( bool bValue ) = 0;
-	virtual bool unk086() = 0;
+	// IDemoPlayer::SetPauseAtEnd
+	virtual void SetDemoPauseAtEnd( bool bPause ) = 0;
+	// Named by what it does: the network game client is in an HLTV replay (its replay flag or replay ticks left)
+	virtual bool IsInHltvReplay() = 0;
 	// Value of cl_language
 	virtual void GetUILanguage( CBufferString &sLanguage ) = 0;
 	virtual float GetScreenAspectRatio( int nViewportWidth, int nViewportHeight ) = 0;
@@ -149,12 +157,14 @@ public:
 	// steam.inf VersionDate and VersionTime
 	virtual const char *GetVersionDateString() = 0;
 	virtual const char *GetVersionTimeString() = 0;
-	virtual int unk093() = 0;
+	// Dota 2 2018 name; 0 without a network game client
+	virtual int GetConnectedServerNetworkVersion() = 0;
 	virtual uint32 GetAppID() = 0;
 	// Loads the "user_keys" key bindings config of nSlot
 	virtual bool ReadKeyBindings( CSplitScreenSlot nSlot ) = 0;
-	virtual void unk096( void *p ) = 0;
-	virtual void *unk097() = 0;
+	// Dota 2 2018 names; the engine only stores the pointer
+	virtual void SetAchievementMgr( void *pAchievementMgr ) = 0;
+	virtual void *GetAchievementMgr() = 0;
 	virtual CSplitScreenSlot GetActiveSplitScreenPlayerSlot() = 0;
 	virtual CSplitScreenSlot SetActiveSplitScreenPlayerSlot( CSplitScreenSlot nSlot ) = 0;
 	// Thread-local flag; returns the previous value
@@ -165,7 +175,8 @@ public:
 	// No-op in this build; GetPitchScale always returns 1.0.
 	virtual void SetPitchScale( float flPitchScale ) = 0;
 	virtual float GetPitchScale() = 0;
-	virtual void Unk_SetMixGroupOfCurrentMixer( void *p ) = 0;
+	// Dota 2 2018 name and argument types
+	virtual void SetMixGroupOfCurrentMixer( const char *pszMixGroupName, const char *pszParameter, float flValue, int nLayer ) = 0;
 	virtual int GetMixLayerIndex( const char *pszMixLayerName ) = 0;
 	virtual void SetMixLayerLevel( int nIndex, float flLevel ) = 0;
 	virtual bool IsVoiceRecording() = 0;
@@ -183,7 +194,8 @@ public:
 	virtual void ServerCmdKeyValues( KeyValues *pKeyValues ) = 0;
 	virtual void TickProgressBar() = 0;
 	virtual PlatWindow_t GetEngineWindow() = 0;
-	virtual void unk122( uint32 nIndex ) = 0;
+	// Named by what it does: forwards nIndex to virtual 25 of the view object of the network game client
+	virtual void SetClientViewIndex( uint32 nIndex ) = 0;
 	virtual void SkipDemoToTime( float flTime ) = 0;
 	virtual void FlashWindow() = 0;
 	virtual void DesktopNotify( const char *pszTitle, const char *pszMessage ) = 0;
@@ -212,7 +224,9 @@ public:
 	virtual bool IsInstantReplayPaused() = 0;
 	virtual float GetInstantReplayTimescale() = 0;
 	virtual bool IsClientLocalToActiveServer() = 0;
-	virtual uint64 unk148() = 0;
+	// Named by what it does: the uint64 of the network game client that INetSupport::GetBaseServerInfo reports
+	// first and the SourceTV status prints formatted
+	virtual uint64 GetConnectedServerSteamID() = 0;
 	virtual const char *GetDefaultRenderSystemOption() = 0;
 	virtual void SetDefaultRenderSystemOption( const char *pszOption ) = 0;
 	virtual bool IsRenderSystemOptionFromCommandLine() = 0;
@@ -223,7 +237,8 @@ public:
 	virtual void MarkRenderSystemOptionRecommended() = 0;
 	// Writes cfg/boot.vcfg.
 	virtual void SaveBootConfig() = 0;
-	virtual void unk157( const EngineLoopState_t &loopState ) = 0;
+	// Named by what it does: puts the game UI service into its loading progress state (progress 0 of 1.0)
+	virtual void BeginGameUILoadingProgress( const EngineLoopState_t &loopState ) = 0;
 	virtual void RunPanoramaAnimUpdate() = 0;
 	virtual void WaitForPanoramaAnimUpdate() = 0;
 	virtual const char *GetLanguage( int nType ) = 0;
@@ -239,21 +254,22 @@ public:
 	virtual void SetLowViolence( bool bLowViolence ) = 0;
 	virtual float DemoTicksToTime( int nTicks ) = 0;
 	virtual const char *GetDemoRecordingFileName() = 0;
-	// Returns the constant 0.1.
-	virtual double unk171() = 0;
+	// AMNOTE: Returns the constant 0.1; no source names it and the engine does not call it
+	virtual double ConstantDoubleQuery() = 0;
 	// Record of the frame being submitted, NULL outside of the engine's frame submission
 	virtual EnginePresentedFrame_t *GetPendingPresentedFrame() = 0;
 	// Copy of the most recently presented frame record
 	virtual EnginePresentedFrame_t GetLastPresentedFrame() = 0;
-	virtual bool unk174( const void *pSyncMsg ) = 0;
-	// No-op in this build.
-	virtual void unk175() = 0;
-	// No-op in this build.
-	virtual void unk176( int nValue ) = 0;
-	// No-op in this build.
-	virtual void unk177() = 0;
-	virtual void unk178( const char *pszCommand, bool bEnable ) = 0;
-	virtual void unk179() = 0;
+	// Hands a GOTV sync answer of the game coordinator to the broadcast player ("Ignoring unexpected sync from gc")
+	virtual bool OnGCGotvSyncReceived( const void *pSyncMsg ) = 0;
+	// AMNOTE: The next three are no-ops in this build; no source names them
+	virtual void EmptyEngineCallback1() = 0;
+	virtual void EmptyEngineCallback2( int nValue ) = 0;
+	virtual void EmptyEngineCallback3() = 0;
+	// Named by what it does: stores the lowercased name with the flag in a list of the engine client
+	virtual void AddCommandFilter( const char *pszCommand, bool bEnable ) = 0;
+	// Named by what it does: clears a global flag of the engine client and returns its address
+	virtual void ClearCommandFilterFlag() = 0;
 	virtual void SendVProfLiteReportToServer( void *pReport ) = 0;
 	virtual int GetGlobalThreadPoolMode() = 0;
 	virtual void SetGlobalThreadPoolMode( int nMode ) = 0;

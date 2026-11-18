@@ -15,13 +15,19 @@
 
 class IDebugVisualizer;
 
+class CFrustum;
+class ISceneView;
+
 // Returned by IEngineServiceMgr::GetDebugVisualizerMgr. Every method takes the registry lock.
+//
+// AMNOTE: Names come from CDebugVisualizerMgr of s&box (libengine2.so DWARF) and Dota 2 2018 (libengine2.dylib
+// symbols); CS2 adds the group argument and IsAnyVisualizerActive.
 abstract_class IDebugVisualizerMgr
 {
 public:
 	virtual int GetVisualizerCount() = 0;
 
-	// nGroup selects the visualizers that unk004 forwards to.
+	// nGroup selects the visualizers that SetOverlayStartTime forwards to.
 	virtual void AddVisualizer( const CGlobalSymbol &name, IDebugVisualizer *pVisualizer, int nGroup ) = 0;
 
 	// Returns the removed visualizer, or NULL. The caller destroys it.
@@ -30,15 +36,15 @@ public:
 	virtual IDebugVisualizer *FindVisualizer( const CGlobalSymbol &name ) = 0;
 
 	// Forwards the time and the flag to every visualizer added with nGroup.
-	virtual void unk004( int nGroup, float flTime, bool ) = 0;
+	virtual void SetOverlayStartTime( int nGroup, float flTime, bool ) = 0;
 
-	// The remaining methods forward to every visualizer; their arguments are not recovered.
-	virtual void unk005() = 0;
-	virtual void unk006() = 0;
+	// The remaining methods forward to every visualizer.
+	virtual void DebugDraw( CFrustum *pFrustum, ISceneView *pView, float, float ) = 0;
+	virtual void AgeList( float, float ) = 0;
 	// Empty in every visualizer of the engine.
-	virtual void unk007() = 0;
-	// True when the forwarded call returns true for at least one visualizer.
-	virtual bool unk008() = 0;
+	virtual void SetTimeDelta( double flTimeDelta ) = 0;
+	// Named by what it does: true when at least one visualizer reports itself active
+	virtual bool IsAnyVisualizerActive() = 0;
 };
 
 #endif // IDEBUGVISUALIZERMGR_H

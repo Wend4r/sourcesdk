@@ -22,7 +22,7 @@ public:
 
 	virtual void AddRecord( int nPlayerSlot, bool bServer, int nKey, const char *pszText ) = 0;
 
-	virtual void SpewDiffs( int nPlayerSlot, bool bUnk ) = 0;
+	virtual void SpewDiffs( int nPlayerSlot, bool ) = 0;
 };
 
 #endif // IPREDICTIONDIFFMANAGER_H

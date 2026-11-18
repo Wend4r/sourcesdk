@@ -25,7 +25,8 @@ public:
 	virtual void AddPeerListener( void *pListener ) = 0;
 	virtual void RemovePeerListener( void *pListener ) = 0;
 
-	virtual void unk026( INetworkMessageInternal *pNetMessage ) = 0;
+	// Empty in this build (Dota 2 2018 RegisterP2PNetMessageAbstract)
+	virtual void RegisterP2PNetMessage( INetworkMessageInternal *pNetMessage ) = 0;
 
 	virtual void RefreshPeerListener( void *pListener ) = 0;
 
@@ -37,8 +38,8 @@ public:
 
 	virtual void OnP2PSessionRequest( SteamNetworkingMessagesSessionRequest_t *pRequest ) = 0;
 
-	// Empty in this build
-	virtual void unk032() = 0;
+	// AMNOTE: Empty on both platforms; no source names it
+	virtual void EmptyP2PCallback() = 0;
 };
 
 #endif // INETWORKP2PSERVICE_H

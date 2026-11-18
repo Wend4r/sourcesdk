@@ -20,11 +20,15 @@ class GameSessionConfiguration_t;
 #define GAMECONFIGURATION_CLIENT_INTERFACE_VERSION "GameConfigClientV001"
 #define GAMECONFIGURATION_SERVER_INTERFACE_VERSION "GameConfigServerV001"
 
+// AMNOTE: Names come from CGameConfiguration / CDOTAGameConfiguration of Dota 2 2018 (libclient.dylib symbols)
+// where the CS2 slot does the same thing.
 abstract_class IGameConfiguration : public ISource2ClientConfig, public ISource2ServerConfig
 {
 public:
-	virtual void *unk019() = 0;
-	virtual void *unk020( const char *pszName ) = 0;
+	// NULL in CS2
+	virtual void *GetEncryptionKey() = 0;
+	// NULL in CS2
+	virtual void *FindProceduralEntity( const char *pszName ) = 0;
 	virtual bool ParseGameSessionConfiguration( KeyValues *pOptions, GameSessionConfiguration_t *pConfig ) = 0;
 	virtual bool SetWorldSession( GameSessionConfiguration_t *pConfig ) = 0;
 	virtual void ClearWorldSession() = 0;
@@ -32,18 +36,22 @@ public:
 	virtual const char *GetModGameSubdir() = 0;
 	// Called by the game loop mode from LoopInit and ReceivedServerInfo once it has registered its own prerequisites;
 	// a false result fails the loop mode. Returns true in CS2 without reading the arguments.
-	virtual bool unk025( GameSessionConfiguration_t *pConfig, ILoopModePrerequisiteRegistry *pRegistry ) = 0;
-	virtual void *unk026() = 0;
-	// Splits the query into key/value pairs and hands them to the game specific handler, which is empty in CS2
+	virtual bool LoopPostInitAllGameSystems( GameSessionConfiguration_t *pConfig, ILoopModePrerequisiteRegistry *pRegistry ) = 0;
+	virtual void RegisterGameActivities() = 0;
+	// Splits the query into key/value pairs and hands them to ExecuteURL, which is empty in CS2
 	virtual void ParseURLQuery( const char *pszURLQuery ) = 0;
-	virtual void *unk028() = 0;
+	// Empty in CS2
+	virtual void GetBugReportLaunchURLParameters( KeyValues *pKeyValues ) = 0;
 	// Appends the descriptions of the game's network string tables (EffectDispatch, VguiScreen, InfoPanel, Scenes, ...)
 	// to a vector of 0x68 byte entries, each starting with the CUtlString table name
-	virtual void Unk_AppendStringTableDescriptions( void *pOutVector ) = 0;
-	virtual bool unk030( int nMessageId ) = 0;
+	virtual void GetStringTableDefs( void *pOutVector ) = 0;
+	// False in CS2
+	virtual bool IsUserMessage( int nMessageId ) = 0;
 	// KeyValues stored by SetWorldSession
 	virtual KeyValues *GetSessionKeyValues() = 0;
 	virtual bool IsToolControlledSession() = 0;
+	// Key/value pairs of ParseURLQuery; empty in CS2
+	virtual void ExecuteURL( int nArgs, const void *pArgs ) = 0;
 };
 
 #endif // IGAMECONFIGURATION_H

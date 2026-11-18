@@ -52,9 +52,10 @@ public:
 	// Get engine build number
 	virtual int GetEngineBuildNumber() = 0;
 
-	virtual void unk012( void *pInfo ) = 0;
+	// Dota 2 2018 names; GetServerInfo fills both, the extended part at +40
+	virtual void GetBaseServerInfo( void *pInfo ) = 0;
 
-	virtual void unk013( void *pInfo ) = 0;
+	virtual void GetExtendedServerInfo( void *pInfo ) = 0;
 
 	virtual void GetServerInfo( void *pServerInfo ) = 0;
 
@@ -80,7 +81,8 @@ public:
 	virtual bool ServerPing( const ns_address &netAdrPublic,
 		IMatchAsyncOperationCallback *pCallback, IMatchAsyncOperation **ppAsyncOperation ) = 0;
 
-	virtual bool Unk_SetNetworkConfig( void *p ) = 0;
+	// Passes both arguments to SteamDatagram_SetNetworkConfig and warns "Failed to set network config: %s" on failure
+	virtual bool SetNetworkConfig( const void *pConfig, const void *pOptions ) = 0;
 };
 
 #define INETSUPPORT_VERSION_STRING "INETSUPPORT_001"

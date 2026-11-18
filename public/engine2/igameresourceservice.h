@@ -26,7 +26,7 @@ public:
 	virtual HGameResourceManifest LoadGameResourceManifestGroup( const char *pszResourceGroupName, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
 	virtual HGameResourceManifest CreateGameResourceManifest( int nResourceCount, const char *const *ppszResourceNames, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
 	virtual HGameResourceManifest CreateGameResourceManifest( EntityResourceManifestCreationCallback_t pfnCreationCallback, void *pContext, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
-	virtual void SetManifestCompletionCallback( HGameResourceManifest hManifest, IGameResourceManifestLoadCompletionCallback *pCallback, int nResourceCount, const char *const *ppszResourceNames, bool bUnk ) = 0;
+	virtual void SetManifestCompletionCallback( HGameResourceManifest hManifest, IGameResourceManifestLoadCompletionCallback *pCallback, int nResourceCount, const char *const *ppszResourceNames, bool ) = 0;
 	virtual bool IsManifestLoaded( HGameResourceManifest hManifest ) = 0;
 	virtual void BlockUntilManifestLoaded( HGameResourceManifest hManifest ) = 0;
 	virtual void DestroyResourceManifest( HGameResourceManifest hManifest ) = 0;
@@ -38,8 +38,9 @@ public:
 	virtual void GetManifestResourceNames( HGameResourceManifest hManifest, CUtlVector< CUtlString > &vecResourceNames ) = 0;
 	virtual HGameResourceManifest AllocGameResourceManifest( ResourceManifestLoadBehavior_t eBehavior, const char *pszAllocatorName, ResourceManifestLoadPriority_t ePriority ) = 0;
 	virtual bool CreateGameResourceManifest( HGameResourceManifest hManifest ) = 0;
-	virtual HGameResourceManifest LoadCompressedGameResourceManifest( const CCompressedResourceManifest *pCompressedManifest, bool bUnk, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
-	virtual void AppendToGameResourceManifest( HGameResourceManifest hManifest, const CCompressedResourceManifest *pCompressedManifest, bool bUnk1, ResourceManifestLoadBehavior_t eBehavior, bool bUnk2 ) = 0;
+	// bManifestFlag4 sets bit 0x4 of the manifest flags; what it selects, and the bools without a name, is not established
+	virtual HGameResourceManifest LoadCompressedGameResourceManifest( const CCompressedResourceManifest *pCompressedManifest, bool bManifestFlag4, ResourceManifestLoadBehavior_t eBehavior, const char *pszManifestName, ResourceManifestLoadPriority_t ePriority ) = 0;
+	virtual void AppendToGameResourceManifest( HGameResourceManifest hManifest, const CCompressedResourceManifest *pCompressedManifest, bool bManifestFlag4, ResourceManifestLoadBehavior_t eBehavior, bool ) = 0;
 	virtual void BuildCompressedManifest( HGameResourceManifest hManifest, CCompressedResourceManifest *pCompressedManifest, bool bOnlyUnloadedResources ) = 0;
 	virtual void LockGameResourceManifest( bool bLock, CGameResourceManifestLock &manifestLock ) = 0;
 	virtual bool AppendToAndCreateGameResourceManifest( HGameResourceManifest hManifest, SpawnGroupHandle_t hSpawnGroup, int nCount, const EntitySpawnInfo_t *pEntities, const matrix3x4a_t *pWorldOffset ) = 0;
