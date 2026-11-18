@@ -34,7 +34,8 @@ public:
 
 	virtual bool RegisterCustomFontFile( const char *pszFullPath, const char *pszFileName ) = 0;
 
-	virtual IUITextLayout *CreateTextLayout( const void *pText, int nTextBytes, int nCharCount, uint8 nEncoding, const void *pLayoutParams, void *pUnk ) = 0;
+	// pLayoutInfoOut is optional: a 20 byte record the layout zeroes and then fills while it runs
+	virtual IUITextLayout *CreateTextLayout( const void *pText, int nTextBytes, int nCharCount, uint8 nEncoding, const void *pLayoutParams, void *pLayoutInfoOut ) = 0;
 	virtual void FreeTextLayout( IUITextLayout *pLayout ) = 0;
 
 	virtual const CUtlVector< CUtlString > &GetSortedValidFontNames() = 0;

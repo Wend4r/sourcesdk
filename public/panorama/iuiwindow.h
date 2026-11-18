@@ -14,6 +14,9 @@
 #include "tier0/platwindow.h"
 #include "tier0/utllinkedlist.h"
 
+template < typename T > class CStrongHandle;
+class InfoForResourceTypeCTextureBase;
+
 class ISceneView;
 class ISceneLayer;
 class IRenderContext;
@@ -28,8 +31,10 @@ class IUIRenderDevice;
 class IUIImageManager;
 struct InputMessage_t;
 
-// The slots after the destructor belong to the engine's top level window class. On Linux the
-// destructor takes two slots and three more slots follow BInitializeSurface.
+// The slots after the destructor belong to the engine's top level window class
+// (CTopLevelWindowSource2). On Linux the destructor takes two slots and three more slots follow
+// BInitializeSurface: the overrides of the class's second base (GetKeyFocusedObject,
+// GetFocusedObject and GetAssociatedPlatWindow in Dota 2), which this interface leaves out.
 abstract_class IUIWindow
 {
 public:
@@ -82,11 +87,10 @@ public:
 
 	virtual bool BIsWindowInLayoutPass() = 0;
 
-	// True while the second layout pass runs
-	virtual bool unk025() = 0;
-
-	// Requests a second layout pass in the next layout
-	virtual void unk026() = 0;
+	// Named by what they do: true while the second layout pass runs; the request makes the next
+	// layout run a second pass
+	virtual bool BIsWindowInSecondLayoutPass() = 0;
+	virtual void RequestSecondLayoutPass() = 0;
 
 	// An opaque pointer shared by the code that owns the window
 	virtual void SetContextPtr( void *pContext ) = 0;
@@ -102,23 +106,24 @@ public:
 	// Blocks every input event except the escape key
 	virtual void SetInhibitInput( bool bInhibitInput ) = 0;
 
-	// Blocks the input events of one event source
-	virtual void unk034( bool bUnk ) = 0;
+	// Named by what it does: BAllowInput drops every input event whose source is the gamepad
+	virtual void SetInhibitGamepadInput( bool bInhibitInput ) = 0;
 
-	// Three flags, each read by the first and latched to true by the second slot of a pair;
-	// the window input reports the first two
-	virtual bool unk035() = 0;
-	virtual void unk036() = 0;
-	virtual bool unk037() = 0;
-	virtual void unk038() = 0;
-	virtual bool unk039() = 0;
-	virtual void unk040() = 0;
+	// Named by what they do: three window flags, each read by the first and set for good by the
+	// second slot of a pair; panorama itself never sets or reads them, only the window's owner
+	virtual bool BLatchedFlag0() = 0;
+	virtual void SetLatchedFlag0() = 0;
+	virtual bool BLatchedFlag1() = 0;
+	virtual void SetLatchedFlag1() = 0;
+	virtual bool BLatchedFlag2() = 0;
+	virtual void SetLatchedFlag2() = 0;
 
-	virtual void unk041( float flUnk ) = 0;
+	// Name from CS:GO IUIWindow; nothing in CS2 panorama reads the stored value
+	virtual void SetMinFPS( float flMinFPS ) = 0;
 
-	// Forward to the window input
-	virtual bool unk042() = 0;
-	virtual bool unk043() = 0;
+	// Forward to the window input (its gamepad controller)
+	virtual bool BWasGamepadConnectedThisSession() = 0;
+	virtual bool BWasGamepadUsedThisSession() = 0;
 
 	// An invisible window is neither painted nor hit-tested
 	virtual bool IsVisible() = 0;
@@ -138,10 +143,10 @@ public:
 	virtual void SetLayerLevel( int nLevel ) = 0;
 	virtual int GetLayerLevel() = 0;
 
-	// Scale that fits the window height to a 1080 pixel layout, or its width when the
-	// window is narrower than the aspect ratio unk055 sets
-	virtual float unk054() = 0;
-	virtual void unk055( float flUnk ) = 0;
+	// Named by what they do: the scale that fits the window height to a 1080 pixel layout, or its
+	// width when the window is narrower than the aspect ratio the setter stores (0 turns that off)
+	virtual float GetAutoScaleFactor() = 0;
+	virtual void SetAutoScaleAspectRatio( float flAspectRatio ) = 0;
 
 	// The platform window input events must name to reach the window
 	virtual void SetPlatWindow( PlatWindow_t hWindow ) = 0;
@@ -151,16 +156,18 @@ public:
 
 	virtual void LayoutAndPaintIfNeeded() = 0;
 
-	// A flag the engine sets on the windows it creates by name only
-	virtual bool unk059() = 0;
-	virtual void unk060( bool bUnk ) = 0;
+	// Named by what they do: set on the windows IUIEngine::CreateNewSurfacelessUIWindow creates
+	virtual bool BIsSurfaceless() = 0;
+	virtual void SetSurfaceless( bool bSurfaceless ) = 0;
 
-	// Takes ownership of an object the window deletes after its next layout pass
-	virtual void unk061( void *p ) = 0;
+	// Named by what it does: takes the polymorphic object *ppObject points to (and clears the
+	// pointer); the window deletes it after its next layout pass
+	virtual void DeleteAfterNextLayout( void **ppObject ) = 0;
 
-	// Returns a structure by value from the render surface; the declared signature is not callable
-	virtual void unk062() = 0;
-	virtual void unk063() = 0;
+	// Named by what they do: the render target texture of the window's surface (an empty handle
+	// when the surface draws to the back buffer) and the bDrawToBackBuffer of BInitializeSurface
+	virtual CStrongHandle< InfoForResourceTypeCTextureBase > GetRenderTargetTexture() = 0;
+	virtual bool BDrawToBackBuffer() = 0;
 
 	virtual ~IUIWindow() {}
 
@@ -175,7 +182,7 @@ public:
 	virtual IUIImageManager *AccessImageManager() = 0;
 
 	// Name the window was created with
-	virtual const char *unk071() = 0;
+	virtual const char *GetName() = 0;
 
 	virtual void Shutdown() = 0;
 	virtual bool BInitializeSurface( int x, int y, int nWidth, int nHeight, bool bFixedSurfaceSize, bool bEnforceWindowAspectRatio, bool bAcceptKBandMouse, bool bDrawToBackBuffer ) = 0;

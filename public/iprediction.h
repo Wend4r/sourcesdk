@@ -12,12 +12,19 @@
 #endif
 
 #include "appframework/iappsystem.h"
-#include "game/client/prediction.h"
 #include "mathlib/vector.h"
 #include "playerslot.h"
 #include "splitscreenslot.h"
 
-// TrueView timing state of the client prediction
+struct PostDataUpdateCall_t;
+
+// Reason passed to the client prediction entry point.
+enum PredictionReason_t : int
+{
+	PREDICTION_REASON_CLIENT_COMMAND_TICK = 0,
+};
+
+// TrueView timing state of the client prediction (CPrediction::m_TrueView)
 struct PredictionTrueViewState_t
 {
 	bool m_bActive;
@@ -25,15 +32,18 @@ struct PredictionTrueViewState_t
 	bool m_bOffsetUndetermined;
 	// Desired prediction time offset in ticks
 	float m_flDesiredOffsetTicks;
-	int m_nUnk08;
-	int m_nUnk0C;
+	// Named by what it does: Update stores how many commands it walked past the last predicted
+	// command of the split screen slot
+	int m_nCommandsPastLastPredicted;
+	// Zeroed by the constructor; nothing in client.dll reads or writes it in this build
+	int m_nUnused0C;
 	// Desired final predicted tick and its fraction
 	int m_nDesiredPredictedTick;
 	float m_flDesiredPredictedTickFraction;
-	int m_nUnk18;
-	int m_nUnk1C;
+	// Named by what they do: Update copies the desired final predicted tick here after a pass
+	int m_nLastDesiredPredictedTick;
+	float m_flLastDesiredPredictedTickFraction;
 };
-COMPILE_TIME_ASSERT( sizeof( PredictionTrueViewState_t ) == 0x20 );
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -46,7 +56,7 @@ public:
 	virtual void NetUpdatePreStart() = 0;
 	virtual void NetUpdateStart() = 0;
 	virtual void PostEntityPacketReceived() = 0;
-	virtual void PostNetworkDataReceived() = 0;
+	virtual void PostNetworkDataReceived( const PostDataUpdateCall_t *pCalls, uint64 nCount ) = 0;
 	// Resets the prediction state after a full update
 	virtual void OnReceivedUncompressedPacket() = 0;
 

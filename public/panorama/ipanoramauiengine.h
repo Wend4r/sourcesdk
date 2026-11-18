@@ -35,7 +35,10 @@ public:
 
 	virtual int DeleteClosedWindows() = 0;
 
-	virtual bool unk017( void *p1, void *p2 ) = 0;
+	// Named by what it does: walks the DOM of a layout file and appends a 24 byte record (id
+	// attribute, element name, a third value of the element) for every element to the CUtlVector;
+	// false when the layout has no document
+	virtual bool CollectLayoutFilePanelIDs( const void *pLayoutFile, void *pVecPanels ) = 0;
 };
 
 #endif // IPANORAMAUIENGINE_H

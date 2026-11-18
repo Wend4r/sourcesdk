@@ -33,21 +33,24 @@ public:
 	virtual void OnMouseMove( float flMouseX, float flMouseY ) = 0;
 	virtual void OnMouseMoveSurfaceCoords( float flMouseX, float flMouseY ) = 0;
 
-	// Accumulates a 20 byte structure until the next frame
-	virtual bool unk003( const void *pData ) = 0;
+	// Named by what it does: keeps a 20 byte input record until the next frame; while one is
+	// pending a new record replaces its first three ints and adds its two floats
+	virtual bool CoalesceInputDelta( const void *pData ) = 0;
 
 	virtual void GetSurfaceMousePosition( float &x, float &y ) = 0;
 
 	// Forwards to IUIWindow::BCursorVisible
 	virtual bool BCursorVisible() = 0;
 
+	// Read from the gamepad controller of the input engine
 	virtual int GetNumGamepadsConnected() = 0;
 	virtual bool BWasGamepadConnectedThisSession() = 0;
 	virtual bool BWasGamepadUsedThisSession() = 0;
 	virtual bool BWasMouseOrKeyboardUsedThisSession() = 0;
 
-	// Forwards to the input engine
-	virtual void unk010() = 0;
+	// Named by what it does: the gamepad controller polls SDL and updates the button state of
+	// every gamepad
+	virtual void UpdateGamepadState() = 0;
 
 	// The source of the last input event: 1 gamepad, 2 keyboard, 3 mouse
 	virtual bool BWasGamepadLastInputSource() = 0;
@@ -95,9 +98,12 @@ public:
 	virtual bool BDragInProgress() = 0;
 	virtual void SetDragDropEnabled( int nMouseCode, bool bEnabled ) = 0;
 
-	virtual bool unk036() = 0;
-	virtual bool unk037() = 0;
-	virtual void unk038() = 0;
+	// Named by what they do: true while a panel is drag-scrolled with the mouse and for 0.4 seconds
+	// after it is let go, or while the scroll keeps moving; the state of SDL_IsScreenKeyboardShown
+	// the input keeps each frame; ends the drag and drop without a drop
+	virtual bool BIsDragScrolling() = 0;
+	virtual bool BIsScreenKeyboardShown() = 0;
+	virtual void CancelDragDrop() = 0;
 };
 
 } // namespace panorama

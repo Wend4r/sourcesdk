@@ -20,7 +20,9 @@ enum ClientUIState_t : int;
 abstract_class IClientUI : public IAppSystem
 {
 public:
-	virtual void unk011() = 0;
+	// Named by what it does: registers the client UI's render handler (its second base) with the
+	// render service for the "PostPanoramaRenderingPipeline"
+	virtual void RegisterPostPanoramaRenderHandler() = 0;
 
 	virtual void OnGameUIActivated() = 0;
 	virtual void OnGameUIHidden() = 0;
@@ -28,17 +30,22 @@ public:
 	virtual void OnLevelLoadingFinished() = 0;
 	virtual void UpdateProgressBar( float flProgress, const char *pszStatusText ) = 0;
 
-	virtual bool unk017() = 0;
+	// Named by what it does: returns a byte member of CCsgoClientUI (+0x60, right after its render
+	// handler base) that no code of the client writes after construction
+	virtual bool BClientUIFlag() = 0;
 
 	virtual ClientUIState_t GetClientUIState() = 0;
 
 	virtual void AddListener( void *pListener ) = 0;
 	virtual void RemoveListener( void *pListener ) = 0;
 
-	// Flag toggled by unk022
-	virtual bool unk021() = 0;
-	virtual void unk022( bool bEnable ) = 0;
-	virtual void *unk023() = 0;
+	// Named by what they do: the state of the client UI's input context, which the setter enables
+	// or disables with IInputStackSystem::EnableInputContext
+	virtual bool IsInputContextEnabled() = 0;
+	virtual void EnableInputContext( bool bEnable ) = 0;
+
+	// Named by what it does: CS2 returns NULL
+	virtual void *GetClientUIObject() = 0;
 
 	virtual void SetClientUIState( ClientUIState_t nState ) = 0;
 };

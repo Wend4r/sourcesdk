@@ -19,16 +19,18 @@ abstract_class IGameClientExports : public IAppSystem
 {
 public:
 	virtual bool IsPlayerGameVoiceMuted( int nPlayerSlot ) = 0;
-	virtual void Unk_MutePlayerGameVoice( void *p ) = 0;
-	virtual void Unk_UnmutePlayerGameVoice( void *p ) = 0;
+	// Names from Dota 2 (CGameClientExports); empty in CS2
+	virtual void MutePlayerGameVoice( int nPlayerSlot ) = 0;
+	virtual void UnmutePlayerGameVoice( int nPlayerSlot ) = 0;
 
 	// Fire the "gameui_activated" / "gameui_hidden" game events
 	virtual void OnGameUIActivated() = 0;
 	virtual void OnGameUIHidden() = 0;
 
-	virtual bool unk016() = 0;
-	virtual void *unk017() = 0;
-	virtual bool unk018() = 0;
+	// Names from Dota 2 (CGameClientExports); CS2 returns false, 0 and false
+	virtual bool GetPlayerIsAliveUserId( int nUserID, bool &bIsAlive ) = 0;
+	virtual int GetNumPlayersAliveHumanPlayersOnTeam( int nTeam ) = 0;
+	virtual bool ClientWantsBlurEffect() = 0;
 };
 
 #endif // IGAMECLIENTEXPORTS_H

@@ -20,7 +20,9 @@ class IVPhysics2World;
 abstract_class INavSystem : public IAppSystem
 {
 public:
-	virtual void GenerateNavMesh( void *pUnused, const CNavGenInput &input, const IVPhysics2World *pWorld, const void *pHulls, bool bUnk1, bool bUnk2, bool bSkipSpaceBuild, CNavGenOutput *pOutput ) = 0;
+	// The two first flags are named by what they do: bCopyPolysToOutput also copies the generated
+	// polygons into the output, bStartFromOutputMesh starts from the mesh pOutput already holds
+	virtual void GenerateNavMesh( void *pUnused, const CNavGenInput &input, const IVPhysics2World *pWorld, const void *pHulls, bool bCopyPolysToOutput, bool bStartFromOutputMesh, bool bSkipSpaceBuild, CNavGenOutput *pOutput ) = 0;
 
 	virtual void LoadNavSettingsFromGameInfo() = 0;
 };
