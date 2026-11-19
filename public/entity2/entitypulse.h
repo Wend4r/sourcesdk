@@ -226,6 +226,7 @@ struct PulseLibraryRegistration_t
 	bool m_bIsCellLibrary;
 	bool m_bExposeAllMethods;
 	bool m_bSkip;
+	const char* m_pszLegacyLibraryName;
 };
 
 class CEntityIOOutput;

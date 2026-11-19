@@ -155,7 +155,10 @@ private:
 
 	struct MurmurHash2HashFunctor
 	{ 
-		unsigned int operator()( uint32 n ) const { return MurmurHash2( &n, sizeof( uint32 ), 0x3501A674 ); } 
+		unsigned int operator()( uint32 n ) const { return MurmurHash2( &n, sizeof( uint32 ), 0x3501A674 ); }
+
+		// m_DataDescKeyUnserializers is keyed by the field type: the game hashes it widened to 32 bits
+		unsigned int operator()( SpawnKeyType_t eType ) const { return ( *this )( static_cast< uint32 >( eType ) ); }
 	};
 
 	typedef CUtlDelegate<bool( IErrorListener *, CEntityInstance *, void *, const ComponentUnserializerFieldInfo_t *, const KeyValues3 * )> KeyUnserializerDelegate;
