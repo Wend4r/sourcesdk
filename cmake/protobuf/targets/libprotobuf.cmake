@@ -17,6 +17,12 @@ elseif(MACOS)
 endif()
 
 target_compile_options(${PROTOBUF_LIBPPROTOBUF_NAME} PRIVATE ${PLATFORM_COMPILE_OPTIONS})
+
+# Protobuf is third-party code: its warnings are not ours to fix, and -Wall from the platform options asks for them
+if(NOT MSVC)
+	target_compile_options(${PROTOBUF_LIBPPROTOBUF_NAME} PRIVATE -w)
+endif()
+
 target_link_options(${PROTOBUF_LIBPPROTOBUF_NAME} PRIVATE ${PLATFORM_LINK_OPTIONS})
 
 target_compile_definitions(${PROTOBUF_LIBPPROTOBUF_NAME} PRIVATE ${PLATFORM_COMPILE_DEFINITIONS})
