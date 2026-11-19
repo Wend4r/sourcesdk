@@ -1497,7 +1497,8 @@ void ConVar_PrintDescription( const ConVarRefAbstract *ref );
 // Purpose: Utility class to quickly allow ConCommands to call member methods
 //-----------------------------------------------------------------------------
 #ifdef _MSC_VER
-#pragma warning (disable : 4355 )
+#pragma warning ( push )
+#pragma warning ( disable : 4355 )
 #endif
 
 template< class T >
@@ -1610,7 +1611,7 @@ private:
 };
 
 #ifdef _MSC_VER
-#pragma warning ( default : 4355 )
+#pragma warning ( pop )
 #endif
 
 //-----------------------------------------------------------------------------

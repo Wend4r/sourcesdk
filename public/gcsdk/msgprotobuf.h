@@ -19,12 +19,16 @@
 #undef TYPE_BOOL
 #endif
 
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning( disable:4512 )
+#endif
 #include <tier0/valve_minmax_off.h>
 #include "steammessages.pb.h"
 #include <tier0/valve_minmax_on.h>
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 
 namespace GCSDK
@@ -248,14 +252,14 @@ public:
 	}
 
 private:
-	virtual ::google::protobuf::Message *InternalAlloc()
+	virtual ::google::protobuf::Message *InternalAlloc() override
 	{
 		PB_OBJECT_TYPE *pObject = (PB_OBJECT_TYPE *)malloc( sizeof( PB_OBJECT_TYPE ) );
 		Construct( pObject );
 		return pObject;
 	}
 
-	virtual void InternalFree( google::protobuf::Message *pMsg )
+	virtual void InternalFree( google::protobuf::Message *pMsg ) override
 	{
 		if ( NULL == pMsg )
 		{
