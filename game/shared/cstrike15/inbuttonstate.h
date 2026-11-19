@@ -37,7 +37,7 @@ schema enum InputBitMask_t : int64
 	IN_LOOK_AT_WEAPON = 1ll << 35,
 };
 
-schema enum EInButtonState : uint64
+schema enum EInButtonState : uint32
 {
 	IN_BUTTON_UP = 0,
 	IN_BUTTON_DOWN = 1,

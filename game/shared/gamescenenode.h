@@ -48,7 +48,7 @@ template < class T, class OWNER > class CInterpolatedVarProceduralUsingOwnerLerp
 // HIERARCHY_BONE_MERGE, "absorigin" or no name HIERARCHY_ABSORIGIN, a model attachment
 // HIERARCHY_ATTACHMENT, a bone HIERARCHY_BONE).
 //-----------------------------------------------------------------------------
-enum HierarchyType_t : uint8
+enum HierarchyType_t : uint32
 {
 	HIERARCHY_NONE = 0,
 	HIERARCHY_BONE_MERGE = 1,
