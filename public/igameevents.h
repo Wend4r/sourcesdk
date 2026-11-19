@@ -140,7 +140,6 @@ public:
 	virtual KeyValues3* GetDataKeys() const = 0;
 };
 
-// The event list entry of an event: id at 0x0C, local flag at 0x28, reliable flag at 0x29
 class CGameEventDescriptor;
 
 //-----------------------------------------------------------------------------
