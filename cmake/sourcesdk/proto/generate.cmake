@@ -32,8 +32,9 @@ function(sourcesdk_compile_protos PROTO_FILENAMES PROTO_ARGS PROTO_DIR PROTO_OUT
 	if(PROTO_OUTPUT_DIR)
 		file(MAKE_DIRECTORY ${PROTO_OUTPUT_DIR})
 	endif()
-	file(MAKE_DIRECTORY ${LOGS_DIR})
-	file(MAKE_DIRECTORY ${ERROR_LOGS_DIR})
+
+	# The log directories are made below, next to the protoc call: a configure that compiles no proto, which is nearly
+	# every one, used to leave a pair of empty directories named after its time in logs/protos.
 
 	foreach(PROTO_FILENAME IN LISTS PROTO_FILENAMES)
 		if(NOT PROTO_DIR)
