@@ -117,11 +117,14 @@ GS_EVENT_MSG( SpawnGroupPrecache )
 	IEntityPrecacheConfiguration *m_pConfig;
 };
 
+// Built by CSpawnGroupMgrGameSystem when a precached spawn group is shut down (24 bytes); the world
+// group is the spawn group's
 GS_EVENT_MSG( SpawnGroupUncache )
 {
 	CUtlString m_SpawnGroupName;
 	CUtlString m_EntityLumpName;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
+	WorldGroupId_t m_WorldGroupId;
 };
 
 GS_EVENT_MSG( PreSpawnGroupLoad )
@@ -141,19 +144,25 @@ GS_EVENT_MSG( PostSpawnGroupLoad )
 	CUtlVector< CEntityHandle > m_EntityList;
 };
 
+// Built by CSpawnGroupMgrGameSystem::SpawnGroupShutdown (48 bytes): the world group of the spawn group
+// and its entities
 GS_EVENT_MSG( PreSpawnGroupUnload )
 {
 	CUtlString m_SpawnGroupName;
 	CUtlString m_EntityLumpName;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
+	WorldGroupId_t m_WorldGroupId;
 	CUtlVector< CEntityHandle > m_EntityList;
 };
 
+// Built by CSpawnGroupMgrGameSystem when a spawn group is shut down (24 bytes); the world group is
+// the spawn group's (CWorldGameSystem reads it)
 GS_EVENT_MSG( PostSpawnGroupUnload )
 {
 	CUtlString m_SpawnGroupName;
 	CUtlString m_EntityLumpName;
 	SpawnGroupHandle_t m_SpawnGroupHandle;
+	WorldGroupId_t m_WorldGroupId;
 };
 
 GS_EVENT_MSG( ActiveSpawnGroupChanged )
@@ -394,12 +403,12 @@ GS_EVENT_MSG( ServerPrePackEntities )
 // method (Init returns true, the handlers are empty, GetName/SetName use m_pName,
 // DoesGameSystemReallocate returns false); only YouForgot_DECLARE_GAME_SYSTEM is pure.
 // The handlers are named after their event messages (GS_EVENT); Valve's own names differ
-// for some of them (FrameUpdatePreEntityThink, FrameUpdatePostEntityThink, ... in Dota 2).
+// for some of them (FrameUpdatePreEntityThink, FrameUpdatePostEntityThink, ...).
 //-----------------------------------------------------------------------------
 abstract_class IGameSystem
 {
 public:
-	// Element of IGameSystem::sm_GameSystemFactories (Dota 2 2017 DWARF)
+	// Element of IGameSystem::sm_GameSystemFactories
 	struct FactoryInfo_t
 	{
 		FactoryInfo_t() : m_pFactory( NULL ), m_bHasBeenAdded( true ) {}
@@ -504,7 +513,7 @@ public:
 	GS_EVENT_IMPL( WorldGroupDestroyed )					// 54
 
 	// Named by what the game does with them: nothing dispatches or overrides these two in
-	// server.dll, libserver.so or client.dll; the registration only caches their slot indices
+	// the server or the client; the registration only caches their slot indices
 	virtual void UndispatchedEvent1( const void *const msg ) {}	// 55
 	virtual void UndispatchedEvent2( const void *const msg ) {}	// 56
 
@@ -523,7 +532,7 @@ public:
 	virtual void YouForgot_DECLARE_GAME_SYSTEM_InYourClassDefinition() = 0;
 
 protected:
-	// Returned by GetName (Dota 2 2017 DWARF: IGameSystem::m_pName)
+	// Returned by GetName
 	const char *m_pName;
 };
 
@@ -543,6 +552,20 @@ public:
 
 // Deprecated, use CAutoGameSystem instead
 using CBaseGameSystem = CAutoGameSystem;
+
+//-----------------------------------------------------------------------------
+// The class name comes from the RTTI of the game. 16 bytes on both platforms (the deleting
+// destructor frees 16 bytes): IGameSystem and nothing else, not even the member
+// DECLARE_GAME_SYSTEM() adds, so it only overrides the pure method. Never registered: the
+// dispatch of an event builds one on the stack (vtable and a null name), swaps in a table
+// that records which slot is called and calls the handler through its pointer to member, to
+// learn the slot index of the event (cached per event).
+//-----------------------------------------------------------------------------
+class CDontUseThisGameSystem : public IGameSystem
+{
+public:
+	virtual void YouForgot_DECLARE_GAME_SYSTEM_InYourClassDefinition() override {}
+};
 
 #include "schemacompiler/schemaoff.h"
 

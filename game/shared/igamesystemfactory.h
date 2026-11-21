@@ -1,6 +1,6 @@
 //========= Copyright © 1996-2005, Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose:
 //
 // $NoKeywords: $
 //=============================================================================//
@@ -21,62 +21,72 @@
 * you need provide the CBaseGameSystemFactory::sm_pFirst by whatever means are possible to you.
 * As a starting point you can look for "Game System %s is defined twice" string in the server binary
 * to find it, if that string is missing then this comment is out of date, please, report or update it!
-* 
+*
 * Once CBaseGameSystemFactory::sm_pFirst is initialized and correct address provided,
 * you can create your own gamesystem (refer to igamesystem.h on what it should be like) and register it
 * via:
-* 
-* // Factory object would be returned, and you are responsible for freeing it inside the ``Shutdown`` method of ``YourGameSystemClass``
-* // common way to do that would be to store the factory as a static member in ``YourGameSystemClass`` and free it when ``Shutdown`` is called.
-* IGameSystemFactory factory = new CGameSystemStaticFactory<YourGameSystemClass>( "YourGameSystemName", &PointerToYourGameSystemInstance );
-* 
+*
+* // The factory links itself into the list of the game. Unlink and free it with ``Destroy`` inside the
+* // ``Shutdown`` method of ``YourGameSystemClass``; a common way is to keep the factory as a static member
+* // of ``YourGameSystemClass``.
+* auto *pFactory = new CGameSystemStaticFactory< YourGameSystemClass >( "YourGameSystemName", &YourGameSystemInstance );
+*
 * after the new factory object has been created and if all is done correctly your game system should be viewable to the game
 * and its callbacks should trigger.
 */
 
 using GameSystemListeners_t = CUtlVector< CUtlVector< IGameSystem * > >;
 
+//-----------------------------------------------------------------------------
+// Creates and destroys one game system for IGameSystem::InitAllSystems.
+// The interface has no virtual destructor (10 slots on both platforms); the factories are
+// static objects of the game.
+//-----------------------------------------------------------------------------
 abstract_class IGameSystemFactory
 {
 public:
 	virtual bool Init() = 0;
 	virtual void PostInit() = 0;
 	virtual void Shutdown() = 0;
-	virtual IGameSystem* CreateGameSystem() = 0;
-	virtual void DestroyGameSystem(IGameSystem* pGameSystem) = 0;
-	virtual bool ShouldAutoAdd() = 0;
-	virtual int GetPriority() = 0;
-	virtual void SetGlobalPtr(void* pValue) = 0;
-	virtual bool IsReallocating() = 0;
-	virtual IGameSystem* GetStaticGameSystem() = 0;
+	virtual IGameSystem *CreateGameSystem() = 0;
+	virtual void DestroyGameSystem( IGameSystem *pGameSystem ) = 0;
+	virtual bool ShouldAutoAdd() const = 0;
+	virtual int GetPriority() const = 0;
+	// IGameSystem::SetGameSystemGlobalPtrs of the created system forwards here
+	virtual void SetGlobalPtr( void *pValue ) = 0;
+	// IGameSystem::DoesGameSystemReallocate of the created system forwards here
+	virtual bool IsReallocating() const = 0;
+	virtual IGameSystem *GetStaticGameSystem() = 0;
 };
 
+//-----------------------------------------------------------------------------
+// A named factory in the list that IGameSystem::InitAllSystems walks. The
+// constructor puts it at the head of the list.
+//-----------------------------------------------------------------------------
 class CBaseGameSystemFactory : public IGameSystemFactory
 {
 protected:
-	explicit CBaseGameSystemFactory(const char* pName)
+	explicit CBaseGameSystemFactory( const char *pName )
 	{
 		m_pName = pName;
 		m_pNext = *sm_pFirst;
 		*sm_pFirst = this;
 	}
 
-	virtual ~CBaseGameSystemFactory() = default;
+	// Not virtual: the game's factories have no destructor slot. Destroy frees a factory
+	// through its own type.
+	~CBaseGameSystemFactory() = default;
 
-private:
-	CBaseGameSystemFactory* m_pNext;
-	const char* m_pName;
-
-public:
-	void Destroy()
+	// Removes this factory from the list, a helper for Destroy of the derived factories
+	void RemoveFromList()
 	{
-		CBaseGameSystemFactory* pFactoryCurrent = *sm_pFirst;
-		CBaseGameSystemFactory* pFactoryPrevious = nullptr;
-		while (pFactoryCurrent)
+		CBaseGameSystemFactory *pFactoryCurrent = *sm_pFirst;
+		CBaseGameSystemFactory *pFactoryPrevious = nullptr;
+		while ( pFactoryCurrent )
 		{
-			if (strcmp(pFactoryCurrent->m_pName, m_pName) == 0)
+			if ( pFactoryCurrent == this )
 			{
-				if (pFactoryPrevious == nullptr)
+				if ( pFactoryPrevious == nullptr )
 				{
 					*sm_pFirst = pFactoryCurrent->m_pNext;
 				}
@@ -84,7 +94,7 @@ public:
 				{
 					pFactoryPrevious->m_pNext = pFactoryCurrent->m_pNext;
 				}
-				delete pFactoryCurrent;
+				m_pNext = nullptr;
 				return;
 			}
 			pFactoryPrevious = pFactoryCurrent;
@@ -92,25 +102,30 @@ public:
 		}
 	}
 
+private:
+	CBaseGameSystemFactory *m_pNext;
+	const char *m_pName;
+
+public:
 	const char *GetName() const { return m_pName; }
 	CBaseGameSystemFactory *GetNext() const { return m_pNext; }
 
 	static void LoopByFactories( void ( *pfnFunc )( CBaseGameSystemFactory *pFactory ) )
 	{
-		CBaseGameSystemFactory* pFactoryList = *sm_pFirst;
-		while (pFactoryList)
+		CBaseGameSystemFactory *pFactoryList = *sm_pFirst;
+		while ( pFactoryList )
 		{
 			pfnFunc( pFactoryList );
 			pFactoryList = pFactoryList->GetNext();
 		}
 	}
 
-	static CBaseGameSystemFactory* GetFactoryByName(const char* pName)
+	static CBaseGameSystemFactory *GetFactoryByName( const char *pName )
 	{
-		CBaseGameSystemFactory* pFactoryList = *sm_pFirst;
-		while (pFactoryList)
+		CBaseGameSystemFactory *pFactoryList = *sm_pFirst;
+		while ( pFactoryList )
 		{
-			if (strcmp(pFactoryList->m_pName, pName) == 0)
+			if ( strcmp( pFactoryList->m_pName, pName ) == 0 )
 			{
 				return pFactoryList;
 			}
@@ -119,10 +134,10 @@ public:
 		return nullptr;
 	}
 
-	static IGameSystem* GetGlobalPtrByName(const char* pName)
+	static IGameSystem *GetGlobalPtrByName( const char *pName )
 	{
-		CBaseGameSystemFactory* pFactory = GetFactoryByName(pName);
-		if (pFactory)
+		CBaseGameSystemFactory *pFactory = GetFactoryByName( pName );
+		if ( pFactory )
 		{
 			return pFactory->GetStaticGameSystem();
 		}
@@ -131,110 +146,158 @@ public:
 
 	// AMNOTE: This needs to be provided by a thirdparty application,
 	// and is required if you want to register your own gamesystem
-	static CBaseGameSystemFactory** sm_pFirst;
+	static CBaseGameSystemFactory **sm_pFirst;
 };
 
-template <class T, class U = T>
-class CGameSystemStaticFactory : public CBaseGameSystemFactory
+//-----------------------------------------------------------------------------
+// Factory of a game system that is a global object of the module. The game's
+// instantiations return the system's own ShouldAutoAdd and GetPriority values
+// (most of them true and 0, as here).
+//-----------------------------------------------------------------------------
+template < class T, class U = T >
+class CGameSystemStaticFactory final : public CBaseGameSystemFactory
 {
 public:
-	CGameSystemStaticFactory(const char* pName, T* pActualGlobal, U** ppGlobalPointer = nullptr) : CBaseGameSystemFactory(pName)
+	CGameSystemStaticFactory( const char *pName, T *pActualGlobal, U **ppGlobalPointer = nullptr ) : CBaseGameSystemFactory( pName )
 	{
 		m_pActualGlobal = pActualGlobal;
 		m_ppGlobalPointer = ppGlobalPointer;
-		pActualGlobal->SetName(pName);
+		pActualGlobal->SetName( pName );
+	}
+
+	// Unlinks the factory from the list and frees it (for factories made with new)
+	void Destroy()
+	{
+		RemoveFromList();
+		delete this;
 	}
 
 	bool Init() override { return m_pActualGlobal->Init(); }
 	void PostInit() override { m_pActualGlobal->PostInit(); }
 	void Shutdown() override { m_pActualGlobal->Shutdown(); }
 
-	IGameSystem* CreateGameSystem() override
+	IGameSystem *CreateGameSystem() override
 	{
-		m_pActualGlobal->SetGameSystemGlobalPtrs(m_pActualGlobal);
+		m_pActualGlobal->SetGameSystemGlobalPtrs( m_pActualGlobal );
 		return m_pActualGlobal;
 	}
 
-	void DestroyGameSystem(IGameSystem* pGameSystem) override
+	void DestroyGameSystem( IGameSystem *pGameSystem ) override
 	{
-		m_pActualGlobal->SetGameSystemGlobalPtrs(nullptr);
+		m_pActualGlobal->SetGameSystemGlobalPtrs( nullptr );
 	}
 
-	bool ShouldAutoAdd() override { return true; }
-	int GetPriority() override { return 0; }
+	bool ShouldAutoAdd() const override { return true; }
+	int GetPriority() const override { return 0; }
 
-	void SetGlobalPtr(void* pValue) override
+	void SetGlobalPtr( void *pValue ) override
 	{
-		if (m_ppGlobalPointer)
+		if ( m_ppGlobalPointer )
 		{
-			*m_ppGlobalPointer = reinterpret_cast<T*>(pValue);
+			*m_ppGlobalPointer = reinterpret_cast< T * >( pValue );
 		}
 	}
 
-	bool IsReallocating() override { return false; }
-	IGameSystem* GetStaticGameSystem() override { return m_pActualGlobal; }
+	bool IsReallocating() const override { return false; }
+	IGameSystem *GetStaticGameSystem() override { return m_pActualGlobal; }
 
 private:
-	T* m_pActualGlobal;
-	U** m_ppGlobalPointer;
+	T *m_pActualGlobal;
+	U **m_ppGlobalPointer;
 };
 
-class CBaseReallocatingGameSystemFactory : public CBaseGameSystemFactory
+//-----------------------------------------------------------------------------
+// Factory of a game system that is allocated by every CreateGameSystem. The
+// game's instantiations call the system's static init/shutdown helpers from
+// Init/Shutdown when it has them (CSource2EntitySystem::StaticInit, ...) and
+// return its own ShouldAutoAdd and GetPriority values.
+//-----------------------------------------------------------------------------
+template < class T, class U = T >
+class CGameSystemReallocatingFactory final : public CBaseGameSystemFactory
 {
-protected:
-	CBaseReallocatingGameSystemFactory(const char* pName, void** ppGlobalPointer) : CBaseGameSystemFactory(pName)
+public:
+	CGameSystemReallocatingFactory( const char *pName, U **ppGlobalPointer = nullptr ) : CBaseGameSystemFactory( pName )
 	{
 		m_ppGlobalPointer = ppGlobalPointer;
 	}
 
-public:
-	IGameSystem* GetCurrentGameSystem() const
+	// Unlinks the factory from the list and frees it (for factories made with new)
+	void Destroy()
 	{
-		return m_ppGlobalPointer ? static_cast<IGameSystem*>(*m_ppGlobalPointer) : nullptr;
-	}
-
-protected:
-	void** m_ppGlobalPointer;
-};
-
-template <class T, class U = T>
-class CGameSystemReallocatingFactory : public CBaseReallocatingGameSystemFactory
-{
-public:
-	CGameSystemReallocatingFactory(const char* pName, U** ppGlobalPointer = nullptr) : CBaseReallocatingGameSystemFactory(pName, reinterpret_cast<void**>(ppGlobalPointer))
-	{
+		RemoveFromList();
+		delete this;
 	}
 
 	bool Init() override { return true; }
-	void PostInit() override { }
-	void Shutdown() override { }
+	void PostInit() override {}
+	void Shutdown() override {}
 
-	IGameSystem* CreateGameSystem() override
+	IGameSystem *CreateGameSystem() override
 	{
-		T* pObject = new T();
-		pObject->SetGameSystemGlobalPtrs(pObject);
+		T *pObject = new T();
+		pObject->SetGameSystemGlobalPtrs( pObject );
 		return pObject;
 	}
 
-	void DestroyGameSystem(IGameSystem* pGameSystem) override
+	void DestroyGameSystem( IGameSystem *pGameSystem ) override
 	{
-		pGameSystem->SetGameSystemGlobalPtrs(nullptr);
+		pGameSystem->SetGameSystemGlobalPtrs( nullptr );
 		delete pGameSystem;
 	}
 
-	bool ShouldAutoAdd() override { return true; }
-	int GetPriority() override { return 0; }
+	bool ShouldAutoAdd() const override { return true; }
+	int GetPriority() const override { return 0; }
 
-	void SetGlobalPtr(void* pValue) override
+	void SetGlobalPtr( void *pValue ) override
 	{
-		if (m_ppGlobalPointer)
+		if ( m_ppGlobalPointer )
 		{
-			*reinterpret_cast<U**>(m_ppGlobalPointer) = reinterpret_cast<T*>(pValue);
+			*m_ppGlobalPointer = reinterpret_cast< T * >( pValue );
 		}
 	}
 
-	bool IsReallocating() override { return true; }
-	IGameSystem* GetStaticGameSystem() override { return nullptr; }
+	bool IsReallocating() const override { return true; }
+	IGameSystem *GetStaticGameSystem() override { return nullptr; }
+
+private:
+	U **m_ppGlobalPointer;
+};
+
+//-----------------------------------------------------------------------------
+// Keeps a global pointer of interface type I up to date for a game system base
+// class T whose derived classes have their own factories. It is not in the
+// factory list and creates nothing: T::SetGameSystemGlobalPtrs forwards to its
+// SetGlobalPtr. The game has one, a static object for
+// CGameSystemAbstractFactory< CVScriptGameSystem, IVScriptGameSystem >, which
+// CVScriptGameSystem and CCSGOVScriptGameSystem call.
+//-----------------------------------------------------------------------------
+template < class T, class I >
+class CGameSystemAbstractFactory : public IGameSystemFactory
+{
+public:
+	explicit CGameSystemAbstractFactory( I **ppGlobalPointer ) : m_ppGlobalPointer( ppGlobalPointer ) {}
+
+	bool Init() override { return false; }
+	void PostInit() override {}
+	void Shutdown() override {}
+	IGameSystem *CreateGameSystem() override { return nullptr; }
+	void DestroyGameSystem( IGameSystem *pGameSystem ) override {}
+	bool ShouldAutoAdd() const override { return false; }
+	int GetPriority() const override { return 0; }
+
+	void SetGlobalPtr( void *pValue ) override
+	{
+		if ( m_ppGlobalPointer )
+		{
+			*m_ppGlobalPointer = reinterpret_cast< T * >( pValue );
+		}
+	}
+
+	bool IsReallocating() const override { return false; }
+	IGameSystem *GetStaticGameSystem() override { return nullptr; }
+
+private:
+	I **m_ppGlobalPointer;
 };
 
 struct AddedGameSystem_t
