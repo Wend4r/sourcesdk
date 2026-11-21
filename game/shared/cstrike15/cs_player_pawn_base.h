@@ -6,7 +6,8 @@
 #include "../../server/baseplayerpawn.h"
 #include "../../server/ai_speech.h"
 
-class CCSPlayerStateInfo;
+class CCSPlayerState;
+enum CSPlayerState : uint32;
 
 //-----------------------------------------------------------------------------
 // CCSPlayerPawnBase adds 8 methods to CAI_ExpresserHost< CBasePlayerPawn >: Linux slots
@@ -30,8 +31,8 @@ public:
 	virtual void Blind( float flHoldTime, float flFadeTime, float flStartingAlpha ) = 0;
 	// Empty; CCSPlayerPawn moves the player between states for the new team, CCSObserverPawn enters STATE_OBSERVER_MODE. Called by OnTeamChanged unless the controller is in m_bInSwitchTeam. Named by what it does, after the state part of CCSPlayer::ChangeTeam of Counter-Strike: Global Offensive
 	virtual void HandleTeamChange( int nOldTeam, int nNewTeam ) = 0;
-	// The state info of a CSPlayerState (name, enter and leave callbacks); CCSPlayerPawn and CCSObserverPawn add their states. Called by State_Enter. CCSPlayer::State_LookupInfo of Counter-Strike: Global Offensive
-	virtual CCSPlayerStateInfo *State_LookupInfo( int nState ) = 0;
+	// The CCSPlayerState member of the pawn for a state, null when the pawn has none: Welcome, ObserverMode, GungameRespawn, DeathWaitForKey and Dormant here; CCSPlayerPawn and CCSObserverPawn answer their own states first. Called by State_Enter
+	virtual CCSPlayerState *State_LookupInfo( CSPlayerState nState ) = 0;
 };
 
 #endif // CSTRIKE15_CS_PLAYER_PAWN_BASE_H
