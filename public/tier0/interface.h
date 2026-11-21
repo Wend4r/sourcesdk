@@ -46,12 +46,13 @@ PLATFORM_INTERFACE CreateInterfaceFn Plat_GetModuleInterfaceFactory( HMODULE mod
 
 // This is a helper function to load a module, get its factory, and get a specific interface.
 // You are expected to free all of these things.
-// Returns false and cleans up if any of the steps fail.
+// Returns false and cleans up if any of the steps fail; pOutModule is optional.
 PLATFORM_INTERFACE bool Plat_LoadInterface(
 	const char *pModuleName,
 	const char *pInterfaceVersionName,
 	HMODULE *pOutModule,
-	void **pOutInterface );
+	void **pOutInterface,
+	bool bHideLoadingError = true );
 
 //-----------------------------------------------------------------------------
 // Objects the modules share by name through tier0

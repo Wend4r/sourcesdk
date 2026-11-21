@@ -32,6 +32,7 @@ extern "C" void __cxa_pure_virtual() { VPurecallHandler(); }
 
 #include "tier0/dbg.h"
 #include "tier0/memalloc.h"
+#include "tier0/bufferstring.h"
 #include <string.h>
 #include <stdio.h>
 #include "memdbgoff.h"
@@ -64,7 +65,12 @@ extern "C" void __cxa_pure_virtual() { VPurecallHandler(); }
 const char* GetModuleName()
 {
 	static char szModule[MAX_PATH]{};
-	if (szModule[0] == '\0') Plat_GetModuleFilename(szModule, sizeof(szModule));
+	if ( szModule[ 0 ] == '\0' )
+	{
+		CBufferStringN< MAX_PATH > moduleName;
+		Plat_GetModuleFilename( &moduleName );
+		V_strncpy( szModule, moduleName.Get(), sizeof( szModule ) );
+	}
 	return szModule;
 }
 

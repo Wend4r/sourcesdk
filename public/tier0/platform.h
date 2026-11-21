@@ -861,13 +861,14 @@ FORCEINLINE double fsel(double fComparand, double fValGE, double fLT)
 #endif	// BUILD_AS_DLL
 
 //-----------------------------------------------------------------------------
-// Returns true if debugger attached, false otherwise
+// Returns true if debugger attached, false otherwise; on Linux the answer is cached unless
+// bNoCachedResults is set
 //-----------------------------------------------------------------------------
 #if defined( PLATFORM_WINDOWS ) || defined( PLATFORM_LINUX ) || defined( PLATFORM_OSX )
-PLATFORM_INTERFACE bool Plat_IsInDebugSession();
+PLATFORM_INTERFACE bool Plat_IsInDebugSession( int bNoCachedResults = 0 );
 PLATFORM_INTERFACE void Plat_DebugString( const tchar * );
 #else
-inline bool Plat_IsInDebugSession() { return false; }
+inline bool Plat_IsInDebugSession( int bNoCachedResults = 0 ) { return false; }
 #define Plat_DebugString(s) ((void)0)
 #endif
 
@@ -1322,10 +1323,9 @@ PLATFORM_INTERFACE double			Plat_FloatTime();		// Returns time in seconds since 
 PLATFORM_INTERFACE uint32			Plat_MSTime();			// Time in milliseconds.
 PLATFORM_INTERFACE uint64			Plat_MSTime64();		// Time in milliseconds.
 PLATFORM_INTERFACE uint64			Plat_USTime();			// Time in microseconds.
-PLATFORM_INTERFACE char *			Plat_ctime64( const time_t *timep, char *buf, size_t bufsize );
+// The 64-bit time functions take the time by value; null when bufsize is under 26
+PLATFORM_INTERFACE char *			Plat_ctime64( time_t nTime, char *buf, size_t bufsize );
 PLATFORM_INTERFACE uint64			Plat_GetClockStart();	// Snapshot of the clock when app started.
-PLATFORM_INTERFACE int32			Plat_timezone( void );
-PLATFORM_INTERFACE int32			Plat_daylight( void );
 
 // Relative ticks and conversions between tick counts and durations
 PLATFORM_INTERFACE uint64			Plat_RelativeTicks();
@@ -1359,15 +1359,14 @@ PLATFORM_INTERFACE void				Plat_GetLocalTime( struct tm *pNow );
 
 // Convert a time_t (specified in nTime - seconds since Jan 1, 1970 UTC) to a local calendar time in a threadsafe and non-crash-prone way.
 PLATFORM_INTERFACE void				Plat_ConvertToLocalTime( uint64 nTime, struct tm *pNow );
-PLATFORM_INTERFACE struct tm *		Plat_localtime( const time_t *timep, struct tm *result );
 
 // Get a time string (same as ascstring, but threadsafe).
 PLATFORM_INTERFACE void				Plat_GetTimeString( struct tm *pTime, char *pOut, int nMaxBytes );
 
 // converts a time_t to a struct tm without the local time conversion of ConvertToLocalTime
-PLATFORM_INTERFACE struct tm*		Plat_gmtime64( const time_t *nTime, struct tm *pTime );
+PLATFORM_INTERFACE struct tm*		Plat_gmtime64( time_t nTime, struct tm *pTime );
 PLATFORM_INTERFACE time_t			Plat_timegm64( struct tm *timeptr );
-PLATFORM_INTERFACE struct tm *		Plat_localtime64( const time_t *timep, struct tm *result );
+PLATFORM_INTERFACE struct tm *		Plat_localtime64( time_t nTime, struct tm *result );
 PLATFORM_INTERFACE time_t			Plat_mktime64( struct tm *pTime );
 PLATFORM_INTERFACE char *			Plat_asctime( const struct tm *pTime, char *pBuf, size_t nBufSize );
 
@@ -1458,21 +1457,20 @@ typedef const void *( *PlatClipboardDataCallback_t )( void *pUserData, const cha
 typedef void ( *PlatClipboardCleanupCallback_t )( void *pUserData );
 PLATFORM_INTERFACE bool Plat_SetClipboardData( PlatClipboardDataCallback_t pfnCallback, PlatClipboardCleanupCallback_t pfnCleanup, void *pUserData, const char **ppMimeTypes, size_t nMimeTypes );
 
-// Get the process' executable filename.
-PLATFORM_INTERFACE void				Plat_GetModuleFilename( char *pOut, int nMaxBytes );
+// Get the process' executable filename: the one set by Plat_SetModuleFilename, or the path of the
+// executable; fails fatally when neither is known
+PLATFORM_INTERFACE void				Plat_GetModuleFilename( CBufferString *pOut );
 PLATFORM_INTERFACE void				Plat_SetModuleFilename( const char *pExeName );
-PLATFORM_INTERFACE bool				Plat_GetExecutablePath( char* pBuff, size_t nBuff );
-PLATFORM_INTERFACE int				Plat_GetExecutablePathUTF8( CBufferString *buf );
+PLATFORM_INTERFACE bool				Plat_GetExecutablePathUTF8( CBufferString *pOut );
 
-PLATFORM_INTERFACE const char *		Plat_GetGameDirectory( int unknown=0 );
+PLATFORM_INTERFACE const char *		Plat_GetGameDirectory();
 PLATFORM_INTERFACE void				Plat_SetGameDirectory( const char *pGameDir );
 
-PLATFORM_INTERFACE int				Plat_chmod(const char *filename, int pmode);
 // bDontFollowLinks checks a symbolic link itself rather than its target. Returns -1 when the file doesn't exist.
 PLATFORM_INTERFACE int64			Plat_FileSize( const char *pFileName, bool bDontFollowLinks = false );
 PLATFORM_INTERFACE bool				Plat_IsDirectory( const char *pFilepath, bool bDontFollowLinks = false );
 PLATFORM_INTERFACE bool				Plat_FileIsReadOnly(const char *pFileName);
-PLATFORM_INTERFACE bool				Plat_FileExists( const char *pFileName, int flags );
+PLATFORM_INTERFACE bool				Plat_FileExists( const char *pFileName, bool bDontFollowLinks = false );
 PLATFORM_INTERFACE bool				Plat_IsFile( const char *pFileName, bool bDontFollowLinks = false );
 PLATFORM_INTERFACE bool				Plat_IsSymlink( const char *pPath );
 PLATFORM_INTERFACE bool				Plat_GetFileType( const char *pPath, CBufferString &out );
@@ -1501,7 +1499,8 @@ PLATFORM_INTERFACE void				Plat_TranslateSymbolicLinks( const char *pInDir, CBuf
 // Reads a whole file into a buffer allocated by g_pMemAlloc, returns 0 or a platform error code
 PLATFORM_INTERFACE int				PlatC_ReadFileToMemory( const char *pFileName, void **ppBuffer, uint32 *pnSize, bool bNullTerminate, uint32 nMaxSize );
 
-PLATFORM_INTERFACE char const *		Plat_GetEnv( char const *pEnvVarName );
+// Copies the value of the variable into out and returns its string, null when the variable is not set
+PLATFORM_INTERFACE const char *		Plat_GetEnv( const char *pEnvVarName, CBufferString &out );
 PLATFORM_INTERFACE const char *		Plat_GetCrtEnv( const char *pEnvVarName );
 PLATFORM_INTERFACE bool				Plat_HasEnv( const char *pEnvVarName );
 PLATFORM_INTERFACE bool				Plat_SetEnv( const char *pEnvVarName, const char *pValue, bool bOverwrite );
@@ -1522,16 +1521,6 @@ PLATFORM_INTERFACE const char *		Plat_GetMiniDumpErrorString();
 PLATFORM_INTERFACE void				Plat_NonFatalErrorFunc( const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
 
 PLATFORM_INTERFACE void				Plat_FatalError( const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
-
-//called to exit the process due to a fatal error. This allows for the application to handle providing a hook as well which can be called
-//before exiting
-PLATFORM_INTERFACE void				Plat_ExitProcessWithError( int nCode, bool bGenerateMinidump = false );
-
-//sets the callback that will be triggered by Plat_ExitProcessWithError. NULL is valid. The return value true indicates that
-//the exit has been handled and no further processing should be performed. False will cause a minidump to be generated, and the process
-//to be terminated
-typedef bool (*ExitProcessWithErrorCBFn)( int nCode );
-PLATFORM_INTERFACE void				Plat_SetExitProcessWithErrorCB( ExitProcessWithErrorCBFn pfnCB );
 
 PLATFORM_INTERFACE void				Plat_RestartCurrentProcess();
 PLATFORM_INTERFACE void				Plat_OnExecutableExitingMain();
@@ -1714,7 +1703,8 @@ PLATFORM_INTERFACE const CPUInformation &GetCPUInformation();
 
 PLATFORM_INTERFACE uint64 Plat_CPUTickFrequency();
 
-PLATFORM_INTERFACE double Plat_GetCPUUsage();
+// The share of the CPU time in use; the one minute load average on Linux
+PLATFORM_INTERFACE float Plat_GetCPUUsage();
 
 PLATFORM_INTERFACE void Plat_GetCurrentDate( int *pDay, int *pMonth, int *pYear );
 
@@ -2399,8 +2389,6 @@ PLATFORM_INTERFACE const char *GetNameFromOSType( EOSType type );
 PLATFORM_INTERFACE bool OSTypesAreCompatible( EOSType eOSTypeDetected, EOSType eOSTypeRequired );
 
 #ifdef PLATFORM_OSX
-PLATFORM_INTERFACE bool Plat_GetAppleMajorMinorPatchVersion( int *pMajor, int *pMinor, int *pPatch );
-
 // Whether the version of macOS is at least nMajor.nMinor.nPatch
 PLATFORM_INTERFACE bool IsAppleOSVersionSupported( int nMajor, int nMinor, int nPatch );
 #endif
@@ -2459,17 +2447,64 @@ PLATFORM_INTERFACE void Plat_RegistryWriteInt( PlatRegistryKey_t hKey, const cha
 PLATFORM_INTERFACE void Plat_RegistryReadString( PlatRegistryKey_t hKey, const char *pKey, char *pValue, int nValueBufferSize, const char *pDefaultValue );
 PLATFORM_INTERFACE void Plat_RegistryWriteString( PlatRegistryKey_t hKey, const char *pKey, const char *pValue );
 
-class CWindowedGameInstanceMutex;
+// Holds the lock that keeps a second instance of the game from running
+class CWindowedGameInstanceMutex
+{
+public:
+	bool m_bIsValid;
+#ifdef _WIN32
+	// Named by what it does: the "<game>_singleton_mutex" mutex
+	void *m_hMutex;
+#else
+	int m_nLockfd;
+	char m_lockFilename[ 512 ];
+#endif
+};
+
 PLATFORM_INTERFACE CWindowedGameInstanceMutex *Plat_CreateGameInstanceMutex( const char *pGameName );
 PLATFORM_INTERFACE void Plat_DestroyGameInstanceMutex( CWindowedGameInstanceMutex *pMutex );
 PLATFORM_INTERFACE CWindowedGameInstanceMutex *Plat_GetLastGameInstanceMutex();
 
+// The registry of the global list with the hash, created on first use; declared in tier0/globallist.h
 struct GlobalListTypelessRegistry_t;
 PLATFORM_INTERFACE GlobalListTypelessRegistry_t *Plat_GetGlobalListRegistry( uint64 nUniqueHash );
 
 #ifdef PLATFORM_POSIX
+struct SignalName_t
+{
+	const char *szName;
+	SignalName_t *pNext;
+};
+
+// The state tier0 keeps for one signal, passed to its handlers; the handlers run in the order
+// they were registered and the default action runs when none of them returned true
 struct VSignalHandlerInfo_t;
 typedef bool (*FN_SignalHandler_t)( int nSignal, siginfo_t *pSignalInfo, void *pContext, VSignalHandlerInfo_t &info );
+
+struct VSignalHandlerInfo_t
+{
+	SignalName_t *pNames;
+
+	// Named by what it does: bit 30 is set when sigaction failed, bit 3 exits the process after
+	// the default action
+	uint32 m_nFlags;
+
+	// Named by what it does: bit 0 is the spin lock that guards this signal
+	int32 m_nLock;
+
+	// Named by what it does: the registered handlers, m_InlineHandlers until there are more
+	FN_SignalHandler_t *m_pHandlers;
+	size_t m_nHandlerCount;
+	size_t m_nMaxHandlers;
+	FN_SignalHandler_t m_InlineHandlers[ 1 ];
+
+	// Named by what it does: the action of the signal before tier0 installed its own
+	struct sigaction m_PreviousAction;
+
+	// Named by what it does: the object that runs the default action of the signal
+	void *m_pDefaultAction;
+};
+
 PLATFORM_INTERFACE void Plat_RegisterSignalHandler( int nSignal, FN_SignalHandler_t pfnHandler, bool bUnregister );
 #endif
 

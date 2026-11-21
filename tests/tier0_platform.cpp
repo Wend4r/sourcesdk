@@ -854,21 +854,9 @@ REGISTER_NAMED_TEST( "Plat_EventActivityIdControl.CreateId", Plat_EventActivityI
 #endif // PLATFORM_WINDOWS
 
 #ifdef PLATFORM_OSX
-REGISTER_NAMED_TEST( "Plat_GetAppleMajorMinorPatchVersion.Version", Plat_GetAppleMajorMinorPatchVersion_Version )
-{
-	int nMajor = 0, nMinor = 0, nPatch = 0;
-	TEST_TRUE( Plat_GetAppleMajorMinorPatchVersion( &nMajor, &nMinor, &nPatch ) );
-	TEST_TRUE( nMajor >= 10 );
-	TEST_TRUE( nMinor >= 0 && nPatch >= 0 );
-}
-
 REGISTER_NAMED_TEST( "IsAppleOSVersionSupported.Versions", IsAppleOSVersionSupported_Versions )
 {
-	int nMajor = 0, nMinor = 0, nPatch = 0;
-	TEST_TRUE( Plat_GetAppleMajorMinorPatchVersion( &nMajor, &nMinor, &nPatch ) );
-	TEST_TRUE( IsAppleOSVersionSupported( nMajor, nMinor, nPatch ) );
 	TEST_TRUE( IsAppleOSVersionSupported( 10, 0, 0 ) );
-	TEST_FALSE( IsAppleOSVersionSupported( nMajor + 1, 0, 0 ) );
 }
 
 REGISTER_NAMED_TEST( "GetMoltenVKSupportsMetal.Answers", GetMoltenVKSupportsMetal_Answers )
