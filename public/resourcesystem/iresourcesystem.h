@@ -15,6 +15,7 @@ class CVDataTypeManager;
 class CResourceSystemProfiler;
 class CResourceSystemLeakTracker;
 class IToolsResourceListener;
+class IToolsResourcePreReloadListener;
 
 typedef void ( *FnResourceLoadCompleteCallback_t )( HGameResourceManifest hManifest, void *pUserData );
 
@@ -68,8 +69,12 @@ public:
 	virtual void UnregisterForcedSynchronizationCallback( void *pCallback, void *pParam ) = 0;
 	virtual void GetResourcesNamesInManifest( HGameResourceManifest pGameResourceManifest, CUtlVector< CUtlString > &pVector ) = 0;
 	virtual void GetAllResourcesInManifestTree( HGameResourceManifest pGameResourceManifest, CUtlVector< ResourceHandle_t > &pVector ) = 0;
-	virtual void AddResourceListeners( void *pListener ) = 0;
-	virtual void RemoveResourceListeners( void *pListener ) = 0;
+	// Slots 56 and 57. Act only in tools mode (IApplication::IsInToolsMode): the listener goes on the
+	// list that is told at once or on the one told in the next Update, by its
+	// GetResourceNotificationMode; both lists get NotifyResourceStatusChange. Named by the type
+	// the game passes (the IToolsResourceListener base of CBodyGameSystem and CAnimGraphGameSystem)
+	virtual void RegisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
+	virtual void UnregisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
 	virtual void RegisterAsyncResourceListener( void *pListener ) = 0;
 	virtual void UnregisterAsyncResourceListener( void *pListener ) = 0;
 	virtual ICodeResourceManifestManager *GetCodeResourceManifestManager() = 0;
@@ -83,10 +88,11 @@ public:
 	virtual CVDataTypeManager *GetVDataTypeManager() = 0;
 	virtual bool IsShuttingDown() = 0;
 	virtual bool GetDebugFlag( int nFlag ) = 0;
-	// s&box names; both only act in tools mode (IApplication::IsInToolsMode) and keep the listeners
-	// in a list that nothing in resourcesystem iterates
-	virtual void RegisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
-	virtual void UnregisterToolsResourceListener( IToolsResourceListener *pListener ) = 0;
+	// Slots 71 and 72. Act only in tools mode; the listeners get NotifyResourcePreReload before a
+	// resource is reloaded (the CS2 game passes
+	// the IToolsResourcePreReloadListener base of CBodyGameSystem and CAnimGraphGameSystem)
+	virtual void RegisterToolsResourcePreReloadListener( IToolsResourcePreReloadListener *pListener ) = 0;
+	virtual void UnregisterToolsResourcePreReloadListener( IToolsResourcePreReloadListener *pListener ) = 0;
 	virtual void InstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void UninstallTestFilesystem( void *pTestFS ) = 0;
 	virtual void Lock() = 0;

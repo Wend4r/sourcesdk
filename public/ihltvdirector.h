@@ -41,23 +41,24 @@ public:
 
 	virtual const char**	GetModEvents() = 0;
 
-	// Named by what the game implementation does: fires the "hltv_versioninfo" event to every HLTV
-	// server; it reads no argument and the type of the one the engine passes is not known.
-	virtual void	SendVersionInfo( void *pUnusedArg ) = 0;
-	// Empty in the game implementation; the name is the earlier SDK guess, the argument is not read.
+	// The two methods marked below are named by what they do.
+	// Fires the "hltv_versioninfo" event to every HLTV server; it reads no argument and the type of
+	// the one the engine passes is not known.
+	virtual void	OnStartRecording( void *pUnusedArg ) = 0;
+	// Named by what it does. Empty in the game implementation, the argument is not read.
 	virtual void	OnHLTVClientDisconnect( void *pUnusedArg ) = 0;
-	// Id of the legacy game event that CaptureCameraEvent() keeps as the last camera event, -1 when there is none.
-	virtual int		GetCameraEventId() = 0;
+	// Id of the legacy game event that OnHLTVNetMessage() keeps as the last camera event, -1 when there is none.
+	virtual int		GetDirectorCameraEventId() = 0;
 	// Sends the "hltv_title" event with the tv_title text to nPlayerSlot, or to every player when it is -1.
-	virtual void	SendTitle( int nPlayerSlot ) = 0;
+	virtual void	BroadcastLocalTitle( int nPlayerSlot ) = 0;
 	// Builds the "hltv_chat" event and serializes it into a new legacy game event message.
 	// On failure *ppMessage is set to NULL.
-	virtual void	SerializeChat( const CSteamID &steamID, const char *pszName, const char *pszText, INetworkMessageInternal **ppSerializer, CNetMessage **ppMessage ) = 0;
+	virtual void	CreateLocalChatMessage( const CSteamID &steamID, const char *pszName, const char *pszText, INetworkMessageInternal **ppSerializer, CNetMessage **ppMessage ) = 0;
 	// Writes the last camera event, if any, into the snapshot buffer.
 	virtual void	OnHLTVUncompressedSnapshot( int nPlayerSlot, bf_write &buf ) = 0;
-	// Stores a copy of the message when it is a legacy game event whose id is GetCameraEventId().
-	virtual void	CaptureCameraEvent( const NetMessageInfo_t *pInfo, const CNetMessage *pData ) = 0;
-	// Per-frame director update driven by the HLTV server; flDelay becomes the value GetDelay() returns.
+	// Stores a copy of the message when it is a legacy game event whose id is GetDirectorCameraEventId()
+	virtual void	OnHLTVNetMessage( const NetMessageInfo_t *pInfo, const CNetMessage *pData ) = 0;
+	// Named by what it does. Per-frame director update driven by the HLTV server; flDelay becomes the value GetDelay() returns.
 	virtual void	UpdateDirector( float flDelay ) = 0;
 };
 
