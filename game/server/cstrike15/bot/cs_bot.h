@@ -19,6 +19,7 @@
 #include "cs_bot_chatter.h"
 #include "cs_gamestate.h"
 #include "navlib/nav_path.h"
+#include "mathlib/vectorws.h"
 
 #include "schemacompiler/schemaon.h"
 
@@ -241,7 +242,7 @@ public:
 public:
 	// A copy of the profile the bot was made with; difficulty changes edit this one.
 	noschema BotProfile *m_pLocalProfile;
-	Vector m_eyePosition;
+	VectorWS m_eyePosition;
 	char m_name[ 64 ];
 
 	// The distance kept from the enemy during gunplay.
@@ -308,7 +309,7 @@ public:
 	// The skill level 0 to 7 the behavior tree is given; 8 derives it from the profile.
 	noschema int m_nSkillLevelOverride;
 
-	Vector m_goalPosition;
+	VectorWS m_goalPosition;
 	CHandle< CBaseEntity > m_goalEntity;
 	// A higher priority player to make way for.
 	CHandle< CBaseEntity > m_avoid;
@@ -374,17 +375,17 @@ public:
 	CountdownTimer m_waitForHostageTimer;
 
 	// The last non-friendly noise heard.
-	Vector m_noisePosition;
+	VectorWS m_noisePosition;
 	float m_noiseTravelDistance;
 	// When it was heard, zero when forgotten.
 	float m_noiseTimestamp;
 	// The entity that made it.
-	CBaseEntity *m_noiseSource;
+	CCSPlayerPawn *m_noiseSource;
 	noschema CNavArea *m_noiseArea;
 	noschema PriorityType m_noisePriority;
 	// Throttles bending the line of sight to the noise.
 	CountdownTimer m_noiseBendTimer;
-	Vector m_bentNoisePosition;
+	VectorWS m_bentNoisePosition;
 	bool m_bendNoisePositionValid;
 
 	// When the looking around changes next.
@@ -398,7 +399,7 @@ public:
 	float m_inhibitLookAroundTimestamp;
 
 	noschema LookAtSpotState m_lookAtSpotState;
-	Vector m_lookAtSpot;
+	VectorWS m_lookAtSpot;
 	noschema PriorityType m_lookAtSpotPriority;
 	// -1 for forever.
 	float m_lookAtSpotDuration;
@@ -416,7 +417,7 @@ public:
 	noschema ApproachPoint m_approachPoint[ MAX_APPROACH_POINTS ];
 	uint8 m_approachPointCount;
 	// Where the approach points were computed from.
-	Vector m_approachPointViewPosition;
+	VectorWS m_approachPointViewPosition;
 
 	// How long the view has not moved.
 	IntervalTimer m_viewSteadyTimer;
@@ -442,9 +443,9 @@ public:
 	float m_lookYawVel;
 
 	// The spot to fire at, its velocity and where it is predicted to be.
-	Vector m_targetSpot;
+	VectorWS m_targetSpot;
 	Vector m_targetSpotVelocity;
-	Vector m_targetSpotPredicted;
+	VectorWS m_targetSpotPredicted;
 	QAngle m_aimError;
 	QAngle m_aimGoal;
 	GameTime_t m_targetSpotTime;
@@ -461,7 +462,7 @@ public:
 	bool m_isEnemyVisible;
 	// VisiblePartType bits.
 	uint8 m_visibleEnemyParts;
-	Vector m_lastEnemyPosition;
+	VectorWS m_lastEnemyPosition;
 	float m_lastSawEnemyTimestamp;
 	float m_firstSawEnemyTimestamp;
 	float m_currentEnemyAcquireTimestamp;
@@ -515,7 +516,7 @@ public:
 	bool m_isStuck;
 	GameTime_t m_stuckTimestamp;
 	// Where the bot became stuck.
-	Vector m_stuckSpot;
+	VectorWS m_stuckSpot;
 	noschema NavRelativeDirType m_wiggleDirection;
 	CountdownTimer m_wiggleTimer;
 	// When to jump next while stuck.
@@ -525,7 +526,7 @@ public:
 	float m_avgVel[ MAX_VEL_SAMPLES ];
 	int m_avgVelIndex;
 	int m_avgVelCount;
-	Vector m_lastOrigin;
+	VectorWS m_lastOrigin;
 
 	// The last radio command received, 0 for none.
 	noschema int m_lastRadioCommand;
@@ -534,7 +535,7 @@ public:
 	// Who sent it.
 	CHandle< CCSPlayerPawn > m_radioSubject;
 	// The position it referred to.
-	Vector m_radioPosition;
+	VectorWS m_radioPosition;
 	float m_voiceEndTimestamp;
 
 	noschema BotChatterInterface *m_pChatter;

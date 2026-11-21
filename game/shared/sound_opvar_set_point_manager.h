@@ -17,6 +17,7 @@
 #include <tier0/utlvector.h>
 #include <tier0/utlsymbollarge.h>
 #include <mathlib/vector.h>
+#include <mathlib/vectorws.h>
 #include <kv3lib/kv3transfer.h>
 #include <schemasystem/schematypes.h>
 
@@ -49,8 +50,7 @@ public:
 	CUtlSymbolLarge m_iszOperator;
 	CUtlSymbolLarge m_iszOpvar;
 	float m_flVal;
-	// VectorWS in the schema
-	Vector m_vPos;
+	VectorWS m_vPos;
 };
 
 //-----------------------------------------------------------------------------

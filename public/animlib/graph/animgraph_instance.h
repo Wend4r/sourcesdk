@@ -237,35 +237,35 @@ public:
 	}
 
 	// The instance does not hold a reference of its own
-	CWeakHandle< InfoForResourceTypeCNmGraphDefinition > m_hGraphDefinition;
+	noschema CWeakHandle< InfoForResourceTypeCNmGraphDefinition > m_hGraphDefinition;
 	// Indexed by node index; the control parameter nodes come first
-	CUtlVector< CNmGraphNode * > m_nodes;
+	noschema CUtlVector< CNmGraphNode * > m_nodes;
 	// One block of m_instanceRequiredMemory bytes that every node is constructed in
-	CUtlLeanVector< uint8 > m_allocatedInstanceMemory;
-	CNmPoseNode *m_pRootNode;
+	noschema CUtlLeanVector< uint8 > m_allocatedInstanceMemory;
+	noschema CNmPoseNode *m_pRootNode;
 	// The ID the creator passed in, also the m_graphUserID of the context
-	int32 m_userID;
-	bool m_isStandaloneGraphInstance;
+	noschema int32 m_userID;
+	noschema bool m_isStandaloneGraphInstance;
 	// Cleared on creation, nothing that was examined sets it
-	bool m_isExternalGraph;
+	noschema bool m_isExternalGraph;
 	// IApplication::IsInToolsMode() at creation, enables the graph log and the root motion debugger
-	bool m_bInToolsMode;
+	noschema bool m_bInToolsMode;
 
-	CNmGraphContext m_graphContext;
-	NmTaskSerializationContext_t m_taskSerializationContext;
+	noschema CNmGraphContext m_graphContext;
+	noschema NmTaskSerializationContext_t m_taskSerializationContext;
 	// Incremented every time m_taskSerializationContext is rebuilt
-	int32 m_nTaskSerializationContextIteration;
-	bool m_taskSerializationRequiresUpdate;
-	bool m_externalGraphStateChanged;
-	CUtlVectorFixedGrowable< const CNmSkeleton *, 3 > m_secondarySkeletons;
+	noschema int32 m_nTaskSerializationContextIteration;
+	noschema bool m_taskSerializationRequiresUpdate;
+	noschema bool m_externalGraphStateChanged;
+	noschema CUtlVectorFixedGrowable< const CNmSkeleton *, 3 > m_secondarySkeletons;
 
-	CTransform m_rootMotionDelta;
+	noschema CTransform m_rootMotionDelta;
 	// Zeroed on creation and whenever the graph state is reset
-	int32 m_nUnknown390;
+	noschema int32 m_nUnknown390;
 	// Name of the instance in the animgraph debugger
-	CUtlString m_debugName;
-	NmGraphDebugMode_t m_debugMode;
-	CNmGraphRecording *m_pRecording;
+	noschema CUtlString m_debugName;
+	noschema NmGraphDebugMode_t m_debugMode;
+	noschema CNmGraphRecording *m_pRecording;
 
 private:
 	template < class T >
@@ -287,8 +287,8 @@ schema class CAnimGraph2InstancePtr
 public:
 	CNmGraphInstance *Get() const { return m_pInstance; }
 
-	CBaseAnimGraphController *m_pController;
-	CNmGraphInstance *m_pInstance;
+	noschema CBaseAnimGraphController *m_pController;
+	noschema CNmGraphInstance *m_pInstance;
 };
 
 #include "schemacompiler/schemaoff.h"

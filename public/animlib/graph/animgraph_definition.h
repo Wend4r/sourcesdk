@@ -80,22 +80,22 @@ public:
 	// The members below are not serialized, the loader fills them in
 
 	// Maps control parameter IDs to their position and virtual parameter IDs to m_virtualParameterNodeIndices
-	CUtlHashtable< CGlobalSymbol, int16 > m_parameterLookupMap;
-	CUtlVector< CNmGraphNode::CDefinition * > m_nodeDefinitions;
+	noschema CUtlHashtable< CGlobalSymbol, int16 > m_parameterLookupMap;
+	noschema CUtlVector< CNmGraphNode::CDefinition * > m_nodeDefinitions;
 	// Holds the node definitions; only the allocation is used, the count stays zero
-	CUtlVector< uint8 > m_nodeDefinitionMemory;
+	noschema CUtlVector< uint8 > m_nodeDefinitionMemory;
 	// Offset of every node in the memory block of an instance
-	CUtlVector< uint32 > m_instanceNodeStartOffsets;
-	uint32 m_instanceRequiredMemory;
-	uint32 m_instanceRequiredAlignment;
+	noschema CUtlVector< uint32 > m_instanceNodeStartOffsets;
+	noschema uint32 m_instanceRequiredMemory;
+	noschema uint32 m_instanceRequiredAlignment;
 
 	CUtlVector< CUtlString > m_nodePaths;
 	// Strong handles in the game
 	CUtlVector< ResourceHandle_t > m_resources;
 	// Every resource of this definition and of the graphs it references, by resource ID
-	CUtlHashtable< ResourceId_t, ResourceHandle_t > m_resourceLUT;
+	noschema CUtlHashtable< ResourceId_t, ResourceHandle_t > m_resourceLUT;
 	// Warnings about referenced resources that failed to load
-	CUtlVector< CUtlString > m_resourceLoadWarnings;
+	noschema CUtlVector< CUtlString > m_resourceLoadWarnings;
 };
 
 #include "schemacompiler/schemaoff.h"
