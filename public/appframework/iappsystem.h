@@ -125,16 +125,21 @@ public:
 	// Init, shutdown
 	virtual InitReturnVal_t Init() { return INIT_OK; }
 	virtual void Shutdown() {}
+	virtual void PreShutdown() {}
 
 	virtual const AppSystemInfo_t* GetDependencies() { return NULL; }
 	virtual AppSystemTier_t GetTier() { return APP_SYSTEM_TIER_OTHER; }
 
+	// Refills the interface globals of this module from the factory (all of them when pInterfaceName is NULL)
 	virtual void Reconnect( CreateInterfaceFn factory, const char *pInterfaceName )
 	{
 		ReconnectInterface( factory, pInterfaceName );
 	}
 
 	virtual bool IsSingleton() { return true; }
+
+	// Fixed by the build configuration of the module; the shipped game modules return the retail value
+	virtual AppSystemBuildType_t GetBuildType() { return APP_SYSTEM_BUILD_RETAIL; }
 };
 
 enum LanguageType_t
@@ -225,13 +230,54 @@ public:
 	template < class T > T* FindSystem( const char *pSystemName ) { return static_cast< T* >( FindSystem( pSystemName ) ); }
 };
 
+class ConVarRefAbstract;
+class ConCommandRef;
+
+typedef void (*FnConVarRegisterCallback)(ConVarRefAbstract *ref);
+typedef void (*FnConCommandRegisterCallback)(ConCommandRef *ref);
+
+bool ConVar_Register( uint64 nCVarFlag, FnConVarRegisterCallback cvar_reg_cb, FnConCommandRegisterCallback cmd_reg_cb );
+bool ConVar_Unregister( );
+
 //-----------------------------------------------------------------------------
 // Helper implementation of an IAppSystem for tier0
+//
+// Owns the work every app system does when it connects: it fills all interface
+// globals of its module from the factory and registers the module's ConVars and
+// ConCommands with ConVarFlag added to their flags. The higher tiers only add to it.
 //-----------------------------------------------------------------------------
-template< class IInterface > 
+template< class IInterface, int64 ConVarFlag = 0 >
 class CTier0AppSystem : public CBaseAppSystem< IInterface >
 {
 public:
+	virtual bool Connect( CreateInterfaceFn factory )
+	{
+		ConnectInterfaces( &factory, 1 );
+		return true;
+	}
+
+	virtual void Disconnect()
+	{
+		DisconnectInterfaces();
+	}
+
+	virtual InitReturnVal_t Init()
+	{
+		if ( g_pCVar )
+		{
+			ConVar_Register( ConVarFlag, nullptr, nullptr );
+		}
+		return INIT_OK;
+	}
+
+	virtual void Shutdown()
+	{
+		if ( g_pCVar )
+		{
+			ConVar_Unregister( );
+		}
+	}
+
 	virtual AppSystemTier_t GetTier()
 	{
 		return APP_SYSTEM_TIER0;

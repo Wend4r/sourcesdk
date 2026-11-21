@@ -26,9 +26,16 @@ public:
 //-----------------------------------------------------------------------------
 // Call this to connect to/disconnect from all tier 2 libraries.
 // It's up to the caller to check the globals it cares about to see if ones are missing
+//
+// Connects no interface: when g_pResourceManifestRegistry is set, registers
+// g_nResourceFrameCount with it (once) and every static resource manifest of
+// the module. Calls are counted; the last disconnect unregisters both.
 //-----------------------------------------------------------------------------
 void ConnectTier2Libraries( CreateInterfaceFn *pFactoryList, int nFactoryCount );
 void DisconnectTier2Libraries();
+
+// Unregisters the manifests an app system registered by hand from the resource manifest registry
+void DisconnectTier2ManualManifests( ResourceManifestDesc_t **ppManifests, int nManifestCount );
 
 
 //-----------------------------------------------------------------------------
@@ -49,18 +56,59 @@ void InitCommandLineProgram( int &argc, char ** &argv );
 //-----------------------------------------------------------------------------
 // Helper empty implementation of an IAppSystem for tier2 libraries
 //-----------------------------------------------------------------------------
-template< class IInterface, int ConVarFlag = 0 > 
+template< class IInterface, int64 ConVarFlag = 0 >
 class CTier2AppSystem : public CTier1AppSystem< IInterface, ConVarFlag >
 {
 	typedef CTier1AppSystem< IInterface, ConVarFlag > BaseClass;
 
 public:
+	virtual bool Connect( CreateInterfaceFn factory )
+	{
+		if ( !BaseClass::Connect( factory ) )
+			return false;
+
+		ConnectTier2Libraries( &factory, 1 );
+		++m_nAppSysTier2LibraryConnects;
+		return true;
+	}
+
+	virtual void Disconnect()
+	{
+		DisconnectTier2ManualManifests( m_manualManifests.Base(), m_manualManifests.Count() );
+		while ( m_nAppSysTier2LibraryConnects > 0 )
+		{
+			DisconnectTier2Libraries();
+			--m_nAppSysTier2LibraryConnects;
+		}
+		BaseClass::Disconnect();
+	}
+
+	// Overridden at this level in the game, with the behaviour of the base
+	virtual InitReturnVal_t Init()
+	{
+		return BaseClass::Init();
+	}
+
+	virtual void Shutdown()
+	{
+		BaseClass::Shutdown();
+	}
+
+	virtual void Reconnect( CreateInterfaceFn factory, const char *pInterfaceName )
+	{
+		BaseClass::Reconnect( factory, pInterfaceName );
+		ConnectTier2Libraries( &factory, 1 );
+		++m_nAppSysTier2LibraryConnects;
+	}
+
 	virtual AppSystemTier_t GetTier()
 	{
 		return APP_SYSTEM_TIER2;
 	}
-	CUtlVector<ResourceManifestDesc_t *> m_manualManifests;
-	int m_nAppSysTier2LibraryConnects;
+
+	CUtlVector< ResourceManifestDesc_t * > m_manualManifests;
+	// Number of ConnectTier2Libraries() calls that Disconnect() has to undo
+	int m_nAppSysTier2LibraryConnects = 0;
 };
 
 class CTier2Application : public CTier1Application

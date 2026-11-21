@@ -18,6 +18,8 @@
 //-----------------------------------------------------------------------------
 // Call this to connect to/disconnect from all tier 3 libraries.
 // It's up to the caller to check the globals it cares about to see if ones are missing
+// The tier 3 app systems of the game do not call them: every interface global
+// is already connected by CTier0AppSystem.
 //-----------------------------------------------------------------------------
 void ConnectTier3Libraries( CreateInterfaceFn *pFactoryList, int nFactoryCount );
 void DisconnectTier3Libraries();
@@ -26,27 +28,12 @@ void DisconnectTier3Libraries();
 //-----------------------------------------------------------------------------
 // Helper empty implementation of an IAppSystem for tier3 libraries
 //-----------------------------------------------------------------------------
-template< class IInterface, int ConVarFlag = 0 > 
+template< class IInterface, int64 ConVarFlag = 0 >
 class CTier3AppSystem : public CTier2AppSystem< IInterface, ConVarFlag >
 {
 	typedef CTier2AppSystem< IInterface, ConVarFlag > BaseClass;
 
 public:
-	virtual bool Connect( CreateInterfaceFn factory ) 
-	{
-		if ( !BaseClass::Connect( factory ) )
-			return false;
-
-		ConnectTier3Libraries( &factory, 1 );
-		return true;
-	}
-
-	virtual void Disconnect() 
-	{
-		DisconnectTier3Libraries();
-		BaseClass::Disconnect();
-	}
-
 	virtual AppSystemTier_t GetTier()
 	{
 		return APP_SYSTEM_TIER3;
