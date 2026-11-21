@@ -40,9 +40,6 @@ namespace GCSDK
 //-----------------------------------------------------------------------------
 class CProtoBufNetPacket : public IMsgNetPacket
 {
-#ifdef GC
-	DECLARE_CLASS_MEMPOOL( CProtoBufNetPacket );
-#endif
 
 public:
 	CProtoBufNetPacket( CNetPacket *pNetPacket, GCProtoBufMsgSrc eReplyType, const CSteamID steamID, uint32 nGCDirIndex, MsgType_t msgType );

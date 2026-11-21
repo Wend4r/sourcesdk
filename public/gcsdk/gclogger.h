@@ -9,11 +9,6 @@
 #define GCLOGGER_H
 
 
-#ifdef GC
-	#include "gc_convar.h"
-#endif
-
-
 namespace GCSDK
 {
 	//a class that defines an output group for messages that can be output to the console or to a log. This allows for individual filtering of different groups to different
@@ -35,21 +30,12 @@ namespace GCSDK
 		//that to help with consistency, DECLARE_GC_EMIT_GROUP should be used for declaring these objects over manually providing names for all fields
 		CGCEmitGroup( const char* pszGroupName, const char* pszConsoleVar, const char* pszLogVar, const char* pszDefaultConsole, const char* pszDefaultLog )	
 			: m_pszGroupName( pszGroupName )
-			#ifdef GC
-				, m_LogLevel( pszLogVar, pszDefaultLog, 0, "The output level to log for this system. 1 means log only critical errors, 2 means log errors and warnings, 3 means log errors, warnings and messages, 4 means log everything", true, 0.0f, true, 4.0f )
-				, m_ConsoleLevel( pszConsoleVar, pszDefaultConsole, 0, "The output level to log for this system. 1 means log only critical errors, 2 means log errors and warnings, 3 means log errors, warnings and messages, 4 means log everything", true, 0.0f, true, 4.0f )
-			#endif
 		{}
 
 		//get the name of the group and current filter levels
 		const char*	GetName() const				{ return m_pszGroupName; }
-		#ifdef GC
-			int		GetConsoleLevel() const			{ return m_ConsoleLevel.GetInt(); }
-			int		GetLogLevel() const				{ return m_LogLevel.GetInt(); }
-		#else
 			int		GetConsoleLevel() const			{ return 3; }
 			int		GetLogLevel() const				{ return 3; }
-		#endif
 
 		//these will output text for each of the appropriate severities, from Verbose (defaulted to filtered out), to critical error. These are not intended to be called directly, as the preparation
 		//of all the command line arguments can be costly, and the EG_XXXX macros should be used instead to avoid this cost.
@@ -73,12 +59,6 @@ namespace GCSDK
 	private:
 		//the display name of this group, must be a static string
 		const char*		m_pszGroupName;
-		#ifdef GC
-			//the console variable used to control the log level that will be recorded to the ouput logs [0..4]
-			GCConVar		m_LogLevel;
-			//the console variable used to control the level of output that will be displayed to the console [0..4]
-			GCConVar		m_ConsoleLevel;
-		#endif
 	};
 
 	//macros to emit to an emit group. These should be used so that you don't have to pay the cost of formatting parameters that won't be used if the output isn't turned on anyway.

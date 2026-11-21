@@ -1234,9 +1234,6 @@ public:
 		ResourceHandle_t m_hResource;
 	};
 
-#ifdef CITADEL
-	void *pad[2];
-#endif
 
 	fieldtype_t m_type;
 

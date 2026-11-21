@@ -45,7 +45,6 @@ class IEntity2Networkables;
 class IEntityPrecacheConfiguration;
 class IEntityResourceManifestBuilder;
 class ISpawnGroupEntityFilter;
-class IHandleEntity;
 struct ComponentUnserializerFieldInfo_t;
 
 // Null before ISource2Server::Init and after its Shutdown

@@ -13,9 +13,6 @@
 #include "google/protobuf/descriptor.h"
 #include "tier0/keyvalues.h"
 
-#if defined( GC ) && defined( DEBUG )
-#include "gcbase.h"
-#endif
 
 namespace google
 {
@@ -47,19 +44,6 @@ public:
 	virtual bool BAddToMessage( std::string *pBuffer, bool bUnk ) const OVERRIDE;
 	virtual bool BAddDestroyToMessage( std::string *pBuffer ) const OVERRIDE;
 
-#ifdef GC
-#ifdef DBGFLAG_VALIDATE
-	virtual void Validate( CValidator &validator, const char *pchName );
-#endif
-
-	virtual bool BAddToMessage( CUtlBuffer & bufOutput ) const OVERRIDE;
-	virtual bool BAddDestroyToMessage( CUtlBuffer & bufDestroy ) const OVERRIDE;
-
-	virtual bool BParseFromMemcached( CUtlBuffer & buffer ) OVERRIDE;
-	virtual bool BAddToMemcached( CUtlBuffer & bufOutput ) const OVERRIDE;
-
-	static bool SerializeToBuffer( const ::google::protobuf::Message & msg, CUtlBuffer & bufOutput );
-#endif //GC
 
 	// Static helpers
 	static void Dump( const ::google::protobuf::Message & msg );
@@ -71,9 +55,6 @@ protected:
 	const ::google::protobuf::Message *GetPObject() const { return const_cast<CProtoBufSharedObjectBase *>(this)->GetPObject(); }
 
 private:
-#ifdef GC
-	static ::google::protobuf::Message *BuildDestroyToMessage( const ::google::protobuf::Message & msg );
-#endif //GC
 
 };
 
@@ -88,10 +69,6 @@ class CProtoBufSharedObject : public CProtoBufSharedObjectBase
 public:
 	~CProtoBufSharedObject()
 	{
-#if defined( GC ) && defined( DEBUG )
-		// Ensure this SO is not in any cache, or we have an error. We must provide the type since it is a virutal function otherwise
-		Assert( !GGCBase()->IsSOCached( this, nTypeID ) );
-#endif
 	}
 
 	virtual int GetTypeID() const { return nTypeID; }
@@ -127,10 +104,6 @@ public:
 
 	~CProtoBufSharedObjectWrapper()
 	{
-#if defined( GC ) && defined( DEBUG )
-		// Ensure this SO is not in any cache, or we have an error. We must provide the type since it is a virutal function otherwise
-		Assert( !GGCBase()->IsSOCached( this, nTypeID ) );
-#endif
 	}
 
 	virtual int GetTypeID() const { return nTypeID; }
