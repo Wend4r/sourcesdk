@@ -15,10 +15,6 @@
 #include <cstrike15_usermessages.pb.h>
 
 class CCSUsrMsg_VGUIMenu_t                        : public CUserMessagePB< CS_UM_VGUIMenu, CCSUsrMsg_VGUIMenu > {};
-// Neither the server nor the client registers Geiger, Train and HudText
-class CCSUsrMsg_Geiger_t                          : public CUserMessagePB< CS_UM_Geiger, CCSUsrMsg_Geiger > {};
-class CCSUsrMsg_Train_t                           : public CUserMessagePB< CS_UM_Train, CCSUsrMsg_Train > {};
-class CCSUsrMsg_HudText_t                         : public CUserMessagePB< CS_UM_HudText, CCSUsrMsg_HudText > {};
 class CCSUsrMsg_SendAudio_t                       : public CUserMessagePB< CS_UM_SendAudio, CCSUsrMsg_SendAudio > {};
 class CCSUsrMsg_RawAudio_t                        : public CUserMessagePB< CS_UM_RawAudio, CCSUsrMsg_RawAudio > {};
 class CCSUsrMsg_Damage_t                          : public CUserMessagePB< CS_UM_Damage, CCSUsrMsg_Damage > {};

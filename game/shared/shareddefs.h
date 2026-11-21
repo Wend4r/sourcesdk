@@ -29,11 +29,7 @@
 #define ROUND_TO_TICKS( t )		( TICK_INTERVAL * TIME_TO_TICKS( t ) )
 #define TICK_NEVER_THINK		(-1)
 
-#if defined( TF_DLL )
-#define ANIMATION_CYCLE_BITS		10
-#else
 #define ANIMATION_CYCLE_BITS		15
-#endif
 #define ANIMATION_CYCLE_MINFRAC		(1.0f / (1<<ANIMATION_CYCLE_BITS))
 
 // Each mod defines these for itself.
@@ -99,16 +95,7 @@ public:
 
 #define MAX_CLIMB_SPEED		200
 
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL) || defined( CSTRIKE15 )
-
-	#define TIME_TO_DUCK_MSECS		200
-
-#else
-
-	#define TIME_TO_DUCK_MSECS		400
-
-#endif 
-
+#define TIME_TO_DUCK_MSECS			200
 #define TIME_TO_UNDUCK_MSECS		200
 
 inline float FractionDucked( int msecs )
@@ -121,17 +108,10 @@ inline float FractionUnDucked( int msecs )
 	return clamp( (float)msecs / (float)TIME_TO_UNDUCK_MSECS, 0.0f, 1.0f );
 }
 
-#if defined( CSTRIKE15 )
 #define MAX_WEAPON_SLOTS		6	// hud item selection slots
 #define MAX_WEAPON_POSITIONS	6	// max number of items within a slot
 #define MAX_ITEM_TYPES			6	// hud item selection slots
 #define MAX_WEAPONS				64	// Max number of weapons available
-#else
-#define MAX_WEAPON_SLOTS		11	// hud item selection slots
-#define MAX_WEAPON_POSITIONS	20	// max number of items within a slot
-#define MAX_ITEM_TYPES			6	// hud item selection slots
-#define MAX_WEAPONS				64	// Max number of weapons available
-#endif 
 
 #define MAX_ITEMS				5	// hard coded item types
 
@@ -263,15 +243,6 @@ schema enum AmmoPosition_t
 #define HIDEHUD_BITCOUNT			14
 
 //===================================================================================================================
-// suit usage bits
-#define bits_SUIT_DEVICE_SPRINT		0x00000001
-#define bits_SUIT_DEVICE_FLASHLIGHT	0x00000002
-#define bits_SUIT_DEVICE_BREATHER	0x00000004
-
-#define MAX_SUIT_DEVICES			3
-
-
-//===================================================================================================================
 // Player Defines
 
 // Max number of players in a game ( see const.h for ABSOLUTE_PLAYER_LIMIT (256 ) )
@@ -310,23 +281,11 @@ enum SharedTeams_t
 
 #define MAX_TEAM_FLAG_ICON_LENGTH	8	// Max length of a team's flag icon (just the singlular country code)
 #define MAX_TEAM_LOGO_ICON_LENGTH	8	// Max length of a team's flag icon (just the singlular country code)
-#define MAX_TEAM_FLAG_HTML_LENGTH	64	// Max length of a team's flag html string
-//#define TEAM_FLAG_IMG_STRING		"<img src='flag_%s.png' height='26' width='52'/>"
-#define TEAM_FLAG_IMG_STRING		"<img src='flag_%s.png'/>"//resource/Flash/images/flags/
-#define TEAM_LOGO_IMG_STRING		"%s.png"
-#define TEAM_FLAG_IMG_MOV_STRING		"%s"//.png
 
 // Weapon m_iState
 #define WEAPON_NOT_CARRIED				0	// Weapon is on the ground
 #define WEAPON_IS_CARRIED_BY_PLAYER		1	// This client is carrying this weapon.
 #define WEAPON_IS_ACTIVE				2	// This client is carrying this weapon and it's the currently held weapon
-
-// -----------------------------------------
-// Skill Level
-// -----------------------------------------
-#define SKILL_EASY		1
-#define SKILL_MEDIUM	2
-#define SKILL_HARD		3
 
 
 // Weapon flags
@@ -350,43 +309,11 @@ schema enum ItemFlagTypes_t : uint8
 
 // Humans only have left and right hands, though we might have aliens with more
 //  than two, sigh
-#if defined( CSTRIKE15 )
-
 #define MAX_VIEWMODELS			2
-
-#else
-
-#define MAX_VIEWMODELS			2
-
-#endif
 
 #define MAX_BEAM_ENTS			10
 
 #define TRACER_TYPE_DEFAULT		0x00000001
-#define TRACER_TYPE_GUNSHIP		0x00000002
-#define TRACER_TYPE_STRIDER		0x00000004 // Here ya go, Jay!
-#define TRACER_TYPE_GAUSS		0x00000008
-#define TRACER_TYPE_WATERBULLET	0x00000010
-
-#define MUZZLEFLASH_TYPE_DEFAULT	0x00000001
-#define MUZZLEFLASH_TYPE_GUNSHIP	0x00000002
-#define MUZZLEFLASH_TYPE_STRIDER	0x00000004
-
-// Muzzle flash definitions (for the flags field of the "MuzzleFlash" DispatchEffect)
-enum
-{
-	MUZZLEFLASH_AR2				= 0,
-	MUZZLEFLASH_SHOTGUN,
-	MUZZLEFLASH_SMG1,
-	MUZZLEFLASH_SMG2,
-	MUZZLEFLASH_PISTOL,
-	MUZZLEFLASH_COMBINE,
-	MUZZLEFLASH_357,
-	MUZZLEFLASH_RPG,
-	MUZZLEFLASH_COMBINE_TURRET,
-
-	MUZZLEFLASH_FIRSTPERSON		= 0x100,
-};
 
 // Tracer Flags
 #define TRACER_FLAG_WHIZ			0x0001
@@ -404,52 +331,13 @@ schema enum EntityDissolveType_t
 	ENTITY_DISSOLVE_CORE,
 };
 
-//
-// Enumerations for setting player animation.
-//
-enum PLAYER_ANIM
-{
-	PLAYER_IDLE,
-	PLAYER_WALK,
-	PLAYER_JUMP,
-	PLAYER_SUPERJUMP,
-	PLAYER_DIE,
-	PLAYER_ATTACK1,
-	PLAYER_IN_VEHICLE,
-
-	// TF Player animations
-	PLAYER_RELOAD,
-	PLAYER_START_AIMING,
-	PLAYER_LEAVE_AIMING,
-};
-
-#ifdef HL2_DLL
-// HL2 has 600 gravity by default
-// NOTE: The discrete ticks can have quantization error, so these numbers are biased a little to
-// make the heights more exact
-#define PLAYER_FATAL_FALL_SPEED		922.5f // approx 60 feet sqrt( 2 * gravity * 60 * 12 )
-#define PLAYER_MAX_SAFE_FALL_SPEED	526.5f // approx 20 feet sqrt( 2 * gravity * 20 * 12 )
-#define PLAYER_LAND_ON_FLOATING_OBJECT	173 // Can fall another 173 in/sec without getting hurt
-#define PLAYER_MIN_BOUNCE_SPEED		173
-#define PLAYER_FALL_PUNCH_THRESHOLD 303.0f // won't punch player's screen/make scrape noise unless player falling at least this fast - at least a 76" fall (sqrt( 2 * g * 76))
-#else
 #define PLAYER_FATAL_FALL_SPEED		1024 // approx 60 feet
 #define PLAYER_MAX_SAFE_FALL_SPEED	580 // approx 20 feet
 #define PLAYER_LAND_ON_FLOATING_OBJECT	200 // Can go another 200 units without getting hurt
 #define PLAYER_MIN_BOUNCE_SPEED		200
 #define PLAYER_FALL_PUNCH_THRESHOLD (float)350 // won't punch player's screen/make scrape noise unless player falling at least this fast.
-#endif
 #define DAMAGE_FOR_FALL_SPEED		100.0f / ( PLAYER_FATAL_FALL_SPEED - PLAYER_MAX_SAFE_FALL_SPEED ) // damage per unit per second.
 
-
-#define AUTOAIM_2DEGREES  0.0348994967025
-#define AUTOAIM_5DEGREES  0.08715574274766
-#define AUTOAIM_8DEGREES  0.1391731009601
-#define AUTOAIM_10DEGREES 0.1736481776669
-#define AUTOAIM_20DEGREES 0.3490658503989
-
-#define AUTOAIM_SCALE_DEFAULT		1.0f
-#define AUTOAIM_SCALE_DIRECT_ONLY	0.0f
 
 // instant damage
 
@@ -517,24 +405,11 @@ schema enum TakeDamageFlags_t : uint64
 };
 
 
-
 // settings for m_takedamage
 #define	DAMAGE_NO				0
 #define DAMAGE_EVENTS_ONLY		1		// Call damage functions, but don't modify health
 #define	DAMAGE_YES				2
 #define	DAMAGE_AIM				3
-
-
-enum RelativeDamagedDirection_t
-{
-	DAMAGED_DIR_NONE = 0,
-	DAMAGED_DIR_FRONT,
-	DAMAGED_DIR_BACK,
-	DAMAGED_DIR_LEFT,
-	DAMAGED_DIR_RIGHT,
-
-	DAMAGED_DIR_TOTAL
-};
 
 
 // Spectator Movement modes
@@ -568,32 +443,6 @@ enum
 	TYPE_FILE,		// show this local file
 } ;
 
-// [Forrest] Replaced text window command string with TEXTWINDOW_CMD enumeration
-// of options.  Passing a command string is dangerous and allowed a server network
-// message to run arbitrary commands on the client.
-enum
-{
-	TEXTWINDOW_CMD_NONE = 0,
-	TEXTWINDOW_CMD_JOINGAME,
-	TEXTWINDOW_CMD_CHANGETEAM,
-	TEXTWINDOW_CMD_IMPULSE101,
-	TEXTWINDOW_CMD_MAPINFO,
-	TEXTWINDOW_CMD_CLOSED_HTMLPAGE,
-	TEXTWINDOW_CMD_CHOOSETEAM,
-};
-
-// VGui Screen Flags
-enum
-{
-	VGUI_SCREEN_ACTIVE = 0x1,
-	VGUI_SCREEN_VISIBLE_TO_TEAMMATES = 0x2,
-	VGUI_SCREEN_ATTACHED_TO_VIEWMODEL = 0x4,
-	VGUI_SCREEN_TRANSPARENT = 0x8,
-	VGUI_SCREEN_ONLY_USABLE_BY_OWNER = 0x10,
-
-	VGUI_SCREEN_MAX_BITS = 5
-};
-
 // basic team colors
 #define COLOR_RED		Color(255, 64, 64, 255)
 #define COLOR_BLUE		Color(153, 204, 255, 255)
@@ -602,54 +451,6 @@ enum
 #define COLOR_GREY		Color(204, 204, 204, 255)
 #define COLOR_WHITE		Color(255, 255, 255, 255)
 #define COLOR_BLACK		Color(0, 0, 0, 255)
-
-// All NPCs need this data
-enum
-{
-	DONT_BLEED = -1,
-
-	BLOOD_COLOR_RED = 0,
-	BLOOD_COLOR_YELLOW,
-	BLOOD_COLOR_GREEN,
-	BLOOD_COLOR_MECH,
-
-#if defined( HL2_EPISODIC )
-	BLOOD_COLOR_ANTLION,		// FIXME: Move to Base HL2
-	BLOOD_COLOR_ZOMBIE,			// FIXME: Move to Base HL2
-	BLOOD_COLOR_ANTLION_WORKER,
-	BLOOD_COLOR_BLOB,
-	BLOOD_COLOR_BLOB_FROZEN,
-#endif // HL2_EPISODIC
-
-#if defined( INFESTED_DLL )
-	BLOOD_COLOR_BLOB,
-	BLOOD_COLOR_BLOB_FROZEN,
-#endif // INFESTED_DLL
-
-	BLOOD_COLOR_BRIGHTGREEN,
-};
-
-//-----------------------------------------------------------------------------
-// Vehicles may have more than one passenger.
-// This enum may be expanded by derived classes
-//-----------------------------------------------------------------------------
-enum PassengerRole_t
-{
-	VEHICLE_ROLE_NONE = -1,
-
-	VEHICLE_ROLE_DRIVER = 0,	// Only one driver
-	
-	LAST_SHARED_VEHICLE_ROLE,
-};
-
-//-----------------------------------------------------------------------------
-// Water splash effect flags
-//-----------------------------------------------------------------------------
-enum
-{
-	FX_WATER_IN_SLIME = 0x1,
-};
-
 
 // Shared think context stuff
 #define	MAX_CONTEXT_LENGTH		32
@@ -707,110 +508,6 @@ enum
 };
 
 //-----------------------------------------------------------------------------
-// EFFECTS
-//-----------------------------------------------------------------------------
-const int FX_BLOODSPRAY_DROPS	= 0x01;
-const int FX_BLOODSPRAY_GORE	= 0x02;
-const int FX_BLOODSPRAY_CLOUD	= 0x04;
-const int FX_BLOODSPRAY_ALL		= 0xFF;
-
-//-----------------------------------------------------------------------------
-#define MAX_SCREEN_OVERLAYS		10
-
-// These are the types of data that hang off of CBaseEntities and the flag bits used to mark their presence
-enum
-{
-	GROUNDLINK = 0,
-	TOUCHLINK,
-	STEPSIMULATION,
-	MODELSCALE,
-	POSITIONWATCHER,
-	PHYSICSPUSHLIST,
-	VPHYSICSUPDATEAI,
-	VPHYSICSWATCHER,
-
-	// Must be last and <= 32
-	NUM_DATAOBJECT_TYPES,
-};
-
-class CBaseEntity;
-
-//-----------------------------------------------------------------------------
-// Bullet firing information
-//-----------------------------------------------------------------------------
-class CBaseEntity;
-
-enum FireBulletsFlags_t
-{
-	FIRE_BULLETS_FIRST_SHOT_ACCURATE = 0x1,		// Pop the first shot with perfect accuracy
-	FIRE_BULLETS_DONT_HIT_UNDERWATER = 0x2,		// If the shot hits its target underwater, don't damage it
-	FIRE_BULLETS_ALLOW_WATER_SURFACE_IMPACTS = 0x4,	// If the shot hits water surface, still call DoImpactEffect
-	FIRE_BULLETS_TEMPORARY_DANGER_SOUND = 0x8,		// Danger sounds added from this impact can be stomped immediately if another is queued
-
-	FIRE_BULLETS_NO_PIERCING_SPARK = 0x16,	// do a piercing spark effect when a bullet penetrates an alien
-	FIRE_BULLETS_HULL = 0x32,	// bullet trace is a hull rather than a line
-	FIRE_BULLETS_ANGULAR_SPREAD = 0x64,	// bullet spread is based on uniform random change to angles rather than gaussian search
-};
-
-
-struct FireBulletsInfo_t
-{
-	FireBulletsInfo_t()
-	{
-		m_iShots = 1;
-		m_vecSpread.Init( 0, 0, 0 );
-		m_flDistance = 8192;
-		m_iTracerFreq = 4;
-		m_flDamage = 0.0f;
-		m_flPlayerDamage = 0.0f;
-		m_pAttacker = NULL;
-		m_nFlags = 0;
-		m_pAdditionalIgnoreEnt = NULL;
-		m_flDamageForceScale = 1.0f;
-
-#ifdef _DEBUG
-		m_iAmmoType = -1;
-		m_vecSrc.Init( VEC_T_NAN, VEC_T_NAN, VEC_T_NAN );
-		m_vecDirShooting.Init( VEC_T_NAN, VEC_T_NAN, VEC_T_NAN );
-#endif
-		m_bPrimaryAttack = true;
-	}
-
-	FireBulletsInfo_t( int nShots, const Vector &vecSrc, const Vector &vecDir, const Vector &vecSpread, float flDistance, int nAmmoType, bool bPrimaryAttack = true )
-	{
-		m_iShots = nShots;
-		m_vecSrc = vecSrc;
-		m_vecDirShooting = vecDir;
-		m_vecSpread = vecSpread;
-		m_flDistance = flDistance;
-		m_iAmmoType = nAmmoType;
-		m_iTracerFreq = 4;
-		m_flDamage = 0;
-		m_flPlayerDamage = 0;
-		m_pAttacker = NULL;
-		m_nFlags = 0;
-		m_pAdditionalIgnoreEnt = NULL;
-		m_flDamageForceScale = 1.0f;
-		m_bPrimaryAttack = bPrimaryAttack;
-	}
-
-	int m_iShots;
-	Vector m_vecSrc;
-	Vector m_vecDirShooting;
-	Vector m_vecSpread;
-	float m_flDistance;
-	int m_iAmmoType;
-	int m_iTracerFreq;
-	float m_flDamage;
-	float m_flPlayerDamage;	// Damage to be used instead of m_flDamage if we hit a player
-	int m_nFlags;			// See FireBulletsFlags_t
-	float m_flDamageForceScale;
-	CBaseEntity *m_pAttacker;
-	CBaseEntity *m_pAdditionalIgnoreEnt;
-	bool m_bPrimaryAttack;
-};
-
-//-----------------------------------------------------------------------------
 // Purpose: Data for making the MOVETYPE_STEP entities appear to simulate every frame
 //  We precompute the simulation and then meter it out each tick during networking of the 
 //  entities origin and orientation.  Uses a bit more bandwidth, but it solves the NPCs interacting
@@ -849,17 +546,6 @@ struct StepSimulationData
 	Vector		m_vecNetworkOrigin;
 	int			m_networkCell[3];
 	QAngle		m_angNetworkAngles;
-};
-
-//-----------------------------------------------------------------------------
-// Purpose: Simple state tracking for changing model sideways shrinkage during barnacle swallow
-//-----------------------------------------------------------------------------
-struct ModelScale
-{
-	float		m_flModelScaleStart;
-	float		m_flModelScaleGoal;
-	float		m_flModelScaleFinishTime;
-	float		m_flModelScaleStartTime;
 };
 
 struct CSoundParameters;
@@ -959,77 +645,10 @@ COMPILE_TIME_ASSERT( sizeof( EmitSound_t ) == 48 );
 
 #define MAX_ACTORS_IN_SCENE 16
 
-//-----------------------------------------------------------------------------
-// Multiplayer specific defines
-//-----------------------------------------------------------------------------
-#define MAX_CONTROL_POINTS			8
-#define MAX_CONTROL_POINT_GROUPS	8
-
-// Maximum number of points that a control point may need owned to be cappable
-#define MAX_PREVIOUS_POINTS			3
-
-// The maximum number of teams the control point system knows how to deal with
-#define MAX_CONTROL_POINT_TEAMS		8
-
-// Maximum length of the cap layout string
-#define MAX_CAPLAYOUT_LENGTH		32
-
-// Maximum length of the current round printname
-#define MAX_ROUND_NAME				32
-
-// Maximum length of the current round name
-#define MAX_ROUND_IMAGE_NAME		64
-
-// Score added to the team score for a round win
-#define TEAMPLAY_ROUND_WIN_SCORE	1
-
-enum
-{
-	CP_WARN_NORMAL = 0,
-	CP_WARN_FINALCAP,
-	CP_WARN_NO_ANNOUNCEMENTS
-};
-
-// YWB:  3/12/2007
-// Changing the following #define for Prediction Error checking (See gamemovement.cpp for overview) will to 1 or 2 enables the system, 0 turns it off
-// Level 1 enables it, but doesn't force "full precision" networking, so you can still get lots of errors in position/velocity/etc.
-// Level 2 enables it but also forces origins/angles to be sent full precision, so other fields can be error / tolerance checked
-// NOTE:  This stuff only works on a listen server since it punches a hole from the client .dll to server .dll!!!
-#define PREDICTION_ERROR_CHECK_LEVEL 0
-
-// Set to 1 to spew a call stack in DiffPrint() for the existing side when the other side is missing
-#define PREDICTION_ERROR_CHECK_STACKS_FOR_MISSING 0
-
-//-----------------------------------------------------------------------------
-// Round timer states
-//-----------------------------------------------------------------------------
-enum
-{
-	RT_STATE_SETUP,		// Timer is in setup mode
-	RT_STATE_NORMAL,	// Timer is in normal mode
-};
-
 enum
 {
 	SIMULATION_TIME_WINDOW_BITS = 8,
 };
-
-//-----------------------------------------------------------------------------
-// Commentary Mode
-//-----------------------------------------------------------------------------
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
-#define GAME_HAS_NO_USE_KEY
-
-//-----------------------------------------------------------------------------
-// Multiplayer overrides
-//-----------------------------------------------------------------------------
-#if defined( SPROP_COORD )
-#undef SPROP_COORD
-#endif
-
-#define SPROP_COORD SPROP_COORD_MP
-
-#endif
 
 //-----------------------------------------------------------------------------
 // Cell origin values
@@ -1040,40 +659,9 @@ enum
 
 
 // The player's method of starting / stopping commentary
-#ifdef GAME_HAS_NO_USE_KEY
-	#define COMMENTARY_BUTTONS		(IN_ATTACK | IN_ATTACK2 | IN_USE)
-#else
-	#ifdef PORTAL2
-		#define COMMENTARY_BUTTONS	(IN_USE | IN_REMOTE_VIEW)
-	#else
-		#define COMMENTARY_BUTTONS	(IN_USE)
-	#endif
-#endif
+#define COMMENTARY_BUTTONS	(IN_USE)
 
-bool IsHeadTrackingEnabled();
-
-// If this is defined, all of the scopeguard objects are NULL'd out to reduce overhead
-#if defined( CSTRIKE15 ) //&& !defined( _GAMECONSOLE )  // Split screen removed from console.
-#define SPLIT_SCREEN_STUBS
-#endif
-
-#if defined(TF_DLL) || defined(TF_CLIENT_DLL)
-	#if defined( SPLIT_SCREEN_STUBS )
-		#define MAX_SPLITSCREEN_PLAYERS 1
-	#else
-		#define MAX_SPLITSCREEN_PLAYERS 2
-	#endif
-#elif defined( PORTAL2 )
-	#define MAX_SPLITSCREEN_PLAYERS 2
-#elif defined ( CSTRIKE15 )
-#if defined( _GAMECONSOLE )
-	#define MAX_SPLITSCREEN_PLAYERS 1 // Split screen removed from console.
-#else
-	#define MAX_SPLITSCREEN_PLAYERS 1
-#endif
-#else
-	#define MAX_SPLITSCREEN_PLAYERS 1
-#endif
+#define MAX_SPLITSCREEN_PLAYERS 1
 
 inline bool IsSplitScreenSupported()
 {
@@ -1110,32 +698,6 @@ schema enum Class_T
 	CLASS_PLANTED_C4,
 
 	NUM_CLASSIFY_CLASSES,
-};
-
-// Factions
-#define FACTION_NONE				0					// Not assigned a faction.  Entities not assigned a faction will not do faction tests.
-#define LAST_SHARED_FACTION			(FACTION_NONE)
-#define NUM_SHARED_FACTIONS			(FACTION_NONE + 1)
-
-enum ModelScaleType_t
-{
-	HIERARCHICAL_MODEL_SCALE,
-	NONHIERARCHICAL_MODEL_SCALE
-};
-
-//-----------------------------------------------------------------------------
-// Econ Item testing
-//-----------------------------------------------------------------------------
-enum testitem_itemtypes_t
-{
-	TI_TYPE_UNKNOWN = -1,
-
-	TI_TYPE_WEAPON = 0,
-	TI_TYPE_HEADGEAR,
-	TI_TYPE_MISC1,
-	TI_TYPE_MISC2,
-
-	TI_TYPE_COUNT,
 };
 
 

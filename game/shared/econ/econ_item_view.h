@@ -17,13 +17,10 @@
 #include "tier0/utlvector.h"
 #include "networkvar.h"
 
-#define RGB_INT_RED 12073019
-#define RGB_INT_BLUE 5801378
 #define ECON_ITEM_GENERATED_ICON_WIDTH 512
 #define ECON_ITEM_GENERATED_ICON_HEIGHT 384
 #define ECON_ITEM_GENERATED_PINBOARD_ICON_WIDTH 512
 #define ECON_ITEM_GENERATED_PINBOARD_ICON_HEIGHT 384
-#define ECON_ITEM_GENERATED_ICON_DIR "resource/Flash/econ/weapons/cached/"
 
 #define SCHEMA_BASE_ITEM_MAX 499 // def indices 1-499 are reserved for default aka stock items
 

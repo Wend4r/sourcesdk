@@ -276,9 +276,6 @@ enum eEconItemFlags
 	kEconItemFlag_NonEconomy = 1 << 3, // used for items that are meant to not interact in the economy -- these can't be traded, gift-wrapped, crafted, etc.
 
 #ifdef CLIENT_DLL
-#ifdef TF_CLIENT_DLL
-	kEconItemFlagClient_ForceBlueTeam = 1 << 5,
-#endif // TF_CLIENT_DLL
 	kEconItemFlagClient_StoreItem = 1 << 6,
 	kEconItemFlagClient_Preview = 1 << 7, // only set on the client; means "this item is being previewed"
 #endif                                    // CLIENT_DLL
@@ -379,10 +376,6 @@ const attrib_definition_index_t INVALID_ATTRIB_DEF_INDEX = ( (attrib_definition_
 
 // The number of items to work on in a job before checking if a yield is necessary
 #define MAX_ITEMS_BEFORE_YIELD 50
-
-// TF team-color paints (moved from econ_item_view.h)
-#define RGB_INT_RED 12073019
-#define RGB_INT_BLUE 5801378
 
 // Custom textures
 const int k_nCustomImageSize = 256;
@@ -492,48 +485,6 @@ enum kill_eater_event_t
 	kKillEaterEvent_PlayerKill = 0,
 	kKillEaterEvent_MVPs,
 
-	// 	kKillEaterEvent_KillAssists,			// not yet implemented
-	// 	kKillEaterEvent_Wins,
-	// 	kKillEaterEvent_Treants_Created,
-	// 	kKillEaterEvent_Omnislash_Jumps,
-	// 	kKillEaterEvent_Blade_Fury_Damage,
-	// 	kKillEaterEvent_Blade_Dance_Crits,
-	// 	kKillEaterEvent_Wards_Placed,
-	// 	kKillEaterEvent_Killing_Sprees,			// not yet implemented
-	// 	kKillEaterEvent_Trees_Created,
-	// 	kKillEaterEvent_Carries_Killed,			// not yet implemented
-	// 	kKillEaterEvent_First_Blood,
-	// 	kKillEaterEvent_Godlike,
-	// 	kKillEaterEvent_Gold_Earned,
-	// 	kKillEaterEvent_Gold_Spent,
-	// 	kKillEaterEvent_Towers_Destroyed,
-	// 	kKillEaterEventType_Bounty_TrackedKills,
-	// 	kKillEaterEventType_Bounty_TrackedInvisKills,
-	// 	kKillEaterEventType_Bounty_InvisJinadaHits,
-	// 	kKillEaterEventType_Bounty_TrackGold,
-	// 	kKillEaterEventType_Tide_GoodRavages,
-	// 	kKillEaterEventType_Windrunner_DoubleShackles,
-	// 	kKillEaterEventType_Windrunner_GoodPowershots,
-	// 	kKillEaterEventType_Invoker_SunstrikeKills,
-	// 	kKillEaterEventType_Couriers_Purchased,
-	// 	kKillEaterEventType_Wards_Purchased,
-	// 	kKillEaterEventType_Tide_EnemiesGushed,
-	// 	kKillEaterEventType_Axe_Culls,
-	// 	kKillEaterEventType_Axe_BattleHungerKills,
-	// 	kKillEaterEventType_Axe_LowHealthKills,
-	// 	kKillEaterEventType_Axe_CalledDamageDone,
-	// 	kKillEaterEventType_Axe_CalledDamageTaken,
-	// 	kKillEaterEventType_Invoker_TornadoKills,
-	// 	kKillEaterEventType_Games_Viewed,
-	// 	kKillEaterEventType_Sven_DoubleStuns,
-	// 	kKillEaterEventType_Sven_WarcryAssists,
-	// 	kKillEaterEventType_Sven_CleaveDoubleKills,
-	// 	kKillEaterEventType_Sven_TeleportInterrupts,
-	// 	kKillEaterEventType_Faceless_MultiChrono,
-	// 	kKillEaterEventType_Faceless_ChronoKills,
-	// 	kKillEaterEventType_Ursa_MultiShocks,
-	// 	kKillEaterEventType_RoshanKills,
-
 	// NEW ENTRIES MUST BE ADDED AT THE BOTTOM
 };
 
@@ -621,14 +572,6 @@ enum
 	kGCItemSort_SortByQuality = 5,
 
 	kGCItemSort_GameSpecificBase = 100,
-};
-
-// FIXME: these should be moved... somewhere; where?
-enum
-{
-	kTFGCItemSort_SortByClass = kGCItemSort_GameSpecificBase + 1,
-	kTFGCItemSort_SortBySlot = kGCItemSort_GameSpecificBase + 2,
-	kDOTAGCItemSort_SortByHero = kGCItemSort_GameSpecificBase + 3,
 };
 
 enum
