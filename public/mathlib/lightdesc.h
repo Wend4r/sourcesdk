@@ -1,6 +1,6 @@
 //===== Copyright © 1996-2005, Valve Corporation, All rights reserved. ======//
 //
-// Purpose: 
+// Purpose:
 //
 //===========================================================================//
 
@@ -8,7 +8,6 @@
 #ifndef LIGHTDESC_H
 #define LIGHTDESC_H
 
-#include <mathlib/ssemath.h>
 #include <mathlib/vector.h>
 
 //-----------------------------------------------------------------------------
@@ -20,8 +19,11 @@ enum LightType_t
 	MATERIAL_LIGHT_POINT,
 	MATERIAL_LIGHT_DIRECTIONAL,
 	MATERIAL_LIGHT_SPOT,
+	MATERIAL_LIGHT_ORTHO,
+	MATERIAL_LIGHT_ENVIRONMENT_PROBE,
 };
 
+// Bits of LightDesc_t::m_Flags that RecalculateDerivedValues sets
 enum LightType_OptimizationFlags_t
 {
 	LIGHTTYPE_OPTIMIZATIONFLAGS_HAS_ATTENUATION0 = 1,
@@ -30,156 +32,81 @@ enum LightType_OptimizationFlags_t
 	LIGHTTYPE_OPTIMIZATIONFLAGS_DERIVED_VALUES_CALCED = 8,
 };
 
-struct LightDesc_t 
+// Values of LightDesc_t::m_nShape
+enum LightSourceShape_t
 {
-    LightType_t m_Type;										//< MATERIAL_LIGHT_xxx
-	Vector m_Color;											//< color+intensity 
-    Vector m_Position;										//< light source center position
-    Vector m_Direction;										//< for SPOT, direction it is pointing
-    float  m_Range;											//< distance range for light.0=infinite
-    float m_Falloff;										//< angular falloff exponent for spot lights
-    float m_Attenuation0;									//< constant distance falloff term
-    float m_Attenuation1;									//< linear term of falloff
-    float m_Attenuation2;									//< quadatic term of falloff
+	LIGHT_SOURCE_SHAPE_SPHERE = 0,
+	LIGHT_SOURCE_SHAPE_CAPSULE,
+	LIGHT_SOURCE_SHAPE_RECTANGLE,
+};
+
+//-----------------------------------------------------------------------------
+// The description of a light that the light components build and the scene
+// system takes (288 bytes, 16 aligned, on both platforms)
+//-----------------------------------------------------------------------------
+struct LightDesc_t
+{
+	LightType_t m_Type;
+	Vector m_Color;							// color * brightness
+	Vector m_BounceColor;					// the secondary color of a capsule light
+	float m_Range;							// 0 = infinite
+	float m_Falloff;						// angular falloff exponent for spot lights
+	float m_Attenuation0;					// constant distance falloff term
+	float m_Attenuation1;					// linear term of falloff
+	float m_Attenuation2;					// quadratic term of falloff
 
 	// NOTE: theta and phi are *half angles*
-    float m_Theta;											//< inner cone angle. no angular falloff 
-															//< within this cone
-    float m_Phi;											//< outer cone angle
+	float m_Theta;							// inner cone angle, no angular falloff within this cone
+	float m_Phi;							// outer cone angle
 
-	// the values below are derived from the above settings for optimizations
-	// These aren't used by DX8. . used for software lighting.
+	int m_nLightCookieTextureIndex;			// render device index of the cookie texture, -1 without one
+	uint8 m_nDirectLight;
+	uint8 m_nCastShadows;
+	uint8 m_nShadowCascadeCount;
+	uint8 m_nCascadeRenderStaticObjects;
+	int m_nShadowWidth;
+	int m_nShadowHeight;
+	float m_flShadowCascadeDistance[ 4 ];
+	int m_nShadowCascadeResolution[ 4 ];
+	float m_flShadowCascadeCrossFade;
+	float m_flShadowCascadeDistanceFade;
+	int m_nShadowPriority;
+	uint8 m_nBakedShadowIndex;
+	uint8 m_nBounceLight;
+	bool m_bAllowSSTGeneration;
+	uint8 m_nFogLightingMode;
+	bool m_bRenderDiffuse;
+	bool m_bRenderSpecular;
+	bool m_bRenderTransmissive;
+	uint8 m_nShape;							// LightSourceShape_t
+	float m_flLightSourceDim0;
+	float m_flLightSourceDim1;
+	float m_flLightSourceSize0;				// width of an ortho light
+	float m_flLightSourceSize1;				// height of an ortho light
+	float m_flPrecomputedMaxRange;
+	float m_flFogContributionStength;
+	float m_flNearClipPlane;
+
+	Vector m_Position;						// light source center position
+	Vector m_Direction;						// for SPOT, direction it is pointing
+	Vector m_vecUp;							// scaled by the capsule length for capsule lights
+
+	// the values below are derived from the above settings by RecalculateDerivedValues
 
 	// NOTE: These dots are cos( m_Theta ), cos( m_Phi )
 	float m_ThetaDot;
 	float m_PhiDot;
+	float m_TanPhi;
 	float m_OneOverThetaDotMinusPhiDot;
-	unsigned int m_Flags;
-protected:
-	float m_RangeSquared;
-public:
+	float m_Truncation;						// from the brightness threshold passed to RecalculateDerivedValues
+	uint32 m_Flags;							// LightType_OptimizationFlags_t and more
 
-	void RecalculateDerivedValues(void);			 // calculate m_xxDot, m_Type for changed parms
-	void RecalculateOneOverThetaDotMinusPhiDot();
+	Vector m_vMinBounds;
+	Vector m_vMaxBounds;
 
-	LightDesc_t(void)
-	{
-	}
-
-	// constructors for various useful subtypes
-
-	// a point light with infinite range
-	LightDesc_t( const Vector &pos, const Vector &color )
-	{
-		InitPoint( pos, color );
-	}
-
-	LightDesc_t &operator=( const LightDesc_t &src )
-	{
-		memcpy( ( void * )this, &src, sizeof(LightDesc_t) );
-		return *this;
-	}
-
-	/// a simple light. cone boundaries in radians. you pass a look_at point and the
-	/// direciton is derived from that.
-	LightDesc_t( const Vector &pos, const Vector &color, const Vector &point_at,
-				float inner_cone_boundary, float outer_cone_boundary )
-	{
-		InitSpot( pos, color, point_at, inner_cone_boundary, outer_cone_boundary );
-	}
-
-	void InitPoint( const Vector &pos, const Vector &color );
-	void InitDirectional( const Vector &dir, const Vector &color );
-	void InitSpot(const Vector &pos, const Vector &color, const Vector &point_at,
-		float inner_cone_boundary, float outer_cone_boundary );
-
-	/// Given 4 points and 4 normals, ADD lighting from this light into "color".
-	void ComputeLightAtPoints( const FourVectors &pos, const FourVectors &normal,
-							   FourVectors &color, bool DoHalfLambert=false ) const;
-	void ComputeNonincidenceLightAtPoints( const FourVectors &pos, FourVectors &color ) const;
-	void ComputeLightAtPointsForDirectional( const FourVectors &pos,
-											 const FourVectors &normal,
-											 FourVectors &color, bool DoHalfLambert=false ) const;
-
-	// warning - modifies color!!! set color first!!
-	void SetupOldStyleAttenuation( float fQuadatricAttn, float fLinearAttn, float fConstantAttn );
-
-	void SetupNewStyleAttenuation( float fFiftyPercentDistance, float fZeroPercentDistance );
-
-
-/// given a direction relative to the light source position, is this ray within the
-	/// light cone (for spotlights..non spots consider all rays to be within their cone)
-	bool IsDirectionWithinLightCone(const Vector &rdir) const
-	{
-		return ( ( m_Type != MATERIAL_LIGHT_SPOT ) || ( rdir.Dot(m_Direction) >= m_PhiDot ) );
-	}
-
-	float OneOverThetaDotMinusPhiDot() const
-	{
-		return m_OneOverThetaDotMinusPhiDot;
-	}
-
-	float DistanceAtWhichBrightnessIsLessThan( float flAmount ) const;
+	QuaternionAligned m_qPrecomputedOBBOrientation;
+	Vector m_vPrecomputedOBBOrigin;
+	Vector m_vPrecomputedOBBExtent;
 };
 
-
-//-----------------------------------------------------------------------------
-// a point light with infinite range
-//-----------------------------------------------------------------------------
-inline void LightDesc_t::InitPoint( const Vector &pos, const Vector &color )
-{
-	m_Type=MATERIAL_LIGHT_POINT;
-	m_Color=color;
-	m_Position=pos;
-	m_Range=0.0;									// infinite
-	m_Attenuation0=1.0;
-	m_Attenuation1=0;
-	m_Attenuation2=0;
-	RecalculateDerivedValues();
-}
-
-
-//-----------------------------------------------------------------------------
-// a directional light with infinite range
-//-----------------------------------------------------------------------------
-inline void LightDesc_t::InitDirectional( const Vector &dir, const Vector &color )
-{
-	m_Type=MATERIAL_LIGHT_DIRECTIONAL;
-	m_Color=color;
-	m_Direction=dir;
-	m_Range=0.0;									// infinite
-	m_Attenuation0=1.0;
-	m_Attenuation1=0;
-	m_Attenuation2=0;
-	RecalculateDerivedValues();
-}
-
-
-//-----------------------------------------------------------------------------
-// a simple light. cone boundaries in radians. you pass a look_at point and the
-// direciton is derived from that.
-//-----------------------------------------------------------------------------
-inline void LightDesc_t::InitSpot(const Vector &pos, const Vector &color, const Vector &point_at,
-	float inner_cone_boundary, float outer_cone_boundary)
-{
-	m_Type=MATERIAL_LIGHT_SPOT;
-	m_Color=color;
-	m_Position=pos;
-	m_Direction=point_at;
-	m_Direction-=pos;
-	VectorNormalizeFast(m_Direction);
-	m_Falloff=5.0;										// linear angle falloff
-	m_Theta=inner_cone_boundary;
-	m_Phi=outer_cone_boundary;
-
-	m_Range=0.0;										// infinite
-
-	m_Attenuation0=1.0;
-	m_Attenuation1=0;
-	m_Attenuation2=0;
-	RecalculateDerivedValues();
-}
-
-
 #endif
-

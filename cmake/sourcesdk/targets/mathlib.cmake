@@ -44,7 +44,6 @@ set(SOURCESDK_MATHLIB_SOURCE_FILES
 	${SOURCESDK_MATHLIB_DIR}/halton.cpp
 	${SOURCESDK_MATHLIB_DIR}/IceKey.cpp
 	${SOURCESDK_MATHLIB_DIR}/imagequant.cpp
-	${SOURCESDK_MATHLIB_DIR}/lightdesc.cpp
 	${SOURCESDK_MATHLIB_DIR}/mathlib_base.cpp
 	${SOURCESDK_MATHLIB_DIR}/polyhedron.cpp
 	${SOURCESDK_MATHLIB_DIR}/powsse.cpp

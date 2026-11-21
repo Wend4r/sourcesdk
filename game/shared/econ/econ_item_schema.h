@@ -264,7 +264,7 @@ struct WeaponPaintableMaterial_t
 	bool m_bMirrorPattern;
 };
 
-class LightDesc_t;
+struct LightDesc_t;
 
 struct InventoryImageData_t
 {
@@ -405,7 +405,7 @@ public:
 	CUtlConstString m_strInventoryImage;
 
 	// Eight more owned strings, freed with the rest. Neither the server nor the client writes
-	// them; CS:GO keeps the icon URLs in this place.
+	// them.
 	CUtlConstString m_sIconURLs[ 8 ];
 };
 COMPILE_TIME_ASSERT( sizeof( CEconMusicDefinition ) == 0x70 );
@@ -543,7 +543,7 @@ public:
 };
 COMPILE_TIME_ASSERT( sizeof( CSkirMishDefinition ) == 0x50 );
 
-// 48 bytes in CS2, not the 28 of CS:GO: the item set getters index the entries with that stride.
+// 48 bytes: the item set getters index the entries with that stride.
 struct item_list_entry_t
 {
 	// Item def
@@ -1114,7 +1114,7 @@ enum item_capabilities_t
 	ITEM_CAP_CAN_CRAFT_COUNT = 1 << 10,       // NOT USED
 	ITEM_CAP_CAN_CRAFT_MARK = 1 << 11,        // NOT USED
 	ITEM_CAP_PAINTABLE_TEAM_COLORS = 1 << 12, // NOT USED
-	ITEM_CAP_CAN_WRAP_STICKER = 1 << 13,      // "can_wrap_sticker"; CS:GO had "can_be_restored" in this bit
+	ITEM_CAP_CAN_WRAP_STICKER = 1 << 13,      // "can_wrap_sticker"
 	ITEM_CAP_CAN_USE_STRANGE_PARTS = 1 << 14, // NOT USED
 	ITEM_CAP_PAINTABLE_UNUSUAL = 1 << 15,     // NOT USED
 	ITEM_CAP_CAN_INCREMENT = 1 << 16,         // NOT USED
@@ -1812,9 +1812,7 @@ public:
 	RecipeDefinitionMap_t m_mapRecipes;
 
 	// Contains the list of item sets.
-	// The definition is stored BY VALUE. Ordered by string content, not by key pointer - CS:GO
-	// used DefLessFunc(const char*) here and looked sets up with a linear Q_strcmp scan, CS2
-	// sorts with strcmp instead.
+	// The definition is stored BY VALUE. Ordered by string content (strcmp), not by key pointer.
 	CUtlOrderedMap< const char *, CEconItemSetDefinition, CDefStringLess, int > m_mapItemSets;
 
 	// Revolving loot lists.
@@ -1834,8 +1832,6 @@ public:
 
 	// List of alternate icons.
 	AlternateIconsMap_t m_mapAlternateIcons;
-
-	// CS:GO's achievement reward dict and map sat here; CS2 has neither.
 
 	// Contains the map of paint kits.
 	// GetPaintKitDefinitionByMapIndex() calls Find() on this, so the comparator has to be a
@@ -1963,8 +1959,7 @@ public:
 	float flScaleMax;
 	float flWearMin;
 	float flWearMax;
-	// CS:GO keeps a small and a large icon URL here; CS2 has four strings, and neither the
-	// server nor the client writes them.
+	// Four strings; neither the server nor the client writes them.
 	CUtlString m_sIconURLs[ 4 ];
 	KeyValues *m_pKVItem;
 };
@@ -2069,8 +2064,7 @@ public:
 	CUtlString sSimpleName;
 	CUtlString sLargeSimpleName;
 
-	// CS:GO keeps a small and a large icon URL here; CS2 has four strings, and neither the
-	// server nor the client writes them.
+	// Four strings; neither the server nor the client writes them.
 	CUtlString m_sIconURLs[ 4 ];
 };
 
