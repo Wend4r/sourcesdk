@@ -98,17 +98,25 @@ public:
 class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 
+// The base of the entity components. It has no members besides the table pointer and no virtual
+// destructor: the component helper constructs and destroys each component as its concrete type.
+//
+// The method that returns the class name ("GetComponentName") is not part of this table: each
+// component class that has it declares it itself, after the methods of its own base, so its slot
+// differs between the component classes (CBodyComponent has none).
 schema class CEntityComponent
 {
 public:
 	// TODO(@Wend4r): Implement schemacompiler2 & kv3lib stuff
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
+	// The game's base version returns an empty datamap named "CEntityComponent"; most components
+	// keep it. Pure here, as the SDK has no definition of it
 	virtual datamap_t *GetDataDescMap() = 0;
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > GetSchemaBinding() = 0;
 	CLASS_USES_KV3TRANSFER_VIRTUAL( CEntityComponent );
 
+	// Registers the component helper of the class on the first call
 	virtual CEntityComponentHelper *GetComponentHelper() = 0;
-	virtual const char *GetComponentName() = 0;
 };
 
 #include "schemacompiler/schemaoff.h"

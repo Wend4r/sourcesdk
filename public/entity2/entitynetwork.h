@@ -263,21 +263,21 @@ public:
 	virtual ~CNetworkTransmitComponent() = 0;
 
 public:
-	// Allocated on the first state change (Dota 2017 DWARF name)
+	// Allocated on the first state change
 	noschema ChangeAccessorFieldPathIndexInfo_t *m_pChangeChangeAccessorFieldPathIndexInfo;
 
 	// Calls FireEvent when it fires; while it is registered, state changes only set
-	// m_bPendingStateChange (Dota 2017 DWARF name; 32 bytes, owned)
+	// m_bPendingStateChange (32 bytes, owned)
 	noschema CEventRegister *m_pTimerEvent;
 
 	// Named by what it does: the PVS clusters the entity touches, rebuilt from its world bounds
-	// while m_bPVSClustersDirty is set (server.dll sub_1801A8DF0); the center of those bounds, the
+	// while m_bPVSClustersDirty is set; the center of those bounds, the
 	// number of used words and the words
 	noschema Vector m_vecPVSClusterCenter;
 	noschema int32 m_nPVSClusterWordCount;
 	noschema NetworkTransmitPVSClusterWord_t m_PVSClusterWords[ 32 ];
 
-	// No user found in server.dll and libserver.so besides the constructor and the destructor
+	// No user besides the constructor and the destructor
 	noschema CThreadRWLock_FastRead m_StateChangeLock;
 
 	// Named by what it does: the box that the sv_pvs_max_distance check measures against the
@@ -308,14 +308,14 @@ public:
 	// Most offsets one shared change info record holds, -1 for the default 48
 	noschema int32 m_nMaxChangedOffsets;
 
-	// The entity that embeds the component (Dota 2017 DWARF name)
+	// The entity that embeds the component
 	noschema CEntityInstance *m_pOuter;
 
 	// Named by what it does: the entity index, -1 until the entity is added to the entity database
 	noschema int32 m_nEntityIndex;
 
-	// Dota 2017 DWARF names
 	noschema CChangeInfoAccessor m_Accessor;
+	// The spawn group whose bounds contain the entity
 	noschema SpawnGroupHandle_t m_PhysicalSpawnGroupHandle;
 
 	// Named by what they guard: the UpdateTransmitState call and the PVS cluster rebuild

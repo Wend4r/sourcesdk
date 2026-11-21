@@ -51,6 +51,23 @@ private:
 	float m_Value;
 };
 
+schema struct GameTick_t
+{
+public:
+	TYPEMETA( MIsBoxedIntegerType );
+	DECLARE_SCHEMA_DATA_CLASS( GameTick_t );
+
+	GameTick_t( int32 value = 0 ) : m_Value( value ) {}
+
+	int32 GetTick() const { return m_Value; }
+	void SetTick( int32 value ) { m_Value = value; }
+
+	operator int32() const { return m_Value; }
+
+private:
+	int32 m_Value;
+};
+
 enum ActivateType_t
 {
 	ACTIVATE_TYPE_INITIAL_CREATION = 0,
