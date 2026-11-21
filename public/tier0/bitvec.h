@@ -36,7 +36,7 @@ private:
 #define LOG2_BITS_PER_INT	5
 #define BITS_PER_INT		32
 
-#if _WIN32 && !defined(_X360)
+#if _WIN32
 #include <intrin.h>
 #pragma intrinsic(_BitScanForward)
 #endif
@@ -48,17 +48,9 @@ inline int FirstBitInWord( unsigned int elem, int offset )
 #if _WIN32
 	if ( !elem )
 		return -1;
-#if defined( _X360 )
-	// this implements CountTrailingZeros() / BitScanForward()
-	unsigned int mask = elem-1;
-	unsigned int comp = ~elem;
-	elem = mask & comp;
-	return (32 - _CountLeadingZeros(elem)) + offset;
-#else
 	unsigned long out;
 	_BitScanForward(&out, elem);
 	return out + offset;
-#endif
 
 #else
 	static unsigned firstBitLUT[256] = 
@@ -234,13 +226,8 @@ inline uint PopulationCount( uint8 v )
 }
 
 
-#ifdef _X360
-#define BitVec_Bit( bitNum ) GetBitForBitnum( bitNum )
-#define BitVec_BitInByte( bitNum ) GetBitForBitnumByte( bitNum )
-#else
 #define BitVec_Bit( bitNum ) ( 1 << ( (bitNum) & (BITS_PER_INT-1) ) )
 #define BitVec_BitInByte( bitNum ) ( 1 << ( (bitNum) & 7 ) )
-#endif
 #define BitVec_Int( bitNum ) ( (bitNum) >> LOG2_BITS_PER_INT )
 
 
@@ -1084,13 +1071,8 @@ inline unsigned GetStartBitMask( int startBit )
 }
 
 
-#ifdef _X360
-#define BitVec_Bit( bitNum ) GetBitForBitnum( bitNum )
-#define BitVec_BitInByte( bitNum ) GetBitForBitnumByte( bitNum )
-#else
 #define BitVec_Bit( bitNum ) ( 1 << ( (bitNum) & (BITS_PER_INT-1) ) )
 #define BitVec_BitInByte( bitNum ) ( 1 << ( (bitNum) & 7 ) )
-#endif
 #define BitVec_Int( bitNum ) ( (bitNum) >> LOG2_BITS_PER_INT )
 
 inline bool BitVec_IsBitSet( const uint32 *pBase, int nBitNum )

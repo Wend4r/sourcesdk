@@ -44,26 +44,6 @@
 #endif
 #endif
 
-#ifdef SN_TARGET_PS3
-
-//#define NO_STEAM
-#define NO_STEAM_PS3_OVERLAY
-
-#define _PS3 1
-#define COMPILER_PS3 1
-#define PLATFORM_PS3 1
-
-// There are 2 compilers for the PS3: GCC and the SN Systems compiler.
-// They are mostly similar, but in a few places we need to distinguish between the two.
-#if defined( __SNC__ )
-#define COMPILER_SNC 1
-#elif defined( __GCC__ )
-#define COMPILER_GCC 1
-#else
-#error "Unrecognized PS3 compiler; either __SNC__ or __GCC__ must be defined"
-#endif
-
-#endif // SN_TARGET_PS3 
 
 #if defined(__clang__)
 #define COMPILER_CLANG 1
@@ -73,66 +53,16 @@
 #define COMPILER_GCC 1
 #endif
 
-#if defined( _X360 ) || defined( _PS3 )
-#define PLATFORM_PPC 1
-#endif
-
 
 #ifdef COMPILER_MSVC
 #pragma once
 #endif
 
-#if defined (_PS3)
-
-#if defined( __SPU__ )
-	#include <spu_intrinsics.h>
-	#include <vmx2spu.h>
-	#include <vec_types.h>
-#else
-	#include <ppu_intrinsics.h>
-
-	// We want to force the assert to be redefined, because the STD assert might have been 
-	// included and redefined. ps3_assert.h will do a check for assert being redefined.
-	// #include "ps3/ps3_assert.h"
-	#ifndef COMPILER_PS3
-	#error "for PS3, VPC must define COMPILER_PS3 macro just like it does for COMPILER_MSVCX360 macro"
-	#endif
-	#if !defined( COMPILER_SNC ) && !defined( COMPILER_CLANG ) && !defined( COMPILER_GCC )
-	#error "for PS3, VPC must define COMPILER_SNC, COMPILER_CLANG or COMPILER_GCC macro, depending on the target compiler, just like it does for COMPILER_MSVCX360 macro"
-	#endif
-#endif
-
-#elif defined( _X360 )
-	#define NO_STEAM
-	#define NO_VOICE
-	// for the 360, the ppc platform and the rtos are tightly coupled
-	// setup the 360 environment here !once! for much less leaf module include wackiness
-	// these are critical order and purposely appear *before* anything else
-	#define _XBOX
-	#include <xaudio2.h>
-	#include <xbdm.h>
-	#include <xgraphics.h>
-	#include <xui.h>
-	#include <pmcpbsetup.h>
-	#include <xmahardwareabstraction.h>
-	#undef _XBOX
-
-#endif
 
 #include "wchartypes.h"
 #include "tier0/tier0_unicode.h"
 #include "tier0/valve_off.h"
 
-#ifdef _PS3
-
-	#include "ps3/ps3_platform.h"
-
-	// symbol redefinition was the source of many PS3 compile warnings
-#if !defined( NO_STEAM_GAMECOORDINATOR )
-	#define NO_STEAM_GAMECOORDINATOR
-#endif
-
-#else
 
 // No game coordinator for Partner depot
 #if !defined( NO_STEAM_GAMECOORDINATOR )
@@ -155,7 +85,6 @@
 	#include <stdarg.h>
 #endif
 
-#endif
 
 // Forward declaration
 class CBufferString;

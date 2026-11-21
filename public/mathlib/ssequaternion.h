@@ -42,16 +42,11 @@
 // permitted only on 360, as we've done careful tuning on its Altivec math.
 // FourQuaternions, however, are always allowed, because vertical ops are
 // fine on SSE.
-#ifdef PLATFORM_PPC
-#define ALLOW_SIMD_QUATERNION_MATH 1  // not on PC!
-#endif
-
 
 
 //---------------------------------------------------------------------
 // Load/store quaternions
 //---------------------------------------------------------------------
-#ifndef _X360
 // Using STDC or SSE
 FORCEINLINE fltx4 LoadAlignedSIMD( const QuaternionAligned & pSIMD )
 {
@@ -69,30 +64,6 @@ FORCEINLINE void StoreAlignedSIMD( QuaternionAligned * RESTRICT pSIMD, const flt
 {
 	StoreAlignedSIMD( pSIMD->Base(), a );
 }
-#else
-
-// for the transitional class -- load a QuaternionAligned
-FORCEINLINE fltx4 LoadAlignedSIMD( const QuaternionAligned & pSIMD )
-{
-	fltx4 retval = XMLoadVector4A( pSIMD.Base() );
-	return retval;
-}
-
-FORCEINLINE fltx4 LoadAlignedSIMD( const QuaternionAligned * RESTRICT pSIMD )
-{
-	fltx4 retval = XMLoadVector4A( pSIMD );
-	return retval;
-}
-
-FORCEINLINE void StoreAlignedSIMD( QuaternionAligned * RESTRICT pSIMD, const fltx4 & a )
-{
-	XMStoreVector4A( pSIMD->Base(), a );
-}
-
-// From a RadianEuler packed onto a fltx4, to a quaternion
-fltx4 AngleQuaternionSIMD( FLTX4 vAngles );
-
-#endif
 
 
 #if ALLOW_SIMD_QUATERNION_MATH
@@ -177,7 +148,6 @@ FORCEINLINE fltx4 QuaternionBlendSIMD( const fltx4 &p, const fltx4 &q, float t )
 //---------------------------------------------------------------------
 // Multiply Quaternions
 //---------------------------------------------------------------------
-#ifndef _X360
 
 // SSE and STDC
 FORCEINLINE fltx4 QuaternionMultSIMD( const fltx4 &p, const fltx4 &q )
@@ -192,160 +162,10 @@ FORCEINLINE fltx4 QuaternionMultSIMD( const fltx4 &p, const fltx4 &q )
 	return result;
 }
 
-#else 
-
-// X360
-extern const fltx4 g_QuatMultRowSign[4];
-FORCEINLINE fltx4 QuaternionMultSIMD( const fltx4 &p, const fltx4 &q )
-{
-	fltx4 q2, row, result;
-	q2 = QuaternionAlignSIMD( p, q );
-
-	row = XMVectorSwizzle( q2, 3, 2, 1, 0 );
-	row = MulSIMD( row, g_QuatMultRowSign[0] );
-	result = Dot4SIMD( row, p );
-
-	row = XMVectorSwizzle( q2, 2, 3, 0, 1 );
-	row = MulSIMD( row, g_QuatMultRowSign[1] );
-	row = Dot4SIMD( row, p );
-	result = __vrlimi( result, row, 4, 0 );
-	
-	row = XMVectorSwizzle( q2, 1, 0, 3, 2 );
-	row = MulSIMD( row, g_QuatMultRowSign[2] );
-	row = Dot4SIMD( row, p );
-	result = __vrlimi( result, row, 2, 0 );
-	
-	row = MulSIMD( q2, g_QuatMultRowSign[3] );
-	row = Dot4SIMD( row, p );
-	result = __vrlimi( result, row, 1, 0 );
-	return result;
-}
-
-#endif
-
 
 //---------------------------------------------------------------------
 // Quaternion scale
 //---------------------------------------------------------------------
-#ifdef _X360
-
-// X360
-FORCEINLINE fltx4 QuaternionScaleSIMD( const fltx4 &p, float t )
-{
-	fltx4 sinom = Dot3SIMD( p, p );
-	sinom = SqrtSIMD( sinom );
-	sinom = MinSIMD( sinom, Four_Ones );
-	fltx4 sinsom = ArcSinSIMD( sinom );
-	fltx4 t4 = ReplicateX4( t );
-	sinsom = MulSIMD( sinsom, t4 );
-	sinsom = SinSIMD( sinsom );
-	sinom = AddSIMD( sinom, Four_Epsilons );
-	sinom = ReciprocalSIMD( sinom );
-	t4 = MulSIMD( sinsom, sinom );
-	fltx4 result = MulSIMD( p, t4 );
-
-	// rescale rotation
-	sinsom = MulSIMD( sinsom, sinsom );
-	fltx4 r = SubSIMD( Four_Ones, sinsom );
-	r = MaxSIMD( r, Four_Zeros );
-	r = SqrtSIMD( r );
-
-	// keep sign of rotation
-	fltx4 cmp = CmpGeSIMD( p, Four_Zeros );
-	r = MaskedAssign( cmp, r, NegSIMD( r ) );
-
-	result = __vrlimi(result, r, 1, 0);
-	return result;
-}
-
-// X360
-// assumes t4 contains a float replicated to each slot
-FORCEINLINE fltx4 QuaternionScaleSIMD( const fltx4 &p, const fltx4 &t4 )
-{
-	fltx4 sinom = Dot3SIMD( p, p );
-	sinom = SqrtSIMD( sinom );
-	sinom = MinSIMD( sinom, Four_Ones );
-	fltx4 sinsom = ArcSinSIMD( sinom );
-	sinsom = MulSIMD( sinsom, t4 );
-	sinsom = SinSIMD( sinsom );
-	sinom = AddSIMD( sinom, Four_Epsilons );
-	sinom = ReciprocalSIMD( sinom );
-	fltx4 result = MulSIMD( p, MulSIMD( sinsom, sinom ) );
-
-	// rescale rotation
-	sinsom = MulSIMD( sinsom, sinsom );
-	fltx4 r = SubSIMD( Four_Ones, sinsom );
-	r = MaxSIMD( r, Four_Zeros );
-	r = SqrtSIMD( r );
-
-	// keep sign of rotation
-	fltx4 cmp = CmpGeSIMD( p, Four_Zeros );
-	r = MaskedAssign( cmp, r, NegSIMD( r ) );
-
-	result = __vrlimi(result, r, 1, 0);
-	return result;
-}
-
-#elif defined(_PS3)
-
-// X360
-FORCEINLINE fltx4 QuaternionScaleSIMD( const fltx4 &p, float t )
-{
-	fltx4 sinom = Dot3SIMD( p, p );
-	sinom = SqrtSIMD( sinom );
-	sinom = MinSIMD( sinom, Four_Ones );
-	fltx4 sinsom = ArcSinSIMD( sinom );
-	fltx4 t4 = ReplicateX4( t );
-	sinsom = MulSIMD( sinsom, t4 );
-	sinsom = SinSIMD( sinsom );
-	sinom = AddSIMD( sinom, Four_Epsilons );
-	sinom = ReciprocalSIMD( sinom );
-	t4 = MulSIMD( sinsom, sinom );
-	fltx4 result = MulSIMD( p, t4 );
-
-	// rescale rotation
-	sinsom = MulSIMD( sinsom, sinsom );
-	fltx4 r = SubSIMD( Four_Ones, sinsom );
-	r = MaxSIMD( r, Four_Zeros );
-	r = SqrtSIMD( r );
-
-	// keep sign of rotation
-	r = MaskedAssign( CmpGeSIMD( p, Four_Zeros ), r, NegSIMD( r ) );
-	// set just the w component of result
-	result = MaskedAssign( LoadAlignedSIMD( g_SIMD_ComponentMask[3] ), r, result );
-
-	return result;
-}
-
-// X360
-// assumes t4 contains a float replicated to each slot
-FORCEINLINE fltx4 QuaternionScaleSIMD( const fltx4 &p, const fltx4 &t4 )
-{
-	fltx4 sinom = Dot3SIMD( p, p );
-	sinom = SqrtSIMD( sinom );
-	sinom = MinSIMD( sinom, Four_Ones );
-	fltx4 sinsom = ArcSinSIMD( sinom );
-	sinsom = MulSIMD( sinsom, t4 );
-	sinsom = SinSIMD( sinsom );
-	sinom = AddSIMD( sinom, Four_Epsilons );
-	sinom = ReciprocalSIMD( sinom );
-	fltx4 result = MulSIMD( p, MulSIMD( sinsom, sinom ) );
-
-	// rescale rotation
-	sinsom = MulSIMD( sinsom, sinsom );
-	fltx4 r = SubSIMD( Four_Ones, sinsom );
-	r = MaxSIMD( r, Four_Zeros );
-	r = SqrtSIMD( r );
-
-	// keep sign of rotation
-	r = MaskedAssign( CmpGeSIMD( p, Four_Zeros ), r, NegSIMD( r ) );
-	// set just the w component of result
-	result = MaskedAssign( LoadAlignedSIMD( g_SIMD_ComponentMask[3] ), r, result );
-
-	return result;
-}
-
-#else
 
 // SSE and STDC
 FORCEINLINE fltx4 QuaternionScaleSIMD( const fltx4 &p, float t )
@@ -378,13 +198,10 @@ FORCEINLINE fltx4 QuaternionScaleSIMD( const fltx4 &p, float t )
 	return q;
 }
 
-#endif
-
 
 //-----------------------------------------------------------------------------
 // Quaternion sphereical linear interpolation
 //-----------------------------------------------------------------------------
-#ifndef _X360
 
 // SSE and STDC
 FORCEINLINE fltx4 QuaternionSlerpNoAlignSIMD( const fltx4 &p, const fltx4 &q, float t )
@@ -433,16 +250,6 @@ FORCEINLINE fltx4 QuaternionSlerpNoAlignSIMD( const fltx4 &p, const fltx4 &q, fl
 	return result;
 }
 
-#else
-
-// X360
-FORCEINLINE fltx4 QuaternionSlerpNoAlignSIMD( const fltx4 &p, const fltx4 &q, float t )
-{
-	return XMQuaternionSlerp( p, q, t );
-}
-
-#endif
-
 
 FORCEINLINE fltx4 QuaternionSlerpSIMD( const fltx4 &p, const fltx4 &q, float t )
 {
@@ -476,14 +283,12 @@ public:
 					 : x(_x), y(_y), z(_z), w(_w)
 	{}
 
-#if !defined(__SPU__)
 	// four rotations around the same axis. angles should be in radians.
 	FourQuaternions ( const fltx4 &axis, 
 		const float &angle0, const float &angle1, const float &angle2, const float &angle3)
 	{
 		FromAxisAndAngles( axis, angle0, angle1, angle2, angle3 );
 	}
-#endif
 
 	FourQuaternions( FourQuaternions const &src )
 	{
@@ -526,7 +331,6 @@ public:
 
 	FORCEINLINE FourQuaternions SlerpNoAlign( const FourQuaternions &originalto, const fltx4 &t );
 
-#if !defined(__SPU__)
 	/// given an axis and four angles, populate this quaternion with the equivalent rotations
 	/// (ie, make these four quaternions represent four different rotations around the same axis)
 	/// angles should be in RADIANS
@@ -538,7 +342,6 @@ public:
 	{
 		return FromAxisAndAngles( axis, MulSIMD(angles, Four_DegToRad));
 	}
-#endif
 
 	// rotate (in place) a FourVectors by this quaternion. there's a corresponding RotateBy in FourVectors.
 	FORCEINLINE void RotateFourVectors( FourVectors * RESTRICT vecs ) const RESTRICT ;
@@ -548,21 +351,6 @@ public:
 	/// all 4 vectors must be 128 bit boundary
 	FORCEINLINE void LoadAndSwizzleAligned(const float *RESTRICT a, const float *RESTRICT b, const float *RESTRICT c, const float *RESTRICT d)
 	{
-#if defined( _X360 )
-		fltx4 tx = LoadAlignedSIMD(a);
-		fltx4 ty = LoadAlignedSIMD(b);
-		fltx4 tz = LoadAlignedSIMD(c);
-		fltx4 tw = LoadAlignedSIMD(d);
-		fltx4 r0 = __vmrghw(tx, tz);
-		fltx4 r1 = __vmrghw(ty, tw);
-		fltx4 r2 = __vmrglw(tx, tz);
-		fltx4 r3 = __vmrglw(ty, tw);
-
-		x = __vmrghw(r0, r1);
-		y = __vmrglw(r0, r1);
-		z = __vmrghw(r2, r3);
-		w = __vmrglw(r2, r3);
-#else
 		x		= LoadAlignedSIMD(a);
 		y		= LoadAlignedSIMD(b);
 		z		= LoadAlignedSIMD(c);
@@ -573,7 +361,6 @@ public:
 		// x y z w
 		// x y z w
 		TransposeSIMD(x, y, z, w);
-#endif
 	}
 
 	FORCEINLINE void LoadAndSwizzleAligned(const QuaternionAligned * RESTRICT a, 
@@ -590,21 +377,6 @@ public:
 	/// all 4 vectors must be 128 bit boundary
 	FORCEINLINE void LoadAndSwizzleAligned(const QuaternionAligned *qs)
 	{
-#if defined( _X360 )
-		fltx4 tx = LoadAlignedSIMD(qs++);
-		fltx4 ty = LoadAlignedSIMD(qs++);
-		fltx4 tz = LoadAlignedSIMD(qs++);
-		fltx4 tw = LoadAlignedSIMD(qs);
-		fltx4 r0 = __vmrghw(tx, tz);
-		fltx4 r1 = __vmrghw(ty, tw);
-		fltx4 r2 = __vmrglw(tx, tz);
-		fltx4 r3 = __vmrglw(ty, tw);
-
-		x = __vmrghw(r0, r1);
-		y = __vmrglw(r0, r1);
-		z = __vmrghw(r2, r3);
-		w = __vmrglw(r2, r3);
-#else
 		x		= LoadAlignedSIMD(qs++);
 		y		= LoadAlignedSIMD(qs++);
 		z		= LoadAlignedSIMD(qs++);
@@ -615,58 +387,23 @@ public:
 		// x y z w
 		// x y z w
 		TransposeSIMD(x, y, z, w);
-#endif
 	}
 
 	// Store the FourQuaternions out to four nonconsecutive ordinary quaternions in memory.
 	FORCEINLINE void SwizzleAndStoreAligned(QuaternionAligned *a, QuaternionAligned *b, QuaternionAligned *c, QuaternionAligned *d)
 	{
-#if defined( _X360 )
-		fltx4 r0 = __vmrghw(x, z);
-		fltx4 r1 = __vmrghw(y, w);
-		fltx4 r2 = __vmrglw(x, z);
-		fltx4 r3 = __vmrglw(y, w);
-
-		fltx4 rx = __vmrghw(r0, r1);
-		fltx4 ry = __vmrglw(r0, r1);
-		fltx4 rz = __vmrghw(r2, r3);
-		fltx4 rw = __vmrglw(r2, r3);
-
-		StoreAlignedSIMD(a, rx);
-		StoreAlignedSIMD(b, ry);
-		StoreAlignedSIMD(c, rz);
-		StoreAlignedSIMD(d, rw);
-#else
 		fltx4 dupes[4] = { x, y, z, w };
 		TransposeSIMD(dupes[0], dupes[1], dupes[2], dupes[3]);
 		StoreAlignedSIMD(a, dupes[0]);
 		StoreAlignedSIMD(b, dupes[1]);
 		StoreAlignedSIMD(c, dupes[2]);
 		StoreAlignedSIMD(d, dupes[3]);
-#endif
 	}
 
 	// Store the FourQuaternions out to four consecutive ordinary quaternions in memory.
 	FORCEINLINE void SwizzleAndStoreAligned(QuaternionAligned *qs)
 	{
-#if defined( _X360 )
-		fltx4 r0 = __vmrghw(x, z);
-		fltx4 r1 = __vmrghw(y, w);
-		fltx4 r2 = __vmrglw(x, z);
-		fltx4 r3 = __vmrglw(y, w);
-
-		fltx4 rx = __vmrghw(r0, r1);
-		fltx4 ry = __vmrglw(r0, r1);
-		fltx4 rz = __vmrghw(r2, r3);
-		fltx4 rw = __vmrglw(r2, r3);
-
-		StoreAlignedSIMD(qs, rx);
-		StoreAlignedSIMD(++qs, ry);
-		StoreAlignedSIMD(++qs, rz);
-		StoreAlignedSIMD(++qs, rw);
-#else
 		SwizzleAndStoreAligned(qs, qs+1, qs+2, qs+3);
-#endif
 	}
 
 	// Store the FourQuaternions out to four consecutive ordinary quaternions in memory.
@@ -686,23 +423,11 @@ public:
 			SplatZSIMD(controlMask),
 			SplatWSIMD(controlMask)	};
 
-#if defined( _X360 )
-		fltx4 r0 = __vmrghw(x, z);
-		fltx4 r1 = __vmrghw(y, w);
-		fltx4 r2 = __vmrglw(x, z);
-		fltx4 r3 = __vmrglw(y, w);
-
-		fltx4 rx = __vmrghw(r0, r1);
-		fltx4 ry = __vmrglw(r0, r1);
-		fltx4 rz = __vmrghw(r2, r3);
-		fltx4 rw = __vmrglw(r2, r3);
-#else
 		fltx4 rx = x;
 		fltx4 ry = y;
 		fltx4 rz = z;
 		fltx4 rw = w;
 		TransposeSIMD( rx, ry, rz, rw );
-#endif
 
 		StoreAlignedSIMD( qs+0, MaskedAssign(masks[0], rx, originals[0]));
 		StoreAlignedSIMD( qs+1, MaskedAssign(masks[1], ry, originals[1]));
@@ -712,13 +437,10 @@ public:
 };
 
 
-
 FORCEINLINE FourQuaternions FourQuaternions::Conjugate(  ) const
 {
 	return FourQuaternions( NegSIMD(x),  NegSIMD(y),  NegSIMD(z),  w );
 }
-
-
 
 
 FORCEINLINE const fltx4 Dot(const FourQuaternions &a, const FourQuaternions &b)
@@ -819,7 +541,6 @@ FORCEINLINE const FourQuaternions QuaternionNormalize( const FourQuaternions &q 
 }
 
 
-#if !defined(__SPU__)
 FORCEINLINE FourQuaternions &FourQuaternions::FromAxisAndAngles( const fltx4 &axis, 
 											   const float &angle0, const float &angle1,	const float &angle2, const float &angle3 )
 {
@@ -846,7 +567,6 @@ FORCEINLINE FourQuaternions &FourQuaternions::FromAxisAndAngles( const fltx4 &ax
 
 	return *this;
 }
-#endif
 
 
 /// this = this * q;
@@ -1192,7 +912,6 @@ FORCEINLINE FourQuaternions FourQuaternions::Slerp( const FourQuaternions &origi
 
 	return ret;
 }
-
 
 
 FORCEINLINE FourQuaternions FourQuaternions::SlerpNoAlign( const FourQuaternions &originalto, const fltx4 &t )

@@ -29,11 +29,6 @@
 
 #include "tier0/valve_off.h"
 
-// There's a different version of this file in the xbox codeline
-// so the PC version built in the xbox branch includes things like 
-// tickrate changes.
-#include "xbox_codeline_defines.h"
-
 #if defined(_PS3)
 #if defined( __SPU__ )
 #include <spu_intrinsics.h>
@@ -497,11 +492,6 @@ inline bool color32::operator!=( const color32 &other ) const
 	return r != other.r || g != other.g || b != other.b || a != other.a;
 }
 
-struct colorVec
-{
-	unsigned r, g, b, a;
-};
-
 struct colorVec4
 {
 	float r, g, b, a;
@@ -555,84 +545,10 @@ struct Rect3D_t
 
 
 //-----------------------------------------------------------------------------
-// Interval, used by soundemittersystem + the game
-//-----------------------------------------------------------------------------
-struct interval_t
-{
-	float start;
-	float range;
-};
-
-
-//-----------------------------------------------------------------------------
 // Declares a type-safe handle type; you can't assign one handle to the next
 //-----------------------------------------------------------------------------
 
-// 32-bit pointer handles.
-
-// Typesafe 8-bit and 16-bit handles.
-template< class HandleType >
-class CBaseIntHandle
-{
-public:
-
-	inline bool			operator==( const CBaseIntHandle &other )	{ return m_Handle == other.m_Handle; }
-	inline bool			operator!=( const CBaseIntHandle &other )	{ return m_Handle != other.m_Handle; }
-
-	// Only the code that doles out these handles should use these functions.
-	// Everyone else should treat them as a transparent type.
-	inline HandleType	GetHandleValue()					{ return m_Handle; }
-	inline void			SetHandleValue( HandleType val )	{ m_Handle = val; }
-
-	typedef HandleType	HANDLE_TYPE;
-
-protected:
-
-	HandleType	m_Handle;
-};
-
-template< class DummyType >
-class CIntHandle16 : public CBaseIntHandle< unsigned short >
-{
-public:
-	inline			CIntHandle16() {}
-
-	static inline	CIntHandle16<DummyType> MakeHandle( HANDLE_TYPE val )
-	{
-		return CIntHandle16<DummyType>( val );
-	}
-
-protected:
-	inline			CIntHandle16( HANDLE_TYPE val )
-	{
-		m_Handle = val;
-	}
-};
-
-
-template< class DummyType >
-class CIntHandle32 : public CBaseIntHandle< uint32 >
-{
-public:
-	inline			CIntHandle32() {}
-
-	static inline	CIntHandle32<DummyType> MakeHandle( HANDLE_TYPE val )
-	{
-		return CIntHandle32<DummyType>( val );
-	}
-
-protected:
-	inline			CIntHandle32( HANDLE_TYPE val )
-	{
-		m_Handle = val;
-	}
-};
-
-
 // NOTE: This macro is the same as windows uses; so don't change the guts of it
-#define DECLARE_HANDLE_16BIT(name)	typedef CIntHandle16< struct name##__handle * > name;
-#define DECLARE_HANDLE_32BIT(name)	typedef CIntHandle32< struct name##__handle * > name;
-
 #define DECLARE_POINTER_HANDLE(name) struct name##__ { int unused; }; typedef struct name##__ *name
 #define FORWARD_DECLARE_HANDLE(name) typedef struct name##__ *name
 

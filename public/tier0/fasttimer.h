@@ -13,22 +13,11 @@
 
 #include <assert.h>
 #include "tier0/platform.h"
-#ifdef _PS3
-#include "sys/sys_time.h"
-#endif
 
 // Frequency of the counter Plat_Rdtsc() samples, which cycle counts convert to time through
 inline uint64 GetCycleCountFrequency()
 {
-#if defined( _X360 )
-	// The time base runs at 1/64 of the CPU clock
-	return Plat_CPUTickFrequency() / 64;
-#elif defined( _PS3 )
-	// The time base frequency is unrelated to the CPU clock
-	return sys_time_get_timebase_frequency();
-#else
 	return Plat_CPUTickFrequency();
-#endif
 }
 
 class CCycleCount

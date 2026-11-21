@@ -15,11 +15,9 @@ typedef __time64_t time64_t;
 #include <sys/types.h>
 #include <sys/stat.h>
 typedef int64_t time64_t;
-#if !defined( _PS3 )
 #include <signal.h>
 #include <dirent.h>
 #include <limits.h>
-#endif // _PS3
 #endif
 
 #include "tier0/platform.h"
@@ -432,8 +430,6 @@ public:
 
 #ifdef _WIN32
 	static void __stdcall ThreadedWriteFileCompletionFunc( unsigned long dwErrorCode, unsigned long dwBytesTransfered, struct _OVERLAPPED *pOverlapped );
-#elif defined( _PS3 )
-	// not implemented on PS3
 #elif defined(POSIX)
 	static void __stdcall ThreadedWriteFileCompletionFunc( sigval sigval );
 #else
@@ -462,7 +458,6 @@ inline uint64 CFileWriter::GetBytesWritten()
 	return m_cubWritten; 
 }
 
-#if !defined(_PS3)
 //-----------------------------------------------------------------------------
 // Watches a directory for file changes
 //-----------------------------------------------------------------------------
@@ -530,7 +525,6 @@ private:
 	CDirWatcher( const CDirWatcher & ) = delete;
 	CDirWatcher &operator=( const CDirWatcher & ) = delete;
 };
-#endif // _PS3
 
 
 //-----------------------------------------------------------------------------

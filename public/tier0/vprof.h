@@ -10,31 +10,12 @@
 
 #include "tier0/dbg.h"
 #include "tier0/fasttimer.h"
-#include "tier0/l2cache.h"
 #include "tier0/threadtools.h"
 #include "tier0/utlvector.h"
 
 // VProf is enabled by default in all configurations -except- X360 Retail.
-#if !( defined( _X360 ) && defined( _CERT ) )
 #define VPROF_ENABLED
-#endif
 
-#if defined(_X360) && defined(VPROF_ENABLED)
-#include "tier0/pmc360.h"
-#ifndef USE_PIX
-#define VPROF_UNDO_PIX
-#undef _PIX_H_
-#undef PIXBeginNamedEvent
-#undef PIXEndNamedEvent
-#undef PIXSetMarker
-#undef PIXNameThread
-#define USE_PIX
-#include <pix.h>
-#undef USE_PIX
-#else
-#include <pix.h>
-#endif
-#endif
 
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -133,12 +114,6 @@
 #define VPROF_BUDGETGROUP_CLIENTLEAFSYSTEM			_T("ClientLeafSystem")
 #define VPROF_BUDGETGROUP_JOBS_COROUTINES			_T("Jobs/Coroutines")
 	
-#ifdef _X360
-// update flags
-#define VPROF_UPDATE_BUDGET				0x01	// send budget data every frame
-#define VPROF_UPDATE_TEXTURE_GLOBAL		0x02	// send global texture data every frame
-#define VPROF_UPDATE_TEXTURE_PERFRAME	0x04	// send perframe texture data every frame
-#endif
 
 //-------------------------------------
 
@@ -1133,102 +1108,8 @@ private:
 
 #endif
 
-#ifdef _X360
-
-#include "xbox/xbox_console.h"
-#include "tracerecording.h"
-#include  "tier0/fmtstr.h"
-#pragma comment( lib, "tracerecording.lib" )
-#pragma comment( lib, "xbdm.lib" )
-
-class CPIXRecorder
-{
-public:
-	CPIXRecorder() : m_bActive( false ) {}
-	~CPIXRecorder() { Stop(); }
-
-	void Start( const char *pszFilename = "capture" )
-	{
-		if ( !m_bActive )
-		{
-			if ( !XTraceStartRecording( CFmtStr( "e:\\%s.pix2", pszFilename ) ) )
-			{
-				Msg( "XTraceStartRecording failed, error code %d\n", GetLastError() );
-			}
-			else
-			{
-				m_bActive = true;
-			}
-		}
-	}
-
-	void Stop()
-	{
-		if ( m_bActive )
-		{
-			m_bActive = false;
-			if ( XTraceStopRecording() )
-			{
-				Msg( "CPU trace finished.\n" );
-				// signal VXConsole that trace is completed
-				XBX_rTraceComplete();
-			}
-		}
-	}
-
-private:
-	bool m_bActive;
-};
-
-#define VPROF_BEGIN_PIX_BLOCK( convar ) \
-	{ \
-	bool bRunPix = 0; \
-	static CFastTimer PIXTimer; \
-	extern ConVar convar; \
-	ConVar &PIXConvar = convar; \
-	CPIXRecorder PIXRecorder; \
-		{ \
-		PIXLabel: \
-			if ( bRunPix ) \
-			{ \
-				PIXRecorder.Start(); \
-			} \
-			else \
-			{ \
-				if ( PIXConvar.GetBool() ) \
-				{ \
-					PIXTimer.Start(); \
-				} \
-			} \
-				{
-
-
-#define VPROF_END_PIX_BLOCK() \
-				} \
-			\
-			if ( !bRunPix ) \
-			{ \
-				if ( PIXConvar.GetBool() ) \
-				{ \
-					PIXTimer.End(); \
-					if ( PIXTimer.GetDuration().GetMillisecondsF() > PIXConvar.GetFloat() ) \
-					{ \
-						PIXConvar.SetValue( 0 ); \
-						bRunPix = true; \
-						goto PIXLabel; \
-					} \
-				} \
-			} \
-			else \
-			{ \
-				PIXRecorder.Stop(); \
-			} \
-		} \
-	}
-#else
 #define VPROF_BEGIN_PIX_BLOCK( PIXConvar ) {
 #define VPROF_END_PIX_BLOCK() }
-#endif
 
 
 #ifdef VPROF_UNDO_PIX

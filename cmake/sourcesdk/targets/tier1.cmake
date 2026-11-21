@@ -38,8 +38,6 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 
 set(SOURCESDK_TIER1_SOURCE_FILES
 	${SOURCESDK_TIER1_DIR}/generichash.cpp
-	${SOURCESDK_TIER1_DIR}/newbitbuf.cpp
-	${SOURCESDK_TIER1_DIR}/processor_detect.cpp
 	${SOURCESDK_TIER1_DIR}/rangecheckedvar.cpp
 	${SOURCESDK_TIER1_DIR}/tier1.cpp
 	${SOURCESDK_TIER1_DIR}/utlbufferutil.cpp
@@ -64,8 +62,6 @@ if(WINDOWS)
 	if(SOURCESDK_MSVC_RUNTIME_LIBRARY)
 		set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	endif()
-elseif(MACOS)
-	set_target_properties(${SOURCESDK_TIER1_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
 endif()
 
 target_compile_options(${SOURCESDK_TIER1_NAME} PUBLIC ${PLATFORM_COMPILE_OPTIONS} ${SOURCESDK_TIER1_COMPILER_OPTIONS})

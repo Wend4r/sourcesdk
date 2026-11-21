@@ -19,12 +19,9 @@
 #include "tier0/assert_base.h"
 
 // For XBX_** functions
-#if defined( _X360 )
-#include "xbox/xbox_console.h"
-#endif
 
 // Used by CColorizedLoggingListener
-#if defined( _WIN32 ) || (defined(POSIX) && !defined(_GAMECONSOLE))
+#if defined( _WIN32 ) || defined(POSIX)
 #include "tier0/win32consoleio.h"
 #endif
 
@@ -364,14 +361,6 @@ public:
 
 	  virtual void Log( const LoggingContext_t *pContext, const tchar *pMessage )
 	  {
-#ifdef _X360
-		  if ( !m_bQuietDebugger && XBX_IsConsoleConnected() )
-		  {
-			  // send to console
-			  XBX_DebugString( XMAKECOLOR( 0,0,0 ), pMessage );
-		  }
-		  else
-#endif
 		  {
 #ifndef _CERT
 			  if ( !m_bQuietPrintf )
@@ -427,7 +416,6 @@ public:
 // A logging listener with Win32 console API color support which which prints 
 // to stdout and the debug channel.
 //-----------------------------------------------------------------------------
-#if !defined _X360
 class CColorizedLoggingListener : public CSimpleLoggingListener
 {
 public:
@@ -467,7 +455,6 @@ public:
 
 	Win32ConsoleColorContext_t m_ColorContext;
 };
-#endif // !_X360
 
 
 //-----------------------------------------------------------------------------

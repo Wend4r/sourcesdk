@@ -28,7 +28,7 @@
 #endif
 
 #if defined( _MEMTEST )
-#if defined( _WIN32 ) || defined( _PS3 )
+#if defined( _WIN32 )
 #define USE_MEM_DEBUG 1
 #endif
 #endif
@@ -271,20 +271,9 @@ public:
 //-----------------------------------------------------------------------------
 // Singleton interface
 //-----------------------------------------------------------------------------
-#ifdef _PS3
-
-PLATFORM_INTERFACE IMemAlloc* g_pMemAllocInternalPS3;
-#ifndef PLATFORM_INTERFACE_MEM_ALLOC_INTERNAL_PS3_OVERRIDE
-#define g_pMemAlloc g_pMemAllocInternalPS3
-#else
-#define g_pMemAlloc PLATFORM_INTERFACE_MEM_ALLOC_INTERNAL_PS3_OVERRIDE
-#endif
-
-#else // !_PS3
 
 MEM_INTERFACE IMemAlloc* g_pMemAlloc;
 
-#endif
 
 // Plain functions over g_pMemAlloc, for libraries that take allocator callbacks
 MEM_INTERFACE void *MemAlloc_AllocFunc( size_t nSize );

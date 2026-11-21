@@ -409,11 +409,9 @@ public:
 	// Temporarily disables pretty print
 	void EnableTabs( bool bEnable );
 
-#if !defined( _GAMECONSOLE )
 	// Swap my internal memory with another buffer,
 	// and copy all of its other members
 	void SwapCopy( CUtlBuffer &other ) ;
-#endif
 
 protected:
 	// error flags
@@ -795,11 +793,11 @@ inline uint32 StringToNumber( char *pString, char **ppEnd, int nRadix )
 template <>
 inline int64 StringToNumber( char *pString, char **ppEnd, int nRadix )
 {
-#if defined(_PS3) || defined(POSIX)
+#if defined(POSIX)
 	return ( int64 )strtoll( pString, ppEnd, nRadix );
-#else // !_PS3
+#else
 	return ( int64 )_strtoi64( pString, ppEnd, nRadix );
-#endif // _PS3
+#endif
 }
 
 template <>
@@ -1025,79 +1023,6 @@ inline void CUtlBuffer::PutTypeBin( T src )
 	}
 }
 
-#if defined( _GAMECONSOLE )
-template <>
-inline void CUtlBuffer::PutTypeBin< float >( float src )
-{
-	if ( CheckPut( sizeof( src ) ) )
-	{
-		if ( m_Byteswap.IsSwappingBytes() )
-		{
-			m_Byteswap.SwapBufferToTargetEndian<float>( &src, &src );
-		}
-
-		//
-		// Write the data
-		//
-		unsigned pData = (unsigned)PeekPut();
-		if ( pData & 0x03 )
-		{
-			// handle unaligned write
-			byte* dst = (byte*)pData;
-			byte* srcPtr = (byte*)&src;
-			dst[0] = srcPtr[0];
-			dst[1] = srcPtr[1];
-			dst[2] = srcPtr[2];
-			dst[3] = srcPtr[3];
-		}
-		else
-		{
-			*(float *)pData = src;
-		}
-
-		m_Put += sizeof(float);
-		AddNullTermination( );
-	}
-}
-
-template <>
-inline void CUtlBuffer::PutTypeBin< double >( double src )
-{
-	if ( CheckPut( sizeof( src ) ) )
-	{
-		if ( m_Byteswap.IsSwappingBytes() )
-		{
-			m_Byteswap.SwapBufferToTargetEndian<double>( &src, &src );
-		}
-
-		//
-		// Write the data
-		//
-		unsigned pData = (unsigned)PeekPut();
-		if ( pData & 0x07 )
-		{
-			// handle unaligned write
-			byte* dst = (byte*)pData;
-			byte* srcPtr = (byte*)&src;
-			dst[0] = srcPtr[0];
-			dst[1] = srcPtr[1];
-			dst[2] = srcPtr[2];
-			dst[3] = srcPtr[3];
-			dst[4] = srcPtr[4];
-			dst[5] = srcPtr[5];
-			dst[6] = srcPtr[6];
-			dst[7] = srcPtr[7];
-		}
-		else
-		{
-			*(double *)pData = src;
-		}
-
-		m_Put += sizeof(double);
-		AddNullTermination( );
-	}
-}
-#endif
 
 template <typename T> 
 inline void CUtlBuffer::PutType( T src )
@@ -1375,7 +1300,6 @@ inline void CUtlBuffer::Spew( )
 	}
 }
 
-#if !defined(_GAMECONSOLE)
 inline void CUtlBuffer::SwapCopy(  CUtlBuffer &other  )
 {
 	m_Get = other.m_Get;
@@ -1392,7 +1316,6 @@ inline void CUtlBuffer::SwapCopy(  CUtlBuffer &other  )
 
 	m_Memory.Swap( other.m_Memory );
 }
-#endif
 
 inline void CUtlBuffer::CopyBuffer( const CUtlBuffer &buffer )
 {

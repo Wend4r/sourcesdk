@@ -38,18 +38,12 @@ list(APPEND SOURCESDK_INCLUDE_DIRS
 
 set(SOURCESDK_MATHLIB_SOURCE_FILES
 	${SOURCESDK_MATHLIB_DIR}/almostequal.cpp
-	${SOURCESDK_MATHLIB_DIR}/anorms.cpp
-	${SOURCESDK_MATHLIB_DIR}/bumpvects.cpp
 	${SOURCESDK_MATHLIB_DIR}/color_conversion.cpp
 	${SOURCESDK_MATHLIB_DIR}/halton.cpp
 	${SOURCESDK_MATHLIB_DIR}/IceKey.cpp
-	${SOURCESDK_MATHLIB_DIR}/imagequant.cpp
 	${SOURCESDK_MATHLIB_DIR}/mathlib_base.cpp
-	${SOURCESDK_MATHLIB_DIR}/polyhedron.cpp
 	${SOURCESDK_MATHLIB_DIR}/powsse.cpp
-	${SOURCESDK_MATHLIB_DIR}/quantize.cpp
 	${SOURCESDK_MATHLIB_DIR}/randsse.cpp
-	${SOURCESDK_MATHLIB_DIR}/simdvectormatrix.cpp
 	${SOURCESDK_MATHLIB_DIR}/sparse_convolution_noise.cpp
 	${SOURCESDK_MATHLIB_DIR}/spherical.cpp
 	${SOURCESDK_MATHLIB_DIR}/sse.cpp
@@ -77,8 +71,6 @@ if(WINDOWS)
 	if(SOURCESDK_MSVC_RUNTIME_LIBRARY)
 		set_target_properties(${SOURCESDK_MATHLIB_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 	endif()
-elseif(MACOS)
-	set_target_properties(${SOURCESDK_MATHLIB_NAME} PROPERTIES OSX_ARCHITECTURES "x86_64")
 endif()
 
 target_compile_options(${SOURCESDK_MATHLIB_NAME} PUBLIC ${PLATFORM_COMPILE_OPTIONS} ${SOURCESDK_MATHLIB_COMPILER_OPTIONS})

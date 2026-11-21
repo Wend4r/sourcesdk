@@ -18,7 +18,7 @@
 #pragma warning( disable : 4700 )
 #endif
 
-#if defined( USE_NATIVE_SLIST ) && !defined( _X360 )
+#if defined( USE_NATIVE_SLIST )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
@@ -28,9 +28,6 @@
 #include "tier0/memalloc.h"
 #include "tier0/memdbgoff.h"
 
-#if defined( _X360 )
-#define USE_NATIVE_SLIST
-#endif
 
 //-----------------------------------------------------------------------------
 
@@ -57,15 +54,6 @@ inline bool ThreadInterlockedAssignIf64x128( volatile int64 *pDest, const int64 
 #define TSLIST_NODE_ALIGN 
 #define TSLIST_HEAD_ALIGN_POST DECL_ALIGN(TSLIST_HEAD_ALIGNMENT)
 #define TSLIST_NODE_ALIGN_POST DECL_ALIGN(TSLIST_NODE_ALIGNMENT)
-#elif defined( _PS3 )
-#define TSLIST_HEAD_ALIGNMENT 8
-#define TSLIST_NODE_ALIGNMENT 8
-
-#define TSLIST_HEAD_ALIGN ALIGN8
-#define TSLIST_NODE_ALIGN ALIGN8
-#define TSLIST_HEAD_ALIGN_POST ALIGN8_POST
-#define TSLIST_NODE_ALIGN_POST ALIGN8_POST
-
 #else
 #error
 #endif

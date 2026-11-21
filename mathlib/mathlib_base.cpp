@@ -16,7 +16,7 @@
 #include "tier0/vprof.h"
 //#define _VPROF_MATHLIB
 
-#if !defined(__SPU__) && defined(_MSC_VER)
+#if defined(_MSC_VER)
 #pragma warning(disable:4244)   // "conversion from 'const int' to 'float', possible loss of data"
 #pragma warning(disable:4730)	// "mixing _m64 and floating point expressions may result in incorrect code"
 #endif
@@ -24,13 +24,9 @@
 #include "mathlib/mathlib.h"
 #include "mathlib/vector.h"
 #include "mathlib/vplane.h"
-#if !defined(__SPU__)
 #include "mathlib/vmatrix.h"
-#endif
 
-#if !defined( _X360 )
 #include "sse.h"
-#endif
 
 #include "mathlib/ssemath.h"
 #include "mathlib/ssequaternion.h"
@@ -58,7 +54,6 @@ const matrix3x4a_t g_MatrixIdentity(
 	0,0,1,0
 );
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Standard C implementations of optimized routines:
 //-----------------------------------------------------------------------------
@@ -75,7 +70,6 @@ float _rsqrtf(float x)
 	return 1.f / _sqrtf( x );
 }
 
-#ifndef PLATFORM_PPC
 float VectorNormalize (Vector& vec)
 {
 #ifdef _VPROF_MATHLIB
@@ -93,7 +87,6 @@ float VectorNormalize (Vector& vec)
 	
 	return radius;
 }
-#endif
 
 
 // TODO: Add fast C VectorNormalizeFast.
@@ -118,7 +111,6 @@ float _InvRSquared(const float* v)
 	return r2 < 1.f ? 1.f : 1/r2;
 }
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Function pointers selecting the appropriate implementation
 //-----------------------------------------------------------------------------
@@ -138,7 +130,6 @@ void InitSinCosTable()
 		SinCosTable[i] = sin(i * 2.0 * M_PI / SIN_TABLE_SIZE);
 	}
 }
-#endif // !defined(__SPU__)
 
 
 qboolean VectorsEqual( const float *v1, const float *v2 )
@@ -148,7 +139,6 @@ qboolean VectorsEqual( const float *v1, const float *v2 )
 		     ( v1[1] == v2[1] ) &&
 			 ( v1[2] == v2[2] ) );
 }
-#endif // #if !defined(__SPU__)
 
 //-----------------------------------------------------------------------------
 // Purpose: Generates Euler angles given a left-handed orientation matrix. The
@@ -291,8 +281,6 @@ Vector MatrixNormalize( const matrix3x4_t &in, matrix3x4_t &out )
 }
 
 
-
-#if !defined(__SPU__)
 // transform in1 by the matrix in2
 void VectorTransform (const float * RESTRICT in1, const matrix3x4_t& in2, float * RESTRICT out)
 {
@@ -325,7 +313,6 @@ void VectorITransform (const float *in1, const matrix3x4_t& in2, float *out)
 	out[ 1 ] = y;
 	out[ 2 ] = z;
 }
-#endif // #if !defined(__SPU__)
 
 // assume in2 is a rotation and rotate the input vector
 void VectorRotate( const float * RESTRICT in1, const matrix3x4_t& in2, float * RESTRICT out )
@@ -340,7 +327,6 @@ void VectorRotate( const float * RESTRICT in1, const matrix3x4_t& in2, float * R
 	out[ 2 ] = z;
 }
 
-#if !defined(__SPU__)
 // assume in2 is a rotation and rotate the input vector
 void VectorRotate( const Vector &in1, const QAngle &in2, Vector &out )
 {
@@ -445,7 +431,6 @@ bool MatricesAreEqual( const matrix3x4_t &src1, const matrix3x4_t &src2, float f
 	}
 	return true;
 }
-#endif // #if !defined(__SPU__)
 
 
 // NOTE: This is just the transpose not a general inverse
@@ -525,7 +510,6 @@ void MatrixScaleByZero( matrix3x4_t &out )
 	out[ 2 ][ 2 ] = 0.0f;
 }
 
-#if !defined(__SPU__)
 int VectorCompare (const float *v1, const float *v2)
 {
 	Assert( s_bMathlibInitialized );
@@ -550,15 +534,10 @@ void CrossProduct (const float* v1, const float* v2, float* cross)
 
 size_t Q_log2( unsigned int val )
 {
-#ifdef _X360 // use hardware
-	// both zero and one return zero (per old implementation)
-	return ( val == 0 ) ? 0 : 31 - _CountLeadingZeros( val );
-#else // use N. Compoop's algorithm ( inherited from days of yore )
 	int answer=0;
 	while (val>>=1)
 		answer++;
 	return answer;
-#endif
 }
 
 // Matrix is right-handed x=forward, y=left, z=up.  We a left-handed convention for vectors in the game code (forward, right, up)
@@ -636,19 +615,9 @@ void AngleVectorsFLU( const QAngle &angles, Vector *pForward, Vector *pLeft, Vec
 
 	float sr, sp, sy, cr, cp, cy;
 
-#ifdef _X360
-	fltx4 radians, scale, sine, cosine;
-	radians = LoadUnaligned3SIMD( angles.Base() );
-	scale = ReplicateX4( M_PI_F / 180.f ); 
-	radians = MulSIMD( radians, scale );
-	SinCos3SIMD( sine, cosine, radians ); 	
-	sp = SubFloat( sine, 0 );	sy = SubFloat( sine, 1 );	sr = SubFloat( sine, 2 );
-	cp = SubFloat( cosine, 0 );	cy = SubFloat( cosine, 1 );	cr = SubFloat( cosine, 2 );
-#else
 	SinCos( DEG2RAD( angles[YAW] ), &sy, &cy );
 	SinCos( DEG2RAD( angles[PITCH] ), &sp, &cp );
 	SinCos( DEG2RAD( angles[ROLL] ), &sr, &cr );
-#endif
 
 	if ( pForward )
 	{
@@ -732,7 +701,6 @@ void ConcatRotations( const matrix3x4_t &in1, const matrix3x4_t &in2, matrix3x4_
 	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] +
 				in1[2][2] * in2[2][2];
 }
-#endif // #if !defined(__SPU__)
 
 
 void ConcatTransforms_Aligned( const matrix3x4a_t &m0, const matrix3x4a_t &m1, matrix3x4a_t &out )
@@ -869,7 +837,6 @@ numer and denom, both of which should contain no fractional part. The
 quotient must fit in 32 bits.
 ====================
 */
-#if !defined(__SPU__)
 void FloorDivMod (double numer, double denom, int *quotient,
 		int *rem)
 {
@@ -1064,19 +1031,9 @@ void AngleVectors( const QAngle &angles, Vector *forward, Vector *right, Vector 
 	
 	float sr, sp, sy, cr, cp, cy;
 
-#ifdef _X360
-	fltx4 radians, scale, sine, cosine;
-	radians = LoadUnaligned3SIMD( angles.Base() );
-	scale = ReplicateX4( M_PI_F / 180.f ); 
-	radians = MulSIMD( radians, scale );
-	SinCos3SIMD( sine, cosine, radians ); 	
-	sp = SubFloat( sine, 0 );	sy = SubFloat( sine, 1 );	sr = SubFloat( sine, 2 );
-	cp = SubFloat( cosine, 0 );	cy = SubFloat( cosine, 1 );	cr = SubFloat( cosine, 2 );
-#else
 	SinCos( DEG2RAD( angles[YAW] ), &sy, &cy );
 	SinCos( DEG2RAD( angles[PITCH] ), &sp, &cp );
 	SinCos( DEG2RAD( angles[ROLL] ), &sr, &cr );
-#endif
 
 	if (forward)
 	{
@@ -1215,7 +1172,6 @@ void VectorAngles( const Vector &forward, const Vector &pseudoup, QAngle &angles
 	}	
 }
 
-#endif // #if !defined(__SPU__)
 
 void SetIdentityMatrix( matrix3x4_t& matrix )
 {
@@ -1226,7 +1182,6 @@ void SetIdentityMatrix( matrix3x4_t& matrix )
 }
 
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Builds a scale matrix
 //-----------------------------------------------------------------------------
@@ -1305,7 +1260,6 @@ void MatrixTranspose( const matrix3x4_t& src, matrix3x4_t& dst )
 	dst[1][0] = src[0][1]; dst[1][1] = src[1][1]; dst[1][2] = src[2][1]; dst[1][3] = 0.0f;
 	dst[2][0] = src[0][2]; dst[2][1] = src[1][2]; dst[2][2] = src[2][2]; dst[2][3] = 0.0f;
 }
-#endif // #if !defined(__SPU__)
 
 //-----------------------------------------------------------------------------
 // Purpose: converts engine euler angles into a matrix
@@ -1345,20 +1299,9 @@ void AngleMatrix( const QAngle &angles, matrix3x4_t& matrix )
 
 	float sr, sp, sy, cr, cp, cy;
 
-#ifdef _X360
-	fltx4 radians, scale, sine, cosine;
-	radians = LoadUnaligned3SIMD( angles.Base() );
-	scale = ReplicateX4( M_PI_F / 180.f ); 
-	radians = MulSIMD( radians, scale );
-	SinCos3SIMD( sine, cosine, radians ); 	
-
-	sp = SubFloat( sine, 0 );	sy = SubFloat( sine, 1 );	sr = SubFloat( sine, 2 );
-	cp = SubFloat( cosine, 0 );	cy = SubFloat( cosine, 1 );	cr = SubFloat( cosine, 2 );
-#else
 	SinCos( DEG2RAD( angles[YAW] ), &sy, &cy );
 	SinCos( DEG2RAD( angles[PITCH] ), &sp, &cp );
 	SinCos( DEG2RAD( angles[ROLL] ), &sr, &cr );
-#endif
 
 	// matrix = (YAW * PITCH) * ROLL
 	matrix[0][0] = cp*cy;
@@ -1378,7 +1321,6 @@ void AngleMatrix( const QAngle &angles, matrix3x4_t& matrix )
 	matrix[2][3] = 0.0f;
 }
 
-#if !defined(__SPU__)
 void AngleIMatrix( const RadianEuler& angles, matrix3x4_t& matrix )
 {
 	QAngle quakeEuler( RAD2DEG( angles.y ), RAD2DEG( angles.z ), RAD2DEG( angles.x ) );
@@ -1419,9 +1361,7 @@ void AngleIMatrix (const QAngle &angles, const Vector &position, matrix3x4_t &ma
 	vecTranslation *= -1.0f;
 	MatrixSetColumn( vecTranslation, 3, mat );
 }
-#endif // #if !defined(__SPU__)
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Bounding box construction methods
 //-----------------------------------------------------------------------------
@@ -1620,7 +1560,6 @@ void VectorYawRotate( const Vector &in, float flYaw, Vector &out)
 }
 
 
-
 float Bias( float x, float biasAmt )
 {
 	// WARNING: not thread safe
@@ -1667,7 +1606,6 @@ float SmoothCurve_Tweak( float x, float flPeakPos, float flPeakSharpness )
 	return SmoothCurve( flSharpened );
 }
 
-#endif  // !defined(__SPU__)
 
 //-----------------------------------------------------------------------------
 // make sure quaternions are within 180 degrees of one another, if not, reverse q
@@ -1741,7 +1679,6 @@ void QuaternionBlendNoAlign( const Quaternion &p, const Quaternion &q, float t, 
 	}
 	QuaternionNormalize( qt );
 }
-
 
 
 void QuaternionIdentityBlend( const Quaternion &p, float t, Quaternion &qt )
@@ -1824,7 +1761,6 @@ void QuaternionSlerpNoAlign( const Quaternion &p, const Quaternion &q, float t, 
 	Assert( qt.IsValid() );
 }
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Purpose: Returns the angular delta between the two normalized quaternions in degrees.
 //-----------------------------------------------------------------------------
@@ -1906,7 +1842,6 @@ void QuaternionMultiply( const Quaternion &q, const Vector &v, Vector &result )
 	result += t2;
 }
 
-#endif // #if !defined(__SPU__)
 
 //-----------------------------------------------------------------------------
 // Make sure the quaternion is of unit length
@@ -2037,8 +1972,6 @@ void QuaternionMult( const Quaternion &p, const Quaternion &q, Quaternion &qt )
 }
 
 
-#if !defined(__SPU__)
-
 void QuaternionExp( const Quaternion &p, Quaternion &q )
 {
 	float r  = sqrt(p[0]*p[0]+p[1]*p[1]+p[2]*p[2]);
@@ -2152,7 +2085,6 @@ void QuaternionLookAt( const Vector &vecForward, const Vector &referenceUp, Quat
 	*/
 } 
 
-#endif // !defined(__SPU__)
 
 void QuaternionMatrix( const Quaternion &q, const Vector &pos, matrix3x4_t& matrix )
 {
@@ -2263,7 +2195,6 @@ const Vector Quaternion::GetLeft()const
 }
 
 
-
 const Vector Quaternion::GetUp()const
 {
 	Vector vAxisZ;
@@ -2272,7 +2203,6 @@ const Vector Quaternion::GetUp()const
 	vAxisZ.z = 1.0f - 2.0f * x * x - 2.0f * y * y;
 	return vAxisZ;
 }
-
 
 
 const Quaternion RotateBetween( const Vector& v1, const Vector& v2 )
@@ -2472,8 +2402,6 @@ void UnitTestVectorFLU()
 }
 
 
-
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Purpose: Converts a quaternion to an axis / angle in degrees
 //			(exponential map)
@@ -2505,7 +2433,6 @@ void AxisAngleQuaternion( const Vector &axis, float angle, Quaternion &q )
 	q.z = axis.z * sa;
 	q.w = ca;
 }
-#endif // #if !defined(__SPU__)
 
 //-----------------------------------------------------------------------------
 // Purpose: Converts radian-euler axis aligned angles to a quaternion
@@ -2523,22 +2450,9 @@ void AngleQuaternion( const RadianEuler &angles, Quaternion &outQuat )
 
 	float sr, sp, sy, cr, cp, cy;
 
-#ifdef _X360
-	fltx4 radians, scale, sine, cosine;
-	radians = LoadUnaligned3SIMD( &angles.x );
-	scale = ReplicateX4( 0.5f ); 
-	radians = MulSIMD( radians, scale );
-	SinCos3SIMD( sine, cosine, radians ); 	
-
-	// NOTE: The ordering here is *different* from the AngleQuaternion below
-	// because p, y, r are not in the same locations in QAngle + RadianEuler. Yay!
-	sr = SubFloat( sine, 0 );	sp = SubFloat( sine, 1 );	sy = SubFloat( sine, 2 );	
-	cr = SubFloat( cosine, 0 );	cp = SubFloat( cosine, 1 );	cy = SubFloat( cosine, 2 );	
-#else
 	SinCos( angles.z * 0.5f, &sy, &cy );
 	SinCos( angles.y * 0.5f, &sp, &cp );
 	SinCos( angles.x * 0.5f, &sr, &cr );
-#endif
 
 	// NJS: for some reason VC6 wasn't recognizing the common subexpressions:
 	float srXcp = sr * cp, crXsp = cr * sp;
@@ -2549,72 +2463,6 @@ void AngleQuaternion( const RadianEuler &angles, Quaternion &outQuat )
 	outQuat.z = crXcp*sy-srXsp*cy; // Z
 	outQuat.w = crXcp*cy+srXsp*sy; // W (real component)
 }
-
-#ifdef _X360
-//-----------------------------------------------------------------------------
-// Purpose: Converts radian-euler axis aligned angles to a quaternion, returning
-//			it on a vector register.
-// Input  : *vAngles - Right-handed Euler angles in radians (roll pitch yaw)
-//
-// Algorithm based on that found in the XDK (which really uses RPY order, as
-//  opposed to this which takes the parameters in RPY order but catenates them
-//  in PYR order).
-//-----------------------------------------------------------------------------
-fltx4 AngleQuaternionSIMD( FLTX4 vAngles )
-{
-	Assert( s_bMathlibInitialized );
-	//	Assert( angles.IsValid() );
-
-#ifdef _VPROF_MATHLIB
-	VPROF_BUDGET( "AngleQuaternion", "Mathlib" );
-#endif
-
-	// we compute the sin and cos of half all the angles.
-	// in the comments I'll call these components
-	// sr = sin(r/2), cp = cos(p/2), sy = sin(y/2), etc.
-
-	fltx4 OneHalf = __vspltisw(1);
-	OneHalf = __vcfsx(OneHalf, 1);
-
-	fltx4 HalfAngles = MulSIMD(vAngles, OneHalf);
-	fltx4 sine,cosine;
-	SinCos3SIMD(sine, cosine, HalfAngles);
-	
-	fltx4 SignMask = __vspltisw(-1);
-	fltx4 Zero = __vspltisw(0);
-	SignMask = __vslw(SignMask, SignMask); // shift left so 1 is only in the sign bit
-	SignMask = __vrlimi(SignMask, Zero, 0x5, 0); // { -1, 0, -1, 0 }
-
-	fltx4 Rc, Pc, Yc, Rs, Ps, Ys, retsum, retval;
-
-	Rc = __vspltw(cosine, 0);	// cr cr cr cr
-	Pc = __vspltw(cosine, 1);	// cp cp cp cp
-	Yc = __vspltw(cosine, 2);	// cy cy cy cy
-	Rs = __vspltw(sine,   0);		// sr sr sr sr
-	Ps = __vspltw(sine,   1);		// sp sp sp sp
-	Ys = __vspltw(sine,   2);		// sy sy sy sy
-
-	Rc = __vrlimi(Rc, sine,	  0x8, 0);	// sr cr cr cr
-	Rs = __vrlimi(Rs, cosine, 0x8, 0);	// cr sr sr sr
-	Pc = __vrlimi(Pc, sine,   0x4, 0);	// cp sp cp cp 
-	Ps = __vrlimi(Ps, cosine, 0x4, 0);	// sp cp sp sp 
-	Yc = __vrlimi(Yc, sine,   0x2, 0);	// cy cy sy cy 
-	Ys = __vrlimi(Ys, cosine, 0x2, 0);	// sy sy cy sy
-
-	retsum = __vxor(Rs, SignMask);	// -cr sr -sr sr
-	retval = __vmulfp(Pc, Yc);		//  cp*cy  sp*cy  cp*sy  cp*cy
-	retsum = __vmulfp(retsum, Ys);	// -cr*sy  sr*sy -sr*cy  sr*sy
-	retval = __vmulfp(retval, Rc);	//  cp*cy*sr  sp*cy*cr  cp*sy*cr  cp*cy*cr
-	retval = __vmaddfp(retsum, Ps, retval); //  cp*cy*sr + -cr*sy*sp ...
-
-	return retval;
-}
-
-inline fltx4 AngleQuaternionSIMD( const RadianEuler &angles )
-{
-	return AngleQuaternionSIMD(LoadUnaligned3SIMD(angles.Base()));
-}
-#endif
 
 
 //-----------------------------------------------------------------------------
@@ -2633,22 +2481,9 @@ void AngleQuaternion( const QAngle &angles, Quaternion &outQuat )
 
 	float sr, sp, sy, cr, cp, cy;
 
-#ifdef _X360
-	fltx4 radians, scale, sine, cosine;
-	radians = LoadUnaligned3SIMD( angles.Base() );
-	scale = ReplicateX4( 0.5f * M_PI_F / 180.f ); 
-	radians = MulSIMD( radians, scale );
-	SinCos3SIMD( sine, cosine, radians ); 	
-
-	// NOTE: The ordering here is *different* from the AngleQuaternion above
-	// because p, y, r are not in the same locations in QAngle + RadianEuler. Yay!
-	sp = SubFloat( sine, 0 );	sy = SubFloat( sine, 1 );	sr = SubFloat( sine, 2 );	
-	cp = SubFloat( cosine, 0 );	cy = SubFloat( cosine, 1 );	cr = SubFloat( cosine, 2 );	
-#else
 	SinCos( DEG2RAD( angles.y ) * 0.5f, &sy, &cy );
 	SinCos( DEG2RAD( angles.x ) * 0.5f, &sp, &cp );
 	SinCos( DEG2RAD( angles.z ) * 0.5f, &sr, &cr );
-#endif
 
 	// NJS: for some reason VC6 wasn't recognizing the common subexpressions:
 	float srXcp = sr * cp, crXsp = cr * sp;
@@ -2660,7 +2495,6 @@ void AngleQuaternion( const QAngle &angles, Quaternion &outQuat )
 	outQuat.w = crXcp*cy+srXsp*sy; // W (real component)
 }
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Purpose: Converts a basis to a quaternion
 //-----------------------------------------------------------------------------
@@ -2746,7 +2580,6 @@ void MatrixQuaternion( const matrix3x4_t &mat, Quaternion &q )
 	MatrixAngles( mat, angles );
 	AngleQuaternion( angles, q );
 }
-#endif // #if !defined(__SPU__)
 
 void MatrixQuaternionFast( const matrix3x4_t &mat, Quaternion &q )
 {
@@ -2875,7 +2708,6 @@ void QuaternionAngles( const Quaternion &q, RadianEuler &angles )
 	Assert( angles.IsValid() );
 }
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Purpose: A helper function to normalize p2.x->p1.x and p3.x->p4.x to 
 //  be the same length as p2.x->p3.x
@@ -2910,9 +2742,7 @@ void Spline_Normalize(
 		}
 	}
 }
-#endif // #if !defined(__SPU__)
 
-#if !defined(__SPU__)
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : 
@@ -3116,7 +2946,6 @@ void Catmull_Rom_Spline_NormalizeX(
 	Catmull_Rom_Spline( p1n, p2, p3, p4n, t, output );
 }
 
-#endif // !defined(__SPU__)
 
 //-----------------------------------------------------------------------------
 // Purpose: basic hermite spline.  t = 0 returns p1, t = 1 returns p2, 
@@ -3238,7 +3067,6 @@ void Hermite_Spline( const Quaternion &q0, const Quaternion &q1, const Quaternio
 }
 
 
-#if !defined(__SPU__)
 // See http://en.wikipedia.org/wiki/Kochanek-Bartels_curves
 // 
 // Tension:  -1 = Round -> 1 = Tight
@@ -4042,7 +3870,6 @@ void MathLib_Init( float gamma, float texGamma, float brightness, int overbright
 
 	// FIXME: Hook SSE into VectorAligned + Vector4DAligned
 
-#if !defined( _GAMECONSOLE )
 	// Grab the processor information:
 	const CPUInformation& pi = GetCPUInformation();
 
@@ -4051,7 +3878,6 @@ void MathLib_Init( float gamma, float texGamma, float brightness, int overbright
 		Assert( 0 );
 		Error( "SSE and SSE2 are required." );
 	}
-#endif //!360
 
 
 	s_bMathlibInitialized = true;
@@ -4779,9 +4605,7 @@ float CalcFovX( float flFovY, float flAspect )
 	return RAD2DEG( atan( tan( DEG2RAD( flFovY ) * 0.5f ) * flAspect ) ) * 2.0f;
 }
 
-#endif // !defined(__SPU__)
 
-#if !defined(__SPU__) 
 //-----------------------------------------------------------------------------
 // Generate a frustum based on perspective view parameters
 //-----------------------------------------------------------------------------
@@ -5192,18 +5016,9 @@ bool Frustum_t::Intersects( const Vector &mins, const Vector &maxs ) const
 		fltx4 zTotalBack = MulSIMD( planes[i].nZ, MaskedAssign( planes[i].zSign, minz, maxz ) );
 		fltx4 dotBack = AddSIMD( xTotalBack, AddSIMD(yTotalBack, zTotalBack) );
 		// if plane of the farthest corner is behind the plane, then the box is completely outside this plane
-#if _X360
-		if  ( !XMVector3GreaterOrEqual( dotBack, planes[i].dist ) )
-			return false;
-#elif defined( _PS3 )
-		bi32x4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
-		if ( IsAnyNegative(isOut) )
-			return false;
-#else
 		fltx4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
 		if ( IsAnyNegative(isOut) )
 			return false;
-#endif
 	}
 	return true;
 }
@@ -5226,18 +5041,9 @@ bool Frustum_t::Intersects( const fltx4 &mins4, const fltx4 &maxs4 ) const
 		fltx4 zTotalBack = MulSIMD( planes[i].nZ, MaskedAssign( planes[i].zSign, minz, maxz ) );
 		fltx4 dotBack = AddSIMD( xTotalBack, AddSIMD(yTotalBack, zTotalBack) );
 		// if plane of the farthest corner is behind the plane, then the box is completely outside this plane
-#if _X360
-		if  ( !XMVector4GreaterOrEqual( dotBack, planes[i].dist ) )
-			return false;
-#elif defined( _PS3 )
-		bi32x4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
-		if ( IsAnyNegative(isOut) )
-			return false;
-#else
 		fltx4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
 		if ( IsAnyNegative(isOut) )
 			return false;
-#endif
 	}
 	return true;
 }
@@ -5261,18 +5067,9 @@ bool Frustum_t::IntersectsCenterExtents( const Vector &center, const Vector &ext
 		fltx4 zTotalBack = AddSIMD( MulSIMD( planes[i].nZ, centerz ), MulSIMD(planes[i].nZAbs, extz ) );
 		fltx4 dotBack = AddSIMD( xTotalBack, AddSIMD(yTotalBack, zTotalBack) );
 		// if plane of the farthest corner is behind the plane, then the box is completely outside this plane
-#if _X360
-		if  ( !XMVector4GreaterOrEqual( dotBack, planes[i].dist ) )
-			return false;
-#elif defined( _PS3 )
-		bi32x4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
-		if ( IsAnyNegative(isOut) )
-			return false;
-#else
 		fltx4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
 		if ( IsAnyNegative(isOut) )
 			return false;
-#endif
 	}
 	return true;
 }
@@ -5295,18 +5092,9 @@ bool Frustum_t::IntersectsCenterExtents( const fltx4 &fl4Center, const fltx4 &fl
 		fltx4 zTotalBack = AddSIMD( MulSIMD( planes[i].nZ, centerz ), MulSIMD(planes[i].nZAbs, extz ) );
 		fltx4 dotBack = AddSIMD( xTotalBack, AddSIMD(yTotalBack, zTotalBack) );
 		// if plane of the farthest corner is behind the plane, then the box is completely outside this plane
-#if _X360
-		if  ( !XMVector3GreaterOrEqual( dotBack, planes[i].dist ) )
-			return false;
-#elif defined( _PS3 )
-		bi32x4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
-		if ( IsAnyNegative(isOut) )
-			return false;
-#else
 		fltx4 isOut = CmpLtSIMD( dotBack, planes[i].dist );
 		if ( IsAnyNegative(isOut) )
 			return false;
-#endif
 	}
 	return true;
 }
@@ -5761,8 +5549,6 @@ Vector RandomVectorInUnitSphere( IUniformRandomStream *pRnd )
 }
 
 
-
-
 float RandomVectorInUnitCircle( Vector2D *pVector )
 {
 	// Guarantee uniform random distribution within a sphere
@@ -5868,4 +5654,3 @@ void BuildTransformedBox( Vector *v2, Vector const &bbmin, Vector const &bbmax, 
 }
 
 
-#endif // !defined(__SPU__)

@@ -13,49 +13,8 @@
 // YUP_ACTIVE is from Source2. It's (obviously) not supported on this branch, just including it here to help merge camera.cpp/.h and the CSM shadow code.
 //#define YUP_ACTIVE 1
 
-#if defined( _X360 )
-#include <xboxmath.h>
-#elif defined(_PS3)
 
-#ifdef SPU
-#include <vectormath/c/vectormath_aos.h>
-#include <spu_intrinsics.h>
-#else
-#include <ppu_asm_intrinsics.h>
-#endif
-
-// Note that similar defines exist in ssemath.h
-// Maybe we should consolidate in one place for all platforms.
-
-#define _VEC_0x7ff		(vec_int4){0x7ff,0x7ff,0x7ff,0x7ff}
-#define _VEC_0x3ff		(vec_int4){0x3ff,0x3ff,0x3ff,0x3ff}
-#define _VEC_22L		(vector unsigned int){22,22,22,22}
-#define _VEC_11L		(vector unsigned int){11,11,11,11}
-#define _VEC_0L			(vector unsigned int){0,0,0,0}
-#define _VEC_255F		(vector float){255.0f,255.0f,255.0f,255.0f}
-#define _VEC_NEGONEF	(vector float){-1.0f,-1.0f,-1.0f,-1.0f}
-#define _VEC_ONEF		(vector float){1.0f,1.0f,1.0f,1.0f}
-#define _VEC_ZEROF		(vector float){0.0f,0.0f,0.0f,0.0f}
-#define _VEC_ZEROxyzONEwF (vector float){0.0f,0.0f,0.0f,1.0f}
-#define _VEC_HALFF		(vector float){0.5f,0.5f,0.5f,0.5f}
-#define _VEC_HALFxyzZEROwF	(vector float){0.5f,0.5f,0.5f,0.0f}
-#define _VEC_PERMUTE_XYZ0W1   (vector unsigned char){0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x1c,0x1d,0x1e,0x1f}
-
-#define _VEC_IEEEHACK (vector float){(float)(1 << 23),(float)(1 << 23),(float)(1 << 23),(float)(1 << 23)}
-#define _VEC_PERMUTE_FASTFTOC (vector unsigned char){0,0,0,0,0,0,0,0,0,0,0,0,0x03,0x07,0x0b,0x0f}
-
-// AngleQuaternion
-#define _VEC_PERMUTE_AQsxsxcxcx (vector unsigned char) {0x00,0x01,0x02,0x03,0x00,0x01,0x02,0x03,0x10,0x11,0x12,0x13,0x10,0x11,0x12,0x13}	
-#define _VEC_PERMUTE_AQczszszcz (vector unsigned char) {0x18,0x19,0x1a,0x1b,0x08,0x09,0x0a,0x0b,0x08,0x09,0x0a,0x0b,0x18,0x19,0x1a,0x1b}	
-#define _VEC_PERMUTE_AQcxcxsxsx (vector unsigned char) {0x10,0x11,0x12,0x13,0x10,0x11,0x12,0x13,0x00,0x01,0x02,0x03,0x00,0x01,0x02,0x03}	
-#define _VEC_PERMUTE_AQszczczsz (vector unsigned char) {0x08,0x09,0x0a,0x0b,0x18,0x19,0x1a,0x1b,0x18,0x19,0x1a,0x1b,0x08,0x09,0x0a,0x0b}	
-#define _VEC_PERMUTE_ANGLEQUAT  (vector unsigned char) {0x10,0x11,0x12,0x13,0x04,0x05,0x06,0x07,0x18,0x19,0x1a,0x1b,0x0c,0x0d,0x0e,0x0f}	
-
-#define _VEC_EPSILONF		(__vector float)			{FLT_EPSILON,FLT_EPSILON,FLT_EPSILON,FLT_EPSILON}
-
-#endif
-
-#if !(defined( PLATFORM_PPC ) || defined(SPU))
+#if !defined(SPU)
 // If we are not PPC based or SPU based, then assumes it is SSE2. We should make this code cleaner.
 
 #include <xmmintrin.h>
@@ -98,7 +57,7 @@ inline float FastRecip(float x) {return 1.0f / x;}
 inline float FastSqrtEst(float x) { return FastRSqrtFast(x) * x; }
 
 
-#else // !defined( PLATFORM_PPC ) && !defined(_SPU)
+#else
 
 #ifndef SPU
 // We may not need this for SPU, so let's not bother for now
@@ -121,17 +80,6 @@ FORCEINLINE double _VMX_RSqrtFast( double x )
 	return __frsqrte( x );
 }
 
-#ifdef _X360
-FORCEINLINE void _VMX_SinCos( float a, float *pS, float *pC )
-{
-	XMScalarSinCos( pS, pC, a );
-}
-
-FORCEINLINE float _VMX_Cos( float a )
-{
-	return XMScalarCos( a );
-}
-#endif
 
 // the 360 has fixed hw and calls directly
 #define FastSqrt(x)			_VMX_Sqrt(x)
@@ -149,189 +97,9 @@ inline double FastSqrtEst(double x) { return __frsqrte(x) * x; }
 // if x is infinite, return FLT_MAX
 inline float FastClampInfinity( float x )
 {
-#ifdef PLATFORM_PPC
-	return fsel( std::numeric_limits<float>::infinity() - x, x, FLT_MAX );
-#else
 	return ( x > FLT_MAX ? FLT_MAX : x );
-#endif
 }
 
-#if defined (_PS3) 
-
-#if defined(__SPU__)
-
-inline int _rotl( int a, int count )
-{
-	vector signed int vi;
-	vi = spu_promote(a, 0);
-	vi = spu_rl(vi, count);
-	return spu_extract(vi, 0);
-}
-
-#else
-
-// extern float cosvf(float);      /* single precision cosine      */
-// extern float sinvf(float);      /* single precision sine        */
-// TODO: need a faster single precision equivalent
-#define cosvf cosf
-#define sinvf sinf
-
-inline int _rotl( int x, int c )
-{
-	return __rlwimi(x,x,c,0,31);
-}
-
-inline int64 _rotl64( int64 x, int c )
-{
-	return __rldicl( x, c, 0 );
-}
-
-
-/*
-FORCEINLINE float _VMX_Sqrt( float x )
-{
-	vector_float_union vIn, vOut;
-
-	vIn.f[0] = x;
-
-	vOut.vf = sqrtf4(vIn.vf);
-	
-	return vOut.f[0];
-}
-
-FORCEINLINE float _VMX_RSqrt( float x )
-{
-	vector_float_union vIn, vOut;
-
-	vIn.f[0] = x;
-
-	vOut.vf = rsqrtf4(vIn.vf);
-
-	return vOut.f[0];
-}
-
-FORCEINLINE float _VMX_RSqrtFast( float x )
-{
-	vector_float_union vIn, vOut;
-
-	vIn.f[0] = x;
-
-	vOut.vf = rsqrtf4fast(vIn.vf);
-
-	return vOut.f[0];
-}
-*/
-
-FORCEINLINE void _VMX_SinCos( float a, float *pS, float *pC )
-{
-	*pS=sinvf(a);
-	*pC=cosvf(a);
-}
-
-FORCEINLINE float _VMX_Cos( float a )
-{
-	return cosvf(a);
-}
-
-
-// the 360 has fixed hw and calls directly
-/*
-#define FastSqrt(x)			_VMX_Sqrt(x)
-#define	FastRSqrt(x)		_VMX_RSqrt(x)
-#define FastRSqrtFast(x)	_VMX_RSqrtFast(x)
-#define FastSinCos(x,s,c)	_VMX_SinCos(x,s,c)
-#define FastCos(x)			_VMX_Cos(x)
-*/
-
-#endif
-
-
-#if defined(__SPU__)
-
-// do we need these optimized yet?
-
-FORCEINLINE float FastSqrt( float x )
-{
-	return sqrtf( x );
-}
-
-FORCEINLINE float FastRSqrt( float x )
-{
-	float rroot = 1.f / (sqrtf(x) + FLT_EPSILON);
-	return rroot;
-}
-
-
-#define FastRSqrtFast(x)	FastRSqrt(x)
-
-
-#endif
-
-
-
-//-----------------------------------------------------------------
-// Vector Unions
-//-----------------------------------------------------------------
-
-//-----------------------------------------------------------------
-// Floats
-//-----------------------------------------------------------------
-typedef union
-{
-	vector float vf;
-	float f[4];
-} vector_float_union;
-
-#if !defined(__SPU__)
-//-----------------------------------------------------------------
-// Ints
-//-----------------------------------------------------------------
-typedef union
-{
-	vector int vi;
-	int i[4];
-} vector_int4_union;
-
-typedef union
-{
-	vector unsigned int vui;
-	unsigned int ui[4];
-} vector_uint4_union;
-
-//-----------------------------------------------------------------
-// Shorts
-//-----------------------------------------------------------------
-typedef union
-{
-	vector signed short vs;
-	signed short s[8];
-} vector_short8_union;
-
-typedef union
-{
-	vector unsigned short vus;
-	unsigned short us[8];
-} vector_ushort8_union;
-
-//-----------------------------------------------------------------
-// Chars
-//-----------------------------------------------------------------
-typedef union
-{
-	vector signed char vc;
-	signed char c[16];
-} vector_char16_union;
-
-typedef union
-{
-	vector unsigned char vuc;
-	unsigned char uc[16];
-} vector_uchar16_union;
-#endif
-
-
-
-#endif	// _PS3
 #endif	// #ifndef SPU
 
 #endif // _MATH_PFNS_H_

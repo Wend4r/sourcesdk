@@ -19,10 +19,6 @@
 // NOTE: This must be the last file included!!!
 //#include "tier0/memdbgon.h"
 
-#ifdef _X360
-// mandatory ... wary of above comment and isolating, tier0 is built as MT though
-#include "tier0/memdbgon.h"
-#endif
 
 #ifndef NDEBUG
 static volatile char const *pDebugString;
@@ -33,17 +29,6 @@ static volatile char const *pDebugString;
 
 #if _WIN32
 #define FAST_BIT_SCAN 1
-#if defined( _X360 )
-#define CountLeadingZeros(x) _CountLeadingZeros(x)
-inline unsigned int CountTrailingZeros( unsigned int elem )
-{
-	// this implements CountTrailingZeros() / BitScanForward()
-	unsigned int mask = elem-1;
-	unsigned int comp = ~elem;
-	elem = mask & comp;
-	return (32 - _CountLeadingZeros(elem));
-}
-#else
 #include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
 #pragma intrinsic(_BitScanForward)
@@ -63,7 +48,6 @@ inline unsigned int CountTrailingZeros(unsigned int elem)
 	return 32;
 }
 
-#endif
 #else
 #define FAST_BIT_SCAN 0
 #endif
@@ -220,13 +204,9 @@ void bf_write::WriteSBitLong( int data, int numbits )
 #if _WIN32
 inline unsigned int BitCountNeededToEncode(unsigned int data)
 {
-#if defined(_X360)
-	return (32 - CountLeadingZeros(data+1)) - 1;
-#else
 	unsigned long firstBit;
 	_BitScanReverse(&firstBit,data+1);
 	return firstBit;
-#endif
 }
 #endif	// _WIN32
 

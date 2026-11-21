@@ -11,11 +11,11 @@
 // to include this potentially multiple times (since we can deactivate debugging
 // by including memdbgoff.h)
 
-#if !defined(STEAM) && !defined(NO_MALLOC_OVERRIDE) && !defined(__SPU__)
+#if !defined(STEAM) && !defined(NO_MALLOC_OVERRIDE)
 
 // SPECIAL NOTE #2: This must be the final include in a .cpp or .h file!!!
 
-#if defined(_DEBUG) && !defined(USE_MEM_DEBUG) && !defined( _PS3 )
+#if defined(_DEBUG) && !defined(USE_MEM_DEBUG)
 #define USE_MEM_DEBUG 1
 #endif
 
@@ -28,13 +28,11 @@
 		#include <wchar.h>
 	#endif
 	#include <string.h>
-	#ifndef _PS3
 		#if defined( OSX )
 			#include <malloc/malloc.h>
 		#else
 			#include <malloc.h>
 		#endif
-	#endif
 #include "tier0/valve_on.h"
 
 #include "commonmacros.h"
@@ -49,7 +47,7 @@
 #endif
 
 #if defined(USE_MEM_DEBUG)
-	#if defined( POSIX ) || defined( _PS3 )
+	#if defined( POSIX )
 		#define _NORMAL_BLOCK 1
 		
 		#include "tier0/valve_off.h"
@@ -126,14 +124,7 @@ extern const char* GetModuleName();
 
 #undef new
 
-#if defined( _PS3 )
-	#ifndef PS3_OPERATOR_NEW_WRAPPER_DEFINED
-		#define PS3_OPERATOR_NEW_WRAPPER_DEFINED
-		inline void* operator new( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
-		inline void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
-	#endif
-	#define new new( 1, __FILE__, __LINE__ )
-#elif !defined( GNUC )
+#if !defined( GNUC )
 	#if defined(__AFX_H__) && defined(DEBUG_NEW)
 		#define new DEBUG_NEW
 	#else
@@ -211,14 +202,6 @@ extern const char* GetModuleName();
 
 #undef new
 
-#if defined( _PS3 ) && !defined( _CERT )
-	#ifndef PS3_OPERATOR_NEW_WRAPPER_DEFINED
-		#define PS3_OPERATOR_NEW_WRAPPER_DEFINED
-		inline void* operator new( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
-		inline void* operator new[]( size_t nSize, int blah, const char *pFileName, int nLine ) { return g_pMemAlloc->IndirectAlloc( nSize, pFileName, nLine ); }
-	#endif
-	#define new new( 1, __FILE__, __LINE__ )
-#endif
 
 #undef _strdup
 #undef strdup
@@ -271,4 +254,4 @@ inline wchar_t *MemAlloc_WcStrDup(const wchar_t *pString)
 
 #define MEMDBGON_H // Defined here so can be used abov
 
-#endif // !STEAM && !NO_MALLOC_OVERRIDE && !__SPU__
+#endif

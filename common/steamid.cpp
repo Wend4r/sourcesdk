@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include "dbg.h"
-#include "SteamCommon.h"
 #include "steam/steamclientpublic.h"
 #include "tier0/strtools.h"
 

@@ -8,8 +8,6 @@
 #ifndef DBG_H
 #define DBG_H
 
-#if !defined(__SPU__)
-
 
 #ifdef _WIN32
 #pragma once
@@ -212,11 +210,7 @@ PLATFORM_INTERFACE bool SetupWin32ConsoleIO();
 #define AssertAlignedWidth(PTR, width)
 #define AssertAlignedConsole(PTR)
 #else
-#  if defined( _X360 )
-#	 define AssertAlignedWidth( PTR, width ) __twnei( intp(PTR) & ( width - 1 ), 0 ) // trap if not equal to immediate value (from width mask); unsigned comparison
-#    define AssertAligned( PTR ) AssertAlignedWidth( PTR, 16 ) // Call above with 16 width defined
-#    define AssertAlignedConsole( PTR ) AssertAlignedWidth( PTR, 4 ) // Call above with 4 width defined (xbox only for now)
-#  elif defined( DBGFLAG_ASSERT )
+#  if defined( DBGFLAG_ASSERT )
 #	 define  AssertAlignedWidth( adr, width )  Assert( ( ( ( intp ) ( adr ) ) & ( width - 1 ) ) == 0 )
 #    define  AssertAligned( adr )           AssertAlignedWidth( adr, 16 )
 #    define AssertAlignedConsole(adr)     // XBox only for now.
@@ -384,18 +378,6 @@ PLATFORM_INTERFACE void SeriousWarning( PRINTF_FORMAT_STRING const char *pMsgFor
 PLATFORM_OVERLOAD void SeriousWarning( LoggingChannelID_t channelID, PRINTF_FORMAT_STRING const char *pMsgFormat, ... ) FMTFUNCTION( 2, 3 );
 PLATFORM_OVERLOAD void SeriousWarning( LoggingChannelID_t channelID, Color spewColor, PRINTF_FORMAT_STRING const char *pMsgFormat, ... ) FMTFUNCTION( 3, 4 );
 
-#ifdef _PS3
-
-PLATFORM_OVERLOAD void DevMsg( int level, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 2, 3 );
-PLATFORM_OVERLOAD void DevWarning( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) FMTFUNCTION( 2, 3 );
-
-PLATFORM_INTERFACE void DevMsg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
-PLATFORM_INTERFACE void DevWarning( PRINTF_FORMAT_STRING const tchar *pMsg, ... ) FMTFUNCTION( 1, 2 );
-
-PLATFORM_INTERFACE void ConColorMsg( const Color& clr, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 2, 3 );
-PLATFORM_INTERFACE void ConMsg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
-
-#else // !_PS3
 
 PLATFORM_INTERFACE void DevMsg( int level, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 2, 3 );
 PLATFORM_INTERFACE void DevWarning( int level, PRINTF_FORMAT_STRING const tchar *pMsg, ... ) FMTFUNCTION( 2, 3 );
@@ -406,7 +388,6 @@ PLATFORM_OVERLOAD void DevWarning( PRINTF_FORMAT_STRING const tchar *pMsg, ... )
 PLATFORM_OVERLOAD void ConColorMsg( const Color& clr, PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 2, 3 );
 PLATFORM_OVERLOAD void ConMsg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
 
-#endif // _PS3
 
 PLATFORM_INTERFACE void ConDMsg( PRINTF_FORMAT_STRING const tchar* pMsg, ... ) FMTFUNCTION( 1, 2 );
 
@@ -568,7 +549,7 @@ private:
 //
 // Purpose: Embed debug info in each file.
 //
-#if defined( _WIN32 ) && !defined( _X360 )
+#if defined( _WIN32 )
 
 	#ifdef _DEBUG
 		#pragma comment(compiler)
@@ -775,60 +756,6 @@ private:
 
 #endif // IS_WINDOWS_PC
 //-----------------------------------------------------------------------------
-
-
-#else //#if !defined(__SPU__)
-
-// void these for now
-
-#define  Assert( _exp )										((void)0)
-#define  AssertOnce( _exp )									((void)0)
-#define  AssertMsg( _exp, _msg )							((void)0)
-#define  AssertMsgOnce( _exp, _msg )						((void)0)
-#define  AssertFunc( _exp, _f )								((void)0)
-#define  AssertEquals( _exp, _expectedValue )				((void)0)
-#define  AssertFloatEquals( _exp, _expectedValue, _tol )	((void)0)
-#define  Verify( _exp )										(_exp)
-#define  VerifyEquals( _exp, _expectedValue )           	(_exp)
-
-#define  AssertMsg1( _exp, _msg, a1 )									((void)0)
-#define  AssertMsg2( _exp, _msg, a1, a2 )								((void)0)
-#define  AssertMsg3( _exp, _msg, a1, a2, a3 )							((void)0)
-#define  AssertMsg4( _exp, _msg, a1, a2, a3, a4 )						((void)0)
-#define  AssertMsg5( _exp, _msg, a1, a2, a3, a4, a5 )					((void)0)
-#define  AssertMsg6( _exp, _msg, a1, a2, a3, a4, a5, a6 )				((void)0)
-#define  AssertMsg6( _exp, _msg, a1, a2, a3, a4, a5, a6 )				((void)0)
-#define  AssertMsg7( _exp, _msg, a1, a2, a3, a4, a5, a6, a7 )			((void)0)
-#define  AssertMsg8( _exp, _msg, a1, a2, a3, a4, a5, a6, a7, a8 )		((void)0)
-#define  AssertMsg9( _exp, _msg, a1, a2, a3, a4, a5, a6, a7, a8, a9 )	((void)0)
-
-#define COMPILE_TIME_ASSERT( pred )
-#define ASSERT_INVARIANT( pred )
-
-#define  AssertFatal( _exp )									((void)0)
-#define  AssertFatalOnce( _exp )								((void)0)
-#define  AssertFatalMsg( _exp, _msg )							((void)0)
-#define  AssertFatalMsgOnce( _exp, _msg )						((void)0)
-#define  AssertFatalFunc( _exp, _f )							((void)0)
-#define  AssertFatalEquals( _exp, _expectedValue )				((void)0)
-#define  AssertFatalFloatEquals( _exp, _expectedValue, _tol )	((void)0)
-#define  VerifyFatal( _exp )									(_exp)
-#define  VerifyEqualsFatal( _exp, _expectedValue )				(_exp)
-
-#define  AssertFatalMsg1( _exp, _msg, a1 )									((void)0)
-#define  AssertFatalMsg2( _exp, _msg, a1, a2 )								((void)0)
-#define  AssertFatalMsg3( _exp, _msg, a1, a2, a3 )							((void)0)
-#define  AssertFatalMsg4( _exp, _msg, a1, a2, a3, a4 )						((void)0)
-#define  AssertFatalMsg5( _exp, _msg, a1, a2, a3, a4, a5 )					((void)0)
-#define  AssertFatalMsg6( _exp, _msg, a1, a2, a3, a4, a5, a6 )				((void)0)
-#define  AssertFatalMsg6( _exp, _msg, a1, a2, a3, a4, a5, a6 )				((void)0)
-#define  AssertFatalMsg7( _exp, _msg, a1, a2, a3, a4, a5, a6, a7 )			((void)0)
-#define  AssertFatalMsg8( _exp, _msg, a1, a2, a3, a4, a5, a6, a7, a8 )		((void)0)
-#define  AssertFatalMsg9( _exp, _msg, a1, a2, a3, a4, a5, a6, a7, a8, a9 )	((void)0)
-
-#define AssertAligned(PTR)
-
-#endif
 
 
 //-----------------------------------------------------------------------------
