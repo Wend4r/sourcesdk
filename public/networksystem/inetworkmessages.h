@@ -176,7 +176,8 @@ public:
 	// A negative nMessageId auto-assigns the id from the message name hash.
 	// nSignonGroup is a SignonGroup_t passed int-wide; SG_INVALID leaves the message in the "Unknown" group.
 	// bCannotBeNetworked marks the message as never sent over the network, its id is auto-assigned too.
-	// Returns nullptr when the message isn't registered yet and additional message registration is not allowed
+	// A message first registered after additional message registration was closed is still created, but it logs a warning
+	// and is registered as if bCannotBeNetworked were set (auto-assigned id, never networked)
 	virtual INetworkSerializerPB *FindOrCreateNetMessage( NetworkMessageId nMessageId, NetMessageAllocateFn_t pfnAllocateMessage, int nSignonGroup, NetChannelBufType_t nBufType, bool bOkayToRedispatch, bool bCannotBeNetworked ) = 0;
 
 	// Doesn't support duplicated callbacks per field
