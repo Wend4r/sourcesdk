@@ -31,13 +31,6 @@ elseif(LINUX)
 		POSIX
 		_LINUX LINUX
 	)
-elseif(APPLE)
-	set(SOURCESDK_COMPILE_DEFINITIONS
-		${SOURCESDK_COMPILE_DEFINITIONS}
-
-		POSIX
-		OSX _OSX
-	)
 endif()
 
 if(SOURCESDK_STATIC_LINKED)
@@ -107,8 +100,6 @@ if(WINDOWS)
 	set(SOURCESDK_PLATFORM_DIR "win64")
 elseif(LINUX)
 	set(SOURCESDK_PLATFORM_DIR "linuxsteamrt64")
-elseif(APPLE)
-	set(SOURCESDK_PLATFORM_DIR "osx64")
 else()
 	message(FATAL_ERROR "Unsupported platform")
 endif()

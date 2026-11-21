@@ -1,9 +1,5 @@
-if(UNIX)
-	if(APPLE)
-		set(MACOS TRUE)
-	else()
-		set(LINUX TRUE)
-	endif()
+if(UNIX AND NOT APPLE)
+	set(LINUX TRUE)
 endif()
 
 if(WIN32)

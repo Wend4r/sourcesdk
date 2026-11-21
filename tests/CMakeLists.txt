@@ -19,12 +19,6 @@ set(SOURCESDK_TEST_LINK_OPTIONS
 	${SOURCESDK_LINK_OPTIONS}
 )
 
-if(MACOS AND SOURCESDK_CONFIGURE_EXPORT_MAP)
-	list(REMOVE_ITEM SOURCESDK_TEST_LINK_OPTIONS
-		-Wl,-exported_symbols_list,${SOURCESDK_SYMBOLS_DIR}/exported_symbols.lds
-	)
-endif()
-
 function(sourcesdk_setup_test_target target_name)
 	if(NOT TARGET ${SOURCESDK_TIER0_NAME})
 		message(FATAL_ERROR "${target_name} requires ${SOURCESDK_TIER0_NAME}")
@@ -66,12 +60,6 @@ function(sourcesdk_setup_test_target target_name)
 	if(WINDOWS)
 		target_compile_definitions(${target_name} PRIVATE
 			PLATFORM_WINDOWS=1
-		)
-	elseif(MACOS)
-		set_target_properties(${target_name} PROPERTIES OSX_ARCHITECTURES "x86_64")
-
-		target_compile_definitions(${target_name} PRIVATE
-			PLATFORM_OSX=1
 		)
 	else()
 		target_compile_definitions(${target_name} PRIVATE
