@@ -69,16 +69,28 @@ public:
 
 //-----------------------------------------------------------------------------
 // Purpose: CS2's inventory manager; the game keeps one static instance of it.
-//		This is the server's class. Besides the virtual below it handles Init(), PostInit(),
-//		Shutdown(), GameInit() and BuildGameSessionManifest().
+//		This is the server's class; 232112 bytes on both platforms (factory
+//		"CCSInventoryManager", static instance).
 //-----------------------------------------------------------------------------
 class CCSInventoryManager : public CInventoryManager
 {
 public:
 	DECLARE_GAME_SYSTEM();
 
+	virtual bool Init() override;
+	virtual void PostInit() override;
+	virtual void Shutdown() override;
+	// Empty
+	GS_EVENT( GameInit );
+	// Adds the resources of the items (weapons by loadout slot) to the session manifest
+	GS_EVENT( BuildGameSessionManifest );
+
+	// Forward to the game system factory
+	virtual void SetGameSystemGlobalPtrs( void *pValue ) override;
+	virtual bool DoesGameSystemReallocate() override;
+
 	// Does a mapping to a "class" index based on a class index and a preset index, so that presets can be stored in the GC.
-	virtual equipped_class_t DoClassMapping( equipped_class_t unClass, equipped_preset_t unPreset ) = 0;
+	virtual equipped_class_t DoClassMapping( equipped_class_t unClass, equipped_preset_t unPreset );
 
 	// Returns the item data for the base item in the loadout slot for a given class
 	CEconItemView *GetBaseItemForTeam( int iClass, int iSlot )

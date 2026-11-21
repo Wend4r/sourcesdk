@@ -24,12 +24,15 @@
 class CNavSpaceGame;
 
 //-----------------------------------------------------------------------------
-// Overrides the spawn group events of the base game system and adds no virtuals.
+// Registered as "NavGameSystem" (reallocating factory), 72 bytes on both platforms. A direct
+// child of IGameSystem with no own virtual methods.
 //-----------------------------------------------------------------------------
-abstract_class CNavGameSystem : public CBaseGameSystem
+class CNavGameSystem : public IGameSystem
 {
 public:
-	// Created when a spawn group with nav data starts loading.
+	DECLARE_GAME_SYSTEM();
+
+	// Created when a spawn group with nav data starts loading
 	struct NavInfoForSpawnGroup_t
 	{
 		// The spawn group's own mesh, or m_pNavMeshForSpawnGroupsWithNoNav when none was created.
@@ -45,11 +48,23 @@ public:
 		bool m_bRebuildNavSpaceOnActivate;
 	};
 
-	// The member DECLARE_GAME_SYSTEM adds.
-	struct YouForgot
-	{
-	} m_YouForgot;
+	GS_EVENT( GameInit );
+	GS_EVENT( GameShutdown );
+	// Loads the nav mesh of the spawn group (LoadNavForSpawnGroup)
+	GS_EVENT( PreSpawnGroupLoad );
+	GS_EVENT( PostSpawnGroupLoad );
+	GS_EVENT( PostSpawnGroupUnload );
+	// Makes the mesh of the new active spawn group the one bots use
+	GS_EVENT( ActiveSpawnGroupChanged );
+	GS_EVENT( RestoreGame );
 
+	// Forward to the game system factory
+	virtual void SetGameSystemGlobalPtrs( void *pValue ) override;
+	virtual bool DoesGameSystemReallocate() override;
+
+	virtual ~CNavGameSystem();
+
+public:
 	// Every loaded spawn group that has nav data. The active one's mesh is the one bots use.
 	CUtlMap< SpawnGroupHandle_t, NavInfoForSpawnGroup_t *, int > m_NavInfoForSpawnGroup;
 	// Used by spawn groups without nav data; null when nav is disabled.

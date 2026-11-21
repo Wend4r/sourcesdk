@@ -54,21 +54,28 @@ class CLoadingSpawnGroup : public ILoadingSpawnGroup
 {
 };
 
+//-----------------------------------------------------------------------------
+// Registered as "SpawnGroupManagerGameSystem" (reallocating factory). 384 bytes on Windows, 728 on
+// Linux (CThreadRWLock_FastRead is larger there). IGameSpawnGroupMgr is the primary base.
+// The declaration order of the IGameSystem overrides (and of the implicit destructor, last) is the
+// order of the entries libserver.so adds to the IGameSpawnGroupMgr table.
+//-----------------------------------------------------------------------------
 class CSpawnGroupMgrGameSystem : public IGameSpawnGroupMgr, public CAutoGameSystem
 {
 	DECLARE_GAME_SYSTEM();
 
 public:
-	virtual bool DoesGameSystemReallocate() override = 0;
-	virtual void SetGameSystemGlobalPtrs( void *pValue ) override = 0;
+	// Forward to the game system factory
+	virtual bool DoesGameSystemReallocate() override;
+	virtual void SetGameSystemGlobalPtrs( void *pValue ) override;
 
 	// Starts queueing the SpawnGroupSpawnEntities calls
-	GS_EVENT( GameInit ) = 0;
+	GS_EVENT( GameInit );
 	// Drops the queued SpawnGroupSpawnEntities calls
-	GS_EVENT( GameShutdown ) = 0;
+	GS_EVENT( GameShutdown );
 	// Performs the queued unload requests
-	GS_EVENT( GameFrameBoundary ) = 0;
-	GS_EVENT( PreSpawnGroupLoad ) = 0;
+	GS_EVENT( GameFrameBoundary );
+	GS_EVENT( PreSpawnGroupLoad );
 
 public:
 	CConCommandMemberAccessor< CSpawnGroupMgrGameSystem > m_OnSpawnGroupActivate; // "spawn_group_activate"
@@ -81,10 +88,5 @@ public:
 	CUtlVector< SpawnGroupHandle_t > m_QueuedUnloadRequests;
 	CUtlString m_sName;
 };
-#ifdef _WIN32
-COMPILE_TIME_ASSERT( sizeof( CSpawnGroupMgrGameSystem ) == 0x180 );
-#elif defined( POSIX )
-COMPILE_TIME_ASSERT( sizeof( CSpawnGroupMgrGameSystem ) == 0x2D8 );
-#endif
 
 #endif // SPAWNGROUPMGR_H

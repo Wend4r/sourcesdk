@@ -59,7 +59,7 @@ public:
 	virtual void RemoveItem( itemid_t iItemID ) = 0;
 
 	// Called by SOCreated(), SOUpdated() and SOCacheSubscribed() for each shared object of type
-	// k_EEconTypeEquipSlot, which took over from CS:GO's default equipped definition instance.
+	// k_EEconTypeEquipSlot.
 	// Pure in this class.
 	virtual void DefaultEquippedDefinitionHasBeenUpdated( CEconEquipSlot *pEquipSlot ) = 0;
 
@@ -75,11 +75,11 @@ public:
 	virtual void ItemHasBeenUpdated( CEconItemView *pItem, bool bUpdateAckFile, bool bWriteAckFile, EInventoryItemEvent eEventType ) = 0;
 	virtual void ItemIsBeingRemoved( CEconItemView *pItem ) = 0;
 
-	// Marks the description of every item of the set dirty; CS:GO calls it
-	// MarkSetItemDescriptionsDirty(). In CS2 it is declared last but under the name of the
+	// Marks the description of every item of the set dirty (MarkSetItemDescriptionsDirty() below).
+	// In CS2 it is declared last but under the name of the
 	// virtual above that takes an item id: the Itanium ABI keeps it in the last slot, while MSVC
 	// emits it right in front of that one, which it only does for an overload. The name the two
-	// share is not in the binaries, so RemoveItem() stands in for it.
+	// share is not known, so RemoveItem() stands in for it.
 	virtual void RemoveItem( int nItemSetIndex ) = 0;
 
 	void MarkSetItemDescriptionsDirty( int nItemSetIndex ) { RemoveItem( nItemSetIndex ); }
@@ -88,7 +88,7 @@ public:
 	int m_nTargetRecipe;
 	GCSDK::SOID_t m_OwnerID;
 
-	// One item vector, not CS:GO's two: SOCacheSubscribed clears this one and refills it from the
+	// One item vector: SOCacheSubscribed clears this one and refills it from the
 	// econ item type cache.
 	CUtlVector< CEconItemView * > m_vecInventoryItems;
 	CUtlMap< itemid_t, CEconItemView *, int, CDefLess< itemid_t > > m_mapItemIDToItemView;
@@ -105,21 +105,27 @@ public:
 // Purpose: The game system that keeps the list of player inventories.
 //		This is the server's class. The client's one has more virtuals after these and more
 //		members between the reference items and m_pInventories.
-//		Of the game system events the class handles Init(), PostInit(), Shutdown(),
-//		GameActivate() and GameDeactivate(); they add no slots and are not redeclared here.
+//		Abstract in the game (no DECLARE_GAME_SYSTEM); 104 bytes on both platforms.
 //-----------------------------------------------------------------------------
 class CInventoryManager : public CAutoGameSystem
 {
 public:
+	virtual bool Init() override;
+	virtual void PostInit() override;
+	// Calls SOClear() on each registered inventory
+	virtual void Shutdown() override;
+	GS_EVENT( GameActivate );
+	GS_EVENT( GameDeactivate );
+
 	// Returns the registered inventory whose owner is that individual account.
-	virtual CPlayerInventory *GetInventoryForAccount( uint32 iAccountID ) = 0;
+	virtual CPlayerInventory *GetInventoryForAccount( uint32 iAccountID );
 
 	// We're generating a base item. We need to add the game-specific keys to the criteria so that it'll find the right base item.
 	// Empty in this class, and CS2 does not override it.
-	virtual void AddBaseItemCriteria( baseitemcriteria_t *pCriteria, CItemSelectionCriteria *pSelectionCriteria ) = 0;
+	virtual void AddBaseItemCriteria( baseitemcriteria_t *pCriteria, CItemSelectionCriteria *pSelectionCriteria );
 
 	// Zero for a position that is unset or unacknowledged, its low byte otherwise.
-	virtual int GetBackpackPositionFromBackend( uint32 iBackendPosition ) = 0;
+	virtual int GetBackpackPositionFromBackend( uint32 iBackendPosition );
 
 public:
 	struct inventories_t
