@@ -41,9 +41,6 @@ struct SearchPathStateHandle_t;
 typedef void * FileHandle_t;
 typedef void (*FileSystemLoggingFunc_t)( const char *fileName, const char *accessType );
 
-#ifdef _X360
-typedef void* HANDLE;
-#endif
 
 //-----------------------------------------------------------------------------
 // Enums used by the interface
@@ -62,20 +59,10 @@ enum
 	PATH_IS_NORMAL      = 0x00, // normal path, not pack based
 	PATH_IS_PACKFILE    = 0x01, // path is a pack file
 	PATH_IS_MAPPACKFILE = 0x02, // path is a map pack file
-	PATH_IS_DVDDEV		= 0x04, // path is the dvddev cache
 };
 typedef uint32 PathTypeQuery_t;
 
 #define IS_PACKFILE( n ) ( n & ( PATH_IS_PACKFILE | PATH_IS_MAPPACKFILE ) )
-#define IS_DVDDEV( n )   ( n & PATH_IS_DVDDEV )
-
-enum DVDMode_t
-{
-	DVDMODE_OFF    = 0, // not using dvd
-	DVDMODE_STRICT = 1, // dvd device only
-	DVDMODE_DEV    = 2, // dev mode, mutiple devices ok
-	DVDMODE_DEV_VISTA = 3, // dev mode from a vista host, mutiple devices ok
-};
 
 // In non-retail builds, enable the file blocking access tracking stuff...
 #if defined( TRACK_BLOCKING_IO )
@@ -640,39 +627,6 @@ public:
 
 	virtual bool			IsFileFromUntrustedAddon( const char *pFileName ) = 0;
 };
-
-//-----------------------------------------------------------------------------
-
-#if defined( _X360 ) && !defined( _CERT )
-extern char g_szXboxProfileLastFileOpened[MAX_PATH];
-#define SetLastProfileFileRead( s ) Q_strncpy( g_szXboxProfileLastFileOpened, sizeof( g_szXboxProfileLastFileOpened), pFileName )
-#define GetLastProfileFileRead() (&g_szXboxProfileLastFileOpened[0])
-#else
-#define SetLastProfileFileRead( s ) ((void)0)
-#define GetLastProfileFileRead() NULL
-#endif
-
-#if defined( _X360 ) && defined( _BASETSD_H_ )
-class CXboxDiskCacheSetter
-{
-public:
-	CXboxDiskCacheSetter( SIZE_T newSize )
-	{
-		m_oldSize = XGetFileCacheSize();
-		XSetFileCacheSize( newSize );
-	}
-
-	~CXboxDiskCacheSetter()
-	{
-		XSetFileCacheSize( m_oldSize );
-	}
-private:
-	SIZE_T m_oldSize;
-};
-#define DISK_INTENSIVE() CXboxDiskCacheSetter cacheSetter( 1024*1024 )
-#else
-#define DISK_INTENSIVE() ((void)0)
-#endif
 
 //-----------------------------------------------------------------------------
 

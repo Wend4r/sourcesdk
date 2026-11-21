@@ -34,10 +34,6 @@ class IMatchSession;
 #include "imatchsystem.h"
 #include "iplayermanager.h"
 #include "iplayer.h"
-#include "iservermanager.h"
-#include "imatchvoice.h"
-#include "isearchmanager.h"
-#include "idatacenter.h"
 
 abstract_class IMatchFramework : public IAppSystem
 {

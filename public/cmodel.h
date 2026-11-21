@@ -13,12 +13,9 @@
 #pragma once
 #endif
 
-#include "trace.h"
+#include "mathlib/mathlib.h"
 #include "tier0/dbg.h"
 #include "entityhandle.h"
-
-struct edict_t;
-struct model_t;
 
 /*
 ==============================================================
@@ -31,13 +28,6 @@ COLLISION DETECTION
 #include "bspflags.h"
 //#include "mathlib/vector.h"
 
-// gi.BoxEdicts() can return a list of either solid or trigger entities
-// FIXME: eliminate AREA_ distinction?
-#define	AREA_SOLID		1
-#define	AREA_TRIGGERS	2
-
-#include "vcollide.h"
-
 enum RayType_t : uint8
 {
 	RAY_TYPE_LINE = 0,
@@ -45,22 +35,6 @@ enum RayType_t : uint8
 	RAY_TYPE_HULL,
 	RAY_TYPE_CAPSULE,
 	RAY_TYPE_MESH,
-};
-
-struct cmodel_t
-{
-	Vector		mins, maxs;
-	Vector		origin;		// for sounds or lights
-	int			headnode;
-
-	vcollide_t	vcollisionData;
-};
-
-struct csurface_t
-{
-	const char	*name;
-	short		surfaceProps;
-	unsigned short	flags;		// BUGBUG: These are declared per surface, not per material, but this database is per-material now
 };
 
 //-----------------------------------------------------------------------------

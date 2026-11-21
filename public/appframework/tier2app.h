@@ -20,75 +20,12 @@
 
 
 #include "appframework/appframework.h"
-#include "tier2/tier2dm.h"
 #include "tier0/convar.h"
 #include "appframework/tier1app.h"
 #include "tier2/tier2_logging.h"
 
 class IUGCAddonPathResolver;
 class KeyValues3;
-
-
-//-----------------------------------------------------------------------------
-// The application object for apps that use tier2
-//-----------------------------------------------------------------------------
-class CTier2SteamApp : public CSteamAppSystemGroup
-{
-	typedef CSteamAppSystemGroup BaseClass;
-
-public:
-	// Methods of IApplication
-	virtual bool PreInit()
-	{
-		CreateInterfaceFn factory = GetFactory();
-		ConnectTier1Libraries( &factory, 1 );
-		ConVar_Register( 0 );
-		ConnectTier2Libraries( &factory, 1 );
-		return true;			
-	}
-
-	virtual void PostShutdown()
-	{
-		DisconnectTier2Libraries();
-		ConVar_Unregister();
-		DisconnectTier1Libraries();
-	}
-
-	virtual void Destroy()
-	{
-	}
-};
-
-
-//-----------------------------------------------------------------------------
-// The application object for apps that use tier2 and datamodel
-//-----------------------------------------------------------------------------
-class CTier2DmSteamApp : public CTier2SteamApp
-{
-	typedef CTier2SteamApp BaseClass;
-
-public:
-	// Methods of IApplication
-	virtual bool PreInit()
-	{
-		if ( !BaseClass::PreInit() )
-			return false;
-
-		CreateInterfaceFn factory = GetFactory();
-		if ( !ConnectDataModel( factory ) )
-			return false;
-
-		InitReturnVal_t nRetVal = InitDataModel();
-		return ( nRetVal == INIT_OK );
-	}
-
-	virtual void PostShutdown()
-	{
-		ShutdownDataModel();
-		DisconnectDataModel();
-		BaseClass::PostShutdown();
-	}
-};
 
 
 class CTier2AppSystemDict : public CTier1AppSystemDict

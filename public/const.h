@@ -17,30 +17,10 @@
 
 #include "schemacompiler/schemaon.h"
 
-// the command line param that tells the engine to use steam
-#define STEAM_PARM					"-steam"
-// the command line param to tell dedicated server to restart 
-// if they are out of date
-#define AUTO_RESTART "-autoupdate"
-
-// the message a server sends when a clients steam login is expired
-#define INVALID_STEAM_TICKET "Invalid STEAM UserID Ticket\n"
-#define INVALID_STEAM_LOGON "No Steam logon\n"
-#define INVALID_STEAM_VACBANSTATE "VAC banned from secure server\n"
-#define INVALID_STEAM_LOGGED_IN_ELSEWHERE "This Steam account is being used in another location\n"
-
-#define DEFAULT_TICK_INTERVAL_X360	(1.0 / 29.970030) // This matches x360 refresh, but is not critical
-#define DEFAULT_TICK_INTERVAL_PS3	(1.0 / 30.0)
 #define DEFAULT_TICK_INTERVAL_PC	(1.0 / 64.0)
 
 // This is the default, see shareddefs.h for mod-specific value, which can override this
-#if defined( _X360 )
-#define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_X360
-#elif defined( _PS3 )
-#define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_PS3
-#else
 #define DEFAULT_TICK_INTERVAL	DEFAULT_TICK_INTERVAL_PC
-#endif
 #define MINIMUM_TICK_INTERVAL   (4.0f / 512.0f)		// 128 fps
 #define MAXIMUM_TICK_INTERVAL	(25.0f / 512.0f)	// 20.48 fps
 
@@ -59,11 +39,7 @@
 // the 360 only allows 15 char + 0, but stick with the larger PC size for cross-platform communication
 #define MAX_PLAYER_NAME_LENGTH		128
 
-#ifdef _X360
-#define MAX_PLAYERS_PER_CLIENT		XUSER_MAX_COUNT	// Xbox 360 supports 4 players per console
-#else
 #define MAX_PLAYERS_PER_CLIENT		1	// One player per PC
-#endif
 
 #define MAX_MAP_NAME				64	
 #define	MAX_NETWORKID_LENGTH		64  // num chars for a network (i.e steam) ID

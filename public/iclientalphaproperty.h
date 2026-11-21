@@ -12,11 +12,12 @@
 #endif
 
 #include "interface.h"
-#include "iclientunknown.h"
 #include "appframework/iappsystem.h"
 #include "const.h"
 
 #include "schemacompiler/schemaon.h"
+
+class IClientUnknown;
 
 
 enum ClientAlphaDistanceFadeMode_t

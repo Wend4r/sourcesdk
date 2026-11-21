@@ -16,8 +16,6 @@
 #pragma once
 #endif
 
-#include "inetmessage.h"
-
 class	INetChannel;
 typedef struct netpacket_s netpacket_t;
 
