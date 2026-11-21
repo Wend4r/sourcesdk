@@ -101,8 +101,8 @@ public:	// IGameEventManager functions
 	virtual IGameEvent *DuplicateEvent( IGameEvent *event ) OVERRIDE;
 	virtual void FreeEvent( IGameEvent *event ) OVERRIDE;
 
-	virtual bool SerializeEvent( IGameEvent *event, CMsgSource1LegacyGameEvent_t *ev ) OVERRIDE;
-	virtual IGameEvent *UnserializeEvent( const CMsgSource1LegacyGameEvent_t &ev ) OVERRIDE;
+	virtual bool SerializeEvent( IGameEvent *event, Source1LegacyGameEvent_t *ev ) OVERRIDE;
+	virtual IGameEvent *UnserializeEvent( const Source1LegacyGameEvent_t &ev ) OVERRIDE;
 
 	virtual int  LookupEventId( const char *name ) OVERRIDE;
 	virtual void PrintEventToString( IGameEvent *event, CUtlString &out ) OVERRIDE;

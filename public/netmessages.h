@@ -95,6 +95,6 @@ class CSVCMsg_EncryptedData_t :              public CNetMessagePB< svc_Encrypted
 
 class CBidirMsg_RebroadcastGameEvent_t :     public CNetMessagePB< bi_RebroadcastGameEvent, CBidirMsg_RebroadcastGameEvent, SG_EVENTS, BUF_RELIABLE, true > {};
 class CBidirMsg_RebroadcastSource_t :        public CNetMessagePB< bi_RebroadcastSource, CBidirMsg_RebroadcastSource, SG_EVENTS, BUF_RELIABLE, true > {};
-class CBidirMsg_PredictionEvent_t :          public CNetMessagePB< bi_PredictionEvent, CBidirMsg_PredictionEvent, SG_GENERIC, BUF_UNRELIABLE > {};
+class CBiDirMsg_PredictionEvent_t :          public CNetMessagePB< bi_PredictionEvent, CBidirMsg_PredictionEvent, SG_GENERIC, BUF_UNRELIABLE > {};
 
 #endif // NETMESSAGES_H

@@ -57,10 +57,8 @@ public:
 public:
 	CServerSideClient_GameEventLegacyProxy m_Clients[ 64 ];
 	bool m_bRegisteredTestScriptChatScanner;
-	// Named by what it holds. The RTTI name of the element class is
-	// Source1LegacyGameEvent_t (sourcesdk: CMsgSource1LegacyGameEvent_t, the same message); the
-	// destructor and GameShutdown destroy them, no writer is left in this build
-	CUtlVector< CMsgSource1LegacyGameEvent_t > m_QueuedEvents;
+	// Named by what it holds; the destructor and GameShutdown destroy them, nothing writes them
+	CUtlVector< Source1LegacyGameEvent_t > m_QueuedEvents;
 };
 
 #endif // SOURCE1LEGACYGAMEEVENTGAMESYSTEM_H

@@ -35,7 +35,7 @@ class CEntityInstance;
 class CBasePlayerController;
 class CBasePlayerPawn;
 
-class CMsgSource1LegacyGameEvent_t;
+class Source1LegacyGameEvent_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: Engine interface into global game event management
@@ -214,8 +214,8 @@ public:
 	virtual void FreeEvent( IGameEvent *event ) = 0;
 
 	// write/read event to/from bitbuffer
-	virtual bool SerializeEvent( IGameEvent *event, CMsgSource1LegacyGameEvent_t *ev ) = 0;
-	virtual IGameEvent *UnserializeEvent( const CMsgSource1LegacyGameEvent_t &ev ) = 0; // create new KeyValues, must be deleted
+	virtual bool SerializeEvent( IGameEvent *event, Source1LegacyGameEvent_t *ev ) = 0;
+	virtual IGameEvent *UnserializeEvent( const Source1LegacyGameEvent_t &ev ) = 0; // create new KeyValues, must be deleted
 	
 	virtual int LookupEventId( const char *name ) = 0;
 	

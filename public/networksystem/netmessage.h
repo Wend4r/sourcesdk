@@ -39,7 +39,9 @@ inline constexpr const char *k_pszNetGroupNames[ SG_TOTAL ] =
 class CNetMessage
 {
 public:
-	CNetMessage( NetChannelBufType_t bufType = BUF_DEFAULT ) : m_dbRecivedTime( -1.0 ), m_nTick( 0 ), m_bufType( bufType ), m_nBits( -1 ), m_nInSequenceNr( -1 ), m_flMargin( -1.0f ), m_nPlaybackTime( -1 ) {}
+	// A new message keeps BUF_DEFAULT: the buffer type is set when the message is received or sent,
+	// SendNetMessage( msg, BUF_DEFAULT ) takes the registered buffer type of the message
+	CNetMessage( NetChannelBufType_t bufType = BUF_DEFAULT ) : m_dbRecivedTime( 0.0 ), m_nTick( 0 ), m_bufType( bufType ), m_nBits( -1 ), m_nInSequenceNr( -1 ), m_flMargin( -1.0f ), m_nPlaybackTime( -1 ) {}
 	CNetMessage( const CNetMessage &copyFrom ) = default;
 	CNetMessage( CNetMessage &&moveFrom ) = default;
 	CNetMessage &operator=( const CNetMessage &copyFrom ) = default;
@@ -200,7 +202,7 @@ public:
 	} sm_binding;
 
 public:
-	CNetMessagePB() : CNetMessage( kBufType ), PBType_t() {}
+	CNetMessagePB() : CNetMessage(), PBType_t() {}
 	CNetMessagePB( const MyType_t &copyFrom ) = default;
 	CNetMessagePB( MyType_t &&moveFrom ) = default;
 	MyType_t &operator=( const MyType_t &copyFrom ) = default;
@@ -243,7 +245,16 @@ public:
 	}
 };
 
+// User messages: the "User Messages" group, ok to redispatch
 template< NetworkMessageId ID, typename PROTO_TYPE, NetChannelBufType_t BUF_TYPE = BUF_RELIABLE >
-class CUserMessagePB : public CNetMessagePB< ID, PROTO_TYPE, SG_USERMSG, BUF_TYPE > {};
+class CUserMessagePB : public CNetMessagePB< ID, PROTO_TYPE, SG_USERMSG, BUF_TYPE, true > {};
+
+// Entity messages are user messages addressed to an entity
+template< NetworkMessageId ID, typename PROTO_TYPE, NetChannelBufType_t BUF_TYPE = BUF_RELIABLE >
+class CEntityMessagePB : public CUserMessagePB< ID, PROTO_TYPE, BUF_TYPE > {};
+
+// Client messages: the "Client Messages" group, ok to redispatch
+template< NetworkMessageId ID, typename PROTO_TYPE, NetChannelBufType_t BUF_TYPE = BUF_RELIABLE >
+class CClientMessagePB : public CNetMessagePB< ID, PROTO_TYPE, SG_CLIENTMSG, BUF_TYPE, true > {};
 
 #endif // NETMESSAGE_H
