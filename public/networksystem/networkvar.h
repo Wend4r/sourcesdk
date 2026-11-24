@@ -30,7 +30,7 @@ enum NetworkResolveFlags_t : uint8
 // The internals below are reconstructed - the one confirmed part is that GROW_SIZE is threaded down
 // from CNetworkUtlVectorBase. Every networked-vector field observed so far passes -1.
 template < class T, int GROW_SIZE = -1 >
-class CNetworkUtlVector_MemoryType : public CUtlVectorMemory_Growable< T, int, GROW_SIZE >
+class CNetworkUtlVector_MemoryType : public CUtlVectorMemory_Growable< T, int, static_cast< size_t >( GROW_SIZE ) >
 {
 };
 
