@@ -22,6 +22,7 @@
 #include <ns_address.h>
 #include <playeruserid.h>
 #include <qlimits.h>
+#include <spawngrouptypes.h>
 #include <resourcefile/resourcetype.h>
 #include <tier0/checksum_crc.h>
 #include <steam/steamnetworkingtypes.h>
@@ -77,6 +78,8 @@ class CHLTVServerAsync;
 class CTvDirectDemoRecorder;
 class CClientFrame;
 class CJob;
+class CMsgVoiceAudio;
+class ISceneViewDebugOverlays;
 
 typedef int ChallengeType_t;
 typedef int PauseGroup_t;
@@ -130,7 +133,7 @@ public:
 	virtual void	ServerPostSimulate( const EventServerPostSimulate_t & ) = 0;
 
 	virtual SpawnGroupHandle_t LoadSpawnGroup( const SpawnGroupDesc_t & ) = 0;
-	virtual void	AsyncUnloadSpawnGroup( unsigned int, /*ESpawnGroupUnloadOption*/ int ) = 0;
+	virtual void	AsyncUnloadSpawnGroup( SpawnGroupHandle_t hSpawnGroup, ESpawnGroupUnloadOption nOption ) = 0;
 	virtual void	PrintSpawnGroupStatus( void ) const = 0;
 
 	// returns the game time scale (multiplied in conjunction with host_timescale)
@@ -164,7 +167,7 @@ public:
 	virtual int 	GetSpawnGroupLoadingStatus( SpawnGroupHandle_t ) = 0;
 	virtual void	SetSpawnGroupDescription( SpawnGroupHandle_t, const char * ) = 0;
 
-	virtual void*	StartChangeLevel( const char *pszMapName, const char *pszLandmark, const char *pszAddons ) = 0;
+	virtual CServerChangelevelState *StartChangeLevel( const char *pszMapName, const char *pszLandmark, const char *pszAddons ) = 0;
 	virtual void	FinishChangeLevel( CServerChangelevelState * ) = 0;
 	virtual bool	IsChangelevelPending( void ) const = 0;
 
@@ -185,7 +188,7 @@ public:
 	virtual void	SetClientConnect( CPlayerSlot slot, bool b = true ) = 0;
 	virtual SignonState_t	GetClientSignonState( CPlayerSlot slot ) = 0;
 
-	virtual void	NotifySceneViewDebugOverlays( void *pSceneView, bool bUnk ) = 0;
+	virtual void	NotifySceneViewDebugOverlays( ISceneViewDebugOverlays *pDebugOverlays, bool bEnable ) = 0;
 
 	virtual void	BroadcastMessage( INetworkMessageInternal *pSerializer, const CNetMessage *pNetMessage, const IRecipientFilter *pFilter ) = 0;
 	virtual bool	IsRecordingDemo() = 0;
@@ -200,23 +203,30 @@ public:
 
 	virtual CSteamID	GetGameServerSteamID() = 0;
 
-	virtual bool BroadcastVoiceData( int nEntityIndex, void *pVoiceData, uint64 xuidFrom ) = 0;
+	virtual void BroadcastVoiceData( int nEntityIndex, const CMsgVoiceAudio *pVoiceData, uint64 xuidFrom ) = 0;
 };
 
-class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, protected IConVarListener
+class CNetworkGameServerBase : public INetworkGameServer, protected IConnectionlessPacketHandler, public IConVarListener
 {
 public:
-	virtual ~CNetworkGameServerBase() = 0;
+	struct SpawnGroupUnloadEntry_t
+	{
+		SpawnGroupHandle_t m_hSpawnGroup;
+		ESpawnGroupUnloadOption m_nOption;
+	};
+
+public:
+	virtual ~CNetworkGameServerBase() override = 0;
 
 	virtual void	SetMaxClients( int nMaxClients ) = 0;
 	virtual CPlayerSlot	CreateClient( CPlayerSlot nSlot, CSteamID nSteamID, const char *pszName) = 0;
 
 public: // IConnectionlessPacketHandler
-	virtual bool	ProcessConnectionlessPacket( netpacket_t *packet ) = 0; // process a connectionless packet
+	virtual bool	ProcessConnectionlessPacket( netpacket_t *packet ) override = 0; // process a connectionless packet
 
 public: // IConVarListener
-	virtual void	OnConVarCreated( ConVarRefAbstract *pNewCvar ) = 0;
-	virtual void	OnConCommandCreated( ConCommand *pNewCommand ) = 0;
+	virtual void	OnConVarCreated( ConVarRefAbstract *pNewCvar ) override = 0;
+	virtual void	OnConCommandCreated( ConCommand *pNewCommand ) override = 0;
 
 public:
 	virtual CPlayerUserId GetPlayerUserId( CPlayerSlot slot ) = 0;
@@ -227,8 +237,7 @@ public:
 	// Returns hostname of this server instance
 	virtual const char *GetName() = 0;
 
-	// AMNOTE: arg names are speculative and might be incorrect!
-	// Sums up across all the connected players.
+	// Incoming and outgoing bytes per second, summed over connected non-bot clients.
 	virtual void	GetNetStats( float &inflow, float &outflow ) = 0;
 
 	virtual void	FillKV3ServerInfo( KeyValues3 *out ) = 0;
@@ -240,13 +249,13 @@ public:
 	// Returns sv_password cvar value, if it's set to "none" nullptr would be returned!
 	virtual const char *GetPassword() = 0;
 
-	virtual void	RemoveClientFromGame(CServerSideClientBase *, /*ENetworkDisconnectionReason*/ int ) = 0;
+	virtual void	RemoveClientFromGame( CServerSideClientBase *pClient, ENetworkDisconnectionReason reason ) = 0;
 
 	virtual void	FillServerInfo( CSVCMsg_ServerInfo_t *pServerInfo ) = 0;
 	virtual void	UserInfoChanged( CPlayerSlot slot ) = 0;
 
-	// 2nd arg is unused.
-	virtual void	GetClassBaseline( void *, ServerClass *pClass, intp *pOut ) = 0;
+	// The first argument is unused. A missing baseline is allowed when instance baselines are disabled.
+	virtual bool	GetClassBaseline( void *pUnused, ServerClass *pClass, CBaselineEntityData **ppBaseline ) = 0;
 
 	virtual void	StartHLTVMaster() = 0;
 
@@ -254,7 +263,7 @@ public:
 	                                              const char *pszDecryptedPassword, const byte *pAuthTicket, int nAuthTicketLength, bool bIsLowViolence ) = 0;
 	virtual CServerSideClientBase *CreateNewClient( CPlayerSlot slot ) = 0;
 	
-	virtual bool	FinishCertificateCheck( const ns_address *pAddr, int socket, byte ) = 0;
+	virtual bool	FinishCertificateCheck( const ns_address *pAddr, int nSocket, byte nAuthProtocol ) = 0;
 
 	virtual ChallengeType_t	GetChallengeType( const ns_address &addr ) = 0;
 	virtual bool	CheckPassword( const ns_address &addr, const char *password ) = 0;
@@ -351,7 +360,7 @@ public:
 	CUtlLinkedList< CNetworkServerSpawnGroupCreatePrerequisites * > m_SpawnGroupPrerequisites;
 	CUtlMap< SpawnGroupHandle_t, CNetworkServerSpawnGroup * > m_SpawnGroups;
 
-	CUtlVector< uint64 > m_QueuedSpawnGroupUnloads; // SpawnGroupUnloadEntry_t (handle + flags)
+	CUtlVector< SpawnGroupUnloadEntry_t > m_QueuedSpawnGroupUnloads;
 	// AsyncUnloadSpawnGroup queues the unload while this is non-zero
 	int m_nQueueSpawnGroupUnloads;
 	SpawnGroupHandle_t m_hJustInTimeResourceSpawnGroup;
@@ -400,8 +409,8 @@ public:
 
 	int m_nFrameTimeBucketCount;
 	uint64 m_FrameTimeBuckets[ 11 ];
-	int64 m_nFrameTimeSum;
-	int64 m_nFrameTimeCount;
+	uint64 m_nFrameTimeSum;
+	uint64 m_nFrameTimeCount;
 
 	int m_nComputeTimeBucketCount;
 	uint64 m_ComputeTimeBuckets[ 61 ];
@@ -418,7 +427,29 @@ public:
 	void *m_pReplayDirector;
 };
 
-class CNetworkGameServer : public CNetworkGameServerBase {
+class CNetworkGameServer : public CNetworkGameServerBase
+{
+public:
+	virtual ~CNetworkGameServer() override = 0;
+
+	virtual void Init( const GameSessionConfiguration_t &config, const char *pszLevelName ) override = 0;
+	virtual void Shutdown() override = 0;
+	virtual void ServerPostSimulate( const EventServerPostSimulate_t &event ) override = 0;
+	virtual bool ActivateServer() override = 0;
+	virtual bool PrepareForAssetLoad() override = 0;
+	virtual bool SpawnServer( const char *pszMapName ) override = 0;
+	virtual void NotifySceneViewDebugOverlays( ISceneViewDebugOverlays *pDebugOverlays, bool bEnable ) override = 0;
+	virtual void PrepareSendClientUpdatesMainThread() override = 0;
+	virtual void PrepareSendClientUpdatesAsync() override = 0;
+	virtual void SetMaxClients( int nMaxClients ) override = 0;
+	virtual CPlayerUserId GetPlayerUserId( CPlayerSlot slot ) override = 0;
+	virtual const char *GetPlayerNetworkIDString( CPlayerSlot slot ) override = 0;
+	virtual bool IsPausable( PauseGroup_t nPauseGroup ) override = 0;
+	virtual void RemoveClientFromGame( CServerSideClientBase *pClient, ENetworkDisconnectionReason reason ) override = 0;
+	virtual void StartHLTVMaster() override = 0;
+	virtual CServerSideClientBase *CreateNewClient( CPlayerSlot slot ) override = 0;
+	virtual bool FinishCertificateCheck( const ns_address *pAddr, int nSocket, byte nAuthProtocol ) override = 0;
+
 public:
 	CUtlString m_szStartspot;
 	bf_write m_FullSendTables;
