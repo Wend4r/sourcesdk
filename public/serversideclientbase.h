@@ -95,7 +95,7 @@ enum ClientSlotReservation_t : int
 	CLIENT_SLOT_CREATED,
 };
 
-class CServerSideClientBase : public CUtlSlot, public INetworkChannelNotify, public INetworkMessageProcessingPreFilter
+class CServerSideClientBase : public CUtlSlot, public INetworkChannelNotify, private INetworkMessageProcessingPreFilter
 {
 public:
 	// Async payload for CNETMsg_SpawnGroup_SetCreationTick_t

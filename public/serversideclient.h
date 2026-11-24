@@ -6,6 +6,7 @@
 #endif
 
 #include <serversideclientbase.h>
+#include <eiface.h>
 
 class CHLTVServer;
 
@@ -64,7 +65,7 @@ public:
 	{
 		int m_nReplayStopAt;
 		int m_nReplayDelay;
-		char m_Request[44];
+		HltvReplayParams_t m_Request;
 		double m_flRequestTime;
 	};
 
