@@ -269,6 +269,8 @@ public:
 	virtual CEconItemSystem *GetEconItemSystem() = 0;
 	// Forwards to the game network string tables
 	virtual void GameCreateNetworkStringTables() = 0;
+	// Drops the game's pointers to its network string tables; the tables themselves belong to the engine
+	virtual void ResetStringTablePointers() = 0;
 	// Fires the "client_disconnect" game event
 	virtual void OnDisconnect( int nReasonCode, const char *pszReason, CUtlString *pOutMessage ) = 0;
 	virtual void GetModelCombineInfo( const void *hModel, void *pCombinedModel, int *pCombineIndex ) = 0;

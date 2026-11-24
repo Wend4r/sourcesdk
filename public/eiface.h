@@ -349,6 +349,9 @@ public:
 	// Let the game .dll allocate it's own network/shared string tables
 	virtual void			GameCreateNetworkStringTables( void ) = 0;
 
+	// Drops the game's pointers to its network string tables; the tables themselves belong to the engine
+	virtual void			ResetStringTablePointers( void ) = 0;
+
 	virtual void			WriteSignonMessages( const bf_write &buf ) = 0;
 
 	virtual void			PreWorldUpdate( bool simulating ) = 0;
