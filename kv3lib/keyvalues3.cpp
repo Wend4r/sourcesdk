@@ -24,7 +24,9 @@ void KeyValues3::NormalizeArray( KV3TypeEx_t type, KV3SubType_t subtype, int siz
 	if ( data == m_Data.m_pMemory )
 		m_bFreeArrayMemory = false;
 
-	PrepareForType( KV3_TYPEEX_ARRAY, subtype );
+	// An array keeps its subtype (a vector stays a vector), anything else becomes an array
+	const KV3SubType_t arraySubType = IsArray() ? GetSubType() : KV3_SUBTYPE_ARRAY;
+	PrepareForType( KV3_TYPEEX_ARRAY, arraySubType );
 
 	CKeyValues3Array *pNewArray = m_Data.m_Array.m_pRoot;
 
@@ -115,6 +117,7 @@ void KeyValues3::AllocArray( int size, const T* data, KV3ArrayAllocType_t alloc_
 	else
 	{
 		NormalizeArray< T >( type_elem, subtype_elem, size, data, alloc_type == KV3_ARRAY_ALLOC_EXTERN_FREE );
+		m_SubType = subtype;
 	}
 }
 
