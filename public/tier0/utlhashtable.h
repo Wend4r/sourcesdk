@@ -596,9 +596,8 @@ UtlHashHandle_t CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, TableT, bTriv
 	unsigned int idx = chainid;
 	if ( table[idx].IdealIndex( slotmask ) != chainid )
 	{
-		// Nothing in root position should mean no match, but if chain invariants
-		// were damaged we can still recover Find/Insert by scanning valid slots.
-		return pPreviousInChain ? (handle_t)-1 : DoLookupSlow<KeyParamT>( x, h );
+		// Nothing in root position means no match
+		return (handle_t) -1;
 	}
 
 	// Linear scan until found or end of chain. Bound the walk to one full
@@ -623,7 +622,7 @@ UtlHashHandle_t CUtlHashtable<KeyT, ValueT, KeyHashT, KeyIsEqualT, TableT, bTriv
 			if ( table[idx].flags_and_hash & FLAG_LAST )
 			{
 				// End of chain. No match.
-				return pPreviousInChain ? (handle_t)-1 : DoLookupSlow<KeyParamT>( x, h );
+				return (handle_t) -1;
 			}
 
 			lastIdx = (handle_t) idx;
