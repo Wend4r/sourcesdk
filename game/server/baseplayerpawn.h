@@ -48,7 +48,7 @@ public:
 	virtual CPlayerPawnComponentVTable *CreateCameraServices() = 0;
 	// For m_pMovementServices; null in the base class
 	virtual CPlayerPawnComponentVTable *CreateMovementServices() = 0;
-	// Adds the eye position of the pawn or of the observed entity to the visibility of the client; called by CSource2GameClients::ClientSetupVisibility with the observer target. Dota 2 2018: CBasePlayer::SetupVisibility( CBaseEntity *, vis_info_t * )
+	// Adds the eye position of the pawn or of the observed entity to the visibility of the client; called by CSource2GameClients::ClientSetupVisibility with the observer target.
 	virtual void SetupVisibility( CBaseEntity *pViewEntity, vis_info_t *pVisInfo ) = 0;
 	// Overridden by CCSPlayerPawn
 	virtual bool WantsLagCompensationOnEntity( const CBaseEntity *pEntity, const void *pCmd, const void *pEntityTransmitBits ) = 0;
@@ -90,15 +90,15 @@ public:
 	virtual uint32 PhysicsSolidMaskForEntity() = 0;
 	// Returns false; CCSPlayerPawn returns m_bIsWalking
 	virtual bool IsWalking() = 0;
-	// Refuses with the message of CCSPlayer::StartHltvReplayEvent of Counter-Strike: Global Offensive: the player is active, replaying the last kill would interfere; overridden by CCSPlayerPawn
+	// Refuses: the player is active, replaying the last kill would interfere; overridden by CCSPlayerPawn
 	virtual bool StartHltvReplayEvent( const ClientReplayEventParams_t &params ) = 0;
-	// Empty in every class; StartHltvReplayEvent calls it when the engine started the replay and the event did not force its settings, where CCSPlayer::StartHltvReplayEvent of Counter-Strike: Global Offensive started the replay for the dead teammates. Named by its caller
+	// Empty in every class; StartHltvReplayEvent calls it when the engine started the replay and the event did not force its settings. Named by its caller
 	virtual void OnHltvReplayStarted( const HltvReplayParams_t &params ) = 0;
 	// Clears m_fInitHUD; never overridden
 	virtual void UpdateClientData() = 0;
-	// Does nothing but ask IsAlive, never overridden; called with RUMBLE_STOP_ALL (0, 0, 0) from SetOrResetInitialState, Activate and Event_Killed. CBasePlayer::RumbleEffect of Source 1 and Dota 2 2018. Called by SetOrResetInitialState, Activate and Event_Killed
+	// Does nothing but ask IsAlive, never overridden; called with RUMBLE_STOP_ALL (0, 0, 0) from SetOrResetInitialState, Activate and Event_Killed. Called by SetOrResetInitialState, Activate and Event_Killed
 	virtual void RumbleEffect( uint8 nIndex, uint8 nRumbleData, uint8 nRumbleFlags ) = 0;
-	// Empty; CCSPlayerPawn overrides it with an empty body. Event_Killed calls it with its argument after the components' Event_Killed and before the active weapon is dropped. Dota 2 2018 has CBasePlayer::DeathSound( const CTakeDamageInfo & ) between RumbleEffect and the impulse commands, the order CS2 keeps; only the CS pawn overrides it, as CCSPlayer::DeathSound of Counter-Strike: Global Offensive, and CS2 plays the Player.Death sounds from a non-virtual helper of CCSPlayerPawn::Event_Killed instead. The client has no counterpart. Called by Event_Killed
+	// Empty; CCSPlayerPawn overrides it with an empty body. Event_Killed calls it with its argument after the components' Event_Killed and before the active weapon is dropped. The client has no counterpart. Called by Event_Killed
 	virtual void DeathSound( const CTakeDamageResult &result ) = 0;
 	// Runs an impulse command, 200 looks at the weapon and the rest goes to CheatImpulseCommands; called by ImpulseCommands. Named by what it does
 	virtual void RunImpulseCommand( int nImpulse ) = 0;
@@ -110,7 +110,7 @@ public:
 	virtual bool DispatchClientCommand( void *pUnused, const CCommand &args ) = 0;
 	// Runs RunImpulseCommand with the impulse of the last command and clears it; never overridden
 	virtual void ImpulseCommands() = 0;
-	// Sets m_fInitHUD, calls UpdateClientData and restarts the ambient sounds, as CBasePlayer::ForceClientDllUpdate of Source 1; never overridden
+	// Sets m_fInitHUD, calls UpdateClientData and restarts the ambient sounds; never overridden
 	virtual void ForceClientDllUpdate() = 0;
 	// Takes the pawn out of its team, adds it to the new one and calls CBaseEntity::ChangeTeam; CCSPlayerPawnBase ignores team -1. Called by ChangeTeam of the controller and when the controller takes the pawn. Named by what it does
 	virtual void ChangePawnTeam( void *pUnknown, int nTeam ) = 0;
@@ -123,7 +123,7 @@ public:
 	virtual void CommitSuicide( const Vector &vecForce, bool bExplode, bool bForce ) = 0;
 	// The FL_BOT bit of m_fFlags; never overridden
 	virtual bool IsBot() = 0;
-	// False; CCSPlayerPawnBase returns m_hOriginalController != m_hController, another player has taken the pawn over. Asked many times per tick. Named after CCSPlayer::HasControlledByPlayer of Counter-Strike: Global Offensive. Asked while user commands are processed
+	// False; CCSPlayerPawnBase returns m_hOriginalController != m_hController, another player has taken the pawn over. Asked many times per tick, while user commands are processed
 	virtual bool HasControlledByPlayer() = 0;
 	// What IsObserver of the controller answers; without a controller m_iTeamNum >= 2 here, CCSPlayerPawnBase m_iTeamNum == 0 or not alive. Asked by the player filters. Named by what it does
 	virtual bool IsObserver() = 0;

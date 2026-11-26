@@ -8,6 +8,7 @@
 #include "tier0/utlhashtable.h"
 #include "tier0/utlstring.h"
 #include "tier0/utlvector.h"
+#include "tier0/convar.h"
 
 class CTakeDamageInfo;
 struct CTakeDamageResult;
@@ -170,6 +171,27 @@ public:
 
 	// Named by what it does: the handler of each game event the script listens to, by event id
 	CUtlHashtable< int, GameEventHandler_t > m_GameEventHandlers;
+};
+
+//-----------------------------------------------------------------------------
+// A console command a cs_script registers (48 bytes): ICommandCallback calls the script callback with the command arguments as one string; the destructor deletes
+// the command.
+//-----------------------------------------------------------------------------
+abstract_class CCSScriptConCommand : public ICommandCallback
+{
+public:
+	virtual ~CCSScriptConCommand() = 0;
+
+public:
+	// Named by what it holds: the script that registered the command; the callback runs in its context
+	CCSBaseScript *m_pScript;
+	// Named by what it holds: the key of the callback in CCSBaseScript::m_Callbacks ("ConCommand:<name>")
+	CGlobalSymbol m_CallbackName;
+	// The registered command (its callback is this object); deleted by the destructor
+	ConCommand *m_pConCommand;
+	// Both are copies the object owns
+	const char *m_pszName;
+	const char *m_pszHelpString;
 };
 
 #endif // CCSCRIPT_H

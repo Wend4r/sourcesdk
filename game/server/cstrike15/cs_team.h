@@ -13,7 +13,7 @@ template < class TBase = CTeamVTable<> >
 abstract_class CCSTeamVTable : public TBase
 {
 public:
-	// Sets m_numMapVictories with a state change. CTeam::SetNumMapVictories of team.h of Counter-Strike: Global Offensive, moved to CCSTeam with the member
+	// Sets m_numMapVictories with a state change.
 	virtual void SetNumMapVictories( int nNumVictories ) = 0;
 };
 

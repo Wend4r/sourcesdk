@@ -34,7 +34,7 @@ public:
 	virtual Vector HeadDirection2D() = 0;
 	// BodyDirection3D
 	virtual Vector HeadDirection3D() = 0;
-	// The dot product FInViewCone compares with, m_flFieldOfView of Source 1: -1 here, 0.766 for a player pawn. Named by what it does. Asked by FInViewCone on every call
+	// The dot product FInViewCone compares with: -1 here, 0.766 for a player pawn. Named by what it does. Asked by FInViewCone on every call
 	virtual float GetFieldOfView() = 0;
 	// Returns true in every class
 	virtual bool Stub_317() = 0;
@@ -46,29 +46,29 @@ public:
 	virtual bool ShouldGib( const CTakeDamageResult &result ) = 0;
 	// Empty; CBasePlayerPawn passes the call to DropActivePlayerWeapon of its item services
 	virtual void DropActivePlayerWeapon( const Vector &vecForce, void *pUnknown, bool bUnknown ) = 0;
-	// False in every class; Event_Killed of the pawn asks it only when ShouldGib answered true and removes the entity after the base Event_Killed when it answers true. CBaseCombatCharacter::Event_Gibbed of Dota 2 2018 and Counter-Strike: Global Offensive
+	// False in every class; Event_Killed of the pawn asks it only when ShouldGib answered true and removes the entity after the base Event_Killed when it answers true.
 	virtual bool Event_Gibbed( const CTakeDamageResult &result ) = 0;
 	// Overridden by CBasePlayerPawn
 	virtual bool BecomeRagdoll( const CTakeDamageResult &result, const Vector &vecForce ) = 0;
-	// The first test of VPhysicsShadowCollision: true only for a moving VPHYSICS object that is not the ground entity, not a ragdoll, not thrown by this character, while the character moves at 300 units/s or less, the early-outs of CBasePlayer::VPhysicsShadowCollision of Source 1; never overridden. Named by what it does
+	// The first test of VPhysicsShadowCollision: true only for a moving VPHYSICS object that is not the ground entity, not a ragdoll, not thrown by this character, while the character moves at 300 units/s or less; never overridden. Named by what it does
 	virtual bool ShouldTakeShadowCollisionDamage( CBaseEntity *pOther, void *pOtherPhysics ) = 0;
 	// Empty in every class
 	virtual void Stub_325() = 0;
 	// Returns the address of the same static object in every class. A zero vector
 	virtual const void *Stub_326() = 0;
-	// False in every class; CCSPlayerPawn::RoundRespawn calls it with 0 when m_fFlags has FL_IN_VEHICLE, before it clears the parent, where CCSPlayer::RoundRespawn of Counter-Strike: Global Offensive calls LeaveVehicle. The default of CBaseCombatCharacter::ExitVehicle of Source 1 and Dota 2 2018; the argument is not explained
+	// False in every class; CCSPlayerPawn::RoundRespawn calls it with 0 when m_fFlags has FL_IN_VEHICLE, before it clears the parent. The argument is not explained
 	virtual bool ExitVehicle( int nUnknown ) = 0;
 	// Empty in every class
 	virtual void Stub_328() = 0;
 	// Empty in every class
 	virtual void Stub_329() = 0;
-	// Moves the player count of the team from the left area to the entered one; CCSPlayerPawn also tells its bot and sets m_szLastPlaceName. Called by UpdateLastKnownNav, ClearLastKnownArea and SetLastKnownNavArea. Dota 2 2018 and CCSPlayer::OnNavAreaChanged of Counter-Strike: Global Offensive
+	// Moves the player count of the team from the left area to the entered one; CCSPlayerPawn also tells its bot and sets m_szLastPlaceName. Called by UpdateLastKnownNav, ClearLastKnownArea and SetLastKnownNavArea.
 	virtual void OnNavAreaChanged( CNavArea *pEnteredArea, CNavArea *pLeftArea ) = 0;
-	// When the current, last or fallback nav area of the character is in the sorted list of removed areas, clears them (OnNavAreaChanged( NULL, current )); never overridden. The batch form of CBaseCombatCharacter::OnNavAreaRemoved of Source 1 and Dota 2 2018
+	// When the current, last or fallback nav area of the character is in the sorted list of removed areas, clears them (OnNavAreaChanged( NULL, current )); never overridden.
 	virtual void OnNavAreasRemoved( int nCount, CNavArea **ppAreas ) = 0;
 	// True; CCSObserverPawn returns false. PreThink of the pawn asks it before CBaseCombatCharacter::UpdateLastKnownNav. Named by its caller. Asked every tick by PreThink of the pawn and by SetOrResetInitialState
 	virtual bool ShouldUpdateLastKnownNav() = 0;
-	// Traces a line from EyePosition to the EyePosition of a combat character (WorldSpaceCenter of anything else), ignoring this and its owner; true when nothing or pEntity is hit, the return logic of CBaseEntity::FVisible of Source 1. Never overridden, no caller found
+	// Traces a line from EyePosition to the EyePosition of a combat character (WorldSpaceCenter of anything else), ignoring this and its owner; true when nothing or pEntity is hit. Never overridden, no caller found
 	virtual bool FVisible( CBaseEntity *pEntity ) = 0;
 	// The forward vector of the absolute angles; never overridden. Named by what it does
 	virtual Vector GetAbsForward() = 0;

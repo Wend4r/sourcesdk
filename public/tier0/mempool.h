@@ -23,6 +23,7 @@
 #include "tier0/platform.h"
 #include "tier0/utlvector.h"
 #include "tier0/utlrbtree.h"
+#include "tier0/utlleanvector.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Optimized pool memory allocator
@@ -616,5 +617,31 @@ inline void CAlignedMemPool<ITEM_SIZE, ALIGNMENT, CHUNK_SIZE, CAllocator, GROWMO
 		}
 	}
 }
+
+//-----------------------------------------------------------------------------
+// A memory pool of T objects that lives as long as the module (CAnimPose has one). The objects
+// are allocated in blocks (arrays of T made with new[]) and never freed before the pool;
+// released objects go to the free list. One slot on both platforms, no virtual destructor.
+//-----------------------------------------------------------------------------
+template < class T >
+abstract_class CEnduringClassMemoryPool
+{
+public:
+	// Prepares an object the pool hands out; empty in the game's instantiation
+	virtual void InitObject( T &object ) = 0;
+
+public:
+	struct Block
+	{
+		T *m_pElements;
+		uint32 m_elementCount;
+	};
+
+	// The released objects, used as a stack.
+	CUtlLeanVector< T * > m_freeList;
+	// Owned by the pool (unique pointers in the game).
+	CUtlVectorConservative< Block * > m_blocks;
+	uint32 m_blockSize;
+};
 
 #endif // MEMPOOL_H

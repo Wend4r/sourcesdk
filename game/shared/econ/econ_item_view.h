@@ -16,6 +16,8 @@
 #include "entity2/entitynetwork.h"
 #include "tier0/utlvector.h"
 #include "networkvar.h"
+#include "networksystem/networkvar.h"
+#include "networksystem/networkvar_vtable.h"
 
 #define ECON_ITEM_GENERATED_ICON_WIDTH 512
 #define ECON_ITEM_GENERATED_ICON_HEIGHT 384
@@ -23,6 +25,9 @@
 #define ECON_ITEM_GENERATED_PINBOARD_ICON_HEIGHT 384
 
 #define SCHEMA_BASE_ITEM_MAX 499 // def indices 1-499 are reserved for default aka stock items
+
+// CEconItemAttribute, CAttributeList and CEconItemView below are complete declarations. A project
+// that declares its own classes of these names from the schema does not include this header.
 
 class CAttributeManager;
 class CEconItem;
@@ -44,14 +49,10 @@ struct stickerMaterialReference_t
 //			An element of CAttributeList::m_Attributes: its changes reach the owner entity through
 //			the chainer, which is why the three notifications below forward to it.
 //-----------------------------------------------------------------------------
-/*class CEconItemAttribute
+class CEconItemAttribute
 {
 public:
-	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
-
-	virtual void NetworkStateChanged( const NetworkStateChanged_t &data ) = 0;
-	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t &data ) = 0;
-	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) = 0;
+	DECLARE_EMBEDDED_NETWORKVAR_VTABLE()
 
 	virtual const CNetworkSerializerClassInfo *GetSerializerClassInfo() = 0;
 
@@ -64,7 +65,6 @@ public:
 	int m_nRefundableCurrency;
 	bool m_bSetBonus;
 };
-COMPILE_TIME_ASSERT( sizeof( CEconItemAttribute ) == 0x48 );
 
 //-----------------------------------------------------------------------------
 // Purpose: The attributes of one item. Embedded in CEconItemView, whose NetworkVar_ wrappers
@@ -89,11 +89,13 @@ public:
 	CNetworkUtlVarEmbedded( CEconItemAttribute, m_Attributes );
 	CAttributeManager *m_pManager;
 };
-COMPILE_TIME_ASSERT( sizeof( CAttributeList ) == 0x78 );
 
 //-----------------------------------------------------------------------------
 // Purpose: An item that knows how to read itself from a datafile, describe itself to the user,
 //			and serialize itself between Servers, Clients, and Steam.
+//
+//			Overrides the methods of IEconItemInterface and adds the three change
+//			notifications behind them (Linux slots 31-33, Windows 30-32).
 //-----------------------------------------------------------------------------
 class CEconItemView : public IEconItemInterface
 {
@@ -145,6 +147,5 @@ public:
 	char m_szCustomNameOverride2[ MAX_ITEM_CUSTOM_NAME_DATABASE_SIZE ];
 	char m_szCustomNameOverride3[ MAX_ITEM_CUSTOM_NAME_DATABASE_SIZE ];
 };
-COMPILE_TIME_ASSERT( sizeof( CEconItemView ) == 0x3E8 );*/
 
 #endif // ECON_ITEM_VIEW_H

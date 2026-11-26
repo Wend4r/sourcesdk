@@ -117,6 +117,19 @@ public:
 	virtual bool ShouldSkipFramesWithOutstandingPresents( void ) = 0;
 };
 
+class CResourceManifestPrerequisite;
+
+//-----------------------------------------------------------------------------
+// The base of the loop modes (CLoopModeGame derives from it). It adds no virtual method; it has no
+// virtual destructor. The game implements the methods of ILoopMode it overrides.
+//-----------------------------------------------------------------------------
+abstract_class CLoopModeBase : public ILoopMode
+{
+public:
+	// Created by LoopInit, released by LoopShutdown
+	CResourceManifestPrerequisite *m_pResourceManifestPrerequisite;
+};
+
 abstract_class ILoopModeFactory
 {
 public:

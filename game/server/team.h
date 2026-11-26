@@ -15,9 +15,9 @@ template < class TBase = CBaseEntityVTable >
 abstract_class CTeamVTable : public TBase
 {
 public:
-	// CBaseEntity::ShouldTransmit asks the team of the receiving client when the entity has no transmit flags; returns transmit flags: 4 when a flag of pInfo is set and the entity is the one pInfo names, 16 otherwise; CCSTeam always transmits to spectators and to its own team. Dota 2 2018 CTeam::ShouldTransmitToPlayer, team.h of Counter-Strike: Global Offensive
+	// CBaseEntity::ShouldTransmit asks the team of the receiving client when the entity has no transmit flags; returns transmit flags: 4 when a flag of pInfo is set and the entity is the one pInfo names, 16 otherwise; CCSTeam always transmits to spectators and to its own team.
 	virtual int ShouldTransmitToPlayer( const CCheckTransmitInfo *pInfo, CBaseEntity *pEntity ) = 0;
-	// Clears m_iScore; CCSTeam also clears m_bSurrendered and the half and overtime scores. Dota 2 2018 CTeam::ResetScores, team.h of Counter-Strike: Global Offensive
+	// Clears m_iScore; CCSTeam also clears m_bSurrendered and the half and overtime scores.
 	virtual void ResetScores() = 0;
 };
 

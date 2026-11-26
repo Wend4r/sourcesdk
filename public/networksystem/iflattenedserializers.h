@@ -34,11 +34,13 @@ class CMemoryStack;
 class CFlattenedSerializer;
 class CNetworkSerializer;
 class CSchemaClassBindingBase;
-class INetworkSerializerBindingBuildFilter;
+class CSchemaClassInfo;
+class CSchemaType;
 class PackedEntity;
 class ServerClass;
 class IMemAlloc;
 
+struct SchemaClassFieldData_t;
 struct FlattenedSerializerOwner_t;
 struct FlattenedSerializerUserData_t;
 struct NetworkFieldResult_t;
@@ -59,6 +61,27 @@ struct FlattenedSerializerDesc_t
 		CFlattenedSerializer *m_pSerializer;
 		FlattenedSerializerHandle_t m_handle;
 	};
+};
+
+//-----------------------------------------------------------------------------
+// Asked by the serializer builder while it builds the serializer of a class
+// (BuildFlattenedSerializerInfo_t::m_pFilter). The server implements it as
+// CNetworkSerializerBindingBuildFilter. Linux slots 0-5, Windows 0-4.
+//-----------------------------------------------------------------------------
+abstract_class INetworkSerializerBindingBuildFilter
+{
+public:
+	virtual ~INetworkSerializerBindingBuildFilter() {}
+
+	// Named by what it does: the name of the module the classes belong to ("Entity2" in the server)
+	virtual const char *GetModuleName() = 0;
+	// Named by what it does: the replacement of pszName from the filter's list of name pairs, or pszName
+	virtual const char *RemapName( void *pContext, const char *pszName ) = 0;
+	// Walks the base classes of pClass; 0x80000000 when none has a priority
+	virtual int GetFieldPriority( const CSchemaClassInfo *pClass ) = 0;
+	// Named by what it does: the type registered for the field name in the override list of the
+	// class chain, else the field's own type
+	virtual const CSchemaType *OverrideFieldType( void *pTypeScope, const CSchemaClassInfo *pClass, const SchemaClassFieldData_t *pField ) = 0;
 };
 
 // One class to build, 48-byte elements of the BuildEntityClassSerializers array

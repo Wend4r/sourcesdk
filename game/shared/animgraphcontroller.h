@@ -32,6 +32,7 @@ class CEntityKeyValues;
 class CModel;
 class CNmGraphInstance;
 class CAnimGraphControllerManager;
+class CAnimationDecodeOp;
 class CKV3TransferLoadContext;
 class CKV3TransferSaveContext;
 class CNetworkSerializerClassInfo;
@@ -89,6 +90,18 @@ public:
 	virtual void Reset() = 0;
 };
 
+// A bool parameter that goes back to its default value after every update of the graph (see
+// IAnimGraph2ParamAutoReset). bOptional: a missing parameter is not reported, as with
+// CAnimGraph2ParamOptionalRef. The game implements the virtual method.
+template < bool bOptional >
+class CAnimGraph2ParamAutoResetRefBase : public CAnimGraph2ParamRefBase< bool >, public IAnimGraph2ParamAutoReset
+{
+public:
+	virtual void Reset() override;
+};
+
+using CAnimGraph2ParamAutoResetOptionalRef = CAnimGraph2ParamAutoResetRefBase< true >;
+
 // A parameter whose value the controller copies, before every update of the graph, from the
 // graph of another entity (m_hParameterSourceEntity). Named by what it holds.
 struct AnimGraphControllerCopiedParameter_t
@@ -96,6 +109,26 @@ struct AnimGraphControllerCopiedParameter_t
 	CGlobalSymbol m_ID;
 	int16 m_index;
 	NmGraphValueType_t m_valueType;
+};
+
+// What CSkeletonAnimationController::CreateModelReloadInfo returns. One slot on both platforms,
+// no virtual destructor.
+abstract_class IAnimGraphControllerModelReloadInfo
+{
+public:
+	// The only method: clears the reload flag of the controller, rebuilds its graph bindings and
+	// applies the saved parameters again
+	virtual void Unk_0() = 0;
+};
+
+// What CSkeletonAnimationController::SetupSequences fills (CSimSequenceSetup). Two slots on both
+// platforms, no virtual destructor.
+abstract_class ISequenceSetup
+{
+public:
+	virtual void AddAnimationDecode( float flWeight, int nSequence, const CAnimationDecodeOp *pOps, int nOpCount, const float *pPoseParameters, CEntityHandle hEntity ) = 0;
+	// Marks the setup used and adds a sequence by the entity handle
+	virtual void Unk_1( int nUnknown, CEntityHandle hEntity ) = 0;
 };
 
 //-----------------------------------------------------------------------------

@@ -55,7 +55,7 @@ public:
 	// NetworkStateChanged / NetworkStateChangedRemove / NetworkStateChangedLog group of the
 	// embedded network classes (CGameSceneNodeHandle, CEconItemView).
 	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t &data ) {}
-	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) const {}
+	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) {}
 
 	// The "CountdownTimer" serializer registered with the network serializer class dictionary.
 	virtual const CNetworkSerializerClassInfo *GetSerializerClassInfo() const { return nullptr; }
@@ -85,7 +85,7 @@ public:
 	// CountdownTimer's.
 	virtual void NetworkStateChanged( const NetworkStateChanged_t &data ) {}
 	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t &data ) {}
-	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) const {}
+	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) {}
 
 	// Save and load m_timestamp and m_nWorldGroupId.
 	CLASS_USES_KV3TRANSFER_VIRTUAL( IntervalTimer );

@@ -45,6 +45,10 @@ public:
 	virtual void LoadSettings() override;
 	virtual void SaveSettings() override;
 
+	// Records the bullets of the tick for every player pawn; returns at once unless the
+	// overlay records
+	GS_EVENT( ServerPostSimulate );
+
 public:
 	// Cleared by the constructor
 	uint64 m_nClearedOnConstruction[ 8 ];

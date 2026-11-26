@@ -29,11 +29,11 @@ public:
 	virtual void OnBreakPieceCreated( const void *pPieceInfo, CBaseEntity *pPiece ) = 0;
 	// Null; CBaseAnimGraph looks up the CPhysicsBodyGameMarkupData of the model by the bone name of the body, the same code on the client. No caller found, the argument type is inferred. Named by what it does
 	virtual const void *GetPhysicsBodyGameMarkup( void *pPhysicsBody ) = 0;
-	// Starts (phase 0), processes (1) or clears (2) a choreo scene event; CBaseAnimGraph runs it through its choreo component, false elsewhere. CChoreoComponent::AddSceneEvent drops the event when phase 0 fails, as CBaseFlex::AddSceneEvent of Source 1 does with StartSceneEvent; the flags follow ClearSceneEvent of Source 1. Named by what it does
+	// Starts (phase 0), processes (1) or clears (2) a choreo scene event; CBaseAnimGraph runs it through its choreo component, false elsewhere. CChoreoComponent::AddSceneEvent drops the event when phase 0 fails. Named by what it does
 	virtual bool HandleSceneEvent( CSceneEventInfo *pInfo, int16 nPhase, bool bFastKill, bool bCanceled ) = 0;
 	// Returns true in every class, on the client too; CChoreoComponent::AddSceneEvent asks it first and adds the event only when it is true. Named by its caller
 	virtual bool AllowsSceneEvents() = 0;
-	// Called by the think CBaseModelEntity::ProcessSceneEventsThink: false (stop) on the server, the client decays the flex weights by 0.95 while any is above zero. CBaseFlex::ProcessSceneEvents of Source 1 and Dota 2 2018
+	// Called by the think CBaseModelEntity::ProcessSceneEventsThink: false (stop) on the server, the client decays the flex weights by 0.95 while any is above zero.
 	virtual bool ProcessSceneEvents() = 0;
 	// Allocates the choreo component, null when m_pChoreoComponent is set; never overridden. Named by what it does
 	virtual void *CreateChoreoComponent() = 0;
@@ -69,13 +69,13 @@ public:
 	virtual CGlobalSymbol DamageDecal( int bitsDamageType, int gameMaterial ) = 0;
 	// True; false in CModelPointEntity (and C_ModelPointEntity, C_PlayerSprayDecal, C_PointWorldText on the client). SpawnShared reads the mins and maxs key values into the collision bounds only when it is true. Named by its caller
 	virtual bool UsesKeyValueCollisionBounds() = 0;
-	// Called at the end of the model setter SetModel uses: restarts the attached_soundevents of the model; CCSWeaponBase runs the same code, the client overrides re-cache what depends on the model. Dota 2018 names the client method OnNewModel, a name CBaseEntity already uses for its slot 52. Named by its caller
+	// Called at the end of the model setter SetModel uses: restarts the attached_soundevents of the model; CCSWeaponBase runs the same code, the client overrides re-cache what depends on the model. Named by its caller
 	virtual void OnModelChanged() = 0;
-	// True unless EFL 0x20 is set or, in a single-player game, the local player sees the entity and m_bAllowFadeInView is off. CBaseEntity::SUB_AllowedToFade of Source 1, CBaseModelEntity::SUB_AllowedToFade of Dota 2 2018
+	// True unless EFL 0x20 is set or, in a single-player game, the local player sees the entity and m_bAllowFadeInView is off.
 	virtual bool SUB_AllowedToFade() = 0;
 	// Returns false; CBaseAnimGraph returns m_bClientSideRagdoll, CRagdollProp true
 	virtual bool IsRagdoll() = 0;
-	// Ignite goes on only when this is true or its flags carry 4; CBreakableProp and CPhysicsProp answer by the flammable and ignite-at-half-health interactions of their prop data unless already on fire. CAI_BaseNPC::AllowedToIgnite of Source 1, which CBaseAnimating::Ignite asks
+	// Ignite goes on only when this is true or its flags carry 4; CBreakableProp and CPhysicsProp answer by the flammable and ignite-at-half-health interactions of their prop data unless already on fire.
 	virtual bool AllowedToIgnite() = 0;
 	// The Ignite inputs call it
 	virtual void Ignite( uint32 nFlags, CBaseEntity *pUnknown, float flLifetime, float flUnknown1, float flUnknown2, float flUnknown3 ) = 0;

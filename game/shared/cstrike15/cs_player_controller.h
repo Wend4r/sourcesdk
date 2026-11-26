@@ -22,7 +22,7 @@ public:
 	virtual void Respawn() = 0;
 	// Calls PlaceOnGround of the pawn; never overridden. Named by what it does
 	virtual void PlacePawnOnGround() = 0;
-	// Clears the per-round state: m_iRoundScore and the per-round data of the action tracking and money services of the controller and of the action tracking services of the pawn. Called for every controller by RestartRound and BeginRound of the game rules. Named after CBasePlayer::ResetPerRoundStats of Source 1, which the round restart calls for every player
+	// Clears the per-round state: m_iRoundScore and the per-round data of the action tracking and money services of the controller and of the action tracking services of the pawn. Called for every controller by RestartRound and BeginRound of the game rules
 	virtual void ResetPerRoundStats() = 0;
 };
 

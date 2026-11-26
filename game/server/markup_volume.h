@@ -53,4 +53,54 @@ public:
 	int m_NumLoadedSpawnGroups;
 };
 
+// BEGIN ENTITY VTABLES: generated, do not edit
+
+#include "../shared/basemodelentity.h"
+#include "../shared/positionwatcher.h"
+
+class Color;
+
+//-----------------------------------------------------------------------------
+// CMarkupVolume adds 2 methods to CBaseModelEntity: Linux slots 272-273, Windows 271-272.
+//-----------------------------------------------------------------------------
+template < class TBase = CBaseModelEntityVTable<> >
+abstract_class CMarkupVolumeVTable : public TBase
+{
+public:
+	// Only caller is the Enable input handler; empty in the base. Named by what it does
+	virtual void Enable() = 0;
+	// Only caller is the Disable input handler; empty in the base. Named by what it does
+	virtual void Disable() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// CMarkupVolumeTagged adds 3 methods to CMarkupVolume: Linux slots 274-276, Windows 273-275.
+//-----------------------------------------------------------------------------
+template < class TBase = CMarkupVolumeVTable<> >
+abstract_class CMarkupVolumeTaggedVTable : public TBase
+{
+public:
+	// Draws the volume and its tags ("DISABLED") as debug overlay. Named by what it does
+	virtual void DrawTagsDebugOverlay( const Color &color, float flDuration ) = 0;
+	// Empty; called twice by the nav markup code, overridden by the _Nav classes
+	virtual void Unk_274() = 0;
+	// Empty in every class
+	virtual void Stub_275() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// CMarkupVolumeWithRef adds no method to CMarkupVolumeTagged. The Linux table has 1 more slot, 277: the override of a method of IPositionWatcher, which the
+// Itanium ABI also enters into the primary table and MSVC does not.
+// The second bases sit at offsets 8, 16, ... here, not where the game has them: do not convert a pointer to them.
+//-----------------------------------------------------------------------------
+template < class TBase = CMarkupVolumeTaggedVTable<> >
+abstract_class CMarkupVolumeWithRefVTable : public TBase, public IPositionWatcher
+{
+public:
+	// Recomputes m_vRefPosEntitySpace / m_vRefPos. Overrides IPositionWatcher: a slot of this table on Linux only
+	virtual void NotifyPositionChanged( CBaseEntity *pEntity ) override = 0;
+};
+
+// END ENTITY VTABLES
+
 #endif // MARKUP_VOLUME_H

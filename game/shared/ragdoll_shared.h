@@ -14,8 +14,31 @@
 #include "ehandle.h"
 #include "entitytypes.h"
 #include "tier0/utllinkedlist.h"
+#include "schemasystem/schematypes.h"
 
 class CBaseAnimGraph;
+class CKV3TransferLoadContext;
+class CKV3TransferSaveContext;
+class CNetworkSerializerClassInfo;
+struct NetworkStateChanged_t;
+struct NetworkStateChangedRemove_t;
+
+//-----------------------------------------------------------------------------
+// The virtual table of the schema struct PhysicsRagdollPose_t: the pose of a ragdoll,
+// networked. The game class has members this declaration does not have.
+//-----------------------------------------------------------------------------
+abstract_class PhysicsRagdollPose_tVTable
+{
+public:
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
+	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const = 0;
+	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext ) = 0;
+	virtual const char *GetClassName() const = 0;
+	virtual void NetworkStateChanged( const NetworkStateChanged_t &data ) = 0;
+	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t &data ) = 0;
+	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) = 0;
+	virtual const CNetworkSerializerClassInfo *GetSerializerClassInfo() const = 0;
+};
 
 //-----------------------------------------------------------------------------
 // Static instance, 88 bytes on both platforms. The lists keep the time each ragdoll was added.

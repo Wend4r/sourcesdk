@@ -26,4 +26,21 @@ public:
 	bool ShouldHitEntity( CEntityInstance *pEntity ) override;
 };
 
+// BEGIN ENTITY VTABLES: generated, do not edit
+
+#include "weapon_csbase.h"
+
+//-----------------------------------------------------------------------------
+// CKnife adds 1 method to CCSWeaponBase: Linux slot 448, Windows 437.
+//-----------------------------------------------------------------------------
+template < class TBase = CCSWeaponBaseVTable<> >
+abstract_class CKnifeVTable : public TBase
+{
+public:
+	// Returns true in every class; the base weapon class no longer has the method
+	virtual bool HasPrimaryAmmo() = 0;
+};
+
+// END ENTITY VTABLES
+
 #endif // CSTRIKE15_WEAPON_KNIFE_H

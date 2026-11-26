@@ -762,7 +762,58 @@ public:
 };
 COMPILE_TIME_ASSERT( sizeof( CEconLootListDefinition ) == 0xC0 );
 
-class CEconCraftingRecipeDefinition;
+//-----------------------------------------------------------------------------
+// A crafting recipe (CEconItemSchema::m_mapRecipes). 2504 bytes on Linux, 1352 on Windows (the
+// localized strings are wchar_t arrays: 4 bytes a character on Linux, 2 on Windows). Virtual
+// methods: Linux slots 0-2, Windows 0-1.
+//-----------------------------------------------------------------------------
+abstract_class CEconCraftingRecipeDefinition
+{
+public:
+	virtual ~CEconCraftingRecipeDefinition() = 0;
+
+	// Whether the items match the inputs of the recipe; bAllowPartialMatch accepts a subset
+	virtual bool ItemListMatchesInputs( const CUtlVector< CEconItem * > &vecCraftingItems, bool bAllowPartialMatch ) const = 0;
+
+public:
+	// The number used to refer to this definition
+	int32 m_nDefIndex;
+
+	// Localization key strings
+	CUtlString m_strName;
+	CUtlString m_strN_A;
+	CUtlString m_strDescInputs;
+	CUtlString m_strDescOutputs;
+	CUtlString m_strDI_A;
+	CUtlString m_strDI_B;
+	CUtlString m_strDI_C;
+	CUtlString m_strDO_A;
+	CUtlString m_strDO_B;
+	CUtlString m_strDO_C;
+
+	wchar_t m_wszName[ 64 ];
+	wchar_t m_wszDesc[ 512 ];
+
+	// The recipes made from item sets are disabled
+	bool m_bDisabled;
+	bool m_bRequiresAllSameClass;
+	bool m_bRequiresAllSameSlot;
+	int m_iCacheClassUsageForOutputFromItem;
+	int m_iCacheSlotUsageForOutputFromItem;
+	int m_iCacheSetForOutputFromItem;
+	bool m_bAlwaysKnown;
+	bool m_bPremiumAccountOnly;
+	recipecategories_t m_iCategory;
+	// -2 for the recipes made from item sets
+	int m_iFilter;
+
+	// The items the recipe takes, with the number of duplicates of each
+	CUtlVector< CItemSelectionCriteria > m_InputItemsCriteria;
+	CUtlVector< uint8 > m_InputItemDupeCounts;
+
+	// The items the recipe produces
+	CUtlVector< CItemSelectionCriteria > m_OutputItemsCriteria;
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: Attribute definition details

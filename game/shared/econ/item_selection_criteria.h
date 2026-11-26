@@ -67,8 +67,9 @@ public:
 	{
 	public:
 		virtual ~CCondition() = 0;
-		virtual bool BSerializeToMsg( CSOItemCriteriaCondition &msg ) = 0;
+		virtual bool BSerializeToMsg( CSOItemCriteriaCondition &msg ) const = 0;
 		virtual const char *GetField() = 0;
+		// Null in the base; the string condition returns its value
 		virtual const char *GetValue() = 0;
 
 	public:

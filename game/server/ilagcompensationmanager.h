@@ -15,25 +15,41 @@
 class CBaseEntity;
 class CBasePlayerPawn;
 
-// The object that decides which entities a lag compensation moves (polymorphic,
-// four methods: whether an entity is compensated, the target
-// time, ...). CDefaultLagCompensation implements it for the overloads that take
-// a weapon position.
-class ILagCompensation;
-
-enum LagCompensationType
-{
-	LAG_COMPENSATE_BOUNDS,
-	LAG_COMPENSATE_HITBOXES,
-	LAG_COMPENSATE_HITBOXES_ALONG_RAY,
-};
-
 // Named by what it holds: a tick and the fraction into it (the code adds them as
 // tick + fraction); 8 bytes
 struct LagCompensationTargetTime_t
 {
 	int m_nTick;
 	float m_flFraction;
+};
+
+//-----------------------------------------------------------------------------
+// The object that decides which entities a lag compensation moves.
+// CDefaultLagCompensation implements it for the overloads that take a weapon
+// position. No virtual destructor.
+//-----------------------------------------------------------------------------
+abstract_class ILagCompensation
+{
+public:
+	// Named by what it does: asks the compensating pawn (its WantsLagCompensationOnEntity) and,
+	// with a weapon range, also requires the entity within that range plus 1024 units.
+	virtual bool WantsLagCompensationOnEntity( CBaseEntity *pEntity ) = 0;
+
+	// Tests the entity (its collision bounds or center) against the aim of the weapon.
+	virtual void Stub_1( CBaseEntity *pEntity ) = 0;
+
+	// Named by what it does: the target time the compensation was started with.
+	virtual LagCompensationTargetTime_t GetTargetTime() const = 0;
+
+	// Returns the flag the compensation was started with.
+	virtual bool Stub_3() const = 0;
+};
+
+enum LagCompensationType
+{
+	LAG_COMPENSATE_BOUNDS,
+	LAG_COMPENSATE_HITBOXES,
+	LAG_COMPENSATE_HITBOXES_ALONG_RAY,
 };
 
 // Named by what StartLagCompensation does with it: the parameters of one

@@ -22,7 +22,33 @@
 
 #include "schemacompiler/schemaon.h"
 
-class CNmGraphVariationUserData;
+class IToolAttr_Table;
+class CKV3TransferLoadContext;
+class CKV3TransferSaveContext;
+
+// User data of a graph variation; the game derives CBaseAnimGraphVariationUserData from it.
+// The game implements the virtual methods.
+schema class CNmGraphVariationUserData
+{
+public:
+	TYPEMETA( MGetKV3ClassDefaults );
+
+	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding();
+	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const;
+	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext );
+	// Name of the most derived class
+	virtual const char *GetKV3TransferClassName() const;
+	// Named by what it does: the tool attribute table of the class
+	virtual IToolAttr_Table *GetToolAttrTable() const;
+	// Empty and never overridden
+	virtual void Unk_5();
+
+	virtual ~CNmGraphVariationUserData();
+
+	// Both empty and never overridden
+	virtual void Unk_7();
+	virtual void Unk_8();
+};
 
 schema class CNmGraphDefinition
 {

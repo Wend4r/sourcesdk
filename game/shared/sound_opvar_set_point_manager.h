@@ -41,7 +41,7 @@ public:
 	// Empty
 	virtual void NetworkStateChanged( const NetworkStateChanged_t &data ) {}
 	virtual void NetworkStateChangedRemove( const NetworkStateChangedRemove_t &data ) {}
-	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) const {}
+	virtual void NetworkStateChangedLog( const char *pszFieldName, const char *pszInfo ) {}
 	CLASS_USES_KV3TRANSFER_VIRTUAL( sndopvarlatchdata_t );
 	virtual const char *GetClassName() const { return "sndopvarlatchdata_t"; }
 

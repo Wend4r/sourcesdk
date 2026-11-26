@@ -49,11 +49,7 @@ struct gamevcollisionevent_t;
 //     lays overloads out in reverse.
 // The numbers in the Unk_ names are Windows slots.
 //
-// The game has no symbols for this class. A name comes from the Dota 2 build of
-// 2018 that shipped with symbols, matched by position between methods known
-// from other sources, by behaviour and by the classes that override the slot,
-// from the Source 1 method the same classes override, or from the behaviour
-// alone; the Unk_ methods are the ones none of these gave a name to.
+// The Unk_ methods are the ones without a name.
 //-----------------------------------------------------------------------------
 abstract_class CBaseEntityVTable : public CEntityInstance
 {
@@ -78,10 +74,10 @@ public:
 	virtual const CBaseModelEntity *GetBaseModelEntity() const = 0;
 	virtual CBaseAnimGraph *GetBaseAnimGraph() = 0;
 	virtual const CBaseAnimGraph *GetBaseAnimGraph() const = 0;
-	// Returns null or false in every class. A pair, null on the client too. GetBaseAnimatingOverlay of Dota 2 2018 stands here, not confirmed
-	virtual void *Stub_59() = 0;
-	// Returns null or false in every class
-	virtual void *Stub_60() = 0;
+	// Returns null in every class, on the client too: the game has no class that answers it.
+	virtual void *GetBaseAnimatingOverlay() = 0;
+	// The const overload, laid out before the other one on Windows; null in every class.
+	virtual const void *GetBaseAnimatingOverlay() const = 0;
 	// Returns null; CBaseAnimGraph returns itself, as from GetBaseAnimGraph, on the client too. The anim graph components reach it through the owner of their scene node and read the result as a CBaseAnimGraph (the graph controller manager, the ragdoll). Named by what it does: what tells this pair from GetBaseAnimGraph is not known. Called every tick for pawns and weapons
 	virtual CBaseAnimGraph *AsBaseAnimGraph() = 0;
 	// The const overload, laid out before the other one on Windows. GetPhysicsBodyIndex and the first-physics-body helper call it when their ragdoll flag is set and search the ragdoll physics of the result (the pointer before m_pRagdollControl); C_BaseEntity::GetPhysicsBodyIndex of the client does the same with its slot. Called every tick for pawns and weapons
@@ -114,9 +110,9 @@ public:
 	virtual void VPhysicsShadowCollision( int nIndex, gamevcollisionevent_t *pEvent ) = 0;
 	// Calls VPhysicsCollisionEffects, then clears a flag of both entities once they have come to rest
 	virtual void VPhysicsCollision( int nIndex, gamevcollisionevent_t *pEvent ) = 0;
-	// The collision sound, screen shake and dust, which Source 1 kept in VPhysicsCollision; never overridden. Named by what it does
+	// The collision sound, screen shake and dust; never overridden. Named by what it does
 	virtual void VPhysicsCollisionEffects( int nIndex, gamevcollisionevent_t *pEvent ) = 0;
-	// Empty in every class. The contact callback CPhysicsGameSystem::GameWorldInit registers with the physics world calls it on the entity of each body of a reporting contact, with the index of the body (0 or 1) and the contact. VPhysicsFriction of Dota 2 2018 stands here, a name the arguments do not confirm
+	// Empty in every class. The contact callback CPhysicsGameSystem::GameWorldInit registers with the physics world calls it on the entity of each body of a reporting contact, with the index of the body (0 or 1) and the contact.
 	virtual void Stub_81( int nIndex, const void *pContact ) = 0;
 	virtual void UpdatePhysicsShadowToCurrentPosition( float flDeltaTime ) = 0;
 	virtual bool ForceVPhysicsCollide( CBaseEntity *pEntity ) = 0;
@@ -146,17 +142,17 @@ public:
 	virtual int GetMovableNavMeshId() = 0;
 	// The transform of the scene node, never overridden. Named by what it does
 	virtual matrix3x4_t EntityToWorldTransform() = 0;
-	// World space bounds out of the collision property, the origin twice without one; never overridden. Named by what it does, after CCollisionProperty::WorldSpaceAABB of Source 1
+	// World space bounds out of the collision property, the origin twice without one; never overridden. Named by what it does
 	virtual void WorldSpaceAABB( Vector *pWorldMins, Vector *pWorldMaxs ) = 0;
 	// Empty; overridden by entities that wait for a player: the ones that resolve !player, sound event entities, movers
 	virtual void PostClientActive( CPlayerSlot slot ) = 0;
 	// Follows the move parents up to the topmost one
 	virtual CBaseEntity *GetRootMoveParent() = 0;
-	// False; true for the lights and for a dynamic prop that owns a nav obstacle. When the scene node moves, the entities it is true for are queued and get ReportPositionChanged once the nodes are updated, the mechanism of s_reportPositionChangedCalls of Dota 2 2018
+	// False; true for the lights and for a dynamic prop that owns a nav obstacle. When the scene node moves, the entities it is true for are queued and get ReportPositionChanged once the nodes are updated
 	virtual bool ShouldReportPositionChanged() = 0;
-	// Empty; the lights refresh their light component, a dynamic prop its nav obstacle. Called for the entities ShouldReportPositionChanged queued, after the scene nodes are updated (ReportPositionChanged of Dota 2 2018)
+	// Empty; the lights refresh their light component, a dynamic prop its nav obstacle. Called for the entities ShouldReportPositionChanged queued, after the scene nodes are updated
 	virtual void ReportPositionChanged() = 0;
-	// Empty; CGameSceneNode::PerformInvalidatePhysicsRecursive calls it on the owner of a node whose transform changed. Dota 2 2018 symbol, the same caller and test
+	// Empty; CGameSceneNode::PerformInvalidatePhysicsRecursive calls it on the owner of a node whose transform changed.
 	virtual void OnBoneTransformsChanged() = 0;
 	virtual void ChangeTeam( int iTeamNum ) = 0;
 	virtual bool InSameTeam( CBaseEntity *pEntity ) = 0;
@@ -170,13 +166,13 @@ public:
 	virtual void DispatchResponse( const char *pszConceptName ) = 0;
 	// Returns null or false in every class
 	virtual void *Stub_111() = 0;
-	// Returns false in every class; CGameEntitySystem::OnAddEntity counts the non-networked entities it is true for. Dota 2 2018 symbol, the same caller. Called when the entity is added to the entity system
+	// Returns false in every class; CGameEntitySystem::OnAddEntity counts the non-networked entities it is true for. Called when the entity is added to the entity system
 	virtual bool IsSaveNonNetworkable() = 0;
-	// False; true for the lights, the sky, world text and world UI panels, the barn light returns m_bEnabled. Dota 2 2017 symbol (DWARF) with the same overriding classes; the client slot with the same overrides is C_BaseEntity::ShouldDraw. No caller on the server
+	// False; true for the lights, the sky, world text and world UI panels, the barn light returns m_bEnabled. No caller on the server
 	virtual bool ShouldDraw() = 0;
 	// Debug overlay drawing chosen by the bits. Named by what it does
 	virtual void DrawDebugGeometryOverlays( uint64 nDebugBits ) = 0;
-	// False; true for dynamic props, movers, func_movelinear, paths with dynamic nodes, point_template and ragdolls. Spawn keeps the hammerUniqueId key in m_sUniqueHammerID when it is true or in tools mode. CS2_VibeSignatures calls the slot CBaseEntity_GetHammerUniqueId, but it returns a bool. Named by what it does. Asked by Spawn
+	// False; true for dynamic props, movers, func_movelinear, paths with dynamic nodes, point_template and ragdolls. Spawn keeps the hammerUniqueId key in m_sUniqueHammerID when it is true or in tools mode. Named by what it does. Asked by Spawn
 	virtual bool RequiresUniqueHammerID() = 0;
 	// Parses name:value:duration lists into the response contexts
 	virtual void AddContext( const char *pszNameAndValue ) = 0;
@@ -202,12 +198,12 @@ public:
 	virtual void OnTakeDamage( const CTakeDamageResult &result ) = 0;
 	// Tells the attacker through Event_KilledOther and returns true; the grenades and CBaseCombatCharacter return false
 	virtual bool Event_Killed( const CTakeDamageResult &result ) = 0;
-	// The rest of the Source 1 Event_Killed: stops taking damage, marks the entity dead and removes it. Named by what it does. Called by TakeDamage
+	// Stops taking damage, marks the entity dead and removes it: the end of a kill. Named by what it does. Called by TakeDamage
 	virtual void Event_KilledRemove( const CTakeDamageResult &result ) = 0;
 	virtual void Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info ) = 0;
 	virtual bool IsTriggered( CBaseEntity *pActivator ) = 0;
 	virtual void ImpactTrace( CGameTrace *pTrace, int iDamageType, const char *pszCustomImpactName ) = 0;
-	// ( m_iEFlags & 2 ) == 0, never overridden, the same body on the client. The constructor of CCSWeaponBase sets that flag; ImpactTrace (server and client) sets IMPACT_NODECAL (bit 1 of CEffectData::m_fFlags, fx_impact.h of Counter-Strike: Global Offensive) when this answers false, and the decal trace helper refuses entities with the flag. Named by what it does
+	// ( m_iEFlags & 2 ) == 0, never overridden, the same body on the client. The constructor of CCSWeaponBase sets that flag; ImpactTrace (server and client) sets IMPACT_NODECAL when this answers false, and the decal trace helper refuses entities with the flag. Named by what it does
 	virtual bool AcceptsDecals() = 0;
 	virtual bool OnControls( CBaseEntity *pControls ) = 0;
 	virtual bool HasTarget( CUtlSymbolLarge targetName ) = 0;
@@ -219,7 +215,7 @@ public:
 	virtual CBaseEntity *GetEnemy() = 0;
 	// Empty; CBaseAnimGraph and CCSWeaponBase override it. Called last by CGameSceneNode::UpdateEntityForHierarchyChange with the entity of the previous parent node. Named by what it does. Called for weapons
 	virtual void OnParentChanged( CBaseEntity *pOldParent ) = 0;
-	// Empty in every class. UpdatePaintPowersFromContacts of Counter-Strike: Global Offensive stands at this place; position only
+	// Empty in every class.
 	virtual void Stub_146() = 0;
 	virtual void Use( InputData_t *pInput ) = 0;
 	// Returns true in every class. the last check of CPlayer_UseServices::IsUseableEntity, which passes its pawn. Asked about doors and pawns the player looks at
@@ -272,10 +268,10 @@ public:
 	virtual CBasePlayerWeapon *MyCombatWeaponPointer() = 0;
 	virtual const CBasePlayerWeapon *MyCombatWeaponPointer() const = 0;
 	virtual bool IsBaseTrain() = 0;
-	// Returns null in every class. Dota 2 2018 symbol (after IsBaseTrain); the anim graph trace filter skips entities that return non-null, as the Source 1 NextBot filters do
+	// Returns null in every class; the anim graph trace filter skips entities that return non-null
 	virtual INextBot *MyNextBotPointer() = 0;
-	// Returns null or false in every class. Respawn of Source 1 and Dota 2 2017 and 2018 stands here (CBaseEntity *Respawn() { return NULL; }); the pointer body fits, no caller confirms it
-	virtual void *Stub_184() = 0;
+	// Returns false in every class: the game has no master entity fields left.
+	virtual bool IsLockedByMaster() = 0;
 	virtual int GetMaxHealth() = 0;
 	virtual void ModifyOrAppendCriteria( CResponseCriteriaSet &set ) = 0;
 	virtual void ModifyOrAppendDerivedCriteria( CResponseCriteriaSet &set ) = 0;
@@ -284,7 +280,7 @@ public:
 	virtual QAngle EyeAngles() = 0;
 	virtual QAngle LocalEyeAngles() = 0;
 	virtual Vector EarPosition() = 0;
-	// EyePosition by default, never overridden; the eye point FVisible and FInViewCone look from (Source 1 used EyePosition there). Named by what it does. Asked by FInViewCone
+	// EyePosition by default, never overridden; the eye point FVisible and FInViewCone look from. Named by what it does. Asked by FInViewCone
 	virtual Vector EyePositionForVisibility() = 0;
 	// The angles of the entity; the pawns return EyeAngles. BodyDirection2D and BodyDirection3D of CBaseCombatCharacter are built on it
 	virtual QAngle BodyAngles() = 0;
@@ -331,7 +327,7 @@ public:
 	virtual void OnStartTouchTrigger( CBaseEntity *pTrigger ) = 0;
 	// Empty in every class; CBaseTrigger::EndTouch calls it on the entity it removes from its touching list, passing the trigger. Named by what it does. Called by CBaseTrigger::EndTouch on the entity that leaves the trigger
 	virtual void OnEndTouchTrigger( CBaseEntity *pTrigger ) = 0;
-	// Returns true in every class; asked on the root of a pusher about each entity in its way, false blocks the push. CBaseEntity::CanPushEntity of Source 1, Dota 2 2018 symbol. Asked on a moving door about every entity in its way: false marks the move as blocked
+	// Returns true in every class; asked on the root of a pusher about each entity in its way, false blocks the push. Asked on a moving door about every entity in its way: false marks the move as blocked
 	virtual bool CanPushEntity( CBaseEntity *pOther ) const = 0;
 	// Returns null; breakables and ragdolls return the attacker set within the last flTime seconds
 	virtual CBaseEntity *HasPhysicsAttacker( float flTime ) = 0;
@@ -343,8 +339,8 @@ public:
 	virtual int GetSubclassScope() = 0;
 	// The subclass data was set (1) or reloaded (2)
 	virtual void OnSubclassVDataChanged( uint32 nChangeType ) = 0;
-	// Empty in every class. Dota 2 2017 has OnCreatedServerRagdoll( CBaseModelEntity * ), also empty, at this place before PerformCustomPhysics, but CS2 never calls it; position only
-	virtual void Stub_227() = 0;
+	// Empty in every class, no caller on the server.
+	virtual void OnCreatedServerRagdoll( CBaseModelEntity *pRagdoll ) = 0;
 	// Empty; overridden by the grenade projectiles and the bomb
 	virtual void PerformCustomPhysics( Vector *pNewPosition, Vector *pNewVelocity, QAngle *pNewAngles, QAngle *pNewAngVelocity ) = 0;
 	// Keeps the Spawn of CEntityInstance visible next to the one below

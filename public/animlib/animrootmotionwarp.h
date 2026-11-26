@@ -26,10 +26,14 @@ struct NmFrameTime_t
 	NmPercent_t m_percentageThrough;
 };
 
+// The only implementation in the game is CNmRootMotionWarpDebugData
 abstract_class INmRootMotionWarpDebugData
 {
 public:
 	virtual ~INmRootMotionWarpDebugData() = 0;
+
+	// Named by what it does: draws the debug state through the draw context, at the world transform
+	virtual void DrawDebug( const CTransform &worldTransform, void *pDrawContext ) const = 0;
 };
 
 class CNmRootMotionWarpContext

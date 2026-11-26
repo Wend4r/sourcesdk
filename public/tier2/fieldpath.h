@@ -29,4 +29,21 @@ public:
 	bool m_bReadOnly;
 };
 
+//-----------------------------------------------------------------------------
+// The Huffman tree that encodes field path operations. Only the node interface is declared
+// here; the encoder's members are not.
+//-----------------------------------------------------------------------------
+class CFieldPathHuffmanEncoder
+{
+public:
+	// A node of the tree: InternalNode and LeafNode derive from it. On Windows the game has no
+	// run-time type information for these classes.
+	abstract_class INode
+	{
+	public:
+		virtual ~INode() {}
+		virtual bool IsLeafNode() const = 0;
+	};
+};
+
 #endif // TIER2_FIELDPATH_H

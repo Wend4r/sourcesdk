@@ -14,10 +14,35 @@
 #include "igamesystem.h"
 
 #include <tier0/utlvector.h>
+#include "steam/isteamugc.h"
 
-// A Steam UGC query (SteamUGCQueryCompleted_t call result) for one addon, 112 bytes; its own
-// virtual destructor frees it
-class CUGCDetailsRequest;
+#include <functional>
+
+//-----------------------------------------------------------------------------
+// A Steam UGC details query for one addon, 112 bytes on Linux, 136 on Windows (std::function is
+// 32 bytes in libstdc++, 64 in the MSVC library). Its own virtual destructor, its only virtual
+// method, unregisters the call result and releases the query.
+//-----------------------------------------------------------------------------
+abstract_class CUGCDetailsRequest
+{
+public:
+	virtual ~CUGCDetailsRequest() {}
+
+public:
+	// Named by what it holds: the SteamUGCQueryCompleted_t call result of SendQueryUGCRequest; its
+	// handler checks that the result belongs to m_hQuery, calls m_OnCompleted and sets m_bCompleted
+	CCallResult< CUGCDetailsRequest, SteamUGCQueryCompleted_t > m_callResult;
+	// Zeroed by the constructor; nothing reads or writes it after that
+	uint64 m_nZeroedAtConstruction;
+	// Named by what it holds: the query (CreateQueryUGCDetailsRequest), sent on creation and
+	// released by the destructor
+	UGCQueryHandle_t m_hQuery;
+	// Named by what it does: set when the query completed or could not be sent; CCSAddonManager
+	// deletes the completed requests
+	bool m_bCompleted;
+	// Named by what it holds: the callback of the requester, called with the result
+	std::function< void( SteamUGCQueryCompleted_t *, bool ) > m_OnCompleted;
+};
 
 //-----------------------------------------------------------------------------
 // Registered as "CCSAddonManager" (static factory). It adds no virtual methods to IGameSystem.
@@ -50,8 +75,8 @@ public:
 	virtual bool DoesGameSystemReallocate() override;
 
 public:
-	// Named by what it holds: the outstanding UGC detail requests (the byte at +72 of a request marks
-	// it completed)
+	// Named by what it holds: the outstanding UGC detail requests (CUGCDetailsRequest::m_bCompleted
+	// marks the ones to delete)
 	CUtlVector< CUGCDetailsRequest * > m_UGCDetailsRequests;
 	// Named by what the code does with it: Shutdown passes it to slot 25 of an engine interface and
 	// clears it; nothing in the server sets it

@@ -35,7 +35,8 @@ class CKV3TransferSaveContext;
 class CNmEvent
 {
 public:
-	// Declared without bodies: the game implements them, and a definition may hold an event by value
+	// Declared without bodies: the game implements them, and a definition may hold an event by value.
+	// Every event overrides GetDebugText, which is pure here
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding();
 	virtual void KV3TransferSave( CKV3TransferSaveContext *pContext ) const;
 	virtual void KV3TransferLoad( CKV3TransferLoadContext *pContext );
@@ -49,7 +50,7 @@ public:
 	virtual CNmEventRelevance_t GetRelevance() const;
 	// Self unless the event has a target of its own
 	virtual CNmEventTargetEntity_t GetTargetEntity() const;
-	virtual CBufferStringN< 256 > GetDebugText() const;
+	virtual CBufferStringN< 256 > GetDebugText() const = 0;
 
 	NmPercent_t m_flStartTime;
 	NmPercent_t m_flDuration;
@@ -59,6 +60,8 @@ public:
 class CNmFloatCurveEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	CGlobalSymbol m_ID;
 	CPiecewiseCurve m_curve;
 };
@@ -66,18 +69,24 @@ public:
 class CNmFootEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	NmFootPhase_t m_phase;
 };
 
 class CNmFrameSnapEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	NmFrameSnapEventMode_t m_frameSnapMode;
 };
 
 class CNmIDEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	CGlobalSymbol m_ID;
 	CGlobalSymbol m_secondaryID;
 };
@@ -85,6 +94,8 @@ public:
 class CNmMaterialAttributeEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	CNmEventTargetEntity_t m_target;
 	CUtlString m_attributeName;
 	CUtlStringToken m_attributeNameToken;
@@ -96,11 +107,15 @@ public:
 
 class CNmOrientationWarpEvent : public CNmEvent
 {
+public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
 };
 
 class CNmParticleEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	enum class Type_t : int32
 	{
 		Create = 0,
@@ -126,12 +141,16 @@ public:
 class CNmRootMotionEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	float m_flBlendTimeSeconds;
 };
 
 class CNmSoundEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	enum class Position_t : int32
 	{
 		None = 0,
@@ -153,6 +172,8 @@ public:
 class CNmTargetWarpEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	NmTargetWarpRule_t m_rule;
 	NmTargetWarpAlgorithm_t m_algorithm;
 };
@@ -160,6 +181,8 @@ public:
 class CNmTransitionEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	NmTransitionRule_t m_rule;
 	CGlobalSymbol m_ID;
 };
@@ -167,6 +190,8 @@ public:
 class CNmBodyGroupEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	CNmEventTargetEntity_t m_target;
 	CUtlString m_groupName;
 	CUtlString m_choiceName;
@@ -175,18 +200,24 @@ public:
 class CNmCameraDOFEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	CPiecewiseCurve m_curve;
 };
 
 class CNmCameraFOVEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	CPiecewiseCurve m_curve;
 };
 
 class CNmClothEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	enum class Type_t : int32
 	{
 		Stiffen = 0,
@@ -205,6 +236,8 @@ public:
 class CNmContactEvent : public CNmEvent
 {
 public:
+	virtual CBufferStringN< 256 > GetDebugText() const override;
+
 	CGlobalSymbol m_configID;
 	CGlobalSymbol m_probeBoneID;
 	Vector m_vBoneLocalProbeDir;

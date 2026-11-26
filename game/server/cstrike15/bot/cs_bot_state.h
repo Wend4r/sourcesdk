@@ -158,9 +158,8 @@ public:
 	};
 
 public:
-	// The state's setup is a stub returning false in this build (server.dll 0x18032b9e0) and the
-	// state has no source counterpart, so the members below that only the constructor or nothing
-	// at all touches have no source of names; they are named by what is known of them.
+	// The state's setup is a stub that returns false, so the members below that only the
+	// constructor or nothing at all touches are named by what is known of them.
 
 	// Neither the constructor nor any other code of this build touches it.
 	uint8 m_StubbedData08[ 0x44 ];

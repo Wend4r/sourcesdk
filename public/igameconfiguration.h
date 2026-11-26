@@ -36,7 +36,8 @@ public:
 	// a false result fails the loop mode. Returns true in CS2 without reading the arguments.
 	virtual bool LoopPostInitAllGameSystems( GameSessionConfiguration_t *pConfig, ILoopModePrerequisiteRegistry *pRegistry ) = 0;
 	virtual void RegisterGameActivities() = 0;
-	// Splits the query into key/value pairs and hands them to ExecuteURL, which is empty in CS2
+	// Splits the query into key/value pairs and hands them to CGameConfiguration::ExecuteURL,
+	// which is empty in CS2
 	virtual void ParseURLQuery( const char *pszURLQuery ) = 0;
 	// Empty in CS2
 	virtual void GetBugReportLaunchURLParameters( KeyValues *pKeyValues ) = 0;
@@ -48,8 +49,6 @@ public:
 	// KeyValues stored by SetWorldSession
 	virtual KeyValues *GetSessionKeyValues() = 0;
 	virtual bool IsToolControlledSession() = 0;
-	// Key/value pairs of ParseURLQuery; empty in CS2
-	virtual void ExecuteURL( int nArgs, const void *pArgs ) = 0;
 };
 
 #endif // IGAMECONFIGURATION_H

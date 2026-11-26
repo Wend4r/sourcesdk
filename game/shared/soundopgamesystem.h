@@ -18,7 +18,33 @@
 #include <tier0/convar.h>
 #include <soundsystem/isoundopsystem.h>
 
-struct CSosEventInfo_t;
+// The kind of a queued sound event message
+enum SosMessageQueueInfoType_t
+{
+	SOSMSGQ_START = 0,
+	SOSMSGQ_STOP,
+	SOSMSGQ_STOP_HASH,
+	SOSMSGQ_SOUND_FIELDS,
+	SOSMSGQ_LIBRARY_FIELDS,
+};
+
+//-----------------------------------------------------------------------------
+// The base of the sound event messages the system queues (CSosStartSoundEventInfo_t,
+// CSosStopSoundEventInfo_t, CSosStopSoundEventHashInfo_t, CSosSetSoundEventFieldsInfo_t,
+// CSosSetLibraryStackFieldsInfo_t and their filtered versions, through
+// CSosEventInfoWithFieldData_t for the ones that carry field data), 16 bytes. It declares its
+// destructor only; the derived classes add no virtual method.
+//-----------------------------------------------------------------------------
+abstract_class CSosEventInfo_t
+{
+public:
+	virtual ~CSosEventInfo_t() = 0;
+
+public:
+	// Set by the constructor of each derived message
+	SosMessageQueueInfoType_t m_msgType;
+};
+
 // Named by what it does: the objects of m_MessageListeners, whose first virtual method gets every
 // message the system sends
 class ISoundOpMessageListener;

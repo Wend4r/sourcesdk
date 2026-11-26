@@ -72,14 +72,20 @@ abstract_class ISaveRestoreBlockHandler
 public:
 	virtual const char *GetBlockName() = 0;
 
-	virtual void PreSave( CSaveRestoreData * ) = 0;					// Called immediately prior to save, generally used to set up any necessary tables
-	virtual void Save( ISave * ) = 0;
-	virtual void WriteSaveHeaders( ISave * ) = 0;					// Called after save to allow the writing out of any dictionaries/tables/indexes generated during save
+	// Called immediately prior to save, generally used to set up any necessary tables.
+	// pEntities: an int count followed by a pointer to that many 4-byte entity handles
+	// (the entities of the save); the entity handler visits each of them.
+	virtual void PreSave( CSaveRestoreData *pSaveData, const void *pEntities ) = 0;
+	virtual void Save( ISave *pSave ) = 0;
+	// Called after save to allow the writing out of any dictionaries/tables/indexes generated during save
+	virtual void WriteSaveHeaders( ISave *pSave ) = 0;
 	virtual void PostSave() = 0;
-	
+
 	virtual void PreRestore() = 0;
-	virtual void ReadRestoreHeaders( IRestore * ) = 0;				// Called prior to Restore()
-	virtual void Restore( IRestore *, bool fCreatePlayers ) = 0;
+	// Called prior to Restore()
+	virtual void ReadRestoreHeaders( IRestore *pRestore ) = 0;
+	// nRestoreArg: a value the block set passes to every handler unchanged; its meaning is not established
+	virtual void Restore( IRestore *pRestore, uint32 nRestoreArg, bool fCreatePlayers ) = 0;
 	virtual void PostRestore() = 0;
 };
 
@@ -90,7 +96,8 @@ abstract_class ISaveRestoreBlockSet : public ISaveRestoreBlockHandler
 public:
 	virtual void AddBlockHandler( ISaveRestoreBlockHandler *pHandler ) = 0;
 	virtual void RemoveBlockHandler( ISaveRestoreBlockHandler *pHandler ) = 0;
-	virtual void CallBlockHandlerRestore( ISaveRestoreBlockHandler *pHandler, int baseFilePos, IRestore *pRestore, bool fCreatePlayers ) = 0;
+	// Opens the handler's block in pRestore and calls its Restore unless the block is missing
+	virtual void CallBlockHandlerRestore( ISaveRestoreBlockHandler *pHandler, IRestore *pRestore, uint32 nRestoreArg, bool fCreatePlayers ) = 0;
 };
 
 extern ISaveRestoreBlockSet *g_pGameSaveRestoreBlockSet;
@@ -101,14 +108,14 @@ abstract_class CDefSaveRestoreBlockHandler : public ISaveRestoreBlockHandler
 {
 	virtual const char *GetBlockName() = 0;
 
-	virtual void PreSave( CSaveRestoreData * ) {}
-	virtual void Save( ISave * ) {}
-	virtual void WriteSaveHeaders( ISave * ) {}
+	virtual void PreSave( CSaveRestoreData *pSaveData, const void *pEntities ) {}
+	virtual void Save( ISave *pSave ) {}
+	virtual void WriteSaveHeaders( ISave *pSave ) {}
 	virtual void PostSave() {}
-	
+
 	virtual void PreRestore() {}
-	virtual void ReadRestoreHeaders( IRestore * ) {}
-	virtual void Restore( IRestore *, bool fCreatePlayers ) {}
+	virtual void ReadRestoreHeaders( IRestore *pRestore ) {}
+	virtual void Restore( IRestore *pRestore, uint32 nRestoreArg, bool fCreatePlayers ) {}
 	virtual void PostRestore() {}
 };
 
@@ -340,6 +347,115 @@ public:
 	}
 };
 
+
+//-----------------------------------------------------------------------------
+//
+// IEntity2SaveRestore
+//
+// Saving and restoring the entities of the game (CEntity2SaveRestore, kept by the
+// entity system). No virtual destructor: Release destroys the object. The Stub_
+// methods are named by their slot (the same on both platforms); their behaviour is
+// noted. Where only the types of the parameters are known, they have no names.
+//
+//-----------------------------------------------------------------------------
+
+class CUtlString;
+class CUtlBuffer;
+class ILoadingSpawnGroup;
+struct ElapsedTime_t;
+
+abstract_class IEntity2SaveRestore
+{
+public:
+	// Creates the "save/" search path and the save job
+	virtual bool Init() = 0;
+	virtual void Shutdown() = 0;
+	virtual void Release() = 0;
+	virtual bool IsRestoring() const = 0;
+	virtual bool StreamEntitiesFromFile( int *, void *, void *, void *, void *, void *, int * ) = 0;
+	virtual bool LoadAdjacentEnts( int *, void *, void *, void *, void *, void * ) = 0;
+	// Records the handle of the entity in a list
+	virtual void AddRestoredEntity( CEntityInstance *pEntity ) = 0;
+	virtual bool OpenSaveFileAndExtractLevels( const char *pszName, int *, void *, int, int ) = 0;
+	// Reads the save data of the loading spawn group ("save/<name>.hl1") into a save memory block
+	virtual void ExtractResourcesFromSaveGame( void *, ILoadingSpawnGroup *pLoadingSpawnGroup, void *, void * ) = 0;
+	// Restores the entities of a loading spawn group that is a level transition
+	virtual void AppendTransitionResources( void *, void *, ILoadingSpawnGroup *pLoadingSpawnGroup, uint32, void * ) = 0;
+	// Restores the entities of a loading spawn group that loads its entities from the save
+	virtual void Stub_10( void *, void *, ILoadingSpawnGroup *pSpawnGroup, uint32, void * ) = 0;
+	// Deletes the "save/*.hl?" files of the current mod
+	virtual void ClearSaveDirectory() = 0;
+	virtual void SetOneWayTransition( bool bOneWay ) = 0;
+	virtual bool GetOneWayTransition() const = 0;
+	// "save/<name>.sav" or "save/<dir>/<name>.sav"
+	virtual CUtlString CalcSaveGameName( const char *pszName ) = 0;
+	// Allocates the save data from the save memory stack (created on first use)
+	virtual CSaveRestoreData *SaveInit( int nSize, int nTokenCount ) = 0;
+	// Frees the save data and releases the save memory stack
+	virtual void SaveFinish( CSaveRestoreData *pSaveData ) = 0;
+	virtual void SetCurrentMod( const char *pszMod ) = 0;
+	// Named by what it does: returns what SetCurrentMod set
+	virtual const char *GetCurrentMod() const = 0;
+	// Whether the physics system has the level's aggregate
+	virtual bool IsReadyToSave() = 0;
+	virtual void *SaveGame_Start( const void *pSaveParams ) = 0;
+	// Writes the game header and the spawn groups; no .sav file for a transition
+	virtual bool SaveGame_Finalize( void *pSaveData ) = 0;
+	virtual bool StreamEntitiesToFile( void *pSaveData, const void *pEntities ) = 0;
+	virtual const char *SaveGame_GetLastSaveFile() = 0;
+	virtual void SaveGame_ForgetLastSave() = 0;
+	// Walks the key values of the spawned entities
+	virtual void Stub_25() = 0;
+	virtual bool SaveGame( const char *pszName ) = 0;
+	// Decides between auto and quick saves ("autosave", "autosavedangerous", "quicksave")
+	virtual void Stub_27() = 0;
+	// Deletes the oldest saves ("sav", "jpg")
+	virtual void AgeSaveList() = 0;
+	// Returns a member
+	virtual void *Stub_29() = 0;
+	virtual void SetMostRecentElapsedTime( const ElapsedTime_t &time ) = 0;
+	virtual void AccumulateElapsedTime() = 0;
+	// The elapsed seconds; AccumulateElapsedTime calls it
+	virtual float Stub_32() = 0;
+	// Formats a string from the argument
+	virtual CUtlString Stub_33( const char *pszName ) = 0;
+	// Returns a member
+	virtual void *Stub_34() = 0;
+	virtual void StartNewRestore() = 0;
+	// "AsyncSave" on the save thread, "MainThread" otherwise
+	virtual const char *Stub_36() const = 0;
+	// Sets a string member that Stub_38 returns
+	virtual void Stub_37( const char *pszValue ) = 0;
+	virtual const char *Stub_38() const = 0;
+	// Queries on the save state
+	virtual bool Stub_39() const = 0;
+	virtual bool Stub_40() const = 0;
+	virtual bool Stub_41() const = 0;
+	virtual void FinishAsyncSave() = 0;
+	// Returns a byte member
+	virtual bool Stub_43() const = 0;
+	// Builds "save/<name>.hl1" for a file name
+	virtual CUtlString Stub_44( const char *pszName ) = 0;
+};
+
+//-----------------------------------------------------------------------------
+// The files of a save held in memory, by name (CSaveRestoreFileData). The names are
+// named by what the methods do.
+//-----------------------------------------------------------------------------
+abstract_class ISaveRestoreFileData
+{
+public:
+	virtual void AddFile( const char *pszName, const void *pData, int nSize ) = 0;
+	// Copy the data of a file into buf; Stub_2 terminates it with a null byte
+	virtual bool Stub_1( const char *pszName, CUtlBuffer &buf ) = 0;
+	virtual bool Stub_2( const char *pszName, CUtlBuffer &buf ) = 0;
+	virtual void RemoveAllFiles() = 0;
+	virtual int GetFileCount() const = 0;
+	// Logs every file with its size
+	virtual void PrintFiles() = 0;
+	virtual bool HasFile( const char *pszName ) = 0;
+	virtual ~ISaveRestoreFileData() {}
+};
 
 //=============================================================================
 

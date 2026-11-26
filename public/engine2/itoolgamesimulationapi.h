@@ -30,8 +30,21 @@ struct ToolEvent_GetEntityInfoResult_t;
 // Named by what it holds: the scene file, the actor name, the scene's duration and two state flags of a
 // CSceneEntity (GetSceneEntityInfo)
 struct ToolSceneEntityInfo_t;
-// RTTI name of the 48-byte object CreatePhysicsGrab allocates; the tools delete it through its vtable
-class IToolGameSimulationAPI_IPhysicsGrab;
+
+//-----------------------------------------------------------------------------
+// The 48-byte grab object CreatePhysicsGrab allocates (CPhysicsGrab). Two slots on both platforms,
+// no virtual destructor: the tools free it with Release.
+//-----------------------------------------------------------------------------
+abstract_class IToolGameSimulationAPI_IPhysicsGrab
+{
+public:
+	// Damps the grabbed body and passes pTarget to its motion controller, which moves the body
+	// toward it
+	virtual void Unk_0( const void *pTarget ) = 0;
+	// Releases the grabbed body, restores its mass and damping and frees the object. Named by what
+	// it does
+	virtual void Release() = 0;
+};
 
 //-----------------------------------------------------------------------------
 // Implemented by the server's CToolGameSimulationAPI. No virtual destructor. No source names the

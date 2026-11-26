@@ -347,8 +347,7 @@ public:
 	noschema CCSBotLadderManeuver m_ladderManeuver;
 	// The ladder of the current segment.
 	noschema const CNavLadder *m_pathLadder;
-	// Name from the CS:GO CCSBot member between m_pathLadder and m_pathLadderEnd
-	// (NavRelativeDirType). No instruction of this build addresses it.
+	// A NavRelativeDirType; nothing in the game reads or writes it.
 	noschema int m_pathLadderDismountDir;
 	// The z of the top when ascending, of the bottom when descending.
 	float m_pathLadderEnd;

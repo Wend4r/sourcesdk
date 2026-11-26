@@ -119,7 +119,8 @@ public:
 	virtual void InitializeInternal( CNmGraphContext &context, const NmSyncTrackTime_t &initialTime ) = 0;
 	// Runs synchronized when an update range is given, otherwise advances by the delta time of the context
 	virtual NmGraphPoseNodeResult_t Update( CNmGraphContext &context, const NmSyncTrackTimeRange_t *pUpdateRange ) = 0;
-	// Empty in every node of the shipped game, so the type of the draw context is not known
+	// Empty in most nodes; CNmOrientationWarpNode, CNmReferencedGraphNode, CNmTargetSelectorNode and
+	// CNmTargetWarpNode draw here. The type of the draw context is not known
 	virtual void DrawDebug( CNmGraphContext &graphContext, void *pDrawContext ) = 0;
 
 	// In seconds

@@ -192,6 +192,10 @@ template < typename T >
 class CEntityOutputTemplate : public CEntityIOOutput
 {
 public:
+	// Every instantiation has its own save and load
+	void KV3TransferSave( CKV3TransferSaveContext *pContext ) const override;
+	void KV3TransferLoad( CKV3TransferLoadContext *pContext ) override;
+
 	fieldtype_t ValueFieldType() const { return VariantDeduceType( T ); }
 	T &Get() { return m_Value; }
 	const T &Get() const { return m_Value; }

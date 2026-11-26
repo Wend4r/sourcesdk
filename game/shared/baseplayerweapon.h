@@ -15,7 +15,7 @@ template < class TBase = CEconEntityVTable<> >
 abstract_class CBasePlayerWeaponVTable : public TBase
 {
 public:
-	// Returns false; CCSWeaponBase returns true, as CWeaponCSBase::IsPredicted, the same on the client. Named by the table of Dota 2 2018 and the sources of Counter-Strike: Global Offensive
+	// Returns false; CCSWeaponBase returns true, the same on the client
 	virtual bool IsPredicted() const = 0;
 	// Stops the weapon, makes it follow the owner and sets the owner entity
 	virtual void Equip( CBaseEntity *pOwner ) = 0;
@@ -44,7 +44,7 @@ public:
 	virtual bool AllowsAutoSwitchFrom() = 0;
 	// Returns true; the grenades look at their ammo. Asked by CanBeSelected of CCSWeaponBase
 	virtual bool VisibleInWeaponSelection() = 0;
-	// True when a mode uses ammo and the flag 1 of the weapon data (ITEM_FLAG_SELECTONEMPTY of Source 1) is not set; never overridden. Named by what it does
+	// True when a mode uses ammo and the flag 1 of the weapon data is not set; never overridden. Named by what it does
 	virtual bool RequiresAmmoToBeSelected() = 0;
 	// CCSWeaponBase returns m_szName of the weapon data
 	virtual const char *GetName() = 0;
@@ -56,7 +56,7 @@ public:
 	virtual int GetSlot() = 0;
 	// Asks the weapon data
 	virtual int GetPosition() = 0;
-	// Called by HandleAnimEvent; empty, CCSWeaponBase handles the events. The second argument is the one of Source 1, not checked
+	// Called by HandleAnimEvent; empty, CCSWeaponBase handles the events.
 	virtual void Operator_HandleAnimEvent( animevent_t *pEvent, CBaseEntity *pOperator ) = 0;
 	// True when the secondary mode has an ammo type
 	virtual bool UsesSecondaryAmmo() = 0;
@@ -86,7 +86,7 @@ public:
 	virtual bool StoresReserveAmmoInWeapon( int nMode ) = 0;
 	// m_pReserveAmmo of the weapon or the count of the owner; never overridden
 	virtual int GetReserveAmmoCount( int nMode ) = 0;
-	// Changes the reserve by a difference, as CBaseCombatWeapon::GiveReserveAmmo of Counter-Strike: Global Offensive whose arguments these are; never overridden. Called by GiveDefaultItems and by WeaponReset of the grenades
+	// Changes the reserve by a difference; never overridden. Called by GiveDefaultItems and by WeaponReset of the grenades
 	virtual int GiveReserveAmmo( int nMode, int nCount, bool bSuppressSound ) = 0;
 	// Returns true; the dual pistols agree when two rounds are missing. Named by what it does. Asked by RefillActiveWeaponClips of the weapon services when sv_infinite_ammo is 1: whether the clip of the mode is refilled
 	virtual bool ShouldRefillClip( int nMode ) = 0;

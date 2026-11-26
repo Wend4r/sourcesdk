@@ -134,6 +134,29 @@ private:
 	uint32 m_cHeartbeatsBeforeTimeout;
 };
 
+//-----------------------------------------------------------------------------
+// Purpose: a GC client job for one protobuf message type. The packet overload of
+//			BYieldingRunGCJob wraps the packet into the typed message and hands it to
+//			BYieldingRunGCJobWithMsg, the one slot this class adds (Linux 7, Windows 6).
+//			No members of its own: the jobs derived from it are as large as CGCClientJob.
+//-----------------------------------------------------------------------------
+template < typename TMsg >
+class CGCClientProtoJob : public CGCClientJob
+{
+public:
+	CGCClientProtoJob( CGCClient *pGCClient ) : CGCClientJob( pGCClient ) {}
+
+	using CGCClientJob::BYieldingRunGCJob;
+	virtual bool BYieldingRunGCJob( IMsgNetPacket *pNetPacket ) override
+	{
+		CProtoBufMsg< TMsg > msg( pNetPacket );
+		return BYieldingRunGCJobWithMsg( msg );
+	}
+
+	// Named by what it does: runs the job on the typed message
+	virtual bool BYieldingRunGCJobWithMsg( CProtoBufMsg< TMsg > &msg ) = 0;
+};
+
 } // namespace GCSDK
 
 #endif // GCCLIENTJOB_H

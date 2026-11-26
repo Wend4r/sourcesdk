@@ -14,6 +14,7 @@
 #include "gamescenenode.h"
 #include "tier0/utlsymbollarge.h"
 #include "tier1/utldelegate.h"
+#include "tier0/interpolatedvar.h"
 #include "mathlib/transform.h"
 #include "resourcesystem/resourcehandle.h"
 #include "resourcesystem/resourcehandletypes.h"
@@ -110,33 +111,6 @@ public:
 	CUtlVector< CTransform > m_CtrlTransforms;
 	CUtlVector< CTransform > m_CtrlTransformsPrev;
 } ALIGN16_POST;
-
-//-----------------------------------------------------------------------------
-// The layout of an embedded interpolated variable of the game, for the members that hold one by
-// value. The game's object is polymorphic: its table is the one of
-// CInterpolatedVarArrayBase< T, 0, 1, CGlobalInterpolationLerpFuncs< T > > (at least 35 slots),
-// not reconstructed here, so the table pointer is declared as data and the class has no
-// virtuals. Never construct one; read the members of the game's object.
-//-----------------------------------------------------------------------------
-template < class T >
-class CInterpolatedVarProcedural
-{
-public:
-	const void *m_pVTable;
-	int32 m_nEntryCount;
-	// -1 when empty.
-	int32 m_nLastIndex;
-	// 0x20: two history buffers; second byte, low 6 bits: maximum entry count; third byte, bits
-	// 3-5: the interpolation type.
-	uint32 m_nFlags;
-	// 8 bytes per entry, m_nEntryCount used.
-	void *m_pEntries;
-	// One or two 32-byte history ring descriptors, allocated with a count prefix.
-	void *m_pHistory;
-	// Read the value from the owner and write the interpolated value back to it.
-	CUtlDelegate< void ( T & ) > m_GetValue;
-	CUtlDelegate< void ( const T & ) > m_SetValue;
-};
 
 //-----------------------------------------------------------------------------
 // The model of a skeleton instance and everything computed from it. Embedded in CSkeletonInstance

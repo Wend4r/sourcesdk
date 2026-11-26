@@ -462,6 +462,24 @@ public:
 #endif
 };
 
+template < class T > class CEnduringClassMemoryPool;
+
+//-----------------------------------------------------------------------------
+// A reference counted object allocated from a memory pool (CAnimPose derives from
+// CRefCountedMemPoolObject< CAnimPose >): the pool it returns to and the reference count. The
+// virtual destructor is its only virtual method.
+//-----------------------------------------------------------------------------
+template < class T >
+abstract_class CRefCountedMemPoolObject
+{
+public:
+	virtual ~CRefCountedMemPoolObject() {}
+
+public:
+	CEnduringClassMemoryPool< T > *m_pPool;
+	int32 m_iRefs;
+};
+
 //-----------------------------------------------------------------------------
 
 #endif // REFCOUNT_H

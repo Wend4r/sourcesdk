@@ -45,7 +45,7 @@ public:
 	virtual void OnNetworkGameServerActivated( INetworkGameServer *pNetworkGameServer ) = 0;
 	// Applies the network settings of the client: the command queue, cl_interp_ratio; never overridden
 	virtual void ClientSettingsChanged() = 0;
-	// Fills the transmit info of the client: the engine info, the controller, the ear position, the team, HLTV, low violence, the observer target; called by CheckTransmit. Dota 2 2018: CBasePlayer::BuildTransmitInfo
+	// Fills the transmit info of the client: the engine info, the controller, the ear position, the team, HLTV, low violence, the observer target; called by CheckTransmit.
 	virtual void BuildTransmitInfo( CGameCheckTransmitInfo &info, CCheckTransmitInfo *pTransmitInfo ) = 0;
 	// What EarPosition of the pawn returns; never overridden. Named by what it does
 	virtual Vector GetPawnEarPosition() = 0;
@@ -69,9 +69,9 @@ public:
 	virtual void ClearSteadyStateEntities() = 0;
 	// By m_iIgnoreGlobalChat
 	virtual bool CanHearAndReadChatFrom( CBasePlayerController *pSender ) = 0;
-	// Returns true in every class; Host_Say asks it. CBasePlayer::CanSpeak of Source 1 and Dota 2 2018, directly after CanHearAndReadChatFrom as here
+	// Returns true in every class; Host_Say asks it.
 	virtual bool CanSpeak() = 0;
-	// Sends CUserMessageAchievementEvent to the player, as CBasePlayer::AwardAchievement of Source 1; CCSPlayerController does not while it controls a bot
+	// Sends CUserMessageAchievementEvent to the player; CCSPlayerController does not while it controls a bot
 	virtual void AwardAchievement( int nAchievement ) = 0;
 	// Empty in every class; ISource2Server::OnClientHltvReplayStart( slot, n ) forwards to the controller of the slot. Named by the interface method
 	virtual void OnClientHltvReplayStart( int nUnknown ) = 0;
@@ -85,9 +85,9 @@ public:
 	virtual void OnNameOrSteamIDChanged() = 0;
 	// Runs the queued user commands; named by its profiler string
 	virtual void OnSimulateUserCommands() = 0;
-	// Returns true in every class; the achievement_earned client command asks it before it fires the event. CBasePlayer::ShouldAnnounceAchievement of Source 1
+	// Returns true in every class; the achievement_earned client command asks it before it fires the event.
 	virtual bool ShouldAnnounceAchievement() = 0;
-	// Empty in every class; called after the achievement_earned event is fired. CBaseMultiplayerPlayer::OnAchievementEarned of Source 1
+	// Empty in every class; called after the achievement_earned event is fired.
 	virtual void OnAchievementEarned( int nAchievement ) = 0;
 };
 

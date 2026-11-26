@@ -29,7 +29,7 @@ public:
 	virtual bool AllowsRedeploy() = 0;
 	// AllowsRedeploy and CanHolster; SelectItem of the weapon services asks it when the selected weapon is already the active one and, for sub type 4, holsters and deploys it again. Never overridden. Named by what it does. Asked by SelectItem of the weapon services
 	virtual bool CanRedeploy() = 0;
-	// Empty; overridden by CCSWeaponBaseGun. The arguments are the ones of Source 1, not checked
+	// Empty; overridden by CCSWeaponBaseGun.
 	virtual void BulletWasFired( const Vector &vecStart, const Vector &vecEnd ) = 0;
 	// True for a weapon without an owner; overridden by the bomb
 	virtual bool ShouldRemoveOnRoundRestart() = 0;
@@ -142,15 +142,15 @@ public:
 	virtual int GetRevolverCylinderIdx() = 0;
 	// Empty; CCSWeaponBaseGun moves m_nRevolverCylinderIdx back by one (wrapping to 7) when the argument is set, else sets it to the primary clip, the same on the client. Named by what it does
 	virtual void UpdateRevolverCylinderIdx( bool bShotFired ) = 0;
-	// What Holster does for a Counter-Strike weapon; overridden by the grenades, the bomb and the items. Called by SelectItem, EquipWeapon and OnDetachWeapon of the weapon services. Named by what it does
+	// What Holster does for a weapon of the game; overridden by the grenades, the bomb and the items. Called by SelectItem, EquipWeapon and OnDetachWeapon of the weapon services. Named by what it does
 	virtual void HolsterWeapon( CBasePlayerWeapon *pSwitchingTo ) = 0;
 	// Asks DefaultReload first; overridden by CCSWeaponBaseGun, the shotguns, the grenades and the items
 	virtual bool Reload() = 0;
-	// Sets m_bInReload; never overridden. The arguments are the ones of Source 1, not checked
+	// Sets m_bInReload; never overridden.
 	virtual bool DefaultReload( int nClipSize1, int nClipSize2, int nActivity ) = 0;
 	// False while reloading, while the silencer is switched, for a grenade with the pin pulled and always for the healthshot. Named by what it does. Asked by ItemPostFrame before the inspect animation starts (m_bInspectPending)
 	virtual bool CanInspect() = 0;
-	// Called by Touch: lets a pawn pick the weapon up when m_bCanBePickedUp, m_nextOwnerTouchTime and m_hPrevOwner allow it, as CWeaponCSBase::DefaultTouch of Counter-Strike: Global Offensive; never overridden. Asked by Touch
+	// Called by Touch: lets a pawn pick the weapon up when m_bCanBePickedUp, m_nextOwnerTouchTime and m_hPrevOwner allow it; never overridden. Asked by Touch
 	virtual void DefaultTouch( CBaseEntity *pOther ) = 0;
 	// Never overridden
 	virtual float GetInaccuracy() = 0;
@@ -158,19 +158,19 @@ public:
 	virtual void UpdateAccuracyPenalty() = 0;
 	// Applies what the animation graph of the weapon reported for this command, read out of the weapon graph controller: the silencer on or off, the silent part of a reload, the looping inspect and others; overridden by CWeaponBaseItem. Called on every command of the owner. Named by what it does
 	virtual void ProcessAnimGraphFlags( CCS2WeaponGraphController *pController ) = 0;
-	// Moves the ammo into the clip through MoveReserveAmmoToClip, one shell or the whole clip, clears m_flRecoilIndex and moves m_iWeaponGameplayAnimState on, as CBaseCombatWeapon::FinishReload of Source 1; overridden by the CZ75a. Called while a reload finishes
+	// Moves the ammo into the clip through MoveReserveAmmoToClip, one shell or the whole clip, clears m_flRecoilIndex and moves m_iWeaponGameplayAnimState on; overridden by the CZ75a. Called while a reload finishes
 	virtual void FinishReload() = 0;
 	// Ends the reload, the inspect and the other states of m_iWeaponGameplayAnimState: clears m_bInReload and m_bIsInStealthReload and goes back to state 50; overridden by the grenades and the items. Named by what it does. Called while a reload finishes
 	virtual void FinishGameplayAnimState() = 0;
 	// m_bSilencerOn; never overridden
 	virtual bool IsSilenced() = 0;
-	// Named by Dota 2 2017 (DWARF) and its caller, which sizes the scratch memory of the bone setup by it. Returns 0. Overrides IBoneTransformOverride: a slot of this table on Linux only
+	// Returns 0. Overrides IBoneTransformOverride: a slot of this table on Linux only
 	virtual int GetScratchMemorySize( const CSkeletonInstance *pInstance ) const override = 0;
-	// Named by Dota 2 2017 (DWARF). Overrides the bones of the dual pistols (elite_holster, weapon_l) and the magazine of the CZ75a (magazine2); returns BONE_TRANSFORM_SPECIFIED_IN_WORLD_SPACE when it wrote a world space transform. Overrides IBoneTransformOverride: a slot of this table on Linux only
+	// Overrides the bones of the dual pistols (elite_holster, weapon_l) and the magazine of the CZ75a (magazine2); returns BONE_TRANSFORM_SPECIFIED_IN_WORLD_SPACE when it wrote a world space transform. Overrides IBoneTransformOverride: a slot of this table on Linux only
 	virtual BoneTransformOverrideResult_t GetBoneTransformOverride( const CSkeletonInstance *pInstance, int nBoneIndex, const CBoneAccessor< CTransform > &parentSpaceBones, const CBoneAccessor< CTransform > &worldSpaceBones, bool *pScratchMemoryValid, void *pScratchMemory, CTransform *pTransform ) const override = 0;
 	// Moves the silencer and hand bones (weapon_m4a1_silencer, weapon_usp_silencer, weapon_hand_r) after the bone transform override. Named by what it does. Overrides IBoneTransformModifier: a slot of this table on Linux only
 	virtual bool ModifyBoneTransform( int nParentBone, int nBone, CTransform *pTransform ) override = 0;
-	// Returns true; the grenades and CItem_Healthshot return false, and Drop then removes the weapon when its reserve is empty, as CBaseCombatWeapon::RemoveIfZeroAmmo. Named by the sources of Counter-Strike: Global Offensive. Asked by Drop
+	// Returns true; the grenades and CItem_Healthshot return false, and Drop then removes the weapon when its reserve is empty. Asked by Drop
 	virtual bool IsZeroAmmoStateValid() const = 0;
 	// Returns true in every class
 	virtual bool Stub_436() = 0;

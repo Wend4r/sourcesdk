@@ -4,6 +4,7 @@
 #pragma once
 
 #include "basemodelentity.h"
+#include "animlib/graph/animgraph_definition.h"
 
 class CAnimGraphControllerBase;
 class CAnimGraphControllerManager;
@@ -32,17 +33,17 @@ public:
 	virtual int16 GetAnimUpdateListFlags() = 0;
 	// Called by SetPlaybackRate of the animation controller after the rate changed, with the old rate; CDynamicProp (and C_DynamicProp) restarts its think when the direction of play flips. Named by its caller
 	virtual void OnPlaybackRateChanged( float flOldRate ) = 0;
-	// Empty here; the animation controller calls it when m_nNotifyState is eNotifyTriggered (it resets it to eDoNotNotify first), C_CSGO_PreviewModel starts its desired sequence. C_BaseAnimating::OnSequenceFinished( bool ) of Dota 2 2018
+	// Empty here; the animation controller calls it when m_nNotifyState is eNotifyTriggered (it resets it to eDoNotNotify first), C_CSGO_PreviewModel starts its desired sequence.
 	virtual void OnSequenceFinished( bool bUnknown ) = 0;
 	// Overridden by CDynamicProp, CBasePropDoor and CBasePlayerWeapon
 	virtual void HandleAnimEvent( animevent_t *pEvent ) = 0;
-	// Empty in every class, on the client too; slot 14 of CGameChoreoServices calls it with a byte on the entity AsBaseAnimGraph returns, then clears its target
-	virtual void Stub_281( bool bUnknown ) = 0;
+	// Empty in every class, on the client too; IChoreoServices::CineCleanup calls it with its own argument on the entity AsBaseAnimGraph returns, then clears its target
+	virtual void Stub_281( bool bCanceled ) = 0;
 	// Allocates a CGameChoreoServices; never overridden. Named by what it does
 	virtual void *CreateChoreoServices() = 0;
 	// An AnimationAlgorithm_t, which the animation controller stores in m_nAnimationAlgorithm: 2 (animation graph) here, CDynamicProp 1 or 2 by m_bUseAnimGraph, the weapons 3 in some gameplay animation states and 1 otherwise, CRagdollProp 0; the same on the client. Named by the member it fills
 	virtual uint8 GetAnimationAlgorithm() = 0;
-	// Returns false; CBasePlayerPawn returns true, on the client C_BasePlayerPawn (client slot 268). No caller on the server or the client: no devirtualised compare with the base function and no call through the slot on an entity in libserver.so or libclient.so. Named by what it does
+	// Returns false; CBasePlayerPawn returns true, on the client C_BasePlayerPawn. Named by what it does
 	virtual bool IsPlayerPawnAnimGraph() = 0;
 	// Writes the time into m_flAnimTime and m_flSimulationTime (the latter 0 when a global mode flag is 1); called by the AnimGraph tick update after the frame advance, for entities driven by the animation graph. Named by what it does
 	virtual void UpdateAnimTime( float flTime ) = 0;
@@ -54,15 +55,15 @@ public:
 	virtual const void *GetFootstepEntry() = 0;
 	// Null here and on the client; the AG2 contact event consumer (CNmEventConsumerContact) asks it for the entity a contact event refers to. Named by its caller
 	virtual CBaseEntity *GetContactEventTarget( const void *pContact ) = 0;
-	// Returns null or false in every class. IsViewModel of Dota 2 2018 stands here, right before IsClientRagdoll; position only
+	// Returns null or false in every class.
 	virtual void *Stub_290() = 0;
-	// False on the server; on the client only C_ClientRagdoll returns true. C_BaseAnimating::IsClientRagdoll of Dota 2 2018, which also stands right before BecomeRagdollOnClient
+	// False on the server; on the client only C_ClientRagdoll returns true.
 	virtual bool IsClientRagdoll() = 0;
-	// Sets m_bClientSideRagdoll and m_vecForce when CanBecomeRagdoll or the second argument allows it, as CBaseAnimating::BecomeRagdollOnClient of Source 1; called by BecomeRagdoll of the pawn. Never overridden
+	// Sets m_bClientSideRagdoll and m_vecForce when CanBecomeRagdoll or the second argument allows it; called by BecomeRagdoll of the pawn. Never overridden
 	virtual bool BecomeRagdollOnClient( const Vector &vecForce, bool bForce ) = 0;
-	// True when the model has more than one physics body and FL_TRANSRAGDOLL is not set, the test of CBaseAnimating::CanBecomeRagdoll of Source 1; CCSPlayerPawn returns true. Called by Event_Killed of the pawn
+	// True when the model has more than one physics body and FL_TRANSRAGDOLL is not set; CCSPlayerPawn returns true. Called by Event_Killed of the pawn
 	virtual bool CanBecomeRagdoll() = 0;
-	// Copies the force unchanged; BecomeRagdollOnClient stores the result in m_vecForce. Never overridden. Dota 2 2018: CBaseAnimating::ClampRagdollForce, after BecomeRagdollOnClient and CanBecomeRagdoll as here. Called by BecomeRagdoll of the pawn
+	// Copies the force unchanged; BecomeRagdollOnClient stores the result in m_vecForce. Never overridden. Called by BecomeRagdoll of the pawn
 	virtual void ClampRagdollForce( const Vector &vecForce, Vector *pResult ) = 0;
 	// Empty in every class
 	virtual void Stub_295() = 0;
@@ -87,5 +88,16 @@ public:
 	// Destroys and recreates the AG2 event consumers of the entity (CNmEventConsumerLegacy, Particle, Sound, Attributes, BodyGroup, Pulse); CCSPlayerPawn adds its own. C_CSPlayerPawn::AG2_CreateEventConsumers of the client RTTI
 	virtual void AG2_CreateEventConsumers() = 0;
 };
+
+#include "schemacompiler/schemaon.h"
+
+// The variation user data of the animation graph of an entity (8 bytes: the virtual table pointer)
+schema class CBaseAnimGraphVariationUserData : public CNmGraphVariationUserData
+{
+public:
+	TYPEMETA( MGetKV3ClassDefaults );
+};
+
+#include "schemacompiler/schemaoff.h"
 
 #endif // BASEANIMGRAPH_H
