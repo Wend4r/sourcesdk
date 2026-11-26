@@ -213,6 +213,7 @@ class IServerToolsInfo;
 class IClientToolsInfo;
 class INavSystem;
 class INavGameTest;
+class ICustomNavGen;
 class ILocalServerClientAccess;
 class IClientLocalServerAccess;
 class IAsyncFileSystem2;
@@ -226,6 +227,8 @@ class IP4;
 class IRenderDevice;
 class IRenderDeviceSetup;
 class IRenderDeviceMgr;
+class IRenderDeviceMgrBackdoor;
+class IVfx;
 class IRenderUtils;
 class IResourceSystem;
 class IMatchFramework;
@@ -234,7 +237,7 @@ class ISoundSystem;
 class IAvi;
 class IWebmSystem;
 class IBik;
-class IVRAD3;
+class IVrad3;
 class IMeshSystem;
 class IMeshUtils;
 class IWorldRendererMgr;
@@ -326,11 +329,12 @@ class IDebugDrawQueueMgr;
 class IGameModelInfo;
 class ISaveRestoreDataMgr;
 class IHostUtils;
+class IGameSystem2HostHook;
 class IDotaMapUtils;
 class ISinglePlayerSharedMemory;
 class IEconVData;
 class IIMEManager;
-class ISmartPropsSystem;
+class ISmartPropSystem;
 
 class IPanoramaUIEngine;
 class IPanoramaUIClient;
@@ -398,6 +402,12 @@ DECLARE_TIER2_INTERFACE( IInputStackSystem, g_pInputStackSystem );
 #define RENDER_DEVICE_MGR_INTERFACE_VERSION		"RenderDeviceMgr001"
 DECLARE_TIER2_INTERFACE( IRenderDeviceMgr, g_pRenderDeviceMgr );
 
+// Second interface of the DX11 render device manager (Windows only); not an app system
+#define RENDER_DEVICE_MGR_BACKDOOR_INTERFACE_VERSION	"VRenderDeviceMgrBackdoor001"
+
+// Shader compile module the material system loads when dynamic shader compiling is enabled; not an app system
+#define VFX_INTERFACE_VERSION				"VFX_DLL_001"
+
 #define RENDER_UTILS_INTERFACE_VERSION		"RenderUtils_001"
 DECLARE_TIER2_INTERFACE( IRenderUtils, g_pRenderUtils );
 
@@ -456,6 +466,9 @@ DECLARE_TIER3_INTERFACE( IRenderHardwareConfig, g_pRenderHardwareConfig );
 #define SCENESYSTEM_INTERFACE_VERSION			"SceneSystem_002"
 DECLARE_TIER3_INTERFACE( ISceneSystem, g_pSceneSystem );
 
+// Registered by the scene system; the object only implements IAppSystem
+#define RENDERINGPIPELINES_INTERFACE_VERSION	"RenderingPipelines_001"
+
 #define PULSESYSTEM_INTERFACE_VERSION			"IPulseSystem_001"
 DECLARE_TIER3_INTERFACE( IPulseSystem, g_pPulseSystem );
 
@@ -498,11 +511,17 @@ DECLARE_TIER3_INTERFACE( panorama::IUITextServices, g_IUITextServices );
 #define TOOLFRAMEWORK2_INTERFACE_VERSION		"ToolFramework2_002"
 DECLARE_TIER3_INTERFACE( IToolFramework2, g_pToolFramework2 );
 
+// A tool module registers its tool system under this name, or under the tool's own name
+#define TOOLSYSTEM2_INTERFACE_VERSION		"ToolSystem2_001"
+
 #define PHYSICSBUILDER_INTERFACE_VERSION		"PhysicsBuilderMgr001"
 DECLARE_TIER3_INTERFACE( IMapBuilderMgr, g_pPhysicsBuilderMgr );
 
 #define VISBUILDER_INTERFACE_VERSION		"VisBuilder_001"
 DECLARE_TIER3_INTERFACE( IMapBuilderMgr, g_pVisBuilderMgr );
+
+// The resource type compiler the vis builder module registers
+#define MAPVISIBILITY_RESOURCE_TYPE_COMPILER_INTERFACE_VERSION	"MapVisibilityV001RESOURCE_TYPE_COMPILER_002"
 
 #define BAKEDLODBUILDER_INTERFACE_VERSION		"BakedLODBuilderMgr001"
 DECLARE_TIER3_INTERFACE( IMapBuilderMgr, g_pBakedLODBuilderMgr );
@@ -551,6 +570,9 @@ DECLARE_TIER3_INTERFACE( IAssetRenameSystem, g_pAssetRenameSystem );
 
 #define VCONCOMM_INTERFACE_VERSION		"VConComm001"
 DECLARE_TIER3_INTERFACE( IVConComm, g_pVConComm );
+
+// A subtool module registers its tool under this prefix followed by the tool's name
+#define VCONSOLE_SUBTOOL_INTERFACE_VERSION_PREFIX	"VConsole_SubTool_001_"
 
 #define MODELPROCESSINGSERVICES_INTERFACE_VERSION		"MODEL_PROCESSING_SERVICES_INTERFACE_001"
 DECLARE_TIER3_INTERFACE( IModelProcessingServices, g_pModelProcessingServices );
@@ -685,13 +707,15 @@ DECLARE_TIER3_INTERFACE( IServerToolsInfo, g_pServerToolsInfo );
 DECLARE_TIER3_INTERFACE( IClientToolsInfo, g_pClientToolsInfo );
 
 #define VRAD3_INTERFACE_VERSION				"Vrad3_001"
-DECLARE_TIER3_INTERFACE( IVRAD3, g_pVRAD3 );
+DECLARE_TIER3_INTERFACE( IVrad3, g_pVRAD3 );
 
 #define NAVSYSTEM_INTERFACE_VERSION				"NavSystem001"
 DECLARE_TIER3_INTERFACE( INavSystem, g_pNavSystem );
 
 #define NAVGAMETEST_INTERFACE_VERSION				"NavGameTest001"
 DECLARE_TIER3_INTERFACE( INavGameTest, g_pNavGameTest );
+
+#define CUSTOMNAVGEN_INTERFACE_VERSION				"customnavsystem001"
 
 #define LOCALSERVERCLIENTACCESS_INTERFACE_VERSION			"LocalServerClientAccess001"
 DECLARE_TIER3_INTERFACE( ILocalServerClientAccess, g_pLocalServerClientAccess );
@@ -704,6 +728,12 @@ DECLARE_TIER3_INTERFACE( IEngineService, g_pBugService );
 
 #define BUGBUGSERVICE_INTERFACE_VERSION		"BugBugService001"
 DECLARE_TIER3_INTERFACE( IEngineService, g_pBugBugService );
+
+// Engine services exported by the game and sound modules
+#define SOUNDBUGBUGSERVICE_INTERFACE_VERSION		"SoundBugBugService001_Client"
+#define CLIENTBUGBUGSERVICE_INTERFACE_VERSION		"ClientBugBugServic001_Client"
+#define EMPTYWORLDSERVICE_SERVER_INTERFACE_VERSION	"EmptyWorldService001_Server"
+#define EMPTYWORLDSERVICE_CLIENT_INTERFACE_VERSION	"EmptyWorldService001_Client"
 
 #define SCREENSHOTSERVICE_INTERFACE_VERSION		"ScreenshotService001"
 DECLARE_TIER3_INTERFACE( IEngineService, g_pScreenshotService );
@@ -776,6 +806,9 @@ DECLARE_TIER3_INTERFACE( ISaveRestoreDataMgr, g_pSaveRestoreDataMgr );
 #define HOSTUTILS_INTERFACE_VERSION		"HostUtils001"
 DECLARE_TIER3_INTERFACE( IHostUtils, g_pHostUtils );
 
+#define GAMESYSTEM2HOSTHOOK_INTERFACE_VERSION	"GameSystem2HostHook"
+DECLARE_TIER3_INTERFACE( IGameSystem2HostHook, g_pGameSystem2HostHook );
+
 #define DOTAMAPUTILS_INTERFACE_VERSION		"DotaMapUtils001"
 DECLARE_TIER3_INTERFACE( IDotaMapUtils, g_pDotaMapUtils );
 
@@ -789,7 +822,7 @@ DECLARE_TIER3_INTERFACE( IEconVData, g_pEconVData );
 DECLARE_TIER3_INTERFACE( IIMEManager, g_pIMEManager );
 
 #define SMARTPROPSSYSTEM_INTERFACE_VERSION		"SmartPropsSystem_001"
-DECLARE_TIER3_INTERFACE( ISmartPropsSystem, g_pSmartPropsSystem );
+DECLARE_TIER3_INTERFACE( ISmartPropSystem, g_pSmartPropsSystem );
 
 //-----------------------------------------------------------------------------
 // Work that has to wait until the module's interface globals are connected.

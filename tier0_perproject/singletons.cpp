@@ -121,7 +121,7 @@ IAnimGraphEditorUtils *g_pAnimGraphEditorUtils;
 IExportSystem *g_pExportSystem;
 IServerToolsInfo *g_pServerToolsInfo;
 IClientToolsInfo *g_pClientToolsInfo;
-IVRAD3 *g_pVRAD3;
+IVrad3 *g_pVRAD3;
 INavSystem *g_pNavSystem;
 INavGameTest *g_pNavGameTest;
 ILocalServerClientAccess *g_pLocalServerClientAccess;
@@ -151,11 +151,12 @@ IDebugDrawQueueMgr *g_pDebugDrawQueueMgr;
 IGameModelInfo *g_pGameModelInfo;
 ISaveRestoreDataMgr *g_pSaveRestoreDataMgr;
 IHostUtils *g_pHostUtils;
+IGameSystem2HostHook *g_pGameSystem2HostHook;
 IDotaMapUtils *g_pDotaMapUtils;
 ISinglePlayerSharedMemory *g_pSinglePlayerSharedMemory;
 IEconVData *g_pEconVData;
 IIMEManager *g_pIMEManager;
-ISmartPropsSystem *g_pSmartPropsSystem;
+ISmartPropSystem *g_pSmartPropsSystem;
 
 struct InterfaceGlobals_t
 {
