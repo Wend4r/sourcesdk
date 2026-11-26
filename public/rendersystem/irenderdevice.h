@@ -2,10 +2,6 @@
 //
 // Purpose: The render device
 //
-// Reconstructed from CS2 1.41.9.7 (rendersystemvulkan / rendersystemdx11, both ABIs), names from
-// the s&box 2026-04 DWARF of librendersystemvulkan.so / librendersystemempty.so and from the
-// assert strings of the Windows build. Methods marked "named by what it does" have no name source.
-//
 //===========================================================================//
 
 #ifndef IRENDERDEVICE_H
@@ -165,8 +161,8 @@ public:
 	virtual void SetHardwareGammaRamp( SwapChainHandle_t hSwapChain, float flGamma, float flGammaTVRangeMin, float flGammaTVRangeMax, float flGammaTVExponent, bool bTVEnabled ) = 0;
 	virtual std::unique_ptr< IRenderShaderByteCode > CompileShader( const char *pProgram, uint32 nBufLen, const char *pShaderVersion ) = 0;
 
-	// nShaderArg0 and nShaderArg1 are new in CS2 and go untouched to the second virtual method of the
-	// created shader object (named by what it does)
+	// nShaderArg0 and nShaderArg1 go untouched to the second virtual method of the created shader
+	// object (named by what it does)
 	virtual RenderShaderHandle_t CreateShader( RenderShaderType_t nType, std::unique_ptr< IRenderShaderByteCode > pShader, const char *pDebugName, uint32 nShaderArg0, uint64 nShaderArg1 ) = 0;
 
 	virtual void DestroyShader( RenderShaderType_t nType, RenderShaderHandle_t hShader ) = 0;
@@ -211,7 +207,7 @@ public:
 	virtual uint64 GetPooledVertexBufferDeviceAddress( PooledVertexBufferHandle_t hPooledBuffer ) = 0;
 	virtual uint64 GetPooledIndexBufferDeviceAddress( PooledIndexBufferHandle_t hPooledBuffer ) = 0;
 
-	// bUploadOption is new in CS2 and goes with the data to the render context upload call
+	// bUploadOption goes with the data to the render context upload call
 	virtual HRenderTextureStrong FindOrCreateTexture( const char *pResourceName, bool bIsAnonymous, const CTextureCreationDesc *pCreationDesc, const CTextureDesc *pDesc, const void *pData, int nDataSize, bool bUploadOption ) = 0;
 
 	virtual HRenderTexture GetErrorTexture( RenderTextureDimension_t nDimension ) = 0;
@@ -295,7 +291,7 @@ public:
 
 	virtual bool IsTextureFullyResident( HRenderTexture hTexture ) = 0;
 
-	// The texture manager field next to the unthrottle counter, as m_nMaxTextureRes in s&box
+	// The texture manager field next to the unthrottle counter
 	virtual int GetMaxTextureRes() = 0;
 
 	virtual void AddTextureResidencyListener( ITextureResidencyListener *pListener ) = 0;
@@ -344,8 +340,8 @@ public:
 	virtual bool HasOutstandingPresents( SwapChainHandle_t hSwapChain ) = 0;
 	virtual void WaitForOutstandingPresents( SwapChainHandle_t hSwapChain ) = 0;
 
-	// CS2 passes the mode by reference and adds nWindowFlags (named by what it does: window style flags
-	// picked from the mode usage bits are combined with it)
+	// nWindowFlags (named by what it does): combined with the window style flags picked from the
+	// mode usage bits
 	virtual void ResizeEngineWindow( SwapChainHandle_t hSwapChain, PlatWindow_t hWindow, uint32 nWindowFlags, const RenderDeviceInfo_t &info ) = 0;
 
 	virtual int GetLastValidSheetCacheFrame() = 0;
@@ -378,7 +374,7 @@ public:
 
 	virtual float GetLastPresentTime() = 0;
 
-	// bUploadOption is new in CS2, see FindOrCreateTexture
+	// bUploadOption: see FindOrCreateTexture
 	virtual void AsyncSetTextureData( HRenderTexture hTexture, const CTextureDesc *pDataDesc, const void *pData, uint32 nDataSize, bool bUploadOption, uint32 nSpecificMipLevelToSet, const Rect3D_t *pSubRectToUpdate, uint32 nTextureUpdateFlags, const DataRecycleDelegate_t *pDataRecycle, RenderAsyncTextureUpdateFlags_t nAsyncFlags ) = 0;
 
 	virtual GraphicsAPISpecificTextureHandle_t GetGraphicsAPISpecificTextureHandle( HRenderTexture hTexture ) = 0;
@@ -392,7 +388,8 @@ public:
 	// m_nHighestFrameSubmitted of the device (named by what it does)
 	virtual uint32 GetHighestFrameSubmitted() = 0;
 
-	virtual bool IsUsing32BitDepthBuffer() = 0;
+	// m_bUseReverseDepth (RenderSystem/UseReverseDepth of gameinfo)
+	virtual bool IsUsingReverseDepth() = 0;
 	virtual void LowLatencySleep() = 0;
 	virtual void SetLatencyMarker( uint32 nMarker ) = 0;
 
@@ -525,8 +522,9 @@ public:
 	// type is the read callback interface of the module (IRenderReadCallback in its RTTI)
 	virtual bool ReadCompiledTextureMips( HRenderTexture hTexture, int nRequestTag, int nFirstMip, int nMipCount, int nRequestFlags, std::shared_ptr< IRenderReadCallback > pCallback ) = 0;
 
-	bool m_bUse32BitDepthBuffer;
+	// From RenderSystem/UseReverseDepth and RenderSystem/Use32BitDepthBuffer of gameinfo, set by InitDevice
 	bool m_bUseReverseDepth;
+	bool m_bUse32BitDepthBuffer;
 };
 
 #endif // IRENDERDEVICE_H

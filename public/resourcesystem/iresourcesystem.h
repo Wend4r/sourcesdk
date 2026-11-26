@@ -13,7 +13,7 @@ class IResourceDataProvider;
 class ICodeResourceManifestManager;
 class CVDataTypeManager;
 class CResourceSystemProfiler;
-class CResourceSystemLeakTracker;
+class IResourceSystemLeakTracker;
 class IToolsResourceListener;
 class IToolsResourcePreReloadListener;
 
@@ -49,7 +49,7 @@ public:
 	virtual ResourceId_t ResourceHandleToResourceId( ResourceHandle_t pResourceHandle ) = 0;
 	virtual void GetResourceName( ResourceHandle_t pResourceHandle, CBufferString &pResult, bool bAllowHeapAllocation ) = 0;
 	virtual void GetResourceName( ResourceHandle_t pResourceHandle, CResourceString &pResult ) = 0;
-	virtual IResourceTypeManager *GetTypeManagerForBinding( ResourceHandle_t pResourceHandle ) = 0;
+	virtual ResourceType_t GetResourceType( ResourceHandle_t pResourceHandle ) = 0;
 	virtual ResourceHandle_t GetErrorResource( ResourceType_t nResourceType ) = 0;
 	virtual const char *GetResourceTypeName( ResourceType_t nResourceType ) = 0;
 	virtual void MarkErrorResourcesReloaded() = 0;
@@ -57,7 +57,7 @@ public:
 	virtual ResourceHandle_t BlockingLoadResourceByNameIntoJustInTimeManifest( CResourceString &pResourceName, const char *pszManifestName ) = 0;
 	virtual void FreeJustInTimeManifests() = 0;
 	virtual uint32 GetJustInTimeManifestCount() = 0;
-	virtual void GetJustInTimeManifest( CUtlVector< ResourceHandle_t > &pVector ) = 0;
+	virtual void GetJustInTimeManifestResources( CUtlVector< ResourceHandle_t > &pVector ) = 0;
 	virtual bool IsInFrameUpdate() = 0;
 	virtual void InstallResourceUpdater( IResourceUpdater *pUpdater ) = 0;
 	virtual void UninstallResourceUpdater() = 0;
@@ -79,7 +79,7 @@ public:
 	virtual void UnregisterAsyncResourceListener( void *pListener ) = 0;
 	virtual ICodeResourceManifestManager *GetCodeResourceManifestManager() = 0;
 	virtual CResourceSystemProfiler *GetResourceSystemProfiler() = 0;
-	virtual CResourceSystemLeakTracker *GetResourceSystemLeakTracker() = 0;
+	virtual IResourceSystemLeakTracker *GetLeakTracker() = 0;
 	virtual void SetResourceTypeManifestPriority( ResourceType_t nResourceType, ResourceManifestLoadPriority_t nResourceManifestLoadPriority ) = 0;
 	virtual void BlockingFinishAllCurrentlyLoadingManifests() = 0;
 	virtual bool IsBlockingOnManifestLoad() = 0;
@@ -107,10 +107,10 @@ DECLARE_TIER2_INTERFACE( IResourceSystem, g_pResourceSystem );
 abstract_class IResourceManifestRegistry
 {
 public:
-	virtual void RegisterFrameNumberTracker( int *pnFrameNumber ) = 0;
-	virtual void UnregisterFrameNumberTracker( int *pnFrameNumber ) = 0;
-	virtual void RegisterManifest( ResourceManifestDesc_t *pDesc ) = 0;
-	virtual void UnregisterManifest( ResourceManifestDesc_t *pDesc ) = 0;
+	virtual void RegisterResourceSystemUser( uint32 *pnFinishedFrameCounter ) = 0;
+	virtual void UnregisterResourceSystemUser( uint32 *pnFinishedFrameCounter ) = 0;
+	virtual void RegisterNamedManifest( ResourceManifestDesc_t *pDesc ) = 0;
+	virtual void UnregisterNamedManifest( ResourceManifestDesc_t *pDesc ) = 0;
 };
 
 DECLARE_TIER2_INTERFACE( IResourceManifestRegistry, g_pResourceManifestRegistry );

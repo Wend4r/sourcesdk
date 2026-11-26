@@ -20,7 +20,8 @@
 #include "tier0/interface.h"
 #include "tier0/utlsymbol.h"
 #include "tier0/utlstring.h"
-//#include "tier0/functors.h" 
+#include "tier0/utlstringtoken.h"
+//#include "tier0/functors.h"
 #include "tier0/checksum_crc.h"
 #include "tier0/utlqueue.h"
 #include "appframework/iappsystem.h"
@@ -390,8 +391,8 @@ public:
 	virtual bool			UnzipFile( const char *pFileName, const char *pPath, const char *pDestination ) = 0;
 	virtual bool			CopyAFile(const char *pFileName, const char *pPathID, const char *pDestination, bool bDontOverwrite = false) = 0;
 
-	virtual IMemoryMappedFile	*MemoryMapFile( FileHandle_t file, uint32 nFlags ) = 0;
-	virtual IMemoryMappedFile	*MemoryMapFile( const char *pFileName, const char *pPathID, uint32 nFlags ) = 0;
+	virtual IMemoryMappedFile	*CreateMemoryMap( FileHandle_t file, uint32 nFlags ) = 0;
+	virtual IMemoryMappedFile	*CreateMemoryMap( const char *pFileName, const char *pPathID, uint32 nFlags ) = 0;
 
 	//--------------------------------------------------------
 	// Search path manipulation
@@ -404,7 +405,8 @@ public:
 	//  override is cleared and the current .bsp is searched for an embedded PAK file
 	//  and this file becomes the highest priority search path ( i.e., it's looked at first
 	//   even before the mod's file system path ).
-	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL, SearchPathPriority_t priority = SEARCH_PATH_PRIORITY_DEFAULT, int nGroup = 0 ) = 0;
+	// Search paths added with the same merge token form one group
+	virtual void			AddSearchPath( const char *pPath, const char *pathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL, SearchPathPriority_t priority = SEARCH_PATH_PRIORITY_DEFAULT, CUtlStringToken mergeToken = CUtlStringToken() ) = 0;
 	virtual bool			RemoveSearchPath( const char *pPath, const char *pathID = 0 ) = 0;
 	
 	virtual SearchPathStateHandle_t		*SaveSearchPathState( const char *pszName ) const = 0;
@@ -429,16 +431,16 @@ public:
 	// converts a partial path into a full path
 	virtual const char		*RelativePathToFullPath( const char *pFileName, const char *pPathID, CBufferString &pLocalPath, PathTypeFilter_t pathFilter = FILTER_NONE, PathTypeQuery_t *pPathType = NULL ) = 0;
 
-	virtual bool			GetWritePath(const char*, const char*, CBufferString &) = 0;
+	virtual bool			RelativePathToFullWritePath( const char *pFileName, const char *pPathID, CBufferString &pLocalPath ) = 0;
 
 	// Returns the search path, each path is separated by ;s. Returns the length of the string returned
 	virtual bool			GetSearchPath( const char *pathID, GetSearchPathTypes_t pathType, CBufferString &pPath, int nSearchPathsToGet ) = 0;
-	
-	// Returns the search path group of the search path that holds pPath under pPathID, 0 if there is none or pPath is a "ugc:" path
-	virtual int				GetSearchPathGroup( const char *pPath, const char *pPathID ) = 0;
 
-	// Writes the path IDs of the search paths in nGroup, returns the length of pathIDs plus one
-	virtual int				GetPathIDsForSearchPathGroup( int nGroup, CBufferString &pathIDs ) = 0;
+	// Returns the merge token of the search path that holds pPath under pPathID, 0 if there is none or pPath is a "ugc:" path
+	virtual CUtlStringToken	GetMergeTokenForPath( const char *pPath, const char *pPathID ) = 0;
+
+	// Writes the path IDs of the search paths added with mergeToken, returns the length of pathIDs plus one
+	virtual int				GetMergedPaths( CUtlStringToken mergeToken, CBufferString &pathIDs ) = 0;
 
 	//--------------------------------------------------------
 	// File manipulation operations
@@ -520,7 +522,7 @@ public:
 	virtual FileNameHandle_t	FindOrAddFileName( char const *pFileName ) = 0;
 	virtual bool				String( const FileNameHandle_t& handle, CBufferString &buf ) = 0;
 
-	virtual void			Trace_DumpUnclosedFiles() = 0;
+	virtual void			PrintOpenedFiles() = 0;
 
 	virtual void			PrintSearchPaths( void ) = 0;
 
@@ -549,7 +551,15 @@ public:
 		TYPE_VMT,
 		TYPE_SOUNDEMITTER,
 		TYPE_SOUNDSCAPE,
+		TYPE_SOUNDOPERATORS,
 		NUM_PRELOAD_TYPES
+	};
+
+	enum AccesLogWriteResult_t
+	{
+		ACCESS_LOG_WRITE_NO_LOG,
+		ACCESS_LOG_WRITE_FAILED,
+		ACCESS_LOG_WRITE_SUCCESS
 	};
 
 	// If the "PreloadedData" hasn't been purged, then this'll try and instance the KeyValues using the fast path of compiled keyvalues loaded during startup.
@@ -579,10 +589,10 @@ public:
 
 	virtual void		GetSearchPathID( CBufferString &inout ) = 0;
 
-	// File path is "ugc:<UGCHandle_t value>"
-	virtual bool AddUGCVPKFile( const char *pszName, const char *pPathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
-	virtual void RemoveUGCVPKFile( const char *pszName ) = 0;
-	virtual bool IsUGCVPKFileLoaded( const char *pszName ) = 0;
+	// Mounts a VPK as a search path of pPathID ("ugc:<UGCHandle_t value>" names a workshop VPK)
+	virtual bool AddVPKFile( const char *pszName, const char *pPathID, SearchPathAdd_t addType = PATH_ADD_TO_TAIL ) = 0;
+	virtual void RemoveVPKFile( const char *pszName, const char *pPathID ) = 0;
+	virtual bool IsVPKFileLoaded( const char *pszName ) = 0;
 
 	virtual void EnableAutoVPKFileLoading( bool ) = 0;
 	virtual bool GetAutoVPKFileLoading( void ) = 0;
@@ -614,11 +624,12 @@ public:
 	virtual void			GetSearchPathsForPathID( const char*, GetSearchPathTypes_t, CUtlVector<CUtlString> & ) = 0;
 
 	virtual bool			MarkContentCorrupt( bool bMissingFilesOnly, const char *pFile, const char *pszReason ) = 0;
-	virtual void			EnableContentCorruptionReporting( bool bEnable ) = 0;
+	virtual void			SetContentCorruptionReportingEnabled( bool bEnable ) = 0;
 
-	virtual void			SuppressSearchPathAsyncBarrier( bool bSuppress ) = 0;
+	// Search path changes do not wait for the pending async file requests while this is set
+	virtual void			SuppressAsyncFileRequestFlushOnPathChange( bool bSuppress ) = 0;
 
-	virtual int				WriteOpenedFilesLog( const char *pszHeader, const char *pFileName, const char *pPathID, bool bClearLog ) = 0;
+	virtual AccesLogWriteResult_t WriteFileAccessLog( const char *pszHeader, const char *pFileName, const char *pPathID, bool bClearLog ) = 0;
 
 	virtual void			SetVPKSignatureKey( const uint8 *pPublicKey, int nKeySize, void *pSignatureCallback ) = 0;
 

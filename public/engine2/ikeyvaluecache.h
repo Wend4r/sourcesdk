@@ -18,18 +18,21 @@ class KeyValues;
 abstract_class IKeyValueCache : public IAppSystem
 {
 public:
-	virtual KeyValues *LoadKeyValues( const char *pszFileName, bool bUsesEscapeSequences, const char *pszRootName, const char *pszPathID ) = 0;
+	virtual KeyValues *LoadCachedKeyValues( const char *pszFileName, bool bUsesEscapeSequences, const char *pszRootName, const char *pszPathID ) = 0;
 
 	// The files are loaded in order and merged into the first one.
-	virtual KeyValues *LoadKeyValuesMerged( const CUtlVector< const char * > *pFileNames, bool bUsesEscapeSequences, const char *pszRootName, const char *pszPathID ) = 0;
+	virtual KeyValues *LoadCachedKeyValuesList( CUtlVector< const char * > &fileNames, bool bUsesEscapeSequences, const char *pszRootName, const char *pszPathID ) = 0;
 
-	virtual KeyValues *ReloadKeyValues( const char *pszFileName, bool bUsesEscapeSequences, const char *pszRootName, const char *pszPathID ) = 0;
+	virtual KeyValues *FlushReloadCachedKeyValues( const char *pszFileName, bool bUsesEscapeSequences, const char *pszRootName, const char *pszPathID ) = 0;
 
-	virtual bool ReleaseKeyValues( KeyValues *pKeyValues ) = 0;
+	// Drops one reference; the KeyValues are deleted with the last one.
+	virtual bool ReleaseCachedKeyValues( KeyValues *pKeyValues ) = 0;
 
-	virtual bool IsKeyValuesMergedCached( const CUtlVector< const char * > *pFileNames ) = 0;
+	virtual bool IsKeyValueListInCache( CUtlVector< const char * > &fileNames ) = 0;
 
-	virtual void InvalidateKeyValuesMerged( const CUtlVector< const char * > *pFileNames ) = 0;
+	// Named by what it does: hashes the file list and counts one more reference to that hash in a list of its own
+	// (separate from the cached KeyValues).
+	virtual void AddKeyValueListReference( CUtlVector< const char * > &fileNames ) = 0;
 };
 
 #endif // IKEYVALUECACHE_H

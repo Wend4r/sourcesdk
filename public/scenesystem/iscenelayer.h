@@ -50,8 +50,8 @@ struct SceneLayerOutputs_t
 	int m_nDepthTargetIndex;
 };
 
-// Render state overrides of a layer. Layouts from the s&box DWARF, checked against the CS2 client code that fills
-// them (stencil: client.dll sub_1811D5AB0; depth bias: sub_1811F16A0, sc_shadow_depth_bias*). They belong to the render
+// Render state overrides of a layer, filled by the client render pipeline (depth bias from sc_shadow_depth_bias*).
+// They belong to the render
 // system; defined here until a rendersystem header declares them
 struct RsStencilStateDesc_t
 {
@@ -110,11 +110,11 @@ public:
 	virtual bool UseAlternateProceduralLayerType() = 0;
 };
 
-// 1920 bytes on Windows, 1904 on Linux (constructor: scenesystem.dll sub_1800C6F90, libscenesystem.so sub_266380)
+// 1920 bytes on Windows, 1904 on Linux
 abstract_class ISceneLayer
 {
 public:
-	// 8 bytes in CS2; s&box adds m_bMSAA and m_nFlags
+	// 8 bytes
 	struct RenderTargetAttribute_t
 	{
 		HSceneViewRenderTarget m_hRenderTarget;
@@ -206,12 +206,12 @@ public:
 	IProceduralLayerRenderer *m_pRenderProcedure;
 	bool m_bDeleteRenderProcedureWhenFinished;
 
-	// Renders before the layer is submitted (s&box SetPreSubmitProceduralLayerRenderer); deleted with the layer when
+	// Renders before the layer is submitted; deleted with the layer when
 	// the flag is set
 	IProceduralLayerRenderer *m_pPreSubmitRenderProcedure;
 	bool m_bDeletePreSubmitRenderProcedureWhenFinished;
 
-	// Applied to the render context before the layer draws (scenesystem.dll sub_1800EEA20): rasterizer state, depth
+	// Applied to the render context before the layer draws: rasterizer state, depth
 	// stencil state with m_nOverrideStencilRef, and blend state with its blend factor and sample mask (-1 by default)
 	RsRasterizerStateHandle_t m_hOverrideRasterizerState;
 	RsDepthStencilStateHandle_t m_hOverrideDepthStencilState;
@@ -238,7 +238,7 @@ public:
 
 	// The label of a label layer (ISceneView::AddLabelLayer)
 	CUtlStringToken m_nLabel;
-	// s&box order: the stencil bit token the layer depends on, after the label
+	// The stencil bit token the layer depends on
 	CUtlStringToken m_nStencilBitDependency;
 	ISceneView *m_pParentView;
 
@@ -247,7 +247,7 @@ public:
 	// Textures that get a barrier to their layout before the layer renders
 	CUtlVectorFixedGrowable< InputTexture_t, 4 > m_inputTextures;
 
-	// s&box position (SetSemaphore / GetSemaphore there); zeroed by the constructor
+	// Zeroed by the constructor
 	void *m_hSemaphore;
 
 	// Named by what the code does: set while the procedural layer path works on the layer's own render target

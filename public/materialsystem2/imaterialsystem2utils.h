@@ -38,12 +38,9 @@ enum LayoutPositionType_e : int;
 enum EGPUTextureCompressOptions_t : int;
 
 //-----------------------------------------------------------------------------
-// Immediate and queued 2D rendering helpers of the material system.
-//
-// Names and arguments from the s&box DWARF of IMaterialSystem2Utils where the
-// CS2 body matches. CS2 has no 3D sphere/box/axes/line/triangle helpers, no
-// RenderPrimitives / QueueRenderPrimitives and no PrepareForRender, and has
-// GenerateMipMaps and GetMaterialModeShaderName that s&box does not.
+// Immediate and queued 2D rendering helpers of the material system. No virtual
+// destructor in the game: the destructor slots of the implementation follow
+// GetMaterialLayerString.
 //-----------------------------------------------------------------------------
 abstract_class IMaterialSystem2Utils : public IAppSystem
 {
@@ -128,8 +125,6 @@ public:
 	// Named by what it does: a lower-cased string that the material's resource data holds for
 	// the layer nLayer + 1
 	virtual CBufferString GetMaterialLayerString( HMaterialWeak hMaterial, int nLayer ) = 0;
-
-	virtual ~IMaterialSystem2Utils() {}
 };
 
 #endif // IMATERIALSYSTEM2UTILS_H

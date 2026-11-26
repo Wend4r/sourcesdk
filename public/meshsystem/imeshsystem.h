@@ -34,9 +34,9 @@ typedef HProjectedDecal__ *HProjectedDecal;
 
 //-----------------------------------------------------------------------------
 // Mesh system: models, mesh instances, projected decals and mesh ray traces.
+// No virtual destructor in the game: the destructor slots of the implementation
+// follow GetInputIndexTexture.
 //
-// Names from the s&box DWARF of IMeshSystem and the Dota 2 (2018) Mach-O symbols
-// of CMeshSystem where the CS2 body matches; the rest are named by what they do.
 // The overloads of CreateMeshInstance, CreateSceneObject and FindInputIndex are
 // declared at their Linux slots: MSVC groups each set at its first declaration
 // in reverse order, as the Windows binary has it (CreateMeshInstance 13-14,
@@ -105,8 +105,6 @@ public:
 	// Named by what it does: the texture attribute of the material when its bool attribute
 	// (both looked up by token) is set
 	virtual ResourceHandle_t GetInputIndexTexture( ResourceHandle_t hMaterial ) = 0;
-
-	virtual ~IMeshSystem() {}
 };
 
 #endif // IMESHSYSTEM_H

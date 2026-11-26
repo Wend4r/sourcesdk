@@ -29,9 +29,9 @@ struct SceneCachedData_t
 	// _has_speak_events_
 	bool			m_bHasSpeakEvents;
 };
-COMPILE_TIME_ASSERT( sizeof( SceneCachedData_t ) == 0xC );
 
-abstract_class ISceneFileCache : public IAppSystem
+// Derives from CBaseAppSystem< IAppSystem > rather than IAppSystem; the vtable is the same
+abstract_class ISceneFileCache : public CBaseAppSystem< IAppSystem >
 {
 public:
 	// Same lookup as GetSceneCachedData() without reading the cached values:

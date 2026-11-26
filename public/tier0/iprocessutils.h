@@ -133,8 +133,15 @@ public:
 													// or when IProcessUtils' Shutdown function is called.
 #define STARTPROCESS_FATPIPES				0x10	// Use I/O pipes larger than the default size for processes that do lots of stdio
 													// (Only works with STARTPROCESS_CONNECTSTDPIPES)
-// AMNOTE: Other flags the engine checks: 0x20 don't inherit handles, 0x40 adds -attachtodebugger, 0x80 adds -breakimmediately,
-// 0x100 kill with parent process, 0x200 no console window, 0x400 run under crash monitor, 0x800 no stdout pipe, 0x1000 no stderr pipe
+#define STARTPROCESS_NO_INHERIT_HANDLES		0x20	// The process inherits only its standard handles
+#define STARTPROCESS_ATTACH_TO_DEBUGGER		0x40	// Appends "-attachtodebugger -nominidumps" to the command line
+#define STARTPROCESS_BREAK_IMMEDIATELY		0x80	// Appends "-breakimmediately -nominidumps" to the command line
+#define STARTPROCESS_KILL_WITH_PARENT		0x100	// The process dies with this one (Windows: a shared kill-on-close job object)
+#define STARTPROCESS_NO_WINDOW				0x200	// Windows: the process gets no console window
+#define STARTPROCESS_CRASH_MONITOR			0x400	// Windows: the process runs under the debugger of this one, which writes
+													// a minidump when it crashes (not supported elsewhere: starting fails)
+#define STARTPROCESS_NO_STDOUT_PIPE			0x800	// With STARTPROCESS_CONNECTSTDPIPES: no stdout pipe (stderr gets its own)
+#define STARTPROCESS_NO_STDERR_PIPE			0x1000	// With STARTPROCESS_CONNECTSTDPIPES: no stderr pipe
 
 struct StartProcessInfo_t
 {

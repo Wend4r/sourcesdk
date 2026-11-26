@@ -82,7 +82,7 @@ public:
 
 	virtual void MoveLayerToBeAfterLayer( ISceneLayer *pLayer, ISceneLayer *pAfterLayer ) = 0;
 
-	// pLayer renders only after the label layer (or pDependency) has; s&box names
+	// pLayer renders only after the label layer (or pDependency) has
 	virtual void AddSemaphoreDependencyForLabelLayer( CUtlStringToken label, ISceneLayer *pLayer ) = 0;
 	virtual void AddSemaphoreDependency( ISceneLayer *pLayer, ISceneLayer *pDependency ) = 0;
 
@@ -98,7 +98,7 @@ public:
 	virtual ISceneLayer *AddSimpleQuadRendererLayer( const char *pszName, const RenderViewport_t &viewport, const CUtlStringToken &shaderMode, ResourceHandle_t hTexture, int nTextureWidth, int nTextureHeight, const RenderViewport_t &srcRect, const RenderViewport_t &dstRect ) = 0;
 
 	// Resolves color target nColorTargetIndex of the previous layer into hTarget; fails as the first layer.
-	// The game does not read nUnusedX and nUnusedY (s&box has the same two ints)
+	// The game does not read nUnusedX and nUnusedY
 	virtual ISceneLayer *AddResolveRenderTargetLayer( const char *pszName, const RenderViewport_t &viewport, int nUnusedX, int nUnusedY, int nColorTargetIndex, HSceneViewRenderTarget hTarget ) = 0;
 
 	// Resolves the depth target of the previous layer into hTarget; fails as the first layer
@@ -161,7 +161,7 @@ public:
 	// Only plane 0 is stored
 	virtual void SetUserClipPlane( int nIndex, const VPlane &plane ) = 0;
 
-	// s&box names; the scene system only stores the flag
+	// The scene system only stores the flag
 	virtual bool GetShadowsEnabled() = 0;
 	virtual void SetShadowsEnabled( bool bEnabled ) = 0;
 
@@ -225,7 +225,7 @@ public:
 	virtual void SetOverrideLODLevel( int nLevel ) = 0;
 	virtual int GetOverrideLODLevel() = 0;
 
-	// s&box names (a post process flag next to the shadows one there); the scene system only stores the flag
+	// The scene system only stores the flag
 	virtual bool GetPostProcessEnabled() = 0;
 	virtual void SetPostProcessEnabled( bool bEnabled ) = 0;
 
@@ -264,15 +264,14 @@ public:
 	virtual bool FindRenderTargetForTexture( HRenderTexture hTexture, int *pIndex, uint8 *pMultisampleType ) = 0;
 	virtual int GetRenderTargetRefCount( HRenderTexture hTexture ) = 0;
 
-	// Named by what they do: the layer that render layers added afterwards are associated with (s&box passes it to
-	// every Add*Layer)
+	// Named by what they do: the layer that render layers added afterwards are associated with
 	virtual void SetAssociatedLayerForNewLayers( ISceneLayer *pLayer ) = 0;
 	virtual ISceneLayer *GetAssociatedLayerForNewLayers() = 0;
 
-	// Empty in the game; s&box name of its empty slot next to SetVolumeCuller
+	// Empty in the game
 	virtual void CaptureRenderDocForView() = 0;
 
-	// s&box name: the fog volumes AddWorldToRenderList copied from the worlds
+	// The fog volumes AddWorldToRenderList copied from the worlds
 	virtual const CUtlVector< SceneVolumetricFogVolume_t > &GetVolumetricFogVolumes() = 0;
 
 	// Named by what they do: two std::shared_ptr members the scene system only stores
@@ -280,7 +279,7 @@ public:
 	virtual void SetSharedUserData2( std::shared_ptr< void > pData ) = 0;
 	virtual std::shared_ptr< void > GetSharedUserData2() = 0;
 
-	// s&box name; appends the frustum to the auxiliary cameras of the view
+	// Appends the frustum to the auxiliary cameras of the view
 	virtual void AddAuxiliaryRenderCamera( const CFrustum &frustum ) = 0;
 
 	// Named by what they do: values the scene system only stores (the client sets and reads them)

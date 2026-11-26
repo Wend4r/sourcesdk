@@ -18,8 +18,7 @@ class Vector;
 class CEntityKeyValues;
 class CSceneSystemBakedLightingInfo;
 
-// The geometry of a loaded world (CWorld). Names from the s&box DWARF build (CWorld), the CS2 order
-// from worldrenderer.dll / libworldrenderer.so 1.41.9.7. No virtual destructor in the game
+// The geometry of a loaded world (CWorld). No virtual destructor in the game
 abstract_class IWorld
 {
 public:

@@ -21,7 +21,7 @@ enum GameInterfaceConnectionMode_t
 //-----------------------------------------------------------------------------
 // Connects the interfaces that only the game modules use (DotaMapUtils, HostUtils,
 // PredictionDiffManager, DebugDrawQueueManager, ResponseRulesCache, GameSystem2HostHook,
-// SinglePlayerSharedMemory, EntitySubclassUtilsV001 (server only), EconVData) and
+// SinglePlayerSharedMemory, EntitySubclassUtilsV001 (client only: the server provides it), EconVData) and
 // points the side-specific globals (game resource service, string table container)
 // at the server or client instance. A module must always use the same mode.
 //-----------------------------------------------------------------------------

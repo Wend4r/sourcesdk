@@ -125,19 +125,20 @@ public:
 	virtual void FindDescendentsOfClass( const CSchemaClassInfo* pClassInfo, int, CUtlVector<const CSchemaClassInfo*> *descendents, bool ) = 0;
 	virtual void LoadSchemaDataForModules( const char** ppszModules, int nModules ) = 0;
 	
-	virtual const char* GetClassModuleName( const CSchemaClassInfo* pClassInfo ) = 0;
-	virtual const char* GetClassProjectName( const CSchemaClassInfo* pClassInfo ) = 0;
-	
-	virtual const char* GetEnumModuleName( const CSchemaEnumInfo* pEnumInfo ) = 0;
-	virtual const char* GetEnumProjectName( const CSchemaEnumInfo* pEnumInfo ) = 0;
+	// The binary is the module whose address range holds the binding, "<No schema binary for binding>" when none does
+	virtual const char* FindClassBindingBinaryName( const CSchemaClassInfo* pClassInfo ) = 0;
+	virtual const char* FindClassBindingProjectName( const CSchemaClassInfo* pClassInfo ) = 0;
+
+	virtual const char* FindEnumBindingBinaryName( const CSchemaEnumInfo* pEnumInfo ) = 0;
+	virtual const char* FindEnumBindingProjectName( const CSchemaEnumInfo* pEnumInfo ) = 0;
 	
 	virtual bool SchemaSystemIsReady() = 0;
 	virtual void VerifySchemaBindingConsistency( bool ) = 0;
 	virtual void CompleteModuleRegistration( const char* pszModuleName ) = 0;
 	virtual void RegisterAtomicType( const SchemaAtomicTypeInfo_t* pAtomicType ) = 0;
 	
-	virtual void PrintSchemaStats( const char* pszOptions ) = 0;
-	virtual void PrintSchemaMetaStats( const char* pszOptions ) = 0;
+	virtual void DumpStats( const char* pszOptions ) = 0;
+	virtual void DumpMetaStats( const char* pszOptions ) = 0;
 	
 	virtual void RegisterAtomics( const char* pszModuleName, const char* pszProjectName, CSchemaType** ppSchemaTypes, int, SchemaAtomicTypeInfo_t** ppAtomicTypes ) = 0;
 	virtual void RegisterEnums( const char* pszModuleName, const char* pszProjectName, CSchemaType** ppSchemaTypes, int, CSchemaEnumInfo** ppEnumInfos ) = 0;

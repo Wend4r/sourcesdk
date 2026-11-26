@@ -17,9 +17,8 @@
 class INetChannel;
 class CUtlBuffer;
 
-// Split screen user registered through ISplitScreenService. Only the members the service reads are known;
-// the type name is not present in the binaries.
-struct SplitScreenPlayer_t
+// Split screen user registered through ISplitScreenService. Only the members the service reads are known.
+struct SplitScreenClient_t
 {
 	INetChannel *m_pNetChannel;
 	CPlayerSlot m_nPlayerSlot;
@@ -32,8 +31,8 @@ abstract_class ISplitScreenService : public IEngineService
 public:
 	virtual ~ISplitScreenService() {}
 
-	virtual bool AddSplitScreenUser( CSplitScreenSlot nSlot, SplitScreenPlayer_t *pSplitPlayer ) = 0;
-	virtual bool AddBaseUser( CSplitScreenSlot nSlot, SplitScreenPlayer_t *pSplitPlayer ) = 0;
+	virtual bool AddSplitScreenUser( CSplitScreenSlot nSlot, SplitScreenClient_t *pSplitClient ) = 0;
+	virtual bool AddBaseUser( CSplitScreenSlot nSlot, SplitScreenClient_t *pSplitClient ) = 0;
 	virtual bool RemoveSplitScreenUser( CSplitScreenSlot nSlot ) = 0;
 
 	virtual CSplitScreenSlot GetActiveSplitScreenPlayerSlot() = 0;
@@ -44,8 +43,8 @@ public:
 	// Returns -1 when there is no further valid slot
 	virtual CSplitScreenSlot NextValidSplitScreenSlot( CSplitScreenSlot nPreviousSlot ) = 0;
 
-	virtual int GetNumSplitScreenPlayers() = 0;
-	virtual CPlayerSlot GetSplitScreenPlayer( CSplitScreenSlot nSlot ) = 0;
+	virtual int GetNumSplitScreenPlayers() const = 0;
+	virtual CPlayerSlot GetSplitScreenPlayerEntity( CSplitScreenSlot nSlot ) = 0;
 	virtual INetChannel *GetSplitScreenPlayerNetChan( CSplitScreenSlot nSlot ) = 0;
 
 	virtual bool IsDisconnecting( CSplitScreenSlot nSlot ) = 0;
@@ -56,11 +55,11 @@ public:
 	virtual bool IsLocalPlayerResolvable() = 0;
 
 	// Number of split screen players the game supports (1 to 4)
-	virtual int GetMaxSplitScreenPlayers() = 0;
+	virtual int GetMaxSplitScreenPlayers() const = 0;
 
 	// Searches every active slot, including slot 0
-	virtual bool IsSplitScreenPlayer( CPlayerSlot nPlayerSlot ) = 0;
-	virtual CSplitScreenSlot GetSplitScreenSlotForPlayer( CPlayerSlot nPlayerSlot ) = 0;
+	virtual bool IsSplitScreenPlayerEntity( CPlayerSlot nPlayerSlot ) const = 0;
+	virtual CSplitScreenSlot FindSplitPlayerSlot( CPlayerSlot nPlayerSlot ) const = 0;
 
 	virtual bool ReadUserConfig( const char *pszName, const CSplitScreenSlot &nSlot, CUtlBuffer &buf ) = 0;
 	virtual bool WriteUserConfig( const char *pszName, const CSplitScreenSlot &nSlot, CUtlBuffer &buf ) = 0;

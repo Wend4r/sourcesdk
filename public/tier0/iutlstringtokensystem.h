@@ -16,7 +16,8 @@
 abstract_class IUtlStringTokenSystem : public IAppSystem
 {
 public:
-	virtual const char *GetStringForToken( CUtlStringToken token ) = 0;
+	// The string the token was registered with, "<null>" for the null token, "" when it is not known
+	virtual const char *GetLikelyStringTokenName( CUtlStringToken token ) = 0;
 };
 
 #endif // TIER0_IUTLSTRINGTOKENSYSTEM_H

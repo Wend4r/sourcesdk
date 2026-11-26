@@ -21,9 +21,9 @@ struct FontAliasList_t;
 enum FontDrawType_t : int;
 
 //-----------------------------------------------------------------------------
-// Font manager of the material system. Every slot has the s&box DWARF name of
-// IFontManager at the same index; the CS2 bodies match (font alias groups,
-// "%s%s-%s" range keys, "<Unknown font>").
+// Font manager of the material system: font alias groups ( "%s%s-%s" range
+// keys ), glyph sets and the glyph texture cache. No virtual destructor in the
+// game: the destructor slots of the implementation follow SpewFonts.
 //-----------------------------------------------------------------------------
 abstract_class IFontManager : public IAppSystem
 {
@@ -81,10 +81,8 @@ public:
 	// Empty in CS2
 	virtual void ClearTemporaryFontCache() = 0;
 
-	// Prints every font of a font alias group (s&box has an extra float argument, CS2 does not)
+	// Prints every font of a font alias group
 	virtual void SpewFonts( const char *pTagName ) = 0;
-
-	virtual ~IFontManager() {}
 };
 
 #endif // IFONTMANAGER_H

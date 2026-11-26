@@ -531,9 +531,9 @@ private:
 	static const uint16 kInvalidAccessIndex = 0xFFFFu;
 
 public:
-	ConCommandRef() : m_CommandAccessIndex( kInvalidAccessIndex ), m_CommandRegisteredIndex( 0u ) {}
-	ConCommandRef( uint16 command_idx ) : m_CommandAccessIndex( command_idx ), m_CommandRegisteredIndex( 0u ) {}
-	ConCommandRef( uint16 access_idx, uint32 reg_idx ) : m_CommandAccessIndex( access_idx ), m_CommandRegisteredIndex( reg_idx ) {}
+	ConCommandRef() : m_CommandAccessIndex( kInvalidAccessIndex ), m_Unused( 0u ), m_CommandRegisteredIndex( 0u ) {}
+	ConCommandRef( uint16 command_idx ) : m_CommandAccessIndex( command_idx ), m_Unused( 0u ), m_CommandRegisteredIndex( 0u ) {}
+	ConCommandRef( uint16 access_idx, uint32 reg_idx ) : m_CommandAccessIndex( access_idx ), m_Unused( 0u ), m_CommandRegisteredIndex( reg_idx ) {}
 
 	ConCommandRef( const char *name, bool allow_defensive = false );
 
@@ -562,7 +562,7 @@ public:
 		return GetRawData()->GetAutoCompleteSuggestions( command, completions );
 	}
 
-	void InvalidateRef() { m_CommandAccessIndex = kInvalidAccessIndex; m_CommandRegisteredIndex = 0u; }
+	void InvalidateRef() { m_CommandAccessIndex = kInvalidAccessIndex; m_Unused = 0u; m_CommandRegisteredIndex = 0u; }
 	bool IsValidRef() const { return m_CommandAccessIndex != kInvalidAccessIndex; }
 	uint16 GetAccessIndex() const { return m_CommandAccessIndex; }
 	uint32 GetRegisteredIndex() const { return m_CommandRegisteredIndex; }
@@ -572,6 +572,8 @@ public:
 private:
 	// Index into internal linked list of concommands
 	uint16 m_CommandAccessIndex;
+	// Always zero: modules compare the whole reference as one 64-bit handle (0xFFFF is the invalid one)
+	uint16 m_Unused;
 	// Commands registered positional index
 	uint32 m_CommandRegisteredIndex;
 };

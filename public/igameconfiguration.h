@@ -20,8 +20,6 @@ class GameSessionConfiguration_t;
 #define GAMECONFIGURATION_CLIENT_INTERFACE_VERSION "GameConfigClientV001"
 #define GAMECONFIGURATION_SERVER_INTERFACE_VERSION "GameConfigServerV001"
 
-// AMNOTE: Names come from CGameConfiguration / CDOTAGameConfiguration of Dota 2 2018 (libclient.dylib symbols)
-// where the CS2 slot does the same thing.
 abstract_class IGameConfiguration : public ISource2ClientConfig, public ISource2ServerConfig
 {
 public:

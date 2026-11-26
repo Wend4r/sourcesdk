@@ -34,8 +34,7 @@ struct WorldNodeRenderable_t
 	ResourceHandle_t m_renderable;
 };
 
-// Slot order from worldrenderer.dll / libworldrenderer.so 1.41.9.7; names from the s&box DWARF build
-// (IWorldRendererMgr) where it has the method, otherwise named by what the method does
+// Methods named by what they do say so in their comment
 abstract_class IWorldRendererMgr : public IAppSystem
 {
 public:
@@ -69,7 +68,7 @@ public:
 	virtual const CUtlVector< const CEntityKeyValues * > *GetEntityList( IWorldReference *pWorldRef, const char *pSearchLump = NULL ) const = 0;
 	// pLumpName NULL or empty checks for any entity lump
 	virtual bool IsEntityLumpLoaded( IWorldReference *pWorldRef, const char *pLumpName ) const = 0;
-	// Same lookup, forwarded to CWorld::IsEntityManifestLoaded (s&box name of the CWorld method)
+	// Same lookup, forwarded to CWorld::IsEntityManifestLoaded
 	virtual bool IsEntityManifestLoaded( IWorldReference *pWorldRef, const char *pLumpName ) const = 0;
 
 	// Named by what it does: flags every world whose spawn group handle masked with nSpawnGroupMask equals

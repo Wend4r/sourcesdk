@@ -14,11 +14,9 @@ class CPostProcessingState;
 struct PostProcessingResource_t;
 
 //-----------------------------------------------------------------------------
-// Post processing (color correction) system of the material system.
-//
-// Slots 14-19 keep their Dota 2 (2018, Mach-O symbols) names: the CS2 bodies do
-// what the Dota methods of the same names did (editor override flag, override
-// lookup texture, override params pointer, lookup add/remove by name).
+// Post processing (color correction) system of the material system: the editor
+// override flag, override lookup texture and params, and the named color
+// correction lookups. No destructor slots.
 //-----------------------------------------------------------------------------
 abstract_class IPostProcessingSystem : public IAppSystem
 {

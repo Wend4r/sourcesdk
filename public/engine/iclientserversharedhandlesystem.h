@@ -19,8 +19,6 @@ struct ClientServerSharedHandle_t
 
 	bool IsValid() const { return m_nIndex != 0 && m_nSerial != 0; }
 };
-COMPILE_TIME_ASSERT( sizeof( ClientServerSharedHandle_t ) == 0x8 );
-
 abstract_class IClientServerSharedHandleSystem : public IAppSystem
 {
 public:

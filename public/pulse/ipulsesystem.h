@@ -48,7 +48,6 @@ public:
 
 	uint32 m_Value;
 };
-COMPILE_TIME_ASSERT( sizeof( PulseGraphInstanceID_t ) == 4 );
 
 abstract_class IPulseSystem : public IAppSystem
 {

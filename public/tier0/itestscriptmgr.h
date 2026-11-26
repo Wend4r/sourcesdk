@@ -12,8 +12,12 @@
 
 #include "appframework/iappsystem.h"
 
-// Receives the commands a test script issues
-class ITestScriptCommandProcessor;
+// Receives the commands of a test script that the manager does not handle itself
+abstract_class ITestScriptCommandProcessor
+{
+public:
+	virtual void ExecuteCommand( const char *pCommand ) = 0;
+};
 
 abstract_class ITestScriptMgr : public IAppSystem
 {

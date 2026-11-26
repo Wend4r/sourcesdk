@@ -7,8 +7,6 @@
 #include "resourcefile/resourcetype.h"
 #include "resourcesystem/resourcesystemtypes.h"
 
-class IResourceTypeManager;
-
 struct SerialResourceHandle_t
 {
 	SerialResourceHandle_t() : m_nData( 0 ) {}
@@ -20,8 +18,6 @@ struct SerialResourceHandle_t
 	uint64 m_nData;
 };
 
-COMPILE_TIME_ASSERT( sizeof( SerialResourceHandle_t ) == 0x8 );
-
 class IResourceHandleUtils
 {
 public:
@@ -32,7 +28,7 @@ public:
 	virtual void ResourceReferenceLeakTracking_Release( ResourceHandle_t hResource, ResourceLeakTrackingGroup_t eGroup, uintp nContext ) = 0;
 	virtual void ResourceReferenceLeakTracking_ReportReferences( ResourceHandle_t hResource ) = 0;
 	virtual ResourceStatus_t GetResourceStatus( ResourceHandle_t hResource ) = 0;
-	virtual IResourceTypeManager *GetTypeManagerForBinding( ResourceHandle_t hResource ) = 0;
+	virtual ResourceType_t GetResourceHandleType( ResourceHandle_t hResource ) = 0;
 	// Allocator and serial handle self-test.
 	virtual void RunSelfTest() = 0;
 	// Returns an empty handle if hResource is not a live binding.

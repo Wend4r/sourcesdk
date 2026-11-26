@@ -40,8 +40,7 @@ struct WorldNode_t;
 FORWARD_DECLARE_HANDLE( RenderBufferHandle_t );
 FORWARD_DECLARE_HANDLE( ConstantBufferHandle_t );
 
-// Layouts from worldrenderer.dll / libworldrenderer.so 1.41.9.7 (constructors, destructors and the methods
-// named in the comments); names from the s&box DWARF build (2026) where it has the member.
+// Layouts checked against the constructors, destructors and the methods named in the comments.
 
 // A world the world renderer manages. The class has no virtual destructor; the manager destroys it
 class CSingleWorldRep : public IWorldReference
@@ -93,7 +92,7 @@ using SceneObjectRefCompareFn_t = bool ( * )( CWorldSceneObjectRef *const &, CWo
 using SceneObjectRefKeyFn_t = unsigned int ( * )( CWorldSceneObjectRef *const & );
 using CWorldSceneObjectRefHash = CUtlHash< CWorldSceneObjectRef *, SceneObjectRefCompareFn_t, SceneObjectRefKeyFn_t >;
 
-// The baked lighting a scene world renders with (scene system type, s&box name). Filled by
+// The baked lighting a scene world renders with (scene system type). Filled by
 // CWorldRendererBakedLightingInfo::Init from BakedLightingInfo_t
 class CSceneSystemBakedLightingInfo
 {
@@ -120,7 +119,7 @@ public:
 	CUtlHashtable< uint64, int8 > m_bakedShadowChannels;
 };
 
-// The scene objects of a world node (s&box CNodeSceneObjectData; CS2 keeps one inside CWorld)
+// The scene objects of a world node (CWorld keeps one)
 class CNodeSceneObjectData
 {
 public:

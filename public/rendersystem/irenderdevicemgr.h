@@ -2,9 +2,6 @@
 //
 // Purpose: Enumerates graphics adapters and display modes
 //
-// Reconstructed from CS2 1.41.9.7 (CRenderDeviceMgrBase / CRenderDeviceMgrVulkan, both ABIs), names
-// from the s&box 2026-04 DWARF of librendersystemempty.so.
-//
 //===========================================================================//
 
 #ifndef IRENDERDEVICEMGR_H
@@ -83,6 +80,23 @@ public:
 
 	// Highest DX level the device supports (110, 111, 120)
 	virtual int GetMaxDXLevel() = 0;
+};
+
+//-----------------------------------------------------------------------------
+// Second interface of the DX11 device manager, registered as "VRenderDeviceMgrBackdoor001"
+// next to the IRenderDeviceMgr of the same object. Not an app system.
+//-----------------------------------------------------------------------------
+abstract_class IRenderDeviceMgrBackdoor
+{
+public:
+	// Named by what it does: stores the render system type that the caps report as the
+	// overriding type and makes Init succeed without creating a render device
+	virtual void OverrideRenderSystemType( int nRenderSystemType ) = 0;
+
+	// Named by what it does: creates the sheet cache texture ("sheetcachetexture_.vtex",
+	// Rendersystem/SheetCacheTextureRows and SheetCacheTextureCols of gameinfo) when the device
+	// has none yet
+	virtual void CreateSheetCacheTexture() = 0;
 };
 
 #endif // IRENDERDEVICEMGR_H

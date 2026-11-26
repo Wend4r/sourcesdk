@@ -20,8 +20,9 @@ struct RenderAdapterInfo_t;
 abstract_class IRenderHardwareConfig
 {
 public:
-	// Caps int at +552 of HardwareCaps_t; the Vulkan adapter enumeration always stores 16 (named by what it does)
-	virtual int GetCapsLimit552() = 0;
+	// Named by what it does: the first caps value after the adapter info, a limit that both
+	// the DX11 and the Vulkan device managers fix at 16; nothing else in the game reads it
+	virtual int GetFixedCapsLimit() = 0;
 
 	virtual int GetMaxTextureWidth() = 0;
 	virtual int GetMaxTextureHeight() = 0;
@@ -34,15 +35,17 @@ public:
 
 	virtual int GetMaxTextureDepth() = 0;
 	virtual int GetMaxViewports() = 0;
-	// Bit 2 of caps byte 681 of the actual (not overridden) caps (named by what it does)
-	virtual bool HasActualCapsBit681_2() = 0;
 
-	// r_prefer_loop_unrolling
-	virtual bool PreferLoopUnrolling() = 0;
+	// Read from the caps the adapter reported, not from the caps in use
+	virtual bool SupportsNonPowerOfTwoDxtTextures() = 0;
 
-	// Caps bits without a known setter (named by what they do)
-	virtual bool HasCapsBit680_5() = 0;
-	virtual bool HasCapsBit681_0() = 0;
+	// Secondary command lists: always on Vulkan, off on DX11
+	virtual bool AreSecondaryContextsSupported() = 0;
+
+	// The depth buffer is reversed (cleared in the adapter caps, set by the device)
+	virtual bool ReverseDepth() = 0;
+
+	virtual bool IsFastSubrectClearSupported() = 0;
 
 	// The caps in use, which start with the adapter info
 	virtual const RenderAdapterInfo_t &AdapterInfo() = 0;
@@ -74,15 +77,15 @@ public:
 	// Highest supported multisample type not above nDesired
 	virtual RenderMultisampleType_t GetBestSupportedMultisampleType( int nFormat, RenderMultisampleType_t nDesired ) = 0;
 
-	// Constant true on Vulkan (set with the caps defaults) (named by what it does)
-	virtual bool HasCapsBit681_5() = 0;
+	// Always on Vulkan, off on DX11
+	virtual bool SupportsDescriptorSets() = 0;
 
 	virtual int GetMaxPerStageSampledTextures() = 0;
 	virtual int GetMaxPushConstantsSize() = 0;
 	virtual int GetMinConstantBufferOffsetAlignment() = 0;
 
-	// Caps bit without a known setter (named by what it does)
-	virtual bool HasCapsBit681_6() = 0;
+	// Always on Vulkan, off on DX11
+	virtual bool SupportsBarriers() = 0;
 
 	// Separate async compute queue
 	virtual bool SupportsAsyncCompute() = 0;
@@ -97,8 +100,9 @@ public:
 	// HLSL SM6.0 subgroup wave operations
 	virtual bool SupportsWaveOps() = 0;
 
-	// Set unconditionally when the Vulkan device initialises (named by what it does)
-	virtual bool HasCapsBit682_4() = 0;
+	// Texel views of compressed block formats (GPU texture compression writes through them);
+	// set when the Vulkan device initialises, off on DX11
+	virtual bool SupportsCompressedBlockTexelViews() = 0;
 
 	// Ray tracing pipelines; also requires DX level 120
 	virtual bool SupportsRayTracing() = 0;
@@ -121,11 +125,13 @@ public:
 
 	virtual int GetLowLatencyMode() = 0;
 
-	// Two Vulkan physical device features the device stores at +18928 and +18932 (named by what it does)
-	virtual bool HasCapsBit683_5() = 0;
+	// Named by what it does: the Vulkan device has storageBuffer16BitAccess, shaderFloat16 and
+	// shaderInt8 (native 16-bit and 8-bit shader types); off on DX11
+	virtual bool SupportsNative16BitShaderTypes() = 0;
 
-	// Constant true on Vulkan (set with the caps defaults) (named by what it does)
-	virtual bool HasCapsBit683_6() = 0;
+	// Named by what it does: a capability every Vulkan device reports (set with the Vulkan caps
+	// defaults) and DX11 does not; nothing else in the game reads it
+	virtual bool HasVulkanBaselineCapability() = 0;
 	virtual bool SupportsDeviceGeneratedCommands() = 0;
 	virtual bool SupportsShaderInvocationReorder() = 0;
 	// A second queue family can present to the swap chain surface (vkGetPhysicalDeviceSurfaceSupportKHR
@@ -153,8 +159,9 @@ public:
 
 	virtual bool SupportsComputeShaderDerivatives() = 0;
 	virtual bool SupportsOpacityMicromap() = 0;
-	// Constant true on Vulkan (set with the caps defaults) (named by what it does)
-	virtual bool HasCapsBit685_2() = 0;
+	// Named by what it does: the last caps flag, set with the Vulkan caps defaults and never on
+	// DX11; nothing else in the game reads it
+	virtual bool HasVulkanDefaultCapability() = 0;
 };
 
 #endif // IRENDERHARDWARECONFIG_H

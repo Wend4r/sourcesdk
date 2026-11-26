@@ -38,11 +38,8 @@ enum ProceduralResourceType_t : int;
 
 //-----------------------------------------------------------------------------
 // Source 2 material system, exposed as MATERIAL_SYSTEM2_INTERFACE_VERSION
-// ( see g_pMaterialSystem2 ).
-//
-// Names from the s&box DWARF of IMaterialSystem2 where the CS2 body matches;
-// CS2 has no RsFillModeOverride_t argument in the render state setters. The
-// slots s&box does not have are named by what they do.
+// ( see g_pMaterialSystem2 ). No virtual destructor in the game: the
+// destructor slots of the implementation follow RemoveMaterialParamChangedListener.
 //-----------------------------------------------------------------------------
 abstract_class IMaterialSystem2 : public IAppSystem
 {
@@ -127,8 +124,6 @@ public:
 
 	virtual void AddMaterialParamChangedListener( void *pListener ) = 0;
 	virtual void RemoveMaterialParamChangedListener( void *pListener ) = 0;
-
-	virtual ~IMaterialSystem2() {}
 };
 
 #endif // IMATERIALSYSTEM2_H

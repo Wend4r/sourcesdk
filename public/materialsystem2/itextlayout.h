@@ -22,8 +22,8 @@ struct CCharRenderGeometry;
 struct RenderViewport_t;
 
 //-----------------------------------------------------------------------------
-// Text layout of the material system. Every slot has the s&box DWARF name of
-// ITextLayout at the same index; the CS2 bodies match.
+// Text layout of the material system. No virtual destructor in the game: the
+// destructor slots of the implementation follow GetWSize.
 //-----------------------------------------------------------------------------
 abstract_class ITextLayout : public IAppSystem
 {
@@ -47,8 +47,6 @@ public:
 
 	// Size of the laid out text
 	virtual Vector2D GetWSize( CTextLayoutInfo *pTextLayoutInfo ) = 0;
-
-	virtual ~ITextLayout() {}
 };
 
 #endif // ITEXTLAYOUT_H

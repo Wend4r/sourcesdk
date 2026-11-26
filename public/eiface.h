@@ -511,8 +511,8 @@ public:
 
 	virtual bool			LogForHTTPListeners( const char *szLogLine ) = 0;
 
-	// AMNOTE: Only reached through IToolService::ToolServerCallback1-4 and empty in release builds; no source names
-	// them and no caller passes an argument
+	// Named by how they are reached: only through IToolService::ToolServerCallback1-4, empty in release builds,
+	// and no caller passes an argument
 	virtual void			ToolServerCallback1( void ) = 0;
 	virtual void			ToolServerCallback2( void ) = 0;
 	virtual void			ToolServerCallback3( void ) = 0;
@@ -580,7 +580,7 @@ public:
 
 	virtual bool			AllowPlayerToTakeOverBots() = 0;
 
-	// Dota 2 2018 CGameConfiguration name; empty in CS2
+	// Empty in CS2
 	virtual void			OnClientFullyConnect( CEntityIndex nEntityIndex ) = 0;
 
 	virtual void		GetHostStateLoopModeInfo( HostStateLoopModeType_t type, CUtlString &loopModeName, KeyValues **ppLoopModeOptions ) = 0;

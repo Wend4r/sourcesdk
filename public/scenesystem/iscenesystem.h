@@ -68,7 +68,6 @@ FORWARD_DECLARE_HANDLE( RenderInputLayout_t );
 // Builds a template view; registered by name with InstallTemplateViewFactory
 typedef ISceneView *SceneTemplateViewFactoryFunc_t( const char *pszName, const ISceneView *pParentView, void *pContext );
 
-// Methods without an s&box (2026, DWARF) name are named by what they do; their comments say so.
 abstract_class ISceneSystem : public IAppSystem
 {
 public:
@@ -240,7 +239,7 @@ public:
 	virtual void ExecuteQueuedSceneObjectUpdateJobs() = 0;
 	virtual void InstallMaterialDependentSceneObjectUpdater( const std::function< void( CSceneObject * ) > &updater ) = 0;
 
-	// s&box names. A listener added after the scene system is initialized is notified right away
+	// A listener added after the scene system is initialized is notified right away
 	virtual void AddListener( ISceneSystemListener *pListener ) = 0;
 	virtual void RemoveListener( ISceneSystemListener *pListener ) = 0;
 
@@ -259,7 +258,7 @@ public:
 
 	// Named by what it does: the material names of the object's extra data block
 	virtual void GetSceneObjectMaterialNames( CUtlVector< CUtlString > &outNames, const CSceneObject *pObject ) = 0;
-	// Named by what it does: a per-class byte (s&box ModifyObjectClassFlags works on the same table)
+	// Named by what it does: sets a per-class byte flag
 	virtual uint8 SetObjectClassFlags( uint8 nClass, bool bValue ) = 0;
 
 	virtual void SceneObject_ScheduleDirtyUpdate( CSceneObject *pObject ) = 0;
@@ -329,7 +328,7 @@ public:
 	virtual void AddObjectDeletionListener( ISceneObjectDeletionListener *pListener ) = 0;
 	virtual void RemoveObjectDeletionListener( ISceneObjectDeletionListener *pListener ) = 0;
 
-	// Global render states keyed by token (s&box SetIntState). Named by what the others do: the count of states
+	// Global render states keyed by token. Named by what the others do: the count of states
 	// changed since they were last applied, a token to bool table, a pending flag and the apply step
 	virtual void SetIntState( CUtlStringToken token, int nValue ) = 0;
 	virtual int GetPendingStateCount() = 0;

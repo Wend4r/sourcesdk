@@ -327,7 +327,8 @@ enum XUSER_SIGNIN_STATE
 	eXUserSigninState_SignedInToLive,
 };
 
-#if (defined(POSIX))
+// Win64 declares ULONG_PTR as a 64-bit type, the same as size_t
+#if defined( POSIX ) || defined( PLATFORM_64BITS )
 typedef size_t ULONG_PTR;
 #else
 typedef _W64 unsigned long ULONG_PTR;

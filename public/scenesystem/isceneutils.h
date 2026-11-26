@@ -31,7 +31,6 @@ class Vector2D;
 struct RenderViewport_t;
 struct SceneLayerOutputs_t;
 
-// Methods without an s&box (2026, DWARF) name are named by what they do; their comments say so.
 abstract_class ISceneUtils : public IAppSystem
 {
 public:
@@ -69,7 +68,7 @@ public:
 	virtual IRenderingPipeline *FindRenderingPipeline( CUtlStringToken name ) = 0;
 	virtual IRenderingPipeline *AliasRenderingPipeline( const char *pszAlias, CUtlStringToken name ) = 0;
 
-	// s&box has two overloads of the same name here; MSVC orders them in reverse
+	// Two overloads; MSVC orders them in reverse
 	virtual ISceneLayer *AddTextureDebugLayer( ISceneView *pView, const char *pszName, const SceneLayerOutputs_t &outputs, const RenderViewport_t &viewport, HRenderTexture hTexture, int nMip, bool bAlpha ) = 0;
 	virtual ISceneLayer *AddTextureDebugLayer( ISceneView *pView, const char *pszName, const SceneLayerOutputs_t &outputs, const RenderViewport_t &viewport, HSceneViewRenderTarget hTarget, int nMip, bool bAlpha ) = 0;
 

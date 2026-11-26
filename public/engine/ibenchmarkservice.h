@@ -15,7 +15,8 @@
 abstract_class IBenchmarkService : public IEngineService
 {
 public:
-	virtual int GetFrameRenderCount() = 0;
+	// Integer launch option read when a benchmark starts (default 1).
+	virtual int GetRenderingMultiplier() const = 0;
 };
 
 #endif // IBENCHMARKSERVICE_H

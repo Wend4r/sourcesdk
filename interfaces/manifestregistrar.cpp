@@ -34,7 +34,7 @@ void CManifestRegistrar::RegisterAll()
 		if ( !pDesc->m_bRegistered && !pDesc->m_bDisallowRegistration )
 		{
 			pDesc->m_bRegistered = true;
-			g_pResourceManifestRegistry->RegisterManifest( pDesc );
+			g_pResourceManifestRegistry->RegisterNamedManifest( pDesc );
 		}
 	}
 }
@@ -47,7 +47,7 @@ void CManifestRegistrar::UnregisterManifests( ResourceManifestDesc_t **pManifest
 
 		if ( pDesc->m_bRegistered )
 		{
-			g_pResourceManifestRegistry->UnregisterManifest( pDesc );
+			g_pResourceManifestRegistry->UnregisterNamedManifest( pDesc );
 			pDesc->m_bRegistered = false;
 		}
 	}
@@ -62,7 +62,7 @@ void CManifestRegistrar::UnregisterAll()
 
 		if ( pDesc && pDesc->m_bRegistered )
 		{
-			g_pResourceManifestRegistry->UnregisterManifest( pDesc );
+			g_pResourceManifestRegistry->UnregisterNamedManifest( pDesc );
 			pDesc->m_bRegistered = false;
 		}
 	}

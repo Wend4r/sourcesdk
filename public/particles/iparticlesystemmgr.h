@@ -48,16 +48,14 @@ enum ParticleSystemFeatureFlags_t
 	PARTICLE_FEATURE_NON_HOMOGENOUS_FORWARD_LAYER_ONLY = ( 1 << 1 ),	// "non_homogenous_forward_layer_only"
 };
 
-// CParticleSystemMgr in particles.dll / libparticles.so. Names marked "Source 1" are those of
-// the CParticleSystemMgr methods of CS:GO that do the same thing; the others are named by what
-// the CS2 code does, as the comments say. On Linux the CParticleSystemMgr table has two more slots
-// at the end: the overrides of its secondary bases, not part of this interface.
+// CParticleSystemMgr in particles.dll / libparticles.so. No destructor slots in the interface;
+// on Linux the CParticleSystemMgr table has two more slots at the end that are not part of it.
 abstract_class IParticleSystemMgr : public IAppSystem
 {
 public:
-	// Source 1. Stored as they are; CParticleCollection::Init picks the fallback definition with them
+	// Stored as they are; CParticleCollection::Init picks the fallback definition with them
 	virtual void SetFallbackParameters( float flBase, float flMultiplier, float flSimFallbackBaseMultiplier, float flSimThresholdMs ) = 0;
-	// Source 1. A definition whose minimum CPU or GPU level is above these falls back when created with bCheckSystemLevel
+	// A definition whose minimum CPU or GPU level is above these falls back when created with bCheckSystemLevel
 	virtual void SetSystemLevel( int nCPULevel, int nGPULevel ) = 0;
 
 	// Named by what it does: a flag the client sets every frame next to SetFallbackParameters and
@@ -68,8 +66,7 @@ public:
 	// Performs a blocking load (with a warning when bWarnIfNotPrecached) if the system was not precached
 	virtual HParticleSystemDefinition FindParticleSystem( const char *pszName, bool bWarnIfNotPrecached ) = 0;
 
-	// Named by what it does: the schema class of CParticleSystemDefinition (Source 1 has
-	// GetParticleSystemDefinitionUnpackStructure in this role)
+	// Named by what it does: the schema class of CParticleSystemDefinition
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > GetParticleSystemDefinitionClassInfo() = 0;
 
 	// Unknown names and empty definitions fall back to the error particle system.
@@ -96,11 +93,11 @@ public:
 	virtual int GetOperatorDefinitionCount( int nFunctionType ) = 0;
 	virtual void *GetOperatorDefinition( int nFunctionType, int nIndex ) = 0;
 
-	// Source 1: also runs the sleep and fallback bookkeeping of the frame
+	// Also runs the sleep and fallback bookkeeping of the frame
 	virtual void SetLastSimulationTime( float flTime ) = 0;
 	virtual float GetLastSimulationTime() = 0;
 
-	// Source 1 (with a flag that also lists the instance counts per system)
+	// bInstanceCounts also lists the instance counts per system
 	virtual void DumpParticleList( const char *pszNameSubstring, bool bInstanceCounts ) = 0;
 
 	// Creates a collection and a particle scene object for it in pWorld. MSVC orders the three
@@ -110,8 +107,7 @@ public:
 	// The scene object deletes the collection with itself when bOwnsCollection is set
 	virtual CSceneObject *CreateParticleSceneObject( IParticleCollection *pCollection, ISceneWorld *pWorld, bool bOwnsCollection ) = 0;
 
-	// Source 1 name of the CParticleCollection method that does the same: fills pOut with the
-	// particles of pParticles for rendering in one of three layouts (nLayout 0..2) and sorts the
+	// Fills pOut with the particles of pParticles for rendering in one of three layouts (nLayout 0..2) and sorts the
 	// pointers in ppSorted by their key when bSorted is set. Returns the number of particles.
 	// Named by what the code does with them: pDirection is a Vector followed by a bool, read only with
 	// bUseDirection; pIndexRemap maps particle indices (negative entries are skipped); nKeyAttribute
@@ -122,9 +118,9 @@ public:
 	virtual int RandomInt( IParticleCollection *pCollection, int nMin, int nMax ) = 0;
 	virtual float RandomFloat( IParticleCollection *pCollection, float flMin, float flMax ) = 0;
 
-	// Source 1. The internal attribute names ("XYZ", "LIFE_DURATION", ...); "unknown" for an index out of range
+	// The internal attribute names ("XYZ", "LIFE_DURATION", ...); "unknown" for an index out of range
 	virtual const char *GetParticleAttributeName( int nAttribute ) = 0;
-	// Source 1. EAttributeDataType of the attribute
+	// EAttributeDataType of the attribute
 	virtual int GetParticleAttributeDataType( int nAttribute ) = 0;
 
 	// Named by what it does: restarts every collection that uses the definition

@@ -43,7 +43,8 @@
 struct ConVarSnapshot_t;
 class KeyValues;
 
-typedef std::function<void( FnGenericChangeCallbackProvider_t, FnGenericChangeCallback_t )> FnCvarCallbacksReader_t;
+// Returns false to stop the iteration
+typedef std::function<bool( FnGenericChangeCallbackProvider_t, FnGenericChangeCallback_t )> FnCvarCallbacksReader_t;
 
 //-----------------------------------------------------------------------------
 // Called when a ConVar changes value
@@ -154,9 +155,11 @@ private:
 
 // AMNOTE: CCvar definition is mostly for reference and is reverse engineered
 // You shouldn't be using this to directly register cvars/concommands, use its interface instead when possible
-class CCvar : public ICvar
+class CCvar : public CTier0AppSystem< ICvar >
 {
 public:
+	typedef CTier0AppSystem< ICvar > BaseClass;
+
 	static const int kMemoryBufferChunkMaxSize = 8192;
 	static const int kStringBufferChunkMaxSize = 2048;
 

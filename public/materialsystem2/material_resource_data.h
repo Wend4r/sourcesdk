@@ -10,10 +10,9 @@
 #include <tier0/utlsymbollarge.h>
 
 //-----------------------------------------------------------------------------
-// A shader parameter value: a vector, a texture or a blob. Names and layout from
-// the s&box DWARF (CVfxParam), confirmed on CS2 by CMaterial2's parameter code
-// (texture flag at byte 30 bit 0, buffer size cleared as a 16-bit word at 28,
-// buffer freed with delete[] at 32).
+// A shader parameter value: a vector, a texture or a blob. CMaterial2's parameter
+// code reads the texture flag at byte 30 bit 0, clears the buffer size as a 16-bit
+// word at 28 and frees the buffer with delete[] at 32.
 //-----------------------------------------------------------------------------
 class CVfxParam
 {
@@ -30,8 +29,8 @@ public:
 
 //-----------------------------------------------------------------------------
 // A named shader parameter of a loaded material (CMaterial2::m_params).
-// s&box DWARF names; CS2 compares m_name with V_stricmp_fast and reads the
-// shader name from m_string of the first parameter. 64 bytes on both platforms.
+// The game compares m_name with V_stricmp_fast and reads the shader name from
+// m_string of the first parameter. 64 bytes on both platforms.
 //-----------------------------------------------------------------------------
 class CMaterialParam : public CVfxParam
 {

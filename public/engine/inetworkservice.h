@@ -15,7 +15,7 @@
 abstract_class INetworkService : public IEngineService
 {
 public:
-	virtual void OpenSockets() = 0;
+	virtual void ConfigureSockets() = 0;
 };
 
 #endif // INETWORKSERVICE_H

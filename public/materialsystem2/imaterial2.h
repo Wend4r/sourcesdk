@@ -28,12 +28,10 @@ enum EBatchableInModeFlags_t : int;
 //-----------------------------------------------------------------------------
 // A loaded Source 2 material (CMaterial2 in materialsystem2).
 //
-// Method names from the s&box DWARF of IMaterial2 where the CS2 body does the
-// same thing; the slots CS2 has and s&box does not are named by what they do.
 // Slot 39 (Windows) / 39-40 (Linux) is the virtual destructor.
 //
-// The fields are the leading members of the game's CMaterial2 (2016 bytes in
-// CS2, ctor in CMaterialSystem2's procedural material creators); only this
+// The fields are the leading members of the game's CMaterial2 (2016 bytes,
+// constructed by CMaterialSystem2's procedural material creators); only this
 // prefix is declared, the class is never instantiated by the SDK.
 //-----------------------------------------------------------------------------
 abstract_class IMaterial2
@@ -78,7 +76,7 @@ public:
 	virtual bool IsBatchableInMode( const CUtlStringToken &shaderMode, EBatchableInModeFlags_t nFlags ) const = 0;
 	virtual void GetRepresentativeTextureSize( int *pWidth, int *pHeight, int nDefWidth, int nDefHeight, bool bClamp ) const = 0;
 
-	// CS2 has one more int than s&box; it selects the texture attribute pair that is read
+	// nMode selects the texture attribute pair that is read
 	virtual void GetWorldMappingSize( int *pWidth, int *pHeight, int nMode, int nDefWidth, int nDefHeight, bool bClamp ) const = 0;
 
 	// Returns 1 in CS2

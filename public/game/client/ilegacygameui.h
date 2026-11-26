@@ -35,7 +35,7 @@ public:
 	// Called with the map name when a non-dedicated server starts
 	virtual void SetProgressLevelName( const char *pszLevelName ) = 0;
 	virtual void OnConnectToServer2( const char *pszGame, int nIP, int nConnectionPort, int nQueryPort ) = 0;
-	// Name from CS:GO IGameUI (same position after OnConnectToServer2); empty in CS2
+	// Empty in CS2
 	virtual void SetProgressOnStart() = 0;
 	// Shows a popup for the Steam/VAC related reasons
 	virtual void OnDisconnectFromServer( ENetworkDisconnectionReason reason ) = 0;
@@ -44,10 +44,10 @@ public:
 	virtual void UnusedNotification0() = 0;
 	virtual void UnusedNotification1() = 0;
 
-	// Name from CS:GO IGameUI: true while the main menu or the pause menu is shown
+	// True while the main menu or the pause menu is shown
 	virtual bool IsMainMenuVisible() = 0;
 
-	// Parameter names from CS:GO IGameUI. The closed command runs after the OK and the cancel command;
+	// The closed command runs after the OK and the cancel command;
 	// pszLegend is not used; pszPanelID is the ID of the message box panel. The box goes on the
 	// loading screen or the main menu, depending on the state of the UI; the slot variant
 	// forwards to CreateCommandMsgBox without a panel ID

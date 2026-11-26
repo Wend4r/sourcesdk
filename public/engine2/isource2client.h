@@ -43,10 +43,7 @@ struct RenderViewport_t;
 struct PipelineRenderTargetInfo_t;
 struct GameClientCommandQueueState_t;
 
-// AMNOTE: Slot names come from the CSource2Client vtable of Dota 2 2018 (libclient.dylib symbols), from the
-// CEngineSoundServices / CToolService / CNetworkClientService forwarders of the engine that call them (Dota 2018
-// libengine2.dylib symbols) and, where no symbol exists, from what the CS2 code does (client.dll, the calls in
-// libengine2.so). Those last ones say so in their comment.
+// Methods whose comment says "named by what it does" are named after the client code and the engine calls.
 abstract_class ISource2Client : public IAppSystem
 {
 public:
@@ -116,7 +113,7 @@ public:
 	virtual void HudText( const char *pszMessage ) = 0;
 	// Called after a split screen client was added or removed
 	virtual void OnSplitScreenStateChanged() = 0;
-	// Names of the Dota 2018 slots at this place; constants or empty in CS2
+	// Constants or empty in CS2
 	virtual bool SupportsRandomMaps() = 0;
 	virtual bool CanVoiceChat() = 0;
 	virtual void OnFullEntityUpdate() = 0;
@@ -295,7 +292,7 @@ public:
 	// Empty in this build; the scene renderer passes the render attributes and the view of a player view
 	virtual void SetupPlayerViewRenderAttributes( CRenderAttributes *pAttributes ) = 0;
 	virtual void OnPlayerViewCreated( ISceneView *pView ) = 0;
-	// AMNOTE: No source names these three and they are constant in this build; named by their shape:
+	// Named by their shape, as they are constant in this build:
 	// false, NULL (IToolService::GetToolClientEntityInterface forwards here) and a NULL handle
 	// (IToolService::GetToolClientSelectedEntity forwards here)
 	virtual bool IsToolClientActive() = 0;
@@ -303,7 +300,7 @@ public:
 	virtual CEntityHandle GetToolClientSelectedEntity() = 0;
 	// Named by what it does: reconciles the predicted user commands of slot 0 with the command the server executed
 	virtual void OnServerExecutedCommand( CSplitScreenSlot nSlot, int nAckedCommand, int nTick, int nCommandNumber ) = 0;
-	// AMNOTE: Empty in this build and never called by the engine; no source names it
+	// Named by what it does: empty in this build and never called by the engine
 	virtual void EmptyClientCallback() = 0;
 	// Named by what it does: the name of the entity, NULL for an invalid index
 	virtual const char *GetEntityName( CEntityIndex nEntityIndex ) = 0;
@@ -385,11 +382,9 @@ public:
 
 	// Named by what it does: called after a spawn group of the server was loaded or unloaded
 	virtual void OnSpawnGroupChanged( void *pSpawnGroup, int nSlot, int nSpawnGroupHandle ) = 0;
-	// AMNOTE: The econ / character queries of the tools. Names of the 11 CToolService slots of Dota 2018 at the same
-	// place of IToolService, which forwards here; the ones of Dota forward to the server. All are empty or constant
-	// in CS2 (the scales return 1.0, the string outputs are cleared). GetDefaultControlPointAutoUpdates sits before
-	// the scales here, after them in Dota. EmptyToolCallback, between them, is reached from IToolService slot 81
-	// and has no source name
+	// The econ / character queries of the tools; IToolService forwards them here. All are empty or constant in CS2
+	// (the scales return 1.0, the string outputs are cleared). EmptyToolCallback, between them, is reached from
+	// IToolService slot 81 and is named by what it does
 	virtual void GetEconItemNamesForModel( const char *pszModelName, bool bExcludeItemSets, bool bExcludeLockedItems, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemNamesForCharacter( const char *pszCharacterName, bool bExcludeItemSets, bool bExcludeLockedItems, CUtlVector< CUtlString > &names ) = 0;
 	virtual void GetEconItemsInfoForModel( const char *pszModelName, const char *pszSlot, bool bExcludeItemSets, bool bExcludeLockedItems, bool bExcludeDefaultItems, void *pItems ) = 0;

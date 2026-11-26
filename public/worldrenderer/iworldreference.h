@@ -13,8 +13,7 @@
 class ISceneWorld;
 class Vector;
 
-// A reference counted world (CSingleWorldRep). Order from worldrenderer.dll / libworldrenderer.so 1.41.9.7,
-// names from the s&box DWARF build where it has the method. No virtual destructor in the game
+// A reference counted world (CSingleWorldRep). No virtual destructor in the game
 abstract_class IWorldReference
 {
 public:

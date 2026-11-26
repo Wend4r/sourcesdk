@@ -19,7 +19,7 @@ class KeyValues;
 abstract_class IMapListService : public IEngineService
 {
 public:
-	virtual void GetMapList( const char *pszFilter, CUtlVector< CUtlString > &maps ) = 0;
+	virtual void ListMaps( const char *pszFilter, CUtlVector< CUtlString > &maps ) = 0;
 
 	virtual KeyValues *ParseMapOptions( const char *pszOptions ) = 0;
 

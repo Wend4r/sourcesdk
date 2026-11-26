@@ -16,7 +16,7 @@ abstract_class IStatsService : public IEngineService
 {
 public:
 	// stats_display != 0
-	virtual bool IsStatsDisplayEnabled() = 0;
+	virtual bool IsDisplayingStats() = 0;
 
 	// Clears the accumulated frame and GPU timing samples
 	virtual void ResetStats() = 0;
