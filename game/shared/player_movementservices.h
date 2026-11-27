@@ -11,7 +11,8 @@ class CMoveData;
 class CPhysSurfaceProperties;
 
 //-----------------------------------------------------------------------------
-// CPlayer_MovementServices, slots 23-50. See playerpawn_component.h.
+// CPlayer_MovementServices, slots 23-50, on the client 30-53. See
+// playerpawn_component.h.
 //
 // The class runs the user commands of a pawn. RunCommand calls, in this order:
 // StartCommand, CanBeFrozen, CheckMovingGround, GetResetMoveData, SetupMove, then for
@@ -32,20 +33,31 @@ public:
 	// Runs one command through StartCommand .. FinishCommand
 	virtual void RunCommand( CUserCmdBase *pCmd ) = 0;
 
+#ifndef CLIENT_DLL
 	// Takes the commands a client sent for a tick. The third argument is the user command message.
 	virtual void ProcessUsercmds( CUserCmdBase **ppCmds, int nCmds, void *pMessage ) = 0;
 
 	// The part of ProcessUsercmds that runs when no command has to be dropped
 	virtual void ProcessUsercmdsInternal( CUserCmdBase **ppCmds, int nCmds, void *pMessage ) = 0;
+#endif
 
 	// Implemented by CCSPlayer_MovementServices and CCSObserver_MovementServices
 	virtual void ProcessMovement( CMoveData *pMove ) = 0;
 
+#ifndef CLIENT_DLL
 	// The pawn's velocity; CPlayer_MovementServices_Humanoid returns m_vecSmoothedVelocity
 	virtual Vector GetSmoothedVelocity() = 0;
+#endif
 
 	// Returns true in every class, on the client too; no caller on the server or the client
 	virtual bool Stub_30() = 0;
+
+#ifdef CLIENT_DLL
+	// Client slot 35. Copies m_vecOldViewAngles into the angles passed when a flag of the pawn
+	// is set, or when a check of the pawn's entity index passes and CanBeFrozen returns true;
+	// stores the angles passed into m_vecOldViewAngles otherwise. Not overridden.
+	virtual void Unk_35( QAngle &angles ) = 0;
+#endif
 
 	// The footstep table entry of the pawn: "player" for a humanoid, "t_player" or "ct_player" in CS
 	virtual const void *GetFootstepEntry() = 0;
@@ -105,16 +117,18 @@ public:
 	// when it is null. Returns false in the base class.
 	virtual bool CanFitAtPosition( CMoveData *pMove, const Vector *pVecPosition, bool bUnknown ) = 0;
 
+#ifndef CLIENT_DLL
 	// Looks for a position around the pawn that it fits into; used when noclip is turned off
 	virtual bool FindPassableSpace( Vector &vecOrigin ) = 0;
 
 	// The last step of turning noclip on or off. Empty in the server classes.
 	virtual void OnNoclipChanged( bool bUnknown ) = 0;
+#endif
 };
 
 //-----------------------------------------------------------------------------
-// CPlayer_MovementServices_Humanoid, slots 51-57: the step sounds of the
-// Source 1 CBasePlayer.
+// CPlayer_MovementServices_Humanoid, slots 51-57, on the client 54-61: the step
+// sounds of the Source 1 CBasePlayer.
 //-----------------------------------------------------------------------------
 template < class TBase = CPlayer_MovementServicesVTable<> >
 abstract_class CPlayer_MovementServices_HumanoidVTable : public TBase
@@ -130,6 +144,12 @@ public:
 	virtual void PlayStepSound( const Vector &vecOrigin, const CPhysSurfaceProperties *pSurface, float flVolume, bool bForce ) = 0;
 	virtual void GetStepSoundVelocities( float *pVelWalk, float *pVelRun ) = 0;
 	virtual void SetStepSoundTime( int iStepSoundTime, bool bWalking ) = 0;
+
+#ifdef CLIENT_DLL
+	// Client slot 60. Looks a sound event up by its name: hashes the lower-cased name and
+	// asks the sound system for the hash. CCSPlayer_MovementServices overrides it.
+	virtual void *Unk_60( void *pUnknown, const char *pszName ) = 0;
+#endif
 
 	// Empty in every class, on the client too; no caller on the server or the client
 	virtual void Stub_57() = 0;

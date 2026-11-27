@@ -6,15 +6,18 @@
 #include "../player_movementservices.h"
 
 //-----------------------------------------------------------------------------
-// CCSPlayer_MovementServices, slot 58. See playerpawn_component.h.
+// CCSPlayer_MovementServices, slot 58; the client class adds no virtual method.
+// See playerpawn_component.h.
 //-----------------------------------------------------------------------------
 template < class TBase = CPlayer_MovementServices_HumanoidVTable<> >
 abstract_class CCSPlayer_MovementServicesVTable : public TBase
 {
+#ifndef CLIENT_DLL
 public:
 	// Plays the step sound like PlayStepSound, then counts the step in m_iFootsteps and
 	// fires the player_footstep event
 	virtual void PlayFootstep( const Vector &vecOrigin, const CPhysSurfaceProperties *pSurface, float flVolume, bool bForce ) = 0;
+#endif
 };
 
 #endif // CSTRIKE15_CS_PLAYER_MOVEMENTSERVICES_H

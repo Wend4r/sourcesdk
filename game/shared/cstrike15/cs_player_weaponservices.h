@@ -10,8 +10,9 @@
 // CCSPlayer_WeaponServices adds no virtual method of its own. See
 // playerpawn_component.h.
 //
-// The game class also derives from IToolsResourcePreReloadListener (at offset 176)
-// and IToolsResourceListener (at 184), in that order. Its overrides of their
+// The game class also derives from IToolsResourcePreReloadListener (at offset 176,
+// on the client 168) and IToolsResourceListener (at 184, on the client 176), in
+// that order. Its overrides of their
 // methods are entered into the primary table on Linux only (the two slots after
 // RefillActiveWeaponClips); the Windows table keeps them in the tables of the
 // second bases. The second bases sit right behind the table pointer of these

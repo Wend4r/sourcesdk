@@ -10,11 +10,13 @@ class CBaseEntity;
 class KeyValues;
 
 //-----------------------------------------------------------------------------
-// CPlayer_ItemServices, slots 23-27. See playerpawn_component.h.
+// CPlayer_ItemServices, slots 23-27; the client class adds no virtual method.
+// See playerpawn_component.h.
 //-----------------------------------------------------------------------------
 template < class TBase = CPlayerPawnComponentVTable >
 abstract_class CPlayer_ItemServicesVTable : public TBase
 {
+#ifndef CLIENT_DLL
 public:
 	// Spawns the entity and gives it to the pawn. CCSPlayer_ItemServices ignores everything but the name.
 	virtual CBaseEntity *GiveNamedItem( const char *pszName, int iSubType = 0, KeyValues *pKeyValues = nullptr ) = 0;
@@ -28,6 +30,7 @@ public:
 	// CCSPlayer_ItemServices drops the active weapon through the weapon services
 	virtual void DropActivePlayerWeapon( const Vector &vecForce ) = 0;
 	virtual void RemoveAllItems( bool bRemoveSuit ) = 0;
+#endif
 };
 
 #endif // PLAYER_ITEMSERVICES_H

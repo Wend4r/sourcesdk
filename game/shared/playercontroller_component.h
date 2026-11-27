@@ -8,22 +8,31 @@
 #include "schemasystem/schematypes.h"
 
 class CNetworkSerializerClassInfo;
+struct datamap_t;
 
 //-----------------------------------------------------------------------------
 // Virtual table of CPlayerControllerComponent, the base of the services of a
-// player controller, as laid out by the server module.
+// player controller, as laid out by the server module, or by the client module
+// when CLIENT_DLL is defined.
 //
 // The class follows the rules of CPlayerPawnComponentVTable: virtual methods only,
 // a VTable suffix, and the classes derived from it are templates over their base
 // class. See playerpawn_component.h.
 //
 // A controller keeps its components in a list and runs the methods from Activate
-// to PostThink for each of them from its own method of the same name.
+// to PostThink (on the client also PostDataUpdate to OnDataChanged) for each of
+// them from its own method of the same name.
 //-----------------------------------------------------------------------------
 abstract_class CPlayerControllerComponentVTable
 {
 public:
 	virtual SchemaMetaInfoHandle_t< CSchemaClassInfo > Schema_DynamicBinding() = 0;
+
+#ifdef CLIENT_DLL
+	// The map of the predicted fields; no controller component has any of its own
+	virtual datamap_t *GetPredDescMap() = 0;
+#endif
+
 	virtual const CNetworkSerializerClassInfo *GetSerializerClassInfo() = 0;
 	virtual ~CPlayerControllerComponentVTable() = 0;
 
@@ -34,6 +43,12 @@ public:
 	virtual void OnRestore() = 0;
 	virtual void PreThink() = 0;
 	virtual void PostThink() = 0;
+
+#ifdef CLIENT_DLL
+	virtual void PostDataUpdate( DataUpdateType_t updateType ) = 0;
+	virtual void OnPreDataChanged( DataUpdateType_t updateType ) = 0;
+	virtual void OnDataChanged( DataUpdateType_t updateType ) = 0;
+#endif
 
 	// The first call after the component is linked to its controller, every class chains to its base
 	virtual void PreInit() = 0;

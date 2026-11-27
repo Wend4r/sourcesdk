@@ -9,7 +9,8 @@
 class CBasePlayerWeapon;
 
 //-----------------------------------------------------------------------------
-// CPlayer_WeaponServices, slots 23-44. See playerpawn_component.h.
+// CPlayer_WeaponServices, slots 23-44, on the client 30-47. See
+// playerpawn_component.h.
 //-----------------------------------------------------------------------------
 template < class TBase = CPlayerPawnComponentVTable >
 abstract_class CPlayer_WeaponServicesVTable : public TBase
@@ -31,8 +32,10 @@ public:
 	// Implemented by CCSPlayer_WeaponServices only
 	virtual void DropWeapon( CBasePlayerWeapon *pWeapon, Vector *pVecTarget = nullptr, Vector *pVelocity = nullptr ) = 0;
 
+#ifndef CLIENT_DLL
 	// The pawn touched a weapon on the ground. CCSPlayer_WeaponServices returns 0, 1 or 2; the base class returns 0.
 	virtual int BumpWeapon( CBasePlayerWeapon *pWeapon ) = 0;
+#endif
 
 	// Makes the weapon the active one. Implemented by CCSPlayer_WeaponServices only.
 	virtual bool SelectItem( CBasePlayerWeapon *pWeapon, int iSubType = 0 ) = 0;
@@ -44,8 +47,10 @@ public:
 	// Asked by SelectItem: whether the weapon being put away becomes the last weapon. Always true.
 	virtual bool ShouldSetLastWeapon( CBasePlayerWeapon *pOldWeapon, CBasePlayerWeapon *pNewWeapon ) = 0;
 
+#ifndef CLIENT_DLL
 	// False while m_bPreventWeaponPickup is set; CCSPlayer_WeaponServices also requires the pawn to be alive
 	virtual bool CanPickupWeapons() = 0;
+#endif
 
 	// Empty on the server and on the client. Called when a weapon handle is appended to
 	// m_hMyWeapons (from EquipWeapon). Named by its caller
@@ -65,11 +70,13 @@ public:
 	// Forwards the ammo index to the ammo definition
 	virtual bool CanCarryInfiniteAmmo( uint8 nAmmoIndex ) = 0;
 
+#ifndef CLIENT_DLL
 	// Returns 0 in every class; no caller found, the client has no such slot
 	virtual float Stub_42() = 0;
 
 	// Empty in every class; no caller found, the client has no such slot
 	virtual void Stub_43() = 0;
+#endif
 
 	// Tops up the clips of the active weapon from its reserve ammo, depending on a console variable
 	virtual void RefillActiveWeaponClips() = 0;

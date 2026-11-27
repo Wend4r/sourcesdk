@@ -6,7 +6,7 @@
 #include "../player_cameraservices.h"
 
 //-----------------------------------------------------------------------------
-// CCSPlayerBase_CameraServices, slot 33. See playerpawn_component.h.
+// CCSPlayerBase_CameraServices, slot 33, on the client 46. See playerpawn_component.h.
 //-----------------------------------------------------------------------------
 template < class TBase = CPlayer_CameraServicesVTable<> >
 abstract_class CCSPlayerBase_CameraServicesVTable : public TBase
